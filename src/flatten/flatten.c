@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.82  1999/02/11 09:20:55  bs
+ * Functions FltnArray and FltnExprs modified. Now arrays of const. integers
+ * additionally are stored in compact form.
+ *
  * Revision 1.81  1999/01/14 13:38:47  sbs
  * flattening of first arg of genarray suppressed.
  *
@@ -368,6 +372,63 @@ typedef struct LOCAL_STACK {
 
 static int with_level = 0;
 static local_stack *tos, *stack, *stack_limit;
+
+/******************************************************************************
+ *
+ * function:
+ *  void DbugPrintArray(int len, int *intptr)
+ *
+ * description:
+ *   - this function is only used for printing of debugging informations in
+ *     FltnArray.
+ *
+ ******************************************************************************/
+
+void
+DbugPrintArray (int len, int *intptr)
+{
+    int i;
+
+    if ((intptr == NULL) || (len <= 1))
+        return;
+    else {
+        printf ("/* [%d", intptr[0]);
+        for (i = 1; i < ((len < 10) ? (len) : (10)); i++)
+            printf (",%d", intptr[i]);
+        if (len > 10)
+            printf (",..] */\n");
+        else
+            printf ("] */\n");
+        return;
+    }
+}
+
+/******************************************************************************
+ *
+ * function:
+ *  int *CopyIntArray(int len, int* array)
+ *
+ * description:
+ *   - this function is only used for copying of the first len integers
+ *     of a large integer array.
+ *   - it is only used in FltnArray.
+ *
+ ******************************************************************************/
+
+int *
+CopyIntArray (int len, int *array)
+{
+    int i, *res;
+
+    if ((array == NULL) || (len <= 1))
+        return (NULL);
+    else {
+        res = MALLOC (len * sizeof (int));
+        for (i = 0; i < len; i++)
+            res[i] = array[i];
+        return (res);
+    }
+}
 
 /******************************************************************************
  *
@@ -1000,8 +1061,9 @@ FltnLet (node *arg_node, node *arg_info)
  *  node *FltnArray(node *arg_node, node *arg_info)
  *
  * description:
- *  set the context-flag of arg_info to CT_normal, traverse the arguments,
- *  and finally restore the old context-flag.
+ *  set the context-flag of arg_info to CT_array, traverse the arguments,
+ *  in the case of constant integers store the array in compact form
+ *  additionally, and finally restore the old context-flag.
  *
  ******************************************************************************/
 
@@ -1009,16 +1071,26 @@ node *
 FltnArray (node *arg_node, node *arg_info)
 {
     contextflag old_ctxt;
+    int info_fltn_intarray[256];
 
     DBUG_ENTER ("FltnArray");
 
     DBUG_ASSERT ((ARRAY_AELEMS (arg_node) != NULL), "N_array node where AELEMS is NULL!");
 
     old_ctxt = INFO_FLTN_CONTEXT (arg_info);
-    INFO_FLTN_CONTEXT (arg_info) = CT_normal;
-    ARRAY_AELEMS (arg_node) = Trav (ARRAY_AELEMS (arg_node), arg_info);
-    INFO_FLTN_CONTEXT (arg_info) = old_ctxt;
+    INFO_FLTN_ARRAYLENGTH (arg_info) = 0;
+    INFO_FLTN_INTARRAY (arg_info) = info_fltn_intarray;
+    INFO_FLTN_CONTEXT (arg_info) = CT_array;
 
+    ARRAY_AELEMS (arg_node) = Trav (ARRAY_AELEMS (arg_node), arg_info);
+
+    ARRAY_LENGTH (arg_node) = MAX (0, INFO_FLTN_ARRAYLENGTH (arg_info));
+    ARRAY_INTARRAY (arg_node)
+      = CopyIntArray (INFO_FLTN_ARRAYLENGTH (arg_info), INFO_FLTN_INTARRAY (arg_info));
+    INFO_FLTN_INTARRAY (arg_info) = NULL;
+    INFO_FLTN_CONTEXT (arg_info) = old_ctxt;
+    DBUG_EXECUTE ("ARRAY_FLAT",
+                  DbugPrintArray (ARRAY_LENGTH (arg_node), ARRAY_INTARRAY (arg_node)););
     DBUG_RETURN (arg_node);
 }
 
@@ -1129,17 +1201,19 @@ FltnReturn (node *arg_node, node *arg_info)
  *
  * description:
  *  - flattens all the exprs depending on the context INFO_FLTN_CONTEXT( arg_info)
+ *  - collecting constant integer elements
  *
  ******************************************************************************/
 
 node *
 FltnExprs (node *arg_node, node *arg_info)
 {
-    int abstract;
+    int abstract, *info_fltn_intarray;
     node *expr, *expr2;
 
     DBUG_ENTER ("FltnExprs");
 
+    info_fltn_intarray = INFO_FLTN_INTARRAY (arg_info);
     expr = EXPRS_EXPR (arg_node);
 
     /* skip leading casts */
@@ -1167,6 +1241,21 @@ FltnExprs (node *arg_node, node *arg_info)
         abstract = ((NODE_TYPE (expr) == N_ap) || (NODE_TYPE (expr) == N_prf)
                     || (NODE_TYPE (expr) == N_Nwith) || (NODE_TYPE (expr) == N_with));
         break;
+    case CT_array:
+        abstract = ((NODE_TYPE (expr) == N_ap) || (NODE_TYPE (expr) == N_prf)
+                    || (NODE_TYPE (expr) == N_Nwith) || (NODE_TYPE (expr) == N_with));
+        if ((INFO_FLTN_ARRAYLENGTH (arg_info) >= 0) && (NODE_TYPE (expr) == N_num)) {
+            /*
+             * collect the array elements if constant integers
+             */
+            info_fltn_intarray[INFO_FLTN_ARRAYLENGTH (arg_info)] = NUM_VAL (expr);
+            INFO_FLTN_ARRAYLENGTH (arg_info) += 1;
+        } else
+            /*
+             * notice: the element isn't a constant integer
+             */
+            INFO_FLTN_ARRAYLENGTH (arg_info) = -1;
+        break;
     default:
         DBUG_ASSERT (0, "illegal context !");
         /*
@@ -1188,10 +1277,11 @@ FltnExprs (node *arg_node, node *arg_info)
                  "return-node differs from arg_node while flattening an expr!");
 
     /*
-     * Last, but not least remaining exprs have to be done:
+     * Last but not least remaining exprs have to be done:
      */
     if (EXPRS_NEXT (arg_node))
         EXPRS_NEXT (arg_node) = Trav (EXPRS_NEXT (arg_node), arg_info);
+
     DBUG_RETURN (arg_node);
 }
 
