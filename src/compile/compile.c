@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.54  2000/05/24 13:30:23  nmw
+ * (jhs) Added workarounds for BLOCK_INSTR == NULL.
+ *
  * Revision 2.53  2000/04/27 13:16:31  dkr
  * Bug in COMPArg fixed:
  * In SPMD-functions no DEC_RC_... and INC_RC_... ICMs are added anymore!
@@ -2265,7 +2268,9 @@ COMPBlock (node *arg_node, node *arg_info)
     }
 
     INFO_COMP_LASTASSIGN (arg_info) = arg_node;
-    BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
+    if (BLOCK_INSTR (arg_node) != NULL) {
+        BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
+    }
 
     /* restoring old info! (nested blocks) */
     INFO_COMP_LASTASSIGN (arg_info) = old_info;
@@ -6222,7 +6227,9 @@ COMPNcode (node *arg_node, node *arg_info)
         /*
          * insert these ICMs as first statement into the code-block
          */
-        if (NODE_TYPE (BLOCK_INSTR (NCODE_CBLOCK (arg_node))) == N_empty) {
+
+        if ((BLOCK_INSTR (NCODE_CBLOCK (arg_node)) != NULL)
+            && (NODE_TYPE (BLOCK_INSTR (NCODE_CBLOCK (arg_node))) == N_empty)) {
             /*
              * remove a N_empty node
              */
@@ -6828,8 +6835,9 @@ COMPWLgrid (node *arg_node, node *arg_info)
 
             DBUG_ASSERT ((NCODE_CBLOCK (WLGRID_CODE (arg_node)) != NULL),
                          "no code block found");
-            if (NODE_TYPE (BLOCK_INSTR (NCODE_CBLOCK (WLGRID_CODE (arg_node))))
-                != N_empty) {
+            if ((BLOCK_INSTR (NCODE_CBLOCK (WLGRID_CODE (arg_node))) != NULL)
+                && (NODE_TYPE (BLOCK_INSTR (NCODE_CBLOCK (WLGRID_CODE (arg_node))))
+                    != N_empty)) {
                 assigns
                   = DupTree (BLOCK_INSTR (NCODE_CBLOCK (WLGRID_CODE (arg_node))), NULL);
             }
@@ -7280,8 +7288,9 @@ COMPWLgridVar (node *arg_node, node *arg_info)
 
             DBUG_ASSERT ((NCODE_CBLOCK (WLGRIDVAR_CODE (arg_node)) != NULL),
                          "no code block found");
-            if (NODE_TYPE (BLOCK_INSTR (NCODE_CBLOCK (WLGRIDVAR_CODE (arg_node))))
-                != N_empty) {
+            if ((BLOCK_INSTR (NCODE_CBLOCK (WLGRIDVAR_CODE (arg_node))) != NULL)
+                && (NODE_TYPE (BLOCK_INSTR (NCODE_CBLOCK (WLGRIDVAR_CODE (arg_node))))
+                    != N_empty)) {
                 assigns = DupTree (BLOCK_INSTR (NCODE_CBLOCK (WLGRIDVAR_CODE (arg_node))),
                                    NULL);
             }
