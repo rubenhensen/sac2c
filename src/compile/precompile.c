@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2001/02/14 14:43:54  dkr
+ * PREC2fundef: Removal of artificial return types re-implemented
+ *
  * Revision 3.6  2001/01/19 11:55:44  dkr
  * PREC2WLseg() and PREC2WLsegVar() replaced by PREC2WLsegx()
  *
@@ -1173,9 +1176,9 @@ PREC2objdef (node *arg_node, node *arg_info)
 node *
 PREC2fundef (node *arg_node, node *arg_info)
 {
+    types *ret_types;
     char *keep_name, *keep_mod;
     statustype keep_status, keep_attrib;
-    int i;
 
     DBUG_ENTER ("PREC2fundef");
 
@@ -1227,7 +1230,6 @@ PREC2fundef (node *arg_node, node *arg_info)
      * and the number of reference parameters (including global objects)
      * is counted and stored in 'cnt_artificial'
      */
-    INFO_PREC_CNT_ARTIFICIAL (arg_info) = 0;
     if (FUNDEF_ARGS (arg_node) != NULL) {
         FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), arg_info);
     }
@@ -1238,34 +1240,39 @@ PREC2fundef (node *arg_node, node *arg_info)
      * because in the real syntax tree these are stored within the types
      * structure and not as part of the fundef node as in the virtual
      * syntax tree.
-     * Nowadays, artificial return types are tagged ST_artificial. This
-     * would allow a different implementation of removing them without
-     * first counting the corresponding arguments.
+     * Artificial return types are tagged ST_artificial.
      */
-    if (INFO_PREC_CNT_ARTIFICIAL (arg_info) > 0) {
-        keep_name = FUNDEF_NAME (arg_node);
-        keep_mod = FUNDEF_MOD (arg_node);
-        keep_status = FUNDEF_STATUS (arg_node);
-        keep_attrib = FUNDEF_ATTRIB (arg_node);
+    keep_name = FUNDEF_NAME (arg_node);
+    keep_mod = FUNDEF_MOD (arg_node);
+    keep_status = FUNDEF_STATUS (arg_node);
+    keep_attrib = FUNDEF_ATTRIB (arg_node);
 
-        for (i = 1; i < INFO_PREC_CNT_ARTIFICIAL (arg_info); i++) {
-            FUNDEF_TYPES (arg_node) = FreeOneTypes (FUNDEF_TYPES (arg_node));
-        }
-
-        if (TYPES_NEXT (FUNDEF_TYPES (arg_node)) == NULL) {
-            FUNDEF_BASETYPE (arg_node) = T_void;
-            FREE (FUNDEF_TNAME (arg_node));
-            FUNDEF_TNAME (arg_node) = NULL;
-            FUNDEF_TMOD (arg_node) = NULL;
-        } else {
-            FUNDEF_TYPES (arg_node) = FreeOneTypes (FUNDEF_TYPES (arg_node));
-        }
-
-        FUNDEF_NAME (arg_node) = keep_name;
-        FUNDEF_MOD (arg_node) = keep_mod;
-        FUNDEF_STATUS (arg_node) = keep_status;
-        FUNDEF_ATTRIB (arg_node) = keep_attrib;
+    ret_types = FUNDEF_TYPES (arg_node);
+    DBUG_ASSERT ((ret_types != NULL), "no return type found!");
+    /* remove artificial types at head of TYPES chain */
+    while ((ret_types != NULL) && (TYPES_STATUS (ret_types) == ST_artificial)) {
+        ret_types = FreeOneTypes (ret_types);
     }
+    if (ret_types == NULL) {
+        /* all return types removed -> create T_void */
+        FUNDEF_TYPES (arg_node) = MakeTypes1 (T_void);
+    } else {
+        /* store new head in FUNDEF node */
+        FUNDEF_TYPES (arg_node) = ret_types;
+        /* remove artificial types in inner of TYPES chain */
+        while (TYPES_NEXT (ret_types) != NULL) {
+            if (TYPES_STATUS (TYPES_NEXT (ret_types)) == ST_artificial) {
+                TYPES_NEXT (ret_types) = FreeOneTypes (TYPES_NEXT (ret_types));
+            } else {
+                ret_types = TYPES_NEXT (ret_types);
+            }
+        }
+    }
+
+    FUNDEF_NAME (arg_node) = keep_name;
+    FUNDEF_MOD (arg_node) = keep_mod;
+    FUNDEF_STATUS (arg_node) = keep_status;
+    FUNDEF_ATTRIB (arg_node) = keep_attrib;
 
     /*
      * Now, the data flow mask base is updated.
@@ -1299,19 +1306,12 @@ PREC2fundef (node *arg_node, node *arg_info)
  *       ST_readonly_reference -> ST_regular
  *       ST_was_reference -> ST_inout
  *
- *   INFO_PREC_CNT_ARTIFICIAL is used to count the number of artificial
- *   return values.
- *
  ******************************************************************************/
 
 node *
 PREC2arg (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PREC2arg");
-
-    if (ARG_ATTRIB (arg_node) == ST_was_reference) {
-        INFO_PREC_CNT_ARTIFICIAL (arg_info)++;
-    }
 
     if (ARG_STATUS (arg_node) == ST_artificial) {
         arg_node = FreeNode (arg_node);
@@ -1515,7 +1515,7 @@ PREC2exprs_return (node *ret_exprs, node *ret_node)
     }
 
     if (ID_STATUS (EXPRS_EXPR (ret_exprs)) == ST_artificial) {
-        if (ARG_STATUS (ID_VARDEC (EXPRS_EXPR (ret_exprs))) == ST_artificial) {
+        if (VARDEC_OR_ARG_STATUS (ID_VARDEC (EXPRS_EXPR (ret_exprs))) == ST_artificial) {
             /*
              * This artificial return value belongs to a global object,
              * so it can be removed.
