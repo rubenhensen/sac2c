@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.20  2002/02/22 14:31:26  dkr
+ * function DupOneTypesOnly_Inplace() replaced my DupAllTypes()
+ *
  * Revision 3.19  2002/02/21 15:17:40  dkr
  * access macros used
  *
@@ -986,7 +989,8 @@ CFid (node *arg_node, node *arg_info)
 	VARDEC_DIM(ID_VARDEC(mrd)) = VARDEC_DIM(ID_VARDEC(arg_node));
 	VARDEC_SHPSEG(ID_VARDEC(mrd)) = DupShpseg(VARDEC_SHPSEG(ID_VARDEC(arg_node)));
 #else
-                DupOneTypesOnly_Inplace (&(ID_TYPE (mrd)), ID_TYPE (arg_node));
+                L_VARDEC_OR_ARG_TYPE (ID_VARDEC (mrd), FreeAllTypes (ID_TYPE (mrd)));
+                L_VARDEC_OR_ARG_TYPE (ID_VARDEC (mrd), DupAllTypes (ID_TYPE (arg_node)));
 #endif
             }
 
