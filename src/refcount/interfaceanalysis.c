@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2004/12/08 10:39:28  ktr
+ * bugfix.
+ *
  * Revision 1.7  2004/11/30 22:03:34  ktr
  * even more brushing
  *
@@ -693,7 +696,7 @@ EMIAreturn (node *arg_node, info *arg_info)
 
     funargs = FUNDEF_ARGS (INFO_IA_FUNDEF (arg_info));
     while (funargs != NULL) {
-        if (!DFMtestMaskEntry (retmask, NULL, funargs)) {
+        if (!DFMtestMaskEntry (retmask, NULL, ARG_AVIS (funargs))) {
             funargs = SetArgAlias (funargs, FALSE);
         }
         funargs = ARG_NEXT (funargs);
