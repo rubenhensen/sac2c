@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2001/04/26 00:09:47  dkr
+ * no changes done
+ *
  * Revision 3.2  2001/03/15 15:24:30  dkr
  * signature of Type2String modified
  *
@@ -40,7 +43,8 @@
  * Fold functions are always written to the SIB including there bodies.
  *
  * Revision 1.17  1998/06/05 15:27:49  cg
- * global variable mod_name_con and macros MOD_NAME_CON MOD MOD_NAME MOD_CON removed
+ * global variable mod_name_con and macros MOD_NAME_CON, MOD MOD_NAME,
+ * MOD_CON removed
  * Now, module name and symbol name are combined correctly by ':'.
  * Only when it really comes to the generation of C code, the ':' is
  * replaced by '__'. This is done by the renaming of all identifiers
@@ -84,7 +88,8 @@
  * is used instead.
  *
  * Revision 1.5  1996/01/02  17:49:05  cg
- * Typedefs in SIBs which are again based on user-defined types are now resolved.
+ * Typedefs in SIBs which are again based on user-defined types are now
+ * resolved.
  *
  * Revision 1.4  1996/01/02  16:10:01  cg
  * types of implicitly used global objects are now written to the SIB
