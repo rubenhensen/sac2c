@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.41  2003/04/15 21:16:15  dkr
+ * -DTAGGED_ARRAYS created only once
+ *
  * Revision 3.40  2003/04/15 14:16:05  dkr
  * -DTAGGED_ARRAYS added for TAGGED_ARRAYS
  *
@@ -575,9 +578,6 @@ AnalyseCommandline (int argc, char *argv[])
     });
 
     ARGS_OPTION ("D", cppvars[num_cpp_vars++] = ARG);
-#ifdef TAGGED_ARRAYS
-    cppvars[num_cpp_vars++] = "TAGGED_ARRAYS";
-#endif
 
     ARGS_FLAG ("enforceIEEE", enforce_ieee = TRUE);
 
@@ -944,6 +944,10 @@ AnalyseCommandline (int argc, char *argv[])
     ARGS_UNKNOWN (ARGS_ERROR ("Invalid command line entry"));
 
     ARGS_END ();
+
+#ifdef TAGGED_ARRAYS
+    cppvars[num_cpp_vars++] = "TAGGED_ARRAYS";
+#endif
 
     DBUG_VOID_RETURN;
 }
