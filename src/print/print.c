@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.188  1998/04/16 15:42:46  dkr
+ * access macros used
+ *
  * Revision 1.187  1998/04/16 11:41:53  srs
  * fixed bug which resulted from printing the return node of the old WLs.
  * inserted new INFO* macros and renamed the already used ones.
@@ -875,20 +878,19 @@ PrintModul (node *arg_node, node *arg_info)
         outfile = WriteOpen ("%s/header.h", tmp_dirname);
         GSCPrintFileHeader ();
 
-        if (NULL != arg_node->node[1]) {
+        if (NULL != MODUL_TYPES (arg_node)) {
             fprintf (outfile, "\n\n");
             Trav (MODUL_TYPES (arg_node), arg_info); /* print typedefs */
         }
 
-        if (NULL != arg_node->node[2]) {
+        if (NULL != MODUL_FUNS (arg_node)) {
             fprintf (outfile, "\n\n");
             Trav (MODUL_FUNS (arg_node), arg_node); /* print function declarations */
         }
 
-        if (NULL != arg_node->node[3]) {
+        if (NULL != MODUL_OBJS (arg_node)) {
             fprintf (outfile, "\n\n");
             print_objdef_for_header_file = 1;
-
             Trav (MODUL_OBJS (arg_node), arg_info); /* print object declarations */
         }
 
@@ -911,18 +913,17 @@ PrintModul (node *arg_node, node *arg_info)
          *  nasty warnings. These are suppressed by the above dummy symbol.
          */
 
-        if (NULL != arg_node->node[3]) {
+        if (NULL != MODUL_OBJS (arg_node)) {
             fprintf (outfile, "\n\n");
             print_objdef_for_header_file = 0;
-
-            Trav (arg_node->node[3], arg_info); /* print object definitions */
+            Trav (MODUL_OBJS (arg_node), arg_info); /* print object definitions */
         }
 
         fclose (outfile);
 
-        if (NULL != arg_node->node[2]) {
+        if (NULL != MODUL_FUNS (arg_node)) {
             fprintf (outfile, "\n\n");
-            Trav (arg_node->node[2], NULL); /* print function definitions */
+            Trav (MODUL_FUNS (arg_node), NULL); /* print function definitions */
         }
     } else {
         switch (MODUL_FILETYPE (arg_node)) {
