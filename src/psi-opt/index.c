@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2001/05/08 09:16:48  sbs
+ * address calculations are transformed now iff
+ * M_uses_and transform AND TRANSFORM_VINFO!=NULL !!
+ *
  * Revision 3.9  2001/05/07 18:09:24  sbs
  * IdxLet vastly changed!
  * In case M_uses_only, now pure address computations will
@@ -1878,7 +1882,8 @@ IdxPrf (node *arg_node, node *arg_info)
         break;
     case F_add_SxA:
         INFO_IVE_NON_SCAL_LEN (arg_info) = ID_SHAPE (PRF_ARG2 (arg_node), 0);
-        if (INFO_IVE_MODE (arg_info) == M_uses_and_transform) {
+        if ((INFO_IVE_MODE (arg_info) == M_uses_and_transform)
+            && (INFO_IVE_TRANSFORM_VINFO (arg_info) != NULL)) {
             PRF_PRF (arg_node) = F_add;
         }
         PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
@@ -1887,7 +1892,8 @@ IdxPrf (node *arg_node, node *arg_info)
     case F_add_AxS:
         INFO_IVE_NON_SCAL_LEN (arg_info) = ID_SHAPE (PRF_ARG1 (arg_node), 0);
     case F_add_AxA:
-        if (INFO_IVE_MODE (arg_info) == M_uses_and_transform) {
+        if ((INFO_IVE_MODE (arg_info) == M_uses_and_transform)
+            && (INFO_IVE_TRANSFORM_VINFO (arg_info) != NULL)) {
             PRF_PRF (arg_node) = F_add;
         }
         PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
@@ -1895,7 +1901,8 @@ IdxPrf (node *arg_node, node *arg_info)
         break;
     case F_sub_SxA:
         INFO_IVE_NON_SCAL_LEN (arg_info) = ID_SHAPE (PRF_ARG2 (arg_node), 0);
-        if (INFO_IVE_MODE (arg_info) == M_uses_and_transform) {
+        if ((INFO_IVE_MODE (arg_info) == M_uses_and_transform)
+            && (INFO_IVE_TRANSFORM_VINFO (arg_info) != NULL)) {
             PRF_PRF (arg_node) = F_sub;
         }
         PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
@@ -1904,35 +1911,40 @@ IdxPrf (node *arg_node, node *arg_info)
     case F_sub_AxS:
         INFO_IVE_NON_SCAL_LEN (arg_info) = ID_SHAPE (PRF_ARG1 (arg_node), 0);
     case F_sub_AxA:
-        if (INFO_IVE_MODE (arg_info) == M_uses_and_transform) {
+        if ((INFO_IVE_MODE (arg_info) == M_uses_and_transform)
+            && (INFO_IVE_TRANSFORM_VINFO (arg_info) != NULL)) {
             PRF_PRF (arg_node) = F_sub;
         }
         PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
         ive_op++;
         break;
     case F_mul_SxA:
-        if (INFO_IVE_MODE (arg_info) == M_uses_and_transform) {
+        if ((INFO_IVE_MODE (arg_info) == M_uses_and_transform)
+            && (INFO_IVE_TRANSFORM_VINFO (arg_info) != NULL)) {
             PRF_PRF (arg_node) = F_mul;
         }
         PRF_ARG2 (arg_node) = Trav (PRF_ARG2 (arg_node), arg_info);
         ive_op++;
         break;
     case F_mul_AxS:
-        if (INFO_IVE_MODE (arg_info) == M_uses_and_transform) {
+        if ((INFO_IVE_MODE (arg_info) == M_uses_and_transform)
+            && (INFO_IVE_TRANSFORM_VINFO (arg_info) != NULL)) {
             PRF_PRF (arg_node) = F_mul;
         }
         PRF_ARG1 (arg_node) = Trav (PRF_ARG1 (arg_node), arg_info);
         ive_op++;
         break;
     case F_div_SxA:
-        if (INFO_IVE_MODE (arg_info) == M_uses_and_transform) {
+        if ((INFO_IVE_MODE (arg_info) == M_uses_and_transform)
+            && (INFO_IVE_TRANSFORM_VINFO (arg_info) != NULL)) {
             PRF_PRF (arg_node) = F_div;
         }
         PRF_ARG2 (arg_node) = Trav (PRF_ARG2 (arg_node), arg_info);
         ive_op++;
         break;
     case F_div_AxS:
-        if (INFO_IVE_MODE (arg_info) == M_uses_and_transform) {
+        if ((INFO_IVE_MODE (arg_info) == M_uses_and_transform)
+            && (INFO_IVE_TRANSFORM_VINFO (arg_info) != NULL)) {
             PRF_PRF (arg_node) = F_div;
         }
         PRF_ARG1 (arg_node) = Trav (PRF_ARG1 (arg_node), arg_info);
