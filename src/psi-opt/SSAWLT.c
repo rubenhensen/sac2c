@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.16  2002/10/09 12:44:44  dkr
+ * SSAWLTNgenerator(): *structural* constants used now
+ *
  * Revision 1.15  2002/10/09 02:11:31  dkr
  * constants modul used instead of ID/ARRAY_CONSTVEC
  *
@@ -94,8 +97,8 @@
 #include "Error.h"
 #include "dbug.h"
 #include "traverse.h"
-#include "constants.h"
 #include "optimize.h"
+#include "SSAConstantFolding.h"
 #include "SSAWithloopFolding.h"
 #include "SSAWLT.h"
 
@@ -968,14 +971,15 @@ SSAWLTNgenerator (node *arg_node, node *arg_info)
              *                        ^^^^^^^^^ :-))
              */
             if ((*bound) != NULL) {
-                constant *bound_const = COAST2Constant (*bound);
+                struct_constant *bound_const = SCOExpr2StructConstant (*bound);
 
                 if (bound_const != NULL) {
                     /* substitute bound */
-                    (*bound) = FreeTree (*bound);
-                    (*bound) = COConstant2AST (bound_const);
+                    node *tmp = *bound;
+                    (*bound) = SCODupStructConstant2Expr (bound_const);
                     DBUG_ASSERT ((NODE_TYPE (*bound) == N_array), "illegal node found!");
-                    bound_const = COFreeConstant (bound_const);
+                    tmp = FreeTree (tmp);
+                    bound_const = SCOFreeStructConstant (bound_const);
                 } else {
                     /* non-constant son found */
                     if (i <= 2) {
