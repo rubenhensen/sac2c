@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.4  1994/11/23 12:42:42  sbs
+# Revision 1.5  1994/12/14 13:56:58  sbs
+# YYDEBUG set for y.tab.c
+#
+# Revision 1.4  1994/11/23  12:42:42  sbs
 # compilation of y.tab.c without -Wall -pedantic !!!
 #
 # Revision 1.3  1994/11/17  13:18:05  sbs
@@ -22,7 +25,7 @@ INCS=-I../global -I../../inc
 all: y.tab.o lex.yy.o
 
 y.tab.o: y.tab.c
-	$(CCL) -o y.tab.o -c y.tab.c $(INCS)
+	$(CCL) -o y.tab.o -DYYDEBUG -c y.tab.c $(INCS)
 
 lex.yy.o: lex.yy.c y.tab.h
 	$(CCL) -o lex.yy.o -c lex.yy.c $(INCS)
