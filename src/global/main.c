@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.12  1994/12/16 14:23:10  sbs
+ * Revision 1.13  1994/12/20 11:40:33  sbs
+ * NOTE for import inserted.
+ *
+ * Revision 1.12  1994/12/16  14:23:10  sbs
  * Import inserted
  *
  * Revision 1.11  1994/12/15  16:37:49  asi
@@ -140,6 +143,7 @@ MAIN
 
     if (!breakparse) {
         syntax_tree = Import (syntax_tree);
+        NOTE (("Resolving Imports: ..."));
         if (!breakimport) {
             syntax_tree = Flatten (syntax_tree);
             if (!breakflatten) {
