@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2002/10/18 13:48:58  sbs
+ * several flag settings for freshly made N_id nodes inserted.
+ *
  * Revision 3.8  2002/08/13 13:46:40  dkr
  * SearchInLUT_PP used instead of SearchInLUT_P
  *
@@ -451,24 +454,39 @@ DFM2ReturnExprs (DFMmask_t mask, LUT_t lut)
          * ID_VARDEC and ID_OBJDEF are mapped to the same node!
          */
         ID_VARDEC (id) = SearchInLUT_PP (lut, decl);
+        SET_FLAG (ID, id, IS_GLOBAL, (NODE_TYPE (ID_VARDEC (id)) == N_objdef));
+        SET_FLAG (ID, id, IS_REFERENCE, FALSE);
 
         /*
          * VARDEC_OR_ARG_ATTRIB == 'ST_was_reference'
          *   -> ID_STATUS = 'ST_artificial'
          */
         if (VARDEC_OR_ARG_ATTRIB (decl) == ST_was_reference) {
-            ID_ATTRIB (id) = ST_unique;
+            /*
+             * who does use this ????
+             *
+             *    IDS_ATTRIB( IDS_ID(id)) = ST_unique;
+             */
             ID_STATUS (id) = ST_artificial;
-            DBUG_PRINT ("DFMU", ("ID_ATTRIB/STATUS[ return( %s) ] :="
-                                 " ST_unique/ST_artificial !!!",
+            DBUG_PRINT ("DFMU", ("ID_STATUS[ return( %s) ] :="
+                                 " ST_artificial !!!",
                                  ID_NAME (id)));
         } else {
-            ID_ATTRIB (id) = VARDEC_OR_ARG_ATTRIB (decl);
+            SET_FLAG (ID, id, IS_GLOBAL, (VARDEC_OR_ARG_ATTRIB (decl) == ST_global));
+            SET_FLAG (ID, id, IS_REFERENCE,
+                      ((VARDEC_OR_ARG_ATTRIB (decl) == ST_reference)
+                       || (VARDEC_OR_ARG_ATTRIB (decl) == ST_readonly_reference)));
+            SET_FLAG (ID, id, IS_READ_ONLY,
+                      (VARDEC_OR_ARG_ATTRIB (decl) == ST_readonly_reference));
+
             ID_STATUS (id) = VARDEC_OR_ARG_STATUS (decl);
 
-            DBUG_PRINT ("DFMU",
-                        ("ID_ATTRIB/STATUS[ return( %s) ] == %s/%s", ID_NAME (id),
-                         mdb_statustype[ID_ATTRIB (id)], mdb_statustype[ID_STATUS (id)]));
+            DBUG_PRINT ("DFMU", ("ID_FLAGS[ return( %s) ] %s%s%s", ID_NAME (id),
+                                 FLAG2STRING (ID, id, IS_GLOBAL),
+                                 FLAG2STRING (ID, id, IS_REFERENCE),
+                                 FLAG2STRING (ID, id, IS_READ_ONLY)));
+            DBUG_PRINT ("DFMU", ("ID_STATUS[ return( %s) ] == %s", ID_NAME (id),
+                                 mdb_statustype[ID_STATUS (id)]));
         }
         exprs = MakeExprs (id, exprs);
 
@@ -505,13 +523,17 @@ DFM2ApArgs (DFMmask_t mask, LUT_t lut)
          * ID_VARDEC and ID_OBJDEF are mapped to the same node!
          */
         ID_VARDEC (id) = SearchInLUT_PP (lut, decl);
+        SET_FLAG (ID, id, IS_GLOBAL, (NODE_TYPE (ID_VARDEC (id)) == N_objdef));
+        SET_FLAG (ID, id, IS_REFERENCE,
+                  ((VARDEC_OR_ARG_ATTRIB (decl) == ST_reference)
+                   || (VARDEC_OR_ARG_ATTRIB (decl) == ST_readonly_reference)));
+        SET_FLAG (ID, id, IS_READ_ONLY,
+                  (VARDEC_OR_ARG_ATTRIB (decl) == ST_readonly_reference));
 
-        ID_ATTRIB (id) = VARDEC_OR_ARG_ATTRIB (decl);
         ID_STATUS (id) = VARDEC_OR_ARG_STATUS (decl);
 
-        DBUG_PRINT ("DFMU",
-                    ("ID_ATTRIB/STATUS[ fun( %s) ] == %s/%s", ID_NAME (id),
-                     mdb_statustype[ID_ATTRIB (id)], mdb_statustype[ID_STATUS (id)]));
+        DBUG_PRINT ("DFMU", ("ID_STATUS[ fun( %s) ] == %s", ID_NAME (id),
+                             mdb_statustype[ID_STATUS (id)]));
 
         exprs = MakeExprs (id, exprs);
 
