@@ -3,7 +3,11 @@
 /*
  *
  * $Log$
- * Revision 1.53  1995/03/07 19:13:04  hw
+ * Revision 1.54  1995/03/13 16:59:59  hw
+ * -  the identifier of node N_id, N_pre and N_post is stored
+ *    in 'info.ids->id' instead of 'info.id' now
+ *
+ * Revision 1.53  1995/03/07  19:13:04  hw
  *  - new rule for parsing of arrays ( no recursion anymore)
  *  - changed rule for parsing of 'A[..]'
  *   (now 'A[1,2,3] == A[[1,2,3]] == psi([1,2,3],A)' and
@@ -11,7 +15,7 @@
  *
  * Revision 1.52  1995/03/01  16:28:00  hw
  * changed N_generator ( the name of the index vector is
- * 	now stored in innfo.ids)
+ * 	now stored in info.ids)
  *
  * Revision 1.51  1995/02/20  09:35:47  hw
  * inserted rule expr -> MINUS ID %prec UMINUS
@@ -275,7 +279,7 @@ moddec: modclass ID COLON evextern { if($4 == 1) mod_name=NULL;
               $$->nnode=2;
               DBUG_PRINT("GENTREE",
                        ("%s:"P_FORMAT" Id: %s , %s"P_FORMAT" %s," P_FORMAT,
-                        mdb_nodetype[ $$->nodetype ], $$, $$->info.id,
+                        mdb_nodetype[ $$->nodetype ], $$, $$->info.fun_name.id,
                         mdb_nodetype[ $$->node[0]->nodetype ], $$->node[0],
                         mdb_nodetype[ $$->node[1]->nodetype ], $$->node[1]));
 	    }
@@ -283,7 +287,7 @@ moddec: modclass ID COLON evextern { if($4 == 1) mod_name=NULL;
               $$->nnode=1;
               DBUG_PRINT("GENTREE",
                        ("%s:"P_FORMAT" Id: %s , %s"P_FORMAT,
-                        mdb_nodetype[ $$->nodetype ], $$, $$->info.id,
+                        mdb_nodetype[ $$->nodetype ], $$, $$->info.fun_name.id,
                         mdb_nodetype[ $$->node[0]->nodetype ], $$->node[0]));
 	    };
 	  }
@@ -807,24 +811,24 @@ letassign: ids LET exprORarray
              }
          | ID unaryop 
             { $$=MakeNode(N_post);
-              $$->info.id=$1;
+              $$->info.ids=MakeIds($1);
               $$->node[0]=$2;
               $$->nnode=1;
               
               DBUG_PRINT("GENTREE",
                          ("%s "P_FORMAT": %s "P_FORMAT,
-                          mdb_nodetype[$$->nodetype], $$, $$->info.id,
+                          mdb_nodetype[$$->nodetype], $$, $$->info.ids->id,
                           mdb_nodetype[$$->node[0]->nodetype] ));
            }
          | unaryop ID
             {  $$=MakeNode(N_pre);
-               $$->info.id=$2;    
+               $$->info.ids=MakeIds($2);    
                $$->node[0]=$1;
                $$->nnode=1;
 
                DBUG_PRINT("GENTREE",
                           ("%s "P_FORMAT": %s "P_FORMAT,
-                           mdb_nodetype[$$->nodetype], $$, $$->info.id,
+                           mdb_nodetype[$$->nodetype], $$, $$->info.ids->id,
                            mdb_nodetype[$$->node[0]->nodetype] )); 
             }
         | ID ADDON exprORarray
@@ -973,7 +977,7 @@ apl: ID  BRACKET_L {$$=MakeNode(N_ap);} exprs BRACKET_R
 
            DBUG_PRINT("GENTREE",
                       ("%s: "P_FORMAT ": Id: %s, Arg:%s " P_FORMAT,
-                       mdb_nodetype[ $$->nodetype ], $$, $$->info.id,
+                       mdb_nodetype[ $$->nodetype ], $$, $$->info.fun_name.id,
                        mdb_nodetype[ $$->node[0]->nodetype ], $$->node[0]));
          }
       | ID BRACKET_L BRACKET_R
@@ -982,7 +986,7 @@ apl: ID  BRACKET_L {$$=MakeNode(N_ap);} exprs BRACKET_R
 
           DBUG_PRINT("GENTREE",
                      ("%s " P_FORMAT " Id: %s,",
-                      mdb_nodetype[ $$->nodetype ], $$, $$->info.id));
+                      mdb_nodetype[ $$->nodetype ], $$, $$->info.fun_name.id));
         }
         ;
 
@@ -1023,16 +1027,16 @@ expr:   apl {$$=$1; $$->info.fun_name.id_mod=NULL; }
         }
       | ID 
          { $$=MakeNode(N_id);
-           $$->info.id=$1;  /* Name einer Variablen */
+           $$->info.ids=MakeIds($1);  /* name of variable*/
 
            DBUG_PRINT("GENTREE",("%s " P_FORMAT ": %s ",
-                                mdb_nodetype[$$->nodetype], $$, $$->info.id));  
+                            mdb_nodetype[$$->nodetype],$$,$$->info.ids->id));  
          }
       | MINUS ID %prec UMINUS
         {   node *exprs1, *exprs2;
             exprs2=MakeNode(N_exprs);
             exprs2->node[0]=MakeNode(N_id);
-            exprs2->node[0]->info.id=$2;
+            exprs2->node[0]->info.ids=MakeIds($2);
             exprs2->nnode=1;
             exprs1=MakeNode(N_exprs);
             exprs1->node[0]=MakeNode(N_num);
@@ -1049,7 +1053,8 @@ expr:   apl {$$=$1; $$->info.fun_name.id_mod=NULL; }
                                   exprs1->node[0], exprs1->node[0]->info.cint));
             DBUG_PRINT("GENTREE",("%s " P_FORMAT ": %s ",
                                   mdb_nodetype[exprs2->node[0]->nodetype],
-                                  exprs2->node[0], exprs2->node[0]->info.id));
+                                  exprs2->node[0], 
+                                  exprs2->node[0]->info.ids->id));
 
             DBUG_PRINT("GENTREE",
                        ("%s " P_FORMAT ": %s " P_FORMAT ", %s" P_FORMAT,
@@ -1314,10 +1319,7 @@ generator: exprORarray  LE ID LE exprORarray
             { $$=MakeNode(N_generator);
               $$->node[0]=$1;        /* left border  */
               $$->node[1]=$5;        /* right border */
-              $$->info.ids=GEN_NODE(ids);
-              $$->info.ids->id=$3;     /*index-variable  */
-              $$->info.ids->node=NULL;
-              $$->info.ids->next=NULL;
+              $$->info.ids=MakeIds($3);/*index-variable  */
               $$->nnode=2;
 
               DBUG_PRINT("GENTREE",
@@ -1745,7 +1747,7 @@ node *MakeEmptyBlock()
  *                  of the let.
  *  global vars   : ---
  *  internal funs : MakeNode, GenPrfNode
- *  external funs : ---
+ *  external funs : MakeNode,MakeIds
  *  macros        : DBUG..., P_FORMAT
  *
  *  remarks       : this function is used to convert addon, etc to N_let
@@ -1759,18 +1761,14 @@ node *MakeLet(id *name, node *expr, prf fun)
    DBUG_ENTER("MakeLet");
    
    return_node=MakeNode(N_let);
-   return_node->info.ids=GEN_NODE(ids);
-   DBUG_ASSERT((NULL != return_node->info.ids),"NULL");
-   return_node->info.ids->id=name;
-   return_node->info.ids->next=NULL;
-   return_node->info.ids->node=NULL;
+   return_node->info.ids=MakeIds(name);
    id_node=MakeNode(N_id);
-   id_node->info.id=name;
+   id_node->info.ids=MakeIds(name);
 
    DBUG_PRINT("GENTREE",("%s"P_FORMAT": %s",
                          mdb_nodetype[id_node->nodetype],
                          id_node,
-                         id_node->info.id));
+                         id_node->info.ids->id));
    
    return_node->node[0]=GenPrfNode(fun,id_node,expr);
    return_node->nnode=1;
