@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.15  1994/12/14 11:16:42  hw
- * inserted TClet , TCassign, N_stop & N_ok
+ * Revision 1.16  1994/12/15 11:45:22  hw
+ * inserted FltnModul
  *
+;; Revision 1.15  1994/12/14  11:16:42  hw
+;; inserted TClet , TCassign, N_stop & N_ok
+;;
 ;; Revision 1.14  1994/12/14  10:11:08  sbs
 ;; *** empty log message ***
 ;;
@@ -60,7 +63,7 @@ NIF (N_num, "N_num", DummyFun, PrintNum, DummyFun, DummyFun),
   NIF (N_moddec, "N_moddec", DummyFun, DummyFun, DummyFun, DummyFun),
   NIF (N_explist, "N_explist", DummyFun, DummyFun, DummyFun, DummyFun),
   NIF (N_typedef, "N_typedef", DummyFun, PrintTypedef, DummyFun, DummyFun),
-  NIF (N_modul, "N_modul", DummyFun, PrintModul, DummyFun, DummyFun),
+  NIF (N_modul, "N_modul", FltnModul, PrintModul, DummyFun, DummyFun),
   NIF (N_implist, "N_implist", DummyFun, PrintImplist, DummyFun, DummyFun),
   NIF (N_fundef, "N_fundef", DummyFun, PrintFundef, TCfundef, DummyFun),
   NIF (N_vardec, "N_vardec", DummyFun, PrintVardec, DummyFun, DummyFun),

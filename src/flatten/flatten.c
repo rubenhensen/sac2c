@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.9  1994/12/12 16:03:59  asi
+ * Revision 1.10  1994/12/15 11:47:06  hw
+ * inserted FltnModul
+ *
+ * Revision 1.9  1994/12/12  16:03:59  asi
  * Error fixed in FltnDo
  *
  * Revision 1.8  1994/11/22  17:27:48  hw
@@ -243,8 +246,7 @@ FltnPrf (node *arg_node, node *arg_info)
 
             assign_node = MakeNode (N_assign);
             assign_node->node[0] = let_node;
-            assign_node->node[1]
-              = arg_info->node[0]; /* here the new node is put in front! */
+            assign_node->node[1] = arg_info->node[0]; /* a new node is put in front! */
             if (NULL == assign_node->node[1])
                 assign_node->nnode = 1;
             else
@@ -303,7 +305,7 @@ FltnExprs (node *arg_node, node *arg_info)
 
         assign_node = MakeNode (N_assign);
         assign_node->node[0] = let_node;
-        assign_node->node[1] = arg_info->node[0]; /* here the new node is put in front! */
+        assign_node->node[1] = arg_info->node[0]; /* a new node is put in front! */
         if (NULL == assign_node->node[1])
             assign_node->nnode = 1;
         else
@@ -398,8 +400,8 @@ FltnWhile (node *arg_node, node *arg_info)
                  info_node->node[0]->node[0]));
 
     /*
-     *  now we're looking for the last N_assign node in the pointer chain of info_node
-     *  to copy the flattend arg_node->node[0] to it.
+     *  now we're looking for the last N_assign node in the pointer chain
+     *  of info_node to copy the flattend arg_node->node[0] to it.
      *  This has to be done, because we must "update" (compute) the termination
      *  condition of the while loop at the end of the while-loop body
      *
@@ -408,8 +410,9 @@ FltnWhile (node *arg_node, node *arg_info)
     tmp = info_node; /* tmp ist used to free info_node  */
 
     /*  looking for last N_assign node.
-     *  info _node stores the pointer to the last N_assign nodes, so we look at this
-     *  pointer chain insted of going through the chain behind  arg_node->node[1]
+     *  info _node stores the pointer to the last N_assign nodes,
+     *  so we look at this pointer chain insted of going through
+     *  the chain behind  arg_node->node[1]
      */
     info_node = info_node->node[0];
     while (1 != info_node->nnode) {
@@ -507,7 +510,8 @@ FltnDo (node *arg_node, node *arg_info)
     /* looking for last N_assign node in the body of the do-loop */
     info_node = info_node->node[0];
     while (1 != info_node->nnode) {
-        DBUG_ASSERT ((N_assign == info_node->nodetype), "wrong nodetype: != N_assign");
+        DBUG_ASSERT ((N_assign == info_node->nodetype), "wrong nodetype:"
+                                                        "!= N_assign");
         info_node = info_node->node[1];
     }
 
@@ -526,7 +530,9 @@ FltnDo (node *arg_node, node *arg_info)
     /* traverse body of do-loop */
     arg_node->node[0] = Trav (arg_node->node[0], info_node);
 
-    /* append flattened termination condition to last assignment in the loop's body */
+    /* append flattened termination condition to last assignment
+     * in the loop's body
+     */
     last_assign->node[1] = info_node->node[0];
     if (NULL != last_assign->node[1]) {
         DBUG_PRINT ("FLATTEN",
@@ -537,6 +543,32 @@ FltnDo (node *arg_node, node *arg_info)
         last_assign->nnode = 2;
     }
     free (tmp);
+
+    DBUG_RETURN (arg_node);
+}
+
+/*
+ *
+ *  functionname  : FltnModul
+ *  arguments     : 1) argument node
+ *                  2) last assignment in arg_info->node[0]
+ *  description   : call Trav to flatten the user defined functions
+ *  global vars   :
+ *  internal funs :
+ *  external funs : Trav
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
+node *
+FltnModul (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("FltnModul");
+    DBUG_ASSERT ((NULL != arg_node->node[2]), "blabla");
+    DBUG_ASSERT ((N_fundef == arg_node->node[2]->nodetype), "blaaa");
+
+    arg_node->node[2] = Trav (arg_node->node[2], arg_info);
 
     DBUG_RETURN (arg_node);
 }
