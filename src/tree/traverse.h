@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.43  2004/06/08 14:20:35  skt
+ * support for tem_tab added
+ *
  * Revision 3.42  2004/04/22 14:13:12  skt
  * Added traversal asmra (assigmantrearrange)
  * for mt-mode 3
@@ -359,7 +362,7 @@ extern funtab *wlpg_tab;
 extern funtab *cvp_tab;
 extern funtab *wlfs_tab;
 extern funtab *asmra_tab;
-extern funtab *unused_tab2;
+extern funtab *tem_tab;
 extern funtab *unused_tab3;
 extern funtab *unused_tab4;
 extern funtab *unused_tab5;

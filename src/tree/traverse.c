@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.54  2004/06/08 14:20:35  skt
+ * support for tem_tab added
+ *
  * Revision 3.53  2004/04/27 12:24:01  skt
  * some traversal functions for assignmentsrearrange added
  *
@@ -258,6 +261,7 @@
 #include "dataflow_analysis.h"
 #include "blocks_propagate.h"
 #include "barriers_init.h"
+#include "tag_executionmode.h"
 #include "assignments_rearrange.h"
 #include "blocks_lift.h"
 #include "adjust_calls.h"
@@ -1636,15 +1640,15 @@ static funtab asmra_tab_rec = {{
 funtab *asmra_tab = &asmra_tab_rec;
 
 /*
- *  (122) unused_tab2
+ *  (122) tem_tab
  */
-static funtab unused_tab2_rec = {{
-#define NIFunused_2(it_unused_2) it_unused_2
+static funtab tem_tab_rec = {{
+#define NIFtem(it_tem) it_tem
 #include "node_info.mac"
-                                 },
-                                 NULL,
-                                 NULL};
-funtab *unused_tab2 = &unused_tab2_rec;
+                             },
+                             NULL,
+                             NULL};
+funtab *tem_tab = &tem_tab_rec;
 
 /*
  *  (123) unused_tab3
