@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2000/04/20 11:37:11  jhs
+ * ID_VARDECs of return arguments are set correct now.
+ *
  * Revision 1.4  2000/04/18 14:02:01  jhs
  * Added DBUGs.
  *
@@ -268,6 +271,7 @@ BLKLImt (node *arg_node, node *arg_info)
                            retexprs);
             ID_ATTRIB (EXPRS_EXPR (new_retexpr)) = ST_regular;
             ID_REFCNT (EXPRS_EXPR (new_retexpr)) = GET_ZERO_REFCNT (ARG, vardec);
+            ID_VARDEC (EXPRS_EXPR (new_retexpr)) = vardec;
         } else {
             new_rettype = DuplicateTypes (VARDEC_TYPE (vardec), 1);
 
@@ -276,6 +280,7 @@ BLKLImt (node *arg_node, node *arg_info)
                            retexprs);
             ID_ATTRIB (EXPRS_EXPR (new_retexpr)) = ST_regular;
             ID_REFCNT (EXPRS_EXPR (new_retexpr)) = GET_ZERO_REFCNT (VARDEC, vardec);
+            ID_VARDEC (EXPRS_EXPR (new_retexpr)) = vardec;
         }
 
         /*
@@ -283,7 +288,7 @@ BLKLImt (node *arg_node, node *arg_info)
          * After we have build the new fundef node, we must traverse it to correct
          * the vardec-pointers of all id's.
          */
-        ID_VARDEC (EXPRS_EXPR (new_retexpr)) = NULL;
+        /*  ID_VARDEC( EXPRS_EXPR( new_retexpr)) = NULL; */
 
         TYPES_NEXT (new_rettype) = rettypes;
 
