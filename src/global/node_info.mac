@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.117  1996/01/05 13:12:22  cg
- * added function PrintStr in print_tab
+ * Revision 1.118  1996/01/05 14:43:51  cg
+ * use DupId instead of DupChain to copy modarray
  *
+;; Revision 1.117  1996/01/05  13:12:22  cg
+;; added function PrintStr in print_tab
+;;
 ;; Revision 1.116  1996/01/05  12:29:05  cg
 ;; new function RSIBobjdef in readsib_tab
 ;;
@@ -593,7 +596,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons),
 
   NIF (N_modarray, "N_modarray", TravSons, FltnCon, PrintModarray, TravSons, TravSons,
-       TravSons, TravSons, FreeModarray, TravSons, RCcon, TravSons, TravSons, DupChain,
+       TravSons, TravSons, FreeModarray, TravSons, RCcon, TravSons, TravSons, DupId,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        PrintModarray, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
