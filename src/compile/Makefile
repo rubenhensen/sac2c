@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.18  2000/03/31 09:22:22  cg
+# make deps done
+#
 # Revision 2.17  2000/03/17 15:50:59  dkr
 # *.o targets simplified
 #
@@ -252,7 +255,7 @@ wlpragma_funs.o: ../global/internal_lib.h ../tree/free.h ../global/my_debug.h
 wlpragma_funs.o: /usr/include/malloc.h /usr/include/sys/types.h
 wlpragma_funs.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
 wlpragma_funs.o: ../tree/DupTree.h ../tree/LookUpTable.h wltransform.h
-wlpragma_funs.o: wlpragma_funs.h
+wlpragma_funs.o: wlpragma_funs.h /usr/include/limits.h
 wltransform.o: ../tree/tree.h ../global/types.h ../tree/tree_basic.h
 wltransform.o: ../tree/tree_compound.h ../global/Error.h /usr/include/stdio.h
 wltransform.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
@@ -264,4 +267,4 @@ wltransform.o: ../global/my_debug.h /usr/include/malloc.h
 wltransform.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
 wltransform.o: /usr/include/sys/int_types.h ../tree/traverse.h
 wltransform.o: ../tree/DataFlowMask.h wlpragma_funs.h ../tree/DupTree.h
-wltransform.o: ../tree/LookUpTable.h /usr/include/limits.h
+wltransform.o: ../tree/LookUpTable.h

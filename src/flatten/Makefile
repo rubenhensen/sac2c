@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.16  2000/03/31 09:22:10  cg
+# make deps done
+#
 # Revision 2.15  2000/03/19 11:08:52  dkr
 # make deps done
 #
@@ -135,18 +138,6 @@ adjust_ids.o: ../global/my_debug.h /usr/include/malloc.h
 adjust_ids.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
 adjust_ids.o: /usr/include/sys/int_types.h ../tree/DupTree.h
 adjust_ids.o: ../tree/LookUpTable.h ../print/print.h
-cleanup_decls.o: ../tree/tree.h ../global/types.h ../tree/tree_basic.h
-cleanup_decls.o: ../tree/tree_compound.h ../global/Error.h
-cleanup_decls.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-cleanup_decls.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
-cleanup_decls.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-cleanup_decls.o: /usr/include/string.h /usr/include/stdlib.h
-cleanup_decls.o: ../global/globals.h ../global/internal_lib.h
-cleanup_decls.o: ../tree/traverse.h ../tree/free.h ../../inc/dbug.h
-cleanup_decls.o: ../global/my_debug.h /usr/include/malloc.h
-cleanup_decls.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
-cleanup_decls.o: /usr/include/sys/int_types.h ../tree/DataFlowMask.h
-cleanup_decls.o: ../tree/DataFlowMaskUtils.h ../tree/LookUpTable.h
 flatten.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 flatten.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 flatten.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
@@ -178,4 +169,4 @@ lac2fun.o: ../global/my_debug.h /usr/include/malloc.h
 lac2fun.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
 lac2fun.o: /usr/include/sys/int_types.h ../tree/DupTree.h
 lac2fun.o: ../tree/LookUpTable.h ../tree/DataFlowMask.h
-lac2fun.o: ../tree/DataFlowMaskUtils.h cleanup_decls.h
+lac2fun.o: ../tree/DataFlowMaskUtils.h

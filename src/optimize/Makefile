@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.16  2000/03/31 09:22:18  cg
+# make deps done
+#
 # Revision 2.15  2000/03/01 14:52:35  dkr
 # make deps done
 #
@@ -202,6 +205,10 @@ ConstantFolding.o: ../tree/access_macros.h ../typecheck/typecheck.h
 ConstantFolding.o: optimize.h generatemasks.h ../tree/DupTree.h
 ConstantFolding.o: ../tree/LookUpTable.h LoopInvariantRemoval.h
 ConstantFolding.o: ConstantFolding.h
+DFMtest.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
+DFMtest.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
+DFMtest.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
+DFMtest.o: ../tree/DataFlowMask.h ../global/types.h
 DeadCodeRemoval.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 DeadCodeRemoval.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 DeadCodeRemoval.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
