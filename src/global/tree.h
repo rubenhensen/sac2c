@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.40  1995/06/02 10:02:52  sbs
+ * Revision 1.41  1995/06/02 12:15:25  sbs
+ * NIF macro prolongated
+ *
+ * Revision 1.40  1995/06/02  10:02:52  sbs
  * use-node in ids and info.use inserted
  *
  * Revision 1.39  1995/06/01  10:09:55  cg
@@ -209,7 +212,7 @@ typedef struct FUN_NAME {
  *
  */
 
-#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j) n
+#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, aa) n
 
 typedef enum {
 #include "node_info.mac"

@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.11  1995/04/11 15:57:47  asi
+ * Revision 1.12  1995/06/02 12:13:08  sbs
+ * NIF macro prolongated
+ *
+ * Revision 1.11  1995/04/11  15:57:47  asi
  * NIF macro enlarged
  *
  * Revision 1.10  1995/01/31  14:59:33  asi
@@ -45,7 +48,7 @@
 ** global array used for DBUG purposes only
 */
 
-#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j) s
+#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, aa) s
 
 char *mdb_nodetype[] = {
 #include "node_info.mac"
