@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2000/02/04 16:50:20  cg
+ * Added MSCA (memory size cache adjustment)
+ *
  * Revision 1.9  2000/01/17 19:46:26  cg
  * Adjusted target architecture discrimination to new project wide standard.
  *
@@ -563,6 +566,57 @@ extern void SAC_HM_CheckAllocPatternAnyChunk (SAC_HM_header_t *addr);
 
 #if SAC_DO_APS
 
+#if SAC_DO_MSCA
+
+#define SAC_HM_MALLOC_FIXED_SIZE(var, size)                                              \
+    {                                                                                    \
+        if ((size) <= SAC_HM_ARENA_4_MAXCS_BYTES) {                                      \
+            if ((size) <= SAC_HM_ARENA_2_MAXCS_BYTES) {                                  \
+                if ((size) <= SAC_HM_ARENA_1_MAXCS_BYTES) {                              \
+                    SAC_HM_MALLOC_SMALL_CHUNK (var, 2, 1);                               \
+                } else {                                                                 \
+                    SAC_HM_MALLOC_SMALL_CHUNK (var, 4, 2);                               \
+                }                                                                        \
+            } else {                                                                     \
+                if ((size) <= SAC_HM_ARENA_3_MAXCS_BYTES) {                              \
+                    SAC_HM_MALLOC_SMALL_CHUNK (var, 8, 3);                               \
+                } else {                                                                 \
+                    SAC_HM_MALLOC_SMALL_CHUNK (var, 16, 4);                              \
+                }                                                                        \
+            }                                                                            \
+        } else {                                                                         \
+            const SAC_HM_size_byte_t _real_size_1                                        \
+              = size                                                                     \
+                + SAC_HM_CACHE_ADJUST (size, SAC_SET_CACHE_3_SIZE,                       \
+                                       SAC_SET_CACHE_3_MSCA_FACTOR);                     \
+            const SAC_HM_size_byte_t _real_size_2                                        \
+              = _real_size_1                                                             \
+                + SAC_HM_CACHE_ADJUST (_real_size_1, SAC_SET_CACHE_2_SIZE,               \
+                                       SAC_SET_CACHE_2_MSCA_FACTOR);                     \
+            const SAC_HM_size_byte_t _real_size_3                                        \
+              = _real_size_2                                                             \
+                + SAC_HM_CACHE_ADJUST (_real_size_2, SAC_SET_CACHE_1_SIZE,               \
+                                       SAC_SET_CACHE_1_MSCA_FACTOR);                     \
+            const SAC_HM_size_unit_t _units = SAC_HM_BYTES_2_UNITS (_real_size_3) + 2;   \
+                                                                                         \
+            if (_units < SAC_HM_ARENA_7_MINCS) {                                         \
+                if (_units < SAC_HM_ARENA_6_MINCS) {                                     \
+                    SAC_HM_MALLOC_LARGE_CHUNK (var, _units, 5);                          \
+                } else {                                                                 \
+                    SAC_HM_MALLOC_LARGE_CHUNK (var, _units, 6);                          \
+                }                                                                        \
+            } else {                                                                     \
+                if (_units < SAC_HM_ARENA_8_MINCS) {                                     \
+                    SAC_HM_MALLOC_LARGE_CHUNK (var, _units, 7);                          \
+                } else {                                                                 \
+                    SAC_HM_MALLOC_TOP_ARENA (var, _units);                               \
+                }                                                                        \
+            }                                                                            \
+        }                                                                                \
+    }
+
+#else /* SAC_DO_MSCA */
+
 #define SAC_HM_MALLOC_FIXED_SIZE(var, size)                                              \
     {                                                                                    \
         if ((size) <= SAC_HM_ARENA_4_MAXCS_BYTES) {                                      \
@@ -596,6 +650,8 @@ extern void SAC_HM_CheckAllocPatternAnyChunk (SAC_HM_header_t *addr);
             }                                                                            \
         }                                                                                \
     }
+
+#endif /* SAC_DO_MSCA */
 
 #else /* SAC_DO_APS */
 
@@ -747,6 +803,24 @@ extern void SAC_HM_CheckAllocPatternAnyChunk (SAC_HM_header_t *addr);
     }
 
 #endif /* SAC_DO_INLINE_FREE */
+
+#if SAC_DO_MSCA
+
+#define SAC_HM_CACHE_ADJUST(size, cache_size, factor)                                    \
+    ((cache_size) <= 0                                                                   \
+       ? 0                                                                               \
+       : ((size) % (cache_size) < (cache_size) * (factor)                                \
+            ? (SAC_HM_size_byte_t) ((cache_size) * (factor)) - (size) % (cache_size)     \
+            : ((cache_size) - (size) % (cache_size) < (cache_size) * (factor)            \
+                 ? (SAC_HM_size_byte_t) ((cache_size) * (factor)) + (cache_size)         \
+                     - (size) % (cache_size)                                             \
+                 : 0)))
+
+#else /* SAC_DO_MSCA */
+
+#define SAC_HM_CACHE_ADJUST(size, cache_size, factor) 0
+
+#endif /* SAC_DO_MSCA */
 
 #else /* SAC_DO_PHM */
 
