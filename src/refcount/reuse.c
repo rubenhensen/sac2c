@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2004/11/23 19:52:59  ktr
+ * COMPILES!!!
+ *
  * Revision 1.8  2004/11/23 19:28:31  jhb
  * ismop
  *
@@ -531,7 +534,8 @@ RIprf (node *arg_node, info *arg_info)
         if (rhc != NULL) {
             DBUG_PRINT ("RI", ("rhc"));
             DBUG_EXECUTE ("RI", PRTdoPrint (rhc);
-                          PRTdoPrint (INFO_RI_CANDIDATES (arg_info)););
+                          DFMprintMask (global.outfile, "%s",
+                                        INFO_RI_CANDIDATES (arg_info)););
         }
 
         INFO_RI_RHSCAND (arg_info) = CutExprs (INFO_RI_CANDIDATES (arg_info), rhc);
@@ -573,9 +577,13 @@ RIwith2 (node *arg_node, info *arg_info)
             INFO_RI_RHSCAND (arg_info) = CutExprs (INFO_RI_CANDIDATES (arg_info), rhc);
 
             if (INFO_RI_RHSCAND (arg_info) != NULL) {
+                node *mem;
+                mem = (NODE_TYPE (arg_node) == N_genarray) ? GENARRAY_MEM (arg_node)
+                                                           : MODARRAY_MEM (arg_node);
+
                 INFO_RI_TRAVMODE (arg_info) = ri_annotate;
-                AVIS_SSAASSIGN (ID_AVIS (WITHOP_MEM (withop)))
-                  = TRAVdo (AVIS_SSAASSIGN (ID_AVIS (WITHOP_MEM (withop))), arg_info);
+                AVIS_SSAASSIGN (ID_AVIS (mem))
+                  = TRAVdo (AVIS_SSAASSIGN (ID_AVIS (mem)), arg_info);
                 INFO_RI_TRAVMODE (arg_info) = ri_default;
             }
         }
