@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.57  1998/01/31 13:44:53  srs
+ * removed bug in FltnNCode
+ *
  * Revision 1.56  1998/01/30 17:53:29  srs
  * adjusted flattening of new WL generator to new node structure.
  *
@@ -1742,9 +1745,10 @@ FltnNcode (node *arg_node, node *arg_info)
     char *name;
     DBUG_ENTER ("FltnNcode");
 
-    /* if CEXPR is not an Id we have to flatten the expression in the context
+    /* if CEXPR is not a constant we have to flatten the expression in the context
        of the body */
-    if (N_id != NODE_TYPE (NCODE_CEXPR (arg_node))
+    if (N_float != NODE_TYPE (NCODE_CEXPR (arg_node))
+        && N_double != NODE_TYPE (NCODE_CEXPR (arg_node))
         && N_num != NODE_TYPE (NCODE_CEXPR (arg_node))) {
         name = GenTmpVar (var_counter++);
         let_node = MakeLet (NCODE_CEXPR (arg_node), MakeIds (name, NULL, ST_regular));
