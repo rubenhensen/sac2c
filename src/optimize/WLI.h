@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 1.2  1998/04/01 07:41:03  srs
+ * added WLINwithop
+ *
  * Revision 1.1  1998/03/22 18:21:34  srs
  * Initial revision
  *
@@ -23,6 +26,7 @@ extern node *WLIwith (node *, node *);
 extern node *WLINwith (node *, node *);
 extern node *WLIlet (node *, node *);
 
+extern node *WLINwithop (node *, node *);
 extern node *WLINpart (node *, node *);
 extern node *WLINcode (node *, node *);
 
