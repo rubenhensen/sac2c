@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.13  1995/05/26 14:26:02  asi
+ * Revision 1.14  1995/06/02 09:54:53  sbs
+ * -bs, -nopsiopt, and -noidex_vect_elimination inserted
+ *
+ * Revision 1.13  1995/05/26  14:26:02  asi
  * function inlineing and loop unrolling added
  *
  * Revision 1.12  1995/05/22  12:06:24  sbs
@@ -64,6 +67,7 @@ usage (char *prg_name)
     printf ("\t -bf \t\t\tstop after flatten\n");
     printf ("\t -bt \t\t\tstop after typecheck\n");
     printf ("\t -bo \t\t\tstop after sac-optimizations\n");
+    printf ("\t -bs \t\t\tstop after psi-optimizations\n");
     printf ("\t -br \t\t\tstop after refcount inference\n");
     printf ("\t -bc \t\t\tstop unresolved ICM code\n");
 
@@ -75,6 +79,8 @@ usage (char *prg_name)
     printf ("\t -nodead_code_removal\t\tno dead code removal \n");
     printf ("\t -nopartial_dead_code_removal\tno partial_dead code removal \n");
     printf ("\t -noloop_invariant_removal\tno loop invariant removal \n");
+    printf ("\t -nopsi_opt\t\t\tno psi optimisations\n");
+    printf ("\t -noindex_vect_elimination\tno index vector elimination \n");
     printf ("\t -v <no>\t\t\treserve <no> variables for optimization\n");
 
     printf ("\nTRACE OPTIONS:\n");
