@@ -1,8 +1,8 @@
 /*
  *
  * $Log$
- * Revision 3.9  2002/02/22 14:29:47  dkr
- * CSAddResult: workaround for FUNDEF_NAME as a part of TYPES is no
+ * Revision 3.10  2002/02/22 14:30:23  dkr
+ * AddSpecializedFundef: workaround for FUNDEF_NAME as a part of TYPES is no
  * longer needed :-)
  *
  * Revision 3.8  2002/02/20 15:00:08  dkr
