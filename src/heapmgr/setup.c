@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2003/04/15 09:02:29  sbs
+ * binsize and min_chunk_size only defined when creating the MT versions.
+ * Otherwise, these are not used.
+ *
  * Revision 3.3  2003/04/14 14:43:50  sbs
  * casts from int into unsigned int added for comparison of num_threads.
  *
@@ -61,6 +65,8 @@
  * Heap management configuration data.
  */
 
+#ifdef MT
+
 static const SAC_HM_size_unit_t min_chunk_size[]
   = {SAC_HM_ARENA_0_MINCS, SAC_HM_ARENA_1_MINCS, SAC_HM_ARENA_2_MINCS,
      SAC_HM_ARENA_3_MINCS, SAC_HM_ARENA_4_MINCS, SAC_HM_ARENA_5_MINCS,
@@ -70,6 +76,8 @@ static const SAC_HM_size_unit_t binsize[]
   = {SAC_HM_ARENA_0_BINSIZE, SAC_HM_ARENA_1_BINSIZE, SAC_HM_ARENA_2_BINSIZE,
      SAC_HM_ARENA_3_BINSIZE, SAC_HM_ARENA_4_BINSIZE, SAC_HM_ARENA_5_BINSIZE,
      SAC_HM_ARENA_6_BINSIZE, SAC_HM_ARENA_7_BINSIZE, SAC_HM_ARENA_8_BINSIZE};
+
+#endif
 
 /*
  * Configuration variables for heap setup.
