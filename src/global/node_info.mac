@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.37  1995/01/31 14:59:33  asi
- * opt4_tab inserted and NIF macro enlarged
+ * Revision 1.38  1995/02/02 14:53:19  hw
+ * deleted FltnPrf
  *
+;; Revision 1.37  1995/01/31  14:59:33  asi
+;; opt4_tab inserted and NIF macro enlarged
+;;
 ;; Revision 1.36  1995/01/18  17:30:48  asi
 ;; free_tab filled with functions
 ;;
@@ -182,7 +185,7 @@ NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun, FreeNoInfo, DummyFun, DummyFun, DummyFun, DummyFun),
   NIF (N_modarray, "N_modarray", DummyFun, DummyFun, PrintConexpr, DummyFun, DummyFun,
        DummyFun, DummyFun, FreeNoInfo, DummyFun, DummyFun, DummyFun, DummyFun),
-  NIF (N_prf, "N_prf", DummyFun, FltnPrf, PrintPrf, DummyFun, DummyFun, DummyFun,
+  NIF (N_prf, "N_prf", DummyFun, DummyFun, PrintPrf, DummyFun, DummyFun, DummyFun,
        DummyFun, FreeNoInfo, DummyFun, DummyFun, DummyFun, DummyFun),
   NIF (N_ap, "N_ap", DummyFun, DummyFun, PrintAp, DummyFun, DummyFun, DummyFun, DummyFun,
        FreeInfoId, DummyFun, DummyFun, DummyFun, DummyFun),
