@@ -1,6 +1,9 @@
 /*
  * $Log$
- * Revision 1.10  1995/05/03 12:26:06  hw
+ * Revision 1.11  1995/06/06 16:09:36  hw
+ * changed errormessages
+ *
+ * Revision 1.10  1995/05/03  12:26:06  hw
  * - changes range of first argument of primitive function rotate
  *   (rotate(i,n,a) : 0 <= i <= dim(a) -1 )
  * - first argument of of primitive function rotate has to be constant
@@ -52,6 +55,7 @@
 #include "internal_lib.h"
 
 extern types *DuplicateTypes (types *source); /* imported form typecheck.c */
+extern char filename[];                       /* is set in main.c */
 
 enum type_class {
     SxS_S,
@@ -464,9 +468,9 @@ TakeV (node *vec, types *array)
     DBUG_ENTER ("TakeV");
 
     if (N_array != vec->nodetype)
-        ERROR2 (3, ("type error in line %d: 1.argument of function `take` "
+        ERROR2 (3, ("%s, %d: 1.argument of function `take` "
                     " should be a constant vector",
-                    vec->lineno));
+                    filename, vec->lineno));
     DBUG_ASSERT ((N_array == vec->nodetype), "not a N_array node");
 
     /* check weather entries in 1) are ok */
@@ -526,9 +530,9 @@ DropV (node *vec, types *array)
     DBUG_ENTER ("DropV");
 
     if (N_array != vec->nodetype)
-        ERROR2 (3, ("type error in line %d: 1.argument of function `take` "
+        ERROR2 (3, ("%s, %d: 1.argument of function `take` "
                     " should be a constant vector",
-                    vec->lineno));
+                    filename, vec->lineno));
     DBUG_ASSERT ((N_array == vec->nodetype), "not a N_array node");
 
     /* check weather the entries in 1) are ok */
@@ -628,9 +632,9 @@ TakeDropS (node *s_node, types *array, int tag)
     DBUG_ENTER ("TakeDropS");
 
     if (N_num != s_node->nodetype)
-        ERROR2 (3, ("type error in line %d: 1.argument of function 'drop' "
+        ERROR2 (3, ("%s, %d: 1.argument of function 'drop' "
                     "is not a constant",
-                    s_node->lineno));
+                    filename, s_node->lineno));
 
     DBUG_ASSERT ((N_num == s_node->nodetype), "not N_num");
 
@@ -703,9 +707,9 @@ Rot (node *s_node, types *array)
         else
             GEN_TYPE_NODE (ret_type, T_unknown);
     else
-        ERROR2 (3, ("type error in line %d: 1.argument of function `rotate` "
+        ERROR2 (3, ("%s, %d: 1.argument of function `rotate` "
                     " should be a constant",
-                    s_node->lineno));
+                    filename, s_node->lineno));
 
     DBUG_RETURN (ret_type);
 }
@@ -761,9 +765,9 @@ Cat (node *s_node, types *array1, types *array2)
         } else
             GEN_TYPE_NODE (ret_type, T_unknown);
     } else
-        ERROR2 (3, ("type error in line %d: 1.argument of function `cat` "
+        ERROR2 (3, ("%s, %d: 1.argument of function `cat` "
                     " should be a constant",
-                    s_node->lineno));
+                    filename, s_node->lineno));
 
     DBUG_RETURN (ret_type);
 }
