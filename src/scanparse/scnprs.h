@@ -4,6 +4,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  1998/02/27 10:49:01  cg
+ * added  #include "types.h" before #include "y.tab.h"
+ *
  * Revision 1.7  1997/06/03 08:57:58  sbs
  * MAX_CPP_VARS defined
  *
@@ -34,6 +37,8 @@
  *
  */
 
+#include "resource.h"
+#include "types.h"
 #include "y.tab.h"
 
 #define MAX_CPP_VARS 32
