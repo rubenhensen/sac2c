@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.23  2003/03/26 14:22:11  sah
+ * added missing / in tmp_dirname.
+ *
  * Revision 3.22  2003/03/26 13:16:02  sah
  * and another silly bug;)
  *
@@ -217,14 +220,14 @@ main (int argc, char *argv[])
     /* malloc is used here as tempnam uses it */
     /* internally as well.                    */
 
-    tmp_dirname = malloc (strlen (config.mkdir) + 11);
+    tmp_dirname = malloc (strlen (config.mkdir) + 12);
     tmp_dirname = strcpy (tmp_dirname, config.tmpdir);
-    tmp_dirname = strcat (tmp_dirname, "SAC_XXXXXX");
+    tmp_dirname = strcat (tmp_dirname, "/SAC_XXXXXX");
 
     tmp_dirname = mkdtemp (tmp_dirname);
 
     if (tmp_dirname == NULL) {
-        SYSABORT (("System failed to create temporary directory '%s'\n", tmp_dirname));
+        SYSABORT (("System failed to create temporary directory.\n"));
     }
 #else
     /* the old way for platforms not */
