@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.82  2004/11/26 11:10:25  cg
+ * Added string conversion tables.
+ *
  * Revision 3.81  2004/11/25 23:25:57  cg
  * Added global vars from convert.c
  *
@@ -229,43 +232,43 @@ static bool do_fun2lac_init[PH_final + 1] = {
 #include "phase_info.mac"
 };
 
-static bool ATG_has_shp_init[] = {
+static bool argtag_has_shp_init[] = {
 #define SELECTshp(it_shp) it_shp
 #include "argtag_info.mac"
 #undef SELECTshp
 };
 
-static bool ATG_has_rc_init[] = {
+static bool argtag_has_rc_init[] = {
 #define SELECTrc(it_rc) it_rc
 #include "argtag_info.mac"
 #undef SELECTrc
 };
 
-static bool ATG_has_desc_init[] = {
+static bool argtag_has_desc_init[] = {
 #define SELECTdesc(it_desc) it_desc
 #include "argtag_info.mac"
 #undef SELECTdesc
 };
 
-static bool ATG_is_in_init[] = {
+static bool argtag_is_in_init[] = {
 #define SELECTin(it_in) it_in
 #include "argtag_info.mac"
 #undef SELECTin
 };
 
-static bool ATG_is_out_init[] = {
+static bool argtag_is_out_init[] = {
 #define SELECTout(it_out) it_out
 #include "argtag_info.mac"
 #undef SELECTout
 };
 
-static bool ATG_is_inout_init[] = {
+static bool argtag_is_inout_init[] = {
 #define SELECTinout(it_inout) it_inout
 #include "argtag_info.mac"
 #undef SELECTinout
 };
 
-static const char *ATG_string_init[] = {
+static const char *argtag_string_init[] = {
 #define SELECTtext(it_text) it_text
 #include "argtag_info.mac"
 #undef SELECTtext
@@ -499,12 +502,12 @@ static const char *mdb_statustype_init[] = {
 #undef SELECTtext
 };
 
-static char *type_string_init[] = {
+static const char *type_string_init[] = {
 #define TYP_IFpr_str(str) str
 #include "type_info.mac"
 };
 
-static char *rename_type_init[] = {
+static const char *rename_type_init[] = {
 #define TYP_IFfunr_str(str) str
 #include "type_info.mac"
 };
@@ -623,6 +626,22 @@ static runtimecheck_flags_t runtimecheck_none_init = {
 static genlib_flags_t genlib_init = {
 #define GENLIBdefault(default) default,
 #include "flags.mac"
+};
+
+/*
+ * Initialize  primitive function tables
+ */
+
+static char *prf_symbol_init[] = {
+#define PRF_IF(a, b, c, d, e, f, g, h) d
+#include "prf_node_info.mac"
+#undef PRF_IF
+};
+
+static bool prf_is_infix_init[] = {
+#define PRF_IF(a, b, c, d, e, f, g, h) e
+#include "prf_node_info.mac"
+#undef PRF_IF
 };
 
 /*

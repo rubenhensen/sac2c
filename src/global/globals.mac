@@ -2,6 +2,9 @@
 /*
  *
  * $Log$
+ * Revision 1.17  2004/11/26 11:10:25  cg
+ * Added string conversion tables.
+ *
  * Revision 1.16  2004/11/25 23:25:57  cg
  * Added global vars from convert.c
  *
@@ -389,6 +392,16 @@ GLOBAL (bool, show_idx, FALSE)
  * Show index vector elimination information during printing.
  */
 
+GLOBAL (char **, prf_symbol, prf_symbol_init)
+/*
+ * String representations of primitive function names.
+ */
+
+GLOBAL (bool *, prf_is_infix, prf_is_infix_init)
+/*
+ * Infix or prefix notation for primitive functions.
+ */
+
 /*
  * Runtime options
  */
@@ -613,13 +626,13 @@ GLOBAL (bool *, do_fun2lac, do_fun2lac_init)
  * for arg tags
  */
 
-GLOBAL (bool *, ATG_has_shp, ATG_has_shp_init)
-GLOBAL (bool *, ATG_has_rc, ATG_has_rc_init)
-GLOBAL (bool *, ATG_has_desc, ATG_has_desc_init)
-GLOBAL (bool *, ATG_is_in, ATG_is_in_init)
-GLOBAL (bool *, ATG_is_out, ATG_is_out_init)
-GLOBAL (bool *, ATG_is_inout, ATG_is_inout_init)
-GLOBAL (const char **, ATG_string, ATG_string_init)
+GLOBAL (bool *, argtag_has_shp, argtag_has_shp_init)
+GLOBAL (bool *, argtag_has_rc, argtag_has_rc_init)
+GLOBAL (bool *, argtag_has_desc, argtag_has_desc_init)
+GLOBAL (bool *, argtag_is_in, argtag_is_in_init)
+GLOBAL (bool *, argtag_is_out, argtag_is_out_init)
+GLOBAL (bool *, argtag_is_inout, argtag_is_inout_init)
+GLOBAL (const char **, argtag_string, argtag_string_init)
 
 /*
  * Special purpose global variables
