@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.35  1999/10/28 09:53:22  sbs
+ * re-coded compilation of F_reshape!
+ * Now, the shape vector will be freed properly!
+ *
  * Revision 2.34  1999/10/26 19:03:52  dkr
  * Fixed a bug in COMPPrf: ICMs are now correctly wrapped by an
  * assign-node
@@ -318,31 +322,37 @@ int basetype_size[] = {
 
 static int label_nr = 0;
 
-#if 0
-node *AdjustRC(ids *varname, int num)
+/******************************************************************************
+ *
+ * function:
+ *   node *MakeAdjustRCIcms(ids *varname, int num)
+ *
+ * description:
+ *
+ *   According to num, either ND_INC_RC( varname, num),
+ *                            ----,
+ *                       or   ND_DEC_RC_FREE_ARRAY( varname, -num)
+ *   is created.
+ *
+ ******************************************************************************/
+
+node *
+MakeAdjustRCIcms (ids *varname, int num)
 {
-  node *result;
+    node *result;
 
+    if (num > 0) {
+        result = MakeAssignIcm2 ("ND_INC_RC", MakeId2 (DupOneIds (varname, NULL)),
+                                 MakeNum (num));
+    } else if (num == 0) {
+        result = NULL;
+    } else /* num < -1 */ {
+        result = MakeAssignIcm2 ("ND_DEC_RC_FREE_ARRAY",
+                                 MakeId2 (DupOneIds (varname, NULL)), MakeNum (-num));
+    }
 
-  if (num > 0) {
-     result = MakeIcm2( "ND_INC_RC",
-                        MakeId2( DupOneIds( varname, NULL)),
-                        MakeNum( 1));
-  } else if (num == 0) {
-    result = NULL;
-  } else if (num == -1) {
-    result = MakeIcm2( "ND_DEC_RC_FREE_ARRAY", 
-                       MakeId2( DupOneIds( varname, NULL)), 
-                       MakeNum( 1));
-  } else /* if (num < -1) */ {
-    result = MakeIcm2( "ND_DEC_RC", 
-                       MakeId2( DupOneIds( varname, NULL)), 
-                       MakeNum( 1));
-  }
-  
-  return( result);
+    return (result);
 }
-#endif
 
 /*
           if (IDS_REFCNT( usevar) > 1) {
@@ -2890,9 +2900,25 @@ COMPConvert (node *arg_node, node *arg_info)
  *                  INFO_COMP_LASTLET(arg_info) contains pointer to last N_let
  */
 
+/*
+ * This function is partly (!) adjusted to the new returning convention of
+ * COMPAssign and COMPLet !
+ * To allow for both techniques to co-exist for a while, we use a flag
+ * "assign_chain_res" for switching between the two conventions.
+ * If (assign_chain_res == 1) holds, we return icms which should hold
+ * an assignment chain that will replace the actual assignment (!= arg_node!)
+ * Note here, that this variant should NOT free/ re-use arg_node!
+ * For (assign_chain_res == 0), it is assumed, that all modifications happen
+ * here! This includes the insertion of further assign nodes as well as
+ * freeing not further used parts of the AST!
+ * In the long term, we should try to convert all parts to (assign_chain_res == 1)!!!
+ */
+
 node *
 COMPPrf (node *arg_node, node *arg_info)
 {
+    int assign_chain_res = 0;
+    node *icms;
     node *array, *scalar, *tmp, *res, *res_ref, *icm_arg, *prf_id_node, *type_id_node,
       *arg1, *arg2, *arg3, *first_assign = NULL, *next_assign = NULL, *last_assign = NULL,
                            *length_node, *tmp_array1, *tmp_array2, *dim_node, *tmp_rc,
@@ -3313,41 +3339,40 @@ COMPPrf (node *arg_node, node *arg_info)
             break;
         }
         case F_reshape: {
-            arg1 = EXPRS_EXPR (PRF_ARGS (arg_node));
-            arg2 = EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node)));
-            FreeTree (arg1);
-            FREE (arg_node->node[0]);
-            if (N_array == NODE_TYPE (arg2)) {
-                arg_node = COMPArray (arg2, arg_info);
+            /*
+             * this function complies to the NEW returning convention of
+             * COMPAssign/ COMPLet, i.e., we return an assignment chain
+             * of ICMs and we DO NOT free any parts of arg_node!
+             * For compliance with older parts (other cases...), we
+             * finally set the flag "assign_chain_res" to 1 which causes
+             * the function to return "icms" rather than "arg_node"!
+             */
+            assign_chain_res = 1;
+
+            arg1 = PRF_ARG1 (arg_node);
+            arg2 = PRF_ARG2 (arg_node);
+            DBUG_ASSERT ((NODE_TYPE (arg1) == N_id),
+                         "N_id as 1st arg of F_reshape expected!");
+            icms = MakeDecRcFreeICMs (ID_IDS (arg1));
+
+            DBUG_ASSERT ((N_id == NODE_TYPE (arg2)),
+                         "N_id as 2nd arg of F_reshape expected!");
+            if (0 == strcmp (ID_NAME (arg2), IDS_NAME (INFO_COMP_LASTIDS (arg_info)))) {
+                /*
+                 * We are dealing with an assignment of the kind:
+                 *   a = reshape( b, a);
+                 * which we compile into:
+                 *   NOOP() which will be eliminated by ???
+                 */
+                icms = AppendAssign (icms, MakeAssignIcm0 ("NOOP"));
             } else {
-                DBUG_ASSERT ((N_id == NODE_TYPE (arg2)), "wrong nodetype");
-                if (0
-                    == strcmp (ID_NAME (arg2), IDS_NAME (INFO_COMP_LASTIDS (arg_info)))) {
-                    FREE_IDS (LET_IDS (arg2));
-                    FREE (arg2);
-                    FREE (arg_node->node[0]->node[1]);
-                    arg_node = NULL;
-                    NODE_TYPE (INFO_COMP_LASTLET (arg_info)) = N_icm;
-                    /*
-                     * don't free LET_IDS( INFO_COMP_LASTLET( arg_info)),
-                     *  because it is shared with vardec!
-                     */
-                    ICM_NAME (INFO_COMP_LASTLET (arg_info)) = "NOOP";
-                } else {
-                    res = MakeId3 (INFO_COMP_LASTIDS (arg_info));
-                    BIN_ICM_REUSE (INFO_COMP_LASTLET (arg_info), "ND_KS_ASSIGN_ARRAY",
-                                   arg2, res);
-                    SET_VARS_FOR_MORE_ICMS;
-                    if (ID_REFCNT (res) > 1) {
-                        INC_RC_ND (res, MakeNum (ID_REFCNT (res) - 1));
-                        INSERT_ASSIGN;
-                    } else if (0 == ID_REFCNT (res)) {
-                        DEC_OR_FREE_RC_ND (res, MakeNum (1));
-                        INSERT_ASSIGN;
-                    }
-                    FREE (old_arg_node);
-                }
+                res = MakeId3 (DupOneIds (INFO_COMP_LASTIDS (arg_info), NULL));
+                icms = AppendAssign (icms, MakeAssignIcm2 ("ND_KS_ASSIGN_ARRAY",
+                                                           DupTree (arg2, NULL), res));
+                icms = AppendAssign (icms, MakeAdjustRCIcms (ID_IDS (res),
+                                                             ID_REFCNT (res) - 1));
             }
+
             break;
         }
         case F_psi: {
@@ -3724,7 +3749,11 @@ COMPPrf (node *arg_node, node *arg_info)
         }
     }
 
-    DBUG_RETURN (arg_node);
+    if (assign_chain_res == 0) {
+        DBUG_RETURN (arg_node);
+    } else {
+        DBUG_RETURN (icms);
+    }
 }
 
 /*
