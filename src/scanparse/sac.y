@@ -4,6 +4,9 @@
 /*
  *
  * $Log$
+ * Revision 3.25  2001/06/20 13:27:30  sbs
+ * changed priority of SIGN (unary minus) now less than sel!
+ *
  * Revision 3.24  2001/05/23 07:39:53  sbs
  * moved eof 'out' of all!
  * The alpha-trick doesn't work within a standalone function!
@@ -241,11 +244,11 @@ static node *CheckWlcompConf( node *ap, node *exprs);
 %left PLUS, MINUS
 %left MUL, DIV, PRF_MOD
 %left TAKE, DROP, RESHAPE
+%nonassoc SIGN
 %left SQBR_L
 %right CAST
 %right NOT
 %right ELSE
-%nonassoc SIGN
 %nonassoc GENERATOR
 
 
