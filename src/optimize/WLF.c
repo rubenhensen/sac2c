@@ -1,6 +1,12 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 1.14  1998/08/06 18:34:51  srs
+ * bug fix:
+ * index vector variable and index scalar variables are now renamed if
+ * necessary. Loop unrolling and inlining can lead to same names in
+ * different WLs.
+ *
  * Revision 1.13  1998/07/14 14:27:19  srs
  * modarray->modarray transformation from version 1.11 reverted
  *
@@ -139,14 +145,13 @@ typedef enum {
     wlfm_replace     /* traverse copied body of targetWL and
                         replace substituted reference. */
     /* wlfm_search_WL and wlm_search_ref both traverse the original target code
-       block. The first searches for other WL inside the current WL body and
-       folds in internal WLs first. The second again traverses the target code
-       and, if a foldable reference is found, initiates folding.
-       wlfm_replace traverses the copied target code block and tries to find
-       the same point (Id which should be folded) here. Then the subst code
-       is inserted at this point.
-       wlf_rename traverses the subst code and renames variables which would
-       lead to name clashes. */
+       block. The first phase searches for other WLs inside the current WL
+       body. The most cascated WLs are folded first. The second phase again
+       traverses the target code and, if a foldable reference is found, initiates
+       folding.  wlfm_replace traverses the copied target code block and tries to
+       find the same point (Id which should be folded) here. Then the subst code
+       is inserted at this point.  wlf_rename traverses the subst code and renames
+       variables which would lead to name clashes. */
 } wlf_mode_type;
 
 typedef struct CODE_CONSTRUCTION {
@@ -190,8 +195,8 @@ intern_gen *intersect_grids_tig, *intersect_grids_sig, *intersect_grids_baseig;
 intern_gen *intersect_intern_gen; /* resulting igs of IntersectInternGen. Global
                                      var to speed up function call.*/
 
-long *target_mask; /* we store the mrd of the psi function
-                      which shall be replaced in this var. */
+long *target_mask; /* here we store the mrd of the psi function
+                      which shall be replaced */
 long *subst_mask;  /* mrd mask of subst WL. */
 
 /******************************************************************************
@@ -202,7 +207,7 @@ long *subst_mask;  /* mrd mask of subst WL. */
  * description:
  *   Add new entry to renaiming list. No own mem for strings (old and new) is
  *   allocated. So the char pointers should point to string which will not be
- *   deleted soon (especially old_name: best let it point to vardec).
+ *   deleted soon.
  *
  *   Additionally, if var insert is != 0, this function inserts the assignment
  *   'new_name = old_name' after! the subst-WL. The N_assign node of the subst
@@ -244,8 +249,6 @@ AddRen (node *old_name, char *new_name, types *type, node *arg_info, int insert)
         _ids = MakeIds (StringCopy (new_name), NULL, ST_regular);
         IDS_VARDEC (_ids) = ren->vardec;
         letn = MakeLet (idn, _ids);
-        /*     assignn = MakeAssign(letn, ASSIGN_INSTR(INFO_WLI_NCA(arg_info))); */
-        /*     ASSIGN_INSTR(INFO_WLI_NCA(arg_info)) = assignn; */
         assignn = MakeAssign (letn, ASSIGN_NEXT (INFO_WLI_NCA (arg_info)));
         ASSIGN_NEXT (INFO_WLI_NCA (arg_info)) = assignn;
     }
@@ -1155,7 +1158,7 @@ Fold (node *idn, index_info *transformations, node *targetwln, node *substwln)
 {
     intern_gen *target_ig; /* transformed igs of target WL */
     intern_gen *subst_ig;  /* transformed igs of subst WL */
-    intern_gen *ig, *tmpig, *intersect_ig;
+    intern_gen *tmpig, *intersect_ig;
     int error;
     index_info *transf2;
 
@@ -1164,27 +1167,16 @@ Fold (node *idn, index_info *transformations, node *targetwln, node *substwln)
     code_constr = NULL;
 
     /* create target_ig */
-    /* srs: optimize dup from new_ig to target_ig!! */
-    target_ig = NULL;
-    ig = new_ig;
-    while (ig) {
-        tmpig = CopyInternGen (ig);
-        if (target_ig) {
-            tmpig->next = target_ig;
-            target_ig = tmpig;
-        } else
-            target_ig = tmpig;
-        ig = ig->next;
-    }
+    target_ig = new_ig;
+    new_ig = NULL;
+
     /* the 'old' new_ig is not needed anymore because we create a new list of
        intern gens which represents the same set of index elements as the
        'old' list. */
     new_ig = FreeInternGenChain (new_ig);
 
-    /* check if array access in in range. Don't use the original *transformations
-       because RemoveDoubleIndexVectors() modifies it.
-      */
-
+    /* check if array access is in range. Don't use the original *transformations
+       because RemoveDoubleIndexVectors() modifies it.  */
     transf2 = DuplicateIndexInfo (transformations);
     error = TransformationRangeCheck (transf2, substwln, target_ig);
     FREE_INDEX (transf2);
@@ -1456,15 +1448,15 @@ WLFassign (node *arg_node, node *arg_info)
  *  In wlfm_replace phase insert variable definitions of index vector
  *  and index scalars. Remove psi operation and replace it with the
  *  body of the subst WL.
- *   In wlfm_rename phase detect name clashes and solve them.
+ *  In wlfm_rename phase detect name clashes and solve them.
  *
  ******************************************************************************/
 
 node *
 WLFid (node *arg_node, node *arg_info)
 {
-    node *substn, *coden, *vectorn, *argsn, *letn, *subst_wl_partn;
-    node *old_arg_info_assign, *arrayn;
+    node *substn, *coden, *vectorn, *argsn, *letn, *subst_wl_partn, *subst_header;
+    node *old_arg_info_assign, *arrayn, *tmpn;
     ids *subst_wl_ids, *_ids;
     int count, varno;
     char *new_name;
@@ -1505,7 +1497,6 @@ WLFid (node *arg_node, node *arg_info)
             varno = ID_VARNO (NCODE_CEXPR (coden));
             if (target_mask[varno]) { /* target_mask was initialized before Fold() */
                 new_name = TmpVarName (ID_NAME (NCODE_CEXPR (coden)));
-                /* Get vardec's name because ID_NAME will be deleted soon. */
                 ren = AddRen (ID_VARDEC (NCODE_CEXPR (coden)), new_name,
                               ID_TYPE (NCODE_CEXPR (coden)), arg_info, 0);
                 INFO_WLI_NEW_ID (arg_info) = MakeId (new_name, NULL, ST_regular);
@@ -1517,15 +1508,7 @@ WLFid (node *arg_node, node *arg_info)
             /* Create substitution code. */
             substn = DupTree (BLOCK_INSTR (NCODE_CBLOCK (coden)), NULL);
 
-            /* trav subst code with wlfm_rename to solve name clashes. */
-            wlf_mode = wlfm_rename;
-            old_arg_info_assign = INFO_WLI_ASSIGN (arg_info); /* save arg_info */
-            substn = Trav (substn, arg_info);
-            INFO_WLI_ASSIGN (arg_info) = old_arg_info_assign;
-            FreeRen (); /* set list free (created in wlfm_rename) */
-            wlf_mode = wlfm_replace;
-
-            /* add assignments to rename variables which index the array we want
+            /* create assignments to rename variables which index the array we want
                to replace.
                Example: We want to replace psi(sel,A) and A is a WL with a
                generator iv=[i,j,k]. Then we add:
@@ -1535,8 +1518,8 @@ WLFid (node *arg_node, node *arg_info)
                  iv = sel;
                Remember that iv,i,j,k all are temporary variables, inserted
                in flatten. No name clashes can happen. */
+            subst_header = NULL;
             vectorn = PRF_ARG1 (LET_EXPR (ASSIGN_INSTR (INFO_WLI_ASSIGN (arg_info))));
-            /* We have to remember that new assignments have been inserted. */
             count = 0;
             /* This ID_WL is used in case (1) here (see header of file) */
             subst_wl_partn
@@ -1550,7 +1533,7 @@ WLFid (node *arg_node, node *arg_info)
                    - yes, if this is no newly created code block (WLF)
                    - no otherwise. We could duplicate masks for new code blocks,
                      but I guess that would cost more time than speculatively inserting
-                     (and DCR-removing) some new variables. */
+                     (and DC-removing) some new variables. */
                 if (!NCODE_MASK (coden, 1 /* USE mask */) /* mask does not exist */
                     || NCODE_MASK (coden, 1)[IDS_VARNO (subst_wl_ids)]) {
                     arrayn = MakeArray (MakeExprs (MakeNum (count), NULL));
@@ -1558,11 +1541,21 @@ WLFid (node *arg_node, node *arg_info)
                       MakeNums (1, NULL)); /* nums struct is freed inside MakeShpseg. */
                     ARRAY_TYPE (arrayn) = MakeType (T_int, 1, shpseg, NULL, NULL);
                     argsn = MakeExprs (arrayn, MakeExprs (DupTree (vectorn, NULL), NULL));
-                    _ids
-                      = MakeIds (StringCopy (IDS_NAME (subst_wl_ids)), NULL, ST_regular);
-                    IDS_VARDEC (_ids) = IDS_VARDEC (subst_wl_ids);
+
+                    /* maybe the index scalar variable of the subst wl has to be renamed
+                     */
+                    if (target_mask[IDS_VARNO (subst_wl_ids)]) {
+                        new_name = TmpVarName (IDS_NAME (subst_wl_ids));
+                        ren = AddRen (IDS_VARDEC (subst_wl_ids), new_name,
+                                      IDS_TYPE (subst_wl_ids), arg_info, 0);
+                        _ids = MakeIds (new_name, NULL, ST_regular);
+                        IDS_VARDEC (_ids) = ren->vardec;
+                    } else
+                        /* keep original name */
+                        _ids = DupTree (subst_wl_ids, NULL);
+
                     letn = MakeLet (MakePrf (F_psi, argsn), _ids);
-                    substn = MakeAssign (letn, substn);
+                    subst_header = MakeAssign (letn, subst_header);
                 }
 
                 count++;
@@ -1573,16 +1566,39 @@ WLFid (node *arg_node, node *arg_info)
             subst_wl_ids = NPART_VEC (subst_wl_partn);
             if (!NCODE_MASK (coden, 1 /* USE mask */) /* mask does not exist */
                 || NCODE_MASK (coden, 1)[IDS_VARNO (subst_wl_ids)]) {
-                _ids = MakeIds (StringCopy (IDS_NAME (subst_wl_ids)), NULL, ST_regular);
-                IDS_VARDEC (_ids) = IDS_VARDEC (NPART_VEC (subst_wl_partn));
+                /* maybe the index vector variable of the subst wl has to be renamed */
+                if (target_mask[IDS_VARNO (subst_wl_ids)]) {
+                    new_name = TmpVarName (IDS_NAME (subst_wl_ids));
+                    ren = AddRen (IDS_VARDEC (subst_wl_ids), new_name,
+                                  IDS_TYPE (subst_wl_ids), arg_info, 0);
+                    _ids = MakeIds (new_name, NULL, ST_regular);
+                    IDS_VARDEC (_ids) = ren->vardec;
+                } else
+                    /* keep original name */
+                    _ids = DupTree (subst_wl_ids, NULL);
+
                 letn = MakeLet (DupTree (vectorn, NULL), _ids);
-                substn = MakeAssign (letn, substn);
+                subst_header = MakeAssign (letn, subst_header);
             }
+
+            /* trav subst code with wlfm_rename to solve name clashes. */
+            wlf_mode = wlfm_rename;
+            old_arg_info_assign = INFO_WLI_ASSIGN (arg_info); /* save arg_info */
+            substn = Trav (substn, arg_info);
+            INFO_WLI_ASSIGN (arg_info) = old_arg_info_assign;
+            FreeRen (); /* set list free (created in wlfm_rename) */
+            wlf_mode = wlfm_replace;
+
+            /* merge subst_header and substn */
+            tmpn = subst_header;
+            while (ASSIGN_NEXT (tmpn))
+                tmpn = ASSIGN_NEXT (tmpn);
+            ASSIGN_NEXT (tmpn) = substn;
 
             /* we dont' need the old _SUBST info anymore so we return the
                new subst assign chain here. WLFassign uses this information to
                melt both chains. */
-            INFO_WLI_SUBST (arg_info) = substn;
+            INFO_WLI_SUBST (arg_info) = subst_header;
         }
         break;
 
@@ -1679,6 +1695,7 @@ WLFlet (node *arg_node, node *arg_info)
         break;
 
     case wlfm_rename:
+        LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
         varno = IDS_VARNO (LET_IDS (arg_node));
         if (varno != -1 && target_mask[varno]) {
             /* we have to solve a name clash. */
@@ -1695,8 +1712,6 @@ WLFlet (node *arg_node, node *arg_info)
             LET_IDS (arg_node) = MakeIds (new_name, NULL, ST_regular);
             IDS_VARDEC (LET_IDS (arg_node)) = ren->vardec;
         }
-
-        LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
         break;
 
     default:
