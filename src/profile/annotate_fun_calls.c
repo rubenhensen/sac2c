@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2001/03/15 20:39:48  dkr
+ * Fundef2ProfileString: '&' for reference objects is no longer printed
+ * by Type2String()
+ *
  * Revision 1.5  2001/03/15 15:48:47  dkr
  * signature of Type2String modified
  *
@@ -99,9 +103,9 @@ SearchMain (node *fundef)
  *    char *Fundef2ProfileString( node *fundef)
  *
  * description:
- *    creates a profile ame string from a given function definition. It's length
- *    is limited to PF_MAXFUNNAMELEN-1 chars in order to guarantee readable
- *    profiling output.
+ *    creates a profile name string from a given function definition. It's
+ *    length is limited to PF_MAXFUNNAMELEN-1 chars in order to guarantee
+ *    readable profiling output.
  *
  ********************************************************************************/
 
@@ -124,8 +128,16 @@ Fundef2ProfileString (node *fundef)
     arg = FUNDEF_ARGS (fundef);
     while (arg != NULL) {
         tmp_str = Type2String (ARG_TYPE (arg), 0, TRUE);
-        tmp_str = strcat (tmp_str, " ");
-        tmp_str = strcat (tmp_str, ARG_NAME (arg));
+        if (ARG_ATTRIB (arg) == ST_reference) {
+            tmp_str = strcat (tmp_str, " &");
+        } else if (ARG_ATTRIB (arg) == ST_readonly_reference) {
+            tmp_str = strcat (tmp_str, " (&)");
+        } else {
+            tmp_str = strcat (tmp_str, " ");
+        }
+        if (ARG_NAME (arg) != NULL) {
+            tmp_str = strcat (tmp_str, ARG_NAME (arg));
+        }
         str_buff = strncat (str_buff, tmp_str, str_spc);
         str_spc -= strlen (tmp_str);
         str_spc = MAX (str_spc, 0);
@@ -137,7 +149,7 @@ Fundef2ProfileString (node *fundef)
             str_spc = MAX (str_spc, 0);
         }
     }
-    str_buff = strncat (str_buff, " )", str_spc);
+    str_buff = strncat (str_buff, ")", str_spc);
     str_spc -= 2;
     str_spc = MAX (str_spc, 0);
 
