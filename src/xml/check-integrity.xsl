@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.2  2004/12/05 17:50:57  sah
+  extended checks
+
   Revision 1.1  2004/11/29 10:30:13  sah
   Initial revision
 
@@ -17,6 +20,8 @@
   <!-- starting template -->
   <xsl:template match="/">
     <xsl:apply-templates select="//traversal" mode="check-traversal" />
+    <xsl:apply-templates select="//nodeset" mode="check-nodeset" />
+    <xsl:apply-templates select="//syntaxtree" mode="check-syntaxtree" />
   </xsl:template>
 
   <xsl:template match="traversal" mode="check-traversal" >
@@ -29,6 +34,77 @@
       <xsl:value-of select="@name" />
       <xsl:value-of select="' of traversal '"/>
       <xsl:value-of select="../../@name" />
+      <xsl:value-of select="' unknown'" />
+      <xsl:call-template name="newline" />
+    </xsl:if>
+  </xsl:template>
+
+  <xsl:template match="nodeset" mode="check-nodeset">
+    <xsl:apply-templates select=".//node" />
+  </xsl:template>
+
+  <xsl:template match="node" mode="check-nodeset" >
+    <xsl:if test="not( key( &quot;nodes&quot;, @name))">
+      <xsl:value-of select="'Node '" />
+      <xsl:value-of select="@name" />
+      <xsl:value-of select="' of nodeset '"/>
+      <xsl:value-of select="../@name" />
+      <xsl:value-of select="' unknown'" />
+      <xsl:call-template name="newline" />
+    </xsl:if>
+  </xsl:template>
+
+  <xsl:template match="syntaxtree" mode="check-syntaxtree">
+    <xsl:apply-templates select=".//target" mode="check-syntaxtree" />
+  </xsl:template>
+
+  <xsl:template match="type/target/node" mode="check-syntaxtree" >
+    <xsl:if test="not( key( &quot;nodes&quot;, @name))">
+      <xsl:value-of select="'Target '" />
+      <xsl:value-of select="@name" />
+      <xsl:value-of select="' of attribute '"/>
+      <xsl:value-of select="../../../@name" />
+      <xsl:value-of select="' of node '"/>
+      <xsl:value-of select="../../../../../@name" />
+      <xsl:value-of select="' unknown'" />
+      <xsl:call-template name="newline" />
+    </xsl:if>
+  </xsl:template>
+
+  <xsl:template match="type/target/set" mode="check-syntaxtree" >
+    <xsl:if test="not( key( &quot;nodesets&quot;, @name))">
+      <xsl:value-of select="'Targetset '" />
+      <xsl:value-of select="@name" />
+      <xsl:value-of select="' of attribute '"/>
+      <xsl:value-of select="../../../@name" />
+      <xsl:value-of select="' of node '"/>
+      <xsl:value-of select="../../../../../@name" />
+      <xsl:value-of select="' unknown'" />
+      <xsl:call-template name="newline" />
+    </xsl:if>
+  </xsl:template>
+
+  <xsl:template match="son/target/node" mode="check-syntaxtree" >
+    <xsl:if test="not( key( &quot;nodes&quot;, @name))">
+      <xsl:value-of select="'Target '" />
+      <xsl:value-of select="@name" />
+      <xsl:value-of select="' of son '"/>
+      <xsl:value-of select="../../@name" />
+      <xsl:value-of select="' of node '"/>
+      <xsl:value-of select="../../../../@name" />
+      <xsl:value-of select="' unknown'" />
+      <xsl:call-template name="newline" />
+    </xsl:if>
+  </xsl:template>
+
+  <xsl:template match="son/target/set" mode="check-syntaxtree" >
+    <xsl:if test="not( key( &quot;nodesets&quot;, @name))">
+      <xsl:value-of select="'Targetset '" />
+      <xsl:value-of select="@name" />
+      <xsl:value-of select="' of son '"/>
+      <xsl:value-of select="../../@name" />
+      <xsl:value-of select="' of node '"/>
+      <xsl:value-of select="../../../../@name" />
       <xsl:value-of select="' unknown'" />
       <xsl:call-template name="newline" />
     </xsl:if>

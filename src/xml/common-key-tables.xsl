@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.4  2004/12/05 17:50:57  sah
+  extended checks
+
   Revision 1.3  2004/11/29 13:35:39  sah
   added nodes key
 
@@ -25,5 +28,8 @@
 
 <!-- and one for all nodes -->
 <xsl:key name="nodes" match="/definition/syntaxtree/node" use="@name" />
+
+<!-- and one for all nodesets -->
+<xsl:key name="nodesets" match="/definition/nodesets/nodeset" use="@name" />
 
 </xsl:stylesheet>
