@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.21  1995/12/07 16:23:29  asi
+ * Revision 1.22  1995/12/12 18:26:02  asi
+ * added VARDEC_FLAG
+ *
+ * Revision 1.21  1995/12/07  16:23:29  asi
  * comment added for INLREC
  *
  * Revision 1.20  1995/12/04  15:03:58  asi
@@ -148,6 +151,8 @@ The following compilation steps are used:
  - rm-void-fun
  - optimize
    - inlining
+   - arrayelimination
+   - deadcoderemoval
  - psi-optimize
  - refcount
  - precompile
@@ -163,6 +168,11 @@ file can be found in tree_basic.c
 #ifndef _sac_tree_basic_h
 
 #define _sac_tree_basic_h
+
+/* Uncomment the #define statement to use new virtual syntaxtree
+ *
+ * #define NEWTREE
+ */
 
 /*
  *   Global Access-Macros
@@ -787,6 +797,7 @@ extern node *MakeBlock (node *instr, node *vardec);
  ***    int         REFCNT                     (refcount -> compile -> )
  ***    int         VARNO                      (optimize -> )
  ***    statustype  ATTRIB                     (typecheck -> uniquecheck -> )
+ ***    int         FLAG                       (arrayelimination -> deadcoderemoval -> )
  ***/
 
 /*
@@ -811,6 +822,7 @@ extern node *MakeVardec (char *name, types *type, node *next);
 #define VARDEC_STATUS(n) (n->info.types->status)
 #define VARDEC_ATTRIB(n) (n->info.types->attrib)
 #define VARDEC_TYPEDEF(n) (n->node[1])
+#define VARDEC_FLAG(n) (n->flag)
 
 /*--------------------------------------------------------------------------*/
 
