@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.12  1997/04/24 10:07:37  cg
+ * Revision 1.13  1997/04/30 11:52:33  cg
+ * full path names are used also for SAC modules in link list
+ *
+ * Revision 1.12  1997/04/24  10:07:37  cg
  * call to gcc converted to new environment variable SACBASE
  *
  * Revision 1.11  1997/03/19  13:46:23  cg
@@ -759,7 +762,7 @@ CountLinklistLength (deps *depends)
 
     while (tmp != NULL) {
         if (DEPS_STATUS (tmp) == ST_sac) {
-            cnt += strlen (DEPS_NAME (tmp)) + 3;
+            cnt += strlen (DEPS_NAME (tmp)) + 5 + strlen (tmp_dirname);
         } else {
             cnt += strlen (DEPS_LIBNAME (tmp)) + 1;
         }
@@ -786,11 +789,13 @@ CountLinklistLength (deps *depends)
  *  external funs : strcat
  *  macros        :
  *
- *  remarks       : For SAC libraries the pure module/class name is appended
+ *  remarks       : For SAC libraries the pure module/class name is
+ *                  preceded by the path name of the temporary directory
+ *                  and appended
  *                  by '.a' because all archives extracted from SAC libraries
- *                  reside in a temporary directory.
+ *                  reside in this temporary directory.
  *                  For external and system libraries the respective pathname
- *                  is used.
+ *                  collected by readsib.c is used.
  *
  */
 
@@ -805,6 +810,8 @@ FillLinklist (deps *depends, char *linklist)
 
     while (tmp != NULL) {
         if (DEPS_STATUS (tmp) == ST_sac) {
+            strcat (linklist, tmp_dirname);
+            strcat (linklist, "/");
             strcat (linklist, DEPS_NAME (tmp));
             strcat (linklist, ".a ");
         } else {
@@ -929,10 +936,8 @@ InvokeCC ()
     if (filetype == F_prog) {
         SystemCall ("gcc %s -Wall -Wno-unused -fno-builtin "
                     "-I$SACBASE/runtime/ -L$SACBASE/runtime/ "
-                    "-L%s "
                     "-o %s %s %s -lsac",
-                    ccflagsstr, tmp_dirname, outfilename, cfilename,
-                    GenLinklist (dependencies));
+                    ccflagsstr, outfilename, cfilename, GenLinklist (dependencies));
     } else {
         if (linkstyle == 1) {
             SystemCall ("gcc %s -Wall -Wno-unused -fno-builtin "
