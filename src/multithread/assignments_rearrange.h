@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2004/08/11 08:38:44  skt
+ * full redesigned, still under construction but looks well
+ *
  * Revision 1.3  2004/07/29 00:41:50  skt
  * build compilable intermediate version
  * work in progress
@@ -25,93 +28,81 @@
 
 #define ASSIGNMENTS_REARRANGE_H
 
-/* access macros for arg_info
- *
- *   node*      DATAFLOWGRAPH  (the dataflowgraph of the currunt function
- *                              as far as it has been constructed)
- *   int        EXECUTIONMODE  (the current execution mode)
- *   odelist*   USEDNODES      (list of identifiers of the variables used by
- *                              the current assignment)
- */
-#define INFO_ASMRA_DATAFLOWGRAPH(n) (n->node[0])
-#define INFO_ASMRA_OUTERASSIGN(n) (n->node[1])
-#define INFO_ASMRA_ACTNODE(n) (n->node[2])
-#define INFO_ASMRA_EXECUTIONMODE(n) (n->flag)
-#define INFO_ASMRA_WITHDEEP(n) (n->refcnt)
-#define INFO_ASMRA_USEDIDS(n) (n->info.ids)
+#define ASMRA_DEBUG 1
+#define ASMRA_NODEUSED -1
 
-/* access macros for N_infos to be used as notes of a dataflowgraph
- *
- *   node*       INNERASSIGNMENT (the corresponding assignment)
- *   node*       OUTERASSIGNMENT (the assignment in the list of assignments,
- *                                that has to be taken for rearranging the
- *                                list. Usually the same as INNERASSIGNMENT,
- *                                but neccessary to handle ST-/MT-Blocks
- *                                see ASMRAassign for details)
- *   int         EXECUTIONMODE   (some info about the execution of the
- *                                corresponding assignment;
- *                                any-, multi- or singlethreaded)
- *   nodelist*   DEPENDENT       (list of (dataflow) nodes that depends on this
- *                                node)
- *   char*       NAME            (name of the dataflownode; NOT substantial
- *                                for the functionality, but helpful to print
- *                                and understand the dataflowgraph)
+/*
+ * some structures
  */
 
-#define DATA_ASMRA_NAME(n) ((char *)(n->dfmask[1]))
-#define DATA_ASMRA_INNERASSIGN(n) (n->node[0])
-#define DATA_ASMRA_OUTERASSIGN(n) (n->node[1])
-#define DATA_ASMRA_EXECUTIONMODE(n) (n->flag)
-#define DATA_ASMRA_NODEREFCOUNT(n) (n->refcnt)
-#define DATA_ASMRA_STATUS(n) (n->counter)
-#define DATA_ASMRA_DEPENDENT(n) ((nodelist *)(n->dfmask[0]))
+struct asmra_cluster_s {
+    node *dfn;
+    int distance;
+    struct asmra_cluster_s *next;
+};
 
-/* definitions for storing the information about the current execution mode */
-#define ASMRA_ANY 0
-#define ASMRA_ST 1
-#define ASMRA_MT 2
+struct asmra_list_s {
+    void *element;
+    struct asmra_list_s *next;
+};
 
-extern node *AssignmentsRearrange (node *arg_node, node *arg_info);
+/*
+ * some access macros
+ *   node*                    ASMRA_CLUSTER_DFN
+ *   int                      ASMRA_CLUSTER_DISTANCE
+ *   struct asmra_cluster_s*  ASMRA_CLUSTER_NEXT
+ *
+ *   void*                    ASMRA_LIST_ELEMENT
+ *   struct asmra_list_s*     ASMRA_LIST_NEXT
+ */
+#define ASMRA_CLUSTER_DFN(n) (n->dfn)
+#define ASMRA_CLUSTER_DISTANCE(n) (n->distance)
+#define ASMRA_CLUSTER_NEXT(n) (n->next)
+#define ASMRA_LIST_ELEMENT(n) (n->element)
+#define ASMRA_LIST_NEXT(n) (n->next)
 
-extern node *ASMRAfundef (node *arg_node, node *arg_info);
+extern node *AssignmentsRearrange (node *arg_node);
 
-extern node *ASMRAassign (node *arg_node, node *arg_info);
+extern node *ASMRAblock (node *arg_node, info *arg_info);
 
-extern node *ASMRAlet (node *arg_node, node *arg_info);
+extern node *ASMRACreateNewAssignmentOrder (node *arg_node);
 
-extern node *ASMRAid (node *arg_node, node *arg_info);
+struct asmra_list_s *ASMRABuildListOfCluster (node *graph);
 
-extern node *ASMRAst (node *arg_node, node *arg_info);
+struct asmra_cluster_s *ASMRABuildCluster (node *graph, int execmode);
 
-extern node *ASMRAmt (node *arg_node, node *arg_info);
+node *ASMRAFindElement (node *graph, int execmode);
 
-extern node *ASMRAwith2 (node *arg_node, node *arg_info);
+struct asmra_list_s *ASMRADissolveAllCluster (struct asmra_list_s *list_of_cluster);
 
-node *Rearrange (node *arg_node, node *dataflowgraph);
+struct asmra_cluster_s *ASMRACalculateDistances (struct asmra_cluster_s *cluster,
+                                                 struct asmra_list_s *list);
 
-nodelist *AddBorderElements (nodelist *subgraph, nodelist *border, int ex_mode,
-                             int counter);
+bool ASMRAOneNodeIsDependent (struct asmra_cluster_s *cluster,
+                              struct asmra_cluster_s *dependent_cluster);
 
-int IncreaseBorder (nodelist *border, node *dataflowgraph);
+bool ASMRAFoundDependent (nodelist *dependent_nodes, struct asmra_cluster_s *search_area);
 
-/* Some functions to create, administrate and delete dataflowgraphs */
+bool ASMRAIsInCluster (node *dfn, struct asmra_cluster_s *search_area);
 
-node *CreateDataflowgraphASMRA (char *name, node *arg_info);
+node *ASMRAGetNodeWithLowestDistance (struct asmra_cluster_s *act_cluster);
 
-int DeleteDataflowgraphASMRA (node *graph);
+node *ASMRABuildNewAssignmentChain (struct asmra_list_s *list_of_dfn, node *arg_node);
 
-int PrintDataflowgraphASMRA (node *dataflowgraph, char *name);
+struct asmra_cluster_s *ASMRAMakeCluster (node *arg_node);
 
-int PrintDataflownodeASMRA (node *datanode);
+struct asmra_cluster_s *ASMRAFreeCluster (struct asmra_cluster_s *cluster);
 
-node *GetReturnNodeASMRA (node *graph);
+struct asmra_cluster_s *ASMRAClusterAdd (struct asmra_cluster_s *cluster, node *dfn);
 
-node *UpdateReturnASMRA (node *graph, node *arg_node);
+struct asmra_cluster_s *ASMRAClusterRefUpdate (struct asmra_cluster_s *cluster);
 
-node *MakeDataflowNodeASMRA (char *name, node *inner_assign, node *arg_info);
+void ASMRAPrintCluster (struct asmra_cluster_s *cluster);
 
-node *AddDataflowNodeASMRA (node *graph, node *newnode);
+struct asmra_list_s *ASMRAMakeList (void *element);
 
-node *UpdateDependenciesASMRA (node *graph, node *avisnode, node *actnode);
+struct asmra_list_s *ASMRAFreeList (struct asmra_list_s *list);
+
+struct asmra_list_s *ASMRAListAppend (struct asmra_list_s *list, void *element);
 
 #endif /* ASSIGNMENTS_REARRANGE_H */

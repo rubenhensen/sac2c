@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.5  2004/08/11 08:38:44  skt
+ * full redesigned, still under construction but looks well
+ *
  * Revision 1.4  2004/08/05 10:52:22  skt
  * initialization of border & new_borderelem added
  *
@@ -36,6 +39,8 @@
  *
  *****************************************************************************/
 
+#define NEW_INFO
+
 #include "dbug.h"
 
 #include "types.h"
@@ -44,25 +49,73 @@
 #include "traverse.h"
 #include "assignments_rearrange.h"
 #include "print.h"
+#include "multithread.h"
 
-/******************************************************************************
+/*
+ * INFO structure
+ */
+struct INFO {
+    node *next;
+};
+
+/*
+ * INFO macros
+ *   node*      NEXT
  *
- * function:
- *   node *AssignmentsRearrange(node *arg_node, node *arg_info)
+ */
+#define INFO_ASMRA_NEXT(n) (n->next)
+
+/*
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = Malloc (sizeof (info));
+
+    INFO_ASMRA_NEXT (result) = NULL;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    if (INFO_ASMRA_NEXT (info) != NULL) {
+        info = FreeInfo (info);
+    }
+    info = Free (info);
+
+    DBUG_RETURN (info);
+}
+
+/*** <!--*******************************************************************-->
  *
- * description:
- *   Inits the traversal for this phase
+ * @fn:node *AssignmentsRearrange(node *arg_node)
  *
- ******************************************************************************/
+ * @brief Inits the traversal for this phase
+ *
+ * @param arg_node
+ * @return
+ *
+ *****************************************************************************/
 node *
-AssignmentsRearrange (node *arg_node, node *arg_info)
+AssignmentsRearrange (node *arg_node)
 {
     funtab *old_tab;
-
+    info *arg_info;
     DBUG_ENTER ("AssignmentsRearrange");
 
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_modul),
                  "AssignmentsRearrange expects a N_modul as arg_node");
+
+    arg_info = MakeInfo ();
 
     /* push info ... */
     old_tab = act_tab;
@@ -75,562 +128,432 @@ AssignmentsRearrange (node *arg_node, node *arg_info)
     /* pop info ... */
     act_tab = old_tab;
 
+    arg_info = FreeInfo (arg_info);
+
     DBUG_RETURN (arg_node);
 }
-
-/* todo - loops & conditionals */
 
 /** <!--********************************************************************->>
  *
- * @fn node *ASMRAfundef(node *arg_node, node *arg_info)
+ * @fn node *ASMRAblock(node *arg_node, info *arg_info)
  *
- * @brief Rearrange the assignments of the function
+ * @brief Rearrange the assignments of this block on all levels
  *
- ******************************************************************************/
+ * @param arg_node
+ * @param arg_info
+ * @return N_block with rearranged assignment chain(s)
+ *
+ ****************************************************************************/
 node *
-ASMRAfundef (node *arg_node, node *arg_info)
+ASMRAblock (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ASMRAfundef");
+    DBUG_ENTER ("ASMRAblock");
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_block), "node is not a N_block");
 
-    DBUG_PRINT ("ASMRA", ("Welcome to ASMRAfundef"));
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_fundef), "node is not a N_fundef");
-
-    INFO_ASMRA_WITHDEEP (arg_info) = 0;
-
-    /* Initialisation of the Dataflowgraph for this N_fundef */
-    INFO_ASMRA_EXECUTIONMODE (arg_info) = ASMRA_ANY;
-    INFO_ASMRA_DATAFLOWGRAPH (arg_info)
-      = CreateDataflowgraphASMRA (FUNDEF_NAME (arg_node), arg_info);
-
-    /* continue traversal */
-    DBUG_PRINT ("ASMRA", ("trav into body"));
-    FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
-    DBUG_PRINT ("ASMRA", ("trav from body"));
-
-    /* now the dataflowgraph is ready to be used for rearranging the assignment*/
-
-    PrintDataflowgraphASMRA (INFO_ASMRA_DATAFLOWGRAPH (arg_info), FUNDEF_NAME (arg_node));
-
-    arg_node = Rearrange (arg_node, INFO_ASMRA_DATAFLOWGRAPH (arg_info));
-    /* TODO */
-
-    DeleteDataflowgraphASMRA (INFO_ASMRA_DATAFLOWGRAPH (arg_info));
-
-    if (FUNDEF_NEXT (arg_node) != NULL) {
-        DBUG_PRINT ("ASMRA", ("trav into fundef-next"));
-        FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
-        DBUG_PRINT ("ASMRA", ("trav from fundef-next"));
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-node *
-ASMRAassign (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("ASMRAassign");
-
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_assign), "node is not a N_assign");
-
-    /* there's a problem concerning finding the correct assign belonging to a
-       N_let (the new nodes of the dataflowgraph are build in N_let-nodes):
-       the current structure is
-        N_block
-         |
-        N_assign(a)
-         |
-        N_assign(b1) -> N_mt -> N_Block -> N_assign(b2) -> instr
-         |
-        N_assign(c1) -> N_st -> N_Block -> N_assign(c2) -> instr
-        ...
-       the corresponding N_avis-nodes point to (a),(b2) and (c2), but if you want
-       to rearrange the assignment-chain, you need pointer to (a),(b1) and (c1);
-       so you habe to keep the assign in your mind if the current executionmode
-       is ASMRA_ANY */
-
-    if (INFO_ASMRA_EXECUTIONMODE (arg_info) == ASMRA_ANY) {
-        INFO_ASMRA_OUTERASSIGN (arg_info) = arg_node;
-    }
-
-    /* if it's the return-instruction, one need not to traverse into the
-       instruction, because the dataflownode for return already exists
-    */
-    if (NODE_TYPE (ASSIGN_INSTR (arg_node)) != N_return) {
-        DBUG_PRINT ("ASMRA", ("trav into instruction"));
-        ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
-        DBUG_PRINT ("ASMRA", ("trav from instruction"));
-    } else {
-        /* but you have to update the returnassignment in the dataflowgraph*/
-        INFO_ASMRA_DATAFLOWGRAPH (arg_info)
-          = UpdateReturnASMRA (INFO_ASMRA_DATAFLOWGRAPH (arg_info), arg_node);
+    if (NODE_TYPE (BLOCK_INSTR (arg_node)) == N_assign) {
+        arg_node = ASMRACreateNewAssignmentOrder (arg_node);
     }
 
     /* continue traversal */
-    if (ASSIGN_NEXT (arg_node) != NULL) {
-        DBUG_PRINT ("ASMRA", ("trav into next"));
-        ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
-        DBUG_PRINT ("ASMRA", ("trav from next"));
-    }
+    DBUG_PRINT ("ASMRA", ("trav into instruction(s)"));
+    BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
+    DBUG_PRINT ("ASMRA", ("trav from instruction(s)"));
 
     DBUG_RETURN (arg_node);
 }
+
+/** <!--********************************************************************->>
+ *
+ * @fn node *ASMRACreateNewAssignmentOrder(node *arg_node)
+ *
+ * @brief Top-level rearrange arg_node's assignment-chain
+ *
+ * @param arg_node a N_block
+ * @return N_block with rearranged assignment chain on top-level
+ *
+ ****************************************************************************/
 
 node *
-ASMRAlet (node *arg_node, node *arg_info)
+ASMRACreateNewAssignmentOrder (node *arg_node)
 {
-    DBUG_ENTER ("ASMRAlet");
+    struct asmra_list_s *my_list;
+    DBUG_ENTER ("ASMRACreateNewAssignmentOrder");
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_block), "node is not a N_block");
 
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_let), "node is not a N_let");
+    my_list = ASMRABuildListOfCluster (BLOCK_DATAFLOWGRAPH (arg_node));
 
-    if (INFO_ASMRA_WITHDEEP (arg_node) == 0) {
-        /* create dataflownode out of the let-ids */
-        DBUG_PRINT ("ASMRA", ("before MakeDataflowNode"));
-        INFO_ASMRA_ACTNODE (arg_info)
-          = MakeDataflowNodeASMRA (IDS_NAME (LET_IDS (arg_node)),
-                                   AVIS_SSAASSIGN (IDS_AVIS (LET_IDS (arg_node))),
-                                   arg_info);
-        DBUG_PRINT ("ASMRA", ("after MakeDataflowNode"));
+    my_list = ASMRADissolveAllCluster (my_list);
 
-        /* insert the node into the dataflowgraph */
-        INFO_ASMRA_DATAFLOWGRAPH (arg_info)
-          = AddDataflowNodeASMRA (INFO_ASMRA_DATAFLOWGRAPH (arg_info),
-                                  INFO_ASMRA_ACTNODE (arg_info));
-    }
-    /* continue traversal */
-    DBUG_PRINT ("ASMRA", ("trav into expr"));
-    LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
-    DBUG_PRINT ("ASMRA", ("trav from expr"));
+    arg_node = ASMRABuildNewAssignmentChain (my_list, arg_node);
 
     DBUG_RETURN (arg_node);
 }
 
-node *
-ASMRAid (node *arg_node, node *arg_info)
+struct asmra_list_s *
+ASMRABuildListOfCluster (node *graph)
 {
-    DBUG_ENTER ("ASMRAid");
+    struct asmra_list_s *list_of_cluster;
+    struct asmra_cluster_s *new_cluster;
+    int next_cluster_execmode;
+    DBUG_ENTER ("ASMRABuildListOfCluster");
 
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_id), "node is not a N_id");
+    next_cluster_execmode = MUTH_EXCLUSIVE;
+    /* create initial list */
+    list_of_cluster = NULL;
 
-    /*fprintf(stdout,"act. id = %s\n",ID_NAME(arg_node));*/
-    INFO_ASMRA_DATAFLOWGRAPH (arg_info)
-      = UpdateDependenciesASMRA (INFO_ASMRA_DATAFLOWGRAPH (arg_info), ID_AVIS (arg_node),
-                                 INFO_ASMRA_ACTNODE (arg_info));
+    /* deal with the graph as long as it contains more than one unused node */
+    while (DATAFLOWNODE_REFCOUNT (DATAFLOWGRAPH_SINK (graph)) != 0) {
+        new_cluster = NULL;
 
-    DBUG_RETURN (arg_node);
-}
+        while (new_cluster == NULL) {
+            new_cluster = ASMRABuildCluster (graph, next_cluster_execmode);
 
-node *
-ASMRAst (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("ASMRAst");
-
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_st), "node is not a N_st");
-
-    INFO_ASMRA_EXECUTIONMODE (arg_info) = ASMRA_ST;
-
-    DBUG_PRINT ("ASMRA", ("trav into st-region"));
-    ST_REGION (arg_node) = Trav (ST_REGION (arg_node), arg_info);
-    DBUG_PRINT ("ASMRA", ("trav from st-region"));
-
-    INFO_ASMRA_EXECUTIONMODE (arg_info) = ASMRA_ANY;
-
-    DBUG_RETURN (arg_node);
-}
-
-node *
-ASMRAmt (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("ASMRAmt");
-
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_mt), "node is not a N_mt");
-
-    INFO_ASMRA_EXECUTIONMODE (arg_info) = ASMRA_MT;
-
-    DBUG_PRINT ("ASMRA", ("trav into mt-region"));
-    MT_REGION (arg_node) = Trav (MT_REGION (arg_node), arg_info);
-    DBUG_PRINT ("ASMRA", ("trav from mt-region"));
-
-    INFO_ASMRA_EXECUTIONMODE (arg_info) = ASMRA_ANY;
-
-    DBUG_RETURN (arg_node);
-}
-
-node *
-ASMRAwith2 (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("ASMRANwith2");
-
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_Nwith2), "node is not a N_Nwith2");
-
-    /* increase the "deepness of the withloop"-counter */
-    INFO_ASMRA_WITHDEEP (arg_info)++;
-
-    MT_REGION (arg_node) = Trav (MT_REGION (arg_node), arg_info);
-    NWITH2_WITHID (arg_node) = Trav (NWITH2_WITHID (arg_node), arg_info);
-    NWITH2_SEGS (arg_node) = Trav (NWITH2_SEGS (arg_node), arg_info);
-    NWITH2_CODE (arg_node) = Trav (NWITH2_CODE (arg_node), arg_info);
-    NWITH2_WITHOP (arg_node) = Trav (NWITH2_WITHOP (arg_node), arg_info);
-
-    /* restore actual deepness */
-    INFO_ASMRA_WITHDEEP (arg_info)--;
-
-    DBUG_RETURN (arg_node);
-}
-
-node *
-Rearrange (node *arg_node, node *dataflowgraph)
-{
-    int act_executionmode;
-    int border_increases;
-    int subgraph_counter;
-    nodelist *border;
-    nodelist *current_subgraph;
-    nodelist *all_subgraphs;
-    DBUG_ENTER ("rearrange");
-
-    /* some initialisations */
-    act_executionmode = DATA_ASMRA_EXECUTIONMODE (dataflowgraph);
-    subgraph_counter = 1;
-    current_subgraph = NULL;
-    all_subgraphs = NULL;
-    border_increases = 1;
-    border = NULL;
-
-    /* the spring of the dataflowgraph is first element of the border */
-    border = NodeListAppend (border, dataflowgraph, NULL);
-
-    /* status -1 means: already used for border (or subgraph) */
-    DATA_ASMRA_STATUS (NODELIST_NODE (border)) = -1;
-
-    /* creation of individual execution blocks */
-    while (border != NULL) {
-        while (border_increases) {
-            current_subgraph = AddBorderElements (current_subgraph, border,
-                                                  act_executionmode, subgraph_counter);
-            border_increases = IncreaseBorder (border, dataflowgraph);
-        }
-        all_subgraphs = ConcatNodelist (all_subgraphs, current_subgraph);
-        subgraph_counter++;
-        current_subgraph = NULL;
-    }
-
-    /* arranging the assignments in this blocks */
-
-    DBUG_RETURN (arg_node);
-}
-
-nodelist *
-AddBorderElements (nodelist *subgraph, nodelist *border, int ex_mode, int counter)
-{
-    nodelist *list_iterator;
-    nodelist *tmp;
-    DBUG_ENTER ("AddBorderElements");
-
-    list_iterator = border;
-
-    while (list_iterator != NULL) {
-        fprintf (stdout, "current executionmode: %i\n",
-                 DATA_ASMRA_EXECUTIONMODE (NODELIST_NODE (list_iterator)));
-        if (DATA_ASMRA_EXECUTIONMODE (NODELIST_NODE (list_iterator)) == ex_mode) {
-            DATA_ASMRA_STATUS (NODELIST_NODE (list_iterator)) = counter;
-            tmp = subgraph;
-            subgraph = list_iterator;
-
-            if (border == list_iterator) {
-                /* uups - we've got the first element of the border, so let's chance
-                   its pointer, too */
-                border = NODELIST_NEXT (border);
+            /* "increment" next_cluster_mode (MUTH_MULTI only if the building of the
+             * cluster failed) */
+            switch (next_cluster_execmode) {
+            case MUTH_EXCLUSIVE:
+                next_cluster_execmode = MUTH_SINGLE;
+                break;
+            case MUTH_SINGLE:
+                next_cluster_execmode = MUTH_MULTI;
+                break;
+            case MUTH_MULTI:
+                if (new_cluster == NULL) {
+                    next_cluster_execmode = MUTH_EXCLUSIVE;
+                }
+                break;
             }
+        }
+        list_of_cluster = ASMRAListAppend (list_of_cluster, new_cluster);
+    }
+    DBUG_RETURN (list_of_cluster);
+}
 
-            list_iterator = NODELIST_NEXT (list_iterator);
-            NODELIST_NEXT (subgraph) = tmp;
+struct asmra_cluster_s *
+ASMRABuildCluster (node *graph, int execmode)
+{
+    node *nextnode;
+    struct asmra_cluster_s *result;
+    bool node_added;
+    DBUG_ENTER ("ASMRABuildCluster");
+
+    nextnode = ASMRAFindElement (graph, execmode);
+    result = NULL;
+
+    do {
+        node_added = FALSE;
+        while (nextnode != NULL) {
+            result = ASMRAClusterAdd (result, nextnode);
+            node_added = TRUE;
+            nextnode = ASMRAFindElement (graph, execmode);
+        }
+
+        ASMRAPrintCluster (result);
+        result = ASMRAClusterRefUpdate (result);
+    } while ((execmode != MUTH_MULTI) && (node_added == TRUE));
+
+    DBUG_RETURN (result);
+}
+
+/*
+ * returns a dataflownode from the graph with no references on it (exept the
+ * one by the source) and which executionmode equals MUTH_ANY or execmode
+ */
+node *
+ASMRAFindElement (node *graph, int execmode)
+{
+    nodelist *member_iterator;
+    node *result;
+    DBUG_ENTER ("ASMRAListFindElement");
+
+    result = NULL;
+    member_iterator = DATAFLOWGRAPH_MEMBERS (graph);
+
+    while (member_iterator != NULL) {
+        if (((DATAFLOWNODE_EXECMODE (NODELIST_NODE (member_iterator)) == execmode)
+             || (DATAFLOWNODE_EXECMODE (NODELIST_NODE (member_iterator)) == MUTH_ANY))
+            && (DATAFLOWNODE_REFCOUNT (NODELIST_NODE (member_iterator)) == 1)
+            && (DATAFLOWNODE_REFLEFT (NODELIST_NODE (member_iterator)) == 0)) {
+            result = NODELIST_NODE (member_iterator);
+
+            /* set the executionmode of the result
+             * (important for ASMRADissolveCLuster) */
+            DATAFLOWNODE_EXECMODE (result) = execmode;
+            DATAFLOWNODE_REFLEFT (result) = -1;
+            member_iterator = NULL;
         } else {
-            list_iterator = NODELIST_NEXT (list_iterator);
+            member_iterator = NODELIST_NEXT (member_iterator);
+        }
+    }
+    DBUG_RETURN (result);
+}
+
+struct asmra_list_s *
+ASMRADissolveAllCluster (struct asmra_list_s *list)
+{
+    struct asmra_list_s *list_of_dfn, *iterator;
+    struct asmra_cluster_s *act_cluster;
+    node *act_node;
+
+    DBUG_ENTER ("ASMRADissolveAllCluster");
+    list_of_dfn = NULL;
+    act_node = NULL;
+    iterator = list;
+
+    while (ASMRA_LIST_ELEMENT (iterator) != NULL) {
+        act_cluster = ASMRA_LIST_ELEMENT (iterator);
+        act_cluster = ASMRACalculateDistances (act_cluster, iterator);
+
+        act_node = ASMRAGetNodeWithLowestDistance (act_cluster);
+        while (act_node != NULL) {
+            list_of_dfn = ASMRAListAppend (list_of_dfn, act_node);
+            act_node = ASMRAGetNodeWithLowestDistance (act_cluster);
+        }
+
+        ASMRAFreeCluster (ASMRA_LIST_ELEMENT (iterator));
+        iterator = ASMRA_LIST_NEXT (iterator);
+    }
+
+    ASMRAFreeList (list);
+
+    DBUG_RETURN (list_of_dfn);
+}
+
+struct asmra_cluster_s *
+ASMRACalculateDistances (struct asmra_cluster_s *cluster, struct asmra_list_s *list)
+{
+    struct asmra_cluster_s *act_member;
+    struct asmra_list_s *list_iterator;
+
+    DBUG_ENTER ("ASMRACalculateDistances");
+
+    act_member = cluster;
+
+    while (act_member != NULL) {
+        ASMRA_CLUSTER_DISTANCE (act_member) = 0;
+        list_iterator = list;
+        while ((list_iterator != NULL)
+               && (ASMRAFoundDependent (DATAFLOWNODE_DEPENDENT (
+                                          ASMRA_CLUSTER_DFN (act_member)),
+                                        ASMRA_LIST_ELEMENT (list_iterator))
+                   == FALSE))
+            ;
+        {
+
+            list_iterator = ASMRA_LIST_NEXT (list_iterator);
+            ASMRA_CLUSTER_DISTANCE (act_member)++;
+        }
+    }
+    DBUG_RETURN (cluster);
+}
+
+bool
+ASMRAFoundDependent (nodelist *dependent_nodes, struct asmra_cluster_s *search_area)
+{
+    bool result;
+    DBUG_ENTER ("ASMRAFoundDependent");
+
+    result = FALSE;
+
+    while ((dependent_nodes != NULL) && (result == FALSE)) {
+        result = ASMRAIsInCluster (NODELIST_NODE (dependent_nodes), search_area);
+        dependent_nodes = NODELIST_NEXT (dependent_nodes);
+    }
+
+    DBUG_RETURN (result);
+}
+
+bool
+ASMRAIsInCluster (node *dfn, struct asmra_cluster_s *search_area)
+{
+    bool result;
+    DBUG_ENTER ("ASMRAIsInCluster");
+    result = FALSE;
+
+    while (search_area != NULL) {
+        if (dfn == ASMRA_CLUSTER_DFN (search_area)) {
+            result = TRUE;
+            search_area = NULL;
         }
     }
 
-    DBUG_RETURN (subgraph);
+    DBUG_RETURN (result);
 }
 
-int
-IncreaseBorder (nodelist *border, node *dataflowgraph)
+node *
+ASMRAGetNodeWithLowestDistance (struct asmra_cluster_s *act_cluster)
 {
-    nodelist *list_iterator;
-    nodelist *new_borderelems;
-    int border_increases;
-    DBUG_ENTER ("IncreaseBorder");
+    node *result;
+    int lowest_distance;
+    struct asmra_cluster_s *iterator;
+    DBUG_ENTER ("ASMRAGetNodeWithLowestDistance");
 
-    new_borderelems = NULL;
-    list_iterator = DATA_ASMRA_DEPENDENT (dataflowgraph);
-    /* walk through the dataflowgraph and add all nodes to the border, which
-       refcouter equals 0
-    */
+    iterator = act_cluster;
+    if (iterator != NULL) {
+        result = ASMRA_CLUSTER_DFN (iterator);
+        lowest_distance = ASMRA_CLUSTER_DISTANCE (iterator);
+        iterator = ASMRA_CLUSTER_NEXT (iterator);
+    }
+
+    while (iterator != NULL) {
+        if (ASMRA_CLUSTER_DISTANCE (iterator) < lowest_distance) {
+            lowest_distance = ASMRA_CLUSTER_DISTANCE (iterator);
+            result = ASMRA_CLUSTER_DFN (iterator);
+        }
+        iterator = ASMRA_CLUSTER_NEXT (iterator);
+    }
+
+    DBUG_RETURN (result);
+}
+
+node *
+ASMRABuildNewAssignmentChain (struct asmra_list_s *list_of_dfn, node *arg_node)
+{
+    struct asmra_list_s *list_iterator;
+    node *act_assign, *last_assign;
+    DBUG_ENTER ("ASMRABuildNewAssignmentChain");
+
+    list_iterator = list_of_dfn;
+    act_assign = ASMRA_LIST_ELEMENT (list_iterator);
+    BLOCK_INSTR (arg_node) = act_assign;
+
+    list_iterator = ASMRA_LIST_NEXT (list_iterator);
+
     while (list_iterator != NULL) {
-        if (DATA_ASMRA_NODEREFCOUNT (NODELIST_NODE (list_iterator)) == 0) {
-            new_borderelems
-              = NodeListAppend (new_borderelems, NODELIST_NODE (list_iterator), NULL);
-        }
-        list_iterator = NODELIST_NEXT (list_iterator);
+        last_assign = act_assign;
+        act_assign = ASMRA_LIST_ELEMENT (list_iterator);
+        ASSIGN_NEXT (last_assign) = act_assign;
+        list_iterator = ASMRA_LIST_NEXT (list_iterator);
     }
 
-    if (new_borderelems == NULL) {
-        border_increases = 0;
-    } else {
-        border_increases = 1;
-    }
-
-    /* decrease the referencecounter of the nodes, which depends on the new
-       border elements and add the new border elements to the current border */
-    while (new_borderelems != NULL) {
-        list_iterator = DATA_ASMRA_DEPENDENT (NODELIST_NODE (new_borderelems));
-        while (list_iterator != NULL) {
-            DATA_ASMRA_NODEREFCOUNT (NODELIST_NODE (list_iterator))--;
-            list_iterator = NODELIST_NEXT (list_iterator);
-        }
-        border = NodeListAppend (border, NODELIST_NODE (new_borderelems), NULL);
-        new_borderelems = NODELIST_NEXT (new_borderelems);
-    }
-
-    DBUG_RETURN (border_increases);
+    list_of_dfn = ASMRAFreeList (list_of_dfn);
+    DBUG_RETURN (arg_node);
 }
 
-node *
-CreateDataflowgraphASMRA (char *name, node *arg_info)
+struct asmra_cluster_s *
+ASMRAMakeCluster (node *dfn)
 {
-    node *graph;
-    DBUG_ENTER ("CreateDataflowgraphASMRA");
+    struct asmra_cluster_s *result;
 
-    /* build initial datanode */
-    graph = MakeDataflowNodeASMRA (name, NULL, arg_info);
+    DBUG_ENTER ("ASMRAMakeCluster");
 
-    /* add the sink to the dataflowgraph */
-    DATA_ASMRA_DEPENDENT (graph)
-      = NodeListAppend (DATA_ASMRA_DEPENDENT (graph),
-                        MakeDataflowNodeASMRA (NULL, NULL, arg_info), NULL);
+    result = Malloc (sizeof (struct asmra_cluster_s));
 
-    /* return datanode as new graph */
-    DBUG_RETURN (graph);
+    ASMRA_CLUSTER_DFN (result) = dfn;
+    ASMRA_CLUSTER_DISTANCE (result) = 0;
+    ASMRA_CLUSTER_NEXT (result) = NULL;
+
+    DBUG_RETURN (result);
 }
 
-int
-DeleteDataflowgraphASMRA (node *graph)
+struct asmra_cluster_s *
+ASMRAFreeCluster (struct asmra_cluster_s *cluster)
 {
-    int status;
-    nodelist *list_iterator;
+    DBUG_ENTER ("ASMRAFreeCluster");
 
-    DBUG_ENTER ("DeleteDataflowgraph");
-    /* iterate over all nodes and deletes their nodelists, then delete the "main"
-       nodelist */
-
-    list_iterator = DATA_ASMRA_DEPENDENT (graph);
-
-    while (list_iterator != NULL) {
-        DATA_ASMRA_DEPENDENT (NODELIST_NODE (list_iterator))
-          = NodeListFree (DATA_ASMRA_DEPENDENT (NODELIST_NODE (list_iterator)), TRUE);
-        list_iterator = NODELIST_NEXT (list_iterator);
+    if (ASMRA_CLUSTER_NEXT (cluster) != NULL) {
+        ASMRA_CLUSTER_NEXT (cluster) = ASMRAFreeCluster (ASMRA_CLUSTER_NEXT (cluster));
     }
+    free (ASMRA_CLUSTER_DFN (cluster));
+    free (ASMRA_CLUSTER_NEXT (cluster));
 
-    DATA_ASMRA_DEPENDENT (graph) = NodeListFree (DATA_ASMRA_DEPENDENT (graph), TRUE);
-
-    graph = Free (graph);
-
-    status = 0;
-
-    DBUG_RETURN (status);
+    return cluster;
 }
 
-int
-PrintDataflowgraphASMRA (node *dataflowgraph, char *name)
+struct asmra_cluster_s *
+ASMRAClusterAdd (struct asmra_cluster_s *cluster, node *dfn)
 {
-    int status;
-    nodelist *list_iterator;
-    DBUG_ENTER ("PrintDataflowgraph");
-    status = 0;
-
-    fprintf (stdout, "The Dataflowgraph for %s:\n", name);
-
-    list_iterator = DATA_ASMRA_DEPENDENT (dataflowgraph);
-    while (list_iterator != NULL) {
-        PrintDataflownodeASMRA (NODELIST_NODE (list_iterator));
-        list_iterator = NODELIST_NEXT (list_iterator);
-    }
-    fprintf (stdout, "\n");
-    DBUG_RETURN (status);
-}
-
-int
-PrintDataflownodeASMRA (node *datanode)
-{
-    int status;
-    nodelist *list_iterator;
-    DBUG_ENTER ("PrintDataflownode");
-
-    if (DATA_ASMRA_NAME (datanode) != NULL) {
-        fprintf (stdout, "- Name: %s, mode: %i\n", DATA_ASMRA_NAME (datanode),
-                 DATA_ASMRA_EXECUTIONMODE (datanode));
-    } else {
-        fprintf (stdout, "- Return, mode: %i\n", DATA_ASMRA_EXECUTIONMODE (datanode));
-    }
-
-    list_iterator = DATA_ASMRA_DEPENDENT (datanode);
-
-    if (list_iterator != NULL) {
-        fprintf (stdout, "  ->");
-
-        while (list_iterator != NULL) {
-            if (NODE_TYPE (
-                  ASSIGN_INSTR (DATA_ASMRA_INNERASSIGN (NODELIST_NODE (list_iterator))))
-                != N_return) {
-                fprintf (stdout, " %s,", DATA_ASMRA_NAME (NODELIST_NODE (list_iterator)));
-            } else {
-                fprintf (stdout, " Return");
-            }
-            list_iterator = NODELIST_NEXT (list_iterator);
-        }
-        fprintf (stdout, "\n");
-    } else {
-        fprintf (stdout, "  -> No dependent nodes\n");
-    }
-
-    status = 0;
-
-    DBUG_RETURN (status);
-}
-
-node *
-GetReturnNodeASMRA (node *graph)
-{
-    nodelist *list_iterator;
-
-    DBUG_ENTER ("GetReturnNode");
-
-    list_iterator = DATA_ASMRA_DEPENDENT (graph);
-
-    while ((list_iterator != NULL)
-           && (DATA_ASMRA_INNERASSIGN (NODELIST_NODE (list_iterator)) != NULL)) {
-        list_iterator = NODELIST_NEXT (list_iterator);
-    }
-    DBUG_ASSERT (list_iterator != NULL, "the dataflowgraph has no returnnode!");
-
-    DBUG_RETURN (NODELIST_NODE (list_iterator));
-}
-
-node *
-UpdateReturnASMRA (node *graph, node *arg_node)
-{
-    node *returnnode;
-
-    DBUG_ENTER ("UpdateReturn");
-
-    returnnode = GetReturnNodeASMRA (graph);
-
-    DATA_ASMRA_INNERASSIGN (returnnode) = arg_node;
-    DATA_ASMRA_OUTERASSIGN (returnnode) = arg_node;
-
-    DBUG_RETURN (graph);
-}
-
-node *
-MakeDataflowNodeASMRA (char *name, node *inner_assign, node *arg_info)
-{
-    node *tmp;
-
-    DBUG_ENTER ("MakeDataflowNode");
-
-    tmp = MakeInfo ();
-
-    DATA_ASMRA_NAME (tmp) = name;
-    /* the inner assignment means, that its instruction is the N_let of the
-       identifier */
-    DATA_ASMRA_INNERASSIGN (tmp) = inner_assign;
-
-    /* it is impossible to have a outer assign without an inner assign */
-    if (inner_assign == NULL) {
-        DATA_ASMRA_OUTERASSIGN (tmp) = NULL;
-    } else {
-        DATA_ASMRA_OUTERASSIGN (tmp) = INFO_ASMRA_OUTERASSIGN (arg_info);
-    }
-
-    DATA_ASMRA_EXECUTIONMODE (tmp) = INFO_ASMRA_EXECUTIONMODE (arg_info);
-    DATA_ASMRA_DEPENDENT (tmp) = NULL;
-
-    /* set status 0 (default) */
-    DATA_ASMRA_STATUS (tmp) = 0;
-
-    /* initial value for the reference-counter is 0
-       the reference of the spring is implicit*/
-    DATA_ASMRA_NODEREFCOUNT (tmp) = 0;
+    struct asmra_cluster_s *tmp;
+    DBUG_ENTER ("ASMRAClusterAdd");
+    tmp = ASMRAMakeCluster (dfn);
+    ASMRA_CLUSTER_NEXT (tmp) = cluster;
 
     DBUG_RETURN (tmp);
 }
 
-node *
-AddDataflowNodeASMRA (node *graph, node *newnode)
+struct asmra_cluster_s *
+ASMRAClusterRefUpdate (struct asmra_cluster_s *cluster)
 {
-    node *return_node;
-    DBUG_ENTER ("AddDataflowNode");
+    struct asmra_cluster_s *tmp;
+    nodelist *dependent_iterator;
+    DBUG_ENTER ("ASMRAClusterRefUpdate");
 
-    /* node added to the graph -> made dependent from the spring */
-    DATA_ASMRA_DEPENDENT (graph)
-      = NodeListAppend (DATA_ASMRA_DEPENDENT (graph), newnode, NULL);
+    tmp = cluster;
+    while (tmp != NULL) {
+        /* update the refcounts in the member of the cluster */
+        DATAFLOWNODE_REFCOUNT (ASMRA_CLUSTER_DFN (tmp))--;
 
-    return_node = GetReturnNodeASMRA (graph);
+        /* update the refcount in its dependent nodes */
+        dependent_iterator = DATAFLOWNODE_DEPENDENT (ASMRA_CLUSTER_DFN (tmp));
+        while (dependent_iterator != NULL) {
+            DATAFLOWNODE_REFCOUNT (NODELIST_NODE (dependent_iterator))--;
+            dependent_iterator = NODELIST_NEXT (dependent_iterator);
+        }
 
-    DATA_ASMRA_DEPENDENT (newnode)
-      = NodeListAppend (DATA_ASMRA_DEPENDENT (newnode), return_node, NULL);
-    DATA_ASMRA_NODEREFCOUNT (return_node) += 1;
-
-    DBUG_RETURN (graph);
+        tmp = ASMRA_CLUSTER_NEXT (tmp);
+    }
+    DBUG_RETURN (cluster);
 }
 
-node *
-UpdateDependenciesASMRA (node *graph, node *avisnode, node *actnode)
+void
+ASMRAPrintCluster (struct asmra_cluster_s *cluster)
 {
-    nodelist *list_iterator;
-    node *tmp;
-    DBUG_ENTER ("UpdateDependencies");
+    DBUG_ENTER ("ASMRAPrintCluster");
 
-    DBUG_ASSERT ((NODE_TYPE (avisnode) == N_avis), "node is not a N_avis");
-
-    /*fprintf(stdout,"UpdateDependencies for %s\n",DATA_ASMRA_NAME(actnode));*/
-
-    /* is it a with_id?*/
-    if (AVIS_WITHID (avisnode) == NULL) {
-        /* no - let us have a closer look on it */
-
-        /* Does the variable depend on an assignment ? */
-        if (AVIS_SSAASSIGN (avisnode) != NULL) {
-            list_iterator = DATA_ASMRA_DEPENDENT (graph);
-
-            /* time to search for the corresponding node */
-            while (DATA_ASMRA_INNERASSIGN (NODELIST_NODE (list_iterator))
-                   != AVIS_SSAASSIGN (avisnode)) {
-                list_iterator = NODELIST_NEXT (list_iterator);
-                DBUG_ASSERT ((list_iterator != NULL),
-                             "Variable without any correspondent lefthandside");
-            }
-
-            /* tmp points on the dataflownode, that has to be a father of actnode */
-            tmp = NODELIST_NODE (list_iterator);
-
-            /*fprintf(stdout,"%s ist the father of %s\n",DATA_ASMRA_NAME(tmp),
-              DATA_ASMRA_NAME(actnode));*/
-
-            /* let us insert actnode into tmp's dependent_nodes, if this has not be
-               done yet */
-            if (NodeListFind (DATA_ASMRA_DEPENDENT (tmp), actnode) == NULL) {
-                DATA_ASMRA_DEPENDENT (tmp)
-                  = NodeListAppend (DATA_ASMRA_DEPENDENT (tmp), actnode, NULL);
-                DATA_ASMRA_NODEREFCOUNT (tmp) += 1;
-            }
-        } else { /* AVIS_SSAASSIGN */
-                 /* nothing to do - by default it depends on the spring of the graph*/
-        }
-    } /* AVIS_WITHID */
-    else {
-        /* Yes - we can ignore it for the dataflowgraph */
+    if (cluster != NULL) {
+        fprintf (stdout, "%s," DATAFLOWNODE_NAME (ASMRA_CLUSTER_DFN (cluster)));
+        ASMRAPrintCluster (cluster);
     }
-    DBUG_RETURN (graph);
+    DBUG_VOID_RETURN;
+}
+
+struct asmra_list_s *
+ASMRAMakeList (void *element)
+{
+    struct asmra_list_s *result;
+
+    DBUG_ENTER ("ASMRAMakeList");
+
+    result = Malloc (sizeof (struct asmra_list_s));
+    ASMRA_LIST_ELEMENT (result) = element;
+    ASMRA_LIST_NEXT (result) = NULL;
+
+    DBUG_RETURN (result);
+}
+
+struct asmra_list_s *
+ASMRAFreeList (struct asmra_list_s *list)
+{
+    DBUG_ENTER ("ASMRAFreeList");
+
+    if (ASMRA_LIST_NEXT (list) != NULL) {
+        ASMRA_LIST_NEXT (list) = ASMRAFreeList (ASMRA_LIST_NEXT (list));
+    }
+    free (ASMRA_LIST_ELEMENT (list));
+    free (ASMRA_LIST_NEXT (list));
+
+    return list;
+}
+
+struct asmra_list_s *
+ASMRAListAppend (struct asmra_list_s *list, void *element)
+{
+    struct asmra_list_s *iter;
+    DBUG_ENTER ("ASMRAListAppend");
+
+    iter = list;
+
+    if (list != NULL) {
+        while (ASMRA_LIST_NEXT (iter) != NULL) {
+            iter = ASMRA_LIST_NEXT (iter);
+        }
+
+        ASMRA_LIST_NEXT (iter) = ASMRAMakeList (element);
+    } else {
+        list = ASMRAMakeList (element);
+    }
+
+    DBUG_RETURN (list);
 }
 
 /**
