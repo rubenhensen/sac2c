@@ -1,7 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.24  1995/07/04 09:26:11  hw
+ * Revision 1.25  1995/07/13 16:48:44  hw
+ * N_icm ND_KS_DEC_IMPORT_IN_ARRAY &  ND_KS_DEC_IMPORT_OUT_ARRAY added
+ * ( used in icm2c.c for compilation of declarations of imported
+ *   functions)
+ *
+ * Revision 1.24  1995/07/04  09:26:11  hw
  * macros ND_I2D_A, ND_F2D_A, ND_D2I_A & ND_D2F_A inserted
  *
  * Revision 1.23  1995/06/30  12:19:57  hw
@@ -114,6 +119,10 @@
  * ND_KS_AP_IN_ARRAY	: macro for giving an array as argument
  * ND_KS_AP_OUT_ARRAY   : macro for getting an array as result
  * ND_KS_RET_OUT_ARRAY  : macro for returning an array
+ * ND_KS_DEC_IMPORT_IN_ARRAY  : macro for prototyping array as "in" parameters
+ *                              (imported functions only )
+ * ND_KS_DEC_IMPORT_OUT_ARRAY : macro for prototyping array as "out" parameters
+ *                              (imported functions only )
  *
  */
 
@@ -127,6 +136,8 @@
 
 #define ND_KS_DEC_IN_ARRAY(type, name) type *##name, int *__##name##_rc
 #define ND_KS_DEC_OUT_ARRAY(type, name) type **##name##__p, int **__##name##_rc__p
+#define ND_KS_DEC_IMPORT_IN_ARRAY(type) type *, int *
+#define ND_KS_DEC_IMPORT_OUT_ARRAY(type) type **, int **
 #define ND_KS_AP_IN_ARRAY(name) name, __##name##_rc
 #define ND_KS_AP_OUT_ARRAY(name) &name, &__##name##_rc
 #define ND_KS_RET_OUT_ARRAY(name)                                                        \
