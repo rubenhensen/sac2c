@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.71  2002/09/06 10:03:15  sbs
+ * Ids2Exprs added.
+ *
  * Revision 3.70  2002/09/03 12:06:19  dkr
  * CompareTypesImplementation(): comment corrected
  *
@@ -3321,6 +3324,31 @@ IsConstArray (node *array)
 
     DBUG_RETURN (isconst);
 }
+/*****************************************************************************
+ *
+ * function:
+ *   node *Ids2Exprs( ids *ids_arg)
+ *
+ * description:
+ *   convert ids into N_exprs chain
+ *
+ *****************************************************************************/
+
+node *
+Ids2Exprs (ids *ids_arg)
+{
+    node *exprs;
+
+    DBUG_ENTER ("Ids2Exprs");
+
+    if (ids_arg != NULL) {
+        exprs = MakeExprs (DupIds_Id (ids_arg), Ids2Exprs (IDS_NEXT (ids_arg)));
+    } else {
+        exprs = NULL;
+    }
+
+    DBUG_RETURN (exprs);
+}
 
 /*****************************************************************************
  *
@@ -3336,8 +3364,6 @@ node *
 Ids2Array (ids *ids_arg)
 {
     node *array;
-    node *tmp;
-    ids *tmp_ids;
     types *array_type;
     shpseg *array_shape;
     int len, i;
@@ -3345,18 +3371,8 @@ Ids2Array (ids *ids_arg)
     DBUG_ENTER ("Ids2Array");
 
     if (ids_arg != NULL) {
-        len = 1;
-        array = MakeExprs (DupIds_Id (ids_arg), NULL);
-        tmp = array;
-
-        tmp_ids = IDS_NEXT (ids_arg);
-        while (tmp_ids != NULL) {
-            len++;
-            tmp = EXPRS_NEXT (tmp) = MakeExprs (DupIds_Id (tmp_ids), NULL);
-            tmp_ids = IDS_NEXT (tmp_ids);
-        }
-
-        array = MakeArray (array);
+        len = CountIds (ids_arg);
+        array = MakeArray (Ids2Exprs (ids_arg));
     } else {
         len = 0;
         array = MakeArray (NULL);

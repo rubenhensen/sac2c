@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.67  2002/09/06 10:03:15  sbs
+ * Ids2Exprs added.
+ *
  * Revision 3.66  2002/09/03 11:09:07  dkr
  * signature of CompareTypesImplementation() modified
  *
@@ -1641,6 +1644,8 @@ extern node *CreateZeroVector (int length, simpletype btype);
  ******************************************************************************/
 
 extern int IsConstArray (node *array);
+
+extern node *Ids2Exprs (ids *ids_arg);
 
 extern node *Ids2Array (ids *ids_arg);
 
