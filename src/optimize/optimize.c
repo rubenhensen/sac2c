@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.7  1999/05/10 11:08:55  bs
+ * New optimization phase 'WLAccessAnalize' added.
+ *
  * Revision 2.6  1999/04/13 14:02:56  cg
  * function GetExpr() removed.
  *
@@ -128,7 +131,7 @@
 #include "ArrayElimination.h"
 #include "CSE.h"
 #include "WithloopFolding.h"
-#include "tile_size_inference.h"
+#include "wl_access_analyze.h"
 
 /*
  * global variables to keep track of optimization's success
@@ -686,8 +689,12 @@ OPTfundef (node *arg_node, node *arg_info)
         arg_node = DeadCodeRemoval (arg_node, arg_info);
     }
 
-    DBUG_EXECUTE ("DO_THE_TSI", (arg_node = TileSizeInference (arg_node)););
-    /* This DBUG-Flag is a temporary one! It's for testing the tsi. */
+    /*
+     * Now, it's indicated to analyze the array accesses within WLs.
+     */
+    if (opt_tile) {
+        arg_node = WLAccessAnalyze (arg_node);
+    }
 
 INFO:
     if (loop1 + loop2 == max_optcycles
