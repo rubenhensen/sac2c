@@ -1,5 +1,9 @@
 /* *
  * $Log$
+ * Revision 1.16  2003/02/09 18:06:06  mwe
+ * bug removed: now optimization don't start, if only constant
+ * nodes are available
+ *
  * Revision 1.15  2002/11/13 16:36:18  mwe
  * unused variable removed
  *
@@ -512,8 +516,13 @@ ALprf (node *arg_node, node *arg_info)
 
             /*
              * neccessary to optimize?
+             *
+             * (anz_const < anz_all): important, because if no variable node is
+             * available, the 'CommitNAssignNodes' will crash. If only constant
+             * nodes are available, so 'constant folding' is deactivated and this
+             * optimization make no sense
              */
-            if ((anz_const > 1) && (anz_all > 2)) {
+            if ((anz_const > 1) && (anz_all > 2) && (anz_const < anz_all)) {
 
                 nodetype = NODE_TYPE (NODELIST_NODE (INFO_AL_CONSTANTLIST (arg_info)));
                 if (!(enforce_ieee)
