@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.2  2004/11/22 14:37:39  skt
+ * code brushing in SACDevCampDK 2004
+ *
  * Revision 1.1  2004/09/02 16:02:25  skt
  * Initial revision
  *
@@ -14,11 +17,12 @@
  *
  *****************************************************************************/
 
-#ifndef CONSOLIDATE_CELLS_H
+#ifndef _SAC_CONSOLIDATE_CELLS_H
+#define _SAC_CONSOLIDATE_CELLS_H
 
-#define CONSOLIDATE_CELLS_H
+#include "types.h"
 
-extern node *ConsolidateCells (node *arg_node);
+extern node *CONCELdoConsolidateCells (node *arg_node);
 
 extern node *CONCELfundef (node *arg_node, info *arg_info);
 
@@ -28,4 +32,4 @@ extern node *CONCELst (node *arg_node, info *arg_info);
 
 extern node *CONCELmt (node *arg_node, info *arg_info);
 
-#endif /* CONSOLIDATE_CELLS_H */
+#endif /* _SAC_CONSOLIDATE_CELLS_H */

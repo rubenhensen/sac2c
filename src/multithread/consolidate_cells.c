@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.2  2004/11/22 14:37:39  skt
+ * code brushing in SACDevCampDK 2004
+ *
  * Revision 1.1  2004/09/02 16:02:22  skt
  * Initial revision
  *
@@ -29,7 +32,6 @@
 #define NEW_INFO
 
 #include "dbug.h"
-#include "types.h"
 #include "tree_basic.h"
 #include "traverse.h"
 #include "print.h"
@@ -77,33 +79,33 @@ FreeInfo (info *info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *ConsolidateCells(node *arg_node)
+ * @fn node *CONCELdoConsolidateCells(node *arg_node)
  *
  *   @brief  Inits the traversal for this phase
  *
- *   @param arg_node a N_modul
+ *   @param arg_node a N_module
  *   @return the N_modul with consolidated cells (the cell of each function
  *           with only one cell will be deleted and its assignment chain
  *           restored into the FUNDEF_BODY
  *
  *****************************************************************************/
 node *
-ConsolidateCells (node *arg_node)
+CONCELdoConsolidateCells (node *arg_node)
 {
     funtab *old_tab;
     info *arg_info;
-    DBUG_ENTER ("ReplicateFunctions");
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_modul),
-                 "ReplicateFunctions expects a N_modul as arg_node");
+    DBUG_ENTER ("CONCELdoConsoldateCells");
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_module),
+                 "CONCELdoConsolidateCells expects a N_module as arg_node");
 
     arg_info = MakeInfo ();
     /* push info ... */
     old_tab = act_tab;
     act_tab = concel_tab;
 
-    DBUG_PRINT ("CONCEL", ("trav into modul-funs"));
-    arg_node = Trav (MODUL_FUNS (arg_node), arg_info);
-    DBUG_PRINT ("CONCEL", ("trav from modul-funs"));
+    DBUG_PRINT ("CONCEL", ("trav into module-funs"));
+    arg_node = Trav (MODULE_FUNS (arg_node), arg_info);
+    DBUG_PRINT ("CONCEL", ("trav from module-funs"));
 
     /* pop info ... */
     act_tab = old_tab;
