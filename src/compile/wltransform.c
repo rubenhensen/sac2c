@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.92  2004/07/18 15:11:39  sah
+ * initialised some pointers to NULL
+ * to please the compiler
+ *
  * Revision 3.91  2004/07/17 17:07:16  sah
  * switch to new INFO structure
  * PHASE I
@@ -3094,6 +3098,10 @@ ExtractOtherOperators (node *wl, info *arg_info, types *res_types)
     /* initialisation */
     withop = NULL;
     withop_ext = NULL;
+    /* initialisations to please the compiler */
+    cexprs_ext = NULL;
+    res_types_ext = NULL;
+    ids_ext = NULL;
 
     while (withop == NULL && NWITH2_WITHOP (wl) != NULL) {
 
