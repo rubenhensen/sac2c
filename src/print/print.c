@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.252  1998/12/03 09:21:31  sbs
+ * ftoi, ftod, and friends eliminated
+ *
  * Revision 1.251  1998/10/30 09:51:32  cg
  * primtive functions min and max or no longer printed
  * in infix notation.
@@ -1478,17 +1481,6 @@ PrintPrf (node *arg_node, node *arg_info)
     case F_dim:
     case F_rotate:
     case F_not:
-    case F_ftoi:
-    case F_ftoi_A:
-    case F_ftod:
-    case F_ftod_A:
-    case F_itof:
-    case F_itof_A:
-    case F_itod:
-    case F_itod_A:
-    case F_dtoi:
-    case F_dtof:
-    case F_dtof_A:
     case F_toi:
     case F_toi_A:
     case F_tof:
