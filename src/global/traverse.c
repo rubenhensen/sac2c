@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.37  1995/12/01 17:08:14  cg
+ * Revision 1.38  1995/12/07 14:15:09  cg
+ * removed DummyFun2
+ * renamed DummyFun to TravSons
+ *
+ * Revision 1.37  1995/12/01  17:08:14  cg
  * new fun table 'precomp_tab'
  *
  * Revision 1.36  1995/11/16  19:38:34  cg
@@ -615,16 +619,27 @@ Trav (node *arg_node, node *arg_info)
 }
 
 /*
-**  dummy function for funtab entries not yet done
-**  recursively invokes Trav on all subnodes
+**
+**  functionname  : TravSons
+**  arguments     : 1) pointer to actual node
+**                  2) pointer to further (top down) info's
+**  description   : traverses all son nodes depending on nnode.
+**  global vars   : ---
+**  internal funs : Trav
+**  external funs : ---
+**
+**  remarks       : TravSons can be used as dummy function for fun_tab entries
+**                  where a specific function for a particular node type is
+**                  not yet implemented or not necessary.
+**
 */
 
 node *
-DummyFun (node *arg_node, node *arg_info)
+TravSons (node *arg_node, node *arg_info)
 {
     int i;
 
-    DBUG_ENTER ("DummyFun");
+    DBUG_ENTER ("TravSons");
 
     for (i = 0; i < arg_node->nnode; i++) {
         if (arg_node->node[i] != NULL) {
@@ -636,27 +651,23 @@ DummyFun (node *arg_node, node *arg_info)
 }
 
 /*
-**  dummy function for funtab entries not yet done
-**  recursively invoces Trav on all subnodes
-**  does NOT depend on nnode but on exis, aa, abtance of node[i] !
+**
+**  functionname  : NoTrav
+**  arguments     : 1) pointer to actual node
+**                  2) pointer to further (top down) info's
+**  description   : does nothing on the given syntax tree,
+**                  especially no further sons are traversed.
+**                  The given son is returned unmodified.
+**  global vars   : ---
+**  internal funs : ---
+**  external funs : ---
+**
+**  remarks       : NoTrav can be used as fun_tab entry where no further
+**                  traversal of the syntax tree is needed in order
+**                  to avoid unnecessary work.
+**
 */
 
-node *
-DummyFun2 (node *arg_node, node *arg_info)
-{
-    int i;
-
-    DBUG_ENTER ("DummyFun2");
-    for (i = 0; i < 6; i++)
-        if (arg_node->node[i])
-            arg_node->node[i] = Trav (arg_node->node[i], arg_info);
-    DBUG_RETURN (arg_node);
-}
-
-/*
- * dummy function for funtab entries where nothing is to do
- *
- */
 node *
 NoTrav (node *arg_node, node *arg_info)
 {

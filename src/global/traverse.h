@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.28  1995/12/01 17:08:14  cg
+ * Revision 1.29  1995/12/07 14:15:09  cg
+ * removed DummyFun2
+ * renamed DummyFun to TravSons
+ *
+ * Revision 1.28  1995/12/01  17:08:14  cg
  * new fun table 'precomp_tab'
  *
  * Revision 1.27  1995/11/16  19:38:34  cg
@@ -99,9 +103,7 @@ typedef node *(*funptr) (node *, node *);
 
 extern node *Trav (node *arg_node, node *arg_info);
 
-extern node *DummyFun (node *arg_node, node *arg_info);
-
-extern node *DummyFun2 (node *arg_node, node *arg_info);
+extern node *TravSons (node *arg_node, node *arg_info);
 
 extern node *NoTrav (node *arg_node, node *arg_info);
 
