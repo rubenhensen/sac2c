@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2001/02/22 12:45:16  nmw
+ * MakeVardecFromArg added
+ *
  * Revision 3.11  2001/02/20 15:52:53  nmw
  * AppendAssign in now able to handle empty blocks
  *
@@ -1609,6 +1612,11 @@ MakeVardecFromArg (node *arg_node)
     VARDEC_STATUS (new_vardec) = ARG_STATUS (arg_node);
     VARDEC_ATTRIB (new_vardec) = ARG_ATTRIB (arg_node);
     VARDEC_TDEF (new_vardec) = ARG_TDEF (arg_node);
+    /* ##nmw## */
+    /* duplicate avis node manually */
+    FreeNode (VARDEC_AVIS (new_vardec));
+    VARDEC_AVIS (new_vardec) = DupNode (VARDEC_AVIS (arg_node));
+    AVIS_VARDECORARG (VARDEC_AVIS (new_vardec)) = new_vardec;
 
     /* delete wrong data in copied AVIS node */
     AVIS_SSAASSIGN (VARDEC_AVIS (new_vardec)) = NULL;
