@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.14  1995/10/08 11:29:56  sbs
+# Revision 1.15  1995/12/01 17:25:42  cg
+# added compilation of precompile.c
+#
+# Revision 1.14  1995/10/08  11:29:56  sbs
 # make deps done
 #
 # Revision 1.13  1995/07/07  15:47:53  asi
@@ -52,7 +55,7 @@ CC=gcc -ansi -g
 INCS=-I../global -I../../inc -I../print -I../typecheck -I../refcount
 MACS=icm.data icm_decl.c icm_args.c icm_comment.c icm_trace.c
 
-all: compile.o icm2c.o
+all: compile.o icm2c.o precompile.o
 
 BEtest: icm2c.c $(MACS)
 	$(CC) -o BEtest icm2c.c -DTEST_BACKEND $(INCS) ../../lib/dbug.o
@@ -63,11 +66,17 @@ compile.o: compile.c
 icm2c.o: icm2c.c
 	$(CC) -o icm2c.o -c icm2c.c $(INCS)
 
+precompile.o: precompile.c
+	$(CC) -o precompile.o -c precompile.c $(INCS)
+
+
 deps:
 	makedepend $(INCS) *.c
 
 clean:
-	$(RM) compile.o icm2c.o *.bak BEtest
+	$(RM) compile.o icm2c.o precompile.o *.bak BEtest
+
+
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
