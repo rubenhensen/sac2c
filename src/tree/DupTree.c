@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2000/12/06 19:26:53  dkr
+ * DupTreePre renamed into DupTreeTravPre
+ * DupTreePost renamed into DupTreeTravPost
+ *
  * Revision 3.1  2000/11/20 18:03:19  sacbase
  * new release made
  *
@@ -339,7 +343,7 @@ DupTreeOrNodeLUT (int NodeOnly, node *arg_node, node *arg_info, LUT_t lut)
 /******************************************************************************
  *
  * function:
- *   node *DupTreePre( node *arg_node, node *arg_info)
+ *   node *DupTreeTravPre( node *arg_node, node *arg_info)
  *
  * description:
  *   This function is called before the traversal of each node.
@@ -347,9 +351,9 @@ DupTreeOrNodeLUT (int NodeOnly, node *arg_node, node *arg_info, LUT_t lut)
  ******************************************************************************/
 
 node *
-DupTreePre (node *arg_node, node *arg_info)
+DupTreeTravPre (node *arg_node, node *arg_info)
 {
-    DBUG_ENTER ("DupTreePre");
+    DBUG_ENTER ("DupTreeTravPre");
 
     DBUG_PRINT ("DUP", ("Duplicating - %s", NODE_TEXT (arg_node)));
 
@@ -359,7 +363,7 @@ DupTreePre (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *DupTreePost( node *arg_node, node *arg_info)
+ *   node *DupTreeTravPost( node *arg_node, node *arg_info)
  *
  * description:
  *   This function is called after the traversal of each node.
@@ -367,9 +371,9 @@ DupTreePre (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-DupTreePost (node *arg_node, node *arg_info)
+DupTreeTravPost (node *arg_node, node *arg_info)
 {
-    DBUG_ENTER ("DupTreePost");
+    DBUG_ENTER ("DupTreeTravPost");
 
     DBUG_RETURN (arg_node);
 }

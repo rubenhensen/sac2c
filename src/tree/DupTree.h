@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 3.2  2000/12/06 19:26:31  dkr
+ * DupTreePre renamed into DupTreeTravPre
+ * DupTreePost renamed into DupTreeTravPost
+ *
  * Revision 3.1  2000/11/20 18:03:20  sacbase
  * new release made
  *
@@ -199,7 +203,7 @@ extern node *DupWLstriVar (node *arg_node, node *arg_info);
 extern node *DupWLgridVar (node *arg_node, node *arg_info);
 
 /* pre- and post-processing during traversal */
-extern node *DupTreePre (node *arg_node, node *arg_info);
-extern node *DupTreePost (node *arg_node, node *arg_info);
+extern node *DupTreeTravPre (node *arg_node, node *arg_info);
+extern node *DupTreeTravPost (node *arg_node, node *arg_info);
 
 #endif /* _sac_DupTree_h */
