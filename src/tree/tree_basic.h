@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.126  2002/06/18 10:18:08  ktr
+ * INFO_WLS_DIMS, INFO_WLS_BLOCK added
+ *
  * Revision 3.125  2002/06/10 20:40:23  ktr
  * More INFO_WLS_*-Macros inserted.
  *
@@ -2569,6 +2572,8 @@ extern node *MakeAvis (node *vardecOrArg);
  ***    int        PARTS             (parts of the new withloop)
  ***    ids*       WITHVEC           (withvec of new withloop)
  ***    node*      WITHOP            (withop of the outer withloop)
+ ***    int        DIMS              (dimensions of the inner WLs)
+ ***    node*      BLOCK             (N_block in which the WLS is to take place)
  ***
  ***  remarks:
  ***
@@ -3076,6 +3081,8 @@ extern node *MakeInfo ();
 #define INFO_WLS_PARTS(n) (n->counter)
 #define INFO_WLS_WITHVEC(n) (n->info.ids)
 #define INFO_WLS_WITHOP(n) (n->node[1])
+#define INFO_WLS_DIMS(n) (n->varno)
+#define INFO_WLS_BLOCK(n) (n->node[2])
 
 /*--------------------------------------------------------------------------*/
 
