@@ -41,7 +41,7 @@ ReadOneGenPart (FILE *infile, node *id_node)
     if (error) {
         if (aelems != NULL)
             FreeTree (aelems);
-        arr_node = id_node;
+        arr_node = NULL;
     } else {
         arr_node = MakeArray (aelems);
         ARRAY_TYPE (arr_node) = DuplicateTypes (VARDEC_TYPE (ID_VARDEC (id_node)), 1);
