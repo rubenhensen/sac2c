@@ -1,6 +1,8 @@
 /*
- *
  * $Log$
+ * Revision 2.10  2000/05/25 23:04:44  dkr
+ * PREClet(): call of AdjustFoldFundef() added
+ *
  * Revision 2.9  2000/04/18 14:00:48  jhs
  * Added DBUGs.
  *
@@ -49,59 +51,86 @@
  *
  * Revision 1.1  1995/11/28  12:23:34  cg
  * Initial revision
- *
- *
- *
  */
 
+#include "dbug.h"
 #include "types.h"
 #include "tree.h"
+#include "DupTree.h"
 #include "free.h"
-#include "precompile.h"
+#include "traverse.h"
 #include "internal_lib.h"
 #include "convert.h"
-#include "traverse.h"
 #include "DataFlowMask.h"
-#include "scheduling.h"
-
-#include "DupTree.h"
 #include "typecheck.h"
-#include "dbug.h"
+#include "scheduling.h"
+#include "adjust_ids.h"
+#include "precompile.h"
 
 #include <string.h>
+
+#ifdef TAGGED_ARRAYS
 
 /******************************************************************************
  *
  * function:
- *   node *precompile(node *syntax_tree)
+ *   data_class_t GetClassFromTypes(types *typ)
  *
  * description:
- *   prepares syntax tree for code generation.
- *     - renames functions and global objects
- *     - removes all casts
- *     - inserts extern declarations for function definitions
- *     - removes all artificial parameters and return values
- *     - marks reference parameters in function applications
- *     - transforms new with-loops
+ *   Returns the Data Class of an object (usually an array) from its type
+ *
+ * NB: As of 1999-06-22, it only returns C_aks or C_akd or C_scl.
+ *                       It can't deduce HID.
  *
  ******************************************************************************/
 
-node *
-precompile (node *syntax_tree)
+data_class_t
+GetClassFromTypes (types *typ)
 {
-    node *info;
+    data_class_t z;
 
-    DBUG_ENTER ("precompile");
+    DBUG_ENTER ("GetClassFromTypes");
+    /*
+     * If the array has known shape, it's C_aks; otherwise C_akd.
+     */
+    if (TYPES_DIM (typ) == SCALAR)
+        z = C_scl;
+    else if (KNOWN_SHAPE (TYPES_DIM (typ)))
+        z = C_aks;
+    else
+        z = C_akd;
 
-    info = MakeInfo ();
-    act_tab = precomp_tab;
-
-    syntax_tree = Trav (syntax_tree, info);
-
-    FREE (info);
-
-    DBUG_RETURN (syntax_tree);
+    DBUG_RETURN (z);
 }
+
+/******************************************************************************
+ *
+ * function:
+ *   uniqueness_class_t GetUniFromTypes(types *typ)
+ *
+ * description:
+ *   Returns the Uniqueness Class of an object (usually an array) from
+ *   its type
+ *
+ *
+ ******************************************************************************/
+
+uniqueness_class_t
+GetUniFromTypes (types *typ)
+{
+    uniqueness_class_t z;
+
+    DBUG_ENTER ("GetUniFromTypes");
+
+    if (IsUnique (typ))
+        z = C_unq;
+    else
+        z = C_nuq;
+
+    DBUG_RETURN (z);
+}
+
+#endif /* TAGGED_ARRAYS */
 
 /******************************************************************************
  *
@@ -110,7 +139,6 @@ precompile (node *syntax_tree)
  *                                   uniqueness_class_t u_class)
  *
  * description:
- *
  *   This function renames a given local identifier name for precompiling
  *   purposes. If the identifier has been inserted by sac2c, i.e. it starts
  *   with an underscore, it is prefixed by SACp. Otherwise, it is prefixed
@@ -155,7 +183,7 @@ PRECRenameLocalIdentifier (char *id)
         sprintf (new_name, "(%s%s,(%s,(%s,NIL)))", name_prefix, id,
                  nt_class_str[nt_class], nt_uni_str[nt_uni]);
     };
-#else /* TAGGED_ARRAYS */
+#else  /* TAGGED_ARRAYS */
     if (id[0] == '_') {
         /*
          * This local identifier was inserted by sac2c.
@@ -173,7 +201,7 @@ PRECRenameLocalIdentifier (char *id)
         new_name = (char *)Malloc (sizeof (char) * (strlen (id) + 6));
         sprintf (new_name, "SACl_%s", id);
     }
-#endif
+#endif /* TAGGED_ARRAYS */
 
     FREE (id);
 
@@ -186,7 +214,6 @@ PRECRenameLocalIdentifier (char *id)
  *   node *RenameId(node *idnode)
  *
  * description:
- *
  *   This function performs the renaming of identifiers on the right hand
  *   side of assignments, i.e. the original identifiers are prefixed with
  *   SACl or SACp or are renamed according to the renaming conventions of
@@ -234,11 +261,9 @@ RenameId (node *idnode)
  *   ids *PrecompileIds(ids *id)
  *
  * description:
- *
  *   This function performs the renaming of identifiers stored within ids-chains.
  *   It also removes those identifiers from the chain which are marked as
  *   'artificial'.
- *
  *
  ******************************************************************************/
 
@@ -483,6 +508,60 @@ RenameFun (node *fun)
     }
 
     DBUG_RETURN (fun);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *AdjustFoldFundef( node *fundef,
+ *                           ids *acc, char *funname, node *cexpr)
+ *
+ * description:
+ *   Returns the given fold-fun definition 'fundef' with adjusted var-names.
+ *
+ * parameters:
+ *   'acc' is the accumulator variable.
+ *   'funname' is the name of the artificially introduced fold-fun.
+ *   'cexpr' is the expression in the operation part.
+ *
+ ******************************************************************************/
+
+node *
+AdjustFoldFundef (node *fundef, ids *acc, char *funname, node *cexpr)
+{
+    node *accvar, *funap, *fold_let;
+
+    DBUG_ENTER ("AdjustFoldFundef");
+
+    DBUG_ASSERT ((fundef != NULL), "fundef is NULL!");
+    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef), "no fundef found!");
+
+    /*
+     * first, we create a let-expression of the form
+     *    <acc> = <funname>( <acc>, <cexpr>);
+     */
+
+    accvar = MakeId (StringCopy (IDS_NAME (acc)), NULL, ST_regular);
+    ID_VARDEC (accvar) = IDS_VARDEC (acc);
+    DBUG_ASSERT ((ID_VARDEC (accvar) != NULL), "vardec is missing");
+
+    funap = MakeAp (StringCopy (funname), NULL,
+                    MakeExprs (accvar, MakeExprs (DupTree (cexpr, NULL), NULL)));
+    AP_FUNDEF (funap) = fundef;
+
+    fold_let = MakeLet (funap, DupOneIds (acc, NULL));
+
+    /*
+     * then we use this dummy let-expression to adjust the fundef
+     */
+    fundef = AdjustIdentifiers (fundef, fold_let);
+
+    /*
+     * let-expression is useless now
+     */
+    fold_let = FreeTree (fold_let);
+
+    DBUG_RETURN (fundef);
 }
 
 /******************************************************************************
@@ -783,11 +862,11 @@ PRECfundef (node *arg_node, node *arg_info)
  *   node *PRECarg(node *arg_node, node *arg_info)
  *
  * description:
- *  An artificial argument is removed, the attribs are switched:
+ *   An artificial argument is removed, the attribs are switched:
  *       ST_readonly_reference -> ST_regular
  *       ST_was_reference -> ST_inout
  *
- *  INFO_PREC_CNT_ARTIFICIAL is used to count the number of artificial
+ *   INFO_PREC_CNT_ARTIFICIAL is used to count the number of artificial
  *   return values.
  *
  ******************************************************************************/
@@ -936,6 +1015,9 @@ PRECassign (node *arg_node, node *arg_info)
 node *
 PREClet (node *arg_node, node *arg_info)
 {
+    node *wl_node;
+    ids *wl_ids;
+
     DBUG_ENTER ("PREClet");
 
     LET_IDS (arg_node) = PrecompileIds (LET_IDS (arg_node));
@@ -944,6 +1026,22 @@ PREClet (node *arg_node, node *arg_info)
 
     if (LET_EXPR (arg_node) == NULL) {
         arg_node = FreeTree (arg_node);
+    } else {
+        wl_ids = LET_IDS (arg_node);
+        wl_node = LET_EXPR (arg_node);
+        if ((NODE_TYPE (wl_node) == N_Nwith2)
+            && ((NWITH2_TYPE (wl_node) == WO_foldfun)
+                || (NWITH2_TYPE (wl_node) == WO_foldprf))) {
+            /*
+             * Adjust definition of the pseudo fold-fun.
+             *
+             * Note: It is sufficient to take the CEXPR of the first code-node, because
+             *       in a fold with-loop all CEXPR-ids have the same name!
+             */
+            NWITH2_FUNDEF (wl_node)
+              = AdjustFoldFundef (NWITH2_FUNDEF (wl_node), wl_ids, NWITH2_FUN (wl_node),
+                                  NCODE_CEXPR (NWITH2_CODE (wl_node)));
+        }
     }
 
     DBUG_RETURN (arg_node);
@@ -1189,7 +1287,6 @@ PRECid (node *arg_node, node *arg_info)
  *   node *PRECgenerator(node *arg_node, node *arg_info)
  *
  * description:
- *
  *   This function does the renaming of the index vector variable
  *   for the old with-loop.
  *
@@ -1214,7 +1311,6 @@ PRECgenerator (node *arg_node, node *arg_info)
  *   node *PRECNwithid(node *arg_node, node *arg_info)
  *
  * description:
- *
  *   This function does the renaming of the index vector variable
  *   as well as its scalar counterparts for the new with-loop.
  *
@@ -1237,7 +1333,6 @@ PRECNwithid (node *arg_node, node *arg_info)
  *   node *PRECdo(node *arg_node, node *arg_info)
  *
  * description:
- *
  *   The compiler phase refcount unfortunately produces chains of identifiers
  *   for which refcounting operations must be inserted during code generation.
  *   These must be renamed in addition to those identifiers that are "really"
@@ -1267,14 +1362,10 @@ PRECdo (node *arg_node, node *arg_info)
  *   node *PRECwhile(node *arg_node, node *arg_info)
  *
  * description:
- *
  *   The compiler phase refcount unfortunately produces chains of identifiers
  *   for which refcounting operations must be inserted during code generation.
  *   These must be renamed in addition to those identifiers that are "really"
  *   part of the code.
- *
- *
- *
  *
  ******************************************************************************/
 
@@ -1300,14 +1391,10 @@ PRECwhile (node *arg_node, node *arg_info)
  *   node *PRECcond(node *arg_node, node *arg_info)
  *
  * description:
- *
  *   The compiler phase refcount unfortunately produces chains of identifiers
  *   for which refcounting operations must be inserted during code generation.
  *   These must be renamed in addition to those identifiers that are "really"
  *   part of the code.
- *
- *
- *
  *
  ******************************************************************************/
 
@@ -1335,14 +1422,10 @@ PRECcond (node *arg_node, node *arg_info)
  *   node *PRECwith(node *arg_node, node *arg_info)
  *
  * description:
- *
  *   The compiler phase refcount unfortunately produces chains of identifiers
  *   for which refcounting operations must be inserted during code generation.
  *   These must be renamed in addition to those identifiers that are "really"
  *   part of the code.
- *
- *
- *
  *
  ******************************************************************************/
 
@@ -1366,14 +1449,10 @@ PRECwith (node *arg_node, node *arg_info)
  *   node *PRECNwith2(node *arg_node, node *arg_info)
  *
  * description:
- *
  *   The compiler phase refcount unfortunately produces chains of identifiers
  *   for which refcounting operations must be inserted during code generation.
  *   These must be renamed in addition to those identifiers that are "really"
  *   part of the code.
- *
- *
- *
  *
  ******************************************************************************/
 
@@ -1411,7 +1490,6 @@ PRECNwith2 (node *arg_node, node *arg_info)
  *   node *PRECNcode(node *arg_node, node *arg_info)
  *
  * description:
- *
  *   The compiler phase refcount unfortunately produces chains of identifiers
  *   for which refcounting operations must be inserted during code generation.
  *   These must be renamed in addition to those identifiers that are "really"
@@ -1465,7 +1543,6 @@ PRECsync (node *arg_node, node *arg_info)
  *   node *PRECWLseg(node *arg_node, node *arg_info)
  *
  * description:
- *
  *   Since the scheduling specification may contain the names of local
  *   identifiers, these have to be renamed according to the general renaming
  *   scheme implemented by this compiler phase.
@@ -1497,7 +1574,6 @@ PRECWLseg (node *arg_node, node *arg_info)
  *   node *PRECWLsegVar(node *arg_node, node *arg_info)
  *
  * description:
- *
  *   Since the scheduling specification may contain the names of local
  *   identifiers, these have to be renamed according to the general renaming
  *   scheme implemented by this compiler phase.
@@ -1523,65 +1599,35 @@ PRECWLsegVar (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-#ifdef TAGGED_ARRAYS
-
 /******************************************************************************
  *
  * function:
- *   data_class_t GetClassFromTypes(types *typ)
+ *   node *precompile(node *syntax_tree)
  *
  * description:
- *   Returns the Data Class of an object (usually an array) from its type
- *
- * NB: As of 1999-06-22, it only returns C_aks or C_akd or C_scl.
- *                       It can't deduce HID.
+ *   prepares syntax tree for code generation.
+ *     - renames functions and global objects
+ *     - removes all casts
+ *     - inserts extern declarations for function definitions
+ *     - removes all artificial parameters and return values
+ *     - marks reference parameters in function applications
+ *     - transforms new with-loops
  *
  ******************************************************************************/
 
-data_class_t
-GetClassFromTypes (types *typ)
+node *
+precompile (node *syntax_tree)
 {
-    data_class_t z;
+    node *info;
 
-    DBUG_ENTER ("GetClassFromTypes");
-    /*
-     * If the array has known shape, it's C_aks; otherwise C_akd.
-     */
-    if (TYPES_DIM (typ) == SCALAR)
-        z = C_scl;
-    else if (KNOWN_SHAPE (TYPES_DIM (typ)))
-        z = C_aks;
-    else
-        z = C_akd;
+    DBUG_ENTER ("precompile");
 
-    DBUG_RETURN (z);
+    info = MakeInfo ();
+    act_tab = precomp_tab;
+
+    syntax_tree = Trav (syntax_tree, info);
+
+    FREE (info);
+
+    DBUG_RETURN (syntax_tree);
 }
-
-/******************************************************************************
- *
- * function:
- *   uniqueness_class_t GetUniFromTypes(types *typ)
- *
- * description:
- *   Returns the Uniqueness Class of an object (usually an array) from
- *   its type
- *
- *
- ******************************************************************************/
-
-uniqueness_class_t
-GetUniFromTypes (types *typ)
-{
-    uniqueness_class_t z;
-
-    DBUG_ENTER ("GetUniFromTypes");
-
-    if (IsUnique (typ))
-        z = C_unq;
-    else
-        z = C_nuq;
-
-    DBUG_RETURN (z);
-}
-
-#endif /* TAGGED_ARRAYS */
