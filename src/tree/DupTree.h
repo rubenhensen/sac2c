@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.21  2002/06/25 14:01:53  sbs
+ * DupDot added.
+ *
  * Revision 3.20  2002/04/09 15:55:02  dkr
  * some comments added
  *
@@ -125,6 +128,7 @@ extern node *DupFloat (node *arg_node, node *arg_info);
 extern node *DupDouble (node *arg_node, node *arg_info);
 extern node *DupChar (node *arg_node, node *arg_info);
 extern node *DupStr (node *arg_node, node *arg_info);
+extern node *DupDot (node *arg_node, node *arg_info);
 extern node *DupId (node *arg_node, node *arg_info);
 extern node *DupCast (node *arg_node, node *arg_info);
 extern node *DupReturn (node *arg_node, node *arg_info);

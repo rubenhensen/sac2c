@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.63  2002/06/25 14:01:53  sbs
+ * DupDot added.
+ *
  * Revision 3.62  2002/06/20 15:23:25  dkr
  * signature of MakeNWithOp modified
  *
@@ -677,6 +680,22 @@ DupStr (node *arg_node, node *arg_info)
     DBUG_ENTER ("DupStr");
 
     new_node = MakeStr (StringCopy (STR_STRING (arg_node)));
+
+    CopyCommonNodeData (new_node, arg_node);
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************/
+
+node *
+DupDot (node *arg_node, node *arg_info)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DupDot");
+
+    new_node = MakeDot (DOT_NUM (arg_node));
 
     CopyCommonNodeData (new_node, arg_node);
 
