@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.34  2001/03/22 14:07:35  sbs
+ * F_abs now printed prefix rather than infix 8-)
+ *
  * Revision 3.33  2001/03/21 17:12:08  dkr
  * PrintAST: address of ID_VARDEC, IDS_VARDEC printed
  *
@@ -1874,6 +1877,7 @@ PrintPrf (node *arg_node, node *arg_info)
     case F_idx_modarray:
     case F_min:
     case F_max:
+    case F_abs:
         /* primitive functions that are printed as function application */
         DBUG_EXECUTE ("PRINT_PRF", fprintf (outfile, "PRF:"););
 
