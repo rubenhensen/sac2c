@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.20  2004/11/23 19:33:39  sbs
+  phases introduced
+
   Revision 1.19  2004/11/23 18:56:45  skt
   traversals for multithreading added
 
@@ -137,7 +140,7 @@
     <type name="StringSet" ctype="stringset_t*" init="NULL"
     copy="function" persist="no" />
   </attributetypes>
-  <traversals>
+  <phases>
     <!-- id is the short id of the traversal 
          name is a descriptive name
 	 default gives the default traversal mode
@@ -147,254 +150,265 @@
 	   error TravError
 	 include the include file needed for the traversal
     -->
-    <traversal id="CF" name="Constant Folding" default="sons" include="SSAConstantFolding.h" >
-      <travuser>
-        <node name="Id" />
-      </travuser>
-      <travsons>
-      </travsons>
-      <travnone>
-      </travnone>
-      <traverror>
-      </traverror>
-    </traversal>
-    <traversal id="DUP" name="Tree duplication" default="user" include="DupTree.h" />
-    <traversal id="EMAA" name="Alias analysis" default="sons" include="aliasanalysis.h" >
-      <travuser>
-        <node name="Ap" />
-        <node name="Arg" />
-        <node name="Assign" />
-        <node name="Code" />
-        <node name="Cond" />
-        <node name="Fold" />
-        <node name="Funcond" />
-        <node name="Fundef" />
-        <node name="Icm" />
-        <node name="Id" />
-        <node name="Let" />
-        <node name="Prf" />
-        <node name="With" />
-        <node name="With2" />
-        <node name="Vardec" />
-      </travuser>
-      <travsons>
-      </travsons>
-      <travnone>
-      </travnone>
-      <traverror>
-      </traverror>
-    </traversal>
-    <traversal id="EMAL" name="Allocation" default="sons" include="alloc.h" >
-      <travuser>
-        <node name="Ap" />
-        <node name="Array" />
-        <node name="Assign" />
-        <node name="Code" />
-        <node name="Const" />
-        <node name="Fold" />
-        <node name="Funcond" />
-        <node name="Fundef" />
-        <node name="Genarray" />
-        <node name="Icm" />
-        <node name="Id" />
-        <node name="Let" />
-        <node name="Modarray" />
-        <node name="Prf" />
-        <node name="With" />
-        <node name="With2" />
-      </travuser>
-      <travsons>
-      </travsons>
-      <travnone>
-      </travnone>
-      <traverror>
-      </traverror>
-    </traversal>
-    <traversal id="EMDR" name="Data reuse" default="sons" include="datareuse.h" >
-      <travuser>
-        <node name="Ap" />
-        <node name="Assign" />
-        <node name="Code" />
-        <node name="Fundef" />
-        <node name="Id" />
-        <node name="Let" />
-        <node name="Prf" />
-      </travuser>
-      <travsons>
-      </travsons>
-      <travnone>
-      </travnone>
-      <traverror>
-      </traverror>
-  </traversal>
-    <traversal id="EMEC" name="Explicit Copy" default="sons" include="explicitcopy.h" >
-      <travuser>
-        <node name="Assign" />
-        <node name="Fundef" />
-        <node name="Prf" />
-      </travuser>
-      <travsons>
-      </travsons>
-      <travnone>
-      </travnone>
-      <traverror>
-      </traverror>
-    </traversal>
-    <traversal id="EMFRC" name="Filter Ref Counting" default="sons" include="filterrc.h" >
-      <travuser>
-        <node name="Ap" />
-        <node name="Arg" />
-        <node name="Assign" />
-        <node name="Cond" />
-        <node name="Fold" />
-        <node name="Funcond" />
-        <node name="Fundef" />
-        <node name="Genarray" />
-        <node name="Id" />
-        <node name="Modarray" />
-        <node name="Prf" />
-        <node name="With" />
-        <node name="With2" />
-      </travuser>
-      <travsons>
-      </travsons>
-      <travnone>
-      </travnone>
-      <traverror>
-      </traverror>
-    </traversal>
-    <traversal id="EMIA" name="Interface Analysis" default="sons" include="interfaceanalysis.h" >
-      <travuser>
-        <node name="Ap" />
-        <node name="Arg" />
-        <node name="Assign" />
-        <node name="Block" />
-        <node name="Cond" />
-        <node name="Fold" />
-        <node name="Funcond" />
-        <node name="Fundef" />
-        <node name="Id" />
-        <node name="Let" />
-        <node name="Return" />
-        <node name="Vardec" />
-        <node name="with" />
-        <node name="With2" />
-      </travuser>
-      <travsons>
-      </travsons>
-      <travnone>
-      </travnone>
-      <traverror>
-      </traverror>
-    </traversal>
-    <traversal id="EMRCO" name="RC Optimizations" default="sons" include="rcopt.h" >
-      <travuser>
-        <node name="Assign" />
-        <node name="Block" />
-        <node name="Genarray" />
-        <node name="Let" />
-        <node name="Modarray" />
-        <node name="Prf" />
-      </travuser>
-      <travsons>
-      </travsons>
-      <travnone>
-      </travnone>
-      <traverror>
-      </traverror>
-    </traversal>
-    <traversal id="EMRC" name="Reference Counting Analysis" default="sons" include="refcounting.h" >
-      <travuser>
-        <node name="Ap" />
-        <node name="Arg" />
-        <node name="Array" />
-        <node name="Assign" />
-        <node name="Block" />
-        <node name="Code" />
-        <node name="Cond" />
-        <node name="Fold" />
-        <node name="Funcond" />
-        <node name="Fundef" />
-        <node name="Genarray" />
-        <node name="Icm" />
-        <node name="Id" />
-        <node name="Let" />
-        <node name="Modarray" />
-        <node name="Prf" />
-        <node name="Return" />
-        <node name="Vardec" />
-        <node name="with" />
-        <node name="With2" />
-        <node name="Withid" />
-      </travuser>
-      <travsons>
-      </travsons>
-      <travnone>
-      </travnone>
-      <traverror>
-      </traverror>
-    </traversal>
-    <traversal id="EMRB" name="Reuse branching" default="sons" include="reusebranching.h" >
-      <travuser>
-        <node name="Assign" />
-        <node name="Fundef" />
-        <node name="Prf" />
-      </travuser>
-      <travsons>
-      </travsons>
-      <travnone>
-      </travnone>
-      <traverror>
-      </traverror>
-    </traversal>
-    <traversal id="EMRE" name="Reuse elimination" default="sons" include="reuseelimination.h" >
-      <travuser>
-        <node name="Assign" />
-        <node name="Cond" />
-        <node name="Fundef" />
-        <node name="Genarray" />
-        <node name="Let" />
-        <node name="Modarray" />
-        <node name="Prf" />
-        <node name="Vardec" />
-      </travuser>
-      <travsons>
-      </travsons>
-      <travnone>
-      </travnone>
-      <traverror>
-      </traverror>
-    </traversal>
-    <traversal id="EMRI" name="Reuse inference" default="sons" include="reuse.h" >
-      <travuser>
-        <node name="Arg" />
-        <node name="Assign" />
-        <node name="Code" />
-        <node name="Cond" />
-        <node name="Fundef" />
-        <node name="Icm" />
-        <node name="Let" />
-        <node name="Prf" />
-        <node name="With2" />
-      </travuser>
-      <travsons>
-      </travsons>
-      <travnone>
-      </travnone>
-      <traverror>
-      </traverror>
-    </traversal>
-    <traversal id="EMSR" name="Static Reuse" default="sons" include="staticreuse.h" >
-      <travuser>
-        <node name="Prf" />
-      </travuser>
-      <travsons>
-      </travsons>
-      <travnone>
-      </travnone>
-      <traverror>
-      </traverror>
-    </traversal>
+    <phase id="typecheck" name="Running type inference system">
+    </phase>
+    <phase id="sacopt" name="Running SAC optimizations">
+      <traversal id="CF" name="Constant Folding" default="sons" include="SSAConstantFolding.h" >
+        <travuser>
+          <node name="Id" />
+        </travuser>
+        <travsons>
+        </travsons>
+        <travnone>
+        </travnone>
+        <traverror>
+        </traverror>
+      </traversal>
+    <general>
+      <traversal id="DUP" name="Tree duplication" default="user" include="DupTree.h" />
+    </general>
+    <phase id="alloc" name="Introducing explicit allocation instructions">
+      <traversal id="EMAA" name="Alias analysis" default="sons" include="aliasanalysis.h" >
+        <travuser>
+          <node name="Ap" />
+          <node name="Arg" />
+          <node name="Assign" />
+          <node name="Code" />
+          <node name="Cond" />
+          <node name="Fold" />
+          <node name="Funcond" />
+          <node name="Fundef" />
+          <node name="Icm" />
+          <node name="Id" />
+          <node name="Let" />
+          <node name="Prf" />
+          <node name="With" />
+          <node name="With2" />
+          <node name="Vardec" />
+        </travuser>
+        <travsons>
+        </travsons>
+        <travnone>
+        </travnone>
+        <traverror>
+        </traverror>
+      </traversal>
+      <traversal id="EMAL" name="Allocation" default="sons" include="alloc.h" >
+        <travuser>
+          <node name="Ap" />
+          <node name="Array" />
+          <node name="Assign" />
+          <node name="Code" />
+          <node name="Const" />
+          <node name="Fold" />
+          <node name="Funcond" />
+          <node name="Fundef" />
+          <node name="Genarray" />
+          <node name="Icm" />
+          <node name="Id" />
+          <node name="Let" />
+          <node name="Modarray" />
+          <node name="Prf" />
+          <node name="With" />
+          <node name="With2" />
+        </travuser>
+        <travsons>
+        </travsons>
+        <travnone>
+        </travnone>
+        <traverror>
+        </traverror>
+      </traversal>
+      <traversal id="EMDR" name="Data reuse" default="sons" include="datareuse.h" >
+        <travuser>
+          <node name="Ap" />
+          <node name="Assign" />
+          <node name="Code" />
+          <node name="Fundef" />
+          <node name="Id" />
+          <node name="Let" />
+          <node name="Prf" />
+        </travuser>
+        <travsons>
+        </travsons>
+        <travnone>
+        </travnone>
+        <traverror>
+        </traverror>
+      </traversal>
+      <traversal id="EMEC" name="Explicit Copy" default="sons" include="explicitcopy.h" >
+        <travuser>
+          <node name="Assign" />
+          <node name="Fundef" />
+          <node name="Prf" />
+        </travuser>
+        <travsons>
+        </travsons>
+        <travnone>
+        </travnone>
+        <traverror>
+        </traverror>
+      </traversal>
+      <traversal id="EMFRC" name="Filter Ref Counting" default="sons" include="filterrc.h" >
+        <travuser>
+          <node name="Ap" />
+          <node name="Arg" />
+            <node name="Assign" />
+          <node name="Cond" />
+          <node name="Fold" />
+          <node name="Funcond" />
+          <node name="Fundef" />
+          <node name="Genarray" />
+          <node name="Id" />
+          <node name="Modarray" />
+          <node name="Prf" />
+          <node name="With" />
+          <node name="With2" />
+        </travuser>
+        <travsons>
+        </travsons>
+        <travnone>
+        </travnone>
+        <traverror>
+        </traverror>
+      </traversal>
+      <traversal id="EMIA" name="Interface Analysis" default="sons" include="interfaceanalysis.h" >
+        <travuser>
+          <node name="Ap" />
+          <node name="Arg" />
+          <node name="Assign" />
+          <node name="Block" />
+          <node name="Cond" />
+          <node name="Fold" />
+          <node name="Funcond" />
+          <node name="Fundef" />
+          <node name="Id" />
+          <node name="Let" />
+          <node name="Return" />
+          <node name="Vardec" />
+          <node name="with" />
+          <node name="With2" />
+        </travuser>
+        <travsons>
+        </travsons>
+        <travnone>
+        </travnone>
+        <traverror>
+        </traverror>
+      </traversal>
+      <traversal id="EMRB" name="Reuse branching" default="sons" include="reusebranching.h" >
+        <travuser>
+          <node name="Assign" />
+          <node name="Fundef" />
+          <node name="Prf" />
+        </travuser>
+        <travsons>
+        </travsons>
+        <travnone>
+        </travnone>
+        <traverror>
+        </traverror>
+      </traversal>
+      <traversal id="EMRI" name="Reuse inference" default="sons" include="reuse.h" >
+        <travuser>
+          <node name="Arg" />
+          <node name="Assign" />
+          <node name="Code" />
+          <node name="Cond" />
+          <node name="Fundef" />
+          <node name="Icm" />
+          <node name="Let" />
+          <node name="Prf" />
+          <node name="With2" />
+        </travuser>
+        <travsons>
+        </travsons>
+        <travnone>
+        </travnone>
+        <traverror>
+        </traverror>
+      </traversal>
+      <traversal id="EMSR" name="Static Reuse" default="sons" include="staticreuse.h" >
+        <travuser>
+          <node name="Prf" />
+        </travuser>
+        <travsons>
+        </travsons>
+        <travnone>
+        </travnone>
+        <traverror>
+        </traverror>
+      </traversal>
+    </phase>
+    <phase id="refcnt" name="Introducing explicit allocation instructions" >
+      <traversal id="EMRCO" name="RC Optimizations" default="sons" include="rcopt.h" >
+        <travuser>
+          <node name="Assign" />
+          <node name="Block" />
+          <node name="Genarray" />
+          <node name="Let" />
+          <node name="Modarray" />
+          <node name="Prf" />
+        </travuser>
+        <travsons>
+        </travsons>
+        <travnone>
+        </travnone>
+        <traverror>
+        </traverror>
+      </traversal>
+      <traversal id="EMRC" name="Reference Counting Analysis" default="sons" include="refcounting.h" >
+        <travuser>
+          <node name="Ap" />
+          <node name="Arg" />
+          <node name="Array" />
+          <node name="Assign" />
+          <node name="Block" />
+          <node name="Code" />
+          <node name="Cond" />
+          <node name="Fold" />
+          <node name="Funcond" />
+          <node name="Fundef" />
+          <node name="Genarray" />
+          <node name="Icm" />
+          <node name="Id" />
+          <node name="Let" />
+          <node name="Modarray" />
+          <node name="Prf" />
+          <node name="Return" />
+          <node name="Vardec" />
+          <node name="with" />
+          <node name="With2" />
+          <node name="Withid" />
+        </travuser>
+        <travsons>
+        </travsons>
+        <travnone>
+        </travnone>
+        <traverror>
+        </traverror>
+      </traversal>
+      <traversal id="EMRE" name="Reuse elimination" default="sons" include="reuseelimination.h" >
+        <travuser>
+          <node name="Assign" />
+          <node name="Cond" />
+          <node name="Fundef" />
+          <node name="Genarray" />
+          <node name="Let" />
+          <node name="Modarray" />
+          <node name="Prf" />
+          <node name="Vardec" />
+        </travuser>
+        <travsons>
+        </travsons>
+        <travnone>
+        </travnone>
+        <traverror>
+        </traverror>
+      </traversal>
+    </phase>
+
+    <phase id="multithread" name="Generating annotations for MT">
     <traversal id="MUTH" name="Build Multithread (MT3)" default="sons" include="multithread.h">
       <travuser>
         <node name="Assign" />
@@ -532,9 +546,11 @@
       <traverror>
       </traverror>
     </traversal>
+    </phase>
 
 
-   </traversals>
+
+   </phases>
   <nodesets>
     <nodeset name="Expr">
       <target>
