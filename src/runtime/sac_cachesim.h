@@ -1,10 +1,14 @@
 /*
  * $Log$
+ * Revision 2.2  1999/03/19 11:13:36  her
+ * new function (SAC_CS_Start) added
+ * function SAC_CS_ShowResults replaced by SAC_CS_Stop
+ *
  * Revision 2.1  1999/02/23 12:43:50  sacbase
  * new release made
  *
  * Revision 1.3  1999/02/17 17:14:22  her
- * new parameter for Initialize: profilelevel
+ * new parameter for SAC_CS_Initialize: profilelevel
  * english comments
  *
  */
@@ -166,16 +170,29 @@ extern void (*SAC_CS_WriteAccess) (void * /*baseaddress*/, void * /*elemaddress*
 /******************************************************************************
  *
  * function:
- *   void SAC_CS_WriteAccess(void* baseaddress, void* elemaddress)
+ *   void SAC_CS_Start(char* tag)
  *
  * description:
- *   Prints the Results of the analysis.
+ *   Starts the analysis and offers the possibility to mark it by a
+ *   userdefined tag.
+ *
+ *****************************************************************************/
+extern void SAC_CS_Start (char *tag);
+
+/******************************************************************************
+ *
+ * function:
+ *   void SAC_CS_Stop(void)
+ *
+ * description:
+ *   Stops the analysis and prints its tag (defined in SAC_CS_Start) and
+ *   their results.
  *   simple & detailed profilinglevel:
  *     hit- and missrate for each cachelevel
  *   detailed profilinglevel only:
  *     classification of misses as coldstart, self- or crossinterference
  *
  *****************************************************************************/
-extern void SAC_CS_ShowResults (void);
+extern void SAC_CS_Stop (void);
 
 #endif
