@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2004/07/17 14:52:03  sah
+ * switch to INFO structure
+ * PHASE I
+ *
  * Revision 1.9  2001/05/18 09:43:28  cg
  * MALLOC replaced by Malloc.
  *
@@ -67,6 +71,8 @@
  ***
  ***/
 
+#define NEW_INFO
+
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -76,6 +82,45 @@
 #include "free.h"
 #include "globals.h"
 #include "convert.h"
+
+/*
+ * INFO structure
+ */
+struct INFO {
+    node *fundef;
+};
+
+/*
+ * INFO macros
+ */
+#define INFO_PF_FUNDEF(n) (n->fundef)
+
+/*
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = Malloc (sizeof (info));
+
+    INFO_PF_FUNDEF (result) = NULL;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = Free (info);
+
+    DBUG_RETURN (info);
+}
 
 /********************************************************************************
  ***
@@ -215,7 +260,7 @@ Fundef2FunTypeMask (node *fundef)
 /********************************************************************************
  *
  * function:
- *    node *PFfundef( node *arg_node, node *arg_info)
+ *    node *PFfundef( node *arg_node, info *arg_info)
  *
  * description:
  *    enumerates the function found (FUNDEF_FUNNO( arg_node) is set to a non-zero
@@ -226,7 +271,7 @@ Fundef2FunTypeMask (node *fundef)
  ********************************************************************************/
 
 node *
-PFfundef (node *arg_node, node *arg_info)
+PFfundef (node *arg_node, info *arg_info)
 {
     char *str_buff;
 
@@ -261,7 +306,7 @@ PFfundef (node *arg_node, node *arg_info)
 /********************************************************************************
  *
  * function:
- *    node *PFassign( node *arg_node, node *arg_info)
+ *    node *PFassign( node *arg_node, info *arg_info)
  *
  * description:
  *    traverses the instruction in order to find out whether a function is called.
@@ -273,9 +318,8 @@ PFfundef (node *arg_node, node *arg_info)
  ********************************************************************************/
 
 node *
-PFassign (node *arg_node, node *arg_info)
+PFassign (node *arg_node, info *arg_info)
 {
-
     int funtypemask;
     int funno, funap_cnt;
     node *old_next_assign, *res;
@@ -345,7 +389,7 @@ PFassign (node *arg_node, node *arg_info)
 /********************************************************************************
  *
  * function:
- *    node *PFap( node *arg_node, node *arg_info)
+ *    node *PFap( node *arg_node, info *arg_info)
  *
  * description:
  *    Since we want to traverse the program following the invocation tree, we
@@ -357,7 +401,7 @@ PFassign (node *arg_node, node *arg_info)
  ********************************************************************************/
 
 node *
-PFap (node *arg_node, node *arg_info)
+PFap (node *arg_node, info *arg_info)
 {
     node *fundef;
 
@@ -404,7 +448,7 @@ node *
 ProfileFunCalls (node *arg_node)
 {
     funtab *tmp_tab;
-    node *info_node;
+    info *info;
     node *main_fun;
     int i;
 
@@ -413,7 +457,7 @@ ProfileFunCalls (node *arg_node)
     tmp_tab = act_tab;
     act_tab = profile_tab;
 
-    info_node = MakeInfo ();
+    info = MakeInfo ();
 
     /*
      * First, we initialize the application counter:
@@ -431,12 +475,12 @@ ProfileFunCalls (node *arg_node)
     if (MODUL_FUNS (arg_node) != NULL) {
         main_fun = SearchMain (MODUL_FUNS (arg_node));
         if (main_fun != NULL) {
-            main_fun = Trav (main_fun, info_node);
+            main_fun = Trav (main_fun, info);
         }
     }
     DBUG_PRINT ("PFFUN", ("function annotation done"));
 
-    info_node = FreeNode (info_node);
+    info = FreeInfo (info);
     act_tab = tmp_tab;
 
     DBUG_RETURN (arg_node);
