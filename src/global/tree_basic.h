@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.145  1998/04/25 12:35:26  dkr
+ * changed a comment for NCODE_COPY
+ *
  * Revision 1.144  1998/04/24 17:19:27  dkr
  * changed attributes/macros for N_spmd, N_sync
  *
@@ -2263,6 +2266,7 @@ extern node *MakeInfo ();
 #define INFO_COMP_VARDECS(n) (n->node[3])
 #define INFO_COMP_WITHBEGIN(n) (n->node[4])
 #define INFO_COMP_SPMDFUNS(n) (n->node[5])
+#define INFO_COMP_MT(n) (n->flag)
 
 #define INFO_COMP_FIRSTASSIGN(n) (n->node[0])
 #define INFO_COMP_CNTPARAM(n) (n->lineno)
@@ -2551,7 +2555,7 @@ extern node *MakeNWithOp (WithOpType WithOp);
  ***    int    NO         (unambiguous number for PrintNwith2())
  ***                                   (precompile -> )
  ***    int    FLAG                    (WLI -> WLF)
- ***    node*  COPY                    (DUP!!)
+ ***    node*  COPY                    ( -> DupTree )
  ***
  ***  remarks:
  ***   1)
@@ -2573,13 +2577,15 @@ extern node *MakeNWithOp (WithOpType WithOp);
 
 extern node *MakeNCode (node *block, node *expr);
 
-#define NCODE_USED(n) (n->info.cint)
 #define NCODE_CBLOCK(n) (n->node[0])
 #define NCODE_CEXPR(n) (n->node[1])
 #define NCODE_NEXT(n) (n->node[2])
+#define NCODE_USED(n) (n->info.cint)
+
 #define NCODE_MASK(n, x) (n->mask[x])
 #define NCODE_NO(n) (n->refcnt)
 #define NCODE_FLAG(n) (n->flag)
+
 #define NCODE_COPY(n) (n->node[3])
 
 /*--------------------------------------------------------------------------*/
