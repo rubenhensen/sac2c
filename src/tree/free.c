@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.71  2004/11/08 16:35:23  sah
+ * as I found out today, FUNDEF_IMPL is needed for zombie funs as
+ * well in order to dispatch correctly in create_wrapper_code.c.
+ * So now that attribute is not freed as well.
+ *
  * Revision 3.70  2004/10/26 11:21:23  khf
  * Now, FreeNode works with N_Nwithop also
  *
@@ -818,6 +823,7 @@ FreeZombie (node *fundef)
         FUNDEF_MOD (fundef) = Free (FUNDEF_MOD (fundef));
         FUNDEF_LINKMOD (fundef) = Free (FUNDEF_LINKMOD (fundef));
 #endif
+        FUNDEF_IMPL (fundef) = NULL;
 
         FUNDEF_TYPES (fundef) = FreeOneTypes (FUNDEF_TYPES (fundef));
         if (FUNDEF_RET_TYPE (fundef) != NULL) {
@@ -829,6 +835,9 @@ FreeZombie (node *fundef)
 
         tmp = fundef;
         fundef = FUNDEF_NEXT (fundef);
+#ifdef NEW_AST
+        tmp->attribs.any = Free (tmp->attribs.any);
+#endif
         tmp = Free (tmp);
     }
 

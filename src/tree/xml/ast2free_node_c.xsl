@@ -1,6 +1,11 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.7  2004/11/08 16:35:23  sah
+  as I found out today, FUNDEF_IMPL is needed for zombie funs as
+  well in order to dispatch correctly in create_wrapper_code.c.
+  So now that attribute is not freed as well.
+
   Revision 1.6  2004/11/02 10:40:51  sah
   fixed typoe
 
@@ -176,8 +181,8 @@ version="1.0">
   <xsl:value-of select="' = ST_zombiefun;'"/>
   <!-- first free everything downwards in the ast -->
   <xsl:apply-templates select="sons/son[@name = &quot;Next&quot;]"/>
-  <!-- free all attributes, except NAME, MOD, LINKMOD and TYPES --> 
-  <xsl:apply-templates select="attributes/attribute[@name != &quot;Name&quot;][@name != &quot;Mod&quot;][@name!=&quot;LinkMod&quot;][@name != &quot;Types&quot;][@name != &quot;Type&quot;]"/>
+  <!-- free all attributes, except NAME, MOD, LINKMOD. IMPL and TYPES --> 
+  <xsl:apply-templates select="attributes/attribute[@name != &quot;Name&quot;][@name != &quot;Mod&quot;][@name!=&quot;LinkMod&quot;][@name != &quot;Types&quot;][@name != &quot;Type&quot;][@name!=&quot;Impl&quot;]"/>
   <!-- call free for all other sons -->
   <xsl:apply-templates select="sons/son[not( @name= &quot;Next&quot;)]"/>
   <!-- DBUG_RETURN call -->
