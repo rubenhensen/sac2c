@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  1998/05/19 10:05:21  cg
+ * added 'clear-indent !' feature
+ *
  * Revision 1.4  1998/05/13 09:26:07  dkr
  * added dummy function to fool the linker
  *
@@ -96,7 +99,12 @@ MAIN
 #define ICM_ALL
 #include "icm_betest.c"
 #undef ICM_ALL
-        printf ("icm %s not defined!\n", buffer);
+        if (0 == strcmp (buffer, "clear-indent")) {
+            indent = 0;
+        } else {
+            printf ("icm %s not defined!\n", buffer);
+        }
+
         scanf ("%s\n", buffer);
         scanf_res = scanf ("%s", buffer);
     }
