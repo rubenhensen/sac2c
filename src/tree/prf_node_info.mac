@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2002/09/09 17:30:59  dkr
+ * comment about prf categories removed
+ *
  * Revision 3.7  2002/09/09 16:48:31  dkr
  * prf_string-entry for F_mul_SxS corrected!!!
  *
@@ -37,50 +40,20 @@
 **
 */
 
-/*
- *
- * NOTE: At the time being, there are 5 categories of prf's:
- *
- *       - the first legal prf HAS TO BE "F_toi"!!
- *
- *       - funs with exactly 1 scalar arg. The last fun of this
- *         category HAS TO BE "F_not"!!
- *
- *       - funs which require more than one argument. All of the fun's
- *         arguments should be scalars (not arrays). The last fun of
- *         this category HAS TO BE "F_neq"!!
- *
- *       - funs that require at least one non-scalar (array) argument
- *         and are purely intrinsics.
- *         The last fun of this category HAS TO BE "F_modarray"!!
- *
- *       - funs that require at least one non-scalar (array) argument
- *         and are not purely intrinsics (i.e. they can be found in the
- *         Array module, too). The last fun of this category HAS TO BE
- *         "F_rotate"!!
- *
- *       - funs that cause runtime errors. These funs HAVE TO BE located
- *         at the end of the list (after "F_rotate")!!
- *
- * These side-conditions are used and defined in prf.h!!!
- * And they should be be used EXCLUSIVELY in prf.h!!!!!!!
- *
- */
-
 /*  node_name           mdb_prf[]         prf_string[]    prf_name_str[]  */
 
 PRF_IF (F_toi, "F_foi", "toi", "toi", NTCPRF_dummy),
+  PRF_IF (F_toi_A, "F_toi_A", "toi", "toi", NTCPRF_dummy),
   PRF_IF (F_tof, "F_fof", "tof", "tof", NTCPRF_dummy),
+  PRF_IF (F_tof_A, "F_tof_A", "tof", "tof", NTCPRF_dummy),
   PRF_IF (F_tod, "F_fod", "tod", "tod", NTCPRF_dummy),
+  PRF_IF (F_tod_A, "F_tod_A", "tod", "tod", NTCPRF_dummy),
+
   PRF_IF (F_abs, "F_abs", "abs", "abs", NTCPRF_dummy),
   PRF_IF (F_not, "F_not", "!", "_not", NTCPRF_dummy),
 
   PRF_IF (F_min, "F_min", "min", "min", NTCPRF_ari_op_AxA),
   PRF_IF (F_max, "F_max", "max", "max", NTCPRF_ari_op_AxA),
-  PRF_IF (F_add, "F_add", "+", "_add", NTCPRF_dummy),
-  PRF_IF (F_sub, "F_sub", "-", "_sub", NTCPRF_dummy),
-  PRF_IF (F_mul, "F_mul", "*", "_mul", NTCPRF_dummy),
-  PRF_IF (F_div, "F_div", "/", "_div", NTCPRF_dummy),
   PRF_IF (F_mod, "F_mod", "%", "_mod", NTCPRF_int_op_SxS),
   PRF_IF (F_and, "F_and", "&&", "_and", NTCPRF_log_op_AxA),
   PRF_IF (F_or, "F_or", "||", "_or", NTCPRF_log_op_AxA),
@@ -91,7 +64,6 @@ PRF_IF (F_toi, "F_foi", "toi", "toi", NTCPRF_dummy),
   PRF_IF (F_gt, "F_gt", ">", "_gt", NTCPRF_rel_op_AxA),
   PRF_IF (F_neq, "F_neq", "!=", "_neq", NTCPRF_rel_op_AxA),
 
-  PRF_IF (F_genarray, "F_genarray", "genarray", "genarray", NTCPRF_dummy),
   PRF_IF (F_dim, "F_dim", "dim", "dim", NTCPRF_dim),
   PRF_IF (F_shape, "F_shape", "shape", "shape", NTCPRF_shape),
   PRF_IF (F_reshape, "F_reshape", "reshape", "reshape", NTCPRF_reshape),
@@ -115,10 +87,13 @@ PRF_IF (F_toi, "F_foi", "toi", "toi", NTCPRF_dummy),
   PRF_IF (F_idx_modarray, "F_idx_modarray", "idx_modarray", "idx_modarray", NTCPRF_dummy),
   PRF_IF (F_sel, "F_sel", "sel", "sel", NTCPRF_selS),
   PRF_IF (F_modarray, "F_modarray", "modarray", "modarray", NTCPRF_modarrayS),
+  PRF_IF (F_genarray, "F_genarray", "genarray", "genarray", NTCPRF_dummy),
 
-  PRF_IF (F_toi_A, "F_toi_A", "toi", "toi", NTCPRF_dummy),
-  PRF_IF (F_tof_A, "F_tof_A", "tof", "tof", NTCPRF_dummy),
-  PRF_IF (F_tod_A, "F_tod_A", "tod", "tod", NTCPRF_dummy),
+  PRF_IF (F_add, "F_add", "+", "_add", NTCPRF_dummy),
+  PRF_IF (F_sub, "F_sub", "-", "_sub", NTCPRF_dummy),
+  PRF_IF (F_mul, "F_mul", "*", "_mul", NTCPRF_dummy),
+  PRF_IF (F_div, "F_div", "/", "_div", NTCPRF_dummy),
+
   PRF_IF (F_take, "F_take", "take", "take", NTCPRF_dummy),
   PRF_IF (F_drop, "F_drop", "drop", "drop", NTCPRF_dummy),
   PRF_IF (F_cat, "F_cat", "cat", "cat", NTCPRF_dummy),
