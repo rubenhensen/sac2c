@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2004/11/25 18:01:40  sbs
+ * compiles
+ *
  * Revision 1.3  2004/11/22 15:36:00  sbs
  * SacDevCamp04
  *
@@ -17,7 +20,7 @@
 
 #include "types.h"
 
-extern dft_res *SPEChandleDownProjections (DFT_res *dft, node *wrapper, ntype *args);
+extern dft_res *SPEChandleDownProjections (dft_res *dft, node *wrapper, ntype *args);
 extern node *SPEChandleLacFun (node *fundef, node *assign, ntype *args);
 extern node *SPECresetSpecChain ();
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2004/11/25 18:01:40  sbs
+ * compiles
+ *
  * Revision 3.13  2004/11/22 15:36:00  sbs
  * SacDevCamp04
  *
@@ -57,7 +60,6 @@ extern ntype *NTCnewTypeCheck_Expr (node *arg_node);
 extern ntype *NTCcheckUdtAndSetBaseType (usertype udt, int *visited);
 
 extern node *NTCtypedef (node *arg_node, info *arg_info);
-extern node *NTCobjdef (node *arg_node, info *arg_info);
 extern node *NTCmodule (node *arg_node, info *arg_info);
 extern node *NTCfundef (node *arg_node, info *arg_info);
 extern node *NTCarg (node *arg_node, info *arg_info);
@@ -74,6 +76,7 @@ extern node *NTCarray (node *arg_node, info *arg_info);
 extern node *NTCcast (node *arg_node, info *arg_info);
 extern node *NTCexprs (node *arg_node, info *arg_info);
 extern node *NTCid (node *arg_node, info *arg_info);
+extern node *NTCglobobj (node *arg_node, info *arg_info);
 extern node *NTCnum (node *arg_node, info *arg_info);
 extern node *NTCbool (node *arg_node, info *arg_info);
 extern node *NTCchar (node *arg_node, info *arg_info);

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.14  2004/11/25 18:01:40  sbs
+ * compiles
+ *
  * Revision 1.13  2004/11/22 15:36:00  sbs
  * SacDevCamp04
  *
@@ -49,7 +52,7 @@
 
 #include "types.h"
 
-extern char *TEprfArg2Obj (char *prf_str, int pos);
+extern char *TEprfArg2Obj (const char *prf_str, int pos);
 extern char *TEarg2Obj (int pos);
 extern char *TEarrayElem2Obj (int pos);
 
@@ -72,16 +75,17 @@ extern void TEassureSameSimpleType (char *obj1, ntype *type1, char *obj2, ntype 
 extern void TEassureSameScalarType (char *obj1, ntype *type1, char *obj2, ntype *type2);
 extern ntype *TEassureSameShape (char *obj1, ntype *type1, char *obj2, ntype *type2);
 
-extern te_info *TEmakeInfo (int linenum, char *kind_str, char *mod_str, char *name_str,
-                            node *wrapper, node *assign, void *cffun, te_info *parent);
+extern te_info *TEmakeInfo (int linenum, char *kind_str, char *mod_str,
+                            const char *name_str, node *wrapper, node *assign,
+                            const void *cffun, te_info *parent);
 extern void TEextendedAbort ();
 extern int TEgetLine (te_info *info);
 extern char *TEgetKindStr (te_info *info);
 extern char *TEgetModStr (te_info *info);
-extern char *TEgetNameStr (te_info *info);
+extern const char *TEgetNameStr (te_info *info);
 extern node *TEgetWrapper (te_info *info);
 extern node *TEgetAssign (te_info *info);
-extern void *TEgetCFFun (te_info *info);
+extern const void *TEgetCFFun (te_info *info);
 extern te_info *TEgetParent (te_info *info);
 
 #endif /* _SAC_TYPE_ERRORS_H_ */

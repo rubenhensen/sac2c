@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.25  2004/11/25 18:01:40  sbs
+ * compiles
+ *
  * Revision 3.24  2004/11/22 15:36:00  sbs
  * SacDevCamp04
  *
@@ -371,7 +374,6 @@ extern ntype *TYoldTypes2ProdType (types *old);
 extern ntype *TYsplitWrapperType (ntype *type, bool *finished);
 extern ntype *TYgetWrapperRetType (ntype *type);
 extern node *TYcorrectWrapperArgTypes (node *args, ntype *type);
-extern node *TYcreateWrapperVardecs (node *fundef);
 extern node *TYcreateWrapperCode (node *fundef, node *vardecs, node **new_vardecs);
 
 /*

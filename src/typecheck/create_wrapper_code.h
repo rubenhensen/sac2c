@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.8  2004/11/25 18:01:40  sbs
+ * compiles
+ *
  * Revision 1.7  2004/11/22 15:36:00  sbs
  * SacDevCamp04
  *
@@ -37,7 +40,6 @@ node *CWCfundef (node *arg_node, info *arg_info);
 node *CWCap (node *arg_node, info *arg_info);
 node *CWCwith (node *arg_node, info *arg_info);
 node *CWCgenarray (node *arg_node, info *arg_info);
-node *CWCmodarray (node *arg_node, info *arg_info);
 node *CWCfold (node *arg_node, info *arg_info);
 
 #endif /* _SAC_CREATE_WRAPPER_CODE_H_ */

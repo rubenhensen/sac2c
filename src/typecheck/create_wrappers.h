@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2004/11/25 18:01:40  sbs
+ * compiles
+ *
  * Revision 1.11  2004/11/22 15:36:00  sbs
  * SacDevCamp04
  *
@@ -44,16 +47,13 @@
 #include "types.h"
 
 extern node *CRWRPdoCreateWrappers (node *arg_node);
-extern ntype *CRWRPcreateFunRettype (types *old_ret);
 extern ntype *CRWRPcreateFuntype (node *fundef);
 
 extern node *CRTWRPmodule (node *arg_node, info *arg_info);
 extern node *CRTWRPfundef (node *arg_node, info *arg_info);
 extern node *CRTWRPlet (node *arg_node, info *arg_info);
 extern node *CRTWRPap (node *arg_node, info *arg_info);
-extern node *CRTWRPid (node *arg_node, info *arg_info);
 extern node *CRTWRPgenarray (node *arg_node, info *arg_info);
-extern node *CRTWRPmodarray (node *arg_node, info *arg_info);
 extern node *CRTWRPfold (node *arg_node, info *arg_info);
 
 #endif /* _SAC_CREATE_WRAPPERS_H_ */
