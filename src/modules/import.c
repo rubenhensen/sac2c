@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.23  2004/11/07 16:11:51  ktr
+ * Temporary files are now stored in tmp_dirname
+ *
  * Revision 3.22  2004/11/07 14:30:18  ktr
  * Replaced piped communication with CPP with true file IO in order to
  * be able to use gdb under Mac OS X.
@@ -422,7 +425,11 @@ GenMod (char *name, int checkdec)
         SYSABORT (("Unable to open file \"%s\"", buffer));
     }
 
-    tmpnam (cppfile);
+    cppfile[0] = '\0';
+    strcat (cppfile, tmp_dirname);
+    strcat (cppfile, "/");
+    strcat (cppfile, name);
+
     CreateCppCallString (pathname, cccallstr, cppfile);
 
     if (show_syscall) {
@@ -432,6 +439,10 @@ GenMod (char *name, int checkdec)
     err = system (cccallstr);
     if (err) {
         SYSABORT (("Unable to start C preprocessor"));
+    }
+
+    if (show_syscall) {
+        NOTE (("yyin = fopen( \"%s\", \"r\")", cppfile));
     }
 
     yyin = fopen (cppfile, "r");
@@ -448,9 +459,17 @@ GenMod (char *name, int checkdec)
         start_token = PARSE_DEC;
         My_yyparse ();
 
+        if (show_syscall) {
+            NOTE (("err = fclose( yyin)"));
+        }
+
         err = fclose (yyin);
         if (err) {
             SYSABORT (("C preprocessor error"));
+        }
+
+        if (show_syscall) {
+            NOTE (("err = remove( \"%s\")", cppfile));
         }
 
         err = remove (cppfile);
@@ -1902,16 +1921,23 @@ ImportOwnDeclaration (char *name, file_type modtype)
     if (pathname == NULL) {
         mod_tab = Free (mod_tab);
     } else {
-        tmpnam (cppfile);
+        cppfile[0] = '\0';
+        strcat (cppfile, tmp_dirname);
+        strcat (cppfile, "/");
+        strcat (cppfile, name);
         CreateCppCallString (pathname, cccallstr, cppfile);
 
         if (show_syscall) {
-            NOTE (("err = system( %s)", cccallstr));
+            NOTE (("err = system( \"%s\")", cccallstr));
         }
 
         err = system (cccallstr);
         if (err) {
             SYSABORT (("Unable to start C preprocessor"));
+        }
+
+        if (show_syscall) {
+            NOTE (("yyin = fopen( \"%s\", \"r\")", cppfile));
         }
 
         yyin = fopen (cppfile, "r");
@@ -1931,9 +1957,17 @@ ImportOwnDeclaration (char *name, file_type modtype)
         start_token = PARSE_DEC;
         My_yyparse ();
 
+        if (show_syscall) {
+            NOTE (("yyin = fclose( yyin)"));
+        }
+
         err = fclose (yyin);
         if (err) {
             SYSABORT (("C Preprocessor error"));
+        }
+
+        if (show_syscall) {
+            NOTE (("err = remove( \"%s\")", cppfile));
         }
 
         err = remove (cppfile);

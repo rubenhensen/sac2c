@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2004/11/07 16:11:19  ktr
+ * Temporary files are now stored in tmp_dirname
+ *
  * Revision 3.15  2004/11/07 14:28:45  ktr
  * Replaced piped communication with CPP with true file IO in order to
  * be able to use gdb under Mac OS X.
@@ -292,12 +295,16 @@ ScanParse ()
     /*
      * Create a name for the file containing the CPP's result
      */
-    tmpnam (cppfile);
+    cppfile[0] = '\0';
+    strcat (cppfile, tmp_dirname);
+    strcat (cppfile, "/");
 
     if (sacfilename[0] == '\0') {
+        strcat (cppfile, "stdin");
         CreateCppCallString (sacfilename, cccallstr, cppfile);
         NOTE (("Parsing from stdin ..."));
     } else {
+        strcat (cppfile, filename);
         pathname = FindFile (PATH, sacfilename);
 
         if (pathname == NULL) {
@@ -309,12 +316,17 @@ ScanParse ()
         NOTE (("Parsing file \"%s\" ...", pathname));
     }
 
-    if (show_syscall)
-        NOTE (("err = system( %s)", cccallstr));
+    if (show_syscall) {
+        NOTE (("err = system( \"%s\")", cccallstr));
+    }
 
     err = system (cccallstr);
     if (err) {
         SYSABORT (("Unable to start C preprocessor"));
+    }
+
+    if (show_syscall) {
+        NOTE (("yyin = fopen( \"%s\", \"r\")", cppfile));
     }
 
     yyin = fopen (cppfile, "r");
@@ -327,9 +339,17 @@ ScanParse ()
 
     My_yyparse ();
 
+    if (show_syscall) {
+        NOTE (("err = fclose( yyin)"));
+    }
+
     err = fclose (yyin);
     if (err) {
         SYSABORT (("C preprocessor error"));
+    }
+
+    if (show_syscall) {
+        NOTE (("err = remove( \"%s\")", cppfile));
     }
 
     err = remove (cppfile);
