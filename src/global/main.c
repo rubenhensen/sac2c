@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2001/02/12 14:22:21  dkr
+ * call of  PatchWith() moved
+ *
  * Revision 3.4  2001/01/25 10:18:25  dkr
  * PH_spmdregions renamed into PH_multithread
  *
@@ -516,12 +519,6 @@ main (int argc, char *argv[])
         goto BREAK;
     compiler_phase++;
 
-    if (make_patchwith) {
-        NOTE2 (("   \n"
-                "** Patching with-loops (generating multiple parts) ...\n"));
-        syntax_tree = PatchWith (syntax_tree); /* patchwith_tab */
-    }
-
     if ((!dkr) && ((gen_mt_code != GEN_MT_NEW))) {
         compiler_phase += 2;
         PHASE_PROLOG;
@@ -532,6 +529,12 @@ main (int argc, char *argv[])
         if (break_after == PH_refcnt)
             goto BREAK;
         compiler_phase -= 2;
+    }
+
+    if (make_patchwith) {
+        NOTE2 (("   \n"
+                "** Patching with-loops (generating multiple parts) ...\n"));
+        syntax_tree = PatchWith (syntax_tree); /* patchwith_tab */
     }
 
     PHASE_PROLOG;
