@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2005/01/07 16:49:00  cg
+ * Added function FMGRcleanUp.
+ *
  * Revision 1.7  2004/11/25 22:25:11  cg
  * Added FMGRsetFileNames()
  *
@@ -86,12 +89,6 @@
  *
  */
 
-#ifndef _SAC_FILEMGR_H_
-#define _SAC_FILEMGR_H_
-
-#include <stdio.h>
-#include "types.h"
-
 /******************************************************************************
  *
  * Filemanager
@@ -99,6 +96,12 @@
  * Prefix: FMGR
  *
  *****************************************************************************/
+
+#ifndef _SAC_FILEMGR_H_
+#define _SAC_FILEMGR_H_
+
+#include <stdio.h>
+#include "types.h"
 
 extern char *FMGRfindFile (pathkind_t p, char *name);
 extern void FMGRinitPaths ();
@@ -110,5 +113,6 @@ extern bool FMGRcheckExistFile (char *dir, char *name);
 extern locationtype FMGRfindLocationOfFile (char *file);
 extern bool FMGRcheckSystemLibrary (char *name);
 extern void FMGRsetFileNames (node *module);
+extern void FMGRcleanUp ();
 
 #endif /* _SAC_FILEMGR_H_ */
