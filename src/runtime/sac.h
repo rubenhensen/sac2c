@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2003/09/15 13:02:29  dkr
+ * include of sac_icm.h moved
+ *
  * Revision 3.6  2003/08/04 18:08:06  dkr
  * sac_mt.tagged.h, sac_heapmgr.tagged.h added
  *
@@ -89,9 +92,9 @@
 
 #include "sac_icm.h"
 
+#include "sac_misc.h"
 #include "sac_message.h"
 #include "sac_runtimecheck.h"
-#include "sac_misc.h"
 #include "sac_bool.h"
 
 #ifdef TAGGED_ARRAYS
