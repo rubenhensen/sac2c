@@ -1,6 +1,9 @@
 /*
  * $Log$
- * Revision 1.4  1995/02/13 17:51:38  hw
+ * Revision 1.5  1995/02/27 11:09:35  hw
+ * bug fixed in function `Psi`
+ *
+ * Revision 1.4  1995/02/13  17:51:38  hw
  * added B_B to enum type_class
  *
  * Revision 1.3  1995/02/09  11:07:13  hw
@@ -559,7 +562,7 @@ Psi (types *vec, types *array)
 
     if (1 == vec->dim)
         if (vec->shpseg->shp[0] <= array->dim) {
-            GEN_TYPE_NODE (ret_type, T_int);
+            GEN_TYPE_NODE (ret_type, array->simpletype);
             to_drop = vec->shpseg->shp[0];
             dim = array->dim - to_drop;
             ret_type->dim = dim;
