@@ -1,15 +1,18 @@
 /*
  *
  * $Log$
- * Revision 1.1  1994/12/20 15:42:10  sbs
+ * Revision 1.2  1994/12/20 17:34:35  hw
+ * bug fixed in FreeIdsOnly
+ * exchanged stdio.h with stdlib.h
+ *
+ * Revision 1.1  1994/12/20  15:42:10  sbs
  * Initial revision
  *
  *
  */
 
-#include <stdio.h>
+#include <stdlib.h>
 
-#include "dbug.h"
 #include "tree.h"
 
 /*
@@ -31,10 +34,10 @@ FreeIdsOnly (ids *ids)
 
 {
 
-    DBUG_ENTER ("FreeIds");
+    DBUG_ENTER ("FreeIdsOnly");
 
     if (ids->next != NULL)
-        FreeIds (ids->next);
+        FreeIdsOnly (ids->next);
     free (ids);
 
     DBUG_VOID_RETURN;
