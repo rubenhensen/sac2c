@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.84  2003/12/11 21:38:39  dkrHH
+ * bug in EmptyParts2StridesOrExpr() fixed: 'iter_shp' my be NULL!
+ *
  * Revision 3.83  2003/11/12 00:02:12  dkrHH
  * genarray-WLs with empty parts and empty result are transformed
  * correctly now (however, the generated code is not flattened yet :-((
@@ -28,7 +31,7 @@
  * DBUG_ASSERT for with-loops with empty shape added
  *
  * Revision 3.75  2003/04/10 13:27:22  dkr
- * GetWlShape() streamlined and corrected
+ * GetWlIterShape() streamlined and corrected
  *
  * Revision 3.74  2003/03/13 19:11:54  dkr
  * GetShapeDim() used instead of GetShapeClassFromTypes()
@@ -37,7 +40,7 @@
  * global variable 'line' removed -- 'linenum' used instead
  *
  * Revision 3.72  2003/03/13 00:13:35  dkr
- * comment in GetWlShape() added
+ * comment in GetWlIterShape() added
  *
  * Revision 3.71  2003/03/12 23:34:07  dkr
  * SSA transform removed...
@@ -46,7 +49,7 @@
  * SSA form used if flag -ssa is set
  *
  * Revision 3.69  2003/03/05 15:33:09  dkr
- * bug in GetWlShape() fixed:
+ * bug in GetWlIterShape() fixed:
  * works correcly for nested type definitions (user defined types...) now
  *
  * Revision 3.68  2002/10/30 14:12:58  dkr
@@ -73,7 +76,7 @@
  *
  * Revision 3.60  2002/08/09 12:38:36  dkr
  * - more code brushing done
- * - INFO_WL_TYPES move from tree_basic.h to wltransform.c
+ * - INFO_WLTRANS_LHS_TYPE move from tree_basic.h to wltransform.c
  *
  * Revision 3.59  2002/08/08 12:34:58  dkr
  * code brushed, some DBUG_ASSERTs added for AKD, AUD
@@ -291,7 +294,7 @@
 /*
  * access macros for 'arg_info'
  */
-#define INFO_WL_TYPES(n) (n->info.types)
+#define INFO_WL_LHS_TYPE(n) (n->info.types)
 #define INFO_WL_PREASSIGNS(n) (n->node[0])
 
 /*****************************************************************************
@@ -2194,27 +2197,28 @@ GetLcmUnroll (node *nodes, int dim, bool include_blocks)
 /******************************************************************************
  *
  * Function:
- *   node *GenerateShapeStrides( int dim, int dims, shpseg* shape)
+ *   node *GenerateShapeStrides( int dim, int iter_dims, shpseg* iter_shp)
  *
  * Description:
- *   Returns strides/grids of the size found in 'shape'.
+ *   Returns strides/grids of the size found in 'iter_shp'.
  *
  ******************************************************************************/
 
 static node *
-GenerateShapeStrides (int dim, int dims, shpseg *shape)
+GenerateShapeStrides (int dim, int iter_dims, shpseg *iter_shp)
 {
     node *new_grid;
     node *strides = NULL;
 
     DBUG_ENTER ("GenerateShapeStrides");
 
-    if (dim < dims) {
-        new_grid = MakeWLgrid (0, dim, 0, 1, FALSE,
-                               GenerateShapeStrides (dim + 1, dims, shape), NULL, NULL);
+    if (dim < iter_dims) {
+        new_grid
+          = MakeWLgrid (0, dim, 0, 1, FALSE,
+                        GenerateShapeStrides (dim + 1, iter_dims, iter_shp), NULL, NULL);
 
-        strides = MakeWLstride (0, dim, 0, GET_SHAPE_IDX (SHPSEG_ELEMS (shape), dim), 1,
-                                FALSE, new_grid, NULL);
+        strides = MakeWLstride (0, dim, 0, GET_SHAPE_IDX (SHPSEG_ELEMS (iter_shp), dim),
+                                1, FALSE, new_grid, NULL);
     }
 
     DBUG_RETURN (strides);
@@ -2475,26 +2479,24 @@ CheckWithids (node *part)
 /******************************************************************************
  *
  * Function:
- *   shpseg *GetWlShape( node *wl, int dims, types *wl_type)
+ *   shpseg *GetWlIterShape( node *wl, int iter_dims, types *res_type)
  *
  * Description:
- *   Returns the shape of the with-loop operator.
- *   'dims' represents the dimension of the operator (= number of iv components)
- *   and is always >=0.
+ *   Returns the shape of the with-loop iteration space.
  *
  ******************************************************************************/
 
 shpseg *
-GetWlShape (node *wl, int dims, types *wl_type)
+GetWlIterShape (node *wl, int iter_dims, types *res_type)
 {
     node *shp_node;
     int check_dims;
 #ifndef DBUG_OFF
     int arr_len;
 #endif
-    shpseg *shape = NULL;
+    shpseg *iter_shp = NULL;
 
-    DBUG_ENTER ("GetWlShape");
+    DBUG_ENTER ("GetWlIterShape");
 
     switch (NWITH_TYPE (wl)) {
     case WO_genarray:
@@ -2502,14 +2504,15 @@ GetWlShape (node *wl, int dims, types *wl_type)
         if (NODE_TYPE (shp_node) == N_array) {
 #ifndef DBUG_OFF
             arr_len = CountExprs (ARRAY_AELEMS (shp_node));
-            DBUG_ASSERT ((dims == arr_len),
+            DBUG_ASSERT ((iter_dims == arr_len),
                          "genarray with-loop:"
                          " size of index vector != dimension of WL shape");
 #endif
-            shape = (IsConstArray (shp_node)) ? Array2Shpseg (shp_node, NULL) : NULL;
+            iter_shp = (IsConstArray (shp_node)) ? Array2Shpseg (shp_node, NULL) : NULL;
         } else {
             DBUG_ASSERT ((NODE_TYPE (shp_node) == N_id),
                          "NWITH_SHAPE is neither N_array nor N_id");
+#if 1       /* !!! */
             /*
              * handling of constant N_id nodes is missing here
              *
@@ -2518,12 +2521,13 @@ GetWlShape (node *wl, int dims, types *wl_type)
              * Note here, that it is not possible to use the SSA form in this
              * phase since the previous phase RC can not handle SSA yet.
              */
+#endif
         }
         break;
 
     case WO_modarray:
-        shape = Type2Shpseg (wl_type, &check_dims);
-        DBUG_ASSERT ((dims <= DIM_NO_OFFSET (check_dims)),
+        iter_shp = Type2Shpseg (res_type, &check_dims);
+        DBUG_ASSERT ((iter_dims <= DIM_NO_OFFSET (check_dims)),
                      "modarray with-loop:"
                      " size of index vector > dimension of target array");
         break;
@@ -2534,7 +2538,7 @@ GetWlShape (node *wl, int dims, types *wl_type)
         break;
     }
 
-    DBUG_RETURN (shape);
+    DBUG_RETURN (iter_shp);
 }
 
 /******************************************************************************
@@ -2780,16 +2784,16 @@ CurrentComponent_GetNode (node *aelems)
 /******************************************************************************
  *
  * Function:
- *   node* Parts2Strides( node *parts, int dims, shpseg *shape)
+ *   node* Parts2Strides( node *parts, int iter_dims, shpseg *iter_shp)
  *
  * Description:
  *   Converts a N_Npart-chain ('parts') into a N_WLstride-chain (return).
- *   If 'shape' != NULL out-of-bounds values are adjusted accordingly.
+ *   If ('iter_shp' != NULL) out-of-bounds values are adjusted accordingly.
  *
  ******************************************************************************/
 
 static node *
-Parts2Strides (node *parts, int dims, shpseg *shape)
+Parts2Strides (node *parts, int iter_dims, shpseg *iter_shp)
 {
     node *parts_stride, *stride, *new_stride, *new_grid;
     node *gen, *code;
@@ -2827,8 +2831,8 @@ Parts2Strides (node *parts, int dims, shpseg *shape)
         /*
          * with-loops with empty shapes should have been removed already!!!
          */
-        DBUG_ASSERT ((dims > 0), "with-loop with empty shape found!");
-        for (dim = 0; dim < dims; dim++) {
+        DBUG_ASSERT ((iter_dims > 0), "with-loop with empty shape found!");
+        for (dim = 0; dim < iter_dims; dim++) {
             DBUG_ASSERT ((bound1 != NULL), "bound1 incomplete");
             DBUG_ASSERT ((bound2 != NULL), "bound2 incomplete");
 
@@ -2856,9 +2860,10 @@ Parts2Strides (node *parts, int dims, shpseg *shape)
                 /* build N_WLstride-node of current dimension */
                 new_stride
                   = MakeWLstride (0, dim, CurrentComponent_GetInt (bound1),
-                                  (shape != NULL) ? MIN (CurrentComponent_GetInt (bound2),
-                                                         SHPSEG_SHAPE (shape, dim))
-                                                  : CurrentComponent_GetInt (bound2),
+                                  (iter_shp != NULL)
+                                    ? MIN (CurrentComponent_GetInt (bound2),
+                                           SHPSEG_SHAPE (iter_shp, dim))
+                                    : CurrentComponent_GetInt (bound2),
                                   CurrentComponent_GetInt (step), FALSE, new_grid, NULL);
 
                 /* the PART-information is needed by 'IntersectStrideWithOutline' */
@@ -2924,8 +2929,8 @@ Parts2Strides (node *parts, int dims, shpseg *shape)
  *
  * Function:
  *   node *EmptyParts2StridesOrExpr( node **wl,
- *                                   int dims, shpseg *shape,
- *                                   types *lhs_type)
+ *                                   int iter_dims, shpseg *iter_shp,
+ *                                   int res_sdim)
  *
  * Description:
  *   This function handles the case in which all parts are empty.
@@ -2933,7 +2938,7 @@ Parts2Strides (node *parts, int dims, shpseg *shape)
  ******************************************************************************/
 
 static node *
-EmptyParts2StridesOrExpr (node **wl, int dims, shpseg *shape, types *lhs_type)
+EmptyParts2StridesOrExpr (node **wl, int iter_dims, shpseg *iter_shp, int res_sdim)
 {
     node *strides;
     node *cexpr, *def;
@@ -2947,12 +2952,12 @@ EmptyParts2StridesOrExpr (node **wl, int dims, shpseg *shape, types *lhs_type)
 
     switch (NWITH2_TYPE ((*wl))) {
     case WO_genarray:
-        if (GetShpsegLength (dims, shape) > 0) {
+        if ((iter_shp == NULL) || (GetShpsegLength (iter_dims, iter_shp) > 0)) {
             /*
              * result array of genarray-with-loop is non-empty
              *  -> generate a single stride over the whole domain
              */
-            strides = GenerateShapeStrides (0, dims, shape);
+            strides = GenerateShapeStrides (0, iter_dims, iter_shp);
         } else {
             /*
              * result array of genarray-with-loop is empty
@@ -2962,8 +2967,7 @@ EmptyParts2StridesOrExpr (node **wl, int dims, shpseg *shape, types *lhs_type)
 
             cexpr = NWITH2_CEXPR (tmp_wl);
             DBUG_ASSERT ((NODE_TYPE (cexpr) == N_id), "CEXPR must be a N_id node!");
-            sdim = GetShapeDim (lhs_type);
-            if (KNOWN_SHAPE (sdim)) {
+            if (KNOWN_SHAPE (res_sdim)) {
                 /*
                  * shape of result is statically known already:
                  *   lhs = [];
@@ -4158,7 +4162,8 @@ ComputeCubes (node *strides)
 /******************************************************************************
  *
  * Function:
- *   node *GenerateCompleteDomain( node *stride, int dims, shpseg *shape)
+ *   node *GenerateCompleteDomain( node *stride,
+ *                                            int iter_dims, shpseg *iter_shp)
  *
  * Description:
  *   Supplements strides/grids for the complement of N_WLstride node 'stride'.
@@ -4203,7 +4208,7 @@ ComputeCubes (node *strides)
  ******************************************************************************/
 
 static node *
-GenerateCompleteDomain (node *stride, int dims, shpseg *shape)
+GenerateCompleteDomain (node *stride, int iter_dims, shpseg *iter_shp)
 {
     node *new_strides, *new_stride, *new_grid;
     node *next_dim;
@@ -4220,7 +4225,7 @@ GenerateCompleteDomain (node *stride, int dims, shpseg *shape)
     DBUG_ASSERT ((stride != NULL), "no stride found");
     DBUG_ASSERT ((NODE_TYPE (stride) == N_WLstride), "var. stride found");
     DBUG_ASSERT ((WLSTRIDE_NEXT (stride) == NULL), "more than one stride found");
-    DBUG_ASSERT ((shape != NULL), "no shape information found!");
+    DBUG_ASSERT ((iter_shp != NULL), "no shape information found!");
 
     /*
      * we duplicate 'strides'
@@ -4261,12 +4266,13 @@ GenerateCompleteDomain (node *stride, int dims, shpseg *shape)
         new_stride
           = GenerateNodeForGap (act_stride, N_WLstride, &(WLSTRIDE_BOUND2 (act_stride)),
                                 N_WLstride,
-                                &(SHPSEG_SHAPE (shape, WLSTRIDE_DIM (act_stride))),
+                                &(SHPSEG_SHAPE (iter_shp, WLSTRIDE_DIM (act_stride))),
                                 FALSE);
         if (new_stride != NULL) {
             WLSTRIDE_CONTENTS (new_stride)
               = MakeWLgrid (0, WLGRID_DIM (act_grid), 0, 1, FALSE,
-                            GenerateShapeStrides (WLGRID_DIM (act_grid) + 1, dims, shape),
+                            GenerateShapeStrides (WLGRID_DIM (act_grid) + 1, iter_dims,
+                                                  iter_shp),
                             NULL, NULL);
 
             if (last_compl_grid != NULL) {
@@ -4310,7 +4316,8 @@ GenerateCompleteDomain (node *stride, int dims, shpseg *shape)
         if (new_stride != NULL) {
             WLSTRIDE_CONTENTS (new_stride)
               = MakeWLgrid (0, WLGRID_DIM (act_grid), 0, 1, FALSE,
-                            GenerateShapeStrides (WLGRID_DIM (act_grid) + 1, dims, shape),
+                            GenerateShapeStrides (WLGRID_DIM (act_grid) + 1, iter_dims,
+                                                  iter_shp),
                             NULL, NULL);
 
             if (last_compl_grid != NULL) {
@@ -4379,7 +4386,8 @@ GenerateCompleteDomain (node *stride, int dims, shpseg *shape)
 /******************************************************************************
  *
  * Function:
- *   node *GenerateCompleteDomainVar( node *stride, int dims, shpseg *shape)
+ *   node *GenerateCompleteDomainVar( node *stride,
+ *                                             int iter_dims, shpseg *iter_shp)
  *
  * Description:
  *   Supplements strides/grids for the complement of N_WLstrideVar node
@@ -4414,7 +4422,7 @@ GenerateCompleteDomain (node *stride, int dims, shpseg *shape)
  ******************************************************************************/
 
 static node *
-GenerateCompleteDomainVar (node *stride, int dims, shpseg *shape)
+GenerateCompleteDomainVar (node *stride, int iter_dims, shpseg *iter_shp)
 {
     node *grid;
     int lb, shp_idx;
@@ -4436,27 +4444,27 @@ GenerateCompleteDomainVar (node *stride, int dims, shpseg *shape)
                             WLSTRIDEX_GET_ADDR (stride, STEP), FALSE);
         if (new_node != NULL) {
             WLGRIDX_NEXTDIM (new_node)
-              = GenerateShapeStrides (WLGRID_DIM (grid) + 1, dims, shape);
+              = GenerateShapeStrides (WLGRID_DIM (grid) + 1, iter_dims, iter_shp);
         }
 
         /*
          * next dim
          */
         WLGRIDX_NEXTDIM (grid)
-          = GenerateCompleteDomainVar (WLGRIDX_NEXTDIM (grid), dims, shape);
+          = GenerateCompleteDomainVar (WLGRIDX_NEXTDIM (grid), iter_dims, iter_shp);
 
         /*
          * append lower part of complement
          */
-        shp_idx = GET_SHAPE_IDX (SHPSEG_ELEMS (shape), WLSTRIDEX_DIM (stride));
+        shp_idx = GET_SHAPE_IDX (SHPSEG_ELEMS (iter_shp), WLSTRIDEX_DIM (stride));
         stride = FillGapSucc (&new_node, stride, NODE_TYPE (stride),
                               WLSTRIDEX_GET_ADDR (stride, BOUND2), N_WLstride, &shp_idx,
                               FALSE);
         if (new_node != NULL) {
             WLSTRIDEX_CONTENTS (new_node)
               = MakeWLgrid (0, WLSTRIDEX_DIM (stride), 0, 1, FALSE,
-                            GenerateShapeStrides (WLSTRIDEX_DIM (stride) + 1, dims,
-                                                  shape),
+                            GenerateShapeStrides (WLSTRIDEX_DIM (stride) + 1, iter_dims,
+                                                  iter_shp),
                             NULL, NULL);
         }
 
@@ -4469,8 +4477,8 @@ GenerateCompleteDomainVar (node *stride, int dims, shpseg *shape)
         if (new_node != NULL) {
             WLSTRIDEX_CONTENTS (new_node)
               = MakeWLgrid (0, WLSTRIDEX_DIM (stride), 0, 1, FALSE,
-                            GenerateShapeStrides (WLSTRIDEX_DIM (stride) + 1, dims,
-                                                  shape),
+                            GenerateShapeStrides (WLSTRIDEX_DIM (stride) + 1, iter_dims,
+                                                  iter_shp),
                             NULL, NULL);
         }
     }
@@ -4481,7 +4489,8 @@ GenerateCompleteDomainVar (node *stride, int dims, shpseg *shape)
 /******************************************************************************
  *
  * Function:
- *   node *BuildCubes( node *strides, bool is_fold, int dims, shpseg *shape,
+ *   node *BuildCubes( node *strides, bool is_fold,
+ *                                            int iter_dims, shpseg *iter_shp,
  *                     bool *do_naive_comp)
  *
  * Description:
@@ -4490,7 +4499,8 @@ GenerateCompleteDomainVar (node *stride, int dims, shpseg *shape)
  ******************************************************************************/
 
 static node *
-BuildCubes (node *strides, bool is_fold, int dims, shpseg *shape, bool *do_naive_comp)
+BuildCubes (node *strides, bool is_fold, int iter_dims, shpseg *iter_shp,
+            bool *do_naive_comp)
 {
     bool all_const;
     node *cubes = NULL;
@@ -4500,9 +4510,9 @@ BuildCubes (node *strides, bool is_fold, int dims, shpseg *shape, bool *do_naive
     all_const = AllStridesAreConstant (strides, TRUE, TRUE);
     DBUG_EXECUTE ("WLtrans", NOTE ((all_const ? "  constant-bounds with-loop: TRUE"
                                               : "  constant-bounds with-loop: FALSE"));
-                  NOTE (((shape != NULL) ? "  known-shape with-loop: TRUE"
-                                         : "  known-shape with-loop: FALSE (dim = %d)",
-                         dims));
+                  NOTE (((iter_shp != NULL) ? "  known-shape with-loop: TRUE"
+                                            : "  known-shape with-loop: FALSE (dim = %d)",
+                         iter_dims));
                   NOTE (((WLSTRIDEX_NEXT (strides) != NULL)
                            ? "  multi-generator with-loop: TRUE"
                            : "  multi-generator with-loop: FALSE")););
@@ -4515,10 +4525,10 @@ BuildCubes (node *strides, bool is_fold, int dims, shpseg *shape, bool *do_naive
          */
         if (!is_fold) {
             /* no fold with-loop  ->  add missing indices (init/copy) */
-            if (all_const && (shape != NULL)) {
-                cubes = GenerateCompleteDomain (strides, dims, shape);
+            if (all_const && (iter_shp != NULL)) {
+                cubes = GenerateCompleteDomain (strides, iter_dims, iter_shp);
             } else {
-                cubes = GenerateCompleteDomainVar (strides, dims, shape);
+                cubes = GenerateCompleteDomainVar (strides, iter_dims, iter_shp);
 
                 /*
                  * the generated cubes are already splitted and merged
@@ -4572,7 +4582,7 @@ BuildCubes (node *strides, bool is_fold, int dims, shpseg *shape, bool *do_naive
 /******************************************************************************
  *
  * Function:
- *   node *SetSegs( node *pragma, node *cubes, int dims, bool fold_float)
+ *   node *SetSegs( node *pragma, node *cubes, int iter_dims, bool fold_float)
  *
  * Description:
  *   returns chain of segments (based on the calculated cubes 'cubes')
@@ -4580,7 +4590,7 @@ BuildCubes (node *strides, bool is_fold, int dims, shpseg *shape, bool *do_naive
  ******************************************************************************/
 
 static node *
-SetSegs (node *pragma, node *cubes, int dims, bool fold_float)
+SetSegs (node *pragma, node *cubes, int iter_dims, bool fold_float)
 {
     node *aps;
     node *segs;
@@ -4591,9 +4601,9 @@ SetSegs (node *pragma, node *cubes, int dims, bool fold_float)
     /*
      * create default configuration.
      * also possible:
-     *   segs = WLCOMP_Cubes( NULL, NULL, cubes, dims, linenum);
+     *   segs = WLCOMP_Cubes( NULL, NULL, cubes, iter_dims, linenum);
      */
-    segs = WLCOMP_All (NULL, NULL, cubes, dims, linenum);
+    segs = WLCOMP_All (NULL, NULL, cubes, iter_dims, linenum);
 
     /*
      * create pragma-dependent configuration
@@ -4605,7 +4615,7 @@ SetSegs (node *pragma, node *cubes, int dims, bool fold_float)
 #define WLP(fun, str, ieee)                                                              \
     if (strcmp (AP_NAME (EXPRS_EXPR (aps)), str) == 0) {                                 \
         if ((!fold_float) || (!enforce_ieee) || ieee) {                                  \
-            segs = fun (segs, AP_ARGS (EXPRS_EXPR (aps)), cubes, dims, linenum);         \
+            segs = fun (segs, AP_ARGS (EXPRS_EXPR (aps)), cubes, iter_dims, linenum);    \
         } else {                                                                         \
             WARN (linenum, ("Function %s of wlcomp-pragma ignored in order"              \
                             " to meet the IEEE-754 standard",                            \
@@ -5100,11 +5110,11 @@ BlockStride (node *stride, int *bv, bool unroll)
 /******************************************************************************
  *
  * Function:
- *   node *BlockWL( node *stride, int dims, int *bv, bool unroll)
+ *   node *BlockWL( node *stride, int iter_dims, int *bv, bool unroll)
  *
  * Description:
  *   returns with blocking-vector 'bv' blocked 'stride'.
- *   'dims' is the number of dimensions in 'stride'.
+ *   'iter_dims' is the number of dimensions in 'stride'.
  *
  *   when called multiple times in a row, this function even realizes
  *     hierarchical blocking!! (top-down: coarse blocking first!)
@@ -5115,7 +5125,7 @@ BlockStride (node *stride, int *bv, bool unroll)
  ******************************************************************************/
 
 static node *
-BlockWL (node *stride, int dims, int *bv, bool unroll)
+BlockWL (node *stride, int iter_dims, int *bv, bool unroll)
 {
     node *curr_block, *curr_dim, *curr_stride, *curr_grid, *contents, *lastdim,
       *last_block, *block;
@@ -5141,7 +5151,7 @@ BlockWL (node *stride, int dims, int *bv, bool unroll)
 
                 /* block contents of found block */
                 WLBLOCK_CONTENTS (curr_dim)
-                  = BlockWL (WLBLOCK_CONTENTS (curr_dim), dims, bv, unroll);
+                  = BlockWL (WLBLOCK_CONTENTS (curr_dim), iter_dims, bv, unroll);
 
                 curr_block = WLBLOCK_NEXT (curr_block);
             }
@@ -5175,7 +5185,7 @@ BlockWL (node *stride, int dims, int *bv, bool unroll)
                     curr_grid = WLSTRIDE_CONTENTS (curr_stride);
                     do {
                         WLGRID_NEXTDIM (curr_grid)
-                          = BlockWL (WLGRID_NEXTDIM (curr_grid), dims, bv, unroll);
+                          = BlockWL (WLGRID_NEXTDIM (curr_grid), iter_dims, bv, unroll);
                         curr_grid = WLGRID_NEXT (curr_grid);
                     } while (curr_grid != NULL);
                     curr_stride = WLSTRIDE_NEXT (curr_stride);
@@ -5186,7 +5196,7 @@ BlockWL (node *stride, int dims, int *bv, bool unroll)
                      */
                     contents = curr_stride;
                     lastdim = NULL;
-                    for (d = WLSTRIDE_DIM (curr_stride); d < dims; d++) {
+                    for (d = WLSTRIDE_DIM (curr_stride); d < iter_dims; d++) {
                         DBUG_ASSERT ((NODE_TYPE (contents) == N_WLstride),
                                      "no stride found");
                         DBUG_ASSERT (((d == WLSTRIDE_DIM (curr_stride))
@@ -6221,7 +6231,7 @@ DoNormalize (node *nodes, int *width)
 /******************************************************************************
  *
  * Function:
- *   node *NormWL( int dims, shpseg *shape, int *idx_max, node *nodes)
+ *   node *NormWL( int iter_dims, shpseg *iter_shp, int *idx_max, node *nodes)
  *
  * Description:
  *   Returns the normalized N_WL...-tree 'nodes'.
@@ -6229,18 +6239,18 @@ DoNormalize (node *nodes, int *width)
  ******************************************************************************/
 
 static node *
-NormWL (int dims, shpseg *shape, int *idx_max, node *nodes)
+NormWL (int iter_dims, shpseg *iter_shp, int *idx_max, node *nodes)
 {
     int d;
     int *width = NULL;
 
     DBUG_ENTER ("NormWL");
 
-    MALLOC_VECT (width, dims, int);
-    for (d = 0; d < dims; d++) {
+    MALLOC_VECT (width, iter_dims, int);
+    for (d = 0; d < iter_dims; d++) {
         if (idx_max[d] == IDX_SHAPE) {
-            DBUG_ASSERT ((shape != NULL), "no shape found!");
-            width[d] = SHPSEG_SHAPE (shape, d);
+            DBUG_ASSERT ((iter_shp != NULL), "no shape found!");
+            width[d] = SHPSEG_SHAPE (iter_shp, d);
         } else {
             width[d] = idx_max[d];
         }
@@ -6486,7 +6496,7 @@ InsertNoopNodes (node *wlnode)
 /******************************************************************************
  *
  * function:
- *   void ComputeIndexMinMax( node *wlseg, shpseg *shape, node *wlnode)
+ *   void ComputeIndexMinMax( node *wlseg, shpseg *iter_shp, node *wlnode)
  *
  * description:
  *   Computes the minimum and maximum of the index-vector found in 'wlnode'.
@@ -6517,7 +6527,7 @@ InsertNoopNodes (node *wlnode)
  ******************************************************************************/
 
 static void
-ComputeIndexMinMax (node *wlseg, shpseg *shape, node *wlnode)
+ComputeIndexMinMax (node *wlseg, shpseg *iter_shp, node *wlnode)
 {
     nodetype nt;
     void *p_min, *p_max;
@@ -6532,8 +6542,8 @@ ComputeIndexMinMax (node *wlseg, shpseg *shape, node *wlnode)
         case N_WLstride:
             /* here is no break missing! */
         case N_WLstrideVar:
-            ComputeIndexMinMax (wlseg, shape, WLSTRIDEX_CONTENTS (wlnode));
-            ComputeIndexMinMax (wlseg, shape, WLSTRIDEX_NEXT (wlnode));
+            ComputeIndexMinMax (wlseg, iter_shp, WLSTRIDEX_CONTENTS (wlnode));
+            ComputeIndexMinMax (wlseg, iter_shp, WLSTRIDEX_NEXT (wlnode));
 
             dim = WLSTRIDEX_DIM (wlnode);
             p_min = WLSTRIDEX_GET_ADDR (wlnode, BOUND1);
@@ -6543,8 +6553,8 @@ ComputeIndexMinMax (node *wlseg, shpseg *shape, node *wlnode)
         case N_WLblock:
             /* here is no break missing! */
         case N_WLublock:
-            ComputeIndexMinMax (wlseg, shape, WLXBLOCK_NEXTDIM (wlnode));
-            ComputeIndexMinMax (wlseg, shape, WLXBLOCK_NEXT (wlnode));
+            ComputeIndexMinMax (wlseg, iter_shp, WLXBLOCK_NEXTDIM (wlnode));
+            ComputeIndexMinMax (wlseg, iter_shp, WLXBLOCK_NEXT (wlnode));
 
             dim = WLXBLOCK_DIM (wlnode);
             p_min = WLSTRIDEX_GET_ADDR (wlnode, BOUND1);
@@ -6554,8 +6564,8 @@ ComputeIndexMinMax (node *wlseg, shpseg *shape, node *wlnode)
         case N_WLgrid:
             /* here is no break missing! */
         case N_WLgridVar:
-            ComputeIndexMinMax (wlseg, shape, WLGRIDX_NEXTDIM (wlnode));
-            ComputeIndexMinMax (wlseg, shape, WLGRIDX_NEXT (wlnode));
+            ComputeIndexMinMax (wlseg, iter_shp, WLGRIDX_NEXTDIM (wlnode));
+            ComputeIndexMinMax (wlseg, iter_shp, WLGRIDX_NEXT (wlnode));
 
             /*
              * skip adjustment of 'idx_min', 'idx_max'
@@ -6574,7 +6584,7 @@ ComputeIndexMinMax (node *wlseg, shpseg *shape, node *wlnode)
         if (dim >= 0) {
             p_idx_min = WLSEGX_IDX_GET_ADDR (wlseg, IDX_MIN, dim);
             p_idx_max = WLSEGX_IDX_GET_ADDR (wlseg, IDX_MAX, dim);
-            shp_idx = GET_SHAPE_IDX (SHPSEG_ELEMS (shape), dim);
+            shp_idx = GET_SHAPE_IDX (SHPSEG_ELEMS (iter_shp), dim);
 
             if (NodeOrInt_Le (nt, p_min, NODE_TYPE (wlseg), p_idx_min, shp_idx)) {
                 NodeOrInt_SetNodeOrInt (NODE_TYPE (wlseg), p_idx_min, nt, p_min);
@@ -6591,7 +6601,7 @@ ComputeIndexMinMax (node *wlseg, shpseg *shape, node *wlnode)
 /******************************************************************************
  *
  * Function:
- *   node* InferSegsParams_Pre( node *segs, shpseg *shape)
+ *   node* InferSegsParams_Pre( node *segs, shpseg *iter_shp)
  *
  * Description:
  *   Infers the temporary attribute IDX_MIN, IDX_MAX, SV of all the given
@@ -6600,7 +6610,7 @@ ComputeIndexMinMax (node *wlseg, shpseg *shape, node *wlnode)
  ******************************************************************************/
 
 static node *
-InferSegsParams_Pre (node *segs, shpseg *shape)
+InferSegsParams_Pre (node *segs, shpseg *iter_shp)
 {
     int d;
 
@@ -6612,8 +6622,8 @@ InferSegsParams_Pre (node *segs, shpseg *shape)
 
         DBUG_EXECUTE (
           "WLtrans", fprintf (stderr, "InferSegsParams_Pre: ");
-          fprintf (stderr, "SHAPE = "); if (shape != NULL) {
-              PRINT_VECT (stderr, SHPSEG_ELEMS (shape), WLSEGX_DIMS (segs), "%i");
+          fprintf (stderr, "SHAPE = "); if (iter_shp != NULL) {
+              PRINT_VECT (stderr, SHPSEG_ELEMS (iter_shp), WLSEGX_DIMS (segs), "%i");
           } else { fprintf (stderr, "NULL"); });
 
         if (NODE_TYPE (segs) == N_WLseg) {
@@ -6628,7 +6638,7 @@ InferSegsParams_Pre (node *segs, shpseg *shape)
             /*
              * compute the infimum and supremum of the index-vector.
              */
-            ComputeIndexMinMax (segs, shape, WLSEG_CONTENTS (segs));
+            ComputeIndexMinMax (segs, iter_shp, WLSEG_CONTENTS (segs));
 
             /*******************
              *       SV        *
@@ -6661,7 +6671,7 @@ InferSegsParams_Pre (node *segs, shpseg *shape)
             /*
              * compute the infimum and supremum of the index-vector.
              */
-            ComputeIndexMinMax (segs, shape, WLSEGVAR_CONTENTS (segs));
+            ComputeIndexMinMax (segs, iter_shp, WLSEGVAR_CONTENTS (segs));
 
             DBUG_EXECUTE ("WLtrans", fprintf (stderr, ", WLSEGVAR_IDX_MIN = ");
                           WLSEGVAR_IDX_PRINT (stderr, segs, IDX_MIN);
@@ -6670,7 +6680,7 @@ InferSegsParams_Pre (node *segs, shpseg *shape)
                           fprintf (stderr, "\n"););
         }
 
-        WLSEGX_NEXT (segs) = InferSegsParams_Pre (WLSEGX_NEXT (segs), shape);
+        WLSEGX_NEXT (segs) = InferSegsParams_Pre (WLSEGX_NEXT (segs), iter_shp);
     }
 
     DBUG_RETURN (segs);
@@ -6900,7 +6910,7 @@ InferFitted (node *wlnode)
 /******************************************************************************
  *
  * Function:
- *   node *ProcessSegments( node *segs, int dims, shpseg *shape,
+ *   node *ProcessSegments( node *segs, int iter_dims, shpseg *iter_shp,
  *                          bool do_naive_comp)
  *
  * Description:
@@ -6909,14 +6919,14 @@ InferFitted (node *wlnode)
  ******************************************************************************/
 
 static node *
-ProcessSegments (node *segs, int dims, shpseg *shape, bool do_naive_comp)
+ProcessSegments (node *segs, int iter_dims, shpseg *iter_shp, bool do_naive_comp)
 {
     node *seg;
 
     DBUG_ENTER ("ProcessSegments");
 
     /* compute SEGX_IDX_MIN, SEGX_IDX_MAX and SEG_SV */
-    segs = InferSegsParams_Pre (segs, shape);
+    segs = InferSegsParams_Pre (segs, iter_shp);
 
     seg = segs;
     while (seg != NULL) {
@@ -6947,7 +6957,7 @@ ProcessSegments (node *segs, int dims, shpseg *shape, bool do_naive_comp)
                               NOTE (("step 6.%d: hierarchical blocking (level %d)", b + 1,
                                      b)););
                 WLSEG_CONTENTS (seg)
-                  = BlockWL (WLSEG_CONTENTS (seg), dims, WLSEG_BV (seg, b), FALSE);
+                  = BlockWL (WLSEG_CONTENTS (seg), iter_dims, WLSEG_BV (seg, b), FALSE);
             }
         }
         if ((break_after == PH_wltrans) && (!strcmp (break_specifier, "block"))) {
@@ -6960,7 +6970,7 @@ ProcessSegments (node *segs, int dims, shpseg *shape, bool do_naive_comp)
         if ((NODE_TYPE (seg) == N_WLseg) && (!do_naive_comp)) {
             DBUG_EXECUTE ("WLtrans", NOTE (("step 7: unrolling-blocking")););
             WLSEG_CONTENTS (seg)
-              = BlockWL (WLSEG_CONTENTS (seg), dims, WLSEG_UBV (seg), TRUE);
+              = BlockWL (WLSEG_CONTENTS (seg), iter_dims, WLSEG_UBV (seg), TRUE);
         }
         if ((break_after == PH_wltrans) && (!strcmp (break_specifier, "ublock"))) {
             goto DONE;
@@ -7005,7 +7015,7 @@ ProcessSegments (node *segs, int dims, shpseg *shape, bool do_naive_comp)
         if ((NODE_TYPE (seg) == N_WLseg) && (!do_naive_comp)) {
             DBUG_EXECUTE ("WLtrans", NOTE (("step 11: normalize")););
             WLSEG_CONTENTS (seg)
-              = NormWL (dims, shape, WLSEG_IDX_MAX (seg), WLSEG_CONTENTS (seg));
+              = NormWL (iter_dims, iter_shp, WLSEG_IDX_MAX (seg), WLSEG_CONTENTS (seg));
         }
         if ((break_after == PH_wltrans) && (!strcmp (break_specifier, "norm"))) {
             goto DONE;
@@ -7038,7 +7048,7 @@ ProcessSegments (node *segs, int dims, shpseg *shape, bool do_naive_comp)
 /******************************************************************************
  *
  * Function:
- *   node *ConvertWith( node *wl, int dims)
+ *   node *ConvertWith( node *wl, int iter_dims)
  *
  * Description:
  *   Converts the given N_Nwith node into a N_Nwith2 node with empty segment
@@ -7047,14 +7057,14 @@ ProcessSegments (node *segs, int dims, shpseg *shape, bool do_naive_comp)
  ******************************************************************************/
 
 static node *
-ConvertWith (node *wl, int dims)
+ConvertWith (node *wl, int iter_dims)
 {
     node *new_node;
 
     DBUG_ENTER ("ConvertWith");
 
-    new_node
-      = MakeNWith2 (NWITH_WITHID (wl), NULL, NWITH_CODE (wl), NWITH_WITHOP (wl), dims);
+    new_node = MakeNWith2 (NWITH_WITHID (wl), NULL, NWITH_CODE (wl), NWITH_WITHOP (wl),
+                           iter_dims);
 
     /* extract array-placement pragmas */
     NWITH2_PRAGMA (new_node) = ExtractAplPragma (NWITH_PRAGMA (wl), linenum);
@@ -7142,22 +7152,18 @@ EmptyWl2Expr (node *wl, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *CheckWith( node *arg_node, node *arg_info)
+ *   node *CheckWith( node *arg_node, int res_sdim)
  *
  * Description:
  *   Checks whether the given WL fullfills certain side-conditions and throws
  *   error messages if not.
  *
- * Remark:
- *   'INFO_WL_TYPES( arg_info)' points to the type of the (first) let-ids.
- *
  ******************************************************************************/
 
 node *
-CheckWith (node *arg_node, node *arg_info)
+CheckWith (node *arg_node, int res_sdim)
 {
     node *cexpr;
-    int wlids_sdim;
     int cexpr_sdim;
 
     DBUG_ENTER ("CheckWith");
@@ -7183,23 +7189,15 @@ CheckWith (node *arg_node, node *arg_info)
          * index vector) and the WL expression depends on the index vector,
          * it would be impossible to compute the shape of the result at all!
          */
-        wlids_sdim = GetShapeDim (INFO_WL_TYPES (arg_info));
         cexpr = NWITH_CEXPR (arg_node);
         DBUG_ASSERT ((NODE_TYPE (cexpr) == N_id), "NWITH_CEXPR is not a N_id");
         cexpr_sdim = GetShapeDim (ID_TYPE (cexpr));
 
-        if ((!KNOWN_SHAPE (wlids_sdim)) && (!KNOWN_SHAPE (cexpr_sdim))
+        if ((!KNOWN_SHAPE (res_sdim)) && (!KNOWN_SHAPE (cexpr_sdim))
             && (NWITH_DEFAULT (arg_node) == NULL)) {
-#if 1
             ABORT (linenum, ("genarray with-loop with missing default expression found."
                              " Unfortunately, a default expression is necessary here"
                              " to compute the shape of the result"));
-#else
-            /*
-             * for test purpose only (to smuggle in a dummy value for NWITH_DEFAULT)
-             */
-            NWITH_DEFAULT (arg_node) = DupIds_Id (NWITH_IDS (arg_node));
-#endif
         }
         break;
 
@@ -7227,7 +7225,7 @@ CheckWith (node *arg_node, node *arg_info)
  *   transforms with-loop (N_Nwith-node) into new representation (N_Nwith2).
  *
  * Remark:
- *   'INFO_WL_TYPES( arg_info)' points to the type of the (first) let-ids.
+ *   'INFO_WL_LHS_TYPE( arg_info)' points to the type of the (first) let-ids.
  *
  ******************************************************************************/
 
@@ -7236,6 +7234,7 @@ WLTRAwith (node *arg_node, node *arg_info)
 {
     types *idx_type;
     int idx_sdim;
+    int res_sdim;
     bool is_fold;
     node *new_node = NULL;
 
@@ -7247,9 +7246,10 @@ WLTRAwith (node *arg_node, node *arg_info)
 
     idx_type = IDS_TYPE (NWITH_VEC (arg_node));
     idx_sdim = GetShapeDim (idx_type);
+    res_sdim = GetShapeDim (INFO_WL_LHS_TYPE (arg_info));
     is_fold = NWITH_IS_FOLD (arg_node);
 
-    arg_node = CheckWith (arg_node, arg_info);
+    arg_node = CheckWith (arg_node, res_sdim);
 
     if (!KNOWN_SHAPE (idx_sdim)) {
         DBUG_ASSERT ((idx_sdim != SCALAR), "scalar index vector found!");
@@ -7264,8 +7264,8 @@ WLTRAwith (node *arg_node, node *arg_info)
         new_node = arg_node;
     } else {
         node *strides;
-        int idx_size;
-        shpseg *wl_shp;
+        int iter_dims;    /* >= 0 */
+        shpseg *iter_shp; /* may be NULL! */
 
         DBUG_EXECUTE ("WLtrans",
                       NOTE (("with-loop with AKS withid found (line %d)", linenum)););
@@ -7280,10 +7280,11 @@ WLTRAwith (node *arg_node, node *arg_info)
                      "This is probably due to an error during with-loop-folding.");
 
         /* get number of dims of with-loop index range */
-        idx_size = TYPES_SHAPE (idx_type, 0);
-        wl_shp = GetWlShape (arg_node, idx_size, INFO_WL_TYPES (arg_info));
+        iter_dims = TYPES_SHAPE (idx_type, 0);
+        DBUG_ASSERT ((iter_dims >= 0), "dimension of wl iteration space not found!");
+        iter_shp = GetWlIterShape (arg_node, iter_dims, INFO_WL_LHS_TYPE (arg_info));
 
-        if (idx_size == 0) {
+        if (iter_dims == 0) {
             new_node = EmptyWl2Expr (arg_node, arg_info);
         } else {
 
@@ -7291,7 +7292,7 @@ WLTRAwith (node *arg_node, node *arg_info)
              * convert parts of with-loop into new format
              */
             DBUG_EXECUTE ("WLtrans", NOTE (("step 1.1: convert parts into strides")););
-            strides = Parts2Strides (NWITH_PART (arg_node), idx_size, wl_shp);
+            strides = Parts2Strides (NWITH_PART (arg_node), iter_dims, iter_shp);
 
             /*
              * consistence check: ensures that the strides are pairwise disjoint
@@ -7302,12 +7303,12 @@ WLTRAwith (node *arg_node, node *arg_info)
                          " Not all strides are pairwise disjoint!\n"
                          "This is probably due to an error during with-loop-folding.");
 
-            new_node = ConvertWith (arg_node, idx_size);
+            new_node = ConvertWith (arg_node, iter_dims);
 
             if (strides == NULL) {
                 /* all parts are empty  ->  set 'strides' or 'new_node' */
-                strides = EmptyParts2StridesOrExpr (&new_node, idx_size, wl_shp,
-                                                    INFO_WL_TYPES (arg_info));
+                strides
+                  = EmptyParts2StridesOrExpr (&new_node, iter_dims, iter_shp, res_sdim);
             }
 
             if (strides != NULL) {
@@ -7323,7 +7324,8 @@ WLTRAwith (node *arg_node, node *arg_info)
                  * build the cubes
                  */
                 DBUG_EXECUTE ("WLtrans", NOTE (("step 2: build cubes")););
-                cubes = BuildCubes (strides, is_fold, idx_size, wl_shp, &do_naive_comp);
+                cubes
+                  = BuildCubes (strides, is_fold, iter_dims, iter_shp, &do_naive_comp);
                 if ((break_after == PH_wltrans) && (!strcmp (break_specifier, "cubes"))) {
                     goto DONE;
                 }
@@ -7340,12 +7342,13 @@ WLTRAwith (node *arg_node, node *arg_info)
                 DBUG_EXECUTE ("WLtrans", NOTE (("step 4: choose segments")););
                 if (do_naive_comp) {
                     /* naive compilation  ->  put each stride in a separate segment */
-                    segs = WLCOMP_Cubes (NULL, NULL, cubes, idx_size, linenum);
+                    segs = WLCOMP_Cubes (NULL, NULL, cubes, iter_dims, linenum);
                 } else {
-                    simpletype wl_btype = GetBasetype (INFO_WL_TYPES (arg_info));
+                    simpletype res_btype = GetBasetype (INFO_WL_LHS_TYPE (arg_info));
                     bool fold_float
-                      = (is_fold && ((wl_btype == T_float) || (wl_btype == T_double)));
-                    segs = SetSegs (NWITH_PRAGMA (arg_node), cubes, idx_size, fold_float);
+                      = (is_fold && ((res_btype == T_float) || (res_btype == T_double)));
+                    segs
+                      = SetSegs (NWITH_PRAGMA (arg_node), cubes, iter_dims, fold_float);
                 }
                 if ((break_after == PH_wltrans) && (!strcmp (break_specifier, "segs"))) {
                     goto DONE;
@@ -7354,12 +7357,12 @@ WLTRAwith (node *arg_node, node *arg_info)
                 /*
                  * do all the segment-wise transformation stuff (step 4 -- 11)
                  */
-                segs = ProcessSegments (segs, idx_size, wl_shp, do_naive_comp);
+                segs = ProcessSegments (segs, iter_dims, iter_shp, do_naive_comp);
 
             DONE:
                 if (segs == NULL) {
                     segs = WLCOMP_All (NULL, NULL, (cubes == NULL) ? strides : cubes,
-                                       idx_size, linenum);
+                                       iter_dims, linenum);
                 }
 
                 /* free temporary data */
@@ -7418,7 +7421,7 @@ WLTRAcode (node *arg_node, node *arg_info)
  *   node *WLTRAlet( node *arg_node, node *arg_info)
  *
  * Description:
- *   INFO_WL_TYPES is set to the type of the (first) let-ids.
+ *   INFO_WL_LHS_TYPE is set to the type of the (first) let-ids.
  *
  ******************************************************************************/
 
@@ -7429,7 +7432,7 @@ WLTRAlet (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("WLTRAlet");
 
-    tmp = INFO_WL_TYPES (arg_info);
+    tmp = INFO_WL_LHS_TYPE (arg_info);
 
     if (LET_IDS (arg_node) != NULL) {
         DBUG_ASSERT ((LET_VARDEC (arg_node) != NULL),
@@ -7439,14 +7442,14 @@ WLTRAlet (node *arg_node, node *arg_info)
                       || (NODE_TYPE (LET_VARDEC (arg_node)) == N_arg)),
                      "vardec-node of let-variable has wrong type!");
 
-        INFO_WL_TYPES (arg_info) = LET_TYPE (arg_node);
+        INFO_WL_LHS_TYPE (arg_info) = LET_TYPE (arg_node);
     } else {
-        INFO_WL_TYPES (arg_info) = NULL;
+        INFO_WL_LHS_TYPE (arg_info) = NULL;
     }
 
     LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
 
-    INFO_WL_TYPES (arg_info) = tmp;
+    INFO_WL_LHS_TYPE (arg_info) = tmp;
 
     DBUG_RETURN (arg_node);
 }
