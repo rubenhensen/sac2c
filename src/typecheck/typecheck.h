@@ -1,6 +1,10 @@
 /*
  * $Log$
- * Revision 1.25  1996/05/31 09:43:06  asi
+ * Revision 1.26  1996/07/16 15:30:32  asi
+ * macro GET_BASIC_TYPE changed: commented the part, where th array substructure
+ * of the type structure had been duplicated, this is already done in DuplicateTypes
+ *
+ * Revision 1.25  1996/05/31  09:43:06  asi
  * macros defined in access_macros.h no longer used
  *
  * Revision 1.24  1996/02/12  16:07:31  asi
@@ -138,25 +142,23 @@ extern char *module_name;      /* name of module to typecheck;
                             MOD_NAME (arg_type->name_mod), arg_type->name))              \
             else {                                                                       \
                 res_type = DuplicateTypes (t_node->info.types, 0);                       \
-                if (arg_type->dim > 0) {                                                 \
-                    if (res_type->dim >= 0) {                                            \
-                        int dim, i;                                                      \
-                        shpseg *shpseg_old;                                              \
-                        int old_dim = res_type->dim;                                     \
-                        dim = old_dim + arg_type->dim;                                   \
-                        DBUG_ASSERT (dim <= SHP_SEG_SIZE, "shape out off range ");       \
-                        shpseg_old = res_type->shpseg;                                   \
-                        res_type->shpseg = (shpseg *)Malloc (sizeof (shpseg));           \
-                        res_type->shpseg->next = NULL;                                   \
-                        for (i = 0; i < arg_type->dim; i++)                              \
-                            res_type->shpseg->shp[i] = arg_type->shpseg->shp[i];         \
-                        for (i = 0; i < old_dim; i++)                                    \
-                            res_type->shpseg->shp[i + arg_type->dim]                     \
-                              = shpseg_old->shp[i];                                      \
-                        res_type->dim = dim;                                             \
-                    }                                                                    \
-                }                                                                        \
-            }                                                                            \
+            /* The following lines seemed to be double (here and in DuplicateTypes) */   \
+/*         if(arg_type->dim >0) { \
+            if(res_type->dim >=0) { \
+               int dim, i; \
+               shpseg *shpseg_old; \
+               int old_dim=res_type->dim; \
+               dim=old_dim+arg_type->dim; \
+               DBUG_ASSERT(dim <=SHP_SEG_SIZE, "shape out off range "); \
+               shpseg_old=res_type->shpseg; \
+               res_type->shpseg=(shpseg*)Malloc(sizeof(shpseg)); \
+               res_type->shpseg->next=NULL; \
+               for(i=0;i<arg_type->dim; i++) \
+                  res_type->shpseg->shp[i]=arg_type->shpseg->shp[i]; \
+               for(i=0;i<old_dim; i++) \
+                  res_type->shpseg->shp[i+arg_type->dim]=shpseg_old->shp[i]; \
+               res_type->dim=dim; \
+       }  } */ }                                                                         \
         } else                                                                           \
             res_type = DuplicateTypes (arg_type, 0);                                     \
     }
