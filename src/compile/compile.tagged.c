@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.34  2002/07/31 16:36:05  dkr
+ * - tags reorganized: HID/NHD are seperate classes now
+ * - support for arrays of hidden added
+ *
  * Revision 1.33  2002/07/31 15:34:15  dkr
  * - new hidden tag added
  * - some bugs fixed
@@ -3332,7 +3336,8 @@ COMPPrfSel (node *arg_node, node *arg_info, node **check_reuse1, node **check_re
 
         (*set_shape_icm) = MakeIcm1 ("ND_PRF_SEL__SHAPE_id", icm_args);
 
-        ret_node = MakeAssignIcm1 ("ND_PRF_SEL__DATA_id", DupTree (icm_args), NULL);
+        ret_node = MakeAssignIcm2 ("ND_PRF_SEL__DATA_id", DupTree (icm_args),
+                                   MakeId_Copy (GenericFun (0, ID_TYPE (arg2))), NULL);
     } else {
         DBUG_ASSERT ((NODE_TYPE (arg1) == N_array),
                      "1st arg of F_sel is neither N_id nor N_array!");
@@ -3349,7 +3354,8 @@ COMPPrfSel (node *arg_node, node *arg_info, node **check_reuse1, node **check_re
 
         (*set_shape_icm) = MakeIcm1 ("ND_PRF_SEL__SHAPE_arr", icm_args);
 
-        ret_node = MakeAssignIcm1 ("ND_PRF_SEL__DATA_arr", DupTree (icm_args), NULL);
+        ret_node = MakeAssignIcm2 ("ND_PRF_SEL__DATA_arr", DupTree (icm_args),
+                                   MakeId_Copy (GenericFun (0, ID_TYPE (arg2))), NULL);
     }
 
     DBUG_RETURN (ret_node);
@@ -3404,25 +3410,26 @@ COMPPrfModarray (node *arg_node, node *arg_info, node **check_reuse1, node **che
         DBUG_ASSERT (((GetBasetype (ID_TYPE (arg2)) == T_int)),
                      "2nd arg of F_modarray is a illegal indexing var!");
 
-        ret_node = MakeAssignIcm5 ("ND_PRF_MODARRAY__DATA_id",
+        ret_node = MakeAssignIcm6 ("ND_PRF_MODARRAY__DATA_id",
                                    MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
                                                  FALSE, TRUE, FALSE, NULL),
                                    MakeTypeArgs (ID_NAME (arg1), ID_TYPE (arg1), FALSE,
                                                  TRUE, FALSE, NULL),
                                    MakeNum (GetTypesLength (ID_TYPE (arg2))),
-                                   DupNode_NT (arg2), DupNode_NT (arg3), NULL);
+                                   DupNode_NT (arg2), DupNode_NT (arg3),
+                                   MakeId_Copy (GenericFun (0, ID_TYPE (arg1))), NULL);
     } else {
         DBUG_ASSERT ((NODE_TYPE (arg2) == N_array),
                      "2nd arg of F_modarray is neither N_id nor N_array!");
 
-        ret_node
-          = MakeAssignIcm5 ("ND_PRF_MODARRAY__DATA_arr",
-                            MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE,
-                                          TRUE, FALSE, NULL),
-                            MakeTypeArgs (ID_NAME (arg1), ID_TYPE (arg1), FALSE, TRUE,
-                                          FALSE, NULL),
-                            MakeNum (CountExprs (ARRAY_AELEMS (arg2))),
-                            DupExprs_NT (ARRAY_AELEMS (arg2)), DupNode_NT (arg3), NULL);
+        ret_node = MakeAssignIcm6 ("ND_PRF_MODARRAY__DATA_arr",
+                                   MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
+                                                 FALSE, TRUE, FALSE, NULL),
+                                   MakeTypeArgs (ID_NAME (arg1), ID_TYPE (arg1), FALSE,
+                                                 TRUE, FALSE, NULL),
+                                   MakeNum (CountExprs (ARRAY_AELEMS (arg2))),
+                                   DupExprs_NT (ARRAY_AELEMS (arg2)), DupNode_NT (arg3),
+                                   MakeId_Copy (GenericFun (0, ID_TYPE (arg1))), NULL);
     }
 
     DBUG_RETURN (ret_node);
@@ -3477,7 +3484,8 @@ COMPPrfIdxSel (node *arg_node, node *arg_info, node **check_reuse1, node **check
 
     (*set_shape_icm) = MakeIcm1 ("ND_PRF_IDX_SEL__SHAPE", icm_args);
 
-    ret_node = MakeAssignIcm1 ("ND_PRF_IDX_SEL__DATA", DupTree (icm_args), NULL);
+    ret_node = MakeAssignIcm2 ("ND_PRF_IDX_SEL__DATA", DupTree (icm_args),
+                               MakeId_Copy (GenericFun (0, ID_TYPE (arg2))), NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -3537,12 +3545,13 @@ COMPPrfIdxModarray (node *arg_node, node *arg_info, node **check_reuse1,
                                 MakeTypeArgs (ID_NAME (arg1), ID_TYPE (arg1), FALSE, TRUE,
                                               FALSE, NULL)));
 
-    ret_node = MakeAssignIcm4 ("ND_PRF_IDX_MODARRAY__DATA",
+    ret_node = MakeAssignIcm5 ("ND_PRF_IDX_MODARRAY__DATA",
                                MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
                                              FALSE, TRUE, FALSE, NULL),
                                MakeTypeArgs (ID_NAME (arg1), ID_TYPE (arg1), FALSE, TRUE,
                                              FALSE, NULL),
-                               DupNode_NT (arg2), DupNode_NT (arg3), NULL);
+                               DupNode_NT (arg2), DupNode_NT (arg3),
+                               MakeId_Copy (GenericFun (0, ID_TYPE (arg1))), NULL);
 
     DBUG_RETURN (ret_node);
 }
