@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.32  1998/03/17 10:34:01  dkr
+ * changed usage of MakeWLseg
+ *
  * Revision 1.31  1998/03/16 00:33:29  dkr
  * added DupWLseg, DupWLblock, DupWLublock, DupWLproj, DupWLgrid
  *
@@ -698,7 +701,7 @@ DupWLseg (node *arg_node, node *arg_info)
     node *new_node;
 
     DBUG_ENTER ("DupWLseg");
-    new_node = MakeWLseg (Trav (WLSEG_INNER (arg_node), arg_info),
+    new_node = MakeWLseg (WLSEG_DIM (arg_node), Trav (WLSEG_INNER (arg_node), arg_info),
                           Trav (WLSEG_NEXT (arg_node), arg_info));
 
     DBUG_RETURN (new_node);
