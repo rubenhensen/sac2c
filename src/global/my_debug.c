@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.14  1995/07/07 14:27:54  hw
+ * Revision 1.15  1995/08/03 14:51:40  cg
+ * Macro NIF adjusted to 26 parameters.
+ *
+ * Revision 1.14  1995/07/07  14:27:54  hw
  * enlarged macro PRF_IF( there are 4 args now)
  *
  * Revision 1.13  1995/06/23  12:18:07  hw
@@ -54,7 +57,9 @@
 ** global array used for DBUG purposes only
 */
 
-#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, aa) s
+#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, aa, ab, ac,   \
+            ad, ae)                                                                      \
+    s
 
 char *mdb_nodetype[] = {
 #include "node_info.mac"
