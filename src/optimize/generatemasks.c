@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.15  2002/07/12 17:16:23  dkr
+ * GNMicm(): modifications for TAGGED_ARRAYS done
+ *
  * Revision 3.14  2002/02/21 13:41:23  dkr
  * access macros used
  *
@@ -2528,6 +2531,25 @@ GNMicm (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("GNMicm");
 
+#ifdef TAGGED_ARRAYS
+    if (strcmp (ICM_NAME (arg_node), "ND_VECT2OFFSET") == 0) {
+        /*
+         * ICM "ND_VECT2OFFSET"
+         */
+        icm_arg = EXPRS_EXPR (ICM_ARGS (arg_node));
+        INC_VAR (arg_info->mask[0], ID_VARNO (icm_arg));
+    } else {
+        /*
+         * ICM "ND_USE_GENVAR_OFFSET"
+         */
+        if (strcmp (ICM_NAME (arg_node), "ND_USE_GENVAR_OFFSET") == 0) {
+            icm_arg = EXPRS_EXPR (ICM_ARGS (arg_node));
+            INC_VAR (arg_info->mask[0], ID_VARNO (icm_arg));
+        } else {
+            DBUG_ASSERT ((0), "unknown ICM found while mask-generation");
+        }
+    }
+#else
     if (strcmp (ICM_NAME (arg_node), "ND_KS_VECT2OFFSET") == 0) {
         /*
          * ICM "ND_KS_VECT2OFFSET"
@@ -2545,11 +2567,13 @@ GNMicm (node *arg_node, node *arg_info)
             DBUG_ASSERT ((0), "unknown ICM found while mask-generation");
         }
     }
+#endif
 
     DBUG_RETURN (arg_node);
 }
 
 /******************************************************************************/
+
 node *
 GenerateMasks (node *arg_node, node *arg_info)
 {
