@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.26  2003/09/29 14:05:56  sah
+ * added basic support for . in set notation
+ * fixed some minor bugs
+ *
  * Revision 1.25  2003/09/24 14:30:09  sah
  * small bugfix
  *
@@ -1274,7 +1278,7 @@ ScanId (node *id, node **array, node *arg_info)
     while (ids != NULL) {
         if ((ids->type == ID_vector) && (strcmp (ids->id, ID_NAME (id)) == 0)) {
             node *id = MakeTmpId ("setassign");
-            node *code = MakeAssignLetNV (ID_NAME (id), *array);
+            node *code = MakeAssignLetNV (StringCopy (ID_NAME (id)), *array);
             node *shape = MakePrf (F_shape, MakeExprs (DupTree (id), NULL));
             shpchain *chain = Malloc (sizeof (shpchain));
 
@@ -1433,6 +1437,133 @@ Exprs2Ids (node *exprs)
 
         exprs = EXPRS_NEXT (exprs);
     }
+
+    DBUG_RETURN (result);
+}
+
+/** <!--********************************************************************-->
+ * checks for any occurencies of a dot symbol within a set notation
+ * selection vector.
+ *
+ * @param ids EXPRS node containing ids
+ * @return number of dots found
+ *****************************************************************************/
+int
+CountDotsInVector (node *ids)
+{
+    int result;
+
+    DBUG_ENTER ("CountDotsInVector");
+
+    if (NODE_TYPE (ids) != N_exprs) {
+        result = 0;
+    } else {
+        while (ids != NULL) {
+            if (NODE_TYPE (EXPRS_EXPR (ids)) == N_dot)
+                result++;
+            ids = EXPRS_NEXT (ids);
+        }
+    }
+
+    DBUG_RETURN (result);
+}
+
+/** <!--********************************************************************-->
+ * removes all occurences of a dot symbol in the given exprs chain of ids.
+ *
+ * @param ids exprs chain containing ids and dots
+ * @return exprs chain without any dots
+ ****************************************************************************/
+node *
+RemoveDotsFromVector (node *ids)
+{
+    node *result;
+    node *temp;
+
+    DBUG_ENTER ("RemoveDotsFromVector");
+
+    result = DupTree (ids);
+
+    /* first remove leading dots */
+    while (result != NULL && NODE_TYPE (EXPRS_EXPR (result)) == N_dot) {
+        temp = result;
+        result = EXPRS_NEXT (result);
+        EXPRS_NEXT (temp) = NULL;
+        FreeTree (temp);
+    }
+
+    /* now remove inner dots */
+    temp = result;
+    while (EXPRS_NEXT (temp) != NULL) {
+        if (NODE_TYPE (EXPRS_EXPR (EXPRS_NEXT (temp))) == N_dot) {
+            node *remove = EXPRS_NEXT (temp);
+            EXPRS_NEXT (temp) = EXPRS_NEXT (EXPRS_NEXT (temp));
+            EXPRS_NEXT (remove) = NULL;
+            FreeTree (remove);
+        } else {
+            temp = EXPRS_NEXT (temp);
+        }
+    }
+
+    DBUG_RETURN (result);
+}
+
+node *
+BuildPermutatedVector (node *ids, node *vect)
+{
+    node *result = NULL;
+    node *trav = ids;
+    node *next = NULL;
+    int pos = 0;
+
+    DBUG_ENTER ("BuildPermutatedVector");
+
+    /* first scan for non-dot entries */
+
+    while (trav != NULL) {
+        if (NODE_TYPE (EXPRS_EXPR (trav)) != N_dot) {
+            node *entry
+              = MAKE_BIN_PRF (F_sel, MakeFlatArray (MakeExprs (MakeNum (pos), NULL)),
+                              DupTree (vect));
+
+            if (result == NULL) {
+                result = MakeExprs (entry, NULL);
+                next = result;
+            } else {
+                EXPRS_NEXT (next) = MakeExprs (entry, NULL);
+                next = EXPRS_NEXT (next);
+            }
+        }
+
+        trav = EXPRS_NEXT (trav);
+        pos++;
+    }
+
+    /* now the same for dots */
+
+    trav = ids;
+    pos = 0;
+
+    while (trav != NULL) {
+        if (NODE_TYPE (EXPRS_EXPR (trav)) == N_dot) {
+            node *entry
+              = MAKE_BIN_PRF (F_sel, MakeFlatArray (MakeExprs (MakeNum (pos), NULL)),
+                              DupTree (vect));
+
+            if (result == NULL) {
+                result = MakeExprs (entry, NULL);
+                next = result;
+            } else {
+                EXPRS_NEXT (next) = MakeExprs (entry, NULL);
+                next = EXPRS_NEXT (next);
+            }
+        }
+
+        trav = EXPRS_NEXT (trav);
+        pos++;
+    }
+
+    result = MakeFlatArray (result);
 
     DBUG_RETURN (result);
 }
@@ -1825,7 +1956,7 @@ HDassign (node *arg_node, node *arg_info)
                 if (assigns == NULL)
                     assigns = temp;
                 else
-                    assigns = AppendAssign (temp, assigns);
+                    assigns = AppendAssign (assigns, temp);
             }
 
             /* append everything */
@@ -1862,12 +1993,25 @@ HDsetwl (node *arg_node, node *arg_info)
     travstate oldstate = INFO_HD_TRAVSTATE (arg_info);
     idtable *oldtable = INFO_HD_IDTABLE (arg_info);
     node *shape = NULL;
+    node *ids;
+    int dotcnt;
 
     DBUG_ENTER ("HDsetwl");
 
+    /* maybe the set-index contains some dots */
+    dotcnt = CountDotsInVector (SETWL_IDS (arg_node));
+
+    /* build vector without dots */
+    if (dotcnt == 0) {
+        ids = DupTree (SETWL_IDS (arg_node));
+    } else {
+        ids = RemoveDotsFromVector (SETWL_IDS (arg_node));
+    }
+
+    /* from here on, it is a set notation without any dots */
+
     INFO_HD_TRAVSTATE (arg_info) = HD_scan;
-    INFO_HD_IDTABLE (arg_info)
-      = BuildIdTable (SETWL_IDS (arg_node), INFO_HD_IDTABLE (arg_info));
+    INFO_HD_IDTABLE (arg_info) = BuildIdTable (ids, INFO_HD_IDTABLE (arg_info));
 
     TravSons (arg_node, arg_info);
 
@@ -1875,7 +2019,7 @@ HDsetwl (node *arg_node, node *arg_info)
 
     if (INFO_HD_IDTABLE (arg_info)->type == ID_scalar) {
         result
-          = MakeNWith (MakeNPart (MakeNWithid (NULL, Exprs2Ids (SETWL_IDS (arg_node))),
+          = MakeNWith (MakeNPart (MakeNWithid (NULL, Exprs2Ids (ids)),
                                   MakeNGenerator (MakeDot (1), MakeDot (1), F_le, F_le,
                                                   NULL, NULL),
                                   NULL),
@@ -1883,7 +2027,7 @@ HDsetwl (node *arg_node, node *arg_info)
                        MakeNWithOp (WO_genarray, shape));
     } else {
         result
-          = MakeNWith (MakeNPart (MakeNWithid (DupId_Ids (SETWL_IDS (arg_node)), NULL),
+          = MakeNWith (MakeNPart (MakeNWithid (DupId_Ids (ids), NULL),
                                   MakeNGenerator (MakeDot (1), MakeDot (1), F_le, F_le,
                                                   NULL, NULL),
                                   NULL),
@@ -1891,7 +2035,38 @@ HDsetwl (node *arg_node, node *arg_info)
                        MakeNWithOp (WO_genarray, shape));
     }
 
+    /* check whether we had some dots in order to create */
+    /* code to handle the permutation                    */
+
+    if (dotcnt != 0) {
+        node *setid = MakeTmpId ("setwithoutdots");
+        node *withid = MakeTmpId ("permutationiv");
+        node *selvector = BuildPermutatedVector (SETWL_IDS (arg_node), withid);
+        node *shape = MakePrf (F_shape, MakeExprs (DupTree (setid), NULL));
+        node *shapevector = BuildPermutatedVector (SETWL_IDS (arg_node), shape);
+
+        /* put the intermediate result into the assigns chain */
+
+        NCODE_USED (NWITH_CODE (result))++;
+        NPART_CODE (NWITH_PART (result)) = NWITH_CODE (result);
+
+        INFO_HD_ASSIGNS (arg_info)
+          = AppendAssign (INFO_HD_ASSIGNS (arg_info),
+                          MakeAssignLetNV (StringCopy (ID_NAME (setid)), result));
+
+        /* create permutation code */
+
+        result = MakeNWith (MakeNPart (MakeNWithid (DupId_Ids (withid), NULL),
+                                       MakeNGenerator (MakeDot (1), MakeDot (1), F_le,
+                                                       F_le, NULL, NULL),
+                                       NULL),
+                            MakeNCode (MAKE_EMPTY_BLOCK (),
+                                       MAKE_BIN_PRF (F_sel, selvector, setid)),
+                            MakeNWithOp (WO_genarray, shapevector));
+    }
+
     FreeTree (arg_node);
+    FreeTree (ids);
 
     NCODE_USED (NWITH_CODE (result))++;
     NPART_CODE (NWITH_PART (result)) = NWITH_CODE (result);
