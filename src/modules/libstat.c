@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2004/11/14 15:22:42  sah
+ * switched to AddSymbolByName
+ *
  * Revision 1.7  2004/11/01 21:49:10  sah
  * dependencises are printed now as well
  *
@@ -73,7 +76,8 @@ PrintLibStatCodeReadSymbols (module_t *module, const char *symbol, STtable_t *ta
 {
     DBUG_ENTER ("PrintLibStatCodeReadSymbols");
 
-    AddSymbolToAst (symbol, module);
+    AddSymbolByName (symbol, SET_wrapperhead, GetModuleName (module));
+    AddSymbolByName (symbol, SET_typedef, GetModuleName (module));
 
     DBUG_VOID_RETURN;
 }
