@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.139  1998/04/29 19:55:12  dkr
+ * changed COMPSpmd, COMPSync
+ *
  * Revision 1.138  1998/04/26 21:53:53  dkr
  * fixed a bug in COMPSpmd
  *
@@ -2310,19 +2313,12 @@ Compile (node *arg_node)
  * description:
  *   compiles an N_modul node:
  *     - traverses sons.
- *     - append SPMD-funs at fundef chain.
- *
- * remarks:
- *   - INFO_COMP_MT decides weather the memory managment for with-loops is done
- *     in the N_sync- or the N_with2- code!!
  *
  ******************************************************************************/
 
 node *
 COMPModul (node *arg_node, node *arg_info)
 {
-    node *tmp;
-
     DBUG_ENTER ("COMPModul");
 
     if (MODUL_OBJS (arg_node) != NULL) {
@@ -2333,20 +2329,6 @@ COMPModul (node *arg_node, node *arg_info)
     }
     if (MODUL_TYPES (arg_node) != NULL) {
         MODUL_TYPES (arg_node) = Trav (MODUL_TYPES (arg_node), arg_info);
-    }
-
-    /*
-     * compile SPMD-funs (INFO_COMP_SPMDFUNS(arg_info)) and append them to
-     *  fundef chain.
-     */
-    INFO_COMP_MT (arg_info) = 1;
-    if (INFO_COMP_SPMDFUNS (arg_info) != NULL) {
-        tmp = MODUL_FUNS (arg_node);
-        DBUG_ASSERT ((tmp != NULL), "no funs found");
-        while (FUNDEF_NEXT (tmp) != NULL) {
-            tmp = FUNDEF_NEXT (tmp);
-        }
-        FUNDEF_NEXT (tmp) = Trav (INFO_COMP_SPMDFUNS (arg_info), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -5938,123 +5920,44 @@ COMPWith (node *arg_node, node *arg_info)
 node *
 COMPSpmd (node *arg_node, node *arg_info)
 {
-    node *seq_region, *new_fundef, *assigns, *icm_args;
-
     DBUG_ENTER ("COMPSpmd");
 
-    /*
-     * Compile contents of SPMD-region for sequential execution
-     *  (INFO_COMP_MT == 0).
-     * For multi-threading this is done by COMPModul via INFO_COMP_SPMPFUNS !!!
-     */
-
-    INFO_COMP_MT (arg_info) = 0;
-    seq_region = Trav (DupTree (SPMD_REGION (arg_node), NULL), arg_info);
-
-    /*
-     * build definition of SPMD-fun (for MT)
-     */
-
-    new_fundef = SPMD_FUNDEC (arg_node);
-    FUNDEF_BODY (new_fundef) = SPMD_REGION (arg_node);
-    /* now we have to append the return-assignment to the body */
-    FUNDEF_INSTR (new_fundef)
-      = AppendAssign (FUNDEF_INSTR (new_fundef),
-                      MakeAssign (FUNDEF_RETURN (new_fundef), NULL));
-
-    /*
-     * insert new fundef into INFO_COMP_SPMDFUNS
-     *  -> COMPModul inserts them into the fundef chain of the modul
-     */
-
-    FUNDEF_NEXT (new_fundef) = INFO_COMP_SPMDFUNS (arg_info);
-    INFO_COMP_SPMDFUNS (arg_info) = new_fundef;
-
-    /****************************************************************************
-     * build ICMs for SPMD-region
-     */
-
-    /*
-     * MT_IF_PARALLEL
-     */
-
-    assigns = MakeAssign (MakeIcm ("MT_IF_PARALLEL", NULL, NULL), NULL);
-
-    /*
-     * insert memory managment for first N_sync region !!!
-     *  (a ND_ALLOC_ARRAY for every RC-object in 'SYNC_INOUT')
-     */
-
-    DBUG_ASSERT ((NODE_TYPE (ASSIGN_INSTR (BLOCK_INSTR (SPMD_REGION (arg_node))))
-                  == N_sync),
-                 "first sync-region not found");
-    assigns
-      = AppendAssign (assigns,
-                      GetMemoryManagementICMs (SYNC_INOUT (ASSIGN_INSTR (
-                                                 BLOCK_INSTR (SPMD_REGION (arg_node)))),
-                                               "ND_ALLOC_ARRAY"));
-
 #if 0
-  /*
-   * to get the args for MT_SPMD_SETUP we simply compile SMPD_AP_LET( arg_node)
-   *  --- this is an let node containing the funap of the SPMD-function ---
-   * and extract the arguments of the resulting ND_FUN_AP icm.
+  /****************************************************************************
+   * build ICMs for SPMD-region
    */
 
-  icm = Trav( SPMD_AP_LET( arg_node), arg_info);
-  DBUG_ASSERT( (NODE_TYPE( icm) == N_icm), "no icm found");
-  icm_args = ICM_ARGS( icm);
-#else
-    icm_args = MakeNum (0);
+  assigns = MakeAssign( MakeIcm( "MT_SPMD", NULL, NULL),
+                        NULL);
+
+  /*
+   * insert sequentiell SPMD-region code
+   */
+
+  assigns = AppendAssign( assigns, BLOCK_INSTR( SPMD_REGION( seq_region,
+                                               NULL));
+
+  /*
+   * MT_ENDIF_SEQUENTIAL
+   */
+
+  assigns = AppendAssign( assigns,
+                          MakeAssign( MakeIcm( "MT_ENDIF_SEQUENTIAL", NULL, NULL),
+                                      NULL));
+
+  /*
+   * build ICMs for SPMD-region
+   ****************************************************************************/
+
+  /*
+   * remove remain of N_spmd node
+   */
+
+  SPMD_REGION( arg_node) = NULL;
+  arg_node = FreeTree( arg_node);
 #endif
 
-    /*
-     * MT_SPMD_SETUP, MT_SPMD_START, MT_ELSEIF_SEQUENTIAL
-     */
-
-    assigns
-      = AppendAssign (assigns,
-                      MakeAssign (MakeIcm ("MT_SPMD_SETUP", icm_args, NULL),
-                                  MakeAssign (MakeIcm ("MT_SPMD_START", icm_args, NULL),
-                                              MakeAssign (MakeIcm ("MT_ELSEIF_SEQUENTIAL",
-                                                                   NULL, NULL),
-                                                          NULL))));
-
-#if 0
-  DBUG_ASSERT( (NODE_TYPE( EXPRS_EXPR( icm_args)) == N_id), "wrong arg found");
-  icm = MakeIcm( "MT_SPMD_START",
-                 MakeExprs( DupNode( EXPRS_EXPR( icm_args)),
-                            NULL),
-                 NULL);
-  INSERT_INSTR( last_assign, icm)
-#endif
-
-    /*
-     * insert sequentiell SPMD-region code
-     */
-
-    assigns = AppendAssign (assigns, MakeAssign (seq_region, NULL));
-
-    /*
-     * MT_ENDIF_SEQUENTIAL
-     */
-
-    assigns
-      = AppendAssign (assigns,
-                      MakeAssign (MakeIcm ("MT_ENDIF_SEQUENTIAL", NULL, NULL), NULL));
-
-    /*
-     * build ICMs for SPMD-region
-     ****************************************************************************/
-
-    /*
-     * remove remain of N_spmd node
-     */
-
-    SPMD_REGION (arg_node) = NULL;
-    arg_node = FreeTree (arg_node);
-
-    DBUG_RETURN (assigns);
+    DBUG_RETURN (arg_node);
 }
 
 /******************************************************************************
@@ -6074,124 +5977,134 @@ COMPSpmd (node *arg_node, node *arg_info)
 node *
 COMPSync (node *arg_node, node *arg_info)
 {
-    node *assigns = NULL;
-    node *icm_args, *icm_args1, *icm_args2;
-    ids *sync_ids;
-    char *icm_name;
-    simpletype s_type;
-    int num_folds;
-
     DBUG_ENTER ("COMPSync");
 
+#if 0
+  /*
+   * compile contents of sync-region
+   */
+
+  INFO_COMP_MT( arg_info) = 0;
+  SYNC_REGION( arg_node) = Trav( SYNC_REGION( arg_node), arg_info);
+
+  /*
+   * build the arguments for the ICMs
+   */
+
+  icm_args1 = icm_args2 = NULL;
+  num_folds = 0;
+  sync_ids = SYNC_OUT( arg_node);
+  while (sync_ids != NULL) {
+    GET_BASIC_SIMPLETYPE( s_type, IDS_TYPE( sync_ids));
+    icm_args = MakeExprs( MakeId( StringCopy( type_string[ s_type]),
+                                  NULL,
+                                  ST_regular),
+                          MakeExprs( MakeId2( DupOneIds( sync_ids, NULL)),
+                                     NULL));
+
+    icm_args1 = AppendExpr( icm_args1, icm_args);
+    icm_args2 = AppendExpr( icm_args2,
+                            MakeExprs( DupTree( icm_args, NULL),
+                              MakeExprs( MakeId( StringCopy( "?tmp_var?"),
+                                                 NULL,
+                                                 ST_regular),
+                                 MakeExprs( MakeId( StringCopy( "?fold_op?"),
+                                                    NULL,
+                                                    ST_regular),
+                                            NULL))));
+
+    num_folds++;
+    sync_ids = IDS_NEXT( sync_ids);
+  }
+
+  /*
+   * is this sync-region *not* the first one of the current SPMD-region?
+   *  -> insert the memory-managment (malloc).
+   *  -> insert ICM (MT_CONTINUE),
+   */
+
+  if (SYNC_FIRST( arg_node) == 0) {
+
     /*
-     * compile contents of sync-region
+     * insert a ND_ALLOC_ARRAY for every RC-object in 'SYNC_INOUT'
      */
+    assigns = AppendAssign( assigns, 
+                            GetMemoryManagementICMs( SYNC_INOUT( arg_node),
+                                                     "ND_ALLOC_ARRAY"));
 
-    INFO_COMP_MT (arg_info) = 0;
-    SYNC_REGION (arg_node) = Trav (SYNC_REGION (arg_node), arg_info);
+    assigns = AppendAssign( assigns,
+                            MakeAssign( MakeIcm( "MT_CONTINUE",
+                                                 MakeExprs( MakeNum( num_folds),
+                                                            icm_args1),
+                                                 NULL),
+                                        NULL));
 
-    /*
-     * build the arguments for the ICMs
-     */
+  }
+  else {
 
-    icm_args1 = icm_args2 = NULL;
-    num_folds = 0;
-    sync_ids = SYNC_OUT (arg_node);
-    while (sync_ids != NULL) {
-        GET_BASIC_SIMPLETYPE (s_type, IDS_TYPE (sync_ids));
-        icm_args = MakeExprs (MakeId (StringCopy (type_string[s_type]), NULL, ST_regular),
-                              MakeExprs (MakeId2 (DupOneIds (sync_ids, NULL)), NULL));
-
-        icm_args1 = AppendExpr (icm_args1, icm_args);
-        icm_args2
-          = AppendExpr (icm_args2,
-                        MakeExprs (DupTree (icm_args, NULL),
-                                   MakeExprs (MakeId (StringCopy ("?tmp_var?"), NULL,
-                                                      ST_regular),
-                                              MakeExprs (MakeId (StringCopy ("?fold_op?"),
-                                                                 NULL, ST_regular),
-                                                         NULL))));
-
-        num_folds++;
-        sync_ids = IDS_NEXT (sync_ids);
+    if (icm_args1 != NULL) {
+      icm_args1 = FreeTree( icm_args1);
     }
 
-    /*
-     * is this sync-region *not* the first one of the current SPMD-region?
-     *  -> insert the memory-managment (malloc).
-     *  -> insert ICM (MT_CONTINUE),
-     */
+  }
 
-    if (SYNC_FIRST (arg_node) == 0) {
+  /*
+   * insert contents of sync-region-block
+   */
 
-        /*
-         * insert a ND_ALLOC_ARRAY for every RC-object in 'SYNC_INOUT'
-         */
-        assigns = AppendAssign (assigns, GetMemoryManagementICMs (SYNC_INOUT (arg_node),
-                                                                  "ND_ALLOC_ARRAY"));
+  assigns = AppendAssign( assigns,
+                          BLOCK_INSTR( SYNC_REGION( arg_node)));
+  BLOCK_INSTR( SYNC_REGION( arg_node)) = NULL;
 
-        assigns
-          = AppendAssign (assigns,
-                          MakeAssign (MakeIcm ("MT_CONTINUE",
-                                               MakeExprs (MakeNum (num_folds), icm_args1),
+  /*
+   * insert ICM (MT_SYNC_...)
+   */
+
+  if (SYNC_INOUT( arg_node) == NULL) {
+    DBUG_ASSERT( (SYNC_OUT( arg_node) != NULL), "no target found");
+    if (IDS_NEXT( SYNC_OUT( arg_node)) == NULL) {
+      icm_name = "MT_SYNC_ONEFOLD";
+    }
+    else {
+      icm_name = "MT_SYNC_FOLD";
+    }
+  }
+  else {
+    if (SYNC_OUT( arg_node) == NULL) {
+      icm_name = "MT_SYNC_NONFOLD";
+    }
+    else {
+      if (IDS_NEXT( SYNC_OUT( arg_node)) == NULL) {
+        icm_name = "MT_SYNC_ONEFOLD_NONFOLD";
+      }
+      else {
+        icm_name = "MT_SYNC_FOLD_NONFOLD";
+      }
+    }
+  }
+
+  assigns = AppendAssign( assigns,
+                          MakeAssign( MakeIcm( icm_name,
+                                               MakeExprs( MakeNum( num_folds),
+                                                          icm_args2),
                                                NULL),
                                       NULL));
 
-    } else {
+  /*
+   * insert the memory-managment (free),
+   */
 
-        if (icm_args1 != NULL) {
-            icm_args1 = FreeTree (icm_args1);
-        }
-    }
 
-    /*
-     * insert contents of sync-region-block
-     */
+  /*
+   * remove remain of N_sync node
+   */
 
-    assigns = AppendAssign (assigns, BLOCK_INSTR (SYNC_REGION (arg_node)));
-    BLOCK_INSTR (SYNC_REGION (arg_node)) = NULL;
+  arg_node = FreeTree( arg_node);
 
-    /*
-     * insert ICM (MT_SYNC_...)
-     */
-
-    if (SYNC_INOUT (arg_node) == NULL) {
-        DBUG_ASSERT ((SYNC_OUT (arg_node) != NULL), "no target found");
-        if (IDS_NEXT (SYNC_OUT (arg_node)) == NULL) {
-            icm_name = "MT_SYNC_ONEFOLD";
-        } else {
-            icm_name = "MT_SYNC_FOLD";
-        }
-    } else {
-        if (SYNC_OUT (arg_node) == NULL) {
-            icm_name = "MT_SYNC_NONFOLD";
-        } else {
-            if (IDS_NEXT (SYNC_OUT (arg_node)) == NULL) {
-                icm_name = "MT_SYNC_ONEFOLD_NONFOLD";
-            } else {
-                icm_name = "MT_SYNC_FOLD_NONFOLD";
-            }
-        }
-    }
-
-    assigns
-      = AppendAssign (assigns,
-                      MakeAssign (MakeIcm (icm_name,
-                                           MakeExprs (MakeNum (num_folds), icm_args2),
-                                           NULL),
-                                  NULL));
-
-    /*
-     * insert the memory-managment (free),
-     */
-
-    /*
-     * remove remain of N_sync node
-     */
-
-    arg_node = FreeTree (arg_node);
-
-    DBUG_RETURN (assigns);
+  DBUG_RETURN( assigns);
+#else
+    DBUG_RETURN (arg_node);
+#endif
 }
 
 /******************************************************************************
