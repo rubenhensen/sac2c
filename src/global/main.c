@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.143  1998/12/03 10:24:25  cg
+ * Now, the specification of several source files on the sac2c command
+ * line results in an appropriate error message rather than confusion.
+ *
  * Revision 1.142  1998/10/26 12:34:14  cg
  * new compiler option:
  * use intrinsic array operations instead of with-loop based implementations
@@ -1152,7 +1156,11 @@ MAIN
             puresacfilename += 1;
         }
     } else {
-        puresacfilename = "stdin";
+        if (argc == 0) {
+            puresacfilename = "stdin";
+        } else {
+            SYSERROR (("Too many source files specified on command line"));
+        }
     }
 
     /*
