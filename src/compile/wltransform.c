@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.94  2004/09/08 23:55:42  dkrHH
+ * InferWlIterShape(): replaced ASSERT by WARN since this ion
+ *
  * Revision 3.93  2004/08/13 14:20:32  khf
  * ConvertWith(): added setting of NWITHOP_OFFSET_NEEDED,
  *                modified setting of NWITH2_OFFSET_NEEDED
@@ -2623,7 +2626,9 @@ GetWlIterShape (node *wl, int iter_dims, types *res_types)
                  * Note here, that it is not possible to use the SSA form in this
                  * phase since the previous phase RC can not handle SSA yet.
                  */
-                DBUG_ASSERT ((0), "NWITHOP_SHAPE: handling of N_id not implemented yet!");
+                WARN (NODE_LINE (wl),
+                      ("Infering shape of WL iteration space:"
+                       " handling of (possibly constant) N_id not implemented yet!"));
 #endif
             }
             break;
