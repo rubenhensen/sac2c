@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2002/07/02 13:02:08  dkr
+ * icm2c_basic.h included
+ *
  * Revision 3.5  2002/07/02 08:58:40  dkr
  * all fundefs are static now
  *
@@ -31,6 +34,8 @@
  *
  */
 
+#include "icm2c_basic.h"
+
 #define ICM_DEF(prf, trf)                                                                \
     void Print##prf (node *exprs, node *arg_info)                                        \
     {                                                                                    \
@@ -53,6 +58,7 @@
     }
 
 #define ICM_END(prf, args)                                                               \
+    print_comment = 1;                                                                   \
     ICMCompile##prf args;                                                                \
     DBUG_VOID_RETURN;                                                                    \
     }
