@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.34  2002/07/09 12:53:19  sbs
+ * hd_tab added
+ *
  * Revision 3.33  2002/06/07 17:17:48  mwe
  * Support for AssociativeLaw added
  *
@@ -219,6 +222,7 @@
 #include "rmcasts.h"
 #include "SSAInferLI.h"
 #include "create_wrappers.h"
+#include "handle_dots.h"
 
 #include "traverse.h"
 
@@ -1415,6 +1419,17 @@ static funtab al_tab_rec = {{
                             NULL,
                             NULL};
 funtab *al_tab = &al_tab_rec;
+
+/*
+ *  (109) hd_tab
+ */
+static funtab hd_tab_rec = {{
+#define NIFhd(it_hd) it_hd
+#include "node_info.mac"
+                            },
+                            NULL,
+                            NULL};
+funtab *hd_tab = &hd_tab_rec;
 
 /*
  *  nnode

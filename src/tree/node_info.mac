@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.80  2002/07/09 12:53:19  sbs
+ * hd_tab added
+ *
  * Revision 3.79  2002/06/25 15:02:19  sah
  * PrintDot entered in print_tab
  *
@@ -172,7 +175,7 @@
  *
  *   ssaili_tab      comp2_tab       precomp2_tab    insvd_tab
  *   crtwrp_tab      wls_tab         precomp4_tab    al_tab4
- *   unused_tab5     unused_tab6     unused_tab7     unused_tab8
+ *   hd_tab          unused_tab6     unused_tab7     unused_tab8
  *   unused_tab9     unused_tab10    unused_tab11    unused_tab12
  *   unused_tab13    unused_tab14    unused_tab15    unused_tab16
  *
@@ -575,8 +578,8 @@
 #define NIFal(it_al)
 #endif
 
-#ifndef NIFunused5
-#define NIFunused5(it_unused5)
+#ifndef NIFhd
+#define NIFhd(it_hd)
 #endif
 #ifndef NIFunused6
 #define NIFunused6(it_unused6)
@@ -651,7 +654,7 @@
   it_ssalur, it_ssawlt, it_ssawli, it_ssawlf,                                               \
                                                                                             \
   it_ssaili, it_comp2, it_precomp2, it_insvd, it_crtwrp, it_wls, it_precomp4, it_al,        \
-  it_unused5, it_unused6, it_unused7, it_unused8, it_unused9, it_unused10, it_unused11,     \
+  it_hd, it_unused6, it_unused7, it_unused8, it_unused9, it_unused10, it_unused11,          \
   it_unused12, it_unused13, it_unused14, it_unused15, it_unused16,                          \
                                                                                             \
   nnode)                                                                                    \
@@ -710,7 +713,7 @@
                                                   NIFinsvd (it_insvd) NIFcrtwrp (           \
                                                     it_crtwrp) NIFwls (it_wls)              \
                                                     NIFprecomp4 (it_precomp4) NIFal (       \
-                                                      it_al) NIFunused5 (it_unused5)        \
+                                                      it_al) NIFhd (it_hd)                  \
                                                       NIFunused6 (it_unused6)               \
                                                         NIFunused7 (it_unused7)             \
                                                           NIFunused8 (it_unused8)           \
@@ -1532,7 +1535,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
        TravSons, COMP2Prf, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       HDprf, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 1),
 
   NIF (N_ap, "N_ap", TravSons, FltnAp, PrintAp, TravSons, GNMap, TravSons, TravSons,
@@ -2541,7 +2544,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 #undef NIFprecomp4
 #undef NIFal
 
-#undef NIFunused5
+#undef NIFhd
 #undef NIFunused6
 #undef NIFunused7
 #undef NIFunused8

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.27  2002/07/09 12:53:19  sbs
+ * hd_tab added
+ *
  * Revision 3.26  2002/06/07 17:18:24  mwe
  * Support for AssociativeLaw added
  *
@@ -294,6 +297,7 @@ extern funtab *insvd_tab;
 extern funtab *crtwrp_tab;
 extern funtab *wls_tab;
 extern funtab *al_tab;
+extern funtab *hd_tab;
 
 extern int nnode[];
 
