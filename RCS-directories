@@ -1,6 +1,5 @@
 doc
 inc
-lib
 src/flatten
 src/global
 src/print
