@@ -3,7 +3,13 @@
 /*
  *
  * $Log$
- * Revision 1.74  1995/07/17 14:03:16  hw
+ * Revision 1.75  1995/07/19 12:18:03  hw
+ * in "extern" ModuleDec or ClassDec's the decaration of a primitive function
+ * requires the declaration of the associated "non-SAC-function"
+ * in braces after the name of the primitive function
+ * ( e.g:  new_type + {my_plus} (new_type, new_type); )
+ *
+ * Revision 1.74  1995/07/17  14:03:16  hw
  * - the module name will be added to all type definitions
  * - functions can be declared in a module/class declaration
  *   with or without the name of the formal parameters
@@ -318,7 +324,7 @@ static enum { F_prog, F_modimp, F_classimp, F_moddec, F_extmoddec,
 %type <nodetype> modclass
 %type <cint> evextern
 %type <ids> ids
-%type <id> fun_name
+%type <id> fun_name prf_name
 %type <nums> nums
 %type <types> localtype, type, types, simpletype, complextype, returntypes;
 %type <node> arg, args, fundefs, fundef, main, prg, modimp,
@@ -561,7 +567,7 @@ fundecs: fundec fundecs { $1->node[1]=$2;
 	| fundec {$$=$1;}
 	;
 
-fundec: returntypes fun_name BRACKET_L argtypes BRACKET_R SEMIC
+fundec: returntypes fun_name  BRACKET_L argtypes BRACKET_R SEMIC
           { $$=MakeNode(N_fundef);
             $$->node[0]=NULL;	/* there is no function body here! */
             $$->node[2]=$4;	/* argument declarations */
@@ -601,6 +607,61 @@ fundec: returntypes fun_name BRACKET_L argtypes BRACKET_R SEMIC
                        ("%s:"P_FORMAT" Id: %s , NULL body",
                         mdb_nodetype[ $$->nodetype ], $$, $$->info.types->id));
           }
+    | returntypes prf_name  BRACE_L ID BRACE_R BRACKET_L args BRACKET_R SEMIC
+          { 
+             if(!((F_extmoddec == file_kind) || (F_extclassdec == file_kind)))
+             {
+                strcpy(yytext,"{");
+                yyerror("syntax error");
+             }
+             else
+             {
+                $$=MakeNode(N_fundef);
+                $$->node[0]=NULL;	/* there is no function body here! */
+                $$->node[2]=$7;	/* argument declarations */
+                $$->node[5]=(node *)$4; /* new name for primitive function */
+                $$->nnode=1;
+                $$->info.types=$1;
+                $$->info.types->id=$2; /* function name */
+                $$->info.types->id_mod=mod_name; /* modul name */
+
+                DBUG_PRINT("GENTREE",
+                           ("%s:"P_FORMAT" Id: %s ,new_name: %s NULL body, "
+                            "%s" P_FORMAT,
+                            mdb_nodetype[$$->nodetype ], $$, $$->info.types->id,
+                            (char *)$$->node[5],
+                            mdb_nodetype[$$->node[2]->nodetype ], $$->node[2]));
+             }
+             
+          }
+    | returntypes prf_name BRACE_L ID BRACE_R BRACKET_L argtypes BRACKET_R SEMIC
+          { 
+             if(!((F_extmoddec == file_kind) || (F_extclassdec == file_kind)))
+             {
+                strcpy(yytext,"{");
+                yyerror("syntax error");
+             }
+             else
+             {
+                $$=MakeNode(N_fundef);
+                $$->node[0]=NULL; /* there is no function body here! */
+                $$->node[2]=$7; /* argument declarations */
+                $$->node[5]=(node *)$4; /* new name for primitive function */
+                $$->nnode=1;
+                $$->info.types=$1;
+                $$->info.types->id=$2; /* function name */
+                $$->info.types->id_mod=mod_name; /* modul name */
+
+                DBUG_PRINT("GENTREE",
+                           ("%s:"P_FORMAT" Id: %s ,new_name: %s NULL body, "
+                            "%s" P_FORMAT,
+                            mdb_nodetype[$$->nodetype ], $$, $$->info.types->id,
+                            (char *)$$->node[5],
+                            mdb_nodetype[$$->node[2]->nodetype ], $$->node[2]));
+             }
+             
+          }
+
 	;
 
 defs: imports def2 {$$=$2;
@@ -801,7 +862,10 @@ argtype: type {$$=MakeNode(N_arg);
      ;
 
 fun_name : ID { $$=$1; }
-         | AND { $$=$1; }
+         | prf_name { $$=$1; }
+         ;
+
+prf_name : AND { $$=$1; }
          | OR { $$=$1; }
          | EQ { $$=$1; }
          | NEQ { $$=$1; }
@@ -1919,7 +1983,7 @@ int yyerror( char *errname)
 
 int warn( char *warnname)
 {
-  fprintf(stderr, "sac: Warning: %s in line %d  at \"%s\"\n",warnname, 
+  fprintf(stderr, "sac2c: Warning: %s in line %d  at \"%s\"\n",warnname, 
           linenum, yytext);
   return(1);
 }
