@@ -1,3 +1,4 @@
+
 /************************************************************************
  *                                                                     *
  *                     Copyright (c) 1984, Fred Fish                   *
@@ -265,7 +266,32 @@ IMPORT int processid;
  *     Translate some calls among different systems.
  */
 
+/* The following is a workaround for Linux-X86 >2.1.126 */
+/* jfe@informatik.uni-kiel.de  */
+
+/* the original Delay */
+/* # define Delay sleep */
+
+/* this cannot be used in: "(VOID) Delay(stack->delay);" */
+/* #define Delay(x) if ((x)!=0) sleep(x);  */
+
+/* instead use:       (LINUX_X86 is defined  sac2c-Makefile) */
+
+#ifdef LINUX_X86
+
+void
+Delay (int d_time)
+{
+    if (d_time != 0)
+        sleep (d_time);
+}
+
+#else
+
 #define Delay sleep
+
+#endif
+
 IMPORT unsigned sleep (); /* Pause for given number of seconds */
 
 /*
@@ -1556,7 +1582,7 @@ _db_longjmp_ ()
 LOCAL int DelayArg (value) int value;
 {
     int delayarg;
-
+#define UNIX
 #ifdef UNIX
     delayarg = value / 10; /* Delay is in seconds for sleep () */
 #else
