@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.240  2004/11/24 16:45:28  sah
+ * changed internal node representation
+ *
  * Revision 3.239  2004/11/23 23:01:11  khf
  * added global.mdb..
  *
@@ -228,14 +231,15 @@ extern access_t *TBmakeAccess (node *array, node *iv, accessclass_t class, shpse
  * this defines the new node type
  */
 
+#include "sons.h"
 #include "attribs.h"
 
 struct NODE {
-    nodetype nodetype;           /* type of node */
-    int lineno;                  /* line number in source code */
-    char *src_file;              /* pointer to filename or source code */
-    struct NODE *node[MAX_SONS]; /* pointers to child nodes */
-    union ATTRIBUNION attribs;   /* the nodes attributes */
+    nodetype nodetype;         /* type of node */
+    int lineno;                /* line number in source code */
+    char *src_file;            /* pointer to filename or source code */
+    union SONUNION sons;       /* the sons */
+    union ATTRIBUNION attribs; /* the nodes attributes */
 };
 
 #include "node_basic.h"
