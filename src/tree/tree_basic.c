@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.69  2002/10/18 13:45:12  sbs
+ * handling of ID_ATTRIB replaced by FLAGS
+ *
  * Revision 3.68  2002/10/16 11:07:04  sbs
  * OBJDEF_AVIS(n) added.
  *
@@ -292,7 +295,7 @@ MakeIds (char *name, char *mod, statustype status)
     IDS_DEF (tmp) = NULL;
     IDS_USE (tmp) = NULL;
     IDS_STATUS (tmp) = status;
-    IDS_ATTRIB (tmp) = (mod == NULL) ? ST_regular : ST_global;
+    IDS_ATTRIB (tmp) = ST_regular;
 
     DBUG_RETURN (tmp);
 }
@@ -1133,6 +1136,12 @@ MakeId (char *name, char *mod, statustype status)
 
     ID_IDS (tmp) = MakeIds (name, mod, status);
 
+    if (sbs == 0) {
+        SET_FLAG (ID, tmp, IS_GLOBAL, FALSE);
+        SET_FLAG (ID, tmp, IS_REFERENCE, FALSE);
+        SET_FLAG (ID, tmp, IS_READ_ONLY, FALSE);
+    }
+
 #ifndef TAGGED_ARRAYS
     ID_UNQCONV (tmp) = NO_UNQCONV;
 #endif
@@ -1155,6 +1164,11 @@ MakeIdFromIds (ids *idss)
     tmp = CreateCleanNode (N_id);
 
     ID_IDS (tmp) = idss;
+    if (sbs == 0) {
+        SET_FLAG (ID, tmp, IS_GLOBAL, FALSE);
+        SET_FLAG (ID, tmp, IS_REFERENCE, FALSE);
+        SET_FLAG (ID, tmp, IS_READ_ONLY, FALSE);
+    }
 
 #ifndef TAGGED_ARRAYS
     ID_UNQCONV (tmp) = NO_UNQCONV;
