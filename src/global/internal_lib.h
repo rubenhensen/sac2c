@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.17  2001/07/13 13:23:41  cg
+ * DBUG tag MEM_LEAK_CHECK renamed to MEM_LEAK
+ *
  * Revision 3.16  2001/06/20 11:34:19  ben
  * StrTok implemented
  *
@@ -246,7 +249,7 @@ extern void DbugMemoryLeakCheck ();
 
 #define PHASE_DONE_EPILOG                                                                \
     ABORT_ON_ERROR;                                                                      \
-    DBUG_EXECUTE ("MEM_LEAK_CHECK", DbugMemoryLeakCheck ();)
+    DBUG_EXECUTE ("MEM_LEAK", DbugMemoryLeakCheck ();)
 
 #define PHASE_EPILOG                                                                     \
     if (do_fun2lac[compiler_phase]) {                                                    \
