@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.17  2004/11/09 14:03:00  mwe
+ * code for type upgrade added
+ * use ntype-structure instead of types-structure
+ * new code deactivated by MWE_NTYPE_READY macro
+ *
  * Revision 1.16  2004/10/14 22:36:57  sbs
  * DBUG_assert in SHCopySHape split over two lines for easier debugging.
  *
@@ -820,7 +825,9 @@ node *
 SHShape2Array (shape *shp)
 {
     node *array;
+#ifndef MWE_NTYPE_READY
     shpseg *shp_seg;
+#endif
     int dim;
 
     DBUG_ENTER ("SHShape2Array");
@@ -829,9 +836,17 @@ SHShape2Array (shape *shp)
 
     array = MakeFlatArray (SHShape2Exprs (shp));
 
+#ifdef MWE_NTYPE_READY
+    /*  ARRAY_NTYPE(array) = TYMakeAKS(TYMakeSimpleType(T_int), SHMakeShape(1,dim)); */
+    ARRAY_NTYPE (array)
+      = TYMakeAKV (TYMakeSimpleType (T_int),
+                   COMakeConstant (T_int, SHMakeShape (1, dim),
+                                   Array2IntVec (Array_AELEMS (a), NULL)));
+#else
     shp_seg = MakeShpseg (NULL);
     SHPSEG_SHAPE (shp_seg, 0) = dim;
     ARRAY_TYPE (array) = MakeTypes (T_int, 1, shp_seg, NULL, NULL);
+#endif
 
     DBUG_RETURN (array);
 }

@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.24  2004/11/09 14:03:00  mwe
+ * code for type upgrade added
+ * use ntype-structure instead of types-structure
+ * new code deactivated by MWE_NTYPE_READY macro
+ *
  * Revision 1.23  2004/07/23 15:23:45  ktr
  * unnecessary comment removed.
  *
@@ -422,6 +427,21 @@ COMakeConstantFromInt (int val)
 constant *
 COMakeConstantFromArray (node *a)
 {
+#ifdef MWE_NTYPE_READY
+    ntype *type;
+    constant *res;
+
+    DBUG_ENTER ("COMakeConstantFromArray");
+
+    type = ARRAY_NTYPE (a);
+
+    /*
+     * This implementation does not yet comply to its desired functionality!
+     * We assume here that a is a constant integer vector!
+     */
+    res = COMakeConstant (TYGetBasetype (type), TYTypes2Shape (type),
+                          Array2IntVec (ARRAY_AELEMS (a), NULL));
+#else
     types *type;
     constant *res;
 
@@ -435,6 +455,7 @@ COMakeConstantFromArray (node *a)
      */
     res = COMakeConstant (TYPES_BASETYPE (type), SHOldTypes2Shape (type),
                           Array2IntVec (ARRAY_AELEMS (a), NULL));
+#endif
     DBUG_RETURN (res);
 }
 
@@ -755,8 +776,20 @@ COConstant2AST (constant *a)
          * After creating the array, we have to create a types-node to preserve
          * the shape of the array!
          */
+#ifdef MWE_NTYPE_READY
+
+        DBUG_ASSERT ((ARRAY_NTYPE (a) != NULL),
+                     "no ntype-structure found in ARRAY_NTYPE");
+        ARRAY_NTYPE (res)
+          = TYMakeAKV (TYMakeSimpleType (CONSTANT_TYPE (a)),
+                       COMakeConstant (CONSTANT_TYPE (a), CONSTANT_SHAPE (a),
+                                       Array2Vec (CONSTANT_TYPE (a), ARRAY_AELEMS (res),
+                                                  NULL)));
+
+#else
         ARRAY_TYPE (res) = MakeTypes (CONSTANT_TYPE (a), CONSTANT_DIM (a),
                                       SHShape2OldShpseg (CONSTANT_SHAPE (a)), NULL, NULL);
+#endif
         /*
          * Note here, that in some situation the calling function has to add
          * constvec infos. This is not done here, since it is not yet clear how
@@ -824,20 +857,35 @@ COAST2Constant (node *n)
             break;
 
         case N_array:
+#ifdef MWE_NTYPE_READY
+            DBUG_ASSERT ((ARRAY_NTYPE (n) != NULL),
+                         "no ntype-structure found in ARRAY_NTYPE");
+            new_co = COMakeConstant (TYGetBasetype (ARRAY_NTYPE (n)),
+                                     TYGetShape (ARRAY_NTYPE (n)),
+                                     Array2Vec (TYGetBasetype (ARRAY_NTYPE (n)),
+                                                ARRAY_AELEMS (n), NULL));
+#else
             new_co = COMakeConstant (GetBasetype (ARRAY_TYPE (n)),
                                      SHOldTypes2Shape (ARRAY_TYPE (n)),
                                      Array2Vec (GetBasetype (ARRAY_TYPE (n)),
                                                 ARRAY_AELEMS (n), NULL));
+#endif
             break;
 
         case N_id:
             new_co = COCopyConstant (AVIS_SSACONST (ID_AVIS (n)));
 
             /* update constants shape info according to type info */
+#ifdef MWE_NTYPE_READY
+            DBUG_ASSERT ((TYGetBasetype (AVIS_TYPE (ID_AVIS (n)))
+                          == CONSTANT_TYPE (new_co)),
+                         "different basetype in id and assigned array");
+#else
             DBUG_ASSERT ((GetBasetype (
                             VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (n))))
                           == CONSTANT_TYPE (new_co)),
                          "different basetype in id and assigned array");
+#endif
 
             if (!sbs) {
                 /*
@@ -850,8 +898,12 @@ COAST2Constant (node *n)
                  * necessary!!!!
                  */
                 CONSTANT_SHAPE (new_co) = SHFreeShape (CONSTANT_SHAPE (new_co));
+#ifdef MWE_NTYPE_READY
+                CONSTANT_SHAPE (new_co) = TYType2Shape (AVIS_TYPE (ID_AVIS (n)));
+#else
                 CONSTANT_SHAPE (new_co) = SHOldTypes2Shape (
                   VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (n))));
+#endif
             }
             break;
 
