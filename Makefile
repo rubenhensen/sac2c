@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.4  2000/12/08 10:43:01  cg
+# Option "-w" removed again.
+#
 # Revision 3.3  2000/12/06 19:51:22  dkr
 # src/flatten/infer_dfms.o added
 #
@@ -93,8 +96,8 @@ CCPROD       := gcc
 #
 # gcc specific flags:
 #
-gcc_FLAGS      := -ansi -Wall -w -g
-gcc_PROD_FLAGS := -ansi -Wall -w -O3
+gcc_FLAGS      := -ansi -Wall -g
+gcc_PROD_FLAGS := -ansi -Wall -O3
 
 #
 # cc specific flags:

@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.4  2000/12/08 10:41:48  cg
+# Option "-w" removed again.
+#
 # Revision 3.3  2000/12/06 20:09:09  dkr
 # make deps done
 #
@@ -66,7 +69,7 @@ OS        := SOLARIS_SPARC
 
 
 CC        := gcc
-CCFLAGS   := -ansi -Wall -w -D__EXTENSIONS__ -g -DSAC_FOR_$(OS)
+CCFLAGS   := -ansi -Wall -D__EXTENSIONS__ -g -DSAC_FOR_$(OS)
 
 MTFLAGS   := -DMT -D_REENTRANT -D_POSIX_C_SOURCE=199506L
 
