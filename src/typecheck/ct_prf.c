@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.3  2002/09/04 12:59:46  sbs
+ * type checking of arrays changed; now sig deps will be created as well.
+ *
  * Revision 1.2  2002/08/07 09:49:58  sbs
  * modulo added
  *
@@ -44,6 +47,58 @@ NTCPRF_dummy (te_info *info, ntype *args)
     DBUG_ENTER ("NTCPRF_dummy");
     DBUG_ASSERT (FALSE, "prf not yet implemented");
     DBUG_RETURN (args);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    ntype *NTCPRF_array( te_info *info, ntype *elems)
+ *
+ * description:
+ *
+ ******************************************************************************/
+
+ntype *
+NTCPRF_array (te_info *info, ntype *elems)
+{
+    ntype *elem, *elem2, *res;
+    shape *shp;
+    int num_elems;
+    int i;
+
+    DBUG_ENTER ("NTCPRF_array");
+
+    elem = TYCopyType (TYGetProductMember (elems, 0));
+    num_elems = TYGetProductSize (elems);
+
+    for (i = 1; i < num_elems; i++) {
+        elem2 = TYGetProductMember (elems, i);
+        TEAssureSameScalarType ("array element #0", elem, TEArrayElem2Obj (i), elem2);
+        elem2 = TEAssureSameShape ("array element #0", elem, TEArrayElem2Obj (i), elem2);
+        TYFreeType (elem);
+        elem = elem2;
+    }
+
+    switch (TYGetConstr (elem)) {
+    case TC_aks:
+        shp = SHCreateShape (1, num_elems);
+        res = TYMakeAKS (TYGetScalar (elem), SHAppendShapes (shp, TYGetShape (elem)));
+        SHFreeShape (shp);
+        break;
+    case TC_akd:
+        res = TYMakeAKD (TYGetScalar (elem), TYGetDim (elem) + 1, SHMakeShape (0));
+        break;
+    case TC_audgz:
+    case TC_aud:
+        res = TYMakeAUDGZ (TYGetScalar (elem));
+        break;
+    default:
+        DBUG_ASSERT ((FALSE), "array elements of non array types not yet supported");
+    }
+
+    TYFreeTypeConstructor (elem);
+
+    DBUG_RETURN (TYMakeProductType (1, res));
 }
 
 /******************************************************************************

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2002/09/04 12:59:46  sbs
+ * type checking of arrays changed; now sig deps will be created as well.
+ *
  * Revision 3.15  2002/09/03 14:41:45  sbs
  * DupTree machanism for duplicating condi funs established
  *
@@ -987,11 +990,8 @@ node *
 NTCarray (node *arg_node, node *arg_info)
 {
     int num_elems;
-    ntype *scalar = NULL;
-    ntype *tmp;
-    ntype *type = NULL;
-    shape *shp;
-    int i;
+    ntype *type, *elems;
+    te_info *info;
 
     DBUG_ENTER ("NTCarray");
 
@@ -1011,59 +1011,28 @@ NTCarray (node *arg_node, node *arg_info)
     DBUG_ASSERT (TYIsProd (INFO_NTC_TYPE (arg_info)),
                  "NTCexprs did not create a product type");
 
+    elems = INFO_NTC_TYPE (arg_info);
+    INFO_NTC_TYPE (arg_info) = NULL;
+
     /*
      * Now, we built the resulting (AKS-)type type from the product type found:
      */
-    num_elems = TYGetProductSize (INFO_NTC_TYPE (arg_info));
+    num_elems = TYGetProductSize (elems);
     if (num_elems > 0) {
-        /*
-         * We are dealing with a non-empty array here. So we can derive
-         * the element type from the first element found.
-         * Then, we check that all elems are of the same type "scalar".
-         * Note here, that "scalar" points (should point) to an AKS-type with
-         * an empty shape!!
-         */
-        scalar = TYGetProductMember (INFO_NTC_TYPE (arg_info), 0);
-        for (i = 1; i < num_elems; i++) {
-            tmp = TYGetProductMember (INFO_NTC_TYPE (arg_info), i);
-            if (TYCmpTypes (scalar, tmp) != TY_eq) {
-                ABORT (NODE_LINE (arg_node),
-                       ("Different element types used in one array;"
-                        " element #0 has type %s, element #%d has type %s",
-                        TYType2String (scalar, FALSE, 0), i,
-                        TYType2String (tmp, FALSE, 0)));
-            }
-            TYFreeType (tmp);
-        }
 
-        switch (TYGetConstr (scalar)) {
-        case TC_aks:
-            shp = SHCreateShape (1, num_elems);
-            type = TYMakeAKS (TYGetScalar (scalar),
-                              SHAppendShapes (shp, TYGetShape (scalar)));
-            SHFreeShape (shp);
-            break;
-        case TC_akd:
-            type
-              = TYMakeAKD (TYGetScalar (scalar), TYGetDim (scalar) + 1, SHMakeShape (0));
-            break;
-        case TC_audgz:
-        case TC_aud:
-            type = TYMakeAUDGZ (TYGetScalar (scalar));
-            break;
-        default:
-            DBUG_ASSERT ((FALSE), "array elements of non array types not yet supported");
-        }
+        info = TEMakeInfo (linenum, "prf", "array-constructor", NULL, NULL);
+        type = NTCCTComputeType (NTCPRF_array, info, elems);
 
-        TYFreeTypeConstructor (scalar);
-        TYFreeTypeConstructor (INFO_NTC_TYPE (arg_info));
+        TYFreeType (elems);
+
     } else {
         /* we are dealing with an empty array here! */
         type = NULL;
         DBUG_ASSERT ((0), "empty arrays are not yet supported!");
     }
 
-    INFO_NTC_TYPE (arg_info) = type;
+    INFO_NTC_TYPE (arg_info) = TYGetProductMember (type, 0);
+    TYFreeTypeConstructor (type);
 
     DBUG_RETURN (arg_node);
 }
