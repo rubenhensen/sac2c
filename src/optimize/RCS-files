@@ -31,6 +31,8 @@ WithloopFolding.c
 WithloopFolding.h
 WorkReduction.c
 WorkReduction.h
+freemasks.c
+freemasks.h
 generatemasks.c
 generatemasks.h
 optimize.c
