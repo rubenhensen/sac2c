@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.15  2004/11/08 14:49:00  ktr
+ * idx-identifiers renamed by SSATRANSFORM are now recognized, too.
+ *
  * Revision 3.14  2004/10/14 14:17:31  sbs
  * added alternative code in ReuseIdxSel when calling IdxChangeId from index.c
  *
@@ -492,7 +495,7 @@ ReuseIdxSel (node *arg1, node *arg2, info *arg_info)
         idx_sel_name = IdxChangeIdOld (IDS_NAME (INFO_REUSE_IDX (arg_info)), type);
 #endif
 
-        if (!strcmp (ID_NAME (arg1), idx_sel_name)) {
+        if (strstr (ID_NAME (arg1), idx_sel_name) == ID_NAME (arg1)) {
             /*
              * 'arg2' is used in a (flattened) normal WL-sel()
              *  -> we can possibly reuse this array
