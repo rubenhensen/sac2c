@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2001/02/13 17:15:40  dkr
+ * MakeNode(N_info) replaced by MakeInfo()
+ *
  * Revision 3.1  2000/11/20 18:00:28  sacbase
  * new release made
  *
@@ -136,12 +139,6 @@ typedef enum { active, redundant } assignstatus;
  *                  R) ptr to root of the optimized syntaxtree
  *  description   : Dead Code Removal
  *  global vars   : syntax_tree, dcr_tab, active_tab
- *  internal funs : ---
- *  external funs : Trav, MakeNode
- *  macros        : DBUG...
- *
- *  remarks       :
- *
  *
  */
 node *
@@ -170,12 +167,12 @@ DeadCodeRemoval (node *arg_node, node *info_node)
      */
     tmp_tab = act_tab;
     act_tab = active_tab;
-    info_node = MakeNode (N_info);
+    info_node = MakeInfo ();
     arg_node = Trav (arg_node, info_node);
     FREE (info_node);
 
     act_tab = dcr_tab;
-    info_node = MakeNode (N_info);
+    info_node = MakeInfo ();
     arg_node = Trav (arg_node, info_node);
     FREE (info_node);
 

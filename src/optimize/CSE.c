@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.3  2001/02/13 17:13:58  dkr
+ * MakeNode(N_info) replaced by MakeInfo()
+ *
  * Revision 3.2  2000/12/01 14:53:08  sbs
  * warnings eliminated.
  *
@@ -128,7 +131,7 @@ CSE (node *arg_node, node *info_node)
 
     tmp_tab = act_tab;
     act_tab = cse_tab;
-    info_node = MakeNode (N_info);
+    info_node = MakeInfo ();
 
     arg_node = Trav (arg_node, info_node);
 

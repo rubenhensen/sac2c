@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/02/13 17:14:50  dkr
+ * MakeNode(N_info) replaced by MakeInfo()
+ *
  * Revision 3.3  2001/02/02 10:24:54  dkr
  * superfluous import of access_macros.h removed
  *
@@ -558,14 +561,9 @@ IsConst (node *arg_node)
  *		    - the most-recently-defined- stack (mrdl_stack) will be initialize
  *		    - call Trav to start constant-folding
  *  global vars   : syntax_tree, cf_tab, act_tab, mrdl_stack
- *  internal funs : ---
- *  external funs : Trav (traverse.h), MakeNode (tree_basic.h)
- *  macros        : FREE
- *
- *  remarks       : --
- *
  *
  */
+
 node *
 ConstantFolding (node *arg_node, node *info_node)
 {
@@ -581,7 +579,7 @@ ConstantFolding (node *arg_node, node *info_node)
     tmp_tab = act_tab;
     act_tab = cf_tab;
 
-    info_node = MakeNode (N_info);
+    info_node = MakeInfo ();
     inside_wl_root = NULL;
 
     arg_node = Trav (arg_node, info_node);
@@ -1341,11 +1339,6 @@ ArraySize (node *array)
  *                  R) ptr to result array
  *  description   : duplicates an array between start and (start+length)
  *  global vars   : N_exprs, N_id
- *  internal funs : --
- *  external funs : DupTree, MakeNode
- *  macros        : DBUG..., DEC_VAR
- *
- *  remarks       : --
  *
  */
 
