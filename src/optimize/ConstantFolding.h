@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.6  1995/05/03 16:25:48  asi
+ * Revision 1.7  1995/06/20 15:50:30  asi
+ * added macros TOS, VAR
+ *
+ * Revision 1.6  1995/05/03  16:25:48  asi
  * CFap added
  *
  * Revision 1.5  1995/03/07  10:17:09  asi
@@ -26,6 +29,22 @@
 #ifndef _ConstantFolding_h
 
 #define _ConstantFolding_h
+
+#define TOS cf_stack->stack[cf_stack->tos]
+#define VAR(i) TOS.varlist[i]
+
+typedef struct STELM {
+    int vl_len;
+    node **varlist;
+} stelm;
+
+typedef struct STACK {
+    long tos;
+    long st_len;
+    stelm *stack;
+} stack;
+
+extern stack *cf_stack;
 
 extern node *ConstantFolding (node *arg_node, node *arg_info);
 
