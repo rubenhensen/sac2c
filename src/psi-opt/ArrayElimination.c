@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.13  2000/10/20 15:37:07  dkr
+ * macro GET_DIM and GET_LENGTH replaced by functions GetDim and
+ * GetTypesLength
+ *
  * Revision 2.12  2000/07/14 11:34:41  dkr
  * FUNDEF_INLINE==0 replaced by !FUNDEF_INLINE
  *
@@ -95,7 +99,7 @@
 #include "dbug.h"
 #include "my_debug.h"
 #include "traverse.h"
-#include "typecheck.h"
+#include "typecheck.h" /* macro GET_BASIC_TYPE */
 #include "free.h"
 #include "DupTree.h"
 #include "tree.h"
@@ -170,8 +174,8 @@ CorrectArraySize (ids *ids_node)
     DBUG_ENTER ("CorrectArraySize");
 
     type = IDS_TYPE (ids_node);
-    GET_LENGTH (length, type);
-    GET_DIM (dim, type);
+    length = GetTypesLength (type);
+    dim = GetDim (type);
 
     if ((length <= minarray) && (0 != length) && (1 == dim)) {
         DBUG_PRINT ("AE", ("array %s with length %d to eliminated found",
@@ -270,7 +274,7 @@ GenPsi (ids *ids_node, node *arg_info)
     DBUG_ENTER ("GenPsi");
     type = IDS_TYPE (ids_node);
     ;
-    GET_LENGTH (length, type);
+    length = GetTypesLength (type);
     for (i = 0; i < length; i++) {
         exprn = MakeExprs (MakeNum (i), NULL);
         arg[0] = MakeArray (exprn);
