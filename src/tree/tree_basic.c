@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.59  2002/07/12 18:29:41  dkr
+ * minor changes in MakeIcm() done
+ *
  * Revision 3.58  2002/07/10 19:25:22  dkr
  * MakeStr_Copy() added
  *
@@ -1386,10 +1389,10 @@ MakeIcm (char *name, node *args)
          */
         ICM_INDENT_BEFORE (tmp) = 0;
         ICM_INDENT_AFTER (tmp) = 0;
-    } else if (strstr (name, "BEGIN")) {
+    } else if (strstr (name, "_BEGIN")) {
         ICM_INDENT_BEFORE (tmp) = 0;
         ICM_INDENT_AFTER (tmp) = 1;
-    } else if (strstr (name, "END")) {
+    } else if (strstr (name, "_END")) {
         ICM_INDENT_BEFORE (tmp) = -1;
         ICM_INDENT_AFTER (tmp) = 0;
     } else {
