@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.81  2004/07/23 15:25:17  khf
+ * if explicit accumulation was applied, the generatsted
+ * dummy fold-functions is no longer needed
+ *
  * Revision 3.80  2004/07/22 14:48:15  ktr
  * markmemvals.h added.
  *
@@ -2238,7 +2242,8 @@ PREC3with2 (node *arg_node, info *arg_info)
  *   node *PREC3withop( node *arg_node, info *arg_info)
  *
  * description:
- *   New, unique and adjusted pseudo fold-funs are created.
+ *   New, unique and adjusted pseudo fold-funs are created,
+ *   if Explicit Accumulate wasn't applied (flag eacc activated)
  *
  * caution:
  *   The N_Nwithop node may be part of a N_Nwith *or* a N_Nwith2 node!!
@@ -2261,7 +2266,8 @@ PREC3withop (node *arg_node, info *arg_info)
     DBUG_ASSERT (((NODE_TYPE (let_expr) == N_Nwith)
                   || (NODE_TYPE (let_expr) == N_Nwith2)),
                  "neither N_Nwith nor N_Nwith2 node found!");
-    if (NWITH_OR_NWITH2_IS_FOLD (let_expr)) {
+
+    if (!eacc && NWITH_OR_NWITH2_IS_FOLD (let_expr)) {
         /*
          * We have to make the formal parameters of each pseudo fold-fun identical
          * to the corresponding application in order to allow for simple code
@@ -2308,6 +2314,8 @@ PREC3withop (node *arg_node, info *arg_info)
  *
  * description:
  *   Checks whether all NCODE_CEXPR nodes of fold-WLs have identical names.
+ *   (Only necessary if ExplicitAccumulation wasn't applied
+ *    (flag eacc activated))
  *
  * caution:
  *   The N_Nwithop node may be part of a N_Nwith *or* a N_Nwith2 node!!
@@ -2326,7 +2334,8 @@ PREC3code (node *arg_node, info *arg_info)
     DBUG_ASSERT (((NODE_TYPE (let_expr) == N_Nwith)
                   || (NODE_TYPE (let_expr) == N_Nwith2)),
                  "neither N_Nwith nor N_Nwith2 node found!");
-    if (NWITH_OR_NWITH2_IS_FOLD (let_expr)) {
+
+    if ((!eacc && NWITH_OR_NWITH2_IS_FOLD (let_expr))) {
         /*
          * fold with-loop:
          * check whether all NCODE_CEXPR nodes have identical names
