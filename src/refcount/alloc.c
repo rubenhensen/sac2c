@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.23  2004/09/20 10:59:41  ktr
+ * Minor bugfix...
+ *
  * Revision 1.22  2004/09/20 09:45:55  ktr
  * Brushed use of new types while dealing with bug #56.
  *
@@ -1152,7 +1155,6 @@ node *
 EMALprf (node *arg_node, info *arg_info)
 {
     alloclist_struct *als;
-    ntype *nt;
 
     DBUG_ENTER ("EMALprf");
 
@@ -1285,10 +1287,12 @@ EMALprf (node *arg_node, info *arg_info)
     case F_sub_SxA:
     case F_mul_SxA:
     case F_div_SxA:
-        nt = AVIS_TYPE (ID_AVIS (PRF_ARG2 (arg_node)));
         if ((CountExprs (PRF_ARGS (arg_node)) < 2)
             || (NODE_TYPE (PRF_ARG2 (arg_node)) != N_id)
-            || ((TYIsAKD (nt) || TYIsAKS (nt) || TYIsAKV (nt)) && (TYGetDim (nt) == 0))) {
+            || ((TYIsAKD (AVIS_TYPE (ID_AVIS (PRF_ARG2 (arg_node))))
+                 || TYIsAKS (AVIS_TYPE (ID_AVIS (PRF_ARG2 (arg_node))))
+                 || TYIsAKV (AVIS_TYPE (ID_AVIS (PRF_ARG2 (arg_node)))))
+                && (TYGetDim (AVIS_TYPE (ID_AVIS (PRF_ARG2 (arg_node)))) == 0))) {
             als->dim = MakeDimArg (PRF_ARG1 (arg_node));
             als->shape = MakeShapeArg (PRF_ARG1 (arg_node));
         } else {
