@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.105  2004/11/19 10:18:29  sah
+ * ST_classfuns are external now as well
+ *
  * Revision 3.104  2004/11/07 18:09:30  sah
  * modified some macros to reflect newast
  *
@@ -1018,7 +1021,8 @@ extern node *AppendObjdef (node *objdef_chain, node *objdef);
      || (FUNDEF_STATUS (n) == ST_imported_extmod)                                        \
      || (FUNDEF_STATUS (n) == ST_objinitfun) || (FUNDEF_STATUS (n) == ST_classfun))
 #else
-#define FUNDEF_IS_EXTERNAL(n) ((FUNDEF_STATUS (n) == ST_Cfun))
+#define FUNDEF_IS_EXTERNAL(n)                                                            \
+    ((FUNDEF_STATUS (n) == ST_Cfun) || (FUNDEF_STATUS (n) == ST_classfun))
 #endif /* NEW_AST */
 
 /*
