@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2003/04/29 11:55:05  cg
+ * If the detach state or the scope of threads cannot be set correctly,
+ * a warning is now issued instead of raiing an error and terminating
+ * program execution.
+ *
  * Revision 3.11  2003/04/14 15:16:51  sbs
  * cast from int into unsigned int added for safe comparisons.
  *
@@ -451,15 +456,24 @@ SAC_MT_Setup (int cache_line_max, int barrier_offset, int num_schedulers)
         }
 
         if (0 != pthread_attr_setscope (&SAC_MT_thread_attribs, PTHREAD_SCOPE_SYSTEM)) {
-            SAC_RuntimeError ("Unable to set POSIX thread attributes to "
-                              "PTHREAD_SCOPE_SYSTEM");
+            SAC_RuntimeWarning ("Unable to set POSIX thread attributes to "
+                                "PTHREAD_SCOPE_SYSTEM.\n"
+                                "Probably, your PTHREAD implementation does "
+                                "not support system \n"
+                                "scope threads, i.e. threads are likely not "
+                                "to be executed in \n"
+                                "parallel, but in time-sharing mode.");
         }
 
         if (0
             != pthread_attr_setdetachstate (&SAC_MT_thread_attribs,
                                             PTHREAD_CREATE_DETACHED)) {
-            SAC_RuntimeError ("Unable to set POSIX thread attributes to "
-                              "PTHREAD_CREATE_DETACHED");
+            SAC_RuntimeWarning ("Unable to set POSIX thread attributes to "
+                                "PTHREAD_CREATE_DETACHED."
+                                "Probably, your PTHREAD implementation does "
+                                "not support detached \n"
+                                "threads. This may cause some runtime "
+                                "overhead.");
         }
 
         SAC_TR_PRINT (("Creating worker thread #1 of class 0"));
