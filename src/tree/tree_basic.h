@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.28  2000/03/19 15:47:01  dkr
+ * type of INFO_CUD_REF changed
+ *
  * Revision 1.27  2000/03/17 20:41:18  dkr
  * INFO_CUD_... macros added
  *
@@ -2607,7 +2610,7 @@ extern node *MakeInfo ();
 
 /* cleaning up declarations (cleanup_decls.c) */
 #define INFO_CUD_FUNDEF(n) (n->node[0])
-#define INFO_CUD_REF(n) ((DFMstack_t) (n->dfmask[0]))
+#define INFO_CUD_REF(n) (n->dfmask[0])
 
 /* reconverting functions to loops and conditionals (fun2lac.c) */
 #define INFO_FUN2LAC_FUNDEF(n) (n->node[0])
