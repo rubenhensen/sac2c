@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.27  2003/08/04 14:30:52  dkr
+ * GSCicm(): error messages for MT_SPMD_SETUP corrected
+ *
  * Revision 3.26  2003/04/14 14:55:54  sbs
  * num_threads casted to unsigned int for correct comparison.
  *
@@ -564,36 +567,36 @@ GSCicm (node *arg_node, node *arg_info)
     if (!strcmp (ICM_NAME (arg_node), "MT_SPMD_SETUP")) {
 
         DBUG_ASSERT ((ICM_EXPRS1 (arg_node) != NULL),
-                     "ICM MT_SPMD_BLOCK has wrong format (args missing)");
+                     "ICM MT_SPMD_SETUP has wrong format (args missing)");
         DBUG_ASSERT ((ICM_EXPRS2 (arg_node) != NULL),
-                     "ICM MT_SPMD_BLOCK has wrong format (name missing)");
+                     "ICM MT_SPMD_SETUP has wrong format (name missing)");
         DBUG_ASSERT ((ICM_EXPRS3 (arg_node) != NULL),
-                     "ICM MT_SPMD_BLOCK has wrong format (numargs missing)");
+                     "ICM MT_SPMD_SETUP has wrong format (numargs missing)");
 
         icm_arg = ICM_EXPRS3 (arg_node);
         while (icm_arg != NULL) {
             DBUG_ASSERT ((EXPRS_EXPR1 (icm_arg) != NULL),
-                         "ICM MT_SPMD_BLOCK has wrong format (tag missing)");
+                         "ICM MT_SPMD_SETUP has wrong format (tag missing)");
             DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR1 (icm_arg)) == N_id),
-                         "ICM MT_SPMD_BLOCK has wrong format (tag missing)");
+                         "ICM MT_SPMD_SETUP has wrong format (tag missing)");
 
             tag = ID_NAME (EXPRS_EXPR1 (icm_arg));
 
             DBUG_ASSERT ((EXPRS_EXPRS2 (icm_arg) != NULL),
-                         "ICM MT_SPMD_BLOCK has wrong format (type missing)");
+                         "ICM MT_SPMD_SETUP has wrong format (type missing)");
             DBUG_ASSERT ((EXPRS_EXPR2 (icm_arg) != NULL),
-                         "ICM MT_SPMD_BLOCK has wrong format (type missing)");
+                         "ICM MT_SPMD_SETUP has wrong format (type missing)");
             DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR2 (icm_arg)) == N_id),
-                         "ICM MT_SPMD_BLOCK has wrong format (type missing)");
+                         "ICM MT_SPMD_SETUP has wrong format (type missing)");
 
             type = ID_NAME (EXPRS_EXPR2 (icm_arg));
 
             DBUG_ASSERT ((EXPRS_EXPRS3 (icm_arg) != NULL),
-                         "ICM MT_SPMD_BLOCK has wrong format (parameter missing)");
+                         "ICM MT_SPMD_SETUP has wrong format (parameter missing)");
             DBUG_ASSERT ((EXPRS_EXPR3 (icm_arg) != NULL),
-                         "ICM MT_SPMD_BLOCK has wrong format (parameter missing)");
+                         "ICM MT_SPMD_SETUP has wrong format (parameter missing)");
             DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR3 (icm_arg)) == N_id),
-                         "ICM MT_SPMD_BLOCK has wrong format (parameter missing)");
+                         "ICM MT_SPMD_SETUP has wrong format (parameter missing)");
 
             name = ID_NAME (EXPRS_EXPR3 (icm_arg));
 
