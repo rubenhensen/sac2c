@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.15  2002/03/01 02:36:53  dkr
+ * FreeArgtab() added
+ *
  * Revision 3.14  2001/05/18 10:38:58  cg
  * Old memory management macros MALLOC and FREE removed.
  *
@@ -88,6 +91,7 @@ extern nodelist *FreeNodelist (nodelist *fr);
 extern nodelist *FreeNodelistNode (nodelist *nl);
 extern access_t *FreeOneAccess (access_t *fr);
 extern access_t *FreeAllAccess (access_t *fr);
+extern argtab_t *FreeArgtab (argtab_t *argtab);
 
 /*
  * traversal functions
