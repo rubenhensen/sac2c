@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.113  1998/04/02 17:39:35  dkr
+ * removed NWITH2_FUNAP
+ * new node N_conc added
+ *
  * Revision 1.112  1998/04/02 13:13:30  dkr
  * added NWITH2_FUNAP
  *
@@ -2053,8 +2057,8 @@ extern node *MakePragma ();
  ***
  ***  when used in typecheck.c :
  ***
- ***    node *     NEXTASSIGN    <O>  (N_assign)
- ***    node *     LASSIGN       <O>  (N_assign)
+ ***    node *     NEXTASSIGN    (O)  (N_assign)
+ ***    node *     LASSIGN       (0)  (N_assign)
  ***
  ***  when used in writesib.c :
  ***
@@ -2135,6 +2139,29 @@ extern node *MakeInfo ();
 /*--------------------------------------------------------------------------*/
 
 /***
+ ***  N_conc :
+ ***
+ ***  sons:
+ ***
+ ***    node*  REGION             (0)  (N_assign)
+ ***
+ ***  permanent attributes:
+ ***
+ ***    ---
+ ***
+ ***  temporary attributes:
+ ***
+ ***    ---
+ ***
+ ***/
+
+extern node *MakeConc (node *region);
+
+#define CONC_REGION(n) (n->node[0])
+
+/*--------------------------------------------------------------------------*/
+
+/***
  ***  N_Nwith :
  ***
  ***  sons:
@@ -2144,11 +2171,13 @@ extern node *MakeInfo ();
  ***    node*  WITHOP    (N_Nwithop)
  ***
  ***  permanent attributes:
+ ***
  ***    int    PARTS     (number of N_Npart nodes for this WL.
  ***                      -1: no complete partition, exactly one N_Npart,
  ***                      >0: complete partition.
  ***
  ***  temporary attributes:
+ ***
  ***    long*  MASK                    (optimize -> )
  ***    int    REFERENCED              (wli -> )
  ***    int    REFERENCED_FOLD         (wli -> )
@@ -2187,6 +2216,7 @@ extern node *MakeNWith (node *part, node *code, node *withop);
  ***    node*  CODE          (N_Ncode)
  ***
  ***  temporary attributes:
+ ***
  ***    long*  MASK                    (optimize -> )
  ***
  ***/
@@ -2269,11 +2299,13 @@ extern node *MakeNGenerator (node *bound1, node *bound2, prf op1, prf op2, node 
  ***    prf        PRF         (iff WithOpType == WO_foldprf)
  ***
  ***  temporary attributes:
+ ***
  ***    node*  EXPR            (scanparse, stays != NULL afterwards)
  ***    node*  FUNDEF          (N_fundef)  (typecheck -> )
  ***    long*  MASK                        (optimize -> )
  ***
- ***  remarks: WithOpType is WO_genarray, WO_modarray, WO_foldfun, WO_foldprf.
+ ***  remarks:
+ ***    WithOpType is WO_genarray, WO_modarray, WO_foldfun, WO_foldprf.
  ***    FUNDEF-node is used if TYPE == WO_foldfun.
  ***
  ***/
@@ -2355,7 +2387,7 @@ extern node *MakeNCode (node *block, node *expr);
  ***
  ***  temporary attributes:
  ***
- ***    node*    FUNAP    (0)     (N_ap)     (call of parallelized WL-fun)
+ ***    ---
  ***
  ***/
 
@@ -2365,8 +2397,6 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop);
 #define NWITH2_SEG(n) (n->node[1])
 #define NWITH2_CODE(n) (n->node[2])
 #define NWITH2_WITHOP(n) (n->node[3])
-
-#define NWITH2_FUNAP(n) (n->node[4])
 
 /*--------------------------------------------------------------------------*/
 
