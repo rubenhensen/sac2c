@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2000/12/07 12:56:56  dkr
+ * nothing changed
+ *
  * Revision 3.1  2000/11/20 18:02:30  sacbase
  * new release made
  *
@@ -450,7 +453,7 @@ SPMDLnwith2 (node *arg_node, node *arg_info)
     NWITH2_WITHOP (arg_node) = Trav (NWITH2_WITHOP (arg_node), arg_info);
 
     /*
-     * gnerate new DFMasks
+     * generate new DFMasks
      */
 
     in = DFMGenMaskClear (FUNDEF_DFM_BASE (INFO_CONC_FUNDEF (arg_info)));

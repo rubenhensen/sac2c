@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2000/12/07 12:57:09  dkr
+ * nothing changed
+ *
  * Revision 3.3  2000/12/07 08:54:08  cg
  * Bug fixed in initialization of some variables after
  * warning elimination.
@@ -52,7 +55,6 @@
  *
  * Revision 1.1  1998/06/18 14:35:53  cg
  * Initial revision
- *
  *
  */
 

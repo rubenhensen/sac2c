@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2000/12/07 12:57:02  dkr
+ * nothing changed
+ *
  * Revision 3.1  2000/11/20 18:02:33  sacbase
  * new release made
  *
@@ -37,7 +40,6 @@
  *
  * Revision 2.1  1999/06/15 14:15:23  jhs
  * Initial revision generated.
- *
  *
  */
 
