@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.162  2004/08/26 17:02:24  skt
+ * printing of FUNDEF_EXECMODE enabled during availability of the information
+ *
  * Revision 3.161  2004/08/19 10:13:14  skt
  * handling of CELLID (needed for mtmode 3) in PrintAssign added
  *
@@ -305,7 +308,7 @@
 #include "refcount.h"
 #include "wl_bounds.h"
 #include "wltransform.h"
-#include "multithread.h"
+#include "multithread_lib.h"
 #include "constants.h"
 #include "print_interface.h"
 #include "print.h"
@@ -1774,6 +1777,11 @@ PrintFundef (node *arg_node, info *arg_info)
          * print function definition
          */
 
+        /* print some extra information during a section of mtmode 3 */
+        if (executionmodes_available == TRUE) {
+            fprintf (outfile, "%s:", MUTHDecodeExecmode (FUNDEF_EXECMODE (arg_node)));
+        }
+
         if (FUNDEF_STATUS (arg_node) == ST_zombiefun) {
             if (compiler_phase < PH_genccode) {
                 fprintf (outfile, "/*\n");
@@ -2189,6 +2197,7 @@ PrintAssign (node *arg_node, info *arg_info)
 
     PRINT_LINE_PRAGMA_IN_SIB (outfile, arg_node);
 
+    /* print some extra information during a section of mtmode 3 */
     if (executionmodes_available == TRUE) {
         fprintf (outfile, "%s:", MUTHDecodeExecmode (ASSIGN_EXECMODE (arg_node)));
     }
