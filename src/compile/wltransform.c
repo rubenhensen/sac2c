@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.35  2001/03/05 17:01:45  dkr
+ * message text of DBUG_ASSERT about CheckWithids() modified
+ *
  * Revision 3.34  2001/03/05 16:42:27  dkr
  * no macros NWITH???_IS_FOLD used
  *
@@ -6370,11 +6373,11 @@ WLTRAwith (node *arg_node, node *arg_info)
     NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
 
     /*
-     * check whether NWITHID_VEC, NWITHID_IDS of all parts contain the same names.
+     * check whether NWITHID_VEC, NWITHID_IDS of all parts have identical names.
      */
     DBUG_ASSERT ((CheckWithids (NWITH_PART (arg_node))),
-                 "Not all N_Nwithid nodes of the with-loop contain"
-                 " the same VEC and IDS names!\n"
+                 "Not all N_Nwithid nodes of the with-loop have identical"
+                 " names!\n"
                  "This is probably due to an error during with-loop-folding.");
 
     is_fold = NWITH_IS_FOLD (arg_node);
