@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2000/11/29 10:31:24  nmw
+ * *** empty log message ***
+ *
  * Revision 3.3  2000/11/27 21:04:38  cg
  * Added general support for new optimization APL,
  * "array placement"
@@ -542,8 +545,8 @@ usage ()
             "\t\t\t\t  o: trace old with-loop execution.\n"
             "\t\t\t\t  w: trace new with-loop execution.\n"
             "\t\t\t\t  t: trace multi-threading specific operations.\n"
-            "\t\t\t\t  c: trace runtime enviroment init/exit when using\n"
-            "\t\t\t\t     sac-libraries in c programms.\n");
+            "\t\t\t\t  c: trace runtime enviroment init/exit when\n"
+            "\t\t\t\t     using sac-libraries in c programms.\n");
 
     printf ("\n\nRUNTIME PROFILING OPTIONS:\n\n"
 
