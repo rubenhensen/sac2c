@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 3.60  2004/10/14 14:14:49  sbs
+ * provided IdxChangeIdOld in addition to IdxChangeId to ensure
+ * compatibility in ReuseArray.c if needed.
+ * Eventually, this function should be deleted.
+ * Eliminated EqTypes as the types have been replaced by shapes.
+ *
  * Revision 3.59  2004/10/14 13:56:27  sbs
  * fixed a bug in IdxNcode
  *
@@ -815,49 +821,6 @@ FindVect (node *chain)
 
 /** <!--********************************************************************-->
  *
- * @fn  bool EqTypes( types *type1, types *type2)
- *
- *   @brief  compares two types with respect to the shape.
- *
- *           In case of UDFs the implementation-type is compared.
- *           This is a helper function needed from FindIdx only!
- *   @param  type1
- *   @param  type2
- *   @return 1 iff the types are equal, 0 otherwise
- *
- ******************************************************************************/
-
-bool
-EqTypes (types *type1, types *type2)
-{
-    int i;
-    bool res;
-    int dim1, dim2;
-    shpseg *shpseg1, *shpseg2;
-
-    DBUG_ENTER ("EqTypes");
-
-    shpseg1 = Type2Shpseg (type1, &dim1);
-    shpseg2 = Type2Shpseg (type2, &dim2);
-
-    if (dim1 == dim2) {
-        res = TRUE;
-        DBUG_ASSERT ((shpseg1 != NULL) && (shpseg2 != NULL),
-                     "EqTypes used on type without shape");
-        for (i = 0; i < dim2; i++) {
-            if (SHPSEG_SHAPE (shpseg1, i) != SHPSEG_SHAPE (shpseg2, i)) {
-                res = FALSE;
-            }
-        }
-    } else {
-        res = FALSE;
-    }
-
-    DBUG_RETURN (res);
-}
-
-/** <!--********************************************************************-->
- *
  * @fn  node *FindIdx( node *chain, shape *vshape)
  *
  *   @brief  checks whether IDX(vshape) is in the chain.
@@ -1270,6 +1233,41 @@ IdxChangeId (char *varname, shape *shp)
     }
     sprintf (buffer2, "__");
     strcat (buffer, buffer2);
+
+    DBUG_RETURN (StringCopy (buffer));
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn char *IdxChangeIdOld( char *varname, types *type)
+ *
+ * @brief appends the shape given by type to the varname.
+ *
+ *    Example:
+ *    test, int[1,4,2,3]  =>  test_1_4_2_3__
+ *    does not free the argument space!
+ *
+ ******************************************************************************/
+
+char *
+IdxChangeIdOld (char *varname, types *type)
+{
+    shpseg *tmp_shpseg;
+    static char buffer[1024];
+    static char buffer2[32];
+    int i;
+
+    DBUG_ENTER ("IdxChangeIdExt");
+
+    sprintf (buffer, "%s", varname);
+    tmp_shpseg = Type2Shpseg (type, NULL);
+    for (i = 0; i < GetShapeDim (type); i++) {
+        sprintf (buffer2, "_%d", SHPSEG_SHAPE (tmp_shpseg, i));
+        strcat (buffer, buffer2);
+    }
+    sprintf (buffer2, "__");
+    strcat (buffer, buffer2);
+    tmp_shpseg = FreeShpseg (tmp_shpseg);
 
     DBUG_RETURN (StringCopy (buffer));
 }
