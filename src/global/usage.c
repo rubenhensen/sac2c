@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.52  2003/10/19 22:02:31  dkrHH
+ * description of -intrinsic for TAGGED_ARRAYS corrected
+ *
  * Revision 3.51  2003/09/17 18:12:29  dkr
  * RCAO renamed into DAO for TAGGED_ARRAYS
  *
@@ -872,7 +875,11 @@ Usage ()
             "    library. These intrinsic implementations can be activated by the\n"
             "    following compiler option.\n"
             "\n"
-            "    -intrinsic [a+-x/tdcrpo]+\n"
+#ifndef TAGGED_ARRAYS
+            "    -intrinsic [a+-x/tdcrso]+\n"
+#else
+            "    -intrinsic [a+-x/so]+\n"
+#endif
             "                    Use intrinsic implementations for array operations.\n"
             "                      a: Use all intrinsic operations  available\n"
 #ifndef TAGGED_ARRAYS
