@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.20  2004/11/22 13:47:10  skt
+ * code brushing in SACDevCampDK 2004
+ *
  * Revision 3.19  2004/09/02 16:01:35  skt
  * support for consolidate_cells added
  *
@@ -136,66 +139,17 @@
  *
  * prefix:      MUTH
  *
- *   The step of exploiting concurrency is done step by step in several
- *   miniphases. Each miniphase will be done on *all* functions before
- *   the next step is done.
- *
- *   - PHASE 1 - Scheduling-Inference (schedule_init.[ch])
- *     Decides which with-loops will be executed multithreaded an
- *     which not:
- *     > At each with-loop *to be* executed multithreaded a scheduling is
- *       annotated, schedulings annotated by pragmas are also considered,
- *       if annotated scheduling is not suitable error messages occur
- *     > At each with-loop *not to be* executed multithreaded no scheduling
- *       is annotated, warnings will be displayed if schedulings
- *       are annotatated at such with-loops by pragmas
- *   - PHASE 2 - Creation of REPfunctions
- *        #### to be done  ...
- *   - PHASE 3 - Creation of MT- and ST-Blocks
- *     ####
- *     > Creates a MT-Block around each assigment to be executed
- *       multithreaded, these are only the with-loops with schedulings
- *       annotated in Phase 1.
- *     > Creates a ST Block around each assigment to be executed
- *       singlethreaded, because it is not allowed to execute it
- *       multithreaded
- *       - usage of class-function ####
- *       - application of (primitive) function with unknown body, returning
- *         an array result > threshold ####
- *       - assignments of an array-constant > threshold ####
- *       - ???? application of a known function, with st-block before
- *         mt-block, including loopi- and condi-functions resp. loops and
- *         conditionals ####
- *     > Traverses also with-loops without scheduling ####
- *   - ...
- *      .
- *      .     #### to be done
- *      .
- *   - ...
- *
- *
  */
 
 #define NEW_INFO
 
 #include "dbug.h"
 
-#include "types.h"
 #include "tree_basic.h"
 #include "traverse.h"
 #include "globals.h"
 #include "free.h"
 #include "Error.h"
-
-/*#include "repfuns_init.h"
-  #include "blocks_propagate.h"
-  #include "blocks_expand.h"
-  #include "mtfuns_init.h"
-  #include "blocks_cons.h"
-  #include "dataflow_analysis.h"
-  #include "barriers_init.h"
-  #include "blocks_lift.h"
-  #include "adjust_calls.h" */
 
 #include "multithread.h"
 #include "tag_executionmode.h"
@@ -251,7 +205,7 @@ FreeInfo (info *info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *BuildMultiThread( node *syntax_tree)
+ * @fn node *MUTHdoBuildMultiThread( node *syntax_tree)
  *
  *   This function starts the process of building the *new* support for
  *   multithread. Throughout this process arg_info points to an N_info which
@@ -263,7 +217,7 @@ FreeInfo (info *info)
  *         application
  *****************************************************************************/
 node *
-BuildMultiThread (node *syntax_tree)
+MUTHdoBuildMultiThread (node *syntax_tree)
 {
     funtab *old_tab;
 
@@ -358,7 +312,7 @@ MUTHassign (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *MUTHmodul(node *arg_node, info *arg_info)
+ * @fn node *MUTHmodule(node *arg_node, info *arg_info)
  *
  *   @brief executes the first parts of the EX-/ST-/MT-multithreading
  *
@@ -368,214 +322,170 @@ MUTHassign (node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 node *
-MUTHmodul (node *arg_node, info *arg_info)
+MUTHmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("MUTHmodul");
+    DBUG_ENTER ("MUTHmodule");
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_modul),
-                 "MUTHmodul expects a N_modul as 1st argument");
+                 "MUTHmodule expects a N_modul as 1st argument");
 
     /*
      *  --- initializing (init) ---
      */
     DBUG_PRINT ("MUTH", ("begin initializing"));
-    if (MODUL_IMPORTS (arg_node) != NULL) {
-        DBUG_PRINT ("MUTH", ("trav into modul-imports"));
-        MODUL_IMPORTS (arg_node) = Trav (MODUL_IMPORTS (arg_node), arg_info);
-        DBUG_PRINT ("MUTH", ("trav from modul-imports"));
+    if (MODULE_IMPORTS (arg_node) != NULL) {
+        DBUG_PRINT ("MUTH", ("trav into module-imports"));
+        MODULE_IMPORTS (arg_node) = Trav (MODULE_IMPORTS (arg_node), arg_info);
+        DBUG_PRINT ("MUTH", ("trav from module-imports"));
     }
-    if (MODUL_OBJS (arg_node) != NULL) {
-        DBUG_PRINT ("MUTH", ("trav into modul-objs"));
-        MODUL_OBJS (arg_node) = Trav (MODUL_OBJS (arg_node), arg_info);
-        DBUG_PRINT ("MUTH", ("trav from modul-objs"));
+    if (MODULE_OBJS (arg_node) != NULL) {
+        DBUG_PRINT ("MUTH", ("trav into module-objs"));
+        MODULE_OBJS (arg_node) = Trav (MODULE_OBJS (arg_node), arg_info);
+        DBUG_PRINT ("MUTH", ("trav from module-objs"));
     }
-    if (MODUL_TYPES (arg_node) != NULL) {
-        DBUG_PRINT ("MUTH", ("trav into modul-types"));
-        MODUL_TYPES (arg_node) = Trav (MODUL_TYPES (arg_node), arg_info);
-        DBUG_PRINT ("MUTH", ("trav from modul-types"));
+    if (MODULE_TYPES (arg_node) != NULL) {
+        DBUG_PRINT ("MUTH", ("trav into module-types"));
+        MODULE_TYPES (arg_node) = Trav (MODULE_TYPES (arg_node), arg_info);
+        DBUG_PRINT ("MUTH", ("trav from module-types"));
     }
-    if (MODUL_FUNS (arg_node) != NULL) {
-        DBUG_PRINT ("MUTH", ("trav into modul-funs"));
-        MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
-        DBUG_PRINT ("MUTH", ("trav from modul-funs"));
+    if (MODULE_FUNS (arg_node) != NULL) {
+        DBUG_PRINT ("MUTH", ("trav into module-funs"));
+        MODULE_FUNS (arg_node) = Trav (MODULE_FUNS (arg_node), arg_info);
+        DBUG_PRINT ("MUTH", ("trav from module-funs"));
     }
-    executionmodes_available = TRUE;
+    global.executionmodes_available = TRUE;
     DBUG_PRINT ("MUTH", ("end initializing"));
 
-    if ((break_after == PH_multithread) && (strcmp ("init", break_specifier) == 0)) {
+    if ((global.break_after == PH_multithread)
+        && (strcmp ("init", global.break_specifier) == 0)) {
         goto cont;
     }
 
     /*
-     *  --- TagExecutionmode (tem) ---
+     *  --- TEMdoTagExecutionmode (tem) ---
      */
-    DBUG_PRINT ("MUTH", ("begin TagExecutionmode"));
+    DBUG_PRINT ("MUTH", ("begin TEMdoTagExecutionmode"));
 
-    arg_node = TagExecutionmode (arg_node);
+    arg_node = TEMdoTagExecutionmode (arg_node);
 
-    DBUG_PRINT ("MUTH", ("end TagExecutionmode"));
+    DBUG_PRINT ("MUTH", ("end TEMdoTagExecutionmode"));
 
-    if ((break_after == PH_multithread) && (strcmp ("tem", break_specifier) == 0)) {
+    if ((global.break_after == PH_multithread)
+        && (strcmp ("tem", global.break_specifier) == 0)) {
         goto cont;
     }
 
     /*
-     *  --- CreateWithinwith (crwiw) ---
+     *  --- CRWIWdoCreateWithinwith (crwiw) ---
      */
-    DBUG_PRINT ("MUTH", ("begin CreateWithinwith"));
+    DBUG_PRINT ("MUTH", ("begin CRWIWdoCreateWithinwith"));
 
-    arg_node = CreateWithinwith (arg_node);
+    arg_node = CRWIWdoCreateWithinwith (arg_node);
 
-    DBUG_PRINT ("MUTH", ("end CreateWihitinwith"));
+    DBUG_PRINT ("MUTH", ("end CRWIWdoCreateWihitinwith"));
 
-    if ((break_after == PH_multithread) && (strcmp ("crwiw", break_specifier) == 0)) {
+    if ((global.break_after == PH_multithread)
+        && (strcmp ("crwiw", global.break_specifier) == 0)) {
         goto cont;
     }
 
     /*
-     *  --- PropagateExecutionmode (pem) ---
+     *  --- PEMdoPropagateExecutionmode (pem) ---
      */
-    DBUG_PRINT ("MUTH", ("begin PropagateExecutionmode"));
+    DBUG_PRINT ("MUTH", ("begin PEMdoPropagateExecutionmode"));
 
-    arg_node = PropagateExecutionmode (arg_node);
+    arg_node = PEMdoPropagateExecutionmode (arg_node);
 
-    DBUG_PRINT ("MUTH", ("end PropagateExecutionmode"));
+    DBUG_PRINT ("MUTH", ("end PEMdoPropagateExecutionmode"));
 
-    if ((break_after == PH_multithread) && (strcmp ("pem", break_specifier) == 0)) {
+    if ((global.break_after == PH_multithread)
+        && (strcmp ("pem", global.break_specifier) == 0)) {
         goto cont;
     }
 
     /*
-     *  --- CreateDataflowgraph (cdfg) ---
+     *  --- CDFGdoCreateDataflowgraph (cdfg) ---
      */
-    DBUG_PRINT ("MUTH", ("begin CreateDataflowgraph"));
+    DBUG_PRINT ("MUTH", ("begin CDFGdoCreateDataflowgraph"));
 
-    arg_node = CreateDataflowgraph (arg_node);
+    arg_node = CDFGdoCreateDataflowgraph (arg_node);
 
-    DBUG_PRINT ("MUTH", ("end CreateDataflowgraph"));
+    DBUG_PRINT ("MUTH", ("end CDFGdoCreateDataflowgraph"));
 
-    if ((break_after == PH_multithread) && (strcmp ("cdfg", break_specifier) == 0)) {
+    if ((global.break_after == PH_multithread)
+        && (strcmp ("cdfg", global.break_specifier) == 0)) {
         goto cont;
     }
 
     /*
-     *  --- AssignmentsRearange (asmra) ---
+     *  --- ASMRAdoAssignmentsRearange (asmra) ---
      */
-    DBUG_PRINT ("MUTH", ("begin AssignmentsRearrange"));
+    DBUG_PRINT ("MUTH", ("begin ASMRAdoAssignmentsRearrange"));
 
-    arg_node = AssignmentsRearrange (arg_node);
+    arg_node = ASMRAdoAssignmentsRearrange (arg_node);
 
-    DBUG_PRINT ("MUTH", ("end AssignmentsRearrange"));
+    DBUG_PRINT ("MUTH", ("end ASMRAdoAssignmentsRearrange"));
 
-    if ((break_after == PH_multithread) && (strcmp ("asmra", break_specifier) == 0)) {
+    if ((global.break_after == PH_multithread)
+        && (strcmp ("asmra", global.break_specifier) == 0)) {
         goto cont;
     }
 
     /*
-     *  --- CreateCells (crece) ---
+     *  --- CRECEdoCreateCells (crece) ---
      */
-    DBUG_PRINT ("MUTH", ("begin CreateCells"));
+    DBUG_PRINT ("MUTH", ("begin CRECEdoCreateCells"));
 
-    arg_node = CreateCells (arg_node);
+    arg_node = CRECEdoCreateCells (arg_node);
 
-    DBUG_PRINT ("MUTH", ("end CreateCells"));
-    if ((break_after == PH_multithread) && (strcmp ("crece", break_specifier) == 0)) {
+    DBUG_PRINT ("MUTH", ("end CRECEDoCreateCells"));
+    if ((global.break_after == PH_multithread)
+        && (strcmp ("crece", global.break_specifier) == 0)) {
         goto cont;
     }
 
     /*
-     *  --- CellGrowth (cegro) ---
+     *  --- CEGROdoCellGrowth (cegro) ---
      */
-    DBUG_PRINT ("MUTH", ("begin CellGrowth"));
+    DBUG_PRINT ("MUTH", ("begin CEGROdoCellGrowth"));
 
-    arg_node = CellGrowth (arg_node);
+    arg_node = CEGROdoCellGrowth (arg_node);
 
-    DBUG_PRINT ("MUTH", ("end CellGrowth"));
-    if ((break_after == PH_multithread) && (strcmp ("cegro", break_specifier) == 0)) {
+    DBUG_PRINT ("MUTH", ("end CEGROdoCellGrowth"));
+    if ((global.break_after == PH_multithread)
+        && (strcmp ("cegro", global.break_specifier) == 0)) {
         goto cont;
     }
 
     /*
-     * --- ReplicateFunctions (repfu) ---
+     * --- REPFUNdoReplicateFunctions (repfun) ---
      */
-    DBUG_PRINT ("MUTH", ("begin ReplicateFunctions"));
+    DBUG_PRINT ("MUTH", ("begin REPFUNdoReplicateFunctions"));
 
-    arg_node = ReplicateFunctions (arg_node);
+    arg_node = REPFUNdoReplicateFunctions (arg_node);
 
     /* extra-call of DFR to remove superflous functions */
     arg_node = DeadFunctionRemoval (arg_node);
 
-    DBUG_PRINT ("MUTH", ("end ReplicateFunctions"));
-    if ((break_after == PH_multithread) && (strcmp ("repfun", break_specifier) == 0)) {
+    DBUG_PRINT ("MUTH", ("end REPFUNdoReplicateFunctions"));
+    if ((global.break_after == PH_multithread)
+        && (strcmp ("repfun", global.break_specifier) == 0)) {
         goto cont;
     }
 
     /*
-     * --- ConsolidateCells (concel) ---
+     * --- CONDELdoConsolidateCells (concel) ---
      */
-    DBUG_PRINT ("MUTH", ("begin ConsolidateCells"));
+    DBUG_PRINT ("MUTH", ("begin CONCELdoConsolidateCells"));
 
-    arg_node = ConsolidateCells (arg_node);
+    arg_node = CONCELdoConsolidateCells (arg_node);
 
-    DBUG_PRINT ("MUTH", ("end ConsolidateCells"));
-    if ((break_after == PH_multithread) && (strcmp ("concel", break_specifier) == 0)) {
+    DBUG_PRINT ("MUTH", ("end CONCELdoConsolidateCells"));
+    if ((global.break_after == PH_multithread)
+        && (strcmp ("concel", global.break_specifier) == 0)) {
         goto cont;
     }
 
-    executionmodes_available = FALSE;
-
-    /*
-     *  --- DataflowAnalysis (dfa) ---
-     */
-    /* DBUG_PRINT( "MUTH", ("begin DataflowAnalysis"));
-    MODUL_FUNS( arg_node) =
-      MUTHdriver (MODUL_FUNS( arg_node), arg_info, FALSE, DataflowAnalysis, MUTHignore);
-    DBUG_PRINT( "MUTH", ("end DataflowAnalysis"));
-
-    if ((break_after == PH_multithread) &&
-        (strcmp("dfa", break_specifier)==0)) {
-      goto cont;
-      }*/
-
-    /*
-     *  --- BarriersInit (barin) ---
-     */
-    /* DBUG_PRINT( "MUTH", ("begin BarriersInit"));
-       MODUL_FUNS( arg_node) =
-       MUTHdriver (MODUL_FUNS( arg_node), arg_info, FALSE, BarriersInit, MUTHignore);
-       DBUG_PRINT( "MUTH", ("end BarriersInit"));
-
-       if ((break_after == PH_multithread) &&
-       (strcmp("barin", break_specifier)==0)) {
-       goto cont;
-      }*/
-
-    /*
-     *  --- BlocksLift (blkli) ---
-     */
-    /* DBUG_PRINT( "MUTH", ("begin BlocksLift"));
-       MODUL_FUNS( arg_node) =
-       MUTHdriver (MODUL_FUNS( arg_node), arg_info, TRUE, BlocksLift, MUTHignore);
-       DBUG_PRINT( "MUTH", ("end BlocksLift"));
-
-       if ((break_after == PH_multithread) &&
-       (strcmp("blkli", break_specifier)==0)) {
-       goto cont;
-       }*/
-
-    /*
-     *  --- AdjustCalls (adjca) ---
-     */
-    /*DBUG_PRINT( "MUTH", ("begin AdjustCalls"));
-      MODUL_FUNS( arg_node) =
-      MUTHdriver (MODUL_FUNS( arg_node), arg_info, FALSE, AdjustCalls1, MUTHignore);
-      MODUL_FUNS( arg_node) =
-      MUTHdriver (MODUL_FUNS( arg_node), arg_info, FALSE, AdjustCalls2, MUTHignore);
-      DBUG_PRINT( "MUTH", ("end AdjustCalls"));
-
-      if ((break_after == PH_multithread) &&
-      (strcmp("adjca", break_specifier)==0)) {
-      goto cont;
-      }*/
+    global.executionmodes_available = FALSE;
 
 cont:
 

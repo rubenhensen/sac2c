@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2004/11/22 13:47:10  skt
+ * code brushing in SACDevCampDK 2004
+ *
  * Revision 3.13  2004/08/26 17:01:36  skt
  * moved MUTHDecodeExecmode from multithread to multithread_lib
  *
@@ -62,20 +65,17 @@
  *
  *****************************************************************************/
 
-#ifndef MULTITHREAD_H
+#ifndef _SAC_MULTITHREAD_H
+#define _SAC_MULTITHREAD_H
 
-#define MULTITHREAD_H
+#include "types.h"
 
-/* definition of the execution modes */
+extern node *MUTHdoBuildMultiThread (node *syntax_tree);
 
-#define MUTH_SPLITPHASE_ENABLED TRUE
-
-extern node *BuildMultiThread (node *syntax_tree);
-
-extern node *MUTHmodul (node *arg_node, info *arg_info);
+extern node *MUTHmodule (node *arg_node, info *arg_info);
 
 extern node *MUTHfundef (node *arg_node, info *arg_info);
 
 extern node *MUTHassign (node *arg_node, info *arg_info);
 
-#endif /* MULTITHREAD_H */
+#endif /* _SAC_MULTITHREAD_H */

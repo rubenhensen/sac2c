@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.3  2004/11/22 13:48:10  skt
+ * code brushing in SACDevCampDK 2004
+ *
  * Revision 1.2  2004/08/17 15:47:39  skt
  * comments added
  *
@@ -30,8 +33,6 @@
 #define NEW_INFO
 
 #include "dbug.h"
-
-#include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
@@ -83,7 +84,7 @@ FreeInfo (info *info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *CellGrowth(node *arg_node)
+ * @fn node *CEGROdoCellGrowth(node *arg_node)
  *
  *   @brief  Inits the traversal for this phase
  *
@@ -95,22 +96,22 @@ FreeInfo (info *info)
  *
  *****************************************************************************/
 node *
-CellGrowth (node *arg_node)
+CEGROdoCellGrowth (node *arg_node)
 {
     funtab *old_tab;
     info *arg_info;
-    DBUG_ENTER ("CellGrowth");
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_modul),
-                 "CellGrowth expects a N_modul as arg_node");
+    DBUG_ENTER ("CEGROdoCellGrowth");
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_module),
+                 "CEGROdoCellGrowth expects a N_module as arg_node");
 
     arg_info = MakeInfo ();
     /* push info ... */
     old_tab = act_tab;
     act_tab = cegro_tab;
 
-    DBUG_PRINT ("CEGRO", ("trav into modul-funs"));
-    MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
-    DBUG_PRINT ("CEGRO", ("trav from modul-funs"));
+    DBUG_PRINT ("CEGRO", ("trav into module-funs"));
+    MODULE_FUNS (arg_node) = Trav (MODULE_FUNS (arg_node), arg_info);
+    DBUG_PRINT ("CEGRO", ("trav from module-funs"));
 
     /* pop info ... */
     act_tab = old_tab;
@@ -248,7 +249,6 @@ CEGROblock (node *arg_node, info *arg_info)
  *   @return
  *
  *****************************************************************************/
-
 node *
 CEGROassign (node *arg_node, info *arg_info)
 {
