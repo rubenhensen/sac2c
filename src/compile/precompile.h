@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.21  2004/09/24 16:13:45  sbs
+ * RenameFunName made externally available.
+ *
  * Revision 3.20  2004/08/08 15:48:59  ktr
  * PREC1prf added in order to remove inc_rc/dec_rc instructions for global
  * objects.
@@ -156,5 +159,6 @@ extern node *PREC4WLsegx (node *arg_node, info *arg_info);
 extern char *ObjInitFunctionName (bool before_rename);
 
 extern char *RenameLocalIdentifier (char *id);
+extern char *RenameFunName (char *mod, char *name, statustype status, node *args);
 
 #endif /* _sac_precompile_h */

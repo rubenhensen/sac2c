@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.92  2004/09/24 16:13:45  sbs
+ * RenameFunName made externally available.
+ *
  * Revision 3.91  2004/09/23 16:45:41  ktr
  * CEXPR is no longer renamed to the accumulation variable in PREC3code as
  * the MT compilation scheme requires it to have the name of tmp_var
@@ -2872,7 +2875,7 @@ ReplaceSpecialCharacters (char *name)
  *
  ******************************************************************************/
 
-static char *
+char *
 RenameFunName (char *mod, char *name, statustype status, node *args)
 {
     char *prefix;
