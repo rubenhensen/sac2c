@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.113  2004/07/28 08:47:59  ktr
+ * NULL pointer problem in COMPPrfReshape resolved
+ *
  * Revision 3.112  2004/07/27 20:11:46  ktr
  * minor bugfix in MakeSetShapeIcm
  * ,
@@ -4105,7 +4108,7 @@ COMPPrfReshape (node *arg_node, info *arg_info, node *rc_icms)
     int reuse;
     char *copyfun;
     int dim_new, dim_old;
-    node *ret_node;
+    node *ret_node = NULL;
 
     DBUG_ENTER ("COMPPrfReshape");
 
@@ -4163,6 +4166,9 @@ COMPPrfReshape (node *arg_node, info *arg_info, node *rc_icms)
         alloc_icm = MakeAllocIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids),
                                   RC_INIT (IDS_REFCNT (let_ids)), get_dim, set_shape_icm,
                                   NULL, NULL);
+
+        ret_node = rc_icms;
+
     } else {
         alloc_icm = NULL;
     }
@@ -4170,8 +4176,6 @@ COMPPrfReshape (node *arg_node, info *arg_info, node *rc_icms)
     /* Is this correct? Or do we have to take the rhs instead? */
     copyfun = GenericFun (0, IDS_TYPE (let_ids));
 #endif
-
-    ret_node = rc_icms;
 
     if (NODE_TYPE (arg2) == N_id) {
         if (!emm) {
@@ -5062,7 +5066,7 @@ COMPPrf (node *arg_node, info *arg_info)
     ids *let_ids;
     node *args, *arg;
     node *check_reuse1, *check_reuse2;
-    node *ret_node, *ret_node2;
+    node *ret_node, *ret_node2 = NULL;
     node *get_dim = NULL;
     node *set_shape_icm = NULL;
 
