@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.4  1999/04/16 11:47:30  jhs
+ * Changes made for empty arrays.
+ *
  * Revision 2.3  1999/03/15 14:02:28  bs
  * Access macros renamed (take a look at tree_basic.h).
  *
@@ -1254,7 +1257,7 @@ TakeV (node *vec, types *vec_type, types *array)
 
                 /* check weather the entries in 1) are ok */
                 for (i = 0; i < dim2; i++) {
-                    if ((tmp2[i] >= 0) && (tmp2[i] < TYPES_SHAPE (array_btype, i)))
+                    if ((tmp2[i] >= 0) && (tmp2[i] <= TYPES_SHAPE (array_btype, i)))
                         ok = 1;
                     else
                         ok = 0;
@@ -1458,7 +1461,7 @@ DropV (node *vec, types *vec_type, types *array)
                 /* check weather the entries in 1) are ok */
                 dim2 = ID_VECLEN (vec);
                 for (i = 0; i < dim2; i++) {
-                    if ((tmp2[i] >= 0) && (tmp2[i] < TYPES_SHAPE (array_btype, i)))
+                    if ((tmp2[i] >= 0) && (tmp2[i] <= TYPES_SHAPE (array_btype, i)))
                         ok = 1;
                     else
                         ok = 0;
