@@ -1,5 +1,9 @@
 /*
+ *
  * $Log$
+ * Revision 3.4  2001/01/10 13:37:35  dkr
+ * nothing changed
+ *
  * Revision 3.3  2001/01/09 17:26:31  dkr
  * N_WLstriVar renamed into N_WLstrideVar
  *
@@ -96,6 +100,7 @@
  *
  * Revision 1.1  1995/05/01  15:32:32  asi
  * Initial revision
+ *
  */
 
 #ifndef _sac_DupTree_h
