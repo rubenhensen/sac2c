@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.147  1999/01/25 16:26:26  sbs
+ * interrupt handler setup inserted.
+ *
  * Revision 1.146  1999/01/18 15:31:39  sbs
  * mt for LINUX enabled 8-))
  *
@@ -128,6 +131,7 @@
 #include "Old2NewWith.h"
 #include "internal_lib.h"
 #include "resource.h"
+#include "interrupt.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -151,6 +155,7 @@ MAIN
 
     /* initializations */
     InitPaths ();
+    SetupInterruptHandlers ();
 
     compiler_phase = PH_setup;
 
