@@ -3,7 +3,11 @@
 /*
  *
  * $Log$
- * Revision 1.37  1997/04/25 12:13:52  sbs
+ * Revision 1.38  1997/04/28 11:57:08  cg
+ * Syntactic analysis made stricter: ftoi, dtoi, moduledec Moduldec, extern, etc
+ * are no longer allowed. Refer to sac_grammar for complete and correct SAC syntax.
+ *
+ * Revision 1.37  1997/04/25  12:13:52  sbs
  * malloc replaced by Malloc
  *
  * Revision 1.36  1997/03/19  13:44:45  cg
@@ -204,7 +208,7 @@ int start_token;
 %%
 %{
 
-/* the next view lines allow for smuggling in a start_token! */
+/* the next few lines allow for smuggling in a start_token! */
 
      if(start_token) {
        int mem=start_token;
@@ -259,18 +263,11 @@ int start_token;
 "rotate"			{FILTER7( ROTATE,prf_name_str[F_rotate] );}
 "cat"                           {FILTER7( CAT,prf_name_str[F_cat] );}
 "psi"                           {FILTER7( PSI,prf_name_str[F_psi] );}
-"ftoi"                          {FILTER7( F2I,prf_name_str[F_ftoi] );}
-"ftod"                          {FILTER7( F2D,prf_name_str[F_ftod] );}
-"itof"                          {FILTER7( I2F,prf_name_str[F_itof] );}
-"itod"                          {FILTER7( I2D,prf_name_str[F_itod] );}
-"dtoi"                          {FILTER7( D2I,prf_name_str[F_dtoi] );}
-"dtof"                          {FILTER7( D2F,prf_name_str[F_dtof] );}
 "toi"                           {FILTER7( TOI,prf_name_str[F_toi] );}
 "tof"                           {FILTER7( TOF,prf_name_str[F_tof] );}
 "tod"                           {FILTER7( TOD,prf_name_str[F_tod] );}
 "typedef"			{FILTER( TYPEDEF );}
 "classtype"			{FILTER( CLASSTYPE );}
-"constdef"		        {FILTER( CONSTDEF );}
 "objdef"		        {FILTER( OBJDEF );}
 "main"				{FILTER( K_MAIN );}
 "return"			{FILTER( RETURN );}
@@ -285,12 +282,11 @@ int start_token;
 "fold"				{FILTER( FOLD );}
 "inline"			{FILTER( INLINE );}
 
-[mM]odule[dD]ec			{FILTER( MODDEC );}
-[mM]odule			{FILTER( MODIMP );}
-[mM]odul[dD]ec			{FILTER( MODDEC );}
-[mM]odul			{FILTER( MODIMP );}
-[cC]lass[dD]ec			{FILTER( CLASSDEC );}
-[cC]lass                        {FILTER( CLASSIMP );}
+ModuleDec			{FILTER( MODDEC );}
+Module				{FILTER( MODIMP );}
+ClassDec			{FILTER( CLASSDEC );}
+Class	                        {FILTER( CLASSIMP );}
+
 "import"			{FILTER( IMPORT );}
 "all"				{FILTER( ALL );}
 "implicit"			{FILTER( IMPLICIT );}
@@ -299,9 +295,7 @@ int start_token;
 "funs"				{FILTER( FUNS );}
 "functions"			{FILTER( FUNS );}
 "own"				{FILTER( OWN );}
-"extern"                        {FILTER( EXTERN );}
 "external"			{FILTER( EXTERN );}
-"constants"                     {FILTER( CONSTANTS );}
 "global"                        {FILTER( GLOBAL );}
 "objects"                       {FILTER( OBJECTS );}
 
