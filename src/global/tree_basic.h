@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.27  1999/06/15 12:30:07  jhs
+ * Added some missing Macros to access NAIVE_REFCNT.
+ * Added INFO_RC_NAIVE_RCDUMP.
+ *
  * Revision 2.26  1999/06/09 13:58:06  jhs
  * Added new macros to access NAIVE_REFCNT.
  *
@@ -1909,6 +1913,7 @@ extern node *MakeEmpty ();
  ***
  ***    node*  DECL    (N_vardec)  (typecheck -> )
  ***    int    REFCNT              (refcount  -> )
+ ***    int    NAIVE_REFCNT        (refcount  -> concurrent -> )
  ***/
 
 extern node *MakePost (int incdec, char *id);
@@ -1918,6 +1923,7 @@ extern node *MakePost (int incdec, char *id);
 #define POST_ID(n) (n->info.id)
 #define POST_DECL(n) (n->node[1])
 #define POST_REFCNT(n) (n->info.ids->refcnt)
+#define POST_NAIVE_REFCNT(n) (n->info.ids->refcnt)
 
 /*
  * Attention : The way incrementations and decrementation are represented
@@ -1965,6 +1971,7 @@ extern node *MakePost (int incdec, char *id);
  ***
  ***    node*  DECL    (N_vardec)  (typecheck -> )
  ***    int    REFCNT              (refcount  -> )
+ ***    int    NAIVE_REFCNT        (refcount  -> concurrent -> )
  ***/
 
 extern node *MakePre (nodetype incdec, char *id);
@@ -1972,6 +1979,7 @@ extern node *MakePre (nodetype incdec, char *id);
 #define PRE_INCDEC(n) ((n->node[0]->nodetype == N_dec) ? 0 : 1)
 #define PRE_ID(n) (n->info.id)
 #define PRE_REFCNT(n) (n->info.ids->refcnt)
+#define PRE_NAIVE_REFCNT(n) (n->info.ids->naive_refcnt)
 #define PRE_DECL(n) (n->node[1])
 
 /*
@@ -2213,6 +2221,14 @@ extern node *MakePragma ();
  ***    int        SEPARATE
  ***
  ***
+ ***  when used in refcount.c
+ ***
+ ***    node*      PRF
+ ***    node*      WITH
+ ***    int*       RCDUMP             (only while traversing a group of N_code's)
+ ***    int*       NAIVE_RCDUMP       (only while traversing a group of N_code's)
+ ***    int        VARNO
+ ***
  *** remarks:
  ***    N_info is used in many other phases without access macros :((
  ***/
@@ -2280,6 +2296,8 @@ extern node *MakeInfo ();
 #define INFO_RC_PRF(n) (n->node[0])
 #define INFO_RC_WITH(n) (n->node[1])
 #define INFO_RC_RCDUMP(n) ((int *)(n->node[2]))
+#define INFO_RC_NAIVE_RCDUMP(n) ((int *)(n->node[3]))
+#define INFO_RC_VARNO(n) (n->varno)
 
 /* wltransform */
 #define INFO_WL_SHPSEG(n) ((shpseg *)(n->node[0]))
