@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.86  2000/07/28 12:37:09  cg
+ * Added temporary attribute TYPEDEF_ICM.
+ *
  * Revision 1.85  2000/07/28 08:32:37  mab
  * added INFO_APC_WITH
  *
@@ -783,12 +786,13 @@ extern node *MakeExplist (node *itypes, node *etypes, node *objs, node *funs);
  ***
  ***  temporary attributes:
  ***
- ***    types*      IMPL         (O)        (import -> )
- ***                                        ( -> writesib !!)
- ***    node*       PRAGMA       (O)        (import -> readsib !!)
- ***    char*       COPYFUN      (O)        (readsib -> compile -> )
- ***    char*       FREEFUN      (O)        (readsib -> compile -> )
- ***    node*       TYPEDEC_DEF  (O)        (checkdec -> writesib !!)
+ ***    types*      IMPL         (O)         (import -> )
+ ***                                         ( -> writesib !!)
+ ***    node*       PRAGMA       (O)         (import -> readsib !!)
+ ***    char*       COPYFUN      (O)         (readsib -> compile -> )
+ ***    char*       FREEFUN      (O)         (readsib -> compile -> )
+ ***    node*       TYPEDEC_DEF  (O)         (checkdec -> writesib !!)
+ ***    node*       ICM          (O) (N_icm) (compile -> )
  ***/
 
 /*
@@ -806,6 +810,9 @@ extern node *MakeExplist (node *itypes, node *etypes, node *objs, node *funs);
  *  is stored in COPYFUN and FREEFUN, respectively. These must be provided
  *  with the external module/class. The names may be generic or user-defined
  *  using pragmas.
+ *
+ *  The attribute ICM holds the associated N_icm node in the case of
+ *  compiled typedefs
  */
 
 extern node *MakeTypedef (char *name, char *mod, types *type, statustype attrib,
@@ -822,6 +829,7 @@ extern node *MakeTypedef (char *name, char *mod, types *type, statustype attrib,
 #define TYPEDEF_PRAGMA(n) (n->node[2])
 #define TYPEDEF_COPYFUN(n) ((char *)(n->node[3]))
 #define TYPEDEF_FREEFUN(n) ((char *)(n->node[4]))
+#define TYPEDEF_ICM(n) (n->node[5])
 
 /*--------------------------------------------------------------------------*/
 
