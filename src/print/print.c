@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.152  2004/05/05 15:08:16  ktr
+ * Added support for NCODE_EPILOGUE
+ *
  * Revision 3.151  2004/03/05 19:14:27  mwe
  * support for new node N_funcond added
  *
@@ -3707,6 +3710,10 @@ PrintNcode (node *arg_node, node *arg_info)
 
     fprintf (outfile, " : ");
     Trav (NCODE_CEXPRS (arg_node), arg_info);
+    if (NCODE_EPILOGUE (arg_node) != NULL) {
+        fprintf (outfile, "\n");
+        Trav (NCODE_EPILOGUE (arg_node), arg_info);
+    }
     fprintf (outfile, " ; ");
 
     if (NCODE_AP_DUMMY_CODE (arg_node)) {
