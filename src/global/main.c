@@ -1,12 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2001/05/07 15:01:34  dkr
+ * PrintAST is called even with -noPAB.
+ * PAB_YES, PAB_NO replaced by TRUE, FALSE.
+ *
  * Revision 3.11  2001/05/07 13:26:18  dkr
  * DBUG string 'AST' added: calls PrintAST(syntax_tree) if flag -b... is
  * given.
- *
- * Revision 3.10  2001/04/26 21:08:22  dkr
- * ups, include of rmcasts.h removed
  *
  * Revision 3.9  2001/04/26 17:10:42  dkr
  * RemoveVoidFuns removed
@@ -37,12 +38,6 @@
  *
  * Revision 2.26  2000/11/14 13:18:42  dkr
  * no '... might be used uninitialized' warnings anymore
- *
- * Revision 2.25  2000/07/27 15:22:09  nmw
- * undo to revision 2.23
- *
- * Revision 2.24  2000/07/25 10:05:40  nmw
- * no generation of dec files when compiling for c-libraries
  *
  * Revision 2.23  2000/07/12 10:09:18  dkr
  * phase numbers in comments corrected
@@ -121,9 +116,6 @@
  *
  * Revision 2.2  1999/03/31 11:30:27  cg
  * added command line parameter -cachesim
- *
- * Revision 2.1  1999/02/23 12:39:28  sacbase
- * new release made
  *
  * ... [eliminated]
  *
@@ -450,7 +442,7 @@ main (int argc, char *argv[])
         compiler_phase -= 2;
     }
 
-    if (make_patchwith) {
+    if (patch_with) {
         NOTE2 (("   \n"
                 "** Patching with-loops (generating multiple parts) ...\n"));
         syntax_tree = PatchWith (syntax_tree); /* patchwith_tab */
@@ -556,8 +548,8 @@ BREAK:
         if (compiler_phase < PH_scanparse) {
             RSCShowResources ();
         } else {
-            if ((print_after_break == PAB_YES) && (compiler_phase <= PH_compile)) {
-                DBUG_EXECUTE ("AST", PrintAST (syntax_tree););
+            DBUG_EXECUTE ("AST", PrintAST (syntax_tree););
+            if (print_after_break && (compiler_phase <= PH_compile)) {
                 Print (syntax_tree);
             }
             syntax_tree = FreeTree (syntax_tree);
