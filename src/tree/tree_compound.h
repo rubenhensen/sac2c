@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.23  2001/03/15 21:15:17  dkr
+ * signature of NameOr..._MakeIndex modified
+ *
  * Revision 3.22  2001/03/05 16:43:13  dkr
  * new macros NWITH???_IS_FOLD added
  *
@@ -1900,9 +1903,9 @@ extern node *NameOrVal_MakeNode (char *name, int val, void *node_or_int);
 extern node *NodeOrInt_MakeNode (nodetype nt, void *node_or_int);
 
 extern node *NameOrVal_MakeIndex (char *name, int val, int dim, char *wl_name,
-                                  bool no_num);
+                                  bool no_num, bool no_icm);
 extern node *NodeOrInt_MakeIndex (nodetype nt, void *node_or_int, int dim, char *wl_name,
-                                  bool no_num);
+                                  bool no_num, bool no_icm);
 
 extern bool NameOrVal_Eq (char *name1, int val1, char *name2, int val2);
 extern bool NodeOrInt_Eq (nodetype nt1, void *node_or_int1, nodetype nt2,
