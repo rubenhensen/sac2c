@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.31  2003/09/25 18:37:57  dkr
+ * aggressive type propagation enabled
+ *
  * Revision 1.30  2003/03/12 14:49:23  dkr
  * space in DBUG_PRINT added
  *
@@ -333,7 +336,7 @@ FindCSE (node *cselist, node *let)
 /******************************************************************************
  *
  * function:
- *    bool CmpIdsTypes(ids *ichain1, ids *ichain2)
+ *    bool CmpIdsTypes( ids *ichain1, ids *ichain2)
  *
  * description:
  *    compares the types of all ids in two given ids chains.
@@ -344,6 +347,7 @@ static bool
 CmpIdsTypes (ids *ichain1, ids *ichain2)
 {
     bool result;
+
     DBUG_ENTER ("CmpIdsTypes");
 
     if (ichain1 != NULL) {
@@ -460,19 +464,19 @@ ForbiddenSubstitution (ids *chain)
  *
  *     will be transformed to
  *
- *       a = 1;                       int f_cond( int[*] x, int[*] y)
+ *       a = 1;                       int f_cond( int[] x, int[] y)
  *       b = a;                       { ...
  *       c = f_cond( a, a);             return( x + x);
  *       ...                          }
  *
  *     Unused code will be removed later by DeadCodeRemoval!
  *
- *     Note, that it is *not* allowed to specialize 'f_cond', i.e. to replace
- *     the types of the formal arguments 'x' and 'y' by 'int[]', because
- *     'f_cond' might contain (dead) code in which 'x' and 'y' are not scalars:
+ *     Note, that it is (in general) *not* recommended to complain about type
+ *     errors in 'f_cond', because 'f_cond' might contain (dead) code in which
+ *     'x' or 'y' are not scalars:
  *
- *       if (dim( x) != 0) {
- *         ...
+ *       if (dim( x) == 1) {
+ *         ... fun_for_vectors_only( x) ...
  *       }
  *
  * implementation:
@@ -490,6 +494,8 @@ SSACSEPropagateSubst2Args (node *fun_args, node *ap_args, node *fundef)
     node *search_fun_arg;
     node *search_ap_arg;
     bool found_match;
+    int cmp;
+    char *stype1, *stype2;
 
     DBUG_ENTER ("SSACSEPropagateSubst2Args");
 
@@ -497,7 +503,7 @@ SSACSEPropagateSubst2Args (node *fun_args, node *ap_args, node *fundef)
     act_ap_arg = ap_args;
     while (act_fun_arg != NULL) {
         /* process all arguments */
-        DBUG_ASSERT ((act_ap_arg != NULL), "to few arguments in function application");
+        DBUG_ASSERT ((act_ap_arg != NULL), "too few arguments in function application");
 
         /* init AVIS_SUBST attribute (means no substitution) */
         AVIS_SUBST (ARG_AVIS (act_fun_arg)) = NULL;
@@ -508,35 +514,35 @@ SSACSEPropagateSubst2Args (node *fun_args, node *ap_args, node *fundef)
         ext_ap_avis = ID_AVIS (EXPRS_EXPR (act_ap_arg));
         ext_ap_type = VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ext_ap_avis));
 
-        /* specialization not allowed (see comment above) 8-(( */
-#if 0
-    /*
-     * specialize types of formal parameters if possible
-     */
-    cmp = CompareTypesImplementation( ARG_TYPE( act_fun_arg),
-                                      ext_ap_type);
-    DBUG_ASSERT( (cmp != 2),   
-                 "special function application with incompatible types found");
-    if ((cmp == 0) || (cmp == 1)) {
-      char *stype1 = Type2String( ARG_TYPE( act_fun_arg), 0, TRUE);
-      char *stype2 = Type2String( ext_ap_type, 0, TRUE);
-      DBUG_PRINT( "SSACSE",
-                  ("type of formal LaC-fun (%s) arg specialized in line %d:"
-                   "  %s:%s->%s",
-                   FUNDEF_NAME( fundef),
-                   NODE_LINE( act_fun_arg),
-                   ARG_NAME( act_fun_arg),
-                   stype1, stype2));
-      stype1 = Free( stype1);
-      stype2 = Free( stype2);
-
-      /*
-       * actual type is subtype of formal type -> specialize
-       */
-      ARG_TYPE( act_fun_arg) = FreeAllTypes( ARG_TYPE( act_fun_arg));
-      ARG_TYPE( act_fun_arg) = DupAllTypes( ext_ap_type);
-    }
-#endif
+        /*
+         * specialize types of formal parameters if possible
+         */
+        cmp = CompareTypesImplementation (ARG_TYPE (act_fun_arg), ext_ap_type);
+        stype1 = Type2String (ARG_TYPE (act_fun_arg), 0, TRUE);
+        stype2 = Type2String (ext_ap_type, 0, TRUE);
+        if ((cmp == 0) || (cmp == 1)) {
+            DBUG_PRINT ("SSACSE",
+                        ("type of formal LaC-fun (%s) arg specialized in line %d:"
+                         "  %s:%s->%s",
+                         FUNDEF_NAME (fundef), NODE_LINE (act_fun_arg),
+                         ARG_NAME (act_fun_arg), stype1, stype2));
+            /*
+             * actual type is subtype of formal type -> specialize
+             */
+            ARG_TYPE (act_fun_arg) = FreeAllTypes (ARG_TYPE (act_fun_arg));
+            ARG_TYPE (act_fun_arg) = DupAllTypes (ext_ap_type);
+        } else if (cmp == 2) {
+            /*
+             * special function application with incompatible types found
+             */
+            DBUG_PRINT ("SSACSE",
+                        ("application of LaC-function %s with incompatible types"
+                         " in line %d:  %s:%s->%s",
+                         FUNDEF_NAME (fundef), NODE_LINE (act_fun_arg),
+                         ARG_NAME (act_fun_arg), stype1, stype2));
+        }
+        stype1 = Free (stype1);
+        stype2 = Free (stype2);
 
         /*
          * now search the application args for identical id to substitute it.
@@ -578,7 +584,7 @@ SSACSEPropagateSubst2Args (node *fun_args, node *ap_args, node *fundef)
         act_fun_arg = ARG_NEXT (act_fun_arg);
         act_ap_arg = EXPRS_NEXT (act_ap_arg);
     }
-    DBUG_ASSERT ((act_ap_arg == NULL), "to many arguments in function application");
+    DBUG_ASSERT ((act_ap_arg == NULL), "too many arguments in function application");
 
     DBUG_RETURN (fun_args);
 }
@@ -1158,11 +1164,8 @@ SSACSElet (node *arg_node, node *arg_info)
         cmp = CompareTypesImplementation (type1, type2);
         if ((cmp == 0) || (cmp == 1)) {
             /*
-             *  Strictly speaking, we can substitute ids only if they have
-             *  equal or *less* generic types! In the latter case substitution
-             *  would not make any sense because of the loss of shape information.
-             *  It would be very nice to substitute ids with more generic types,
-             *  but this is not always possible. Example:
+             *  Since we want to substitute ids with more generic types, we have to
+             *  tolerate (some) type errors:
              *
              *    int[3] a;
              *    int[+] b;
@@ -1171,15 +1174,11 @@ SSACSElet (node *arg_node, node *arg_info)
              *    a = [1,2,3];
              *    b = a;                  # copy assignment
              *    if (shape( b) == [2]) {
-             *      c = b;                # be better do not replace 'b' by 'a' here
-             *    }
+             *      c = b;                # don't complain about a type error here,
+             *    }                       # once 'b' have been replaced by 'a'!
              *    else {
              *      ...
              *    }
-             *
-             *  But we *can* replace all occurances of 'b' that are outside of
-             *  conditionals and loops, thus, we have to make sure that the type
-             *  propagation is not carried into LaC-functions!
              */
 
             /* set subst attributes for results */
@@ -1194,55 +1193,62 @@ SSACSElet (node *arg_node, node *arg_info)
 
             /* remove copy assignment */
             INFO_SSACSE_REMASSIGN (arg_info) = TRUE;
-        } else if (cmp == 2) {
+        } else if (cmp == -1) {
+#if 0
+      /*
+       *  We have an assignment of this form:
+       *
+       *    a:TA = b:TB;    where (TA=type(a) < TB=type(b))
+       *    Rest
+       *
+       *  It does not make sense to substitute 'b' for 'a' in 'Rest'
+       *  because this would destroy type information!
+       *
+       *  Note here, that it is *illegal* to replace 'TB' by 'TA' because
+       *  the actual type of 'b' is not necessaryly a subtype of 'TA':
+       *
+       *    int[+] a;
+       *    int[2] b;
+       *    int[3] c;
+       *
+       *    a = [1,2,3];
+       *    if (shape( b) == [2]) {
+       *      a = b;                  # !!!!!
+       *    } else {
+       *      a = c;
+       *    }
+       *
+       *  Unfortunately, there is no easy way to get rid of the generic type
+       *  TB here. But... here we go --- no risk no fun:
+       *  Actually, we *can* replace 'TB' by 'TA' if the definition of 'b' is
+       *  *not* outside a loop/conditional.
+       *  If the vardec of 'b' points to a N_arg node (might be a LaC-fun),
+       *  we better leave the type untouched.
+       */
+      node *decl = ID_VARDEC( LET_EXPR( arg_node));  /* N_arg or N_vardec */
+      if (NODE_TYPE( decl) == N_vardec) {
+        VARDEC_TYPE( decl) = FreeAllTypes( VARDEC_TYPE( decl));
+        VARDEC_TYPE( decl) = DupAllTypes( IDS_TYPE( LET_IDS( arg_node)));
+      }
+
+      DBUG_PRINT( "SSACSE",
+                  ("type on RHS of copy assignment specialized in line %d:"
+                   "  %s:%s = %s:%s",
+                   NODE_LINE( arg_node),
+                   IDS_NAME( LET_IDS( arg_node)),
+                   stype1,
+                   ID_NAME( LET_EXPR( arg_node)),
+                   stype2));
+#endif
+        } else {
             DBUG_PRINT ("SSACSE",
                         ("incompatible copy assignment in line %d:  %s:%s = %s:%s",
                          NODE_LINE (arg_node), IDS_NAME (LET_IDS (arg_node)), stype1,
                          ID_NAME (LET_EXPR (arg_node)), stype2));
-            DBUG_ASSERT ((0), "SSACSElet() tries to substitute identifier of"
-                              " incompatible type");
-        } else {
             /*
-             *  We have an assignment of this form:
-             *
-             *    a:TA = b:TB;    where (TA=type(a) < TB=type(b))
-             *    Rest
-             *
-             *  It does not make sense to substitute 'b' for 'a' in 'Rest'
-             *  because this would destroy type information!
-             *
-             *  Note here, that it is *illegal* to replace 'TB' by 'TA' because
-             *  the actual type of 'b' is not necessaryly a subtype of 'TA':
-             *
-             *    int[+] a;
-             *    int[2] b;
-             *    int[3] c;
-             *
-             *    a = [1,2,3];
-             *    if (shape( b) == [2]) {
-             *      a = b;                  # !!!!!
-             *    } else {
-             *      a = c;
-             *    }
-             *
-             *  Unfortunately, there is no easy way to get rid of the generic type
-             *  TB here. But... here we go --- no risk no fun:
-             *  Actually, we *can* replace 'TB' by 'TA' if the definition of 'b' is
-             *  *not* outside a loop/conditional.
-             *  If the vardec of 'b' points to a N_arg node (might be a LaC-fun),
-             *  we better leave the type untouched.
+             * Do *not* produce an error here, since this may be dead code!
+             * (See comment for the function SSACSEPropagateSubst2Args() as well!)
              */
-            node *decl = ID_VARDEC (LET_EXPR (arg_node)); /* N_arg or N_vardec */
-            if (NODE_TYPE (decl) == N_vardec) {
-                VARDEC_TYPE (decl) = FreeAllTypes (VARDEC_TYPE (decl));
-                VARDEC_TYPE (decl) = DupAllTypes (IDS_TYPE (LET_IDS (arg_node)));
-            }
-
-            DBUG_PRINT ("SSACSE",
-                        ("type on RHS of copy assignment specialized in line %d:"
-                         "  %s:%s = %s:%s",
-                         NODE_LINE (arg_node), IDS_NAME (LET_IDS (arg_node)), stype1,
-                         ID_NAME (LET_EXPR (arg_node)), stype2));
         }
         stype1 = Free (stype1);
         stype2 = Free (stype2);
@@ -1496,8 +1502,8 @@ SSACSEids (ids *arg_ids, node *arg_info)
     /* process stored INFO_SSACSE_RESULTARG information */
     if (INFO_SSACSE_RESULTARG (arg_info) != NULL) {
         DBUG_ASSERT ((AVIS_SUBST (IDS_AVIS (arg_ids)) == NULL),
-                     "there must not exist any subst setting for "
-                     "a fresh defined vardec");
+                     "there must not exist any subst setting for"
+                     " a fresh defined vardec");
 
         /* set AVIS_SUBST corresponding avis infered by */
         AVIS_SUBST (IDS_AVIS (arg_ids))
@@ -1572,7 +1578,7 @@ SSACSE (node *fundef, node *modul)
 
     /* do not start traversal in special functions */
     if (!(FUNDEF_IS_LACFUN (fundef))) {
-        DBUG_ASSERT ((optimize & OPT_DCR), "SSACSE requiers SSADCR");
+        DBUG_ASSERT ((optimize & OPT_DCR), "SSACSE requieres SSADCR");
 
         arg_info = MakeInfo ();
 
