@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.15  1999/09/16 16:01:21  cg
+ * Removed small bug in description of -check option.
+ *
  * Revision 2.14  1999/08/05 08:21:18  jhs
  * Added missign linebreak.
  *
@@ -466,7 +469,7 @@ usage ()
 
       "\n\nRUNTIME CHECK OPTIONS:\n\n"
 
-      "\t -check [abme]+ \tinclude runtime checks into executable program.\n"
+      "\t -check [abmeh]+ \tinclude runtime checks into executable program.\n"
       "\t\t\t\t  a: include all checks available.\n"
       "\t\t\t\t  b: check array accesses for boundary\n"
       "\t\t\t\t     violations.\n"
