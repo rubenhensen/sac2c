@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.59  1999/12/01 15:21:20  dkr
+ * comment for IDS_VARDEC added
+ *
  * Revision 2.58  1999/11/24 14:43:45  bs
  * INFO_TSI_WLCOMP(n) modified, INFO_TSI_BLOCKSHP renamed to INFO_TSI_TILESHP
  *
@@ -527,12 +530,12 @@ extern types *MakeType (simpletype basetype, int dim, shpseg *shpseg, char *name
  ***
  ***  temporary attributes:
  ***
- ***    int         REFCNT       (refcount -> )
- ***    int         NAIVE_REFCNT (refcount -> )
- ***    node*       VARDEC       (typecheck -> )
- ***    node*       DEF          (psi-optimize -> )
- ***    node*       USE          (psi-optimize -> )
- ***    statustype  STATUS       (obj-handling -> compile !!)
+ ***    int         REFCNT                          (refcount -> )
+ ***    int         NAIVE_REFCNT                    (refcount -> )
+ ***    node*       VARDEC       (N_vardec/N_arg)   (typecheck -> )
+ ***    node*       DEF                             (psi-optimize -> )
+ ***    node*       USE                             (psi-optimize -> )
+ ***    statustype  STATUS                          (obj-handling -> compile !!)
  ***/
 
 /*
