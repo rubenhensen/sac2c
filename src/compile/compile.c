@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.96  1997/10/29 14:11:15  srs
+ * removed HAVE_MALLOC_O
+ *
  * Revision 1.95  1997/10/13 21:01:38  dkr
  * removed a bug in CompWithReturn() with nnode.
  *
@@ -2413,10 +2416,6 @@ Compile (node *arg_node)
 
     DBUG_ENTER ("Compile");
 
-#ifdef HAVE_MALLOC_O
-    malloc_debug (2);
-#endif /* HAVE_MALLOC_O */
-
     act_tab = comp_tab; /* set new function-table for traverse */
     info = MakeInfo ();
     if (NODE_TYPE (arg_node) == N_modul) {
@@ -2434,11 +2433,6 @@ Compile (node *arg_node)
         arg_node = Trav (arg_node, info);
     }
     FREE (info);
-
-#ifdef HAVE_MALLOC_O
-    malloc_verify ();
-    malloc_debug (0);
-#endif /* HAVE_MALLOC_O */
 
     DBUG_RETURN (arg_node);
 }
