@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.66  1998/02/05 16:25:16  srs
+ * added REFCNT to N_pre and N_post.
+ * added FUNDEF to  N_Nwithop.
+ *
  * Revision 1.65  1998/01/30 17:54:15  srs
  * changed node structure of N_Nwithid
  *
@@ -1716,6 +1720,7 @@ extern node *MakeEmpty ();
  ***  temporary attributes:
  ***
  ***    node*  DECL    (N_vardec)  (typecheck -> )
+ ***    int    REFCNT              (refcount  -> )
  ***/
 
 extern node *MakePost (int incdec, char *id);
@@ -1723,6 +1728,7 @@ extern node *MakePost (int incdec, char *id);
 #define POST_INCDEC(n) ((n->node[0]->nodetype == N_dec) ? 0 : 1)
 #define POST_ID(n) (n->info.id)
 #define POST_DECL(n) (n->node[1])
+#define POST_REFCNT(n) (n->info.ids->refcnt)
 
 /*
  * Attention : The way incrementations and decrementation are represented
@@ -1769,6 +1775,7 @@ extern node *MakePost (int incdec, char *id);
  ***  temporary attributes:
  ***
  ***    node*  DECL    (N_vardec)  (typecheck -> )
+ ***    int    REFCNT              (refcount  -> )
  ***/
 
 extern node *MakePre (nodetype incdec, char *id);
@@ -1776,6 +1783,7 @@ extern node *MakePre (nodetype incdec, char *id);
 #define PRE_INCDEC(n) ((n->node[0]->nodetype == N_dec) ? 0 : 1)
 #define PRE_ID(n) (n->info.id)
 #define PRE_DECL(n) (n->node[1])
+#define PRE_REFCNT(n) (n->info.ids->refcnt)
 
 /*
  * Attention : The way incrementations and decrementation are represented
@@ -2066,9 +2074,11 @@ extern node *MakeNGenerator (node *bound1, node *bound2, prf op1, prf op2, node 
  ***    prf        PRF         (iff WithOpType == WO_foldprf)
  ***
  ***  temporary attributes:
- ***     node*  EXPR           (scanparse, stays != NULL afterwards)
+ ***    node*  EXPR            (scanparse, stays != NULL afterwards)
+ ***    node*  FUNDEF          (N_fundef)  (typecheck -> )
  ***
- ***  remarks: WithOpType is WO_genarray, WO_modarray, WO_foldfun, WO_foldprf
+ ***  remarks: WithOpType is WO_genarray, WO_modarray, WO_foldfun, WO_foldprf.
+ ***    FUNDEF-node is used if TYPE == WO_foldfun.
  ***
  ***/
 
@@ -2082,6 +2092,7 @@ extern node *MakeNWithOp (WithOpType WithOp);
 #define NWITHOP_FUN(n) (n->info.fun_name.id)
 #define NWITHOP_MOD(n) (n->info.fun_name.id_mod)
 #define NWITHOP_PRF(n) (n->info.prf)
+#define NWITHOP_FUNDEF(n) (n->node[2])
 
 /*--------------------------------------------------------------------------*/
 
