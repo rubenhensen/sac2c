@@ -1,11 +1,8 @@
 /*
  *
  * $Log$
- * Revision 3.86  2002/06/02 21:49:41  dkr
- * ID_NT_TAG modified
- *
- * Revision 3.85  2002/05/31 17:23:21  dkr
- * PrintNT() moved from NameTuples.c to print.c
+ * Revision 3.87  2002/06/06 18:21:47  dkr
+ * Now, ID_NT_TAG is printed in phase PH_genccode only
  *
  * Revision 3.84  2002/05/31 14:53:15  sbs
  * Now the wrapper functions are printed as well
@@ -14,8 +11,8 @@
  * Handling of main() function modified:
  * The main() function defined by the programmer is renamed in the same
  * way as a normal user-defined function.
- * GSCPrintMain() prints a new main() function which contains all the initialization
- * stuff.
+ * GSCPrintMain() prints a new main() function which contains all the
+ * initialization stuff.
  *
  * Revision 3.82  2002/04/16 11:05:42  dkr
  * PrintArgtab() and PrintAssign() modified
@@ -41,68 +38,11 @@
  * - return statement is printed even for void-functions now
  * - some brushing done
  *
- * Revision 3.75  2002/03/05 16:24:45  dkr
- * minor changes done
- *
  * Revision 3.74  2002/03/01 03:20:50  dkr
  * support for ARGTABs added
  *
- * Revision 3.73  2002/02/25 17:25:33  dkr
- * minor changes done
- *
  * Revision 3.72  2002/02/12 15:45:02  dkr
  * DoPrintAST(): N_avis added
- *
- * Revision 3.71  2001/12/12 12:45:51  dkr
- * some minor changes in PrintId() done
- *
- * Revision 3.70  2001/12/11 13:04:50  dkr
- * PrintId: ID_NT_TAG used for TAGGED_ARRAYS
- *
- * Revision 3.69  2001/12/10 15:36:46  dkr
- * some modifications for TAGGED_ARRAYS done
- *
- * Revision 3.67  2001/11/19 14:54:24  sbs
- * WLARRAY and WLINDEXVAR now printed in WLAAprintAccesses as well.
- *
- * Revision 3.66  2001/11/13 19:55:19  dkr
- * PRINT_CONT: macro is no longer called with an empty second argument
- * (this might irritate some preprocessors ...)
- *
- * Revision 3.65  2001/06/28 07:46:51  cg
- * Primitive function psi() renamed to sel().
- *
- * Revision 3.64  2001/06/27 12:37:34  ben
- * SCHPrintTasksel inserted
- *
- * Revision 3.63  2001/06/01 14:53:30  dkr
- * PrintNwith() and PrintNwith2() modified:
- * output for DEC_RC shifted at end of with-loop.
- *
- * Revision 3.62  2001/05/17 11:13:02  sbs
- * return values of Free used now 8-()
- *
- * Revision 3.61  2001/05/17 07:42:07  sbs
- * FREE / MALLOC eliminated
- *
- * Revision 3.60  2001/05/09 08:58:53  dkr
- * output for DBUG-string PRINT_RC corrected
- *
- * Revision 3.59  2001/05/08 13:15:59  dkr
- * new macros for RC used
- *
- * Revision 3.58  2001/05/03 17:32:01  dkr
- * MAXHOMDIM replaced by HOMSV
- *
- * Revision 3.57  2001/04/30 12:03:04  nmw
- * PrintFundef does not print zombie fundefs in code generation at all
- *
- * Revision 3.56  2001/04/27 14:21:31  nmw
- * PrintFundef does not longer print code of zombie fundefs to
- * header- or separate files of modules
- *
- * Revision 3.55  2001/04/26 09:23:36  dkr
- * DoPrintAST: minor modifications done
  *
  * [ eliminated ]
  *
@@ -147,7 +87,6 @@
 #include "scheduling.h"
 #include "wl_access_analyze.h"
 #include "tile_size_inference.h"
-#include "NameTuplesUtils.h"
 #include "wltransform.h"
 #include "wl_bounds.h"
 #include "refcount.h"
@@ -2336,7 +2275,9 @@ PrintId (node *arg_node, node *arg_info)
     }
 
     fprintf (outfile, "%s",
-             (ID_NT_TAG (arg_node) != NULL) ? ID_NT_TAG (arg_node) : ID_NAME (arg_node));
+             ((compiler_phase == PH_genccode) && (ID_NT_TAG (arg_node) != NULL))
+               ? ID_NT_TAG (arg_node)
+               : ID_NAME (arg_node));
 
     PrintStatus (ID_ATTRIB (arg_node), FALSE);
     PrintStatus (ID_STATUS (arg_node), FALSE);
