@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.3  1995/10/16 17:57:00  cg
+ * Revision 1.4  1995/10/19 10:08:41  cg
+ * new entry in enum statustype: ST_used
+ *
+ * Revision 1.3  1995/10/16  17:57:00  cg
  * added new member 'ST_objinitfun' of enum statustype
  *
  * Revision 1.2  1995/10/06  17:15:46  cg
@@ -69,6 +72,7 @@ typedef enum {
     ST_global,             /* identifier is global object            */
     ST_imported,           /* function, type, or object imported     */
                            /* from other module                      */
+    ST_used,               /* var declaration is used in body        */
     ST_objinitfun          /* function is automatically generated    */
                            /* to contain global object init expr     */
 
