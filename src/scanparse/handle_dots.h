@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2002/09/05 12:48:21  sah
+ * added HDassign
+ *
  * Revision 1.3  2002/08/13 09:54:52  sah
  * added several traversalfunctions.
  *
@@ -28,5 +31,6 @@ extern node *HDgenerator (node *arg_node, node *arg_info);
 extern node *HDdot (node *arg_node, node *arg_info);
 extern node *HDap (node *arg_node, node *arg_info);
 extern node *HDprf (node *arg_node, node *arg_info);
+extern node *HDassign (node *arg_node, node *arg_info);
 
 #endif /* _handle_dots_h */
