@@ -1,6 +1,15 @@
 /*
  *
  * $Log$
+ * Revision 3.15  2001/02/14 15:05:35  dkr
+ * ATTRIB/STATUS are always initialized now.
+ * Pre-processor flag NAMES_IN_TYPES added:
+ * In MakeTypedef(), MakeObjdef(), MakeFundef(), MakeArg(), MakeVardec()
+ * some arguments are mapped to the same physical position in the AST
+ * (TYPEDEF_TYPE and TYPEDEF_NAME for example).
+ * In order to prevent a memory leak redundant information is freed in
+ * these cases.
+ *
  * Revision 3.14  2001/02/12 17:05:11  nmw
  * N_avis node added, MakeVardec/MakeArg alloc N_avis node
  *
@@ -59,6 +68,8 @@
 #include "scnprs.h"
 #include "free.h"
 #include "internal_lib.h"
+
+#define NAMES_IN_TYPES
 
 /*--------------------------------------------------------------------------*/
 
@@ -200,12 +211,17 @@ MakeTypes (simpletype btype, int dim, shpseg *shpseg, char *name, char *mod)
     TYPES_TDEF (tmp) = NULL;
     TYPES_NEXT (tmp) = NULL;
 
+#if 1
+    /*
+     * these entries are *not* part of the TYPES structure
+     *  but part of the TYPEDEF/OBDEF/FUNDEF/ARG/VARDEC node!!
+     */
     tmp->id = NULL;
     tmp->id_mod = NULL;
     tmp->id_cmod = NULL;
-
     tmp->status = ST_regular;
     tmp->attrib = ST_regular;
+#endif
 
     DBUG_RETURN (tmp);
 }
@@ -561,10 +577,26 @@ MakeTypedef (char *name, char *mod, types *type, statustype attrib, node *next)
     tmp = CreateCleanNode (N_typedef);
 
     TYPEDEF_TYPE (tmp) = type;
+#ifdef NAMES_IN_TYPES
+    if (TYPEDEF_NAME (tmp) != NULL) {
+        FREE (TYPEDEF_NAME (tmp));
+    }
+#endif
     TYPEDEF_NAME (tmp) = name;
+#ifdef NAMES_IN_TYPES
+    if (TYPEDEF_MOD (tmp) != NULL) {
+        FREE (TYPEDEF_MOD (tmp));
+    }
+#endif
     TYPEDEF_MOD (tmp) = mod;
     TYPEDEF_ATTRIB (tmp) = attrib;
     TYPEDEF_NEXT (tmp) = next;
+
+    TYPEDEF_STATUS (tmp) = ST_regular;
+
+    TYPEDEF_IMPL (tmp) = NULL;
+    TYPEDEF_COPYFUN (tmp) = NULL;
+    TYPEDEF_FREEFUN (tmp) = NULL;
 
     DBUG_PRINT ("MAKENODE",
                 ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
@@ -584,10 +616,24 @@ MakeObjdef (char *name, char *mod, types *type, node *expr, node *next)
     tmp = CreateCleanNode (N_objdef);
 
     OBJDEF_TYPE (tmp) = type;
+#ifdef NAMES_IN_TYPES
+    if (OBJDEF_NAME (tmp) != NULL) {
+        FREE (OBJDEF_NAME (tmp));
+    }
+#endif
     OBJDEF_NAME (tmp) = name;
+#ifdef NAMES_IN_TYPES
+    if (OBJDEF_MOD (tmp) != NULL) {
+        FREE (OBJDEF_MOD (tmp));
+    }
+#endif
     OBJDEF_MOD (tmp) = mod;
     OBJDEF_EXPR (tmp) = expr;
     OBJDEF_NEXT (tmp) = next;
+
+    OBJDEF_LINKMOD (tmp) = NULL;
+    OBJDEF_STATUS (tmp) = ST_regular;
+    OBJDEF_ATTRIB (tmp) = ST_regular;
 
     DBUG_PRINT ("MAKENODE",
                 ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
@@ -606,13 +652,29 @@ MakeFundef (char *name, char *mod, types *types, node *args, node *body, node *n
 
     tmp = CreateCleanNode (N_fundef);
 
-    FUNDEF_TYPES (tmp) = types;
-    FUNDEF_NAME (tmp) = name;
-    FUNDEF_MOD (tmp) = mod;
-    FUNDEF_ARGS (tmp) = args;
     FUNDEF_BODY (tmp) = body;
+    FUNDEF_ARGS (tmp) = args;
     FUNDEF_NEXT (tmp) = next;
+
+    FUNDEF_TYPES (tmp) = types;
+#ifdef NAMES_IN_TYPES
+    if (FUNDEF_NAME (tmp) != NULL) {
+        FREE (FUNDEF_NAME (tmp));
+    }
+#endif
+    FUNDEF_NAME (tmp) = name;
+#ifdef NAMES_IN_TYPES
+    if (FUNDEF_MOD (tmp) != NULL) {
+        FREE (FUNDEF_MOD (tmp));
+    }
+#endif
+    FUNDEF_MOD (tmp) = mod;
+    FUNDEF_LINKMOD (tmp) = NULL;
+    FUNDEF_STATUS (tmp) = ST_regular;
+    FUNDEF_ATTRIB (tmp) = ST_regular;
+
     FUNDEF_FUNNO (tmp) = 0;
+    FUNDEF_INLINE (tmp) = FALSE;
 
     DBUG_PRINT ("MAKENODE",
                 ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
@@ -631,14 +693,20 @@ MakeArg (char *name, types *type, statustype status, statustype attrib, node *ne
 
     tmp = CreateCleanNode (N_arg);
 
+    ARG_NEXT (tmp) = next;
     ARG_TYPE (tmp) = type;
+#ifdef NAMES_IN_TYPES
+    if (ARG_NAME (tmp) != NULL) {
+        FREE (ARG_NAME (tmp));
+    }
+#endif
     ARG_NAME (tmp) = name;
     ARG_STATUS (tmp) = status;
     ARG_ATTRIB (tmp) = attrib;
-    ARG_NEXT (tmp) = next;
+    ARG_AVIS (tmp) = MakeAvis (tmp);
+
     ARG_ACTCHN (tmp) = NULL;
     ARG_COLCHN (tmp) = NULL;
-    ARG_AVIS (tmp) = MakeAvis (tmp);
 
     DBUG_PRINT ("MAKENODE",
                 ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
@@ -679,9 +747,16 @@ MakeVardec (char *name, types *type, node *next)
 
     tmp = CreateCleanNode (N_vardec);
 
-    VARDEC_TYPE (tmp) = type;
-    VARDEC_NAME (tmp) = name;
     VARDEC_NEXT (tmp) = next;
+    VARDEC_TYPE (tmp) = type;
+#ifdef NAMES_IN_TYPES
+    if (VARDEC_NAME (tmp) != NULL) {
+        FREE (VARDEC_NAME (tmp));
+    }
+#endif
+    VARDEC_NAME (tmp) = name;
+    VARDEC_STATUS (tmp) = ST_regular;
+    VARDEC_ATTRIB (tmp) = ST_regular;
     VARDEC_AVIS (tmp) = MakeAvis (tmp);
 
     DBUG_PRINT ("MAKENODE",
