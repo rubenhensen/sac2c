@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.27  2004/12/07 15:47:38  sbs
+ * NT2OTwithid fixed.
+ *
  * Revision 1.26  2004/11/27 01:25:32  khf
  * adjusted name of start function
  *
@@ -569,7 +572,7 @@ NT2OTlet (node *arg_node, info *arg_info)
 node *
 NT2OTwithid (node *arg_node, info *arg_info)
 {
-    node *new_ids, *tmp_ids, *tmp_avis;
+    node *new_ids, *tmp_avis;
     node *new_vardecs;
     int i, num_vars;
     ntype *vec_type;
@@ -587,11 +590,10 @@ NT2OTwithid (node *arg_node, info *arg_info)
             new_ids = NULL;
             new_vardecs = INFO_NT2OT_VARDECS (arg_info);
             for (i = 0; i < num_vars; i++) {
-                tmp_avis = TBmakeAvis (ILIBtmpVar (), NULL);
-                L_VARDEC_OR_ARG_TYPE (AVIS_DECL (tmp_avis), TBmakeTypes1 (T_unknown));
-                tmp_ids = TBmakeIds (tmp_avis, new_ids);
+                tmp_avis = TBmakeAvis (ILIBtmpVar (), TYmakeAKS (TYmakeSimpleType (T_int),
+                                                                 SHcreateShape (0)));
                 new_vardecs = TBmakeVardec (tmp_avis, new_vardecs);
-                new_ids = tmp_ids;
+                new_ids = TBmakeIds (tmp_avis, new_ids);
             }
             WITHID_IDS (arg_node) = new_ids;
             INFO_NT2OT_VARDECS (arg_info) = new_vardecs;
