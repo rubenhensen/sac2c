@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.26  2002/09/26 13:14:38  sbs
+ * mt compilation enabled for OSF_ALPHA now!!
+ *
  * Revision 3.25  2002/07/24 15:50:06  dkr
  * -mt disabled for TAGGED_ARRAYS
  *
@@ -911,16 +914,6 @@ CheckOptionConsistency ()
         num_threads = 1;
         SYSWARN (("Code generation for multi-threaded program execution not"
                   " yet available for TAGGED_ARRAYS.\n"
-                  "Code for sequential execution generated instead"));
-    }
-#endif
-
-#ifdef SAC_FOR_OSF_ALPHA
-    if ((gen_mt_code == GEN_MT_OLD) || (gen_mt_code == GEN_MT_NEW)) {
-        gen_mt_code = GEN_MT_NONE;
-        num_threads = 1;
-        SYSWARN (("Code generation for multi-threaded program execution not"
-                  " yet available for DEC-alpha.\n"
                   "Code for sequential execution generated instead"));
     }
 #endif
