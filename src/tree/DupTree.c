@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2000/02/09 14:13:57  dkr
+ * WLSEGVAR_MAXHOMDIM removed
+ *
  * Revision 1.8  2000/02/03 17:30:30  dkr
  * GenLUT renamed to GenerateLUT
  * DupTreeLUT and DupNodeLUT added
@@ -1662,7 +1665,6 @@ DupWLsegVar (node *arg_node, node *arg_info)
         WLSEGVAR_SCHEDULING (new_node)
           = SCHCopyScheduling (WLSEGVAR_SCHEDULING (arg_node));
     }
-    WLSEGVAR_MAXHOMDIM (new_node) = WLSEGVAR_MAXHOMDIM (arg_node);
 
     DBUG_RETURN (new_node);
 }

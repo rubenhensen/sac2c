@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2000/02/09 14:14:07  dkr
+ * WLSEGVAR_MAXHOMDIM removed
+ *
  * Revision 1.4  2000/02/03 15:19:31  jhs
  * Fixed Bugs in MakeMt, MakeST.
  *
@@ -1883,12 +1886,6 @@ MakeWLsegVar (int dims, node *contents, node *next)
     for (d = 0; d < dims; d++) {
         (WLSEGVAR_SV (new_node))[d] = 1;
     }
-
-    WLSEGVAR_MAXHOMDIM (new_node) = -1;
-    /*
-     * By default, no dimension is homogenious. Since dimensions are counted
-     * starting by 0, we must set  MAXHOMDIM to -1 here.
-     */
 
     DBUG_RETURN (new_node);
 }
