@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.23  2003/11/11 19:10:44  dkr
+ * bug in Check_Mirror() fixed:
+ * check of SAC_ND_A_DIM was too weak...
+ *
  * Revision 1.22  2003/09/30 22:10:41  dkrHH
  * bug in Set_Shape() fixed
  *
@@ -129,6 +133,23 @@ Check_Mirror (char *to_NT, int to_sdim, void *shp1, int shp1_size,
         DBUG_ASSERT ((shp2_read_fun != NULL), "2nd shape-read-fun not found!");
     }
 
+    /*
+     * check of SAC_ND_A_DIM
+     */
+    if (to_sc != C_aud) {
+        ASSURE_TYPE_ASS (
+          fprintf (outfile, "SAC_ND_A_DIM( %s) == ", to_NT);
+          GetAttr (shp1, shp1_size, shp1_size_fun);
+          if (shp2 != NULL) {
+              fprintf (outfile, " + ");
+              GetAttr (shp2, shp2_size, shp2_size_fun);
+          },
+          fprintf (outfile, "Assignment with incompatible types found!"););
+    }
+
+    /*
+     * simplify 'shp1_size', 'shp2_size'
+     */
     if (to_dim >= 0) {
         if ((shp1_size >= 0) && (shp2_size >= 0)) {
             DBUG_ASSERT ((shp1_size == to_dim - shp2_size),
@@ -142,10 +163,10 @@ Check_Mirror (char *to_NT, int to_sdim, void *shp1, int shp1_size,
         }
     }
 
-    switch (to_sc) {
-    case C_scl:
-        /* here is no break missing */
-    case C_aks:
+    /*
+     * check of SAC_ND_A_SHAPE
+     */
+    if ((to_sc == C_scl) || (to_sc == C_aks)) {
         DBUG_ASSERT ((to_dim >= 0), "illegal dimension found!");
         if (shp1_size >= 0) {
             for (i = 0; i < shp1_size; i++) {
@@ -185,30 +206,12 @@ Check_Mirror (char *to_NT, int to_sdim, void *shp1, int shp1_size,
                                           "Assignment with incompatible types found!"););
             }
         }
-        /*
-         * check of  SAC_ND_A_SIZE( to_NT)  is missing here ...
-         */
-        /* here is no break missing */
+    }
 
-    case C_akd:
-        ASSURE_TYPE_ASS (
-          fprintf (outfile, "SAC_ND_A_DIM( %s) == ", to_NT);
-          GetAttr (shp1, shp1_size, shp1_size_fun);
-          if (shp2 != NULL) {
-              fprintf (outfile, " + ");
-              GetAttr (shp2, shp2_size, shp2_size_fun);
-          },
-          fprintf (outfile, "Assignment with incompatible types found!"););
-        break;
-
-    case C_aud:
-        INDENT;
-        fprintf (outfile, "SAC_NOOP()\n");
-        break;
-
-    default:
-        DBUG_ASSERT ((0), "Unknown shape class found!");
-        break;
+    /*
+     * check of SAC_ND_A_SIZE is missing here ...
+     */
+    if ((to_sc == C_scl) || (to_sc == C_aks)) {
     }
 
     DBUG_VOID_RETURN;
