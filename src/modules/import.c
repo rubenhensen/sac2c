@@ -1,7 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.44  1997/03/19 13:48:59  cg
+ * Revision 1.45  1997/04/24 10:02:15  cg
+ * improved PrintDependencies for -Mlib option
+ * bug fixed concerning class types upon selective import when checking
+ * a module's own declaration file
+ *
+ * Revision 1.44  1997/03/19  13:48:59  cg
  * Now, all imported modules are stored in the global dependency tree for
  * later use (checking libraries, link list)
  *
@@ -1170,10 +1175,15 @@ GenMod (char *name, int checkdec)
 
         if (!checkdec) {
             if (MODDEC_LINKWITH (decl_tree) == NULL) {
-                dependencies
-                  = MakeDeps (StringCopy (name), StringCopy (abspathname), NULL,
-                              MODDEC_ISEXTERNAL (decl_tree) ? ST_external : ST_sac, NULL,
-                              dependencies);
+                if ((EXPLIST_ITYPES (MODDEC_OWN (decl_tree)) != NULL)
+                    || (EXPLIST_ETYPES (MODDEC_OWN (decl_tree)) != NULL)
+                    || (EXPLIST_FUNS (MODDEC_OWN (decl_tree)) != NULL)
+                    || (EXPLIST_OBJS (MODDEC_OWN (decl_tree)) != NULL)) {
+                    dependencies
+                      = MakeDeps (StringCopy (name), StringCopy (abspathname), NULL,
+                                  MODDEC_ISEXTERNAL (decl_tree) ? ST_external : ST_sac,
+                                  NULL, dependencies);
+                }
             } else {
                 dependencies
                   = MakeDeps (StringCopy (name), StringCopy (abspathname), NULL,
@@ -1762,11 +1772,23 @@ DoImport (node *modul, node *implist, char *filename)
             ImportAll (mod, modul);
         } else /* selective import! */
         {
-            if (mod->moddec->nodetype == N_classdec) {
-                tmp = MakeIds (implist->info.id, NULL, ST_regular);
-                tmp->next = (ids *)implist->node[1];
-                implist->node[1] = (node *)tmp;
-            }
+
+#if 0
+The whole stuff is moved to function AddClasstypeOnSelectiveImport
+
+      if (mod->moddec->nodetype==N_classdec)
+      {
+        /*
+         *  If the imported module/class actually is a class then the
+         *  respective class type is added to the import list in the
+         *  case of a selective import.
+         */
+        tmp=MakeIds(implist->info.id, NULL, ST_regular);
+        tmp->next= (ids*) implist->node[1];
+        implist->node[1]= (node*) tmp;
+      }
+
+#endif
 
             for (i = 0; i < 4; i++) {
                 tmp = (ids *)implist->node[i + 1];
@@ -1824,6 +1846,60 @@ DoImport (node *modul, node *implist, char *filename)
 
 /*
  *
+ *  functionname  : AddClasstypeOnSelectiveImport
+ *  arguments     : 1) pointer to mod_tab entry
+ *  description   : The entire import list of the given module/class
+ *                  declaration is traversed and wherever a selective
+ *                  import from another class occurs, the classtype
+ *                  is added to the list of imported implicit types.
+ *                  So, a programmer may or may not include the class type
+ *                  when importing selectively from a class.
+ *  global vars   : ---
+ *  internal funs : FindModul
+ *  external funs : MakeIds
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
+
+void
+AddClasstypeOnSelectiveImport (mod *modptr)
+{
+    mod *moddec;
+    ids *tmp;
+    node *implist;
+
+    DBUG_ENTER ("AddClasstypeOnSelectiveImport");
+
+    implist = MODDEC_IMPORTS (modptr->moddec);
+
+    while (implist != NULL) {
+        moddec = FindModul (IMPLIST_NAME (implist));
+
+        if ((NODE_TYPE (moddec->moddec) == N_classdec)
+            && ((IMPLIST_ITYPES (implist) != NULL) || (IMPLIST_ETYPES (implist) != NULL)
+                || (IMPLIST_FUNS (implist) != NULL)
+                || (IMPLIST_OBJS (implist) != NULL))) {
+            /*
+             *  If the imported module/class actually is a class then the
+             *  respective class type is added to the import list in the
+             *  case of a selective import.
+             */
+
+            tmp = MakeIds (IMPLIST_NAME (implist), NULL, ST_regular);
+            tmp->next = (ids *)IMPLIST_ITYPES (implist);
+            IMPLIST_ITYPES (implist) = (node *)tmp;
+        }
+
+        implist = IMPLIST_NEXT (implist);
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/*
+ *
  *  functionname  : IMmodul
  *  arguments     : 1) pointer to N_modul node
  *                  2) NULL-pointer
@@ -1832,7 +1908,8 @@ DoImport (node *modul, node *implist, char *filename)
  *                  of typedefs and fundefs necessary to retrieve
  *                  information from SIBs.
  *  global vars   : mod_tab
- *  internal funs : FindOrAppend, GenSyms, DoImport
+ *  internal funs : FindOrAppend, GenSyms, DoImport,
+ *                  AddClasstypeOnSelectiveImport
  *  external funs : Trav
  *  macros        : DBUG, TREE
  *
@@ -1858,6 +1935,7 @@ IMmodul (node *arg_node, node *arg_info)
                 FindOrAppend (modptr->moddec->node[1], 0);
             }
             GenSyms (modptr);
+            AddClasstypeOnSelectiveImport (modptr);
             modptr = modptr->next;
         }
 
@@ -1903,7 +1981,8 @@ IMmodul (node *arg_node, node *arg_info)
  *                  declaration when compiling a module or class
  *                  implementation
  *  global vars   : decl_tree, linenum, start_token, yyin
- *  internal funs : InsertClassType, AppendModnameToSymbol
+ *  internal funs : InsertClassType, AppendModnameToSymbol,
+ *                  AddClasstypeOnSelectiveImport
  *  external funs : strcmp, fopen, fclose, yyparse,
  *                  Malloc, FindFile
  *  macros        : DBUG, ERROR
@@ -1991,6 +2070,8 @@ ImportOwnDeclaration (char *name, file_type modtype)
                 FindOrAppend (modptr->moddec->node[1], 1);
             }
             GenSyms (modptr);
+            AddClasstypeOnSelectiveImport (modptr);
+
             modptr = modptr->next;
         }
 
@@ -2008,153 +2089,109 @@ ImportOwnDeclaration (char *name, file_type modtype)
     DBUG_RETURN (decl);
 }
 
-#if 0
-
-/*=========================================================================*/
-
-
-
 /*
  *
- *  functionname  : AddToLinkList
- *  arguments     : ---
- *  description   : generates list of modules for C linker.
- *  global vars   : mod_tab, linker_tab
- *  internal funs : 
- *  external funs : strcpy, strcat, FindFile
+ *  functionname  : PrintDependencies
+ *  arguments     : 1) list of dependencies
+ *                  2) mode, corresponds to compiler option -M (1) or
+ *                     -Mlib (2).
+ *  description   : prints a list of dependencies in a Makefile-like style
+ *                  to stdout. All declaration files of imported modules
+ *                  and classes are printed including the own declaration
+ *                  when compiling a module/class implementation.
+ *  global vars   : ---
+ *  internal funs : ---
+ *  external funs : printf
  *  macros        :
  *
- *  remarks       :
+ *  remarks       : This function corresponds to the -M and -Mlib
+ *                  compiler options.
  *
  */
 
-strings* AddToLinkList(strings *list, char *name)
+void
+PrintDependencies (deps *depends, int mode)
 {
-  strings *tmp=list;
-  
-  DBUG_ENTER("AddToLinkList");
-  
-  while ((tmp!=NULL) && (strcmp(tmp->name,name)!=0))
-  {
-    tmp=tmp->next;
-  }
-  
-  if (tmp==NULL)
-  {
-    tmp=(strings*)Malloc(sizeof(strings));
-    tmp->name=name;
-    tmp->next=list;
-  }
-  else
-  {
-    tmp=list;
-  }
-  
-  DBUG_RETURN(tmp);
+    deps *tmp;
+    char buffer[MAX_FILE_NAME];
+
+    DBUG_ENTER ("PrintDependencies");
+
+    printf ("%s: ", outfilename);
+
+    if (tmp != NULL) {
+        tmp = depends;
+
+        while (tmp != NULL) {
+            printf ("  \\\n  %s", DEPS_DECNAME (tmp));
+            tmp = DEPS_NEXT (tmp);
+        }
+
+        if (mode == 1) {
+            printf ("\n");
+        } else {
+            tmp = depends;
+
+            while (tmp != NULL) {
+                strcpy (buffer, DEPS_NAME (tmp));
+
+                if (DEPS_STATUS (tmp) == ST_sac) {
+                    strcat (buffer, ".lib");
+                } else {
+                    strcat (buffer, ".a");
+                }
+
+                printf ("  \\\n  %s", buffer);
+                tmp = DEPS_NEXT (tmp);
+            }
+
+            strcpy (buffer, sacfilename);
+            strcpy (buffer + strlen (sacfilename) - 4, ".d");
+
+            printf ("\n\n%s:", buffer);
+
+            tmp = depends;
+
+            while (tmp != NULL) {
+                printf ("  \\\n  %s", DEPS_DECNAME (tmp));
+                tmp = DEPS_NEXT (tmp);
+            }
+
+            printf ("\n\nalldeps:");
+
+            tmp = depends;
+
+            while (tmp != NULL) {
+                printf ("  \\\n  %s", DEPS_NAME (tmp));
+                tmp = DEPS_NEXT (tmp);
+            }
+
+            printf ("\n\n.PHONY:");
+
+            tmp = depends;
+
+            while (tmp != NULL) {
+                printf ("  \\\n  %s", DEPS_NAME (tmp));
+                tmp = DEPS_NEXT (tmp);
+            }
+
+            printf ("\n\n");
+
+            tmp = depends;
+
+            while (tmp != NULL) {
+                printf ("%s:\n\t", DEPS_NAME (tmp));
+
+                strcpy (buffer, DEPS_DECNAME (tmp));
+                filename = strrchr (buffer, '/');
+                *filename = 0;
+
+                printf ("(cd %s; $(MAKE) %s)\n\n", buffer, DEPS_NAME (tmp));
+
+                tmp = DEPS_NEXT (tmp);
+            }
+        }
+    }
+
+    DBUG_VOID_RETURN;
 }
-
-
-
-/*
- *
- *  functionname  : GenExtmodlistList
- *  arguments     : ---
- *  description   : generates list of imported external modules/classes.
- *                  This list is needed as additional linker list for
- *                  implicitly imported external symbols
- *  global vars   : mod_tab
- *  internal funs : 
- *  external funs : Malloc
- *  macros        :
- *
- *  remarks       :
- *
- */
-
-strings *GenExtmodlistList()
-{
-  mod *modp=mod_tab;
-  strings *tmp, *linklist=NULL;
-  
-  DBUG_ENTER("GenExtmodlistList");
-  
-  while (modp!=NULL)
-  {
-    if (modp->prefix==NULL)              /* external module/class */
-    {
-      tmp=(strings*)Malloc(sizeof(strings));
-      tmp->name=modp->name;
-      tmp->next=linklist;
-      linklist=tmp;
-    }
-  }
-  
-  DBUG_RETURN(linklist);
-}
-
-
-
-/*
- *
- *  functionname  : GenLinkerList
- *  arguments     : ---
- *  description   : generates list of modules for C linker.
- *  global vars   : mod_tab
- *  internal funs : AddToLinkList
- *  external funs : strcpy, strcat, FindFile
- *  macros        :
- *
- *  remarks       :
- *
- */
-
-char *GenLinkerList()
-{
-  mod *modp=mod_tab;
-  strings *linklist=NULL, *tmp;
-  static char buffer[MAX_FILE_NAME];
-  static char list[MAX_PATH_LEN];
-  char *file;
-
-  DBUG_ENTER("GenLinkerList");
-
-  while (modp!=NULL)
-  {
-    linklist=AddToLinkList(linklist, modp->name);
-    if (modp->sib!=NULL)
-    {
-      tmp=(strings*)modp->sib->node[2];
-      while (tmp!=NULL)
-      {
-        linklist=AddToLinkList(linklist,tmp->name);
-        tmp=tmp->next;
-      }
-    }
-    modp=modp->next;
-  }
-
-  while(linklist!=NULL) 
-  {
-    strcpy(buffer,linklist->name);
-    strcat(buffer,".o");
-    file=FindFile(MODIMP_PATH, buffer);
-
-    if(file) 
-    {
-      strcat(list," ");
-      strcat(list,file);
-    }
-    else
-    {
-      SYSWARN(("Unable to find file \"%s\"", buffer));
-    }
-    linklist=linklist->next;
-  }
-
-
-
-    
-  DBUG_RETURN(list);
-}
-
-#endif

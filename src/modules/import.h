@@ -1,7 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.23  1997/03/19 13:50:40  cg
+ * Revision 1.24  1997/04/24 10:02:15  cg
+ * improved PrintDependencies for -Mlib option
+ * bug fixed concerning class types upon selective import when checking
+ * a module's own declaration file
+ *
+ * Revision 1.23  1997/03/19  13:50:40  cg
  * new function PrintDependencies() which corresponds to -M compiler option
  *
  * Revision 1.22  1997/03/11  16:27:10  cg
@@ -134,5 +139,7 @@ extern int *Nums2IntArray (int line, int size, nums *numsp);
 extern int *Nums2BoolArray (int line, int size, nums *numsp);
 extern node *InitGenericFuns (node *arg_node, node *pragma);
 extern node *ResolvePragmaReadonly (node *arg_node, node *pragma, int);
+
+extern void PrintDependencies (deps *depends, int mode);
 
 #endif /* _sac_import_h */
