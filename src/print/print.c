@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.195  2004/12/05 20:12:44  sah
+ * fixed printing of withids
+ *
  * Revision 3.194  2004/12/05 16:45:38  sah
  * added SPIds SPId SPAp in frontend
  *
@@ -3069,7 +3072,13 @@ PRTwith (node *arg_node, info *arg_info)
 
     fprintf (global.outfile, "with");
     fprintf (global.outfile, " ( ");
-    TRAVdo (WITHID_VEC (PART_WITHID (WITH_PART (arg_node))), arg_info);
+    if (WITHID_VEC (PART_WITHID (WITH_PART (arg_node))) != NULL) {
+        TRAVdo (WITHID_VEC (PART_WITHID (WITH_PART (arg_node))), arg_info);
+    } else {
+        fprintf (global.outfile, "[ ");
+        TRAVdo (WITHID_IDS (PART_WITHID (WITH_PART (arg_node))), arg_info);
+        fprintf (global.outfile, " ]");
+    }
     fprintf (global.outfile, " )\n");
     global.indent++;
     TRAVdo (WITH_PART (arg_node), arg_info);
