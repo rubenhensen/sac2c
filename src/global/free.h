@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  1997/10/29 14:55:44  srs
+ * changed FREE and removed HAVE_MALLOC_O
+ *
  * Revision 1.11  1997/10/29 13:01:00  srs
  * new macro FREE (show_malloc).
  * removed HAVE_MALLOC_O
@@ -60,9 +63,9 @@
 #define FREE(address)                                                                    \
     if ((address) != NULL) {                                                             \
         DBUG_PRINT ("FREEMEM", ("Free memory at adress: " P_FORMAT, (address)));         \
-        address = (void *)((int *)address - 1);                                          \
-        current_allocated_mem -= *(int *)address;                                        \
-        free ((address));                                                                \
+        address = (void *)((int *)(address)-1);                                          \
+        current_allocated_mem -= *(int *)(address);                                      \
+        free (address);                                                                  \
         address = NULL;                                                                  \
     }
 #else /* not show_malloc */
