@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.14  2000/10/17 13:03:30  dkr
+ * macro COUNT_ELEMS renamed into EXPRS_LENGTH and moved to tree_compound.h
+ * macro FUN_DOES_REFCOUNT moved from compile.c to compile.h
+ *
  * Revision 2.13  2000/10/16 16:46:15  dkr
  * names of local vars in macros have a prefix '_' now
  *
@@ -86,8 +90,17 @@ extern node *GetFoldVardecs (node *fundef);
 
 #define IS_REFCOUNTED(item, arg) (item##_REFCNT (arg) >= 0)
 
+#define FUN_DOES_REFCOUNT(fundef, i)                                                     \
+    ((FUNDEF_STATUS (fundef) != ST_Cfun)                                                 \
+     || ((FUNDEF_PRAGMA (fundef) != NULL) && (FUNDEF_REFCOUNTING (fundef) != NULL)       \
+         && (PRAGMA_NUMPARAMS (FUNDEF_PRAGMA (fundef)) > i)                              \
+         && FUNDEF_REFCOUNTING (fundef)[i]))
+
 /*
  * some macros for creation of N_icms
+ *
+ * PLEASE DO NOT USE THE FOLLOWING MACROS FOR NEW CODE!!!!!
+ * Use the functions MakeIcm? and MakeAssignIcm? instead!!
  */
 
 #define MAKE_NEXT_ICM_ARG(prev, new_node)                                                \
@@ -164,19 +177,5 @@ extern node *GetFoldVardecs (node *fundef);
 #define APPEND_ASSIGNS(first, next)                                                      \
     ASSIGN_NEXT (first) = next;                                                          \
     first = next
-
-/*
- * length of N_exprs-chain
- */
-#define COUNT_ELEMS(n, exprs)                                                            \
-    {                                                                                    \
-        node *_tmp;                                                                      \
-        n = 0;                                                                           \
-        _tmp = exprs;                                                                    \
-        while (_tmp != NULL) {                                                           \
-            n++;                                                                         \
-            _tmp = EXPRS_NEXT (_tmp);                                                    \
-        }                                                                                \
-    }
 
 #endif /* _sac_compile_h */
