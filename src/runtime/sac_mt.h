@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.36  2001/06/29 11:10:06  sbs
+ * application of CAT1 macro eliminated to prevent from
+ * gcc 3.0 warning.
+ *
  * Revision 3.35  2001/06/29 08:21:53  ben
  * one small optimation added to TS_Even, but nit yet tested
  *
@@ -368,9 +372,9 @@ typedef union {
 #define SAC_MT_BARRIER_RESULT(barrier, n, m, type) (barrier[n].b[m].result_##type)
 
 #define SAC_MT_BARRIER_RC_RESULT_PTR(barrier, n, m, type)                                \
-    (CAT1 (CAT1 (barrier[n].b[m].result_, type), .ptr))
+    (CAT1 (barrier[n].b[m].result_, type).ptr)
 #define SAC_MT_BARRIER_RC_RESULT_RC(barrier, n, m, type)                                 \
-    (CAT1 (CAT1 (barrier[n].b[m].result_, type), .rc))
+    (CAT1 (barrier[n].b[m].result_, type).rc)
 
 /*
  *  Advanced access macros for synchronisation barrier.
