@@ -4,6 +4,9 @@
 /*
  *
  * $Log$
+ * Revision 3.38  2002/04/16 18:42:56  dkr
+ * support for empty return statements added
+ *
  * Revision 3.37  2002/02/26 14:47:10  dkr
  * several NODE_LINE errors corrected
  *
@@ -78,59 +81,6 @@
  *
  * Revision 3.17  2001/04/24 09:05:55  dkr
  * P_FORMAT replaced by F_PTR
- *
- * Revision 3.16  2001/03/29 14:47:25  dkr
- * bug in CheckWlcompConf() fixed
- *
- * Revision 3.15  2001/03/26 08:22:45  sbs
- * next_conf preset to NULL in order to please the compiler...
- *
- * Revision 3.14  2001/03/23 17:57:32  dkr
- * CheckWlcompConf modified: warning '... might be used uninitialized'
- * eliminated
- *
- * Revision 3.13  2001/03/22 20:11:28  dkr
- * no changes done
- *
- * Revision 3.12  2001/03/22 09:49:19  dkr
- * ooops ...! bug with global wlcomp pragmas fixed
- *
- * Revision 3.11  2001/03/21 17:47:51  dkr
- * forassign: AppendAssign() used instead of Append()
- *
- * Revision 3.10  2001/03/21 13:57:58  dkr
- * parsing of wlcomp-pragmas re-roganized in order to avoid shift/reduce
- * conflicts without defacing the syntax
- *
- * Revision 3.9  2001/03/20 22:19:42  dkr
- * syntax for wlcomp-pragmas corrected. all shift/reduce conflicts
- * eliminated
- *
- * Revision 3.8  2001/03/20 15:33:02  ben
- * args of wlcomp-pragmas might be applications
- *
- * Revision 3.7  2001/02/14 14:41:41  dkr
- * some calls of MakeNode() eliminated
- *
- * Revision 3.6  2000/12/15 15:18:20  sbs
- * added an ugly hack in the eof-rule for preventing gcc warnings
- * about unused labels. For details see comment in that rule.
- *
- * Revision 3.5  2000/12/12 11:36:31  dkr
- * nodes N_inc, N_dec, N_pre, N_post removed
- *
- * Revision 3.4  2000/12/06 11:06:00  dkr
- * NODE_LINE for with-loops is set correctly now
- *
- * Revision 3.3  2000/11/27 21:06:51  cg
- * Added support for APL entry in wlcomp pragma.
- *
- * Revision 3.2  2000/11/24 11:59:19  sbs
- * yyparse and yylex prototypes given for avoiding
- * warnings in bison.simple....
- *
- * Revision 3.1  2000/11/20 17:59:50  sacbase
- * new release made
  *
  *  ... [eliminated] 
  *
@@ -1521,6 +1471,14 @@ assignsOPTret: /*
                }
              | RETURN BRACKET_L { $<cint>$ = linenum; } exprs BRACKET_R SEMIC
                { $$ = MakeAssign( MakeReturn( $4), NULL);
+                 NODE_LINE( $$) = $<cint>3;
+               }
+             | RETURN BRACKET_L { $<cint>$ = linenum; } BRACKET_R SEMIC
+               { $$ = MakeAssign( MakeReturn( NULL), NULL);
+                 NODE_LINE( $$) = $<cint>3;
+               }
+             | RETURN { $<cint>$ = linenum; } SEMIC
+               { $$ = MakeAssign( MakeReturn( NULL), NULL);
                  NODE_LINE( $$) = $<cint>3;
                }
              | assign { $<cint>$ = linenum; } assignsOPTret
