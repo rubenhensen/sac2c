@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.29  2004/11/23 22:22:08  skt
+  flag IsSpmdfun added
+
   Revision 1.28  2004/11/23 22:14:15  mwe
   ElimSubDiv added
 
@@ -1283,6 +1286,7 @@
         <flag name="AllowsInfix" />
         <flag name="HasDotArgs" />
         <flag name="HasDotRets" />
+        <flag name="IsSpmdfun" />
       </flags>
     </node>
     <node name="Arg">
