@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.46  2003/07/29 07:31:07  ktr
+ * Added support for structural CF of cat_VxV and A[idx1][idx2] == A[idx1++idx2]
+ *
  * Revision 1.45  2003/06/15 22:04:59  ktr
  * result is now initialized
  *
@@ -1198,6 +1201,45 @@ SSACFModarray (node *a, constant *idx, node *elem)
 /******************************************************************************
  *
  * function:
+ *   node *SSACFCatVxV(node *vec1, node *vec2)
+ *
+ * description:
+ *   tries to concatenate the given vectors as struct constants
+ *
+ *****************************************************************************/
+
+static node *
+SSACFCatVxV (node *vec1, node *vec2)
+{
+    node *result;
+    struct_constant *sc_vec1;
+    struct_constant *sc_vec2;
+
+    DBUG_ENTER ("SSACFVxV");
+
+    result = NULL;
+
+    sc_vec1 = SCOExpr2StructConstant (vec1);
+    sc_vec2 = SCOExpr2StructConstant (vec2);
+
+    if ((sc_vec1 != NULL) && (sc_vec2 != NULL)) {
+        SCO_HIDDENCO (sc_vec1) = COCat (SCO_HIDDENCO (sc_vec1), SCO_HIDDENCO (sc_vec2));
+
+        result = SCODupStructConstant2Expr (sc_vec1);
+    }
+
+    if (sc_vec1 != NULL)
+        sc_vec1 = SCOFreeStructConstant (sc_vec1);
+
+    if (sc_vec2 != NULL)
+        sc_vec2 = SCOFreeStructConstant (sc_vec2);
+
+    DBUG_RETURN (result);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   node *SSACFSel(node *idx_expr, node *array_expr)
  *
  * description:
@@ -1222,6 +1264,8 @@ SSACFSel (node *idx_expr, node *array_expr)
 {
     node *result;
     node *prf_mod;
+    node *prf_sel;
+    node *concat;
     node *mod_arr_expr;
     node *mod_idx_expr;
     node *mod_elem_expr;
@@ -1238,58 +1282,71 @@ SSACFSel (node *idx_expr, node *array_expr)
      */
     if ((NODE_TYPE (array_expr) == N_id)
         && (AVIS_SSAASSIGN (ID_AVIS (array_expr)) != NULL)
-        && (NODE_TYPE (ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (array_expr)))) == N_prf)
-        && (PRF_PRF (ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (array_expr)))) == F_modarray)) {
+        && (NODE_TYPE (ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (array_expr)))) == N_prf)) {
+        if (PRF_PRF (ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (array_expr)))) == F_modarray) {
 
-        prf_mod = ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (array_expr)));
+            prf_mod = ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (array_expr)));
 
-        /* get parameter of modarray */
-        DBUG_ASSERT ((PRF_ARGS (prf_mod) != NULL), "missing 1. arg for modarray");
-        mod_arr_expr = EXPRS_EXPR (PRF_ARGS (prf_mod));
+            /* get parameter of modarray */
+            DBUG_ASSERT ((PRF_ARGS (prf_mod) != NULL), "missing 1. arg for modarray");
+            mod_arr_expr = EXPRS_EXPR (PRF_ARGS (prf_mod));
 
-        DBUG_ASSERT ((EXPRS_NEXT (PRF_ARGS (prf_mod)) != NULL),
-                     "missing 2. arg for modarray");
-        mod_idx_expr = EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (prf_mod)));
+            DBUG_ASSERT ((EXPRS_NEXT (PRF_ARGS (prf_mod)) != NULL),
+                         "missing 2. arg for modarray");
+            mod_idx_expr = EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (prf_mod)));
 
-        DBUG_ASSERT ((EXPRS_NEXT (EXPRS_NEXT (PRF_ARGS (prf_mod))) != NULL),
-                     "missing 3. arg for modarray");
-        mod_elem_expr = EXPRS_EXPR (EXPRS_NEXT (EXPRS_NEXT (PRF_ARGS (prf_mod))));
+            DBUG_ASSERT ((EXPRS_NEXT (EXPRS_NEXT (PRF_ARGS (prf_mod))) != NULL),
+                         "missing 3. arg for modarray");
+            mod_elem_expr = EXPRS_EXPR (EXPRS_NEXT (EXPRS_NEXT (PRF_ARGS (prf_mod))));
 
-        /* try to build up constants from index vectors */
-        idx_co = COAST2Constant (idx_expr);
-        mod_idx_co = COAST2Constant (mod_idx_expr);
+            /* try to build up constants from index vectors */
+            idx_co = COAST2Constant (idx_expr);
+            mod_idx_co = COAST2Constant (mod_idx_expr);
 
-        if ((CompareTree (idx_expr, mod_idx_expr) == CMPT_EQ)
-            || ((idx_co != NULL) && (mod_idx_co != NULL)
-                && (COCompareConstants (idx_co, mod_idx_co)))) {
-            /*
-             * idx vectors in sel and modarray are equal
-             * - replace sel() with element
-             */
-            result = DupTree (mod_elem_expr);
+            if ((CompareTree (idx_expr, mod_idx_expr) == CMPT_EQ)
+                || ((idx_co != NULL) && (mod_idx_co != NULL)
+                    && (COCompareConstants (idx_co, mod_idx_co)))) {
+                /*
+                 * idx vectors in sel and modarray are equal
+                 * - replace sel() with element
+                 */
+                result = DupTree (mod_elem_expr);
 
-            DBUG_PRINT ("SSACF", ("sel-modarray optimization done"));
+                DBUG_PRINT ("SSACF", ("sel-modarray optimization done"));
 
-        } else {
-            /* index vector does not match, but if both are constant, we can try
-             * to look up futher in a modarray chain to find a matching one.
-             * to avoid wrong decisions we need constant vectors in both idx
-             * expressions.
-             */
-            if ((idx_co != NULL) && (mod_idx_co != NULL)) {
-                result = SSACFSel (idx_expr, mod_arr_expr);
             } else {
-                /* no further analysis possible, because of non constant idx expr */
-                result = NULL;
+                /* index vector does not match, but if both are constant, we can try
+                 * to look up futher in a modarray chain to find a matching one.
+                 * to avoid wrong decisions we need constant vectors in both idx
+                 * expressions.
+                 */
+                if ((idx_co != NULL) && (mod_idx_co != NULL)) {
+                    result = SSACFSel (idx_expr, mod_arr_expr);
+                } else {
+                    /* no further analysis possible, because of non constant idx expr */
+                    result = NULL;
+                }
             }
-        }
 
-        /* free local constants */
-        if (idx_co != NULL) {
-            idx_co = COFreeConstant (idx_co);
-        }
-        if (mod_idx_co != NULL) {
-            mod_idx_co = COFreeConstant (mod_idx_co);
+            /* free local constants */
+            if (idx_co != NULL) {
+                idx_co = COFreeConstant (idx_co);
+            }
+            if (mod_idx_co != NULL) {
+                mod_idx_co = COFreeConstant (mod_idx_co);
+            }
+        } else if (PRF_PRF (ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (array_expr))))
+                   == F_sel) {
+
+            prf_sel = ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (array_expr)));
+            concat = SSACFCatVxV (EXPRS_EXPR (PRF_ARGS (prf_sel)), idx_expr);
+
+            if (concat != NULL)
+                result = MakePrf (F_sel,
+                                  MakeExprs (concat,
+                                             MakeExprs (DupTree (EXPRS_EXPR (EXPRS_NEXT (
+                                                          PRF_ARGS (prf_sel)))),
+                                                        NULL)));
         }
     }
 
@@ -2480,7 +2537,8 @@ SSACFFoldPrfExpr (prf op, node **arg_expr)
             }
 
         if ((new_co == NULL) && (new_node == NULL) && (TWO_ARG (arg_expr))) {
-            /* for some expressions concerning sel-modarray combinations */
+            /* for some expressions concerning sel-modarray combinations or
+               sel-sel combinations */
             new_node = SSACFSel (arg_expr[0], arg_expr[1]);
         }
         break;
@@ -2536,7 +2594,11 @@ SSACFFoldPrfExpr (prf op, node **arg_expr)
             {
                 new_co = COCat (arg_co[0], arg_co[1]);
             }
+        else {
+            new_node = SSACFCatVxV (arg_expr[0], arg_expr[1]);
+        }
         break;
+
     case F_cat:
         /* not implemented yet */
         break;
