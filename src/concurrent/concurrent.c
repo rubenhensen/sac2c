@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.6  1999/07/30 13:46:40  jhs
+ * Brushed some Notes.
+ *
  * Revision 2.5  1999/07/28 13:03:35  jhs
  * Added seventh phase: spmd-constraining.
  *
@@ -123,18 +126,11 @@ CONCmodul (node *arg_node, node *arg_info)
         MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
     }
 
-    /*  if (max_sync_fold == 0) {
-        NOTE(("  maximum folds per sync needed could not be evaluated"));
-      } else {
-        NOTE(("  maximum folds per sync needed is %i", needed_sync_fold));
-      }
-      cannot evaluate this!!! ####
-      because one does not melt all the sync-blocks if limited!!!
-    */
     if (max_sync_fold == -1) {
-        NOTE (("  maximum folds per sync is set to %i", needed_sync_fold));
+        NOTE (
+          ("  (Inferred) maximum folds per sync-block is set to %i", needed_sync_fold));
     } else {
-        NOTE (("  maximum folds per sync is set to %i", max_sync_fold));
+        NOTE (("  Maximum folds per sync-block is set to %i", max_sync_fold));
     }
     DBUG_RETURN (arg_node);
 }
