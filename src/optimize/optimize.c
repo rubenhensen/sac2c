@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2001/03/07 15:58:04  nmw
+ * SSACSE for ssa optimization added
+ *
  * Revision 3.6  2001/02/27 16:06:27  nmw
  * SSADeadCodeRemoval with -ssa switch added
  *
@@ -185,10 +188,6 @@
 #include "traverse.h"
 #include "print.h"
 #include "convert.h"
-#include "CheckAvis.h"
-#include "SSATransform.h"
-#include "UndoSSATransform.h"
-#include "lac2fun.h"
 
 #include "optimize.h"
 #include "generatemasks.h"
@@ -208,7 +207,12 @@
 #include "index.h"
 #include "pad.h"
 
+#include "CheckAvis.h"
+#include "SSATransform.h"
+#include "UndoSSATransform.h"
+#include "lac2fun.h"
 #include "SSADeadCodeRemoval.h"
+#include "SSACSE.h"
 
 /*
  * global variables to keep track of optimization's success
@@ -769,7 +773,13 @@ OPTfundef (node *arg_node, node *arg_info)
             old_lir_expr = lir_expr;
 
             if (optimize & OPT_CSE) {
-                arg_node = CSE (arg_node, arg_info); /* cse_tab */
+                if (use_ssaform) {
+                    arg_node = CheckAvis (arg_node);
+                    arg_node = SSATransform (arg_node);
+                    arg_node = SSACSE (arg_node);
+                } else {
+                    arg_node = CSE (arg_node, arg_info);
+                }
                 arg_node = GenerateMasks (arg_node, NULL);
             }
 
