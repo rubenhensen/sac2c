@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.59  1998/06/03 14:54:47  cg
+ * Attribute WITH_USEDVARS renamed to WITH_USEVARS and built correctly
+ *
  * Revision 1.58  1998/05/28 23:52:30  dkr
  * fixed a bug in RCNwith:
  *   NWITH_DEC_RC_IDS is now set correctly for fold
@@ -1488,11 +1491,11 @@ RCwith (node *arg_node, node *arg_info)
 
     /* mask of variables that are used in body */
     used_mask = WITH_MASK (arg_node, 1);
-    WITH_USEDVARS (arg_node) = MakeInfo ();
+
     /*
      * store refcounts of variables that are used in body
      * before they will be defined in a with_loop
-     * in WITH_USEDVARS(arg_node).
+     * in WITH_USEVARS(arg_node).
      */
     for (i = 0; i < varno; i++) {
         if (used_mask[i] > 0) {
@@ -1502,8 +1505,8 @@ RCwith (node *arg_node, node *arg_info)
                 if (0 < VARDEC_REFCNT (vardec)) {
                     /* store refcount of used variables in WITH_USEDVARS() */
                     VARDEC_2_ID_NODE (id_node, vardec);
-                    id_node->node[0] = WITH_USEDVARS (arg_node)->node[0];
-                    WITH_USEDVARS (arg_node)->node[0] = id_node;
+                    WITH_USEVARS (arg_node)
+                      = MakeExprs (id_node, WITH_USEVARS (arg_node));
                     DBUG_PRINT ("RC", ("store used variables %s:%d", ID_NAME (id_node),
                                        ID_REFCNT (id_node)));
                 }
