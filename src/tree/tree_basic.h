@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.115  2002/03/07 02:21:30  dkr
+ * INFO_COMP_FIRSTASSIGN removed
+ * INFO_PREC... macros renamed
+ *
  * Revision 3.114  2002/03/06 03:45:34  dkr
  * RETURN_CRET modified
  *
@@ -2699,13 +2703,13 @@ extern node *MakeInfo ();
 #define INFO_ADJCA_ATTRIB(n) ((statustype) (n->int_data))
 
 /* precompile */
-#define INFO_PREC1_FUNDEF(n) (n->node[0])
-#define INFO_PREC1_LET(n) (n->node[1])
-#define INFO_PREC1_LASTASSIGN(n) (n->node[2])
-#define INFO_PREC1_CEXPR(n) (n->node[3])
-#define INFO_PREC2_OBJINITFUNDEF(n) (n->node[0])
-#define INFO_PREC3_PRE_ASSIGNS(n) (n->node[0])
-#define INFO_PREC3_POST_ASSIGNS(n) (n->node[1])
+#define INFO_PREC1_OBJINITFUNDEF(n) (n->node[0])
+#define INFO_PREC2_PRE_ASSIGNS(n) (n->node[0])
+#define INFO_PREC2_POST_ASSIGNS(n) (n->node[1])
+#define INFO_PREC3_FUNDEF(n) (n->node[0])
+#define INFO_PREC3_LET(n) (n->node[1])
+#define INFO_PREC3_LASTASSIGN(n) (n->node[2])
+#define INFO_PREC3_CEXPR(n) (n->node[3])
 
 /* ArrayElemination */
 #define INFO_AE_TYPES(n) (n->node[1])
@@ -2714,7 +2718,6 @@ extern node *MakeInfo ();
 /* compile */
 #define INFO_COMP_MODUL(n) (n->node[0])
 #define INFO_COMP_FUNDEF(n) (n->node[1])
-#define INFO_COMP_FIRSTASSIGN(n) (n->node[2])
 #define INFO_COMP_LASTSYNC(n) (n->node[3])
 #define INFO_COMP_LASTIDS(n) (n->info.ids)
 #define INFO_COMP_FOLDFUNS(n) ((bool)(n->varno))
