@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.43  2000/07/11 16:13:49  dkr
+ * -b21 illegal now
+ *
  * Revision 2.42  2000/07/11 15:51:03  dkr
  * PH_psiopt removed
  *
@@ -206,7 +209,7 @@ AnalyseCommandline (int argc, char *argv[])
         char *break_arg = StringCopy (ARG);
 
         ARG = strtok (ARG, ":");
-        ARG_RANGE (break_after, 1, 21);
+        ARG_RANGE (break_after, 1, 20);
         switch (break_after) {
         case PH_sacopt:
             show_idx = 1;
