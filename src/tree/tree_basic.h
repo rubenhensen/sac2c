@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.146  2002/09/06 12:07:24  sbs
+ * FUNDEF_IMPL added.
+ *
  * Revision 3.145  2002/09/06 10:36:45  sah
  * added basic N_setwl support.
  *
@@ -988,6 +991,7 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  ***
  ***    node*           SIB         (N_sib)       (readsib !!)
  ***    node*           RETURN      (N_return)    (typecheck -> compile !!)
+ ***    node*           IMPL        (N_fundef)    (typecheck !!)          only newTS!!
  ***    nodelist*       NEEDOBJS                  (import -> )
  ***                                                ( -> analysis -> )
  ***                                                ( -> write-SIB -> )
@@ -1093,6 +1097,7 @@ extern node *MakeFundef (char *name, char *mod, types *types, node *args, node *
 
 #define FUNDEF_SIB(n) (n->node[3])
 #define FUNDEF_RETURN(n) (n->node[3])
+#define FUNDEF_IMPL(n) (n->node[5])
 #define FUNDEC_DEF(n) (n->node[3])
 #define FUNDEF_NEEDOBJS(n) ((nodelist *)(n->dfmask[6]))
 #define FUNDEF_VARNO(n) (n->varno)
