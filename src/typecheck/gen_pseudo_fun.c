@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.3  1998/06/04 09:10:15  sbs
+ * indenting adjusted
+ *
  * Revision 1.2  1998/05/28 23:49:56  dkr
  * FUNDEF_STATUS of the pseudo-fun for a fold with-loop is set to
  * ST_foldfun
