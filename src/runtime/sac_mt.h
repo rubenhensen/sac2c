@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.38  2001/07/06 10:16:33  ben
+ * one minor bug in SAC_SET_TASKS removed
+ *
  * Revision 3.37  2001/07/04 10:02:32  ben
  * code beautiefied
  *
@@ -1027,7 +1030,7 @@ typedef union {
     {                                                                                    \
         int i;                                                                           \
                                                                                          \
-        for (i = 0; i < max_task; i++)                                                   \
+        for (i = 0; i <= max_task; i++)                                                  \
             SAC_MT_TASK (sched_id, i) = 0;                                               \
         SAC_TR_MT_PRINT (("SAC_MT_TASK set for sched_id %d", sched_id));                 \
     }
@@ -1051,7 +1054,7 @@ typedef union {
 #define SAC_MT_SCHEDULER_Self_FIRST_TASK_DYNAMIC(sched_id, taskid)                       \
     {                                                                                    \
         SAC_MT_SCHEDULER_Self_NEXT_TASK (sched_id, taskid);                              \
-        SAC_TR_MT_PRINT (("SAC_MT_SCHEDULER_Self_FIRST_TASK_DYNAMIC"));                  \
+        SAC_TR_MT_PRINT (("SAC_MT_SCHEDULER_Self_FIRST_TASK_DYNAMIC task=%d", taskid));  \
     }
 
 #define SAC_MT_SCHEDULER_Self_NEXT_TASK(sched_id, taskid)                                \
