@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.26  2003/03/17 14:31:47  dkr
+ * refcounting for NWITHID_IDS added
+ *
  * Revision 3.25  2003/03/12 18:05:36  dkr
  * comment for RCicm() corrected
  *
@@ -9,7 +12,7 @@
  *
  * Revision 3.23  2002/10/18 16:53:07  dkr
  * RCfundef(): inference of ST_Cfun corrected
- * (BTW, why is this infered here)
+ * (BTW, why is this infered here?)
  *
  * Revision 3.22  2002/09/06 09:37:37  dkr
  * ND_IDXS2OFFSET added
@@ -1437,6 +1440,7 @@ RCid (node *arg_node, node *arg_info)
                 IDS_REFCNT (NWITH_OR_NWITH2_VEC (EXPRS_EXPR (wl_node))) = 1;
             }
             IDS_NAIVE_REFCNT (NWITH_OR_NWITH2_VEC (EXPRS_EXPR (wl_node))) = 1;
+            break;
         }
 
         wl_node = EXPRS_NEXT (wl_node);
@@ -1760,6 +1764,7 @@ RCNwith (node *arg_node, node *arg_info)
     int *ref_dump, *tmp_rcdump;
     int *naive_ref_dump;
     int *tmp_naive_rcdump;
+    ids *iv_ids;
     ids *last_ids = NULL;
 
     DBUG_ENTER ("RCNwith");
@@ -1946,6 +1951,23 @@ RCNwith (node *arg_node, node *arg_info)
     }
 
     /*
+     * index-vector-components are always needed for the code of the WL
+     *  -> set the RC to 1.
+     */
+    iv_ids = NWITH_OR_NWITH2_IDS (arg_node);
+    while (iv_ids != NULL) {
+        if (!INFO_RC_ONLYNAIVE (arg_info)) {
+            if (DECL_MUST_REFCOUNT (IDS_VARDEC (iv_ids))) {
+                IDS_REFCNT (iv_ids) = 1;
+            }
+        }
+        if (DECL_MUST_NAIVEREFCOUNT (IDS_VARDEC (iv_ids))) {
+            IDS_NAIVE_REFCNT (iv_ids) = 1;
+        }
+        iv_ids = IDS_NEXT (iv_ids);
+    }
+
+    /*
      * we leave the with-loop
      *   -> remove current WL from 'INFO_RC_WITH( arg_info)' (head of chain!).
      */
@@ -2122,7 +2144,7 @@ RCNgen (node *arg_node, node *arg_info)
 node *
 RCNwithid (node *arg_node, node *arg_info)
 {
-    ids *my_ids;
+    ids *iv_ids;
 
     DBUG_ENTER ("RCNwithid");
 
@@ -2132,24 +2154,24 @@ RCNwithid (node *arg_node, node *arg_info)
      * (if a reference of the index-vector is found while traversal of the codes,
      *  the RC of the withid in the first part (= 'NWITH(2)_VEC') is set to 1.)
      */
-
     if (!INFO_RC_ONLYNAIVE (arg_info)) {
         IDS_REFCNT (NWITHID_VEC (arg_node)) = -1;
     }
     IDS_NAIVE_REFCNT (NWITHID_VEC (arg_node)) = -1;
 
     /*
-     * index-vector-components are scalar values.
-     *  -> mark them as non-RC-objects.
+     * we initialize the RC of the index-vector-components with -1 because they
+     * must not be counted.
+     * Since index-vector-components are always needed for the code of the WL,
+     * RCNwith() will set their RCs to 1 after traversal of the with-loop.
      */
-
-    my_ids = NWITHID_IDS (arg_node);
-    while (my_ids != NULL) {
+    iv_ids = NWITHID_IDS (arg_node);
+    while (iv_ids != NULL) {
         if (!INFO_RC_ONLYNAIVE (arg_info)) {
-            IDS_REFCNT (my_ids) = -1;
+            IDS_REFCNT (iv_ids) = -1;
         }
-        IDS_NAIVE_REFCNT (my_ids) = -1;
-        my_ids = IDS_NEXT (my_ids);
+        IDS_NAIVE_REFCNT (iv_ids) = -1;
+        iv_ids = IDS_NEXT (iv_ids);
     }
 
     DBUG_RETURN (arg_node);
