@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.6  1995/08/30 14:02:17  cg
+# Revision 1.7  1995/08/31 08:40:13  cg
+# sib.c and sib.h added
+#
+# Revision 1.6  1995/08/30  14:02:17  cg
 # now print.o depends on compare_macros.h
 #
 # Revision 1.5  1995/08/08  09:52:15  cg
@@ -24,9 +27,9 @@
 MAKE=make
 CC=gcc -ansi -g
 
-INCS=-I../global -I../../inc -I../scanparse -I../typecheck
+INCS=-I../global -I../../inc -I../scanparse -I../print
 
-all: filemgr.o import.o
+all: filemgr.o import.o sib.o
 
 filemgr.o: filemgr.c
 	$(CC) -o filemgr.o -c filemgr.c $(INCS)
@@ -34,11 +37,14 @@ filemgr.o: filemgr.c
 import.o: import.c
 	$(CC) -o import.o -c import.c $(INCS)
 
+sib.o: sib.c
+	$(CC) -o sib.o -c sib.c $(INCS)
+
 deps:
 	makedepend $(INCS) *.c
 
 clean:
-	$(RM) filemgr.o import.o *.bak
+	$(RM) filemgr.o import.o sib.o *.bak
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
@@ -58,4 +64,5 @@ sib.o: /usr/include/stdio.h ../global/tree.h ../global/type_info.mac
 sib.o: ../global/node_info.mac ../global/prf_node_info.mac ../global/free.h
 sib.o: ../global/Error.h ../global/my_debug.h ../scanparse/scnprs.h
 sib.o: ../scanparse/y.tab.h ../global/traverse.h ../global/access_macros.h
-sib.o: filemgr.h import.h
+sib.o: compare_macros.h filemgr.h import.h ../print/print.h
+sib.o: ../print/convert.h sib.h
