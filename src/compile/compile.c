@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.99  1997/11/03 16:22:14  dkr
+ * removed a bug with the nnode-elimination
+ *
  * Revision 1.98  1997/11/02 13:57:57  dkr
  * with defined NEWTREE, node->nnode is not used anymore
  *
@@ -765,14 +768,6 @@ int basetype_size[] = {
         DBUG_PRINT ("FREE", (P_FORMAT, a));                                              \
         FreeAllIds (a);                                                                  \
     }
-
-#if 0
-#define FREE(a)
-#define FREE_TYPE(a)
-#define FREE_VARDEC(a)
-#define FREE_TREE(a)
-#define FREE_IDS(a)
-#endif
 
 static int label_nr = 0;
 
@@ -1810,7 +1805,6 @@ node **GenStandardIcmTab(node *vars_arg_start, int n_vars, int varblock_length)
 }
 
 
-
 /*
  *
  *  functionname  : GenSpecialIcmTabFundef
@@ -2032,8 +2026,6 @@ node **GenSpecialIcmTabNonFundef(node *vars_arg_start, int n_vars,
 }
   
 
-
-
 /*
  *
  *  functionname  : ReorganizeParameters
@@ -2201,8 +2193,7 @@ node *ReorganizeParameters(int tag, node *icm_args, node *fundef,
     
   DBUG_RETURN(collect_assigns);
 }
-
-#endif
+#endif /* 0 */
 
 /*
  *
@@ -2887,7 +2878,7 @@ CompVardec (node *arg_node, node *arg_info)
                 arg_node->nnode = 1;
             else
                 arg_node->nnode = 2;
-#endif
+#endif /* NEWTREE */
         }
     } else if (TYPES_DIM (full_type) == UNKNOWN_SHAPE) {
         /*
@@ -2924,7 +2915,7 @@ CompVardec (node *arg_node, node *arg_info)
                 arg_node->nnode = 1;
             else
                 arg_node->nnode = 2;
-#endif
+#endif /* NEWTREE */
         }
     } else if (TYPES_DIM (full_type) < KNOWN_DIM_OFFSET) {
         /*
@@ -2963,7 +2954,7 @@ CompVardec (node *arg_node, node *arg_info)
                 arg_node->nnode = 1;
             else
                 arg_node->nnode = 2;
-#endif
+#endif /* NEWTREE */
         }
     } else {
         if (IsNonUniqueHidden (VARDEC_TYPE (arg_node))) {
@@ -2978,13 +2969,12 @@ CompVardec (node *arg_node, node *arg_info)
                     assign->nnode = 1;
                 else
                     assign->nnode = 2;
-#endif
-            } else {
-#ifndef NEWTREE
-                assign->nnode = 1;
-#endif
+#endif /* NEWTREE */
             }
-
+#ifndef NEWTREE
+            else
+                assign->nnode = 1;
+#endif /* NEWTREE */
             FREE_VARDEC (arg_node);
             arg_node = assign;
         } else {
@@ -3005,15 +2995,15 @@ CompVardec (node *arg_node, node *arg_info)
                 /* traverse next N_vardec node if any */
 #ifndef NEWTREE
                 if (1 == arg_node->nnode)
-#else
+#else  /* NEWTREE */
                 if (arg_node->node[0] != NULL)
-#endif
+#endif /* NEWTREE */
                 {
                     arg_node->node[0] = Trav (arg_node->node[0], NULL);
 #ifndef NEWTREE
                     if (NULL == arg_node->node[0])
                         arg_node->nnode = 0;
-#endif
+#endif /* NEWTREE */
                 }
             }
         }
@@ -3821,6 +3811,11 @@ CompPrf (node *arg_node, node *arg_info)
                     arg_info->node[1]->nodetype = N_icm;
 #ifndef NEWTREE
                     arg_info->node[1]->nnode = 0;
+#else
+                    /*
+                    for (int i=0; i<MAX_SONS; i++)
+                      arg_info->node[1]->node[i] = NULL;
+                    */
 #endif
                     /* don't free  arg_info->node[1]->IDS, because ..->IDS_ID
                        is shared with vardec  FREE_IDS(arg_info->node[1]->IDS);
@@ -4708,9 +4703,8 @@ CompAp (node *arg_node, node *arg_info)
 
 /*************************************************************/
 #ifndef NEWTREE
-                    if (VARDEC_NEXT (arg_info->node[3]) == NULL) {
+                    if (VARDEC_NEXT (arg_info->node[3]) == NULL)
                         arg_info->node[3]->nnode = 0;
-                    }
 #endif
                     /*************************************************************/
 
