@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.21  2000/10/24 09:44:04  dkr
+ * GetSimpletype renamed into GetBasetype
+ *
  * Revision 1.20  2000/10/20 15:38:30  dkr
  * some functions on types added
  *
@@ -262,7 +265,7 @@ GetTypes_Line (types *type, int line)
     node *tdef;
     types *res;
 
-    DBUG_ENTER ("GetTypesLine");
+    DBUG_ENTER ("GetTypes_Line");
 
     if (TYPES_BASETYPE (type) == T_user) {
         tdef = TYPES_TDEF (type);
@@ -301,7 +304,7 @@ GetTypes (types *type)
 {
     types *res;
 
-    DBUG_ENTER ("GetSimpletype");
+    DBUG_ENTER ("GetTypes");
 
     res = GetTypes_Line (type, 0);
 
@@ -333,7 +336,7 @@ GetDim (types *type)
 /******************************************************************************
  *
  * Function:
- *   simpletype GetSimpletype( types* type)
+ *   simpletype GetBasetype( types* type)
  *
  * Description:
  *
@@ -341,11 +344,11 @@ GetDim (types *type)
  ******************************************************************************/
 
 simpletype
-GetSimpletype (types *type)
+GetBasetype (types *type)
 {
     simpletype res;
 
-    DBUG_ENTER ("GetSimpletype");
+    DBUG_ENTER ("GetBasetype");
 
     res = TYPES_BASETYPE (GetTypes (type));
 
@@ -368,7 +371,7 @@ GetTypesLength (types *type)
     types *b_type;
     int length, i;
 
-    DBUG_ENTER ("GetTypeLength");
+    DBUG_ENTER ("GetTypesLength");
 
     b_type = GetTypes (type);
 

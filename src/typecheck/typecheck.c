@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.53  2000/10/24 09:45:59  dkr
+ * GetSimpletype renamed into GetBasetype
+ *
  * Revision 2.52  2000/10/20 15:38:12  dkr
  * macros GET_DIM, GET_LENGTH, GET_BASIC_SIMPLETYPE replaced by
  * equivalent functions in tree_compound.[ch]
@@ -1795,7 +1798,7 @@ ComputeNeutralElem (prf prf_fun, types *neutral_type)
     DBUG_ENTER ("ComputeNeutralElem");
 
     length = GetTypesLength (neutral_type);
-    stype = GetSimpletype (neutral_type);
+    stype = GetBasetype (neutral_type);
 
     switch (prf_fun) {
     case F_add:

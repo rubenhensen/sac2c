@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.9  2000/10/24 09:45:54  dkr
+ * GetSimpletype renamed into GetBasetype
+ *
  * Revision 2.8  2000/10/20 15:37:49  dkr
  * macros GET_DIM, GET_LENGTH, GET_BASIC_SIMPLETYPE removed
  *
@@ -91,10 +94,10 @@ extern char *module_name; /* name of module to typecheck;
 #define GET_BASIC_SIMPLETYPE_OF_NODE(stype, Node)                                        \
     if (N_array == Node->nodetype) {                                                     \
         DBUG_ASSERT (NULL != Node->info.types, "info.types of node N_array missing");    \
-        stype = GetSimpletype (Node->info.types);                                        \
+        stype = GetBasetype (Node->info.types);                                          \
     } else if (N_id == Node->nodetype) {                                                 \
         DBUG_ASSERT (NULL != Node->info.ids->node, "pointer to var_dec missing");        \
-        stype = GetSimpletype (Node->info.ids->node->info.types);                        \
+        stype = GetBasetype (Node->info.ids->node->info.types);                          \
     } else                                                                               \
         DBUG_ASSERT (0, "wrong nodetype != N_id,N_array")
 
