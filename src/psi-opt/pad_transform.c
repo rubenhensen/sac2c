@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.12  2000/07/19 12:38:23  mab
+ * *** empty log message ***
+ *
  * Revision 1.11  2000/07/13 14:17:58  mab
  * changed padding of with-loops
  * added support for further PRFs
@@ -72,7 +75,7 @@ static char *prf_string[] = {
  *
  * description:
  *
- *   This compiler module appplies array padding.
+ *   This compiler module applies array padding.
  *
  *
  *****************************************************************************/
