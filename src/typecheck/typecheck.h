@@ -1,6 +1,9 @@
 /*
  * $Log$
- * Revision 1.7  1994/12/30 10:16:36  hw
+ * Revision 1.8  1995/03/01 12:49:50  hw
+ * added LookupType
+ *
+ * Revision 1.7  1994/12/30  10:16:36  hw
  * *** empty log message ***
  *
  * Revision 1.6  1994/12/20  14:20:44  hw
@@ -36,5 +39,6 @@ extern node *TCassign (node *arg_node, node *arg_info);
 extern node *TCdo (node *arg_node, node *arg_info);
 extern node *TCwhile (node *arg_node, node *arg_info);
 extern node *TCunaryOp (node *arg_node, node *arg_info);
+extern node *LookupType (char *type_name, char *mod_name, int line);
 
 #endif /* _typecheck_h */
