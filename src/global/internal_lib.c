@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.34  1998/08/20 12:09:00  srs
+ * removed upper allocation bound in Malloc (maybe this was inserted
+ * for debugging).
+ *
  * Revision 1.33  1998/06/23 15:04:35  cg
  * The printing of system calls is now triggered via the global variable
  * show_syscall and the command line option -dshow_syscall.
@@ -179,10 +183,6 @@ Malloc (int size)
 
     total_allocated_mem += size;
     current_allocated_mem += size;
-    if (current_allocated_mem > 500000000) {
-        /* set brek here */
-        tmp = NULL;
-    }
     DBUG_PRINT ("MEM_OBSERVE", ("mem currently allocated: %d", current_allocated_mem));
     if (max_allocated_mem < current_allocated_mem)
         max_allocated_mem = current_allocated_mem;
