@@ -1,6 +1,14 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/07/14 12:11:16  sbs
+ * Major re-implementation of IVE!
+ * - stacking of ACTCHNs for proper handling of CONDs and LOOPs
+ * - iv += 3 for non-maximal iv's are handled correctly now
+ * - proper arg_info usage added
+ * - ivs of WLs can be eliminated now
+ * - some code streamlining, e.g. proper usage of MakeIcm...
+ *
  * Revision 2.2  1999/07/07 06:02:56  sbs
  * changed vardec chains into $-stacked chaines.
  * Appropriate handling of cond/ do / while is not yet included.
@@ -56,6 +64,10 @@ extern node *IdxId (node *arg_node, node *arg_info);
 extern node *IdxNum (node *arg_node, node *arg_info);
 extern node *IdxArray (node *arg_node, node *arg_info);
 extern node *IdxNwith (node *arg_node, node *arg_info);
+extern node *IdxNpart (node *arg_node, node *arg_info);
 extern node *IdxNcode (node *arg_node, node *arg_info);
+extern node *IdxCond (node *arg_node, node *arg_info);
+extern node *IdxWhile (node *arg_node, node *arg_info);
+extern node *IdxDo (node *arg_node, node *arg_info);
 
 #endif /* sac_index_h */
