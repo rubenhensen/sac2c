@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.30  1995/11/06 14:16:14  cg
+ * Revision 1.31  1995/11/10 15:01:59  cg
+ * new command line option -v<n> to set verbose level
+ *
+ * Revision 1.30  1995/11/06  14:16:14  cg
  * added new break option -bq to break after uniqueness check
  *
  * Revision 1.29  1995/11/01  08:02:34  cg
@@ -114,7 +117,11 @@ usage (char *prg_name)
     printf ("\t -L path\t\tspecify additional library path\n");
     printf ("\t -o outfilename\t\tset output to outfilename\n");
     printf ("\t -c \t\t\tgenerate C-file only\n");
-    printf ("\t -s \t\t\tcompile silently\n");
+    printf ("\t -v<n> \t\t\tverbose level\n");
+    printf ("\t\t\t\t\t0: error messages only\n");
+    printf ("\t\t\t\t\t1: error messages and warnings\n");
+    printf ("\t\t\t\t\t2: basic compile time information\n");
+    printf ("\t\t\t\t\t3: full compile time information (default)\n");
 
     printf ("\nSTOP OPTIONS:\n");
     printf ("\t -bp \t\t\tstop after scan/parse\n");
