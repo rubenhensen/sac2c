@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.7  1996/08/09 16:44:12  asi
+ * Revision 1.8  1996/09/11 06:29:43  cg
+ * Added some new global variables for new command line options.
+ *
+ * Revision 1.7  1996/08/09  16:44:12  asi
  * dead function removal added
  *
  * Revision 1.6  1996/05/29  14:18:57  sbs
@@ -41,9 +44,11 @@ extern FILE *outfile;
 extern char sacfilename[];
 extern char prgname[];
 extern char outfilename[];
+extern char modulename[];
 extern char cfilename[];
 extern char ccflagsstr[];
 extern char targetdir[];
+extern char commandline[];
 
 extern int Ccodeonly;
 extern int break_compilation;
@@ -82,5 +87,12 @@ extern int breakae;
 extern int check_boundary;
 extern int cleanup;
 extern int check_malloc;
+
+extern int useranlib;
+extern int libstat;
+extern int linkstyle;
+
+extern int print_objdef_for_header_file;
+extern int function_counter;
 
 #endif /* _sac_globals_h */
