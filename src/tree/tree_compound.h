@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.140  2004/11/24 20:41:23  mwe
+ * TCreturnTypes2Ret added
+ *
  * Revision 3.139  2004/11/24 20:38:24  khf
  * added OBJDEF_NAME
  *
@@ -822,6 +825,7 @@ extern int TCcmpDomain (node *args1, node *args2);
 
 extern int TCcountRets (node *rets);
 extern node *TCappendRets (node *chain, node *item);
+extern node *TCreturnTypes2Ret (types *type);
 
 /*--------------------------------------------------------------------------*/
 
