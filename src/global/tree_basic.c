@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.21  1997/10/29 14:32:47  srs
+ * free -> FREE
+ *
  * Revision 1.20  1997/05/16 09:54:01  sbs
  * ANALSE-TOOL extended to function-application specific timing
  *
@@ -75,8 +78,6 @@
  *
  *
  */
-
-#include <malloc.h>
 
 #include "types.h"
 #include "tree_basic.h"
@@ -160,7 +161,7 @@ MakeShpseg (nums *numsp)
         i++;
         oldnumsp = numsp;
         numsp = NUMS_NEXT (numsp);
-        free (oldnumsp);
+        FREE (oldnumsp);
     }
 
     DBUG_RETURN (tmp);

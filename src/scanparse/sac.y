@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 1.136  1997/10/29 14:31:41  srs
+ * free -> FREE
+ *
  * Revision 1.135  1997/10/13 21:02:57  dkr
  * min() and max() are now foldops.
  *
@@ -1622,7 +1625,7 @@ assignblock: SEMIC
                    }
                    else /* block is empty */
                    {
-                      free($<node>2);
+                      FREE($<node>2);
                       $$=MakeEmptyBlock();
                    }
                 }
@@ -3413,7 +3416,7 @@ types *GenComplexType( types *types, nums *numsp)
     DBUG_PRINT("GENTREE",("shape-element: %d",numsp->num));
     tmp=numsp;
     numsp=numsp->next;
-    free(tmp);
+    FREE(tmp);
   } while (numsp != NULL);
   DBUG_RETURN(types);
 }
@@ -3440,7 +3443,7 @@ node *GenVardec( types *type, ids *ids_p)
      vardec_p->info.types->id=ids_p->id;
      tmp2=ids_p;
      ids_p=ids_p->next;
-     free(tmp2);
+     FREE(tmp2);
   } while (ids_p != NULL);
   DBUG_RETURN(vardec_p);
 }
@@ -3493,7 +3496,7 @@ node *Append(node *target_node, node *append_node)
    else
    {  /* target_node has type N_empty */
 
-      free(tmp);     /* delete node of type N_empty */
+      FREE(tmp);     /* delete node of type N_empty */
       if (N_assign != append_node->nodetype)
       {
          tmp=MakeNode(N_assign);  

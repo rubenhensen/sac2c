@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.27  1997/10/29 14:34:11  srs
+ * free -> FREE
+ *
  * Revision 1.26  1997/10/28 18:26:25  srs
  * dead code removed
  *
@@ -377,7 +380,7 @@ InitPrimFunDeclarations ()
 #undef TT3
     tmp_node = prim_fun_dec;
     prim_fun_dec = prim_fun_dec->node[1];
-    free (tmp_node);
+    FREE (tmp_node);
 
     DBUG_VOID_RETURN;
 }
@@ -416,7 +419,7 @@ InitPrimFunTab ()
 
     prim_fun_p = prim_fun_tab;
     prim_fun_tab = prim_fun_tab->next;
-    free (prim_fun_p);
+    FREE (prim_fun_p);
 
     DBUG_VOID_RETURN;
 }

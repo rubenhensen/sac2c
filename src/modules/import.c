@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.48  1997/10/29 14:30:44  srs
+ * free -> FREE
+ *
  * Revision 1.47  1997/08/04 17:13:17  dkr
  * removed strcpy/strlen-bug in GenSyms
  *
@@ -180,7 +183,6 @@
 
 #include <string.h>
 #include <limits.h>
-#include <malloc.h>
 
 #include "tree.h"
 
@@ -302,7 +304,7 @@ FreeMods (mods *mod)
     while (mod != NULL) {
         tmp = mod;
         mod = mod->next;
-        free (tmp);
+        FREE (tmp);
     }
 
     DBUG_VOID_RETURN;
@@ -1839,7 +1841,7 @@ The whole stuff is moved to function AddClasstypeOnSelectiveImport
                                 ImportSymbol (i, tmp->id, mods->mod, modul);
                             }
                             mods = mods->next;
-                            free (tmpmods);
+                            FREE (tmpmods);
                         } while (mods != NULL);
                     }
                     tmp = tmp->next;

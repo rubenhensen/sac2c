@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.30  1997/10/29 14:33:38  srs
+ * free -> FREE
+ *
  * Revision 1.29  1997/04/25 13:02:06  sacbase
  * DBUG_PRINT in SearchObjdef and SearchTypedef :
  * mod -> MOD(mod) (mod may be NULL!!)
@@ -112,8 +115,6 @@
 #include "dbug.h"
 #include "my_debug.h"
 #include "free.h"
-
-#include <malloc.h>
 
 /***
  ***  mod_name_con
@@ -552,7 +553,7 @@ TidyUpNodelist (nodelist *list)
     while ((list != NULL) && (NODELIST_STATUS (list) == ST_artificial)) {
         tmp = list;
         list = NODELIST_NEXT (list);
-        free (tmp);
+        FREE (tmp);
     }
 
     first = list;
@@ -562,7 +563,7 @@ TidyUpNodelist (nodelist *list)
             tmp = list;
             NODELIST_NEXT (last) = NODELIST_NEXT (list);
             list = NODELIST_NEXT (list);
-            free (tmp);
+            FREE (tmp);
         } else {
             last = list;
             list = NODELIST_NEXT (list);

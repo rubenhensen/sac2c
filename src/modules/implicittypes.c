@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  1997/10/29 14:33:04  srs
+ * free -> FREE
+ *
  * Revision 1.2  1995/11/10 15:04:37  cg
  * converted to new error macros
  *
@@ -9,8 +12,6 @@
  *
  *
  */
-
-#include <malloc.h>
 
 #include "types.h"
 #include "tree_basic.h"
@@ -132,7 +133,7 @@ SearchImplementation (types *type, node *alltypes)
                       = MergeShpseg (TYPES_SHPSEG (type), TYPES_DIM (type),
                                      TYPEDEF_SHPSEG (tdef), TYPEDEF_DIM (tdef));
 
-                    free (tobefreed);
+                    FREE (tobefreed);
 
                     TYPES_DIM (type) += TYPEDEF_DIM (tdef);
                 }
@@ -166,7 +167,7 @@ SearchImplementation (types *type, node *alltypes)
                   = MergeShpseg (TYPES_SHPSEG (type), TYPES_DIM (type),
                                  TYPEDEF_SHPSEG (tdef), TYPEDEF_DIM (tdef));
 
-                free (tobefreed);
+                FREE (tobefreed);
 
                 TYPES_DIM (type) += TYPEDEF_DIM (tdef);
             }

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.15  1997/10/29 14:38:00  srs
+ * free -> FREE
+ *
  * Revision 1.14  1997/05/05 11:53:18  cg
  * SIB syntax slightly modified
  *
@@ -52,7 +55,6 @@
  */
 
 #include <string.h>
-#include <malloc.h>
 
 #include "types.h"
 #include "tree_basic.h"

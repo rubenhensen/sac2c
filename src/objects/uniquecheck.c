@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  1997/10/29 14:38:52  srs
+ * free -> FREE
+ *
  * Revision 1.10  1997/03/18 14:43:08  cg
  * bug fixed: now, readonly-reference parameters are checked correctly
  *
@@ -47,8 +50,6 @@
 #include "internal_lib.h"
 #include "Error.h"
 #include "free.h"
-
-#include <malloc.h>
 
 /************************************************************************
  *  local type definitions

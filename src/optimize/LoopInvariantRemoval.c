@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.19  1997/10/29 14:32:12  srs
+ * free -> FREE
+ *
  * Revision 1.18  1997/04/25 12:13:52  sbs
  * malloc replaced by Malloc
  *
@@ -861,10 +864,10 @@ CheckUp (node *arg_node, node *arg_info)
     DBUG_ENTER ("CheckUp");
 
     DBUG_EXECUTE ("LIRI", char *text; text = PrintMask (LINVAR, VARNO);
-                  printf ("\nLOOP INVARIANT :%s\n", text); free (text);
+                  printf ("\nLOOP INVARIANT :%s\n", text); FREE (text);
                   text = PrintMask (UBD, VARNO); printf ("USED BEFORE DEF:%s\n", text);
-                  free (text); text = PrintMask (UBD_MAKE, VARNO);
-                  printf ("UBD MAKED      :%s\n", text); free (text););
+                  FREE (text); text = PrintMask (UBD_MAKE, VARNO);
+                  printf ("UBD MAKED      :%s\n", text); FREE (text););
 
     node_behind = NodeBehindCast (arg_node->node[0]->node[0]);
 
@@ -1074,10 +1077,10 @@ CheckUp (node *arg_node, node *arg_info)
     DBUG_PRINT ("LIR", ("Line %d = %d, %d, %d, %d => %d", arg_node->lineno, term1, term2,
                         term3, term4, MOVE));
     DBUG_EXECUTE ("LIRI", char *text; text = PrintMask (LINVAR, VARNO);
-                  printf ("LOOP INVARIANT :%s\n", text); free (text);
+                  printf ("LOOP INVARIANT :%s\n", text); FREE (text);
                   text = PrintMask (UBD, VARNO); printf ("USED BEFORE DEF:%s\n", text);
-                  free (text); text = PrintMask (UBD_MAKE, VARNO);
-                  printf ("UBD MAKED      :%s\n", text); free (text););
+                  FREE (text); text = PrintMask (UBD_MAKE, VARNO);
+                  printf ("UBD MAKED      :%s\n", text); FREE (text););
     DBUG_RETURN (arg_node);
 }
 
@@ -1106,10 +1109,10 @@ CheckDown (node *arg_node, node *arg_info)
     DBUG_ENTER ("CheckDown");
 
     DBUG_EXECUTE ("LIRI", char *text; text = PrintMask (LINVAR, VARNO);
-                  printf ("\nLOOP INVARIANT :%s\n", text); free (text);
+                  printf ("\nLOOP INVARIANT :%s\n", text); FREE (text);
                   text = PrintMask (UBD, VARNO); printf ("USED BEFORE DEF:%s\n", text);
-                  free (text); text = PrintMask (UBD_MAKE, VARNO);
-                  printf ("UBD MAKED      :%s\n", text); free (text););
+                  FREE (text); text = PrintMask (UBD_MAKE, VARNO);
+                  printf ("UBD MAKED      :%s\n", text); FREE (text););
 
     node_behind = NodeBehindCast (arg_node->node[0]->node[0]);
 
@@ -1229,10 +1232,10 @@ CheckDown (node *arg_node, node *arg_info)
                         term3, MOVE));
 
     DBUG_EXECUTE ("LIRI", char *text; text = PrintMask (LINVAR, VARNO);
-                  printf ("LOOP INVARIANT :%s\n", text); free (text);
+                  printf ("LOOP INVARIANT :%s\n", text); FREE (text);
                   text = PrintMask (UBD, VARNO); printf ("USED BEFORE DEF:%s\n", text);
-                  free (text); text = PrintMask (UBD_MAKE, VARNO);
-                  printf ("UBD MAKED      :%s\n", text); free (text););
+                  FREE (text); text = PrintMask (UBD_MAKE, VARNO);
+                  printf ("UBD MAKED      :%s\n", text); FREE (text););
 
     DBUG_RETURN (arg_node);
 } /* END - CheckDown */

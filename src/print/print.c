@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.132  1997/10/29 14:31:59  srs
+ * free -> FREE
+ *
  * Revision 1.131  1997/10/07 13:30:40  srs
  * PrintPrf: F_min, F_max adjusted
  *
@@ -1176,7 +1179,7 @@ PrintFloat (node *arg_node, node *arg_info)
 
     tmp_string = Float2String (arg_node->info.cfloat);
     fprintf (outfile, "%s", tmp_string);
-    free (tmp_string);
+    FREE (tmp_string);
 
     DBUG_RETURN (arg_node);
 }
@@ -1191,7 +1194,7 @@ PrintDouble (node *arg_node, node *arg_info)
 
     tmp_string = Double2String (arg_node->info.cdbl);
     fprintf (outfile, "%s", tmp_string);
-    free (tmp_string);
+    FREE (tmp_string);
 
     DBUG_RETURN (arg_node);
 }
@@ -1338,7 +1341,7 @@ PrintDo (node *arg_node, node *arg_info)
 
     DBUG_EXECUTE ("MASK", char *text; text = PrintMask (arg_node->mask[1], VARNO);
                   fprintf (outfile, "**Used Variables (do-cnd) : %s\n", text);
-                  free (text););
+                  FREE (text););
 
     INDENT;
     fprintf (outfile, "while( ");
@@ -1366,7 +1369,7 @@ PrintWhile (node *arg_node, node *arg_info)
 
     DBUG_EXECUTE ("MASK", char *text; text = PrintMask (arg_node->mask[1], VARNO);
                   fprintf (outfile, "**Used Variables (while-cnd) : %s\n", text);
-                  free (text););
+                  FREE (text););
 
     fprintf (outfile, "while( ");
     Trav (arg_node->node[0], arg_info);
@@ -1418,7 +1421,7 @@ PrintCond (node *arg_node, node *arg_info)
 
     DBUG_EXECUTE ("MASK", char *text; text = PrintMask (arg_node->mask[1], VARNO);
                   fprintf (outfile, "**Used Variables (Cond) : %s\n", text);
-                  free (text););
+                  FREE (text););
 
     Trav (arg_node->node[0], arg_info);
     fprintf (outfile, ")\n");
@@ -1456,7 +1459,7 @@ PrintWith (node *arg_node, node *arg_info)
     DBUG_EXECUTE ("MASK", char *text;
                   text = PrintMask (arg_node->node[1]->mask[1], VARNO);
                   fprintf (outfile, "**Used Variables (gen-,modarray) : %s\n", text);
-                  free (text););
+                  FREE (text););
 
     DBUG_EXECUTE ("MASK", fprintf (outfile, "\n**MASKS - with body\n");
                   PrintMasks (arg_node, arg_info););
