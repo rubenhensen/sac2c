@@ -1,6 +1,15 @@
 /*
  *
  * $Log$
+ * Revision 1.15  1998/03/25 10:41:43  cg
+ * library format of SAC libraries slightly modified:
+ * archives are now called lib<modname>.a instead of <modname>.a
+ * This allows for using the -l option of C compilers in conjunction
+ * with -L<tmpdir>.
+ * Additionally, the dependence trees is simplified before the
+ * link list is generated, resulting in a much shorter compiler
+ * call string.
+ *
  * Revision 1.14  1998/03/04 16:23:27  cg
  *  C compiler invocations and file handling converted to new
  * to usage of new  configuration files.
@@ -75,482 +84,6 @@
 #include "traverse.h"
 #include "resource.h"
 
-#if 0
-
-==========================================================================
-
-/*
- *
- *  functionname  : AddToLinklist
- *  arguments     : 
- *  description   : 
- *  global vars   : 
- *  internal funs : 
- *  external funs : 
- *  macros        : 
- *
- *  remarks       : 
- *
- */
-
-void AddToLinklist(ids *new)
-{
-  ids *tmp, *rest;
-  
-  DBUG_ENTER("AddToLinklist");
-  
-  while (new!=NULL)
-  {
-    tmp=linklist;
-    
-    while ((tmp!=NULL) && (0!=strcmp(IDS_NAME(new), IDS_NAME(tmp))))
-    {
-      tmp=IDS_NEXT(tmp);
-    }
-    
-    rest=IDS_NEXT(new);
-
-    if (tmp==NULL)
-    {
-      IDS_NEXT(new)=linklist;
-      linklist=new;
-    }
-    else
-    {
-      FreeOneIds(new);
-    }
-    
-    new=rest;
-  }
-  
-  DBUG_VOID_RETURN;
-}
-
-
-
-/*
- *
- *  functionname  : PrintLinklist
- *  arguments     : 
- *  description   : 
- *  global vars   : 
- *  internal funs : 
- *  external funs : 
- *  macros        : 
- *
- *  remarks       : 
- *
- */
-
-void PrintLinklist(FILE *sib)
-{
-  ids *tmp;
-  
-  DBUG_ENTER("PrintLinklist");
-  
-  tmp=linklist;
-  
-  if (tmp!=NULL)
-  {
-    fprintf(sib, "#pragma linkwith %s\"%s\"",
-            IDS_ISEXTERNAL(tmp)?"external ":"", IDS_NAME(tmp));
-    
-    tmp=IDS_NEXT(tmp);
-    
-    while (tmp!=NULL)
-    {
-      fprintf(sib, ",\n                 %s\"%s\"",
-            IDS_ISEXTERNAL(tmp)?"external ":"", IDS_NAME(tmp));
-      tmp=IDS_NEXT(tmp);
-    }
-    fprintf(sib, "\n\n");
-  }
-  
-  DBUG_VOID_RETURN;
-}
-
-    
-
-/*
- *
- *  functionname  : IsStandardMod
- *  arguments     : 1) module name
- *  description   : tests whether the given module is a standard one or not
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : strcmp
- *  macros        : 
- *
- *  remarks       : The standard modules are hard coded as a list which
- *                  has to be kept up to date.
- *
- */
-
-int IsStandardMod(char *name)
-{
-  static char *standard_modules[]=
-  {
-  /* standard modules */
-
-    /* structures */
-    "String", "StringC", "StringSAC", "Char", "List", "Complex",
-    
-    /* numerical */
-    "Math", "MathC", "MathSAC",
-
-  /* standard classes */
-
-    /* world */
-    "World",
-
-    /* stdio */
-    "File", "TermFile", "ScalarIO", "ArrayIO", "PrintArray",
-    "FibreIO", "FibrePrint", "FibreScan", "ComplexIO",
-    "ListIO", "StdIO",
-
-    /* system */
-    "CommandLine", "Env", "EnvVar", "Rand", "Random", "Rand48",
-    "SysErr", "Time",
-
-    ""
-  };
-
-  int i, res;
-    
-  DBUG_ENTER("IsStandardMod");
-  
-  i=0;
-  
-  while ((standard_modules[i][0]!=0)
-         && (strcmp(standard_modules[i], name) != 0))
-  {
-    i+=1;
-  }
-  
-  if (standard_modules[i][0]==0)
-  {
-    res=0;
-  }
-  else
-  {
-    res=1;
-  }
-  
-  DBUG_RETURN(res);
-}
-  
-
-
-
-/*
- *
- *  functionname  : GenLibStat
- *  arguments     : 
- *  description   : 
- *  global vars   : dependencies
- *  internal funs : 
- *  external funs : 
- *  macros        : 
- *
- *  remarks       : 
- *
- */
-
-void GenLibStat()
-{
-  FILE *statusfile;
-  ids *tmp;
-  long int current;
-  strings *str;
-  
-  DBUG_ENTER("GenLibStat");
-  
-  statusfile=WriteOpen("%s%s.stt", build_dirname, modulename);
-  
-  current=time(NULL);
-    
-  fprintf(statusfile, "\n***  Status Report - %s.lib  ***\n\n", modulename);
-  fprintf(statusfile, "Call : %s\n", commandline);
-  fprintf(statusfile, "From : %s\n", getenv("PWD"));
-  fprintf(statusfile, "On   : %s\n", getenv("HOST"));
-  fprintf(statusfile, "By   : %s\n", getenv("USER"));
-  fprintf(statusfile, "Date : %s", ctime(&current));
-   
-  fprintf(statusfile, 
-          "\nDependencies from imported modules and classes :\n");
-
-  str=imported_decs;
-
-  while (str!=NULL)
-  {
-    fprintf(statusfile, "%s\n", STRINGS_STRING(str));
-    str=STRINGS_NEXT(str);
-  }
-  
-
-  if (linkstyle==3)
-  {
-    fprintf(statusfile, "\nIncluded non-standard libraries :\n");
-  }
-  else
-  {
-    fprintf(statusfile, "\nRequired non-standard libraries :\n");
-  }
-  
-  tmp=linklist;
-
-  while (tmp!=NULL)
-  {
-    if (!IsStandardMod(IDS_NAME(tmp))
-        && (!IDS_ISEXTERNAL(tmp)
-            || (0!=strncmp("lib", IDS_NAME(tmp), 3))))
-    {
-      fprintf(statusfile, "  %-15s found : %s\n", 
-              IDS_NAME(tmp), IDS_MOD(tmp));
-    }
-    
-    tmp=IDS_NEXT(tmp);
-  }
-
-
-  fprintf(statusfile, "\nRequired standard libraries :\n");
-
-  tmp=linklist;
-
-  while (tmp!=NULL)
-  {
-    if (IsStandardMod(IDS_NAME(tmp)))
-    {
-      fprintf(statusfile, "  %-15s found : %s\n",
-              IDS_NAME(tmp), IDS_MOD(tmp));
-    }
-    
-    tmp=IDS_NEXT(tmp);
-  }
-
-
-  fprintf(statusfile, "\nRequired system libraries :\n");
-
-  tmp=linklist;
-
-  while (tmp!=NULL)
-  {
-    if (!IsStandardMod(IDS_NAME(tmp))
-        && IDS_ISEXTERNAL(tmp)
-        && (0==strncmp("lib", IDS_NAME(tmp), 3)))
-    {
-      fprintf(statusfile, "  %-15s found : not checked\n", IDS_NAME(tmp));
-    }
-    
-    tmp=IDS_NEXT(tmp);
-  }
-
-
-  fprintf(statusfile, "\n***  Status Report - %s.lib  ***\n\n", modulename);
-  
-  fclose(statusfile);
-    
-  DBUG_VOID_RETURN;
-}
-
-
-/*
- *
- *  functionname  : SearchLinkFiles
- *  arguments     : 
- *  description   : 
- *  global vars   : 
- *  internal funs : 
- *  external funs : 
- *  macros        : 
- *
- *  remarks       : 
- *
- */
-
-void SearchLinkFiles()
-{
-  ids *tmp;
-  static char buffer[MAX_FILE_NAME];
-  char *pathname, *abspathname, *standard, *external, *systemlib;
-  int stdmod, issystemlib;
-  
-  DBUG_ENTER("SearchLinkFiles");
-  
-  tmp=linklist;
-  
-  while (tmp!=NULL)
-  {
-    if (IsStandardMod(IDS_NAME(tmp)))
-    {
-      standard="standard ";
-      stdmod=1;
-    }
-    else
-    {
-      standard="";
-      stdmod=0;
-    }
-
-    if (IDS_ISEXTERNAL(tmp))
-    {
-      external="external";
-      
-      if ((0==strncmp(IDS_NAME(tmp), "lib", 3)) && !stdmod)
-      {
-        systemlib="system ";
-        issystemlib=1;
-      }
-      else
-      {
-        systemlib="";
-        issystemlib=0;
-        link_archives=1;
-      }
-      
-    }
-    else
-    {
-      external="SAC";
-      link_archives=1;
-    }
-    
-        
-    NOTE(("Required for linking: %s %s%slibrary '%s` ...", 
-          external, standard, systemlib, IDS_NAME(tmp)));
-  
-    if (IDS_ISEXTERNAL(tmp))
-    {
-      if (issystemlib)
-      {
-        NOTE(("  Not checked !"));
-        sprintf(buffer, " -l%s.a", IDS_NAME(tmp)+3);
-        strcat(systemlibs, buffer);
-      }
-      else
-      {
-        strcpy(buffer, IDS_NAME(tmp));
-        strcat(buffer, ".a");
-
-        pathname=FindFile(MODIMP_PATH, buffer);
-
-        if (pathname==NULL)
-        {
-          strcpy(buffer, IDS_NAME(tmp));
-          strcat(buffer, ".o");
-
-          pathname=FindFile(MODIMP_PATH, buffer);
-
-          if (pathname==NULL)
-          {
-            if (SystemTest("-f %s%s.a", tmp_dirname, IDS_NAME(tmp)))
-            {
-              NOTE(("  Found implicit version !"));
-
-              IDS_MOD(tmp)=StringCopy("implicit version");
-          
-              if ((linkstyle==0) || ((linkstyle==3) && !stdmod))
-              {
-                SystemCall("cd %s; ln -s %s%s.a", build_dirname,
-                           tmp_dirname, IDS_NAME(tmp));
-              }
-            }
-            else
-            {
-              SYSERROR(("Unable to find %s %s%slibrary '%s`",
-                        external, standard, systemlib, IDS_NAME(tmp)));
-            }
-          }
-          else
-          {
-            abspathname=AbsolutePathname(pathname);
-      
-            NOTE(("  Found \"%s\" !", abspathname));
-
-            IDS_MOD(tmp)=StringCopy(abspathname);
-          
-            if ((linkstyle==0) || ((linkstyle==3) && !stdmod))
-            {
-              SystemCall("ar cr %s%s.a %s",
-                         build_dirname, IDS_NAME(tmp), abspathname);
-              if (useranlib)
-              {
-                SystemCall("ranlib %s%s.a", build_dirname, IDS_NAME(tmp));
-              }
-            }
-          }
-        }
-        else
-        {
-          abspathname=AbsolutePathname(pathname);
-      
-          NOTE(("  Found \"%s\" !", abspathname));
-
-          IDS_MOD(tmp)=StringCopy(abspathname);
-          
-          if ((linkstyle==0) || ((linkstyle==3) && !stdmod))
-          {
-            SystemCall("cd %s; ln -s %s", build_dirname, abspathname);
-          }
-        }
-      }
-      
-    }
-    else
-    {
-      strcpy(buffer, IDS_NAME(tmp));
-      strcat(buffer, ".lib");
-
-      pathname=FindFile(MODIMP_PATH, buffer);
-
-      if (pathname==NULL)
-      {
-        if (SystemTest("-f %s%s.a", tmp_dirname, IDS_NAME(tmp)))
-        {
-          NOTE(("  Found implicit version !"));
-
-          IDS_MOD(tmp)=StringCopy("implicit version");
-          
-          if ((linkstyle==0) || ((linkstyle==3) && !stdmod))
-          {
-            SystemCall("cd %s; ln -s %s%s.a", build_dirname,
-                       tmp_dirname, IDS_NAME(tmp));
-          }
-        }
-        else
-        {
-          SYSERROR(("Unable to find %s %s%slibrary '%s`",
-                    external, standard, systemlib, IDS_NAME(tmp)));
-        }
-      }
-      else
-      {
-        abspathname=AbsolutePathname(pathname);
-    
-        NOTE(("  Found \"%s\" !", abspathname));
-
-        IDS_MOD(tmp)=StringCopy(abspathname);
-          
-        if ((linkstyle==0) || ((linkstyle==3) && !stdmod))
-        {
-          SystemCall("cd %s; tar xf %s %s.a", 
-                     build_dirname, abspathname, IDS_NAME(tmp));
-        }
-      }
-
-    }
-
-    tmp=IDS_NEXT(tmp);
-  }
-    
-  DBUG_VOID_RETURN;
-}
-
-
-
-============================================================================
-#endif
-
 /*
  *
  *  functionname  : GenLibstatEntry
@@ -572,7 +105,7 @@ void SearchLinkFiles()
  *
  */
 
-strings *
+static strings *
 GenLibstatEntry (FILE *statusfile, deps *depends, statustype stat, strings *done)
 {
     strings *tmp_done;
@@ -635,7 +168,7 @@ GenLibstatEntry (FILE *statusfile, deps *depends, statustype stat, strings *done
  *
  */
 
-void
+static void
 GenLibStat ()
 {
     FILE *statusfile;
@@ -735,48 +268,90 @@ PrintLibStat ()
     DBUG_VOID_RETURN;
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : CountLinklistLength
- *  arguments     : 1) dependency tree
- *  description   : counts the length of the link list which is used to
- *                  allocate the appropriate amount of memory before
- *                  generating the link list.
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : strlen
- *  macros        :
+ * function:
+ *   void LinearizeDependencies(deps *depends)
  *
- *  remarks       : For SAC libraries the pure module/class name is appended
- *                  by '.a' because all archives extracted from SAC libraries
- *                  reside in a temporary directory.
- *                  For external and system libraries the respective pathname
- *                  is used.
+ * description:
  *
- */
+ *   This function realizes a pre-order traversal of the dependence tree
+ *   and transforms it into a linear list.
+ *
+ *
+ ******************************************************************************/
 
-int
-CountLinklistLength (deps *depends)
+static void
+LinearizeDependencies (deps *depends)
 {
+    deps *keep_next;
     deps *tmp;
+
+    DBUG_ENTER ("LinearizeDependencies");
+
+    while (depends != NULL) {
+        if (DEPS_SUB (depends) != NULL) {
+            keep_next = DEPS_NEXT (depends);
+            DEPS_NEXT (depends) = DEPS_SUB (depends);
+            DEPS_SUB (depends) = NULL;
+            tmp = DEPS_NEXT (depends);
+            while (DEPS_NEXT (tmp) != NULL) {
+                tmp = DEPS_NEXT (tmp);
+            }
+            DEPS_NEXT (tmp) = keep_next;
+        }
+
+        depends = DEPS_NEXT (depends);
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   int ProcessDependencies(deps *depends)
+ *
+ * description:
+ *
+ *   This function traverses the entire linearized dependence tree. For each
+ *   dependent module it is checked whether this has further occurrences or
+ *   not. In the former case it is marked using a special status. In the latter
+ *   case the length-counter for the linklist string buffer is incremented
+ *   depending on the type of library.
+ *
+ *   The total amount of memory needed to store the string linklist is returned.
+ *
+ ******************************************************************************/
+
+static int
+ProcessDependencies (deps *depends)
+{
     int cnt = 0;
+    deps *tmp;
 
-    DBUG_ENTER ("CountLinklistLength");
+    DBUG_ENTER ("ProcessDependencies");
 
-    tmp = depends;
+    while (depends != NULL) {
+        tmp = DEPS_NEXT (depends);
 
-    while (tmp != NULL) {
-        if (DEPS_STATUS (tmp) == ST_sac) {
-            cnt += strlen (DEPS_NAME (tmp)) + 5 + strlen (tmp_dirname);
+        while ((tmp != NULL) && (0 != strcmp (DEPS_NAME (depends), DEPS_NAME (tmp)))) {
+            tmp = DEPS_NEXT (tmp);
+        }
+
+        if (tmp != NULL) {
+            DEPS_STATUS (depends) = ST_regular;
         } else {
-            cnt += strlen (DEPS_LIBNAME (tmp)) + 1;
+            if (DEPS_STATUS (depends) == ST_sac) {
+                cnt += strlen (DEPS_NAME (depends)) + 3;
+            }
+
+            else {
+                cnt += strlen (DEPS_LIBNAME (depends)) + 1;
+            }
         }
 
-        if (DEPS_SUB (tmp) != NULL) {
-            cnt += CountLinklistLength (DEPS_SUB (tmp));
-        }
-
-        tmp = DEPS_NEXT (tmp);
+        depends = DEPS_NEXT (depends);
     }
 
     DBUG_RETURN (cnt);
@@ -794,41 +369,38 @@ CountLinklistLength (deps *depends)
  *  external funs : strcat
  *  macros        :
  *
- *  remarks       : For SAC libraries the pure module/class name is
- *                  preceded by the path name of the temporary directory
- *                  and appended
- *                  by '.a' because all archives extracted from SAC libraries
- *                  reside in this temporary directory.
+ *  remarks       : The archive files of all dependent SAC libraries are stored
+ *                  in the temporary directory. They are all named libXXX.a,
+ *                  so we can exploit the -L and -l cc options to link with them.
  *                  For external and system libraries the respective pathname
- *                  collected by readsib.c is used.
+ *                  collected by readsib.c is used directly.
  *
  */
 
-void
+static void
 FillLinklist (deps *depends, char *linklist)
 {
-    deps *tmp;
-
     DBUG_ENTER ("FillLinklist");
 
-    tmp = depends;
-
-    while (tmp != NULL) {
-        if (DEPS_STATUS (tmp) == ST_sac) {
-            strcat (linklist, tmp_dirname);
-            strcat (linklist, "/");
-            strcat (linklist, DEPS_NAME (tmp));
-            strcat (linklist, ".a ");
-        } else {
-            strcat (linklist, DEPS_LIBNAME (tmp));
+    while (depends != NULL) {
+        switch (DEPS_STATUS (depends)) {
+        case ST_regular:
+            break;
+        case ST_sac:
+            strcat (linklist, "-l");
+            strcat (linklist, DEPS_NAME (depends));
             strcat (linklist, " ");
+            break;
+        case ST_external:
+        case ST_system:
+            strcat (linklist, DEPS_LIBNAME (depends));
+            strcat (linklist, " ");
+            break;
+        default:
+            break;
         }
 
-        if (DEPS_SUB (tmp) != NULL) {
-            FillLinklist (DEPS_SUB (tmp), linklist);
-        }
-
-        tmp = DEPS_NEXT (tmp);
+        depends = DEPS_NEXT (depends);
     }
 
     DBUG_VOID_RETURN;
@@ -839,7 +411,7 @@ FillLinklist (deps *depends, char *linklist)
  *  functionname  : GenLinklist
  *  arguments     : 1) dependency tree
  *  description   : allocates memory for the link list and fills it with
- *                  the dependent libraries extracted from the dependency tree
+ *                  the dependent libraries extracted from the processed dependency tree
  *  global vars   : ---
  *  internal funs : CountLinklistLength, FillLinklist
  *  external funs : Malloc, strcpy
@@ -849,7 +421,7 @@ FillLinklist (deps *depends, char *linklist)
  *
  */
 
-char *
+static char *
 GenLinklist (deps *depends)
 {
     char *linklist;
@@ -857,7 +429,9 @@ GenLinklist (deps *depends)
 
     DBUG_ENTER ("GenLinklist");
 
-    size = CountLinklistLength (depends) + 5;
+    LinearizeDependencies (depends);
+
+    size = ProcessDependencies (depends) + 5;
 
     linklist = (char *)Malloc (size);
 
@@ -892,7 +466,7 @@ CreateLibrary ()
 
     NOTE (("Creating SAC library \"%s%s.lib\"", targetdir, modulename));
 
-    SystemCall ("%s %s/%s.a %s/*.o", config.ar_create, tmp_dirname, modulename,
+    SystemCall ("%s %s/lib%s.a %s/*.o", config.ar_create, tmp_dirname, modulename,
                 tmp_dirname);
 
     if (config.ranlib[0] != '\0') {
@@ -901,7 +475,7 @@ CreateLibrary ()
 
     GenLibStat ();
 
-    SystemCall ("%s %s; %s %s.lib %s.a %s.sib %s.stt", config.chdir, tmp_dirname,
+    SystemCall ("%s %s; %s %s.lib lib%s.a %s.sib %s.stt", config.chdir, tmp_dirname,
                 config.tar_create, modulename, modulename, modulename, modulename);
 
     SystemCall ("%s %s/%s.lib %s", config.move, tmp_dirname, modulename, targetdir);
@@ -954,9 +528,9 @@ InvokeCC ()
     }
 
     if (filetype == F_prog) {
-        SystemCall ("%s %s %s %s -o %s %s %s %s", config.cc, config.ccflags, config.ccdir,
-                    opt_buffer, outfilename, cfilename, GenLinklist (dependencies),
-                    config.cclink);
+        SystemCall ("%s %s %s -L%s %s -o %s %s %s %s", config.cc, config.ccflags,
+                    config.ccdir, tmp_dirname, opt_buffer, outfilename, cfilename,
+                    GenLinklist (dependencies), config.cclink);
     } else {
         if (linkstyle == 1) {
             SystemCall ("%s %s %s %s -o %s/%s.o -c %s/%s.c", config.cc, config.ccflags,
