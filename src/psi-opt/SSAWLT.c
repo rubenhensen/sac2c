@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.20  2003/03/14 13:19:32  dkr
+ * SSAWLTNwithop(): NWITHOP_ARRAY no longer inlined
+ *
  * Revision 1.19  2003/03/13 00:06:42  dkr
  * SSAWLTNwithop() added
  *
@@ -880,7 +883,7 @@ SSAWLTNwith (node *arg_node, node *arg_info)
  *   node *SSAWLTNwithop( node *arg_node, node *arg_info)
  *
  * description:
- *   Substitutes the withop-argument into the N_Nwithop node.
+ *   Substitutes NWITHOP_SHAPE into the N_Nwithop node.
  *
  ******************************************************************************/
 
@@ -903,7 +906,7 @@ SSAWLTNwithop (node *arg_node, node *arg_info)
         if (NWITHOP_ARRAY (arg_node) != NULL) {
             NWITHOP_ARRAY (arg_node) = Trav (NWITHOP_ARRAY (arg_node), arg_info);
         }
-        son = &(NWITHOP_ARRAY (arg_node));
+        son = NULL;
         break;
 
     case WO_foldfun:
