@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.43  1999/01/19 20:32:10  srs
+ * added references_folded to struct WL_INFO
+ *
  * Revision 1.42  1999/01/15 15:21:24  cg
  * added new types access_t, accessclass_t, and feature_t.
  *
@@ -418,12 +421,13 @@ typedef types shapes; /* this definition is primarily needed for
                        */
 
 typedef struct WL_INFO {
-    int referenced;      /* number of references in function */
-    int referenced_fold; /* number of foldable references */
-    int parts;           /* number of N_part nodes */
-    int complex;         /* indicator of fold complexity */
-    int foldable;        /* has constant generator */
-    int no_chance;       /* 1 if WL is defined within loop/cond */
+    int referenced;        /* number of references in function */
+    int referenced_fold;   /* number of foldable references */
+    int references_folded; /* number of refs eliminated by WLF */
+    int parts;             /* number of N_part nodes */
+    int complex;           /* indicator of fold complexity */
+    int foldable;          /* has constant generator */
+    int no_chance;         /* 1 if WL is defined within loop/cond */
 } wl_info;
 
 typedef struct FUN_NAME {
