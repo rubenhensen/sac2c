@@ -1,7 +1,13 @@
 /*
  *
  * $Log$
- * Revision 1.100  1995/12/29 10:35:33  cg
+ * Revision 1.101  1996/01/02 15:52:59  cg
+ * function Print now opens outfile itself.
+ * If compilation process is interrupted (break parameter), then the
+ * resulting program is written to stdout, otherwise to the file
+ * specified by the global variable cfilename.
+ *
+ * Revision 1.100  1995/12/29  10:35:33  cg
  * modified printing of pragmas which can now be printed within
  * or outside comments. With-loops will now be printed in the new syntax
  *
@@ -328,14 +334,12 @@
 #include "optimize.h"
 #include "trace.h"
 
-extern int show_refcnt; /* imported from main.c */
-extern int show_icm;    /* imported from main.c */
-extern int show_idx;    /* imported from main.c */
-extern FILE *outfile;   /* outputfile for PrintTree defined in main.c*/
+#include "globals.h"
 
 int indent;
 
-/* First, we generate the external declarations for all functions that
+/*
+ * First, we generate the external declarations for all functions that
  * expand ICMs to C.
  */
 
@@ -1493,8 +1497,14 @@ Print (node *arg_node)
     mod_name_con = mod_name_con_1;
     indent = 0;
 
-    if (outfile == stdout) {
-        fprintf (outfile, "\n------------------------------------------------\n");
+    if (break_compilation) {
+        outfile = stdout;
+        fprintf (outfile, "\n-----------------------------------------------\n");
+    } else {
+        outfile = fopen (cfilename, "w");
+        if (outfile == NULL) {
+            SYSABORT (("Unable to open file \"%s\" for writing", cfilename));
+        }
     }
 
     if (show_icm == 0) {
@@ -1515,6 +1525,8 @@ Print (node *arg_node)
 
     if (outfile == stdout) {
         fprintf (outfile, "\n------------------------------------------------\n");
+    } else {
+        fclose (outfile);
     }
 
     DBUG_RETURN (arg_node);
