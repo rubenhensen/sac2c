@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2003/09/20 14:18:35  dkr
+ * icm2c_prf.h added
+ *
  * Revision 3.6  2002/09/09 14:24:26  dkr
  * icm2c_error.h included
  *
@@ -61,6 +64,7 @@
 #include "globals.h"
 
 #include "icm2c_std.h"
+#include "icm2c_prf.h"
 #include "icm2c_wl.h"
 #include "icm2c_mt.h"
 #include "icm2c_sched.h"

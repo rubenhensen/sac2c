@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2003/09/20 14:18:53  dkr
+ * icm2c_prf.h added
+ *
  * Revision 3.5  2002/09/09 14:18:01  dkr
  * icm2c_error.h added
  *
@@ -44,6 +47,7 @@
 #include "NameTuples.h"
 
 #include "icm2c_std.h"
+#include "icm2c_prf.h"
 #include "icm2c_wl.h"
 #include "icm2c_mt.h"
 #include "icm2c_sched.h"
