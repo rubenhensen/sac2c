@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.74  1996/01/23 09:02:25  cg
+ * Revision 1.75  1996/01/25 15:00:00  cg
+ * renamed some icm macros
+ *
+ * Revision 1.74  1996/01/23  09:02:25  cg
  * Now, the init expressions of object definitions are always removed.
  *
  * Revision 1.73  1996/01/22  17:33:22  cg
@@ -701,11 +704,10 @@ AdjustAddedAssigns (node *before, node *after)
 
     while (before != NULL) {
         if (NODE_TYPE (ASSIGN_INSTR (before)) == N_icm) {
-            if ((0
-                 == strcmp (ICM_NAME (ASSIGN_INSTR (before)), "ND_PREPARE_UPDATE_ARRAY"))
+            if ((0 == strcmp (ICM_NAME (ASSIGN_INSTR (before)), "ND_MAKE_UNIQUE_ARRAY"))
                 || (0
                     == strcmp (ICM_NAME (ASSIGN_INSTR (before)),
-                               "ND_PREPARE_UPDATE_HIDDEN"))) {
+                               "ND_MAKE_UNIQUE_HIDDEN"))) {
                 tmp = ASSIGN_NEXT (after);
                 last = after;
                 old_id = ID_NAME (ICM_ARG1 (ASSIGN_INSTR (before)));
@@ -746,7 +748,7 @@ AdjustAddedAssigns (node *before, node *after)
                                     == strcmp (ID_NAME (ICM_ARG1 (ASSIGN_INSTR (tmp))),
                                                new_id))) {
                                 ICM_NAME (ASSIGN_INSTR (before))
-                                  = "ND_PREPARE_UPDATE_ARRAY_NO_RC";
+                                  = "ND_KS_NO_RC_MAKE_UNIQUE_ARRAY";
                             } else {
                                 if ((0
                                      == strcmp (ICM_NAME (ASSIGN_INSTR (tmp)),
@@ -756,11 +758,14 @@ AdjustAddedAssigns (node *before, node *after)
                                                      ICM_ARG1 (ASSIGN_INSTR (tmp))),
                                                    new_id))) {
                                     ICM_NAME (ASSIGN_INSTR (before))
-                                      = "ND_PREPARE_UPDATE_HIDDEN_NO_RC";
+                                      = "ND_NO_RC_MAKE_UNIQUE_HIDDEN";
                                 } else {
-                                    if ((0
-                                         == strcmp (ICM_NAME (ASSIGN_INSTR (tmp)),
-                                                    "ND_RENAME_RC"))
+                                    if (((0
+                                          == strcmp (ICM_NAME (ASSIGN_INSTR (tmp)),
+                                                     "ND_NO_RC_ASSIGN_HIDDEN"))
+                                         || (0
+                                             == strcmp (ICM_NAME (ASSIGN_INSTR (tmp)),
+                                                        "ND_KS_NO_RC_ASSIGN_ARRAY")))
                                         && (0
                                             == strcmp (ID_NAME (
                                                          ICM_ARG1 (ASSIGN_INSTR (tmp))),
@@ -954,7 +959,7 @@ MergeIcmsAp (node *out_icm, node *in_icm, types *type, int rc)
                 if (0
                     != strcmp (ID_NAME (ICMPARAM_ARG1 (in_icm)),
                                ID_NAME (ICMPARAM_ARG1 (out_icm)))) {
-                    CREATE_2_ARY_ICM (new_assign, "ND_RENAME_RC",
+                    CREATE_2_ARY_ICM (new_assign, "ND_KS_NO_RC_ASSIGN_ARRAY",
                                       MAKE_IDNODE (ID_NAME (ICMPARAM_ARG1 (in_icm))),
                                       MAKE_IDNODE (
                                         StringCopy (ID_NAME (ICMPARAM_ARG1 (out_icm)))));
@@ -968,7 +973,7 @@ MergeIcmsAp (node *out_icm, node *in_icm, types *type, int rc)
                                          ID_NAME (ICMPARAM_ARG1 (in_icm)),
                                          ID_NAME (ICMPARAM_ARG1 (out_icm))));
 
-                    CREATE_3_ARY_ICM (new_assign, "ND_PREPARE_UPDATE_ARRAY",
+                    CREATE_3_ARY_ICM (new_assign, "ND_MAKE_UNIQUE_ARRAY",
                                       MAKE_IDNODE (ID_NAME (ICMPARAM_ARG1 (in_icm))),
                                       MAKE_IDNODE (
                                         StringCopy (ID_NAME (ICMPARAM_ARG1 (out_icm)))),
@@ -995,7 +1000,7 @@ MergeIcmsAp (node *out_icm, node *in_icm, types *type, int rc)
                 if (0
                     != strcmp (ID_NAME (ICMPARAM_ARG1 (in_icm)),
                                ID_NAME (ICMPARAM_ARG1 (out_icm)))) {
-                    CREATE_2_ARY_ICM (new_assign, "ND_RENAME_RC",
+                    CREATE_2_ARY_ICM (new_assign, "ND_NO_RC_ASSIGN_HIDDEN",
                                       MAKE_IDNODE (ID_NAME (ICMPARAM_ARG1 (in_icm))),
                                       MAKE_IDNODE (
                                         StringCopy (ID_NAME (ICMPARAM_ARG1 (out_icm)))));
@@ -1009,7 +1014,7 @@ MergeIcmsAp (node *out_icm, node *in_icm, types *type, int rc)
                                          ID_NAME (ICMPARAM_ARG1 (in_icm)),
                                          ID_NAME (ICMPARAM_ARG1 (out_icm))));
 
-                    CREATE_3_ARY_ICM (new_assign, "ND_PREPARE_UPDATE_HIDDEN",
+                    CREATE_3_ARY_ICM (new_assign, "ND_MAKE_UNIQUE_HIDDEN",
                                       MAKE_IDNODE (ID_NAME (ICMPARAM_ARG1 (in_icm))),
                                       MAKE_IDNODE (
                                         StringCopy (ID_NAME (ICMPARAM_ARG1 (out_icm)))),
@@ -2839,7 +2844,7 @@ CompPrf (node *arg_node, node *arg_info)
                 CREATE_CONST_ARRAY (array, tmp_array1, type_id_node, res_ref);
 
                 /* reuse temporary array __TMP */
-                CREATE_2_ARY_ICM (next_assign, "ND_REUSE_RC", tmp_array1, res);
+                CREATE_2_ARY_ICM (next_assign, "ND_KS_ASSIGN_ARRAY", tmp_array1, res);
                 APPEND_ASSIGNS (first_assign, next_assign);
 
                 array = tmp_array1; /* set array to __TMP */
@@ -2932,7 +2937,7 @@ CompPrf (node *arg_node, node *arg_info)
                     CREATE_CONST_ARRAY (arg1, tmp_array1, type_id_node, res_ref);
                     MAKENODE_NUM (n_node1, 0);
                     CREATE_CONST_ARRAY (arg2, tmp_array2, type_id_node, n_node1);
-                    CREATE_2_ARY_ICM (next_assign, "ND_REUSE_RC", tmp_array1, res);
+                    CREATE_2_ARY_ICM (next_assign, "ND_KS_ASSIGN_ARRAY", tmp_array1, res);
                     APPEND_ASSIGNS (first_assign, next_assign);
                     /* set arg1 and arg2 for later use as parameters of BIN_OP */
                     arg1 = tmp_array1;
@@ -2942,7 +2947,7 @@ CompPrf (node *arg_node, node *arg_info)
                     DECL_ARRAY (first_assign, arg1->node[0], "__TMP1", tmp_array1);
                     arg_node = first_assign;
                     CREATE_CONST_ARRAY (arg1, tmp_array1, type_id_node, res_ref);
-                    CREATE_2_ARY_ICM (next_assign, "ND_REUSE_RC", tmp_array1, res);
+                    CREATE_2_ARY_ICM (next_assign, "ND_KS_ASSIGN_ARRAY", tmp_array1, res);
                     APPEND_ASSIGNS (first_assign, next_assign);
                     /* set arg1 for later use as parameters of BIN_OP */
                     arg1 = tmp_array1;
@@ -2951,7 +2956,7 @@ CompPrf (node *arg_node, node *arg_info)
                     DECL_ARRAY (first_assign, arg2->node[0], "__TMP2", tmp_array2);
                     arg_node = first_assign;
                     CREATE_CONST_ARRAY (arg2, tmp_array2, type_id_node, res_ref);
-                    CREATE_2_ARY_ICM (next_assign, "ND_REUSE_RC", tmp_array2, res);
+                    CREATE_2_ARY_ICM (next_assign, "ND_KS_ASSIGN_ARRAY", tmp_array2, res);
                     APPEND_ASSIGNS (first_assign, next_assign);
                     /* set arg2 for later use as parameters of BIN_OP */
                     arg2 = tmp_array2;
@@ -3829,7 +3834,12 @@ CompId (node *arg_node, node *arg_info)
         if (NULL != arg_info) {
             MAKENODE_ID_REUSE_IDS (res, arg_info->IDS);
 
-            BIN_ICM_REUSE (arg_info->node[1], "ND_REUSE_RC", arg_node, res);
+            if (IsArray (VARDEC_TYPE (ID_VARDEC (arg_node)))) {
+                BIN_ICM_REUSE (arg_info->node[1], "ND_KS_ASSIGN_ARRAY", arg_node, res);
+            } else {
+                BIN_ICM_REUSE (arg_info->node[1], "ND_ASSIGN_HIDDEN", arg_node, res);
+            }
+
             SET_VARS_FOR_MORE_ICMS;
             if (0 == IDS_REFCNT (INFO_LASTIDS (arg_info))) {
                 MAKENODE_NUM (n_node, 1);
@@ -3977,9 +3987,16 @@ CompAp (node *arg_node, node *arg_info)
 #endif
                     /*************************************************************/
 
-                    CREATE_2_ARY_ICM (next_assign, "ND_RENAME_RC",
-                                      MAKE_IDNODE (StringCopy (ID_NAME (id_node))),
-                                      MAKE_IDNODE (StringCopy (IDS_NAME (ids))));
+                    if (IsArray (VARDEC_TYPE (IDS_VARDEC (ids)))) {
+                        CREATE_2_ARY_ICM (next_assign, "ND_KS_NO_RC_ASSIGN_ARRAY",
+                                          MAKE_IDNODE (StringCopy (ID_NAME (id_node))),
+                                          MAKE_IDNODE (StringCopy (IDS_NAME (ids))));
+                    } else {
+                        CREATE_2_ARY_ICM (next_assign, "ND_NO_RC_ASSIGN_HIDDEN",
+                                          MAKE_IDNODE (StringCopy (ID_NAME (id_node))),
+                                          MAKE_IDNODE (StringCopy (IDS_NAME (ids))));
+                    }
+
                     APPEND_ASSIGNS (first_assign, next_assign);
                 }
 

@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.33  1996/01/21 14:52:31  cg
+ * Revision 1.34  1996/01/25 15:03:03  cg
+ * renamed some icm macros
+ *
+ * Revision 1.33  1996/01/21  14:52:31  cg
  * bug fixed in creating arrays of type void*
  *
  * Revision 1.32  1996/01/21  14:11:49  cg
@@ -807,7 +810,7 @@ DBUG_VOID_RETURN;
     int i;
     for (i = 0; i < dim; i++) {
         INDENT;
-        fprintf (outfile, "ND_CHECK_REUSE_HIDDEN(%s, %s[%d], %s);\n", A[i], name, i,
+        fprintf (outfile, "ND_NO_RC_MAKE_UNIQUE_HIDDEN(%s, %s[%d], %s);\n", A[i], name, i,
                  copyfun);
     }
 }
