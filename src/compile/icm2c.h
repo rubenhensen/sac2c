@@ -1,7 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.15  1995/05/11 10:27:08  hw
+ * Revision 1.16  1995/05/19 13:41:41  hw
+ * added macro COMP_NOT_DO_LABEL for compilation with a c-compiler
+ *  if -DCOMP_NOT_DO_LABEL will be given as argumnet to a c-compiler
+ *   ND_LABEL and ND_GOTO will be expanded to nothing
+ *
+ * Revision 1.15  1995/05/11  10:27:08  hw
  * - added ND_GOTO & ND_LABEL for compilation of do-loop
  * - address of array  will be printed too, if TRACE_REF is defined
  *
@@ -226,13 +231,13 @@
             ND_A_FIELD (res)[__i] = s op ND_A_FIELD (a2)[__i];                           \
     };
 
-#if 0
+#ifndef COMP_NOT_DO_LABEL
 #define ND_GOTO(label) goto label;
 #define ND_LABEL(label)                                                                  \
     label:
-#endif
-
+#else
 #define ND_GOTO(label)
 #define ND_LABEL(label)
+#endif
 
 #endif /* _sac_icm2c_h */
