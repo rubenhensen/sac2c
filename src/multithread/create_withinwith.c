@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2004/09/22 12:07:56  skt
+ * initialization of old_flag added
+ *
  * Revision 1.3  2004/08/31 16:59:10  skt
  * some comments added
  *
@@ -176,6 +179,9 @@ CRWIWassign (node *arg_node, info *arg_info)
     if (INFO_CRWIW_WITHINMULTI (arg_info) == TRUE) {
         ASSIGN_EXECMODE (arg_node) = MUTH_MULTI_SPECIALIZED;
     }
+
+    /* some initialization to avoid a compiler warning */
+    old_flag = FALSE;
 
     if (ASSIGN_EXECMODE (arg_node) == MUTH_MULTI) {
         /* set the within_multi-flag */
