@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.34  2003/09/17 17:19:37  dkr
+ * some minor changes done.
+ * This revision does not work correctly yet :(
+ *
  * Revision 3.33  2003/09/17 14:17:25  dkr
  * some function parameters renamed
  *
@@ -438,12 +442,11 @@ ICMCompileMT_SPMD_FUN_RET (int barrier_id, int vararg_cnt, char **vararg)
  *   MT_START_SYNCBLOCK( barrier_id, vararg_cnt, [ tag, type, param_NT ]* )
  *
  *   This ICM implements the begin of a synchronisation block.
- *   Essentially, the reference counters of the arguments tagged in_rc are
- *   shadowed by thread-specific dummy reference counters. Dummies can be
- *   used safely since memory may exclusively been released in between
- *   synchronisation blocks. Nevertheless, they must be provided because
- *   arbitrary code in the with-loop body may want to increment/decrement
- *   reference counters.
+ *   Essentially, the reference counters of the arguments are shadowed by
+ *   thread-specific dummy reference counters. Dummies can be used safely
+ *   since memory may exclusively been released in between synchronisation
+ *   blocks. Nevertheless, they must be provided because arbitrary code in
+ *   the with-loop body may want to increment/decrement reference counters.
  *
  *   However, this ICM also complements the various ICMs that implement
  *   different kinds of barrier synchronisations.
@@ -1221,10 +1224,10 @@ void ICMCompileMT_CONTINUE( int foldargs_cnt, char **vararg,
  * description:
  *   implements the compilation of the following ICM:
  *
- *   MT_SPMD_SETUP( name, vararg_cnt, [ tag, type, arg ]* )
+ *   MT_SPMD_SETUP( name, vararg_cnt, [ tag, type, arg_NT ]* )
  *
  *   the arguments handed over could have the tags:
- *     in, in_rc, out, out_rc, shared and shared_rc.
+ *     in, out, shared.
  *   One needs to set the in variables to the spmd-region, that is normal.
  *   One also needs to set the adresses ot the out-variables, so the
  *   spmd-region can put the values there automatically.
@@ -1248,12 +1251,20 @@ ICMCompileMT_SPMD_SETUP (char *name, int vararg_cnt, char **vararg)
 #undef MT_SPMD_SETUP
 
     for (i = 0; i < 3 * vararg_cnt; i += 3) {
+#ifdef TAGGED_ARRAYS
+        if ((strcmp (vararg[i], "in") == 0) || (strcmp (vararg[i], "out") == 0)) {
+            INDENT;
+            fprintf (outfile, "SAC_MT_SPMD_SETARG_%s( %s, %s);\n", vararg[i], name,
+                     vararg[i + 2]);
+        }
+#else  /* TAGGED_ARRAYS */
         if ((strcmp (vararg[i], "in") == 0) || (strcmp (vararg[i], "in_rc") == 0)
             || (strcmp (vararg[i], "out") == 0) || (strcmp (vararg[i], "out_rc") == 0)) {
             INDENT;
             fprintf (outfile, "SAC_MT_SPMD_SETARG_%s( %s, %s);\n", vararg[i], name,
                      vararg[i + 2]);
         }
+#endif /* TAGGED_ARRAYS */
     }
 
     DBUG_VOID_RETURN;
@@ -1360,7 +1371,7 @@ ICMCompileMT_SPMD_END (char *name)
  *   of its spmd frame. However, some of the parameters may be loop-invariant
  *   which allows to move them out of the loop body.
  *
- *   Tags may be from the set in | in_rc.
+ *   Tags should be "in".
  *
  ******************************************************************************/
 
