@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.37  2000/11/17 12:52:09  cg
+ * External C types are now consistentlt renamed for their usage
+ * within SAC to avoid accidental name clashes with other symbols
+ * on the C level.
+ *
  * Revision 2.36  2000/11/14 13:38:39  dkr
  * some '... might be used uninitialized in this function' warnings
  * removed
@@ -763,23 +768,39 @@ RenameTypes (types *type)
 
     DBUG_ENTER ("RenameTypes");
 
-    if (TYPES_MOD (type) != NULL) {
-        if (0 == strcmp (TYPES_MOD (type), MAIN_MOD_NAME)) {
-            tmp = (char *)Malloc (sizeof (char) * (strlen (TYPES_NAME (type)) + 6));
-            sprintf (tmp, "SACt_%s", TYPES_NAME (type));
+    if (TYPES_BASETYPE (type) == T_user) {
+        if (TYPES_MOD (type) != NULL) {
+            /*
+             * This is a SAC data type.
+             */
+            if (0 == strcmp (TYPES_MOD (type), MAIN_MOD_NAME)) {
+                tmp = (char *)Malloc (sizeof (char) * (strlen (TYPES_NAME (type)) + 6));
+                sprintf (tmp, "SACt_%s", TYPES_NAME (type));
+            } else {
+                tmp = (char *)Malloc (
+                  sizeof (char)
+                  * (strlen (TYPES_NAME (type)) + strlen (TYPES_MOD (type)) + 8));
+                sprintf (tmp, "SACt_%s__%s", TYPES_MOD (type), TYPES_NAME (type));
+            }
+
+            DBUG_PRINT ("PREC", ("renaming type %s:%s to %s", TYPES_MOD (type),
+                                 TYPES_NAME (type), tmp));
+
+            FREE (TYPES_NAME (type));
+            TYPES_NAME (type) = tmp;
+            TYPES_MOD (type) = NULL;
         } else {
-            tmp = (char *)Malloc (
-              sizeof (char)
-              * (strlen (TYPES_NAME (type)) + strlen (TYPES_MOD (type)) + 8));
-            sprintf (tmp, "SACt_%s__%s", TYPES_MOD (type), TYPES_NAME (type));
+            /*
+             * This is an imported C data type.
+             */
+            tmp = (char *)Malloc (sizeof (char) * (strlen (TYPES_NAME (type)) + 6));
+            sprintf (tmp, "SACe_%s", TYPES_NAME (type));
+
+            DBUG_PRINT ("PREC", ("renaming type %s to %s", TYPES_NAME (type), tmp));
+
+            FREE (TYPES_NAME (type));
+            TYPES_NAME (type) = tmp;
         }
-
-        DBUG_PRINT ("PREC", ("renaming type %s:%s to %s", TYPES_MOD (type),
-                             TYPES_NAME (type), tmp));
-
-        FREE (TYPES_NAME (type));
-        TYPES_NAME (type) = tmp;
-        TYPES_MOD (type) = NULL;
     }
 
     if (TYPES_NEXT (type) != NULL) {
@@ -990,6 +1011,9 @@ PREC2typedef (node *arg_node, node *arg_info)
     DBUG_ENTER ("PREC2typedef");
 
     if (TYPEDEF_MOD (arg_node) != NULL) {
+        /*
+         * This is a SAC typedef.
+         */
         if (0 == strcmp (TYPEDEF_MOD (arg_node), MAIN_MOD_NAME)) {
             tmp = (char *)Malloc (sizeof (char) * (strlen (TYPEDEF_NAME (arg_node)) + 6));
             sprintf (tmp, "SACt_%s", TYPEDEF_NAME (arg_node));
@@ -1005,6 +1029,24 @@ PREC2typedef (node *arg_node, node *arg_info)
         TYPEDEF_MOD (arg_node) = NULL;
 
         TYPEDEF_TYPE (arg_node) = RenameTypes (TYPEDEF_TYPE (arg_node));
+    } else {
+        /*
+         * This is an imported C typedef.
+         */
+        tmp = (char *)Malloc (sizeof (char) * (strlen (TYPEDEF_NAME (arg_node)) + 6));
+        sprintf (tmp, "SACe_%s", TYPEDEF_NAME (arg_node));
+
+        FREE (TYPEDEF_NAME (arg_node));
+        TYPEDEF_NAME (arg_node) = tmp;
+        /*
+         * Why are imported C renamed unlike imported C functions or global objects ?
+         *
+         * Imported C types do not have a real counterpart in the C module/class
+         * implementation. So, there must be no coincidence at link time.
+         * As the type name actually does only exist for the sake of the SAC world,
+         * which maps it directly to either void* or some basic type, its renaming
+         * avoids potential name clashes with other external symbols.
+         */
     }
 
     if (TYPEDEF_NEXT (arg_node) != NULL) {
@@ -1044,8 +1086,6 @@ PREC2objdef (node *arg_node, node *arg_info)
             FREE (OBJDEF_PRAGMA (arg_node));
         }
     } else {
-        OBJDEF_TYPE (arg_node) = RenameTypes (OBJDEF_TYPE (arg_node));
-
         FREE (OBJDEF_VARNAME (arg_node));
         /*
          * OBJDEF_VARNAME is no longer used for the generation of the final C code
@@ -1070,6 +1110,8 @@ PREC2objdef (node *arg_node, node *arg_info)
         OBJDEF_MOD (arg_node) = NULL;
         OBJDEF_NAME (arg_node) = new_name;
     }
+
+    OBJDEF_TYPE (arg_node) = RenameTypes (OBJDEF_TYPE (arg_node));
 
     if (OBJDEF_NEXT (arg_node) != NULL) {
         OBJDEF_NEXT (arg_node) = Trav (OBJDEF_NEXT (arg_node), arg_info);
