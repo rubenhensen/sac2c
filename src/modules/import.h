@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.17  1995/10/26 16:11:01  cg
+ * Revision 1.18  1995/12/29 10:41:25  cg
+ * All functions concerning SIBs extracted and moved to readsib.c
+ *
+ * Revision 1.17  1995/10/26  16:11:01  cg
  * new function ImportOwnDeclaration used to check the declaration file
  * when compiling a module/class implementation.
  * error messages improved.
@@ -102,11 +105,10 @@ extern char *ModulePrefix (char *);
 extern node *ImportOwnDeclaration (char *name, file_type modtype);
 
 extern node *IMmodul (node *, node *);
-extern node *IMtypedef (node *, node *);
-extern node *IMfundef (node *, node *);
 extern node *Import (node *);
 extern char *GenLinkerList ();
 extern strings *GenExtmodlistList ();
 extern void InsertClassType (node *);
+extern void AddSymbol (char *name, char *module, int symbkind);
 
 #endif /* _sac_import_h */
