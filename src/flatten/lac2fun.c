@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.23  2003/09/11 08:37:44  sbs
+ * DBUG_PRINTs OPT added.
+ *
  * Revision 3.22  2002/10/16 12:09:47  dkr
  * code for RESOLVE_REFERENCES removed:
  * LaC functions no longer resolve reference parameters, but reproduce
@@ -672,11 +675,24 @@ Lac2Fun (node *syntax_tree)
 
     DBUG_ENTER ("Lac2Fun");
 
+#ifndef DBUG_OFF
+    if (compiler_phase == PH_sacopt) {
+        DBUG_PRINT ("OPT", ("LAC2FUN"));
+        DBUG_PRINT ("OPT", ("  inferring DFMs"));
+    }
+#endif
+
     /*
      * infer the in-, out- and local-masks of each conditional or loop
      * (via fixpoint iteration)
      */
     syntax_tree = InferDFMs (syntax_tree, HIDE_LOCALS_LAC);
+
+#ifndef DBUG_OFF
+    if (compiler_phase == PH_sacopt) {
+        DBUG_PRINT ("OPT", ("  transforming loops and conditionals"));
+    }
+#endif
 
     info_node = MakeInfo ();
 
@@ -692,10 +708,22 @@ Lac2Fun (node *syntax_tree)
      */
     syntax_tree = CleanupDecls (syntax_tree);
 
+#ifndef DBUG_OFF
+    if (compiler_phase == PH_sacopt) {
+        DBUG_PRINT ("OPT", ("  inferring DFMs"));
+    }
+#endif
+
     /*
      * after lifting and clean-up the current DFMs are not valid anymore!!!
      */
     syntax_tree = InferDFMs (syntax_tree, HIDE_LOCALS_NEVER);
+
+#ifndef DBUG_OFF
+    if (compiler_phase == PH_sacopt) {
+        DBUG_PRINT ("OPT", ("                        done"));
+    }
+#endif
 
     DBUG_RETURN (syntax_tree);
 }
