@@ -1,7 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.75  1995/11/16 19:35:48  cg
+ * Revision 1.76  1995/12/01 17:05:47  cg
+ * removed global variable 'silent'
+ * new compilation phase 'precompile'
+ * new break parameter '-bl' to stop after it
+ *
+ * Revision 1.75  1995/11/16  19:35:48  cg
  * added new compilation phase 'RemoveVoidFunctions'
  * break parameter: -bv
  * activated call of FreeTree at end of compilation to test the
@@ -274,6 +279,7 @@
 #include "objects.h"
 #include "uniquecheck.h"
 #include "rmvoidfun.h"
+#include "precompile.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -315,7 +321,7 @@ MAIN
     int breakparse = 0, breakimport = 0, breakflatten = 0, breaktype = 0, breakopt = 0,
         breakpsiopt = 0, breakref = 0, breaksib = 0, breakimpltype = 0, breakobjinit = 0,
         breakanalysis = 0, breakcheckdec = 0, breakobjects = 0, breakuniquecheck = 0,
-        breakrmvoidfun = 0;
+        breakrmvoidfun = 0, breakprecompile = 0;
     int write_sib = 1;
     char prgname[MAX_FILE_NAME];
     char outfilename[MAX_FILE_NAME];
@@ -421,6 +427,9 @@ MAIN
             break;
         case 'q':
             breakuniquecheck = 1;
+            break;
+        case 'l':
+            breakprecompile = 1;
             break;
         default:
             SYSWARN (("Unknown break parameter '%s`", *argv));
@@ -783,36 +792,25 @@ MAIN
 
                                                             if (!breakref) {
                                                                 NOTE_COMPILER_PHASE;
-                                                                syntax_tree
-                                                                  = Compile (syntax_tree);
+                                                                syntax_tree = precompile (
+                                                                  syntax_tree);
                                                                 ABORT_ON_ERROR;
                                                                 compiler_phase++;
 
-                                                                if (!Ccodeonly) {
+                                                                if (!breakprecompile) {
                                                                     NOTE_COMPILER_PHASE;
-                                                                    if (MODUL_FILETYPE (
-                                                                          syntax_tree)
-                                                                        == F_prog) {
-                                                                        sprintf (
-                                                                          cccallstr,
-                                                                          "gcc %s-Wall "
-                                                                          "-Wno-unused "
-                                                                          "-I "
-                                                                          "$RCSROOT/src/"
-                                                                          "compile/"
-                                                                          " -o %s %s %s",
-                                                                          ccflagsstr,
-                                                                          outfilename,
-                                                                          cfilename,
-                                                                          GenLinkerList ());
-                                                                    } else {
+                                                                    syntax_tree
+                                                                      = Compile (
+                                                                        syntax_tree);
+                                                                    ABORT_ON_ERROR;
+                                                                    compiler_phase++;
+
+                                                                    if (!Ccodeonly) {
+                                                                        NOTE_COMPILER_PHASE;
                                                                         if (
-                                                                          (MODUL_FILETYPE (
-                                                                             syntax_tree)
-                                                                           == F_modimp)
-                                                                          || (MODUL_FILETYPE (
-                                                                                syntax_tree)
-                                                                              == F_classimp)) {
+                                                                          MODUL_FILETYPE (
+                                                                            syntax_tree)
+                                                                          == F_prog) {
                                                                             sprintf (
                                                                               cccallstr,
                                                                               "gcc "
@@ -822,25 +820,58 @@ MAIN
                                                                               "$RCSROOT/"
                                                                               "src/"
                                                                               "compile/"
-                                                                              " -o %s.o "
-                                                                              "-c %s",
+                                                                              " -o %s %s "
+                                                                              "%s",
                                                                               ccflagsstr,
-                                                                              (NULL
-                                                                               != module_name)
-                                                                                ? module_name
-                                                                                : outfilename,
-                                                                              cfilename);
+                                                                              outfilename,
+                                                                              cfilename,
+                                                                              GenLinkerList ());
                                                                         } else {
-                                                                            DBUG_ASSERT (
-                                                                              0,
-                                                                              "wrong "
-                                                                              "value of "
-                                                                              "kind_of_"
-                                                                              "file ");
+                                                                            if (
+                                                                              (MODUL_FILETYPE (
+                                                                                 syntax_tree)
+                                                                               == F_modimp)
+                                                                              || (MODUL_FILETYPE (
+                                                                                    syntax_tree)
+                                                                                  == F_classimp)) {
+                                                                                sprintf (
+                                                                                  cccallstr,
+                                                                                  "gcc "
+                                                                                  "%s-"
+                                                                                  "Wall "
+                                                                                  "-Wno-"
+                                                                                  "unused"
+                                                                                  " -I "
+                                                                                  "$RCSRO"
+                                                                                  "OT/"
+                                                                                  "src/"
+                                                                                  "compil"
+                                                                                  "e/"
+                                                                                  " -o "
+                                                                                  "%s.o "
+                                                                                  "-c %s",
+                                                                                  ccflagsstr,
+                                                                                  (NULL
+                                                                                   != module_name)
+                                                                                    ? module_name
+                                                                                    : outfilename,
+                                                                                  cfilename);
+                                                                            } else {
+                                                                                DBUG_ASSERT (
+                                                                                  0,
+                                                                                  "wrong "
+                                                                                  "value "
+                                                                                  "of "
+                                                                                  "kind_"
+                                                                                  "of_"
+                                                                                  "file"
+                                                                                  " ");
+                                                                            }
                                                                         }
+                                                                        ABORT_ON_ERROR;
+                                                                        compiler_phase
+                                                                          = 0;
                                                                     }
-                                                                    ABORT_ON_ERROR;
-                                                                    compiler_phase = 0;
                                                                 }
                                                             }
                                                         }
