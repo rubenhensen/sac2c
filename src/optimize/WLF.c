@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 1.17  1998/12/02 16:41:13  cg
+ * changed #include "limits.h" to #include <limits.h>
+ *
  * Revision 1.16  1998/11/18 15:06:48  srs
  * N_empty nodes are supported now
  *
@@ -117,10 +120,10 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <limits.h>
 
 #include "tree.h"
 #include "types.h"
-#include "limits.h"
 #include "internal_lib.h"
 #include "free.h"
 #include "print.h"
