@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.82  2000/06/28 15:14:05  nmw
+ * PrintCWrapper added
+ *
  * Revision 2.81  2000/06/23 15:34:37  nmw
  * PrintCWrapper added
  *
@@ -937,6 +940,14 @@ PrintModul (node *arg_node, node *arg_info)
             fprintf (outfile, " */\n");
             Trav (MODUL_FUNS (arg_node), arg_info); /* print function definitions */
         }
+
+        DBUG_EXECUTE ("PRINT_CWRAPPER", if (MODUL_CWRAPPER (arg_node) != NULL) {
+            fprintf (outfile, "\n\n");
+            fprintf (outfile, "/*\n");
+            fprintf (outfile, " *  c wrapper functions\n");
+            fprintf (outfile, " */\n");
+            Trav (MODUL_CWRAPPER (arg_node), arg_info); /* print wrapper mappings */
+        });
     }
 
     DBUG_RETURN (arg_node);
@@ -3112,8 +3123,46 @@ PrintWLgridVar (node *arg_node, node *arg_info)
 node *
 PrintCWrapper (node *arg_node, node *arg_info)
 {
+    nodelist *funlist;
+    node *fundef;
+    char *typestring;
+
     DBUG_ENTER ("PrintCWrapper");
 
+    if (compiler_phase != PH_genccode) {
+        /* internal debug output of mapping-tree of wrappers */
+        DBUG_EXECUTE (
+          "PRINT_CWRAPPER",
+          fprintf (outfile, "CWrapper %s with %d arg(s) and %d result(s)\n",
+                   CWRAPPER_NAME (arg_node), CWRAPPER_ARGCOUNT (arg_node),
+                   CWRAPPER_RESCOUNT (arg_node));
+
+          funlist = CWRAPPER_FUNS (arg_node); while (funlist != NULL) {
+              fundef = NODELIST_NODE (funlist);
+
+              fprintf (outfile, "  overloaded for (");
+              /* print args of function */
+              if (FUNDEF_ARGS (fundef) != NULL) {
+                  Trav (FUNDEF_ARGS (fundef), arg_info);
+              }
+
+              fprintf (outfile, ") -> (");
+
+              /* print results of function */
+              typestring = Type2String (FUNDEF_TYPES (fundef), 0);
+              fprintf (outfile, "%s", typestring);
+              FREE (typestring);
+
+              fprintf (outfile, ")\n");
+              funlist = NODELIST_NEXT (funlist);
+          }
+
+          fprintf (outfile, "\n\n");
+
+          if (CWRAPPER_NEXT (arg_node) != NULL) {
+              PRINT_CONT (Trav (CWRAPPER_NEXT (arg_node), arg_info), );
+          });
+    }
     DBUG_RETURN (arg_node);
 }
 
@@ -3224,8 +3273,9 @@ Print (node *syntax_tree)
     FREE (arg_info);
 
     /*if generating c library, invoke the headerfile generator */
-    if (generatelibrary & GENERATELIBRARY_C)
+    if ((generatelibrary & GENERATELIBRARY_C) && (compiler_phase == PH_genccode)) {
         PrintInterface (syntax_tree);
+    }
 
     DBUG_RETURN (syntax_tree);
 }
