@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.5  1999/11/16 15:23:05  dkr
+ * comments added
+ *
  * Revision 2.4  1999/07/21 12:28:17  jhs
  * Improved indenting.
  *
@@ -636,6 +639,14 @@ ICMCompileWL_INIT_OFFSET (int dims_target, char *target, char *idx_vec, int dims
  *
  *   WL_ADJUST_OFFSET( dim, first_block_dim, dims_target, target, idx_vec,
  *                     dims, [ idx_scalars ]* )
+ *
+ * remark:
+ *   This ICM is needed (and usefull) in combination with the ICMs
+ *   WL_(U)BLOCK_LOOP_BEGIN only!!
+ *   If the C compiler reports an undeclared 'SAC__start...' there is probably
+ *   an error in compile.c:
+ *   Either an WL_(U)BLOCK_LOOP_BEGIN ICM is missing, or the WL_ADJUST_OFFSET
+ *   ICM is obsolete (bug in the inference in COMPWLgrid...?)
  *
  ******************************************************************************/
 
