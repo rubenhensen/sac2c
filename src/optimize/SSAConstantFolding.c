@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2001/05/03 16:49:19  nmw
+ * modarray for constants integrated
+ *
  * Revision 1.9  2001/05/02 08:02:11  nmw
  * arithmetical constant folding implemented
  *
@@ -55,6 +58,7 @@
 #include "optimize.h"
 #include "SSATransform.h"
 #include "Inline.h"
+#include "compare_tree.h"
 
 /*
  * constant identifiers should be substituted by its constant value
@@ -96,6 +100,7 @@ typedef struct {
 static ids *TravIDS (ids *arg_ids, node *arg_info);
 static ids *SSACFids (ids *arg_ids, node *arg_info);
 static node *SSACFPropagateConstants2Args (node *arg_chain, node *param_chain);
+static ids *SSACFSetSSAASSIGN (ids *chain, node *assign);
 static struc_constant *SSACFExpr2StructConstant (node *expr);
 static node *SSACFDupStructConstant2Expr (struc_constant *struc_co);
 static struc_constant *SCOFreeStructConstant (struc_constant *struc_co);
@@ -127,6 +132,10 @@ static node *SSACFModarray ( node *a, constant *idx, node *elem);
 static node *SSACFCat      ( constant *dim, node *a, node *b);
 static node *SSACFRotate   ( constant *dim, constant *num, node *a);
 */
+
+/* some primitive functions that allows special optimizations in gerneric cases */
+static node *SSACFEq (node *expr1, node *expr2);
+static node *SSACFSub (node *expr1, node *expr2);
 
 /* functions for internal use only */
 /******************************************************************************
@@ -165,6 +174,44 @@ SSACFPropagateConstants2Args (node *arg_chain, node *param_chain)
     }
 
     DBUG_RETURN (arg_chain);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   ids *SSACFSetSSAASSIGN(ids *chain, node *assign)
+ *
+ * description:
+ *   sets the AVIS_SSAASSIGN to the correct assignment.
+ *   the backrefs may be wrong after Inlining, because DupTree is not able
+ *   to correct them when dubbing an assignment chain only.
+ *
+ ******************************************************************************/
+static ids *
+SSACFSetSSAASSIGN (ids *chain, node *assign)
+{
+    DBUG_ENTER ("SSACFSetSSAASSIGN");
+
+    if (chain != NULL) {
+        /* set current assign as defining assignement */
+        if (AVIS_SSAPHITARGET (IDS_AVIS (chain)) == PHIT_NONE) {
+            AVIS_SSAASSIGN (IDS_AVIS (chain)) = assign;
+        }
+
+        /* check correct setting of SSAASSIGN() attribute */
+        if (AVIS_SSAASSIGN (IDS_AVIS (chain)) != assign) {
+            DBUG_PRINT ("WARN",
+                        ("mismatch SSAASSIGN link for %s (phit: %d) - 1:%p, 2:%p - %p",
+                         IDS_NAME (chain), AVIS_SSAPHITARGET (IDS_AVIS (chain)),
+                         AVIS_SSAASSIGN (IDS_AVIS (chain)),
+                         AVIS_SSAASSIGN2 (IDS_AVIS (chain)), assign));
+        }
+
+        /* traverse to next ids */
+        IDS_NEXT (chain) = SSACFSetSSAASSIGN (IDS_NEXT (chain), assign);
+    }
+
+    DBUG_RETURN (chain);
 }
 
 /******************************************************************************
@@ -567,7 +614,8 @@ SSACFArithmOpWrapper (prf op, constant *arg1, node *arg1_expr, constant *arg2,
 
 #ifndef DBUG_OFF
     if (result != NULL) {
-        DBUG_PRINT ("SSACF", ("arithmetic constant folding done."));
+        DBUG_PRINT ("SSACF",
+                    ("arithmetic constant folding done for %s.", prf_string[op]));
     }
 #endif
 
@@ -610,6 +658,100 @@ SSACFGetShapeOfExpr (node *expr)
     }
 
     DBUG_RETURN (shp);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   simpletype SSACFGetBasetypeOfExpr(node *expr)
+ *
+ * description:
+ *   try to get the basetype of the given expression. this can be a
+ *   identifier or an array node. returns NULL if no type can be computed.
+ *
+ ******************************************************************************/
+static simpletype
+SSACFGetBasetypeOfExpr (node *expr)
+{
+    simpletype stype;
+    DBUG_ENTER ("SSACFGetBasetypeOfExpr");
+    DBUG_ASSERT ((expr != NULL), "SSACFGetBasetypeOfExpr called with NULL pointer");
+
+    switch (NODE_TYPE (expr)) {
+    case N_id:
+        /* get basetype from type info */
+        stype = TYPES_BASETYPE (VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (expr))));
+        break;
+
+    case N_array:
+        /* get shape from array type attribute */
+        DBUG_ASSERT ((ARRAY_TYPE (expr) != NULL), "array type attribute is missing");
+        stype = TYPES_BASETYPE (ARRAY_TYPE (expr));
+        break;
+
+    default:
+        stype = T_unknown;
+    }
+
+    DBUG_RETURN (stype);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *SSACFEq(node *expr1, node *expr2)
+ *
+ * description:
+ *   implements the F_eq primitive function for two expressions via a cmptree.
+ *
+ ******************************************************************************/
+static node *
+SSACFEq (node *expr1, node *expr2)
+{
+    node *result;
+
+    DBUG_ENTER ("SSACFEq");
+
+    if (CompareTree (expr1, expr2) == CMPT_EQ) {
+        result = MakeBool (TRUE);
+    } else {
+        result = NULL; /* no concrete answer for compare operation possible */
+    }
+
+    DBUG_RETURN (result);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *SSACFSub(node *expr1, node *expr2)
+ *
+ * description:
+ *   implements special optimization for x - x -> 0
+ *
+ ******************************************************************************/
+static node *
+SSACFSub (node *expr1, node *expr2)
+{
+    node *result;
+    constant *tmp_co;
+    shape *target_shp;
+
+    DBUG_ENTER ("SSACFSub");
+
+    if (CompareTree (expr1, expr2) == CMPT_EQ) {
+        target_shp = SSACFGetShapeOfExpr (expr1);
+        if (target_shp != NULL) {
+            /* Create ZeroConstant of same type and shape as expression */
+            tmp_co = COMakeZero (SSACFGetBasetypeOfExpr (expr1), target_shp);
+            result = COConstant2AST (tmp_co);
+            tmp_co = COFreeConstant (tmp_co);
+        }
+    } else {
+        result = NULL; /* no concrete answer for compare operation possible */
+    }
+
+    DBUG_RETURN (result);
 }
 
 /* traversal functions */
@@ -741,8 +883,12 @@ SSACFassign (node *arg_node, node *arg_info)
 {
     bool remove_assignment;
     node *tmp;
+    node *old_assign;
 
     DBUG_ENTER ("SSACFassign");
+
+    /* stack currect assignment */
+    old_assign = INFO_SSACF_ASSIGN (arg_info);
 
     /* init flags for possible code removal/movement */
     INFO_SSACF_REMASSIGN (arg_info) = FALSE;
@@ -751,7 +897,9 @@ SSACFassign (node *arg_node, node *arg_info)
     if (ASSIGN_INSTR (arg_node) != NULL) {
         ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
     }
-    INFO_SSACF_ASSIGN (arg_info) = NULL;
+
+    /* restore old assignment */
+    INFO_SSACF_ASSIGN (arg_info) = old_assign;
 
     /* save removal flag for bottom-up traversal */
     remove_assignment = INFO_SSACF_REMASSIGN (arg_info);
@@ -932,9 +1080,11 @@ SSACFlet (node *arg_node, node *arg_info)
     DBUG_ASSERT ((LET_EXPR (arg_node) != NULL), "let without expression");
 
     /* remove tag SSAPHITARGET if conditional has been removed */
-    if ((FUNDEF_STATUS (INFO_SSACF_FUNDEF (arg_info)) == ST_regular)
-        || (FUNDEF_STATUS (INFO_SSACF_FUNDEF (arg_info)) == ST_inlinefun)) {
+    if ((INFO_SSACF_INLFUNDEF (arg_info) == TRUE)
+        && (AVIS_SSAPHITARGET (IDS_AVIS (LET_IDS (arg_node))) != PHIT_NONE)) {
+        /* normal variable */
         AVIS_SSAPHITARGET (IDS_AVIS (LET_IDS (arg_node))) = PHIT_NONE;
+        AVIS_SSAASSIGN (IDS_AVIS (LET_IDS (arg_node))) = INFO_SSACF_ASSIGN (arg_info);
     }
 
     /*
@@ -1014,6 +1164,10 @@ SSACFlet (node *arg_node, node *arg_info)
     } else {
         /* left side is already maked as constant - no further processing needed */
     }
+
+    /* update defining assigns after inlining */
+    LET_IDS (arg_node)
+      = SSACFSetSSAASSIGN (LET_IDS (arg_node), INFO_SSACF_ASSIGN (arg_info));
 
     DBUG_RETURN (arg_node);
 }
@@ -1185,8 +1339,10 @@ SSACFprf (node *arg_node, node *arg_info)
     constant *new_co;
     constant *arg1;
     constant *arg2;
+    constant *arg3;
     node *arg1_expr;
     node *arg2_expr;
+    node *arg3_expr;
 
     DBUG_ENTER ("SSACFprf");
 
@@ -1202,28 +1358,37 @@ SSACFprf (node *arg_node, node *arg_info)
     /* init local variables */
     new_node = NULL;
     new_co = NULL;
+    arg1 = NULL;
+    arg2 = NULL;
+    arg3 = NULL;
+    arg1_expr = NULL;
+    arg2_expr = NULL;
+    arg3_expr = NULL;
 
     /* try to convert args to constants */
+    /* arg1 */
     if (EXPRS_EXPR (PRF_ARGS (arg_node)) != NULL) {
-        arg1 = COAST2Constant (EXPRS_EXPR (PRF_ARGS (arg_node)));
         arg1_expr = EXPRS_EXPR (PRF_ARGS (arg_node));
-    } else {
-        arg1 = NULL;
-        arg1_expr = NULL;
-    }
+        arg1 = COAST2Constant (arg1_expr);
 
-    if ((EXPRS_NEXT (PRF_ARGS (arg_node)) != NULL)
-        && (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node))) != NULL)) {
-        arg2 = COAST2Constant (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node))));
-        arg2_expr = EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node)));
-    } else {
-        arg2 = NULL;
-        arg2_expr = NULL;
+        /* arg2 */
+        if ((EXPRS_NEXT (PRF_ARGS (arg_node)) != NULL)
+            && (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node))) != NULL)) {
+            arg2_expr = EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node)));
+            arg2 = COAST2Constant (arg2_expr);
+
+            /* arg 3 */
+            if ((EXPRS_NEXT (EXPRS_NEXT (PRF_ARGS (arg_node))) != NULL)
+                && (EXPRS_EXPR (EXPRS_NEXT (EXPRS_NEXT (PRF_ARGS (arg_node)))) != NULL)) {
+                arg3_expr = EXPRS_EXPR (EXPRS_NEXT (EXPRS_NEXT (PRF_ARGS (arg_node))));
+                arg3 = COAST2Constant (arg3_expr);
+            }
+        }
     }
 
     /* do constant folding on primitive functions */
     switch (PRF_PRF (arg_node)) {
-        /* single-argument functions */
+        /* one-argument functions */
     case F_toi:
     case F_toi_A:
         if (arg1 != NULL) {
@@ -1254,6 +1419,26 @@ SSACFprf (node *arg_node, node *arg_info)
     case F_not:
         if (arg1 != NULL) {
             new_co = CONot (arg1);
+        }
+        break;
+
+    case F_dim:
+        if (arg1 != NULL) {
+            /* for pure constant arg */
+            new_co = CODim (arg1);
+        } else if (arg1_expr != NULL) {
+            /* for some non full constant expression args */
+            new_co = SSACFDim (arg1_expr);
+        }
+        break;
+
+    case F_shape:
+        if (arg1 != NULL) {
+            /* for pure constant arg */
+            new_co = COShape (arg1);
+        } else if (arg1_expr != NULL) {
+            /* for some non full constant expression args */
+            new_co = SSACFShape (arg1_expr);
         }
         break;
 
@@ -1288,9 +1473,10 @@ SSACFprf (node *arg_node, node *arg_info)
     case F_sub_AxA:
         if ((arg1 != NULL) && (arg2 != NULL)) {
             new_co = COSub (arg1, arg2);
-        }
-        if (ONE_CONST_ARG (arg1, arg2)) {
+        } else if (ONE_CONST_ARG (arg1, arg2)) {
             new_node = SSACFArithmOpWrapper (F_sub, arg1, arg1_expr, arg2, arg2_expr);
+        } else if ((arg1_expr != NULL) && (arg2_expr != NULL)) {
+            new_node = SSACFSub (arg1_expr, arg2_expr);
         }
         break;
 
@@ -1356,7 +1542,11 @@ SSACFprf (node *arg_node, node *arg_info)
 
     case F_eq:
         if ((arg1 != NULL) && (arg2 != NULL)) {
+            /* for pure constant arg */
             new_co = COEq (arg1, arg2);
+        } else if ((arg1_expr != NULL) && (arg2_expr != NULL)) {
+            /* for two expressions (does a treecmp */
+            new_node = SSACFEq (arg1_expr, arg2_expr);
         }
         break;
 
@@ -1378,29 +1568,9 @@ SSACFprf (node *arg_node, node *arg_info)
         }
         break;
 
-    case F_dim:
-        if (arg1 != NULL) {
-            /* for pure constant arg */
-            new_co = CODim (arg1);
-        } else if (arg1_expr != NULL) {
-            /* for some non full constant expression args */
-            new_co = SSACFDim (arg1_expr);
-        }
-        break;
-
-    case F_shape:
-        /* for pure constant arg */
-        if (arg1 != NULL) {
-            new_co = COShape (arg1);
-        } else if (arg1_expr != NULL) {
-            /* for some non full constant expression args */
-            new_co = SSACFShape (arg1_expr);
-        }
-        break;
-
     case F_reshape:
-        /* for pure constant arg */
         if ((arg1 != NULL) && (arg2 != NULL)) {
+            /* for pure constant arg */
             new_co = COReshape (arg1, arg2);
         } else if ((arg1 != NULL) && (arg2_expr != NULL)) {
             /* for some non constant expression and constant index vector */
@@ -1413,8 +1583,8 @@ SSACFprf (node *arg_node, node *arg_info)
         break;
 
     case F_psi:
-        /* for pure constant args */
         if ((arg1 != NULL) && (arg2 != NULL)) {
+            /* for pure constant args */
             new_co = COPsi (arg1, arg2);
         } else if ((arg1 != NULL) && (arg2_expr != NULL)) {
             /* for some non constant expression and constant index vector */
@@ -1422,17 +1592,9 @@ SSACFprf (node *arg_node, node *arg_info)
         }
         break;
 
-    case F_idx_modarray:
-        /* not implemeted yet */
-        break;
-
-    case F_modarray:
-        /* not implemented yet */
-        break;
-
     case F_take:
-        /* for pure constant args */
         if ((arg1 != NULL) && (arg2 != NULL)) {
+            /* for pure constant args */
             new_co = COTake (arg1, arg2);
         } else if ((arg1 != NULL) && (arg2_expr != NULL)) {
             /* for some non constant expression and constant index vector */
@@ -1441,12 +1603,21 @@ SSACFprf (node *arg_node, node *arg_info)
         break;
 
     case F_drop:
-        /* for pure constant args */
         if ((arg1 != NULL) && (arg2 != NULL)) {
+            /* for pure constant args */
             new_co = CODrop (arg1, arg2);
         } else if ((arg1 != NULL) && (arg2_expr != NULL)) {
             /* for some non constant expression and constant index vector */
             new_node = SSACFStructOpWrapper (F_drop, arg1, arg2_expr);
+        }
+        break;
+
+        /* three-argument functions */
+    case F_modarray:
+        if ((arg1 != NULL) && (arg2 != NULL) && (arg3 != NULL)) {
+            /* for pure constant args */
+            new_co = COModarray (arg1, arg2, arg3);
+        } else if (FALSE) {
         }
         break;
 
