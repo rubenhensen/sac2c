@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.46  1997/05/06 13:54:18  sbs
+ * Revision 1.47  1997/05/27 08:53:59  sbs
+ * *** empty log message ***
+ *
+ * Revision 1.46  1997/05/06  13:54:18  sbs
  * -a[at] option included
  *
  * Revision 1.45  1997/03/19  13:42:02  cg
@@ -258,11 +261,13 @@ usage (char *prg_name)
     printf ("\t -dnocleanup\t\tdon't remove temporary files and directories\n");
     printf ("\t -dcheck_malloc\t\tcheck success of memory allocations\n");
 
-    printf ("\n\nRUNTIME ANALYSIS OPTIONS:\n\n");
+    printf ("\n\nPROFILING OPTIONS:\n\n");
 
-    printf ("\t -a [at] \t\tinclude runtime analysis\n");
-    printf ("\t\t\t\ta: analyse all (same as t)\n");
-    printf ("\t\t\t\tt: analyse time spend in different parts of the program\n");
+    printf ("\t -p [afiw] \t\tinclude runtime analysis\n");
+    printf ("\t\t\t\ta: analyse all (same as iw)\n");
+    printf ("\t\t\t\tw: analyse time spent in with-loops\n");
+    printf ("\t\t\t\tf: analyse time spend in non-inline functions\n");
+    printf ("\t\t\t\ti: analyse time spend in any function\n");
 
     printf ("\n\nLINK OPTIONS:\n\n");
 
