@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.6  2001/03/15 10:52:04  nmw
+ * SSATransform now sets SSAUNDOFLAG for artificial vardecs
+ *
  * Revision 1.5  2001/02/22 12:44:24  nmw
  * tranformation of multigenerator withloops added
  *
@@ -943,6 +946,17 @@ SSAleftids (ids *arg_ids, node *arg_info)
         FREE (IDS_NAME (arg_ids));
         IDS_NAME (arg_ids) = StringCopy (VARDEC_NAME (new_vardec));
 #endif
+
+        /*
+         * mark this avis for undo ssa transform:
+         * all global objects and artificial identifier must
+         * be mapped back to their original name in undossa.
+         *
+         */
+        if ((IDS_STATUS (arg_ids) == ST_artificial)
+            || (IDS_ATTRIB (arg_ids) == ST_global)) {
+            AVIS_SSAUNDOFLAG (IDS_AVIS (arg_ids)) = TRUE;
+        }
     }
     /* AVIS_SSAASSIGN(IDS_AVIS(arg_ids)) = ##nmw## */
 
