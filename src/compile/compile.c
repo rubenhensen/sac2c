@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.38  1995/06/06 11:39:02  hw
+ * Revision 1.39  1995/06/06 15:54:30  hw
+ * changed CompVardec ( a declaration of an array with unknown shape
+ *   will be removed )
+ *
+ * Revision 1.38  1995/06/06  11:39:02  hw
  * changed CompPrf (F_take/F_drop) (first argument can be a scalar too, now)
  *
  * Revision 1.37  1995/06/02  08:43:34  hw
@@ -687,7 +691,7 @@ CompVardec (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("CompVardec");
 
-    if (1 == IsArray (arg_node->TYPES)) {
+    if ((1 == IsArray (arg_node->TYPES)) && (arg_node->DIM >= 0)) {
         MAKE_ICM (assign);
         MAKE_ICM_NAME (assign->node[0], "ND_KS_DECL_ARRAY");
 
@@ -741,6 +745,14 @@ CompVardec (node *arg_node, node *arg_info)
         if (NULL != arg_node->node[1])
             arg_node->node[1] = Trav (arg_node->node[1], NULL);
 
+    } else
+
+      if (arg_node->DIM < 0) {
+        /* current vardec-node has unknown shape and will be removed */
+        node *tmp;
+        tmp = arg_node;
+        arg_node = Trav (arg_node->node[0], NULL);
+        FREE_VARDEC (tmp);
     } else
       /* traverse next N_vardec node if any */
       if (NULL != arg_node->node[0])
