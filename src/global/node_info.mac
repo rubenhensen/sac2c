@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.100  1995/10/30 10:20:48  cg
- * final version of sib_tab integrated.
+ * Revision 1.101  1995/11/01 08:01:44  cg
+ * added obj_tab.
  *
+;; Revision 1.100  1995/10/30  10:20:48  cg
+;; final version of sib_tab integrated.
+;;
 ;; Revision 1.99  1995/10/22  17:25:34  cg
 ;; added checkdec_tab and writedec_tab
 ;; renamed sib_tab to writesib_tab
@@ -362,10 +365,10 @@ NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun,
   NIF (N_objdef, "N_objdef", DummyFun, DummyFun, PrintObjdef, TCobjdef, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
-       DummyFun, DummyFun, OIobjdef, DummyFun, CDECobjdef, WDECobjdef, DummyFun),
+       OBJobjdef, DummyFun, OIobjdef, DummyFun, CDECobjdef, WDECobjdef, DummyFun),
   NIF (N_modul, "N_modul", IMmodul, FltnModul, PrintModul, DummyFun, OPTmodul, OPTmodul,
        OPTmodul, FreeModul, OPTmodul, DummyFun, DummyFun, OPTmodul, OPTmodul, INLmodul,
-       OPTmodul, DummyFun, IdxModul, OPTmodul, DummyFun, OPTmodul, SIBmodul, DummyFun,
+       OPTmodul, DummyFun, IdxModul, OPTmodul, DummyFun, OPTmodul, SIBmodul, OBJmodul,
        IMPLmodul, OImodul, ANAmodul, DummyFun, WDECmodul, DummyFun),
   NIF (N_moddec, "N_moddec", DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
@@ -386,7 +389,7 @@ NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun,
   NIF (N_fundef, "N_fundef", IMfundef, FltnFundef, PrintFundef, TCfundef, OPTfundef,
        DEADfundef, WRfundef, FreeInfoType, CFfundef, RCfundef, CompFundef, LIRfundef,
        DupFundef, INLfundef, UNRfundef, DummyFun, IdxFundef, UNSfundef, DummyFun,
-       AEfundef, SIBfundef, DummyFun, DummyFun, DummyFun, ANAfundef, CDECfundef,
+       AEfundef, SIBfundef, OBJfundef, DummyFun, DummyFun, ANAfundef, CDECfundef,
        WDECfundef, DummyFun),
   NIF (N_vardec, "N_vardec", DummyFun, DummyFun, PrintVardec, DummyFun, OPTvardec,
        DEADvardec, DummyFun, FreeInfoType, DummyFun, DummyFun, CompVardec, DummyFun,
@@ -399,7 +402,7 @@ NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun),
   NIF (N_arg, "N_arg", DummyFun, FltnArgs, PrintArg, DummyFun, OPTarg, DummyFun, DummyFun,
        FreeInfoType, DummyFun, DummyFun, CompArg, DummyFun, DupDec, INLvar, DummyFun,
-       DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, PrintArg, DummyFun, DummyFun,
+       DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, PrintArg, OBJarg, DummyFun,
        DummyFun, DummyFun, DummyFun, WDECarg, DummyFun),
   NIF (N_assign, "N_assign", DummyFun, FltnAssign, PrintAssign, TCassign, OPTassign,
        DEADassign, DummyFun, FreeNoInfo, CFassign, RCassign, CompAssign, LIRassign,
