@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.32  2002/04/15 13:53:03  dkr
+ * precomp4_tab added
+ *
  * Revision 3.31  2002/04/09 08:11:50  ktr
  * Support for WithloopScalarization added.
  *
@@ -1387,6 +1390,17 @@ static funtab wls_tab_rec = {{
                              NULL,
                              NULL};
 funtab *wls_tab = &wls_tab_rec;
+
+/*
+ *  (107) precomp4_tab
+ */
+static funtab precomp4_tab_rec = {{
+#define NIFprecomp4(it_precomp4) it_precomp4
+#include "node_info.mac"
+                                  },
+                                  NULL,
+                                  NULL};
+funtab *precomp4_tab = &precomp4_tab_rec;
 
 /*
  *  nnode

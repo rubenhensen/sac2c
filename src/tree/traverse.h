@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.25  2002/04/15 13:52:32  dkr
+ * precomp4_tab added
+ *
  * Revision 3.24  2002/04/09 08:11:50  ktr
  * Support for WithloopScalarization added.
  *
@@ -213,6 +216,7 @@ extern funtab *unique_tab;
 extern funtab *precomp1_tab;
 extern funtab *precomp2_tab;
 extern funtab *precomp3_tab;
+extern funtab *precomp4_tab;
 extern funtab *readsib_tab;
 extern funtab *wlt_tab;
 extern funtab *cse_tab;
