@@ -3,6 +3,11 @@
 /*
  *
  * $Log$
+ * Revision 1.56  1998/12/02 16:25:33  cg
+ * some bugs fixed: primitive function tokens are now returned without
+ * the name associated thus closing a memory leak since these names are
+ * usually not needed for the syntax tree.
+ *
  * Revision 1.55  1998/10/30 09:52:16  cg
  * key word 'all' is now allowed as function name,
  * required by array library.
@@ -188,130 +193,113 @@
 
 #define FILTER(token) if (0==commlevel)  return(token)
 
-#define FILTER2(token) if (0==commlevel)  {                             \
-                         yylval.id=(char *)Malloc(sizeof(char)          \
-                                                  *(strlen(yytext)+1)); \
-                         strcpy(yylval.id, yytext);                     \
+#define FILTER2(token) if (0==commlevel)  {             \
+                         yylval.id=StringCopy(yytext);  \
                          return(token); }
 
-#define FILTER3(token) if (0==commlevel) {                              \
-                         yylval.cint=atoi(yytext);		        \
+#define FILTER3(token) if (0==commlevel) {              \
+                         yylval.cint=atoi(yytext);      \
                          return(token); }
 
-#define FILTER4(token) if (0==commlevel) {                              \
-                         yylval.cdbl=atof(yytext);		       \
+#define FILTER4(token) if (0==commlevel) {              \
+                         yylval.cdbl=atof(yytext);      \
                          return(token); }
 
-#define FILTER5(token) if (0==commlevel) {                              \
-                         yytext[strlen(yytext)]='\0';                   \
-                         yylval.cdbl=atof(yytext);                      \
+#define FILTER5(token) if (0==commlevel) {              \
+                         yytext[strlen(yytext)]='\0';   \
+                         yylval.cdbl=atof(yytext);      \
                          return(token); }
 
-#define FILTER6(token) if (0==commlevel) {                              \
-                         yytext[strlen(yytext)]='\0';                   \
-                         yylval.cfloat=atof(yytext);                    \
+#define FILTER6(token) if (0==commlevel) {                      \
+                         yytext[strlen(yytext)]='\0';           \
+                         yylval.cfloat=(float) atof(yytext);    \
                          return(token); }
 
-#define FILTER7(token, name) if (0==commlevel)  {                       \
-                               yylval.id=name;                          \
-                               yylval.id=(char *)Malloc(sizeof(char)    \
-                                                    *(strlen(name)+1)); \
-                               strcpy(yylval.id, name);                 \
-                               return(token); }
-
-#define FILTER8(token) if (0==commlevel) {                              \
-                         yylval.cchar=yytext[1];		        \
-                         return(token); }
-        
-#define FILTER10(token) if (0==commlevel) {                              \
-                         yylval.cchar=(char)atoi(yytext+2);              \
-                         return(token); }
-        
-#define FILTER11(token) if (0==commlevel) {             \
-                              switch(yytext[2]){   \
-                              case 'n': yylval.cchar='\n';  \
-                                        break;  \
-                              case 't': yylval.cchar='\t';  \
-                                        break;   \
-                              }  \
+#define FILTER8(token) if (0==commlevel) {              \
+                         yylval.cchar=yytext[1];        \
                          return(token); }
         
 #define FILTER9(token) if (0==commlevel)  {                             \
-                         yylval.id=(char *)Malloc(sizeof(char)          \
-                                                  *(strlen(yytext)+1)); \
-                         strcpy(yylval.id, yytext+sizeof(char));        \
+                         yylval.id=StringCopy(yytext+sizeof(char));     \
                          yylval.id[strlen(yylval.id)-1]='\0';           \
                          return(token); }
 
+#define FILTER10(token) if (0==commlevel) {                     \
+                         yylval.cchar=(char)atoi(yytext+2);     \
+                         return(token); }
+        
+#define FILTER11(token) if (0==commlevel) {                     \
+                              switch(yytext[2]){                \
+                              case 'n': yylval.cchar='\n';      \
+                                        break;                  \
+                              case 't': yylval.cchar='\t';      \
+                                        break;                  \
+                              }                                 \
+                         return(token); }
+        
 
 #define FILTER12(token)						\
  if (0==commlevel) {						\
-   if (compiler_phase==PH_setup) {					\
+   if (compiler_phase==PH_setup) {		     		\
      return(token);						\
    }								\
-   yylval.id=(char *)Malloc(sizeof(char)*(strlen(yytext)+1));	\
-   strcpy(yylval.id, yytext);					\
+   yylval.id=StringCopy(yytext);		      		\
    if (yylval.id[0]=='_') return(PRIVATEID);			\
    else return(ID);						\
  }
 
 
-#define FILTER13(token)						\
- if (0==commlevel) {						\
-   int i;							\
-   if (compiler_phase==PH_setup) {					\
-     yylval.id=(char *)Malloc(sizeof(char)*(strlen(yytext)+1));	\
-     strcpy(yylval.id, yytext);					\
-     return(token);						\
-   }								\
-   switch (yytext[0]) {						\
-   case '-':							\
-     for (i=strlen(yytext)-1; i>0; i--) unput(yytext[i]);		\
-     FILTER7(MINUS, prf_name_str[F_sub]);			\
-     break;							\
-   case '/':							\
-     for (i=strlen(yytext)-1; i>0; i--) unput(yytext[i]);		\
-     FILTER7(DIV, prf_name_str[F_div]);				\
-     break;							\
-   case '_':							\
-     FILTER2(PRIVATEID);					\
-     break;							\
-   default:							\
-     FILTER2(ID);						\
-   }								\
+#define FILTER13(token)                                         \
+ if (0==commlevel) {                                            \
+   int i;                                                       \
+   if (compiler_phase==PH_setup) {                              \
+     yylval.id=StringCopy(yytext);                              \
+     return(token);                                             \
+   }                                                            \
+   switch (yytext[0]) {                                         \
+   case '-':                                                    \
+     for (i=strlen(yytext)-1; i>0; i--) unput(yytext[i]);       \
+     FILTER(MINUS);                                             \
+     break;                                                     \
+   case '/':                                                    \
+     for (i=strlen(yytext)-1; i>0; i--) unput(yytext[i]);       \
+     FILTER(DIV);                                               \
+     break;                                                     \
+   case '_':                                                    \
+     FILTER2(PRIVATEID);                                        \
+     break;                                                     \
+   default:                                                     \
+     FILTER2(ID);                                               \
+   }                                                            \
  }
  
 
-#define FILTER14(token)						\
- if (0==commlevel) {						\
-   if (compiler_phase!=PH_setup) {				\
-     return(token);						\
-   }								\
-   yylval.id=(char *)Malloc(sizeof(char)*(strlen(yytext)+1));	\
-   strcpy(yylval.id, yytext);					\
-   return(ID);							\
+#define FILTER14(token)                         \
+ if (0==commlevel) {                            \
+   if (compiler_phase!=PH_setup) {              \
+     return(token);                             \
+   }                                            \
+   yylval.id=StringCopy(yytext);                \
+   return(ID);                                  \
  }
 
 
 
-#define FILTER15(token, name) 						\
- if (0==commlevel)  { 							\
-   if (compiler_phase==PH_setup) {					\
-     yylval.id=(char *)Malloc(sizeof(char) * (strlen(yytext)+1));	\
-     strcpy(yylval.id, yytext);						\
-     return(ID);							\
-   }									\
-   else {								\
-     yylval.id=(char *)Malloc(sizeof(char) * (strlen(name)+1));		\
-     strcpy(yylval.id, name);						\
-     return(token);							\
-   }									\
- }
+#define FILTER15(token)                         \
+ if (0==commlevel)  {                           \
+   if (compiler_phase==PH_setup) {              \
+     yylval.id=StringCopy(yytext);              \
+     return(ID);                                \
+   }                                            \
+   else {                                       \
+     return(token);                             \
+   }                                            \
+ } 
  
 
 extern int indent;
 extern int i;
-
+ 
 char * tmp;
 int linenum=1;
 int commlevel=0;
@@ -349,20 +337,20 @@ int start_token;
 "&"				{FILTER( AMPERS );}
 "."                             {FILTER( DOT);}
 
-"&&"				{FILTER7( AND,prf_name_str[F_and]);}
-"||"				{FILTER7( OR,prf_name_str[F_or] );}
-"=="				{FILTER7( EQ,prf_name_str[F_eq] );}
-"!="				{FILTER7( NEQ,prf_name_str[F_neq] );}
-"!"                             {FILTER7( NOT,prf_name_str[F_not] );}
-"<="				{FILTER7( LE,prf_name_str[F_le] );}
-"<"				{FILTER7( LT,prf_name_str[F_lt] );}
-">="				{FILTER7( GE,prf_name_str[F_ge] );}
-">"				{FILTER7( GT,prf_name_str[F_gt] );}
-"+"				{FILTER7( PLUS,prf_name_str[F_add] );}
-"-"				{FILTER7( MINUS,prf_name_str[F_sub] );}
-"/"				{FILTER7( DIV,prf_name_str[F_div] );}
-"*"				{FILTER7( MUL,prf_name_str[F_mul] );}
-"%"				{FILTER7( PRF_MOD,prf_name_str[F_div] );}
+"&&"				{FILTER( AND );}
+"||"				{FILTER( OR );}
+"=="				{FILTER( EQ );}
+"!="				{FILTER( NEQ );}
+"!"                             {FILTER( NOT );}
+"<="				{FILTER( LE );}
+"<"				{FILTER( LT );}
+">="				{FILTER( GE );}
+">"				{FILTER( GT );}
+"+"				{FILTER( PLUS );}
+"-"				{FILTER( MINUS );}
+"/"				{FILTER( DIV );}
+"*"				{FILTER( MUL );}
+"%"				{FILTER( PRF_MOD );}
 
 "++"				{FILTER( INC );}
 "--" 				{FILTER( DEC );}
@@ -373,20 +361,20 @@ int start_token;
 "/="				{FILTER( DIVON );}
 "%="				{FILTER( MODON );}
 
-"abs"				{FILTER7( ABS,prf_name_str[F_abs] );}
-"reshape"			{FILTER7( RESHAPE, prf_name_str[F_reshape] );}
-"shape"				{FILTER7( SHAPE,prf_name_str[F_shape] );}
-"take"				{FILTER7( TAKE,prf_name_str[F_take] );}
-"drop"				{FILTER7( DROP,prf_name_str[F_drop] );}
-"dim"				{FILTER7( DIM,prf_name_str[F_dim] );}
-"rotate"			{FILTER7( ROTATE,prf_name_str[F_rotate] );}
-"cat"                           {FILTER15( CAT,prf_name_str[F_cat] );}
-"psi"                           {FILTER7( PSI,prf_name_str[F_psi] );}
-"toi"                           {FILTER7( TOI,prf_name_str[F_toi] );}
-"tof"                           {FILTER7( TOF,prf_name_str[F_tof] );}
-"tod"                           {FILTER7( TOD,prf_name_str[F_tod] );}
-"min"                           {FILTER7( PRF_MIN,prf_name_str[F_min] );}
-"max"                           {FILTER7( PRF_MAX,prf_name_str[F_max] );}
+"abs"				{FILTER( ABS );}
+"reshape"			{FILTER( RESHAPE );}
+"shape"				{FILTER( SHAPE );}
+"take"				{FILTER( TAKE );}
+"drop"				{FILTER( DROP );}
+"dim"				{FILTER( DIM );}
+"rotate"			{FILTER( ROTATE );}
+"cat"                           {FILTER15( CAT );}
+"psi"                           {FILTER( PSI );}
+"toi"                           {FILTER( TOI );}
+"tof"                           {FILTER( TOF );}
+"tod"                           {FILTER( TOD );}
+"min"                           {FILTER( PRF_MIN );}
+"max"                           {FILTER( PRF_MAX );}
 "typedef"			{FILTER( TYPEDEF );}
 "classtype"			{FILTER( CLASSTYPE );}
 "objdef"		        {FILTER( OBJDEF );}
@@ -401,8 +389,8 @@ int start_token;
 "with" 	  	 	       	{FILTER( NWITH );}
 "step" 				{FILTER( STEP );}
 "width" 			{FILTER( WIDTH );}
-"genarray"			{FILTER7( GENARRAY,prf_name_str[F_genarray] );}
-"modarray"			{FILTER7( MODARRAY,prf_name_str[F_modarray] );}
+"genarray"			{FILTER( GENARRAY );}
+"modarray"			{FILTER( MODARRAY );}
 "fold"				{FILTER( FOLD );}
 "inline"			{FILTER( INLINE );}
 
@@ -412,7 +400,7 @@ int start_token;
 "Class"	                        {FILTER( CLASSIMP );}
 
 "import"			{FILTER( IMPORT );}
-"all"				{FILTER7( ALL, "all" );}
+"all"				{FILTER( ALL );}
 "implicit"			{FILTER( IMPLICIT );}
 "explicit"			{FILTER( EXPLICIT );}
 "types"				{FILTER( TYPES );}
