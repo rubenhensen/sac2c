@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.24  1995/06/21 13:10:02  asi
+ * Revision 1.25  1995/06/21 13:23:58  asi
+ * bug fix - same bug fixed for psi
+ *
+ * Revision 1.24  1995/06/21  13:10:02  asi
  * bug fix - ArrayPrf will check if it is a constant correctly
  *
  * Revision 1.23  1995/06/20  15:50:30  asi
@@ -1661,7 +1664,7 @@ ArrayPrf (node *arg_node, types *res_type, node *arg_info)
             int length, start, mult, i, j, arg_length;
             int vec_dim;
             int vec_shape[SHP_SEG_SIZE];
-            node *res_node, *old_arg_0;
+            node *res_node, *old_arg_0, *value;
 
             old_arg_0 = arg[0];
 
@@ -1669,15 +1672,17 @@ ArrayPrf (node *arg_node, types *res_type, node *arg_info)
              * Substitute shape-vector
              */
             if (N_id == arg[0]->nodetype) {
-                DEC_VAR (arg_info->mask[1], arg[0]->info.ids->node->varno);
-                arg[0] = DupTree (VAR (arg[0]->info.ids->node->varno), NULL);
-                used_sofar = arg_info->mask[1];
-                arg_info->mask[1] = GenMask (VARNO);
-
-                arg[0] = Trav (arg[0], arg_info);
-
-                FREE (arg_info->mask[1]);
-                arg_info->mask[1] = used_sofar;
+                value = VAR (arg[0]->info.ids->node->varno);
+                if (1 == IsConst (value)) {
+                    DEC_VAR (arg_info->mask[1], arg[0]->info.ids->node->varno);
+                    arg[0] = DupTree (value, NULL);
+                    used_sofar = arg_info->mask[1];
+                    arg_info->mask[1] = GenMask (VARNO);
+                    arg[0] = Trav (arg[0], arg_info);
+                    FREE (arg_info->mask[1]);
+                    arg_info->mask[1] = used_sofar;
+                } else
+                    break;
             } else {
                 arg[0] = Trav (arg[0], arg_info);
             }
