@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.10  2000/01/17 19:14:24  cg
+# Small bug fixed.
+#
 # Revision 1.9  2000/01/17 18:41:17  cg
 # make deps done
 #
@@ -47,7 +50,7 @@ OS        := SOLARIS_SPARC
 
 
 CC        := gcc
-CCFLAGS   := -ansi -Wall -D__EXTENSIONS__ -g 
+CCFLAGS   := -ansi -Wall -D__EXTENSIONS__ -g -DSAC_FOR_$(OS)
 
 MTFLAGS   := -DMT -D_REENTRANT -D_POSIX_C_SOURCE=199506L
 
