@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.95  2000/08/14 12:50:33  dkr
+ * PrintAST modified
+ *
  * Revision 2.94  2000/08/05 13:01:42  dkr
  * minor changes in PrintNgenerator
  *
