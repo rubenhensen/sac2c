@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.20  2002/10/24 13:10:22  ktr
+ * level of aggresiveness now controlled by flag -wls_aggressive
+ *
  * Revision 1.19  2002/10/23 10:19:29  ktr
  * ASSIGN_INDENT is now increased by the number of dimensions of the inner with loop.
  *
@@ -537,13 +540,13 @@ probePart (node *arg_node, node *arg_info)
                &&
 
                /* In non aggressive mode, the nesting must be perfect */
-               ((wls_aggressive == 2)
+               ((wls_aggressive)
                 || (BLOCK_INSTR (NPART_CBLOCK (arg_node)) == NPART_SSAASSIGN (arg_node)))
                &&
 
                /* In non aggressive mode, all the inner WLs must iterate over the same
                   dimensions */
-               ((wls_aggressive == 2)
+               ((wls_aggressive)
                 || (INFO_WLS_DIMS (arg_info)
                     == VARDEC_SHAPE (IDS_VARDEC (NWITH_VEC (NPART_LETEXPR (arg_node))),
                                      0))));
@@ -551,13 +554,13 @@ probePart (node *arg_node, node *arg_info)
         } else {
             INFO_WLS_POSSIBLE (arg_info) =
               /* In non aggressive mode, assignment of CEXPR must not be inside the WL */
-              (((wls_aggressive == 2)
+              (((wls_aggressive)
                 || (!isAssignInsideBlock (NPART_SSAASSIGN (arg_node),
                                           BLOCK_INSTR (NPART_CBLOCK (arg_node)))))
                &&
 
                /* In non aggressive mode, CBLOCK must be empty */
-               ((wls_aggressive == 2)
+               ((wls_aggressive)
                 || (NODE_TYPE (BLOCK_INSTR (NPART_CBLOCK (arg_node))) == N_empty)));
         }
     }
@@ -1323,9 +1326,7 @@ joinCodes (node *outercode, node *innercode, node *outerwithid, node *innerwithi
     newcode = DupTree (innercode);
     tmp_node = BLOCK_INSTR (NCODE_CBLOCK (newcode));
 
-    /* In aggressive mode, we might prepend some outer code.
-       The indentation of code is marked in ASSIGN_INDENT()
-       of the outer code's N_assign nodes */
+    /* In aggressive mode, we might prepend the old outer code. */
     BLOCK_INSTR (NCODE_CBLOCK (newcode))
       = DupTree (BLOCK_INSTR (NCODE_CBLOCK (outercode)));
 
@@ -1335,11 +1336,9 @@ joinCodes (node *outercode, node *innercode, node *outerwithid, node *innerwithi
         BLOCK_INSTR (NCODE_CBLOCK (newcode)) = tmp_node;
     else {
         while (ASSIGN_NEXT (ASSIGN_NEXT (tmp_node2)) != NULL) {
-            ASSIGN_INDENT (tmp_node2)++;
             tmp_node2 = ASSIGN_NEXT (tmp_node2);
         }
         if (NODE_TYPE (tmp_node) != N_empty) {
-            ASSIGN_INDENT (tmp_node2) += CountIds (NWITHID_IDS (innerwithid));
             ASSIGN_NEXT (tmp_node2) = tmp_node;
         } else
             ASSIGN_NEXT (tmp_node2) = NULL;
