@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.11  2004/08/26 17:23:56  skt
+ * changed inclusion of multithread.h into multithread_lib.h
+ *
  * Revision 1.10  2004/08/19 15:01:03  skt
  * rearranging algorithm improved
  *
@@ -64,7 +67,7 @@
 #include "traverse.h"
 #include "assignments_rearrange.h"
 #include "print.h"
-#include "multithread.h"
+#include "multithread_lib.h"
 
 /*
  * INFO structure
