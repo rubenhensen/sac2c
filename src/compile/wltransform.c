@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.21  1998/05/25 13:15:11  dkr
+ * ASSERTs about wrong arguments in wlcomp-pragmas are now ABORT-messages
+ *
  * Revision 1.20  1998/05/24 21:15:39  dkr
  * fixed a bug in ComputeIndexMinMax
  *
@@ -1307,6 +1310,12 @@ interne Darstellung im Syntaxbaum:
 #include <limits.h> /* INT_MAX */
 
 /*
+ * here we store the lineno of the current with-loop
+ *  (for creating error-messages ...)
+ */
+static int line;
+
+/*
  * these macros are used in 'Parts2Strides' to manage
  *   non-constant generator params
  */
@@ -2217,6 +2226,7 @@ SetSegs (node *pragma, node *cubes, int dims)
 {
     node *aps;
     node *segs;
+    char *fun_names;
 
     DBUG_ENTER ("SetSegs");
 
@@ -2224,9 +2234,9 @@ SetSegs (node *pragma, node *cubes, int dims)
      * create default configuration
      */
 #if 1 /* -> sac2c flag!?! */
-    segs = All (NULL, NULL, cubes, dims);
+    segs = All (NULL, NULL, cubes, dims, line);
 #else
-    segs = Cubes (NULL, NULL, cubes, dims);
+    segs = Cubes (NULL, NULL, cubes, dims, line);
 #endif
 
     /*
@@ -2238,13 +2248,22 @@ SetSegs (node *pragma, node *cubes, int dims)
 
 #define WLP(fun, str)                                                                    \
     if (strcmp (AP_NAME (EXPRS_EXPR (aps)), str) == 0) {                                 \
-        segs = fun (segs, AP_ARGS (EXPRS_EXPR (aps)), cubes, dims);                      \
+        segs = fun (segs, AP_ARGS (EXPRS_EXPR (aps)), cubes, dims, line);                \
     } else
-
 #include "wlpragma_funs.mac"
-            DBUG_ASSERT ((0), "wrong function name in wlcomp-pragma");
-
 #undef WLP
+            {
+                fun_names =
+#define WLP(fun, str) " "##str
+#include "wlpragma_funs.mac"
+#undef WLP
+                  ;
+
+                ABORT (line, ("Illegal function name in wlcomp-pragma found."
+                              " Currently supported functions are:"
+                              "%s",
+                              fun_names));
+            }
 
             aps = EXPRS_NEXT (aps);
         }
@@ -2543,16 +2562,23 @@ BlockStride (node *stride, long *bv)
              * contains bv an illegal value?
              *  -> abort compilation and produce an error-message
              */
-            DBUG_ASSERT ((bv[WLSTRIDE_DIM (curr_stride)] > 1),
-                         "blocking step <= 1\n"
-                         "please check the parameters of the wlcomp-pragma");
-            DBUG_ASSERT ((bv[WLSTRIDE_DIM (curr_stride)] >= WLSTRIDE_STEP (curr_stride)),
-                         "blocking step is greater than 1 and smaller than stride step"
-                         "please check the parameters of the wlcomp-pragma");
-            DBUG_ASSERT (((bv[WLSTRIDE_DIM (curr_stride)] % WLSTRIDE_STEP (curr_stride))
-                          == 0),
-                         "stride step is not a divisor of blocking step"
-                         "please check the parameters of the wlcomp-pragma");
+            if (bv[WLSTRIDE_DIM (curr_stride)] < 1) {
+                ABORT (line, ("Blocking step is not >= 1."
+                              " Please check parameters of functions in wlcomp-pragma"));
+            }
+            if (bv[WLSTRIDE_DIM (curr_stride)] == 1) {
+                ABORT (line, ("Blocking step 1 is allowed in first dimensions only."
+                              " Please check parameters of functions in wlcomp-pragma"));
+            }
+            if (bv[WLSTRIDE_DIM (curr_stride)] < WLSTRIDE_STEP (curr_stride)) {
+                ABORT (line,
+                       ("Blocking step is greater than 1 and smaller than stride step."
+                        " Please check parameters of functions in wlcomp-pragma"));
+            }
+            if ((bv[WLSTRIDE_DIM (curr_stride)] % WLSTRIDE_STEP (curr_stride)) != 0) {
+                ABORT (line, ("Stride step is not a divisor of blocking step."
+                              " Please check parameters of functions in wlcomp-pragma"));
+            }
 
             /* fit bounds of stride to blocking step */
             WLSTRIDE_BOUND1 (curr_stride) = 0;
@@ -2651,9 +2677,11 @@ BlockWL (node *stride, int dims, long *bv, int unroll)
             curr_stride = stride;
             while (curr_stride != NULL) {
 
-                DBUG_ASSERT ((bv[WLSTRIDE_DIM (curr_stride)] >= 1),
-                             "wrong bv value found");
-
+                if (bv[WLSTRIDE_DIM (curr_stride)] < 1) {
+                    ABORT (line,
+                           ("Blocking step is not >= 1."
+                            " Please check parameters of functions in wlcomp-pragma"));
+                }
                 if (bv[WLSTRIDE_DIM (curr_stride)] == 1) {
                     /*
                      * no blocking -> go to next dim
@@ -4380,6 +4408,12 @@ WLTRANwith (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("WLTRANwith");
 
+    /*
+     * store the lineno of the current with-loop
+     *  (for generation of error-messages)
+     */
+    line = NODE_LINE (arg_node);
+
     /* analyse 'break_specifier' */
     WL_break_after = WL_PH_norm;
     if (break_after == PH_wltrans) {
@@ -4584,21 +4618,21 @@ WLTRANwith (node *arg_node, node *arg_info)
                  * we want to stop after cube-building.
                  *  -> build one segment containing all cubes.
                  */
-                segs = All (NULL, NULL, cubes, dims);
+                segs = All (NULL, NULL, cubes, dims, line);
             }
         } else {
             /*
              * not all params are constant.
              *  -> build one segment containing all cubes.
              */
-            segs = All (NULL, NULL, cubes, dims);
+            segs = All (NULL, NULL, cubes, dims, line);
         }
     } else {
         /*
          * we want to stop after converting.
          *  -> build one segment containing the strides.
          */
-        segs = All (NULL, NULL, strides, dims);
+        segs = All (NULL, NULL, strides, dims, line);
     }
 
     NWITH2_SEGS (new_node) = segs;

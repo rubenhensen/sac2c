@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  1998/05/25 13:14:14  dkr
+ * ASSERTs about wrong arguments in wlcomp-pragmas are now ABORT-messages
+ *
  * Revision 1.11  1998/05/24 00:42:26  dkr
  * changed some assert-messages
  *
@@ -67,7 +70,8 @@
  *
  * function:
  *   node *IntersectStridesArray( node *strides,
- *                                node *aelems1, node *aelems2)
+ *                                node *aelems1, node *aelems2,
+ *                                int line)
  *
  * description:
  *   returns the intersection of the N_WLstride-chain 'strides' with
@@ -77,7 +81,7 @@
  ******************************************************************************/
 
 node *
-IntersectStridesArray (node *strides, node *aelems1, node *aelems2)
+IntersectStridesArray (node *strides, node *aelems1, node *aelems2, int line)
 {
     node *isect, *nextdim, *code, *new_grids, *grids;
     int bound1, bound2, step, width, offset, grid1_b1, grid1_b2, grid2_b1, grid2_b2;
@@ -88,11 +92,15 @@ IntersectStridesArray (node *strides, node *aelems1, node *aelems2)
     isect = NULL;
     if (strides != NULL) {
 
-        DBUG_ASSERT (((aelems1 != NULL) && (aelems2 != NULL)),
-                     "error in wlcomp-pragma:\n ConstSegs(): arg has wrong dim");
-        DBUG_ASSERT (((NODE_TYPE (EXPRS_EXPR (aelems1)) == N_num)
-                      && (NODE_TYPE (EXPRS_EXPR (aelems2)) == N_num)),
-                     "error in wlcomp-pragma:\n ConstSegs(): array element not an int");
+        if ((aelems1 == NULL) || (aelems2 == NULL)) {
+            ABORT (line, ("Illegal argument in wlcomp-pragma found; "
+                          "ConstSegs(): Argument has wrong dimension"));
+        }
+        if ((NODE_TYPE (EXPRS_EXPR (aelems1)) != N_num)
+            || (NODE_TYPE (EXPRS_EXPR (aelems2)) != N_num)) {
+            ABORT (line, ("Illegal argument in wlcomp-pragma found; "
+                          "ConstSegs(): Argument is not an 'int'-array"));
+        }
 
         /* compute outline of intersection in current dim */
         bound1 = MAX (WLSTRIDE_BOUND1 (strides), NUM_VAL (EXPRS_EXPR (aelems1)));
@@ -139,7 +147,7 @@ IntersectStridesArray (node *strides, node *aelems1, node *aelems2)
                         /* compute intersection of next dim */
                         nextdim = IntersectStridesArray (WLGRID_NEXTDIM (grids),
                                                          EXPRS_NEXT (aelems1),
-                                                         EXPRS_NEXT (aelems2));
+                                                         EXPRS_NEXT (aelems2), line);
                         if (nextdim == NULL) {
                             /* next dim is empty */
                             empty = 1;
@@ -183,10 +191,11 @@ IntersectStridesArray (node *strides, node *aelems1, node *aelems2)
 
         /* compute intersection of next stride */
         if (isect == NULL) {
-            isect = IntersectStridesArray (WLSTRIDE_NEXT (strides), aelems1, aelems2);
+            isect
+              = IntersectStridesArray (WLSTRIDE_NEXT (strides), aelems1, aelems2, line);
         } else {
             WLSTRIDE_NEXT (isect)
-              = IntersectStridesArray (WLSTRIDE_NEXT (strides), aelems1, aelems2);
+              = IntersectStridesArray (WLSTRIDE_NEXT (strides), aelems1, aelems2, line);
         }
     }
 
@@ -196,7 +205,7 @@ IntersectStridesArray (node *strides, node *aelems1, node *aelems2)
 /******************************************************************************
  *
  * function:
- *   node *Array2Bv( node *array, long *bv, int dims)
+ *   node *Array2Bv( node *array, long *bv, int dims, int line)
  *
  * description:
  *   converts an N_array node into a blocking vector (long *).
@@ -204,7 +213,7 @@ IntersectStridesArray (node *strides, node *aelems1, node *aelems2)
  ******************************************************************************/
 
 long *
-Array2Bv (node *array, long *bv, int dims)
+Array2Bv (node *array, long *bv, int dims, int line)
 {
     int d;
 
@@ -212,14 +221,21 @@ Array2Bv (node *array, long *bv, int dims)
 
     array = ARRAY_AELEMS (array);
     for (d = 0; d < dims; d++) {
-        DBUG_ASSERT ((array != NULL),
-                     "error in wlcomp-pragma:\n Bv(): bv-arg has wrong dim");
-        DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (array)) == N_num),
-                     "error in wlcomp-pragma:\n Bv(): bv-arg not an int-array");
+        if (array == NULL) {
+            ABORT (line, ("Illegal argument in wlcomp-pragma found; "
+                          "Bv(): Blocking vector has wrong dimension"));
+        }
+        if (NODE_TYPE (EXPRS_EXPR (array)) != N_num) {
+            ABORT (line, ("Illegal argument in wlcomp-pragma found; "
+                          "Bv(): Blocking vector is not an 'int'-array"));
+        }
         bv[d] = NUM_VAL (EXPRS_EXPR (array));
         array = EXPRS_NEXT (array);
     }
-    DBUG_ASSERT ((array == NULL), "error in wlcomp-pragma:\n Bv(): bv-arg has wrong dim");
+    if (array != NULL) {
+        ABORT (line, ("Illegal argument in wlcomp-pragma found; "
+                      "Bv(): Blocking vector has wrong dimension"));
+    }
 
     DBUG_RETURN (bv);
 }
@@ -271,7 +287,7 @@ CalcSV (node *stride, long *sv)
 /******************************************************************************
  *
  * function:
- *   node *All( node *segs, node *parms, node *cubes, int dims)
+ *   node *All( node *segs, node *parms, node *cubes, int dims, int line)
  *
  * description:
  *   choose the hole array as the only segment;
@@ -283,12 +299,14 @@ CalcSV (node *stride, long *sv)
  ******************************************************************************/
 
 node *
-All (node *segs, node *parms, node *cubes, int dims)
+All (node *segs, node *parms, node *cubes, int dims, int line)
 {
     DBUG_ENTER ("All");
 
-    DBUG_ASSERT ((parms == NULL),
-                 "error in wlcomp-pragma:\n All(): too many parms found");
+    if (parms != NULL) {
+        ABORT (line, ("Illegal argument in wlcomp-pragma found; "
+                      "All(): Parameters found"));
+    }
 
     if (segs != NULL) {
         segs = FreeTree (segs);
@@ -301,7 +319,7 @@ All (node *segs, node *parms, node *cubes, int dims)
         WLSEG_SV (segs) = NULL;
     }
 
-    segs = NoBlocking (segs, parms, cubes, dims);
+    segs = NoBlocking (segs, parms, cubes, dims, line);
 
     DBUG_RETURN (segs);
 }
@@ -309,7 +327,7 @@ All (node *segs, node *parms, node *cubes, int dims)
 /******************************************************************************
  *
  * function:
- *   node *Cubes( node *segs, node *parms, node *cubes, int dims)
+ *   node *Cubes( node *segs, node *parms, node *cubes, int dims, int line)
  *
  * description:
  *   choose every cube as a segment;
@@ -318,14 +336,16 @@ All (node *segs, node *parms, node *cubes, int dims)
  ******************************************************************************/
 
 node *
-Cubes (node *segs, node *parms, node *cubes, int dims)
+Cubes (node *segs, node *parms, node *cubes, int dims, int line)
 {
     node *new_seg, *last_seg;
 
     DBUG_ENTER ("Cubes");
 
-    DBUG_ASSERT ((parms == NULL),
-                 "error in wlcomp-pragma:\n Cubes(): too many parms found");
+    if (parms != NULL) {
+        ABORT (line, ("Illegal argument in wlcomp-pragma found; "
+                      "Cubes(): Parameters found"));
+    }
 
     if (segs != NULL) {
         segs = FreeTree (segs);
@@ -350,7 +370,7 @@ Cubes (node *segs, node *parms, node *cubes, int dims)
         cubes = WLSTRIDE_NEXT (cubes);
     }
 
-    segs = NoBlocking (segs, parms, cubes, dims);
+    segs = NoBlocking (segs, parms, cubes, dims, line);
 
     DBUG_RETURN (segs);
 }
@@ -358,7 +378,7 @@ Cubes (node *segs, node *parms, node *cubes, int dims)
 /******************************************************************************
  *
  * function:
- *   node *ConstSegs( node *segs, node *parms, node *cubes, int dims)
+ *   node *ConstSegs( node *segs, node *parms, node *cubes, int dims, int line)
  *
  * description:
  *   Defines a new set of segments in reliance on the given extra parameters
@@ -368,7 +388,7 @@ Cubes (node *segs, node *parms, node *cubes, int dims)
  ******************************************************************************/
 
 node *
-ConstSegs (node *segs, node *parms, node *cubes, int dims)
+ConstSegs (node *segs, node *parms, node *cubes, int dims, int line)
 {
     node *new_cubes, *new_seg, *last_seg;
 
@@ -379,15 +399,19 @@ ConstSegs (node *segs, node *parms, node *cubes, int dims)
     }
 
     while (parms != NULL) {
-        DBUG_ASSERT ((EXPRS_NEXT (parms) != NULL),
-                     "error in wlcomp-pragma:\n ConstSegs(): upper bound not found");
-        DBUG_ASSERT (((NODE_TYPE (EXPRS_EXPR (parms)) == N_array)
-                      && (NODE_TYPE (EXPRS_EXPR (EXPRS_NEXT (parms))) == N_array)),
-                     "error in wlcomp-pragma:\n ConstSegs(): argument is not an array");
+        if (EXPRS_NEXT (parms) == NULL) {
+            ABORT (line, ("Illegal argument in wlcomp-pragma found; "
+                          "ConstSegs(): Upper bound not found"));
+        }
+        if ((NODE_TYPE (EXPRS_EXPR (parms)) != N_array)
+            || (NODE_TYPE (EXPRS_EXPR (EXPRS_NEXT (parms))) != N_array)) {
+            ABORT (line, ("Illegal argument in wlcomp-pragma found; "
+                          "ConstSegs(): Argument is not an array"));
+        }
 
         new_cubes
           = IntersectStridesArray (cubes, ARRAY_AELEMS (EXPRS_EXPR (parms)),
-                                   ARRAY_AELEMS (EXPRS_EXPR (EXPRS_NEXT (parms))));
+                                   ARRAY_AELEMS (EXPRS_EXPR (EXPRS_NEXT (parms))), line);
 
         if (new_cubes != NULL) {
             new_seg = MakeWLseg (dims, new_cubes, NULL);
@@ -403,7 +427,7 @@ ConstSegs (node *segs, node *parms, node *cubes, int dims)
         parms = EXPRS_NEXT (EXPRS_NEXT (parms));
     }
 
-    segs = NoBlocking (segs, parms, cubes, dims);
+    segs = NoBlocking (segs, parms, cubes, dims, line);
 
     DBUG_RETURN (segs);
 }
@@ -411,7 +435,7 @@ ConstSegs (node *segs, node *parms, node *cubes, int dims)
 /******************************************************************************
  *
  * function:
- *   node *NoBlocking( node *segs, node *parms, node *cubes, int dims)
+ *   node *NoBlocking( node *segs, node *parms, node *cubes, int dims, int line)
  *
  * description:
  *   sets all blocking vectors and the unrolling-blocking vector to
@@ -420,15 +444,17 @@ ConstSegs (node *segs, node *parms, node *cubes, int dims)
  ******************************************************************************/
 
 node *
-NoBlocking (node *segs, node *parms, node *cubes, int dims)
+NoBlocking (node *segs, node *parms, node *cubes, int dims, int line)
 {
     int b, d;
     node *seg = segs;
 
     DBUG_ENTER ("NoBlocking");
 
-    DBUG_ASSERT ((parms == NULL),
-                 "error in wlcomp-pragma:\n NoBlocking(): too many parms found");
+    if (parms != NULL) {
+        ABORT (line, ("Illegal argument in wlcomp-pragma found; "
+                      "NoBlocking(): Parameters found"));
+    }
 
     while (seg != NULL) {
 
@@ -457,7 +483,7 @@ NoBlocking (node *segs, node *parms, node *cubes, int dims)
 /******************************************************************************
  *
  * function:
- *   node *Bv( node *segs, node *parms, node *cubes, int dims)
+ *   node *Bv( node *segs, node *parms, node *cubes, int dims, int line)
  *
  * description:
  *   Changes the blocking-vector for one blocking level (ubv respectively).
@@ -473,16 +499,21 @@ NoBlocking (node *segs, node *parms, node *cubes, int dims)
  ******************************************************************************/
 
 node *
-Bv (node *segs, node *parms, node *cubes, int dims)
+Bv (node *segs, node *parms, node *cubes, int dims, int line)
 {
     node *seg = segs;
     int level;
 
     DBUG_ENTER ("Bv");
 
-    DBUG_ASSERT ((parms != NULL), "error in wlcomp-pragma:\n Bv(): first parm not found");
-    DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (parms)) == N_num),
-                 "error in wlcomp-pragma:\n Bv(): first argument not an int");
+    if (parms == NULL) {
+        ABORT (line, ("Illegal argument in wlcomp-pragma found; "
+                      "Bv(): First parameter not found"));
+    }
+    if (NODE_TYPE (EXPRS_EXPR (parms)) != N_num) {
+        ABORT (line, ("Illegal argument in wlcomp-pragma found; "
+                      "Bv(): First argument is not an 'int'"));
+    }
 
     level = NUM_VAL (EXPRS_EXPR (parms));
     parms = EXPRS_NEXT (parms);
@@ -490,14 +521,17 @@ Bv (node *segs, node *parms, node *cubes, int dims)
     if ((parms != NULL) && (seg != NULL) && (level <= WLSEG_BLOCKS (seg))) {
 
         while ((seg != NULL) && (EXPRS_NEXT (parms) != NULL)) {
-            DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (parms)) == N_array),
-                         "error in wlcomp-pragma:\n Bv(): bv-arg not an array");
+            if (NODE_TYPE (EXPRS_EXPR (parms)) != N_array) {
+                ABORT (line, ("Illegal argument in wlcomp-pragma found; "
+                              "Bv(): Blocking-vector is not an array"));
+            }
 
             if (level < WLSEG_BLOCKS (seg)) {
                 WLSEG_BV (seg, level)
-                  = Array2Bv (EXPRS_EXPR (parms), WLSEG_BV (seg, level), dims);
+                  = Array2Bv (EXPRS_EXPR (parms), WLSEG_BV (seg, level), dims, line);
             } else {
-                WLSEG_UBV (seg) = Array2Bv (EXPRS_EXPR (parms), WLSEG_UBV (seg), dims);
+                WLSEG_UBV (seg)
+                  = Array2Bv (EXPRS_EXPR (parms), WLSEG_UBV (seg), dims, line);
             }
 
             seg = WLSTRIDE_NEXT (seg);
@@ -508,9 +542,10 @@ Bv (node *segs, node *parms, node *cubes, int dims)
 
             if (level < WLSEG_BLOCKS (seg)) {
                 WLSEG_BV (seg, level)
-                  = Array2Bv (EXPRS_EXPR (parms), WLSEG_BV (seg, level), dims);
+                  = Array2Bv (EXPRS_EXPR (parms), WLSEG_BV (seg, level), dims, line);
             } else {
-                WLSEG_UBV (seg) = Array2Bv (EXPRS_EXPR (parms), WLSEG_UBV (seg), dims);
+                WLSEG_UBV (seg)
+                  = Array2Bv (EXPRS_EXPR (parms), WLSEG_UBV (seg), dims, line);
             }
 
             seg = WLSTRIDE_NEXT (seg);
@@ -523,7 +558,7 @@ Bv (node *segs, node *parms, node *cubes, int dims)
 /******************************************************************************
  *
  * function:
- *   node *BvL0( node *segs, node *parms, node *cubes, int dims)
+ *   node *BvL0( node *segs, node *parms, node *cubes, int dims, int line)
  *
  * description:
  *   uses 'Bv' to change the blocking-vectors in level 0.
@@ -531,12 +566,12 @@ Bv (node *segs, node *parms, node *cubes, int dims)
  ******************************************************************************/
 
 node *
-BvL0 (node *segs, node *parms, node *cubes, int dims)
+BvL0 (node *segs, node *parms, node *cubes, int dims, int line)
 {
     DBUG_ENTER ("BvL0");
 
     parms = MakeExprs (MakeNum (0), parms);
-    segs = Bv (segs, parms, cubes, dims);
+    segs = Bv (segs, parms, cubes, dims, line);
     parms = FreeNode (parms);
 
     DBUG_RETURN (segs);
@@ -545,7 +580,7 @@ BvL0 (node *segs, node *parms, node *cubes, int dims)
 /******************************************************************************
  *
  * function:
- *   node *BvL1( node *segs, node *parms, node *cubes, int dims)
+ *   node *BvL1( node *segs, node *parms, node *cubes, int dims, int line)
  *
  * description:
  *   uses 'Bv' to change the blocking-vectors in level 1.
@@ -553,12 +588,12 @@ BvL0 (node *segs, node *parms, node *cubes, int dims)
  ******************************************************************************/
 
 node *
-BvL1 (node *segs, node *parms, node *cubes, int dims)
+BvL1 (node *segs, node *parms, node *cubes, int dims, int line)
 {
     DBUG_ENTER ("BvL1");
 
     parms = MakeExprs (MakeNum (1), parms);
-    segs = Bv (segs, parms, cubes, dims);
+    segs = Bv (segs, parms, cubes, dims, line);
     parms = FreeNode (parms);
 
     DBUG_RETURN (segs);
@@ -567,7 +602,7 @@ BvL1 (node *segs, node *parms, node *cubes, int dims)
 /******************************************************************************
  *
  * function:
- *   node *BvL2( node *segs, node *parms, node *cubes, int dims)
+ *   node *BvL2( node *segs, node *parms, node *cubes, int dims, int line)
  *
  * description:
  *   uses 'Bv' to change the blocking-vectors in level 2.
@@ -575,12 +610,12 @@ BvL1 (node *segs, node *parms, node *cubes, int dims)
  ******************************************************************************/
 
 node *
-BvL2 (node *segs, node *parms, node *cubes, int dims)
+BvL2 (node *segs, node *parms, node *cubes, int dims, int line)
 {
     DBUG_ENTER ("BvL2");
 
     parms = MakeExprs (MakeNum (2), parms);
-    segs = Bv (segs, parms, cubes, dims);
+    segs = Bv (segs, parms, cubes, dims, line);
     parms = FreeNode (parms);
 
     DBUG_RETURN (segs);
@@ -589,7 +624,7 @@ BvL2 (node *segs, node *parms, node *cubes, int dims)
 /******************************************************************************
  *
  * function:
- *   node *Ubv( node *segs, node *parms, node *cubes, int dims)
+ *   node *Ubv( node *segs, node *parms, node *cubes, int dims, int line)
  *
  * description:
  *   uses 'Bv' to change the unrolling-blocking-vectors.
@@ -597,13 +632,13 @@ BvL2 (node *segs, node *parms, node *cubes, int dims)
  ******************************************************************************/
 
 node *
-Ubv (node *segs, node *parms, node *cubes, int dims)
+Ubv (node *segs, node *parms, node *cubes, int dims, int line)
 {
     DBUG_ENTER ("Ubv");
 
     if (segs != NULL) {
         parms = MakeExprs (MakeNum (WLSEG_BLOCKS (segs)), parms);
-        segs = Bv (segs, parms, cubes, dims);
+        segs = Bv (segs, parms, cubes, dims, line);
         parms = FreeNode (parms);
     }
 
