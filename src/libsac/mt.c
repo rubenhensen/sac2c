@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2001/05/21 12:41:17  ben
+ * SAC_MT_Setup modified for initilization of SAC_MT_TASK_LOCKS depending on
+ * SAC_MT_SET_NUM_SCHEDULERS
+ *
  * Revision 3.7  2001/04/19 07:54:56  dkr
  * no changes done
  *
@@ -356,8 +360,8 @@ SAC_MT_SetupInitial (int argc, char *argv[], unsigned int num_threads,
 /******************************************************************************
  *
  * function:
- *   void SAC_MT_Setup( int cache_line_max, int barrier_offset)
- *   void SAC_MT_TR_Setup( int cache_line_max, int barrier_offset)
+ *   void SAC_MT_Setup( int cache_line_max, int barrier_offset,int num_schedulers)
+ *   void SAC_MT_TR_Setup( int cache_line_max, int barrier_offset,int num_schedulers)
  *
  * description:
  *
@@ -374,13 +378,13 @@ SAC_MT_SetupInitial (int argc, char *argv[], unsigned int num_threads,
 
 #ifdef TRACE
 void
-SAC_MT_TR_Setup (int cache_line_max, int barrier_offset)
+SAC_MT_TR_Setup (int cache_line_max, int barrier_offset, int num_schedulers)
 #else
 void
-SAC_MT_Setup (int cache_line_max, int barrier_offset)
+SAC_MT_Setup (int cache_line_max, int barrier_offset, int num_schedulers)
 #endif
 {
-    int i;
+    int i, n;
 
     SAC_TR_PRINT (("Aligning synchronization barrier data structure "
                    "to data cache specification."));
@@ -397,10 +401,10 @@ SAC_MT_Setup (int cache_line_max, int barrier_offset)
 
     SAC_TR_PRINT (("Initialzing Tasklocks."));
 
-    for (i = 0; i < SAC_MT_threads + 1; i++) {
-        pthread_mutex_init (&SAC_MT_TASKLOCK (i), NULL);
-        SAC_MT_TASK (i) = 0;
-    }
+    for (n = 0; n < num_schedulers; n++)
+        for (i = 0; i < SAC_MT_threads; i++) {
+            pthread_mutex_init (&(SAC_MT_TASKLOCK (n, i, num_schedulers)), NULL);
+        }
 
     SAC_TR_PRINT (("Computing thread class of master thread."));
 
