@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.70  2003/04/20 21:19:15  dkr
+ * PREC2ap renamed into PREC2apORprf
+ * some prf args are flattened as well now
+ *
  * Revision 3.69  2003/04/15 12:29:17  dkr
  * bug in MakeMergeAssigns() fixed:
  * assignments in INFO_PREC2_PRE_ASSIGNS are in correct order now
@@ -214,6 +218,18 @@
 #include "scheduling.h"
 #include "compile.h"
 #include "precompile.h"
+
+/*
+ * access macros for 'arg_info'
+ */
+#define INFO_PREC_FUNDEF(n) (n->node[0])
+#define INFO_PREC1_OBJINITFUNDEF(n) (n->node[1])
+#define INFO_PREC1_MODUL(n) (n->node[2])
+#define INFO_PREC2_PREASSIGNS(n) (n->node[1])
+#define INFO_PREC2_POSTASSIGNS(n) (n->node[2])
+#define INFO_PREC3_LET(n) (n->node[1])
+#define INFO_PREC3_LASTASSIGN(n) (n->node[2])
+#define INFO_PREC3_CEXPR(n) (n->node[3])
 
 #ifdef TAGGED_ARRAYS
 
@@ -1641,8 +1657,8 @@ PREC2fundef (node *arg_node, node *arg_info)
          * all FUNDEF_ARGTABs are build now
          *  -> traverse body
          */
-        INFO_PREC2_POST_ASSIGNS (arg_info) = NULL;
-        INFO_PREC2_PRE_ASSIGNS (arg_info) = NULL;
+        INFO_PREC2_POSTASSIGNS (arg_info) = NULL;
+        INFO_PREC2_PREASSIGNS (arg_info) = NULL;
         if (FUNDEF_BODY (arg_node) != NULL) {
             FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
         }
@@ -1662,7 +1678,7 @@ PREC2fundef (node *arg_node, node *arg_info)
  *   node *PREC2assign( node *arg_node, node *arg_info)
  *
  * Description:
- *   Inserts the assignments found in INFO_PREC2_PRE/POST_ASSIGNS into the AST.
+ *   Inserts the assignments found in INFO_PREC2_PRE/POSTASSIGNS into the AST.
  *
  ******************************************************************************/
 
@@ -1677,14 +1693,14 @@ PREC2assign (node *arg_node, node *arg_info)
 
     ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
 
-    if (INFO_PREC2_POST_ASSIGNS (arg_info) != NULL) {
+    if (INFO_PREC2_POSTASSIGNS (arg_info) != NULL) {
         ASSIGN_NEXT (arg_node)
-          = AppendAssign (INFO_PREC2_POST_ASSIGNS (arg_info), ASSIGN_NEXT (arg_node));
-        INFO_PREC2_POST_ASSIGNS (arg_info) = NULL;
+          = AppendAssign (INFO_PREC2_POSTASSIGNS (arg_info), ASSIGN_NEXT (arg_node));
+        INFO_PREC2_POSTASSIGNS (arg_info) = NULL;
     }
-    if (INFO_PREC2_PRE_ASSIGNS (arg_info) != NULL) {
-        arg_node = AppendAssign (INFO_PREC2_PRE_ASSIGNS (arg_info), arg_node);
-        INFO_PREC2_PRE_ASSIGNS (arg_info) = NULL;
+    if (INFO_PREC2_PREASSIGNS (arg_info) != NULL) {
+        arg_node = AppendAssign (INFO_PREC2_PREASSIGNS (arg_info), arg_node);
+        INFO_PREC2_PREASSIGNS (arg_info) = NULL;
     }
 
     DBUG_RETURN (arg_node);
@@ -1706,8 +1722,8 @@ MakeMergeAssigns (argtab_t *argtab, node *arg_info)
 {
     node *expr;
     int i;
-    node *pre_assigns = INFO_PREC2_PRE_ASSIGNS (arg_info);
-    node *post_assigns = INFO_PREC2_POST_ASSIGNS (arg_info);
+    node *pre_assigns = INFO_PREC2_PREASSIGNS (arg_info);
+    node *post_assigns = INFO_PREC2_POSTASSIGNS (arg_info);
 
     DBUG_ENTER ("MakeMergeAssigns");
 
@@ -1787,8 +1803,8 @@ MakeMergeAssigns (argtab_t *argtab, node *arg_info)
         }
     }
 
-    INFO_PREC2_PRE_ASSIGNS (arg_info) = pre_assigns;
-    INFO_PREC2_POST_ASSIGNS (arg_info) = post_assigns;
+    INFO_PREC2_PREASSIGNS (arg_info) = pre_assigns;
+    INFO_PREC2_POSTASSIGNS (arg_info) = post_assigns;
 
     DBUG_RETURN (arg_info);
 }
@@ -1866,7 +1882,7 @@ PREC2let (node *arg_node, node *arg_info)
                                          nt_shape_string[actual_cls],
                                          nt_shape_string[formal_cls]));
                     LiftIds (ap_ids, INFO_PREC_FUNDEF (arg_info), rettypes,
-                             &(INFO_PREC2_POST_ASSIGNS (arg_info)));
+                             &(INFO_PREC2_POSTASSIGNS (arg_info)));
                 }
             }
 #endif /* TAGGED_ARRAYS */
@@ -1910,7 +1926,7 @@ PREC2let (node *arg_node, node *arg_info)
                                          nt_shape_string[formal_cls]));
                     EXPRS_EXPR (ap_exprs)
                       = LiftArg (ap_id, INFO_PREC_FUNDEF (arg_info), ARG_TYPE (args),
-                                 TRUE, &(INFO_PREC2_PRE_ASSIGNS (arg_info)));
+                                 TRUE, &(INFO_PREC2_PREASSIGNS (arg_info)));
                 }
             }
 #endif /* TAGGED_ARRAYS */
@@ -1938,7 +1954,7 @@ PREC2let (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *PREC2ap( node *arg_node, node *arg_info)
+ *   node *PREC2apORprf( node *arg_node, node *arg_info)
  *
  * Description:
  *
@@ -1946,52 +1962,56 @@ PREC2let (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PREC2ap (node *arg_node, node *arg_info)
+PREC2apORprf (node *arg_node, node *arg_info)
 {
 #ifdef TAGGED_ARRAYS
     node *args, *arg;
 #endif /* TAGGED_ARRAYS */
 
-    DBUG_ENTER ("PREC2ap");
+    DBUG_ENTER ("PREC2apORprf");
 
-    if (AP_ARGS (arg_node) != NULL) {
-        AP_ARGS (arg_node) = Trav (AP_ARGS (arg_node), arg_info);
+    if (AP_OR_PRF_ARGS (arg_node) != NULL) {
+        L_AP_OR_PRF_ARGS (arg_node, Trav (AP_OR_PRF_ARGS (arg_node), arg_info));
     }
 
 #ifdef TAGGED_ARRAYS
-    args = AP_ARGS (arg_node);
-    while (args != NULL) {
-        arg = EXPRS_EXPR (args);
-        if (NODE_TYPE (arg) != N_id) {
-            types *type;
+    if ((NODE_TYPE (arg_node) == N_ap)
+        || ((NODE_TYPE (arg_node) == N_prf)
+            && ((PRF_PRF (arg_node) == F_dim) || (PRF_PRF (arg_node) == F_shape)))) {
+        args = AP_OR_PRF_ARGS (arg_node);
+        while (args != NULL) {
+            arg = EXPRS_EXPR (args);
+            if (NODE_TYPE (arg) != N_id) {
+                types *type;
 
-            switch (NODE_TYPE (arg)) {
-            case N_num:
-                type = MakeTypes1 (T_int);
-                break;
-            case N_float:
-                type = MakeTypes1 (T_float);
-                break;
-            case N_double:
-                type = MakeTypes1 (T_double);
-                break;
-            case N_bool:
-                type = MakeTypes1 (T_bool);
-                break;
-            case N_char:
-                type = MakeTypes1 (T_char);
-                break;
-            default:
-                DBUG_ASSERT ((0), "illegal node type found!");
-                type = NULL;
-                break;
+                switch (NODE_TYPE (arg)) {
+                case N_num:
+                    type = MakeTypes1 (T_int);
+                    break;
+                case N_float:
+                    type = MakeTypes1 (T_float);
+                    break;
+                case N_double:
+                    type = MakeTypes1 (T_double);
+                    break;
+                case N_bool:
+                    type = MakeTypes1 (T_bool);
+                    break;
+                case N_char:
+                    type = MakeTypes1 (T_char);
+                    break;
+                default:
+                    DBUG_ASSERT ((0), "illegal node type found!");
+                    type = NULL;
+                    break;
+                }
+
+                EXPRS_EXPR (args) = LiftArg (arg, INFO_PREC_FUNDEF (arg_info), type, TRUE,
+                                             &(INFO_PREC2_PREASSIGNS (arg_info)));
             }
 
-            EXPRS_EXPR (args) = LiftArg (arg, INFO_PREC_FUNDEF (arg_info), type, TRUE,
-                                         &(INFO_PREC2_PRE_ASSIGNS (arg_info)));
+            args = EXPRS_NEXT (args);
         }
-
-        args = EXPRS_NEXT (args);
     }
 #endif /* TAGGED_ARRAYS */
 
