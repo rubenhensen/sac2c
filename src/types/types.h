@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2004/11/23 15:52:58  cg
+ * *** empty log message ***
+ *
  * Revision 1.5  2004/11/23 15:07:30  cg
  * Macro renamed.
  *
@@ -332,7 +335,7 @@ typedef struct DEPS {
 
 typedef struct SHPSEG {
     int shp[SHP_SEG_SIZE];
-    struct shpseg *next;
+    struct SHPSEG *next;
 } shpseg;
 
 typedef struct ACCESS_T {
