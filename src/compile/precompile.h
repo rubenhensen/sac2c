@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.4  1995/12/18 16:31:38  cg
+ * Revision 1.5  1997/04/30 11:55:34  cg
+ * new function PRECassign added
+ *
+ * Revision 1.4  1995/12/18  16:31:38  cg
  * declaration of PRECexprs removed
  *
  * Revision 1.3  1995/12/04  17:00:04  cg
@@ -30,6 +33,7 @@ extern node *PRECfundef (node *arg_node, node *arg_info);
 extern node *PRECarg (node *arg_node, node *arg_info);
 extern node *PREClet (node *arg_node, node *arg_info);
 extern node *PRECap (node *arg_node, node *arg_info);
+extern node *PRECassign (node *arg_node, node *arg_info);
 extern node *PRECreturn (node *arg_node, node *arg_info);
 extern node *PRECid (node *arg_node, node *arg_info);
 extern node *PRECvardec (node *arg_node, node *arg_info);
