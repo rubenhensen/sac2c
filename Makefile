@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.30  2001/05/14 15:59:18  nmw
+# SSAWLT.o and SSAWithloopFOlding.o added
+#
 # Revision 3.29  2001/05/11 14:42:36  cg
 # Added linking of new file icm2c_sched.o
 #
@@ -246,6 +249,7 @@ PSIOPT= src/psi-opt/index.o src/psi-opt/ArrayElimination.o \
 	src/psi-opt/wl_access_analyze.o src/psi-opt/tile_size_inference.o \
 	src/psi-opt/WithloopFolding.o src/psi-opt/WLT.o src/psi-opt/WLI.o \
 	src/psi-opt/WLF.o \
+        src/psi-opt/SSAWithloopFolding.o src/psi-opt/SSAWLT.o \
 	src/psi-opt/pad.o src/psi-opt/pad_collect.o src/psi-opt/pad_infer.o \
 	src/psi-opt/pad_transform.o src/psi-opt/pad_info.o
 MODULES= src/modules/filemgr.o src/modules/import.o src/modules/writesib.o  \

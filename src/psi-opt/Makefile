@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.10  2001/05/14 15:58:50  nmw
+# SSAWLT.o and SSAWithloopFOlding.o added
+#
 # Revision 3.9  2001/04/26 21:09:48  dkr
 # make deps done
 #
@@ -103,7 +106,7 @@ CFLAGS    := -D__EXTENSIONS__
 INCS=-I../global -I../../inc -I../tree -I../compile -I../typecheck -I../modules \
      -I../print -I../optimize -I../constants
 all: index.o ArrayElimination.o wl_access_analyze.o tile_size_inference.o \
-     WithloopFolding.o WLT.o WLI.o WLF.o \
+     WithloopFolding.o WLT.o WLI.o WLF.o SSAWithloopFolding.o SSAWLT.o \
      pad.o pad_info.o pad_collect.o pad_infer.o pad_transform.o
 
 
