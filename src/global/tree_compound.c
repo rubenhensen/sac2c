@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.45  1999/02/09 14:47:07  dkr
+ * removed unused var in NodeListFind()
+ *
  * Revision 1.44  1999/02/06 12:49:59  srs
  * inserted the following functions
  * NodeListAppend()
@@ -945,8 +948,6 @@ NodeListFree (nodelist *nl, int free_attrib)
 nodelist *
 NodeListFind (nodelist *nl, node *node)
 {
-    nodelist *tmpnl;
-
     while (nl && NODELIST_NODE (nl) != node)
         nl = NODELIST_NEXT (nl);
 
