@@ -2,6 +2,12 @@
 /*
  *
  * $Log$
+ * Revision 1.23  2005/03/10 09:41:09  cg
+ * Removed support for -lac2fun and -fun2lac
+ * Compiler phase names are now static in phase.c
+ * Break specifiers are no longer held in static buffers
+ * puresacfilename is preset to stdin.
+ *
  * Revision 1.22  2005/02/16 15:16:05  mwe
  * bug fixed
  *
@@ -139,7 +145,7 @@ GLOBAL (char *, sacfilename, NULL)
  * name of file to be compiled
  */
 
-GLOBAL (char *, puresacfilename, NULL)
+GLOBAL (char *, puresacfilename, "stdin")
 /*
  * sacfilename without path specification
  */
@@ -518,7 +524,7 @@ GLOBAL (int, break_cycle_specifier, -1)
  * a particular (optimization) loop.
  */
 
-GLOBAL (char *, break_specifier, (char *)ILIBmalloc (MAX_BREAK_SPECIFIER))
+GLOBAL (char *, break_specifier, "")
 /*
  * Additional break specifier to allow breaking within a particular
  * compiler phase at any position.
@@ -578,7 +584,12 @@ GLOBAL (int, verbose_level, 3)
  * Verbosity of compile time output
  */
 
-GLOBAL (compiler_phase_t, compiler_phase, PH_setup)
+GLOBAL (compiler_phase_t, compiler_phase, PH_initial)
+/*
+ * Counter for compilation phases
+ */
+
+GLOBAL (compiler_subphase_t, compiler_subphase, SUBPH_initial)
 /*
  * Counter for compilation phases
  */
@@ -613,11 +624,6 @@ GLOBAL (char *, filename, NULL)
  * Current file name
  */
 
-GLOBAL (const char **, compiler_phase_name, compiler_phase_name_init)
-/*
- * Names of compiler phases
- */
-
 /*
  * DBUG options
  */
@@ -632,20 +638,6 @@ GLOBAL (char *, my_dbug_str, NULL)
 GLOBAL (unsigned int, current_allocated_mem, 0)
 GLOBAL (unsigned int, max_allocated_mem, 0)
 #endif
-
-/*
- * lac2fun, fun2lac conversion
- */
-
-GLOBAL (bool *, do_lac2fun, do_lac2fun_init)
-/*
- * do_lac2fun[i] > 0: do lac2fun conversion before phase i
- */
-
-GLOBAL (bool *, do_fun2lac, do_fun2lac_init)
-/*
- * do_fun2lac[i] > 0: do fun2lac conversion after phase i
- */
 
 /*
  * for arg tags
