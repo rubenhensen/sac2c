@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.5  2004/11/29 15:04:51  sah
+ * fixed-a-bug(tm)
+ *
  * Revision 1.4  2004/11/29 14:43:20  sah
  * bugfixes
  *
@@ -472,7 +475,7 @@ FPCret (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("FPCret");
 
-    FUNDEF_ARGTAB (arg_node)
+    INFO_FPC_ARGTAB (arg_info)
       = InsertIntoOut (INFO_FPC_ARGTAB (arg_info), INFO_FPC_FUNDEF (arg_info), arg_node);
 
     arg_node = TRAVcont (arg_node, arg_info);
@@ -495,7 +498,7 @@ FPCarg (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("FPCret");
 
-    FUNDEF_ARGTAB (arg_node)
+    INFO_FPC_ARGTAB (arg_info)
       = InsertIntoIn (INFO_FPC_ARGTAB (arg_info), INFO_FPC_FUNDEF (arg_info), arg_node);
 
     arg_node = TRAVcont (arg_node, arg_info);
