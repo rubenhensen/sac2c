@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2001/04/12 12:18:37  sbs
+ * two further volatiles added...
+ *
  * Revision 3.5  2001/04/12 10:15:03  sbs
  * volatile declarations have to be added to external decls as well!!!!!!
  * otherwise new gcc version on bunasera fails 8-(((((
@@ -182,7 +185,7 @@ volatile unsigned int (*SAC_MT_spmd_function) (const unsigned int, const unsigne
 static void
 ThreadControl (void *arg)
 {
-    unsigned int worker_flag = 0;
+    volatile unsigned int worker_flag = 0; /* This volatile IS essential!!! */
     unsigned int i;
     unsigned int my_worker_class = ((unsigned long int)arg) >> 17;
     const unsigned int my_thread_id = ((unsigned long int)arg) & 0xFFFF;
@@ -249,7 +252,7 @@ ThreadControl (void *arg)
 static void
 ThreadControlInitialWorker (void *arg)
 {
-    unsigned int worker_flag = 0;
+    volatile unsigned int worker_flag = 0; /* This volatile is essential!! */
     unsigned int i;
     pthread_t tmp;
     const unsigned int my_thread_id = 1;
