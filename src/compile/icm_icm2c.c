@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.15  2002/09/11 23:08:50  dkr
+ * prf_string replaced by prf_symbol
+ *
  * Revision 3.14  2002/08/06 08:57:29  dkr
  * cc warnings eliminated
  *
@@ -187,7 +190,7 @@ node *GetNextPrf( char **ret, node *exprs)
   DBUG_ASSERT( (cnt == 2), "icm-arg N_prf: only infix notation implemented!");
 
   GetNextVarAny( &v, &len, cnt, PRF_ARGS( expr));
-  len += strlen( prf_string[ PRF_PRF( expr)]);
+  len += strlen( prf_symbol[ PRF_PRF( expr)]);
   len += 5;
 
   (*ret) = (char *) Malloc( len * sizeof( char));
