@@ -4,6 +4,9 @@
 /*
  *
  * $Log$
+ * Revision 3.63  2002/09/06 12:43:51  sah
+ * rules for SetWL modified.
+ *
  * Revision 3.62  2002/09/06 12:19:27  sah
  * now N_setwl nodes are generated properly.
  *
@@ -1230,10 +1233,10 @@ expr: fun_id                      { $$ = MakeIdFromIds( $1); }
       { $$ = MakeCast( $5, $3);
       }
     | BRACE_L id ARROW expr BRACE_R
-      { $$ = MakeSetWL($2, $4);
+      { $$ = MakeSetWL(MakeId($2, NULL, ST_regular), $4);
       }
-    | BRACE_L expr_ar ARROW expr BRACE_R
-      { $$ = MakeSetWL($2, $4);
+    | BRACE_L BRACKET_L exprs BRACKET_R ARROW expr BRACE_R
+      { $$ = MakeSetWL($3, $6);
       }
     | wlcomp_pragma_local
       NWITH { $<cint>$ = linenum; } BRACKET_L generator BRACKET_R
