@@ -65,7 +65,10 @@ STDLIB_LIBPATH   :=  "$SACBASE/stdlib/modules/structures/lib:"
                      "$SACBASE/stdlib/world/x-window/lib:"
                      "$SACBASE/stdlib/hidden/lib"
  
-SYSTEM_LIBPATH   :=  "/usr/ccs/bin:"
+SYSTEM_LIBPATH   :=  ""
+
+/*
+SYSTEM_LIBPATH   :=  "/usr/ccs/bin:" (sun)
                      "/usr/ccs/lib:"
                      "/opt/gnu/lib:"
                      "/lib:"
@@ -74,11 +77,14 @@ SYSTEM_LIBPATH   :=  "/usr/ccs/bin:"
 
 SYSTEM_LIBPATH   :=  "/usr/lib:/lib:/usr/local/lib:"   (linux,alpha,mac)
                      "/home/sac/lib/efence"
+*/
 
+TMPDIR           :=  "/tmp"
 
-TMPDIR           :=  "/var/tmp"
+/*
+TMPDIR           :=  "/var/tmp" (sun)
 TMPDIR           :=  "/tmp" (linux,alpha,mac)
-
+*/
 CACHE1_SIZE      :=  0
 CACHE1_LINE      :=  0
 CACHE1_ASSOC     :=  0
