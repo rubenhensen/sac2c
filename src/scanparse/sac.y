@@ -3,7 +3,11 @@
 /*
  *
  * $Log$
- * Revision 1.109  1996/01/25 18:45:08  cg
+ * Revision 1.110  1996/01/26 15:29:57  cg
+ * prefix 'class' introduced to functions to mark generic class conversion
+ * functions
+ *
+ * Revision 1.109  1996/01/25  18:45:08  cg
  * added new class header containing definition of class type
  *
  * Revision 1.108  1996/01/23  09:57:03  cg
@@ -464,7 +468,7 @@ static file_type file_kind = F_prog;
 
 %type <prf> foldop
 %type <nodetype> modclass
-%type <cint> evextern, sibheader, evinline
+%type <cint> evextern, sibheader, evmarker
 %type <ids> ids, modnames, modname
 %type <id> fun_name, prf_name, sibparam, id
 %type <nums> nums
@@ -2813,24 +2817,44 @@ sibfuns: sibfun sibfuns
             }
        ;
 
-sibfun: evinline varreturntypes fun_name 
+sibfun: evmarker varreturntypes fun_name 
         BRACKET_L sibarglist BRACKET_R sibfunbody sibpragmas
           {
             $$=MakeFundef($3, NULL, $2, $5, $7, NULL);
-            FUNDEF_STATUS($$)=ST_imported;
-            FUNDEF_INLINE($$)=$1;
+            switch ($1)
+            {
+            case 0:
+              FUNDEF_STATUS($$)=ST_imported;
+              FUNDEF_INLINE($$)=0;
+            case 1:
+              FUNDEF_STATUS($$)=ST_imported;
+              FUNDEF_INLINE($$)=1;
+            case 2:
+              FUNDEF_STATUS($$)=ST_classfun;
+              FUNDEF_INLINE($$)=0;
+            }
             FUNDEF_PRAGMA($$)=$8;
 
            DBUG_PRINT("GENSIB",("%s"P_FORMAT"SibFun %s",
                                mdb_nodetype[$$->nodetype],$$,
                                ItemName($$)));
           }
-      | evinline varreturntypes id COLON fun_name 
+      | evmarker varreturntypes id COLON fun_name 
         BRACKET_L sibarglist BRACKET_R sibfunbody sibpragmas
           {
             $$=MakeFundef($5, $3, $2, $7, $9, NULL);
-            FUNDEF_STATUS($$)=ST_imported;
-            FUNDEF_INLINE($$)=$1;
+            switch ($1)
+            {
+            case 0:
+              FUNDEF_STATUS($$)=ST_imported;
+              FUNDEF_INLINE($$)=0;
+            case 1:
+              FUNDEF_STATUS($$)=ST_imported;
+              FUNDEF_INLINE($$)=1;
+            case 2:
+              FUNDEF_STATUS($$)=ST_classfun;
+              FUNDEF_INLINE($$)=0;
+            }
             FUNDEF_PRAGMA($$)=$10;
 
            DBUG_PRINT("GENSIB",("%s"P_FORMAT"SibFun %s",
@@ -2840,8 +2864,9 @@ sibfun: evinline varreturntypes fun_name
           }
         ;
 
-evinline: INLINE {$$=1;} 
-        |        {$$=0;}
+evmarker: INLINE   {$$=2;} 
+        | CLASSIMP {$$=1;}
+        |          {$$=0;}
         ;
 
 sibarglist: sibargs {$$=$1;}
