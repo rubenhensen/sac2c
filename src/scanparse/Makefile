@@ -1,6 +1,10 @@
 #
 #
 # $Log$
+# Revision 3.16  2004/10/15 12:06:03  sah
+# added switch to choose between two alternative
+# scanner/parser implementations
+#
 # Revision 3.15  2003/06/11 21:42:54  ktr
 # included ../constants
 #
@@ -76,6 +80,14 @@ LIBS      := -ly -ll
 INCS=-I../global -I../tree -I../../inc -I../modules -I../typecheck -I../flatten \
      -I../constants
 
+ifeq ($(NEWAST),yes)
+  SAC_L := nsac.l
+  SAC_Y := nsac.y
+else
+  SAC_L := sac.l
+  SAC_Y := sac.y
+endif
+
 
 all: y.tab.o lex.yy.o scnprs.o handle_dots.o
 
@@ -88,12 +100,12 @@ lex.yy.o: lex.yy.c y.tab.h
 	$(CC) $(CCL_FLAGS) $(CCFLAGS) $(CFLAGS) -DYYLMAX=8192 -o lex.yy.o -c lex.yy.c $(INCS)
 	$(CLOCK_SKEW_ELIMINATION) $@
 
-lex.yy.c: sac.l
-	$(LEX) sac.l
+lex.yy.c: $(SAC_L)
+	$(LEX) $(SAC_L)
 	$(CLOCK_SKEW_ELIMINATION) $@
 
-y.tab.c y.tab.h: sac.y 
-	$(YACC)  sac.y
+y.tab.c y.tab.h: $(SAC_Y)
+	$(YACC) $(SAC_Y)
 	$(CLOCK_SKEW_ELIMINATION) y.tab.c y.tab.h
 
 
