@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.23  1999/11/11 18:27:15  dkr
+ * added NWITH_WITHID
+ *
  * Revision 2.22  1999/11/09 21:15:57  dkr
  * Functions MakeIcm7, MakeAssignIcm7 added.
  *
@@ -1511,6 +1514,7 @@ extern node *AppendExprs (node *exprs1, node *exprs2);
  ***/
 
 #define NWITH_TYPE(n) (NWITHOP_TYPE (NWITH_WITHOP (n)))
+#define NWITH_WITHID(n) (NPART_WITHID (NWITH_PART (n)))
 #define NWITH_IDS(n) (NPART_IDS (NWITH_PART (n)))
 #define NWITH_VEC(n) (NPART_VEC (NWITH_PART (n)))
 #define NWITH_BOUND2(n) (NPART_BOUND2 (NWITH_PART (n)))
