@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.64  2004/07/19 14:24:52  sah
+ * removed useless second argument
+ * to ArrayElimination
+ *
  * Revision 3.63  2004/07/18 19:54:54  sah
  * switch to new INFO structure
  * PHASE I
@@ -999,7 +1003,7 @@ OPTfundef (node *arg_node, info *arg_info)
          */
 
         if (optimize & OPT_AE) {
-            arg_node = ArrayElimination (arg_node, arg_node); /* ae_tab */
+            arg_node = ArrayElimination (arg_node); /* ae_tab */
             arg_node = RestoreSSAOneFunction (arg_node);
         }
 
