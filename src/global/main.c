@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.22  2003/03/26 13:16:02  sah
+ * and another silly bug;)
+ *
  * Revision 3.21  2003/03/26 13:02:10  sah
  * comments on mkdtemp and
  * silly bug fix;)
@@ -220,7 +223,7 @@ main (int argc, char *argv[])
 
     tmp_dirname = mkdtemp (tmp_dirname);
 
-    if (tmp_dirname = NULL) {
+    if (tmp_dirname == NULL) {
         SYSABORT (("System failed to create temporary directory '%s'\n", tmp_dirname));
     }
 #else
