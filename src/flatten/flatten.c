@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.55  1998/01/21 12:52:50  srs
+ * Fixed bug in function which flattens fold.
+ * Neutral element may be optional.
+ *
  * Revision 1.54  1998/01/02 10:57:47  srs
  * changes comments
  *
@@ -1671,7 +1675,7 @@ FltnNgenerator (node *arg_node, node *arg_info)
  *   - genarray: at the moment shape is limited to a constant array
  *   - modarray: the array has to be an id or is flattened otherwise.
  *   - fold: the neutral element has to be an id or a constant scalar
- *           or is flattened otherwise.
+ *           or is flattened otherwise. It is optional.
  *
  ******************************************************************************/
 node *
@@ -1700,14 +1704,16 @@ FltnNwithop (node *arg_node, node *arg_info)
         break;
     }
     default: {
-        old_tag = arg_info->info.cint;
-        /* exprs is only used temporary to call FltnExprs */
-        exprs = MakeExprs (NWITHOP_NEUTRAL (arg_node), NULL);
-        arg_info->info.cint = NORMAL;
-        exprs = Trav (exprs, arg_info); /* call FltnExprs */
-        arg_info->info.cint = old_tag;
-        NWITHOP_NEUTRAL (arg_node) = EXPRS_EXPR (exprs);
-        FREE (exprs);
+        if (NWITHOP_NEUTRAL (arg_node)) {
+            old_tag = arg_info->info.cint;
+            /* exprs is only used temporary to call FltnExprs */
+            exprs = MakeExprs (NWITHOP_NEUTRAL (arg_node), NULL);
+            arg_info->info.cint = NORMAL;
+            exprs = Trav (exprs, arg_info); /* call FltnExprs */
+            arg_info->info.cint = old_tag;
+            NWITHOP_NEUTRAL (arg_node) = EXPRS_EXPR (exprs);
+            FREE (exprs);
+        }
     }
     }
 
