@@ -3,7 +3,11 @@
 /*
  *
  * $Log$
- * Revision 1.103  1996/01/02 17:46:48  cg
+ * Revision 1.104  1996/01/05 12:33:43  cg
+ * Now, we check that module/class names are not longer than
+ * 12 characters.
+ *
+ * Revision 1.103  1996/01/02  17:46:48  cg
  * SIBS can now deal with external implicit types.
  *
  * Revision 1.102  1996/01/02  15:56:05  cg
@@ -376,6 +380,8 @@
 #include "Error.h"
 #include "free.h"
 
+#include "readsib.h"
+
 
 extern int linenum;
 extern char yytext[];
@@ -546,16 +552,26 @@ moddec: modheader evimport OWN COLON expdesc
 modheader: modclass evextern id COLON
            {
              $$=MakeNode($1);
+             link_mod_name=$3;
+
+             if (strlen(link_mod_name)>12)
+             {
+               link_mod_name[12]='\0';
+               
+               WARN(linenum, ("Module/class names limited to 12 characters"));
+               CONT_WARN(("name truncated to '%s` !", link_mod_name));
+             }
+
              if ($2)
              {
                mod_name=NULL;
              }
              else
              {
-               mod_name=$3;
+               mod_name=link_mod_name;
              }
 
-             link_mod_name=$3;
+             
              $$->info.fun_name.id=$3;
              $$->info.fun_name.id_mod=mod_name;
            }
@@ -1045,6 +1061,15 @@ def4: fundefs { $$=MakeNode(N_modul);
 
 modimp: impclass id {  mod_name=$2; } COLON defs
           { $$=$5;
+
+            if (strlen(mod_name)>12)
+            {
+              mod_name[12]='\0';
+              
+              WARN(linenum, ("Module/class names limited to 12 characters"));
+              CONT_WARN(("name truncated to '%s` !", mod_name));
+            }
+
             MODUL_NAME($$)=mod_name;
             MODUL_FILETYPE($$)=file_kind;
           }
@@ -2631,7 +2656,7 @@ simpletype: TYPE_INT
  */
 
 
-sib: sibheader sibtypes sibobjs sibfuns SIBLIMIT
+sib: sibheader sibtypes sibobjs sibfuns siblimit
        {
          $$=MakeSib(mod_name, $1, $2, $3, $4);
 
@@ -2654,6 +2679,13 @@ sibheader: LT id GT
              }
          ;
 
+siblimit: SIBLIMIT
+          {
+            CreateArchive(mod_name);
+          }
+        ;
+
+ 
 
 sibtypes: sibtype sibtypes
             {
