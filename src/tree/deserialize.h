@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2004/11/23 21:20:48  sah
+ * *** empty log message ***
+ *
  * Revision 1.7  2004/11/23 10:05:24  sah
  * SaC DevCamp 04
  *
@@ -27,15 +30,15 @@
  *
  */
 
-#ifndef _DESERIALIZE_H
-#define _DESERIALIZE_H
+#ifndef _SAC_DESERIALIZE_H_
+#define _SAC_DESERIALIZE_H_
 
 #include "types.h"
 
 extern void DSinitDeserialize (node *module);
 extern void DSfinishDeserialize (node *module);
 
-extern node *DSaddSymbolByName (const char *symbol, STentrytype_t type,
+extern node *DSaddSymbolByName (const char *symbol, stentrytype_t type,
                                 const char *module);
 extern node *DSaddSymbolById (const char *symbid, const char *module);
 
@@ -60,4 +63,4 @@ extern node *DSId (node *arg_node, info *arg_info);
 extern node *DSLet (node *arg_node, info *arg_info);
 extern node *DSNWithid (node *arg_node, info *arg_info);
 
-#endif /* _DESERIALIZE_H */
+#endif /* _SAC_DESERIALIZE_H_ */
