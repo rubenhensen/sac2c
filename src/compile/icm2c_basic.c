@@ -1,8 +1,8 @@
 /*
  *
  * $Log$
- * Revision 1.11  2002/10/07 23:36:39  dkr
- * GetAttr() added
+ * Revision 1.12  2002/10/08 01:49:52  dkr
+ * bug in VectToOffset2() fixed
  *
  * Revision 1.10  2002/08/05 18:08:15  dkr
  * comment corrected
@@ -284,6 +284,7 @@ GetAttr (void *v, int v_attr, void (*v_attr_fun) (void *))
     DBUG_ENTER ("GetAttr");
 
     if (v_attr < 0) {
+        DBUG_ASSERT ((v_attr_fun != NULL), "access function not found!");
         v_attr_fun (v);
     } else {
         fprintf (outfile, "%d", v_attr);
@@ -317,10 +318,14 @@ VectToOffset2 (char *off_any, void *v_any, int v_size, void (*v_size_fun) (void 
 
     DBUG_ENTER ("VectToOffset2");
 
+    DBUG_ASSERT ((v_read_fun != NULL), "access function not found!");
+    DBUG_ASSERT ((a_shape_fun != NULL), "access function not found!");
+
     if (v_size != 0) {
         if ((v_size < 0) || (a_dim < 0)) {
-            DBUG_ASSERT (((v_size_fun != NULL) && (a_dim_fun != NULL)),
-                         "AUD array without access functions found!");
+            DBUG_ASSERT ((((v_size >= 0) || (v_size_fun != NULL))
+                          && ((a_dim >= 0) || (a_dim_fun != NULL))),
+                         "access function not found!");
             INDENT;
             fprintf (outfile, "{\n");
             indent++;
@@ -336,9 +341,9 @@ VectToOffset2 (char *off_any, void *v_any, int v_size, void (*v_size_fun) (void 
              */
             INDENT;
             fprintf (outfile, "for (SAC_i = ");
-            v_size_fun (v_any);
+            GetAttr (v_any, v_size, v_size_fun);
             fprintf (outfile, "; SAC_i < ");
-            a_dim_fun (a_any);
+            GetAttr (a_any, a_dim, a_dim_fun);
             fprintf (outfile, "; SAC_i++) {\n");
             indent++;
             INDENT;
