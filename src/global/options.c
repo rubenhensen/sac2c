@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.45  2000/07/12 13:05:35  mab
+ * bug fixed in option consistency check
+ *
  * Revision 2.44  2000/07/12 12:08:58  mab
  * added consistency check for array padding and boundary check
  *
@@ -746,7 +749,7 @@ CheckOptionConsistency ()
 
     DBUG_ENTER ("CheckOptionConsistency");
 
-    if (RUNTIMECHECK_BOUNDARY && (optimize & OPT_AP)) {
+    if (runtimecheck & RUNTIMECHECK_BOUNDARY && (optimize & OPT_AP)) {
         SYSERROR (("Boundary check and array padding may not be used simultaneously"));
     }
 
