@@ -21,7 +21,9 @@ typedef enum {
     rc_array,
     rc_const,
     rc_cond,
-    rc_funcond
+    rc_funcond,
+    rc_cexprs,
+    rc_with
 } rc_rhs_type;
 
 typedef enum { rc_default, rc_else } rc_mode;
@@ -44,6 +46,7 @@ typedef struct RC_COUNTER {
 #define INFO_SSARC_DECLIST(n) ((rc_list_struct *)(n->node[0]))
 #define INFO_SSARC_INCLIST(n) ((rc_list_struct *)(n->node[1]))
 #define INFO_SSARC_FUNDEF(n) (n->node[2])
+#define INFO_SSARC_WITHID(n) (n->node[3])
 
 #define AVIS_SSARC_COUNTED(n) ((bool)(n->info.cint))
 #define AVIS_SSARC_COUNTER(n) ((rc_counter *)(n->dfmask[0]))
@@ -122,10 +125,34 @@ IncreaseEnvOnZero (node *avis, node *arg_info)
     return AddEnvPar (avis, arg_info, 1, FALSE);
 }
 
+bool
+IsIndexVariable (node *avis, node *arg_info)
+{
+    node *wid;
+    ids *i;
+
+    wid = INFO_SSARC_WITHID (arg_info);
+    if (wid == NULL)
+        return FALSE;
+
+    if ((NWITHID_VEC (wid) != NULL) && (IDS_AVIS (NWITHID_VEC (wid)) == avis))
+        return TRUE;
+
+    i = NWITHID_IDS (wid);
+    while (i != NULL) {
+        if (IDS_AVIS (i) == avis)
+            return TRUE;
+        i = IDS_NEXT (i);
+    }
+
+    return FALSE;
+}
+
 int
 PopEnv (node *avis, node *arg_info)
 {
     int res;
+    rc_counter *rcc;
 
     DBUG_ASSERT (AVIS_SSARC_COUNTED (avis) == FALSE,
                  "Variable has already been counted!");
@@ -135,9 +162,19 @@ PopEnv (node *avis, node *arg_info)
     if (AVIS_SSARC_COUNTER (avis) == NULL)
         return 0;
     else {
-        res = AVIS_SSARC_COUNTER (avis)->count;
-        AVIS_SSARC_COUNTER (avis) = Free (AVIS_SSARC_COUNTER (avis));
-        return (res);
+        if (AVIS_SSARC_COUNTER (avis)->depth < INFO_SSARC_DEPTH (arg_info))
+            return 0;
+        else {
+            DBUG_ASSERT (AVIS_SSARC_COUNTER (avis)->depth == INFO_SSARC_DEPTH (arg_info),
+                         "Wrong depth!!!");
+            rcc = AVIS_SSARC_COUNTER (avis);
+            AVIS_SSARC_COUNTER (avis) = rcc->next;
+            rcc->next = NULL;
+            res = rcc->count;
+            rcc = Free (rcc);
+
+            return (res);
+        }
     }
 }
 
@@ -164,6 +201,29 @@ DecList_Insert (node *arg_info, node *avis)
         rls->next = INFO_SSARC_DECLIST (arg_info);
         INFO_SSARC_DECLIST (arg_info) = rls;
     }
+}
+
+rc_list_struct *
+RCLS_Remove (rc_list_struct *rls, node *avis)
+{
+    rc_list_struct *temp;
+
+    if (rls->avis == avis) {
+        temp = rls->next;
+        Free (rls);
+        return (temp);
+    } else {
+        if (rls->next != NULL)
+            rls->next = RCLS_Remove (rls->next, avis);
+        return (rls);
+    }
+}
+
+void
+DecList_Remove (node *arg_info, node *avis)
+{
+    if (INFO_SSARC_DECLIST (arg_info) != NULL)
+        INFO_SSARC_DECLIST (arg_info) = RCLS_Remove (INFO_SSARC_DECLIST (arg_info), avis);
 }
 
 rc_list_struct *
@@ -274,26 +334,28 @@ SSARCfundef (node *fundef, node *arg_info)
     INFO_SSARC_FUNDEF (arg_info) = fundef;
     INFO_SSARC_DEPTH (arg_info) = 0;
     INFO_SSARC_MODE (arg_info) = rc_default;
+    INFO_SSARC_WITHID (arg_info) = NULL;
 
     /* Traverse args in order to initialize refcounting environment */
     if (FUNDEF_ARGS (fundef) != NULL)
         FUNDEF_ARGS (fundef) = Trav (FUNDEF_ARGS (fundef), arg_info);
 
     /* Traverse block */
-    if (FUNDEF_BODY (fundef) != NULL)
+    if (FUNDEF_BODY (fundef) != NULL) {
         FUNDEF_BODY (fundef) = Trav (FUNDEF_BODY (fundef), arg_info);
 
-    /* Annotate missing ADJUST_RCs */
-    arg = FUNDEF_ARGS (fundef);
-    while (arg != NULL) {
-        BLOCK_INSTR (FUNDEF_BODY (fundef))
-          = MakeAdjustRC (ARG_AVIS (arg), PopEnv (ARG_AVIS (arg), arg_info) - 1,
-                          BLOCK_INSTR (FUNDEF_BODY (fundef)));
-        arg = ARG_NEXT (arg);
-    }
+        /* Annotate missing ADJUST_RCs */
+        arg = FUNDEF_ARGS (fundef);
+        while (arg != NULL) {
+            BLOCK_INSTR (FUNDEF_BODY (fundef))
+              = MakeAdjustRC (ARG_AVIS (arg), PopEnv (ARG_AVIS (arg), arg_info) - 1,
+                              BLOCK_INSTR (FUNDEF_BODY (fundef)));
+            arg = ARG_NEXT (arg);
+        }
 
-    /* Restore SSA form */
-    /*   fundef = RestoreSSAOneFundef(fundef);  */
+        /* Restore SSA form */
+        fundef = RestoreSSAOneFundef (fundef);
+    }
 
     /* Traverse other fundefs */
     if (FUNDEF_NEXT (fundef) != NULL)
@@ -430,8 +492,10 @@ SSARCcond (node *arg_node, node *arg_info)
             KillSecondEnv (ARG_AVIS (n));
             t = PopEnv (ARG_AVIS (n), arg_info);
             KillSecondEnv (ARG_AVIS (n));
-            m = e > t ? e : t;
-            if (m > 0) {
+
+            if (e + t > 0) {
+                m = e < t ? e : t;
+                m = m > 1 ? m : 1;
                 AddEnv (ARG_AVIS (n), arg_info, m);
                 BLOCK_INSTR (COND_THEN (arg_node))
                   = MakeAdjustRC (ARG_AVIS (n), t - m,
@@ -450,8 +514,10 @@ SSARCcond (node *arg_node, node *arg_info)
                 KillSecondEnv (VARDEC_AVIS (n));
                 t = PopEnv (VARDEC_AVIS (n), arg_info);
                 KillSecondEnv (VARDEC_AVIS (n));
-                m = e > t ? e : t;
-                if (m > 0) {
+
+                if (e + t > 0) {
+                    m = e < t ? e : t;
+                    m = m > 1 ? m : 1;
                     AddEnv (VARDEC_AVIS (n), arg_info, m);
                     BLOCK_INSTR (COND_THEN (arg_node))
                       = MakeAdjustRC (VARDEC_AVIS (n), t - m,
@@ -487,6 +553,7 @@ SSARClet (node *arg_node, node *arg_info)
     case rc_prfap:
     case rc_const:
     case rc_array:
+    case rc_with:
         rhs_val = 0;
         break;
     case rc_copy:
@@ -545,7 +612,7 @@ SSARCid (node *arg_node, node *arg_info)
         INFO_SSARC_RHS (arg_info) = rc_copy;
         break;
     case rc_funcond:
-        DBUG_ASSERT (FALSE, "Cannot arrive in Funcond");
+        /* We don't need to do anything */
         break;
     case rc_funap:
     case rc_return:
@@ -559,6 +626,8 @@ SSARCid (node *arg_node, node *arg_info)
     case rc_array:
     case rc_prfap:
     case rc_cond:
+    case rc_cexprs:
+    case rc_with:
         /* Add one to the environment iff it is zero */
         if (IncreaseEnvOnZero (ID_AVIS (arg_node), arg_info))
 
@@ -635,6 +704,148 @@ SSARCstr (node *arg_node, node *arg_info)
 
     if (INFO_SSARC_RHS (arg_info) == rc_undef)
         INFO_SSARC_RHS (arg_info) = rc_const;
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+SSARCNwith (node *arg_node, node *arg_info)
+{
+    node *oldwithid;
+
+    DBUG_ENTER ("SSARCNwith");
+
+    oldwithid = INFO_SSARC_WITHID (arg_info);
+
+    if (NODE_TYPE (arg_node) == N_Nwith) {
+        INFO_SSARC_DEPTH (arg_info) += 1;
+        INFO_SSARC_WITHID (arg_info) = NWITH_WITHID (arg_node);
+        if (NWITH_CODE (arg_node) != NULL)
+            NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
+        INFO_SSARC_DEPTH (arg_info) -= 1;
+        INFO_SSARC_RHS (arg_info) = rc_with;
+        NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
+        NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
+    } else {
+        INFO_SSARC_DEPTH (arg_info) += 1;
+        INFO_SSARC_WITHID (arg_info) = NWITH2_WITHID (arg_node);
+        if (NWITH2_CODE (arg_node) != NULL)
+            NWITH2_CODE (arg_node) = Trav (NWITH2_CODE (arg_node), arg_info);
+        INFO_SSARC_DEPTH (arg_info) -= 1;
+        INFO_SSARC_RHS (arg_info) = rc_with;
+        NWITH2_WITHID (arg_node) = Trav (NWITH2_WITHID (arg_node), arg_info);
+        NWITH2_SEGS (arg_node) = Trav (NWITH2_SEGS (arg_node), arg_info);
+        NWITH2_WITHOP (arg_node) = Trav (NWITH2_WITHOP (arg_node), arg_info);
+    }
+
+    INFO_SSARC_WITHID (arg_info) = oldwithid;
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+SSARCNcode (node *arg_node, node *arg_info)
+{
+    node *n, *a;
+    rc_list_struct *declist, *rls;
+    int env;
+
+    DBUG_ENTER ("SSARCNcode");
+
+    /* Save DecList */
+    declist = INFO_SSARC_DECLIST (arg_info);
+    INFO_SSARC_DECLIST (arg_info) = NULL;
+
+    /* Traverse CEXPRS and insert adjust_rc operations into
+       NCODE_EPILOGUE */
+    INFO_SSARC_RHS (arg_info) = rc_cexprs;
+    NCODE_CEXPRS (arg_node) = Trav (NCODE_CEXPRS (arg_node), arg_info);
+
+    DBUG_ASSERT (NCODE_EPILOGUE (arg_node) == NULL, "Epilogue must not exist yet!");
+
+    /* Insert ADJUST_RC prfs from DECLIST into EPILOGUE*/
+    a = NULL;
+    while (DecList_HasNext (arg_info)) {
+        rls = DecList_PopNext (arg_info);
+        a = MakeAdjustRCfromRLS (rls, a);
+        rls = Free (rls);
+    }
+
+    if (a != NULL)
+        NCODE_EPILOGUE (arg_node) = MakeBlock (a, NULL);
+
+    NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
+
+    /* Restore DecList */
+    DBUG_ASSERT (INFO_SSARC_DECLIST (arg_info) == NULL, "DecList must be NULL");
+    INFO_SSARC_DECLIST (arg_info) = declist;
+
+    /* Prepend block with Adjust_RC prfs */
+    n = FUNDEF_ARGS (INFO_SSARC_FUNDEF (arg_info));
+    while (n != NULL) {
+        env = PopEnv (ARG_AVIS (n), arg_info);
+
+        AVIS_SSARC_COUNTED (ARG_AVIS (n)) = FALSE;
+
+        if (env > 0) {
+            BLOCK_INSTR (NCODE_CBLOCK (arg_node))
+              = MakeAdjustRC (ARG_AVIS (n), env, BLOCK_INSTR (NCODE_CBLOCK (arg_node)));
+
+            INFO_SSARC_DEPTH (arg_info) -= 1;
+            if (IncreaseEnvOnZero (ARG_AVIS (n), arg_info))
+                DecList_Insert (arg_info, ARG_AVIS (n));
+            INFO_SSARC_DEPTH (arg_info) += 1;
+        }
+        n = ARG_NEXT (n);
+    }
+
+    n = BLOCK_VARDEC (FUNDEF_BODY (INFO_SSARC_FUNDEF (arg_info)));
+    while (n != NULL) {
+        if (AVIS_SSARC_COUNTED (VARDEC_AVIS (n)) == FALSE) {
+            env = PopEnv (VARDEC_AVIS (n), arg_info)
+                  + (IsIndexVariable (VARDEC_AVIS (n), arg_info) ? -1 : 0);
+
+            AVIS_SSARC_COUNTED (VARDEC_AVIS (n)) = FALSE;
+
+            if (env != 0) {
+                BLOCK_INSTR (NCODE_CBLOCK (arg_node))
+                  = MakeAdjustRC (VARDEC_AVIS (n), env,
+                                  BLOCK_INSTR (NCODE_CBLOCK (arg_node)));
+
+                INFO_SSARC_DEPTH (arg_info) -= 1;
+                if (IncreaseEnvOnZero (VARDEC_AVIS (n), arg_info))
+                    DecList_Insert (arg_info, VARDEC_AVIS (n));
+                INFO_SSARC_DEPTH (arg_info) += 1;
+            }
+        }
+        n = VARDEC_NEXT (n);
+    }
+
+    /*
+     * count the references in next code
+     */
+    if (NCODE_NEXT (arg_node) != NULL) {
+        NCODE_NEXT (arg_node) = Trav (NCODE_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+SSARCNwithid (node *arg_node, node *arg_info)
+{
+    ids *iv_ids;
+    DBUG_ENTER ("SSARCNwithid");
+
+    /* Index vector and Index variables must be removed from DecList */
+    if (NWITHID_VEC (arg_node) != NULL)
+        DecList_Remove (arg_info, IDS_AVIS (NWITHID_VEC (arg_node)));
+
+    iv_ids = NWITHID_IDS (arg_node);
+    while (iv_ids != NULL) {
+        DecList_Remove (arg_info, IDS_AVIS (iv_ids));
+        iv_ids = IDS_NEXT (iv_ids);
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -718,7 +929,7 @@ SSARefCount (node *syntax_tree)
 
     info = FreeTree (info);
 
-    /*   syntax_tree = UndoSSA( syntax_tree ); */
+    /*  syntax_tree = UndoSSA( syntax_tree ); */
 
     DBUG_RETURN (syntax_tree);
 }
