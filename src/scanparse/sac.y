@@ -4,6 +4,10 @@
 /*
  *
  * $Log$
+ * Revision 3.55  2002/08/14 11:51:37  sbs
+ * HMAdjustFundef turned into HMAdjustFunNames
+ * just to please imports.....
+ *
  * Revision 3.54  2002/08/14 09:24:20  sbs
  * several missing StringCopy calls inserrted
  *
@@ -261,8 +265,6 @@ static node *CheckWlcompConf( node *ap, node *exprs);
 %type <node> prg, defs, def2, def3, def4
 
 %type <node> imports, import, impdesc, impdesc2, impdesc3, impdesc4
-%type <id> imp_fun_id
-%type <ids> imp_fun_ids
 
 %type <node> typedefs, typedef
 
@@ -512,8 +514,9 @@ impdesc3: GLOBAL OBJECTS COLON ids SEMIC impdesc4
       | impdesc4 { $$ = $1; }
       ;
 
-impdesc4: FUNS COLON imp_fun_ids SEMIC BRACE_R
-          { $$ = MakeImplist( NULL, NULL, NULL, NULL, $3, NULL);
+impdesc4: FUNS COLON fun_ids SEMIC BRACE_R
+          { $3 = HMAdjustFunNames( $3);
+            $$ = MakeImplist( NULL, NULL, NULL, NULL, $3, NULL);
 
             DBUG_PRINT("PARSE",
 		       ("%s:"F_PTR,
@@ -538,18 +541,7 @@ impdesc4: FUNS COLON imp_fun_ids SEMIC BRACE_R
           }
       ;
 
-imp_fun_ids: imp_fun_id COMMA imp_fun_ids
-             { $$ = MakeIds( $1, NULL, ST_regular);
-               IDS_NEXT( $$) = $3;
-             }
-           | imp_fun_id
-             { $$ = MakeIds( $1, NULL, ST_regular);
-             }
-           ;
 
-imp_fun_id: id                      { $$ = $1; }
-          | BRACKET_L id BRACKET_R  { $$ = $2; }
-          ;
 
 
 /*
@@ -637,6 +629,7 @@ fundef: INLINE fundef1 { $$ = $2; FUNDEF_INLINE( $$) = TRUE;}
 
 fundef1: returntypes BRACKET_L fun_id BRACKET_R BRACKET_L fundef2
          { $$ = $6;
+           $3 = HMAdjustFunNames( $3);
            FUNDEF_TYPES( $$) = $1;              /* result type(s) */
            FUNDEF_NAME( $$) = IDS_NAME( $3);    /* function name  */
            FUNDEF_MOD( $$) = mod_name;          /* module name    */
@@ -644,7 +637,6 @@ fundef1: returntypes BRACKET_L fun_id BRACKET_R BRACKET_L fundef2
            FUNDEF_ATTRIB( $$) = ST_regular;
            FUNDEF_STATUS( $$) = ST_regular;
            FUNDEF_INFIX( $$) = TRUE;
-           $$ = HMAdjustFundef( $$);
               
            DBUG_PRINT("PARSE",
 		       ("%s: %s:%s "F_PTR,
@@ -656,6 +648,7 @@ fundef1: returntypes BRACKET_L fun_id BRACKET_R BRACKET_L fundef2
          }
        | returntypes fun_id BRACKET_L fundef2
          { $$ = $4;
+           $2 = HMAdjustFunNames( $2);
            FUNDEF_TYPES( $$) = $1;              /* result type(s) */
            FUNDEF_NAME( $$) = IDS_NAME( $2);    /* function name  */
            FUNDEF_MOD( $$) = mod_name;          /* module name    */
@@ -663,7 +656,6 @@ fundef1: returntypes BRACKET_L fun_id BRACKET_R BRACKET_L fundef2
            FUNDEF_ATTRIB( $$) = ST_regular;
            FUNDEF_STATUS( $$) = ST_regular;
            FUNDEF_INFIX( $$) = FALSE;
-           $$ = HMAdjustFundef( $$);
 
            DBUG_PRINT("PARSE",
 		       ("%s: %s:%s "F_PTR,
@@ -859,12 +851,14 @@ pragma: PRAGMA LINKNAME string
           { if (store_pragma==NULL) store_pragma=MakePragma();
             if (PRAGMA_EFFECT(store_pragma)!=NULL)
               WARN(linenum, ("Conflicting definitions of pragma 'effect`"))
+            $3 = HMAdjustFunNames( $3);
             PRAGMA_EFFECT(store_pragma) = $3;
           }
       | PRAGMA TOUCH fun_ids
           { if (store_pragma==NULL) store_pragma=MakePragma();
             if (PRAGMA_TOUCH(store_pragma)!=NULL)
               WARN(linenum, ("Conflicting definitions of pragma 'touch`"))
+            $3 = HMAdjustFunNames( $3);
             PRAGMA_TOUCH(store_pragma) = $3;
           }
       | PRAGMA COPYFUN string
@@ -1855,6 +1849,7 @@ fundecs: fundec fundecs
 fundec: varreturntypes fun_id BRACKET_L fundec2
           {
             $$ = $4;
+            $2 = HMAdjustFunNames( $2);
             FUNDEF_TYPES( $$) = $1;
             FUNDEF_NAME( $$) = StringCopy( IDS_NAME( $2));  /* function name */
             FreeOneIds( $2);
@@ -1863,7 +1858,6 @@ fundec: varreturntypes fun_id BRACKET_L fundec2
             FUNDEF_ATTRIB( $$) = ST_regular;
             FUNDEF_STATUS( $$) = (file_kind == F_moddec)
                                    ? ST_imported_mod : ST_imported_class;
-            $$ = HMAdjustFundef( $$);
 
             DBUG_PRINT("PARSE",
                        ("%s:"F_PTR" Id: %s , NULL body,  %s" F_PTR,
@@ -2244,9 +2238,9 @@ sibfuns: sibfun sibfuns
 sibfun: sibevmarker varreturntypes fun_id BRACKET_L sibarglist
         BRACKET_R { $<cint>$ = linenum; } sibfunbody sibpragmas
           {
-            $$ = HMAdjustFundef(
-                   MakeFundef( StringCopy( IDS_NAME( $3)),
-                               IDS_MOD( $3), $2, $5, $8, NULL));
+            $3 = HMAdjustFunNames( $3);
+            $$ = MakeFundef( StringCopy( IDS_NAME( $3)),
+                               IDS_MOD( $3), $2, $5, $8, NULL);
             $3 = FreeOneIds( $3);
             NODE_LINE( $$) = $<cint>7;
             switch ($1) {
@@ -2398,11 +2392,11 @@ sibfunlist: sibfunlistentry COMMA sibfunlist
 
 sibfunlistentry: fun_id BRACKET_L sibarglist BRACKET_R
                  {
-                   $$ = HMAdjustFundef(
-                          MakeFundef( StringCopy( IDS_NAME( $1)),
+                   $1 = HMAdjustFunNames( $1);
+                   $$ = MakeFundef( StringCopy( IDS_NAME( $1)),
                                       IDS_MOD( $1),
                                       MakeTypes1( T_unknown),
-                                      $3, NULL, NULL));
+                                      $3, NULL, NULL);
                    FUNDEF_STATUS( $$) = sib_imported_status;
 
                    DBUG_PRINT("PARSE_SIB",("%s"F_PTR"SibNeedFun %s",
