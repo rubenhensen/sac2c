@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.22  1997/11/24 16:04:55  srs
+ * print routines for N_Nwith node and subnodes
+ *
  * Revision 1.21  1997/11/20 13:39:15  srs
  * added PrintNPart and PrintNWith
  *
@@ -129,5 +132,7 @@ extern node *PrintNPart (node *, node *);
 extern void PrintFunctionHeader (node *arg_node, node *arg_info);
 
 extern node *Print (node *);
+
+extern void PrintNodeTree (node *node); /* debugoutput */
 
 #endif /* _sac_print_h */

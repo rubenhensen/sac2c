@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.136  1997/11/24 16:04:41  srs
+ * print routines for N_Nwith node and subnodes
+ *
  * Revision 1.135  1997/11/20 15:32:44  srs
  * print routines for new WLs
  *
@@ -453,7 +456,7 @@
 #include "filemgr.h"
 #include "globals.h"
 
-int indent;
+int indent = 0;
 
 static int print_separate = 0;
 
@@ -1245,8 +1248,8 @@ PrintReturn (node *arg_node, node *arg_info)
     if (RETURN_EXPRS (arg_node) && (!RETURN_INWITH (arg_node))) {
         if ((INFO_FUNDEF (arg_info) != NULL)
             && (strcmp (FUNDEF_NAME (INFO_FUNDEF (arg_info)), "main") == 0)) {
-            INDENT;
             fprintf (outfile, "PROFILE_PRINT();\n");
+            INDENT;
         }
         fprintf (outfile, "return( ");
         Trav (arg_node->node[0], arg_info);
@@ -1856,6 +1859,7 @@ PrintNWith (node *arg_node, node *arg_info)
     Trav (NWITH_PART (arg_node), arg_info);
     indent--;
 
+    INDENT;
     switch (NWITHOP_TYPE (NWITH_WITHOP (arg_node))) {
     case WO_genarray:
         fprintf (outfile, "genarray( ");
@@ -1887,6 +1891,7 @@ PrintNGenerator (node *gen, node *idx, node *arg_info)
 {
     DBUG_ENTER ("PrintNGenerator");
 
+    INDENT;
     fprintf (outfile, "(");
 
     /* print upper bound and first operator*/
@@ -2017,3 +2022,23 @@ Print (node *arg_node)
 
     DBUG_RETURN (arg_node);
 }
+/* ---------------------------------------------------------------- */
+
+void
+PrintNodeTree (node *node)
+{
+    int i;
+    outfile = stdout;
+
+    if (node) {
+        INDENT;
+        fprintf (outfile, "%s\n", nodename[NODE_TYPE (node)]);
+        indent++;
+        for (i = 0; i < nnode[NODE_TYPE (node)]; i++)
+            if (node->node[i])
+                PrintNodeTree (node->node[i]);
+        indent--;
+    } else
+        fprintf (outfile, "NULL\n");
+}
+/* ---------------------------------------------------------------- */
