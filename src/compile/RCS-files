@@ -39,3 +39,4 @@ markmemvals.c
 markmemvals.h
 type_conversions.c
 functionprecompile.c
+functionprecompile.h
