@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.52  2000/06/22 09:54:54  nmw
+ * changes made in N_info access macros for usage in PIW
+ *
  * Revision 1.51  2000/06/21 15:00:49  mab
  * added macros *_PADDED for ARG and VARDEC
  * added INFO_APT_EXPRESSION_PADDED
@@ -2243,6 +2246,7 @@ extern node *MakePragma ();
  ***    int        RETPOS                        - position of simple returntype (-1 if
  *void)
  ***    int        ARGCOUNT                      - # of arguments
+ ***    int        RETCOUNT                      - # of return types
  ***    char*      WRAPPERNAME                   - string with wrapper name
  ***
  ***
@@ -2623,6 +2627,7 @@ extern node *MakeInfo ();
 #define INFO_PIW_RETPOS(n) (n->int_data)
 #define INFO_PIW_ARGCOUNT(n) (n->counter)
 #define INFO_PIW_WRAPPERNAME(n) (n->src_file)
+#define INFO_PIW_RETCOUNT(n) (n->flag)
 
 /* when used in pad_transform.c */
 #define INFO_APT_EXPRESSION_PADDED (n->flag)
@@ -2634,7 +2639,7 @@ extern node *MakeInfo ();
  ***
  ***  sons:
  ***
- ***    node*      REGION      (N_block)
+ ***    node      REGION      (N_block)
  ***
  ***  permanent attributes:
  ***
