@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.3  2000/12/05 14:33:27  nmw
+ * trace output redirected to stderr
+ *
  * Revision 3.2  2000/11/29 16:24:02  nmw
  * trace output added
  *
@@ -231,7 +234,7 @@ PrintSACRuntimeInitExit (node *arg_node)
 
     if (traceflag & TRACE_CENV) {
         /* print runtime trace comment */
-        fprintf (outfile, "printf(\"SAC-Runtime-System ready...\\n\");\n");
+        fprintf (outfile, "fprintf(stderr, \"SAC-Runtime-System ready...\\n\");\n");
     }
 
     fprintf (outfile, "}\n\n");
@@ -242,7 +245,7 @@ PrintSACRuntimeInitExit (node *arg_node)
 
     if (traceflag & TRACE_CENV) {
         /* print runtime trace comment */
-        fprintf (outfile, "printf(\"SAC-Runtime-System cleaned up...\\n\");\n");
+        fprintf (outfile, "fprintf(stderr, \"SAC-Runtime-System cleaned up...\\n\");\n");
     }
 
     fprintf (outfile, "\n}\n\n");
