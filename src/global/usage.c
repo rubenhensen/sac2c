@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.68  2004/11/26 21:23:54  skt
+ * final version from SACDevCampDk 2k4
+ *
  * Revision 3.67  2004/11/25 14:49:37  skt
  * solved last naming problems
  *
@@ -852,7 +855,8 @@ USGprintUsage ()
             "      Michael Werner\n"
             "      Stephan Herhut\n"
             "      Karsten Hinckfuﬂ\n"
-            "      Steffen Kuthe\n");
+            "      Steffen Kuthe\n"
+            "      Jan-Henrik Baumgarten\n");
 
     printf ("\n\nCONTACT:\n\n"
 
