@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.17  1996/02/16 09:38:51  sbs
+ * Revision 1.18  1996/05/13 14:18:58  hw
+ * deleted DBUG_PRINTs in Type2String
+ * .
+ *
+ * Revision 1.17  1996/02/16  09:38:51  sbs
  * floor used for recognizing whole numbers in Double2Str and Float2Str
  *
  * Revision 1.16  1996/02/08  18:04:05  hw
@@ -208,7 +212,6 @@ Type2String (types *type, int flag)
 
                 for (i = 0; i < dim; i++)
                     if (i != (dim - 1)) {
-                        DBUG_PRINT ("PRINT", ("shp[%d]=%d", i, type->shpseg->shp[i]));
                         if (2 == flag)
                             if (1 == known_shape)
                                 sprintf (int_string, "%d_", type->shpseg->shp[i]);
@@ -221,7 +224,6 @@ Type2String (types *type, int flag)
 
                         strcat (tmp_string, int_string);
                     } else {
-                        DBUG_PRINT ("PRINT", ("shp[%d]=%d", i, type->shpseg->shp[i]));
                         if (2 == flag)
                             if (1 == known_shape)
                                 sprintf (int_string, "%d_", type->shpseg->shp[i]);
