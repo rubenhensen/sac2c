@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.3  2004/08/29 18:10:05  sah
+  general improvements
+
   Revision 1.2  2004/08/08 16:18:35  sah
   doxygen improvement
 
@@ -37,11 +40,12 @@ version="1.0">
 #ifndef _SAC_FREE_NODE_H
 #define _SAC_FREE_NODE_H
 
-#include "tree_basic.h"
-#include "internal_lib.h"
+#include "types.h"
 
   </xsl:text>
-  <xsl:apply-templates select="//syntaxtree/node"/>
+  <xsl:apply-templates select="//syntaxtree/node">
+    <xsl:sort select="@name"/>
+  </xsl:apply-templates>
   <xsl:text>
 #endif /* _SAC_FREE_NODE_H */
   </xsl:text>

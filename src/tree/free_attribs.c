@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2004/08/29 18:10:05  sah
+ * general improvements
+ *
  * Revision 1.1  2004/08/08 16:03:50  sah
  * Initial revision
  *
@@ -9,10 +12,11 @@
 
 #include "free_attribs.h"
 #include "tree_basic.h"
+#include "tree_compound.h"
 
 /** <!--******************************************************************-->
  *
- * @fn FreeString
+ * @fn FreeStringAttrib
  *
  * @brief Frees String attribute
  *
@@ -22,18 +26,42 @@
  *
  ***************************************************************************/
 char *
-FreeString (char *attr)
+FreeStringAttrib (char *attr)
 {
-    DBUG_ENTER ("FreeString");
+    DBUG_ENTER ("FreeStringAttrib");
 
-    attr = Free (attr);
+    if (attr != NULL) {
+        DBUG_PRINT ("FREE", ("Freeing string '%s' at " F_PTR, attr, attr));
+        attr = Free (attr);
+    }
 
     DBUG_RETURN (attr);
 }
 
 /** <!--******************************************************************-->
  *
- * @fn FreeOldType
+ * @fn FreeSharedStringAttrib
+ *
+ * @brief Frees String attribute
+ *
+ * @param attr String node to process
+ *
+ * @return result of Free call, usually NULL
+ *
+ ***************************************************************************/
+char *
+FreeSharedStringAttrib (char *attr)
+{
+    DBUG_ENTER ("FreeSharedStringAttrib");
+
+    /* do nothing */
+
+    DBUG_RETURN ((char *)NULL);
+}
+
+/** <!--******************************************************************-->
+ *
+ * @fn FreeOldTypeAttrib
  *
  * @brief Frees OldType attribute
  *
@@ -43,18 +71,20 @@ FreeString (char *attr)
  *
  ***************************************************************************/
 types *
-FreeOldType (types *attr)
+FreeOldTypeAttrib (types *attr)
 {
-    DBUG_ENTER ("FreeOldType");
+    DBUG_ENTER ("FreeOldTypeAttrib");
 
-    attr = FreeOneTypes (attr);
+    if (attr != NULL) {
+        attr = FreeOneTypes (attr);
+    }
 
     DBUG_RETURN (attr);
 }
 
 /** <!--******************************************************************-->
  *
- * @fn FreeNode
+ * @fn FreeNodeAttrib
  *
  * @brief Frees Node attribute
  *
@@ -64,18 +94,22 @@ FreeOldType (types *attr)
  *
  ***************************************************************************/
 node *
-FreeNode (node *attr)
+FreeNodeAttrib (node *attr)
 {
-    DBUG_ENTER ("FreeNode");
+    DBUG_ENTER ("FreeNodeAttrib");
 
-    attr = FreeTree (attr);
+    if (attr != NULL) {
+        DBUG_PRINT ("FREE", ("Starting to free %s node attribute at " F_PTR,
+                             mdb_nodetype[NODE_TYPE (attr)], attr));
+        attr = FreeTree (attr);
+    }
 
     DBUG_RETURN (attr);
 }
 
 /** <!--******************************************************************-->
  *
- * @fn FreeLink
+ * @fn FreeLinkAttrib
  *
  * @brief Frees Link attribute
  *
@@ -85,18 +119,66 @@ FreeNode (node *attr)
  *
  ***************************************************************************/
 node *
-FreeLink (node *attr)
+FreeLinkAttrib (node *attr)
 {
-    DBUG_ENTER ("FreeLink");
+    DBUG_ENTER ("FreeLinkAttrib");
 
     /* do nothing */
 
-    DBUG_RETURN (attr);
+    DBUG_RETURN ((node *)NULL);
 }
 
 /** <!--******************************************************************-->
  *
- * @fn FreeIntegerArray
+ * @fn FreeApLinkAttrib
+ *
+ * @brief Frees Link attribute
+ *
+ * @param attr Link node to process
+ *
+ * @return result of Free call, usually NULL
+ *
+ ***************************************************************************/
+node *
+FreeApLinkAttrib (node *attr)
+{
+    DBUG_ENTER ("FreeLinkAttrib");
+
+    if (attr != NULL) {
+        DBUG_PRINT ("FREE", ("Decrementing use count for '%s' at " F_PTR,
+                             FUNDEF_NAME (attr), attr));
+        DBUG_ASSERT ((NODE_TYPE (attr) == N_fundef), "illegal value in AP_FUNDEF found!");
+
+        DBUG_ASSERT (((!FUNDEF_IS_LACFUN (attr))
+                      || (FUNDEF_USED (attr) != USED_INACTIVE)),
+                     "FUNDEF_USED must be active for LaC functions!");
+
+        if (FUNDEF_USED (attr) != USED_INACTIVE) {
+            (FUNDEF_USED (attr))--;
+
+            DBUG_ASSERT ((FUNDEF_USED (attr) >= 0), "FUNDEF_USED dropped below 0");
+
+            DBUG_PRINT ("FREE", ("decrementing used counter of %s to %d",
+                                 FUNDEF_NAME (attr), FUNDEF_USED (attr)));
+
+            if (FUNDEF_USED (attr) == 0) {
+                /*
+                 * referenced fundef no longer used
+                 *  -> transform it into a zombie
+                 */
+                DBUG_PRINT ("FREE", ("Use count reached 0 for '%s' at " F_PTR,
+                                     FUNDEF_NAME (attr), attr));
+                attr = FreeNode (attr);
+            }
+        }
+    }
+
+    DBUG_RETURN ((node *)NULL);
+}
+
+/** <!--******************************************************************-->
+ *
+ * @fn FreeIntegerArrayAttrib
  *
  * @brief Frees IntegerArray attribute
  *
@@ -106,9 +188,9 @@ FreeLink (node *attr)
  *
  ***************************************************************************/
 int *
-FreeIntegerArray (int *attr)
+FreeIntegerArrayAttrib (int *attr)
 {
-    DBUG_ENTER ("FreeIntegerArray");
+    DBUG_ENTER ("FreeIntegerArrayAttrib");
 
     /* TODO */
 
@@ -117,7 +199,7 @@ FreeIntegerArray (int *attr)
 
 /** <!--******************************************************************-->
  *
- * @fn FreeNums
+ * @fn FreeNumsAttrib
  *
  * @brief Frees Nums attribute
  *
@@ -127,11 +209,12 @@ FreeIntegerArray (int *attr)
  *
  ***************************************************************************/
 nums *
-FreeNums (nums *attr)
+FreeNumsAttrib (nums *attr)
 {
-    DBUG_ENTER ("FreeNums");
+    DBUG_ENTER ("FreeNumsAttrib");
 
     while (attr != NULL) {
+        DBUG_PRINT ("FREE", ("Freeing nums structure at " F_PTR, attr));
         nums *tmp = attr;
         attr = NUMS_NEXT (attr);
         tmp = Free (tmp);
@@ -142,7 +225,7 @@ FreeNums (nums *attr)
 
 /** <!--******************************************************************-->
  *
- * @fn FreeLUT
+ * @fn FreeLUTAttrib
  *
  * @brief Frees LUT attribute
  *
@@ -152,18 +235,20 @@ FreeNums (nums *attr)
  *
  ***************************************************************************/
 LUT_t
-FreeLUT (LUT_t attr)
+FreeLUTAttrib (LUT_t attr)
 {
-    DBUG_ENTER ("FreeLUT");
+    DBUG_ENTER ("FreeLUTAttrib");
 
-    attr = RemoveLUT (attr);
+    if (attr != NULL) {
+        attr = RemoveLUT (attr);
+    }
 
     DBUG_RETURN (attr);
 }
 
 /** <!--******************************************************************-->
  *
- * @fn FreeMask
+ * @fn FreeMaskAttrib
  *
  * @brief Frees Mask attribute
  *
@@ -173,11 +258,12 @@ FreeLUT (LUT_t attr)
  *
  ***************************************************************************/
 long *
-FreeMask (long *attr)
+FreeMaskAttrib (long *attr)
 {
-    DBUG_ENTER ("FreeMask");
+    DBUG_ENTER ("FreeMaskAttrib");
 
     if (attr != NULL) {
+        DBUG_PRINT ("FREE", ("Freeing element of mask at " F_PTR, attr));
         attr = Free (attr);
     }
 
@@ -186,7 +272,7 @@ FreeMask (long *attr)
 
 /** <!--******************************************************************-->
  *
- * @fn FreeDeps
+ * @fn FreeDepsAttrib
  *
  * @brief Frees Deps attribute
  *
@@ -196,18 +282,20 @@ FreeMask (long *attr)
  *
  ***************************************************************************/
 deps *
-FreeDeps (deps *attr)
+FreeDepsAttrib (deps *attr)
 {
-    DBUG_ENTER ("FreeDeps");
+    DBUG_ENTER ("FreeDepsAttrib");
 
-    attr = FreeAllDeps (attr);
+    if (attr != NULL) {
+        attr = FreeAllDeps (attr);
+    }
 
     DBUG_RETURN (attr);
 }
 
 /** <!--******************************************************************-->
  *
- * @fn FreeIds
+ * @fn FreeIdsAttrib
  *
  * @brief Frees Ids attribute
  *
@@ -217,18 +305,20 @@ FreeDeps (deps *attr)
  *
  ***************************************************************************/
 ids *
-FreeIds (ids *attr)
+FreeIdsAttrib (ids *attr)
 {
-    DBUG_ENTER ("FreeIds");
+    DBUG_ENTER ("FreeIdsAttrib");
 
-    attr = FreeAllIds (attr);
+    if (attr != NULL) {
+        attr = FreeAllIds (attr);
+    }
 
     DBUG_RETURN (attr);
 }
 
 /** <!--******************************************************************-->
  *
- * @fn FreeNodeList
+ * @fn FreeNodeListAttrib
  *
  * @brief Frees NodeList attribute
  *
@@ -238,11 +328,12 @@ FreeIds (ids *attr)
  *
  ***************************************************************************/
 nodelist *
-FreeNodeList (nodelist *attr)
+FreeNodeListAttrib (nodelist *attr)
 {
-    DBUG_ENTER ("FreeNodeList");
+    DBUG_ENTER ("FreeNodeListAttrib");
 
     while (attr != NULL) {
+        DBUG_PRINT ("FREE", ("Freeing nodelist structure at " F_PTR, attr));
         nodelist *tmp = attr;
         attr = NODELIST_NEXT (attr);
         tmp = Free (tmp);
@@ -253,7 +344,7 @@ FreeNodeList (nodelist *attr)
 
 /** <!--******************************************************************-->
  *
- * @fn FreeSharedNodeList
+ * @fn FreeSharedNodeListAttrib
  *
  * @brief Frees SharedNodeList attribute
  *
@@ -263,18 +354,18 @@ FreeNodeList (nodelist *attr)
  *
  ***************************************************************************/
 nodelist *
-FreeSharedNodeList (nodelist *attr)
+FreeSharedNodeListAttrib (nodelist *attr)
 {
-    DBUG_ENTER ("FreeSharedNodeList");
+    DBUG_ENTER ("FreeSharedNodeListAttrib");
 
     /* do nothing here */
 
-    DBUG_RETURN (attr);
+    DBUG_RETURN ((nodelist *)NULL);
 }
 
 /** <!--******************************************************************-->
  *
- * @fn FreePragmaLink
+ * @fn FreePragmaLinkAttrib
  *
  * @brief Frees PragmaLink attribute
  *
@@ -284,18 +375,18 @@ FreeSharedNodeList (nodelist *attr)
  *
  ***************************************************************************/
 node *
-FreePragmaLink (node *attr)
+FreePragmaLinkAttrib (node *attr)
 {
-    DBUG_ENTER ("FreePragmaLink");
+    DBUG_ENTER ("FreePragmaLinkAttrib");
 
     /* do nothing here */
 
-    DBUG_RETURN (attr);
+    DBUG_RETURN ((node *)NULL);
 }
 
 /** <!--******************************************************************-->
  *
- * @fn FreeDFMMask
+ * @fn FreeDFMMaskAttrib
  *
  * @brief Frees DFMMask attribute
  *
@@ -305,18 +396,20 @@ FreePragmaLink (node *attr)
  *
  ***************************************************************************/
 DFMmask_t
-FreeDFMMask (DFMmask_t attr)
+FreeDFMMaskAttrib (DFMmask_t attr)
 {
-    DBUG_ENTER ("FreeDFMMask");
+    DBUG_ENTER ("FreeDFMMaskAttrib");
 
-    attr = DFMRemoveMask (attr);
+    if (attr != NULL) {
+        attr = DFMRemoveMask (attr);
+    }
 
     DBUG_RETURN (attr);
 }
 
 /** <!--******************************************************************-->
  *
- * @fn FreeDFMMaskBase
+ * @fn FreeDFMMaskBaseAttrib
  *
  * @brief Frees DFMMaskBase attribute
  *
@@ -326,18 +419,20 @@ FreeDFMMask (DFMmask_t attr)
  *
  ***************************************************************************/
 DFMmask_base_t
-FreeDFMMaskBase (DFMmask_base_t attr)
+FreeDFMMaskBaseAttrib (DFMmask_base_t attr)
 {
-    DBUG_ENTER ("FreeDFMMaskBase");
+    DBUG_ENTER ("FreeDFMMaskBaseAttrib");
 
-    attr = DFMRemoveMaskBase (attr);
+    if (attr != NULL) {
+        attr = DFMRemoveMaskBase (attr);
+    }
 
     DBUG_RETURN (attr);
 }
 
 /** <!--******************************************************************-->
  *
- * @fn FreeDFMFoldMask
+ * @fn FreeDFMFoldMaskAttrib
  *
  * @brief Frees DFMFoldMask attribute
  *
@@ -347,9 +442,9 @@ FreeDFMMaskBase (DFMmask_base_t attr)
  *
  ***************************************************************************/
 DFMfoldmask_t *
-FreeDFMFoldMask (DFMfoldmask_t *attr)
+FreeDFMFoldMaskAttrib (DFMfoldmask_t *attr)
 {
-    DBUG_ENTER ("FreeDFMFoldMask");
+    DBUG_ENTER ("FreeDFMFoldMaskAttrib");
 
     if (attr != NULL) {
         attr = Free (attr);
@@ -360,7 +455,7 @@ FreeDFMFoldMask (DFMfoldmask_t *attr)
 
 /** <!--******************************************************************-->
  *
- * @fn FreeNewType
+ * @fn FreeNewTypeAttrib
  *
  * @brief Frees NewType attribute
  *
@@ -370,18 +465,20 @@ FreeDFMFoldMask (DFMfoldmask_t *attr)
  *
  ***************************************************************************/
 ntype *
-FreeNewType (ntype *attr)
+FreeNewTypeAttrib (ntype *attr)
 {
-    DBUG_ENTER ("FreeNewType");
+    DBUG_ENTER ("FreeNewTypeAttrib");
 
-    attr = TYFreeType (attr);
+    if (attr != NULL) {
+        attr = TYFreeType (attr);
+    }
 
     DBUG_RETURN (attr);
 }
 
 /** <!--******************************************************************-->
  *
- * @fn FreeArgTab
+ * @fn FreeArgTabAttrib
  *
  * @brief Frees ArgTab attribute
  *
@@ -391,9 +488,9 @@ FreeNewType (ntype *attr)
  *
  ***************************************************************************/
 argtab_t *
-FreeArgTab (argtab_t *attr)
+FreeArgTabAttrib (argtab_t *attr)
 {
-    DBUG_ENTER ("FreeArgTab");
+    DBUG_ENTER ("FreeArgTabAttrib");
 
     if (attr != NULL) {
         attr->ptr_in = Free (attr->ptr_in);
@@ -409,7 +506,7 @@ FreeArgTab (argtab_t *attr)
 
 /** <!--******************************************************************-->
  *
- * @fn FreeIndexPointer
+ * @fn FreeIndexPointerAttrib
  *
  * @brief Frees IndexPointer attribute
  *
@@ -419,9 +516,9 @@ FreeArgTab (argtab_t *attr)
  *
  ***************************************************************************/
 index_info *
-FreeIndexPointer (index_info *attr)
+FreeIndexPointerAttrib (index_info *attr)
 {
-    DBUG_ENTER ("FreeIndexPointer");
+    DBUG_ENTER ("FreeIndexPointerAttrib");
 
     if (attr != NULL) {
         attr = FreeIndexInfo (attr);
@@ -432,7 +529,7 @@ FreeIndexPointer (index_info *attr)
 
 /** <!--******************************************************************-->
  *
- * @fn FreeShape
+ * @fn FreeShapeAttrib
  *
  * @brief Frees Shape attribute
  *
@@ -442,18 +539,20 @@ FreeIndexPointer (index_info *attr)
  *
  ***************************************************************************/
 shape *
-FreeShape (shape *attr)
+FreeShapeAttrib (shape *attr)
 {
-    DBUG_ENTER ("FreeShape");
+    DBUG_ENTER ("FreeShapeAttrib");
 
-    attr = SHFreeShape (attr);
+    if (attr != NULL) {
+        attr = SHFreeShape (attr);
+    }
 
     DBUG_RETURN (attr);
 }
 
 /** <!--******************************************************************-->
  *
- * @fn FreeConstVecPointer
+ * @fn FreeConstVecPointerAttrib
  *
  * @brief Frees ConstVecPointer attribute
  *
@@ -463,9 +562,9 @@ FreeShape (shape *attr)
  *
  ***************************************************************************/
 void *
-FreeConstVecPointer (void *attr)
+FreeConstVecPointerAttrib (void *attr)
 {
-    DBUG_ENTER ("FreeConstVecPointer");
+    DBUG_ENTER ("FreeConstVecPointerAttrib");
 
     if (attr != NULL) {
         attr = Free (attr);
@@ -476,7 +575,7 @@ FreeConstVecPointer (void *attr)
 
 /** <!--******************************************************************-->
  *
- * @fn FreeAccess
+ * @fn FreeAccessAttrib
  *
  * @brief Frees Access attribute
  *
@@ -486,14 +585,14 @@ FreeConstVecPointer (void *attr)
  *
  ***************************************************************************/
 access_t *
-FreeAccess (access_t *attr)
+FreeAccessAttrib (access_t *attr)
 {
-    DBUG_ENTER ("FreeAccess");
+    DBUG_ENTER ("FreeAccessAttrib");
 
     while (attr != NULL) {
         access_t *tmp = attr;
         attr = attr->next;
-        tmp->offset = FreeShpSeg (tmp->offset);
+        tmp->offset = FreeShpSegAttrib (tmp->offset);
         tmp = Free (tmp);
     }
 
@@ -502,7 +601,7 @@ FreeAccess (access_t *attr)
 
 /** <!--******************************************************************-->
  *
- * @fn FreeAccessInfo
+ * @fn FreeAccessInfoAttrib
  *
  * @brief Frees AccessInfo attribute
  *
@@ -512,12 +611,12 @@ FreeAccess (access_t *attr)
  *
  ***************************************************************************/
 access_info_t *
-FreeAccessInfo (access_info_t *attr)
+FreeAccessInfoAttrib (access_info_t *attr)
 {
-    DBUG_ENTER ("FreeAccessInfo");
+    DBUG_ENTER ("FreeAccessInfoAttrib");
 
     if (attr != NULL) {
-        attr->access = FreeAccess (attr->access);
+        attr->access = FreeAccessAttrib (attr->access);
         attr = Free (attr);
     }
 
@@ -526,7 +625,7 @@ FreeAccessInfo (access_info_t *attr)
 
 /** <!--******************************************************************-->
  *
- * @fn FreeShpSeg
+ * @fn FreeShpSegAttrib
  *
  * @brief Frees ShpSeg attribute
  *
@@ -536,12 +635,12 @@ FreeAccessInfo (access_info_t *attr)
  *
  ***************************************************************************/
 shpseg *
-FreeShpSeg (shpseg *attr)
+FreeShpSegAttrib (shpseg *attr)
 {
-    DBUG_ENTER ("FreeShpSeg");
+    DBUG_ENTER ("FreeShpSegAttrib");
 
     if (attr != NULL) {
-        FreeShpSeg (SHPSEG_NEXT (attr));
+        SHPSEG_NEXT (attr) = FreeShpSegAttrib (SHPSEG_NEXT (attr));
         attr = Free (attr);
     }
 
@@ -550,7 +649,7 @@ FreeShpSeg (shpseg *attr)
 
 /** <!--******************************************************************-->
  *
- * @fn FreeIntegerPointer
+ * @fn FreeIntegerPointerAttrib
  *
  * @brief Frees IntegerPointer attribute
  *
@@ -560,9 +659,9 @@ FreeShpSeg (shpseg *attr)
  *
  ***************************************************************************/
 int *
-FreeIntegerPointer (int *attr)
+FreeIntegerPointerAttrib (int *attr)
 {
-    DBUG_ENTER ("FreeIntegerPointer");
+    DBUG_ENTER ("FreeIntegerPointerAttrib");
 
     if (attr != NULL) {
         attr = Free (attr);
@@ -573,7 +672,7 @@ FreeIntegerPointer (int *attr)
 
 /** <!--******************************************************************-->
  *
- * @fn FreeIntegerPointerArray
+ * @fn FreeIntegerPointerArrayAttrib
  *
  * @brief Frees IntegerPointerArray attribute
  *
@@ -583,9 +682,9 @@ FreeIntegerPointer (int *attr)
  *
  ***************************************************************************/
 int *
-FreeIntegerPointerArray (int *attr)
+FreeIntegerPointerArrayAttrib (int *attr)
 {
-    DBUG_ENTER ("FreeIntegerPointerArray");
+    DBUG_ENTER ("FreeIntegerPointerArrayAttrib");
 
     if (attr != NULL) {
         attr = Free (attr);
@@ -596,7 +695,7 @@ FreeIntegerPointerArray (int *attr)
 
 /** <!--******************************************************************-->
  *
- * @fn FreeScheduling
+ * @fn FreeSchedulingAttrib
  *
  * @brief Frees Scheduling attribute
  *
@@ -606,9 +705,9 @@ FreeIntegerPointerArray (int *attr)
  *
  ***************************************************************************/
 SCHsched_t
-FreeScheduling (SCHsched_t attr)
+FreeSchedulingAttrib (SCHsched_t attr)
 {
-    DBUG_ENTER ("FreeScheduling");
+    DBUG_ENTER ("FreeSchedulingAttrib");
 
     if (attr != NULL) {
         attr = SCHRemoveScheduling (attr);
@@ -619,7 +718,7 @@ FreeScheduling (SCHsched_t attr)
 
 /** <!--******************************************************************-->
  *
- * @fn FreeTaskSel
+ * @fn FreeTaskSelAttrib
  *
  * @brief Frees TaskSel attribute
  *
@@ -629,9 +728,9 @@ FreeScheduling (SCHsched_t attr)
  *
  ***************************************************************************/
 SCHtasksel_t
-FreeTaskSel (SCHtasksel_t attr)
+FreeTaskSelAttrib (SCHtasksel_t attr)
 {
-    DBUG_ENTER ("FreeTaskSel");
+    DBUG_ENTER ("FreeTaskSelAttrib");
 
     if (attr != NULL) {
         attr = SCHRemoveTasksel (attr);
@@ -642,7 +741,7 @@ FreeTaskSel (SCHtasksel_t attr)
 
 /** <!--******************************************************************-->
  *
- * @fn FreeNodePointer
+ * @fn FreeNodePointerAttrib
  *
  * @brief Frees NodePointer attribute
  *
@@ -652,9 +751,9 @@ FreeTaskSel (SCHtasksel_t attr)
  *
  ***************************************************************************/
 node **
-FreeNodePointer (node **attr)
+FreeNodePointerAttrib (node **attr)
 {
-    DBUG_ENTER ("FreeNodePointer");
+    DBUG_ENTER ("FreeNodePointerAttrib");
 
     /* TODO */
 
@@ -663,7 +762,7 @@ FreeNodePointer (node **attr)
 
 /** <!--******************************************************************-->
  *
- * @fn FreeConstant
+ * @fn FreeConstantAttrib
  *
  * @brief Frees Constant attribute
  *
@@ -673,9 +772,9 @@ FreeNodePointer (node **attr)
  *
  ***************************************************************************/
 constant *
-FreeConstant (constant *attr)
+FreeConstantAttrib (constant *attr)
 {
-    DBUG_ENTER ("FreeConstant");
+    DBUG_ENTER ("FreeConstantAttrib");
 
     if (attr != NULL) {
         attr = COFreeConstant (attr);

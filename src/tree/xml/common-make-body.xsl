@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.7  2004/08/29 18:10:05  sah
+  general improvements
+
   Revision 1.6  2004/08/07 17:57:57  sah
   some changes to increase reusability
 
@@ -41,24 +44,26 @@ version="1.0">
   <xsl:value-of select="'{'"/>
   <!-- declarate variables -->
   <xsl:value-of select="'node *this;'" />
-  <!-- if there is a for loop for initialising attributes, we 
-       need a variable cnt, which is created here -->
-  <xsl:if test="attributes/attribute[key(&quot;arraytypes&quot;, ./type/@name)]">
-    <xsl:value-of select="'int cnt;'" />
-  </xsl:if>
+  <!-- counter for for-loops -->
+  <xsl:value-of select="'int cnt;'" />
   <!-- DBUG_ENTER call -->
   <xsl:value-of select="'DBUG_ENTER( &quot;Make'"/>
   <xsl:value-of select="@name"/>
   <xsl:value-of select="'&quot;);'"/>
   <!-- allocate new node this -->
+  <xsl:value-of select="'DBUG_PRINT( &quot;MAKE&quot;, (&quot;allocating node structure&quot;));'"/>
   <xsl:value-of select="'this = Malloc(sizeof(node));'"/>
+  <!-- clear all node pointers -->
+  <xsl:value-of select="'for(cnt=0;cnt&lt;MAX_SONS;cnt++){this-&gt;node[cnt]=NULL;}'"/>
   <!-- allocate the attrib structure -->
+  <xsl:value-of select="'DBUG_PRINT( &quot;MAKE&quot;, (&quot;allocating attrib structure&quot;));'"/>
   <xsl:value-of select="'this->attribs.N_'"/>
   <xsl:value-of select="@name"/>
   <xsl:value-of select="' = Malloc(sizeof(struct AttribS_N_'"/>
   <xsl:value-of select="@name"/>
   <xsl:value-of select="'));'"/>
   <!-- set node type -->
+  <xsl:value-of select="'DBUG_PRINT( &quot;MAKE&quot;, (&quot;setting node type&quot;));'"/>
   <xsl:value-of select="'NODE_TYPE(this) = '" />
   <xsl:call-template name="name-to-nodeenum">
     <xsl:with-param name="name">
@@ -67,8 +72,10 @@ version="1.0">
   </xsl:call-template>
   <xsl:value-of select="';'" />
   <!-- set lineno -->
+  <xsl:value-of select="'DBUG_PRINT( &quot;MAKE&quot;, (&quot;setting lineno&quot;));'"/>
   <xsl:value-of select="'this->lineno = linenum;'" />
   <!-- set filename -->
+  <xsl:value-of select="'DBUG_PRINT( &quot;MAKE&quot;, (&quot;setting filename&quot;));'"/>
   <xsl:value-of select="'this->src_file = filename;'" />
   <!-- assign sons and attributes a value -->
   <xsl:apply-templates select="sons/son" mode="make-body"/>
@@ -77,6 +84,7 @@ version="1.0">
   <xsl:call-template name="newline" />
   <xsl:value-of select="'#ifndef DBUG_OFF'" />
   <xsl:call-template name="newline" />
+  <xsl:value-of select="'DBUG_PRINT( &quot;MAKE&quot;, (&quot;doing son target checks&quot;));'"/>
   <!-- generate warning messages -->
   <xsl:apply-templates select="sons/son[not( @default)]" mode="make-assertion-target">
     <xsl:with-param name="self"><xsl:value-of select="'this'"/></xsl:with-param>
@@ -91,6 +99,9 @@ version="1.0">
 
 <!-- generate the assignment for a son -->
 <xsl:template match="sons/son" mode="make-body">
+  <xsl:value-of select="'DBUG_PRINT( &quot;MAKE&quot;, (&quot;assigning son '"/>
+  <xsl:value-of select="@name"/>
+  <xsl:value-of select="' initial value&quot;));'"/>
   <xsl:call-template name="node-access">
     <xsl:with-param name="node">
       <xsl:value-of select="'this'" />

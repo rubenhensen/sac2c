@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.4  2004/08/29 18:10:05  sah
+  general improvements
+
   Revision 1.3  2004/08/08 16:18:35  sah
   doxygen improvement
 
@@ -55,7 +58,7 @@ version="1.0">
   <xsl:value-of select="@ctype"/>
   <xsl:value-of select="' Free'"/>
   <xsl:value-of select="@name"/>
-  <xsl:value-of select="'( '"/>
+  <xsl:value-of select="'Attrib( '"/>
   <xsl:value-of select="@ctype"/>
   <xsl:value-of select="' );'"/>
 </xsl:template>

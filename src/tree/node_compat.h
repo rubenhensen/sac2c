@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.5  2004/08/29 18:10:05  sah
+ * general improvements
+ *
  * Revision 1.4  2004/08/06 14:41:32  sah
  * adding support for new ast
  *
@@ -52,10 +55,15 @@
 #define MakeArray(elems, shp) MakeArray (shp, elems)
 #define MakeVinfo(flag, type, next, dollar) MakeVinfo (flag, type, dollar, next)
 #define MakeNGenerator(b1, b2, p1, p2, s, w) MakeNGenerator (p1, p2, b1, b2, s, w)
+#define MakeNPart(withid, gen, code) MakeNPart (code, withid, gen)
 #define MakeCast(a, b) MakeCast (b, a)
 #define MakeMop(a, b, c) MakeMop (b, c, a)
 #define MakeNWith2(a, b, c, d, e) MakeNWith2 (e, a, b, d, c)
 #define MakeSSAstack(a, b) MakeSSAstack (b, a)
+
+#define NWITHOP_ARRAY(n) NWITHOP_SHAPEARRAYNEUTRAL (n)
+#define NWITHOP_SHAPE(n) NWITHOP_SHAPEARRAYNEUTRAL (n)
+#define NWITHOP_NEUTRAL(n) NWITHOP_SHAPEARRAYNEUTRAL (n)
 
 #define NGEN_BOUND1(n) NGENERATOR_BOUND1 (n)
 #define NGEN_BOUND2(n) NGENERATOR_BOUND2 (n)
@@ -66,14 +74,6 @@
 #define NGEN_OP1_ORIG(n) NGENERATOR_OP1_ORIG (n)
 #define NGEN_OP2_ORIG(n) NGENERATOR_OP2_ORIG (n)
 #define NPART_GEN(n) NPART_GENERATOR (n)
-
-/***
- * The NWithOP node has three sons, but only one at a time is used. The
- * new AST currently encodes this as three separate fields, thus
- * it is just copied to all three fields
- ***/
-#define MakeNWithOp(type, shp_array_neutral)                                             \
-    MakeNWithOp (type, shp_array_neutral, shp_array_neutral, shp_array_neutral)
 
 #define MakeFlatArray(aelems) MakeArray (aelems, SHCreateShape (1, CountExprs (aelems)))
 
@@ -97,6 +97,8 @@
 #undef MakeMop
 #undef MakeNWith2
 #undef MakeSSAstack
+#undef MakeNGenerator
+#undef MakeNPart
 
 #undef NGEN_BOUND1
 #undef NGEN_BOUND2

@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.5  2004/08/29 18:10:05  sah
+  general improvements
+
   Revision 1.4  2004/08/08 16:07:21  sah
   beautified generated code
   include more doxygen comments
@@ -52,6 +55,7 @@
 #include "LookUpTable.h"
 #include "DataFlowMask.h"
 #include "scheduling.h"
+#include "constants.h"
     </xsl:text>
     <!-- start phase that generates a struct of attributes for each node -->
     <xsl:apply-templates select="/definition/syntaxtree" mode="generate-attrib-structs"/>
@@ -70,7 +74,9 @@
  * nodenameAttribStruct. 
  *****************************************************************************/
      </xsl:text>
-     <xsl:apply-templates select="node" mode="generate-attrib-structs"/>
+     <xsl:apply-templates select="node" mode="generate-attrib-structs">
+       <xsl:sort select="@name"/>
+     </xsl:apply-templates>
   </xsl:template>
 
   <!-- generate a attribute structure for a son -->
@@ -109,7 +115,9 @@
  ****************************************************************************/
     </xsl:text>
     <xsl:value-of select="'union AttribUnion { '"/>
-    <xsl:apply-templates select="node" mode="generate-attrib-union"/>
+    <xsl:apply-templates select="node" mode="generate-attrib-union">
+      <xsl:sort select="@name"/>
+    </xsl:apply-templates>
     <xsl:value-of select="' } ; '"/>
   </xsl:template>
  

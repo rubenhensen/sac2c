@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.7  2004/08/29 18:10:05  sah
+  general improvements
+
   Revision 1.6  2004/08/08 16:06:25  sah
   lots of small fixes
 
@@ -28,6 +31,8 @@
   <attributetypes>
     <type name="String" ctype="char*" init="NULL"
     copy="function" />
+    <type name="SharedString" ctype="char*" init="NULL"
+    copy="function" />
     <type name="Integer" ctype="int" init="0" copy="literal" />
     <type name="Long" ctype="long" init="0" copy="literal" />
     <type name="Bool" ctype="bool" init="FALSE" copy="literal" />
@@ -38,6 +43,7 @@
     copy="function" />
     <type name="Node" ctype="node*" init="NULL" copy="function" />
     <type name="Link" ctype="node*" init="NULL" copy="hash" />
+    <type name="ApLink" ctype="node*" init="NULL" copy="hash" />
     <type name="IntegerArray" ctype="int*" init="NULL"
     copy="function" />
     <type name="Nums" ctype="nums*" init="NULL" copy="function" />
@@ -98,6 +104,8 @@
     <type name="BitField" ctype="int" init="0" copy="literal" />
     <type name="Constant" ctype="constant*" init="NULL"
     copy="function" />
+    <type name="MTExecMode" ctype="mtexecmode_t" init="MUTH_ANY"
+    copy="literal" />
   </attributetypes>
   <nodesets>
     <nodeset name="Expr">
@@ -167,7 +175,7 @@
       </sons>
       <attributes>
         <attribute name="Name" mandatory="no">
-          <type name="String" />
+          <type name="SharedString" />
           <phases>
             <all />
           </phases>
@@ -426,7 +434,7 @@
           </phases>
         </attribute>
         <attribute name="Mod" mandatory="no">
-          <type name="String" />
+          <type name="SharedString" />
           <phases>
             <all />
           </phases>
@@ -524,7 +532,7 @@
           </phases>
         </attribute>
         <attribute name="Mod" mandatory="yes">
-          <type name="String" />
+          <type name="SharedString" />
           <phases>
             <all />
           </phases>
@@ -653,7 +661,7 @@
           </phases>
         </attribute>
         <attribute name="Mod" mandatory="yes">
-          <type name="String" />
+          <type name="SharedString" />
           <phases>
             <all />
           </phases>
@@ -887,6 +895,12 @@
             <range from="mtfin" to="final" />
           </phases>
         </attribute>
+	<attribute name="ExecMode" mandatory="no">
+	  <type name="MTExecMode"/>
+	  <phases>
+	    <range from="BuildMultithread" to="CreateCells"/>
+	  </phases>
+	</attribute>
       </attributes>
       <flags></flags>
     </node>
@@ -1314,6 +1328,12 @@
 	    <range from="BuildMultithread" to="CreateCells" />
 	  </phases>
 	</attribute>
+	<attribute name="CellId" mandatory="yes">
+	  <type name="Integer" />
+	  <phases>
+	    <range from="AssignmentsRearrange" to="CreateCells" />
+	  </phases>
+	</attribute>
       </attributes>
       <flags></flags>
     </node>
@@ -1653,7 +1673,7 @@
           </phases>
         </attribute>
         <attribute name="Mod" mandatory="no">
-          <type name="String" />
+          <type name="SharedString" />
           <phases>
             <all />
           </phases>
@@ -1665,7 +1685,7 @@
           </phases>
         </attribute>
         <attribute name="Fundef" mandatory="yes">
-          <type name="Link">
+          <type name="ApLink">
             <target>
               <node name="Fundef" />
             </target>
@@ -2336,7 +2356,7 @@
           </phases>
         </attribute>
         <attribute name="SSACount" mandatory="yes">
-          <type name="Node">
+          <type name="Link">
             <target>
               <node name="SSAcnt" />
             </target>
@@ -2346,7 +2366,7 @@
           </phases>
         </attribute>
         <attribute name="SSAAssign" mandatory="yes">
-          <type name="Node">
+          <type name="Link">
             <target>
               <node name="Assign" />
             </target>
@@ -2356,7 +2376,7 @@
           </phases>
         </attribute>
         <attribute name="SSAAssign2" mandatory="yes">
-          <type name="Node">
+          <type name="Link">
             <target>
               <node name="Assign" />
             </target>
@@ -2395,7 +2415,7 @@
           </phases>
         </attribute>
         <attribute name="WithId" default="NULL" mandatory="no">
-          <type name="Node">
+          <type name="Link">
             <target>
               <node name="Nwithid" />
             </target>
@@ -2968,7 +2988,7 @@
         <attribute name="Code" mandatory="yes">
           <description>if present, the used counter for the code
           should be increased which is not done yet</description>
-          <type name="Node">
+          <type name="Link">
             <target>
               <node name="NCode" />
             </target>
@@ -3021,11 +3041,13 @@
         <son name="Bound1" mandatory="no">
           <target>
             <set name="Expr" />
+	    <node name="Dot" />
           </target>
         </son>
         <son name="Bound2" mandatory="no">
           <target>
             <set name="Expr" />
+	    <node name="Dot" />
           </target>
         </son>
         <son name="Step" mandatory="no">
@@ -3243,22 +3265,12 @@
     <node name="NWithOp">
       <description>withloop operation</description>
       <sons>
-        <son name="Shape" mandatory="no">
+        <son name="ShapeArrayNeutral" mandatory="no">
           <target>
             <set name="Expr" />
           </target>
         </son>
         <son name="Default" default="NULL" mandatory="no">
-          <target>
-            <set name="Expr" />
-          </target>
-        </son>
-        <son name="Array" mandatory="no">
-          <target>
-            <set name="Expr" />
-          </target>
-        </son>
-        <son name="Neutral" mandatory="no">
           <target>
             <set name="Expr" />
           </target>
@@ -3283,7 +3295,7 @@
           </phases>
         </attribute>
         <attribute name="Mod" default="NULL" mandatory="yes">
-          <type name="String" />
+          <type name="SharedString" />
           <phases>
             <all />
           </phases>
@@ -3326,6 +3338,12 @@
 	  </type>
 	  <phases>
 	    <range from="emalloc" to="final" />
+	  </phases>
+	</attribute>
+	<attribute name="Offset_Needed" mandatory="yes">
+	  <type name="Bool"/>
+	  <phases>
+	    <range from="wltransform" to="final"/>
 	  </phases>
 	</attribute>
       </attributes>
@@ -3859,7 +3877,7 @@
           </phases>
         </attribute>
         <attribute name="Mod" mandatory="yes">
-          <type name="String" />
+          <type name="SharedString" />
           <phases>
             <all />
           </phases>
@@ -3921,6 +3939,130 @@
             <all />
           </phases>
         </attribute>
+      </attributes>
+      <flags></flags>
+    </node>
+    <node name="Dataflownode">
+      <sons></sons>
+      <attributes>
+        <attribute name="Dependent" mandatory="no">
+	  <type name="NodeList" />
+	  <phases>
+	    <all />
+	  </phases>
+	</attribute>
+	<attribute name="Name" mandatory="no">
+	  <type name="String" />
+	  <phases>
+	    <all />
+	  </phases>
+	</attribute>
+	<attribute name="RefCount" mandatory="yes">
+	  <type name="Integer" />
+	  <phases>
+	    <all />
+	  </phases>
+	</attribute>
+	<attribute name="Assign" mandatory="no">
+	  <type name="Link">
+	    <target>
+	      <node name="Assign" />
+	    </target>
+	  </type>
+	  <phases>
+	    <all />
+	  </phases>
+	</attribute>
+	<attribute name="ExecMode" mandatory="yes">
+	  <type name="MTExecMode" />
+	  <phases>
+	    <all />
+	  </phases>
+	</attribute>
+	<attribute name="Graph" mandatory="yes">
+	  <type name="Link">
+	    <target>
+	      <node name="Dataflowgraph"/>
+	    </target>
+	  </type>
+	  <phases>
+	    <all />
+	  </phases>
+	</attribute>
+	<attribute name="DFGThen" mandatory="no">
+	  <type name="Link">
+	    <target>
+	      <node name="Block" />
+	    </target>
+	  </type>
+	  <phases>
+	    <all />
+	  </phases>
+	</attribute>
+	<attribute name="DFGElse" mandatory="no">
+	  <type name="Link">
+	    <target>
+	      <node name="Block" />
+	    </target>
+	  </type>
+	  <phases>
+	    <all />
+	  </phases>
+	</attribute>
+	<attribute name="RefLeft" mandatory="yes">
+	  <type name="Integer" />
+	  <phases>
+	    <phase name="AssignmentsRearrange" />
+	  </phases>
+	</attribute>
+	<attribute name="Used" mandatory="yes">
+	  <type name="Bool" />
+	  <phases>
+	    <phase name="AssignmentsRearrange" />
+	  </phases>
+	</attribute>
+      </attributes>
+      <flags></flags>
+    </node>
+    <node name="Dataflowgraph">
+      <sons></sons>
+      <attributes>
+        <attribute name="Members" mandatory="yes">
+	  <type name="NodeList" />
+	  <phases>
+	    <all />
+	  </phases>
+	</attribute>
+	<attribute name="Source" mandatory="yes">
+	  <type name="Node">
+	    <target>
+	      <node name="Dataflownode"/>
+	    </target>
+	  </type>
+	  <phases>
+	    <all />
+	  </phases>
+	</attribute>
+	<attribute name="Sink" mandatory="yes">
+	  <type name="Node">
+	    <target>
+	      <node name="Dataflownode"/>
+	    </target>
+	  </type>
+	  <phases>
+	    <all />
+	  </phases>
+	</attribute>
+	<attribute name="MyHomeDFN" mandatory="no">
+	  <type name="Node">
+	    <target>
+	      <node name="Dataflownode"/>
+	    </target>
+	  </type>
+	  <phases>
+	    <all />
+	  </phases>
+	</attribute>
       </attributes>
       <flags></flags>
     </node>
