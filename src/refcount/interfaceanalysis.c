@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2004/11/30 22:03:34  ktr
+ * even more brushing
+ *
  * Revision 1.6  2004/11/24 13:55:41  ktr
  * COMPILES!!!
  *
@@ -311,7 +314,8 @@ EMIAarg (node *arg_node, info *arg_info)
         AVIS_ALIASMASK (ARG_AVIS (arg_node))
           = DFMgenMaskClear (INFO_IA_MASKBASE (arg_info));
 
-        DFMsetMaskEntrySet (AVIS_ALIASMASK (ARG_AVIS (arg_node)), NULL, arg_node);
+        DFMsetMaskEntrySet (AVIS_ALIASMASK (ARG_AVIS (arg_node)), NULL,
+                            ARG_AVIS (arg_node));
         break;
 
     case IA_end:
@@ -702,7 +706,7 @@ EMIAreturn (node *arg_node, info *arg_info)
      */
     funargs = FUNDEF_ARGS (INFO_IA_FUNDEF (arg_info));
     while (funargs != NULL) {
-        DFMsetMaskEntrySet (argmask, NULL, funargs);
+        DFMsetMaskEntrySet (argmask, NULL, ARG_AVIS (funargs));
         funargs = ARG_NEXT (funargs);
     }
 
@@ -761,7 +765,8 @@ EMIAvardec (node *arg_node, info *arg_info)
         AVIS_ALIASMASK (VARDEC_AVIS (arg_node))
           = DFMgenMaskClear (INFO_IA_MASKBASE (arg_info));
 
-        DFMsetMaskEntrySet (AVIS_ALIASMASK (VARDEC_AVIS (arg_node)), NULL, arg_node);
+        DFMsetMaskEntrySet (AVIS_ALIASMASK (VARDEC_AVIS (arg_node)), NULL,
+                            VARDEC_AVIS (arg_node));
         break;
 
     case IA_end:
