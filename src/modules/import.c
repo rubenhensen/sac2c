@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.37  1996/01/07 16:59:29  cg
+ * Revision 1.38  1996/01/22 18:34:18  cg
+ * added new pragmas for global objects: effect, initfun
+ *
+ * Revision 1.37  1996/01/07  16:59:29  cg
  * pragmas copyfun, freefun, linkname, effect, touch and readonly
  * are now immediately resolved
  *
@@ -741,6 +744,11 @@ IMtypedef (node *arg_node, node *arg_info)
                 PRAGMA_TOUCH (pragma) = FreeAllIds (PRAGMA_TOUCH (pragma));
             }
 
+            if (PRAGMA_INITFUN (pragma) != NULL) {
+                WARN (NODE_LINE (arg_node), ("Pragma 'initfun` has no effect on type"));
+                FREE (PRAGMA_INITFUN (pragma));
+            }
+
             if (TYPEDEF_BASETYPE (arg_node) != T_hidden) {
                 if (PRAGMA_COPYFUN (pragma) != NULL) {
                     WARN (NODE_LINE (arg_node),
@@ -833,6 +841,12 @@ IMfundef (node *arg_node, node *arg_info)
                 FREE (PRAGMA_FREEFUN (pragma));
             }
 
+            if (PRAGMA_INITFUN (pragma) != NULL) {
+                WARN (NODE_LINE (arg_node),
+                      ("Pragma 'initfun` has no effect on function"));
+                FREE (PRAGMA_INITFUN (pragma));
+            }
+
             if (PRAGMA_LINKSIGNNUMS (pragma) != NULL) {
                 PRAGMA_LINKSIGN (pragma)
                   = Nums2IntArray (NODE_LINE (arg_node), count_params,
@@ -885,7 +899,7 @@ IMfundef (node *arg_node, node *arg_info)
  *
  *  functionname  : IMobjdef
  *  arguments     : 1) N_objdef node
- *                  2) arg_info unused
+ *                  2) arg_info points to N_modul node
  *  description   : checks pragmas of global objects.
  *                  Afterwards, the whole pragma node is removed.
  *  global vars   : ---
@@ -939,16 +953,17 @@ IMobjdef (node *arg_node, node *arg_info)
                 PRAGMA_READONLYNUMS (pragma) = FreeAllNums (PRAGMA_READONLYNUMS (pragma));
             }
 
-            if (PRAGMA_EFFECT (pragma) != NULL) {
-                WARN (NODE_LINE (arg_node),
-                      ("Pragma 'effect` has no effect on global object"));
-                PRAGMA_EFFECT (pragma) = FreeAllIds (PRAGMA_EFFECT (pragma));
-            }
-
             if (PRAGMA_TOUCH (pragma) != NULL) {
                 WARN (NODE_LINE (arg_node),
                       ("Pragma 'touch` has no effect on global object"));
                 PRAGMA_TOUCH (pragma) = FreeAllIds (PRAGMA_TOUCH (pragma));
+            }
+
+            if (PRAGMA_EFFECT (pragma) != NULL) {
+                OBJDEF_NEEDOBJS (arg_node)
+                  = CheckExistObjects (PRAGMA_EFFECT (pragma), arg_info,
+                                       ST_readonly_reference, NODE_LINE (arg_node));
+                PRAGMA_EFFECT (pragma) = NULL;
             }
 
             if (PRAGMA_COPYFUN (pragma) != NULL) {
@@ -963,10 +978,12 @@ IMobjdef (node *arg_node, node *arg_info)
                 FREE (PRAGMA_FREEFUN (pragma));
             }
 
-            if (PRAGMA_LINKNAME (pragma) != NULL) {
-                OBJDEF_LINKNAME (arg_node) = PRAGMA_LINKNAME (pragma);
-                FREE (pragma);
+            if (PRAGMA_INITFUN (pragma) != NULL) {
+                DBUG_PRINT ("PRAGMA", ("object %s has initfun %s", ItemName (arg_node),
+                                       PRAGMA_INITFUN (pragma)));
+            }
 
+            if (PRAGMA_LINKNAME (pragma) != NULL) {
                 DBUG_PRINT ("PRAGMA", ("object %s has linkname %s", ItemName (arg_node),
                                        OBJDEF_LINKNAME (arg_node)));
             }
@@ -1100,9 +1117,6 @@ GenMod (char *name, int checkdec)
 
         tmp->prefix = decl_tree->info.fun_name.id_mod;
         tmp->name = decl_tree->info.fun_name.id;
-
-        /*    tmp->moddec=CheckPragmas(tmp->moddec, tmp->prefix);  */
-
         tmp->next = NULL;
 
         for (i = 0; i < 4; i++)
@@ -1818,7 +1832,7 @@ IMmodul (node *arg_node, node *arg_info)
         }
 
         if (MODUL_OBJS (arg_node) != NULL) {
-            MODUL_OBJS (arg_node) = Trav (MODUL_OBJS (arg_node), arg_info);
+            MODUL_OBJS (arg_node) = Trav (MODUL_OBJS (arg_node), arg_node);
         }
 
         if (MODUL_FUNS (arg_node) != NULL) {
@@ -1887,15 +1901,15 @@ ImportOwnDeclaration (char *name, file_type modtype)
             SYSERROR (("File \"%s\" provides wrong declaration", filename));
 
             if (modtype == F_modimp) {
-                CONT_ERROR (("\tRequired: ModuleDec %s", name));
+                CONT_ERROR (("  Required: ModuleDec %s", name));
             } else {
-                CONT_ERROR (("\tRequired: ClassDec %s", name));
+                CONT_ERROR (("  Required: ClassDec %s", name));
             }
 
             if (NODE_TYPE (decl_tree) == N_moddec) {
-                CONT_ERROR (("\tProvided: ModuleDec %s", MODDEC_NAME (decl_tree)));
+                CONT_ERROR (("  Provided: ModuleDec %s", MODDEC_NAME (decl_tree)));
             } else {
-                CONT_ERROR (("\tProvided: ClassDec %s", MODDEC_NAME (decl_tree)));
+                CONT_ERROR (("  Provided: ClassDec %s", MODDEC_NAME (decl_tree)));
             }
 
             ABORT_ON_ERROR;

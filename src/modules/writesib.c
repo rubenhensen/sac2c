@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.7  1996/01/07 17:01:26  cg
+ * Revision 1.8  1996/01/22 18:35:31  cg
+ * added new pragmas for global objects: effect, initfun
+ *
+ * Revision 1.7  1996/01/07  17:01:26  cg
  * pragmas linkname, copyfun, and freefun are now generated
  * for sib from internal information
  *
@@ -241,7 +244,7 @@ node *
 AddImplicitItems (node *info, node *all_types)
 {
     nodelist *tmp;
-    node *fundef, *tdef, *impl_tdef;
+    node *fundef, *tdef, *impl_tdef, *objdef;
 
     DBUG_ENTER ("AddImplicitItems");
 
@@ -271,6 +274,16 @@ AddImplicitItems (node *info, node *all_types)
               = SearchTypedef (TYPEDEF_TNAME (tdef), TYPEDEF_TMOD (tdef), all_types);
             StoreExportNode (impl_tdef, info);
         }
+
+        tmp = NODELIST_NEXT (tmp);
+    }
+
+    tmp = INFO_EXPORTOBJS (info);
+
+    while (tmp != NULL) {
+        objdef = NODELIST_NODE (tmp);
+        StoreExportNodes (OBJDEF_NEEDOBJS (objdef), info);
+        StoreExportNodes (FUNDEF_NEEDOBJS (AP_FUNDEF (OBJDEF_EXPR (objdef))), info);
 
         tmp = NODELIST_NEXT (tmp);
     }
@@ -458,17 +471,55 @@ PrintNeededObjects (FILE *sibfile, nodelist *objs)
 
 /*
  *
- *  functionname  :
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
+ *  functionname  : PrintNeededObjectsOfObject
+ *  arguments     : 1) file handle for printing
+ *                  2) node list of objdefs
+ *  description   : writes an effect pragma with the given objects
+ *                  to the sib file.
+ *  global vars   : ---
+ *  internal funs : ---
+ *  external funs : fprintf
+ *  macros        : PRINTMODNAME
  *
- *  remarks       :
+ *  remarks       : The only difference to PrintNeededObjects is that
+ *                  this function always writes a pragma effect regardless
+ *                  of the node list attribute.
  *
  */
+
+void
+PrintNeededObjectsOfObject (FILE *sibfile, nodelist *objs)
+{
+    node *obj;
+    int first;
+    nodelist *tmp;
+
+    DBUG_ENTER ("PrintNeededObjectsOfObject");
+
+    tmp = objs;
+    first = 1;
+
+    while (tmp != NULL) {
+        obj = NODELIST_NODE (tmp);
+
+        if (first) {
+            first = 0;
+            fprintf (sibfile, "#pragma effect ");
+        } else {
+            fprintf (sibfile, ", ");
+        }
+
+        PRINTMODNAME (OBJDEF_MOD (obj), OBJDEF_NAME (obj));
+
+        tmp = NODELIST_NEXT (tmp);
+    }
+
+    if (!first) {
+        fprintf (sibfile, "\n");
+    }
+
+    DBUG_VOID_RETURN;
+}
 
 /*
  *
@@ -588,6 +639,19 @@ PrintSibObjs (FILE *sibfile, nodelist *objdeflist, char *modname)
         if (OBJDEF_LINKNAME (objdef) != NULL) {
             fprintf (sibfile, "#pragma linkname \"%s\"\n", OBJDEF_LINKNAME (objdef));
         }
+
+        if (OBJDEF_INITFUN (objdef) != NULL) {
+            fprintf (sibfile, "#pragma initfun \"%s\"\n", OBJDEF_INITFUN (objdef));
+        }
+
+        PrintNeededObjectsOfObject (sibfile, OBJDEF_NEEDOBJS (objdef));
+        PrintNeededObjectsOfObject (sibfile,
+                                    FUNDEF_NEEDOBJS (AP_FUNDEF (OBJDEF_EXPR (objdef))));
+        /*
+         * The structure of the syntax tree guarantees that almost one of
+         * the above function calls actually writes a pragma to sibfile.
+         */
+
         /*
             if (OBJDEF_LINKMOD(objdef)!=NULL)
             {
@@ -658,6 +722,36 @@ PrintSibFuns (FILE *sibfile, nodelist *fundeflist, char *modname)
     }
 
     DBUG_VOID_RETURN;
+}
+
+/*
+ *
+ *  functionname  : WSIBobjdef
+ *  arguments     :
+ *  description   :
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
+
+node *
+WSIBobjdef (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("WSIBobjdef");
+
+    if (FUNDEF_NEEDOBJS (AP_FUNDEF (OBJDEF_EXPR (OBJDEC_DEF (arg_node))))) {
+        StoreExportNode (OBJDEC_DEF (arg_node), arg_info);
+    }
+
+    if (OBJDEF_NEXT (arg_node) != NULL) {
+        arg_info = Trav (OBJDEF_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_info);
 }
 
 /*
@@ -778,6 +872,10 @@ WSIBexplist (node *arg_node, node *arg_info)
 
     if (EXPLIST_FUNS (arg_node) != NULL) {
         arg_info = Trav (EXPLIST_FUNS (arg_node), arg_info);
+    }
+
+    if (EXPLIST_OBJS (arg_node) != NULL) {
+        arg_info = Trav (EXPLIST_OBJS (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_info);

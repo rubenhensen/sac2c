@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.6  1996/01/07 16:59:29  cg
+ * Revision 1.7  1996/01/22 18:35:31  cg
+ * added new pragmas for global objects: effect, initfun
+ *
+ * Revision 1.6  1996/01/07  16:59:29  cg
  * pragmas copyfun, freefun, linkname, effect, touch and readonly
  * are now immediately resolved
  *
@@ -366,41 +369,35 @@ ExtractObjFromSib (node *obj, node *sib, node *modul)
         SIB_OBJS (sib) = OBJDEF_NEXT (obj);
     } else {
         tmp = SIB_OBJS (sib);
+
         while (OBJDEF_NEXT (tmp) != obj) {
             tmp = OBJDEF_NEXT (tmp);
         }
+
         OBJDEF_NEXT (tmp) = OBJDEF_NEXT (obj);
     }
 
     OBJDEF_LINKMOD (obj) = SIB_NAME (sib);
 
-    if (OBJDEF_PRAGMA (obj) != NULL) {
-        DBUG_ASSERT (PRAGMA_LINKNAME (OBJDEF_PRAGMA (obj)) != NULL,
-                     "Objdef from SIB has pragma but no linkname");
-
-        OBJDEF_LINKNAME (obj) = PRAGMA_LINKNAME (OBJDEF_PRAGMA (obj));
-    }
-
     if (MODUL_OBJS (modul) == NULL) {
         MODUL_OBJS (modul) = obj;
-        OBJDEF_NEXT (obj) = NULL;
-
-        /******************************************************/
-#ifndef NEWTREE
-        obj->nnode = 1;
-#endif
-        /******************************************************/
-
     } else {
-        OBJDEF_NEXT (obj) = MODUL_OBJS (modul);
-        MODUL_OBJS (modul) = obj;
+        tmp = MODUL_OBJS (modul);
 
-        /******************************************************/
-#ifndef NEWTREE
-        obj->nnode = 2;
-#endif
-        /******************************************************/
+        while (OBJDEF_NEXT (tmp) != NULL) {
+            tmp = OBJDEF_NEXT (tmp);
+        }
+
+        OBJDEF_NEXT (tmp) = obj;
     }
+
+    OBJDEF_NEXT (obj) = NULL;
+
+    /******************************************************/
+#ifndef NEWTREE
+    obj->nnode = 1;
+#endif
+    /******************************************************/
 
     DBUG_VOID_RETURN;
 }
@@ -506,6 +503,8 @@ EnsureExistObjects (ids *object, node *modul, node *sib, statustype attrib)
             objtype = MakeIds (StringCopy (OBJDEF_TNAME (find)), OBJDEF_TMOD (find),
                                ST_regular);
             EnsureExistTypes (objtype, modul, sib);
+
+            OBJDEF_SIB (find) = sib;
         } else {
             DBUG_PRINT ("READSIB",
                         ("Implicitly used object %s already exists.", ItemName (find)));
@@ -802,11 +801,26 @@ RSIBfundef (node *arg_node, node *arg_info)
 node *
 RSIBobjdef (node *arg_node, node *arg_info)
 {
+    node *sib_entry, *sib = NULL;
+
     DBUG_ENTER ("RSIBobjdef");
 
-    if (OBJDEF_STATUS (arg_node) == ST_imported) {
-        if (OBJDEF_MOD (arg_node) != NULL) {
-            FindSib (OBJDEF_MOD (arg_node));
+    if (OBJDEF_SIB (arg_node) != NULL) {
+        sib = OBJDEF_SIB (arg_node);
+        OBJDEF_SIB (arg_node) = NULL;
+    } else {
+        if ((OBJDEF_STATUS (arg_node) == ST_imported)
+            && (OBJDEF_MOD (arg_node) != NULL)) {
+            sib = FindSib (OBJDEF_MOD (arg_node));
+        }
+    }
+
+    if (sib != NULL) {
+        sib_entry = FindSibEntry (arg_node, sib);
+
+        if ((sib_entry != NULL) && (OBJDEF_PRAGMA (sib_entry) != NULL)) {
+            OBJDEF_NEEDOBJS (arg_node) = EnsureExistObjects (OBJDEF_EFFECT (sib_entry),
+                                                             arg_info, sib, ST_reference);
         }
     }
 
@@ -902,7 +916,7 @@ RSIBmodul (node *arg_node, node *arg_info)
      */
 
     if (MODUL_OBJS (arg_node) != NULL) {
-        MODUL_OBJS (arg_node) = Trav (MODUL_OBJS (arg_node), arg_info);
+        MODUL_OBJS (arg_node) = Trav (MODUL_OBJS (arg_node), arg_node);
     }
 
     DBUG_RETURN (arg_node);
