@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.4  1999/02/15 15:13:02  cg
+ * Reordering of functions corrected: Fodfuns remain in front
+ * of N_fundef chain.
+ *
  * Revision 1.3  1998/06/25 08:04:18  cg
  * sequence of fundefs will now be reordered so that spmd-functions
  * appear before the original functions they are lifted from.
@@ -132,7 +136,7 @@ CONCfundef (node *arg_node, node *arg_info)
 
     INFO_SPMD_FUNDEF (arg_info) = arg_node;
 
-    if (FUNDEF_BODY (arg_node) != NULL) {
+    if ((FUNDEF_BODY (arg_node) != NULL) && (FUNDEF_STATUS (arg_node) != ST_foldfun)) {
 
         if (FUNDEF_STATUS (arg_node) != ST_spmdfun) {
 
@@ -257,7 +261,8 @@ CONCfundef (node *arg_node, node *arg_info)
      */
 
     if ((FUNDEF_STATUS (arg_node) != ST_spmdfun) && (FUNDEF_NEXT (arg_node) != NULL)
-        && (FUNDEF_STATUS (FUNDEF_NEXT (arg_node)) == ST_spmdfun)) {
+        && (FUNDEF_STATUS (FUNDEF_NEXT (arg_node)) == ST_spmdfun)
+        && (FUNDEF_LIFTEDFROM (FUNDEF_NEXT (arg_node)) == arg_node)) {
         current_fun = arg_node;
         first_spmdfun = FUNDEF_NEXT (arg_node);
         last_spmdfun = first_spmdfun;
