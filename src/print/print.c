@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.200  1998/04/24 12:11:48  dkr
+ * changed PrintSPMD
+ *
  * Revision 1.199  1998/04/24 01:13:09  dkr
  * added PrintSync
  *
@@ -2124,6 +2127,14 @@ PrintSPMD (node *arg_node, node *arg_info)
 
     if (SPMD_INOUT (arg_node) != NULL) {
         SPMD_INOUT (arg_node) = Trav (SPMD_INOUT (arg_node), arg_info);
+    }
+
+    fprintf (outfile, "\n");
+    INDENT;
+    fprintf (outfile, " *** local: ");
+
+    if (SPMD_LOCAL (arg_node) != NULL) {
+        SPMD_LOCAL (arg_node) = Trav (SPMD_LOCAL (arg_node), arg_info);
     }
 
     fprintf (outfile, "\n");
