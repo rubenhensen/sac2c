@@ -88,10 +88,29 @@ CACHE3_MSCA      :=  0
  
 /*******************************************************************************
  *
- * target 
+ * Targets for the specification of different cache architectures
  *
  */
 
+target dec_3000-800:
 
+CACHE1_SIZE      :=  8
+CACHE1_LINE      :=  32
+CACHE1_ASSOC     :=  1
+CACHE1_WRITEPOL  :=  "write_around"
+
+CACHE2_SIZE      :=  2048
+CACHE2_LINE      :=  32
+CACHE2_ASSOC     :=  1
+
+
+/*******************************************************************************
+ *
+ * Specific machine targets using gcc
+ *
+ *
+ */
+
+target scalar::dec_3000-800:
 
 
