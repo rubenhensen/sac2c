@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.12  1994/11/17 16:49:03  hw
+ * Revision 1.13  1994/11/22 11:45:48  hw
+ * - deleted PrintFor
+ * - changed Type2string
+ *
+ * Revision 1.12  1994/11/17  16:49:03  hw
  * added ";" to output in PrintPost, PrintPre
  *
  * Revision 1.11  1994/11/15  10:06:15  sbs
@@ -27,12 +31,15 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "tree.h"
 #include "my_debug.h"
 #include "dbug.h"
 #include "traverse.h"
 #include "print.h"
+#include "Error.h"
 
 #define TYPE_LENGTH 80      /* dimension of array of char */
 #define FUN_HEAD_LENGTH 120 /* dimension of array of char */
@@ -77,7 +84,10 @@ Type2String (types *type, int print_id)
     do {
         if (0 == type->dim)
             strcat (tmp_string, type_string[type->simpletype]);
-        else {
+        else if (-1 == type->dim) {
+            strcat (tmp_string, type_string[type->simpletype]);
+            strcat (tmp_string, "[]");
+        } else {
             int i;
             static char int_string[INT_STRING_LENGTH];
 
@@ -90,7 +100,7 @@ Type2String (types *type, int print_id)
                     strcat (tmp_string, int_string);
                 } else {
                     DBUG_PRINT ("PRINT", ("shp[%d]=%d", i, type->shpseg->shp[i]));
-                    sprintf (int_string, "%d ] ", type->shpseg->shp[i]);
+                    sprintf (int_string, "%d ]", type->shpseg->shp[i]);
                     strcat (tmp_string, int_string);
                 }
         }
@@ -299,7 +309,10 @@ PrintBool (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("PrintBool");
 
-    fprintf (outfile, "%s", arg_node->info.cint);
+    if (0 == arg_node->info.cint)
+        fprintf (outfile, "FALSE");
+    else
+        fprintf (outfile, "TRUE");
 
     DBUG_RETURN (arg_node);
 }
@@ -374,29 +387,6 @@ PrintVardec (node *arg_node, node *arg_info)
 }
 
 node *
-PrintFor (node *arg_node, node *arg_info)
-{
-    int i;
-
-    DBUG_ENTER ("PrintFor");
-
-    fprintf (outfile, "for(");
-    i = indent;
-    indent = 0;
-    Trav (arg_node->node[0], arg_info);
-    indent = i;
-    Trav (arg_node->node[1], arg_info);
-    fprintf (outfile, "; ");
-    Trav (arg_node->node[2], arg_info);
-    fprintf (outfile, ")\n");
-    indent++; /* indent for body */
-    Trav (arg_node->node[3], arg_info);
-    indent--; /* indent as last assignment */
-
-    DBUG_RETURN (arg_node);
-}
-
-node *
 PrintDo (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintDo");
@@ -456,6 +446,9 @@ PrintLeton (node *arg_node, node *arg_info)
         break;
     case N_divon:
         fprintf (outfile, " %s /= ", arg_node->info.ids->id);
+        break;
+    default:
+        Error ("wrong nodetype in PrintLeton", 1);
         break;
     }
     Trav (arg_node->node[0], arg_info);
