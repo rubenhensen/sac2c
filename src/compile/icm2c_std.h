@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2002/03/07 20:08:33  dkr
+ * ND_FUN_RET: parameter 'arg_info' removed
+ *
  * Revision 3.3  2001/12/21 13:33:02  dkr
  * ICMs ..._CHECK_REUSE removed
  *
@@ -49,7 +52,7 @@ extern void ICMCompileND_FUN_DEC (char *name, char *rettype, int narg, char **ty
 
 extern void ICMCompileND_FUN_AP (char *name, char *retname, int narg, char **arg);
 
-extern void ICMCompileND_FUN_RET (char *retname, int narg, char **arg, node *arg_info);
+extern void ICMCompileND_FUN_RET (char *retname, int narg, char **arg);
 
 extern void ICMCompileND_CREATE_CONST_ARRAY_S (char *name, int dim, char **s);
 
