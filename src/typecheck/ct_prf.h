@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.6  2003/04/07 14:34:19  sbs
+ * NTCPRF_cffuntab added .
+ *
  * Revision 1.5  2003/03/19 10:34:30  sbs
  * NTCPRF_drop_SxV and NTCPRF_cat_VxV added.
  *
@@ -26,6 +29,7 @@
 #include "type_errors.h"
 
 extern ct_funptr NTCPRF_funtab[];
+extern void *NTCPRF_cffuntab[];
 
 extern ntype *NTCPRF_dummy (te_info *info, ntype *args);
 extern ntype *NTCPRF_array (te_info *info, ntype *elems);
