@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.25  2002/09/05 16:54:53  dkr
+ * wrapper functions always inlined now
+ *
  * Revision 3.24  2002/09/04 13:06:41  dkr
  * INLfundef: comment about LaC limitation updated
  *
@@ -726,7 +729,8 @@ INLfundef (node *arg_node, node *arg_info)
  *   node *INLassign( node *arg_node, node *arg_info)
  *
  * Description:
- *   Initiates function inlining if substitution-counter not 0
+ *   Initiates function inlining if substitution-counter not 0 or the given
+ *   fundef is a wrapper function.
  *
  ******************************************************************************/
 
@@ -751,8 +755,11 @@ INLassign (node *arg_node, node *arg_info)
                             AP_NAME (LET_EXPR (instr)), NODE_LINE (arg_node),
                             FUNDEF_INLINE (inl_fundef), FUNDEF_INLREC (inl_fundef)));
 
-        if (FUNDEF_INLREC (inl_fundef) > 0) {
-            inlined_nodes = DoInline (instr, arg_info);
+        if (FUNDEF_INLINE (inl_fundef)) {
+            if ((FUNDEF_INLREC (inl_fundef) > 0)
+                || (FUNDEF_STATUS (inl_fundef) == ST_wrapperfun)) {
+                inlined_nodes = DoInline (instr, arg_info);
+            }
         }
     }
 
