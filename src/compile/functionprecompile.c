@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.8  2004/12/13 18:45:45  ktr
+ * LET_EXPR is now always traversed in order to handle nested code.
+ *
  * Revision 1.7  2004/12/08 11:20:06  sah
  * bugfix
  *
@@ -614,6 +617,8 @@ node *
 FPClet (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("FPClet");
+
+    LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
     if (NODE_TYPE (LET_EXPR (arg_node)) == N_ap) {
         /*
