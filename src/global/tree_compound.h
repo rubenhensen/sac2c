@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.68  1998/05/07 21:38:46  dkr
+ * added VARDEC_OR_ARG_TYPE
+ *
  * Revision 1.67  1998/05/06 17:20:31  dkr
  * added macros NWITH_IDS, NWITH_VEC
  *
@@ -650,6 +653,8 @@ extern nodelist *CopyNodelist (nodelist *nl);
                                : (NODE_TYPE (n) == N_block ? BLOCK_INSTR (n) : NULL))
 
 #define VARDEC_OR_ARG_NAME(n) ((NODE_TYPE (n) == N_arg) ? ARG_NAME (n) : VARDEC_NAME (n))
+
+#define VARDEC_OR_ARG_TYPE(n) ((NODE_TYPE (n) == N_arg) ? ARG_TYPE (n) : VARDEC_TYPE (n))
 
 #define VARDEC_OR_ARG_REFCNT(n)                                                          \
     ((NODE_TYPE (n) == N_arg) ? ARG_REFCNT (n) : VARDEC_REFCNT (n))
