@@ -17,7 +17,7 @@
 
 target default:
  
-CC               :=  gcc
+CC               :=  cc
 CCFLAGS          :=  "-Wall -Wno-unused -fno-builtin"
 CCDIR            :=  "-I$SACBASE/runtime/ "
                      "-L$SACBASE/runtime/"
@@ -31,12 +31,12 @@ OPT_O3           :=  -O3
 OPT_g            :=  -g
  
 CPP_STDIN        :=  "cpp -C"
-CPP_FILE         :=  "gcc -E -C -x c"
+CPP_FILE         :=  "cpp -C"
 OPT_D            :=  -D
 TAR_CREATE       :=  "tar cf"
 TAR_EXTRACT      :=  "tar xf"
 AR_CREATE        :=  "ar cr"
-RANLIB           :=  ""
+RANLIB           :=  "ranlib"
 MKDIR            :=  mkdir
 RMDIR            :=  "rm -rf"
 CHDIR            :=  cd
