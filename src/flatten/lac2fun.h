@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2000/02/23 23:07:40  dkr
+ * some new functions added
+ *
  * Revision 1.6  2000/02/09 14:54:08  dkr
  * LAC2FUNcode added
  *
@@ -21,18 +24,23 @@
 #ifndef _sac_lac2fun_h
 #define _sac_lac2fun_h
 
-extern node *LaC2Fun (node *syntaxtree);
+extern node *Lac2Fun (node *syntaxtree);
 
-extern node *LAC2FUNfundef (node *arg_node, node *arg_info);
-extern node *LAC2FUNassign (node *arg_node, node *arg_info);
-extern node *LAC2FUNlet (node *arg_node, node *arg_info);
-extern node *LAC2FUNid (node *arg_node, node *arg_info);
-extern node *LAC2FUNwithid (node *arg_node, node *arg_info);
-extern node *LAC2FUNcode (node *arg_node, node *arg_info);
-extern node *LAC2FUNwith (node *arg_node, node *arg_info);
-extern node *LAC2FUNwith2 (node *arg_node, node *arg_info);
-extern node *LAC2FUNcond (node *arg_node, node *arg_info);
-extern node *LAC2FUNdo (node *arg_node, node *arg_info);
-extern node *LAC2FUNwhile (node *arg_node, node *arg_info);
+extern node *L2F_INFERfundef (node *arg_node, node *arg_info);
+extern node *L2F_INFERassign (node *arg_node, node *arg_info);
+extern node *L2F_INFERlet (node *arg_node, node *arg_info);
+extern node *L2F_INFERid (node *arg_node, node *arg_info);
+extern node *L2F_INFERwithid (node *arg_node, node *arg_info);
+extern node *L2F_INFERcode (node *arg_node, node *arg_info);
+extern node *L2F_INFERwith (node *arg_node, node *arg_info);
+extern node *L2F_INFERwith2 (node *arg_node, node *arg_info);
+extern node *L2F_INFERcond (node *arg_node, node *arg_info);
+extern node *L2F_INFERwhile (node *arg_node, node *arg_info);
+extern node *L2F_INFERdo (node *arg_node, node *arg_info);
+
+extern node *L2F_LIFTfundef (node *arg_node, node *arg_info);
+extern node *L2F_LIFTcond (node *arg_node, node *arg_info);
+extern node *L2F_LIFTwhile (node *arg_node, node *arg_info);
+extern node *L2F_LIFTdo (node *arg_node, node *arg_info);
 
 #endif /* _sac_lac2fun_h */
