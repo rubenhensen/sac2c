@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.138  2004/10/04 17:16:22  sah
+ * removed MT/ST/EX-Identifier
+ * added a NEW_AST define
+ *
  * Revision 3.137  2004/09/30 20:02:07  sah
  * fixed type of DFMmask_t arguments
  *
@@ -2572,6 +2576,7 @@ MakeParamsByDFMfold (DFMfoldmask_t *mask, char *tag, int *num_args, node *icm_ar
 static node *
 DoSomeReallyUglyTransformations_MT2 (node *fundef)
 {
+#ifndef NEW_AST
     node *front, *back;
     node *vardec;
     node *assigns, *assign;
@@ -2639,6 +2644,9 @@ DoSomeReallyUglyTransformations_MT2 (node *fundef)
     FUNDEF_ARGS (fundef) = NULL;
 
     DBUG_RETURN (fundef);
+#else
+    return (fundef);
+#endif /* NEW_AST */
 }
 
 /** <!--********************************************************************-->
@@ -8873,8 +8881,7 @@ COMPMt (node *arg_node, info *arg_info)
     /*
      *  Part 2 - Broadcast
      */
-    broadcast = MakeIcm5 ("MT2_MASTER_BROADCAST", MakeId_Copy ("SYNC"),
-                          MakeNum (MT_IDENTIFIER (arg_node)),
+    broadcast = MakeIcm5 ("MT2_MASTER_BROADCAST", MakeId_Copy ("SYNC"), MakeNum (42),
                           MakeNum (DFMTestMask (MT_ALLOC (arg_node))
                                    + DFMTestMask (MT_USEMASK (arg_node))),
                           MakeParamsByDFM (MT_ALLOC (arg_node), "alloc", NULL, NULL),
@@ -8897,7 +8904,7 @@ COMPMt (node *arg_node, info *arg_info)
     /*
      *  Part 5 - Barrier
      */
-    barrier = MakeIcm1 ("MT2_MASTER_BARRIER", MakeNum (MT_IDENTIFIER (arg_node)));
+    barrier = MakeIcm1 ("MT2_MASTER_BARRIER", MakeNum (42));
 
     /*
      *  Finalization ... build result and free old tree
@@ -8934,7 +8941,7 @@ COMPSt (node *arg_node, info *arg_info)
     fundef = INFO_COMP_FUNDEF (arg_info);
 
     if (FUNDEF_ATTRIB (fundef) == ST_call_mt_master) {
-        barrier = MakeIcm1 ("MT2_MASTER_BARRIER", MakeNum (ST_IDENTIFIER (arg_node)));
+        barrier = MakeIcm1 ("MT2_MASTER_BARRIER", MakeNum (42));
         code = MakeIcm0 ("CODE");
 
 #if 0
@@ -8945,20 +8952,18 @@ COMPSt (node *arg_node, info *arg_info)
 #else
         allocate = MakeAllocs (ST_ALLOC (arg_node));
 #endif
-        broadcast
-          = MakeIcm4 ("MT2_MASTER_BROADCAST", MakeId_Copy ("SYNC"),
-                      MakeNum (MT_IDENTIFIER (arg_node)), MakeNum (DFMTestMask (bset)),
-                      MakeParamsByDFM (bset, "bset", NULL, NULL));
+        broadcast = MakeIcm4 ("MT2_MASTER_BROADCAST", MakeId_Copy ("SYNC"), MakeNum (42),
+                              MakeNum (DFMTestMask (bset)),
+                              MakeParamsByDFM (bset, "bset", NULL, NULL));
         activate = MakeIcm2 ("MT2_ACTIVATE", MakeId_Copy ("SYNC"), MakeId_Copy ("NULL"));
 
         result = MakeAssigns5 (barrier, code, allocate, broadcast, activate);
     } else if (FUNDEF_ATTRIB (fundef) == ST_call_mt_worker) {
-        barrier = MakeIcm1 ("MT2_WORKER_BARRIER", MakeNum (ST_IDENTIFIER (arg_node)));
+        barrier = MakeIcm1 ("MT2_WORKER_BARRIER", MakeNum (42));
         suspend = MakeIcm1 ("MT2_SUSPEND", MakeId_Copy ("SYNC"));
-        receive
-          = MakeIcm4 ("MT2_MASTER_RECEIVE", MakeId_Copy ("SYNC"),
-                      MakeNum (MT_IDENTIFIER (arg_node)), MakeNum (DFMTestMask (bset)),
-                      MakeParamsByDFM (bset, "bset", NULL, NULL));
+        receive = MakeIcm4 ("MT2_MASTER_RECEIVE", MakeId_Copy ("SYNC"), MakeNum (42),
+                            MakeNum (DFMTestMask (bset)),
+                            MakeParamsByDFM (bset, "bset", NULL, NULL));
 
         result = MakeAssigns3 (barrier, suspend, receive);
     } else {
