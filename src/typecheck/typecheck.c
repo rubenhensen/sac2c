@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.7  1999/03/30 14:59:27  cg
+ * Bug fixed: the number of return values is now checked against
+ * the function declaration.
+ *
  * Revision 2.6  1999/03/17 21:31:55  sbs
  * fixed a problem when profiling functions with many arguments
  * (strncat does not work properly with negative n's !)
@@ -5327,6 +5331,12 @@ TCreturn (node *arg_node, node *arg_info)
             }
             return_type = return_type->next;
             fun_type = fun_type->next;
+        }
+
+        if ((return_type != NULL) || (fun_type != NULL)) {
+            ABORT (NODE_LINE (arg_node), ("Number of return values does not match "
+                                          "declaration of function '%s`",
+                                          ModName (fun_mod, fun_name)));
         }
 
         DBUG_ASSERT ((0 != is_compatible), " is_compatible == 0");
