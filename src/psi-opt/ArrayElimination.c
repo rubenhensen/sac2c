@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2001/05/09 15:51:42  nmw
+ * when using ssa form, ArrayElimination does not need masks anymore
+ *
  * Revision 3.7  2001/05/02 06:56:25  nmw
  * init of constant arrays completed
  *
@@ -377,8 +380,20 @@ AEprf (node *arg_node, node *arg_info)
 
     if (F_psi == PRF_PRF (arg_node)) {
         tmpn = NodeBehindCast (PRF_ARG1 (arg_node));
-        if (N_id == NODE_TYPE (tmpn))
-            tmpn = MRD_GETDATA (ID_VARNO (tmpn), INFO_VARNO (arg_info));
+        if (N_id == NODE_TYPE (tmpn)) {
+            if (use_ssaform) {
+                /* look up via ssa assign attribute */
+                if (AVIS_SSAASSIGN (ID_AVIS (tmpn)) != NULL) {
+                    DBUG_PRINT ("AE", ("defining assignment looked up via SSAASSIGN"));
+                    tmpn = ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (tmpn)));
+                } else {
+                    tmpn = NULL;
+                }
+            } else {
+                /* old version - use MRD masks - can be removed in future... */
+                tmpn = MRD_GETDATA (ID_VARNO (tmpn), INFO_VARNO (arg_info));
+            }
+        }
 
         arg[0] = tmpn;
         arg[1] = NodeBehindCast (PRF_ARG2 (arg_node));
