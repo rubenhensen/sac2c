@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2004/11/02 14:28:44  ktr
+ * Better loop support.
+ *
  * Revision 1.1  2004/10/26 11:18:22  ktr
  * Initial revision
  *
@@ -38,6 +41,7 @@ extern node *EMIAwithop (node *arg_node, info *arg_info);
  * - N_prf
  * - N_icm
  * - N_array
+ * - N_objdef
  *
  ****************************************************************************/
 

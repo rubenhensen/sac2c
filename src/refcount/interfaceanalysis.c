@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2004/11/02 14:28:44  ktr
+ * Better loop support.
+ *
  * Revision 1.1  2004/10/26 11:18:16  ktr
  * Initial revision
  *
@@ -23,8 +26,6 @@
  *
  */
 #define NEW_INFO
-
-#define AVIS_ALIASMASK(n) (n->dfmask[0])
 
 #include "globals.h"
 #include "tree_basic.h"
@@ -335,6 +336,10 @@ EMIAarg (node *arg_node, info *arg_info)
         break;
     }
 
+    if (ARG_NEXT (arg_node) != NULL) {
+        ARG_NEXT (arg_node) = Trav (ARG_NEXT (arg_node), arg_info);
+    }
+
     DBUG_RETURN (arg_node);
 }
 
@@ -431,7 +436,14 @@ EMIAfuncond (node *arg_node, info *arg_info)
     DBUG_ENTER ("EMIAfuncond");
 
     INFO_IA_CONTEXT (arg_info) = IA_funcond;
-    FUNCOND_THEN (arg_node) = Trav (FUNCOND_THEN (arg_node), arg_info);
+
+    /*
+     * LOOP Functions: Alias of the return value does not depend on
+     *                 the recursive application!
+     */
+    if (!FUNDEF_IS_LOOPFUN (INFO_IA_FUNDEF (arg_info))) {
+        FUNCOND_THEN (arg_node) = Trav (FUNCOND_THEN (arg_node), arg_info);
+    }
     FUNCOND_ELSE (arg_node) = Trav (FUNCOND_ELSE (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
@@ -735,6 +747,10 @@ EMIAvardec (node *arg_node, info *arg_info)
     default:
         DBUG_ASSERT ((0), "Illegal context");
         break;
+    }
+
+    if (VARDEC_NEXT (arg_node) != NULL) {
+        VARDEC_NEXT (arg_node) = Trav (VARDEC_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
