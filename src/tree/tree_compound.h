@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.42  2001/04/26 21:06:45  dkr
+ * L_VARDEC_OR_ARG_TYPE added
+ *
  * Revision 3.41  2001/04/26 13:10:16  dkr
  * CountIds() added
  *
@@ -1009,6 +1012,13 @@ extern int CmpDomain (node *args1, node *args2);
         ARG_AVIS (n) = (rhs);                                                            \
     } else {                                                                             \
         VARDEC_AVIS (n) = (rhs);                                                         \
+    }
+
+#define L_VARDEC_OR_ARG_TYPE(n, rhs)                                                     \
+    if (NODE_TYPE (n) == N_arg) {                                                        \
+        ARG_TYPE (n) = (rhs);                                                            \
+    } else {                                                                             \
+        VARDEC_TYPE (n) = (rhs);                                                         \
     }
 
 /*
