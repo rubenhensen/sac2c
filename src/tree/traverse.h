@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.56  2004/08/26 15:02:08  khf
+ * ddepend_tab and tdepend_tab added
+ *
  * Revision 3.55  2004/08/24 16:51:19  skt
  * crwiw_tab added
  *
@@ -403,8 +406,8 @@ extern funtab *asmra_tab;
 extern funtab *tem_tab;
 extern funtab *pem_tab;
 extern funtab *emalloc_tab;
-extern funtab *unused_tab5;
-extern funtab *unused_tab6;
+extern funtab *ddepend_tab;
+extern funtab *tdepend_tab;
 extern funtab *unused_tab7;
 extern funtab *unused_tab8;
 extern funtab *unused_tab9;

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.70  2004/08/26 15:02:08  khf
+ * ddepend_tab and tdepend_tab added
+ *
  * Revision 3.69  2004/08/24 16:51:19  skt
  * crwiw_tab added
  *
@@ -344,6 +347,8 @@
 #include "ExplicitAccumulate.h"
 #include "ConstVarPropagation.h"
 #include "WithloopFusion.h"
+#include "detectdependencies.h"
+#include "tagdependencies.h"
 
 #include "traverse.h"
 
@@ -1727,26 +1732,26 @@ static funtab emalloc_tab_rec = {{
 funtab *emalloc_tab = &emalloc_tab_rec;
 
 /*
- *  (125) unused_tab5
+ *  (125) ddepend_tab
  */
-static funtab unused_tab5_rec = {{
-#define NIFunused_5(it_unused_5) it_unused_5
+static funtab ddepend_tab_rec = {{
+#define NIFddepend(it_ddepend) it_ddepend
 #include "node_info.mac"
                                  },
                                  NULL,
                                  NULL};
-funtab *unused_tab5 = &unused_tab5_rec;
+funtab *ddepend_tab = &ddepend_tab_rec;
 
 /*
- *  (126) unused_tab6
+ *  (126) tdepend_tab
  */
-static funtab unused_tab6_rec = {{
-#define NIFunused_6(it_unused_6) it_unused_6
+static funtab tdepend_tab_rec = {{
+#define NIFtdepend(it_tdepend) it_tdepend
 #include "node_info.mac"
                                  },
                                  NULL,
                                  NULL};
-funtab *unused_tab6 = &unused_tab6_rec;
+funtab *tdepend_tab = &tdepend_tab_rec;
 
 /*
  *  (127) unused_tab7
