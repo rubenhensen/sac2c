@@ -1,6 +1,9 @@
 /*      $Id$
  *
  * $Log$
+ * Revision 1.19  1998/07/14 12:58:25  srs
+ * enhanced ASSERT text of CreateVardec()
+ *
  * Revision 1.18  1998/05/15 14:41:01  srs
  * changed MakeNullVec() and added break specifier bo:wli
  *
@@ -804,6 +807,7 @@ node *
 CreateVardec (char *name, types *type, node **vardecs)
 {
     node *vardecn;
+    char *c;
 
     DBUG_ENTER ("CreateVardec");
 
@@ -812,7 +816,14 @@ CreateVardec (char *name, types *type, node **vardecs)
 
     /* if not found, create vardec. */
     if (!vardecn) {
-        DBUG_ASSERT (type, ("wrong parameters"));
+        if (!type) {
+            c = Malloc (50);
+            c[0] = 0;
+            c = strcat (c, "parameter type is NULL for variable ");
+            c = strcat (c, name);
+            DBUG_ASSERT (0, (c));
+        }
+
         type = DuplicateTypes (type, 42);
         vardecn = MakeVardec (StringCopy (name), type, *vardecs);
         VARDEC_VARNO (vardecn) = -1;
