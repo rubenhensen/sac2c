@@ -1,6 +1,8 @@
 /*
- *
  * $Log$
+ * Revision 2.4  2000/05/29 17:29:58  dkr
+ * functions for old with-loop removed
+ *
  * Revision 2.3  1999/07/14 12:11:16  sbs
  * Major re-implementation of IVE!
  * - stacking of ACTCHNs for proper handling of CONDs and LOOPs
@@ -39,8 +41,6 @@
  *
  * Revision 1.1  1995/06/02  10:06:56  sbs
  * Initial revision
- *
- *
  */
 
 #ifndef sac_index_h
@@ -56,8 +56,6 @@ extern node *IdxVardec (node *arg_node, node *arg_info);
 extern node *IdxArg (node *arg_node, node *arg_info);
 extern node *IdxAssign (node *arg_node, node *arg_info);
 extern node *IdxReturn (node *arg_node, node *arg_info);
-extern node *IdxWith (node *arg_node, node *arg_info);
-extern node *IdxGenerator (node *arg_node, node *arg_info);
 extern node *IdxLet (node *arg_node, node *arg_info);
 extern node *IdxPrf (node *arg_node, node *arg_info);
 extern node *IdxId (node *arg_node, node *arg_info);
