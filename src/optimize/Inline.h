@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  1998/07/16 17:19:17  sbs
+ * DoInline made privat and InlineSingleApplication exported!
+ *
  * Revision 1.7  1998/07/16 11:40:51  sbs
  * exported DoInline which is needed in WLUnroll.c
  *
@@ -30,7 +33,7 @@
 #define _Inline_h
 
 extern node *Inline (node *arg_node, node *arg_info);
-extern node *DoInline (node *let_node, node *ap_node, node *arg_info);
+extern node *InlineSingleApplication (node *let_node, node *fundef_node);
 
 extern node *INLmodul (node *arg_node, node *arg_info);
 extern node *INLfundef (node *arg_node, node *arg_info);
