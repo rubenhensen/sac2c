@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2003/01/28 18:16:22  ktr
+ * CompareTreeLUT added to compare_tree
+ *
  * Revision 1.10  2001/05/22 14:57:37  nmw
  * bug fixed in CMPwithid(), destroys sometimes arg_info :-(
  *
@@ -166,9 +169,19 @@ CMPTid (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("CMPTid");
 
-    INFO_CMPT_EQFLAG (arg_info)
-      = CMPT_TEST (INFO_CMPT_EQFLAG (arg_info),
-                   ID_AVIS (arg_node) == ID_AVIS (INFO_CMPT_TREE (arg_info)));
+    if (INFO_CMPT_LUT (arg_info) == NULL)
+        INFO_CMPT_EQFLAG (arg_info)
+          = CMPT_TEST (INFO_CMPT_EQFLAG (arg_info),
+                       ID_AVIS (arg_node) == ID_AVIS (INFO_CMPT_TREE (arg_info)));
+    else if (INFO_CMPT_WRITELUT (arg_info) == FALSE)
+        INFO_CMPT_EQFLAG (arg_info)
+          = CMPT_TEST (INFO_CMPT_EQFLAG (arg_info),
+                       ID_AVIS (arg_node)
+                         == SearchInLUT_PP (INFO_CMPT_LUT (arg_info),
+                                            ID_AVIS (INFO_CMPT_TREE (arg_info))));
+    else
+        InsertIntoLUT_P (INFO_CMPT_LUT (arg_info), ID_AVIS (INFO_CMPT_TREE (arg_info)),
+                         ID_AVIS (arg_node));
 
     DBUG_RETURN (arg_node);
 }
@@ -261,11 +274,14 @@ CMPTlet (node *arg_node, node *arg_info)
     /* save current compare node */
     let_node2 = INFO_CMPT_TREE (arg_info);
 
+    INFO_CMPT_WRITELUT (arg_info) = TRUE;
     /* traverse ids-chain */
     if ((INFO_CMPT_EQFLAG (arg_info) == CMPT_EQ) && (LET_IDS (arg_node) != NULL)) {
         INFO_CMPT_TREE (arg_info) = (node *)(LET_IDS (INFO_CMPT_TREE (arg_info)));
         LET_IDS (arg_node) = TravIDS (LET_IDS (arg_node), arg_info);
     }
+
+    INFO_CMPT_WRITELUT (arg_info) = FALSE;
 
     /* restore current compare node */
     INFO_CMPT_TREE (arg_info) = let_node2;
@@ -451,9 +467,10 @@ CMPTNcode (node *arg_node, node *arg_info)
     DBUG_ENTER ("CMPTNcode");
 
     /* compare attributes */
-    INFO_CMPT_EQFLAG (arg_info)
-      = CMPT_TEST (INFO_CMPT_EQFLAG (arg_info),
-                   NCODE_USED (arg_node) == NCODE_USED (INFO_CMPT_TREE (arg_info)));
+    if (INFO_CMPT_LUT (arg_info) == NULL)
+        INFO_CMPT_EQFLAG (arg_info)
+          = CMPT_TEST (INFO_CMPT_EQFLAG (arg_info),
+                       NCODE_USED (arg_node) == NCODE_USED (INFO_CMPT_TREE (arg_info)));
 
     /* traverse all sons */
     arg_node = CMPTTravSons (arg_node, arg_info);
@@ -505,10 +522,22 @@ CMPTids (ids *arg_ids, node *arg_info)
     if ((arg_ids != NULL) && (INFO_CMPT_TREE (arg_info) != NULL)
         && (INFO_CMPT_EQFLAG (arg_info) == CMPT_EQ)) {
 
-        INFO_CMPT_EQFLAG (arg_info)
-          = CMPT_TEST (INFO_CMPT_EQFLAG (arg_info),
-                       IDS_AVIS (arg_ids)
-                         == IDS_AVIS (((ids *)INFO_CMPT_TREE (arg_info))));
+        if (INFO_CMPT_LUT (arg_info) == NULL)
+            INFO_CMPT_EQFLAG (arg_info)
+              = CMPT_TEST (INFO_CMPT_EQFLAG (arg_info),
+                           IDS_AVIS (arg_ids)
+                             == IDS_AVIS (((ids *)INFO_CMPT_TREE (arg_info))));
+        else if (INFO_CMPT_WRITELUT (arg_info) == FALSE)
+            INFO_CMPT_EQFLAG (arg_info)
+              = CMPT_TEST (INFO_CMPT_EQFLAG (arg_info),
+                           IDS_AVIS (arg_ids)
+                             == SearchInLUT_PP (INFO_CMPT_LUT (arg_info),
+                                                IDS_AVIS (
+                                                  ((ids *)INFO_CMPT_TREE (arg_info)))));
+        else
+            InsertIntoLUT_P (INFO_CMPT_LUT (arg_info),
+                             IDS_AVIS (((ids *)INFO_CMPT_TREE (arg_info))),
+                             IDS_AVIS (arg_ids));
 
         if (IDS_NEXT (arg_ids) != NULL) {
             INFO_CMPT_TREE (arg_info)
@@ -659,6 +688,79 @@ CompareTree (node *tree1, node *tree2)
         /* start traversal with CMPT_EQ as result */
         INFO_CMPT_EQFLAG (arg_info) = CMPT_EQ;
         INFO_CMPT_TREE (arg_info) = tree2;
+
+        /***************/
+        INFO_CMPT_LUT (arg_info) = NULL;
+        INFO_CMPT_WRITELUT (arg_info) = FALSE;
+        /***************/
+
+        old_tab = act_tab;
+        act_tab = cmptree_tab;
+
+        tree1 = Trav (tree1, arg_info);
+
+        /* save result */
+        result = INFO_CMPT_EQFLAG (arg_info);
+
+        act_tab = old_tab;
+        arg_info = FreeTree (arg_info);
+    }
+
+    DBUG_RETURN (result);
+}
+
+/**
+ ******************************************************************************
+ *
+ * starts traversal of tree 1 to compare it with tree 2 taking a LUT
+ * into account.
+ * This allows to detect structural equality despite the occurence of
+ * different ID(s) nodes. Optionally the third parameter can be used to
+ * insert a priori knowledge into the traversal.
+ *
+ * @param tree1 First tree
+ * @param tree2 Second tree
+ * @param lut A LUT specifying a prioro knowledge about id-substitutions.
+ * Usally you might want to pass a fresh LUT.
+ *
+ * @return  the result is
+ *        CMPT_EQ: tree1 == tree2 (means same operations and values)
+ *       CMPT_NEQ: tree1 != tree2 (at least one difference between the trees)
+ *
+ ******************************************************************************
+ */
+cmptree_t
+CompareTreeLUT (node *tree1, node *tree2, LUT_t lut)
+{
+    cmptree_t result;
+    node *arg_info;
+    funtab *old_tab;
+
+    DBUG_ENTER ("CompareTree");
+
+    DBUG_ASSERT (lut != NULL, "lut == NULL!");
+
+    if ((tree1 == NULL) || (tree2 == NULL)) {
+        /* NULL pointer handling */
+        if (tree1 == tree2) {
+            /* NULL == NULL is EQ */
+            result = CMPT_EQ;
+        } else {
+            result = CMPT_NEQ;
+        }
+    } else {
+
+        arg_info = MakeInfo ();
+
+        DBUG_PRINT ("CMPT", ("starting tree compare (%s, %s)", NODE_TEXT (tree1),
+                             NODE_TEXT (tree2)));
+
+        /* start traversal with CMPT_EQ as result */
+        INFO_CMPT_EQFLAG (arg_info) = CMPT_EQ;
+        INFO_CMPT_TREE (arg_info) = tree2;
+
+        INFO_CMPT_LUT (arg_info) = lut;
+        INFO_CMPT_WRITELUT (arg_info) = FALSE;
 
         old_tab = act_tab;
         act_tab = cmptree_tab;

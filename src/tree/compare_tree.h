@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.6  2003/01/28 18:16:22  ktr
+ * CompareTreeLUT added to compare_tree
+ *
  * Revision 1.5  2001/04/30 12:24:58  nmw
  * comments corrected
  *
@@ -43,7 +46,9 @@
 #define SAC_COMPARETREE_H
 
 #include "types.h"
+#include "LookUpTable.h"
 
+extern cmptree_t CompareTreeLUT (node *tree1, node *tree2, LUT_t lut);
 extern cmptree_t CompareTree (node *tree1, node *tree2);
 
 extern node *CMPTnum (node *arg_node, node *arg_info);

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.162  2003/01/28 18:16:22  ktr
+ * CompareTreeLUT added to compare_tree
+ *
  * Revision 3.161  2002/10/24 13:11:32  ktr
  * removed ASSIGN_INDENT
  *
@@ -3228,6 +3231,8 @@ extern node *MakeInfo ();
 /* when used in compare_tree.c */
 #define INFO_CMPT_EQFLAG(n) ((cmptree_t) (n->flag))
 #define INFO_CMPT_TREE(n) (n->node[0])
+#define INFO_CMPT_LUT(n) ((LUT_t) (n->node[2]))
+#define INFO_CMPT_WRITELUT(n) (n->counter)
 
 /* when used in annotate_fun_calls.c */
 #define INFO_PF_FUNDEF(n) (n->node[0])
@@ -3306,6 +3311,9 @@ extern node *MakeInfo ();
 #define INFO_WLS_WITHOP(n) (n->node[1])
 #define INFO_WLS_DIMS(n) (n->varno)
 #define INFO_WLS_BLOCK(n) (n->node[2])
+#define INFO_WLS_NEWCODES(n) (n->node[4])
+#define INFO_WLS_NEWPARTS(n) (n->node[5])
+#define INFO_WLS_CODETABLE(n) ((code_t *)(n->info2))
 
 /* when used in AssociativeLaw.c */
 #define INFO_AL_CONSTANTLIST(n) ((nodelist *)(n->info2))
