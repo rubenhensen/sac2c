@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.51  1997/09/05 18:31:38  dkr
+ * removed a bug in function CFid.
+ * constant-folding now does not lose type-shapes after function-inlining anymore
+ *
  * Revision 1.50  1997/09/05 13:46:04  cg
  * All cast expressions are now removed by rmvoidfun.c. Therefore,
  * the respective attempts in precompile.c and ConstantFolding.c
@@ -470,6 +474,60 @@ CFid (node *arg_node, node *arg_info)
         switch (NODE_TYPE (mrd)) {
         case N_id:
             DEC_VAR (ASSIGN_USEMASK (INFO_ASSIGN), ID_VARNO (arg_node));
+
+            if ((VARDEC_SHPSEG (ID_VARDEC (mrd)) == NULL)
+                && (VARDEC_SHPSEG (ID_VARDEC (arg_node)) != NULL)) {
+                /* in the following fragment of a SAC-program
+
+                      int[] f()
+                      {
+                        ret = ... external C-implementation ...
+                        return (ret);
+                      }
+
+                      int main()
+                      {
+                        int[5] a;
+
+                        a = f();
+
+                        return ( ... a ... );
+                      }
+
+                   function-inlining leads to
+
+                      int main()
+                      {
+                        int[5] a;
+                        int[] inl_tmp;
+
+                        inl__tmp = ret;
+                        a = inl__tmp;
+
+                        return ( ... a ... );
+                      }.
+
+                   When constant-folding now eliminates "a", the array-shape "[5]" must be
+                   handed over to "inl__tmp" (a = inl__tmp):
+
+                      int main()
+                      {
+                        int[5] inl_tmp;
+
+                        inl__tmp = ret;
+
+                        return ( ... inl__tmp ... );
+                      }
+                */
+                /*
+                  if the type of mrd has not a shape yet, but the type of arg_node has,
+                  then copy the dimension and the shape-segments from arg_node to mrd
+                */
+                VARDEC_DIM (ID_VARDEC (mrd)) = VARDEC_DIM (ID_VARDEC (arg_node));
+                VARDEC_SHPSEG (ID_VARDEC (mrd))
+                  = DupShpSeg (VARDEC_SHPSEG (ID_VARDEC (arg_node)));
+            }
+
             FreeTree (arg_node);
             arg_node = DupTree (mrd, NULL);
             INC_VAR (ASSIGN_USEMASK (INFO_ASSIGN), ID_VARNO (arg_node));
