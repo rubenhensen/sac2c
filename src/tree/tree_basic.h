@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.93  2001/05/08 12:29:10  dkr
+ * minor changes done
+ *
  * Revision 3.92  2001/05/07 09:06:16  nmw
  * macros for shared usage of WLUnroll adjusted
  *
@@ -439,19 +442,19 @@ extern types *MakeTypes (simpletype btype, int dim, shpseg *shpseg, char *name,
  ***  permanent attributes:
  ***
  ***    char*       NAME
- ***    char*       MOD         (O)
+ ***    char*       MOD
  ***    statustype  ATTRIB
- ***    ids*        NEXT        (O)
+ ***    ids*        NEXT
  ***
  ***  temporary attributes:
  ***
- ***    node*       AVIS         (N_avis)           (ssaform -> )
- ***    node*       VARDEC       (N_vardec/N_arg)   (typecheck -> )
- ***    node*       DEF                             (psi-optimize -> )
- ***    node*       USE                             (psi-optimize -> )
- ***    statustype  STATUS                          (obj-handling -> compile !!)
- ***    int         REFCNT                          (refcount -> )
- ***    int         NAIVE_REFCNT                    (refcount -> )
+ ***    node*       AVIS      (N_avis)          (ssaform -> )
+ ***    node*       VARDEC    (N_vardec/N_arg)  (typecheck -> )
+ ***    node*       DEF                         (psi-optimize -> )
+ ***    node*       USE                         (psi-optimize -> )
+ ***    statustype  STATUS                      (obj-handling -> compile -> )
+ ***    int         REFCNT                      (refcount -> compile -> )
+ ***    int         NAIVE_REFCNT                (refcount -> )
  ***/
 
 /*
@@ -901,30 +904,30 @@ extern node *MakeTypedef (char *name, char *mod, types *type, statustype attrib,
  ***
  ***  sons:
  ***
- ***    node*       EXPR  (O)  ("N_expr")
- ***    node*       NEXT  (O)  (N_objdef)
+ ***    node*      EXPR       ("N_expr")
+ ***    node*      NEXT       (N_objdef)
  ***
  ***  permanent attributes:
  ***
- ***    char*       NAME
- ***    char*       MOD     (O)
- ***    char*       LINKMOD (O)
- ***    types*      TYPE
- ***    statustype  ATTRIB
- ***    statustype  STATUS
+ ***    char*      NAME
+ ***    char*      MOD
+ ***    char*      LINKMOD
+ ***    types*     TYPE
+ ***    statustype ATTRIB
+ ***    statustype STATUS
  ***
  ***  temporary attributes:
  ***
- ***    char*       VARNAME                     (typecheck -> obj-handling ->
- ***                                            ( -> precompile -> compile -> )
- ***    node*       PRAGMA     (O)  (N_pragma)  (import -> readsib -> precompile -> )
- ***    node*       ARG        (O)              (obj-handling !!)
- ***    node*       SIB        (O)              (readsib !!)
- ***    nodelist*   NEEDOBJS   (O)              (import -> analysis -> objects -> )
+ ***    char*      VARNAME                (typecheck -> obj-handling ->
+ ***                                      ( -> precompile -> compile -> )
+ ***    node*      PRAGMA     (N_pragma)  (import -> readsib -> precompile -> )
+ ***    node*      ARG                    (obj-handling !!)
+ ***    node*      SIB                    (readsib !!)
+ ***    nodelist*  NEEDOBJS               (import -> analysis -> objects -> )
  ***
- ***    node*       OBJDEC_DEF (O)              (checkdec -> writesib -> )
+ ***    node*      OBJDEC_DEF             (checkdec -> writesib -> )
  ***
- ***    node*       ICM        (O)  (N_icm)     (compile -> )
+ ***    node*      ICM        (N_icm)     (compile -> )
  ***/
 
 /*
@@ -3448,7 +3451,7 @@ extern node *MakeNGenerator (node *bound1, node *bound2, prf op1, prf op2, node 
  ***  temporary attributes:
  ***
  ***    node*  EXPR                  (scanparse !!)
- ***    node*  FUNDEF    (N_fundef)  (typecheck -> precompile -> compile )
+ ***    node*  FUNDEF    (N_fundef)  (typecheck -> precompile -> compile -> )
  ***    long*  MASK                  (optimize -> )
  ***
  ***  remarks:
@@ -3491,7 +3494,7 @@ extern node *MakeNWithOp (WithOpType WithOp);
  ***    long*      MASK                    (optimize -> )
  ***    node *     USE         (N_vinfo)   (IVE -> )
  ***    bool       FLAG                    (WLI -> WLF)
- ***    ids*       INC_RC_IDS              (refcount -> compile )
+ ***    ids*       INC_RC_IDS              (refcount -> compile -> )
  ***
  ***    node*      WLAA_INFO(n)            (wlaa -> )
  ***    access_t*  WLAA_ACCESS             (wlaa -> )
@@ -3502,7 +3505,7 @@ extern node *MakeNWithOp (WithOpType WithOp);
  ***    node*      WLAA_WLARRAY(n)         (wlaa -> )
  ***    shpseg*    TSI_TILESHP(n)          (tsi  -> )
  ***
- ***    bool       AP_DUMMY_CODE           (ap -> wltransform -> compile )
+ ***    bool       AP_DUMMY_CODE           (ap -> wltransform -> compile -> )
  ***
  ***  remarks:
  ***
@@ -3582,9 +3585,9 @@ extern node *MakeNCode (node *block, node *expr);
  ***
  ***    DFMmask_t  REUSE                 (ReuseWithArrays -> compile !!)
  ***
- ***    ids*       DEC_RC_IDS            (wltransform -> compile )
+ ***    ids*       DEC_RC_IDS            (wltransform -> compile -> )
  ***
- ***    bool       OFFSET_NEEDED         (wltransform -> compile )
+ ***    bool       OFFSET_NEEDED         (wltransform -> compile -> )
  ***
  ***    bool       ISSCHEDULED           (new_mt -> ...)
  ***                            [Signals whether any segment is scheduled or not]
@@ -3705,10 +3708,10 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int 
  ***
  ***  temporary attributes:
  ***
- ***    int*       SV         [step vector]            (wltransform -> )
- ***    int*       HOMSV      [hom. step vector]       (wltransform -> )
+ ***    int*       SV         [step vector]        (wltransform -> )
+ ***    int*       HOMSV      [hom. step vector]   (wltransform -> )
  ***
- ***    SCHsched_t SCHEDULING                          (wltransform -> compile )
+ ***    SCHsched_t SCHEDULING                      (wltransform -> compile -> )
  ***
  ***  remarks:
  ***
@@ -3751,12 +3754,12 @@ extern node *MakeWLseg (int dims, node *contents, node *next);
  ***
  ***    int        DIMS       [number of dims]
  ***
- ***    node**     IDX_MIN       (N_num, N_id)         (wltransform -> compile )
- ***    node**     IDX_MAX       (N_num, N_id)         (wltransform -> compile )
+ ***    node**     IDX_MIN       (N_num, N_id)    (wltransform -> compile -> )
+ ***    node**     IDX_MAX       (N_num, N_id)    (wltransform -> compile -> )
  ***
  ***  temporary attributes:
  ***
- ***    SCHsched_t SCHEDULING                          (wltransform -> compile )
+ ***    SCHsched_t SCHEDULING                     (wltransform -> compile -> )
  ***
  ***  remarks:
  ***
