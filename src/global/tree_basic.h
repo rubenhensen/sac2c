@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.128  1998/04/16 19:07:42  dkr
+ * changed a comment for N_ap
+ *
  * Revision 1.127  1998/04/16 16:00:04  srs
  * added INFO_INL* macros
  *
@@ -1504,7 +1507,7 @@ extern node *MakeAnnotate (int tag, int funnumber, int funapnumber);
  ***  temporary attributes:
  ***
  ***    node*  FUNDEF       (N_fundef)  (typecheck -> analysis -> )
- ***                                    ( -> obj-handling -> )
+ ***                                    ( -> obj-handling -> compile -> )
  ***/
 
 extern node *MakeAp (char *name, char *mod, node *args);
