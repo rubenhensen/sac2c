@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.8  1999/05/18 17:08:30  dkr
+# added project clean_sb for removing all .sb directories (cc)
+#
 # Revision 2.7  1999/05/12 14:36:07  cg
 # added linking of main_args.o and options.o
 #
@@ -9,9 +12,6 @@
 #
 # Revision 2.5  1999/05/10 10:50:58  bs
 # make deps done
-#
-# Revision 2.4  1999/04/12 12:51:42  sbs
-# *** empty log message ***
 #
 # Revision 2.3  1999/03/15 18:55:01  dkr
 # fixed some bugs with CCPROD
@@ -350,6 +350,10 @@ clean:
 	$(RM) sac2c.efence
 	$(RM) -r .sb
 	$(RM) src.tar.gz
+
+clean_sb:
+	$(RM) -r .sb
+	$(RM) -r src/*/.sb
 
 floppy: src.tar.gz
 	$(TAR) -cvf /dev/rfd0c src.tar.gz
