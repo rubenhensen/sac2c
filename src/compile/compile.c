@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.177  1998/07/02 09:24:18  cg
+ * bug fixed in generation MT_SYNC_ONEFOLD ICM
+ *
  * Revision 1.176  1998/06/29 08:54:08  cg
  * added new multi-threaded versions of new with-loop begin/end ICMs
  * added compilation of ICM WL_MT_SCHEDULER_SET_OFFSET
@@ -6200,7 +6203,9 @@ COMPSync (node *arg_node, node *arg_info)
                          "no fundef found");
             icm_args2
               = AppendExpr (icm_args2,
-                            MakeExprs (MakeId (StringCopy ("tmp_var"), NULL, ST_regular),
+                            MakeExprs (MakeId (StringCopy (ID_NAME (
+                                                 NCODE_CEXPR (NWITH2_CODE (with)))),
+                                               NULL, ST_regular),
                                        MakeExprs (MakeId (StringCopy (
                                                             FUNDEF_NAME (NWITHOP_FUNDEF (
                                                               NWITH2_WITHOP (with)))),
