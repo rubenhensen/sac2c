@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.21  2004/11/26 15:48:40  jhb
+ * compile
+ *
  * Revision 1.20  2004/11/26 14:50:40  sbs
  * some ismop
  *
@@ -85,7 +88,7 @@
  * In all other parts of the compiler, the shape is hidden within
  * the (also to be replaced) types structure.
  * Therefore, this module also implements some conversion routines, e.g.
- *   SHOldTypes2Shape
+ *   SHoldTypes2Shape
  *
  * For avoiding un-intended pointer sharing and for avoiding memory leaks
  * we establish the following rules:
@@ -591,29 +594,29 @@ SHshape2String (int dots, shape *shp)
 
 /** <!--********************************************************************-->
  *
- * @fn shape *SHOldTypes2Shape( types *types)
+ * @fn shape *SHoldTypes2Shape( types *types)
  *
  * @brief if types has a dim>=0 a shape structure is created which carries the same
  *        shape info as the types-node does. Otherwise, NULL is returned.
  *
  ******************************************************************************/
 shape *
-SHOldTypes2Shape (types *types)
+SHoldTypes2Shape (types *types)
 {
     int dim;
     shape *res;
     shpseg *shpseg;
 
-    DBUG_ENTER ("SHOldTypes2Shape");
-    DBUG_ASSERT ((types != NULL), ("SHOldTypes2Shape called with NULL types!"));
+    DBUG_ENTER ("SHoldTypes2Shape");
+    DBUG_ASSERT ((types != NULL), ("SHoldTypes2Shape called with NULL types!"));
 
     /* this function handle user defined types, too */
-    shpseg = Type2Shpseg (types, &dim);
+    shpseg = TCtype2Shpseg (types, &dim);
 
-    res = SHOldShpseg2Shape (dim, shpseg);
+    res = SHoldShpseg2Shape (dim, shpseg);
 
     if (shpseg != NULL) {
-        shpseg = FreeShpseg (shpseg);
+        shpseg = FREEfreeShpseg (shpseg);
     }
 
     DBUG_RETURN (res);
@@ -621,19 +624,19 @@ SHOldTypes2Shape (types *types)
 
 /** <!--********************************************************************-->
  *
- * @fn shape *SHOldShpseg2Shape( int dim, shpseg *shpseg)
+ * @fn shape *SHoldShpseg2Shape( int dim, shpseg *shpseg)
  *
  * @brief iff dim > 0 a new shape structure is created which contains the same
  *        shape info as the shpseg does. Otherwise, NULL is returned.
  *
  ******************************************************************************/
 shape *
-SHOldShpseg2Shape (int dim, shpseg *shpseg)
+SHoldShpseg2Shape (int dim, shpseg *shpseg)
 {
     int i, j;
     shape *res;
 
-    DBUG_ENTER ("SHOldShpseg2Shape");
+    DBUG_ENTER ("SHoldShpseg2Shape");
 
     if (dim >= 0) {
         res = SHmakeShape (dim);
@@ -642,7 +645,7 @@ SHOldShpseg2Shape (int dim, shpseg *shpseg)
             i = 0;
             while (dim > SHP_SEG_SIZE) {
                 DBUG_ASSERT ((shpseg != NULL),
-                             "SHOldShpseg2Shape called with NULL shpseg but dim >0!");
+                             "SHoldShpseg2Shape called with NULL shpseg but dim >0!");
                 for (j = 0; j < SHP_SEG_SIZE; j++, i++) {
                     SHAPE_EXT (res, i) = SHPSEG_SHAPE (shpseg, j);
                 }
@@ -681,13 +684,13 @@ SHshape2OldShpseg (shape *shp)
     dim = SHAPE_DIM (shp);
     if (dim > 0) {
         i = 0;
-        res = MakeShpseg (NULL);
+        res = TBmakeShpseg (NULL);
         curr_seg = res;
         while (dim > SHP_SEG_SIZE) {
             for (j = 0; j < SHP_SEG_SIZE; j++, i++) {
                 SHPSEG_SHAPE (curr_seg, j) = SHAPE_EXT (shp, i);
             }
-            SHPSEG_NEXT (curr_seg) = MakeShpseg (NULL);
+            SHPSEG_NEXT (curr_seg) = TBmakeShpseg (NULL);
             curr_seg = SHPSEG_NEXT (curr_seg);
             dim -= SHP_SEG_SIZE;
         }
@@ -818,7 +821,7 @@ SHshape2Exprs (shape *shp)
     dim = SHAPE_DIM (shp);
     exprs = NULL;
     for (i = dim - 1; i >= 0; i--) {
-        exprs = TBmakeExprs (MakeNum (SHAPE_EXT (shp, i)), exprs);
+        exprs = TBmakeExprs (TBmakeNum (SHAPE_EXT (shp, i)), exprs);
     }
 
     DBUG_RETURN (exprs);
@@ -852,11 +855,11 @@ SHshape2Array (shape *shp)
     ARRAY_NTYPE (array)
       = TYmakeAKV (TYmakeSimpleType (T_int),
                    COmakeConstant (T_int, SHmakeShape (1, dim),
-                                   Array2IntVec (Array_AELEMS (a), NULL)));
+                                   TCarray2IntVec (Array_AELEMS (a), NULL)));
 #else
-    shp_seg = MakeShpseg (NULL);
+    shp_seg = TBmakeShpseg (NULL);
     SHPSEG_SHAPE (shp_seg, 0) = dim;
-    ARRAY_TYPE (array) = MakeTypes (T_int, 1, shp_seg, NULL, NULL);
+    ARRAY_TYPE (array) = TBmakeTypes (T_int, 1, shp_seg, NULL, NULL);
 #endif
 
     DBUG_RETURN (array);

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.8  2004/11/26 15:49:05  jhb
+ * compile
+ *
  * Revision 1.7  2004/11/26 14:29:53  sbs
  * change run
  *
@@ -41,7 +44,7 @@
 /******************************************************************************
  *
  * function:
- *    constant * COZip( zipcvfunptr *fun_arr, constant *a, constant *b,
+ *    constant * COzip( zipcvfunptr *fun_arr, constant *a, constant *b,
  *                      simpletype target_type)
  *
  * description:
@@ -56,7 +59,7 @@
  *     || b is a scalar (i.e. dim(b)==0)
  *     || shape(a) == shape(b)
  *    the function supplied by fun_arr is applied elementwise to the elements
- *    of a and b. It should be noted here, that COZip assumes a and b to be
+ *    of a and b. It should be noted here, that COzip assumes a and b to be
  *    arrays of the same base type!
  *    If the condition above does not hold or the types are different, a
  *    DBUG_ASSERT will lead to program termination (assuming DBUG_OFF is
@@ -65,15 +68,15 @@
  ******************************************************************************/
 
 constant *
-COZip (zipcvfunptr *fun_arr, constant *a, constant *b, simpletype target_type)
+COzip (const zipcvfunptr *fun_arr, constant *a, constant *b, simpletype target_type)
 {
     constant *res;
     void *cv;
     int i;
 
-    DBUG_ENTER ("COZip");
+    DBUG_ENTER ("COzip");
     DBUG_ASSERT ((CONSTANT_TYPE (a) == CONSTANT_TYPE (b)),
-                 "COZip called with args of different base type!");
+                 "COzip called with args of different base type!");
 
     if (CONSTANT_DIM (a) == 0) {
         /*
@@ -82,7 +85,7 @@ COZip (zipcvfunptr *fun_arr, constant *a, constant *b, simpletype target_type)
         if (target_type != T_unknown) {
             res = COmakeConstant (target_type, SHcopyShape (COgetShape (b)),
                                   ILIBmalloc (CONSTANT_VLEN (b)
-                                              * basetype_size[target_type]));
+                                              * global.basetype_size[target_type]));
         } else {
             res = COcopyConstant (b);
         }
@@ -100,7 +103,7 @@ COZip (zipcvfunptr *fun_arr, constant *a, constant *b, simpletype target_type)
             if (target_type != T_unknown) {
                 res = COmakeConstant (target_type, SHcopyShape (COgetShape (a)),
                                       ILIBmalloc (CONSTANT_VLEN (a)
-                                                  * basetype_size[target_type]));
+                                                  * global.basetype_size[target_type]));
             } else {
                 res = COcopyConstant (a);
             }
@@ -118,9 +121,10 @@ COZip (zipcvfunptr *fun_arr, constant *a, constant *b, simpletype target_type)
              */
             if (SHcompareShapes (CONSTANT_SHAPE (a), CONSTANT_SHAPE (b)) == TRUE) {
                 if (target_type != T_unknown) {
-                    res = COmakeConstant (target_type, SHcopyShape (COgetShape (a)),
-                                          ILIBmalloc (CONSTANT_VLEN (a)
-                                                      * basetype_size[target_type]));
+                    res
+                      = COmakeConstant (target_type, SHcopyShape (COgetShape (a)),
+                                        ILIBmalloc (CONSTANT_VLEN (a)
+                                                    * global.basetype_size[target_type]));
                 } else {
                     res = COcopyConstant (a);
                 }
@@ -131,7 +135,7 @@ COZip (zipcvfunptr *fun_arr, constant *a, constant *b, simpletype target_type)
                 }
 
             } else {
-                DBUG_ASSERT ((0 == 1), "COZip called with args of different shape!");
+                DBUG_ASSERT ((0 == 1), "COzip called with args of different shape!");
                 res = NULL;
             }
         }
@@ -142,7 +146,7 @@ COZip (zipcvfunptr *fun_arr, constant *a, constant *b, simpletype target_type)
 /******************************************************************************
  *
  * function:
- *    constant * COZipUnary( zipcvfunptr *fun_arr, constant *a,
+ *    constant * COzipUnary( zipcvfunptr *fun_arr, constant *a,
  *                           simpletype targettype)
  *
  * description:
@@ -157,18 +161,18 @@ COZip (zipcvfunptr *fun_arr, constant *a, constant *b, simpletype target_type)
  ******************************************************************************/
 
 constant *
-COZipUnary (zipcvfunptr *fun_arr, constant *a, simpletype target_type)
+COzipUnary (const zipcvfunptr *fun_arr, constant *a, simpletype target_type)
 {
     constant *res;
     void *cv;
     int i;
 
-    DBUG_ENTER ("COZipUnary");
+    DBUG_ENTER ("COzipUnary");
 
     if (target_type != T_unknown) {
-        res
-          = COmakeConstant (target_type, SHcopyShape (COgetShape (a)),
-                            ILIBmalloc (CONSTANT_VLEN (a) * basetype_size[target_type]));
+        res = COmakeConstant (target_type, SHcopyShape (COgetShape (a)),
+                              ILIBmalloc (CONSTANT_VLEN (a)
+                                          * global.basetype_size[target_type]));
     } else {
         res = COcopyConstant (a);
     }
@@ -196,7 +200,7 @@ COZipUnary (zipcvfunptr *fun_arr, constant *a, simpletype target_type)
 /******************************************************************************
  *
  * function:
- *    constant *COAdd( constant *a, constant *b)
+ *    constant *COadd( constant *a, constant *b)
  *
  * description:
  *    returns a constant whose elements are the elementwise addition of a and b,
@@ -206,13 +210,13 @@ COZipUnary (zipcvfunptr *fun_arr, constant *a, simpletype target_type)
  ******************************************************************************/
 
 constant *
-COAdd (constant *a, constant *b)
+COadd (constant *a, constant *b)
 {
     constant *res;
 
-    DBUG_ENTER ("COAdd");
-    res = COZip (zipcv_plus, a, b, T_unknown);
-    DBUG_EXECUTE ("COOPS", DbugPrintBinOp ("COAdd", a, b, res););
+    DBUG_ENTER ("COadd");
+    res = COzip (global.zipcv_plus, a, b, T_unknown);
+    DBUG_EXECUTE ("COOPS", COINTdbugPrintBinOp ("COadd", a, b, res););
     DBUG_RETURN (res);
 }
 
@@ -229,20 +233,20 @@ COAdd (constant *a, constant *b)
  ******************************************************************************/
 
 constant *
-COSub (constant *a, constant *b)
+COsub (constant *a, constant *b)
 {
     constant *res;
 
-    DBUG_ENTER ("COSub");
-    res = COZip (zipcv_minus, a, b, T_unknown);
-    DBUG_EXECUTE ("COOPS", DbugPrintBinOp ("COSub", a, b, res););
+    DBUG_ENTER ("COsub");
+    res = COzip (global.zipcv_minus, a, b, T_unknown);
+    DBUG_EXECUTE ("COOPS", COINTdbugPrintBinOp ("COsub", a, b, res););
     DBUG_RETURN (res);
 }
 
 /******************************************************************************
  *
  * function:
- *    constant *COMul( constant *a, constant *b)
+ *    constant *COmul( constant *a, constant *b)
  *
  * description:
  *    returns a constant whose elements are the elementwise multiplication of a
@@ -252,20 +256,20 @@ COSub (constant *a, constant *b)
  ******************************************************************************/
 
 constant *
-COMul (constant *a, constant *b)
+COmul (constant *a, constant *b)
 {
     constant *res;
 
-    DBUG_ENTER ("COMul");
-    res = COZip (zipcv_mul, a, b, T_unknown);
-    DBUG_EXECUTE ("COOPS", DbugPrintBinOp ("COMul", a, b, res););
+    DBUG_ENTER ("COmul");
+    res = COzip (global.zipcv_mul, a, b, T_unknown);
+    DBUG_EXECUTE ("COOPS", COINTdbugPrintBinOp ("COmul", a, b, res););
     DBUG_RETURN (res);
 }
 
 /******************************************************************************
  *
  * function:
- *    constant *CODiv( constant *a, constant *b)
+ *    constant *COdiv( constant *a, constant *b)
  *
  * description:
  *    returns a constant whose elements are the elementwise division of a and b,
@@ -275,13 +279,13 @@ COMul (constant *a, constant *b)
  ******************************************************************************/
 
 constant *
-CODiv (constant *a, constant *b)
+COdiv (constant *a, constant *b)
 {
     constant *res;
 
-    DBUG_ENTER ("CODiv");
-    res = COZip (zipcv_div, a, b, T_unknown);
-    DBUG_EXECUTE ("COOPS", DbugPrintBinOp ("CODiv", a, b, res););
+    DBUG_ENTER ("COdiv");
+    res = COzip (global.zipcv_div, a, b, T_unknown);
+    DBUG_EXECUTE ("COOPS", COINTdbugPrintBinOp ("COdiv", a, b, res););
     DBUG_RETURN (res);
 }
 
@@ -298,13 +302,13 @@ CODiv (constant *a, constant *b)
  ******************************************************************************/
 
 constant *
-COMod (constant *a, constant *b)
+COmod (constant *a, constant *b)
 {
     constant *res;
 
-    DBUG_ENTER ("CODMod");
-    res = COZip (zipcv_mod, a, b, T_unknown);
-    DBUG_EXECUTE ("COOPS", DbugPrintBinOp ("COMod", a, b, res););
+    DBUG_ENTER ("CODmod");
+    res = COzip (global.zipcv_mod, a, b, T_unknown);
+    DBUG_EXECUTE ("COOPS", COINTdbugPrintBinOp ("COmod", a, b, res););
     DBUG_RETURN (res);
 }
 
@@ -321,13 +325,13 @@ COMod (constant *a, constant *b)
  ******************************************************************************/
 
 constant *
-COMin (constant *a, constant *b)
+COmin (constant *a, constant *b)
 {
     constant *res;
 
-    DBUG_ENTER ("CODMin");
-    res = COZip (zipcv_min, a, b, T_unknown);
-    DBUG_EXECUTE ("COOPS", DbugPrintBinOp ("COMin", a, b, res););
+    DBUG_ENTER ("CODmin");
+    res = COzip (global.zipcv_min, a, b, T_unknown);
+    DBUG_EXECUTE ("COOPS", COINTdbugPrintBinOp ("COmin", a, b, res););
     DBUG_RETURN (res);
 }
 
@@ -344,13 +348,13 @@ COMin (constant *a, constant *b)
  ******************************************************************************/
 
 constant *
-COMax (constant *a, constant *b)
+COmax (constant *a, constant *b)
 {
     constant *res;
 
-    DBUG_ENTER ("CODMax");
-    res = COZip (zipcv_max, a, b, T_unknown);
-    DBUG_EXECUTE ("COOPS", DbugPrintBinOp ("COMax", a, b, res););
+    DBUG_ENTER ("COmax");
+    res = COzip (global.zipcv_max, a, b, T_unknown);
+    DBUG_EXECUTE ("COOPS", COINTdbugPrintBinOp ("COmax", a, b, res););
     DBUG_RETURN (res);
 }
 
@@ -367,20 +371,20 @@ COMax (constant *a, constant *b)
  ******************************************************************************/
 
 constant *
-COAnd (constant *a, constant *b)
+COand (constant *a, constant *b)
 {
     constant *res;
 
-    DBUG_ENTER ("COAnd");
-    res = COZip (zipcv_and, a, b, T_unknown);
-    DBUG_EXECUTE ("COOPS", DbugPrintBinOp ("COAnd", a, b, res););
+    DBUG_ENTER ("COand");
+    res = COzip (global.zipcv_and, a, b, T_unknown);
+    DBUG_EXECUTE ("COOPS", COINTdbugPrintBinOp ("COand", a, b, res););
     DBUG_RETURN (res);
 }
 
 /******************************************************************************
  *
  * function:
- *    constant *COOr( constant *a, constant *b)
+ *    constant *COor( constant *a, constant *b)
  *
  * description:
  *    returns a constant whose elements are the elementwise log.OR of a and b,
@@ -390,20 +394,20 @@ COAnd (constant *a, constant *b)
  ******************************************************************************/
 
 constant *
-COOr (constant *a, constant *b)
+COor (constant *a, constant *b)
 {
     constant *res;
 
-    DBUG_ENTER ("COOr");
-    res = COZip (zipcv_or, a, b, T_unknown);
-    DBUG_EXECUTE ("COOPS", DbugPrintBinOp ("COOr", a, b, res););
+    DBUG_ENTER ("COor");
+    res = COzip (global.zipcv_or, a, b, T_unknown);
+    DBUG_EXECUTE ("COOPS", COINTdbugPrintBinOp ("COor", a, b, res););
     DBUG_RETURN (res);
 }
 
 /******************************************************************************
  *
  * function:
- *    constant *COLe( constant *a, constant *b)
+ *    constant *COle( constant *a, constant *b)
  *
  * description:
  *    returns a constant whose elements are the elementwise comparison a<=b,
@@ -413,20 +417,20 @@ COOr (constant *a, constant *b)
  ******************************************************************************/
 
 constant *
-COLe (constant *a, constant *b)
+COle (constant *a, constant *b)
 {
     constant *res;
 
-    DBUG_ENTER ("COLe");
-    res = COZip (zipcv_le, a, b, T_bool);
-    DBUG_EXECUTE ("COOPS", DbugPrintBinOp ("COLe", a, b, res););
+    DBUG_ENTER ("COle");
+    res = COzip (global.zipcv_le, a, b, T_bool);
+    DBUG_EXECUTE ("COOPS", COINTdbugPrintBinOp ("COle", a, b, res););
     DBUG_RETURN (res);
 }
 
 /******************************************************************************
  *
  * function:
- *    constant *COLt( constant *a, constant *b)
+ *    constant *COlt( constant *a, constant *b)
  *
  * description:
  *    returns a constant whose elements are the elementwise comparison a<b,
@@ -436,20 +440,20 @@ COLe (constant *a, constant *b)
  ******************************************************************************/
 
 constant *
-COLt (constant *a, constant *b)
+COlt (constant *a, constant *b)
 {
     constant *res;
 
-    DBUG_ENTER ("COLt");
-    res = COZip (zipcv_lt, a, b, T_bool);
-    DBUG_EXECUTE ("COOPS", DbugPrintBinOp ("COLt", a, b, res););
+    DBUG_ENTER ("COlt");
+    res = COzip (global.zipcv_lt, a, b, T_bool);
+    DBUG_EXECUTE ("COOPS", COINTdbugPrintBinOp ("COlt", a, b, res););
     DBUG_RETURN (res);
 }
 
 /******************************************************************************
  *
  * function:
- *    constant *COGe( constant *a, constant *b)
+ *    constant *COge( constant *a, constant *b)
  *
  * description:
  *    returns a constant whose elements are the elementwise comparison a>=b,
@@ -459,20 +463,20 @@ COLt (constant *a, constant *b)
  ******************************************************************************/
 
 constant *
-COGe (constant *a, constant *b)
+COge (constant *a, constant *b)
 {
     constant *res;
 
-    DBUG_ENTER ("COGe");
-    res = COZip (zipcv_ge, a, b, T_bool);
-    DBUG_EXECUTE ("COOPS", DbugPrintBinOp ("COGe", a, b, res););
+    DBUG_ENTER ("COge");
+    res = COzip (global.zipcv_ge, a, b, T_bool);
+    DBUG_EXECUTE ("COOPS", COINTdbugPrintBinOp ("COge", a, b, res););
     DBUG_RETURN (res);
 }
 
 /******************************************************************************
  *
  * function:
- *    constant *COGt( constant *a, constant *b)
+ *    constant *COgt( constant *a, constant *b)
  *
  * description:
  *    returns a constant whose elements are the elementwise comparison a>b,
@@ -482,20 +486,20 @@ COGe (constant *a, constant *b)
  ******************************************************************************/
 
 constant *
-COGt (constant *a, constant *b)
+COgt (constant *a, constant *b)
 {
     constant *res;
 
-    DBUG_ENTER ("COGt");
-    res = COZip (zipcv_gt, a, b, T_bool);
-    DBUG_EXECUTE ("COOPS", DbugPrintBinOp ("COGt", a, b, res););
+    DBUG_ENTER ("COgt");
+    res = COzip (global.zipcv_gt, a, b, T_bool);
+    DBUG_EXECUTE ("COOPS", COINTdbugPrintBinOp ("COgt", a, b, res););
     DBUG_RETURN (res);
 }
 
 /******************************************************************************
  *
  * function:
- *    constant *COEq( constant *a, constant *b)
+ *    constant *COeq( constant *a, constant *b)
  *
  * description:
  *    returns a constant whose elements are the elementwise comparison a==b,
@@ -505,20 +509,20 @@ COGt (constant *a, constant *b)
  ******************************************************************************/
 
 constant *
-COEq (constant *a, constant *b)
+COeq (constant *a, constant *b)
 {
     constant *res;
 
-    DBUG_ENTER ("COEq");
-    res = COZip (zipcv_eq, a, b, T_bool);
-    DBUG_EXECUTE ("COOPS", DbugPrintBinOp ("COEq", a, b, res););
+    DBUG_ENTER ("COeq");
+    res = COzip (global.zipcv_eq, a, b, T_bool);
+    DBUG_EXECUTE ("COOPS", COINTdbugPrintBinOp ("COeq", a, b, res););
     DBUG_RETURN (res);
 }
 
 /******************************************************************************
  *
  * function:
- *    constant *CONeq( constant *a, constant *b)
+ *    constant *COneq( constant *a, constant *b)
  *
  * description:
  *    returns a constant whose elements are the elementwise comparison a!=b,
@@ -528,20 +532,20 @@ COEq (constant *a, constant *b)
  ******************************************************************************/
 
 constant *
-CONeq (constant *a, constant *b)
+COneq (constant *a, constant *b)
 {
     constant *res;
 
-    DBUG_ENTER ("CONeq");
-    res = COZip (zipcv_neq, a, b, T_bool);
-    DBUG_EXECUTE ("COOPS", DbugPrintBinOp ("CONeq", a, b, res););
+    DBUG_ENTER ("COneq");
+    res = COzip (global.zipcv_neq, a, b, T_bool);
+    DBUG_EXECUTE ("COOPS", COINTdbugPrintBinOp ("COneq", a, b, res););
     DBUG_RETURN (res);
 }
 
 /******************************************************************************
  *
  * function:
- *    constant *CONot( constant *a)
+ *    constant *COnot( constant *a)
  *
  * description:
  *    returns a constant whose elements are the elementwise logical !a ,
@@ -549,20 +553,20 @@ CONeq (constant *a, constant *b)
  ******************************************************************************/
 
 constant *
-CONot (constant *a)
+COnot (constant *a)
 {
     constant *res;
 
-    DBUG_ENTER ("CONot");
-    res = COZipUnary (zipcv_not, a, T_unknown);
-    DBUG_EXECUTE ("COOPS", DbugPrintUnaryOp ("CONot", a, res););
+    DBUG_ENTER ("COnot");
+    res = COzipUnary (global.zipcv_not, a, T_unknown);
+    DBUG_EXECUTE ("COOPS", COINTdbugPrintUnaryOp ("COnot", a, res););
     DBUG_RETURN (res);
 }
 
 /******************************************************************************
  *
  * function:
- *    constant *COToi( constant *a)
+ *    constant *COtoi( constant *a)
  *
  * description:
  *    returns a constant whose elements are elementwise convertet to  ,
@@ -570,20 +574,20 @@ CONot (constant *a)
  ******************************************************************************/
 
 constant *
-COToi (constant *a)
+COtoi (constant *a)
 {
     constant *res;
 
-    DBUG_ENTER ("COToi");
-    res = COZipUnary (zipcv_toi, a, T_int);
-    DBUG_EXECUTE ("COOPS", DbugPrintUnaryOp ("COToi", a, res););
+    DBUG_ENTER ("COtoi");
+    res = COzipUnary (global.zipcv_toi, a, T_int);
+    DBUG_EXECUTE ("COOPS", COINTdbugPrintUnaryOp ("COtoi", a, res););
     DBUG_RETURN (res);
 }
 
 /******************************************************************************
  *
  * function:
- *    constant *COTof( constant *a)
+ *    constant *COtof( constant *a)
  *
  * description:
  *    returns a constant whose elements are elementwise convertet to float,
@@ -591,20 +595,20 @@ COToi (constant *a)
  ******************************************************************************/
 
 constant *
-COTof (constant *a)
+COtof (constant *a)
 {
     constant *res;
 
-    DBUG_ENTER ("COTof");
-    res = COZipUnary (zipcv_tof, a, T_float);
-    DBUG_EXECUTE ("COOPS", DbugPrintUnaryOp ("COtof", a, res););
+    DBUG_ENTER ("COtof");
+    res = COzipUnary (global.zipcv_tof, a, T_float);
+    DBUG_EXECUTE ("COOPS", COINTdbugPrintUnaryOp ("COtof", a, res););
     DBUG_RETURN (res);
 }
 
 /******************************************************************************
  *
  * function:
- *    constant *COTod( constant *a)
+ *    constant *COtod( constant *a)
  *
  * description:
  *    returns a constant whose elements elementwise converted to double,
@@ -612,20 +616,20 @@ COTof (constant *a)
  ******************************************************************************/
 
 constant *
-COTod (constant *a)
+COtod (constant *a)
 {
     constant *res;
 
-    DBUG_ENTER ("COTod");
-    res = COZipUnary (zipcv_tod, a, T_double);
-    DBUG_EXECUTE ("COOPS", DbugPrintUnaryOp ("COTod", a, res););
+    DBUG_ENTER ("COtod");
+    res = COzipUnary (global.zipcv_tod, a, T_double);
+    DBUG_EXECUTE ("COOPS", COINTdbugPrintUnaryOp ("COtod", a, res););
     DBUG_RETURN (res);
 }
 
 /******************************************************************************
  *
  * function:
- *    constant *COAbs( constant *a)
+ *    constant *COabs( constant *a)
  *
  * description:
  *    returns a constant whose elements are the elementwise absolute value,
@@ -633,19 +637,19 @@ COTod (constant *a)
  ******************************************************************************/
 
 constant *
-COAbs (constant *a)
+COabs (constant *a)
 {
     constant *res;
 
-    DBUG_ENTER ("COAbs");
-    res = COZipUnary (zipcv_abs, a, T_unknown);
-    DBUG_EXECUTE ("COOPS", DbugPrintUnaryOp ("COAbs", a, res););
+    DBUG_ENTER ("COabs");
+    res = COzipUnary (global.zipcv_abs, a, T_unknown);
+    DBUG_EXECUTE ("COOPS", COINTdbugPrintUnaryOp ("COabs", a, res););
     DBUG_RETURN (res);
 }
 
 /** <!--********************************************************************-->
  *
- * @fn constant *CONeg( constant *a)
+ * @fn constant *COneg( constant *a)
  *
  *   @brief  negates all elements of a
  *
@@ -655,12 +659,12 @@ COAbs (constant *a)
  ******************************************************************************/
 
 constant *
-CONeg (constant *a)
+COneg (constant *a)
 {
     constant *res;
 
-    DBUG_ENTER ("CONeg");
-    res = COZipUnary (zipcv_neg, a, T_unknown);
-    DBUG_EXECUTE ("COOPS", DbugPrintUnaryOp ("CONeg", a, res););
+    DBUG_ENTER ("COneg");
+    res = COzipUnary (global.zipcv_neg, a, T_unknown);
+    DBUG_EXECUTE ("COOPS", COINTdbugPrintUnaryOp ("COneg", a, res););
     DBUG_RETURN (res);
 }
