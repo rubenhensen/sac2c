@@ -2,6 +2,9 @@
 /*
  *
  * $Log$
+ * Revision 1.16  2004/09/23 21:54:13  ktr
+ * MaskBase is now updated after inserting the subarray variable for A_sub.
+ *
  * Revision 1.15  2004/09/23 16:37:32  ktr
  * DFM entries of variables no longer present are cleared now.
  *
@@ -199,6 +202,7 @@ UpdateDFM (DFMmask_t dfm, info *arg_info)
     DBUG_ENTER ("UpdateDFM");
 
     vardec = FUNDEF_VARDEC (INFO_MMV_FUNDEF (arg_info));
+
     while (vardec != NULL) {
 
         if (DFMTestMaskEntry (dfm, NULL, vardec)) {
@@ -576,6 +580,16 @@ MMVprfSuballoc (node *arg_node, info *arg_info)
         vardec = MakeVardec (subname, DupOneTypes (IDS_TYPE (INFO_MMV_LHS (arg_info))),
                              FUNDEF_VARDEC (INFO_MMV_FUNDEF (arg_info)));
         FUNDEF_VARDEC (INFO_MMV_FUNDEF (arg_info)) = vardec;
+
+        /*
+         * Because of the new vardec, the mask base must be updated
+         */
+        if (FUNDEF_DFM_BASE (INFO_MMV_FUNDEF (arg_info)) != NULL) {
+            FUNDEF_DFM_BASE (INFO_MMV_FUNDEF (arg_info))
+              = DFMUpdateMaskBase (FUNDEF_DFM_BASE (INFO_MMV_FUNDEF (arg_info)),
+                                   FUNDEF_ARGS (INFO_MMV_FUNDEF (arg_info)),
+                                   FUNDEF_VARDEC (INFO_MMV_FUNDEF (arg_info)));
+        }
     } else {
         Free (subname);
     }
@@ -693,6 +707,8 @@ MMVspmd (node *arg_node, info *arg_info)
     DBUG_ENTER ("MMVspmd");
 
     SPMD_REGION (arg_node) = Trav (SPMD_REGION (arg_node), arg_info);
+
+    DBUG_EXECUTE ("MMV", PrintNode (INFO_MMV_FUNDEF (arg_info)););
 
     SPMD_IN (arg_node) = UpdateDFM (SPMD_IN (arg_node), arg_info);
     SPMD_OUT (arg_node) = UpdateDFM (SPMD_OUT (arg_node), arg_info);
