@@ -1,358 +1,16 @@
 /*
  *
  * $Log$
+ * Revision 3.99  2004/11/23 22:18:50  skt
+ * code brushing during SACDevCampDK 2k4
+ *
  * Revision 3.98  2004/11/21 11:22:03  sah
  * removed some old ast infos
- *
- * Revision 3.97  2004/11/20 17:25:31  sah
- * added some defines
- *
- * Revision 3.96  2004/11/19 21:04:13  sah
- * added some linklist features
- *
- * Revision 3.95  2004/11/19 15:11:10  sah
- * removed NEEDOBJS
- * added OBJECTS
- *
- * Revision 3.94  2004/10/26 16:14:31  sah
- * added RemoveFundef
- *
- * Revision 3.93  2004/10/16 17:40:13  sbs
- * bug in Type2Shape eliminated (errorneous DBUG_ASSERT).
- * cAUSE OF BUG 71.
- *
- * Revision 3.92  2004/10/14 13:38:04  sbs
- * eliminated second parameter ot Type2Shape
- *
- * Revision 3.91  2004/10/14 12:43:19  sbs
- * Type2Shape added.
- *
- * Revision 3.90  2004/10/13 15:18:28  sah
- * MakeIdFromIds works in NEW_AST mode now!
- *
- * Revision 3.89  2004/09/28 14:11:18  ktr
- * removed old refcount and generatemasks
- *
- * Revision 3.88  2004/08/03 11:11:19  khf
- * CreateSel(): setting of avis added
- *
- * Revision 3.87  2004/08/03 09:22:32  ktr
- * CreateScalarWith used to call MakeNCode without wrapping CEXPR in an
- * EXPRS-chain.
- *
- * Revision 3.86  2004/08/02 20:46:54  sah
- * added lots if ifdefs for mini sac compiler
- * using the new ast...
- *
- * Revision 3.85  2004/08/02 19:30:43  sah
- * moved MakeStr_Copy to tree_compound
- *
- * Revision 3.84  2004/07/31 16:11:35  sah
- * moved MakeId_xxx functions to tree_compund
- *
- * Revision 3.83  2004/07/29 13:06:29  ktr
- * LiftArgs now allocates memory for scalars explicitly, although this should
- * be necessaray as scalars are now flattened out of function applications.
- *
- * Revision 3.82  2004/07/23 15:54:53  ktr
- * exchanged ktr by emm
- *
- * Revision 3.81  2004/07/22 14:19:48  ktr
- * LiftArgs now introduces an alloc() assignment when needed
- *
- * Revision 3.80  2004/07/14 14:21:37  sah
- * moved NodeBehindCast from LoopInvariantRemoval here
- *
- * Revision 3.79  2004/03/05 19:14:27  mwe
- * support for new node N_funcond added
- *
- * Revision 3.78  2004/02/06 14:19:33  mwe
- * isPhiFun added, PHITARGET's removed
- *
- * Revision 3.77  2003/06/13 09:27:27  ktr
- * AdjustVectorShape now checks whether it was called with a NULL argument
- *
- * Revision 3.76  2003/06/11 22:03:09  ktr
- * ARRAY_SHAPE added.
- *
- * Revision 3.75  2002/10/30 16:31:07  dkr
- * HasDotTypes(), HasDotArgs() modified
- *
- * Revision 3.74  2002/10/10 23:51:53  dkr
- * no changes done
- *
- * Revision 3.73  2002/10/10 00:43:23  dkr
- * bug in CompareTypesImplementation() fixed
- *
- * Revision 3.72  2002/09/25 11:34:34  sbs
- * CompareTypesImplementation now allways initializes res !!!
- *
- * Revision 3.71  2002/09/06 10:03:15  sbs
- * Ids2Exprs added.
- *
- * Revision 3.70  2002/09/03 12:06:19  dkr
- * CompareTypesImplementation(): comment corrected
- *
- * Revision 3.69  2002/09/03 11:09:19  dkr
- * CompareTypesImplementation() modified
- *
- * Revision 3.68  2002/08/05 17:03:45  sbs
- * several extensions required for the alpha version of the new type checker
- *
- * Revision 3.67  2002/08/03 00:35:13  dkr
- * DBUG-output for CreateScalarWith() corrected
- *
- * Revision 3.66  2002/07/24 13:19:55  dkr
- * macros MUST_REFCOUNT renamed
- *
- * Revision 3.65  2002/07/15 17:25:07  dkr
- * LiftArg() moved from precompile.c to tree_compound.[ch]
- *
- * Revision 3.64  2002/07/12 09:07:16  dkr
- * CreateSel: no warning about uninitialized variable anymore :-)
- *
- * Revision 3.62  2002/06/27 16:57:00  dkr
- * signature of CreateSel() modified
- *
- * Revision 3.61  2002/06/27 13:32:04  dkr
- * - Ids2Array() added
- * - CreateSel() modified
- *
- * Revision 3.60  2002/06/27 11:01:55  dkr
- * - CreateScalarWith() and CreateSel() added
- * - bug in CreateScalarWith() fixed
- *
- * Revision 3.59  2002/06/26 08:49:05  dkr
- * CreateZero() creates vectors for WL-unrolling only :)
- *
- * Revision 3.58  2002/06/25 23:52:06  ktr
- * CreateZero now always creates a Withloop for non-scalar values, because
- * WLS can't handle ZeroVectors.
- *
- * Revision 3.57  2002/06/20 15:35:36  dkr
- * - AddVardecs() added
- * - MakeZero(), MakeZeroFromTypes() added
- *
- * Revision 3.56  2002/04/29 15:59:34  sbs
- * function HasDotTypes added.
- *
- * Revision 3.55  2002/03/07 16:42:03  sbs
- * HasDotArgs added.
- *
- * Revision 3.54  2002/03/07 02:19:02  dkr
- * AdjustAvisData() modified: DBUG_ASSERT added
- *
- * Revision 3.53  2002/03/01 02:39:12  dkr
- * GetArgtabIndexIn() and GetArgtabIndexOut() added
- *
- * Revision 3.52  2002/02/20 14:38:09  dkr
- * function DupTypes() renamed into DupAllTypes()
- *
- * Revision 3.51  2002/02/08 10:02:31  dkr
- * function IsArray() modified: returns TRUE for type[*] objects as well.
- * function IsBoxed() modified: equals (IsArray || IsHidden) now.
- *
- * Revision 3.50  2001/12/17 21:30:46  dkr
- * MakeAssignInstr() modified
- *
- * Revision 3.49  2001/12/13 15:15:52  dkr
- * signature of MakeAssignIcm?() modified
- *
- * Revision 3.48  2001/12/12 14:40:25  dkr
- * function CombineExprs() added
- *
- * Revision 3.47  2001/12/11 15:58:16  dkr
- * GetDim() renamed into GetShapeDim()
- * GetDim() added
- *
- * Revision 3.46  2001/12/10 13:46:03  dkr
- * function MakeAssignInstr() added
- * functions MakeAssigns?() added
- *
- * Revision 3.45  2001/11/09 11:48:45  sbs
- * res now initialized in default case of functions IsExternal and friends!
- * (Just top please gcc 8-)
- *
- * Revision 3.44  2001/07/19 16:19:57  cg
- * Added new inquiery functions IsImported, IsExternal, IsFromModule
- * and IsFromClass to avoid clumsy direct checks for import status
- * of types, objects, and functions.
- *
- * Revision 3.43  2001/07/19 11:48:18  cg
- * AppendAssign now accepts N_empty nodes as
- * assign chain.
- *
- * Revision 3.42  2001/07/18 12:57:45  cg
- * Function ExprsConcat renamed to AppendExprs.
- *
- * Revision 3.41  2001/07/13 13:23:41  cg
- * DBUG tags brushed.
- *
- * Revision 3.40  2001/05/31 14:50:43  nmw
- * CompareTypesImplementation() added
- *
- * Revision 3.39  2001/05/17 14:43:58  dkr
- * FREE, MALLOC eliminated
- *
- * Revision 3.38  2001/05/11 13:34:11  nmw
- * AdjustAvisData fixed for handling multiple inlined ssacounters
- *
- * Revision 3.37  2001/05/09 12:32:24  nmw
- * AdjustAvisData created ssacnt nodes only when used in ssaform
- *
- * Revision 3.36  2001/04/26 13:26:39  dkr
- * CountIds() added
- *
- * Revision 3.35  2001/04/26 12:30:09  dkr
- * GetExprsLength() renamed into CountExprs()
- *
- * Revision 3.34  2001/04/25 12:27:57  dkr
- * NodeListDelete: works correctly even for empty nodelists now
- *
- * Revision 3.33  2001/04/17 15:26:37  nmw
- * AppendTypes added
- *
- * Revision 3.32  2001/04/09 15:56:33  nmw
- * MakeArgFromVardec added
- *
- * Revision 3.31  2001/04/06 18:50:10  dkr
- * CountArgs() and CountTypes() added
- *
- * Revision 3.30  2001/04/05 12:29:51  nmw
- * debug messages added, big error with wrong macro corrected in AdjustAvisData
- *
- * Revision 3.29  2001/04/04 09:58:30  nmw
- * AdjustAvisData added
- *
- * Revision 3.28  2001/04/02 11:45:00  dkr
- * functions NodeOrInt...(), NameOrVal...() moved to wl_bounds.[ch]
- *
- * Revision 3.27  2001/04/02 11:17:31  nmw
- * bug fixed in NodeListDelete when removing last element in list
- *
- * Revision 3.26  2001/03/29 09:17:01  nmw
- * tabs2spaces done
- *
- * Revision 3.25  2001/03/29 01:33:35  dkr
- * functions for NodeOrInt, NameOrVal recoded
- *
- * Revision 3.21  2001/03/27 15:40:17  nmw
- * Array2Vec as wrapper for different Array2<XYZ>Vec added
- *
- * Revision 3.20  2001/03/21 17:48:12  dkr
- * comment for AppendAssign() modified
- *
- * Revision 3.19  2001/03/20 22:28:48  dkr
- * MakeVardecFromArg: VARDEC_OBJDEF set
- *
- * Revision 3.18  2001/03/19 14:24:54  nmw
- * AVIS_ASSIGN2 init in MakeVardecFromArg added
- *
- * Revision 3.17  2001/03/16 11:57:07  nmw
- * AVIS_SSAPHITRAGET type changed
- *
- * Revision 3.16  2001/03/15 21:23:53  dkr
- * signature of NodeOr..._MakeIndex modified:
- * parameter 'no_icm' added
- *
- * Revision 3.15  2001/03/15 10:54:49  nmw
- * MakeVardecFromArgs adjusts VARDEC_ATTRIB correctly
- *
- * Revision 3.12  2001/02/22 12:45:16  nmw
- * MakeVardecFromArg added
- *
- * Revision 3.11  2001/02/20 15:52:53  nmw
- * AppendAssign in now able to handle empty blocks
- *
- * Revision 3.10  2001/02/15 16:59:43  nmw
- * access macro for SSAstack added
- *
- * Revision 3.8  2001/01/29 16:08:51  dkr
- * NameOrVal_Le() and NodeOrInt_Le() added
- *
- * Revision 3.7  2001/01/24 23:34:42  dkr
- * NameOrVal_MakeIndex, NodeOrInt_MakeIndex added
- *
- * Revision 3.6  2001/01/19 14:16:59  dkr
- * include of DupTree.h added
- *
- * Revision 3.5  2001/01/19 11:54:55  dkr
- * NameOrVal_MakeNode() modified
- *
- * Revision 3.4  2001/01/17 14:17:19  dkr
- * functions NameOrVal_... and NodeOrInt_... added
- *
- * Revision 3.3  2001/01/10 14:33:00  dkr
- * function MakeWLsegX added
- *
- * Revision 3.2  2000/12/04 10:45:44  dkr
- * bug in Type2Shpseg fixed:
- * return value is now initialized correctly even for scalar types
- *
- * Revision 3.1  2000/11/20 18:03:35  sacbase
- * new release made
- *
- * Revision 1.30  2000/11/14 13:19:40  dkr
- * no '... might be used uninitialized' warnings anymore
- *
- * Revision 1.29  2000/10/31 23:31:53  dkr
- * signature of Type2Shpseg, Array2Shpseg modified
- *
- * Revision 1.28  2000/10/27 02:29:25  dkr
- * bug in GetTypes_Line fixed: condition for ABORT is no longer missing
- *
- * Revision 1.27  2000/10/27 00:06:07  dkr
- * Type2Shpseg and Type2Exprs added,
- * some code brushing done.
- *
- * Revision 1.26  2000/10/26 14:04:27  dkr
- * MakeShpseg used in Array2Shpseg
- *
- * Revision 1.25  2000/10/26 13:57:37  dkr
- * CopyShpseg replaced by DupShpseg (DupTree.[ch])
- *
- * Revision 1.24  2000/10/24 14:47:46  dkr
- * some append functions added
- *
- * Revision 1.23  2000/10/24 11:42:40  dkr
- * MakeType renamed into MakeTypes
- *
- * Revision 1.22  2000/10/24 10:06:01  dkr
- * GetBasetypeSize() added
- *
- * Revision 1.21  2000/10/24 09:44:04  dkr
- * GetSimpletype renamed into GetBasetype
- *
- * Revision 1.20  2000/10/20 15:38:30  dkr
- * some functions on types added
- *
- * Revision 1.19  2000/10/12 18:41:07  dkr
- * return value type of Is...() functions is bool, new
- *
- * Revision 1.18  2000/09/25 15:15:41  dkr
- * IsBoxed() simplified (uses IsHidden() now)
- *
- * Revision 1.17  2000/09/15 15:43:44  dkr
- * IsNonUniqueHidden() revisited
- *
- * Revision 1.16  2000/07/31 10:45:52  cg
- * Eventually, the son ICM_NEXT is removed from the N_icm node.
- * The creation function MakeIcm is adjusted accordingly.
- *
- * Revision 1.15  2000/07/21 14:17:53  mab
- * added EqualShpseg
- *
- * Revision 1.14  2000/07/14 09:37:45  dkr
- * CopyNodelist renamed into DupNodelist and moved to DupTree.[ch]
- *
- * Revision 1.13  2000/07/12 15:19:40  dkr
- * function SearchDecl moved from Inline.c to tree_compound.c
  *
  * [...]
  *
  */
 
-#include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "DupTree.h"
@@ -365,6 +23,100 @@
 #include "wltransform.h"
 #include "globals.h"
 #include "NameTuplesUtils.h"
+
+/*****************************************************************************/
+/**
+ **  some ugly macros (better use modul CompareTree!), moved from tree_compound.h
+ **/
+
+/*
+ *  macro name    : CMP_TYPE_USER
+ *  arg types     : 1) types*
+ *                  2) types*
+ *  result type   : int
+ *  description   : compares two user-defined types (name and module)
+ *                  Names and module names must be equal.
+ *  remarks       : result: 1 - equal, 0 - not equal
+ */
+
+#define CMP_TYPE_USER(a, b)                                                              \
+    ((!strcmp (TYPES_NAME (a), TYPES_NAME (b)))                                          \
+     && (!strcmp (STR_OR_EMPTY (TYPES_MOD (a)), STR_OR_EMPTY (TYPES_MOD (b)))))
+
+/*
+ *  macro name    : CMP_TYPEDEF(a,b)
+ *  arg types     : 1) node*  (N_typedef)
+ *                  2) node*  (N_typedef)
+ *  result type   : int
+ *  description   : compares two typedef nodes (name and module)
+ *                  result: 1 - equal, 0 - not equal
+ */
+
+#define CMP_TYPEDEF(a, b)                                                                \
+    ((NULL == TYPEDEF_MOD (a))                                                           \
+       ? (!strcmp (TYPEDEF_NAME (a), TYPEDEF_NAME (b)) && (NULL == TYPEDEF_MOD (b)))     \
+       : ((NULL == TYPEDEF_MOD (b))                                                      \
+            ? 0                                                                          \
+            : ((!strcmp (TYPEDEF_NAME (a), TYPEDEF_NAME (b)))                            \
+               && (!strcmp (TYPEDEF_MOD (a), TYPEDEF_MOD (b))))))
+
+/*
+ *  macro name    : CMP_TYPE_TYPEDEF(name, mod, typedef)
+ *  arg types     : 1) char*
+ *                  2) char*
+ *                  3) node*  (N_typedef)
+ *  result type   : int
+ *  description   : compares name and module name of a type with the
+ *                  defined name and module name of a typedef
+ *                  result: 1 - equal, 0 - not equal
+ */
+
+#define CMP_TYPE_TYPEDEF(name, mod, tdef)                                                \
+    ((!strcmp (name, TYPEDEF_NAME (tdef)))                                               \
+     && (!strcmp (STR_OR_EMPTY (mod), STR_OR_EMPTY (TYPEDEF_MOD (tdef)))))
+
+/*
+ *  macro name    : CMP_OBJ_OBJDEF
+ *  arg types     : 1) char*
+ *                  2) char*
+ *                  3) node*  (N_objdef)
+ *  result type   : int
+ *  description   : compares name and module name of an object with the
+ *                  defined name and module name of an objdef
+ *                  result: 1 - equal, 0 - not equal
+ */
+
+#define CMP_OBJ_OBJDEF(name, mod, odef)                                                  \
+    ((mod == NULL) ? (0 == strcmp (name, OBJDEF_NAME (odef)))                            \
+                   : ((0 == strcmp (name, OBJDEF_NAME (odef)))                           \
+                      && (0 == strcmp (mod, OBJDEF_MOD (odef)))))
+
+/*
+ *  macro name    : CMP_FUN_ID(a,b)
+ *  arg types     : 1) node*  (N_objdef)
+ *                  2) node*  (N_objdef)
+ *  result type   : int
+ *  description   : compares two fundef nodes (name and module only)
+ *                  result: 1 - equal, 0 - not equal
+ */
+
+#define CMP_FUN_ID(a, b)                                                                 \
+    ((0 == strcmp (FUNDEF_NAME (a), FUNDEF_NAME (b)))                                    \
+     && (0 == strcmp (STR_OR_EMPTY (FUNDEF_MOD (a)), STR_OR_EMPTY (FUNDEF_MOD (b)))))
+
+/*
+ *  macro name    : CMP_FUNDEF(a,b)
+ *  arg types     : 1) node*  (N_objdef)
+ *                  2) node*  (N_objdef)
+ *  result type   : int
+ *  description   : compares two fundef nodes (name, module, and domain)
+ *                  result: 1 - equal, 0 - not equal
+ */
+
+#define CMP_FUNDEF(a, b)                                                                 \
+    ((CMP_FUN_ID (a, b)) ? CmpDomain (FUNDEF_ARGS (a), FUNDEF_ARGS (b)) : 0)
+
+/*****************************************************************************/
 
 /*
  * macro template for append functions
@@ -649,7 +401,7 @@ CountTypes (types *type)
  *   Checks whether any T_dot type is contained in the given types chain.
  *
  ******************************************************************************/
-
+/* TODO - kill it, because the T_dots type is deprecated */
 int
 HasDotTypes (types *type)
 {
@@ -1543,167 +1295,74 @@ AnnotateIdWithConstVec (node *expr, node *id)
 /***
  ***  NODELIST :
  ***/
-
-void
-StoreNeededNode (node *insert, node *fundef, statustype status)
+#if 0 /* TODO - to be deleted after SACDevCampDK 2k4 */
+nodelist *TCtidyUpNodelist(nodelist *list)
 {
-    nodelist *act, *last, *list;
+  nodelist *tmp, *first, *last;
+  
+  DBUG_ENTER("TCtidyUpNodelist");
 
-    DBUG_ENTER ("StoreNeededNode");
+  while ((list!=NULL) && (NODELIST_STATUS(list)==ST_artificial)) {
+    tmp=list;
+    list=NODELIST_NEXT(list);
+    tmp = Free( tmp);
+  }    
+  
+  first=list;
+  
+  if( list != NULL) {
+    last = list;
+    list=NODELIST_NEXT(list);
+    
+    while (list!=NULL) {
+      if (NODELIST_STATUS(list) == ST_artificial) {
+        tmp=list;
+        NODELIST_NEXT(last)=NODELIST_NEXT(list);
+        list=NODELIST_NEXT(list);
+        tmp = Free( tmp);
+      }
+      else {
+        last=list;
+        list=NODELIST_NEXT(list);
+      }      
+    }
+  }
+  
+  DBUG_RETURN(first);
+}
 
-    DBUG_PRINT ("ANA", ("Function '%s` needs '%s` (%s)", ItemName (fundef),
-                        ItemName (insert), NODE_TEXT (insert)));
 
-    switch (NODE_TYPE (insert)) {
-    case N_fundef:
-        list = FUNDEF_NEEDFUNS (fundef);
-        break;
 
-#ifndef NEW_AST
-
-    case N_objdef:
-        list = FUNDEF_NEEDOBJS (fundef);
-        break;
-
+nodelist *TCconcatNodelist(nodelist *first, nodelist *second)
+{
+  nodelist *tmp;
+  
+  DBUG_ENTER("TCconcatNodelist");
+  
+  if (first==NULL) {
+    first=second;
+  }
+  else {
+    tmp=first;
+    
+    while (NODELIST_NEXT(tmp)!=NULL) {
+      tmp=NODELIST_NEXT(tmp);
+    }
+    
+    NODELIST_NEXT(tmp)=second;
+  }
+  
+  DBUG_RETURN(first);
+}
 #endif
-
-    case N_typedef:
-        list = FUNDEF_NEEDTYPES (fundef);
-        break;
-
-    default:
-        DBUG_ASSERT (0, "Wrong insert node in call to function 'StoreNeededNode`");
-        list = NULL;
-    }
-
-    if (list == NULL) {
-        switch (NODE_TYPE (insert)) {
-        case N_fundef:
-            FUNDEF_NEEDFUNS (fundef) = MakeNodelist (insert, status, NULL);
-            break;
-
-#ifndef NEW_AST
-        case N_objdef:
-            FUNDEF_NEEDOBJS (fundef) = MakeNodelist (insert, status, NULL);
-            break;
-#endif
-
-        case N_typedef:
-            FUNDEF_NEEDTYPES (fundef) = MakeNodelist (insert, status, NULL);
-            break;
-
-        default:
-            DBUG_ASSERT (0, "Wrong insert node in call to function 'StoreNeededNode`");
-        }
-    } else {
-        act = list;
-        last = list;
-
-        while ((act != NULL) && (NODELIST_NODE (act) != insert)) {
-            last = act;
-            act = NODELIST_NEXT (act);
-        }
-
-        if (act == NULL) {
-            NODELIST_NEXT (last) = MakeNodelist (insert, status, NULL);
-        }
-    }
-
-    DBUG_VOID_RETURN;
-}
-
-void
-StoreNeededNodes (nodelist *inserts, node *fundef, statustype status)
-{
-    DBUG_ENTER ("StoreNeededNodes");
-
-    while (inserts != NULL) {
-        StoreNeededNode (NODELIST_NODE (inserts), fundef, status);
-        inserts = NODELIST_NEXT (inserts);
-    }
-
-    DBUG_VOID_RETURN;
-}
-
-void
-StoreUnresolvedNodes (nodelist *inserts, node *fundef, statustype status)
-{
-    DBUG_ENTER ("StoreUnresolvedNodes");
-
-    while (inserts != NULL) {
-        if (NODELIST_ATTRIB (inserts) == ST_unresolved) {
-            StoreNeededNode (NODELIST_NODE (inserts), fundef, status);
-        }
-        inserts = NODELIST_NEXT (inserts);
-    }
-
-    DBUG_VOID_RETURN;
-}
-
-nodelist *
-TidyUpNodelist (nodelist *list)
-{
-    nodelist *tmp, *first, *last;
-
-    DBUG_ENTER ("TidyUpNodelist");
-
-    while ((list != NULL) && (NODELIST_STATUS (list) == ST_artificial)) {
-        tmp = list;
-        list = NODELIST_NEXT (list);
-        tmp = Free (tmp);
-    }
-
-    first = list;
-
-    if (list != NULL) {
-        last = list;
-        list = NODELIST_NEXT (list);
-
-        while (list != NULL) {
-            if (NODELIST_STATUS (list) == ST_artificial) {
-                tmp = list;
-                NODELIST_NEXT (last) = NODELIST_NEXT (list);
-                list = NODELIST_NEXT (list);
-                tmp = Free (tmp);
-            } else {
-                last = list;
-                list = NODELIST_NEXT (list);
-            }
-        }
-    }
-
-    DBUG_RETURN (first);
-}
-
-nodelist *
-ConcatNodelist (nodelist *first, nodelist *second)
-{
-    nodelist *tmp;
-
-    DBUG_ENTER ("ConcatNodelist");
-
-    if (first == NULL) {
-        first = second;
-    } else {
-        tmp = first;
-
-        while (NODELIST_NEXT (tmp) != NULL) {
-            tmp = NODELIST_NEXT (tmp);
-        }
-
-        NODELIST_NEXT (tmp) = second;
-    }
-
-    DBUG_RETURN (first);
-}
 
 /******************************************************************************
  *
  * function:
- *   nodelist *NodeListAppend(nodelist *nl, node *newnode, void *attrib)
- *   nodelist *NodeListDelete(nodelist *nl, node *node, bool free_attrib)
- *   nodelist *NodeListFree(nodelist *nl, bool free_attrib)
- *   nodelist *NodeListFind(nodelist *nl, node *node)
+ *   nodelist *TCnodeListAppend(nodelist *nl, node *newnode, void *attrib)
+ *   nodelist *TCnodeListDelete(nodelist *nl, node *node, bool free_attrib)
+ *   nodelist *TcnodeListFree(nodelist *nl, bool free_attrib)
+ *   nodelist *TCnodeListFind(nodelist *nl, node *node)
  *
  * description:
  *   the following functions realize basic functions on pure node lists.
@@ -3884,22 +3543,6 @@ MakeVinfoDollar (node *next)
  ***/
 
 /*--------------------------------------------------------------------------*/
-
-node *
-MakeId_Copy (char *name)
-{
-    node *result;
-
-    DBUG_ENTER ("MakeId_Copy");
-
-    if (name == NULL) {
-        name = "";
-    }
-
-    result = MakeId (StringCopy (name), NULL, ST_regular);
-
-    DBUG_RETURN (result);
-}
 
 node *
 MakeId_Copy_NT (char *name, types *type)
