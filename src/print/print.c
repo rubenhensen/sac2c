@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.103  1996/01/05 13:13:08  cg
+ * Revision 1.104  1996/01/05 14:34:22  cg
+ * modified functions for printing genarray, modarray, foldfun, and
+ * foldprf. Corresponding return is now infered.
+ *
+ * Revision 1.103  1996/01/05  13:13:08  cg
  * added function PrintStr, modified PrintPragma for new storage
  * format of strings.
  *
@@ -919,6 +923,10 @@ PrintReturn (node *arg_node, node *arg_info)
         fprintf (outfile, " );");
     }
 
+    if (RETURN_INWITH (arg_node)) {
+        arg_info->node[0] = arg_node;
+    }
+
     DBUG_RETURN (arg_node);
 }
 
@@ -1168,21 +1176,28 @@ PrintGenator (node *arg_node, node *arg_info)
 node *
 PrintGenarray (node *arg_node, node *arg_info)
 {
+    node *ret_node;
+
     DBUG_ENTER ("PrintGenarray");
 
     INDENT;
 
-    if (ASSIGN_INSTR (BLOCK_INSTR (GENARRAY_BODY (arg_node)))
-        != GENARRAY_RETURN (arg_node)) {
+    if (NODE_TYPE (ASSIGN_INSTR (BLOCK_INSTR (GENARRAY_BODY (arg_node)))) != N_return) {
         fprintf (outfile, "\n");
         Trav (GENARRAY_BODY (arg_node), arg_info);
+        ret_node = arg_info->node[0];
+
         INDENT;
+    } else {
+        ret_node = ASSIGN_INSTR (BLOCK_INSTR (GENARRAY_BODY (arg_node)));
     }
+
+    DBUG_ASSERT (ret_node != NULL, "genarray without return-statement");
 
     fprintf (outfile, "genarray( ");
     Trav (GENARRAY_ARRAY (arg_node), arg_info);
     fprintf (outfile, ", ");
-    Trav (RETURN_EXPRS (GENARRAY_RETURN (arg_node)), arg_info);
+    Trav (RETURN_EXPRS (ret_node), arg_info);
     fprintf (outfile, ")");
 
     DBUG_RETURN (arg_node);
@@ -1191,21 +1206,28 @@ PrintGenarray (node *arg_node, node *arg_info)
 node *
 PrintModarray (node *arg_node, node *arg_info)
 {
+    node *ret_node;
+
     DBUG_ENTER ("PrintModarray");
 
     INDENT;
 
-    if (ASSIGN_INSTR (BLOCK_INSTR (MODARRAY_BODY (arg_node)))
-        != MODARRAY_RETURN (arg_node)) {
+    if (NODE_TYPE (ASSIGN_INSTR (BLOCK_INSTR (MODARRAY_BODY (arg_node)))) != N_return) {
         fprintf (outfile, "\n");
         Trav (MODARRAY_BODY (arg_node), arg_info);
+        ret_node = arg_info->node[0];
+
         INDENT;
+    } else {
+        ret_node = ASSIGN_INSTR (BLOCK_INSTR (MODARRAY_BODY (arg_node)));
     }
+
+    DBUG_ASSERT (ret_node != NULL, "modarray without return-statement");
 
     fprintf (outfile, "modarray( ");
     Trav (MODARRAY_ARRAY (arg_node), arg_info);
     fprintf (outfile, ", %s, ", MODARRAY_ID (arg_node));
-    Trav (RETURN_EXPRS (MODARRAY_RETURN (arg_node)), arg_info);
+    Trav (RETURN_EXPRS (ret_node), arg_info);
     fprintf (outfile, ")");
 
     DBUG_RETURN (arg_node);
@@ -1214,16 +1236,23 @@ PrintModarray (node *arg_node, node *arg_info)
 node *
 PrintFoldfun (node *arg_node, node *arg_info)
 {
+    node *ret_node;
+
     DBUG_ENTER ("PrintFold");
 
     INDENT;
 
-    if (ASSIGN_INSTR (BLOCK_INSTR (FOLDFUN_BODY (arg_node)))
-        != FOLDFUN_RETURN (arg_node)) {
+    if (NODE_TYPE (ASSIGN_INSTR (BLOCK_INSTR (FOLDFUN_BODY (arg_node)))) != N_return) {
         fprintf (outfile, "\n");
         Trav (FOLDFUN_BODY (arg_node), arg_info);
+        ret_node = arg_info->node[0];
+
         INDENT;
+    } else {
+        ret_node = ASSIGN_INSTR (BLOCK_INSTR (FOLDFUN_BODY (arg_node)));
     }
+
+    DBUG_ASSERT (ret_node != NULL, "foldfun without return-statement");
 
     if (NULL != FOLDFUN_MOD (arg_node)) {
         fprintf (outfile, "fold( %s%s%s, ", FOLDFUN_MOD (arg_node), mod_name_con,
@@ -1234,7 +1263,7 @@ PrintFoldfun (node *arg_node, node *arg_info)
 
     Trav (FOLDFUN_NEUTRAL (arg_node), arg_info);
     fprintf (outfile, ", ");
-    Trav (RETURN_EXPRS (FOLDFUN_RETURN (arg_node)), arg_info);
+    Trav (RETURN_EXPRS (ret_node), arg_info);
     fprintf (outfile, " )");
 
     DBUG_RETURN (arg_node);
@@ -1243,16 +1272,23 @@ PrintFoldfun (node *arg_node, node *arg_info)
 node *
 PrintFoldprf (node *arg_node, node *arg_info)
 {
+    node *ret_node;
+
     DBUG_ENTER ("PrintFold");
 
     INDENT;
 
-    if (ASSIGN_INSTR (BLOCK_INSTR (FOLDPRF_BODY (arg_node)))
-        != FOLDPRF_RETURN (arg_node)) {
+    if (NODE_TYPE (ASSIGN_INSTR (BLOCK_INSTR (FOLDPRF_BODY (arg_node)))) != N_return) {
         fprintf (outfile, "\n");
         Trav (FOLDPRF_BODY (arg_node), arg_info);
+        ret_node = arg_info->node[0];
+
         INDENT;
+    } else {
+        ret_node = ASSIGN_INSTR (BLOCK_INSTR (FOLDPRF_BODY (arg_node)));
     }
+
+    DBUG_ASSERT (ret_node != NULL, "foldprf without return-statement");
 
     fprintf (outfile, "fold( %s, ", prf_string[FOLDPRF_PRF (arg_node)]);
 
@@ -1261,7 +1297,7 @@ PrintFoldprf (node *arg_node, node *arg_info)
         fprintf (outfile, ", ");
     }
 
-    Trav (RETURN_EXPRS (FOLDPRF_RETURN (arg_node)), arg_info);
+    Trav (RETURN_EXPRS (ret_node), arg_info);
     fprintf (outfile, " )");
 
     DBUG_RETURN (arg_node);
