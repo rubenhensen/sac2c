@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 1.2  2003/03/20 23:12:14  sah
+# OS now includes architecture
+#
 # Revision 1.1  2003/03/20 22:20:49  sah
 # Initial revision
 #
@@ -21,8 +24,7 @@
 # do not delete os lines, but "comment" all not used lines
 #
 
-OS=@OS@
-ARCH=@ARCH@
+OS=@OS@_@ARCH@
 
 #
 # SOLARIS_SPARC specific flags and libraries:
