@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.45  2004/11/24 14:28:53  sbs
+  ntc added
+
   Revision 1.44  2004/11/24 14:10:11  khf
   added DDEPEND, TDEPEND, RDEPEND, WLFS
 
@@ -240,6 +243,48 @@
       </traversal>
     </phase>
     <phase id="typecheck" name="Running type inference system">
+      <traversal id="NTC" name="New Type Inference" default="sons" include="new_typecheck.h" >
+        <travuser> 
+          <node name="typedef" />
+          <node name="objdef" />
+          <node name="module" />
+          <node name="fundef" />
+          <node name="arg" />
+          <node name="block" />
+          <node name="vardec" />
+          <node name="assign" />
+          <node name="cond" />
+          <node name="funcond" />
+          <node name="let" />
+          <node name="return" />
+          <node name="ap" />
+          <node name="prf" />
+          <node name="array" />
+          <node name="cast" />
+          <node name="exprs" />
+          <node name="id" />
+          <node name="num" />
+          <node name="bool" />
+          <node name="char" />
+          <node name="double" />
+          <node name="float" />
+          <node name="with" />
+          <node name="generator" />
+          <node name="part" />
+          <node name="withid" />
+          <node name="code" />
+          <node name="genarray" />
+          <node name="modarray" />
+          <node name="fold" />
+        </travuser>
+        <travsons>
+        </travsons>
+        <travnone>
+        </travnone>
+        <traverror>
+        </traverror>
+      </traversal>
+
     </phase>
     <phase id="export" name="Exporting symbols">
       <traversal id="SER" name="Serialize Module" default="sons" include="serialize_node.h" />
