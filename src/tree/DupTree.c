@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.58  2002/03/07 02:20:12  dkr
+ * duplication of AP_ARGTAB and FUNDEF_ARGTAB added
+ *
  * Revision 3.57  2002/03/01 02:40:09  dkr
  * DupFundef() and DupAp() modified: ARGTAB is duplicated now
  *
@@ -366,15 +369,13 @@ DupIds_ (ids *arg_ids, node *arg_info)
     DBUG_ENTER ("DupIds_");
 
     if (arg_ids != NULL) {
-        new_name = SearchInLUT_S ((arg_info != NULL) ? INFO_DUP_LUT (arg_info) : NULL,
-                                  IDS_NAME (arg_ids));
+        LUT_t *lut = (arg_info != NULL) ? INFO_DUP_LUT (arg_info) : NULL;
 
+        new_name = SearchInLUT_S (lut, IDS_NAME (arg_ids));
         new_ids = MakeIds (StringCopy (new_name), StringCopy (IDS_MOD (arg_ids)),
                            IDS_STATUS (arg_ids));
 
-        IDS_VARDEC (new_ids)
-          = SearchInLUT_P ((arg_info != NULL) ? INFO_DUP_LUT (arg_info) : NULL,
-                           IDS_VARDEC (arg_ids));
+        IDS_VARDEC (new_ids) = SearchInLUT_P (lut, IDS_VARDEC (arg_ids));
         IDS_USE (new_ids) = IDS_USE (arg_ids);
 
         IDS_ATTRIB (new_ids) = IDS_ATTRIB (arg_ids);
@@ -389,6 +390,11 @@ DupIds_ (ids *arg_ids, node *arg_info)
         }
 
         IDS_NEXT (new_ids) = DupIds_ (IDS_NEXT (arg_ids), arg_info);
+
+        if (arg_info != NULL) {
+            INFO_DUP_LUT (arg_info)
+              = InsertIntoLUT_P (INFO_DUP_LUT (arg_info), arg_ids, new_ids);
+        }
     } else {
         new_ids = NULL;
     }
@@ -461,6 +467,11 @@ DupTypes_ (types *arg_types, node *arg_info)
                              TYPES_NAME (arg_types)));
 
         TYPES_NEXT (new_types) = DupTypes_ (TYPES_NEXT (arg_types), arg_info);
+
+        if (arg_info != NULL) {
+            INFO_DUP_LUT (arg_info)
+              = InsertIntoLUT_P (INFO_DUP_LUT (arg_info), arg_types, new_types);
+        }
     } else {
         new_types = NULL;
     }
@@ -497,6 +508,45 @@ DupNodelist_ (nodelist *nl, node *arg_info)
     }
 
     DBUG_RETURN (new_nl);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   argtab_t *DupArgtab_( argtab_t *argtab, node *arg_info)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+static argtab_t *
+DupArgtab_ (argtab_t *argtab, node *arg_info)
+{
+    argtab_t *new_argtab;
+    int i;
+
+    DBUG_ENTER ("DupArgtab_");
+
+    if (argtab != NULL) {
+        new_argtab = MakeArgtab (argtab->size);
+
+        for (i = 0; i < argtab->size; i++) {
+            new_argtab->tag[i] = argtab->tag[i];
+            new_argtab->ptr_in[i]
+              = (argtab->ptr_in[i] != NULL)
+                  ? SearchInLUT_P (INFO_DUP_LUT (arg_info), argtab->ptr_in[i])
+                  : NULL;
+            new_argtab->ptr_out[i]
+              = (argtab->ptr_out[i] != NULL)
+                  ? SearchInLUT_P (INFO_DUP_LUT (arg_info), argtab->ptr_out[i])
+                  : NULL;
+        }
+    } else {
+        new_argtab = NULL;
+    }
+
+    DBUG_RETURN (new_argtab);
 }
 
 /******************************************************************************/
@@ -630,9 +680,7 @@ DupId (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("DupId");
 
-    new_name = SearchInLUT_S ((arg_info != NULL) ? INFO_DUP_LUT (arg_info) : NULL,
-                              ID_NAME (arg_node));
-
+    new_name = SearchInLUT_S (INFO_DUP_LUT (arg_info), ID_NAME (arg_node));
     new_node = MakeId (StringCopy (new_name), StringCopy (ID_MOD (arg_node)),
                        ID_STATUS (arg_node));
 
@@ -834,8 +882,8 @@ DupFundef (node *arg_node, node *arg_info)
 
     new_node = MakeFundef (StringCopy (FUNDEF_NAME (arg_node)),
                            StringCopy (FUNDEF_MOD (arg_node)),
-                           DupTypes_ (FUNDEF_TYPES (arg_node), arg_info), NULL, NULL,
-                           DUPCONT (FUNDEF_NEXT (arg_node)));
+                           DupTypes_ (FUNDEF_TYPES (arg_node), arg_info),
+                           DUPTRAV (FUNDEF_ARGS (arg_node)), NULL, NULL);
 
     /* now we copy all the other things ... */
     FUNDEF_LINKMOD (new_node) = StringCopy (FUNDEF_LINKMOD (arg_node));
@@ -852,13 +900,16 @@ DupFundef (node *arg_node, node *arg_info)
   FUNDEF_ICM( new_node) = ???;
   FUNDEC_DEF( new_node) = ???;
   FUNDEF_MASK( new_node, ?) = ???;
-  FUNDEF_ARGTAB( new_node) = ???;
 #endif
 
     CopyCommonNodeData (new_node, arg_node);
 
+    FUNDEF_ARGTAB (new_node) = DupArgtab_ (FUNDEF_ARGTAB (arg_node), arg_info);
+
+    FUNDEF_NEXT (new_node) = DUPCONT (FUNDEF_NEXT (arg_node));
+
     /*
-     * must be done *before* traversal of body!
+     * must be done before traversal of BODY
      */
     if (FUNDEF_IS_LACFUN (new_node)) {
         FUNDEF_USED (new_node) = 0;
@@ -879,7 +930,6 @@ DupFundef (node *arg_node, node *arg_info)
     INFO_DUP_LUT (arg_info)
       = InsertIntoLUT_P (INFO_DUP_LUT (arg_info), arg_node, new_node);
 
-    FUNDEF_ARGS (new_node) = DUPTRAV (FUNDEF_ARGS (arg_node));
     FUNDEF_BODY (new_node) = DUPTRAV (FUNDEF_BODY (arg_node));
 
     if (FUNDEF_BODY (new_node) != NULL) {
@@ -887,7 +937,7 @@ DupFundef (node *arg_node, node *arg_info)
     }
 
     /*
-     * must be done *after* traversal of body!
+     * must be done after traversal of BODY
      */
 #if DUP_DFMS
     FUNDEF_DFM_BASE (new_node)
@@ -985,6 +1035,9 @@ DupExprs (node *arg_node, node *arg_info)
 
     CopyCommonNodeData (new_node, arg_node);
 
+    INFO_DUP_LUT (arg_info)
+      = InsertIntoLUT_P (INFO_DUP_LUT (arg_info), arg_node, new_node);
+
     DBUG_RETURN (new_node);
 }
 
@@ -1016,10 +1069,10 @@ DupBlock (node *arg_node, node *arg_info)
      * Look at DupFundef() for further comments.
      */
     if ((old_base != NULL) && (arg_node == FUNDEF_BODY (INFO_DUP_FUNDEF (arg_info)))) {
-        new_base = DFMGenMaskBase (FUNDEF_ARGS ((
-                                     (node *)SearchInLUT_P (INFO_DUP_LUT (arg_info),
-                                                            INFO_DUP_FUNDEF (arg_info)))),
-                                   new_vardecs);
+        new_base
+          = DFMGenMaskBase (FUNDEF_ARGS (SearchInLUT_P (INFO_DUP_LUT (arg_info),
+                                                        INFO_DUP_FUNDEF (arg_info))),
+                            new_vardecs);
 
         INFO_DUP_LUT (arg_info)
           = InsertIntoLUT_P (INFO_DUP_LUT (arg_info), old_base, new_base);
@@ -1121,9 +1174,8 @@ DupReturn (node *arg_node, node *arg_info)
 
     RETURN_REFERENCE (new_node) = DUPTRAV (RETURN_REFERENCE (arg_node));
 
-#if 0
-  RETURN_CRET( new_node) = ???;
-#endif
+    RETURN_CRET (new_node)
+      = SearchInLUT_P (INFO_DUP_LUT (arg_info), RETURN_CRET (arg_node));
 
     RETURN_USEMASK (new_node) = DupDFMask_ (RETURN_USEMASK (arg_node), arg_info);
     RETURN_DEFMASK (new_node) = DupDFMask_ (RETURN_DEFMASK (arg_node), arg_info);
@@ -1275,8 +1327,12 @@ DupLet (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("DupLet");
 
-    new_node
-      = MakeLet (DUPTRAV (LET_EXPR (arg_node)), DupIds_ (LET_IDS (arg_node), arg_info));
+    new_node = MakeLet (NULL, DupIds_ (LET_IDS (arg_node), arg_info));
+
+    /*
+     * EXPR must be traversed after IDS (for AP_ARGTAB)
+     */
+    LET_EXPR (new_node) = DUPTRAV (LET_EXPR (arg_node));
 
     LET_USEMASK (new_node) = DupDFMask_ (LET_USEMASK (arg_node), arg_info);
     LET_DEFMASK (new_node) = DupDFMask_ (LET_DEFMASK (arg_node), arg_info);
@@ -1297,7 +1353,7 @@ DupAp (node *arg_node, node *arg_info)
     DBUG_ENTER ("DupAp");
 
     DBUG_PRINT ("DUP",
-                ("duplicating application of %s ...",
+                ("duplicating application of %s() ...",
                  (AP_FUNDEF (arg_node) != NULL) ? FUNDEF_NAME (AP_FUNDEF (arg_node))
                                                 : "?"));
 
@@ -1310,9 +1366,7 @@ DupAp (node *arg_node, node *arg_info)
     AP_FUNDEF (new_node) = new_fundef;
     AP_ATFLAG (new_node) = AP_ATFLAG (arg_node);
 
-#if 0
-  AP_ARGTAB( new_node) = ???;
-#endif
+    AP_ARGTAB (new_node) = DupArgtab_ (AP_ARGTAB (arg_node), arg_info);
 
     CopyCommonNodeData (new_node, arg_node);
 
