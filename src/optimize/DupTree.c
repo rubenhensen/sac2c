@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.77  1998/04/29 17:13:23  dkr
+ * changed DupSpmd, DupSync
+ *
  * Revision 1.76  1998/04/26 22:12:08  dkr
  * fixed a bug in DupSpmd
  *
@@ -862,19 +865,6 @@ DupSpmd (node *arg_node, node *arg_info)
 
     new_node = MakeSpmd (DUPTRAV (SPMD_REGION (arg_node)));
 
-    if (SPMD_IN (arg_node) != NULL) {
-        SPMD_IN (new_node) = DupIds (SPMD_IN (arg_node), arg_info);
-    }
-    if (SPMD_OUT (arg_node) != NULL) {
-        SPMD_OUT (new_node) = DupIds (SPMD_OUT (arg_node), arg_info);
-    }
-    if (SPMD_INOUT (arg_node) != NULL) {
-        SPMD_INOUT (new_node) = DupIds (SPMD_INOUT (arg_node), arg_info);
-    }
-    if (SPMD_LOCAL (arg_node) != NULL) {
-        SPMD_LOCAL (new_node) = DupIds (SPMD_LOCAL (arg_node), arg_info);
-    }
-
     DBUG_RETURN (new_node);
 }
 
@@ -888,13 +878,6 @@ DupSync (node *arg_node, node *arg_info)
     DBUG_ENTER ("DupSync");
 
     new_node = MakeSync (DUPTRAV (SYNC_REGION (arg_node)), SYNC_FIRST (arg_node));
-
-    if (SYNC_OUT (arg_node) != NULL) {
-        SYNC_OUT (new_node) = DupIds (SYNC_OUT (arg_node), arg_info);
-    }
-    if (SYNC_INOUT (arg_node) != NULL) {
-        SYNC_INOUT (new_node) = DupIds (SYNC_INOUT (arg_node), arg_info);
-    }
 
     DBUG_RETURN (new_node);
 }
