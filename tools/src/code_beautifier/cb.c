@@ -18,7 +18,7 @@ typedef int bool;
 #define VERS "Code Beautifier for C/C++/Java          Version 2.3 (Sep 19, 2002)\n"
 #define PGM "cb"
 
-#define MAXLEN 1024
+#define MAXLEN 4096
 
 char string[MAXLEN]; /* input line max. length */
 
