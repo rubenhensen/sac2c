@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/04/26 09:23:18  dkr
+ * - DFMs for lifted function are explicitly rebuild now
+ *   (DupTree no longer duplicates DFMs)
+ * - For adjusting decl pointers in the lifted code DupTreeLUT is used
+ *   instead of FindVardec_...()  :-))
+ *
  * Revision 3.3  2000/12/12 12:11:51  dkr
  * NWITH_INOUT removed
  * interpretation of NWITH_IN changed:
@@ -72,16 +78,16 @@
  *****************************************************************************/
 
 #include "dbug.h"
-
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
 #include "DupTree.h"
 #include "DataFlowMask.h"
-#include "typecheck.h"
 #include "internal_lib.h"
 #include "concurrent_lib.h"
+#include "LookUpTable.h"
+#include "InferDFMs.h"
 
 /******************************************************************************
  *
@@ -89,36 +95,14 @@
  *   ids *SPMDLids( ids *arg_node, node *arg_info)
  *
  * description:
- *   Corrects the vardec-pointers of ids.
  *
- * remarks:
- *   INFO_CONC_FUNDEF( arg_info) points to the current fundef-node.
  *
  ******************************************************************************/
 
 ids *
 SPMDLids (ids *arg_node, node *arg_info)
 {
-    node *fundef;
-
     DBUG_ENTER ("SPMDLids");
-
-    fundef = INFO_CONC_FUNDEF (arg_info);
-
-    if (FUNDEF_STATUS (fundef) == ST_spmdfun) {
-
-        /*
-         * we are inside a body of a SPMD-fun
-         *   -> correct the pointers to the vardec
-         */
-
-        IDS_VARDEC (arg_node) = FindVardec_Name (IDS_NAME (arg_node), fundef);
-        DBUG_ASSERT ((IDS_VARDEC (arg_node) != NULL), "vardec not found");
-
-        if (IDS_NEXT (arg_node) != NULL) {
-            IDS_NEXT (arg_node) = SPMDLids (IDS_NEXT (arg_node), arg_info);
-        }
-    }
 
     DBUG_RETURN (arg_node);
 }
@@ -140,10 +124,12 @@ node *
 SPMDLspmd (node *arg_node, node *arg_info)
 {
     node *vardec, *fundef, *new_fundef, *body;
-    node *new_vardec, *last_vardec;
+    node *fvardecs, *new_fvardec;
     node *fargs, *new_farg;
     node *retexprs, *new_retexpr;
+    node *tmp;
     types *rettypes, *new_rettype;
+    LUT_t *lut;
 
     DBUG_ENTER (" SPMDLspmd");
 
@@ -154,31 +140,33 @@ SPMDLspmd (node *arg_node, node *arg_info)
      */
 
     /*
-     * generate body of SPMD-function
+     * generate LUT (needed to get correct decl pointers during DupTree)
      */
-    body = DupTree (SPMD_REGION (arg_node));
+    lut = GenerateLUT ();
 
     /*
-     * insert vardecs of SPMD_OUT/LOCAL-vars into body
+     * build vardecs of SPMD_OUT/LOCAL-vars for SPMD function and fill LUT
      */
-    last_vardec = NULL;
+    fvardecs = NULL;
     vardec = DFMGetMaskEntryDeclSet (SPMD_OUT (arg_node));
     while (vardec != NULL) {
         /* reduce outs by ins */
         if (!(DFMTestMaskEntry (SPMD_IN (arg_node), NULL, vardec))) {
             if (NODE_TYPE (vardec) == N_vardec) {
-                new_vardec = DupNode (vardec);
-                VARDEC_NEXT (new_vardec) = last_vardec;
+                new_fvardec = DupNode (vardec);
+                VARDEC_NEXT (new_fvardec) = fvardecs;
 
                 DBUG_PRINT ("SPMDL", ("inserted vardec out %s", VARDEC_NAME (vardec)));
             } else {
-                new_vardec = MakeVardec (StringCopy (ARG_NAME (vardec)),
-                                         DupTypes (ARG_TYPE (vardec)), last_vardec);
-                VARDEC_REFCNT (new_vardec) = ARG_REFCNT (vardec);
+                new_fvardec = MakeVardec (StringCopy (ARG_NAME (vardec)),
+                                          DupTypes (ARG_TYPE (vardec)), fvardecs);
+                VARDEC_REFCNT (new_fvardec) = ARG_REFCNT (vardec);
 
                 DBUG_PRINT ("SPMDL", ("inserted arg out %s", ARG_NAME (vardec)));
             }
-            last_vardec = new_vardec;
+            lut = InsertIntoLUT_P (lut, vardec, new_fvardec);
+
+            fvardecs = new_fvardec;
         }
         vardec = DFMGetMaskEntryDeclSet (NULL);
     }
@@ -186,17 +174,18 @@ SPMDLspmd (node *arg_node, node *arg_info)
     vardec = DFMGetMaskEntryDeclSet (SPMD_LOCAL (arg_node));
     while (vardec != NULL) {
         if (NODE_TYPE (vardec) == N_vardec) {
-            new_vardec = DupNode (vardec);
-            VARDEC_NEXT (new_vardec) = last_vardec;
+            new_fvardec = DupNode (vardec);
+            VARDEC_NEXT (new_fvardec) = fvardecs;
         } else {
-            new_vardec = MakeVardec (StringCopy (ARG_NAME (vardec)),
-                                     DupTypes (ARG_TYPE (vardec)), last_vardec);
-            VARDEC_REFCNT (new_vardec) = ARG_REFCNT (vardec);
+            new_fvardec = MakeVardec (StringCopy (ARG_NAME (vardec)),
+                                      DupTypes (ARG_TYPE (vardec)), fvardecs);
+            VARDEC_REFCNT (new_fvardec) = ARG_REFCNT (vardec);
         }
-        last_vardec = new_vardec;
+        lut = InsertIntoLUT_P (lut, vardec, new_fvardec);
+
+        fvardecs = new_fvardec;
         vardec = DFMGetMaskEntryDeclSet (NULL);
     }
-    BLOCK_VARDEC (body) = last_vardec;
 
     vardec = DFMGetMaskEntryDeclSet (SPMD_SHARED (arg_node));
     while (vardec != NULL) {
@@ -204,25 +193,26 @@ SPMDLspmd (node *arg_node, node *arg_info)
         if ((!(DFMTestMaskEntry (SPMD_IN (arg_node), NULL, vardec)))
             && (!(DFMTestMaskEntry (SPMD_OUT (arg_node), NULL, vardec)))) {
             if (NODE_TYPE (vardec) == N_vardec) {
-                new_vardec = DupNode (vardec);
-                VARDEC_NEXT (new_vardec) = last_vardec;
+                new_fvardec = DupNode (vardec);
+                VARDEC_NEXT (new_fvardec) = fvardecs;
 
                 DBUG_PRINT ("SPMDL", ("inserted vardec shared %s", VARDEC_NAME (vardec)));
             } else {
-                new_vardec = MakeVardec (StringCopy (ARG_NAME (vardec)),
-                                         DupTypes (ARG_TYPE (vardec)), last_vardec);
-                VARDEC_REFCNT (new_vardec) = ARG_REFCNT (vardec);
+                new_fvardec = MakeVardec (StringCopy (ARG_NAME (vardec)),
+                                          DupTypes (ARG_TYPE (vardec)), fvardecs);
+                VARDEC_REFCNT (new_fvardec) = ARG_REFCNT (vardec);
 
                 DBUG_PRINT ("SPMDL", ("inserted arg shared %s", ARG_NAME (vardec)));
             }
-            last_vardec = new_vardec;
+            lut = InsertIntoLUT_P (lut, vardec, new_fvardec);
+
+            fvardecs = new_fvardec;
         }
         vardec = DFMGetMaskEntryDeclSet (NULL);
     }
-    BLOCK_VARDEC (body) = last_vardec;
 
     /*
-     * build formal parameters (SPMD_IN/INOUT).
+     * build formal parameters (SPMD_IN/INOUT) of SPMD function and fill LUT
      */
     fargs = NULL;
     vardec = DFMGetMaskEntryDeclSet (SPMD_IN (arg_node));
@@ -240,6 +230,8 @@ SPMDLspmd (node *arg_node, node *arg_info)
 
             DBUG_PRINT ("SPMDL", ("inserted arg %s", ARG_NAME (vardec)));
         }
+        lut = InsertIntoLUT_P (lut, vardec, new_farg);
+
         fargs = new_farg;
         vardec = DFMGetMaskEntryDeclSet (NULL);
     }
@@ -269,12 +261,9 @@ SPMDLspmd (node *arg_node, node *arg_info)
             ID_REFCNT (EXPRS_EXPR (new_retexpr)) = GET_ZERO_REFCNT (VARDEC, vardec);
         }
 
-        /*
-         * This is only a dummy value for the vardec-pointer.
-         * After we have build the new fundef node, we must traverse it to correct
-         * the vardec-pointers of all id's.
-         */
-        ID_VARDEC (EXPRS_EXPR (new_retexpr)) = NULL;
+        tmp = SearchInLUT_P (lut, vardec);
+        DBUG_ASSERT ((tmp != NULL), "no decl for return value found in LUT!");
+        ID_VARDEC (EXPRS_EXPR (new_retexpr)) = tmp;
 
         TYPES_NEXT (new_rettype) = rettypes;
 
@@ -292,6 +281,12 @@ SPMDLspmd (node *arg_node, node *arg_info)
         rettypes = MakeTypes1 (T_void);
     }
 
+    /*
+     * generate body of SPMD function
+     */
+    body = DupTreeLUT (SPMD_REGION (arg_node), lut);
+    BLOCK_VARDEC (body) = fvardecs;
+
     new_fundef = MakeFundef (TmpVarName (FUNDEF_NAME (fundef)), "_SPMD", rettypes, fargs,
                              body, NULL);
 
@@ -308,10 +303,9 @@ SPMDLspmd (node *arg_node, node *arg_info)
     AppendAssign (BLOCK_INSTR (body), MakeAssign (FUNDEF_RETURN (new_fundef), NULL));
 
     /*
-     * generate DFMaskBase for the new fundef
+     * update DFMs for the new fundef
      */
-    FUNDEF_DFM_BASE (new_fundef)
-      = DFMGenMaskBase (FUNDEF_ARGS (new_fundef), FUNDEF_VARDEC (new_fundef));
+    new_fundef = InferDFMs (new_fundef, HIDE_LOCALS_NEVER);
 
     /*
      * insert SPMD-function into fundef-chain of modul
@@ -329,6 +323,11 @@ SPMDLspmd (node *arg_node, node *arg_info)
     }
 
     /*
+     * remove LUT
+     */
+    lut = RemoveLUT (lut);
+
+    /*
      * build fundef for this spmd region
      ****************************************************************************/
 
@@ -341,32 +340,14 @@ SPMDLspmd (node *arg_node, node *arg_info)
  *   node *SPMDLid( node *arg_node, node *arg_info)
  *
  * description:
- *   Corrects the vardec-pointer of N_id nodes in SPMD-funs.
  *
- * remarks:
- *   INFO_CONC_FUNDEF( arg_info) points to the current fundef-node.
  *
  ******************************************************************************/
 
 node *
 SPMDLid (node *arg_node, node *arg_info)
 {
-    node *fundef;
-
     DBUG_ENTER ("SPMDLid");
-
-    fundef = INFO_CONC_FUNDEF (arg_info);
-
-    if (FUNDEF_STATUS (fundef) == ST_spmdfun) {
-
-        /*
-         * we are inside a body of a SPMD-fun
-         *   -> correct the pointer to the vardec (ID_VARDEC)
-         */
-
-        ID_VARDEC (arg_node) = FindVardec_Name (ID_NAME (arg_node), fundef);
-        DBUG_ASSERT ((ID_VARDEC (arg_node) != NULL), "vardec not found");
-    }
 
     DBUG_RETURN (arg_node);
 }
