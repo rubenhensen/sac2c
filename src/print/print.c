@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.206  1998/04/29 09:38:58  dkr
+ * changed output for N_Nwith2: (code == NULL -> 'noop')
+ *
  * Revision 1.205  1998/04/28 15:44:46  srs
  * changed output of Nwithop
  *
@@ -2724,8 +2727,11 @@ PrintWLgrid (node *arg_node, node *arg_info)
         fprintf (outfile, "\n");
         WLGRID_NEXTDIM (arg_node) = Trav (WLGRID_NEXTDIM (arg_node), arg_info);
     } else {
-        DBUG_ASSERT ((WLGRID_CODE (arg_node) != NULL), "WLGRID_CODE not found");
-        fprintf (outfile, "op_%d\n", NCODE_NO (WLGRID_CODE (arg_node)));
+        if (WLGRID_CODE (arg_node) != NULL) {
+            fprintf (outfile, "op_%d\n", NCODE_NO (WLGRID_CODE (arg_node)));
+        } else {
+            fprintf (outfile, "noop\n");
+        }
     }
     indent--;
 
@@ -2832,8 +2838,11 @@ PrintWLgridVar (node *arg_node, node *arg_info)
         fprintf (outfile, "\n");
         WLGRIDVAR_NEXTDIM (arg_node) = Trav (WLGRIDVAR_NEXTDIM (arg_node), arg_info);
     } else {
-        DBUG_ASSERT ((WLGRIDVAR_CODE (arg_node) != NULL), "WLGRIDVAR_CODE not found");
-        fprintf (outfile, "op_%d\n", NCODE_NO (WLGRIDVAR_CODE (arg_node)));
+        if (WLGRIDVAR_CODE (arg_node) != NULL) {
+            fprintf (outfile, "op_%d\n", NCODE_NO (WLGRIDVAR_CODE (arg_node)));
+        } else {
+            fprintf (outfile, "noop\n");
+        }
     }
     indent--;
 
