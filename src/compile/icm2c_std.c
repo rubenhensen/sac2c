@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.37  2002/10/10 23:52:09  dkr
+ * bugs fixed
+ *
  * Revision 3.36  2002/10/07 23:36:10  dkr
  * some bugs with TAGGED_ARRAYS fixed
  *
@@ -392,7 +395,7 @@ ICMCompileND_FUN_RET (char *retname, int narg, char **arg_any)
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_OBJDEF( nt, basetype, sdim, shp_0 ... shp_n)
+ *   ND_OBJDEF( nt, basetype, sdim, [ shp ]* )
  *
  ******************************************************************************/
 
@@ -450,7 +453,7 @@ ICMCompileND_OBJDEF_EXTERN (char *nt, char *basetype, int sdim)
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_DECL( nt, basetype, sdim, shp_0 ... shp_n)
+ *   ND_DECL( nt, basetype, sdim, [ shp ]* )
  *
  ******************************************************************************/
 
@@ -516,7 +519,7 @@ ICMCompileND_DECL_EXTERN (char *nt, char *basetype, int sdim)
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_DECL__MIRROR( nt, sdim, shp_0 ... shp_n)
+ *   ND_DECL__MIRROR( nt, sdim, [ shp ]* )
  *
  ******************************************************************************/
 
@@ -590,7 +593,7 @@ ICMCompileND_DECL__MIRROR (char *nt, int sdim, int *shp)
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_DECL__MIRROR_PARAM( nt, sdim, shp_0 ... shp_n)
+ *   ND_DECL__MIRROR_PARAM( nt, sdim, [ shp ]* )
  *
  ******************************************************************************/
 
@@ -825,7 +828,7 @@ ICMCompileND_CHECK_REUSE (char *to_nt, int to_sdim, char *from_nt, int from_sdim
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_SET__SHAPE( to_nt, dim, shp_0 ... shp_n)
+ *   ND_SET__SHAPE( to_nt, dim, [shp]* )
  *
  ******************************************************************************/
 
@@ -1415,19 +1418,22 @@ ICMCompileND_ASSIGN__DIMSHP (char *to_nt, int to_sdim, char *from_nt, int from_s
         for (i = 0; i < to_dim; i++) {
             INDENT;
             fprintf (outfile,
-                     "SAC_ND_A_SHAPE( %s, %d) = "
+                     "SAC_ND_A_MIRROR_SHAPE( %s, %d) = "
                      "SAC_ND_A_SHAPE( %s, %d);\n",
                      to_nt, i, from_nt, i);
         }
         INDENT;
-        fprintf (outfile, "SAC_ND_A_SIZE( %s) = SAC_ND_A_SIZE( %s);\n", to_nt, from_nt);
+        fprintf (outfile, "SAC_ND_A_MIRROR_SIZE( %s) = SAC_ND_A_SIZE( %s);\n", to_nt,
+                 from_nt);
         break;
 
     case C_aud:
         INDENT;
-        fprintf (outfile, "SAC_ND_A_SIZE( %s) = SAC_ND_A_SIZE( %s);\n", to_nt, from_nt);
+        fprintf (outfile, "SAC_ND_A_MIRROR_SIZE( %s) = SAC_ND_A_SIZE( %s);\n", to_nt,
+                 from_nt);
         INDENT;
-        fprintf (outfile, "SAC_ND_A_DIM( %s) = SAC_ND_A_DIM( %s);\n", to_nt, from_nt);
+        fprintf (outfile, "SAC_ND_A_MIRROR_DIM( %s) = SAC_ND_A_DIM( %s);\n", to_nt,
+                 from_nt);
         break;
 
     default:
@@ -1654,7 +1660,7 @@ ICMCompileND_MAKE_UNIQUE (char *to_nt, int to_sdim, char *from_nt, int from_sdim
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_CREATE__VECT__DIM( val_size, vala_0 ... vala_n)
+ *   ND_CREATE__VECT__DIM( val_size, [ vala ]* )
  *
  ******************************************************************************/
 
@@ -1708,7 +1714,7 @@ ICMCompileND_CREATE__VECT__DIM (int val_size, char **vala_any)
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_CREATE__VECT__SHAPE( nt, sdim, val_size, vala_0 ... vala_n)
+ *   ND_CREATE__VECT__SHAPE( nt, sdim, val_size, [ vala ]* )
  *
  ******************************************************************************/
 
@@ -1934,7 +1940,7 @@ ICMCompileND_CREATE__VECT__SHAPE (char *to_nt, int to_sdim, int val_size, char *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_CREATE__VEC__DATAT( nt, sdim, val_size, vala_0 ... vala_n, copyfun)
+ *   ND_CREATE__VEC__DATAT( nt, sdim, val_size, [ vala ]* , copyfun)
  *
  ******************************************************************************/
 
@@ -2411,7 +2417,7 @@ ICMCompileND_PRF_SEL__SHAPE_id (char *to_nt, int to_sdim, char *from_nt, int fro
  *   implements the compilation of the following ICM:
  *
  *   ND_PRF_SEL__SHAPE_arr( to_nt, to_sdim, from_nt, from_sdim,
- *                          idx_size, ...idxa_any...)
+ *                          idx_size, [ idxa_any ]* )
  *
  ******************************************************************************/
 
@@ -2596,7 +2602,7 @@ ICMCompileND_PRF_SEL__DATA_id (char *to_nt, int to_sdim, char *from_nt, int from
  *   implements the compilation of the following ICM:
  *
  *   ND_PRF_SEL__DATA_arr( to_nt, to_sdim, from_nt, from_sdim,
- *                         idx_size, ...idxa_any..., copyfun)
+ *                         idx_size, [ idxa_any ]* , copyfun)
  *
  ******************************************************************************/
 
@@ -2885,7 +2891,7 @@ ICMCompileND_PRF_MODARRAY__DATA_id (char *to_nt, int to_sdim, char *from_nt,
  *   implements the compilation of the following ICM:
  *
  *   ND_PRF_MODARRAY__DATA_arr( to_nt, to_sdim, from_nt, from_sdim,
- *                              idx_size, ...idxa_any..., val_any, copyfun)
+ *                              idx_size, [ idxa_any ]* , val_any, copyfun)
  *
  ******************************************************************************/
 
@@ -3222,7 +3228,7 @@ ICMCompileND_IDXS2OFFSET (char *off_nt, int idxs_size, char **idxs_nt, int shp_s
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_KS_DECL_GLOBAL_ARRAY( basetype, name, dim, s0 ... sn)
+ *   ND_KS_DECL_GLOBAL_ARRAY( basetype, name, dim, [ s ]* )
  *
  ******************************************************************************/
 
@@ -3324,7 +3330,7 @@ ICMCompileND_KD_DECL_EXTERN_ARRAY (char *basetype, char *name, int dim)
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_KS_DECL_ARRAY( basetype, name, dim, s0 ... sn)
+ *   ND_KS_DECL_ARRAY( basetype, name, dim, [ s ]* )
  *
  ******************************************************************************/
 
@@ -3369,7 +3375,7 @@ ICMCompileND_KS_DECL_ARRAY (char *basetype, char *name, int dim, char **s)
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_KS_DECL_ARRAY_ARG( name, dim, s0 ... sn)
+ *   ND_KS_DECL_ARRAY_ARG( name, dim, [ s ]* )
  *   declares an array given as arg
  *
  ******************************************************************************/
@@ -3411,7 +3417,7 @@ ICMCompileND_KS_DECL_ARRAY_ARG (char *name, int dim, char **s)
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_CREATE_CONST_ARRAY_S( name, len, s0 ... sn)
+ *   ND_CREATE_CONST_ARRAY_S( name, len, [ s ]* )
  *
  ******************************************************************************/
 
@@ -3444,7 +3450,7 @@ ICMCompileND_CREATE_CONST_ARRAY_S (char *name, int len, char **s)
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_CREATE_CONST_ARRAY_H( name, copyfun, len, A0 ... An)
+ *   ND_CREATE_CONST_ARRAY_H( name, copyfun, len, [ A ]* )
  *   generates a constant array of refcounted hidden values
  *
  ******************************************************************************/
@@ -3479,7 +3485,7 @@ ICMCompileND_CREATE_CONST_ARRAY_H (char *name, char *copyfun, int len, char **A)
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_CREATE_CONST_ARRAY_A( name, len2, len1, A0 ... An)
+ *   ND_CREATE_CONST_ARRAY_A( name, len2, len1, [ A ]* )
  *   generates a constant array out of arrays
  *   where len2 is the number of elements of the argument array A
  *
@@ -3514,7 +3520,7 @@ ICMCompileND_CREATE_CONST_ARRAY_A (char *name, int len2, int len1, char **A)
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_KD_SEL_CxA_S( a, res, dim, v0 ... vn)
+ *   ND_KD_SEL_CxA_S( a, res, dim, [ v ]* )
  *   selects a single element of the array
  *
  ******************************************************************************/
@@ -3577,7 +3583,7 @@ ICMCompileND_KD_SEL_VxA_S (char *a, char *res, int dim, char *v)
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_KD_SEL_CxA_A( dima, a, res, dimv, v0 ... vn)
+ *   ND_KD_SEL_CxA_A( dima, a, res, dimv, [ v ]* )
  *   selects a sub-array
  *
  ******************************************************************************/
@@ -3639,7 +3645,7 @@ ICMCompileND_KD_SEL_VxA_A (int dima, char *a, char *res, int dimv, char *v)
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_KD_TAKE_CxA_A( dima, a, res, dimv, v0 ... vn)
+ *   ND_KD_TAKE_CxA_A( dima, a, res, dimv, [ v ]* )
  *
  ******************************************************************************/
 
@@ -3675,7 +3681,7 @@ ICMCompileND_KD_TAKE_CxA_A (int dima, char *a, char *res, int dimv, char **vi)
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_KD_DROP_CxA_A( dima, a, res, dimv, v0 ... vn)
+ *   ND_KD_DROP_CxA_A( dima, a, res, dimv, [ v ]* )
  *
  ******************************************************************************/
 
@@ -3838,7 +3844,7 @@ ICMCompileND_KD_ROT_CxSxA_A (int rotdim, char **numstr, int dima, char *a, char 
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_PRF_MODARRAY_AxCxS( res_btype, dimres, res, old, value, dimv, v0 ... vn)
+ *   ND_PRF_MODARRAY_AxCxS( res_btype, dimres, res, old, value, dimv, [ v ]* )
  *
  ******************************************************************************/
 
@@ -3941,7 +3947,7 @@ ICMCompileND_PRF_MODARRAY_AxVxS (char *res_btype, int dimres, char *res, char *o
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_PRF_MODARRAY_AxCxA( res_btype, dimres, res, old, val, dimv, v0 ... vn)
+ *   ND_PRF_MODARRAY_AxCxA( res_btype, dimres, res, old, val, dimv, [ v ]* )
  *
  ******************************************************************************/
 
