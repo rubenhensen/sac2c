@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/11/04 18:45:38  ktr
+ * All withops are traversed now.
+ *
  * Revision 1.3  2004/11/02 14:34:59  ktr
  * Better support for conditionals.
  * AP_ARGS are now actually traversed.
@@ -583,6 +586,10 @@ EMFRCwithop (node *arg_node, info *arg_info)
 
     default:
         break;
+    }
+
+    if (NWITHOP_NEXT (arg_node) != NULL) {
+        NWITHOP_NEXT (arg_node) = Trav (NWITHOP_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
