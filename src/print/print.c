@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.49  2001/04/23 13:40:01  dkr
+ * DoPrintAST: FUNDEF_DFM_BASE added
+ *
  * Revision 3.48  2001/04/19 15:36:03  dkr
  * DBUG output for COND_CONDUSEMASK removed
  *
@@ -4166,6 +4169,9 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
             PrintStatus (OBJDEF_ATTRIB (arg_node), TRUE);
             PrintStatus (OBJDEF_STATUS (arg_node), TRUE);
 
+            fprintf (outfile, ", ");
+            fprintf (outfile, "mask-base: <" F_PTR ">", FUNDEF_DFM_BASE (arg_node));
+
             fprintf (outfile, ")");
 
             skip = FUNDEF_NEXT (arg_node);
@@ -4237,6 +4243,48 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
             skip = ASSIGN_NEXT (arg_node);
             break;
 
+        case N_cond:
+            fprintf (outfile, "(");
+
+            fprintf (outfile, "in-mask: <" F_PTR ">", COND_IN_MASK (arg_node));
+
+            fprintf (outfile, ", ");
+            fprintf (outfile, "out-mask: <" F_PTR ">", COND_OUT_MASK (arg_node));
+
+            fprintf (outfile, ", ");
+            fprintf (outfile, "local-mask: <" F_PTR ">", COND_LOCAL_MASK (arg_node));
+
+            fprintf (outfile, ")");
+            break;
+
+        case N_do:
+            fprintf (outfile, "(");
+
+            fprintf (outfile, "in-mask: <" F_PTR ">", DO_IN_MASK (arg_node));
+
+            fprintf (outfile, ", ");
+            fprintf (outfile, "out-mask: <" F_PTR ">", DO_OUT_MASK (arg_node));
+
+            fprintf (outfile, ", ");
+            fprintf (outfile, "local-mask: <" F_PTR ">", DO_LOCAL_MASK (arg_node));
+
+            fprintf (outfile, ")");
+            break;
+
+        case N_while:
+            fprintf (outfile, "(");
+
+            fprintf (outfile, "in-mask: <" F_PTR ">", WHILE_IN_MASK (arg_node));
+
+            fprintf (outfile, ", ");
+            fprintf (outfile, "out-mask: <" F_PTR ">", WHILE_OUT_MASK (arg_node));
+
+            fprintf (outfile, ", ");
+            fprintf (outfile, "local-mask: <" F_PTR ">", WHILE_LOCAL_MASK (arg_node));
+
+            fprintf (outfile, ")");
+            break;
+
         case N_let:
             DoPrintIdsAST (LET_IDS (arg_node), TRUE);
             break;
@@ -4302,6 +4350,18 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
             break;
 
         case N_Nwith:
+            fprintf (outfile, "(");
+
+            fprintf (outfile, "in-mask: <" F_PTR ">", NWITH_IN_MASK (arg_node));
+
+            fprintf (outfile, ", ");
+            fprintf (outfile, "out-mask: <" F_PTR ">", NWITH_OUT_MASK (arg_node));
+
+            fprintf (outfile, ", ");
+            fprintf (outfile, "local-mask: <" F_PTR ">", NWITH_LOCAL_MASK (arg_node));
+
+            fprintf (outfile, ")");
+
             fprintf (outfile, "\n");
             if (NWITH_PRAGMA (arg_node) != NULL) {
                 indent++;
@@ -4372,6 +4432,15 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
         case N_Nwith2:
             fprintf (outfile, "(");
 
+            fprintf (outfile, "in-mask: <" F_PTR ">", NWITH2_IN_MASK (arg_node));
+
+            fprintf (outfile, ", ");
+            fprintf (outfile, "out-mask: <" F_PTR ">", NWITH2_OUT_MASK (arg_node));
+
+            fprintf (outfile, ", ");
+            fprintf (outfile, "local-mask: <" F_PTR ">", NWITH2_LOCAL_MASK (arg_node));
+
+            fprintf (outfile, ", ");
             fprintf (outfile, "offset_needed: %i", NWITH2_OFFSET_NEEDED (arg_node));
 
             fprintf (outfile, ", ");
