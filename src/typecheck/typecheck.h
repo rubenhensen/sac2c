@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.31  1998/05/12 13:19:59  cg
+ * bug fixed: original vardecs are now traversed in advance and
+ * module names are given to user-defined types where necessary.
+ *
  * Revision 1.30  1998/02/11 16:35:08  dkr
  * typedef cmp_types moved to typecheck.h (compile.c needs to import this type)
  *
@@ -114,6 +118,7 @@ typedef enum {
 extern node *Typecheck (node *arg_node);
 extern node *TCfundef (node *arg_node, node *arg_info);
 extern node *TClet (node *arg_node, node *arg_info);
+extern node *TCvardec (node *arg_node, node *arg_info);
 extern node *TCreturn (node *arg_node, node *arg_info);
 extern node *TCcond (node *arg_node, node *arg_info);
 extern node *TCblock (node *arg_node, node *arg_info);
