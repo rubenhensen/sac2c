@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  2000/03/15 13:55:26  dkr
+ * comment changed
+ *
  * Revision 2.1  1999/02/23 12:42:57  sacbase
  * new release made
  *
@@ -14,12 +17,9 @@
  * Revision 1.2  1998/04/13 18:11:13  dkr
  * rcs-header added
  *
- *
- *
  */
 
 #ifndef _sac_wlpragma_funs_h
-
 #define _sac_wlpragma_funs_h
 
 extern node *All (node *segs, node *parms, node *cubes, int dims, int line);
