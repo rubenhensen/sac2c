@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.47  2004/07/21 12:40:38  khf
+ * phase WLPartitionGeneration exchanged by phase WLEnhancement
+ *
  * Revision 3.46  2004/07/19 12:43:29  ktr
  * Added EM Reference counting.
  *
@@ -211,7 +214,7 @@
 #include "options.h"
 #include "multithread.h"
 #include "blir.h"
-#include "WLPartitionGeneration.h"
+#include "WLEnhancement.h"
 
 #include <stdlib.h>
 #include <unistd.h>
@@ -505,14 +508,12 @@ main (int argc, char *argv[])
     compiler_phase++;
 
     PHASE_PROLOG;
-    if (khf) {
-        NOTE_COMPILER_PHASE;
-        syntax_tree = WLPartitionGeneration (syntax_tree); /* wlpg_tab */
-        PHASE_DONE_EPILOG;
-    }
+    NOTE_COMPILER_PHASE;
+    syntax_tree = WLEnhancement (syntax_tree); /* see WLEnhancement.c */
+    PHASE_DONE_EPILOG;
     PHASE_EPILOG;
 
-    if (break_after == PH_wlpartgen)
+    if (break_after == PH_wlenhance)
         goto BREAK;
     compiler_phase++;
 
