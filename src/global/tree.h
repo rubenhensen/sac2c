@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.61  1995/11/01 16:24:16  cg
+ * Revision 1.62  1995/12/04 13:08:02  hw
+ * changed makro MODEMODE_ID(no, str) ( str will be copied now)
+ *
+ * Revision 1.61  1995/11/01  16:24:16  cg
  * moved function AppendIdsChain to tree_compound.[ch]
  *
  * Revision 1.60  1995/10/06  17:10:44  cg
@@ -209,6 +212,7 @@
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
+#include "internal_lib.h"
 
 /*
  *  The following macros for the generation of nodes are only supported
@@ -222,9 +226,7 @@
     no = MakeNode (N_num);                                                               \
     no->info.cint = nr
 
-#define MAKENODE_ID(no, str)                                                             \
-    no = MakeNode (N_id);                                                                \
-    no->IDS = MakeIds (str, NULL, ST_regular)
+#define MAKENODE_ID(no, str) no = MakeId (StringCopy (str), NULL, ST_regular)
 
 #define MAKENODE_BOOL(no, nr)                                                            \
     no = MakeNode (N_bool);                                                              \
