@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.190  2004/11/29 16:42:13  sah
+ * reactivated printing of old types
+ *
  * Revision 3.189  2004/11/29 09:57:57  sah
  * removed nested comment
  *
@@ -1667,11 +1670,7 @@ PRTvardec (node *arg_node, info *arg_info)
                   fprintf (global.outfile, "**%d: ", VARDEC_VARNO (arg_node)););
 
     if ((VARDEC_ICM (arg_node) == NULL) || (NODE_TYPE (VARDEC_ICM (arg_node)) != N_icm)) {
-        if (ARG_NTYPE (arg_node) != NULL) {
-            type_str = TYtype2String (VARDEC_NTYPE (arg_node), FALSE, 0);
-        } else {
-            type_str = CVtype2String (VARDEC_TYPE (arg_node), 0, TRUE);
-        }
+        type_str = TYtype2String (VARDEC_NTYPE (arg_node), FALSE, 0);
         fprintf (global.outfile, "%s ", type_str);
         type_str = ILIBfree (type_str);
 
@@ -1679,7 +1678,7 @@ PRTvardec (node *arg_node, info *arg_info)
 
         fprintf (global.outfile, "; ");
 
-        type_str = TYtype2String (AVIS_TYPE (VARDEC_AVIS (arg_node)), FALSE, 0);
+        type_str = CVtype2String (VARDEC_TYPE (arg_node), 0, TRUE);
         fprintf (global.outfile, "/* %s */", type_str);
         type_str = ILIBfree (type_str);
 
