@@ -1,9 +1,12 @@
 
 /* $Log$
- * Revision 1.10  1995/09/05 11:06:41  hw
- * added macros-calls for typechecking of function 'modarray'
- *  with 'double[]' args
+ * Revision 1.11  1995/12/06 17:04:34  hw
+ * added typecheck of primitive function 'genarray'
  *
+;; Revision 1.10  1995/09/05  11:06:41  hw
+;; added macros-calls for typechecking of function 'modarray'
+;;  with 'double[]' args
+;;
 ;; Revision 1.9  1995/08/11  17:33:21  hw
 ;;  added macros-calls for typechecking of function 'modarray'
 ;;
@@ -164,6 +167,16 @@ TT2 (230, SxA_Ad, INT, INT_A, TakeDropS (arg_node->node[0]->node[0], arg_type[1]
 TT2 (231, SxA_Ad, INT, FLOAT_A, TakeDropS (arg_node->node[0]->node[0], arg_type[1], 1))
 TT2 (232, SxA_Ad, INT, BOOL_A, TakeDropS (arg_node->node[0]->node[0], arg_type[1], 1))
 TT2 (233, SxA_Ad, INT, DOUBLE_A, TakeDropS (arg_node->node[0]->node[0], arg_type[1], 1))
+
+TT2 (240, VxA_Ag, INT_A, INT_A, Genarray_A (arg_node->node[0]->node[0], arg_type[1]))
+TT2 (241, VxA_Ag, INT_A, FLOAT_A, Genarray_A (arg_node->node[0]->node[0], arg_type[1]))
+TT2 (242, VxA_Ag, INT_A, BOOL_A, Genarray_A (arg_node->node[0]->node[0], arg_type[1]))
+TT2 (243, VxA_Ag, INT_A, DOUBLE_A, Genarray_A (arg_node->node[0]->node[0], arg_type[1]))
+
+TT2 (250, VxS_Ag, INT_A, INT, Genarray_S (arg_node->node[0]->node[0], arg_type[1]))
+TT2 (251, VxS_Ag, INT_A, FLOAT, Genarray_S (arg_node->node[0]->node[0], arg_type[1]))
+TT2 (252, VxS_Ag, INT_A, BOOL, Genarray_S (arg_node->node[0]->node[0], arg_type[1]))
+TT2 (253, VxS_Ag, INT_A, DOUBLE, Genarray_S (arg_node->node[0]->node[0], arg_type[1]))
 
 TT3 (300, SxAxA_A, INT, INT_A, INT_A,
      Cat (arg_node->node[0]->node[0], arg_type[1], arg_type[2]))

@@ -1,6 +1,9 @@
 /*
  * $Log$
- * Revision 1.19  1995/08/15 14:42:25  hw
+ * Revision 1.20  1995/12/06 17:03:37  hw
+ * added typecheck of primitive function 'genarray'
+ *
+ * Revision 1.19  1995/08/15  14:42:25  hw
  * changed typecheck of "modarray" (shapes will be compared)
  *
  * Revision 1.18  1995/08/11  17:27:32  hw
@@ -104,6 +107,8 @@ enum type_class {
     VxA_Ap,
     SxA_At,
     SxA_Ad,
+    VxA_Ag,
+    VxS_Ag,
     V_As,
     A_S,
     SxSxA_A,
@@ -456,11 +461,17 @@ Shp (types *array)
 
     DBUG_ENTER ("Shp");
 
-    GEN_TYPE_NODE (ret_type, T_int);
-    ret_type->dim = 1;
-    ret_type->shpseg = (shpseg *)Malloc (sizeof (shpseg));
+#if 0   
+   GEN_TYPE_NODE(ret_type, T_int);
+   ret_type->dim=1;
+   ret_type->shpseg=(shpseg *)Malloc(sizeof(shpseg));
+   GET_DIM(dim,array);
+   ret_type->shpseg->shp[0]=dim;
+#endif /* 0 (hw 5.12) */
+
+    ret_type = MakeType (T_int, 1, MakeShpseg (NULL), NULL, NULL);
     GET_DIM (dim, array);
-    ret_type->shpseg->shp[0] = dim;
+    TYPES_SHAPE (ret_type, 0) = dim;
 
     DBUG_RETURN (ret_type);
 }
@@ -491,29 +502,34 @@ Reshp (node *vec, types *array)
     DBUG_ENTER ("Reshp");
 
     /* count number of elements of the new array  and store it in count1 */
-    tmp = vec->node[0];
+    DBUG_ASSERT (N_array == NODE_TYPE (vec), " wrong node != N_array");
+    tmp = ARRAY_AELEMS (vec);
     count1 = 1;
     while (NULL != tmp) {
         dim2++;
-        count1 *= tmp->node[0]->info.cint;
-        tmp = tmp->node[1];
+        count1 *= NUM_VAL (EXPRS_EXPR (tmp));
+        tmp = EXPRS_NEXT (tmp);
     }
 
     /* count number of elements of old array 1) */
     count2 = 1;
-    for (i = 0; i < array->dim; i++)
-        count2 *= array->shpseg->shp[i];
+    for (i = 0; i < TYPES_DIM (array); i++)
+        count2 *= TYPES_SHAPE (array, i);
 
     if ((count1 != count2) || (dim2 > SHP_SEG_SIZE))
         GEN_TYPE_NODE (ret_type, T_unknown);
     else {
-        GEN_TYPE_NODE (ret_type, array->simpletype);
-        ret_type->dim = dim2;
-        ret_type->shpseg = (shpseg *)Malloc (sizeof (shpseg));
-        tmp = vec->node[0];
+#if 0
+      GEN_TYPE_NODE(ret_type,array->simpletype);
+      ret_type->dim=dim2;
+      ret_type->shpseg=(shpseg*)Malloc(sizeof(shpseg));
+#endif /* 0 (hw 5.12) */
+
+        ret_type = MakeType (TYPES_BASETYPE (array), dim2, MakeShpseg (NULL), NULL, NULL);
+        tmp = ARRAY_AELEMS (vec);
         for (i = 0; i < dim2; i++) {
-            ret_type->shpseg->shp[i] = tmp->node[0]->info.cint;
-            tmp = tmp->node[1];
+            TYPES_SHAPE (ret_type, i) = NUM_VAL (EXPRS_EXPR (tmp));
+            tmp = EXPRS_NEXT (tmp);
         }
     }
 
@@ -963,6 +979,85 @@ Modarray (types *array, types *vec, types *value, int line)
     }
 
     DBUG_ASSERT (ret_type != NULL, " wrong return value");
+
+    DBUG_RETURN (ret_type);
+}
+
+/*
+ *
+ *  functionname  : Genarray_S
+ *  arguments     : 1) node to constant array (vector)
+ *                  2) type of an array
+ *  description   : computes the resulttype of a 'genarray' operation
+ *                  whoes first argument is a constant vector.
+ *  global vars   :
+ *  internal funs :
+ *  external funs : Malloc
+ *  macros        : DBUG...,
+ *
+ *  remarks       : is part of macro TT2 and is used in typecheck.c
+ *
+ */
+types *
+Genarray_S (node *v_node, types *array)
+{
+    types *ret_type;
+    int dim = 0;
+    shpseg *shpseg_p;
+    node *tmp;
+
+    DBUG_ENTER ("Genarray_S");
+
+    if (N_array == NODE_TYPE (v_node)) {
+
+        /* create shpseg of resulting type */
+        shpseg_p = MakeShpseg (NULL);
+        tmp = ARRAY_AELEMS (v_node);
+        do {
+            SHPSEG_SHAPE (shpseg_p, dim) = NUM_VAL (EXPRS_EXPR (tmp));
+            tmp = EXPRS_NEXT (tmp);
+            dim++;
+        } while (NULL != tmp);
+
+        /* create resulting types */
+        ret_type = MakeType (TYPES_BASETYPE (array), dim, shpseg_p,
+                             StringCopy (TYPES_NAME (array)), TYPES_MOD (array));
+    } else
+        DBUG_ASSERT (0, " wrong first argument of primitive function genarray");
+
+    DBUG_RETURN (ret_type);
+}
+/*
+ *
+ *  functionname  : Genarray_A
+ *  arguments     : 1) node to constant array (vector)
+ *                  2) type of an array
+ *  description   : computes the resulttype of a 'genarray' operation
+ *                  whoes first argument is a constant vector.
+ *  global vars   :
+ *  internal funs :
+ *  external funs : Malloc
+ *  macros        : DBUG...,
+ *
+ *  remarks       : is part of macro TT2 and is used in typecheck.c
+ *
+ */
+types *
+Genarray_A (node *v_node, types *array)
+{
+    types *ret_type;
+    int i, dim = 0;
+
+    DBUG_ENTER ("Genarray_A");
+
+    ret_type = Genarray_S (v_node, array);
+    dim = TYPES_DIM (ret_type);
+    for (i = 0; i < TYPES_DIM (array); i++) {
+        DBUG_ASSERT (dim < SHP_SEG_SIZE, " shape is out of range");
+        TYPES_SHAPE (ret_type, dim) = TYPES_SHAPE (array, i);
+        dim++;
+    }
+    TYPES_DIM (ret_type) = dim;
 
     DBUG_RETURN (ret_type);
 }

@@ -1,8 +1,11 @@
 /*
  *  $Log$
- *  Revision 1.11  1995/12/04 16:15:15  hw
- *  added primitve functions toi, tof & tod
+ *  Revision 1.12  1995/12/06 17:04:34  hw
+ *  added typecheck of primitive function 'genarray'
  *
+;; Revision 1.11  1995/12/04  16:15:15  hw
+;; added primitve functions toi, tof & tod
+;;
 ;; Revision 1.10  1995/08/11  17:33:21  hw
 ;;  added macros-calls for typechecking of function 'modarray'
 ;;
@@ -115,3 +118,5 @@ FT (F_dtoi, d_i, F_dtoi)
 FT (F_dtoi, D_I, F_dtoi_A)
 FT (F_modarray, AxAxS_A, F_modarray)
 FT (F_modarray, AxAxA_A, F_modarray)
+FT (F_genarray, VxA_Ag, F_genarray)
+FT (F_genarray, VxS_Ag, F_genarray)

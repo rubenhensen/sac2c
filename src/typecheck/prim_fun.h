@@ -1,7 +1,10 @@
 /*
  *  $Log$
- *  Revision 1.6  1995/08/11 17:27:49  hw
- *  function Modarray inserted
+ *  Revision 1.7  1995/12/06 17:03:37  hw
+ *  added typecheck of primitive function 'genarray'
+ *
+ * Revision 1.6  1995/08/11  17:27:49  hw
+ * function Modarray inserted
  *
  * Revision 1.5  1995/07/04  09:06:30  hw
  * - Axs_F, F2I & I2F removed
@@ -55,6 +58,8 @@ extern types *Cat (node *s_node, types *array1, types *array2);
 extern types *Rot (node *s_node, types *array);
 extern types *ConvertType (types *array1, simpletype s_type);
 extern types *Modarray (types *array, types *vec, types *value, int line);
+extern types *Genarray_S (node *vec, types *array);
+extern types *Genarray_A (node *vec, types *array);
 
 #if 0 
 extern types *Psi(types *array1, types *array2);
