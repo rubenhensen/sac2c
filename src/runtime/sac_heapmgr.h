@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2000/12/06 18:29:10  cg
+ * Added declaration of function SAC_HM_PlaceArray
+ *
  * Revision 3.1  2000/11/20 18:02:14  sacbase
  * new release made
  *
@@ -389,6 +392,9 @@ extern void SAC_HM_FreeTopArena_at (SAC_HM_header_t *addr);
 
 extern void SAC_HM_ShowDiagnostics ();
 extern void SAC_HM_CheckAllocPatternAnyChunk (SAC_HM_header_t *addr);
+
+extern void *SAC_HM_PlaceArray (void *alloc, void *base, long int offset,
+                                long int cache_size);
 
 /*
  * Definition of general macros.
