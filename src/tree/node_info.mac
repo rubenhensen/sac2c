@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.223  2004/10/22 15:37:30  ktr
+ * Added EMREfundef.
+ *
  * Revision 3.222  2004/10/22 14:47:40  sah
  * added usesymbols traversal
  *
@@ -1560,7 +1563,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, SBTNum, TravSons, T
 
        TravSons, TravSons, PEMfundef, EMALfundef, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, EMFRCfundef, EMAAfundef, EXPFundef, TravSons, TravSons,
-       ANSFundef, TravSons, TravSons, TravSons, TravSons, 3),
+       ANSFundef, EMREfundef, TravSons, TravSons, TravSons, 3),
 
   NIF (N_arg, "N_arg", TravSons, FltnArgs, PrintArg, TravSons, SBTArg, TravSons, TravSons,
        FreeArg, TravSons, TravSons, EMRCarg, RIarg, DupArg, TravSons, SETArg, TravSons,
@@ -1644,7 +1647,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, SBTNum, TravSons, T
 
        ASMRAblock, TravSons, TravSons, TravSons, TravSons, TravSons, WLSCblock, TravSons,
        TravSons, EMRCOblock, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, 2),
+       EMREblock, TravSons, TravSons, TravSons, 2),
 
   NIF (N_spmd, "N_spmd", TravSons, TravSons, PrintSpmd, TravSons, SBTSpmd, TravSons,
        TravSons, FreeSpmd, SPMDEMMspmd, TravSons, TravSons, TravSons, DupSpmd, TravSons,
@@ -2692,7 +2695,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, SBTNum, TravSons, T
 
        TravSons, TravSons, TravSons, TravNone, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravNone, TravSons, TravSons, TravSons, TravSons,
-       EMREblock, TravSons, TravSons, TravSons, 3),
+       TravSons, TravSons, TravSons, TravSons, 3),
 
   NIF (N_WLublock, "N_WLublock", TravSons, TravSons, PrintWLxblock, TravSons, SBTWLublock,
        TravSons, TravSons, FreeWLublock, TravSons, TravSons, TravSons, TravSons,
