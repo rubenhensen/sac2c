@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 1.10  1998/05/16 16:25:25  srs
+ * fixed bug in WLFid
+ *
  * Revision 1.9  1998/05/15 14:48:47  srs
  * several changed/fixes
  *
@@ -1471,15 +1474,29 @@ WLFid (node *arg_node, node *arg_info)
     case wlfm_replace:
         /* This ID_WL is used in case (2) here (see header of file) */
         if (ID_WL (arg_node) == INFO_WLI_ID (arg_info)) {
-            /* this is the Id which has to be replaced. Create substitution code. */
+            /* this is the Id which has to be replaced. */
+            /* First store the C_EXPR in INFO_WLI_NEW_ID. Usage: see WLFassign.
+               It might happen that this C_EXPR in the substn will be renamed when
+               loops surround the WL. Then we have to rename the C_EXPR, too. */
+            renaming = NULL; /* Used by AddRen(), SearchRen() */
             coden = INFO_WLI_SUBST (arg_info);
-            INFO_WLI_NEW_ID (arg_info)
-              = DupTree (NCODE_CEXPR (coden), NULL); /* usage: see WLFassign */
+            varno = ID_VARNO (NCODE_CEXPR (coden));
+            if (target_mask[varno]) { /* target_mask was initialized before Fold() */
+                new_name = TmpVarName (ID_NAME (NCODE_CEXPR (coden)));
+                /* Get vardec's name because ID_NAME will be deleted soon. */
+                ren = AddRen (VARDEC_NAME (ID_VARDEC (NCODE_CEXPR (coden))), new_name,
+                              ID_TYPE (NCODE_CEXPR (coden)), arg_info, 0);
+                INFO_WLI_NEW_ID (arg_info) = MakeId (new_name, NULL, ST_regular);
+                ID_VARDEC (INFO_WLI_NEW_ID (arg_info)) = ren->vardec;
+            } else
+                /* keep original name */
+                INFO_WLI_NEW_ID (arg_info) = DupTree (NCODE_CEXPR (coden), NULL);
+
+            /* Create substitution code. */
             substn = DupTree (BLOCK_INSTR (NCODE_CBLOCK (coden)), NULL);
 
             /* trav subst code with wlfm_rename to solve name clashes. */
             wlf_mode = wlfm_rename;
-            renaming = NULL; /* Used by AddRen(), SearchRen() */
             old_arg_info_assign = INFO_WLI_ASSIGN (arg_info); /* save arg_info */
             substn = Trav (substn, arg_info);
             INFO_WLI_ASSIGN (arg_info) = old_arg_info_assign;
@@ -1549,9 +1566,9 @@ WLFid (node *arg_node, node *arg_info)
 
     case wlfm_rename:
         varno = ID_VARNO (arg_node);
-        if (varno != -1 && target_mask[varno] != subst_mask[varno]) {
+        ren = SearchRen (ID_NAME (arg_node));
+        if (ren || (varno != -1 && target_mask[varno] != subst_mask[varno])) {
             /* we have to solve a name clash. */
-            ren = SearchRen (ID_NAME (arg_node));
             if (ren)
                 new_name = StringCopy (ren->new);
             else {
@@ -1627,6 +1644,8 @@ WLFlet (node *arg_node, node *arg_info)
                ASSIGN_INDEX provides the correct index_info.*/
             transformation = INDEX (INFO_WLI_ASSIGN (arg_info));
 
+            DBUG_PRINT ("WLF", ("folding array %s in line %d now", ID_NAME (idn),
+                                NODE_LINE (arg_node)));
             Fold (idn, transformation, targetwln, substwln);
             wlf_expr++;
 
@@ -1711,6 +1730,7 @@ WLFNwith (node *arg_node, node *arg_info)
            2. and then try to fold references to other WLs.
            */
         INFO_WLI_FLAG (arg_info) = 0;
+        DBUG_PRINT ("WLF", ("traversing body of WL in line %d", NODE_LINE (arg_node)));
         arg_node = TravSons (arg_node, arg_info);
 
         if (INFO_WLI_FLAG (arg_info)) {
@@ -1726,6 +1746,8 @@ WLFNwith (node *arg_node, node *arg_info)
             intersect_grids_os
               = Malloc (sizeof (int) * IDS_SHAPE (NWITH_VEC (arg_node), 0));
 
+            DBUG_PRINT ("WLF",
+                        ("something to fold in WL in line %d", NODE_LINE (arg_node)));
             NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
 
             FREE (intersect_grids_ot);
@@ -1748,7 +1770,9 @@ WLFNwith (node *arg_node, node *arg_info)
                 arg_node = InternGen2Tree (arg_node, all_new_ig);
                 all_new_ig = FreeInternGenChain (all_new_ig);
                 arg_node = CheckForSuperfluousCodes (arg_node);
+                DBUG_PRINT ("WLF", ("new generators created"));
             }
+            DBUG_PRINT ("WLF", ("folding of last WL complete"));
 
             /* this WL is finisched. Search other WLs on same level. */
             wlf_mode = wlfm_search_WL;
@@ -1758,7 +1782,9 @@ WLFNwith (node *arg_node, node *arg_info)
              was chosen to be folded (FoldDecision) we have to eleminate
              the modarray, epecially the reference to the base array.
              Else DCR would not remove the subst WL. */
-        if (WO_modarray == NWITH_TYPE (arg_node) && FoldDecision (arg_node, substwln))
+        if (WO_modarray == NWITH_TYPE (arg_node) && substwln
+            && /* can be NULL if array is not in reach (loops, function argument)*/
+            FoldDecision (arg_node, substwln))
             arg_node = Modarray2Genarray (arg_node);
 
         /* restore arg_info */
