@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.87  2004/09/20 08:42:44  ktr
+ * added NWITHOP_MEM
+ *
  * Revision 3.86  2004/08/02 19:30:43  sah
  * moved MakeStr_Copy to tree_compound
  *
@@ -2203,6 +2206,7 @@ extern node *CreateSel (ids *sel_vec, ids *sel_ids, node *sel_array, bool no_wl,
 #define NWITH2_DEFAULT(n) (NWITHOP_DEFAULT (NWITH2_WITHOP (n)))
 #define NWITH2_ARRAY(n) (NWITHOP_ARRAY (NWITH2_WITHOP (n)))
 #define NWITH2_NEUTRAL(n) (NWITHOP_NEUTRAL (NWITH2_WITHOP (n)))
+#define NWITH2_MEM(n) (NWITHOP_MEM (NWITH2_WITHOP (n)))
 
 /*
  * CBLOCK, CEXPR of the *first* N_Ncode-node
