@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.50  1998/08/07 16:07:33  dkr
+ * some WL-ICMs changed
+ *
  * Revision 1.49  1998/08/07 12:30:57  dkr
  * fixed signature of MT_ADJUST_SCHEDULER
  *
@@ -535,45 +538,45 @@ ICM_END( ND_KS_VECT2OFFSET, (off_name, arr_name, dim, dims, s))
  * ICMs for compilation of new with-loop
  */
 
-#if defined(WL_MT_NONFOLD_BEGIN) || defined(ICM_ALL)
-ICM_DEF( WL_MT_NONFOLD_BEGIN, NO_TRACE)
+#if defined(WL_NONFOLD_BEGIN) || defined(ICM_ALL)
+ICM_DEF( WL_NONFOLD_BEGIN, NO_TRACE)
   ICM_STR(target)
   ICM_STR(idx_vec)
   ICM_INT(dims)
-ICM_END( WL_MT_NONFOLD_BEGIN, (target, idx_vec, dims))
+ICM_END( WL_NONFOLD_BEGIN, (target, idx_vec, dims))
 #endif
 
-#if defined(WL_MT_FOLD_BEGIN) || defined(ICM_ALL)
-ICM_DEF( WL_MT_FOLD_BEGIN, NO_TRACE)
+#if defined(WL_FOLD_BEGIN) || defined(ICM_ALL)
+ICM_DEF( WL_FOLD_BEGIN, NO_TRACE)
   ICM_STR(target)
   ICM_STR(idx_vec)
   ICM_INT(dims)
-ICM_END( WL_MT_FOLD_BEGIN, (target, idx_vec, dims))
+ICM_END( WL_FOLD_BEGIN, (target, idx_vec, dims))
 #endif
 
-#if defined(WL_MT_NONFOLD_END) || defined(ICM_ALL)
-ICM_DEF( WL_MT_NONFOLD_END, NO_TRACE)
+#if defined(WL_NONFOLD_END) || defined(ICM_ALL)
+ICM_DEF( WL_NONFOLD_END, NO_TRACE)
   ICM_STR(target)
   ICM_STR(idx_vec)
   ICM_INT(dims)
-ICM_END( WL_MT_NONFOLD_END, (target, idx_vec, dims))
+ICM_END( WL_NONFOLD_END, (target, idx_vec, dims))
 #endif
 
-#if defined(WL_MT_FOLD_END) || defined(ICM_ALL)
-ICM_DEF( WL_MT_FOLD_END, NO_TRACE)
+#if defined(WL_FOLD_END) || defined(ICM_ALL)
+ICM_DEF( WL_FOLD_END, NO_TRACE)
   ICM_STR(target)
   ICM_STR(idx_vec)
   ICM_INT(dims)
-ICM_END( WL_MT_FOLD_END, (target, idx_vec, dims))
+ICM_END( WL_FOLD_END, (target, idx_vec, dims))
 #endif
 
-#if defined(WL_MT_SCHEDULER_SET_OFFSET) || defined(ICM_ALL)
-ICM_DEF( WL_MT_SCHEDULER_SET_OFFSET, NO_TRACE)
+#if defined(WL_INIT_OFFSET) || defined(ICM_ALL)
+ICM_DEF( WL_INIT_OFFSET, NO_TRACE)
+  ICM_INT(dims_target)
   ICM_STR(target)
   ICM_STR(idx_vec)
   ICM_INT(dims_wl)
-  ICM_INT(dims_target)
-ICM_END( WL_MT_SCHEDULER_SET_OFFSET, (target, idx_vec, dims_wl, dims_target))
+ICM_END( WL_INIT_OFFSET, (dims_target, target, idx_vec, dims_wl))
 #endif
 
 #if defined(WL_ASSIGN) || defined(ICM_ALL)
@@ -777,6 +780,21 @@ ICM_END( MT_ADJUST_SCHEDULER, (current_dim, array_dim, lower, unrolling, array))
 /*
  * ICMs for implementing scheduling strategies
  */
+
+#if defined(MT_SCHEDULER_BEGIN) || defined(ICM_ALL)
+ICM_DEF( MT_SCHEDULER_BEGIN, NO_TRACE)
+  ICM_INT(dim)
+  ICM_VARINT((2*dim), varint)
+ICM_END( MT_SCHEDULER_BEGIN, (dim, varint))
+#endif
+
+#if defined(MT_SCHEDULER_END) || defined(ICM_ALL)
+ICM_DEF( MT_SCHEDULER_END, NO_TRACE)
+  ICM_INT(dim)
+  ICM_VARINT((2*dim), varint)
+ICM_END( MT_SCHEDULER_END, (dim, varint))
+#endif
+
 
 #if defined(MT_SCHEDULER_Block_BEGIN) || defined(ICM_ALL)
 ICM_DEF( MT_SCHEDULER_Block_BEGIN, NO_TRACE)
