@@ -1,7 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.25  1995/10/24 13:14:30  cg
+ * Revision 1.26  1995/10/26 16:13:25  cg
+ *  new function ImportOwnDeclaration used to check the declaration file
+ * when compiling a module/class implementation.
+ * error messages improved.
+ *
+ * Revision 1.25  1995/10/24  13:14:30  cg
  *  Now, all file names in error messages are written with "
  *
  * Revision 1.24  1995/10/18  16:48:19  cg
@@ -243,6 +248,7 @@ InsertClassType (node *classdec)
     tmp->info.types->id = classdec->info.fun_name.id;
     tmp->info.types->id_mod = classdec->info.fun_name.id_mod;
     tmp->info.types->attrib = ST_unique;
+    tmp->info.types->status = ST_imported;
     tmp->lineno = 0;
 
     explist = classdec->node[0];
@@ -263,6 +269,9 @@ InsertClassType (node *classdec)
  *
  *  functionname  : GenMod
  *  arguments     : 1) name of modul to be read
+ *                  2) flag whether the module is initially generated(0)
+ *                     or for checking the declaration of a module/class
+ *                     implementation(1).
  *  description   : Scans and parses the respective declaration
  *                  file and SIB-file and generates/initilizes a
  *                  new mod-node
@@ -276,7 +285,7 @@ InsertClassType (node *classdec)
  */
 
 mod *
-GenMod (char *name)
+GenMod (char *name, int checkdec)
 
 {
     int i;
@@ -290,52 +299,57 @@ GenMod (char *name)
     tmp->flag = 0;
     tmp->allflag = 0;
 
-    NOTE (("\n  Loading module/class '%s`", name));
-
     strcpy (buffer, name);
     strcat (buffer, ".dec");
+
+    if (checkdec) {
+        NOTE (("  Verifying imported declaration file \"%s\" ...", buffer));
+    } else {
+        NOTE (("  Loading module/class '%s` ...", name));
+    }
+
     yyin = fopen (FindFile (MODDEC_PATH, buffer), "r");
 
     if (yyin == NULL) {
-        SYSERROR (("Unable to open file \"%s\"", buffer));
-    }
+        SYSABORT (("Unable to open file \"%s\"", buffer));
+    } else {
+        linenum = 1;
+        start_token = PARSE_DEC;
+        yyparse ();
 
-    linenum = 1;
-    start_token = PARSE_DEC;
-    yyparse ();
+        tmp->moddec = decl_tree;
+        if (strcmp (decl_tree->info.fun_name.id, name) != 0)
+            SYSERROR (("File \"%s\" does not provide module/class '%s`,\n\t"
+                       "but module/class '%s`",
+                       buffer, name, decl_tree->info.fun_name.id));
 
-    tmp->moddec = decl_tree;
-    if (strcmp (decl_tree->info.fun_name.id, name) != 0)
-        SYSERROR (("File \"%s\" does not provide module/class '%s`,\n\t"
-                   "but module/class '%s`",
-                   buffer, name, decl_tree->info.fun_name.id));
+        tmp->prefix = decl_tree->info.fun_name.id_mod;
+        tmp->next = NULL;
+        for (i = 0; i < 4; i++)
+            tmp->syms[i] = NULL;
 
-    tmp->prefix = decl_tree->info.fun_name.id_mod;
-    tmp->next = NULL;
-    for (i = 0; i < 4; i++)
-        tmp->syms[i] = NULL;
+        if (tmp->moddec->nodetype == N_classdec) {
+            InsertClassType (tmp->moddec);
+        }
 
-    if (tmp->moddec->nodetype == N_classdec) {
-        InsertClassType (tmp->moddec);
-    }
+        if ((tmp->prefix != NULL) && (!checkdec)) /* module is not external */
+        {
+            strcpy (buffer, name);
+            strcat (buffer, ".sib");
+            yyin = fopen (FindFile (MODDEC_PATH, buffer), "r");
 
-    if (tmp->prefix != NULL) /* module is not external */
-    {
-        strcpy (buffer, name);
-        strcat (buffer, ".sib");
-        yyin = fopen (FindFile (MODDEC_PATH, buffer), "r");
-
-        if (yyin == NULL) {
-            tmp->sib = NULL;
-            DBUG_PRINT ("IMPORT", ("Module %s has no SIB-file", name));
-            SYSWARN (("SAC-module/class '%s` has no SIB-file", name));
-            /* SYSWARN only preliminary, later it must be a SYSERROR */
-        } else {
-            DBUG_PRINT ("READSIB", ("...parsing %s.sib", name));
-            linenum = 1;
-            start_token = PARSE_SIB;
-            yyparse ();
-            tmp->sib = sib_tree;
+            if (yyin == NULL) {
+                tmp->sib = NULL;
+                DBUG_PRINT ("IMPORT", ("Module %s has no SIB-file", name));
+                SYSWARN (("SAC-module/class '%s` has no SIB-file", name));
+                /* SYSWARN only preliminary, later it must be a SYSERROR */
+            } else {
+                DBUG_PRINT ("READSIB", ("...parsing %s.sib", name));
+                linenum = 1;
+                start_token = PARSE_SIB;
+                yyparse ();
+                tmp->sib = sib_tree;
+            }
         }
     }
 
@@ -346,6 +360,9 @@ GenMod (char *name)
  *
  *  functionname  : FindOrAppend
  *  arguments     : 1) importlist
+ *                  2) flag whether the module is initially generated(0)
+ *                     or for checking the declaration of a module/class
+ *                     implementation(1).
  *  description   : searches for all modules from the given importlist
  *                  in the global mod_tab. For all modules, which can
  *                  not be found, a new mod_tab entry is generated
@@ -360,7 +377,7 @@ GenMod (char *name)
  */
 
 void
-FindOrAppend (node *implist)
+FindOrAppend (node *implist, int checkdec)
 
 {
     mod *current, *last;
@@ -376,9 +393,11 @@ FindOrAppend (node *implist)
     if (mod_tab == NULL) /* the first modul has to be inserted anyway! */
     {
         strcpy (filename, implist->info.id);
+        strcat (filename, ".dec");
+
         /* only for correct error messages while parsing decs */
 
-        mod_tab = GenMod (implist->info.id);
+        mod_tab = GenMod (implist->info.id, checkdec);
         implist = implist->node[0];
     }
 
@@ -397,7 +416,7 @@ FindOrAppend (node *implist)
             strcpy (filename, implist->info.id);
             /* only for correct error messages while parsing decs */
 
-            current = GenMod (implist->info.id);
+            current = GenMod (implist->info.id, checkdec);
             last->next = current;
         }
         implist = implist->node[0];
@@ -659,35 +678,64 @@ AppendModnameToSymbol (node *symbol, char *modname)
 
                 if (mods != NULL)
                     if (mods2 != NULL) {
-                        ERROR (symbol->lineno, ("Implicit type '%s:%s` and "
-                                                "explicit type '%s:%s` available",
-                                                mods->mod->name, types->name,
-                                                mods2->mod->name, types->name));
-
+                        if ((strcmp (mods->mod->name, types->name) == 0)
+                            && (mods->mod->moddec->nodetype == N_classdec)) {
+                            ERROR (symbol->lineno,
+                                   ("Explicit type '%s:%s`\n\t"
+                                    "conflicts with class '%s`"
+                                    "in module/class '%s`",
+                                    mods2->mod->name, types->name, types->name, modname));
+                        } else {
+                            ERROR (symbol->lineno,
+                                   ("Implicit type '%s:%s`\n\t"
+                                    "and explicit type '%s:%s` available\n\t"
+                                    "in module/class '%s`",
+                                    mods->mod->name, types->name, mods2->mod->name,
+                                    types->name, modname));
+                        }
                     }
 
                     else /* mods2 == NULL */
                       if (mods->next != NULL) {
-                        ERROR (symbol->lineno,
-                               ("Implicit types '%s:%s` and '%s:%s` available",
-                                mods->mod->name, types->name, mods->next->mod->name,
-                                types->name));
-                    }
-
-                    else /* mods->next == NULL */
+                        if ((strcmp (mods->mod->name, types->name) == 0)
+                            && (mods->mod->moddec->nodetype == N_classdec)) {
+                            ERROR (symbol->lineno, ("Implicit type '%s:%s`\n\t"
+                                                    "conflicts with class '%s`"
+                                                    "in module/class '%s`",
+                                                    mods->next->mod->name, types->name,
+                                                    types->name, modname));
+                        } else {
+                            if ((strcmp (mods->next->mod->name, types->name) == 0)
+                                && (mods->next->mod->moddec->nodetype == N_classdec)) {
+                                ERROR (symbol->lineno, ("Implicit type '%s:%s`\n\t"
+                                                        "conflicts with class '%s`"
+                                                        "in module/class '%s`",
+                                                        mods->mod->name, types->name,
+                                                        types->name, modname));
+                            } else {
+                                ERROR (
+                                  symbol->lineno,
+                                  ("Implicit types '%s:%s` and '%s:%s` available\n\t",
+                                   "in module/class '%s`", mods->mod->name, types->name,
+                                   mods->next->mod->name, types->name, modname));
+                            }
+                        }
+                    } else /* mods->next == NULL */
                         types->name_mod = mods->mod->prefix;
 
                 else /* mods == NULL */
                   if (mods2 == NULL) {
-                    ERROR (symbol->lineno, ("No type '%s` available", types->name));
+                    ERROR (symbol->lineno, ("No type '%s` available\n\t"
+                                            "in module/class '%s`",
+                                            types->name, modname));
                 }
 
                 else /* mods2 != NULL */
                   if (mods2->next != NULL) {
                     ERROR (symbol->lineno,
-                           ("Explicit types '%s:%s` and '%s:%s` available",
-                            mods2->mod->name, types->name, mods2->next->mod->name,
-                            types->name));
+                           ("Explicit types '%s:%s` and '%s:%s` available\n\t",
+                            "in module/class '%s`", mods2->mod->name, types->name,
+                            mods2->next->mod->name, types->name, modname));
                 } else
                     types->name_mod = mods2->mod->prefix;
 
@@ -714,7 +762,7 @@ AppendModnameToSymbol (node *symbol, char *modname)
  *                  2) N_modul node where the imports have to be inserted
  *  description   : inserts all symbols from a given mod * into a given modul.
  *  global vars   : ---
- *  internal funs : DoImport
+ *  internal funs : DoImport, AppendModnameToSymbol
  *  external funs : AppendNodeChain
  *  macros        : DBUG...
  *
@@ -812,9 +860,9 @@ ImportSymbol (int symbtype, char *name, mod *mod, node *modul)
     int next, son;
 
     DBUG_ENTER ("ImportSymbol");
-    DBUG_PRINT ("IMPORT",
-                ("importing symbol %s of kind %d (0=imp/1=exp/2=fun/3=obj) from modul %s",
-                 name, symbtype, mod->name));
+    DBUG_PRINT ("IMPORT", ("importing symbol %s of kind %d (0=imp/1=exp/2=fun/3=obj)"
+                           "from modul %s",
+                           name, symbtype, mod->name));
 
     explist = mod->moddec->node[0];
 
@@ -875,8 +923,8 @@ ImportSymbol (int symbtype, char *name, mod *mod, node *modul)
  *                  given modul. If a specified symbol can not be found
  *                  an Error message is made.
  *  global vars   : ---
- *  internal funs : FindModul, FindSymbolInModul
- *  external funs : ---
+ *  internal funs : FindModul, FindSymbolInModul, ImportAll, ImportSymbol
+ *  external funs : MakeIds
  *  macros        : DBUG...
  *
  *  remarks       :
@@ -972,9 +1020,9 @@ DoImport (node *modul, node *implist, char *filename)
  *                  of typedefs and fundefs necessary to retrieve
  *                  information from SIBs.
  *  global vars   : mod_tab
- *  internal funs :
- *  external funs :
- *  macros        :
+ *  internal funs : FindOrAppend, GenSyms, DoImport
+ *  external funs : Trav
+ *  macros        : DBUG, TREE
  *
  *  remarks       :
  *
@@ -989,21 +1037,27 @@ IMmodul (node *arg_node, node *arg_info)
 
     if (arg_node->node[0] != NULL) /* there are any imports! */
     {
-        FindOrAppend (arg_node->node[0]);
+        FindOrAppend (arg_node->node[0], 0);
         modptr = mod_tab;
 
         while (modptr != NULL) {
             DBUG_PRINT ("IMPORT", ("analyzing module/class %s", modptr->moddec->info.id));
             if (modptr->moddec->node[1] != NULL) {
-                FindOrAppend (modptr->moddec->node[1]);
+                FindOrAppend (modptr->moddec->node[1], 0);
             }
             GenSyms (modptr);
             modptr = modptr->next;
         }
 
         DoImport (arg_node, arg_node->node[0], arg_node->info.id);
-        FreeImplist (arg_node->node[0]);
-        arg_node->node[0] = NULL;
+
+        /*
+         *  The imports are reused in checkdec.c for writing automatic
+         *  declaration files, but they will not be printed any more.
+         */
+
+        MODUL_STORE_IMPORTS (arg_node) = MODUL_IMPORTS (arg_node);
+        MODUL_IMPORTS (arg_node) = NULL;
 
         /*
          *  searching SIB-information about types
@@ -1024,6 +1078,114 @@ IMmodul (node *arg_node, node *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+/*
+ *
+ *  functionname  : ImportOwnDeclaration
+ *  arguments     : 1) name of module/class
+ *                  2) file type, module or class ?
+ *  description   : scans and parses the respective
+ *                  declaration when compiling a module or class
+ *                  implementation
+ *  global vars   : decl_tree, linenum, start_token, yyin
+ *  internal funs : InsertClassType, AppendModnameToSymbol
+ *  external funs : strcmp, fopen, fclose, yyparse,
+ *                  Malloc, FindFile
+ *  macros        : DBUG, ERROR
+ *
+ *  remarks       :
+ *
+ */
+
+node *
+ImportOwnDeclaration (char *name, file_type modtype)
+{
+    mod *modptr, *old_mod_tab = mod_tab;
+    int i;
+    char buffer[MAX_FILE_NAME];
+    node *decl = NULL, *symbol;
+
+    DBUG_ENTER ("ImportOwnDeclaration");
+
+    mod_tab = (mod *)Malloc (sizeof (mod));
+    mod_tab->name = name;
+    mod_tab->flag = 0;
+    mod_tab->allflag = 0;
+
+    strcpy (buffer, name);
+    strcat (buffer, ".dec");
+    yyin = fopen (FindFile (MODDEC_PATH, buffer), "r");
+
+    if (yyin == NULL) {
+        free (mod_tab);
+        mod_tab = NULL;
+    } else {
+        NOTE (("  Loading declaration file \"%s\" ...", filename));
+
+        linenum = 1;
+        start_token = PARSE_DEC;
+        yyparse ();
+        fclose (yyin);
+
+        if ((strcmp (MODDEC_NAME (decl_tree), name) != 0)
+            || ((NODE_TYPE (decl_tree) == N_classdec) && (modtype == F_modimp))
+            || ((NODE_TYPE (decl_tree) == N_moddec) && (modtype == F_classimp))) {
+            SYSERROR (("File \"%s\" provides wrong declaration", filename));
+
+            if (modtype == F_modimp) {
+                NOTE (("\tRequired: ModuleDec %s", name));
+            } else {
+                NOTE (("\tRequired: ClassDec %s", name));
+            }
+
+            if (NODE_TYPE (decl_tree) == N_moddec) {
+                NOTE (("\tProvided: ModuleDec %s", MODDEC_NAME (decl_tree)));
+            } else {
+                NOTE (("\tProvided: ClassDec %s", MODDEC_NAME (decl_tree)));
+            }
+
+            ABORT_ON_ERROR;
+        }
+
+        decl = decl_tree;
+
+        mod_tab->moddec = decl_tree;
+        mod_tab->prefix = decl_tree->info.fun_name.id_mod;
+        mod_tab->next = NULL;
+        for (i = 0; i < 4; i++)
+            mod_tab->syms[i] = NULL;
+
+        if (mod_tab->moddec->nodetype == N_classdec) {
+            InsertClassType (mod_tab->moddec);
+        }
+
+        modptr = mod_tab;
+
+        while (modptr != NULL) {
+            if (mod_tab->moddec->node[1] != NULL) {
+                FindOrAppend (mod_tab->moddec->node[1], 1);
+            }
+            GenSyms (modptr);
+            modptr = modptr->next;
+        }
+
+        for (i = 1; i < 4; i++) {
+            symbol = mod_tab->moddec->node[0]->node[i];
+            while (symbol != NULL) {
+                AppendModnameToSymbol (symbol, name);
+                symbol = NODE_NEXT (symbol);
+            }
+        }
+    }
+
+    /* free(mod_tab); */
+
+    mod_tab = old_mod_tab;
+
+    DBUG_RETURN (decl);
+}
+
+/*=========================================================================*/
 
 /*
  *
