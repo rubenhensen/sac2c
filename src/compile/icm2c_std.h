@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2002/07/03 15:53:35  dkr
+ * more ICMs for TAGGED_ARRAYS added
+ *
  * Revision 3.10  2002/06/07 16:10:49  dkr
  * some new ICMs for TAGGED_ARRAYS added
  *
@@ -82,36 +85,49 @@ extern void ICMCompileND_DECL (char *nt, char *basetype, int sdim, int *shp);
 
 extern void ICMCompileND_DECL_EXTERN (char *nt, char *basetype, int sdim);
 
-extern void ICMCompileND_DECL_MIRROR (char *nt, int sdim, int *shp);
+extern void ICMCompileND_DECL__MIRROR (char *nt, int sdim, int *shp);
 
-extern void ICMCompileND_DECL_MIRROR_PARAM (char *nt, int sdim, int *shp);
+extern void ICMCompileND_DECL__MIRROR_PARAM (char *nt, int sdim, int *shp);
 
-extern void ICMCompileND_DECL_MIRROR_EXTERN (char *nt, int sdim);
+extern void ICMCompileND_DECL__MIRROR_EXTERN (char *nt, int sdim);
 
-extern void ICMCompileND_SET_SHP (char *nt, int sdim, int *shp);
+extern void ICMCompileND_SET__SHAPE (char *nt, int dim, char **shp_str);
 
 extern void ICMCompileND_REFRESH_MIRROR (char *nt, int sdim);
 
-extern void ICMCompileND_CHECK_REUSE (char *nt);
+extern void ICMCompileND_CHECK_REUSE (char *to_nt, int to_sdim, char *from_nt,
+                                      int from_sdim);
 
-extern void ICMCompileND_ALLOC (char *nt, char *basetype, int sdim, int *shp, int rc);
+extern void ICMCompileND_ALLOC (char *nt, int rc, char *set_shape);
 
-extern void ICMCompileND_ALLOC_PLACE (char *nt, char *basetype, int sdim, int *shp,
-                                      int rc);
+extern void ICMCompileND_ALLOC_PLACE (char *nt, int rc);
 
-extern void ICMCompileND_ASSIGN (char *to_nt, int to_sdim, char *from_nt);
+extern void ICMCompileND_CHECK_MIRROR (char *to_nt, int to_sdim, char *from_nt,
+                                       int from_sdim);
 
-extern void ICMCompileND_ASSIGN_DATA (char *to_nt, int to_sdim, char *from_nt);
+extern void ICMCompileND_ASSIGN (char *to_nt, int to_sdim, char *from_nt, int from_sdim);
 
-extern void ICMCompileND_ASSIGN_MIRROR (char *to_nt, int to_sdim, char *from_nt);
+extern void ICMCompileND_ASSIGN__DESC (char *to_nt, int to_sdim, char *from_nt,
+                                       int from_sdim);
 
-extern void ICMCompileND_COPY (char *to_nt, char *from_nt);
+extern void ICMCompileND_ASSIGN__MIRROR (char *to_nt, int to_sdim, char *from_nt,
+                                         int from_sdim);
 
-extern void ICMCompileND_MAKE_UNIQUE (char *to_nt, char *from_nt, char *basetype);
+extern void ICMCompileND_COPY (char *to_nt, int to_sdim, char *from_nt, int from_sdim,
+                               char *copyfun);
 
-extern void ICMCompileND_ASSIGN_CONST_VECT (char *name, int len, char **s);
+extern void ICMCompileND_COPY__SHAPE (char *to_nt, int to_sdim, char *from_nt,
+                                      int from_sdim);
 
-extern void ICMCompileND_PRF_SHAPE (char *to_nt, char *from_nt, int from_sdim);
+extern void ICMCompileND_MAKE_UNIQUE (char *to_nt, int to_sdim, char *from_nt,
+                                      int from_sdim, char *copyfun);
+
+extern void ICMCompileND_ASSIGN__VECT__SHAPE (char *name, int len, char **s);
+
+extern void ICMCompileND_ASSIGN__VECT__DATA (char *name, int len, char **s);
+
+extern void ICMCompileND_PRF_SHAPE (char *to_nt, int to_sdim, char *from_nt,
+                                    int from_sdim);
 
 #else /* TAGGED_ARRAYS */
 
@@ -130,8 +146,6 @@ extern void ICMCompileND_CREATE_CONST_ARRAY_H (char *name, char *copyfun, int le
                                                char **A);
 
 extern void ICMCompileND_CREATE_CONST_ARRAY_A (char *name, int len2, int len1, char **s);
-
-#endif /* TAGGED_ARRAYS */
 
 extern void ICMCompileND_KD_SEL_CxA_S (char *a, char *res, int dim, char **vi);
 
@@ -164,6 +178,8 @@ extern void ICMCompileND_PRF_MODARRAY_AxCxA (char *res_btype, int dimres, char *
 
 extern void ICMCompileND_PRF_MODARRAY_AxVxA (char *res_btype, int dimres, char *res,
                                              char *old, char *val, int dim, char *v);
+
+#endif /* TAGGED_ARRAYS */
 
 extern void ICMCompileND_KS_VECT2OFFSET (char *off_name, char *arr_name, int dim,
                                          int dims, char **s);

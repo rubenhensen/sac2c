@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.18  2002/07/03 15:53:22  dkr
+ * more ICMs for TAGGED_ARRAYS added
+ *
  * Revision 3.17  2002/06/07 16:11:01  dkr
  * some new ICMs for TAGGED_ARRAYS added
  *
@@ -76,6 +79,13 @@
 #include "globals.h"
 #include "print.h"
 #include "gen_startup_code.h"
+
+#ifdef BEtest
+#define Free(x)                                                                          \
+    x;                                                                                   \
+    free (x)
+#define Malloc(x) malloc (x)
+#endif /* BEtest */
 
 #define ScanArglist(cnt, inc, sep_str, sep_code, code)                                   \
     {                                                                                    \
@@ -274,9 +284,15 @@ ICMCompileND_FUN_DEC (char *name, char *rettype, int narg, char **arg)
         fprintf (outfile, "%s( int __argc, char *__argv[])", name);
     } else {
         fprintf (outfile, "%s(", name);
+#ifdef TAGGED_ARRAYS
+        ScanArglist (narg, 3, ",", ,
+                     fprintf (outfile, " SAC_ND_PARAM_%s( %s, %s)", arg[i], arg[i + 2],
+                              arg[i + 1]));
+#else
         ScanArglist (narg, 3, ",", ,
                      fprintf (outfile, " SAC_ND_PARAM_%s( %s, %s)", arg[i], arg[i + 1],
                               arg[i + 2]));
+#endif
         fprintf (outfile, ")");
     }
 
@@ -450,10 +466,12 @@ ICMCompileND_DECL (char *nt, char *basetype, int sdim, int *shp)
 #undef ND_DECL
 
     INDENT;
-    fprintf (outfile, "SAC_ND_DECL_DATA( %s, %s, );\n", nt, basetype);
+    fprintf (outfile, "SAC_ND_DECL__DATA( %s, %s, )\n", nt, basetype);
 
     INDENT;
-    ICMCompileND_DECL_MIRROR (nt, sdim, shp);
+    fprintf (outfile, "SAC_ND_DECL__DESC( %s, )\n", nt);
+
+    ICMCompileND_DECL__MIRROR (nt, sdim, shp);
 
     DBUG_VOID_RETURN;
 }
@@ -481,10 +499,12 @@ ICMCompileND_DECL_EXTERN (char *nt, char *basetype, int sdim)
 #undef ND_DECL_EXTERN
 
     INDENT;
-    fprintf (outfile, "SAC_ND_DECL_DATA( %s, %s, extern);\n", nt, basetype);
+    fprintf (outfile, "SAC_ND_DECL__DATA( %s, %s, extern)\n", nt, basetype);
 
     INDENT;
-    ICMCompileND_DECL_MIRROR_EXTERN (nt, sdim);
+    fprintf (outfile, "SAC_ND_DECL__DESC( %s, extern)\n", nt);
+
+    ICMCompileND_DECL__MIRROR_EXTERN (nt, sdim);
 
     DBUG_VOID_RETURN;
 }
@@ -492,39 +512,38 @@ ICMCompileND_DECL_EXTERN (char *nt, char *basetype, int sdim)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_DECL_MIRROR( char *nt, int sdim, int *shp)
+ *   void ICMCompileND_DECL__MIRROR( char *nt, int sdim, int *shp)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_DECL_MIRROR( nt, sdim, shp_0 ... shp_n)
+ *   ND_DECL__MIRROR( nt, sdim, shp_0 ... shp_n)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_DECL_MIRROR (char *nt, int sdim, int *shp)
+ICMCompileND_DECL__MIRROR (char *nt, int sdim, int *shp)
 {
     int size, i;
     data_class_t dc = ICUGetDataClass (nt);
     int dim = DIM_NO_OFFSET (sdim);
 
-    DBUG_ENTER ("ICMCompileND_DECL_MIRROR");
+    DBUG_ENTER ("ICMCompileND_DECL__MIRROR");
 
-#define ND_DECL_MIRROR
+#define ND_DECL__MIRROR
 #include "icm_comment.c"
 #include "icm_trace.c"
-#undef ND_DECL_MIRROR
+#undef ND_DECL__MIRROR
 
     switch (dc) {
     case C_scl:
         INDENT;
-        fprintf (outfile, "/* nothing */\n");
+        fprintf (outfile, "SAC_NOTHING()\n");
         break;
 
     case C_aks:
-        INDENT;
-        fprintf (outfile, "const int SAC_ND_A_DIM( %s) = %d;\n", nt, dim);
         size = 1;
+        DBUG_ASSERT ((dim >= 0), "illegal dimension found!");
         for (i = 0; i < dim; i++) {
             INDENT;
             fprintf (outfile, "const int SAC_ND_A_SHAPE( %s, %d) = %d;\n", nt, i, shp[i]);
@@ -532,29 +551,32 @@ ICMCompileND_DECL_MIRROR (char *nt, int sdim, int *shp)
         }
         INDENT;
         fprintf (outfile, "const int SAC_ND_A_SIZE( %s) = %d;\n", nt, size);
+        INDENT;
+        fprintf (outfile, "const int SAC_ND_A_DIM( %s) = %d;\n", nt, dim);
         break;
 
     case C_akd:
-        INDENT;
-        fprintf (outfile, "const int SAC_ND_A_DIM( %s) = %d;\n", nt, dim);
+        DBUG_ASSERT ((dim >= 0), "illegal dimension found!");
         for (i = 0; i < dim; i++) {
             INDENT;
             fprintf (outfile, "int SAC_ND_A_SHAPE( %s, %d);\n", nt, i);
         }
         INDENT;
         fprintf (outfile, "int SAC_ND_A_SIZE( %s);\n", nt);
+        INDENT;
+        fprintf (outfile, "const int SAC_ND_A_DIM( %s) = %d;\n", nt, dim);
         break;
 
     case C_aud:
         INDENT;
-        fprintf (outfile, "int SAC_ND_A_DIM( %s);\n", nt);
-        INDENT;
         fprintf (outfile, "int SAC_ND_A_SIZE( %s);\n", nt);
+        INDENT;
+        fprintf (outfile, "int SAC_ND_A_DIM( %s);\n", nt);
         break;
 
     case C_hid:
         INDENT;
-        fprintf (outfile, "/* nothing */\n");
+        fprintf (outfile, "SAC_NOTHING()\n");
         break;
 
     default:
@@ -568,39 +590,38 @@ ICMCompileND_DECL_MIRROR (char *nt, int sdim, int *shp)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_DECL_MIRROR_PARAM( char *nt, int sdim, int *shp)
+ *   void ICMCompileND_DECL__MIRROR_PARAM( char *nt, int sdim, int *shp)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_DECL_MIRROR_PARAM( nt, sdim, shp_0 ... shp_n)
+ *   ND_DECL__MIRROR_PARAM( nt, sdim, shp_0 ... shp_n)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_DECL_MIRROR_PARAM (char *nt, int sdim, int *shp)
+ICMCompileND_DECL__MIRROR_PARAM (char *nt, int sdim, int *shp)
 {
     int size, i;
     data_class_t dc = ICUGetDataClass (nt);
     int dim = DIM_NO_OFFSET (sdim);
 
-    DBUG_ENTER ("ICMCompileND_DECL_MIRROR_PARAM");
+    DBUG_ENTER ("ICMCompileND_DECL__MIRROR_PARAM");
 
-#define ND_DECL_MIRROR_PARAM
+#define ND_DECL__MIRROR_PARAM
 #include "icm_comment.c"
 #include "icm_trace.c"
-#undef ND_DECL_MIRROR_PARAM
+#undef ND_DECL__MIRROR_PARAM
 
     switch (dc) {
     case C_scl:
         INDENT;
-        fprintf (outfile, "/* nothing */\n");
+        fprintf (outfile, "SAC_NOTHING()\n");
         break;
 
     case C_aks:
-        INDENT;
-        fprintf (outfile, "const int SAC_ND_A_DIM( %s) = %d;\n", nt, dim);
         size = 1;
+        DBUG_ASSERT ((dim >= 0), "illegal dimension found!");
         for (i = 0; i < dim; i++) {
             INDENT;
             fprintf (outfile, "const int SAC_ND_A_SHAPE( %s, %d) = %d;\n", nt, i, shp[i]);
@@ -608,11 +629,12 @@ ICMCompileND_DECL_MIRROR_PARAM (char *nt, int sdim, int *shp)
         }
         INDENT;
         fprintf (outfile, "const int SAC_ND_A_SIZE( %s) = %d;\n", nt, size);
+        INDENT;
+        fprintf (outfile, "const int SAC_ND_A_DIM( %s) = %d;\n", nt, dim);
         break;
 
     case C_akd:
-        INDENT;
-        fprintf (outfile, "const int SAC_ND_A_DIM( %s) = %d;\n", nt, dim);
+        DBUG_ASSERT ((dim >= 0), "illegal dimension found!");
         for (i = 0; i < dim; i++) {
             INDENT;
             fprintf (outfile,
@@ -622,18 +644,20 @@ ICMCompileND_DECL_MIRROR_PARAM (char *nt, int sdim, int *shp)
         }
         INDENT;
         fprintf (outfile, "int SAC_ND_A_SIZE( %s) = SAC_ND_A_DESC_SIZE( %s);\n", nt, nt);
+        INDENT;
+        fprintf (outfile, "const int SAC_ND_A_DIM( %s) = %d;\n", nt, dim);
         break;
 
     case C_aud:
         INDENT;
-        fprintf (outfile, "int SAC_ND_A_DIM( %s) = SAC_ND_A_DESC_DIM( %s);\n", nt, nt);
-        INDENT;
         fprintf (outfile, "int SAC_ND_A_SIZE( %s) = SAC_ND_A_DESC_SIZE( %s);\n", nt, nt);
+        INDENT;
+        fprintf (outfile, "int SAC_ND_A_DIM( %s) = SAC_ND_A_DESC_DIM( %s);\n", nt, nt);
         break;
 
     case C_hid:
         INDENT;
-        fprintf (outfile, "/* nothing */\n");
+        fprintf (outfile, "SAC_NOTHING()\n");
         break;
 
     default:
@@ -647,41 +671,37 @@ ICMCompileND_DECL_MIRROR_PARAM (char *nt, int sdim, int *shp)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_DECL_MIRROR_EXTERN( char *nt, int sdim)
+ *   void ICMCompileND_DECL__MIRROR_EXTERN( char *nt, int sdim)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_DECL_MIRROR_EXTERN( nt, sdim)
+ *   ND_DECL__MIRROR_EXTERN( nt, sdim)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_DECL_MIRROR_EXTERN (char *nt, int sdim)
+ICMCompileND_DECL__MIRROR_EXTERN (char *nt, int sdim)
 {
     int i;
     data_class_t dc = ICUGetDataClass (nt);
     int dim = DIM_NO_OFFSET (sdim);
 
-    DBUG_ENTER ("ICMCompileND_DECL_MIRROR_EXTERN");
+    DBUG_ENTER ("ICMCompileND_DECL__MIRROR_EXTERN");
 
-#define ND_DECL_MIRROR_EXTERN
+#define ND_DECL__MIRROR_EXTERN
 #include "icm_comment.c"
 #include "icm_trace.c"
-#undef ND_DECL_MIRROR_EXTERN
+#undef ND_DECL__MIRROR_EXTERN
 
     switch (dc) {
     case C_scl:
         INDENT;
-        fprintf (outfile, "/* nothing */\n");
+        fprintf (outfile, "SAC_NOTHING()\n");
         break;
 
     case C_aks:
-        INDENT;
-        fprintf (outfile,
-                 "extern "
-                 "const int SAC_ND_A_DIM( %s);\n",
-                 nt);
+        DBUG_ASSERT ((dim >= 0), "illegal dimension found!");
         for (i = 0; i < dim; i++) {
             INDENT;
             fprintf (outfile,
@@ -694,14 +714,15 @@ ICMCompileND_DECL_MIRROR_EXTERN (char *nt, int sdim)
                  "extern "
                  "const int SAC_ND_A_SIZE( %s);\n",
                  nt);
-        break;
-
-    case C_akd:
         INDENT;
         fprintf (outfile,
                  "extern "
                  "const int SAC_ND_A_DIM( %s);\n",
                  nt);
+        break;
+
+    case C_akd:
+        DBUG_ASSERT ((dim >= 0), "illegal dimension found!");
         for (i = 0; i < dim; i++) {
             INDENT;
             fprintf (outfile,
@@ -714,24 +735,29 @@ ICMCompileND_DECL_MIRROR_EXTERN (char *nt, int sdim)
                  "extern "
                  "int SAC_ND_A_SIZE( %s);\n",
                  nt);
+        INDENT;
+        fprintf (outfile,
+                 "extern "
+                 "const int SAC_ND_A_DIM( %s);\n",
+                 nt);
         break;
 
     case C_aud:
         INDENT;
         fprintf (outfile,
                  "extern "
-                 "int SAC_ND_A_DIM( %s);\n",
+                 "int SAC_ND_A_SIZE( %s);\n",
                  nt);
         INDENT;
         fprintf (outfile,
                  "extern "
-                 "int SAC_ND_A_SIZE( %s);\n",
+                 "int SAC_ND_A_DIM( %s);\n",
                  nt);
         break;
 
     case C_hid:
         INDENT;
-        fprintf (outfile, "/* nothing */\n");
+        fprintf (outfile, "SAC_NOTHING()\n");
         break;
 
     default:
@@ -745,66 +771,73 @@ ICMCompileND_DECL_MIRROR_EXTERN (char *nt, int sdim)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_SET_SHP( char *nt, int sdim, int *shp)
+ *   void ICMCompileND_SET__SHAPE( char *nt, int dim, char **shp_str)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_SET_SHP( nt, sdim, shp_0 ... shp_n)
- *   Sets the dim/shape/size data of the descriptor
+ *   ND_SET__SHAPE( nt, dim, shp_str_0 ... shp_str_n)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_SET_SHP (char *nt, int sdim, int *shp)
+ICMCompileND_SET__SHAPE (char *nt, int dim, char **shp_str)
 {
+    int i;
     data_class_t dc = ICUGetDataClass (nt);
 
-    DBUG_ENTER ("ICMCompileND_SET_SHP");
+    DBUG_ENTER ("ICMCompileND_SET__SHAPE");
 
-#define ND_SET_SHP
+#define ND_SET__SHAPE
 #include "icm_comment.c"
 #include "icm_trace.c"
-#undef ND_SET_SHP
+#undef ND_SET__SHAPE
+
+    DBUG_ASSERT ((dim >= 0), "illegal dimension found!");
 
     switch (dc) {
-    case C_scl:
+    case C_aud:
         INDENT;
-        fprintf (outfile, "/* noop */\n");
+        fprintf (outfile, "SAC_ND_A_DESC_DIM( %s) = %d;\n", nt, dim);
+        INDENT;
+        fprintf (outfile, "SAC_ND_A_DIM( %s) = %d;\n", nt, dim);
+        /* here is no break missing! */
+
+    case C_akd:
+        INDENT;
+        fprintf (outfile, "{ int SAC__size = 1;\n");
+        indent++;
+        DBUG_ASSERT ((dim >= 0), "illegal dimension found!");
+        for (i = 0; i < dim; i++) {
+            INDENT;
+            fprintf (outfile, "SAC__size *= %s;\n", shp_str[i]);
+            INDENT;
+            fprintf (outfile, "SAC_ND_A_DESC_SHAPE( %s, %d) = %s;\n", nt, i, shp_str[i]);
+            INDENT;
+            fprintf (outfile, "SAC_ND_A_SHAPE( %s, %d) = %s;\n", nt, i, shp_str[i]);
+        }
+        INDENT;
+        fprintf (outfile, "SAC_ND_A_DESC_SIZE( %s) = SAC__size;\n", nt);
+        INDENT;
+        fprintf (outfile, "SAC_ND_A_SIZE( %s) = SAC__size;\n", nt);
+        indent--;
+        INDENT;
+        fprintf (outfile, "}\n");
         break;
 
     case C_aks:
         INDENT;
-        fprintf (outfile, "/* noop */\n");
+        fprintf (outfile, "SAC_NOOP()\n");
         break;
 
-    case C_akd:
+    case C_scl:
         INDENT;
-        fprintf (outfile, "/* illegal for AKD */\n");
-#ifndef BEtest
-#if 0
-      DBUG_ASSERT( (0), "ICM ND_SET_SHP() is illegal for AKD!");
-#else
-        SYSWARN (("ICM ND_SET_SHP() is illegal for AKD"));
-#endif
-#endif
-        break;
-
-    case C_aud:
-        INDENT;
-        fprintf (outfile, "/* illegal for AUD */\n");
-#ifndef BEtest
-#if 0
-      DBUG_ASSERT( (0), "ICM ND_SET_SHP() is illegal for AUD!");
-#else
-        SYSWARN (("ICM ND_SET_SHP() is illegal for AUD"));
-#endif
-#endif
+        fprintf (outfile, "SAC_NOOP()\n");
         break;
 
     case C_hid:
         INDENT;
-        fprintf (outfile, "/* noop */\n");
+        fprintf (outfile, "SAC_NOOP()\n");
         break;
 
     default:
@@ -844,15 +877,16 @@ ICMCompileND_REFRESH_MIRROR (char *nt, int sdim)
     switch (dc) {
     case C_scl:
         INDENT;
-        fprintf (outfile, "/* noop */\n");
+        fprintf (outfile, "SAC_NOOP()\n");
         break;
 
     case C_aks:
         INDENT;
-        fprintf (outfile, "/* noop */\n");
+        fprintf (outfile, "SAC_NOOP()\n");
         break;
 
     case C_akd:
+        DBUG_ASSERT ((dim >= 0), "illegal dimension found!");
         for (i = 0; i < dim; i++) {
             INDENT;
             fprintf (outfile,
@@ -866,14 +900,14 @@ ICMCompileND_REFRESH_MIRROR (char *nt, int sdim)
 
     case C_aud:
         INDENT;
-        fprintf (outfile, "SAC_ND_A_DIM( %s) = SAC_ND_A_DESC_DIM( %s);\n", nt, nt);
-        INDENT;
         fprintf (outfile, "SAC_ND_A_SIZE( %s) = SAC_ND_A_DESC_SIZE( %s);\n", nt, nt);
+        INDENT;
+        fprintf (outfile, "SAC_ND_A_DIM( %s) = SAC_ND_A_DESC_DIM( %s);\n", nt, nt);
         break;
 
     case C_hid:
         INDENT;
-        fprintf (outfile, "/* noop */\n");
+        fprintf (outfile, "SAC_NOOP()\n");
         break;
 
     default:
@@ -887,19 +921,21 @@ ICMCompileND_REFRESH_MIRROR (char *nt, int sdim)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_CHECK_REUSE( char *nt)
+ *   void ICMCompileND_CHECK_REUSE( char *to_nt, int to_sdim,
+ *                                  char *from_nt, int from_sdim)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_CHECK_REUSE( nt)
+ *   ND_CHECK_REUSE( to_nt, to_sdim, from_nt, from_sdim)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_CHECK_REUSE (char *nt)
+ICMCompileND_CHECK_REUSE (char *to_nt, int to_sdim, char *from_nt, int from_sdim)
 {
-    data_class_t dc = ICUGetDataClass (nt);
+    data_class_t to_dc = ICUGetDataClass (to_nt);
+    unq_class_t to_uc = ICUGetUnqClass (to_nt);
 
     DBUG_ENTER ("ICMCompileND_CHECK_REUSE");
 
@@ -908,102 +944,46 @@ ICMCompileND_CHECK_REUSE (char *nt)
 #include "icm_trace.c"
 #undef ND_CHECK_REUSE
 
-    switch (dc) {
-    case C_scl:
+    if ((to_uc == C_unq) || (to_dc == C_scl)) {
         INDENT;
-        fprintf (outfile, "/* noop */\n");
-        break;
-
-    case C_aks:
+        fprintf (outfile, "SAC_NOOP()\n");
+    } else {
         INDENT;
-        fprintf (outfile, "/* not yet implemented */\n");
-        break;
+        fprintf (outfile, "if (SAC_ND_A_RC( %s) == 1) {\n", from_nt);
 
-    case C_akd:
-        INDENT;
-        fprintf (outfile, "/* not yet implemented */\n");
-        break;
+        ICMCompileND_ASSIGN (to_nt, to_sdim, from_nt, from_sdim);
 
-    case C_aud:
-        INDENT;
-        fprintf (outfile, "/* not yet implemented */\n");
-        break;
+        fprintf (outfile,
+                 "SAC_TR_MEM_PRINT("
+                 " (\"reuse memory of %s at %%p for %s\","
+                 " ND_A_FIELD( %s)));\n",
+                 from_nt, to_nt, from_nt);
 
-    case C_hid:
-        INDENT;
-        fprintf (outfile, "/* not yet implemented */\n");
-        break;
-
-    default:
-        DBUG_ASSERT ((0), "Unknown data class found!");
-        break;
+        fprintf (outfile, "}\n");
+        fprintf (outfile, "else\n");
     }
 
     DBUG_VOID_RETURN;
 }
 
-#if 0
-/*
- *  If SECURE_ALLOC_FREE is defined an extra check wether the requested size
- *  is 0 is done. In that case no call for malloc(0) is executed, but directly
- *  NULL set for the array-variable is done.
- *  This is an Option for possible Problems with calls for malloc(0).
- *  This comment is referenced by: SAC_ND_FREE
- */
-#ifdef SECURE_ALLOC_FREE
-#define SAC_ND_ALLOC(rc, nt, basetype, sdim, shp)
-{
-  if (SAC_ND_A_SIZE(nt) != 0) {
-    SAC_HM_MALLOC_FIXED_SIZE( SAC_ND_A_FIELD( nt),
-                              sizeof( basetype) * SAC_ND_A_SIZE( nt));
-  }
-  else {
-    SAC_ND_A_FIELD( nt) = NULL;
-  }
-  SAC_HM_MALLOC_FIXED_SIZE( SAC_ND_A_RCP( nt), sizeof( int));
-  SAC_ND_A_RC( nt) = rc;
-  SAC_TR_MEM_PRINT(("ND_ALLOC( %s, %s, %d) at addr: %p",
-#basetype, #nt, rc, SAC_ND_A_FIELD(nt)));
-  SAC_TR_INC_ARRAY_MEMCNT( SAC_ND_A_SIZE(nt));
-  SAC_TR_REF_PRINT_RC( nt);
-  SAC_CS_REGISTER_ARRAY( nt);
-}
-#else
-#define SAC_ND_ALLOC(basetype, nt, rc)
-{
-  SAC_HM_MALLOC_FIXED_SIZE_WITH_RC( SAC_ND_A_FIELD( nt),
-                                    SAC_ND_A_RCP( nt),
-                                    sizeof( basetype) * SAC_ND_A_SIZE( nt));
-  SAC_ND_A_RC( nt) = rc;
-  SAC_TR_MEM_PRINT( ("ND_ALLOC( %s, %s, %d) at addr: %p",
-#basetype, #nt, rc, SAC_ND_A_FIELD(nt)));
-  SAC_TR_INC_ARRAY_MEMCNT( SAC_ND_A_SIZE( nt));
-  SAC_TR_REF_PRINT_RC( nt);
-  SAC_CS_REGISTER_ARRAY( nt);
-}
-#endif
-#endif
-
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_ALLOC( char *nt, char *basetype, int sdim, int *shp,
- *                            int rc)
+ *   void ICMCompileND_ALLOC( char *nt, int rc, char *set_shape)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_ALLOC( nt, basetype, sdim, shp_0 ... shp_n, rc)
+ *   ND_ALLOC( nt, rc, set_shape)
+ *
+ * remark:
+ *   for the time being this ICM is not used :-(
  *
  ******************************************************************************/
 
 void
-ICMCompileND_ALLOC (char *nt, char *basetype, int sdim, int *shp, int rc)
+ICMCompileND_ALLOC (char *nt, int rc, char *set_shape)
 {
-    int i;
-    data_class_t dc = ICUGetDataClass (nt);
-    int dim = DIM_NO_OFFSET (sdim);
-
     DBUG_ENTER ("ICMCompileND_ALLOC");
 
 #define ND_ALLOC
@@ -1011,35 +991,29 @@ ICMCompileND_ALLOC (char *nt, char *basetype, int sdim, int *shp, int rc)
 #include "icm_trace.c"
 #undef ND_ALLOC
 
-    switch (dc) {
-    case C_scl:
+    if (rc > 0) {
         INDENT;
-        fprintf (outfile, "/* noop */\n");
-        break;
+        fprintf (outfile, "{\n");
+        indent++;
 
-    case C_aks:
         INDENT;
-        fprintf (outfile, "/* not yet implemented */\n");
-        break;
+        fprintf (outfile, "SAC_ND_ALLOC__DESC( %s)\n", nt);
 
-    case C_akd:
         INDENT;
-        fprintf (outfile, "/* not yet implemented */\n");
-        break;
+        fprintf (outfile, "SAC_ND_SET__RC( %s, %d)\n", nt, rc);
 
-    case C_aud:
         INDENT;
-        fprintf (outfile, "/* not yet implemented */\n");
-        break;
+        fprintf (outfile, "%s\n", set_shape);
 
-    case C_hid:
         INDENT;
-        fprintf (outfile, "/* not yet implemented */\n");
-        break;
+        fprintf (outfile, "SAC_ND_ALLOC__DATA( %s)\n", nt);
 
-    default:
-        DBUG_ASSERT ((0), "Unknown data class found!");
-        break;
+        indent--;
+        INDENT;
+        fprintf (outfile, "}\n");
+    } else {
+        INDENT;
+        fprintf (outfile, "SAC_NOOP()\n");
     }
 
     DBUG_VOID_RETURN;
@@ -1048,23 +1022,18 @@ ICMCompileND_ALLOC (char *nt, char *basetype, int sdim, int *shp, int rc)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_ALLOC_PLACE( char *nt, char *basetype,
- *                                  int sdim, int *shp, int rc)
+ *   void ICMCompileND_ALLOC_PLACE( char *nt, int rc)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_ALLOC_PLACE( nt, basetype, sdim, shp_0 ... shp_n, rc)
+ *   ND_ALLOC_PLACE( nt, rc)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_ALLOC_PLACE (char *nt, char *basetype, int sdim, int *shp, int rc)
+ICMCompileND_ALLOC_PLACE (char *nt, int rc)
 {
-    int i;
-    data_class_t dc = ICUGetDataClass (nt);
-    int dim = DIM_NO_OFFSET (sdim);
-
     DBUG_ENTER ("ICMCompileND_ALLOC_PLACE");
 
 #define ND_ALLOC_PLACE
@@ -1072,30 +1041,121 @@ ICMCompileND_ALLOC_PLACE (char *nt, char *basetype, int sdim, int *shp, int rc)
 #include "icm_trace.c"
 #undef ND_ALLOC_PLACE
 
-    switch (dc) {
+    DBUG_ASSERT ((0), "not yet implemented!");
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileND_CHECK_MIRROR( char *to_nt, int to_sdim,
+ *                                   char *from_nt, int from_sdim)
+ *
+ * description:
+ *   implements the compilation of the following ICM:
+ *
+ *   ND_CHECK_MIRROR( to_nt, to_sdim, from_nt, from_sdim)
+ *
+ ******************************************************************************/
+
+void
+ICMCompileND_CHECK_MIRROR (char *to_nt, int to_sdim, char *from_nt, int from_sdim)
+{
+    int i;
+    data_class_t to_dc = ICUGetDataClass (to_nt);
+    data_class_t from_dc = ICUGetDataClass (from_nt);
+    int to_dim = DIM_NO_OFFSET (to_sdim);
+
+    DBUG_ENTER ("ICMCompileND_CHECK_MIRROR");
+
+#define ND_CHECK_MIRROR
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef ND_CHECK_MIRROR
+
+    /*
+     * check constant parts of mirror
+     */
+    switch (to_dc) {
     case C_scl:
+        /* check dimension/size */
         INDENT;
-        fprintf (outfile, "/* noop */\n");
+        fprintf (outfile,
+                 "SAC_ASSURE_TYPE( (SAC_ND_A_DIM( %s) == 0),"
+                 " (\"Assignment with incompatible types found!\"))\n",
+                 from_nt);
+        INDENT;
+        fprintf (outfile,
+                 "SAC_ASSURE_TYPE( (SAC_ND_A_SIZE( %s) == 1),"
+                 " (\"Assignment with incompatible types found!\"))\n",
+                 from_nt);
         break;
 
     case C_aks:
-        INDENT;
-        fprintf (outfile, "/* not yet implemented */\n");
+        switch (from_dc) {
+        case C_aud:
+            INDENT;
+            fprintf (outfile,
+                     "SAC_ASSURE_TYPE("
+                     " (SAC_ND_A_DIM( %s) == SAC_ND_A_DIM( %s)),"
+                     " (\"Assignment with incompatible types found!\"))\n",
+                     to_nt, from_nt);
+            /* here is no break missing! */
+        case C_akd:
+            DBUG_ASSERT ((to_dim >= 0), "illegal dimension found!");
+            for (i = 0; i < to_dim; i++) {
+                INDENT;
+                fprintf (outfile,
+                         "SAC_ASSURE_TYPE("
+                         " (SAC_ND_A_SHAPE( %s, %d) == SAC_ND_A_SHAPE( %s, %d)),"
+                         " (\"Assignment with incompatible types found!\"))\n",
+                         to_nt, i, from_nt, i);
+            }
+            INDENT;
+            fprintf (outfile,
+                     "SAC_ASSURE_TYPE("
+                     " (SAC_ND_A_SIZE( %s) == SAC_ND_A_SIZE( %s)),"
+                     " (\"Assignment with incompatible types found!\"))\n",
+                     to_nt, from_nt);
+            break;
+        case C_aks:
+            INDENT;
+            fprintf (outfile, "SAC_NOOP()\n");
+            break;
+        default:
+            DBUG_ASSERT ((0), ("Illegal assignment found!"));
+            break;
+        }
         break;
 
     case C_akd:
-        INDENT;
-        fprintf (outfile, "/* not yet implemented */\n");
+        switch (from_dc) {
+        case C_aud:
+            INDENT;
+            fprintf (outfile,
+                     "SAC_ASSURE_TYPE("
+                     " (SAC_ND_A_DIM( %s) == SAC_ND_A_DIM( %s)),"
+                     " (\"Assignment with incompatible types found!\"))\n",
+                     to_nt, from_nt);
+            break;
+        case C_akd:
+            /* here is no break missing */
+        case C_aks:
+            INDENT;
+            fprintf (outfile, "SAC_NOOP()\n");
+            break;
+        default:
+            DBUG_ASSERT ((0), ("Illegal assignment found!"));
+            break;
+        }
         break;
 
     case C_aud:
-        INDENT;
-        fprintf (outfile, "/* not yet implemented */\n");
-        break;
-
+        /* here is no break missing */
     case C_hid:
         INDENT;
-        fprintf (outfile, "/* not yet implemented */\n");
+        fprintf (outfile, "SAC_NOOP()\n");
         break;
 
     default:
@@ -1109,17 +1169,18 @@ ICMCompileND_ALLOC_PLACE (char *nt, char *basetype, int sdim, int *shp, int rc)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_ASSIGN( char *to_nt, int to_sdim, char *from_nt)
+ *   void ICMCompileND_ASSIGN( char *to_nt, int to_sdim,
+ *                             char *from_nt, int from_sdim)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_ASSIGN( to_nt, to_sdim, from_nt)
+ *   ND_ASSIGN( to_nt, to_sdim, from_nt, from_sdim)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_ASSIGN (char *to_nt, int to_sdim, char *from_nt)
+ICMCompileND_ASSIGN (char *to_nt, int to_sdim, char *from_nt, int from_sdim)
 {
     DBUG_ENTER ("ICMCompileND_ASSIGN");
 
@@ -1128,11 +1189,13 @@ ICMCompileND_ASSIGN (char *to_nt, int to_sdim, char *from_nt)
 #include "icm_trace.c"
 #undef ND_ASSIGN
 
-    INDENT;
-    ICMCompileND_ASSIGN_DATA (to_nt, to_sdim, from_nt);
+    ICMCompileND_ASSIGN__DESC (to_nt, to_sdim, from_nt, from_sdim);
+
+    ICMCompileND_ASSIGN__MIRROR (to_nt, to_sdim, from_nt, from_sdim);
 
     INDENT;
-    ICMCompileND_ASSIGN_MIRROR (to_nt, to_sdim, from_nt);
+    fprintf (outfile, "SAC_ND_ASSIGN__DATA( %s, %d, %s, %d)\n", to_nt, to_sdim, from_nt,
+             from_sdim);
 
     DBUG_VOID_RETURN;
 }
@@ -1140,86 +1203,93 @@ ICMCompileND_ASSIGN (char *to_nt, int to_sdim, char *from_nt)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_ASSIGN_DATA( char *to_nt, int to_sdim, char *from_nt)
+ *   void ICMCompileND_ASSIGN__DESC( char *to_nt, int to_sdim,
+ *                                   char *from_nt, int from_sdim)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_ASSIGN_DATA( to_nt, to_sdim, from_nt)
+ *   ND_ASSIGN__DESC( to_nt, to_sdim, from_nt, from_sdim)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_ASSIGN_DATA (char *to_nt, int to_sdim, char *from_nt)
+ICMCompileND_ASSIGN__DESC (char *to_nt, int to_sdim, char *from_nt, int from_sdim)
 {
     int i;
     data_class_t to_dc = ICUGetDataClass (to_nt);
     unq_class_t to_uc = ICUGetUnqClass (to_nt);
     data_class_t from_dc = ICUGetDataClass (from_nt);
-    int to_dim = DIM_NO_OFFSET (to_sdim);
+    int from_dim = DIM_NO_OFFSET (from_sdim);
 
-    DBUG_ENTER ("ICMCompileND_ASSIGN_DATA");
+    DBUG_ENTER ("ICMCompileND_ASSIGN__DESC");
 
-#define ND_ASSIGN_DATA
+#define ND_ASSIGN__DESC
 #include "icm_comment.c"
 #include "icm_trace.c"
-#undef ND_ASSIGN_DATA
+#undef ND_ASSIGN__DESC
 
-    DBUG_ASSERT (((to_dc != C_unknownd) && (from_dc != C_unknownd)),
-                 "Unknown data class found!");
+    /*
+     * assign descriptor
+     */
+    if ((to_dc == C_scl) && ((from_dc == C_scl) || (from_dc == C_aud))) {
+        INDENT;
+        fprintf (outfile, "SAC_NOOP()\n");
+    } else if (((to_dc == C_aks) || (to_dc == C_akd) || (to_dc == C_aud))
+               && ((from_dc == C_aks) || (from_dc == C_akd) || (from_dc == C_aud))) {
+        INDENT;
+        fprintf (outfile, "SAC_ND_A_DESC( %s) = SAC_ND_A_DESC( %s);\n", to_nt, from_nt);
+    } else if ((to_dc == C_aud) && (from_dc == C_scl)) {
+        INDENT;
+        fprintf (outfile, "SAC_ND_ALLOC__DESC( %s)\n", to_nt);
+        INDENT;
+        fprintf (outfile, "SAC_ND_SET__RC( %s, 0)\n", to_nt);
+    } else if ((to_dc == C_hid) && (from_dc == C_hid)) {
+        INDENT;
+        if (to_uc == C_nuq) {
+            fprintf (outfile, "SAC_ND_A_DESC( %s) = SAC_ND_A_DESC( %s);\n", to_nt,
+                     from_nt);
+        } else {
+            fprintf (outfile, "SAC_NOOP()\n");
+        }
+    } else {
+        DBUG_ASSERT ((0), ("Illegal assignment found!"));
+    }
 
-    DBUG_ASSERT ((((to_dc != C_hid) && (from_dc != C_hid))
-                  || ((to_dc == C_hid) && (from_dc == C_hid))),
-                 "Conversion from non-hidden into hidden or vise-versa found!");
-
-    INDENT;
-    fprintf (outfile, "SAC_ND_A_FIELD( %s) = SAC_ND_A_FIELD( %s);\n", to_nt, from_nt);
-
+    /*
+     * assign missing descriptor entries
+     */
     switch (to_dc) {
-    case C_hid:
-        break;
-
     case C_scl:
-        switch (from_dc) {
-        case C_scl:
-            break;
-        case C_aks:
-            break;
-        case C_akd:
-            break;
-        case C_aud:
-            break;
-        default:
-            break;
-        }
-        break;
-
+        /* here is no break missing */
     case C_aks:
-        switch (from_dc) {
-        case C_scl:
-            break;
-        case C_aks:
-            break;
-        case C_akd:
-            break;
-        case C_aud:
-            break;
-        default:
-            break;
-        }
+        INDENT;
+        fprintf (outfile, "SAC_NOOP()\n");
         break;
 
     case C_akd:
         switch (from_dc) {
-        case C_scl:
-            break;
         case C_aks:
+            DBUG_ASSERT ((from_dim >= 0), "illegal dimension found!");
+            for (i = 0; i < from_dim; i++) {
+                INDENT;
+                fprintf (outfile,
+                         "SAC_ND_A_DESC_SHAPE( %s, %d)"
+                         " = SAC_ND_A_SHAPE( %s, %d);\n",
+                         to_nt, i, from_nt, i);
+            }
+            INDENT;
+            fprintf (outfile, "SAC_ND_A_DESC_SIZE( %s) = SAC_ND_A_SIZE( %s);\n", to_nt,
+                     from_nt);
             break;
         case C_akd:
-            break;
+            /* here is no break missing */
         case C_aud:
+            INDENT;
+            fprintf (outfile, "SAC_NOOP()\n");
             break;
         default:
+            DBUG_ASSERT ((0), ("Illegal assignment found!"));
             break;
         }
         break;
@@ -1227,27 +1297,46 @@ ICMCompileND_ASSIGN_DATA (char *to_nt, int to_sdim, char *from_nt)
     case C_aud:
         switch (from_dc) {
         case C_scl:
-            break;
+            /* here is no break missing! */
         case C_aks:
-            break;
+            DBUG_ASSERT ((from_dim >= 0), "illegal dimension found!");
+            for (i = 0; i < from_dim; i++) {
+                INDENT;
+                fprintf (outfile,
+                         "SAC_ND_A_DESC_SHAPE( %s, %d)"
+                         " = SAC_ND_A_SHAPE( %s, %d);\n",
+                         to_nt, i, from_nt, i);
+            }
+            INDENT;
+            fprintf (outfile, "SAC_ND_A_DESC_SIZE( %s) = SAC_ND_A_SIZE( %s);\n", to_nt,
+                     from_nt);
+            /* here is no break missing */
         case C_akd:
+            INDENT;
+            fprintf (outfile, "SAC_ND_A_DESC_DIM( %s) = SAC_ND_A_DIM( %s);\n", to_nt,
+                     from_nt);
             break;
         case C_aud:
+            INDENT;
+            fprintf (outfile, "SAC_NOOP()\n");
             break;
         default:
+            DBUG_ASSERT ((0), ("Illegal assignment found!"));
             break;
         }
         break;
 
+    case C_hid:
+        DBUG_ASSERT ((from_dc == C_hid), ("Illegal assignment found!"));
+
+        INDENT;
+        fprintf (outfile, "SAC_NOOP()\n");
+        break;
+
     default:
+        DBUG_ASSERT ((0), "Unknown data class found!");
         break;
     }
-
-    /*
-    INDENT;
-    fprintf( outfile, "SAC_ND_A_DESC( %s) = SAC_ND_A_DESC( %s);\n",
-                      to_nt, from_nt);
-    */
 
     DBUG_VOID_RETURN;
 }
@@ -1255,41 +1344,42 @@ ICMCompileND_ASSIGN_DATA (char *to_nt, int to_sdim, char *from_nt)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_ASSIGN_MIRROR( char *to_nt, int to_sdim, char *from_nt)
+ *   void ICMCompileND_ASSIGN__MIRROR( char *to_nt, int to_sdim,
+ *                                     char *from_nt, int from_sdim)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_ASSIGN_MIRROR( to_nt, to_sdim, from_nt)
+ *   ND_ASSIGN__MIRROR( to_nt, to_sdim, from_nt, from_sdim)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_ASSIGN_MIRROR (char *to_nt, int to_sdim, char *from_nt)
+ICMCompileND_ASSIGN__MIRROR (char *to_nt, int to_sdim, char *from_nt, int from_sdim)
 {
     int i;
-    data_class_t to_cls = ICUGetDataClass (to_nt);
+    data_class_t to_dc = ICUGetDataClass (to_nt);
     int to_dim = DIM_NO_OFFSET (to_sdim);
 
-    DBUG_ENTER ("ICMCompileND_ASSIGN_MIRROR");
+    DBUG_ENTER ("ICMCompileND_ASSIGN__MIRROR");
 
-#define ND_ASSIGN_MIRROR
+#define ND_ASSIGN__MIRROR
 #include "icm_comment.c"
 #include "icm_trace.c"
-#undef ND_ASSIGN_MIRROR
+#undef ND_ASSIGN__MIRROR
 
-    switch (to_cls) {
+    ICMCompileND_CHECK_MIRROR (to_nt, to_sdim, from_nt, from_sdim);
+
+    switch (to_dc) {
     case C_scl:
-        INDENT;
-        fprintf (outfile, "/* noop */\n");
-        break;
-
+        /* here is no break missing */
     case C_aks:
         INDENT;
-        fprintf (outfile, "/* noop */\n");
+        fprintf (outfile, "SAC_NOOP()\n");
         break;
 
     case C_akd:
+        DBUG_ASSERT ((to_dim >= 0), "illegal dimension found!");
         for (i = 0; i < to_dim; i++) {
             INDENT;
             fprintf (outfile,
@@ -1303,14 +1393,14 @@ ICMCompileND_ASSIGN_MIRROR (char *to_nt, int to_sdim, char *from_nt)
 
     case C_aud:
         INDENT;
-        fprintf (outfile, "SAC_ND_A_DIM( %s) = SAC_ND_A_DIM( %s);\n", to_nt, from_nt);
-        INDENT;
         fprintf (outfile, "SAC_ND_A_SIZE( %s) = SAC_ND_A_SIZE( %s);\n", to_nt, from_nt);
+        INDENT;
+        fprintf (outfile, "SAC_ND_A_DIM( %s) = SAC_ND_A_DIM( %s);\n", to_nt, from_nt);
         break;
 
     case C_hid:
         INDENT;
-        fprintf (outfile, "/* noop */\n");
+        fprintf (outfile, "SAC_NOOP()\n");
         break;
 
     default:
@@ -1324,20 +1414,19 @@ ICMCompileND_ASSIGN_MIRROR (char *to_nt, int to_sdim, char *from_nt)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_COPY( char *to_nt, char *from_nt)
+ *   void ICMCompileND_COPY( char *to_nt, int to_sdim,
+ *                           char *from_nt, int from_sdim, char *copyfun)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_COPY( to_nt, from_nt)
+ *   ND_COPY( to_nt, to_sdim, from_nt, copyfun)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_COPY (char *to_nt, char *from_nt)
+ICMCompileND_COPY (char *to_nt, int to_sdim, char *from_nt, int from_sdim, char *copyfun)
 {
-    data_class_t to_dc = ICUGetDataClass (to_nt);
-
     DBUG_ENTER ("ICMCompileND_COPY");
 
 #define ND_COPY
@@ -1345,36 +1434,16 @@ ICMCompileND_COPY (char *to_nt, char *from_nt)
 #include "icm_trace.c"
 #undef ND_COPY
 
-    switch (to_dc) {
-    case C_scl:
-        INDENT;
-        fprintf (outfile, "/* not yet implemented */\n");
-        break;
+    /* allocate descriptor */
+    INDENT;
+    fprintf (outfile, "SAC_ALLOC__DESC( %s)\n", to_nt);
 
-    case C_aks:
-        INDENT;
-        fprintf (outfile, "/* not yet implemented */\n");
-        break;
+    /* copy descriptor entries and mirror */
+    ICMCompileND_COPY__SHAPE (to_nt, to_sdim, from_nt, from_sdim);
 
-    case C_akd:
-        INDENT;
-        fprintf (outfile, "/* not yet implemented */\n");
-        break;
-
-    case C_aud:
-        INDENT;
-        fprintf (outfile, "/* not yet implemented */\n");
-        break;
-
-    case C_hid:
-        INDENT;
-        fprintf (outfile, "/* not yet implemented */\n");
-        break;
-
-    default:
-        DBUG_ASSERT ((0), "Unknown data class found!");
-        break;
-    }
+    INDENT;
+    fprintf (outfile, "SAC_ND_COPY__DATA( %s, %d, %s, %d, %s)\n", to_nt, to_sdim, from_nt,
+             from_sdim, copyfun);
 
     DBUG_VOID_RETURN;
 }
@@ -1382,7 +1451,114 @@ ICMCompileND_COPY (char *to_nt, char *from_nt)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_MAKE_UNIQUE( char *to_nt, char *from_nt, char *basetype)
+ *   void ICMCompileND_COPY__SHAPE( char *to_nt, int to_sdim,
+ *                                  char *from_nt, int from_sdim)
+ *
+ * description:
+ *   implements the compilation of the following ICM:
+ *
+ *   ND_COPY__SHAPE( to_nt, to_sdim, from_nt, from_sdim)
+ *
+ ******************************************************************************/
+
+void
+ICMCompileND_COPY__SHAPE (char *to_nt, int to_sdim, char *from_nt, int from_sdim)
+{
+    int i;
+    data_class_t to_dc = ICUGetDataClass (to_nt);
+    data_class_t from_dc = ICUGetDataClass (from_nt);
+    int from_dim = DIM_NO_OFFSET (from_sdim);
+    int to_dim = DIM_NO_OFFSET (to_sdim);
+
+    DBUG_ENTER ("ICMCompileND_COPY__SHAPE");
+
+#define ND_COPY__SHAPE
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef ND_COPY__SHAPE
+
+    /*
+     * copy descriptor entries
+     */
+    switch (to_dc) {
+    case C_aud:
+        INDENT;
+        fprintf (outfile, "SAC_ND_A_DESC_DIM( %s) = SAC_ND_A_DIM( %s);\n", to_nt,
+                 from_nt);
+        /* here is no break missing */
+    case C_akd:
+        INDENT;
+        fprintf (outfile, "SAC_ND_A_DESC_SIZE( %s) = SAC_ND_A_SIZE( %s);\n", to_nt,
+                 from_nt);
+        break;
+
+    case C_aks:
+        /* here is no break missing */
+    case C_scl:
+        /* here is no break missing */
+    case C_hid:
+        INDENT;
+        fprintf (outfile, "SAC_NOOP()\n");
+        break;
+
+    default:
+        DBUG_ASSERT ((0), "Unknown data class found!");
+        break;
+    }
+    if ((to_dc == C_aud) && (from_dc == C_aud)) {
+        INDENT;
+        fprintf (outfile, "{ int SAC__i;\n");
+        indent++;
+        INDENT;
+        fprintf (outfile,
+                 "for (SAC__i = 0; SAC__i < SAC_ND_A_DIM( %s);"
+                 " SAC__i++) {\n",
+                 from_nt);
+        indent++;
+        INDENT;
+        fprintf (outfile,
+                 "SAC_ND_A_DESC_SHAPE( %s, SAC__i)"
+                 " = SAC_ND_A_SHAPE( %s, SAC__i);\n",
+                 to_nt, from_nt);
+        indent--;
+        INDENT;
+        fprintf (outfile, "}\n");
+        indent--;
+        INDENT;
+        fprintf (outfile, "}\n");
+    } else if (to_dc == C_aud) {
+        DBUG_ASSERT ((from_dim >= 0), "illegal dimension found!");
+        for (i = 0; i < from_dim; i++) {
+            INDENT;
+            fprintf (outfile,
+                     "SAC_ND_A_DESC_SHAPE( %s, %d)"
+                     " = SAC_ND_A_SHAPE( %s, %d);\n",
+                     to_nt, i, from_nt, i);
+        }
+    } else if (to_dc == C_akd) {
+        DBUG_ASSERT ((to_dim >= 0), "illegal dimension found!");
+        for (i = 0; i < to_dim; i++) {
+            INDENT;
+            fprintf (outfile,
+                     "SAC_ND_A_DESC_SHAPE( %s, %d)"
+                     " = SAC_ND_A_SHAPE( %s, %d);\n",
+                     to_nt, i, from_nt, i);
+        }
+    }
+
+    /*
+     * copy and check mirror
+     */
+    ICMCompileND_ASSIGN__MIRROR (to_nt, to_sdim, from_nt, from_sdim);
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileND_MAKE_UNIQUE( char *to_nt, int to_sdim,
+ *                                  char *from_nt, int from_sdim, char *copyfun)
  *
  * description:
  *   implements the compilation of the following ICM:
@@ -1392,7 +1568,8 @@ ICMCompileND_COPY (char *to_nt, char *from_nt)
  ******************************************************************************/
 
 void
-ICMCompileND_MAKE_UNIQUE (char *to_nt, char *from_nt, char *basetype)
+ICMCompileND_MAKE_UNIQUE (char *to_nt, int to_sdim, char *from_nt, int from_sdim,
+                          char *copyfun)
 {
     data_class_t to_dc = ICUGetDataClass (to_nt);
 
@@ -1403,30 +1580,64 @@ ICMCompileND_MAKE_UNIQUE (char *to_nt, char *from_nt, char *basetype)
 #include "icm_trace.c"
 #undef ND_MAKE_UNIQUE
 
+#if 0
+#define SAC_ND_MAKE_UNIQUE_ARRAY(to_nt, from_nt, copyfun)
+{
+  SAC_TR_MEM_PRINT( ("ND_MAKE_UNIQUE( %s, %s, %s)",
+#to_nt, #from_nt, #copyfun));
+  SAC_TR_REF_PRINT_RC( to_nt);
+  if ((SAC_ND_A_RC( to_nt)) == 1) {
+    SAC_ND_ASSIGN_ARRAY( to_nt, from_nt);
+    SAC_TR_MEM_PRINT( ("%s is already unique.", to_nt));
+  }
+  else {
+    SAC_ND_KS_COPY_ARRAY( to_nt, from_nt, copyfun);
+    SAC_ND_DEC_RC( to_nt, 1);
+    SAC_ND_ALLOC_RC( from_nt);
+  }
+}
+
+#define SAC_ND_MAKE_UNIQUE_HIDDEN(to_nt, from_nt, copyfun)
+{
+  SAC_TR_MEM_PRINT( ("ND_MAKE_UNIQUE( %s, %s, %s)",
+#to_nt, #from_nt, #copyfun));
+  SAC_TR_REF_PRINT_RC( to_nt);
+  if (SAC_ND_A_RC( to_nt) == 1) {
+    SAC_ND_NO_RC_ASSIGN_HIDDEN( to_nt, from_nt);
+    SAC_HM_FREE_FIXED_SIZE( SAC_ND_A_RCP( to_nt), sizeof( int));
+    SAC_TR_MEM_PRINT( ("%s is already unique.", to_nt));
+  }
+  else {
+    SAC_ND_COPY_HIDDEN( to_nt, from_nt, copyfun);
+    SAC_ND_DEC_RC( to_nt, 1);
+  }
+}
+#endif
+
     switch (to_dc) {
     case C_scl:
         INDENT;
-        fprintf (outfile, "/* not yet implemented */\n");
+        DBUG_ASSERT ((0), "not yet implemented!");
         break;
 
     case C_aks:
         INDENT;
-        fprintf (outfile, "/* not yet implemented */\n");
+        DBUG_ASSERT ((0), "not yet implemented!");
         break;
 
     case C_akd:
         INDENT;
-        fprintf (outfile, "/* not yet implemented */\n");
+        DBUG_ASSERT ((0), "not yet implemented!");
         break;
 
     case C_aud:
         INDENT;
-        fprintf (outfile, "/* not yet implemented */\n");
+        DBUG_ASSERT ((0), "not yet implemented!");
         break;
 
     case C_hid:
         INDENT;
-        fprintf (outfile, "/* not yet implemented */\n");
+        DBUG_ASSERT ((0), "not yet implemented!");
         break;
 
     default:
@@ -1440,27 +1651,83 @@ ICMCompileND_MAKE_UNIQUE (char *to_nt, char *from_nt, char *basetype)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_ASSIGN_CONST_VECT( char *nt, int len, char **s)
+ *   void ICMCompileND_ASSIGN__VECT__SHAPE( char *nt, int len, char **s)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_ASSIGN_CONST_VECT( nt, len, s_0 ... s_n)
+ *   ND_ASSIGN__VECT__SHAPE( nt, len, s_0 ... s_n)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_ASSIGN_CONST_VECT (char *nt, int len, char **s)
+ICMCompileND_ASSIGN__VECT__SHAPE (char *nt, int len, char **s)
+{
+    bool entries_are_scalars;
+    int i;
+    char **shp = NULL;
+    int shp_len = 0;
+
+    DBUG_ENTER ("ICMCompileND_ASSIGN__VECT__SHAPE");
+
+#define ND_ASSIGN__VECT__SHAPE
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef ND_ASSIGN__VECT__SHAPE
+
+    /*
+     * CAUTION:
+     * s[i] is either a tagged identifier or a constant (N_num, N_float, ...)!!
+     */
+
+    entries_are_scalars = FALSE;
+    for (i = 0; i < len; i++) {
+        if ((s[i][0] != '(') || (ICUGetDataClass (s[i]) == C_scl)) {
+            /* not a tagged identifier -> must be a constant scalar! */
+            entries_are_scalars = TRUE;
+        }
+    }
+
+    if (entries_are_scalars) {
+        shp = Malloc (sizeof (char *));
+        shp_len = 1;
+        shp[0] = Malloc (10 * sizeof (char));
+        sprintf (shp[0], "%d", len);
+        ICMCompileND_SET__SHAPE (nt, 1, shp);
+    } else {
+    }
+
+    if (shp != NULL) {
+        shp = Free (shp);
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileND_ASSIGN__VECT__DATA( char *nt, int len, char **s)
+ *
+ * description:
+ *   implements the compilation of the following ICM:
+ *
+ *   ND_ASSIGN__VEC__DATAT( nt, len, s_0 ... s_n)
+ *
+ ******************************************************************************/
+
+void
+ICMCompileND_ASSIGN__VECT__DATA (char *nt, int len, char **s)
 {
     bool entries_are_scalars;
     int i;
 
-    DBUG_ENTER ("ICMCompileND_ASSIGN_CONST_VECT");
+    DBUG_ENTER ("ICMCompileND_ASSIGN__VECT__DATA");
 
-#define ND_ASSIGN_CONST_VECT
+#define ND_ASSIGN__VECT__DATA
 #include "icm_comment.c"
 #include "icm_trace.c"
-#undef ND_ASSIGN_CONST_VECT
+#undef ND_ASSIGN__VECT__DATA
 
     /*
      * CAUTION:
@@ -1491,18 +1758,18 @@ ICMCompileND_ASSIGN_CONST_VECT (char *nt, int len, char **s)
     } else {
         if (len > 0) {
             INDENT;
-            fprintf (outfile, "{ int SAC_i = 0;\n");
+            fprintf (outfile, "{ int SAC__i = 0;\n");
             indent++;
             for (i = 0; i < len; i++) {
                 INDENT;
                 fprintf (outfile,
-                         "for ( ; SAC_i < %d * SAC_ND_A_SIZE( %s); SAC_i++) "
+                         "for ( ; SAC__i < %d * SAC_ND_A_SIZE( %s); SAC__i++) "
                          "{\n",
                          i + 1, s[i]);
                 indent++;
                 INDENT;
                 fprintf (outfile,
-                         "SAC_ND_WRITE( %s, SAC_i) = SAC_ND_READ( %s, SAC_i)"
+                         "SAC_ND_WRITE( %s, SAC__i) = SAC_ND_READ( %s, SAC__i)"
                          ";\n",
                          nt, s[i]);
                 indent--;
@@ -1521,17 +1788,18 @@ ICMCompileND_ASSIGN_CONST_VECT (char *nt, int len, char **s)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_PRF_SHAPE( char *to_nt, char *from_nt, int from_sdim)
+ *   void ICMCompileND_PRF_SHAPE( char *to_nt, int to_sdim,
+ *                                char *from_nt, int from_sdim)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_PRF_SHAPE( to_nt, from_nt, from_sdim)
+ *   ND_PRF_SHAPE( to_nt, to_sdim, from_nt, from_sdim)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_PRF_SHAPE (char *to_nt, char *from_nt, int from_sdim)
+ICMCompileND_PRF_SHAPE (char *to_nt, int to_sdim, char *from_nt, int from_sdim)
 {
     int i;
     data_class_t to_dc = ICUGetDataClass (to_nt);
@@ -1550,6 +1818,10 @@ ICMCompileND_PRF_SHAPE (char *to_nt, char *from_nt, int from_sdim)
     case C_aks:
         /* here is no break missing */
     case C_akd:
+#if 0
+  from_dim !!!
+#endif
+        DBUG_ASSERT ((from_dim >= 0), "illegal dimension found!");
         for (i = 0; i < from_dim; i++) {
             INDENT;
             fprintf (outfile,
@@ -1561,18 +1833,18 @@ ICMCompileND_PRF_SHAPE (char *to_nt, char *from_nt, int from_sdim)
 
     case C_aud:
         INDENT;
-        fprintf (outfile, "{ int SAC_i;\n");
+        fprintf (outfile, "{ int SAC__i;\n");
         indent++;
         INDENT;
         fprintf (outfile,
-                 "for ( SAC_i = 0; SAC_i < SAC_ND_A_DIM( %s);"
-                 " SAC_i++) {\n",
+                 "for ( SAC__i = 0; SAC__i < SAC_ND_A_DIM( %s);"
+                 " SAC__i++) {\n",
                  from_nt);
         indent++;
         INDENT;
         fprintf (outfile,
-                 "SAC_ND_WRITE( %s, SAC_i) = "
-                 "SAC_ND_A_SHAPE( %s, SAC_i);\n",
+                 "SAC_ND_WRITE( %s, SAC__i) = "
+                 "SAC_ND_A_SHAPE( %s, SAC__i);\n",
                  to_nt, from_nt);
         indent--;
         INDENT;
@@ -1888,8 +2160,6 @@ ICMCompileND_CREATE_CONST_ARRAY_A (char *name, int len2, int len1, char **A)
 
     DBUG_VOID_RETURN;
 }
-
-#endif /* TAGGED_ARRAYS */
 
 /******************************************************************************
  *
@@ -2501,6 +2771,8 @@ ICMCompileND_PRF_MODARRAY_AxVxA (char *res_btype, int dimres, char *res, char *o
 
     DBUG_VOID_RETURN;
 }
+
+#endif /* TAGGED_ARRAYS */
 
 /******************************************************************************
  *
