@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2000/08/03 10:20:47  nmw
+ * ST_gen_remove added
+ *
  * Revision 1.5  2000/07/10 14:19:49  cg
  * Added new status entry ST_crettype to tag actual return types
  * of compiled C functions.
@@ -134,7 +137,10 @@ SELECT (ST_regular, "ST_regular",
           /* lifted from N_mt                        */),
 
   SELECT (ST_crettype, "ST_crettype",
-          /* real return type of compiled C function */)
+          /* real return type of compiled C function */),
+
+  SELECT (ST_gen_remove, "ST_gen_remove",
+          /* generic function to be removed after specialization */)
 
 #undef SELECT
 
