@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.93  2004/08/06 11:45:16  skt
+ * MakeDataflowgraph extended
+ *
  * Revision 3.92  2004/08/06 11:27:37  skt
  * deleted parameter executionmode of MakeDataflownode
  *
@@ -2292,10 +2295,16 @@ MakeDataflowgraph ()
     DBUG_ENTER ("MakeDataflowgraph");
 
     tmp = CreateCleanNode (N_dataflowgraph);
+    DATAFLOWGRAPH_SOURCE (tmp) = MakeDataflownode (NULL);
+    DATAFLOWGRAPH_MEMBERS (tmp)
+      = NodeListAppend (DATAFLOWGRAPH_MEMBERS (tmp), DATAFLOWGRAPH_SOURCE (tmp), NULL);
+    DATAFLOWGRAPH_SINK (tmp) = MakeDataflownode (NULL);
+    DATAFLOWGRAPH_MEMBERS (tmp)
+      = NodeListAppend (DATAFLOWGRAPH_MEMBERS (tmp), DATAFLOWGRAPH_SINK (tmp), NULL);
 
     DBUG_PRINT ("MAKE",
                 ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
-
+#define DATAFLOWGRAPH_MEMBERS(n) ((nodelist *)(n->dfmask[0]))
     DBUG_RETURN (tmp);
 }
 
