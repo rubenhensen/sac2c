@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.9  1995/04/20 10:21:20  asi
+# Revision 1.10  1995/05/01 15:38:20  asi
+# DupTree added
+#
+# Revision 1.9  1995/04/20  10:21:20  asi
 # make deps done
 #
 # Revision 1.8  1995/04/05  15:54:58  asi
@@ -35,10 +38,13 @@ CC=gcc -ansi -g
 INCS=-I../global -I../../inc -I../typecheck
 
 all: optimize.o ConstantFolding.o DeadCodeRemoval.o WorkReduction.o \
-     LoopInvariantRemoval.o
+     LoopInvariantRemoval.o DupTree.o
 
 optimize.o: optimize.c
 	$(CC) -o optimize.o -c optimize.c $(INCS)
+
+DupTree.o: DupTree.c
+	$(CC) -o DupTree.o -c DupTree.c $(INCS)
 
 ConstantFolding.o: ConstantFolding.c
 	$(CC) -o ConstantFolding.o -c ConstantFolding.c $(INCS)
