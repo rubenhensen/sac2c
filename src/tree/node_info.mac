@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.25  2001/03/05 12:51:36  dkr
+ * trav table for N_Ncode corrected
+ *
  * Revision 3.24  2001/03/02 16:10:22  dkr
  * PREC1withop added
  *
@@ -1719,8 +1722,8 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, IdxNcode, TravSons, WLINcode, TravSons,
 
        PrintNcode, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, ACTNcode, TravSons, WLTNcode, CSENcode, TravSons, TravSons,
-       TravSons, PREC2code, TravSons, TravSons,
+       TravSons, PREC2code, ACTNcode, TravSons, WLTNcode, CSENcode, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons,
 
        TravSons, WLTRAcode, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        WLAAncode, FMTravSons, TravSons, TravSons, TravSons, TSIncode, TravSons, TravSons,
