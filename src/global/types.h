@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2002/02/22 11:49:00  dkr
+ * TYPES structure modified
+ *
  * Revision 3.9  2001/06/28 07:46:51  cg
  * Primitive function psi() renamed to sel().
  *
@@ -186,6 +189,11 @@ typedef enum {
 #include "status_info.mac"
 } statustype;
 
+typedef enum {
+#define SELECTelement(it_element) it_element
+#include "argtag_info.mac"
+} argtag_t;
+
 typedef enum { DOLLAR, VECT, IDX } useflag;
 
 typedef enum {
@@ -302,11 +310,6 @@ typedef struct TYPESS {
     statustype type_status; /* regular/artificial/crettype */
     struct TYPESS *next;    /* only needed for fun-results  */
                             /* and implementation of implicit types */
-    char *id;               /* identifier of function, object, ...  */
-    char *id_mod;           /* SAC module where id is defined */
-    char *id_cmod;          /* C module where id is defined */
-    statustype attrib;      /* uniqueness attribute */
-    statustype status;      /* regular or artificial */
 } types;
 
 /*
