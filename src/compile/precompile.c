@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.49  2002/07/15 15:24:35  dkr
+ * - LiftIds() and LiftArg() modified
+ * - bug in PREC2let() fixed: args for T_dots are not lifted
+ *
  * Revision 3.48  2002/07/12 17:16:03  dkr
  * RenameId(): ID_NT_TAG is renamed as well
  *
@@ -144,6 +148,13 @@
  *   - A function with code for object initialization is created.
  *
  * Things done during second traversal:
+ *   - Constant arguments of function applications are abstracted out:
+ *       a = fun( 1);   =>   _tmp = 1; a = fun( _tmp);
+ *     This can be done *after* type-checking only, because this modification
+ *     should not be done for primitive functions (it is superfluous for prfs
+ *     and we should minimize the number of local variables used ...).
+ *     Unfortunately, only the type system can decide whether an application
+ *     uses a primitive or a user-defined function (overloading!).
  *   - Function signatures are transformed into the final form:
  *     At most a single return value, remapping because of a linksign pragma,
  *     parameter tags (in, out, inout, ...).
@@ -151,18 +162,18 @@
  *     respectively. Note, that the node information of the AST is left as is.
  *   - Arguments of function applications are lifted if formal and actual types
  *     differ:
- *       b = fun( a);   =>   tmp_a = a; b = fun( tmp_a);
+ *       b = fun( a);   =>   _tmp_a = a; b = fun( _tmp_a);
  *     Return values of function applications are lifted if formal and actual
  *     types differ:
- *       b = fun( a);   =>   tmp_b = fun( a); b = tmp_b;
+ *       b = fun( a);   =>   _tmp_b = fun( a); b = _tmp_b;
  *
  * Things done during third traversal:
- *   - Arguments of function applications are abstracted if needed:
+ *   - Arguments of function applications are abstracted out if needed:
  *       a = fun( a)   =>   tmp_a = a; a = fun( tmp_a)
  *     This can only be done *after* type-checking, because types are needed
  *     to decide if abstraction is needed or not, and *after* code optimizations
  *     are finished, because some optimizations (especially CF) might undo these
- *     abstractions.
+ *     modifications.
  *   - For each with-loop a unique and adjusted dummy fold-function is
  *     generated.
  *   - It is checked whether NCODE_CEXPR is identical for all N_Ncode nodes
@@ -261,9 +272,6 @@ LiftIds (ids *ids_arg, node *fundef, types *new_type, node **new_assigns)
 
     DBUG_ENTER ("LiftIds");
 
-    /*
-     * first occur of the var of the LHS
-     */
     DBUG_PRINT ("PREC", ("lifting return value (%s) of function application",
                          IDS_NAME (ids_arg)));
 
@@ -276,7 +284,7 @@ LiftIds (ids *ids_arg, node *fundef, types *new_type, node **new_assigns)
     fundef = AddVardecs (fundef, new_vardec);
 
     /*
-     * Abstract the found return value:
+     * Abstract the found return value out:
      *   A:n = fun( ...);
      *   ... A:n ... A:1 ...    // n references of A
      * is transformed into
@@ -306,76 +314,52 @@ LiftIds (ids *ids_arg, node *fundef, types *new_type, node **new_assigns)
 /******************************************************************************
  *
  * Function:
- *   void ReplaceArg( node *arg_id, char *new_name, node *new_vardec)
+ *   node *LiftArg( node *arg, node *fundef, types *new_type,
+ *                  node **new_assigns)
  *
  * Description:
- *   Replaces name and vardec of the the given N_id node.
- *
- ******************************************************************************/
-
-static void
-ReplaceArg (node *arg_id, char *new_name, node *new_vardec)
-{
-    DBUG_ENTER ("ReplaceArg");
-
-    DBUG_ASSERT ((NODE_TYPE (arg_id) == N_id), "no N_id node found!");
-
-    /*
-     * temporary var already generated
-     * -> just replace the current arg by 'new_id'
-     */
-    ID_NAME (arg_id) = Free (ID_NAME (arg_id));
-    ID_NAME (arg_id) = StringCopy (new_name);
-    ID_VARDEC (arg_id) = new_vardec;
-
-    DBUG_VOID_RETURN;
-}
-
-/******************************************************************************
- *
- * Function:
- *   void LiftArg( node *arg_id, node *fundef, types *new_type,
- *                 node **new_assigns)
- *
- * Description:
- *   Lifts the given argument (N_id node) of a function application:
+ *   Lifts the given argument of a function application:
  *    - Generates a new and fresh varname.
  *    - Generates a new vardec and inserts it into the vardec chain of 'fundef'.
  *      If 'new_type' is not NULL, 'new_type' is used as VARDEC_TYPE instead
- *      of ID_VARDEC(arg_id).
+ *      of ID_TYPE(arg).
  *    - Builds a new assignment and inserts it into the assignment chain
  *      'new_assigns'.
- *    - Adjusts the name and vardec of 'arg_id'.
+ *    - Returns the new argument.
  *
  ******************************************************************************/
 
-static void
-LiftArg (node *arg_id, node *fundef, types *new_type, node **new_assigns)
+static node *
+LiftArg (node *arg, node *fundef, types *new_type, node **new_assigns)
 {
     char *new_name;
     node *new_vardec;
+    node *new_arg;
     ids *new_ids;
 
     DBUG_ENTER ("LiftArg");
 
-    DBUG_ASSERT ((NODE_TYPE (arg_id) == N_id), "no N_id node found!");
+    if (NODE_TYPE (arg) == N_id) {
+        DBUG_PRINT ("PREC",
+                    ("lifting argument (%s) of function application", ID_NAME (arg)));
 
-    /*
-     * first occur of the var of the LHS
-     */
-    DBUG_PRINT ("PREC",
-                ("lifting argument (%s) of function application", ID_NAME (arg_id)));
+        new_name = TmpVarName (ID_NAME (arg));
+        /* Insert vardec for new var */
+        if (new_type == NULL) {
+            new_type = ID_TYPE (arg);
+        }
+    } else {
+        DBUG_PRINT ("PREC", ("lifting argument (no id) of function application"));
 
-    new_name = TmpVarName (ID_NAME (arg_id));
-    /* Insert vardec for new var */
-    if (new_type == NULL) {
-        new_type = ID_TYPE (arg_id);
+        new_name = TmpVar ();
+        DBUG_ASSERT ((new_type != NULL), "no type found!");
     }
+
     new_vardec = MakeVardec (StringCopy (new_name), DupAllTypes (new_type), NULL);
     fundef = AddVardecs (fundef, new_vardec);
 
     /*
-     * Abstract the given argument:
+     * Abstract the given argument out:
      *   ... = fun( A:n, ...);
      * is transformed into
      *   __A:1 = A:n;
@@ -383,46 +367,57 @@ LiftArg (node *arg_id, node *fundef, types *new_type, node **new_assigns)
      */
     new_ids = MakeIds (new_name, NULL, ST_regular);
     IDS_VARDEC (new_ids) = new_vardec;
-    (*new_assigns) = MakeAssign (MakeLet (DupNode (arg_id), new_ids), (*new_assigns));
+    (*new_assigns) = MakeAssign (MakeLet (arg, new_ids), (*new_assigns));
 
-    ReplaceArg (arg_id, new_name, new_vardec);
+    new_arg = DupIds_Id (new_ids);
 
-    if (RC_IS_ACTIVE (ID_REFCNT (arg_id))) {
-        IDS_REFCNT (new_ids) = ID_REFCNT (arg_id) = 1;
-    } else if (RC_IS_INACTIVE (ID_REFCNT (arg_id))) {
-        IDS_REFCNT (new_ids) = ID_REFCNT (arg_id) = RC_INACTIVE;
+    if (NODE_TYPE (arg) == N_id) {
+        if (RC_IS_ACTIVE (ID_REFCNT (arg))) {
+            IDS_REFCNT (new_ids) = ID_REFCNT (new_arg) = 1;
+        } else if (RC_IS_INACTIVE (ID_REFCNT (new_arg))) {
+            IDS_REFCNT (new_ids) = ID_REFCNT (new_arg) = RC_INACTIVE;
+        } else {
+            DBUG_ASSERT ((0), "illegal RC value found!");
+        }
     } else {
-        DBUG_ASSERT ((0), "illegal RC value found!");
+        IDS_REFCNT (new_ids) = ID_REFCNT (new_arg)
+          = MUST_REFCOUNT (new_type) ? 1 : RC_INACTIVE;
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN (new_arg);
 }
 
 /******************************************************************************
  *
  * Function:
- *   void LiftOrReplaceArg( node *arg_id, node *fundef,
- *                          node *new_id, types *new_type,
- *                          node **new_assigns)
+ *   node *LiftOrReplaceArg( node *arg_id, node *fundef,
+ *                           node *new_id, types *new_type,
+ *                           node **new_assigns)
  *
  * Description:
  *
  *
  ******************************************************************************/
 
-static void
+static node *
 LiftOrReplaceArg (node *arg_id, node *fundef, node *new_id, types *new_type,
                   node **new_assigns)
 {
     DBUG_ENTER ("LiftOrReplaceArg");
 
     if (new_id == NULL) {
-        LiftArg (arg_id, fundef, new_type, new_assigns);
+        arg_id = LiftArg (arg_id, fundef, new_type, new_assigns);
     } else {
-        ReplaceArg (arg_id, ID_NAME (new_id), ID_VARDEC (new_id));
+        /*
+         * temporary var already generated
+         * -> just replace the current arg by 'new_id'
+         */
+        ID_NAME (arg_id) = Free (ID_NAME (arg_id));
+        ID_NAME (arg_id) = StringCopy (ID_NAME (new_id));
+        ID_VARDEC (arg_id) = ID_VARDEC (new_id);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN (arg_id);
 }
 
 /*
@@ -1880,6 +1875,8 @@ PREC2let (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("PREC2let");
 
+    LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
+
     ap = LET_EXPR (arg_node);
     if (NODE_TYPE (ap) == N_ap) {
         fundef = AP_FUNDEF (ap);
@@ -1910,17 +1907,19 @@ PREC2let (node *arg_node, node *arg_info)
             ap_argtab->tag[idx + dots_off] = argtab->tag[idx];
 
 #ifdef TAGGED_ARRAYS
-            actual_cls = GetDataClassFromTypes (IDS_TYPE (ap_ids));
-            formal_cls = GetDataClassFromTypes (rettypes);
-            if (ATG_has_shp[argtab->tag[idx]] && (actual_cls != formal_cls)) {
-                DBUG_PRINT ("PREC",
-                            ("Return value with inappropriate data class found:"));
-                DBUG_PRINT ("PREC",
-                            ("   ... %s ... = %s( ... ), %s instead of %s",
-                             FUNDEF_NAME (fundef), IDS_NAME (ap_ids),
-                             nt_data_string[actual_cls], nt_data_string[formal_cls]));
-                LiftIds (ap_ids, INFO_PREC_FUNDEF (arg_info), rettypes,
-                         &(INFO_PREC2_POST_ASSIGNS (arg_info)));
+            if (TYPES_BASETYPE (rettypes) != T_dots) {
+                actual_cls = GetDataClassFromTypes (IDS_TYPE (ap_ids));
+                formal_cls = GetDataClassFromTypes (rettypes);
+                if (ATG_has_shp[argtab->tag[idx]] && (actual_cls != formal_cls)) {
+                    DBUG_PRINT ("PREC",
+                                ("Return value with inappropriate data class found:"));
+                    DBUG_PRINT ("PREC",
+                                ("   ... %s ... = %s( ... ), %s instead of %s",
+                                 FUNDEF_NAME (fundef), IDS_NAME (ap_ids),
+                                 nt_data_string[actual_cls], nt_data_string[formal_cls]));
+                    LiftIds (ap_ids, INFO_PREC_FUNDEF (arg_info), rettypes,
+                             &(INFO_PREC2_POST_ASSIGNS (arg_info)));
+                }
             }
 #endif
 
@@ -1935,6 +1934,8 @@ PREC2let (node *arg_node, node *arg_info)
         dots_off = 0;
         idx = ap_argtab->size; /* to avoid a CC warning */
         while (ap_exprs != NULL) {
+            bool do_lifting;
+
             DBUG_ASSERT ((args != NULL), "application is inconsistant");
 
             if (dots_off == 0) {
@@ -1947,18 +1948,22 @@ PREC2let (node *arg_node, node *arg_info)
 
 #ifdef TAGGED_ARRAYS
             ap_id = EXPRS_EXPR (ap_exprs);
-            DBUG_ASSERT ((NODE_TYPE (ap_id) == N_id), "no N_id node found!");
 
-            actual_cls = GetDataClassFromTypes (ID_TYPE (ap_id));
-            formal_cls = GetDataClassFromTypes (ARG_TYPE (args));
-            if (ATG_has_shp[argtab->tag[idx]] && (actual_cls != formal_cls)) {
-                DBUG_PRINT ("PREC", ("Argument with inappropriate data class found:"));
-                DBUG_PRINT ("PREC",
-                            ("   ... = %s( ... %s ...), %s instead of %s",
-                             FUNDEF_NAME (fundef), ID_NAME (ap_id),
-                             nt_data_string[actual_cls], nt_data_string[formal_cls]));
-                LiftArg (ap_id, INFO_PREC_FUNDEF (arg_info), ARG_TYPE (args),
-                         &(INFO_PREC2_PRE_ASSIGNS (arg_info)));
+            DBUG_ASSERT ((NODE_TYPE (ap_id) == N_id), "no N_id node found!");
+            if (ARG_BASETYPE (args) != T_dots) {
+                formal_cls = GetDataClassFromTypes (ARG_TYPE (args));
+                actual_cls = GetDataClassFromTypes (ID_TYPE (ap_id));
+                if (ATG_has_shp[argtab->tag[idx]] && (actual_cls != formal_cls)) {
+                    DBUG_PRINT ("PREC",
+                                ("Argument with inappropriate data class found:"));
+                    DBUG_PRINT ("PREC",
+                                ("   ... = %s( ... %s ...), %s instead of %s",
+                                 FUNDEF_NAME (fundef), ID_NAME (ap_id),
+                                 nt_data_string[actual_cls], nt_data_string[formal_cls]));
+                    EXPRS_EXPR (ap_exprs)
+                      = LiftArg (ap_id, INFO_PREC_FUNDEF (arg_info), ARG_TYPE (args),
+                                 &(INFO_PREC2_PRE_ASSIGNS (arg_info)));
+                }
             }
 #endif
 
@@ -1977,8 +1982,28 @@ PREC2let (node *arg_node, node *arg_info)
          * builds merging assignments if needed and stores them in 'arg_info'
          */
         arg_info = MakeMergeAssigns (ap_argtab, arg_info);
-    } else {
-        LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *PREC2ap( node *arg_node, node *arg_info)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+PREC2ap (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PREC2ap");
+
+    if (AP_ARGS (arg_node) != NULL) {
+        AP_ARGS (arg_node) = Trav (AP_ARGS (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -2137,7 +2162,7 @@ PREC3assign (node *arg_node, node *arg_info)
     ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
 
     /*
-     * Newly inserted abstractions are prepanded in front of
+     * Newly inserted assignments are prepanded in front of
      * INFO_PREC3_LASTASSIGN.
      * In order to insert these nodes properly, that pointer has to be returned!
      */
@@ -2204,9 +2229,10 @@ PREC3let (node *arg_node, node *arg_info)
                     /* 2nd argument of F_reshape need not to be flattened! */
                     ((PRF_PRF (let_expr) != F_reshape) || (arg_idx != 1))
                     && (!strcmp (ID_NAME (arg_id), IDS_NAME (let_ids)))) {
-                    LiftOrReplaceArg (EXPRS_EXPR (arg), INFO_PREC_FUNDEF (arg_info),
-                                      new_id, NULL, &(INFO_PREC3_LASTASSIGN (arg_info)));
-                    new_id = EXPRS_EXPR (arg);
+                    new_id
+                      = LiftOrReplaceArg (arg_id, INFO_PREC_FUNDEF (arg_info), new_id,
+                                          NULL, &(INFO_PREC3_LASTASSIGN (arg_info)));
+                    EXPRS_EXPR (arg) = new_id;
                 }
 
                 arg = EXPRS_NEXT (arg);
@@ -2245,10 +2271,12 @@ PREC3let (node *arg_node, node *arg_info)
                                          "illegal tag found!");
 
                             if (!ATG_has_rc[argtab->tag[arg_idx]]) {
-                                LiftOrReplaceArg (arg_id, INFO_PREC_FUNDEF (arg_info),
-                                                  new_id, NULL,
-                                                  &(INFO_PREC3_LASTASSIGN (arg_info)));
-                                new_id = arg_id;
+                                new_id
+                                  = LiftOrReplaceArg (arg_id, INFO_PREC_FUNDEF (arg_info),
+                                                      new_id, NULL,
+                                                      &(INFO_PREC3_LASTASSIGN (
+                                                        arg_info)));
+                                EXPRS_EXPR (arg) = new_id;
                             }
                         }
                     }
