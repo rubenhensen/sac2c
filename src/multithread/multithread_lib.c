@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2004/11/21 14:22:39  skt
+ * uncomment some old stuff to make it run this newast
+ *
  * Revision 3.11  2004/09/28 13:22:48  ktr
  * Removed generatemasks.
  *
@@ -200,27 +203,26 @@ MUTHMeltBlocks (node *first_block, node *second_block)
 /******************************************************************************
  *  see comment above
  ******************************************************************************/
-node *
-MUTHMeltBlocksOnCopies (node *first_block, node *second_block)
+/*node *MUTHMeltBlocksOnCopies (node *first_block, node *second_block)
 {
-    node *result;
-    node *arg_info;
+  node *result;
+  node * arg_info;
 
-    DBUG_ENTER ("MUTHMeltBlocksOnCopies");
+  DBUG_ENTER("MUTHMeltBlocksOnCopies");
 
-    arg_info = MakeInfo ();
-    first_block = DupTree (first_block);
-    arg_info = FreeTree (arg_info);
+  arg_info = MakeInfo();
+  first_block = DupTree( first_block);
+  arg_info = FreeTree( arg_info);
 
-    arg_info = MakeInfo ();
-    second_block = DupTree (second_block);
-    arg_info = FreeTree (arg_info);
+  arg_info = MakeInfo();
+  second_block = DupTree( second_block);
+  arg_info = FreeTree( arg_info);
 
-    result = MUTHMeltBlocks (first_block, second_block);
+  result = MUTHMeltBlocks( first_block, second_block);
 
-    DBUG_RETURN (result);
+  DBUG_RETURN(result);
 }
-
+*/
 /******************************************************************************
  *
  * function:

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2004/11/21 14:22:39  skt
+ * uncomment some old stuff to make it run this newast
+ *
  * Revision 3.9  2004/09/28 13:22:48  ktr
  * Removed generatemasks.
  *
@@ -70,7 +73,7 @@
 
 extern node *MUTHBlocksLastInstruction (node *block);
 extern node *MUTHMeltBlocks (node *first_block, node *second_block);
-extern node *MUTHMeltBlocksOnCopies (node *first_block, node *second_block);
+/*extern node *MUTHMeltBlocksOnCopies (node *first_block, node *second_block);*/
 extern node *MUTHExchangeApplication (node *arg_node, node *new_fundef);
 extern node *MUTHExpandFundefName (node *fundef, char *prefix);
 extern node *MUTHReduceFundefName (node *fundef, int count);
