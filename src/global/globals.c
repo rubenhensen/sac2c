@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2000/12/06 10:06:45  dkr
+ * version incremented to 0.91
+ *
  * Revision 3.2  2000/11/27 21:04:38  cg
  * Added general support for new optimization APL,
  * "array placement"
@@ -162,7 +165,7 @@
  *  Version control
  */
 
-char version_id[] = "v0.9";
+char version_id[] = "v0.91";
 /* version identifier of sac2c */
 
 #if defined(SAC_FOR_SOLARIS_SPARC)
