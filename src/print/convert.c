@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.24  1999/01/25 10:21:17  cg
+ * Bug fixed in Double2String and Float2String: .0 not added after
+ * number in exponential representation.
+ *
  * Revision 1.23  1998/11/09 18:44:41  sbs
  * ...size changed to 266 humble humble....
  *
@@ -140,7 +144,7 @@ Float2String (float val)
     /*
      * 256 chars + "." + "e+1000" + ".0f" + "\0" = 267
      */
-    if (val == floor (val))
+    if ((val == floor (val)) && (val > -1000) && (val < 1000))
         sprintf (tmp_string, "%.256g.0f", val);
     else
         sprintf (tmp_string, "%.256gf", val);
@@ -173,7 +177,7 @@ Double2String (double val)
     /*
      * 256 chars + "." + "e+1000" + ".0" + "\0" = 266
      */
-    if (val == floor (val))
+    if ((val == floor (val)) && (val > -1000) && (val < 1000))
         sprintf (tmp_string, "%.256g.0", val);
     else
         sprintf (tmp_string, "%.256g", val);
