@@ -1,5 +1,8 @@
 <!--
   $Log$
+  Revision 1.80  2004/11/25 19:47:52  sbs
+  default value for N_pragma sons added.
+
   Revision 1.79  2004/11/25 19:09:29  mwe
   InferDFMs added
 
@@ -2843,27 +2846,27 @@
 -->
     <node name="Pragma">
       <sons>
-        <son name="ReadOnly" mandatory="no">
+        <son name="ReadOnly" default="NULL" mandatory="no">
 	  <target>
 	    <node name="Nums" />
 	  </target>
 	</son>
-	<son name="Refcounting" mandatory="no">
+	<son name="Refcounting" default="NULL" mandatory="no">
 	  <target>
 	    <node name="Nums" />
 	  </target>
 	</son>
-	<son name="Effect" mandatory="no">
+	<son name="Effect" default="NULL" mandatory="no">
 	  <target>
 	    <node name="Ids" />
 	  </target>
 	</son>
-	<son name="Touch" mandatory="no">
+	<son name="Touch" default="NULL" mandatory="no">
 	  <target>
 	    <node name="Ids" />
 	  </target>
 	</son>
-	<son name="LinkSign" mandatory="no">
+	<son name="LinkSign" default="NULL" mandatory="no">
 	  <target>
 	    <node name="Ids" />
 	  </target>
