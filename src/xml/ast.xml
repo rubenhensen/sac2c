@@ -1,5 +1,8 @@
 <!--
   $Log$
+  Revision 1.114  2004/11/26 22:59:10  khf
+  added WLI WLF
+
   Revision 1.113  2004/11/26 21:56:32  mwe
   SSALIR added
 
@@ -905,6 +908,31 @@
 	  <node name="Assign" />
 	  <node name="Prf" />
         </travuser>
+      </traversal>
+      <traversal id="WLI" name="With-Loop-Interference" default="sons" include="SSAWLI.h" >
+	<travuser>
+	  <node name="Fundef" />
+	  <node name="Assign" />
+	  <node name="Ap" />
+	  <node name="Id" />
+          <node name="Let" />
+          <node name="Cond" />
+	  <node name="With" />
+	  <node name="Modarray" />
+	  <node name="Part" />
+	  <node name="Generator" />
+          <node name="Code" />
+	</travuser>
+      </traversal>
+     <traversal id="WLF" name="With-Loop-Folding" default="sons" include="SSAWLF.h" >
+	<travuser>
+	  <node name="Fundef" />
+	  <node name="Assign" />
+	  <node name="Id" />
+          <node name="Let" />
+	  <node name="With" />
+          <node name="Code" />
+	</travuser>
       </traversal>
       <traversal id="WLFS" name="With-Loop-Fusion" default="sons" include="WithloopFusion.h" >
 	<travuser>
