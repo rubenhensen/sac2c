@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.19  2004/11/23 18:56:45  skt
+  traversals for multithreading added
+
   Revision 1.18  2004/11/23 17:13:46  khf
   made numparams from N_pragma permanent, added Last in N_sync
   and corrected flag IsFoldable
@@ -392,6 +395,145 @@
       <traverror>
       </traverror>
     </traversal>
+    <traversal id="MUTH" name="Build Multithread (MT3)" default="sons" include="multithread.h">
+      <travuser>
+        <node name="Assign" />
+        <node name="Fundef" />
+        <node name="Module" />
+      </travuser>
+      <travsons>
+      </travsons>
+      <travnone>
+      </travnone>
+      <traverror>
+      </traverror>
+    </traversal>
+    <traversal id="TEM" name="Tag Executionmode" default="sons" include="tag_executionmode.h">
+      <travuser>
+        <node name="Ap" />
+        <node name="Array" />
+        <node name="Assign" />
+        <node name="Let" />
+        <node name="Prf" />
+        <node name="With2" />
+      </travuser>
+      <travsons>
+      </travsons>
+      <travnone>
+      </travnone>
+      <traverror>
+      </traverror>
+    </traversal>
+    <traversal id="CRWIW" name="Create Withinwith Replication" default="sons" include="create_withinwith.h">
+      <travuser>
+        <node name="Ap" />
+        <node name="Assign" />
+        <node name="Fundef" />
+      </travuser>
+      <travsons>
+      </travsons>
+      <travnone>
+      </travnone>
+      <traverror>
+      </traverror>
+    </traversal>
+    <traversal id="PEM" name="Propagate Executionmode" default="sons" include="propagate_executionmode.h">
+      <travuser>
+        <node name="Ap" />
+        <node name="Assign" />
+        <node name="Cond" />
+        <node name="Fundef" />
+        <node name="With2" />
+      </travuser>
+      <travsons>
+      </travsons>
+      <travnone>
+      </travnone>
+      <traverror>
+      </traverror>
+    </traversal>
+    <traversal id="CDFG" name="Create Dataflowgraph" default="sons" include="create_dataflowgraph.h">
+      <travuser>
+        <node name="Assign" />
+        <node name="Block" />
+        <node name="Cond" />
+        <node name="Id" />
+        <node name="Withid" />
+      </travuser>
+      <travsons>
+      </travsons>
+      <travnone>
+      </travnone>
+      <traverror>
+      </traverror>
+    </traversal>
+    <traversal id="ASMRA" name="Assignments Rearrange" default="sons" include="assignments_rearrange.h">
+      <travuser>
+        <node name="Block" />
+      </travuser>
+      <travsons>
+      </travsons>
+      <travnone>
+      </travnone>
+      <traverror>
+      </traverror>
+    </traversal>
+    <traversal id="CRECE" name="Create Cells" default="sons" include="create_cells.h">
+      <travuser>
+        <node name="Assign" />
+        <node name="Block" />
+      </travuser>
+      <travsons>
+      </travsons>
+      <travnone>
+      </travnone>
+      <traverror>
+      </traverror>
+    </traversal>
+    <traversal id="CEGRO" name="Cell Growth" default="sons" include="cell_growth.h">
+      <travuser>
+        <node name="Assign" />
+        <node name="Block" />
+      </travuser>
+      <travsons>
+      </travsons>
+      <travnone>
+      </travnone>
+      <traverror>
+      </traverror>
+    </traversal>
+    <traversal id="REPFUN" name="Replicate Functions" default="sons" include="replicate_functions.h">
+      <travuser>
+        <node name="Ap" />
+        <node name="Assign" />
+        <node name="Ex" />
+        <node name="Fundef" />
+        <node name="Mt" />
+        <node name="St" />
+      </travuser>
+      <travsons>
+      </travsons>
+      <travnone>
+      </travnone>
+      <traverror>
+      </traverror>
+    </traversal>
+    <traversal id="CONCEL" name="Consolidate Cells" default="sons" include="consolidate_cells.h">
+      <travuser>
+        <node name="Ex" />
+        <node name="Fundef" />
+        <node name="Mt" />
+        <node name="St" />
+      </travuser>
+      <travsons>
+      </travsons>
+      <travnone>
+      </travnone>
+      <traverror>
+      </traverror>
+    </traversal>
+
+
    </traversals>
   <nodesets>
     <nodeset name="Expr">
