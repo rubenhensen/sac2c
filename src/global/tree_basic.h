@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.47  1996/01/26 15:29:02  cg
+ * Revision 1.48  1996/02/11 20:19:01  sbs
+ * some minor corrections on stuff concerning N_vinfo,
+ * VARDEC_ACTCHN, VARDEC_COLCHN, ARG_ACTCHN, and ARG_COLCHN added.
+ *
+ * Revision 1.47  1996/01/26  15:29:02  cg
  * added macro ID_MAKEUNIQUE(n)
  *
  * Revision 1.46  1996/01/25  18:39:05  cg
@@ -351,8 +355,8 @@ extern types *MakeType (simpletype basetype, int dim, shpseg *shpseg, char *name
  ***
  ***    int         REFCNT       (refcount -> )
  ***    node*       VARDEC       (typecheck -> )
- ***    node*       DEF          (optimize -> )
- ***    node*       USE          (optimize -> )
+ ***    node*       DEF          (psi-optimize -> )
+ ***    node*       USE          (psi-optimize -> )
  ***    statustype  STATUS       (obj-handling -> compile !!)
  ***/
 
@@ -857,11 +861,14 @@ extern node *MakeFundef (char *name, char *mod, types *types, node *args, node *
  ***
  ***  temporary attributes:
  ***
- ***    int         VARNO                     (optimize -> )
- ***    int         REFCNT                    (refcount -> compile -> )
- ***    char*       TYPESTRING (O)            (precompile -> )
- ***    node*       OBJDEF     (O)            (obj-handling ->
- ***                                          ( -> precompile !!)
+ ***    int         VARNO                        (optimize -> )
+ ***    int         REFCNT                       (refcount -> compile -> )
+ ***    char*       TYPESTRING (O)               (precompile -> )
+ ***    node*       OBJDEF     (O)               (obj-handling ->
+ ***                                             ( -> precompile !!)
+ ***    node*       ACTCHN     (O)  (N_vinfo)    (psi-optimize -> )
+ ***    node*       COLCHN     (O)  (N_vinfo)    (psi-optimize -> )
+ ***    node*       FUNDEF     (O)  (N_fundef)   (psi-optimize -> )
  ***/
 
 /*
@@ -890,6 +897,9 @@ extern node *MakeArg (char *name, types *type, statustype status, statustype att
 #define ARG_REFCNT(n) (n->refcnt)
 #define ARG_TYPESTRING(n) ((char *)n->node[1])
 #define ARG_OBJDEF(n) (n->node[2])
+#define ARG_ACTCHN(n) (n->node[3])
+#define ARG_COLCHN(n) (n->node[4])
+#define ARG_FUNDEF(n) (n->node[5])
 
 /*--------------------------------------------------------------------------*/
 
@@ -936,7 +946,9 @@ extern node *MakeBlock (node *instr, node *vardec);
  ***
  ***  temporary attributes:
  ***
- ***    node        TYPEDEF  (O)  (N_typedef)  (typecheck -> fun_analysis -> )
+ ***    node*       TYPEDEF  (O)  (N_typedef)  (typecheck -> fun_analysis -> )
+ ***    node*       ACTCHN   (O)  (N_vinfo)    (psi-optimize -> )
+ ***    node*       COLCHN   (O)  (N_vinfo)    (psi-optimize -> )
  ***    int         REFCNT                     (refcount -> compile -> )
  ***    int         VARNO                      (optimize -> )
  ***    statustype  ATTRIB                     (typecheck -> uniquecheck -> )
@@ -965,6 +977,8 @@ extern node *MakeVardec (char *name, types *type, node *next);
 #define VARDEC_STATUS(n) (n->info.types->status)
 #define VARDEC_ATTRIB(n) (n->info.types->attrib)
 #define VARDEC_TYPEDEF(n) (n->node[1])
+#define VARDEC_ACTCHN(n) (n->node[2])
+#define VARDEC_COLCHN(n) (n->node[3])
 #define VARDEC_FLAG(n) (n->flag)
 
 /*--------------------------------------------------------------------------*/
@@ -1217,6 +1231,7 @@ extern node *MakeWith (node *gen, node *body);
  ***
  ***    node*  VARDEC                  (typechecker -> )
  ***    long*  MASK[x]                 (optimize -> )
+ ***    node*  USE     (O) (N_vinfo)   (psi-optimize -> )
  ***/
 
 extern node *MakeGenerator (node *left, node *right, char *id);
@@ -1224,6 +1239,7 @@ extern node *MakeGenerator (node *left, node *right, char *id);
 #define GEN_LEFT(n) (n->node[0])
 #define GEN_RIGHT(n) (n->node[1])
 #define GEN_ID(n) (n->info.ids->id)
+#define GEN_USE(n) (n->info.ids->use)
 #define GEN_VARDEC(n) (n->info.ids->node)
 #define GEN_MASK(n, x) (n->mask[x])
 
@@ -1377,15 +1393,17 @@ extern node *MakeArray (node *aelems);
  ***  permanent attributes:
  ***
  ***    useflag  FLAG
- ***    shapes*  SHP   (O)
+ ***    types*   TYPE   (O)
+ ***    node*    VARDEC (O)  (N_vardec)
  ***
  ***/
 
-extern node *MakeVinfo (useflag flag, shapes *shp, node *next);
+extern node *MakeVinfo (useflag flag, types *type, node *next);
 
 #define VINFO_FLAG(n) (n->info.use)
-#define VINFO_SHP(n) ((shapes *)n->node[1])
+#define VINFO_TYPE(n) ((types *)n->node[1])
 #define VINFO_NEXT(n) (n->node[0])
+#define VINFO_VARDEC(n) (n->node[2])
 
 /*--------------------------------------------------------------------------*/
 

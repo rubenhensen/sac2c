@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.15  1996/01/22 14:04:50  asi
+ * Revision 1.16  1996/02/11 20:19:01  sbs
+ * some minor corrections on stuff concerning N_vinfo,
+ * VARDEC_ACTCHN, VARDEC_COLCHN, ARG_ACTCHN, and ARG_COLCHN added.
+ *
+ * Revision 1.15  1996/01/22  14:04:50  asi
  * added MakeId2
  *
  * Revision 1.14  1996/01/05  14:14:10  asi
@@ -473,6 +477,8 @@ MakeArg (char *name, types *type, statustype status, statustype attrib, node *ne
     ARG_STATUS (tmp) = status;
     ARG_ATTRIB (tmp) = attrib;
     ARG_NEXT (tmp) = next;
+    ARG_ACTCHN (tmp) = NULL;
+    ARG_COLCHN (tmp) = NULL;
 
     DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
                              mdb_nodetype[NODE_TYPE (tmp)], tmp));
@@ -850,7 +856,7 @@ MakeArray (node *aelems)
 }
 
 node *
-MakeVinfo (useflag flag, shapes *shp, node *next)
+MakeVinfo (useflag flag, types *type, node *next)
 {
     node *tmp;
     DBUG_ENTER ("MakeVinfo");
@@ -860,8 +866,9 @@ MakeVinfo (useflag flag, shapes *shp, node *next)
     NODE_NNODE (tmp) = 1;
 
     VINFO_FLAG (tmp) = flag;
-    VINFO_SHP (tmp) = shp;
+    VINFO_TYPE (tmp) = type;
     VINFO_NEXT (tmp) = next;
+    VINFO_VARDEC (tmp) = NULL;
 
     DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
                              mdb_nodetype[NODE_TYPE (tmp)], tmp));
