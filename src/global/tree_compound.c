@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.13  1995/10/31 09:40:31  cg
+ * Revision 1.14  1995/11/01 16:25:01  cg
+ * new function AppendIdsChain from tree.c and converted to new macros
+ *
+ * Revision 1.13  1995/10/31  09:40:31  cg
  * bug fixed: free.h now included.
  *
  * Revision 1.12  1995/10/31  08:54:43  cg
@@ -466,6 +469,29 @@ TidyUpNodelist (nodelist *list)
             last = list;
             list = NODELIST_NEXT (list);
         }
+    }
+
+    DBUG_RETURN (first);
+}
+
+/***
+ ***  AppendIdsChain
+ ***/
+
+ids *
+AppendIdsChain (ids *first, ids *second)
+{
+    ids *tmp;
+
+    DBUG_ENTER ("AppendIdsChain");
+
+    if (first == NULL)
+        first = second;
+    else {
+        tmp = first;
+        while (IDS_NEXT (tmp) != NULL)
+            tmp = IDS_NEXT (tmp);
+        IDS_NEXT (tmp) = second;
     }
 
     DBUG_RETURN (first);

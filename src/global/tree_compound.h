@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.12  1995/10/31 08:54:43  cg
+ * Revision 1.13  1995/11/01 16:25:01  cg
+ * new function AppendIdsChain from tree.c and converted to new macros
+ *
+ * Revision 1.12  1995/10/31  08:54:43  cg
  * added new functions FreeNodelist and TidyUpNodelist.
  *
  * Revision 1.11  1995/10/26  16:01:44  cg
@@ -214,6 +217,24 @@ extern shpseg *MergeShpseg (shpseg *first, int dim1, shpseg *second, int dim2);
 /***
  ***  IDS :
  ***/
+
+/*
+ *
+ *  functionname  : AppendIdsChain
+ *  arguments     : 1) first ids chain
+ *                  2) second ids chain to be appended after first one
+ *  description   : follows first chain to it's end and
+ *                  appends second.
+ *  global vars   : ---
+ *  internal funs : ---
+ *  external funs : ---
+ *  macros        : DBUG, TREE
+ *
+ *  remarks       :
+ *
+ */
+
+extern ids *AppendIdsChain (ids *first, ids *second);
 
 /*--------------------------------------------------------------------------*/
 
