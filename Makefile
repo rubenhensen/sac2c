@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.69  1998/04/02 16:07:16  dkr
+# added concregs.o
+#
 # Revision 1.68  1998/03/24 11:47:10  cg
 # compilation of compile/profile.c removed
 # sources of libsac moved to new directory runtime
@@ -276,8 +279,9 @@ MODULES= src/modules/filemgr.o src/modules/import.o src/modules/writesib.o  \
 OBJECTS= src/objects/objinit.o src/objects/objects.o \
          src/objects/uniquecheck.o src/objects/rmvoidfun.o
 REFCOUNT= src/refcount/refcount.o
-COMPILE= src/compile/compile.o src/compile/icm2c.o src/compile/precompile.o \
-         src/compile/gen_startup_code.o src/compile/Old2NewWith.o
+COMPILE= src/compile/concregs.o src/compile/compile.o src/compile/icm2c.o \
+         src/compile/precompile.o src/compile/gen_startup_code.o \
+         src/compile/Old2NewWith.o
 
 OBJ=$(GLOBAL) $(SCANP) $(PRINT) $(FLATTEN) $(TYPECHECK) $(OPTIMIZE) \
     $(MODULES) $(OBJECTS) $(REFCOUNT) $(COMPILE) $(PSIOPT)
