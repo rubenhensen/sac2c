@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.41  2001/04/26 13:10:16  dkr
+ * CountIds() added
+ *
  * Revision 3.40  2001/04/26 12:18:42  dkr
  * GetExprsLength() renamed into CountExprs()
  *
@@ -247,6 +250,7 @@ extern bool IsNonUniqueHidden (types *type);
 #define IDS_PADDED(n) VARDEC_OR_ARG_PADDED (IDS_VARDEC (n))
 
 extern ids *AppendIds (ids *chain, ids *item);
+extern int CountIds (ids *ids_arg);
 
 /******************************************************************************
  *
