@@ -4,6 +4,9 @@
 /*
  *
  * $Log$
+ * Revision 3.74  2002/10/28 10:32:28  sbs
+ * secret insertion of EXTERN_MOD_NAME in case of readsib improved.
+ *
  * Revision 3.73  2002/10/28 09:10:07  dkr
  * void arg added
  *
@@ -1183,7 +1186,12 @@ exprs: expr COMMA exprs          { $$ = MakeExprs( $1, $3);   }
      | expr                      { $$ = MakeExprs( $1, NULL); }
      ;
 
-expr: fun_id                     { $$ = MakeIdFromIds( $1); }
+expr: fun_id                     { if( (file_kind == F_sib) && (sbs == 1)
+                                       && (strcmp( IDS_MOD( $1), EXTERN_MOD_NAME) == 0)) {
+                                     IDS_MOD( $1) = NULL;
+                                   }
+                                   $$ = MakeIdFromIds( $1);
+                                 }
     | DOT                        { $$ = MakeDot( 1);        }
     | DOT DOT DOT                { $$ = MakeDot( 3);        }
     | NUM                        { $$ = MakeNum( $1);       }
@@ -1488,6 +1496,9 @@ fun_ids: fun_id COMMA fun_ids
 
 fun_id: local_fun_id
         { $$ = $1;
+          if( (file_kind == F_sib) && (sbs == 1) ) {
+            IDS_MOD( $$) = EXTERN_MOD_NAME;
+          }
         }
       | id COLON local_fun_id
         { $$ = $3;
@@ -1583,6 +1594,11 @@ types: type COMMA types
 
 type: localtype
       { $$ = $1;
+        if( (file_kind == F_sib) && (sbs == 1) && (TYPES_BASETYPE( $1) == T_user)) {
+          if( TYPES_MOD( $1) == NULL) {
+            TYPES_MOD( $1) = EXTERN_MOD_NAME;
+          }
+        }
       }
     | id COLON localtype
       { $$ = $3;
@@ -2252,7 +2268,7 @@ sibtypes: sibtype sibtypes
         ;
 
 sibtype: sibevclass TYPEDEF type id SEMIC sibpragmas
-         { $$ = MakeTypedef( $4, NULL, $3, $1, NULL);
+         { $$ = MakeTypedef( $4, ( (sbs == 1) ? EXTERN_MOD_NAME: NULL), $3, $1, NULL);
            TYPEDEF_STATUS( $$) = sib_imported_status;
            TYPEDEF_PRAGMA( $$) = $6;
 
@@ -2276,7 +2292,7 @@ sibtype: sibevclass TYPEDEF type id SEMIC sibpragmas
                        ItemName( $$)));
          }
        | sibevclass TYPEDEF IMPLICIT id SEMIC sibpragmas
-         { $$ = MakeTypedef( $4, NULL,
+         { $$ = MakeTypedef( $4, ( (sbs == 1) ? EXTERN_MOD_NAME: NULL),
                              MakeTypes1( T_hidden),
                              $1, NULL);
            TYPEDEF_STATUS( $$) = sib_imported_status;
@@ -2804,9 +2820,9 @@ types *Exprs2ShpInfo( types *types, node *exprs)
     if( nt == N_id) {
       name = ID_NAME( EXPRS_EXPR1( exprs));
       mod = ID_MOD( EXPRS_EXPR1( exprs));
-      if( (strcmp( name, "*") == 0) && (mod == NULL) ) {
+      if( (strcmp( name, "*") == 0) && (( file_kind == F_sib) || (mod == NULL)) ) {
         TYPES_DIM( types) = ARRAY_OR_SCALAR;
-      } else if( (strcmp( name, "+") == 0) && (mod == NULL) ) {
+      } else if( (strcmp( name, "+") == 0) && (( file_kind == F_sib) || (mod == NULL)) ) {
         TYPES_DIM( types) = UNKNOWN_SHAPE;
       } else {
         yyerror("illegal shape specification");
