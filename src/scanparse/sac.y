@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.35  1994/12/21 11:45:16  hw
+ * Revision 1.36  1994/12/21 13:15:37  sbs
+ * for fundec nnode decremented (1/0)
+ *
+ * Revision 1.35  1994/12/21  11:45:16  hw
  * added DBUG_PRINT in simpletype
  * changed N_typedef : now the name of the defined type is put in info.types->id
  *
@@ -350,7 +353,7 @@ fundec: types ID BRACKET_L args BRACKET_R SEMIC
           { $$=MakeNode(N_fundef);
             $$->node[0]=NULL;	/* there is no function body here! */
             $$->node[2]=$4;	/* argument declarations */
-            $$->nnode=2;
+            $$->nnode=1;
             $$->info.types=$1;
             $$->info.types->id=$2; /* function name */
 
@@ -362,7 +365,7 @@ fundec: types ID BRACKET_L args BRACKET_R SEMIC
 	| types ID BRACKET_L BRACKET_R SEMIC
           { $$=MakeNode(N_fundef);
             $$->node[0]=NULL;   /* there is no function body here! */
-            $$->nnode=1;
+            $$->nnode=0;
             $$->info.types=$1;
             $$->info.types->id=$2; /* function name */
 
