@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.74  2004/11/29 15:05:30  sah
+ * minor change.
+ *
  * Revision 3.73  2004/11/24 20:23:57  sah
  * COMPILES.
  *
@@ -303,6 +306,7 @@ FREEdoFreeNode (node *free_node)
     DBUG_ENTER ("FREEfreeNode");
 
     arg_info = MakeInfo ();
+
     INFO_FREE_FLAG (arg_info) = free_node;
 
     TRAVpush (TR_free);
@@ -310,6 +314,8 @@ FREEdoFreeNode (node *free_node)
     free_node = TRAVdo (free_node, arg_info);
 
     TRAVpop ();
+
+    arg_info = FreeInfo (arg_info);
 
     DBUG_RETURN (free_node);
 }
