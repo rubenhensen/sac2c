@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.35  2001/03/02 12:03:49  nmw
+ * INFO_SSADCR_ASSIGN added (for restoring FUNDEF_EXT_ASSIGN)
+ *
  * Revision 3.34  2001/02/28 16:01:48  nmw
  * INFO_SSADCR_LET added
  *
@@ -2316,6 +2319,7 @@ extern node *MakeAvis (node *vardecOrArg);
  ***    int        RESCOUNT          (counter when traversing the results)
  ***    int        RESNEEDED         (counter for needed results of a fun_ap)
  ***    node*      LET               (actual let node)
+ ***    node*      ASSIGN            (actual assign node)
  ***
  *** remarks:
  ***    N_info is used in many other phases without access macros :((
@@ -2728,6 +2732,7 @@ extern node *MakeInfo ();
 #define INFO_SSADCR_RESCOUNT(n) (n->counter)
 #define INFO_SSADCR_RESNEEDED(n) (n->refcnt)
 #define INFO_SSADCR_LET(n) (n->node[2])
+#define INFO_SSADCR_ASSIGN(n) (n->node[3])
 
 /*--------------------------------------------------------------------------*/
 
