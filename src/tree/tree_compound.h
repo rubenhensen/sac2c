@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2001/01/19 11:54:43  dkr
+ * signature of NameOrVal_MakeNode modified
+ *
  * Revision 3.9  2001/01/17 14:17:27  dkr
  * functions NameOrVal_... and NodeOrInt_... added
  *
@@ -1766,7 +1769,7 @@ extern node *MakeWLsegX (int dims, int full_range, node *contents, node *next);
 extern void NodeOrInt_GetNameOrVal (char **ret_name, int *ret_val, nodetype nt,
                                     void *node_or_int);
 
-extern node *NameOrVal_MakeNode (char *name, int val);
+extern node *NameOrVal_MakeNode (char *name, int val, void *node_or_int);
 extern node *NodeOrInt_MakeNode (nodetype nt, void *node_or_int);
 
 extern bool NameOrVal_Eq (char *name1, int val1, char *name2, int val2);
