@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2004/07/31 12:46:07  sah
+ * modified abstract datatype from void* pointers
+ * to abstract structures
+ *
  * Revision 3.6  2003/04/14 15:09:35  sbs
  * since sizeof returns size_t rather than int comparisons to int values
  * require casting!
@@ -133,14 +137,14 @@ static unsigned int *access_mask_table = NULL;
  * definition of abstract data types
  */
 
-typedef struct {
+typedef struct MASK_BASE_T {
     int num_ids;
     int num_bitfields;
     char **ids;
     node **decls;
 } mask_base_t;
 
-typedef struct {
+typedef struct MASK_T {
     int num_bitfields;
     unsigned int *bitfield;
     mask_base_t *mask_base;

@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 3.2  2004/07/31 12:46:07  sah
+ * modified abstract datatype from void* pointers
+ * to abstract structures
+ *
  * Revision 3.1  2000/11/20 18:03:16  sacbase
  * new release made
  *
@@ -152,8 +156,8 @@
  * abstract data types
  */
 
-typedef void *DFMmask_base_t;
-typedef void *DFMmask_t;
+typedef struct MASK_BASE_T *DFMmask_base_t;
+typedef struct MASK_T *DFMmask_t;
 
 /*
  * function declarations
