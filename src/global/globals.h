@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  1997/10/29 14:34:53  srs
+ * added more counters for malloc statistics
+ *
  * Revision 1.13  1997/10/09 13:54:12  srs
  * counter for memory allocation
  *
@@ -120,5 +123,7 @@ extern int function_counter;
 extern deps *dependencies;
 
 extern unsigned int total_allocated_mem;
+extern unsigned int current_allocated_mem;
+extern unsigned int max_allocated_mem;
 
 #endif /* _sac_globals_h */
