@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.86  2002/06/02 21:49:41  dkr
+ * ID_NT_TAG modified
+ *
  * Revision 3.85  2002/05/31 17:23:21  dkr
  * PrintNT() moved from NameTuples.c to print.c
  *
@@ -593,30 +596,6 @@ TSIprintInfo (node *arg_node, node *arg_info)
 }
 
 #endif /* ! DBUG_OFF */
-
-/******************************************************************************
- *
- * Function:
- *   void PrintNT( char *name, types *type)
- *
- * Description:
- *   Prints name tuples.
- *
- ******************************************************************************/
-
-static void
-PrintNT (char *name, types *type)
-{
-    DBUG_ENTER ("PrintNT");
-
-    DBUG_ASSERT ((type != NULL), "No type information found!");
-
-    fprintf (outfile, (compiler_phase < PH_compile) ? "%s__%s_%s" : "(%s, (%s,(%s,)))",
-             name, nt_class_string[GetClassFromTypes (type)],
-             nt_unq_string[GetUnqFromTypes (type)]);
-
-    DBUG_VOID_RETURN;
-}
 
 /******************************************************************************
  *
@@ -2350,29 +2329,14 @@ PrintExprs (node *arg_node, node *arg_info)
 node *
 PrintId (node *arg_node, node *arg_info)
 {
-    bool print_nt = FALSE;
-
     DBUG_ENTER ("PrintId");
 
     if ((ID_ATTRIB (arg_node) == ST_global) && (ID_MOD (arg_node) != NULL)) {
         fprintf (outfile, "%s:", ID_MOD (arg_node));
     }
 
-#if TAGGED_ARRAYS
-    if (ID_NT_TAG (arg_node) != NULL) {
-        DBUG_ASSERT (((NODE_TYPE (ID_NT_TAG (arg_node)) == N_vardec)
-                      || (NODE_TYPE (ID_NT_TAG (arg_node)) == N_arg)),
-                     "ID_NT_TAG is neither N_vardec nor N_arg node!");
-
-        print_nt = TRUE;
-    }
-#endif
-
-    if (print_nt) {
-        PrintNT (ID_NAME (arg_node), VARDEC_OR_ARG_TYPE (ID_NT_TAG (arg_node)));
-    } else {
-        fprintf (outfile, "%s", ID_NAME (arg_node));
-    }
+    fprintf (outfile, "%s",
+             (ID_NT_TAG (arg_node) != NULL) ? ID_NT_TAG (arg_node) : ID_NAME (arg_node));
 
     PrintStatus (ID_ATTRIB (arg_node), FALSE);
     PrintStatus (ID_STATUS (arg_node), FALSE);

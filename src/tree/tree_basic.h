@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.121  2002/06/02 21:46:48  dkr
+ * ID_NT_TAG modified
+ *
  * Revision 3.120  2002/05/31 14:55:45  sbs
  * several attributes for fundef nodes added.
  *
@@ -1660,7 +1663,7 @@ extern node *MakeVinfo (useflag flag, types *type, node *next, node *dollar);
  ***    int         ISCONST                     (flatten -> )
  ***    int         NUM
  ***
- ***    node*       NT_TAG    (N_vardec/N_arg)  (compile -> )
+ ***    nt_tag_t*   NT_TAG                      (compile -> )
  ***
  ***
  ***  remarks:
@@ -1722,7 +1725,7 @@ extern node *MakeId (char *name, char *mod, statustype status);
 
 extern node *MakeId_Copy (char *str);
 
-extern node *MakeId_Copy_NT (node *vardec);
+extern node *MakeId_Copy_NT (char *str, types *type);
 
 extern node *MakeId_Num (int val);
 
@@ -1739,7 +1742,7 @@ extern node *MakeId_Num (int val);
 #define ID_NAIVE_REFCNT(n) (IDS_NAIVE_REFCNT (ID_IDS (n)))
 #define ID_UNQCONV(n) (*((unqconv_t *)(&(n->node[4])))) /* needed for cc */
 #define ID_WL(n) (n->node[0])
-#define ID_NT_TAG(n) (n->node[5])
+#define ID_NT_TAG(n) ((char *)(n->node[5]))
 
 #define ID_VECLEN(n) (n->counter)
 #define ID_VECTYPE(n) ((simpletype) (n->int_data))

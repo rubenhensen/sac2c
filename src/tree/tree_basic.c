@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.51  2002/06/02 21:46:48  dkr
+ * ID_NT_TAG modified
+ *
  * Revision 3.50  2002/04/12 13:57:06  sbs
  * FUNDEF_TYPE added
  *
@@ -82,6 +85,7 @@
 #include "my_debug.h"
 #include "free.h"
 #include "internal_lib.h"
+#include "NameTuplesUtils.h"
 #include "refcount.h"
 
 /*--------------------------------------------------------------------------*/
@@ -1061,16 +1065,14 @@ MakeId_Copy (char *str)
 /*--------------------------------------------------------------------------*/
 
 node *
-MakeId_Copy_NT (node *vardec)
+MakeId_Copy_NT (char *str, types *type)
 {
     node *result;
 
     DBUG_ENTER ("MakeId_Copy");
 
-    DBUG_ASSERT ((vardec != NULL), "no vardec found!");
-
-    result = MakeId_Copy (VARDEC_OR_ARG_NAME (vardec));
-    ID_NT_TAG (result) = vardec;
+    result = MakeId_Copy (str);
+    ID_NT_TAG (result) = CreateNtTag (str, type);
 
     DBUG_RETURN (result);
 }

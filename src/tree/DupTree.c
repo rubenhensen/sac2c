@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.61  2002/06/02 21:47:23  dkr
+ * ID_NT_TAG modified
+ *
  * Revision 3.60  2002/04/09 16:39:20  dkr
  * okay... *now* DupFundef() should work correctly $%&-(
  *
@@ -110,6 +113,7 @@
 #include "dbug.h"
 
 #include "DupTree.h"
+#include "NameTuplesUtils.h"
 #include "DataFlowMask.h"
 #include "DataFlowMaskUtils.h"
 #include "LookUpTable.h"
@@ -726,6 +730,10 @@ DupId (node *arg_node, node *arg_info)
                           ID_CONSTVEC (arg_node));
     } else {
         ID_CONSTVEC (new_node) = NULL;
+    }
+
+    if (ID_NT_TAG (arg_node) != NULL) {
+        ID_NT_TAG (new_node) = StringCopy (ID_NT_TAG (arg_node));
     }
 
     CopyCommonNodeData (new_node, arg_node);
@@ -2675,8 +2683,8 @@ DupIds_Id_NT (ids *arg_ids)
 
     new_id = DupIds_Id (arg_ids);
 
-    DBUG_ASSERT ((IDS_VARDEC (arg_ids) != NULL), "NT_TAG: no vardec found!");
-    ID_NT_TAG (new_id) = IDS_VARDEC (arg_ids);
+    DBUG_ASSERT ((IDS_TYPE (arg_ids) != NULL), "NT_TAG: no type found!");
+    ID_NT_TAG (new_id) = CreateNtTag (IDS_NAME (arg_ids), IDS_TYPE (arg_ids));
 
     DBUG_RETURN (new_id);
 }
@@ -2699,10 +2707,11 @@ DupId_NT (node *arg_id)
 
     DBUG_ENTER ("DupId_NT");
 
+    DBUG_ASSERT ((NODE_TYPE (arg_id) == N_id), "DupId_NT: no N_id node found!");
     new_id = DupNode (arg_id);
 
-    DBUG_ASSERT ((ID_VARDEC (arg_id) != NULL), "NT_TAG: no vardec found!");
-    ID_NT_TAG (new_id) = ID_VARDEC (arg_id);
+    DBUG_ASSERT ((ID_TYPE (arg_id) != NULL), "NT_TAG: no type found!");
+    ID_NT_TAG (new_id) = CreateNtTag (ID_NAME (arg_id), ID_TYPE (arg_id));
 
     DBUG_RETURN (new_id);
 }
