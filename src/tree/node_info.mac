@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.220  2004/10/22 12:13:12  ktr
+ * Removed EMRCOfundef
+ *
  * Revision 3.219  2004/10/22 09:01:55  sah
  * added annotatenamespace traversal.
  *
@@ -1550,7 +1553,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, SBTNum, TravSons, T
        TravSons, TravSons, TravSons, SPfundef, TSfundef, CVPfundef, WLFSfundef,
 
        TravSons, TravSons, PEMfundef, EMALfundef, TravSons, TravSons, TravSons, TravSons,
-       TravSons, EMRCOfundef, EMFRCfundef, EMAAfundef, EXPFundef, TravSons, TravSons,
+       TravSons, TravSons, EMFRCfundef, EMAAfundef, EXPFundef, TravSons, TravSons,
        ANSFundef, TravSons, TravSons, TravSons, TravSons, 3),
 
   NIF (N_arg, "N_arg", TravSons, FltnArgs, PrintArg, TravSons, SBTArg, TravSons, TravSons,
