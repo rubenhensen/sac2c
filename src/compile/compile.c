@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.13  1999/06/17 09:11:39  jhs
+ * Prepared some changes to ICM constructions part of concurrent
+ * compileing.
+ *
  * Revision 2.12  1999/06/03 13:11:01  jhs
  * Changed parameters for ICMCompileMT_CONTINUE. Vaaribalenames for master-worker
  * exchange are handed over now.
@@ -6025,6 +6029,67 @@ COMPWith (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
+ *   char *strcatauto(char *first, char* second)
+ *
+ * description
+ *   Reserves new memory for the concatinated string first + second,
+ *   and returns the concatination. Does not free any memory used by
+ *   first or second.
+ *
+ ******************************************************************************/
+char *
+strcatauto (char *first, char *second)
+{
+    char *result;
+
+    DBUG_ENTER ("strcatauto");
+
+    result = malloc (strlen (first) + strlen (second) + 1);
+
+    strcpy (result, first);
+    strcat (result, second);
+
+    DBUG_RETURN (result);
+}
+
+node *
+BuildParamsByDFM (DFMmask_t *mask, char *tag, int *num_args, node *icm_args)
+{
+    node *vardec;
+    char *rc_tag, *this_tag;
+
+    DBUG_ENTER ("BuildParamsByDFM");
+
+    rc_tag = strcatauto (tag, "_rc");
+
+    vardec = DFMGetMaskEntryDeclSet (mask);
+    while (vardec != NULL) {
+        if (VARDEC_OR_ARG_REFCNT (vardec) >= 0) {
+            this_tag = rc_tag;
+        } else {
+            this_tag = tag;
+        }
+        icm_args
+          = MakeExprs (MakeId (StringCopy (tag), NULL, ST_regular),
+                       MakeExprs (MakeId (MakeTypeString (VARDEC_OR_ARG_TYPE (vardec)),
+                                          NULL, ST_regular),
+                                  MakeExprs (MakeId (StringCopy (
+                                                       VARDEC_OR_ARG_NAME (vardec)),
+                                                     NULL, ST_regular),
+                                             icm_args)));
+        num_args++;
+
+        vardec = DFMGetMaskEntryDeclSet (NULL);
+    }
+
+    free (rc_tag);
+
+    DBUG_RETURN (icm_args);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   node *COMPSpmd( node *arg_node, node *arg_info)
  *
  * description:
@@ -6097,78 +6162,12 @@ COMPSpmd (node *arg_node, node *arg_info)
      * Now, build up the arguments for MT_SPMD_SETUP ICM.
      */
 
-    icm_args = NULL;
     num_args = 0;
+    icm_args = NULL;
 
-    /*
-     * in-params
-     */
-    vardec = DFMGetMaskEntryDeclSet (SPMD_IN (arg_node));
-    while (vardec != NULL) {
-        if (VARDEC_OR_ARG_REFCNT (vardec) >= 0) {
-            tag = "in_rc";
-        } else {
-            tag = "in";
-        }
-        icm_args
-          = MakeExprs (MakeId (StringCopy (tag), NULL, ST_regular),
-                       MakeExprs (MakeId (MakeTypeString (VARDEC_OR_ARG_TYPE (vardec)),
-                                          NULL, ST_regular),
-                                  MakeExprs (MakeId (StringCopy (
-                                                       VARDEC_OR_ARG_NAME (vardec)),
-                                                     NULL, ST_regular),
-                                             icm_args)));
-        num_args++;
-
-        vardec = DFMGetMaskEntryDeclSet (NULL);
-    }
-
-    /*
-     * inout-params
-     */
-
-    vardec = DFMGetMaskEntryDeclSet (SPMD_INOUT (arg_node));
-    while (vardec != NULL) {
-        if (VARDEC_OR_ARG_REFCNT (vardec) >= 0) {
-            tag = "inout_rc";
-        } else {
-            tag = "inout";
-        }
-        icm_args
-          = MakeExprs (MakeId (StringCopy (tag), NULL, ST_regular),
-                       MakeExprs (MakeId (MakeTypeString (VARDEC_OR_ARG_TYPE (vardec)),
-                                          NULL, ST_regular),
-                                  MakeExprs (MakeId (StringCopy (
-                                                       VARDEC_OR_ARG_NAME (vardec)),
-                                                     NULL, ST_regular),
-                                             icm_args)));
-        num_args++;
-
-        vardec = DFMGetMaskEntryDeclSet (NULL);
-    }
-
-    /*
-     * out-params
-     */
-    vardec = DFMGetMaskEntryDeclSet (SPMD_OUT (arg_node));
-    while (vardec != NULL) {
-        if (VARDEC_OR_ARG_REFCNT (vardec) >= 0) {
-            tag = "out_rc";
-        } else {
-            tag = "out";
-        }
-        icm_args
-          = MakeExprs (MakeId (StringCopy (tag), NULL, ST_regular),
-                       MakeExprs (MakeId (MakeTypeString (VARDEC_OR_ARG_TYPE (vardec)),
-                                          NULL, ST_regular),
-                                  MakeExprs (MakeId (StringCopy (
-                                                       VARDEC_OR_ARG_NAME (vardec)),
-                                                     NULL, ST_regular),
-                                             icm_args)));
-        num_args++;
-
-        vardec = DFMGetMaskEntryDeclSet (NULL);
-    }
+    icm_args = BuildParamsByDFM (SPMD_IN (arg_node), "in", &num_args, icm_args);
+    icm_args = BuildParamsByDFM (SPMD_OUT (arg_node), "out", &num_args, icm_args);
+    icm_args = BuildParamsByDFM (SPMD_SHARED (arg_node), "shared", &num_args, icm_args);
 
     icm_args = MakeExprs (MakeId (StringCopy (FUNDEF_NAME (SPMD_FUNDEF (arg_node))), NULL,
                                   ST_regular),
