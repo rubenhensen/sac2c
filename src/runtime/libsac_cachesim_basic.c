@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.11  1999/06/03 13:40:36  her
+ * added the line "self & cross int." to the output of SAC_CS_ShowResults.
+ *
  * Revision 2.10  1999/05/20 14:16:29  cg
  * All simulation parameters may now be set dynamically, including
  * global/blocked simulation.
@@ -846,7 +849,7 @@ void
 SAC_CS_ShowResults (void)
 {
     int i, digits;
-    long unsigned int accesses;
+    long unsigned int accesses, both;
     float hit_ratio;
 
     fprintf (stderr,
@@ -883,10 +886,20 @@ SAC_CS_ShowResults (void)
                     SAC_CS_miss[i] = 1;
                 }
 
+                /*
+                 * A self- and cross interference (for one access) will be counted
+                 * in SAC_CS_self and also in SAC_CS_cross! The following computations
+                 * correct this!
+                 */
+                both = SAC_CS_self[i] + SAC_CS_cross[i] + SAC_CS_cold[i] - SAC_CS_miss[i];
+                SAC_CS_self[i] -= both;
+                SAC_CS_cross[i] -= both;
+
                 fprintf (stderr,
                          "  misses:  cold start:          %*lu  (%5.1f%%)\n"
                          "           cross interference:  %*lu  (%5.1f%%)\n"
                          "           self interference:   %*lu  (%5.1f%%)\n"
+                         "           self & cross int.:   %*lu  (%5.1f%%)\n"
                          "           invalidation:        %*lu  (%5.1f%%)\n",
                          digits, SAC_CS_cold[i],
                          ((float)SAC_CS_cold[i] / (float)SAC_CS_miss[i]) * 100.0, digits,
@@ -894,6 +907,7 @@ SAC_CS_ShowResults (void)
                          ((float)SAC_CS_cross[i] / (float)SAC_CS_miss[i]) * 100.0, digits,
                          SAC_CS_self[i],
                          ((float)SAC_CS_self[i] / (float)SAC_CS_miss[i]) * 100.0, digits,
+                         both, ((float)both / (float)SAC_CS_miss[i]) * 100.0, digits,
                          SAC_CS_invalid[i],
                          ((float)SAC_CS_invalid[i] / (float)SAC_CS_miss[i]) * 100.0);
             } /* if */
