@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.29  1998/06/18 13:28:22  cg
+# added ../concurrent as include directory
+#
 # Revision 1.28  1998/05/21 09:51:51  dkr
 # make deps done
 #
@@ -84,7 +87,7 @@ CCFLAGS   := -ansi -Wall -g
 CFLAGS    := -D__EXTENSIONS__
 
 
-INCS=-I../global -I../../inc -I../optimize -I../compile -I../modules
+INCS=-I../global -I../../inc -I../optimize -I../compile -I../modules -I../concurrent
 
 all: print.o convert.o
 
