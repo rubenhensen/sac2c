@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2000/03/31 14:11:20  dkr
+ * bug in FreeOneAccess identified
+ *
  * Revision 1.4  2000/03/29 16:09:54  jhs
  * FreeST and FreeMT added.
  *
@@ -497,18 +500,30 @@ FreeOneAccess (access_t *fr)
     DBUG_ENTER ("FreeOneAccess");
 
     if (fr != NULL) {
-        DBUG_PRINT ("FREE",
-                    ("Removing Access: psi(%s, %s)", VARDEC_OR_ARG_NAME (ACCESS_IV (fr)),
-                     VARDEC_OR_ARG_NAME (ACCESS_ARRAY (fr))));
+#if 0
+    DBUG_ASSERT( ((NODE_TYPE( ACCESS_IV( fr)) == N_vardec) ||
+                  (NODE_TYPE( ACCESS_IV( fr)) == N_arg)),
+                 "ACCESS_IV is neither a N_vardec- nor a N_arg-node!");
 
-        tmp = fr;
-        fr = ACCESS_NEXT (fr);
+    DBUG_ASSERT( ((NODE_TYPE( ACCESS_ARRAY( fr)) == N_vardec) ||
+                  (NODE_TYPE( ACCESS_ARRAY( fr)) == N_arg)),
+                 "ACCESS_ARRAY is neither a N_vardec- nor a N_arg-node!");
 
-        if (ACCESS_OFFSET (tmp) != NULL) {
-            ACCESS_OFFSET (tmp) = FreeShpseg (ACCESS_OFFSET (tmp));
-        }
+    DBUG_PRINT("FREE",("Removing Access: psi(%s, %s)", 
+                       VARDEC_OR_ARG_NAME( ACCESS_IV( fr)),
+                       VARDEC_OR_ARG_NAME( ACCESS_ARRAY( fr))));
 
-        FREE (tmp);
+    tmp = fr;
+    fr = ACCESS_NEXT( fr);
+    
+    if (ACCESS_OFFSET( tmp) != NULL) {
+      ACCESS_OFFSET( tmp) = FreeShpseg( ACCESS_OFFSET( tmp));
+    }
+    
+    FREE( tmp);
+#else
+        fr = NULL;
+#endif
     }
 
     DBUG_RETURN (fr);
