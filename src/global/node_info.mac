@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.206  1998/05/12 11:26:08  dkr
+ * added SPMDLiftLet, SPMDLiftNwithid
+ *
  * Revision 1.205  1998/05/11 13:43:21  dkr
  * added RCicm
  *
@@ -816,7 +819,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        FreeLet, CFlet, RClet, COMPLet, TravSons, DupId, TravSons, UNRlet, TravSons,
        IdxLet, UNSlet, WLIlet, TravSons, PrintLet, OBJlet, TravSons, TravSons, TravSons,
        TravSons, TravSons, UNQlet, TravSons, PRECLet, TravSons, TravSons, WLTlet,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, SPMDLiftLet, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 1),
 
   NIF (N_prf, "N_prf", TravSons, FltnPrf, PrintPrf, TravSons, TravSons, TravSons,
@@ -1026,8 +1029,8 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        DupNwithid, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        PrintNwithid, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, 0),
+       TravSons, TravSons, SPMDLiftNwithid, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, 0),
 
   NIF (N_Ngenerator, "N_Ngenerator", TravSons, FltnNgenerator, NoTrav, TravSons, TravSons,
        TravSons, TravSons, FreeNGenerator, TravSons, RCNgen, TravSons, TravSons, DupNgen,
