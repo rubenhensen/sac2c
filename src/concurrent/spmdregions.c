@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.20  1998/05/12 12:37:00  dkr
+ * removed SPMD-funs (temporary)
+ *
  * Revision 1.19  1998/05/12 12:21:43  dkr
  * added SPMDLiftNwithid, SPMDLiftLet, SPMDLiftIds
  *
@@ -404,15 +407,18 @@ SPMDLiftSpmd (node *arg_node, node *arg_info)
     body = Trav (body, arg_info);
     INFO_SPMD_FUNDEF (arg_info) = fundef;
 
-    /*
-     * insert SPMD-function into fundef-chain of modul
-     */
-    if (FUNDEF_NEXT (fundef) != NULL) {
-        FUNDEF_NEXT (new_fundef) = FUNDEF_NEXT (fundef);
-        FUNDEF_NEXT (fundef) = new_fundef;
-    } else {
-        FUNDEF_NEXT (fundef) = new_fundef;
-    }
+#if 0
+  /*
+   * insert SPMD-function into fundef-chain of modul
+   */
+  if (FUNDEF_NEXT( fundef) != NULL) {
+    FUNDEF_NEXT( new_fundef) = FUNDEF_NEXT( fundef);
+    FUNDEF_NEXT( fundef) = new_fundef;
+  }
+  else {
+    FUNDEF_NEXT( fundef) = new_fundef;
+  }
+#endif
 
     /*
      * build fundef for this spmd region
