@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.20  1998/06/03 14:32:41  cg
+ * implementation streamlined
+ *
  * Revision 1.19  1997/04/24 16:43:16  sbs
  * converted malloc to Malloc
  *
@@ -72,10 +75,10 @@
 #include <stdlib.h>
 #include <math.h>
 
-#include "tree.h"
 #include "internal_lib.h"
 #include "dbug.h"
-#include "convert.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
 
 #define TYPE_LENGTH 256      /* dimension of array of char */
 #define INT_STRING_LENGTH 16 /* dimension of array of char */
@@ -91,7 +94,7 @@ char *type_string[] = {
 /* strings for primitve types used for renaming of functions*/
 #define TYP_IF(n, d, p, f, sz) f
 
-char *rename_type[] = {
+static char *rename_type[] = {
 #include "type_info.mac"
 };
 #undef TYP_IF
@@ -153,6 +156,7 @@ Double2String (double val)
         sprintf (tmp_string, "%.256g.0", val);
     else
         sprintf (tmp_string, "%.256g", val);
+
     DBUG_RETURN (tmp_string);
 }
 
@@ -175,6 +179,7 @@ Double2String (double val)
  *  remarks       :
  *
  */
+
 char *
 Type2String (types *type, int flag)
 {
@@ -186,14 +191,19 @@ Type2String (types *type, int flag)
     tmp_string[0] = '\0';
 
     do {
-        if ((type->name_mod != NULL) && (flag != 3)) {
-            strcat (tmp_string, type->name_mod);
-            strcat (tmp_string, mod_name_con);
+        if (TYPES_BASETYPE (type) == T_user) {
+            if ((flag != 3) && (TYPES_MOD (type) != NULL)) {
+                strcat (tmp_string, TYPES_MOD (type));
+                strcat (tmp_string, mod_name_con);
+            }
+            strcat (tmp_string, TYPES_NAME (type));
+        } else {
+            if (flag == 2) {
+                strcat (tmp_string, rename_type[TYPES_BASETYPE (type)]);
+            } else {
+                strcat (tmp_string, type_string[TYPES_BASETYPE (type)]);
+            }
         }
-        if (2 == flag)
-            strcat (tmp_string, SIMPLE4FUN_RENAME (type));
-        else
-            strcat (tmp_string, SIMPLE2STR (type));
 
         if (0 != type->dim)
             if (-1 == type->dim)

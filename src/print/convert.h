@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  1998/06/03 14:32:41  cg
+ * implementation streamlined
+ *
  * Revision 1.9  1998/04/25 15:56:55  sbs
  * tree.h included!
  *
@@ -34,15 +37,9 @@
 
 #define _convert_h
 
-#include "tree.h"
-
-#define SIMPLE2STR(type)                                                                 \
-    ((type->name != NULL) ? type->name : type_string[type->simpletype])
-#define SIMPLE4FUN_RENAME(type)                                                          \
-    ((type->name != NULL) ? type->name : rename_type[type->simpletype])
+#include "types.h"
 
 extern char *type_string[];
-extern char *rename_type[];
 
 extern char *Type2String (types *, int);
 extern char *Double2String (double);
