@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.18  2003/09/25 13:43:40  dkr
+ * new argument 'copyfun' added to some ICMs
+ *
  * Revision 3.17  2003/09/17 14:17:14  dkr
  * some function parameters renamed
  *
@@ -70,13 +73,15 @@ extern void ICMCompileWL_END__OFFSET (char *to_NT, int to_sdim, char *idx_vec_NT
 extern void ICMCompileWL_END (char *to_NT, int to_sdim, char *idx_vec_NT, int dims);
 
 extern void ICMCompileWL_ASSIGN (char *val_NT, int val_sdim, char *to_NT, int to_dim,
-                                 char *idx_vec_NT, int dims, char **idxa_scl_NT);
+                                 char *idx_vec_NT, int dims, char **idxa_scl_NT,
+                                 char *copyfun);
 
 extern void ICMCompileWL_ASSIGN__INIT (char *to_NT, int to_sdim, char *idx_vec_NT,
                                        int dims, char **idxa_scl_NT);
 
 extern void ICMCompileWL_ASSIGN__COPY (char *from_NT, char *to_NT, int to_sdim,
-                                       char *idx_vec_NT, int dims, char **idxa_scl_NT);
+                                       char *idx_vec_NT, int dims, char **idxa_scl_NT,
+                                       char *copyfun);
 
 extern void ICMCompileWL_FOLD__OFFSET (char *to_NT, int to_sdim, char *idx_vec_NT,
                                        int dims, char **idxa_scl_NT);

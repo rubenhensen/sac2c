@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2003/09/25 13:44:05  dkr
+ * new argument 'copyfun' added to some ICMs
+ *
  * Revision 1.1  2003/09/20 14:20:20  dkr
  * Initial revision
  *
@@ -59,13 +62,13 @@ extern void ICMCompileND_PRF_TAKE__SHAPE (char *to_NT, int to_sdim, char *from_N
                                           int from_sdim, char *cnt_ANY);
 
 extern void ICMCompileND_PRF_TAKE__DATA (char *to_NT, int to_sdim, char *from_NT,
-                                         int from_sdim, char *cnt_ANY);
+                                         int from_sdim, char *cnt_ANY, char *copyfun);
 
 extern void ICMCompileND_PRF_DROP__SHAPE (char *to_NT, int to_sdim, char *from_NT,
                                           int from_sdim, char *cnt_ANY);
 
 extern void ICMCompileND_PRF_DROP__DATA (char *to_NT, int to_sdim, char *from_NT,
-                                         int from_sdim, char *cnt_ANY);
+                                         int from_sdim, char *cnt_ANY, char *copyfun);
 
 extern void ICMCompileND_PRF_CAT__SHAPE (char *to_NT, int to_sdim, char *from1_NT,
                                          int from1_sdim, char *from2_NT, int from2_sdim);

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.64  2003/09/25 13:43:05  dkr
+ * new argument 'copyfun' added to some ICMs
+ *
  * Revision 3.63  2003/09/20 14:23:41  dkr
  * several ICMs for prfs added
  *
@@ -280,20 +283,20 @@ ICM_END( ND_SET__SHAPE, (to_NT, dim, shp_ANY))
 #endif
 
 
-#if defined(ND_REFRESH_MIRROR) || defined(ICM_ALL)
-ICM_DEF( ND_REFRESH_MIRROR, TRACE_NONE)
+#if defined(ND_REFRESH__MIRROR) || defined(ICM_ALL)
+ICM_DEF( ND_REFRESH__MIRROR, TRACE_NONE)
   ICM_NT( var_NT)
   ICM_INT( sdim)
-ICM_END( ND_REFRESH_MIRROR, (var_NT, sdim))
+ICM_END( ND_REFRESH__MIRROR, (var_NT, sdim))
 #endif
 
-#if defined(ND_CHECK_MIRROR) || defined(ICM_ALL)
-ICM_DEF( ND_CHECK_MIRROR, TRACE_NONE)
+#if defined(ND_CHECK__MIRROR) || defined(ICM_ALL)
+ICM_DEF( ND_CHECK__MIRROR, TRACE_NONE)
   ICM_NT( to_NT)
   ICM_INT( to_sdim)
   ICM_NT( from_NT)
   ICM_INT( from_sdim)
-ICM_END( ND_CHECK_MIRROR, (to_NT, to_sdim, from_NT, from_sdim))
+ICM_END( ND_CHECK__MIRROR, (to_NT, to_sdim, from_NT, from_sdim))
 #endif
 
 
@@ -316,13 +319,22 @@ ICM_DEF( ND_ASSIGN__DESC, TRACE_NONE)
 ICM_END( ND_ASSIGN__DESC, (to_NT, from_NT))
 #endif
 
-#if defined(ND_ASSIGN__DIMSHP) || defined(ICM_ALL)
-ICM_DEF( ND_ASSIGN__DIMSHP, TRACE_NONE)
+#if defined(ND_UPDATE__DESC) || defined(ICM_ALL)
+ICM_DEF( ND_UPDATE__DESC, TRACE_NONE)
   ICM_NT( to_NT)
   ICM_INT( to_sdim)
   ICM_NT( from_NT)
   ICM_INT( from_sdim)
-ICM_END( ND_ASSIGN__DIMSHP, (to_NT, to_sdim, from_NT, from_sdim))
+ICM_END( ND_UPDATE__DESC, (to_NT, to_sdim, from_NT, from_sdim))
+#endif
+
+#if defined(ND_UPDATE__MIRROR) || defined(ICM_ALL)
+ICM_DEF( ND_UPDATE__MIRROR, TRACE_NONE)
+  ICM_NT( to_NT)
+  ICM_INT( to_sdim)
+  ICM_NT( from_NT)
+  ICM_INT( from_sdim)
+ICM_END( ND_UPDATE__MIRROR, (to_NT, to_sdim, from_NT, from_sdim))
 #endif
 
 
@@ -544,7 +556,9 @@ ICM_DEF( ND_PRF_TAKE__DATA, TRACE_NONE)
   ICM_NT( from_NT)
   ICM_INT( from_sdim)
   ICM_ANY( cnt_ANY)
-ICM_END( ND_PRF_TAKE__DATA, (to_NT, to_sdim, from_NT, from_sdim, cnt_ANY))
+  ICM_ID( copyfun)
+ICM_END( ND_PRF_TAKE__DATA, (to_NT, to_sdim, from_NT, from_sdim, cnt_ANY,
+                             copyfun))
 #endif
 
 #if defined(ND_PRF_DROP__SHAPE) || defined(ICM_ALL)
@@ -564,7 +578,9 @@ ICM_DEF( ND_PRF_DROP__DATA, TRACE_NONE)
   ICM_NT( from_NT)
   ICM_INT( from_sdim)
   ICM_ANY( cnt_ANY)
-ICM_END( ND_PRF_DROP__DATA, (to_NT, to_sdim, from_NT, from_sdim, cnt_ANY))
+  ICM_ID( copyfun)
+ICM_END( ND_PRF_DROP__DATA, (to_NT, to_sdim, from_NT, from_sdim, cnt_ANY,
+                             copyfun))
 #endif
 
 #if defined(ND_PRF_CAT__SHAPE) || defined(ICM_ALL)
@@ -901,8 +917,9 @@ ICM_DEF( WL_ASSIGN, TRACE_NONE)
   ICM_NT( idx_vec_NT)
   ICM_INT( dims)
   ICM_VARNT( dims, idxs_scl_NT)
+  ICM_ID( copyfun)
 ICM_END( WL_ASSIGN, (val_NT, val_sdim, to_NT, to_sdim,
-                     idx_vec_NT, dims, idxs_scl_NT))
+                     idx_vec_NT, dims, idxs_scl_NT, copyfun))
 #endif
 
 #if defined(WL_ASSIGN__INIT) || defined(ICM_ALL)
@@ -923,7 +940,9 @@ ICM_DEF( WL_ASSIGN__COPY, TRACE_NONE)
   ICM_NT( idx_vec_NT)
   ICM_INT( dims)
   ICM_VARNT( dims, idxs_scl_NT)
-ICM_END( WL_ASSIGN__COPY, (from_NT, to_NT, to_sdim, idx_vec_NT, dims, idxs_scl_NT))
+  ICM_ID( copyfun)
+ICM_END( WL_ASSIGN__COPY, (from_NT, to_NT, to_sdim, idx_vec_NT, dims, idxs_scl_NT,
+                           copyfun))
 #endif
 
 #if defined(WL_FOLD__OFFSET) || defined(ICM_ALL)

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.81  2003/09/25 13:42:58  dkr
+ * new argument 'copyfun' added to some ICMs
+ *
  * Revision 1.80  2003/09/25 10:54:17  dkr
  * to_unq() and from_unq() are prfs now
  *
@@ -1013,7 +1016,10 @@ MakeAllocIcm (char *name, types *type, int rc, node *get_dim, node *set_shape_ic
 
     if (RC_IS_ACTIVE (rc)) {
         if (pragma == NULL) {
-#if 1
+#if USE_COMPACT_ALLOC
+            assigns = MakeAssignIcm3 ("ND_ALLOC", MakeId_Copy_NT (name, type),
+                                      MakeNum (rc), get_dim, set_shape_icm, assigns);
+#else
             assigns
               = MakeAssignIcm3 ("ND_ALLOC_BEGIN", MakeId_Copy_NT (name, type),
                                 MakeNum (rc), get_dim,
@@ -1022,9 +1028,6 @@ MakeAllocIcm (char *name, types *type, int rc, node *get_dim, node *set_shape_ic
                                                             MakeId_Copy_NT (name, type),
                                                             MakeNum (rc),
                                                             DupTree (get_dim), assigns)));
-#else
-            assigns = MakeAssignIcm3 ("ND_ALLOC", MakeId_Copy_NT (name, type),
-                                      MakeNum (rc), get_dim, set_shape_icm, assigns);
 #endif
         } else {
             assigns
@@ -1636,8 +1639,7 @@ MakeIcm_ND_FUN_AP (node *ap, node *fundef, node *assigns)
             DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (argtab->ptr_in[i])) == N_id),
                          "argument of application must be a N_id node!");
 
-            exprs = MakeExprs (DupId_NT (EXPRS_EXPR (argtab->ptr_in[i])), NULL);
-            EXPRS_NEXT (exprs) = icm_args;
+            exprs = MakeExprs (DupId_NT (EXPRS_EXPR (argtab->ptr_in[i])), icm_args);
         }
         icm_args = MakeExprs (MakeId_Copy (ATG_string[argtab->tag[i]]), exprs);
     }
@@ -2579,11 +2581,7 @@ COMPSpmdFunReturn (node *arg_node, node *arg_info)
                          "no N_id node found!");
 
             new_args = MakeExprs (MakeId_Copy (ATG_string[argtab->tag[i]]),
-                                  MakeExprs (DupId_NT (EXPRS_EXPR (ret_exprs)),
-#if 0
-                 MakeExprs( MakeArgNode( i, NULL),
-#endif
-                                             NULL));
+                                  MakeExprs (DupId_NT (EXPRS_EXPR (ret_exprs)), NULL));
 
             if (last_arg == NULL) {
                 icm_args = new_args;
@@ -3168,6 +3166,7 @@ COMP2Array (node *arg_node, node *arg_info)
         int dim;
         node *icm_args, *icm_args2;
         int val0_sdim;
+        char *copyfun;
         int i;
 
         shp = ARRAY_SHAPE (arg_node);
@@ -3180,11 +3179,14 @@ COMP2Array (node *arg_node, node *arg_info)
             node *val0 = EXPRS_EXPR (ARRAY_AELEMS (arg_node));
             if (NODE_TYPE (val0) == N_id) {
                 val0_sdim = GetShapeDim (ID_TYPE (val0));
+                copyfun = GenericFun (0, ID_TYPE (val0));
             } else {
                 val0_sdim = 0; /* scalar */
+                copyfun = NULL;
             }
         } else {
             val0_sdim = -815; /* array is empty */
+            copyfun = NULL;
         }
 
         icm_args2 = NULL;
@@ -3206,9 +3208,7 @@ COMP2Array (node *arg_node, node *arg_info)
                                           MakeTypeArgs (IDS_NAME (let_ids),
                                                         IDS_TYPE (let_ids), FALSE, TRUE,
                                                         FALSE, DupTree (icm_args)),
-                                          MakeId_Copy (
-                                            GenericFun (0, IDS_TYPE (let_ids))),
-                                          ret_node));
+                                          MakeId_Copy (copyfun), ret_node));
     }
 
     DBUG_RETURN (ret_node);
@@ -3327,6 +3327,7 @@ COMPPrfReshape (node *arg_node, node *arg_info, node **check_reuse1, node **chec
     node *arg1, *arg2;
     ids *let_ids;
     int reuse;
+    char *copyfun;
     node *ret_node;
 
     DBUG_ENTER ("COMPPrfReshape");
@@ -3356,6 +3357,11 @@ COMPPrfReshape (node *arg_node, node *arg_info, node **check_reuse1, node **chec
                                                DupExprs_NT (ARRAY_AELEMS (arg1)))));
     }
 
+#if 1
+    /* Is this correct? Or do we have to take the rhs instead? */
+    copyfun = GenericFun (0, IDS_TYPE (let_ids));
+#endif
+
     if (NODE_TYPE (arg2) == N_id) {
         reuse = CheckReuse (RC_INIT (IDS_REFCNT (let_ids)), *check_reuse1, *check_reuse2);
         ret_node = NULL;
@@ -3366,7 +3372,7 @@ COMPPrfReshape (node *arg_node, node *arg_info, node **check_reuse1, node **chec
         }
 
         ret_node = MakeAssignIcm3 ("ND_COPY__DATA", DupIds_Id_NT (let_ids),
-                                   DupId_NT (arg2), MakeId_Copy (NULL), ret_node);
+                                   DupId_NT (arg2), MakeId_Copy (copyfun), ret_node);
 
         if (reuse) {
             ret_node = MakeAssignIcm2 ("IS_REUSED__BLOCK_BEGIN", DupIds_Id_NT (let_ids),
@@ -3385,7 +3391,7 @@ COMPPrfReshape (node *arg_node, node *arg_info, node **check_reuse1, node **chec
                                           TRUE, FALSE,
                                           MakeExprs (MakeSizeArg (arg2, TRUE),
                                                      DupExprs_NT (ARRAY_AELEMS (arg2)))),
-                            MakeId_Copy (GenericFun (0, IDS_TYPE (let_ids))), NULL);
+                            MakeId_Copy (copyfun), NULL);
     }
 
     DBUG_RETURN (ret_node);
@@ -3507,11 +3513,11 @@ COMPPrfIdxModarray (node *arg_node, node *arg_info, node **check_reuse1,
                                 MakeTypeArgs (ID_NAME (arg1), ID_TYPE (arg1), FALSE, TRUE,
                                               FALSE, NULL)));
 
-    ret_node = MakeAssignIcm5 ("ND_PRF_IDX_MODARRAY__DATA",
+    ret_node = MakeAssignIcm4 ("ND_PRF_IDX_MODARRAY__DATA",
                                MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
-                                             FALSE, TRUE, FALSE, NULL),
-                               MakeTypeArgs (ID_NAME (arg1), ID_TYPE (arg1), FALSE, TRUE,
-                                             FALSE, NULL),
+                                             FALSE, TRUE, FALSE,
+                                             MakeTypeArgs (ID_NAME (arg1), ID_TYPE (arg1),
+                                                           FALSE, TRUE, FALSE, NULL)),
                                DupNode_NT (arg2), DupNode_NT (arg3),
                                MakeId_Copy (GenericFun (0, ID_TYPE (arg1))), NULL);
 
@@ -3639,26 +3645,28 @@ COMPPrfModarray (node *arg_node, node *arg_info, node **check_reuse1, node **che
         DBUG_ASSERT (((GetBasetype (ID_TYPE (arg2)) == T_int)),
                      "2nd arg of F_modarray is a illegal indexing var!");
 
-        ret_node = MakeAssignIcm6 ("ND_PRF_MODARRAY__DATA_id",
-                                   MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
-                                                 FALSE, TRUE, FALSE, NULL),
-                                   MakeTypeArgs (ID_NAME (arg1), ID_TYPE (arg1), FALSE,
-                                                 TRUE, FALSE, NULL),
-                                   DupNode_NT (arg2), MakeSizeArg (arg2, TRUE),
-                                   DupNode_NT (arg3),
-                                   MakeId_Copy (GenericFun (0, ID_TYPE (arg1))), NULL);
+        ret_node
+          = MakeAssignIcm5 ("ND_PRF_MODARRAY__DATA_id",
+                            MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE,
+                                          TRUE, FALSE,
+                                          MakeTypeArgs (ID_NAME (arg1), ID_TYPE (arg1),
+                                                        FALSE, TRUE, FALSE, NULL)),
+                            DupNode_NT (arg2), MakeSizeArg (arg2, TRUE),
+                            DupNode_NT (arg3),
+                            MakeId_Copy (GenericFun (0, ID_TYPE (arg1))), NULL);
     } else {
         DBUG_ASSERT ((NODE_TYPE (arg2) == N_array),
                      "2nd arg of F_modarray is neither N_id nor N_array!");
 
-        ret_node = MakeAssignIcm6 ("ND_PRF_MODARRAY__DATA_arr",
-                                   MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
-                                                 FALSE, TRUE, FALSE, NULL),
-                                   MakeTypeArgs (ID_NAME (arg1), ID_TYPE (arg1), FALSE,
-                                                 TRUE, FALSE, NULL),
-                                   MakeSizeArg (arg2, TRUE),
-                                   DupExprs_NT (ARRAY_AELEMS (arg2)), DupNode_NT (arg3),
-                                   MakeId_Copy (GenericFun (0, ID_TYPE (arg1))), NULL);
+        ret_node
+          = MakeAssignIcm5 ("ND_PRF_MODARRAY__DATA_arr",
+                            MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE,
+                                          TRUE, FALSE,
+                                          MakeTypeArgs (ID_NAME (arg1), ID_TYPE (arg1),
+                                                        FALSE, TRUE, FALSE, NULL)),
+                            MakeSizeArg (arg2, TRUE), DupExprs_NT (ARRAY_AELEMS (arg2)),
+                            DupNode_NT (arg3),
+                            MakeId_Copy (GenericFun (0, ID_TYPE (arg1))), NULL);
     }
 
     DBUG_RETURN (ret_node);
@@ -5877,8 +5885,13 @@ COMP2WLgridx (node *arg_node, node *arg_info)
                                  "no N_id node found!");
 
                     icm_name = "WL_ASSIGN__COPY";
-                    icm_args = MakeExprs (DupId_NT (NWITH2_ARRAY (wlnode)),
-                                          MakeIcmArgs_WL_OP2 (arg_node));
+                    icm_args
+                      = AppendExprs (MakeExprs (DupId_NT (NWITH2_ARRAY (wlnode)),
+                                                MakeIcmArgs_WL_OP2 (arg_node)),
+                                     MakeExprs (MakeId_Copy (
+                                                  GenericFun (0, ID_TYPE (NWITH2_ARRAY (
+                                                                   wlnode)))),
+                                                NULL));
                     break;
 
                 case WO_foldfun:
@@ -5925,8 +5938,13 @@ COMP2WLgridx (node *arg_node, node *arg_info)
                     DBUG_ASSERT ((NODE_TYPE (cexpr) == N_id), "code expr is not a id");
 
                     icm_name = "WL_ASSIGN";
-                    icm_args = MakeTypeArgs (ID_NAME (cexpr), ID_TYPE (cexpr), FALSE,
-                                             TRUE, FALSE, MakeIcmArgs_WL_OP2 (arg_node));
+                    icm_args
+                      = AppendExprs (MakeTypeArgs (ID_NAME (cexpr), ID_TYPE (cexpr),
+                                                   FALSE, TRUE, FALSE,
+                                                   MakeIcmArgs_WL_OP2 (arg_node)),
+                                     MakeExprs (MakeId_Copy (
+                                                  GenericFun (0, ID_TYPE (cexpr))),
+                                                NULL));
                     /*
                      * we must decrement the RC of 'cexpr' (consumed argument)
                      */
@@ -6183,9 +6201,6 @@ COMP2Spmd (node *arg_node, node *arg_info)
          */
     }
 
-#if 0
-  icm_args = BLOCK_SPMD_SETUP_ARGS(FUNDEF_BODY(SPMD_FUNDEF(arg_node)));
-#endif
     num_args = 0;
     icm_args = NULL; /* dkr: should be FreeTree( icm_args) ?!? */
     icm_args = MakeParamsByDFM (SPMD_IN (arg_node), "in", &num_args, icm_args);
