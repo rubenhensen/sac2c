@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.27  2004/12/18 15:32:44  sbs
+ * nasty bug in Set_Shape solved
+ *
  * Revision 1.26  2004/11/24 17:42:47  jhb
  * compile! SACdevCamp2k4
  *
@@ -383,7 +386,7 @@ Set_Shape (char *to_NT, int to_sdim, void *shp1, int shp1_size,
                                      shp1_prod_fun (shp1);
                                  } if (shp2_prod_fun != NULL) {
                                      fprintf (global.outfile, " * ");
-                                     shp1_prod_fun (shp2);
+                                     shp2_prod_fun (shp2);
                                  }););
         break;
 
