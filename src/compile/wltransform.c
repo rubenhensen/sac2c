@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.31  1998/08/11 00:10:46  dkr
+ * assert-text in IntersectOutline changed
+ *
  * Revision 1.30  1998/08/07 18:03:53  dkr
  * a bug in CheckParams fixed
  *
@@ -2026,8 +2029,7 @@ IntersectOutline (node *stride1, node *stride2, node **i_stride1, node **i_strid
                          ("must resign: "
                           "intersection of outline(stride1) and outline(stride2) is "
                           "non-empty, "
-                          "while intersection of outline(stride1) and stride2, as well "
-                          "as "
+                          "while intersection of outline(stride1) and stride2, or "
                           "intersection of stride1 and outline(stride2) is empty :-("));
 
             if ((WLSTRIDE_PART (stride1) == WLSTRIDE_PART (stride2)) &&
