@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.39  2003/03/12 19:04:18  dkr
+ * error corrected
+ *
  * Revision 3.38  2003/03/12 17:30:02  dkr
  * some new break specifiers for -b15 added
  *
@@ -274,7 +277,7 @@ usage ()
     PRINT_BREAK_SPEC (PH_sacopt, "dfr", "Stop after initial dead function removal.");
     PRINT_BREAK_SPEC (PH_sacopt, "w2d",
                       "Stop after transf. of while into do loops (ssa only).");
-    PRINT_BREAK_SPEC (PH_typecheck, "l2f",
+    PRINT_BREAK_SPEC (PH_sacopt, "l2f",
                       "Stop after converting loops and conditionals into");
     CONT_BREAK_SPEC ("functions (ssa only).");
     PRINT_BREAK_SPEC (PH_sacopt, "ssa",
