@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.13  2003/09/09 13:03:43  sbs
+# -I../typecheck added
+#
 # Revision 3.12  2002/06/06 19:56:03  dkr
 # target clean modified
 #
@@ -66,7 +69,7 @@ include $(PROJECT_ROOT)/Makefile.Config
 #
 
 INCS = -I../global -I../tree -I../../inc -I../compile -I../modules \
-       -I../constants -I../print -I../scanparse
+       -I../constants -I../print -I../scanparse -I../typecheck
 
 
 all: print_interface.o map_cwrapper.o import_specialization.o \

@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.24  2003/09/09 12:53:33  sbs
+# -I../typecheck added
+#
 # Revision 3.23  2003/06/11 21:40:03  ktr
 # included ../constants
 #
@@ -67,7 +70,7 @@ include $(PROJECT_ROOT)/Makefile.Config
 # local settings:
 #
 
-INCS = -I../global -I../../inc -I../tree -I../print -I../optimize -I../constants
+INCS = -I../global -I../../inc -I../tree -I../print -I../optimize -I../constants -I../typecheck
 
 
 all: flatten.o lac2fun.o fun2lac.o while2do.o insert_vardec.o handle_mops.o

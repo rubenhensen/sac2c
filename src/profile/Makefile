@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 1.8  2003/09/09 13:02:28  sbs
+# -I../typecheck added
+#
 # Revision 1.7  2003/06/11 22:07:36  ktr
 # included ../constants
 #
@@ -41,7 +44,7 @@ include $(PROJECT_ROOT)/Makefile.Config
 # local settings:
 #
 
-INCS = -I../../inc -I../tree -I../global -I../print -I../constants
+INCS = -I../../inc -I../tree -I../global -I../print -I../constants -I../typecheck
 
 
 all: annotate_fun_calls.o

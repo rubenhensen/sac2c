@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 1.14  2003/09/09 12:58:16  sbs
+# -I../typecheck added
+#
 # Revision 1.13  2003/06/11 22:05:36  ktr
 # included ../constants
 #
@@ -59,7 +62,7 @@ include $(PROJECT_ROOT)/Makefile.Config
 # local settings:
 #
 
-INCS = -I../../inc -I../tree -I../global -I.
+INCS = -I../../inc -I../tree -I../global -I. -I../typecheck
 
 all: shape.o \
      constants_basic.o constants_struc_ops.o constants_ari_ops.o \
