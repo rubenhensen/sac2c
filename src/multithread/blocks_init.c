@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.18  2000/07/13 08:23:13  jhs
+ * Moved DupMask_ InsertBlock, InsertMT and InsertST to multithread_lib.c.
+ *
  * Revision 1.17  2000/07/13 07:34:24  jhs
  * No more warnings here ...
  * Added some comments.
@@ -395,111 +398,6 @@ WillExecuteMultiThreaded (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   long *DupMask_(long *oldmask, int varno)
- *
- * description:
- *   copies Mask via DupMask, but is able to handle NULL also (returns NULL
- *   when it has to copy a NULL).
- *
- ******************************************************************************/
-static long *
-DupMask_ (long *oldmask, int varno)
-{
-    long *result;
-
-    DBUG_ENTER ("DupMask_");
-
-    if (oldmask == NULL) {
-        result = NULL;
-    } else {
-        result = DupMask (oldmask, varno);
-    }
-
-    DBUG_RETURN (result);
-}
-
-/******************************************************************************
- *
- * function:
- *   static node *InsertBlock(node *assign, node *block, node *fundef)
- *
- * description:
- *   Inserts an MT or ST-Block into assign, block contains a MT- or ST-Block
- *   with REGION == NULL, fundef is the actual fundef node.
- *   assign gets the block as new instruction, while the region of the block
- *   will get the old instruction of the assignment.
- *   So the instruction at the assign will be embedded into block.
- *
- ******************************************************************************/
-static node *
-InsertBlock (node *assign, node *block, node *fundef)
-{
-    node *newassign;
-    int varno;
-
-    DBUG_ENTER ("InsertBlock");
-
-    DBUG_ASSERT ((NODE_TYPE (assign) == N_assign), ("assign: N_assign expected"));
-    DBUG_ASSERT (((NODE_TYPE (block) == N_mt) || (NODE_TYPE (block) == N_st)),
-                 ("block: N_mt or N_st expected"));
-    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef), ("fundef: N_fundef expected"));
-
-    newassign = MakeAssign (ASSIGN_INSTR (assign), NULL);
-    L_MT_OR_ST_REGION (block, MakeBlock (newassign, NULL));
-    ASSIGN_INSTR (assign) = block;
-    varno = FUNDEF_VARNO (fundef);
-    ASSIGN_DEFMASK (newassign) = DupMask_ (ASSIGN_DEFMASK (assign), varno);
-    ASSIGN_USEMASK (newassign) = DupMask_ (ASSIGN_USEMASK (assign), varno);
-    ASSIGN_MRDMASK (newassign) = DupMask_ (ASSIGN_MRDMASK (assign), varno);
-
-    DBUG_RETURN (assign);
-}
-
-/******************************************************************************
- *
- * function:
- *   static node *InsertMT(node *assign, node *arg_info)
- *
- * description:
- *   inserts mt-block around the instruction of the assignment
- *
- ******************************************************************************/
-node *
-InsertMT (node *assign, node *arg_info)
-{
-    DBUG_ENTER ("InsertMT");
-
-    DBUG_ASSERT ((NODE_TYPE (assign) == N_assign), "assign-node is not a N_assign");
-
-    assign = InsertBlock (assign, MakeMT (NULL), INFO_MUTH_FUNDEF (arg_info));
-
-    DBUG_RETURN (assign);
-}
-
-/******************************************************************************
- *
- * function:
- *   static node *InsertST(node *assign, node *arg_info)
- *
- * description:
- *   inserts st-block around the instruction of the assignment
- *
- ******************************************************************************/
-node *
-InsertST (node *assign, node *arg_info)
-{
-    DBUG_ENTER ("InsertST");
-
-    DBUG_ASSERT ((NODE_TYPE (assign) == N_assign), "assign-node is not a N_assign");
-
-    assign = InsertBlock (assign, MakeST (NULL), INFO_MUTH_FUNDEF (arg_info));
-
-    DBUG_RETURN (assign);
-}
-
-/******************************************************************************
- *
- * function:
  *   node *BLKINassign(node *arg_node, node *arg_info)
  *
  * description:
@@ -518,18 +416,26 @@ BLKINassign (node *arg_node, node *arg_info)
         /*
          *  Insert ST-Block
          */
-        arg_node = InsertST (arg_node, arg_info);
+        arg_node = MUTHInsertST (arg_node, arg_info);
         if (FUNDEF_COMPANION (INFO_MUTH_FUNDEF (arg_info)) == NULL) {
             DBUG_PRINT ("BLKIN", ("first is st"));
+            /*
+             *  FUNDEF_COMPANION is used to transport information from blkin to blkpp:
+             *  What is the first type of block: N_mt, N_st or something else.
+             */
             FUNDEF_COMPANION (INFO_MUTH_FUNDEF (arg_info)) = ASSIGN_INSTR (arg_node);
         }
     } else if (WillExecuteMultiThreaded (arg_node, arg_info)) {
         /*
          *  Insert MT-Block
          */
-        arg_node = InsertMT (arg_node, arg_info);
+        arg_node = MUTHInsertMT (arg_node, arg_info);
         if (FUNDEF_COMPANION (INFO_MUTH_FUNDEF (arg_info)) == NULL) {
             DBUG_PRINT ("BLKIN", ("first is mt"));
+            /*
+             *  FUNDEF_COMPANION is used to transport information from blkin to blkpp:
+             *  What is the first type of block: N_mt, N_st or something else.
+             */
             FUNDEF_COMPANION (INFO_MUTH_FUNDEF (arg_info)) = ASSIGN_INSTR (arg_node);
         }
     } else {
