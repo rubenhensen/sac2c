@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.72  1998/05/28 16:30:47  dkr
+ * added an indent-machanismus for H-ICMs
+ *
  * Revision 1.71  1998/05/24 00:39:30  dkr
  * removed WLGRID_CODE_TEMPLATE
  *
@@ -1394,6 +1397,33 @@ MakeIcm (char *name, node *args, node *next)
     ICM_NAME (tmp) = name;
     ICM_ARGS (tmp) = args;
     ICM_NEXT (tmp) = next;
+
+    if (strcmp (name, "WL_BLOCK_LOOP0_BEGIN") == 0)
+        ICM_INDENT (tmp) = 1;
+    else if (strcmp (name, "WL_BLOCK_LOOP_BEGIN") == 0)
+        ICM_INDENT (tmp) = 1;
+    else if (strcmp (name, "WL_UBLOCK_LOOP0_BEGIN") == 0)
+        ICM_INDENT (tmp) = 1;
+    else if (strcmp (name, "WL_UBLOCK_LOOP_BEGIN") == 0)
+        ICM_INDENT (tmp) = 1;
+    else if (strcmp (name, "WL_STRIDE_LOOP0_BEGIN") == 0)
+        ICM_INDENT (tmp) = 1;
+    else if (strcmp (name, "WL_STRIDE_LOOP_BEGIN") == 0)
+        ICM_INDENT (tmp) = 1;
+    else if (strcmp (name, "WL_GRID_LOOP_BEGIN") == 0)
+        ICM_INDENT (tmp) = 1;
+    else if (strcmp (name, "WL_BLOCK_LOOP_END") == 0)
+        ICM_INDENT (tmp) = -1;
+    else if (strcmp (name, "WL_UBLOCK_LOOP_END") == 0)
+        ICM_INDENT (tmp) = -1;
+    else if (strcmp (name, "WL_STRIDE_LOOP_END") == 0)
+        ICM_INDENT (tmp) = -1;
+    else if (strcmp (name, "WL_GRID_LOOP_END") == 0)
+        ICM_INDENT (tmp) = -1;
+    else if (strcmp (name, "WL_END") == 0)
+        ICM_INDENT (tmp) = -1;
+    else
+        ICM_INDENT (tmp) = 0;
 
     DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
                              mdb_nodetype[NODE_TYPE (tmp)], tmp));
