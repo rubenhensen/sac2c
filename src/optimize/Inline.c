@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.6  1995/06/26 09:26:22  asi
+ * Revision 1.7  1995/07/24 09:09:34  asi
+ * macro TYPES renamed to INL_TYPES
+ *
+ * Revision 1.6  1995/06/26  09:26:22  asi
  * inlineing in functions with inline tag disabled
  *
  * Revision 1.5  1995/06/23  13:48:10  asi
@@ -174,8 +177,8 @@ INLfundef (node *arg_node, node *arg_info)
       arg_node->node[0]->node[0] = Trav(arg_node->node[0]->node[0], arg_info);
       }
     
-    arg_node->node[0]->node[1] = AppendNodeChain(0, TYPES, arg_node->node[0]->node[1]);
-    TYPES = NULL;
+    arg_node->node[0]->node[1] = AppendNodeChain(0, INL_TYPES, arg_node->node[0]->node[1]);
+    INL_TYPES = NULL;
     
     if (NULL!=arg_node->node[1])
       arg_node->node[1] = Trav(arg_node->node[1], arg_info);
@@ -199,8 +202,8 @@ INLfundef (node *arg_node, node *arg_info)
         arg_node->node[0]->node[0] = Trav (arg_node->node[0]->node[0], arg_info);
 
         arg_node->node[0]->node[1]
-          = AppendNodeChain (0, TYPES, arg_node->node[0]->node[1]);
-        TYPES = NULL;
+          = AppendNodeChain (0, INL_TYPES, arg_node->node[0]->node[1]);
+        INL_TYPES = NULL;
 
         if (NULL != arg_node->node[1])
             arg_node->node[1] = Trav (arg_node->node[1], arg_info);
@@ -313,7 +316,7 @@ DoInline (node *let_node, node *ap_node, node *arg_info)
         new_expr = DupTree (expr_node->node[0], arg_info);
         inl_nodes = INLMakeLet (new_name, new_expr);
         inl_nodes->node[0]->info.ids->node
-          = SearchDecl (inl_nodes->node[0]->info.ids->id, TYPES);
+          = SearchDecl (inl_nodes->node[0]->info.ids->id, INL_TYPES);
         header_nodes = AppendNodeChain (1, inl_nodes, header_nodes);
         var_node = var_node->node[0];
         expr_node = expr_node->node[1];
@@ -434,7 +437,7 @@ RenameInlinedVar (char *old_name)
 
 /*
  *
- *  functionname  : SetDeclPtr
+ *  functionname  : SearchDecl
  *  arguments     :
  *  description   :
  *  global vars   :
@@ -484,12 +487,12 @@ INLvar (node *arg_node, node *arg_info)
     DBUG_ENTER ("INLvar");
 
     new_name = RenameInlinedVar (arg_node->info.types->id);
-    if (NULL == SearchDecl (new_name, TYPES)) {
+    if (NULL == SearchDecl (new_name, INL_TYPES)) {
         new_vardec = MakeNode (N_vardec);
         new_vardec->info.types = DuplicateTypes (arg_node->info.types, 1);
         FREE (new_vardec->info.types->id);
         new_vardec->info.types->id = new_name;
-        TYPES = AppendNodeChain (0, new_vardec, TYPES);
+        INL_TYPES = AppendNodeChain (0, new_vardec, INL_TYPES);
     } else {
         FREE (new_name);
     }

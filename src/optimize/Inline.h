@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.3  1995/06/08 10:03:44  asi
+ * Revision 1.4  1995/07/24 09:09:34  asi
+ * macro TYPES renamed to INL_TYPES
+ *
+ * Revision 1.3  1995/06/08  10:03:44  asi
  * added SearchDecl and removed SetDeclPtr
  *
  * Revision 1.2  1995/06/02  11:29:35  asi
@@ -17,7 +20,7 @@
 
 #define _Inline_h
 
-#define TYPES arg_info->node[2]
+#define INL_TYPES arg_info->node[2]
 
 extern node *Inline (node *arg_node, node *arg_info);
 
