@@ -1,11 +1,14 @@
 /*
  *
  * $Log$
- * Revision 1.27  1995/01/02 16:04:46  asi
- * Renamed opt_tab in opt1_tab and all OPT.. in OPT1..
- * Added OPT1while, OPT1do, OPT1cond, OPT1cc
- * Added opt2_tab
+ * Revision 1.28  1995/01/05 12:45:51  sbs
+ * N_str inserted
  *
+;; Revision 1.27  1995/01/02  16:04:46  asi
+;; Renamed opt_tab in opt1_tab and all OPT.. in OPT1..
+;; Added OPT1while, OPT1do, OPT1cond, OPT1cc
+;; Added opt2_tab
+;;
 ;; Revision 1.26  1995/01/02  10:50:49  asi
 ;; added OPTassign
 ;;
@@ -96,6 +99,8 @@
 
 NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun, DummyFun,
      DummyFun),
+  NIF (N_str, "N_str", DummyFun, DummyFun, PrintId, DummyFun, DummyFun, DummyFun,
+       DummyFun, DummyFun),
   NIF (N_id, "N_id", DummyFun, DummyFun, PrintId, DummyFun, OPT1id, DummyFun, DummyFun,
        DummyFun),
   NIF (N_float, "N_float", DummyFun, DummyFun, PrintFloat, DummyFun, DummyFun, DummyFun,
