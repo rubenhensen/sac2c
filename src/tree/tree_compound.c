@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2000/07/12 15:19:40  dkr
+ * function SearchDecl moved from Inline.c to tree_compound.c
+ *
  * Revision 1.12  2000/07/11 14:59:14  dkr
  * function IsHidden added
  *
@@ -215,43 +218,6 @@ MergeShpseg (shpseg *first, int dim1, shpseg *second, int dim2)
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  Ids :
- ***/
-
-ids *
-AppendIdsChain (ids *first, ids *second)
-{
-    ids *tmp;
-
-    DBUG_ENTER ("AppendIdsChain");
-
-    if (first == NULL)
-        first = second;
-    else {
-        tmp = first;
-        while (IDS_NEXT (tmp) != NULL)
-            tmp = IDS_NEXT (tmp);
-        IDS_NEXT (tmp) = second;
-    }
-
-    DBUG_RETURN (first);
-}
-
-ids *
-LookupIds (char *name, ids *ids_chain)
-{
-    DBUG_ENTER ("LookupIds");
-
-    while ((ids_chain != NULL) && (0 != strcmp (name, IDS_NAME (ids_chain)))) {
-        ids_chain = IDS_NEXT (ids_chain);
-    }
-
-    DBUG_RETURN (ids_chain);
-}
-
-/*--------------------------------------------------------------------------*/
-
-/***
  ***  Types :
  ***/
 
@@ -391,6 +357,43 @@ IsNonUniqueHidden (types *type)
     }
 
     DBUG_RETURN (ret);
+}
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  Ids :
+ ***/
+
+ids *
+AppendIdsChain (ids *first, ids *second)
+{
+    ids *tmp;
+
+    DBUG_ENTER ("AppendIdsChain");
+
+    if (first == NULL)
+        first = second;
+    else {
+        tmp = first;
+        while (IDS_NEXT (tmp) != NULL)
+            tmp = IDS_NEXT (tmp);
+        IDS_NEXT (tmp) = second;
+    }
+
+    DBUG_RETURN (first);
+}
+
+ids *
+LookupIds (char *name, ids *ids_chain)
+{
+    DBUG_ENTER ("LookupIds");
+
+    while ((ids_chain != NULL) && (0 != strcmp (name, IDS_NAME (ids_chain)))) {
+        ids_chain = IDS_NEXT (ids_chain);
+    }
+
+    DBUG_RETURN (ids_chain);
 }
 
 /*--------------------------------------------------------------------------*/
@@ -797,7 +800,10 @@ CopyNodelist (nodelist *nl)
 /******************************************************************************
  *
  * function:
- *   -
+ *   nodelist *NodeListAppend(nodelist *nl, node *newnode, void *attrib)
+ *   nodelist *NodeListDelete(nodelist *nl, node *node, int free_attrib)
+ *   nodelist *NodeListFree(nodelist *nl, int free_attrib)
+ *   nodelist *NodeListFind(nodelist *nl, node *node)
  *
  * description:
  *   the following functions realize basic functions on pure node lists.
@@ -880,6 +886,42 @@ NodeListFind (nodelist *nl, node *node)
 /*--------------------------------------------------------------------------*/
 
 /***
+ ***  N_modul :
+ ***/
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_moddec :
+ ***/
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_classdec :
+ ***/
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_sib :
+ ***/
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_implist :
+ ***/
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_explist :
+ ***/
+
+/*--------------------------------------------------------------------------*/
+
+/***
  ***  N_typedef :
  ***/
 
@@ -949,13 +991,71 @@ ObjList2ArgList (node *objdef)
 /******************************************************************************
  *
  * function:
- *   int CountFunctionParams(node *fundef)
+ *   node *FindVardec_Name( char *name, node *fundef)
+ *
+ * description:
+ *   returns a pointer to the vardec of var with name 'name'
+ *
+ ******************************************************************************/
+
+node *
+FindVardec_Name (char *name, node *fundef)
+{
+    node *tmp, *vardec = NULL;
+
+    DBUG_ENTER ("FindVardec_Name");
+
+    FOREACH_VARDEC_AND_ARG (fundef, tmp,
+                            if (strcmp (VARDEC_OR_ARG_NAME (tmp), name) == 0) {
+                                vardec = tmp;
+                                break;
+                            }) /* FOREACH_VARDEC_AND_ARG */
+
+    if (vardec == NULL) {
+        DBUG_PRINT ("SPMDL", ("Cannot find %s", name));
+    }
+
+    DBUG_RETURN (vardec);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *FindVardec_Varno(int varno, node *fundef)
+ *
+ * description:
+ *   returns the vardec of var number 'varno'
+ *   Search runs through arguments and vardecs of the function, so erery
+ *   variable valid in the function has to be found here.
+ *
+ ******************************************************************************/
+
+node *
+FindVardec_Varno (int varno, node *fundef)
+{
+    node *tmp, *vardec = NULL;
+
+    DBUG_ENTER ("FindVardec_Varno");
+
+    FOREACH_VARDEC_AND_ARG (fundef, tmp, if (ARG_VARNO (tmp) == varno) {
+        vardec = tmp;
+        break;
+    }) /* FOREACH_VARDEC_AND_ARG */
+
+    DBUG_RETURN (vardec);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   int CountFunctionParams( node *fundef)
  *
  * description:
  *   Counts the number of arguments AND return-values, adds both and returns
  *   the sum.
  *
  ******************************************************************************/
+
 int
 CountFunctionParams (node *fundef)
 {
@@ -978,74 +1078,6 @@ CountFunctionParams (node *fundef)
     }
 
     DBUG_RETURN (count);
-}
-
-static int
-CompatibleAttributes (statustype attrib1, statustype attrib2)
-{
-    int ret;
-
-    DBUG_ENTER ("CompatibleAttributes");
-
-    if ((attrib1 == ST_regular) && (attrib2 == ST_unique)) {
-        ret = 1;
-    } else {
-        if ((attrib2 == ST_regular) && (attrib1 == ST_unique)) {
-            ret = 1;
-        } else {
-            ret = (attrib1 == attrib2);
-        }
-    }
-
-    DBUG_RETURN (ret);
-}
-
-int
-CmpDomain (node *arg1, node *arg2)
-{
-    int i, is_equal;
-
-    DBUG_ENTER ("CmpDomain");
-
-    while ((NULL != arg1) && (NULL != arg2)) {
-        if (ARG_BASETYPE (arg1) == ARG_BASETYPE (arg2)) {
-            if (ARG_BASETYPE (arg1) == T_user) {
-                if (!CMP_TYPE_USER (ARG_TYPE (arg1), ARG_TYPE (arg2))) {
-                    break;
-                }
-                if (!CompatibleAttributes (ARG_ATTRIB (arg1), ARG_ATTRIB (arg2))) {
-                    break;
-                }
-            }
-            if (ARG_DIM (arg1) == ARG_DIM (arg2)) {
-                if (ARG_DIM (arg1) > 0) {
-                    for (i = 0; i < ARG_DIM (arg1); i++)
-                        if (ARG_SHAPE (arg1, i) != ARG_SHAPE (arg2, i))
-                            break;
-                    if (i != ARG_DIM (arg1))
-                        break;
-                    else {
-                        arg1 = ARG_NEXT (arg1);
-                        arg2 = ARG_NEXT (arg2);
-                    }
-                } else {
-                    arg1 = ARG_NEXT (arg1);
-                    arg2 = ARG_NEXT (arg2);
-                }
-            } else
-                break;
-        } else
-            break;
-    }
-    if ((NULL == arg1) && (NULL == arg2)) {
-        is_equal = 1;
-        DBUG_PRINT ("TREE", ("Domain compare positive !"));
-    } else {
-        is_equal = 0;
-        DBUG_PRINT ("TREE", ("Domain compare negative !"));
-    }
-
-    DBUG_RETURN (is_equal);
 }
 
 node *
@@ -1115,68 +1147,147 @@ AppendVardecs (node *vardecs, node *append)
     DBUG_RETURN (vardecs);
 }
 
-/******************************************************************************
- *
- * function:
- *   node *FindVardec_Name( char *name, node *fundef)
- *
- * description:
- *   returns a pointer to the vardec of var with name 'name'
- *
- ******************************************************************************/
-
-node *
-FindVardec_Name (char *name, node *fundef)
-{
-    node *tmp, *vardec = NULL;
-
-    DBUG_ENTER ("FindVardec_Name");
-
-    FOREACH_VARDEC_AND_ARG (fundef, tmp,
-                            if (strcmp (VARDEC_OR_ARG_NAME (tmp), name) == 0) {
-                                vardec = tmp;
-                                break;
-                            }) /* FOREACH_VARDEC_AND_ARG */
-
-    if (vardec == NULL) {
-        DBUG_PRINT ("SPMDL", ("Cannot find %s", name));
-    }
-
-    DBUG_RETURN (vardec);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *FindVardec_Varno(int varno, node *fundef)
- *
- * description:
- *   returns the vardec of var number 'varno'
- *   Search runs through arguments and vardecs of the function, so erery
- *   variable valid in the function has to be found here.
- *
- ******************************************************************************/
-
-node *
-FindVardec_Varno (int varno, node *fundef)
-{
-    node *tmp, *vardec = NULL;
-
-    DBUG_ENTER ("FindVardec_Varno");
-
-    FOREACH_VARDEC_AND_ARG (fundef, tmp, if (ARG_VARNO (tmp) == varno) {
-        vardec = tmp;
-        break;
-    }) /* FOREACH_VARDEC_AND_ARG */
-
-    DBUG_RETURN (vardec);
-}
-
 /*--------------------------------------------------------------------------*/
 
 /***
  ***  N_arg :
  ***/
+
+/******************************************************************************
+ *
+ * Function:
+ *   int CmpDomain(node *arg1, node *arg2)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+static int
+CompatibleAttributes (statustype attrib1, statustype attrib2)
+{
+    int ret;
+
+    DBUG_ENTER ("CompatibleAttributes");
+
+    if ((attrib1 == ST_regular) && (attrib2 == ST_unique)) {
+        ret = 1;
+    } else {
+        if ((attrib2 == ST_regular) && (attrib1 == ST_unique)) {
+            ret = 1;
+        } else {
+            ret = (attrib1 == attrib2);
+        }
+    }
+
+    DBUG_RETURN (ret);
+}
+
+int
+CmpDomain (node *arg1, node *arg2)
+{
+    int i, is_equal;
+
+    DBUG_ENTER ("CmpDomain");
+
+    while ((NULL != arg1) && (NULL != arg2)) {
+        DBUG_ASSERT (((NODE_TYPE (arg1) == N_arg) && (NODE_TYPE (arg2) == N_arg)),
+                     "arguments must be N_arg chains!");
+
+        if (ARG_BASETYPE (arg1) == ARG_BASETYPE (arg2)) {
+            if (ARG_BASETYPE (arg1) == T_user) {
+                if (!CMP_TYPE_USER (ARG_TYPE (arg1), ARG_TYPE (arg2))) {
+                    break;
+                }
+                if (!CompatibleAttributes (ARG_ATTRIB (arg1), ARG_ATTRIB (arg2))) {
+                    break;
+                }
+            }
+            if (ARG_DIM (arg1) == ARG_DIM (arg2)) {
+                if (ARG_DIM (arg1) > 0) {
+                    for (i = 0; i < ARG_DIM (arg1); i++) {
+                        if (ARG_SHAPE (arg1, i) != ARG_SHAPE (arg2, i)) {
+                            break;
+                        }
+                    }
+                    if (i != ARG_DIM (arg1)) {
+                        break;
+                    } else {
+                        arg1 = ARG_NEXT (arg1);
+                        arg2 = ARG_NEXT (arg2);
+                    }
+                } else {
+                    arg1 = ARG_NEXT (arg1);
+                    arg2 = ARG_NEXT (arg2);
+                }
+            } else {
+                break;
+            }
+        } else {
+            break;
+        }
+    }
+    if ((NULL == arg1) && (NULL == arg2)) {
+        is_equal = 1;
+        DBUG_PRINT ("TREE", ("Domain compare positive !"));
+    } else {
+        is_equal = 0;
+        DBUG_PRINT ("TREE", ("Domain compare negative !"));
+    }
+
+    DBUG_RETURN (is_equal);
+}
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_vardec :  *and*  N_arg :
+ ***/
+
+/*
+ *
+ *  functionname  : SearchDecl
+ *  arguments     : 1) character string
+ *                  2) N_vardec - or N_arg - chain
+ *                  R) true or false
+ *  description   : returns ptr to N_vardec - or N_arg - node  if variable or argument
+ *                  with same name as in 1) has been found, else NULL
+ *  global vars   : ---
+ *  internal funs : ---
+ *  external funs : strcmp
+ *  macros        : NODE_TYPE, VARDEC_NAME, VARDEC_NEXT, ARG_NAME, ARG_NEXT
+ *
+ *  remarks       : ---
+ *
+ */
+
+node *
+SearchDecl (char *name, node *decl_node)
+{
+    node *found = NULL;
+
+    DBUG_ENTER ("SearchDecl");
+
+    while (NULL != decl_node) {
+        if (N_vardec == NODE_TYPE (decl_node)) {
+            if (!strcmp (name, VARDEC_NAME (decl_node))) {
+                found = decl_node;
+                decl_node = NULL;
+            } else {
+                decl_node = VARDEC_NEXT (decl_node);
+            }
+        } else {
+            if (!strcmp (name, ARG_NAME (decl_node))) {
+                found = decl_node;
+                decl_node = NULL;
+            } else {
+                decl_node = ARG_NEXT (decl_node);
+            }
+        }
+    }
+
+    DBUG_RETURN (found);
+}
 
 /*--------------------------------------------------------------------------*/
 
@@ -1479,37 +1590,13 @@ MakeExprsNum (int num)
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  N_ap :
+ ***  N_while :
  ***/
 
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  N_Nwith :
- ***/
-
-/*--------------------------------------------------------------------------*/
-
-/***
- ***  N_Npart:
- ***/
-
-/*--------------------------------------------------------------------------*/
-
-/***
- ***  N_Ncode :
- ***/
-
-/*--------------------------------------------------------------------------*/
-
-/***
- ***  N_Nwithop :
- ***/
-
-/*--------------------------------------------------------------------------*/
-
-/***
- ***  N_Nwith2 :
+ ***  N_do :  *and*  N_while :
  ***/
 
 /*--------------------------------------------------------------------------*/
@@ -1969,13 +2056,31 @@ MakePrf3 (prf prf, node *arg1, node *arg2, node *arg3)
 /*--------------------------------------------------------------------------*/
 
 /***
+ ***  N_ap :
+ ***/
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_prf :  *and*  N_ap :
+ ***/
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_pragma :
+ ***/
+
+/*--------------------------------------------------------------------------*/
+
+/***
  ***  N_icm :
  ***/
 
 /******************************************************************************
  *
  * function:
- *   static node *CombineExprs( node *first, node *second)
+ *   node *CombineExprs( node *first, node *second)
  *
  * description:
  *   This one is used only within MakeIcmXXX.
@@ -2159,3 +2264,51 @@ MakeIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *arg4, node *arg5
 
     DBUG_RETURN (icm);
 }
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_mt :   N_st :
+ ***/
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_spmd :
+ ***/
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_Nwith :
+ ***/
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_Npart:
+ ***/
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_Ncode :
+ ***/
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_Nwithop :
+ ***/
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_Nwith2 :
+ ***/
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_Nwith :  *and*  N_Nwith2 :
+ ***/
