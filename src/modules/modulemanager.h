@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2004/11/22 16:57:41  ktr
+ * SACDevCamp 04 Ismop
+ *
  * Revision 1.6  2004/11/14 15:22:18  sah
  * changed signature of serfun_p
  *
@@ -23,24 +26,26 @@
  *
  */
 
-#ifndef _MODULEMANAGER_H
-#define _MODULEMANAGER_H
+#ifndef _SAC_MODULEMANAGER_H_
+#define _SAC_MODULEMANAGER_H_
 
 #include "types.h"
-#include "symboltable.h"
-#include "stringset.h"
 
-typedef struct MODULE_T module_t;
-typedef node *(*serfun_p) ();
+/******************************************************************************
+ *
+ * Modulemanager
+ *
+ * Prefix: MODM
+ *
+ *****************************************************************************/
+extern module_t *MODMloadModule (const char *name);
+extern module_t *MODMunLoadModule (module_t *module);
 
-extern module_t *LoadModule (const char *name);
-extern module_t *UnLoadModule (module_t *module);
+extern const char *MODMgetModuleName (module_t *module);
 
-extern const char *GetModuleName (module_t *module);
+extern STtable_t *MODMgetSymbolTable (module_t *module);
+extern stringset_t *MODMgetDependencyTable (module_t *module);
 
-extern STtable_t *GetSymbolTable (module_t *module);
-extern stringset_t *GetDependencyTable (module_t *module);
+extern serfun_p MODMgetDeSerializeFunction (const char *symbol, module_t *module);
 
-extern serfun_p GetDeSerializeFunction (const char *symbol, module_t *module);
-
-#endif /* _MODULEMANAGER_H */
+#endif /* _SAC_MODULEMANAGER_H_ */

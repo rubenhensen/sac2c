@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2004/11/22 16:57:41  ktr
+ * SACDevCamp 04 Ismop
+ *
  * Revision 1.8  2004/11/21 11:22:03  sah
  * removed some old ast infos
  *
@@ -31,75 +34,66 @@
  *
  */
 
-#ifndef _SYMBOLTABLE_H
-#define _SYMBOLTABLE_H
+#ifndef _SAC_SYMBOLTABLE_H_
+#define _SAC_SYMBOLTABLE_H_
 
 #include "types.h"
 
-typedef enum {
-    SET_funbody,
-    SET_funhead,
-    SET_typedef,
-    SET_objdef,
-    SET_wrapperbody,
-    SET_wrapperhead,
-    SET_namespace
-} STentrytype_t;
-
-typedef enum { SVT_local, SVT_provided, SVT_exported } STvisibility_t;
-
-typedef struct ST_ENTRY_T STentry_t;
-typedef struct ST_SYMBOLITERATOR_T STsymboliterator_t;
-typedef struct ST_ENTRYITERATOR_T STentryiterator_t;
-typedef struct ST_SYMBOLTABLE_T STtable_t;
-typedef struct ST_SYMBOL_T STsymbol_t;
+/******************************************************************************
+ *
+ * Symboltable
+ *
+ * Prefix: ST
+ *
+ *****************************************************************************/
 
 /*
  * Functions for handling symbol tables
  */
-extern STtable_t *STInit ();
-extern STtable_t *STDestroy (STtable_t *table);
-extern void STAdd (const char *symbol, STvisibility_t visbility, const char *name,
+
+extern STtable_t *STinit ();
+extern STtable_t *STdestroy (STtable_t *table);
+extern void STadd (const char *symbol, STvisibility_t visbility, const char *name,
                    STentrytype_t type, STtable_t *table);
-extern void STRemove (const char *symbol, STtable_t *table);
-extern bool STContains (const char *symbol, STtable_t *table);
-extern bool STContainsEntry (const char *name, STtable_t *table);
-extern STsymbol_t *STGet (const char *symbol, STtable_t *table);
-extern STentry_t *STGetFirstEntry (const char *symbol, STtable_t *table);
+extern void STremove (const char *symbol, STtable_t *table);
+extern bool STcontains (const char *symbol, STtable_t *table);
+extern bool STcontainsEntry (const char *name, STtable_t *table);
+extern STsymbol_t *STget (const char *symbol, STtable_t *table);
+extern STentry_t *STgetFirstEntry (const char *symbol, STtable_t *table);
 
 /*
  * Symbol iterator functions
  */
-extern STsymboliterator_t *STSymbolIteratorGet (STtable_t *table);
-extern STsymboliterator_t *STSymbolIteratorRelease (STsymboliterator_t *iterator);
-extern STsymbol_t *STSymbolIteratorNext (STsymboliterator_t *iterator);
-extern void STSymbolIteratorReset (STsymboliterator_t *iterator);
-extern int STSymbolIteratorHasMore (STsymboliterator_t *iterator);
+extern STsymboliterator_t *STsymbolIteratorGet (STtable_t *table);
+extern STsymboliterator_t *STsymbolIteratorRelease (STsymboliterator_t *iterator);
+extern STsymbol_t *STsymbolIteratorNext (STsymboliterator_t *iterator);
+extern void STsymbolIteratorReset (STsymboliterator_t *iterator);
+extern int STsymbolIteratorHasMore (STsymboliterator_t *iterator);
 
 /*
  * Entry iterator functions
  */
-extern STentryiterator_t *STEntryIteratorGet (const char *symbol, STtable_t *table);
-extern STentryiterator_t *STEntryIteratorRelease (STentryiterator_t *iterator);
-extern STentry_t *STEntryIteratorNext (STentryiterator_t *iterator);
-extern void STEntryIteratorReset (STentryiterator_t *iterator);
-extern int STEntryIteratorHasMore (STentryiterator_t *iterator);
+extern STentryiterator_t *STentryIteratorGet (const char *symbol, STtable_t *table);
+extern STentryiterator_t *STentryIteratorRelease (STentryiterator_t *iterator);
+extern STentry_t *STentryIteratorNext (STentryiterator_t *iterator);
+extern void STentryIteratorReset (STentryiterator_t *iterator);
+extern int STentryIteratorHasMore (STentryiterator_t *iterator);
 
 /*
  * Functions to access table symbols
  */
-extern const char *STSymbolName (STsymbol_t *symbol);
-extern STvisibility_t STSymbolVisibility (STsymbol_t *symbol);
+extern const char *STsymbolName (STsymbol_t *symbol);
+extern STvisibility_t STsymbolVisibility (STsymbol_t *symbol);
 
 /*
  * Functions to access table entries
  */
-extern const char *STEntryName (STentry_t *entry);
-extern STentrytype_t STEntryType (STentry_t *entry);
+extern const char *STentryName (STentry_t *entry);
+extern STentrytype_t STentryType (STentry_t *entry);
 
 /*
  * Functions to print symbol tables
  */
-extern void STPrint (STtable_t *table);
+extern void STprint (STtable_t *table);
 
-#endif /* _SYMBOLTABLE_H */
+#endif /* _SAC_SYMBOLTABLE_H_ */

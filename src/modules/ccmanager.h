@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2004/11/22 16:57:41  ktr
+ * SACDevCamp 04 Ismop
+ *
  * Revision 1.2  2004/10/28 17:18:58  sah
  * added handling of dependencies
  *
@@ -11,11 +14,18 @@
  *
  */
 
-#ifndef _CCMANAGER_H
-#define _CCMANAGER_H
+#ifndef _SAC_CCMANAGER_H_
+#define _SAC_CCMANAGER_H_
 
 #include "types.h"
 
-extern void InvokeCC (stringset_t *deps);
+/******************************************************************************
+ *
+ * CCmanager
+ *
+ * Prefix: CCM
+ *
+ *****************************************************************************/
+extern void CCMinvokeCC (stringset_t *deps);
 
-#endif /* _CCMANAGER_H */
+#endif /* _SAC_CCMANAGER_H_ */

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2004/11/22 16:57:41  ktr
+ * SACDevCamp 04 Ismop
+ *
  * Revision 1.1  2004/10/21 17:19:00  sah
  * Initial revision
  *
@@ -8,17 +11,24 @@
  *
  */
 
-#ifndef _RESOLVE_ALL_H
-#define _RESOLVE_ALL_H
+#ifndef _SAC_RESOLVE_ALL_H_
+#define _SAC_RESOLVE_ALL_H_
 
 #include "types.h"
 
-extern void ResolveAll (node *modul);
+/******************************************************************************
+ *
+ * Resolve all traversal ( rsa_tab)
+ *
+ * Prefix: RSA
+ *
+ *****************************************************************************/
+extern node *RSAdoResolveAll (node *modul);
 
-extern node *RSAUse (node *arg_node, info *arg_info);
-extern node *RSAImport (node *arg_node, info *arg_info);
-extern node *RSAProvide (node *arg_node, info *arg_info);
-extern node *RSAExport (node *arg_node, info *arg_info);
-extern node *RSAModul (node *arg_node, info *arg_info);
+extern node *RSAuse (node *arg_node, info *arg_info);
+extern node *RSAimport (node *arg_node, info *arg_info);
+extern node *RSAprovide (node *arg_node, info *arg_info);
+extern node *RSAexport (node *arg_node, info *arg_info);
+extern node *RSAmodule (node *arg_node, info *arg_info);
 
-#endif /* _RESOLVE_ALL_H */
+#endif /* _SAC_RESOLVE_ALL_H_ */

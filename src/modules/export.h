@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2004/11/22 16:57:41  ktr
+ * SACDevCamp 04 Ismop
+ *
  * Revision 1.2  2004/11/14 15:23:04  sah
  * extended traversal to typedefs
  *
@@ -11,29 +14,37 @@
  *
  */
 
-#ifndef _EXPORT_H
-#define _EXPORT_H
+#ifndef _SAC_EXPORT_H_
+#define _SAC_EXPORT_H_
 
 #include "types.h"
 
-/*
- * Traversal Functions
- */
-
-extern node *EXPUse (node *arg_node, info *arg_info);
-extern node *EXPImport (node *arg_node, info *arg_info);
-extern node *EXPProvide (node *arg_node, info *arg_info);
-extern node *EXPExport (node *arg_node, info *arg_info);
-extern node *EXPSymbol (node *arg_node, info *arg_info);
-extern node *EXPFundef (node *arg_node, info *arg_info);
-extern node *EXPTypedef (node *arg_node, info *arg_info);
-extern node *EXPObjdef (node *arg_node, info *arg_info);
-extern node *EXPModul (node *arg_node, info *arg_info);
+/******************************************************************************
+ *
+ * Export traversal ( exp_tab)
+ *
+ * Prefix: EXP
+ *
+ *****************************************************************************/
 
 /*
  * Start of Traversal
  */
 
-extern void DoExport (node *syntax_tree);
+extern node *EXPdoExport (node *syntax_tree);
 
-#endif /* _EXPORT_H */
+/*
+ * Traversal Functions
+ */
+
+extern node *EXPuse (node *arg_node, info *arg_info);
+extern node *EXPimport (node *arg_node, info *arg_info);
+extern node *EXPprovide (node *arg_node, info *arg_info);
+extern node *EXPexport (node *arg_node, info *arg_info);
+extern node *EXPsymbol (node *arg_node, info *arg_info);
+extern node *EXPfundef (node *arg_node, info *arg_info);
+extern node *EXPtypedef (node *arg_node, info *arg_info);
+extern node *EXPobjdef (node *arg_node, info *arg_info);
+extern node *EXPmodul (node *arg_node, info *arg_info);
+
+#endif /* _SAC_EXPORT_H_ */

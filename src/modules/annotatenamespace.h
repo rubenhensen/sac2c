@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/11/22 16:57:41  ktr
+ * SACDevCamp 04 Ismop
+ *
  * Revision 1.3  2004/10/22 13:23:51  sah
  * working implementation for fundefs
  *
@@ -14,24 +17,31 @@
  *
  */
 
-#ifndef _ANNOTATENAMESPACES_H
-#define _ANNOTATENAMESPACES_H
+#ifndef _SAC_ANNOTATENAMESPACES_H_
+#define _SAC_ANNOTATENAMESPACES_H_
 
 #include "types.h"
 
-extern node *ANSSymbol (node *arg_node, info *arg_info);
-extern node *ANSUse (node *arg_node, info *arg_info);
-extern node *ANSImport (node *arg_node, info *arg_info);
-extern node *ANSExport (node *arg_node, info *arg_info);
-extern node *ANSProvide (node *arg_node, info *arg_info);
-extern node *ANSFundef (node *arg_node, info *arg_info);
-extern node *ANSTypedef (node *arg_node, info *arg_info);
-extern node *ANSObjdef (node *arg_node, info *arg_info);
-extern node *ANSAp (node *arg_node, info *arg_info);
-extern node *ANSArg (node *arg_node, info *arg_info);
-extern node *ANSVardec (node *arg_node, info *arg_info);
-extern node *ANSModul (node *arg_node, info *arg_info);
+/******************************************************************************
+ *
+ * Annotate namespaces traversal ( ans_tab)
+ *
+ * Prefix: ANS
+ *
+ *****************************************************************************/
+extern node *ANSdoAnnotateNamespace (node *module);
 
-extern void DoAnnotateNamespace (node *module);
+extern node *ANSsymbol (node *arg_node, info *arg_info);
+extern node *ANSuse (node *arg_node, info *arg_info);
+extern node *ANSimport (node *arg_node, info *arg_info);
+extern node *ANSexport (node *arg_node, info *arg_info);
+extern node *ANSprovide (node *arg_node, info *arg_info);
+extern node *ANSfundef (node *arg_node, info *arg_info);
+extern node *ANStypedef (node *arg_node, info *arg_info);
+extern node *ANSobjdef (node *arg_node, info *arg_info);
+extern node *ANSap (node *arg_node, info *arg_info);
+extern node *ANSarg (node *arg_node, info *arg_info);
+extern node *ANSvardec (node *arg_node, info *arg_info);
+extern node *ANSmodule (node *arg_node, info *arg_info);
 
-#endif /* _ANNOTATENAMESPACES_H */
+#endif /* _SAC_ANNOTATENAMESPACES_H_ */

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2004/11/22 16:57:41  ktr
+ * SACDevCamp 04 Ismop
+ *
  * Revision 1.5  2004/11/07 18:06:28  sah
  * added support for different stringkinds
  *
@@ -20,19 +23,23 @@
  *
  */
 
-#ifndef _STRINGSET_H
-#define _STRINGSET_H
+#ifndef _SAC_STRINGSET_H_
+#define _SAC_STRINGSET_H_
 
 #include "types.h"
 
-typedef enum { SS_saclib, SS_extlib, SS_objfile } SStype_t;
-typedef void *(*SSfoldfun_p) (const char *elem, SStype_t kind, void *rest);
+/******************************************************************************
+ *
+ * String set
+ *
+ * Prefix: STRS
+ *
+ *****************************************************************************/
+extern bool STRScontains (const char *string, stringset_t *set);
+extern stringset_t *STRSadd (const char *string, SStype_t kind, stringset_t *set);
+extern void *STRSfold (SSfoldfun_p fun, stringset_t *set, void *init);
+extern stringset_t *STRSjoin (stringset_t *one, stringset_t *two);
+extern stringset_t *STRSfree (stringset_t *set);
+extern void STRSprint (stringset_t *set);
 
-extern bool SSContains (const char *string, stringset_t *set);
-extern stringset_t *SSAdd (const char *string, SStype_t kind, stringset_t *set);
-extern void *SSFold (SSfoldfun_p fun, stringset_t *set, void *init);
-extern stringset_t *SSJoin (stringset_t *one, stringset_t *two);
-extern stringset_t *SSFree (stringset_t *set);
-extern void SSPrint (stringset_t *set);
-
-#endif /* _STRINGSET_H */
+#endif /* _SAC_STRINGSET_H_ */
