@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 1.57  1999/01/19 16:16:03  cg
+ * added the '?' for types that match both scalars and arrays.
+ *
  * Revision 1.56  1998/12/02 16:25:33  cg
  * some bugs fixed: primitive function tokens are now returned without
  * the name associated thus closing a memory leak since these names are
@@ -55,125 +58,8 @@
  * # line - capability integrated into sac2c.
  * Now, the line-number in error messages should be correct 8-)))
  *
- * Revision 1.39  1997/05/05  07:46:09  cg
- * SIB limit removed
  *
- * Revision 1.38  1997/04/28  11:57:08  cg
- * Syntactic analysis made stricter: ftoi, dtoi, moduledec Moduldec, extern, etc
- * are no longer allowed. Refer to sac_grammar for complete and correct SAC syntax.
  *
- * Revision 1.37  1997/04/25  12:13:52  sbs
- * malloc replaced by Malloc
- *
- * Revision 1.36  1997/03/19  13:44:45  cg
- * new token LINKWITH for respective pragma
- *
- * Revision 1.35  1996/09/09  10:05:29  cg
- * new primitive functions toi, tod, etc. are now treated like the old ones
- *
- * Revision 1.34  1996/05/21  20:16:52  sbs
- * default type for floating numbers set to double! (like in C)
- * and leading zeros for exponents enabled!
- *
- * Revision 1.33  1996/04/02  19:36:41  cg
- * strings are now scanned which contain '\"'
- *
- * Revision 1.32  1996/04/02  13:47:24  cg
- * scanparse converted to new strings: key word string removed
- *
- * Revision 1.31  1996/02/21  18:01:33  cg
- * now, special characters such as '\n' or '\0' are accepted
- *
- * Revision 1.30  1996/02/08  18:05:21  hw
- * added token DOT
- *
- * Revision 1.29  1996/02/06  08:20:44  sbs
- * the scanner now accepts FF's (ctrl-L, bzw. \f in C-Notation)
- *
- * Revision 1.28  1996/01/25  18:40:55  cg
- * added key word classtype
- *
- * Revision 1.27  1996/01/22  17:30:38  cg
- * added new pragma initfun
- *
- * Revision 1.26  1996/01/05  13:13:55  cg
- * modified storage format of strings which are now stored without '"'.
- *
- * Revision 1.25  1995/12/29  10:37:26  cg
- * added new token SIBLIMIT="<###>"
- *
- * Revision 1.24  1995/12/21  15:04:06  cg
- * added new primitive type char
- *
- * Revision 1.23  1995/12/04  16:17:21  hw
- * added primitve functions toi, tof & tod
- *
- * Revision 1.22  1995/12/01  17:15:44  cg
- * added key words for new pragmas
- * added: Command not found.
- * added PRIVATEID to allow identifiers without SAC restrictions
- * which are needed for parsing SIBs
- *
- * Revision 1.21  1995/08/07  10:30:00  cg
- * assignement operator := deleted.
- *
- * Revision 1.20  1995/07/07  16:20:56  hw
- * - added macro FILTER7
- * - exchanged FILTER2 with FILTER7 to generate tokens for
- *    primitive functions
- *
- * Revision 1.19  1995/07/06  17:26:00  cg
- * Modul -> Module, & added
- *
- * Revision 1.18  1995/07/06  16:58:44  hw
- * tokens of primitive functions contain in yyval.id there name now
- *
- * Revision 1.17  1995/07/04  11:13:49  hw
- * - scanning of 'double constants'( e.g. 3d, 3D, 3.0d, 3.0D) inserted
- * - scanning of 'float constants'( e.g. 3f, 3F, 3.0, 3.0F, 3.0f) changed
- * - scanning of primitive functions ifod, ftod, dtoi, dtof inserted.
- *
- * Revision 1.16  1995/06/30  11:09:37  hw
- * - tokens for new primitive functions "ftoi" & "itof" inserted
- * - token C_KEYWORD for not used c-keywords inserted
- * - identifiers have to begin with a letter.
- *   more than one "_" in succession will not be accepted
- *
- * Revision 1.15  1995/05/30  08:21:55  cg
- * sac-grammar version 0.5 tokens inserted.
- *
- * Revision 1.14  1995/05/22  15:03:43  hw
- * comments will not be printed anymore
- *
- * Revision 1.13  1995/02/14  12:00:42  sbs
- * fold inserted
- *
- * Revision 1.12  1995/02/14  10:11:10  hw
- * NOT inserted
- *
- * Revision 1.11  1995/01/06  19:05:51  sbs
- * no_mod_ext pragma deleted & extern declaration inserted
- *
- * Revision 1.10  1995/01/06  17:51:45  sbs
- * no_mod_ext pragma inserted
- *
- * Revision 1.9  1995/01/05  12:46:51  sbs
- * string inserted
- *
- * Revision 1.8  1994/12/16  14:34:28  sbs
- * moddec  and start_token inserted
- *
- * Revision 1.7  1994/12/14  10:08:40  sbs
- * typedef inserted
- *
- * Revision 1.6  1994/12/08  17:45:58  sbs
- * modules inserted
- *
- * Revision 1.5  1994/11/23  09:44:03  hw
- * inserted true & false
- *
- * Revision 1.4  1994/11/10  15:10:01  sbs
- * RCS-header adjusted
  *
  * Revision 1.3  1994/11/10  14:53:24  sbs
  * RCS-header inserted
@@ -335,6 +221,7 @@ int start_token;
 ","				{FILTER( COMMA );}
 "="				{FILTER( LET );}
 "&"				{FILTER( AMPERS );}
+"?"				{FILTER( QUESTION );}
 "."                             {FILTER( DOT);}
 
 "&&"				{FILTER( AND );}
@@ -455,7 +342,6 @@ int start_token;
 
 "target"                        {FILTER12( TARGET );}
 "default"                       {FILTER14( C_KEYWORD);}
-":="                            {FILTER( EQUALS );}
 
 [-/][_A-Za-z0-9]*               {FILTER13( OPTION );}
 
