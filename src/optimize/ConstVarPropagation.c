@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2004/07/22 14:17:20  ktr
+ * - Special functions are now traversed when they are used
+ * - Constants are no longer propagated into funaps as this can introduce
+ *   inefficiencies (precompile will lift constant args anyway).
+ *
  * Revision 1.4  2004/07/18 19:54:54  sah
  * switch to new INFO structure
  * PHASE I
@@ -124,6 +129,7 @@ typedef enum {
 struct INFO {
     context_t context;
     statustype attrib;
+    node *fundef;
 };
 
 /*
@@ -131,6 +137,7 @@ struct INFO {
  */
 #define INFO_CVP_CONTEXT(n) (n->context)
 #define INFO_CVP_ATTRIB(n) (n->attrib)
+#define INFO_CVP_FUNDEF(n) (n->fundef)
 
 /*
  * INFO functions
@@ -144,6 +151,7 @@ MakeInfo ()
 
     result = Malloc (sizeof (info));
 
+    INFO_CVP_FUNDEF (result) = NULL;
     INFO_CVP_CONTEXT (result) = CON_undef;
     INFO_CVP_ATTRIB (result) = ST_undef;
 
@@ -243,17 +251,17 @@ AskPropagationOracle (node *let, info *arg_info)
 
     switch (INFO_CVP_CONTEXT (arg_info)) {
     case CON_array:
-    case CON_ap:
     case CON_primfun:
     case CON_let:
     case CON_withloop:
     case CON_cond:
         /* TRUE iff behind let node is constant value or an id node */
-        answer = IsConstant (LET_EXPR (let)) || IsVariable (LET_EXPR (let));
+        answer = ((IsConstant (LET_EXPR (let))) || (IsVariable (LET_EXPR (let))));
         break;
     case CON_return:
     case CON_withloop_cexprs:
     case CON_specialfun:
+    case CON_ap:
         /* TRUE iff behind let node is an id node */
         answer = IsVariable (LET_EXPR (let));
         break;
@@ -268,7 +276,7 @@ AskPropagationOracle (node *let, info *arg_info)
     }
 
     /* prevent propagation of unique variables */
-    answer = !(INFO_CVP_ATTRIB (arg_info) == ST_unique) & answer;
+    answer = ((INFO_CVP_ATTRIB (arg_info) != ST_unique) && (answer));
 
     DBUG_RETURN (answer);
 }
@@ -461,6 +469,12 @@ CVPap (node *arg_node, info *arg_info)
     DBUG_ENTER ("CVPap");
 
     if ((FUNDEF_IS_LACFUN (AP_FUNDEF (arg_node)))) {
+        /*
+         * special functions must be traversed when they are used
+         */
+        if (AP_FUNDEF (arg_node) != INFO_CVP_FUNDEF (arg_info)) {
+            AP_FUNDEF (arg_node) = Trav (AP_FUNDEF (arg_node), arg_info);
+        }
         INFO_CVP_CONTEXT (arg_info) = CON_specialfun;
     } else {
         INFO_CVP_CONTEXT (arg_info) = CON_ap;
@@ -644,7 +658,6 @@ CVPassign (node *arg_node, info *arg_info)
 node *
 CVPblock (node *arg_node, info *arg_info)
 {
-
     DBUG_ENTER ("CVPblock");
 
     if (BLOCK_INSTR (arg_node) != NULL) {
@@ -667,12 +680,18 @@ CVPblock (node *arg_node, info *arg_info)
 node *
 CVPfundef (node *arg_node, info *arg_info)
 {
+    node *oldfundef;
 
     DBUG_ENTER ("CVPfundef");
+
+    oldfundef = INFO_CVP_FUNDEF (arg_info);
+    INFO_CVP_FUNDEF (arg_info) = arg_node;
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
     }
+
+    INFO_CVP_FUNDEF (arg_info) = oldfundef;
 
     DBUG_RETURN (arg_node);
 }
@@ -691,7 +710,6 @@ CVPfundef (node *arg_node, info *arg_info)
 node *
 ConstVarPropagation (node *arg_node)
 {
-
     info *arg_info;
     funtab *old_tab;
 
