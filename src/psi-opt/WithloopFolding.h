@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 2.3  1999/02/28 21:45:21  srs
+ * moved two types to types.h and FREE_INDEX to free.h
+ *
  * Revision 2.2  1999/02/26 14:49:21  dkr
  * file moved from folder /optimize
  *
@@ -57,63 +60,6 @@
 
 /******************************************************************************
  *
- * types
- *
- ******************************************************************************/
-
-/* The following struct may only be annotated to N_assign nodes which are
-   inside a WL body and which have ASSIGN_INSTRs N_let and N_prf(F_psi). */
-typedef struct INDEX_INFO {
-    int vector;               /* this is an index vector (>0) or a scalar (0)
-                                 in case of a vector this number is the
-                                 shape of the vector. */
-    int *permutation;         /* Describes the permutation of index vars in
-                                 this vector (if this is a vector) or stores
-                                 the base scalar index in permutation[0].
-                                 The index scarales are counted starting
-                                 with 1. E.g. in [i,j,k] j has the no 2.
-                                 If one elements is not based on an index
-                                 (ONLY a constant, else the vector is not
-                                 valid) this value is 0 and the constant
-                                 can be found in const_arg. */
-    struct INDEX_INFO **last; /* Vector of predecessores (in case of vector)
-                                 or one predecessor (last[0] in case of scalar).
-                                 Point to last transformations */
-
-    /* the next 3 components describe the executed transformation */
-    prf prf;        /* prf +,-,* or / */
-    int *const_arg; /* the constant arg has to be an integer.
-                       For every element of a vector there is an
-                       own constant arg.
-                       If this struct is an annotation for a scalar,
-                       only const_arg[0] is valid.
-                       If the corresponding permutation is 0, the
-                       vector's element is a constant which is
-                       stored here (not a prf arg). */
-    int arg_no;     /* const_arg is the first (1) or second (2)
-                       argument of prf. arg_no may be 0 which
-                       means that no prf is given. Can only be in:
-                        tmp = [i,j,c];
-                        val = psi(...,tmp);
-                       Well, can also happen when CF is deacivated.
-                       If arg_no is 0, prf is undefined */
-} index_info;
-
-/* internal representation of WL generators on which the intersection
-   creation is based. */
-typedef struct INTERN_GEN {
-    int shape;
-
-    int *l, *u;
-    int *step, *width;
-
-    node *code;
-
-    struct INTERN_GEN *next;
-} intern_gen;
-
-/******************************************************************************
- *
  * exported functions
  *
  ******************************************************************************/
@@ -158,16 +104,8 @@ extern intern_gen *FreeInternGenChain (intern_gen *ig);
 #define DEF_MASK 0
 #define USE_MASK 1
 
-/* index_info related macros */
+/* index_info related macros. See FREE_INDEX_INFO in free.h */
 #define INDEX(n) ((index_info *)ASSIGN_INDEX (n))
-#define FREE_INDEX(tmp)                                                                  \
-    {                                                                                    \
-        FREE (tmp->permutation);                                                         \
-        FREE (tmp->last);                                                                \
-        FREE (tmp->const_arg);                                                           \
-        FREE (tmp);                                                                      \
-        tmp = NULL;                                                                      \
-    }
 
 /* intern_gen related macros*/
 #define FREE_INTERN_GEN(tmp)                                                             \
