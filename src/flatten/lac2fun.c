@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2000/12/07 13:43:56  dkr
+ * some includes added
+ *
  * Revision 3.5  2000/12/07 11:00:35  dkr
  * DBUG-string LAC2FUN renamed into L2F
  *
@@ -128,6 +131,8 @@
 #include "DupTree.h"
 #include "DataFlowMask.h"
 #include "DataFlowMaskUtils.h"
+#include "infer_dfms.h"
+#include "cleanup_decls.h"
 #include "lac2fun.h"
 
 /******************************************************************************
