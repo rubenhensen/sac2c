@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2001/05/31 09:12:59  sbs
+ * corrected output for SAC_TR_DecArrayMemcnt 8-)
+ *
  * Revision 3.1  2000/11/20 18:02:47  sacbase
  * new release made
  *
@@ -175,7 +178,7 @@ SAC_TR_DecArrayMemcnt (int size)
 {
     SAC_MT_ACQUIRE_LOCK (SAC_TR_array_memcnt_lock);
     SAC_TR_array_memcnt -= size;
-    SAC_TR_Print ("%d array elements allocated, total now: %d.", size,
+    SAC_TR_Print ("%d array elements deallocated, total now: %d.", size,
                   SAC_TR_array_memcnt);
     SAC_MT_RELEASE_LOCK (SAC_TR_array_memcnt_lock);
 }
