@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.16  2000/04/14 17:43:26  jhs
+ * Comments ...
+ *
  * Revision 1.15  2000/04/10 15:43:40  jhs
  * Played with infering ...
  *
@@ -257,16 +260,17 @@ MustExecuteSingleThreaded (node *arg_node, node *arg_info)
              *  it is a function with unknown body,
              *  is any array-result > threshold?
              */
-            result = testfun (AP_FUNDEF (LET_EXPR (instr)));
+            /*     result = testfun( AP_FUNDEF( LET_EXPR( instr))); */
 
-            result = CheckLHSforHeavyTypes (instr)
-                     || CheckLHSforBigArrays (instr, max_replication_size);
+            result = 1;
+            /*  CheckLHSforHeavyTypes( instr) ||
+              CheckLHSforBigArrays( instr, max_replication_size);  */
         } else if ((NODE_TYPE (LET_EXPR (instr)) == N_ap)) {
             DBUG_PRINT ("BLKIN", ("N_ap with known body"));
 
             /* #### */
 
-            result = testfun (AP_FUNDEF (LET_EXPR (instr)));
+            /*      result = testfun( AP_FUNDEF( LET_EXPR( instr))); */
 
 #if 1
             /* normal: use this */
@@ -295,12 +299,12 @@ MustExecuteSingleThreaded (node *arg_node, node *arg_info)
         }
     } else if (NODE_TYPE (instr) == N_while) {
         /* ??? #### */
-        DBUG_ASSERT (0, "N_while not supported");
         result = FALSE;
+        DBUG_ASSERT (0, "N_while not supported");
     } else if (NODE_TYPE (instr) == N_do) {
-        DBUG_ASSERT (0, "N_do not supported");
         /* ??? #### */
         result = FALSE;
+        DBUG_ASSERT (0, "N_do not supported");
     } else if (NODE_TYPE (instr) == N_cond) {
         /* ??? #### */
         result = FALSE;
@@ -309,8 +313,8 @@ MustExecuteSingleThreaded (node *arg_node, node *arg_info)
         /* N_return does not need to be inserted in Blocks */
         result = FALSE;
     } else {
-        DBUG_ASSERT (0, "unknown type of instr");
         result = FALSE;
+        DBUG_ASSERT (0, "unknown type of instr");
     }
 
     DBUG_RETURN (result);

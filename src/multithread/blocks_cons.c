@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2000/04/14 17:43:26  jhs
+ * Comments ...
+ *
  * Revision 1.7  2000/04/10 15:43:21  jhs
  * Added dbprint.
  *
@@ -110,7 +113,7 @@ BlocksCons (node *arg_node, node *arg_info)
         act_tab = old_tab;
     }
 
-    DBUG_PRINT ("BLKCO", ("begin"));
+    DBUG_PRINT ("BLKCO", ("end"));
     DBUG_RETURN (arg_node);
 }
 
@@ -207,6 +210,7 @@ node *
 BLKCOfundef (node *arg_node, node *arg_info)
 {
     statustype old_attrib;
+    node *old_fundef;
 
     DBUG_ENTER ("BLKCOfundef");
     DBUG_PRINT ("BLKCO", ("begin"));
@@ -231,11 +235,20 @@ BLKCOfundef (node *arg_node, node *arg_info)
         /* ignore repfuns */
     } else if (FUNDEF_ATTRIB (arg_node) == ST_call_any) {
         /*
-         *  all functions should be set to something != ST_call_any,
-         *  by RFIN or MTFIN by now ...
+         *  all needed functions should be set to something != ST_call_any,
+         *  by RFIN or MTFIN by now ... all the other ones still tagged
+         *  as ST_call_any will not be used in the programm and can
+         *  now be deleted (perhabs -noDFR is set).
          */
         DBUG_PRINT ("BLKCO", ("fundef_name: %s", FUNDEF_NAME (arg_node)));
-        DBUG_ASSERT (0, ("ST_call_any not allowed for here!!!"));
+        /*   DBUG_ASSERT(0, ("ST_call_any not allowed here!!!")); */
+
+        old_fundef = arg_node;
+        arg_node = FUNDEF_NEXT (old_fundef);
+        /*    FUNDEF_NEXT( old_fundef) = NULL; */
+        FreeNode (old_fundef);
+
+        /*    delete here ... */
     }
 
     /* DO NOT TRAV INTO NEXT!!! */

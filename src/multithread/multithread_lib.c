@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2000/04/14 17:43:26  jhs
+ * Comments ...
+ *
  * Revision 1.5  2000/04/10 15:45:08  jhs
  * Added Reduce
  *
@@ -199,18 +202,20 @@ MUTHExchangeApplication (node *arg_node, node *new_fundef)
 
     DBUG_PRINT ("MUTH", ("begin"));
 
+    DBUG_PRINT ("MUTH", ("new_fundef = %s", FUNDEF_NAME (new_fundef)));
+
     AP_FUNDEF (arg_node) = new_fundef;
 
     if (AP_NAME (arg_node) != NULL) {
         FREE (AP_NAME (arg_node));
     }
     AP_NAME (arg_node) = StringCopy (FUNDEF_NAME (new_fundef));
-    DBUG_ASSERT ((AP_MOD (arg_node) != NULL), ("null1!!"));
+    /*  DBUG_ASSERT((AP_MOD( arg_node) != NULL), ("null1!!")); */
     if (AP_MOD (arg_node) != NULL) {
         /*    FREE( AP_MOD( arg_node)); */
     }
 
-    DBUG_ASSERT ((FUNDEF_MOD (new_fundef) != NULL), ("null2!!"));
+    /*  DBUG_ASSERT((FUNDEF_MOD( new_fundef) != NULL), ("null2!!"));  */
     if (FUNDEF_MOD (new_fundef) != NULL) {
         AP_MOD (arg_node) = StringCopy (FUNDEF_MOD (new_fundef));
     } else {

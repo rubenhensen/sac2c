@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2000/04/14 17:43:26  jhs
+ * Comments ...
+ *
  * Revision 1.3  2000/03/31 16:24:33  jhs
  * improved
  *
@@ -12,6 +15,31 @@
  *
  *
  */
+
+/******************************************************************************
+ *
+ * file:   adjust_class.c
+ *
+ * prefix: ADJCA1 / ADJCA2
+ *
+ * description:
+ *   This phase creates master und worker-functions. All functions to be
+ *   executed multithreaded are tagged as ST_call_mt_master, these function
+ *   will be the master functions. From each master-function a copy is created
+ *   and tagged as ST_call_mt_worker. From now on the suffix "master" will
+ *   have real significance.
+ *   Within master-functions only masters are to be called, from within workers
+ *   only workers. So the calls have to be adjusted after coping the
+ *   functions.
+ *
+ *   This phase consist of two traversal, the first (ADJCA1) copies all the
+ *   functions, and the second (ADJCA2) adjusts the calls.
+ *   The two traversals are necessary: The adjustment has to be done in
+ *   all workers, so we need to have this worker do the adjustment.
+ *   And the function to be called must exist to. The easist way is to
+ *   simple copy all functions first and then adjust.
+ *
+ ******************************************************************************/
 
 #include "dbug.h"
 
@@ -28,6 +56,15 @@
 #include "internal_lib.h"
 #include "multithread_lib.h"
 
+/******************************************************************************
+ *
+ * function:
+ *   node* AdjustCalls1( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   Starts first traversal, for comments see file comments above.
+ *
+ ******************************************************************************/
 node *
 AdjustCalls1 (node *arg_node, node *arg_info)
 {
@@ -49,6 +86,15 @@ AdjustCalls1 (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/******************************************************************************
+ *
+ * function:
+ *   node* AdjustCalls2( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   Starts second traversal, for comments see file comments above.
+ *
+ ******************************************************************************/
 node *
 AdjustCalls2 (node *arg_node, node *arg_info)
 {
@@ -70,6 +116,22 @@ AdjustCalls2 (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/******************************************************************************
+ *
+ * function:
+ *   node *ADJCA1fundef( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   (First part of this phase!)
+ *   Creates a copy of each ST_call_mt[_master] function tagged as
+ *   ST_call_mt_worker. Now the meaning of ST_call_mt_master is not only
+ *   call_mt anymore, but also call_mt_master.
+ *
+ * attention:
+ *   this traversal handles ST_call_mt_master functions only, but ignores
+ *   the new ST_call_mt_workers. So we assert this within here.
+ *
+ ******************************************************************************/
 node *
 ADJCA1fundef (node *arg_node, node *arg_info)
 {
@@ -94,6 +156,24 @@ ADJCA1fundef (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/******************************************************************************
+ *
+ * function:
+ *   node *ADJCA1fundef( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   (Second part of this phase!)
+ *   Here we adjust all calls, within workers only workers are called
+ *   and within masters only masters are called.
+ *   The masters are all correct we only change the workers.
+ *   The first traversal has created a copy of each mt-function so there
+ *   always must be a N_fundef tagged as worker to set the N_ap to.
+ *
+ * attention:
+ *   this traversal handles ST_call_mt_worker functions only, but ignores
+ *   the new ST_call_mt_masters. So we assert this within here.
+ *
+ ******************************************************************************/
 node *
 ADJCA2fundef (node *arg_node, node *arg_info)
 {
@@ -118,6 +198,17 @@ ADJCA2fundef (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/******************************************************************************
+ *
+ * function:
+ *   node *ADJCA2st( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   Within workers we do not need contents of ST-blocks anymore (but we still
+ *   need the ST-block, with it's mask for code generation!!!). We remove
+ *   contents here.
+ *
+ ******************************************************************************/
 node *
 ADJCA2st (node *arg_node, node *arg_info)
 {
@@ -131,6 +222,17 @@ ADJCA2st (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/******************************************************************************
+ *
+ * function:
+ *   node* ADJCA2let( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   Here is the part were the calls really are adjusted.
+ *   This routine is able to change a call from a master to a worker, but
+ *   not necessaryly the other way round.
+ *
+ ******************************************************************************/
 node *
 ADJCA2let (node *arg_node, node *arg_info)
 {

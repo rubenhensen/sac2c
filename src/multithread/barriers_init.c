@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2000/04/14 17:43:26  jhs
+ * Comments ...
+ *
  * Revision 1.3  2000/04/10 15:45:35  jhs
  * Added BARINmt and BARINassign to traversal.
  *
@@ -40,7 +43,15 @@
 #include "internal_lib.h"
 #include "multithread_lib.h"
 
-/* #### */
+/******************************************************************************
+ *
+ * function:
+ *   node *BarriersInit(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   inits this traversal ... ####
+ *
+ ******************************************************************************/
 node *
 BarriersInit (node *arg_node, node *arg_info)
 {
@@ -69,19 +80,45 @@ BarriersInit (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/* #### */
+/******************************************************************************
+ *
+ * function:
+ *   node *BARINassign( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   This function looks big, but isn't (at least not until now, when I write
+ *   this comment ...). Most parts are debugging and building of new nodes.
+ *
+ *   The function does the following things:
+ *   - inspects lets
+ *     - puts components of barriers around with-loops on rhs
+ *       (see comments and action below).
+ *     - ignores all other lets
+ *   - traverses into N_mt
+ *   - ignores everything else
+ *
+ * attention:
+ *   THIS FUNCTION DOES NOT RETURN arg_node BUT assign!
+ *   (see declaration of local variables).
+ *
+ ******************************************************************************/
 node *
 BARINassign (node *arg_node, node *arg_info)
 {
-    node *instr;
-    node *before;
-    node *behind;
-    node *assign;
-    node *rhs;
-    node *signal;
-    node *alloc;
-    node *sync;
-    char *name;
+    node *instr;  /* the instr at arg_node */
+    node *before; /* nodes to be inserted before a wl */
+    node *behind; /* nodes to be inserted behind a wl */
+    node *assign; /*
+                   * The result of this function, if components of barriers
+                   * are added this one may be != argnode, otherwise it will
+                   * be == arg_node.
+                   * THIS FUNCTION DOES NOT RETURN arg_node BUT assign!
+                   */
+    node *rhs;    /* rhs of an let in the actual assign */
+    node *signal; /* a new MTsignal */
+    node *alloc;  /* a new MTalloc */
+    node *sync;   /* a new MTsync */
+    char *name;   /* the name of a variable containing a fold result */
 
     DBUG_ENTER ("BARINassign");
 
@@ -97,6 +134,10 @@ BARINassign (node *arg_node, node *arg_info)
                     || (NWITHOP_TYPE (NWITH2_WITHOP (rhs)) == WO_modarray)) {
                     DBUG_PRINT ("BARIN", ("gen/mod wl scheduled"));
 
+                    /*
+                     *  We put a MTalloc before each gen/mod-wl.
+                     *  We put a MTsignal and a MTsync after each gen/mod-wl.
+                     */
                     alloc = MakeMTalloc ();
                     MTALLOC_IDSET (alloc) = DFMGenMaskCopy (LET_DEFMASK (instr));
 
@@ -112,8 +153,12 @@ BARINassign (node *arg_node, node *arg_info)
                     ASSIGN_NEXT (arg_node) = behind;
 
                     assign = before;
-                } else {
+                } else if (NWITHOP_TYPE (NWITH2_WITHOP (rhs)) == WO_foldfun) {
                     DBUG_PRINT ("BARIN", ("fold-wl scheduled"));
+
+                    /*
+                     *  We put a MTsignal and a MTsync behind each fold-wl.
+                     */
 
                     /* there can be one variable on the left side only! */
                     name = StringCopy (DFMGetMaskEntryNameSet (LET_DEFMASK (instr)));
@@ -131,16 +176,18 @@ BARINassign (node *arg_node, node *arg_info)
                     ASSIGN_NEXT (arg_node) = behind;
 
                     assign = arg_node;
+                } else {
+                    DBUG_PRINT ("BARIN", ("unknown kind of withloop"));
                 }
-
             } else {
+                /* nothing do be done */
                 DBUG_PRINT ("BARIN", ("not within mt or wl not scheduled"));
                 assign = arg_node;
             }
         } else {
+            /* nothing do be done */
             DBUG_PRINT ("BARIN", ("not a wl but %s", NODE_TEXT (instr)));
             assign = arg_node;
-            /* nothing do be done */
         }
 
     } else if (NODE_TYPE (instr) == N_mt) {
@@ -160,7 +207,18 @@ BARINassign (node *arg_node, node *arg_info)
     DBUG_RETURN (assign);
 }
 
-/* #### */
+/******************************************************************************
+ *
+ * function:
+ *   node *BARINfundef( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   Sets flag to show the traversal enters an mt-function, traverses the
+ *   mt-function, and sets the flag back.
+ *   The flag meant is INFO_BARIN_WITHINMT, used to show the traversal is
+ *   in some mt-region (a mt-block or a mt-function).
+ *
+ ******************************************************************************/
 node *
 BARINfundef (node *arg_node, node *arg_info)
 {
@@ -182,7 +240,18 @@ BARINfundef (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/* #### */
+/******************************************************************************
+ *
+ * function:
+ *   node *BARINmt( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   Sets flag to show the traversal enters an mt-block, traverses the
+ *   mt-block, and sets the flag back.
+ *   The flag meant is INFO_BARIN_WITHINMT, used to show the traversal is
+ *   in some mt-region (a mt-block or a mt-function).
+ *
+ ******************************************************************************/
 node *
 BARINmt (node *arg_node, node *arg_info)
 {

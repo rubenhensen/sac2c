@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2000/04/14 17:43:26  jhs
+ * Comments ...
+ *
  * Revision 1.7  2000/04/10 15:44:01  jhs
  * Changed behaviour
  *
@@ -35,9 +38,38 @@
  * prefix: MTFIN
  *
  * description:
- *   For each function called within a N_mt a copy of this function is created.
- *   This new version of the function will be called if the original function
- *   is called within any N_mt.
+ *   The name of this file is somewhat misleading *<:(, not only mtfuns, but
+ *   also stfuns are created here ...
+ *   - For each function called within a mt-block (N_mt) a copy is created
+ *     and tagged as ST_call_mt (in reality ST_call_mt_master is used),
+ *     saying this function is to be called from a mt-context.
+ *     All calls in the new function are treated like they were in an st-block
+ *     (and they really are in a mt-context).
+ *   => The new functions are called mtfuns and get some  prefix like CALL-MT
+ *   - For each function called within a st-block (N_st) a copy is created
+ *     and tagged as ST_call_st, saying this function is to be called from a
+ *     st-context. All calls in the new function are treated like they were in
+ *     a st-block (and they really are in a st-context).
+ *     - Basic requirement for this part of the traversal:
+ *       Each function f that is imported from a module has to be within a
+ *       st-block (f from a modul? FUNDEF_BODY( f) == NULL)
+ *   => The new functions are called stfuns, their names are not to be changed,
+ *      because they could be e.g. external c-functions.
+ *   - The traversal does *not* traverse each function of it's own, but
+ *     starts from the function main with context st, traversing in each called
+ *     function (and from there goes on recursively) changing context at each
+ *     mt/st-block or an the start of a already tagged function, copies
+ *     functions if needed ... functions not used in the programm (-noDFR) are
+ *     not reached.
+ *
+ * attention:
+ *   - this traversal changes names of functions ... if this is done any call
+ *     (N_ap) of this function has to be changed too (!!!), because the name
+ *     of the function is stored (ugly dies the world) in the N_ap too!!!!
+ *     So if we want to make a one time traversalit correct, we can change the
+ *     name of a function *only* if we see it be called for the *first* time,
+ *     otherwise we would have to traverse twice or we end up with wrong
+ *     names in the applications ...
  *
  ******************************************************************************/
 
@@ -71,6 +103,8 @@
  *   - all functions that are not the main function!!!
  *     Then all functions could be modified.
  *
+ *   => see file comment for futher information
+ *
  ******************************************************************************/
 node *
 MtfunsInit (node *arg_node, node *arg_info)
@@ -85,7 +119,7 @@ MtfunsInit (node *arg_node, node *arg_info)
 
     /*
      *  This traversal starts from function main only!!!
-     *  Because the scheme with the miniphases should not be disturb
+     *  Because the scheme with the miniphases should not be disturbed
      *  all other functions are ignored within here
      */
     if (strcmp (FUNDEF_NAME (arg_node), "main") == 0) {
@@ -204,6 +238,10 @@ MTFINlet (node *arg_node, node *arg_info)
                           || (INFO_MTFIN_CURRENTATTRIB (arg_info) = ST_call_st)),
                          ("function without body, cannot be call_mt"));
 
+            /*
+             *  we see a call to this function for the first time, change name if
+             *  needed ...
+             */
             FUNDEF_ATTRIB (old_fundef) = INFO_MTFIN_CURRENTATTRIB (arg_info);
             if (FUNDEF_ATTRIB (old_fundef) == ST_call_mt_master) {
                 old_fundef = MUTHExpandFundefName (old_fundef, "__CALL_MT__");
@@ -217,7 +255,10 @@ MTFINlet (node *arg_node, node *arg_info)
         } else if (FUNDEF_ATTRIB (old_fundef) == INFO_MTFIN_CURRENTATTRIB (arg_info)) {
             DBUG_PRINT ("MTFIN", ("== current %s %s", FUNDEF_NAME (old_fundef),
                                   mdb_statustype[FUNDEF_ATTRIB (old_fundef)]));
-            /* adjust call */
+            /*
+             *  wee see a call to the function not for the first time, name
+             *  could have been changed before, adjust name in the call
+             */
             ap = MUTHExchangeApplication (ap, old_fundef);
         } else if (FUNDEF_ATTRIB (old_fundef) != INFO_MTFIN_CURRENTATTRIB (arg_info)) {
 
@@ -226,6 +267,9 @@ MTFINlet (node *arg_node, node *arg_info)
             new_fundef = FUNDEF_COMPANION (old_fundef);
             if (new_fundef != NULL) {
                 DBUG_PRINT ("MTFIN", ("exists"));
+                /*
+                 *  The name of the function could have been changed, so adjust it here
+                 */
                 ap = MUTHExchangeApplication (ap, new_fundef);
             } else {
                 DBUG_PRINT ("MTFIN", ("not exists"));
@@ -236,19 +280,17 @@ MTFINlet (node *arg_node, node *arg_info)
 
                 DBUG_PRINT ("MTFIN", ("hit"));
                 /*
-                 *  Change names.
+                 *  Adjust names ...
                  */
                 if (FUNDEF_ATTRIB (old_fundef) == ST_call_mt_master) {
-                    /*        old_fundef = MUTHExpandFundefName( old_fundef,
-                     * "__CALL_MT__"); */
-                    /*        new_fundef = MUTHExpandFundefName( new_fundef,
-                     * "__CALL_ST__"); */
-
+                    /*
+                     *  ... recreate original name for St_call
+                     */
                     new_fundef = MUTHReduceFundefName (new_fundef, 11);
-
                 } else {
-                    /*        old_fundef = MUTHExpandFundefName( old_fundef,
-                     * "__CALL_ST__"); */
+                    /*
+                     *  ... add call_mt
+                     */
                     new_fundef = MUTHExpandFundefName (new_fundef, "__CALL_MT__");
                 }
                 DBUG_PRINT ("MTFIN", ("hit2"));
