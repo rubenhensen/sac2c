@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.1  1995/11/16 19:47:38  cg
+ * Revision 1.2  1997/03/19 15:31:08  cg
+ * Now, module/class implementations without any functions are supported
+ *
+ * Revision 1.1  1995/11/16  19:47:38  cg
  * Initial revision
  *
  *
@@ -186,7 +189,9 @@ RMVmodul (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("RMVmodul");
 
-    MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
+    if (MODUL_FUNS (arg_node) != NULL) {
+        MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }

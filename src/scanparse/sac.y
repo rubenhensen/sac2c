@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.121  1997/03/19 13:45:17  cg
+ * Revision 1.122  1997/03/19 15:31:08  cg
+ * Now, module/class implementations without any functions are supported
+ *
+ * Revision 1.121  1997/03/19  13:45:17  cg
  * new pragma linkwith added in module/class declarations as well as
  * special version for sib files
  *
@@ -590,6 +593,30 @@ moddec: modheader evimport OWN COLON expdesc
         {
           $$=$1;
           $$->node[0]=$5;
+          $$->node[1]=$2;
+          if($$->node[1] != NULL)
+          {
+             $$->nnode=2;
+             DBUG_PRINT("GENTREE",
+                       ("%s:"P_FORMAT" Id: %s , %s"P_FORMAT" %s," P_FORMAT,
+                        mdb_nodetype[ $$->nodetype ], $$, $$->info.fun_name.id,
+                        mdb_nodetype[ $$->node[0]->nodetype ], $$->node[0],
+                        mdb_nodetype[ $$->node[1]->nodetype ], $$->node[1]));
+          }
+          else
+          {
+             $$->nnode=1;
+             DBUG_PRINT("GENTREE",
+                       ("%s:"P_FORMAT" Id: %s , %s"P_FORMAT,
+                        mdb_nodetype[ $$->nodetype ], $$, $$->info.fun_name.id,
+                        mdb_nodetype[ $$->node[0]->nodetype ], $$->node[0]));
+          }
+	     }
+      | modheader evimport
+        {
+          $$=$1;
+          $$->node[0]=MakeNode(N_explist);
+          $$->node[0]->nnode=0;
           $$->node[1]=$2;
           if($$->node[1] != NULL)
           {

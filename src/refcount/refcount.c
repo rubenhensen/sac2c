@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.23  1996/09/02 17:41:51  sbs
+ * Revision 1.24  1997/03/19 15:29:59  cg
+ * Now, module/class implementations without any functions are supported
+ *
+ * Revision 1.23  1996/09/02  17:41:51  sbs
  * commented ref_dump in RefLoop
  *
  * Revision 1.22  1996/05/29  16:48:11  sbs
@@ -523,8 +526,10 @@ Refcount (node *arg_node)
     act_tab = refcnt_tab;
 
     if (N_modul == NODE_TYPE (arg_node)) {
-        DBUG_ASSERT ((N_fundef == NODE_TYPE (MODUL_FUNS (arg_node))), "wrong node ");
-        MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), NULL);
+        if (MODUL_FUNS (arg_node) != NULL) {
+            DBUG_ASSERT ((N_fundef == NODE_TYPE (MODUL_FUNS (arg_node))), "wrong node ");
+            MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), NULL);
+        }
     } else {
         DBUG_ASSERT ((N_fundef == NODE_TYPE (arg_node)), "wrong node ");
         arg_node = Trav (arg_node, NULL);
