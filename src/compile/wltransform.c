@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.55  2002/06/13 11:51:15  dkr
+ * no changes done
+ *
  * Revision 3.54  2001/11/22 08:41:17  sbs
  * CheckWithids is only compiled in the dbug version since
  * it is used from DBUG_ASSERT only!
@@ -6608,9 +6611,9 @@ node *
 WLTRAwith (node *arg_node, node *arg_info)
 {
     node *strides, *cubes, *segs, *seg;
-    shpseg *wlshape;
+    shpseg *res_shp;
     bool is_fold, do_naive_comp, all_const;
-    int wldims, b;
+    int wl_dim, b;
     wl_bs_t WL_break_after;
     node *new_node = NULL;
 
@@ -6634,16 +6637,16 @@ WLTRAwith (node *arg_node, node *arg_info)
 
     is_fold = NWITH_IS_FOLD (arg_node);
     /* get number of dims of with-loop index range */
-    wldims = IDS_SHAPE (NWITH_VEC (arg_node), 0);
-    wlshape = is_fold ? NULL : TYPES_SHPSEG (INFO_WL_TYPES (arg_info));
+    wl_dim = IDS_SHAPE (NWITH_VEC (arg_node), 0);
+    res_shp = is_fold ? NULL : TYPES_SHPSEG (INFO_WL_TYPES (arg_info));
 
     /* convert parts of with-loop into new format */
     DBUG_EXECUTE ("WLtrans", NOTE (("step 0.1: convert parts into strides\n")));
-    strides = Parts2Strides (NWITH_PART (arg_node), wldims, wlshape);
+    strides = Parts2Strides (NWITH_PART (arg_node), wl_dim, res_shp);
 
     if (strides == NULL) {
         /* all parts are empty  ->  set 'strides' or 'new_node' */
-        EmptyParts2StridesOrExpr (&strides, &new_node, arg_node, wldims, wlshape);
+        EmptyParts2StridesOrExpr (&strides, &new_node, arg_node, wl_dim, res_shp);
     }
 
     /* consistence check: ensures that the strides are pairwise disjoint */
@@ -6656,7 +6659,7 @@ WLTRAwith (node *arg_node, node *arg_info)
     if (new_node == NULL) {
         DBUG_ASSERT ((strides != NULL), "no strides found!");
         new_node = MakeNWith2 (NWITH_WITHID (arg_node), NULL, NWITH_CODE (arg_node),
-                               NWITH_WITHOP (arg_node), wldims);
+                               NWITH_WITHOP (arg_node), wl_dim);
 
         /* extract naive-compilation and array-placement pragmas */
         do_naive_comp = ExtractNaiveCompPragma (NWITH_PRAGMA (arg_node), line);
@@ -6690,7 +6693,7 @@ WLTRAwith (node *arg_node, node *arg_info)
 
         if (WL_break_after < WL_PH_cubes) {
             /* stop after converting  ->  build one segment containing the strides */
-            segs = WLCOMP_All (NULL, NULL, strides, wldims, line);
+            segs = WLCOMP_All (NULL, NULL, strides, wl_dim, line);
         } else {
             /* build the cubes */
             DBUG_EXECUTE ("WLtrans", NOTE (("step 1: build cubes\n")));
@@ -6706,9 +6709,9 @@ WLTRAwith (node *arg_node, node *arg_info)
                 if (!is_fold) {
                     /* no fold with-loop  ->  add missing indices (init/copy) */
                     if (all_const) {
-                        cubes = GenerateCompleteDomain (strides, wldims, wlshape);
+                        cubes = GenerateCompleteDomain (strides, wl_dim, res_shp);
                     } else {
-                        cubes = GenerateCompleteDomainVar (strides, wldims, wlshape);
+                        cubes = GenerateCompleteDomainVar (strides, wl_dim, res_shp);
 
                         /*
                          * the generated cubes are already splitted and merged
@@ -6757,19 +6760,19 @@ WLTRAwith (node *arg_node, node *arg_info)
 
             if (WL_break_after < WL_PH_segs) {
                 /* stop after cube building  ->  build one segment containing cubes */
-                segs = WLCOMP_All (NULL, NULL, cubes, wldims, line);
+                segs = WLCOMP_All (NULL, NULL, cubes, wl_dim, line);
             } else {
                 DBUG_EXECUTE ("WLtrans", NOTE (("step 3: choose segments\n")));
 
                 if (do_naive_comp) {
                     /* naive compilation  ->  put each stride in a separate segment */
-                    segs = WLCOMP_Cubes (NULL, NULL, cubes, wldims, line);
+                    segs = WLCOMP_Cubes (NULL, NULL, cubes, wl_dim, line);
                 } else {
-                    segs = SetSegs (NWITH_PRAGMA (arg_node), cubes, wldims);
+                    segs = SetSegs (NWITH_PRAGMA (arg_node), cubes, wl_dim);
                 }
 
                 /* compute SEGX_IDX_MIN, SEGX_IDX_MAX and SEG_SV */
-                segs = InferSegsParams_Pre (segs, wlshape);
+                segs = InferSegsParams_Pre (segs, res_shp);
 
                 seg = segs;
                 while (seg != NULL) {
@@ -6795,7 +6798,7 @@ WLTRAwith (node *arg_node, node *arg_info)
                                   NOTE (("step 5.%d: hierarchical blocking (level %d)\n",
                                          b + 1, b)));
                                 WLSEG_CONTENTS (seg)
-                                  = BlockWL (WLSEG_CONTENTS (seg), wldims,
+                                  = BlockWL (WLSEG_CONTENTS (seg), wl_dim,
                                              WLSEG_BV (seg, b), FALSE);
                             }
                         }
@@ -6806,7 +6809,7 @@ WLTRAwith (node *arg_node, node *arg_info)
                         if (NODE_TYPE (seg) == N_WLseg) {
                             DBUG_EXECUTE ("WLtrans",
                                           NOTE (("step 6: unrolling-blocking\n")));
-                            WLSEG_CONTENTS (seg) = BlockWL (WLSEG_CONTENTS (seg), wldims,
+                            WLSEG_CONTENTS (seg) = BlockWL (WLSEG_CONTENTS (seg), wl_dim,
                                                             WLSEG_UBV (seg), TRUE);
                         }
                     }
@@ -6840,7 +6843,7 @@ WLTRAwith (node *arg_node, node *arg_info)
                         if (NODE_TYPE (seg) == N_WLseg) {
                             DBUG_EXECUTE ("WLtrans", NOTE (("step 10: normalize\n")));
                             WLSEG_CONTENTS (seg)
-                              = NormWL (wldims, wlshape, WLSEG_IDX_MAX (seg),
+                              = NormWL (wl_dim, res_shp, WLSEG_IDX_MAX (seg),
                                         WLSEG_CONTENTS (seg));
                         }
                     }
