@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 1.12  1998/04/08 20:44:29  srs
+ * exported new functions
+ *
  * Revision 1.11  1998/04/03 11:39:40  srs
  * changed arguments for SearchWL
  *
@@ -99,8 +102,8 @@ typedef struct INTERN_GEN {
 extern node *WithloopFolding (node *, node *);
 extern int LocateIndexVar (node *idn, node *wln);
 extern node *CreateVardec (char *name, types *type, node **vardecs);
-extern node *SearchWL (int, node *, int *, int, int);
 extern node *StartSearchWL (node *idn, node *assignn, int mode);
+extern void ArrayST2ArrayInt (node *arrayn, int **iarray, int shape);
 
 /* index_info related functions */
 extern void DbugIndexInfo (index_info *iinfo);
@@ -109,11 +112,14 @@ extern index_info *DuplicateIndexInfo (index_info *iinfo);
 extern index_info *ValidLocalId (node *idn);
 
 /* intern_gen related functions */
-extern intern_gen *AppendInternGen (intern_gen *, int, node *, int);
-extern intern_gen *Tree2InternGen (node *wln);
+extern intern_gen *Tree2InternGen (node *wln, node *filter);
 extern node *InternGen2Tree (node *wln, intern_gen *ig);
 extern int NormalizeInternGen (intern_gen *ig);
-extern void ArrayST2ArrayInt (node *arrayn, int **iarray, int shape);
+extern intern_gen *CreateInternGen (int shape, int stepwidth);
+extern intern_gen *AppendInternGen (intern_gen *, int, node *, int);
+extern intern_gen *CopyInternGen (intern_gen *source);
+extern intern_gen *MoveInternGen (intern_gen *source, intern_gen **dest);
+extern void *FreeInternGenChain (intern_gen *ig);
 
 /******************************************************************************
  *
