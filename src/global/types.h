@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2001/04/02 11:07:30  nmw
+ * symbol FUN_UNUSED added
+ *
  * Revision 3.6  2001/03/30 16:37:09  nmw
  * *** empty log message ***
  *
@@ -155,7 +158,7 @@
 #define MAX_SONS 6
 
 /* init value for FUNDEF_USED */
-#define FUN_UNUSED -1
+#define FUN_UNUSED 0
 
 typedef char id; /* kept for compatibility reasons with old version only */
 
