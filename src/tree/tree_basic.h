@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.67  2000/07/06 14:43:21  mab
+ * added INFO_APT_FUNDEF
+ *
  * Revision 1.66  2000/07/04 14:35:21  jhs
  * Added CopyDFMfoldmask.
  *
@@ -2590,6 +2593,8 @@ extern node *MakeInfo ();
 #define INFO_APT_EXPRESSION_PADDED(n) ((bool)(n->flag))
 #define INFO_APT_WITHOP_TYPE(n) (n->int_data)
 #define INFO_APT_WITH(n) (n->node[0])
+#define INFO_APT_FUNDEF(n) (m->node[1])
+
 /*--------------------------------------------------------------------------*/
 
 /***
