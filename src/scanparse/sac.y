@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 2.24  2000/07/21 14:48:17  nmw
+ * parsing of specialization files added
+ *
  * Revision 2.23  2000/07/14 11:48:14  dkr
  * FUNDEF_INLINE is bool!
  *
@@ -358,6 +361,7 @@ int i;
 node *syntax_tree;
 node *decl_tree;
 node *sib_tree;
+node *spec_tree;
 
 
 static char *mod_name="_MAIN";
@@ -402,19 +406,19 @@ extern types *GenComplexType( types *types, nums *numsp);
          target_list_t   *target_list_t;
        }
 
-%token PARSE_PRG, PARSE_DEC, PARSE_SIB, PARSE_RC
+%token PARSE_PRG, PARSE_DEC, PARSE_SIB, PARSE_RC, PARSE_SPEC
 
 %token BRACE_L, BRACE_R, BRACKET_L, BRACKET_R, SQBR_L, SQBR_R, COLON, SEMIC,
        COMMA, AMPERS, ASSIGN, DOT, QUESTION,
        INLINE, LET, TYPEDEF, CONSTDEF, OBJDEF, CLASSTYPE,
        INC, DEC, ADDON, SUBON, MULON, DIVON, MODON
        K_MAIN, RETURN, IF, ELSE, DO, WHILE, FOR, NWITH, FOLD,
-       MODDEC, MODIMP, CLASSDEC, IMPORT, IMPLICIT, EXPLICIT, TYPES, FUNS,
+       MODDEC, MODSPEC, MODIMP, CLASSDEC, IMPORT, IMPLICIT, EXPLICIT, TYPES, FUNS,
        OWN, CONSTANTS, GLOBAL, OBJECTS, CLASSIMP,
        ARRAY,SC, TRUETOKEN, FALSETOKEN, EXTERN, C_KEYWORD,
        PRAGMA, LINKNAME, LINKSIGN, EFFECT, READONLY, REFCOUNTING,
        TOUCH, COPYFUN, FREEFUN, INITFUN, LINKWITH,
-       WLCOMP, DEFAULT, CACHESIM,
+       WLCOMP, DEFAULT, CACHESIM, SPECIALIZE, 
        STEP, WIDTH, TARGET,
        AND, OR, EQ, NEQ, NOT, LE, LT, GE, GT, MUL, DIV, PRF_MOD, PLUS,
        TOI, TOF, TOD, ABS, PRF_MIN, PRF_MAX, ALL,
@@ -451,7 +455,7 @@ extern types *GenComplexType( types *types, nums *numsp);
              exprsNOar, /* exprNOdot */, exprORdot, exprNOar, 
              expr, expr_main, expr_ap, expr_ar, expr_num, exprs,
              Ngenerator, Nsteps, Nwidth, Nwithop, Ngenidx,
-             moddec, expdesc, expdesc2, expdesc3, expdesc4, fundecs, fundec,
+             moddec, modspec, expdesc, expdesc2, expdesc3, expdesc4, fundecs, fundec,
              exptypes, exptype, objdecs, objdec, evimport, modheader,
              imptypes, imptype,import, imports, impdesc, impdesc2, impdesc3,
              impdesc4, opt_arguments,
@@ -496,6 +500,7 @@ file:   PARSE_PRG prg {syntax_tree=$2;}
       | PARSE_DEC moddec {decl_tree=$2;}
       | PARSE_SIB sib {sib_tree=$2;}
       | PARSE_RC  targets {target_list=RSCAddTargetList($2, target_list);}
+      | PARSE_SPEC modspec {spec_tree=$2;}
       ;
 
 id: ID
@@ -570,6 +575,17 @@ moddec: modheader evimport OWN COLON expdesc
         }
       ;
 
+modspec:  modheader OWN COLON expdesc
+          {
+          $$=$1;
+          $$->node[0]=$4;
+          $$->node[1]=NULL;
+	  DBUG_PRINT("GENTREE",
+		     ("%s:"P_FORMAT" Id: %s , %s"P_FORMAT,
+		      mdb_nodetype[ $$->nodetype ], $$, $$->info.fun_name.id,
+		      mdb_nodetype[ $$->node[0]->nodetype ], $$->node[0]));
+	  };
+
 modheader: modclass evextern id COLON linkwith
            {
              $$=MakeNode($1);
@@ -592,6 +608,7 @@ modheader: modclass evextern id COLON linkwith
 
 modclass: MODDEC {$$=N_moddec; file_kind=F_moddec;}
         | CLASSDEC {$$=N_classdec; file_kind=F_classdec;}
+        | MODSPEC {$$=N_modspec; file_kind=F_modspec;}
         ;
 
 evextern: EXTERN 
