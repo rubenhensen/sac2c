@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2004/11/29 10:56:46  sah
+ * fixed naming convention bug
+ *
  * Revision 3.4  2004/11/22 12:37:33  ktr
  * Ismop SacDevCamp 04
  * ,.
@@ -88,7 +91,7 @@ extern node *FLATarray (node *arg_node, info *arg_info);
 extern node *FLATreturn (node *arg_node, info *arg_info);
 extern node *FLATid (node *arg_node, info *arg_info);
 extern node *FLATlet (node *arg_node, info *arg_info);
-extern node *FLATargs (node *arg_node, info *arg_info);
+extern node *FLATarg (node *arg_node, info *arg_info);
 extern node *FLATprf (node *arg_node, info *arg_info);
 extern node *FLATwith (node *arg_node, info *arg_info);
 extern node *FLATwithid (node *arg_node, info *arg_info);

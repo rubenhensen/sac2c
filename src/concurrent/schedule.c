@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2004/11/29 10:56:00  sah
+ * fixed naming convention bug
+ *
  * Revision 3.9  2004/11/25 15:20:21  jhb
  * WLSEGX_TASKSEL achanged to L_WLSEGX_TASKSEL
  *
@@ -226,7 +229,7 @@ SCHEDwlseg (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SCHEDwlsegVar(node *arg_node, info *arg_info)
+ *   node *SCHEDwlsegvar(node *arg_node, info *arg_info)
  *
  * description:
  *   sched_tab traversal function for N_WLsegVar nodes.
@@ -238,9 +241,9 @@ SCHEDwlseg (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 node *
-SCHEDwlsegVar (node *arg_node, info *arg_info)
+SCHEDwlsegvar (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SCHEDwlsegVar");
+    DBUG_ENTER ("SCHEDwlsegvar");
 
     if (arg_info == NULL) {
         /*

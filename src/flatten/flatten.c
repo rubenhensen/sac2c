@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.38  2004/11/29 10:56:46  sah
+ * fixed naming convention bug
+ *
  * Revision 3.37  2004/11/27 05:11:03  ktr
  * late night fix
  *
@@ -937,7 +940,7 @@ FLATfundef (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *  node *FLATargs(node *arg_node, info *arg_info)
+ *  node *FLATarg(node *arg_node, info *arg_info)
  *
  * description:
  *   - adds names of formal parameters to the stack
@@ -945,9 +948,9 @@ FLATfundef (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 node *
-FLATargs (node *arg_node, info *arg_info)
+FLATarg (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("FLATargs");
+    DBUG_ENTER ("FLATarg");
 
     PUSH (ARG_NAME (arg_node), ARG_NAME (arg_node), with_level);
 
