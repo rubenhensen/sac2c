@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.2  2004/11/22 16:34:41  sbs
+ * SacDevCamp04
+ *
  * Revision 3.1  2000/11/20 18:01:53  sacbase
  * new release made
  *
@@ -48,52 +51,8 @@
  *
  *****************************************************************************/
 
-#ifndef sac_pad_info_h
-
-#define sac_pad_info_h
-
-/* structure for storing access patterns */
-typedef struct PATTERN_T {
-    shpseg *pattern;
-    struct PATTERN_T *next;
-} pattern_t;
-
-/* structure for grouping access patterns by conflict groups */
-typedef struct CONFLICT_GROUP_T {
-    shpseg *group;
-    accessdir_t direction;
-    pattern_t *patterns;
-    struct CONFLICT_GROUP_T *next;
-} conflict_group_t;
-
-/* strcture for grouping conflict groups by array types */
-typedef struct ARRAY_TYPE_T {
-    simpletype type;
-    int dim;
-    shpseg *shape;
-    conflict_group_t *groups;
-    struct ARRAY_TYPE_T *next;
-} array_type_t;
-
-/* structure containing shapes of unsupported operations */
-typedef struct UNSUPPORTED_SHAPE_T {
-    simpletype type;
-    int dim;
-    shpseg *shape;
-    struct UNSUPPORTED_SHAPE_T *next;
-} unsupported_shape_t;
-
-/* structure containing old and infered array shape */
-typedef struct PAD_INFO_T {
-    simpletype type;
-    int dim;
-    shpseg *old_shape;
-    shpseg *new_shape;
-    shpseg *padding;
-    node *fundef_pad;
-    node *fundef_unpad;
-    struct PAD_INFO_T *next;
-} pad_info_t;
+#ifndef _SAC_PAD_INFO_H_
+#define _SAC_PAD_INFO_H_
 
 /* used in pad.c */
 extern void PIinit ();
@@ -140,4 +99,4 @@ extern types *PIgetOldType (types *old_type);
 extern node *PIgetFundefPad (types *old_type);
 extern node *PIgetFundefUnpad (types *old_type);
 
-#endif /* sac_pad_info_h */
+#endif /* _SAC_PAD_INFO_H_ */

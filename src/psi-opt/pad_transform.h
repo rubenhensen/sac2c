@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.3  2004/11/22 16:34:41  sbs
+ * SacDevCamp04
+ *
  * Revision 3.2  2004/07/19 14:19:38  sah
  * switch to new INFO structure
  * PHASE I
@@ -50,16 +53,15 @@
  *
  * description:
  *
- *   This compiler module appplies array padding.
+ *   This compiler module applies array padding.
  *
  *
  *****************************************************************************/
 
-#ifndef sac_pad_transform_h
+#ifndef _SAC_PAD_TRANSFORM_H_
+#define _SAC_PAD_TRANSFORM_H_
 
-#define sac_pad_transform_h
-
-extern void APtransform ();
+extern void APTdoTransform ();
 
 extern node *APTarg (node *arg_node, info *arg_info);
 extern node *APTvardec (node *arg_node, info *arg_info);
@@ -75,4 +77,4 @@ extern node *APTfundef (node *arg_node, info *arg_info);
 extern node *APTblock (node *arg_node, info *arg_info);
 extern node *APTlet (node *arg_node, info *arg_info);
 
-#endif /* sac_pad_transform_h */
+#endif /* _SAC_PAD_TRANSFORM_H_ */
