@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.218  2004/08/19 15:25:08  skt
+ * moved FUNDEF_COMPANION
+ *
  * Revision 3.217  2004/08/19 10:12:51  skt
  * some comments
  *
@@ -1414,10 +1417,11 @@ extern node *MakeFundef (char *name, char *mod, types *types, node *args, node *
 /* concurrent: ST_spmdfun */
 #define FUNDEF_LIFTEDFROM(n) ((node *)(n->dfmask[1]))
 #define FUNDEF_WORKER(n) ((node *)(n->dfmask[2]))
-#define FUNDEF_COMPANION(n) ((node *)(n->dfmask[3]))
 
 /* multithreading: */
 #define FUNDEF_EXECMODE(n) ((mtexecmode_t) (n->lineno))
+#define FUNDEF_COMPANION(n) ((node *)(n->dfmask[3]))
+
 /* multithreading: ST_spmdfun */
 #define FUNDEF_IDENTIFIER(n) (n->lineno)
 #define FUNDEF_MT2USE(n) (n->dfmask[1])
