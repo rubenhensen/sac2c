@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2001/01/24 23:40:39  dkr
+ * ICMs SAC_WL_GRIDVAR_... renamed into SAC_WL_GRID_FIT_...
+ *
  * Revision 3.8  2001/01/22 13:47:51  dkr
  * ICM SAC_WL_STRIDE_LAST_LOOP_BEGIN added
  *
@@ -231,7 +234,7 @@
 
 /*
  * SAC_WL_VAR( stop, idx_sca) contain always the upper bound of the current
- * stride and is needed by the ..GRIDVAR_LOOP_BEGIN.. macros.
+ * stride and is needed by the ..GRID_FIT_LOOP_BEGIN.. macros.
  */
 
 /*
@@ -351,13 +354,13 @@
  *
  *            we can use these macros only for (0->1) grids!!!!
  *            For all other grids we must add a runtime-check, whether the grid
- *            must be cut or not ('WL_GRIDVAR_LOOP_...').
+ *            must be cut or not ('WL_GRID_FIT_LOOP_...').
  */
 
 /*****************************************************************************/
 
 /***
- *** grid-loop (constant parameters)
+ *** grid-loop (fitted already)
  ***/
 
 /*
@@ -409,7 +412,7 @@
 /*****************************************************************************/
 
 /***
- *** grid-loop (non-constant parameters)
+ *** grid-loop (not fitted yet)
  ***/
 
 /*
@@ -421,25 +424,25 @@
  * BEGIN
  */
 
-#define SAC_WL_GRIDVAR_LOOP_BEGIN(dim, idx_vec, idx_sca, bnd1, bnd2)                     \
+#define SAC_WL_GRID_FIT_LOOP_BEGIN(dim, idx_vec, idx_sca, bnd1, bnd2)                    \
     {                                                                                    \
         int SAC_WL_VAR (grid_stop, idx_sca)                                              \
           = SAC_ND_MIN (idx_sca + (bnd2 - bnd1), SAC_WL_VAR (stop, idx_sca));            \
         for (; idx_sca < SAC_WL_VAR (grid_stop, idx_sca); idx_sca++) {
 
-#define SAC_WL_MT_GRIDVAR_LOOP_BEGIN(dim, idx_vec, idx_sca, bnd1, bnd2)                  \
-    SAC_WL_GRIDVAR_LOOP_BEGIN (dim, idx_vec, idx_sca, bnd1, bnd2)
+#define SAC_WL_MT_GRID_FIT_LOOP_BEGIN(dim, idx_vec, idx_sca, bnd1, bnd2)                 \
+    SAC_WL_GRID_FIT_LOOP_BEGIN (dim, idx_vec, idx_sca, bnd1, bnd2)
 
 /*
  * END
  */
 
-#define SAC_WL_GRIDVAR_LOOP_END(dim, idx_vec, idx_sca, bnd1, bnd2)                       \
+#define SAC_WL_GRID_FIT_LOOP_END(dim, idx_vec, idx_sca, bnd1, bnd2)                      \
     }                                                                                    \
     }
 
-#define SAC_WL_MT_GRIDVAR_LOOP_END(dim, idx_vec, idx_sca, bnd1, bnd2)                    \
-    SAC_WL_GRIDVAR_LOOP_END (dim, idx_vec, idx_sca, bnd1, bnd2)
+#define SAC_WL_MT_GRID_FIT_LOOP_END(dim, idx_vec, idx_sca, bnd1, bnd2)                   \
+    SAC_WL_GRID_FIT_LOOP_END (dim, idx_vec, idx_sca, bnd1, bnd2)
 
 /*****************************************************************************/
 
