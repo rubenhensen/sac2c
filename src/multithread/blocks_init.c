@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2000/02/03 15:17:31  jhs
+ * First step of MustExecuteSingleThreaded implemented.
+ *
  * Revision 1.3  2000/02/02 17:22:47  jhs
  * BlocksInit improved.
  *
@@ -83,7 +86,11 @@ static int
 MustExecuteSingleThreaded (node *arg_node, node *arg_info)
 {
     int result;
+    int sum, i;
     node *instr;
+    ids *letids;
+    node *vardec;
+    types *type;
 
     DBUG_ENTER ("MustExecuteSingleThreeaded");
 
@@ -91,8 +98,48 @@ MustExecuteSingleThreaded (node *arg_node, node *arg_info)
 
     instr = ASSIGN_INSTR (arg_node);
 
+    NOTE (("hit0"));
     if (NODE_TYPE (instr) == N_let) {
         /* test lhs if arrays > threshold */
+        NOTE (("hit1"));
+        if (NODE_TYPE (LET_EXPR (instr)) == N_ap) {
+            /* it is a function */
+            NOTE (("hit2"));
+
+            /* unknown body and array-result > threshold? */
+            /*   if (FUNDEF_BODY( AP_FUNDEF( LET_EXPR( instr))) == NULL) { */
+            if (1) {
+                NOTE (("hit3"));
+                result = FALSE;
+                letids = LET_IDS (instr);
+                while (letids != NULL) {
+                    vardec = IDS_VARDEC (letids);
+                    type = VARDEC_TYPE (vardec);
+
+                    if ((KNOWN_SHAPE (type)) && (TYPES_DIM (type) > 0)) {
+
+                        sum = 1;
+                        for (i = 0; i < TYPES_DIM (type); i++) {
+                            sum = sum * TYPES_SHAPE (type, i);
+                        }
+                        if (sum > 10) { /* threshold einsetzen #### */
+                            result = TRUE;
+                        }
+                    } else {
+                        /* nothing happens #### error? warning?  */
+                    }
+                    letids = IDS_NEXT (letids);
+                }
+            }
+        } else if (NODE_TYPE (LET_EXPR (instr)) == N_prf) {
+            /* it is a primitive function */
+
+            /* array-result > threshold? */
+            result = FALSE;
+
+        } else {
+            result = FALSE;
+        }
 
     } else if (NODE_TYPE (instr) == N_while) {
         /* ??? #### */
@@ -186,7 +233,7 @@ InsertBlock (node *assign, node *block, node *fundef)
 
     newassign = MakeAssign (ASSIGN_INSTR (assign), NULL);
     L_MT_OR_ST_REGION (block, MakeBlock (newassign, NULL));
-    ASSIGN_INSTR (assign) = MT_OR_ST_REGION (block);
+    ASSIGN_INSTR (assign) = block;
     varno = FUNDEF_VARNO (fundef);
     ASSIGN_DEFMASK (newassign) = DupMask_ (ASSIGN_DEFMASK (assign), varno);
     ASSIGN_USEMASK (newassign) = DupMask_ (ASSIGN_USEMASK (assign), varno);
@@ -266,6 +313,10 @@ BLKINassign (node *arg_node, node *arg_info)
          *  can be executed sequential or multithreaded
          *  this decision is made later
          */
+    }
+
+    if (ASSIGN_NEXT (arg_node) != NULL) {
+        ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
