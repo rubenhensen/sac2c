@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.2  2001/03/02 15:50:21  nmw
+ * missing includes added
+ *
  * Revision 1.1  2001/03/02 15:46:04  nmw
  * Initial revision
  *
@@ -19,6 +22,12 @@
  *
  *
  *****************************************************************************/
+#include "dbug.h"
+#include "globals.h"
+#include "tree.h"
+#include "free.h"
+#include "DupTree.h"
+#include "optimize.h"
 
 /* internal helper functions */
 static node *CSFreeApNarg (node *exprs, int actpos, int freepos);
