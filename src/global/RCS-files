@@ -1,7 +1,6 @@
 Error.c
 Error.h
 Makefile
-NameTuples.c
 NameTuples.h
 NameTuplesUtils.c
 NameTuplesUtils.h
