@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.125  2003/11/12 12:33:22  sbs
+ * number of sons in NWithop increased from 1 to 2 (default-expr!)
+ *
  * Revision 3.124  2003/11/07 10:12:22  ktr
  * hm_tab comment added.
  *
@@ -1919,7 +1922,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, CRTWRPNwithop, TravSons, TravSons,
        TravSons, HDwithop, NT2OTwithop, CWCwithop, HMNwithop, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 1),
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 2),
 
   NIF (N_Ncode, "N_Ncode", TravSons, FltnNcode, PrintNcode, TCNcode, TravSons, TravSons,
        WLFNcode, FreeNCode, CFNcode, RCNcode, COMPWLcode, TravSons, DupNcode, TravSons,
