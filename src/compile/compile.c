@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.134  2004/09/21 17:29:33  ktr
+ * Added support for F_idx_shape_sel, F_shape_sel
+ *
  * Revision 3.133  2004/09/20 15:51:24  ktr
  * Fixed a nasty bug related to new WL_ icms and multithreading.
  *
@@ -4664,6 +4667,120 @@ COMPPrfIdxModarray (node *arg_node, info *arg_info, node **check_reuse1,
 
 /** <!--********************************************************************-->
  *
+ * @fn  node *COMPPrfShapeSel( node *arg_node, info *arg_info,
+ *                             node **check_reuse1, node **check_reuse2,
+ *                             node **get_dim, node **set_shape_icm)
+ *
+ * @brief  Compiles N_prf node of type F_shape_sel.
+ *         The return value is a N_assign chain of ICMs.
+ *         Note, that the old 'arg_node' is removed by COMPLet.
+ *
+ * Remarks:
+ *   INFO_COMP_LASTIDS contains name of assigned variable.
+ *
+ ******************************************************************************/
+
+static node *
+COMPPrfShapeSel (node *arg_node, info *arg_info, node **check_reuse1, node **check_reuse2,
+                 node **get_dim, node **set_shape_icm)
+{
+    node *arg1, *arg2;
+    ids *let_ids;
+    int dim;
+    node *ret_node;
+
+    DBUG_ENTER ("COMPPrfShapeSel");
+
+    let_ids = INFO_COMP_LASTIDS (arg_info);
+    arg1 = PRF_ARG1 (arg_node);
+    arg2 = PRF_ARG2 (arg_node);
+
+    DBUG_ASSERT (((NODE_TYPE (arg1) == N_id) || (NODE_TYPE (arg1) == N_num)),
+                 "1st arg of F_shape_sel is neither N_id nor N_num!");
+    DBUG_ASSERT ((NODE_TYPE (arg2) == N_id), "2nd arg of F_shape_sel is no N_id!");
+
+    /* shape_sel() can only return scalars!!! */
+    dim = GetDim (IDS_TYPE (let_ids));
+    DBUG_ASSERT ((dim == 0), "shape_sel can only return scalars!");
+
+    if (!emm) {
+        (*check_reuse1) = (*check_reuse2) = NULL;
+
+        (*get_dim) = MakeNum (dim);
+
+        (*set_shape_icm)
+          = MakeIcm2 ("ND_SET__SHAPE_arr", DupIds_Id_NT (let_ids), MakeNum (0));
+    }
+
+    ret_node = MakeAssignIcm3 ("ND_PRF_SHAPE_SEL__DATA",
+                               MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
+                                             FALSE, TRUE, FALSE, NULL),
+                               MakeTypeArgs (ID_NAME (arg2), ID_TYPE (arg2), FALSE, TRUE,
+                                             FALSE, NULL),
+                               MakeExprs (DupId_NT (arg1), NULL), NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn  node *COMPPrfIdxShapeSel( node *arg_node, info *arg_info,
+ *                                node **check_reuse1, node **check_reuse2,
+ *                                node **get_dim, node **set_shape_icm)
+ *
+ * @brief  Compiles N_prf node of type F_idx_shape_sel.
+ *         The return value is a N_assign chain of ICMs.
+ *         Note, that the old 'arg_node' is removed by COMPLet.
+ *
+ * Remarks:
+ *   INFO_COMP_LASTIDS contains name of assigned variable.
+ *
+ ******************************************************************************/
+
+static node *
+COMPPrfIdxShapeSel (node *arg_node, info *arg_info, node **check_reuse1,
+                    node **check_reuse2, node **get_dim, node **set_shape_icm)
+{
+    node *arg1, *arg2;
+    ids *let_ids;
+    int dim;
+    node *ret_node;
+
+    DBUG_ENTER ("COMPPrfIdxShapeSel");
+
+    let_ids = INFO_COMP_LASTIDS (arg_info);
+    arg1 = PRF_ARG1 (arg_node);
+    arg2 = PRF_ARG2 (arg_node);
+
+    DBUG_ASSERT (((NODE_TYPE (arg1) == N_id) || (NODE_TYPE (arg1) == N_num)),
+                 "1st arg of F_idx_shape_sel is neither N_id nor N_num!");
+    DBUG_ASSERT ((NODE_TYPE (arg2) == N_id), "2nd arg of F_idx_shape_sel is no N_id!");
+
+    /* idx_shape_sel() can only return scalars!!! */
+    dim = GetDim (IDS_TYPE (let_ids));
+    DBUG_ASSERT ((dim == 0), "idx_shape_sel can only return scalars!");
+
+    if (!emm) {
+        (*check_reuse1) = (*check_reuse2) = NULL;
+
+        (*get_dim) = MakeNum (dim);
+
+        (*set_shape_icm)
+          = MakeIcm2 ("ND_SET__SHAPE_arr", DupIds_Id_NT (let_ids), MakeNum (0));
+    }
+
+    ret_node = MakeAssignIcm3 ("ND_PRF_IDX_SHAPE_SEL__DATA",
+                               MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
+                                             FALSE, TRUE, FALSE, NULL),
+                               MakeTypeArgs (ID_NAME (arg2), ID_TYPE (arg2), FALSE, TRUE,
+                                             FALSE, NULL),
+                               MakeExprs (DupExpr_NT_AddReadIcms (arg1), NULL), NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn  node *COMPPrfSel( node *arg_node, info *arg_info,
  *                        node **check_reuse1, node **check_reuse2,
  *                        node **get_dim, node **set_shape_icm)
@@ -5525,6 +5642,16 @@ COMPPrf (node *arg_node, info *arg_info)
 
         case F_idx_modarray:
             ret_node = COMPPrfIdxModarray (arg_node, arg_info, &check_reuse1,
+                                           &check_reuse2, &get_dim, &set_shape_icm);
+            break;
+
+        case F_shape_sel:
+            ret_node = COMPPrfShapeSel (arg_node, arg_info, &check_reuse1, &check_reuse2,
+                                        &get_dim, &set_shape_icm);
+            break;
+
+        case F_idx_shape_sel:
+            ret_node = COMPPrfIdxShapeSel (arg_node, arg_info, &check_reuse1,
                                            &check_reuse2, &get_dim, &set_shape_icm);
             break;
 

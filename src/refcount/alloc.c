@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.24  2004/09/21 17:27:59  ktr
+ * Added support for F_idx_shape_sel, F_shape_sel
+ *
  * Revision 1.23  2004/09/20 10:59:41  ktr
  * Minor bugfix...
  *
@@ -643,7 +646,6 @@ EMALassign (node *arg_node, info *arg_info)
      * Traverse RHS of assignment
      */
     if (ASSIGN_INSTR (arg_node) != NULL) {
-        DBUG_EXECUTE ("EMAL", PrintNode (arg_node););
         ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
     }
 
@@ -998,9 +1000,7 @@ EMALfundef (node *fundef, info *arg_info)
      * Traverse fundef body
      */
     if (FUNDEF_BODY (fundef) != NULL) {
-        DBUG_EXECUTE ("EMAL", PrintNode (fundef););
         FUNDEF_BODY (fundef) = Trav (FUNDEF_BODY (fundef), arg_info);
-        DBUG_EXECUTE ("EMAL", PrintNode (fundef););
     }
 
     /*
@@ -1243,6 +1243,18 @@ EMALprf (node *arg_node, info *arg_info)
         als->shape = MakeShapeArg (PRF_ARG1 (arg_node));
         break;
 
+    case F_idx_shape_sel:
+    case F_shape_sel:
+        /*
+         * shape_sel always yields a scalar
+         *
+         * a = shape_sel( idx, A)
+         * alloc( 0, []);
+         */
+        als->dim = MakeNum (0);
+        als->shape = CreateZeroVector (0, T_int);
+        break;
+
     case F_add_SxS:
     case F_sub_SxS:
     case F_mul_SxS:
@@ -1347,6 +1359,7 @@ EMALprf (node *arg_node, info *arg_info)
         break;
 
     default:
+        DBUG_EXECUTE ("EMAL", PrintNode (arg_node););
         DBUG_ASSERT ((0), "unknown prf found!");
         break;
     }
