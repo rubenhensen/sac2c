@@ -1,9 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2000/02/22 15:45:58  jhs
+ * Fixed misspelling.
+ *
  * Revision 1.7  2000/02/22 11:58:36  jhs
  * Added and adapted NODE_TEXT.
- * /
  *
  * Revision 1.6  2000/02/10 15:48:13  jhs
  * Added NWITH2_ISSCHEDULED.
@@ -69,49 +71,10 @@
  * Revision 1.84  1999/02/06 12:53:01  srs
  * added MakeNodelistNode()
  *
- * Revision 1.83  1999/01/15 15:18:55  cg
- * added function MakeAccess().
- *
- * Revision 1.82  1998/08/11 14:35:33  dkr
- * MakeWLsegVar, MakeWLstriVar, MakeWLgridVar changed
- *
- * Revision 1.81  1998/08/11 00:04:41  dkr
- * MakeWLsegVar changed
- *
- * Revision 1.80  1998/08/10 12:45:11  dkr
- * removed unused vars in MakeWLsegVar
- *
- * Revision 1.79  1998/08/07 14:36:33  dkr
- * stuff for N_WLsegVar added
- *
- * Revision 1.78  1998/08/03 10:49:59  cg
- * added initialization of WLSEG_MAXHOMDIM
- *
- * Revision 1.77  1998/06/24 10:37:43  dkr
- * removed WL_END from indent-mechanismus
- *
- * Revision 1.76  1998/06/23 12:40:57  cg
- * added indentation information for mt-ICMs
- *
- * Revision 1.75  1998/06/08 08:57:34  cg
- * handling of attribute ARRAY_TYPE corrected.
- *
- * Revision 1.74  1998/05/30 15:41:43  dkr
- * added some ICM_INDENT cases
- *
- * Revision 1.73  1998/05/28 23:55:58  dkr
- * in MakeIcm:
- *   added some ICM_INDENTs
- *
- *
- * Revision 1.2  1995/09/29  17:50:51  cg
- * new access structures for strings, nums, shpseg.
- * shape handling modified.
+ * [...]
  *
  * Revision 1.1  1995/09/27  15:13:12  cg
  * Initial revision
- *
- *
  *
  */
 
@@ -433,7 +396,7 @@ MakeModul (char *name, file_type filetype, node *imports, node *types, node *obj
     MODUL_NAME (tmp) = name;
 
     DBUG_PRINT ("MAKENODE",
-                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), XTNODE_TE (tmp), tmp));
+                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
