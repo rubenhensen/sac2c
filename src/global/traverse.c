@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.7  1995/01/02 16:04:46  asi
+ * Revision 1.8  1995/01/11 13:25:14  sbs
+ * traverse.c:145: warning: unsigned value >= 0 is always 1 fixed
+ *
+ * Revision 1.7  1995/01/02  16:04:46  asi
  * Renamed opt_tab in opt1_tab and all OPT.. in OPT1..
  * Added OPT1while, OPT1do, OPT1cond, OPT1cc
  * Added opt2_tab
@@ -141,8 +144,7 @@ Trav (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("Trav");
     DBUG_ASSERT ((NULL != arg_node), "wrong argument:NULL pointer");
-    DBUG_ASSERT (((arg_node->nodetype >= N_num) && (arg_node->nodetype <= N_ok)),
-                 "wrong argument: Type-tag out of range!");
+    DBUG_ASSERT ((arg_node->nodetype <= N_ok), "wrong argument: Type-tag out of range!");
     DBUG_PRINT ("TRAV", ("case %s: node adress: %06x number of nodes: %d",
                          mdb_nodetype[arg_node->nodetype], arg_node, arg_node->nnode));
 
