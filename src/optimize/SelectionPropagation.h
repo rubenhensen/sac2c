@@ -3,9 +3,12 @@
 #define _SAC_SELECTIONPROPAGATION_H
 
 extern node *SelectionPropagation (node *fundef, node *modul);
+
+extern node *SPfundef (node *arg_node, node *arg_info);
 extern node *SPreturn (node *arg_node, node *arg_info);
 extern node *SPid (node *arg_node, node *arg_info);
 extern node *SPwith (node *arg_node, node *arg_info);
+extern node *SPwithid (node *arg_node, node *arg_info);
 extern node *SPpart (node *arg_node, node *arg_info);
 extern node *SPcode (node *arg_node, node *arg_info);
 extern node *SParg (node *arg_node, node *arg_info);

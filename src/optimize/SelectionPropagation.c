@@ -11,16 +11,16 @@
 #include "optimize.h"
 #include "print.h"
 
-#define INFO_SP_FLAGS(n) (n->flag)
+#define INFO_SP_DIRECTION(n) (n->flag)
 #define INFO_SP_POSSIBLE(n) ((bool)(n->counter))
 #define INFO_SP_FUNDEF(n) (n->node[0])
+#define INFO_SP_MODUL(n) (n->node[1])
 
-#define SP_DIRDOWN 1
-#define SP_MAPOP 2
-#define SP_SEL 4
+#define SP_DIRDOWN TRUE
+#define SP_DIRUP FALSE
 
-#define SP_IMPOSSIBLE -1
-#define SP_POSSIBLE 0
+#define SP_IMPOSSIBLE FALSE
+#define SP_POSSIBLE TRUE
 
 /* internal functions for traversing ids like nodes */
 static ids *TravLeftIDS (ids *arg_ids, node *arg_info);
@@ -190,8 +190,6 @@ SPwith (node *arg_node, node *arg_info)
         NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
     }
 
-    INFO_SP_POSSIBLE (arg_info) = FALSE;
-
     DBUG_RETURN (arg_node);
 }
 
@@ -224,6 +222,36 @@ SPpart (node *arg_node, node *arg_info)
     /* traverse next part */
     if (NPART_NEXT (arg_node) != NULL) {
         NPART_NEXT (arg_node) = Trav (NPART_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *SPwithid(node *arg_node , node *arg_info)
+ *
+ * description:
+ *   traverses vector and scalars in order to prevent selection propagation
+ *   of withid_vecs.
+ *
+ *****************************************************************************/
+node *
+SPwithid (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("SPwithid");
+
+    INFO_SP_POSSIBLE (arg_info) = FALSE;
+
+    /* traverse left side identifier */
+    if (NWITHID_VEC (arg_node) != NULL) {
+        NWITHID_VEC (arg_node) = TravLeftIDS (NWITHID_VEC (arg_node), arg_info);
+    }
+
+    /* traverse left side identifier */
+    if (NWITHID_IDS (arg_node) != NULL) {
+        NWITHID_IDS (arg_node) = TravLeftIDS (NWITHID_IDS (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -300,12 +328,38 @@ SParg (node *arg_node, node *arg_info)
 node *
 SPap (node *arg_node, node *arg_info)
 {
+    node *new_arg_info;
 
     DBUG_ENTER ("SPap");
 
+    if ((FUNDEF_IS_LACFUN (AP_FUNDEF (arg_node)))
+        && (AP_FUNDEF (arg_node) != INFO_SP_FUNDEF (arg_info))) {
+        DBUG_PRINT ("SP", ("traverse in special fundef %s",
+                           FUNDEF_NAME (AP_FUNDEF (arg_node))));
+
+        DBUG_ASSERT ((FUNDEF_USED (AP_FUNDEF (arg_node)) == 1),
+                     "more than one instance of special function used.");
+
+        /* stack arg_info frame for new fundef */
+        new_arg_info = MakeInfo ();
+
+        /* start traversal of special fundef (and maybe reduce parameters!) */
+        AP_FUNDEF (arg_node) = Trav (AP_FUNDEF (arg_node), new_arg_info);
+
+        DBUG_PRINT ("SP", ("traversal of special fundef %s finished"
+                           "continue in fundef %s\n",
+                           FUNDEF_NAME (AP_FUNDEF (arg_node)),
+                           FUNDEF_NAME (INFO_SP_FUNDEF (arg_info))));
+
+        new_arg_info = FreeTree (new_arg_info);
+    } else {
+        DBUG_PRINT ("SP", ("do not traverse in normal fundef %s",
+                           FUNDEF_NAME (AP_FUNDEF (arg_node))));
+    }
+
     INFO_SP_POSSIBLE (arg_info) = FALSE;
 
-    if (INFO_SP_FLAGS (arg_info) & SP_DIRDOWN) {
+    if (INFO_SP_DIRECTION (arg_info) == SP_DIRDOWN) {
         if (AP_ARGS (arg_node) != NULL) {
             AP_ARGS (arg_node) = Trav (AP_ARGS (arg_node), arg_info);
         }
@@ -327,39 +381,10 @@ SPprf (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("SPprf");
 
-    if (PRF_PRF (arg_node) == F_sel) {
-
-        INFO_SP_FLAGS (arg_info) |= SP_SEL;
-
-        if (!(INFO_SP_FLAGS (arg_info) & SP_DIRDOWN)) {
-            INFO_SP_POSSIBLE (arg_info)
-              = ((ID_AVIS (PRF_ARG2 (arg_node)) != NULL)
-                 && (AVIS_SSAASSIGN (ID_AVIS (PRF_ARG2 (arg_node))) != NULL)
-                 && (NODE_TYPE (
-                       ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (PRF_ARG2 (arg_node)))))
-                     == N_prf)
-                 && (isMapOp (PRF_PRF (
-                      ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (PRF_ARG2 (arg_node)))))))
-                 && (AVIS_SELPROP (ID_AVIS (PRF_ARG2 (arg_node))) == SP_POSSIBLE));
-        }
-
-    } else {
-        if (isMapOp (PRF_PRF (arg_node))) {
-            INFO_SP_FLAGS (arg_info) |= SP_MAPOP;
-
-            if (INFO_SP_FLAGS (arg_info) & SP_DIRDOWN) {
-                PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
-            }
-        } else {
-            INFO_SP_POSSIBLE (arg_info) = FALSE;
-
-            if (INFO_SP_FLAGS (arg_info) & SP_DIRDOWN) {
-                if (PRF_ARGS (arg_node) != NULL) {
-                    PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
-                }
-            }
-        }
+    if (PRF_ARGS (arg_node) != NULL) {
+        PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
     }
+
     DBUG_RETURN (arg_node);
 }
 
@@ -378,17 +403,36 @@ SPlet (node *arg_node, node *arg_info)
 
     DBUG_ASSERT ((LET_EXPR (arg_node) != NULL), "let without expression");
 
-    if ((INFO_SP_FLAGS (arg_info) & SP_DIRDOWN)
-        && (NODE_TYPE (LET_EXPR (arg_node)) == N_id)) {
-        INFO_SP_POSSIBLE (arg_info) = FALSE;
-    }
+    if ((INFO_SP_DIRECTION (arg_info) == SP_DIRDOWN)) {
+        /* Direction: Down */
 
-    /* traverse right side of let */
-    LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
+        /* Mark LHS */
+        INFO_SP_POSSIBLE (arg_info)
+          = ((LET_EXPR (arg_node) != NULL) && (NODE_TYPE (LET_EXPR (arg_node)) == N_prf)
+             && (isMapOp (PRF_PRF (LET_EXPR (arg_node)))));
 
-    /* traverse left side identifier */
-    if (LET_IDS (arg_node) != NULL) {
-        LET_IDS (arg_node) = TravLeftIDS (LET_IDS (arg_node), arg_info);
+        /* traverse left side identifier */
+        if (LET_IDS (arg_node) != NULL) {
+            LET_IDS (arg_node) = TravLeftIDS (LET_IDS (arg_node), arg_info);
+        }
+
+        /* Mark RHS */
+        if ((LET_EXPR (arg_node) != NULL) && (NODE_TYPE (LET_EXPR (arg_node)) == N_prf)
+            && (PRF_PRF (LET_EXPR (arg_node)) == F_sel)) {
+            AVIS_SELPROP (ID_AVIS (PRF_ARG1 (LET_EXPR (arg_node)))) = FALSE;
+        } else {
+            INFO_SP_POSSIBLE (arg_info) = FALSE;
+
+            /* traverse right side of let */
+            if (LET_EXPR (arg_node) != NULL)
+                LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
+        }
+    } else {
+        /* Direction: Up */
+        INFO_SP_POSSIBLE (arg_info)
+          = ((LET_EXPR (arg_node) != NULL) && (NODE_TYPE (LET_EXPR (arg_node)) == N_prf)
+             && (PRF_PRF (LET_EXPR (arg_node)) == F_sel)
+             && (AVIS_SELPROP (ID_AVIS (PRF_ARG2 (LET_EXPR (arg_node)))) == SP_POSSIBLE));
     }
 
     DBUG_RETURN (arg_node);
@@ -407,9 +451,7 @@ SPassign (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("SPassign");
 
-    INFO_SP_FLAGS (arg_info) = SP_DIRDOWN;
-
-    INFO_SP_POSSIBLE (arg_info) = TRUE;
+    INFO_SP_DIRECTION (arg_info) = SP_DIRDOWN;
 
     /* traverse instruction */
     ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
@@ -418,8 +460,7 @@ SPassign (node *arg_node, node *arg_info)
         ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
     }
 
-    INFO_SP_FLAGS (arg_info) = 0;
-    INFO_SP_POSSIBLE (arg_info) = FALSE;
+    INFO_SP_DIRECTION (arg_info) = SP_DIRUP;
 
     /* traverse instruction */
     ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
@@ -489,12 +530,8 @@ SPleftids (ids *arg_ids, node *arg_info)
 {
     DBUG_ENTER ("SPleftids");
 
-    if (INFO_SP_FLAGS (arg_info) & SP_DIRDOWN) {
-        if (INFO_SP_POSSIBLE (arg_info) == FALSE) {
-            AVIS_SELPROP (IDS_AVIS (arg_ids)) = SP_IMPOSSIBLE;
-        } else if (INFO_SP_FLAGS (arg_info) & SP_MAPOP) {
-            AVIS_SELPROP (IDS_AVIS (arg_ids)) = SP_POSSIBLE;
-        }
+    if (INFO_SP_DIRECTION (arg_info) == SP_DIRDOWN) {
+        AVIS_SELPROP (IDS_AVIS (arg_ids)) = INFO_SP_POSSIBLE (arg_info);
     }
 
     /* traverse next ids in ids chain */
@@ -518,12 +555,9 @@ SPrightids (ids *arg_ids, node *arg_info)
 {
     DBUG_ENTER ("SPrightids");
 
-    if (INFO_SP_FLAGS (arg_info) & SP_DIRDOWN) {
-        if (INFO_SP_POSSIBLE (arg_info) == FALSE) {
-            AVIS_SELPROP (IDS_AVIS (arg_ids)) = SP_IMPOSSIBLE;
-        } else if (INFO_SP_FLAGS (arg_info) & SP_MAPOP) {
-            AVIS_SELPROP (IDS_AVIS (arg_ids)) = SP_IMPOSSIBLE;
-        }
+    if (INFO_SP_DIRECTION (arg_info) == SP_DIRDOWN) {
+        AVIS_SELPROP (IDS_AVIS (arg_ids))
+          = (AVIS_SELPROP (IDS_AVIS (arg_ids)) && (INFO_SP_POSSIBLE (arg_info)));
     }
 
     /* traverse next ids in ids chain */
@@ -579,6 +613,41 @@ TravRightIDS (ids *arg_ids, node *arg_info)
 /******************************************************************************
  *
  * function:
+ *   node *SPfundef(node *arg_node , node *arg_info)
+ *
+ * description:
+ *   Starts the traversal of a given fundef. Does NOT traverse to
+ *   next fundef in chain!
+ *
+ *****************************************************************************/
+node *
+SPfundef (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("SPfundef");
+
+    DBUG_PRINT ("SP",
+                ("\nstarting dead code removal in fundef %s.", FUNDEF_NAME (arg_node)));
+
+    INFO_SP_DIRECTION (arg_info) = SP_DIRDOWN;
+
+    /* store current vardec for later access */
+    INFO_SP_FUNDEF (arg_info) = arg_node;
+
+    if (FUNDEF_ARGS (arg_node) != NULL) {
+        FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), arg_info);
+    }
+
+    if (FUNDEF_BODY (arg_node) != NULL) {
+        /* traverse block of fundef */
+        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   node *SelectionPropagation(node *fundef, node *modul)
  *
  * description:
@@ -602,20 +671,17 @@ SelectionPropagation (node *fundef, node *modul)
                         FUNDEF_NAME (fundef)));
 
     /* do not start traversal in special functions */
-    arg_info = MakeInfo ();
+    if (!(FUNDEF_IS_LACFUN (fundef))) {
+        arg_info = MakeInfo ();
 
-    INFO_SP_FUNDEF (arg_info) = fundef;
-    INFO_SP_POSSIBLE (arg_info) = TRUE;
-    INFO_SP_FLAGS (arg_info) = SP_DIRDOWN;
+        old_tab = act_tab;
+        act_tab = sp_tab;
 
-    old_tab = act_tab;
-    act_tab = sp_tab;
+        fundef = Trav (fundef, arg_info);
 
-    fundef = Trav (fundef, arg_info);
+        act_tab = old_tab;
 
-    act_tab = old_tab;
-
-    arg_info = FreeTree (arg_info);
-
+        arg_info = FreeTree (arg_info);
+    }
     DBUG_RETURN (fundef);
 }
