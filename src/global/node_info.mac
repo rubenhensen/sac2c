@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.24  1994/12/19 15:27:07  asi
- * Added - OPTid
+ * Revision 1.25  1994/12/20 13:48:29  hw
+ * inserted TCunaryOp at N_pre & N_post
  *
+;; Revision 1.24  1994/12/19  15:27:07  asi
+;; Added - OPTid
+;;
 ;; Revision 1.23  1994/12/19  14:48:07  asi
 ;; Added - OPTfundef OPTarg OPTvardec OPTmodul OPTlet OPTblock
 ;;
@@ -154,9 +157,9 @@ NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun),
   NIF (N_dec, "N_dec", DummyFun, DummyFun, PrintDec, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun),
-  NIF (N_post, "N_post", DummyFun, DummyFun, PrintPost, DummyFun, DummyFun, DummyFun,
+  NIF (N_post, "N_post", DummyFun, DummyFun, PrintPost, TCunaryOp, DummyFun, DummyFun,
        DummyFun, DummyFun),
-  NIF (N_pre, "N_pre", DummyFun, DummyFun, PrintPre, DummyFun, DummyFun, DummyFun,
+  NIF (N_pre, "N_pre", DummyFun, DummyFun, PrintPre, TCunaryOp, DummyFun, DummyFun,
        DummyFun, DummyFun),
   NIF (N_bool, "N_bool", DummyFun, DummyFun, PrintBool, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun),
