@@ -1,12 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2000/08/17 10:06:55  dkr
+ * signature of RenameLocalIdentifier() modified
+ *
  * Revision 1.4  2000/07/31 10:45:52  cg
  * Eventually, the son ICM_NEXT is removed from the N_icm node.
  * The creation function MakeIcm is adjusted accordingly.
- *
- * Revision 1.3  2000/07/11 09:56:19  dkr
- * minor changed for TAGGED ARRAYS done
  *
  * Revision 1.2  2000/01/28 13:51:50  jhs
  * SCHCopyScheduling does not retun NULL any more, but the
@@ -78,7 +78,7 @@
 #include "free.h"
 #include "traverse.h"
 #include "Error.h"
-#include "precompile.h" /* for PRECRenameLocalIdentifier() */
+#include "precompile.h" /* for RenameLocalIdentifier() */
 #include "dbug.h"
 
 /******************************************************************************
@@ -800,12 +800,7 @@ SCHPrecompileScheduling (sched_t *sched)
 
     for (i = 0; i < sched->num_args; i++) {
         if (sched->args[i].arg_type == AT_id) {
-            sched->args[i].arg.id = PRECRenameLocalIdentifier (sched->args[i].arg.id
-#ifdef TAGGED_ARRAYS
-                                                               ,
-                                                               C_scl, C_nuq
-#endif /* TAGGED_ARRAYS */
-            );
+            sched->args[i].arg.id = RenameLocalIdentifier (sched->args[i].arg.id);
         }
     }
 
