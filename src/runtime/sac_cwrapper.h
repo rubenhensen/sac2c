@@ -1,10 +1,21 @@
 /*
  * $Log$
+ * Revision 1.5  2000/07/13 14:59:12  nmw
+ * output of errormsg now with SAC_RuntimeError()
+ *
  * Revision 1.4  2000/07/12 10:15:44  nmw
  * RCS-header added
  *
+ * Revision 1.3  2000/07/07 15:32:00  nmw
+ * DEC-RC macro modified
  *
- *  makros for the SAC <-> Interface wrapper functions
+ * Revision 1.2  2000/07/06 15:54:08  nmw
+ * macros debugged
+ *
+ * Revision 1.1  2000/07/05 14:01:58  nmw
+ * Initial revision
+ *
+ * makros for compiling the SAC <-> c Interface wrapper functions
  *
  */
 
@@ -14,8 +25,7 @@
 /* check for refcount >=1 */
 #define SAC_IW_CHECK_RC(a)                                                               \
     if (SAC_ARG_LRC (a) <= 0) {                                                          \
-        fprintf (stderr, "Referencecounter reaches 0, no data available!\n");            \
-        return (2);                                                                      \
+        SAC_RuntimeError ("Referencecounter reaches 0, no data available!\n");           \
     }
 
 /* argument is simple type */
