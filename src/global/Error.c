@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.9  1995/11/10 14:59:22  cg
+ * Revision 1.10  1995/11/16 15:33:20  cg
+ * renamed compiler phase flatten
+ *
+ * Revision 1.9  1995/11/10  14:59:22  cg
  * new functions ProcessErrorMessage and NumberOfDigit,
  * used by the revised macros in Error.h
  * some further global variables for error handling and layout formatting.
@@ -67,7 +70,7 @@ char *compiler_phase_name[] = {"",
                                "Loading SAC program",
                                "Resolving global object initializations",
                                "Resolving imports from modules and classes",
-                               "Flattening source code expressions",
+                               "Simplifying source code",
                                "Running type inference system",
                                "Checking module/class declaration file",
                                "Resolving implicit types",
