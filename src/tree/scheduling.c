@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2001/03/20 12:57:51  ben
+ * in scheduler_table adjustmentflag for Static set to 1
+ *
  * Revision 3.8  2001/03/15 21:25:25  dkr
  * signature of NodeOr..._MakeIndex modified
  *
@@ -216,7 +219,7 @@ static struct {
   /* Name            Class          Adjust Dim  Args  ArgTypes */
   {"Block", SC_const_seg, 1, 0, 0, ""},   {"BlockVar", SC_var_seg, 1, 0, 0, ""},
   {"AllByOne", SC_var_seg, 0, 0, 1, "i"}, {"BlockBySome", SC_const_seg, 0, 0, 2, "i,i"},
-  {"Static", SC_withloop, 0, 0, 0, ""},   {"", SC_const_seg, 0, 0, 0, ""}};
+  {"Static", SC_withloop, 1, 0, 0, ""},   {"", SC_const_seg, 0, 0, 0, ""}};
 
 /******************************************************************************
  *
