@@ -1,5 +1,8 @@
 <!--
   $Log$
+  Revision 1.104  2004/11/26 17:15:09  ktr
+  added Compile.
+
   Revision 1.103  2004/11/26 16:47:32  sah
   *** empty log message ***
 
@@ -1422,6 +1425,51 @@
       </traversal>
     </phase>
     <phase id="compile" name="Generating C code" >
+      <traversal id="COMP" name="Compile" default="sons" include="compile.h">
+        <travuser>
+          <node name="Ap" />
+          <node name="Array" />
+          <node name="Assign" />
+          <node name="Block" />
+          <node name="Cond" />
+          <node name="Fundef" />
+          <node name="Id" />
+          <node name="Let" />
+          <node name="Loop" />
+          <node name="Module" />
+          <node name="Objdef" />
+          <node name="Prf" />
+          <node name="Return" />
+          <node name="Typedef" />
+          <node name="Vardec" />
+
+          <node name="Num" />
+          <node name="Char" />
+          <node name="Bool" />
+          <node name="Float" />
+          <node name="Double" />
+
+          <node name="With" />
+          <node name="With2" />
+          <node name="Wlseg" />
+          <node name="Wlsegvar" />
+          <node name="Wlblock" />
+          <node name="Wlublock" />
+          <node name="Wlstride" />
+          <node name="Wlstridevar" />
+          <node name="Wlgrid" />
+          <node name="Wlgridvar" />
+          <node name="Wlcode" />
+
+          <node name="Spmd" />
+          <node name="Sync" />
+        </travuser>
+        <traverror>
+          <node name="Cast" />
+          <node name="While" />
+          <node name="Funcond" />
+        </traverror>
+      </traversal>
     </phase>
    </phases>
   <nodesets>
