@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2004/06/08 14:40:56  skt
+ * definition of execution modes added
+ *
  * Revision 3.1  2000/11/20 18:03:11  sacbase
  * new release made
  *
@@ -13,9 +16,9 @@
  *
  */
 
-/*****************************************************************************
+/** <!--********************************************************************-->
  *
- * file:        multithread.h
+ * @file multithread.h
  *
  * prefix:      MUTH
  *
@@ -28,6 +31,12 @@
 #ifndef MULTITHREAD_H
 
 #define MULTITHREAD_H
+
+/* definition of the execution modes */
+#define MUTH_ANY 0
+#define MUTH_SINGLE 1
+#define MUTH_ONCE 2
+#define MUTH_MULTI 3
 
 extern node *BuildMultiThread (node *syntax_tree);
 
