@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2003/03/13 14:39:11  dkr
+ * local variable of PRINT_MESSAGE renamed in order to prevent name
+ * clashes
+ *
  * Revision 3.4  2001/11/19 20:21:35  dkr
  * global vars 'errors' and 'warnings' renamed into
  * 'errors_cnt' and 'warnings_cnt' respectively in order
@@ -258,26 +262,26 @@
 
 #define PRINT_MESSAGE(message, header, ind1, ind2, first_line_ind, excl)                 \
     {                                                                                    \
-        char *line;                                                                      \
+        char *SAC__line;                                                                 \
                                                                                          \
         current_line_length                                                              \
-          = MAX_LINE_LENGTH - ind1 - ind2 - (header == NULL ? 0 : strlen (header));      \
+          = MAX_LINE_LENGTH - ind1 - ind2 - ((header == NULL) ? 0 : strlen (header));    \
         ProcessErrorMessage message;                                                     \
                                                                                          \
         if (excl)                                                                        \
             strcat (error_message_buffer, " !");                                         \
-        line = strtok (error_message_buffer, "@");                                       \
+        SAC__line = strtok (error_message_buffer, "@");                                  \
         if (first_line_ind)                                                              \
             ERROR_INDENT (ind1);                                                         \
                                                                                          \
         do {                                                                             \
             fprintf (stderr, "%s", header);                                              \
             ERROR_INDENT (ind2);                                                         \
-            fprintf (stderr, "%s\n", STR_OR_EMPTY (line));                               \
-            line = strtok (NULL, "@");                                                   \
-            if (line != NULL)                                                            \
+            fprintf (stderr, "%s\n", STR_OR_EMPTY (SAC__line));                          \
+            SAC__line = strtok (NULL, "@");                                              \
+            if (SAC__line != NULL)                                                       \
                 ERROR_INDENT (ind1);                                                     \
-        } while (line != NULL);                                                          \
+        } while (SAC__line != NULL);                                                     \
     }
 
 /*
