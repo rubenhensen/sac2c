@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2002/07/02 08:58:40  dkr
+ * all fundefs are static now
+ *
  * Revision 3.4  2002/07/01 16:42:14  dkr
  * GetNextIcm(): some spaces added in output
  *
@@ -32,17 +35,23 @@
     void Print##prf (node *exprs, node *arg_info)                                        \
     {                                                                                    \
         DBUG_ENTER ("Print" #prf);
+
 #define ICM_ICM(name) exprs = GetNextIcm (&name, exprs);
+
 #define ICM_STR(name) exprs = GetNextId (&name, exprs);
+
 #define ICM_INT(name) exprs = GetNextInt (&name, exprs);
+
 #define ICM_VAR(cnt, name)                                                               \
     if (cnt > 0) {                                                                       \
         exprs = GetNextVar (&name, NULL, cnt, exprs);                                    \
     }
+
 #define ICM_VARINT(cnt, name)                                                            \
     if (cnt > 0) {                                                                       \
         exprs = GetNextVarInt (&name, cnt, exprs);                                       \
     }
+
 #define ICM_END(prf, args)                                                               \
     ICMCompile##prf args;                                                                \
     DBUG_VOID_RETURN;                                                                    \
@@ -51,8 +60,7 @@
 /* forward declaration */
 static node *GetNextVar (char ***ret, int *ret_len, int cnt, node *exprs);
 
-/* static */
-node *
+static node *
 GetNextIcm (char **ret, node *exprs)
 {
     node *expr;
@@ -323,8 +331,7 @@ GetNextVar (char ***ret, int *ret_len, int cnt, node *exprs)
     DBUG_RETURN (exprs);
 }
 
-/* static */
-node *
+static node *
 GetNextVarInt (int **ret, int cnt, node *exprs)
 {
     node *expr;
