@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.15  1995/02/22 18:18:44  asi
+ * Revision 1.16  1995/02/28 18:28:51  asi
+ * masks now have dynamic length, stored in varno
+ *
+ * Revision 1.15  1995/02/22  18:18:44  asi
  * ClearMask, ReadMask added -- GenMask, OPTfundef modified
  *
  * Revision 1.14  1995/02/16  15:50:07  asi
@@ -68,28 +71,29 @@ extern int opt_dcr;
 extern int opt_cf;
 /* main.c end */
 
-extern long optno;
-extern long deadvar;
+extern int dead_expr;
+extern int dead_var;
+extern int cf_expr;
 
-#define MAX_VAR 255
 #define INC_VAR(mask, var) mask[var] += 1
 #define DEC_VAR(mask, var) mask[var] -= 1
+#define VARNO arg_info->varno
 
 #define VAR_LENGTH 10
 
 extern node *Optimize (node *arg_node);
 
 extern void *MAlloc (int size);
-extern char *PrintMask (long *mask);
-extern void ClearMask (long *mask);
-extern long *GenMask ();
-extern void MinusMask (long *mask1, long *mask2);
-extern long *DupMask (long *oldmask);
-extern void OrMask (long *mask1, long *mask2);
-extern short CheckMask (long *mask1, long *mask2);
-extern void PlusMask (long *mask1, long *mask2);
-extern void If3_2Mask (long *mask1, long *mask2, long *mask3);
-extern short MaskIsNotZero (long *mask);
+extern char *PrintMask (long *mask, int varno);
+extern void ClearMask (long *mask, int varno);
+extern long *GenMask (int varno);
+extern void MinusMask (long *mask1, long *mask2, int varno);
+extern long *DupMask (long *oldmask, int varno);
+extern void OrMask (long *mask1, long *mask2, int varno);
+extern short CheckMask (long *mask1, long *mask2, int varno);
+extern void PlusMask (long *mask1, long *mask2, int varno);
+extern void If3_2Mask (long *mask1, long *mask2, long *mask3, int varno);
+extern short MaskIsNotZero (long *mask, int varno);
 extern long ReadMask (long *mask, long number);
 
 extern node *OPTfundef (node *arg_node, node *arg_info);
