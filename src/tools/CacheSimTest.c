@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2000/01/27 11:11:27  her
+ * removed the suscicious pointer arithmetic on a void*.
+ *
  * Revision 1.3  1999/07/08 12:01:31  cg
  * File moved to new directory src/tools
  *
@@ -18,7 +21,7 @@ int
 main ()
 {
     int i;
-    void *base;
+    long base;
 
     SAC_CS_Initialize (1, SAC_CS_advanced, 1, "dali", "cstest.cs", ".", 16, 16, 4,
                        SAC_CS_fetch_on_write, 256, 16, 1, SAC_CS_fetch_on_write, 1024, 32,
@@ -33,24 +36,24 @@ main ()
 
     SAC_CS_Start ("linear Read");
 
-    base = (void *)12345;
+    base = 12345;
     for (i = 0; i < 1024 * 512; i++) {
-        SAC_CS_ReadAccess (base, (void *)(base + i));
+        SAC_CS_ReadAccess ((void *)base, (void *)(base + i));
     }
 
-    base = (void *)12345;
+    base = 12345;
     for (i = 0; i < 1024 * 512; i++) {
-        SAC_CS_ReadAccess (base, (void *)(base + i));
+        SAC_CS_ReadAccess ((void *)base, (void *)(base + i));
     }
     /*
-    base = (void*)12345678;
+    base = 12345678;
     for(i=0; i<1024*1024; i++) {
-      SAC_CS_ReadAccess(base, (void*)(base+i));
+      SAC_CS_ReadAccess((void*)base, (void*)(base+i));
     }
 
-    base = (void*)12345;
+    base = 12345;
     for(i=0; i<1024*1024; i++) {
-      SAC_CS_ReadAccess(base, (void*)(base+i));
+      SAC_CS_ReadAccess((void*)base, (void*)(base+i));
     }
     */
 
