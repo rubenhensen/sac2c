@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.16  1999/07/16 17:04:12  jhs
+ * Fixed Bug in CheckOptionConsistency.
+ *
  * Revision 2.15  1999/07/09 12:45:32  cg
  * Basic prerequisites for diagnostic heap management introduced.
  *
@@ -536,7 +539,7 @@ CheckOptionConsistency ()
 
     if (gen_mt_code) {
 
-        if (cachesim != CACHESIM_NO) {
+        if (cachesim & CACHESIM_NO) {
             SYSERROR (("Cache simulation is not available for multi-threaded "
                        "program execution"));
         }
