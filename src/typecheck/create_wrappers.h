@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2002/03/12 15:13:32  sbs
+ * CRTWRPxxxx traversal function added.
+ *
  * Revision 1.4  2002/03/05 15:51:17  sbs
  * *** empty log message ***
  *
@@ -26,6 +29,8 @@
 
 extern node *CreateWrappers (node *arg_node);
 
+extern node *CRTWRPmodul (node *arg_node, node *arg_info);
 extern node *CRTWRPfundef (node *arg_node, node *arg_info);
+extern node *CRTWRPap (node *arg_node, node *arg_info);
 
 #endif /* _create_wrappers_h */
