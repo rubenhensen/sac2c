@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/04/12 09:41:44  cg
+ * Boundchecking is completely redesigned.
+ * Now, any C array access can be checked on demand.
+ *
  * Revision 2.1  1999/02/23 12:43:49  sacbase
  * new release made
  *
@@ -22,23 +26,20 @@
  *   This file is part of the SAC standard header file sac.h
  *
  *   It provides macros for selectively checking array bounds upon access.
- *   Bound checking is activated by the global switch BOUNDCHECK.
+ *
  *
  *****************************************************************************/
 
 /*
  *  REMARK:
  *
- * The current way of boundcchecking is absolutely unsatisfying.
+ * The current way of boundcchecking is not yet satisfying.
  *
- * First, bounds are not checked in each dimension, but only accesses
+ * Bounds are not checked in each dimension, but only accesses
  * are determined which exceed the memory allocated for the accessed
- * array.
+ * array. However, doing boundary checking correctly would require
+ * much more effort.
  *
- * Second, boundchecking is actually not implemented as a selectively
- * activatible macro, but is hardcoded into the psi operation. The macro
- * defined here is only used for generating an error message, but not
- * for the check itself.
  */
 
 #ifndef SAC_BOUNDCHECK_H
@@ -47,16 +48,25 @@
 
 #if SAC_DO_BOUNDCHECK
 
-#define SAC_OUT_OF_BOUND(line, prf, size, idx)                                           \
-    {                                                                                    \
-        SAC_RuntimeError ("%d: access in function %s is out"                             \
-                          " of range (size: %d, index:%d)",                              \
-                          line, prf, size, idx);                                         \
-    }
+#include "sac_message.h"
+
+extern char SAC_BC_format_write[];
+extern char SAC_BC_format_read[];
+
+#define SAC_BC_WRITE(name, pos)                                                          \
+    (((pos >= 0) && (pos < SAC_ND_A_SIZE (name)))                                        \
+       ? 0                                                                               \
+       : SAC_RuntimeError (SAC_BC_format_write, #name, SAC_ND_A_SIZE (name), pos)),
+
+#define SAC_BC_READ(name, pos)                                                           \
+    (((pos >= 0) && (pos < SAC_ND_A_SIZE (name)))                                        \
+       ? 0                                                                               \
+       : SAC_RuntimeError (SAC_BC_format_read, #name, SAC_ND_A_SIZE (name), pos)),
 
 #else /* SAC_DO_BOUNDCHECK */
 
-#define SAC_OUT_OF_BOUND(line, prf, size, idx)
+#define SAC_BC_WRITE(name, pos)
+#define SAC_BC_READ(name, pos)
 
 #endif /* SAC_DO_BOUNDCHECK */
 
