@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2004/11/24 15:59:10  jhb
+ * removed include my_dbug NameTuples.h
+ *
  * Revision 3.6  2003/09/20 14:18:53  dkr
  * icm2c_prf.h added
  *
@@ -43,8 +46,9 @@
 #include "dbug.h"
 #include "globals.h"
 #include "convert.h"
-#include "my_debug.h"
-#include "NameTuples.h"
+
+/* #include "my_debug.h"
+   #include "NameTuples.h" */
 
 #include "icm2c_std.h"
 #include "icm2c_prf.h"
