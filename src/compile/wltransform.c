@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.13  2000/03/10 12:06:08  dkr
+ * FitWL brushed and corrected
+ *
  * Revision 2.12  2000/03/10 10:36:50  dkr
  * Bug in FitWL fixed
  * NormWL corrected: After normalization ublock/stride-nodes are fitted
@@ -1447,10 +1450,10 @@ static int line;
 
 /******************************************************************************
  *
- * function:
+ * Function:
  *   int CompareWLnode( node *node1, node *node2, int outline)
  *
- * description:
+ * Description:
  *   this function defines the sort order for InsertWLnodes:
  *   compares the N_WL...-nodes 'node1' and 'node2' IN ALL DIMS.
  *   possibly present next nodes in 'node1' or 'node2' are ignored.
@@ -1553,10 +1556,10 @@ CompareWLnode (node *node1, node *node2, int outline)
 
 /******************************************************************************
  *
- * function:
+ * Function:
  *   node *InsertWLnodes( node *nodes, node *insert_nodes)
  *
- * description:
+ * Description:
  *   inserts all elements of the chain 'insert_nodes' into the sorted chain
  *     'nodes'.
  *   all elements of 'insert_nodes' that exist already in 'nodes' are freed.
@@ -1619,10 +1622,10 @@ InsertWLnodes (node *nodes, node *insert_nodes)
 
 /******************************************************************************
  *
- * function:
+ * Function:
  *   node *NormalizeStride_1( node *stride)
  *
- * description:
+ * Description:
  *   Returns the IN THE FIRST DIMENSION normalized N_WLstride-node 'stride'.
  *   a possibly present next node in 'stride' is ignored.
  *
@@ -1737,13 +1740,13 @@ NormalizeStride_1 (node *stride)
 
 /******************************************************************************
  *
- * function:
+ * Function:
  *   int IndexHeadStride( node *stride)
  *
- * description:
+ * Description:
  *   returns the index position of the first element of 'stride'.
  *
- * remark:
+ * Remark:
  *   the grids of the stride must be sorted in ascending order with respect
  *   to their lower bounds, because this routine examines only the *first*
  *   grid!
@@ -1769,10 +1772,10 @@ IndexHeadStride (node *stride)
 
 /******************************************************************************
  *
- * function:
+ * Function:
  *   int IndexRearStride( node *stride)
  *
- * description:
+ * Description:
  *   returns the index position '+1' of the last element of 'stride'
  *
  ******************************************************************************/
@@ -1812,11 +1815,11 @@ IndexRearStride (node *stride)
 
 /******************************************************************************
  *
- * function:
+ * Function:
  *   int GridOffset( int new_bound1,
  *                   int bound1, int step, int grid_b2)
  *
- * description:
+ * Description:
  *   computes a offset for a grid relating to 'new_bound1':
  *     what happens to the bounds of a grid if 'new_bound1' is the new
  *     upper bound for the accessory stride?
@@ -1847,34 +1850,33 @@ GridOffset (int new_bound1, int bound1, int step, int grid_b2)
 
 /******************************************************************************
  *
- * function:
- *   int GetMaxUnroll( node *nodes, int dim)
+ * Function:
+ *   int GetLcmUnroll( node *nodes, int dim)
  *
- * description:
- *   returns the maximal number of elements that must be unrolled
+ * Description:
+ *   Returns the maximal number of elements that must be unrolled
  *     in dimension 'dim' of the WL-tree 'nodes'.
- *
- *   we must search for the first N_WLublock- or N_WLstride-node in each
- *     leaf of the 'nodes'-tree and get the step of this node.
+ *   We must search for the first N_WLublock- or N_WLstride-node in each
+ *     leaf of the 'nodes'-tree and calculate the lcm of there steps.
  *
  ******************************************************************************/
 
 int
-GetMaxUnroll (node *nodes, int dim)
+GetLcmUnroll (node *nodes, int dim)
 {
     int unroll = 1;
 
-    DBUG_ENTER ("GetMaxUnroll");
+    DBUG_ENTER ("GetLcmUnroll");
 
     if (nodes != NULL) {
-        unroll = GetMaxUnroll (WLNODE_NEXT (nodes), dim);
+        unroll = GetLcmUnroll (WLNODE_NEXT (nodes), dim);
 
         if ((WLNODE_DIM (nodes) == dim)
             && ((NODE_TYPE (nodes) == N_WLublock) || (NODE_TYPE (nodes) == N_WLstride))) {
             /*
              * we have found a node with unrolling information
              */
-            unroll = MAX (unroll, WLNODE_STEP (nodes));
+            unroll = lcm (unroll, WLNODE_STEP (nodes));
         } else {
             /*
              * search in whole tree for nodes with unrolling information
@@ -1883,16 +1885,16 @@ GetMaxUnroll (node *nodes, int dim)
             case N_WLblock:
                 /* here is no break missing! */
             case N_WLublock:
-                unroll = MAX (unroll, GetMaxUnroll (WLBLOCK_NEXTDIM (nodes), dim));
-                unroll = MAX (unroll, GetMaxUnroll (WLBLOCK_CONTENTS (nodes), dim));
+                unroll = lcm (unroll, GetLcmUnroll (WLBLOCK_NEXTDIM (nodes), dim));
+                unroll = lcm (unroll, GetLcmUnroll (WLBLOCK_CONTENTS (nodes), dim));
                 break;
 
             case N_WLstride:
-                unroll = MAX (unroll, GetMaxUnroll (WLSTRIDE_CONTENTS (nodes), dim));
+                unroll = lcm (unroll, GetLcmUnroll (WLSTRIDE_CONTENTS (nodes), dim));
                 break;
 
             case N_WLgrid:
-                unroll = MAX (unroll, GetMaxUnroll (WLBLOCK_NEXTDIM (nodes), dim));
+                unroll = lcm (unroll, GetLcmUnroll (WLBLOCK_NEXTDIM (nodes), dim));
                 break;
 
             default:
@@ -1913,10 +1915,10 @@ GetMaxUnroll (node *nodes, int dim)
 
 /******************************************************************************
  *
- * function:
+ * Function:
  *   node* Parts2Strides( node *parts, int dims)
  *
- * description:
+ * Description:
  *   converts a N_Npart-chain ('parts') into a N_WLstride-chain (return).
  *   'dims' is the number of dimensions.
  *
@@ -2094,11 +2096,11 @@ Parts2Strides (node *parts, int dims)
 
 /******************************************************************************
  *
- * function:
+ * Function:
  *   int StridesNotDisjoint_OneDim( int lb1, int ub1, int step1, int width1,
  *                                  int lb2, int ub2, int step2, int width2)
  *
- * description:
+ * Description:
  *   checks whether the given strides are disjoint.
  *
  *   stride1: lb1 <= iv1 < ub1 STEP step1 WIDTH width1
@@ -2182,10 +2184,10 @@ StridesNotDisjoint_OneDim (int lb1, int ub1, int step1, int width1, int lb2, int
 
 /******************************************************************************
  *
- * function:
+ * Function:
  *   int StridesNotDisjoint_AllDims( node *stride1, node *stride2)
  *
- * description:
+ * Description:
  *   checks whether the given strides are disjoint (in at least one dimension).
  *
  *   return value: 0 - disjoint
@@ -2229,10 +2231,10 @@ StridesNotDisjoint_AllDims (node *stride1, node *stride2)
 
 /******************************************************************************
  *
- * function:
+ * Function:
  *   int CheckDisjointness( node *strides)
  *
- * description:
+ * Description:
  *   checks whether all strides are pairwise disjoint.
  *
  *   return value: 0 - disjoint
@@ -2273,10 +2275,10 @@ ret:
 
 /******************************************************************************
  *
- * function:
+ * Function:
  *   node *SetSegs( node *pragma, node *cubes, int dims)
  *
- * description:
+ * Description:
  *   returns chain of segments (based on the calculated cubes 'cubes')
  *
  ******************************************************************************/
@@ -2335,10 +2337,10 @@ SetSegs (node *pragma, node *cubes, int dims)
 
 /******************************************************************************
  *
- * function:
+ * Function:
  *   void CheckParams( node *seg)
  *
- * description:
+ * Description:
  *   checks whether the parameter of the segment 'seg' are legal.
  *
  ******************************************************************************/
@@ -2451,11 +2453,11 @@ CheckParams (node *seg)
 
 /******************************************************************************
  *
- * function:
+ * Function:
  *   node *NewBoundsStride( node *stride, int dim,
  *                          int new_bound1, int new_bound2)
  *
- * description:
+ * Description:
  *   returns modified 'stride':
  *     all strides in dimension ("current dimension" + 'dim') are new bounds
  *     given ('bound1', 'bound2').
@@ -2551,11 +2553,11 @@ NewBoundsStride (node *stride, int dim, int new_bound1, int new_bound2)
 
 /******************************************************************************
  *
- * function:
+ * Function:
  *   void SplitStride( node *stride1, node *stride2
  *                     node **s_stride1, node **s_stride2)
  *
- * description:
+ * Description:
  *   returns in 's_stride1', 's_stride2' the splitted stride 'stride1',
  *     'stride2' respectively.
  *   returns NULL if there is nothing to split.
@@ -2621,10 +2623,10 @@ SplitStride (node *stride1, node *stride2, node **s_stride1, node **s_stride2)
 
 /******************************************************************************
  *
- * function:
+ * Function:
  *   node *SplitWL( node *strides)
  *
- * description:
+ * Description:
  *   returns the splitted stride-tree 'strides'.
  *
  ******************************************************************************/
@@ -2727,10 +2729,10 @@ SplitWL (node *strides)
 
 /******************************************************************************
  *
- * function:
+ * Function:
  *   node *BlockStride( node *stride, long *bv, int unroll)
  *
- * description:
+ * Description:
  *   returns 'stride' with corrected bounds, blocking levels and
  *     unrolling-flag.
  *   this function is needed after a blocking.
@@ -2784,10 +2786,10 @@ BlockStride (node *stride, long *bv, int unroll)
 
 /******************************************************************************
  *
- * function:
+ * Function:
  *   node *BlockWL( node *stride, int dims, long *bv, int unroll)
  *
- * description:
+ * Description:
  *   returns with blocking-vector 'bv' blocked 'stride'.
  *   'dims' is the number of dimensions in 'stride'.
  *
@@ -2971,10 +2973,10 @@ BlockWL (node *stride, int dims, long *bv, int unroll)
 
 /******************************************************************************
  *
- * function:
+ * Function:
  *   node *NewStepGrids( node *grids, int step, int new_step, int offset)
  *
- * description:
+ * Description:
  *   returns a modified 'grids' chain:
  *     - the bounds of the grids are modified (relating to 'offset')
  *     - the step of the grids is now 'step'
@@ -3037,11 +3039,11 @@ NewStepGrids (node *grids, int step, int new_step, int offset)
 
 /******************************************************************************
  *
- * function:
+ * Function:
  *   node *IntersectGrid( node *grid1, node *grid2, int step,
  *                        node **i_grid1, node **i_grid2)
  *
- * description:
+ * Description:
  *   returns in 'i_grid1', 'i_grid2' the intersection of 'grid1' and 'grid2'.
  *   both grids must have the same step ('step').
  *
@@ -3088,10 +3090,10 @@ IntersectGrid (node *grid1, node *grid2, int step, node **i_grid1, node **i_grid
 
 /******************************************************************************
  *
- * function:
+ * Function:
  *   node *MergeWL( node *nodes)
  *
- * description:
+ * Description:
  *   returns the merged chain 'nodes'.
  *   if necessary (e.g. if called from 'ComputeCubes') the bounds of the
  *     chain-elements are adjusted.
@@ -3287,10 +3289,10 @@ MergeWL (node *nodes)
 
 /******************************************************************************
  *
- * function:
+ * Function:
  *   int CompareWLtrees( node *tree1, node *tree2)
  *
- * description:
+ * Description:
  *   returns 1 if the N_WL...-trees 'tree1' and 'tree2' are equal.
  *   returns 0 otherwise.
  *
@@ -3406,11 +3408,11 @@ CompareWLtrees (node *tree1, node *tree2)
 
 /******************************************************************************
  *
- * function:
+ * Function:
  *   node *OptWL( node *nodes)
  *
- * description:
- *   returns the optimized N_WL...-tree 'nodes'.
+ * Description:
+ *   Returns the optimized N_WL...-tree 'nodes'.
  *
  ******************************************************************************/
 
@@ -3564,10 +3566,43 @@ OptWL (node *nodes)
 
 /******************************************************************************
  *
- * function:
+ * Function:
+ *   int AdjustBlockingFactor( int old_bv, int unroll)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+int
+AdjustBlockingFactor (int old_bv, int unroll)
+{
+    int mod, new_bv;
+
+    DBUG_ENTER ("AdjustBlockingFactor");
+
+    mod = old_bv % unroll;
+    if ((old_bv > 1) && (mod != 0)) {
+        if (mod <= unroll / 2) {
+            new_bv = old_bv - mod;
+        } else {
+            new_bv = old_bv + unroll - mod;
+        }
+
+        DBUG_ASSERT ((new_bv % unroll == 0), "adjustment of blocking factor wrong!");
+    } else {
+        new_bv = old_bv;
+    }
+
+    DBUG_RETURN (new_bv);
+}
+
+/******************************************************************************
+ *
+ * Function:
  *   node *FitNode( node *wlnode, int unroll)
  *
- * description:
+ * Description:
  *   Checks whether the extent (difference of upper and lower bound) of
  *   'wlnode' is a multiple of 'unroll'. If not, the incomplete periode at the
  *   tail is split.
@@ -3605,140 +3640,143 @@ FitNode (node *wlnode, int unroll)
 
 /******************************************************************************
  *
- * function:
- *   node *FitWL( node *nodes, int curr_dim, int dims)
+ * Function:
+ *   node *FitWL( node *nodes)
  *
- * description:
- *   returns the fitted N_WL...-tree 'nodes'.
- *   the tree is fitted in the dimension from 'curr_dim' till ('dims'-1).
+ * Description:
+ *   Returns the fitted N_WL...-tree 'nodes'.
  *
  ******************************************************************************/
 
 node *
-FitWL (node *nodes, int curr_dim, int dims)
+FitWL (node *nodes)
 {
-    node *node, *grids, *tmp;
-    int unroll, mod, old_bv, new_bv;
+    node *node, *grids;
+    int unroll, old_bv;
 
     DBUG_ENTER ("FitWL");
 
     if (nodes != NULL) {
 
         if (NODE_TYPE (nodes) != N_WLstriVar) {
-            if (curr_dim < dims) {
+            /*
+             * traverse the whole chain
+             */
+            node = nodes;
+            while (node != NULL) {
 
-                /*
-                 * traverse the whole chain
-                 */
-                node = nodes;
-                while (node != NULL) {
-
-                    switch (NODE_TYPE (node)) {
-                    case N_WLblock:
-                        if (WLBLOCK_NEXTDIM (node) != NULL) {
-                            /*
-                             * fit in next dimension;
-                             * compute unrolling information
-                             */
-                            DBUG_ASSERT ((WLBLOCK_CONTENTS (node) == NULL),
-                                         "Sons CONTENTS and NEXTDIM of WLblock are used "
-                                         "simultaneous!");
-
-                            WLBLOCK_NEXTDIM (node)
-                              = FitWL (WLBLOCK_NEXTDIM (node), curr_dim + 1, dims);
-
-                            unroll = GetMaxUnroll (WLBLOCK_NEXTDIM (node), curr_dim);
-                        } else {
-                            /*
-                             * fit contents of block;
-                             * compute unrolling information
-                             */
-                            DBUG_ASSERT ((WLBLOCK_NEXTDIM (node) == NULL),
-                                         "Sons CONTENTS and NEXTDIM of WLblock are used "
-                                         "simultaneous!");
-
-                            WLBLOCK_CONTENTS (node)
-                              = FitWL (WLBLOCK_CONTENTS (node), curr_dim, dims);
-
-                            unroll = GetMaxUnroll (WLBLOCK_CONTENTS (node), curr_dim);
-                        }
-
+                switch (NODE_TYPE (node)) {
+                case N_WLblock:
+                    if (WLBLOCK_NEXTDIM (node) != NULL) {
                         /*
-                         * adjust blocking factor
-                         * (blocking factor must be a multiple of 'unroll')
+                         * fit in next dimension; compute unrolling information
                          */
-                        mod = WLBLOCK_STEP (node) % unroll;
-                        if ((WLBLOCK_STEP (node) > 1) && (mod != 0)) {
-                            old_bv = WLBLOCK_STEP (node);
-                            if (mod <= unroll / 2) {
-                                WLBLOCK_STEP (node) -= mod;
-                            } else {
-                                WLBLOCK_STEP (node) += (unroll - mod);
-                            }
-                            new_bv = WLBLOCK_STEP (node);
-                            WARN (line, ("Blocking factor adjusted: %i instead of %i",
-                                         new_bv, old_bv));
+                        DBUG_ASSERT ((WLBLOCK_CONTENTS (node) == NULL),
+                                     "Sons CONTENTS and NEXTDIM of WLblock are used "
+                                     "simultaneous!");
 
-                            DBUG_ASSERT ((new_bv % unroll == 0),
-                                         "adjustment of blocking factor wrong!");
+                        WLBLOCK_NEXTDIM (node) = FitWL (WLBLOCK_NEXTDIM (node));
 
-                            /*
-                             * find the related ublock/stride-node in the contents of the
-                             * block and adjust its upper bound, too
-                             */
-                            tmp = node;
-                            while (WLBLOCK_NEXTDIM (tmp) != NULL) {
-                                tmp = WLBLOCK_NEXTDIM (tmp);
-                            }
-                            tmp = WLBLOCK_CONTENTS (tmp);
-                            DBUG_ASSERT ((WLNODE_BOUND2 (tmp) == old_bv),
-                                         "upper bound of block contents is not the same "
-                                         "as the blocking step");
-                            WLNODE_BOUND2 (tmp) = new_bv;
-                        }
-                        break;
+                        unroll
+                          = GetLcmUnroll (WLBLOCK_NEXTDIM (node), WLBLOCK_DIM (node));
+                    } else {
+                        /*
+                         * fit contents of block; compute unrolling information
+                         */
+                        DBUG_ASSERT ((WLBLOCK_NEXTDIM (node) == NULL),
+                                     "Sons CONTENTS and NEXTDIM of WLblock are used "
+                                     "simultaneous!");
 
-                    case N_WLublock:
-                        if (WLBLOCK_NEXTDIM (node) != NULL) {
-                            /*
-                             * fit in next dimension;
-                             */
-                            WLBLOCK_NEXTDIM (node)
-                              = FitWL (WLBLOCK_NEXTDIM (node), curr_dim + 1, dims);
-                        }
+                        WLBLOCK_CONTENTS (node) = FitWL (WLBLOCK_CONTENTS (node));
 
-                        unroll = WLUBLOCK_STEP (node);
-                        break;
-
-                    case N_WLstride:
-                        grids = WLSTRIDE_CONTENTS (node);
-                        if (curr_dim < dims - 1) {
-                            /*
-                             * fit for all grids in next dimension;
-                             */
-                            while (grids != NULL) {
-                                WLGRID_NEXTDIM (grids)
-                                  = FitWL (WLGRID_NEXTDIM (grids), curr_dim + 1, dims);
-                                grids = WLGRID_NEXT (grids);
-                            }
-                        }
-                        unroll = WLSTRIDE_STEP (node);
-                        break;
-
-                    default:
-                        DBUG_ASSERT ((0), "wrong node type");
+                        unroll
+                          = GetLcmUnroll (WLBLOCK_CONTENTS (node), WLBLOCK_DIM (node));
                     }
 
-                    if (WLNODE_LEVEL (node) == 0) { /* outer most node? */
+                    /*
+                     * adjust blocking factor (blocking factor must be a multiple of
+                     * 'unroll')
+                     */
+                    old_bv = WLBLOCK_STEP (node);
+                    WLBLOCK_STEP (node)
+                      = AdjustBlockingFactor (WLBLOCK_STEP (node), unroll);
+                    if (old_bv != WLBLOCK_STEP (node)) {
+                        WARN (line, ("Blocking factor adjusted: %i instead of %i",
+                                     WLBLOCK_STEP (node), old_bv));
+                    }
+                    /*
+                     * the upper bound of the related ublock/stride-nodes in the contents
+                     * of the block is corrected later on. (just a few lines ahead ...)
+                     */
+                    break;
+
+                case N_WLublock:
+                    if (WLUBLOCK_NEXTDIM (node) != NULL) {
                         /*
-                         * fit the outer most node of the current dimension:
-                         *   split a uncompleted periode at the end of index range
+                         * fit in next dimension
                          */
-                        node = FitNode (node, unroll);
+                        DBUG_ASSERT ((WLUBLOCK_CONTENTS (node) == NULL),
+                                     "Sons CONTENTS and NEXTDIM of WLublock are used "
+                                     "simultaneous!");
+
+                        WLUBLOCK_NEXTDIM (node) = FitWL (WLUBLOCK_NEXTDIM (node));
+                    } else {
+                        /*
+                         * fit contents of block
+                         */
+                        DBUG_ASSERT ((WLUBLOCK_NEXTDIM (node) == NULL),
+                                     "Sons CONTENTS and NEXTDIM of WLublock are used "
+                                     "simultaneous!");
+
+                        WLUBLOCK_CONTENTS (node) = FitWL (WLUBLOCK_CONTENTS (node));
                     }
 
-                    node = WLNODE_NEXT (node);
+                    unroll = WLUBLOCK_STEP (node);
+                    break;
+
+                case N_WLstride:
+                    grids = WLSTRIDE_CONTENTS (node);
+
+                    /*
+                     * fit for all grids in next dimension;
+                     */
+                    while (grids != NULL) {
+                        WLGRID_NEXTDIM (grids) = FitWL (WLGRID_NEXTDIM (grids));
+                        grids = WLGRID_NEXT (grids);
+                    }
+
+                    unroll = WLSTRIDE_STEP (node);
+                    break;
+
+                default:
+                    DBUG_ASSERT ((0), "wrong node type");
                 }
+
+                if (WLNODE_LEVEL (node) == 0) { /* outer most node? */
+                    /*
+                     * Fit the outer most node of the current dimension:
+                     *   Split a uncompleted periode at the end of index range
+                     */
+                    node = FitNode (node, unroll);
+                } else {
+                    if (NODE_TYPE (node) != N_WLblock) {
+                        /*
+                         * We have a inner ublock- or stride-node.
+                         * Therefore we are inside of a block or unrolling-block.
+                         * That means, the lower bound must be equal to 0 and the
+                         * upper bound should be a multiple of the step.
+                         * If the latter is not hold, this node correspondes
+                         * with a block-node whose blocking factor had been
+                         * adjusted -> we must fathom this adjustment here!
+                         */
+                        DBUG_ASSERT ((WLNODE_BOUND1 (node) == 0),
+                                     "lower bound of inner node is != 0");
+                        WLNODE_BOUND2 (node) = AdjustBlockingFactor (WLNODE_BOUND2 (node),
+                                                                     WLNODE_STEP (node));
+                    }
+                }
+
+                node = WLNODE_NEXT (node);
             }
         } else {
             /*
@@ -3766,10 +3804,10 @@ FitWL (node *nodes, int curr_dim, int dims)
 
 /******************************************************************************
  *
- * function:
+ * Function:
  *   node *NormalizeWLnodes( node *nodes, int *width)
  *
- * description:
+ * Description:
  *   Returns the normalized N_WL...-tree 'nodes'.
  *   'idx_max' is the supremum of the index vector set.
  *   'width' is an array with one component for each dimension initially
@@ -3777,7 +3815,7 @@ FitWL (node *nodes, int curr_dim, int dims)
  *     during calculation (here we save the width of the index ranges) but in
  *     the end it contains the correct value again.
  *
- * remark:
+ * Remark:
  *   During normalization another fitting might be needed. Example:
  *   Before 'fitting phase':
  *     (0 -> 23), ublock0[0] 4:
@@ -3819,7 +3857,6 @@ NormalizeWLnodes (node *nodes, int *width)
     DBUG_ENTER ("NormalizeWLnodes");
 
     if (nodes != NULL) {
-
         /*
          * backup width of current dim
          */
@@ -3903,10 +3940,10 @@ NormalizeWLnodes (node *nodes, int *width)
 
 /******************************************************************************
  *
- * function:
+ * Function:
  *   node *NormWL( node *nodes, int *idx_max)
  *
- * description:
+ * Description:
  *   returns the normalized N_WL...-tree 'nodes'.
  *   'idx_max' is the supremum of the index-vector set.
  *
@@ -3944,10 +3981,10 @@ NormWL (node *nodes, int *idx_max)
 
 /******************************************************************************
  *
- * function:
+ * Function:
  *   node *GenerateCompleteGrid( node *stride)
  *
- * description:
+ * Description:
  *   Supplements missings parts of the grid in 'stride'.
  *
  *   Example (with shape [300,300]):
@@ -4061,10 +4098,10 @@ GenerateCompleteGrid (node *stride)
 
 /******************************************************************************
  *
- * function:
+ * Function:
  *   node *GenerateShapeStrides( int dim, int dims, shpseg* shape)
  *
- * description:
+ * Description:
  *   Returns strides/grids of the size found in 'shape'.
  *
  *   This function is called by 'GenerateCompleteDomain',
@@ -4091,11 +4128,11 @@ GenerateShapeStrides (int dim, int dims, shpseg *shape)
 
 /******************************************************************************
  *
- * function:
+ * Function:
  *   node *GenerateCompleteDomain( node *strides,
  *                                 int dims, shpseg *shape)
  *
- * description:
+ * Description:
  *   Supplements strides/grids for the complement of 'stride'.
  *
  *   For constant strides we must *not* optimize and merge strides, because
@@ -4315,10 +4352,10 @@ GenerateCompleteDomain (node *strides, int dims, shpseg *shape)
 
 /******************************************************************************
  *
- * function:
+ * Function:
  *   node *GenerateCompleteDomainVar( node *stride_var, int dims, shpseg *shape)
  *
- * description:
+ * Description:
  *   Supplements strides/grids for the complement of 'stride_var'.
  *
  *   For variable strides we do not call 'SplitWL()', 'MergeWL()', 'OptWL()',
@@ -4487,15 +4524,15 @@ GenerateCompleteDomainVar (node *stride_var, int dims, shpseg *shape)
 
 /******************************************************************************
  *
- * function:
+ * Function:
  *   node* ComputeOneCube( node *stride, WithOpType wltype,
  *                         int dims, shpseg *shape)
  *
- * description:
+ * Description:
  *   If the with-loop contains one part/generator only, we must supplement
  *   new generators for the complement.
  *
- * remark:
+ * Remark:
  *   The new generators contain no pointer to a code-block. We inspect the
  *   type of the with-loop (WO_genarray, WO_modarray, WO_fold...) to decide
  *   whether we must ...
@@ -4539,11 +4576,11 @@ ComputeOneCube (node *stride, WithOpType wltype, int dims, shpseg *shape)
 
 /******************************************************************************
  *
- * function:
+ * Function:
  *   int TestAndDivideStrides( node *stride1, node *stride2,
  *                             node **divided_stridea, node **divided_strideb)
  *
- * description:
+ * Description:
  *   this function divides 'stride1' or 'stride2' if necessary, and returns
  *     the two yielded strides in 'divided_stridea', 'divided_strideb'.
  *   possibly present next nodes in 'stride1' or 'stride2' are ignored.
@@ -4722,11 +4759,11 @@ TestAndDivideStrides (node *stride1, node *stride2, node **divided_stridea,
 
 /******************************************************************************
  *
- * function:
+ * Function:
  *   int IntersectStrideWithOutline( node *stride1, node *stride2,
  *                                   node **i_stride1, node **i_stride2)
  *
- * description:
+ * Description:
  *   returns in 'i_stride1' and 'i_stride2' the part of 'stride1', 'stride2'
  *     respectively that lies in a common cube.
  *   possibly present next nodes in 'stride1' or 'stride2' are ignored.
@@ -4837,7 +4874,7 @@ IntersectStrideWithOutline (node *stride1, node *stride2, node **i_stride1,
                  * The following parts of the 'cube generation' can not handle this case!
                  * Therefore we will stop here!!
                  *
-                 * remark: If this assertion fails, there is a bug in the 'first step'
+                 * Remark: If this assertion fails, there is a bug in the 'first step'
                  *         of 'ComputeCubes()' !!!
                  */
 
@@ -4905,10 +4942,10 @@ IntersectStrideWithOutline (node *stride1, node *stride2, node **i_stride1,
 
 /******************************************************************************
  *
- * function:
+ * Function:
  *   int IsSubsetStride( node *stride1, node *stride2)
  *
- * description:
+ * Description:
  *   determines, whether stride2 is a subset of stride1 (return value 1) or
  *   stride1 is a subset of stride2 (return value 2) or nothing of these
  *   (return value 0).
@@ -4978,10 +5015,10 @@ IsSubsetStride (node *stride1, node *stride2)
 
 /******************************************************************************
  *
- * function:
+ * Function:
  *   int AdjustBounds( node **stride1, node **stride2)
  *
- * description:
+ * Description:
  *   adjusts the bounds of one of two strides (stride1, stride2) taken from the
  *   same WL-part to get disjoint strides.
  *   returns 0 if stride1 and stride2 are left unchanged, 1 if stride1 has
@@ -5055,10 +5092,10 @@ AdjustBounds (node **stride1, node **stride2)
 
 /******************************************************************************
  *
- * function:
+ * Function:
  *   node* EleminateDuplicatesAndAdjustBounds( node *strides)
  *
- * description:
+ * Description:
  *   When ComputeCubes() splits the strides by using IntersectStrideWithOutline()
  *   this may create non-disjoint index vector sets A and B ...
  *
@@ -5167,10 +5204,10 @@ EleminateDuplicatesAndAdjustBounds (node *strides)
 
 /******************************************************************************
  *
- * function:
+ * Function:
  *   node *ComputeCubes( node *strides)
  *
- * description:
+ * Description:
  *   returns the set of cubes as a N_WLstride-chain
  *
  ******************************************************************************/
@@ -5458,10 +5495,10 @@ ComputeCubes (node *strides)
 
 /******************************************************************************
  *
- * function:
+ * Function:
  *   node *InferInnerStep( node *nodes, int curr_dim, int dims)
  *
- * description:
+ * Description:
  *   Infers for each outer WLblock-, WLublock- or WLstride-node the
  *   the unroll-information (max(ublock,step)) and stores it in INNERSTEP.
  *
@@ -5495,7 +5532,7 @@ InferInnerStep (node *nodes, int curr_dim, int dims)
                       = InferInnerStep (WLBLOCK_NEXTDIM (node), curr_dim + 1, dims);
 
                     WLBLOCK_INNERSTEP (node)
-                      = GetMaxUnroll (WLBLOCK_NEXTDIM (node), curr_dim);
+                      = GetLcmUnroll (WLBLOCK_NEXTDIM (node), curr_dim);
                 } else {
                     /*
                      * compute unrolling information and store it in WLBLOCK_INNERSTEP.
@@ -5504,7 +5541,7 @@ InferInnerStep (node *nodes, int curr_dim, int dims)
                                  "inner of block not found");
 
                     WLBLOCK_INNERSTEP (node)
-                      = GetMaxUnroll (WLBLOCK_CONTENTS (node), curr_dim);
+                      = GetLcmUnroll (WLBLOCK_CONTENTS (node), curr_dim);
                 }
                 break;
 
@@ -5557,10 +5594,10 @@ InferInnerStep (node *nodes, int curr_dim, int dims)
 
 /******************************************************************************
  *
- * function:
+ * Function:
  *   int IsHom( node *wlnode, int sv_d)
  *
- * description:
+ * Description:
  *   Infers, whether 'wlnode' has a homogenous grid or not.
  *
  ******************************************************************************/
@@ -5585,10 +5622,10 @@ IsHom (node *wlnode, int sv_d)
 
 /******************************************************************************
  *
- * function:
+ * Function:
  *   int InferMaxHomDim( node *wlnode, int *sv, int max_hom_dim)
  *
- * description:
+ * Description:
  *   Infers the maximal homogenous dimension of the given wlnode-tree 'wlnode'.
  *
  ******************************************************************************/
@@ -5637,10 +5674,10 @@ InferMaxHomDim (node *wlnode, long *sv, int max_hom_dim)
 
 /******************************************************************************
  *
- * function:
+ * Function:
  *   node *InferParams( node *seg)
  *
- * description:
+ * Description:
  *   infers WLSEGX_MAXHOMDIM for the given segment 'seg' and WL..._INNERSTEP
  *   for all contained WLblock-, WLublock-, WLstride-nodes with
  *   (WL..._LEVEL == 0).
@@ -5675,13 +5712,13 @@ InferParams (node *seg)
 
 /******************************************************************************
  *
- * function:
+ * Function:
  *   node *WLTRANwith( node *arg_node, node *arg_info)
  *
- * description:
+ * Description:
  *   transforms with-loop (N_Nwith-node) into new representation (N_Nwith2).
  *
- * remark:
+ * Remark:
  *   'INFO_WL_SHPSEG( arg_info)' points to the shape-segs of 'LET_IDS'.
  *
  ******************************************************************************/
@@ -5827,7 +5864,7 @@ WLTRANwith (node *arg_node, node *arg_info)
              *  -> the index-ranges of the generators partitionize the index-vector-space.
              *  -> the generator params are constant.
              *
-             * remark: for the time being these assertions are not a restriction, because
+             * Remark: for the time being these assertions are not a restriction, because
              *         in a SAC-source we can specifiy one part only.
              *         Therefore multiple parts are generated exclusiv by WLF, and these
              *         multiple parts meet the above conditions.
@@ -5896,7 +5933,7 @@ WLTRANwith (node *arg_node, node *arg_info)
                 /* fitting */
                 if (WL_break_after >= WL_PH_fit) {
                     DBUG_EXECUTE ("WLprec", NOTE (("step 8: fitting\n")));
-                    WLSEGX_CONTENTS (seg) = FitWL (WLSEGX_CONTENTS (seg), 0, dims);
+                    WLSEGX_CONTENTS (seg) = FitWL (WLSEGX_CONTENTS (seg));
                 }
 
                 /* normalization */
@@ -5937,13 +5974,13 @@ WLTRANwith (node *arg_node, node *arg_info)
 
 /******************************************************************************
  *
- * function:
+ * Function:
  *   node *WLTRANcode( node *arg_node, node *arg_info)
  *
- * description:
+ * Description:
  *   precompilation of Ncode-nodes.
  *
- * remarks:
+ * Remarks:
  *   - CODE_NO is set in the whole Ncode-chain
  *
  ******************************************************************************/
@@ -5972,10 +6009,10 @@ WLTRANcode (node *arg_node, node *arg_info)
 
 /******************************************************************************
  *
- * function:
+ * Function:
  *   node *WLTRAFundef(node *arg_node, node *arg_info)
  *
- * description:
+ * Description:
  *   traverses sons.
  *
  ******************************************************************************/
@@ -6000,10 +6037,10 @@ WLTRAFundef (node *arg_node, node *arg_info)
 
 /******************************************************************************
  *
- * function:
+ * Function:
  *   node *WLTRAFundef(node *arg_node, node *arg_info)
  *
- * description:
+ * Description:
  *   'INFO_WL_SHPSEG( arg_info)' points to the shape-segs of 'LET_IDS'
  *   (needed for 'WLTRANwith').
  *
@@ -6033,10 +6070,10 @@ WLTRALet (node *arg_node, node *arg_info)
 
 /******************************************************************************
  *
- * function:
+ * Function:
  *   node *WlTransform( node *syntax_tree)
  *
- * description:
+ * Description:
  *   In this compiler phase all N_Nwith nodes are transformed in N_Nwith2
  *   nodes.
  *
