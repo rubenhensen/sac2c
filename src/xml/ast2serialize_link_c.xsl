@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.2  2004/11/23 22:52:12  sah
+  COMPILES!
+
   Revision 1.1  2004/11/23 11:31:53  sah
   Initial revision
 
@@ -233,7 +236,7 @@ version="1.0">
     </xsl:with-param>
   </xsl:call-template>
   <xsl:value-of select="' != NULL) {'" />
-  <xsl:value-of select="'Trav( '" />
+  <xsl:value-of select="'TRAVdo( '" />
   <xsl:call-template name="node-access">
     <xsl:with-param name="node">arg_node</xsl:with-param>
     <xsl:with-param name="nodetype">
@@ -259,7 +262,7 @@ version="1.0">
     </xsl:with-param>
   </xsl:call-template>
   <xsl:value-of select="' != NULL) {'" />
-  <xsl:value-of select="'Trav( '" />
+  <xsl:value-of select="'TRAVdo( '" />
   <xsl:call-template name="node-access">
     <xsl:with-param name="node">arg_node</xsl:with-param>
     <xsl:with-param name="nodetype">
