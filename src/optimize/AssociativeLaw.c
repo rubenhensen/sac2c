@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.21  2003/07/31 16:36:39  mwe
+ * some changes regarding to array support
+ *
  * Revision 1.20  2003/04/23 19:53:44  mwe
  * small changes in code
  *
@@ -259,6 +262,7 @@
 
 #define INFO_AL_OPTLIST(n) (nodelist *)(n->dfmask[4])
 #define INFO_AL_ARRAYLIST(n) (nodelist *)(n->dfmask[3])
+#define INFO_AL_CONSTARRAYLIST(n) (nodelist *)(n->dfmask[5])
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -367,8 +371,9 @@ ReachedDefinition (node *arg_node)
     if (NODE_TYPE (arg_node) == N_id) {
         if (AVIS_SSAASSIGN (ID_AVIS (arg_node)) == NULL)
             return_bool = 0;
-        else if (NODE_TYPE (LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (arg_node)))))
-                 != N_prf)
+        else if ((NODE_TYPE (
+                    LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (arg_node)))))
+                  != N_prf))
             return_bool = 1;
         else
             return_bool = 0;
@@ -411,6 +416,25 @@ IsConstant (node *arg_node)
     DBUG_RETURN (return_bool);
 }
 
+static bool
+IsConstantArray (node *arg_node)
+{
+
+    bool result;
+    DBUG_ENTER ("IsConstantArray");
+
+    switch (NODE_TYPE (arg_node)) {
+    case N_array:
+        result = TRUE;
+        break;
+
+    default:
+        result = FALSE;
+    }
+
+    DBUG_RETURN (result);
+}
+
 /*****************************************************************************
  *
  * function:
@@ -421,6 +445,8 @@ IsConstant (node *arg_node)
  *   If the int-argument is '1', the arg_node contains a constant scalar value
  *   If the int-argument is '0', the arg_node contains no constant scalar value
  *   If the int-argument is '2', the arg_node contains an array value
+ *   If the int-argument is '3', the arg_node contains an constant array value
+ *
  *   Increase the corresponding counter
  *   arg_node is added to the corresponding list
  *
@@ -433,7 +459,7 @@ AddNode (node *arg_node, node *arg_info, int nodetype)
 
     DBUG_ENTER ("AddNode");
 
-    if (nodetype == 1) {
+    if ((nodetype == 1) || (nodetype == 3)) {
         INFO_AL_NUMBEROFCONSTANTS (arg_info) = INFO_AL_NUMBEROFCONSTANTS (arg_info) + 1;
     }
 
@@ -450,6 +476,13 @@ AddNode (node *arg_node, node *arg_info, int nodetype)
 
         NODELIST_NEXT (newnodelistnode) = (INFO_AL_ARRAYLIST (arg_info));
         INFO_AL_ARRAYLIST (arg_info) = newnodelistnode;
+
+    }
+
+    else if (nodetype == 3) {
+
+        NODELIST_NEXT (newnodelistnode) = (INFO_AL_CONSTARRAYLIST (arg_info));
+        INFO_AL_CONSTARRAYLIST (arg_info) = newnodelistnode;
 
     }
 
@@ -481,7 +514,10 @@ OtherPrfOp (node *arg_node, node *arg_info)
     prf otherPrf;
     DBUG_ENTER ("OtherPrfOp");
     if (NODE_TYPE (EXPRS_EXPR (arg_node)) == N_id) {
-        if (AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (arg_node))) == NULL)
+        if ((AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (arg_node))) == NULL)
+            || (NODE_TYPE (LET_EXPR (
+                  ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (arg_node))))))
+                != N_prf))
             otherOp = 0;
         else {
             otherPrf = PRF_PRF (
@@ -574,21 +610,30 @@ MakeAssignNodeFromCurrentNode (node *newnode, node *arg_info, int dim)
     types *type;
     char *newname1, *newname2;
 
+    shpseg *shp;
+    node *shpnode;
+    int shpint;
+
     DBUG_ENTER ("MakeAssignNodeFromCurrentNode");
 
     if (NODE_TYPE (newnode) == N_id) {
 
+        shpint = TYPES_DIM ((INFO_AL_TYPE (arg_info)));
+        shpnode = Shpseg2Array (TYPES_SHPSEG (INFO_AL_TYPE (arg_info)), shpint);
+        shp = Array2Shpseg (shpnode, &shpint);
+
         type = VARDEC_TYPE (ID_VARDEC (newnode));
-        type = MakeTypes (TYPES_BASETYPE (type), TYPES_DIM (type), TYPES_SHPSEG (type),
-                          NULL, NULL);
+        type = MakeTypes (TYPES_BASETYPE (type), TYPES_DIM (type), shp, NULL, NULL);
 
     } else {
 
         if (dim > 0) {
 
+            shpint = TYPES_DIM ((INFO_AL_TYPE (arg_info)));
+            shpnode = Shpseg2Array (TYPES_SHPSEG (INFO_AL_TYPE (arg_info)), shpint);
+            shp = Array2Shpseg (shpnode, &shpint);
             type = MakeTypes (TYPES_BASETYPE ((INFO_AL_TYPE (arg_info))),
-                              TYPES_DIM ((INFO_AL_TYPE (arg_info))),
-                              TYPES_SHPSEG (INFO_AL_TYPE (arg_info)), NULL, NULL);
+                              TYPES_DIM ((INFO_AL_TYPE (arg_info))), shp, NULL, NULL);
         } else {
 
             type = MakeTypes (TYPES_BASETYPE ((INFO_AL_TYPE (arg_info))), 0, NULL, NULL,
@@ -887,6 +932,20 @@ CreateOptlist (node *arg_info)
         }
     }
 
+    currentList = INFO_AL_CONSTARRAYLIST (arg_info);
+
+    if (currentList != NULL) {
+        while (NODELIST_NEXT (currentList) != NULL) {
+
+            next = NODELIST_NEXT (currentList);
+            NODELIST_NEXT (currentList) = INFO_AL_OPTLIST (arg_info);
+            INFO_AL_OPTLIST (arg_info) = currentList;
+
+            INFO_AL_CONSTARRAYLIST (arg_info) = next;
+            currentList = INFO_AL_CONSTARRAYLIST (arg_info);
+        }
+    }
+
     currentList = INFO_AL_VARIABLELIST (arg_info);
 
     if (currentList != NULL) {
@@ -948,32 +1007,57 @@ TravElems (node *arg_node, node *arg_info)
 
     } else {
 
-        if (OtherPrfOp (arg_node, arg_info) || ReachedArgument (EXPRS_EXPR (arg_node))
-            || ReachedDefinition (EXPRS_EXPR (arg_node))) {
+        if (IsConstantArray (EXPRS_EXPR (arg_node))) {
 
-            /*
-             *
-             */
-            if (ContainsAnArray (arg_node))
-                arg_info = AddNode (arg_node, arg_info, 2);
-            else
-                arg_info = AddNode (arg_node, arg_info, 0);
+            arg_info = AddNode (arg_node, arg_info, 3);
 
-            /*
-             *
-             */
         } else {
 
-            ASSIGN_STATUS (INFO_AL_CURRENTASSIGN (arg_info)) = 0;
-            INFO_AL_CURRENTASSIGN (arg_info)
-              = AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (arg_node)));
+            if (OtherPrfOp (arg_node, arg_info) || ReachedArgument (EXPRS_EXPR (arg_node))
+                || ReachedDefinition (EXPRS_EXPR (arg_node))) {
 
-            arg_info = TravElems (PRF_ARGS (LET_EXPR (ASSIGN_INSTR (
-                                    AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (arg_node)))))),
-                                  arg_info);
-            arg_info = TravElems (EXPRS_NEXT (PRF_ARGS (LET_EXPR (ASSIGN_INSTR (
-                                    AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (arg_node))))))),
-                                  arg_info);
+                /*
+                 *
+                 */
+                if (ContainsAnArray (arg_node)) {
+
+                    int a, b;
+
+                    a = ReachedArgument (EXPRS_EXPR (arg_node));
+                    b = OtherPrfOp (arg_node, arg_info);
+
+                    if ((a == 0) && (b == 0)
+                        && (NODE_TYPE (LET_EXPR (ASSIGN_INSTR (
+                              AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (arg_node))))))
+                            == N_array)) {
+
+                        node *tmp;
+                        tmp = LET_EXPR (ASSIGN_INSTR (
+                          AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (arg_node)))));
+                        tmp = MakeExprs (tmp, NULL);
+                        arg_info = AddNode (tmp, arg_info, 3);
+                    } else
+                        arg_info = AddNode (arg_node, arg_info, 2);
+                } else
+                    arg_info = AddNode (arg_node, arg_info, 0);
+
+                /*
+                 *
+                 */
+            } else {
+
+                ASSIGN_STATUS (INFO_AL_CURRENTASSIGN (arg_info)) = 0;
+                INFO_AL_CURRENTASSIGN (arg_info)
+                  = AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (arg_node)));
+
+                arg_info = TravElems (PRF_ARGS (LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (
+                                        ID_AVIS (EXPRS_EXPR (arg_node)))))),
+                                      arg_info);
+                arg_info
+                  = TravElems (EXPRS_NEXT (PRF_ARGS (LET_EXPR (ASSIGN_INSTR (
+                                 AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (arg_node))))))),
+                               arg_info);
+            }
         }
     }
 
@@ -1029,76 +1113,38 @@ GetOperator (prf op, int flag)
 }
 
 static node *
-JoinResults (node *arg_node, node *arg_info)
+JoinResults (nodelist *nodelist1, nodelist *nodelist2, node *arg_info, int flag)
 {
 
-    node *result, *tmp;
-    nodelist *tmplist;
+    node *tmp;
 
     DBUG_ENTER ("JoinResults");
 
-    if (INFO_AL_VARIABLELIST (arg_info) != NULL) {
-        tmp
-          = MakeExprsNodeFromAssignNodes (NODELIST_NODE (INFO_AL_VARIABLELIST (arg_info)),
-                                          NODELIST_NODE (
-                                            INFO_AL_CONSTANTLIST (arg_info)));
+    if (nodelist1 != NULL) {
+        if (nodelist2 != NULL) {
 
-        tmp = MakePrf (GetOperator (INFO_AL_CURRENTPRF (arg_info), 0), tmp);
-
-        tmplist = INFO_AL_VARIABLELIST (arg_info);
-        NODELIST_NEXT (tmplist) = INFO_AL_OPTLIST (arg_info);
-        INFO_AL_OPTLIST (arg_info) = tmplist;
-        tmplist = INFO_AL_CONSTANTLIST (arg_info);
-        NODELIST_NEXT (tmplist) = INFO_AL_OPTLIST (arg_info);
-        INFO_AL_OPTLIST (arg_info) = tmplist;
-
-        if (INFO_AL_ARRAYLIST (arg_info) != NULL) {
-            tmp = MakeAssignNodeFromCurrentNode (tmp, arg_info, 0);
-            tmplist = MakeNodelistNode (tmp, NULL);
-            result = MakeExprsNodeFromExprsAndAssignNode (INFO_AL_ARRAYLIST (arg_info),
-                                                          tmplist);
-            tmp = PRF_ARGS (arg_node);
-            PRF_ARGS (arg_node) = result;
-            PRF_PRF (arg_node) = GetOperator (INFO_AL_CURRENTPRF (arg_info), 2);
-            tmplist = INFO_AL_ARRAYLIST (arg_info);
-            NODELIST_NEXT (tmplist) = INFO_AL_OPTLIST (arg_info);
-            INFO_AL_OPTLIST (arg_info) = tmplist;
+            tmp = MakeExprsNodeFromAssignNodes (NODELIST_NODE (nodelist1),
+                                                NODELIST_NODE (nodelist2));
+            tmp = MakePrf (GetOperator (INFO_AL_CURRENTPRF (arg_info), flag), tmp);
+            tmp = MakeAssignNodeFromCurrentNode (tmp, arg_info, flag);
 
         } else {
-            result = tmp;
-            tmp = arg_node;
-            arg_node = result;
+
+            tmp = MakeExprsNodeFromExprsAndAssignNode (nodelist1,
+                                                       MakeNodelistNode (NULL, NULL));
+            tmp = MakeAssignNodeFromCurrentNode (EXPRS_EXPR (tmp), arg_info, -1);
         }
-    } else if (INFO_AL_ARRAYLIST (arg_info) != NULL) {
+    } else if (nodelist2 != NULL) {
 
-        result = MakeExprsNodeFromExprsAndAssignNode (INFO_AL_ARRAYLIST (arg_info),
-                                                      INFO_AL_CONSTANTLIST (arg_info));
-        tmp = PRF_ARGS (arg_node);
-        PRF_ARGS (arg_node) = result;
-        PRF_PRF (arg_node) = GetOperator (INFO_AL_CURRENTPRF (arg_info), 2);
-
-        tmplist = INFO_AL_ARRAYLIST (arg_info);
-        NODELIST_NEXT (tmplist) = INFO_AL_OPTLIST (arg_info);
-        INFO_AL_OPTLIST (arg_info) = tmplist;
-        tmplist = INFO_AL_CONSTANTLIST (arg_info);
-        NODELIST_NEXT (tmplist) = INFO_AL_OPTLIST (arg_info);
-        INFO_AL_OPTLIST (arg_info) = tmplist;
+        tmp = MakeExprsNodeFromExprsAndAssignNode (nodelist2,
+                                                   MakeNodelistNode (NULL, NULL));
+        tmp = MakeAssignNodeFromCurrentNode (EXPRS_EXPR (tmp), arg_info, -1);
     } else {
 
-        tmp = arg_node;
-        result = NODELIST_NODE (INFO_AL_CONSTANTLIST (arg_info));
-        result = ASSIGN_INSTR (LET_EXPR (result));
-        arg_node = DupTree (result);
-        result = NODELIST_NODE (INFO_AL_CONSTANTLIST (arg_info));
-        result = Free (result);
+        tmp = NULL;
     }
 
-    INFO_AL_ARRAYLIST (arg_info) = NULL;
-    INFO_AL_CONSTANTLIST (arg_info) = NULL;
-    INFO_AL_VARIABLELIST (arg_info) = NULL;
-    tmp = Free (tmp);
-
-    DBUG_RETURN (arg_node);
+    DBUG_RETURN (tmp);
 }
 
 /*****************************************************************************
@@ -1313,7 +1359,10 @@ ALprf (node *arg_node, node *arg_info)
 {
     int anz_const;
     int anz_all;
-    nodetype nodetype;
+    node *nodetype;
+    node *node1, *node2;
+    nodelist *tmp;
+    nodelist *tmp1;
 
     DBUG_ENTER ("AssociativeLawOptimize");
 
@@ -1325,6 +1374,7 @@ ALprf (node *arg_node, node *arg_info)
             INFO_AL_CONSTANTLIST (arg_info) = NULL;
             INFO_AL_VARIABLELIST (arg_info) = NULL;
             INFO_AL_ARRAYLIST (arg_info) = NULL;
+            INFO_AL_CONSTARRAYLIST (arg_info) = NULL;
             INFO_AL_OPTLIST (arg_info) = NULL;
             INFO_AL_CURRENTPRF (arg_info) = PRF_PRF (arg_node);
 
@@ -1347,9 +1397,12 @@ ALprf (node *arg_node, node *arg_info)
              * optimization make no sense
              */
             if ((anz_const > 1) && (anz_all > 2) && (anz_const < anz_all)) {
-                nodetype = NODE_TYPE (NODELIST_NODE (INFO_AL_CONSTANTLIST (arg_info)));
+
+                nodetype = IDS_VARDEC (LET_IDS (INFO_AL_LETNODE (arg_info)));
+
                 if (!(enforce_ieee)
-                    || ((nodetype != N_float) && (nodetype != N_double))) {
+                    || ((TYPES_BASETYPE (VARDEC_TYPE (nodetype)) != T_float)
+                        && (TYPES_BASETYPE (VARDEC_TYPE (nodetype)) != T_double))) {
 
                     /*
                      * start optimization
@@ -1360,6 +1413,8 @@ ALprf (node *arg_node, node *arg_info)
                       = CreateAssignNodes (INFO_AL_ARRAYLIST (arg_info), arg_info, 1);
                     arg_info
                       = CreateAssignNodes (INFO_AL_VARIABLELIST (arg_info), arg_info, 0);
+                    arg_info = CreateAssignNodes (INFO_AL_CONSTARRAYLIST (arg_info),
+                                                  arg_info, 1);
 
                     arg_info
                       = CommitAssignNodes (INFO_AL_CONSTANTLIST (arg_info), arg_info, 0);
@@ -1367,9 +1422,105 @@ ALprf (node *arg_node, node *arg_info)
                       = CommitAssignNodes (INFO_AL_ARRAYLIST (arg_info), arg_info, 1);
                     arg_info
                       = CommitAssignNodes (INFO_AL_VARIABLELIST (arg_info), arg_info, 0);
+                    arg_info = CommitAssignNodes (INFO_AL_CONSTARRAYLIST (arg_info),
+                                                  arg_info, 1);
 
                     arg_info = CreateOptlist (arg_info);
-                    arg_node = JoinResults (arg_node, arg_info);
+
+                    node1 = JoinResults (INFO_AL_CONSTANTLIST (arg_info),
+                                         INFO_AL_CONSTARRAYLIST (arg_info), arg_info, 1);
+                    if (INFO_AL_CONSTANTLIST (arg_info) != NULL) {
+
+                        tmp = INFO_AL_CONSTANTLIST (arg_info);
+                        INFO_AL_CONSTANTLIST (arg_info) = INFO_AL_OPTLIST (arg_info);
+                        NODELIST_NEXT (tmp) = INFO_AL_CONSTANTLIST (arg_info);
+                        INFO_AL_OPTLIST (arg_info) = tmp;
+                    }
+                    if (INFO_AL_CONSTARRAYLIST (arg_info) != NULL) {
+
+                        tmp = INFO_AL_CONSTARRAYLIST (arg_info);
+                        INFO_AL_CONSTARRAYLIST (arg_info) = INFO_AL_OPTLIST (arg_info);
+                        NODELIST_NEXT (tmp) = INFO_AL_CONSTARRAYLIST (arg_info);
+                        INFO_AL_OPTLIST (arg_info) = tmp;
+                    }
+                    node2 = JoinResults (INFO_AL_VARIABLELIST (arg_info),
+                                         INFO_AL_ARRAYLIST (arg_info), arg_info, 1);
+                    if (INFO_AL_VARIABLELIST (arg_info) != NULL) {
+
+                        tmp = INFO_AL_VARIABLELIST (arg_info);
+                        INFO_AL_VARIABLELIST (arg_info) = INFO_AL_OPTLIST (arg_info);
+                        NODELIST_NEXT (tmp) = INFO_AL_VARIABLELIST (arg_info);
+                        INFO_AL_OPTLIST (arg_info) = tmp;
+                    }
+                    if (INFO_AL_ARRAYLIST (arg_info) != NULL) {
+
+                        tmp = INFO_AL_ARRAYLIST (arg_info);
+                        INFO_AL_ARRAYLIST (arg_info) = INFO_AL_OPTLIST (arg_info);
+                        NODELIST_NEXT (tmp) = INFO_AL_ARRAYLIST (arg_info);
+                        INFO_AL_OPTLIST (arg_info) = tmp;
+                    }
+
+                    if (node1 != NULL) {
+                        if (node2 != NULL) {
+
+                            int dim, tmp;
+
+                            tmp = TYPES_DIM (
+                              VARDEC_TYPE (IDS_VARDEC (LET_IDS (ASSIGN_INSTR (node1)))));
+                            if (tmp == 0) {
+                                if (TYPES_DIM (VARDEC_TYPE (
+                                      IDS_VARDEC (LET_IDS (ASSIGN_INSTR (node2)))))
+                                    == 0)
+                                    dim = 0;
+                                else
+                                    dim = 1;
+                            } else if (TYPES_DIM (VARDEC_TYPE (
+                                         IDS_VARDEC (LET_IDS (ASSIGN_INSTR (node2)))))
+                                       == 0)
+                                dim = 2;
+                            else
+                                dim = 3;
+
+                            INFO_AL_CONSTANTLIST (arg_info)
+                              = MakeNodelistNode (node1, MakeNodelistNode (node2, NULL));
+                            tmp1 = INFO_AL_CONSTANTLIST (arg_info);
+                            INFO_AL_CONSTANTLIST (arg_info) = INFO_AL_OPTLIST (arg_info);
+                            NODELIST_NEXT (NODELIST_NEXT (tmp1))
+                              = INFO_AL_CONSTANTLIST (arg_info);
+                            INFO_AL_OPTLIST (arg_info) = tmp1;
+                            node1 = MakeExprsNodeFromAssignNodes (node1, node2);
+                            node2 = PRF_ARGS (arg_node);
+                            PRF_ARGS (arg_node) = node1;
+
+                            PRF_PRF (arg_node) = GetOperator (PRF_PRF (arg_node), dim);
+                        } else {
+                            INFO_AL_CONSTANTLIST (arg_info)
+                              = MakeNodelistNode (node1, NULL);
+                            tmp1 = INFO_AL_CONSTANTLIST (arg_info);
+                            INFO_AL_CONSTANTLIST (arg_info) = INFO_AL_OPTLIST (arg_info);
+                            NODELIST_NEXT (tmp1) = INFO_AL_CONSTANTLIST (arg_info);
+                            INFO_AL_OPTLIST (arg_info) = tmp1;
+                            node1 = MakeExprsNodeFromExprsAndAssignNode (
+                              MakeNodelistNode (node1, NULL),
+                              MakeNodelistNode (NULL, NULL));
+                            node2 = arg_node;
+                            arg_node = node1;
+                        }
+                    } else {
+                        INFO_AL_CONSTANTLIST (arg_info) = MakeNodelistNode (node2, NULL);
+                        tmp1 = INFO_AL_CONSTANTLIST (arg_info);
+                        INFO_AL_CONSTANTLIST (arg_info) = INFO_AL_OPTLIST (arg_info);
+                        NODELIST_NEXT (tmp1) = INFO_AL_CONSTANTLIST (arg_info);
+                        INFO_AL_OPTLIST (arg_info) = tmp1;
+                        node1
+                          = MakeExprsNodeFromExprsAndAssignNode (MakeNodelistNode (node2,
+                                                                                   NULL),
+                                                                 MakeNodelistNode (NULL,
+                                                                                   NULL));
+                        node2 = arg_node;
+                        arg_node = node1;
+                    }
+                    Free (node2);
 
                 } else {
                     /*
@@ -1377,6 +1528,8 @@ ALprf (node *arg_node, node *arg_info)
                      */
                     FreeNodelist (INFO_AL_CONSTANTLIST (arg_info));
                     FreeNodelist (INFO_AL_VARIABLELIST (arg_info));
+                    FreeNodelist (INFO_AL_CONSTARRAYLIST (arg_info));
+                    FreeNodelist (INFO_AL_ARRAYLIST (arg_info));
                     INFO_AL_NUMBEROFVARIABLES (arg_info) = 0;
                     INFO_AL_NUMBEROFCONSTANTS (arg_info) = 0;
                 }
@@ -1386,6 +1539,8 @@ ALprf (node *arg_node, node *arg_info)
                  */
                 FreeNodelist (INFO_AL_CONSTANTLIST (arg_info));
                 FreeNodelist (INFO_AL_VARIABLELIST (arg_info));
+                FreeNodelist (INFO_AL_CONSTARRAYLIST (arg_info));
+                FreeNodelist (INFO_AL_ARRAYLIST (arg_info));
                 INFO_AL_NUMBEROFVARIABLES (arg_info) = 0;
                 INFO_AL_NUMBEROFCONSTANTS (arg_info) = 0;
             }

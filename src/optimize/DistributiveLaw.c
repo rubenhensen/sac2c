@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.10  2003/07/31 16:36:39  mwe
+ * some changes regarding to array support
+ *
  * Revision 1.9  2003/04/24 21:51:52  mwe
  * big fixed (SacZilla Bug-ID: 13)
  *
@@ -510,6 +513,7 @@ IsConstant (node *arg_node, node *arg_info)
         INFO_DL_IEEEFLAG (arg_info) = 1;
     case N_bool:
     case N_num:
+    case N_array:
     case N_char:
         is_constant = TRUE;
         break;
