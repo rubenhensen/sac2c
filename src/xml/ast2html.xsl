@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.2  2004/11/23 19:52:12  sah
+  adapted to new structure
+
   Revision 1.1  2004/11/23 11:30:34  sah
   Initial revision
 
@@ -33,7 +36,10 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
           body { font-family: sans-serif } 
           table { border-width: 1pt; border-style: solid;
                   border-color: #000000; background-color: #cccccc; 
-                  padding: 0pt; margin: 20pt; width: 80% } 
+                  padding: 0pt; margin: 20pt; width: 90% } 
+          table.inner { border-width: 1pt; border-style: solid;
+                        border-color: #000000; background-color: #cccccc; 
+                        padding: 0pt; margin: 20pt; width: 100% } 
           tr { padding: 10pt; margin: 0pt; border-style: none} 
           td { vertical-align: top; padding: 4pt; margin: 0pt; 
                border-style: none } 
@@ -82,6 +88,14 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
     </li>
   </xsl:template>
   <!-- each nodeset generates a link, as well -->
+  <xsl:template match="nodesets" mode="list-of-tables">
+    <li> Nodesets
+      <ul>
+        <xsl:apply-templates mode="list-of-tables" />
+      </ul>
+    </li>
+  </xsl:template>
+
   <xsl:template match="nodeset" mode="list-of-tables">
     <li>
       <xsl:element name="a">
@@ -97,9 +111,14 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
   </xsl:template>
   <!-- we sort the nodes by name using this template -->
   <xsl:template match="syntaxtree" mode="list-of-tables">
-    <xsl:apply-templates select="node" mode="list-of-tables">
-      <xsl:sort select="@name" />
-    </xsl:apply-templates>
+    <li>
+      Nodes
+      <ul>
+        <xsl:apply-templates select="node" mode="list-of-tables">
+          <xsl:sort select="@name" />
+        </xsl:apply-templates>
+      </ul>
+    </li>
   </xsl:template>
   <!-- in list-of-tables mode, each node generates a link -->
   <xsl:template match="node" mode="list-of-tables">
@@ -114,6 +133,56 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
             <xsl:value-of select="@name" />
           </xsl:with-param>
         </xsl:call-template>
+      </xsl:element>
+    </li>
+  </xsl:template>
+
+  <xsl:template match="phases" mode="list-of-tables">
+    <li>
+      Phases
+      <ul>
+        <xsl:apply-templates mode="list-of-tables" />
+      </ul>
+    </li>
+  </xsl:template>
+
+  <xsl:template match="phase" mode="list-of-tables" >
+    <li>
+      <xsl:element name="a">
+        <xsl:attribute name="href">
+          <xsl:value-of select="'#PH_'" />
+          <xsl:value-of select="@id" />
+        </xsl:attribute>
+        <xsl:value-of select="@name" />
+      </xsl:element>
+      <ul>
+        <xsl:apply-templates mode="list-of-tables" />
+      </ul>
+    </li>
+  </xsl:template>
+
+  <xsl:template match="general" mode="list-of-tables" >
+    <li>
+      <xsl:element name="a">
+        <xsl:attribute name="href">
+          <xsl:value-of select="'#GENERALTRAVS'" />
+        </xsl:attribute>
+        General Traversals
+      </xsl:element>
+      <ul>
+        <xsl:apply-templates mode="list-of-tables" />
+      </ul>
+    </li>
+  </xsl:template>
+
+  <xsl:template match="traversal" mode="list-of-tables">
+    <li>
+      <xsl:element name="a">
+        <xsl:attribute name="href">
+          <xsl:value-of select="'#TR_'" />
+          <xsl:value-of select="@id" />
+        </xsl:attribute>
+        <xsl:value-of select="@name" />
       </xsl:element>
     </li>
   </xsl:template>
@@ -191,6 +260,69 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
     </tr>
   </xsl:template>
 
+  <!-- phases are transfered into a table -->
+  <xsl:template match="phase" mode="table">
+    <xsl:element name="a">
+      <xsl:attribute name="name">
+        <xsl:value-of select="'PH_'" />
+        <xsl:value-of select="@id" />
+      </xsl:attribute>
+    </xsl:element>
+    <table>
+      <tr>
+        <td class="title">
+          <xsl:value-of select="'Phase PH_'" />
+          <xsl:value-of select="@id" />
+          <div class="description">
+            <xsl:value-of select="@name" />
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <xsl:apply-templates select="traversal" mode="table" />
+        </td>
+      </tr>
+    </table>
+  </xsl:template>
+
+  <xsl:template match="general" mode="table">
+    <xsl:element name="a">
+      <xsl:attribute name="name">
+        <xsl:value-of select="'GENERALTRAVS'" />
+      </xsl:attribute>
+    </xsl:element>
+    <table>
+      <tr>
+        <td class="title">
+          General Traversals
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <xsl:apply-templates select="traversal" mode="table" />
+        </td>
+      </tr>
+    </table>
+  </xsl:template>
+
+  <xsl:template match="traversal" mode="table">
+    <table class="inner">
+      <tr>
+        <td class="heading">
+          <xsl:element name="a">
+            <xsl:attribute name="name">
+              <xsl:value-of select="'TR_'" />
+              <xsl:value-of select="@id" />
+            </xsl:attribute>
+            <xsl:value-of select="@name" />
+          </xsl:element>
+        </td>
+      </tr>
+    </table>
+  </xsl:template>
+  
+    
   <!-- each nodeset is transformed into a table -->
   <xsl:template match="nodeset" mode="table">
     <xsl:element name="a">
@@ -410,7 +542,7 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
       </td>
       <xsl:if test="not(phases/all)">
         <td>
-          <xsl:apply-templates select="phases" mode="table" />
+          <xsl:apply-templates select="phases" mode="table-node" />
         </td>
       </xsl:if>
       <td class="ccode" >
@@ -445,17 +577,17 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
   </xsl:template>
 
   <!-- attribute phase information is just printed -->
-  <xsl:template match="phases/unknown" mode="table">
+  <xsl:template match="phases/unknown" mode="table-node">
     <xsl:value-of select="'[ '" />
     <div class="alert">
       <xsl:value-of select="'unknown'" />
     </div>
     <xsl:value-of select="' ]'" />
   </xsl:template>
-  <xsl:template match="phases/phase" mode="table">
+  <xsl:template match="phases/phase" mode="table-node">
     <xsl:value-of select="concat( concat( '[ ', @name ), ' ]')" />
   </xsl:template>
-  <xsl:template match="phases/range" mode="table">
+  <xsl:template match="phases/range" mode="table-node">
     <xsl:value-of select="'[ '" />
     <xsl:value-of select="concat( @from, ' - ')" />
     <xsl:value-of select="concat( @to, ' ]')" />

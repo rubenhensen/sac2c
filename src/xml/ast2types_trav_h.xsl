@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.2  2004/11/23 19:51:59  sah
+  adapted to new structure
+
   Revision 1.1  2004/11/23 11:32:38  sah
   Initial revision
 
@@ -34,15 +37,15 @@
 #define _SAC_TYPES_TRAV_H_
 
     </xsl:text>
-    <xsl:apply-templates select="/definition/traversals" />
+    <xsl:apply-templates select="/definition/phases" />
     <xsl:text>
 #endif /* _SAC_TYPES_TRAV_H_ */
     </xsl:text>
   </xsl:template>
 
-  <xsl:template match="traversals" >
+  <xsl:template match="phases" >
     <xsl:value-of select="'typedef enum { TR_undefined'" />
-    <xsl:apply-templates select="traversal" />
+    <xsl:apply-templates />
     <xsl:value-of select="'} trav_t; '" />
   </xsl:template>
 
