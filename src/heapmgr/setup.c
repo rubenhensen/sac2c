@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2000/05/24 09:32:35  cg
+ * Added dummy definition of SAC_HM_ShowDiagnostics().
+ * Heap manager diagnostics are now printed after termination through
+ * runtime error.
+ *
  * Revision 1.5  2000/03/02 16:46:02  jhs
  * including malloc.h while compiling unter LINUX_X86
  *
@@ -296,3 +301,27 @@ SAC_HM_SetupWorkers (unsigned int num_threads)
 }
 
 #endif /* MT */
+
+#ifndef DIAG
+
+/*
+ * The purpose of the following 'empty' function definition is to allow heap manager
+ * diagnostics to be printed when program execution is terminated by a runtime error.
+ * With the following dummy function, the function SAC_RuntimeError() may always call
+ * SAC_HM_ShowDiagnostics() regardless of whether the program is linked with the
+ * diagnostic version of the heap manager or not.
+ *
+ * This function definition cannot be put into diagnostics.c because with diagnostics
+ * disabled diagnostics.o will not be linked to the program, there's simply no
+ * reference to SAC_HM_ShowDiagnostics(). Unfortunately, there is a reference in
+ * SAC_RuntimeError() which will incurr linking with nophm.o. However, this results
+ * in a linker error since with phm and nophm both linked to a program, there are
+ * lots of multiply defined symbols.
+ */
+
+void
+SAC_HM_ShowDiagnostics ()
+{
+}
+
+#endif /* DIAG */

@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2000/05/24 09:32:35  cg
+ * Added dummy definition of SAC_HM_ShowDiagnostics().
+ * Heap manager diagnostics are now printed after termination through
+ * runtime error.
+ *
  * Revision 1.1  2000/01/17 16:49:15  cg
  * Initial revision
  *
@@ -132,6 +137,11 @@ void *
 SAC_HM_MallocTopArena_mt (SAC_HM_size_unit_t units)
 {
     return (malloc (units * SAC_HM_UNIT_SIZE));
+}
+
+void
+SAC_HM_ShowDiagnostics ()
+{
 }
 
 void *
