@@ -29,3 +29,4 @@ SSAWLT.c
 SSAWLT.h
 SSAWithloopFolding.c
 SSAWithloopFolding.h
+detectdependencies.c
