@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/03/14 10:13:49  ben
+ *  ICMs MT_SCHEDULER_BlockVar_... implemented
+ *
  * Revision 3.3  2001/01/24 23:38:37  dkr
  * type of arguments of ICMs MT_SCHEDULER_..._BEGIN, MT_SCHEDULER_..._END
  * changed from int* to char**
@@ -112,5 +115,8 @@ extern void ICMCompileMT_SCHEDULER_END (int dim, char **vararg);
 
 extern void ICMCompileMT_SCHEDULER_Block_BEGIN (int dim, char **vararg);
 extern void ICMCompileMT_SCHEDULER_Block_END (int dim, char **vararg);
+
+extern void ICMCompileMT_SCHEDULER_BlockVar_BEGIN (int dim, char **vararg);
+extern void ICMCompileMT_SCHEDULER_BlockVar_END (int dim, char **vararg);
 
 #endif /* _ICM2C_MT_H_ */

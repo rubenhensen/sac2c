@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/03/14 10:12:43  ben
+ *  ICMs MT_SCHEDULER_BlockVar_... implemented
+ *
  * Revision 3.3  2001/01/24 23:38:44  dkr
  * type of arguments of ICMs MT_SCHEDULER_..._BEGIN, MT_SCHEDULER_..._END
  * changed from int* to char**
@@ -1447,6 +1450,67 @@ ICMCompileMT_SCHEDULER_Block_END (int dim, char **vararg)
 #include "icm_comment.c"
 #include "icm_trace.c"
 #undef MT_SCHEDULER_Block_END
+
+    fprintf (outfile, "\n");
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileMT_SCHEDULER_BlockVar_BEGIN(int dim, char **vararg)
+ *   void ICMCompileMT_SCHEDULER_BlockVar_END(int dim, char **vararg)
+ *
+ * description:
+ *   These two ICMs implement the scheduling for variable segments
+ *   called "BlockVar".
+ *
+ *   This scheduling is a very simple one that partitions the iteration
+ *   space along the outermost dimension upon the available processors.
+ *   Blocking is not considered!
+ *   Unrolling is not considered!
+ *
+ ******************************************************************************/
+
+void
+ICMCompileMT_SCHEDULER_BlockVar_BEGIN (int dim, char **vararg)
+{
+    char **lower_bound = vararg;
+    char **upper_bound = vararg + dim;
+    char **unrolling = vararg + 3 * dim;
+    int i;
+
+    DBUG_ENTER ("ICMCompileMT_SCHEDULER_BlockVar_BEGIN");
+
+#define MT_SCHEDULER_BlockVar_BEGIN
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef MT_SCHEDULER_BlockVar_BEGIN
+
+    INDENT;
+    fprintf (outfile, "SAC_MT_SCHEDULER_BlockVar_DIM0( %s, %s, %s);\n", lower_bound[0],
+             upper_bound[0], unrolling[0]);
+
+    for (i = 1; i < dim; i++) {
+        INDENT;
+        fprintf (outfile, "SAC_WL_MT_SCHEDULE_START( %d) = %s;\n", i, lower_bound[i]);
+        INDENT;
+        fprintf (outfile, "SAC_WL_MT_SCHEDULE_STOP( %d) = %s;\n", i, upper_bound[i]);
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+void
+ICMCompileMT_SCHEDULER_BlockVar_END (int dim, char **vararg)
+{
+    DBUG_ENTER ("ICMCompileMT_SCHEDULER_BlockVar_END");
+
+#define MT_SCHEDULER_BlockVar_END
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef MT_SCHEDULER_BlockVar_END
 
     fprintf (outfile, "\n");
 
