@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 17:59:28  sacbase
+ * new release made
+ *
  * Revision 2.36  2000/10/27 13:23:13  cg
  * Added new command line options -aplimit and -apdiaglimit.
  *

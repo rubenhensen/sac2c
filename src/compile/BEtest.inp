@@ -13,3 +13,4 @@ MT_SYNC_ONEFOLD( double arg2 tmp foldop )
 MT_SPMD_FUN_RET( 2 out arg2 out_rc arg4 )
 clear-indent !
 
+

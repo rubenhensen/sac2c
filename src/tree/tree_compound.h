@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:03:37  sacbase
+ * new release made
+ *
  * Revision 1.47  2000/10/31 23:31:47  dkr
  * signature of Type2Shpseg, Array2Shpseg modified
  *

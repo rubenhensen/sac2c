@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 17:59:50  sacbase
+ * new release made
+ *
  * Revision 2.33  2000/11/17 16:18:02  sbs
  * call of MakeDeps adjusted by LOC_stdlib. ' hope this is correct here...
  *
@@ -3019,4 +3022,5 @@ node *Append(node *target_node, node *append_node)
 
   DBUG_RETURN(target_node);
 }
+
 

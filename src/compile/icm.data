@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.1  2000/11/20 18:01:13  sacbase
+ * new release made
+ *
  * Revision 2.12  2000/08/18 23:02:06  dkr
  * signature of ND_FUN_RET changed
  *
@@ -658,5 +661,6 @@ ICM_DEF( MT_SCHEDULER_Block_END, TRACE_NONE)
   ICM_VARINT((4*dim), varint)
 ICM_END( MT_SCHEDULER_Block_END, (dim, varint))
 #endif
+
 
 

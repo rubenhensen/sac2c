@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.1  2000/11/20 18:02:50  sacbase
+# new release made
+#
 # Revision 1.10  2000/11/02 14:22:25  dkr
 # header compressed
 #
@@ -140,3 +143,4 @@ small_chunks.o: ../runtime/sac_heapmgr.h
 wrapper.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 wrapper.o: /usr/include/sys/isa_defs.h heapmgr.h ../runtime/sac_mt.h
 wrapper.o: ../runtime/sac_heapmgr.h
+

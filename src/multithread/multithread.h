@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:03:11  sacbase
+ * new release made
+ *
  * Revision 1.2  2000/01/21 14:28:09  jhs
  * Added MUTHmodul and MUTHfundef.
  *

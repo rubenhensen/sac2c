@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:02:15  sacbase
+ * new release made
+ *
  * Revision 2.4  2000/07/26 18:20:19  dkr
  * SAC_ND_KS_USE_GENVAR_OFFSET: macro SAC_WL_DEST used instead of
  * ##__destptr

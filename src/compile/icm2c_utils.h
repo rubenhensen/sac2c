@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:01:20  sacbase
+ * new release made
+ *
  * Revision 1.4  2000/08/17 10:18:57  dkr
  * all the NT stuff is now in a separate modul (NameTuples.[ch])
  *

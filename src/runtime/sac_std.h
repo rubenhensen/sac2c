@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:02:20  sacbase
+ * new release made
+ *
  * Revision 2.13  2000/09/25 15:14:50  dkr
  * ICM ND_TYPEDEF_ARRAY moved from sac_misc.h to sac_std.h
  * ICM ND_TYPEDEF_HIDDEN created

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:00:45  sacbase
+ * new release made
+ *
  * Revision 2.3  2000/07/25 11:54:28  mab
  * added ap_padded and ap_unsupported
  *

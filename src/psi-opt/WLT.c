@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:01:42  sacbase
+ * new release made
+ *
  * Revision 2.21  2000/10/31 22:43:56  dkr
  * bug in WLTNgenerator() fixed
  * semantics of CreateZeroVector() modified

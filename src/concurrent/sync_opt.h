@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:02:36  sacbase
+ * new release made
+ *
  * Revision 2.2  1999/07/07 15:54:54  jhs
  * Added SYNC[sync|assign].
  *

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 17:59:15  sacbase
+ * new release made
+ *
  * Revision 2.3  1999/11/10 13:23:33  sbs
  * stdlib.h now included as well => strtol not known otherwise!
  *

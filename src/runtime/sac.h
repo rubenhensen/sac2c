@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:02:07  sacbase
+ * new release made
+ *
  * Revision 2.11  2000/08/18 13:56:15  dkr
  * sac_icm.h always included (the cat?-macros are usefull even without
  * TAGGED_ARRAYS)

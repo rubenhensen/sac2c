@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:03:18  sacbase
+ * new release made
+ *
  * Revision 1.6  2000/03/23 17:37:06  dkr
  * DFM2Types() renamed to DFM2ReturnTypes()
  *

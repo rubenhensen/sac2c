@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 17:59:34  sacbase
+ * new release made
+ *
  * Revision 2.5  2000/11/02 14:55:27  dkr
  * nothing changed
  *

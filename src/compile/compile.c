@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:01:07  sacbase
+ * new release made
+ *
  * Revision 2.103  2000/11/20 13:40:28  dkr
  * fixed a bug in COMPSpmdFunReturn() and COMPMT2FunReturn():
  * all ICM args are correctly allocated now

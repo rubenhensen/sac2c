@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:01:39  sacbase
+ * new release made
+ *
  * Revision 2.16  2000/10/31 23:33:03  dkr
  * CreateZeroVector( 0, ...) replaced by CreateZeroScalar( ...)
  *

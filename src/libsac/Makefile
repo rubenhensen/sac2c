@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.1  2000/11/20 18:02:39  sacbase
+# new release made
+#
 # Revision 1.23  2000/11/02 14:51:45  dkr
 # INC path -I../tree added
 # explicit .mac dependencies added
@@ -192,3 +195,4 @@ trace.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 trace.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
 trace.o: /usr/include/stdarg.h /usr/include/varargs.h /usr/include/string.h
 trace.o: ../runtime/sac_mt.h
+

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:01:10  sacbase
+ * new release made
+ *
  * Revision 2.15  2000/10/24 11:08:35  dkr
  * all deprecated macros have been moved to compile.c
  *

@@ -153,6 +153,9 @@
 
 /*
  * $Log$
+ * Revision 3.1  2000/11/20 18:02:12  sacbase
+ * new release made
+ *
  * Revision 1.6  2000/08/04 09:51:23  nmw
  * added documentation of the c interface.
  *

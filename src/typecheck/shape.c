@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:00:14  sacbase
+ * new release made
+ *
  * Revision 1.7  2000/10/26 14:30:17  dkr
  * MakeShpseg used instead of MALLOC
  *

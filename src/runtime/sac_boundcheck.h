@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:02:11  sacbase
+ * new release made
+ *
  * Revision 2.4  1999/10/25 15:38:08  sbs
  * changed SAC_BC_WRITE and SAC_BC_READ:
  * ( check_bound ? 0 : SAC_RuntimeError(...))    is not correct,

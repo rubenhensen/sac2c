@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 17:59:28  sacbase
+ * new release made
+ *
  * Revision 2.2  2000/03/23 14:00:28  jhs
  * Added build_os.
  *

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.1  2000/11/20 18:01:52  sacbase
+ * new release made
+ *
  * Revision 1.14  2000/10/31 18:13:27  cg
  * Function PIpaddingOverhead() made more robust against
  * numerical problems.

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.1  2000/11/20 18:02:42  sacbase
+ * new release made
+ *
  * Revision 2.23  2000/10/27 16:12:13  cg
  * Converted counters to new data type  unsigned long long int !
  *

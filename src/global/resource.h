@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 17:59:38  sacbase
+ * new release made
+ *
  * Revision 2.6  2000/02/03 17:20:55  cg
  * Added new resource table entries CACHE[123]_MSCA
  *

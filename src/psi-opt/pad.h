@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.1  2000/11/20 18:01:48  sacbase
+ * new release made
+ *
  * Revision 1.5  2000/08/03 15:29:49  mab
  * added apdiag_file, APprintDiag
  * removed all dummies

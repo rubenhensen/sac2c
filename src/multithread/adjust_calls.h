@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:03:00  sacbase
+ * new release made
+ *
  * Revision 1.2  2000/03/30 15:08:30  jhs
  *  Tried to build in removal of st-interior ...
  *

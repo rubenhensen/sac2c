@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:02:26  sacbase
+ * new release made
+ *
  * Revision 1.3  1999/08/02 09:48:35  jhs
  * Moved MeltBlocks[OnCopies] from spmd_opt.[ch] to concurrent_lib.[ch].
  *

@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.1  2000/11/20 17:59:15  sacbase
+# new release made
+#
 # Revision 2.23  2000/11/02 14:23:58  dkr
 # header compressed
 #
@@ -135,3 +138,4 @@ lac2fun.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
 lac2fun.o: /usr/include/sys/int_types.h ../tree/DupTree.h
 lac2fun.o: ../tree/LookUpTable.h ../tree/DataFlowMask.h
 lac2fun.o: ../tree/DataFlowMaskUtils.h cleanup_decls.h
+

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:01:57  sacbase
+ * new release made
+ *
  * Revision 2.20  2000/10/26 13:47:52  dkr
  * MakeShpseg used now :-)
  *

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:03:15  sacbase
+ * new release made
+ *
  * Revision 1.3  2000/01/28 13:51:02  jhs
  * Traversal is finished, pragma-schedulings can be used.
  *

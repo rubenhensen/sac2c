@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:02:57  sacbase
+ * new release made
+ *
  * Revision 1.3  2000/01/17 17:58:45  cg
  * Added support for optimized allocation of refernce counters.
  *

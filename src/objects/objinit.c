@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:02:00  sacbase
+ * new release made
+ *
  * Revision 2.6  2000/10/26 14:20:19  dkr
  * CopyShpseg replaced by DupShpseg (DupTree.[ch])
  *

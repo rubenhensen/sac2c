@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:01:55  sacbase
+ * new release made
+ *
  * Revision 2.21  2000/10/26 13:35:37  dkr
  * Malloc replaced by MALLOC
  *

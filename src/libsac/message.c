@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:02:44  sacbase
+ * new release made
+ *
  * Revision 2.4  2000/05/24 09:32:35  cg
  * Heap manager diagnostics are now printed after termination through
  * runtime error.

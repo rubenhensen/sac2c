@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:01:19  sacbase
+ * new release made
+ *
  * Revision 1.6  2000/10/23 12:46:15  dkr
  * FindParen(): In the 2nd DBUG_ASSERT 'NULL' is replaced by '\0'.
  *

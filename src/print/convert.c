@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 17:59:43  sacbase
+ * new release made
+ *
  * Revision 2.11  2000/10/30 19:24:44  dkr
  * Type2String: in case of ST_inout a '&' is printed now
  *

@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 3.1  2000/11/20 17:59:26  sacbase
+# new release made
+#
 # Revision 2.32  2000/11/02 14:36:55  dkr
 # explicit .mac dependencies added
 #
@@ -194,3 +197,4 @@ usage.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 usage.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
 usage.o: /usr/include/stdlib.h usage.h globals.h types.h build.h
 usage.o: ../../inc/dbug.h
+

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:02:34  sacbase
+ * new release made
+ *
  * Revision 2.9  2000/01/25 13:42:38  dkr
  * function FindVardec moved to tree_compound.h and renamed to
  * FindVardec_Varno

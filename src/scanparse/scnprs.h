@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 17:59:52  sacbase
+ * new release made
+ *
  * Revision 2.4  2000/07/21 14:48:52  nmw
  * global var spec_tree added
  *

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.1  2000/11/20 18:03:16  sacbase
+ * new release made
+ *
  * Revision 1.4  2000/07/04 14:36:43  jhs
  * Added DFMGetMaskBase and used it in DFMDuplicateMask
  *

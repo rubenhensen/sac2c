@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:02:14  sacbase
+ * new release made
+ *
  * Revision 1.12  2000/05/24 09:32:35  cg
  * Added declaration for SAC_HM_ShowDiagnostics() in no diag variant.
  * Heap manager diagnostics are now printed after termination through

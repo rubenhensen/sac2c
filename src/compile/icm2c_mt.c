@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:01:15  sacbase
+ * new release made
+ *
  * Revision 2.16  2000/10/09 19:16:46  dkr
  * GetUnadjustedFoldCode() renamed into GetFoldCode()
  *

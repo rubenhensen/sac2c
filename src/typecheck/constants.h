@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.1  2000/11/20 18:00:03  sacbase
+ * new release made
+ *
  * Revision 1.3  2000/05/03 16:49:17  dkr
  * COFreeConstant returns NULL now
  *

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:00:48  sacbase
+ * new release made
+ *
  * Revision 2.19  2000/11/17 16:02:16  nmw
  * ALPHA special handling for ar -x call added
  *

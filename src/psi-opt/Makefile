@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.1  2000/11/20 18:01:38  sacbase
+# new release made
+#
 # Revision 2.27  2000/11/02 14:46:31  dkr
 # explicit .mac dependencies added
 #
@@ -266,3 +269,4 @@ wl_access_analyze.o: /usr/include/malloc.h /usr/include/sys/types.h
 wl_access_analyze.o: /usr/include/sys/machtypes.h
 wl_access_analyze.o: /usr/include/sys/int_types.h ../global/internal_lib.h
 wl_access_analyze.o: ../print/print.h ../tree/tree.h wl_access_analyze.h
+

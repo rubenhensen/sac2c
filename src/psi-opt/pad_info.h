@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.1  2000/11/20 18:01:53  sacbase
+ * new release made
+ *
  * Revision 1.9  2000/10/27 13:24:56  cg
  * Added functions PInoteResults() and PIpaddingOverhead().
  *

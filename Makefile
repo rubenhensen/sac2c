@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.1  2000/11/20 17:59:10  sacbase
+# new release made
+#
 # Revision 2.53  2000/11/16 10:32:15  dkr
 # target src.tar.gz modified: RCS* files are excluded now
 #
@@ -418,3 +421,4 @@ linux: src.tar.gz
             'chmod 644 $(SOURCE_FILES);'   \
             'make deps OS=LINUX_X86;'      \
             'make OS=LINUX_X86'
+

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.1  2000/11/20 18:00:02  sacbase
+ * new release made
+ *
  * Revision 1.6  2000/10/24 12:46:59  dkr
  * MakeType renamed into MakeTypes
  *

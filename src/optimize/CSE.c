@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.1  2000/11/20 18:00:24  sacbase
+ * new release made
+ *
  * Revision 2.11  2000/10/26 12:49:53  dkr
  * DupIds renamed into DupAllIds
  *

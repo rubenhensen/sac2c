@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:02:17  sacbase
+ * new release made
+ *
  * Revision 2.15  2000/08/24 11:17:34  dkr
  * macros CONCAT, CATCAT replaced by CAT? (see sac_icm.h)
  *

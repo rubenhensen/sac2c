@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:02:28  sacbase
+ * new release made
+ *
  * Revision 1.6  1999/11/11 10:31:30  jhs
  * Inferring of first sync blocks begins at spmdfun-block not at the spmdfun
  * itself, preventing neverending recursions.

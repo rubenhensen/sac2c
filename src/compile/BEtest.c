@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:00:59  sacbase
+ * new release made
+ *
  * Revision 2.6  2000/07/11 09:19:57  dkr
  * include icm2c_utils.h not needed
  *

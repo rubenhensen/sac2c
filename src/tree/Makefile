@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.1  2000/11/20 18:03:22  sacbase
+# new release made
+#
 # Revision 1.23  2000/11/02 14:42:26  dkr
 # explicit .mac dependencies added
 #
@@ -213,3 +216,4 @@ tree_compound.o: ../global/my_debug.h free.h /usr/include/malloc.h
 tree_compound.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
 tree_compound.o: /usr/include/sys/int_types.h ../global/internal_lib.h
 tree_compound.o: ../typecheck/typecheck.h
+

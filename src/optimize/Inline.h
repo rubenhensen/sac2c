@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:00:31  sacbase
+ * new release made
+ *
  * Revision 2.2  2000/07/12 15:14:52  dkr
  * function SearchDecl moved to tree_compound.h
  *

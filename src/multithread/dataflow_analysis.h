@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:03:08  sacbase
+ * new release made
+ *
  * Revision 1.3  2000/06/08 12:16:03  jhs
  * Fixed some problems caused by non-flatend code of IVE.
  *

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.1  2000/11/20 18:02:03  sacbase
+ * new release made
+ *
  * Revision 2.3  2000/06/23 13:32:24  dkr
  * comment about old with-loop removed
  *

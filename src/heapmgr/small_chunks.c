@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:02:57  sacbase
+ * new release made
+ *
  * Revision 1.2  2000/01/17 16:25:58  cg
  * Added multi-threading capabilities to the heap manager.
  *

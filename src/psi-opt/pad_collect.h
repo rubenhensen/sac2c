@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.1  2000/11/20 18:01:49  sacbase
+ * new release made
+ *
  * Revision 1.8  2000/08/03 15:32:00  mab
  * completed collection of access patterns and unsupported shapes
  *

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:03:27  sacbase
+ * new release made
+ *
  * Revision 1.3  2000/11/02 13:51:55  dkr
  * dito
  *

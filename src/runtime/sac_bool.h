@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:02:10  sacbase
+ * new release made
+ *
  * Revision 2.2  2000/06/30 13:20:46  nmw
  * conditional define for typedef bool added
  *

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.1  2000/11/20 18:03:39  sacbase
+ * new release made
+ *
  * Revision 1.8  2000/11/16 13:49:00  nmw
  * removal of generic functions after specialization reenabled
  *

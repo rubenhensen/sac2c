@@ -1,6 +1,9 @@
 /*      $Id$
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:00:22  sacbase
+ * new release made
+ *
  * Revision 2.2  2000/05/11 10:38:00  dkr
  * Signature of ReduceGenarrayShape modified
  *

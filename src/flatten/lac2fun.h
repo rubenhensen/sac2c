@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 17:59:23  sacbase
+ * new release made
+ *
  * Revision 1.8  2000/03/23 17:38:05  dkr
  * L2F_INFERarg and L2F_INFERap added
  *

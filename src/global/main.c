@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 17:59:33  sacbase
+ * new release made
+ *
  * Revision 2.26  2000/11/14 13:18:42  dkr
  * no '... might be used uninitialized' warnings anymore
  *

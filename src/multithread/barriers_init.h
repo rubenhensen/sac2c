@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:03:01  sacbase
+ * new release made
+ *
  * Revision 1.2  2000/04/10 15:45:35  jhs
  * Added BARINmt and BARINassign to traversal.
  *

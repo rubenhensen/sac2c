@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.1  2000/11/20 18:03:40  sacbase
+ * new release made
+ *
  * Revision 1.10  2000/10/31 18:19:13  cg
  * Added support for new function tag ST_exported.
  *

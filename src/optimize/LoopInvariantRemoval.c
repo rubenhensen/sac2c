@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:00:32  sacbase
+ * new release made
+ *
  * Revision 2.11  2000/10/24 12:54:34  dkr
  * AppendIdsChain renamed into AppendIds
  *

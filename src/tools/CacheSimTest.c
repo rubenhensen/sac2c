@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.1  2000/11/20 18:02:49  sacbase
+ * new release made
+ *
  * Revision 1.4  2000/01/27 11:11:27  her
  * removed the suscicious pointer arithmetic on a void*.
  *

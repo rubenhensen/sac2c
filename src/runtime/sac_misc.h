@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:02:16  sacbase
+ * new release made
+ *
  * Revision 2.2  2000/09/25 15:14:13  dkr
  * ICM ND_TYPEDEF_ARRAY moved to sac_std.h
  *

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 17:59:30  sacbase
+ * new release made
+ *
  * Revision 2.24  2000/11/15 17:18:24  sbs
  * Malloc for size==0 and ndef SHOW_MALLOC now returns NULL rather than calling
  * SYSABORT (iff the built-in malloc returns NULL in that case).

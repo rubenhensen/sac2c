@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:01:56  sacbase
+ * new release made
+ *
  * Revision 2.7  1999/08/30 13:35:23  bs
  * Access macros added.
  *

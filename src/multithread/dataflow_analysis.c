@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:03:08  sacbase
+ * new release made
+ *
  * Revision 1.10  2000/07/13 09:35:27  jhs
  * Added some comments.
  * Unexported functions are static now.

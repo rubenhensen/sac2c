@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.1  2000/11/20 18:01:54  sacbase
+ * new release made
+ *
  * Revision 1.9  2000/08/03 15:36:33  mab
  * debugged transformation
  * (conversion functions not yet supported)

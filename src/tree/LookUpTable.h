@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:03:21  sacbase
+ * new release made
+ *
  * Revision 1.4  2000/03/17 18:31:06  dkr
  * type lut_t* replaced by LUT_t
  *

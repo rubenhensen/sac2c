@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:01:18  sacbase
+ * new release made
+ *
  * Revision 2.5  2000/07/24 15:07:03  dkr
  * redundant parameter 'line' removed from ICMs for array-prfs
  *

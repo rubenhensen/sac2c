@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 17:59:17  sacbase
+ * new release made
+ *
  * Revision 1.5  2000/03/21 14:55:23  dkr
  * ASSERT added: CleanupDecls() can be used after type checking only
  *

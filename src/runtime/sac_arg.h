@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.1  2000/11/20 18:02:10  sacbase
+ * new release made
+ *
  * Revision 1.6  2000/07/28 14:42:15  nmw
  * Prototypes changed to handle T_user types
  *

@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.1  2000/11/20 18:00:34  sacbase
+# new release made
+#
 # Revision 2.25  2000/11/02 14:43:26  dkr
 # header compressed
 #
@@ -244,3 +247,4 @@ optimize.o: Unswitch.h ../psi-opt/ArrayElimination.h CSE.h
 optimize.o: ../psi-opt/WithloopFolding.h ../psi-opt/wl_access_analyze.h
 optimize.o: ../psi-opt/tile_size_inference.h ../psi-opt/index.h
 optimize.o: ../psi-opt/pad.h
+

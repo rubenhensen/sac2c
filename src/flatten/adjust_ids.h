@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.1  2000/11/20 17:59:17  sacbase
+ * new release made
+ *
  * Revision 1.3  2000/06/05 12:34:36  dkr
  * Prototypes for functions AIwith, AIwith2, AIcode added
  *

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:03:31  sacbase
+ * new release made
+ *
  * Revision 1.6  2000/10/31 18:16:36  cg
  * MakeNode() now initializes the new field int_data in node data structure.
  *

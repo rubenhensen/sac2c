@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 3.1  2000/11/20 18:02:04  sacbase
+# new release made
+#
 # Revision 2.14  2000/08/17 10:17:35  dkr
 # make deps done
 #
@@ -94,3 +97,4 @@ main_args.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 main_args.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 main_args.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
 main_args.o: /usr/include/string.h
+

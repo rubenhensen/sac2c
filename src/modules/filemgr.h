@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:00:52  sacbase
+ * new release made
+ *
  * Revision 2.3  2000/11/17 16:14:53  sbs
  * locationtype FindLocationOfFile( char *file)
  * added;

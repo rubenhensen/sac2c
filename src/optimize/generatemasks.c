@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.1  2000/11/20 18:00:42  sacbase
+ * new release made
+ *
  * Revision 2.21  2000/08/17 10:04:47  dkr
  * PrintDefUseMasks() split into PrintDefMask() and PrintUseMask()
  *

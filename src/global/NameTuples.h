@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 17:59:27  sacbase
+ * new release made
+ *
  * Revision 1.2  2000/08/17 11:10:55  dkr
  * signature of PrintNT changed
  *

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:03:04  sacbase
+ * new release made
+ *
  * Revision 1.5  2000/07/13 08:23:13  jhs
  * Moved DupMask_ InsertBlock, InsertMT and InsertST to multithread_lib.c.
  *

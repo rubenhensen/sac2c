@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:03:03  sacbase
+ * new release made
+ *
  * Revision 1.2  2000/02/21 17:52:07  jhs
  * Expansion on N_mt's finished.
  *

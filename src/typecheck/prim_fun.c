@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:00:11  sacbase
+ * new release made
+ *
  * Revision 2.21  2000/11/15 14:07:44  sbs
  * additional {}'s added to please muttering gcc on ALPHA.
  *

@@ -1,6 +1,9 @@
 #
 # 
 # $Log$
+# Revision 3.1  2000/11/20 18:02:58  sacbase
+# new release made
+#
 # Revision 1.21  2000/11/02 14:39:12  dkr
 # header compressed
 #
@@ -232,3 +235,4 @@ schedule_init.o: ../tree/tree_basic.h ../tree/tree_compound.h
 schedule_init.o: ../global/Error.h /usr/include/string.h
 schedule_init.o: /usr/include/stdlib.h ../global/globals.h ../tree/traverse.h
 schedule_init.o: ../tree/scheduling.h ../global/internal_lib.h
+

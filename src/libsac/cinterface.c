@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.1  2000/11/20 18:02:43  sacbase
+ * new release made
+ *
  * Revision 1.13  2000/11/02 14:52:01  dkr
  * explicit path for #include removed
  *

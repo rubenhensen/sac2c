@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:02:32  sacbase
+ * new release made
+ *
  * Revision 2.14  2000/06/23 15:13:10  dkr
  * signature of DupTree changed
  *

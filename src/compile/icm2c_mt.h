@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:01:16  sacbase
+ * new release made
+ *
  * Revision 2.5  2000/01/17 16:25:58  cg
  * Removed static and dynamic versions of the ICMs
  * MT_SPMD_[STATIC|DYNAMIC]_MODE_[BEGIN|ALTSEQ|END].

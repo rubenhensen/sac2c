@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:01:21  sacbase
+ * new release made
+ *
  * Revision 2.2  2000/07/28 11:43:37  cg
  * Added new ICM WL_ASSIGN_NOOP for efficient handling of dummy
  * iteration space segments introduced through array padding.

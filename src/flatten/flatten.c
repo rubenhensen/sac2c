@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 17:59:19  sacbase
+ * new release made
+ *
  * Revision 2.30  2000/11/15 20:05:28  sbs
  * FindIdInSeg could not handlw seg_sz=0 && seg==NULL properly;
  * Now, it can!

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:03:07  sacbase
+ * new release made
+ *
  * Revision 1.2  2000/03/21 13:07:26  jhs
  * Added BLKPPassign, BLKPPfundef.
  *

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:01:12  sacbase
+ * new release made
+ *
  * Revision 2.2  2000/08/01 13:28:17  nmw
  * header generation for c library internal PHM init function added
  *

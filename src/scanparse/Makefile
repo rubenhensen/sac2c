@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.1  2000/11/20 17:59:47  sacbase
+# new release made
+#
 # Revision 2.20  2000/11/15 14:30:50  dkr
 # default CC flags used now
 #
@@ -147,3 +150,4 @@ y.tab.o: /usr/include/string.h ../global/globals.h ../global/internal_lib.h
 y.tab.o: ../typecheck/typecheck.h ../tree/DupTree.h ../tree/LookUpTable.h
 y.tab.o: ../global/my_debug.h ../tree/free.h /usr/include/malloc.h
 y.tab.o: ../modules/readsib.h ../global/resource.h
+

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:03:06  sacbase
+ * new release made
+ *
  * Revision 1.2  2000/03/29 16:08:51  jhs
  * Duplication of lifted function added.
  *

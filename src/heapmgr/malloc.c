@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:02:54  sacbase
+ * new release made
+ *
  * Revision 1.4  2000/02/04 17:23:14  cg
  * Bug fixed in free(), dignostic heap management now works with
  * refernce counter allocation optimization.

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:03:24  sacbase
+ * new release made
+ *
  * Revision 1.5  2000/07/21 08:20:15  nmw
  * FreeModspec added
  *

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:01:14  sacbase
+ * new release made
+ *
  * Revision 2.4  2000/07/06 16:27:03  dkr
  * ICM ND_KD_A_SHAPE renamed into ND_A_SHAPE
  *

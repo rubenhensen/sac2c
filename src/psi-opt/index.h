@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:01:47  sacbase
+ * new release made
+ *
  * Revision 2.5  2000/07/11 15:50:01  dkr
  * function IndexVectorElimination added
  *

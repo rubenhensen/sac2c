@@ -1,6 +1,9 @@
 
 /*
  * $Log$
+ * Revision 3.1  2000/11/20 18:00:07  sacbase
+ * new release made
+ *
  * Revision 1.5  2000/06/23 13:58:57  dkr
  * functions for old with-loop removed (IdxGen, IdxWith)
  *

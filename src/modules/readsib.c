@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:00:56  sacbase
+ * new release made
+ *
  * Revision 2.7  2000/11/17 16:15:38  sbs
  * MakeDeps extended for locationtype.
  *

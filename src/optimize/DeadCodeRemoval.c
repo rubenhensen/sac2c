@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:00:28  sacbase
+ * new release made
+ *
  * Revision 2.7  2000/06/23 13:58:26  dkr
  * nodetype N_with removed
  *

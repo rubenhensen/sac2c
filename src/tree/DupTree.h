@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.1  2000/11/20 18:03:20  sacbase
+ * new release made
+ *
  * Revision 1.18  2000/10/26 12:45:18  dkr
  * function DupId_Ids added
  * signature of DupOneIds, DupNodelist changed

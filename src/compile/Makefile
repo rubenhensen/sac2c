@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.1  2000/11/20 18:01:00  sacbase
+# new release made
+#
 # Revision 2.36  2000/11/02 14:43:01  dkr
 # header compressed
 #
@@ -260,3 +263,4 @@ wltransform.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
 wltransform.o: /usr/include/sys/int_types.h ../tree/DupTree.h
 wltransform.o: ../tree/LookUpTable.h ../tree/DataFlowMask.h ../print/print.h
 wltransform.o: wlpragma_funs.h /usr/include/limits.h
+

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:00:50  sacbase
+ * new release made
+ *
  * Revision 2.7  2000/10/31 18:10:58  cg
  * Functions that are exported via the module/class declaration
  * file are now tagged as ST_exported.

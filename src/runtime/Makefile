@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.1  2000/11/20 18:02:06  sacbase
+# new release made
+#
 # Revision 2.20  2000/11/02 14:21:47  dkr
 # header compressed
 #
@@ -149,3 +152,4 @@ clean:
 	$(RM) sac2crc CacheSimAnalyser
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
+

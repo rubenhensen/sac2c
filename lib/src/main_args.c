@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:02:05  sacbase
+ * new release made
+ *
  * Revision 2.3  1999/06/01 12:54:38  cg
  * added #include <string.h> for usage of function strncpy.
  *

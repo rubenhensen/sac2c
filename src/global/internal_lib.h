@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 17:59:31  sacbase
+ * new release made
+ *
  * Revision 2.15  2000/04/27 13:50:19  cg
  * Bug fixed in DBUG_OFF versions of CHECK_DBUG_START and CHECK_DBUG_STOP.
  *

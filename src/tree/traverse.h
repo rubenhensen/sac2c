@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:03:30  sacbase
+ * new release made
+ *
  * Revision 1.22  2000/07/21 08:22:07  nmw
  * impspec_tab added
  *

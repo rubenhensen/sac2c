@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:01:36  sacbase
+ * new release made
+ *
  * Revision 2.6  2000/06/08 12:13:54  jhs
  * abstraction of InferWithDFM, used to infer DFMs of with-loops,
  * can be used by other phases now

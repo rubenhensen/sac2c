@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:02:52  sacbase
+ * new release made
+ *
  * Revision 1.4  2000/11/13 16:45:40  cg
  * Added correct sbrk() casts for OSF_ALPHA platform.
  *

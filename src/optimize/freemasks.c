@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:00:40  sacbase
+ * new release made
+ *
  * Revision 2.2  2000/01/26 17:27:29  dkr
  * type of traverse-function-table changed.
  *

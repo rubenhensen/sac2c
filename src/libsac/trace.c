@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:02:47  sacbase
+ * new release made
+ *
  * Revision 2.4  2000/02/07 09:51:59  cg
  * Changed setting of semicolons in definitions and declarations of
  * mutex locks in order to avoid nasty warnings from cc.

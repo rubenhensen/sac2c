@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:03:21  sacbase
+ * new release made
+ *
  * Revision 1.6  2000/07/12 13:37:26  dkr
  * lut->size counts the number of pointer-PAIRS now
  * Output of PrintLUT modified

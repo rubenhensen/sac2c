@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.1  2000/11/20 18:02:37  sacbase
+# new release made
+#
 # Revision 2.13  2000/11/20 17:10:00  sbs
 # sac2crc.for.%-2_5 / sac2crc.for.%-2_7 rules extended by mv!
 #
@@ -391,3 +394,4 @@ new:
 
 allnew: clean
 	$(MAKE)
+

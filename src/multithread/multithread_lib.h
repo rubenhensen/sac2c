@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:03:12  sacbase
+ * new release made
+ *
  * Revision 1.6  2000/07/13 08:24:24  jhs
  * Moved DupMask_ InsertBlock, InsertMT and InsertST from blocks_init.[ch]
  * Renamed InsertXX to MUTHInsertXX.

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:01:46  sacbase
+ * new release made
+ *
  * Revision 2.19  2000/11/16 17:24:36  sbs
  * nasty potential side effect in MergeCopyTop eliminated.
  * (Showed off on linux only 8-)

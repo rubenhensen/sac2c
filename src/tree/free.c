@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:03:24  sacbase
+ * new release made
+ *
  * Revision 1.13  2000/11/02 16:03:10  dkr
  * FreeIcm: ICM args are no longer shared in the AST
  * -> free them :-)

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:01:47  sacbase
+ * new release made
+ *
  * Revision 1.14  2000/10/31 18:13:27  cg
  * If no cache specification is available, array padding is now
  * skipped at a reasonably high level.

@@ -1,6 +1,9 @@
 /*      $Id$
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:00:22  sacbase
+ * new release made
+ *
  * Revision 2.10  2000/05/11 10:38:28  dkr
  * Signature of ReduceGenarrayShape modified.
  * Bug in ReduceGenarrayShape fixed: arg_info is no longer dumped.

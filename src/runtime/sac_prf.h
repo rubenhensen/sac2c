@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:02:18  sacbase
+ * new release made
+ *
  * Revision 2.2  1999/04/12 09:37:48  cg
  * All accesses to C arrays are now performed through the new ICMs
  * ND_WRITE_ARRAY and ND_READ_ARRAY. This allows for an integration

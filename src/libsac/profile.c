@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:02:46  sacbase
+ * new release made
+ *
  * Revision 2.2  1999/07/08 12:30:19  cg
  * File moved to new directory src/libsac.
  *

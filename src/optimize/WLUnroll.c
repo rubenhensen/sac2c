@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:00:38  sacbase
+ * new release made
+ *
  * Revision 2.21  2000/10/31 23:02:37  dkr
  * local functions are static now
  *

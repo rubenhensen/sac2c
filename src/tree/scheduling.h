@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:03:29  sacbase
+ * new release made
+ *
  * Revision 1.2  2000/08/16 13:43:59  dkr
  * include-guard prefixed with 'SAC_'
  *

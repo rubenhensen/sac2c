@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:03:13  sacbase
+ * new release made
+ *
  * Revision 1.8  2000/10/31 23:21:41  dkr
  * Trav: NWITH2_CODE might be NULL
  *

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 17:59:36  sacbase
+ * new release made
+ *
  * Revision 2.2  1999/07/09 11:52:18  cg
  * Added consistency check for command line options.
  *

@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 17:59:48  sacbase
+ * new release made
+ *
  * Revision 2.19  2000/11/15 14:42:30  sbs
  * initialization of yy_init deleted on ALPHA since flex 2.5.4 is available
  * on that machine now!
@@ -461,3 +464,4 @@ int charpos = 0;
                                 }
 
 %%
+

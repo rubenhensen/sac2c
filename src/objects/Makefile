@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.1  2000/11/20 18:01:58  sacbase
+# new release made
+#
 # Revision 2.16  2000/11/02 14:23:11  dkr
 # header compressed
 #
@@ -119,3 +122,4 @@ uniquecheck.o: ../tree/traverse.h ../global/internal_lib.h ../tree/free.h
 uniquecheck.o: ../global/my_debug.h /usr/include/malloc.h
 uniquecheck.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
 uniquecheck.o: /usr/include/sys/int_types.h
+

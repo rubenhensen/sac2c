@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:01:02  sacbase
+ * new release made
+ *
  * Revision 2.5  2000/11/05 13:40:02  dkr
  * arg_info is removed now after finishing traversal
  *

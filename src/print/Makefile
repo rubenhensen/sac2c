@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.1  2000/11/20 17:59:42  sacbase
+# new release made
+#
 # Revision 2.24  2000/11/02 14:49:01  dkr
 # explicit .mac dependencies added
 #
@@ -126,3 +129,4 @@ print.o: ../modules/filemgr.h ../compile/gen_startup_code.h
 print.o: ../psi-opt/WithloopFolding.h ../tree/scheduling.h
 print.o: ../psi-opt/wl_access_analyze.h ../psi-opt/tile_size_inference.h
 print.o: ../global/NameTuples.h ../compile/icm.data ../tree/prf_node_info.mac
+

@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.1  2000/11/20 18:01:34  sacbase
+# new release made
+#
 # Revision 2.16  2000/11/02 14:23:00  dkr
 # header compressed
 #
@@ -77,3 +80,4 @@ refcount.o: ../tree/traverse.h ../optimize/optimize.h ../tree/free.h
 refcount.o: /usr/include/malloc.h /usr/include/sys/types.h
 refcount.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
 refcount.o: ../optimize/generatemasks.h refcount.h
+

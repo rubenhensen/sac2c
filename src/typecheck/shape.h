@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.1  2000/11/20 18:00:15  sacbase
+ * new release made
+ *
  * Revision 1.5  2000/06/23 09:51:37  nmw
  * Compare and Create functions with varargs added
  *

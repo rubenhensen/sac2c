@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:00:26  sacbase
+ * new release made
+ *
  * Revision 2.45  2000/11/01 18:56:39  dkr
  * fixed a bug in DupPartialArray:
  * DupNode() used instead of DupArray() !!!!

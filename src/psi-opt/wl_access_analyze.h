@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:01:57  sacbase
+ * new release made
+ *
  * Revision 2.3  1999/05/18 13:16:09  dkr
  * added prototype for WLAccessAnalyze()
  *

@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:01:45  sacbase
+ * new release made
+ *
  * Revision 2.6  2000/10/26 17:33:47  dkr
  * CreateZeroVector moved to tree_compound.[ch]
  *

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:02:53  sacbase
+ * new release made
+ *
  * Revision 1.3  2000/03/02 16:46:02  jhs
  * including malloc.h while compiling unter LINUX_X86
  *

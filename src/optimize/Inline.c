@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:00:31  sacbase
+ * new release made
+ *
  * Revision 2.6  2000/07/14 11:34:47  dkr
  * FUNDEF_INLINE==0 replaced by !FUNDEF_INLINE
  *

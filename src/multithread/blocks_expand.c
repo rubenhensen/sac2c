@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:03:03  sacbase
+ * new release made
+ *
  * Revision 1.7  2000/03/21 13:06:28  jhs
  * Brushing, comments.
  *

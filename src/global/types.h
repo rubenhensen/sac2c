@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 17:59:39  sacbase
+ * new release made
+ *
  * Revision 2.37  2000/11/17 16:20:14  sbs
  * DEPS structure extended by location field;
  * location type added.

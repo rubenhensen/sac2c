@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:01:26  sacbase
+ * new release made
+ *
  * Revision 2.37  2000/11/17 12:52:09  cg
  * External C types are now consistentlt renamed for their usage
  * within SAC to avoid accidental name clashes with other symbols

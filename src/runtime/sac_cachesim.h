@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.1  2000/11/20 18:02:12  sacbase
+ * new release made
+ *
  * Revision 2.13  1999/06/11 12:57:59  cg
  * Cache simulation via memory access trace file implemented.
  * Added help screen for CacheSimAnalyser as well as application

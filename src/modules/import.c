@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:00:54  sacbase
+ * new release made
+ *
  * Revision 2.7  2000/11/17 16:16:02  sbs
  * locationtype field added in DEPS structure.
  * This is used for implementing -MM and -MMlib options!

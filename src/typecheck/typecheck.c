@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:00:18  sacbase
+ * new release made
+ *
  * Revision 2.57  2000/11/15 14:24:59  sbs
  * added {}'s in order to please gcc ambitious else warning
  *

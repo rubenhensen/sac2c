@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.1  2000/11/20 18:03:16  sacbase
+ * new release made
+ *
  * Revision 1.5  2000/07/31 10:45:52  cg
  * Eventually, the son ICM_NEXT is removed from the N_icm node.
  * The creation function MakeIcm is adjusted accordingly.

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.1  2000/11/20 18:02:13  sacbase
+ * new release made
+ *
  * Revision 1.9  2000/08/03 14:16:53  nmw
  * handling macro for T_hidden added
  * ,

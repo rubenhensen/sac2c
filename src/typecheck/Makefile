@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.1  2000/11/20 18:00:00  sacbase
+# new release made
+#
 # Revision 2.25  2000/11/02 14:37:04  dkr
 # explicit .mac dependencies added
 #
@@ -210,3 +213,4 @@ user_types.o: ../../inc/dbug.h ../tree/free.h ../global/my_debug.h
 user_types.o: /usr/include/malloc.h /usr/include/sys/types.h
 user_types.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
 user_types.o: ../global/internal_lib.h user_types.h new_types.h shape.h
+

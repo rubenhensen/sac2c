@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:00:21  sacbase
+ * new release made
+ *
  * Revision 2.10  2000/11/02 11:57:35  dkr
  * macro GET_BASIC_SIMPLETYPE_OF_NODE removed
  *

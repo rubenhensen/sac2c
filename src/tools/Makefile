@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.1  2000/11/20 18:02:49  sacbase
+# new release made
+#
 # Revision 1.8  2000/11/02 14:43:50  dkr
 # header compressed
 #
@@ -81,3 +84,4 @@ CacheSimTest.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 CacheSimTest.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 CacheSimTest.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
 CacheSimTest.o: ../runtime/sac_cachesim.h
+

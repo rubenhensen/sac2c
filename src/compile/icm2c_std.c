@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:01:17  sacbase
+ * new release made
+ *
  * Revision 2.22  2000/09/27 16:47:08  dkr
  * __p replaced by SAC_NAMEP
  *

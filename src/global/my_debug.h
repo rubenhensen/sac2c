@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 17:59:34  sacbase
+ * new release made
+ *
  * Revision 2.3  2000/09/22 13:34:36  dkr
  * macro STR_OR_NULL added
  *

@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.1  2000/11/20 18:02:23  sacbase
+# new release made
+#
 # Revision 2.24  2000/11/02 14:39:00  dkr
 # header compressed
 #
@@ -177,3 +180,4 @@ sync_opt.o: ../global/globals.h ../global/internal_lib.h ../tree/DupTree.h
 sync_opt.o: ../tree/LookUpTable.h ../tree/DataFlowMask.h spmd_trav.h
 sync_opt.o: ../global/Error.h /usr/include/string.h /usr/include/stdlib.h
 sync_opt.o: concurrent_lib.h sync_opt.h
+

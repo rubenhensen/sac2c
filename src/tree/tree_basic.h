@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.1  2000/11/20 18:03:34  sacbase
+ * new release made
+ *
  * Revision 1.104  2000/11/17 16:19:03  sbs
  * DEPS-structure extended by location field; access macros as well as
  * Constructor Function adjusted accordingly.

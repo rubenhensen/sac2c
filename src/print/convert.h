@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 17:59:44  sacbase
+ * new release made
+ *
  * Revision 2.2  2000/10/27 13:24:04  cg
  * Added new functions Basetype2String() and Shpseg2String().
  *

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.1  2000/11/20 18:01:01  sacbase
+ * new release made
+ *
  * Revision 1.4  2000/10/31 16:25:26  dkr
  * bug fixed: empty NCODE_BLOCK is build correctly now.
  *

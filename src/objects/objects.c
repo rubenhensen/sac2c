@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:01:59  sacbase
+ * new release made
+ *
  * Revision 2.7  2000/10/30 19:24:06  dkr
  * OBJarg:
  * new_return_type->attrib is set explicitly in order to get smarter

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:03:04  sacbase
+ * new release made
+ *
  * Revision 1.19  2000/07/13 09:34:46  jhs
  * Changed InsertXX to MUTHInsertXX.
  * Added multithread_lib.h inclusion.

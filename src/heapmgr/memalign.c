@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:02:55  sacbase
+ * new release made
+ *
  * Revision 1.2  2000/01/17 16:25:58  cg
  * Conventional heap management functions now have their
  * original prototypes using size_t.

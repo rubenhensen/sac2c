@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:02:29  sacbase
+ * new release made
+ *
  * Revision 2.9  2000/02/22 11:36:00  jhs
  * Adapted NODE_TEXT.
  *

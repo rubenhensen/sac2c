@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:02:32  sacbase
+ * new release made
+ *
  * Revision 2.6  1999/08/27 11:58:47  jhs
  * Added DBUG_PRINTS.
  * Added function SPMDoptimize. to do spmd-opt from the outside.

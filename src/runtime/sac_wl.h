@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.1  2000/11/20 18:02:23  sacbase
+ * new release made
+ *
  * Revision 2.9  2000/08/24 11:16:16  dkr
  * macros cat? renamed to CAT?
  *
