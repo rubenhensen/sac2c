@@ -1,7 +1,13 @@
 /*
  *
  * $Log$
- * Revision 1.36  1996/02/06 16:11:37  sbs
+ * Revision 1.37  1996/04/28 12:45:49  sbs
+ * chnaged RetWithArray-Macro; inserted
+ * fprintf(outfile,"ND_DEC_RC_FREE_ARRAY( %s, 1);\n", a);
+ * at the end of each with-instance, since otherwise
+ * the "return"-arrays of the with-body were not deleted at all!
+ *
+ * Revision 1.36  1996/02/06  16:11:37  sbs
  * using Double2String and Float2String in icm_args.c
  *
  * Revision 1.35  1996/01/25  15:44:20  cg
@@ -146,7 +152,10 @@
     INDENT;                                                                              \
     fprintf (outfile, "ND_A_FIELD(%s)[%s__destptr++]=ND_A_FIELD(%s)[__i];\n", res, res,  \
              a);                                                                         \
-    indent -= 2;                                                                         \
+    indent--;                                                                            \
+    INDENT;                                                                              \
+    fprintf (outfile, "ND_DEC_RC_FREE_ARRAY( %s, 1);\n", a);                             \
+    indent--;                                                                            \
     INDENT;                                                                              \
     fprintf (outfile, "}\n")
 
