@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.18  1995/01/02 10:50:03  asi
+ * Revision 1.19  1995/01/02 11:20:44  asi
+ * changed type of mask from char to long
+ *
+ * Revision 1.18  1995/01/02  10:50:03  asi
  * *** empty log message ***
  *
  * Revision 1.17  1994/12/30  16:57:48  sbs
@@ -151,7 +154,7 @@ typedef struct NODE {
         prf prf;           /* tag for primitive functions        */
         fun_name fun_name; /* used in N_ap nodes                 */
     } info;                /* fu"r spezielle Informationen */
-    char *mask[3];         /* special informations for optimization */
+    long *mask[3];         /* special informations for optimization */
     int nnode;             /* Anzahl der benutzten Knoten */
     int lineno;            /* Zeilennummer in der ein Befehl steht */
                            /* later used for variable number while optimizing */
