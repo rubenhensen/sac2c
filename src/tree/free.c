@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2001/03/07 15:56:18  nmw
+ * wrong traversal in FreeCSEinfo fixed
+ *
  * Revision 3.9  2001/02/15 16:58:05  nmw
  * FreeSSAstack added
  *
@@ -1993,7 +1996,7 @@ FreeCSEinfo (node *arg_node, node *arg_info)
 
     DBUG_PRINT ("FREE", ("Removing contents of N_cseinfo node ..."));
 
-    FREETRAV (CSEINFO_NEXT (arg_node));
+    FREECONT (CSEINFO_NEXT (arg_node));
 
     DBUG_PRINT ("FREE", ("Removing N_cseinfo node ..."));
 
