@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.26  2003/06/23 15:15:02  dkr
+ * refcounting phase is moved for oldMT only (instead of oldMT and noMT)
+ * now
+ *
  * Revision 3.25  2003/04/25 15:15:37  sbs
  * mkdtemp requires unistd.h to be included (at least on freeBSD.)
  *
@@ -442,7 +446,7 @@ main (int argc, char *argv[])
         goto BREAK;
     compiler_phase++;
 
-    if (gen_mt_code != GEN_MT_NEW) {
+    if (gen_mt_code == GEN_MT_OLD) {
         compiler_phase += 2;
         PHASE_PROLOG;
         NOTE_COMPILER_PHASE;
@@ -498,7 +502,7 @@ main (int argc, char *argv[])
         goto BREAK;
     compiler_phase++;
 
-    if (gen_mt_code == GEN_MT_NEW) {
+    if (gen_mt_code != GEN_MT_OLD) {
         PHASE_PROLOG;
         NOTE_COMPILER_PHASE;
         syntax_tree = Refcount (syntax_tree); /* refcnt_tab */
