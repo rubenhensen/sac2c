@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.50  2000/06/21 12:36:54  jhs
+ * Added MT_ALLOC.
+ *
  * Revision 1.49  2000/06/16 15:00:03  nmw
  * N_info for function->wrapper matching added
  *
@@ -2719,6 +2722,7 @@ extern node *MakeSync (node *region);
  ***    DFMmask_t  USEMASK                (multithread.dfa   ->)
  ***    DFMmask_t  DEFMASK                (multithread.dfa   ->)
  ***    DFMmask_t  NEEDLATER              (multithread.dfa   ->)
+ ***    DFMmask_t  ALLOC                  (not yet implemented -> compile)
  ***    node*      FUNDEF     (N_fundef)  (multithread.blkli ->
  ***                                       This mt-block was lifted to which
  ***                                       function?)
@@ -2731,6 +2735,7 @@ extern node *MakeMT (node *region);
 #define MT_USEMASK(n) (n->dfmask[0])
 #define MT_DEFMASK(n) (n->dfmask[1])
 #define MT_NEEDLATER(n) (n->dfmask[2])
+#define MT_ALLOC(n) (n->dfmask[3])
 #define MT_FUNDEF(n) (n->node[1])
 
 /*--------------------------------------------------------------------------*/
