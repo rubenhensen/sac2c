@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.51  1997/12/05 16:26:44  srs
+ * bugfix with flattening of WLs
+ *
  * Revision 1.50  1997/12/04 21:19:02  srs
  * flattening of new WLs is working
  *
@@ -186,13 +189,15 @@
 
 /*
  * arg_info in this file:
- * info.cint : context of this arg_node, e.g. within a condition.
+ * info.cint : context of this arg_node, e.g. within a condition. FltnExprs
+ *             decides to abstract or not abstract the node.
  * node[0]: every FltnAssign replaces node[0] with arg_node so that other
  *          functions may place instructions IN FRONT of that assignment.
  *          FltnAssign returns this node[0]
  * node[1]: this node is only used in the context of WLs. It is necessary
- *          to put instructions in front of the assignments of WLs and
- *          not only in front of the last assignment.
+ *          to put assignments (var initialisations) at the beginning of
+ *          the WL-body. These assihnments are stored here. See comment in
+ *          FltnNcode.
  */
 
 #include <stdio.h>
@@ -271,15 +276,8 @@ DuplicateNode (node *source_node)
     node *dest_node;
 
     DBUG_ENTER ("DuplicateNode");
-
-#ifndef NEWTREE
-    DBUG_PRINT ("DUPLICATE",
-                ("%s" P_FORMAT " number of nodes: %d",
-                 mdb_nodetype[source_node->nodetype], source_node, source_node->nnode));
-#else
     DBUG_PRINT ("DUPLICATE",
                 ("%s" P_FORMAT, mdb_nodetype[source_node->nodetype], source_node));
-#endif
 
     if (N_id == source_node->nodetype) {
         dest_node = MakeId (StringCopy (ID_NAME (source_node)), ID_MOD (source_node),
@@ -313,6 +311,7 @@ DuplicateNode (node *source_node)
                 dest_node->node[i] = NULL;
 #endif
         dest_node->info = source_node->info;
+        dest_node->info2 = source_node->info2;
     }
     NODE_LINE (dest_node) = NODE_LINE (source_node);
 
@@ -401,7 +400,7 @@ RenameWithVar (char *name, int level)
  *  external funs :
  *  macros        : ---
  *
- *  remarks       :
+ *  remarks       : memory for names is allocated here.
  *
  */
 node *
@@ -412,7 +411,6 @@ AppendIdentity (node *last_assign, char *old_name, char *new_name)
 
     DBUG_ENTER ("AppendIdentity");
 
-    /* srs: waste: parameters have allocated mem (stringcopy) */
     assign_node = MakeNode (N_assign);
     let_node = MakeNode (N_let);
     name = (char *)Malloc (sizeof (char) * (strlen (new_name) + 1));
@@ -674,37 +672,32 @@ FltnCond (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("FltnCond");
 
-    info_node = MakeNode (N_info);
     old_tag = arg_info->info.cint; /* store tag (used in FltnExprs) */
     arg_info->info.cint = COND;
 
     /* create a temporary N_exprs node to flatten the condition with FltnExprs
      */
     tmp_exprs = MakeNode (N_exprs);
-    tmp_exprs->node[0] = arg_node->node[0];
+    EXPRS_EXPR (tmp_exprs) = COND_COND (arg_node);
 
     tmp_exprs = Trav (tmp_exprs, arg_info);
-    arg_node->node[0] = tmp_exprs->node[0]; /* set node of termination condition
-                                             * correctly
-                                             */
-    arg_info->info.cint = old_tag;          /* restore tag */
+    COND_COND (arg_node) = EXPRS_EXPR (tmp_exprs); /* set node of termination condition
+                                                    * correctly
+                                                    */
+    arg_info->info.cint = old_tag;                 /* restore tag */
 
-#ifndef NEWTREE
-    for (i = 1; i < arg_node->nnode; i++)
-#else
+    info_node = MakeNode (N_info);
     for (i = 1; i < nnode[NODE_TYPE (arg_node)]; i++)
-        if (arg_node->node[i] != NULL)
-#endif
-    {
-        info_node->node[0] = NULL;
-        info_node->node[1] = arg_info->node[1]; /* list of assigns that have to be
-                                                 * put infront of a with_loop
-                                                 */
-        arg_node->node[i] = Trav (arg_node->node[i], info_node);
-        arg_info->node[1] = info_node->node[1]; /* list of assigns that have to be
-                                                 * put infront of a with_loop
-                                                 */
-    }
+        if (arg_node->node[i]) {
+            info_node->node[0] = NULL;
+            info_node->node[1] = arg_info->node[1]; /* list of assigns that have to be
+                                                     * put infront of a with_loop
+                                                     */
+            arg_node->node[i] = Trav (arg_node->node[i], info_node);
+            arg_info->node[1] = info_node->node[1]; /* list of assigns that have to be
+                                                     * put infront of a with_loop
+                                                     */
+        }
     FREE (info_node);
 
     DBUG_RETURN (arg_node);
@@ -739,7 +732,7 @@ FltnWhile (node *arg_node, node *arg_info)
                                              * put infront of a with_loop
                                              */
     /* traverse body of while-loop */
-    arg_node->node[1] = Trav (arg_node->node[1], info_node);
+    WHILE_BODY (arg_node) = Trav (WHILE_BODY (arg_node), info_node);
 
     arg_info->node[1] = info_node->node[1]; /* list of assigns that have to be
                                              * put infront of a with_loop
@@ -754,17 +747,14 @@ FltnWhile (node *arg_node, node *arg_info)
      * in FltnExprs
      */
     tmp_exprs = MakeNode (N_exprs);
-    tmp_exprs->node[0] = arg_node->node[0];
-#ifndef NEWTREE
-    tmp_exprs->nnode = 1;
-#endif
+    EXPRS_EXPR (tmp_exprs) = WHILE_COND (arg_node);
 
     old_tag = arg_info->info.cint;
     arg_info->info.cint = LOOP; /* set tag for FltnExprs */
     tmp_exprs = Trav (tmp_exprs, arg_info);
-    arg_node->node[0] = tmp_exprs->node[0]; /* set node of termination condition
-                                             * correctly
-                                             */
+    WHILE_COND (arg_node) = tmp_exprs->node[0]; /* set node of termination condition
+                                                 * correctly
+                                                 */
     FREE (tmp_exprs);
     arg_info->info.cint = old_tag; /* restore tag */
 
@@ -775,35 +765,31 @@ FltnWhile (node *arg_node, node *arg_info)
 
     /*
      *  now we're looking for the last N_assign node in the pointer chain
-     *  of info_node to copy the flattend arg_node->node[0] to it.
+     *  of info_node to copy the flattend condition to it.
      *  This has to be done, because we must "update" (compute) the termination
      *  condition of the while loop at the end of the while-loop body
      *
      */
 
     tmp = info_node; /* tmp ist used to free info_node  */
-    if (NULL != info_node->node[0]) {
+    if (info_node->node[0]) {
         /*  looking for last N_assign node.
-         *  info_node stores the pointer to the last N_assign nodes,
-         *  so we look at this pointer chain instead of going through
+         *  info_node stores the pointer to the last N_assign nodes, because
+         *  we used info_node as arg_info while traversing the body.
+         *  So we look at this pointer chain instead of going through
          *  the chain behind  arg_node->node[1]
          */
         info_node = info_node->node[0];
-#ifndef NEWTREE
-        while (1 != info_node->nnode)
-#else
-        while (info_node->node[1] != NULL)
-#endif
-        {
+        while (ASSIGN_NEXT (info_node)) {
             DBUG_ASSERT ((N_assign == info_node->nodetype),
                          "wrong nodetype: != N_assign");
-            info_node = info_node->node[1];
+            info_node = ASSIGN_NEXT (info_node);
         }
         last_assign = info_node;
     } else
         last_assign = NULL;
 
-    if (NULL != arg_info->node[0]) {
+    if (arg_info->node[0]) {
         dest_node = arg_info->node[0];
 
         /*  now we create new N_assign nodes and  dublicate the flattened
@@ -819,19 +805,13 @@ FltnWhile (node *arg_node, node *arg_info)
             arg_node->node[1]->node[0] = last_assign;
         }
 
-        while (N_while != dest_node->node[0]->nodetype) {
-            DBUG_ASSERT ((N_assign == dest_node->nodetype),
+        while (N_while != NODE_TYPE (ASSIGN_INSTR (dest_node))) {
+            DBUG_ASSERT ((N_assign == NODE_TYPE (dest_node)),
                          "wrong nodetype: not N_assign");
 
-            last_assign->node[1] = MakeNode (N_assign);
-#ifndef NEWTREE
-            last_assign->nnode = 2;
-#endif
-            last_assign->node[1]->node[0] = DuplicateNode (dest_node->node[0]);
-#ifndef NEWTREE
-            last_assign->node[1]->nnode = 1;
-#endif
-            last_assign = last_assign->node[1];
+            ASSIGN_NEXT (last_assign) = MakeNode (N_assign);
+            ASSIGN_INSTR (ASSIGN_NEXT (last_assign)) = DuplicateNode (dest_node->node[0]);
+            last_assign = ASSIGN_NEXT (last_assign);
             dest_node = dest_node->node[1];
         }
     }
@@ -909,9 +889,6 @@ FltnDo (node *arg_node, node *arg_info)
     DBUG_ENTER ("FltnDo");
 
     info_node = MakeNode (N_info);
-#ifndef NEWTREE
-    info_node->nnode = 1;
-#endif
     info_node->node[1] = arg_info->node[1]; /* list of assigns that have to be
                                              * put infront of a with_loop
                                              */
@@ -930,12 +907,7 @@ FltnDo (node *arg_node, node *arg_info)
     info_node = info_node->node[0];
     if (NULL != info_node) {
         /* looking for last N_assign node in the body of the do-loop */
-#ifndef NEWTREE
-        while (1 != info_node->nnode)
-#else
-        while (info_node->node[1] != NULL)
-#endif
-        {
+        while (info_node->node[1]) {
             DBUG_ASSERT ((N_assign == info_node->nodetype), "wrong nodetype:"
                                                             "!= N_assign");
             info_node = info_node->node[1];
@@ -1344,8 +1316,7 @@ FltnLet (node *arg_node, node *arg_info)
             if (!tmp) {
                 PUSH (ids->id, ids->id, with_level);
             } else {
-                DBUG_ASSERT (0 < with_level,
-                             "srs: with_level == 0, else reduce condition");
+                /* if not inside a WL the with_level is exactly 0 so nothing happens */
                 if ((0 < with_level) && (with_level > tmp->w_level)) {
                     old_name = ids->id;
                     ids->id = RenameWithVar (old_name, with_level);
@@ -1697,7 +1668,22 @@ FltnNcode (node *arg_node, node *arg_info)
 
     /* traverse the body, use info_node to save arg_info  */
     info_node = MakeInfo ();
-    arg_node = Trav (NCODE_CBLOCK (arg_node), info_node);
+    NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), info_node);
+
+    /* Every variable which is assigned a new value to in the body is local and
+       so has to be renamed if used outside the body. The renaming has been done
+       so far. But the new variable is still not initialised, which is important
+       if the assignment is only in one part of a condidion.
+       The initialisations can be found in info_node->node[1]. */
+    if (info_node->node[1]) {
+        tmp = info_node->node[1];
+
+        while (ASSIGN_NEXT (tmp))
+            tmp = ASSIGN_NEXT (tmp);
+
+        ASSIGN_NEXT (tmp) = BLOCK_INSTR (NCODE_CBLOCK (arg_node));
+        BLOCK_INSTR (NCODE_CBLOCK (arg_node)) = info_node->node[1];
+    }
 
     /* there is only one Ncode node at this time so we can ignore NCODE_NEXT(). */
     return (arg_node);
