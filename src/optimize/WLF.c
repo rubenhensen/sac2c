@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 1.25  1999/02/15 11:14:17  srs
+ * replaced N_empty with prg genarray in WLFassign()
+ *
  * Revision 1.24  1999/02/12 13:48:33  srs
  * fixed bug in WLFassign()
  *
@@ -1426,6 +1429,8 @@ node *
 WLFassign (node *arg_node, node *arg_info)
 {
     node *tmpn, *last_assign, *substn;
+    types *idt;
+    int i;
 
     DBUG_ENTER ("WLFassign");
 
@@ -1456,10 +1461,23 @@ WLFassign (node *arg_node, node *arg_info)
                     && NWITH_REFERENCED (LET_EXPR (tmpn)) > 0
                     && NWITH_REFERENCED (LET_EXPR (tmpn))
                          == NWITH_REFERENCES_FOLDED (LET_EXPR (tmpn))) {
-                    FreeTree (tmpn);
-                    ASSIGN_INSTR (arg_node) = MakeEmpty ();
-                    /* the N_empty node will ne removed in GenerateMasks, which
-                       is called directly after WLF. */
+                    LET_EXPR (tmpn) = FreeTree (LET_EXPR (tmpn));
+                    /* create genarray([..],0) and replace the WL. This does not change
+                       the program symantically because the WL is not referenced
+                       anymore.*/
+                    idt = IDS_TYPE (LET_IDS (tmpn));
+                    tmpn = NULL;
+                    for (i = TYPES_DIM (idt); i > 0; i--)
+                        tmpn = MakeExprs (MakeNum (TYPES_SHAPE (idt, i - 1)),
+                                          tmpn); /* Array elements */
+                    tmpn = MakeArray (tmpn);     /* N_Array */
+                    tmpn
+                      = MakePrf (F_genarray, /* prf N_genarray */
+                                 MakeExprs (tmpn,
+                                            MakeExprs (MakeNullVec (0,
+                                                                    TYPES_BASETYPE (idt)),
+                                                       NULL)));
+                    LET_EXPR (ASSIGN_INSTR (arg_node)) = tmpn;
                 }
             }
         }
