@@ -1,6 +1,9 @@
 /*
  * $Log$
- * Revision 1.9  1995/03/09 16:04:47  hw
+ * Revision 1.10  1995/03/17 15:53:51  hw
+ * changed function Typecheck (now it returns the syntax_tree)
+ *
+ * Revision 1.9  1995/03/09  16:04:47  hw
  * added extern declaration for function StringCopy
  *
  * Revision 1.8  1995/03/01  12:49:50  hw
@@ -31,7 +34,7 @@
 
 #define _typecheck_h
 
-extern void Typecheck (node *arg_node);
+extern node *Typecheck (node *arg_node);
 
 extern node *TCfundef (node *arg_node, node *arg_info);
 extern node *TClet (node *arg_node, node *arg_info);
