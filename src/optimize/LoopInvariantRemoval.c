@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.10  1995/06/21 09:15:41  asi
+ * Revision 1.11  1995/06/23 13:22:52  hw
+ * added argument to call of 'DuplicateTypes'
+ *
+ * Revision 1.10  1995/06/21  09:15:41  asi
  * Bug fixed: DupDecleration modified -  don't frees memory for variable name
  *            after DuplicateTypes !!
  *
@@ -335,8 +338,7 @@ DupDecleration (node *var_node, char *var_name, node *arg_info)
     DBUG_ASSERT ((0 != optvar_counter), "Not enough variables for LIR");
     optvar_counter--;
     new_node = MakeNode (N_vardec);
-    new_node->info.types
-      = DuplicateTypes (var_node->info.types); /* do not dulicate name */
+    new_node->info.types = DuplicateTypes (var_node->info.types, 0); /* share strings */
     new_node->varno = VARNO++;
     /* FREE(new_node->info.types->id); */
     new_node->info.types->id = var_name;
