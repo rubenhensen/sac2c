@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.37  2001/03/20 15:32:20  ben
+ * prefix WLCOMP_ for wlcomp-functions added
+ *
  * Revision 3.36  2001/03/20 15:26:11  dkr
  * WLSEG_HOMSV removed (WLSEG_SV used instead)
  *
@@ -2832,9 +2835,9 @@ SetSegs (node *pragma, node *cubes, int dims)
     /*
      * create default configuration.
      * also possible:
-     *   segs = Cubes( NULL, NULL, cubes, dims, line);
+     *   segs = WLCOMP_Cubes( NULL, NULL, cubes, dims, line);
      */
-    segs = All (NULL, NULL, cubes, dims, line);
+    segs = WLCOMP_All (NULL, NULL, cubes, dims, line);
 
     /*
      * create pragma-dependent configuration
@@ -6438,7 +6441,7 @@ WLTRAwith (node *arg_node, node *arg_info)
              * stop after converting
              *   -> build one segment containing the strides.
              */
-            segs = All (NULL, NULL, strides, wl_dims, line);
+            segs = WLCOMP_All (NULL, NULL, strides, wl_dims, line);
         } else {
             /*
              * build the cubes
@@ -6518,7 +6521,7 @@ WLTRAwith (node *arg_node, node *arg_info)
                  * we want to stop after cube-building.
                  *  -> build one segment containing all cubes.
                  */
-                segs = All (NULL, NULL, cubes, wl_dims, line);
+                segs = WLCOMP_All (NULL, NULL, cubes, wl_dims, line);
             } else {
                 DBUG_EXECUTE ("WLtrans", NOTE (("step 3: choice of segments\n")));
 
@@ -6527,7 +6530,7 @@ WLTRAwith (node *arg_node, node *arg_info)
                      * naive compilation
                      *  -> put each stride in a separate segment
                      */
-                    segs = Cubes (NULL, NULL, cubes, wl_dims, line);
+                    segs = WLCOMP_Cubes (NULL, NULL, cubes, wl_dims, line);
                 } else {
                     segs = SetSegs (NWITH_PRAGMA (arg_node), cubes, wl_dims);
                 }
