@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.147  2004/11/29 10:27:41  sah
+ * renamed some functions
+ *
  * Revision 3.146  2004/11/26 17:35:58  ktr
  * COMPILES!!!
  *
@@ -6715,9 +6718,9 @@ COMPwlgridvar (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 node *
-COMPWLcode (node *arg_node, info *arg_info)
+COMPcode (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("COMPWLcode");
+    DBUG_ENTER ("COMPcode");
 
     CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
 

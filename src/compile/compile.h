@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.18  2004/11/29 10:27:41  sah
+ * renamed some functions
+ *
  * Revision 3.17  2004/11/26 18:14:40  ktr
  * added some comments.
  *
@@ -65,7 +68,7 @@ extern node *COMPcond (node *arg_node, info *arg_info);
 extern node *COMPfundef (node *arg_node, info *arg_info);
 extern node *COMPid (node *arg_node, info *arg_info);
 extern node *COMPlet (node *arg_node, info *arg_info);
-extern node *COMPloop (node *arg_node, info *arg_info);
+extern node *COMPdo (node *arg_node, info *arg_info);
 extern node *COMPmodule (node *arg_node, info *arg_info);
 extern node *COMPobjdef (node *arg_node, info *arg_info);
 extern node *COMPprf (node *arg_node, info *arg_info);
@@ -89,7 +92,7 @@ extern node *COMPwlstride (node *arg_node, info *arg_info);
 extern node *COMPwlstridevar (node *arg_node, info *arg_info);
 extern node *COMPwlgrid (node *arg_node, info *arg_info);
 extern node *COMPwlgridvar (node *arg_node, info *arg_info);
-extern node *COMPwlcode (node *arg_node, info *arg_info);
+extern node *COMPcode (node *arg_node, info *arg_info);
 
 extern node *COMPspmd (node *arg_node, info *arg_info);
 extern node *COMPsync (node *arg_node, info *arg_info);
