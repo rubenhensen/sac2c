@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2003/09/25 13:45:55  dkr
+ * some dummy macros for TAGGED_ARRAYS added
+ *
  * Revision 3.12  2003/09/19 12:26:58  dkr
  * postfixes _nt, _any of varnames renamed into _NT, _ANY
  *
@@ -150,6 +153,10 @@
 #define NT_NAME(var_NT) var_NT
 #define SAC_ND_WRITE(var_NT, idx) SAC_ND_WRITE_ARRAY (var_NT, idx)
 #define SAC_ND_READ(var_NT, idx) SAC_ND_READ_ARRAY (var_NT, idx)
+#define SAC_ND_WRITE_COPY(to_NT, to_pos, expr, copyfun)                                  \
+    SAC_ND_WRITE (to_NT, to_pos) = expr;
+#define SAC_ND_WRITE_READ_COPY(to_NT, to_pos, from_NT, from_pos, copyfun)                \
+    SAC_ND_WRITE (to_NT, to_pos, SAC_ND_READ (from_NT, from_pos), copyfun)
 
 /*
  * ICMs for array access:
