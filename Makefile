@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.22  2001/03/20 16:17:16  nmw
+# SSAConstantFolding.o added
+#
 # Revision 3.21  2001/03/09 11:14:44  sbs
 # PROFILE and annotate_fun_calls.o added.
 #
@@ -213,7 +216,8 @@ OPTIMIZE= src/optimize/optimize.o src/optimize/ConstantFolding.o \
 	  src/optimize/LoopInvariantRemoval.o src/optimize/Inline.o \
           src/optimize/Unroll.o src/optimize/WLUnroll.o src/optimize/Unswitch.o \
           src/optimize/CSE.o \
-          src/optimize/SSADeadCodeRemoval.o src/optimize/SSACSE.o
+          src/optimize/SSADeadCodeRemoval.o src/optimize/SSACSE.o \
+          src/optimize/SSAConstantFolding.o
 PROFILE= src/profile/annotate_fun_calls.o
 PSIOPT= src/psi-opt/index.o src/psi-opt/ArrayElimination.o \
 	src/psi-opt/wl_access_analyze.o src/psi-opt/tile_size_inference.o \

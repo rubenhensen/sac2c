@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.10  2001/03/20 16:17:00  nmw
+# SSAConstantFolding.o added
+#
 # Revision 3.9  2001/03/09 11:53:40  sbs
 # make deps done
 #
@@ -94,7 +97,7 @@ INCS=-I../global -I../../inc -I../typecheck -I../print -I../psi-opt -I../modules
 all: optimize.o generatemasks.o ConstantFolding.o DeadCodeRemoval.o \
      LoopInvariantRemoval.o Inline.o Unroll.o Unswitch.o CSE.o \
      WLUnroll.o DeadFunctionRemoval.o freemasks.o \
-     SSADeadCodeRemoval.o SSACSE.o
+     SSADeadCodeRemoval.o SSACSE.o SSAConstantFolding.o
 
 %.o: %.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o $@ -c $< $(INCS)
