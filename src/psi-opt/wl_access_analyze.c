@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.8  1999/08/30 13:29:49  bs
+ * WLAAncode modified: access macros added, access macros renamed.
+ *
  * Revision 2.7  1999/08/04 14:35:11  bs
  * NCODE_WLAA_xxx macros added.
  *
@@ -590,6 +593,9 @@ WLAAncode (node *arg_node, node *arg_info)
     NCODE_WLAA_ACCESS (arg_node) = INFO_WLAA_ACCESS (arg_info);
     NCODE_WLAA_FEATURE (arg_node) = INFO_WLAA_FEATURE (arg_info);
     NCODE_WLAA_ACCESSCNT (arg_node) = INFO_WLAA_COUNT (arg_info);
+    NCODE_WLAA_WLARRAY (arg_node) = INFO_WLAA_WLARRAY (arg_info);
+    NCODE_WLAA_ARRAYDIM (arg_node) = VARDEC_DIM (INFO_WLAA_WLARRAY (arg_info));
+    NCODE_WLAA_ARRAYSHP (arg_node) = VARDEC_SHPSEG (INFO_WLAA_WLARRAY (arg_info));
     FreeInfo (arg_info, NULL);
     arg_info = old_arg_info;
 
