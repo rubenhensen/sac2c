@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.8  1995/04/07 09:29:39  sbs
+ * Revision 1.9  1995/04/12 07:02:53  sbs
+ * separation of IN and OUT arrays added
+ *
+ * Revision 1.8  1995/04/07  09:29:39  sbs
  * ND_KS_ASSIGN_ARRAY( name, res) inserted
  *
  * Revision 1.7  1995/04/06  14:23:25  sbs
@@ -66,8 +69,14 @@
 #define ND_A_DIM(name) __##name##_d
 #define ND_KD_A_SHAPE(name, dim) __##name##_s##dim
 #define ND_A_SHAPE(name, dim) __##name##_s[dim]
-#define ND_KS_ARG_ARRAY(type, name) type *name, int *__##name##_rc
-#define ND_KS_RET_ARRAY(name) name, __##name##_rc
+
+#define ND_KS_DEC_IN_ARRAY(type, name) type *##name, int *__##name##_rc
+#define ND_KS_DEC_OUT_ARRAY(type, name) type **##name##__p, int **__##name##_rc__p
+#define ND_KS_AP_IN_ARRAY(name) name, __##name##_rc
+#define ND_KS_AP_OUT_ARRAY(name) &name, &__##name##_rc
+#define ND_KS_RET_OUT_ARRAY(name)                                                        \
+    *##name##__p = name;                                                                 \
+    *__##name##_rc__p = __##name##_rc
 
 /*
  * Macros for initializing an array:

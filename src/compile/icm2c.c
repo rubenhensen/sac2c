@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.11  1995/04/11 16:08:48  sbs
+ * Revision 1.12  1995/04/12 07:02:53  sbs
+ * separation of IN and OUT arrays added
+ *
+ * Revision 1.11  1995/04/11  16:08:48  sbs
  * some minor bugs fixed
  *
  * Revision 1.10  1995/04/11  15:06:35  sbs
@@ -56,38 +59,39 @@
             i += step;                                                                   \
         }                                                                                \
     }
-#define ScanArglist(arg, n, bin, bfout, bout, binout, barray, sep)                       \
+#define ScanArglist(arg, n, bin, bfout, bout, binout, bina, bouta, binouta, sepstr)      \
     {                                                                                    \
         int i = 0;                                                                       \
         int out = 0;                                                                     \
-        int sepneeded = 0;                                                               \
+        int sep = 0;                                                                     \
         while (i < n) {                                                                  \
-            if (sepneeded)                                                               \
-                fprintf (outfile, "%s", sep);                                            \
+            if (sep)                                                                     \
+                fprintf (outfile, "%s", sepstr);                                         \
             DBUG_PRINT ("PRINT", ("arg-index: %d, arg-tag : %s", i, arg[i]));            \
             if (strcmp (arg[i], "in") == 0) {                                            \
                 i++;                                                                     \
                 bin;                                                                     \
-                sepneeded = 1;                                                           \
             } else if (strcmp (arg[i], "out") == 0) {                                    \
                 i++;                                                                     \
                 if (out) {                                                               \
                     bout;                                                                \
-                    sepneeded = 1;                                                       \
                 } else {                                                                 \
                     out = 1;                                                             \
                     bfout;                                                               \
-                    sepneeded = 0;                                                       \
                 }                                                                        \
             } else if (strcmp (arg[i], "inout") == 0) {                                  \
                 i++;                                                                     \
                 binout;                                                                  \
-                sepneeded = 1;                                                           \
+            } else if (strcmp (arg[i], "in_a") == 0) {                                   \
+                i++;                                                                     \
+                bina;                                                                    \
+            } else if (strcmp (arg[i], "out_a") == 0) {                                  \
+                i++;                                                                     \
+                bouta;                                                                   \
             } else {                                                                     \
                 i++;                                                                     \
-                barray;                                                                  \
-                sepneeded = 1;                                                           \
-            };                                                                           \
+                binouta;                                                                 \
+            }                                                                            \
         }                                                                                \
     }
 #define AccessVect(v, i) fprintf (outfile, "ND_A_FIELD(%s)[%i])", v, i)
@@ -274,11 +278,17 @@ extern FILE *outfile; /* outputfile for PrintTree defined in main.c*/
     INDENT;
     FirstOut (tyarg, 3 * narg, fprintf (outfile, "%s ", tyarg[i]), 2);
     fprintf (outfile, "%s( ", name);
-    ScanArglist (tyarg, 3 * narg, fprintf (outfile, " %s %s", tyarg[i++], tyarg[i++]),
-                 i += 2, fprintf (outfile, " %s *%s__p", tyarg[i++], tyarg[i++]),
-                 fprintf (outfile, " %s *%s__p", tyarg[i++], tyarg[i++]),
-                 fprintf (outfile, " ND_KS_ARG_ARRAY(%s, %s)", tyarg[i++], tyarg[i++]),
-                 ",");
+    ScanArglist (tyarg, 3 * narg, fprintf (outfile, " %s %s", tyarg[i++], tyarg[i++]);
+                 sep = 1, i += 2;
+                 sep = 0, fprintf (outfile, " %s *%s__p", tyarg[i++], tyarg[i++]);
+                 sep = 1, fprintf (outfile, " %s *%s__p", tyarg[i++], tyarg[i++]);
+                 sep = 1,
+                 fprintf (outfile, " ND_KS_DEC_IN_ARRAY(%s, %s)", tyarg[i++], tyarg[i++]);
+                 sep = 1, fprintf (outfile, " ND_KS_DEC_OUT_ARRAY(%s, %s)", tyarg[i++],
+                                   tyarg[i++]);
+                 sep = 1, fprintf (outfile, " ND_KS_DEC_OUT_ARRAY(%s, %s)", tyarg[i++],
+                                   tyarg[i++]);
+                 sep = 1, ",");
     fprintf (outfile, ")\n");
 
 #undef ND_FUN_DEC
@@ -308,9 +318,13 @@ extern FILE *outfile; /* outputfile for PrintTree defined in main.c*/
 INDENT;
 FirstOut (arg, 2 * narg, fprintf (outfile, "%s =", arg[i]), 1);
 fprintf (outfile, "%s( ", name);
-ScanArglist (arg, 2 * narg, fprintf (outfile, " %s", arg[i++]), i++,
-             fprintf (outfile, " &%s", arg[i++]), fprintf (outfile, " &%s", arg[i++]),
-             fprintf (outfile, " ND_KS_RET_ARRAY(%s)", arg[i++]), ",");
+ScanArglist (arg, 2 * narg, fprintf (outfile, " %s", arg[i++]); sep = 1, i++; sep = 0;
+             , fprintf (outfile, " &%s", arg[i++]);
+             sep = 1, fprintf (outfile, " &%s", arg[i++]);
+             sep = 1, fprintf (outfile, " ND_KS_AP_IN_ARRAY(%s)", arg[i++]);
+             sep = 1, fprintf (outfile, " ND_KS_AP_OUT_ARRAY(%s)", arg[i++]);
+             sep = 1, fprintf (outfile, " ND_KS_AP_OUT_ARRAY(%s)", arg[i++]);
+             sep = 1, ",");
 fprintf (outfile, ");\n");
 
 #undef ND_FUN_AP
@@ -338,10 +352,13 @@ DBUG_VOID_RETURN;
 #include "icm_comment.c"
 
 INDENT;
-ScanArglist (arg, 2 * narg, i++, i++,
-             fprintf (outfile, "*%s__p = %s;\n", arg[i], arg[i++]);
-             INDENT, fprintf (outfile, "*%s__p = %s;\n", arg[i], arg[i++]);
-             INDENT, i += 1, "");
+ScanArglist (arg, 2 * narg, i++; sep = 0, i++;
+             sep = 0, fprintf (outfile, "*%s__p = %s;\n", arg[i], arg[i++]); INDENT;
+             sep = 1, fprintf (outfile, "*%s__p = %s;\n", arg[i], arg[i++]); INDENT;
+             sep = 1, i += 1;
+             sep = 0, fprintf (outfile, "ND_KS_RET_OUT_ARRAY(%s);\n", arg[i++]); INDENT;
+             sep = 1, fprintf (outfile, "ND_KS_RET_OUT_ARRAY(%s);\n", arg[i++]); INDENT;
+             sep = 1, "");
 FirstOut (arg, 2 * narg, fprintf (outfile, "return(%s);\n", arg[i]), 1);
 
 #undef ND_FUN_RET
