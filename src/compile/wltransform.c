@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/08/10 15:43:11  dkr
+ * bug in cube generation fixed
+ *
  * Revision 2.1  1999/02/23 12:43:00  sacbase
  * new release made
  *
@@ -1745,7 +1748,7 @@ Parts2Strides (node *parts, int dims)
                                                        NULL, NULL),
                                            NULL);
 
-                /* the PART-information is needed by 'IntersectOutline' */
+                /* the PART-information is needed by 'IntersectStrideWithOutline' */
                 WLSTRIDE_PART (new_stride) = parts;
 
                 new_stride = NormalizeStride_1 (new_stride);
@@ -1949,8 +1952,8 @@ GridOffset (int new_bound1, int bound1, int step, int grid_b2)
 /******************************************************************************
  *
  * function:
- *   int IntersectOutline( node *stride1, node *stride2,
- *                         node **i_stride1, node **i_stride2)
+ *   int IntersectStrideWithOutline( node *stride1, node *stride2,
+ *                                   node **i_stride1, node **i_stride2)
  *
  * description:
  *   returns in 'i_stride1' and 'i_stride2' the part of 'stride1', 'stride2'
@@ -1958,21 +1961,21 @@ GridOffset (int new_bound1, int bound1, int step, int grid_b2)
  *   possibly present next nodes in 'stride1' or 'stride2' are ignored.
  *   the return value is 1 if and only if the intersection is non-empty.
  *
- *   if we are interested in the return value only, we can call this
- *     function with ('stride1' == NULL), ('stride2' == NULL).
+ *   if interested in the return value only, call this function with
+ *     ('i_stride1' == NULL), ('i_stride2' == NULL).
  *
  ******************************************************************************/
 
 int
-IntersectOutline (node *stride1, node *stride2, node **i_stride1, node **i_stride2)
+IntersectStrideWithOutline (node *stride1, node *stride2, node **i_stride1,
+                            node **i_stride2)
 {
     node *grid1, *grid2, *new_i_stride1, *new_i_stride2;
     int bound11, bound21, grid1_b1, grid1_b2, bound12, bound22, grid2_b1, grid2_b2, head1,
       rear1, head2, rear2, i_bound1, i_bound2, i_offset1, i_offset2;
-    int flag = 0;
     int result = 1;
 
-    DBUG_ENTER ("IntersectOutline");
+    DBUG_ENTER ("IntersectStrideWithOutline");
 
     if (i_stride1 != NULL) {
         new_i_stride1 = *i_stride1 = DupNode (stride1);
@@ -2018,109 +2021,73 @@ IntersectOutline (node *stride1, node *stride2, node **i_stride1, node **i_strid
         if (/* are the outlines of 'stride1' and 'stride2' not disjunkt? */
             (head1 < rear2) && (head2 < rear1) &&
 
+            /* are 'stride1' and 'stride2' descended from the different Npart-nodes? */
+            (WLSTRIDE_PART (stride1) != WLSTRIDE_PART (stride2)) &&
+            /*
+             * Note: if stride1 and stride are descended from the same Npart-node
+             *        they must have disjunct outlines!!!
+             */
+
             /* are the grids compatible? */
             (i_offset1 <= grid1_b1) && (i_offset2 <= grid2_b1)
             /*
-             * Note: (i_offset_1 < grid1_b1) means, that the grid1 must be split
+             * Note: (i_offset_1 > grid1_b1) means, that the stride1 must be split
              *        in two parts to fit the new upper bound in the current dim.
-             *       Then the *projections* of grid1, grid2 can not be disjunct,
-             *        therefore grid1, grid2 must have disjunct outlines!!!
+             *       Then the *projections* of stride1, stride2 can not be disjunct,
+             *        therefore stride1, stride2 must have disjunct outlines!!!
              */
-
         ) {
 
-            DBUG_ASSERT ((
-                           /* is intersection of 'stride1' with the outline of 'stride2'
-                              not empty? */
-                           (i_bound1 + grid1_b1 - i_offset1 < i_bound2) &&
-                           /* is intersection of 'stride2' with the outline of 'stride1'
-                              not empty? */
-                           (i_bound1 + grid2_b1 - i_offset2 < i_bound2)
-                           /*
-                            * example:
-                            *
-                            *   stride1: 0->5 step 2          stride2: 2->3 step 1
-                            *                   1->2: ...                     0->1: ...
-                            *
-                            * Here we must notice, that the intersection of 'stride1' with
-                            * the outline of 'stride2' is empty:
-                            *
-                            *            2->3 step 2
-                            *                   1->2: ...     !!!!!!!!!!!!
-                            *
-                            * The following parts of the 'cube generation' can not handle
-                            * this case! Therefore we will stop here!!
-                            *
-                            * remark: If this assertion fails, there is a bug in the
-                            * 'first step' of 'ComputeCubes()' !!!
-                            */
-                           ),
-                         ("must resign: "
-                          "intersection of outline(stride1) and outline(stride2) is "
-                          "non-empty, "
-                          "while intersection of outline(stride1) and stride2, or "
-                          "intersection of stride1 and outline(stride2) is empty :-("));
-
-            if ((WLSTRIDE_PART (stride1) == WLSTRIDE_PART (stride2)) &&
-                /* are 'stride1' and 'stride2' descended from the same Npart? */
-                (!flag)) {
-                /* we should deal with this exception only once !! */
+            if (
+              /* is intersection of 'stride1' with the outline of 'stride2' empty? */
+              (i_bound1 + grid1_b1 - i_offset1 >= i_bound2) ||
+              /* is intersection of 'stride2' with the outline of 'stride1' empty? */
+              (i_bound1 + grid2_b1 - i_offset2 >= i_bound2)) {
 
                 /*
                  * example:
                  *
-                 *  0->6  step 3, 0->1: op1
-                 *  0->16 step 3, 1->3: op2
-                 *  4->20 step 3, 2->3: op3
-                 * ------------------------- after first round with IntersectOutline:
-                 *  0->7  step 3, 1->3: op2  <- intersection of 'op2' and outline('op1')
-                 *  3->16 step 3, 1->3: op2  <- intersection of 'op2' and outline('op3')
+                 *   stride1: 0->5 step 2          stride2: 2->3 step 1
+                 *                   1->2: ...                     0->1: ...
                  *
-                 *  these two strides are **not** disjunkt!!!
-                 *  but they are part of the same Npart!!
+                 * Here we must notice, that the intersection of 'stride1' with the
+                 *  outline of 'stride2' is empty:
+                 *
+                 *            2->3 step 2
+                 *                   1->2: ...     !!!!!!!!!!!!
+                 *
+                 * The following parts of the 'cube generation' can not handle this case!
+                 * Therefore we will stop here!!
+                 *
+                 * remark: If this assertion fails, there is a bug in the 'first step'
+                 *         of 'ComputeCubes()' !!!
                  */
 
-                flag = 1; /* skip this exception handling in later dimensions! */
+                DBUG_ASSERT ((0),
+                             ("must resign: "
+                              "intersection of outline(stride1) and outline(stride2) is "
+                              "non-empty, "
+                              "while intersection of outline(stride1) and stride2, or "
+                              "intersection of stride1 and outline(stride2) is empty "
+                              ":-("));
+            }
 
-                /*
-                 * modify the bounds of the first stride,
-                 * so that the new outlines are disjunct
-                 */
-                if (WLSTRIDE_BOUND2 (stride1) < WLSTRIDE_BOUND2 (stride2)) {
-                    if (i_stride1 != NULL) {
-                        WLSTRIDE_BOUND2 (new_i_stride1) = i_bound1;
-                        new_i_stride1 = NormalizeStride_1 (new_i_stride1);
-                    }
-                } else {
-                    if (i_stride2 != NULL) {
-                        WLSTRIDE_BOUND2 (new_i_stride2) = i_bound1;
-                        new_i_stride2 = NormalizeStride_1 (new_i_stride2);
-                    }
-                }
+            /* intersect 'stride1' with the outline of 'stride2' */
+            if (i_stride1 != NULL) {
+                WLSTRIDE_BOUND1 (new_i_stride1) = i_bound1;
+                WLSTRIDE_BOUND2 (new_i_stride1) = i_bound2;
+                WLGRID_BOUND1 (WLSTRIDE_CONTENTS (new_i_stride1)) = grid1_b1 - i_offset1;
+                WLGRID_BOUND2 (WLSTRIDE_CONTENTS (new_i_stride1)) = grid1_b2 - i_offset1;
+                new_i_stride1 = NormalizeStride_1 (new_i_stride1);
+            }
 
-            } else {
-
-                if (i_stride1 != NULL) {
-                    /* intersect 'stride1' with the outline of 'stride2' */
-                    WLSTRIDE_BOUND1 (new_i_stride1) = i_bound1;
-                    WLSTRIDE_BOUND2 (new_i_stride1) = i_bound2;
-                    WLGRID_BOUND1 (WLSTRIDE_CONTENTS (new_i_stride1))
-                      = grid1_b1 - i_offset1;
-                    WLGRID_BOUND2 (WLSTRIDE_CONTENTS (new_i_stride1))
-                      = grid1_b2 - i_offset1;
-                    new_i_stride1 = NormalizeStride_1 (new_i_stride1);
-                }
-
-                if (i_stride2 != NULL) {
-                    /* intersect 'stride2' with the outline of 'stride1' */
-                    WLSTRIDE_BOUND1 (new_i_stride2) = i_bound1;
-                    WLSTRIDE_BOUND2 (new_i_stride2) = i_bound2;
-                    WLGRID_BOUND1 (WLSTRIDE_CONTENTS (new_i_stride2))
-                      = grid2_b1 - i_offset2;
-                    WLGRID_BOUND2 (WLSTRIDE_CONTENTS (new_i_stride2))
-                      = grid2_b2 - i_offset2;
-                    new_i_stride2 = NormalizeStride_1 (new_i_stride2);
-                }
+            /* intersect 'stride2' with the outline of 'stride1' */
+            if (i_stride2 != NULL) {
+                WLSTRIDE_BOUND1 (new_i_stride2) = i_bound1;
+                WLSTRIDE_BOUND2 (new_i_stride2) = i_bound2;
+                WLGRID_BOUND1 (WLSTRIDE_CONTENTS (new_i_stride2)) = grid2_b1 - i_offset2;
+                WLGRID_BOUND2 (WLSTRIDE_CONTENTS (new_i_stride2)) = grid2_b2 - i_offset2;
+                new_i_stride2 = NormalizeStride_1 (new_i_stride2);
             }
 
         } else {
@@ -2156,6 +2123,228 @@ IntersectOutline (node *stride1, node *stride2, node **i_stride1, node **i_strid
     }
 
     DBUG_RETURN (result);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   int SearchForDublicates( node *stride1, node *stride2)
+ *
+ * description:
+ *
+ ******************************************************************************/
+
+int
+SearchForDublicates (node **stride1, node **stride2)
+{
+    node *new_stride1, *new_stride2;
+    int bound11, bound21, bound12, bound22;
+    int res = 0;
+
+    DBUG_ENTER ("SearchForDublicates");
+
+    DBUG_ASSERT (((stride1 != NULL) && (stride2 != NULL)),
+                 "call by reference params are NULL");
+
+    if (WLSTRIDE_PART (*stride1) == WLSTRIDE_PART (*stride2)) {
+        new_stride1 = *stride1;
+        new_stride2 = *stride2;
+
+        while (new_stride1 != NULL) {
+            res = -1;
+            DBUG_ASSERT ((new_stride2 != NULL), "dim not found");
+
+            bound11 = WLSTRIDE_BOUND1 (new_stride1);
+            bound21 = WLSTRIDE_BOUND2 (new_stride1);
+            bound12 = WLSTRIDE_BOUND1 (new_stride2);
+            bound22 = WLSTRIDE_BOUND2 (new_stride2);
+
+            if ((bound12 >= bound11) && (bound22 <= bound21)) {
+                /* stride2 is subset of stride1 */
+                if ((res == -1) && ((bound12 > bound11) || (bound22 < bound21))) {
+                    /* stride2 is *proper* subset of stride1 */
+                    res = 1;
+                }
+            } else if ((bound11 >= bound12) && (bound21 <= bound22)) {
+                /* stride1 is subset of stride2 */
+                if ((res == -1) && ((bound11 > bound12) || (bound21 < bound22))) {
+                    /* stride1 is *proper* subset of stride2 */
+                    res = 2;
+                }
+            } else {
+                res = 0;
+                break;
+            }
+            new_stride1 = WLGRID_NEXTDIM (WLSTRIDE_CONTENTS (new_stride1));
+            new_stride2 = WLGRID_NEXTDIM (WLSTRIDE_CONTENTS (new_stride2));
+        }
+    }
+
+    if (res == -1)
+        res = 1;
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   int AdjustBounds( node *stride1, node *stride2)
+ *
+ * description:
+ *
+ ******************************************************************************/
+
+int
+AdjustBounds (node **stride1, node **stride2)
+{
+    node *new_stride1, *new_stride2;
+    int bound11, bound21, bound12, bound22;
+    int res = 0;
+
+    DBUG_ENTER ("AdjustBounds");
+
+    DBUG_ASSERT (((stride1 != NULL) && (stride2 != NULL)),
+                 "call by reference params are NULL");
+
+#if 1 /* not finished yet */
+    if (WLSTRIDE_PART (*stride1) == WLSTRIDE_PART (*stride2)) {
+        new_stride1 = *stride1;
+        new_stride2 = *stride2;
+
+        while (new_stride1 != NULL) {
+            DBUG_ASSERT ((new_stride2 != NULL), "dim not found");
+
+            bound11 = WLSTRIDE_BOUND1 (new_stride1);
+            bound21 = WLSTRIDE_BOUND2 (new_stride1);
+            bound12 = WLSTRIDE_BOUND1 (new_stride2);
+            bound22 = WLSTRIDE_BOUND2 (new_stride2);
+
+            if (bound21 < bound22) {
+                if (bound21 > bound12) {
+                    res = 1;
+                    WLSTRIDE_BOUND2 (new_stride1) = bound12;
+                    new_stride1 = NormalizeStride_1 (new_stride1);
+                }
+                break;
+            } else {
+                if (bound22 > bound11) {
+                    res = 1;
+                    WLSTRIDE_BOUND2 (new_stride2) = bound11;
+                    new_stride2 = NormalizeStride_1 (new_stride2);
+                    break;
+                }
+            }
+            new_stride1 = WLGRID_NEXTDIM (WLSTRIDE_CONTENTS (new_stride1));
+            new_stride2 = WLGRID_NEXTDIM (WLSTRIDE_CONTENTS (new_stride2));
+        }
+    }
+#endif
+
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node* EleminateDuplicatesAndAdjustBounds( node *strides)
+ *
+ * description:
+ *   When ComputeCubes() splits the strides by using IntersectStrideWithOutline()
+ *   this may create non-disjunct index vector sets A and B ...
+ *
+ *   a) ... where A is a subset of B. Example:
+ *
+ *       0->140 step 9, 2->9: op1
+ *       0->306 step 9, 0->2: op2
+ *     135->302 step 9, 5->9: op3
+ *     140->300 step 9, 6->9: op4
+ *    ----------------------- after first round with IntersectStrideWithOutline:
+ *       0->140 step 9, 2->9: op1
+ *       0->144 step 9, 0->2: op2 <- intersection of 'op2' and outline('op1')
+ *     128->306 step 9, 7->9: op2 <- intersection of 'op2' and outline('op3')  (*1*)
+ *     137->306 step 9, 7->9: op2 <- intersection of 'op2' and outline('op4')  (*2*)
+ *     135->302 step 9, 5->9: op3
+ *     140->300 step 9, 6->9: op4
+ *
+ *     (*2*) is a subset of (*1*), therefore (*1*) should be removed!
+ *
+ *   b) ... where A and B are no subsets of each other. Example:
+ *
+ *     0->6  step 3, 0->1: op1
+ *     0->16 step 3, 1->3: op2
+ *     4->16 step 3, 2->3: op3
+ *    ----------------------- after first round with IntersectStrideWithOutline:
+ *     0->7  step 3, 1->3: op2  <- intersection of 'op2' and outline('op1')
+ *     3->16 step 3, 1->3: op2  <- intersection of 'op2' and outline('op3')
+ *
+ *     These two strides are **not** disjunkt!!!
+ *     But they are part of the same Npart!!
+ *
+ *   Therefore first whole strides are removed and then bounds are adjusted
+ *   to get disjunct index vector sets.
+ *
+ ******************************************************************************/
+
+node *
+EleminateDuplicatesAndAdjustBounds (node *strides)
+{
+    node *stride1, *prev_stride1, *stride2, *prev_stride2;
+    int res;
+
+    DBUG_ENTER ("EleminateDuplicatesAndAdjustBounds");
+
+    /*
+     * first step: remove strides
+     */
+    stride1 = strides;
+    prev_stride1 = NULL;
+    while (stride1 != NULL) {
+
+        stride2 = WLSTRIDE_NEXT (stride1);
+        prev_stride2 = stride1;
+        while (stride2 != NULL) {
+
+            res = SearchForDublicates (&stride1, &stride2);
+            if (res == 1) {
+                /* remove 'stride1' from chain */
+                if (prev_stride1 == NULL) {
+                    strides = WLSTRIDE_NEXT (strides);
+                    stride1 = FreeNode (stride1);
+                } else {
+                    stride1 = WLSTRIDE_NEXT (prev_stride1)
+                      = FreeNode (WLSTRIDE_NEXT (prev_stride1));
+                }
+                stride2 = WLSTRIDE_NEXT (stride1);
+                prev_stride2 = stride1;
+            } else if (res == 2) {
+                /* remove 'stride2' from chain */
+                stride2 = WLSTRIDE_NEXT (prev_stride2)
+                  = FreeNode (WLSTRIDE_NEXT (prev_stride2));
+            } else {
+                DBUG_ASSERT ((res == 0), "unknown value returned");
+                prev_stride2 = stride2;
+                stride2 = WLSTRIDE_NEXT (stride2);
+            }
+        }
+
+        prev_stride1 = stride1;
+        stride1 = WLSTRIDE_NEXT (stride1);
+    }
+
+    /*
+     * second step: adjust bounds
+     */
+    stride1 = strides;
+    while (stride1 != NULL) {
+        stride2 = WLSTRIDE_NEXT (stride1);
+        while (stride2 != NULL) {
+            res = AdjustBounds (&stride1, &stride2);
+            stride2 = WLSTRIDE_NEXT (stride2);
+        }
+        stride1 = WLSTRIDE_NEXT (stride1);
+    }
+
+    DBUG_RETURN (strides);
 }
 
 /******************************************************************************
@@ -2521,7 +2710,7 @@ SplitWL (node *strides)
                 }
 
                 /*
-                 * split in pairs
+                 * split pairwise
                  */
                 stride1 = strides;
                 while (stride1 != NULL) {
@@ -4537,7 +4726,7 @@ ComputeCubes (node *strides)
             stride1 = WLSTRIDE_NEXT (stride1);
         }
 
-        /* intersect the elements of 'strides' in pairs */
+        /* intersect the elements of 'strides' pairwise */
         stride1 = strides;
         while (stride1 != NULL) {
 
@@ -4545,7 +4734,7 @@ ComputeCubes (node *strides)
             while (stride2 != NULL) {
 
                 /* intersect outlines of 'stride1' and 'stride2' */
-                IntersectOutline (stride1, stride2, &i_stride1, &i_stride2);
+                IntersectStrideWithOutline (stride1, stride2, &i_stride1, &i_stride2);
 
                 if (i_stride1 != NULL) {
                     if (CompareWLnode (stride1, i_stride1, 1) != 0) {
@@ -4592,7 +4781,7 @@ ComputeCubes (node *strides)
             }
         }
 
-        strides = new_strides;
+        strides = EleminateDuplicatesAndAdjustBounds (new_strides);
     } while (!fixpoint);
 
     /*
@@ -4613,7 +4802,7 @@ ComputeCubes (node *strides)
         while (stride2 != NULL) {
 
             /* lie 'stride1' and 'stride2' in the same cube? */
-            if (IntersectOutline (stride1, stride2, NULL, NULL)) {
+            if (IntersectStrideWithOutline (stride1, stride2, NULL, NULL)) {
                 /*
                  * 'stride1' and 'stride2' lie in the same cube
                  *  -> append 'stride2' to the 'stride1'-chain
