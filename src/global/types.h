@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.54  2004/11/22 18:08:33  sbs
+ * stuff from SSAConstantFolding.h added.
+ *
  * Revision 3.53  2004/11/22 18:03:33  cg
  * Added optimize_t and global_t.
  *
@@ -1069,5 +1072,13 @@ typedef struct {
 #undef GLOBALdelim
 #undef GLOBALid
 #undef GLOBALtype
+
+/*******************************************************************************
+ * moved from SSAConstantFolding.h:
+ *
+ *
+ * structural constant (SCO) should be integrated in constants.[ch] in future
+ */
+typedef struct STRUCT_CONSTANT struct_constant;
 
 #endif /* _SAC_TYPES_H_ */
