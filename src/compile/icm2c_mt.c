@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.38  2003/10/15 12:31:00  dkrHH
+ * MT_START_SYNCBLOCK renamed into MT_SYNCBLOCK_BEGIN.
+ * MT_SYNCBLOCK_END added.
+ *
  * Revision 3.37  2003/10/15 01:08:01  dkrHH
  * MT_START_SYNCBLOCK modified for TAGGED_ARRAYS
  *
@@ -439,13 +443,13 @@ ICMCompileMT_SPMD_FUN_RET (int barrier_id, int vararg_cnt, char **vararg)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileMT_START_SYNCBLOCK( int barrier_id,
+ *   void ICMCompileMT_SYNCBLOCK_BEGIN( int barrier_id,
  *                                      int vararg_cnt, char **vararg)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   MT_START_SYNCBLOCK( barrier_id, vararg_cnt, [ tag, param_NT, dim ]* )
+ *   MT_SYNCBLOCK_BEGIN( barrier_id, vararg_cnt, [ tag, param_NT, dim ]* )
  *
  *   This ICM implements the begin of a synchronisation block.
  *   Essentially, the reference counters of the arguments are shadowed by
@@ -460,16 +464,16 @@ ICMCompileMT_SPMD_FUN_RET (int barrier_id, int vararg_cnt, char **vararg)
  ******************************************************************************/
 
 void
-ICMCompileMT_START_SYNCBLOCK (int barrier_id, int vararg_cnt, char **vararg)
+ICMCompileMT_SYNCBLOCK_BEGIN (int barrier_id, int vararg_cnt, char **vararg)
 {
     int i;
 
-    DBUG_ENTER ("ICMCompileMT_START_SYNCBLOCK");
+    DBUG_ENTER ("ICMCompileMT_SYNCBLOCK_BEGIN");
 
-#define MT_START_SYNCBLOCK
+#define MT_SYNCBLOCK_BEGIN
 #include "icm_comment.c"
 #include "icm_trace.c"
-#undef MT_START_SYNCBLOCK
+#undef MT_SYNCBLOCK_BEGIN
 
     INDENT;
     fprintf (outfile, "{\n");
@@ -478,11 +482,9 @@ ICMCompileMT_START_SYNCBLOCK (int barrier_id, int vararg_cnt, char **vararg)
 #ifdef TAGGED_ARRAYS
     for (i = 0; i < 3 * vararg_cnt; i += 3) {
         if (!strcmp (vararg[i], "in")) {
-#if 1
             INDENT;
             fprintf (outfile, "SAC_MT_DECL_LOCAL_DESC( %s, %s)\n", vararg[i + 1],
                      vararg[i + 2]);
-#endif
         }
     }
     fprintf (outfile, "\n");
@@ -494,11 +496,9 @@ ICMCompileMT_START_SYNCBLOCK (int barrier_id, int vararg_cnt, char **vararg)
     for (i = 0; i < 3 * vararg_cnt; i += 3) {
 #ifdef TAGGED_ARRAYS
         if (!strcmp (vararg[i], "in")) {
-#if 1
             INDENT;
-            fprintf (outfile, "SAC_MT_INIT_DESC( %s, %s)\n", vararg[i + 1],
+            fprintf (outfile, "SAC_MT_CREATE_LOCAL_DESC( %s, %s)\n", vararg[i + 1],
                      vararg[i + 2]);
-#endif
         }
 #else  /* TAGGED_ARRAYS */
         if (!strcmp (vararg[i], "in_rc")) {
@@ -512,6 +512,59 @@ ICMCompileMT_START_SYNCBLOCK (int barrier_id, int vararg_cnt, char **vararg)
     INDENT;
     fprintf (outfile, "SAC_TR_MT_PRINT("
                       " (\"Starting execution of synchronisation block\"));\n");
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileMT_SYNCBLOCK_END( int barrier_id,
+ *                                    int vararg_cnt, char **vararg)
+ *
+ * description:
+ *   implements the compilation of the following ICM:
+ *
+ *   MT_SYNCBLOCK_END( barrier_id, vararg_cnt, [ tag, param_NT, dim ]* )
+ *
+ *   This ICM implements the begin of a synchronisation block.
+ *   Essentially, the reference counters of the arguments are shadowed by
+ *   thread-specific dummy reference counters. Dummies can be used safely
+ *   since memory may exclusively been released in between synchronisation
+ *   blocks. Nevertheless, they must be provided because arbitrary code in
+ *   the with-loop body may want to increment/decrement reference counters.
+ *
+ *   However, this ICM also complements the various ICMs that implement
+ *   different kinds of barrier synchronisations.
+ *
+ ******************************************************************************/
+
+void
+ICMCompileMT_SYNCBLOCK_END
+(int barrier_id, int vararg_cnt, char **vararg)
+{
+    int i;
+
+    DBUG_ENTER ("ICMCompileMT_SYNCBLOCK_END");
+
+#define MT_SYNCBLOCK_END
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef MT_SYNCBLOCK_END
+
+#ifdef TAGGED_ARRAYS
+    for (i = 0; i < 3 * vararg_cnt; i += 3) {
+        if (!strcmp (vararg[i], "in")) {
+            INDENT;
+            fprintf (outfile, "SAC_MT_FREE_LOCAL_DESC( %s, %s)\n", vararg[i + 1],
+                     vararg[i + 2]);
+        }
+    }
+#endif /* TAGGED_ARRAYS */
+
+    indent--;
+    INDENT;
+    fprintf (outfile, "}\n");
 
     DBUG_VOID_RETURN;
 }
@@ -770,10 +823,6 @@ ICMCompileMT_SYNC_FOLD (int barrier_id, int vararg_cnt, char **vararg)
     INDENT;
     fprintf (outfile, "SAC_MT_SYNC_MULTIFOLD_3C( %d)\n", barrier_id);
 
-    indent--;
-    INDENT;
-    fprintf (outfile, "}\n");
-
 #ifndef BEtest
     for (i = 0; i < vararg_cnt; i++) {
         foldcodes[i] = FreeTree (foldcodes[i]);
@@ -864,13 +913,6 @@ ICMCompileMT_SYNC_ONEFOLD (int barrier_id, char *foldtype, char *accu_var, char 
     fprintf (outfile, "SAC_MT_SYNC_ONEFOLD_3( %s, %s, %s, %d)\n", foldtype, accu_var,
              tmp_var, barrier_id);
 
-    indent--;
-
-    INDENT;
-    fprintf (outfile, "}\n");
-
-    fprintf (outfile, "\n");
-
 #ifndef BEtest
     fold_code = FreeTree (fold_code);
 #endif /* BEtest */
@@ -906,13 +948,6 @@ ICMCompileMT_SYNC_NONFOLD (int barrier_id)
     INDENT;
     fprintf (outfile, "SAC_MT_SYNC_NONFOLD_1( %d)\n", barrier_id);
 
-    indent--;
-
-    INDENT;
-    fprintf (outfile, "}\n");
-
-    fprintf (outfile, "\n");
-
     DBUG_VOID_RETURN;
 }
 
@@ -926,9 +961,9 @@ ICMCompileMT_SYNC_NONFOLD (int barrier_id)
  *
  *   MT_SYNC_FOLD_NONFOLD( vararg_cnt, [ foldtype, accu_NT, tmp_NT, foldop ]* )
  *
- *   This ICM implements barrier synchronisation for synchronisation blocks
- *   that contain several fold with-loops as well as additional genarray/modarray
- *   with-loops.
+ *   This ICM implements barrier synchronisation for synchronisation
+ *   blocks that contain several fold with-loops as well as additional
+ *   genarray/modarray with-loops.
  *
  *   Each fold with-loop corresponds with a quadrupel of ICM arguments,
  *   specifying the type of the fold result, the name of the accumulator

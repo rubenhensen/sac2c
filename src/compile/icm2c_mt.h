@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.20  2003/10/15 12:31:00  dkrHH
+ * MT_START_SYNCBLOCK renamed into MT_SYNCBLOCK_BEGIN.
+ * MT_SYNCBLOCK_END added.
+ *
  * Revision 3.19  2003/10/14 23:44:11  dkrHH
  * SPMD_PRESET removed
  *
@@ -140,7 +144,10 @@ extern void ICMCompileMT_SPMD_FUN_DEC (char *name, char *from, int vararg_cnt,
                                        char **vararg);
 extern void ICMCompileMT_SPMD_FUN_RET (int barrier_id, int vararg_cnt, char **vararg);
 
-extern void ICMCompileMT_START_SYNCBLOCK (int barrier_id, int vararg_cnt, char **vararg);
+extern void ICMCompileMT_SYNCBLOCK_BEGIN (int barrier_id, int vararg_cnt, char **vararg);
+extern void
+ICMCompileMT_SYNCBLOCK_END
+(int barrier_id, int vararg_cnt, char **vararg);
 
 extern void ICMCompileMT_SYNC_FOLD (int barrier_id, int vararg_cnt, char **vararg);
 extern void ICMCompileMT_SYNC_NONFOLD (int barrier_id);

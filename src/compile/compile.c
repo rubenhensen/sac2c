@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.100  2003/10/15 12:29:37  dkrHH
+ * MT_START_SYNCBLOCK renamed into MT_SYNCBLOCK_BEGIN.
+ * MT_SYNCBLOCK_END added.
+ *
  * Revision 3.99  2003/09/25 18:59:47  dkr
  * new argument 'copyfun' added to icms WL_ASSIGN, WL_ASSIGN__COPY
  *
@@ -5742,9 +5746,10 @@ GetFoldTypeTag (ids *with_ids)
  *
  *     < malloc-ICMs >                   // if (FIRST == 0) only
  *     MT_CONTINUE( ...)                 // if (FIRST == 0) only
- *     MT_START_SYNCBLOCK( ...)
+ *     MT_SYNCBLOCK_BEGIN( ...)
  *     < with-loop code without malloc/free-ICMs >
  *     MT_SYNC...( ...)
+ *     MT_SYNCBLOCK_END( ...)
  *     < free-ICMs >
  *
  ******************************************************************************/
@@ -5778,7 +5783,7 @@ COMPSync (node *arg_node, node *arg_info)
     DBUG_ENTER ("COMPSync");
 
     /*
-     * build arguments of ICM 'MT_START_SYNCBLOCK'
+     * build arguments of ICMs 'MT_SYNCBLOCK_BEGIN', 'MT_SYNCBLOCK_END'
      */
     icm_args3 = NULL;
     num_args = 0;
@@ -6133,11 +6138,11 @@ COMPSync (node *arg_node, node *arg_info)
     barrier_id++;
 
     /*
-     * insert ICM 'MT_START_SYNCBLOCK' and contents of modified sync-region-block
+     * insert ICM 'MT_SYNCBLOCK_BEGIN' and contents of modified sync-region block
      */
     assigns
       = AppendAssign (assigns,
-                      MakeAssignIcm2 ("MT_START_SYNCBLOCK", MakeNum (barrier_id),
+                      MakeAssignIcm2 ("MT_SYNCBLOCK_BEGIN", MakeNum (barrier_id),
                                       icm_args3, BLOCK_INSTR (SYNC_REGION (arg_node))));
 
     /*
@@ -6165,7 +6170,8 @@ COMPSync (node *arg_node, node *arg_info)
                             ("MT_SYNC_FOLD (instead of MT_SYNC_FOLD_NONFOLD)"));
             } else {
                 /* DFMTestMask( SYNC_OUT( arg_node)) == 1  */
-                /* possible, but not implemented: icm_name = "MT_SYNC_ONEFOLD_NONFOLD"; */
+                /* possible, but not implemented:
+                     icm_name = "MT_SYNC_ONEFOLD_NONFOLD"; */
                 barrier_args = MakeExprs (MakeNum (num_barrier_args), barrier_args);
                 barrier_args = MakeExprs (MakeNum (barrier_id), barrier_args);
                 icm_name = "MT_SYNC_FOLD";
@@ -6205,6 +6211,13 @@ COMPSync (node *arg_node, node *arg_info)
                 ("using syncronisation: %s barrier: %i", icm_name, barrier_id));
 
     assigns = AppendAssign (assigns, MakeAssignIcm1 (icm_name, barrier_args, NULL));
+
+    /*
+     * insert ICM 'MT_SYNCBLOCK_END'
+     */
+    assigns
+      = AppendAssign (assigns, MakeAssignIcm2 ("MT_SYNCBLOCK_END", MakeNum (barrier_id),
+                                               DupTree (icm_args3), NULL));
 
     /*
      * insert extracted epilog-ICMs (free).

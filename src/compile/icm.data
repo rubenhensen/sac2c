@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.68  2003/10/15 12:26:57  dkrHH
+ * MT_START_SYNCBLOCK renamed into MT_SYNCBLOCK_BEGIN.
+ * MT_SYNCBLOCK_END added.
+ *
  * Revision 3.67  2003/10/14 23:44:57  dkrHH
  * SPMD_PRESET removed
  *
@@ -1021,12 +1025,20 @@ ICM_DEF( MT_SPMD_FUN_RET, TRACE_NONE)
 ICM_END( MT_SPMD_FUN_RET, (barrier_id, vararg_cnt, vararg))
 #endif
 
-#if defined(MT_START_SYNCBLOCK) || defined(ICM_ALL)
-ICM_DEF( MT_START_SYNCBLOCK, TRACE_NONE)
+#if defined(MT_SYNCBLOCK_BEGIN) || defined(ICM_ALL)
+ICM_DEF( MT_SYNCBLOCK_BEGIN, TRACE_NONE)
   ICM_INT( barrier_id)
   ICM_INT( vararg_cnt)
   ICM_VARANY( (3*vararg_cnt), vararg)
-ICM_END( MT_START_SYNCBLOCK, (barrier_id, vararg_cnt, vararg))
+ICM_END( MT_SYNCBLOCK_BEGIN, (barrier_id, vararg_cnt, vararg))
+#endif
+
+#if defined(MT_SYNCBLOCK_END) || defined(ICM_ALL)
+ICM_DEF( MT_SYNCBLOCK_END, TRACE_NONE)
+  ICM_INT( barrier_id)
+  ICM_INT( vararg_cnt)
+  ICM_VARANY( (3*vararg_cnt), vararg)
+ICM_END( MT_SYNCBLOCK_END, (barrier_id, vararg_cnt, vararg))
 #endif
 
 #if defined(MT_SYNC_NONFOLD) || defined(ICM_ALL)

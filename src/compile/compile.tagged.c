@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.88  2003/10/15 12:28:34  dkrHH
+ * MT_START_SYNCBLOCK renamed into MT_SYNCBLOCK_BEGIN.
+ * MT_SYNCBLOCK_END added.
+ *
  * Revision 1.87  2003/10/15 01:06:03  dkrHH
  * some superfluous code removed
  * signature of START_SYNCBLOCK icm modified
@@ -4623,12 +4627,13 @@ COMP2Loop (node *arg_node, node *arg_info)
     /*
      * Before (3) - Build INC_RC-icms.
      *
-     * The variable used in the loop were refcounted once for the loop (plus
-     * their occurences in the rest of the programm if not also defined in the loop).
-     * If the loop is not executed this counter is reduced (icm's builded somewhere
-     * else). But if the loop is executed the refcounters have to be adjusted to
-     * the number of usages in the loop plus possible usage in another pass of the
-     * loop. The extra counter for a next pass is also reduced after the loop.
+     * The variable used in the loop were refcounted once for the loop (plus their
+     * occurences in the rest of the programm if not also defined in the loop).
+     * If the loop is not executed this counter is reduced (icm's builded
+     * somewhere else). But if the loop is executed the refcounters have to be
+     * adjusted to the number of usages in the loop plus possible usage in another
+     * pass of the loop. The extra counter for a next pass is also reduced after
+     * the loop.
      */
     usevar = DO_OR_WHILE_USEVARS (arg_node);
     while (usevar != NULL) {
@@ -6289,7 +6294,8 @@ COMP2WLcode (node *arg_node, node *arg_info)
         DBUG_ASSERT ((NCODE_CBLOCK (arg_node) != NULL),
                      "no code block found in N_Ncode node");
         DBUG_ASSERT ((NCODE_CBLOCK_INSTR (arg_node) != NULL),
-                     "first instruction of block is NULL (should be a N_empty node)");
+                     "first instruction of block is NULL"
+                     " (should be a N_empty node)");
 
         if (NODE_TYPE (NCODE_CBLOCK_INSTR (arg_node)) == N_empty) {
             /* remove a N_empty node */
@@ -6430,9 +6436,10 @@ GetFoldTypeTag (ids *with_ids)
  *
  *     < malloc-ICMs >                   // if (FIRST == 0) only
  *     MT_CONTINUE( ...)                 // if (FIRST == 0) only
- *     MT_START_SYNCBLOCK( ...)
+ *     MT_SYNCBLOCK_BEGIN( ...)
  *     < with-loop code without malloc/free-ICMs >
  *     MT_SYNC...( ...)
+ *     MT_SYNCBLOCK_END( ...)
  *     < free-ICMs >
  *
  ******************************************************************************/
@@ -6441,7 +6448,7 @@ node *
 COMP2Sync (node *arg_node, node *arg_info)
 {
     node *icm_args, *icm_args3, *vardec, *with, *block, *instr, *assign, *last_assign,
-      *prolog_icms, *epilog_icms, *new_icm;
+      *prolog_icms, *epilog_icms, *move_icm;
 #if 0
   node *setup_args;
 #endif
@@ -6471,7 +6478,7 @@ COMP2Sync (node *arg_node, node *arg_info)
     DBUG_ENTER ("COMPSync");
 
     /*
-     * build arguments of ICM 'MT_START_SYNCBLOCK'
+     * build arguments of ICMs 'MT_SYNCBLOCK_BEGIN', 'MT_SYNCBLOCK_END'
      */
     icm_args3 = NULL;
     num_args = 0;
@@ -6651,8 +6658,10 @@ COMP2Sync (node *arg_node, node *arg_info)
     assign = BLOCK_INSTR (SYNC_REGION (arg_node));
     last_assign = NULL;
     /*
-     * prolog == TRUE: current assignment is in front of WL_..._BEGIN-ICM (part of prolog)
-     * epilog == TRUE: current assignment is behind WL_..._END-ICM (part of epilog)
+     * prolog == TRUE:
+     *   current assignment is in front of WL_..._BEGIN-ICM (part of prolog)
+     * epilog == TRUE:
+     *   current assignment is behind WL_..._END-ICM (part of epilog)
      */
     var_name = NULL;
     prolog = TRUE;
@@ -6740,12 +6749,14 @@ COMP2Sync (node *arg_node, node *arg_info)
                     var_name = NULL;
                     prolog = FALSE;
                     epilog = FALSE;
-                    DBUG_PRINT ("COMP_MT", ("ICM: %s is neither epilog nor prolog",
+                    DBUG_PRINT ("COMP_MT", ("ICM: %s() is neither epilog nor prolog",
                                             ICM_NAME (instr)));
                 }
             } else {
                 var_name = NULL;
-                DBUG_PRINT ("COMP_MT", ("ICM: %s is ignored for epilog/prolog!!!",
+                prolog = FALSE;
+                epilog = FALSE;
+                DBUG_PRINT ("COMP_MT", ("ICM: %s() is ignored for epilog/prolog!!!",
                                         ICM_NAME (instr)));
             }
 
@@ -6760,25 +6771,30 @@ COMP2Sync (node *arg_node, node *arg_info)
                  */
                 if (DFMTestMaskEntry (SYNC_IN (arg_node), var_name, NULL)
                     || DFMTestMaskEntry (SYNC_INOUT (arg_node), var_name, NULL)) {
-                    new_icm = DupNode (assign);
-
+                    /*
+                     * since we still might need the content of 'var_name',
+                     * we better *move* the ICM instead of copying/freeing it!
+                     */
+                    move_icm = assign;
                     if (last_assign == NULL) {
-                        assign = BLOCK_INSTR (SYNC_REGION (arg_node)) = FreeNode (assign);
+                        assign = BLOCK_INSTR (SYNC_REGION (arg_node))
+                          = ASSIGN_NEXT (assign);
                     } else {
-                        assign = ASSIGN_NEXT (last_assign) = FreeNode (assign);
+                        assign = ASSIGN_NEXT (last_assign) = ASSIGN_NEXT (assign);
                     }
+                    ASSIGN_NEXT (move_icm) = NULL;
 
                     DBUG_ASSERT ((prolog || epilog), ("icm has to be prolog or epilog"));
                     DBUG_ASSERT ((!(prolog && epilog)),
                                  ("icm cannot be in prolog and epilog at the same time"));
                     if (prolog) {
-                        prolog_icms = AppendAssign (prolog_icms, new_icm);
+                        prolog_icms = AppendAssign (prolog_icms, move_icm);
                         DBUG_PRINT ("COMP_MT",
                                     ("ICM: %s( %s) is moved to prolog", ICM_NAME (instr),
                                      STR_OR_EMPTY (var_name)));
                     }
                     if (epilog) {
-                        epilog_icms = AppendAssign (epilog_icms, new_icm);
+                        epilog_icms = AppendAssign (epilog_icms, move_icm);
                         DBUG_PRINT ("COMP_MT",
                                     ("ICM: %s( %s) is moved to epilog", ICM_NAME (instr),
                                      STR_OR_EMPTY (var_name)));
@@ -6794,7 +6810,7 @@ COMP2Sync (node *arg_node, node *arg_info)
                     var_name = NULL;
                 }
             } else {
-                DBUG_PRINT ("COMP_MT", ("ICM: %s is *not* moved to prolog/epilog",
+                DBUG_PRINT ("COMP_MT", ("ICM: %s() is *not* moved to prolog/epilog",
                                         ICM_NAME (instr)));
             }
         }
@@ -6854,24 +6870,26 @@ COMP2Sync (node *arg_node, node *arg_info)
 #if 0 /* dkr: never used! */
     num_args = 0;
     setup_args = NULL;
-    setup_args = MakeParamsByDFM( SYNC_INOUT( arg_node), "in", &num_args, setup_args);
+    setup_args = MakeParamsByDFM( SYNC_INOUT( arg_node), "in",
+                                  &num_args, setup_args);
 
     DBUG_PRINT( "COMP_MT", ("num_args %i", num_args));
 #endif
 
         BLOCK_SPMD_PROLOG_ICMS (FUNDEF_BODY (INFO_COMP2_FUNDEF (arg_info))) = prolog_icms;
 #if 0 /* dkr: never used! */
-    BLOCK_SPMD_SETUP_ARGS(FUNDEF_BODY(INFO_COMP2_FUNDEF( arg_info))) = setup_args;
+    BLOCK_SPMD_SETUP_ARGS(FUNDEF_BODY(INFO_COMP2_FUNDEF( arg_info)))
+        = setup_args;
 #endif
     }
     barrier_id++;
 
     /*
-     * insert ICM 'MT_START_SYNCBLOCK' and contents of modified sync-region-block
+     * insert ICM 'MT_SYNCBLOCK_BEGIN' and contents of modified sync-region block
      */
     assigns
       = AppendAssign (assigns,
-                      MakeAssignIcm2 ("MT_START_SYNCBLOCK", MakeNum (barrier_id),
+                      MakeAssignIcm2 ("MT_SYNCBLOCK_BEGIN", MakeNum (barrier_id),
                                       icm_args3, BLOCK_INSTR (SYNC_REGION (arg_node))));
 
     /*
@@ -6890,7 +6908,10 @@ COMP2Sync (node *arg_node, node *arg_info)
     if (DFMTestMask (SYNC_INOUT (arg_node)) > 0) {
         if (DFMTestMask (SYNC_OUT (arg_node)) > 0) {
             if (DFMTestMask (SYNC_OUT (arg_node)) > 1) {
-                /* possible, but not implemented: icm_name = "MT_SYNC_FOLD_NONFOLD"; */
+                /*
+                 * possible, but not implemented:
+                 *   icm_name = "MT_SYNC_FOLD_NONFOLD";
+                 */
                 barrier_args = MakeExprs (MakeNum (num_barrier_args), barrier_args);
                 barrier_args = MakeExprs (MakeNum (barrier_id), barrier_args);
                 icm_name = "MT_SYNC_FOLD";
@@ -6898,8 +6919,12 @@ COMP2Sync (node *arg_node, node *arg_info)
                 DBUG_PRINT ("COMP_MT",
                             ("MT_SYNC_FOLD (instead of MT_SYNC_FOLD_NONFOLD)"));
             } else {
-                /* DFMTestMask( SYNC_OUT( arg_node)) == 1  */
-                /* possible, but not implemented: icm_name = "MT_SYNC_ONEFOLD_NONFOLD"; */
+                /*
+                 * DFMTestMask( SYNC_OUT( arg_node)) == 1
+                 *
+                 * possible, but not implemented:
+                 *   icm_name = "MT_SYNC_ONEFOLD_NONFOLD";
+                 */
                 barrier_args = MakeExprs (MakeNum (num_barrier_args), barrier_args);
                 barrier_args = MakeExprs (MakeNum (barrier_id), barrier_args);
                 icm_name = "MT_SYNC_FOLD";
@@ -6939,6 +6964,13 @@ COMP2Sync (node *arg_node, node *arg_info)
                 ("using syncronisation: %s barrier: %i", icm_name, barrier_id));
 
     assigns = AppendAssign (assigns, MakeAssignIcm1 (icm_name, barrier_args, NULL));
+
+    /*
+     * insert ICM 'MT_SYNCBLOCK_END'
+     */
+    assigns
+      = AppendAssign (assigns, MakeAssignIcm2 ("MT_SYNCBLOCK_END", MakeNum (barrier_id),
+                                               DupTree (icm_args3), NULL));
 
     /*
      * insert extracted epilog-ICMs (free).
@@ -7039,7 +7071,8 @@ COMP2Mt (node *arg_node, node *arg_info)
 #if 0
   allocate  = MakeIcm2( "MT2_ALLOCATE",
                         MakeNum( DFMTestMask( MT_ALLOC( arg_node))),
-                        MakeParamsByDFM( MT_ALLOC( arg_node), "alloc", NULL, NULL));
+                        MakeParamsByDFM( MT_ALLOC( arg_node), "alloc",
+                                         NULL, NULL));
 
 #else
     allocate = MakeAllocs (MT_ALLOC (arg_node));
@@ -7115,7 +7148,8 @@ COMP2St (node *arg_node, node *arg_info)
 #if 0
     allocate  = MakeIcm2( "MT2_ALLOCATE",
                           MakeNum( DFMTestMask( ST_ALLOC( arg_node))),
-                          MakeParamsByDFM( ST_ALLOC( arg_node), "alloc", NULL, NULL));
+                          MakeParamsByDFM( ST_ALLOC( arg_node), "alloc",
+                                           NULL, NULL));
 #else
         allocate = MakeAllocs (ST_ALLOC (arg_node));
 #endif
