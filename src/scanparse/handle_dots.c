@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2002/08/21 13:43:54  sah
+ * fixed bug traversing N_ap nodes without arguments.
+ *
  * Revision 1.7  2002/08/20 17:31:27  sah
  * fixed some bugs occuring due to new
  * scanner/parser.
@@ -684,9 +687,10 @@ HDap (node *arg_node, node *arg_info)
     /* Now we traverse our result in order to handle any */
     /* dots inside.                                      */
 
-    if (NODE_TYPE (result) == N_ap)
-        AP_ARGS (result) = Trav (AP_ARGS (result), arg_info);
-    else
+    if (NODE_TYPE (result) == N_ap) {
+        if (AP_ARGS (result) != NULL)
+            AP_ARGS (result) = Trav (AP_ARGS (result), arg_info);
+    } else
         result = Trav (result, arg_info);
 
     DBUG_RETURN (result);
@@ -745,9 +749,10 @@ HDprf (node *arg_node, node *arg_info)
     /* Now we traverse our result in order to handle any */
     /* dots inside.                                      */
 
-    if (NODE_TYPE (result) == N_prf)
-        PRF_ARGS (result) = Trav (PRF_ARGS (result), arg_info);
-    else
+    if (NODE_TYPE (result) == N_prf) {
+        if (PRF_ARGS (result) != NULL)
+            PRF_ARGS (result) = Trav (PRF_ARGS (result), arg_info);
+    } else
         result = Trav (result, arg_info);
 
     DBUG_RETURN (result);
