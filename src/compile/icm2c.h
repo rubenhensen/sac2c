@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.12  1995/04/18 14:44:57  sbs
+ * Revision 1.13  1995/04/27 12:57:05  sbs
+ * *** empty log message ***
+ *
+ * Revision 1.12  1995/04/18  14:44:57  sbs
  * ND_ALLOC_ARRAY modified; initial rc parameter
  *
  * Revision 1.11  1995/04/18  14:09:33  sbs
