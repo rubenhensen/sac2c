@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.12  2000/07/11 15:56:31  dkr
+# make deps done
+#
 # Revision 2.11  2000/05/29 14:36:43  dkr
 # make deps done
 #
@@ -76,12 +79,9 @@ clean:
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
 dbug.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-dbug.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
-dbug.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-dbug.o: /usr/include/stdlib.h /usr/include/unistd.h /usr/include/sys/types.h
-dbug.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
+dbug.o: /usr/include/sys/va_list.h /usr/include/stdlib.h
+dbug.o: /usr/include/unistd.h /usr/include/sys/types.h
+dbug.o: /usr/include/sys/isa_defs.h /usr/include/sys/machtypes.h
 dbug.o: /usr/include/sys/unistd.h /usr/include/malloc.h ../../inc/dbug.h
 main_args.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-main_args.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
-main_args.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-main_args.o: /usr/include/string.h
+main_args.o: /usr/include/sys/va_list.h /usr/include/string.h

@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.14  2000/07/11 15:56:25  dkr
+# make deps done
+#
 # Revision 2.13  2000/05/29 14:36:39  dkr
 # make deps done
 #
@@ -211,16 +214,12 @@ clean:
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
 analysis.o: ../../inc/dbug.h /usr/include/stdio.h
-analysis.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
-analysis.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-analysis.o: /usr/include/stdio_impl.h ../global/types.h ../tree/tree_basic.h
-analysis.o: ../tree/tree_compound.h ../global/Error.h /usr/include/string.h
-analysis.o: /usr/include/stdlib.h ../global/globals.h ../tree/traverse.h
+analysis.o: /usr/include/sys/feature_tests.h /usr/include/sys/va_list.h
+analysis.o: ../global/types.h ../tree/tree_basic.h ../tree/tree_compound.h
+analysis.o: ../global/Error.h /usr/include/string.h /usr/include/stdlib.h
+analysis.o: ../global/globals.h ../tree/traverse.h
 cccall.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-cccall.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
-cccall.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-cccall.o: /usr/include/time.h /usr/include/sys/types.h
-cccall.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
+cccall.o: /usr/include/sys/va_list.h /usr/include/time.h
 cccall.o: /usr/include/stdlib.h ../global/types.h ../tree/tree_basic.h
 cccall.o: ../tree/tree_compound.h ../global/Error.h /usr/include/string.h
 cccall.o: ../global/globals.h ../../inc/dbug.h ../global/internal_lib.h
@@ -228,70 +227,53 @@ cccall.o: ../tree/free.h ../global/my_debug.h /usr/include/malloc.h
 cccall.o: ../scanparse/scnprs.h ../global/resource.h ../scanparse/y.tab.h
 cccall.o: filemgr.h ../tree/traverse.h ../compile/gen_startup_code.h
 checkdec.o: /usr/include/string.h /usr/include/sys/feature_tests.h
-checkdec.o: /usr/include/sys/isa_defs.h ../global/types.h
-checkdec.o: ../tree/tree_basic.h ../tree/tree_compound.h ../global/Error.h
-checkdec.o: /usr/include/stdio.h /usr/include/sys/va_list.h
-checkdec.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
+checkdec.o: ../global/types.h ../tree/tree_basic.h ../tree/tree_compound.h
+checkdec.o: ../global/Error.h /usr/include/stdio.h /usr/include/sys/va_list.h
 checkdec.o: /usr/include/stdlib.h ../global/globals.h ../../inc/dbug.h
 checkdec.o: ../global/my_debug.h ../tree/traverse.h ../tree/free.h
-checkdec.o: /usr/include/malloc.h /usr/include/sys/types.h
-checkdec.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-checkdec.o: ../global/internal_lib.h import.h ../print/convert.h filemgr.h
-checkdec.o: ../scanparse/scnprs.h ../global/resource.h ../scanparse/y.tab.h
-checkdec.o: implicittypes.h ../print/print.h ../tree/tree.h checkdec.h
+checkdec.o: /usr/include/malloc.h ../global/internal_lib.h import.h
+checkdec.o: ../print/convert.h filemgr.h ../scanparse/scnprs.h
+checkdec.o: ../global/resource.h ../scanparse/y.tab.h implicittypes.h
+checkdec.o: ../print/print.h ../tree/tree.h checkdec.h
 filemgr.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
-filemgr.o: /usr/include/sys/isa_defs.h /usr/include/string.h
-filemgr.o: /usr/include/stdarg.h /usr/include/varargs.h
+filemgr.o: /usr/include/string.h /usr/include/stdarg.h /usr/include/varargs.h
 filemgr.o: /usr/include/sys/va_list.h /usr/include/unistd.h
-filemgr.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
-filemgr.o: /usr/include/sys/int_types.h /usr/include/sys/unistd.h
-filemgr.o: ../../inc/dbug.h /usr/include/stdio.h /usr/include/stdio_tag.h
-filemgr.o: /usr/include/stdio_impl.h ../global/internal_lib.h
+filemgr.o: /usr/include/sys/types.h /usr/include/sys/isa_defs.h
+filemgr.o: /usr/include/sys/machtypes.h /usr/include/sys/unistd.h
+filemgr.o: ../../inc/dbug.h /usr/include/stdio.h ../global/internal_lib.h
 filemgr.o: ../global/types.h ../global/Error.h ../global/globals.h
 filemgr.o: ../tree/free.h ../global/my_debug.h /usr/include/malloc.h
 filemgr.o: filemgr.h ../global/resource.h
 implicittypes.o: ../global/types.h ../tree/tree_basic.h
 implicittypes.o: ../tree/tree_compound.h ../global/Error.h
 implicittypes.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-implicittypes.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
-implicittypes.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-implicittypes.o: /usr/include/string.h /usr/include/stdlib.h
-implicittypes.o: ../global/globals.h ../print/convert.h ../tree/free.h
-implicittypes.o: ../../inc/dbug.h ../global/my_debug.h /usr/include/malloc.h
-implicittypes.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
-implicittypes.o: /usr/include/sys/int_types.h ../global/internal_lib.h
+implicittypes.o: /usr/include/sys/va_list.h /usr/include/string.h
+implicittypes.o: /usr/include/stdlib.h ../global/globals.h ../print/convert.h
+implicittypes.o: ../tree/free.h ../../inc/dbug.h ../global/my_debug.h
+implicittypes.o: /usr/include/malloc.h ../global/internal_lib.h
 implicittypes.o: ../tree/traverse.h
 import.o: /usr/include/string.h /usr/include/sys/feature_tests.h
-import.o: /usr/include/sys/isa_defs.h /usr/include/limits.h ../tree/tree.h
+import.o: /usr/include/limits.h /usr/include/sys/isa_defs.h ../tree/tree.h
 import.o: ../global/types.h ../tree/tree_basic.h ../tree/tree_compound.h
 import.o: ../global/Error.h /usr/include/stdio.h /usr/include/sys/va_list.h
-import.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
 import.o: /usr/include/stdlib.h ../global/globals.h ../global/internal_lib.h
 import.o: ../tree/free.h ../../inc/dbug.h ../global/my_debug.h
-import.o: /usr/include/malloc.h /usr/include/sys/types.h
-import.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-import.o: ../scanparse/scnprs.h ../global/resource.h ../scanparse/y.tab.h
-import.o: ../tree/traverse.h ../tree/access_macros.h filemgr.h import.h
+import.o: /usr/include/malloc.h ../scanparse/scnprs.h ../global/resource.h
+import.o: ../scanparse/y.tab.h ../tree/traverse.h ../tree/access_macros.h
+import.o: filemgr.h import.h
 readsib.o: ../global/types.h ../tree/tree_basic.h ../tree/tree_compound.h
 readsib.o: ../global/Error.h /usr/include/stdio.h
-readsib.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
-readsib.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-readsib.o: /usr/include/stdio_impl.h /usr/include/string.h
-readsib.o: /usr/include/stdlib.h ../global/globals.h ../tree/free.h
-readsib.o: ../../inc/dbug.h ../global/my_debug.h /usr/include/malloc.h
-readsib.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
-readsib.o: /usr/include/sys/int_types.h ../global/internal_lib.h
-readsib.o: ../tree/traverse.h import.h ../scanparse/scnprs.h
-readsib.o: ../global/resource.h ../scanparse/y.tab.h filemgr.h cccall.h
+readsib.o: /usr/include/sys/feature_tests.h /usr/include/sys/va_list.h
+readsib.o: /usr/include/string.h /usr/include/stdlib.h ../global/globals.h
+readsib.o: ../tree/free.h ../../inc/dbug.h ../global/my_debug.h
+readsib.o: /usr/include/malloc.h ../global/internal_lib.h ../tree/traverse.h
+readsib.o: import.h ../scanparse/scnprs.h ../global/resource.h
+readsib.o: ../scanparse/y.tab.h filemgr.h cccall.h
 readsib.o: ../typecheck/gen_pseudo_fun.h
 writesib.o: /usr/include/string.h /usr/include/sys/feature_tests.h
-writesib.o: /usr/include/sys/isa_defs.h ../global/types.h
-writesib.o: ../tree/tree_basic.h ../tree/tree_compound.h ../global/Error.h
-writesib.o: /usr/include/stdio.h /usr/include/sys/va_list.h
-writesib.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
+writesib.o: ../global/types.h ../tree/tree_basic.h ../tree/tree_compound.h
+writesib.o: ../global/Error.h /usr/include/stdio.h /usr/include/sys/va_list.h
 writesib.o: /usr/include/stdlib.h ../global/globals.h ../tree/free.h
 writesib.o: ../../inc/dbug.h ../global/my_debug.h /usr/include/malloc.h
-writesib.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
-writesib.o: /usr/include/sys/int_types.h ../global/internal_lib.h
-writesib.o: ../tree/traverse.h ../print/convert.h filemgr.h ../print/print.h
-writesib.o: ../tree/tree.h
+writesib.o: ../global/internal_lib.h ../tree/traverse.h ../print/convert.h
+writesib.o: filemgr.h ../print/print.h ../tree/tree.h

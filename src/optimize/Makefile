@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.21  2000/07/11 15:56:23  dkr
+# make deps done
+#
 # Revision 2.20  2000/07/11 15:52:12  dkr
 # explicit *.o rules removed
 #
@@ -155,165 +158,126 @@ clean:
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
 CSE.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-CSE.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
-CSE.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-CSE.o: /usr/include/stdlib.h ../tree/tree.h ../global/types.h
-CSE.o: ../tree/tree_basic.h ../tree/tree_compound.h ../global/Error.h
-CSE.o: /usr/include/string.h ../global/globals.h ../global/internal_lib.h
-CSE.o: ../tree/free.h ../../inc/dbug.h ../global/my_debug.h
-CSE.o: /usr/include/malloc.h /usr/include/sys/types.h
-CSE.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-CSE.o: ../print/print.h ../tree/traverse.h ../typecheck/typecheck.h
-CSE.o: optimize.h generatemasks.h ../tree/DupTree.h ../tree/LookUpTable.h
-CSE.o: CSE.h
+CSE.o: /usr/include/sys/va_list.h /usr/include/stdlib.h ../tree/tree.h
+CSE.o: ../global/types.h ../tree/tree_basic.h ../tree/tree_compound.h
+CSE.o: ../global/Error.h /usr/include/string.h ../global/globals.h
+CSE.o: ../global/internal_lib.h ../tree/free.h ../../inc/dbug.h
+CSE.o: ../global/my_debug.h /usr/include/malloc.h ../print/print.h
+CSE.o: ../tree/traverse.h ../typecheck/typecheck.h optimize.h generatemasks.h
+CSE.o: ../tree/DupTree.h ../tree/LookUpTable.h CSE.h
 ConstantFolding.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-ConstantFolding.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
-ConstantFolding.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-ConstantFolding.o: /usr/include/stdlib.h ../tree/tree.h ../global/types.h
-ConstantFolding.o: ../tree/tree_basic.h ../tree/tree_compound.h
-ConstantFolding.o: ../global/Error.h /usr/include/string.h
-ConstantFolding.o: ../global/globals.h ../global/internal_lib.h
-ConstantFolding.o: ../tree/free.h ../../inc/dbug.h ../global/my_debug.h
-ConstantFolding.o: /usr/include/malloc.h /usr/include/sys/types.h
-ConstantFolding.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
+ConstantFolding.o: /usr/include/sys/va_list.h /usr/include/stdlib.h
+ConstantFolding.o: ../tree/tree.h ../global/types.h ../tree/tree_basic.h
+ConstantFolding.o: ../tree/tree_compound.h ../global/Error.h
+ConstantFolding.o: /usr/include/string.h ../global/globals.h
+ConstantFolding.o: ../global/internal_lib.h ../tree/free.h ../../inc/dbug.h
+ConstantFolding.o: ../global/my_debug.h /usr/include/malloc.h
 ConstantFolding.o: ../print/print.h ../tree/traverse.h
 ConstantFolding.o: ../tree/access_macros.h ../typecheck/typecheck.h
 ConstantFolding.o: optimize.h generatemasks.h ../tree/DupTree.h
 ConstantFolding.o: ../tree/LookUpTable.h LoopInvariantRemoval.h
 ConstantFolding.o: ConstantFolding.h
 DeadCodeRemoval.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-DeadCodeRemoval.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
-DeadCodeRemoval.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-DeadCodeRemoval.o: /usr/include/stdlib.h ../tree/tree.h ../global/types.h
-DeadCodeRemoval.o: ../tree/tree_basic.h ../tree/tree_compound.h
-DeadCodeRemoval.o: ../global/Error.h /usr/include/string.h
-DeadCodeRemoval.o: ../global/globals.h ../global/internal_lib.h
-DeadCodeRemoval.o: ../tree/free.h ../../inc/dbug.h ../global/my_debug.h
-DeadCodeRemoval.o: /usr/include/malloc.h /usr/include/sys/types.h
-DeadCodeRemoval.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
+DeadCodeRemoval.o: /usr/include/sys/va_list.h /usr/include/stdlib.h
+DeadCodeRemoval.o: ../tree/tree.h ../global/types.h ../tree/tree_basic.h
+DeadCodeRemoval.o: ../tree/tree_compound.h ../global/Error.h
+DeadCodeRemoval.o: /usr/include/string.h ../global/globals.h
+DeadCodeRemoval.o: ../global/internal_lib.h ../tree/free.h ../../inc/dbug.h
+DeadCodeRemoval.o: ../global/my_debug.h /usr/include/malloc.h
 DeadCodeRemoval.o: ../tree/traverse.h optimize.h generatemasks.h
 DeadCodeRemoval.o: DeadCodeRemoval.h
 DeadFunctionRemoval.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-DeadFunctionRemoval.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
-DeadFunctionRemoval.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-DeadFunctionRemoval.o: /usr/include/stdlib.h ../tree/tree.h ../global/types.h
-DeadFunctionRemoval.o: ../tree/tree_basic.h ../tree/tree_compound.h
-DeadFunctionRemoval.o: ../global/Error.h /usr/include/string.h
-DeadFunctionRemoval.o: ../global/globals.h ../global/internal_lib.h
-DeadFunctionRemoval.o: ../tree/free.h ../../inc/dbug.h ../global/my_debug.h
-DeadFunctionRemoval.o: /usr/include/malloc.h /usr/include/sys/types.h
-DeadFunctionRemoval.o: /usr/include/sys/machtypes.h
-DeadFunctionRemoval.o: /usr/include/sys/int_types.h ../tree/traverse.h
-DeadFunctionRemoval.o: optimize.h
+DeadFunctionRemoval.o: /usr/include/sys/va_list.h /usr/include/stdlib.h
+DeadFunctionRemoval.o: ../tree/tree.h ../global/types.h ../tree/tree_basic.h
+DeadFunctionRemoval.o: ../tree/tree_compound.h ../global/Error.h
+DeadFunctionRemoval.o: /usr/include/string.h ../global/globals.h
+DeadFunctionRemoval.o: ../global/internal_lib.h ../tree/free.h
+DeadFunctionRemoval.o: ../../inc/dbug.h ../global/my_debug.h
+DeadFunctionRemoval.o: /usr/include/malloc.h ../tree/traverse.h optimize.h
 Inline.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-Inline.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
-Inline.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-Inline.o: /usr/include/stdlib.h ../global/globals.h ../global/types.h
-Inline.o: ../tree/tree.h ../tree/tree_basic.h ../tree/tree_compound.h
-Inline.o: ../global/Error.h /usr/include/string.h ../global/internal_lib.h
-Inline.o: ../../inc/dbug.h ../global/my_debug.h ../tree/traverse.h
-Inline.o: ../tree/free.h /usr/include/malloc.h /usr/include/sys/types.h
-Inline.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-Inline.o: ../typecheck/typecheck.h optimize.h LoopInvariantRemoval.h
-Inline.o: ../tree/DupTree.h ../tree/LookUpTable.h Inline.h
+Inline.o: /usr/include/sys/va_list.h /usr/include/stdlib.h
+Inline.o: ../global/globals.h ../global/types.h ../tree/tree.h
+Inline.o: ../tree/tree_basic.h ../tree/tree_compound.h ../global/Error.h
+Inline.o: /usr/include/string.h ../global/internal_lib.h ../../inc/dbug.h
+Inline.o: ../global/my_debug.h ../tree/traverse.h ../tree/free.h
+Inline.o: /usr/include/malloc.h ../typecheck/typecheck.h optimize.h
+Inline.o: LoopInvariantRemoval.h ../tree/DupTree.h ../tree/LookUpTable.h
+Inline.o: Inline.h
 LoopInvariantRemoval.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-LoopInvariantRemoval.o: /usr/include/sys/isa_defs.h
-LoopInvariantRemoval.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-LoopInvariantRemoval.o: /usr/include/stdio_impl.h /usr/include/stdlib.h
+LoopInvariantRemoval.o: /usr/include/sys/va_list.h /usr/include/stdlib.h
 LoopInvariantRemoval.o: ../tree/tree.h ../global/types.h ../tree/tree_basic.h
 LoopInvariantRemoval.o: ../tree/tree_compound.h ../global/Error.h
 LoopInvariantRemoval.o: /usr/include/string.h ../global/globals.h
 LoopInvariantRemoval.o: ../global/internal_lib.h ../tree/free.h
 LoopInvariantRemoval.o: ../../inc/dbug.h ../global/my_debug.h
-LoopInvariantRemoval.o: /usr/include/malloc.h /usr/include/sys/types.h
-LoopInvariantRemoval.o: /usr/include/sys/machtypes.h
-LoopInvariantRemoval.o: /usr/include/sys/int_types.h ../tree/traverse.h
+LoopInvariantRemoval.o: /usr/include/malloc.h ../tree/traverse.h
 LoopInvariantRemoval.o: ../typecheck/typecheck.h ../tree/access_macros.h
 LoopInvariantRemoval.o: optimize.h generatemasks.h ../tree/DupTree.h
 LoopInvariantRemoval.o: ../tree/LookUpTable.h LoopInvariantRemoval.h
 Unroll.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-Unroll.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
-Unroll.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-Unroll.o: /usr/include/stdlib.h ../global/globals.h ../global/types.h
-Unroll.o: ../tree/tree.h ../tree/tree_basic.h ../tree/tree_compound.h
-Unroll.o: ../global/Error.h /usr/include/string.h ../global/internal_lib.h
-Unroll.o: ../tree/free.h ../../inc/dbug.h ../global/my_debug.h
-Unroll.o: /usr/include/malloc.h /usr/include/sys/types.h
-Unroll.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
+Unroll.o: /usr/include/sys/va_list.h /usr/include/stdlib.h
+Unroll.o: ../global/globals.h ../global/types.h ../tree/tree.h
+Unroll.o: ../tree/tree_basic.h ../tree/tree_compound.h ../global/Error.h
+Unroll.o: /usr/include/string.h ../global/internal_lib.h ../tree/free.h
+Unroll.o: ../../inc/dbug.h ../global/my_debug.h /usr/include/malloc.h
 Unroll.o: ../tree/traverse.h ../tree/access_macros.h optimize.h
 Unroll.o: generatemasks.h ConstantFolding.h ../tree/DupTree.h
 Unroll.o: ../tree/LookUpTable.h Unroll.h WLUnroll.h
 Unswitch.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-Unswitch.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
-Unswitch.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-Unswitch.o: /usr/include/stdlib.h ../global/globals.h ../global/types.h
-Unswitch.o: ../tree/tree.h ../tree/tree_basic.h ../tree/tree_compound.h
-Unswitch.o: ../global/Error.h /usr/include/string.h ../global/internal_lib.h
-Unswitch.o: ../tree/free.h ../../inc/dbug.h ../global/my_debug.h
-Unswitch.o: /usr/include/malloc.h /usr/include/sys/types.h
-Unswitch.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
+Unswitch.o: /usr/include/sys/va_list.h /usr/include/stdlib.h
+Unswitch.o: ../global/globals.h ../global/types.h ../tree/tree.h
+Unswitch.o: ../tree/tree_basic.h ../tree/tree_compound.h ../global/Error.h
+Unswitch.o: /usr/include/string.h ../global/internal_lib.h ../tree/free.h
+Unswitch.o: ../../inc/dbug.h ../global/my_debug.h /usr/include/malloc.h
 Unswitch.o: ../tree/traverse.h ../tree/access_macros.h optimize.h
 Unswitch.o: generatemasks.h ConstantFolding.h ../tree/DupTree.h
 Unswitch.o: ../tree/LookUpTable.h Unroll.h Unswitch.h
 WLUnroll.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-WLUnroll.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
-WLUnroll.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-WLUnroll.o: /usr/include/stdlib.h ../global/globals.h ../global/types.h
-WLUnroll.o: ../tree/tree.h ../tree/tree_basic.h ../tree/tree_compound.h
-WLUnroll.o: ../global/Error.h /usr/include/string.h ../global/internal_lib.h
-WLUnroll.o: ../tree/free.h ../../inc/dbug.h ../global/my_debug.h
-WLUnroll.o: /usr/include/malloc.h /usr/include/sys/types.h
-WLUnroll.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
+WLUnroll.o: /usr/include/sys/va_list.h /usr/include/stdlib.h
+WLUnroll.o: ../global/globals.h ../global/types.h ../tree/tree.h
+WLUnroll.o: ../tree/tree_basic.h ../tree/tree_compound.h ../global/Error.h
+WLUnroll.o: /usr/include/string.h ../global/internal_lib.h ../tree/free.h
+WLUnroll.o: ../../inc/dbug.h ../global/my_debug.h /usr/include/malloc.h
 WLUnroll.o: ../tree/traverse.h ../typecheck/typecheck.h ../compile/compile.h
 WLUnroll.o: optimize.h Inline.h ../tree/DupTree.h ../tree/LookUpTable.h
 WLUnroll.o: ../psi-opt/WithloopFolding.h
 WorkReduction.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-WorkReduction.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
-WorkReduction.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-WorkReduction.o: /usr/include/stdlib.h ../tree/tree.h ../global/types.h
-WorkReduction.o: ../tree/tree_basic.h ../tree/tree_compound.h
-WorkReduction.o: ../global/Error.h /usr/include/string.h ../global/globals.h
+WorkReduction.o: /usr/include/sys/va_list.h /usr/include/stdlib.h
+WorkReduction.o: ../tree/tree.h ../global/types.h ../tree/tree_basic.h
+WorkReduction.o: ../tree/tree_compound.h ../global/Error.h
+WorkReduction.o: /usr/include/string.h ../global/globals.h
 WorkReduction.o: ../global/internal_lib.h ../../inc/dbug.h
 WorkReduction.o: ../global/my_debug.h ../tree/traverse.h optimize.h
-WorkReduction.o: ../tree/free.h /usr/include/malloc.h
-WorkReduction.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
-WorkReduction.o: /usr/include/sys/int_types.h WorkReduction.h
+WorkReduction.o: ../tree/free.h /usr/include/malloc.h WorkReduction.h
 freemasks.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-freemasks.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
-freemasks.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-freemasks.o: /usr/include/stdlib.h /usr/include/string.h ../tree/tree.h
-freemasks.o: ../global/types.h ../tree/tree_basic.h ../tree/tree_compound.h
-freemasks.o: ../global/Error.h ../global/globals.h ../global/internal_lib.h
-freemasks.o: ../tree/free.h ../../inc/dbug.h ../global/my_debug.h
-freemasks.o: /usr/include/malloc.h /usr/include/sys/types.h
-freemasks.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
+freemasks.o: /usr/include/sys/va_list.h /usr/include/stdlib.h
+freemasks.o: /usr/include/string.h ../tree/tree.h ../global/types.h
+freemasks.o: ../tree/tree_basic.h ../tree/tree_compound.h ../global/Error.h
+freemasks.o: ../global/globals.h ../global/internal_lib.h ../tree/free.h
+freemasks.o: ../../inc/dbug.h ../global/my_debug.h /usr/include/malloc.h
 freemasks.o: ../tree/traverse.h
 generatemasks.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-generatemasks.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
-generatemasks.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-generatemasks.o: /usr/include/stdlib.h /usr/include/string.h ../tree/tree.h
-generatemasks.o: ../global/types.h ../tree/tree_basic.h
-generatemasks.o: ../tree/tree_compound.h ../global/Error.h
-generatemasks.o: ../global/globals.h ../global/internal_lib.h ../tree/free.h
-generatemasks.o: ../../inc/dbug.h ../global/my_debug.h /usr/include/malloc.h
-generatemasks.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
-generatemasks.o: /usr/include/sys/int_types.h ../tree/traverse.h
-generatemasks.o: ../print/print.h optimize.h generatemasks.h
-generatemasks.o: ConstantFolding.h DeadCodeRemoval.h LoopInvariantRemoval.h
-generatemasks.o: Inline.h Unroll.h Unswitch.h ../psi-opt/ArrayElimination.h
-generatemasks.o: CSE.h ../psi-opt/WithloopFolding.h
+generatemasks.o: /usr/include/sys/va_list.h /usr/include/stdlib.h
+generatemasks.o: /usr/include/string.h ../tree/tree.h ../global/types.h
+generatemasks.o: ../tree/tree_basic.h ../tree/tree_compound.h
+generatemasks.o: ../global/Error.h ../global/globals.h
+generatemasks.o: ../global/internal_lib.h ../tree/free.h ../../inc/dbug.h
+generatemasks.o: ../global/my_debug.h /usr/include/malloc.h
+generatemasks.o: ../tree/traverse.h ../print/print.h optimize.h
+generatemasks.o: generatemasks.h ConstantFolding.h DeadCodeRemoval.h
+generatemasks.o: LoopInvariantRemoval.h Inline.h Unroll.h Unswitch.h
+generatemasks.o: ../psi-opt/ArrayElimination.h CSE.h
+generatemasks.o: ../psi-opt/WithloopFolding.h
 optimize.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-optimize.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
-optimize.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-optimize.o: /usr/include/stdlib.h /usr/include/string.h ../tree/tree.h
-optimize.o: ../global/types.h ../tree/tree_basic.h ../tree/tree_compound.h
-optimize.o: ../global/Error.h ../global/globals.h ../global/internal_lib.h
-optimize.o: ../tree/free.h ../../inc/dbug.h ../global/my_debug.h
-optimize.o: /usr/include/malloc.h /usr/include/sys/types.h
-optimize.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
+optimize.o: /usr/include/sys/va_list.h /usr/include/stdlib.h
+optimize.o: /usr/include/string.h ../tree/tree.h ../global/types.h
+optimize.o: ../tree/tree_basic.h ../tree/tree_compound.h ../global/Error.h
+optimize.o: ../global/globals.h ../global/internal_lib.h ../tree/free.h
+optimize.o: ../../inc/dbug.h ../global/my_debug.h /usr/include/malloc.h
 optimize.o: ../tree/traverse.h ../print/print.h ../print/convert.h optimize.h
 optimize.o: generatemasks.h freemasks.h ConstantFolding.h DeadCodeRemoval.h
 optimize.o: DeadFunctionRemoval.h LoopInvariantRemoval.h Inline.h Unroll.h
 optimize.o: Unswitch.h ../psi-opt/ArrayElimination.h CSE.h
 optimize.o: ../psi-opt/WithloopFolding.h ../psi-opt/wl_access_analyze.h
-optimize.o: ../psi-opt/tile_size_inference.h ../psi-opt/pad.h
+optimize.o: ../psi-opt/tile_size_inference.h ../psi-opt/index.h
+optimize.o: ../psi-opt/pad.h
