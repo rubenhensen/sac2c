@@ -1,6 +1,10 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.4  2004/08/06 21:19:57  sah
+  uses common-node-access.xsl common-name-to-nodeenum.xsl now
+  and generates assertions using common-make-assertion.xsl
+
   Revision 1.3  2004/08/06 14:39:48  sah
   some ast improvements
 
@@ -17,6 +21,9 @@
 version="1.0">
 
 <xsl:import href="common-c-code.xsl"/>
+<xsl:import href="common-name-to-nodeenum.xsl"/>
+<xsl:import href="common-node-access.xsl"/>
+<xsl:import href="common-make-assertion.xsl"/>
 
 <xsl:output method="text" indent="no"/>
 <xsl:strip-space elements="*"/>
@@ -24,6 +31,8 @@ version="1.0">
 <!-- templates for generating the body of a make function -->
 <xsl:template match="node" mode="make-body">
   <xsl:value-of select="'{'"/>
+  <!-- declarate variables -->
+  <xsl:value-of select="'node *this;'" />
   <!-- if there is a for loop for initialising attributes, we 
        need a variable cnt, which is created here -->
   <xsl:if test="attributes/attribute/type[@name = //attributetypes/type[@size]/@name]">
@@ -34,7 +43,7 @@ version="1.0">
   <xsl:value-of select="@name"/>
   <xsl:value-of select="'&quot;);'"/>
   <!-- allocate new node this -->
-  <xsl:value-of select="'node *this = Malloc(sizeof(node));'"/>
+  <xsl:value-of select="'this = Malloc(sizeof(node));'"/>
   <!-- allocate the attrib structure -->
   <xsl:value-of select="'this->attribs.N_'"/>
   <xsl:value-of select="@name"/>
@@ -42,23 +51,12 @@ version="1.0">
   <xsl:value-of select="@name"/>
   <xsl:value-of select="'));'"/>
   <!-- set node type -->
-  <xsl:value-of select="'NODE_TYPE(this) = N_'" />
-  <!-- UGLY HACK: MT and WL nodes use their uppercase name -->
-  <xsl:choose>
-    <xsl:when test="@name = 'MT'">
-      <xsl:value-of select="'mt'" />
-    </xsl:when>
-    <xsl:when test="starts-with(@name,'MT') or starts-with(@name,'WL')">
+  <xsl:value-of select="'NODE_TYPE(this) = '" />
+  <xsl:call-template name="name-to-nodeenum">
+    <xsl:with-param name="name">
       <xsl:value-of select="@name" />
-    </xsl:when>
-    <xsl:otherwise>
-      <xsl:call-template name="lowercase">
-        <xsl:with-param name="string">
-          <xsl:value-of select="@name" />
-        </xsl:with-param>
-      </xsl:call-template>
-    </xsl:otherwise>
-  </xsl:choose>
+    </xsl:with-param>
+  </xsl:call-template>
   <xsl:value-of select="';'" />
   <!-- set lineno -->
   <xsl:value-of select="'this->lineno = linenum;'" />
@@ -67,6 +65,8 @@ version="1.0">
   <!-- assign sons and attributes a value -->
   <xsl:apply-templates select="sons/son" mode="make-body"/>
   <xsl:apply-templates select="attributes/attribute" mode="make-body"/>
+  <!-- check for valid arguments -->
+  <xsl:apply-templates select="sons/son[not( @default)]" mode="make-assertion" />
   <!-- DBUG_RETURN call -->
   <xsl:value-of select="'DBUG_RETURN( this);'"/>
   <xsl:value-of select="'}'"/>
@@ -74,21 +74,27 @@ version="1.0">
 
 <!-- generate the assignment for a son -->
 <xsl:template match="sons/son" mode="make-body">
-  <xsl:call-template name="uppercase">
-    <xsl:with-param name="string"><xsl:value-of select="../../@name"/></xsl:with-param>
+  <xsl:call-template name="node-access">
+    <xsl:with-param name="node">
+      <xsl:value-of select="'this'" />
+    </xsl:with-param>
+    <xsl:with-param name="nodetype">
+      <xsl:value-of select="../../@name" />
+    </xsl:with-param>
+    <xsl:with-param name="field">
+      <xsl:value-of select="@name" />
+    </xsl:with-param>
   </xsl:call-template>
-  <xsl:value-of select="'_'"/>
-  <xsl:call-template name="uppercase">
-    <xsl:with-param name="string"><xsl:value-of select="@name"/></xsl:with-param>
-  </xsl:call-template>
-  <xsl:value-of select="'(this) = '"/>
+  <xsl:value-of select="' = '"/>
   <!-- check for default value -->
-  <xsl:if test="@default">
-    <xsl:value-of select="@default" />
-  </xsl:if>
-  <xsl:if test="not(@default)">
-    <xsl:value-of select="@name" />
-  </xsl:if>
+  <xsl:choose>
+    <xsl:when test="@default">
+      <xsl:value-of select="@default" />
+    </xsl:when>
+    <xsl:otherwise>
+      <xsl:value-of select="@name" />
+    </xsl:otherwise>
+  </xsl:choose>
   <xsl:value-of select="';'"/>
 </xsl:template>
  
@@ -101,19 +107,24 @@ version="1.0">
     <xsl:value-of select="'; cnt++) { '" />
   </xsl:if>
   <!-- left side of assignment -->
-  <xsl:call-template name="uppercase">
-    <xsl:with-param name="string"><xsl:value-of select="../../@name"/></xsl:with-param>
+  <xsl:call-template name="node-access">
+    <xsl:with-param name="node">
+      <xsl:value-of select="'this'" />
+    </xsl:with-param>
+    <xsl:with-param name="nodetype">
+      <xsl:value-of select="../../@name" />
+    </xsl:with-param>
+    <xsl:with-param name="field">
+      <xsl:value-of select="@name" />
+    </xsl:with-param>
+    <!-- if its is an array, we have to add another parameter -->
+    <xsl:with-param name="index">
+      <xsl:if test="//attributetypes/type[@name = current()/type/@name]/@size">
+        <xsl:value-of select="'cnt'"/>
+      </xsl:if>
+    </xsl:with-param>
   </xsl:call-template>
-  <xsl:value-of select="'_'"/>
-  <xsl:call-template name="uppercase">
-    <xsl:with-param name="string"><xsl:value-of select="@name"/></xsl:with-param>
-  </xsl:call-template>
-  <xsl:value-of select="'( this'" />
-  <!-- if its is an array, we have to add another parameter -->
-  <xsl:if test="//attributetypes/type[@name = current()/type/@name]/@size">
-    <xsl:value-of select="', cnt'"/>
-  </xsl:if>
-  <xsl:value-of select="') = '" />
+  <xsl:value-of select="' = '" />
   <!-- right side of assignment -->
   <xsl:apply-templates select="@name" mode="make-body" />
   <xsl:value-of select="';'"/>
