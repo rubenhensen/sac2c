@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.17  2002/09/05 09:44:09  dkr
+ * NewTypeCheck_Expr() modified
+ *
  * Revision 3.16  2002/09/04 12:59:46  sbs
  * type checking of arrays changed; now sig deps will be created as well.
  *
@@ -157,7 +160,8 @@ NewTypeCheck (node *arg_node)
  *    ntype *NewTypeCheck_Expr( node *arg_node)
  *
  * description:
- *    infers the type of an expression.
+ *    Infers the type of an expression and fixes/eliminates alpha types.
+ *    This function should be used *after* the regular type check phase only!
  *
  ******************************************************************************/
 
@@ -176,6 +180,7 @@ NewTypeCheck_Expr (node *arg_node)
     arg_info = MakeInfo ();
     arg_node = Trav (arg_node, arg_info);
     type = INFO_NTC_TYPE (arg_info);
+    type = TYFixAndEliminateAlpha (type);
     arg_info = FreeNode (arg_info);
 
     act_tab = tmp_tab;
@@ -540,7 +545,8 @@ CheckUdtAndSetBaseType (usertype udt, int *visited)
  *   On the traversal down, we insert all user defined types. While doing so
  *   we check on duplicate definitions and issue ERROR-messages if neccessary.
  *   On the way back up we check on consistency (for the exact restrictions
- *   see "CheckUdtAndSetBaseType") and replace the defining type by its basetype.
+ *   see "CheckUdtAndSetBaseType") and replace the defining type by its
+ *   basetype.
  *
  ******************************************************************************/
 
@@ -1058,10 +1064,9 @@ NTCid (node *arg_node, node *arg_info)
     type = AVIS_TYPE (ID_AVIS (arg_node));
 
     if (type == NULL) {
-        ABORT (
-          NODE_LINE (arg_node),
-          ("Cannot infer type for %s as it may be used without a previous definition",
-           ID_NAME (arg_node)));
+        ABORT (NODE_LINE (arg_node), ("Cannot infer type for %s as it may be"
+                                      " used without a previous definition",
+                                      ID_NAME (arg_node)));
     } else {
         INFO_NTC_TYPE (arg_info) = TYCopyType (type);
     }
