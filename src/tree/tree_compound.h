@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.61  2002/06/27 12:51:29  dkr
+ * signature of CreateSel() modified
+ *
  * Revision 3.60  2002/06/27 10:59:52  dkr
  * - CreateScalarWith() and CreateSel() added
  * - bug in CreateScalarWith() fixed
@@ -1925,7 +1928,7 @@ extern node *CreateScalarWith (int dim, shpseg *shape, simpletype btype, node *e
 extern node *CreateZero (int dim, shpseg *shape, simpletype btype, bool unroll,
                          node *fundef);
 
-extern node *CreateSel (node *sel_index, node *sel_array, node *fundef);
+extern node *CreateSel (ids *sel_vec, ids *sel_ids, node *sel_array, node *fundef);
 
 /*--------------------------------------------------------------------------*/
 
