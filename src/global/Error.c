@@ -1,7 +1,13 @@
 /*
  *
  * $Log$
- * Revision 1.21  1997/03/11 16:33:20  cg
+ * Revision 1.22  1997/03/19 13:32:55  cg
+ * removed compiler phase 'prepare-linking' ("Checking required external module/class
+ * implementations")
+ * switched to single tmp directory tmp_dirname instead of build_dirname and
+ * store_dirname
+ *
+ * Revision 1.21  1997/03/11  16:33:20  cg
  * added compiler phase 'writing dependencies to stdout'
  *
  * Revision 1.20  1996/09/11  06:11:28  cg
@@ -106,32 +112,21 @@ char error_message_buffer[MAX_ERROR_MESSAGE_LENGTH];
 
 char *filename; /* current file name */
 
-char *compiler_phase_name[] = {"",
-                               "Evaluating command line parameters",
-                               "Loading SAC program",
-                               "Resolving imports from modules and classes",
-                               "Checking required SAC libraries",
-                               "Generating generic types and functions",
-                               "Simplifying source code",
-                               "Running type inference system",
-                               "Checking module/class declaration file",
-                               "Resolving implicit types",
-                               "Analysing functions and global objects",
-                               "Generating SAC-Information-Block",
-                               "Resolving global objects and reference parameters",
-                               "Checking uniqueness property of objects",
-                               "Generating purely functional code",
-                               "Running SAC optimizations",
-                               "Running PSI optimizations",
-                               "Running reference count inference system",
-                               "Preparing C-code generation",
-                               "Generating C-code",
-                               "Checking required external module/class implementations",
-                               "Creating C file",
-                               "Invoking C compiler",
-                               "Creating SAC library",
-                               "Writing dependencies to stdout",
-                               "Unknown compiler phase"};
+char *compiler_phase_name[]
+  = {"", "Evaluating command line parameters", "Loading SAC program",
+     "Resolving imports from modules and classes", "Checking required libraries",
+     "Generating generic types and functions", "Simplifying source code",
+     "Running type inference system", "Checking module/class declaration file",
+     "Resolving implicit types", "Analysing functions and global objects",
+     "Generating SAC-Information-Block",
+     "Resolving global objects and reference parameters",
+     "Checking uniqueness property of objects", "Generating purely functional code",
+     "Running SAC optimizations", "Running PSI optimizations",
+     "Running reference count inference system", "Preparing C-code generation",
+     "Generating C-code",
+     /*  "Checking required external module/class implementations", */
+     "Creating C file", "Invoking C compiler", "Creating SAC library",
+     "Writing dependencies to stdout", "Unknown compiler phase"};
 
 /*
  *
@@ -356,7 +351,7 @@ ItemName (node *item)
  *                  except the actual result file. Used to clean up the
  *                  file system in regular as well as irregular program
  *                  termination.
- *  global vars   : tmp_dirname, store_dirname, build_dirname, cleanup
+ *  global vars   : tmp_dirname, cleanup
  *  internal funs : ---
  *  external funs : RemoveDirectory
  *  macros        :
@@ -371,8 +366,7 @@ CleanUp ()
     DBUG_ENTER ("CleanUp");
 
     if (cleanup) {
-        RemoveDirectory (store_dirname);
-        RemoveDirectory (build_dirname);
+        RemoveDirectory (tmp_dirname);
     }
 
     DBUG_VOID_RETURN;
