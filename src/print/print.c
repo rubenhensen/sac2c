@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.243  1998/07/20 16:51:28  dkr
+ * PrintNodeTree extended
+ *
  * Revision 1.242  1998/07/16 20:42:04  dkr
  * extended PrintNodeTree
  *
@@ -3200,6 +3203,60 @@ Print (node *syntax_tree)
 /******************************************************************************
  *
  * function:
+ *   void PrintNodeTreeSon( int num, node *node)
+ *
+ * description:
+ *   This function is call from 'PrintNodeTree' only.
+ *   Prints a son or attribute containing a hole sub-tree.
+ *
+ ******************************************************************************/
+
+void
+PrintNodeTreeSon (int num, node *node)
+{
+    int j;
+
+    for (j = 0; j < indent; j++) {
+        if (j % 4) {
+            fprintf (outfile, "  ");
+        } else {
+            fprintf (outfile, "| ");
+        }
+    }
+
+    if (num >= 0) {
+        fprintf (outfile, "%i-", num);
+    } else {
+        fprintf (outfile, "+-");
+    }
+    PrintNodeTree (node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void PrintNodeTreeIds( ids *vars)
+ *
+ * description:
+ *   This function is call from 'PrintNodeTree' only.
+ *   Prints a 'ids'-chain.
+ *
+ ******************************************************************************/
+
+void
+PrintNodeTreeIds (ids *vars)
+{
+    fprintf (outfile, "( ");
+    while (vars != NULL) {
+        fprintf (outfile, "%s:%d ", IDS_NAME (vars), IDS_REFCNT (vars));
+        vars = IDS_NEXT (vars);
+    }
+    fprintf (outfile, ")");
+}
+
+/******************************************************************************
+ *
+ * function:
  *   void PrintNodeTree(node *node)
  *
  * description:
@@ -3213,8 +3270,7 @@ Print (node *syntax_tree)
 void
 PrintNodeTree (node *node)
 {
-    int i, j;
-    ids *_ids;
+    int i, d;
 
     DBUG_ENTER ("PrintNodeTree");
 
@@ -3226,14 +3282,19 @@ PrintNodeTree (node *node)
 
         /* print additional information to nodes */
         switch (NODE_TYPE (node)) {
-        case N_let:
-            _ids = LET_IDS (node);
-            fprintf (outfile, "( ");
-            while (_ids) {
-                fprintf (outfile, "%s:%d ", IDS_NAME (_ids), IDS_REFCNT (_ids));
-                _ids = IDS_NEXT (_ids);
+        case N_pragma:
+            if (PRAGMA_WLCOMP_APS (node) != NULL) {
+                fprintf (outfile, "(wlcomp)\n");
+                indent++;
+                PrintNodeTreeSon (0, PRAGMA_WLCOMP_APS (node));
+                indent--;
+            } else {
+                fprintf (outfile, "\n");
             }
-            fprintf (outfile, ")\n");
+            break;
+        case N_let:
+            PrintNodeTreeIds (LET_IDS (node));
+            fprintf (outfile, "\n");
             break;
         case N_id:
             fprintf (outfile, "(%s:%d)\n", ID_NAME (node), ID_REFCNT (node));
@@ -3249,7 +3310,8 @@ PrintNodeTree (node *node)
             break;
         case N_arg:
             fprintf (outfile, "(%s %s:%d)\n", mdb_type[TYPES_BASETYPE (ARG_TYPE (node))],
-                     ARG_NAME (node), ARG_REFCNT (node));
+                     (ARG_NAME (node) != NULL) ? ARG_NAME (node) : "?",
+                     ARG_REFCNT (node));
             break;
         case N_vardec:
             fprintf (outfile, "(%s %s:%d)\n",
@@ -3259,9 +3321,29 @@ PrintNodeTree (node *node)
         case N_fundef:
             fprintf (outfile, "(%s)\n", FUNDEF_NAME (node));
             break;
+        case N_Nwith:
+            if (NWITH_PRAGMA (node) != NULL) {
+                fprintf (outfile, "\n");
+                indent++;
+                PrintNodeTreeSon (-1, NWITH_PRAGMA (node));
+                indent--;
+            }
+            break;
         case N_Nwithid:
-            fprintf (outfile, "(%s:%d)\n", IDS_NAME (NWITHID_VEC (node)),
-                     IDS_REFCNT (NWITHID_VEC (node)));
+            fprintf (outfile, "( ");
+            if (NWITHID_VEC (node) != NULL) {
+                fprintf (outfile, "%s:%d", IDS_NAME (NWITHID_VEC (node)),
+                         IDS_REFCNT (NWITHID_VEC (node)));
+            } else {
+                fprintf (outfile, "?");
+            }
+            fprintf (outfile, " = ");
+            if (NWITHID_IDS (node) != NULL) {
+                PrintNodeTreeIds (NWITHID_IDS (node));
+            } else {
+                fprintf (outfile, "?");
+            }
+            fprintf (outfile, " )\n");
             break;
         case N_Npart:
             if (NPART_CODE (node) != NULL) {
@@ -3272,6 +3354,23 @@ PrintNodeTree (node *node)
             break;
         case N_Ncode:
             fprintf (outfile, "(adr: 0x%p, used: %d)\n", node, NCODE_USED (node));
+            break;
+        case N_WLseg:
+            fprintf (outfile, "(sv: [ ");
+            for (d = 0; d < WLSEG_DIMS (node); d++) {
+                fprintf (outfile, "%i ", (WLSEG_SV (node))[d]);
+            }
+            for (i = 0; i < WLSEG_BLOCKS (node); i++) {
+                fprintf (outfile, "], bv%i: [ ", i);
+                for (d = 0; d < WLSEG_DIMS (node); d++) {
+                    fprintf (outfile, "%i ", (WLSEG_BV (node, i))[d]);
+                }
+            }
+            fprintf (outfile, "], ubv: [ ");
+            for (d = 0; d < WLSEG_DIMS (node); d++) {
+                fprintf (outfile, "%i ", (WLSEG_UBV (node))[d]);
+            }
+            fprintf (outfile, "])\n");
             break;
         case N_WLblock:
             fprintf (outfile, "(%d->%d block%d[%d] %d)\n", WLBLOCK_BOUND1 (node),
@@ -3323,16 +3422,7 @@ PrintNodeTree (node *node)
         indent++;
         for (i = 0; i < nnode[NODE_TYPE (node)]; i++)
             if (node->node[i]) {
-                for (j = 0; j < indent; j++) {
-                    if (j % 4) {
-                        fprintf (outfile, "  ");
-                    } else {
-                        fprintf (outfile, "| ");
-                    }
-                }
-
-                fprintf (outfile, "%i-", i);
-                PrintNodeTree (node->node[i]);
+                PrintNodeTreeSon (i, node->node[i]);
             }
         indent--;
     } else
