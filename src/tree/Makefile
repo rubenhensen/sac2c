@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.31  2004/08/01 19:34:29  sah
+# removed target node_compat.o
+#
 # Revision 3.30  2004/07/03 15:09:35  sah
 # added the new node representation into the source code.
 # the new ast can be enabled by make newast int the
@@ -76,7 +79,7 @@ include $(PROJECT_ROOT)/Makefile.Config
 # local settings:
 #
 ifeq ($(shell test -f $(PROJECT_ROOT)/_NEW_AST && echo yes),yes)
-  NEWASTTARGETS := node_basic.o node_compat.o
+  NEWASTTARGETS := node_basic.o
 else
   NEWASTTARGETS :=
 endif
