@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.3  2000/05/25 23:03:40  dkr
+ * prototype for AdjustFoldFundef added
+ *
  * Revision 2.2  1999/06/25 14:52:25  rob
  * Introduce definitions and utility infrastructure for tagged array support.
  *
@@ -86,9 +89,6 @@
  *
  * Revision 1.1  1995/11/28  12:23:34  cg
  * Initial revision
- *
- *
- *
  */
 
 #ifndef _sac_precompile_h
@@ -119,6 +119,8 @@ extern node *PRECNcode (node *arg_node, node *arg_info);
 extern node *PRECsync (node *arg_node, node *arg_info);
 extern node *PRECWLseg (node *arg_node, node *arg_info);
 extern node *PRECWLsegVar (node *arg_node, node *arg_info);
+
+extern node *AdjustFoldFundef (node *fundef, ids *acc, char *funname, node *cexpr);
 
 #ifdef TAGGED_ARRAYS
 
