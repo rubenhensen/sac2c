@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.109  1998/02/25 09:11:41  cg
+ * Global variables moved to globals.c
+ * Compilation process rigidly streamlined.
+ * New break options using break specifiers.
+ *
  * Revision 1.108  1998/02/09 15:59:24  srs
  * changed call of optimization functions
  *
@@ -364,7 +369,7 @@
 #include "tree.h"
 #include "free.h"
 #include "my_debug.h"
-
+#include "globals.h"
 #include "Error.h"
 #include "usage.h"
 #include "flatten.h"
@@ -397,125 +402,16 @@
 #include <string.h>
 
 /*
- *  Global variables to store command line parameters
- */
-
-FILE *outfile;
-/* stream to write result to */
-
-char sacfilename[MAX_FILE_NAME] = "";
-/* name of file to be compiled */
-
-char prgname[MAX_FILE_NAME];
-/* name of the compiler, e.g. sac2c */
-
-char outfilename[MAX_FILE_NAME] = "";
-/* name of executable    */
-
-char modulename[MAX_FILE_NAME] = "";
-/* name of module/class which is compiled    */
-
-char cfilename[MAX_FILE_NAME];
-/* name of C source code file       */
-
-char targetdir[MAX_FILE_NAME];
-/* name of C source code file       */
-
-char ccflagsstr[MAX_FILE_NAME] = "";
-/* flags which are handed to gcc    */
-
-char commandline[MAX_PATH_LEN] = "";
-/* command line, used for diagnostic output (status report)  */
-
-file_type filetype;
-/* kind of file: F_PROG, F_MODIMP or F_CLASSIMP */
-
-char *cppvars[MAX_CPP_VARS];
-int num_cpp_vars = 0;
-
-int Ccodeonly = 0;
-int break_compilation = 0;
-int Make_Old2NewWith = 0;
-
-int optimize = 1;
-int sac_optimize = 1;
-int opt_dcr = 1, opt_cf = 1, opt_wr = 1, opt_lir = 1, opt_inl = 1, opt_unr = 1,
-    opt_uns = 1, opt_ae = 1, opt_cse = 1, opt_wlf = 1, opt_dfr = 1;
-
-int optvar = 50;
-int inlnum = 1;
-int unrnum = 2;
-int minarray = 4;
-
-int max_overload = 10;
-int max_optcycles = 4;
-int psi_optimize = 1;
-int psi_opt_ive = 1;
-
-int opt_rco = 1;
-int show_refcnt = 0;
-int show_idx = 0;
-int show_icm = 0;
-int traceflag = 0;
-int profileflag = 0;
-int check_malloc = 0;
-int breakae = 0;
-int check_boundary = 0;
-int cleanup = 1;
-int linkstyle = 2;
-int useranlib = 1;
-int libstat = 0;
-int makedeps = 0;
-
-int dbug_from = 0;
-int dbug_to = 0;
-int dbug_active = 0;
-char *dbug_str = "";
-
-unsigned int total_allocated_mem = 0;
-unsigned int current_allocated_mem = 0;
-unsigned int max_allocated_mem = 0;
-
-int print_objdef_for_header_file = 0;
-/*
- *  This global variable serves a very special purpose.
- *  When generating separate C-files for functions and global variables,
- *  a header file is required which contains declarations of them all.
- *  In this case the ICM ND_KS_DECL_GLOBAL_ARRAY must be written
- *  differently. This global variable triggers the respective print
- *  function defined in icm2c.c. It is set by PrintModul.
- */
-
-int function_counter = 1;
-/*
- *  This global variable is used whenever the functions of a module or
- *  class are written to separate files.
- */
-
-deps *dependencies = NULL;
-/*
- *  This global variable is used to store dependencies during the
- *  whole compilation process.
- *
- *  The dependency table is built by import.c and readsib.c and used
- *  for several purposes, such as generating makefiles or link lists.
- */
-
-/*
  *  And now, the main function which triggers the whole compilation.
  */
 
 MAIN
 {
-    int breakparse = 0, breakimport = 0, breakflatten = 0, breaktype = 0, breakopt = 0,
-        breakpsiopt = 0, breakref = 0, breakreadsib = 0, breakwritesib = 0,
-        breakimpltype = 0, breakobjinit = 0, breakanalysis = 0, breakcheckdec = 0,
-        breakobjects = 0, breakuniquecheck = 0, breakrmvoidfun = 0, breakprecompile = 0,
-        breakcompile = 0;
-
     node *syntax_tree;
 
     int i;
+
+    int tmp_break = 1;
 
 #ifdef SHOW_MALLOC
     compute_malloc_align_step ();
@@ -539,34 +435,25 @@ MAIN
      *  First, we evaluate the given command line options...
      */
 
-    /*  NOTE_COMPILER_PHASE; */
-
-    strcpy (prgname, argv[0]);
-
     OPT ARG '_' : PARM
     {
         if (!strncmp (*argv, "DBUG", 4)) {
             (*argv) += 4;
 
             if (**argv != 0) {
-                dbug_from = strtol (*argv, argv, 10);
+                dbug_from = (compiler_phase_t)strtol (*argv, argv, 10);
 
                 if (**argv == '/') {
                     (*argv)++;
 
                     if (**argv != 0) {
-                        dbug_to = strtol (*argv, argv, 10);
+                        dbug_to = (compiler_phase_t)strtol (*argv, argv, 10);
 
                         if (**argv == '/') {
                             (*argv)++;
 
                             if (**argv != 0) {
                                 dbug_str = StringCopy (*argv);
-
-                                if (dbug_from == 0)
-                                    dbug_from = 1; /* default: from beginning */
-                                if (dbug_to == 0)
-                                    dbug_to = 100; /* default: till the end */
                             } else
                                 SYSWARN (("Third _DBUG option is missing"));
                         } else
@@ -631,124 +518,139 @@ MAIN
     NEXTOPT
     ARG 'h':
     {
-        usage (prgname);
+        usage ();
         exit (0);
     }
     ARG 'b' : PARM
     {
-        break_compilation = 1;
-        Ccodeonly = 1;
         switch (**argv) {
+        case 'u':
+            break_after = PH_setup;
+            break;
         case 'p':
         case '2':
-            breakparse = 1;
+            break_after = PH_scanparse;
             break;
         case 'j':
         case '5':
-            breakobjinit = 1;
+            break_after = PH_objinit;
             break;
         case 'i':
         case '3':
-            breakimport = 1;
+            break_after = PH_import;
             break;
         case 'f':
         case '6':
-            breakflatten = 1;
+            break_after = PH_flatten;
             break;
         case 't':
         case '7':
-            breaktype = 1;
+            break_after = PH_typecheck;
             break;
         case 'o':
-            breakopt = 1;
-            break;
-        case 'a':
-            breakae = 1;
-            breakopt = 1;
+            break_after = PH_sacopt;
             break;
         case 's':
-            breakpsiopt = 1;
+            break_after = PH_psiopt;
             show_idx = 1;
             break;
         case 'r':
-            breakref = 1;
+            break_after = PH_refcnt;
             show_refcnt = 1;
             break;
         case 'c':
-            breakcompile = 1;
+            break_after = PH_compile;
             show_icm = 1;
             break;
         case 'w':
-            breakwritesib = 1;
+            break_after = PH_writesib;
             break;
         case 'b':
         case '4':
-            breakreadsib = 1;
+            break_after = PH_readsib;
             break;
         case 'd':
         case '8':
-            breakcheckdec = 1;
+            break_after = PH_checkdec;
             break;
         case 'm':
         case '9':
-            breakimpltype = 1;
+            break_after = PH_impltype;
             break;
         case 'y':
-            breakanalysis = 1;
+            break_after = PH_analysis;
             break;
         case 'e':
-            breakobjects = 1;
+            break_after = PH_objects;
             break;
         case 'v':
-            breakrmvoidfun = 1;
+            break_after = PH_rmvoidfun;
             break;
         case 'q':
-            breakuniquecheck = 1;
+            break_after = PH_uniquecheck;
             break;
         case 'l':
-            breakprecompile = 1;
+            break_after = PH_precompile;
             break;
         case '1':
             switch (*(*argv + 1)) {
             case '0':
-                breakanalysis = 1;
+                break_after = PH_analysis;
+                tmp_break = 2;
                 break;
             case '1':
-                breakwritesib = 1;
+                break_after = PH_writesib;
+                tmp_break = 2;
                 break;
             case '2':
-                breakobjects = 1;
+                break_after = PH_objects;
+                tmp_break = 2;
                 break;
             case '3':
-                breakuniquecheck = 1;
+                break_after = PH_uniquecheck;
+                tmp_break = 2;
                 break;
             case '4':
-                breakrmvoidfun = 1;
+                break_after = PH_rmvoidfun;
+                tmp_break = 2;
                 break;
             case '5':
-                breakopt = 1;
+                break_after = PH_sacopt;
+                tmp_break = 2;
                 break;
             case '6':
-                breakpsiopt = 1;
+                break_after = PH_psiopt;
+                tmp_break = 2;
                 show_idx = 1;
                 break;
             case '7':
-                breakref = 1;
+                break_after = PH_refcnt;
+                tmp_break = 2;
                 show_refcnt = 1;
                 break;
             case '8':
-                breakprecompile = 1;
+                break_after = PH_precompile;
+                tmp_break = 2;
                 break;
             case '9':
-                breakcompile = 1;
+                break_after = PH_compile;
+                tmp_break = 2;
                 show_icm = 1;
+                break;
+            case '\0':
+                break_after = PH_setup;
                 break;
             default:
                 SYSWARN (("Unknown break parameter '%s`", *argv));
             }
             break;
+
         default:
             SYSWARN (("Unknown break parameter '%s`", *argv));
+        }
+
+        if (*(*argv + tmp_break) == ':') {
+            strncpy (break_specifier, *argv + tmp_break + 1, MAX_BREAK_SPECIFIER - 1);
         }
     }
     NEXTOPT
@@ -809,7 +711,7 @@ MAIN
     NEXTOPT
     ARG 'c':
     {
-        Ccodeonly = 1;
+        break_after = PH_genccode;
     }
     ARG 'g':
     {
@@ -846,8 +748,6 @@ MAIN
             opt_cf = 0;
         else if (!strncmp (*argv, "oconstant_folding", 17))
             opt_cf = 0;
-        else if (!strncmp (*argv, "oPDCR", 5))
-            opt_wr = 0;
         else if (!strncmp (*argv, "odead_function_removal", 22))
             opt_dfr = 0;
         else if (!strncmp (*argv, "oSACOPT", 7))
@@ -855,15 +755,13 @@ MAIN
         else if (!strncmp (*argv, "osacopt", 7))
             sac_optimize = 0;
         else if (!strncmp (*argv, "oOPT", 4)) {
-            optimize = 0;
             sac_optimize = 0;
             psi_optimize = 0;
-            opt_rco = 0;
+            backend_optimize = 0;
         } else if (!strncmp (*argv, "oopt", 4)) {
-            optimize = 0;
             sac_optimize = 0;
             psi_optimize = 0;
-            opt_rco = 0;
+            backend_optimize = 0;
         } else if (!strncmp (*argv, "oLIR", 4))
             opt_lir = 0;
         else if (!strncmp (*argv, "oloop_invariant_removal", 23))
@@ -885,9 +783,9 @@ MAIN
         else if (!strncmp (*argv, "opsiopt", 7))
             psi_optimize = 0;
         else if (!strncmp (*argv, "oindex_vect_elimination", 23))
-            psi_opt_ive = 0;
+            opt_ive = 0;
         else if (!strncmp (*argv, "oIVE", 3))
-            psi_opt_ive = 0;
+            opt_ive = 0;
         else if (!strncmp (*argv, "oarray_elimination", 19))
             opt_ae = 0;
         else if (!strncmp (*argv, "oAE", 3))
@@ -906,6 +804,10 @@ MAIN
             opt_rco = 0;
         else if (!strncmp (*argv, "oRCO", 3))
             opt_rco = 0;
+        else if (!strncmp (*argv, "oBACKENDOPT", 7))
+            backend_optimize = 0;
+        else if (!strncmp (*argv, "obackendopt", 7))
+            backend_optimize = 0;
         else if (!strncmp (*argv, "oranlib", 7))
             useranlib = 0;
         else
@@ -1057,6 +959,11 @@ MAIN
     }
 
     ABORT_ON_ERROR;
+
+    NOTE_COMPILER_PHASE;
+
+    if (break_after == PH_setup)
+        goto BREAK;
     compiler_phase++;
 
     /*
@@ -1074,239 +981,255 @@ MAIN
     syntax_tree = ScanParse ();
     CHECK_DBUG_STOP;
     ABORT_ON_ERROR;
+
+    if (break_after == PH_scanparse)
+        goto BREAK;
     compiler_phase++;
 
-    if (!breakparse) {
-        if (MODUL_IMPORTS (syntax_tree) != NULL) {
-            NOTE_COMPILER_PHASE;
-            CHECK_DBUG_START;
-            syntax_tree = Import (syntax_tree); /* imp_tab */
-            CHECK_DBUG_STOP;
-            ABORT_ON_ERROR;
-        }
-        compiler_phase++;
-
-        if (!breakimport && !makedeps) {
-            if (MODUL_STORE_IMPORTS (syntax_tree) != NULL) {
-                NOTE_COMPILER_PHASE;
-                CHECK_DBUG_START;
-                syntax_tree = ReadSib (syntax_tree); /* readsib_tab */
-                CHECK_DBUG_STOP;
-                ABORT_ON_ERROR;
-            }
-            compiler_phase++;
-
-            if (!breakreadsib) {
-                NOTE_COMPILER_PHASE;
-                CHECK_DBUG_START;
-                syntax_tree = objinit (syntax_tree); /* objinit_tab */
-                CHECK_DBUG_STOP;
-                ABORT_ON_ERROR;
-                compiler_phase++;
-
-                if (!breakobjinit) {
-                    NOTE_COMPILER_PHASE;
-                    CHECK_DBUG_START;
-                    syntax_tree = Flatten (syntax_tree); /* flat_tab */
-                    CHECK_DBUG_STOP;
-                    ABORT_ON_ERROR;
-                    compiler_phase++;
-
-                    if (!breakflatten) {
-                        NOTE_COMPILER_PHASE;
-                        CHECK_DBUG_START;
-                        syntax_tree = Typecheck (syntax_tree); /* type_tab */
-                        CHECK_DBUG_STOP;
-                        ABORT_ON_ERROR;
-                        compiler_phase++;
-
-                        if (!breaktype) {
-                            if (MODUL_FILETYPE (syntax_tree) != F_prog) {
-                                NOTE_COMPILER_PHASE;
-                                CHECK_DBUG_START;
-                                syntax_tree = CheckDec (
-                                  syntax_tree); /* writedec_tab and checkdec_tab */
-                                CHECK_DBUG_STOP;
-                                ABORT_ON_ERROR;
-                            }
-                            compiler_phase++;
-
-                            if (!breakcheckdec) {
-                                NOTE_COMPILER_PHASE;
-                                CHECK_DBUG_START;
-                                syntax_tree = RetrieveImplicitTypeInfo (
-                                  syntax_tree); /* impltype_tab */
-                                CHECK_DBUG_STOP;
-                                ABORT_ON_ERROR;
-                                compiler_phase++;
-
-                                if (!breakimpltype) {
-                                    NOTE_COMPILER_PHASE;
-                                    CHECK_DBUG_START;
-                                    syntax_tree = Analysis (syntax_tree); /* analy_tab */
-                                    CHECK_DBUG_STOP;
-                                    ABORT_ON_ERROR;
-                                    compiler_phase++;
-
-                                    if (!breakanalysis) {
-                                        if (MODUL_FILETYPE (syntax_tree) != F_prog) {
-                                            NOTE_COMPILER_PHASE;
-                                            CHECK_DBUG_START;
-                                            syntax_tree
-                                              = WriteSib (syntax_tree); /* writesib_tab */
-                                            CHECK_DBUG_STOP;
-                                            ABORT_ON_ERROR;
-                                        }
-                                        compiler_phase++;
-
-                                        if (!breakwritesib) {
-                                            NOTE_COMPILER_PHASE;
-                                            CHECK_DBUG_START;
-                                            syntax_tree
-                                              = HandleObjects (syntax_tree); /* obj_tab */
-                                            CHECK_DBUG_STOP;
-                                            ABORT_ON_ERROR;
-                                            compiler_phase++;
-
-                                            if (!breakobjects) {
-                                                NOTE_COMPILER_PHASE;
-                                                CHECK_DBUG_START;
-                                                syntax_tree = UniquenessCheck (
-                                                  syntax_tree); /* unique_tab */
-                                                CHECK_DBUG_STOP;
-                                                ABORT_ON_ERROR;
-                                                compiler_phase++;
-
-                                                if (!breakuniquecheck) {
-                                                    NOTE_COMPILER_PHASE;
-                                                    CHECK_DBUG_START;
-                                                    syntax_tree = RemoveVoidFunctions (
-                                                      syntax_tree); /* rmvoid_tab */
-                                                    CHECK_DBUG_STOP;
-                                                    ABORT_ON_ERROR;
-                                                    compiler_phase++;
-
-                                                    if (!breakrmvoidfun) {
-                                                        NOTE_COMPILER_PHASE;
-                                                        CHECK_DBUG_START;
-                                                        syntax_tree
-                                                          = Optimize (
-                                                            syntax_tree); /* see
-                                                                             optimize.c,
-                                                                             Optimize() */
-                                                        CHECK_DBUG_STOP;
-                                                        ABORT_ON_ERROR;
-                                                        compiler_phase++;
-
-                                                        if (!breakopt) {
-                                                            if (psi_optimize) {
-                                                                NOTE_COMPILER_PHASE;
-                                                                CHECK_DBUG_START;
-                                                                syntax_tree = PsiOpt (
-                                                                  syntax_tree); /* idx_tab
-                                                                                 */
-                                                                CHECK_DBUG_STOP;
-                                                                ABORT_ON_ERROR;
-                                                            }
-                                                            compiler_phase++;
-
-                                                            if (!breakpsiopt) {
-                                                                NOTE_COMPILER_PHASE;
-                                                                CHECK_DBUG_START;
-                                                                syntax_tree = Refcount (
-                                                                  syntax_tree); /* refcnt_tab
-                                                                                 */
-                                                                CHECK_DBUG_STOP;
-                                                                ABORT_ON_ERROR;
-                                                                compiler_phase++;
-
-                                                                if (Make_Old2NewWith)
-                                                                    syntax_tree
-                                                                      = Old2NewWith (
-                                                                        syntax_tree); /* o2nWith_tab
-                                                                                       */
-
-                                                                if (!breakref) {
-                                                                    NOTE_COMPILER_PHASE;
-                                                                    CHECK_DBUG_START;
-                                                                    syntax_tree
-                                                                      = precompile (
-                                                                        syntax_tree); /* precomp_tab
-                                                                                       */
-                                                                    CHECK_DBUG_STOP;
-                                                                    ABORT_ON_ERROR;
-                                                                    compiler_phase++;
-
-                                                                    if (
-                                                                      !breakprecompile) {
-                                                                        NOTE_COMPILER_PHASE;
-                                                                        CHECK_DBUG_START;
-                                                                        syntax_tree
-                                                                          = Compile (
-                                                                            syntax_tree); /* comp_tab */
-                                                                        CHECK_DBUG_STOP;
-                                                                        ABORT_ON_ERROR;
-                                                                        compiler_phase++;
-                                                                    }
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
+    if (MODUL_IMPORTS (syntax_tree) != NULL) {
+        NOTE_COMPILER_PHASE;
+        CHECK_DBUG_START;
+        syntax_tree = Import (syntax_tree); /* imp_tab */
+        CHECK_DBUG_STOP;
+        ABORT_ON_ERROR;
     }
 
+    if (break_after == PH_import)
+        goto BREAK;
+
     if (makedeps) {
-        compiler_phase = 23;
+        /*
+         * This is not a real compiler run,
+         * only dependencies are to be detected.
+         */
+
+        compiler_phase = PH_writedeps;
         NOTE_COMPILER_PHASE;
         CHECK_DBUG_START;
         PrintDependencies (dependencies, makedeps);
         CHECK_DBUG_STOP;
         ABORT_ON_ERROR;
-    } else {
-        if (!break_compilation) {
-            NOTE_COMPILER_PHASE;
-            CHECK_DBUG_START;
-            Print (syntax_tree);
-            CHECK_DBUG_STOP;
-            ABORT_ON_ERROR;
-            compiler_phase++;
-        } else {
-            Print (syntax_tree);
-        }
-
-        /*
-         *  After the C file has been written, the syntax tree may be released.
-         */
 
         FreeTree (syntax_tree);
+        CleanUp ();
 
-        if (!Ccodeonly) {
-            NOTE_COMPILER_PHASE;
-            CHECK_DBUG_START;
-            InvokeCC ();
-            CHECK_DBUG_STOP;
-            ABORT_ON_ERROR;
-            compiler_phase++;
+        /*
+         *  After all, a success message is displayed.
+         */
 
-            if (filetype != F_prog) {
-                NOTE_COMPILER_PHASE;
-                CHECK_DBUG_START;
-                CreateLibrary ();
-                CHECK_DBUG_STOP;
-                ABORT_ON_ERROR;
-            }
-            compiler_phase++;
-        }
+        NEWLINE (2);
+        NOTE2 (("*** Dependency Detection successful ***"));
+        NOTE2 (("*** Exit code 0"));
+        NOTE2 (("*** 0 error(s), %d warning(s)", warnings));
+        NEWLINE (2);
+
+        return (0);
+    }
+
+    compiler_phase++;
+
+    if (MODUL_STORE_IMPORTS (syntax_tree) != NULL) {
+        NOTE_COMPILER_PHASE;
+        CHECK_DBUG_START;
+        syntax_tree = ReadSib (syntax_tree); /* readsib_tab */
+        CHECK_DBUG_STOP;
+        ABORT_ON_ERROR;
+    }
+
+    if (break_after == PH_readsib)
+        goto BREAK;
+    compiler_phase++;
+
+    NOTE_COMPILER_PHASE;
+    CHECK_DBUG_START;
+    syntax_tree = objinit (syntax_tree); /* objinit_tab */
+    CHECK_DBUG_STOP;
+    ABORT_ON_ERROR;
+
+    if (break_after == PH_objinit)
+        goto BREAK;
+    compiler_phase++;
+
+    NOTE_COMPILER_PHASE;
+    CHECK_DBUG_START;
+    syntax_tree = Flatten (syntax_tree); /* flat_tab */
+    CHECK_DBUG_STOP;
+    ABORT_ON_ERROR;
+
+    if (break_after == PH_flatten)
+        goto BREAK;
+    compiler_phase++;
+
+    NOTE_COMPILER_PHASE;
+    CHECK_DBUG_START;
+    syntax_tree = Typecheck (syntax_tree); /* type_tab */
+    CHECK_DBUG_STOP;
+    ABORT_ON_ERROR;
+
+    if (break_after == PH_typecheck)
+        goto BREAK;
+    compiler_phase++;
+
+    if (MODUL_FILETYPE (syntax_tree) != F_prog) {
+        NOTE_COMPILER_PHASE;
+        CHECK_DBUG_START;
+        syntax_tree = CheckDec (syntax_tree); /* writedec_tab and checkdec_tab */
+        CHECK_DBUG_STOP;
+        ABORT_ON_ERROR;
+    }
+
+    if (break_after == PH_checkdec)
+        goto BREAK;
+    compiler_phase++;
+
+    NOTE_COMPILER_PHASE;
+    CHECK_DBUG_START;
+    syntax_tree = RetrieveImplicitTypeInfo (syntax_tree); /* impltype_tab */
+    CHECK_DBUG_STOP;
+    ABORT_ON_ERROR;
+
+    if (break_after == PH_impltype)
+        goto BREAK;
+    compiler_phase++;
+
+    NOTE_COMPILER_PHASE;
+    CHECK_DBUG_START;
+    syntax_tree = Analysis (syntax_tree); /* analy_tab */
+    CHECK_DBUG_STOP;
+    ABORT_ON_ERROR;
+
+    if (break_after == PH_analysis)
+        goto BREAK;
+    compiler_phase++;
+
+    if (MODUL_FILETYPE (syntax_tree) != F_prog) {
+        NOTE_COMPILER_PHASE;
+        CHECK_DBUG_START;
+        syntax_tree = WriteSib (syntax_tree); /* writesib_tab */
+        CHECK_DBUG_STOP;
+        ABORT_ON_ERROR;
+    }
+
+    if (break_after == PH_writesib)
+        goto BREAK;
+    compiler_phase++;
+
+    NOTE_COMPILER_PHASE;
+    CHECK_DBUG_START;
+    syntax_tree = HandleObjects (syntax_tree); /* obj_tab */
+    CHECK_DBUG_STOP;
+    ABORT_ON_ERROR;
+
+    if (break_after == PH_objects)
+        goto BREAK;
+    compiler_phase++;
+
+    NOTE_COMPILER_PHASE;
+    CHECK_DBUG_START;
+    syntax_tree = UniquenessCheck (syntax_tree); /* unique_tab */
+    CHECK_DBUG_STOP;
+    ABORT_ON_ERROR;
+
+    if (break_after == PH_uniquecheck)
+        goto BREAK;
+    compiler_phase++;
+
+    NOTE_COMPILER_PHASE;
+    CHECK_DBUG_START;
+    syntax_tree = RemoveVoidFunctions (syntax_tree); /* rmvoid_tab */
+    CHECK_DBUG_STOP;
+    ABORT_ON_ERROR;
+
+    if (break_after == PH_rmvoidfun)
+        goto BREAK;
+    compiler_phase++;
+
+    if (sac_optimize) {
+        NOTE_COMPILER_PHASE;
+        CHECK_DBUG_START;
+        syntax_tree = Optimize (syntax_tree); /* see optimize.c, Optimize() */
+        CHECK_DBUG_STOP;
+        ABORT_ON_ERROR;
+    }
+
+    if (break_after == PH_sacopt)
+        goto BREAK;
+    compiler_phase++;
+
+    if (psi_optimize) {
+        NOTE_COMPILER_PHASE;
+        CHECK_DBUG_START;
+        syntax_tree = PsiOpt (syntax_tree); /* idx_tab */
+        CHECK_DBUG_STOP;
+        ABORT_ON_ERROR;
+    }
+
+    if (break_after == PH_psiopt)
+        goto BREAK;
+    compiler_phase++;
+
+    NOTE_COMPILER_PHASE;
+    CHECK_DBUG_START;
+    syntax_tree = Refcount (syntax_tree); /* refcnt_tab */
+    CHECK_DBUG_STOP;
+    ABORT_ON_ERROR;
+
+    if (break_after == PH_refcnt)
+        goto BREAK;
+    compiler_phase++;
+
+    if (Make_Old2NewWith)
+        syntax_tree = Old2NewWith (syntax_tree); /* o2nWith_tab */
+
+    NOTE_COMPILER_PHASE;
+    CHECK_DBUG_START;
+    syntax_tree = precompile (syntax_tree); /* precomp_tab */
+    CHECK_DBUG_STOP;
+    ABORT_ON_ERROR;
+
+    if (break_after == PH_precompile)
+        goto BREAK;
+    compiler_phase++;
+
+    NOTE_COMPILER_PHASE;
+    CHECK_DBUG_START;
+    syntax_tree = Compile (syntax_tree); /* comp_tab */
+    CHECK_DBUG_STOP;
+    ABORT_ON_ERROR;
+
+    if (break_after == PH_compile)
+        goto BREAK;
+    compiler_phase++;
+
+    NOTE_COMPILER_PHASE;
+    CHECK_DBUG_START;
+    Print (syntax_tree);
+    CHECK_DBUG_STOP;
+    ABORT_ON_ERROR;
+
+    if (break_after == PH_genccode)
+        goto BREAK;
+    compiler_phase++;
+
+    /*
+     *  After the C file has been written, the syntax tree may be released.
+     */
+
+    FreeTree (syntax_tree);
+
+    NOTE_COMPILER_PHASE;
+    CHECK_DBUG_START;
+    InvokeCC ();
+    CHECK_DBUG_STOP;
+    ABORT_ON_ERROR;
+    compiler_phase++;
+
+    if (filetype != F_prog) {
+        NOTE_COMPILER_PHASE;
+        CHECK_DBUG_START;
+        CreateLibrary ();
+        CHECK_DBUG_STOP;
+        ABORT_ON_ERROR;
     }
 
     /*
@@ -1319,27 +1242,37 @@ MAIN
      *  After all, a success message is displayed.
      */
 
-    if (makedeps) {
-        NEWLINE (2);
-        NOTE2 (("*** Dependency Detection successful ***"));
-        NOTE2 (("*** Exit code 0"));
-        NOTE2 (("*** 0 error(s), %d warning(s)", warnings));
-        NEWLINE (2);
-    } else {
-        NEWLINE (2);
-        NOTE2 (("*** Compilation successful ***"));
+    NEWLINE (2);
+    NOTE2 (("*** Compilation successful ***"));
 
-        if (break_compilation) {
-            NOTE2 (("*** BREAK after: %s", compiler_phase_name[compiler_phase - 1]));
-        }
 #ifdef SHOW_MALLOC
-        NOTE2 (("*** maximal allocated memory (bytes): %u", max_allocated_mem));
+    NOTE2 (("*** maximum allocated memory (bytes): %u", max_allocated_mem));
 #endif
 
-        NOTE2 (("*** Exit code 0"));
-        NOTE2 (("*** 0 error(s), %d warning(s)", warnings));
-        NEWLINE (2);
-    }
+    NOTE2 (("*** Exit code 0"));
+    NOTE2 (("*** 0 error(s), %d warning(s)", warnings));
+    NEWLINE (2);
+
+    return (0);
+
+BREAK:
+
+    if (compiler_phase >= PH_scanparse)
+        Print (syntax_tree);
+
+    NEWLINE (2);
+    NOTE2 (("*** Compilation successful ***"));
+    NOTE2 (("*** BREAK after: %s", compiler_phase_name[compiler_phase]));
+    if (break_specifier[0] != '\0')
+        NOTE2 (("*** BREAK specifier: '%s`", break_specifier));
+
+#ifdef SHOW_MALLOC
+    NOTE2 (("*** maximum allocated memory (bytes): %u", max_allocated_mem));
+#endif
+
+    NOTE2 (("*** Exit code 0"));
+    NOTE2 (("*** 0 error(s), %d warning(s)", warnings));
+    NEWLINE (2);
 
     return (0);
 }
