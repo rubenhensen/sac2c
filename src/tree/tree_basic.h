@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.225  2004/10/14 13:36:28  sbs
+ * VINFO_TYPE changed into VINFO_SHAPE
+ * signature of MakeVinfo adjusted accordingly.
+ *
  * Revision 3.224  2004/10/11 14:57:53  sah
  * made INC/DEC NCODE_USED explicit 
  *
@@ -2102,15 +2106,15 @@ extern node *MakeFlatArray (node *aelems);
  ***  permanent attributes:
  ***
  ***    useflag  FLAG
- ***    types*   TYPE     (O)
+ ***    shape*   SHAPE     (O)
  ***    node*    DOLLAR   (O)  (N_vinfo)
  ***    node*    VARDEC   (O)  (N_vardec)
  ***/
 
-extern node *MakeVinfo (useflag flag, types *type, node *next, node *dollar);
+extern node *MakeVinfo (useflag flag, shape *shp, node *next, node *dollar);
 
 #define VINFO_FLAG(n) (n->info.use)
-#define VINFO_TYPE(n) ((types *)n->node[1])
+#define VINFO_SHAPE(n) ((shape *)n->node[1])
 #define VINFO_NEXT(n) (n->node[0])
 #define VINFO_DOLLAR(n) (n->node[2])
 #define VINFO_VARDEC(n) (n->node[3])
