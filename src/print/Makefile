@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.14  2004/08/06 10:44:12  skt
+# added path to multithread
+#
 # Revision 3.13  2002/06/06 19:56:03  dkr
 # target clean modified
 #
@@ -64,7 +67,7 @@ include $(PROJECT_ROOT)/Makefile.Config
 
 INCS = -I../global -I../tree -I../compile -I../modules -I../refcount \
        -I../concurrent -I../psi-opt -I../optimize -I../typecheck \
-       -I../c-interface -I../../inc -I../constants
+       -I../c-interface -I../../inc -I../constants -I../multithread
 
 all: print.o convert.o
 
