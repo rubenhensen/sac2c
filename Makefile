@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.18  1995/03/29 11:49:43  hw
+# Revision 1.19  1995/03/29 12:10:37  hw
+# *** empty log message ***
+#
+# Revision 1.18  1995/03/29  11:49:43  hw
 # compile inserted
 #
 # Revision 1.17  1995/03/28  12:07:46  hw
@@ -101,7 +104,7 @@ deps:
 	(cd src/optimize; $(MAKE) deps)
 	(cd src/modules; $(MAKE) deps)
 	(cd src/refcount; $(MAKE) deps )
-	(cd src/compile; $(MAKE) )
+	(cd src/compile; $(MAKE) deps )
 
 clean:
 	(cd src/scanparse; $(MAKE) clean)
@@ -112,5 +115,5 @@ clean:
 	(cd src/optimize; $(MAKE) clean)
 	(cd src/modules; $(MAKE) clean)
 	(cd src/refcount; $(MAKE) clean)
-	(cd src/compile; $(MAKE) )
+	(cd src/compile; $(MAKE) clean )
 	$(RM) sac2c
