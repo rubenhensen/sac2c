@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.4  1999/10/28 17:08:35  dkr
+ * signature of Print...Mask() functions changed
+ *
  * Revision 2.3  1999/09/01 17:11:01  jhs
  * Fixed Duplicating of masks in DupAssign.
  *
@@ -21,9 +24,6 @@
  *    INLINE -> DUP_INLINE
  *    NORMAL -> DUP_NORMAL
  *    INVARIANT -> DUP_INVARIANT
- *
- * Revision 1.22  1997/11/26 14:21:03  srs
- * *** empty log message ***
  *
  * Revision 1.21  1997/11/26 14:06:26  srs
  * removed use of old macros from acssass_macros.h
@@ -154,7 +154,7 @@ int invaruns = 1;
  *
  *  functionname  : LoopInvariantRemoval
  *  arguments     : 1) ptr to root of the syntaxtree or a N_fundef - node.
- *		    2) NULL
+ *                  2) NULL
  *                  R) ptr optimized 1)
  *  description   : initiates loop invariant removal reduction for the intermediate
  *                  sac-code
@@ -296,7 +296,7 @@ LIRloop (node *arg_node, node *arg_info)
                     LINVAR[i] = FALSE;
                 }
                 /* If there are usages for genarray or modarray they are not loop */
-                /* invariant too 							*/
+                /* invariant too                                                  */
                 if ((NULL != arg_node->node[1]->mask[1])
                     && (0 < arg_node->node[1]->mask[1][i])) {
                     if (0 < arg_node->mask[0][i])
@@ -312,8 +312,9 @@ LIRloop (node *arg_node, node *arg_info)
             UBD = GenMask (VARNO); /* all variables automaticly set to FALSE */
             /* all variables defined in loop body may be used before defined */
             for (i = 0; i < VARNO; i++) {
-                if (0 < arg_node->node[1]->mask[0][i])
+                if (0 < arg_node->node[1]->mask[0][i]) {
                     UBD[i] = UNDEF;
+                }
             }
             LINVAR = GenMask (VARNO);
             SetMask (LINVAR, TRUE, MAXVARNO);
@@ -878,12 +879,12 @@ LIRMblock (node *arg_node, node *arg_info)
  *
  *  functionname  : GetUsed
  *  arguments     : 1) assign_node
- *		    2) node behind cast-nodes in let-expressions
- *		    R) ptr to the mask, which contains information's about used
+ *                  2) node behind cast-nodes in let-expressions
+ *                  R) ptr to the mask, which contains information's about used
  *                     variables in this expression.
  *  description   : this functions determines, what expression this assignment is,
  *                  and delivers the mask (which is calculated before) to the calling
- *		    function.
+ *                  function.
  *  global vars   : --
  *  internal funs : --
  *  external funs : --
@@ -946,11 +947,12 @@ CheckUp (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("CheckUp");
 
-    DBUG_EXECUTE ("LIRI", char *text; text = PrintMask (LINVAR, VARNO);
-                  printf ("\nLOOP INVARIANT :%s\n", text); FREE (text);
-                  text = PrintMask (UBD, VARNO); printf ("USED BEFORE DEF:%s\n", text);
-                  FREE (text); text = PrintMask (UBD_MAKE, VARNO);
-                  printf ("UBD MAKED      :%s\n", text); FREE (text););
+    DBUG_EXECUTE ("LIRI", fprintf (stdout, "\nLOOP INVARIANT :");
+                  PrintDefUseMask (stdout, LINVAR, VARNO);
+                  fprintf (stdout, "\nUSED BEFORE DEF:");
+                  PrintDefUseMask (stdout, UBD, VARNO);
+                  fprintf (stdout, "\nUBD MAKED      :");
+                  PrintDefUseMask (stdout, UBD_MAKE, VARNO); fprintf (stdout, "\n"););
 
     node_behind = NodeBehindCast (arg_node->node[0]->node[0]);
 
@@ -984,12 +986,11 @@ CheckUp (node *arg_node, node *arg_info)
                     MOVE = CAUTION;
                 }
             }
-        } else
-        /*
-         * Unswitch conditional ?
-         * arg_node->node[0] ist N_cond
-         */
-        {
+        } else {
+            /*
+             * Unswitch conditional ?
+             * arg_node->node[0] ist N_cond
+             */
             if (N_id == NODE_TYPE (COND_COND (arg_node->node[0])))
                 /* srs        cond = arg_node->node[0]->node[0]->IDS_VARNO; */
                 cond = VARDEC_VARNO (ID_VARDEC (COND_COND (arg_node->node[0])));
@@ -1161,11 +1162,12 @@ CheckUp (node *arg_node, node *arg_info)
 
     DBUG_PRINT ("LIR", ("Line %d = %d, %d, %d, %d => %d", arg_node->lineno, term1, term2,
                         term3, term4, MOVE));
-    DBUG_EXECUTE ("LIRI", char *text; text = PrintMask (LINVAR, VARNO);
-                  printf ("LOOP INVARIANT :%s\n", text); FREE (text);
-                  text = PrintMask (UBD, VARNO); printf ("USED BEFORE DEF:%s\n", text);
-                  FREE (text); text = PrintMask (UBD_MAKE, VARNO);
-                  printf ("UBD MAKED      :%s\n", text); FREE (text););
+    DBUG_EXECUTE ("LIRI", fprintf (stdout, "LOOP INVARIANT :");
+                  PrintDefUseMask (stdout, LINVAR, VARNO);
+                  fprintf (stdout, "\nUSED BEFORE DEF:");
+                  PrintDefUseMask (stdout, UBD, VARNO);
+                  fprintf (stdout, "\nUBD MAKED      :");
+                  PrintDefUseMask (stdout, UBD_MAKE, VARNO); fprintf (stdout, "\n"););
     DBUG_RETURN (arg_node);
 }
 
@@ -1193,11 +1195,12 @@ CheckDown (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("CheckDown");
 
-    DBUG_EXECUTE ("LIRI", char *text; text = PrintMask (LINVAR, VARNO);
-                  printf ("\nLOOP INVARIANT :%s\n", text); FREE (text);
-                  text = PrintMask (UBD, VARNO); printf ("USED BEFORE DEF:%s\n", text);
-                  FREE (text); text = PrintMask (UBD_MAKE, VARNO);
-                  printf ("UBD MAKED      :%s\n", text); FREE (text););
+    DBUG_EXECUTE ("LIRI", fprintf (stdout, "\nLOOP INVARIANT :");
+                  PrintDefUseMask (stdout, LINVAR, VARNO);
+                  fprintf (stdout, "\nUSED BEFORE DEF:\n");
+                  PrintDefUseMask (stdout, UBD, VARNO);
+                  fprintf (stdout, "\nUBD MAKED      :\n");
+                  PrintDefUseMask (stdout, UBD_MAKE, VARNO); fprintf (stdout, "\n"););
 
     node_behind = NodeBehindCast (arg_node->node[0]->node[0]);
 
@@ -1226,8 +1229,7 @@ CheckDown (node *arg_node, node *arg_info)
      * exemain all variables used or defined in this expression.
      */
     for (i = 0; i < VARNO; i++) {
-        if (0 < DEF[i]) /* check defined variables first */
-        {
+        if (0 < DEF[i]) { /* check defined variables first */
             if (TRUE != LINVAR[i])
                 term2 = FALSE; /* all definitions below moved ?          */
             if (UNDEF == UBD[i])
@@ -1235,8 +1237,7 @@ CheckDown (node *arg_node, node *arg_info)
             if (TRUE == UBD[i])
                 term3 = FALSE; /* is it a variable used before defined ? */
         }
-        if (0 < used_vars[i]) /* check used variables second */
-        {
+        if (0 < used_vars[i]) { /* check used variables second */
             if (TRUE == UBD[i])
                 term1 = FALSE; /* is it a variable used before defined ? */
         }
@@ -1246,8 +1247,9 @@ CheckDown (node *arg_node, node *arg_info)
      * If all all terms TRUE mark this node as MOVE_DOWN
      */
     if (term1 && term2 && term3 && (N_with != node_behind->nodetype)
-        && (N_return != arg_node->node[0]->nodetype))
+        && (N_return != arg_node->node[0]->nodetype)) {
         MOVE = MOVE_DOWN;
+    }
 
     /*
      * If this expression might be moved above loop, check if there are definitions
@@ -1295,8 +1297,8 @@ CheckDown (node *arg_node, node *arg_info)
         MOVE = NONE;
         for (i = 0; i < VARNO; i++) {
             if (0 < used_vars[i]) {
-                if (TRUE == LINVAR[i]) /* no remaining definitions blow this line left */
-                {
+                if (TRUE
+                    == LINVAR[i]) { /* no remaining definitions blow this line left */
                     UBD_MAKE[i] = TRUE;
                 }
             }
@@ -1317,11 +1319,12 @@ CheckDown (node *arg_node, node *arg_info)
     DBUG_PRINT ("LIR", ("Line %d  = %d, %d, %d => %d", arg_node->lineno, term1, term2,
                         term3, MOVE));
 
-    DBUG_EXECUTE ("LIRI", char *text; text = PrintMask (LINVAR, VARNO);
-                  printf ("LOOP INVARIANT :%s\n", text); FREE (text);
-                  text = PrintMask (UBD, VARNO); printf ("USED BEFORE DEF:%s\n", text);
-                  FREE (text); text = PrintMask (UBD_MAKE, VARNO);
-                  printf ("UBD MAKED      :%s\n", text); FREE (text););
+    DBUG_EXECUTE ("LIRI", fprintf (stdout, "LOOP INVARIANT :");
+                  PrintDefUseMask (stdout, LINVAR, VARNO);
+                  fprintf (stdout, "\nUSED BEFORE DEF:");
+                  PrintDefUseMask (stdout, UBD, VARNO);
+                  fprintf (stdout, "\nUBD MAKED      :");
+                  PrintDefUseMask (stdout, UBD_MAKE, VARNO); fprintf (stdout, "\n"););
 
     DBUG_RETURN (arg_node);
 } /* END - CheckDown */
