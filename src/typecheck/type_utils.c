@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2004/12/06 17:30:25  sbs
+ * TUreplaceRettypes is now non-destructive!
+ *
  * Revision 1.5  2004/12/05 19:19:55  sbs
  * return type of LaC funs changed into alphas.
  *
@@ -107,11 +110,10 @@ TUreplaceRetTypes (node *rets, ntype *prodt)
     while (tmp != NULL) {
         type = TYgetProductMember (prodt, i);
         RET_TYPE (tmp) = TYfreeType (RET_TYPE (tmp));
-        RET_TYPE (tmp) = type;
+        RET_TYPE (tmp) = TYcopyType (type);
         tmp = RET_NEXT (tmp);
         i++;
     }
-    TYfreeTypeConstructor (prodt);
 
     DBUG_RETURN (rets);
 }
