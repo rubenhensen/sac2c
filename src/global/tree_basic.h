@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.150  1998/04/30 12:23:16  srs
+ * changed comment
+ *
  * Revision 1.149  1998/04/29 20:15:50  dkr
  * added macro INFO_SPMD_FIRST
  *
@@ -2532,7 +2535,7 @@ extern node *MakeNGenerator (node *bound1, node *bound2, prf op1, prf op2, node 
  ***
  ***  temporary attributes:
  ***
- ***    node*  EXPR            (scanparse, stays != NULL afterwards)
+ ***    node*  EXPR            (scanparse, NULL afterwards)
  ***    node*  FUNDEF          (N_fundef)  (typecheck -> )
  ***    long*  MASK                        (optimize -> )
  ***
