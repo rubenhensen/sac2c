@@ -1,7 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.44  1996/08/29 17:46:51  sbs
+ * Revision 1.45  1997/03/11 16:33:57  cg
+ * macro CMP_OBJ_OBJDEF rewritten. . Now, it should be possible to specify
+ * >> a module name even for external modules when using a global object.
+ * >> .
+ *
+ * Revision 1.44  1996/08/29  17:46:51  sbs
  * LET_BASETYPE inserted
  *
  * Revision 1.43  1996/05/28  11:30:51  sbs
@@ -792,8 +797,11 @@ extern node *SearchTypedef (char *name, char *mod, node *implementations);
  */
 
 #define CMP_OBJ_OBJDEF(name, mod, odef)                                                  \
-    ((!strcmp (name, OBJDEF_NAME (odef)))                                                \
-     && (!strcmp (MOD (mod), MOD (OBJDEF_MOD (odef)))))
+    ((mod == NULL)                                                                       \
+       ? (0 == strcmp (name, OBJDEF_NAME (odef)))                                        \
+       : ((0 == strcmp (name, OBJDEF_NAME (odef)))                                       \
+          && ((OBJDEF_MOD (odef) == NULL) ? (0 == strcmp (mod, OBJDEF_LINKMOD (odef)))   \
+                                          : (0 == strcmp (mod, OBJDEF_MOD (odef))))))
 
 /*
  *
