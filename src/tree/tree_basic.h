@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.98  2000/10/23 11:32:41  dkr
+ * MakeId1 renamed to MakeId_Copy
+ * MakeId2 removed
+ *
  * Revision 1.97  2000/10/17 16:27:46  dkr
  * some comments corrected
  *
@@ -455,7 +459,7 @@ extern types *MakeType (simpletype basetype, int dim, shpseg *shpseg, char *name
 
 extern ids *MakeIds (char *name, char *mod, statustype status);
 
-extern ids *MakeIds1 (char *name);
+extern ids *MakeIds_Copy (char *name);
 
 #define IDS_NAME(i) (i->id)
 #define IDS_MOD(i) (i->mod)
@@ -1722,9 +1726,7 @@ extern node *MakeVinfo (useflag flag, types *type, node *next, node *dollar);
 
 extern node *MakeId (char *name, char *mod, statustype status);
 
-extern node *MakeId1 (char *str);
-extern node *MakeId2 (ids *ids_node);
-extern node *MakeId3 (ids *ids_node);
+extern node *MakeId_Copy (char *str);
 
 #define ID_IDS(n) (n->info.ids)
 #define ID_NAME(n) (n->info.ids->id)
@@ -1734,7 +1736,7 @@ extern node *MakeId3 (ids *ids_node);
 #define ID_MOD(n) (n->info.ids->mod)
 #define ID_ATTRIB(n) (n->info.ids->attrib)
 #define ID_STATUS(n) (n->info.ids->status)
-#define ID_REFCNT(n) (n->refcnt)
+#define ID_REFCNT(n) (n->info.ids->refcnt)
 #define ID_NAIVE_REFCNT(n) (n->info.ids->naive_refcnt)
 #define ID_CLSCONV(n) ((clsconv_t) (n->flag))
 #define ID_WL(n) (n->node[0])
