@@ -2160,9 +2160,13 @@
 	  </phases>
 	</attribute>
         <attribute name="FunGroup" default="NULL" mandatory="no">
-          <type name="Node" />
+          <type name="Link" >
+            <target>
+              <node name="Fungroup" />
+            </target>
+          </type>
           <phases>
-             <range from="optimize" to="final" />
+             <range from="typecheck" to="final" />
           </phases>
          </attribute>
       </attributes>
