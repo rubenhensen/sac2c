@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.50  1997/12/04 21:19:02  srs
+ * flattening of new WLs is working
+ *
  * Revision 1.49  1997/12/02 18:56:33  srs
  * temporary checkin (don't try new_with)
  *
@@ -183,12 +186,13 @@
 
 /*
  * arg_info in this file:
+ * info.cint : context of this arg_node, e.g. within a condition.
  * node[0]: every FltnAssign replaces node[0] with arg_node so that other
  *          functions may place instructions IN FRONT of that assignment.
  *          FltnAssign returns this node[0]
  * node[1]: this node is only used in the context of WLs. It is necessary
- *          to put instructions in front of the assignments of WLs so
- *          this node contains
+ *          to put instructions in front of the assignments of WLs and
+ *          not only in front of the last assignment.
  */
 
 #include <stdio.h>
@@ -419,9 +423,7 @@ AppendIdentity (node *last_assign, char *old_name, char *new_name)
     LET_EXPR (let_node) = MakeId (name, NULL, ST_regular);
 
     ASSIGN_INSTR (assign_node) = let_node;
-    if (last_assign) {
-        ASSIGN_NEXT (assign_node) = last_assign;
-    }
+    ASSIGN_NEXT (assign_node) = last_assign;
 
     DBUG_RETURN (assign_node);
 }
@@ -494,9 +496,6 @@ Flatten (node *arg_node)
     act_tab = flat_tab;
     info_node = MakeNode (N_info);
     info_node->info.cint = NORMAL;
-#ifndef NEWTREE
-    info_node->nnode = 1;
-#endif
     info_node->node[0] = NULL;
     with_level = 0;
     arg_node = Trav (arg_node, info_node);
@@ -558,17 +557,19 @@ FltnAssign (node *arg_node, node *arg_info)
 node *
 FltnExprs (node *arg_node, node *arg_info)
 {
-    node *tmp_node1, *id_node, *let_node, *assign_node, *tmp_arg = arg_node->node[0];
+    node *tmp_node1, *id_node, *let_node, *assign_node, *tmp_arg;
     int abstract, old_tag;
 
     DBUG_ENTER ("FltnExprs");
 
+    tmp_arg = EXPRS_EXPR (arg_node);
+
     /* ignore leading casts */
     while (N_cast == tmp_arg->nodetype)
-        tmp_arg = tmp_arg->node[0];
+        tmp_arg = EXPRS_EXPR (tmp_arg);
 
     /* compute whether to abstract an expression or not , depending on the
-     * context of the expression ,given by arg_info->info.cint
+     * context of the expression, given by arg_info->info.cint
      */
     switch (arg_info->info.cint) {
     case LOOP:
@@ -600,29 +601,19 @@ FltnExprs (node *arg_node, node *arg_info)
                             abstract, mdb_nodetype[tmp_arg->nodetype]));
 
     if (abstract) {
-        tmp_node1 = arg_node->node[0];
+        tmp_node1 = EXPRS_EXPR (arg_node);
 
         id_node = MakeNode (N_id);
         id_node->info.ids = MakeIds (GenTmpVar (var_counter), NULL, ST_regular);
-        arg_node->node[0] = id_node;
+        EXPRS_EXPR (arg_node) = id_node;
 
         let_node = MakeNode (N_let);
         let_node->info.ids = MakeIds (GenTmpVar (var_counter++), NULL, ST_regular);
-#ifndef NEWTREE
-        let_node->nnode = 1;
-#endif
-        let_node->node[0] = tmp_node1;
+        LET_EXPR (let_node) = tmp_node1;
 
         assign_node = MakeNode (N_assign);
         ASSIGN_INSTR (assign_node) = let_node;
         ASSIGN_NEXT (assign_node) = arg_info->node[0]; /* a new node is put in front! */
-#ifndef NEWTREE
-        if (NULL == assign_node->node[1])
-            assign_node->nnode = 1;
-        else
-            assign_node->nnode = 2;
-#endif
-
         arg_info->node[0] = assign_node;
 
         /* we use tmp_arg , because tmp_node1 may be a N_cast, but tmp_arg
@@ -652,12 +643,8 @@ FltnExprs (node *arg_node, node *arg_info)
     } else if (N_id == tmp_arg->nodetype)
         arg_node->node[0] = Trav (arg_node->node[0], arg_info);
 
-        /* Last, but not least remaining exprs have to be done */
-#ifndef NEWTREE
-    if (arg_node->nnode == 2)
-#else
-    if (arg_node->node[1] != NULL)
-#endif
+    /* Last, but not least remaining exprs have to be done */
+    if (EXPRS_NEXT (arg_node))
         EXPRS_NEXT (arg_node) = Trav (EXPRS_NEXT (arg_node), arg_info);
     DBUG_RETURN (arg_node);
 }
@@ -748,9 +735,6 @@ FltnWhile (node *arg_node, node *arg_info)
     DBUG_ENTER ("FltnWhile");
 
     info_node = MakeNode (N_info);
-#ifndef NEWTREE
-    info_node->nnode = 1;
-#endif
     info_node->node[1] = arg_info->node[1]; /* list of assigns that have to be
                                              * put infront of a with_loop
                                              */
@@ -1230,7 +1214,7 @@ FltnPrf (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("FltnAp");
 
-    if (arg_node->node[0]) {
+    if (PRF_ARGS (arg_node)) {
         old_tag = arg_info->info.cint;
         if ((arg_node->info.prf == F_psi) || (arg_node->info.prf == F_modarray)) {
             arg_info->info.cint = AP;
@@ -1367,9 +1351,12 @@ FltnLet (node *arg_node, node *arg_info)
                     ids->id = RenameWithVar (old_name, with_level);
                     PUSH (old_name, ids->id, with_level);
                     /* srs: what happens if node[1] != 0 ? */
+                    /*                arg_info->node[1]=AppendIdentity(arg_info->node[1],
+                     */
+                    /* 						StringCopy(tmp->id_new), ids->id);
+                     */
                     arg_info->node[1]
-                      = AppendIdentity (arg_info->node[1], StringCopy (tmp->id_new),
-                                        ids->id);
+                      = AppendIdentity (arg_info->node[1], tmp->id_new, ids->id);
                 } else if ((0 < with_level) && (with_level == tmp->w_level)) {
                     FREE (ids->id);
                     ids->id = StringCopy (tmp->id_new);
@@ -1393,7 +1380,9 @@ FltnLet (node *arg_node, node *arg_info)
             tmp_tos = tos;
             PUSH (ids->id, new_name, with_level);
             ids->id = StringCopy (let_name);
-            new_assign = AppendIdentity (new_assign, StringCopy (tmp->id_new), new_name);
+            /*          new_assign=AppendIdentity(new_assign, */
+            /*                                    StringCopy(tmp->id_new), new_name); */
+            new_assign = AppendIdentity (new_assign, tmp->id_new, new_name);
         } else {
             PUSH (ids->id, ids->id, with_level);
         }
@@ -1552,12 +1541,12 @@ FltnNwith (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("FltnNWith");
 
-    with_level += 1;
+    with_level++;
     tmp_tos = tos; /* store tos */
 
     arg_node = TravSons (arg_node, arg_info);
 
-    with_level -= 1;
+    with_level--;
     tos = tmp_tos;
 
     DBUG_RETURN (arg_node);
@@ -1686,23 +1675,31 @@ FltnNwithop (node *arg_node, node *arg_info)
 node *
 FltnNcode (node *arg_node, node *arg_info)
 {
-    node *info_node, *tmp;
+    node *info_node, *tmp, *assign_node, *let_node;
+    char *name;
 
+    /* if CEXPR is not an Id we have to flatten the expression in the context
+       of the body */
+    if (N_id != NODE_TYPE (NCODE_CEXPR (arg_node))) {
+        name = GenTmpVar (var_counter++);
+        let_node = MakeLet (NCODE_CEXPR (arg_node), MakeIds (name, NULL, ST_regular));
+        assign_node = MakeAssign (let_node, NULL);
+        NCODE_CEXPR (arg_node) = MakeId (name, NULL, ST_regular);
+        /* name will be pushed on the local_stack later while processing the body. */
+
+        /* insert assign_node at the end of the body */
+        tmp = BLOCK_INSTR (NCODE_CBLOCK (arg_node));
+        while (tmp && ASSIGN_NEXT (tmp))
+            tmp = ASSIGN_NEXT (tmp);
+        if (tmp)
+            ASSIGN_NEXT (tmp) = assign_node;
+    }
+
+    /* traverse the body, use info_node to save arg_info  */
     info_node = MakeInfo ();
-    arg_node = TravSons (arg_node, info_node);
+    arg_node = Trav (NCODE_CBLOCK (arg_node), info_node);
 
-    /* now we have assignments in info_node which have to be put before
-     the WL. */
-    tmp = info_node->node[0];
-    while (tmp && ASSIGN_NEXT (tmp)) {
-        DBUG_ASSERT (NODE_TYPE (tmp) == N_assign, "");
-        tmp = ASSIGN_NEXT (tmp);
-    }
-    if (tmp) {
-        ASSIGN_NEXT (tmp) = arg_info->node[0];
-        arg_info->node[0] = info_node->node[0];
-    }
-
+    /* there is only one Ncode node at this time so we can ignore NCODE_NEXT(). */
     return (arg_node);
 }
 /* ========================================================================== */
