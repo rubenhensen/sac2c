@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2001/02/12 18:30:08  dkr
+ * fixed a bug in INFDFMSfundef:
+ * Now, DFMUpdateMaskBase() is called in order to get definitely correct
+ * masks ...
+ *
  * Revision 1.1  2000/12/15 18:29:31  dkr
  * Initial revision
  *
@@ -685,10 +690,11 @@ INFDFMSfundef (node *arg_node, node *arg_info)
     INFO_INFDFMS_FUNDEF (arg_info) = arg_node;
 
     if (FUNDEF_BODY (arg_node) != NULL) {
-        if (FUNDEF_DFM_BASE (arg_node) == NULL) {
-            FUNDEF_DFM_BASE (arg_node)
-              = DFMGenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDEC (arg_node));
-        }
+        FUNDEF_DFM_BASE (arg_node)
+          = (FUNDEF_DFM_BASE (arg_node) == NULL)
+              ? DFMGenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDEC (arg_node))
+              : DFMUpdateMaskBase (FUNDEF_DFM_BASE (arg_node), FUNDEF_ARGS (arg_node),
+                                   FUNDEF_VARDEC (arg_node));
 
         INFO_INFDFMS_IN (arg_info) = DFMGenMaskClear (FUNDEF_DFM_BASE (arg_node));
         INFO_INFDFMS_OUT (arg_info) = DFMGenMaskClear (FUNDEF_DFM_BASE (arg_node));
