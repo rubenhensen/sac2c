@@ -1,6 +1,9 @@
 /*
  * $Log$
- * Revision 1.3  1995/02/09 11:07:13  hw
+ * Revision 1.4  1995/02/13 17:51:38  hw
+ * added B_B to enum type_class
+ *
+ * Revision 1.3  1995/02/09  11:07:13  hw
  *  - added macros TT1, TT3, BOOL_A
  * - enlarged enum type_class
  *  - changed function AxA
@@ -46,7 +49,8 @@ enum type_class {
     V_As,
     A_S,
     SxSxA_A,
-    SxAxA_A
+    SxAxA_A,
+    B_B
 };
 
 #define GEN_TYPE_NODE(node, type)                                                        \
