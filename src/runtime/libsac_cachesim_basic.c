@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.9  1999/05/10 10:57:54  her
+ * SAC_CS_CheckArguments got a new parameter: profilinglevel
+ *
  * Revision 2.8  1999/05/06 14:05:45  her
  * eliminated THE segmentation fault caused by pde1-64
  *
@@ -187,7 +190,66 @@ WritePolicyName (tWritePolicy wpol)
     default:
         return ("");
     }
-}
+} /* WritePolicyName */
+
+static char *
+WritePolicyShortName (tWritePolicy wpol)
+{
+    switch (wpol) {
+    case SAC_CS_default:
+        return ("d");
+    case SAC_CS_fetch_on_write:
+        return ("f");
+    case SAC_CS_write_validate:
+        return ("v");
+    case SAC_CS_write_around:
+        return ("a");
+    default:
+        return ("");
+    }
+} /* WritePolicyShortName */
+
+static char *
+ProfilingLevelName (tProfilingLevel level)
+{
+    switch (level) {
+    case SAC_CS_default:
+        return ("default");
+    case SAC_CS_simple:
+        return ("simple");
+    case SAC_CS_advanced:
+        return ("advanced");
+    case SAC_CS_piped_simple:
+        return ("piped_simple");
+    case SAC_CS_piped_advanced:
+        return ("piped_advanced");
+    case SAC_CS_file:
+        return ("file");
+    default:
+        return ("none");
+    }
+} /* ProfilingLevelName */
+
+static char *
+ProfilingLevelShortName (tProfilingLevel level)
+{
+    switch (level) {
+    case SAC_CS_default:
+        return ("d");
+    case SAC_CS_simple:
+        return ("s");
+    case SAC_CS_advanced:
+        return ("a");
+    case SAC_CS_piped_simple:
+        return ("ps");
+    case SAC_CS_piped_advanced:
+        return ("pa");
+    case SAC_CS_file:
+        return ("f");
+    default:
+        return ("n");
+    }
+} /* ProfilingLevelShortName */
 
 static void
 ResetCacheParms (char *spec, unsigned long int *cachesize, int *cachelinesize,
@@ -249,17 +311,18 @@ ResetCacheParms (char *spec, unsigned long int *cachesize, int *cachelinesize,
 }
 
 void
-SAC_CS_CheckArguments (int argc, char *argv[], unsigned long int *cachesize1,
-                       int *cachelinesize1, int *associativity1,
-                       tWritePolicy *writepolicy1, unsigned long int *cachesize2,
-                       int *cachelinesize2, int *associativity2,
-                       tWritePolicy *writepolicy2, unsigned long int *cachesize3,
-                       int *cachelinesize3, int *associativity3,
-                       tWritePolicy *writepolicy3)
+SAC_CS_CheckArguments (int argc, char *argv[], tProfilingLevel *profilinglevel,
+                       unsigned long int *cachesize1, int *cachelinesize1,
+                       int *associativity1, tWritePolicy *writepolicy1,
+                       unsigned long int *cachesize2, int *cachelinesize2,
+                       int *associativity2, tWritePolicy *writepolicy2,
+                       unsigned long int *cachesize3, int *cachelinesize3,
+                       int *associativity3, tWritePolicy *writepolicy3)
 {
     int i;
 
     for (i = 1; i < argc - 1; i++) {
+        /* extracting parameters for each cachelevel */
         if ((argv[i][0] == '-') && (argv[i][1] == 'c') && (argv[i][2] == 's')
             && (argv[i][4] == '\0')) {
             switch (argv[i][3]) {
@@ -277,10 +340,26 @@ SAC_CS_CheckArguments (int argc, char *argv[], unsigned long int *cachesize1,
                 break;
             default:
                 break;
+            } /* switch */
+        }     /* if */
+
+        /* extracting general parameters for the cachesimulation */
+        if (!strcmp (argv[i], "-csg")) {
+            if (!strcmp (argv[i + 1], "s")) {
+                *profilinglevel = SAC_CS_simple;
+            } else if (!strcmp (argv[i + 1], "a")) {
+                *profilinglevel = SAC_CS_advanced;
+            } else if (!strcmp (argv[i + 1], "ps")) {
+                *profilinglevel = SAC_CS_piped_simple;
+            } else if (!strcmp (argv[i + 1], "pa")) {
+                *profilinglevel = SAC_CS_piped_advanced;
+            } else {
             }
-        }
-    }
-}
+
+        } /* if */
+
+    } /* for */
+} /* SAC_CS_CheckArguments */
 
 static void
 InitializeOneCacheLevel (int L, int nr_of_cpu, tProfilingLevel profilinglevel,
@@ -433,10 +512,9 @@ SAC_CS_Initialize (int nr_of_cpu, tProfilingLevel profilinglevel, ULINT cachesiz
                    tWritePolicy writepolicy2, ULINT cachesize3, int cachelinesize3,
                    int associativity3, tWritePolicy writepolicy3)
 {
-    tProfilingLevel transmitted_plevel;
+    char filename[255];
 
     profiling_level = profilinglevel;
-    transmitted_plevel = profilinglevel;
 
     if (nr_of_cpu > 1) {
         SAC_RuntimeError ("Cache simulation does not support multi-threaded execution");
@@ -471,30 +549,22 @@ SAC_CS_Initialize (int nr_of_cpu, tProfilingLevel profilinglevel, ULINT cachesiz
 
     if ((profilinglevel == SAC_CS_piped_simple)
         || (profilinglevel == SAC_CS_piped_advanced)) {
-        /* The CacheSimAnalyser must not get an profilinglevel
-         * like SAC_CS_piped_X!!!
-         */
-        switch (profilinglevel) {
-        case SAC_CS_piped_simple:
-            transmitted_plevel = SAC_CS_simple;
-            break;
-        case SAC_CS_piped_advanced:
-            transmitted_plevel = SAC_CS_advanced;
-            break;
-        default:
-            break;
-        }
-        SAC_CS_pipehandle = stdout;
-        SAC_CS_pipehandle = popen ("$SACBASE/runtime/CacheSimAnalyser", "w");
-        fprintf (SAC_CS_pipehandle,
-                 "I %d %d "
-                 "%lu %d %d %d "
-                 "%lu %d %d %d "
-                 "%lu %d %d %d\n",
-                 nr_of_cpu, transmitted_plevel, cachesize1, cachelinesize1,
-                 associativity1, writepolicy1, cachesize2, cachelinesize2, associativity2,
-                 writepolicy2, cachesize3, cachelinesize3, associativity3, writepolicy3);
 
+        sprintf (filename,
+                 "$SACBASE/runtime/CacheSimAnalyser"
+                 " -csg %s"
+                 " -cs1 %lu/%d/%d/%s"
+                 " -cs2 %lu/%d/%d/%s"
+                 " -cs3 %lu/%d/%d/%s",
+                 ProfilingLevelShortName (profilinglevel), cachesize1, cachelinesize1,
+                 associativity1, WritePolicyShortName (writepolicy1), cachesize2,
+                 cachelinesize2, associativity2, WritePolicyShortName (writepolicy2),
+                 cachesize3, cachelinesize3, associativity3,
+                 WritePolicyShortName (writepolicy3));
+        printf ("%s\n", filename);
+        SAC_CS_pipehandle = stdout;
+        SAC_CS_pipehandle = popen (filename, "w");
+        /*SAC_CS_pipehandle = stdout;*/
         /* set all other function-variables to the piped version
          */
         SAC_CS_Finalize = &Piped_Finalize;
@@ -537,13 +607,15 @@ SAC_CS_Initialize (int nr_of_cpu, tProfilingLevel profilinglevel, ULINT cachesiz
     fprintf (stderr,
              "====================================================\n"
              "SAC program running with cache simulation enabled!\n"
+             "(at profiling_level: %s)\n"
              "This might delay program execution significantly.\n"
              "====================================================\n"
              "L1 cache:  cache size        : %lu KByte\n"
              "           cache line size   : %d Byte\n"
              "           associativity     : %d\n"
              "           write miss policy : %s\n",
-             cachesize1, cachelinesize1, associativity1, WritePolicyName (writepolicy1));
+             ProfilingLevelName (profiling_level), cachesize1, cachelinesize1,
+             associativity1, WritePolicyName (writepolicy1));
 
     if (cachesize2 > 0) {
         fprintf (stderr,
@@ -803,6 +875,7 @@ static void
 Piped_Finalize (void)
 {
     fprintf (SAC_CS_pipehandle, "F\n");
+    fflush (SAC_CS_pipehandle);
     pclose (SAC_CS_pipehandle);
 } /* Piped_Finalize */
 
@@ -835,7 +908,7 @@ Piped_WriteAccess (void *baseaddress, void *elemaddress)
 static void
 Piped_Start (char *tag)
 {
-    fprintf (SAC_CS_pipehandle, "B %s\n", tag);
+    fprintf (SAC_CS_pipehandle, "B %s\n", (tag == NULL) ? "" : tag);
 } /* Piped_Start */
 
 static void
