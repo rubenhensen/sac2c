@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.49  1998/04/10 03:13:20  dkr
+ * fixed a bug in FitWL
+ *
  * Revision 1.48  1998/04/10 02:25:58  dkr
  * added support for wlcomp-pragmas
  *
@@ -2959,7 +2962,7 @@ node *
 FitWL (node *nodes, int curr_dim, int dims)
 {
     node *new_node, *grids, *tmp;
-    int unroll, remain;
+    int unroll, remain, width;
 
     DBUG_ENTER ("FitWL");
 
@@ -3027,8 +3030,9 @@ FitWL (node *nodes, int curr_dim, int dims)
              * fit current dimension:
              *   split a uncompleted periode at the end of index range
              */
-            remain = (WLNODE_BOUND2 (tmp) - WLNODE_BOUND1 (tmp)) % unroll;
-            if (remain > 0) {
+            width = WLNODE_BOUND2 (tmp) - WLNODE_BOUND1 (tmp);
+            remain = width % unroll;
+            if ((remain > 0) && (width > remain)) {
                 /*
                  *  uncompleted periode found -> split
                  */
