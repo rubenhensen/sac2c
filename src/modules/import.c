@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.8  1995/01/06 17:50:43  sbs
+ * Revision 1.9  1995/01/06 19:30:30  sbs
+ * bug fixed in AppendModsToSymbol
+ *
+ * Revision 1.8  1995/01/06  17:50:43  sbs
  * no_mod_ext pragma inserted
  *
  * Revision 1.7  1995/01/04  18:19:36  sbs
@@ -421,9 +424,14 @@ AppendModnameToSymbol (node *symbol, char *modname)
                 modname = types->name_mod;
                 mods = FindSymbolInModul (modname, types->name, 0, NULL, 0);
                 mods2 = FindSymbolInModul (modname, types->name, 1, NULL, 0);
-                if (((mods == NULL) && (mods2 != NULL))
-                    || ((mods != NULL) && (mods2 == NULL)))
+                if ((mods == NULL) && (mods2 != NULL)) {
+                    types->name_mod = mods2->mod->prefix;
                     done = 1;
+                }
+                if ((mods != NULL) && (mods2 == NULL)) {
+                    types->name_mod = mods->mod->prefix;
+                    done = 1;
+                }
                 FreeMods (mods);
                 FreeMods (mods2);
             };
