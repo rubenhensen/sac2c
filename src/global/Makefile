@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.37  1997/04/25 12:04:05  sbs
+# Revision 1.38  1997/05/28 12:48:26  sbs
+# make deps done
+#
+# Revision 1.37  1997/04/25  12:04:05  sbs
 # make deps done
 #
 # Revision 1.36  1996/01/18  13:05:38  asi
@@ -204,11 +207,12 @@ main.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/malloc.h
 main.o: usage.h ../flatten/flatten.h ../print/print.h
 main.o: ../typecheck/typecheck.h ../optimize/optimize.h ../modules/filemgr.h
 main.o: ../modules/import.h ../refcount/refcount.h ../scanparse/scnprs.h
-main.o: ../scanparse/y.tab.h ../compile/trace.h ../compile/compile.h
-main.o: ../psi-opt/psi-opt.h ../modules/writesib.h ../modules/readsib.h
-main.o: ../modules/implicittypes.h ../objects/objinit.h ../modules/analysis.h
-main.o: ../modules/checkdec.h ../objects/objects.h ../objects/uniquecheck.h
-main.o: ../objects/rmvoidfun.h ../compile/precompile.h ../modules/cccall.h
+main.o: ../scanparse/y.tab.h ../compile/trace.h ../compile/profile.h
+main.o: ../compile/compile.h ../psi-opt/psi-opt.h ../modules/writesib.h
+main.o: ../modules/readsib.h ../modules/implicittypes.h ../objects/objinit.h
+main.o: ../modules/analysis.h ../modules/checkdec.h ../objects/objects.h
+main.o: ../objects/uniquecheck.h ../objects/rmvoidfun.h
+main.o: ../compile/precompile.h ../modules/cccall.h
 my_debug.o: tree.h types.h tree_basic.h tree_compound.h Error.h
 my_debug.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdio.h
 my_debug.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdarg.h

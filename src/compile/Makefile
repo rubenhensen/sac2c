@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.24  1997/05/28 12:35:25  sbs
+# Revision 1.25  1997/05/28 12:48:31  sbs
+# make deps done
+#
+# Revision 1.24  1997/05/28  12:35:25  sbs
 # Profiling integrated
 #
 # Revision 1.23  1997/05/14  08:54:07  sbs
@@ -118,7 +121,6 @@ clean:
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
-profile.o: profile.h
 compile.o: /usr/include/stdlib.h /usr/include/sys/stdtypes.h
 compile.o: /usr/include/string.h ../global/types.h ../global/tree_basic.h
 compile.o: ../global/tree_compound.h ../global/Error.h /usr/include/stdio.h
@@ -138,7 +140,9 @@ icm_args.o: icm.data
 icm_comment.o: icm.data
 icm_decl.o: icm.data
 icm_trace.o: icm.data
-libsac.o: /usr/include/stdio.h /usr/include/malloc.h
+libsac.o: /usr/include/sys/time.h /usr/include/sys/time.h
+libsac.o: /usr/include/sys/resource.h /usr/include/stdio.h
+libsac.o: /usr/include/malloc.h profile.h
 precompile.o: ../global/types.h ../global/tree_basic.h
 precompile.o: ../global/tree_compound.h ../global/Error.h
 precompile.o: /usr/include/stdio.h /usr/include/string.h
@@ -147,3 +151,5 @@ precompile.o: ../global/globals.h ../global/free.h ../../inc/dbug.h
 precompile.o: ../global/my_debug.h /usr/include/malloc.h
 precompile.o: ../global/internal_lib.h ../print/convert.h
 precompile.o: ../global/traverse.h ../refcount/refcount.h
+profile.o: ../../inc/dbug.h /usr/include/stdio.h ../global/globals.h
+profile.o: ../global/types.h profile.h

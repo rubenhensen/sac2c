@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.16  1997/05/14 12:20:00  sbs
+# Revision 1.17  1997/05/28 12:48:29  sbs
+# make deps done
+#
+# Revision 1.16  1997/05/14  12:20:00  sbs
 # make deps
 #
 # Revision 1.15  1997/05/14  06:51:54  sbs
@@ -88,4 +91,4 @@ typecheck.o: ../global/globals.h ../global/internal_lib.h
 typecheck.o: ../global/my_debug.h ../../inc/dbug.h ../global/traverse.h
 typecheck.o: typecheck.h ../print/convert.h ../modules/import.h prim_fun.h
 typecheck.o: ../global/free.h /usr/include/malloc.h ../global/access_macros.h
-typecheck.o: ../optimize/DupTree.h ../compile/analyse.h prim_fun_tt.mac
+typecheck.o: ../optimize/DupTree.h ../compile/profile.h prim_fun_tt.mac

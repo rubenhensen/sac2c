@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.17  1996/07/18 12:22:08  sbs
+# Revision 1.18  1997/05/28 12:48:27  sbs
+# make deps done
+#
+# Revision 1.17  1996/07/18  12:22:08  sbs
 # convert.o included in clean-line
 #
 # Revision 1.16  1996/02/16  09:46:46  sbs
@@ -79,4 +82,5 @@ print.o: ../global/globals.h print.h ../global/tree.h
 print.o: ../global/internal_lib.h ../global/my_debug.h ../../inc/dbug.h
 print.o: ../global/traverse.h convert.h ../optimize/optimize.h
 print.o: ../global/free.h /usr/include/malloc.h ../compile/trace.h
-print.o: ../modules/filemgr.h ../compile/icm.data ../global/prf_node_info.mac
+print.o: ../compile/profile.h ../modules/filemgr.h ../compile/icm.data
+print.o: ../global/prf_node_info.mac
