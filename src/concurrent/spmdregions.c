@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.28  1998/05/21 15:08:08  dkr
+ * fixed a bug in SPMDLiftFundef
+ *
  * Revision 1.27  1998/05/21 13:32:17  dkr
  * for lifted spmd-funs FUNDEF_DFM_BASE is created now
  * added SPMDLiftNwith2 (to correct the DFMs)
@@ -270,7 +273,7 @@ SPMDLiftFundef (node *arg_node, node *arg_info)
      * build and optimize sync-regions in SMPD-fun
      */
 
-    if (FUNDEF_STATUS (arg_node) = ST_spmdfun) {
+    if (FUNDEF_STATUS (arg_node) == ST_spmdfun) {
 
         old_tab = act_tab;
 
@@ -570,12 +573,14 @@ SPMDLiftSpmd (node *arg_node, node *arg_info)
      *          because it must be traversed to correct the vardec-pointers of
      *          all id's and to generate new DFMasks!!
      */
+#if 00
     if (FUNDEF_NEXT (fundef) != NULL) {
         FUNDEF_NEXT (new_fundef) = FUNDEF_NEXT (fundef);
         FUNDEF_NEXT (fundef) = new_fundef;
     } else {
         FUNDEF_NEXT (fundef) = new_fundef;
     }
+#endif
 
     /*
      * build fundef for this spmd region
