@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2004/10/17 17:03:20  sah
+ * noew the generated code no more contains
+ * any sac2c specific types o [3~´´r enums (hopefully)
+ *
  * Revision 1.7  2004/09/30 20:15:10  sah
  * fixed signature of SerializeRCCounterAttrib
  *
@@ -271,7 +275,7 @@ SerializeOldTypeAttrib (char *vname, info *info, types *attr, node *parent)
     if (attr == NULL) {
         fprintf (INFO_SER_FILE (info), "NULL");
     } else {
-        fprintf (INFO_SER_FILE (info), "MakeTypes1( T_unknown)");
+        fprintf (INFO_SER_FILE (info), "MakeTypes1( %d)", T_unknown);
     }
 
     DBUG_VOID_RETURN;
