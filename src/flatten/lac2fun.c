@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.32  2004/11/27 02:50:54  ktr
+ * L2FgetLacFunName
+ *
  * Revision 3.31  2004/11/25 11:19:01  mwe
  * use now correct fundef in TBmakeAp
  *
@@ -282,21 +285,20 @@ FreeInfo (info *info)
 /******************************************************************************
  *
  * function:
- *   char *GetLacFunName( char *suffix)
+ *   char *L2FgetLacFunName( char *suffix)
  *
  * description:
  *   Creates a new name for a LaC function. 'suffix' should be one of the
  *   strings "Cond", "Do" or "While".
  *
  ******************************************************************************/
-
-static char *
-GetLacFunName (char *suffix)
+char *
+L2FgetLacFunName (char *suffix)
 {
     static int number = 0;
     char *funname;
 
-    DBUG_ENTER ("GetLacFunName");
+    DBUG_ENTER ("L2FgetLacFunName");
 
     funname = (char *)ILIBmalloc ((strlen (suffix) + 20 + 3) * sizeof (char));
     sprintf (funname, "__%s%i", suffix, number);
@@ -530,7 +532,7 @@ DoLifting (char *prefix, dfmask_t *in, dfmask_t *out, dfmask_t *local, node *arg
     /*
      * build call of the new LaC function
      */
-    funname = GetLacFunName (prefix);
+    funname = L2FgetLacFunName (prefix);
     modname = ILIBstringCopy (FUNDEF_MOD (INFO_L2F_FUNDEF (arg_info)));
     DBUG_ASSERT ((modname != NULL), "modul name for LAC function is NULL!");
     let = MakeL2fFunLet (NULL, in, out);
