@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.31  1995/10/20 09:22:29  cg
+# Revision 1.32  1995/10/22 17:28:57  cg
+# make deps done
+#
+# Revision 1.31  1995/10/20  09:22:29  cg
 # make deps done
 #
 # Revision 1.30  1995/10/16  12:00:32  cg
@@ -176,7 +179,7 @@ main.o: ../optimize/optimize.h ../modules/filemgr.h ../modules/import.h
 main.o: ../refcount/refcount.h ../scanparse/scnprs.h ../scanparse/y.tab.h
 main.o: ../compile/trace.h ../compile/compile.h ../psi-opt/psi-opt.h
 main.o: ../modules/sib.h ../modules/implicittypes.h ../objects/objinit.h
-main.o: ../modules/analysis.h
+main.o: ../modules/analysis.h ../modules/checkdec.h
 main.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdlib.h
 main.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/sys/stdtypes.h
 main.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/string.h
@@ -197,8 +200,8 @@ traverse.o: ../modules/import.h ../refcount/refcount.h ../compile/compile.h
 traverse.o: ../optimize/DupTree.h ../optimize/Inline.h ../optimize/Unroll.h
 traverse.o: ../optimize/Unswitch.h ../psi-opt/ArrayElimination.h
 traverse.o: ../psi-opt/index.h ../modules/sib.h ../modules/implicittypes.h
-traverse.o: ../objects/objinit.h ../modules/analysis.h traverse.h
-traverse.o: node_info.mac
+traverse.o: ../objects/objinit.h ../modules/analysis.h ../modules/checkdec.h
+traverse.o: traverse.h node_info.mac
 tree.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdlib.h
 tree.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/sys/stdtypes.h
 tree.o: tree.h types.h tree_basic.h tree_compound.h Error.h
