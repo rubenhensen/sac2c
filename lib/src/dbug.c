@@ -58,18 +58,18 @@
  * some platform specific settings:
  */
 
-#ifdef SAC_FOR_SOLARIS_SPARC
+#if defined(SAC_FOR_SOLARIS_SPARC)
 #define STRTOK_EXISTS
 #define STRRCHR_EXISTS
 
 #else
-#ifdef SAC_FOR_LINUX_X86
+#if defined(SAC_FOR_LINUX_X86) || defined(SAC_FOR_OSX_MAC)
 #define C370
 #define STRTOK_EXISTS
 #define STRRCHR_EXISTS
 
 #else
-#ifdef SAC_FOR_OSF_ALPHA
+#if defined(SAC_FOR_OSF_ALPHA)
 #define STRTOK_EXISTS
 #define STRRCHR_EXISTS
 
@@ -150,7 +150,7 @@ typedef int BOOLEAN;
  *     be accessed via the macro package facilities.
  */
 
-#ifdef SAC_FOR_LINUX_X86
+#if defined(SAC_FOR_LINUX_X86) || defined(SAC_FOR_OSX_MAC)
 #define C370
 #endif
 
@@ -303,7 +303,7 @@ IMPORT int processid;
  *     Translate some calls among different systems.
  */
 
-/* The following is a workaround for Linux-X86 >2.1.126 */
+/* The following is a workaround for Linux-X86 >2.1.126  */
 /* jfe@informatik.uni-kiel.de  */
 
 /* the original Delay */
@@ -312,10 +312,7 @@ IMPORT int processid;
 /* this cannot be used in: "(VOID) Delay(stack->delay);" */
 /* #define Delay(x) if ((x)!=0) sleep(x);  */
 
-/* instead use:       (LINUX_X86 is defined  sac2c-Makefile) */
-
-/*  #ifdef LINUX_X86
- * Now for all Arch */
+/* instead use:                                          */
 
 void
 Delay (int d_time)
@@ -324,13 +321,7 @@ Delay (int d_time)
         sleep (d_time);
 }
 
-/*
-#else
-
-#define Delay sleep
-
-#endif
-*/
+/*                                                       */
 
 IMPORT unsigned sleep (); /* Pause for given number of seconds */
 
