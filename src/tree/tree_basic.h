@@ -1,5 +1,9 @@
 /*
+ *
  * $Log$
+ * Revision 3.6  2000/12/12 15:34:12  dkr
+ * some macros renamed
+ *
  * Revision 3.5  2000/12/06 20:13:13  dkr
  * INFO_LAC2FUN_... renamed into INFO_L2F_... or
  * INFO_INFDFMS_... respectively
@@ -272,6 +276,7 @@
  * WLGRID_CEXPR_TEMPLATE is now WLGRID_CODE_TEMPLATE
  *
  * [...]
+ *
  */
 
 /*============================================================================
@@ -362,7 +367,6 @@ file can be found in tree_basic.c
 ============================================================================*/
 
 #ifndef _sac_tree_basic_h
-
 #define _sac_tree_basic_h
 
 #include "types.h"
@@ -379,11 +383,8 @@ extern char *prf_name_str[];
  */
 
 #define NODE_TYPE(n) ((n)->nodetype)
-
 #define NODE_LINE(n) ((n)->lineno)
-
 #define NODE_FILE(n) ((n)->src_file)
-
 #define NODE_TEXT(n) (mdb_nodetype[NODE_TYPE (n)])
 
 /*
@@ -397,7 +398,7 @@ extern char *prf_name_str[];
  ***  permanent attributes:
  ***
  ***    int                DIM
- ***    int[SHP_SEG_SIZE]  SELEMS  (O)
+ ***    shpseg*            SHPSEG
  ***
  ***/
 
@@ -414,6 +415,7 @@ extern char *prf_name_str[];
  ***  permanent attributes:
  ***
  ***    int[SHP_SEG_SIZE]  SHAPE
+ ***    shpseg*            NEXT
  ***
  ***/
 
@@ -866,13 +868,13 @@ extern node *MakeExplist (node *itypes, node *etypes, node *objs, node *funs);
  ***
  ***  temporary attributes:
  ***
- ***    types*      IMPL         (O)         (import -> )
- ***                                         ( -> writesib !!)
- ***    node*       PRAGMA       (O)         (import -> readsib !!)
- ***    char*       COPYFUN      (O)         (readsib -> compile -> )
- ***    char*       FREEFUN      (O)         (readsib -> compile -> )
- ***    node*       TYPEDEC_DEF  (O)         (checkdec -> writesib !!)
- ***    node*       ICM          (O) (N_icm) (compile -> )
+ ***    types*      IMPL         (O)           (import -> writesib !!)
+ ***    node*       PRAGMA       (O)           (import -> readsib !!)
+ ***    char*       COPYFUN      (O)           (readsib -> compile -> )
+ ***    char*       FREEFUN      (O)           (readsib -> compile -> )
+ ***    node*       TYPEDEC_DEF  (O)           (checkdec -> writesib !!)
+ ***
+ ***    node*       ICM          (O)  (N_icm)  (compile -> )
  ***/
 
 /*
@@ -932,16 +934,16 @@ extern node *MakeTypedef (char *name, char *mod, types *type, statustype attrib,
  ***
  ***  temporary attributes:
  ***
- ***    char*       VARNAME      (typecheck -> obj-handling ->
- ***                             ( -> precompile -> compile -> )
- ***    node*       PRAGMA    (O)  (N_pragma)  (import -> readsib ->
- ***                                            precompile -> )
- ***    node*       ARG       (O)  (obj-handling !!)
- ***    node*       ICM       (O)  (compile ->)
- ***    node*       SIB       (O)  (readsib !!)
- ***    nodelist*   NEEDOBJS  (O)  (import -> analysis -> objects -> )
+ ***    char*       VARNAME                     (typecheck -> obj-handling ->
+ ***                                            ( -> precompile -> compile -> )
+ ***    node*       PRAGMA     (O)  (N_pragma)  (import -> readsib -> precompile -> )
+ ***    node*       ARG        (O)              (obj-handling !!)
+ ***    node*       SIB        (O)              (readsib !!)
+ ***    nodelist*   NEEDOBJS   (O)              (import -> analysis -> objects -> )
  ***
- ***    node*       OBJDEC_DEF (O)  (checkdec -> writesib -> )
+ ***    node*       OBJDEC_DEF (O)              (checkdec -> writesib -> )
+ ***
+ ***    node*       ICM        (O)  (N_icm)     (compile -> )
  ***/
 
 /*
@@ -957,12 +959,12 @@ extern node *MakeTypedef (char *name, char *mod, types *type, statustype attrib,
  *
  *  ARG is a pointer to the additional argument which is added to a function's
  *  parameter list for this global object. ARG changes while traversing
- *  the functions !!
+ *  the functions!
  *
  *  ICM contains a pointer to the respective icm if the global object
  *  is an array (ND_KS_DECL_ARRAY_GLOBAL or ND_KD_DECL_ARRAY_EXTERN)
  *
- *  ATTENTION: ARG, INIT, and ICM are mapped to the same real node !
+ *  ATTENTION: ARG, INIT, and ICM are mapped to the same real node!
  *
  *  LINKMOD contains the name of the module which has to be linked with
  *  in order to make the code of this function available. If LINKMOD is
@@ -987,10 +989,10 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
 #define OBJDEF_EXPR(n) (n->node[1])
 #define OBJDEC_DEF(n) (n->node[2])
 #define OBJDEF_ARG(n) (n->node[3])
-#define OBJDEF_ICM(n) (n->node[3])
 #define OBJDEF_SIB(n) (n->node[3])
 #define OBJDEF_PRAGMA(n) (n->node[4])
 #define OBJDEF_NEEDOBJS(n) ((nodelist *)(n->node[5]))
+#define OBJDEF_ICM(n) (n->node[3])
 
 /*--------------------------------------------------------------------------*/
 
@@ -1010,8 +1012,8 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  ***    char*           LINKMOD  (O)
  ***    types*          TYPES
  ***    statustype      STATUS
- ***    statustype      ATTRIB        (?? -> multithread  && multithread!! )
- ***                                  FLAGS IS CHANGED IN multithread!!!
+ ***    statustype      ATTRIB        (?? -> multithread !!)
+ ***                                  FLAGS IS CHANGED IN multithread!
  ***    bool            INLINE
  ***    int             FUNNO
  ***    node*           PRAGMA   (O)   (N_pragma)
@@ -1045,8 +1047,8 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  ***  temporary attributes for ST_spmdfun fundefs only:
  ***
  ***    node*           LIFTEDFROM  (N_fundef)    (liftspmd -> compile -> )
- ***    node*           COMPANION (N_fundef)      (rfin and mtfin)
- ***                                      FLAG WILL BE CLEANED before mt-phases!!!
+ ***    node*           COMPANION   (N_fundef)    (rfin and mtfin)
+ ***                                      FLAG WILL BE CLEANED before mt-phases!
  ***/
 
 /*
@@ -1108,24 +1110,24 @@ extern node *MakeFundef (char *name, char *mod, types *types, node *args, node *
 #define FUNDEF_BODY(n) (n->node[0])
 #define FUNDEF_ARGS(n) (n->node[2])
 #define FUNDEF_NEXT(n) (n->node[1])
+#define FUNDEF_PRAGMA(n) (n->node[4])
 #define FUNDEF_RETURN(n) (n->node[3])
 #define FUNDEF_SIB(n) (n->node[3])
-#define FUNDEF_ICM(n) (n->node[3])
+#define FUNDEF_ICM(n) (n->node[5])
 #define FUNDEC_DEF(n) (n->node[3])
-#define FUNDEF_NEEDOBJS(n) ((nodelist *)(n->node[4]))
-#define FUNDEF_PRAGMA(n) (n->node[5])
+#define FUNDEF_NEEDOBJS(n) ((nodelist *)(n->dfmask[6]))
 #define FUNDEF_VARNO(n) (n->varno)
 #define FUNDEF_MASK(n, x) (n->mask[x])
 #define FUNDEF_INLINE(n) (n->flag)
 #define FUNDEF_INLREC(n) (n->refcnt)
 #define FUNDEF_EXPORT(n) (n->int_data)
 #define FUNDEF_DFM_BASE(n) (n->dfmask[0])
-#define FUNDEF_IDENTIFIER(n) ((int)(n->dfmask[1]))
-#define FUNDEF_MT2USE(n) (n->dfmask[2])
-#define FUNDEF_MT2DEF(n) (n->dfmask[3])
-#define FUNDEF_LIFTEDFROM(n) ((node *)(n->dfmask[4]))
-#define FUNDEF_WORKER(n) ((node *)(n->dfmask[5]))
-#define FUNDEF_COMPANION(n) ((node *)(n->dfmask[6]))
+#define FUNDEF_IDENTIFIER(n) (n->int_data)
+#define FUNDEF_MT2USE(n) (n->dfmask[1])
+#define FUNDEF_MT2DEF(n) (n->dfmask[2])
+#define FUNDEF_LIFTEDFROM(n) ((node *)(n->dfmask[3]))
+#define FUNDEF_WORKER(n) ((node *)(n->dfmask[4]))
+#define FUNDEF_COMPANION(n) ((node *)(n->dfmask[5]))
 
 /*--------------------------------------------------------------------------*/
 
@@ -1150,8 +1152,7 @@ extern node *MakeFundef (char *name, char *mod, types *types, node *args, node *
  ***    int         NAIVE_REFCNT                 (refcount -> concurrent -> )
  ***    bool        PADDED                       (ap -> )
  ***    char*       TYPESTRING (O)               (precompile -> )
- ***    node*       OBJDEF     (O)  (N_objdef)   (obj-handling ->
- ***                                             ( -> precompile !!)
+ ***    node*       OBJDEF     (O)  (N_objdef)   (obj-handling -> precompile !!)
  ***    node*       ACTCHN     (O)  (N_vinfo)    (psi-optimize -> )
  ***    node*       COLCHN     (O)  (N_vinfo)    (psi-optimize -> )
  ***    node*       FUNDEF     (O)  (N_fundef)   (psi-optimize -> )
@@ -1211,7 +1212,7 @@ extern node *MakeArg (char *name, types *type, statustype status, statustype att
  ***
  ***    nodelist*  NEEDFUNS   (O)         (analysis -> )
  ***                                      ( -> analysis -> )
- ***                                      ( -> write-SIB -> DFR!! )
+ ***                                      ( -> write-SIB -> DFR !!)
  ***    nodelist*  NEEDTYPES  (O)         (analysis -> )
  ***                                      ( -> write-SIB -> )
  ***    long*      MASK[x]                (optimize -> )
@@ -1234,10 +1235,10 @@ extern node *MakeBlock (node *instr, node *vardec);
 #define BLOCK_MASK(n, x) (n->mask[x])
 #define BLOCK_INSTR(n) (n->node[0])
 #define BLOCK_VARDEC(n) (n->node[1])
-#define BLOCK_NEEDFUNS(n) ((nodelist *)(n->node[2]))
-#define BLOCK_NEEDTYPES(n) ((nodelist *)(n->node[3]))
-#define BLOCK_SPMD_PROLOG_ICMS(n) (n->node[4])
-#define BLOCK_SPMD_SETUP_ARGS(n) (n->node[5])
+#define BLOCK_NEEDFUNS(n) ((nodelist *)(n->dfmask[0]))
+#define BLOCK_NEEDTYPES(n) ((nodelist *)(n->dfmask[1]))
+#define BLOCK_SPMD_PROLOG_ICMS(n) (n->node[3])
+#define BLOCK_SPMD_SETUP_ARGS(n) (n->node[4])
 #define BLOCK_CACHESIM(n) (n->info.id)
 
 /*--------------------------------------------------------------------------*/
@@ -1258,15 +1259,14 @@ extern node *MakeBlock (node *instr, node *vardec);
  ***  temporary attributes:
  ***
  ***    node*       TYPEDEF  (O)  (N_typedef)  (typecheck -> fun_analysis -> )
- ***    node*       OBJDEF   (O)  (N_objdef)   (inlining ->
- ***                                           ( -> precompile !!)
+ ***    node*       OBJDEF   (O)  (N_objdef)   (inlining -> precompile !!)
  ***    node*       ACTCHN   (O)  (N_vinfo)    (psi-optimize -> )
  ***    node*       COLCHN   (O)  (N_vinfo)    (psi-optimize -> )
  ***    int         REFCNT                     (refcount -> compile -> )
  ***    int         NAIVE_REFCNT               (refcount -> concurrent -> )
  ***    int         VARNO                      (optimize -> )
  ***    statustype  ATTRIB                     (typecheck -> uniquecheck -> )
- ***    int         FLAG                       (ael  -> dcr2 !! )
+ ***    int         FLAG                       (ael -> dcr2 !!)
  ***    bool        PADDED                     (ap -> )
  ***    node*       ICM      (O)  (N_icm)      (compile -> )
  ***/
@@ -1323,18 +1323,18 @@ extern node *MakeVardec (char *name, types *type, node *next);
  ***    int    STATUS                     (dcr1 -> dcr2 !!)
  ***    node*  CSE                        (CSE (GenerateMasks()) -> ??? )
  ***    node*  CF                         (CF !!)
- ***    void*  INDEX    (O)               (wli -> wlf ->)
+ ***    void*  INDEX    (O)               (wli -> wlf -> )
  ***    int    LEVEL                      (wli !!)
  ***
  ***  remarks:
- ***   there is no easy way to remove the INDEX information after wlf (another
- ***   tree traversal would be necessary), so it stays afterwards.
- ***   Nevertheless only wlf will use it. The type of INDEX is index_info*,
- ***   defined in WithloopFolding.c (not in types.h).
+ ***    there is no easy way to remove the INDEX information after wlf (another
+ ***    tree traversal would be necessary), so it stays afterwards.
+ ***    Nevertheless only wlf will use it. The type of INDEX is index_info*,
+ ***    defined in WithloopFolding.c (not in types.h).
  ***
- ***   CF is used to temporarily store an N_assign node behind another one.
- ***   This additional N_assign node will later be inserted before the original
- ***   one into the assignment chain.
+ ***    CF is used to temporarily store an N_assign node behind another one.
+ ***    This additional N_assign node will later be inserted before the original
+ ***    one into the assignment chain.
  ***/
 
 extern node *MakeAssign (node *instr, node *next);
@@ -1363,8 +1363,8 @@ extern node *MakeAssign (node *instr, node *next);
  ***
  ***  temporary attributes:
  ***
- ***    DFMmask_t USEMASK                    (multithread ->)
- ***    DFMmask_t DEFMASK                    (multithread ->)
+ ***    DFMmask_t USEMASK                    (multithread -> )
+ ***    DFMmask_t DEFMASK                    (multithread -> )
  ***/
 
 extern node *MakeLet (node *expr, ids *ids);
@@ -1405,8 +1405,8 @@ extern node *MakeCast (node *expr, types *type);
  ***  temporary attributes:
  ***
  ***    node*     REFERENCE  (N_exprs)  (O)  (precompile -> compile !!)
- ***    DFMmask_t USEMASK                    (multithread ->)
- ***    DFMmask_t DEFMASK                    (multithread ->)
+ ***    DFMmask_t USEMASK                    (multithread -> )
+ ***    DFMmask_t DEFMASK                    (multithread -> )
  ***/
 
 /*
@@ -1436,12 +1436,12 @@ extern node *MakeReturn (node *exprs);
  ***
  ***  temporary attributes:
  ***
+ ***    long*     MASK[x]                (optimize -> )
+ ***    DFMmask_t IN_MASK                (infer_dfms -> lac2fun -> refcount -> )
+ ***    DFMmask_t OUT_MASK               (infer_dfms -> lac2fun -> refcount -> )
+ ***    DFMmask_t LOCAL_MASK             (infer_dfms -> lac2fun -> refcount -> )
  ***    ids*      THENVARS               (refcount -> compile -> )
  ***    ids*      ELSEVARS               (refcount -> compile -> )
- ***    long*     MASK[x]                (optimize -> )
- ***    DFMmask_t IN_MASK                (lac2fun !!)
- ***    DFMmask_t OUT_MASK               (lac2fun !!)
- ***    DFMmask_t LOCAL_MASK             (lac2fun !!)
  ***/
 
 /*
@@ -1456,14 +1456,14 @@ extern node *MakeCond (node *cond, node *thenpart, node *elsepart);
 #define COND_COND(n) (n->node[0])
 #define COND_THEN(n) (n->node[1])
 #define COND_ELSE(n) (n->node[2])
+#define COND_MASK(n, x) (n->mask[x])
+#define COND_IN_MASK(n) (n->dfmask[0])
+#define COND_OUT_MASK(n) (n->dfmask[1])
+#define COND_LOCAL_MASK(n) (n->dfmask[2])
 #define COND_THENVARS(n) ((ids *)n->node[3])
 #define COND_ELSEVARS(n) ((ids *)n->node[4])
 #define COND_NAIVE_THENVARS(n) ((ids *)n->info2)
 #define COND_NAIVE_ELSEVARS(n) ((ids *)n->node[5])
-#define COND_MASK(n, x) (n->mask[x])
-#define COND_IN_MASK(n) (n->dfmask[1])
-#define COND_OUT_MASK(n) (n->dfmask[2])
-#define COND_LOCAL_MASK(n) (n->dfmask[3])
 
 /*--------------------------------------------------------------------------*/
 
@@ -1480,15 +1480,13 @@ extern node *MakeCond (node *cond, node *thenpart, node *elsepart);
  ***    ids*      USEVARS                (refcount -> compile -> )
  ***    ids*      DEFVARS                (refcount -> compile -> )
  ***    long*     MASK[x]                (optimize -> )
- ***    DFMmask_t IN_MASK                (lac2fun !!)
- ***    DFMmask_t OUT_MASK               (lac2fun !!)
- ***    DFMmask_t LOCAL_MASK             (lac2fun !!)
+ ***    DFMmask_t IN_MASK                (infer_dfms -> lac2fun -> refcount -> )
+ ***    DFMmask_t OUT_MASK               (infer_dfms -> lac2fun -> refcount -> )
+ ***    DFMmask_t LOCAL_MASK             (infer_dfms -> lac2fun -> refcount -> )
  ***
  ***  attention:
- ***    - Don't mix up USEVARS and USEMASK resp DEFVARS and USEMASK!!!
- ***      Btw. the masks are defined in tree_compound.
  ***    - To access do-loops and while-loops with one macro use the
- ***      compound macros DO_OR_WHILE_xxx!!!
+ ***      compound macros DO_OR_WHILE_xxx!
  ***/
 
 /*
@@ -1502,14 +1500,14 @@ extern node *MakeDo (node *cond, node *body);
 
 #define DO_COND(n) (n->node[0])
 #define DO_BODY(n) (n->node[1])
+#define DO_MASK(n, x) (n->mask[x])
+#define DO_IN_MASK(n) (n->dfmask[0])
+#define DO_OUT_MASK(n) (n->dfmask[1])
+#define DO_LOCAL_MASK(n) (n->dfmask[2])
 #define DO_USEVARS(n) ((ids *)n->node[2])
 #define DO_DEFVARS(n) ((ids *)n->node[3])
 #define DO_NAIVE_USEVARS(n) ((ids *)n->node[4])
 #define DO_NAIVE_DEFVARS(n) ((ids *)n->node[5])
-#define DO_MASK(n, x) (n->mask[x])
-#define DO_IN_MASK(n) (n->dfmask[1])
-#define DO_OUT_MASK(n) (n->dfmask[2])
-#define DO_LOCAL_MASK(n) (n->dfmask[3])
 
 /*--------------------------------------------------------------------------*/
 
@@ -1526,15 +1524,13 @@ extern node *MakeDo (node *cond, node *body);
  ***    ids*      USEVARS                (refcount -> compile -> )
  ***    ids*      DEFVARS                (refcount -> compile -> )
  ***    long*     MASK[x]                (optimize -> )
- ***    DFMmask_t IN_MASK                (lac2fun !!)
- ***    DFMmask_t OUT_MASK               (lac2fun !!)
- ***    DFMmask_t LOCAL_MASK             (lac2fun !!)
+ ***    DFMmask_t IN_MASK                (infer_dfms -> lac2fun -> refcount -> )
+ ***    DFMmask_t OUT_MASK               (infer_dfms -> lac2fun -> refcount -> )
+ ***    DFMmask_t LOCAL_MASK             (infer_dfms -> lac2fun -> refcount -> )
  ***
  ***  attention:
- ***    - Don't mix up USEVARS and USEMASK resp DEFVARS and USEMASK!!!
- ***      Btw. the masks are defined in tree_compound.
  ***    - To access do-loops and while-loops with one macro use the
- ***      compound macros DO_OR_WHILE_xxx!!!
+ ***      compound macros DO_OR_WHILE_xxx!
  ***/
 
 /*
@@ -1550,14 +1546,14 @@ extern node *While2Do (node *while_node);
 
 #define WHILE_COND(n) (n->node[0])
 #define WHILE_BODY(n) (n->node[1])
+#define WHILE_MASK(n, x) (n->mask[x])
+#define WHILE_IN_MASK(n) (n->dfmask[0])
+#define WHILE_OUT_MASK(n) (n->dfmask[1])
+#define WHILE_LOCAL_MASK(n) (n->dfmask[2])
 #define WHILE_USEVARS(n) ((ids *)n->node[2])
 #define WHILE_DEFVARS(n) ((ids *)n->node[3])
 #define WHILE_NAIVE_USEVARS(n) ((ids *)n->node[4])
 #define WHILE_NAIVE_DEFVARS(n) ((ids *)n->node[5])
-#define WHILE_MASK(n, x) (n->mask[x])
-#define WHILE_IN_MASK(n) (n->dfmask[1])
-#define WHILE_OUT_MASK(n) (n->dfmask[2])
-#define WHILE_LOCAL_MASK(n) (n->dfmask[3])
 
 /*--------------------------------------------------------------------------*/
 
@@ -1721,7 +1717,7 @@ extern node *MakeVinfo (useflag flag, types *type, node *next, node *dollar);
  ***    int         REFCNT                      (refcount -> compile -> )
  ***    int         NAIVE_REFCNT                (refcount -> concurrent -> )
  ***    clsconv_t   CLSCONV                     (precompile -> compile -> )
- ***    node*       DEF                         (Unroll !, Unswitch !)
+ ***    node*       DEF                         (Unroll !!, Unswitch !!)
  ***    node*       WL          (O)             (wli -> wlf !!)
  ***
  ***    void*       CONSTVEC    (O)             (flatten -> )
@@ -1908,51 +1904,9 @@ extern node *MakeEmpty ();
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  N_post :
- ***
- ***  permanent attributes:
- ***
- ***    node*  INCDEC
- ***    char*  ID
- ***
- ***  temporary attributes:
- ***
- ***    node*  DECL    (N_vardec)  (typecheck -> )
- ***    int    REFCNT              (refcount  -> )
- ***    int    NAIVE_REFCNT        (refcount  -> concurrent -> )
- ***/
-
-extern node *MakePost (int incdec, char *id);
-
-#define POST_INCDEC(n) ((n->node[0]->nodetype == N_dec) ? 0 : 1)
-
-#define POST_ID(n) (n->info.id)
-#define POST_DECL(n) (n->node[1])
-#define POST_REFCNT(n) (n->info.ids->refcnt)
-#define POST_NAIVE_REFCNT(n) (n->info.ids->refcnt)
-
-/*
- * Attention : The way incrementations and decrementation are represented
- * is not changed up to now. The macro POST_INCDEC must not be used on the
- * left side of the assignment operator. In comments the new representation
- * is shown. The MakePost function is intended to support both ways.
- */
-
-/*--------------------------------------------------------------------------*/
-
-/***
  ***  N_ok :
  ***
  ***  dummynode, last declared in node_info.mac
- ***/
-
-/*--------------------------------------------------------------------------*/
-
-/***
- ***  N_inc :
- ***  N_dec :
- ***
- ***  no description yet
  ***/
 
 /*--------------------------------------------------------------------------*/
@@ -1963,37 +1917,6 @@ extern node *MakePost (int incdec, char *id);
  ***  no description yet
  ***  barely used in typecheck.c
  ***/
-/*--------------------------------------------------------------------------*/
-
-/***
- ***  N_pre :
- ***
- ***  permanent attributes:
- ***
- ***    node*  INCDEC
- ***    char*  ID
- ***
- ***  temporary attributes:
- ***
- ***    node*  DECL    (N_vardec)  (typecheck -> )
- ***    int    REFCNT              (refcount  -> )
- ***    int    NAIVE_REFCNT        (refcount  -> concurrent -> )
- ***/
-
-extern node *MakePre (nodetype incdec, char *id);
-
-#define PRE_INCDEC(n) ((n->node[0]->nodetype == N_dec) ? 0 : 1)
-#define PRE_ID(n) (n->info.id)
-#define PRE_REFCNT(n) (n->info.ids->refcnt)
-#define PRE_NAIVE_REFCNT(n) (n->info.ids->naive_refcnt)
-#define PRE_DECL(n) (n->node[1])
-
-/*
- * Attention : The way incrementations and decrementation are represented
- * is not changed up to now. The macro POST_INCDEC must not be used on the
- * left side of the assignment operator. In comments the new representation
- * is shown. The MakePost function is intended to support both ways.
- */
 
 /*--------------------------------------------------------------------------*/
 
@@ -2207,7 +2130,7 @@ extern node *MakePragma ();
  ***    node *     INFO_IVE_TRANSFORM_VINFO  (N_vinfo)
  ***    int        INFO_IVE_NON_SCAL_LEN
  ***
- ***  old mt!!!
+ ***  old mt!
  ***  when used in managing spmd- and sync blocks in concurrent :
  ***    (oa) concurrent.[ch]
  ***    (ob) spmd_init.[ch]
@@ -2269,7 +2192,7 @@ extern node *MakePragma ();
  ***
  ***    node*      INFO_SPMDC_FIRSTSYNC
  ***
- ***  new mt!!!
+ ***  new mt!
  ***  when used in multithread ...
  ***    (na) multithread.[ch]
  ***    (nb) schedule_init.[ch]
@@ -2422,7 +2345,7 @@ extern node *MakeInfo ();
  *                  copied, when the body of a function is duplicated (jhs)
  */
 #define INFO_DUP_CONT(n) (n->node[1])
-/*      INFO_INL_TYPES(n)                      (n->node[2])   See comment!!! */
+/*      INFO_INL_TYPES(n)                      (n->node[2])   See comment! */
 #define INFO_DUP_FUNDEF(n) (n->node[3])
 #define INFO_DUP_TYPE(n) (n->flag)
 #define INFO_DUP_ALL(n) (n->int_data)
@@ -2445,7 +2368,7 @@ extern node *MakeInfo ();
 
 /* typecheck */
 /* here, some ugly things happen 8-((
- * An N_ok-node is used as info-carrier!!!
+ * An N_ok-node is used as info-carrier!
  * It carries several values needed for typechecking functions
  * and is stored under info_node->node[0].
  * Since I (sbs) consider this a dirty implementational hack,
@@ -2468,13 +2391,14 @@ extern node *MakeInfo ();
 #define INFO_WSIB_EXPORTTYPES(n) ((nodelist *)(n->node[0]))
 #define INFO_WSIB_EXPORTOBJS(n) ((nodelist *)(n->node[1]))
 #define INFO_WSIB_EXPORTFUNS(n) ((nodelist *)(n->node[2]))
-/* see also print access macros used in this phase ! */
+/* see also print access macros used in this phase! */
 
 /* refcount */
-#define INFO_RC_PRF(n) (n->node[0])
-#define INFO_RC_WITH(n) (n->node[1])
-#define INFO_RC_RCDUMP(n) ((int *)(n->node[2]))
-#define INFO_RC_NAIVE_RCDUMP(n) ((int *)(n->node[3]))
+#define INFO_RC_FUNDEF(n) (n->node[0])
+#define INFO_RC_PRF(n) (n->node[1])
+#define INFO_RC_WITH(n) (n->node[2])
+#define INFO_RC_RCDUMP(n) ((int *)(n->node[3]))
+#define INFO_RC_NAIVE_RCDUMP(n) ((int *)(n->node[4]))
 #define INFO_RC_VARNO(n) (n->varno)
 #define INFO_RC_ONLYNAIVE(n) (n->flag)
 
@@ -2485,7 +2409,7 @@ extern node *MakeInfo ();
 #define INFO_CONC_FUNDEF(n) (n->node[0])
 
 /* concurrent - spmdinit */
-/* DO NOT OVERRIDE ANY INFO_CONC_XXX here!!! */
+/* DO NOT OVERRIDE ANY INFO_CONC_XXX here! */
 #define INFO_SPMDI_LASTSPMD(n) (n->flag)
 #define INFO_SPMDI_NEXTSPMD(n) (n->counter)
 #define INFO_SPMDI_CONTEXT(n) (n->int_data)
@@ -2493,53 +2417,53 @@ extern node *MakeInfo ();
 #define INFO_SPMDI_EXPANDSTEP(n) (n->refcnt)
 
 /* concurrent-spmdopt */
-/* DO NOT OVERRIDE ANY INFO_CONC_XXX here!!! */
+/* DO NOT OVERRIDE ANY INFO_CONC_XXX here! */
 #define INFO_SPMDO_THISASSIGN(n) (n->node[1])
 #define INFO_SPMDO_NEXTASSIGN(n) (n->node[2])
 
 /* concurrent-spmdlift */
-/* DO NOT OVERRIDE ANY INFO_CONC_XXX here!!! */
+/* DO NOT OVERRIDE ANY INFO_CONC_XXX here! */
 #define INFO_SPMDL_MT(n) (n->counter)
 
 /* concurrent-syncinit */
-/* DO NOT OVERRIDE ANY INFO_CONC_XXX here!!! */
+/* DO NOT OVERRIDE ANY INFO_CONC_XXX here! */
 #define INFO_SYNCI_FIRST(n) (n->flag)
 #define INFO_SYNCI_LAST(n) (n->int_data)
 
 /* concurrent-syncopt */
-/* DO NOT OVERRIDE ANY INFO_CONC_XXX here!!! */
+/* DO NOT OVERRIDE ANY INFO_CONC_XXX here! */
 #define INFO_SYNCO_THISASSIGN(n) (n->node[1])
 #define INFO_SYNCO_NEXTASSIGN(n) (n->node[2])
 
 /* concurrent-spmdcons */
-/* DO NOT OVERRIDE ANY INFO_CONC_XXX here!!! */
+/* DO NOT OVERRIDE ANY INFO_CONC_XXX here! */
 #define INFO_SPMDC_FIRSTSYNC(n) (n->node[1])
 
 /* concurrent-spmdtrav-reducemasks */
-/* DO NOT OVERRIDE ANY INFO_CONC_XXX here!!! */
+/* DO NOT OVERRIDE ANY INFO_CONC_XXX here! */
 #define INFO_SPMDRM_RESULT(n) (n->dfmask[0])
 #define INFO_SPMDRM_CHECK(n) (n->dfmask[1])
 
 /* concurrent-spmdtrav-reduceoccurences */
-/* DO NOT OVERRIDE ANY INFO_CONC_XXX here!!! */
+/* DO NOT OVERRIDE ANY INFO_CONC_XXX here! */
 #define INFO_SPMDCO_RESULT(n) ((int *)(n->node[1]))
 #define INFO_SPMDCO_WHICH(n) (n->dfmask[1])
 
 /* concurrent-spmdtrav-reduceoccurences */
-/* DO NOT OVERRIDE ANY INFO_CONC_XXX here!!! */
+/* DO NOT OVERRIDE ANY INFO_CONC_XXX here! */
 #define INFO_SPMDRO_CHECK(n) (n->dfmask[1])
 #define INFO_SPMDRO_COUNTERS(n) ((int *)(n->node[1]))
 
 /* concurrent-spmdtrav-lc */
-/* DO NOT OVERRIDE ANY INFO_CONC_XXX here!!! */
+/* DO NOT OVERRIDE ANY INFO_CONC_XXX here! */
 #define INFO_SPMDLC_APPLICATION(n) (n->int_data)
 
 /* concurrent-spmdtrav-deletenested */
-/* DO NOT OVERRIDE ANY INFO_CONC_XXX here!!! */
+/* DO NOT OVERRIDE ANY INFO_CONC_XXX here! */
 #define INFO_SPMDDN_NESTED(n) (n->int_data)
 
 /* concurrent-spmdtrav-producemasks */
-/* DO NOT OVERRIDE ANY INFO_CONC_XXX here!!! */
+/* DO NOT OVERRIDE ANY INFO_CONC_XXX here! */
 #define INFO_SPMDPM_IN(n) ((DFMmask_t) (n->dfmask[0]))
 #define INFO_SPMDPM_INOUT(n) ((DFMmask_t) (n->dfmask[1]))
 #define INFO_SPMDPM_OUT(n) ((DFMmask_t) (n->dfmask[2]))
@@ -2547,7 +2471,7 @@ extern node *MakeInfo ();
 #define INFO_SPMDPM_SHARED(n) ((DFMmask_t) (n->dfmask[4]))
 
 /* multithread - all mini-phases */
-/* DO NOT OVERRIDE ANY INFO_YYYY_xxx HERE, were YYYY is any other miniphase!!! */
+/* DO NOT OVERRIDE ANY INFO_YYYY_xxx HERE, were YYYY is any other miniphase! */
 #define INFO_MUTH_FUNDEF(n) (n->node[0])
 #define INFO_MUTH_ALLOW_OOOC(n) (n->counter)
 #define INFO_MUTH_TOPDOWN(n) (n->refcnt)
@@ -2555,30 +2479,30 @@ extern node *MakeInfo ();
 #define INFO_MUTH_IGNORE(n) ((ignorefun) (n->node[2]))
 
 /* multithread - schedule_init */
-/* DO NOT OVERRIDE ANY INFO_MUTH_XXX HERE!!! */
+/* DO NOT OVERRIDE ANY INFO_MUTH_XXX HERE! */
 #define INFO_SCHIN_SCHEDULING(n) (n->node[3])
 #define INFO_SCHIN_INNERWLS(n) (n->int_data)
 #define INFO_SCHIN_ALLOWED(n) (n->flag)
 
 /* multithread - repfuns_init */
-/* DO NOT OVERRIDE ANY INFO_MUTH_XXX HERE!!! */
+/* DO NOT OVERRIDE ANY INFO_MUTH_XXX HERE! */
 #define INFO_RFIN_WITHINWITH(n) (n->int_data)
 
 /* multithread - blocks_expand */
-/* DO NOT OVERRIDE ANY INFO_MUTH_XXX HERE!!! */
+/* DO NOT OVERRIDE ANY INFO_MUTH_XXX HERE! */
 #define INFO_BLKEX_BLOCKABOVE(n) (n->int_data)
 
 /* multithread - blocks_expand */
-/* DO NOT OVERRIDE ANY INFO_MUTH_XXX HERE!!! */
+/* DO NOT OVERRIDE ANY INFO_MUTH_XXX HERE! */
 #define INFO_MTFIN_CURRENTATTRIB(n) ((statustype) (n->int_data))
 
 /* multithread - blocks_expand */
-/* DO NOT OVERRIDE ANY INFO_MUTH_XXX HERE!!! */
+/* DO NOT OVERRIDE ANY INFO_MUTH_XXX HERE! */
 #define INFO_BLKCO_CURRENTATTRIB(n) ((statustype) (n->int_data))
 #define INFO_BLKCO_THISASSIGN(n) (n->node[3])
 
 /* multithread - blocks_expand */
-/* DO NOT OVERRIDE ANY INFO_MUTH_XXX HERE!!! */
+/* DO NOT OVERRIDE ANY INFO_MUTH_XXX HERE! */
 #define INFO_DFA_HEADING(n) (n->int_data)
 #define INFO_DFA_USEMASK(n) (n->dfmask[0])
 #define INFO_DFA_DEFMASK(n) (n->dfmask[1])
@@ -2588,14 +2512,13 @@ extern node *MakeInfo ();
 #define INFO_DFA_THISASSIGN(n) (n->node[4])
 #define INFO_DFA_INFER_LET_DEFMASK(n) (n->dfmask[4])
 #define INFO_DFA_INFER_LET_USEMASK(n) (n->dfmask[5])
-#define INFO_DFA_INFER_LET_LHSDONE(n) (n->flag)
 
 /* multithread - barriers_init */
-/* DO NOT OVERRIDE ANY INFO_MUTH_XXX HERE!!! */
+/* DO NOT OVERRIDE ANY INFO_MUTH_XXX HERE! */
 #define INFO_BARIN_WITHINMT(n) (n->int_data)
 
 /* multithread - adjust_calls */
-/* DO NOT OVERRIDE ANY INFO_MUTH_XXX HERE!!! */
+/* DO NOT OVERRIDE ANY INFO_MUTH_XXX HERE! */
 #define INFO_ADJCA_ATTRIB(n) ((statustype) (n->int_data))
 
 /* precompile */
@@ -2793,11 +2716,11 @@ extern node *MakeInfo ();
  ***
  ***  permanent attributes:
  ***
- ***    DFMmask_t  IN          (spmdinit ->)
- ***    DFMmask_t  OUT         (spmdinit ->)
- ***    DFMmask_t  INOUT       (spmdinit ->)
- ***    DFMmask_t  LOCAL       (spmdinit ->)
- ***    DFMmask_t  SHARED      (spmdinit ->)
+ ***    DFMmask_t  IN          (spmdinit -> )
+ ***    DFMmask_t  OUT         (spmdinit -> )
+ ***    DFMmask_t  INOUT       (spmdinit -> )
+ ***    DFMmask_t  LOCAL       (spmdinit -> )
+ ***    DFMmask_t  SHARED      (spmdinit -> )
  ***
  ***    node*      FUNDEF      (N_fundef)
  ***
@@ -2860,8 +2783,8 @@ extern node *MakeSpmd (node *region);
  ***
  ***  temporary attributes:
  ***
- ***    node*      WITH_PTRS   (N_exprs)   (syncinit -> syncopt -> compile ! )
- ***    SCHsched_t SCHEDULING              (syncinit (O) -> sched -> compile ! )
+ ***    node*      WITH_PTRS   (N_exprs)   (syncinit -> syncopt -> compile !!)
+ ***    SCHsched_t SCHEDULING              (syncinit (O) -> sched -> compile !!)
  ***/
 
 extern node *MakeSync (node *region);
@@ -2892,9 +2815,9 @@ extern node *MakeSync (node *region);
  ***                                      corresponding blocks
  ***
  ***  temporary attributes:
- ***    DFMmask_t  USEMASK                (multithread.dfa   ->)
- ***    DFMmask_t  DEFMASK                (multithread.dfa   ->)
- ***    DFMmask_t  NEEDLATER              (multithread.dfa   ->)
+ ***    DFMmask_t  USEMASK                (multithread.dfa -> )
+ ***    DFMmask_t  DEFMASK                (multithread.dfa -> )
+ ***    DFMmask_t  NEEDLATER              (multithread.dfa -> )
  ***    DFMmask_t  ALLOC                  (not yet implemented -> compile)
  ***    node*      FUNDEF     (N_fundef)  (multithread.blkli ->
  ***                                       This mt-block was lifted to which
@@ -2925,10 +2848,10 @@ extern node *MakeMT (node *region);
  ***                                      corresponding blocks
  ***
  ***  temporary attributes:
- ***    DFMmask_t  USEMASK        (multithread.dfa ->)
- ***    DFMmask_t  DEFMASK        (multithread.dfa ->)
- ***    DFMmask_t  NEEDLATER_ST   (multithread.dfa ->)
- ***    DFMmask_t  NEEDLATER_MT   (multithread.dfa ->)
+ ***    DFMmask_t  USEMASK        (multithread.dfa -> )
+ ***    DFMmask_t  DEFMASK        (multithread.dfa -> )
+ ***    DFMmask_t  NEEDLATER_ST   (multithread.dfa -> )
+ ***    DFMmask_t  NEEDLATER_MT   (multithread.dfa -> )
  ***/
 
 extern node *MakeST (node *region);
@@ -3004,19 +2927,18 @@ extern node *MakeMTalloc ();
  ***
  ***  temporary attributes:
  ***
- ***    node*      PRAGMA     (N_pragma)  (scanparse -> wltransform ! )
- ***    int        REFERENCED             (wlt -> wlf !!
+ ***    node*      PRAGMA     (N_pragma)  (scanparse -> wltransform !!)
+ ***    int        REFERENCED             (wlt -> wlf !!)
  ***    int        REFERENCED_FOLD        (wlt -> wlf !!)
  ***    int        REFERENCES_FOLDED      (wlt -> wlf !!)
  ***    bool       FOLDABLE               (wlt -> wlf !!)
  ***    bool       NO_CHANCE              (wlt -> wlf !!)
- ***    ids*       DEC_RC_IDS             (refcount -> wltransform )
+ ***    ids*       DEC_RC_IDS             (refcount -> wltransform !!)
  ***    node*      TSI                    (tile size inference -> )
  ***
- ***    DFMmask_t  IN                     (refcount -> wltransform )
- ***    DFMmask_t  INOUT                  (refcount -> wltransform )
- ***    DFMmask_t  OUT                    (refcount -> wltransform )
- ***    DFMmask_t  LOCAL                  (refcount -> wltransform )
+ ***    DFMmask_t  IN_MASK                (infer_dfms -> lac2fun -> wltransform !!)
+ ***    DFMmask_t  OUT_MASK               (infer_dfms -> lac2fun -> wltransform !!)
+ ***    DFMmask_t  LOCAL_MASK             (infer_dfms -> lac2fun -> wltransform !!)
  ***/
 
 extern node *MakeNWith (node *part, node *code, node *withop);
@@ -3035,10 +2957,9 @@ extern node *MakeNWith (node *part, node *code, node *withop);
 #define NWITH_FOLDABLE(n) (((wl_info *)((n)->info2))->foldable)
 #define NWITH_NO_CHANCE(n) (((wl_info *)((n)->info2))->no_chance)
 
-#define NWITH_IN(n) ((DFMmask_t) (n)->dfmask[0])
-#define NWITH_INOUT(n) ((DFMmask_t) (n)->dfmask[1])
-#define NWITH_OUT(n) ((DFMmask_t) (n)->dfmask[2])
-#define NWITH_LOCAL(n) ((DFMmask_t) (n)->dfmask[3])
+#define NWITH_IN_MASK(n) ((DFMmask_t) (n)->dfmask[0])
+#define NWITH_OUT_MASK(n) ((DFMmask_t) (n)->dfmask[1])
+#define NWITH_LOCAL_MASK(n) ((DFMmask_t) (n)->dfmask[2])
 
 /*--------------------------------------------------------------------------*/
 
@@ -3058,7 +2979,7 @@ extern node *MakeNWith (node *part, node *code, node *withop);
  ***  temporary attributes:
  ***
  ***    long*  MASK          (optimize -> )
- ***    bool   COPY          (Unroll !)
+ ***    bool   COPY          (Unroll !!)
  ***    bool   PADDED        (ap-> )
  ***/
 
@@ -3187,7 +3108,7 @@ extern node *MakeNWithOp (WithOpType WithOp);
  ***  temporary attributes:
  ***
  ***    int        NO         (unambiguous number for PrintNwith2())
- ***                                      (precompile -> )
+ ***                                       (precompile -> )
  ***    long*      MASK                    (optimize -> )
  ***    node *     USE         (N_vinfo)   (IVE -> )
  ***    bool       FLAG                    (WLI -> WLF)
@@ -3268,24 +3189,23 @@ extern node *MakeNCode (node *block, node *expr);
  ***
  ***    int        DIMS
  ***
- ***    DFMmask_t  IN
- ***    DFMmask_t  INOUT
- ***    DFMmask_t  OUT
- ***    DFMmask_t  LOCAL
  ***    bool       MT
  ***    node*      PRAGMA        (N_pragma)
  ***
- ***
  ***  temporary attributes:
  ***
- ***    ids*       DEC_RC_IDS                     (wltransform -> compile )
+ ***    DFMmask_t  IN_MASK                  (infer_dfms -> lac2fun -> refcount -> )
+ ***    DFMmask_t  OUT_MASK                 (infer_dfms -> lac2fun -> refcount -> )
+ ***    DFMmask_t  LOCAL_MASK               (infer_dfms -> lac2fun -> refcount -> )
  ***
- ***    bool       ISSCHEDULED                    (new mt -> ...)
- ***                       [Signals whether any segment is scheduled or not]
+ ***    ids*       DEC_RC_IDS               (wltransform -> compile)
  ***
- ***    DFMmask_t  REUSE                          (ReuseWithArrays -> compile ! )
+ ***    bool       ISSCHEDULED              (new_mt -> ...)
+ ***                            [Signals whether any segment is scheduled or not]
  ***
- ***    SCHsched_t SCHEDULING   (O)               (wltransform -> compile )
+ ***    DFMmask_t  REUSE                    (ReuseWithArrays -> compile !!)
+ ***
+ ***    SCHsched_t SCHEDULING   (O)         (wltransform -> compile)
  ***/
 
 extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int dims);
@@ -3301,11 +3221,10 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int 
 #define NWITH2_ISSCHEDULED(n) ((n)->int_data)
 #define NWITH2_DEC_RC_IDS(n) ((ids *)((n)->node[5]))
 
-#define NWITH2_IN(n) ((DFMmask_t) ((n)->dfmask[0]))
-#define NWITH2_INOUT(n) ((DFMmask_t) ((n)->dfmask[1]))
-#define NWITH2_OUT(n) ((DFMmask_t) ((n)->dfmask[2]))
-#define NWITH2_LOCAL(n) ((DFMmask_t) ((n)->dfmask[3]))
-#define NWITH2_REUSE(n) ((DFMmask_t) ((n)->dfmask[4]))
+#define NWITH2_IN_MASK(n) ((DFMmask_t) ((n)->dfmask[0]))
+#define NWITH2_OUT_MASK(n) ((DFMmask_t) ((n)->dfmask[1]))
+#define NWITH2_LOCAL_MASK(n) ((DFMmask_t) ((n)->dfmask[2]))
+#define NWITH2_REUSE(n) ((DFMmask_t) ((n)->dfmask[3]))
 
 /*--------------------------------------------------------------------------*/
 
@@ -3532,8 +3451,8 @@ extern node *MakeWLublock (int level, int dim, int bound1, int bound2, int step,
  ***  temporary attributes:
  ***
  ***    node*    PART         (part this stride is generated from)
- ***                                                 (wltransform ! )
- ***    node*    MODIFIED                            (wltransform ! )
+ ***                                                 (wltransform !!)
+ ***    node*    MODIFIED                            (wltransform !!)
  ***/
 
 extern node *MakeWLstride (int level, int dim, int bound1, int bound2, int step,
@@ -3572,7 +3491,7 @@ extern node *MakeWLstride (int level, int dim, int bound1, int bound2, int step,
  ***
  ***  temporary attributes:
  ***
- ***    node*   MODIFIED                                (wltransform ! )
+ ***    node*   MODIFIED                                (wltransform !!)
  ***
  ***  remarks:
  ***

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2000/12/12 15:34:07  dkr
+ * some macros renamed
+ *
  * Revision 3.2  2000/11/29 13:13:29  dkr
  * macros AP_ARG? added
  *
@@ -708,6 +711,7 @@ extern node *AppendObjdef (node *objdef_chain, node *objdef);
 #define FUNDEF_VARDEC(n) (BLOCK_VARDEC (FUNDEF_BODY (n)))
 #define FUNDEF_INSTR(n) (BLOCK_INSTR (FUNDEF_BODY (n)))
 #define FUNDEF_BODY_VARNO(n) (BLOCK_VARNO (FUNDEF_BODY (n)))
+#define FUNDEF_RC_ICMS(n) (BLOCK_RC_ICMS (FUNDEF_BODY (n)))
 
 #define FUNDEF_DEFMASK(n) (FUNDEF_MASK (n, 0))
 #define FUNDEF_USEMASK(n) (FUNDEF_MASK (n, 1))
@@ -1205,8 +1209,8 @@ extern int GetExprsLength (node *exprs);
 #define DO_DEFMASK(n) (BLOCK_DEFMASK (DO_BODY (n)))
 #define DO_USEMASK(n) (BLOCK_USEMASK (DO_BODY (n)))
 #define DO_MRDMASK(n) (BLOCK_MRDMASK (DO_BODY (n)))
-#define DO_TERMMASK(n) (DO_MASK (n, 1))
 #define DO_INSTR(n) (BLOCK_INSTR (DO_BODY (n)))
+#define DO_TERMMASK(n) (DO_MASK (n, 1))
 
 /*--------------------------------------------------------------------------*/
 
@@ -1221,8 +1225,8 @@ extern int GetExprsLength (node *exprs);
 #define WHILE_DEFMASK(n) (BLOCK_DEFMASK (WHILE_BODY (n)))
 #define WHILE_USEMASK(n) (BLOCK_USEMASK (WHILE_BODY (n)))
 #define WHILE_MRDMASK(n) (BLOCK_MRDMASK (WHILE_BODY (n)))
-#define WHILE_TERMMASK(n) (WHILE_MASK (n, 1))
 #define WHILE_INSTR(n) (BLOCK_INSTR (WHILE_BODY (n)))
+#define WHILE_TERMMASK(n) (WHILE_MASK (n, 1))
 
 /*--------------------------------------------------------------------------*/
 
@@ -1237,14 +1241,9 @@ extern int GetExprsLength (node *exprs);
 
 #define DO_OR_WHILE_COND(n) ((NODE_TYPE (n) == N_do) ? DO_COND (n) : WHILE_COND (n))
 #define DO_OR_WHILE_BODY(n) ((NODE_TYPE (n) == N_do) ? DO_BODY (n) : WHILE_BODY (n))
-#define DO_OR_WHILE_USEVARS(n)                                                           \
-    ((NODE_TYPE (n) == N_do) ? DO_USEVARS (n) : WHILE_USEVARS (n))
-#define DO_OR_WHILE_DEFVARS(n)                                                           \
-    ((NODE_TYPE (n) == N_do) ? DO_DEFVARS (n) : WHILE_DEFVARS (n))
-#define DO_OR_WHILE_NAIVE_USEVARS(n)                                                     \
-    ((NODE_TYPE (n) == N_do) ? DO_NAIVE_USEVARS (n) : WHILE_NAIVE_USEVARS (n))
-#define DO_OR_WHILE_NAIVE_DEFVARS(n)                                                     \
-    ((NODE_TYPE (n) == N_do) ? DO_NAIVE_DEFVARS (n) : WHILE_NAIVE_DEFVARS (n))
+
+#define DO_OR_WHILE_INSTR(n) ((NODE_TYPE (n) == N_do) ? DO_INSTR (n) : WHILE_INSTR (n))
+
 #define DO_OR_WHILE_MASK(n, x)                                                           \
     ((NODE_TYPE (n) == N_do) ? DO_MASK (n, x) : WHILE_MASK (n, x))
 #define DO_OR_WHILE_DEFMASK(n)                                                           \
@@ -1253,7 +1252,22 @@ extern int GetExprsLength (node *exprs);
     ((NODE_TYPE (n) == N_do) ? DO_USEMASK (n) : WHILE_USEMASK (n))
 #define DO_OR_WHILE_TERMMASK(n)                                                          \
     ((NODE_TYPE (n) == N_do) ? DO_TERMMASK (n) : WHILE_TERMMASK (n))
-#define DO_OR_WHILE_INSTR(n) ((NODE_TYPE (n) == N_do) ? DO_INSTR (n) : WHILE_INSTR (n))
+
+#define DO_OR_WHILE_IN_MASK(n)                                                           \
+    ((NODE_TYPE (n) == N_do) ? DO_IN_MASK (n) : WHILE_IN_MASK (n))
+#define DO_OR_WHILE_OUT_MASK(n)                                                          \
+    ((NODE_TYPE (n) == N_do) ? DO_OUT_MASK (n) : WHILE_OUT_MASK (n))
+#define DO_OR_WHILE_LOCAL_MASK(n)                                                        \
+    ((NODE_TYPE (n) == N_do) ? DO_LOCAL_MASK (n) : WHILE_LOCAL_MASK (n))
+
+#define DO_OR_WHILE_USEVARS(n)                                                           \
+    ((NODE_TYPE (n) == N_do) ? DO_USEVARS (n) : WHILE_USEVARS (n))
+#define DO_OR_WHILE_DEFVARS(n)                                                           \
+    ((NODE_TYPE (n) == N_do) ? DO_DEFVARS (n) : WHILE_DEFVARS (n))
+#define DO_OR_WHILE_NAIVE_USEVARS(n)                                                     \
+    ((NODE_TYPE (n) == N_do) ? DO_NAIVE_USEVARS (n) : WHILE_NAIVE_USEVARS (n))
+#define DO_OR_WHILE_NAIVE_DEFVARS(n)                                                     \
+    ((NODE_TYPE (n) == N_do) ? DO_NAIVE_DEFVARS (n) : WHILE_NAIVE_DEFVARS (n))
 
 /*
  *  compound set macros
@@ -1272,6 +1286,13 @@ extern int GetExprsLength (node *exprs);
         DO_BODY (n) = (rhs);                                                             \
     } else {                                                                             \
         WHILE_BODY (n) = (rhs);                                                          \
+    }
+
+#define L_DO_OR_WHILE_INSTR(n, rhs)                                                      \
+    if (NODE_TYPE (n) == N_do) {                                                         \
+        DO_INSTR (n) = (rhs);                                                            \
+    } else {                                                                             \
+        WHILE_INSTR (n) = (rhs);                                                         \
     }
 
 #define L_DO_OR_WHILE_USEVARS(n, rhs)                                                    \
@@ -1300,13 +1321,6 @@ extern int GetExprsLength (node *exprs);
         DO_NAIVE_DEFVARS (n) = (rhs);                                                    \
     } else {                                                                             \
         WHILE_NAIVE_DEFVARS (n) = (rhs);                                                 \
-    }
-
-#define L_DO_OR_WHILE_INSTR(n, rhs)                                                      \
-    if (NODE_TYPE (n) == N_do) {                                                         \
-        DO_INSTR (n) = (rhs);                                                            \
-    } else {                                                                             \
-        WHILE_INSTR (n) = (rhs);                                                         \
     }
 
 /*--------------------------------------------------------------------------*/
@@ -1717,40 +1731,32 @@ extern node *MakeIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *arg
 #define NWITH_OR_NWITH2_VEC(n)                                                           \
     ((NODE_TYPE (n) == N_Nwith) ? NWITH_VEC (n) : NWITH2_VEC (n))
 
-#define NWITH_OR_NWITH2_IN(n) ((NODE_TYPE (n) == N_Nwith) ? NWITH_IN (n) : NWITH2_IN (n))
-#define NWITH_OR_NWITH2_INOUT(n)                                                         \
-    ((NODE_TYPE (n) == N_Nwith) ? NWITH_INOUT (n) : NWITH2_INOUT (n))
-#define NWITH_OR_NWITH2_OUT(n)                                                           \
-    ((NODE_TYPE (n) == N_Nwith) ? NWITH_OUT (n) : NWITH2_OUT (n))
-#define NWITH_OR_NWITH2_LOCAL(n)                                                         \
-    ((NODE_TYPE (n) == N_Nwith) ? NWITH_LOCAL (n) : NWITH2_LOCAL (n))
+#define NWITH_OR_NWITH2_IN_MASK(n)                                                       \
+    ((NODE_TYPE (n) == N_Nwith) ? NWITH_IN_MASK (n) : NWITH2_IN_MASK (n))
+#define NWITH_OR_NWITH2_OUT_MASK(n)                                                      \
+    ((NODE_TYPE (n) == N_Nwith) ? NWITH_OUT_MASK (n) : NWITH2_OUT_MASK (n))
+#define NWITH_OR_NWITH2_LOCAL_MASK(n)                                                    \
+    ((NODE_TYPE (n) == N_Nwith) ? NWITH_LOCAL_MASK (n) : NWITH2_LOCAL_MASK (n))
 
-#define L_NWITH_OR_NWITH2_IN(n, rhs)                                                     \
+#define L_NWITH_OR_NWITH2_IN_MASK(n, rhs)                                                \
     if (NODE_TYPE (n) == N_Nwith) {                                                      \
-        NWITH_IN (n) = (rhs);                                                            \
+        NWITH_IN_MASK (n) = (rhs);                                                       \
     } else {                                                                             \
-        NWITH2_IN (n) = (rhs);                                                           \
+        NWITH2_IN_MASK (n) = (rhs);                                                      \
     }
 
-#define L_NWITH_OR_NWITH2_INOUT(n, rhs)                                                  \
+#define L_NWITH_OR_NWITH2_OUT_MASK(n, rhs)                                               \
     if (NODE_TYPE (n) == N_Nwith) {                                                      \
-        NWITH_INOUT (n) = (rhs);                                                         \
+        NWITH_OUT_MASK (n) = (rhs);                                                      \
     } else {                                                                             \
-        NWITH2_INOUT (n) = (rhs);                                                        \
+        NWITH2_OUT_MASK (n) = (rhs);                                                     \
     }
 
-#define L_NWITH_OR_NWITH2_OUT(n, rhs)                                                    \
+#define L_NWITH_OR_NWITH2_LOCAL_MASK(n, rhs)                                             \
     if (NODE_TYPE (n) == N_Nwith) {                                                      \
-        NWITH_OUT (n) = (rhs);                                                           \
+        NWITH_LOCAL_MASK (n) = (rhs);                                                    \
     } else {                                                                             \
-        NWITH2_OUT (n) = (rhs);                                                          \
-    }
-
-#define L_NWITH_OR_NWITH2_LOCAL(n, rhs)                                                  \
-    if (NODE_TYPE (n) == N_Nwith) {                                                      \
-        NWITH_LOCAL (n) = (rhs);                                                         \
-    } else {                                                                             \
-        NWITH2_LOCAL (n) = (rhs);                                                        \
+        NWITH2_LOCAL_MASK (n) = (rhs);                                                   \
     }
 
 /*--------------------------------------------------------------------------*/
