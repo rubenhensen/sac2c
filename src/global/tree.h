@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.19  1995/01/02 11:20:44  asi
+ * Revision 1.20  1995/01/05 12:37:02  sbs
+ * third component for type_info.mac inserted
+ *
+ * Revision 1.19  1995/01/02  11:20:44  asi
  * changed type of mask from char to long
  *
  * Revision 1.18  1995/01/02  10:50:03  asi
@@ -79,7 +82,7 @@ typedef struct NUMS {
 /* typedef enum { T_int, T_float, T_bool, T_hidden, T_user, T_unknown } simpletype;
  */
 
-#define TYP_IF(n, s) n
+#define TYP_IF(n, s, p) n
 
 typedef enum {
 #include "type_info.mac"

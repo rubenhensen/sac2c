@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.8  1994/12/30 16:57:01  sbs
+ * Revision 1.9  1995/01/05 12:37:02  sbs
+ * third component for type_info.mac inserted
+ *
+ * Revision 1.8  1994/12/30  16:57:01  sbs
  * commented out #ifndef DBUG_OFF
  *
  * Revision 1.7  1994/12/21  11:33:29  hw
@@ -52,7 +55,7 @@ char *mdb_prf[] = {
 
 #undef PRF_IF
 
-#define TYP_IF(n, s) s
+#define TYP_IF(n, s, p) s
 
 char *mdb_type[] = {
 #include "type_info.mac"
