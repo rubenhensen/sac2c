@@ -5,3 +5,5 @@ fun2lac.c
 fun2lac.h
 lac2fun.c
 lac2fun.h
+while2do.c
+while2do.h
