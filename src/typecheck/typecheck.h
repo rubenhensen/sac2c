@@ -1,6 +1,10 @@
 /*
  * $Log$
- * Revision 1.15  1995/06/30 12:10:57  hw
+ * Revision 1.16  1995/07/13 15:43:05  hw
+ * changed macro GET_LENGTH( second argument is now a 'types' struct;
+ *  size of basic-type will be computed correctly now)
+ *
+ * Revision 1.15  1995/06/30  12:10:57  hw
  * -renamed macro GET_BASIC_TYPE to GET_BASIC_SIMPLETYPE
  * - new macro GET_BASIC_TYPE inserted
  *
@@ -112,16 +116,23 @@ extern types *DuplicateTypes (types *source, int share);
     }
 
 /* number of total elements of an array */
-#define GET_LENGTH(length, vardec_node)                                                  \
+#define GET_LENGTH(length, type)                                                         \
     {                                                                                    \
-        types *type;                                                                     \
         int i;                                                                           \
-        if (T_user == vardec_node->SIMPLETYPE)                                           \
-            type = LookupType (vardec_node->NAME, vardec_node->NAME_MOD, 042)->TYPES;    \
+        if (T_user == type->simpletype) {                                                \
+            types *b_type = LookupType (type->name, type->name_mod, 042)->TYPES;         \
+            if (0 < b_type->dim + type->dim) {                                           \
+                for (i = 0, length = 1; i < type->dim; i++)                              \
+                    length *= type->shpseg->shp[i];                                      \
+                for (i = 0; i < b_type->dim; i++)                                        \
+                    length *= b_type->shpseg->shp[i];                                    \
+            } else                                                                       \
+                length = 0;                                                              \
+        } else if (0 < type->dim)                                                        \
+            for (i = 0, length = 1; i < type->dim; i++)                                  \
+                length *= type->shpseg->shp[i];                                          \
         else                                                                             \
-            type = vardec_node->TYPES;                                                   \
-        for (i = 0, length = 1; i < type->dim; i++)                                      \
-            length *= type->shpseg->shp[i];                                              \
+            length = 0;                                                                  \
     }
 
 #endif /* _typecheck_h */
