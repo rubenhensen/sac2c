@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.49  2001/12/11 15:58:21  dkr
+ * GetDim() renamed into GetShapeDim()
+ * GetDim() added
+ *
  * Revision 3.48  2001/12/10 13:45:58  dkr
  * function MakeAssignInstr() added
  * functions MakeAssigns?() added
@@ -230,6 +234,7 @@ extern types *AppendTypes (types *chain, types *item);
 extern int CountTypes (types *type);
 extern types *GetTypes_Line (types *type, int line);
 extern types *GetTypes (types *type);
+extern int GetShapeDim (types *type);
 extern int GetDim (types *type);
 extern simpletype GetBasetype (types *type);
 extern int GetBasetypeSize (types *type);

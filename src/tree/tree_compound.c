@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.47  2001/12/11 15:58:16  dkr
+ * GetDim() renamed into GetShapeDim()
+ * GetDim() added
+ *
  * Revision 3.46  2001/12/10 13:46:03  dkr
  * function MakeAssignInstr() added
  * functions MakeAssigns?() added
@@ -545,20 +549,25 @@ GetTypes (types *type)
 /******************************************************************************
  *
  * Function:
- *   int GetDim( types* type)
+ *   int GetShapeDim( types* type)
  *
  * Description:
- *
+ *   returns encoded dimension (DIM) of 'type'
+ *   ('encoded' means, that it contains also some shape information):
+ *     >= 0 : dimension == DIM             and    known shape
+ *     <  -2: dimension == -2 - DIM        and  unknown shape
+ *     == -1: dimension unknown (but > 0)
+ *     == -2: dimension unknown (>= 0)
  *
  ******************************************************************************/
 
 int
-GetDim (types *type)
+GetShapeDim (types *type)
 {
     types *impl_type;
     int dim, base_dim, impl_dim;
 
-    DBUG_ENTER ("GetDim");
+    DBUG_ENTER ("GetShapeDim");
 
     base_dim = TYPES_DIM (type);
 
@@ -571,6 +580,14 @@ GetDim (types *type)
         impl_dim = TYPES_DIM (impl_type);
 
         if ((UNKNOWN_SHAPE == impl_dim) || (UNKNOWN_SHAPE == base_dim)) {
+            dim = UNKNOWN_SHAPE;
+        } else if ((ARRAY_OR_SCALAR == impl_dim) && (ARRAY_OR_SCALAR == base_dim)) {
+            dim = ARRAY_OR_SCALAR;
+        } else if ((ARRAY_OR_SCALAR == impl_dim) && (SCALAR == base_dim)) {
+            dim = ARRAY_OR_SCALAR;
+        } else if ((SCALAR == impl_dim) && (ARRAY_OR_SCALAR == base_dim)) {
+            dim = ARRAY_OR_SCALAR;
+        } else if ((ARRAY_OR_SCALAR == impl_dim) || (ARRAY_OR_SCALAR == base_dim)) {
             dim = UNKNOWN_SHAPE;
         } else if (KNOWN_SHAPE (impl_dim) && KNOWN_SHAPE (base_dim)) {
             dim = impl_dim + base_dim;
@@ -590,6 +607,32 @@ GetDim (types *type)
          */
         dim = base_dim;
     }
+
+    DBUG_RETURN (dim);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   int GetDim( types* type)
+ *
+ * Description:
+ *   returns dimension of 'type':
+ *     >= 0 : dimension known
+ *     == -1: dimension unknown (but > 0)
+ *     == -2: dimension unknown (>= 0)
+ *
+ ******************************************************************************/
+
+int
+GetDim (types *type)
+{
+    int dim;
+
+    DBUG_ENTER ("GetDim");
+
+    dim = GetShapeDim (type);
+    dim = DIM_NO_OFFSET (dim);
 
     DBUG_RETURN (dim);
 }
@@ -641,7 +684,7 @@ GetBasetypeSize (types *type)
 /******************************************************************************
  *
  * Function:
- *   bool CompareTypesImplementation(types *t1, types *t2)
+ *   bool CompareTypesImplementation( types *t1, types *t2)
  *
  * Description:
  *   compares two types for having the equal implementation types (resolving
@@ -663,14 +706,15 @@ CompareTypesImplementation (types *t1, types *t2)
     DBUG_ASSERT (((t1 != NULL) && (t2 != NULL)), "CompareTypes() called with NULL type");
 
     if (GetBasetype (t1) == GetBasetype (t2)) {
-        if (GetDim (t1) == GetDim (t2)) {
+        if (GetShapeDim (t1) == GetShapeDim (t2)) {
             shpseg1 = Type2Shpseg (t1, &dim);
             shpseg2 = Type2Shpseg (t2, NULL);
+
             res = EqualShpseg (dim, shpseg1, shpseg2);
+
             if (shpseg1 != NULL) {
                 FreeShpseg (shpseg1);
             }
-
             if (shpseg2 != NULL) {
                 FreeShpseg (shpseg2);
             }
@@ -729,7 +773,7 @@ Type2Shpseg (types *type, int *ret_dim)
 
     DBUG_ENTER ("Type2Shpseg");
 
-    dim = GetDim (type);
+    dim = GetShapeDim (type);
 
     DBUG_ASSERT ((dim < SHP_SEG_SIZE), "shape is out of range");
 
@@ -784,7 +828,7 @@ Type2Exprs (types *type)
     /* create a dummy node to append the shape items to */
     ret_node = MakeExprs (NULL, NULL);
 
-    dim = GetDim (type);
+    dim = GetShapeDim (type);
 
     if (dim > SCALAR) {
         tmp = ret_node;
