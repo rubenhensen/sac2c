@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.53  2004/08/09 14:55:55  ktr
+ * Replaced EMAllocateFill with ExplicitAllocation subphase
+ *
  * Revision 3.52  2004/08/06 14:38:59  sah
  * ongoing work to use new AST in sac2c
  *
@@ -209,7 +212,7 @@
 #include "filemgr.h"
 #include "import.h"
 #include "refcount.h"
-#include "alloc.h"
+#include "allocation.h"
 #include "refcounting.h"
 #include "scnprs.h"
 #include "writesib.h"
@@ -597,17 +600,11 @@ main (int argc, char *argv[])
         goto BREAK;
     compiler_phase++;
 
-    if (emm) {
-        syntax_tree = DoSSA (syntax_tree);
-    }
-
-    if (emm) {
-        PHASE_PROLOG;
-        NOTE_COMPILER_PHASE;
-        syntax_tree = EMAllocateFill (syntax_tree); /* emalloc_tab */
-        PHASE_DONE_EPILOG;
-        PHASE_EPILOG;
-    }
+    PHASE_PROLOG;
+    NOTE_COMPILER_PHASE;
+    syntax_tree = ExplicitAllocation (syntax_tree); /* emalloc_tab */
+    PHASE_DONE_EPILOG;
+    PHASE_EPILOG;
 
     if (break_after == PH_alloc)
         goto BREAK;
