@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.91  2002/08/13 12:15:43  dkr
+ * NT2OTap added
+ *
  * Revision 3.90  2002/08/13 10:23:32  sbs
  * hm_tab for handle_mops added.
  *
@@ -1588,7 +1591,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        SSAWLIap, TravSons,
 
        SSAILIap, COMP2Ap, PREC2ap, TravSons, CRTWRPap, TravSons, TravSons, TravSons, HDap,
-       TravSons, CWCap, HMap, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       NT2OTap, CWCap, HMap, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, 1),
 
   NIF (N_cast, "N_cast", TravSons, TravSons, PrintCast, TravSons, TravSons, TravSons,
