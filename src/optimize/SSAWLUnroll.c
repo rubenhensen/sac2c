@@ -1,9 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2002/10/09 02:05:34  dkr
+ * bug in CountElements() fixed
+ *
  * Revision 1.1  2002/10/08 22:10:04  dkr
  * Initial revision
- *
  *
  *
  * created from WLUnroll.c, Revision 3.11 on 2002/10/10 by dkr
@@ -351,13 +353,16 @@ CountElements (node *genn)
 
     const_l = COAST2Constant (NGEN_BOUND1 (genn));
     l = COGetDataVec (const_l);
+    dim = COGetDim (const_l);
 
     const_u = COAST2Constant (NGEN_BOUND2 (genn));
     u = COGetDataVec (const_u);
+    DBUG_ASSERT ((COGetDim (const_u) == dim), "inconsistant wl bounds found!");
 
     if (NGEN_STEP (genn) != NULL) {
         const_s = COAST2Constant (NGEN_STEP (genn));
         s = COGetDataVec (const_s);
+        DBUG_ASSERT ((COGetDim (const_s) == dim), "inconsistant wl bounds found!");
     } else {
         const_s = NULL;
         s = NULL;
@@ -366,6 +371,7 @@ CountElements (node *genn)
     if (NGEN_WIDTH (genn) != NULL) {
         const_w = COAST2Constant (NGEN_WIDTH (genn));
         w = COGetDataVec (const_w);
+        DBUG_ASSERT ((COGetDim (const_w) == dim), "inconsistant wl bounds found!");
     } else {
         const_w = NULL;
         w = NULL;
@@ -448,7 +454,7 @@ SSACheckUnrollModarray (node *wln)
     while (ok && partn) {
         genn = NPART_GEN (partn);
         /* check if code is a copy of the original array and set NPART_COPY
-           for later usage in DoUnrollModarray().
+           for later usage in SSADoUnrollModarray().
 
              B = new_with
                ([ 0 ] <= __flat_1_iv=[__flat_0_i] < [ 3 ]) {
