@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.67  1995/06/02 17:15:21  sbs
+ * Revision 1.68  1995/06/06 07:53:11  sbs
+ * some bugs in PrintVect eliminated
+ *
+ * Revision 1.67  1995/06/02  17:15:21  sbs
  * PrintVectInfo inserted.
  *
  * Revision 1.66  1995/05/30  07:04:37  hw
@@ -608,7 +611,7 @@ PrintExprs (node *arg_node, node *arg_info)
 }
 
 node *
-PrintArg (node *arg_node, node *info_node)
+PrintArg (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintArg");
 
@@ -616,9 +619,12 @@ PrintArg (node *arg_node, node *info_node)
 
     fprintf (outfile, "%s", Type2String (arg_node->info.types, 1));
 
+    if (arg_node->node[2] && show_idx)
+        Trav (arg_node->node[2], arg_info);
+
     if (1 == arg_node->nnode) {
         fprintf (outfile, ", ");
-        Trav (arg_node->node[0], info_node);
+        Trav (arg_node->node[0], arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -633,7 +639,10 @@ PrintVardec (node *arg_node, node *arg_info)
 
     DBUG_EXECUTE ("MASK", fprintf (outfile, "**Number %d -> ", arg_node->varno););
 
-    fprintf (outfile, "%s;\n", Type2String (arg_node->info.types, 1));
+    fprintf (outfile, "%s", Type2String (arg_node->info.types, 1));
+    if (arg_node->node[2] && show_idx)
+        Trav (arg_node->node[2], arg_info);
+    fprintf (outfile, ";\n");
     if (1 == arg_node->nnode)
         Trav (arg_node->node[0], arg_info);
     else
@@ -909,11 +918,9 @@ PrintVectInfo (node *arg_node, node *arg_info)
         if (arg_node->info.use == VECT)
             fprintf (outfile, ":VECT");
         else {
-            fprintf (outfile, ":IDX(");
-            fprintf (outfile, ")");
+            fprintf (outfile, ":IDX(%s)", Type2String ((types *)arg_node->node[1], 0));
         }
         if (arg_node->node[0]) {
-            fprintf (outfile, "/");
             Trav (arg_node->node[0], arg_info);
         }
         fprintf (outfile, " ");
