@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.10  1995/04/07 13:41:35  hw
+ * Revision 1.11  1995/04/21 12:36:20  hw
+ * - added FltnId, FltnLet & FltnArgs
+ * - removed FltnPrf
+ *
+ * Revision 1.10  1995/04/07  13:41:35  hw
  * >> FltnAp, FltnReturn inserted
  *
  * Revision 1.9  1995/03/07  11:00:03  hw
@@ -37,7 +41,6 @@
 
 extern node *Flatten (node *);
 extern node *FltnAssign (node *arg_node, node *arg_info);
-extern node *FltnPrf (node *arg_node, node *arg_info);
 extern node *FltnExprs (node *arg_node, node *arg_info);
 extern node *FltnCond (node *arg_node, node *arg_info);
 extern node *FltnWhile (node *arg_node, node *arg_info);
@@ -49,4 +52,7 @@ extern node *FltnGen (node *arg_node, node *arg_info);
 extern node *FltnAp (node *arg_node, node *arg_info);
 extern node *FltnReturn (node *arg_node, node *arg_info);
 
+extern node *FltnId (node *arg_node, node *arg_info);
+extern node *FltnLet (node *arg_node, node *arg_info);
+extern node *FltnArgs (node *arg_node, node *arg_info);
 #endif /* _flatten_h  */
