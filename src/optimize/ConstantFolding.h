@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.10  1995/07/04 16:32:58  asi
+ * Revision 1.11  1996/01/17 14:37:31  asi
+ * stack-handling moved to optimize.h
+ *
+ * Revision 1.10  1995/07/04  16:32:58  asi
  * IsConst defined global
  *
  * Revision 1.9  1995/06/26  16:23:39  asi
@@ -39,28 +42,6 @@
 
 #define _ConstantFolding_h
 
-typedef struct STELM {
-    int vl_len;
-    node **varlist;
-} stelm;
-
-typedef struct STACK {
-    long tos;
-    long st_len;
-    stelm *stack;
-} stack;
-
-#define MIN_STACK_SIZE 50
-
-stack *def_stack;
-
-#define TOS def_stack->stack[def_stack->tos]
-#define VAR(i) TOS.varlist[i]
-
-extern void PushVL (long NumVar);
-extern void PushDupVL ();
-extern void PopVL ();
-extern void PopVL2 ();
 extern int IsConst (node *arg_node);
 
 extern node *ConstantFolding (node *arg_node, node *arg_info);
