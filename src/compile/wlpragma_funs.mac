@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2001/04/03 09:53:28  dkr
+ * Bv() removed
+ *
  * Revision 3.4  2001/03/20 19:04:40  dkr
  * wlcomp-pragma functions SchedulingWL(), SchedulingSegs() replaced by
  * Scheduling()
@@ -33,7 +36,6 @@ WLP (WLCOMP_All, "All")
 WLP (WLCOMP_Cubes, "Cubes")
 WLP (WLCOMP_ConstSegs, "ConstSegs")
 WLP (WLCOMP_NoBlocking, "NoBlocking")
-WLP (WLCOMP_Bv, "Bv")
 WLP (WLCOMP_BvL0, "BvL0")
 WLP (WLCOMP_BvL1, "BvL1")
 WLP (WLCOMP_BvL2, "BvL2")
