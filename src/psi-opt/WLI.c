@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2001/04/30 12:19:10  nmw
+ * integrate traversal of special fundefs in WLI traversal
+ *
  * Revision 3.5  2001/04/19 07:47:38  dkr
  * macro F_PTR used as format string for pointers
  *
@@ -737,6 +740,82 @@ WLIwhile (node *arg_node, node *arg_info)
 
     WHILE_COND (arg_node) = OPTTrav (WHILE_COND (arg_node), arg_info, arg_node);
     WHILE_INSTR (arg_node) = OPTTrav (WHILE_INSTR (arg_node), arg_info, arg_node);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *WLIap(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   traverse args
+ *   traverse in applicated fundef if special one like WithloopFolding()
+ *
+ ******************************************************************************/
+
+node *
+WLIap (node *arg_node, node *arg_info)
+{
+    node *new_arg_info;
+    int old_wli_phase;
+    funtab *tmp_tab;
+    int expr;
+
+    DBUG_ENTER ("WLTap");
+
+    if (AP_ARGS (arg_node) != NULL) {
+        AP_ARGS (arg_node) = Trav (AP_ARGS (arg_node), arg_info);
+    }
+
+    /* non-recursive call of special fundef
+     * (only in WLI traversal with wli_phase == 1)
+     */
+    if ((AP_FUNDEF (arg_node) != NULL) && (FUNDEF_IS_LACFUN (AP_FUNDEF (arg_node)))
+        && (INFO_WLI_FUNDEF (arg_info) != AP_FUNDEF (arg_node)) && (wli_phase == 1)) {
+
+        /* stack arg_info frame for new fundef */
+        new_arg_info = MakeInfo ();
+        old_wli_phase = wli_phase;
+
+        DBUG_PRINT ("OPT", ("WLI 1"));
+        DBUG_PRINT ("OPTMEM",
+                    ("mem currently allocated: %d bytes", current_allocated_mem));
+        wli_phase = 1;
+        tmp_tab = act_tab;
+        act_tab = wli_tab;
+        AP_FUNDEF (arg_node) = Trav (AP_FUNDEF (arg_node), new_arg_info);
+
+        /* WLI traversal: search information */
+        DBUG_PRINT ("OPT", ("WLI 2"));
+        DBUG_PRINT ("OPTMEM",
+                    ("mem currently allocated: %d bytes", current_allocated_mem));
+        wli_phase = 2;
+        act_tab = wli_tab;
+        AP_FUNDEF (arg_node) = Trav (AP_FUNDEF (arg_node), new_arg_info);
+
+        /* break after WLI? */
+        if ((break_after != PH_sacopt) /* || (break_cycle_specifier != loop ) */
+            || strcmp (break_specifier, "wli")) {
+            /* WLF traversal: fold WLs */
+            DBUG_PRINT ("OPT", ("WLF"));
+            DBUG_PRINT ("OPTMEM",
+                        ("mem currently allocated: %d bytes", current_allocated_mem));
+            act_tab = wlf_tab;
+            AP_FUNDEF (arg_node) = Trav (AP_FUNDEF (arg_node), new_arg_info);
+            expr = (wlf_expr - old_wlf_expr);
+            DBUG_PRINT ("OPT", ("                        result: %d", expr));
+        }
+        DBUG_PRINT ("OPTMEM",
+                    ("mem currently allocated: %d bytes", current_allocated_mem));
+
+        act_tab = tmp_tab;
+
+        wli_phase = old_wli_phase;
+
+        FREE (new_arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
