@@ -1,0 +1,234 @@
+/******************************************************************************
+ * 
+ * file:  sac2crc
+ * 
+ * description:
+ *
+ *  sac2c public configuration file for SOLARIS_SPARC
+ *
+ ******************************************************************************/
+ 
+
+
+/*******************************************************************************
+ *
+ * target default: default settings for all configuration entries
+ *
+ */
+
+target default:
+ 
+CC             :=  gcc
+CCFLAGS        :=  "-Wall -Wno-unused -fno-builtin"
+CCDIR          :=  "-I$SACBASE/runtime/ "
+                   "-L$SACBASE/runtime/"
+CCLINK         :=  -lsac
+CCMTLINK       :=  -lpthread
+ 
+OPT_O0         :=  ""
+OPT_O1         :=  -O1
+OPT_O2         :=  -O2
+OPT_O3         :=  -O3
+OPT_g          :=  -g
+ 
+CPP_STDIN      :=  "cpp -C"
+CPP_FILE       :=  "gcc -E -C -x c"
+OPT_D          :=  -D
+TAR_CREATE     :=  "tar cf"
+TAR_EXTRACT    :=  "tar xf"
+AR_CREATE      :=  "ar cr"
+RANLIB         :=  ""
+MKDIR          :=  mkdir
+RMDIR          :=  "rm -rf"
+CHDIR          :=  cd
+CAT            :=  cat
+MOVE           :=  mv
+DUMP_OUTPUT    :=  ">/dev/null 2>&1"
+ 
+STDLIB_DECPATH :=  "$SACBASE/stdlib/modules/structures:"
+                   "$SACBASE/stdlib/modules/numerical:"
+                   "$SACBASE/stdlib/classes/random:"
+                   "$SACBASE/stdlib/world/stdio:"
+                   "$SACBASE/stdlib/world/system:"
+                   "$SACBASE/stdlib/world/x-window:"
+                   "$SACBASE/stdlib/hidden"
+ 
+STDLIB_LIBPATH :=  "$SACBASE/stdlib/modules/structures/lib:"
+                   "$SACBASE/stdlib/modules/numerical/lib:"
+                   "$SACBASE/stdlib/classes/random/lib:"
+                   "$SACBASE/stdlib/world/stdio/lib:"
+                   "$SACBASE/stdlib/world/system/lib:"
+                   "$SACBASE/stdlib/world/x-window/lib:"
+                   "$SACBASE/stdlib/hidden/lib"
+ 
+SYSTEM_LIBPATH :=  "/opt/gnu/lib/gcc-lib/sparc-sun-solaris2.5.1/2.7.2.1:"
+                   "/usr/lib/gcc/sparc-sun-solaris2.5.1/2.7.2.1:"
+                   "/opt/gnu/sparc-sun-solaris2.5.1/lib/sparc-sun-solaris2.5.1/2.7.2.1:"
+                   "/opt/gnu/sparc-sun-solaris2.5.1/lib:"
+                   "/usr/ccs/bin/sparc-sun-solaris2.5.1/2.7.2.1:"
+                   "/usr/ccs/bin:"
+                   "/usr/ccs/lib/sparc-sun-solaris2.5.1/2.7.2.1:"
+                   "/usr/ccs/lib:"
+                   "/opt/gnu/lib/sparc-sun-solaris2.5.1/2.7.2.1:"
+                   "/opt/gnu/lib:"
+                   "/lib/sparc-sun-solaris2.5.1/2.7.2.1:"
+                   "/lib:"
+                   "/usr/lib/sparc-sun-solaris2.5.1/2.7.2.1:"
+                   "/usr/lib"
+ 
+CACHE1_SIZE    :=  0
+CACHE1_LINE    :=  0
+CACHE1_ASSOC   :=  0
+ 
+CACHE2_SIZE    :=  0
+CACHE2_LINE    :=  0
+CACHE2_ASSOC   :=  0
+ 
+CACHE3_SIZE    :=  0
+CACHE3_LINE    :=  0
+CACHE3_ASSOC   :=  0
+ 
+ 
+ 
+/*******************************************************************************
+ *
+ * target suncc: use the Sun C compiler instead of gcc
+ *
+ */
+
+target suncc:
+
+CC             :=  cc
+CCFLAGS        :=  "-dalign -fsimple -xsafe=mem"
+ 
+OPT_O0         :=  ""
+OPT_O1         :=  -xO2
+OPT_O2         :=  -xO4
+OPT_O3         :=  -xO5
+ 
+SYSTEM_LIBPATH :=  "/usr/ccs/bin/sparc-sun-solaris2.5.1/2.7.2.1:"
+                   "/usr/ccs/bin:"
+                   "/usr/ccs/lib/sparc-sun-solaris2.5.1/2.7.2.1:"
+                   "/usr/ccs/lib:"
+                   "/lib/sparc-sun-solaris2.5.1/2.7.2.1:"
+                   "/lib:"
+                   "/usr/lib/sparc-sun-solaris2.5.1/2.7.2.1:"
+                   "/usr/lib"
+
+
+
+/*******************************************************************************
+ *
+ * targets for the specification of different cache architectures
+ *
+ */
+
+target sparc_4:
+
+CACHE1_SIZE    :=  8
+CACHE1_LINE    :=  16
+CACHE1_ASSOC   :=  1
+
+
+target sparc_5:
+
+CACHE1_SIZE    :=  8
+CACHE1_LINE    :=  16
+CACHE1_ASSOC   :=  1
+
+
+target sparc_20_61:
+
+CACHE1_SIZE    :=  16
+CACHE1_LINE    :=  32
+CACHE1_ASSOC   :=  4
+
+
+target sparc_20_71:
+
+CACHE1_SIZE    :=  16
+CACHE1_LINE    :=  32
+CACHE1_ASSOC   :=  4
+
+CACHE2_SIZE    :=  1024
+CACHE2_LINE    :=  32
+CACHE2_ASSOC   :=  1
+
+
+target ultra_entr3000:
+
+CACHE1_SIZE    :=  16
+CACHE1_LINE    :=  32
+CACHE1_ASSOC   :=  1
+
+CACHE2_SIZE    :=  512
+CACHE2_LINE    :=  64
+CACHE2_ASSOC   :=  1
+
+
+target ultra2_entr4000:
+
+CACHE1_SIZE    :=  16
+CACHE1_LINE    :=  32
+CACHE1_ASSOC   :=  1
+
+CACHE2_SIZE    :=  1024
+CACHE2_LINE    :=  64
+CACHE2_ASSOC   :=  1
+
+
+
+/*******************************************************************************
+ *
+ * specific machine targets using gcc
+ *
+ */
+
+target tummy::sparc_5:
+
+
+target cheops::sparc_20_61:
+
+
+target twice::sparc_20_71:
+
+
+target blitz::ultra_entr3000:
+
+
+target picard::ultra2_entr4000:
+
+
+
+
+/*******************************************************************************
+ *
+ * specific machine targets using Sun cc
+ *
+ */
+
+target tummy_cc::suncc::sparc_5:
+
+CCFLAGS        +=  "-xtarget=ss5"
+
+
+target cheops_cc::suncc::sparc_20_61:
+
+CCFLAGS        +=  "-xtarget=ss20/71 -xcache=16/32/4"
+
+
+target twice_cc::suncc::sparc_20_71:
+
+CCFLAGS        +=  "-xtarget=ss20/71"
+
+
+target blitz_cc::suncc::ultra_entr3000:
+
+CCFLAGS        +=  "-xtarget=ultra -xcache=16/32/1:512/64/1"
+
+
+target picard_cc::suncc::ultra2_entr4000:
+
+CCFLAGS        +=  "-xtarget=ultra2 -xcache=16/32/1:1024/64/1"
+
+
