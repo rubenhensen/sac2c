@@ -4,6 +4,10 @@
 /*
  *
  * $Log$
+ * Revision 3.85  2003/04/14 15:22:50  dkr
+ * cast of the result of strlen into int eliminated;
+ * constant casted into size_t instead
+ *
  * Revision 3.84  2003/04/14 13:40:24  sbs
  * return value of strlen casted to int for comparison!
  *
@@ -2701,7 +2705,7 @@ int yyerror( char *errname)
                    (((verbose_level > 1) ? 2 : 0) +
                     strlen( filename) +
                     NumberOfDigits( linenum) + 9);
-  if ((int)strlen( linebuf_ptr) > size_of_output) {
+  if (strlen( linebuf_ptr) > (size_t) size_of_output) {
     if (charpos >= size_of_output - 15) {
       offset = charpos - size_of_output + 15;
       strncpy( linebuf_ptr + offset, "... ", 4);
