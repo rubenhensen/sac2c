@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.22  1996/05/29 16:48:11  sbs
+ * Revision 1.23  1996/09/02 17:41:51  sbs
+ * commented ref_dump in RefLoop
+ *
+ * Revision 1.22  1996/05/29  16:48:11  sbs
  * -Inserted tree-macros in RCfundef, RCassign, RCid, RClet
  * -Inserted Comments in RCfundef, RCassign, RCid, RClet
  *
@@ -677,7 +680,10 @@ RCloop (node *arg_node, node *arg_info)
     DBUG_ENTER ("RCloop");
 
     /* traverse body of loop */
-    ref_dump = StoreAndInit (1);
+    ref_dump = StoreAndInit (1); /* store the current ref-cnt values from
+                                    the VARDECs to ref_dump and initialize
+                                    all ref-cnts from the function's vardec
+                                    with 1 */
 
     arg_node->node[1] = Trav (arg_node->node[1], arg_info);
 
