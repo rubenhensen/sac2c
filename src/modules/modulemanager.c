@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2005/03/10 09:41:09  cg
+ * Added #include "internal_lib.h"
+ *
  * Revision 1.9  2005/01/11 12:32:52  cg
  * Converted output from Error.h to ctinfo.c
  *
@@ -16,6 +19,7 @@
 #include "modulemanager.h"
 #include "libmanager.h"
 #include "dbug.h"
+#include "internal_lib.h"
 
 #include <string.h>
 
