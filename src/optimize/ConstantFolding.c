@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.21  2002/07/12 19:08:05  dkr
+ * CFid(): N_char added
+ *
  * Revision 3.20  2002/02/22 14:31:26  dkr
  * function DupOneTypesOnly_Inplace() replaced my DupAllTypes()
  *
@@ -1009,6 +1012,7 @@ CFid (node *arg_node, node *arg_info)
         case N_float:
         case N_double:
         case N_bool:
+        case N_char: /* dkr: is it safe to simply add 'N_char' here? */
         case N_str:
             DEC_VAR (INFO_USE, ID_VARNO (arg_node));
             FreeTree (arg_node);
@@ -1027,7 +1031,7 @@ CFid (node *arg_node, node *arg_info)
         case N_cast:
             break;
         default:
-            DBUG_ASSERT ((FALSE), "Substitution not implemented for constant folding");
+            DBUG_ASSERT ((0), "Substitution not implemented for constant folding");
             break;
         }
     }
