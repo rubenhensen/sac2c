@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.103  2004/11/25 22:18:51  khf
+ * use PRTprintHomsv
+ *
  * Revision 3.102  2004/11/25 21:45:00  khf
  * SacDevCamp04: COMPILES!!!!!!!
  *
@@ -7217,7 +7220,7 @@ InferSegsParamsPost (node *segs)
             DBUG_EXECUTE ("WLtrans", fprintf (stderr, "WLSEG_SV = ");
                           PRINT_VECT (stderr, WLSEG_SV (segs), WLSEG_DIMS (segs), "%i");
                           fprintf (stderr, ", WLSEG_HOMSV = ");
-                          PRINT_HOMSV (stderr, WLSEG_HOMSV (segs), WLSEG_DIMS (segs));
+                          PRTprintHomsv (stderr, WLSEG_HOMSV (segs), WLSEG_DIMS (segs));
                           fprintf (stderr, "\n"););
 
         } else {
