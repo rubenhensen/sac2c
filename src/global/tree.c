@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.6  1995/01/18 17:39:17  asi
+ * Revision 1.7  1995/02/22 10:48:08  hw
+ * bug fixed in MakeTypes (shpseg is set to NULL)
+ *
+ * Revision 1.6  1995/01/18  17:39:17  asi
  * MAX_MASK inserted
  *
  * Revision 1.5  1995/01/16  11:10:25  asi
@@ -53,6 +56,7 @@ MakeTypes (simpletype simple)
 
     tmp = GEN_NODE (types);
     tmp->simpletype = simple;
+    tmp->shpseg = NULL;
     tmp->name = NULL;
     tmp->name_mod = NULL;
     tmp->dim = 0;
