@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2000/10/10 16:31:47  dkr
+ * header modified
+ *
  * Revision 1.1  2000/01/21 15:39:33  dkr
  * Initial revision
  *
@@ -35,40 +38,39 @@
  * Revision 1.13  1997/05/29 13:42:53  sbs
  * F_idx_modarray added
  *
-;; Revision 1.12  1995/12/04  16:13:56  hw
-;; added primitve functions toi, tof & tod
-;;
-;; Revision 1.11  1995/08/11  17:26:00  hw
-;; N_modarray & N_genarray inserted
-;;
-;; Revision 1.10  1995/08/03  12:35:13  asi
-;; some dbug-string's corrected and prim. functions with only one argument seperated
-;;
-;; Revision 1.9  1995/07/07  14:52:14  hw
-;; enlarged macro PRF_IF( there are 4 args now) to generate a new table
-;; called 'prf_name'( this will be done in typecheck.c)
-;;
-;; Revision 1.8  1995/07/04  11:38:35  hw
-;; primitive functions ifod, ftod, dtoi, dtof inserted
-;;
-;; Revision 1.7  1995/06/30  12:21:23  hw
-;; F_ftoi, F_itof, F_ftoi_A & F_itof_A (primitive functions itof &
-;; ftoi) inserted
-;;
-;; Revision 1.6  1995/06/26  10:00:12  sbs
-;; F_idx_psi inserted
-;;
-;; Revision 1.5  1995/03/08  14:21:53  hw
-;; added new enumerators for primitive functions add, mul, sub, div
-;; to  distinguish weather one argument is a scalar or array
-;; (these enumerators are inserted while typechecking)
-;;
-;; Revision 1.4  1995/02/09  09:00:28  hw
-;; changed string of F_cat
-;;
-;; Revision 1.3  1994/11/10  15:44:34  sbs
-;; RCS-header inserted
-;;
+ * Revision 1.12  1995/12/04  16:13:56  hw
+ * added primitve functions toi, tof & tod
+ *
+ * Revision 1.11  1995/08/11  17:26:00  hw
+ * N_modarray & N_genarray inserted
+ *
+ * Revision 1.10  1995/08/03  12:35:13  asi
+ * some dbug-string's corrected and prim. functions with only one argument seperated
+ *
+ * Revision 1.9  1995/07/07  14:52:14  hw
+ * enlarged macro PRF_IF( there are 4 args now) to generate a new table
+ * called 'prf_name'( this will be done in typecheck.c)
+ *
+ * Revision 1.8  1995/07/04  11:38:35  hw
+ * primitive functions ifod, ftod, dtoi, dtof inserted
+ *
+ * Revision 1.7  1995/06/30  12:21:23  hw
+ * F_ftoi, F_itof, F_ftoi_A & F_itof_A (primitive functions itof &
+ * ftoi) inserted
+ *
+ * Revision 1.6  1995/06/26  10:00:12  sbs
+ * F_idx_psi inserted
+ *
+ * Revision 1.5  1995/03/08  14:21:53  hw
+ * added new enumerators for primitive functions add, mul, sub, div
+ * to  distinguish weather one argument is a scalar or array
+ * (these enumerators are inserted while typechecking)
+ *
+ * Revision 1.4  1995/02/09  09:00:28  hw
+ * changed string of F_cat
+ *
+ * Revision 1.3  1994/11/10  15:44:34  sbs
+ * RCS-header inserted
  *
  */
 
