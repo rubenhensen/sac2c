@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.9  1995/05/04 11:44:35  sbs
+# Revision 1.10  1995/05/04 11:46:29  sbs
+# make clean adjusted
+#
+# Revision 1.9  1995/05/04  11:44:35  sbs
 # new deps made
 #
 # Revision 1.8  1995/04/20  10:21:23  asi
@@ -52,7 +55,7 @@ deps:
 	makedepend $(INCS) *.c
 
 clean:
-	$(RM) compile.o *.bak BEtest
+	$(RM) compile.o icm2c.o *.bak BEtest
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
