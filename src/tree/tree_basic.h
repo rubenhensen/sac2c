@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.171  2003/10/15 12:24:44  dkrHH
+ * comment for N_fundef corrected
+ *
  * Revision 3.170  2003/09/25 10:54:54  dkr
  * to_unq() and from_unq() are prfs now
  *
@@ -1138,6 +1141,7 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  *   ST_condfun        : function representing an if-else-clause (LaC function)
  *   ST_dofun          : function representing a do-loop (LaC function)
  *   ST_whilefun       : function representing a while-loop (LaC function)
+ *   ST_spmdfun        : SPMD function
  *   ST_zombiefun      : zombie function
  *   ST_wrapperfun     : wrapper function
  *
@@ -1154,8 +1158,6 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  *
  * while/after multithreading:
  * ATTRIB:
- *   ST_spmd_fun       : SPMD function
- *
  *   ST_call_any       : default_flag
  *                       (will be installed before using ATTRIB in mt-phases,
  *                        should not occur after mt-phases done)
