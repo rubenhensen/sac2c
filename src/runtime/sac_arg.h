@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.5  2000/07/07 15:32:53  nmw
+ * InUseDirectory added
+ *
  * Revision 1.4  2000/07/06 15:52:57  nmw
  * SAC_CI_InitRefcounter() added
  *
@@ -20,6 +23,10 @@
 /* abstract datatype for SAC <-> c arguments and return types */
 #include "sac.h"
 #include "sac_cinterface.h"
+
+/* constants */
+#define SAC_CI_SIMPLETYPE 1
+#define SAC_CI_ARRAYTYPE 2
 
 /* basetypes (same as in sac2c internally used) */
 typedef int SAC_ARG_simpletype;
@@ -44,7 +51,10 @@ typedef struct SAC_ARG_STRUCT {
 extern SAC_arg SAC_CI_NewSACArg (SAC_ARG_simpletype basetype, int dim, int *shpvec);
 extern SAC_arg SAC_CI_CreateSACArg (SAC_ARG_simpletype basetype, int dim, ...);
 extern bool SAC_CI_CmpSACArgType (SAC_arg sa, SAC_ARG_simpletype basetype, int dim, ...);
-extern void SAC_CI_FreeSACArg (SAC_arg sa);
 extern SAC_arg SAC_CI_InitRefcounter (SAC_arg sa, int initvalue);
+extern void SAC_CI_ExitOnInvalidArg (SAC_arg sa, SAC_ARG_simpletype basetype, int flag);
+
+extern void SAC_CI_InitSACArgDirectory ();
+extern void SAC_CI_FreeSACArgDirectory ();
 
 #endif
