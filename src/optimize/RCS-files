@@ -19,6 +19,8 @@ SSADeadCodeRemoval.c
 SSADeadCodeRemoval.h
 SSALIR.c
 SSALIR.h
+SSALUR.c
+SSALUR.h
 Unroll.c
 Unroll.h
 Unswitch.c
