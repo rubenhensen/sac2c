@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.120  2004/12/01 16:31:18  ktr
+ * Some cleanup
+ *
  * Revision 3.119  2004/11/30 21:44:20  ktr
  * TCappendVardecs fixed.
  *
@@ -1809,8 +1812,6 @@ TCmakeVardecFromArg (node *arg_node)
         VARDEC_TYPE (new_vardec) = DUPdupAllTypes (ARG_TYPE (arg_node));
     }
 
-    VARDEC_TDEF (new_vardec) = ARG_TDEF (arg_node);
-
     AVIS_DECL (VARDEC_AVIS (new_vardec)) = new_vardec;
 
     /* delete wrong data in copied AVIS node */
@@ -1853,9 +1854,10 @@ TCmakeArgFromVardec (node *vardec_node)
     AVIS_SSASTACK_TOP (new_avis) = NULL;
 
     new_arg = TBmakeArg (new_avis, NULL);
-    ARG_TYPE (new_arg) = DUPdupAllTypes (VARDEC_TYPE (vardec_node));
 
-    ARG_TDEF (new_arg) = VARDEC_TDEF (vardec_node);
+    if (VARDEC_TYPE (vardec_node) != NULL) {
+        ARG_TYPE (new_arg) = DUPdupAllTypes (VARDEC_TYPE (vardec_node));
+    }
 
     AVIS_DECL (ARG_AVIS (new_arg)) = new_arg;
 
@@ -1975,7 +1977,7 @@ TCcountArgs (node *args)
 {
     int count = 0;
 
-    DBUG_ENTER ("CountArgs");
+    DBUG_ENTER ("TCcountArgs");
 
     while (args != NULL) {
         DBUG_ASSERT ((NODE_TYPE (args) == N_arg), "no N_arg node found!");

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.180  2004/12/01 16:31:18  ktr
+ * Some cleanup
+ *
  * Revision 3.179  2004/11/29 17:29:49  sah
  * added ID_NAME_OR_SPNAME macro
  *
@@ -341,13 +344,15 @@ extern bool TCisNonUniqueHidden (types *type);
 #define IDS_NAME(n) AVIS_NAME (IDS_AVIS (n))
 #define IDS_VARNO(n) VARDEC_OR_ARG_VARNO (IDS_DECL (n))
 #define IDS_DECL(n) AVIS_DECL (IDS_AVIS (n))
-#define IDS_TYPE(n) VARDEC_TYPE (IDS_DECL (n))
 #define IDS_NTYPE(n) AVIS_TYPE (IDS_AVIS (n))
 #define IDS_DIM(n) VARDEC_OR_ARG_DIM (IDS_DECL (n))
+
+/*
+ * TODO: remove
+ */
+#define IDS_TYPE(n) VARDEC_TYPE (IDS_DECL (n))
 #define IDS_SHPSEG(n) TYPES_SHPSEG (VARDEC_OR_ARG_TYPE (IDS_DECL (n)))
 #define IDS_SHAPE(n, x) SHPSEG_SHAPE (IDS_SHPSEG (n), x)
-#define IDS_VARDEC_NAME(n) VARDEC_OR_ARG_NAME (IDS_DECL (n))
-#define IDS_PADDED(n) VARDEC_OR_ARG_PADDED (IDS_DECL (n))
 
 extern node *TCappendIds (node *chain, node *item);
 extern int TCcountIds (node *ids_arg);
@@ -508,36 +513,6 @@ extern nodelist *TCnodeListFind (nodelist *nl, node *node);
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  N_moddec :
- ***/
-
-/*
- *  compound access macros
- */
-
-#define MODDEC_ITYPES(n) EXPLIST_ITYPES (MODDEC_OWN (n))
-#define MODDEC_ETYPES(n) EXPLIST_ETYPES (MODDEC_OWN (n))
-#define MODDEC_OBJS(n) EXPLIST_OBJS (MODDEC_OWN (n))
-#define MODDEC_FUNS(n) EXPLIST_FUNS (MODDEC_OWN (n))
-
-/*--------------------------------------------------------------------------*/
-
-/***
- ***  N_classdec :
- ***/
-
-/*
- *  compound access macros
- */
-
-#define CLASSDEC_ITYPES(n) EXPLIST_ITYPES (CLASSDEC_OWN (n))
-#define CLASSDEC_ETYPES(n) EXPLIST_ETYPES (CLASSDEC_OWN (n))
-#define CLASSDEC_OBJS(n) EXPLIST_OBJS (CLASSDEC_OWN (n))
-#define CLASSDEC_FUNS(n) EXPLIST_FUNS (CLASSDEC_OWN (n))
-
-/*--------------------------------------------------------------------------*/
-
-/***
  ***  N_sib :
  ***/
 
@@ -558,35 +533,6 @@ extern nodelist *TCnodeListFind (nodelist *nl, node *node);
 /***
  ***  N_typedef :
  ***/
-
-/*
- *  compound access macros
- */
-#if 0 /* no more old type within N_typedef */
-#define TYPEDEF_BASETYPE(n) (TYPES_BASETYPE (TYPEDEF_TYPE (n)))
-#define TYPEDEF_DIM(n) (TYPES_DIM (TYPEDEF_TYPE (n)))
-#define TYPEDEF_SHAPE(n, x) (TYPES_SHAPE (TYPEDEF_TYPE (n), x))
-#define TYPEDEF_SHPSEG(n) (TYPES_SHPSEG (TYPEDEF_TYPE (n)))
-#define TYPEDEF_TNAME(n) (TYPES_NAME (TYPEDEF_TYPE (n)))
-#define TYPEDEF_TMOD(n) (TYPES_MOD (TYPEDEF_TYPE (n)))
-#define TYPEDEF_TDEF(n) (TYPES_TDEF (TYPEDEF_TYPE (n)))
-#endif
-
-/*
- *  The following compound access macros are useful whenever a typedef
- *  node is used to represent a type declaration rather than a type
- *  definition.
- */
-
-#if 0
-#define TYPEDEC_TYPE(n) (TYPEDEF_TYPE (TYPEDEC_DEF (n)))
-#define TYPEDEC_BASETYPE(n) (TYPEDEF_BASETYPE (TYPEDEC_DEF (n)))
-#define TYPEDEC_DIM(n) (TYPEDEF_DIM (TYPEDEC_DEF (n)))
-#define TYPEDEC_SHAPE(n, x) (TYPEDEF_SHAPE (TYPEDEC_DEF (n), x))
-#define TYPEDEC_SHPSEG(n) (TYPEDEF_SHPSEG (TYPEDEC_DEF (n)))
-#define TYPEDEC_TNAME(n) (TYPEDEF_NAME (TYPEDEC_DEF (n)))
-#define TYPEDEC_TMOD(n) (TYPEDEF_MOD (TYPEDEC_DEF (n)))
-#endif
 
 /*
  *
@@ -673,6 +619,15 @@ extern node *TCappendObjdef (node *objdef_chain, node *objdef);
  *  compound access macros
  */
 
+#define FUNDEF_NEEDFUNS(n) (BLOCK_NEEDFUNS (FUNDEF_BODY (n)))
+#define FUNDEF_VARDEC(n) (BLOCK_VARDEC (FUNDEF_BODY (n)))
+#define FUNDEF_INSTR(n) (BLOCK_INSTR (FUNDEF_BODY (n)))
+
+#define FUNDEF_ISLACFUN(n) (FUNDEF_ISCONDFUN (n) || FUNDEF_ISDOFUN (n))
+
+/*
+ * Ugly macros, don't use
+ */
 #define FUNDEF_BASETYPE(n) (TYPES_BASETYPE (FUNDEF_TYPES (n)))
 #define FUNDEF_DIM(n) (TYPES_DIM (FUNDEF_TYPES (n)))
 #define FUNDEF_SHAPE(n, x) (TYPES_SHAPE (FUNDEF_TYPES (n), x))
@@ -681,24 +636,15 @@ extern node *TCappendObjdef (node *objdef_chain, node *objdef);
 #define FUNDEF_TMOD(n) (TYPES_MOD (FUNDEF_TYPES (n)))
 #define FUNDEF_TDEF(n) (TYPES_TDEF (FUNDEF_TYPES (n)))
 
-#define FUNDEF_NEEDFUNS(n) (BLOCK_NEEDFUNS (FUNDEF_BODY (n)))
-#define FUNDEF_NEEDTYPES(n) (BLOCK_NEEDTYPES (FUNDEF_BODY (n)))
-#define FUNDEF_VARDEC(n) (BLOCK_VARDEC (FUNDEF_BODY (n)))
-#define FUNDEF_INSTR(n) (BLOCK_INSTR (FUNDEF_BODY (n)))
-#define FUNDEF_BODY_VARNO(n) (BLOCK_VARNO (FUNDEF_BODY (n)))
-#define FUNDEF_RC_ICMS(n) (BLOCK_RC_ICMS (FUNDEF_BODY (n)))
-
-#define FUNDEF_ISLACFUN(n) (FUNDEF_ISCONDFUN (n) || FUNDEF_ISDOFUN (n))
 /*
  *  The following compound access macros are useful whenever a fundef
  *  node is used to represent a function declaration rather than a
  *  function definition.
  */
 
-#define FUNDEC_NEEDFUNS(n) (FUNDEF_NEEDFUNS (FUNDEC_DEF (n)))
-#define FUNDEC_NEEDTYPES(n) (FUNDEF_NEEDTYPES (FUNDEC_DEF (n)))
-#define FUNDEC_NEEDOBJS(n) (FUNDEF_NEEDOBJS (FUNDEC_DEF (n)))
-
+/*
+ * Ugly macros, don't use
+ */
 #define FUNDEC_TYPES(n) (FUNDEF_TYPES (FUNDEC_DEF (n)))
 #define FUNDEC_BASETYPE(n) (FUNDEF_BASETYPE (FUNDEC_DEF (n)))
 #define FUNDEC_DIM(n) (FUNDEF_DIM (FUNDEC_DEF (n)))
@@ -778,6 +724,10 @@ extern node *TCremoveFundef (node *fundef_chain, node *fundef);
 
 #define VARDEC_NTYPE(n) (AVIS_TYPE (VARDEC_AVIS (n)))
 #define VARDEC_NAME(n) (AVIS_NAME (VARDEC_AVIS (n)))
+
+/*
+ * TODO: REMOVE US CAUSE WE'RE UGLY
+ */
 #define VARDEC_BASETYPE(n) (TYPES_BASETYPE (VARDEC_TYPE (n)))
 #define VARDEC_DIM(n) (TYPES_DIM (VARDEC_TYPE (n)))
 #define VARDEC_SHAPE(n, x) (TYPES_SHAPE (VARDEC_TYPE (n), x))
@@ -880,13 +830,16 @@ extern node *TCadjustAvisData (node *new_vardec, node *fundef);
 
 #define ARG_NAME(n) (AVIS_NAME (ARG_AVIS (n)))
 #define ARG_NTYPE(n) (AVIS_TYPE (ARG_AVIS (n)))
+
+/*
+ * TODO: REMOVE US CAUSE WE'RE UGLY
+ */
 #define ARG_BASETYPE(n) (TYPES_BASETYPE (ARG_TYPE (n)))
 #define ARG_DIM(n) (TYPES_DIM (ARG_TYPE (n)))
 #define ARG_SHAPE(n, x) (TYPES_SHAPE (ARG_TYPE (n), x))
 #define ARG_SHPSEG(n) (TYPES_SHPSEG (ARG_TYPE (n)))
 #define ARG_TNAME(n) (TYPES_NAME (ARG_TYPE (n)))
 #define ARG_TMOD(n) (TYPES_MOD (ARG_TYPE (n)))
-#define ARG_TDEF(n) (TYPES_TDEF (ARG_TYPE (n)))
 
 extern int TCcountArgs (node *args);
 
@@ -905,6 +858,10 @@ extern node *TCreturnTypes2Ret (types *type);
 /***
  ***  N_vardec :  *and*  N_arg :
  ***/
+
+/*
+ * TODO: REMOVE US CAUSE WE'RE UGLY
+ */
 
 /*
  * CAUTION: Do not use the following macros as l-values!!!
@@ -940,17 +897,7 @@ extern node *TCreturnTypes2Ret (types *type);
 #define VARDEC_OR_ARG_OBJDEF(n)                                                          \
     ((NODE_TYPE (n) == N_arg) ? ARG_OBJDEF (n) : VARDEC_OBJDEF (n))
 
-#define VARDEC_OR_ARG_BASETYPE(n)                                                        \
-    ((NODE_TYPE (n) == N_arg) ? ARG_BASETYPE (n) : VARDEC_BASETYPE (n))
 #define VARDEC_OR_ARG_DIM(n) ((NODE_TYPE (n) == N_arg) ? ARG_DIM (n) : VARDEC_DIM (n))
-#define VARDEC_OR_ARG_SHAPE(n, x)                                                        \
-    ((NODE_TYPE (n) == N_arg) ? ARG_SHAPE (n, x) : VARDEC_SHAPE (n, x))
-#define VARDEC_OR_ARG_SHPSEG(n)                                                          \
-    ((NODE_TYPE (n) == N_arg) ? ARG_SHPSEG (n) : VARDEC_SHPSEG (n))
-#define VARDEC_OR_ARG_TNAME(n)                                                           \
-    ((NODE_TYPE (n) == N_arg) ? ARG_TNAME (n) : VARDEC_TNAME (n))
-#define VARDEC_OR_ARG_TMOD(n) ((NODE_TYPE (n) == N_arg) ? ARG_TMOD (n) : VARDEC_TMOD (n))
-#define VARDEC_OR_ARG_TDEF(n) ((NODE_TYPE (n) == N_arg) ? ARG_TDEF (n) : VARDEC_TDEF (n))
 
 #define L_VARDEC_OR_ARG_ACTCHN(n, rhs)                                                   \
     if (NODE_TYPE (n) == N_arg) {                                                        \
@@ -1247,18 +1194,6 @@ extern node *TCgetNthExpr (int n, node *exprs);
 
 extern node *TCnodeBehindCast (node *arg_node);
 
-/*
- *  compound access macros
- */
-
-#define CAST_BASETYPE(n) (TYPES_BASETYPE (CAST_TYPE (n)))
-#define CAST_DIM(n) (TYPES_DIM (CAST_TYPE (n)))
-#define CAST_SHAPE(n, x) (TYPES_SHAPE (CAST_TYPE (n), x))
-#define CAST_SHPSEG(n) (TYPES_SHPSEG (CAST_TYPE (n)))
-#define CAST_TNAME(n) (TYPES_NAME (CAST_TYPE (n)))
-#define CAST_TMOD(n) (TYPES_MOD (CAST_TYPE (n)))
-#define CAST_TDEF(n) (TYPES_TDEF (CAST_TYPE (n)))
-
 /*--------------------------------------------------------------------------*/
 
 /***
@@ -1294,96 +1229,11 @@ extern node *TCnodeBehindCast (node *arg_node);
  ***  N_while :
  ***/
 
-/*
- *  compound access macros
- */
-#define WHILE_INSTR(n) (BLOCK_INSTR (WHILE_BODY (n)))
-
 /*--------------------------------------------------------------------------*/
 
 /***
  ***  N_do :  *and*  N_while :
  ***/
-
-/*
- *  compound access macros
- *  (right hand use only, left hand macros see below)
- */
-
-#define DO_OR_WHILE_COND(n) ((NODE_TYPE (n) == N_do) ? DO_COND (n) : WHILE_COND (n))
-#define DO_OR_WHILE_BODY(n) ((NODE_TYPE (n) == N_do) ? DO_BODY (n) : WHILE_BODY (n))
-
-#define DO_OR_WHILE_INSTR(n) ((NODE_TYPE (n) == N_do) ? DO_INSTR (n) : WHILE_INSTR (n))
-
-#define DO_OR_WHILE_IN_MASK(n)                                                           \
-    ((NODE_TYPE (n) == N_do) ? DO_IN_MASK (n) : WHILE_IN_MASK (n))
-#define DO_OR_WHILE_OUT_MASK(n)                                                          \
-    ((NODE_TYPE (n) == N_do) ? DO_OUT_MASK (n) : WHILE_OUT_MASK (n))
-#define DO_OR_WHILE_LOCAL_MASK(n)                                                        \
-    ((NODE_TYPE (n) == N_do) ? DO_LOCAL_MASK (n) : WHILE_LOCAL_MASK (n))
-
-#define DO_OR_WHILE_USEVARS(n)                                                           \
-    ((NODE_TYPE (n) == N_do) ? DO_USEVARS (n) : WHILE_USEVARS (n))
-#define DO_OR_WHILE_DEFVARS(n)                                                           \
-    ((NODE_TYPE (n) == N_do) ? DO_DEFVARS (n) : WHILE_DEFVARS (n))
-#define DO_OR_WHILE_NAIVE_USEVARS(n)                                                     \
-    ((NODE_TYPE (n) == N_do) ? DO_NAIVE_USEVARS (n) : WHILE_NAIVE_USEVARS (n))
-#define DO_OR_WHILE_NAIVE_DEFVARS(n)                                                     \
-    ((NODE_TYPE (n) == N_do) ? DO_NAIVE_DEFVARS (n) : WHILE_NAIVE_DEFVARS (n))
-
-/*
- *  compound set macros
- *  (left hand use only, right hand macros see above)
- */
-
-#define L_DO_OR_WHILE_COND(n, rhs)                                                       \
-    if (NODE_TYPE (n) == N_do) {                                                         \
-        DO_COND (n) = (rhs);                                                             \
-    } else {                                                                             \
-        WHILE_COND (n) = (rhs);                                                          \
-    }
-
-#define L_DO_OR_WHILE_BODY(n, rhs)                                                       \
-    if (NODE_TYPE (n) == N_do) {                                                         \
-        DO_BODY (n) = (rhs);                                                             \
-    } else {                                                                             \
-        WHILE_BODY (n) = (rhs);                                                          \
-    }
-
-#define L_DO_OR_WHILE_INSTR(n, rhs)                                                      \
-    if (NODE_TYPE (n) == N_do) {                                                         \
-        DO_INSTR (n) = (rhs);                                                            \
-    } else {                                                                             \
-        WHILE_INSTR (n) = (rhs);                                                         \
-    }
-
-#define L_DO_OR_WHILE_USEVARS(n, rhs)                                                    \
-    if (NODE_TYPE (n) == N_do) {                                                         \
-        DO_USEVARS (n) = (rhs);                                                          \
-    } else {                                                                             \
-        WHILE_USEVARS (n) = (rhs);                                                       \
-    }
-
-#define L_DO_OR_WHILE_DEFVARS(n, rhs)                                                    \
-    if (NODE_TYPE (n) == N_do) {                                                         \
-        DO_DEFVARS (n) = (rhs);                                                          \
-    } else {                                                                             \
-        WHILE_DEFVARS (n) = (rhs);                                                       \
-    }
-
-#define L_DO_OR_WHILE_NAIVE_USEVARS(n, rhs)                                              \
-    if (NODE_TYPE (n) == N_do) {                                                         \
-        DO_NAIVE_USEVARS (n) = (rhs);                                                    \
-    } else {                                                                             \
-        WHILE_NAIVE_USEVARS (n) = (rhs);                                                 \
-    }
-
-#define L_DO_OR_WHILE_NAIVE_DEFVARS(n, rhs)                                              \
-    if (NODE_TYPE (n) == N_do) {                                                         \
-        DO_NAIVE_DEFVARS (n) = (rhs);                                                    \
-    } else {                                                                             \
-        WHILE_NAIVE_DEFVARS (n) = (rhs);                                                 \
-    }
 
 /*--------------------------------------------------------------------------*/
 
@@ -1395,13 +1245,8 @@ extern node *TCnodeBehindCast (node *arg_node);
  *  compound access macros
  */
 
-#define ARRAY_NODETYPE(n) (NODE_TYPE (EXPRS_EXPR (ARRAY_AELEMS (n))))
 #define ARRAY_BASETYPE(n) (TYPES_BASETYPE (ARRAY_TYPE (n)))
 #define ARRAY_DIM(n) (SHgetDim (ARRAY_SHAPE (n)))
-#define ARRAY_SHPSEG(n) (TYPES_SHPSEG (ARRAY_TYPE (n)))
-#define ARRAY_TNAME(n) (TYPES_NAME (ARRAY_TYPE (n)))
-#define ARRAY_TMOD(n) (TYPES_MOD (ARRAY_TYPE (n)))
-#define ARRAY_TDEF(n) (TYPES_TDEF (ARRAY_TYPE (n)))
 
 /*
  *  function declarations
@@ -1513,7 +1358,6 @@ extern node *TCmakeVinfoDollar (node *next);
  *  compound access macros
  */
 
-#define ID_VARNO(n) VARDEC_OR_ARG_VARNO (ID_DECL (n))
 #define ID_DECL(n) (AVIS_DECL (ID_AVIS (n)))
 #define ID_NAME(n) AVIS_NAME (ID_AVIS (n))
 #define ID_NTYPE(n) AVIS_TYPE (ID_AVIS (n))
@@ -1533,7 +1377,6 @@ extern node *TCmakeVinfoDollar (node *next);
 
 #define ID_SSAASSIGN(n) (AVIS_SSAASSIGN (ID_AVIS (n)))
 
-#define ID_OR_CAST_TYPE(n) ((NODE_TYPE (n) == N_id) ? ID_TYPE (n) : CAST_TYPE (n))
 #define ID_OR_ARRAY_TYPE(n) ((NODE_TYPE (n) == N_id) ? ID_TYPE (n) : ARRAY_TYPE (n))
 
 #define ID_NAME_OR_SPNAME(n) ((ID_AVIS (n) != NULL) ? ID_NAME (n) : ID_SPNAME (n))
