@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2001/04/26 15:32:28  dkr
+ * CFcast added
+ *
  * Revision 3.1  2000/11/20 18:00:27  sacbase
  * new release made
  *
@@ -63,17 +66,16 @@
  * Revision 1.1  1995/02/13  16:55:36  asi
  * Initial revision
  *
- *
  */
 
-#ifndef _ConstantFolding_h
-
-#define _ConstantFolding_h
+#ifndef _sac_ConstantFolding_h_
+#define _sac_ConstantFolding_h_
 
 extern int IsConst (node *arg_node);
 
 extern node *ConstantFolding (node *arg_node, node *arg_info);
 
+extern node *CFcast (node *arg_node, node *arg_info);
 extern node *CFlet (node *arg_node, node *arg_info);
 extern node *CFprf (node *arg_node, node *arg_info);
 extern node *CFarray (node *arg_node, node *arg_info);
@@ -86,13 +88,11 @@ extern node *CFvar (node *arg_node, node *arg_info);
 extern node *CFassign (node *arg_node, node *arg_info);
 extern node *CFap (node *arg_node, node *arg_info);
 
-extern node *CFNwith (node *, node *);
-extern node *CFNpart (node *, node *);
-extern node *CFNcode (node *, node *);
+extern node *CFNwith (node *arg_node, node *arg_info);
+extern node *CFNpart (node *arg_node, node *arg_info);
+extern node *CFNcode (node *arg_node, node *arg_info);
 
-/*
- * used in WLF:
- */
-extern node *FoldPrfScalars (prf prf_name, node **arg, types *res_type, int swap);
+/* used in WLF: */
+extern node *FoldPrfScalars (prf prf_name, node **arg, types *res_type, bool swap);
 
-#endif /* _ConstantFolding_h */
+#endif /* _sac_ConstantFolding_h_ */
