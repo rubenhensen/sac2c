@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.63  2000/01/21 12:42:52  dkr
+ * function MakeIds1 added
+ * macros INFO_LAC2FUN_... added
+ *
  * Revision 2.62  2000/01/18 16:57:07  bs
  * Access macro NCODE_TSI_TILESHP(n) added.
  *
@@ -557,6 +561,8 @@ extern types *MakeType (simpletype basetype, int dim, shpseg *shpseg, char *name
  */
 
 extern ids *MakeIds (char *name, char *mod, statustype status);
+
+extern ids *MakeIds1 (char *name);
 
 #define IDS_NAME(i) (i->id)
 #define IDS_MOD(i) (i->mod)
@@ -1334,7 +1340,7 @@ extern node *MakeAssign (node *instr, node *next);
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  N_let :					( one of "N_instr" )
+ ***  N_let :                                   ( one of "N_instr" )
  ***
  ***  sons:
  ***
@@ -1531,7 +1537,7 @@ extern node *While2Do (node *while_node);
  ***  permanent attributes:
  ***
  ***    int    TAG
- ***	int    FUNNUMBER
+ ***    int    FUNNUMBER
  ***    int    FUNAPNUMBER
  ***/
 
@@ -2603,7 +2609,6 @@ extern node *MakeInfo ();
 #define INFO_REUSE_FUNDEF(n) (n->node[0])
 #define INFO_REUSE_IDX(n) ((ids *)(n->node[1]))
 #define INFO_REUSE_DEC_RC_IDS(n) ((ids *)(n->node[2]))
-
 #define INFO_REUSE_MASK(n) ((DFMmask_t) (n->dfmask[0]))
 #define INFO_REUSE_NEGMASK(n) ((DFMmask_t) (n->dfmask[1]))
 
@@ -2685,7 +2690,6 @@ extern node *MakeInfo ();
 #define INFO_WLAA_ARRAYDIM(n) VARDEC_DIM (INFO_WLAA_WLARRAY (n))
 
 /* Tile Size Inference */
-
 #define INFO_TSI_ACCESS(n) ((access_t *)(n->info2))
 #define INFO_TSI_ACCESSCNT(n) (n->counter)
 #define INFO_TSI_MINLINE(n) (n->flag)
@@ -2703,6 +2707,14 @@ extern node *MakeInfo ();
 #define INFO_TSI_ARRAYSHP(n) VARDEC_SHPSEG (INFO_TSI_WLARRAY (n))
 #define INFO_TSI_INDEXDIM(n) VARDEC_SHAPE (INFO_TSI_INDEXVAR (n), 0)
 #define INFO_TSI_ARRAYDIM(n) VARDEC_DIM (INFO_TSI_WLARRAY (n))
+
+/* converting loops and conditions to functions */
+#define INFO_LAC2FUN_DFMBASE(n) (n->dfmask[0])
+#define INFO_LAC2FUN_IN(n) ((DFMmask_t) (n->dfmask[1]))
+#define INFO_LAC2FUN_OUT(n) ((DFMmask_t) (n->dfmask[2]))
+#define INFO_LAC2FUN_LOCAL(n) ((DFMmask_t) (n->dfmask[3]))
+#define INFO_LAC2FUN_NEEDED(n) ((DFMmask_t) (n->dfmask[4]))
+#define INFO_LAC2FUN_ISTRANS(n) (n->flag)
 
 /*--------------------------------------------------------------------------*/
 
