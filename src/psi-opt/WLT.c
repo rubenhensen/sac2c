@@ -1,6 +1,10 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 2.6  1999/04/29 07:34:36  bs
+ * New function 'CheckGeneratorBounds' added. It is used to check whether
+ * the boundaries of WL-generators have got the compact vector propagation.
+ *
  * Revision 2.5  1999/04/26 10:56:14  bs
  * Some code cosmetics only.
  *
@@ -96,7 +100,7 @@
  - node[3]: FUNDEF: pointer to last fundef node. needed to access vardecs.
  - node[4]: LET   : pointer to N_let node of current WL.
                     LET_EXPR(ID) == INFO_WLI_WL.
- - node[5]: REPLACE: if != NULL, replave WL with this node.
+ - node[5]: REPLACE: if != NULL, replace WL with this node.
  - varno  : number of variables in this function, see optimize.c
  - mask[0]: DEF mask, see optimize.c
  - mask[1]: USE mask, see optimize.c
@@ -107,6 +111,7 @@
 #include <stdlib.h>
 
 #include "tree.h"
+#include "tree_compound.h"
 #include "types.h"
 #include "internal_lib.h"
 #include "free.h"
@@ -247,6 +252,83 @@ CompleteGrid (int *ls, int *us, int *step, int *width, int dim, intern_gen *ig,
     FREE (nw);
 
     DBUG_RETURN (root_ig);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node* CheckGeneratorBounds(node* arg_node, node* arg_info)
+ *
+ * description:
+ *   check whether the bounds of this N_Ngenarray are N_array nodes with
+ *   a compact array propagation. If there's no conpact propagation or
+ *   the bound is an N_id, it will be changed into an N_array with
+ *   complete compact array propagation.
+ *
+ ******************************************************************************/
+node *
+CheckGeneratorBounds (node *arg_node, node *arg_info)
+{
+    node **bound, *nbound, *array, *aelems;
+    int i;
+    nums *shpnums;
+
+    DBUG_ENTER ("CheckGeneratorBounds");
+
+    for (i = 1; i <= 4; i++) {
+        switch (i) {
+        case 1:
+            bound = &NGEN_BOUND1 (arg_node);
+            break;
+        case 2:
+            bound = &NGEN_BOUND2 (arg_node);
+            break;
+        case 3:
+            bound = &NGEN_STEP (arg_node);
+            break;
+        case 4:
+            bound = &NGEN_WIDTH (arg_node);
+            break;
+        default:
+            bound = NULL;
+            break;
+        }
+        if ((bound != NULL) && (*bound != NULL)) {
+
+            DBUG_ASSERT (((NODE_TYPE (*bound) == N_id)
+                          || (NODE_TYPE (*bound) == N_array)),
+                         "Constant integer array expected!");
+
+            if (NODE_TYPE (*bound) == N_array) {
+                array = *bound;
+                if ((ARRAY_INTVEC (array) == NULL) || ARRAY_VECLEN (array) == 0) {
+                    FREE (ARRAY_INTVEC (array));
+                    ARRAY_INTVEC (array)
+                      = Array2IntVec (ARRAY_AELEMS (array), &ARRAY_VECLEN (array));
+                    ARRAY_VECTYPE (array) = T_int;
+                }
+            } else /* (NODE_TYPE(*bound) == N_id) */ {
+                nbound = *bound;
+
+                DBUG_ASSERT ((ID_VECLEN (nbound) >= 0), "No empty array allowed here!");
+
+                aelems = IntVec2Array (ID_VECLEN (nbound), ID_INTVEC (nbound));
+                array = MakeArray (aelems);
+                shpnums = MakeNums (ID_VECLEN (nbound), NULL);
+                ARRAY_VECLEN (array) = ID_VECLEN (nbound);
+                ARRAY_INTVEC (array)
+                  = CopyIntVector (ID_VECLEN (nbound), ID_INTVEC (nbound));
+                ARRAY_TYPE (array) = MakeType (T_int, ARRAY_VECLEN (array),
+                                               MakeShpseg (shpnums), NULL, NULL);
+                ARRAY_VECTYPE (array) = T_int;
+                FREE (shpnums);
+                FreeTree (nbound);
+            }
+            *bound = array;
+        }
+    }
+
+    DBUG_RETURN (arg_node);
 }
 
 /******************************************************************************
@@ -784,9 +866,10 @@ WLTNwith (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("WLTNwith");
 
-    /* inside the body of this WL we may find another WL. So we better
-       save the old arg_info information. */
-
+    /*
+     * inside the body of this WL we may find another WL. So we better
+     * save the old arg_info information.
+     */
     tmpn = MakeInfo ();
     tmpn->mask[0] = INFO_DEF; /* DEF and USE information have */
     tmpn->mask[1] = INFO_USE; /* to be identical. */
@@ -796,7 +879,9 @@ WLTNwith (node *arg_node, node *arg_info)
     INFO_WLI_NEXT (tmpn) = arg_info;
     arg_info = tmpn;
 
-    /* initialize WL traversal */
+    /*
+     * initialize WL traversal
+     */
     INFO_WLI_WL (arg_info) = arg_node; /* store the current node for later */
     INFO_WLI_LET (arg_info) = ASSIGN_INSTR (INFO_WLI_ASSIGN (arg_info));
     INFO_WLI_REPLACE (arg_info) = NULL;
@@ -809,10 +894,12 @@ WLTNwith (node *arg_node, node *arg_info)
 
     NWITH_FOLDABLE (arg_node) = 1;
 
-    /* traverse all parts (and implicitely bodies).
-       It is not possible that WLTNpart calls the NPART_NEXT node because
-       the superior OPTTrav mechanism has to finish before calling the
-       next part. Else modified USE and DEF masks will cause errors. */
+    /*
+     * traverse all parts (and implicitely bodies).
+     * It is not possible that WLTNpart calls the NPART_NEXT node because
+     * the superior OPTTrav mechanism has to finish before calling the
+     * next part. Else modified USE and DEF masks will cause errors.
+     */
     old_assignn = INFO_WLI_ASSIGN (arg_info);
     tmpn = NWITH_PART (arg_node);
     while (tmpn) {
@@ -822,23 +909,32 @@ WLTNwith (node *arg_node, node *arg_info)
     INFO_WLI_ASSIGN (arg_info) = old_assignn;
 
     if (INFO_WLI_REPLACE (arg_info)) {
-        /* This WL has to be removed. Replace it by INFO_WLI_REPLACE(). */
+        /*
+         * This WL has to be removed. Replace it by INFO_WLI_REPLACE().
+         */
         FreeTree (arg_node);
         arg_node = INFO_WLI_REPLACE (arg_info);
-        /* arg_node can only be an N_id, an N_array or a scalar (-node). */
+        /*
+         * arg_node can only be an N_id, an N_array or a scalar (-node).
+         */
         if (N_id == NODE_TYPE (arg_node))
             INFO_USE[ID_VARNO (arg_node)]++;
     } else {
-        /* traverse N_Nwithop */
+        /*
+         * traverse N_Nwithop
+         */
         NWITH_WITHOP (arg_node) = OPTTrav (NWITH_WITHOP (arg_node), arg_info, arg_node);
 
-        /* generate full partition (genarray, modarray). */
+        /*
+         * generate full partition (genarray, modarray).
+         */
         if (NWITH_FOLDABLE (arg_node)
             && (WO_genarray == NWITH_TYPE (arg_node)
                 || WO_modarray == NWITH_TYPE (arg_node)))
             arg_node = CreateFullPartition (arg_node, arg_info);
 
-        /* If withop if fold, we cannot create additional N_Npart nodes (based on what?)
+        /*
+         * If withop is fold, we cannot create additional N_Npart nodes (based on what?)
          */
         if (NWITH_FOLDABLE (arg_node)
             && (WO_foldfun == NWITH_TYPE (arg_node)
@@ -846,13 +942,25 @@ WLTNwith (node *arg_node, node *arg_info)
             NWITH_PARTS (arg_node) = 1;
     }
 
-    /* restore arg_info */
+    /*
+     * restore arg_info
+     */
     tmpn = arg_info;
     arg_info = INFO_WLI_NEXT (arg_info);
     INFO_DEF = tmpn->mask[0];
     INFO_USE = tmpn->mask[1];
     INFO_VARNO = tmpn->varno;
     FREE (tmpn);
+
+    /*
+     *  It's neccessary to check the boundaries of the generators. The flattened
+     *  arrays have to be rechanged from N_id nodes to N_array nodes.
+     */
+    tmpn = NWITH_PART (arg_node);
+    while (tmpn) {
+        NPART_GEN (tmpn) = CheckGeneratorBounds (NPART_GEN (tmpn), arg_info);
+        tmpn = NPART_NEXT (tmpn);
+    }
 
     DBUG_RETURN (arg_node);
 }
