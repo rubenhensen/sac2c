@@ -3,6 +3,10 @@
 /*
  *
  * $Log$
+ * Revision 2.18  2000/02/24 15:53:44  dkr
+ * RETURN_INWITH not supported anymore
+ * (for old with-loop only, therefore obsolete now)
+ *
  * Revision 2.17  2000/02/23 20:16:34  cg
  * Node status ST_imported replaced by ST_imported_mod and
  * ST_imported_class in order to allow distinction between enteties
@@ -2063,7 +2067,9 @@ conexpr: wlassignblock GENARRAY BRACKET_L expr COMMA { $$=MakeGenarray($4, NULL)
 
              $$=$<node>6;
              ret = MakeReturn( MakeExprs($7, NULL) );
+#if 0   /* old with-loops are not supported anymore */
              RETURN_INWITH(ret)=1;
+#endif
              
              GENARRAY_BODY($$)=Append( $1, ret);
              
@@ -2074,7 +2080,9 @@ conexpr: wlassignblock GENARRAY BRACKET_L expr COMMA { $$=MakeGenarray($4, NULL)
 
              $$=$<node>8;
              ret = MakeReturn( MakeExprs($9, NULL) );
+#if 0   /* old with-loops are not supported anymore */
              RETURN_INWITH(ret)=1;
+#endif
 
              MODARRAY_BODY($$)=Append( $1, ret);
              MODARRAY_ID($$)=$6;
@@ -2084,7 +2092,9 @@ conexpr: wlassignblock GENARRAY BRACKET_L expr COMMA { $$=MakeGenarray($4, NULL)
 
              $$=MakeFoldprf($4, NULL, NULL);
              ret = MakeReturn( MakeExprs($6, NULL) );
+#if 0   /* old with-loops are not supported anymore */
              RETURN_INWITH(ret)=1;
+#endif
              FOLDPRF_BODY($$)=Append( $1, ret);
 
            }
@@ -2094,7 +2104,9 @@ conexpr: wlassignblock GENARRAY BRACKET_L expr COMMA { $$=MakeGenarray($4, NULL)
 
              $$=MakeFoldprf($4,NULL,$6);
              ret = MakeReturn( MakeExprs($8, NULL) );
+#if 0   /* old with-loops are not supported anymore */
              RETURN_INWITH(ret)=1;
+#endif
              FOLDPRF_BODY($$)=Append($1, ret);
            }
          | wlassignblock FOLD BRACKET_L foldfun expr COMMA expr 
@@ -2103,7 +2115,9 @@ conexpr: wlassignblock GENARRAY BRACKET_L expr COMMA { $$=MakeGenarray($4, NULL)
 
               $$=$<node>4;
               ret = MakeReturn( MakeExprs($7, NULL) );
+#if 0   /* old with-loops are not supported anymore */
               RETURN_INWITH(ret)=1;
+#endif
               FOLDFUN_BODY($$)=Append( $1, ret);
               FOLDFUN_NEUTRAL($$)= $5;
 
