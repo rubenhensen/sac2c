@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.3  1995/06/02 11:25:48  asi
+ * Revision 1.4  1995/06/23 13:11:54  hw
+ * functions "DupDec" & "DupFundef" inserted
+ *
+ * Revision 1.3  1995/06/02  11:25:48  asi
  * Added functions for all nodes below fundef node
  *
  * Revision 1.2  1995/05/03  12:41:51  asi
@@ -32,5 +35,7 @@ extern node *DupAssign (node *arg_node, node *arg_info);
 extern node *DupCast (node *arg_node, node *arg_info);
 extern node *DupPrf (node *arg_node, node *arg_info);
 extern node *DupFun (node *arg_node, node *arg_info);
+extern node *DupFundef (node *arg_node, node *arg_info);
+extern node *DupDec (node *arg_node, node *arg_info);
 
 #endif /* _DupTree_h */
