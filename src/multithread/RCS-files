@@ -30,3 +30,4 @@ assignments_rearrange.h
 tag_executionmode.h
 tag_executionmode.c
 propagate_executionmode.h
+propagate_executionmode.c
