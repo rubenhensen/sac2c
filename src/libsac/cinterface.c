@@ -1,10 +1,29 @@
 /*
  * $Log$
+ * Revision 1.8  2000/07/13 09:46:07  nmw
+ * convert functions for double, float, long, char added
+ *
  * Revision 1.7  2000/07/12 10:03:13  nmw
  * RCS-Header added
  * memory leak fixed
  *
+ * Revision 1.6  2000/07/07 15:34:11  nmw
+ * utility functions added
  *
+ * Revision 1.5  2000/07/06 15:54:33  nmw
+ * convert functions changed to var_Args parameters
+ *
+ * Revision 1.4  2000/07/06 09:24:20  nme
+ * simpletype from type_info.mac only used here, no more in sac_arg.h
+ *
+ * Revision 1.3  2000/07/05 19:48:12  nmw
+ * stdlib.h added for linux compatibility
+ *
+ * Revision 1.2  2000/07/05 15:35:00  nmw
+ * minor debugging, filenames adapted
+ *
+ * Revision 1.1  2000/07/05 12:43:13  nmw
+ * Initial revision
  *
  * implementation of SAC <-> C interface functions,
  * implements prototypes from
@@ -162,9 +181,9 @@ SAC_SetRefcounter (SAC_arg sa, int newrc)
 }
 
 /*
- *
  * functions converting c-datatypes to SAC_arg and SAC_arg to c-datatype
  * here: macros used for all types
+ *
  */
 
 /* c-array -> SAC_arg */
@@ -261,39 +280,13 @@ SAC_SetRefcounter (SAC_arg sa, int newrc)
     /* return value */                                                                   \
     return (*((c_type *)SAC_ARG_ELEMS (sa)))
 
-/******************************************************************************
+/*
+ * see headerfile ../runtime/sac_cinterface.h
+ * for details in usage this functions
  *
- * functions: here for type ???
- *   SAC_arg  SAC_???Array2Sac(SAC_reusetype reuseflag,??? *array,int dim,...)
- *   SAC_arg  SAC_???2Sac(??? value)
- *   ???     *SAC_Sac2IntArray(SAC_reusetype reuseflag, SAC_arg sa)
- *   ???      SAC_Sac2Int(SAC_arg sa)
- *
- * description:
- *   converts c datatype to SAC_arg datatype and vice versa.
- *   for every basic type there are 4 functions:
- *         simpletype -> SAC_arg
- *         arraytype  -> SAC_arg
- *         SAC_arg    -> simpletype
- *         SAC_arg    -> arraytype
- *
- *   for the arraytype to SAC_arg you have to specify the dimension and its
- *   shape (as varargs after the dimension).
- *
- * remarks:
- *   When reuseflag is set to SAC_CONSUME_ARG, the array is shared internally,
- *   between c-code and SAC. Therefore you are not allowed to access a c array
- *   any more when convert it to SAC_arg!!! DO NOT FREE such a array!!!
- *   On the other hand you are not allowed to access the SAC_arg any more,
- *   when you have converted it to a c-array using SAC_CONSUME_ARG. And you
- *   HAVE TO FREE this array.
- *   When reuseflag is set to SAC_COPY_ARG, then the argument array is not
- *   touched and you might use it in the future. This is valid for both
- *   directions. A c-array you have to free on your own.
- *
- ******************************************************************************/
+ */
 
-/* functions for the usual basetypes */
+/* int */
 SAC_arg
 SAC_IntArray2Sac (SAC_reusetype reuseflag, int *array, int dim, ...)
 {
@@ -316,4 +309,104 @@ int
 SAC_Sac2Int (SAC_arg sa)
 {
     SAC_SAC2SIMPLE (int, T_int);
+}
+
+/* long */
+SAC_arg
+SAC_LongArray2Sac (SAC_reusetype reuseflag, long *array, int dim, ...)
+{
+    SAC_ARRAY2SAC (long, T_long);
+}
+
+SAC_arg
+SAC_Long2Sac (long value)
+{
+    SAC_SIMPLE2SAC (long, T_long);
+}
+
+long *
+SAC_Sac2LongArray (SAC_reusetype reuseflag, SAC_arg sa)
+{
+    SAC_SAC2ARRAY (long, T_long);
+}
+
+long
+SAC_Sac2Long (SAC_arg sa)
+{
+    SAC_SAC2SIMPLE (long, T_long);
+}
+
+/* double */
+SAC_arg
+SAC_DoubleArray2Sac (SAC_reusetype reuseflag, double *array, int dim, ...)
+{
+    SAC_ARRAY2SAC (double, T_double);
+}
+
+SAC_arg
+SAC_Double2Sac (double value)
+{
+    SAC_SIMPLE2SAC (double, T_double);
+}
+
+double *
+SAC_Sac2DoubleArray (SAC_reusetype reuseflag, SAC_arg sa)
+{
+    SAC_SAC2ARRAY (double, T_double);
+}
+
+double
+SAC_Sac2Double (SAC_arg sa)
+{
+    SAC_SAC2SIMPLE (double, T_double);
+}
+
+/* float */
+SAC_arg
+SAC_FloatArray2Sac (SAC_reusetype reuseflag, float *array, int dim, ...)
+{
+    SAC_ARRAY2SAC (float, T_float);
+}
+
+SAC_arg
+SAC_Float2Sac (float value)
+{
+    SAC_SIMPLE2SAC (float, T_float);
+}
+
+float *
+SAC_Sac2FloatArray (SAC_reusetype reuseflag, SAC_arg sa)
+{
+    SAC_SAC2ARRAY (float, T_float);
+}
+
+float
+SAC_Sac2Float (SAC_arg sa)
+{
+    SAC_SAC2SIMPLE (float, T_float);
+}
+
+/* char */
+SAC_arg
+SAC_CharArray2Sac (SAC_reusetype reuseflag, char *array, int dim, ...)
+{
+    SAC_ARRAY2SAC (char, T_char);
+}
+
+SAC_arg
+SAC_Char2Sac (char value)
+{
+    SAC_SIMPLE2SAC (char, T_char);
+}
+
+char *
+SAC_Sac2CharArray (SAC_reusetype reuseflag, SAC_arg sa)
+{
+    SAC_SAC2ARRAY (char, T_char);
+}
+
+char
+SAC_Sac2Char (SAC_arg sa)
+{
+    SAC_SAC2SIMPLE (char, T_char);
 }
