@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.34  1995/04/03 14:00:43  sbs
+ * Revision 1.35  1995/04/05 15:31:24  sbs
+ * linking phase and -c option inserted
+ *
+ * Revision 1.34  1995/04/03  14:00:43  sbs
  * FreeTree due to bugs commented out
  *
  * Revision 1.33  1995/04/03  06:19:49  sbs
@@ -145,10 +148,13 @@ int show_icm = 0;
 MAIN
 {
     int set_outfile = 0;
+    int Ccodeonly = 0;
     int breakparse = 0, breakimport = 0, breakflatten = 0, breaktype = 0, breakopt = 0,
         breakref = 0;
     char prgname[256];
-    char outfilename[256] = "out.txt";
+    char outfilename[256];
+    char cfilename[256];
+    char cccallstr[1024];
 
     malloc_debug (0);
     strcpy (prgname, argv[0]);
@@ -189,6 +195,10 @@ MAIN
         }
     }
     NEXTOPT
+    ARG 'c':
+    {
+        Ccodeonly = 1;
+    }
     ARG 's':
     {
         silent = 1;
@@ -208,6 +218,8 @@ MAIN
     ARG 'o' : PARM
     {
         strcpy (outfilename, *argv);
+        strcpy (cfilename, *argv);
+        strcat (cfilename, ".c");
         set_outfile = 1;
     }
     NEXTOPT
@@ -236,12 +248,21 @@ MAIN
         }
     }
 
-    if (set_outfile) {
-        outfile = fopen (outfilename, "w");
-        if (outfile == NULL)
-            ERROR2 (1, ("Couldn't open Outfile !\n"));
-    } else
-        outfile = stdout;
+    if (Ccodeonly)
+        if (set_outfile)
+            outfile = fopen (outfilename, "w");
+        else
+            outfile = stdout;
+    else {
+        if (set_outfile) {
+            strcpy (outfilename, "a.out");
+            strcpy (cfilename, "a.out.c");
+        }
+        outfile = fopen (cfilename, "w");
+    }
+
+    if (outfile == NULL)
+        ERROR2 (1, ("Couldn't open Outfile !\n"));
 
     start_token = PARSE_PRG;
     yyparse ();
@@ -272,7 +293,15 @@ MAIN
     }
 
     Print (syntax_tree);
+
     /*  FreeTree(syntax_tree);  */
+
+    if (!Ccodeonly) {
+        sprintf (cccallstr, "gcc -O2 -Wall -I $RCSROOT/src/compile/ -o %s %s %s",
+                 outfilename, cfilename, GenLinkerList ());
+        DBUG_PRINT ("MAIN", ("invoking gcc: %s", cccallstr));
+        system (cccallstr);
+    }
 
     return (0);
 }
