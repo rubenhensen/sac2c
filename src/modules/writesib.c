@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.10  1996/02/06 18:58:19  cg
+ * Revision 1.11  1996/09/11 06:26:47  cg
+ * SIB is now written directly to build_dirname.
+ *
+ * Revision 1.10  1996/02/06  18:58:19  cg
  * added special print functions WSIBfloat and WSIBdouble for printing
  * constants followed by F or D to mark their types
  *
@@ -960,7 +963,7 @@ WSIBmodul (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("WSIBmodul");
 
-    sibfile = WriteOpen ("%s%s.sib", store_dirname, MODUL_NAME (arg_node));
+    sibfile = WriteOpen ("%s%s.sib", build_dirname, MODUL_NAME (arg_node));
 
     fprintf (sibfile, "<%s>\n\n", MODUL_NAME (arg_node));
 
