@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2003/05/29 12:44:48  dkr
+ * SearchWrapper() renamed into CorrectFundefPointer()
+ *
  * Revision 1.12  2002/10/31 19:46:26  dkr
  * CorrectFundef() renamed into SearchWrapper()
  *
@@ -50,6 +53,7 @@
 #include "DupTree.h"
 #include "new_typecheck.h"
 #include "new_types.h"
+#include "ct_fun.h"
 
 #define INFO_CWC_TRAVNO(n) ((n)->flag)
 #define INFO_CWC_WRAPPERFUNS(n) ((LUT_t) ((n)->dfmask[0]))
@@ -174,7 +178,8 @@ SplitWrapper (node *fundef)
  *   node *InsertWrapperCode( node *fundef)
  *
  * Description:
- *
+ *   If the given wrapper function 'fundef' can not be dispatched statically,
+ *   appropriate dispatch code is created and stored in FUNDEF_BODY.
  *
  ******************************************************************************/
 
@@ -237,17 +242,53 @@ InsertWrapperCode (node *fundef)
 /******************************************************************************
  *
  * Function:
- *   bool SignatureMatches( node *formal, node *actual)
+ *   ntype *ActualArgs2Ntype( node *actual)
  *
  * Description:
+ *   Returns the appropriate product type for the given actual arguments.
  *
+ ******************************************************************************/
+
+static ntype *
+ActualArgs2Ntype (node *actual)
+{
+    ntype *actual_type, *tmp_type, *prod_type;
+    int size, pos;
+
+    DBUG_ENTER ("ActualArgs2Ntype");
+
+    size = CountExprs (actual);
+    prod_type = TYMakeEmptyProductType (size);
+
+    pos = 0;
+    while (actual != NULL) {
+        tmp_type = NewTypeCheck_Expr (EXPRS_EXPR (actual));
+        actual_type = TYFixAndEliminateAlpha (tmp_type);
+        tmp_type = TYFreeType (tmp_type);
+
+        TYSetProductMember (prod_type, pos, actual_type);
+        actual = EXPRS_NEXT (actual);
+        pos++;
+    }
+
+    DBUG_RETURN (prod_type);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   bool SignatureMatches( node *formal, ntype *actual_prod_type)
+ *
+ * Description:
+ *   Checks whether TYPE('formal') is a supertype of 'actual_prod_type'.
  *
  ******************************************************************************/
 
 static bool
-SignatureMatches (node *formal, node *actual)
+SignatureMatches (node *formal, ntype *actual_prod_type)
 {
-    ntype *formal_type, *actual_type, *tmp_type;
+    ntype *actual_type, *formal_type;
+    int pos;
     bool match = TRUE;
 #ifndef DBUG_OFF
     char *tmp_str, *tmp2_str;
@@ -255,16 +296,13 @@ SignatureMatches (node *formal, node *actual)
 
     DBUG_ENTER ("SignatureMatches");
 
+    pos = 0;
     while ((formal != NULL) && (ARG_TYPE (formal) != NULL)
            && (TYPES_BASETYPE (ARG_TYPE (formal)) != T_dots)) {
-        DBUG_ASSERT ((actual != NULL), "inconsistant application found!");
-        DBUG_ASSERT (((NODE_TYPE (formal) == N_arg) && (NODE_TYPE (actual) == N_exprs)),
-                     "illegal args found!");
+        DBUG_ASSERT ((NODE_TYPE (formal) == N_arg), "illegal args found!");
 
         formal_type = AVIS_TYPE (ARG_AVIS (formal));
-        tmp_type = NewTypeCheck_Expr (EXPRS_EXPR (actual));
-        actual_type = TYFixAndEliminateAlpha (tmp_type);
-        tmp_type = TYFreeType (tmp_type);
+        actual_type = TYGetProductMember (actual_prod_type, pos);
         DBUG_EXECUTE ("CWC", tmp_str = TYType2String (formal_type, FALSE, 0);
                       tmp2_str = TYType2String (actual_type, FALSE, 0););
         DBUG_PRINT ("CWC",
@@ -278,8 +316,10 @@ SignatureMatches (node *formal, node *actual)
         DBUG_PRINT ("CWC", ("result: %d", match));
 
         formal = ARG_NEXT (formal);
-        actual = EXPRS_NEXT (actual);
+        pos++;
     }
+
+    actual_prod_type = TYFreeType (actual_prod_type);
 
     DBUG_RETURN (match);
 }
@@ -287,7 +327,7 @@ SignatureMatches (node *formal, node *actual)
 /******************************************************************************
  *
  * Function:
- *   node *SearchWrapper( node *old_fundef, char *funname, node *args)
+ *   node *CorrectFundefPointer( node *fundef, char *funname, node *args)
  *
  * Description:
  *
@@ -295,24 +335,63 @@ SignatureMatches (node *formal, node *actual)
  ******************************************************************************/
 
 node *
-SearchWrapper (node *fundef, char *funname, node *args)
+CorrectFundefPointer (node *fundef, char *funname, node *args)
 {
-    DBUG_ENTER ("SearchWrapper");
+    ntype *arg_types;
+    DFT_res *dft_res;
+
+    DBUG_ENTER ("CorrectFundefPointer");
 
     DBUG_ASSERT ((fundef != NULL), "fundef not found!");
     if (FUNDEF_STATUS (fundef) == ST_zombiefun) {
+        /*
+         * 'fundef' points to an generic wrapper function
+         *   -> try to dispatch the function application statically in order to
+         *      avoid superfluous wrapper function calls
+         *   -> if static dispatch impossible, search for correct wrapper
+         */
         DBUG_PRINT ("CWC", ("correcting fundef for %s", funname));
-        do {
-            fundef = FUNDEF_NEXT (fundef);
-            DBUG_ASSERT (((fundef != NULL) && (!strcmp (funname, FUNDEF_NAME (fundef)))
-                          && (FUNDEF_STATUS (fundef) == ST_wrapperfun)),
-                         "no appropriate wrapper function found!");
-        } while (!SignatureMatches (FUNDEF_ARGS (fundef), args));
 
-        if (FUNDEF_BODY (fundef) == NULL) {
-            fundef = TYStaticDispatchWrapper (fundef);
-            DBUG_ASSERT ((fundef != NULL), "static dipatch of empty wrapper failed");
+        arg_types = ActualArgs2Ntype (args);
+
+        /*
+         * try to dispatch the function application statically
+         */
+        dft_res = NTCFUNDispatchFunType (fundef, arg_types);
+        if (dft_res == NULL) {
+            DBUG_ASSERT ((args == NULL), "illegal dispatch result found!");
+            /*
+             * no args found -> static dispatch possible -> use FUNDEF_IMPL
+             */
+            fundef = FUNDEF_IMPL (fundef);
+        } else if ((dft_res->num_partials == 0)
+                   && (dft_res->num_deriveable_partials == 0)) {
+            /*
+             * static dispatch possible
+             */
+            if (dft_res->def != NULL) {
+                DBUG_ASSERT ((dft_res->deriveable == NULL), "def and deriveable found!");
+                fundef = dft_res->def;
+            } else {
+                fundef = dft_res->deriveable;
+            }
+        } else {
+            /*
+             * static dispatch impossible -> search for correct wrapper
+             */
+            do {
+                fundef = FUNDEF_NEXT (fundef);
+                DBUG_ASSERT (((fundef != NULL)
+                              && (!strcmp (funname, FUNDEF_NAME (fundef)))
+                              && (FUNDEF_STATUS (fundef) == ST_wrapperfun)),
+                             "no appropriate wrapper function found!");
+            } while (!SignatureMatches (FUNDEF_ARGS (fundef), arg_types));
+
+            DBUG_ASSERT ((FUNDEF_BODY (fundef) == NULL),
+                         "static dispatch of empty wrapper failed");
         }
+
+        arg_types = TYFreeType (arg_types);
     }
 
     DBUG_RETURN (fundef);
@@ -401,9 +480,15 @@ CWCfundef (node *arg_node, node *arg_info)
         }
 
         if (FUNDEF_STATUS (arg_node) == ST_zombiefun) {
+            /*
+             * remove zombie of generic wrapper function
+             */
             arg_node = FreeZombie (arg_node);
         } else if ((FUNDEF_STATUS (arg_node) == ST_wrapperfun)
                    && (FUNDEF_BODY (arg_node) == NULL)) {
+            /*
+             * remove statically dispatchable wrapper function
+             */
             arg_node = FreeZombie (FreeNode (arg_node));
         }
     }
@@ -430,8 +515,8 @@ CWCap (node *arg_node, node *arg_info)
         AP_ARGS (arg_node) = Trav (AP_ARGS (arg_node), arg_info);
     }
 
-    AP_FUNDEF (arg_node)
-      = SearchWrapper (AP_FUNDEF (arg_node), AP_NAME (arg_node), AP_ARGS (arg_node));
+    AP_FUNDEF (arg_node) = CorrectFundefPointer (AP_FUNDEF (arg_node), AP_NAME (arg_node),
+                                                 AP_ARGS (arg_node));
 
     DBUG_RETURN (arg_node);
 }
@@ -457,8 +542,8 @@ CWCwithop (node *arg_node, node *arg_info)
         args = MakeExprs (DupNode (NWITHOP_NEUTRAL (arg_node)), NULL);
         EXPRS_NEXT (args) = DupNode (args);
 
-        NWITHOP_FUNDEF (arg_node)
-          = SearchWrapper (NWITHOP_FUNDEF (arg_node), NWITHOP_FUN (arg_node), args);
+        NWITHOP_FUNDEF (arg_node) = CorrectFundefPointer (NWITHOP_FUNDEF (arg_node),
+                                                          NWITHOP_FUN (arg_node), args);
 
         args = FreeTree (args);
     }
