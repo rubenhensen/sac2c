@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2001/05/04 11:55:12  nmw
+ * added support for AVIS_ASSIGN checks
+ *
  * Revision 1.4  2001/04/30 12:08:54  nmw
  * remove internal call to Unroll()
  *
@@ -227,8 +230,11 @@ SSALURGetDoLoopUnrolling (node *fundef)
 
     /* get defining assignment */
     modifier_assign = AVIS_SSAASSIGN (ID_AVIS (loop_counter_id));
-
-    DBUG_ASSERT ((modifier_assign != NULL), "missing SSAASSIGN attribute for condition");
+    if (modifier_assign == NULL) {
+        DBUG_PRINT ("SSALUR",
+                    ("missing SSAASSIGN attribute for condition (possibly withid)"));
+        DBUG_RETURN (UNR_NONE);
+    }
 
     DBUG_ASSERT ((NODE_TYPE (ASSIGN_INSTR (modifier_assign)) == N_let),
                  "definition assignment without let");

@@ -2,6 +2,9 @@
 /*
  *
  * $Log$
+ * Revision 1.15  2001/05/04 11:54:39  nmw
+ * added support for AVIS_ASSIGN checks
+ *
  * Revision 1.14  2001/04/30 12:07:49  nmw
  * do not traverse results of void functions
  *
@@ -288,7 +291,7 @@ CreateNewResult (node *avis, node *arg_info)
     assign_let = MakeAssignLet (StringCopy (VARDEC_OR_ARG_NAME (new_pct_vardec)),
                                 new_pct_vardec, right_id);
 
-    /* append new copy assignment to then-part block */
+    /* append new copy assignment to else-part block */
     BLOCK_INSTR (COND_ELSE (cond))
       = AppendAssign (BLOCK_INSTR (COND_ELSE (cond)), assign_let);
     AVIS_SSAASSIGN2 (VARDEC_AVIS (new_pct_vardec)) = assign_let;
@@ -855,6 +858,7 @@ SSALIRassign (node *arg_node, node *arg_info)
     node *pre_assign;
     node *tmp;
     int old_maxdepth;
+    node *old_assign;
     int wlir_move_up;
 
     DBUG_ENTER ("SSALIRassign");
@@ -863,6 +867,7 @@ SSALIRassign (node *arg_node, node *arg_info)
 
     /* init traversal flags */
     INFO_SSALIR_REMASSIGN (arg_info) = FALSE;
+    old_assign = INFO_SSALIR_ASSIGN (arg_info);
     INFO_SSALIR_ASSIGN (arg_info) = arg_node;
     INFO_SSALIR_PREASSIGN (arg_info) = NULL;
     INFO_SSALIR_POSTASSIGN (arg_info) = NULL;
@@ -884,7 +889,7 @@ SSALIRassign (node *arg_node, node *arg_info)
     }
 
     /* analyse and store results of instruction traversal */
-    INFO_SSALIR_ASSIGN (arg_info) = NULL;
+    INFO_SSALIR_ASSIGN (arg_info) = old_assign;
     remove_assign = INFO_SSALIR_REMASSIGN (arg_info);
     INFO_SSALIR_REMASSIGN (arg_info) = FALSE;
 
