@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.32  1995/07/07 14:58:38  asi
+ * Revision 1.33  1995/07/19 18:48:37  asi
+ * added external decleration of max_optcycles
+ *
+ * Revision 1.32  1995/07/07  14:58:38  asi
  * added loop unswitching
  *
  * Revision 1.31  1995/06/26  11:53:18  asi
@@ -129,6 +132,7 @@ extern int opt_uns;
 extern int optvar;
 extern int inlnum;
 extern int unrnum;
+extern int max_optcycles;
 /* main.c end */
 
 extern int dead_expr;
