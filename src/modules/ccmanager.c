@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2004/10/17 17:49:19  sah
+ * fixed shell command
+ *
  * Revision 1.1  2004/10/17 17:04:46  sah
  * Initial revision
  *
@@ -184,7 +187,7 @@ InvokeCCModule (char *cccall, char *ccflags)
 {
     DBUG_ENTER ("InvokeCCModule");
 
-    SystemCall ("%s %s -c %s/*.c", cccall, ccflags, tmp_dirname);
+    SystemCall ("cd %s; %s %s -c *.c", tmp_dirname, cccall, ccflags);
 
     DBUG_VOID_RETURN;
 }
