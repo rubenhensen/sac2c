@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2004/12/19 23:16:52  sbs
+ * TCcountFunctionParams replaced by TCcountArgs and TCcountRets
+ *
  * Revision 1.6  2004/11/26 19:18:30  skt
  * renamed RSPmodul into RSPmodule
  *
@@ -339,7 +342,8 @@ RSPfundef (node *arg_node, info *arg_info)
         DBUG_PRINT ("RSP",
                     ("Processing pragmas for function '%s'...", FUNDEF_NAME (arg_node)));
 
-        PRAGMA_NUMPARAMS (pragma) = TCcountFunctionParams (arg_node);
+        PRAGMA_NUMPARAMS (pragma)
+          = TCcountArgs (FUNDEF_ARGS (arg_node)) + TCcountRets (FUNDEF_RETS (arg_node));
 
         if (PRAGMA_FREEFUN (pragma) != NULL) {
             WARN (NODE_LINE (arg_node), ("Pragma 'freefun` has no effect on function"));
