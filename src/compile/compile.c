@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.78  2002/03/07 21:46:54  dkr
+ * CheckAp() corrected
+ *
  * Revision 3.77  2002/03/07 20:21:05  dkr
  * - ND_FUN_RET icm always generated (even for void functions)
  * - ND_FUN_DEC: function parameters have always names now (if needed, a
@@ -1371,7 +1374,7 @@ CheckPrf (ids *let_ids, node *prf, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   bool CheckAp( ids *let_ids, node *ap, node *arg_info)
+ *   bool CheckAp( node *ap, node *arg_info)
  *
  * Description:
  *   Checks whether no one of the refcounted arguments occurs on LHS of the
@@ -1380,37 +1383,45 @@ CheckPrf (ids *let_ids, node *prf, node *arg_info)
  ******************************************************************************/
 
 static bool
-CheckAp (ids *let_ids, node *ap, node *arg_info)
+CheckAp (node *ap, node *arg_info)
 {
-    node *args, *arg_id;
-    ids *_ids;
+    argtab_t *argtab;
+    node *arg, *arg_id;
+    ids *let_ids;
+    int ids_idx, arg_idx;
     bool ok = TRUE;
 
     DBUG_ENTER ("CheckAp");
 
     DBUG_ASSERT ((NODE_TYPE (ap) == N_ap), "no N_ap node found!");
 
-    args = AP_ARGS (ap);
-    while (args != NULL) {
-        arg_id = EXPRS_EXPR (args);
-        if (NODE_TYPE (arg_id) == N_id) {
-            DBUG_ASSERT ((!RC_IS_ZERO (ID_REFCNT (arg_id))),
-                         "Reference with (rc == 0) found!");
-            _ids = let_ids;
-            while (_ids != NULL) {
-                if ((RC_IS_ACTIVE (ID_REFCNT (arg_id))) &&
-#if 0
-            (! FUNDEF_DOES_REFCOUNT( AP_FUNDEF( ap), arg_idx)) &&
-#endif
-                    (!strcmp (IDS_NAME (_ids), ID_NAME (arg_id)))) {
-#if 0
-          ok = FALSE;
-#endif
+    argtab = AP_ARGTAB (ap);
+    DBUG_ASSERT ((argtab != NULL), "no argtab found!");
+
+    DBUG_ASSERT ((argtab->ptr_in[0] == NULL), "argtab inconsistent");
+    for (arg_idx = 1; arg_idx < argtab->size; arg_idx++) {
+        arg = argtab->ptr_in[arg_idx];
+        if (arg != NULL) {
+            DBUG_ASSERT ((NODE_TYPE (arg) == N_exprs),
+                         "no N_exprs node found in argtab!");
+            arg_id = EXPRS_EXPR (arg);
+            if ((NODE_TYPE (arg_id) == N_id) && (RC_IS_ACTIVE (ID_REFCNT (arg_id)))) {
+
+                for (ids_idx = 0; ids_idx < argtab->size; ids_idx++) {
+                    let_ids = argtab->ptr_out[ids_idx];
+                    if ((let_ids != NULL) && (ids_idx != arg_idx)
+                        && (!strcmp (ID_NAME (arg_id), IDS_NAME (let_ids)))) {
+                        DBUG_ASSERT ((argtab->tag[arg_idx] == ATG_in)
+                                       || (argtab->tag[arg_idx] == ATG_in_rc),
+                                     "illegal tag found!");
+
+                        if (argtab->tag[arg_idx] == ATG_in) {
+                            ok = FALSE;
+                        }
+                    }
                 }
-                _ids = IDS_NEXT (_ids);
             }
         }
-        args = EXPRS_NEXT (args);
     }
 
     DBUG_RETURN (ok);
@@ -2599,7 +2610,7 @@ COMPAp (node *arg_node, node *arg_info)
     let_ids = INFO_COMP_LASTIDS (arg_info);
     fundef = AP_FUNDEF (arg_node);
 
-    DBUG_ASSERT ((CheckAp (let_ids, arg_node, arg_info)),
+    DBUG_ASSERT ((CheckAp (arg_node, arg_info)),
                  "application of a user-defined function without own refcounting:"
                  " refcounted argument occurs also on LHS!");
 
