@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.45  2002/06/27 17:22:32  dkr
+ * bug in PREC3code() fixed: INFO_PREC3_CEXPR is handled correctly now
+ *
  * Revision 3.44  2002/06/20 15:24:19  dkr
  * signature of AddVardecs modified
  * AddVardecs() moved to tree_compound.[ch]
@@ -153,7 +156,7 @@
  *   - For each with-loop a unique and adjusted dummy fold-function is
  *     generated.
  *   - It is checked whether NCODE_CEXPR is identical for all N_Ncode nodes
- *     of a single with-loop.
+ *     of a single fold-with-loop.
  *
  * Things done during fourth traversal:
  *   - All names and identifiers are renamed in order to avoid name clashes.
@@ -2350,7 +2353,7 @@ PREC3withop (node *arg_node, node *arg_info)
  *   node *PREC3code( node *arg_node, node *arg_info)
  *
  * Description:
- *   Checks whether all NCODE_CEXPR nodes have identical names.
+ *   Checks whether all NCODE_CEXPR nodes of fold-WLs have identical names.
  *
  ******************************************************************************/
 
@@ -2360,14 +2363,6 @@ PREC3code (node *arg_node, node *arg_info)
     node *let_expr;
 
     DBUG_ENTER ("PREC3code");
-
-    if (NCODE_CBLOCK (arg_node) != NULL) {
-        NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
-    }
-
-    if (NCODE_CEXPR (arg_node) != NULL) {
-        NCODE_CEXPR (arg_node) = Trav (NCODE_CEXPR (arg_node), arg_info);
-    }
 
     let_expr = LET_EXPR (INFO_PREC3_LET (arg_info));
 
@@ -2392,8 +2387,20 @@ PREC3code (node *arg_node, node *arg_info)
         }
     }
 
+    /*
+     * NCODE_NEXT should be traversed first,
+     * otherwise INFO_PREC3_CEXPR must be stacked!!
+     */
     if (NCODE_NEXT (arg_node) != NULL) {
         NCODE_NEXT (arg_node) = Trav (NCODE_NEXT (arg_node), arg_info);
+    }
+
+    if (NCODE_CBLOCK (arg_node) != NULL) {
+        NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
+    }
+
+    if (NCODE_CEXPR (arg_node) != NULL) {
+        NCODE_CEXPR (arg_node) = Trav (NCODE_CEXPR (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
