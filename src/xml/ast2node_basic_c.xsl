@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.3  2004/11/26 16:32:06  sah
+  *** empty log message ***
+
   Revision 1.2  2004/11/24 19:37:53  sah
   COMPILES
 
@@ -56,6 +59,10 @@ static node *MakeEmptyNode()
 
   </xsl:text>
   <xsl:apply-templates select="//syntaxtree/node"/>
+  <xsl:text>
+  /* end of file */
+
+  </xsl:text>
 </xsl:template>
 
 <xsl:template match="node">
