@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.198  1998/05/06 18:09:44  dkr
+ * removed WLTRAAssign
+ *
  * Revision 1.197  1998/05/05 11:25:02  dkr
  * added RCNwithop
  *
@@ -754,7 +757,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        AEassign, PrintAssign, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, RMVassign, PRECAssign, ACTassign, TravSons, WLTassign, CSEassign,
        TravSons, TravSons, SPMDInitAssign, TravSons, TravSons, SYNCInitAssign, TravSons,
-       WLTRAAssign, TravSons, TravSons, TravSons, 2),
+       TravSons, TravSons, TravSons, TravSons, 2),
 
   NIF (N_return, "N_return", TravSons, FltnReturn, PrintReturn, TCreturn, TravSons,
        TravSons, TravSons, FreeReturn, TravSons, TravSons, COMPReturn, TravSons, DupChain,
