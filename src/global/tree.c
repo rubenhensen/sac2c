@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.25  1995/12/20 09:09:48  cg
+ * Revision 1.26  1996/01/02 15:50:34  cg
+ * function MakeTypes now initializes new struct entries tdef and id_cmod
+ * of struct types
+ *
+ * Revision 1.25  1995/12/20  09:09:48  cg
  * removed some functions which are replaced by new ones in tree_basic.c
  *
  * Revision 1.24  1995/11/01  16:24:16  cg
@@ -174,8 +178,10 @@ MakeTypes (simpletype simple)
     tmp->next = NULL;
     tmp->id = NULL;
     tmp->id_mod = NULL;
+    tmp->id_cmod = NULL;
     tmp->attrib = ST_regular;
     tmp->status = ST_regular;
+    tmp->tdef = NULL;
 
     DBUG_PRINT ("MAKETYPES", (P_FORMAT, tmp));
 
