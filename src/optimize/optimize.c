@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.44  2003/03/26 14:56:40  sbs
+ * further doxygen
+ *
  * Revision 3.43  2003/03/26 14:42:09  sbs
  * doxygenic
  *
@@ -326,13 +329,23 @@ int dl_expr;
  */
 bool do_break = FALSE;
 
-/******************************************************************************
+/**
  *
- * function:
- *  void ResetCounters()
+ * @name Functions for optimization statistics:
  *
- * description:
- *   sets all global optimization counters to zero.
+ * <--
+ * void ResetCounters()       : resets all global optimization counters
+ * void PrintStatistics(....) : prints all counters (given as args explicitly!)
+ * -->
+ *
+ *@{
+ */
+
+/** <!--********************************************************************-->
+ *
+ * @fn void ResetCounters()
+ *
+ *   @brief sets all global optimization counters to zero.
  *
  ******************************************************************************/
 
@@ -364,22 +377,20 @@ ResetCounters ()
     DBUG_VOID_RETURN;
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * function:
- *  void PrintStatistics(int off_inl_fun, int off_dead_expr, int off_dead_var,
- *                       int off_dead_fun, int off_lir_expr,
- *                       int off_wlir_expr, int off_cf_expr,
- *                       int off_lunr_expr, int off_wlunr_expr, int off_uns_expr,
- *                       int off_elim_arrays, int off_wlf_expr, int off_wlt_expr,
- *                       int off_cse_expr, int off_ap_padded,
- *                       int off_ap_unsupported,
- *                       int off_wls_expr, int off_al_expr, int off_dl_expr,
- *                       int flag)
+ * @fn void PrintStatistics(int off_inl_fun, int off_dead_expr, int off_dead_var,
+ *                          int off_dead_fun, int off_lir_expr,
+ *                          int off_wlir_expr, int off_cf_expr,
+ *                          int off_lunr_expr, int off_wlunr_expr, int off_uns_expr,
+ *                          int off_elim_arrays, int off_wlf_expr, int off_wlt_expr,
+ *                          int off_cse_expr, int off_ap_padded,
+ *                          int off_ap_unsupported,
+ *                          int off_wls_expr, int off_al_expr, int off_dl_expr,
+ *                          int flag)
  *
- * description:
- *   prints all counters - specified offset provided that the respective
- *   optimization is turned on!
+ *   @brief prints all counters - specified offset provided that the respective
+ *          optimization is turned on!
  *
  ******************************************************************************/
 
@@ -468,6 +479,8 @@ PrintStatistics (int off_inl_fun, int off_dead_expr, int off_dead_var, int off_d
 
     DBUG_VOID_RETURN;
 }
+
+/*@}*/
 
 /**
  *
