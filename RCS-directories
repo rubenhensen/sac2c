@@ -14,3 +14,4 @@ src/psi-opt
 src/objects
 lib/src
 src/runtime
+src/concurrent
