@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2002/08/05 17:02:07  sbs
+ * patched for additional support concerning the wl shortcuts
+ * and the new type checker
+ *
  * Revision 3.13  2002/07/24 18:53:33  dkr
  * TAGGED_ARRAYS: scalar arguments are flattened in precompile now
  *
@@ -200,7 +204,22 @@
  * FINALASSIGN: Every FltnBlock resets node[2] to NULL.
  * (node[2])    Every FltnAssign replaces node[2] with arg_node if
  *              ASSIGN_NEXT(arg_node) equals NULL.
+ *
+ * DOTSHAPE:    this field is used in order to transport the generic shape
+ * (node[3])    from Nwithid (via Nwith) to Ngenerator, where it may be used
+ *              in order to replace . generator boundaries.
  */
+
+#define INFO_FLTN_CONTEXT(n) (n->flag)
+#define INFO_FLTN_LASTASSIGN(n) (n->node[0])
+#define INFO_FLTN_LASTWLBLOCK(n) (n->node[1])
+#define INFO_FLTN_FINALASSIGN(n) (n->node[2])
+#define INFO_FLTN_DOTSHAPE(n) (n->node[3])
+
+#define INFO_FLTN_CONSTVEC(n) (n->info2)
+#define INFO_FLTN_VECLEN(n) (n->counter)
+#define INFO_FLTN_VECTYPE(n) ((simpletype)n->varno)
+#define INFO_FLTN_ISCONST(n) (n->refcnt)
 
 #define WITH_PREFIX "__w" /* name of new variable in with-statement */
 #define WITH_PREFIX_LENGTH 3
@@ -1739,10 +1758,23 @@ FltnNwithop (node *arg_node, node *arg_info)
         }
         DBUG_ASSERT ((expr == expr2),
                      "return-node differs from arg_node while flattening an expr!");
+
+        if (sbs == 1) {
+            INFO_FLTN_DOTSHAPE (arg_info)
+              = MakeAp1 (StringCopy ("shape"), NULL, DupTree (NWITHOP_ARRAY (arg_node)));
+        } else {
+            INFO_FLTN_DOTSHAPE (arg_info) = NULL;
+        }
         break;
 
     case WO_genarray:
         expr = NULL;
+        if (sbs == 1) {
+            INFO_FLTN_DOTSHAPE (arg_info) = DupTree (NWITHOP_SHAPE (arg_node));
+        } else {
+            INFO_FLTN_DOTSHAPE (arg_info) = NULL;
+        }
+
         break;
 
     case WO_foldfun:
@@ -1760,6 +1792,8 @@ FltnNwithop (node *arg_node, node *arg_info)
             DBUG_ASSERT ((expr == expr2),
                          "return-node differs from arg_node while flattening an expr!");
         }
+        INFO_FLTN_DOTSHAPE (arg_info) = NULL;
+
         break;
 
     default:
@@ -1853,26 +1887,77 @@ FltnNgenerator (node *arg_node, node *arg_info)
     int i;
     DBUG_ENTER ("FltnNgenerator");
 
-    /*
-     * First, the bounds are adjusted so that the operator can be
-     * "normalized" to:   bound1 <= iv = [...] < bound2
-     * Howeveer, this is done only for those bounds given explicitly,
-     * not for the "." bounds. For those bounds, the "normalization"
-     * takes place during typechecking!
-     */
-    if (!(DOT_ISSINGLE (NGEN_BOUND1 (arg_node))) && F_lt == NGEN_OP1 (arg_node)) {
-        /* make <= from < and add 1 to bound */
-        NGEN_OP1 (arg_node) = F_le;
-        NGEN_BOUND1 (arg_node)
-          = MakePrf (F_add,
-                     MakeExprs (NGEN_BOUND1 (arg_node), MakeExprs (MakeNum (1), NULL)));
-    }
-    if (!(DOT_ISSINGLE (NGEN_BOUND2 (arg_node))) && F_le == NGEN_OP2 (arg_node)) {
-        /* make < from <= and add 1 to bound */
-        NGEN_OP2 (arg_node) = F_lt;
-        NGEN_BOUND2 (arg_node)
-          = MakePrf (F_add,
-                     MakeExprs (NGEN_BOUND2 (arg_node), MakeExprs (MakeNum (1), NULL)));
+    if (sbs == 1) {
+        /*
+         * Dots are replaced by the "shape" expressions, that are imported via
+         * INFO_FLTN_DOTSHAPE( arg_info)    (cf. FltnNwithid),
+         * and the bounds are adjusted so that the operator can be
+         * "normalized" to:   bound1 <= iv = [...] < bound2     .
+         */
+
+        if ((INFO_FLTN_DOTSHAPE (arg_info) == NULL)
+            && (DOT_ISSINGLE (NGEN_BOUND1 (arg_node))
+                || DOT_ISSINGLE (NGEN_BOUND2 (arg_node)))) {
+            ABORT (linenum, ("dot notation is not allowed in fold with loops"));
+        }
+
+        if (DOT_ISSINGLE (NGEN_BOUND1 (arg_node))) {
+            /* replace "." by "0 * shp" */
+            NGEN_BOUND1 (arg_node) = FreeTree (NGEN_BOUND1 (arg_node));
+            NGEN_BOUND1 (arg_node) = MakePrf2 (F_mul_SxA, MakeNum (0),
+                                               DupTree (INFO_FLTN_DOTSHAPE (arg_info)));
+        }
+
+        if (NGEN_OP1 (arg_node) == F_lt) {
+            /* make <= from < and add 1 to bound */
+            NGEN_OP1 (arg_node) = F_le;
+            NGEN_BOUND1 (arg_node)
+              = MakePrf2 (F_add_AxS, NGEN_BOUND1 (arg_node), MakeNum (1));
+        }
+        if (DOT_ISSINGLE (NGEN_BOUND2 (arg_node))) {
+            if (NGEN_OP2 (arg_node) == F_le) {
+                /* make < from <= and replace "." by "shp"  */
+                NGEN_OP2 (arg_node) = F_lt;
+                NGEN_BOUND2 (arg_node) = FreeTree (NGEN_BOUND2 (arg_node));
+                NGEN_BOUND2 (arg_node) = INFO_FLTN_DOTSHAPE (arg_info);
+            } else {
+                /* replace "." by "shp - 1"  */
+                NGEN_BOUND2 (arg_node) = FreeTree (NGEN_BOUND2 (arg_node));
+                NGEN_BOUND2 (arg_node)
+                  = MakePrf2 (F_sub_AxS, INFO_FLTN_DOTSHAPE (arg_info), MakeNum (1));
+            }
+            INFO_FLTN_DOTSHAPE (arg_info) = NULL; /* has been consumed ! */
+        } else {
+            if (NGEN_OP2 (arg_node) == F_le) {
+                /* make < from <= and add 1 to bound */
+                NGEN_OP2 (arg_node) = F_lt;
+                NGEN_BOUND2 (arg_node)
+                  = MakePrf2 (F_add_AxS, NGEN_BOUND2 (arg_node), MakeNum (1));
+            }
+            INFO_FLTN_DOTSHAPE (arg_info) = FreeTree (INFO_FLTN_DOTSHAPE (arg_info));
+        }
+    } else { /* OLD TYPECHECKER !!! */
+        /*
+         * First, the bounds are adjusted so that the operator can be
+         * "normalized" to:   bound1 <= iv = [...] < bound2
+         * Howeveer, this is done only for those bounds given explicitly,
+         * not for the "." bounds. For those bounds, the "normalization"
+         * takes place during typechecking!
+         */
+        if (!(DOT_ISSINGLE (NGEN_BOUND1 (arg_node))) && F_lt == NGEN_OP1 (arg_node)) {
+            /* make <= from < and add 1 to bound */
+            NGEN_OP1 (arg_node) = F_le;
+            NGEN_BOUND1 (arg_node)
+              = MakePrf (F_add, MakeExprs (NGEN_BOUND1 (arg_node),
+                                           MakeExprs (MakeNum (1), NULL)));
+        }
+        if (!(DOT_ISSINGLE (NGEN_BOUND2 (arg_node))) && F_le == NGEN_OP2 (arg_node)) {
+            /* make < from <= and add 1 to bound */
+            NGEN_OP2 (arg_node) = F_lt;
+            NGEN_BOUND2 (arg_node)
+              = MakePrf (F_add, MakeExprs (NGEN_BOUND2 (arg_node),
+                                           MakeExprs (MakeNum (1), NULL)));
+        }
     }
 
     for (i = 0; i < 4; i++) {
