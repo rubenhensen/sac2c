@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.4  2000/12/12 15:09:02  dkr
+# make deps done
+#
 # Revision 3.3  2000/12/06 20:08:59  dkr
 # make deps done
 #
@@ -155,4 +158,4 @@ lac2fun.o: ../global/my_debug.h /usr/include/malloc.h
 lac2fun.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
 lac2fun.o: /usr/include/sys/int_types.h ../tree/DupTree.h
 lac2fun.o: ../tree/LookUpTable.h ../tree/DataFlowMask.h
-lac2fun.o: ../tree/DataFlowMaskUtils.h lac2fun.h
+lac2fun.o: ../tree/DataFlowMaskUtils.h infer_dfms.h cleanup_decls.h lac2fun.h

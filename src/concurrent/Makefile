@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.4  2000/12/12 15:09:15  dkr
+# make deps done
+#
 # Revision 3.3  2000/12/08 15:21:10  dkr
 # include path extended
 #
@@ -103,6 +106,7 @@ concurrent.o: ../tree/free.h ../global/my_debug.h /usr/include/malloc.h
 concurrent.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
 concurrent.o: /usr/include/sys/int_types.h ../global/internal_lib.h
 concurrent.o: ../global/Error.h /usr/include/string.h /usr/include/stdlib.h
+concurrent.o: ../flatten/infer_dfms.h
 concurrent_lib.o: ../../inc/dbug.h /usr/include/stdio.h
 concurrent_lib.o: /usr/include/sys/feature_tests.h
 concurrent_lib.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h

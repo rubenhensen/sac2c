@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.5  2000/12/12 15:09:19  dkr
+# make deps done
+#
 # Revision 3.4  2000/12/08 10:41:48  cg
 # Option "-w" removed again.
 #
@@ -160,7 +163,8 @@ cinterface.o: /usr/include/stdarg.h /usr/include/varargs.h
 cinterface.o: /usr/include/sys/va_list.h /usr/include/stdlib.h
 cinterface.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 cinterface.o: /usr/include/stdio.h /usr/include/stdio_tag.h
-cinterface.o: /usr/include/stdio_impl.h ../runtime/sac.h ../runtime/sac_icm.h
+cinterface.o: /usr/include/stdio_impl.h /usr/include/string.h
+cinterface.o: ../runtime/sac.h ../runtime/sac_icm.h
 cinterface.o: ../runtime/sac_boundcheck.h ../runtime/sac_misc.h
 cinterface.o: ../runtime/sac_message.h ../runtime/sac_bool.h
 cinterface.o: ../runtime/sac_std.h ../runtime/sac_idx.h ../runtime/sac_prf.h

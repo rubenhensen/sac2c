@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.3  2000/12/12 15:09:05  dkr
+# make deps done
+#
 # Revision 3.2  2000/12/06 20:09:01  dkr
 # make deps done
 #
@@ -106,11 +109,11 @@ clean:
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
-constants.o: ../global/globals.h ../global/types.h /usr/include/stdio.h
+constants.o: ../global/globals.h /usr/include/stdio.h
 constants.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 constants.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-constants.o: /usr/include/stdio_impl.h ../tree/free.h ../../inc/dbug.h
-constants.o: ../global/my_debug.h /usr/include/malloc.h
+constants.o: /usr/include/stdio_impl.h ../global/types.h ../tree/free.h
+constants.o: ../../inc/dbug.h ../global/my_debug.h /usr/include/malloc.h
 constants.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
 constants.o: /usr/include/sys/int_types.h ../global/internal_lib.h shape.h
 constants.o: cv2scalar.h cv2cv.h ../tree/tree_compound.h ../tree/tree_basic.h
@@ -161,14 +164,15 @@ new_types.o: ../global/Error.h /usr/include/string.h /usr/include/stdlib.h
 new_types.o: ../print/convert.h shape.h type_constructor_info.mac new_types.h
 new_types.o: user_types.h
 prim_fun.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
-prim_fun.o: /usr/include/sys/isa_defs.h ../global/globals.h ../global/types.h
+prim_fun.o: /usr/include/sys/isa_defs.h ../global/globals.h
 prim_fun.o: /usr/include/stdio.h /usr/include/sys/va_list.h
-prim_fun.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h ../tree/tree.h
-prim_fun.o: ../tree/tree_basic.h ../tree/tree_compound.h ../global/Error.h
-prim_fun.o: /usr/include/string.h ../global/internal_lib.h prim_fun.h
-prim_fun.o: ../../inc/dbug.h ../global/my_debug.h ../tree/DupTree.h
-prim_fun.o: ../tree/LookUpTable.h ../tree/access_macros.h ../print/convert.h
-prim_fun.o: ../tree/free.h /usr/include/malloc.h /usr/include/sys/types.h
+prim_fun.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
+prim_fun.o: ../global/types.h ../tree/tree.h ../tree/tree_basic.h
+prim_fun.o: ../tree/tree_compound.h ../global/Error.h /usr/include/string.h
+prim_fun.o: ../global/internal_lib.h prim_fun.h ../../inc/dbug.h
+prim_fun.o: ../global/my_debug.h ../tree/DupTree.h ../tree/LookUpTable.h
+prim_fun.o: ../tree/access_macros.h ../print/convert.h ../tree/free.h
+prim_fun.o: /usr/include/malloc.h /usr/include/sys/types.h
 prim_fun.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
 prim_fun.o: typecheck.h prim_fun_tt.mac prim_fun_ft.mac
 shape.o: /usr/include/stdarg.h /usr/include/varargs.h

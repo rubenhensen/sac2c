@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.3  2000/12/12 15:09:09  dkr
+# make deps done
+#
 # Revision 3.2  2000/12/06 20:09:04  dkr
 # make deps done
 #
@@ -161,13 +164,13 @@ compile.o: ../tree/traverse.h ../tree/DataFlowMask.h compile.h
 compile.o: ../print/convert.h ../tree/DupTree.h ../tree/LookUpTable.h
 compile.o: ReuseWithArrays.h ../tree/free.h /usr/include/malloc.h
 compile.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
-compile.o: /usr/include/sys/int_types.h ../tree/scheduling.h precompile.h
-compile.o: ../typecheck/typecheck.h
+compile.o: /usr/include/sys/int_types.h ../tree/scheduling.h
+compile.o: ../refcount/refcount.h precompile.h ../typecheck/typecheck.h
 gen_startup_code.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 gen_startup_code.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 gen_startup_code.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-gen_startup_code.o: /usr/include/string.h ../../inc/dbug.h
-gen_startup_code.o: ../global/globals.h ../global/types.h
+gen_startup_code.o: /usr/include/string.h /usr/include/stdlib.h
+gen_startup_code.o: ../../inc/dbug.h ../global/globals.h ../global/types.h
 gen_startup_code.o: ../global/resource.h ../tree/tree_basic.h
 gen_startup_code.o: ../tree/traverse.h ../tree/free.h ../global/my_debug.h
 gen_startup_code.o: /usr/include/malloc.h /usr/include/sys/types.h
@@ -208,9 +211,9 @@ icm2c_std.o: ../global/internal_lib.h gen_startup_code.h icm_comment.c
 icm2c_std.o: icm.data icm_trace.c
 icm2c_utils.o: /usr/include/string.h /usr/include/sys/feature_tests.h
 icm2c_utils.o: /usr/include/sys/isa_defs.h ../global/globals.h
-icm2c_utils.o: ../global/types.h /usr/include/stdio.h
-icm2c_utils.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-icm2c_utils.o: /usr/include/stdio_impl.h icm2c_utils.h ../global/NameTuples.h
+icm2c_utils.o: /usr/include/stdio.h /usr/include/sys/va_list.h
+icm2c_utils.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
+icm2c_utils.o: ../global/types.h icm2c_utils.h ../global/NameTuples.h
 icm2c_utils.o: ../../inc/dbug.h
 icm2c_wl.o: /usr/include/malloc.h /usr/include/sys/types.h
 icm2c_wl.o: /usr/include/sys/isa_defs.h /usr/include/sys/feature_tests.h
@@ -241,7 +244,7 @@ precompile.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
 precompile.o: ../tree/prf.h ../tree/traverse.h ../print/convert.h
 precompile.o: ../tree/DataFlowMask.h ../typecheck/typecheck.h
 precompile.o: ../tree/scheduling.h ../flatten/adjust_ids.h precompile.h
-precompile.o: ../c-interface/map_cwrapper.h compile.h
+precompile.o: ../c-interface/map_cwrapper.h ../refcount/refcount.h compile.h
 wlpragma_funs.o: ../../inc/dbug.h /usr/include/stdio.h
 wlpragma_funs.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 wlpragma_funs.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h

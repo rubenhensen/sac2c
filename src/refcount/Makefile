@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.5  2000/12/12 15:09:10  dkr
+# make deps done
+#
 # Revision 3.4  2000/12/12 11:38:39  dkr
 # include path extended
 #
@@ -89,4 +92,5 @@ refcount.o: ../tree/DupTree.h ../tree/LookUpTable.h ../tree/DataFlowMask.h
 refcount.o: ../tree/traverse.h ../optimize/optimize.h ../tree/free.h
 refcount.o: /usr/include/malloc.h /usr/include/sys/types.h
 refcount.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-refcount.o: ../optimize/generatemasks.h refcount.h
+refcount.o: ../optimize/generatemasks.h ../flatten/infer_dfms.h
+refcount.o: ../compile/compile.h refcount.h
