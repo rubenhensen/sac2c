@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.35  2001/04/03 22:30:21  dkr
+ * signature for MT_ADJUST_SCHEDULER modified
+ *
  * Revision 3.34  2001/04/03 09:31:20  dkr
  * bug in InsertIcm_WL_SET_OFFSET() fixed
  *
@@ -5130,8 +5133,11 @@ InsertIcm_MT_ADJUST_SCHEDULER (node *arg_node, node *assigns)
     if ((!WLNODE_NOOP (arg_node)) && (WLNODE_LEVEL (arg_node) == 0) && NWITH2_MT (wlnode)
         && (SCHAdjustmentRequired (dim, wlseg))) {
         assigns
-          = MakeAssign (MakeIcm7 ("MT_ADJUST_SCHEDULER", MakeNum (dim),
-                                  MakeNum (WLSEGX_DIMS (wlseg)),
+          = MakeAssign (MakeIcm6 ((NWITH2_OFFSET_NEEDED (wlnode))
+                                    ? "MT_ADJUST_SCHEDULER__OFFSET"
+                                    : "MT_ADJUST_SCHEDULER",
+                                  DupIds_Id (wlids), MakeNum (WLSEGX_DIMS (wlseg)),
+                                  MakeNum (dim),
                                   NodeOrInt_MakeIndex (NODE_TYPE (arg_node),
                                                        WLBLOCKSTR_GET_ADDR (arg_node,
                                                                             BOUND1),
@@ -5143,9 +5149,8 @@ InsertIcm_MT_ADJUST_SCHEDULER (node *arg_node, node *assigns)
                                   NodeOrInt_MakeIndex (NODE_TYPE (arg_node),
                                                        WLBLOCKSTR_GET_ADDR (arg_node,
                                                                             STEP),
-                                                       dim, IDS_NAME (wlids), TRUE, TRUE),
-                                  DupIds_Id (wlids),
-                                  MakeNum (NWITH2_OFFSET_NEEDED (wlnode))),
+                                                       dim, IDS_NAME (wlids), TRUE,
+                                                       TRUE)),
                         assigns);
     }
 
