@@ -4,6 +4,10 @@
 /*
  *
  * $Log$
+ * Revision 3.93  2004/02/24 14:46:54  cg
+ * Bug fixed in parsing of loops whose body is a single
+ * assignment rather than a whole block.
+ *
  * Revision 3.92  2004/02/23 10:28:11  cg
  * The for-loop in SAC now behaves more like its C counterpart:
  * initialization and increment assignments are now optional
@@ -1238,7 +1242,7 @@ assignblock: SEMIC
                }
              }
            | assign
-             { $$ = MakeBlock( MakeAssign( $1, NULL), NULL);
+             { $$ = MakeBlock( $1, NULL);
              }
            ;
 
