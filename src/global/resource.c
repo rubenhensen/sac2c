@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.4  1999/05/18 12:29:10  cg
+ * added new resource entry TMPDIR to specify where sac2c puts
+ * its temporary files.
+ *
  * Revision 2.3  1999/05/06 15:38:46  sbs
  * call of yyparse changed to My_yyparse.
  *
@@ -180,8 +184,8 @@ static struct {
 
   {"STDLIB_DECPATH", str, &config.stdlib_decpath},
   {"STDLIB_LIBPATH", str, &config.stdlib_libpath},
-
   {"SYSTEM_LIBPATH", str, &config.system_libpath},
+  {"TMPDIR", str, &config.tmpdir},
 
   {"CACHE1_SIZE", num, &config.cache1_size},
   {"CACHE1_LINE", num, &config.cache1_line},

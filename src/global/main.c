@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.5  1999/05/18 12:29:10  cg
+ * added new resource entry TMPDIR to specify where sac2c puts
+ * its temporary files.
+ *
  * Revision 2.4  1999/05/12 14:30:07  cg
  * Analysis of command line options moved to options.c
  *
@@ -208,7 +212,9 @@ main (int argc, char *argv[])
 
     ABORT_ON_ERROR;
 
-    NOTE_COMPILER_PHASE;
+    if (!libstat) {
+        NOTE_COMPILER_PHASE;
+    }
 
     RSCEvaluateConfiguration (target_name);
 
@@ -240,7 +246,7 @@ main (int argc, char *argv[])
      * which is defined in globals.c.
      */
 
-    tmp_dirname = tempnam (NULL, "SAC_");
+    tmp_dirname = tempnam (config.tmpdir, "SAC_");
 
     SystemCall ("%s %s", config.mkdir, tmp_dirname);
 

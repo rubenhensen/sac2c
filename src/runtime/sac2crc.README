@@ -127,6 +127,10 @@
  *                 
  *  SYSTEM_LIBPATH  SYSTEM_LIBPATH specifies the directories where sac2c looks for
  *                  system libraries (C standard libraries).
+ *
+ *  TMPDIR          TMPDIR specifies a directory where sac2c may create temporary files.
+ *                  Please make sure that you have write permission to that directory
+ *                  as well as sufficient space.
  *                  
  *  CACHE1_SIZE     CACHE1_SIZE specifies the size of the L1 (data) cache in kb.
  *                  A size of 0 means that the system has no L1 cache or its

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.4  1999/05/18 12:29:10  cg
+ * added new resource entry TMPDIR to specify where sac2c puts
+ * its temporary files.
+ *
  * Revision 2.3  1999/04/01 13:27:24  cg
  * new cache write policy resource entry added to resource data type
  *
@@ -121,6 +125,7 @@ typedef struct {
     char *stdlib_decpath;
     char *stdlib_libpath;
     char *system_libpath;
+    char *tmpdir;
 
     int cache1_size;
     int cache1_line;

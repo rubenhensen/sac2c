@@ -63,6 +63,8 @@ STDLIB_LIBPATH   :=  "$SACBASE/stdlib/modules/structures/lib:"
 SYSTEM_LIBPATH   :=  "/usr/lib:/lib:/usr/local/lib:"
                      "/home/sac/lib/efence"
  
+TMPDIR           :=  "/tmp"
+
 CACHE1_SIZE      :=  0
 CACHE1_LINE      :=  0
 CACHE1_ASSOC     :=  0
