@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.86  2004/11/28 12:56:44  ktr
+ * Zombie phase PH_readsib added in order to have familiar phase numbering.
+ *
  * Revision 3.85  2004/11/27 05:02:55  ktr
  * Some Bugfixes.
  *
@@ -501,6 +504,15 @@ main (int argc, char *argv[])
 
     if (global.break_after == PH_import)
         goto BREAK;
+    global.compiler_phase++;
+
+    /*
+     * TODO: eliminate PH_readsib from phase_info.mac
+     */
+    PHASE_PROLOG;
+    NOTE_COMPILER_PHASE;
+    PHASE_DONE_EPILOG;
+    PHASE_EPILOG;
     global.compiler_phase++;
 
 #if 0
