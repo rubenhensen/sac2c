@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.14  2000/07/20 12:09:49  nmw
+ * debug print generated code removed
+ *
  * Revision 1.13  2000/07/20 11:40:15  nmw
  * wrapperfunctions check for initialized module and register themselves
  * at the free_interface_hanlder to be freed at cleanup
@@ -1049,7 +1052,6 @@ PIWModuleFreeFunction (char *modname)
     DBUG_ENTER ("PIWModuleExitFunction");
     fprintf (outfile, "static void SAC_Free%s()\n{\n", modname);
     GSCPrintMainEnd ();
-    fprintf (outfile, "printf(\"DEBUG: %s has been freed.\\n\");", modname);
     fprintf (outfile, "\n}\n\n\n");
     DBUG_VOID_RETURN;
 }
