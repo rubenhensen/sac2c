@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.126  1998/05/13 13:40:33  srs
+ * renamed switch -noUNR to -noLUNR.
+ * New switch -noWLUNR to deactivate WL unrolling.
+ *
  * Revision 1.125  1998/05/12 07:21:02  cg
  * Bug fixed: temporary directories are now removed even if the
  * compiler is called with a break-option.
@@ -825,7 +829,8 @@ MAIN
             opt_cf = 0;
             opt_lir = 0;
             opt_inl = 0;
-            opt_unr = 0;
+            opt_lunr = 0;
+            opt_wlunr = 0;
             opt_uns = 0;
             opt_cse = 0;
             opt_wlt = 0;
@@ -845,8 +850,10 @@ MAIN
             opt_lir = 0;
         else if (OptCmp (*argv, "oINL"))
             opt_inl = 0;
-        else if (OptCmp (*argv, "oUNR"))
-            opt_unr = 0;
+        else if (OptCmp (*argv, "oLUNR"))
+            opt_lunr = 0;
+        else if (OptCmp (*argv, "oWLUNR"))
+            opt_wlunr = 0;
         else if (OptCmp (*argv, "oUNS"))
             opt_uns = 0;
         else if (OptCmp (*argv, "oIVE"))
