@@ -1,0 +1,100 @@
+/*
+ *
+ * $Log$
+ * Revision 1.1  2004/11/23 17:34:23  cg
+ * Initial revision
+ *
+ *
+ */
+
+/*
+ * Trace flags
+ */
+
+#ifndef TRACEflag
+#define TRACEflag(flag)
+#endif
+
+#define TRACE(flag) TRACEflag (flag)
+
+TRACE (fun)
+TRACE (prf)
+TRACE (ref)
+TRACE (mem)
+TRACE (wl)
+TRACE (aa)
+TRACE (mt)
+TRACE (cenv)
+
+#undef TRACEflag
+#undef TRACE
+
+/*************************************************************/
+
+/*
+ * Cache simulation flags
+ */
+
+#ifndef CACHESIMflag
+#define CACHESIMflag(flag)
+#endif
+
+#define CACHESIM(flag) CACHESIMflag (flag)
+
+CACHESIM (simple) /* was YES */
+CACHESIM (advanced)
+CACHESIM (file)
+CACHESIM (pipe)
+CACHESIM (immediate)
+CACHESIM (block)
+
+#undef CACHESIMflag
+#undef CACHESIM
+
+/*************************************************************/
+
+/*
+ * Runtime check flags
+ */
+
+#ifndef RUNTIMECHECKflag
+#define RUNTIMECHECKflag(flag)
+#endif
+
+#define RUNTIMECHECK(flag) RUNTIMECHECKflag (flag)
+
+RUNTIMECHECK (boundary)
+RUNTIMECHECK (type)
+RUNTIMECHECK (malloc)
+RUNTIMECHECK (errno)
+RUNTIMECHECK (heap)
+
+#undef RUNTIMECHECKflag
+#undef RUNTIMECHECK
+
+/*************************************************************/
+
+/*
+ * Intrinsic array operations flags
+ */
+
+#ifndef INTRINSICflag
+#define INTRINSICflag(flag)
+#endif
+
+#define INTRINSIC(flag) INTRINSICflag (flag)
+
+INTRINSIC (add)
+INTRINSIC (sub)
+INTRINSIC (mul)
+INTRINSIC (div)
+INTRINSIC (to)
+INTRINSIC (take)
+INTRINSIC (drop)
+INTRINSIC (rotate) /* was ROT */
+INTRINSIC (cat)
+INTRINSIC (sel)
+INTRINSIC (modarray) /* was MODA */
+
+#undef INTRINSICflag
+#undef INTRINSIC
