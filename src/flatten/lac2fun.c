@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.27  2004/09/27 19:06:18  sbs
+ * FUNDEF_RET_TYPE is created as well; some DBUG_PRINTs added.
+ *
  * Revision 3.26  2004/09/27 10:44:21  sah
  * added support for ntype types in MakeL2fFundef
  *
@@ -412,6 +415,7 @@ MakeL2fFundef (char *funname, char *modname, node *instr, node *funcall_let, DFM
      * construct the new type for the created function
      */
     FUNDEF_TYPE (fundef) = DFM2FunctionType (in, out, fundef);
+    FUNDEF_RET_TYPE (fundef) = DFM2ProductType (out);
     DBUG_PRINT ("L2F",
                 ("set link to external assignment: " F_PTR, INFO_L2F_ASSIGN (arg_info)));
 
@@ -594,8 +598,11 @@ L2Ffundef (node *arg_node, info *arg_info)
         INFO_L2F_FUNDEF (arg_info) = arg_node;
         INFO_L2F_FUNS (arg_info) = NULL;
 
+        DBUG_PRINT ("L2F", ("processing body of `%s'", FUNDEF_NAME (arg_node)));
+
         FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
 
+        DBUG_PRINT ("L2F", ("finished body of `%s'", FUNDEF_NAME (arg_node)));
         /*
          * insert LaC fundefs into the AST
          */
