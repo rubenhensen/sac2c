@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.5  2001/03/22 20:19:57  dkr
+# make deps done
+#
 # Revision 3.4  2001/03/02 10:36:15  dkr
 # /home/dkr/sac/BASE/sac2c/src/print/RCS/Makefile,v used in touch-rules
 #
@@ -126,10 +129,10 @@ convert.o: ../global/globals.h ../tree/type_info.mac
 print.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 print.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 print.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-print.o: /usr/include/stdlib.h /usr/include/string.h ../tree/tree.h
-print.o: ../global/types.h ../tree/tree_basic.h ../tree/tree_compound.h
-print.o: ../global/Error.h ../global/globals.h ../global/internal_lib.h
-print.o: print.h ../c-interface/print_interface.h ../global/my_debug.h
+print.o: /usr/include/stdlib.h /usr/include/string.h ../global/types.h
+print.o: ../tree/tree_basic.h ../tree/tree_compound.h ../global/Error.h
+print.o: ../global/globals.h ../global/internal_lib.h print.h
+print.o: ../c-interface/print_interface.h ../global/my_debug.h
 print.o: ../../inc/dbug.h ../tree/traverse.h convert.h ../tree/DataFlowMask.h
 print.o: ../optimize/optimize.h ../tree/free.h ../optimize/generatemasks.h
 print.o: ../modules/filemgr.h ../compile/gen_startup_code.h

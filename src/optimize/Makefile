@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.14  2001/03/22 20:20:00  dkr
+# make deps done
+#
 # Revision 3.13  2001/03/22 20:19:00  dkr
 # INCS corrected
 #
@@ -164,12 +167,11 @@ Inline.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 Inline.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 Inline.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
 Inline.o: /usr/include/stdlib.h ../global/globals.h ../global/types.h
-Inline.o: ../tree/tree.h ../tree/tree_basic.h ../tree/tree_compound.h
-Inline.o: ../global/Error.h /usr/include/string.h ../global/internal_lib.h
-Inline.o: ../../inc/dbug.h ../global/my_debug.h ../tree/traverse.h
-Inline.o: ../tree/free.h ../typecheck/typecheck.h optimize.h
-Inline.o: LoopInvariantRemoval.h ../tree/DupTree.h ../tree/LookUpTable.h
-Inline.o: Inline.h
+Inline.o: ../tree/tree_basic.h ../tree/tree_compound.h ../global/Error.h
+Inline.o: /usr/include/string.h ../../inc/dbug.h ../global/my_debug.h
+Inline.o: ../tree/traverse.h ../tree/free.h ../global/internal_lib.h
+Inline.o: ../typecheck/typecheck.h optimize.h LoopInvariantRemoval.h
+Inline.o: ../tree/DupTree.h ../tree/LookUpTable.h Inline.h
 LoopInvariantRemoval.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 LoopInvariantRemoval.o: /usr/include/sys/isa_defs.h
 LoopInvariantRemoval.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
@@ -190,6 +192,18 @@ SSACSE.o: ../tree/tree_basic.h ../tree/tree_compound.h ../global/Error.h
 SSACSE.o: /usr/include/string.h /usr/include/stdlib.h ../global/globals.h
 SSACSE.o: ../global/internal_lib.h ../tree/traverse.h ../tree/free.h
 SSACSE.o: ../global/my_debug.h SSACSE.h ../tree/compare_tree.h optimize.h
+SSAConstantFolding.o: ../../inc/dbug.h /usr/include/stdio.h
+SSAConstantFolding.o: /usr/include/sys/feature_tests.h
+SSAConstantFolding.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
+SSAConstantFolding.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
+SSAConstantFolding.o: ../tree/tree.h ../global/types.h ../tree/tree_basic.h
+SSAConstantFolding.o: ../tree/tree_compound.h ../global/Error.h
+SSAConstantFolding.o: /usr/include/string.h /usr/include/stdlib.h
+SSAConstantFolding.o: ../global/globals.h ../global/internal_lib.h
+SSAConstantFolding.o: ../tree/traverse.h ../tree/free.h ../global/my_debug.h
+SSAConstantFolding.o: SSAConstantFolding.h ../constants/constants.h
+SSAConstantFolding.o: ../constants/shape.h optimize.h
+SSAConstantFolding.o: ../tree/prf_node_info.mac
 SSADeadCodeRemoval.o: ../../inc/dbug.h /usr/include/stdio.h
 SSADeadCodeRemoval.o: /usr/include/sys/feature_tests.h
 SSADeadCodeRemoval.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
@@ -274,4 +288,4 @@ optimize.o: ../psi-opt/WithloopFolding.h ../psi-opt/wl_access_analyze.h
 optimize.o: ../psi-opt/tile_size_inference.h ../psi-opt/index.h
 optimize.o: ../psi-opt/pad.h ../tree/CheckAvis.h ../tree/SSATransform.h
 optimize.o: ../tree/UndoSSATransform.h ../flatten/lac2fun.h
-optimize.o: SSADeadCodeRemoval.h SSACSE.h ../tree/cleanup_decls.h
+optimize.o: SSADeadCodeRemoval.h SSACSE.h SSAConstantFolding.h

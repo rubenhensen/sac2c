@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 3.7  2001/03/22 20:19:57  dkr
+# make deps done
+#
 # Revision 3.6  2001/03/09 11:53:38  sbs
 # make deps done
 #
@@ -130,8 +133,8 @@ interrupt.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
 interrupt.o: /usr/include/stdio_impl.h Error.h /usr/include/string.h
 interrupt.o: /usr/include/stdlib.h types.h globals.h interrupt.h
 interrupt.o: internal_lib.h build.h
-main.o: ../tree/tree.h types.h ../tree/tree_basic.h ../tree/tree_compound.h
-main.o: Error.h /usr/include/stdio.h /usr/include/sys/feature_tests.h
+main.o: types.h ../tree/tree_basic.h ../tree/tree_compound.h Error.h
+main.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 main.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 main.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
 main.o: /usr/include/string.h /usr/include/stdlib.h globals.h internal_lib.h

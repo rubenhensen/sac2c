@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.9  2001/03/22 20:20:02  dkr
+# make deps done
+#
 # Revision 3.8  2001/02/02 10:39:04  dkr
 # make deps done
 #
@@ -91,12 +94,12 @@ clean:
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
 refcount.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
-refcount.o: /usr/include/sys/isa_defs.h ../global/my_debug.h ../../inc/dbug.h
+refcount.o: /usr/include/sys/isa_defs.h ../global/types.h
+refcount.o: ../tree/tree_basic.h ../tree/tree_compound.h ../global/Error.h
 refcount.o: /usr/include/stdio.h /usr/include/sys/va_list.h
 refcount.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-refcount.o: ../global/internal_lib.h ../global/types.h ../tree/tree.h
-refcount.o: ../tree/tree_basic.h ../tree/tree_compound.h ../global/Error.h
-refcount.o: /usr/include/string.h ../global/globals.h ../tree/traverse.h
-refcount.o: ../tree/free.h ../tree/DupTree.h ../tree/LookUpTable.h
-refcount.o: ../tree/DataFlowMask.h ../tree/InferDFMs.h
+refcount.o: /usr/include/string.h ../global/globals.h
+refcount.o: ../global/internal_lib.h ../global/my_debug.h ../../inc/dbug.h
+refcount.o: ../tree/traverse.h ../tree/free.h ../tree/DupTree.h
+refcount.o: ../tree/LookUpTable.h ../tree/DataFlowMask.h ../tree/InferDFMs.h
 refcount.o: ../optimize/generatemasks.h ../optimize/optimize.h refcount.h

@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.18  2001/03/22 20:20:20  dkr
+# make deps done
+#
 # Revision 3.17  2001/03/21 11:20:07  dkr
 # make deps done
 #
@@ -115,7 +118,7 @@ clean:
 CheckAvis.o: ../../inc/dbug.h /usr/include/stdio.h
 CheckAvis.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 CheckAvis.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-CheckAvis.o: /usr/include/stdio_impl.h tree.h ../global/types.h tree_basic.h
+CheckAvis.o: /usr/include/stdio_impl.h ../global/types.h tree_basic.h
 CheckAvis.o: tree_compound.h ../global/Error.h /usr/include/string.h
 CheckAvis.o: /usr/include/stdlib.h ../global/globals.h
 CheckAvis.o: ../global/internal_lib.h traverse.h free.h ../global/my_debug.h
@@ -127,7 +130,7 @@ DataFlowMask.o: /usr/include/string.h ../../inc/dbug.h ../global/types.h
 DataFlowMask.o: tree_basic.h tree_compound.h ../global/Error.h
 DataFlowMask.o: /usr/include/stdlib.h ../global/globals.h
 DataFlowMask.o: ../global/internal_lib.h free.h ../global/my_debug.h
-DataFlowMaskUtils.o: tree.h ../global/types.h tree_basic.h tree_compound.h
+DataFlowMaskUtils.o: ../global/types.h tree_basic.h tree_compound.h
 DataFlowMaskUtils.o: ../global/Error.h /usr/include/stdio.h
 DataFlowMaskUtils.o: /usr/include/sys/feature_tests.h
 DataFlowMaskUtils.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
@@ -137,7 +140,7 @@ DataFlowMaskUtils.o: ../global/globals.h ../global/internal_lib.h free.h
 DataFlowMaskUtils.o: ../../inc/dbug.h ../global/my_debug.h DupTree.h
 DataFlowMaskUtils.o: LookUpTable.h DataFlowMask.h ../typecheck/typecheck.h
 DupTree.o: /usr/include/string.h /usr/include/sys/feature_tests.h
-DupTree.o: /usr/include/sys/isa_defs.h tree.h ../global/types.h tree_basic.h
+DupTree.o: /usr/include/sys/isa_defs.h ../global/types.h tree_basic.h
 DupTree.o: tree_compound.h ../global/Error.h /usr/include/stdio.h
 DupTree.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
 DupTree.o: /usr/include/stdio_impl.h /usr/include/stdlib.h
@@ -146,59 +149,56 @@ DupTree.o: ../../inc/dbug.h ../global/my_debug.h DupTree.h LookUpTable.h
 DupTree.o: DataFlowMask.h DataFlowMaskUtils.h scheduling.h
 DupTree.o: ../optimize/generatemasks.h ../constants/constants.h
 DupTree.o: ../constants/shape.h
-InferDFMs.o: tree.h ../global/types.h tree_basic.h tree_compound.h
-InferDFMs.o: ../global/Error.h /usr/include/stdio.h
-InferDFMs.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
-InferDFMs.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-InferDFMs.o: /usr/include/stdio_impl.h /usr/include/string.h
-InferDFMs.o: /usr/include/stdlib.h ../global/globals.h
+InferDFMs.o: ../global/types.h tree_basic.h tree_compound.h ../global/Error.h
+InferDFMs.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
+InferDFMs.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
+InferDFMs.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
+InferDFMs.o: /usr/include/string.h /usr/include/stdlib.h ../global/globals.h
 InferDFMs.o: ../global/internal_lib.h traverse.h free.h ../../inc/dbug.h
 InferDFMs.o: ../global/my_debug.h DupTree.h LookUpTable.h DataFlowMask.h
 InferDFMs.o: DataFlowMaskUtils.h InferDFMs.h
 LookUpTable.o: /usr/include/string.h /usr/include/sys/feature_tests.h
-LookUpTable.o: /usr/include/sys/isa_defs.h tree.h ../global/types.h
-LookUpTable.o: tree_basic.h tree_compound.h ../global/Error.h
-LookUpTable.o: /usr/include/stdio.h /usr/include/sys/va_list.h
-LookUpTable.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-LookUpTable.o: /usr/include/stdlib.h ../global/globals.h
-LookUpTable.o: ../global/internal_lib.h free.h ../../inc/dbug.h
-LookUpTable.o: ../global/my_debug.h
-SSATransform.o: ../../inc/dbug.h /usr/include/stdio.h
+LookUpTable.o: /usr/include/sys/isa_defs.h ../global/types.h tree_basic.h
+LookUpTable.o: tree_compound.h ../global/Error.h /usr/include/stdio.h
+LookUpTable.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
+LookUpTable.o: /usr/include/stdio_impl.h /usr/include/stdlib.h
+LookUpTable.o: ../global/globals.h ../global/internal_lib.h free.h
+LookUpTable.o: ../../inc/dbug.h ../global/my_debug.h
+SSATransform.o: ../global/types.h tree_basic.h tree_compound.h
+SSATransform.o: ../global/Error.h /usr/include/stdio.h
 SSATransform.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 SSATransform.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-SSATransform.o: /usr/include/stdio_impl.h ../global/globals.h
-SSATransform.o: ../global/types.h tree.h tree_basic.h tree_compound.h
-SSATransform.o: ../global/Error.h /usr/include/string.h /usr/include/stdlib.h
-SSATransform.o: ../global/internal_lib.h traverse.h free.h
+SSATransform.o: /usr/include/stdio_impl.h /usr/include/string.h
+SSATransform.o: /usr/include/stdlib.h ../global/globals.h
+SSATransform.o: ../global/internal_lib.h ../../inc/dbug.h traverse.h free.h
 SSATransform.o: ../global/my_debug.h DupTree.h LookUpTable.h SSATransform.h
-UndoSSATransform.o: ../../inc/dbug.h /usr/include/stdio.h
+UndoSSATransform.o: ../global/types.h tree_basic.h tree_compound.h
+UndoSSATransform.o: ../global/Error.h /usr/include/stdio.h
 UndoSSATransform.o: /usr/include/sys/feature_tests.h
 UndoSSATransform.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
-UndoSSATransform.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h tree.h
-UndoSSATransform.o: ../global/types.h tree_basic.h tree_compound.h
-UndoSSATransform.o: ../global/Error.h /usr/include/string.h
-UndoSSATransform.o: /usr/include/stdlib.h ../global/globals.h
-UndoSSATransform.o: ../global/internal_lib.h traverse.h free.h
-UndoSSATransform.o: ../global/my_debug.h UndoSSATransform.h DupTree.h
-UndoSSATransform.o: LookUpTable.h
+UndoSSATransform.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
+UndoSSATransform.o: /usr/include/string.h /usr/include/stdlib.h
+UndoSSATransform.o: ../global/globals.h ../global/internal_lib.h
+UndoSSATransform.o: ../../inc/dbug.h traverse.h free.h ../global/my_debug.h
+UndoSSATransform.o: UndoSSATransform.h DupTree.h LookUpTable.h
 adjust_ids.o: ../../inc/dbug.h /usr/include/stdio.h
 adjust_ids.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 adjust_ids.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-adjust_ids.o: /usr/include/stdio_impl.h tree.h ../global/types.h tree_basic.h
+adjust_ids.o: /usr/include/stdio_impl.h ../global/types.h tree_basic.h
 adjust_ids.o: tree_compound.h ../global/Error.h /usr/include/string.h
 adjust_ids.o: /usr/include/stdlib.h ../global/globals.h
 adjust_ids.o: ../global/internal_lib.h traverse.h free.h ../global/my_debug.h
 adjust_ids.o: DupTree.h LookUpTable.h ../print/print.h
-change_signature.o: ../../inc/dbug.h /usr/include/stdio.h
+change_signature.o: ../global/types.h tree_basic.h tree_compound.h
+change_signature.o: ../global/Error.h /usr/include/stdio.h
 change_signature.o: /usr/include/sys/feature_tests.h
 change_signature.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 change_signature.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-change_signature.o: ../global/globals.h ../global/types.h tree.h tree_basic.h
-change_signature.o: tree_compound.h ../global/Error.h /usr/include/string.h
-change_signature.o: /usr/include/stdlib.h ../global/internal_lib.h free.h
-change_signature.o: ../global/my_debug.h DupTree.h LookUpTable.h
-change_signature.o: ../optimize/optimize.h
-cleanup_decls.o: tree.h ../global/types.h tree_basic.h tree_compound.h
+change_signature.o: /usr/include/string.h /usr/include/stdlib.h
+change_signature.o: ../global/globals.h ../global/internal_lib.h
+change_signature.o: ../../inc/dbug.h free.h ../global/my_debug.h DupTree.h
+change_signature.o: LookUpTable.h ../optimize/optimize.h
+cleanup_decls.o: ../global/types.h tree_basic.h tree_compound.h
 cleanup_decls.o: ../global/Error.h /usr/include/stdio.h
 cleanup_decls.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 cleanup_decls.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
@@ -207,23 +207,22 @@ cleanup_decls.o: /usr/include/stdlib.h ../global/globals.h
 cleanup_decls.o: ../global/internal_lib.h traverse.h free.h ../../inc/dbug.h
 cleanup_decls.o: ../global/my_debug.h DataFlowMask.h DataFlowMaskUtils.h
 cleanup_decls.o: LookUpTable.h
-compare_tree.o: ../../inc/dbug.h /usr/include/stdio.h
+compare_tree.o: ../global/types.h tree_basic.h tree_compound.h
+compare_tree.o: ../global/Error.h /usr/include/stdio.h
 compare_tree.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 compare_tree.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-compare_tree.o: /usr/include/stdio_impl.h tree.h ../global/types.h
-compare_tree.o: tree_basic.h tree_compound.h ../global/Error.h
-compare_tree.o: /usr/include/string.h /usr/include/stdlib.h
-compare_tree.o: ../global/globals.h ../global/internal_lib.h traverse.h
-compare_tree.o: free.h ../global/my_debug.h compare_tree.h
-compare_tree.o: ../typecheck/typecheck.h
+compare_tree.o: /usr/include/stdio_impl.h /usr/include/string.h
+compare_tree.o: /usr/include/stdlib.h ../global/globals.h
+compare_tree.o: ../global/internal_lib.h ../../inc/dbug.h traverse.h free.h
+compare_tree.o: ../global/my_debug.h compare_tree.h ../typecheck/typecheck.h
 free.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 free.o: /usr/include/sys/isa_defs.h /usr/include/stdio.h
 free.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
 free.o: /usr/include/stdio_impl.h ../../inc/dbug.h ../global/my_debug.h
-free.o: ../global/types.h tree.h tree_basic.h tree_compound.h
-free.o: ../global/Error.h /usr/include/string.h ../global/globals.h
-free.o: ../global/internal_lib.h traverse.h DataFlowMask.h scheduling.h
-free.o: ../constants/constants.h ../constants/shape.h free.h
+free.o: ../global/types.h tree_basic.h tree_compound.h ../global/Error.h
+free.o: /usr/include/string.h ../global/globals.h ../global/internal_lib.h
+free.o: traverse.h DataFlowMask.h scheduling.h ../constants/constants.h
+free.o: ../constants/shape.h free.h
 scheduling.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 scheduling.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 scheduling.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
@@ -236,7 +235,7 @@ scheduling.o: ../compile/precompile.h
 traverse.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 traverse.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 traverse.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-traverse.o: /usr/include/stdlib.h tree.h ../global/types.h tree_basic.h
+traverse.o: /usr/include/stdlib.h ../global/types.h tree_basic.h
 traverse.o: tree_compound.h ../global/Error.h /usr/include/string.h
 traverse.o: ../global/globals.h ../global/internal_lib.h ../../inc/dbug.h
 traverse.o: ../global/my_debug.h ../flatten/flatten.h ../print/print.h
@@ -264,7 +263,7 @@ traverse.o: ../concurrent/sync_init.h ../concurrent/sync_opt.h
 traverse.o: ../concurrent/spmd_trav.h DataFlowMask.h
 traverse.o: ../concurrent/spmd_cons.h ../concurrent/schedule.h
 traverse.o: ../psi-opt/wl_access_analyze.h ../psi-opt/tile_size_inference.h
-traverse.o: ../typecheck/new_typecheck.h ../multithread/multithread.h
+traverse.o: ../typecheck/new_typecheck.h tree.h ../multithread/multithread.h
 traverse.o: InferDFMs.h ../flatten/lac2fun.h cleanup_decls.h
 traverse.o: ../flatten/fun2lac.h adjust_ids.h ../multithread/schedule_init.h
 traverse.o: ../multithread/blocks_init.h ../multithread/blocks_expand.h
@@ -279,7 +278,8 @@ traverse.o: ../c-interface/map_cwrapper.h
 traverse.o: ../c-interface/import_specialization.h CheckAvis.h SSATransform.h
 traverse.o: UndoSSATransform.h ../optimize/SSADeadCodeRemoval.h
 traverse.o: ../optimize/SSACSE.h compare_tree.h
-traverse.o: ../profile/annotate_fun_calls.h traverse.h
+traverse.o: ../profile/annotate_fun_calls.h ../optimize/SSAConstantFolding.h
+traverse.o: traverse.h
 tree.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 tree.o: /usr/include/sys/isa_defs.h tree.h ../global/types.h tree_basic.h
 tree.o: tree_compound.h ../global/Error.h /usr/include/stdio.h

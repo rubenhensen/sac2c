@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 1.4  2001/03/22 20:20:22  dkr
+# make deps done
+#
 # Revision 1.3  2001/03/05 16:57:04  sbs
 # zipcv.o added
 #
@@ -72,7 +75,7 @@ constants_ari_ops.o: /usr/include/sys/isa_defs.h ../../inc/dbug.h
 constants_ari_ops.o: /usr/include/stdio.h /usr/include/sys/va_list.h
 constants_ari_ops.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
 constants_ari_ops.o: ../global/internal_lib.h ../global/types.h constants.h
-constants_ari_ops.o: shape.h constants_internal.h zipcv.h
+constants_ari_ops.o: shape.h constants_internal.h ../global/globals.h zipcv.h
 constants_basic.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 constants_basic.o: /usr/include/sys/isa_defs.h ../global/globals.h
 constants_basic.o: /usr/include/stdio.h /usr/include/sys/va_list.h
@@ -115,4 +118,4 @@ zipcv.o: /usr/include/sys/isa_defs.h /usr/include/sys/feature_tests.h
 zipcv.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
 zipcv.o: /usr/include/stdlib.h ../../inc/dbug.h /usr/include/stdio.h
 zipcv.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-zipcv.o: /usr/include/stdio_impl.h zipcv.h
+zipcv.o: /usr/include/stdio_impl.h ../global/types.h zipcv.h

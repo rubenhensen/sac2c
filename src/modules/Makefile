@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.6  2001/03/22 20:20:00  dkr
+# make deps done
+#
 # Revision 3.5  2001/03/21 11:19:56  dkr
 # make deps done
 #
@@ -137,7 +140,7 @@ checkdec.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
 checkdec.o: /usr/include/stdlib.h ../global/globals.h ../../inc/dbug.h
 checkdec.o: ../global/my_debug.h ../tree/traverse.h ../tree/free.h
 checkdec.o: ../global/internal_lib.h import.h ../print/convert.h filemgr.h
-checkdec.o: implicittypes.h ../print/print.h ../tree/tree.h checkdec.h
+checkdec.o: implicittypes.h ../print/print.h checkdec.h
 filemgr.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 filemgr.o: /usr/include/sys/isa_defs.h /usr/include/string.h
 filemgr.o: /usr/include/stdarg.h /usr/include/varargs.h
@@ -185,4 +188,3 @@ writesib.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
 writesib.o: /usr/include/stdlib.h ../global/globals.h ../tree/free.h
 writesib.o: ../../inc/dbug.h ../global/my_debug.h ../global/internal_lib.h
 writesib.o: ../tree/traverse.h ../print/convert.h filemgr.h ../print/print.h
-writesib.o: ../tree/tree.h

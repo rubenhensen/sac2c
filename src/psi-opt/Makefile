@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.7  2001/03/22 20:20:03  dkr
+# make deps done
+#
 # Revision 3.6  2001/03/02 10:36:22  dkr
 # /home/dkr/sac/BASE/sac2c/src/psi-opt/RCS/Makefile,v used in touch-rules
 #
@@ -129,46 +132,46 @@ ArrayElimination.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 ArrayElimination.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 ArrayElimination.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
 ArrayElimination.o: /usr/include/stdlib.h /usr/include/string.h
-ArrayElimination.o: ../global/globals.h ../global/types.h ../global/Error.h
+ArrayElimination.o: ../tree/tree.h ../global/types.h ../tree/tree_basic.h
+ArrayElimination.o: ../tree/tree_compound.h ../global/Error.h
+ArrayElimination.o: ../global/globals.h ../global/internal_lib.h
 ArrayElimination.o: ../../inc/dbug.h ../global/my_debug.h ../tree/traverse.h
-ArrayElimination.o: ../typecheck/typecheck.h ../tree/free.h
-ArrayElimination.o: ../global/internal_lib.h ../tree/DupTree.h
-ArrayElimination.o: ../tree/LookUpTable.h ../tree/tree.h ../tree/tree_basic.h
-ArrayElimination.o: ../tree/tree_compound.h ../optimize/optimize.h
+ArrayElimination.o: ../typecheck/typecheck.h ../tree/free.h ../tree/DupTree.h
+ArrayElimination.o: ../tree/LookUpTable.h ../optimize/optimize.h
 ArrayElimination.o: ../optimize/generatemasks.h
 ArrayElimination.o: ../optimize/LoopInvariantRemoval.h ArrayElimination.h
 WLF.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 WLF.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 WLF.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-WLF.o: /usr/include/stdlib.h /usr/include/limits.h ../tree/tree.h
-WLF.o: ../global/types.h ../tree/tree_basic.h ../tree/tree_compound.h
-WLF.o: ../global/Error.h /usr/include/string.h ../global/globals.h
-WLF.o: ../global/internal_lib.h ../tree/free.h ../../inc/dbug.h
-WLF.o: ../global/my_debug.h ../tree/DupTree.h ../tree/LookUpTable.h
-WLF.o: ../tree/traverse.h ../optimize/optimize.h ../optimize/generatemasks.h
-WLF.o: ../optimize/ConstantFolding.h WithloopFolding.h WLF.h
+WLF.o: /usr/include/stdlib.h /usr/include/limits.h ../global/types.h
+WLF.o: ../tree/tree_basic.h ../tree/tree_compound.h ../global/Error.h
+WLF.o: /usr/include/string.h ../global/globals.h ../global/internal_lib.h
+WLF.o: ../tree/free.h ../../inc/dbug.h ../global/my_debug.h ../tree/DupTree.h
+WLF.o: ../tree/LookUpTable.h ../tree/traverse.h ../optimize/optimize.h
+WLF.o: ../optimize/generatemasks.h ../optimize/ConstantFolding.h
+WLF.o: WithloopFolding.h WLF.h
 WLI.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 WLI.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 WLI.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-WLI.o: /usr/include/stdlib.h ../tree/tree.h ../global/types.h
-WLI.o: ../tree/tree_basic.h ../tree/tree_compound.h ../global/Error.h
-WLI.o: /usr/include/string.h ../global/globals.h ../global/internal_lib.h
-WLI.o: ../tree/free.h ../../inc/dbug.h ../global/my_debug.h
-WLI.o: ../tree/traverse.h ../optimize/optimize.h ../optimize/generatemasks.h
+WLI.o: /usr/include/stdlib.h ../global/types.h ../tree/tree_basic.h
+WLI.o: ../tree/tree_compound.h ../global/Error.h /usr/include/string.h
+WLI.o: ../global/globals.h ../global/internal_lib.h ../tree/free.h
+WLI.o: ../../inc/dbug.h ../global/my_debug.h ../tree/traverse.h
+WLI.o: ../optimize/optimize.h ../optimize/generatemasks.h
 WLI.o: ../optimize/ConstantFolding.h WithloopFolding.h WLI.h
 WLT.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 WLT.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 WLT.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-WLT.o: /usr/include/stdlib.h ../tree/tree.h ../global/types.h
-WLT.o: ../tree/tree_basic.h ../tree/tree_compound.h ../global/Error.h
-WLT.o: /usr/include/string.h ../global/globals.h ../global/internal_lib.h
-WLT.o: ../tree/free.h ../../inc/dbug.h ../global/my_debug.h ../tree/DupTree.h
+WLT.o: /usr/include/stdlib.h ../global/types.h ../tree/tree_basic.h
+WLT.o: ../tree/tree_compound.h ../global/Error.h /usr/include/string.h
+WLT.o: ../global/globals.h ../global/internal_lib.h ../tree/free.h
+WLT.o: ../../inc/dbug.h ../global/my_debug.h ../tree/DupTree.h
 WLT.o: ../tree/LookUpTable.h ../tree/traverse.h ../optimize/optimize.h
 WLT.o: ../optimize/generatemasks.h WithloopFolding.h WLT.h
 WithloopFolding.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 WithloopFolding.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 WithloopFolding.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-WithloopFolding.o: /usr/include/stdlib.h ../tree/tree.h ../global/types.h
+WithloopFolding.o: /usr/include/stdlib.h ../global/types.h
 WithloopFolding.o: ../tree/tree_basic.h ../tree/tree_compound.h
 WithloopFolding.o: ../global/Error.h /usr/include/string.h
 WithloopFolding.o: ../global/globals.h ../global/internal_lib.h
@@ -180,12 +183,11 @@ WithloopFolding.o: WithloopFolding.h WLT.h WLI.h WLF.h
 index.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 index.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 index.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-index.o: /usr/include/string.h ../../inc/dbug.h ../tree/tree.h
-index.o: ../global/types.h ../tree/tree_basic.h ../tree/tree_compound.h
-index.o: ../global/Error.h /usr/include/stdlib.h ../global/globals.h
-index.o: ../global/internal_lib.h ../print/print.h ../tree/traverse.h
-index.o: ../tree/DupTree.h ../tree/LookUpTable.h ../tree/free.h
-index.o: ../global/my_debug.h index.h
+index.o: /usr/include/string.h ../global/types.h ../tree/tree_basic.h
+index.o: ../tree/tree_compound.h ../global/Error.h /usr/include/stdlib.h
+index.o: ../global/globals.h ../global/internal_lib.h ../../inc/dbug.h
+index.o: ../print/print.h ../tree/traverse.h ../tree/DupTree.h
+index.o: ../tree/LookUpTable.h ../tree/free.h ../global/my_debug.h index.h
 pad.o: /usr/include/stdarg.h /usr/include/varargs.h
 pad.o: /usr/include/sys/va_list.h ../../inc/dbug.h /usr/include/stdio.h
 pad.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
@@ -243,7 +245,7 @@ tile_size_inference.o: ../tree/tree_compound.h ../global/Error.h
 tile_size_inference.o: ../global/globals.h ../tree/traverse.h ../tree/free.h
 tile_size_inference.o: ../global/my_debug.h ../global/internal_lib.h
 tile_size_inference.o: ../global/resource.h ../tree/DupTree.h
-tile_size_inference.o: ../tree/LookUpTable.h ../print/print.h ../tree/tree.h
+tile_size_inference.o: ../tree/LookUpTable.h ../print/print.h
 tile_size_inference.o: tile_size_inference.h
 wl_access_analyze.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 wl_access_analyze.o: /usr/include/sys/isa_defs.h ../../inc/dbug.h

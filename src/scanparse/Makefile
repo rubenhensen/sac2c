@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.5  2001/03/22 20:19:58  dkr
+# make deps done
+#
 # Revision 3.4  2001/01/17 10:13:02  dkr
 # make deps done
 #
@@ -87,11 +90,10 @@ clean:
 lex.yy.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 lex.yy.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 lex.yy.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-lex.yy.o: /usr/include/stdlib.h ../tree/tree.h ../global/types.h
-lex.yy.o: ../tree/tree_basic.h ../tree/tree_compound.h ../global/Error.h
-lex.yy.o: /usr/include/string.h ../global/globals.h ../global/internal_lib.h
-lex.yy.o: ../tree/free.h ../../inc/dbug.h ../global/my_debug.h
-lex.yy.o: ../global/resource.h y.tab.h
+lex.yy.o: /usr/include/stdlib.h ../global/types.h ../tree/tree_basic.h
+lex.yy.o: ../tree/tree_compound.h ../global/Error.h /usr/include/string.h
+lex.yy.o: ../global/globals.h ../global/internal_lib.h ../tree/free.h
+lex.yy.o: ../../inc/dbug.h ../global/my_debug.h ../global/resource.h y.tab.h
 scnprs.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 scnprs.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 scnprs.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
@@ -104,9 +106,9 @@ y.tab.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 y.tab.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
 y.tab.o: /usr/include/stdlib.h /usr/include/memory.h /usr/include/sys/types.h
 y.tab.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-y.tab.o: ../../inc/dbug.h ../tree/tree.h ../global/types.h
-y.tab.o: ../tree/tree_basic.h ../tree/tree_compound.h ../global/Error.h
-y.tab.o: /usr/include/string.h ../global/globals.h ../global/internal_lib.h
+y.tab.o: ../tree/tree.h ../global/types.h ../tree/tree_basic.h
+y.tab.o: ../tree/tree_compound.h ../global/Error.h /usr/include/string.h
+y.tab.o: ../global/globals.h ../global/internal_lib.h ../../inc/dbug.h
 y.tab.o: ../typecheck/typecheck.h ../tree/DupTree.h ../tree/LookUpTable.h
 y.tab.o: ../global/my_debug.h ../tree/free.h ../modules/readsib.h
 y.tab.o: ../global/resource.h
