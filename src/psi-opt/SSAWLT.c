@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.30  2004/05/11 14:27:44  ktr
+ * bug fix of the bug fix :)
+ *
  * Revision 1.29  2004/05/11 12:46:57  ktr
  * Bug 35: COZip called with args of different shape!
  * resolved. In ComputeGeneratorProperties only the prefix of
@@ -900,11 +903,9 @@ ComputeGeneratorProperties (node *wl, shape *max_shp)
     }
 
     /* Clean up constants */
-    if (shpc != NULL)
-        shpc = COFreeConstant (shpc);
-
-    ubc = COFreeConstant (ubc);
-    lbc = COFreeConstant (lbc);
+    shpc = (shpc != NULL ? COFreeConstant (shpc) : NULL);
+    ubc = (ubc != NULL ? COFreeConstant (ubc) : NULL);
+    lbc = (lbc != NULL ? COFreeConstant (lbc) : NULL);
 
     DBUG_PRINT ("SSAWLT", ("generator property of with loop in line %d : %s", linenum,
                            gen_prop_str[res]));
