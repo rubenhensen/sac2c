@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.69  1998/04/24 01:15:14  dkr
+ * added DupSync
+ *
  * Revision 1.68  1998/04/23 15:02:10  srs
  * fixed bug in DupNWithid
  *
@@ -725,10 +728,12 @@ DupDec (node *arg_node, node *arg_info)
     node *new_node;
 
     DBUG_ENTER ("DupDec");
-    DBUG_ASSERT (((N_vardec == arg_node->nodetype) || (N_arg == arg_node->nodetype)),
-                 "wrong nodetype");
-    DBUG_PRINT ("DUP", ("Duplicating - %s", mdb_nodetype[arg_node->nodetype]));
-    new_node = MakeNode (arg_node->nodetype);
+
+    DBUG_ASSERT (((N_vardec == NODE_TYPE (arg_node)) || (N_arg == NODE_TYPE (arg_node))),
+                 "wrong node type");
+    DBUG_PRINT ("DUP", ("Duplicating - %s", mdb_nodetype[NODE_TYPE (arg_node)]));
+
+    new_node = MakeNode (NODE_TYPE (arg_node));
     DUP (arg_node, new_node);
     new_node->info.types = DuplicateTypes (arg_node->info.types, 1);
     if (NULL != arg_node->node[0]) {
@@ -818,6 +823,26 @@ DupSPMD (node *arg_node, node *arg_info)
     DBUG_ENTER ("DupSPMD");
 
     new_node = MakeSPMD (DUPTRAV (SPMD_REGION (arg_node)));
+
+    SPMD_IN (new_node) = DUPTRAV (SPMD_IN (arg_node));
+    SPMD_OUT (new_node) = DUPTRAV (SPMD_OUT (arg_node));
+    SPMD_INOUT (new_node) = DUPTRAV (SPMD_INOUT (arg_node));
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************/
+
+node *
+DupSync (node *arg_node, node *arg_info)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DupSync");
+
+    new_node = MakeSync (DUPTRAV (SYNC_REGION (arg_node)));
+
+    SYNC_INOUT (new_node) = DUPTRAV (SYNC_INOUT (arg_node));
 
     DBUG_RETURN (new_node);
 }
