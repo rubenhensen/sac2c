@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.93  2004/12/19 14:29:51  sbs
+ * TOT header included
+ *
  * Revision 3.92  2004/12/19 13:35:07  sbs
  * replaced NT2OT traversals by TOT traversals
  *
@@ -76,7 +79,7 @@
 #include "WLEnhancement.h"
 #include "export.h"
 #include "traverse.h"
-#include "new2old.h"
+#include "ToOldTypes.h"
 
 #include <stdlib.h>
 #include <unistd.h>

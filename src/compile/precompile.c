@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.108  2004/12/19 14:32:42  sbs
+ * TOT header included
+ *
  * Revision 3.107  2004/12/19 13:37:17  sbs
  * replaced NT2OT by TOT traversal
  *
@@ -32,7 +35,7 @@
 #include "functionprecompile.h"
 #include "typeconv_precompile.h"
 #include "renameidentifiers.h"
-#include "new2old.h"
+#include "ToOldTypes.h"
 #include "setlinksign.h"
 
 #include <string.h>
@@ -137,6 +140,9 @@ DONE:
 /*
  *
  * $Log$
+ * Revision 3.108  2004/12/19 14:32:42  sbs
+ * TOT header included
+ *
  * Revision 3.107  2004/12/19 13:37:17  sbs
  * replaced NT2OT by TOT traversal
  *
