@@ -1,8 +1,11 @@
 /*
  * $Log$
- * Revision 1.1  1995/03/03 14:40:13  sbs
- * Initial revision
+ * Revision 1.2  1995/03/07 18:03:37  sbs
+ * PSI-macros done.
  *
+# Revision 1.1  1995/03/03  14:40:13  sbs
+# Initial revision
+#
  *
  */
 
@@ -76,4 +79,15 @@ Macros for primitve arithmetic operations:
 +ND_BINOP_LEFT( op, type, a1, a2, res)		: uses "left" argument for the result
 +ND_BINOP_RIGHT( op, type, a1, a2, res)		: uses "right" argument for the result
 
+Macros for PSI-primitves:
+=========================
 
+ ND_KD_PSI_CxA_S( type, a, res, dim, v0,..., vn): selects a single element of the array
+ ND_KD_PSI_VxA_S( type, a, res, dim, v )	: selects a single element of the array
+ ND_KD_PSI_CxA_A_NEW( type, a, res, dim, v0,..., vn): selects a sub-array
+ ND_KD_PSI_CxA_A_OLD( type, a, res, dim, v0,..., vn): selects a sub-array
+ ND_KD_PSI_VxA_A_NEW( type, a, res, dim, v )	: selects a sub-array
+ ND_KD_PSI_VxA_A_OLD( type, a, res, dim, v )	: selects a sub-array
+
+ ND_KD_TAKE_CxA_A_NEW( type, a, res, dim, v0,..., vn):
+ ND_KD_TAKE_CxA_A_OLD( type, a, res, dim, v0,..., vn):
