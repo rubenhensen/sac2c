@@ -1,4 +1,6 @@
 Makefile
+basecv.c
+basecv.h
 constants.h
 constants_ari_ops.c
 constants_basic.c
