@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/04/30 12:14:15  nmw
+ * GNMap added
+ *
  * Revision 3.3  2000/12/12 11:42:02  dkr
  * nodes N_pre, N_post, N_inc, N_dec removed
  *
@@ -144,5 +147,6 @@ extern node *GNMloop (node *arg_node, node *arg_info);
 extern node *GNMwith (node *arg_node, node *arg_info);
 extern node *GNMwith2 (node *arg_node, node *arg_info);
 extern node *GNMicm (node *arg_node, node *arg_info);
+extern node *GNMap (node *arg_node, node *arg_info);
 
 #endif /* _generatemasks_h */
