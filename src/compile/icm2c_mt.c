@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/06/25 15:41:47  jhs
+ * Just to provide compilablity.
+ *
  * Revision 2.2  1999/06/03 13:09:04  jhs
  * Changed ICMCompileMT_CONTINUE to handle exchanges of new allocated
  * arrays between master and slaves threads.
@@ -620,10 +623,7 @@ ICMCompileMT_CONTINUE (int nfoldargs, char **vararg, int nsyncargs, char **synca
 
     for (i = 0; i < nsyncargs; i++) {
         INDENT;
-        fprintf (outfile,
-                 "*SAC_MT_spmd_frame.SAC_MT_CURRENT_FUN().SAC_MT_CURRENT_SPMD().%s = "
-                 "%s;\n",
-                 syncargs[i], syncargs[i]);
+        fprintf (outfile, "SAC_MT_SPMD_RET_shared_rc( %s);\n", syncargs[i]);
     }
 
     INDENT;
@@ -655,10 +655,7 @@ ICMCompileMT_CONTINUE (int nfoldargs, char **vararg, int nsyncargs, char **synca
 
     for (i = 0; i < nsyncargs; i++) {
         INDENT;
-        fprintf (outfile,
-                 "%s = "
-                 "*SAC_MT_spmd_frame.SAC_MT_CURRENT_FUN().SAC_MT_CURRENT_SPMD().%s;\n",
-                 syncargs[i], syncargs[i]);
+        fprintf (outfile, "SAC_MT_SPMD_GET_shared_rc( %s);\n", syncargs[i]);
     }
 
     indent--;
