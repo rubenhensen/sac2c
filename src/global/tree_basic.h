@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.40  1996/01/16 16:55:15  cg
+ * Revision 1.41  1996/01/22 09:03:48  cg
+ * added some new macros for N_objdef node
+ *
+ * Revision 1.40  1996/01/16  16:55:15  cg
  * added some macros for N_info nodes
  *
  * Revision 1.39  1996/01/15  11:06:07  asi
@@ -671,11 +674,14 @@ extern node *MakeTypedef (char *name, char *mod, types *type, statustype attrib,
  ***
  ***    char*       VARNAME      (typecheck -> obj-handling ->
  ***                             ( -> precompile -> compile -> )
- ***    node*       PRAGMA    (O)  (N_pragma)  (import -> readsib !!)
- ***    char*       LINKNAME  (O)  (readsib -> precompile -> )
+ ***    node*       PRAGMA    (O)  (N_pragma)  (import -> readsib ->
+ ***                                            precompile -> )
  ***    node*       ARG       (O)  (obj-handling !!)
  ***    node*       INIT      (O)  (precompile !!)
  ***    node*       ICM       (O)  (compile ->)
+ ***    node*       SIB       (O)  (readsib !!)
+ ***    node*       CREATE    (O)  (objinit -> analysis -> precompile -> )
+ ***    nodelist*   NEEDOBJS  (O)  (import -> analysis -> )
  ***/
 
 /*
@@ -691,6 +697,9 @@ extern node *MakeTypedef (char *name, char *mod, types *type, statustype attrib,
  *
  *  INIT is a pointer to an N_let node containing an application of the
  *  init function (SAC objects only).
+ *
+ *  CREATE is a reference to the N_fundef node of the generic
+ *  initialization function.
  *
  *  ICM contains a pointer to the respective icm if the global object
  *  is an array (ND_KS_DECL_ARRAY_GLOBAL or ND_KD_DECL_ARRAY_EXTERN)
@@ -715,9 +724,11 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
 #define OBJDEF_VARNAME(n) ((char *)(n->node[2]))
 #define OBJDEF_ARG(n) (n->node[3])
 #define OBJDEF_PRAGMA(n) (n->node[4])
-#define OBJDEF_LINKNAME(n) ((char *)n->node[4])
 #define OBJDEF_INIT(n) (n->node[3])
 #define OBJDEF_ICM(n) (n->node[3])
+#define OBJDEF_NEEDOBJS(n) ((nodelist *)n->node[5])
+#define OBJDEF_SIB(n) (n->node[3])
+#define OBJDEF_CREATE(n) ((node *)n->mask[0])
 
 /*--------------------------------------------------------------------------*/
 
@@ -1593,6 +1604,7 @@ extern node *MakeIcm (char *name, node *args, node *next);
  ***    char*  LINKNAME         (O)
  ***    int[]  LINKSIGN         (O)
  ***    int[]  REFCOUNTING      (O)
+ ***    char*  INITFUN          (O)
  ***
  ***  temporary attributes:
  ***
@@ -1642,6 +1654,7 @@ extern node *MakePragma ();
 #define PRAGMA_TOUCH(n) ((ids *)n->mask[4])
 #define PRAGMA_COPYFUN(n) ((char *)n->mask[5])
 #define PRAGMA_FREEFUN(n) ((char *)n->mask[6])
+#define PRAGMA_INITFUN(n) ((char *)n->node[3])
 #define PRAGMA_LINKMOD(n) ((char *)n->node[2])
 #define PRAGMA_NEEDTYPES(n) ((ids *)n->node[1])
 #define PRAGMA_NEEDFUNS(n) (n->node[0])
