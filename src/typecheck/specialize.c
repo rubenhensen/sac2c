@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.18  2004/12/01 18:43:28  sah
+ * renamed a function
+ *
  * Revision 1.17  2004/11/27 02:15:19  sbs
  * *** empty log message ***
  *
@@ -354,7 +357,7 @@ DoSpecialize (node *wrapper, node *fundef, ntype *args)
 
     /* insert the new type signature into the wrapper */
     FUNDEF_WRAPPERTYPE (wrapper)
-      = TYmakeOverloadedFunType (CRWRPcreateFuntype (res), FUNDEF_WRAPPERTYPE (wrapper));
+      = TYmakeOverloadedFunType (CRTWRPcreateFuntype (res), FUNDEF_WRAPPERTYPE (wrapper));
 
     FUNDEF_SPECS (fundef)++;
 

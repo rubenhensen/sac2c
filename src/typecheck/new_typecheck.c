@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.64  2004/12/01 18:43:28  sah
+ * renamed a function
+ *
  * Revision 3.63  2004/11/30 15:24:34  sah
  * added a fix to handle CODE_CEXPRS correctly
  *
@@ -593,7 +596,7 @@ NTCmodule (node *arg_node, info *arg_info)
      * function as well as pointers to all potential implementations. These
      * structures are created by "CreateWrappers".
      */
-    arg_node = CRWRPdoCreateWrappers (arg_node);
+    arg_node = CRTWRPdoCreateWrappers (arg_node);
     if ((global.break_after == PH_typecheck)
         && (0 == strcmp (global.break_specifier, "cwr"))) {
         goto DONE;

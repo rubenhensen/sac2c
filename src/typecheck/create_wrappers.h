@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2004/12/01 18:43:28  sah
+ * renamed a function
+ *
  * Revision 1.12  2004/11/25 18:01:40  sbs
  * compiles
  *
@@ -46,8 +49,8 @@
 
 #include "types.h"
 
-extern node *CRWRPdoCreateWrappers (node *arg_node);
-extern ntype *CRWRPcreateFuntype (node *fundef);
+extern node *CRTWRPdoCreateWrappers (node *arg_node);
+extern ntype *CRTWRPcreateFuntype (node *fundef);
 
 extern node *CRTWRPmodule (node *arg_node, info *arg_info);
 extern node *CRTWRPfundef (node *arg_node, info *arg_info);
