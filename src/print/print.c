@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2000/12/12 15:33:55  dkr
+ * handling of ..._ICM sons corrected
+ *
  * Revision 3.6  2000/12/12 12:29:00  dkr
  * nodes N_pre, N_post, N_inc, N_dec removed
  *
@@ -1241,7 +1244,8 @@ PrintTypedef (node *arg_node, node *arg_info)
 
     DBUG_PRINT ("PRINT", ("%s " P_FORMAT, mdb_nodetype[NODE_TYPE (arg_node)], arg_node));
 
-    if (TYPEDEF_ICM (arg_node) == NULL) {
+    if ((TYPEDEF_ICM (arg_node) == NULL)
+        || (NODE_TYPE (TYPEDEF_ICM (arg_node)) != N_icm)) {
         type_string = Type2String (TYPEDEF_TYPE (arg_node), 0);
         fprintf (outfile, "typedef %s ", type_string);
         FREE (type_string);
@@ -1299,10 +1303,7 @@ PrintObjdef (node *arg_node, node *arg_info)
                  OBJDEF_NAME (arg_node));
     }
 
-    if ((OBJDEF_ICM (arg_node) != NULL) && (NODE_TYPE (OBJDEF_ICM (arg_node)) == N_icm)) {
-        Trav (OBJDEF_ICM (arg_node), arg_info);
-        fprintf (outfile, "\n");
-    } else {
+    if ((OBJDEF_ICM (arg_node) == NULL) || (NODE_TYPE (OBJDEF_ICM (arg_node)) != N_icm)) {
         if ((OBJDEF_STATUS (arg_node) == ST_imported_mod)
             || (OBJDEF_STATUS (arg_node) == ST_imported_class)
             || print_objdef_for_header_file) {
@@ -1328,6 +1329,9 @@ PrintObjdef (node *arg_node, node *arg_info)
             Trav (OBJDEF_PRAGMA (arg_node), arg_info);
         }
 
+        fprintf (outfile, "\n");
+    } else {
+        Trav (OBJDEF_ICM (arg_node), arg_info);
         fprintf (outfile, "\n");
     }
 
@@ -1420,12 +1424,16 @@ PrintFundef (node *arg_node, node *arg_info)
 
                 fprintf (outfile, "extern ");
 
-                if ((NULL != FUNDEF_ICM (arg_node))
-                    && (N_icm == NODE_TYPE (FUNDEF_ICM (arg_node)))
-                    && (FUNDEF_STATUS (arg_node) != ST_spmdfun)) {
-                    Trav (FUNDEF_ICM (arg_node), arg_info); /* print N_icm ND_FUN_DEC */
-                } else {
+                if ((FUNDEF_ICM (arg_node) == NULL)
+                    || (NODE_TYPE (FUNDEF_ICM (arg_node)) != N_icm)
+#if 0
+ ||
+            (FUNDEF_STATUS( arg_node) == ST_spmdfun)
+#endif
+                ) {
                     PrintFunctionHeader (arg_node, arg_info);
+                } else {
+                    Trav (FUNDEF_ICM (arg_node), arg_info); /* print N_icm ND_FUN_DEC */
                 }
 
                 fprintf (outfile, ";\n");
@@ -1466,11 +1474,11 @@ PrintFundef (node *arg_node, node *arg_info)
                           PrintUseMask (outfile, FUNDEF_USEMASK (arg_node),
                                         INFO_PRINT_VARNO (arg_info)););
 
-            if ((FUNDEF_ICM (arg_node) != NULL)
-                && (N_icm == NODE_TYPE (FUNDEF_ICM (arg_node)))) {
-                Trav (FUNDEF_ICM (arg_node), arg_info); /* print N_icm ND_FUN_DEC */
-            } else {
+            if ((FUNDEF_ICM (arg_node) == NULL)
+                || (NODE_TYPE (FUNDEF_ICM (arg_node)) != N_icm)) {
                 PrintFunctionHeader (arg_node, arg_info);
+            } else {
+                Trav (FUNDEF_ICM (arg_node), arg_info); /* print N_icm ND_FUN_DEC */
             }
 
             fprintf (outfile, "\n");
@@ -1948,7 +1956,7 @@ PrintVardec (node *arg_node, node *arg_info)
 
     DBUG_EXECUTE ("PRINT_MASKS", fprintf (outfile, "**%d: ", VARDEC_VARNO (arg_node)););
 
-    if (VARDEC_ICM (arg_node) == NULL) {
+    if ((VARDEC_ICM (arg_node) == NULL) || (NODE_TYPE (VARDEC_ICM (arg_node)) != N_icm)) {
         type_string = Type2String (VARDEC_TYPE (arg_node), 0);
         fprintf (outfile, "%s ", type_string);
         FREE (type_string);
