@@ -1,8 +1,11 @@
 /*
  * $Log$
- * Revision 1.2  1994/11/21 13:43:28  hw
- * Log-header modified
+ * Revision 1.3  1994/12/06 11:17:01  hw
+ * changed information about N_fundef and N_block
  *
+# Revision 1.2  1994/11/21  13:43:28  hw
+# Log-header modified
+#
  *
  */
 
@@ -33,8 +36,8 @@ typedef struct NODE
 N_fundef:
 =========
 node[0]	   : functionbody (N_block)
-node[1]	   : next function (N_fundef), if there is one
-node[2]	   : arguments of function (N_arg), if there are some
+node[1]	   : arguments of function (N_arg), if there are some
+node[2]    : next function (N_fundef), if there is one
 info.types : first types structure contains the functions name and 
              the first part of the functions type. If a function has 
 	     more than one return value, the types of these return 
@@ -58,6 +61,7 @@ info.types : contains name and type of the argument. For infomation
 N_block:
 ========
 node[0]    : first node of the block (N_assign or N_empty)
+node[1]    : variable declaration, if there are any
 
 N_vardec:
 =========
