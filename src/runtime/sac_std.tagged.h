@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2002/07/12 19:11:15  dkr
+ * ND_PARAM_() added
+ *
  * Revision 3.13  2002/07/12 16:58:42  dkr
  * some comments corrected
  *
@@ -680,6 +683,9 @@ typedef int SAC_hidden_descriptor; /* reference count */
  * ICMs for passing data objects to functions
  * ==========================================
  *
+ * ND_PARAM_( dummy, basetype)
+ *   macro for ... parameters
+ *
  * ND_PARAM_in( nt, basetype)
  *   macro for prototyping data as "in" parameter
  *
@@ -735,6 +741,8 @@ typedef int SAC_hidden_descriptor; /* reference count */
 
 /* creates name for formal function parameter */
 #define SAC_NAMEP(name) CAT0 (name, __p)
+
+#define SAC_ND_PARAM_(dummy, basetype) basetype
 
 #define SAC_ND_PARAM_in(nt, basetype)                                                    \
     CAT3 (SAC_ND_PARAM_in__, CAT3 (NT_DATA (nt), BuildArgs2 (nt, basetype)))
