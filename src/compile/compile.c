@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.90  2002/08/13 16:27:26  dkr
+ * DBUG_PRINT in GenericFun() corrected
+ *
  * Revision 3.89  2002/08/09 12:45:18  dkr
  * INFO_COMP_... macros moved from tree_basic.h to compile.c
  *
@@ -322,7 +325,7 @@ GenericFun (int which, types *type)
         }
     }
 
-    DBUG_PRINT ("COMP", ("Found generic fun %s", ret));
+    DBUG_PRINT ("COMP", ("Found generic fun %s", STR_OR_EMPTY (ret)));
 
     DBUG_RETURN (ret);
 }
