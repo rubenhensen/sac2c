@@ -3,7 +3,11 @@
 /*
  *
  * $Log$
- * Revision 1.91  1995/10/22 17:35:52  cg
+ * Revision 1.92  1995/10/30 09:51:09  cg
+ * Distinction between module and class implementations now exclusively
+ * by attribute MODUL_FILETYPE.
+ *
+ * Revision 1.91  1995/10/22  17:35:52  cg
  * Now, key words like explicit types: or global objects:
  * are allowed in import statements as well as in export
  * declarations even if not followed by any item.
@@ -874,10 +878,6 @@ modimp: impclass ID {  mod_name=$2; } COLON defs
           { $$=$5;
             MODUL_NAME($$)=mod_name;
             MODUL_FILETYPE($$)=file_kind;
-                /* above: new representation of filetype */
-                /* below: old representation of filetype */
-            if (file_kind==F_classimp)
-               $$->node[4]=MakeNode(N_isclass);
           }
 	;
 
