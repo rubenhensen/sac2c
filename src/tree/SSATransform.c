@@ -1,12 +1,14 @@
 /*
  *
  * $Log$
+ * Revision 1.15  2001/04/19 08:03:22  dkr
+ * macro F_PTR used as format string for pointers
+ *
  * Revision 1.14  2001/04/18 12:58:47  nmw
  * additional traversal setup function for single fundef traversal added
  *
  * Revision 1.13  2001/03/29 09:10:20  nmw
  * tabs2spaces done
- * y
  *
  * Revision 1.12  2001/03/26 13:26:14  nmw
  * SSANewVardec for general usage added
@@ -1047,7 +1049,7 @@ SSAleftids (ids *arg_ids, node *arg_info)
     if (AVIS_SSAPHITARGET (IDS_AVIS (arg_ids)) != PHIT_NONE) {
         /* special ssa phi target - no renaming needed */
         AVIS_SSASTACK_TOP (IDS_AVIS (arg_ids)) = IDS_AVIS (arg_ids);
-        DBUG_PRINT ("SSA", ("phi target, no renaming: %s (%p)",
+        DBUG_PRINT ("SSA", ("phi target, no renaming: %s (" F_PTR ")",
                             VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (IDS_AVIS (arg_ids))),
                             IDS_AVIS (arg_ids)));
 
@@ -1056,7 +1058,7 @@ SSAleftids (ids *arg_ids, node *arg_info)
         AVIS_SSASTACK_TOP (IDS_AVIS (arg_ids)) = IDS_AVIS (arg_ids);
         /* SSACNT_COUNT(AVIS_SSACOUNT(IDS_AVIS(arg_ids))) = 0; */
         AVIS_SSADEFINED (IDS_AVIS (arg_ids)) = TRUE;
-        DBUG_PRINT ("SSA", ("first definition, no renaming: %s (%p)",
+        DBUG_PRINT ("SSA", ("first definition, no renaming: %s (" F_PTR ")",
                             VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (IDS_AVIS (arg_ids))),
                             IDS_AVIS (arg_ids)));
         AVIS_SSAASSIGN (IDS_AVIS (arg_ids)) = INFO_SSA_ASSIGN (arg_info);
@@ -1066,7 +1068,7 @@ SSAleftids (ids *arg_ids, node *arg_info)
         new_vardec = SSANewVardec (AVIS_VARDECORARG (IDS_AVIS (arg_ids)));
         BLOCK_VARDEC (INFO_SSA_BLOCK (arg_info))
           = AppendVardec (BLOCK_VARDEC (INFO_SSA_BLOCK (arg_info)), new_vardec);
-        DBUG_PRINT ("SSA", ("re-definition, renaming: %s (%p) -> %s",
+        DBUG_PRINT ("SSA", ("re-definition, renaming: %s (" F_PTR ") -> %s",
                             VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (IDS_AVIS (arg_ids))),
                             IDS_AVIS (arg_ids), VARDEC_NAME (new_vardec)));
 

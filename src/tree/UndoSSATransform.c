@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2001/04/19 08:03:27  dkr
+ * macro F_PTR used as format string for pointers
+ *
  * Revision 1.12  2001/04/18 13:00:29  nmw
  * debug output for OPT traversal added
  *
@@ -237,8 +240,8 @@ USSAvardec (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("USSAvardec");
     DBUG_PRINT ("USSA",
-                ("name %s: STATUS %s, ATTRIB %s, AVIS %p\n", VARDEC_NAME (arg_node),
-                 mdb_statustype[VARDEC_STATUS (arg_node)],
+                ("name %s: STATUS %s, ATTRIB %s, AVIS " F_PTR "\n",
+                 VARDEC_NAME (arg_node), mdb_statustype[VARDEC_STATUS (arg_node)],
                  mdb_statustype[VARDEC_ATTRIB (arg_node)], VARDEC_AVIS (arg_node)));
 
     /* 1. SSAUNDOFLAG */
@@ -748,7 +751,7 @@ USSAids (ids *arg_ids, node *arg_info)
     DBUG_ENTER ("USSAids");
 
     if (AVIS_SUBSTUSSA (IDS_AVIS (arg_ids)) != NULL) {
-        DBUG_PRINT ("USSA", ("rename ids %s(%p) in %s(%p)",
+        DBUG_PRINT ("USSA", ("rename ids %s(" F_PTR ") in %s(" F_PTR ")",
                              VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (IDS_AVIS (arg_ids))),
                              IDS_AVIS (arg_ids),
                              VARDEC_OR_ARG_NAME (

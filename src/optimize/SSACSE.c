@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2001/04/19 08:03:33  dkr
+ * macro F_PTR used as format string for pointers
+ *
  * Revision 1.11  2001/04/18 12:55:42  nmw
  * debug output for OPT traversal added
  *
@@ -95,7 +98,7 @@ AddCSEinfo (node *cseinfo, node *let)
     DBUG_ASSERT ((cseinfo != NULL), "cseinfo layer stack is NULL");
     DBUG_ASSERT ((let != NULL), "add NULL let to cseinfo layer stack");
 
-    DBUG_PRINT ("SSACSE", ("add let node %p to cse layer %p", let, cseinfo));
+    DBUG_PRINT ("SSACSE", ("add let node " F_PTR " to cse layer " F_PTR, let, cseinfo));
 
     if (CSEINFO_LET (cseinfo) == NULL) {
         /* add letnode top existing empty cseinfo node */
@@ -127,7 +130,7 @@ CreateNewCSElayer (node *cseinfo)
 
     cseinfo = MakeCSEinfo (cseinfo, NULL, NULL);
 
-    DBUG_PRINT ("SSACSE", ("create new cse layer %p", cseinfo));
+    DBUG_PRINT ("SSACSE", ("create new cse layer " F_PTR, cseinfo));
 
     /* set selfreference to mark new starting layer */
     CSEINFO_LAYER (cseinfo) = cseinfo;
@@ -164,7 +167,7 @@ RemoveTopCSElayer (node *cseinfo)
         } else {
             tmp = CSEINFO_NEXT (tmp);
         }
-        DBUG_PRINT ("SSACSE", ("removing csenode %p", freetmp));
+        DBUG_PRINT ("SSACSE", ("removing csenode " F_PTR, freetmp));
         FreeNode (freetmp);
     }
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2001/04/19 08:01:38  dkr
+ * macro F_PTR used as format string for pointers
+ *
  * Revision 3.7  2001/03/22 21:07:51  dkr
  * no changes done
  *
@@ -786,7 +789,7 @@ PrintMrdMask (FILE *handle, long *mrdmask, int varno)
                     }
                     break;
                 }
-                fprintf (handle, "(%d, %s(0x%p))", i, typestr, nodeptr);
+                fprintf (handle, "(%d, %s(" F_PTR "))", i, typestr, nodeptr);
             }
         }
         if (empty) {
