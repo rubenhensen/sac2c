@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.9  1999/07/08 14:59:12  sbs
+ * Array2BoolVec added
+ *
  * Revision 2.8  1999/07/07 05:59:33  sbs
  * Added function MakeVinfoDollar
  *
@@ -1107,6 +1110,40 @@ IntVec2Array (int length, int *intvec)
         aelems = MakeExprs (MakeNum (intvec[i]), aelems);
 
     DBUG_RETURN (aelems);
+}
+
+/***
+ ***  Array2BoolVec
+ ***/
+
+int *
+Array2BoolVec (node *aelems, int *length)
+{
+    int *intvec, i = 0, j;
+    node *tmp = aelems;
+
+    DBUG_ENTER ("Array2IntVec");
+
+    while (aelems != NULL) {
+        DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (aelems)) == N_bool),
+                     "constant bool array exspected !");
+        aelems = EXPRS_NEXT (aelems);
+        i++;
+    }
+    /*
+     *  if the length of the vector is not of interrest length may be NULL
+     */
+    if (length != NULL)
+        *length = i;
+
+    intvec = Malloc (i * sizeof (int));
+
+    for (j = 0; j < i; j++) {
+        intvec[j] = BOOL_VAL (EXPRS_EXPR (tmp));
+        tmp = EXPRS_NEXT (tmp);
+    }
+
+    DBUG_RETURN (intvec);
 }
 
 /***

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.9  1999/07/08 14:59:12  sbs
+ * Array2BoolVec added
+ *
  * Revision 2.8  1999/07/07 05:59:33  sbs
  * Added function MakeVinfoDollar
  *
@@ -1429,6 +1432,7 @@ extern node *IntVec2Array (int length, int *intvec);
  *   Returns an N_exprs node containing the elements of intvec. */
 
 extern int *Array2IntVec (node *aelems, int *length);
+extern int *Array2BoolVec (node *aelems, int *length);
 extern char *Array2CharVec (node *aelems, int *length);
 extern float *Array2FloatVec (node *aelems, int *length);
 extern double *Array2DblVec (node *aelems, int *length);
