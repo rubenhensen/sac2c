@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  2002/10/02 09:39:37  sbs
+ * in commission for sah; (don't blame me 8-))
+ *
  * Revision 1.13  2002/09/11 23:19:42  dkr
  * prf_node_info.mac modified
  *
@@ -787,9 +790,9 @@ BuildWithLoop (node *shape, node *iv, node *array, node *index, node *block)
 }
 
 idtable *
-BuildIdTable (node *ids)
+BuildIdTable (node *ids, idtable *appendto)
 {
-    idtable *result = NULL;
+    idtable *result = appendto;
 
     DBUG_ENTER ("BuildIdTable");
 
@@ -816,11 +819,11 @@ BuildIdTable (node *ids)
 }
 
 void
-FreeIdTable (idtable *table)
+FreeIdTable (idtable *table, idtable *until)
 {
     DBUG_ENTER ("FreeIdTable");
 
-    while (table != NULL) {
+    while (table != until) {
         idtable *next = table->next;
         Free (table->id);
         Free (table);
@@ -897,6 +900,39 @@ BuildWLShape (idtable *table)
     }
 
     result = MakeArray (result);
+
+    DBUG_RETURN (result);
+}
+
+ids *
+Exprs2Ids (node *exprs)
+{
+    ids *result = NULL;
+    ids *handle = NULL;
+
+    DBUG_ENTER ("Exprs2Ids");
+
+    while (exprs != NULL) {
+        ids *newid = NULL;
+
+        if (NODE_TYPE (EXPRS_EXPR (exprs)) == N_id)
+            newid = DupId_Ids (EXPRS_EXPR (exprs));
+        else {
+            /* create dummy id in order to go on until end of phase */
+            ERROR (linenum, ("found non-id expression in index vector"));
+            newid = MakeIds (StringCopy ("unknown_id"), NULL, ST_regular);
+        }
+
+        if (handle == NULL) {
+            result = newid;
+            handle = newid;
+        } else {
+            IDS_NEXT (handle) = newid;
+            handle = newid;
+        }
+
+        exprs = EXPRS_NEXT (exprs);
+    }
 
     DBUG_RETURN (result);
 }
@@ -1282,15 +1318,29 @@ HDsetwl (node *arg_node, node *arg_info)
         node *shape = NULL;
 
         INFO_HD_TRAVSTATE (arg_info) = HD_scan;
-        INFO_HD_IDTABLE (arg_info) = BuildIdTable (SETWL_IDS (arg_node));
+        INFO_HD_IDTABLE (arg_info)
+          = BuildIdTable (SETWL_IDS (arg_node), INFO_HD_IDTABLE (arg_info));
 
         TravSons (arg_node, arg_info);
 
         shape = BuildWLShape (INFO_HD_IDTABLE (arg_info));
 
-        result = NULL;
+        result
+          = MakeNWith (MakeNPart (MakeNWithid (NULL, Exprs2Ids (SETWL_IDS (arg_node))),
+                                  MakeNGenerator (MakeDot (1), MakeDot (1), F_le, F_le,
+                                                  NULL, NULL),
+                                  NULL),
+                       MakeNCode (MAKE_EMPTY_BLOCK (), SETWL_EXPR (arg_node)),
+                       MakeNWithOp (WO_genarray, shape));
 
-        FreeIdTable (INFO_HD_IDTABLE (arg_info));
+        /* free anything except SETWL_EXPR */
+        FreeTree (SETWL_IDS (arg_node));
+        Free (arg_node);
+
+        NCODE_USED (NWITH_CODE (result))++;
+        NPART_CODE (NWITH_PART (result)) = NWITH_CODE (result);
+
+        FreeIdTable (INFO_HD_IDTABLE (arg_info), oldtable);
         INFO_HD_IDTABLE (arg_info) = oldtable;
         INFO_HD_TRAVSTATE (arg_info) = oldstate;
     }
