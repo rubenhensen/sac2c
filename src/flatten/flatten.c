@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.44  2005/01/07 17:32:55  cg
+ * Converted compile time output from Error.h to ctinfo.c
+ *
  * Revision 3.43  2004/12/08 17:58:25  ktr
  * removed ARRAY_TYPE/ARRAY_NTYPE
  *
@@ -178,8 +181,9 @@ FreeInfo (info *info)
         tos->w_level = n;                                                                \
         tos++;                                                                           \
         DBUG_EXECUTE ("RENAME", DbugPrintStack (););                                     \
-    } else                                                                               \
-        ERROR (1, (" stack overflow (local)"))
+    } else {                                                                             \
+        CTIsyserror ("stack overflow (local)");                                          \
+    }
 
 #define PUSH_ENTRY(ptr) PUSH (ptr.id_old, ptr.id_new, ptr.w_level)
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.20  2005/01/07 17:32:55  cg
+ * Converted compile time output from Error.h to ctinfo.c
+ *
  * Revision 1.19  2004/12/14 16:38:15  sbs
  * INSVDspids now traverses the NEXT son as well (iff it exists)
  *
@@ -106,7 +109,7 @@
 #include "traverse.h"
 #include "globals.h"
 #include "free.h"
-#include "Error.h"
+#include "ctinfo.h"
 #include "dbug.h"
 #include "DupTree.h"
 
@@ -347,8 +350,9 @@ INSVDspid (node *arg_node, info *arg_info)
         }
 
         if (vardec == NULL) {
-            ERROR (global.linenum, ("Vardec for Identifier with name:%s is not available",
-                                    SPID_NAME (arg_node)));
+            CTIerror (global.linenum,
+                      "Vardec for Identifier with name '%s` is not available",
+                      SPID_NAME (arg_node));
         } else {
             /*
              * now we can build a real id and remove the spid node
@@ -365,8 +369,8 @@ INSVDspid (node *arg_node, info *arg_info)
                                       INFO_INSVD_OBJDEFS (arg_info));
 
         if (vardec == NULL) {
-            ERROR (global.linenum, ("No definition for global object %s:%s found",
-                                    SPID_MOD (arg_node), SPID_NAME (arg_node)));
+            CTIerror (global.linenum, "No definition for global object %s:%s found",
+                      SPID_MOD (arg_node), SPID_NAME (arg_node));
         } else {
             arg_node = FREEdoFreeNode (arg_node);
             arg_node = TBmakeGlobobj (vardec);
@@ -582,6 +586,7 @@ INSVDdoInsertVardec (node *syntax_tree)
 
     info = FreeInfo (info);
 
-    ABORT_ON_ERROR;
+    CTIabortOnError ();
+
     DBUG_RETURN (syntax_tree);
 }

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.27  2005/01/07 17:32:55  cg
+ * Converted compile time output from Error.h to ctinfo.c
+ *
  * Revision 1.26  2004/12/12 07:55:02  ktr
  * Corrected node usage.
  *
@@ -1035,8 +1038,8 @@ SSATid (node *arg_node, info *arg_info)
              * there is NO valid definition. Hence AVIS_SSASTACK_TOP is NULL.
              */
             if (INFO_SSA_ALLOW_GOS (arg_info) == FALSE) {
-                ERROR (global.linenum,
-                       ("var %s used without definition", ID_NAME (arg_node)));
+                CTIerror (global.linenum, "Variable %s used without definition",
+                          ID_NAME (arg_node));
             }
         } else {
             ID_AVIS (arg_node) = new_avis;
@@ -1679,8 +1682,8 @@ TreatIdsAsRhs (node *arg_ids, info *arg_info)
          * there is NO valid definition. Hence AVIS_SSASTACK_TOP is NULL.
          */
         if (INFO_SSA_ALLOW_GOS (arg_info) == FALSE) {
-            ERROR (global.linenum,
-                   ("var %s used without definition", IDS_NAME (arg_ids)));
+            CTIerror (global.linenum, "Variable %s used without definition",
+                      IDS_NAME (arg_ids));
         }
     } else {
         IDS_AVIS (arg_ids) = new_avis;
