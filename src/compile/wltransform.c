@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.80  2003/11/10 20:50:28  dkrHH
+ * some error messages modified
+ *
  * Revision 3.79  2003/06/23 15:11:36  dkr
  * comment modified
  *
@@ -2052,6 +2055,10 @@ IndexHeadStride (node *stride)
 
     bound1 = WLSTRIDE_BOUND1 (stride);
     bound2 = WLSTRIDE_BOUND2 (stride);
+    /*
+     * empty strides should have been sorted out by EmptyParts2StridesOrExpr()
+     * already!
+     */
     DBUG_ASSERT ((bound1 < bound2),
                  "given stride is empty (lower bound >= upper bound)!");
 
@@ -5228,8 +5235,9 @@ NewStepGrids (node *grids, int step, int new_step, int offset)
     DBUG_ASSERT ((new_step % step == 0), "wrong new step");
 
     if (step == 1) {
-        DBUG_ASSERT ((WLGRID_BOUND1 (grids) == 0), "grid has wrong lower bound");
-        DBUG_ASSERT ((WLGRID_NEXT (grids) == NULL), "grid has wrong bounds");
+        DBUG_ASSERT ((WLGRID_BOUND1 (grids) == 0),
+                     "step==1: lower bound of grid should equal 0!");
+        DBUG_ASSERT ((WLGRID_NEXT (grids) == NULL), "step==1: multiple grids found!");
         WLGRID_BOUND2 (grids) = new_step;
     } else {
         div = new_step / step;
@@ -5362,7 +5370,7 @@ MergeWL (node *nodes)
 
                 DBUG_ASSERT ((WLNODE_BOUND2 (node1)
                               == WLNODE_BOUND2 (WLNODE_NEXT (node1))),
-                             "wrong bounds found");
+                             "overlapping nodes with different upper bounds found");
                 DBUG_ASSERT ((WLNODE_NEXTDIM (node1) != NULL), "dim not found");
                 DBUG_ASSERT ((WLNODE_NEXTDIM (WLNODE_NEXT (node1)) != NULL),
                              "dim not found");
@@ -6076,7 +6084,7 @@ DoNormalize (node *nodes, int *width)
             /*
              * adjust upper bound
              */
-            DBUG_ASSERT ((WLNODE_BOUND1 (node) < curr_width), "wrong bounds found");
+            DBUG_ASSERT ((WLNODE_BOUND1 (node) < curr_width), "lower bound out of range");
             WLNODE_BOUND2 (node) = MIN (WLNODE_BOUND2 (node), curr_width);
 
             /*
