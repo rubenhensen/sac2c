@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2000/01/24 18:24:21  jhs
+ * Added some infrastructure ...
+ *
  * Revision 1.3  2000/01/21 14:28:09  jhs
  * Added MUTHmodul and MUTHfundef.
  *
@@ -35,6 +38,8 @@
 #include "free.h"
 #include "Error.h"
 
+#include "schedule_init.c"
+
 /******************************************************************************
  *
  * function:
@@ -49,15 +54,20 @@
 node *
 BuildMultiThread (node *syntax_tree)
 {
+    funptr *old_tab;
+
     node *arg_info;
 
     DBUG_ENTER ("BuildMultiThread");
 
     arg_info = MakeInfo ();
 
+    old_tab = act_tab;
     act_tab = muth_tab;
 
     syntax_tree = Trav (syntax_tree, arg_info);
+
+    act_tab = old_tab;
 
     FREE (arg_info);
 
@@ -113,7 +123,19 @@ MUTHfundef (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("MUTHfundef");
 
-    NOTE (("MUTHfundef not implemented yet"));
+    NOTE (("MUTHfundef not completly implemented yet"));
+
+    NOTE (("%s", FUNDEF_NAME (arg_node)));
+
+    if ((FUNDEF_BODY (arg_node) != NULL) && (FUNDEF_STATUS (arg_node) != ST_foldfun)) {
+
+        /* ST_spmdfun filtern ??? */
+        arg_node = ScheduleInit (arg_node, arg_info);
+    }
+
+    if (FUNDEF_NEXT (arg_node) != NULL) {
+        FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
