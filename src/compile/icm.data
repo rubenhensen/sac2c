@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.39  1998/05/19 15:43:08  dkr
+ * ICMs for fold changed
+ *
  * Revision 1.38  1998/05/16 16:38:07  dkr
  * WL_END is now a h-icm
  *
@@ -515,24 +518,15 @@ ICM_DEF( WL_FOLD_BEGIN, TRACE_UDF)
 ICM_END( WL_FOLD_BEGIN, (target, idx_vec, dims, args))
 #endif
 
-#if defined(WL_FOLDVAR_BEGIN) || defined(ICM_ALL)
-ICM_DEF( WL_FOLDVAR_BEGIN, TRACE_UDF)
-  ICM_STR(target)
-  ICM_STR(idx_vec)
-  ICM_INT(dims)
-  ICM_VAR( dims, args)
-ICM_END( WL_FOLDVAR_BEGIN, (target, idx_vec, dims, args))
-#endif
-
 #if defined(WL_ASSIGN) || defined(ICM_ALL)
 ICM_DEF( WL_ASSIGN, TRACE_UDF)
   ICM_STR(target)
   ICM_STR(idx_vec)
   ICM_INT(dims)
   ICM_VAR(dims, idx_scalars)
-  ICM_INT(dim_expr)
+  ICM_INT(dims_expr)
   ICM_STR(expr)
-ICM_END( WL_ASSIGN, (target, idx_vec, dims, idx_scalars, dim_expr, expr))
+ICM_END( WL_ASSIGN, (target, idx_vec, dims, idx_scalars, dims_expr, expr))
 #endif
 
 #if defined(WL_ASSIGN_INIT) || defined(ICM_ALL)
@@ -541,9 +535,9 @@ ICM_DEF( WL_ASSIGN_INIT, TRACE_UDF)
   ICM_STR(idx_vec)
   ICM_INT(dims)
   ICM_VAR(dims, idx_scalars)
-  ICM_INT(dim_templ)
+  ICM_INT(dims_templ)
   ICM_STR(templ)
-ICM_END( WL_ASSIGN_INIT, (target, idx_vec, dims, idx_scalars, dim_templ, templ))
+ICM_END( WL_ASSIGN_INIT, (target, idx_vec, dims, idx_scalars, dims_templ, templ))
 #endif
 
 #if defined(WL_ASSIGN_COPY) || defined(ICM_ALL)
@@ -553,20 +547,20 @@ ICM_DEF( WL_ASSIGN_COPY, TRACE_UDF)
   ICM_STR(idx_vec)
   ICM_INT(dims)
   ICM_VAR(dims, idx_scalars)
-  ICM_INT(dim_templ)
+  ICM_INT(dims_templ)
   ICM_STR(templ)
-ICM_END( WL_ASSIGN_COPY, (source, target, idx_vec, dims, idx_scalars, dim_templ, templ))
+ICM_END( WL_ASSIGN_COPY, (source, target, idx_vec, dims, idx_scalars, dims_templ, templ))
 #endif
 
-#if defined(WL_FOLD) || defined(ICM_ALL)
-ICM_DEF( WL_FOLD, TRACE_UDF)
-  ICM_STR(target)
+#if defined(WL_FOLD_NOOP) || defined(ICM_ALL)
+ICM_DEF( WL_FOLD_NOOP, TRACE_UDF)
+  ICM_INT(dim)
   ICM_STR(idx_vec)
   ICM_INT(dims)
   ICM_VAR(dims, idx_scalars)
-  ICM_INT(dim_expr)
-  ICM_STR(expr)
-ICM_END( WL_FOLD, (target, idx_vec, dims, idx_scalars, dim_expr, expr))
+  ICM_INT(cnt_bounds)
+  ICM_VAR(cnt_bounds, bounds)
+ICM_END( WL_FOLD_NOOP, (dim, idx_vec, dims, idx_scalars, cnt_bounds, bounds))
 #endif
 
 
