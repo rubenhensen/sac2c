@@ -1,6 +1,7 @@
 Error.c
 Error.h
 Makefile
+free.c
 main.c
 my_debug.c
 my_debug.h
@@ -8,6 +9,7 @@ node_info.mac
 prf_node_info.mac
 traverse.c
 traverse.h
+tree.c
 tree.h
 usage.c
 usage.h
