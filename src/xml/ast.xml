@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.65  2004/11/25 11:18:53  ktr
+  Added MarkMemVals traversal, AVIS_ISDEAD
+
   Revision 1.64  2004/11/25 11:05:02  sbs
   *** empty log message ***
 
@@ -1262,6 +1265,28 @@
         <traverror>
         </traverror>
       </traversal>
+    </phase>
+    <phase id="precompile" name="Preparing C code generation" >
+      <traversal id="MMV" name="MarkMemVals" default="sons" include="markmemvals.h" >
+        <travuser>
+          <node name="Code" />
+          <node name="Fold" />
+          <node name="Fundef" />
+          <node name="Genarray" />
+          <node name="Id" />
+          <node name="Let" />
+          <node name="Modarray" />
+          <node name="Prf" />
+          <node name="Spmd" />
+          <node name="Vardec" />
+          <node name="With" />
+          <node name="With2" />
+          <node name="Wlseg" />
+          <node name="Wlsegvar" />
+        </travuser>
+      </traversal>
+    </phase>
+    <phase id="compile" name="Generating C code" >
     </phase>
    </phases>
   <nodesets>
@@ -3323,6 +3348,7 @@
         <flag name="SSALPINV" />
         <flag name="IsAlias" default="TRUE" />
 	<flag name="IsUnique" />
+        <flag name="IsDead" />
       </flags>
     </node>
 <!--
