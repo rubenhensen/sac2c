@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.53  2004/11/24 17:29:33  ktr
+  added some header files.
+
   Revision 1.52  2004/11/24 17:24:09  sah
   fixed some .h files
 
@@ -598,7 +601,7 @@
           <node name="With" />
         </travuser>
       </traversal>
-      <traversal id="WLSC" name="With-Loop Scalarization Check traversal" defaults="sons">
+      <traversal id="WLSC" name="With-Loop Scalarization Check traversal" defaults="sons" include="wls.h">
         <travuser>
           <node name="Block" />
           <node name="Code" />
@@ -611,7 +614,7 @@
           <node name="Fold" />
         </travuser>
       </traversal>
-      <traversal id="WLSW" name="With-Loop Scalarization Withloopification traversal" defaults="sons">
+      <traversal id="WLSW" name="With-Loop Scalarization Withloopification traversal" defaults="sons" include="wls.h">
         <travuser>
           <node name="Code" />
           <node name="Id" />
@@ -621,7 +624,7 @@
           <node name="Withid" />
         </travuser>
       </traversal>
-      <traversal id="WLSB" name="With-Loop Scalarization Build traversal" defaults="sons">
+      <traversal id="WLSB" name="With-Loop Scalarization Build traversal" defaults="sons" include="wls.h">
         <travuser>
           <node name="Code" />
           <node name="Generator" />
@@ -671,7 +674,7 @@
         <traverror>
         </traverror>
       </traversal>
-      <traversal id="EMLRO" name="Loop reuse optimization" default="sons">
+      <traversal id="EMLRO" name="Loop reuse optimization" default="sons" include="loopreuseopt.h">
         <travuser>
           <node name="Ap" />
           <node name="Arg" />
