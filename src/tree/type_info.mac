@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2001/04/04 09:59:06  nmw
+ * missing convert functions for basetype char added
+ *
  * Revision 3.4  2001/03/22 14:29:13  nmw
  * COCv2Float, COCv2Bool, COCv2Char added
  *
@@ -174,7 +177,7 @@ TYP_IF (T_unknown, "unknown", "_unknown_", "", COCv2ScalarDummy, COCv2CvDummy,
   TYP_IF (T_str, "string", "string", "st", COCv2ScalarDummy, COCv2CvDummy, COCv2StrDummy,
           sizeof (char *), COZipCvDummy, unused, unused, unused),
 
-  TYP_IF (T_char, "char", "char", "c", COCv2Char, COCv2CvDummy, COCv2StrDummy,
+  TYP_IF (T_char, "char", "char", "c", COCv2Char, COCv2CvChar, COCv2StrChar,
           sizeof (char), COZipCvDummy, unused, unused, unused),
 
   TYP_IF (T_hidden, "hidden", "_hidden_", "h", COCv2ScalarDummy, COCv2CvDummy,
