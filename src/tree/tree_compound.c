@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.80  2004/07/14 14:21:37  sah
+ * moved NodeBehindCast from LoopInvariantRemoval here
+ *
  * Revision 3.79  2004/03/05 19:14:27  mwe
  * support for new node N_funcond added
  *
@@ -3148,6 +3151,31 @@ CountExprs (node *exprs)
 /***
  ***  N_cast :
  ***/
+
+/*
+ *
+ *  functionname  : NodeBehindCast
+ *  arguments     : 1) expression-node of a let-node
+ *                  R) node behind various cast's
+ *  description   : determine what node is hidden behind the cast-nodes
+ *  global vars   : --
+ *  internal funs : --
+ *  external funs : --
+ *  macros        : DBUG..
+ *
+ *  remarks       :
+ *
+ */
+
+node *
+NodeBehindCast (node *arg_node)
+{
+    DBUG_ENTER ("NodeBehindCast");
+    while (N_cast == NODE_TYPE (arg_node)) {
+        arg_node = arg_node->node[0];
+    }
+    DBUG_RETURN (arg_node);
+}
 
 /*--------------------------------------------------------------------------*/
 

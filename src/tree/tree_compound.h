@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.81  2004/07/14 14:21:37  sah
+ * moved NodeBehindCast from LoopInvariantRemoval here
+ *
  * Revision 3.80  2004/02/06 14:19:33  mwe
  * isPhiFun added, PHITARGET's removed
  *
@@ -1491,6 +1494,23 @@ extern int CountExprs (node *exprs);
 /***
  ***  N_cast :
  ***/
+
+/*
+ *
+ *  functionname  : NodeBehindCast
+ *  arguments     : 1) expression-node of a let-node
+ *                  R) node behind various cast's
+ *  description   : determine what node is hidden behind the cast-nodes
+ *  global vars   : --
+ *  internal funs : --
+ *  external funs : --
+ *  macros        : DBUG..
+ *
+ *  remarks       :
+ *
+ */
+
+extern node *NodeBehindCast (node *arg_node);
 
 /*
  *  compound access macros
