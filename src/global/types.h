@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.51  2004/11/22 16:31:12  ktr
+ * typedefss moved from modulemanager SacDevCamp04
+ *
  * Revision 3.50  2004/11/22 16:26:45  sbs
  * imported from pad_info.h
  *
@@ -995,5 +998,12 @@ typedef struct PAD_INFO_T {
     node *fundef_unpad;
     struct PAD_INFO_T *next;
 } pad_info_t;
+
+/*
+ * moved from modulemanager.h
+ */
+
+typedef struct MODULE_T module_t;
+typedef node *(*serfun_p) ();
 
 #endif /* _SAC_TYPES_H_ */
