@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.55  2001/03/21 14:08:06  nmw
+ * INFO_SSACF_ macros added
+ *
  * Revision 3.54  2001/03/21 13:51:39  dkr
  * forced check-in
  *
@@ -2409,14 +2412,21 @@ extern node *MakeAvis (node *vardecOrArg);
  ***    node*      ASSIGN            (actual assign node)
  ***
  ***  when used in SSACSE.c
- ***    int        DEPTH             (recursion depth of special functions)
- ***    bool       REMASSIGN         (falg, if assignment can be removed)
+ ***    int        DEPTH             (stacked depth of special functions)
+ ***    bool       REMASSIGN         (flag, if assignment can be removed)
  ***    node*      FUNDEF            (current working fundef)
  ***    node*      CSE               (cseinfo chain of available expressions)
  ***
  ***  when used in compare_tree.c
  ***    cmptree_t  EQFLAG            (current equal flag for whole tree)
  ***    node*      TREE              (tree to compare with)
+ ***
+ ***  when used in SSAConstantFolding.c
+ ***    int        DEPTH             (stacked depth of special functions)
+ ***    bool       REMASSIGN         (flag, if assignment can be removed)
+ ***    node*      FUNDEF            (current working fundef)
+ ***    bool       INSCONST          (flag, if const value should be inserted
+ ***                                  for a constant identifier)
  ***
  ***  remarks:
  ***
@@ -2813,7 +2823,6 @@ extern node *MakeInfo ();
 #define INFO_USSA_ARGS(n) (n->node[0])
 #define INFO_USSA_TOPBLOCK(n) (n->node[1])
 #define INFO_USSA_FOLDTARGET(n) (n->node[2])
-/* ##nmw## */
 #define INFO_USSA_CONSTASSIGNS(n) (n->node[3])
 #define INFO_USSA_OPASSIGN(n) (n->int_data)
 
@@ -2840,6 +2849,12 @@ extern node *MakeInfo ();
 
 /* when used in annotate_fun_calls.c */
 #define INFO_PF_FUNDEF(n) (n->node[0])
+
+/* when used in SSAConstantFolding.c */
+#define INFO_SSACF_DEPTH(n) (n->int_data)
+#define INFO_SSACF_REMASSIGN(n) ((bool)(n->flag))
+#define INFO_SSACF_FUNDEF(n) (n->node[0])
+#define INFO_SSACF_INSCONST(n) ((bool)(n->varno))
 
 /*--------------------------------------------------------------------------*/
 
