@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.31  1998/04/02 18:17:38  dkr
+ * ST_WLfun renamed to ST_concfun
+ *
  * Revision 1.30  1998/04/02 16:06:11  dkr
  * added new compiler phase PH_concregs
  *
@@ -232,7 +235,7 @@ typedef enum {
     ST_external,           /* external module/class                  */
     ST_system,             /* external system library                */
     ST_own,                /* own declaration of module impl.        */
-    ST_WLfun               /* function with parallelized with-loop   */
+    ST_concfun             /* function generated from a concurrent region */
 } statustype;
 
 typedef enum { VECT, IDX } useflag;
