@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2004/11/17 19:47:04  sah
+ * added visibility support
+ *
  * Revision 1.5  2004/10/25 11:58:47  sah
  * major code cleanup
  *
@@ -28,8 +31,6 @@
 #include "types.h"
 #include <string.h>
 
-typedef struct ST_SYMBOL_T STsymbol_t;
-
 struct ST_SYMBOLITERATOR_T {
     STsymbol_t *head;
     STsymbol_t *pos;
@@ -49,6 +50,7 @@ struct ST_ENTRYITERATOR_T {
 struct ST_SYMBOL_T {
     char *name;
     STentry_t *head;
+    STvisibility_t vis;
     STsymbol_t *next;
 };
 
@@ -109,7 +111,7 @@ STEntryEqual (STentry_t *one, STentry_t *two)
  * Functions for handling STsymbol_t
  */
 static STsymbol_t *
-STSymbolInit (const char *symbol)
+STSymbolInit (const char *symbol, STvisibility_t vis)
 {
     STsymbol_t *result;
 
@@ -118,6 +120,7 @@ STSymbolInit (const char *symbol)
     result = (STsymbol_t *)Malloc (sizeof (STsymbol_t));
 
     result->name = StringCopy (symbol);
+    result->vis = vis;
     result->head = NULL;
     result->next = NULL;
 
@@ -228,7 +231,8 @@ STDestroy (STtable_t *table)
 }
 
 static void
-STEntryInsert (const char *symbolname, STentry_t *entry, STtable_t *table)
+STEntryInsert (const char *symbolname, STvisibility_t vis, STentry_t *entry,
+               STtable_t *table)
 {
     STsymbol_t *symbol;
 
@@ -237,9 +241,11 @@ STEntryInsert (const char *symbolname, STentry_t *entry, STtable_t *table)
     symbol = STLookupSymbol (symbolname, table);
 
     if (symbol == NULL) {
-        symbol = STSymbolInit (symbolname);
+        symbol = STSymbolInit (symbolname, vis);
         STSymbolAdd (symbol, table);
     }
+
+    DBUG_ASSERT ((vis == symbol->vis), "found symbol with mixed visibility!");
 
     STEntryAdd (entry, symbol);
 
@@ -247,14 +253,15 @@ STEntryInsert (const char *symbolname, STentry_t *entry, STtable_t *table)
 }
 
 void
-STAdd (const char *symbol, const char *name, STentrytype_t type, STtable_t *table)
+STAdd (const char *symbol, STvisibility_t vis, const char *name, STentrytype_t type,
+       STtable_t *table)
 {
     STentry_t *entry;
 
     DBUG_ENTER ("STAdd");
 
     entry = STEntryInit (name, type);
-    STEntryInsert (symbol, entry, table);
+    STEntryInsert (symbol, vis, entry, table);
 
     DBUG_VOID_RETURN;
 }
@@ -299,6 +306,14 @@ STContains (const char *symbol, STtable_t *table)
     DBUG_RETURN (result);
 }
 
+STsymbol_t *
+STGet (const char *symbol, STtable_t *table)
+{
+    DBUG_ENTER ("STGet");
+
+    DBUG_RETURN (STLookupSymbol (symbol, table));
+}
+
 STentry_t *
 STGetFirstEntry (const char *symbol, STtable_t *table)
 {
@@ -341,17 +356,17 @@ STSymbolIteratorRelease (STsymboliterator_t *iterator)
     DBUG_RETURN (iterator);
 }
 
-const char *
+STsymbol_t *
 STSymbolIteratorNext (STsymboliterator_t *iterator)
 {
-    char *result;
+    STsymbol_t *result;
 
     DBUG_ENTER ("STSymbolIteratorNext");
 
     if (iterator->pos == NULL) {
         result = NULL;
     } else {
-        result = iterator->pos->name;
+        result = iterator->pos;
         iterator->pos = iterator->pos->next;
     }
 
@@ -453,6 +468,25 @@ STEntryIteratorHasMore (STentryiterator_t *iterator)
 }
 
 /*
+ * Functions to access STsymbol_t
+ */
+const char *
+STSymbolName (STsymbol_t *symbol)
+{
+    DBUG_ENTER ("STSymbolName");
+
+    DBUG_RETURN (symbol->name);
+}
+
+STvisibility_t
+STSymbolVisibility (STsymbol_t *symbol)
+{
+    DBUG_ENTER ("STSymbolVisibility");
+
+    DBUG_RETURN (symbol->vis);
+}
+
+/*
  * Functions to access STentry_t
  */
 
@@ -493,10 +527,26 @@ static void
 STSymbolPrint (STsymbol_t *symbol)
 {
     STentry_t *entry;
+    char *visname;
 
     DBUG_ENTER ("STSymbolPrint");
 
-    printf ("Symbol: %s\n", symbol->name);
+    switch (symbol->vis) {
+    case SVT_local:
+        visname = "local";
+        break;
+    case SVT_provided:
+        visname = "provided";
+        break;
+    case SVT_exported:
+        visname = "exported";
+        break;
+    default:
+        visname = "unkown";
+        break;
+    }
+
+    printf ("Symbol: %s [%s]\n", symbol->name, visname);
 
     entry = symbol->head;
 

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.23  2004/11/17 19:49:46  sah
+ * added visibility support
+ *
  * Revision 1.22  2004/11/14 15:24:47  sah
  * some cleanup
  *
@@ -201,12 +204,12 @@ GenerateSerFileHead (FILE *file)
 }
 
 static void
-GenerateSerSymbolTableAdd (const char *symbol, STentry_t *entry, FILE *file)
+GenerateSerSymbolTableAdd (STsymbol_t *symbol, STentry_t *entry, FILE *file)
 {
     DBUG_ENTER ("GenerateSerSymbolTableAdd");
 
-    fprintf (file, "STAdd( \"%s\", \"%s\", %d, result);\n", symbol, STEntryName (entry),
-             STEntryType (entry));
+    fprintf (file, "STAdd( \"%s\", %d, \"%s\", %d, result);\n", STSymbolName (symbol),
+             STSymbolVisibility (symbol), STEntryName (entry), STEntryType (entry));
 
     DBUG_VOID_RETURN;
 }
@@ -236,13 +239,13 @@ GenerateSerSymbolTableTail (node *module, FILE *file)
 }
 
 static void
-SerializeSymbolTableSymbol (const char *symbol, STtable_t *table, FILE *file)
+SerializeSymbolTableSymbol (STsymbol_t *symbol, STtable_t *table, FILE *file)
 {
     STentryiterator_t *iterator;
 
     DBUG_ENTER ("SerializeSymbolTableSymbol");
 
-    iterator = STEntryIteratorGet (symbol, table);
+    iterator = STEntryIteratorGet (STSymbolName (symbol), table);
 
     while (STEntryIteratorHasMore (iterator)) {
         GenerateSerSymbolTableAdd (symbol, STEntryIteratorNext (iterator), file);
@@ -470,11 +473,20 @@ GenerateSerFunTail (node *elem, STentrytype_t type, info *info)
 static void
 SerializeFundefBody (node *fundef, info *info)
 {
+    STvisibility_t vis;
     DBUG_ENTER ("SerializeFundefBody");
 
     INFO_SER_STACK (info) = SerializeBuildSerStack (FUNDEF_BODY (fundef));
 
-    STAdd (FUNDEF_NAME (fundef), GenerateSerFunName (SET_funbody, fundef),
+    if (GET_FLAG (FUNDEF, fundef, IS_EXPORTED)) {
+        vis = SVT_exported;
+    } else if (GET_FLAG (FUNDEF, fundef, IS_PROVIDED)) {
+        vis = SVT_provided;
+    } else {
+        vis = SVT_local;
+    }
+
+    STAdd (FUNDEF_NAME (fundef), vis, GenerateSerFunName (SET_funbody, fundef),
            (FUNDEF_STATUS (fundef) == ST_wrapperfun) ? SET_wrapperbody : SET_funbody,
            INFO_SER_TABLE (info));
 
@@ -496,13 +508,23 @@ SerializeFundefBody (node *fundef, info *info)
 static void
 SerializeFundefHead (node *fundef, info *info)
 {
+    STvisibility_t vis;
+
     DBUG_ENTER ("SerializeFundefHead");
 
     INFO_SER_STACK (info) = SerializeBuildSerStack (fundef);
 
+    if (GET_FLAG (FUNDEF, fundef, IS_EXPORTED)) {
+        vis = SVT_exported;
+    } else if (GET_FLAG (FUNDEF, fundef, IS_PROVIDED)) {
+        vis = SVT_provided;
+    } else {
+        vis = SVT_local;
+    }
+
     FUNDEF_SYMBOLNAME (fundef) = StringCopy (GenerateSerFunName (SET_funhead, fundef));
 
-    STAdd (FUNDEF_NAME (fundef), FUNDEF_SYMBOLNAME (fundef),
+    STAdd (FUNDEF_NAME (fundef), vis, FUNDEF_SYMBOLNAME (fundef),
            (FUNDEF_STATUS (fundef) == ST_wrapperfun) ? SET_wrapperhead : SET_funhead,
            INFO_SER_TABLE (info));
 
@@ -524,13 +546,23 @@ SerializeFundefHead (node *fundef, info *info)
 static void
 SerializeTypedef (node *tdef, info *info)
 {
+    STvisibility_t vis;
+
     DBUG_ENTER ("SerializeTypedef");
 
     INFO_SER_STACK (info) = SerializeBuildSerStack (tdef);
 
     TYPEDEF_SYMBOLNAME (tdef) = StringCopy (GenerateSerFunName (SET_typedef, tdef));
 
-    STAdd (TYPEDEF_NAME (tdef), TYPEDEF_SYMBOLNAME (tdef), SET_typedef,
+    if (GET_FLAG (TYPEDEF, tdef, IS_EXPORTED)) {
+        vis = SVT_exported;
+    } else if (GET_FLAG (TYPEDEF, tdef, IS_PROVIDED)) {
+        vis = SVT_provided;
+    } else {
+        vis = SVT_local;
+    }
+
+    STAdd (TYPEDEF_NAME (tdef), vis, TYPEDEF_SYMBOLNAME (tdef), SET_typedef,
            INFO_SER_TABLE (info));
 
     GenerateSerFunHead (tdef, SET_typedef, info);
@@ -551,13 +583,23 @@ SerializeTypedef (node *tdef, info *info)
 static void
 SerializeObjdef (node *objdef, info *info)
 {
+    STvisibility_t vis;
+
     DBUG_ENTER ("SerializeObjdef");
 
     INFO_SER_STACK (info) = SerializeBuildSerStack (objdef);
 
     TYPEDEF_SYMBOLNAME (objdef) = StringCopy (GenerateSerFunName (SET_objdef, objdef));
 
-    STAdd (TYPEDEF_NAME (objdef), TYPEDEF_SYMBOLNAME (objdef), SET_objdef,
+    if (GET_FLAG (OBJDEF, objdef, IS_EXPORTED)) {
+        vis = SVT_exported;
+    } else if (GET_FLAG (OBJDEF, objdef, IS_PROVIDED)) {
+        vis = SVT_provided;
+    } else {
+        vis = SVT_local;
+    }
+
+    STAdd (TYPEDEF_NAME (objdef), vis, TYPEDEF_SYMBOLNAME (objdef), SET_objdef,
            INFO_SER_TABLE (info));
 
     GenerateSerFunHead (objdef, SET_objdef, info);
