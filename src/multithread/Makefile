@@ -1,6 +1,9 @@
 #
 # 
 # $Log$
+# Revision 3.21  2004/08/17 09:09:51  skt
+# cell_growth.o added
+#
 # Revision 3.20  2004/08/13 18:02:34  skt
 # several mtmode 3 traversals removed
 #
@@ -85,7 +88,8 @@ INCS = -I../global -I../tree -I../../inc -I../optimize -I../typecheck -I../flatt
 
 
 all: multithread.o multithread_lib.o assignments_rearrange.o \
-    tag_executionmode.o propagate_executionmode.o create_cells.o create_dataflowgraph.o
+    tag_executionmode.o propagate_executionmode.o create_cells.o \
+    create_dataflowgraph.o cell_growth.o
 
  
 

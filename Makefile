@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.99  2004/08/17 09:09:51  skt
+# cell_growth.o added
+#
 # Revision 3.98  2004/08/13 18:02:34  skt
 # several mtmode 3 traversals removed
 #
@@ -287,7 +290,7 @@ CONCURRENT= src/concurrent/concurrent.o \
 MULTITHREAD= src/multithread/multithread.o src/multithread/multithread_lib.o \
              src/multithread/tag_executionmode.o src/multithread/propagate_executionmode.o \
              src/multithread/create_cells.o src/multithread/create_dataflowgraph.o \
-             src/multithread/assignments_rearrange.o
+             src/multithread/assignments_rearrange.o src/multithread/cell_growth.o
 
 
 COMPILE= src/compile/wltransform.o src/compile/wlpragma_funs.o \
