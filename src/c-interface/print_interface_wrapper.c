@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.3  2000/12/05 14:35:52  nmw
+ * handling of T_hidden fixed, macro calls adjusted
+ *
  * Revision 3.2  2000/11/29 16:25:04  nmw
  * detailed runtime error messages for missing
  * specializations added
@@ -155,11 +158,11 @@ PIWcwrapper (node *arg_node, node *arg_info)
      */
     fprintf (outfile, "/* refcount checks for arguments */\n");
     for (i = 1; i <= CWRAPPER_ARGCOUNT (arg_node); i++) {
-        fprintf (outfile, "SAC_IW_CHECKDEC_RC( in%d );\n", i);
+        fprintf (outfile, "SAC_IW_CHECKDEC_RC( in%d , %d );\n", i, T_hidden);
     }
     /* restore original refcount */
     for (i = 1; i <= CWRAPPER_ARGCOUNT (arg_node); i++) {
-        fprintf (outfile, "SAC_IW_INC_RC( in%d );\n", i);
+        fprintf (outfile, "SAC_IW_INC_RC( in%d , %d );\n", i, T_hidden);
     }
 
     /* print case switch for specialized functions */
@@ -347,7 +350,7 @@ PIWarg (node *arg_node, node *arg_info)
 
     case PIW_REFCOUNT_ARGS:
         /* create macro, dec-and-free SAC_arg */
-        if (TYPES_DIM (argtype) > 0) {
+        if ((TYPES_DIM (argtype) > 0) || (TYPES_BASETYPE (argtype) == T_hidden)) {
             /* refcounting only for array types */
             fprintf (outfile, "  SAC_DECLOCALRC( in%d );\n", INFO_PIW_COUNTER (arg_info));
         }
@@ -448,7 +451,7 @@ PIWtypes (types *arg_type, node *arg_info)
             }
 
             /* is there at least one more result?
-             * check, if there is a comma needef */
+             * check, if there is a comma needed */
             if ((TYPES_NEXT (arg_type) != NULL)
                 && (TYPES_STATUS (arg_type) != ST_crettype)) {
                 if (!((TYPES_STATUS (TYPES_NEXT (arg_type)) == ST_crettype)
