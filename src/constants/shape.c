@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2004/09/22 20:07:57  sah
+ * added SHSerializeShape
+ *
  * Revision 1.12  2003/06/13 09:28:23  ktr
  * Fixed a bug in SHTakeFromShape which caused a call of SHMakeShape with a
  * negative argument.
@@ -252,6 +255,24 @@ SHFreeShape (shape *shp)
     shp = Free (shp);
 
     DBUG_RETURN (shp);
+}
+
+void
+SHSerializeShape (FILE *file, shape *shp, char *vname)
+{
+    int cnt;
+
+    DBUG_ENTER ("SHSerializeShape");
+
+    fprintf (file, "%s = SHCreateShape( %d", vname, SHAPE_DIM (shp));
+
+    for (cnt = 0; cnt < SHAPE_DIM (shp); cnt++) {
+        fprintf (file, ", %d", SHAPE_EXT (shp, cnt));
+    }
+
+    fprintf (file, ");\n");
+
+    DBUG_VOID_RETURN;
 }
 
 /** <!--********************************************************************-->

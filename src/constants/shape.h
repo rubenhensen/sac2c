@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2004/09/22 20:07:57  sah
+ * added SHSerializeShape
+ *
  * Revision 1.7  2003/06/11 22:05:36  ktr
  * Added support for multidimensional arrays
  *
@@ -52,6 +55,7 @@ extern shape *SHCreateShape (int dim, ...);
 extern shape *SHCopyShape (shape *shp);
 extern void SHPrintShape (FILE *file, shape *shp);
 extern shape *SHFreeShape (shape *shp);
+extern void SHSerializeShape (FILE *file, shape *shp, char *vname);
 
 extern int SHGetDim (shape *shp);
 extern int SHGetExtent (shape *shp, int dim);
