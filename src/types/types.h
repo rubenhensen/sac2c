@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2004/11/23 21:50:57  cg
+ * Added genlib_flags_t
+ *
  * Revision 1.10  2004/11/23 21:12:44  cg
  * Removed genlib_t
  *
@@ -977,24 +980,29 @@ typedef struct OPTIMIZE_FLAGS_T {
  */
 
 typedef struct TRACE_FLAGS_T {
-#define TRACEflag(flag) unsigned int do##flag : 1;
+#define TRACEflag(flag) unsigned int flag : 1;
 #include "flags.mac"
 } trace_flags_t;
 
 typedef struct PROFILE_FLAGS_T {
-#define PROFILEflag(flag) unsigned int do##flag : 1;
+#define PROFILEflag(flag) unsigned int flag : 1;
 #include "flags.mac"
 } profile_flags_t;
 
 typedef struct CACHESIM_FLAGS_T {
-#define CSflag(flag) unsigned int do##flag : 1;
+#define CSflag(flag) unsigned int flag : 1;
 #include "flags.mac"
 } cachesim_flags_t;
 
 typedef struct RUNTIMECHECK_FLAGS_T {
-#define RTCflag(flag) unsigned int do##flag : 1;
+#define RTCflag(flag) unsigned int flag : 1;
 #include "flags.mac"
 } runtimecheck_flags_t;
+
+typedef struct GENLIB_FLAGS_T {
+#define GENLIBflag(flag) unsigned int flag : 1;
+#include "flags.mac"
+} genlib_flags_t;
 
 /*
  * Read in global variables from globals.mac
