@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.6  2004/11/25 20:33:30  jhb
+ * comcompile! SACDECCAMP 04
+ *
  * Revision 3.5  2003/04/14 15:24:05  sbs
  * typo corrected.
  *
@@ -170,7 +173,7 @@ CreateCacheSpec (int size, int line_size, int assoc, int el_size)
         cache = NULL;
     } else {
 
-        cache = Malloc (sizeof (cache_t));
+        cache = ILIBmalloc (sizeof (cache_t));
 
         cache->assoc = assoc;
         cache->size = size / el_size;
@@ -388,7 +391,7 @@ InitCacheUtil (cache_util_t **cache_util, pattern_t *pattern, array_type_t *arra
         rows++;
         pt_ptr = PIgetNextPattern (pt_ptr);
     }
-    (*cache_util) = (cache_util_t *)Malloc (rows * sizeof (cache_util_t));
+    (*cache_util) = (cache_util_t *)ILIBmalloc (rows * sizeof (cache_util_t));
 
     pt_ptr = pattern;
     for (i = 0; i < rows; i++) {
@@ -1200,7 +1203,7 @@ UpdatePaddingVectorForSpatialReuse (int rows, cache_util_t *cache_util, int dim,
          */
         SHPSEG_SHAPE (pv, current_paddim) += 1;
 
-        if (PIpaddingOverhead (dim, shape, pv) <= padding_overhead_limit) {
+        if (PIpaddingOverhead (dim, shape, pv) <= global.padding_overhead_limit) {
             res = pv;
             break;
         }
@@ -1269,7 +1272,7 @@ UpdatePaddingVectorForTemporalReuse (int rows, cache_util_t *cache_util, int dim
          */
         SHPSEG_SHAPE (pv, current_paddim) += 1;
 
-        if (PIpaddingOverhead (dim, shape, pv) <= padding_overhead_limit) {
+        if (PIpaddingOverhead (dim, shape, pv) <= global.padding_overhead_limit) {
             res = pv;
             break;
         }
@@ -1327,7 +1330,7 @@ EvaluatePadding (int *ret, int dim, cache_t *cache, int rows, cache_util_t *cach
         /*
          * Compute actual array shape including padding.
          */
-        actual_shape = MakeShpseg (NULL);
+        actual_shape = TBmakeShpseg (NULL);
         AddVect (dim, actual_shape, shape, pv);
 
         /*
@@ -1346,7 +1349,7 @@ EvaluatePadding (int *ret, int dim, cache_t *cache, int rows, cache_util_t *cach
         /*
          * Free local resources.
          */
-        FreeShpseg (actual_shape);
+        FREEfreeShpseg (actual_shape);
     }
 
     *ret = num_tr_conflicts;
@@ -1381,8 +1384,8 @@ ComputePaddingForSpatialReuse (int dim, cache_t *cache, int rows,
 
     DBUG_ENTER ("ComputePaddingForSpatialReuse");
 
-    actual_shape = MakeShpseg (NULL);
-    pv_opt = MakeShpseg (NULL);
+    actual_shape = TBmakeShpseg (NULL);
+    pv_opt = TBmakeShpseg (NULL);
     min_sr_conflicts = VERY_LARGE_NUMBER;
 
     do {
@@ -1455,7 +1458,7 @@ ComputePaddingForSpatialReuse (int dim, cache_t *cache, int rows,
                 num_sr_conflicts = min_sr_conflicts;
 
                 APprintDiag ("Padding overhead constraint of %d%% exhausted.\n",
-                             padding_overhead_limit);
+                             global.padding_overhead_limit);
                 APprintDiag ("Returning to padding vector ");
                 PIprintShpSeg (dim, pv);
                 APprintDiag (" .\n"
@@ -1478,8 +1481,8 @@ ComputePaddingForSpatialReuse (int dim, cache_t *cache, int rows,
     /*
      * Free local resources.
      */
-    FreeShpseg (actual_shape);
-    FreeShpseg (pv_opt);
+    FREEfreeShpseg (actual_shape);
+    FREEfreeShpseg (pv_opt);
 
     DBUG_RETURN (pv);
 }
@@ -1514,8 +1517,8 @@ ComputePaddingForTemporalReuse (int dim, cache_t *cache, int rows,
 
     DBUG_ENTER ("ComputePaddingForTemporalReuse");
 
-    actual_shape = MakeShpseg (NULL);
-    pv_opt = MakeShpseg (NULL);
+    actual_shape = TBmakeShpseg (NULL);
+    pv_opt = TBmakeShpseg (NULL);
     min_sr_conflicts = VERY_LARGE_NUMBER;
     min_tr_conflicts = VERY_LARGE_NUMBER;
 
@@ -1606,7 +1609,7 @@ ComputePaddingForTemporalReuse (int dim, cache_t *cache, int rows,
                         num_tr_conflicts = min_tr_conflicts;
 
                         APprintDiag ("Padding overhead constraint of %d%% exhausted.\n",
-                                     padding_overhead_limit);
+                                     global.padding_overhead_limit);
                         APprintDiag ("Returning to padding vector ");
                         PIprintShpSeg (dim, pv);
                         APprintDiag (" .\n"
@@ -1649,8 +1652,8 @@ ComputePaddingForTemporalReuse (int dim, cache_t *cache, int rows,
     /*
      * Free local resources.
      */
-    FreeShpseg (actual_shape);
-    FreeShpseg (pv_opt);
+    FREEfreeShpseg (actual_shape);
+    FREEfreeShpseg (pv_opt);
 
     DBUG_RETURN (pv);
 }
@@ -1687,8 +1690,8 @@ ComputePadding (cache_t *cache_L1, cache_t *cache_L2, cache_t *cache_L3, int dim
 
     rows = InitCacheUtil (&cache_util, pattern, array);
 
-    padding_keep = MakeShpseg (NULL);
-    padding_store = MakeShpseg (NULL);
+    padding_keep = TBmakeShpseg (NULL);
+    padding_store = TBmakeShpseg (NULL);
 
     if (cache_L1 != NULL) {
 
@@ -1858,9 +1861,9 @@ ComputePadding (cache_t *cache_L1, cache_t *cache_L2, cache_t *cache_L3, int dim
     /*
      * Free local resources.
      */
-    cache_util = Free (cache_util);
-    padding_keep = Free (padding_keep);
-    padding_store = Free (padding_store);
+    cache_util = ILIBfree (cache_util);
+    padding_keep = ILIBfree (padding_keep);
+    padding_store = ILIBfree (padding_store);
 
     DBUG_RETURN (padding);
 }
@@ -1910,8 +1913,8 @@ APinfer ()
     /*
      * Init padding vectors.
      */
-    padding = MakeShpseg (NULL);
-    initial_padding = MakeShpseg (NULL);
+    padding = TBmakeShpseg (NULL);
+    initial_padding = TBmakeShpseg (NULL);
 
     /* for every array type... */
     at_ptr = PIgetFirstArrayType ();
@@ -1927,21 +1930,24 @@ APinfer ()
          * Extract information concerning array data type.
          */
         dim = PIgetArrayTypeDim (at_ptr);
-        shape = DupShpseg (PIgetArrayTypeShape (at_ptr));
+        shape = DUPdupShpseg (PIgetArrayTypeShape (at_ptr));
         type = PIgetArrayTypeBasetype (at_ptr);
         element_size = ctype_size[type];
 
         /*
          * Create concise cache specifications.
          */
-        cache_L1 = CreateCacheSpec (config.cache1_size * 1024, config.cache1_line,
-                                    config.cache1_assoc, element_size);
+        cache_L1
+          = CreateCacheSpec (global.config.cache1_size * 1024, global.config.cache1_line,
+                             global.config.cache1_assoc, element_size);
 
-        cache_L2 = CreateCacheSpec (config.cache2_size * 1024, config.cache2_line,
-                                    config.cache2_assoc, element_size);
+        cache_L2
+          = CreateCacheSpec (global.config.cache2_size * 1024, global.config.cache2_line,
+                             global.config.cache2_assoc, element_size);
 
-        cache_L3 = CreateCacheSpec (config.cache3_size * 1024, config.cache3_line,
-                                    config.cache3_assoc, element_size);
+        cache_L3
+          = CreateCacheSpec (global.config.cache3_size * 1024, global.config.cache3_line,
+                             global.config.cache3_assoc, element_size);
 
         APprintDiag ("\nInternal cache specification (sizes in array elements) :\n");
 
@@ -1994,7 +2000,7 @@ APinfer ()
          * Padding inference finished for one array type.
          */
 
-        new_shape = MakeShpseg (NULL);
+        new_shape = TBmakeShpseg (NULL);
         AddVect (dim, new_shape, shape, padding);
 
         APprintDiag (
@@ -2003,7 +2009,7 @@ APinfer ()
           "* Final padding recommendation for array type:\n"
           "*\n"
           "*  Original array type         :  %s",
-          Basetype2String (type));
+          CVbasetype2String (type));
         PIprintShpSeg (dim, shape);
 
         APprintDiag ("\n"
@@ -2012,7 +2018,7 @@ APinfer ()
 
         APprintDiag ("\n"
                      "*  Resulting array type        :  %s",
-                     Basetype2String (type));
+                     CVbasetype2String (type));
         PIprintShpSeg (dim, new_shape);
 
         APprintDiag ("\n"
@@ -2031,25 +2037,25 @@ APinfer ()
             /*
              * No padding recommended.
              */
-            FreeShpseg (shape);
-            FreeShpseg (new_shape);
+            FREEfreeShpseg (shape);
+            FREEfreeShpseg (new_shape);
         } else {
-            PIaddInferredShape (type, dim, shape, new_shape, DupShpseg (padding));
+            PIaddInferredShape (type, dim, shape, new_shape, DUPdupShpseg (padding));
         }
 
         /*
          * Remove array type specific internal cache specifications.
          */
         if (cache_L1 != NULL) {
-            cache_L1 = Free (cache_L1);
+            cache_L1 = ILIBfree (cache_L1);
         }
 
         if (cache_L2 != NULL) {
-            cache_L2 = Free (cache_L2);
+            cache_L2 = ILIBfree (cache_L2);
         }
 
         if (cache_L3 != NULL) {
-            cache_L3 = Free (cache_L3);
+            cache_L3 = ILIBfree (cache_L3);
         }
 
         /*
@@ -2058,8 +2064,8 @@ APinfer ()
         at_ptr = PIgetNextArrayType (at_ptr);
     }
 
-    FreeShpseg (padding);
-    FreeShpseg (initial_padding);
+    FREEfreeShpseg (padding);
+    FREEfreeShpseg (initial_padding);
 
     PIprintPadInfo ();
 
