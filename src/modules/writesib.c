@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/05/17 13:08:53  nmw
+ * MALLOC/FREE replaced by Malloc/Free, using result of Free()
+ *
  * Revision 3.3  2001/04/26 00:09:47  dkr
  * no changes done
  *
@@ -637,7 +640,7 @@ PrintSibTypes (FILE *sibfile, nodelist *tdeflist, char *modname, node *arg_info)
         } else {
             type_str = Type2String (TYPEDEF_TYPE (tdef), 0, TRUE);
             fprintf (sibfile, "typedef %s ", type_str);
-            FREE (type_str);
+            type_str = Free (type_str);
 
             PRINTMODNAME (TYPEDEF_MOD (tdef), TYPEDEF_NAME (tdef));
             fprintf (sibfile, ";\n");
@@ -669,7 +672,7 @@ PrintSibObjs (FILE *sibfile, nodelist *objdeflist, char *modname, node *arg_info
 
         type_str = Type2String (OBJDEF_TYPE (objdef), 0, TRUE);
         fprintf (sibfile, "objdef %s ", type_str);
-        FREE (type_str);
+        type_str = Free (type_str);
 
         PRINTMODNAME (OBJDEF_MOD (objdef), OBJDEF_NAME (objdef));
         fprintf (sibfile, ";\n");

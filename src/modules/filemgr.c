@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2001/05/17 13:08:53  nmw
+ * MALLOC/FREE replaced by Malloc/Free, using result of Free()
+ *
  * Revision 3.1  2000/11/20 18:00:51  sacbase
  * new release made
  *
@@ -178,7 +181,7 @@ CheckExistFile (char *dir, char *name)
     strcat (tmp, name);
 
     file = fopen (tmp, "r");
-    FREE (tmp);
+    tmp = Free (tmp);
 
     if (file == NULL) {
         res = 0;

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2001/05/17 13:08:53  nmw
+ * MALLOC/FREE replaced by Malloc/Free, using result of Free()
+ *
  * Revision 3.2  2001/03/15 15:22:47  dkr
  * signature of Type2String modified
  *
@@ -163,7 +166,7 @@ SearchImplementation (types *type, node *alltypes)
                       = MergeShpseg (TYPES_SHPSEG (type), TYPES_DIM (type),
                                      TYPEDEF_SHPSEG (tdef), TYPEDEF_DIM (tdef));
 
-                    FREE (tobefreed);
+                    tobefreed = Free (tobefreed);
 
                     TYPES_DIM (type) += TYPEDEF_DIM (tdef);
                 }
@@ -197,7 +200,7 @@ SearchImplementation (types *type, node *alltypes)
                   = MergeShpseg (TYPES_SHPSEG (type), TYPES_DIM (type),
                                  TYPEDEF_SHPSEG (tdef), TYPEDEF_DIM (tdef));
 
-                FREE (tobefreed);
+                tobefreed = Free (tobefreed);
 
                 TYPES_DIM (type) += TYPEDEF_DIM (tdef);
             }

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2001/05/17 13:08:53  nmw
+ * MALLOC/FREE replaced by Malloc/Free, using result of Free()
+ *
  * Revision 3.2  2001/03/20 22:25:59  dkr
  * superfluous include of scnprs.h removed
  *
@@ -381,7 +384,7 @@ PrintLibStat ()
         SYSABORT (("Corrupted library file format: \"%s\"", abspathname));
     }
 
-    FREE (stt_filename);
+    stt_filename = Free (stt_filename);
 
     SystemCall ("%s %s/%s.stt", config.cat, tmp_dirname, modname);
 

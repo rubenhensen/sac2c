@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2001/05/17 13:08:53  nmw
+ * MALLOC/FREE replaced by Malloc/Free, using result of Free()
+ *
  * Revision 3.6  2001/04/24 09:15:45  dkr
  * P_FORMAT replaced by F_PTR
  *
@@ -154,7 +157,7 @@ FreeMods (mods *mod)
     while (mod != NULL) {
         tmp = mod;
         mod = mod->next;
-        FREE (tmp);
+        tmp = Free (tmp);
     }
 
     DBUG_VOID_RETURN;
@@ -465,7 +468,7 @@ InitGenericFuns (node *arg_node, node *pragma)
                 strcat (TYPEDEF_FREEFUN (arg_node), TYPEDEF_NAME (arg_node));
             }
 
-            FREE (TYPEDEF_PRAGMA (arg_node));
+            TYPEDEF_PRAGMA (arg_node) = Free (TYPEDEF_PRAGMA (arg_node));
         }
     }
 
@@ -523,7 +526,7 @@ ResolvePragmaReadonly (node *arg_node, node *pragma, int count_params)
         cnt++;
     }
 
-    FREE (PRAGMA_READONLY (pragma));
+    PRAGMA_READONLY (pragma) = Free (PRAGMA_READONLY (pragma));
 
     DBUG_RETURN (arg_node);
 }
@@ -564,7 +567,7 @@ IMtypedef (node *arg_node, node *arg_info)
 
             if (PRAGMA_LINKNAME (pragma) != NULL) {
                 WARN (NODE_LINE (arg_node), ("Pragma 'linkname` has no effect on type"));
-                FREE (PRAGMA_LINKNAME (pragma));
+                PRAGMA_LINKNAME (pragma) = Free (PRAGMA_LINKNAME (pragma));
             }
 
             if (PRAGMA_LINKSIGNNUMS (pragma) != NULL) {
@@ -596,20 +599,20 @@ IMtypedef (node *arg_node, node *arg_info)
 
             if (PRAGMA_INITFUN (pragma) != NULL) {
                 WARN (NODE_LINE (arg_node), ("Pragma 'initfun` has no effect on type"));
-                FREE (PRAGMA_INITFUN (pragma));
+                PRAGMA_INITFUN (pragma) = Free (PRAGMA_INITFUN (pragma));
             }
 
             if (TYPEDEF_BASETYPE (arg_node) != T_hidden) {
                 if (PRAGMA_COPYFUN (pragma) != NULL) {
                     WARN (NODE_LINE (arg_node),
                           ("Pragma 'copyfun` has no effect on explicit type"));
-                    FREE (PRAGMA_COPYFUN (pragma));
+                    PRAGMA_COPYFUN (pragma) = Free (PRAGMA_COPYFUN (pragma));
                 }
 
                 if (PRAGMA_FREEFUN (pragma) != NULL) {
                     WARN (NODE_LINE (arg_node),
                           ("Pragma 'freefun` has no effect on explicit type"));
-                    FREE (PRAGMA_FREEFUN (pragma));
+                    PRAGMA_FREEFUN (pragma) = Free (PRAGMA_FREEFUN (pragma));
                 }
             }
         }
@@ -676,19 +679,19 @@ IMfundef (node *arg_node, node *arg_info)
             if (PRAGMA_COPYFUN (pragma) != NULL) {
                 WARN (NODE_LINE (arg_node),
                       ("Pragma 'copyfun` has no effect on function"));
-                FREE (PRAGMA_COPYFUN (pragma));
+                PRAGMA_COPYFUN (pragma) = Free (PRAGMA_COPYFUN (pragma));
             }
 
             if (PRAGMA_FREEFUN (pragma) != NULL) {
                 WARN (NODE_LINE (arg_node),
                       ("Pragma 'freefun` has no effect on function"));
-                FREE (PRAGMA_FREEFUN (pragma));
+                PRAGMA_FREEFUN (pragma) = Free (PRAGMA_FREEFUN (pragma));
             }
 
             if (PRAGMA_INITFUN (pragma) != NULL) {
                 WARN (NODE_LINE (arg_node),
                       ("Pragma 'initfun` has no effect on function"));
-                FREE (PRAGMA_INITFUN (pragma));
+                PRAGMA_INITFUN (pragma) = Free (PRAGMA_INITFUN (pragma));
             }
 
             if (PRAGMA_LINKSIGNNUMS (pragma) != NULL) {
@@ -813,13 +816,13 @@ IMobjdef (node *arg_node, node *arg_info)
             if (PRAGMA_COPYFUN (pragma) != NULL) {
                 WARN (NODE_LINE (arg_node),
                       ("Pragma 'copyfun` has no effect on global object"));
-                FREE (PRAGMA_COPYFUN (pragma));
+                PRAGMA_COPYFUN (pragma) = Free (PRAGMA_COPYFUN (pragma));
             }
 
             if (PRAGMA_FREEFUN (pragma) != NULL) {
                 WARN (NODE_LINE (arg_node),
                       ("Pragma 'freefun` has no effect on global object"));
-                FREE (PRAGMA_FREEFUN (pragma));
+                PRAGMA_FREEFUN (pragma) = Free (PRAGMA_FREEFUN (pragma));
             }
 
             if (PRAGMA_INITFUN (pragma) != NULL) {
@@ -1591,7 +1594,7 @@ DoImport (node *modul, node *implist, char *filename)
                                 ImportSymbol (i, tmp->id, mods->mod, modul);
                             }
                             mods = mods->next;
-                            FREE (tmpmods);
+                            tmpmods = Free (tmpmods);
                         } while (mods != NULL);
                     }
                     tmp = tmp->next;
@@ -1756,7 +1759,7 @@ ImportOwnDeclaration (char *name, file_type modtype)
     yyin = fopen (pathname, "r");
 
     if (yyin == NULL) {
-        FREE (mod_tab);
+        mod_tab = Free (mod_tab);
     } else {
         abspathname = AbsolutePathname (pathname);
 

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.2  2001/05/17 13:12:07  nmw
+ * MALLOC/FREE replaced by Malloc/Free, using result of Free()
+ *
  * Revision 3.1  2000/11/20 18:02:03  sacbase
  * new release made
  *
@@ -361,12 +364,12 @@ FreeUnqstate (unqstatelist *unqstate)
         while (hist != NULL) {
             tmp_hist = hist;
             hist = HL_NEXT (hist);
-            FREE (tmp_hist);
+            tmp_hist = Free (tmp_hist);
             DBUG_PRINT ("UNQ", ("inner while of FreeUnqstate"));
         }
 
-        FREE (UNQ_STATE (tmp));
-        FREE (tmp);
+        UNQ_STATE (tmp) = Free (UNQ_STATE (tmp));
+        tmp = Free (tmp);
     }
 
     DBUG_VOID_RETURN;

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2001/05/17 13:08:53  nmw
+ * MALLOC/FREE replaced by Malloc/Free, using result of Free()
+ *
  * Revision 3.9  2001/04/24 09:39:45  dkr
  * CHECK_NULL renamed into STR_OR_EMPTY
  *
@@ -237,7 +240,7 @@ PrintDecTypes (types *type, char *modname)
           = Type2String (type, strcmp (STR_OR_EMPTY (TYPES_MOD (type)), modname) ? 0 : 3,
                          FALSE);
         fprintf (outfile, "%s", type_string);
-        FREE (type_string);
+        type_string = Free (type_string);
 
         TYPES_NEXT (type) = next_type;
 
