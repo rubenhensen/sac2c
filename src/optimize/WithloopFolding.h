@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 1.16  1998/05/15 14:41:21  srs
+ * changed MakeNullVec()
+ *
  * Revision 1.15  1998/05/12 09:46:46  srs
  * added TRANSF_TRUE_PERMUTATIONS
  *
@@ -116,7 +119,7 @@ extern int LocateIndexVar (node *idn, node *wln);
 extern node *CreateVardec (char *name, types *type, node **vardecs);
 extern node *StartSearchWL (node *idn, node *assignn, int mode);
 extern void ArrayST2ArrayInt (node *arrayn, int **iarray, int shape);
-extern node *MakeNullVec (int dim);
+extern node *MakeNullVec (int dim, simpletype type);
 
 /* index_info related functions */
 extern void DbugIndexInfo (index_info *iinfo);
