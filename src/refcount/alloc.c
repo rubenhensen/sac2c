@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.18  2004/08/27 08:18:23  ktr
+ * No allocation is now done for F_type_error.
+ * This caused bug #48 in alloc.c.
+ *
  * Revision 1.17  2004/08/05 16:08:00  ktr
  * Scalar with-loops are now treated as they always were. By using the
  * F_wl_assign abstraction we can now explicitly refcount this case.
@@ -1248,8 +1252,19 @@ EMALprf (node *arg_node, info *arg_info)
     case F_accu:
         /*
          * a,... = accu( iv, n, ...)
-         * accu requires a special treatment as none of its return
-         * value must be allocated
+         * accu requires a special treatment as
+         * none of its return values must be allocated
+         */
+        INFO_EMAL_ALLOCLIST (arg_info) = FreeALS (INFO_EMAL_ALLOCLIST (arg_info));
+
+        INFO_EMAL_MUSTFILL (arg_info) = FALSE;
+        break;
+
+    case F_type_error:
+        /*
+         * v,... = _type_error_( ...)
+         * _type_error_ requires a special treatment as
+         * none of its return value must llocated
          */
         INFO_EMAL_ALLOCLIST (arg_info) = FreeALS (INFO_EMAL_ALLOCLIST (arg_info));
 
@@ -1277,14 +1292,6 @@ EMALprf (node *arg_node, info *arg_info)
     case F_genarray:
         DBUG_ASSERT ((0), "Non-instrinsic primitive functions not implemented!"
                           " Use array.lib instead!");
-        break;
-
-        /*
-         *  otherwise
-         */
-
-    case F_type_error:
-        INFO_EMAL_MUSTFILL (arg_info) = FALSE;
         break;
 
     default:
@@ -1330,7 +1337,7 @@ EMALwith (node *arg_node, info *arg_info)
      * genarray/modarray - withops
      * Furthermore, a code template for the index vector is needed
      */
-    INFO_EMAL_WITHOPS (arg_info) = NWITH2_WITHOP (arg_node);
+    INFO_EMAL_WITHOPS (arg_info) = NWITH_WITHOP (arg_node);
     INFO_EMAL_INDEXVECTOR (arg_info) = MakeIdFromIds (DupOneIds (NWITH_VEC (arg_node)));
 
     /*
@@ -1348,7 +1355,7 @@ EMALwith (node *arg_node, info *arg_info)
     /*
      * Rebuild ALLOCLIST by traversing WITHOPS
      */
-    INFO_EMAL_WITHOPMODE (arg_info) = ea_memname;
+    INFO_EMAL_WITHOPMODE (arg_info) = ea_shape;
     NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
 
     /*
