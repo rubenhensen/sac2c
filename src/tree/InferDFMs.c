@@ -1,13 +1,13 @@
 /*
  *
  * $Log$
- * Revision 1.11  2001/04/19 16:33:55  dkr
- * RemoveAllButGlobalObjects() added but not finished yet
+ * Revision 1.12  2001/04/20 12:57:52  dkr
+ * AdjustNeededWith() added:
+ * All non-unique objects are removed from the needed-mask.
  *
  * Revision 1.10  2001/04/19 15:37:36  dkr
- * fixed some bugs:
- *  - fixpoint iteration works correctly now
- *  - out-parameters of loops are infered correctly now
+ * fixpoint iteration works correctly now
+ * (bug in COMPARE_AND_UPDATE fixed)
  *
  * Revision 1.9  2001/04/19 10:09:26  dkr
  * INFDFMSwith(), INFDFMSwith2() replaced by INFDFMSwithx()
@@ -15,10 +15,7 @@
  * Revision 1.8  2001/04/19 07:40:33  dkr
  * macro F_PTR used as format string for pointers
  *
- * Revision 1.7  2001/04/04 19:41:13  dkr
- * uups, typo corrected :-/
- *
- * Revision 1.6  2001/04/04 19:40:16  dkr
+ * Revision 1.7  2001/04/04 19:40:16  dkr
  * warning about out-vars in with-loop replaced by a DBUG_PRINT
  *
  * Revision 1.5  2001/03/22 20:01:20  dkr
@@ -360,8 +357,8 @@ UsedMask (DFMmask_t mask, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   void AdjustNeeded( DFMmask_t needed,
- *                      DFMmask_t in, DFMmask_t out)
+ *   DFMmask_t AdjustNeeded( DFMmask_t needed,
+ *                           DFMmask_t in, DFMmask_t out)
  *
  * description:
  *   Updates the needed-mask (contains all vars, that are needed in outer
@@ -371,7 +368,7 @@ UsedMask (DFMmask_t mask, node *arg_info)
  *
  ******************************************************************************/
 
-static void
+static DFMmask_t
 AdjustNeeded (DFMmask_t needed, DFMmask_t in, DFMmask_t out)
 {
     DBUG_ENTER ("AdjustNeeded");
@@ -379,33 +376,66 @@ AdjustNeeded (DFMmask_t needed, DFMmask_t in, DFMmask_t out)
     DFMSetMaskMinus (needed, out);
     DFMSetMaskOr (needed, in);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN (needed);
 }
 
 /******************************************************************************
  *
- * Function:
- *   DFMmask_t RemoveAllButGlobalObjects( DFMmask_t needed)
+ * function:
+ *   DFMmask_t AdjustNeededWith( DFMmask_t needed,
+ *                               DFMmask_t in, DFMmask_t out)
  *
- * Description:
- *   Clears all entries of 'needed', that do not represent global objects.
+ * description:
+ *   Updates the needed-mask (contains all vars, that are needed in outer
+ *   blocks) according to the in- and out-mask of the current block.
+ *   This function is needed to calculate the new needed-mask before entering
+ *   a with-loop.
+ *
+ *   Stricly speaking, the scope of all vars defined within a with-loop
+ *   is restricted to the with-loop itself:
+ *
+ *     val = 1;
+ *     with (...) {
+ *       val = 2;
+ *     }
+ *     genarray( ...)
+ *     ... val ...         <---  here, 'val' still contains the value 1
+ *
+ *   That means, we have to clear the INFO_INFDFMS_NEEDED mask here!
+ *
+ *   BUT, in case of global objects this behaviour is NOT wanted.
+ *   Therefore, during the flattening phase all not-global vars defined
+ *   within a with-loop are renamed:
+ *
+ *     val = 1;
+ *     with (...) {
+ *       _val = val;
+ *       _val = 2;
+ *     }
+ *     genarray( ...)
+ *     ... val ...         <---  here, 'val' still contains the value 1
+ *
+ *   Because of that, we can leave all global objects in the
+ *   INFO_INFDFMS_NEEDED mask here in order to detect OUT-global-vars :-)
  *
  ******************************************************************************/
 
 static DFMmask_t
-RemoveAllButGlobalObjects (DFMmask_t needed)
+AdjustNeededWith (DFMmask_t needed, DFMmask_t in, DFMmask_t out)
 {
     node *decl;
 
-    DBUG_ENTER ("RemoveAllButGlobalObjects");
+    DBUG_ENTER ("AdjustNeededWith");
+
+    needed = AdjustNeeded (needed, in, out);
 
     decl = DFMGetMaskEntryDeclSet (needed);
     while (decl != NULL) {
         /*
-         * no global object -> clear entry in mask
+         * no unique object -> clear entry in mask
          */
-        if (/* VARDEC_OR_ARG_ */ 0) {
-            DFMSetMaskEntrySet (needed, NULL, decl);
+        if (!IsUnique (VARDEC_OR_ARG_TYPE (decl))) {
+            DFMSetMaskEntryClear (needed, NULL, decl);
         }
 
         decl = DFMGetMaskEntryDeclSet (NULL);
@@ -651,6 +681,8 @@ InferMasksDo (node *arg_node, node *arg_info)
  * function:
  *   node *InferMasks( DFMmask_t *in, DFMmask_t *out, DFMmask_t *local,
  *                     node *arg_node, node *arg_info,
+ *                     DFMmask_t (AdjustNeededFunction)( DFMmask_t,
+ *                                                       DFMmask_t, DFMmask_t),
  *                     node *(InferMasksFunction)( node *, node *),
  *                     bool do_fixpoint_iter)
  *
@@ -661,8 +693,9 @@ InferMasksDo (node *arg_node, node *arg_info)
 
 static node *
 InferMasks (DFMmask_t *in, DFMmask_t *out, DFMmask_t *local, node *arg_node,
-            node *arg_info, node *(InferMasksFunction) (node *, node *),
-            bool do_fixpoint_iter)
+            node *arg_info,
+            DFMmask_t (AdjustNeededFunction) (DFMmask_t, DFMmask_t, DFMmask_t),
+            node *(InferMasksFunction) (node *, node *), bool do_fixpoint_iter)
 {
     DFMmask_t old_needed, old_in, old_out, old_local;
 
@@ -690,7 +723,8 @@ InferMasks (DFMmask_t *in, DFMmask_t *out, DFMmask_t *local, node *arg_node,
      * setup needed-mask
      */
     INFO_INFDFMS_NEEDED (arg_info) = DFMGenMaskCopy (old_needed);
-    AdjustNeeded (INFO_INFDFMS_NEEDED (arg_info), old_in, old_out);
+    INFO_INFDFMS_NEEDED (arg_info)
+      = AdjustNeededFunction (INFO_INFDFMS_NEEDED (arg_info), old_in, old_out);
 
     /*
      * setup in-, out-, local-masks
@@ -1059,46 +1093,16 @@ INFDFMSwithx (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("INFDFMSwithx");
 
-    /*
-     * Stricly speaking, the scope of all vars defined within a with-loop
-     * is restricted to the with-loop itself:
-     *
-     *   val = 1;
-     *   with (...) {
-     *     val = 2;
-     *   }
-     *   genarray( ...)
-     *   ... val ...         <---  here, 'val' still contains the value 1
-     *
-     * That means, we have to clear the INFO_INFDFMS_NEEDED mask here!
-     *
-     * BUT, in case of global objects this behaviour is NOT wanted.
-     * Therefore, during the flattening phase all not-global vars defined
-     * within a with-loop are renamed:
-     *
-     *   val = 1;
-     *   with (...) {
-     *     _val = val;
-     *     _val = 2;
-     *   }
-     *   genarray( ...)
-     *   ... val ...         <---  here, 'val' still contains the value 1
-     *
-     * Because of that, we can leave all global objects in the
-     * INFO_INFDFMS_NEEDED mask here in order to detect OUT-global-vars :-)
-     */
-    INFO_INFDFMS_NEEDED (arg_info)
-      = RemoveAllButGlobalObjects (INFO_INFDFMS_NEEDED (arg_info));
-
     arg_node
       = InferMasks (&(NWITH_OR_NWITH2_IN_MASK (arg_node)),
                     &(NWITH_OR_NWITH2_OUT_MASK (arg_node)),
                     &(NWITH_OR_NWITH2_LOCAL_MASK (arg_node)), arg_node, arg_info,
+                    AdjustNeededWith,
                     (NODE_TYPE (arg_node) == N_Nwith) ? InferMasksWith : InferMasksWith2,
                     FALSE);
 
     /*
-     * A with-loop really *can* have out-vars:
+     * A with-loop indeed *can* have out-vars:
      * Some global objects might be modified within the with-loop. This is legal
      * in SAC although it can cause non-deterministic results!
      * Therfore, we print a warning message here.
@@ -1179,7 +1183,7 @@ INFDFMScond (node *arg_node, node *arg_info)
 
     arg_node = InferMasks (&(COND_IN_MASK (arg_node)), &(COND_OUT_MASK (arg_node)),
                            &(COND_LOCAL_MASK (arg_node)), arg_node, arg_info,
-                           InferMasksCond, FALSE);
+                           AdjustNeeded, InferMasksCond, FALSE);
 
     DBUG_RETURN (arg_node);
 }
@@ -1201,7 +1205,7 @@ INFDFMSwhile (node *arg_node, node *arg_info)
 
     arg_node = InferMasks (&(WHILE_IN_MASK (arg_node)), &(WHILE_OUT_MASK (arg_node)),
                            &(WHILE_LOCAL_MASK (arg_node)), arg_node, arg_info,
-                           InferMasksWhile, TRUE);
+                           AdjustNeeded, InferMasksWhile, TRUE);
 
     DBUG_RETURN (arg_node);
 }
@@ -1221,9 +1225,9 @@ INFDFMSdo (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("INFDFMSdo");
 
-    arg_node
-      = InferMasks (&(DO_IN_MASK (arg_node)), &(DO_OUT_MASK (arg_node)),
-                    &(DO_LOCAL_MASK (arg_node)), arg_node, arg_info, InferMasksDo, TRUE);
+    arg_node = InferMasks (&(DO_IN_MASK (arg_node)), &(DO_OUT_MASK (arg_node)),
+                           &(DO_LOCAL_MASK (arg_node)), arg_node, arg_info, AdjustNeeded,
+                           InferMasksDo, TRUE);
 
     DBUG_RETURN (arg_node);
 }
