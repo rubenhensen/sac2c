@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2001/03/15 17:01:39  dkr
+ * OPTfundef: FREE(tmp_str) added
+ *
  * Revision 3.8  2001/03/15 14:21:53  nmw
  * break specifier for UndoSSA changed from "usd" to "ussa" according
  * to DEBUG specifier for this traversal
@@ -685,7 +688,7 @@ OPTfundef (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("OPTfundef");
 
-    strcpy (argtype_buffer, "( ");
+    strcpy (argtype_buffer, "");
     buffer_space = 77;
 
     if (FUNDEF_BODY (arg_node) != NULL) {
@@ -701,7 +704,7 @@ OPTfundef (node *arg_node, node *arg_info)
          */
         arg = FUNDEF_ARGS (arg_node);
         while ((arg != NULL) && (buffer_space > 5)) {
-            tmp_str = Type2String (ARG_TYPE (arg), 1);
+            tmp_str = Type2String (ARG_TYPE (arg), 0, TRUE);
             tmp_str_size = strlen (tmp_str);
 
             if ((tmp_str_size + 3) <= buffer_space) {
@@ -715,12 +718,13 @@ OPTfundef (node *arg_node, node *arg_info)
                 strcat (argtype_buffer, "...");
                 buffer_space = 0;
             }
+
+            FREE (tmp_str);
             arg = ARG_NEXT (arg);
         }
-        strcat (argtype_buffer, ")");
 
         NOTE (("optimizing function"));
-        NOTE ((" %s %s: ...", FUNDEF_NAME (arg_node), argtype_buffer));
+        NOTE ((" %s( %s): ...", FUNDEF_NAME (arg_node), argtype_buffer));
 
         if (optimize & OPT_AE) {
             /*
