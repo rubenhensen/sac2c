@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.4  1995/01/05 11:51:25  sbs
+ * Revision 1.5  1995/01/06 19:25:20  sbs
+ * "__" inserted between modul and function name
+ *
+ * Revision 1.4  1995/01/05  11:51:25  sbs
  * MOD_NAME_CON macro inserted for mod-name generation for
  * types and functions.
  *
@@ -23,7 +26,7 @@
 
 #define SIMPLE2STR(type)                                                                 \
     ((type->name != NULL) ? type->name : type_string[type->simpletype])
-#define MOD_NAME_CON ""
+#define MOD_NAME_CON "__"
 
 extern char *type_string[];
 extern char *Type2String (types *, int);
