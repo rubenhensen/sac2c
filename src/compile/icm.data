@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.57  2003/03/14 13:22:33  dkr
+ * all arguments of WL-ICMs are tagged now
+ *
  * Revision 3.56  2002/10/29 19:07:12  dkr
  * signature of some WL-ICMs modified
  *
@@ -823,9 +826,9 @@ ICM_DEF( WL_ASSIGN, TRACE_NONE)
   ICM_INT( to_sdim)
   ICM_NT( idx_vec_nt)
   ICM_INT( dims)
-  ICM_VARID( dims, idxa_scl)
+  ICM_VARNT( dims, idxa_scl_nt)
 ICM_END( WL_ASSIGN, (val_nt, val_sdim, to_nt, to_sdim,
-                     idx_vec_nt, dims, idxa_scl))
+                     idx_vec_nt, dims, idxa_scl_nt))
 #endif
 
 #if defined(WL_ASSIGN__INIT) || defined(ICM_ALL)
@@ -834,8 +837,8 @@ ICM_DEF( WL_ASSIGN__INIT, TRACE_NONE)
   ICM_INT( to_sdim)
   ICM_NT( idx_vec_nt)
   ICM_INT( dims)
-  ICM_VARID( dims, idxa_scl)
-ICM_END( WL_ASSIGN__INIT, (to_nt, to_sdim, idx_vec_nt, dims, idxa_scl))
+  ICM_VARNT( dims, idxa_scl_nt)
+ICM_END( WL_ASSIGN__INIT, (to_nt, to_sdim, idx_vec_nt, dims, idxa_scl_nt))
 #endif
 
 #if defined(WL_ASSIGN__COPY) || defined(ICM_ALL)
@@ -845,8 +848,8 @@ ICM_DEF( WL_ASSIGN__COPY, TRACE_NONE)
   ICM_INT( to_sdim)
   ICM_NT( idx_vec_nt)
   ICM_INT( dims)
-  ICM_VARID( dims, idxa_scl)
-ICM_END( WL_ASSIGN__COPY, (from_nt, to_nt, to_sdim, idx_vec_nt, dims, idxa_scl))
+  ICM_VARNT( dims, idxa_scl_nt)
+ICM_END( WL_ASSIGN__COPY, (from_nt, to_nt, to_sdim, idx_vec_nt, dims, idxa_scl_nt))
 #endif
 
 #if defined(WL_FOLD__OFFSET) || defined(ICM_ALL)
@@ -855,8 +858,8 @@ ICM_DEF( WL_FOLD__OFFSET, TRACE_NONE)
   ICM_INT( to_sdim)
   ICM_NT( idx_vec_nt)
   ICM_INT( dims)
-  ICM_VARID( dims, idxa_scl)
-ICM_END( WL_FOLD__OFFSET, (to_nt, to_sdim, idx_vec_nt, dims, idxa_scl))
+  ICM_VARNT( dims, idxa_scl_nt)
+ICM_END( WL_FOLD__OFFSET, (to_nt, to_sdim, idx_vec_nt, dims, idxa_scl_nt))
 #endif
 
 #if defined(WL_FOLD) || defined(ICM_ALL)
@@ -865,8 +868,8 @@ ICM_DEF( WL_FOLD, TRACE_NONE)
   ICM_INT( to_sdim)
   ICM_NT( idx_vec_nt)
   ICM_INT( dims)
-  ICM_VARID( dims, idxa_scl)
-ICM_END( WL_FOLD, (to_nt, to_sdim, idx_vec_nt, dims, idxa_scl))
+  ICM_VARNT( dims, idxa_scl_nt)
+ICM_END( WL_FOLD, (to_nt, to_sdim, idx_vec_nt, dims, idxa_scl_nt))
 #endif
 
 #if defined(WL_ADJUST_OFFSET) || defined(ICM_ALL)
@@ -876,8 +879,8 @@ ICM_DEF( WL_ADJUST_OFFSET, TRACE_NONE)
   ICM_INT( to_sdim)
   ICM_NT( idx_vec_nt)
   ICM_INT( dims)
-  ICM_VARID( dims, idxa_scl)
-ICM_END( WL_ADJUST_OFFSET, (dim, to_nt, to_sdim, idx_vec_nt, dims, idxa_scl))
+  ICM_VARNT( dims, idxa_scl_nt)
+ICM_END( WL_ADJUST_OFFSET, (dim, to_nt, to_sdim, idx_vec_nt, dims, idxa_scl_nt))
 #endif
 
 #if defined(WL_SET_OFFSET) || defined(ICM_ALL)
@@ -888,9 +891,9 @@ ICM_DEF( WL_SET_OFFSET, TRACE_NONE)
   ICM_INT( to_sdim)
   ICM_NT( idx_vec_nt)
   ICM_INT( dims)
-  ICM_VARID( dims, idxa_scl)
+  ICM_VARNT( dims, idxa_scl_nt)
 ICM_END( WL_SET_OFFSET, (dim, first_block_dim, to_nt, to_sdim,
-                         idx_vec_nt, dims, idxa_scl))
+                         idx_vec_nt, dims, idxa_scl_nt))
 #endif
 
 

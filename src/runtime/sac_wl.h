@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.19  2003/03/14 13:22:37  dkr
+ * all arguments of WL-ICMs are tagged now
+ *
  * Revision 3.18  2003/03/14 11:40:26  dkr
  * support for sac2c flag -minarrayrep added
  *
@@ -108,9 +111,10 @@
  ***/
 
 #define SAC_WL_VAR(type, idx_scl_nt)                                                     \
-    CAT0 (CAT0 (CAT0 (SAC_, type), _), SAC_ND_A_FIELD (idx_scl_nt))
+    CAT0 (CAT0 (CAT0 (SAC_, type), _), NT_NAME (idx_scl_nt))
 
-#define SAC_WL_SHAPE_FACTOR(res, dim) CAT0 (CAT0 (CAT0 (SAC_, res), _shpfac), dim)
+#define SAC_WL_SHAPE_FACTOR(res_nt, dim)                                                 \
+    CAT0 (CAT0 (CAT0 (SAC_, NT_NAME (res_nt)), _shpfac), dim)
 
 #define SAC_WL_MT_SCHEDULE_START(dim) CAT0 (SAC_schedule_start, dim)
 
