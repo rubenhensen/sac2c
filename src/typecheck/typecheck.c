@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2001/02/14 10:17:47  dkr
+ * MakeNode(N_vardec) replaced by MakeVardec
+ *
  * Revision 3.12  2001/02/09 17:11:42  cg
  * Removed type comparison results CMP_different_shapes and
  * CMP_different_dimension due to buggy implementation and general
@@ -4572,13 +4575,9 @@ AddIdToStack (ids *ids, types *type, node *arg_info, int line)
          */
 
         node *vardec;
-        types *id_type;
 
         vardec_p = INFO_TC_VARDEC (arg_info); /* pointer to var declaration */
-        id_type = DupTypes (type);
-        vardec = MakeNode (N_vardec);
-        VARDEC_TYPE (vardec) = id_type;
-        VARDEC_NAME (vardec) = StringCopy (ids->id);
+        vardec = MakeVardec (StringCopy (ids->id), DupTypes (type), NULL);
         VARDEC_STATUS (vardec) = ST_used;
         VARDEC_ATTRIB (vardec) = ST_regular;
 
