@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.80  1998/11/09 13:58:11  sbs
+ * flatten applied to arithmetic funs as well -> needed
+ * for defining them in libs!!
+ *
  * Revision 1.79  1998/10/27 09:53:01  sbs
  * INFO_FLTN_CONTEXT reset from CT_wl to CT_normal in
  * FltnBlock. This is required since otherwise renamings
@@ -1073,10 +1077,11 @@ FltnPrf (node *arg_node, node *arg_info)
 
     if (PRF_ARGS (arg_node) != NULL) {
         old_ctxt = INFO_FLTN_CONTEXT (arg_info);
-        if ((PRF_PRF (arg_node) == F_psi) || (PRF_PRF (arg_node) == F_modarray))
-            INFO_FLTN_CONTEXT (arg_info) = CT_ap;
-        else
+        if ((PRF_PRF (arg_node) == F_take) || (PRF_PRF (arg_node) == F_drop)
+            || (PRF_PRF (arg_node) == F_reshape))
             INFO_FLTN_CONTEXT (arg_info) = CT_normal;
+        else
+            INFO_FLTN_CONTEXT (arg_info) = CT_ap;
 
         PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
         INFO_FLTN_CONTEXT (arg_info) = old_ctxt;
@@ -1923,7 +1928,7 @@ FltnNgenerator (node *arg_node, node *arg_info)
 node *
 FltnNcode (node *arg_node, node *arg_info)
 {
-    node **insert_at, *expr, *expr2, *mem_last_assign;
+    node **insert_at, *expr, *expr2, *mem_last_assign, *empty_block;
 
     DBUG_ENTER ("FltnNcode");
 
@@ -1932,21 +1937,28 @@ FltnNcode (node *arg_node, node *arg_info)
     /*
      * First, we traverse the body so that INFO_FLTN_FINALASSIGN will
      * be set correctly, and all renamings will be pushed already!
-     * For inserting a flattened CEXPR later we memoize INFO_FLTN_FINALASSIGN
-     * in *insert_at, since the block may be empty (->access macros!!!)
+     * For inserting assignments that (may) result from flattening CEXPR later,
+     * we memoize the address which WOULD point to the next assignment
+     * IFF one more WOULD exist, i.e. ASSIGNMENT_NEXT if the block is
+     * non-empty, BLOCK_INSTR if the block is empty!
+     * That allows us, to insert the result of flattening CEXPR
+     * by simply assigning to (*insert_at) rather than using 2 different
+     * ACCESS-Macros.
+     * empty_block holds the pointer to the N_empty node iff one exists!
      */
-    if (NCODE_CBLOCK (arg_node) == NULL) {
-        NCODE_CBLOCK (arg_node) = MakeBlock (NULL, NULL);
+    DBUG_ASSERT ((NCODE_CBLOCK (arg_node) != NULL), "no code block found");
+    if (NODE_TYPE (BLOCK_INSTR (NCODE_CBLOCK (arg_node))) == N_empty) {
+        /*
+         * The body is empty; hence we do not need to traverse it!!
+         */
         insert_at = &BLOCK_INSTR (NCODE_CBLOCK (arg_node));
+        empty_block = BLOCK_INSTR (NCODE_CBLOCK (arg_node));
     } else {
-        if (NODE_TYPE (BLOCK_INSTR (NCODE_CBLOCK (arg_node))) == N_empty) {
-            insert_at = &BLOCK_INSTR (NCODE_CBLOCK (arg_node));
-        } else {
-            INFO_FLTN_CONTEXT (arg_info) = CT_wl;
-            DBUG_PRINT ("RENAME", ("CONTEXT set to CT_wl"));
-            NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
-            insert_at = &ASSIGN_NEXT (INFO_FLTN_FINALASSIGN (arg_info));
-        }
+        INFO_FLTN_CONTEXT (arg_info) = CT_wl;
+        DBUG_PRINT ("RENAME", ("CONTEXT set to CT_wl"));
+        NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
+        insert_at = &ASSIGN_NEXT (INFO_FLTN_FINALASSIGN (arg_info));
+        empty_block = NULL;
     }
 
     /*
@@ -1960,7 +1972,27 @@ FltnNcode (node *arg_node, node *arg_info)
     expr2 = Trav (expr, arg_info);
     DBUG_ASSERT ((expr == expr2),
                  "return-node differs from arg_node while flattening an expr!");
+    /*
+     * Here, INFO_FLTN_LASTASSIGN( arg_info) either points to the freshly
+     * generated flatten-assignments or is NULL (if nothing had to be abstracted out)!!
+     */
     *insert_at = INFO_FLTN_LASTASSIGN (arg_info);
+
+    /*
+     * Now, we take care of the fu....g N_empty node...
+     */
+    if (BLOCK_INSTR (NCODE_CBLOCK (arg_node)) == NULL) {
+        /*
+         * Block must have been empty & there is nothing to be flatted out
+         * from CEXPR! => re-use empty_block !!
+         */
+        DBUG_ASSERT ((empty_block != NULL),
+                     "flattened body is empty although un-flattened body isn't!!");
+        BLOCK_INSTR (NCODE_CBLOCK (arg_node)) = empty_block;
+    } else {
+        if (empty_block != NULL)
+            FreeTree (empty_block);
+    }
 
     INFO_FLTN_LASTASSIGN (arg_info) = mem_last_assign;
 
