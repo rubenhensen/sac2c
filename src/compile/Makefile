@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.34  2004/11/25 19:30:50  ktr
+# removed ReuseWithArrays.o, PatchWith.o
+#
 # Revision 3.33  2004/11/24 15:18:11  jhb
 # deleted INC
 #
@@ -99,9 +102,10 @@ BETEST_OBJS = icm2c_std.BEtest.o icm2c_prf.BEtest.o icm2c_wl.BEtest.o \
               ../global/NameTuples.o ../global/globals.o ../../lib/dbug.o
 
 SAC2C_OBJS := wlpragma_funs.o precompile.o compile.o wltransform.o \
-              ReuseWithArrays.o gen_startup_code.o PatchWith.o icm2c.o \
+              gen_startup_code.o icm2c.o \
               icm2c_std.o icm2c_prf.o icm2c_wl.o icm2c_mt.o icm2c_sched.o \
-              icm2c_error.o icm2c_basic.o icm2c_utils.o markmemvals.o
+              icm2c_error.o icm2c_basic.o icm2c_utils.o markmemvals.o \
+              objectprecompile.o
 
 
 all: $(SAC2C_OBJS) BEtest
@@ -142,4 +146,4 @@ clean:
 # - relies on INCS to be set appropriately
 #
 
-include ../../Makefile.Deps
+# include ../../Makefile.Deps
