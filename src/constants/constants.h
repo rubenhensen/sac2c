@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.3  2001/03/22 14:24:37  nmw
+ * primitove ari ops implemented
+ *
  * Revision 1.2  2001/03/05 16:57:04  sbs
  * COAdd, COSub, COMul, and CODiv added
  *
@@ -80,6 +83,8 @@ extern constant *COCopyConstant (constant *a);
 extern void COPrintConstant (FILE *file, constant *a);
 extern constant *COFreeConstant (constant *a);
 extern node *COConstant2AST (constant *a);
+extern constant *COAST2Constant (node *a);
+extern bool COIsConstant (node *a);
 
 /***
  ***
@@ -92,15 +97,40 @@ extern constant *COPsi (constant *idx, constant *a);
 extern constant *COTake (constant *idx, constant *a);
 extern constant *CODrop (constant *idx, constant *a);
 
+/* missing: dim, shape, modarray, cat, rotate */
+
 /***
  ***
  *** value transforming operations implemented in constants_ari_ops.c:
  ***
  ***/
-
+/* numerical ops */
 extern constant *COAdd (constant *a, constant *b);
 extern constant *COSub (constant *a, constant *b);
 extern constant *COMul (constant *a, constant *b);
 extern constant *CODiv (constant *a, constant *b);
+extern constant *COMod (constant *a, constant *b);
+extern constant *COMin (constant *a, constant *b);
+extern constant *COMax (constant *a, constant *b);
+
+/* bool ops */
+extern constant *COAnd (constant *a, constant *b);
+extern constant *COOr (constant *a, constant *b);
+
+/* compare ops */
+extern constant *COEq (constant *a, constant *b);
+extern constant *CONeq (constant *a, constant *b);
+
+extern constant *COLe (constant *a, constant *b);
+extern constant *COLt (constant *a, constant *b);
+extern constant *COGe (constant *a, constant *b);
+extern constant *COGt (constant *a, constant *b);
+
+/* unary ops */
+extern constant *CONot (constant *a);
+extern constant *COToi (constant *a);
+extern constant *COTof (constant *a);
+extern constant *COTod (constant *a);
+extern constant *COAbs (constant *a);
 
 #endif /* _constants_h */
