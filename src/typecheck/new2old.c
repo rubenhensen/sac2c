@@ -1,6 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 1.17  2004/07/05 17:23:43  sbs
+ * now, we do not only compute old types from ntypes, but we also
+ * fix the ntype type variables for proper use later on.
+ * Unfortunately, at the time being, cwc introduces some strange sharing
+ * which requires the type var's not to be freed (UGLY!!) these places
+ * are marked by CWC_WOULD_BE_PROPER macros 8-)
+ *
  * Revision 1.16  2004/02/20 08:14:00  mwe
  * now functions with and without body are separated
  * changed tree traversal (added traverse of MODUL_FUNDECS)
@@ -76,6 +83,11 @@
  *
  * III) to be fixed somewhere else:
  *
+ */
+
+/*
+ * This phase does NOT ONLY compute old types from the new ones but
+ * IT ALSO fixes the ntypes, i.e., it eliminates type vars!!!!!!
  */
 
 /*
@@ -246,7 +258,7 @@ NT2OTfundef (node *arg_node, node *arg_info)
  *   node *NT2OTarg( node *arg_node, node *arg_info)
  *
  * description:
- *
+ *   Fix (!) the ntype and compute the corresponding old type.
  *
  ******************************************************************************/
 
@@ -254,13 +266,26 @@ node *
 NT2OTarg (node *arg_node, node *arg_info)
 {
     ntype *type;
+#ifndef DBUG_OFF
+    char *tmp_str, *tmp_str2;
+#endif
 
     DBUG_ENTER ("NT2OTarg");
 
     type = AVIS_TYPE (ARG_AVIS (arg_node));
 
     if (type != NULL) {
+        DBUG_EXECUTE ("FIXNT", tmp_str = TYType2String (type, FALSE, 0););
+        DBUG_PRINT ("FIXNT", ("replacing argument %s\'s type %s by ...",
+                              ARG_NAME (arg_node), tmp_str));
         type = TYFixAndEliminateAlpha (type);
+        DBUG_EXECUTE ("FIXNT", tmp_str2 = TYType2String (type, FALSE, 0););
+#if CWC_WOULD_BE_PROPER
+        AVIS_TYPE (ARG_AVIS (arg_node)) = TYFreeType (AVIS_TYPE (ARG_AVIS (arg_node)));
+#endif
+        AVIS_TYPE (ARG_AVIS (arg_node)) = type;
+        DBUG_PRINT ("FIXNT", ("... %s", tmp_str2));
+        DBUG_EXECUTE ("FIXNT", tmp_str = Free (tmp_str); tmp_str2 = Free (tmp_str2););
 
         if (TYIsArray (type)) {
             ARG_TYPE (arg_node) = FreeAllTypes (ARG_TYPE (arg_node));
@@ -328,13 +353,27 @@ node *
 NT2OTvardec (node *arg_node, node *arg_info)
 {
     ntype *type;
+#ifndef DBUG_OFF
+    char *tmp_str, *tmp_str2;
+#endif
 
     DBUG_ENTER ("NT2OTvardec");
 
     type = AVIS_TYPE (VARDEC_AVIS (arg_node));
 
     if (type != NULL) {
+        DBUG_EXECUTE ("FIXNT", tmp_str = TYType2String (type, FALSE, 0););
+        DBUG_PRINT ("FIXNT", ("replacing vardec %s\'s type %s by ...",
+                              VARDEC_NAME (arg_node), tmp_str));
         type = TYFixAndEliminateAlpha (type);
+        DBUG_EXECUTE ("FIXNT", tmp_str2 = TYType2String (type, FALSE, 0););
+#if CWC_WOULD_BE_PROPER
+        AVIS_TYPE (VARDEC_AVIS (arg_node))
+          = TYFreeType (AVIS_TYPE (VARDEC_AVIS (arg_node)));
+#endif
+        AVIS_TYPE (VARDEC_AVIS (arg_node)) = type;
+        DBUG_PRINT ("FIXNT", ("... %s", tmp_str2));
+        DBUG_EXECUTE ("FIXNT", tmp_str = Free (tmp_str); tmp_str2 = Free (tmp_str2););
     } else {
         ABORT (linenum,
                ("could not infer proper type for var %s", VARDEC_NAME (arg_node)));
