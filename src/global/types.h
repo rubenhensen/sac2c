@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.37  2000/11/17 16:20:14  sbs
+ * DEPS structure extended by location field;
+ * location type added.
+ *
  * Revision 2.36  2000/09/20 18:20:00  dkr
  * enum type clsconv_t added
  *
@@ -233,6 +237,8 @@ typedef enum { ADIR_read, ADIR_write } accessdir_t;
 
 typedef enum { NO_CLSCONV, TO_CLASS, FROM_CLASS } clsconv_t;
 
+typedef enum { LOC_usr, LOC_stdlib } locationtype;
+
 /*
  * new nodes for yacc and the syntax tree
  */
@@ -275,6 +281,7 @@ typedef struct DEPS {
     char *decname;
     char *libname;
     statustype status;
+    locationtype location;
     struct DEPS *sub;
     struct DEPS *next;
 } deps;
