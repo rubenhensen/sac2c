@@ -19,9 +19,8 @@
 void
 Usage ()
 {
-    printf ("cse\n");
+    printf ("cse file [file]*\n");
     printf (HEADER "-h              print this help mesage.\n");
-    printf (HEADER "file [file]*    files whose time is to be updated.\n");
 }
 
 /*****************************************************************************

@@ -29,5 +29,5 @@ tools/cache_analysis
 tools/cache_analysis/src
 src/constants
 src/profile
-tools/clock_screw_detection
-tools/clock_screw_detection/src
+tools/clock_skew_detection
+tools/clock_skew_detection/src
