@@ -1,12 +1,12 @@
 #
 # $Log$
+# Revision 2.6  2000/01/21 12:03:36  dkr
+# directory tree added
+#
 # Revision 2.5  2000/01/17 18:37:49  cg
 # Handling of target platform unified: One of the following
 # is always defined:
 # SAC_FOR_SOLARIS_SPARC, SAC_FOR_LINUX_X86, OR SAC_FOR_OSF_ALPHA.
-#
-# Revision 2.4  1999/12/13 11:31:28  dkr
-# *** empty log message ***
 #
 # Revision 2.3  1999/03/11 18:18:24  dkr
 # make deps done
@@ -84,7 +84,7 @@ CCFLAGS   := -ansi -Wall -g -DSAC_FOR_$(OS)
 CFLAGS    := -D__EXTENSIONS__
 
 
-INCS=-I../global -I../../inc -I../typecheck -I../optimize
+INCS=-I../global -I../tree -I../../inc -I../typecheck -I../optimize
 
 all: refcount.o
 
@@ -107,9 +107,8 @@ refcount.o: ../global/Error.h /usr/include/stdio.h /usr/include/sys/va_list.h
 refcount.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
 refcount.o: /usr/include/string.h ../global/globals.h
 refcount.o: ../global/internal_lib.h ../global/my_debug.h ../../inc/dbug.h
-refcount.o: ../optimize/DupTree.h ../typecheck/typecheck.h
-refcount.o: ../optimize/DataFlowMask.h ../global/traverse.h
-refcount.o: ../optimize/optimize.h ../global/free.h /usr/include/malloc.h
-refcount.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
-refcount.o: /usr/include/sys/int_types.h ../optimize/generatemasks.h
-refcount.o: refcount.h
+refcount.o: ../tree/DupTree.h ../typecheck/typecheck.h ../tree/DataFlowMask.h
+refcount.o: ../global/traverse.h ../optimize/optimize.h ../global/free.h
+refcount.o: /usr/include/malloc.h /usr/include/sys/types.h
+refcount.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
+refcount.o: ../optimize/generatemasks.h refcount.h

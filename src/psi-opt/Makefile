@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.11  2000/01/21 12:03:22  dkr
+# directory tree added
+#
 # Revision 2.10  2000/01/17 18:41:06  cg
 # make deps done
 #
@@ -7,9 +10,6 @@
 # Handling of target platform unified: One of the following
 # is always defined:
 # SAC_FOR_SOLARIS_SPARC, SAC_FOR_LINUX_X86, OR SAC_FOR_OSF_ALPHA.
-#
-# Revision 2.8  1999/12/13 11:27:35  dkr
-# *** empty log message ***
 #
 # Revision 2.7  1999/06/01 15:17:07  dkr
 # make deps done
@@ -92,7 +92,8 @@ CCFLAGS   := -ansi -Wall -g -DSAC_FOR_$(OS)
 CFLAGS    := -D__EXTENSIONS__
 
 
-INCS=-I../global -I../../inc -I../optimize -I../compile -I../typecheck -I../modules -I../print
+INCS=-I../global -I../../inc -I../tree -I../compile -I../typecheck -I../modules \
+     -I../print -I../optimize
 
 all: index.o psi-opt.o ArrayElimination.o wl_access_analyze.o tile_size_inference.o WithloopFolding.o WLT.o WLI.o WLF.o
 
@@ -143,11 +144,10 @@ ArrayElimination.o: ../global/traverse.h ../typecheck/typecheck.h
 ArrayElimination.o: ../global/free.h /usr/include/malloc.h
 ArrayElimination.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
 ArrayElimination.o: /usr/include/sys/int_types.h ../global/internal_lib.h
-ArrayElimination.o: ../optimize/DupTree.h ../global/tree.h
-ArrayElimination.o: ../global/tree_basic.h ../global/tree_compound.h
-ArrayElimination.o: ../optimize/optimize.h ../optimize/generatemasks.h
-ArrayElimination.o: ../optimize/Inline.h ../optimize/LoopInvariantRemoval.h
-ArrayElimination.o: ArrayElimination.h
+ArrayElimination.o: ../tree/DupTree.h ../global/tree.h ../global/tree_basic.h
+ArrayElimination.o: ../global/tree_compound.h ../optimize/optimize.h
+ArrayElimination.o: ../optimize/generatemasks.h ../optimize/Inline.h
+ArrayElimination.o: ../optimize/LoopInvariantRemoval.h ArrayElimination.h
 WLF.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 WLF.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 WLF.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
@@ -157,7 +157,7 @@ WLF.o: ../global/Error.h /usr/include/string.h ../global/globals.h
 WLF.o: ../global/internal_lib.h ../global/free.h ../../inc/dbug.h
 WLF.o: ../global/my_debug.h /usr/include/malloc.h /usr/include/sys/types.h
 WLF.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-WLF.o: ../print/print.h ../optimize/DupTree.h ../global/traverse.h
+WLF.o: ../print/print.h ../tree/DupTree.h ../global/traverse.h
 WLF.o: ../optimize/optimize.h ../optimize/generatemasks.h
 WLF.o: ../optimize/ConstantFolding.h WithloopFolding.h WLF.h
 WLI.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
@@ -181,7 +181,7 @@ WLT.o: /usr/include/string.h ../global/globals.h ../global/internal_lib.h
 WLT.o: ../global/free.h ../../inc/dbug.h ../global/my_debug.h
 WLT.o: /usr/include/malloc.h /usr/include/sys/types.h
 WLT.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-WLT.o: ../print/print.h ../optimize/DupTree.h ../global/traverse.h
+WLT.o: ../print/print.h ../tree/DupTree.h ../global/traverse.h
 WLT.o: ../optimize/optimize.h ../optimize/generatemasks.h WithloopFolding.h
 WLT.o: WLT.h
 WithloopFolding.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
@@ -194,11 +194,11 @@ WithloopFolding.o: ../global/globals.h ../global/internal_lib.h
 WithloopFolding.o: ../global/free.h ../../inc/dbug.h ../global/my_debug.h
 WithloopFolding.o: /usr/include/malloc.h /usr/include/sys/types.h
 WithloopFolding.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-WithloopFolding.o: ../print/print.h ../optimize/DupTree.h
-WithloopFolding.o: ../global/traverse.h ../optimize/optimize.h
-WithloopFolding.o: ../optimize/generatemasks.h ../optimize/Inline.h
-WithloopFolding.o: ../typecheck/typecheck.h ../optimize/ConstantFolding.h
-WithloopFolding.o: WithloopFolding.h WLT.h WLI.h WLF.h
+WithloopFolding.o: ../print/print.h ../tree/DupTree.h ../global/traverse.h
+WithloopFolding.o: ../optimize/optimize.h ../optimize/generatemasks.h
+WithloopFolding.o: ../optimize/Inline.h ../typecheck/typecheck.h
+WithloopFolding.o: ../optimize/ConstantFolding.h WithloopFolding.h WLT.h
+WithloopFolding.o: WLI.h WLF.h
 index.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 index.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 index.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
@@ -206,7 +206,7 @@ index.o: /usr/include/string.h ../../inc/dbug.h ../global/tree.h
 index.o: ../global/types.h ../global/tree_basic.h ../global/tree_compound.h
 index.o: ../global/Error.h /usr/include/stdlib.h ../global/globals.h
 index.o: ../global/internal_lib.h ../print/print.h ../global/traverse.h
-index.o: ../optimize/DupTree.h index.h psi-opt.h ../global/free.h
+index.o: ../tree/DupTree.h index.h psi-opt.h ../global/free.h
 index.o: ../global/my_debug.h /usr/include/malloc.h /usr/include/sys/types.h
 index.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
 index.o: ../global/access_macros.h ../compile/compile.h
@@ -232,7 +232,7 @@ tile_size_inference.o: ../global/free.h ../global/my_debug.h
 tile_size_inference.o: /usr/include/malloc.h /usr/include/sys/types.h
 tile_size_inference.o: /usr/include/sys/machtypes.h
 tile_size_inference.o: /usr/include/sys/int_types.h ../global/internal_lib.h
-tile_size_inference.o: ../global/resource.h ../optimize/DupTree.h
+tile_size_inference.o: ../global/resource.h ../tree/DupTree.h
 tile_size_inference.o: ../print/print.h ../global/tree.h
 tile_size_inference.o: tile_size_inference.h ../global/type_info.mac
 wl_access_analyze.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h

@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.9  2000/01/21 12:04:23  dkr
+# directory tree added
+#
 # Revision 2.8  2000/01/17 18:37:49  cg
 # Handling of target platform unified: One of the following
 # is always defined:
@@ -127,7 +130,7 @@ LEX       :=flex -n
 YACC      :=bison -y -dv
 LIBS      :=-ly -ll
 
-INCS=-I../global -I../../inc -I../modules -I../typecheck -I../optimize
+INCS=-I../global -I../tree -I../../inc -I../modules -I../typecheck
 
 all: y.tab.o lex.yy.o scnprs.o
 
@@ -183,6 +186,6 @@ y.tab.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
 y.tab.o: ../../inc/dbug.h ../global/tree.h ../global/types.h
 y.tab.o: ../global/tree_basic.h ../global/tree_compound.h ../global/Error.h
 y.tab.o: /usr/include/string.h ../global/globals.h ../global/internal_lib.h
-y.tab.o: ../typecheck/typecheck.h ../optimize/DupTree.h ../global/my_debug.h
+y.tab.o: ../typecheck/typecheck.h ../tree/DupTree.h ../global/my_debug.h
 y.tab.o: ../global/free.h /usr/include/malloc.h ../modules/readsib.h
 y.tab.o: ../global/resource.h

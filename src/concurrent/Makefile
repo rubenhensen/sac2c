@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.12  2000/01/21 12:03:29  dkr
+# directory tree added
+#
 # Revision 2.11  2000/01/17 18:41:13  cg
 # make deps done
 #
@@ -7,9 +10,6 @@
 # Handling of target platform unified: One of the following
 # is always defined:
 # SAC_FOR_SOLARIS_SPARC, SAC_FOR_LINUX_X86, OR SAC_FOR_OSF_ALPHA.
-#
-# Revision 2.9  1999/12/13 11:27:13  dkr
-# *** empty log message ***
 #
 # Revision 2.8  1999/07/30 13:45:12  jhs
 # Added concurrent_lib.[ch], make deps done.
@@ -104,8 +104,8 @@ CC        := gcc
 CCFLAGS   := -ansi -Wall -g -DSAC_FOR_$(OS)
 CFLAGS    := -D__EXTENSIONS__
 
-INCS=-I../global -I../../inc -I../optimize -I../typecheck -I../refcount -I../print  \
-     -I../compile
+INCS= -I../global -I../tree -I../../inc -I../optimize -I../typecheck -I../refcount \
+      -I../print -I../compile
 
 all: concurrent.o scheduling.o spmd_init.o spmd_opt.o spmd_lift.o sync_init.o \
      sync_opt.o schedule.o spmd_trav.o spmd_cons.o concurrent_lib.o
@@ -139,8 +139,8 @@ concurrent_lib.o: ../global/tree_basic.h ../global/types.h ../global/free.h
 concurrent_lib.o: ../global/my_debug.h /usr/include/malloc.h
 concurrent_lib.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
 concurrent_lib.o: /usr/include/sys/int_types.h ../global/globals.h
-concurrent_lib.o: ../global/internal_lib.h ../optimize/DupTree.h
-concurrent_lib.o: ../optimize/DataFlowMask.h
+concurrent_lib.o: ../global/internal_lib.h ../tree/DupTree.h
+concurrent_lib.o: ../tree/DataFlowMask.h
 schedule.o: ../../inc/dbug.h /usr/include/stdio.h
 schedule.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 schedule.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
@@ -162,9 +162,9 @@ spmd_cons.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
 spmd_cons.o: /usr/include/stdio_impl.h ../global/types.h
 spmd_cons.o: ../global/tree_basic.h ../global/tree_compound.h
 spmd_cons.o: ../global/Error.h /usr/include/string.h /usr/include/stdlib.h
-spmd_cons.o: ../global/globals.h ../global/traverse.h ../optimize/DupTree.h
-spmd_cons.o: ../optimize/DataFlowMask.h ../global/internal_lib.h
-spmd_cons.o: ../global/free.h ../global/my_debug.h /usr/include/malloc.h
+spmd_cons.o: ../global/globals.h ../global/traverse.h ../tree/DupTree.h
+spmd_cons.o: ../tree/DataFlowMask.h ../global/internal_lib.h ../global/free.h
+spmd_cons.o: ../global/my_debug.h /usr/include/malloc.h
 spmd_cons.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
 spmd_cons.o: /usr/include/sys/int_types.h ../typecheck/typecheck.h
 spmd_cons.o: concurrent_lib.h spmd_cons.h
@@ -174,8 +174,8 @@ spmd_init.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
 spmd_init.o: /usr/include/stdio_impl.h ../global/types.h
 spmd_init.o: ../global/tree_basic.h ../global/tree_compound.h
 spmd_init.o: ../global/Error.h /usr/include/string.h /usr/include/stdlib.h
-spmd_init.o: ../global/globals.h ../global/traverse.h ../optimize/DupTree.h
-spmd_init.o: ../optimize/DataFlowMask.h ../global/internal_lib.h
+spmd_init.o: ../global/globals.h ../global/traverse.h ../tree/DupTree.h
+spmd_init.o: ../tree/DataFlowMask.h ../global/internal_lib.h
 spmd_init.o: ../global/my_debug.h spmd_trav.h ../optimize/generatemasks.h
 spmd_init.o: spmd_opt.h
 spmd_lift.o: ../../inc/dbug.h /usr/include/stdio.h
@@ -184,8 +184,8 @@ spmd_lift.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
 spmd_lift.o: /usr/include/stdio_impl.h ../global/types.h
 spmd_lift.o: ../global/tree_basic.h ../global/tree_compound.h
 spmd_lift.o: ../global/Error.h /usr/include/string.h /usr/include/stdlib.h
-spmd_lift.o: ../global/globals.h ../global/traverse.h ../optimize/DupTree.h
-spmd_lift.o: ../optimize/DataFlowMask.h ../typecheck/typecheck.h
+spmd_lift.o: ../global/globals.h ../global/traverse.h ../tree/DupTree.h
+spmd_lift.o: ../tree/DataFlowMask.h ../typecheck/typecheck.h
 spmd_lift.o: ../refcount/refcount.h ../global/internal_lib.h concurrent_lib.h
 spmd_opt.o: ../../inc/dbug.h /usr/include/stdio.h
 spmd_opt.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
@@ -195,13 +195,12 @@ spmd_opt.o: ../global/tree_basic.h ../global/traverse.h ../global/free.h
 spmd_opt.o: ../global/my_debug.h /usr/include/malloc.h
 spmd_opt.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
 spmd_opt.o: /usr/include/sys/int_types.h ../global/globals.h
-spmd_opt.o: ../global/internal_lib.h ../optimize/DupTree.h
-spmd_opt.o: ../optimize/DataFlowMask.h spmd_trav.h concurrent_lib.h
-spmd_opt.o: spmd_opt.h
+spmd_opt.o: ../global/internal_lib.h ../tree/DupTree.h ../tree/DataFlowMask.h
+spmd_opt.o: spmd_trav.h concurrent_lib.h spmd_opt.h
 spmd_trav.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 spmd_trav.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 spmd_trav.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-spmd_trav.o: ../../inc/dbug.h ../optimize/DataFlowMask.h ../global/types.h
+spmd_trav.o: ../../inc/dbug.h ../tree/DataFlowMask.h ../global/types.h
 spmd_trav.o: ../global/traverse.h ../global/internal_lib.h
 spmd_trav.o: ../global/tree_basic.h ../global/tree_compound.h
 spmd_trav.o: ../global/Error.h /usr/include/string.h /usr/include/stdlib.h
@@ -215,8 +214,8 @@ sync_init.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
 sync_init.o: /usr/include/stdio_impl.h ../global/types.h
 sync_init.o: ../global/tree_basic.h ../global/tree_compound.h
 sync_init.o: ../global/Error.h /usr/include/string.h /usr/include/stdlib.h
-sync_init.o: ../global/globals.h ../global/traverse.h ../optimize/DupTree.h
-sync_init.o: ../optimize/DataFlowMask.h ../global/internal_lib.h
+sync_init.o: ../global/globals.h ../global/traverse.h ../tree/DupTree.h
+sync_init.o: ../tree/DataFlowMask.h ../global/internal_lib.h
 sync_init.o: ../refcount/refcount.h
 sync_opt.o: ../../inc/dbug.h /usr/include/stdio.h
 sync_opt.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
@@ -226,7 +225,6 @@ sync_opt.o: ../global/tree_basic.h ../global/traverse.h ../global/free.h
 sync_opt.o: ../global/my_debug.h /usr/include/malloc.h
 sync_opt.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
 sync_opt.o: /usr/include/sys/int_types.h ../global/globals.h
-sync_opt.o: ../global/internal_lib.h ../optimize/DupTree.h
-sync_opt.o: ../optimize/DataFlowMask.h spmd_trav.h ../global/Error.h
-sync_opt.o: /usr/include/string.h /usr/include/stdlib.h concurrent_lib.h
-sync_opt.o: sync_opt.h
+sync_opt.o: ../global/internal_lib.h ../tree/DupTree.h ../tree/DataFlowMask.h
+sync_opt.o: spmd_trav.h ../global/Error.h /usr/include/string.h
+sync_opt.o: /usr/include/stdlib.h concurrent_lib.h sync_opt.h

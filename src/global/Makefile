@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.13  2000/01/21 12:03:07  dkr
+# directory tree added
+#
 # Revision 2.12  2000/01/17 18:40:52  cg
 # make deps done
 #
@@ -7,9 +10,6 @@
 # Handling of target platform unified: One of the following
 # is always defined:
 # SAC_FOR_SOLARIS_SPARC, SAC_FOR_LINUX_X86, OR SAC_FOR_OSF_ALPHA.
-#
-# Revision 2.10  1999/12/13 11:26:55  dkr
-# *** empty log message ***
 #
 # Revision 2.9  1999/10/08 08:34:05  sbs
 # in build.c :
@@ -80,7 +80,7 @@ CFLAGS    := -D__EXTENSIONS__
 
 ECHO      := echo -n
 
-INCS=-I../../inc -I../print -I../flatten -I../scanparse -I../typecheck \
+INCS=-I../../inc -I../tree -I../print -I../flatten -I../scanparse -I../typecheck \
      -I../optimize -I../modules -I../global -I../refcount -I../compile \
      -I../psi-opt -I../objects -I../concurrent -I../Old2NewWith
 
@@ -169,7 +169,7 @@ free.o: /usr/include/sys/isa_defs.h /usr/include/stdio.h
 free.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
 free.o: /usr/include/stdio_impl.h ../../inc/dbug.h my_debug.h types.h tree.h
 free.o: tree_basic.h tree_compound.h Error.h /usr/include/string.h globals.h
-free.o: internal_lib.h traverse.h ../optimize/DataFlowMask.h
+free.o: internal_lib.h traverse.h ../tree/DataFlowMask.h
 free.o: ../concurrent/scheduling.h free.h /usr/include/malloc.h
 free.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
 free.o: /usr/include/sys/int_types.h
@@ -245,7 +245,7 @@ traverse.o: /usr/include/sys/int_types.h ../optimize/generatemasks.h
 traverse.o: ../optimize/freemasks.h ../optimize/ConstantFolding.h
 traverse.o: ../optimize/DeadCodeRemoval.h ../optimize/DeadFunctionRemoval.h
 traverse.o: ../optimize/LoopInvariantRemoval.h ../optimize/CSE.h
-traverse.o: ../modules/import.h ../optimize/DupTree.h ../optimize/Inline.h
+traverse.o: ../modules/import.h ../tree/DupTree.h ../optimize/Inline.h
 traverse.o: ../optimize/Unroll.h ../optimize/Unswitch.h
 traverse.o: ../psi-opt/ArrayElimination.h ../psi-opt/index.h
 traverse.o: ../modules/writesib.h ../modules/readsib.h
@@ -261,7 +261,7 @@ traverse.o: ../compile/gen_startup_code.h ../concurrent/scheduling.h
 traverse.o: ../concurrent/concurrent.h ../concurrent/spmd_init.h
 traverse.o: ../concurrent/spmd_opt.h ../concurrent/spmd_lift.h
 traverse.o: ../concurrent/sync_init.h ../concurrent/sync_opt.h
-traverse.o: ../concurrent/spmd_trav.h ../optimize/DataFlowMask.h
+traverse.o: ../concurrent/spmd_trav.h ../tree/DataFlowMask.h
 traverse.o: ../concurrent/spmd_cons.h ../concurrent/schedule.h
 traverse.o: ../psi-opt/wl_access_analyze.h ../psi-opt/tile_size_inference.h
 traverse.o: ../typecheck/new_typecheck.h traverse.h node_info.mac

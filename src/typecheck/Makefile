@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.11  2000/01/21 12:03:53  dkr
+# directory tree added
+#
 # Revision 2.10  2000/01/17 18:40:57  cg
 # make deps done
 #
@@ -57,7 +60,7 @@ CCFLAGS   := -ansi -Wall -g -DSAC_FOR_$(OS)
 CFLAGS    := -D__EXTENSIONS__ 
 
 RM=rm -f
-INCS=-I../global -I../../inc -I../print -I../modules -I../optimize -I../compile
+INCS=-I../global -I../tree -I../../inc -I../print -I../modules -I../optimize -I../compile
 
 all: typecheck.o prim_fun.o typecheck_WL.o gen_pseudo_fun.o \
      new_typecheck.o new_types.o shape.o user_types.o \
@@ -190,7 +193,7 @@ typecheck.o: ../../inc/dbug.h ../global/traverse.h typecheck.h
 typecheck.o: ../print/convert.h ../modules/import.h prim_fun.h
 typecheck.o: ../global/free.h /usr/include/malloc.h /usr/include/sys/types.h
 typecheck.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-typecheck.o: ../global/access_macros.h ../optimize/DupTree.h typecheck_WL.h
+typecheck.o: ../global/access_macros.h ../tree/DupTree.h typecheck_WL.h
 typecheck.o: gen_pseudo_fun.h new_typecheck.h prim_fun_tt.mac
 typecheck_WL.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 typecheck_WL.o: /usr/include/sys/isa_defs.h /usr/include/stddef.h
