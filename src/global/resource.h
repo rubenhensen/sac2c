@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2003/03/21 15:24:04  sbs
+ * RSCParseResourceFile added
+ *
  * Revision 3.2  2001/11/29 13:24:05  sbs
  * LDFLAGS added
  *
@@ -176,6 +179,8 @@ extern configuration_t config;
  * Prototypes of functions
  *
  ******************************************************************************/
+
+extern bool RSCParseResourceFile (char *file);
 
 extern resource_list_t *RSCMakeResourceListEntry (char *resource, char *value_str,
                                                   int value_num, int add_flag,

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2003/03/21 15:24:04  sbs
+ * RSCParseResourceFile added
+ *
  * Revision 3.6  2003/03/08 22:26:53  dkr
  * CCFLAGS of custom targets patched for TAGGED_ARRAYS as well
  *
@@ -430,6 +433,43 @@ RSCShowResources ()
 /******************************************************************************
  *
  * function:
+ *  void ParseResourceFile()
+ *
+ * description:
+ *  This function parses a single resource file and adds its content to the
+ *  global variables.
+ *
+ ******************************************************************************/
+
+bool
+RSCParseResourceFile (char *buffer)
+{
+    bool ok = TRUE;
+
+    DBUG_ENTER ("RSCParseResourceFile");
+
+    yyin = fopen (buffer, "r");
+
+    if (yyin == NULL) {
+        ok = FALSE;
+    } else {
+
+        NOTE (("  Parsing configuration file \"%s\" ...", buffer));
+
+        linenum = 1;
+        filename = buffer; /* set for better error messages only */
+        start_token = PARSE_RC;
+
+        My_yyparse ();
+        fclose (yyin);
+    }
+
+    DBUG_RETURN (ok);
+}
+
+/******************************************************************************
+ *
+ * function:
  *  void ParseResourceFiles()
  *
  * description:
@@ -445,6 +485,7 @@ ParseResourceFiles ()
 {
     char buffer[MAX_FILE_NAME];
     char *envvar;
+    bool ok;
 
     DBUG_ENTER ("ParseResourceFiles");
 
@@ -457,28 +498,18 @@ ParseResourceFiles ()
 
     if (envvar == NULL) {
         SYSABORT (("Unable to open public sac2crc file.\n"
-                   "Probably, your installation is corrupted."));
+                   "Probably, the environment variable SACBASE is not set."));
     }
 
     strcpy (buffer, envvar);
     strcat (buffer, "/runtime/sac2crc");
 
-    yyin = fopen (buffer, "r");
+    ok = RSCParseResourceFile (buffer);
 
-    if (yyin == NULL) {
-        SYSABORT (("Unable to open public sac2crc file.\n"
+    if (!ok) {
+        SYSABORT (("Unable to parse public sac2crc file.\n"
                    "Probably, your installation is corrupted."));
     }
-
-    NOTE (("  Parsing public configuration file \"%s\" ...", buffer));
-
-    linenum = 1;
-    filename = "sac2crc"; /* set for better error messages only */
-    start_token = PARSE_RC;
-
-    My_yyparse ();
-
-    fclose (yyin);
 
     /*
      * Second, the private sac2crc file ist read.
@@ -492,19 +523,7 @@ ParseResourceFiles ()
         strcpy (buffer, envvar);
         strcat (buffer, "/.sac2crc");
 
-        yyin = fopen (buffer, "r");
-
-        if (yyin != NULL) {
-
-            NOTE (("  Parsing private configuration file \"%s\" ...", buffer));
-
-            linenum = 1;
-            filename = ".sac2crc"; /* set for better error messages only */
-            start_token = PARSE_RC;
-            My_yyparse ();
-
-            fclose (yyin);
-        }
+        ok = RSCParseResourceFile (buffer);
     }
 
     filename = puresacfilename;
