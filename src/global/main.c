@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2001/04/24 17:12:44  dkr
+ * output of 'current_allocated_mem' added
+ *
  * Revision 3.7  2001/03/22 19:26:49  dkr
  * include of tree.h eliminated
  *
@@ -545,38 +548,19 @@ main (int argc, char *argv[])
     }
     PHASE_EPILOG;
 
-    /*
-     *  Finally, we do some clean up.
-     */
-
-    CleanUp ();
-
-    /*
-     *  After all, a success message is displayed.
-     */
-
-    NEWLINE (2);
-    NOTE2 (("*** Compilation successful ***"));
-
-#ifdef SHOW_MALLOC
-    NOTE2 (("*** maximum allocated memory (bytes): %u", max_allocated_mem));
-#endif
-
-    NOTE2 (("*** Exit code 0"));
-    NOTE2 (("*** 0 error(s), %d warning(s)", warnings));
-    NEWLINE (2);
-
-    return (0);
+    compiler_phase = PH_final;
 
 BREAK:
 
-    if (compiler_phase >= PH_scanparse) {
-        if ((print_after_break == PAB_YES) && (compiler_phase <= PH_compile)) {
-            Print (syntax_tree);
+    if (compiler_phase < PH_final) {
+        if (compiler_phase < PH_scanparse) {
+            RSCShowResources ();
+        } else {
+            if ((print_after_break == PAB_YES) && (compiler_phase <= PH_compile)) {
+                Print (syntax_tree);
+            }
+            syntax_tree = FreeTree (syntax_tree);
         }
-        syntax_tree = FreeTree (syntax_tree);
-    } else {
-        RSCShowResources ();
     }
 
     /*
@@ -586,18 +570,22 @@ BREAK:
     CleanUp ();
 
     /*
-     * ... and display a success message.
+     *  ... and display a success message.
      */
 
     NEWLINE (2);
     NOTE2 (("*** Compilation successful ***"));
-    NOTE2 (("*** BREAK after: %s", compiler_phase_name[compiler_phase]));
-    if (break_specifier[0] != '\0') {
-        NOTE2 (("*** BREAK specifier: '%s`", break_specifier));
+
+    if (compiler_phase < PH_final) {
+        NOTE2 (("*** BREAK after: %s", compiler_phase_name[compiler_phase]));
+        if (break_specifier[0] != '\0') {
+            NOTE2 (("*** BREAK specifier: '%s`", break_specifier));
+        }
     }
 
 #ifdef SHOW_MALLOC
-    NOTE2 (("*** maximum allocated memory (bytes): %u", max_allocated_mem));
+    NOTE2 (("*** Maximum allocated memory (bytes): %u", max_allocated_mem));
+    NOTE2 (("*** Currently allocated memory (bytes): %u", current_allocated_mem));
 #endif
 
     NOTE2 (("*** Exit code 0"));
