@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.258  1999/02/10 08:44:22  cg
+ * bug fixed in PrintModul(), added some useful comments.
+ *
  * Revision 1.257  1999/02/09 17:27:57  dkr
  * fixed a bug in PrintModul:
  *   no printf-comands on closed files ... :^)
@@ -386,6 +389,18 @@ PrintModul (node *arg_node, node *arg_info)
     DBUG_PRINT ("PRINT", ("%s " P_FORMAT, mdb_nodetype[NODE_TYPE (arg_node)], arg_node));
 
     if (print_separate) {
+        /*
+         * In this case, we print a module or class implementation and we want
+         * each function to appear in a separate file to create a real archive
+         * for later linking.
+         *
+         * So we produce several files in the temporary directory:
+         *   header.h   contains all type definitions and an external declaration
+         *              for each global object and function. This header file
+         *              is included by all other files.
+         *   globals.c  contains the definitions of the global objects.
+         *   fun<n>.c   contains the definition of the nth function.
+         */
         outfile = WriteOpen ("%s/header.h", tmp_dirname);
         GSCPrintFileHeader (arg_node);
 
@@ -397,6 +412,10 @@ PrintModul (node *arg_node, node *arg_info)
         if (NULL != MODUL_FUNS (arg_node)) {
             fprintf (outfile, "\n\n");
             Trav (MODUL_FUNS (arg_node), arg_node); /* print function declarations */
+                                                    /*
+                                                     * Here, we do print only function declarations. This is done by traversing
+                                                     * with arg_info != NULL !!
+                                                     */
         }
 
         if (NULL != MODUL_OBJS (arg_node)) {
@@ -411,6 +430,13 @@ PrintModul (node *arg_node, node *arg_info)
         fprintf (outfile, "#include \"header.h\"\n\n");
         fprintf (outfile, "int __dummy_value_which_is_completely_useless=0;\n\n");
 
+        if (NULL != MODUL_OBJS (arg_node)) {
+            fprintf (outfile, "\n\n");
+            print_objdef_for_header_file = 0;
+            Trav (MODUL_OBJS (arg_node), arg_info); /* print object definitions */
+        }
+
+        fclose (outfile);
         /*
          *  Maybe there's nothing to compile in this module because all functions
          *  deal with shape-independent arrays which are removed after writing
@@ -424,18 +450,15 @@ PrintModul (node *arg_node, node *arg_info)
          *  nasty warnings. These are suppressed by the above dummy symbol.
          */
 
-        if (NULL != MODUL_OBJS (arg_node)) {
-            fprintf (outfile, "\n\n");
-            print_objdef_for_header_file = 0;
-            Trav (MODUL_OBJS (arg_node), arg_info); /* print object definitions */
-        }
-
         if (NULL != MODUL_FUNS (arg_node)) {
-            fprintf (outfile, "\n\n");
-            fclose (outfile);
             Trav (MODUL_FUNS (arg_node), NULL); /* print function definitions */
-        } else {
-            fclose (outfile);
+                                                /*
+                                                 * Here, we do print full function definitions. This is done by traversing
+                                                 * with arg_info == NULL !!
+                                                 *
+                                                 * Note that in this case a separate file is created for each function.
+                                                 * These files are opened and closed in PrintFundef().
+                                                 */
         }
     } else {
         switch (MODUL_FILETYPE (arg_node)) {
