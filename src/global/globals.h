@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.36  2000/10/17 16:51:16  dkr
+ * macro MAIN_MOD_NAME added
+ *
  * Revision 2.35  2000/08/17 10:06:09  dkr
  * all the NT stuff is now in a separate modul (NameTuples.[ch])
  *
@@ -68,16 +71,16 @@
  *
  * Declaration of global variables
  * which are all defined and initialized in globals.c
- *
  */
 
 #ifndef _sac_globals_h
-
 #define _sac_globals_h
 
 #include "types.h"
 
 #include <stdio.h>
+
+#define MAIN_MOD_NAME "_MAIN"
 
 #define MAX_BREAK_SPECIFIER 32
 
