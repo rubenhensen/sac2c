@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.19  2000/07/28 14:55:53  dkr
+ * typo in ICMCompileND_PRF_MODARRAY_CHECK_REUSE corrected
+ * indentation in ICMCompileND_PRF_MODARRAY... is balanced now
+ *
  * Revision 2.18  2000/07/25 10:03:44  nmw
  * special function handling for SAC_ObjectInit... with
  * argc and argv to allow TheCommandLine to initialize
@@ -631,7 +635,8 @@ ICMCompileND_CREATE_CONST_ARRAY_A (char *name, int length, int dim, char **A)
 
     for (i = 0; i < dim * length; i++) {
         INDENT;
-        fprintf (outfile, "%s[%d]=%s[%d];\n", name, i, A[i / length], i % length);
+        fprintf (outfile, "ARRAY_WRITE( %s, %d) = ARRAY_READ( %s, %d);\n", name, i,
+                 A[i / length], i % length);
     }
 
     DBUG_VOID_RETURN;
@@ -1106,7 +1111,6 @@ ICMCompileND_KD_DROP_CxA_A (int dima, char *a, char *res, int dimv, char **vi)
 #undef ND_KD_DROP_CxA_A
 
     INDENT;
-
     TakeSeg (a, dima, VectToOffset (dimv, AccessConst (vi, i), dima, a), /* offset */
              dimv, /* dim of sizes & offsets */
              fprintf (outfile, "SAC_ND_A_SHAPE(%s, %d) - ", a, i);
@@ -1168,7 +1172,7 @@ ICMCompileND_KD_CAT_SxAxA_A (int dima, char **ar, char *res, int catdim)
                                                   "SAC_ND_WRITE_ARRAY(%s, SAC_idest) ="
                                                   " SAC_ND_READ_ARRAY(%s, SAC_isrc1);\n",
                                                   res, ar[1]);
-                       indent--; INDENT));
+                       indent--; INDENT;));
     fprintf (outfile, "\n\n");
 
     DBUG_VOID_RETURN;
@@ -1239,7 +1243,7 @@ ICMCompileND_KD_ROT_CxSxA_A (int rotdim, char **numstr, int dima, char *a, char 
                                                   "SAC_ND_WRITE_ARRAY(%s, SAC_idest) ="
                                                   " SAC_ND_READ_ARRAY(%s, SAC_isrc);\n",
                                                   res, a);
-                       indent--));
+                       indent--;));
     fprintf (outfile, "\n\n");
 
     DBUG_VOID_RETURN;
@@ -1272,19 +1276,27 @@ ICMCompileND_PRF_MODARRAY_AxCxS_CHECK_REUSE (char *res_type, int dimres, char *r
 #include "icm_trace.c"
 #undef ND_PRF_MODARRAY_AxCxS_CHECK_REUSE
 
-    fprintf (outfile, " SAC_ND_CHECK_REUSE_ARRAY(%s,%s)\n", old, res);
     INDENT;
-    fprintf (outfile, "{ int SAC_i;\n");
-    fprintf (outfile, "  SAC_ND_ALLOC_ARRAY(%s, %s, 0);\n", res_type, res);
+    fprintf (outfile, "SAC_ND_CHECK_REUSE_ARRAY(%s,%s)\n", old, res);
     INDENT;
-    fprintf (outfile, "  for (SAC_i=0; SAC_i<SAC_ND_A_SIZE(%s); SAC_i++)\n", res);
+    fprintf (outfile, "{\n");
+    indent++;
+    INDENT;
+    fprintf (outfile, "int SAC_i;\n");
+    INDENT;
+    fprintf (outfile, "SAC_ND_ALLOC_ARRAY(%s, %s, 0);\n", res_type, res);
+    INDENT;
+    fprintf (outfile, "for (SAC_i=0; SAC_i<SAC_ND_A_SIZE(%s); SAC_i++)\n", res);
+    indent++;
     INDENT;
     fprintf (outfile,
-             "    SAC_ND_WRITE_ARRAY(%s, SAC_i) ="
+             "SAC_ND_WRITE_ARRAY(%s, SAC_i) ="
              " SAC_ND_READ_ARRAY(%s, SAC_i);\n",
              res, old);
+    indent--;
     INDENT;
     fprintf (outfile, "}\n");
+    indent--;
     INDENT;
     fprintf (outfile, "SAC_ND_WRITE_ARRAY(%s, ", res);
     VectToOffset (dimv, AccessConst (vi, i), dimres, res);
@@ -1321,15 +1333,22 @@ ICMCompileND_PRF_MODARRAY_AxCxS (char *res_type, int dimres, char *res, char *ol
 #include "icm_trace.c"
 #undef ND_PRF_MODARRAY_AxCxS
 
-    fprintf (outfile, "{ int SAC_i;\n");
-    fprintf (outfile, "  SAC_ND_ALLOC_ARRAY(%s, %s, 0);\n", res_type, res);
     INDENT;
-    fprintf (outfile, "  for (SAC_i=0; SAC_i<SAC_ND_A_SIZE(%s); SAC_i++)\n", res);
+    fprintf (outfile, "{\n");
+    indent++;
+    INDENT;
+    fprintf (outfile, "int SAC_i;\n");
+    INDENT;
+    fprintf (outfile, "SAC_ND_ALLOC_ARRAY(%s, %s, 0);\n", res_type, res);
+    INDENT;
+    fprintf (outfile, "for (SAC_i=0; SAC_i<SAC_ND_A_SIZE(%s); SAC_i++)\n", res);
+    indent++;
     INDENT;
     fprintf (outfile,
-             "    SAC_ND_WRITE_ARRAY(%s, SAC_i) ="
+             "SAC_ND_WRITE_ARRAY(%s, SAC_i) ="
              " SAC_ND_READ_ARRAY(%s, SAC_i);\n",
              res, old);
+    indent -= 2;
     INDENT;
     fprintf (outfile, "}\n");
     INDENT;
@@ -1369,17 +1388,24 @@ ICMCompileND_PRF_MODARRAY_AxVxS_CHECK_REUSE (char *res_type, int dimres, char *r
 #include "icm_trace.c"
 #undef ND_PRF_MODARRAY_AxVxS_CHECK_REUSE
 
-    fprintf (outfile, " SAC_ND_CHECK_REUSE_ARRAY(%s,%s)\n", old, res);
     INDENT;
-    fprintf (outfile, "{ int SAC_i;\n");
-    fprintf (outfile, "  SAC_ND_ALLOC_ARRAY(%s, %s, 0);\n", res_type, res);
+    fprintf (outfile, "SAC_ND_CHECK_REUSE_ARRAY(%s,%s)\n", old, res);
     INDENT;
-    fprintf (outfile, "  for (SAC_i=0; SAC_i<SAC_ND_A_SIZE(%s); SAC_i++)\n", res);
+    fprintf (outfile, "{\n");
+    indent++;
+    INDENT;
+    fprintf (outfile, "int SAC_i;\n");
+    INDENT;
+    fprintf (outfile, "SAC_ND_ALLOC_ARRAY(%s, %s, 0);\n", res_type, res);
+    INDENT;
+    fprintf (outfile, "for (SAC_i=0; SAC_i<SAC_ND_A_SIZE(%s); SAC_i++)\n", res);
+    indent++;
     INDENT;
     fprintf (outfile,
-             "    SAC_ND_WRITE_ARRAY(%s, SAC_i) ="
+             "SAC_ND_WRITE_ARRAY(%s, SAC_i) ="
              " SAC_ND_READ_ARRAY(%s, SAC_i);\n",
              res, old);
+    indent -= 2;
     INDENT;
     fprintf (outfile, "}\n");
     INDENT;
@@ -1417,15 +1443,22 @@ ICMCompileND_PRF_MODARRAY_AxVxS (char *res_type, int dimres, char *res, char *ol
 #include "icm_trace.c"
 #undef ND_PRF_MODARRAY_AxVxS
 
-    fprintf (outfile, "{ int SAC_i;\n");
-    fprintf (outfile, "  SAC_ND_ALLOC_ARRAY(%s, %s, 0);\n", res_type, res);
     INDENT;
-    fprintf (outfile, "  for (SAC_i=0; SAC_i<SAC_ND_A_SIZE(%s); SAC_i++)\n", res);
+    fprintf (outfile, "{\n");
+    indent++;
+    INDENT;
+    fprintf (outfile, "int SAC_i;\n");
+    INDENT;
+    fprintf (outfile, "SAC_ND_ALLOC_ARRAY(%s, %s, 0);\n", res_type, res);
+    INDENT;
+    fprintf (outfile, "for (SAC_i=0; SAC_i<SAC_ND_A_SIZE(%s); SAC_i++)\n", res);
+    indent++;
     INDENT;
     fprintf (outfile,
-             "    SAC_ND_WRITE_ARRAY(%s, SAC_i) ="
+             "SAC_ND_WRITE_ARRAY(%s, SAC_i) ="
              " SAC_ND_READ_ARRAY(%s, SAC_i);\n",
              res, old);
+    indent -= 2;
     INDENT;
     fprintf (outfile, "}\n");
     INDENT;
@@ -1463,37 +1496,46 @@ ICMCompileND_PRF_MODARRAY_AxCxA (char *res_type, int dimres, char *res, char *ol
 #include "icm_trace.c"
 #undef ND_PRF_MODARRAY_AxCxA
 
-    fprintf (outfile, "{ int SAC_i, SAC_j;\n");
-    fprintf (outfile, "  int SAC_idx=");
+    INDENT;
+    fprintf (outfile, "{\n");
+    indent++;
+    INDENT;
+    fprintf (outfile, "int SAC_i, SAC_j;\n");
+    fprintf (outfile, "int SAC_idx=");
     VectToOffset (dimv, AccessConst (vi, i), dimres, res);
     fprintf (outfile, ";\n");
     INDENT;
-    fprintf (outfile, "  SAC_ND_ALLOC_ARRAY(%s, %s, 0);\n", res_type, res);
+    fprintf (outfile, "SAC_ND_ALLOC_ARRAY(%s, %s, 0);\n", res_type, res);
     INDENT;
-    fprintf (outfile, "  for (SAC_i=0; SAC_i<SAC_idx-1; SAC_i++)\n");
+    fprintf (outfile, "for (SAC_i=0; SAC_i<SAC_idx-1; SAC_i++)\n");
+    indent++;
     INDENT;
     fprintf (outfile,
-             "    SAC_ND_WRITE_ARRAY(%s, SAC_i) ="
+             "SAC_ND_WRITE_ARRAY(%s, SAC_i) ="
              " SAC_ND_READ_ARRAY(%s, SAC_i);\n",
              res, old);
+    indent--;
     INDENT;
     fprintf (outfile,
-             "  for (SAC_i = SAC_idx, SAC_j = 0;"
+             "for (SAC_i = SAC_idx, SAC_j = 0;"
              " SAC_j < SAC_ND_A_SIZE( %s); SAC_i++, SAC_j++)\n",
              val);
+    indent++;
     INDENT;
     fprintf (outfile,
-             "    SAC_ND_WRITE_ARRAY(%s, SAC_i) ="
+             "SAC_ND_WRITE_ARRAY(%s, SAC_i) ="
              " SAC_ND_READ_ARRAY(%s, SAC_j);\n",
              res, val);
+    indent--;
     INDENT;
-    fprintf (outfile, "  for (; SAC_i<SAC_ND_A_SIZE(%s); SAC_i++)\n", res);
+    fprintf (outfile, "for (; SAC_i<SAC_ND_A_SIZE(%s); SAC_i++)\n", res);
+    indent++;
     INDENT;
     fprintf (outfile,
-             "    SAC_ND_WRITE_ARRAY(%s, SAC_i) ="
+             "SAC_ND_WRITE_ARRAY(%s, SAC_i) ="
              " SAC_ND_READ_ARRAY(%s, SAC_i);\n",
              res, old);
-
+    indent -= 2;
     INDENT;
     fprintf (outfile, "}\n\n");
 
@@ -1527,8 +1569,11 @@ ICMCompileND_PRF_MODARRAY_AxCxA_CHECK_REUSE (char *res_type, int dimres, char *r
 #include "icm_trace.c"
 #undef ND_PRF_MODARRAY_AxCxA_CHECK_REUSE
 
-    fprintf (outfile, "{  int SAC_i, SAC_j;\n");
+    INDENT;
+    fprintf (outfile, "{\n");
     indent++;
+    INDENT;
+    fprintf (outfile, "int SAC_i, SAC_j;\n");
     INDENT;
     fprintf (outfile, "int SAC_idx = ");
     VectToOffset (dimv, AccessConst (vi, i), dimres, res);
@@ -1553,7 +1598,7 @@ ICMCompileND_PRF_MODARRAY_AxCxA_CHECK_REUSE (char *res_type, int dimres, char *r
     INDENT;
     fprintf (outfile, "}\n");
     INDENT;
-    fprintf (outfile, "else{\n");
+    fprintf (outfile, "else {\n");
     indent++;
     INDENT;
     fprintf (outfile, "SAC_ND_ALLOC_ARRAY(%s, %s, 0);\n", res_type, res);
@@ -1562,7 +1607,7 @@ ICMCompileND_PRF_MODARRAY_AxCxA_CHECK_REUSE (char *res_type, int dimres, char *r
     indent++;
     INDENT;
     fprintf (outfile,
-             "  SAC_ND_WRITE_ARRAY(%s, SAC_i) ="
+             "SAC_ND_WRITE_ARRAY(%s, SAC_i) ="
              " SAC_ND_READ_ARRAY(%s, SAC_i);\n",
              res, old);
     indent--;
@@ -1584,13 +1629,13 @@ ICMCompileND_PRF_MODARRAY_AxCxA_CHECK_REUSE (char *res_type, int dimres, char *r
     INDENT;
     fprintf (outfile,
              "SAC_ND_WRITE_ARRAY(%s, SAC_i) ="
-             " SAC_ND_READ_ARRAY(%s, SAC_i];\n",
+             " SAC_ND_READ_ARRAY(%s, SAC_i);\n",
              res, old);
     indent -= 2;
     INDENT;
     fprintf (outfile, "}\n");
+    indent--;
     INDENT;
-
     fprintf (outfile, "}\n\n");
 
     DBUG_VOID_RETURN;
@@ -1621,8 +1666,11 @@ ICMCompileND_PRF_MODARRAY_AxVxA (char *res_type, int dimres, char *res, char *ol
 #include "icm_trace.c"
 #undef ND_PRF_MODARRAY_AxVxA
 
-    fprintf (outfile, "{ int SAC_i, SAC_j;\n");
+    INDENT;
+    fprintf (outfile, "{\n");
     indent++;
+    INDENT;
+    fprintf (outfile, "int SAC_i, SAC_j;\n");
     INDENT;
     fprintf (outfile, "int SAC_idx=");
     VectToOffset (dim, AccessVect (v, i), dimres, res);
@@ -1631,29 +1679,34 @@ ICMCompileND_PRF_MODARRAY_AxVxA (char *res_type, int dimres, char *res, char *ol
     fprintf (outfile, "SAC_ND_ALLOC_ARRAY(%s, %s, 0);\n", res_type, res);
     INDENT;
     fprintf (outfile, "for (SAC_i = 0; SAC_i < SAC_idx-1; SAC_i++)\n");
+    indent++;
     INDENT;
     fprintf (outfile,
-             "  SAC_ND_WRITE_ARRAY( %s, SAC_i) ="
+             "SAC_ND_WRITE_ARRAY( %s, SAC_i) ="
              " SAC_ND_READ_ARRAY( %s, SAC_i);\n",
              res, old);
+    indent--;
     INDENT;
     fprintf (outfile,
              "for (SAC_i = SAC_idx, SAC_j = 0;"
              " SAC_j < SAC_ND_A_SIZE( %s); SAC_i++, SAC_j++)\n",
              val);
+    indent++;
     INDENT;
     fprintf (outfile,
-             "  SAC_ND_WRITE_ARRAY( %s, SAC_i) ="
+             "SAC_ND_WRITE_ARRAY( %s, SAC_i) ="
              " SAC_ND_READ_ARRAY( %s, SAC_j);\n",
              res, val);
+    indent--;
     INDENT;
     fprintf (outfile, "for (; SAC_i < SAC_ND_A_SIZE( %s); SAC_i++)\n", res);
+    indent++;
     INDENT;
     fprintf (outfile,
-             "  SAC_ND_WRITE_ARRAY( %s, SAC_i) ="
+             "SAC_ND_WRITE_ARRAY( %s, SAC_i) ="
              " SAC_ND_READ_ARRAY( %s, SAC_i);\n",
              res, old);
-    indent--;
+    indent -= 2;
     INDENT;
     fprintf (outfile, "}\n\n");
 
@@ -1687,8 +1740,11 @@ ICMCompileND_PRF_MODARRAY_AxVxA_CHECK_REUSE (char *res_type, int dimres, char *r
 #include "icm_trace.c"
 #undef ND_PRF_MODARRAY_AxVxA_CHECK_REUSE
 
-    fprintf (outfile, "{  int SAC_i, SAC_j;\n");
+    INDENT;
+    fprintf (outfile, "{\n");
     indent++;
+    INDENT;
+    fprintf (outfile, "int SAC_i, SAC_j;\n");
     INDENT;
     fprintf (outfile, "int SAC_idx=");
     VectToOffset (dim, AccessVect (v, i), dimres, res);
@@ -1706,7 +1762,7 @@ ICMCompileND_PRF_MODARRAY_AxVxA_CHECK_REUSE (char *res_type, int dimres, char *r
     indent++;
     INDENT;
     fprintf (outfile,
-             " SAC_ND_WRITE_ARRAY(%s, SAC_i) ="
+             "SAC_ND_WRITE_ARRAY(%s, SAC_i) ="
              " SAC_ND_READ_ARRAY(%s, SAC_j);\n",
              res, val);
     indent -= 2;
@@ -1722,7 +1778,7 @@ ICMCompileND_PRF_MODARRAY_AxVxA_CHECK_REUSE (char *res_type, int dimres, char *r
     indent++;
     INDENT;
     fprintf (outfile,
-             "  SAC_ND_WRITE_ARRAY(%s, SAC_i) ="
+             "SAC_ND_WRITE_ARRAY(%s, SAC_i) ="
              " SAC_ND_READ_ARRAY(%s, SAC_i);\n",
              res, old);
     indent--;
@@ -1751,6 +1807,8 @@ ICMCompileND_PRF_MODARRAY_AxVxA_CHECK_REUSE (char *res_type, int dimres, char *r
     fprintf (outfile, "}\n");
     INDENT;
 
+    indent--;
+    INDENT;
     fprintf (outfile, "}\n\n");
 
     DBUG_VOID_RETURN;
@@ -1778,10 +1836,6 @@ ICMCompileND_KS_VECT2OFFSET (char *off_name, char *arr_name, int dim, int dims, 
 #include "icm_comment.c"
 #include "icm_trace.c"
 #undef ND_KS_VECT2OFFSET
-
-#ifdef TEST_BACKEND
-    indent += idxlen + 1;
-#endif /* TEST_BACKEND */
 
     INDENT;
     fprintf (outfile, "%s = ", off_name);
