@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.53  2004/10/05 17:38:20  khf
+ * splitted SAC_MT_ADJUST_SCHEDULER__OFFSET into
+ * SAC_MT_ADJUST_SCHEDULER__BEGIN ..__OFFSET
+ * and ..__END to support multiple offsets
+ *
  * Revision 3.52  2004/03/09 23:54:41  dkrHH
  * file sac_mt.tagged.h renamed into sac_mt.h
  * old backend removed
@@ -1257,8 +1262,7 @@ typedef union {
         }                                                                                \
     }
 
-#define SAC_MT_ADJUST_SCHEDULER__OFFSET(to_NT, dims, dim, lower, upper, unrolling,       \
-                                        offset)                                          \
+#define SAC_MT_ADJUST_SCHEDULER__BEGIN(to_NT, dims, dim, lower, upper, unrolling)        \
     {                                                                                    \
         int diff_start, diff_stop;                                                       \
                                                                                          \
@@ -1267,25 +1271,18 @@ typedef union {
         SAC_MT_ADJUST_SCHEDULER_BOUND (diff_stop, SAC_WL_MT_SCHEDULE_STOP (dim), lower,  \
                                        upper, unrolling)                                 \
                                                                                          \
-        SAC_WL_OFFSET (to_NT) += diff_start * (offset);                                  \
         SAC_TR_MT_PRINT (("Scheduler Adjustment: dim %d: %d -> %d", dim,                 \
                           SAC_WL_MT_SCHEDULE_START (dim),                                \
-                          SAC_WL_MT_SCHEDULE_STOP (dim)));                               \
+                          SAC_WL_MT_SCHEDULE_STOP (dim)));
+/* Here is no closing bracket missing -> SAC_MT_ADJUST_SCHEDULER__END */
+
+#define SAC_MT_ADJUST_SCHEDULER__OFFSET(to_NT, dims, dim, lower, upper, unrolling)       \
+    {                                                                                    \
+                                                                                         \
+        SAC_WL_OFFSET (to_NT) += diff_start * SAC_WL_SHAPE_FACTOR (to_NT, dim);          \
     }
 
-#define SAC_MT_ADJUST_SCHEDULER(to_NT, dims, dim, lower, upper, unrolling)               \
-    {                                                                                    \
-        int diff_start, diff_stop;                                                       \
-                                                                                         \
-        SAC_MT_ADJUST_SCHEDULER_BOUND (diff_start, SAC_WL_MT_SCHEDULE_START (dim),       \
-                                       lower, upper, unrolling)                          \
-        SAC_MT_ADJUST_SCHEDULER_BOUND (diff_stop, SAC_WL_MT_SCHEDULE_STOP (dim), lower,  \
-                                       upper, unrolling)                                 \
-                                                                                         \
-        SAC_TR_MT_PRINT (("Scheduler Adjustment: dim %d: %d -> %d", dim,                 \
-                          SAC_WL_MT_SCHEDULE_START (dim),                                \
-                          SAC_WL_MT_SCHEDULE_STOP (dim)));                               \
-    }
+#define SAC_MT_ADJUST_SCHEDULER__END(to_NT, dims, dim, lower, upper, unrolling) }
 
 #define SAC_MT_SCHEDULER_Static_BEGIN()
 
