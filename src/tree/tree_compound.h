@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.131  2004/11/24 13:17:16  skt
+ * some old refcnt-macros deleted
+ *
  * Revision 3.130  2004/11/24 12:41:05  khf
  * removed macros concerning CODE_CEXPR
  *
@@ -824,18 +827,6 @@ extern node *TCappendRets (node *chain, node *item);
        : ((NODE_TYPE (n) == N_vardec)                                                    \
             ? VARDEC_VARNO (n)                                                           \
             : DBUG_ASSERT_EXPR (0, "VARDEC_OR_ARG_VARNO on objdef", 0)))
-#define VARDEC_OR_ARG_REFCNT(n)                                                          \
-    ((NODE_TYPE (n) == N_arg)                                                            \
-       ? ARG_REFCNT (n)                                                                  \
-       : ((NODE_TYPE (n) == N_vardec)                                                    \
-            ? VARDEC_REFCNT (n)                                                          \
-            : DBUG_ASSERT_EXPR (0, "VARDEC_OR_ARG_REFCNT on objdef", 0)))
-#define VARDEC_OR_ARG_NAIVE_REFCNT(n)                                                    \
-    ((NODE_TYPE (n) == N_arg)                                                            \
-       ? ARG_NAIVE_REFCNT (n)                                                            \
-       : ((NODE_TYPE (n) == N_vardec)                                                    \
-            ? VARDEC_NAIVE_REFCNT (n)                                                    \
-            : DBUG_ASSERT_EXPR (0, "VARDEC_OR_ARG_NAIVE_REFCNT on objdef", 0)))
 #define VARDEC_OR_ARG_NEXT(n)                                                            \
     ((NODE_TYPE (n) == N_arg)                                                            \
        ? ARG_NEXT (n)                                                                    \
@@ -874,20 +865,6 @@ extern node *TCappendRets (node *chain, node *item);
         ARG_COLCHN (n) = (rhs);                                                          \
     } else {                                                                             \
         VARDEC_COLCHN (n) = (rhs);                                                       \
-    }
-
-#define L_VARDEC_OR_ARG_REFCNT(n, rhs)                                                   \
-    if (NODE_TYPE (n) == N_arg) {                                                        \
-        ARG_REFCNT (n) = (rhs);                                                          \
-    } else {                                                                             \
-        VARDEC_REFCNT (n) = (rhs);                                                       \
-    }
-
-#define L_VARDEC_OR_ARG_NAIVE_REFCNT(n, rhs)                                             \
-    if (NODE_TYPE (n) == N_arg) {                                                        \
-        ARG_NAIVE_REFCNT (n) = (rhs);                                                    \
-    } else {                                                                             \
-        VARDEC_NAIVE_REFCNT (n) = (rhs);                                                 \
     }
 
 #define L_VARDEC_OR_ARG_NEXT(n, rhs)                                                     \
