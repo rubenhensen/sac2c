@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.34  2000/03/17 20:27:35  dkr
+ * option -# without / in parameter: my_dbug_from and my_dbug_to are explicitely
+ * set to the first and last phase, respectively.
+ *
  * Revision 2.33  2000/03/17 11:41:16  dkr
  * fixed a bug in macro LAC_FUN
  *
@@ -628,6 +632,8 @@ AnalyseCommandline (int argc, char *argv[])
         if (NULL == strchr (ARG, '/')) {
             my_dbug_str = StringCopy (ARG);
             my_dbug = 1;
+            my_dbug_from = PH_initial;
+            my_dbug_to = PH_final;
         } else {
             char *s;
             my_dbug_from = (compiler_phase_t)strtol (ARG, &s, 10);
