@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2001/05/02 11:13:57  nmw
+ * missing initialization added
+ *
  * Revision 3.4  2001/05/02 09:09:53  nmw
  * change implementation to be more agressive when removing dead functions
  * from SAC programs
@@ -123,16 +126,6 @@ DFRmodul (node *arg_node, node *arg_info)
         INFO_DFR_SPINE (arg_info) = TRUE;
         MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
 
-        /* turn unused fundefs into zombies */
-        fun = MODUL_FUNS (arg_node);
-        while (fun != NULL) {
-            if (!(FUNDEF_EXPORT (fun))) {
-                dead_fun++;
-                fun = FreeNode (fun);
-            }
-            fun = FUNDEF_NEXT (fun);
-        }
-
         /* remove all produced zombies */
         MODUL_FUNS (arg_node) = RemoveAllZombies (MODUL_FUNS (arg_node));
     }
@@ -160,9 +153,9 @@ DFRfundef (node *arg_node, node *arg_info)
         DBUG_PRINT ("DFR",
                     ("Dead Function Removal in function: %s", FUNDEF_NAME (arg_node)));
 
+        /* remark: main is always tagged as ST_exported! */
         if ((FUNDEF_STATUS (arg_node) == ST_exported)
-            || (FUNDEF_STATUS (arg_node) == ST_objinitfun)
-            || (strcmp (FUNDEF_NAME (arg_node), "main") == 0)) {
+            || (FUNDEF_STATUS (arg_node) == ST_objinitfun)) {
             FUNDEF_EXPORT (arg_node) = TRUE;
 
             if (FUNDEF_BODY (arg_node) != NULL) {
@@ -172,12 +165,16 @@ DFRfundef (node *arg_node, node *arg_info)
             }
         }
 
-        /* traverse all fundefs in modules only */
-        if ((strcmp (FUNDEF_NAME (arg_node), "main") != 0)
-            && (FUNDEF_NEXT (arg_node) != NULL)) {
+        /* traverse next fundef */
+        if (FUNDEF_NEXT (arg_node) != NULL) {
             FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
         }
 
+        /* on bottom up traversal turn unused fundefs into zombies */
+        if (!(FUNDEF_EXPORT (arg_node))) {
+            dead_fun++;
+            arg_node = FreeNode (arg_node);
+        }
     } else {
         if (!FUNDEF_EXPORT (arg_node)) {
             FUNDEF_EXPORT (arg_node) = TRUE;
