@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.210  1998/05/02 17:45:11  dkr
+ * changed PrintSpmd
+ *
  * Revision 1.209  1998/04/30 18:41:36  srs
  * removed big in PrintNwith()
  *
@@ -2128,7 +2131,17 @@ PrintSpmd (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintSpmd");
 
-    fprintf (outfile, "/*** begin of SPMD region ***\n");
+    if (SPMD_ICM (arg_node) == NULL) {
+        fprintf (outfile, "/*** begin of SPMD region ***\n");
+    } else {
+        /*
+         * print ICM
+         */
+        fprintf (outfile, "\n");
+        SPMD_ICM (arg_node) = Trav (SPMD_ICM (arg_node), arg_info);
+        fprintf (outfile, "\n");
+    }
+
     DBUG_EXECUTE ("MASK", char *text;
                   text = PrintMask (SPMD_IN (arg_node), SPMD_VARNO (arg_node));
                   fprintf (outfile, "**IN:    %s\n", text);
@@ -2139,12 +2152,12 @@ PrintSpmd (node *arg_node, node *arg_info)
                   text = PrintMask (SPMD_LOCAL (arg_node), SPMD_VARNO (arg_node));
                   fprintf (outfile, "**LOCAL: %s\n", text); FREE (text););
 
-    indent++;
     SPMD_REGION (arg_node) = Trav (SPMD_REGION (arg_node), arg_info);
-    indent--;
 
-    INDENT
-    fprintf (outfile, "/*** end of SPMD region ***/");
+    if (SPMD_ICM (arg_node) == NULL) {
+        INDENT
+        fprintf (outfile, "/*** end of SPMD region ***/");
+    }
 
     DBUG_RETURN (arg_node);
 }
