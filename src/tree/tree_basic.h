@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.30  2000/03/21 13:51:25  dkr
+ * remarks for N_WLseg and N_WLsegVar added
+ *
  * Revision 1.29  2000/03/21 13:12:16  jhs
  * Added macros: INFO_DFA_xxx, MT_xxx, ST_xxx.
  *
@@ -3173,12 +3176,22 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int 
  ***    int        BLOCKS    (number of blocking levels (0..3)
  ***                           --- without unrolling-blocking)
  ***    int*       SV        (step vector)           (wltransform -> )
- ***    int*       BV        (blocking vector)       (wltransform -> compile )
+ ***    int*       BV[]      (blocking vectors)      (wltransform -> compile )
  ***    int*       UBV       (unrolling-bl. vector)  (wltransform -> compile )
  ***
  ***    SCHsched_t SCHEDULING  (O)                   (wltransform -> compile )
  ***    int        MAXHOMDIM (last homog. dimension) (wltransform -> compile )
  ***    int*       HOMSV     (homog. step vector)    (wltransform -> compile )
+ ***
+ ***  remarks:
+ ***
+ ***    - BV[ 0 .. (BLOCKS-1) ]
+ ***    - IDX_MIN, IDX_MAX, SV, BV[0], BV[1], ..., UBV, HOMSV are vectors of
+ ***      size DIMS.
+ ***    - MAXHOMDIM is element of the set {-1, 0, 1, ..., DIMS-1}.
+ ***      -1 is the default value (= no homogeneous dimensions).
+ ***    - (HOMSV[i] == 0)  <->  (i > MAXHOMDIM),
+ ***      (HOMSV[i] > 0)   <->  (i <= MAXHOMDIM).
  ***/
 
 extern node *MakeWLseg (int dims, node *contents, node *next);
@@ -3387,10 +3400,16 @@ extern node *MakeWLgrid (int level, int dim, int bound1, int bound2, int unrolli
  ***    int        BLOCKS    (number of blocking levels
  ***                           --- without unrolling-blocking)
  ***    int*       SV        (step vector)           (wltransform -> )
- ***    int*       BV        (blocking vector)       (wltransform -> compile )
+ ***    int*       BV[]      (blocking vectors)      (wltransform -> compile )
  ***    int*       UBV       (unrolling-b. vector)   (wltransform -> compile )
  ***
  ***    SCHsched_t SCHEDULING  (O)                   (wltransform -> compile )
+ ***
+ ***  remarks:
+ ***
+ ***    - BV[ 0 .. (BLOCKS-1) ]
+ ***    - IDX_MIN, IDX_MAX, SV, BV[0], BV[1], ..., UBV, HOMSV are vectors of
+ ***      size DIMS.
  ***/
 
 extern node *MakeWLsegVar (int dims, node *contents, node *next);
