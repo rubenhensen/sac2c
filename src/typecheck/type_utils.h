@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2004/12/07 14:36:16  sbs
+ * added TUtypeSignature2String
+ *
  * Revision 1.6  2004/12/05 19:19:55  sbs
  * return type of LaC funs changed into alphas.
  *
@@ -42,5 +45,6 @@ extern bool TUisArrayOfUser (ntype *type);
 extern bool TUisHidden (ntype *type);
 extern bool TUisBoxed (ntype *type);
 extern ntype *TUcomputeImplementationType (ntype *ty);
+extern char *TUtypeSignature2String (node *fundef);
 
 #endif /* _SAC_TYPE_UTILS_H_*/

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2004/12/07 14:36:16  sbs
+ * added TUtypeSignature2String
+ *
  * Revision 1.6  2004/12/06 17:30:25  sbs
  * TUreplaceRettypes is now non-destructive!
  *
@@ -30,6 +33,7 @@
 #include "tree_compound.h"
 
 #include "new_types.h"
+#include "ssi.h"
 #include "user_types.h"
 
 /** <!--********************************************************************-->
@@ -215,7 +219,11 @@ TUrettypes2AUD (node *rets)
     DBUG_ENTER ("TUrettypes2AUD");
 
     while (tmp != NULL) {
-        scalar = TYcopyType (TYgetScalar (RET_TYPE (tmp)));
+        if (TYisAlpha (RET_TYPE (tmp))) {
+            scalar = TYcopyType (TYgetScalar (SSIgetMax (TYgetAlpha (RET_TYPE (tmp)))));
+        } else {
+            scalar = TYcopyType (TYgetScalar (RET_TYPE (tmp)));
+        }
         RET_TYPE (tmp) = TYfreeType (RET_TYPE (tmp));
         RET_TYPE (tmp) = TYmakeAUD (TYmakeSimpleType (T_unknown));
         tmp = RET_NEXT (tmp);
@@ -271,7 +279,11 @@ TUrettypes2alphaAUD (node *rets)
     DBUG_ENTER ("TUrettypes2alphaAUD");
 
     while (tmp != NULL) {
-        scalar = TYcopyType (TYgetScalar (RET_TYPE (tmp)));
+        if (TYisAlpha (RET_TYPE (tmp))) {
+            scalar = TYcopyType (TYgetScalar (SSIgetMax (TYgetAlpha (RET_TYPE (tmp)))));
+        } else {
+            scalar = TYcopyType (TYgetScalar (RET_TYPE (tmp)));
+        }
         RET_TYPE (tmp) = TYfreeType (RET_TYPE (tmp));
         RET_TYPE (tmp) = TYmakeAlphaType (TYmakeAUD (scalar));
         tmp = RET_NEXT (tmp);
@@ -408,4 +420,51 @@ TUcomputeImplementationType (ntype *ty)
         res = TYcopyType (ty);
     }
     DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn char *TUtypeSignature2String( node *fundef)
+ *
+ *   @brief
+ *   @param
+ *   @return
+ *
+ ******************************************************************************/
+
+char *
+TUtypeSignature2String (node *fundef)
+{
+    static str_buf *buf = NULL;
+    char *tmp_str;
+    node *arg;
+
+    DBUG_ENTER ("TUtypeSignature2String");
+
+    if (buf == NULL) {
+        buf = ILIBstrBufCreate (100);
+    }
+
+    arg = FUNDEF_ARGS (fundef);
+    while (arg != NULL) {
+        tmp_str = TYtype2String (ARG_NTYPE (arg), FALSE, 0);
+        buf = ILIBstrBufPrintf (buf, "%s ", tmp_str);
+        tmp_str = ILIBfree (tmp_str);
+        arg = ARG_NEXT (arg);
+    }
+
+    buf = ILIBstrBufPrint (buf, "-> ");
+
+    arg = FUNDEF_RETS (fundef);
+    while (arg != NULL) {
+        tmp_str = TYtype2String (RET_TYPE (arg), FALSE, 0);
+        buf = ILIBstrBufPrintf (buf, "%s ", tmp_str);
+        tmp_str = ILIBfree (tmp_str);
+        arg = RET_NEXT (arg);
+    }
+
+    tmp_str = ILIBstrBuf2String (buf);
+    ILIBstrBufFlush (buf);
+
+    DBUG_RETURN (tmp_str);
 }
