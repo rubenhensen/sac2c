@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.109  1996/01/21 13:56:54  cg
+ * Revision 1.110  1996/01/22 17:29:58  cg
+ * pragma initfun is now printed
+ *
+ * Revision 1.109  1996/01/21  13:56:54  cg
  * bugs fixed in PrintArg and PrintIds
  *
  * Revision 1.108  1996/01/16  16:57:00  cg
@@ -651,6 +654,7 @@ PrintObjdef (node *arg_node, node *arg_info)
 
     if ((OBJDEF_ICM (arg_node) != NULL) && (NODE_TYPE (OBJDEF_ICM (arg_node)) == N_icm)) {
         Trav (OBJDEF_ICM (arg_node), arg_info);
+        fprintf (outfile, "\n");
     } else {
         if (arg_node->info.types->status == ST_imported) {
             fprintf (outfile, "extern %s ", Type2String (arg_node->info.types, 0));
@@ -669,6 +673,10 @@ PrintObjdef (node *arg_node, node *arg_info)
             }
 
             fprintf (outfile, ";\n");
+        }
+
+        if (OBJDEF_PRAGMA (arg_node) != NULL) {
+            Trav (OBJDEF_PRAGMA (arg_node), arg_info);
         }
     }
 
@@ -1554,6 +1562,12 @@ PrintPragma (node *arg_node, node *arg_info)
         if (arg_info == NULL)
             fprintf (outfile, " *  ");
         fprintf (outfile, "#pragma freefun \"%s\"\n", PRAGMA_FREEFUN (arg_node));
+    }
+
+    if (PRAGMA_INITFUN (arg_node) != NULL) {
+        if (arg_info == NULL)
+            fprintf (outfile, " *  ");
+        fprintf (outfile, "#pragma initfun \"%s\"\n", PRAGMA_INITFUN (arg_node));
     }
 
     if (arg_info == NULL) {
