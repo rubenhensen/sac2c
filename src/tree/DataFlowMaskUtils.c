@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2000/03/23 16:16:22  dkr
+ * DFM2ReturnTypes() modified: reference flag in rettypes->attrib is
+ * unset
+ *
  * Revision 1.5  2000/03/23 12:33:55  dkr
  * DFM2Vardecs modified: VARDEC_ATTRIB is now set correctly
  *
@@ -228,7 +232,7 @@ RemoveDFMstack (stack_t **stack)
 /******************************************************************************
  *
  * function:
- *   types *DFM2Types( DFMmask_t mask)
+ *   types *DFM2ReturnTypes( DFMmask_t mask)
  *
  * description:
  *   Creates a types chain based on the given DFmask.
@@ -236,13 +240,13 @@ RemoveDFMstack (stack_t **stack)
  ******************************************************************************/
 
 types *
-DFM2Types (DFMmask_t mask)
+DFM2ReturnTypes (DFMmask_t mask)
 {
     node *decl;
     types *tmp;
     types *rettypes = NULL;
 
-    DBUG_ENTER ("DFM2Types");
+    DBUG_ENTER ("DFM2ReturnTypes");
 
     /*
      * build return types, return exprs (use SPMD_OUT).
@@ -251,6 +255,11 @@ DFM2Types (DFMmask_t mask)
     while (decl != NULL) {
         tmp = rettypes;
         rettypes = DuplicateTypes (VARDEC_OR_ARG_TYPE (decl), 1);
+        if ((rettypes->attrib == ST_reference)
+            || (rettypes->attrib == ST_readonly_reference)) {
+            rettypes->attrib = ST_unique;
+        }
+
         TYPES_NEXT (rettypes) = tmp;
         decl = DFMGetMaskEntryDeclSet (NULL);
     }
