@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.112  2002/08/30 10:50:05  dkr
+ * PrintPrf: F_type_error added
+ *
  * Revision 3.111  2002/08/12 14:59:50  sbs
  *  N_mop representation changed
  *
@@ -2181,16 +2184,18 @@ PrintPrf (node *arg_node, node *arg_info)
 
     switch (PRF_PRF (arg_node)) {
     case F_sel:
-        /* F_sel is printed with special [] notation */
-        /* first the array argument is printed, then */
-        /* a leading [ followed by the selection     */
-        /* vector and finally the closing ].         */
+        /*
+         * F_sel is printed with special [] notation:
+         * first the array argument is printed, then a leading '[' followed by
+         * the selection vector and finally the closing ']'.
+         */
 
         Trav (PRF_ARG2 (arg_node), arg_info);
         fprintf (outfile, "[");
         Trav (PRF_ARG1 (arg_node), arg_info);
         fprintf (outfile, "]");
         break;
+
     case F_take:
     case F_drop:
     case F_shape:
@@ -2212,6 +2217,7 @@ PrintPrf (node *arg_node, node *arg_info)
     case F_min:
     case F_max:
     case F_abs:
+    case F_type_error:
         /* primitive functions that are printed as function application */
         DBUG_EXECUTE ("PRINT_PRF", fprintf (outfile, "PRF:"););
 
