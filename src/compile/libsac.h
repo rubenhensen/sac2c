@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.16  1998/03/17 12:22:40  cg
+ * Now, an alternative way of initializing character arrays derived from
+ * strings is implemented. This uses the new ICM ND_CREATE_CONST_ARRAY_C
+ * which in turn calls the libsac function String2Array.
+ *
  * Revision 1.15  1997/11/03 16:27:19  dkr
  * new macro RT_FREE
  *
@@ -71,6 +76,7 @@ extern void __SAC__Runtime_Print (char *format, ...);
 extern void __SAC__Runtime_PrintTraceHeader (char *format, ...);
 extern void __SAC__Runtime_PrintTraceInfo (char *format, ...);
 extern void *__SAC__Runtime_malloc (int size);
+extern void __SAC__Runtime_String2Array (char *array, const char *string);
 
 /*
  * Internal Macros :

@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.46  1998/03/17 12:22:40  cg
+ * Now, an alternative way of initializing character arrays derived from
+ * strings is implemented. This uses the new ICM ND_CREATE_CONST_ARRAY_C
+ * which in turn calls the libsac function String2Array.
+ *
  * Revision 1.45  1997/11/03 16:26:11  dkr
  * new Makro RT_FREE
  * free -> RT_FREE
@@ -355,6 +360,9 @@
  * ND_ALLOC_RC(name)
  *   allocates memory for refcount (no initialization)
  *
+ * ND_CREATE_CONST_ARRAY_C( name, str)
+ *   creates a constant character array (string)
+ *   Also see ND_CREATE_CONST_ARRAY_S for the creation of scalar arrays.
  */
 
 #define ND_ALLOC_RC(name)                                                                \
@@ -378,6 +386,8 @@
 #define ND_SET_DIM(name, num) ND_A_DIM (name) = num;
 
 #define ND_SET_SHAPE(name, dim, s) ND_A_SHAPE (name, dim) = s;
+
+#define ND_CREATE_CONST_ARRAY_C(name, str) __SAC__Runtime_String2Array (name, str);
 
 /*
  * Macros for reference counting :

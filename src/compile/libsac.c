@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.7  1998/03/17 12:22:40  cg
+ * Now, an alternative way of initializing character arrays derived from
+ * strings is implemented. This uses the new ICM ND_CREATE_CONST_ARRAY_C
+ * which in turn calls the libsac function String2Array.
+ *
  * Revision 1.6  1997/05/28 12:35:25  sbs
  * Profiling integrated
  *
@@ -221,6 +226,69 @@ __SAC__Runtime_PrintHeader (char *title)
     __SAC__Runtime_Print ("*** %-72s ***\n", title);
     __SAC__Runtime_Print ("****************************************"
                           "****************************************\n");
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void __SAC__Runtime_string2array(char *array, const char *string)
+ *
+ * description:
+ *
+ *
+ *
+ *
+ *
+ ******************************************************************************/
+
+void
+__SAC__Runtime_String2Array (char *array, const char *string)
+{
+    int i = 0, j = 0;
+
+    while (string[j] != '\0') {
+        if (string[j] == '\\') {
+            switch (string[j + 1]) {
+            case 'n':
+                array[i++] = '\n';
+                j += 2;
+                break;
+            case 't':
+                array[i++] = '\t';
+                j += 2;
+                break;
+            case 'v':
+                array[i++] = '\v';
+                j += 2;
+                break;
+            case 'b':
+                array[i++] = '\b';
+                j += 2;
+                break;
+            case 'r':
+                array[i++] = '\r';
+                j += 2;
+                break;
+            case 'f':
+                array[i++] = '\f';
+                j += 2;
+                break;
+            case 'a':
+                array[i++] = '\a';
+                j += 2;
+                break;
+            case '"':
+                array[i++] = '"';
+                j += 2;
+                break;
+            default:
+                array[i++] = '\\';
+                j += 1;
+            }
+        } else {
+            array[i++] = string[j++];
+        }
+    }
 }
 
 /*

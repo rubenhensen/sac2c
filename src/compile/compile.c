@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.118  1998/03/17 12:22:40  cg
+ * Now, an alternative way of initializing character arrays derived from
+ * strings is implemented. This uses the new ICM ND_CREATE_CONST_ARRAY_C
+ * which in turn calls the libsac function String2Array.
+ *
  * Revision 1.117  1998/03/03 23:16:37  dkr
  * *** empty log message ***
  *
@@ -4178,7 +4183,10 @@ CompArray (node *arg_node, node *arg_info)
 {
     node *first_assign, *next_assign, *exprs, *res, *type_id_node, *old_arg_node,
       *icm_arg, *n_node, *res_ref, *last_assign;
-    int n_elems = 0, icm_created = 0;
+
+    int n_elems = 0;
+    int icm_created = 0;
+
     simpletype s_type;
 
     DBUG_ENTER ("CompArray");
@@ -4204,11 +4212,41 @@ CompArray (node *arg_node, node *arg_info)
     arg_node = arg_info->node[1]->node[0];
 
     /* create ND_CREATE_CONST_ARRAY */
-    exprs = old_arg_node->node[0];
+
+    exprs = ARRAY_AELEMS (old_arg_node);
+#if 0
+   if (ARRAY_BASETYPE(old_arg_node)==T_char) {
+     /*
+      * When defining a constant array of char, we try to use a string notation.
+      * This is only possible if the character array really represents a string,
+      * i.e. it does not contain intermediate null-characters and the last character
+      * actually is a null-character. In this cases the ICM ND_CREATE_CONST_ARRAY_C
+      * is used instead of ND_CREATE_CONST_ARRAY_S.
+      */
+
+     use_string_notation=1;
+     do {
+       if (((CHAR_VAL(EXPRS_EXPR(exprs))=='\0')
+	       && (EXPRS_NEXT(exprs)!=NULL))
+	   || ((CHAR_VAL(EXPRS_EXPR(exprs))!='\0')
+	       && (EXPRS_NEXT(exprs)==NULL))
+	   || ((!isprint(CHAR_VAL(EXPRS_EXPR(exprs))))
+	       &&) {
+	 use_string_notation=0;
+       }
+       
+       n_elems+=1;
+       exprs=EXPRS_NEXT(exprs);
+     }
+     while(NULL != exprs);
+   }
+#endif
+
     do {
         n_elems += 1;
-        exprs = exprs->node[1];
+        exprs = EXPRS_NEXT (exprs);
     } while (NULL != exprs);
+
     MAKENODE_NUM (n_node, n_elems);
     DBUG_ASSERT (NULL != old_arg_node->node[0], " NULL pointer ");
 
@@ -4235,11 +4273,21 @@ CompArray (node *arg_node, node *arg_info)
     }
 
     if (0 == icm_created) {
-        CREATE_2_ARY_ICM (next_assign, "ND_CREATE_CONST_ARRAY_S", res, n_node);
+        if (ARRAY_STRING (old_arg_node) != NULL) {
+
+            CREATE_2_ARY_ICM (next_assign, "ND_CREATE_CONST_ARRAY_C", res,
+                              MakeStr (ARRAY_STRING (old_arg_node)));
+        } else {
+            CREATE_2_ARY_ICM (next_assign, "ND_CREATE_CONST_ARRAY_S", res, n_node);
+            /* now append the elements of the array to the last N_icm */
+            icm_arg->node[1] = old_arg_node->node[0];
+        }
+    } else {
+
+        /* now append the elements of the array to the last N_icm */
+        icm_arg->node[1] = old_arg_node->node[0];
     }
 
-    /* now append the elements of the array to the last N_icm */
-    icm_arg->node[1] = old_arg_node->node[0];
     APPEND_ASSIGNS (first_assign, next_assign);
 
     INSERT_ASSIGN;
