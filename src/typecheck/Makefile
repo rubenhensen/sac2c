@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.6  1999/10/04 08:35:14  sbs
+# ilne for new_typecheck.o added.
+#
 # Revision 2.5  1999/09/28 14:44:55  sbs
 # line for user_types.o added.
 #
@@ -125,6 +128,15 @@ INCS=-I../global -I../../inc -I../print -I../modules -I../optimize -I../compile
 
 all: typecheck.o prim_fun.o typecheck_WL.o gen_pseudo_fun.o
 
+new_typecheck.o: new_typecheck.c
+	$(CC) $(CCFLAGS) $(CFLAGS) -o new_typecheck.o -c new_typecheck.c $(INCS)
+
+new_types.o: new_types.c
+	$(CC) $(CCFLAGS) $(CFLAGS) -o new_types.o -c new_types.c $(INCS)
+
+shape.o: shape.c
+	$(CC) $(CCFLAGS) $(CFLAGS) -o shape.o -c shape.c $(INCS)
+
 user_types.o: user_types.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o user_types.o -c user_types.c $(INCS)
 
@@ -160,6 +172,18 @@ gen_pseudo_fun.o: ../global/internal_lib.h ../global/free.h
 gen_pseudo_fun.o: ../global/my_debug.h /usr/include/malloc.h
 gen_pseudo_fun.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
 gen_pseudo_fun.o: /usr/include/sys/int_types.h typecheck.h gen_pseudo_fun.h
+new_typecheck.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
+new_typecheck.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
+new_typecheck.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
+new_typecheck.o: /usr/include/string.h ../../inc/dbug.h
+new_types.o: ../../inc/dbug.h /usr/include/stdio.h
+new_types.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
+new_types.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
+new_types.o: /usr/include/stdio_impl.h ../global/free.h ../global/my_debug.h
+new_types.o: /usr/include/malloc.h /usr/include/sys/types.h
+new_types.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
+new_types.o: ../global/internal_lib.h ../global/types.h shape.h
+new_types.o: type_constructor_info.mac new_types.h user_types.h
 prim_fun.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 prim_fun.o: /usr/include/sys/isa_defs.h ../global/globals.h ../global/types.h
 prim_fun.o: /usr/include/stdio.h /usr/include/sys/va_list.h
@@ -171,6 +195,13 @@ prim_fun.o: ../global/access_macros.h ../print/convert.h ../global/free.h
 prim_fun.o: /usr/include/malloc.h /usr/include/sys/types.h
 prim_fun.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
 prim_fun.o: prim_fun_tt.mac prim_fun_ft.mac
+shape.o: ../../inc/dbug.h /usr/include/stdio.h
+shape.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
+shape.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
+shape.o: /usr/include/stdio_impl.h ../global/tree_basic.h ../global/types.h
+shape.o: ../global/free.h ../global/my_debug.h /usr/include/malloc.h
+shape.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
+shape.o: /usr/include/sys/int_types.h ../global/internal_lib.h shape.h
 typecheck.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 typecheck.o: /usr/include/sys/isa_defs.h /usr/include/stddef.h
 typecheck.o: /usr/include/string.h /usr/include/limits.h
@@ -198,3 +229,11 @@ typecheck_WL.o: ../global/my_debug.h ../../inc/dbug.h ../global/traverse.h
 typecheck_WL.o: ../global/free.h /usr/include/malloc.h
 typecheck_WL.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
 typecheck_WL.o: /usr/include/sys/int_types.h ../optimize/ConstantFolding.h
+user_types.o: /usr/include/string.h /usr/include/sys/feature_tests.h
+user_types.o: /usr/include/sys/isa_defs.h ../../inc/dbug.h
+user_types.o: /usr/include/stdio.h /usr/include/sys/va_list.h
+user_types.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
+user_types.o: ../global/free.h ../global/my_debug.h /usr/include/malloc.h
+user_types.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
+user_types.o: /usr/include/sys/int_types.h ../global/internal_lib.h
+user_types.o: ../global/types.h user_types.h new_types.h shape.h
