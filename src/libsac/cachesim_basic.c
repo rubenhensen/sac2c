@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.20  2000/02/04 16:50:20  cg
+ * Changed setting of cache sizes from a KB representation to bytes.
+ *
  * Revision 2.19  1999/07/22 14:56:13  cg
  * Added safety checks concerning existence and executability of
  * external CacheSimAnalyser for piped cache simulation.
@@ -504,7 +507,7 @@ ResetCacheParms (char *spec, unsigned long int *cachesize, int *cachelinesize,
         SAC_RuntimeError ("Invalid cache parameter specification: '%s`.", full_spec);
     }
 
-    *cachesize = atoi (field);
+    *cachesize = atoi (field) * 1024;
 
     field = strtok (NULL, "/");
 
@@ -759,7 +762,7 @@ InitializeOneCacheLevel (int L, int nr_of_cpu, tProfilingLevel profilinglevel,
     SAC_CS_cachelevel[L] = act_cl;
     if ((cachesize > 0) && (act_cl != NULL)) {
         /* init main-structure */
-        act_cl->cachesize = cachesize * 1024; /* kbyte -> byte */
+        act_cl->cachesize = cachesize;
         act_cl->cachelinesize = cachelinesize;
         act_cl->associativity = associativity;
         act_cl->data = (ULINT *)calloc (1, act_cl->cachesize * sizeof (ULINT));
