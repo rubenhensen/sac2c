@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2004/10/22 17:10:04  ktr
+ * moved a declaration.
+ *
  * Revision 1.2  2004/10/22 15:38:19  ktr
  * Ongoing implementation.
  *
@@ -191,9 +194,9 @@ InitializeRetAlias (node *fundef)
     DBUG_ENTER ("InitializeRetAlias");
 
     if (FUNDEF_RETALIAS (fundef) == NULL) {
+        int retvals = TYGetProductSize (FUNDEF_RET_TYPE (fundef));
         DBUG_PRINT ("EMAA",
                     ("FUNDEF_RETALIAS initialized function: %s", FUNDEF_NAME (fundef)));
-        int retvals = TYGetProductSize (FUNDEF_RET_TYPE (fundef));
         while (retvals > 0) {
             FUNDEF_RETALIAS (fundef)
               = MakeNodelistNode (MakeBool (TRUE), FUNDEF_RETALIAS (fundef));
