@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.31  2001/04/02 14:42:57  dkr
+ * WLSEGVAR_IDX_PRINT modified
+ * WLSEGX_IDX_MIN, WLSEGX_IDX_MAX added
+ *
  * Revision 3.30  2001/04/02 11:44:53  dkr
  * functions NodeOrInt...(), NameOrVal...() moved to wl_bounds.[ch]
  *
@@ -1775,14 +1779,8 @@ extern node *MakeIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *arg
         if (vect != NULL) {                                                              \
             fprintf (handle, "[ ");                                                      \
             for (d = 0; d < WLSEGVAR_DIMS (n); d++) {                                    \
-                if (NODE_TYPE (vect[d]) == N_num) {                                      \
-                    fprintf (handle, "%i ", NUM_VAL (vect[d]));                          \
-                } else {                                                                 \
-                    DBUG_ASSERT ((NODE_TYPE (vect[d]) == N_id),                          \
-                                 "entry of var. index vector is neither N_num"           \
-                                 " nor N_id!");                                          \
-                    fprintf (handle, "%s ", ID_NAME (vect[d]));                          \
-                }                                                                        \
+                NodeOrInt_Print (handle, N_WLsegVar, &(vect[d]), d);                     \
+                fprintf (handle, " ");                                                   \
             }                                                                            \
             fprintf (handle, "]");                                                       \
         } else {                                                                         \
@@ -1795,6 +1793,12 @@ extern node *MakeIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *arg
 /***
  ***  N_WLseg :  *and*  N_WLsegVar :
  ***/
+
+#define WLSEGX_IDX_MIN(n)                                                                \
+    ((NODE_TYPE (n) == N_WLseg) ? WLSEG_IDX_MIN (n) : WLSEGVAR_IDX_MIN (n))
+
+#define WLSEGX_IDX_MAX(n)                                                                \
+    ((NODE_TYPE (n) == N_WLseg) ? WLSEG_IDX_MAX (n) : WLSEGVAR_IDX_MAX (n))
 
 #define WLSEGX_IDX_GET_ADDR(n, field, dim)                                               \
     ((NODE_TYPE (n) == N_WLseg) ? (void *)&(((int *)(WLSEG_##field (n)))[dim])           \
