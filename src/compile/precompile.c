@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.23  2000/07/19 16:39:32  nmw
+ * objinit function modified to work with ICMs
+ *
  * Revision 2.22  2000/07/14 15:44:01  nmw
  * some dead code removed
  *
@@ -566,6 +569,9 @@ static node *
 InsertObjInit (node *block, node *objdef)
 {
     ids *new_ids;
+    node *assign_end;
+    node *assign_ap;
+    node *assign_begin;
 
     DBUG_ENTER ("InsertObjInit");
 
@@ -578,10 +584,21 @@ InsertObjInit (node *block, node *objdef)
         IDS_REFCNT (new_ids) = -1;
     }
 
-    BLOCK_INSTR (block)
-      = MakeAssign (MakeLet (OBJDEF_EXPR (objdef), new_ids), BLOCK_INSTR (block));
+    assign_end = MakeAssignIcm0 ("INITGLOBALOBJECT_END");
+    ICM_END_OF_STATEMENT (ASSIGN_INSTR (assign_end)) = TRUE;
 
-    OBJDEF_EXPR (objdef) = NULL; /* ??? */
+    assign_ap = MakeAssign (MakeLet (OBJDEF_EXPR (objdef), new_ids), BLOCK_INSTR (block));
+    assign_begin
+      = MakeAssignIcm1 ("INITGLOBALOBJECT_BEGIN",
+                        MakeId1 (StringConcat ("SAC_INIT_FLAG_", OBJDEF_NAME (objdef))));
+
+    ASSIGN_NEXT (assign_end) = BLOCK_INSTR (block);
+    ASSIGN_NEXT (assign_ap) = assign_end;
+    ASSIGN_NEXT (assign_begin) = assign_ap;
+
+    BLOCK_INSTR (block) = assign_begin;
+
+    OBJDEF_EXPR (objdef) = NULL;
 
     DBUG_RETURN (block);
 }
@@ -1347,19 +1364,21 @@ PREC2id (node *arg_node, node *arg_info)
     if (ID_STATUS (arg_node) == ST_artificial) {
         arg_node = FreeTree (arg_node);
     } else {
-        if ((NODE_TYPE (ID_VARDEC (arg_node)) == N_arg)
-            && (ARG_STATUS (ID_VARDEC (arg_node)) == ST_artificial)) {
-            ID_VARDEC (arg_node) = ARG_OBJDEF (ID_VARDEC (arg_node));
-        } else {
-            if ((NODE_TYPE (ID_VARDEC (arg_node)) == N_vardec)
-                && (VARDEC_STATUS (ID_VARDEC (arg_node)) == ST_artificial)) {
-                ID_VARDEC (arg_node) = VARDEC_OBJDEF (ID_VARDEC (arg_node));
+        if (ID_VARDEC (arg_node) != NULL) { /* is NULL for IDs in ObjInitFunctions */
+            if ((NODE_TYPE (ID_VARDEC (arg_node)) == N_arg)
+                && (ARG_STATUS (ID_VARDEC (arg_node)) == ST_artificial)) {
+                ID_VARDEC (arg_node) = ARG_OBJDEF (ID_VARDEC (arg_node));
+            } else {
+                if ((NODE_TYPE (ID_VARDEC (arg_node)) == N_vardec)
+                    && (VARDEC_STATUS (ID_VARDEC (arg_node)) == ST_artificial)) {
+                    ID_VARDEC (arg_node) = VARDEC_OBJDEF (ID_VARDEC (arg_node));
+                }
             }
+
+            arg_node = RenameId (arg_node);
+
+            ID_MAKEUNIQUE (arg_node) = 0;
         }
-
-        arg_node = RenameId (arg_node);
-
-        ID_MAKEUNIQUE (arg_node) = 0;
     }
 
     DBUG_RETURN (arg_node);
