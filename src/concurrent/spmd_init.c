@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2004/10/12 09:59:15  khf
+ * initialised a variable to please the compiler
+ *
  * Revision 3.10  2004/10/07 15:35:31  khf
  * added support for multioperator WLs
  *
@@ -131,6 +134,7 @@ WithLoopIsWorthConcurrentExecution (node *withloop, ids *let_var)
 
     DBUG_ENTER ("WithLoopIsWorthConcurrentExecution");
 
+    res = FALSE;
     withop = NWITH2_WITHOP (withloop);
     while (let_var != NULL) {
         if (NWITHOP_IS_FOLD (withop)) {
