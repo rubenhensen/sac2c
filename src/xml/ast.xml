@@ -1415,6 +1415,14 @@
       </traversal>
     </phase>
     <phase id="precompile" name="Preparing C code generation" >
+      <traversal id="SLS" name="Set Linksign" default="sons" include="setlinksign.h" >
+        <travuser>
+	  <node name="Module" />
+	  <node name="Fundef" />
+	  <node name="Arg" />
+	  <node name="Ret" />
+	</travuser>
+      </traversal>
       <traversal id="MMV" name="MarkMemVals" default="sons" include="markmemvals.h" >
         <travuser>
           <node name="Block" />
