@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.69  1999/01/25 16:26:58  sbs
+# interrupt.[cho] added
+#
 # Revision 1.68  1998/11/04 18:22:30  dkr
 # make deps done
 #
@@ -226,7 +229,7 @@ INCS=-I../../inc -I../print -I../flatten -I../scanparse -I../typecheck \
 
 all: main.o Error.o traverse.o usage.o my_debug.o tree.o free.o  \
      internal_lib.o tree_basic.o tree_compound.o globals.o \
-     resource.o types.h build.o
+     resource.o types.h build.o interrupt.o
 
 #
 # the types.h object is to fool makedepend which does not
@@ -235,6 +238,9 @@ all: main.o Error.o traverse.o usage.o my_debug.o tree.o free.o  \
 
 types.h: type_info.mac node_info.mac prf_node_info.mac
 	touch types.h
+
+interrupt.o: interrupt.c 
+	$(CC) $(CCFLAGS) $(CFLAGS) -o interrupt.o -c interrupt.c $(INCS)
 
 main.o: main.c 
 	$(CC) $(CCFLAGS) $(CFLAGS) -o main.o -c main.c $(INCS)
