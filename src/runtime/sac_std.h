@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.9  2000/07/06 17:01:13  dkr
+ * SAC_ND_A_SHAPE renamed into SAC_ND_A_SHAPE_AKD
+ * SAC_ND_KD_A_SHAPE renamed into SAC_A_SHAPE
+ *
  * Revision 2.8  2000/01/17 17:58:45  cg
  * Added support for optimized allocation of refernce counters.
  *
@@ -97,15 +101,15 @@
  * ICMs for array access:
  * ========================
  *
- * ND_A_FIELD     : for accessing elements of the array
- * ND_A_SIZE      : accesses the size of the unrolling (in elements)
- * ND_A_DIM       : accesses the dimension of the array
- * ND_KD_A_SHAPE  : accesses the shape in a specified dimension
- * ND_A_SHAPE     : accesses one shape component of an array
- * ND_A_SHAPEP    : accesses the shape vector of an array
+ * ND_A_FIELD      : for accessing elements of the array
+ * ND_A_SIZE       : accesses the size of the unrolling (in elements)
+ * ND_A_DIM        : accesses the dimension of the array
+ * ND_A_SHAPE      : accesses the shape in a specified dimension
+ * ND_A_SHAPE_AKD  : accesses one shape component of an array
+ * ND_A_SHAPEP_AKD : accesses the shape vector of an array
  *
- * ND_WRITE_ARRAY : write access at specified index position
- * ND_READ_ARRAY  : read access at specified index position
+ * ND_WRITE_ARRAY  : write access at specified index position
+ * ND_READ_ARRAY   : read access at specified index position
  *
  * Only the latter two ICMs should be used to access the elements of an array
  * as they selectively enable boundary checking and cache simulation !
@@ -114,9 +118,9 @@
 #define SAC_ND_A_FIELD(name) name
 #define SAC_ND_A_SIZE(name) name##__sz
 #define SAC_ND_A_DIM(name) name##__d
-#define SAC_ND_KD_A_SHAPE(name, dim) name##__s##dim
-#define SAC_ND_A_SHAPEP(name) name##__s
-#define SAC_ND_A_SHAPE(name, dim) name##__s[dim]
+#define SAC_ND_A_SHAPE(name, dim) name##__s##dim
+#define SAC_ND_A_SHAPEP_AKD(name) name##__s
+#define SAC_ND_A_SHAPE_AKD(name, dim) name##__s[dim]
 
 #define SAC_ND_WRITE_ARRAY(name, pos)                                                    \
     SAC_BC_WRITE (name, pos) SAC_CS_WRITE_ARRAY (name, pos) SAC_ND_A_FIELD (name)[pos]
@@ -160,13 +164,13 @@
     SAC_ND_DECL_RC (basetype *, name)                                                    \
     int SAC_ND_A_SIZE (name);                                                            \
     const int SAC_ND_A_DIM (name) = dim;                                                 \
-    int *SAC_ND_A_SHAPEP (name);
+    int *SAC_ND_A_SHAPEP_AKD (name);
 
 #define SAC_ND_DECL_ARRAY(basetype, name)                                                \
     SAC_ND_DECL_RC (basetype *, name)                                                    \
     int SAC_ND_A_SIZE (name);                                                            \
     int SAC_ND_A_DIM (name);                                                             \
-    int *SAC_ND_A_SHAPEP (name);
+    int *SAC_ND_A_SHAPEP_AKD (name);
 
 /*
  * ICMs for removing refcounted data :
@@ -376,7 +380,7 @@
 
 #define SAC_ND_SET_DIM(name, num) SAC_ND_A_DIM (name) = num;
 
-#define SAC_ND_SET_SHAPE(name, dim, s) SAC_ND_A_SHAPE (name, dim) = s;
+#define SAC_ND_SET_SHAPE(name, dim, s) SAC_ND_A_SHAPE_AKD (name, dim) = s;
 
 #define SAC_ND_CREATE_CONST_ARRAY_C(name, str) SAC_String2Array (name, str);
 
