@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.6  2000/03/10 10:33:41  dkr
+ * output format of ICM WL_INIT_OFFSET changed
+ *
  * Revision 2.5  1999/11/16 15:23:05  dkr
  * comments added
  *
@@ -98,8 +101,6 @@
  *
  * Revision 1.1  1998/05/03 14:06:09  dkr
  * Initial revision
- *
- *
  *
  */
 
@@ -558,35 +559,9 @@ PrintShapeFactor (int current_dim, int target_dim, char *target)
 
     DBUG_ENTER ("PrintShapeFactor");
 
-    indent += 2;
-
-    switch (target_dim - current_dim) {
-    case 0:
-    case 1:
-        fprintf (outfile, "\n");
-        break;
-    case 2:
-        fprintf (outfile, " * SAC_ND_KD_A_SHAPE(%s, %d)\n", target, target_dim - 1);
-        break;
-    default:
-        fprintf (outfile, "\n");
-        INDENT;
-        fprintf (outfile, "* ( SAC_ND_KD_A_SHAPE(%s, %d)\n", target, current_dim + 1);
-        indent += 2;
-
-        for (j = current_dim + 2; j < target_dim; j++) {
-            INDENT;
-            fprintf (outfile, "* SAC_ND_KD_A_SHAPE(%s, %d)\n", target, j);
-        }
-
-        indent--;
-        INDENT;
-        fprintf (outfile, ")\n");
-
-        indent--;
+    for (j = current_dim + 1; j < target_dim; j++) {
+        fprintf (outfile, " * SAC_ND_KD_A_SHAPE(%s, %d)", target, j);
     }
-
-    indent -= 2;
 
     DBUG_VOID_RETURN;
 }
@@ -604,22 +579,21 @@ ICMCompileWL_INIT_OFFSET (int dims_target, char *target, char *idx_vec, int dims
 #undef WL_INIT_OFFSET
 
     INDENT;
-    fprintf (outfile, "%s__destptr = \n", target);
+    fprintf (outfile, "%s__destptr = ", target);
     indent++;
 
-    INDENT;
     fprintf (outfile, "SAC_WL_MT_SCHEDULE_START(0)");
 
     PrintShapeFactor (0, dims_target, target);
 
     for (i = 1; i < dims_wl; i++) {
+        fprintf (outfile, "\n");
         INDENT;
         fprintf (outfile, "+ SAC_WL_MT_SCHEDULE_START(%d)", i);
 
         PrintShapeFactor (i, dims_target, target);
     }
 
-    INDENT;
     fprintf (outfile, ";\n");
     indent--;
 
