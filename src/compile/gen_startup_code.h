@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2004/11/26 12:08:24  cg
+ * Removed CalcMasterClass.
+ *
  * Revision 3.6  2004/11/26 11:52:53  cg
  * file names brushed.
  *
@@ -67,8 +70,6 @@ extern void GSCprintDefines ();
 extern void GSCprintMain ();
 extern void GSCprintMainBegin ();
 extern void GSCprintMainEnd ();
-
-extern int GSCcalcMasterclass (int num_threads);
 
 /******************************************************************************
  *
