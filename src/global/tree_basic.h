@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.71  1998/02/12 11:03:07  srs
+ * added INFO_.. macros for ConstantColding
+ *
  * Revision 1.70  1998/02/11 17:21:36  srs
  * changed NPART_IDX to NPART_WITHID
  *
@@ -1934,6 +1937,8 @@ extern node *MakePragma ();
  ***    node*      NEXT               (N_info)
  ***    node*      WL                 (N_Nwith)
  ***
+ ***  when used in ConstantFolding.c :
+ ***    node*      ASSIGN             (N_assign)
  ***/
 
 /*
@@ -1969,6 +1974,10 @@ extern node *MakeInfo ();
 #define INFO_IS_WL(n) (n->counter)
 #define INFO_NEXT(n) (n->node[0])
 #define INFO_WL(n) (n->node[1])
+
+/* CF */
+#define INFO_ASSIGN(n) (n->node[0])
+#define INFO_TYPE(n) (n->info.types)
 
 /*--------------------------------------------------------------------------*/
 
