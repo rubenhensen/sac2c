@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2004/09/27 13:15:20  sah
+ * added serialization support
+ *
  * Revision 1.8  2004/09/22 20:07:57  sah
  * added SHSerializeShape
  *
@@ -55,7 +58,7 @@ extern shape *SHCreateShape (int dim, ...);
 extern shape *SHCopyShape (shape *shp);
 extern void SHPrintShape (FILE *file, shape *shp);
 extern shape *SHFreeShape (shape *shp);
-extern void SHSerializeShape (FILE *file, shape *shp, char *vname);
+extern void SHSerializeShape (FILE *file, shape *shp);
 
 extern int SHGetDim (shape *shp);
 extern int SHGetExtent (shape *shp, int dim);

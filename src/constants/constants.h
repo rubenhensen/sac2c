@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.21  2004/09/27 13:15:20  sah
+ * added serialization support
+ *
  * Revision 1.20  2004/09/22 10:03:58  ktr
  * Modified the comment to point out the common pitfall that COGetDim does
  * not return a freshly allocated shape structure
@@ -103,6 +106,7 @@
  *
  */
 
+#include <stdio.h>
 #include "shape.h"
 #include "types.h"
 
@@ -129,6 +133,14 @@ extern constant *COMakeZero (simpletype type, shape *shp);
 extern constant *COMakeOne (simpletype type, shape *shp);
 extern constant *COMakeTrue (shape *shp);
 extern constant *COMakeFalse (shape *shp);
+
+/*
+ * Functions for serializing/deserializing constants
+ * see constants_serialize.c
+ */
+
+extern void COSerializeConstant (FILE *file, constant *cnst);
+extern constant *CODeserializeConstant (simpletype type, shape *shp, int vlen, char *vec);
 
 /*
  * Functions for extracting info from constants:

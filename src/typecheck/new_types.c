@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.54  2004/09/27 13:15:20  sah
+ * added serialization support
+ *
  * Revision 3.53  2004/07/05 17:26:47  sbs
  * some DBUG output is added.
  *
@@ -232,6 +235,8 @@
 #include "user_types.h"
 #include "shape.h"
 #include "ssi.h"
+
+#include "serialize.h"
 
 /*
  * Since all type constructors may have different attributes,
@@ -5605,6 +5610,617 @@ TYCreateWrapperCode (node *fundef, node *vardecs, node **new_vardecs)
     }
 
     DBUG_RETURN (assigns);
+}
+
+/**
+ ** Serialization support
+ **/
+
+static void
+SerializeSimpleType (FILE *file, ntype *type)
+{
+    DBUG_ENTER ("SerializeSimpleType");
+
+    fprintf (file, "TYDeserializeType( %d, %d)", NTYPE_CON (type), SIMPLE_TYPE (type));
+
+    DBUG_VOID_RETURN;
+}
+
+static void
+SerializeSymbolType (FILE *file, ntype *type)
+{
+    DBUG_ENTER ("SerializeSymbolType");
+
+    fprintf (file, "TYDeserializeType( %d, \"%s\", \"%s\")", NTYPE_CON (type),
+             SYMBOL_NAME (type), SYMBOL_MOD (type));
+
+    DBUG_VOID_RETURN;
+}
+
+static void
+SerializeUserType (FILE *file, ntype *type)
+{
+    DBUG_ENTER ("SerializeUserType");
+
+    fprintf (file, "TYDeserializeType( %d, \"%s\", \"%s\")", NTYPE_CON (type),
+             UTGetName (USER_TYPE (type)), UTGetMod (USER_TYPE (type)));
+
+    DBUG_VOID_RETURN;
+}
+
+static void
+SerializeAKVType (FILE *file, ntype *type)
+{
+    DBUG_ENTER ("SerializeAKVType");
+
+    fprintf (file, "TYDeserializeType( %d, ", NTYPE_CON (type));
+
+    TYSerializeType (file, AKV_BASE (type));
+
+    fprintf (file, ", ");
+
+    COSerializeConstant (file, AKV_CONST (type));
+
+    fprintf (file, ")");
+
+    DBUG_VOID_RETURN;
+}
+
+static void
+SerializeAKSType (FILE *file, ntype *type)
+{
+    DBUG_ENTER ("SerializeAKSType");
+
+    fprintf (file, "TYDeserializeType( %d, ", NTYPE_CON (type));
+
+    TYSerializeType (file, AKS_BASE (type));
+
+    fprintf (file, ", ");
+
+    SHSerializeShape (file, AKS_SHP (type));
+
+    fprintf (file, ")");
+
+    DBUG_VOID_RETURN;
+}
+
+static void
+SerializeAKDType (FILE *file, ntype *type)
+{
+    DBUG_ENTER ("SerializeAKDType");
+
+    fprintf (file, "TYDeserializeType( %d, ", NTYPE_CON (type));
+
+    TYSerializeType (file, AKD_BASE (type));
+
+    fprintf (file, ", %d, ", AKD_DOTS (type));
+
+    SHSerializeShape (file, AKD_SHP (type));
+
+    fprintf (file, ")");
+
+    DBUG_VOID_RETURN;
+}
+
+static void
+SerializeAUDType (FILE *file, ntype *type)
+{
+    DBUG_ENTER ("SerializeAUDType");
+
+    fprintf (file, "TYDeserializeType( %d, ", NTYPE_CON (type));
+
+    TYSerializeType (file, AUD_BASE (type));
+
+    fprintf (file, ")");
+
+    DBUG_VOID_RETURN;
+}
+
+static void
+SerializeAUDGZType (FILE *file, ntype *type)
+{
+    DBUG_ENTER ("SerializeAUDGZType");
+
+    fprintf (file, "TYDeserializeType( %d, ", NTYPE_CON (type));
+
+    TYSerializeType (file, AUDGZ_BASE (type));
+
+    fprintf (file, ")");
+
+    DBUG_VOID_RETURN;
+}
+
+static void
+SerializeProdType (FILE *file, ntype *type)
+{
+    int cnt;
+
+    DBUG_ENTER ("SerializeProdType");
+
+    fprintf (file, "TYDeserializeType( %d, %d", NTYPE_CON (type), NTYPE_ARITY (type));
+
+    for (cnt = 0; cnt < NTYPE_ARITY (type); cnt++) {
+        fprintf (file, ", ");
+
+        TYSerializeType (file, PROD_MEMBER (type, cnt));
+    }
+
+    fprintf (file, ")");
+
+    DBUG_VOID_RETURN;
+}
+
+static void
+SerializeUnionType (FILE *file, ntype *type)
+{
+    int cnt;
+
+    DBUG_ENTER ("SerializeUnionType");
+
+    fprintf (file, "TYDeserializeType( %d, %d", NTYPE_CON (type), NTYPE_ARITY (type));
+
+    for (cnt = 0; cnt < NTYPE_ARITY (type); cnt++) {
+        fprintf (file, ", ");
+
+        TYSerializeType (file, UNION_MEMBER (type, cnt));
+    }
+
+    fprintf (file, ")");
+
+    DBUG_VOID_RETURN;
+}
+
+static void
+SerializeFunType (FILE *file, ntype *type)
+{
+    int cnt;
+
+    DBUG_ENTER ("SerializeFunType");
+
+    fprintf (file, "TYDeserializeType( %d, %d", NTYPE_CON (type), NTYPE_ARITY (type));
+
+    for (cnt = 0; cnt < NTYPE_ARITY (type); cnt++) {
+        fprintf (file, ", ");
+
+        TYSerializeType (file, FUN_IBASE (type, cnt));
+    }
+
+    fprintf (file, ")");
+
+    DBUG_VOID_RETURN;
+}
+
+static void
+SerializeIBaseType (FILE *file, ntype *type)
+{
+    DBUG_ENTER ("SerializeIBaseType");
+
+    fprintf (file, "TYDeserializeType( %d, ", NTYPE_CON (type));
+
+    TYSerializeType (file, IBASE_BASE (type));
+
+    fprintf (file, ", ");
+
+    TYSerializeType (file, IBASE_SCAL (type));
+
+    fprintf (file, ", ");
+
+    TYSerializeType (file, IBASE_GEN (type));
+
+    fprintf (file, ", ");
+
+    TYSerializeType (file, IBASE_IARR (type));
+
+    fprintf (file, ")");
+
+    DBUG_VOID_RETURN;
+}
+
+static void
+SerializeIArrType (FILE *file, ntype *type)
+{
+    int cnt;
+
+    DBUG_ENTER ("SerializeIArrType");
+
+    fprintf (file, "TYDeserializeType( %d, %d, ", NTYPE_CON (type), NTYPE_ARITY (type));
+
+    TYSerializeType (file, IARR_GEN (type));
+
+    for (cnt = 0; cnt < NTYPE_ARITY (type) - 1; cnt++) {
+        fprintf (file, ", ");
+
+        TYSerializeType (file, IARR_IDIM (type, cnt));
+    }
+
+    fprintf (file, ")");
+
+    DBUG_VOID_RETURN;
+}
+
+static void
+SerializeIDimType (FILE *file, ntype *type)
+{
+    int cnt;
+
+    DBUG_ENTER ("SerializeIDimType");
+
+    fprintf (file, "TYDeserializeType( %d, %d, %d, ", NTYPE_CON (type),
+             NTYPE_ARITY (type), IDIM_DIM (type));
+
+    TYSerializeType (file, IDIM_GEN (type));
+
+    for (cnt = 0; cnt < NTYPE_ARITY (type) - 1; cnt++) {
+        fprintf (file, ", ");
+
+        TYSerializeType (file, IDIM_ISHAPE (type, cnt));
+    }
+
+    fprintf (file, ")");
+
+    DBUG_VOID_RETURN;
+}
+
+static void
+SerializeIShapeType (FILE *file, ntype *type)
+{
+    DBUG_ENTER ("SerializeIShapeType");
+
+    fprintf (file, "TYDeserializeType( %d, ", NTYPE_CON (type));
+
+    SHSerializeShape (file, ISHAPE_SHAPE (type));
+
+    fprintf (file, ", ");
+
+    TYSerializeType (file, ISHAPE_GEN (type));
+
+    fprintf (file, ")");
+
+    DBUG_VOID_RETURN;
+}
+
+static void
+SerializeIResType (FILE *file, ntype *type)
+{
+    int cnt;
+
+    DBUG_ENTER ("SerializeIResType");
+
+    fprintf (file, "TYDeserializeType( %d, %d", NTYPE_CON (type), IRES_NUMFUNS (type));
+
+    for (cnt = 0; cnt < IRES_NUMFUNS (type); cnt++) {
+        fprintf (file, ", SHLPLookupFunction( \"%s\")",
+                 GenerateSerFunName (STE_funhead, IRES_FUNDEF (type, cnt)));
+    }
+
+    for (cnt = 0; cnt < IRES_NUMFUNS (type); cnt++) {
+        fprintf (file, ", %d", IRES_POS (type, cnt));
+    }
+
+    fprintf (file, ", ");
+
+    TYSerializeType (file, IRES_TYPE (type));
+
+    fprintf (file, ") ");
+
+    DBUG_VOID_RETURN;
+}
+
+static void
+SerializeAlphaType (FILE *file, ntype *type)
+{
+    DBUG_ENTER ("SerializeAlphaType");
+
+    /*
+    DBUG_ASSERT( 0,
+        "Cannot handle alpha types");
+        */
+
+    fprintf (file, "NULL");
+
+    DBUG_VOID_RETURN;
+}
+
+static void
+SerializePolyType (FILE *file, ntype *type)
+{
+    DBUG_ENTER ("SerializePolyType");
+
+    fprintf (file, "TYDeserializeType( %d, \"%s\")", NTYPE_CON (type), POLY_NAME (type));
+
+    DBUG_VOID_RETURN;
+}
+
+static void
+SerializeDummyType (FILE *file, ntype *type)
+{
+    DBUG_ENTER ("SerializeDummyType");
+
+    fprintf (file, "TYDeserializeType( %d)", NTYPE_CON (type));
+
+    DBUG_VOID_RETURN;
+}
+
+void
+TYSerializeType (FILE *file, ntype *type)
+{
+    DBUG_ENTER ("TYSerializeType");
+
+    if (type == NULL) {
+        DBUG_PRINT ("SET", ("Processing type (null)"));
+
+        fprintf (file, "NULL");
+
+        DBUG_PRINT ("SET", ("Done processing type (null)"));
+    } else {
+        DBUG_PRINT ("SET", ("Processing type %s", dbug_str[NTYPE_CON (type)]));
+
+        switch (NTYPE_CON (type)) {
+        case TC_simple:
+            SerializeSimpleType (file, type);
+            break;
+        case TC_symbol:
+            SerializeSymbolType (file, type);
+            break;
+        case TC_user:
+            SerializeUserType (file, type);
+            break;
+        case TC_akv:
+            SerializeAKVType (file, type);
+            break;
+        case TC_aks:
+            SerializeAKSType (file, type);
+            break;
+        case TC_akd:
+            SerializeAKDType (file, type);
+            break;
+        case TC_aud:
+            SerializeAUDType (file, type);
+            break;
+        case TC_audgz:
+            SerializeAUDGZType (file, type);
+            break;
+        case TC_prod:
+            SerializeProdType (file, type);
+            break;
+        case TC_union:
+            SerializeUnionType (file, type);
+            break;
+        case TC_fun:
+            SerializeFunType (file, type);
+            break;
+        case TC_ibase:
+            SerializeIBaseType (file, type);
+            break;
+        case TC_iarr:
+            SerializeIArrType (file, type);
+            break;
+        case TC_idim:
+            SerializeIDimType (file, type);
+            break;
+        case TC_ishape:
+            SerializeIShapeType (file, type);
+            break;
+        case TC_ires:
+            SerializeIResType (file, type);
+            break;
+        case TC_alpha:
+            SerializeAlphaType (file, type);
+            break;
+        case TC_poly:
+            SerializePolyType (file, type);
+            break;
+        case TC_dummy:
+            SerializeDummyType (file, type);
+            break;
+        }
+
+        DBUG_PRINT ("SET", ("Done processing type %s", dbug_str[NTYPE_CON (type)]));
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/**
+ ** De-Serialization support
+ **/
+
+ntype *
+TYDeserializeType (typeconstr con, ...)
+{
+    ntype *result;
+    int cnt;
+    va_list args;
+
+    DBUG_ENTER ("TYDeserializeType");
+
+    DBUG_PRINT ("SER", ("Deserializing ntype %s", dbug_str[con]));
+
+    switch (con) {
+    case TC_simple:
+        va_start (args, con);
+
+        result = TYMakeSimpleType (va_arg (args, simpletype));
+
+        va_end (args);
+        break;
+    case TC_symbol:
+        va_start (args, con);
+
+        result = TYMakeSymbType (va_arg (args, char *), va_arg (args, char *));
+
+        va_end (args);
+        break;
+    case TC_user:
+        va_start (args, con);
+
+        /* TODO: lookup usertype, if found, set value, otherwise
+                 load type and set value then */
+
+        result = TYMakeUserType (0);
+
+        va_end (args);
+        break;
+    case TC_akv:
+        va_start (args, con);
+
+        result = TYMakeAKV (va_arg (args, ntype *), va_arg (args, constant *));
+
+        va_end (args);
+        break;
+    case TC_aks:
+        va_start (args, con);
+
+        result = TYMakeAKS (va_arg (args, ntype *), va_arg (args, shape *));
+
+        va_end (args);
+        break;
+    case TC_akd:
+        va_start (args, con);
+
+        result = TYMakeAKD (va_arg (args, ntype *), va_arg (args, int),
+                            va_arg (args, shape *));
+
+        va_end (args);
+        break;
+    case TC_aud:
+        va_start (args, con);
+
+        result = TYMakeAUD (va_arg (args, ntype *));
+
+        va_end (args);
+        break;
+    case TC_audgz:
+        va_start (args, con);
+
+        result = TYMakeAUDGZ (va_arg (args, ntype *));
+        break;
+    case TC_prod:
+        va_start (args, con);
+
+        result = MakeNtype (TC_prod, va_arg (args, int));
+
+        for (cnt = 0; cnt < NTYPE_ARITY (result); cnt++) {
+            PROD_MEMBER (result, cnt) = va_arg (args, ntype *);
+        }
+
+        va_end (args);
+        break;
+    case TC_union:
+        va_start (args, con);
+
+        result = MakeNtype (TC_union, va_arg (args, int));
+
+        for (cnt = 0; cnt < NTYPE_ARITY (result); cnt++) {
+            UNION_MEMBER (result, cnt) = va_arg (args, ntype *);
+        }
+
+        va_end (args);
+        break;
+    case TC_fun:
+        va_start (args, con);
+
+        result = MakeNtype (TC_fun, va_arg (args, int));
+
+        for (cnt = 0; cnt < NTYPE_ARITY (result); cnt++) {
+            FUN_IBASE (result, cnt) = va_arg (args, ntype *);
+        }
+
+        va_end (args);
+        break;
+    case TC_ibase:
+        va_start (args, con);
+
+        result = MakeNtype (TC_ibase, 3);
+
+        IBASE_BASE (result) = va_arg (args, ntype *);
+        IBASE_SCAL (result) = va_arg (args, ntype *);
+        IBASE_GEN (result) = va_arg (args, ntype *);
+        IBASE_IARR (result) = va_arg (args, ntype *);
+
+        va_end (args);
+        break;
+    case TC_iarr:
+        va_start (args, con);
+
+        result = MakeNtype (TC_iarr, va_arg (args, int));
+
+        IARR_GEN (result) = va_arg (args, ntype *);
+
+        for (cnt = 0; cnt < NTYPE_ARITY (result) - 1; cnt++) {
+            IARR_IDIM (result, cnt) = va_arg (args, ntype *);
+        }
+
+        va_end (args);
+        break;
+    case TC_idim:
+        va_start (args, con);
+
+        result = MakeNtype (TC_idim, va_arg (args, int));
+
+        IDIM_DIM (result) = va_arg (args, int);
+
+        for (cnt = 0; cnt < NTYPE_ARITY (result) - 1; cnt++) {
+            IDIM_ISHAPE (result, cnt) = va_arg (args, ntype *);
+        }
+
+        va_end (args);
+        break;
+    case TC_ishape:
+        va_start (args, con);
+
+        result = MakeNtype (TC_ishape, 1);
+
+        ISHAPE_SHAPE (result) = va_arg (args, shape *);
+        ISHAPE_GEN (result) = va_arg (args, ntype *);
+
+        va_end (args);
+        break;
+    case TC_ires:
+        va_start (args, con);
+
+        result = MakeNtype (TC_ires, 1);
+        IRES_NUMFUNS (result) = va_arg (args, int);
+
+        if (IRES_NUMFUNS (result) <= 0) {
+            IRES_FUNDEFS (result) = NULL;
+            IRES_POSS (result) = NULL;
+        } else {
+            IRES_FUNDEFS (result) = Malloc (sizeof (node *) * IRES_NUMFUNS (result));
+            IRES_POSS (result) = Malloc (sizeof (int) * IRES_NUMFUNS (result));
+
+            for (cnt = 0; cnt < IRES_NUMFUNS (result); cnt++) {
+                IRES_FUNDEF (result, cnt) = va_arg (args, node *);
+            }
+
+            for (cnt = 0; cnt < IRES_NUMFUNS (result); cnt++) {
+                IRES_POS (result, cnt) = va_arg (args, int);
+            }
+        }
+
+        IRES_TYPE (result) = va_arg (args, ntype *);
+
+        va_end (args);
+        break;
+    case TC_alpha:
+        DBUG_ASSERT (0, "Cannot deserialize alpha types");
+
+        result = NULL;
+        break;
+    case TC_poly:
+        va_start (args, con);
+
+        result = TYMakePolyType (StringCopy (va_arg (args, char *)));
+
+        va_end (args);
+        break;
+    case TC_dummy:
+        result = MakeNtype (TC_dummy, 0);
+
+        break;
+    }
+
+    DBUG_RETURN (result);
 }
 
 /* @} */ /* defgroup nty */

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  2004/09/27 13:15:20  sah
+ * added serialization support
+ *
  * Revision 1.13  2004/09/22 20:07:57  sah
  * added SHSerializeShape
  *
@@ -258,19 +261,19 @@ SHFreeShape (shape *shp)
 }
 
 void
-SHSerializeShape (FILE *file, shape *shp, char *vname)
+SHSerializeShape (FILE *file, shape *shp)
 {
     int cnt;
 
     DBUG_ENTER ("SHSerializeShape");
 
-    fprintf (file, "%s = SHCreateShape( %d", vname, SHAPE_DIM (shp));
+    fprintf (file, "SHCreateShape( %d", SHAPE_DIM (shp));
 
     for (cnt = 0; cnt < SHAPE_DIM (shp); cnt++) {
         fprintf (file, ", %d", SHAPE_EXT (shp, cnt));
     }
 
-    fprintf (file, ");\n");
+    fprintf (file, ")");
 
     DBUG_VOID_RETURN;
 }

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.19  2004/09/27 13:15:20  sah
+ * added serialization support
+ *
  * Revision 3.18  2004/03/05 12:08:54  sbs
  * TYOldType2ScalarType added.
  *
@@ -395,5 +398,12 @@ extern ntype *TYGetWrapperRetType (ntype *type);
 extern node *TYCorrectWrapperArgTypes (node *args, ntype *type);
 extern node *TYCreateWrapperVardecs (node *fundef);
 extern node *TYCreateWrapperCode (node *fundef, node *vardecs, node **new_vardecs);
+
+/*
+ * Serialization and Deserialization support
+ */
+
+extern void TYSerializeType (FILE *file, ntype *type);
+extern ntype *TYDeserializeType (typeconstr con, ...);
 
 #endif /* _new_types_h */
