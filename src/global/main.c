@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.18  2000/03/22 20:10:17  dkr
+ * some PHASE_PROLOG, PHASE_EPILOG macros have been at the wrong place
+ * :-(
+ *
  * Revision 2.17  2000/03/17 12:07:00  dkr
  * macros PHASE_PROLOG and PHASE_EPILOG are now always called even if a
  * phase is skipped
@@ -343,7 +347,7 @@ main (int argc, char *argv[])
         PrintDependencies (dependencies, makedeps);
         PHASE_EPILOG;
 
-        FreeTree (syntax_tree);
+        syntax_tree = FreeTree (syntax_tree);
         CleanUp ();
 
         /*
@@ -464,30 +468,30 @@ main (int argc, char *argv[])
         goto BREAK;
     compiler_phase++;
 
+    PHASE_PROLOG;
     if (optimize) {
         NOTE_COMPILER_PHASE;
-        PHASE_PROLOG;
         syntax_tree = Optimize (syntax_tree); /* see optimize.c, Optimize() */
-        PHASE_EPILOG;
     }
+    PHASE_EPILOG;
 
     if (break_after == PH_sacopt)
         goto BREAK;
     compiler_phase++;
 
+    PHASE_PROLOG;
     if (optimize) {
         NOTE_COMPILER_PHASE;
-        PHASE_PROLOG;
         syntax_tree = PsiOpt (syntax_tree); /* idx_tab */
-        PHASE_EPILOG;
     }
+    PHASE_EPILOG;
 
     if (break_after == PH_psiopt)
         goto BREAK;
     compiler_phase++;
 
-    NOTE_COMPILER_PHASE;
     PHASE_PROLOG;
+    NOTE_COMPILER_PHASE;
     syntax_tree = Refcount (syntax_tree); /* refcnt_tab */
     PHASE_EPILOG;
 
@@ -502,8 +506,8 @@ main (int argc, char *argv[])
         syntax_tree = Old2NewWith (syntax_tree); /* o2nWith_tab */
     }
 
-    NOTE_COMPILER_PHASE;
     PHASE_PROLOG;
+    NOTE_COMPILER_PHASE;
     syntax_tree = WlTransform (syntax_tree); /* wltrans_tab */
     PHASE_EPILOG;
 
@@ -511,26 +515,24 @@ main (int argc, char *argv[])
         goto BREAK;
     compiler_phase++;
 
+    PHASE_PROLOG;
     if (gen_mt_code == GEN_MT_OLD) {
         NOTE_COMPILER_PHASE;
         NOTE (("using old version of mt"));
-        PHASE_PROLOG;
         syntax_tree = BuildSpmdRegions (syntax_tree); /* spmd..._tab, sync..._tab */
-        PHASE_EPILOG;
     } else if (gen_mt_code == GEN_MT_NEW) {
         NOTE_COMPILER_PHASE;
         NOTE (("using new version of mt"));
-        PHASE_PROLOG;
         syntax_tree = BuildMultiThread (syntax_tree);
-        PHASE_EPILOG;
     }
+    PHASE_EPILOG;
 
     if (break_after == PH_spmdregions)
         goto BREAK;
     compiler_phase++;
 
-    NOTE_COMPILER_PHASE;
     PHASE_PROLOG;
+    NOTE_COMPILER_PHASE;
     syntax_tree = precompile (syntax_tree); /* precomp_tab */
     PHASE_EPILOG;
 
@@ -538,8 +540,8 @@ main (int argc, char *argv[])
         goto BREAK;
     compiler_phase++;
 
-    NOTE_COMPILER_PHASE;
     PHASE_PROLOG;
+    NOTE_COMPILER_PHASE;
     syntax_tree = Compile (syntax_tree); /* comp_tab */
     PHASE_EPILOG;
 
@@ -547,8 +549,8 @@ main (int argc, char *argv[])
         goto BREAK;
     compiler_phase++;
 
-    NOTE_COMPILER_PHASE;
     PHASE_PROLOG;
+    NOTE_COMPILER_PHASE;
     Print (syntax_tree);
     PHASE_EPILOG;
 
@@ -560,10 +562,10 @@ main (int argc, char *argv[])
      *  After the C file has been written, the syntax tree may be released.
      */
 
-    FreeTree (syntax_tree);
+    syntax_tree = FreeTree (syntax_tree);
 
-    NOTE_COMPILER_PHASE;
     PHASE_PROLOG;
+    NOTE_COMPILER_PHASE;
     InvokeCC ();
     PHASE_EPILOG;
 
@@ -597,38 +599,35 @@ main (int argc, char *argv[])
     NOTE2 (("*** 0 error(s), %d warning(s)", warnings));
     NEWLINE (2);
 
-#if 0
-  FreeTree( syntax_tree);
-#endif
     return (0);
 
 BREAK:
 
     if (compiler_phase >= PH_scanparse) {
-        if ((print_after_break == PAB_YES) && (compiler_phase < PH_genccode)) {
+        if ((print_after_break == PAB_YES) && (compiler_phase <= PH_compile)) {
             Print (syntax_tree);
         }
-        FreeTree (syntax_tree);
-
+        syntax_tree = FreeTree (syntax_tree);
     } else {
         RSCShowResources ();
     }
 
     /*
-     *  Finally, we do some clean up.....
+     *  Finally, we do some clean up ...
      */
 
     CleanUp ();
 
     /*
-     * ....and display a success message.
+     * ... and display a success message.
      */
 
     NEWLINE (2);
     NOTE2 (("*** Compilation successful ***"));
     NOTE2 (("*** BREAK after: %s", compiler_phase_name[compiler_phase]));
-    if (break_specifier[0] != '\0')
+    if (break_specifier[0] != '\0') {
         NOTE2 (("*** BREAK specifier: '%s`", break_specifier));
+    }
 
 #ifdef SHOW_MALLOC
     NOTE2 (("*** maximum allocated memory (bytes): %u", max_allocated_mem));
