@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.29  2002/09/13 19:04:07  dkr
+ * %p replaced by F_PTR in format strings
+ *
  * Revision 1.28  2002/09/05 20:50:45  dkr
  * SSALIRNwithid(), LIRMOVNwithid(): NWITHID_IDS might be NULL!
  *
@@ -527,7 +530,8 @@ InsertMappingsIntoLUT (LUT_t move_table, nodelist *mappings)
                          NULL);
 
         DBUG_PRINT ("SSALIR",
-                    ("update %s(%p, %p) -> %s(%p, %p) into LUT for mapping",
+                    ("update %s(" F_PTR ", " F_PTR ")"
+                     " -> %s(" F_PTR ", " F_PTR ") into LUT for mapping",
                      VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (NODELIST_NODE (mappings))),
                      NODELIST_NODE (mappings),
                      AVIS_VARDECORARG (NODELIST_NODE (mappings)),
@@ -912,7 +916,8 @@ SSALIRarg (node *arg_node, node *arg_info)
                                EXPRS_EXPR (INFO_SSALIR_APARGCHAIN (arg_info))))));
 
         DBUG_PRINT ("SSALIR",
-                    ("insert arg %s(%p, %p) -> %s(%p, %p) into LUT for mapping",
+                    ("insert arg %s(" F_PTR ", " F_PTR ")"
+                     " -> %s(" F_PTR ", " F_PTR ") into LUT for mapping",
                      ARG_NAME (arg_node), ARG_AVIS (arg_node), arg_node,
                      VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (
                        ID_AVIS (EXPRS_EXPR (INFO_SSALIR_APARGCHAIN (arg_info))))),
@@ -1205,7 +1210,7 @@ SSALIRlet (node *arg_node, node *arg_info)
                   && (INFO_SSALIR_PREASSIGN (arg_info) != NULL)))) {
 
             DBUG_PRINT ("SSALIR",
-                        ("loop independend expression detected - mark it for moving up"));
+                        ("loop-independend expression detected - mark it for moving up"));
             /*
              * expression is  not in a condition and uses only LI
              * arguments -> mark expression for move up in front of loop
@@ -1302,11 +1307,11 @@ SSALIRid (node *arg_node, node *arg_info)
             INFO_SSALIR_NONLIRUSE (arg_info) = INFO_SSALIR_NONLIRUSE (arg_info) + 1;
 
             DBUG_PRINT ("SSALIR",
-                        ("non loop invariant/nonlocal id %s",
+                        ("non-loop-invariant or non-local id %s",
                          VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (ID_AVIS (arg_node)))));
         } else {
             DBUG_PRINT ("SSALIR",
-                        ("loop invariant or local id %s",
+                        ("loop-invariant or local id %s",
                          VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (ID_AVIS (arg_node)))));
         }
 
@@ -1367,7 +1372,7 @@ SSALIRid (node *arg_node, node *arg_info)
 
                     DBUG_PRINT (
                       "SSALIR",
-                      ("loop invariant assignment (marked for move down) [%s, %s]",
+                      ("loop-invariant assignment (marked for move down) [%s, %s]",
                        VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (ID_AVIS (id))),
                        VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (ID_AVIS (arg_node)))));
 
@@ -1772,7 +1777,6 @@ LIRMOVassign (node *arg_node, node *arg_info)
             && (LET_LIRFLAG (ASSIGN_INSTR (arg_node)) & LIRMOVE_UP)) {
             /* adjust identifier AND create new local variables in external fundef */
             INFO_SSALIR_FLAG (arg_info) = SSALIR_MOVEUP;
-
         } else if ((NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_let)
                    && (LET_LIRFLAG (ASSIGN_INSTR (arg_node)) == LIRMOVE_DOWN)) {
             /*
@@ -1780,7 +1784,6 @@ LIRMOVassign (node *arg_node, node *arg_info)
              * add movedown results to RESULTMAP nodelist
              */
             INFO_SSALIR_FLAG (arg_info) = SSALIR_MOVEDOWN;
-
         } else {
             /* only adjust identifiers */
             INFO_SSALIR_FLAG (arg_info) = SSALIR_NORMAL;
@@ -2089,10 +2092,10 @@ LIRMOVleftids (ids *arg_ids, node *arg_info)
         INFO_SSALIR_MOVELUT (arg_info) = InsertIntoLUT_S (INFO_SSALIR_MOVELUT (arg_info),
                                                           IDS_NAME (arg_ids), new_name);
 
-        DBUG_PRINT ("SSALIR",
-                    ("insert local %s(%p, %p) -> ext. %s(%p, %p) into LUT for mapping",
-                     IDS_NAME (arg_ids), IDS_AVIS (arg_ids), IDS_VARDEC (arg_ids),
-                     new_name, new_avis, new_vardec));
+        DBUG_PRINT ("SSALIR", ("insert local %s(" F_PTR ", " F_PTR ")"
+                               " -> ext. %s(" F_PTR ", " F_PTR ") into LUT for mapping",
+                               IDS_NAME (arg_ids), IDS_AVIS (arg_ids),
+                               IDS_VARDEC (arg_ids), new_name, new_avis, new_vardec));
 
         /*
          *  modify functions signature:
