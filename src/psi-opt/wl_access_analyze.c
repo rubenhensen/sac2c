@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.5  1999/07/21 14:49:12  bs
+ * Some DupNode()'s inserted.
+ * WLAAcond modified.
+ *
  * Revision 2.4  1999/07/08 16:13:14  bs
  * ASSERTIONS changed to WARNINGS
  *
@@ -42,14 +46,15 @@
  *   The following access macros are defined for the info-node:
  *
  *   INFO_WLAA_ACCESS(n)      ((access_t*)(n->info2))
+ *   define INFO_WLAA_COUNT(n)            (n->counter)
  *   INFO_WLAA_FEATURE(n)     ((feature_t)(n->lineno))
  *   INFO_WLAA_WOTYPE(n)     ((WithOpType)(n->varno))
  *   INFO_WLAA_LASTLETIDS(n)              (n->info.ids)
  *   INFO_WLAA_BELOWAP(n)                 (n->flag)
- *   INFO_WLAA_WLLEVEL(n)                 (n->counter)
+ *   INFO_WLAA_WLLEVEL(n)                 (n->refcnt)
  *   INFO_WLAA_INDEXVAR(n)                (n->node[0])
- *   INFO_WLAA_ACCESSVEC(n)     ((shpseg*)(n->node[1]))
- *   INFO_WLAA_TMPACCESS(n)   ((access_t*)(n->node[2]))
+ *   INFO_WLAA_ACCESSVEC(n)     ((shpseg*)(n->node[1]))     not in use
+ *   INFO_WLAA_TMPACCESS(n)   ((access_t*)(n->node[2]))     not in use
  *   INFO_WLAA_WLARRAY(n)                 (n->node[3])
  *
  *****************************************************************************/
@@ -64,6 +69,7 @@
 #include "globals.h"
 #include "print.h" /* WLAAprintAccesses */
 #include "Error.h"
+#include "DupTree.h"
 #include "wl_access_analyze.h"
 
 #define ACLT(arg)                                                                        \
@@ -409,7 +415,7 @@ WLAAnwith (node *arg_node, node *arg_info)
 
     DBUG_ASSERT ((arg_info != NULL), "WLAAnwith called with empty info node!");
 
-    INFO_WLAA_INDEXVAR (arg_info) = IDS_VARDEC (NWITH_VEC (arg_node));
+    INFO_WLAA_INDEXVAR (arg_info) = DupNode (IDS_VARDEC (NWITH_VEC (arg_node)));
     INFO_WLAA_WOTYPE (arg_info) = NWITH_TYPE (arg_node);
     INFO_WLAA_WLLEVEL (arg_info) = INFO_WLAA_WLLEVEL (arg_info) + 1;
 
@@ -453,7 +459,7 @@ WLAAncode (node *arg_node, node *arg_info)
     arg_info = MakeInfo ();
 
     INFO_WLAA_ACCESS (arg_info) = NULL;
-    INFO_WLAA_TMPACCESS (arg_info) = NULL;
+    INFO_WLAA_COUNT (arg_info) = 0;
     INFO_WLAA_INDEXVAR (arg_info) = INFO_WLAA_INDEXVAR (old_arg_info);
     INFO_WLAA_FEATURE (arg_info) = FEATURE_NONE;
     INFO_WLAA_WOTYPE (arg_info) = INFO_WLAA_WOTYPE (old_arg_info);
@@ -462,16 +468,13 @@ WLAAncode (node *arg_node, node *arg_info)
     INFO_WLAA_WLARRAY (arg_info) = INFO_WLAA_WLARRAY (old_arg_info);
 
     if (NCODE_CBLOCK (arg_node) != NULL) {
-        WithOpType wotype;
-        wotype = INFO_WLAA_WOTYPE (arg_info);
-        /*
-        if ((INFO_WLAA_WOTYPE(arg_info) == WO_genarray) ||
-            (INFO_WLAA_WOTYPE(arg_info) == WO_modarray) ) {} */
-        if ((wotype == WO_genarray) || (wotype == WO_modarray)) {
+        if ((INFO_WLAA_WOTYPE (arg_info) == WO_genarray)
+            || (INFO_WLAA_WOTYPE (arg_info) == WO_modarray)) {
             INFO_WLAA_ACCESS (arg_info)
               = MakeAccess (INFO_WLAA_WLARRAY (arg_info),
                             ID_VARDEC (INFO_WLAA_INDEXVAR (arg_info)), ACL_offset, NULL,
                             ADIR_write, INFO_WLAA_ACCESS (arg_info));
+            INFO_WLAA_COUNT (arg_info)++;
             ACCESS_OFFSET (INFO_WLAA_ACCESS (arg_info))
               = IntVec2Shpseg (1, 0, NULL, ACCESS_OFFSET (INFO_WLAA_ACCESS (arg_info)));
         }
@@ -481,6 +484,7 @@ WLAAncode (node *arg_node, node *arg_info)
 
     NCODE_ACCESS (arg_node) = INFO_WLAA_ACCESS (arg_info);
     NCODE_FEATURE (arg_node) = INFO_WLAA_FEATURE (arg_info);
+    NCODE_ACCESSNO (arg_node) = INFO_WLAA_COUNT (arg_info);
     FreeInfo (arg_info, NULL);
     arg_info = old_arg_info;
 
@@ -611,8 +615,57 @@ WLAAdo (node *arg_node, node *arg_info)
 node *
 WLAAcond (node *arg_node, node *arg_info)
 {
-    DBUG_ENTER ("WLAAcond");
+    node *then_arg_info, *else_arg_info;
+    int equal_flag = TRUE;
 
+    DBUG_ENTER ("WLAAcond");
+#if 0
+  /* implementation not ready */
+  if (INFO_WLAA_WLLEVEL(arg_info) > 0) {
+    then_arg_info = MakeInfo();
+    INFO_WLAA_INDEXVAR(then_arg_info)   = INFO_WLAA_INDEXVAR(arg_info);
+    INFO_WLAA_WOTYPE(then_arg_info)     = INFO_WLAA_WOTYPE(arg_info);
+    INFO_WLAA_WLLEVEL(then_arg_info)    = INFO_WLAA_WLLEVEL(arg_info);
+    INFO_WLAA_WLARRAY(then_arg_info)    = INFO_WLAA_WLARRAY(arg_info);
+    INFO_WLAA_LASTLETIDS(then_arg_info) = INFO_WLAA_LASTLETIDS(arg_info);
+    INFO_WLAA_BELOWAP(then_arg_info)    = INFO_WLAA_(arg_info);
+    INFO_WLAA_ACCESS(then_arg_info)     = NULL;
+    INFO_WLAA_COUNT(then_arg_info)      = 0;
+    INFO_WLAA_FEATURES(then_arg_info)   = FEATURE_NONE;
+    
+    COND_THEN(arg_node) = Trav(COND_THEN(arg_node), then_arg_info);
+
+    else_arg_info = MakeInfo();
+    INFO_WLAA_INDEXVAR(else_arg_info)   = INFO_WLAA_INDEXVAR(arg_info);
+    INFO_WLAA_WOTYPE(else_arg_info)     = INFO_WLAA_WOTYPE(arg_info);
+    INFO_WLAA_WLLEVEL(else_arg_info)    = INFO_WLAA_WLLEVEL(arg_info);
+    INFO_WLAA_WLARRAY(else_arg_info)    = INFO_WLAA_WLARRAY(arg_info);
+    INFO_WLAA_LASTLETIDS(else_arg_info) = INFO_WLAA_LASTLETIDS(arg_info);
+    INFO_WLAA_BELOWAP(else_arg_info)    = INFO_WLAA_(arg_info);
+    INFO_WLAA_ACCESS(else_arg_info)     = NULL;
+    INFO_WLAA_COUNT(else_arg_info)      = 0;
+    INFO_WLAA_FEATURES(else_arg_info)   = FEATURE_NONE;
+    
+    COND_ELSE(arg_node) = Trav(COND_ELSE(arg_node), else_arg_info);
+
+    if (INFO_WLAA_FEATURES(then_arg_info) != INFO_WLAA_FEATURES(else_arg_info))
+      equal_flag = FALSE;
+    else if (0)
+      equal_flag = FALSE;
+    else {
+    }
+    
+    INFO_WLAA_FEATURES(arg_info) = INFO_WLAA_FEATURES(arg_info) | \
+      INFO_WLAA_FEATURES(then_arg_info) | INFO_WLAA_FEATURES(else_arg_info);
+    
+    FreeNode(then_arg_info); /* Attention !!! */
+    FreeNode(then_arg_info); /* Attention !!! */
+  }
+  else {
+    COND_THEN(arg_node) = Trav(COND_THEN(arg_node), arg_info);
+    COND_ELSE(arg_node) = Trav(COND_ELSE(arg_node), arg_info);
+  }
+#endif
     DBUG_RETURN (arg_node);
 }
 
@@ -643,10 +696,10 @@ WLAAlet (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("WLAAlet");
 
-    INFO_WLAA_LASTLETIDS (arg_info) = LET_IDS (arg_node);
+    INFO_WLAA_LASTLETIDS (arg_info) = DupIds (LET_IDS (arg_node), NULL);
 
     if (NODE_TYPE (LET_EXPR (arg_node)) == N_Nwith)
-        INFO_WLAA_WLARRAY (arg_info) = IDS_VARDEC (LET_IDS (arg_node));
+        INFO_WLAA_WLARRAY (arg_info) = DupNode (IDS_VARDEC (LET_IDS (arg_node)));
 
     LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
 
@@ -731,6 +784,7 @@ WLAAprf (node *arg_node, node *arg_info)
                       = MakeAccess (ID_VARDEC (arg_node_arg2), ID_VARDEC (arg_node_arg1),
                                     ACL_unknown, NULL, ADIR_read,
                                     INFO_WLAA_ACCESS (arg_info));
+                    INFO_WLAA_COUNT (arg_info)++;
 
                     if (ACCESS_IV (INFO_WLAA_ACCESS (arg_info))
                         == INFO_WLAA_INDEXVAR (arg_info)) {
@@ -799,10 +853,11 @@ WLAAprf (node *arg_node, node *arg_info)
             case F_add_SxA:
                 DBUG_PRINT ("WLAA_INFO", ("primitive function F_add_SxA"));
                 access = SearchAccess (INFO_WLAA_ACCESS (arg_info), arg_info);
+                /* not used yet:
                 if (access == NULL) {
-                    access = SearchAccess (INFO_WLAA_TMPACCESS (arg_info), arg_info);
-                    access_flag = TEMP_A;
-                }
+                  access = SearchAccess(INFO_WLAA_TMPACCESS(arg_info), arg_info);
+                  access_flag = TEMP_A;
+                } */
                 if (access != NULL) {
                     if (NODE_TYPE (arg_node_arg1) == N_num) {
                         if (ID_VARDEC (arg_node_arg2) == INFO_WLAA_INDEXVAR (arg_info)) {
@@ -844,10 +899,11 @@ WLAAprf (node *arg_node, node *arg_info)
             case F_add_AxS:
                 DBUG_PRINT ("WLAA_INFO", ("primitive function F_add_AxS"));
                 access = SearchAccess (INFO_WLAA_ACCESS (arg_info), arg_info);
+                /* not used yet:
                 if (access == NULL) {
-                    access = SearchAccess (INFO_WLAA_TMPACCESS (arg_info), arg_info);
-                    access_flag = TEMP_A;
-                }
+                  access = SearchAccess(INFO_WLAA_TMPACCESS(arg_info), arg_info);
+                  access_flag = TEMP_A;
+                } */
                 if (access != NULL) {
                     if (NODE_TYPE (arg_node_arg2) == N_num) {
                         if (ID_VARDEC (arg_node_arg1) == INFO_WLAA_INDEXVAR (arg_info)) {
@@ -895,10 +951,11 @@ WLAAprf (node *arg_node, node *arg_info)
                               " N_id exspected !"));
                 } else {
                     access = SearchAccess (INFO_WLAA_ACCESS (arg_info), arg_info);
+                    /* not used yet:
                     if (access == NULL) {
-                        access = SearchAccess (INFO_WLAA_TMPACCESS (arg_info), arg_info);
-                        access_flag = TEMP_A;
-                    }
+                      access = SearchAccess(INFO_WLAA_TMPACCESS(arg_info), arg_info);
+                      access_flag = TEMP_A;
+                    } */
                     if (access != NULL) {
                         if (ID_VARDEC (arg_node_arg1) == INFO_WLAA_INDEXVAR (arg_info)) {
                             if (ID_CONSTVEC (arg_node_arg2) != NULL) {
@@ -951,10 +1008,11 @@ WLAAprf (node *arg_node, node *arg_info)
             case F_sub_AxS:
                 DBUG_PRINT ("WLAA_INFO", ("primitive function F_sub_AxS"));
                 access = SearchAccess (INFO_WLAA_ACCESS (arg_info), arg_info);
+                /* not used yet:
                 if (access == NULL) {
-                    access = SearchAccess (INFO_WLAA_TMPACCESS (arg_info), arg_info);
-                    access_flag = TEMP_A;
-                }
+                  access = SearchAccess(INFO_WLAA_TMPACCESS(arg_info), arg_info);
+                  access_flag = TEMP_A;
+                } */
                 if (access != NULL) {
                     if (ID_VARDEC (arg_node_arg1) == INFO_WLAA_INDEXVAR (arg_info)) {
                         if (NODE_TYPE (arg_node_arg2) == N_num) {
@@ -987,10 +1045,11 @@ WLAAprf (node *arg_node, node *arg_info)
                               " N_id exspected !"));
 
                 access = SearchAccess (INFO_WLAA_ACCESS (arg_info), arg_info);
+                /* noy used yet:
                 if (access == NULL) {
-                    access = SearchAccess (INFO_WLAA_TMPACCESS (arg_info), arg_info);
-                    access_flag = TEMP_A;
-                }
+                  access = SearchAccess(INFO_WLAA_TMPACCESS(arg_info), arg_info);
+                  access_flag = TEMP_A;
+                } */
                 if (access != NULL) {
                     if (ID_VARDEC (arg_node_arg1) == INFO_WLAA_INDEXVAR (arg_info)) {
                         DBUG_PRINT ("WLAA_INFO", ("primitive function F_sub_AxA"));
