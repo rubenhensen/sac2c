@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.41  2002/07/15 15:25:53  dkr
+ * some bugs fixed
+ *
  * Revision 3.40  2002/07/12 18:53:25  dkr
  * first complete TAGGED_ARRAYS revision :-)
  *
@@ -717,13 +720,13 @@ ICM_END( WL_ASSIGN__INIT, (to_dim, to_nt, idx_vec_nt, dims, idxa_scl))
 
 #if defined(WL_ASSIGN__COPY) || defined(ICM_ALL)
 ICM_DEF( WL_ASSIGN__COPY, TRACE_NONE)
-  ICM_ID( source)
+  ICM_NT( from_nt)
   ICM_INT( to_dim)
   ICM_NT( to_nt)
   ICM_NT( idx_vec_nt)
   ICM_INT( dims)
   ICM_VARID( dims, idxa_scl)
-ICM_END( WL_ASSIGN__COPY, (source, to_dim, to_nt, idx_vec_nt, dims, idxa_scl))
+ICM_END( WL_ASSIGN__COPY, (from_nt, to_dim, to_nt, idx_vec_nt, dims, idxa_scl))
 #endif
 
 #if defined(WL_FOLD__OFFSET) || defined(ICM_ALL)
@@ -917,9 +920,9 @@ ICM_DEF( MT_ADJUST_SCHEDULER__OFFSET, TRACE_NONE)
   ICM_ID( array)
   ICM_INT( array_dim)
   ICM_INT( current_dim)
-  ICM_ID( lower)
-  ICM_ID( upper)
-  ICM_ID( unrolling)
+  ICM_ANY( lower)
+  ICM_ANY( upper)
+  ICM_ANY( unrolling)
 ICM_END( MT_ADJUST_SCHEDULER__OFFSET, (array, array_dim, current_dim, lower, upper, unrolling))
 #endif
 
