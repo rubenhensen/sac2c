@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.44  2000/07/12 12:08:58  mab
+ * added consistency check for array padding and boundary check
+ *
  * Revision 2.43  2000/07/11 16:13:49  dkr
  * -b21 illegal now
  *
@@ -742,6 +745,10 @@ CheckOptionConsistency ()
     int ph_l2f, i;
 
     DBUG_ENTER ("CheckOptionConsistency");
+
+    if (RUNTIMECHECK_BOUNDARY && (optimize & OPT_AP)) {
+        SYSERROR (("Boundary check and array padding may not be used simultaneously"));
+    }
 
     if ((gen_mt_code == GEN_MT_OLD) || (gen_mt_code == GEN_MT_NEW)) {
         if (cachesim & CACHESIM_YES) {
