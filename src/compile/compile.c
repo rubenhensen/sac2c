@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.175  1998/06/23 12:45:19  cg
+ * Now, those with-loops marked to be in top-level position within
+ * an spmd-block and hence have to be executed in multi-threaded mode,
+ * are compiled to special versions of the respective loop ICMs.
+ *
  * Revision 1.174  1998/06/19 19:17:16  dkr
  * fixed a minor bug
  *
@@ -6078,7 +6083,8 @@ COMPSpmd (node *arg_node, node *arg_info)
     }
 
     icm_args = MakeExprs (MakeNum (num_args), icm_args);
-    icm_args = MakeExprs (MakeId (StringCopy (SPMD_FUNNAME (arg_node)), NULL, ST_regular),
+    icm_args = MakeExprs (MakeId (StringCopy (FUNDEF_NAME (SPMD_FUNDEF (arg_node))), NULL,
+                                  ST_regular),
                           icm_args);
 
     SPMD_ICM (arg_node) = MakeIcm ("MT_SPMD_BLOCK", icm_args, NULL);
@@ -6828,16 +6834,31 @@ COMPWLblock (node *arg_node, node *arg_info)
     DBUG_ASSERT ((assigns != NULL), "contents and nextdim are empty");
 
     if (WLBLOCK_LEVEL (arg_node) == 0) {
-        icm_name = "WL_BLOCK_LOOP0_BEGIN";
+        if (NWITH2_MT (wl_node)) {
+            icm_name = "WL_MT_BLOCK_LOOP0_BEGIN";
+        } else {
+            icm_name = "WL_BLOCK_LOOP0_BEGIN";
+        }
     } else {
-        icm_name = "WL_BLOCK_LOOP_BEGIN";
+        if (NWITH2_MT (wl_node)) {
+            icm_name = "WL_MT_BLOCK_LOOP_BEGIN";
+        } else {
+            icm_name = "WL_BLOCK_LOOP_BEGIN";
+        }
     }
 
     assigns = MakeAssign (MakeIcm (icm_name, icm_args, NULL), assigns);
 
-    assigns = AppendAssign (assigns, MakeAssign (MakeIcm ("WL_BLOCK_LOOP_END",
-                                                          DupTree (icm_args, NULL), NULL),
-                                                 NULL));
+    if (NWITH2_MT (wl_node)) {
+        icm_name = "WL_MT_BLOCK_LOOP_END";
+    } else {
+        icm_name = "WL_BLOCK_LOOP_END";
+    }
+
+    assigns
+      = AppendAssign (assigns,
+                      MakeAssign (MakeIcm (icm_name, DupTree (icm_args, NULL), NULL),
+                                  NULL));
 
     /* compile successor */
     if (WLBLOCK_NEXT (arg_node) != NULL) {
@@ -6909,16 +6930,31 @@ COMPWLublock (node *arg_node, node *arg_info)
     DBUG_ASSERT ((assigns != NULL), "contents and nextdim are empty");
 
     if (WLUBLOCK_LEVEL (arg_node) == 0) {
-        icm_name = "WL_UBLOCK_LOOP0_BEGIN";
+        if (NWITH2_MT (wl_node)) {
+            icm_name = "WL_MT_UBLOCK_LOOP0_BEGIN";
+        } else {
+            icm_name = "WL_UBLOCK_LOOP0_BEGIN";
+        }
     } else {
-        icm_name = "WL_UBLOCK_LOOP_BEGIN";
+        if (NWITH2_MT (wl_node)) {
+            icm_name = "WL_MT_UBLOCK_LOOP_BEGIN";
+        } else {
+            icm_name = "WL_UBLOCK_LOOP_BEGIN";
+        }
     }
 
     assigns = MakeAssign (MakeIcm (icm_name, icm_args, NULL), assigns);
 
-    assigns = AppendAssign (assigns, MakeAssign (MakeIcm ("WL_UBLOCK_LOOP_END",
-                                                          DupTree (icm_args, NULL), NULL),
-                                                 NULL));
+    if (NWITH2_MT (wl_node)) {
+        icm_name = "WL_MT_UBLOCK_LOOP_END";
+    } else {
+        icm_name = "WL_UBLOCK_LOOP_END";
+    }
+
+    assigns
+      = AppendAssign (assigns,
+                      MakeAssign (MakeIcm (icm_name, DupTree (icm_args, NULL), NULL),
+                                  NULL));
 
     /* compile successor */
     if (WLUBLOCK_NEXT (arg_node) != NULL) {
@@ -6986,8 +7022,13 @@ COMPWLstride (node *arg_node, node *arg_info)
          * unrolling
          */
 
-        icm_name_begin = "WL_STRIDE_UNROLL_BEGIN";
-        icm_name_end = "WL_STRIDE_UNROLL_END";
+        if (NWITH2_MT (wl_node)) {
+            icm_name_begin = "WL_MT_STRIDE_UNROLL_BEGIN";
+            icm_name_end = "WL_MT_STRIDE_UNROLL_END";
+        } else {
+            icm_name_begin = "WL_STRIDE_UNROLL_BEGIN";
+            icm_name_end = "WL_STRIDE_UNROLL_END";
+        }
 
         new_assigns = NULL;
         DBUG_ASSERT ((((WLSTRIDE_BOUND2 (arg_node) - WLSTRIDE_BOUND1 (arg_node))
@@ -7006,12 +7047,21 @@ COMPWLstride (node *arg_node, node *arg_info)
          * no unrolling
          */
 
-        if (WLSTRIDE_LEVEL (arg_node) == 0) {
-            icm_name_begin = "WL_STRIDE_LOOP0_BEGIN";
+        if (NWITH2_MT (wl_node)) {
+            if (WLSTRIDE_LEVEL (arg_node) == 0) {
+                icm_name_begin = "WL_MT_STRIDE_LOOP0_BEGIN";
+            } else {
+                icm_name_begin = "WL_MT_STRIDE_LOOP_BEGIN";
+            }
+            icm_name_end = "WL_MT_STRIDE_LOOP_END";
         } else {
-            icm_name_begin = "WL_STRIDE_LOOP_BEGIN";
+            if (WLSTRIDE_LEVEL (arg_node) == 0) {
+                icm_name_begin = "WL_STRIDE_LOOP0_BEGIN";
+            } else {
+                icm_name_begin = "WL_STRIDE_LOOP_BEGIN";
+            }
+            icm_name_end = "WL_STRIDE_LOOP_END";
         }
-        icm_name_end = "WL_STRIDE_LOOP_END";
     }
 
     assigns = MakeAssign (MakeIcm (icm_name_begin, icm_args, NULL), assigns);
@@ -7295,8 +7345,13 @@ COMPWLgrid (node *arg_node, node *arg_info)
          * unrolling (or (width == 1))
          */
 
-        icm_name_begin = "WL_GRID_UNROLL_BEGIN";
-        icm_name_end = "WL_GRID_UNROLL_END";
+        if (NWITH2_MT (wl_node)) {
+            icm_name_begin = "WL_MT_GRID_UNROLL_BEGIN";
+            icm_name_end = "WL_MT_GRID_UNROLL_END";
+        } else {
+            icm_name_begin = "WL_GRID_UNROLL_BEGIN";
+            icm_name_end = "WL_GRID_UNROLL_END";
+        }
 
         new_assigns = NULL;
         cnt_unroll = WLGRID_BOUND2 (arg_node) - WLGRID_BOUND1 (arg_node);
@@ -7310,8 +7365,13 @@ COMPWLgrid (node *arg_node, node *arg_info)
          * no unrolling
          */
 
-        icm_name_begin = "WL_GRID_LOOP_BEGIN";
-        icm_name_end = "WL_GRID_LOOP_END";
+        if (NWITH2_MT (wl_node)) {
+            icm_name_begin = "WL_MT_GRID_LOOP_BEGIN";
+            icm_name_end = "WL_MT_GRID_LOOP_END";
+        } else {
+            icm_name_begin = "WL_GRID_LOOP_BEGIN";
+            icm_name_end = "WL_GRID_LOOP_END";
+        }
     }
 
     assigns = MakeAssign (MakeIcm (icm_name_begin, icm_args, NULL), assigns);
@@ -7346,7 +7406,7 @@ COMPWLstriVar (node *arg_node, node *arg_info)
 {
     node *icm_args;
     ids *ids_vector, *ids_scalar;
-    char *icm_name;
+    char *icm_name_begin, *icm_name_end;
     node *assigns;
 
     DBUG_ENTER ("COMPWLstriVar");
@@ -7377,13 +7437,20 @@ COMPWLstriVar (node *arg_node, node *arg_info)
      * insert ICMs for current node
      */
 
-    icm_name = "WL_STRIDE_LOOP0_BEGIN";
+    if (NWITH2_MT (wl_node)) {
+        icm_name_begin = "WL_MT_STRIDE_LOOP0_BEGIN";
+        icm_name_end = "WL_MT_STRIDE_LOOP_END";
+    } else {
+        icm_name_begin = "WL_STRIDE_LOOP0_BEGIN";
+        icm_name_end = "WL_STRIDE_LOOP_END";
+    }
 
-    assigns = MakeAssign (MakeIcm (icm_name, icm_args, NULL), assigns);
+    assigns = MakeAssign (MakeIcm (icm_name_begin, icm_args, NULL), assigns);
 
-    assigns = AppendAssign (assigns, MakeAssign (MakeIcm ("WL_STRIDE_LOOP_END",
-                                                          DupTree (icm_args, NULL), NULL),
-                                                 NULL));
+    assigns
+      = AppendAssign (assigns,
+                      MakeAssign (MakeIcm (icm_name_end, DupTree (icm_args, NULL), NULL),
+                                  NULL));
 
     /* compile successor */
     if (WLSTRIVAR_NEXT (arg_node) != NULL) {
@@ -7410,7 +7477,7 @@ COMPWLgridVar (node *arg_node, node *arg_info)
 {
     node *icm_args, *icm_args2, *cexpr, *fold_code, *assigns = NULL, *dec_rc_cexpr = NULL;
     ids *ids_vector, *ids_scalar, *withid_ids;
-    char *icm_name;
+    char *icm_name, *icm_name_begin, *icm_name_end;
     int num_args;
 
     DBUG_ENTER ("COMPWLgridVar");
@@ -7601,11 +7668,20 @@ COMPWLgridVar (node *arg_node, node *arg_info)
         assigns = MakeAssign (MakeIcm ("WL_GRID_SET_IDX", icm_args, NULL), assigns);
     }
 
-    assigns = MakeAssign (MakeIcm ("WL_GRIDVAR_LOOP_BEGIN", icm_args, NULL), assigns);
+    if (NWITH2_MT (wl_node)) {
+        icm_name_begin = "WL_MT_GRIDVAR_LOOP_BEGIN";
+        icm_name_end = "WL_MT_GRIDVAR_LOOP_END";
+    } else {
+        icm_name_begin = "WL_GRIDVAR_LOOP_BEGIN";
+        icm_name_end = "WL_GRIDVAR_LOOP_END";
+    }
 
-    assigns = AppendAssign (assigns, MakeAssign (MakeIcm ("WL_GRIDVAR_LOOP_END",
-                                                          DupTree (icm_args, NULL), NULL),
-                                                 NULL));
+    assigns = MakeAssign (MakeIcm (icm_name_begin, icm_args, NULL), assigns);
+
+    assigns
+      = AppendAssign (assigns,
+                      MakeAssign (MakeIcm (icm_name_end, DupTree (icm_args, NULL), NULL),
+                                  NULL));
 
     /* compile successor */
     if (WLGRIDVAR_NEXT (arg_node) != NULL) {
