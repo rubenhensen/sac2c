@@ -1,5 +1,8 @@
 <!--
   $Log$
+  Revision 1.112  2004/11/26 21:26:21  khf
+  added DCR
+
   Revision 1.111  2004/11/26 20:11:26  sbs
   OBJ phase addded.
 
@@ -763,6 +766,25 @@
 	  <node name="Return" />
 	  <node name="Array" />
 	  <node name="Funcond" />
+	</travuser>
+      </traversal>
+    <traversal id="DCR" name="Dead Code Removal" default="sons" include="SSADeadCodeRemoval.h" >
+	<travuser>
+	  <node name="Fundef" />
+	  <node name="Arg" />
+	  <node name="Vardec" />
+	  <node name="Block" />
+	  <node name="Assign" />
+	  <node name="Let" />
+	  <node name="Id" />
+	  <node name="Ids" />
+	  <node name="Code" />
+	  <node name="Cond" />
+	  <node name="With" />
+	  <node name="Part" />
+	  <node name="Withid" />
+	  <node name="Ap" />
+	  <node name="Return" />
 	</travuser>
       </traversal>
       <traversal id="DDEPEND" name="Detect Dependencies" default="sons" include="detectdependencies.h" >
