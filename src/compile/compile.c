@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.27  1999/08/27 11:49:33  jhs
+ * Brushed COMPSync.
+ *
  * Revision 2.26  1999/08/02 08:47:39  jhs
  * Added some comments.
  *
@@ -6499,21 +6502,29 @@ COMPSpmd (node *arg_node, node *arg_info)
 node *
 COMPSync (node *arg_node, node *arg_info)
 {
-    node *icm_args, *icm_args2, *icm_args3, *vardec, *with, *block, *instr, *assign,
-      *last_assign, *prolog_icms, *epilog_icms, *new_icm, *setup_args, *assigns = NULL;
+    node *icm_args, *icm_args3, *vardec, *with, *block, *instr, *assign, *last_assign,
+      *prolog_icms, *epilog_icms, *new_icm, *setup_args, *assigns = NULL;
     ids *with_ids;
     types *type;
     simpletype s_type;
     char *tag, *icm_name, *var_name, *fold_type;
-    int num_args, num_folds, prolog, epilog, count_nesting;
+    int num_args, count_nesting;
+
+    int prolog; /* used as boolean */
+    int epilog; /* used as boolean */
 
     node *backup;
     node *let;
     node *last_sync;
-    node *fold_args;
-    node *sync_args;
+
     int num_fold_args;
+    node *fold_args;
+
     int num_sync_args;
+    node *sync_args;
+
+    int num_barrier_args;
+    node *barrier_args;
 
     DBUG_ENTER ("COMPSync");
 
@@ -6630,15 +6641,31 @@ COMPSync (node *arg_node, node *arg_info)
     block = SYNC_REGION (arg_node);
     assign = BLOCK_INSTR (block);
 
-    num_folds = 0;
-    icm_args2 = NULL;
+    /*
+     *  assign browses over the assignments of the sync_region
+     */
+
+    num_barrier_args = 0;
+    barrier_args = NULL;
     while (assign != NULL) {
         let = ASSIGN_INSTR (assign);
+        /*
+         *  One does not know if this really is a with-loop!
+         */
         with = LET_EXPR (let);
         with_ids = LET_IDS (let);
 
-        if ((NWITH2_TYPE (with) == WO_foldprf) || (NWITH2_TYPE (with) == WO_foldfun)) {
-            num_folds++;
+        /*
+         *  Is this assignment a fold-with-loop?
+         *  If so, one needs some arguments for the barrier from it.
+         */
+        if ((NODE_TYPE (with) == N_Nwith2)
+            && ((NWITH2_TYPE (with) == WO_foldprf)
+                || (NWITH2_TYPE (with) == WO_foldfun))) {
+            /*
+             *  Increase the number of fold-with-loops.
+             */
+            num_barrier_args++;
 
             /*
              * create fold_type-tag
@@ -6659,7 +6686,7 @@ COMPSync (node *arg_node, node *arg_info)
                                                      NULL, ST_regular),
                                              NULL));
 
-            icm_args2 = AppendExprs (icm_args2, icm_args);
+            barrier_args = AppendExprs (barrier_args, icm_args);
 
             DBUG_PRINT ("COMP", ("%s", IDS_NAME (with_ids)));
 
@@ -6668,8 +6695,8 @@ COMPSync (node *arg_node, node *arg_info)
              */
             DBUG_ASSERT ((NWITHOP_FUNDEF (NWITH2_WITHOP (with)) != NULL),
                          "no fundef found");
-            icm_args2
-              = AppendExprs (icm_args2,
+            barrier_args
+              = AppendExprs (barrier_args,
                              MakeExprs (MakeId (StringCopy (ID_NAME (
                                                   NCODE_CEXPR (NWITH2_CODE (with)))),
                                                 NULL, ST_regular),
@@ -6698,9 +6725,9 @@ COMPSync (node *arg_node, node *arg_info)
     SYNC_REGION (arg_node) = Trav (SYNC_REGION (arg_node), arg_info);
 
     /*
-     * now we extract all ICMs for memory-management concerning the
+     *  now we extract all ICMs for memory-management concerning the
      *  IN/INOUT/OUT-vars of the current sync-region.
-     * (they must be moved into the sync-barrier!)
+     *  (they must be moved into the sync-barrier!)
      */
 
     prolog_icms = NULL;
@@ -6708,11 +6735,11 @@ COMPSync (node *arg_node, node *arg_info)
     assign = BLOCK_INSTR (SYNC_REGION (arg_node));
     last_assign = NULL;
     /*
-     * prolog = 1: current assignment is in front of WL_..._BEGIN-ICM (part of prolog)
-     * epilog = 1: current assignment is behind WL_..._END-ICM (part of epilog)
+     * prolog == TRUE: current assignment is in front of WL_..._BEGIN-ICM (part of prolog)
+     * epilog == TRUE: current assignment is behind WL_..._END-ICM (part of epilog)
      */
-    prolog = 1;
-    epilog = 0;
+    prolog = TRUE;
+    epilog = FALSE;
     count_nesting = 0; /* # of inner WLs */
     while (assign != NULL) {
 
@@ -6723,6 +6750,7 @@ COMPSync (node *arg_node, node *arg_info)
         var_name = NULL;
         if (NODE_TYPE (instr) == N_icm) {
 
+            /* var_name = NULL; */
             if ((strcmp (ICM_NAME (instr), "WL_FOLD_BEGIN") == 0)
                 || (strcmp (ICM_NAME (instr), "WL_NONFOLD_BEGIN") == 0)) {
                 /*
@@ -6747,35 +6775,35 @@ COMPSync (node *arg_node, node *arg_info)
                  *  not within any (possibly nested) with-loop
                  *  is this an 'prolog-icm' or 'epilog-icm' for memory management?
                  *
-                 *  prolog == 1: current icm (assignment) is part of prolog
-                 *  epilog == 1: current icm (assignment) is part of epilog
+                 *  prolog == TRUE: current icm (assignment) is part of prolog
+                 *  epilog == TRUE: current icm (assignment) is part of epilog
                  */
 
                 if ((strcmp (ICM_NAME (instr), "ND_ALLOC_ARRAY") == 0)
                     || (strcmp (ICM_NAME (instr), "ND_CHECK_REUSE_ARRAY") == 0)
                     || (strcmp (ICM_NAME (instr), "ND_CHECK_REUSE_HIDDEN") == 0)) {
                     var_name = ID_NAME (EXPRS_EXPR (EXPRS_NEXT (ICM_ARGS (instr))));
-                    prolog = 1;
-                    epilog = 0;
+                    prolog = TRUE;
+                    epilog = FALSE;
+                    DBUG_PRINT ("COMP", ("ICM: %s is prolog", ICM_NAME (instr)));
+                } else if (strcmp (ICM_NAME (instr), "ND_INC_RC") == 0) {
+                    var_name = ID_NAME (EXPRS_EXPR (ICM_ARGS (instr)));
+                    prolog = TRUE;
+                    epilog = FALSE;
                     DBUG_PRINT ("COMP", ("ICM: %s is prolog", ICM_NAME (instr)));
                 } else if ((strcmp (ICM_NAME (instr), "ND_DEC_RC_FREE_ARRAY") == 0)
                            || (strcmp (ICM_NAME (instr), "ND_DEC_RC") == 0)) {
                     var_name = ID_NAME (EXPRS_EXPR (ICM_ARGS (instr)));
-                    prolog = 0;
-                    epilog = 1;
+                    prolog = FALSE;
+                    epilog = TRUE;
                     DBUG_PRINT ("COMP", ("ICM: %s is epilog", ICM_NAME (instr)));
-                } else if (strcmp (ICM_NAME (instr), "ND_INC_RC") == 0) {
-                    var_name = ID_NAME (EXPRS_EXPR (ICM_ARGS (instr)));
-                    prolog = 1;
-                    epilog = 0;
-                    DBUG_PRINT ("COMP", ("ICM: %s is prolog", ICM_NAME (instr)));
                 } else {
-                    prolog = 0;
-                    epilog = 0;
+                    prolog = FALSE;
+                    epilog = FALSE;
                     DBUG_PRINT ("COMP", ("ICM: %s is nothing", ICM_NAME (instr)));
                 }
             } else {
-                /* else var_name == NULL is valid */
+                var_name = NULL;
                 DBUG_PRINT ("COMP", ("ICM: %s is ignored!!!!", ICM_NAME (instr)));
             }
 
@@ -6791,7 +6819,7 @@ COMPSync (node *arg_node, node *arg_info)
                         assign = ASSIGN_NEXT (last_assign) = FreeNode (assign);
                     }
 
-                    DBUG_ASSERT ((!((prolog == 1) && (epilog == 1))),
+                    DBUG_ASSERT ((!(prolog && epilog)),
                                  ("icm cannot be in prolog and epilog at the same time"));
                     if (prolog) {
                         prolog_icms = AppendAssign (prolog_icms, new_icm);
@@ -6824,9 +6852,6 @@ COMPSync (node *arg_node, node *arg_info)
      *  -> insert ICM (MT_CONTINUE),
      */
     if (!SYNC_FIRST (arg_node)) {
-        /*    assigns = AppendAssignIcm( assigns,
-                                       "MT_MASTER_BEGIN",
-                                       MakeExprsNum( barrier_id)); */
         assigns = AppendAssign (assigns, prolog_icms);
         assigns = AppendAssignIcm (assigns, "MT_MASTER_SEND_FOLDRESULTS", fold_args);
         assigns = AppendAssignIcm (assigns, "MT_MASTER_SEND_SYNCARGS", sync_args);
@@ -6907,23 +6932,23 @@ COMPSync (node *arg_node, node *arg_info)
         if (DFMTestMask (SYNC_OUT (arg_node)) > 0) {
             if (DFMTestMask (SYNC_OUT (arg_node)) > 1) {
                 /* possible, but not implemented: icm_name = "MT_SYNC_FOLD_NONFOLD"; */
-                icm_args2 = MakeExprs (MakeNum (num_folds), icm_args2);
-                icm_args2 = MakeExprs (MakeNum (barrier_id), icm_args2);
+                barrier_args = MakeExprs (MakeNum (num_barrier_args), barrier_args);
+                barrier_args = MakeExprs (MakeNum (barrier_id), barrier_args);
                 icm_name = "MT_SYNC_FOLD";
 
                 DBUG_PRINT ("COMPi", ("MT_SYNC_FOLD (instead of MT_SYNC_FOLD_NONFOLD)"));
             } else {
                 /* DFMTestMask( SYNC_OUT( arg_node)) == 1  */
                 /* possible, but not implemented: icm_name = "MT_SYNC_ONEFOLD_NONFOLD"; */
-                icm_args2 = MakeExprs (MakeNum (num_folds), icm_args2);
-                icm_args2 = MakeExprs (MakeNum (barrier_id), icm_args2);
+                barrier_args = MakeExprs (MakeNum (num_barrier_args), barrier_args);
+                barrier_args = MakeExprs (MakeNum (barrier_id), barrier_args);
                 icm_name = "MT_SYNC_FOLD";
 
                 DBUG_PRINT ("COMPi",
                             ("MT_SYNC_FOLD (instead of MT_SYNC_ONEFOLD_NONFOLD)"));
             }
         } else {
-            icm_args2 = MakeExprs (MakeNum (barrier_id), icm_args2);
+            barrier_args = MakeExprs (MakeNum (barrier_id), barrier_args);
             icm_name = "MT_SYNC_NONFOLD";
 
             DBUG_PRINT ("COMPi", (" MT_SYNC_NONFOLD"));
@@ -6935,14 +6960,14 @@ COMPSync (node *arg_node, node *arg_info)
                     ("DFMTestMask( OUT ): %i", DFMTestMask (SYNC_OUT (arg_node))));
 
         if (DFMTestMask (SYNC_OUT (arg_node)) > 1) {
-            icm_args2 = MakeExprs (MakeNum (num_folds), icm_args2);
-            icm_args2 = MakeExprs (MakeNum (barrier_id), icm_args2);
+            barrier_args = MakeExprs (MakeNum (num_barrier_args), barrier_args);
+            barrier_args = MakeExprs (MakeNum (barrier_id), barrier_args);
             icm_name = "MT_SYNC_FOLD";
 
             DBUG_PRINT ("COMPi", (" MT_SYNC_FOLD"));
         } else {
             /* DFMTestMask( SYNC_OUT( arg_node)) == 1 */
-            icm_args2 = MakeExprs (MakeNum (barrier_id), icm_args2);
+            barrier_args = MakeExprs (MakeNum (barrier_id), barrier_args);
             icm_name = "MT_SYNC_ONEFOLD";
 
             DBUG_PRINT ("COMPi", (" MT_SYNC_ONEFOLD"));
@@ -6951,7 +6976,7 @@ COMPSync (node *arg_node, node *arg_info)
 
     DBUG_PRINT ("COMPi", ("using syncronisation: %s barrier: %i", icm_name, barrier_id));
 
-    assigns = AppendAssignIcm (assigns, icm_name, icm_args2);
+    assigns = AppendAssignIcm (assigns, icm_name, barrier_args);
 
     /*
      * insert extracted epilog-ICMs (free).
