@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.81  2002/05/31 17:26:21  dkr
+ * new argtags for TAGGED_ARRAYS used
+ *
  * Revision 3.80  2002/04/16 21:13:27  dkr
  * AddThreadIdVardec() no longer needed.
  * This is done by GSCPrintMain() now.
@@ -1337,9 +1340,11 @@ CheckAp (node *ap, node *arg_info)
                     let_ids = argtab->ptr_out[ids_idx];
                     if ((let_ids != NULL) && (ids_idx != arg_idx)
                         && (!strcmp (ID_NAME (arg_id), IDS_NAME (let_ids)))) {
+#ifndef TAGGED_ARRAYS
                         DBUG_ASSERT ((argtab->tag[arg_idx] == ATG_in)
                                        || (argtab->tag[arg_idx] == ATG_in_rc),
                                      "illegal tag found!");
+#endif
 
                         if (argtab->tag[arg_idx] == ATG_in) {
                             ok = FALSE;
@@ -1772,6 +1777,7 @@ COMPFundefArgs (node *fundef, node *arg_info)
                                             Type2Exprs (ARG_TYPE (arg)), assigns);
                     }
 
+#ifndef TAGGED_ARRAYS
                     /*
                      * put "ND_DECL_PARAM_..." ICM at beginning of function block
                      *   AND IN FRONT OF THE DECLARATION ICMs!!!
@@ -1786,6 +1792,7 @@ COMPFundefArgs (node *fundef, node *arg_info)
                                                   MakeTypeNode (ARG_TYPE (arg)),
                                                   MakeId_Copy (ARG_NAME (arg)), assigns);
                     }
+#endif
                 }
             }
         }
@@ -2193,8 +2200,12 @@ COMPNormalFunReturn (node *arg_node, node *arg_info)
 
         DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (ret_exprs)) == N_id), "no N_id node found!");
 
+#ifndef TAGGED_ARRAYS
         tag
           = RC_IS_ACTIVE (ID_REFCNT (EXPRS_EXPR (ret_exprs))) ? ATG_inout_rc : ATG_inout;
+#else
+        tag = ATG_notag;
+#endif
 
         new_args
           = MakeExprs (MakeId_Copy (mdb_argtag[tag]),
@@ -2444,6 +2455,7 @@ COMPApIds (node *ap, node *arg_info)
         if (argtab->ptr_out[i] != NULL) {
             let_ids = argtab->ptr_out[i];
 
+#ifndef TAGGED_ARRAYS
             if (argtab->tag[i] == ATG_out_rc) {
                 /* function does refcounting */
 
@@ -2458,6 +2470,9 @@ COMPApIds (node *ap, node *arg_info)
                                     MakeSetRcIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids),
                                                   IDS_REFCNT (let_ids), ret_node));
             }
+#else
+            ret_node = NULL;
+#endif
         }
     }
 
@@ -5700,11 +5715,15 @@ COMPSync (node *arg_node, node *arg_info)
     num_args = 0;
     vardec = DFMGetMaskEntryDeclSet (SYNC_IN (arg_node));
     while (vardec != NULL) {
+#ifndef TAGGED_ARRAYS
         if (RC_IS_ACTIVE (VARDEC_OR_ARG_REFCNT (vardec))) {
             tag = ATG_in_rc;
         } else {
             tag = ATG_in;
         }
+#else
+        tag = ATG_notag;
+#endif
         icm_args3
           = AppendExprs (icm_args3,
                          MakeExprs (MakeId_Copy (mdb_argtag[tag]),
