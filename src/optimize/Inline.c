@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.18  1998/04/16 16:07:34  srs
+ * renamed macros which access arg_info
+ *
  * Revision 1.17  1998/04/16 14:26:50  srs
  * removed NEWTREE
  *
@@ -83,8 +86,6 @@
 #include "DupTree.h"
 #include "Inline.h"
 
-#define FIRST_FUNC arg_info->node[0]
-
 #define INLINE_PREFIX "__inl"
 #define INLINE_PREFIX_LENGTH 5
 
@@ -139,7 +140,7 @@ INLmodul (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("INLmodul");
     if (NULL != MODUL_FUNS (arg_node)) {
-        FIRST_FUNC = MODUL_FUNS (arg_node);
+        INFO_INL_FIRST_FUNC (arg_info) = MODUL_FUNS (arg_node);
         MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
     }
     DBUG_RETURN (arg_node);
@@ -197,19 +198,19 @@ INLfundef (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("INLfundef");
 
-    if ((NULL != FUNDEF_BODY (arg_node)) && (0 == FUNDEF_INLINE (arg_node))) {
+    if ((FUNDEF_BODY (arg_node)) && (0 == FUNDEF_INLINE (arg_node))) {
         DBUG_PRINT ("INL", ("*** Trav function %s", FUNDEF_NAME (arg_node)));
-        InlineNo (FIRST_FUNC);
+        InlineNo (INFO_INL_FIRST_FUNC (arg_info));
 
-        INL_TYPES = NULL;
+        INFO_INL_TYPES (arg_info) = NULL;
 
         FUNDEF_INSTR (arg_node) = Trav (FUNDEF_INSTR (arg_node), arg_info);
 
         FUNDEF_VARDEC (arg_node)
-          = AppendNodeChain (0, INL_TYPES, FUNDEF_VARDEC (arg_node));
+          = AppendNodeChain (0, INFO_INL_TYPES (arg_info), FUNDEF_VARDEC (arg_node));
     }
 
-    if (NULL != FUNDEF_NEXT (arg_node))
+    if (FUNDEF_NEXT (arg_node))
         FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
@@ -268,7 +269,7 @@ DoInline (node *let_node, node *ap_node, node *arg_info)
 
     while ((NULL != var_node) && (NULL != expr_node)) {
         new_name = RenameInlinedVar (ARG_NAME (var_node));
-        vardec_node = SearchDecl (new_name, INL_TYPES);
+        vardec_node = SearchDecl (new_name, INFO_INL_TYPES (arg_info));
         new_expr = DupTree (EXPRS_EXPR (expr_node), arg_info);
         inl_nodes = MakeAssignLet (new_name, vardec_node, new_expr);
         header_nodes = AppendNodeChain (1, inl_nodes, header_nodes);
@@ -454,61 +455,73 @@ SearchDecl (char *name, node *decl_node)
  *
  */
 node *
-INLvar (node *arg_node, node *arg_info)
+INLarg (node *arg_node, node *arg_info)
 {
     char *new_name;
     types *new_type;
 
-    DBUG_ENTER ("INLvar");
+    DBUG_ENTER ("INLarg");
+    DBUG_ASSERT (N_arg == NODE_TYPE (arg_node), ("wrong node type"));
 
-    if (N_vardec == NODE_TYPE (arg_node)) {
-        new_name = RenameInlinedVar (VARDEC_NAME (arg_node));
-        if (NULL == SearchDecl (new_name, INL_TYPES)) {
-            new_type = DuplicateTypes (VARDEC_TYPE (arg_node), 2);
-            /*
-             * DuplicateTypes also copies attrib and status information.
-             */
+    new_name = RenameInlinedVar (ARG_NAME (arg_node));
+    if (NULL == SearchDecl (new_name, INFO_INL_TYPES (arg_info))) {
+        new_type = DuplicateTypes (ARG_TYPE (arg_node), 2);
+        /*
+         * DuplicateTypes also copies attrib and status information.
+         */
 
-            INL_TYPES = MakeVardec (new_name, new_type, INL_TYPES);
+        INFO_INL_TYPES (arg_info)
+          = MakeVardec (new_name, new_type, INFO_INL_TYPES (arg_info));
 
-            VARDEC_OBJDEF (INL_TYPES) = VARDEC_OBJDEF (arg_node);
-            /*
-             * Here, a possible link to the original global object definition
-             * stored within
-             * an artificial function argument is copied to the respective
-             * artificial variable declaration.
-             */
+        VARDEC_OBJDEF (INFO_INL_TYPES (arg_info)) = ARG_OBJDEF (arg_node);
+        /*
+         * Here, a possible link to the original global object definition
+         * stored within
+         * an artificial function argument is copied to the respective
+         * artificial variable declaration.
+         */
 
-        } else {
-            FREE (new_name);
-        }
-        if (NULL != VARDEC_NEXT (arg_node))
-            VARDEC_NEXT (arg_node) = Trav (VARDEC_NEXT (arg_node), arg_info);
-    } else /* N_arg */
-    {
-        new_name = RenameInlinedVar (ARG_NAME (arg_node));
-        if (NULL == SearchDecl (new_name, INL_TYPES)) {
-            new_type = DuplicateTypes (ARG_TYPE (arg_node), 2);
-            /*
-             * DuplicateTypes also copies attrib and status information.
-             */
+    } else
+        FREE (new_name);
 
-            INL_TYPES = MakeVardec (new_name, new_type, INL_TYPES);
+    if (NULL != ARG_NEXT (arg_node))
+        ARG_NEXT (arg_node) = Trav (ARG_NEXT (arg_node), arg_info);
 
-            VARDEC_OBJDEF (INL_TYPES) = ARG_OBJDEF (arg_node);
-            /*
-             * Here, a possible link to the original global object definition
-             * stored within
-             * an artificial function argument is copied to the respective
-             * artificial variable declaration.
-             */
+    DBUG_RETURN (arg_node);
+}
 
-        } else {
-            FREE (new_name);
-        }
-        if (NULL != ARG_NEXT (arg_node))
-            ARG_NEXT (arg_node) = Trav (ARG_NEXT (arg_node), arg_info);
-    }
+node *
+INLvardec (node *arg_node, node *arg_info)
+{
+    char *new_name;
+    types *new_type;
+
+    DBUG_ENTER ("INLvardec");
+    DBUG_ASSERT (N_vardec == NODE_TYPE (arg_node), ("wrong node type"));
+
+    new_name = RenameInlinedVar (VARDEC_NAME (arg_node));
+    if (NULL == SearchDecl (new_name, INFO_INL_TYPES (arg_info))) {
+        new_type = DuplicateTypes (VARDEC_TYPE (arg_node), 2);
+        /*
+         * DuplicateTypes also copies attrib and status information.
+         */
+
+        INFO_INL_TYPES (arg_info)
+          = MakeVardec (new_name, new_type, INFO_INL_TYPES (arg_info));
+
+        VARDEC_OBJDEF (INFO_INL_TYPES (arg_info)) = VARDEC_OBJDEF (arg_node);
+        /*
+         * Here, a possible link to the original global object definition
+         * stored within
+         * an artificial function argument is copied to the respective
+         * artificial variable declaration.
+         */
+
+    } else
+        FREE (new_name);
+
+    if (VARDEC_NEXT (arg_node))
+        VARDEC_NEXT (arg_node) = Trav (VARDEC_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
