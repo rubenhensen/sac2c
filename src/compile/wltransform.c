@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.99  2004/10/27 14:13:57  khf
+ * EmptyWl2Expr: added definition of iv in front of assigns
+ *
  * Revision 3.98  2004/10/26 16:51:23  khf
  * stacked arg_info before traversal in Ncode
  * EmptyParts2StridesOrExpr corrected
@@ -444,7 +447,7 @@ static extractopts *
 InitExtractOpts (extractopts *arg_extractopts, node *wl, info *arg_info)
 {
     node *ncodes;
-    nodelist *nl_cexprs;
+    nodelist *nl_cexprs = NULL;
 
     DBUG_ENTER ("InitExtractOpts");
 
@@ -3462,14 +3465,13 @@ EmptyParts2StridesOrExpr (node **wl, info *arg_info, int iter_dims, shpseg *iter
          */
 
         node *withop, *cexprs, *shp_node;
-        shpseg *current_shpseg, *old_shpseg;
         ids *_ids;
         extractopts *arg_extractopts;
         bool reuse_wl, free_res_types;
+        shpseg *current_shpseg = NULL;
+        shpseg *old_shpseg = NULL;
         int num_genop = 0;
 
-        current_shpseg = NULL;
-        old_shpseg = NULL;
         withop = NWITH2_WITHOP ((*wl));
 
         while (withop != NULL) {
@@ -7806,16 +7808,16 @@ ConvertWith (node *wl, int iter_dims)
  * Description:
  *   This function handles the case in which the shape of the WL is empty.
  *
- *     B = with( [] <= iv <= []) genarray( [], arr);   =>   B = arr;
- *     B = with( [] <= iv <= []) modarray( A,  scl);   =>   B = scl;
- *       where A represents a scalar
- *     B = with( [] <= iv <= []) fold( f, n, expr);    =>   iv = [];
- *                                                          B = f( n, expr);
- *     if emm is activated:
- *      B = with( [] <= iv < [])                       =>   acc = n;
- *          { acc = accu( iv);                              res = f( acc,expr);
- *            res = f( acc, expr);                          B = res;
- *          }:res
+ *     B = with( [] <= iv <= []) genarray( [], expr);  =>  iv = [];
+ *                                                         B = expr;
+ *
+ *     B = with( [] <= iv <= []) modarray( A,  expr);  =>  iv = [];
+ *       where A represents a scalar                       B = expr
+ *
+ *     B = with( [] <= iv < [])                        =>  iv = [];
+ *          { acc = accu( iv);                             acc = n;
+ *            res = f( acc, expr);                         res = f( acc, expr);
+ *          }:res                                          B = res;
  *          fold(f, n);
  *
  ******************************************************************************/
@@ -7823,7 +7825,7 @@ ConvertWith (node *wl, int iter_dims)
 static node *
 EmptyWl2Expr (node *wl, info *arg_info)
 {
-    node *new_node, *tmp;
+    node *new_node, *tmp, *assigns;
 
     DBUG_ENTER ("EmptyWl2Expr");
 
@@ -7836,30 +7838,46 @@ EmptyWl2Expr (node *wl, info *arg_info)
     case WO_genarray:
         /* here is no break missing */
     case WO_modarray:
-        INFO_WL_PREASSIGNS (arg_info) = DupTree (BLOCK_INSTR (NWITH_CBLOCK (wl)));
+
+        if (NODE_TYPE (BLOCK_INSTR (NWITH_CBLOCK (wl))) != N_empty)
+            assigns = DupTree (BLOCK_INSTR (NWITH_CBLOCK (wl)));
+        else
+            assigns = NULL;
+
+        tmp = MakeFlatArray (NULL);
+        ARRAY_TYPE (tmp)
+          = MakeTypes (T_int, 1, MakeShpseg (MakeNums (0, NULL)), NULL, NULL);
+
+        assigns = MakeAssign (MakeLet (tmp, DupOneIds (NWITHID_VEC (NWITH_WITHID (wl)))),
+                              assigns);
+
+        INFO_WL_PREASSIGNS (arg_info) = assigns;
         new_node = DupNode (NWITH_CEXPR (wl));
         break;
 
     case WO_foldfun:
         /* here is no break missing! */
     case WO_foldprf:
-        if (emm) {
-            tmp = BLOCK_INSTR (NWITH_CBLOCK (wl));
-            while (tmp != NULL) {
-                if ((NODE_TYPE (ASSIGN_RHS (tmp)) == N_prf)
-                    && (PRF_PRF (ASSIGN_RHS (tmp)) == F_accu)) {
-                    ASSIGN_RHS (tmp) = FreeNode (ASSIGN_RHS (tmp));
-                    ASSIGN_RHS (tmp) = DupNode (NWITH_NEUTRAL (wl));
-                    break;
-                }
-                tmp = ASSIGN_NEXT (tmp);
+
+        tmp = MakeFlatArray (NULL);
+        ARRAY_TYPE (tmp)
+          = MakeTypes (T_int, 1, MakeShpseg (MakeNums (0, NULL)), NULL, NULL);
+        assigns = MakeAssign (MakeLet (tmp, DupOneIds (NWITHID_VEC (NWITH_WITHID (wl)))),
+                              DupTree (BLOCK_INSTR (NWITH_CBLOCK (wl))));
+
+        tmp = assigns;
+        while (tmp != NULL) {
+            if ((NODE_TYPE (ASSIGN_RHS (tmp)) == N_prf)
+                && (PRF_PRF (ASSIGN_RHS (tmp)) == F_accu)) {
+                ASSIGN_RHS (tmp) = FreeNode (ASSIGN_RHS (tmp));
+                ASSIGN_RHS (tmp) = DupNode (NWITH_NEUTRAL (wl));
+                break;
             }
-            INFO_WL_PREASSIGNS (arg_info) = DupTree (BLOCK_INSTR (NWITH_CBLOCK (wl)));
-            new_node = DupNode (NWITH_CEXPR (wl));
-        } else {
-            DBUG_ASSERT ((0), "fold-WL with empty shape not yet implemented");
-            new_node = NULL;
+            tmp = ASSIGN_NEXT (tmp);
         }
+
+        INFO_WL_PREASSIGNS (arg_info) = assigns;
+        new_node = DupNode (NWITH_CEXPR (wl));
         break;
 
     default:
