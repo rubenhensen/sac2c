@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.39  2004/11/22 14:09:22  sbs
+ * some further stuff from new_types.h
+ *
  * Revision 3.38  2004/11/22 14:05:54  sbs
  * stuff from new_types.h added
  *
@@ -749,7 +752,8 @@ typedef void (*zipcvfunptr) (void *, int, void *, int, void *, int);
 typedef struct STR_BUF str_buf;
 typedef struct PTR_BUF ptr_buf;
 
-/**
+/*******************************************************************************
+ *
  * moved from new_types.h
  */
 
@@ -764,5 +768,15 @@ typedef enum {
 #define TCITypeConstr(a) a
 #include "type_constructor_info.mac"
 } typeconstr;
+
+typedef struct dft {
+    ntype *type;
+    node *def;
+    node *deriveable;
+    int num_partials;
+    node **partials;
+    int num_deriveable_partials;
+    node **deriveable_partials;
+} DFT_res;
 
 #endif /* _SAC_TYPES_H_ */
