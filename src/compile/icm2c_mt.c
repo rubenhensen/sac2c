@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.20  2001/05/09 15:13:00  cg
+ * All scheduling ICMs get an additional first parameter,
+ * i.e. the segment ID. This is required to identify the appropriate
+ * set of scheduler internal variables.
+ *
  * Revision 3.19  2001/05/04 11:48:42  ben
  *  MT_SCHEDULER_Even_... deleted
  *  MT_SCHEDULER_Cyclic_... renamed to _Static_
@@ -1401,8 +1406,8 @@ TaskSelector (int dim, char **vararg, int strategy, int tasks_on_dim, char *num_
 /******************************************************************************
  *
  * function:
- *   void ICMCompileMT_SCHEDULER_BEGIN( int dim, char **vararg)
- *   void ICMCompileMT_SCHEDULER_END( int dim, char **vararg)
+ *   void ICMCompileMT_SCHEDULER_BEGIN( int seg_id, int dim, char **vararg)
+ *   void ICMCompileMT_SCHEDULER_END( int seg_id, int dim, char **vararg)
  *
  * description:
  *   These two ICMs implement the default scheduling.
@@ -1410,7 +1415,7 @@ TaskSelector (int dim, char **vararg, int strategy, int tasks_on_dim, char *num_
  ******************************************************************************/
 
 void
-ICMCompileMT_SCHEDULER_BEGIN (int dim, char **vararg)
+ICMCompileMT_SCHEDULER_BEGIN (int seg_id, int dim, char **vararg)
 {
     DBUG_ENTER ("ICMCompileMT_SCHEDULER_BEGIN");
 
@@ -1426,7 +1431,7 @@ ICMCompileMT_SCHEDULER_BEGIN (int dim, char **vararg)
 }
 
 void
-ICMCompileMT_SCHEDULER_END (int dim, char **vararg)
+ICMCompileMT_SCHEDULER_END (int seg_id, int dim, char **vararg)
 {
     DBUG_ENTER ("ICMCompileMT_SCHEDULER_END");
 
@@ -1443,8 +1448,10 @@ ICMCompileMT_SCHEDULER_END (int dim, char **vararg)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileMT_SCHEDULER_Block_BEGIN( int dim, char **vararg)
- *   void ICMCompileMT_SCHEDULER_Block_END( int dim, char **vararg)
+ *   void ICMCompileMT_SCHEDULER_Block_BEGIN( int seg_id, int dim,
+ *                                            char **vararg)
+ *   void ICMCompileMT_SCHEDULER_Block_END( int seg_id, int dim,
+ *                                          char **vararg)
  *
  * description:
  *   These two ICMs implement the scheduling for constant segments
@@ -1458,7 +1465,7 @@ ICMCompileMT_SCHEDULER_END (int dim, char **vararg)
  ******************************************************************************/
 
 void
-ICMCompileMT_SCHEDULER_Block_BEGIN (int dim, char **vararg)
+ICMCompileMT_SCHEDULER_Block_BEGIN (int seg_id, int dim, char **vararg)
 {
     char **lower_bound = vararg;
     char **upper_bound = vararg + dim;
@@ -1487,7 +1494,7 @@ ICMCompileMT_SCHEDULER_Block_BEGIN (int dim, char **vararg)
 }
 
 void
-ICMCompileMT_SCHEDULER_Block_END (int dim, char **vararg)
+ICMCompileMT_SCHEDULER_Block_END (int seg_id, int dim, char **vararg)
 {
     DBUG_ENTER ("ICMCompileMT_SCHEDULER_Block_END");
 
@@ -1504,8 +1511,10 @@ ICMCompileMT_SCHEDULER_Block_END (int dim, char **vararg)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileMT_SCHEDULER_BlockVar_BEGIN( int dim, char **vararg)
- *   void ICMCompileMT_SCHEDULER_BlockVar_END( int dim, char **vararg)
+ *   void ICMCompileMT_SCHEDULER_BlockVar_BEGIN( int seg_id, int dim,
+ *                                               char **vararg)
+ *   void ICMCompileMT_SCHEDULER_BlockVar_END( int seg_id, int dim,
+ *                                             char **vararg)
  *
  * description:
  *   These two ICMs implement the scheduling for variable segments
@@ -1519,7 +1528,7 @@ ICMCompileMT_SCHEDULER_Block_END (int dim, char **vararg)
  ******************************************************************************/
 
 void
-ICMCompileMT_SCHEDULER_BlockVar_BEGIN (int dim, char **vararg)
+ICMCompileMT_SCHEDULER_BlockVar_BEGIN (int seg_id, int dim, char **vararg)
 {
     char **lower_bound = vararg;
     char **upper_bound = vararg + dim;
@@ -1548,7 +1557,7 @@ ICMCompileMT_SCHEDULER_BlockVar_BEGIN (int dim, char **vararg)
 }
 
 void
-ICMCompileMT_SCHEDULER_BlockVar_END (int dim, char **vararg)
+ICMCompileMT_SCHEDULER_BlockVar_END (int seg_id, int dim, char **vararg)
 {
     DBUG_ENTER ("ICMCompileMT_SCHEDULER_BlockVar_END");
 
@@ -1565,9 +1574,10 @@ ICMCompileMT_SCHEDULER_BlockVar_END (int dim, char **vararg)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileMT_SCHEDULER_Static_BEGIN(int tasks_per_thread ,int dim, char
- ***vararg) void ICMCompileMT_SCHEDULER_Static_END(int tasks_per_thread ,int dim, char
- ***vararg)
+ *   void ICMCompileMT_SCHEDULER_Static_BEGIN(int seg_id, int tasks_per_thread,
+ *                                            int dim, char **vararg)
+ *   void ICMCompileMT_SCHEDULER_Static_END(int seg_id, int tasks_per_thread,
+ *                                          int dim, char **vararg)
  *
  * description:
  *   These two ICMs implement one scheduling for withloops
@@ -1580,7 +1590,8 @@ ICMCompileMT_SCHEDULER_BlockVar_END (int dim, char **vararg)
  ******************************************************************************/
 
 void
-ICMCompileMT_SCHEDULER_Static_BEGIN (int tasks_per_thread, int dim, char **vararg)
+ICMCompileMT_SCHEDULER_Static_BEGIN (int seg_id, int tasks_per_thread, int dim,
+                                     char **vararg)
 {
     char *numtasks;
 
@@ -1612,7 +1623,8 @@ ICMCompileMT_SCHEDULER_Static_BEGIN (int tasks_per_thread, int dim, char **varar
 }
 
 void
-ICMCompileMT_SCHEDULER_Static_END (int tasks_per_thread, int dim, char **vararg)
+ICMCompileMT_SCHEDULER_Static_END (int seg_id, int tasks_per_thread, int dim,
+                                   char **vararg)
 {
     DBUG_ENTER ("ICMCompileMT_SCHEDULER_Static_END");
 
@@ -1635,8 +1647,10 @@ ICMCompileMT_SCHEDULER_Static_END (int tasks_per_thread, int dim, char **vararg)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileMT_SCHEDULER_Self_BEGIN(int tasks_per_thread ,int dim, char **vararg)
- *   void ICMCompileMT_SCHEDULER_Self_END(int tasks_per_thread ,int dim, char **vararg)
+ *   void ICMCompileMT_SCHEDULER_Self_BEGIN(int seg_id, int tasks_per_thread,
+ *                                          int dim, char **vararg)
+ *   void ICMCompileMT_SCHEDULER_Self_END(int seg_id, int tasks_per_thread,
+ *                                        int dim, char **vararg)
  *
  * description:
  *   These two ICMs implement one scheduling for withloops
@@ -1650,7 +1664,8 @@ ICMCompileMT_SCHEDULER_Static_END (int tasks_per_thread, int dim, char **vararg)
  ******************************************************************************/
 
 void
-ICMCompileMT_SCHEDULER_Self_BEGIN (int tasks_per_thread, int dim, char **vararg)
+ICMCompileMT_SCHEDULER_Self_BEGIN (int seg_id, int tasks_per_thread, int dim,
+                                   char **vararg)
 {
     char *numtasks;
 
@@ -1679,7 +1694,7 @@ ICMCompileMT_SCHEDULER_Self_BEGIN (int tasks_per_thread, int dim, char **vararg)
 }
 
 void
-ICMCompileMT_SCHEDULER_Self_END (int tasks_per_thread, int dim, char **vararg)
+ICMCompileMT_SCHEDULER_Self_END (int seg_id, int tasks_per_thread, int dim, char **vararg)
 {
     DBUG_ENTER ("ICMCompileMT_SCHEDULER_Self_END");
 
@@ -1704,9 +1719,10 @@ ICMCompileMT_SCHEDULER_Self_END (int tasks_per_thread, int dim, char **vararg)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileMT_SCHEDULER_Affinity_BEGIN(int tasks_per_thread ,int dim, char
- ***vararg) void ICMCompileMT_SCHEDULER_Affinity_END(int tasks_per_thread ,int dim, char
- ***vararg)
+ *   void ICMCompileMT_SCHEDULER_Affinity_BEGIN(int seg_id, int tasks_per_thread,
+ *                                              int dim, char **vararg)
+ *   void ICMCompileMT_SCHEDULER_Affinity_END(int seg_id, int tasks_per_thread,
+ *                                            int dim, char **vararg)
  *
  * description:
  *   These two ICMs implement one scheduling for withloops
@@ -1719,7 +1735,8 @@ ICMCompileMT_SCHEDULER_Self_END (int tasks_per_thread, int dim, char **vararg)
  ******************************************************************************/
 
 void
-ICMCompileMT_SCHEDULER_Affinity_BEGIN (int tasks_per_thread, int dim, char **vararg)
+ICMCompileMT_SCHEDULER_Affinity_BEGIN (int seg_id, int tasks_per_thread, int dim,
+                                       char **vararg)
 {
     char *numtasks;
 
@@ -1737,12 +1754,11 @@ ICMCompileMT_SCHEDULER_Affinity_BEGIN (int tasks_per_thread, int dim, char **var
                       "SAC_MT_worktodo;\n");
     InitializeBoundaries (dim, vararg, 0);
     INDENT;
-    fprintf (
-      outfile,
-      "SAC_MT_SCHEDULER_Affinity_FIRST_TASK(%d,SAC_MT_taskid, SAC_MT_worktodo, SAC_MT_maxloadthread, 
-      SAC_MT_mintask);
-    \n ",tasks_per_thread);
-      INDENT;
+    fprintf (outfile,
+             "SAC_MT_SCHEDULER_Affinity_FIRST_TASK(%d, SAC_MT_taskid, "
+             "SAC_MT_worktodo, SAC_MT_maxloadthread, SAC_MT_mintask);\n",
+             tasks_per_thread);
+    INDENT;
     fprintf (outfile, " while (SAC_MT_worktodo){\n");
     TaskSelector (dim, vararg, ST_BLOCK, 0, numtasks, "SAC_MT_taskid");
 
@@ -1751,7 +1767,8 @@ ICMCompileMT_SCHEDULER_Affinity_BEGIN (int tasks_per_thread, int dim, char **var
 }
 
 void
-ICMCompileMT_SCHEDULER_Affinity_END (int tasks_per_thread, int dim, char **vararg)
+ICMCompileMT_SCHEDULER_Affinity_END (int seg_id, int tasks_per_thread, int dim,
+                                     char **vararg)
 {
     DBUG_ENTER ("ICMCompileMT_SCHEDULER_Affinity_END");
 
@@ -1761,12 +1778,11 @@ ICMCompileMT_SCHEDULER_Affinity_END (int tasks_per_thread, int dim, char **varar
 #undef MT_SCHEDULER_Affinity_END
 
     INDENT;
-    fprintf (
-      outfile,
-      "SAC_MT_SCHEDULER_Affinity_NEXT_TASK(%d,SAC_MT_taskid, SAC_MT_worktodo, SAC_MT_maxloadthread, 
-      SAC_MT_mintask);
-    \n ",tasks_per_thread); 
-      INDENT;
+    fprintf (outfile,
+             "SAC_MT_SCHEDULER_Affinity_NEXT_TASK(%d, SAC_MT_taskid, "
+             "SAC_MT_worktodo, SAC_MT_maxloadthread, SAC_MT_mintask);\n",
+             tasks_per_thread);
+    INDENT;
     fprintf (outfile, "}\n");
     INDENT;
     fprintf (outfile, "SAC_MT_SCHEDULER_Reset_Tasks();\n");

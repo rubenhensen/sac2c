@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.52  2001/05/09 15:13:00  cg
+ * All scheduling ICMs get an additional first parameter,
+ * i.e. the segment ID. This is required to identify the appropriate
+ * set of scheduler internal variables.
+ *
  * Revision 3.51  2001/05/08 13:28:04  dkr
  * new RC macros used
  *
@@ -6084,12 +6089,12 @@ COMPWLsegx (node *arg_node, node *arg_info)
      */
     assigns
       = AppendAssign (assigns,
-                      MakeAssign (SCHCompileSchedulingEnd (IDS_NAME (wlids),
+                      MakeAssign (SCHCompileSchedulingEnd (0, IDS_NAME (wlids),
                                                            WLSEGX_SCHEDULING (arg_node),
                                                            arg_node),
                                   NULL));
     assigns
-      = MakeAssign (SCHCompileSchedulingBegin (IDS_NAME (wlids),
+      = MakeAssign (SCHCompileSchedulingBegin (0, IDS_NAME (wlids),
                                                WLSEGX_SCHEDULING (arg_node), arg_node),
                     assigns);
 

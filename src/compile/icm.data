@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.20  2001/05/09 15:13:00  cg
+ * All scheduling ICMs get an additional first parameter,
+ * i.e. the segment ID. This is required to identify the appropriate
+ * set of scheduler internal variables.
+ *
  * Revision 3.19  2001/05/04 11:46:22  ben
  * MT_SCHEDULER_Even_... deleted
  * MT_SCHEDULER_Cyclic_... renamed to _Static_
@@ -692,92 +697,104 @@ ICM_END( MT_ADJUST_SCHEDULER__OFFSET, (array, array_dim, current_dim, lower, upp
 
 #if defined(MT_SCHEDULER_BEGIN) || defined(ICM_ALL)
 ICM_DEF( MT_SCHEDULER_BEGIN, TRACE_NONE)
+  ICM_INT(seg_id)
   ICM_INT(dim)
   ICM_VAR((2*dim), vararg)
-ICM_END( MT_SCHEDULER_BEGIN, (dim, vararg))
+ICM_END( MT_SCHEDULER_BEGIN, (seg_id, dim, vararg))
 #endif
 
 #if defined(MT_SCHEDULER_END) || defined(ICM_ALL)
 ICM_DEF( MT_SCHEDULER_END, TRACE_NONE)
+  ICM_INT(seg_id)
   ICM_INT(dim)
   ICM_VAR((2*dim), vararg)
-ICM_END( MT_SCHEDULER_END, (dim, vararg))
+ICM_END( MT_SCHEDULER_END, (seg_id, dim, vararg))
 #endif
 
 
 #if defined(MT_SCHEDULER_Block_BEGIN) || defined(ICM_ALL)
 ICM_DEF( MT_SCHEDULER_Block_BEGIN, TRACE_NONE)
+  ICM_INT(seg_id)
   ICM_INT(dim)
   ICM_VAR((3*dim), vararg)
-ICM_END( MT_SCHEDULER_Block_BEGIN, (dim, vararg))
+ICM_END( MT_SCHEDULER_Block_BEGIN, (seg_id, dim, vararg))
 #endif
 
 #if defined(MT_SCHEDULER_Block_END) || defined(ICM_ALL)
 ICM_DEF( MT_SCHEDULER_Block_END, TRACE_NONE)
+  ICM_INT(seg_id)
   ICM_INT(dim)
   ICM_VAR((3*dim), vararg)
-ICM_END( MT_SCHEDULER_Block_END, (dim, vararg))
+ICM_END( MT_SCHEDULER_Block_END, (seg_id, dim, vararg))
 #endif
 
 
 #if defined(MT_SCHEDULER_BlockVar_BEGIN) || defined(ICM_ALL)
 ICM_DEF( MT_SCHEDULER_BlockVar_BEGIN, TRACE_NONE)
+  ICM_INT(seg_id)
   ICM_INT(dim)
   ICM_VAR((3*dim), vararg)
-ICM_END( MT_SCHEDULER_BlockVar_BEGIN, (dim, vararg))
+ICM_END( MT_SCHEDULER_BlockVar_BEGIN, (seg_id, dim, vararg))
 #endif
 
 #if defined(MT_SCHEDULER_BlockVar_END) || defined(ICM_ALL)
 ICM_DEF( MT_SCHEDULER_BlockVar_END, TRACE_NONE)
+  ICM_INT(seg_id)
   ICM_INT(dim)
   ICM_VAR((3*dim), vararg)
-ICM_END( MT_SCHEDULER_BlockVar_END, (dim, vararg))
+ICM_END( MT_SCHEDULER_BlockVar_END, (seg_id, dim, vararg))
 #endif
 
 #if defined(MT_SCHEDULER_Cyclic_BEGIN) || defined(ICM_ALL)
 ICM_DEF( MT_SCHEDULER_Static_BEGIN, TRACE_NONE)
+  ICM_INT(seg_id)
   ICM_INT(tasks_per_thread)
   ICM_INT(dim)
   ICM_VAR((3*dim), vararg)
-ICM_END( MT_SCHEDULER_Static_BEGIN, (tasks_per_thread, dim, vararg))
+ICM_END( MT_SCHEDULER_Static_BEGIN, (seg_id, tasks_per_thread, dim, vararg))
 #endif
 
 #if defined(MT_SCHEDULER_Static_END) || defined(ICM_ALL)
 ICM_DEF( MT_SCHEDULER_Static_END, TRACE_NONE)
+  ICM_INT(seg_id)
   ICM_INT(tasks_per_thread)
   ICM_INT(dim)
   ICM_VAR((3*dim), vararg)
-ICM_END( MT_SCHEDULER_Static_END, (tasks_per_thread, dim, vararg))
+ICM_END( MT_SCHEDULER_Static_END, (seg_id, tasks_per_thread, dim, vararg))
 #endif
 
 #if defined(MT_SCHEDULER_Self_BEGIN) || defined(ICM_ALL)
 ICM_DEF( MT_SCHEDULER_Self_BEGIN, TRACE_NONE)
+  ICM_INT(seg_id)
   ICM_INT(tasks_per_thread)
   ICM_INT(dim)
   ICM_VAR((3*dim), vararg)
-ICM_END( MT_SCHEDULER_Self_BEGIN, (tasks_per_thread, dim, vararg))
+ICM_END( MT_SCHEDULER_Self_BEGIN, (seg_id, tasks_per_thread, dim, vararg))
 #endif
 
 #if defined(MT_SCHEDULER_Self_END) || defined(ICM_ALL)
 ICM_DEF( MT_SCHEDULER_Self_END, TRACE_NONE)
+  ICM_INT(seg_id)
   ICM_INT(tasks_per_thread)
   ICM_INT(dim)
   ICM_VAR((3*dim), vararg)
-ICM_END( MT_SCHEDULER_Self_END, (tasks_per_thread, dim, vararg))
+ICM_END( MT_SCHEDULER_Self_END, (seg_id, tasks_per_thread, dim, vararg))
 #endif
 
 #if defined(MT_SCHEDULER_Affinity_BEGIN) || defined(ICM_ALL)
 ICM_DEF( MT_SCHEDULER_Affinity_BEGIN, TRACE_NONE)
+  ICM_INT(seg_id)
   ICM_INT(tasks_per_thread)
   ICM_INT(dim)
   ICM_VAR((3*dim), vararg)
-ICM_END( MT_SCHEDULER_Affinity_BEGIN, (tasks_per_thread, dim, vararg))
+ICM_END( MT_SCHEDULER_Affinity_BEGIN, (seg_id, tasks_per_thread, dim, vararg))
 #endif
 
 #if defined(MT_SCHEDULER_Affinity_END) || defined(ICM_ALL)
 ICM_DEF( MT_SCHEDULER_Affinity_END, TRACE_NONE)
+  ICM_INT(seg_id)
   ICM_INT(tasks_per_thread)
   ICM_INT(dim)
   ICM_VAR((3*dim), vararg)
-ICM_END( MT_SCHEDULER_Affinity_END, (tasks_per_thread, dim, vararg))
+ICM_END( MT_SCHEDULER_Affinity_END, (seg_id, tasks_per_thread, dim, vararg))
 #endif

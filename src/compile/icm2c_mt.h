@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2001/05/09 15:13:00  cg
+ * All scheduling ICMs get an additional first parameter,
+ * i.e. the segment ID. This is required to identify the appropriate
+ * set of scheduler internal variables.
+ *
  * Revision 3.13  2001/05/04 11:48:23  ben
  *  MT_SCHEDULER_Even_... deleted
  *  MT_SCHEDULER_Cyclic_... renamed to _Static_
@@ -144,28 +149,28 @@ extern void ICMCompileMT_ADJUST_SCHEDULER__OFFSET (char *array, int array_dim,
                                                    int current_dim, char *lower,
                                                    char *upper, char *unrolling);
 
-extern void ICMCompileMT_SCHEDULER_BEGIN (int dim, char **vararg);
-extern void ICMCompileMT_SCHEDULER_END (int dim, char **vararg);
+extern void ICMCompileMT_SCHEDULER_BEGIN (int seg_id, int dim, char **vararg);
+extern void ICMCompileMT_SCHEDULER_END (int seg_id, int dim, char **vararg);
 
-extern void ICMCompileMT_SCHEDULER_Block_BEGIN (int dim, char **vararg);
-extern void ICMCompileMT_SCHEDULER_Block_END (int dim, char **vararg);
+extern void ICMCompileMT_SCHEDULER_Block_BEGIN (int seg_id, int dim, char **vararg);
+extern void ICMCompileMT_SCHEDULER_Block_END (int seg_id, int dim, char **vararg);
 
-extern void ICMCompileMT_SCHEDULER_BlockVar_BEGIN (int dim, char **vararg);
-extern void ICMCompileMT_SCHEDULER_BlockVar_END (int dim, char **vararg);
+extern void ICMCompileMT_SCHEDULER_BlockVar_BEGIN (int seg_id, int dim, char **vararg);
+extern void ICMCompileMT_SCHEDULER_BlockVar_END (int seg_id, int dim, char **vararg);
 
-extern void ICMCompileMT_SCHEDULER_Static_BEGIN (int tasks_per_thread, int dim,
-                                                 char **vararg);
-extern void ICMCompileMT_SCHEDULER_Static_END (int tasks_per_thread, int dim,
+extern void ICMCompileMT_SCHEDULER_Static_BEGIN (int seg_id, int tasks_per_thread,
+                                                 int dim, char **vararg);
+extern void ICMCompileMT_SCHEDULER_Static_END (int seg_id, int tasks_per_thread, int dim,
                                                char **vararg);
 
-extern void ICMCompileMT_SCHEDULER_Self_BEGIN (int tasks_per_thread, int dim,
+extern void ICMCompileMT_SCHEDULER_Self_BEGIN (int seg_id, int tasks_per_thread, int dim,
                                                char **vararg);
-extern void ICMCompileMT_SCHEDULER_Self_END (int tasks_per_thread, int dim,
+extern void ICMCompileMT_SCHEDULER_Self_END (int seg_id, int tasks_per_thread, int dim,
                                              char **vararg);
 
-extern void ICMCompileMT_SCHEDULER_Affinity_BEGIN (int tasks_per_thread, int dim,
-                                                   char **vararg);
-extern void ICMCompileMT_SCHEDULER_Affinity_END (int tasks_per_thread, int dim,
-                                                 char **vararg);
+extern void ICMCompileMT_SCHEDULER_Affinity_BEGIN (int seg_id, int tasks_per_thread,
+                                                   int dim, char **vararg);
+extern void ICMCompileMT_SCHEDULER_Affinity_END (int seg_id, int tasks_per_thread,
+                                                 int dim, char **vararg);
 
 #endif /* _SAC_ICM2C_MT_H_ */

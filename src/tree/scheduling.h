@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2001/05/09 15:13:00  cg
+ * All scheduling ICMs get an additional first parameter,
+ * i.e. the segment ID. This is required to identify the appropriate
+ * set of scheduler internal variables.
+ *
  * Revision 3.4  2001/03/29 14:13:38  dkr
  * SCHMakeCompatibleSyncblockScheduling moved
  *
@@ -76,7 +81,11 @@ extern void SCHCheckSuitabilityVarSeg (SCHsched_t *sched);
 extern void SCHCheckSuitabilityWithloop (SCHsched_t *sched);
 extern bool SCHAdjustmentRequired (int dim, node *wlseg);
 
-extern node *SCHCompileSchedulingEnd (char *wl_name, SCHsched_t sched, node *arg_node);
-extern node *SCHCompileSchedulingBegin (char *wl_name, SCHsched_t sched, node *arg_node);
+extern node *SCHCompileSchedulingBegin (int seg_id, char *wl_name, SCHsched_t sched,
+                                        node *arg_node);
+extern node *SCHCompileSchedulingEnd (int seg_id, char *wl_name, SCHsched_t sched,
+                                      node *arg_node);
+extern node *SCHCompileSchedulingInit (int seg_id, char *wl_name, SCHsched_t sched,
+                                       node *arg_node);
 
 #endif /* _SAC_SCHEDULING_H_ */

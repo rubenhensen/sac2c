@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.25  2001/05/09 15:13:00  cg
+ * All scheduling ICMs get an additional first parameter,
+ * i.e. the segment ID. This is required to identify the appropriate
+ * set of scheduler internal variables.
+ *
  * Revision 3.24  2001/05/04 11:45:12  ben
  * scheduler_table[] modified:
  * Even deleted, Cyclic renamed to Static, Afs renamed to Affinity
@@ -834,7 +839,7 @@ SCHAdjustmentRequired (int dim, node *wlseg)
 /******************************************************************************
  *
  * function:
- *   node *CompileSchedulingArgs( sched_t *sched, node *args)
+ *   node *CompileSchedulingArgs( int seg_id, sched_t *sched, node *args)
  *
  * description:
  *   This function converts the arguments of an abstract scheduling
@@ -842,10 +847,12 @@ SCHAdjustmentRequired (int dim, node *wlseg)
  *   Numbers in the case of type 'x' scheduling arguments are transformed
  *   into string representations.
  *
+ *   The segment ID is added to all scheduler ICMs as first argument.
+ *
  ******************************************************************************/
 
 static node *
-CompileSchedulingArgs (sched_t *sched, node *args)
+CompileSchedulingArgs (int seg_id, sched_t *sched, node *args)
 {
     node *new_arg;
     int i;
@@ -876,6 +883,8 @@ CompileSchedulingArgs (sched_t *sched, node *args)
             args = MakeExprs (new_arg, args);
         }
     }
+
+    args = MakeExprs (MakeNum (seg_id), args);
 
     DBUG_RETURN (args);
 }
@@ -944,7 +953,7 @@ CompileConstSegSchedulingArgs (char *wl_name, node *wlseg, sched_t *sched)
  *                                      sched_t *sched)
  *
  * description:
- *   In addition to their individual arguments, scheduling ICMs have addtional
+ *   In addition to their individual arguments, scheduling ICMs have additional
  *   arguments depending on their position. Currently, schedulings for variable
  *   segments do not have general arguments.
  *
@@ -992,19 +1001,21 @@ CompileVarSegSchedulingArgs (char *wl_name, node *wlseg, sched_t *sched)
 /******************************************************************************
  *
  * function:
- *   node *CompileScheduling( char *wl_name, sched_t *sched, node *arg_node,
- *                            char *suffix)
+ *   node *CompileScheduling( int seg_id, char *wl_name, sched_t *sched,
+ *                            node *arg_node, char *suffix)
  *
  * description:
  *   This function compiles abstract scheduling specifications to ICMs
  *    "SAC_MT_SCHEDULER_<discipline>_BEGIN"
  *    "SAC_MT_SCHEDULER_<discipline>_END"
+ *    "SAC_MT_SCHEDULER_<discipline>_INIT"
  *   depending on the parameter 'suffix'.
  *
  ******************************************************************************/
 
 static node *
-CompileScheduling (char *wl_name, sched_t *sched, node *arg_node, char *suffix)
+CompileScheduling (int seg_id, char *wl_name, sched_t *sched, node *arg_node,
+                   char *suffix)
 {
     node *icm, *general_args;
     char *name;
@@ -1034,7 +1045,7 @@ CompileScheduling (char *wl_name, sched_t *sched, node *arg_node, char *suffix)
         DBUG_ASSERT ((0), "wrong node type found");
     }
 
-    icm = MakeIcm (name, CompileSchedulingArgs (sched, general_args));
+    icm = MakeIcm (name, CompileSchedulingArgs (seg_id, sched, general_args));
 
     DBUG_RETURN (icm);
 }
@@ -1042,38 +1053,61 @@ CompileScheduling (char *wl_name, sched_t *sched, node *arg_node, char *suffix)
 /******************************************************************************
  *
  * function:
- *   node *SCHCompileSchedulingBegin( char *wl_name, sched_t *sched,
+ *   node *SCHCompileSchedulingBegin( int seg_id, char *wl_name, sched_t *sched,
  *                                    node *arg_node)
  *
- *   node *SCHCompileSchedulingEnd( char *wl_name, sched_t *sched,
+ *   node *SCHCompileSchedulingEnd( int seg_id, char *wl_name, sched_t *sched,
  *                                  node *arg_node)
  *
+ *   node *SCHCompileSchedulingInit( int seg_id, char *wl_name, sched_t *sched,
+ *                                   node *arg_node)
+ *
  * description:
- *   These two functions initiate the compilation of abstract scheduling
- *   specifications into ICMs.
+ *
+ *   These functions initiate the compilation of abstract scheduling
+ *   specifications into ICMs, where each scheduling is associated with three
+ *   ICMs. Whereas the former two enclose the with-loop code to be scheduled,
+ *   the latter one initializes potentially needed internal data structures
+ *   of the scheduling facility.
+ *
+ *   The segment ID specifies the position of the scheduler within an SPMD
+ *   section. It is needed to identify the appropriate set of scheduler-internal
+ *   data structures.
  *
  ******************************************************************************/
 
 node *
-SCHCompileSchedulingBegin (char *wl_name, sched_t *sched, node *arg_node)
+SCHCompileSchedulingBegin (int seg_id, char *wl_name, sched_t *sched, node *arg_node)
 {
     node *ret_node;
 
     DBUG_ENTER ("SCHCompileSchedulingBegin");
 
-    ret_node = CompileScheduling (wl_name, sched, arg_node, "BEGIN");
+    ret_node = CompileScheduling (seg_id, wl_name, sched, arg_node, "BEGIN");
 
     DBUG_RETURN (ret_node);
 }
 
 node *
-SCHCompileSchedulingEnd (char *wl_name, sched_t *sched, node *arg_node)
+SCHCompileSchedulingEnd (int seg_id, char *wl_name, sched_t *sched, node *arg_node)
 {
     node *ret_node;
 
     DBUG_ENTER ("SCHCompileSchedulingEnd");
 
-    ret_node = CompileScheduling (wl_name, sched, arg_node, "END");
+    ret_node = CompileScheduling (seg_id, wl_name, sched, arg_node, "END");
+
+    DBUG_RETURN (ret_node);
+}
+
+node *
+SCHCompileSchedulingInit (int seg_id, char *wl_name, sched_t *sched, node *arg_node)
+{
+    node *ret_node;
+
+    DBUG_ENTER ("SCHCompileSchedulingInit");
+
+    ret_node = CompileScheduling (seg_id, wl_name, sched, arg_node, "INIT");
 
     DBUG_RETURN (ret_node);
 }
