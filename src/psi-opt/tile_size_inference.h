@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/03/15 15:58:23  bs
+ * access macros changed, declaration of TileSizeInference modified.
+ *
  * Revision 2.1  1999/02/23 12:43:18  sacbase
  * new release made
  *
@@ -28,7 +31,7 @@
 
 #define _tile_size_inference_h
 
-extern node *TileSizeInference (node *arg_node, node *arg_info);
+extern node *TileSizeInference (node *arg_node);
 
 extern node *TSIfundef (node *arg_node, node *arg_info);
 extern node *TSIblock (node *arg_node, node *arg_info);
