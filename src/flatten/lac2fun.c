@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2000/02/08 16:40:33  dkr
+ * LAC2FUNwith() and LAC2FUNwith2() added
+ *
  * Revision 1.4  2000/02/08 15:14:32  dkr
  * LAC2FUNwithid added
  * some bugs fixed
@@ -393,6 +396,53 @@ LAC2FUNwithid (node *arg_node, node *arg_info)
     DEFINED_VARS (_ids, arg_info);
     _ids = NWITHID_IDS (arg_node);
     DEFINED_VARS (_ids, arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *LAC2FUNwith( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   In order to infer the withid-ids as local-vars, code and withop must be
+ *   traversed *before* the withid (contained in part)!!
+ *
+ ******************************************************************************/
+
+node *
+LAC2FUNwith (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("LAC2FUNwith");
+
+    NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
+    NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
+    NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *LAC2FUNwith2( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   In order to infer the withid-ids as local-vars, the segments, code and
+ *   withop must be traversed *before* the withid!!
+ *
+ ******************************************************************************/
+
+node *
+LAC2FUNwith2 (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("LAC2FUNwith2");
+
+    NWITH2_SEGS (arg_node) = Trav (NWITH2_SEGS (arg_node), arg_info);
+    NWITH2_CODE (arg_node) = Trav (NWITH2_CODE (arg_node), arg_info);
+    NWITH2_WITHOP (arg_node) = Trav (NWITH2_WITHOP (arg_node), arg_info);
+    NWITH2_WITHID (arg_node) = Trav (NWITH2_WITHID (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

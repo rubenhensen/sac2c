@@ -1,8 +1,8 @@
 /*
  *
  * $Log$
- * Revision 1.11  2000/02/08 16:16:20  dkr
- * LAC2FUNpart added
+ * Revision 1.12  2000/02/08 16:40:00  dkr
+ * LAC2FUNwith() and LAC2FUNwith2() added
  *
  * Revision 1.10  2000/02/08 14:44:00  dkr
  * LAC2FUNwithid added
@@ -1358,7 +1358,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
        TravSons, WLTRANwith, TravSons, TravSons, O2Nnwith, TravSons, TravSons, TravSons,
        WLAAnwith, TravSons, TravSons, TravSons, TravSons, TSInwith, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, LAC2FUNwith,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
 
@@ -1374,7 +1374,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, O2Nnpart, TravSons, TravSons, TravSons,
        TravSons, FMTravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, LAC2FUNpart,
+       TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
 
@@ -1458,7 +1458,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, ReuseNwith2, TravSons, SCHEDnwith2, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, LAC2FUNwith2,
 
        TravSons, SCHINnwith2, TravSons, RFINnwith2, TravSons, TravSons, TravSons,
        TravSons,
