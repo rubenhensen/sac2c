@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.115  2004/10/11 16:47:45  sah
+# added serialze_buildstack.o
+#
 # Revision 3.114  2004/10/11 14:45:54  ktr
 # added src/refcount/rcphase.o
 #
@@ -271,7 +274,7 @@ ifeq ($(NEWAST),yes)
                src/tree/free_attribs.o src/tree/serialize_node.o \
                src/tree/serialize_attribs.o src/modules/libstat.o \
                src/modules/modulemanager.o src/modules/libmanager.o \
-               src/tree/deserialize.o
+               src/tree/deserialize.o src/tree/serialize_buildstack.o
   NEWASTFLAGS = -ldl --export-dynamic
 endif
 
