@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  1998/04/23 17:33:16  dkr
+ * added PrecSync
+ *
  * Revision 1.12  1998/04/17 17:27:06  dkr
  * 'concurrent regions' are now called 'SPMD regions'
  *
@@ -64,6 +67,7 @@ extern node *PrecId (node *arg_node, node *arg_info);
 extern node *PrecVardec (node *arg_node, node *arg_info);
 extern node *PrecTypedef (node *arg_node, node *arg_info);
 extern node *PrecSPMD (node *arg_node, node *arg_info);
+extern node *PrecSync (node *arg_node, node *arg_info);
 extern node *PrecNwith (node *arg_node, node *arg_info);
 extern node *PrecNcode (node *arg_node, node *arg_info);
 
