@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.18  2001/04/03 14:25:11  nmw
+ * unconditional free in FreeAp when removing syntax_tree
+ *
  * Revision 3.17  2001/04/02 16:24:19  dkr
  * minor changes done
  *
@@ -1126,16 +1129,18 @@ FreeAp (node *arg_node, node *arg_info)
 
         (FUNDEF_USED (AP_FUNDEF (arg_node)))--;
 
-        /* remove assignment from external assignment list) */
-        DBUG_ASSERT ((INFO_FREE_ASSIGN (arg_info) != NULL),
-                     "missing assignment node when freeing ap node");
+        if (compiler_phase < PH_precompile) {
+            /* remove assignment from external assignment list) */
+            DBUG_ASSERT ((INFO_FREE_ASSIGN (arg_info) != NULL),
+                         "missing assignment node when freeing ap node");
 
-        FUNDEF_EXT_ASSIGNS (AP_FUNDEF (arg_node))
-          = NodeListDelete (FUNDEF_EXT_ASSIGNS (AP_FUNDEF (arg_node)),
-                            INFO_FREE_ASSIGN (arg_info), FALSE);
+            FUNDEF_EXT_ASSIGNS (AP_FUNDEF (arg_node))
+              = NodeListDelete (FUNDEF_EXT_ASSIGNS (AP_FUNDEF (arg_node)),
+                                INFO_FREE_ASSIGN (arg_info), FALSE);
 
-        DBUG_PRINT ("FREE", ("decrementing used counter to %d",
-                             FUNDEF_USED (AP_FUNDEF (arg_node))));
+            DBUG_PRINT ("FREE", ("decrementing used counter to %d",
+                                 FUNDEF_USED (AP_FUNDEF (arg_node))));
+        }
     }
 
     DBUG_PRINT ("FREE", ("Removing N_ap node ..."));
