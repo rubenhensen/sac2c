@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.13  2000/06/23 15:21:10  dkr
+ * signature of function DupTree changed
+ *
  * Revision 2.12  2000/06/23 14:10:45  dkr
  * nodetype N_with removed
  *
@@ -148,11 +151,11 @@ CreateBodyCode (node *partn, node *index)
     if (N_empty == NODE_TYPE (BLOCK_INSTR (NCODE_CBLOCK (coden))))
         res = NULL;
     else
-        res = DupTree (BLOCK_INSTR (NCODE_CBLOCK (coden)), NULL);
+        res = DupTree (BLOCK_INSTR (NCODE_CBLOCK (coden)));
 
     /* index vector */
     if (coden->mask[1][IDS_VARNO (NPART_VEC (partn))]) {
-        letn = MakeLet (DupTree (index, NULL), DupOneIds (NPART_VEC (partn), NULL));
+        letn = MakeLet (DupTree (index), DupOneIds (NPART_VEC (partn), NULL));
         res = MakeAssign (letn, res);
     }
 
@@ -162,7 +165,7 @@ CreateBodyCode (node *partn, node *index)
 
     while (_ids) {
         if (coden->mask[1][IDS_VARNO (_ids)]) {
-            letn = MakeLet (DupTree (EXPRS_EXPR (index), NULL), DupOneIds (_ids, NULL));
+            letn = MakeLet (DupTree (EXPRS_EXPR (index)), DupOneIds (_ids, NULL));
             res = MakeAssign (letn, res);
         }
 
@@ -203,7 +206,7 @@ CreateModGenarray (node *assignn, node *index)
     tmpn
       = MakeId (StringCopy (IDS_NAME (array)), StringCopy (IDS_MOD (array)), ST_regular);
     ID_VARDEC (tmpn) = IDS_VARDEC (array);
-    exprs = MakeExprs (tmpn, MakeExprs (index, MakeExprs (DupTree (cexpr, NULL), NULL)));
+    exprs = MakeExprs (tmpn, MakeExprs (index, MakeExprs (DupTree (cexpr), NULL)));
 
     letexpr = MakePrf (F_modarray, exprs);
 
@@ -265,7 +268,7 @@ CreateFold (node *assignn, node *index)
     ID_VARDEC (accvar) = IDS_VARDEC (acc);
 
     funap = MakeAp (StringCopy (NWITHOP_FUN (withop)), StringCopy (NWITHOP_MOD (withop)),
-                    MakeExprs (accvar, MakeExprs (DupTree (cexpr, NULL), NULL)));
+                    MakeExprs (accvar, MakeExprs (DupTree (cexpr), NULL)));
     AP_FUNDEF (funap) = NWITHOP_FUNDEF (withop);
 
     assigns = MakeAssign (MakeLet (funap, DupOneIds (acc, NULL)), NULL);
@@ -640,7 +643,7 @@ DoUnrollModarray (node *wln, node *arg_info)
 
     /* finally add Dupilcation of new array name */
     letn
-      = MakeLet (DupTree (NWITH_ARRAY (wln), NULL),
+      = MakeLet (DupTree (NWITH_ARRAY (wln)),
                  DupOneIds (LET_IDS (ASSIGN_INSTR (INFO_UNR_ASSIGN (arg_info))), NULL));
     res = MakeAssign (letn, res);
 
@@ -738,7 +741,7 @@ DoUnrollGenarray (node *wln, node *arg_info)
      * here. If we drop the reshape, further compilation should(!!!)
      * work without problems and CF can fold all elements.
      */
-    args = DupTree (NWITH_SHAPE (wln), NULL);
+    args = DupTree (NWITH_SHAPE (wln));
 
     type = IDS_TYPE (LET_IDS (ASSIGN_INSTR (INFO_UNR_ASSIGN (arg_info))));
     stype = TYPES_BASETYPE (type);
@@ -860,7 +863,7 @@ DoUnrollFold (node *wln, node *arg_info)
 
     /* finally add initialisation of accumulator with neutral element. */
     letn
-      = MakeLet (DupTree (NWITH_NEUTRAL (wln), NULL),
+      = MakeLet (DupTree (NWITH_NEUTRAL (wln)),
                  DupOneIds (LET_IDS (ASSIGN_INSTR (INFO_UNR_ASSIGN (arg_info))), NULL));
 
     res = MakeAssign (letn, res);
