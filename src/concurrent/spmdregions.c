@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  1998/04/30 13:26:51  dkr
+ * fixed a bug in SPMDLift...
+ *
  * Revision 1.13  1998/04/30 13:00:15  dkr
  * fixed a bug in SPMDLift
  *
@@ -349,18 +352,16 @@ SPMDLiftSpmd (node *arg_node, node *arg_info)
      * append return expressions to body of SPMD-function
      */
 
-    if (retexprs != NULL) {
-        FUNDEF_RETURN (new_fundef) = MakeReturn (retexprs);
+    FUNDEF_RETURN (new_fundef) = MakeReturn (retexprs);
 
-        tmp = BLOCK_INSTR (body);
-        if (tmp != NULL) {
-            while (ASSIGN_NEXT (tmp) != NULL) {
-                tmp = ASSIGN_NEXT (tmp);
-            }
-            ASSIGN_NEXT (tmp) = MakeAssign (FUNDEF_RETURN (new_fundef), NULL);
-        } else {
-            BLOCK_INSTR (body) = MakeAssign (FUNDEF_RETURN (new_fundef), NULL);
+    tmp = BLOCK_INSTR (body);
+    if (tmp != NULL) {
+        while (ASSIGN_NEXT (tmp) != NULL) {
+            tmp = ASSIGN_NEXT (tmp);
         }
+        ASSIGN_NEXT (tmp) = MakeAssign (FUNDEF_RETURN (new_fundef), NULL);
+    } else {
+        BLOCK_INSTR (body) = MakeAssign (FUNDEF_RETURN (new_fundef), NULL);
     }
 
     /*
