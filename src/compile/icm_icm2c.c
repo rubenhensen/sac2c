@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2002/08/06 08:57:29  dkr
+ * cc warnings eliminated
+ *
  * Revision 3.13  2002/07/15 14:47:50  dkr
  * bug in GetNextIcm() fixed: prefix 'SAC_' for icm name added
  *
@@ -482,6 +485,7 @@ GetNextVarAny (char ***ret, int *ret_len, int cnt, node *exprs)
     DBUG_RETURN (exprs);
 }
 
+#ifdef TAGGED_ARRAYS
 static node *
 GetNextVarNt (char ***ret, int cnt, node *exprs)
 {
@@ -501,6 +505,7 @@ GetNextVarNt (char ***ret, int cnt, node *exprs)
 
     DBUG_RETURN (exprs);
 }
+#endif /* TAGGED_ARRAYS */
 
 static node *
 GetNextVarId (char ***ret, int cnt, node *exprs)
@@ -522,6 +527,7 @@ GetNextVarId (char ***ret, int cnt, node *exprs)
     DBUG_RETURN (exprs);
 }
 
+#ifdef TAGGED_ARRAYS
 static node *
 GetNextVarInt (int **ret, int cnt, node *exprs)
 {
@@ -541,6 +547,7 @@ GetNextVarInt (int **ret, int cnt, node *exprs)
 
     DBUG_RETURN (exprs);
 }
+#endif /* TAGGED_ARRAYS */
 
 #include "icm.data"
 
