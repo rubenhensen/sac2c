@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.94  1998/03/22 14:21:26  dkr
+ * WLBLOCK_BLOCKING -> WLBLOCK_STEP
+ *
  * Revision 1.93  1998/03/21 21:58:54  dkr
  * added macros WLNODE_???
  *
@@ -2324,6 +2327,7 @@ extern node *MakeWLseg (int dims, node *contents, node *next);
 
 #define WLNODE_BOUND1(n) (n->counter)
 #define WLNODE_BOUND2(n) (n->varno)
+#define WLNODE_STEP(n) (n->lineno)
 #define WLNODE_NEXT(n) (n->node[4])
 
 #define WLNODE_MODIFIED(n) (n->info.prf_dec.tc)
@@ -2345,7 +2349,7 @@ extern node *MakeWLseg (int dims, node *contents, node *next);
  ***    int      DIM       (0)
  ***    int      BOUND1    (0)
  ***    int      BOUND2    (0)
- ***    int      BLOCKING  (0)
+ ***    int      STEP  (0)
  ***
  ***  temporary attributes:
  ***
@@ -2357,14 +2361,14 @@ extern node *MakeWLseg (int dims, node *contents, node *next);
  ***
  ***/
 
-extern node *MakeWLblock (int level, int dim, int bound1, int bound2, int blocking,
+extern node *MakeWLblock (int level, int dim, int bound1, int bound2, int step,
                           node *nextdim, node *contents, node *next);
 
 #define WLBLOCK_LEVEL(n) (n->refcnt)
 #define WLBLOCK_DIM(n) (n->flag)
 #define WLBLOCK_BOUND1(n) (WLNODE_BOUND1 (n))
 #define WLBLOCK_BOUND2(n) (WLNODE_BOUND2 (n))
-#define WLBLOCK_BLOCKING(n) (n->lineno)
+#define WLBLOCK_STEP(n) (WLNODE_STEP (n))
 #define WLBLOCK_NEXTDIM(n) (n->node[0])
 #define WLBLOCK_CONTENTS(n) (n->node[1])
 #define WLBLOCK_NEXT(n) (WLNODE_NEXT (n))
@@ -2388,7 +2392,7 @@ extern node *MakeWLblock (int level, int dim, int bound1, int bound2, int blocki
  ***    int      DIM       (0)
  ***    int      BOUND1    (0)
  ***    int      BOUND2    (0)
- ***    int      BLOCKING  (0)
+ ***    int      STEP      (0)
  ***
  ***  temporary attributes:
  ***
@@ -2400,19 +2404,19 @@ extern node *MakeWLblock (int level, int dim, int bound1, int bound2, int blocki
  ***
  ***/
 
-extern node *MakeWLublock (int level, int dim, int bound1, int bound2, int blocking,
+extern node *MakeWLublock (int level, int dim, int bound1, int bound2, int step,
                            node *nextdim, node *contents, node *next);
 
 #define WLUBLOCK_LEVEL(n) (WLBLOCK_LEVEL (n))
 #define WLUBLOCK_DIM(n) (WLBLOCK_DIM (n))
 #define WLUBLOCK_BOUND1(n) (WLBLOCK_BOUND1 (n))
 #define WLUBLOCK_BOUND2(n) (WLBLOCK_BOUND2 (n))
-#define WLUBLOCK_BLOCKING(n) (WLBLOCK_BLOCKING (n))
+#define WLUBLOCK_STEP(n) (WLBLOCK_STEP (n))
 #define WLUBLOCK_NEXTDIM(n) (WLBLOCK_NEXTDIM (n))
 #define WLUBLOCK_CONTENTS(n) (WLBLOCK_CONTENTS (n))
 #define WLUBLOCK_NEXT(n) (WLBLOCK_NEXT (n))
 
-#define WLUBLOCK_MODIFIED(n) (WLNODE_MODIFIED (n))
+#define WLUBLOCK_MODIFIED(n) (WLBLOCK_MODIFIED (n))
 
 /*--------------------------------------------------------------------------*/
 
@@ -2446,7 +2450,7 @@ extern node *MakeWLproj (int level, int dim, int bound1, int bound2, int step,
 #define WLPROJ_DIM(n) (n->flag)
 #define WLPROJ_BOUND1(n) (WLNODE_BOUND1 (n))
 #define WLPROJ_BOUND2(n) (WLNODE_BOUND2 (n))
-#define WLPROJ_STEP(n) (n->lineno)
+#define WLPROJ_STEP(n) (WLNODE_STEP (n))
 #define WLPROJ_UNROLLING(n) (n->info.prf_dec.tag)
 #define WLPROJ_CONTENTS(n) (n->node[0])
 #define WLPROJ_NEXT(n) (WLNODE_NEXT (n))

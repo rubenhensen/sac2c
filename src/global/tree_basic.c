@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.48  1998/03/22 14:21:45  dkr
+ * WLBLOCK_BLOCKING -> WLBLOCK_STEP
+ *
  * Revision 1.47  1998/03/21 19:33:27  dkr
  * removed unused var in MakeWLseg
  *
@@ -1416,7 +1419,7 @@ MakeWLseg (int dims, node *contents, node *next)
 /*--------------------------------------------------------------------------*/
 
 node *
-MakeWLblock (int level, int dim, int bound1, int bound2, int blocking, node *nextdim,
+MakeWLblock (int level, int dim, int bound1, int bound2, int step, node *nextdim,
              node *contents, node *next)
 {
     node *new_node;
@@ -1430,7 +1433,7 @@ MakeWLblock (int level, int dim, int bound1, int bound2, int blocking, node *nex
     WLBLOCK_DIM (new_node) = dim;
     WLBLOCK_BOUND1 (new_node) = bound1;
     WLBLOCK_BOUND2 (new_node) = bound2;
-    WLBLOCK_BLOCKING (new_node) = blocking;
+    WLBLOCK_STEP (new_node) = step;
     WLBLOCK_NEXTDIM (new_node) = nextdim;
     WLBLOCK_CONTENTS (new_node) = contents;
     WLBLOCK_NEXT (new_node) = next;
@@ -1440,15 +1443,14 @@ MakeWLblock (int level, int dim, int bound1, int bound2, int blocking, node *nex
 /*--------------------------------------------------------------------------*/
 
 node *
-MakeWLublock (int level, int dim, int bound1, int bound2, int blocking, node *nextdim,
+MakeWLublock (int level, int dim, int bound1, int bound2, int step, node *nextdim,
               node *contents, node *next)
 {
     node *new_node;
 
     DBUG_ENTER ("MakeWLublock");
 
-    new_node
-      = MakeWLblock (level, dim, bound1, bound2, blocking, nextdim, contents, next);
+    new_node = MakeWLblock (level, dim, bound1, bound2, step, nextdim, contents, next);
 
     NODE_TYPE (new_node) = N_WLublock;
 
