@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.149  2005/02/16 14:34:56  jhb
+ * added next to TBmakeError
+ *
  * Revision 3.148  2005/02/03 14:25:09  jhb
  * changed NODE_ERROR to DUPTRAV
  *
@@ -2917,7 +2920,8 @@ DUPerror (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("DUPerror");
 
-    new_node = TBmakeError (ILIBstringCopy (ERROR_MESSAGE (arg_node)));
+    new_node = TBmakeError (ILIBstringCopy (ERROR_MESSAGE (arg_node)),
+                            DUPCONT (ERROR_NEXT (arg_node)));
 
     DBUG_RETURN (new_node);
 }
