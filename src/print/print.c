@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.75  1995/06/30 12:00:30  hw
+ * Revision 1.76  1995/07/04 08:36:53  hw
+ * - changed PrintPrf( ftod, itod, dtof, dtoi inserted)
+ * - PrintDouble inserted.
+ *
+ * Revision 1.75  1995/06/30  12:00:30  hw
  * changed PrintPrf
  *  -  renamed F_trunc with F_ftoi
  *  - added F_itof, F_ftoi_A, F_itof_A & F_itof
@@ -595,8 +599,15 @@ PrintPrf (node *arg_node, node *arg_info)
     case F_not:
     case F_ftoi:
     case F_ftoi_A:
+    case F_ftod:
+    case F_ftod_A:
     case F_itof:
     case F_itof_A:
+    case F_itod:
+    case F_itod_A:
+    case F_dtoi:
+    case F_dtof:
+    case F_dtof_A:
     case F_idx_psi: {
         /* primitive functions that are printed as function application */
         fprintf (outfile, "%s( ", prf_string[arg_node->info.prf]);
@@ -609,7 +620,8 @@ PrintPrf (node *arg_node, node *arg_info)
         fprintf (outfile, "(");
         Trav (arg_node->node[0]->node[0], arg_info);
         fprintf (outfile, " %s ", prf_string[arg_node->info.prf]);
-        Trav (arg_node->node[0]->node[1]->node[0], arg_info);
+        if (NULL != arg_node->node[0]->node[1])
+            Trav (arg_node->node[0]->node[1]->node[0], arg_info);
         fprintf (outfile, ")");
         break;
     }
@@ -654,6 +666,17 @@ PrintFloat (node *arg_node, node *arg_info)
     DBUG_ENTER ("PrintFloat");
 
     fprintf (outfile, "%f", arg_node->info.cfloat);
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+PrintDouble (node *arg_node, node *arg_info)
+{
+
+    DBUG_ENTER ("PrintDouble");
+
+    fprintf (outfile, "%f", arg_node->info.cdbl);
 
     DBUG_RETURN (arg_node);
 }
