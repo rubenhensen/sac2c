@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2004/12/01 16:36:22  ktr
+ * post DK bugfix
+ *
+ * ,
+ *
  * Revision 1.11  2004/11/26 16:33:58  jhb
  * compile
  *
@@ -49,7 +54,7 @@
  *
  *
  */
-#define NEW_INFO
+#include "reusebranching.h"
 
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -483,9 +488,9 @@ BuildCondTree (node *ass, node *branches, node *memvars, node *fundef, dfmask_t 
                                          TCmakePrf2 (F_fill,
                                                      TCmakePrf2 (F_isreused,
                                                                  DUPdoDupNode (
-                                                                   EXPRS_EXPR (rc)),
+                                                                   EXPRS_EXPR (memvars)),
                                                                  DUPdoDupNode (
-                                                                   EXPRS_EXPR (memvars))),
+                                                                   EXPRS_EXPR (rc))),
                                                      TBmakeId (memavis))),
                               res);
             AVIS_SSAASSIGN (IDS_AVIS (valids)) = res;
