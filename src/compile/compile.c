@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.44  2001/04/25 13:55:58  dkr
+ * COMPFundef: ST_zombiefun added
+ *
  * Revision 3.43  2001/04/24 09:39:50  dkr
  * CHECK_NULL renamed into STR_OR_EMPTY
  *
@@ -20,7 +23,7 @@
  *
  * Revision 3.38  2001/04/04 23:08:41  dkr
  * - COMPFundef brushed
- * - pseudo fold-funs are always compiled first now :-)
+ * - special fold-funs are always compiled first now :-)
  *
  * Revision 3.37  2001/04/04 00:09:24  dkr
  * fixed a bug in COMPSync: fold type tag is generated correctly now even
@@ -202,9 +205,9 @@
  *   INFO_COMP_LASTSYNC    : pointer to ... ???
  *
  *   INFO_COMP_FOLDFUNS    : [flag]
- *     In order to guarantee that the pseudo fold-funs are compiled *before*
+ *     In order to guarantee that the special fold-funs are compiled *before*
  *     the associated with-loops, the fundef chain is traversed twice.
- *     During the first traversal (FOLDFUNS == TRUE) only pseudo fold-funs
+ *     During the first traversal (FOLDFUNS == TRUE) only special fold-funs
  *     are traversed. During the second traversal (FOLDFUNS == FALSE) only
  *     the other functions are traversed.
  */
@@ -386,7 +389,7 @@ GenericFun (int which, types *type)
  *   node *GetFoldCode( node *fundef)
  *
  * Description:
- *   Returns the foldop-code of the pseudo fold-fun 'fundef'.
+ *   Returns the foldop-code of the special fold-fun 'fundef'.
  *
  *   This function simply extract the assignments of the fundef-body.
  *   It is assumed that the names of the variables are the same is in the
@@ -406,11 +409,11 @@ GetFoldCode (node *fundef)
 
     DBUG_ENTER ("GetFoldCode");
 
-    DBUG_ASSERT ((fundef != NULL), "no pseudo fold-fun found!");
-    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef), "corrupted pseudo fold-fun found!");
+    DBUG_ASSERT ((fundef != NULL), "no special fold-fun found!");
+    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef), "corrupted special fold-fun found!");
 
     /*
-     * get code of the pseudo fold-fun
+     * get code of the special fold-fun
      */
     fold_code = DupTree (FUNDEF_INSTR (fundef));
 
@@ -446,7 +449,7 @@ GetFoldCode (node *fundef)
  *   node *GetFoldVardecs( node *fundef)
  *
  * Description:
- *   returns the vardecs of the pseudo fold-fun 'fundef'.
+ *   returns the vardecs of the special fold-fun 'fundef'.
  *
  ******************************************************************************/
 
@@ -457,14 +460,14 @@ GetFoldVardecs (node *fundef)
 
     DBUG_ENTER ("GetFoldVardecs");
 
-    DBUG_ASSERT ((fundef != NULL), "no pseudo fold-fun found!");
-    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef), "corrupted pseudo fold-fun found!");
+    DBUG_ASSERT ((fundef != NULL), "no special fold-fun found!");
+    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef), "corrupted special fold-fun found!");
 
     DBUG_ASSERT ((FUNDEF_BODY (fundef) != NULL),
-                 "pseudo fold-fun with empty body found!");
+                 "special fold-fun with empty body found!");
 
     /*
-     * get vardecs of the pseudo fold-fun
+     * get vardecs of the special fold-fun
      */
     fold_vardecs = DupTree (FUNDEF_VARDEC (fundef));
 
@@ -2223,7 +2226,7 @@ COMPModul (node *arg_node, node *arg_info)
 
     if (MODUL_FUNS (arg_node) != NULL) {
         /*
-         * compile all pseudo fold-funs only
+         * compile all special fold-funs only
          */
         INFO_COMP_FOLDFUNS (arg_info) = TRUE;
         MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
@@ -2454,12 +2457,13 @@ COMPFundef (node *arg_node, node *arg_info)
     DBUG_PRINT ("COMP", ("compiling %s", FUNDEF_NAME (arg_node)));
 
     /*
-     * traverse pseudo fold-funs only if INFO_COMP_FOLDFUNS is true,
+     * traverse special fold-funs only if INFO_COMP_FOLDFUNS is true,
      * traverse other functions only if INFO_COMP_FOLDFUNS is false.
      */
-    if (((INFO_COMP_FOLDFUNS (arg_info)) && (FUNDEF_STATUS (arg_node) == ST_foldfun))
-        || ((!INFO_COMP_FOLDFUNS (arg_info))
-            && (FUNDEF_STATUS (arg_node) != ST_foldfun))) {
+    if ((FUNDEF_STATUS (arg_node) != ST_zombiefun)
+        && (((INFO_COMP_FOLDFUNS (arg_info)) && (FUNDEF_STATUS (arg_node) == ST_foldfun))
+            || ((!INFO_COMP_FOLDFUNS (arg_info))
+                && (FUNDEF_STATUS (arg_node) != ST_foldfun)))) {
 
         /*
          * push 'arg_info'
@@ -5716,7 +5720,7 @@ InsertIcm_WL_SET_OFFSET (node *arg_node, node *assigns)
  *
  * Description:
  *   Compilation of a N_with2 node.
- *   If this is a fold-with-loop, we append the vardecs of all pseudo fold-funs
+ *   If this is a fold-with-loop, we append the vardecs of all special fold-funs
  *    to the vardec-chain of the current function.
  *   The return value is a N_assign chain of ICMs.
  *   The old 'arg_node' is removed by COMPLet.
@@ -5791,7 +5795,7 @@ COMPNwith2 (node *arg_node, node *arg_info)
         /*
          * fold with-loop:
          *
-         * Insert the vardecs of all pseudo fold-funs into the vardec-chain of the
+         * Insert the vardecs of all special fold-funs into the vardec-chain of the
          * current function. Afterwards an update of the DFM-base is needed.
          * (This must be done here, because 'COMPSync()' needs the corrected masks)
          */
@@ -6467,7 +6471,7 @@ COMPWLgridx (node *arg_node, node *arg_info)
                     icm_args = BuildIcmArgs_WL_OP2 (arg_node);
 
                     /*
-                     * insert code of the pseudo fold-fun
+                     * insert code of the special fold-fun
                      */
                     assigns
                       = AppendAssign (assigns, GetFoldCode (NWITH2_FUNDEF (wlnode)));
