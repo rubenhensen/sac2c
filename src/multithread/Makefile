@@ -1,6 +1,9 @@
 #
 # 
 # $Log$
+# Revision 3.27  2004/11/23 22:03:35  skt
+# flags adapted
+#
 # Revision 3.26  2004/11/21 11:22:03  sah
 # removed some old ast infos
 #
@@ -99,8 +102,6 @@ include $(PROJECT_ROOT)/Makefile.Config
 #
 
 
-INCS = -I../global -I../tree -I../../inc -I../optimize -I../typecheck \
-       -I../flatten -I../print -I../compile -I../refcount -I../constants
 
 OBJS := multithread.o multithread_lib.o assignments_rearrange.o \
         tag_executionmode.o propagate_executionmode.o create_cells.o \
@@ -111,7 +112,7 @@ all: $(OBJS)
 
 
 %.o: %.c 
-	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) -o $@ -c $<
+	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) -o $@ -c $< $(INCS)
 	$(CLOCK_SKEW_ELIMINATION) $@
 
 
