@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.17  2001/11/13 20:32:40  dkr
+# make deps done
+#
 # Revision 3.16  2001/07/18 13:08:15  cg
 # make deps done
 #
@@ -128,37 +131,44 @@ clean:
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
-flatten.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-flatten.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
-flatten.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-flatten.o: ../global/globals.h ../global/types.h ../global/Error.h
-flatten.o: /usr/include/string.h /usr/include/stdlib.h ../../inc/dbug.h
+flatten.o: /usr/include/stdio.h /usr/include/iso/stdio_iso.h
+flatten.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
+flatten.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
+flatten.o: /usr/include/stdio_impl.h ../global/globals.h ../global/types.h
+flatten.o: ../global/Error.h /usr/include/string.h
+flatten.o: /usr/include/iso/string_iso.h /usr/include/stdlib.h
+flatten.o: /usr/include/iso/stdlib_iso.h ../../inc/dbug.h
 flatten.o: ../global/my_debug.h ../global/internal_lib.h ../tree/tree_basic.h
 flatten.o: ../tree/tree_compound.h ../tree/traverse.h ../tree/free.h
 flatten.o: ../tree/DupTree.h ../tree/LookUpTable.h flatten.h
-fun2lac.o: ../../inc/dbug.h /usr/include/stdio.h
+fun2lac.o: ../../inc/dbug.h /usr/include/stdio.h /usr/include/iso/stdio_iso.h
 fun2lac.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 fun2lac.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-fun2lac.o: /usr/include/stdio_impl.h /usr/include/stdlib.h ../global/types.h
+fun2lac.o: /usr/include/stdio_impl.h /usr/include/stdlib.h
+fun2lac.o: /usr/include/iso/stdlib_iso.h ../global/types.h
 fun2lac.o: ../tree/tree_basic.h ../tree/tree_compound.h ../global/Error.h
-fun2lac.o: /usr/include/string.h ../global/globals.h ../global/internal_lib.h
-fun2lac.o: ../tree/traverse.h ../tree/free.h ../global/my_debug.h
-fun2lac.o: ../tree/DupTree.h ../tree/LookUpTable.h ../print/print.h
-fun2lac.o: ../optimize/Inline.h
+fun2lac.o: /usr/include/string.h /usr/include/iso/string_iso.h
+fun2lac.o: ../global/globals.h ../global/internal_lib.h ../tree/traverse.h
+fun2lac.o: ../tree/free.h ../global/my_debug.h ../tree/DupTree.h
+fun2lac.o: ../tree/LookUpTable.h ../print/print.h ../optimize/Inline.h
 lac2fun.o: ../global/types.h ../tree/tree_basic.h ../tree/tree_compound.h
 lac2fun.o: ../global/Error.h /usr/include/stdio.h
-lac2fun.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
-lac2fun.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-lac2fun.o: /usr/include/stdio_impl.h /usr/include/string.h
-lac2fun.o: /usr/include/stdlib.h ../global/globals.h ../global/internal_lib.h
-lac2fun.o: ../tree/traverse.h ../tree/free.h ../../inc/dbug.h
-lac2fun.o: ../global/my_debug.h ../tree/DupTree.h ../tree/LookUpTable.h
-lac2fun.o: ../tree/DataFlowMask.h ../tree/DataFlowMaskUtils.h
-lac2fun.o: ../tree/InferDFMs.h ../tree/cleanup_decls.h lac2fun.h
+lac2fun.o: /usr/include/iso/stdio_iso.h /usr/include/sys/feature_tests.h
+lac2fun.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
+lac2fun.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
+lac2fun.o: /usr/include/string.h /usr/include/iso/string_iso.h
+lac2fun.o: /usr/include/stdlib.h /usr/include/iso/stdlib_iso.h
+lac2fun.o: ../global/globals.h ../global/internal_lib.h ../tree/traverse.h
+lac2fun.o: ../tree/free.h ../../inc/dbug.h ../global/my_debug.h
+lac2fun.o: ../tree/DupTree.h ../tree/LookUpTable.h ../tree/DataFlowMask.h
+lac2fun.o: ../tree/DataFlowMaskUtils.h ../tree/InferDFMs.h
+lac2fun.o: ../tree/cleanup_decls.h lac2fun.h
 while2do.o: ../../inc/dbug.h /usr/include/stdio.h
-while2do.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
-while2do.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-while2do.o: /usr/include/stdio_impl.h /usr/include/stdlib.h ../global/types.h
-while2do.o: ../tree/tree_basic.h ../tree/traverse.h ../tree/DupTree.h
-while2do.o: ../tree/LookUpTable.h ../tree/free.h ../global/my_debug.h
-while2do.o: ../global/globals.h ../global/internal_lib.h while2do.h
+while2do.o: /usr/include/iso/stdio_iso.h /usr/include/sys/feature_tests.h
+while2do.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
+while2do.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
+while2do.o: /usr/include/stdlib.h /usr/include/iso/stdlib_iso.h
+while2do.o: ../global/types.h ../tree/tree_basic.h ../tree/traverse.h
+while2do.o: ../tree/DupTree.h ../tree/LookUpTable.h ../tree/free.h
+while2do.o: ../global/my_debug.h ../global/globals.h ../global/internal_lib.h
+while2do.o: while2do.h

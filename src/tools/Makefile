@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.3  2001/11/13 20:32:49  dkr
+# make deps done
+#
 # Revision 3.2  2000/12/06 20:09:10  dkr
 # make deps done
 #
@@ -78,12 +81,13 @@ clean:
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
-CacheSimAnalyser.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
+CacheSimAnalyser.o: /usr/include/stdio.h /usr/include/iso/stdio_iso.h
+CacheSimAnalyser.o: /usr/include/sys/feature_tests.h
 CacheSimAnalyser.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 CacheSimAnalyser.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
 CacheSimAnalyser.o: ../runtime/sac_cachesim.h ../runtime/sac_message.h
 CacheSimAnalyser.o: ../libsac/cachesim.h
-CacheSimTest.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-CacheSimTest.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
-CacheSimTest.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-CacheSimTest.o: ../runtime/sac_cachesim.h
+CacheSimTest.o: /usr/include/stdio.h /usr/include/iso/stdio_iso.h
+CacheSimTest.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
+CacheSimTest.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
+CacheSimTest.o: /usr/include/stdio_impl.h ../runtime/sac_cachesim.h

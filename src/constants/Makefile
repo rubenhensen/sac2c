@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 1.9  2001/11/13 20:32:52  dkr
+# make deps done
+#
 # Revision 1.8  2001/07/18 13:08:22  cg
 # make deps done
 #
@@ -86,64 +89,71 @@ clean:
 basecv.o: /usr/include/strings.h /usr/include/sys/types.h
 basecv.o: /usr/include/sys/isa_defs.h /usr/include/sys/feature_tests.h
 basecv.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-basecv.o: /usr/include/sys/select.h /usr/include/sys/time.h
-basecv.o: /usr/include/sys/time.h /usr/include/string.h /usr/include/stdlib.h
-basecv.o: ../../inc/dbug.h /usr/include/stdio.h /usr/include/sys/va_list.h
-basecv.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-basecv.o: ../global/types.h shape.h constants.h basecv.h
-basecv.o: ../global/internal_lib.h
-constants_ari_ops.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
+basecv.o: /usr/include/stdlib.h /usr/include/iso/stdlib_iso.h
+basecv.o: ../../inc/dbug.h /usr/include/stdio.h /usr/include/iso/stdio_iso.h
+basecv.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
+basecv.o: /usr/include/stdio_impl.h ../global/types.h shape.h constants.h
+basecv.o: basecv.h ../global/internal_lib.h
+constants_ari_ops.o: /usr/include/stdlib.h /usr/include/iso/stdlib_iso.h
+constants_ari_ops.o: /usr/include/sys/feature_tests.h
 constants_ari_ops.o: /usr/include/sys/isa_defs.h ../../inc/dbug.h
-constants_ari_ops.o: /usr/include/stdio.h /usr/include/sys/va_list.h
-constants_ari_ops.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-constants_ari_ops.o: ../global/internal_lib.h ../global/types.h constants.h
-constants_ari_ops.o: shape.h constants_internal.h ../global/globals.h zipcv.h
-constants_basic.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
+constants_ari_ops.o: /usr/include/stdio.h /usr/include/iso/stdio_iso.h
+constants_ari_ops.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
+constants_ari_ops.o: /usr/include/stdio_impl.h ../global/internal_lib.h
+constants_ari_ops.o: ../global/types.h constants.h shape.h
+constants_ari_ops.o: constants_internal.h ../global/globals.h zipcv.h
+constants_basic.o: /usr/include/stdlib.h /usr/include/iso/stdlib_iso.h
+constants_basic.o: /usr/include/sys/feature_tests.h
 constants_basic.o: /usr/include/sys/isa_defs.h ../global/globals.h
-constants_basic.o: /usr/include/stdio.h /usr/include/sys/va_list.h
-constants_basic.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-constants_basic.o: ../global/types.h ../tree/free.h ../../inc/dbug.h
-constants_basic.o: ../global/my_debug.h ../global/internal_lib.h shape.h
-constants_basic.o: cv2scalar.h cv2cv.h cv2str.h ../tree/tree_compound.h
-constants_basic.o: ../tree/tree_basic.h ../global/Error.h
-constants_basic.o: /usr/include/string.h basecv.h constants.h
+constants_basic.o: /usr/include/stdio.h /usr/include/iso/stdio_iso.h
+constants_basic.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
+constants_basic.o: /usr/include/stdio_impl.h ../global/types.h ../tree/free.h
+constants_basic.o: ../../inc/dbug.h ../global/my_debug.h
+constants_basic.o: ../global/internal_lib.h shape.h cv2scalar.h cv2cv.h
+constants_basic.o: cv2str.h ../tree/tree_compound.h ../tree/tree_basic.h
+constants_basic.o: ../global/Error.h /usr/include/string.h
+constants_basic.o: /usr/include/iso/string_iso.h basecv.h constants.h
 constants_basic.o: constants_internal.h
-constants_struc_ops.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
+constants_struc_ops.o: /usr/include/stdlib.h /usr/include/iso/stdlib_iso.h
+constants_struc_ops.o: /usr/include/sys/feature_tests.h
 constants_struc_ops.o: /usr/include/sys/isa_defs.h ../global/internal_lib.h
 constants_struc_ops.o: ../global/types.h ../../inc/dbug.h
-constants_struc_ops.o: /usr/include/stdio.h /usr/include/sys/va_list.h
-constants_struc_ops.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-constants_struc_ops.o: constants.h shape.h constants_internal.h
-cv2cv.o: ../../inc/dbug.h /usr/include/stdio.h
+constants_struc_ops.o: /usr/include/stdio.h /usr/include/iso/stdio_iso.h
+constants_struc_ops.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
+constants_struc_ops.o: /usr/include/stdio_impl.h constants.h shape.h
+constants_struc_ops.o: constants_internal.h
+cv2cv.o: ../../inc/dbug.h /usr/include/stdio.h /usr/include/iso/stdio_iso.h
 cv2cv.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 cv2cv.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-cv2cv.o: /usr/include/stdio_impl.h /usr/include/stdlib.h cv2cv.h
-cv2cv.o: ../tree/type_info.mac
+cv2cv.o: /usr/include/stdio_impl.h /usr/include/stdlib.h
+cv2cv.o: /usr/include/iso/stdlib_iso.h cv2cv.h ../tree/type_info.mac
 cv2scalar.o: ../tree/tree_basic.h ../global/types.h ../../inc/dbug.h
-cv2scalar.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-cv2scalar.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
-cv2scalar.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-cv2scalar.o: /usr/include/stdlib.h cv2scalar.h ../tree/type_info.mac
+cv2scalar.o: /usr/include/stdio.h /usr/include/iso/stdio_iso.h
+cv2scalar.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
+cv2scalar.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
+cv2scalar.o: /usr/include/stdio_impl.h /usr/include/stdlib.h
+cv2scalar.o: /usr/include/iso/stdlib_iso.h cv2scalar.h ../tree/type_info.mac
 cv2str.o: /usr/include/strings.h /usr/include/sys/types.h
 cv2str.o: /usr/include/sys/isa_defs.h /usr/include/sys/feature_tests.h
 cv2str.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-cv2str.o: /usr/include/sys/select.h /usr/include/sys/time.h
-cv2str.o: /usr/include/sys/time.h /usr/include/string.h /usr/include/stdlib.h
-cv2str.o: ../../inc/dbug.h /usr/include/stdio.h /usr/include/sys/va_list.h
-cv2str.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-cv2str.o: ../global/internal_lib.h ../global/types.h cv2str.h
-shape.o: /usr/include/stdarg.h /usr/include/sys/va_list.h ../../inc/dbug.h
-shape.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
+cv2str.o: /usr/include/stdlib.h /usr/include/iso/stdlib_iso.h
+cv2str.o: ../../inc/dbug.h /usr/include/stdio.h /usr/include/iso/stdio_iso.h
+cv2str.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
+cv2str.o: /usr/include/stdio_impl.h ../global/internal_lib.h
+cv2str.o: ../global/types.h cv2str.h
+shape.o: /usr/include/stdarg.h /usr/include/varargs.h
+shape.o: /usr/include/sys/va_list.h ../../inc/dbug.h /usr/include/stdio.h
+shape.o: /usr/include/iso/stdio_iso.h /usr/include/sys/feature_tests.h
 shape.o: /usr/include/sys/isa_defs.h /usr/include/stdio_tag.h
-shape.o: /usr/include/stdio_impl.h /usr/include/stdlib.h ../tree/tree_basic.h
-shape.o: ../global/types.h ../tree/tree_compound.h ../global/Error.h
-shape.o: /usr/include/string.h ../global/globals.h ../tree/free.h
+shape.o: /usr/include/stdio_impl.h /usr/include/stdlib.h
+shape.o: /usr/include/iso/stdlib_iso.h ../tree/tree_basic.h ../global/types.h
+shape.o: ../tree/tree_compound.h ../global/Error.h /usr/include/string.h
+shape.o: /usr/include/iso/string_iso.h ../global/globals.h ../tree/free.h
 shape.o: ../global/my_debug.h ../global/internal_lib.h shape.h
 zipcv.o: /usr/include/strings.h /usr/include/sys/types.h
 zipcv.o: /usr/include/sys/isa_defs.h /usr/include/sys/feature_tests.h
 zipcv.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-zipcv.o: /usr/include/sys/select.h /usr/include/sys/time.h
-zipcv.o: /usr/include/sys/time.h /usr/include/string.h /usr/include/stdlib.h
-zipcv.o: ../../inc/dbug.h /usr/include/stdio.h /usr/include/sys/va_list.h
-zipcv.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h ../global/types.h
-zipcv.o: zipcv.h
+zipcv.o: /usr/include/stdlib.h /usr/include/iso/stdlib_iso.h ../../inc/dbug.h
+zipcv.o: /usr/include/stdio.h /usr/include/iso/stdio_iso.h
+zipcv.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
+zipcv.o: /usr/include/stdio_impl.h ../global/types.h zipcv.h

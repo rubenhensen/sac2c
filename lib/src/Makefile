@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 3.6  2001/11/13 20:32:46  dkr
+# make deps done
+#
 # Revision 3.5  2001/07/18 13:08:19  cg
 # make deps done
 #
@@ -100,15 +103,17 @@ clean:
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
-dbug.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-dbug.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
-dbug.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-dbug.o: /usr/include/string.h /usr/include/stdlib.h /usr/include/unistd.h
+dbug.o: /usr/include/stdio.h /usr/include/iso/stdio_iso.h
+dbug.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
+dbug.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
+dbug.o: /usr/include/stdio_impl.h /usr/include/string.h
+dbug.o: /usr/include/iso/string_iso.h /usr/include/stdlib.h
+dbug.o: /usr/include/iso/stdlib_iso.h /usr/include/unistd.h
 dbug.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
-dbug.o: /usr/include/sys/int_types.h /usr/include/sys/select.h
-dbug.o: /usr/include/sys/time.h /usr/include/sys/time.h
-dbug.o: /usr/include/sys/unistd.h /usr/include/malloc.h ../../inc/dbug.h
-main_args.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-main_args.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
-main_args.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-main_args.o: /usr/include/string.h
+dbug.o: /usr/include/sys/int_types.h /usr/include/sys/unistd.h
+dbug.o: ../../inc/dbug.h
+main_args.o: /usr/include/stdio.h /usr/include/iso/stdio_iso.h
+main_args.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
+main_args.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
+main_args.o: /usr/include/stdio_impl.h /usr/include/string.h
+main_args.o: /usr/include/iso/string_iso.h

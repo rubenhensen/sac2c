@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.10  2001/11/13 20:32:47  dkr
+# make deps done
+#
 # Revision 3.9  2001/07/18 13:08:20  cg
 # make deps done
 #
@@ -113,86 +116,105 @@ clean:
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
 concurrent.o: ../../inc/dbug.h /usr/include/stdio.h
-concurrent.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
-concurrent.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-concurrent.o: /usr/include/stdio_impl.h /usr/include/stdlib.h
+concurrent.o: /usr/include/iso/stdio_iso.h /usr/include/sys/feature_tests.h
+concurrent.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
+concurrent.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
+concurrent.o: /usr/include/stdlib.h /usr/include/iso/stdlib_iso.h
 concurrent.o: ../global/types.h ../tree/tree_basic.h ../tree/traverse.h
 concurrent.o: ../global/globals.h ../tree/free.h ../global/my_debug.h
 concurrent.o: ../global/internal_lib.h ../global/Error.h
-concurrent.o: /usr/include/string.h ../tree/InferDFMs.h
+concurrent.o: /usr/include/string.h /usr/include/iso/string_iso.h
+concurrent.o: ../tree/InferDFMs.h
 concurrent_lib.o: ../../inc/dbug.h /usr/include/stdio.h
+concurrent_lib.o: /usr/include/iso/stdio_iso.h
 concurrent_lib.o: /usr/include/sys/feature_tests.h
 concurrent_lib.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 concurrent_lib.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-concurrent_lib.o: /usr/include/stdlib.h ../tree/tree_basic.h
-concurrent_lib.o: ../global/types.h ../tree/free.h ../global/my_debug.h
-concurrent_lib.o: ../global/globals.h ../global/internal_lib.h
-concurrent_lib.o: ../tree/DupTree.h ../tree/LookUpTable.h
-concurrent_lib.o: ../tree/DataFlowMask.h
+concurrent_lib.o: /usr/include/stdlib.h /usr/include/iso/stdlib_iso.h
+concurrent_lib.o: ../tree/tree_basic.h ../global/types.h ../tree/free.h
+concurrent_lib.o: ../global/my_debug.h ../global/globals.h
+concurrent_lib.o: ../global/internal_lib.h ../tree/DupTree.h
+concurrent_lib.o: ../tree/LookUpTable.h ../tree/DataFlowMask.h
 schedule.o: ../../inc/dbug.h /usr/include/stdio.h
-schedule.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
-schedule.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-schedule.o: /usr/include/stdio_impl.h /usr/include/stdlib.h ../global/types.h
-schedule.o: ../tree/tree_basic.h ../tree/traverse.h ../tree/scheduling.h
+schedule.o: /usr/include/iso/stdio_iso.h /usr/include/sys/feature_tests.h
+schedule.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
+schedule.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
+schedule.o: /usr/include/stdlib.h /usr/include/iso/stdlib_iso.h
+schedule.o: ../global/types.h ../tree/tree_basic.h ../tree/traverse.h
+schedule.o: ../tree/scheduling.h
 spmd_cons.o: ../../inc/dbug.h /usr/include/stdio.h
-spmd_cons.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
-spmd_cons.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-spmd_cons.o: /usr/include/stdio_impl.h /usr/include/stdlib.h
+spmd_cons.o: /usr/include/iso/stdio_iso.h /usr/include/sys/feature_tests.h
+spmd_cons.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
+spmd_cons.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
+spmd_cons.o: /usr/include/stdlib.h /usr/include/iso/stdlib_iso.h
 spmd_cons.o: ../global/types.h ../tree/tree_basic.h ../tree/tree_compound.h
-spmd_cons.o: ../global/Error.h /usr/include/string.h ../global/globals.h
+spmd_cons.o: ../global/Error.h /usr/include/string.h
+spmd_cons.o: /usr/include/iso/string_iso.h ../global/globals.h
 spmd_cons.o: ../tree/traverse.h ../tree/DupTree.h ../tree/LookUpTable.h
 spmd_cons.o: ../tree/DataFlowMask.h ../global/internal_lib.h ../tree/free.h
 spmd_cons.o: ../global/my_debug.h ../typecheck/typecheck.h concurrent_lib.h
 spmd_cons.o: ../refcount/refcount.h spmd_cons.h
 spmd_init.o: ../../inc/dbug.h /usr/include/stdio.h
-spmd_init.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
-spmd_init.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-spmd_init.o: /usr/include/stdio_impl.h /usr/include/stdlib.h
+spmd_init.o: /usr/include/iso/stdio_iso.h /usr/include/sys/feature_tests.h
+spmd_init.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
+spmd_init.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
+spmd_init.o: /usr/include/stdlib.h /usr/include/iso/stdlib_iso.h
 spmd_init.o: ../global/types.h ../tree/tree_basic.h ../tree/tree_compound.h
-spmd_init.o: ../global/Error.h /usr/include/string.h ../global/globals.h
+spmd_init.o: ../global/Error.h /usr/include/string.h
+spmd_init.o: /usr/include/iso/string_iso.h ../global/globals.h
 spmd_init.o: ../tree/traverse.h ../tree/DupTree.h ../tree/LookUpTable.h
 spmd_init.o: ../tree/DataFlowMask.h ../global/internal_lib.h
 spmd_init.o: ../global/my_debug.h spmd_trav.h ../optimize/generatemasks.h
 spmd_init.o: spmd_opt.h
 spmd_lift.o: ../../inc/dbug.h /usr/include/stdio.h
-spmd_lift.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
-spmd_lift.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-spmd_lift.o: /usr/include/stdio_impl.h /usr/include/stdlib.h
+spmd_lift.o: /usr/include/iso/stdio_iso.h /usr/include/sys/feature_tests.h
+spmd_lift.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
+spmd_lift.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
+spmd_lift.o: /usr/include/stdlib.h /usr/include/iso/stdlib_iso.h
 spmd_lift.o: ../global/types.h ../tree/tree_basic.h ../tree/tree_compound.h
-spmd_lift.o: ../global/Error.h /usr/include/string.h ../global/globals.h
+spmd_lift.o: ../global/Error.h /usr/include/string.h
+spmd_lift.o: /usr/include/iso/string_iso.h ../global/globals.h
 spmd_lift.o: ../tree/traverse.h ../tree/DupTree.h ../tree/LookUpTable.h
 spmd_lift.o: ../tree/DataFlowMask.h ../global/internal_lib.h concurrent_lib.h
 spmd_lift.o: ../refcount/refcount.h ../tree/InferDFMs.h
 spmd_opt.o: ../../inc/dbug.h /usr/include/stdio.h
-spmd_opt.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
-spmd_opt.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-spmd_opt.o: /usr/include/stdio_impl.h /usr/include/stdlib.h ../global/types.h
-spmd_opt.o: ../tree/tree_basic.h ../tree/traverse.h ../tree/free.h
-spmd_opt.o: ../global/my_debug.h ../global/globals.h ../global/internal_lib.h
-spmd_opt.o: ../tree/DupTree.h ../tree/LookUpTable.h ../tree/DataFlowMask.h
-spmd_opt.o: spmd_trav.h concurrent_lib.h ../refcount/refcount.h spmd_opt.h
-spmd_trav.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-spmd_trav.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
-spmd_trav.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-spmd_trav.o: ../../inc/dbug.h /usr/include/stdlib.h ../tree/DataFlowMask.h
+spmd_opt.o: /usr/include/iso/stdio_iso.h /usr/include/sys/feature_tests.h
+spmd_opt.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
+spmd_opt.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
+spmd_opt.o: /usr/include/stdlib.h /usr/include/iso/stdlib_iso.h
+spmd_opt.o: ../global/types.h ../tree/tree_basic.h ../tree/traverse.h
+spmd_opt.o: ../tree/free.h ../global/my_debug.h ../global/globals.h
+spmd_opt.o: ../global/internal_lib.h ../tree/DupTree.h ../tree/LookUpTable.h
+spmd_opt.o: ../tree/DataFlowMask.h spmd_trav.h concurrent_lib.h
+spmd_opt.o: ../refcount/refcount.h spmd_opt.h
+spmd_trav.o: /usr/include/stdio.h /usr/include/iso/stdio_iso.h
+spmd_trav.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
+spmd_trav.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
+spmd_trav.o: /usr/include/stdio_impl.h ../../inc/dbug.h /usr/include/stdlib.h
+spmd_trav.o: /usr/include/iso/stdlib_iso.h ../tree/DataFlowMask.h
 spmd_trav.o: ../global/types.h ../tree/traverse.h ../global/internal_lib.h
 spmd_trav.o: ../tree/tree_basic.h ../tree/tree_compound.h ../global/Error.h
-spmd_trav.o: /usr/include/string.h ../global/globals.h ../tree/free.h
-spmd_trav.o: ../global/my_debug.h ../refcount/refcount.h spmd_trav.h
+spmd_trav.o: /usr/include/string.h /usr/include/iso/string_iso.h
+spmd_trav.o: ../global/globals.h ../tree/free.h ../global/my_debug.h
+spmd_trav.o: ../refcount/refcount.h spmd_trav.h
 sync_init.o: ../../inc/dbug.h /usr/include/stdio.h
-sync_init.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
-sync_init.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-sync_init.o: /usr/include/stdio_impl.h /usr/include/stdlib.h
+sync_init.o: /usr/include/iso/stdio_iso.h /usr/include/sys/feature_tests.h
+sync_init.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
+sync_init.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
+sync_init.o: /usr/include/stdlib.h /usr/include/iso/stdlib_iso.h
 sync_init.o: ../global/types.h ../tree/tree_basic.h ../tree/tree_compound.h
-sync_init.o: ../global/Error.h /usr/include/string.h ../global/globals.h
+sync_init.o: ../global/Error.h /usr/include/string.h
+sync_init.o: /usr/include/iso/string_iso.h ../global/globals.h
 sync_init.o: ../tree/traverse.h ../tree/DupTree.h ../tree/LookUpTable.h
 sync_init.o: ../tree/DataFlowMask.h ../global/internal_lib.h
 sync_opt.o: ../../inc/dbug.h /usr/include/stdio.h
-sync_opt.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
-sync_opt.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-sync_opt.o: /usr/include/stdio_impl.h /usr/include/stdlib.h ../global/types.h
-sync_opt.o: ../tree/tree_basic.h ../tree/traverse.h ../tree/free.h
-sync_opt.o: ../global/my_debug.h ../global/globals.h ../global/internal_lib.h
-sync_opt.o: ../tree/DupTree.h ../tree/LookUpTable.h ../tree/DataFlowMask.h
-sync_opt.o: spmd_trav.h ../global/Error.h /usr/include/string.h
+sync_opt.o: /usr/include/iso/stdio_iso.h /usr/include/sys/feature_tests.h
+sync_opt.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
+sync_opt.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
+sync_opt.o: /usr/include/stdlib.h /usr/include/iso/stdlib_iso.h
+sync_opt.o: ../global/types.h ../tree/tree_basic.h ../tree/traverse.h
+sync_opt.o: ../tree/free.h ../global/my_debug.h ../global/globals.h
+sync_opt.o: ../global/internal_lib.h ../tree/DupTree.h ../tree/LookUpTable.h
+sync_opt.o: ../tree/DataFlowMask.h spmd_trav.h ../global/Error.h
+sync_opt.o: /usr/include/string.h /usr/include/iso/string_iso.h
 sync_opt.o: concurrent_lib.h ../refcount/refcount.h sync_opt.h

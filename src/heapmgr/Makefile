@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.6  2001/11/13 20:32:50  dkr
+# make deps done
+#
 # Revision 3.5  2001/07/18 13:08:21  cg
 # make deps done
 #
@@ -119,51 +122,49 @@ clean:
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
-calloc.o: /usr/include/string.h /usr/include/sys/feature_tests.h
-calloc.o: /usr/include/sys/isa_defs.h heapmgr.h ../runtime/sac_mt.h
-calloc.o: ../runtime/sac_heapmgr.h
-diagnostics.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-diagnostics.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
-diagnostics.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-diagnostics.o: /usr/include/stdlib.h heapmgr.h ../runtime/sac_mt.h
+calloc.o: /usr/include/string.h /usr/include/iso/string_iso.h
+calloc.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
+calloc.o: heapmgr.h ../runtime/sac_mt.h ../runtime/sac_heapmgr.h
+diagnostics.o: /usr/include/stdio.h /usr/include/iso/stdio_iso.h
+diagnostics.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
+diagnostics.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
+diagnostics.o: /usr/include/stdio_impl.h /usr/include/stdlib.h
+diagnostics.o: /usr/include/iso/stdlib_iso.h heapmgr.h ../runtime/sac_mt.h
 diagnostics.o: ../runtime/sac_heapmgr.h ../runtime/sac_message.h
 internal.o: /usr/include/unistd.h /usr/include/sys/feature_tests.h
 internal.o: /usr/include/sys/isa_defs.h /usr/include/sys/types.h
 internal.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-internal.o: /usr/include/sys/select.h /usr/include/sys/time.h
-internal.o: /usr/include/sys/time.h /usr/include/sys/unistd.h heapmgr.h
-internal.o: ../runtime/sac_mt.h ../runtime/sac_heapmgr.h
-internal.o: ../runtime/sac_message.h
-large_chunks.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
-large_chunks.o: /usr/include/sys/isa_defs.h heapmgr.h ../runtime/sac_mt.h
-large_chunks.o: ../runtime/sac_heapmgr.h ../runtime/sac_message.h
-malloc.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
-malloc.o: /usr/include/sys/isa_defs.h heapmgr.h ../runtime/sac_mt.h
-malloc.o: ../runtime/sac_heapmgr.h
+internal.o: /usr/include/sys/unistd.h heapmgr.h ../runtime/sac_mt.h
+internal.o: ../runtime/sac_heapmgr.h ../runtime/sac_message.h
+large_chunks.o: /usr/include/stdlib.h /usr/include/iso/stdlib_iso.h
+large_chunks.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
+large_chunks.o: heapmgr.h ../runtime/sac_mt.h ../runtime/sac_heapmgr.h
+large_chunks.o: ../runtime/sac_message.h
+malloc.o: /usr/include/stdlib.h /usr/include/iso/stdlib_iso.h
+malloc.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
+malloc.o: heapmgr.h ../runtime/sac_mt.h ../runtime/sac_heapmgr.h
 memalign.o: /usr/include/unistd.h /usr/include/sys/feature_tests.h
 memalign.o: /usr/include/sys/isa_defs.h /usr/include/sys/types.h
 memalign.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-memalign.o: /usr/include/sys/select.h /usr/include/sys/time.h
-memalign.o: /usr/include/sys/time.h /usr/include/sys/unistd.h heapmgr.h
-memalign.o: ../runtime/sac_mt.h ../runtime/sac_heapmgr.h
-placement.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
-placement.o: /usr/include/sys/isa_defs.h /usr/include/stdio.h
+memalign.o: /usr/include/sys/unistd.h heapmgr.h ../runtime/sac_mt.h
+memalign.o: ../runtime/sac_heapmgr.h
+placement.o: /usr/include/stdlib.h /usr/include/iso/stdlib_iso.h
+placement.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
+placement.o: /usr/include/stdio.h /usr/include/iso/stdio_iso.h
 placement.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
 placement.o: /usr/include/stdio_impl.h heapmgr.h ../runtime/sac_mt.h
 placement.o: ../runtime/sac_heapmgr.h
-realloc.o: /usr/include/string.h /usr/include/sys/feature_tests.h
-realloc.o: /usr/include/sys/isa_defs.h heapmgr.h ../runtime/sac_mt.h
-realloc.o: ../runtime/sac_heapmgr.h
+realloc.o: /usr/include/string.h /usr/include/iso/string_iso.h
+realloc.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
+realloc.o: heapmgr.h ../runtime/sac_mt.h ../runtime/sac_heapmgr.h
 setup.o: /usr/include/unistd.h /usr/include/sys/feature_tests.h
 setup.o: /usr/include/sys/isa_defs.h /usr/include/sys/types.h
 setup.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-setup.o: /usr/include/sys/select.h /usr/include/sys/time.h
-setup.o: /usr/include/sys/time.h /usr/include/sys/unistd.h heapmgr.h
-setup.o: ../runtime/sac_mt.h ../runtime/sac_heapmgr.h
-setup.o: ../runtime/sac_message.h
-small_chunks.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
-small_chunks.o: /usr/include/sys/isa_defs.h heapmgr.h ../runtime/sac_mt.h
-small_chunks.o: ../runtime/sac_heapmgr.h
-wrapper.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
-wrapper.o: /usr/include/sys/isa_defs.h heapmgr.h ../runtime/sac_mt.h
-wrapper.o: ../runtime/sac_heapmgr.h
+setup.o: /usr/include/sys/unistd.h heapmgr.h ../runtime/sac_mt.h
+setup.o: ../runtime/sac_heapmgr.h ../runtime/sac_message.h
+small_chunks.o: /usr/include/stdlib.h /usr/include/iso/stdlib_iso.h
+small_chunks.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
+small_chunks.o: heapmgr.h ../runtime/sac_mt.h ../runtime/sac_heapmgr.h
+wrapper.o: /usr/include/stdlib.h /usr/include/iso/stdlib_iso.h
+wrapper.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
+wrapper.o: heapmgr.h ../runtime/sac_mt.h ../runtime/sac_heapmgr.h

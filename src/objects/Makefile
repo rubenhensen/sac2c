@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.5  2001/11/13 20:32:46  dkr
+# make deps done
+#
 # Revision 3.4  2001/04/26 17:07:49  dkr
 # rmvoidfun.o removed
 #
@@ -95,25 +98,29 @@ clean:
 
 objects.o: ../global/types.h ../tree/tree_basic.h ../tree/tree_compound.h
 objects.o: ../global/Error.h /usr/include/stdio.h
-objects.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
-objects.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-objects.o: /usr/include/stdio_impl.h /usr/include/string.h
-objects.o: /usr/include/stdlib.h ../global/globals.h ../../inc/dbug.h
-objects.o: ../tree/traverse.h ../global/internal_lib.h ../tree/DupTree.h
-objects.o: ../tree/LookUpTable.h
-objinit.o: /usr/include/string.h /usr/include/sys/feature_tests.h
-objinit.o: /usr/include/sys/isa_defs.h ../global/types.h ../tree/tree_basic.h
-objinit.o: ../tree/tree_compound.h ../global/Error.h /usr/include/stdio.h
-objinit.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-objinit.o: /usr/include/stdio_impl.h /usr/include/stdlib.h
+objects.o: /usr/include/iso/stdio_iso.h /usr/include/sys/feature_tests.h
+objects.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
+objects.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
+objects.o: /usr/include/string.h /usr/include/iso/string_iso.h
+objects.o: /usr/include/stdlib.h /usr/include/iso/stdlib_iso.h
+objects.o: ../global/globals.h ../../inc/dbug.h ../tree/traverse.h
+objects.o: ../global/internal_lib.h ../tree/DupTree.h ../tree/LookUpTable.h
+objinit.o: /usr/include/string.h /usr/include/iso/string_iso.h
+objinit.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
+objinit.o: ../global/types.h ../tree/tree_basic.h ../tree/tree_compound.h
+objinit.o: ../global/Error.h /usr/include/stdio.h
+objinit.o: /usr/include/iso/stdio_iso.h /usr/include/sys/va_list.h
+objinit.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
+objinit.o: /usr/include/stdlib.h /usr/include/iso/stdlib_iso.h
 objinit.o: ../global/globals.h ../tree/traverse.h ../../inc/dbug.h
 objinit.o: ../global/internal_lib.h ../tree/free.h ../global/my_debug.h
 objinit.o: ../tree/DupTree.h ../tree/LookUpTable.h ../modules/filemgr.h
 uniquecheck.o: ../global/types.h ../tree/tree_basic.h ../tree/tree_compound.h
 uniquecheck.o: ../global/Error.h /usr/include/stdio.h
-uniquecheck.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
-uniquecheck.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-uniquecheck.o: /usr/include/stdio_impl.h /usr/include/string.h
-uniquecheck.o: /usr/include/stdlib.h ../global/globals.h ../../inc/dbug.h
-uniquecheck.o: ../tree/traverse.h ../global/internal_lib.h ../tree/free.h
-uniquecheck.o: ../global/my_debug.h
+uniquecheck.o: /usr/include/iso/stdio_iso.h /usr/include/sys/feature_tests.h
+uniquecheck.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
+uniquecheck.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
+uniquecheck.o: /usr/include/string.h /usr/include/iso/string_iso.h
+uniquecheck.o: /usr/include/stdlib.h /usr/include/iso/stdlib_iso.h
+uniquecheck.o: ../global/globals.h ../../inc/dbug.h ../tree/traverse.h
+uniquecheck.o: ../global/internal_lib.h ../tree/free.h ../global/my_debug.h
