@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.10  2001/05/09 15:53:03  nmw
+ * COCompareConstants() added
+ *
  * Revision 1.9  2001/05/08 13:15:09  nmw
  * signature for IsZero... changed
  *
@@ -108,6 +111,7 @@ extern constant *COFreeConstant (constant *a);
 extern node *COConstant2AST (constant *a);
 extern constant *COAST2Constant (node *a);
 extern bool COIsConstant (node *a);
+extern bool COCompareConstants (constant *c1, constant *c2);
 
 /* basic value compares, if all==true the condition must hold for all elements */
 extern bool COIsZero (constant *a, bool all);

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.11  2001/05/09 15:53:03  nmw
+ * COCompareConstants() added
+ *
  * Revision 1.10  2001/05/08 13:15:34  nmw
  * signature for IsZero... changed
  *
@@ -787,6 +790,7 @@ COIsZero (constant *a, bool all)
             }
         }
         eq = COFreeConstant (eq);
+        zero = COFreeConstant (zero);
     } else {
         result = FALSE;
     }
@@ -826,6 +830,7 @@ COIsOne (constant *a, bool all)
             }
         }
         eq = COFreeConstant (eq);
+        one = COFreeConstant (one);
     } else {
         result = FALSE;
     }
@@ -845,4 +850,45 @@ COIsFalse (constant *a, bool all)
 {
     DBUG_ENTER ("COIsFalse");
     DBUG_RETURN (COIsZero (a, all));
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    bool COCompareConstants( constant *c1, constant *c2)
+ *
+ * description:
+ *    checks two constants for being equal in type, shape and all elements.
+ *
+ ******************************************************************************/
+bool
+COCompareConstants (constant *c1, constant *c2)
+{
+    bool result;
+    constant *eq;
+    int i;
+
+    DBUG_ENTER ("COCompareConstants");
+
+    result = FALSE;
+
+    /* compare structural data */
+    if ((COGetType (c1) == COGetType (c1)) && (COGetDim (c1) == COGetDim (c1))
+        && (SHCompareShapes (COGetShape (c1), COGetShape (c2)))) {
+
+        /* compare constant elements */
+        eq = COEq (c1, c2);
+
+        /* check result for all elements */
+        result = TRUE;
+        for (i = 0; i < CONSTANT_VLEN (eq); i++) {
+            result = result && ((bool *)(CONSTANT_ELEMS (eq)))[i];
+        }
+        eq = COFreeConstant (eq);
+
+    } else {
+        result = FALSE;
+    }
+
+    DBUG_RETURN (result);
 }
