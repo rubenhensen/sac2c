@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.76  2001/04/05 16:10:31  nmw
+ * AVIS_LIRMOVE macro for SSALIR traversal added
+ *
  * Revision 3.75  2001/04/05 01:38:17  dkr
  * INFO_COMP_MERGE added
  *
@@ -2112,6 +2115,7 @@ extern node *MakeSSAstack (node *next, node *avis);
  ***
  ***    the following attributes are only used within SSALIR:
  ***    int         DEFDEPTH (O)    (WITHDEPTH)       (ssalir!!)
+ ***    int         LIRMOVE (O)     (bitfield)        (ssalir!!)
  ***
  ***/
 
@@ -2143,6 +2147,7 @@ extern node *MakeAvis (node *vardecOrArg);
 #define AVIS_SUBSTUSSA(n) ((node *)(n->dfmask[1]))
 /* used only in SSALIR */
 #define AVIS_DEFDEPTH(n) (n->varno)
+#define AVIS_LIRMOVE(n) (n->lineno)
 
 /*--------------------------------------------------------------------------*/
 
