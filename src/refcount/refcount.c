@@ -1,7 +1,23 @@
 /*
  *
  * $Log$
- * Revision 1.21  1996/01/22 17:34:14  cg
+ * Revision 1.22  1996/05/29 16:48:11  sbs
+ * -Inserted tree-macros in RCfundef, RCassign, RCid, RClet
+ * -Inserted Comments in RCfundef, RCassign, RCid, RClet
+ *
+ * -N_info node in Refcount deleted.
+ * -Inserted RCprf. RCprf traverse the args with arg_info pointing to the N_prf!
+ * -arg_info is relevant for N_id nodes only:
+ *    NULL  indicates a normal use i.e. in user-defined
+ *          functions or aliasing.
+ *    *node indicates a use as argument to a primitive
+ *          function. *node points to the respective N_prf
+ *          node
+ *
+ * if opt_rco==1 (default) all ids in arg-pos of a prf are either set to 1
+ * (= last usage of the id) or -1 (=non-last usage of the id).
+ *
+ * Revision 1.21  1996/01/22  17:34:14  cg
  * IsBoxed and IsUnique moved to refcount.c
  *
  * Revision 1.20  1996/01/21  14:18:12  cg
@@ -494,8 +510,6 @@ Restore (int *dump)
 node *
 Refcount (node *arg_node)
 {
-    node *info_node;
-
     DBUG_ENTER ("Refcount");
 
     /*
@@ -505,15 +519,13 @@ Refcount (node *arg_node)
 
     act_tab = refcnt_tab;
 
-    info_node = MakeNode (N_info);
-    if (N_modul == arg_node->nodetype) {
-        DBUG_ASSERT ((N_fundef == arg_node->node[2]->nodetype), "wrong node ");
-        arg_node->node[2] = Trav (arg_node->node[2], info_node);
+    if (N_modul == NODE_TYPE (arg_node)) {
+        DBUG_ASSERT ((N_fundef == NODE_TYPE (MODUL_FUNS (arg_node))), "wrong node ");
+        MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), NULL);
     } else {
-        DBUG_ASSERT ((N_fundef == arg_node->nodetype), "wrong node ");
-        Trav (arg_node, info_node);
+        DBUG_ASSERT ((N_fundef == NODE_TYPE (arg_node)), "wrong node ");
+        arg_node = Trav (arg_node, NULL);
     }
-    FREE (info_node);
 
     DBUG_RETURN (arg_node);
 }
@@ -561,7 +573,7 @@ RCarg (node *arg_node, node *arg_info)
  *                  2) info node
  *  description   : calls Trav to traverse body of function
  *                  sets varno ,fundef_node and arg_no
- *  global vars   :varno, fundef_node, args_no
+ *  global vars   : varno, fundef_node, args_no
  *  internal funs :
  *  external funs :
  *  macros        : DBUG..., NULL
@@ -578,32 +590,31 @@ RCfundef (node *arg_node, node *arg_info)
 
     if (FUNDEF_ARGS (arg_node) != NULL) {
         FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), arg_info);
-
         /*
-         *  The args are traversed to mark refcounted parameters
-         *  and initialize ARG_REFCNT.
+         *  The args are traversed to initialize ARG_REFCNT.
+         *  Refcounted objects are initialized by 0 others by -1.
          *  This information is needed by compile.c .
          */
     }
 
-    if (NULL != arg_node->node[0]) {
+    if (NULL != FUNDEF_BODY (arg_node)) {
         /* setting some global variables to use with the 'mask'
          * and storage of refcounts
          */
-        varno = arg_node->varno;
+        varno = FUNDEF_VARNO (arg_node);
         fundef_node = arg_node;
-        args = arg_node->node[2];
+        args = FUNDEF_ARGS (arg_node);
         args_no = 0;
         while (NULL != args) {
             args_no += 1;
-            args = args->node[0];
+            args = ARG_NEXT (args);
         }
 
-        arg_node->node[0] = Trav (arg_node->node[0], arg_info);
+        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
     }
 
-    if (NULL != arg_node->node[1]) {
-        arg_node->node[1] = Trav (arg_node->node[1], arg_info);
+    if (NULL != FUNDEF_NEXT (arg_node)) {
+        FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -614,8 +625,7 @@ RCfundef (node *arg_node, node *arg_info)
  *  functionname  : RCassign
  *  arguments     : 1) argument node
  *                  2) info node
- *  description   : traverses next N_assign node if possible
- *                  traverses statement where 1) points to afterwards
+ *  description   : Realizes bottom-up traversal for refcounting
  *  global vars   :
  *  internal funs :
  *  external funs : Trav
@@ -629,13 +639,13 @@ RCassign (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("RCassign");
 
-    /* goto last assign-node and start refcounting there */
-    if (1 == arg_node->nnode)
-        arg_node->node[0] = Trav (arg_node->node[0], arg_info);
-    else {
-        arg_node->node[1] = Trav (arg_node->node[1], arg_info);
-        arg_node->node[0] = Trav (arg_node->node[0], arg_info);
-    }
+    /* Bottom up traversal!! */
+    if (NULL != ASSIGN_NEXT (arg_node)) {
+        ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+        ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+    } else /* this must be the return-statement!!! */
+        ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), NULL);
+
     DBUG_RETURN (arg_node);
 }
 
@@ -813,16 +823,45 @@ RCloop (node *arg_node, node *arg_info)
 
 /*
  *
- *  functionname  : RCid
+ *  functionname  : RCprf
  *  arguments     : 1) argument node
- *                  2) info node
- *  description   :
+ *                  2) ignored
+ *  description   : traverse the args with arg_info pointing to the N_prf!
  *  global vars   :
  *  internal funs :
  *  external funs :
  *  macros        : DBUG...
+ *  remarks       :
  *
- *  remarks       :arg_node->info.ids->node: pointer to VarDec
+ */
+node *
+RCprf (node *arg_node, node *arg_info)
+{
+
+    DBUG_ENTER ("RCprf");
+
+    DBUG_PRINT ("RC", ("traversing args of prf-node (%08x) %s", arg_node,
+                       mdb_prf[PRF_PRF (arg_node)]));
+    PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_node);
+
+    DBUG_RETURN (arg_node);
+}
+
+/*
+ *
+ *  functionname  : RCid
+ *  arguments     : 1) argument node
+ *                  2) NULL == normal N_id node
+ *                     *node == argument of N_prf-node!!
+ *  description   : depending on the arg_info do one of the following:
+ *                    a) Increment refcnt at vardec and set local refcnt
+ *                       of the N_id node accordingly. (RC op needed)
+ *                    b) Set local refcnt to -1. (no RC op)
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        : DBUG...
+ *  remarks       :
  *
  */
 node *
@@ -831,13 +870,33 @@ RCid (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("RCid");
 
-    if (MUST_REFCOUNT (arg_node->VAR_DEC->TYPES)) {
-        arg_node->VAR_DEC->refcnt += 1;
-        arg_node->ID_REF = arg_node->VAR_DEC->refcnt;
-    } else
-        arg_node->ID_REF = -1; /* variable needs no refcount */
+    if (MUST_REFCOUNT (ID_TYPE (arg_node))) {
+        if ((arg_info == NULL) || (VARDEC_REFCNT (ID_VARDEC (arg_node)) == 0)
+            || !opt_rco) {
+            /* This N_id node either is NOT an argument of a primitive
+             * function, or it is the last usage within the body of the
+             * current function. (or refcount-optimization is turned off!)
+             * In both cases, the refcnt is incremented and attached to
+             * the N_id node.
+             */
+            DBUG_PRINT ("RC", ("RC for %s increased:", ID_NAME (arg_node)));
+            VARDEC_REFCNT (ID_VARDEC (arg_node)) += 1;
+            ID_REFCNT (arg_node) = VARDEC_REFCNT (ID_VARDEC (arg_node));
+        } else {
+            /* This N_id node is argument to the N_prf node (*arg_info)
+             * AND it is definitly not the last usage of it.
+             * Therefore -1 is attached to the refcnt field if N_id (to
+             * indicate that this operation does not need any refcnt
+             * adjustments).
+             */
+            ID_REFCNT (arg_node) = -1;
+        }
+    } else {
+        ID_REFCNT (arg_node) = -1; /* variable needs no refcount */
+    }
 
-    DBUG_PRINT ("RC", ("set refcnt of %s to %d:", arg_node->ID, arg_node->ID_REF));
+    DBUG_PRINT ("RC",
+                ("set refcnt of %s to %d:", ID_NAME (arg_node), ID_REFCNT (arg_node)));
 
     DBUG_RETURN (arg_node);
 }
@@ -847,7 +906,9 @@ RCid (node *arg_node, node *arg_info)
  *  functionname  : RClet
  *  arguments     : 1) argument node
  *                  2) info node
- *  description   :
+ *  description   : set the refcnts of the defined variables to the
+ *                  actual refcnt-values of the respective variable
+ *                  declarations and reset these values to 0.
  *  global vars   :
  *  internal funs :
  *  external funs :
@@ -862,18 +923,20 @@ RClet (node *arg_node, node *arg_info)
     ids *ids;
 
     DBUG_ENTER ("RClet");
-    DBUG_PRINT ("RC", ("line: %d", arg_node->lineno));
+    DBUG_PRINT ("RC", ("line: %d", NODE_LINE (arg_node)));
 
-    ids = arg_node->info.ids;
+    ids = LET_IDS (arg_node);
     while (NULL != ids) {
-        if (MUST_REFCOUNT (ids->node->TYPES)) {
-            ids->refcnt = ids->node->refcnt;
-            ids->node->refcnt = 0;
-        } else
-            ids->refcnt = -1;
-        ids = ids->next;
+        if (MUST_REFCOUNT (IDS_VARDEC_TYPE (ids))) {
+            IDS_REFCNT (ids) = VARDEC_REFCNT (IDS_VARDEC (ids));
+            VARDEC_REFCNT (IDS_VARDEC (ids)) = 0;
+        } else {
+            IDS_REFCNT (ids) = -1;
+        }
+        ids = IDS_NEXT (ids);
     }
-    arg_node->node[0] = Trav (arg_node->node[0], arg_info);
+
+    LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
