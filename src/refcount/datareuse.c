@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2004/11/09 19:39:37  ktr
+ * ongoing implementation
+ *
  * Revision 1.1  2004/11/02 14:27:05  ktr
  * Initial revision
  *
@@ -136,6 +139,9 @@ EMDRap (node *arg_node, info *arg_info)
         AP_ARGS (arg_node) = Trav (AP_ARGS (arg_node), arg_info);
     }
 
+    /*
+     * CONDFUNs are traversed in order of appearance
+     */
     if (FUNDEF_IS_CONDFUN (AP_FUNDEF (arg_node))) {
         AP_FUNDEF (arg_node) = Trav (AP_FUNDEF (arg_node), arg_info);
     }
@@ -160,6 +166,9 @@ EMDRassign (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("EMDRassign");
 
+    /*
+     * Top-down traversal
+     */
     ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
@@ -206,19 +215,19 @@ EMDRcode (node *arg_node, info *arg_info)
      */
     exprs = NCODE_CEXPRS (arg_node);
     while (exprs != NULL) {
-        node *id, *iv;
-        bool inplace;
+        node *id = NULL;
+        node *iv = NULL;
+        bool inplace = FALSE;
 
         id = EXPRS_EXPR (exprs);
 
         if (AVIS_SSAASSIGN (ID_AVIS (id)) != NULL) {
-            node *wlass;
-
-            wlass = ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (id)));
-            inplace = FALSE;
+            node *wlass = ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (id)));
 
             if ((NODE_TYPE (wlass) == N_prf) && (PRF_PRF (wlass) == F_wl_assign)) {
-                node *val, *mem, *valavis;
+                node *val;
+                node *mem;
+                node *valavis;
 
                 val = PRF_ARG1 (wlass);
                 mem = PRF_ARG2 (wlass);
@@ -260,7 +269,7 @@ EMDRcode (node *arg_node, info *arg_info)
                      *
                      * where A' is known to be a reuse of B
                      */
-                    if ((NODE_TYPE (sel) == N_prf) && (PRF_PRF (sel) = F_idx_sel)) {
+                    if ((NODE_TYPE (sel) == N_prf) && (PRF_PRF (sel) == F_idx_sel)) {
                         node *idx = PRF_ARG1 (sel);
                         node *arr = PRF_ARG2 (sel);
 
@@ -357,6 +366,9 @@ EMDRfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("EMDRfundef");
 
+    /*
+     * CONDFUNs may only be traversed from AP-nodes
+     */
     if ((!FUNDEF_IS_CONDFUN (arg_node)) || (arg_info != NULL)) {
 
         if (FUNDEF_BODY (arg_node) != NULL) {
@@ -374,6 +386,9 @@ EMDRfundef (node *arg_node, info *arg_info)
         }
     }
 
+    /*
+     * Traverse next fundef
+     */
     if (arg_info == NULL) {
         if (FUNDEF_NEXT (arg_node) != NULL) {
             FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
@@ -408,6 +423,7 @@ EMDRid (node *arg_node, info *arg_info)
         arg_node = FreeNode (arg_node);
 
         arg_node = MakeId (StringCopy (VARDEC_NAME (vardec)), NULL, ST_regular);
+
         ID_VARDEC (arg_node) = vardec;
         ID_AVIS (arg_node) = VARDEC_AVIS (vardec);
     }
@@ -504,46 +520,6 @@ EMDRprf (node *arg_node, info *arg_info)
     default:
         break;
     }
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *EMDRwith( node *arg_node, info *arg_info)
- *
- * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return
- *
- *****************************************************************************/
-node *
-EMDRwith (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("EMDRwith");
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *EMDRwith2( node *arg_node, info *arg_info)
- *
- * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return
- *
- *****************************************************************************/
-node *
-EMDRwith2 (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("EMDRwith2");
 
     DBUG_RETURN (arg_node);
 }

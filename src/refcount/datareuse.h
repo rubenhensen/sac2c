@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2004/11/09 19:39:37  ktr
+ * ongoing implementation
+ *
  * Revision 1.1  2004/11/02 14:27:11  ktr
  * Initial revision
  *
@@ -24,7 +27,5 @@ extern node *EMDRid (node *arg_node, info *arg_info);
 extern node *EMDRlet (node *arg_node, info *arg_info);
 extern node *EMDRfundef (node *arg_node, info *arg_info);
 extern node *EMDRprf (node *arg_node, info *arg_info);
-extern node *EMDRwith (node *arg_node, info *arg_info);
-extern node *EMDRwith2 (node *arg_node, info *arg_info);
 
 #endif

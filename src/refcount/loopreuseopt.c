@@ -1,7 +1,7 @@
 /*
  *
  * $Log$
- * Revision 1.2  2004/11/09 19:33:27  ktr
+ * Revision 1.3  2004/11/09 19:38:11  ktr
  * ongoing implementation
  *
  * Revision 1.1  2004/11/02 14:26:48  ktr
@@ -410,6 +410,7 @@ EMLROap (node *arg_node, info *arg_info)
     DBUG_ENTER ("EMLROap");
 
     if (FUNDEF_IS_CONDFUN (AP_FUNDEF (arg_node))) {
+        INFO_EMLR_APARGS (arg_info) = AP_ARGS (arg_node);
         AP_FUNDEF (arg_node) = Trav (AP_FUNDEF (arg_node), arg_info);
     }
 
@@ -570,6 +571,21 @@ EMLROfundef (node *arg_node, info *arg_info)
         }
 
         /*
+         * Print statically resusable variables
+         */
+        DBUG_PRINT ("EMLR", ("The following variables can be statically reused:"));
+        DBUG_EXECUTE ("EMLR", DFMPrintMask (0, "%s\n", INFO_EMLR_REUSEMASK (info)););
+
+        /*
+         * Initialize arguments' AVIS_ALIAS with values from REUSEMASK
+         */
+        if (FUNDEF_ARGS (arg_node) != NULL) {
+            INFO_EMLR_CONTEXT (info) = LR_doargs;
+            FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), info);
+            INFO_EMLR_CONTEXT (info) = LR_undef;
+        }
+
+        /*
          * Restore FUNDEF_NEXT
          */
         FUNDEF_NEXT (arg_node) = fundef_next;
@@ -599,6 +615,8 @@ EMLROfundef (node *arg_node, info *arg_info)
          */
         if (FUNDEF_ARGS (arg_node) != NULL) {
             INFO_EMLR_APMASK (info) = INFO_EMLR_REUSEMASK (arg_info);
+            INFO_EMLR_APARGS (info) = INFO_EMLR_APARGS (arg_info);
+            INFO_EMLR_APARGS (arg_info) = NULL;
             INFO_EMLR_CONTEXT (info) = LR_condargs;
             FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), info);
             INFO_EMLR_CONTEXT (info) = LR_undef;
