@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.86  1998/03/17 10:36:25  dkr
+ * added WLSEG_DIM, WLSEG_BV, WLSEG_UBV
+ *
  * Revision 1.85  1998/03/17 09:57:50  cg
  * added permanent optional attribute ARRAY_STRING
  *
@@ -1585,7 +1588,7 @@ extern node *MakeExprs (node *expr, node *next);
  ***
  ***  permanent attributes:
  ***
- ***    char*  STRING  (O)
+ ***    char*  STRING       (O)
  ***
  ***  temporary attributes:
  ***
@@ -2285,10 +2288,22 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop);
  ***    node*    INNER    (0)     (N_WLblock, N_WLublock, N_WLproj)
  ***    node*    NEXT     (0)     (N_WLseg)
  ***
+ ***  permanent attributes:
+ ***
+ ***    int      DIM      (0)
+ ***
+ ***  temporary attributes:
+ ***
+ ***    long*    BV       (0)     (Precompile -> )
+ ***    long*    UBV      (0)     (Precompile -> )
+ ***
  ***/
 
-extern node *MakeWLseg (node *inner, node *next);
+extern node *MakeWLseg (int dim, node *inner, node *next);
 
+#define WLSEG_DIM(n) (n->refcnt)
+#define WLSEG_BV(n) (n->mask[0])
+#define WLSEG_UBV(n) (n->mask[1])
 #define WLSEG_INNER(n) (n->node[0])
 #define WLSEG_NEXT(n) (n->node[1])
 
