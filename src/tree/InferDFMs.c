@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.32  2004/11/25 19:24:22  mwe
+ * local functions declared as static
+ *
  * Revision 1.31  2004/11/25 19:11:33  mwe
  * SacDevCamp Dk: Compiles!!
  *
@@ -719,8 +722,7 @@ AdjustMasksWith_Post (info *arg_info)
  *   All masks are left as is.
  *
  ******************************************************************************/
-
-info *
+static info *
 AdjustMasksCond_Pre (info *arg_info, node *arg_node)
 {
     DBUG_ENTER ("AdjustMasksCond_Pre");
@@ -743,8 +745,7 @@ AdjustMasksCond_Pre (info *arg_info, node *arg_node)
  *   All masks are left as is.
  *
  ******************************************************************************/
-
-info *
+static info *
 AdjustMasksCond_Post (info *arg_info, dfmask_t *in_then, dfmask_t *out_then,
                       dfmask_t *local_then, dfmask_t *in_else, dfmask_t *out_else,
                       dfmask_t *local_else)
@@ -797,8 +798,7 @@ AdjustMasksCond_Post (info *arg_info, dfmask_t *in_then, dfmask_t *out_then,
  *     return( out);
  *
  ******************************************************************************/
-
-info *
+static info *
 AdjustMasksDo_Pre (info *arg_info, node *arg_node)
 {
     DBUG_ENTER ("AdjustMasksDo_Pre");
@@ -836,8 +836,7 @@ AdjustMasksDo_Pre (info *arg_info, node *arg_node)
  *   All masks are left as is.
  *
  ******************************************************************************/
-
-info *
+static info *
 AdjustMasksDo_Post (info *arg_info)
 {
     DBUG_ENTER ("AdjustMasksDo_Post");
@@ -855,8 +854,7 @@ AdjustMasksDo_Post (info *arg_info)
  *   traversed *before* the withid (contained in part)!
  *
  ******************************************************************************/
-
-node *
+static node *
 InferMasksWith (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("InferMasksWith");
@@ -905,8 +903,7 @@ InferMasksWith (node *arg_node, info *arg_info)
  *   code must be traversed *before* the withid!
  *
  ******************************************************************************/
-
-node *
+static node *
 InferMasksWith2 (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("InferMasksWith2");
@@ -1050,8 +1047,7 @@ InferMasksCond (node *arg_node, info *arg_info)
  *   BODY must be traversed after COND!
  *
  ******************************************************************************/
-
-node *
+static node *
 InferMasksDo (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("InferMasksDo");
