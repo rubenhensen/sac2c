@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/09/10 14:21:32  jhs
+ * I deleted on simple and plain blank.
+ *
  * Revision 2.2  1999/05/07 13:00:22  jhs
  * initialization of src_file in Make Node added.
  *
