@@ -1,11 +1,14 @@
 /*
  *
  * $Log$
+ * Revision 1.14  2004/11/07 18:10:35  sah
+ * aded implementation for Nums and IntegerArrays
+ *
  * Revision 1.13  2004/11/02 12:14:46  sah
  * added support for ConstVect
  *
  * Revision 1.12  2004/11/01 21:52:15  sah
- * added SerialiyezeDownLinkAttrib
+ * added SerializeDownLinkAttrib
  *
  * Revision 1.11  2004/10/26 09:35:55  sah
  * added serialization of links
@@ -18,7 +21,7 @@
  *
  * Revision 1.8  2004/10/17 17:03:20  sah
  * noew the generated code no more contains
- * any sac2c specific types o [3~´´r enums (hopefully)
+ * any sac2c specific types or enums (hopefully)
  *
  * Revision 1.7  2004/09/30 20:15:10  sah
  * fixed signature of SerializeRCCounterAttrib
@@ -67,6 +70,7 @@
 #include "constants.h"
 #include "tree_basic.h"
 #include "traverse.h"
+#include "tree_compound.h"
 #include "dbug.h"
 
 /** <!--******************************************************************-->
@@ -403,7 +407,24 @@ SerializeIntegerArrayAttrib (info *info, int *attr, node *parent)
 {
     DBUG_ENTER ("SerializeIntegerArrayAttrib");
 
-    fprintf (INFO_SER_FILE (info), "NULL");
+    if (attr == NULL) {
+        fprintf (INFO_SER_FILE (info), "NULL");
+    } else {
+        int cnt;
+
+        DBUG_ASSERT ((NODE_TYPE (parent) == N_pragma),
+                     ("Found an IntegerArrayAttribute attached to a node different from "
+                      "N_pragma! "));
+
+        fprintf (INFO_SER_FILE (info), "CreateIntegerArray( %d",
+                 PRAGMA_NUMPARAMS (parent));
+
+        for (cnt = 0; cnt < PRAGMA_NUMPARAMS (parent); cnt++) {
+            fprintf (INFO_SER_FILE (info), ", %d", attr[cnt]);
+        }
+
+        fprintf (INFO_SER_FILE (info), ")");
+    }
 
     DBUG_VOID_RETURN;
 }
@@ -420,12 +441,34 @@ SerializeIntegerArrayAttrib (info *info, int *attr, node *parent)
  *
  ***************************************************************************/
 
+static void
+SerializeNumsAttribRec (info *info, nums *attr)
+{
+    DBUG_ENTER ("SerializeNumsAttribRec");
+
+    if (attr != NULL) {
+        SerializeNumsAttribRec (info, NUMS_NEXT (attr));
+
+        fprintf (INFO_SER_FILE (info), ", %d", NUMS_NUM (attr));
+    }
+
+    DBUG_VOID_RETURN;
+}
+
 void
 SerializeNumsAttrib (info *info, nums *attr, node *parent)
 {
     DBUG_ENTER ("SerializeNumsAttrib");
 
-    fprintf (INFO_SER_FILE (info), "NULL");
+    if (attr == NULL) {
+        fprintf (INFO_SER_FILE (info), "NULL");
+    } else {
+        fprintf (INFO_SER_FILE (info), "CreateNums( %d ", CountNums (attr));
+
+        SerializeNumsAttribRec (info, attr);
+
+        fprintf (INFO_SER_FILE (info), ")");
+    }
 
     DBUG_VOID_RETURN;
 }
