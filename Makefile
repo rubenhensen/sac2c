@@ -1,5 +1,10 @@
 #
 # $Log$
+# Revision 1.97  1998/12/10 12:36:37  cg
+# added -DPRODUCTION for production compilations of sac2c in order
+# to allow for different code sections in production and developer
+# versions of sac2c.
+#
 # Revision 1.96  1998/12/07 17:28:34  cg
 # Added mechanism to link with different libraries on different
 # platforms; added correct settings to please target LINUX_X86.
@@ -123,11 +128,11 @@ LINUX_X86_LIBS      := -lfl
 # general setup:
 #
 
-CCFLAGS :=$($(CC)_FLAGS) -g -D$(OS) $($(OS)_FLAGS)
-CCPROD_FLAGS := $($(CC)_PROD_FLAGS) -D$(OS) $($(OS)_FLAGS)
+CCFLAGS :=$($(CC)_FLAGS) -g $($(OS)_FLAGS)
+CCPROD_FLAGS := $($(CC)_PROD_FLAGS) $($(OS)_FLAGS) 
 
-override CFLAGS := -DNEWTREE -DSHOW_MALLOC $(CFLAGS)
-CPROD_FLAGS  :=-DDBUG_OFF $(CFLAGS)
+override CFLAGS += -DNEWTREE -DSHOW_MALLOC -D$(OS) 
+CPROD_FLAGS  :=-DDBUG_OFF -DNEWTREE -DPRODUCTION -D$(OS) $(CFLAGS)
 
 MAKE         :=$(MAKE) CC="$(CC)" CCFLAGS="$(CCFLAGS)" CFLAGS="$(CFLAGS)"
 MAKEPROD     :=$(MAKE) CC="$(CCPROD)" CCFLAGS="$(CCPROD_FLAGS)" CFLAGS="$(CPROD_FLAGS)"
@@ -137,7 +142,7 @@ TAR          :=tar
 LEX          :=lex
 YACC         :=yacc -dv
 LIBS         :=-lm $($(OS)_LIBS)
-EFLIBS       :=-L/home/dkr/c/lib/ElectricFence -lefence
+EFLIBS       :=-L/home/sacbase/efence -lefence
 RM           :=rm -f
 ECHO         :=echo
 
