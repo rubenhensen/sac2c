@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.70  2004/11/26 18:14:35  mwe
+ * change prefix of IVE
+ *
  * Revision 3.69  2004/11/26 16:27:36  mwe
  * SacDevCamp
  *
@@ -853,7 +856,7 @@ OPTmodule (node *arg_node, info *arg_info)
      * index vector elimination
      */
     if (global.optimize.doive) {
-        arg_node = IDXdoIndexVectorElimination (arg_node);
+        arg_node = IVEdoIndexVectorElimination (arg_node);
 
         if ((global.break_after == PH_sacopt)
             && (0 == strcmp (global.break_specifier, "ive"))) {
@@ -1109,6 +1112,7 @@ OPTfundef (node *arg_node, info *arg_info)
                 goto INFO;
             }
 
+#ifdef _SSA_WLT_FIXED_
             if (global.optimize.dowlt) {
                 arg_node = WLFdoWithloopFoldingWlt (arg_node);
             }
@@ -1118,6 +1122,7 @@ OPTfundef (node *arg_node, info *arg_info)
                 && (0 == strcmp (global.break_specifier, "wlt"))) {
                 goto INFO;
             }
+#endif
 
             if (global.optimize.dowlf) {
                 arg_node = WLFdoWithloopFolding (arg_node, loop1);
@@ -1296,6 +1301,7 @@ OPTfundef (node *arg_node, info *arg_info)
             /*
              * This is needed to transform more index vectors in scalars or vice versa.
              */
+#ifdef _SSA_WLT_FIXED_
             if (global.optimize.dowlt) {
                 arg_node = WLFdoWithloopFoldingWlt (arg_node);
             }
@@ -1305,6 +1311,7 @@ OPTfundef (node *arg_node, info *arg_info)
                 && (0 == strcmp (global.break_specifier, "wlt"))) {
                 goto INFO;
             }
+#endif
         }
 
         /*
