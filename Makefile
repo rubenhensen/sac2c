@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.51  1997/08/04 17:03:22  dkr
+# added libefence support
+#
 # Revision 1.50  1997/05/28 12:37:35  sbs
 # analyse.o -> profile.o
 #
@@ -162,6 +165,7 @@ MAKEPROD=make CC="$(CCPROD)"
 LEX=lex
 YACC=yacc -dv
 LIBS=-ly -ll -lm
+EFLIBS=-L/home/dkr/gcc/lib/ElectricFence -lefence
 RM=rm -f
 
 LIB=lib/dbug.o
@@ -197,6 +201,8 @@ OBJ=$(GLOBAL) $(SCANP) $(PRINT) $(FLATTEN) $(TYPECHECK) $(OPTIMIZE) \
 
 all: dummy sac2c
 
+efence: dummy sac2c.efence
+
 product : clean prod sac2c
 
 dummy:
@@ -227,6 +233,9 @@ prod:
 
 sac2c: $(OBJ) $(LIB)
 	$(CC) -o sac2c $(OBJ) $(LIB) $(LIBS)
+
+sac2c.efence: $(OBJ) $(LIB)
+	$(CC) -o sac2c.efence $(OBJ) $(LIB) $(LIBS) $(EFLIBS)
 
 deps:
 	(cd src/scanparse; $(MAKE) deps)
