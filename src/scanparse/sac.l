@@ -3,6 +3,10 @@
 /*
  *
  * $Log$
+ * Revision 2.8  1999/10/08 09:16:41  sbs
+ * for compliance with older versions of lex/yacc yy_init = 1 is forced
+ * whenever a new start token is smuggled in!
+ *
  * Revision 2.7  1999/10/04 09:24:07  sbs
  * linenum moved to globals.[ch]
  *
@@ -135,6 +139,7 @@ int start_token;
 
      if(start_token) {
        int mem=start_token;
+       yy_init = 1;  /* force new initialization of lex! */
 
        start_token=0;
        return(mem);
