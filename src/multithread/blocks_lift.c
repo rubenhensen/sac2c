@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2000/07/04 14:56:17  jhs
+ * Changed lifting.
+ *
  * Revision 1.5  2000/04/20 11:37:11  jhs
  * ID_VARDECs of return arguments are set correct now.
  *
@@ -182,6 +185,7 @@ BLKLImt (node *arg_node, node *arg_info)
     types *new_rettype;
     node *new_retexpr;
     LUT_t lut;
+    DFMmask_base_t new_base;
 
     DBUG_ENTER ("BLKLImt");
     DBUG_PRINT ("BLKLI", ("begin"));
@@ -198,12 +202,12 @@ BLKLImt (node *arg_node, node *arg_info)
     old_vardecs = FUNDEF_VARDEC (fundef);
     old_args = FUNDEF_ARGS (fundef);
     /*
-     *  ... first we copy the vardecs, that is easy ...
+     *  ... first we copy each vardec, that is easy ...
      */
     while (old_vardecs != NULL) {
         if (!DFMTestMaskEntry (MT_USEMASK (arg_node), NULL, old_vardecs)) {
             new_vardecs = DupNodeVardec (old_vardecs, new_vardecs);
-            InsertIntoLUT (lut, old_vardecs, new_vardecs);
+            lut = InsertIntoLUT (lut, old_vardecs, new_vardecs);
         }
         old_vardecs = VARDEC_NEXT (old_vardecs);
     }
@@ -216,7 +220,7 @@ BLKLImt (node *arg_node, node *arg_info)
     while (old_args != NULL) {
         if (!DFMTestMaskEntry (MT_USEMASK (arg_node), NULL, old_args)) {
             new_vardecs = DupNodeArgToVardec (old_args, new_vardecs);
-            InsertIntoLUT (lut, old_args, new_vardecs);
+            lut = InsertIntoLUT (lut, old_args, new_vardecs);
         }
         old_args = ARG_NEXT (old_args);
     }
@@ -224,11 +228,6 @@ BLKLImt (node *arg_node, node *arg_info)
      *  ... now delete unnecessary vardecs
      */
     /* to be done #### */
-
-    new_block = DupNodeLUT (MT_REGION (arg_node), lut);
-    BLOCK_VARDEC (new_block) = new_vardecs;
-
-    lut = RemoveLUT (lut);
 
     /*
      *  Build args by MT_USEMASK
@@ -306,6 +305,15 @@ BLKLImt (node *arg_node, node *arg_info)
         rettypes = MakeType (T_void, 0, NULL, NULL, NULL);
     }
 
+    new_base = DFMGenMaskBase (new_args, new_vardecs);
+
+    lut = InsertIntoLUT (lut, FUNDEF_DFM_BASE (INFO_MUTH_FUNDEF (arg_info)), new_base);
+
+    new_block = DupNodeLUT (MT_REGION (arg_node), lut);
+    BLOCK_VARDEC (new_block) = new_vardecs;
+
+    lut = RemoveLUT (lut);
+
     new_fundef = MakeFundef (TmpVarName (FUNDEF_NAME (fundef)), "_MTLIFT", rettypes,
                              new_args /* args */, new_block /* body */, NULL /* next */);
 
@@ -317,8 +325,7 @@ BLKLImt (node *arg_node, node *arg_info)
     FUNDEF_RETURN (new_fundef) = MakeReturn (retexprs);
     AppendAssign (BLOCK_INSTR (new_block), MakeAssign (FUNDEF_RETURN (new_fundef), NULL));
 
-    FUNDEF_DFM_BASE (new_fundef)
-      = DFMGenMaskBase (FUNDEF_ARGS (new_fundef), FUNDEF_VARDEC (new_fundef));
+    FUNDEF_DFM_BASE (new_fundef) = new_base;
 
     FUNDEF_NEXT (new_fundef) = FUNDEF_NEXT (fundef);
     FUNDEF_NEXT (fundef) = new_fundef;
