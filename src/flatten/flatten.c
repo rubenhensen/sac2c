@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.66  1998/03/13 18:03:50  srs
+ * replaced GenTmpVar() by global function TmpVar()
+ * and fixed a bug in FltnNCode
+ *
  * Revision 1.65  1998/03/12 13:11:41  srs
  * fixed bug in FlatnNpart()
  *
@@ -264,8 +268,6 @@
 #define ID_MOD(n) (n->info.ids->mod) /* identical to tree_basic.h */
 #define IDS_NEXT(i) (i->next)        /* identical to tree_basic.h */
 
-#define VAR "__tmp"       /* name of new variable */
-#define VAR_LENGTH 10     /* dimension for array of char */
 #define P_FORMAT "(%06x)" /* formatstring for pointer address */
 #define WITH_PREFIX "__w" /* name of new variable in with-statement */
 #define WITH_PREFIX_LENGTH 3
@@ -364,35 +366,6 @@ DuplicateNode (node *source_node)
                 ("return :%s" P_FORMAT, mdb_nodetype[dest_node->nodetype], dest_node));
 
     DBUG_RETURN (dest_node);
-}
-
-/*
- *
- *  functionname  : GenTmpVar
- *  arguments     : 1) counter number
- *  description   : allocate string for temporary variable
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : ---
- *  macros        : ---
- *
- *  remarks       :
- *
- */
-
-char *
-GenTmpVar (int count)
-{
-    char *string;
-
-    DBUG_ENTER ("GenTmpVar");
-
-    string = (char *)Malloc (sizeof (char) * VAR_LENGTH);
-    sprintf (string, VAR "%d", count);
-
-    DBUG_PRINT ("TMP", ("new variable: %s", string));
-
-    DBUG_RETURN (string);
 }
 
 /*
@@ -588,8 +561,6 @@ FltnAssign (node *arg_node, node *arg_info)
  *  arguments     : 1) argument node
  *                  2) last assignment in arg_info->node[0]
  *  description   : Flatten each argument of the given node if neccessary
- *  global vars   : var_counter
- *  internal funs : GenTmpVar
  *  external funs : MakeNode
  *  macros        : GEN_NODE
  *
@@ -602,6 +573,7 @@ FltnExprs (node *arg_node, node *arg_info)
 {
     node *tmp_node1, *id_node, *let_node, *assign_node, *tmp_arg;
     int abstract, old_tag;
+    char *tmp_var_name;
 
     DBUG_ENTER ("FltnExprs");
 
@@ -646,12 +618,13 @@ FltnExprs (node *arg_node, node *arg_info)
     if (abstract) {
         tmp_node1 = EXPRS_EXPR (arg_node);
 
+        tmp_var_name = TmpVar ();
         id_node = MakeNode (N_id);
-        id_node->info.ids = MakeIds (GenTmpVar (var_counter), NULL, ST_regular);
+        id_node->info.ids = MakeIds (tmp_var_name, NULL, ST_regular);
         EXPRS_EXPR (arg_node) = id_node;
 
         let_node = MakeNode (N_let);
-        let_node->info.ids = MakeIds (GenTmpVar (var_counter++), NULL, ST_regular);
+        let_node->info.ids = MakeIds (tmp_var_name, NULL, ST_regular);
         LET_EXPR (let_node) = tmp_node1;
 
         assign_node = MakeNode (N_assign);
@@ -1094,8 +1067,6 @@ FltnFundef (node *arg_node, node *arg_info)
  *  arguments     : 1) argument node
  *                  2) last assignment in arg_info->node[0]
  *  description   : - flattens each argument of the given node, if necessary
- *  global vars   : var_counter
- *  internal funs : GenTmpVar
  *  external funs : MakeNode, Trav,
  *  macros        : DBUG,..., GEN_NODE
  *
@@ -1108,7 +1079,7 @@ FltnGen (node *arg_node, node *arg_info)
     node *tmp_node1, *id_node, *let_node, *assign_node;
     int i;
     local_stack *tmp;
-    char *old_name;
+    char *old_name, *tmp_var_name;
 
     DBUG_ENTER ("FltnGen");
 #ifndef NEWTREE
@@ -1125,11 +1096,11 @@ FltnGen (node *arg_node, node *arg_info)
              ** variable are generated and inserted.
              */
             tmp_node1 = arg_node->node[i];
-            id_node = MakeId (GenTmpVar (var_counter), NULL, ST_regular);
+            id_node = MakeId (tmp_var_name, NULL, ST_regular);
             arg_node->node[i] = id_node;
 
             let_node = MakeNode (N_let);
-            let_node->info.ids = MakeIds (GenTmpVar (var_counter++), NULL, ST_regular);
+            let_node->info.ids = MakeIds (tmp_var_name, NULL, ST_regular);
 
             /*         assign_node=MakeNode(N_assign); */
             /*         ASSIGN_INSTR(assign_node)=let_node; */
@@ -1704,7 +1675,7 @@ FltnNgenerator (node *arg_node, node *arg_info)
         }
 
         if (*act_son && N_id != NODE_TYPE (*act_son)) {
-            new_id = GenTmpVar (var_counter++);
+            new_id = TmpVar ();
             let_node = MakeLet (NULL, MakeIds (new_id, NULL, ST_regular));
             arg_info->node[0] = MakeAssign (let_node, arg_info->node[0]);
             LET_EXPR (let_node) = Trav (*act_son, arg_info);
@@ -1794,10 +1765,10 @@ FltnNcode (node *arg_node, node *arg_info)
     /*       N_double != NODE_TYPE(NCODE_CEXPR(arg_node)) && */
     /*       N_num != NODE_TYPE(NCODE_CEXPR(arg_node))) */
     {
-        name = GenTmpVar (var_counter++);
+        name = TmpVar ();
         let_node = MakeLet (NCODE_CEXPR (arg_node), MakeIds (name, NULL, ST_regular));
         assign_node = MakeAssign (let_node, NULL);
-        NCODE_CEXPR (arg_node) = MakeId (name, NULL, ST_regular);
+        NCODE_CEXPR (arg_node) = MakeId (StringCopy (name), NULL, ST_regular);
         /* name will be pushed on the local_stack later while processing the body. */
 
         if (NCODE_CBLOCK (arg_node)) {
