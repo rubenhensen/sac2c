@@ -1,5 +1,7 @@
 DataFlowMask.c
 DataFlowMask.h
+DataFlowMaskUtils.c
+DataFlowMaskUtils.h
 DupTree.c
 DupTree.h
 Makefile
