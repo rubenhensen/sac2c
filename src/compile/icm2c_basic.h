@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.23  2004/11/24 18:25:33  jhb
+ * added include "types.h"
+ *
  * Revision 3.22  2004/11/24 17:40:59  jhb
  * changend outfile and indent to global
  *
@@ -74,6 +77,8 @@
 
 #ifndef _ICM2C_BASIC_H_
 #define _ICM2C_BASIC_H_
+
+#include "types.h"
 
 extern int print_comment; /* bool */
 
