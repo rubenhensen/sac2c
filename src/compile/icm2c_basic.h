@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2002/07/11 17:15:38  dkr
+ * SizeId() added
+ *
  * Revision 3.7  2002/07/11 13:37:27  dkr
  * function renamed
  *
@@ -58,13 +61,18 @@ extern void DimId (void *nt);
 
 extern void ShapeId (void *nt, char *idx_str, int idx);
 
-extern void VectToOffset2 (char *offset, void *v, int dimv, void (*v_acc_dim) (void *),
-                           void (*v_acc_shp) (void *, char *, int), void *a, int dima,
-                           void (*a_acc_dim) (void *),
-                           void (*a_acc_shp) (void *, char *, int));
+extern void SizeId (void *nt);
 
-extern void VectToOffset (char *offset, void *v, int dimv, void (*v_acc_dim) (void *),
-                          void (*v_acc_shp) (void *, char *, int), void *a, int dima);
+extern void VectToOffset2 (char *offset, void *v_any, int v_dim,
+                           void (*v_size_fun) (void *),
+                           void (*v_read_fun) (void *, char *, int), void *a_any,
+                           int a_dim, void (*a_dim_fun) (void *),
+                           void (*a_shape_fun) (void *, char *, int));
+
+extern void VectToOffset (char *offset, void *v_any, int v_dim,
+                          void (*v_size_fun) (void *),
+                          void (*v_read_fun) (void *, char *, int), void *a_nt,
+                          int a_dim);
 
 #else
 
