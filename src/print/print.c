@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.68  1995/06/06 07:53:11  sbs
+ * Revision 1.69  1995/06/06 14:04:53  cg
+ * constants and objects will be printed now.
+ *
+ * Revision 1.68  1995/06/06  07:53:11  sbs
  * some bugs in PrintVect eliminated
  *
  * Revision 1.67  1995/06/02  17:15:21  sbs
@@ -334,8 +337,10 @@ PrintLet (node *arg_node, node *arg_info)
 
     DBUG_PRINT ("PRINT", ("%s " P_FORMAT, mdb_nodetype[arg_node->nodetype], arg_node));
 
-    PrintIds (arg_node->info.ids);
-    fprintf (outfile, "= ");
+    if (arg_node->info.ids != NULL) {
+        PrintIds (arg_node->info.ids);
+        fprintf (outfile, "= ");
+    }
     Trav (arg_node->node[0], arg_info);
     fprintf (outfile, "; ");
 
@@ -349,8 +354,12 @@ PrintModul (node *arg_node, node *arg_info)
 
     DBUG_PRINT ("PRINT", ("%s " P_FORMAT, mdb_nodetype[arg_node->nodetype], arg_node));
 
-    if (arg_node->info.id != NULL)
-        fprintf (outfile, "Modul %s\n", arg_node->info.id);
+    if (arg_node->info.id != NULL) {
+        if (arg_node->node[5] == NULL)
+            fprintf (outfile, "/*\n** Modul %s :\n*/\n", arg_node->info.id);
+        else
+            fprintf (outfile, "/*\n** Class %s :\n*/\n", arg_node->info.id);
+    }
     if (NULL != arg_node->node[0]) {
         fprintf (outfile, "\n");
         Trav (arg_node->node[0], arg_info); /* print import-list */
@@ -358,6 +367,14 @@ PrintModul (node *arg_node, node *arg_info)
     if (NULL != arg_node->node[1]) {
         fprintf (outfile, "\n");
         Trav (arg_node->node[1], arg_info); /* print typedefs */
+    }
+    if (NULL != arg_node->node[3]) {
+        fprintf (outfile, "\n");
+        Trav (arg_node->node[3], arg_info); /* print constdefs */
+    }
+    if (NULL != arg_node->node[4]) {
+        fprintf (outfile, "\n");
+        Trav (arg_node->node[4], arg_info); /* print objdefs */
     }
 
     Trav (arg_node->node[2], arg_info); /* traverse functions */
@@ -374,9 +391,10 @@ PrintImplist (node *arg_node, node *arg_info)
 
     fprintf (outfile, "import %s: ", arg_node->info.id);
 
-    if ((arg_node->node[1] == NULL) && (arg_node->node[1] == NULL)
-        && (arg_node->node[1] == NULL))
-        fprintf (outfile, "all\n");
+    if ((arg_node->node[1] == NULL) && (arg_node->node[2] == NULL)
+        && (arg_node->node[3] == NULL) && (arg_node->node[4] == NULL)
+        && (arg_node->node[5] == NULL))
+        fprintf (outfile, "all;\n");
     else {
         fprintf (outfile, "{");
         if (arg_node->node[1] != NULL) {
@@ -389,6 +407,16 @@ PrintImplist (node *arg_node, node *arg_info)
             PrintIds ((ids *)arg_node->node[2]); /* dirty trick for keeping ids */
             fprintf (outfile, ";");
         }
+        if (arg_node->node[4] != NULL) {
+            fprintf (outfile, "\n  constants: ");
+            PrintIds ((ids *)arg_node->node[4]); /* dirty trick for keeping ids */
+            fprintf (outfile, ";");
+        }
+        if (arg_node->node[5] != NULL) {
+            fprintf (outfile, "\n  global objects: ");
+            PrintIds ((ids *)arg_node->node[5]); /* dirty trick for keeping ids */
+            fprintf (outfile, ";");
+        }
         if (arg_node->node[3] != NULL) {
             fprintf (outfile, "\n  funs: ");
             PrintIds ((ids *)arg_node->node[3]); /* dirty trick for keeping ids */
@@ -396,6 +424,7 @@ PrintImplist (node *arg_node, node *arg_info)
         }
         fprintf (outfile, "\n}\n");
     }
+
     if (1 == arg_node->nnode)
         Trav (arg_node->node[0], arg_info); /* print further imports */
 
@@ -416,6 +445,60 @@ PrintTypedef (node *arg_node, node *arg_info)
 
     if (1 == arg_node->nnode)
         Trav (arg_node->node[0], arg_info); /* traverse next typedef/fundef */
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+PrintConstdef (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintConstdef");
+
+    DBUG_PRINT ("PRINT", ("%s " P_FORMAT, mdb_nodetype[arg_node->nodetype], arg_node));
+
+    if (arg_node->node[2] != NULL) {
+        fprintf (outfile, "extern %s ", Type2String (arg_node->info.types, 0));
+        if (arg_node->info.types->id_mod != NULL)
+            fprintf (outfile, "%s" MOD_NAME_CON, arg_node->info.types->id_mod);
+        fprintf (outfile, "%s;\n", arg_node->info.types->id);
+    } else {
+        fprintf (outfile, "%s ", Type2String (arg_node->info.types, 0));
+        if (arg_node->info.types->id_mod != NULL)
+            fprintf (outfile, "%s" MOD_NAME_CON, arg_node->info.types->id_mod);
+        fprintf (outfile, "%s = ", arg_node->info.types->id);
+        Trav (arg_node->node[0], arg_info);
+        fprintf (outfile, ";\n");
+    }
+
+    if (2 == arg_node->nnode)
+        Trav (arg_node->node[1], arg_info); /* traverse next def */
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+PrintObjdef (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintObjdef");
+
+    DBUG_PRINT ("PRINT", ("%s " P_FORMAT, mdb_nodetype[arg_node->nodetype], arg_node));
+
+    if (arg_node->node[0]->nodetype == N_empty) {
+        fprintf (outfile, "extern %s ", Type2String (arg_node->info.types, 0));
+        if (arg_node->info.types->id_mod != NULL)
+            fprintf (outfile, "%s" MOD_NAME_CON, arg_node->info.types->id_mod);
+        fprintf (outfile, "%s;\n", arg_node->info.types->id);
+    } else {
+        fprintf (outfile, "%s ", Type2String (arg_node->info.types, 0));
+        if (arg_node->info.types->id_mod != NULL)
+            fprintf (outfile, "%s" MOD_NAME_CON, arg_node->info.types->id_mod);
+        fprintf (outfile, "%s = ", arg_node->info.types->id);
+        Trav (arg_node->node[0], arg_info);
+        fprintf (outfile, ";\n");
+    }
+
+    if (2 == arg_node->nnode)
+        Trav (arg_node->node[0], arg_info); /* traverse next def */
 
     DBUG_RETURN (arg_node);
 }
@@ -563,7 +646,8 @@ PrintReturn (node *arg_node, node *arg_info)
     DBUG_ENTER ("PrintReturn");
 
     fprintf (outfile, "return( ");
-    Trav (arg_node->node[0], arg_info);
+    if (arg_node->nnode > 0)
+        Trav (arg_node->node[0], arg_info);
     fprintf (outfile, " );");
 
     DBUG_RETURN (arg_node);
