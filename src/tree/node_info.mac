@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.92  2002/08/13 12:17:35  dkr
+ * NT2OTap replaced by NT2OTarg (*sign*)
+ *
  * Revision 3.91  2002/08/13 12:15:43  dkr
  * NT2OTap added
  *
@@ -1157,7 +1160,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
        SSAILIarg, TravSons, TravSons, TravSons, TravSons, TravSons, PREC4arg, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, NT2OTarg, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 1),
 
   NIF (N_vardec, "N_vardec", TravSons, TravSons, PrintVardec, TCvardec, GNMvardec,
@@ -1591,7 +1594,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        SSAWLIap, TravSons,
 
        SSAILIap, COMP2Ap, PREC2ap, TravSons, CRTWRPap, TravSons, TravSons, TravSons, HDap,
-       NT2OTap, CWCap, HMap, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, CWCap, HMap, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, 1),
 
   NIF (N_cast, "N_cast", TravSons, TravSons, PrintCast, TravSons, TravSons, TravSons,
