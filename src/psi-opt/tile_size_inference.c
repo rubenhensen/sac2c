@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.18  2000/08/23 16:49:13  bs
+ * Some really big bugs fixed. Two new functions added: ComputeEnhAccess and
+ * ComputeVaddr. CreateEnhAccesslist and RecreateEnhAccesslist modified.
+ *
  * Revision 2.17  2000/07/05 15:21:23  bs
  * Unused expression changed into DBUG_PRINT.
  *
@@ -142,13 +146,14 @@ InsortByCLine (void *element, list_t *list)
         result->next = list;
     } else {
         next = (enh_access_t *)list->element;
-        if (elem->cline < next->cline) {
-            result = (list_t *)Malloc (sizeof (list_t));
-            result->element = element;
-            result->next = list;
-        } else if ((elem->cline == next->cline) && (elem->aline == next->aline)
-                   && (elem->cinst == next->cinst) && (elem->vaddr == next->vaddr)) {
-            free (elem);
+        if (elem->cline <= next->cline) {
+            if (elem->vaddr == next->vaddr) {
+                free (elem);
+            } else {
+                result = (list_t *)Malloc (sizeof (list_t));
+                result->element = element;
+                result->next = list;
+            }
         } else {
             result->next = InsortByCLine (element, list->next);
         }
@@ -209,10 +214,96 @@ MinDistance (list_t *acc_list, int mindist, node *arg_info)
 /*****************************************************************************
  *
  * function:
- *   list_t* RecreateEnhAccesslist(list_t* acc_list, node* arg_info)
+ *    int ComputeVaddr(shpseg* access, shpseg* shape, int dim, int data)
  *
  * description:
  *
+ *
+ *****************************************************************************/
+
+static int
+ComputeVaddr (shpseg *access, node *arg_info)
+{
+    int vaddr, j, dim, dType, *cacheparam;
+    shpseg *shape;
+
+    dim = INFO_TSI_ARRAYDIM (arg_info);
+    shape = INFO_TSI_ARRAYSHP (arg_info);
+    cacheparam = INFO_TSI_CACHEPARAM (arg_info);
+    dType = cacheparam[DTYPE_INDEX];
+    /*
+     *  computing virtual address [elements]:
+     */
+    vaddr = SHPSEG_SHAPE (access, (dim - 1));
+    for (j = dim - 2; j >= 0; j--) {
+        vaddr += (SHPSEG_SHAPE (shape, (j + 1))) * (SHPSEG_SHAPE (access, j));
+    }
+    /*
+     *  computing virtual address [byte]:
+     */
+    vaddr *= dType;
+
+    return (vaddr);
+}
+
+/*****************************************************************************
+ *
+ * function:
+ *   enh_access_t* ComputeEnhAccess(int vaddr, node arg_info)
+ *
+ * description:
+ *
+ *
+ *****************************************************************************/
+
+static enh_access_t *
+ComputeEnhAccess (int vaddr, node *arg_info)
+{
+    int dim, cSize, lSize, dType, *cacheparam;
+    int abscl, cline, cinst;
+    shpseg *shape;
+    enh_access_t *eaccess;
+
+    dim = INFO_TSI_ARRAYDIM (arg_info);
+    shape = INFO_TSI_ARRAYSHP (arg_info);
+    cacheparam = INFO_TSI_CACHEPARAM (arg_info);
+    cSize = cacheparam[CSIZE_INDEX];
+    lSize = cacheparam[LSIZE_INDEX];
+    dType = cacheparam[DTYPE_INDEX];
+
+    /*
+     *  computing absolute cache line, cache line and cache instance:
+     */
+    if ((vaddr < 0) && (lSize > dType)) {
+        abscl = (vaddr - lSize + dType) / lSize;
+        cline = (cSize / lSize) + (abscl % (cSize / lSize));
+        /* 2nd summand is negative ! */
+        cinst = (abscl + 1 - (cSize / lSize)) / (cSize / lSize);
+    } else {
+        abscl = vaddr / lSize;
+        cline = abscl % (cSize / lSize);
+        cinst = abscl / (cSize / lSize);
+    }
+    eaccess = (enh_access_t *)Malloc (sizeof (enh_access_t));
+    eaccess->vaddr = vaddr;
+    eaccess->cline = cline;
+    eaccess->cinst = cinst;
+
+    return (eaccess);
+}
+
+/*****************************************************************************
+ *
+ * function:
+ *   list_t* RecreateEnhAccesslist(list_t* acc_list, node* arg_info)
+ *
+ * description:
+ *   for all accesses a=[a_1,...,a_n] in access_list do:
+ *       b = [a_1,...,a_(n-2),a_(n-1)+1,an];
+ *       access_list = access_list + b;
+ *   For all accesses a=[a_1,...,a_n] in the access_list
+ *   where a_(n-1) <= b_(n-1) for all b=[b1,...,b_n] in access_list do:
+ *       access_list = access_list - b;
  *
  *****************************************************************************/
 
@@ -220,7 +311,7 @@ static list_t *
 RecreateEnhAccesslist (list_t *acc_list, node *arg_info)
 {
     int dim, cSize, lSize, dType, *cacheparam;
-    int vaddr, abscl, cline, cinst, aline, counter;
+    int vaddr, aline;
     list_t *new_list = NULL;
     list_t *help_list = NULL;
     shpseg *shape;
@@ -234,10 +325,8 @@ RecreateEnhAccesslist (list_t *acc_list, node *arg_info)
     cSize = cacheparam[CSIZE_INDEX];
     lSize = cacheparam[LSIZE_INDEX];
     dType = cacheparam[DTYPE_INDEX];
-    counter = 0;
 
     while (acc_list != NULL) {
-        counter++;
 
         help_list = acc_list;
         element = (enh_access_t *)acc_list->element;
@@ -245,31 +334,17 @@ RecreateEnhAccesslist (list_t *acc_list, node *arg_info)
          *  computing virtual address [byte]:
          */
         vaddr = element->vaddr + (dType * SHPSEG_SHAPE (shape, (dim - 1)));
-        /*
-         *  computing absolute cache line and cache line:
-         */
-        if (vaddr < 0) {
-            if (lSize > dType) {
-                abscl = (vaddr - lSize + dType) / lSize;
-            } else {
-                abscl = vaddr / lSize;
-            }
-            cline = (cSize / lSize) + (abscl % (cSize / lSize));
-        } else {
-            abscl = vaddr / lSize;
-            cline = abscl % (cSize / lSize);
-        }
-        /*
-         *  computing cache instance and array line:
-         */
-        cinst = abscl / (cSize / lSize);
-        aline = (element->aline);
 
-        eaccess = (enh_access_t *)Malloc (sizeof (enh_access_t));
-        eaccess->vaddr = vaddr;
-        eaccess->cline = cline;
-        eaccess->cinst = cinst;
-        eaccess->aline = aline + 1;
+        /*
+         *  computing array line:
+         */
+        aline = (element->aline) + 1;
+
+        /*
+         *  computing absolute cache line, cache line and cache instance:
+         */
+        eaccess = ComputeEnhAccess (vaddr, arg_info);
+        eaccess->aline = aline;
         new_list = InsortByCLine (eaccess, new_list);
 
         if (aline > INFO_TSI_MINLINE (arg_info)) {
@@ -297,24 +372,15 @@ RecreateEnhAccesslist (list_t *acc_list, node *arg_info)
 static list_t *
 CreateEnhAccesslist (access_t *accesses, node *arg_info)
 {
-    int dim, cSize, lSize, dType, *cacheparam;
-    int vaddr, abscl, cline, cinst, aline;
-    int minline, maxline, j, counter;
-    shpseg *shape;
+    int vaddr, aline, minline, maxline, dim;
     list_t *acc_list = NULL;
     enh_access_t *eaccess;
 
     DBUG_ENTER ("CreateEnhAccesslist");
 
-    dim = INFO_TSI_ARRAYDIM (arg_info);
-    shape = INFO_TSI_ARRAYSHP (arg_info);
-    cacheparam = INFO_TSI_CACHEPARAM (arg_info);
-    cSize = cacheparam[CSIZE_INDEX];
-    lSize = cacheparam[LSIZE_INDEX];
-    dType = cacheparam[DTYPE_INDEX];
     minline = INT_MAX;
     maxline = INT_MIN;
-    counter = 0;
+    dim = INFO_TSI_ARRAYDIM (arg_info);
 
     DBUG_ASSERT ((ACCESS_CLASS (accesses) == ACL_offset),
                  "Access without ACL_offset found !!");
@@ -323,43 +389,23 @@ CreateEnhAccesslist (access_t *accesses, node *arg_info)
 
         DBUG_ASSERT ((ACCESS_OFFSET (accesses) != NULL),
                      "Access with ACL_offset found, but no offset !!");
-        counter++;
-        /*
-         *  computing virtual address [elements]:
-         */
-        vaddr = SHPSEG_SHAPE (ACCESS_OFFSET (accesses), (dim - 1));
-        for (j = dim - 2; j >= 0; j--) {
-            vaddr += SHPSEG_SHAPE (shape, (SHPSEG_SHAPE (ACCESS_OFFSET (accesses), j)
-                                           * (j + 1)));
-        }
         /*
          *  computing virtual address [byte]:
          */
-        vaddr *= dType;
+        vaddr = ComputeVaddr (ACCESS_OFFSET (accesses), arg_info);
+
         /*
-         *  computing absolute cache line and cache line:
+         *  computing array line:
          */
-        if ((vaddr < 0) && (lSize > dType)) {
-            abscl = (vaddr - lSize + dType) / lSize;
-            cline = (cSize / lSize) + (abscl % (cSize / lSize));
-            /* 2nd summand is negative ! */
-        } else {
-            abscl = vaddr / lSize;
-            cline = abscl % (cSize / lSize);
-        }
-        /*
-         *  computing cache instance and array line:
-         */
-        cinst = abscl / (cSize / lSize);
         aline = SHPSEG_SHAPE (ACCESS_OFFSET (accesses), (dim - 2));
 
+        /*
+         *  computing absolute cache line, cache line and cache instance:
+         */
+        eaccess = ComputeEnhAccess (vaddr, arg_info);
+        eaccess->aline = aline;
         minline = MIN (aline, minline);
         maxline = MAX (aline, maxline);
-        eaccess = (enh_access_t *)Malloc (sizeof (enh_access_t));
-        eaccess->vaddr = vaddr;
-        eaccess->cline = cline;
-        eaccess->cinst = cinst;
-        eaccess->aline = aline;
         acc_list = InsortByCLine (eaccess, acc_list);
         accesses = ACCESS_NEXT (accesses);
     }
@@ -396,28 +442,23 @@ CalcTSInnerDim (list_t *acc_list, node *arg_info)
     shape = INFO_TSI_ARRAYSHP (arg_info);
     minline = INFO_TSI_MINLINE (arg_info);
     maxline = INFO_TSI_MAXLINE (arg_info);
-    maxsize = MIN (SHPSEG_SHAPE (shape, (dim - 1)), (dType * cSize / lSize));
+    maxsize = MIN ((SHPSEG_SHAPE (shape, (dim - 1))), (dType * cSize / lSize));
     tilesize = MinDistance (acc_list, maxsize, arg_info);
 
+    DBUG_EXECUTE ("PRINT_TSI", fprintf (stderr, "*** tilesizing ... %d\n", tilesize););
+
     for (i = 0; i < (maxline - minline); i++) {
-
-        DBUG_EXECUTE ("PRINT_TSI",
-                      fprintf (stderr, "*** tilesizing ... %d\n", tilesize););
-
         acc_list = RecreateEnhAccesslist (acc_list, arg_info);
-        tilesize = MinDistance (acc_list, tilesize, arg_info);
     }
+    tilesize = MinDistance (acc_list, maxsize, arg_info);
+
+    DBUG_EXECUTE ("PRINT_TSI", fprintf (stderr, "*** tilesizing ... %d\n", tilesize););
+
     if ((tilesize >= maxsize) || (tilesize <= lSize)) {
-        tilesize = 1;
-    } else if ((maxsize != tilesize) && ((maxsize - tilesize) < MINTILE)) {
-        if ((maxsize % lSize) == 0) {
-            tilesize = maxsize / 2;
-        } else {
-            tilesize = (maxsize + lSize - (maxsize % lSize)) / 2;
-        }
+        tilesize = SHPSEG_SHAPE (shape, (dim - 1));
     }
     if (tilesize < MINTILE) {
-        tilesize = 1;
+        tilesize = SHPSEG_SHAPE (shape, (dim - 1));
     }
 
     DBUG_EXECUTE ("PRINT_TSI", fprintf (stderr, "*** tilesize found: %d\n", tilesize););
@@ -438,24 +479,16 @@ CalcTSInnerDim (list_t *acc_list, node *arg_info)
 static int
 CalcTSOuterDims (list_t *acc_list, int index, node *arg_info)
 {
-    int tilesize, dim, maxsize;
-    shpseg *Tshape, *Ashape;
+    int size, dim;
+    shpseg *shape;
 
     DBUG_ENTER ("CalcTSOuterDims");
 
     dim = INFO_TSI_ARRAYDIM (arg_info);
-    /*
-     *  shape = INFO_TSI_ARRAYSHP(arg_info);
-     */
-    Ashape = INFO_TSI_ARRAYSHP (arg_info);
-    Tshape = INFO_TSI_TILESHP (arg_info);
-    maxsize = SHPSEG_SHAPE (Ashape, index);
-    tilesize = MIN (SHPSEG_SHAPE (Tshape, index + 1), maxsize);
-    if ((maxsize - tilesize) < MINTILE) {
-        tilesize = maxsize;
-    }
+    shape = INFO_TSI_ARRAYSHP (arg_info);
+    size = SHPSEG_SHAPE (shape, index);
 
-    DBUG_RETURN (tilesize);
+    DBUG_RETURN (size);
 }
 
 /*****************************************************************************
@@ -482,7 +515,7 @@ CalcTilesize (access_t *accesses, node *arg_info)
     tileshp = INFO_TSI_TILESHP (arg_info);
 
     if (dim < 2) {
-        tilesize = 0;
+        tilesize = SHPSEG_SHAPE (shape, (dim - 1));
         /*
          *  No tiling required !  No #pragma wlcomp allowed !
          */
@@ -503,7 +536,7 @@ CalcTilesize (access_t *accesses, node *arg_info)
                      ("Tiling without accesses ? Accesses exspected!"));
 
         tilesize = CalcTSInnerDim (acc_list, arg_info);
-        SHPSEG_SHAPE (tileshp, dim - 1) = tilesize;
+        SHPSEG_SHAPE (tileshp, (dim - 1)) = tilesize;
 
         for (i = dim - 2; i >= 0; i--) {
             SHPSEG_SHAPE (tileshp, i) = CalcTSOuterDims (acc_list, i, arg_info);
@@ -530,27 +563,42 @@ TSIMakePragmaWLComp (int tilesize, node *arg_info)
     node *pragma, *aelems;
     char *ap_name;
     int i, dim;
+    shpseg *shape;
 
     DBUG_ENTER ("TSIMakePragmaWLComp");
 
     dim = INFO_TSI_ARRAYDIM (arg_info);
+    shape = INFO_TSI_ARRAYSHP (arg_info);
     aelems = NULL;
 
     if (tilesize > 0) {
-        for (i = INFO_TSI_ARRAYDIM (arg_info) - 1; i >= 0; i--) {
-            tilesize = SHPSEG_SHAPE (INFO_TSI_TILESHP (arg_info), i);
-            aelems = MakeExprs (MakeNum (tilesize), aelems);
+        tilesize = SHPSEG_SHAPE (INFO_TSI_TILESHP (arg_info), (dim - 1));
+        if (tilesize < SHPSEG_SHAPE (shape, (dim - 1))) {
+            for (i = (dim - 1); i >= 0; i--) {
+                tilesize = SHPSEG_SHAPE (INFO_TSI_TILESHP (arg_info), i);
+                aelems = MakeExprs (MakeNum (tilesize), aelems);
+            }
+            pragma = MakePragma ();
+            ap_name = Malloc (6 * sizeof (char));
+            ap_name = strcpy (ap_name, "BvL0");
+            PRAGMA_WLCOMP_APS (pragma)
+              = MakeExprs (MakeAp (ap_name, NULL, MakeExprs (MakeArray (aelems), NULL)),
+                           NULL);
+        } else {
+            /*
+             *  No #pragma wlcomp required.
+             */
+            DBUG_EXECUTE ("PRINT_TSI",
+                          fprintf (stderr, "*** No #pragma wlcomp required.\n"););
+
+            pragma = NULL;
         }
-        pragma = MakePragma ();
-        ap_name = Malloc (6 * sizeof (char));
-        ap_name = strcpy (ap_name, "BvL0");
-        PRAGMA_WLCOMP_APS (pragma)
-          = MakeExprs (MakeAp (ap_name, NULL, MakeExprs (MakeArray (aelems), NULL)),
-                       NULL);
     } else {
         /*
-         *  No #pragma wlcomp required or allowed.
+         *  No #pragma wlcomp allowed.
          */
+        DBUG_EXECUTE ("PRINT_TSI", fprintf (stderr, "*** No #pragma wlcomp allowed!\n"););
+
         pragma = NULL;
     }
 
@@ -592,8 +640,8 @@ TileSizeInference (node *arg_node)
         arg_node = Trav (arg_node, arg_info);
     } else {
         /*
-         *   If there's no target specified, it's not possibile to infere a tilesize,
-         *   because the TSI have to know the cache parameters.
+         *   If there's no target specified, it's not possibile to infere a
+         *   tilesize, because the TSI have to know the cache parameters.
          */
         DBUG_PRINT ("PRINT_TSI", ("No target specified. No TSI possible!"));
     }
