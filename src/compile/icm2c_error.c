@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2002/09/09 14:24:53  dkr
+ * signature of ICMCompileTYPE_ERROR modified
+ *
  * Revision 1.1  2002/09/09 14:18:52  dkr
  * Initial revision
  *
@@ -10,28 +13,26 @@
 #include <ctype.h>
 
 #include "icm2c_basic.h"
-#include "icm2c_std.h"
+#include "icm2c_error.h"
 
 #include "dbug.h"
-#include "my_debug.h"
-#include "convert.h"
 #include "globals.h"
 #include "print.h"
 
 /******************************************************************************
  *
  * function:
- *   void ICMCompileTYPE_ERROR( int err_code, int cnt, char **args_any)
+ *   void ICMCompileTYPE_ERROR( int cnt, char **args_any)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   TYPE_ERROR( err_code, cnt, args_any_0 ... args_any_n)
+ *   TYPE_ERROR( cnt, args_any_0 ... args_any_n)
  *
  ******************************************************************************/
 
 void
-ICMCompileTYPE_ERROR (int err_code, int cnt, char **args_any)
+ICMCompileTYPE_ERROR (int cnt, char **args_any)
 {
     DBUG_ENTER ("ICMCompileTYPE_ERROR");
 
