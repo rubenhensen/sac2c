@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2002/08/13 15:16:11  sbs
+ * now, unary +, - are handles in the same way the old ugly
+ * type checker wants it to be ....
+ *
  * Revision 1.2  2002/08/13 14:40:14  sbs
  * HMNwithop added.
  *
@@ -392,7 +396,7 @@ HMap (node *arg_node, node *arg_info)
 {
     prf primfun;
     bool found;
-    node *res;
+    node *res, *exprs;
 
     DBUG_ENTER ("HMap");
 
@@ -406,6 +410,10 @@ HMap (node *arg_node, node *arg_info)
         found = Name2Prf (AP_NAME (arg_node), &primfun);
 
         if (found) {
+            exprs = AP_ARGS (arg_node);
+            if ((primfun == F_sub) && (CountExprs (exprs) == 1)) {
+                AP_ARGS (arg_node) = MakeExprs (MakeNum (0), exprs);
+            }
             res = MakePrf (primfun, AP_ARGS (arg_node));
             AP_ARGS (arg_node) = NULL;
             arg_node = FreeNode (arg_node);
