@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.147  2002/09/06 12:16:11  sah
+ * SETWL_IDS modfied. MakeSetWL modified.
+ *
  * Revision 3.146  2002/09/06 12:07:24  sbs
  * FUNDEF_IMPL added.
  *
@@ -2006,7 +2009,7 @@ extern node *MakeDot (int num);
  ***
  ***  permanent attributes:
  ***
- ***    ids*         IDS
+ ***    node*         IDS
  ***    node*        EXPR
  ***
  ***  remarks:
@@ -2015,10 +2018,10 @@ extern node *MakeDot (int num);
  ***    the syntax tree.
  ***/
 
-extern node *MakeSetWL (ids *index, node *expr);
+extern node *MakeSetWL (node *index, node *expr);
 
-#define SETWL_IDS(n) ((ids *)((n)->info2))
-#define SETWL_EXPR(n) (n->node[0])
+#define SETWL_IDS(n) (n->node[0])
+#define SETWL_EXPR(n) (n->node[1])
 
 /*--------------------------------------------------------------------------*/
 
