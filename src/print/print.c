@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.41  2001/04/03 09:16:27  dkr
+ * fixed a bug in PrintWLsegx()
+ *
  * Revision 3.40  2001/04/02 16:58:57  dkr
  * DoPrintAST modified: NWITH2_MT added
  *
@@ -3249,22 +3252,23 @@ node *
 PrintWLsegx (node *arg_node, node *arg_info)
 {
     node *seg;
-    int i = 0;
+    int id;
 
     DBUG_ENTER ("PrintWLsegx");
 
     seg = arg_node;
+    id = 0;
     while (seg != NULL) {
         INDENT;
         fprintf (outfile, "/**********%s segment %d: **********",
-                 (NODE_TYPE (arg_node) == N_WLseg) ? "" : " (var.)", i++);
+                 (NODE_TYPE (seg) == N_WLseg) ? "" : " (var.)", id++);
 
         fprintf (outfile, "\n");
         INDENT;
         fprintf (outfile, " * index domain: ");
-        WLSEGX_IDX_PRINT (outfile, arg_node, IDX_MIN);
+        WLSEGX_IDX_PRINT (outfile, seg, IDX_MIN);
         fprintf (outfile, " -> ");
-        WLSEGX_IDX_PRINT (outfile, arg_node, IDX_MAX);
+        WLSEGX_IDX_PRINT (outfile, seg, IDX_MAX);
         fprintf (outfile, "\n");
         INDENT;
 
