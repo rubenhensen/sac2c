@@ -1,5 +1,6 @@
 Makefile
 sac.h
+sac2crc
 sac2crc.LINUX_X86
 sac2crc.README
 sac2crc.SOLARIS_SPARC
