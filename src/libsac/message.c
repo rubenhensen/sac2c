@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.4  2000/05/24 09:32:35  cg
+ * Heap manager diagnostics are now printed after termination through
+ * runtime error.
+ *
  * Revision 2.3  2000/01/17 16:25:58  cg
  * The implementation of the SAC runtime message system is now
  * thread-safe !!
@@ -54,6 +58,8 @@
 #include <stdarg.h>
 #include <stdlib.h>
 
+#include "sac_heapmgr.h"
+
 #ifdef MT
 #define SAC_DO_MULTITHREAD 1
 #define SAC_DO_THREADS_STATIC 1
@@ -76,6 +82,13 @@ SAC_RuntimeError (char *format, ...)
     va_list arg_p;
 
     SAC_MT_ACQUIRE_LOCK (SAC_MT_output_lock);
+
+    SAC_HM_ShowDiagnostics ();
+    /*
+     * If the program is not linked with the diagnostic version of the private
+     * heap manager, a dummy function will be called here defined either in
+     * heapmgr/setup.c or in libsac/nophm.c.
+     */
 
     fprintf (stderr, "\n\n*** SAC runtime error\n");
     fprintf (stderr, "*** ");
