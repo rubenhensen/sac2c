@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.105  2002/07/24 10:07:16  sah
+ * changed printing of F_sel
+ *
  * Revision 3.104  2002/07/12 18:29:23  dkr
  * indentation of ICMs corrected
  *
@@ -2167,6 +2170,16 @@ PrintPrf (node *arg_node, node *arg_info)
 
     switch (PRF_PRF (arg_node)) {
     case F_sel:
+        /* F_sel is printed with special [] notation */
+        /* first the array argument is printed, then */
+        /* a leading [ followed by the selection     */
+        /* vector and finally the closing ].         */
+
+        Trav (PRF_ARG2 (arg_node), arg_info);
+        fprintf (outfile, "[");
+        Trav (PRF_ARG1 (arg_node), arg_info);
+        fprintf (outfile, "]");
+        break;
     case F_take:
     case F_drop:
     case F_shape:
