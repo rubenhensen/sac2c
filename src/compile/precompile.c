@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.8  1996/01/09 09:19:43  cg
+ * Revision 1.9  1996/01/22 18:36:37  cg
+ * new implementation of object initializations
+ *
+ * Revision 1.8  1996/01/09  09:19:43  cg
  * implemented pragma linkname for global objects
  *
  * Revision 1.7  1995/12/29  10:44:10  cg
@@ -40,6 +43,8 @@
 #include "internal_lib.h"
 #include "convert.h"
 #include "traverse.h"
+
+#include "refcount.h"
 
 #include "dbug.h"
 
@@ -154,23 +159,44 @@ RenameTypes (types *type)
  */
 
 node *
-InsertObjInits (node *fundef, node *objdef)
+InsertObjInits (node *block, node *objects)
 {
-    node *block;
+    ids *new_ids;
+    node *new_assigns, *first;
 
     DBUG_ENTER ("InsertObjInits");
 
-    block = FUNDEF_BODY (fundef);
+    new_assigns = MakeAssign (NULL, NULL);
+    first = new_assigns;
 
-    while (objdef != NULL) {
-        if (OBJDEF_INIT (objdef) != NULL) {
-            BLOCK_INSTR (block) = MakeAssign (OBJDEF_INIT (objdef), BLOCK_INSTR (block));
+    while (objects != NULL) {
+        new_ids = MakeIds (StringCopy (OBJDEF_NAME (objects)), NULL, ST_regular);
+        IDS_VARDEC (new_ids) = objects;
+        IDS_ATTRIB (new_ids) = ST_global;
+
+        if (IsArray (OBJDEF_TYPE (objects))) {
+            IDS_REFCNT (new_ids) = 1;
+        } else {
+            IDS_REFCNT (new_ids) = -1;
         }
 
-        objdef = OBJDEF_NEXT (objdef);
+        ASSIGN_NEXT (first) = MakeAssign (MakeLet (OBJDEF_EXPR (objects), new_ids), NULL);
+
+        first = ASSIGN_NEXT (first);
+
+        OBJDEF_EXPR (objects) = NULL;
+
+        objects = OBJDEF_NEXT (objects);
     }
 
-    DBUG_RETURN (fundef);
+    if (ASSIGN_NEXT (new_assigns) != NULL) {
+        ASSIGN_NEXT (first) = BLOCK_INSTR (block);
+        BLOCK_INSTR (block) = ASSIGN_NEXT (new_assigns);
+    }
+
+    FREE (new_assigns);
+
+    DBUG_RETURN (block);
 }
 
 /*
@@ -355,8 +381,6 @@ PRECtypedef (node *arg_node, node *arg_info)
 node *
 PRECobjdef (node *arg_node, node *arg_info)
 {
-    ids *new_ids;
-
     DBUG_ENTER ("PRECobjdef");
 
     DBUG_PRINT ("PREC", ("precompiling object %s", ItemName (arg_node)));
@@ -365,9 +389,8 @@ PRECobjdef (node *arg_node, node *arg_info)
         if (OBJDEF_LINKNAME (arg_node) != NULL) {
             FREE (OBJDEF_NAME (arg_node));
             OBJDEF_NAME (arg_node) = OBJDEF_LINKNAME (arg_node);
+            FREE (OBJDEF_PRAGMA (arg_node));
         }
-
-        OBJDEF_INIT (arg_node) = NULL;
     } else {
         OBJDEF_TYPE (arg_node) = RenameTypes (OBJDEF_TYPE (arg_node));
 
@@ -382,22 +405,6 @@ PRECobjdef (node *arg_node, node *arg_info)
         FREE (OBJDEF_VARNAME (arg_node));
 
         OBJDEF_MOD (arg_node) = NULL;
-
-        if (OBJDEF_EXPR (arg_node) != NULL) {
-            /*
-             *  Here, we know that OBJDEF_EXPR contains an application of a
-             *  generic object init fun. After objinit.c this is the case for
-             *  all imported objdefs in a SAC program.
-             */
-
-            new_ids = MakeIds (StringCopy (OBJDEF_NAME (arg_node)), NULL, ST_regular);
-            IDS_VARDEC (new_ids) = arg_node;
-            IDS_ATTRIB (new_ids) = ST_global;
-
-            OBJDEF_INIT (arg_node) = MakeLet (OBJDEF_EXPR (arg_node), new_ids);
-
-            OBJDEF_EXPR (arg_node) = NULL;
-        }
     }
 
     if (OBJDEF_NEXT (arg_node) != NULL) {
@@ -534,7 +541,8 @@ PRECfundef (node *arg_node, node *arg_info)
      */
 
     if (strcmp (FUNDEF_NAME (arg_node), "main") == 0) {
-        arg_node = InsertObjInits (arg_node, MODUL_OBJS (arg_info));
+        FUNDEF_BODY (arg_node)
+          = InsertObjInits (FUNDEF_BODY (arg_node), MODUL_OBJS (arg_info));
     } else {
         if (FUNDEF_MOD (arg_node) == NULL) {
             FUNDEF_STATUS (arg_node) = ST_Cfun;
