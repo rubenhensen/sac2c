@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.5  1999/05/12 08:41:11  sbs
+ * CopyIntVector and friends eliminated ; instead,
+ * CopyConstVec, AllocConstVec, and ModConstVec have been added.
+ * /.
+ *
  * Revision 2.4  1999/04/14 16:29:49  jhs
  * Adjustment for empty arrays.
  *
@@ -149,6 +154,7 @@
 #include "globals.h"
 #include "traverse.h"
 #include "types.h"
+#include "tree_basic.h"
 #include "tree_compound.h"
 
 #define MAX_SYSCALL 1000
@@ -216,6 +222,153 @@ Malloc (int size)
 
 /******************************************************************************
  *
+ * function:
+ *  void * CopyConstVec( simpletype vectype, int veclen, void * const_vec)
+ *
+ * description:
+ *   allocates a new vector of size veclen*sizeof(vectype) and copies all
+ *   elements from const_vec into it.
+ *
+ ******************************************************************************/
+
+void *
+CopyConstVec (simpletype vectype, int veclen, void *const_vec)
+{
+    int n;
+    void *res;
+
+    DBUG_ENTER ("CopyConstVec");
+    if (veclen > 0) {
+        switch (vectype) {
+        case T_bool:
+        case T_int:
+            n = veclen * sizeof (int);
+            res = Malloc (n);
+            res = memcpy (res, const_vec, n);
+            break;
+        case T_float:
+            n = veclen * sizeof (float);
+            res = Malloc (n);
+            res = memcpy (res, const_vec, n);
+            break;
+        case T_double:
+            n = veclen * sizeof (double);
+            res = Malloc (n);
+            res = memcpy (res, const_vec, n);
+            break;
+        case T_char:
+            n = veclen * sizeof (char);
+            res = Malloc (n);
+            res = memcpy (res, const_vec, n);
+            break;
+        default:
+            DBUG_ASSERT ((0), "CopyConstVec called with non-const-type!");
+        }
+    } else {
+        res = NULL;
+    }
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *  void * AllocConstVec( simpletype vectype, int veclen)
+ *
+ * description:
+ *   allocates a new vector of size veclen*sizeof(vectype).
+ *
+ ******************************************************************************/
+
+void *
+AllocConstVec (simpletype vectype, int veclen)
+{
+    void *res;
+
+    DBUG_ENTER ("AllocConstVec");
+    if (veclen > 0) {
+        switch (vectype) {
+        case T_bool:
+        case T_int:
+            res = Malloc (veclen * sizeof (int));
+            break;
+        case T_float:
+            res = Malloc (veclen * sizeof (float));
+            break;
+        case T_double:
+            res = Malloc (veclen * sizeof (double));
+            break;
+        case T_char:
+            res = Malloc (veclen * sizeof (int));
+            break;
+        default:
+            DBUG_ASSERT ((0), "CopyConstVec called with non-const-type!");
+        }
+    } else {
+        res = NULL;
+    }
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *  void * ModConstVec( simpletype vectype, void * const_vec, int idx,
+ *                                                           node * const_node)
+ *
+ * description:
+ *   modifies const_vec at position idx by inserting the value stored in
+ *   const_node. It is assumed (!!!) that simpletype is compatible to the const_node;
+ *   if this requires a cast (e.g. NODE_TYPE(const_node) == N_num && vectype==T_double)
+ *   it will be done implicitly.
+ *
+ ******************************************************************************/
+
+void *
+ModConstVec (simpletype vectype, void *const_vec, int idx, node *const_node)
+{
+    DBUG_ENTER ("ModConstVec");
+    switch (vectype) {
+    case T_bool:
+    case T_int:
+        DBUG_ASSERT ((NODE_TYPE (const_node) == N_num),
+                     "array element type does not match infered vectype!");
+        ((int *)const_vec)[idx] = NUM_VAL (const_node);
+        break;
+    case T_float:
+        DBUG_ASSERT (((NODE_TYPE (const_node) == N_num)
+                      || (NODE_TYPE (const_node) == N_float)),
+                     "array element type does not match infered vectype!");
+        if (NODE_TYPE (const_node) == N_num)
+            ((float *)const_vec)[idx] = (float)NUM_VAL (const_node);
+        else
+            ((float *)const_vec)[idx] = FLOAT_VAL (const_node);
+        break;
+    case T_double:
+        DBUG_ASSERT (((NODE_TYPE (const_node) == N_num)
+                      || (NODE_TYPE (const_node) == N_float)
+                      || (NODE_TYPE (const_node) == N_double)),
+                     "array element type does not match infered vectype!");
+        if (NODE_TYPE (const_node) == N_num)
+            ((double *)const_vec)[idx] = (double)NUM_VAL (const_node);
+        else if (NODE_TYPE (const_node) == N_float)
+            ((double *)const_vec)[idx] = FLOAT_VAL (const_node);
+        else
+            ((double *)const_vec)[idx] = DOUBLE_VAL (const_node);
+        break;
+    case T_char:
+        DBUG_ASSERT ((NODE_TYPE (const_node) == N_char),
+                     "array element type does not match infered vectype!");
+        ((char *)const_vec)[idx] = CHAR_VAL (const_node);
+        break;
+    default:
+        DBUG_ASSERT ((0), "CopyConstVec called with non-const-type!");
+    }
+    DBUG_RETURN (const_vec);
+}
+
+/******************************************************************************
+ *
  *  functionname  : StringCopy
  *  arguments     : 1) source string
  *  description   : allocates memory and returns a pointer to the copy of 1)
@@ -244,70 +397,6 @@ StringCopy (char *source)
         ret = NULL;
 
     DBUG_RETURN (ret);
-}
-
-/******************************************************************************
- *
- * function:
- *  int *CopyIntArray(int len, int* array)
- *
- * description:
- *   - this function is only used for copying (the first) len integers
- *     of a (large) integer array.
- *
- ******************************************************************************/
-
-int *
-CopyIntVector (int len, int *intvec)
-{
-    int i, *res;
-
-    DBUG_ENTER ("CopyIntVector");
-
-    if ((intvec == NULL) || (len <= 0))
-        res = NULL;
-    else {
-        res = MALLOC (len * sizeof (int));
-        for (i = 0; i < len; i++)
-            res[i] = intvec[i];
-    }
-    DBUG_RETURN (res);
-}
-
-float *
-CopyFloatVector (int len, float *floatvec)
-{
-    int i;
-    float *res;
-
-    DBUG_ENTER ("CopyFloatVector");
-
-    if ((floatvec == NULL) || (len <= 0))
-        res = NULL;
-    else {
-        res = MALLOC (len * sizeof (float));
-        for (i = 0; i < len; i++)
-            res[i] = floatvec[i];
-    }
-    DBUG_RETURN (res);
-}
-
-double *
-CopyDoubleVector (int len, double *doublevec)
-{
-    int i;
-    double *res;
-
-    DBUG_ENTER ("CopyDoubleVector");
-
-    if ((doublevec == NULL) || (len <= 0))
-        res = NULL;
-    else {
-        res = MALLOC (len * sizeof (double));
-        for (i = 0; i < len; i++)
-            res[i] = doublevec[i];
-    }
-    DBUG_RETURN (res);
 }
 
 /******************************************************************************

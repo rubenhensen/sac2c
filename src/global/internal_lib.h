@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.5  1999/05/12 08:41:11  sbs
+ * CopyIntVector and friends eliminated ; instead,
+ * CopyConstVec, AllocConstVec, and ModConstVec have been added.
+ * /.
+ *
  * Revision 2.4  1999/04/19 09:56:42  jhs
  * TRUE and FALSE added
  *
@@ -71,11 +76,15 @@
 
 #define _internal_lib_h
 
+#include "types.h"
+
 extern void *Malloc (int size);
 extern char *StringCopy (char *source);
-extern int *CopyIntVector (int len, int *intvec);
-extern float *CopyFloatVector (int len, float *floatvec);
-extern double *CopyDoubleVector (int len, double *doublevec);
+
+extern void *CopyConstVec (simpletype vectype, int veclen, void *const_vec);
+extern void *AllocConstVec (simpletype vectype, int veclen);
+extern void *ModConstVec (simpletype vectype, void *const_vec, int idx, node *const_node);
+
 extern int lcm (int x, int y);
 extern char *itoa (long number);
 extern void SystemCall (char *format, ...);
