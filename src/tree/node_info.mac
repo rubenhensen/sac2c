@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.65  2000/10/16 13:43:09  dkr
+ * PREC1block added
+ *
  * Revision 1.64  2000/10/16 11:18:55  dkr
  * PREC1assign added
  *
@@ -927,7 +930,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, FUN2LACblock, AIblock, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, CUDblock, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, APTblock,
+       TravSons, PREC1block, TravSons, APTblock,
 
        TravSons, TravSons, TravSons, TravSons, 2),
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.11  2000/10/16 13:43:33  dkr
+ * PREC1block added
+ *
  * Revision 2.10  2000/10/16 11:19:15  dkr
  * PREC1assign added
  *
@@ -93,6 +96,7 @@
 extern node *Precompile (node *syntax_tree);
 
 extern node *PREC1fundef (node *arg_node, node *arg_info);
+extern node *PREC1block (node *arg_node, node *arg_info);
 extern node *PREC1assign (node *arg_node, node *arg_info);
 extern node *PREC1let (node *arg_node, node *arg_info);
 
