@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.186  1998/08/10 17:45:32  cg
+ * Bug fixed in generation of ICM MT_ADJUST_SCHEDULER
+ *
  * Revision 1.185  1998/08/10 15:01:07  dkr
  * *** empty log message ***
  *
@@ -7068,8 +7071,7 @@ COMPWLblock (node *arg_node, node *arg_info)
             "MT_ADJUST_SCHEDULER",
             MakeExprs (MakeNum (WLBLOCK_DIM (arg_node)),
                        MakeExprs (MakeNum (WLSEG_DIMS (wl_seg)),
-                                  MakeExprs (MakeNum (WLSEG_IDX_MIN (
-                                               wl_seg)[WLBLOCK_DIM (arg_node)]),
+                                  MakeExprs (MakeNum (WLBLOCK_BOUND1 (wl_seg)),
                                              MakeExprs (MakeNum (
                                                           MAX (WLSEG_SV (
                                                                  wl_seg)[WLBLOCK_DIM (
@@ -7192,8 +7194,7 @@ COMPWLublock (node *arg_node, node *arg_info)
             "MT_ADJUST_SCHEDULER",
             MakeExprs (MakeNum (WLUBLOCK_DIM (arg_node)),
                        MakeExprs (MakeNum (WLSEG_DIMS (wl_seg)),
-                                  MakeExprs (MakeNum (WLSEG_IDX_MIN (
-                                               wl_seg)[WLUBLOCK_DIM (arg_node)]),
+                                  MakeExprs (MakeNum (WLUBLOCK_BOUND1 (wl_seg)),
                                              MakeExprs (MakeNum (
                                                           MAX (WLSEG_SV (
                                                                  wl_seg)[WLUBLOCK_DIM (
@@ -7341,8 +7342,7 @@ COMPWLstride (node *arg_node, node *arg_info)
             "MT_ADJUST_SCHEDULER",
             MakeExprs (MakeNum (WLSTRIDE_DIM (arg_node)),
                        MakeExprs (MakeNum (WLSEG_DIMS (wl_seg)),
-                                  MakeExprs (MakeNum (WLSEG_IDX_MIN (
-                                               wl_seg)[WLSTRIDE_DIM (arg_node)]),
+                                  MakeExprs (MakeNum (WLBLOCK_BOUND1 (wl_seg)),
                                              MakeExprs (MakeNum (
                                                           MAX (WLSEG_SV (
                                                                  wl_seg)[WLSTRIDE_DIM (
