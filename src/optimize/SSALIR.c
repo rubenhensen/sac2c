@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.25  2001/05/31 11:34:19  nmw
+ * additional conditional inserted in SSALIRassign to handle blocks with
+ * empty return assignment only
+ *
  * Revision 1.24  2001/05/30 14:00:55  nmw
  * fixed bug, when moving withloops down out of a do loop
  * loop independend inference moved to SSAInferLI.c
@@ -1023,6 +1027,7 @@ SSALIRassign (node *arg_node, node *arg_info)
      * next opt cycle as standalone expression without dependend preassigns.
      */
     if ((INFO_SSALIR_TOPBLOCK (arg_info) == TRUE)
+        && (NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_let)
         && (NODE_TYPE (ASSIGN_RHS (arg_node)) == N_Nwith) && (pre_assign != NULL)) {
         /* do not move this withloop in this opt cycle */
         AVIS_LIRMOVE (IDS_AVIS (LET_IDS (ASSIGN_INSTR (arg_node)))) = LIRMOVE_STAY;
@@ -1030,6 +1035,7 @@ SSALIRassign (node *arg_node, node *arg_info)
     }
 
     if ((INFO_SSALIR_MAXDEPTH (arg_info) < INFO_SSALIR_WITHDEPTH (arg_info))
+        && (NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_let)
         && (!((NODE_TYPE (ASSIGN_RHS (arg_node)) == N_Nwith) && (pre_assign != NULL)))) {
         wlir_move_up = INFO_SSALIR_MAXDEPTH (arg_info);
 
