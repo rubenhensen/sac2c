@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 2.4  1999/03/19 09:46:40  bs
+ * Every Call of MakeArray will also create a compact vector propagation.
+ *
  * Revision 2.3  1999/02/28 21:46:33  srs
  * added DBUG information and renamed FREE_INDEX to FREE_INDEX_INFO
  *
@@ -562,19 +565,19 @@ LinearTransformationsHelp (intern_gen *ig, int dim, prf prf, int arg_no, int con
     case F_mul:
         ig->l[dim] = (ig->l[dim] + constval - 1) / constval;
         ig->u[dim] = (ig->u[dim] - 1) / constval + 1;
-        if (ig->step)
+        if (ig->step) {
             DBUG_ASSERT (0, ("WL folding with transformed index variables "
                              "by multiplication and grids not supported right now."));
+        }
         break;
-
     case F_div:
         ig->l[dim] = ig->l[dim] * constval;
         ig->u[dim] = (ig->u[dim] - 1) * constval + constval - 1 + 1;
-        if (ig->step)
+        if (ig->step) {
             DBUG_ASSERT (0, ("WL folding with transformed index variables "
                              "by division  and grids not supported right now."));
+        }
         break;
-
     default:
         DBUG_ASSERT (0, ("Wrong transformation function"));
     }
@@ -1378,6 +1381,9 @@ Modarray2Genarray (node *wln, node *substwln)
         eltn = MakeExprs (MakeNum (TYPES_SHAPE (type, i)), eltn);
 
     shape = MakeArray (eltn);
+    ARRAY_VECTYPE (shape) = T_int;
+    ARRAY_VECLEN (shape) = dimensions;
+    ARRAY_INTVEC (shape) = Array2IntVec (eltn, NULL);
 
     shpseg = MakeShpseg (
       MakeNums (dimensions, NULL)); /* nums struct is freed inside MakeShpseg. */
@@ -1486,6 +1492,9 @@ WLFassign (node *arg_node, node *arg_info)
                         tmpn = MakeExprs (MakeNum (TYPES_SHAPE (idt, i - 1)),
                                           tmpn); /* Array elements */
                     tmpn = MakeArray (tmpn);     /* N_Array */
+                    ARRAY_VECTYPE (tmpn) = T_int;
+                    ARRAY_VECLEN (tmpn) = TYPES_DIM (idt);
+                    ARRAY_INTVEC (tmpn) = Array2IntVec (ARRAY_AELEMS (tmpn), NULL);
                     tmpn
                       = MakePrf (F_genarray, /* prf N_genarray */
                                  MakeExprs (tmpn,
@@ -1578,15 +1587,15 @@ WLFid (node *arg_node, node *arg_info)
            If yes, set INFO_WLI_FLAG. This is only a speed-up flag. If it is 0,
            we do not enter the wlfm_search_ref phase.
            We used ID_WL in case (1) here (see header of file) */
-        if (ID_WL (arg_node))             /* a WL is referenced (this is an array Id), */
+        if (ID_WL (arg_node)) {           /* a WL is referenced (this is an array Id), */
             if (INFO_WLI_WL (arg_info) && /* inside WL, */
                 INDEX (INFO_WLI_ASSIGN (arg_info)) && /* valid index transformation */
                 FoldDecision (INFO_WLI_WL (arg_info), ID_WL (arg_node)))
                 INFO_WLI_FLAG (arg_info) = 1;
             else
                 ID_WL (arg_node) = NULL;
+        }
         break;
-
     case wlfm_search_ref:
         /* conditional of N_do, N_while or N_cond. Do nothing. */
         break;
@@ -1646,6 +1655,9 @@ WLFid (node *arg_node, node *arg_info)
                 if (!NCODE_MASK (coden, 1 /* USE mask */) /* mask does not exist */
                     || NCODE_MASK (coden, 1)[IDS_VARNO (subst_wl_ids)]) {
                     arrayn = MakeArray (MakeExprs (MakeNum (count), NULL));
+                    ARRAY_VECTYPE (arrayn) = T_int;
+                    ARRAY_VECLEN (arrayn) = 1;
+                    ARRAY_INTVEC (arrayn) = Array2IntVec (ARRAY_AELEMS (arrayn), NULL);
                     shpseg = MakeShpseg (
                       MakeNums (1, NULL)); /* nums struct is freed inside MakeShpseg. */
                     ARRAY_TYPE (arrayn) = MakeType (T_int, 1, shpseg, NULL, NULL);

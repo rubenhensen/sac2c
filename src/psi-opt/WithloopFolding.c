@@ -1,6 +1,9 @@
 /*      $Id$
  *
  * $Log$
+ * Revision 2.3  1999/03/19 09:44:38  bs
+ * Every Call of MakeArray will also create a compact vector propagation.
+ *
  * Revision 2.2  1999/02/26 14:49:13  dkr
  * file moved from folder /optimize
  *
@@ -733,6 +736,9 @@ CreateArrayFromInternGen (int *source, int number, types *type)
     while (number)
         tmpn = MakeExprs (MakeNum (source[--number]), tmpn);
     arrayn = MakeArray (tmpn);
+    ARRAY_VECTYPE (arrayn) = T_int;
+    ARRAY_INTVEC (arrayn) = Array2IntVec (tmpn, NULL);
+    ARRAY_VECLEN (arrayn) = number;
     ARRAY_TYPE (arrayn) = DuplicateTypes (type, 1);
 
     DBUG_RETURN (arrayn);
@@ -1201,11 +1207,12 @@ MakeNullVec (int dim, simpletype type)
 {
     node *resultn, *tmpn;
     int i;
+    simpletype stype;
     shpseg *shpseg;
 
     DBUG_ENTER ("MakeNullVec");
 
-    if (0 == dim) {
+    if (dim == 0) {
         switch (type) {
         case T_int:
             resultn = MakeNum (0);
@@ -1249,6 +1256,9 @@ MakeNullVec (int dim, simpletype type)
             }
 
         resultn = MakeArray (tmpn);
+        ARRAY_VECTYPE (resultn) = type;
+        ARRAY_INTVEC (resultn) = Array2IntVec (tmpn, NULL);
+        ARRAY_VECLEN (resultn) = dim;
 
         shpseg = MakeShpseg (
           MakeNums (dim, NULL)); /* nums struct is freed inside MakeShpseg. */

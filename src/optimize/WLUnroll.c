@@ -1,6 +1,9 @@
 /*         $Id$
  *
  * $Log$
+ * Revision 2.2  1999/03/19 09:47:16  bs
+ * Every Call of MakeArray will also create a compact vector propagation.
+ *
  * Revision 2.1  1999/02/23 12:41:39  sacbase
  * new release made
  *
@@ -74,7 +77,7 @@
    Structure of functions in this file:
    ------------------------------------
 
-   CheckUnrollFold               CHeckUnrollGenarray               CheckUnrollModarray
+   CheckUnrollFold               CheckUnrollGenarray               CheckUnrollModarray
          |                                 |                                |
    DoUnrollFold                  DoUnrollGenarray                  DoUnrollModarray
                   \                        |                      /
@@ -308,6 +311,9 @@ ForEachElementHelp (int *l, int *u, int *s, int *w, int dim, int maxdim, node *a
             shpseg = MakeShpseg (MakeNums (maxdim, NULL));
             type = MakeType (T_int, 1, shpseg, NULL, NULL);
             ARRAY_TYPE (index) = type;
+            ARRAY_VECTYPE (index) = T_int;
+            ARRAY_VECLEN (index) = maxdim;
+            ARRAY_INTVEC (index) = Array2IntVec (ARRAY_AELEMS (index), NULL);
             assignn = opfun (assignn, index);
         } else
             assignn = ForEachElementHelp (l, u, s, w, dim + 1, maxdim, assignn);
