@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.90  2002/06/07 15:49:49  dkr
+ * printing of FUNDEF_ICM: \n added
+ *
  * Revision 3.89  2002/06/07 15:46:12  dkr
  * printing of TYPEDEF_ICM: semicolon is now part of the ICM itself
  *
@@ -1400,6 +1403,7 @@ PrintFundef (node *arg_node, node *arg_info)
                     PrintFunctionHeader (arg_node, arg_info);
                 } else {
                     /* print N_icm ND_FUN_DEC */
+                    fprintf (outfile, "\n");
                     Trav (FUNDEF_ICM (arg_node), arg_info);
                 }
 
