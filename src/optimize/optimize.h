@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.34  1995/07/24 11:48:52  asi
+ * Revision 1.35  1995/11/13 09:04:35  asi
+ * added breakae
+ *
+ * Revision 1.34  1995/07/24  11:48:52  asi
  * added array elimination
  *
  * Revision 1.33  1995/07/19  18:48:37  asi
@@ -124,6 +127,7 @@
  * Global variables defined in main.c
  */
 extern int optimize;
+extern int breakae;
 extern int sac_optimize;
 extern int opt_dcr;
 extern int opt_cf;
