@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.2  2001/04/30 12:19:43  nmw
+ * WLIap added
+ *
  * Revision 3.1  2000/11/20 18:01:42  sacbase
  * new release made
  *
@@ -36,6 +39,7 @@ extern node *WLIdo (node *, node *);
 extern node *WLIwhile (node *, node *);
 extern node *WLINwith (node *, node *);
 extern node *WLIlet (node *, node *);
+extern node *WLIap (node *, node *);
 
 extern node *WLINwithop (node *, node *);
 extern node *WLINpart (node *, node *);
