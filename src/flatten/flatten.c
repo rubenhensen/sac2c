@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.70  1998/03/17 14:19:32  cg
+ * filename is now reset to sacfilename in order to produce correct
+ * error messages
+ *
  * Revision 1.69  1998/03/17 09:51:25  srs
  * fixed bug in FltnCon.
  * Traverse neutral element only if not NULL.
@@ -271,6 +275,7 @@
 #include "access_macros.h"
 #include "free.h"
 #include "flatten.h"
+#include "globals.h"
 
 /* temporary local macro */
 #undef ID_MOD
@@ -529,6 +534,7 @@ Flatten (node *arg_node)
     node *info_node;
 
     DBUG_ENTER ("Flatten");
+
     stack = (local_stack *)Malloc (sizeof (local_stack) * STACK_SIZE);
     stack_limit = STACK_SIZE + stack;
     tos = stack;
@@ -539,6 +545,12 @@ Flatten (node *arg_node)
     info_node->info.cint = NORMAL;
     info_node->node[0] = NULL;
     with_level = 0;
+
+    filename = sacfilename;
+    /*
+     * for correct error messages only
+     */
+
     arg_node = Trav (arg_node, info_node);
     FREE (info_node);
     FREE (stack);
