@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.40  2002/06/06 12:41:23  dkr
+ * LiftIds() for TAGGED_ARRAYS added
+ *
  * Revision 3.39  2002/05/31 17:35:52  dkr
  * bug about TAGGED_ARRAYS fixed
  *
@@ -120,6 +123,12 @@
  *     parameter tags (in, out, inout, ...).
  *     The reorganized layout is stored in FUNDEF_ARGTAB and AP_ARGTAB
  *     respectively. Note, that the node information of the AST is left as is.
+ *   - Arguments of function applications are lifted if formal and actual types
+ *     differ:
+ *       b = fun( a);   =>   tmp_a = a; b = fun( tmp_a);
+ *     Return values of function applications are lifted if formal and actual
+ *     types differ:
+ *       b = fun( a);   =>   tmp_b = fun( a); b = tmp_b;
  *
  * Things done during third traversal:
  *   - Arguments of function applications are abstracted if needed:
@@ -159,6 +168,7 @@
 #include "adjust_ids.h"
 #include "typecheck.h"
 #include "refcount.h"
+#include "NameTuplesUtils.h"
 #include "map_cwrapper.h"
 #include "scheduling.h"
 #include "compile.h"
@@ -197,6 +207,212 @@
       && (PRAGMA_NUMPARAMS (FUNDEF_PRAGMA (n)) > (idx)))                                 \
        ? (FUNDEF_LINKSIGN (fundef))[idx]                                                 \
        : ((dots) ? (idx) : ((idx) + 1)))
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *AddVardec( node *fundef, types *type, char *name)
+ *
+ * Description:
+ *   Generates a new declaration, inserts it into the AST, updates the DFMbase
+ *   and returns the new declaration.
+ *
+ ******************************************************************************/
+
+static node *
+AddVardec (node *fundef, types *type, char *name)
+{
+    node *new_vardec;
+
+    DBUG_ENTER ("AddVardec");
+
+    /*
+     * generate new vardec node
+     */
+    new_vardec = MakeVardec (StringCopy (name), DupAllTypes (type), NULL);
+
+    /*
+     * insert new vardec into AST
+     */
+    VARDEC_NEXT (new_vardec) = FUNDEF_VARDEC (fundef);
+    FUNDEF_VARDEC (fundef) = new_vardec;
+
+    /*
+     * we must update FUNDEF_DFM_BASE!!
+     */
+    FUNDEF_DFM_BASE (fundef)
+      = DFMUpdateMaskBase (FUNDEF_DFM_BASE (fundef), FUNDEF_ARGS (fundef),
+                           FUNDEF_VARDEC (fundef));
+
+    DBUG_RETURN (new_vardec);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   void LiftIds( ids *ids_arg, node *fundef, node **new_assigns)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+static void
+LiftIds (ids *ids_arg, node *fundef, node **new_assigns)
+{
+    char *new_name;
+    node *new_vardec;
+    node *new_id;
+
+    DBUG_ENTER ("LiftIds");
+
+    /*
+     * first occur of the var of the LHS
+     */
+    DBUG_PRINT ("PREC", ("lifting return value (%s) of function application",
+                         IDS_NAME (ids_arg)));
+
+    new_name = TmpVarName (IDS_NAME (ids_arg));
+    /* Insert vardec for new var */
+    new_vardec = AddVardec (fundef, IDS_TYPE (ids_arg), new_name);
+
+    /*
+     * Abstract the found return value:
+     *   A:n = fun( ...);
+     *   ... A:n ... A:1 ...    // n references of A
+     * is transformed into
+     *   __A:1 = fun( ...);
+     *   A:n = __A:1;
+     *   ... A:n ... A:1 ...    // n references of A
+     */
+    new_id = MakeId (new_name, NULL, ST_regular);
+    ID_VARDEC (new_id) = new_vardec;
+    (*new_assigns) = MakeAssign (MakeLet (new_id, DupOneIds (ids_arg)), (*new_assigns));
+
+    IDS_NAME (ids_arg) = Free (IDS_NAME (ids_arg));
+    IDS_NAME (ids_arg) = StringCopy (new_name);
+    IDS_VARDEC (ids_arg) = new_vardec;
+
+    if (RC_IS_ACTIVE (IDS_REFCNT (ids_arg))) {
+        ID_REFCNT (new_id) = IDS_REFCNT (ids_arg) = 1;
+    } else if (RC_IS_INACTIVE (IDS_REFCNT (ids_arg))) {
+        ID_REFCNT (new_id) = IDS_REFCNT (ids_arg) = RC_INACTIVE;
+    } else {
+        DBUG_ASSERT ((0), "illegal RC value found!");
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   void LiftArg( node *arg_id, node *fundef, node **new_assigns)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+static void
+LiftArg (node *arg_id, node *fundef, node **new_assigns)
+{
+    char *new_name;
+    node *new_vardec;
+    ids *new_ids;
+
+    DBUG_ENTER ("LiftArg");
+
+    DBUG_ASSERT ((NODE_TYPE (arg_id) == N_id), "no N_id node found!");
+
+    /*
+     * first occur of the var of the LHS
+     */
+    DBUG_PRINT ("PREC",
+                ("lifting argument (%s) of function application", ID_NAME (arg_id)));
+
+    new_name = TmpVarName (ID_NAME (arg_id));
+    /* Insert vardec for new var */
+    new_vardec = AddVardec (fundef, ID_TYPE (arg_id), new_name);
+
+    /*
+     * Abstract the found argument:
+     *   ... = fun( A:n, ...);
+     * is transformed into
+     *   __A:1 = A:n;
+     *   ... = fun( __A:1, ...);
+     */
+    new_ids = MakeIds (new_name, NULL, ST_regular);
+    IDS_VARDEC (new_ids) = new_vardec;
+    (*new_assigns) = MakeAssign (MakeLet (DupNode (arg_id), new_ids), (*new_assigns));
+
+    ID_NAME (arg_id) = Free (ID_NAME (arg_id));
+    ID_NAME (arg_id) = StringCopy (new_name);
+    ID_VARDEC (arg_id) = new_vardec;
+
+    if (RC_IS_ACTIVE (ID_REFCNT (arg_id))) {
+        IDS_REFCNT (new_ids) = ID_REFCNT (arg_id) = 1;
+    } else if (RC_IS_INACTIVE (ID_REFCNT (arg_id))) {
+        IDS_REFCNT (new_ids) = ID_REFCNT (arg_id) = RC_INACTIVE;
+    } else {
+        DBUG_ASSERT ((0), "illegal RC value found!");
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   void ReplaceArg( node *arg_id, node *new_id)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+static void
+ReplaceArg (node *arg_id, node *new_id)
+{
+    DBUG_ENTER ("ReplaceArg");
+
+    DBUG_ASSERT ((NODE_TYPE (arg_id) == N_id), "no N_id node found!");
+
+    /*
+     * temporary var already generated
+     * -> just replace the current arg by 'new_id'
+     */
+    ID_NAME (arg_id) = Free (ID_NAME (arg_id));
+    ID_NAME (arg_id) = StringCopy (ID_NAME (new_id));
+    ID_VARDEC (arg_id) = ID_VARDEC (new_id);
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   void LiftOrReplaceArg( node *arg_id, node *fundef, node *new_id,
+ *                          node **new_assigns)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+static void
+LiftOrReplaceArg (node *arg_id, node *fundef, node *new_id, node **new_assigns)
+{
+    DBUG_ENTER ("LiftOrReplaceArg");
+
+    if (new_id == NULL) {
+        LiftArg (arg_id, fundef, new_assigns);
+    } else {
+        ReplaceArg (arg_id, new_id);
+    }
+
+    DBUG_VOID_RETURN;
+}
 
 /*
  *
@@ -1083,10 +1299,9 @@ InsertOut (argtab_t *argtab, node *fundef, int param_id, types *rettype, bool *d
             argtab->ptr_out[idx] = rettype;
             argtab->tag[idx] = argtag;
 
-            DBUG_PRINT ("PREC2",
-                        ("%s(): out-arg " F_PTR
-                         " (TYPE) inserted at position %d with tag %s.",
-                         FUNDEF_NAME (fundef), rettype, idx, mdb_argtag[argtag]));
+            DBUG_PRINT ("PREC", ("%s(): out-arg " F_PTR
+                                 " (TYPE) inserted at position %d with tag %s.",
+                                 FUNDEF_NAME (fundef), rettype, idx, mdb_argtag[argtag]));
         } else if (idx == 0) {
             ERROR (line, ("Pragma 'linksign' illegal"));
             CONT_ERROR (("Return value found twice"));
@@ -1194,10 +1409,9 @@ InsertOut (argtab_t *argtab, node *fundef, int param_id, types *rettype, bool *d
             argtab->ptr_out[idx] = rettype;
             argtab->tag[idx] = argtag;
 
-            DBUG_PRINT ("PREC2",
-                        ("%s(): out-arg " F_PTR
-                         " (TYPE) inserted at position %d with tag %s.",
-                         FUNDEF_NAME (fundef), rettype, idx, mdb_argtag[argtag]));
+            DBUG_PRINT ("PREC", ("%s(): out-arg " F_PTR
+                                 " (TYPE) inserted at position %d with tag %s.",
+                                 FUNDEF_NAME (fundef), rettype, idx, mdb_argtag[argtag]));
         } else if (idx == 0) {
             ERROR (line, ("Pragma 'linksign' illegal"));
             CONT_ERROR (("Return value found twice"));
@@ -1280,10 +1494,10 @@ InsertIn (argtab_t *argtab, node *fundef, int param_id, node *arg, bool *dots)
                 argtab->ptr_in[idx] = arg;
                 argtab->tag[idx] = argtag;
 
-                DBUG_PRINT ("PREC2", ("%s(): in-arg " F_PTR "," F_PTR
-                                      " (ARG,TYPE) inserted at position %d with tag %s.",
-                                      FUNDEF_NAME (fundef), arg, ARG_TYPE (arg), idx,
-                                      mdb_argtag[argtag]));
+                DBUG_PRINT ("PREC", ("%s(): in-arg " F_PTR "," F_PTR
+                                     " (ARG,TYPE) inserted at position %d with tag %s.",
+                                     FUNDEF_NAME (fundef), arg, ARG_TYPE (arg), idx,
+                                     mdb_argtag[argtag]));
             } else if ((argtab->tag[idx] == ATG_out_nodesc)
                        && (argtag == ATG_in_nodesc)) {
                 /*
@@ -1295,11 +1509,11 @@ InsertIn (argtab_t *argtab, node *fundef, int param_id, node *arg, bool *dots)
                     argtab->ptr_in[idx] = arg;
                     argtab->tag[idx] = argtag;
 
-                    DBUG_PRINT ("PREC2", ("%s(): in-arg " F_PTR "," F_PTR
-                                          " (ARG,TYPE) merged with out-arg " F_PTR
-                                          " (TYPE) at position %d with tag %s.",
-                                          FUNDEF_NAME (fundef), arg, ARG_TYPE (arg),
-                                          argtab->ptr_out[idx], idx, mdb_argtag[argtag]));
+                    DBUG_PRINT ("PREC", ("%s(): in-arg " F_PTR "," F_PTR
+                                         " (ARG,TYPE) merged with out-arg " F_PTR
+                                         " (TYPE) at position %d with tag %s.",
+                                         FUNDEF_NAME (fundef), arg, ARG_TYPE (arg),
+                                         argtab->ptr_out[idx], idx, mdb_argtag[argtag]));
                 } else {
                     ERROR (line, ("Pragma 'linksign' illegal"));
                     CONT_ERROR (("Mappings allowed exclusively between parameters"
@@ -1382,10 +1596,10 @@ InsertIn (argtab_t *argtab, node *fundef, int param_id, node *arg, bool *dots)
                 argtab->ptr_in[idx] = arg;
                 argtab->tag[idx] = argtag;
 
-                DBUG_PRINT ("PREC2", ("%s(): in-arg " F_PTR "," F_PTR
-                                      " (ARG,TYPE) inserted at position %d with tag %s.",
-                                      FUNDEF_NAME (fundef), arg, ARG_TYPE (arg), idx,
-                                      mdb_argtag[argtag]));
+                DBUG_PRINT ("PREC", ("%s(): in-arg " F_PTR "," F_PTR
+                                     " (ARG,TYPE) inserted at position %d with tag %s.",
+                                     FUNDEF_NAME (fundef), arg, ARG_TYPE (arg), idx,
+                                     mdb_argtag[argtag]));
             } else if ((argtab->tag[idx] == ATG_out) && (argtag == ATG_in)) {
                 /*
                  * merge 'argtab->ptr_out[idx]' and 'arg'
@@ -1395,11 +1609,11 @@ InsertIn (argtab_t *argtab, node *fundef, int param_id, node *arg, bool *dots)
                     argtab->ptr_in[idx] = arg;
                     argtab->tag[idx] = argtag;
 
-                    DBUG_PRINT ("PREC2", ("%s(): in-arg " F_PTR "," F_PTR
-                                          " (ARG,TYPE) merged with out-arg " F_PTR
-                                          " (TYPE) at position %d with tag %s.",
-                                          FUNDEF_NAME (fundef), arg, ARG_TYPE (arg),
-                                          argtab->ptr_out[idx], idx, mdb_argtag[argtag]));
+                    DBUG_PRINT ("PREC", ("%s(): in-arg " F_PTR "," F_PTR
+                                         " (ARG,TYPE) merged with out-arg " F_PTR
+                                         " (TYPE) at position %d with tag %s.",
+                                         FUNDEF_NAME (fundef), arg, ARG_TYPE (arg),
+                                         argtab->ptr_out[idx], idx, mdb_argtag[argtag]));
                 } else {
                     ERROR (line, ("Pragma 'linksign' illegal"));
                     CONT_ERROR (("Mappings allowed exclusively between parameters"
@@ -1479,6 +1693,8 @@ PREC2fundef (node *arg_node, node *arg_info)
             FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
         }
 
+        INFO_PREC_FUNDEF (arg_info) = arg_node;
+
         /*
          * all FUNDEF_ARGTABs are build now
          *  -> traverse body
@@ -1548,15 +1764,10 @@ MakeMergeAssigns (argtab_t *argtab, node *arg_info)
 {
     node *expr;
     int i;
-    node *pre_assigns = NULL;
-    node *post_assigns = NULL;
+    node *pre_assigns = INFO_PREC2_PRE_ASSIGNS (arg_info);
+    node *post_assigns = INFO_PREC2_POST_ASSIGNS (arg_info);
 
     DBUG_ENTER ("MakeMergeAssigns");
-
-    DBUG_ASSERT ((INFO_PREC2_PRE_ASSIGNS (arg_info) == NULL),
-                 "INFO_PREC2_PRE_ASSIGNS not NULL");
-    DBUG_ASSERT ((INFO_PREC2_POST_ASSIGNS (arg_info) == NULL),
-                 "INFO_PREC2_POST_ASSIGNS not NULL");
 
     DBUG_ASSERT ((argtab != NULL), "no argtab found!");
 
@@ -1602,8 +1813,8 @@ MakeMergeAssigns (argtab_t *argtab, node *arg_info)
 
                     post_assigns = MakeAssign (MakeLet (expr, out_ids), post_assigns);
 
-                    DBUG_PRINT ("PREC2", ("Assignments %s = to_unq(...) added",
-                                          IDS_NAME (((ids *)argtab->ptr_out[i]))));
+                    DBUG_PRINT ("PREC", ("Assignments %s = to_unq(...) added",
+                                         IDS_NAME (((ids *)argtab->ptr_out[i]))));
                 } else {
                     /*
                      * argument is no ID node or not refcounted
@@ -1619,8 +1830,8 @@ MakeMergeAssigns (argtab_t *argtab, node *arg_info)
                                                        DupOneIds (argtab->ptr_out[i])),
                                               pre_assigns);
 
-                    DBUG_PRINT ("PREC2", ("Assignment %s = ... added",
-                                          IDS_NAME (((ids *)argtab->ptr_out[i]))));
+                    DBUG_PRINT ("PREC", ("Assignment %s = ... added",
+                                         IDS_NAME (((ids *)argtab->ptr_out[i]))));
                 }
             }
         }
@@ -1650,8 +1861,9 @@ PREC2let (node *arg_node, node *arg_info)
     argtab_t *ap_argtab, *argtab;
     ids *ap_ids;
     types *rettypes;
-    node *ap_exprs, *args;
+    node *ap_exprs, *ap_id, *args;
     int idx, dots_off;
+    data_class_t actual_cls, formal_cls;
 
     DBUG_ENTER ("PREC2let");
 
@@ -1660,7 +1872,7 @@ PREC2let (node *arg_node, node *arg_info)
         fundef = AP_FUNDEF (ap);
         DBUG_ASSERT ((fundef != NULL), "AP_FUNDEF not found!");
 
-        DBUG_PRINT ("PREC2", ("Application of %s().", FUNDEF_NAME (fundef)));
+        DBUG_PRINT ("PREC", ("Application of %s().", FUNDEF_NAME (fundef)));
 
         ap_ids = LET_IDS (arg_node);
         rettypes = FUNDEF_TYPES (fundef);
@@ -1684,6 +1896,21 @@ PREC2let (node *arg_node, node *arg_info)
             ap_argtab->ptr_out[idx + dots_off] = ap_ids;
             ap_argtab->tag[idx + dots_off] = argtab->tag[idx];
 
+#ifdef TAGGED_ARRAYS
+            actual_cls = GetDataClassFromTypes (IDS_TYPE (ap_ids));
+            formal_cls = GetDataClassFromTypes (rettypes);
+            if ((FUNDEF_STATUS (fundef) != ST_Cfun) && (actual_cls != formal_cls)) {
+                DBUG_PRINT ("PREC",
+                            ("Return value with inappropriate data class found:"));
+                DBUG_PRINT ("PREC",
+                            ("   ... %s ... = %s( ... ), %s instead of %s",
+                             FUNDEF_NAME (fundef), IDS_NAME (ap_ids),
+                             nt_data_string[actual_cls], nt_data_string[formal_cls]));
+                LiftIds (ap_ids, INFO_PREC_FUNDEF (arg_info),
+                         &(INFO_PREC2_POST_ASSIGNS (arg_info)));
+            }
+#endif
+
             ap_ids = IDS_NEXT (ap_ids);
             if (TYPES_BASETYPE (rettypes) != T_dots) {
                 rettypes = TYPES_NEXT (rettypes);
@@ -1704,6 +1931,23 @@ PREC2let (node *arg_node, node *arg_info)
             DBUG_ASSERT ((idx < argtab->size), "illegal index");
             ap_argtab->ptr_in[idx + dots_off] = ap_exprs;
             ap_argtab->tag[idx + dots_off] = argtab->tag[idx];
+
+            ap_id = EXPRS_EXPR (ap_exprs);
+            DBUG_ASSERT ((NODE_TYPE (ap_id) == N_id), "no N_id node found!");
+
+#ifdef TAGGED_ARRAYS
+            actual_cls = GetDataClassFromTypes (ID_TYPE (ap_id));
+            formal_cls = GetDataClassFromTypes (ARG_TYPE (args));
+            if ((FUNDEF_STATUS (fundef) != ST_Cfun) && (actual_cls != formal_cls)) {
+                DBUG_PRINT ("PREC", ("Argument with inappropriate data class found:"));
+                DBUG_PRINT ("PREC",
+                            ("   ... = %s( ... %s ...), %s instead of %s",
+                             FUNDEF_NAME (fundef), ID_NAME (ap_id),
+                             nt_data_string[actual_cls], nt_data_string[formal_cls]));
+                LiftArg (ap_id, INFO_PREC_FUNDEF (arg_info),
+                         &(INFO_PREC2_PRE_ASSIGNS (arg_info)));
+            }
+#endif
 
             ap_exprs = EXPRS_NEXT (ap_exprs);
             if (ARG_BASETYPE (args) != T_dots) {
@@ -1732,45 +1976,6 @@ PREC2let (node *arg_node, node *arg_info)
  * THIRD TRAVERSAL
  *
  */
-
-/******************************************************************************
- *
- * Function:
- *   node *AddVardec( node *fundef, types *type, char *name)
- *
- * Description:
- *   Generates a new declaration, inserts it into the AST, updates the DFMbase
- *   and returns the new declaration.
- *
- ******************************************************************************/
-
-static node *
-AddVardec (node *fundef, types *type, char *name)
-{
-    node *new_vardec;
-
-    DBUG_ENTER ("AddVardec");
-
-    /*
-     * generate new vardec node
-     */
-    new_vardec = MakeVardec (StringCopy (name), DupAllTypes (type), NULL);
-
-    /*
-     * insert new vardec into AST
-     */
-    VARDEC_NEXT (new_vardec) = FUNDEF_VARDEC (fundef);
-    FUNDEF_VARDEC (fundef) = new_vardec;
-
-    /*
-     * we must update FUNDEF_DFM_BASE!!
-     */
-    FUNDEF_DFM_BASE (fundef)
-      = DFMUpdateMaskBase (FUNDEF_DFM_BASE (fundef), FUNDEF_ARGS (fundef),
-                           FUNDEF_VARDEC (fundef));
-
-    DBUG_RETURN (new_vardec);
-}
 
 /******************************************************************************
  *
@@ -1848,7 +2053,7 @@ PREC3fundef (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PREC3fundef");
 
-    INFO_PREC3_FUNDEF (arg_info) = arg_node;
+    INFO_PREC_FUNDEF (arg_info) = arg_node;
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
@@ -1880,7 +2085,7 @@ PREC3block (node *arg_node, node *arg_info)
 {
     node *old_lastassign;
 
-    DBUG_ENTER ("PREC3fundef");
+    DBUG_ENTER ("PREC3block");
 
     old_lastassign = INFO_PREC3_LASTASSIGN (arg_info);
 
@@ -1934,91 +2139,12 @@ PREC3assign (node *arg_node, node *arg_info)
 
 /******************************************************************************
  *
- * Function:
- *   node *LiftArg( ids *let_ids, node *arg, node *new_id, node *arg_info)
- *
- * Description:
- *
- *
- ******************************************************************************/
-
-static node *
-LiftArg (ids *let_ids, node *arg, node *new_id, node *arg_info)
-{
-    DBUG_ENTER ("LiftArg");
-
-    if (new_id == NULL) {
-        char *new_name;
-        node *new_vardec;
-        ids *new_ids;
-
-        /*
-         * first occur of the var of the LHS
-         */
-        DBUG_PRINT ("PREC3",
-                    ("abtracting LHS (%s) of function application", IDS_NAME (let_ids)));
-
-        new_name = TmpVarName (IDS_NAME (let_ids));
-        /* Insert vardec for new var */
-        new_vardec
-          = AddVardec (INFO_PREC3_FUNDEF (arg_info), IDS_TYPE (let_ids), new_name);
-
-        /*
-         * Abstract the found argument:
-         *   A:n = prf( A:1, ...);
-         *   ... A:n ... A:1 ...    // n references of 'A'
-         * is transformed into
-         *   __A:1 = A:1;
-         *   A:n = prf( __A:1, ...);
-         *   ... A:n ... A:1 ...
-         */
-        new_ids = MakeIds (new_name, NULL, ST_regular);
-        IDS_VARDEC (new_ids) = new_vardec;
-        INFO_PREC3_LASTASSIGN (arg_info)
-          = MakeAssign (MakeLet (EXPRS_EXPR (arg), new_ids),
-                        INFO_PREC3_LASTASSIGN (arg_info));
-
-        new_id = EXPRS_EXPR (arg) = MakeId_Copy (new_name);
-        ID_VARDEC (EXPRS_EXPR (arg)) = new_vardec;
-
-        if (RC_IS_ACTIVE (IDS_REFCNT (let_ids))) {
-            IDS_REFCNT (new_ids) = 1;
-            ID_REFCNT (EXPRS_EXPR (arg)) = 1;
-        } else if (RC_IS_INACTIVE (IDS_REFCNT (let_ids))) {
-            IDS_REFCNT (new_ids) = RC_INACTIVE;
-            ID_REFCNT (EXPRS_EXPR (arg)) = RC_INACTIVE;
-        } else {
-            DBUG_ASSERT ((0), "illegal RC value found!");
-        }
-    } else {
-        /*
-         * temporary var already generated
-         * -> just replace the current arg by 'new_id'
-         */
-        EXPRS_EXPR (arg) = FreeTree (EXPRS_EXPR (arg));
-        EXPRS_EXPR (arg) = MakeId_Copy (ID_NAME (new_id));
-        ID_VARDEC (EXPRS_EXPR (arg)) = ID_VARDEC (new_id);
-
-        if (RC_IS_ACTIVE (IDS_REFCNT (let_ids))) {
-            ID_REFCNT (EXPRS_EXPR (arg)) = 1;
-        } else if (RC_IS_INACTIVE (IDS_REFCNT (let_ids))) {
-            ID_REFCNT (EXPRS_EXPR (arg)) = RC_INACTIVE;
-        } else {
-            DBUG_ASSERT ((0), "illegal RC value found!");
-        }
-    }
-
-    DBUG_RETURN (new_id);
-}
-
-/******************************************************************************
- *
  * function:
  *   node *PREC3let( node *arg_node, node *arg_info)
  *
  * description:
  *   For each id from the LHS:
- *     If we have   a ... = fun( ... a ... a ... )   ,
+ *     If we have   ... a ... = fun( ... a ... a ... )   ,
  *     were   fun   is a user-defined function
  *       and   a   is a regular argument representing a refcounted data object,
  *       and the refcounting is *not* done by the function itself,
@@ -2065,7 +2191,9 @@ PREC3let (node *arg_node, node *arg_info)
                     /* 2nd argument of F_reshape need not to be flattened! */
                     ((PRF_PRF (let_expr) != F_reshape) || (arg_idx != 1))
                     && (!strcmp (ID_NAME (arg_id), IDS_NAME (let_ids)))) {
-                    new_id = LiftArg (let_ids, arg, new_id, arg_info);
+                    LiftOrReplaceArg (EXPRS_EXPR (arg), INFO_PREC_FUNDEF (arg_info),
+                                      new_id, &(INFO_PREC3_LASTASSIGN (arg_info)));
+                    new_id = EXPRS_EXPR (arg);
                 }
 
                 arg = EXPRS_NEXT (arg);
@@ -2106,7 +2234,10 @@ PREC3let (node *arg_node, node *arg_info)
                                          "illegal tag found!");
 
                             if (argtab->tag[arg_idx] == ATG_in_nodesc) {
-                                new_id = LiftArg (let_ids, arg, new_id, arg_info);
+                                LiftOrReplaceArg (arg_id, INFO_PREC_FUNDEF (arg_info),
+                                                  new_id,
+                                                  &(INFO_PREC3_LASTASSIGN (arg_info)));
+                                new_id = arg_id;
                             }
 #else
                             DBUG_ASSERT ((argtab->tag[arg_idx] == ATG_in)
@@ -2114,7 +2245,10 @@ PREC3let (node *arg_node, node *arg_info)
                                          "illegal tag found!");
 
                             if (argtab->tag[arg_idx] == ATG_in) {
-                                new_id = LiftArg (let_ids, arg, new_id, arg_info);
+                                LiftOrReplaceArg (arg_id, INFO_PREC_FUNDEF (arg_info),
+                                                  new_id,
+                                                  &(INFO_PREC3_LASTASSIGN (arg_info)));
+                                new_id = arg_id;
                             }
 #endif
                         }
