@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.191  1998/04/17 11:02:06  srs
+ * changec N_Ncode output of PrintNodeTree()
+ *
  * Revision 1.190  1998/04/16 22:50:11  dkr
  * changed PrintNwith2:
  *   NWITH2_SEGS can have the value NULL
@@ -2865,13 +2868,13 @@ PrintNodeTree (node *node)
             break;
         case N_Npart:
             if (NPART_CODE (node) != NULL) {
-                fprintf (outfile, "(code used: %d)\n", NCODE_USED (NPART_CODE (node)));
+                fprintf (outfile, "(code used: 0x%p)\n", NPART_CODE (node));
             } else {
                 fprintf (outfile, "(no code)\n");
             }
             break;
         case N_Ncode:
-            fprintf (outfile, "(used: %d)\n", NCODE_USED (node));
+            fprintf (outfile, "(adr: 0x%p, used: %d)\n", node, NCODE_USED (node));
             break;
         case N_WLblock:
             fprintf (outfile, "(%d->%d block%d[%d] %d)\n", WLBLOCK_BOUND1 (node),
