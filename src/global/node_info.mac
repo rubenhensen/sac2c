@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.86  1995/07/12 15:21:56  asi
- * added UNSid and UNRid
+ * Revision 1.87  1995/07/24 11:45:53  asi
+ * added OPTmodul, AEfundef, AEassign and AEprf for ae_tab (array elimination)
  *
+;; Revision 1.86  1995/07/12  15:21:56  asi
+;; added UNSid and UNRid
+;;
 ;; Revision 1.85  1995/07/07  14:58:38  asi
 ;; added loop unswitching - basic version
 ;;
@@ -281,7 +284,7 @@
  *                             opt_tab       dead_tab        wr_tab      free_tab
  *                              cf_tab       refcnt_tab    comp_tab       lir_tab
  *                             dup_tab       inline_tab    unroll_tab   lir_mov_tab
- *                             idx_tab       unswitch_tab  fusion_tab   ----------
+ *                             idx_tab       unswitch_tab  fusion_tab      ae_tab
  */
 
 NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun, DummyFun,
@@ -310,7 +313,7 @@ NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun),
   NIF (N_modul, "N_modul", IMmodul, FltnModul, PrintModul, DummyFun, OPTmodul, OPTmodul,
        OPTmodul, FreeModul, OPTmodul, DummyFun, DummyFun, OPTmodul, OPTmodul, INLmodul,
-       OPTmodul, DummyFun, IdxModul, OPTmodul, DummyFun, DummyFun),
+       OPTmodul, DummyFun, IdxModul, OPTmodul, DummyFun, OPTmodul),
   NIF (N_moddec, "N_moddec", DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun),
@@ -326,7 +329,7 @@ NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun,
   NIF (N_fundef, "N_fundef", DummyFun, FltnFundef, PrintFundef, TCfundef, OPTfundef,
        DEADfundef, WRfundef, FreeInfoType, CFfundef, RCfundef, CompFundef, LIRfundef,
        DupFundef, INLfundef, UNRfundef, DummyFun, DummyFun2, UNSfundef, DummyFun,
-       DummyFun),
+       AEfundef),
   NIF (N_vardec, "N_vardec", DummyFun, DummyFun, PrintVardec, DummyFun, OPTvardec,
        DEADvardec, DummyFun, FreeInfoType, DummyFun, DummyFun, CompVardec, DummyFun,
        DupDec, INLvar, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun),
@@ -339,7 +342,7 @@ NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun,
   NIF (N_assign, "N_assign", DummyFun, FltnAssign, PrintAssign, TCassign, OPTassign,
        DEADassign, DummyFun, FreeNoInfo, CFassign, RCassign, CompAssign, LIRassign,
        DupAssign, INLassign, UNRassign, LIRMassign, IdxAssign, UNSassign, DummyFun,
-       DummyFun),
+       AEassign),
   NIF (N_return, "N_return", DummyFun, FltnReturn, PrintReturn, TCreturn, DummyFun,
        DummyFun, DummyFun, FreeNoInfo, DummyFun, DummyFun, CompReturn, DummyFun, DupChain,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun),
@@ -387,7 +390,7 @@ NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun),
   NIF (N_prf, "N_prf", DummyFun, DummyFun, PrintPrf, DummyFun, DummyFun, DummyFun,
        DummyFun, FreeNoInfo, CFprf, DummyFun, CompPrf, DummyFun, DupPrf, DummyFun,
-       DummyFun, DummyFun, IdxPrf, DummyFun, DummyFun, DummyFun),
+       DummyFun, DummyFun, IdxPrf, DummyFun, DummyFun, AEprf),
   NIF (N_ap, "N_ap", DummyFun, FltnAp, PrintAp, DummyFun, DummyFun, DummyFun, DummyFun,
        FreeInfoId, CFap, DummyFun, CompAp, DummyFun, DupFun, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun),
