@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.110  2004/07/26 18:44:58  ktr
+ * Completed implementation if MakeGetDim.
+ *
  * Revision 3.109  2004/07/25 20:36:46  ktr
  * turned off various parts if emm is turned on.
  *
@@ -1384,11 +1387,29 @@ MakeGetDimIcm (node *arg_node)
         get_dim = DupTree (arg_node);
         break;
 
+    case N_prf:
+        switch (PRF_PRF (arg_node)) {
+        case F_dim:
+            get_dim = MakeDimArg (PRF_ARG1 (arg_node), FALSE);
+            break;
+
+        case F_add_SxS:
+        case F_sub_SxS:
+            get_dim = MakeIcm3 ("ND_BINOP", MakeId_Copy (prf_symbol[PRF_PRF (arg_node)]),
+                                MakeGetDimIcm (PRF_ARG1 (arg_node)),
+                                MakeGetDimIcm (PRF_ARG2 (arg_node)));
+            break;
+        default:
+            DBUG_ASSERT ((0), "Unrecognized dim descriptor");
+            break;
+        }
+        break;
     default:
         DBUG_ASSERT ((0), "Unrecognized dim descriptor");
         break;
     }
 
+    Print (get_dim);
     DBUG_RETURN (get_dim);
 }
 
