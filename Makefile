@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.125  2004/10/22 14:12:43  ktr
+# Added src/refcount/reuseelimination.
+#
 # Revision 3.124  2004/10/22 09:01:55  sah
 # added annotatenamespace traversal.
 #
@@ -399,7 +402,7 @@ REFCOUNT= src/refcount/allocation.o src/refcount/rcopt.o \
           src/refcount/rcphase.o src/refcount/filterrc.o \
           src/refcount/alloc.o src/refcount/refcounting.o \
           src/refcount/reuse.o src/refcount/aliasanalysis.o \
-          src/refcount/staticreuse.o
+          src/refcount/staticreuse.o src/refcount/reuseelimination.o
 REFCOUNT_OLD=
 
 CONCURRENT=
