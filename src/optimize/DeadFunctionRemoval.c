@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2004/08/04 17:06:28  ktr
+ * In EMM, Functions can be dead although they are referenced by a fold-withop
+ *
  * Revision 3.9  2004/07/18 19:54:54  sah
  * switch to new INFO structure
  * PHASE I
@@ -335,8 +338,10 @@ DFRwithop (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("DFRwithop");
 
-    if (NWITHOP_TYPE (arg_node) == WO_foldfun) {
-        NWITHOP_FUNDEF (arg_node) = Trav (NWITHOP_FUNDEF (arg_node), arg_info);
+    if (!emm) {
+        if (NWITHOP_TYPE (arg_node) == WO_foldfun) {
+            NWITHOP_FUNDEF (arg_node) = Trav (NWITHOP_FUNDEF (arg_node), arg_info);
+        }
     }
 
     if (NWITHOP_NEXT (arg_node) != NULL) {
