@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2001/04/02 16:03:42  dkr
+ * some macros moved to wl_bounds.h
+ *
  * Revision 3.6  2001/03/29 01:34:52  dkr
  * PRINT_VARIDX_VECT added
  *
@@ -47,17 +50,6 @@
 
 #ifndef _sac_wltransform_h
 #define _sac_wltransform_h
-
-/*
- * symbolic bounds for strides/grids and IDX_MIN, IDX_MAX
- */
-#define IDX_SHAPE (-1) /* equals the shape */
-#define IDX_OTHER (-2) /* other */
-
-#define IDX_IS_NUM(idx) ((idx) >= 0)
-
-#define GET_SHAPE_IDX(shape, dim)                                                        \
-    (((shape) != NULL) ? SHPSEG_SHAPE ((shape), (dim)) : IDX_SHAPE)
 
 extern node *WlTransform (node *syntax_tree);
 
