@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.52  1998/03/24 13:47:20  cg
+ * Bug fixed in check_boundary code. A local variable 'idx' was defined
+ * for this purpose which may conflict with user-defined variable names.
+ * Variable renamed to __idx.
+ *
  * Revision 1.51  1998/03/17 14:21:58  cg
  * file src/compile/trace.h removed.
  * definition of symbolic values of global variable traceflag moved to globals.h
@@ -189,6 +194,7 @@
 #include "convert.h"
 #include "globals.h"
 #include "icm2c.h"
+#include "gen_startup_code.h"
 
 #define RetWithScal(res, val)                                                            \
     INDENT;                                                                              \
@@ -842,8 +848,8 @@ ScanArglist (arg, 2 * narg, i++;
              sep = 0, fprintf (outfile, "ND_KS_RET_OUT_RC(%s);\n", arg[i]); i++; INDENT;
              sep = 1, fprintf (outfile, "ND_KS_RET_INOUT_RC(%s);\n", arg[i]); i++; INDENT;
              sep = 1, "");
-if ((strcmp (FUNDEF_NAME (INFO_FUNDEF (arg_info)), "main") == 0)) {
-    fprintf (outfile, "PROFILE_PRINT();\n");
+if (strcmp (FUNDEF_NAME (INFO_FUNDEF (arg_info)), "main") == 0) {
+    GSCPrintMainEnd ();
     INDENT;
 }
 if (0 != strcmp (retname, ""))
@@ -1218,20 +1224,20 @@ DBUG_VOID_RETURN;
 
 INDENT;
 if (check_boundary) {
-    fprintf (outfile, "{ int idx=");
+    fprintf (outfile, "{ int __idx=");
     VectToOffset (dim, AccessConst (vi, i), dim, a);
     fprintf (outfile, ";\n");
     INDENT;
-    fprintf (outfile, "if((0 <= idx) && (idx < ND_A_SIZE(%s)) )\n", a);
+    fprintf (outfile, "if((0 <= __idx) && (__idx < ND_A_SIZE(%s)) )\n", a);
     indent++;
     INDENT;
-    fprintf (outfile, "%s=ND_A_FIELD(%s)[idx];\n", res, a);
+    fprintf (outfile, "%s=ND_A_FIELD(%s)[__idx];\n", res, a);
     indent--;
     INDENT;
     fprintf (outfile, "else\n");
     indent++;
     INDENT;
-    fprintf (outfile, "OUT_OF_BOUND(%d, \"psi\", ND_A_SIZE(%s), idx);\n", line, a);
+    fprintf (outfile, "OUT_OF_BOUND(%d, \"psi\", ND_A_SIZE(%s), __idx);\n", line, a);
     indent--;
     INDENT;
     fprintf (outfile, "}\n");
@@ -1268,20 +1274,20 @@ DBUG_VOID_RETURN;
 
 INDENT;
 if (check_boundary) {
-    fprintf (outfile, "{ int idx=");
+    fprintf (outfile, "{ int __idx=");
     VectToOffset (dim, AccessVect (v, i), dim, a);
     fprintf (outfile, ";\n");
     INDENT;
-    fprintf (outfile, "if((0 <= idx)&&(idx < ND_A_SIZE(%s)) )\n", a);
+    fprintf (outfile, "if ((0 <= __idx) && (__idx < ND_A_SIZE(%s)) )\n", a);
     indent++;
     INDENT;
-    fprintf (outfile, "%s=ND_A_FIELD(%s)[idx];\n", res, a);
+    fprintf (outfile, "%s=ND_A_FIELD(%s)[__idx];\n", res, a);
     indent--;
     INDENT;
     fprintf (outfile, "else\n");
     indent++;
     INDENT;
-    fprintf (outfile, "OUT_OF_BOUND(%d, \"psi\", ND_A_SIZE(%s), idx);\n", line, a);
+    fprintf (outfile, "OUT_OF_BOUND(%d, \"psi\", ND_A_SIZE(%s), __idx);\n", line, a);
     indent--;
     INDENT;
     fprintf (outfile, "}\n");
