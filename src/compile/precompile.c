@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.91  2004/09/23 16:45:41  ktr
+ * CEXPR is no longer renamed to the accumulation variable in PREC3code as
+ * the MT compilation scheme requires it to have the name of tmp_var
+ *
  * Revision 3.90  2004/09/22 18:42:00  ktr
  * Small bugfix.
  *
@@ -2556,18 +2560,17 @@ PREC3code (node *arg_node, info *arg_info)
     }
 
     if (emm) {
-        /* if ExplicitAccumulate was applied
-         * cexprs of fold operators have to be renamed to the
-         * name of the corresponding return values
-         * A,B = with(iv)
-         *        gen:{res1 = ...;
-         *             res2 = ...;
-         *            }:res1,res2
-         *       fold( op1, n1)
-         *            ...
+        /*
+         * if explicit accumulation was applied, the accumulation results
+         * must assigned back to the accumulation variable
          *
-         *     rename cexpr: res1 -> A
-         *     add assign  : A = res1
+         * A,B = with(iv)
+         *         gen:{ res1 = ...;
+         *               res2 = ...;
+         *               A    = res1   <---!!!
+         *             } : res1, res2
+         *       fold( op1, n1)
+         *       ...
          *
          */
 
@@ -2587,9 +2590,6 @@ PREC3code (node *arg_node, info *arg_info)
                 if (IDS_VARDEC (_ids) != ID_VARDEC (cexpr)) {
                     tmp = MakeAssign (MakeLet (DupNode (cexpr), DupOneIds (_ids)), NULL);
                     nassign = AppendAssign (nassign, tmp);
-
-                    EXPRS_EXPR (cexprs) = FreeNode (EXPRS_EXPR (cexprs));
-                    EXPRS_EXPR (cexprs) = DupIds_Id (_ids);
                 }
             }
 
