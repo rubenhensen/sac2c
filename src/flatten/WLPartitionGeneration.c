@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2004/08/03 11:15:02  khf
+ * corrected size of array_shape
+ *
  * Revision 1.10  2004/08/03 09:05:36  khf
  * some code brushing done
  * call of MakeNCode adjusted, corrected type of new struct constants
@@ -794,6 +797,10 @@ CreateFullPartition (node *wln, info *arg_info)
 
     do_create = TRUE;
 
+    /* get shape of the index vector (generator) */
+    gen_shape = IDS_SHAPE (NWITH_VEC (wln), 0);
+    DBUG_ASSERT ((gen_shape > 0), "shape of index vector has to be > 0!");
+
     /*
      * allocate "array_shape"
      */
@@ -805,16 +812,16 @@ CreateFullPartition (node *wln, info *arg_info)
 
         if (dim > 0) {
             tmp1 = NULL;
-            for (i = (dim - 1); i >= 0; i--) {
+            for (i = (gen_shape - 1); i >= 0; i--) {
                 tmp1 = MakeExprs (MakeNum (SHPSEG_SHAPE (oshpseg, i)), tmp1);
             }
             array_shape = MakeFlatArray (tmp1);
-            nshpseg = MakeShpseg (MakeNums (dim, NULL));
+            nshpseg = MakeShpseg (MakeNums (gen_shape, NULL));
             ARRAY_TYPE (array_shape) = MakeTypes (T_int, 1, nshpseg, NULL, NULL);
 
             ARRAY_ISCONST (array_shape) = TRUE;
             ARRAY_VECTYPE (array_shape) = TYPES_BASETYPE (ARRAY_TYPE (array_shape));
-            ARRAY_VECLEN (array_shape) = dim;
+            ARRAY_VECLEN (array_shape) = gen_shape;
             ARRAY_CONSTVEC (array_shape)
               = Array2Vec (TYPES_BASETYPE (ARRAY_TYPE (array_shape)),
                            ARRAY_AELEMS (array_shape), NULL);
@@ -828,7 +835,7 @@ CreateFullPartition (node *wln, info *arg_info)
              */
             nassigns = NULL;
 
-            for (i = (abs (dim) - 3); i >= 0; i--) {
+            for (i = (gen_shape - 1); i >= 0; i--) {
                 _ids = NewIds (NWITH_ARRAY (wln), INFO_WLPG_FUNDEF (arg_info));
 
                 /* index position for selection */
@@ -872,8 +879,6 @@ CreateFullPartition (node *wln, info *arg_info)
         /* determine type of expr in the operator (result of body) */
         type = ID_TYPE (NWITH_CEXPR (wln));
 
-        /* get shape of the index vector (generator) */
-        gen_shape = IDS_SHAPE (NWITH_VEC (wln), 0);
         nshpseg = MakeShpseg (MakeNums (gen_shape, NULL));
         array_null = CreateEntryFlatArray (0, gen_shape,
                                            MakeTypes (T_int, 1, nshpseg, NULL, NULL));
