@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2001/03/27 11:51:17  ben
+ * MT_SCHEDULER_Afs_... added
+ *
  * Revision 3.15  2001/03/22 17:38:48  ben
  * Scheduler Self added
  *
@@ -761,4 +764,18 @@ ICM_DEF( MT_SCHEDULER_Self_END, TRACE_NONE)
   ICM_INT(dim)
   ICM_VAR((4*dim), vararg)
 ICM_END( MT_SCHEDULER_Self_END, (dim, vararg))
+#endif
+
+#if defined(MT_SCHEDULER_Afs_BEGIN) || defined(ICM_ALL)
+ICM_DEF( MT_SCHEDULER_Afs_BEGIN, TRACE_NONE)
+  ICM_INT(dim)
+  ICM_VAR((4*dim), vararg)
+ICM_END( MT_SCHEDULER_Afs_BEGIN, (dim, vararg))
+#endif
+
+#if defined(MT_SCHEDULER_Afs_END) || defined(ICM_ALL)
+ICM_DEF( MT_SCHEDULER_Afs_END, TRACE_NONE)
+  ICM_INT(dim)
+  ICM_VAR((4*dim), vararg)
+ICM_END( MT_SCHEDULER_Afs_END, (dim, vararg))
 #endif

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2001/03/27 11:52:03  ben
+ * MT_SCHEDULER_Afs_... added
+ *
  * Revision 3.13  2001/03/23 13:35:38  ben
  * ICMCompileMT_SCHEDULER_Self_... modified
  *
@@ -1766,6 +1769,65 @@ ICMCompileMT_SCHEDULER_Self_END (int dim, char **vararg)
     fprintf (outfile, "}\n");
     INDENT;
     fprintf (outfile, "SAC_MT_SCHEDULER_Reset_Tasks( );\n");
+    fprintf (outfile, "\n");
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileMT_SCHEDULER_Afs_BEGIN(int dim, char **vararg)
+ *   void ICMCompileMT_SCHEDULER_Afs_END(int dim, char **vararg)
+ *
+ * description:
+ *   These two ICMs implement the scheduling for withloops
+ *
+ *   This scheduling is based on adaptive affinity scheduling, which
+ *   realizes a form of loadbalancing by stealing tasks from the thread,
+ *.  which has computated the smallest number of tasks.
+ *
+ *
+ ******************************************************************************/
+
+void
+ICMCompileMT_SCHEDULER_Afs_BEGIN (int dim, char **vararg)
+{
+
+    DBUG_ENTER ("ICMCompileMT_SCHEDULER_Afs_BEGIN");
+
+#define MT_SCHEDULER_Afs_BEGIN
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef MT_SCHEDULER_Afs_BEGIN
+
+    INDENT;
+    fprintf (outfile, "int taskid, maxloadthread, mintask, task, worktodo;\n");
+    INDENT;
+    fprintf (outfile, "SAC_MT_SCHEDULER_Afs_next_task();");
+    INDENT;
+    fprintf (outfile, " while (worktodo==1){\n");
+    SelectTask (dim, vararg, 1, 0, "SAC_MT_THREADS()*5", "taskid");
+
+    DBUG_VOID_RETURN;
+}
+
+void
+ICMCompileMT_SCHEDULER_Afs_END (int dim, char **vararg)
+{
+    DBUG_ENTER ("ICMCompileMT_SCHEDULER_Afs_END");
+
+#define MT_SCHEDULER_Afs_END
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef MT_SCHEDULER_Afs_END
+
+    INDENT;
+    fprintf (outfile, "SAC_MT_SCHEDULER_Afs_next_task();");
+    INDENT;
+    fprintf (outfile, "}\n");
+    INDENT;
+    fprintf (outfile, "SAC_MT_SCHEDULER_Reset_Tasks();\n");
     fprintf (outfile, "\n");
 
     DBUG_VOID_RETURN;
