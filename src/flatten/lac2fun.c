@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.24  2000/10/17 17:03:43  dkr
+ * define-flag MAIN_HAS_NO_MODNAME inverted
+ *
  * Revision 1.23  2000/10/17 16:50:54  dkr
  * _MAIN replaced by macro MAIN_MOD_NAME
  *
@@ -121,8 +124,6 @@
 #include "DataFlowMask.h"
 #include "DataFlowMaskUtils.h"
 #include "cleanup_decls.h"
-
-#define MAIN_HAS_NO_MODNAME
 
 /*
  *
@@ -1276,7 +1277,7 @@ DoLifting (char *prefix, statustype status, DFMmask_t in, DFMmask_t out, DFMmask
      */
     funname = GetDummyFunName (prefix);
     modname = FUNDEF_MOD (INFO_LAC2FUN_FUNDEF (arg_info));
-#ifdef MAIN_HAS_NO_MODNAME
+#ifndef MAIN_HAS_MODNAME
     if (modname == NULL) {
         /* okay, we are in the main() function ... */
         modname = MAIN_MOD_NAME;
