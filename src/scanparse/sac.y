@@ -4,6 +4,9 @@
 /*
  *
  * $Log$
+ * Revision 3.86  2003/06/11 21:42:54  ktr
+ * replaced calls of MakeArray with MakeFlatArray
+ *
  * Revision 3.85  2003/04/14 15:22:50  dkr
  * cast of the result of strlen into int eliminated;
  * constant casted into size_t instead
@@ -1124,7 +1127,7 @@ letassign: ids LET { $<cint>$ = linenum; } expr
            }
          | id SQBR_L exprs SQBR_R LET { $<cint>$ = linenum; } expr
            { if( CountExprs( $3) > 1) {
-               $3 = MakeArray( $3);
+               $3 = MakeFlatArray( $3);
              } else {
                node * tmp;
 
@@ -1348,14 +1351,14 @@ expr_sel: expr SQBR_L exprs SQBR_R
             } else {
               $$ = MakeAp2( StringCopy( "sel"),
                             NULL,
-                            MakeArray( $3),
+                            MakeFlatArray( $3),
                             $1);
             }
           }
         | expr SQBR_L SQBR_R
           { $$ = MakeAp2( StringCopy( "sel"),
                           NULL,
-                          MakeArray( NULL),
+                          MakeFlatArray( NULL),
                           $1);
           }
         ;
@@ -1388,11 +1391,11 @@ opt_arguments: exprs         { $$ = $1;   }
              ;
 
 expr_ar: SQBR_L { $<cint>$ = linenum; } exprs SQBR_R
-         { $$ = MakeArray( $3);
+         { $$ = MakeFlatArray( $3);
            NODE_LINE( $$) = $<cint>2;
          }
        | SQBR_L { $<cint>$ = linenum; } SQBR_R
-         { $$ = MakeArray( NULL);
+         { $$ = MakeFlatArray( NULL);
            NODE_LINE( $$) = $<cint>2;
          }
        ;
@@ -2820,7 +2823,7 @@ node *String2Array(char *str)
   }
 
   len_exprs = MakeExprs( MakeNum( cnt), NULL);
-  array = MakeArray( new_exprs);
+  array = MakeFlatArray( new_exprs);
 
 #ifndef CHAR_ARRAY_NOT_AS_STRING
   ARRAY_STRING(array)=str;

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.49  2003/06/11 21:45:46  ktr
+ * replaced calls of MakeArray with MakeFlatArray
+ *
  * Revision 3.48  2003/05/30 14:21:56  dkr
  * TYStaticDispatchWrapper() removed
  *
@@ -5143,9 +5146,10 @@ BuildCondAssign (node *prf_ass, prf rel_prf, node *expr, node *then_ass, node *e
                 id = DupIds_Id (prf_ids);
                 SET_FLAG (ID, id, IS_GLOBAL, FALSE);
                 SET_FLAG (ID, id, IS_REFERENCE, FALSE);
-                prf2 = MakePrf (F_sel,
-                                MakeExprs (MakeArray (MakeExprs (MakeNum (dim), NULL)),
-                                           MakeExprs (id, NULL)));
+                prf2
+                  = MakePrf (F_sel,
+                             MakeExprs (MakeFlatArray (MakeExprs (MakeNum (dim), NULL)),
+                                        MakeExprs (id, NULL)));
                 flt_prf2
                   = BuildTmpId (TYMakeAKS (TYMakeSimpleType (T_int), SHCreateShape (0)),
                                 new_vardecs);

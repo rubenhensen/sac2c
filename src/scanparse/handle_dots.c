@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.24  2003/06/11 21:42:54  ktr
+ * replaced calls of MakeArray with MakeFlatArray
+ *
  * Revision 1.23  2003/06/10 12:13:44  sah
  * added basic unfolding of
  * set notations
@@ -517,11 +520,11 @@ BuildDrop (node *left, node *right, node *vector)
 
     iv = MakeTmpId ("index_drop");
     to = MAKE_BIN_PRF (F_sub_AxA, MakePrf (F_shape, MakeExprs (DupTree (vector), NULL)),
-                       MakeArray (MakeExprs (DupTree (right), NULL)));
+                       MakeFlatArray (MakeExprs (DupTree (right), NULL)));
 
     result
       = MakeNWith (MakeNPart (MakeNWithid (DupId_Ids (iv), NULL),
-                              MakeNGenerator (MakeArray (MakeExprs (left, NULL)), to,
+                              MakeNGenerator (MakeFlatArray (MakeExprs (left, NULL)), to,
                                               F_le, F_lt, NULL, NULL),
                               NULL),
                    MakeNCode (MAKE_EMPTY_BLOCK (),
@@ -531,7 +534,7 @@ BuildDrop (node *left, node *right, node *vector)
                                               MakePrf (F_shape,
                                                        MakeExprs (DupTree (vector),
                                                                   NULL)),
-                                              MakeArray (
+                                              MakeFlatArray (
                                                 MakeExprs (MAKE_BIN_PRF (F_add_SxS,
                                                                          DupTree (left),
                                                                          DupTree (right)),
@@ -581,8 +584,8 @@ BuildConcat (node *a, node *b)
     result = MakeNWith (
       MakeNPart (MakeNWithid (DupId_Ids (iv), NULL),
                  MakeNGenerator (
-                   MakeArray (MakeExprs (MakeNum (0), NULL)),
-                   MakeArray (
+                   MakeFlatArray (MakeExprs (MakeNum (0), NULL)),
+                   MakeFlatArray (
                      MakeExprs (MAKE_BIN_PRF (F_add_SxA, MakeNum (-1),
                                               MAKE_BIN_PRF (F_add_AxA,
                                                             MakePrf (F_dim,
@@ -601,7 +604,7 @@ BuildConcat (node *a, node *b)
                                 /* cond */
                                 MAKE_BIN_PRF (F_lt,
                                               MAKE_BIN_PRF (F_sel,
-                                                            MakeArray (
+                                                            MakeFlatArray (
                                                               MakeExprs (MakeNum (1),
                                                                          NULL)),
                                                             DupTree (iv)),
@@ -620,7 +623,7 @@ BuildConcat (node *a, node *b)
                                                F_sel,
                                                MAKE_BIN_PRF (
                                                  F_sub_AxA, iv,
-                                                 MakeArray (
+                                                 MakeFlatArray (
                                                    MakeExprs (MakePrf (F_dim,
                                                                        MakeExprs (DupTree (
                                                                                     a),
@@ -632,7 +635,7 @@ BuildConcat (node *a, node *b)
                             NULL),
                  tmpid),
       MakeNWithOp (WO_genarray,
-                   MakeArray (
+                   MakeFlatArray (
                      MakeExprs (MAKE_BIN_PRF (F_add_SxS,
                                               MakePrf (F_dim,
                                                        MakeExprs (DupTree (a), NULL)),
@@ -675,7 +678,7 @@ BuildLeftShape (node *args, node *array, dotinfo *info)
 
     for (cnt = maxdot; cnt > 0; cnt--) {
         result = MakeExprs (MAKE_BIN_PRF (F_sel,
-                                          MakeArray (
+                                          MakeFlatArray (
                                             MakeExprs (MakeNum (LDot2Pos (cnt, info) - 1),
                                                        NULL)),
                                           MakePrf (F_shape,
@@ -685,7 +688,7 @@ BuildLeftShape (node *args, node *array, dotinfo *info)
 
     /* do not create empty array */
     if (result != NULL)
-        result = MakeArray (result);
+        result = MakeFlatArray (result);
 
     DBUG_RETURN (result);
 }
@@ -761,7 +764,7 @@ BuildRightShape (node *args, node *array, dotinfo *info)
 
     /* do not create empty array */
     if (result != NULL)
-        result = MakeArray (result);
+        result = MakeFlatArray (result);
 
     DBUG_RETURN (result);
 }
@@ -870,7 +873,7 @@ BuildLeftIndex (node *args, node *iv, dotinfo *info)
             /* Make selection iv[ldot(cnt)-1] */
             result
               = MakeExprs (MAKE_BIN_PRF (F_sel,
-                                         MakeArray (
+                                         MakeFlatArray (
                                            MakeExprs (MakeNum (LIsDot (cnt, info) - 1),
                                                       NULL)),
                                          DupTree (iv)),
@@ -880,7 +883,7 @@ BuildLeftIndex (node *args, node *iv, dotinfo *info)
         }
     }
 
-    result = MakeArray (result);
+    result = MakeFlatArray (result);
 
     DBUG_RETURN (result);
 }
@@ -941,10 +944,10 @@ BuildRightIndex (node *args, node *iv, dotinfo *info)
             result = MakeExprs (
               MAKE_BIN_PRF (
                 F_sel,
-                MakeArray (
+                MakeFlatArray (
                   MakeExprs (MAKE_BIN_PRF (F_sub_SxS,
                                            MAKE_BIN_PRF (F_sel,
-                                                         MakeArray (
+                                                         MakeFlatArray (
                                                            MakeExprs (MakeNum (0), NULL)),
                                                          MakePrf (F_shape,
                                                                   MakeExprs (DupTree (iv),
@@ -959,7 +962,7 @@ BuildRightIndex (node *args, node *iv, dotinfo *info)
         }
     }
 
-    result = MakeArray (result);
+    result = MakeFlatArray (result);
 
     DBUG_RETURN (result);
 }
@@ -1214,7 +1217,7 @@ ScanVector (node *vector, node **array, node *arg_info)
                     }
 
                     shape
-                      = MAKE_BIN_PRF (F_sel, MakeArray (MakeExprs (position, NULL)),
+                      = MAKE_BIN_PRF (F_sel, MakeFlatArray (MakeExprs (position, NULL)),
                                       MakePrf (F_shape, MakeExprs (DupTree (id), NULL)));
                     chain = Malloc (sizeof (shpchain));
 
@@ -1373,7 +1376,7 @@ BuildWLShape (idtable *table, idtable *end)
             table = table->next;
         }
 
-        result = MakeArray (result);
+        result = MakeFlatArray (result);
     } else if (table->type == ID_vector) {
         if (table->shapes == NULL) {
             ERROR (linenum, ("no shape information found for %s", table->id));

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.50  2003/06/11 21:45:46  ktr
+ * replaced calls of MakeArray with MakeFlatArray
+ *
  * Revision 3.49  2003/04/14 15:06:53  sbs
  * all int prf's casted into prf's as these may be implemented as unsigned.
  *
@@ -413,7 +416,7 @@ Types2Array (types *type, types *res_type)
         types *b_type = TYPEDEF_TYPE (LookupType (type->name, type->name_mod, 042));
         if (0 < b_type->dim + type->dim) {
             node *dummy = MakeExprs (NULL, NULL);
-            shape_array = MakeArray (NULL);
+            shape_array = MakeFlatArray (NULL);
             ARRAY_TYPE (shape_array) = DupAllTypes (res_type);
             shape_array->node[0] = dummy;
             for (i = 0; i < type->dim - 1; i++) {
@@ -440,7 +443,7 @@ Types2Array (types *type, types *res_type)
     } else {
         if (0 < type->dim) {
             node *dummy = MakeExprs (NULL, NULL);
-            shape_array = MakeArray (NULL);
+            shape_array = MakeFlatArray (NULL);
             ARRAY_TYPE (shape_array) = DupAllTypes (res_type);
             shape_array->node[0] = dummy;
             for (i = 0; i < type->dim - 1; i++) {
@@ -451,6 +454,8 @@ Types2Array (types *type, types *res_type)
             dummy->node[0] = MakeNum (type->shpseg->shp[i]);
         }
     }
+
+    shape_array = AdjustVectorShape (shape_array);
 
     DBUG_RETURN (shape_array);
 }
@@ -483,7 +488,7 @@ Type2Vec (types *type)
         res = MakeExprs (tmp_num, res);
         const_vec = ModConstVec (T_int, const_vec, i, tmp_num);
     }
-    res = MakeArray (res);
+    res = MakeFlatArray (res);
     ARRAY_ISCONST (res) = TRUE;
     ARRAY_VECTYPE (res) = T_int;
     ARRAY_VECLEN (res) = TYPES_DIM (type);
@@ -514,7 +519,7 @@ ArrayOfZeros (int count)
     for (i = count - 1; i >= 0; i--) {
         res = MakeExprs (MakeNum (0), res);
     }
-    res = MakeArray (res);
+    res = MakeFlatArray (res);
 
     DBUG_RETURN (res);
 }
@@ -616,9 +621,9 @@ BuildSelWithLoop (types *restype, node *idx, node *array)
         aelems = MakeExprs (MakeId (StringCopy (tmp_vars[i]), NULL, ST_regular), aelems);
     }
 
-    assign
-      = MakeAssign (MakeLet (MakeArray (aelems), MakeIds (tmp_vars[1], NULL, ST_regular)),
-                    assign);
+    assign = MakeAssign (MakeLet (MakeFlatArray (aelems),
+                                  MakeIds (tmp_vars[1], NULL, ST_regular)),
+                         assign);
 
     var_offset = ID_DIM (array) - TYPES_DIM (restype);
 
@@ -636,7 +641,7 @@ BuildSelWithLoop (types *restype, node *idx, node *array)
                             NULL);
 
         assign
-          = MakeAssign (MakeLet (MakeArray (aelems),
+          = MakeAssign (MakeLet (MakeFlatArray (aelems),
                                  MakeIds (tmp_vars[i + var_offset], NULL, ST_regular)),
                         assign);
     }
@@ -701,7 +706,7 @@ BuildGenarrayWithLoop (node *shp, node *val)
         tmp_node = NULL;
         for (i = ID_VECLEN (shp) - 1; i >= 0; i--)
             tmp_node = MakeExprs (MakeNum (((int *)ID_CONSTVEC (shp))[i]), tmp_node);
-        tmp_node = MakeArray (tmp_node);
+        tmp_node = MakeFlatArray (tmp_node);
         ARRAY_VECTYPE (tmp_node) = ID_VECTYPE (shp);
         ARRAY_ISCONST (tmp_node) = ID_ISCONST (shp);
         ARRAY_VECLEN (tmp_node) = ID_VECLEN (shp);
@@ -793,7 +798,7 @@ BuildTakeWithLoop (node *take_shp, node *array)
         node *tmp_node = NULL;
         for (i = ID_VECLEN (take_shp) - 1; i >= 0; i--)
             tmp_node = MakeExprs (MakeNum (((int *)ID_CONSTVEC (take_shp))[i]), tmp_node);
-        tmp_node = MakeArray (tmp_node);
+        tmp_node = MakeFlatArray (tmp_node);
         ARRAY_VECLEN (tmp_node) = ID_VECLEN (take_shp);
         ARRAY_CONSTVEC (tmp_node)
           = CopyConstVec (ID_VECTYPE (take_shp), ID_VECLEN (take_shp),
@@ -885,10 +890,10 @@ BuildDropWithLoop (types *new_shape, node *drop_vec, node *array)
             if (aelem == NULL) {
                 for (i = len_vec; i < dim_array; i++) {
                     aelem = MakeExprs (MakeNum (0), aelem);
-                    new_array = MakeArray (aelem);
+                    new_array = MakeFlatArray (aelem);
                 }
             } else {
-                new_array = MakeArray (aelem);
+                new_array = MakeFlatArray (aelem);
                 while (EXPRS_NEXT (aelem) != NULL) {
                     aelem = EXPRS_NEXT (aelem);
                 }
@@ -1051,7 +1056,7 @@ BuildCatWithLoop2 (ids *lhs, node *arg1, node *arg2, node *arg3)
         const_vec = ModConstVec (T_int, const_vec, i, tmp_num);
     }
 
-    start_vec = MakeArray (start_vec);
+    start_vec = MakeFlatArray (start_vec);
     ARRAY_ISCONST (start_vec) = TRUE;
     ARRAY_VECTYPE (start_vec) = T_int;
     ARRAY_VECLEN (start_vec) = ID_DIM (arg2);
@@ -1571,7 +1576,7 @@ ComputeNeutralElem (prf prf_fun, types *neutral_type, node *arg_info)
             tmp = MakeExprs (DupNode (neutral_base), tmp);
         }
 
-        neutral_elem = MakeArray (tmp);
+        neutral_elem = MakeFlatArray (tmp);
 
         GET_BASIC_TYPE (ARRAY_TYPE (neutral_elem), neutral_type, -64);
 #endif
@@ -6800,7 +6805,7 @@ TI_Nwith (node *arg_node, node *arg_info)
                      */
 
                     tmpass
-                      = MakeAssign (MakeLet (MakeCast (MakeArray (NULL),
+                      = MakeAssign (MakeLet (MakeCast (MakeFlatArray (NULL),
                                                        MakeTypes (T_int, UNKNOWN_SHAPE,
                                                                   NULL, NULL, NULL)),
                                              DupAllIds (NWITH_VEC (arg_node))),
@@ -6997,7 +7002,7 @@ TI_Npart (node *arg_node, types *default_bound_type, node *new_shp, node *arg_in
                 tmpn = MakeExprs (tmp_num, tmpn);
                 const_vec = ModConstVec (T_int, const_vec, i, tmp_num);
             }
-            tmpn = MakeArray (tmpn);
+            tmpn = MakeFlatArray (tmpn);
             ARRAY_ISCONST (tmpn) = TRUE;
             ARRAY_VECTYPE (tmpn) = T_int;
             ARRAY_VECLEN (tmpn) = dim;
@@ -7029,7 +7034,7 @@ TI_Npart (node *arg_node, types *default_bound_type, node *new_shp, node *arg_in
                 tmpn = MakeExprs (tmp_num, tmpn);
                 const_vec = ModConstVec (T_int, const_vec, i, tmp_num);
             }
-            tmpn = MakeArray (tmpn);
+            tmpn = MakeFlatArray (tmpn);
             ARRAY_ISCONST (tmpn) = TRUE;
             ARRAY_VECTYPE (tmpn) = T_int;
             ARRAY_VECLEN (tmpn) = TYPES_DIM (default_bound_type);
@@ -7714,7 +7719,7 @@ CreateConstLet (node *id)
         new = MakeLet (MakeNum (ID_NUM (id)),
                        MakeIds (StringCopy (ID_NAME (id)), NULL, ST_regular));
     } else {
-        new = MakeLet (MakeArray (IntVec2Array (ID_VECLEN (id), ID_CONSTVEC (id))),
+        new = MakeLet (MakeFlatArray (IntVec2Array (ID_VECLEN (id), ID_CONSTVEC (id))),
                        MakeIds (StringCopy (ID_NAME (id)), NULL, ST_regular));
     }
 
@@ -7882,9 +7887,9 @@ TCCPid (node *arg_node, node *arg_info)
                 if (ID_VECLEN (NODELIST_NODE (param)) == 0) {
                     arg_node = MakeNum (ID_NUM (NODELIST_NODE (param)));
                 } else {
-                    arg_node
-                      = MakeArray (IntVec2Array (ID_VECLEN (NODELIST_NODE (param)),
-                                                 ID_CONSTVEC (NODELIST_NODE (param))));
+                    arg_node = MakeFlatArray (
+                      IntVec2Array (ID_VECLEN (NODELIST_NODE (param)),
+                                    ID_CONSTVEC (NODELIST_NODE (param))));
                     ARRAY_ISCONST (arg_node) = 1;
                     ARRAY_VECLEN (arg_node) = ID_VECLEN (NODELIST_NODE (param));
                     ARRAY_VECTYPE (arg_node) = ID_VECTYPE (NODELIST_NODE (param));
