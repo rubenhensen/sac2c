@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.140  1998/04/30 14:04:04  dkr
+ * changed COMPSpmd
+ *
  * Revision 1.139  1998/04/29 19:55:12  dkr
  * changed COMPSpmd, COMPSync
  *
@@ -5920,44 +5923,39 @@ COMPWith (node *arg_node, node *arg_info)
 node *
 COMPSpmd (node *arg_node, node *arg_info)
 {
+    node *assigns = NULL;
+
     DBUG_ENTER ("COMPSpmd");
 
-#if 0
-  /****************************************************************************
-   * build ICMs for SPMD-region
-   */
+    SPMD_REGION (arg_node) = Trav (SPMD_REGION (arg_node), arg_info);
 
+    /****************************************************************************
+     * build ICMs for SPMD-region
+     */
+
+#if 0
   assigns = MakeAssign( MakeIcm( "MT_SPMD", NULL, NULL),
                         NULL);
-
-  /*
-   * insert sequentiell SPMD-region code
-   */
-
-  assigns = AppendAssign( assigns, BLOCK_INSTR( SPMD_REGION( seq_region,
-                                               NULL));
-
-  /*
-   * MT_ENDIF_SEQUENTIAL
-   */
-
-  assigns = AppendAssign( assigns,
-                          MakeAssign( MakeIcm( "MT_ENDIF_SEQUENTIAL", NULL, NULL),
-                                      NULL));
-
-  /*
-   * build ICMs for SPMD-region
-   ****************************************************************************/
-
-  /*
-   * remove remain of N_spmd node
-   */
-
-  SPMD_REGION( arg_node) = NULL;
-  arg_node = FreeTree( arg_node);
 #endif
 
-    DBUG_RETURN (arg_node);
+    /*
+     * build ICMs for SPMD-region
+     ****************************************************************************/
+
+    /*
+     * insert sequentiell SPMD-region code
+     */
+
+    assigns = AppendAssign (assigns, BLOCK_INSTR (SPMD_REGION (arg_node)));
+    BLOCK_INSTR (SPMD_REGION (arg_node)) = NULL;
+
+    /*
+     * remove remain of N_spmd node
+     */
+
+    arg_node = FreeTree (arg_node);
+
+    DBUG_RETURN (assigns);
 }
 
 /******************************************************************************
