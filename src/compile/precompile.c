@@ -1,7 +1,7 @@
 /*
  * $Log$
- * Revision 2.16  2000/07/10 14:24:37  cg
- * *** empty log message ***
+ * Revision 2.17  2000/07/11 09:56:00  dkr
+ * minor changed for TAGGED_ARRAYS done
  *
  * Revision 2.15  2000/06/28 09:12:23  nmw
  * added traversal for mapping of fundctios to c wrappers to Precompile
@@ -194,74 +194,73 @@ PREC1let (node *arg_node, node *arg_info)
  *
  */
 
-#ifdef TAGGED_ARRAYS
-
 /******************************************************************************
  *
  * function:
- *   data_class_t GetClassFromTypes(types *typ)
+ *   data_class_t GetClassFromTypes( types *type)
  *
  * description:
- *   Returns the Data Class of an object (usually an array) from its type
- *
- * NB: As of 1999-06-22, it only returns C_aks or C_akd or C_scl.
- *                       It can't deduce HID.
+ *   Returns the Data Class of an object (usually an array) from its type.
  *
  ******************************************************************************/
 
+#ifdef TAGGED_ARRAYS
 data_class_t
-GetClassFromTypes (types *typ)
+GetClassFromTypes (types *type)
 {
     data_class_t z;
 
     DBUG_ENTER ("GetClassFromTypes");
-    /*
-     * If the array has known shape, it's C_aks; otherwise C_akd.
-     */
-    if (TYPES_DIM (typ) == SCALAR)
+
+    if (IsNonUniqueHidden (type)) {
+        z = C_hid;
+    } else if (TYPES_DIM (type) == SCALAR) {
         z = C_scl;
-    else if (KNOWN_SHAPE (TYPES_DIM (typ)))
+    } else if (KNOWN_SHAPE (TYPES_DIM (type))) {
         z = C_aks;
-    else
+    } else {
         z = C_akd;
+    }
 
     DBUG_RETURN (z);
 }
-
-/******************************************************************************
- *
- * function:
- *   uniqueness_class_t GetUniFromTypes(types *typ)
- *
- * description:
- *   Returns the Uniqueness Class of an object (usually an array) from
- *   its type
- *
- *
- ******************************************************************************/
-
-uniqueness_class_t
-GetUniFromTypes (types *typ)
-{
-    uniqueness_class_t z;
-
-    DBUG_ENTER ("GetUniFromTypes");
-
-    if (IsUnique (typ))
-        z = C_unq;
-    else
-        z = C_nuq;
-
-    DBUG_RETURN (z);
-}
-
 #endif /* TAGGED_ARRAYS */
 
 /******************************************************************************
  *
  * function:
- *   char *PRECRenameLocalIdentifier(char *id, data_class_t d_class,
- *                                   uniqueness_class_t u_class)
+ *   uniqueness_class_t GetUniFromTypes( types *type)
+ *
+ * description:
+ *   Returns the Uniqueness Class of an object (usually an array) from
+ *   its type.
+ *
+ ******************************************************************************/
+
+#ifdef TAGGED_ARRAYS
+uniqueness_class_t
+GetUniFromTypes (types *type)
+{
+    uniqueness_class_t z;
+
+    DBUG_ENTER ("GetUniFromTypes");
+
+    if (IsUnique (type)) {
+        z = C_unq;
+    } else {
+        z = C_nuq;
+    }
+
+    DBUG_RETURN (z);
+}
+#endif /* TAGGED_ARRAYS */
+
+/******************************************************************************
+ *
+ * function:
+ *   char *PRECRenameLocalIdentifier( char *id,
+ *                                    data_class_t d_class,
+ *                                    uniqueness_class_t u_class)
  *
  * description:
  *   This function renames a given local identifier name for precompiling
@@ -272,60 +271,49 @@ GetUniFromTypes (types *typ)
  *   It also maps the name into an nt (Name Tuple) for tagged arrays.
  *
  ******************************************************************************/
-#ifdef TAGGED_ARRAYS
-char *
-PRECRenameLocalIdentifier (char *id, data_class_t nt_class, uniqueness_class_t nt_uni)
-{
-    char *name_prefix_table[] = {"SAC1_", "SACp"};
-    char *name_prefix;
-#else  /* TAGGED_ARRAYS */
-char *
-PRECRenameLocalIdentifier (char *id)
-{
-#endif /* TAGGED_ARRAYS */
 
+char *
+PRECRenameLocalIdentifier (char *id
+#ifdef TAGGED_ARRAYS
+                           ,
+                           data_class_t nt_class, uniqueness_class_t nt_uni
+#endif /* TAGGED_ARRAYS */
+)
+{
+    char *name_prefix;
     char *new_name;
 
     DBUG_ENTER ("PRECRenameLocalIdentifier");
 
-#ifdef TAGGED_ARRAYS
-    /*
-     * Set name prefix depending on whether the identifier was inserted by sac2c
-     * or whether it originated in the source code.
-     */
-    if (id[0] == '_')
-        name_prefix = name_prefix_table[1]; /* name inserted by sac2c */
-    else
-        name_prefix = name_prefix_table[0]; /* name originated in source code */
-
-    if (nt_class == C_scl) {
-        new_name
-          = (char *)Malloc (sizeof (char) * (strlen (id) + strlen (name_prefix) + 1));
-        sprintf (new_name, "%s%s", name_prefix, id);
-    } else {
-        new_name = (char *)Malloc (
-          sizeof (char) * (strlen (id) + strlen (name_prefix) + 1 + NT_OVERHEAD));
-        sprintf (new_name, "(%s%s,(%s,(%s,NIL)))", name_prefix, id,
-                 nt_class_str[nt_class], nt_uni_str[nt_uni]);
-    };
-#else  /* TAGGED_ARRAYS */
     if (id[0] == '_') {
         /*
          * This local identifier was inserted by sac2c.
          */
-        new_name = (char *)Malloc (sizeof (char) * (strlen (id) + 5));
-        sprintf (new_name, "SACp%s", id);
+        name_prefix = "SACp";
         /*
-         * Here, we don't need an underscore after the prefix because the name already
-         * starts with one.
+         * Here, we don't need an underscore after the prefix because the name
+         * already starts with one.
          */
     } else {
         /*
          * This local identifier originates from the source code.
          */
-        new_name = (char *)Malloc (sizeof (char) * (strlen (id) + 6));
-        sprintf (new_name, "SACl_%s", id);
+        name_prefix = "SACl_";
     }
+
+#ifdef TAGGED_ARRAYS
+    if (nt_class == C_scl) {
+#endif /* TAGGED_ARRAYS */
+        new_name
+          = (char *)MALLOC (sizeof (char) * (strlen (id) + strlen (name_prefix) + 1));
+        sprintf (new_name, "%s%s", name_prefix, id);
+#ifdef TAGGED_ARRAYS
+    } else {
+        new_name = (char *)MALLOC (
+          sizeof (char) * (strlen (id) + strlen (name_prefix) + 1 + NT_OVERHEAD));
+        sprintf (new_name, "(%s%s,(%s,(%s,)))", name_prefix, id, nt_class_str[nt_class],
+                 nt_uni_str[nt_uni]);
+    };
 #endif /* TAGGED_ARRAYS */
 
     FREE (id);
@@ -336,7 +324,7 @@ PRECRenameLocalIdentifier (char *id)
 /******************************************************************************
  *
  * function:
- *   node *RenameId(node *idnode)
+ *   node *RenameId( node *idnode)
  *
  * description:
  *   This function performs the renaming of identifiers on the right hand
@@ -349,11 +337,6 @@ PRECRenameLocalIdentifier (char *id)
 static node *
 RenameId (node *idnode)
 {
-#ifdef TAGGED_ARRAYS
-    data_class_t dclass;
-    uniqueness_class_t uclass;
-#endif /* TAGGED_ARRAYS */
-
     DBUG_ENTER ("RenameId");
 
     DBUG_ASSERT ((NODE_TYPE (idnode) == N_id), "Wrong argument to function RenameId()");
@@ -367,14 +350,13 @@ RenameId (node *idnode)
          * The global object's definition has already been renamed.
          */
     } else {
+        ID_NAME (idnode)
+          = PRECRenameLocalIdentifier (ID_NAME (idnode),
 #ifdef TAGGED_ARRAYS
-        dclass = GetClassFromTypes (ID_TYPE (idnode));
-        uclass = GetUniFromTypes (ID_TYPE (idnode));
-
-        ID_NAME (idnode) = PRECRenameLocalIdentifier (ID_NAME (idnode), dclass, uclass);
-#else  /* TAGGED ARRAYS */
-        ID_NAME (idnode) = PRECRenameLocalIdentifier (ID_NAME (idnode));
+                                       GetClassFromTypes (ID_TYPE (idnode)),
+                                       GetUniFromTypes (ID_TYPE (idnode))
 #endif /* TAGGED_ARRAYS */
+          );
     }
 
     DBUG_RETURN (idnode);
@@ -383,7 +365,7 @@ RenameId (node *idnode)
 /******************************************************************************
  *
  * function:
- *   ids *PrecompileIds(ids *id)
+ *   ids *PrecompileIds( ids *id)
  *
  * description:
  *   This function performs the renaming of identifiers stored within ids-chains.
@@ -395,11 +377,6 @@ RenameId (node *idnode)
 static ids *
 PrecompileIds (ids *id)
 {
-#ifdef TAGGED_ARRAYS
-    data_class_t dclass;
-    uniqueness_class_t uclass;
-#endif TAGGED_ARRAYS
-
     DBUG_ENTER ("PrecompileIds");
 
     while ((id != NULL) && (IDS_STATUS (id) == ST_artificial)) {
@@ -407,7 +384,6 @@ PrecompileIds (ids *id)
     }
 
     if (id != NULL) {
-
         if (NODE_TYPE (IDS_VARDEC (id)) == N_objdef) {
             FREE (IDS_NAME (id));
             IDS_NAME (id) = StringCopy (OBJDEF_NAME (IDS_VARDEC (id)));
@@ -415,13 +391,12 @@ PrecompileIds (ids *id)
              * The global object's definition has already been renamed.
              */
         } else {
+            IDS_NAME (id) = PRECRenameLocalIdentifier (IDS_NAME (id),
 #ifdef TAGGED_ARRAYS
-            dclass = GetClassFromTypes (IDS_TYPE (id));
-            uclass = GetUniFromTypes (IDS_TYPE (id));
-            IDS_NAME (id) = PRECRenameLocalIdentifier (IDS_NAME (id), dclass, uclass);
-#else  /* TAGGED_ARRAYS */
-            IDS_NAME (id) = PRECRenameLocalIdentifier (IDS_NAME (id));
+                                                       GetClassFromTypes (IDS_TYPE (id)),
+                                                       GetUniFromTypes (IDS_TYPE (id))
 #endif /* TAGGED_ARRAYS */
+            );
         }
 
         if (IDS_NEXT (id) != NULL) {
@@ -794,8 +769,10 @@ PREC2fundef (node *arg_node, node *arg_info)
      */
 #if 0
   /*
-   * FUNDEF_ATTRIB is reused by multithread ... this here seems to be superfluous (?)
-   * if problems occur we need another way to store ST_call_[rep|any|mt|st] (jhs)
+   * FUNDEF_ATTRIB is reused by multithread ...
+   * this here seems to be superfluous (?)
+   * if problems occur we need another way to store ST_call_[rep|any|mt|st]
+   * (jhs)
    */
   if (((FUNDEF_STATUS(arg_node) == ST_imported_mod)
        || (FUNDEF_STATUS(arg_node) == ST_imported_class)) &&
@@ -966,14 +943,13 @@ PREC2arg (node *arg_node, node *arg_info)
              * The attribute ARG_NAME may not be set in the case of imported function
              * declarations.
              */
-#ifdef TAGGED_ARRAYS
             ARG_NAME (arg_node)
               = PRECRenameLocalIdentifier (ARG_NAME (arg_node),
+#ifdef TAGGED_ARRAYS
                                            GetClassFromTypes (ARG_TYPE (arg_node)),
-                                           GetUniFromTypes (ARG_TYPE (arg_node)));
-#else  /* TAGGED_ARRAYS */
-            ARG_NAME (arg_node) = PRECRenameLocalIdentifier (ARG_NAME (arg_node));
+                                           GetUniFromTypes (ARG_TYPE (arg_node))
 #endif /* TAGGED_ARRAYS */
+              );
         }
 
         if (ARG_NEXT (arg_node) != NULL) {
@@ -1009,14 +985,14 @@ PREC2vardec (node *arg_node, node *arg_info)
     } else {
         VARDEC_TYPE (arg_node) = RenameTypes (VARDEC_TYPE (arg_node));
 
-#ifdef TAGGED_ARRAYS
         VARDEC_NAME (arg_node)
           = PRECRenameLocalIdentifier (VARDEC_NAME (arg_node),
+#ifdef TAGGED_ARRAYS
                                        GetClassFromTypes (ARG_TYPE (arg_node)),
-                                       GetUniFromTypes (ARG_TYPE (arg_node)));
-#else  /* TAGGED_ARRAYS */
-        VARDEC_NAME (arg_node) = PRECRenameLocalIdentifier (VARDEC_NAME (arg_node));
+                                       GetUniFromTypes (ARG_TYPE (arg_node))
 #endif /* TAGGED_ARRAYS */
+          );
+
         if (VARDEC_NEXT (arg_node) != NULL) {
             VARDEC_NEXT (arg_node) = Trav (VARDEC_NEXT (arg_node), arg_info);
         }
