@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.75  1998/07/03 10:16:38  cg
+ * new functions MakeIcm[012345] added
+ * function AppendExpr renamed to AppendExprs
+ *
  * Revision 1.74  1998/06/07 18:39:29  dkr
  * addded NWITH2_VEC
  *
@@ -1229,14 +1233,14 @@ extern node *AppendAssign (node *assigns, node *assign);
 /******************************************************************************
  *
  * function:
- *   node *AppendExpr( node *exprs, node *expr)
+ *   node *AppendExprs( node *exprs1, node *exprs2)
  *
  * description:
- *   appends 'expr' to the N_exprs-chain 'assings' and returns the new chain.
+ *   This function concatenates two N_exprs chains of nodes.
  *
  ******************************************************************************/
 
-extern node *AppendExpr (node *exprs, node *expr);
+extern node *AppendExprs (node *exprs1, node *exprs2);
 
 /*--------------------------------------------------------------------------*/
 
@@ -1593,6 +1597,32 @@ extern int IsConstantArray (node *array, nodetype type);
 #define ICM_ARG2(n) EXPRS_EXPR (EXPRS_NEXT (ICM_ARGS (n)))
 #define ICM_ARG3(n) EXPRS_EXPR (EXPRS_NEXT (EXPRS_NEXT (ICM_ARGS (n))))
 #define ICM_ARG4(n) EXPRS_EXPR (EXPRS_NEXT (EXPRS_NEXT (EXPRS_NEXT (ICM_ARGS (n)))))
+
+/******************************************************************************
+ *
+ * function:
+ *   node *MakeIcm0(char *name)
+ *   node *MakeIcm1(char *name, node *arg1)
+ *   node *MakeIcm3(char *name, node *arg1, node *arg2)
+ *   node *MakeIcm4(char *name, node *arg1, node *arg2, node *arg3, node *arg4)
+ *   node *MakeIcm5(char *name, node *arg1, node *arg2, node *arg3, node *arg4, node
+ **arg5)
+ *
+ * description:
+ *
+ *   These functions generate complete ICM representations including arguments.
+ *   Each function argument may be an arbitrary list of single ICM arguments.
+ *   These are concatenated correctly.
+ *
+ ******************************************************************************/
+
+extern node *MakeIcm0 (char *name);
+extern node *MakeIcm1 (char *name, node *arg1);
+extern node *MakeIcm2 (char *name, node *arg1, node *arg2);
+extern node *MakeIcm3 (char *name, node *arg1, node *arg2, node *arg3);
+extern node *MakeIcm4 (char *name, node *arg1, node *arg2, node *arg3, node *arg4);
+extern node *MakeIcm5 (char *name, node *arg1, node *arg2, node *arg3, node *arg4,
+                       node *arg5);
 
 /*--------------------------------------------------------------------------*/
 

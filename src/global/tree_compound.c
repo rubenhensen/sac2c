@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.41  1998/07/03 10:16:38  cg
+ * new functions MakeIcm[012345] added
+ * function AppendExpr renamed to AppendExprs
+ *
  * Revision 1.40  1998/06/05 15:27:49  cg
  * global variable mod_name_con and macros MOD_NAME_CON MOD MOD_NAME MOD_CON removed
  * Now, module name and symbol name are combined correctly by ':'.
@@ -747,36 +751,6 @@ AppendAssign (node *assigns, node *assign)
     DBUG_RETURN (assigns);
 }
 
-/******************************************************************************
- *
- * function:
- *   node *AppendExpr( node *exprs, node *expr)
- *
- * description:
- *   appends 'expr' to the N_exprs-chain 'assings' and returns the new chain.
- *
- ******************************************************************************/
-
-node *
-AppendExpr (node *exprs, node *expr)
-{
-    node *tmp;
-
-    DBUG_ENTER ("AppendExpr");
-
-    if (exprs != NULL) {
-        tmp = exprs;
-        while (EXPRS_NEXT (tmp) != NULL) {
-            tmp = EXPRS_NEXT (tmp);
-        }
-        EXPRS_NEXT (tmp) = expr;
-    } else {
-        exprs = expr;
-    }
-
-    DBUG_RETURN (exprs);
-}
-
 /***
  ***  CountFunctionParams
  ***/
@@ -875,4 +849,209 @@ IsConstantArray (node *array, nodetype type)
     }
 
     DBUG_RETURN (ok ? elems : 0);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *AppendExprs(node *exprs1, node *exprs2)
+ *
+ * description:
+ *
+ *   This function concatenates two N_exprs chains of nodes.
+ *
+ *
+ *
+ ******************************************************************************/
+
+node *
+AppendExprs (node *exprs1, node *exprs2)
+{
+    node *res;
+
+    DBUG_ENTER ("AppendExprs");
+
+    if (exprs1 == NULL) {
+        res = exprs2;
+    } else {
+        res = exprs1;
+
+        while (EXPRS_NEXT (exprs1) != NULL) {
+            exprs1 = EXPRS_NEXT (exprs1);
+        }
+
+        EXPRS_NEXT (exprs1) = exprs2;
+    }
+
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *MakeIcm0(char *name)
+ *   node *MakeIcm1(char *name, node *arg1)
+ *   node *MakeIcm3(char *name, node *arg1, node *arg2)
+ *   node *MakeIcm4(char *name, node *arg1, node *arg2, node *arg3, node *arg4)
+ *   node *MakeIcm5(char *name, node *arg1, node *arg2, node *arg3, node *arg4, node
+ **arg5)
+ *
+ * description:
+ *
+ *   These functions generate complete ICM representations including arguments.
+ *   Each function argument may be an arbitrary list of single ICM arguments.
+ *   These are concatenated correctly.
+ *
+ ******************************************************************************/
+
+node *
+MakeIcm0 (char *name)
+{
+    node *icm;
+
+    DBUG_ENTER ("MakeIcm0");
+
+    icm = MakeIcm (name, NULL, NULL);
+
+    DBUG_RETURN (icm);
+}
+
+node *
+MakeIcm1 (char *name, node *arg1)
+{
+    node *icm;
+
+    DBUG_ENTER ("MakeIcm1");
+
+    if (NODE_TYPE (arg1) != N_exprs) {
+        arg1 = MakeExprs (arg1, NULL);
+    }
+
+    icm = MakeIcm (name, arg1, NULL);
+
+    DBUG_RETURN (icm);
+}
+
+node *
+MakeIcm2 (char *name, node *arg1, node *arg2)
+{
+    node *icm;
+
+    DBUG_ENTER ("MakeIcm2");
+
+    if (NODE_TYPE (arg2) != N_exprs) {
+        arg2 = MakeExprs (arg2, NULL);
+    }
+
+    if (NODE_TYPE (arg1) != N_exprs) {
+        arg1 = MakeExprs (arg1, arg2);
+    } else {
+        arg1 = AppendExprs (arg1, arg2);
+    }
+
+    icm = MakeIcm (name, arg1, NULL);
+
+    DBUG_RETURN (icm);
+}
+
+node *
+MakeIcm3 (char *name, node *arg1, node *arg2, node *arg3)
+{
+    node *icm;
+
+    DBUG_ENTER ("MakeIcm3");
+
+    if (NODE_TYPE (arg3) != N_exprs) {
+        arg3 = MakeExprs (arg3, NULL);
+    }
+
+    if (NODE_TYPE (arg2) != N_exprs) {
+        arg2 = MakeExprs (arg2, arg3);
+    } else {
+        arg2 = AppendExprs (arg2, arg3);
+    }
+
+    if (NODE_TYPE (arg1) != N_exprs) {
+        arg1 = MakeExprs (arg1, arg2);
+    } else {
+        arg1 = AppendExprs (arg1, arg2);
+    }
+
+    icm = MakeIcm (name, arg1, NULL);
+
+    DBUG_RETURN (icm);
+}
+
+node *
+MakeIcm4 (char *name, node *arg1, node *arg2, node *arg3, node *arg4)
+{
+    node *icm;
+
+    DBUG_ENTER ("MakeIcm4");
+
+    if (NODE_TYPE (arg4) != N_exprs) {
+        arg4 = MakeExprs (arg4, NULL);
+    }
+
+    if (NODE_TYPE (arg3) != N_exprs) {
+        arg3 = MakeExprs (arg3, arg4);
+    } else {
+        arg3 = AppendExprs (arg3, arg4);
+    }
+
+    if (NODE_TYPE (arg2) != N_exprs) {
+        arg2 = MakeExprs (arg2, arg3);
+    } else {
+        arg2 = AppendExprs (arg2, arg3);
+    }
+
+    if (NODE_TYPE (arg1) != N_exprs) {
+        arg1 = MakeExprs (arg1, arg2);
+    } else {
+        arg1 = AppendExprs (arg1, arg2);
+    }
+
+    icm = MakeIcm (name, arg1, NULL);
+
+    DBUG_RETURN (icm);
+}
+
+node *
+MakeIcm5 (char *name, node *arg1, node *arg2, node *arg3, node *arg4, node *arg5)
+{
+    node *icm;
+
+    DBUG_ENTER ("MakeIcm5");
+
+    if (NODE_TYPE (arg5) != N_exprs) {
+        arg5 = MakeExprs (arg5, NULL);
+    }
+
+    if (NODE_TYPE (arg4) != N_exprs) {
+        arg4 = MakeExprs (arg4, arg5);
+    } else {
+        arg4 = AppendExprs (arg4, arg5);
+    }
+
+    if (NODE_TYPE (arg3) != N_exprs) {
+        arg3 = MakeExprs (arg3, arg4);
+    } else {
+        arg3 = AppendExprs (arg3, arg4);
+    }
+
+    if (NODE_TYPE (arg2) != N_exprs) {
+        arg2 = MakeExprs (arg2, arg3);
+    } else {
+        arg2 = AppendExprs (arg2, arg3);
+    }
+
+    if (NODE_TYPE (arg1) != N_exprs) {
+        arg1 = MakeExprs (arg1, arg2);
+    } else {
+        arg1 = AppendExprs (arg1, arg2);
+    }
+
+    icm = MakeIcm (name, arg1, NULL);
+
+    DBUG_RETURN (icm);
 }
