@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.72  2002/09/05 19:20:52  dkr
+ * DupAllTypes(), DupAllIds(), DupNodelist(), DupShpseg() can applied
+ * to NULL now
+ *
  * Revision 3.71  2002/09/05 16:33:16  dkr
  * call of FreeAvis() replaced by FreeNode() !!!
  *
@@ -232,7 +236,7 @@ DupTreeOrNodeLUT_Type (int NodeOnly, node *arg_node, LUT_t lut, int type)
 {
     funtab *old_tab;
     node *arg_info;
-    node *new_node = NULL;
+    node *new_node;
 
     DBUG_ENTER ("DupTreeOrNodeLUT_Type");
 
@@ -290,6 +294,8 @@ DupTreeOrNodeLUT_Type (int NodeOnly, node *arg_node, LUT_t lut, int type)
 
         arg_info = FreeNode (arg_info);
         act_tab = old_tab;
+    } else {
+        new_node = NULL;
     }
 
     DBUG_RETURN (new_node);
@@ -1281,7 +1287,7 @@ DupEmpty (node *arg_node, node *arg_info)
 node *
 DupAssign (node *arg_node, node *arg_info)
 {
-    node *new_node = NULL;
+    node *new_node;
     node *stacked_assign;
 
     DBUG_ENTER ("DupAssign");
@@ -1314,6 +1320,8 @@ DupAssign (node *arg_node, node *arg_info)
 #endif
 
         CopyCommonNodeData (new_node, arg_node);
+    } else {
+        new_node = NULL;
     }
 
     DBUG_RETURN (new_node);
@@ -2284,7 +2292,7 @@ DupMTalloc (node *arg_node, node *arg_info)
  *   node *DupAvis( node *arg_node, node *arg_info)
  *
  * description:
- *   Duplicates a N_avis node. Does not set the correct backrefence!!!
+ *   Duplicates a N_avis node. Does not set AVIS_VARDECORARG!!
  *
  ******************************************************************************/
 
@@ -2556,8 +2564,6 @@ DupAllIds (ids *arg_ids)
 
     DBUG_ENTER ("DupAllIds");
 
-    DBUG_ASSERT ((arg_ids != NULL), "DupAllIds: argument is NULL!");
-
     new_ids = DupIds_ (arg_ids, NULL);
 
     DBUG_RETURN (new_ids);
@@ -2579,10 +2585,6 @@ DupShpseg (shpseg *arg_shpseg)
     shpseg *new_shpseg;
 
     DBUG_ENTER ("DupShpseg");
-
-#if 0
-  DBUG_ASSERT( (arg_shpseg != NULL), "DupShpseg: argument is NULL!");
-#endif
 
     new_shpseg = DupShpseg_ (arg_shpseg, NULL);
 
@@ -2643,9 +2645,11 @@ DupAllTypes (types *arg_types)
 
     DBUG_ENTER ("DupAllTypes");
 
-    DBUG_ASSERT ((arg_types != NULL), "DupAllTypes: argument is NULL!");
-
-    new_types = DupTypes_ (arg_types, NULL);
+    if (arg_types != NULL) {
+        new_types = DupTypes_ (arg_types, NULL);
+    } else {
+        new_types = NULL;
+    }
 
     DBUG_RETURN (new_types);
 }
@@ -2666,8 +2670,6 @@ DupNodelist (nodelist *nl)
     nodelist *new_nl;
 
     DBUG_ENTER ("DupNodelist");
-
-    DBUG_ASSERT ((nl != NULL), "DupNodelist: argument is NULL!");
 
     new_nl = DupNodelist_ (nl, NULL);
 
@@ -2825,7 +2827,7 @@ node *
 DupExprs_NT (node *exprs)
 {
     node *expr;
-    node *new_exprs = NULL;
+    node *new_exprs;
 
     DBUG_ENTER ("DupExprs");
 
@@ -2836,6 +2838,8 @@ DupExprs_NT (node *exprs)
         DBUG_ASSERT ((expr != NULL), "N_exprs node contains no data!");
 
         new_exprs = MakeExprs (DupNode_NT (expr), DupExprs_NT (EXPRS_NEXT (exprs)));
+    } else {
+        new_exprs = NULL;
     }
 
     DBUG_RETURN (new_exprs);
