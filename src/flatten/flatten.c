@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.15  1999/05/12 08:42:26  sbs
+ * brushed handling of CONSTVECs; adjusted to new macros.
+ *
  * Revision 2.14  1999/05/11 16:18:27  jhs
  * Done4 some cosmetics to learn about the code.
  *
@@ -161,61 +164,61 @@ DbugPrintStack (void)
 /******************************************************************************
  *
  * function:
- *   simpletype PreTypecheck(nodetype type1, simpletype type2)
+ *   simpletype PreTypecheck(nodetype act_node_t, simpletype elem_type)
  *
  * description:
- *   Compares two types and results the simpletype in which will be casted.
- *   If a cast is not possible, T_unknown will be returned.
+ *   Checks whether the type of act_node_t is compatible (or can be made
+ *   compatible) to the type of the other elements (elem_type).
+ *   If so, the type is returned, otherwise T_unknown will be returned.
+ *   Note here, that T_nothing indicates that this is the first element
+ *   of the array to be checked (cf. FltnArray).
  *
  ******************************************************************************/
 
 simpletype
-FltnPreTypecheck (nodetype type1, simpletype type2, int index)
+FltnPreTypecheck (nodetype act_node_t, simpletype elem_type)
 {
     DBUG_ENTER ("PreTypecheck");
 
-    switch (type1) {
-    case N_double:
-        if ((index == 0) || (type2 == T_double) || (type2 == T_float) || (type2 == T_int))
-            type2 = T_double;
-        else
-            type2 = T_unknown;
-        break;
-    case N_float:
-        if ((index == 0) || (type2 == T_float) || (type2 == T_int))
-            type2 = T_float;
-        else if (type2 == T_double)
-            type2 = T_double;
-        else
-            type2 = T_unknown;
-        break;
+    switch (act_node_t) {
     case N_num:
-        if ((index == 0) || (type2 == T_int))
-            type2 = T_int;
-        else if (type2 == T_double)
-            type2 = T_double;
-        else if (type2 == T_float)
-            type2 = T_float;
-        else
-            type2 = T_unknown;
+        if ((elem_type == T_int) || (elem_type == T_nothing)) {
+            elem_type = T_int;
+            break;
+        }
+    case N_float:
+        if ((elem_type == T_float) || (elem_type == T_int) || (elem_type == T_nothing)) {
+            elem_type = T_float;
+            break;
+        }
+    case N_double:
+        if ((elem_type == T_double) || (elem_type == T_float) || (elem_type == T_int)
+            || (elem_type == T_nothing)) {
+            elem_type = T_double;
+        } else {
+            elem_type = T_unknown;
+        }
         break;
+
     case N_bool:
-        if ((index == 0) || (type2 == T_bool))
-            type2 = T_bool;
-        else
-            type2 = T_unknown;
+        if ((elem_type == T_bool) || (elem_type == T_nothing)) {
+            elem_type = T_bool;
+        } else {
+            elem_type = T_unknown;
+        }
         break;
     case N_char:
-        if ((index == 0) || (type2 == T_char))
-            type2 = T_char;
-        else
-            type2 = T_unknown;
+        if ((elem_type == T_char) || (elem_type == T_nothing)) {
+            elem_type = T_char;
+        } else {
+            elem_type = T_unknown;
+        }
         break;
     default:
-        type2 = T_unknown;
+        elem_type = T_unknown;
     }
 
-    DBUG_RETURN (type2);
+    DBUG_RETURN (elem_type);
 }
 
 /******************************************************************************
@@ -405,6 +408,9 @@ CopyStackSeg (local_stack *first_elem, local_stack *last_elem)
  *        __flat_<n> = <expr>;
  *     end prepands it to LASTASSIGN from arg_info
  *   - returns a freshly created N_id node holding  __flat_<n>
+ *   - if <expr> is an N_array-node (which may be pre-ceeded by casts!!)
+ *     and the array is constant, then the new N_id node is decorated
+ *     accordingly.
  *
  ******************************************************************************/
 
@@ -412,7 +418,7 @@ node *
 Abstract (node *arg_node, node *arg_info)
 {
     char *tmp;
-    node *res;
+    node *res, *node_behind_cast;
 
     DBUG_ENTER ("Abstract");
 
@@ -426,6 +432,20 @@ Abstract (node *arg_node, node *arg_info)
                  ASSIGN_NEXT (INFO_FLTN_LASTASSIGN (arg_info))));
 
     res = MakeId (StringCopy (tmp), NULL, ST_regular);
+
+    node_behind_cast = arg_node;
+    while (NODE_TYPE (node_behind_cast) == N_cast) {
+        node_behind_cast = CAST_EXPR (node_behind_cast);
+    }
+
+    if ((NODE_TYPE (node_behind_cast) == N_array) && (ARRAY_ISCONST (node_behind_cast))) {
+        ID_ISCONST (res) = TRUE;
+        ID_VECTYPE (res) = ARRAY_VECTYPE (node_behind_cast);
+        ID_VECLEN (res) = ARRAY_VECLEN (node_behind_cast);
+        ID_CONSTVEC (res) = CopyConstVec (ARRAY_VECTYPE (node_behind_cast),
+                                          ARRAY_VECLEN (node_behind_cast),
+                                          ARRAY_CONSTVEC (node_behind_cast));
+    }
 
     DBUG_RETURN (res);
 }
@@ -840,56 +860,45 @@ FltnArray (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("FltnArray");
 
-    old_ctxt = INFO_FLTN_CONTEXT (arg_info);
+    /*
+     * if we are dealing with an empty array, things are easy: we do not have
+     * to use the info-node mechanism to find out whether it is constant....
+     * Instead, we can directly set the attributes correctly.
+     * Only ARRAY_VECTYPE is not known here; therefore, it is set to the
+     * dummy value T_nothing. This will be straightened during type checking
+     * ?!? ( I hope...)
+     */
+    if (ARRAY_AELEMS (arg_node) == NULL) {
+        ARRAY_ISCONST (arg_node) = TRUE;
+        ARRAY_VECTYPE (arg_node) = T_nothing;
+        ARRAY_VECLEN (arg_node) = 0;
+        ARRAY_CONSTVEC (arg_node) = NULL;
+    } else {
 
-    INFO_FLTN_CONSTVEC (arg_info) = NULL;
-    INFO_FLTN_CONTEXT (arg_info) = CT_array;
-    INFO_FLTN_VECLEN (arg_info) = 0;
+        /*
+         * the array is not empty; so we have to traverse it and - while
+         * doing so - collect infos whether the array is constant in the info_node.
+         */
+        old_ctxt = INFO_FLTN_CONTEXT (arg_info);
+        INFO_FLTN_CONTEXT (arg_info) = CT_array;
 
-    if (ARRAY_AELEMS (arg_node) != NULL) {
-        /* the array has elements that will tell us the type of the array. */
-        INFO_FLTN_VECTYPE (arg_info) = T_int;
+        INFO_FLTN_ISCONST (arg_info) = FALSE;
+        INFO_FLTN_VECTYPE (arg_info) = T_nothing; /* T_unknown would indicate
+                                                   * non-constant components!
+                                                   */
+        INFO_FLTN_VECLEN (arg_info) = 0;
+        INFO_FLTN_CONSTVEC (arg_info) = NULL;
+
         ARRAY_AELEMS (arg_node) = Trav (ARRAY_AELEMS (arg_node), arg_info);
+
+        ARRAY_ISCONST (arg_node) = INFO_FLTN_ISCONST (arg_info);
         ARRAY_VECLEN (arg_node) = INFO_FLTN_VECLEN (arg_info);
         ARRAY_VECTYPE (arg_node) = INFO_FLTN_VECTYPE (arg_info);
-    } else {
-        /* the array is empty, but we cannot infere any type. */
-        INFO_FLTN_VECTYPE (arg_info) = T_nothing;
-        ARRAY_VECLEN (arg_node) = 0;
-        ARRAY_VECTYPE (arg_node) = T_nothing;
-    }
+        ARRAY_CONSTVEC (arg_node) = INFO_FLTN_CONSTVEC (arg_info);
 
-    /*  Now we have to copy the compact representation of the constant vector from
-     *  the arg_info node to the actual array node.
-     */
-    switch (INFO_FLTN_VECTYPE (arg_info)) {
-    case T_bool:
-        /*  T_bool and T_int are treated as identical,
-         *  so no break is missing here.
-         */
-    case T_int:
-        ARRAY_INTVEC (arg_node) = (node *)INFO_FLTN_CONSTVEC (arg_info);
-        break;
-    case T_float:
-        ARRAY_FLOATVEC (arg_node) = (node *)INFO_FLTN_CONSTVEC (arg_info);
-        break;
-    case T_double:
-        ARRAY_DOUBLEVEC (arg_node) = (node *)INFO_FLTN_CONSTVEC (arg_info);
-        break;
-    case T_char:
-        ARRAY_CHARVEC (arg_node) = (node *)INFO_FLTN_CONSTVEC (arg_info);
-        break;
-    case T_nothing:
-        /*  nothing do be done, there should be no constvec reserved,
-         *  because T_nothing occurs only with empty arrays.
-         */
-        break;
-    default:
-        FREE (INFO_FLTN_CONSTVEC (arg_info));
+        INFO_FLTN_CONSTVEC (arg_info) = NULL;
+        INFO_FLTN_CONTEXT (arg_info) = old_ctxt;
     }
-
-    INFO_FLTN_CONSTVEC (arg_info) = NULL;
-    INFO_FLTN_CONTEXT (arg_info) = old_ctxt;
 
     DBUG_RETURN (arg_node);
 }
@@ -1003,10 +1012,7 @@ FltnReturn (node *arg_node, node *arg_info)
 node *
 FltnExprs (node *arg_node, node *arg_info)
 {
-    int *info_fltn_intvec, info_fltn_array_index, abstract;
-    char *info_fltn_charvec;
-    float *info_fltn_floatvec;
-    double *info_fltn_doublevec;
+    int info_fltn_array_index, abstract;
     node *expr, *expr2, *casts_expr;
 
     DBUG_ENTER ("FltnExprs");
@@ -1051,8 +1057,7 @@ FltnExprs (node *arg_node, node *arg_info)
         abstract = ((NODE_TYPE (expr) == N_ap) || (NODE_TYPE (expr) == N_prf)
                     || (NODE_TYPE (expr) == N_Nwith) || (NODE_TYPE (expr) == N_with));
         INFO_FLTN_VECTYPE (arg_info)
-          = FltnPreTypecheck (NODE_TYPE (expr), INFO_FLTN_VECTYPE (arg_info),
-                              info_fltn_array_index);
+          = FltnPreTypecheck (NODE_TYPE (expr), INFO_FLTN_VECTYPE (arg_info));
         INFO_FLTN_VECLEN (arg_info) = info_fltn_array_index + 1;
         break;
     default:
@@ -1067,37 +1072,19 @@ FltnExprs (node *arg_node, node *arg_info)
                 ("context: %d, abstract: %d, expr: %s", INFO_FLTN_CONTEXT (arg_info),
                  abstract, mdb_nodetype[NODE_TYPE (expr)]));
 
-    /*  if this is to be abstracted, we abstract and eventually annotate constant
-     *  integer arrays in the N_id node.
+    /*
+     * if this is to be abstracted, we abstract and potentially annotate constant
+     * arrays in the freshly generated N_id node.
      */
     if (abstract) {
-        /*  if there are type casts we need to abstract them too.
-         *  if we leave them, empty arrays will be left uncasted and so untyped.
+        /*
+         *  if there are type casts we need to abstract them too.
+         *  if we leave them, empty arrays will be left uncasted and thus untyped.
          */
         EXPRS_EXPR (arg_node) = Abstract (casts_expr, arg_info);
-        expr2 = Trav (expr, arg_info);
-        /*  is this
-         *  - a constant array of integers?
-         *  - or an empty array, casted as an array of integers?
-         *  if yes, we annotate the constant values, so the array can be viewed as
-         *  constant, although there's only an identifier left.
-         */
-        if (((NODE_TYPE (expr2) == N_array) && (ARRAY_VECTYPE (expr2) == T_int))
-            || ((NODE_TYPE (casts_expr) == N_cast)
-                && (CAST_BASETYPE (casts_expr) == T_int) && (NODE_TYPE (expr2) == N_array)
-                && (ARRAY_VECTYPE (expr2) == T_nothing))) {
-            ID_VECLEN (EXPRS_EXPR (arg_node)) = ARRAY_VECLEN (expr2);
-            if (ID_VECLEN (EXPRS_EXPR (arg_node)) != 0) {
-                ID_INTVEC (EXPRS_EXPR (arg_node))
-                  = CopyIntVector (ARRAY_VECLEN (expr2), ARRAY_INTVEC (expr2));
-            } else {
-                ID_INTVEC (EXPRS_EXPR (arg_node)) = NULL;
-            }
-            ID_CONSTARRAY (EXPRS_EXPR (arg_node)) = TRUE;
-        }
-    } else {
-        expr2 = Trav (expr, arg_info);
     }
+
+    expr2 = Trav (expr, arg_info);
 
     DBUG_ASSERT ((expr == expr2),
                  "return-node differs from arg_node while flattening an expr!");
@@ -1106,67 +1093,32 @@ FltnExprs (node *arg_node, node *arg_info)
      * Last but not least remaining exprs have to be done:
      */
     if (EXPRS_NEXT (arg_node) == NULL) {
-        if (INFO_FLTN_CONTEXT (arg_info) == CT_array) {
-            /*
-             * collect the array element if it's a constant vector
-             */
-            switch (INFO_FLTN_VECTYPE (arg_info)) {
-            case T_bool:
-            case T_int:
-                info_fltn_intvec = MALLOC (INFO_FLTN_VECLEN (arg_info) * sizeof (int));
-                INFO_FLTN_CONSTVEC (arg_info) = (node *)info_fltn_intvec;
-                info_fltn_intvec[info_fltn_array_index] = (int)EXPR_VAL (expr);
-                break;
-            case T_float:
-                info_fltn_floatvec
-                  = MALLOC (INFO_FLTN_VECLEN (arg_info) * sizeof (float));
-                INFO_FLTN_CONSTVEC (arg_info) = (node *)info_fltn_floatvec;
-                info_fltn_floatvec[info_fltn_array_index] = (float)EXPR_VAL (expr);
-                break;
-            case T_double:
-                info_fltn_doublevec
-                  = MALLOC (INFO_FLTN_VECLEN (arg_info) * sizeof (double));
-                INFO_FLTN_CONSTVEC (arg_info) = (node *)info_fltn_doublevec;
-                info_fltn_doublevec[info_fltn_array_index] = (double)EXPR_VAL (expr);
-                break;
-            case T_char:
-                info_fltn_charvec = MALLOC (INFO_FLTN_VECLEN (arg_info) * sizeof (char));
-                INFO_FLTN_CONSTVEC (arg_info) = (node *)info_fltn_charvec;
-                info_fltn_charvec[info_fltn_array_index] = (char)EXPR_VAL (expr);
-                break;
-            default:
-                /* Nothing to do */
-                break;
-            }
+        /*
+         * iff we are within an array, we can now decide whether the array
+         * is constant; if so, we allocate a constvec for collecting
+         * the constant values and insert the last one.
+         */
+        if ((INFO_FLTN_CONTEXT (arg_info) == CT_array)
+            && (INFO_FLTN_VECTYPE (arg_info) != T_unknown)) {
+            INFO_FLTN_ISCONST (arg_info) = TRUE;
+            INFO_FLTN_CONSTVEC (arg_info)
+              = AllocConstVec (INFO_FLTN_VECTYPE (arg_info), INFO_FLTN_VECLEN (arg_info));
+            INFO_FLTN_CONSTVEC (arg_info)
+              = ModConstVec (INFO_FLTN_VECTYPE (arg_info), INFO_FLTN_CONSTVEC (arg_info),
+                             info_fltn_array_index, expr);
         }
     } else {
         EXPRS_NEXT (arg_node) = Trav (EXPRS_NEXT (arg_node), arg_info);
-        if (INFO_FLTN_CONTEXT (arg_info) == CT_array) {
-            /*
-             * collect the array element if it's a constant vector
-             */
-            switch (INFO_FLTN_VECTYPE (arg_info)) {
-            case T_bool:
-            case T_int:
-                info_fltn_intvec = (int *)INFO_FLTN_CONSTVEC (arg_info);
-                info_fltn_intvec[info_fltn_array_index] = (int)EXPR_VAL (expr);
-                break;
-            case T_float:
-                info_fltn_floatvec = (float *)INFO_FLTN_CONSTVEC (arg_info);
-                info_fltn_floatvec[info_fltn_array_index] = (float)EXPR_VAL (expr);
-                break;
-            case T_double:
-                info_fltn_doublevec = (double *)INFO_FLTN_CONSTVEC (arg_info);
-                info_fltn_doublevec[info_fltn_array_index] = (double)EXPR_VAL (expr);
-                break;
-            case T_char:
-                info_fltn_charvec = (char *)INFO_FLTN_CONSTVEC (arg_info);
-                info_fltn_charvec[info_fltn_array_index] = (char)EXPR_VAL (expr);
-                break;
-            default:
-                /* Nothing to do */
-                break;
-            }
+
+        /*
+         * iff we are within a constant array, insert the actual value in
+         * the constvec.
+         */
+        if ((INFO_FLTN_CONTEXT (arg_info) == CT_array)
+            && (INFO_FLTN_VECTYPE (arg_info) != T_unknown)) {
+            INFO_FLTN_CONSTVEC (arg_info)
+              = ModConstVec (INFO_FLTN_VECTYPE (arg_info), INFO_FLTN_CONSTVEC (arg_info),
+                             info_fltn_array_index, expr);
         }
     }
 
