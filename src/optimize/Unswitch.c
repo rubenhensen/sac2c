@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.2  1995/07/07 14:58:38  asi
+ * Revision 1.3  1995/07/12 15:24:43  asi
+ * added UNSid and WhereUnswitch
+ * pointers to varables definitions added
+ *
+ * Revision 1.2  1995/07/07  14:58:38  asi
  * added loop unswitching
  *
  * Revision 1.1  1995/07/07  13:40:15  asi
@@ -30,6 +34,10 @@
 
 #define FALSE 0
 #define TRUE 1
+#define COND arg_info->node[0]
+#define LOOP_INFO arg_info->node[1]
+
+typedef enum { undef, first, medium, last } position;
 
 /*
  *
@@ -97,65 +105,203 @@ UNSfundef (node *arg_node, node *arg_info)
 
     DBUG_PRINT ("UNS", ("Unswitch in function: %s", arg_node->info.types->id));
     VARNO = arg_node->varno;
-    SEARCH = FALSE;
-    COND_ID = -1;
-    PREV_DEF = GenMask (VARNO);
     PushVL (arg_info->varno);
+    LEVEL = 1;
 
     arg_node = OptTrav (arg_node, arg_info, 0); /* functionbody */
 
     PopVL ();
-    FREE (PREV_DEF);
 
     arg_node = OptTrav (arg_node, arg_info, 1); /* next function */
     DBUG_RETURN (arg_node);
 }
 
+/*
+ *
+ *  functionname  : UNSid
+ *  arguments     :
+ *  description   :
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
+node *
+UNSid (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("UNSid");
+    arg_node->flag = LEVEL;
+    DBUG_PRINT ("UNS",
+                ("%s defined at %06x", arg_node->IDS_ID, VAR (arg_node->IDS_VARNO)));
+    arg_node->IDS_DEF = VAR (arg_node->IDS_VARNO);
+    DBUG_RETURN (arg_node);
+}
+
+/*
+ *
+ *  functionname  : UNSlet
+ *  arguments     :
+ *  description   :
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
 node *
 UNSlet (node *arg_node, node *arg_info)
 {
-    node *arg1;
-    node *arg2;
     ids *ids_node;
 
     DBUG_ENTER ("UNSlet");
-    arg_node = OptTrav (arg_node, arg_info, 0); /* maybe trav with-loop */
+    /* genrate defined-pointer and maybe trav with-loop */
+    arg_node = OptTrav (arg_node, arg_info, 0);
 
-    if ((COND_ID == arg_node->IDS_NODE->varno)
-        && (N_prf == arg_node->node[0]->nodetype)) {
-        COND_TEST = arg_node->node[0];
-        arg1 = arg_node->node[0]->ARG1;
-        arg2 = arg_node->node[0]->ARG2;
-
-        if ((N_id == arg1->nodetype) && (1 == ReadMask (PREV_DEF, arg1->IDS_VARNO)))
-            COND_MOD = VAR (arg1->IDS_NODE->varno);
-        else {
-            if ((N_id == arg2->nodetype) && (1 == ReadMask (PREV_DEF, arg2->IDS_VARNO)))
-                COND_MOD = VAR (arg2->IDS_NODE->varno);
-        }
-    }
+    arg_node->node[0]->flag = LEVEL;
 
     ids_node = arg_node->info.ids;
     while (NULL != ids_node) /* determine defined variables */
     {
         VAR (ids_node->node->varno) = arg_node->node[0];
-        INC_VAR (PREV_DEF, ids_node->node->varno);
         ids_node = ids_node->next;
     }
     DBUG_RETURN (arg_node);
 }
 
+/*
+ *
+ *  functionname  : GetPosition
+ *  arguments     :
+ *  description   :
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
+position
+GetPosition (int num, prf test_prf, linfo *loop_info)
+{
+    position pos = undef;
+
+    DBUG_ENTER ("GetPosition");
+
+    DBUG_RETURN (pos);
+}
+/*
+ *
+ *  functionname  : WhereUnswitch
+ *  arguments     :
+ *  description   :
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
+position
+WhereUnswitch (linfo *loop_info, node *cond_node, int level)
+{
+    node *test, *arg[2];
+    prf test_prf;
+    position pos = undef;
+
+    DBUG_ENTER ("DoUnswitch");
+    if (NULL != loop_info) {
+        if (N_id == cond_node->nodetype) {
+            test = cond_node->IDS_DEF;
+            if ((NULL != test) && (N_prf == test->nodetype)
+                && (F_le <= (test_prf = test->info.prf)) && (F_neq >= test_prf)
+                && (test->flag == level))
+                /* the constant value shall be on the right side of the expression */
+                /* i.e. cond = Num op i will be changed to cond = i op Num         */
+                if (IsConst (test->ARG2)) {
+                    arg[0] = test->ARG1;
+                    arg[1] = test->ARG2;
+                } else {
+                    test_prf = InversePrf (test_prf);
+                    arg[0] = test->ARG2;
+                    arg[1] = test->ARG1;
+                }
+            if ((N_id == arg[0]->nodetype) && (loop_info->varno == arg[0]->IDS_VARNO)
+                && (N_num == arg[1]->nodetype)) {
+                pos = GetPosition (arg[1]->info.cint, test_prf, loop_info);
+            }
+        }
+    }
+    DBUG_RETURN (pos);
+}
+
+/*
+ *
+ *  functionname  : DoUnswitch
+ *  arguments     :
+ *  description   :
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
+node *
+DoUnswitch (node *arg_node, node *arg_info, position pos)
+{
+    DBUG_ENTER ("DoUnswitch");
+    switch (pos) {
+    case first:
+        break;
+    case medium:
+        cond_node break;
+    case last:
+        break;
+    default:
+        break;
+    }
+    DBUG_RETURN (arg_node);
+}
+
+/*
+ *
+ *  functionname  : UNSassign
+ *  arguments     :
+ *  description   :
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
 node *
 UNSassign (node *arg_node, node *arg_info)
 {
+    position pos;
+
     DBUG_ENTER ("UNSassign");
 
     /* unswitch subexpressions */
     arg_node = OptTrav (arg_node, arg_info, 0);
 
     switch (arg_node->node[0]->nodetype) {
-    case N_while:
+    case N_cond:
+        COND = arg_node;
+        break;
     case N_do:
+        pos = WhereUnswitch ((linfo *)LOOP_INFO, COND->node[0]->node[0], LEVEL);
+        if (undef != pos)
+            arg_node = DoUnswitch (arg_node, arg_info, pos);
         break;
     default:
         break;
@@ -168,141 +314,129 @@ UNSassign (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/*
+ *
+ *  functionname  : UNSdo
+ *  arguments     :
+ *  description   :
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
 node *
 UNSdo (node *arg_node, node *arg_info)
 {
     int i;
     linfo *loop_info;
     node *cond_node;
-    int old_SEARCH;
-    int old_COND_ID;
-    node *old_COND_TEST;
-    node *old_COND_MOD;
-    long *old_PREV_DEF;
 
     DBUG_ENTER ("UNSdo");
-
     PushDupVL (VARNO);
 
+    LEVEL++;
+
     for (i = 0; i < TOS.vl_len; i++) {
-        if (ReadMask (arg_node->node[1]->mask[0], i) != 0) {
+        if (1 < ReadMask (arg_node->node[1]->mask[0], i)) {
             VAR (i) = NULL;
         }
     }
 
-    cond_node = arg_node->node[0];
-    switch (cond_node->nodetype) {
-    case N_id:
-        old_PREV_DEF = PREV_DEF;
-        old_SEARCH = SEARCH;
-        old_COND_ID = COND_ID;
-        old_COND_TEST = COND_TEST;
-        old_COND_MOD = COND_MOD;
+    COND = NULL;
 
-        PREV_DEF = GenMask (VARNO);
-        SEARCH = TRUE;
-        COND_ID = cond_node->IDS_NODE->varno;
-        COND_TEST = NULL;
-        COND_MOD = NULL;
-        break;
-    default:
-        break;
-    }
-
-    DBUG_PRINT ("UNS", ("Trav do loop in line %d", arg_node->lineno));
+    DBUG_PRINT ("UNR", ("Trav do loop in line %d", arg_node->lineno));
     arg_node = OptTrav (arg_node, arg_info, 1); /* Trav do-body */
+    arg_node = OptTrav (arg_node, arg_info, 0); /* Trav do-condition */
 
-    loop_info = AnalyseLoop (COND_TEST, COND_MOD, N_do);
-    if ((NULL != loop_info)) {
+    cond_node = arg_node->node[0];
+
+    /* Calculate numbers of iterations */
+    if (N_id == cond_node->nodetype)
+        loop_info = AnalyseLoop (cond_node, LEVEL);
+
+    if (NULL != loop_info) {
+        /* do-loops minimum iterations number is one */
+        if (0 == loop_info->loop_num)
+            loop_info->loop_num = 1;
+        LOOP_INFO = (node *)loop_info;
         FREE (loop_info);
-    }
+    } else
+        LOOP_INFO = NULL;
 
-    switch (cond_node->nodetype) {
-    case N_id:
-        FREE (PREV_DEF);
-        PREV_DEF = old_PREV_DEF;
-        SEARCH = old_SEARCH;
-        COND_ID = old_COND_ID;
-        COND_TEST = old_COND_TEST;
-        COND_MOD = old_COND_MOD;
-        break;
-    default:
-        break;
-    }
-
+    LEVEL--;
     PopVL2 ();
     DBUG_RETURN (arg_node);
 }
 
+/*
+ *
+ *  functionname  : UNSwhile
+ *  arguments     :
+ *  description   :
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
 node *
 UNSwhile (node *arg_node, node *arg_info)
 {
     int i;
-    linfo *loop_info;
     node *cond_node;
-    int old_SEARCH;
-    int old_COND_ID;
-    node *old_COND_TEST;
-    node *old_COND_MOD;
-    long *old_PREV_DEF;
 
     DBUG_ENTER ("UNSwhile");
-    PushVL (VARNO);
-    for (i = 0; i < TOS.vl_len; i++) {
-        if (ReadMask (arg_node->node[1]->mask[0], i) != 0) {
-            VAR (i) = NULL;
-        }
-    }
-
     cond_node = arg_node->node[0];
-    switch (cond_node->nodetype) {
-    case N_id:
-        old_PREV_DEF = PREV_DEF;
-        old_SEARCH = SEARCH;
-        old_COND_ID = COND_ID;
-        old_COND_TEST = COND_TEST;
-        old_COND_MOD = COND_MOD;
 
-        PREV_DEF = GenMask (VARNO);
-        SEARCH = TRUE;
-        COND_ID = cond_node->IDS_NODE->varno;
-        COND_TEST = NULL;
-        COND_MOD = NULL;
-        break;
-    default:
-        break;
-    }
+    if ((NULL != cond_node) && (N_id == cond_node->nodetype)
+        && (N_bool == VAR (cond_node->IDS_VARNO)->nodetype)
+        && (TRUE == VAR (cond_node->IDS_VARNO)->info.cint)) {
+        arg_node->nodetype = N_do;
+        arg_node = Trav (arg_node, arg_info);
+    } else {
+        PushVL (VARNO);
+        LEVEL++;
 
-    DBUG_PRINT ("UNS", ("Trav while loop in line %d", arg_node->lineno));
-    arg_node = OptTrav (arg_node, arg_info, 1); /* Trav do-body */
+        for (i = 0; i < TOS.vl_len; i++) {
+            if (0 != ReadMask (arg_node->node[1]->mask[0], i)) {
+                VAR (i) = NULL;
+            }
+        }
 
-    loop_info = AnalyseLoop (COND_TEST, COND_MOD, N_while);
-    if ((NULL != loop_info)) {
-        FREE (loop_info);
-    }
+        DBUG_PRINT ("UNR", ("Trav while loop in line %d", arg_node->lineno));
+        arg_node = OptTrav (arg_node, arg_info, 1); /* Trav while-body */
 
-    switch (cond_node->nodetype) {
-    case N_id:
-        FREE (PREV_DEF);
-        PREV_DEF = old_PREV_DEF;
-        SEARCH = old_SEARCH;
-        COND_ID = old_COND_ID;
-        COND_TEST = old_COND_TEST;
-        COND_MOD = old_COND_MOD;
-        break;
-    default:
-        break;
-    }
+        LOOP_INFO = NULL;
 
-    PopVL ();
-    for (i = 0; i < TOS.vl_len; i++) {
-        if (ReadMask (arg_node->node[1]->mask[0], i) != 0) {
-            VAR (i) = NULL;
+        LEVEL--;
+        PopVL ();
+        for (i = 0; i < TOS.vl_len; i++) {
+            if (ReadMask (arg_node->node[1]->mask[0], i) != 0) {
+                VAR (i) = NULL;
+            }
         }
     }
     DBUG_RETURN (arg_node);
 }
 
+/*
+ *
+ *  functionname  : UNScond
+ *  arguments     :
+ *  description   :
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
 node *
 UNScond (node *arg_node, node *arg_info)
 {
@@ -310,6 +444,11 @@ UNScond (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("UNScond");
     PushDupVL ();
+
+    LEVEL++;
+
+    /* Trav condition */
+    arg_node = OptTrav (arg_node, arg_info, 0);
 
     /* Trav then */
     arg_node = OptTrav (arg_node, arg_info, 1);
@@ -319,6 +458,7 @@ UNScond (node *arg_node, node *arg_info)
 
     /* Trav else */
     arg_node = OptTrav (arg_node, arg_info, 2);
+    LEVEL--;
 
     PopVL ();
     for (i = 0; i < TOS.vl_len; i++) {
@@ -330,14 +470,29 @@ UNScond (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/*
+ *
+ *  functionname  : UNSwith
+ *  arguments     :
+ *  description   :
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
 node *
 UNSwith (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("UNSwith");
     PushDupVL ();
 
+    LEVEL++;
     /* Trav with-body */
     arg_node = OptTrav (arg_node, arg_info, 2);
+    LEVEL--;
 
     PopVL ();
     DBUG_RETURN (arg_node);
