@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2004/08/10 13:30:45  ktr
+ * alloc_or_reuse initial rc is now set to one.
+ *
  * Revision 1.12  2004/08/05 16:09:50  ktr
  * Scalar with-loops are now treated as they always were. By using the
  * F_wl_assign abstraction we can now explicitly refcount this case.
@@ -1988,6 +1991,7 @@ EMRCprf (node *arg_node, info *arg_info)
         break;
 
     case F_alloc:
+    case F_alloc_or_reuse:
         /*
          * alloc( dim, shp)
          *
