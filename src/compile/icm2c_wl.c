@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.39  2004/08/13 16:38:37  khf
+ * splitted WL_BEGIN_OFFSET into WL_SCHEDULE__BEGIN and
+ * WL_OFFSET, added WL_SCHEDULE__END, removed WL_BEGIN_OFFSET,
+ * WL_END_OFFSET, WL_BEGIN, and WL_END
+ *
  * Revision 3.38  2004/08/05 16:12:09  ktr
  * added WL_INC_OFFSET and modified WL_EMM_ASSIGN which now resembles
  * WL_ASSIGN without incrementing the WL_OFFSET.
@@ -182,7 +187,7 @@ DefineShapeFactor (char *to_NT, int to_sdim, int current_dim)
     DBUG_ENTER ("DefineShapeFactor");
 
     INDENT;
-    fprintf (outfile, "int SAC_WL_SHAPE_FACTOR( %s, %d) = 1", to_NT, current_dim);
+    fprintf (outfile, "SAC_WL_SHAPE_FACTOR( %s, %d) = 1", to_NT, current_dim);
     if (to_dim >= 0) {
         for (i = current_dim + 1; i < to_dim; i++) {
             fprintf (outfile, " * SAC_ND_A_SHAPE( %s, %d)", to_NT, i);
@@ -357,72 +362,26 @@ ICMCompileND_WL_GENARRAY__SHAPE_arr_id (char *to_NT, int to_sdim, int shp_size,
 /******************************************************************************
  *
  * function:
- *   void ICMCompileWL_BEGIN__OFFSET( char *to_NT, int to_sdim,
- *                                    char *idx_vec_NT, int dims)
+ *   void ICMCompileWL_SCHEDULE__BEGIN( int dims)
  *
  * description:
  *   Implements the compilation of the following ICM:
  *
- *   WL_BEGIN__OFFSET( to_NT, to_sdim, idx_vec_NT, dims)
+ *   WL_SCHEDULE__BEGIN( dims)
  *
  ******************************************************************************/
 
 void
-ICMCompileWL_BEGIN__OFFSET (char *to_NT, int to_sdim, char *idx_vec_NT, int dims)
+ICMCompileWL_SCHEDULE__BEGIN (int dims)
 {
     int i;
 
-    DBUG_ENTER ("ICMCompileWL_BEGIN__OFFSET");
+    DBUG_ENTER ("ICMCompileWL_SCHEDULE__BEGIN");
 
-#define WL_BEGIN__OFFSET
+#define WL_SCHEDULE__BEGIN
 #include "icm_comment.c"
 #include "icm_trace.c"
-#undef WL_BEGIN__OFFSET
-
-    INDENT;
-    fprintf (outfile, "{ int SAC_WL_OFFSET( %s);\n", to_NT);
-    indent++;
-
-    for (i = 0; i < dims; i++) {
-        INDENT;
-        fprintf (outfile, "int SAC_WL_MT_SCHEDULE_START( %d);\n", i);
-        INDENT;
-        fprintf (outfile, "int SAC_WL_MT_SCHEDULE_STOP( %d);\n", i);
-    }
-
-    INDENT;
-    fprintf (outfile, "int SAC_i;\n"); /* for DefineShapeFactor() !!! */
-    for (i = 0; i < dims; i++) {
-        DefineShapeFactor (to_NT, to_sdim, i);
-    }
-
-    DBUG_VOID_RETURN;
-}
-
-/******************************************************************************
- *
- * function:
- *   void ICMCompileWL_BEGIN( char *to_NT, int to_sdim,
- *                            char *idx_vec_NT, int dims)
- *
- * description:
- *   Implements the compilation of the following ICM:
- *
- *   WL_BEGIN( to_NT, to_sdim, idx_vec_NT, dims)
- *
- ******************************************************************************/
-
-void
-ICMCompileWL_BEGIN (char *to_NT, int to_sdim, char *idx_vec_NT, int dims)
-{
-    int i;
-
-    DBUG_ENTER ("ICMCompileWL_BEGIN");
-
-#define WL_BEGIN
-#include "icm_comment.c"
-#include "icm_trace.c"
-#undef WL_BEGIN
+#undef WL_SCHEDULE__BEGIN
 
     INDENT;
     fprintf (outfile, "{\n");
@@ -441,25 +400,44 @@ ICMCompileWL_BEGIN (char *to_NT, int to_sdim, char *idx_vec_NT, int dims)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileWL_END__OFFSET( char *to_NT, int to_sdim,
- *                                  char *idx_vec_NT, int dims)
+ *   void ICMCompileWL_OFFSET( char *to_NT, int to_sdim,
+ *                             char *idx_vec_NT, int dims)
  *
  * description:
  *   Implements the compilation of the following ICM:
  *
- *   WL_END__OFFSET( to_NT, to_sdim, idx_vec_NT, dims)
+ *   WL_OFFSET( to_NT, to_sdim, idx_vec_NT, dims)
  *
  ******************************************************************************/
 
 void
-ICMCompileWL_END__OFFSET (char *to_NT, int to_sdim, char *idx_vec_NT, int dims)
+ICMCompileWL_OFFSET (char *to_NT, int to_sdim, char *idx_vec_NT, int dims)
 {
-    DBUG_ENTER ("ICMCompileWL_END__OFFSET");
+    int i;
 
-#define WL_END__OFFSET
+    DBUG_ENTER ("ICMCompileWL_OFFSET");
+
+#define WL_OFFSET
 #include "icm_comment.c"
 #include "icm_trace.c"
-#undef WL_END__OFFSET
+#undef WL_OFFSET
+
+    INDENT;
+    fprintf (outfile, "int SAC_WL_OFFSET( %s);\n", to_NT);
+
+    for (i = 0; i < dims; i++) {
+        fprintf (outfile, "int SAC_WL_SHAPE_FACTOR( %s, %d);\n", to_NT, i);
+    }
+
+    INDENT;
+    fprintf (outfile, "{\n");
+    indent++;
+
+    INDENT;
+    fprintf (outfile, "int SAC_i;\n"); /* for DefineShapeFactor() !!! */
+    for (i = 0; i < dims; i++) {
+        DefineShapeFactor (to_NT, to_sdim, i);
+    }
 
     indent--;
     INDENT;
@@ -471,25 +449,24 @@ ICMCompileWL_END__OFFSET (char *to_NT, int to_sdim, char *idx_vec_NT, int dims)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileWL_END( char *to_NT, int to_sdim,
- *                          char *idx_vec_NT, int dims)
+ *   void ICMCompileWL_SCHEDULE__END( int dims)
  *
  * description:
  *   Implements the compilation of the following ICM:
  *
- *   WL_END( to_NT, to_sdim, idx_vec_NT, dims)
+ *   WL_SCHEDULE__END( dims)
  *
  ******************************************************************************/
 
 void
-ICMCompileWL_END (char *to_NT, int to_sdim, char *idx_vec_NT, int dims)
+ICMCompileWL_SCHEDULE__END (int dims)
 {
-    DBUG_ENTER ("ICMCompileWL_END");
+    DBUG_ENTER ("ICMCompileWL_SCHEDULE__END");
 
-#define WL_END
+#define WL_SCHEDULE__END
 #include "icm_comment.c"
 #include "icm_trace.c"
-#undef WL_END
+#undef WL_SCHEDULE__END
 
     indent--;
     INDENT;

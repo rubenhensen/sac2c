@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.22  2004/08/13 16:38:37  khf
+ * splitted WL_BEGIN_OFFSET into WL_SCHEDULE__BEGIN and
+ * WL_OFFSET, added WL_SCHEDULE__END, removed WL_BEGIN_OFFSET,
+ * WL_END_OFFSET, WL_BEGIN, and WL_END
+ *
  * Revision 3.21  2004/08/05 16:12:09  ktr
  * added WL_INC_OFFSET and modified WL_EMM_ASSIGN which now resembles
  * WL_ASSIGN without incrementing the WL_OFFSET.
@@ -82,12 +87,11 @@ extern void ICMCompileND_WL_GENARRAY__SHAPE_arr_id (char *to_NT, int to_sdim,
                                                     int shp_size, char **shp_ANY,
                                                     char *val_NT, int val_sdim);
 
-extern void ICMCompileWL_BEGIN__OFFSET (char *to_NT, int to_sdim, char *idx_vec_NT,
-                                        int dims);
-extern void ICMCompileWL_BEGIN (char *to_NT, int to_sdim, char *idx_vec_NT, int dims);
-extern void ICMCompileWL_END__OFFSET (char *to_NT, int to_sdim, char *idx_vec_NT,
-                                      int dims);
-extern void ICMCompileWL_END (char *to_NT, int to_sdim, char *idx_vec_NT, int dims);
+extern void ICMCompileWL_SCHEDULE__BEGIN (int dims);
+
+extern void ICMCompileWL_OFFSET (char *to_NT, int to_sdim, char *idx_vec_NT, int dims);
+
+extern void ICMCompileWL_SCHEDULE__END (int dims);
 
 extern void ICMCompileWL_SUBALLOC (char *sub_NT, char *to_NT);
 

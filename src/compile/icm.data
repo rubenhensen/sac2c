@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.74  2004/08/13 16:38:37  khf
+ * splitted WL_BEGIN_OFFSET into WL_SCHEDULE__BEGIN and
+ * WL_OFFSET, added WL_SCHEDULE__END, removed WL_BEGIN_OFFSET,
+ * WL_END_OFFSET, WL_BEGIN, and WL_END
+ *
  * Revision 3.73  2004/08/05 16:12:09  ktr
  * added WL_INC_OFFSET and modified WL_EMM_ASSIGN which now resembles
  * WL_ASSIGN without incrementing the WL_OFFSET.
@@ -684,40 +689,25 @@ ICM_END( ND_WL_GENARRAY__SHAPE_arr_id, (to_NT, to_sdim, shp_size, shp_ANY,
                                         val_NT, val_sdim))
 #endif
 
-#if defined(WL_BEGIN__OFFSET) || defined(ICM_ALL)
-ICM_DEF( WL_BEGIN__OFFSET, TRACE_NONE)
-  ICM_NT( to_NT)
-  ICM_INT( to_sdim)
-  ICM_NT( idx_vec_NT)
+#if defined(WL_SCHEDULE__BEGIN) || defined(ICM_ALL)
+ICM_DEF( WL_SCHEDULE__BEGIN, TRACE_NONE)
   ICM_INT( dims)
-ICM_END( WL_BEGIN__OFFSET, (to_NT, to_sdim, idx_vec_NT, dims))
+ICM_END( WL_SCHEDULE__BEGIN, ( dims))
 #endif
 
-#if defined(WL_BEGIN) || defined(ICM_ALL)
-ICM_DEF( WL_BEGIN, TRACE_NONE)
+#if defined(WL_OFFSET) || defined(ICM_ALL)
+ICM_DEF( WL_OFFSET, TRACE_NONE)
   ICM_NT( to_NT)
   ICM_INT( to_sdim)
   ICM_NT( idx_vec_NT)
   ICM_INT( dims)
-ICM_END( WL_BEGIN, (to_NT, to_sdim, idx_vec_NT, dims))
+ICM_END( WL_OFFSET, (to_NT, to_sdim, idx_vec_NT, dims))
 #endif
 
-#if defined(WL_END__OFFSET) || defined(ICM_ALL)
-ICM_DEF( WL_END__OFFSET, TRACE_NONE)
-  ICM_NT( to_NT)
-  ICM_INT( to_sdim)
-  ICM_NT( idx_vec_NT)
+#if defined(WL_SCHEDULE__END) || defined(ICM_ALL)
+ICM_DEF( WL_SCHEDULE__END, TRACE_NONE)
   ICM_INT( dims)
-ICM_END( WL_END__OFFSET, (to_NT, to_sdim, idx_vec_NT, dims))
-#endif
-
-#if defined(WL_END) || defined(ICM_ALL)
-ICM_DEF( WL_END, TRACE_NONE)
-  ICM_NT( to_NT)
-  ICM_INT( to_sdim)
-  ICM_NT( idx_vec_NT)
-  ICM_INT( dims)
-ICM_END( WL_END, (to_NT, to_sdim, idx_vec_NT, dims))
+ICM_END( WL_SCHEDULE__END, ( dims))
 #endif
 
 #if defined(WL_INIT_OFFSET) || defined(ICM_ALL)
