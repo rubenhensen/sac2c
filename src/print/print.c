@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.91  2002/06/21 12:26:45  dkr
+ * PrintAST: AVIS_SSACONST for N_id nodes added
+ *
  * Revision 3.90  2002/06/07 15:49:49  dkr
  * printing of FUNDEF_ICM: \n added
  *
@@ -91,6 +94,7 @@
 #include "refcount.h"
 #include "wl_bounds.h"
 #include "wltransform.h"
+#include "constants.h"
 #include "print_interface.h"
 #include "print.h"
 
@@ -4568,6 +4572,9 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
             break;
 
         case N_avis:
+            fprintf (outfile, "(");
+
+            fprintf (outfile, ")");
             break;
 
         case N_arg:
@@ -4724,6 +4731,12 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
             PrintStatus (ID_STATUS (arg_node), TRUE);
 
             PrintRC (ID_REFCNT (arg_node), ID_NAIVE_REFCNT (arg_node), TRUE);
+
+            if ((ID_AVIS (arg_node) != NULL)
+                && (AVIS_SSACONST (ID_AVIS (arg_node)) != NULL)) {
+                fprintf (outfile, " ");
+                COPrintConstant (outfile, AVIS_SSACONST (ID_AVIS (arg_node)));
+            }
 
             fprintf (outfile, ")");
             break;
