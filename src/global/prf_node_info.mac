@@ -9,7 +9,7 @@
 /*   Node_name       dbug-string    */
 
 PRF_IF (F_add, "F_add", "+"), PRF_IF (F_sub, "F_sub", "-"), PRF_IF (F_mul, "F_mul", "*"),
-  PRF_IF (F_div, "F_div", "\\"), PRF_IF (F_take, "F_take", "take"),
+  PRF_IF (F_div, "F_div", "/"), PRF_IF (F_take, "F_take", "take"),
   PRF_IF (F_drop, "F_drop", "drop"), PRF_IF (F_psi, "F_psi", "psi"),
   PRF_IF (F_shape, "F_shape", "shape"), PRF_IF (F_reshape, "F_reshape", "reshape"),
   PRF_IF (F_cat, "F_cat", "++"), PRF_IF (F_dim, "F_dim", "dim"),
