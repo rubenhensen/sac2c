@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.28  1998/03/21 23:45:24  dkr
+ * fixed a few bugs in PRECnwith
+ * added parts of phase 5 (split-merge)
+ *
  * Revision 1.27  1998/03/21 16:19:10  dkr
  * fixed a few bugs in PRECnwith
  *
@@ -105,6 +109,18 @@
 #include "dbug.h"
 
 #include <string.h>
+
+#define COMP_BEGIN(a, b, result)                                                         \
+    if (a > b) {                                                                         \
+        result = 1;                                                                      \
+    } else {                                                                             \
+        if (a < b) {                                                                     \
+            result = -1;                                                                 \
+        } else {
+
+#define COMP_END                                                                         \
+    }                                                                                    \
+    }
 
 /*
  *
@@ -1126,268 +1142,6 @@ node *ProjIntersect(node *proj1, node *proj2, int shape_int)
 /******************************************************************************
  *
  * function:
- *   node *ProjDisjOutline(node *proj1, node *proj2, int shape_int)
- *
- * description:
- *   returns NULL, if 'proj1' and 'proj2' have disjunct outlines.
- *   otherwise 'proj1', 'proj2' are divided in parts with disjunct outlines;
- *     these parts are returned as a N_exprs-chain of N_index-nodes.
- *
- ******************************************************************************/
-
-node *ProjDisjOutline(node *proj1, node *proj2, int shape_int)
-{
-  node *disj_out = NULL;
-  int bound1_1, bound2_1, offset_1, step_1, width_1,
-      bound1_2, bound2_2, offset_2, step_2, width_2,
-      bound1_1b, bound2_1b, offset_1b, offset_1c,
-      bound1_2b, bound2_2b, offset_2b, offset_2c;
-
-  DBUG_ENTER("ProjDisjOutline");
-
-  bound1_1 = NUM_VAL(INDEX_BOUND1(proj1));
-  bound2_1 = NUM_VAL(INDEX_BOUND2(proj1));
-  offset_1 = NUM_VAL(INDEX_OFFSET(proj1));
-  step_1 = NUM_VAL(INDEX_STEP(proj1));
-  width_1 = NUM_VAL(INDEX_WIDTH(proj1));
-
-  bound1_2 = NUM_VAL(INDEX_BOUND1(proj2));
-  bound2_2 = NUM_VAL(INDEX_BOUND2(proj2));
-  offset_2 = NUM_VAL(INDEX_OFFSET(proj2));
-  step_2 = NUM_VAL(INDEX_STEP(proj2));
-  width_2 = NUM_VAL(INDEX_WIDTH(proj2));
-
-  if ((bound2_1 > bound1_2) && (bound2_2 > bound1_1) &&
-      ((bound1_1 != bound1_2) || (bound2_1 != bound2_2))) {
-    /* 'proj1' and 'proj2' do not have disjunct outlines yet */
-
-    /*
-     * 'proj1' respectively 'proj2' must be devided in at most three parts, called:
-     *    'proj1': (1a), (1b), (1c)
-     *    'proj2': (2a), (2b), (2c)
-     */
-    bound1_1b = MAX(bound1_1, bound1_2);
-    bound2_1b = MIN(bound2_1, bound2_2);
-    offset_1b = ComputeOffset(bound1_1b, bound1_1, step_1, offset_1, width_1);
-    offset_1c = ComputeOffset(bound2_1b, bound1_1, step_1, offset_1, width_1);
-    bound1_2b = bound1_1b;
-    bound2_2b = bound2_1b;
-    offset_2b = ComputeOffset(bound1_2b, bound1_2, step_2, offset_2, width_2);
-    offset_2c = ComputeOffset(bound2_2b, bound1_2, step_2, offset_2, width_2);
-
-    if (IsEmpty(bound1_1b, bound2_1, offset_1b)) {      /* is (1b,1c) empty ? */
-      bound2_2b = bound1_2;                             /* (2a) == empty, (2b) := empty, (2c) := (2) */
-      offset_2c = offset_2;
-    }
-    if (IsEmpty(bound1_2, bound2_2b, offset_2)) {       /* is (2a,2b) empty ? */
-      bound2_1b = bound2_1;                             /* (1c) == empty, (1b) := empty, (1a) := (1) */
-    }
-    if (IsEmpty(bound1_2b, bound2_2, offset_2b)) {      /* is (2b,2c) empty ? */
-      bound2_1b = bound1_1;                             /* (1a) == empty, (1b) := empty, (1c) := (1) */
-      offset_1c = offset_1;
-    }
-    if (IsEmpty(bound1_1, bound2_1b, offset_1)) {       /* is (1a,1b) empty ? */
-      bound2_2b = bound2_2;                             /* (2c) == empty, (2b) := empty, (2a) := (2) */
-    }
-
-    if (! IsEmpty(bound1_1, bound1_1b, offset_1)) {     /* insert (1a) if not empty */
-      disj_out = MakeExprs(MakeIndex(MakeNum(bound1_1), MakeNum(bound1_1b),
-                                     MakeNum(offset_1),
-                                     MakeNum(step_1), MakeNum(width_1), NULL),
-                           disj_out);
-    }
-
-    if (! IsEmpty(bound1_1b, bound2_1b, offset_1b)) {   /* insert (1b) if not empty */
-      disj_out = MakeExprs(MakeIndex(MakeNum(bound1_1b), MakeNum(bound2_1b),
-                                     MakeNum(offset_1b),
-                                     MakeNum(step_1), MakeNum(width_1), NULL),
-                           disj_out);
-    }
-
-    if (! IsEmpty(bound2_1b, bound2_1, offset_1c)) {    /* insert (1c) if not empty */
-      disj_out = MakeExprs(MakeIndex(MakeNum(bound2_1b), MakeNum(bound2_1),
-                                     MakeNum(offset_1c),
-                                     MakeNum(step_1), MakeNum(width_1), NULL),
-                           disj_out);
-    }
-
-    if (! IsEmpty(bound1_2, bound1_2b, offset_2)) {     /* insert (2a) if not empty */
-      disj_out = MakeExprs(MakeIndex(MakeNum(bound1_2), MakeNum(bound1_2b),
-                                     MakeNum(offset_2),
-                                     MakeNum(step_2), MakeNum(width_2), NULL),
-                           disj_out);
-    }
-
-    if (! IsEmpty(bound1_2b, bound2_2b, offset_2b)) {   /* insert (2b) if not empty */
-      disj_out = MakeExprs(MakeIndex(MakeNum(bound1_2b), MakeNum(bound2_2b),
-                                     MakeNum(offset_2b),
-                                     MakeNum(step_2), MakeNum(width_2), NULL),
-                           disj_out);
-    }
-
-    if (! IsEmpty(bound2_2b, bound2_2, offset_2c)) {    /* insert (2c) if not empty */
-      disj_out = MakeExprs(MakeIndex(MakeNum(bound2_2b), MakeNum(bound2_2),
-                                     MakeNum(offset_2c),
-                                     MakeNum(step_2), MakeNum(width_2), NULL),
-                           disj_out);
-    }
-  }
-
-  DBUG_RETURN(disj_out);
-}
-
-
-
-/******************************************************************************
- *
- * function:
- *   node *ProjPartition1(node* old_projs, int shape_int)
- *
- * description:
- *   old_projs: N_exprs-chain of current projections
- *   shape_int: relevant shape-component
- *
- *   return: partition of the current projection (step 1)
- *           (N_exprs-chain of N_index-nodes)
- *
- ******************************************************************************/
-
-node *ProjPartition1(node *old_projs, int shape_int)
-{
-  node *proj1, *proj2, *projs, *isection, *tmp;
-  int fixpoint;
-
-  DBUG_ENTER("ProjPartition1");
-
-  do {
-    fixpoint = 1;
-    projs = NULL;
-
-    /* initialize NPART_MODIFIED(...) */
-    proj1 = old_projs;
-    while (proj1 != NULL) {
-      INDEX_MODIFIED(EXPRS_EXPR(proj1)) = 0;
-      proj1 = EXPRS_NEXT(proj1);
-    }
-
-    /* intersect the elements of 'old_projs' in pairs */
-    proj1 = old_projs;
-    while (proj1 != NULL) {
-      proj2 = EXPRS_NEXT(proj1);
-      while (proj2 != NULL) {
-        /* intersect 'proj1' and 'proj2' */
-        isection = ProjIntersect(EXPRS_EXPR(proj1), EXPRS_EXPR(proj2), shape_int);
-        if (isection != NULL) {
-          fixpoint = 0;
-          INDEX_MODIFIED(EXPRS_EXPR(proj1)) = INDEX_MODIFIED(EXPRS_EXPR(proj2)) = 1;
-          projs = ProjInsert(isection, projs);
-	}
-
-        proj2 = EXPRS_NEXT(proj2);
-      }
-
-      tmp = proj1;
-      proj1 = EXPRS_NEXT(proj1);
-      EXPRS_NEXT(tmp) = NULL;
-
-      /* have 'proj1' only empty intersections with the others? */
-      if (INDEX_MODIFIED(EXPRS_EXPR(tmp)) == 0) {
-        /* insert 'proj1' in 'projs' */
-        projs = ProjInsert(tmp, projs);
-      }
-      else {
-        /* 'proj1' is no longer needed */
-        FreeTree(tmp);
-      }
-    }
-
-    old_projs = projs;
-  } while (! fixpoint);
-
-  DBUG_RETURN(projs);
-}
-
-
-
-/******************************************************************************
- *
- * function:
- *   node *ProjPartition2(node* old_projs, int shape_int)
- *
- * description:
- *   old_projs: partition of the current projection after step 1 (N_exprs-chain)
- *   shape_int: relevant shape-component
- *
- *   return: modified partition of the current projection (step 2):
- *             outlines are disjunct, too.
- *           (N_exprs-chain of N_index-nodes)
- *
- ******************************************************************************/
-
-node *ProjPartition2(node *old_projs, int shape_int)
-{
-  node *proj1, *proj2, *projs, *disj_out, *tmp;
-  int fixpoint;
-
-  DBUG_ENTER("ProjPartition2");
-
-  do {
-    fixpoint = 1;
-    projs = NULL;
-
-    /* initialize NPART_MODIFIED(...) */
-    proj1 = old_projs;
-    while (proj1 != NULL) {
-      INDEX_MODIFIED(EXPRS_EXPR(proj1)) = 0;
-      proj1 = EXPRS_NEXT(proj1);
-    }
-
-    /* intersect the outlines of 'old_projs' in pairs */
-    proj1 = old_projs;
-    while (proj1 != NULL) {
-      if (NUM_VAL(INDEX_STEP(EXPRS_EXPR(proj1))) > 1) {
-        proj2 = EXPRS_NEXT(proj1);
-        while (proj2 != NULL) {
-          if (NUM_VAL(INDEX_STEP(EXPRS_EXPR(proj1))) > 1) {
-            /* make the outlines of 'proj1' and 'proj2' disjunct */
-            disj_out = ProjDisjOutline(EXPRS_EXPR(proj1), EXPRS_EXPR(proj2), shape_int);
-            if (disj_out != NULL) {
-              fixpoint = 0;
-              INDEX_MODIFIED(EXPRS_EXPR(proj1)) = INDEX_MODIFIED(EXPRS_EXPR(proj2)) = 1;
-              projs = ProjInsert(disj_out, projs);
-	    }
-	  }
-
-          proj2 = EXPRS_NEXT(proj2);
-        }
-      }
-
-      tmp = proj1;
-      proj1 = EXPRS_NEXT(proj1);
-      EXPRS_NEXT(tmp) = NULL;
-
-      /* have 'proj1' only empty intersections with the others? */
-      if (INDEX_MODIFIED(EXPRS_EXPR(tmp)) == 0) {
-        /* insert 'proj1' in 'projs' */
-        projs = ProjInsert(tmp, projs);
-      }
-      else {
-        /* 'proj1' is no longer needed */
-        FreeTree(tmp);
-      }
-    }
-
-    old_projs = projs;
-  } while (! fixpoint);
-
-  DBUG_RETURN(projs);
-}
-
-
-
-/******************************************************************************
- *
- * function:
  *   node *ProjPartition3(node* projs)
  *
  * description:
@@ -1466,66 +1220,92 @@ node *ProjPartition3(node *projs)
 /******************************************************************************
  *
  * function:
- *   int CompareProj(node *proj1, node *proj2)
+ *   int CompareWLnode(node *node1, node *node2, int outline)
  *
  * description:
- *   compares the N_WLproj-nodes 'proj1' and 'proj2' IN ALL DIMS.
- *   ALL GRID DATA IS IGNORED!!!
- *   eventually present next-nodes in 'proj1' or 'proj2' are ignored.
+ *   compares the N_WL...-nodes 'node1' and 'node2' IN ALL DIMS.
+ *   if (outline > 0) ALL GRID DATA IS IGNORED!!!
+ *   eventually present next nodes in 'node1' or 'node2' are ignored.
  *
- *   return: -2 => dim('proj1') < dim('proj2')
- *           -1 => dim('proj1') = dim('proj2'), 'proj1' < 'proj2'
- *            0 => dim('proj1') = dim('proj2'), 'proj1' = 'proj2'
- *            1 => dim('proj1') = dim('proj2'), 'proj1' > 'proj2'
- *            2 => dim('proj1') > dim('proj2')
+ *   return: -1 => 'node1' < 'node2'
+ *            0 => 'node1' = 'node2'
+ *            1 => 'node1' > 'node2'
  *
  ******************************************************************************/
 
 int
-CompareProj (node *proj1, node *proj2)
+CompareWLnode (node *node1, node *node2, int outline)
 {
     node *grid1, *grid2;
-    int result = 0;
+    int result;
 
-    DBUG_ENTER ("CompareProj");
+    DBUG_ENTER ("CompareWLnode");
 
-#define TEST_BEGIN(a, b)                                                                 \
-    if (a > b) {                                                                         \
-        result = 1;                                                                      \
-    } else {                                                                             \
-        if (a < b) {                                                                     \
-            result = -1;                                                                 \
+    if ((node1 != NULL) && (node2 != NULL)) {
+
+        DBUG_ASSERT ((NODE_TYPE (node1) == NODE_TYPE (node2)),
+                     "can not compare object of different type");
+
+        COMP_BEGIN (WLNODE_BOUND1 (node1), WLNODE_BOUND1 (node2), result)
+        COMP_BEGIN (WLNODE_BOUND2 (node1), WLNODE_BOUND2 (node2), result)
+        switch (NODE_TYPE (node1)) {
+
+        case N_WLblock:
+
+            result
+              = CompareWLnode (WLBLOCK_NEXTDIM (node1), WLBLOCK_NEXTDIM (node2), outline);
+            break;
+
+        case N_WLublock:
+
+            result = CompareWLnode (WLUBLOCK_NEXTDIM (node1), WLUBLOCK_NEXTDIM (node2),
+                                    outline);
+            break;
+
+        case N_WLproj:
+
+            grid1 = WLPROJ_CONTENTS (node1);
+            grid2 = WLPROJ_CONTENTS (node2);
+
+            DBUG_ASSERT ((grid1 != NULL), "no grid found");
+            DBUG_ASSERT ((grid2 != NULL), "no grid found");
+
+            if (outline > 0) {
+                /* skip grid */
+                result = CompareWLnode (WLGRID_NEXTDIM (grid1), WLGRID_NEXTDIM (grid2),
+                                        outline);
+            } else {
+                /* compare grid */
+                COMP_BEGIN (WLGRID_OFFSET (grid1), WLGRID_OFFSET (grid2), result)
+                COMP_BEGIN (WLGRID_WIDTH (grid1), WLGRID_WIDTH (grid2), result)
+                result = CompareWLnode (WLGRID_NEXTDIM (grid1), WLGRID_NEXTDIM (grid2),
+                                        outline);
+                COMP_END
+                COMP_END
+            }
+
+            break;
+
+        default:
+
+            DBUG_ASSERT ((0), "wrong node type");
+        }
+
+        COMP_END
+        COMP_END
+
+    } else {
+
+        if ((node1 == NULL) && (node2 == NULL)) {
+            result = 0;
         } else {
-#define TEST_END                                                                         \
-    }                                                                                    \
-    }
-
-    while ((result == 0) && ((proj1 != NULL) || (proj2 != NULL))) {
-        if (proj1 == NULL) {
-            result = -2;
-        } else {
-            if (proj2 == NULL) {
+            if (node2 == NULL) {
                 result = 2;
             } else {
-                grid1 = WLPROJ_CONTENTS (proj1);
-                DBUG_ASSERT ((grid1 != NULL), "grid not found");
-                grid2 = WLPROJ_CONTENTS (proj2);
-                DBUG_ASSERT ((grid2 != NULL), "grid not found");
-
-                TEST_BEGIN (WLPROJ_BOUND1 (proj1), WLPROJ_BOUND1 (proj2))
-                TEST_BEGIN (WLPROJ_BOUND2 (proj1), WLPROJ_BOUND2 (proj2))
-                result = 0;
-                TEST_END
-                TEST_END
-
-                proj1 = WLGRID_NEXTDIM (grid1);
-                proj2 = WLGRID_NEXTDIM (grid2);
+                result = -2;
             }
         }
     }
-
-#undef TEST_BEGIN
-#undef TEST_END
 
     DBUG_RETURN (result);
 }
@@ -1533,58 +1313,66 @@ CompareProj (node *proj1, node *proj2)
 /******************************************************************************
  *
  * function:
- *   node *InsertProj(node *projs, node *insert_projs)
+ *   node *InsertWLnodes(node *nodes, node *insert_nodes)
  *
  * description:
- *   inserts all elements of the chain 'insert_projs' into the sorted chain
- *     'projs'.
- *   uses function 'CompareProj' to sort the elements.
+ *   inserts all elements of the chain 'insert_nodes' into the sorted chain
+ *     'nodes'.
+ *   uses function 'CompareWLnode' to sort the elements.
  *
- *   insert_projs: (unsorted) chain of N_WLproj-nodes
- *   projs:        sorted chain of N_WLproj-nodes
- *   return:       sorted chain of N_WLproj-nodes
+ *   insert_nodes: (unsorted) chain of N_WL...-nodes
+ *   nodes:        sorted chain of N_WL...-nodes
+ *   return:       sorted chain of N_WL...-nodes
  *
  ******************************************************************************/
 
 node *
-InsertProjs (node *projs, node *insert_projs)
+InsertWLnodes (node *nodes, node *insert_nodes)
 {
-    node *insert_proj, *insert_here;
+    node *tmp, *insert_here;
+    int compare;
 
-    DBUG_ENTER ("InsertProjs");
+    DBUG_ENTER ("InsertWLnodes");
 
-    while (insert_projs != NULL) {
-        /* insert all elements of 'insert_projs' in 'projs' */
-        insert_proj = insert_projs;
-        insert_projs = WLPROJ_NEXT (insert_projs);
+    /*
+     * insert all elements of 'insert_nodes' in 'nodes'
+     */
+    while (insert_nodes != NULL) {
 
-        if (projs == NULL) { /* 'projs' is empty */
-            /* insert current element of 'insert_projs' at head of 'projs' */
-            WLPROJ_NEXT (insert_proj) = projs;
-            projs = insert_proj;
-        } else { /* 'projs' contains elements */
-            if (CompareProj (insert_proj, projs) < 0) {
-                /* insert current element of 'insert_projs' at head of 'projs' */
-                WLPROJ_NEXT (insert_proj) = projs;
-                projs = insert_proj;
-            } else {
-                /* search for insert-position in 'projs' */
-                insert_here = projs;
-                while (WLPROJ_NEXT (insert_here) != NULL) {
-                    if (CompareProj (insert_proj, WLPROJ_NEXT (insert_here)) < 0) {
-                        break;
-                    }
-                    insert_here = WLPROJ_NEXT (insert_here);
+        compare = CompareWLnode (insert_nodes, nodes, 0);
+
+        if ((nodes == NULL) || (compare < 0)) {
+            /* insert current element of 'insert_nodes' at head of 'nodes' */
+            tmp = insert_nodes;
+            insert_nodes = WLNODE_NEXT (insert_nodes);
+            WLNODE_NEXT (tmp) = nodes;
+            nodes = tmp;
+        } else {
+
+            /* search for insert-position in 'nodes' */
+            insert_here = nodes;
+            while ((compare > 0) && (WLNODE_NEXT (insert_here) != NULL)) {
+                compare = CompareWLnode (insert_nodes, WLNODE_NEXT (insert_here), 0);
+
+                if (compare > 0) {
+                    insert_here = WLNODE_NEXT (insert_here);
                 }
+            }
 
-                /* insert current element of 'insert_projs' at the found position */
-                WLPROJ_NEXT (insert_proj) = WLPROJ_NEXT (insert_here);
-                WLPROJ_NEXT (insert_here) = insert_proj;
+            if (compare == 0) {
+                /* current element of 'insert_nodes' exists already -> free it */
+                insert_nodes = FreeNode (insert_nodes);
+            } else {
+                /* insert current element of 'insert_nodes' after the found position */
+                tmp = insert_nodes;
+                insert_nodes = WLNODE_NEXT (insert_nodes);
+                WLNODE_NEXT (tmp) = WLNODE_NEXT (insert_here);
+                WLNODE_NEXT (insert_here) = tmp;
             }
         }
     }
 
-    DBUG_RETURN (projs);
+    DBUG_RETURN (nodes);
 }
 
 /******************************************************************************
@@ -1594,7 +1382,7 @@ InsertProjs (node *projs, node *insert_projs)
  *
  * description:
  *   returns the IN THE FIRST DIM normalized N_WLproj-node 'proj'.
- *   eventually present next-nodes in 'proj' are ignored.
+ *   a eventually present next node in 'proj' is ignored.
  *
  ******************************************************************************/
 
@@ -1712,7 +1500,7 @@ Parts2Projs (node *parts, node *shape_arr)
         DBUG_ASSERT ((shape_elems == NULL), "shape contains more elements");
 
         WLGRID_CODE (last_grid) = NPART_CODE (parts);
-        parts_proj = InsertProjs (parts_proj, projs);
+        parts_proj = InsertWLnodes (parts_proj, projs);
 
         parts = NPART_NEXT (parts);
     }
@@ -2036,15 +1824,15 @@ ComputeCubes (node *projs, node *shape_arr)
                 /* intersect outlines of 'proj1' and 'proj2' */
                 IntersectOutline (proj1, proj2, ARRAY_AELEMS (shape_arr), &isect1,
                                   &isect2);
-                if ((isect1 != NULL) && (CompareProj (proj1, isect1) != 0)) {
+                if ((isect1 != NULL) && (CompareWLnode (proj1, isect1, 1) != 0)) {
                     fixpoint = 0;
                     WLPROJ_MODIFIED (proj1) = 1;
-                    new_projs = InsertProjs (new_projs, isect1);
+                    new_projs = InsertWLnodes (new_projs, isect1);
                 }
-                if ((isect2 != NULL) && (CompareProj (proj2, isect2) != 0)) {
+                if ((isect2 != NULL) && (CompareWLnode (proj2, isect2, 1) != 0)) {
                     fixpoint = 0;
                     WLPROJ_MODIFIED (proj2) = 1;
-                    new_projs = InsertProjs (new_projs, isect2);
+                    new_projs = InsertWLnodes (new_projs, isect2);
                 }
 
                 proj2 = WLPROJ_NEXT (proj2);
@@ -2055,8 +1843,8 @@ ComputeCubes (node *projs, node *shape_arr)
                 /* insert 'proj1' in 'new_projs' */
                 tmp = proj1;
                 proj1 = WLPROJ_NEXT (proj1);
-                EXPRS_NEXT (tmp) = NULL;
-                new_projs = InsertProjs (new_projs, tmp);
+                WLPROJ_NEXT (tmp) = NULL;
+                new_projs = InsertWLnodes (new_projs, tmp);
             } else {
                 proj1 = FreeNode (proj1); /* 'proj1' is no longer needed */
                                           /* 'proj1' points now to his successor!! */
@@ -2078,9 +1866,7 @@ ComputeCubes (node *projs, node *shape_arr)
         proj2 = WLPROJ_NEXT (proj1);
 
         /* duplicate first node of 'proj1' */
-        WLPROJ_NEXT (proj1) = NULL;
-        new_proj1 = DupTree (proj1, NULL);
-        WLPROJ_NEXT (proj1) = proj2;
+        new_proj1 = DupNode (proj1);
 
 #if 0
     /*
@@ -2089,14 +1875,14 @@ ComputeCubes (node *projs, node *shape_arr)
     while (proj2 != NULL) {
       /* intersect outlines of 'proj1' and 'proj2' */
       IntersectOutline(proj1, proj2, ARRAY_AELEMS(shape_arr), &isect1, &isect2);
-      if (CompareProj(proj1, isect1) == 0) {
-        DBUG_ASSERT((CompareProj(proj2, isect2) == 0), "wrong outline found");
+      if (CompareWLnode(proj1, isect1, 1) == 0) {
+        DBUG_ASSERT((CompareWLnode(proj2, isect2, 1) == 0), "wrong outline found");
 
         WLPROJ_NEXT(last_proj2) = WLPROJ_NEXT(proj2);  /* remove 'proj2' from chain */
 
         /* insert first proj of 'proj2' into 'new_proj1' */
         WLPROJ_NEXT(proj2) = NULL;
-        new_proj1 = InsertProjs(new_proj1, proj2);
+        new_proj1 = InsertWLnodes(new_proj1, proj2);
       }
       else {
         last_proj2 = proj2;                            /* save last proj */
@@ -2114,8 +1900,9 @@ ComputeCubes (node *projs, node *shape_arr)
         while (proj2 != NULL) {
             /* intersect outlines of 'proj1' and 'proj2' */
             IntersectOutline (proj1, proj2, ARRAY_AELEMS (shape_arr), &isect1, &isect2);
-            if (CompareProj (proj1, isect1) == 0) {
-                DBUG_ASSERT ((CompareProj (proj2, isect2) == 0), "wrong outline found");
+            if (CompareWLnode (proj1, isect1, 1) == 0) {
+                DBUG_ASSERT ((CompareWLnode (proj2, isect2, 1) == 0),
+                             "wrong outline found");
 
                 WLPROJ_NEXT (last_proj2)
                   = WLPROJ_NEXT (proj2);                  /* remove 'proj2' from chain */
@@ -2129,7 +1916,7 @@ ComputeCubes (node *projs, node *shape_arr)
             }
         }
 
-        new_projs = InsertProjs (new_projs, new_proj1);
+        new_projs = InsertWLnodes (new_projs, new_proj1);
 
         proj1 = FreeNode (proj1); /* data of 'proj1' no longer needed */
                                   /* 'proj1' points now to his successor!! */
@@ -2241,13 +2028,13 @@ SetSegAttribs (node *seg)
   (WLSEG_UBV(seg))[0] = 18;
   (WLSEG_UBV(seg))[1] = 3;
 #else
-    WLSEG_BLOCKS (seg) = 1;
+    WLSEG_BLOCKS (seg) = 0;
 
     (WLSEG_BV (seg, 0))[0] = 180; /* 180 or 1 */
     (WLSEG_BV (seg, 0))[1] = 156; /* 156 */
 
     (WLSEG_UBV (seg))[0] = 1; /* 1 */
-    (WLSEG_UBV (seg))[1] = 6; /* 6 */
+    (WLSEG_UBV (seg))[1] = 1; /* 6 */
 #endif
 
     FREE (sv);
@@ -2322,7 +2109,8 @@ SetSegs (node *cubes, int dims)
  *   node *BlockProj(node *proj, long *bv)
  *
  * description:
- *   correct bounds and blocking levels of Wlproj-chain 'proj' after a blocking
+ *   corrects bounds and blocking levels of Wlproj-chain 'proj' after a
+ *     blocking
  *
  ******************************************************************************/
 
@@ -2504,6 +2292,92 @@ BlockWL (node *proj, int dims, long *bv, int unroll)
 /******************************************************************************
  *
  * function:
+ *   node *SplitProj(node *proj1, node *proj2)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+SplitProj (node *proj1, node *proj2)
+{
+    node *new_proj, *new_projs;
+    int bound11, bound21, bound12, bound22, i_bound1, i_bound2;
+
+    DBUG_ENTER ("SplitProj");
+
+    new_projs = NULL;
+
+    bound11 = WLNODE_BOUND1 (proj1);
+    bound21 = WLNODE_BOUND2 (proj1);
+    bound12 = WLNODE_BOUND1 (proj2);
+    bound22 = WLNODE_BOUND2 (proj2);
+
+    if (((bound11 != bound12) || (bound21 != bound22))
+        && /* outline(proj1), outline(proj2) not equal */
+        ((bound12 < bound21)
+         && (bound11 < bound22))) { /* outline(proj1), outline(proj2) not disjunkt */
+
+        /*
+         * 'proj1' respectively 'proj2' must be devided in at most three parts
+         */
+        i_bound1 = MAX (bound11, bound12); /* compute bounds of intersection */
+        i_bound2 = MIN (bound21, bound22);
+
+        /* new parts of 'proj1' */
+        if (bound11 < i_bound1) {
+            new_proj = DupNode (proj1);
+            WLNODE_BOUND1 (new_proj) = bound11;
+            WLNODE_BOUND2 (new_proj) = i_bound1;
+            WLNODE_NEXT (new_proj) = new_projs;
+            new_projs = new_proj;
+        }
+
+        new_proj = DupNode (proj1);
+        WLNODE_BOUND1 (new_proj) = i_bound1;
+        WLNODE_BOUND2 (new_proj) = i_bound2;
+        WLNODE_NEXT (new_proj) = new_projs;
+        new_projs = new_proj;
+
+        if (i_bound2 < bound21) {
+            new_proj = DupNode (proj1);
+            WLNODE_BOUND1 (new_proj) = i_bound2;
+            WLNODE_BOUND2 (new_proj) = bound21;
+            WLNODE_NEXT (new_proj) = new_projs;
+            new_projs = new_proj;
+        }
+
+        /* new parts of 'proj2' */
+        if (bound12 < i_bound1) {
+            new_proj = DupNode (proj2);
+            WLNODE_BOUND1 (new_proj) = bound12;
+            WLNODE_BOUND2 (new_proj) = i_bound1;
+            WLNODE_NEXT (new_proj) = new_projs;
+            new_projs = new_proj;
+        }
+
+        new_proj = DupNode (proj2);
+        WLNODE_BOUND1 (new_proj) = i_bound1;
+        WLNODE_BOUND2 (new_proj) = i_bound2;
+        WLNODE_NEXT (new_proj) = new_projs;
+        new_projs = new_proj;
+
+        if (i_bound2 < bound22) {
+            new_proj = DupNode (proj2);
+            WLNODE_BOUND1 (new_proj) = i_bound2;
+            WLNODE_BOUND2 (new_proj) = bound22;
+            WLNODE_NEXT (new_proj) = new_projs;
+            new_projs = new_proj;
+        }
+    }
+
+    DBUG_RETURN (new_projs);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   node *SplitMergeWL(node *projs)
  *
  * description:
@@ -2514,61 +2388,53 @@ BlockWL (node *proj, int dims, long *bv, int unroll)
 node *
 SplitMergeWL (node *projs)
 {
+    node *proj1, *proj2, *new_projs, *split_projs, *tmp;
+    int fixpoint;
+
     DBUG_ENTER ("SplitMergeWL");
 
-#if 0
-  do {
-    fixpoint = 1;
-    new_projs = NULL;
+    do {
+        fixpoint = 1;
+        new_projs = NULL;
 
-    /* initialize WLPROJ_MODIFIED */
-    proj1 = projs;
-    while (proj1 != NULL) {
-      WLPROJ_MODIFIED(proj1) = 0;
-      proj1 = WLPROJ_NEXT(proj1);
-    }
+        /* initialize WLNODE_MODIFIED */
+        proj1 = projs;
+        while (proj1 != NULL) {
+            WLNODE_MODIFIED (proj1) = 0;
+            proj1 = WLNODE_NEXT (proj1);
+        }
 
-    /* intersect the elements of 'projs' in pairs */
-    proj1 = projs;
-    while (proj1 != NULL) {
+        proj1 = projs;
+        while (proj1 != NULL) {
 
-      proj2 = WLPROJ_NEXT(proj1);
-      while (proj2 != NULL) {
+            proj2 = WLNODE_NEXT (proj1);
+            while (proj2 != NULL) {
 
-        /* intersect outlines of 'proj1' and 'proj2' */
-        IntersectOutline(proj1, proj2, ARRAY_AELEMS(shape_arr), &isect1, &isect2);
-        if ((isect1 != NULL) && (CompareProj(proj1, isect1) != 0)) {
-          fixpoint = 0;
-          WLPROJ_MODIFIED(proj1) = 1;
-          new_projs = InsertProjs(new_projs, isect1);
-	}
-        if ((isect2 != NULL) && (CompareProj(proj2, isect2) != 0)) {
-          fixpoint = 0;
-          WLPROJ_MODIFIED(proj2) = 1;
-          new_projs = InsertProjs(new_projs, isect2);
-	}
+                split_projs = SplitProj (proj1, proj2);
+                if (split_projs != NULL) {
+                    fixpoint = 0;
+                    WLNODE_MODIFIED (proj1) = WLNODE_MODIFIED (proj2) = 1;
+                    new_projs = InsertWLnodes (new_projs, split_projs);
+                }
 
-        proj2 = WLPROJ_NEXT(proj2);
-      }
+                proj2 = WLNODE_NEXT (proj2);
+            }
 
-      /* have 'proj1' only empty intersections with the others? */
-      if (WLPROJ_MODIFIED(proj1) == 0) {
-        /* insert 'proj1' in 'new_projs' */
-        tmp = proj1;
-        proj1 = WLPROJ_NEXT(proj1);
-        EXPRS_NEXT(tmp) = NULL;
-        new_projs = InsertProjs(new_projs, tmp);
-      }
-      else {
-        proj1 = FreeNode(proj1);        /* 'proj1' is no longer needed */
-        /* 'proj1' points now to his successor!! */
-      }
-    }
+            /* have 'proj1' only empty intersections with the others? */
+            if (WLNODE_MODIFIED (proj1) == 0) {
+                /* insert 'proj1' in 'new_projs' */
+                tmp = proj1;
+                proj1 = WLNODE_NEXT (proj1);
+                WLNODE_NEXT (tmp) = NULL;
+                new_projs = InsertWLnodes (new_projs, tmp);
+            } else {
+                proj1 = FreeNode (proj1); /* 'proj1' is no longer needed */
+                                          /* 'proj1' points now to his successor!! */
+            }
+        }
 
-    projs = new_projs;
-  }
-  while (! fixpoint);
-#endif
+        projs = new_projs;
+    } while (!fixpoint);
 
     DBUG_RETURN (projs);
 }
@@ -2680,7 +2546,7 @@ PRECnwith (node *arg_node, node *arg_info)
     segs = SetSegs (cubes, dims);
 
 #if 1
-    NOTE2 (("\n * step 2: choise of segments\n"))
+    NOTE2 (("\n * step 2: choice of segments\n"))
     Print (segs);
 #endif
 
