@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2000/04/10 15:44:01  jhs
+ * Changed behaviour
+ *
  * Revision 1.6  2000/03/30 15:11:03  jhs
  *  changed ST_call_mt to ST_call_mt_master
  *
@@ -202,6 +205,10 @@ MTFINlet (node *arg_node, node *arg_info)
                          ("function without body, cannot be call_mt"));
 
             FUNDEF_ATTRIB (old_fundef) = INFO_MTFIN_CURRENTATTRIB (arg_info);
+            if (FUNDEF_ATTRIB (old_fundef) == ST_call_mt_master) {
+                old_fundef = MUTHExpandFundefName (old_fundef, "__CALL_MT__");
+                ap = MUTHExchangeApplication (ap, old_fundef);
+            }
 
             /* return value not needed */
             DBUG_PRINT ("MTFIN", ("traverse info fundef"));
@@ -210,7 +217,8 @@ MTFINlet (node *arg_node, node *arg_info)
         } else if (FUNDEF_ATTRIB (old_fundef) == INFO_MTFIN_CURRENTATTRIB (arg_info)) {
             DBUG_PRINT ("MTFIN", ("== current %s %s", FUNDEF_NAME (old_fundef),
                                   mdb_statustype[FUNDEF_ATTRIB (old_fundef)]));
-            /* nothing happens */
+            /* adjust call */
+            ap = MUTHExchangeApplication (ap, old_fundef);
         } else if (FUNDEF_ATTRIB (old_fundef) != INFO_MTFIN_CURRENTATTRIB (arg_info)) {
 
             DBUG_PRINT ("MTFIN", ("!= current %s %s", FUNDEF_NAME (old_fundef),
@@ -231,10 +239,16 @@ MTFINlet (node *arg_node, node *arg_info)
                  *  Change names.
                  */
                 if (FUNDEF_ATTRIB (old_fundef) == ST_call_mt_master) {
-                    old_fundef = MUTHExpandFundefName (old_fundef, "__CALL_MT__");
-                    new_fundef = MUTHExpandFundefName (new_fundef, "__CALL_ST__");
+                    /*        old_fundef = MUTHExpandFundefName( old_fundef,
+                     * "__CALL_MT__"); */
+                    /*        new_fundef = MUTHExpandFundefName( new_fundef,
+                     * "__CALL_ST__"); */
+
+                    new_fundef = MUTHReduceFundefName (new_fundef, 11);
+
                 } else {
-                    old_fundef = MUTHExpandFundefName (old_fundef, "__CALL_ST__");
+                    /*        old_fundef = MUTHExpandFundefName( old_fundef,
+                     * "__CALL_ST__"); */
                     new_fundef = MUTHExpandFundefName (new_fundef, "__CALL_MT__");
                 }
                 DBUG_PRINT ("MTFIN", ("hit2"));
