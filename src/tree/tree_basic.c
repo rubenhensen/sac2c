@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.101  2004/10/04 16:31:02  skt
+ * killed the ex/st/mt-identifier stuff
+ *
  * Revision 3.100  2004/09/28 16:40:17  skt
  * added DATAFLOWNODE_USEDNODES support
  *
@@ -1722,23 +1725,6 @@ MakeSync (node *region)
 
 /*--------------------------------------------------------------------------*/
 
-int global_EX_counter = 1;
-
-#define EX_STEP 1
-
-static int
-GetNewEXIdentifier ()
-{
-    int result;
-
-    DBUG_ENTER ("GetNewEXIdentifier");
-
-    result = global_EX_counter;
-    global_EX_counter = global_EX_counter + EX_STEP;
-
-    DBUG_RETURN (result);
-}
-
 node *
 MakeEX (node *region)
 {
@@ -1748,29 +1734,11 @@ MakeEX (node *region)
 
     tmp = CreateCleanNode (N_ex);
     EX_REGION (tmp) = region;
-    EX_IDENTIFIER (tmp) = GetNewEXIdentifier ();
 
     DBUG_RETURN (tmp);
 }
 
 /*--------------------------------------------------------------------------*/
-
-int global_MT_counter = 1;
-
-#define MT_STEP 1
-
-static int
-GetNewMTIdentifier ()
-{
-    int result;
-
-    DBUG_ENTER ("GetNewMTIdentifier");
-
-    result = global_MT_counter;
-    global_MT_counter = global_MT_counter + MT_STEP;
-
-    DBUG_RETURN (result);
-}
 
 node *
 MakeMT (node *region)
@@ -1781,29 +1749,11 @@ MakeMT (node *region)
 
     tmp = CreateCleanNode (N_mt);
     MT_REGION (tmp) = region;
-    MT_IDENTIFIER (tmp) = GetNewMTIdentifier ();
 
     DBUG_RETURN (tmp);
 }
 
 /*--------------------------------------------------------------------------*/
-
-int global_ST_counter = 1;
-
-#define ST_STEP 1
-
-static int
-GetNewSTIdentifier ()
-{
-    int result;
-
-    DBUG_ENTER ("GetNewStIdentifier");
-
-    result = global_ST_counter;
-    global_ST_counter = global_ST_counter + ST_STEP;
-
-    DBUG_RETURN (result);
-}
 
 node *
 MakeST (node *region)
@@ -1814,7 +1764,6 @@ MakeST (node *region)
 
     tmp = CreateCleanNode (N_st);
     ST_REGION (tmp) = region;
-    ST_IDENTIFIER (tmp) = GetNewSTIdentifier ();
 
     DBUG_RETURN (tmp);
 }
