@@ -1,13 +1,5 @@
 Makefile
 cmp_type.mac
-constants.c
-constants.h
-cv2cv.c
-cv2cv.h
-cv2scalar.c
-cv2scalar.h
-cv2str.c
-cv2str.h
 gen_pseudo_fun.c
 gen_pseudo_fun.h
 new_typecheck.c
@@ -18,8 +10,6 @@ prim_fun.c
 prim_fun.h
 prim_fun_ft.mac
 prim_fun_tt.mac
-shape.c
-shape.h
 type_constructor_info.mac
 typecheck.c
 typecheck.h
