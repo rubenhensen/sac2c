@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.60  1998/04/17 16:22:20  dkr
+ * MakeWLgrid, MakeWLgridvar now adjust NCODE_USED
+ *
  * Revision 1.59  1998/04/10 02:24:52  dkr
  * changed MakeWLseg
  *
@@ -1451,6 +1454,7 @@ node *
 MakeNPart (node *withid, node *generator, node *code)
 {
     node *tmp;
+
     DBUG_ENTER ("MakeNPart");
     INIT_NODE (tmp);
 
@@ -1458,8 +1462,9 @@ MakeNPart (node *withid, node *generator, node *code)
     NPART_GEN (tmp) = generator;
     NPART_WITHID (tmp) = withid;
     NPART_CODE (tmp) = code;
-    if (code)                /* may be NULL in sac.y */
+    if (code != NULL) {      /* may be NULL in sac.y */
         NCODE_USED (code)++; /* see remarks of N_Ncode in tree_basic.h */
+    }
 
     DBUG_RETURN (tmp);
 }
@@ -1470,6 +1475,7 @@ node *
 MakeNWithid (ids *vec, ids *scalars)
 {
     node *tmp;
+
     DBUG_ENTER ("MakeNWithid");
     INIT_NODE (tmp);
 
@@ -1486,9 +1492,10 @@ node *
 MakeNGenerator (node *bound1, node *bound2, prf op1, prf op2, node *step, node *width)
 {
     node *tmp;
-    DBUG_ENTER ("MakeNGenerator");
 
+    DBUG_ENTER ("MakeNGenerator");
     INIT_NODE (tmp);
+
     NODE_TYPE (tmp) = N_Ngenerator;
     NGEN_BOUND1 (tmp) = bound1;
     NGEN_BOUND2 (tmp) = bound2;
@@ -1506,6 +1513,7 @@ node *
 MakeNWithOp (WithOpType WithOp)
 {
     node *tmp;
+
     DBUG_ENTER ("MakeNWithOp");
     INIT_NODE (tmp);
 
@@ -1524,6 +1532,7 @@ node *
 MakeNCode (node *block, node *expr)
 {
     node *tmp;
+
     DBUG_ENTER ("MakeNCODE");
     INIT_NODE (tmp);
 
@@ -1677,7 +1686,11 @@ MakeWLgrid (int level, int dim, int bound1, int bound2, int unrolling, node *nex
     WLGRID_NEXTDIM (new_node) = nextdim;
     WLGRID_NEXT (new_node) = next;
 
+    if (code != NULL) {
+        NCODE_USED (code)++;
+    }
     WLGRID_CODE (new_node) = code;
+
     WLGRID_MODIFIED (new_node) = 0;
 
     DBUG_RETURN (new_node);
@@ -1724,6 +1737,9 @@ MakeWLgridVar (int dim, node *bound1, node *bound2, node *nextdim, node *next, n
     WLGRIDVAR_NEXTDIM (new_node) = nextdim;
     WLGRIDVAR_NEXT (new_node) = next;
 
+    if (code != NULL) {
+        NCODE_USED (code)++;
+    }
     WLGRIDVAR_CODE (new_node) = code;
 
     DBUG_RETURN (new_node);
