@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.59  2000/03/20 10:33:17  dkr
+ * indentation of ICMs reactivated
+ * WHY THE HELL IS THE OUTPUT OF THE PRINT MODUL CORRUPTED AFTER EACH
+ * UPDATE??
+ *
  * Revision 2.58  2000/03/16 16:19:06  dkr
  * some output layout errors fixed
  *
@@ -1780,10 +1785,10 @@ PrintIcm (node *arg_node, node *arg_info)
             && (strcmp (FUNDEF_NAME (INFO_PRINT_FUNDEF (arg_info)), "main") == 0)
             && (compiler_phase == PH_genccode)) {
             GSCPrintMainEnd ();
-            INDENT;
         }
 
-        fprintf (outfile, "SAC_%s(", ICM_NAME (arg_node));
+        INDENT;
+        fprintf (outfile, "SAC_%s( ", ICM_NAME (arg_node));
         if (NULL != ICM_ARGS (arg_node)) {
             Trav (ICM_ARGS (arg_node), arg_info);
         }
