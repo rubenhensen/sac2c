@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.27  1998/04/19 17:48:00  dkr
+ * uses now access macros
+ *
  * Revision 1.26  1998/04/17 17:26:57  dkr
  * 'concurrent regions' are now called 'SPMD regions'
  *
@@ -106,12 +109,6 @@ extern node *CompNwith2 (node *arg_node, node *arg_info);
 
 /* and now some macros for creation of N_icms */
 
-#define MAKE_ICM(assign)                                                                 \
-    assign = MakeNode (N_assign);                                                        \
-    ASSIGN_INSTR (assign) = MakeNode (N_icm)
-
-#define MAKE_ICM_NAME(var, name) ICM_NAME (var) = name;
-
 #define MAKE_ICM_ARG(var, new_node) var = MakeExprs (new_node, NULL);
 
 #define MAKE_NEXT_ICM_ARG(prev, new_node)                                                \
@@ -133,8 +130,7 @@ extern node *CompNwith2 (node *arg_node, node *arg_info);
 
 #define CREATE_1_ARY_ICM(assign, str, arg)                                               \
     DBUG_PRINT ("COMP", ("Creating ICM \"%s\" ...", str));                               \
-    MAKE_ICM (assign);                                                                   \
-    MAKE_ICM_NAME (ASSIGN_INSTR (assign), str);                                          \
+    assign = MakeAssign (MakeIcm (str, NULL, NULL), NULL);                               \
     MAKE_ICM_ARG (ICM_ARGS (ASSIGN_INSTR (assign)), arg);                                \
     icm_arg = ICM_ARGS (ASSIGN_INSTR (assign));                                          \
     DBUG_PRINT ("COMP", ("ICM \"%s\" created", str));
@@ -168,14 +164,14 @@ extern node *CompNwith2 (node *arg_node, node *arg_info);
 
 #define BIN_ICM_REUSE(reuse, str, arg1, arg2)                                            \
     NODE_TYPE (reuse) = N_icm;                                                           \
-    MAKE_ICM_NAME (reuse, str);                                                          \
+    ICM_NAME (reuse) = str;                                                              \
     MAKE_ICM_ARG (ICM_ARGS (reuse), arg1);                                               \
     icm_arg = ICM_ARGS (reuse);                                                          \
     MAKE_NEXT_ICM_ARG (icm_arg, arg2)
 
 #define TRI_ICM_REUSE(reuse, str, arg1, arg2, arg3)                                      \
-    reuse->nodetype = N_icm;                                                             \
-    MAKE_ICM_NAME (reuse, str);                                                          \
+    NODE_TYPE (reuse) = N_icm;                                                           \
+    ICM_NAME (reuse) = str;                                                              \
     MAKE_ICM_ARG (ICM_ARGS (reuse), arg1);                                               \
     icm_arg = ICM_ARGS (reuse);                                                          \
     MAKE_NEXT_ICM_ARG (icm_arg, arg2);                                                   \
@@ -192,7 +188,7 @@ extern node *CompNwith2 (node *arg_node, node *arg_info);
         n = 0;                                                                           \
         tmp = exprs;                                                                     \
         do {                                                                             \
-            n += 1;                                                                      \
+            n++;                                                                         \
             tmp = EXPRS_NEXT (tmp);                                                      \
         } while (NULL != tmp);                                                           \
     }
