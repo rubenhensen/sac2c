@@ -1,5 +1,9 @@
 /*
+ *
  * $Log$
+ * Revision 1.7  2002/06/21 14:03:32  dkr
+ * Zero-Arrays are build correctly now (by CreateZero...())
+ *
  * Revision 1.6  2001/06/28 07:46:51  cg
  * Primitive function psi() renamed to sel().
  *
@@ -78,7 +82,7 @@
 /******************************************************************************
  *
  * function:
- *   intern_gen *CutSlices(..)
+ *   intern_gen *CutSlices( ...)
  *
  * description:
  *   Creates a (full) partition by adding new intern_gen structs.
@@ -95,6 +99,7 @@
  *   coden  : Pointer of N_Ncode node where the new generators shall point to.
  *
  ******************************************************************************/
+
 static intern_gen *
 CutSlices (int *ls, int *us, int *l, int *u, int dim, intern_gen *ig, node *coden)
 {
@@ -153,12 +158,14 @@ CutSlices (int *ls, int *us, int *l, int *u, int dim, intern_gen *ig, node *code
 /******************************************************************************
  *
  * function:
- *   intern_gen *CompleteGrid(int *ls, int *us, int *step, int *width,
+ *   intern_gen *CompleteGrid( int *ls, int *us, int *step, int *width, int dim,
+ *                             intern_gen *ig, node *coden)
  *
  * description:
  *   adds new generators which specify the elements left out by a grid.
  *
  ******************************************************************************/
+
 static intern_gen *
 CompleteGrid (int *ls, int *us, int *step, int *width, int dim, intern_gen *ig,
               node *coden)
@@ -167,6 +174,7 @@ CompleteGrid (int *ls, int *us, int *step, int *width, int dim, intern_gen *ig,
     intern_gen *root_ig;
 
     DBUG_ENTER ("CompleteGrid");
+
     nw = Malloc (sizeof (int) * dim);
     for (i = 0; i < dim; i++)
         nw[i] = step[i];
@@ -202,12 +210,13 @@ CompleteGrid (int *ls, int *us, int *step, int *width, int dim, intern_gen *ig,
 /******************************************************************************
  *
  * function:
- *   int check_genarray_full_part(node *ln)
+ *   int check_genarray_full_part( node *wln)
  *
  * description:
  *   check whether the generator of this genarray-WL specifies a full partition
  *
  ******************************************************************************/
+
 static int
 check_genarray_full_part (node *wln)
 {
@@ -255,7 +264,7 @@ check_genarray_full_part (node *wln)
 /******************************************************************************
  *
  * function:
- *   node * CreateFullPartition(node *wln, node *arg_info)
+ *   node *CreateFullPartition( node *wln, node *arg_info)
  *
  * description:
  *   generates full partition if possible:
@@ -269,27 +278,39 @@ check_genarray_full_part (node *wln)
  *   arg_info is needed to access the vardecs of the current function.
  *
  ******************************************************************************/
+
 static node *
 CreateFullPartition (node *wln, node *arg_info)
 {
-    int gen_shape, do_create, *array_null, *array_shape;
     node *coden, *sel_index, *sel_array, *idn;
     ids *_ids;
     intern_gen *ig;
-    char *varname;
     types *type;
+    char *varname;
+    int *array_null, *array_shape;
+    int dim, gen_shape;
+    bool do_create;
 
     DBUG_ENTER ("CreateFullPartition");
 
     /*
      * only if we do not have a full partition yet.
      */
-    do_create = NWITH_PARTS (wln) < 0;
+    do_create = (NWITH_PARTS (wln) < 0);
 
     /*
      * this is the shape of the index vector (generator)
      */
     gen_shape = IDS_SHAPE (NWITH_VEC (wln), 0);
+    /* determine type of expr in the operator (result of body) */
+    type = ID_TYPE (NWITH_CEXPR (wln));
+
+    /*
+     * modarray check
+     */
+    if (do_create && (NWITH_TYPE (wln) == WO_modarray)) {
+        /* noop */
+    }
 
     /*
      * genarray check:
@@ -305,13 +326,20 @@ CreateFullPartition (node *wln, node *arg_info)
      * full partition itself, we do not have to create the null-vector
      * and so can create a partition with NWITH_PARTS == 1.
      */
-    if (do_create && NWITH_TYPE (wln) == WO_genarray) {
+    if (do_create && (NWITH_TYPE (wln) == WO_genarray)) {
         if (!NWITH_STEP (wln) /* no grid */
             && check_genarray_full_part (wln)) {
-            do_create = 0;
+            do_create = FALSE;
             NWITH_PARTS (wln) = 1;
         } else {
-            do_create = (TYPES_DIM (ID_TYPE (NWITH_CEXPR (wln))) == 0);
+            dim = GetShapeDim (type);
+            do_create =
+#if _WLS_
+              (dim >= 0)
+#else
+              (dim == 0)
+#endif
+              ;
         }
     }
 
@@ -327,16 +355,22 @@ CreateFullPartition (node *wln, node *arg_info)
             array_shape = NULL;
             SSAArrayST2ArrayInt (NWITH_SHAPE (wln), &array_shape, gen_shape);
         } else { /* modarray */
-            /* We can use the *int array of shpseg to create the upper array bound */
-            array_shape = TYPES_SHPSEG (ID_TYPE (NWITH_ARRAY (wln)))->shp;
+            shpseg *tmp = Type2Shpseg (ID_TYPE (NWITH_ARRAY (wln)), &dim);
+            int i;
+
+            array_shape = (int *)Malloc (dim * sizeof (int));
+            for (i = 0; i < dim; i++) {
+                array_shape[i] = SHPSEG_SHAPE (tmp, i);
+            }
+            if (tmp != NULL) {
+                tmp = FreeShpseg (tmp);
+            }
         }
 
-        /* determine type of expr in the operator (result of body) */
-        type = ID_TYPE (NWITH_CEXPR (wln));
         /* create code for all new parts */
         if (NWITH_TYPE (wln) == WO_genarray) {
             /* create a zero of the correct type */
-            coden = CreateZeroScalar (TYPES_BASETYPE (type));
+            coden = CreateZeroFromType (type, FALSE, INFO_WLI_FUNDEF (arg_info));
         } else { /* modarray */
             _ids = NWITH_VEC (wln);
             sel_index = MakeId (StringCopy (IDS_NAME (_ids)), NULL, ST_regular);
@@ -345,11 +379,11 @@ CreateFullPartition (node *wln, node *arg_info)
             coden = MakePrf (F_sel, MakeExprs (sel_index, MakeExprs (sel_array, NULL)));
         }
         varname = TmpVar ();
-        _ids = MakeIds (varname, NULL, ST_regular); /* use memory from GetTmp() */
+        _ids = MakeIds (varname, NULL, ST_regular);
         IDS_VARDEC (_ids)
           = SSACreateVardec (varname, type, &FUNDEF_VARDEC (INFO_WLI_FUNDEF (arg_info)));
         /* varname is duplicated here (own mem) */
-        idn = MakeId (StringCopy (varname), NULL, ST_regular); /* use new mem */
+        idn = MakeId (StringCopy (varname), NULL, ST_regular);
         ID_VARDEC (idn) = IDS_VARDEC (_ids);
 
         /* create new N_Ncode node  */
@@ -376,8 +410,7 @@ CreateFullPartition (node *wln, node *arg_info)
         /* free the above made arrays */
         ig = SSAFreeInternGenChain (ig);
         array_null = Free (array_null);
-        if (WO_genarray == NWITH_TYPE (wln))
-            array_shape = Free (array_shape); /* no mem allocated in case of modarray. */
+        array_shape = Free (array_shape);
     }
 
     DBUG_RETURN (wln);
@@ -396,6 +429,7 @@ CreateFullPartition (node *wln, node *arg_info)
  *   tmp = iv[[1]];       =>        tmp = j;
  *
  ******************************************************************************/
+
 static node *
 CheckOptimizeSel (node *sel, node *arg_info)
 {
@@ -449,7 +483,7 @@ CheckOptimizeSel (node *sel, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *CheckOptimizeArray(node *array, node *arg_info)
+ *   node *CheckOptimizeArray( node *array, node *arg_info)
  *
  * description:
  *   Checks if array is constructed from all scalar index variables
@@ -460,6 +494,7 @@ CheckOptimizeSel (node *sel, node *arg_info)
  *   sel = [i,j,k];       =>       sel = iv;
  *
  ******************************************************************************/
+
 static node *
 CheckOptimizeArray (node *array, node *arg_info)
 {
@@ -510,6 +545,7 @@ CheckOptimizeArray (node *array, node *arg_info)
  *   starts the traversal of the given fundef
  *
  ******************************************************************************/
+
 node *
 SSAWLTfundef (node *arg_node, node *arg_info)
 {
@@ -534,6 +570,7 @@ SSAWLTfundef (node *arg_node, node *arg_info)
  *   store actual assign node in arg_info and traverse instruction
  *
  ******************************************************************************/
+
 node *
 SSAWLTassign (node *arg_node, node *arg_info)
 {
@@ -559,6 +596,7 @@ SSAWLTassign (node *arg_node, node *arg_info)
  *   traverse sons in the given order, can possibly replaced by TravSons
  *
  ******************************************************************************/
+
 node *
 SSAWLTcond (node *arg_node, node *arg_info)
 {
@@ -581,6 +619,7 @@ SSAWLTcond (node *arg_node, node *arg_info)
  *   2. traverse in applicated fundef if it is a special one.
  *
  ******************************************************************************/
+
 node *
 SSAWLTap (node *arg_node, node *arg_info)
 {
@@ -623,6 +662,7 @@ SSAWLTap (node *arg_node, node *arg_info)
  *   These are optimizations for the compiler phase and are not needed for WLF.
  *
  ******************************************************************************/
+
 node *
 SSAWLTlet (node *arg_node, node *arg_info)
 {
@@ -685,6 +725,7 @@ SSAWLTlet (node *arg_node, node *arg_info)
  *   partition.
  *
  ******************************************************************************/
+
 node *
 SSAWLTNwith (node *arg_node, node *arg_info)
 {
@@ -739,19 +780,18 @@ SSAWLTNwith (node *arg_node, node *arg_info)
         NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
 
         /*
-         * generate full partition (genarray, modarray).
+         * generate full partition.
          */
-        if (NWITH_FOLDABLE (arg_node)
-            && ((WO_genarray == NWITH_TYPE (arg_node))
-                || (WO_modarray == NWITH_TYPE (arg_node)))) {
-            arg_node = CreateFullPartition (arg_node, arg_info);
-        }
-
-        /*
-         * If withop is fold, we cannot create additional N_Npart nodes (based on what?)
-         */
-        if (NWITH_FOLDABLE (arg_node) && NWITH_IS_FOLD (arg_node)) {
-            NWITH_PARTS (arg_node) = 1;
+        if (NWITH_FOLDABLE (arg_node)) {
+            if (NWITH_IS_FOLD (arg_node)) {
+                /*
+                 * If withop is fold, we cannot create additional N_Npart nodes
+                 * (based on what?)
+                 */
+                NWITH_PARTS (arg_node) = 1;
+            } else {
+                arg_node = CreateFullPartition (arg_node, arg_info);
+            }
         }
     }
 
@@ -775,6 +815,7 @@ SSAWLTNwith (node *arg_node, node *arg_info)
  *   2. traverse appropriate body.
  *
  ******************************************************************************/
+
 node *
 SSAWLTNpart (node *arg_node, node *arg_info)
 {
@@ -811,12 +852,13 @@ SSAWLTNpart (node *arg_node, node *arg_info)
  *   [maxdim1,maxdim2] = [10,10]) are changed to fitting gens.
  *
  ******************************************************************************/
+
 node *
 SSAWLTNgenerator (node *arg_node, node *arg_info)
 {
     node *tmpn, **bound, *lb, *ub, *lbe, *ube, *assignn, *blockn, *wln, *idn;
     int i, check_bounds, empty, warning;
-    int lbnum, ubnum, tnum, dim, null_dim;
+    int lbnum, ubnum, tnum, dim;
     ids *_ids, *let_ids;
     char *varname;
     types *type;
@@ -970,7 +1012,7 @@ SSAWLTNgenerator (node *arg_node, node *arg_info)
 
                 if (WO_genarray == NWITH_TYPE (INFO_WLI_WL (arg_info))) {
                     /* change generator: full scope.  */
-                    dim = TYPES_DIM (IDS_TYPE (let_ids));
+                    dim = GetDim (IDS_TYPE (let_ids));
                     lb = NGEN_BOUND1 (arg_node);
                     ub = NGEN_BOUND2 (arg_node);
                     lbe = ARRAY_AELEMS (lb);
@@ -1013,8 +1055,7 @@ SSAWLTNgenerator (node *arg_node, node *arg_info)
                         BLOCK_INSTR (blockn) = FreeTree (BLOCK_INSTR (blockn));
                         /* first, introduce a new variable */
                         varname = TmpVar ();
-                        _ids = MakeIds (varname, NULL,
-                                        ST_regular); /* use memory from GetTmp() */
+                        _ids = MakeIds (varname, NULL, ST_regular);
                         /* determine type of expr in the operator (result of body) */
                         type = ID_TYPE (NWITH_CEXPR (INFO_WLI_WL (arg_info)));
                         IDS_VARDEC (_ids)
@@ -1022,17 +1063,9 @@ SSAWLTNgenerator (node *arg_node, node *arg_info)
                                              &FUNDEF_VARDEC (INFO_WLI_FUNDEF (arg_info)));
                         IDS_AVIS (_ids) = VARDEC_AVIS (IDS_VARDEC (_ids));
 
-                        /* varname is duplicated here (own mem) */
+                        tmpn
+                          = CreateZeroFromType (type, FALSE, INFO_WLI_FUNDEF (arg_info));
 
-                        /* create nullvec */
-                        null_dim
-                          = TYPES_DIM (IDS_TYPE (let_ids))
-                            - ARRAY_SHAPE (NWITH_SHAPE (INFO_WLI_WL (arg_info)), 0);
-                        if (null_dim > 0) {
-                            tmpn = CreateZeroVector (null_dim, T_int);
-                        } else {
-                            tmpn = CreateZeroScalar (T_int);
-                        }
                         /* replace N_empty with new assignment "_ids = [0,..,0]" */
                         assignn = MakeAssign (MakeLet (tmpn, _ids), NULL);
                         BLOCK_INSTR (blockn) = assignn;
@@ -1041,8 +1074,7 @@ SSAWLTNgenerator (node *arg_node, node *arg_info)
                         AVIS_SSAASSIGN (IDS_AVIS (_ids)) = assignn;
 
                         /* replace CEXPR */
-                        idn = MakeId (StringCopy (varname), NULL,
-                                      ST_regular); /* use new mem */
+                        idn = MakeId (StringCopy (varname), NULL, ST_regular);
                         ID_VARDEC (idn) = IDS_VARDEC (_ids);
                         ID_AVIS (idn) = IDS_AVIS (_ids);
                         tmpn = NWITH_CODE (INFO_WLI_WL (arg_info));
@@ -1059,15 +1091,14 @@ SSAWLTNgenerator (node *arg_node, node *arg_info)
                         FreeTree (BLOCK_INSTR (blockn));
                         FreeTree (LET_EXPR (ASSIGN_INSTR (assignn)));
                         BLOCK_INSTR (blockn) = assignn;
-                        null_dim
-                          = TYPES_DIM (IDS_TYPE (let_ids))
-                            - ARRAY_SHAPE (NWITH_SHAPE (INFO_WLI_WL (arg_info)), 0);
-                        if (null_dim > 0) {
-                            LET_EXPR (ASSIGN_INSTR (assignn))
-                              = CreateZeroVector (null_dim, T_int);
-                        } else {
-                            LET_EXPR (ASSIGN_INSTR (assignn)) = CreateZeroScalar (T_int);
-                        }
+                        _ids = LET_IDS (ASSIGN_INSTR (assignn));
+                        type = IDS_TYPE (_ids);
+
+                        tmpn
+                          = CreateZeroFromType (type, FALSE, INFO_WLI_FUNDEF (arg_info));
+                        NCODE_FLAG (NWITH_CODE (INFO_WLI_WL (arg_info))) = TRUE;
+
+                        LET_EXPR (ASSIGN_INSTR (assignn)) = tmpn;
                     }
                 } else {
                     if (WO_modarray == NWITH_TYPE (INFO_WLI_WL (arg_info))) {
@@ -1099,6 +1130,7 @@ SSAWLTNgenerator (node *arg_node, node *arg_info)
  *   marks this N_Ncode node as processed and enters the code block.
  *
  ******************************************************************************/
+
 node *
 SSAWLTNcode (node *arg_node, node *arg_info)
 {
