@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.136  2002/07/15 17:25:21  dkr
+ * INFO_IVE_PRE_ASSIGNS added
+ *
  * Revision 3.135  2002/07/10 17:50:57  dkr
  * MakeStr_Copy() added
  *
@@ -2888,7 +2891,8 @@ extern node *MakeInfo ();
 #define INFO_IVE_FUNDEF(n) (n->node[0])
 #define INFO_IVE_VARDECS(n) (n->node[1])
 #define INFO_IVE_CURRENTASSIGN(n) (n->node[2])
-#define INFO_IVE_TRANSFORM_VINFO(n) (n->node[3])
+#define INFO_IVE_PRE_ASSIGNS(n) (n->node[3])
+#define INFO_IVE_TRANSFORM_VINFO(n) (n->node[4])
 #define INFO_IVE_MODE(n) (n->flag)
 #define INFO_IVE_NON_SCAL_LEN(n) (n->counter)
 
