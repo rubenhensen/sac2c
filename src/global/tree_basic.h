@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.148  1998/04/29 19:52:51  dkr
+ * changed macros for N_spmd, N_sync
+ *
  * Revision 1.147  1998/04/26 21:51:53  dkr
  * MakeSPMD renamed to MakeSpmd
  * added macro SYNC_OUT
@@ -2258,12 +2261,14 @@ extern node *MakeInfo ();
 #define INFO_EXPORTOBJS(n) ((nodelist *)(n->node[1]))
 #define INFO_EXPORTFUNS(n) ((nodelist *)(n->node[2]))
 
+/* wltranform */
+#define INFO_WL_FUNDEF(n) (n->node[0])
+
 /* spmdregions */
 #define INFO_SPMD_FUNDEF(n) (n->node[0])
 
 /* precompile */
 #define INFO_PREC_MODUL(n) (n->node[0])
-#define INFO_PREC_FUNDEF(n) (n->node[1])
 #define INFO_PREC_CNT_ARTIFICIAL(n) (n->lineno)
 
 /* compile */
@@ -2273,7 +2278,6 @@ extern node *MakeInfo ();
 #define INFO_COMP_FUNDEF(n) (n->node[2])
 #define INFO_COMP_VARDECS(n) (n->node[3])
 #define INFO_COMP_WITHBEGIN(n) (n->node[4])
-#define INFO_COMP_SPMDFUNS(n) (n->node[5])
 #define INFO_COMP_MT(n) (n->flag)
 
 #define INFO_COMP_FIRSTASSIGN(n) (n->node[0])
@@ -2324,16 +2328,15 @@ extern node *MakeInfo ();
  ***
  ***  permanent attributes:
  ***
- ***    ids*       IN          (0)
- ***    ids*       OUT         (0)
- ***    ids*       INOUT       (0)
- ***    ids*       LOCAL       (0)
+ ***    int        VARNO       (0)
+ ***    long*      IN          (0)
+ ***    long*      OUT         (0)
+ ***    long*      INOUT       (0)
+ ***    long*      LOCAL       (0)
  ***
  ***  temporary attributes:
  ***
- ***    long*      MASK[x]                        (spmdregions -> )
- ***
- ***    node*      FUNDEC      (0)  (N_fundef)    (precompile -> compile ! )
+ ***    ---
  ***
  ***/
 
@@ -2341,16 +2344,11 @@ extern node *MakeSpmd (node *region);
 
 #define SPMD_REGION(n) (n->node[0])
 
-#define SPMD_IN(n) ((ids *)n->node[1])
-#define SPMD_OUT(n) ((ids *)n->node[2])
-#define SPMD_INOUT(n) ((ids *)n->node[3])
-#define SPMD_LOCAL(n) ((ids *)n->node[4])
-
-#define SPMD_MASK(n, x) (n->mask[x])
-#define SPMD_USEDVARS(n) (SPMD_MASK (n, 1))
-#define SPMD_DEFVARS(n) (SPMD_MASK (n, 0))
-
-#define SPMD_FUNDEC(n) (n->node[5])
+#define SPMD_VARNO(n) (n->varno)
+#define SPMD_IN(n) (n->mask[0])
+#define SPMD_OUT(n) (n->mask[1])
+#define SPMD_INOUT(n) (n->mask[2])
+#define SPMD_LOCAL(n) (n->mask[3])
 
 /*--------------------------------------------------------------------------*/
 
@@ -2365,8 +2363,11 @@ extern node *MakeSpmd (node *region);
  ***
  ***    int        FIRST       (0)     (is the sync-region the first one
  ***                                    of the current SPMD-region?)
- ***    ids*       OUT         (0)
- ***    ids*       INOUT       (0)
+ ***    int        VARNO       (0)
+ ***    long*      IN          (0)
+ ***    long*      OUT         (0)
+ ***    long*      INOUT       (0)
+ ***    long*      LOCAL       (0)
  ***
  ***  temporary attributes:
  ***
@@ -2379,8 +2380,11 @@ extern node *MakeSync (node *region, int first);
 #define SYNC_REGION(n) (n->node[0])
 #define SYNC_FIRST(n) (n->flag)
 
-#define SYNC_OUT(n) ((ids *)n->node[1])
-#define SYNC_INOUT(n) ((ids *)n->node[2])
+#define SYNC_VARNO(n) (n->varno)
+#define SYNC_IN(n) (n->mask[0])
+#define SYNC_OUT(n) (n->mask[1])
+#define SYNC_INOUT(n) (n->mask[2])
+#define SYNC_LOCAL(n) (n->mask[3])
 
 /*--------------------------------------------------------------------------*/
 
@@ -2615,7 +2619,11 @@ extern node *MakeNCode (node *block, node *expr);
  ***
  ***  temporary attributes:
  ***
- ***    ---
+ ***    int      VARNO                (wltrans -> spmdregions -> )
+ ***    long*    IN                   (wltrans -> spmdregions -> )
+ ***    long*    INOUT                (wltrans -> spmdregions -> )
+ ***    long*    OUT                  (wltrans -> spmdregions -> )
+ ***    long*    LOCAL                (wltrans -> spmdregions -> )
  ***
  ***/
 
@@ -2625,6 +2633,12 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop);
 #define NWITH2_SEGS(n) (n->node[1])
 #define NWITH2_CODE(n) (n->node[2])
 #define NWITH2_WITHOP(n) (n->node[3])
+
+#define NWITH2_VARNO(n) (n->varno)
+#define NWITH2_IN(n) (n->mask[0])
+#define NWITH2_INOUT(n) (n->mask[1])
+#define NWITH2_OUT(n) (n->mask[2])
+#define NWITH2_LOCAL(n) (n->mask[3])
 
 /*--------------------------------------------------------------------------*/
 
