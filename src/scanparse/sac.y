@@ -4,6 +4,9 @@
 /*
  *
  * $Log$
+ * Revision 3.95  2004/07/29 18:02:44  sah
+ * the module system uses some macros now
+ *
  * Revision 3.94  2004/07/11 18:08:56  sah
  * updated some ast accesses to macro abstraction
  *
@@ -479,7 +482,7 @@ prg: defs
 
 defs: imports def2
       { $$ = $2;
-        $$->node[0] = $1;
+        MODUL_IMPORTS( $$) = $1;
       }
     | def2
       { $$ = $1; }
@@ -487,7 +490,7 @@ defs: imports def2
 
 def2: typedefs def3
       { $$ = $2;
-        $$->node[1] = $1;
+        MODUL_TYPES( $$) = $1;
       }
     | def3
       { $$ = $1; }
@@ -495,7 +498,7 @@ def2: typedefs def3
 
 def3: objdefs def4
       { $$ = $2;
-        $$->node[3] = $1;
+        MODUL_OBJS( $$) = $1;
       }
     | def4
       { $$ = $1; }
@@ -508,8 +511,8 @@ def4: fundefs
                     ("%s:"F_PTR" %s"F_PTR,
                      mdb_nodetype[ NODE_TYPE( $$)],
                      $$,
-                     mdb_nodetype[ NODE_TYPE(  $$->node[2])],
-                     $$->node[2]));
+                     mdb_nodetype[ NODE_TYPE(  MODUL_FUNS( $$))],
+                     MODUL_FUNS( $$)));
       }
     | { $$ = MakeModul( NULL, F_prog, NULL, NULL, NULL, NULL, NULL);
 
@@ -1899,52 +1902,52 @@ class: CLASSIMP { file_kind = F_classimp; } id { mod_name = $3; } COLON
 
 moddec: modheader evimport OWN COLON expdesc
         { $$ = $1;
-          $$->node[0] = $5;
-          $$->node[1] = $2;
-          if ($$->node[1] != NULL) {
+          MODDEC_OWN( $$) = $5;
+          MODDEC_IMPORTS( $$) = $2;
+          if (MODDEC_IMPORTS( $$) != NULL) {
              DBUG_PRINT( "PARSE",
                          ("%s:"F_PTR" Id: %s , %s"F_PTR" %s," F_PTR,
                           mdb_nodetype[ NODE_TYPE( $$)],
                           $$,
-                          $$->info.fun_name.id,
-                          mdb_nodetype[ NODE_TYPE( $$->node[0])],
-                          $$->node[0],
-                          mdb_nodetype[ NODE_TYPE( $$->node[1])],
-                          $$->node[1]));
+                          MODDEC_NAME( $$),
+                          mdb_nodetype[ NODE_TYPE( MODDEC_OWN( $$))],
+                          MODDEC_OWN( $$),
+                          mdb_nodetype[ NODE_TYPE( MODDEC_IMPORTS( $$))],
+                          MODDEC_IMPORTS( $$)));
           }
           else {
              DBUG_PRINT( "PARSE",
                          ("%s:"F_PTR" Id: %s , %s"F_PTR,
                           mdb_nodetype[ NODE_TYPE( $$)],
                           $$,
-                          $$->info.fun_name.id,
-                          mdb_nodetype[ NODE_TYPE( $$->node[0])],
-                          $$->node[0]));
+                          MODDEC_NAME( $$),
+                          mdb_nodetype[ NODE_TYPE( MODDEC_OWN( $$))],
+                          MODDEC_OWN( $$)));
           }
         }
       | modheader evimport
         { $$ = $1;
-          $$->node[0] = MakeExplist( NULL, NULL, NULL, NULL);
-          $$->node[1] = $2;
-          if ($$->node[1] != NULL) {
+          MODDEC_OWN( $$) = MakeExplist( NULL, NULL, NULL, NULL);
+          MODDEC_IMPORTS( $$) = $2;
+          if (MODDEC_IMPORTS( $$) != NULL) {
              DBUG_PRINT( "PARSE",
                          ("%s:"F_PTR" Id: %s , %s"F_PTR" %s," F_PTR,
                           mdb_nodetype[ NODE_TYPE( $$)],
                           $$,
-                          $$->info.fun_name.id,
-                          mdb_nodetype[ NODE_TYPE( $$->node[0])],
-                          $$->node[0],
-                          mdb_nodetype[ NODE_TYPE( $$->node[1])],
-                          $$->node[1]));
+                          MODDEC_NAME( $$),
+                          mdb_nodetype[ NODE_TYPE( MODDEC_OWN( $$))],
+                          MODDEC_OWN( $$),
+                          mdb_nodetype[ NODE_TYPE( MODDEC_IMPORTS( $$))],
+                          MODDEC_IMPORTS( $$)));
           }
           else {
              DBUG_PRINT( "PARSE",
                          ("%s:"F_PTR" Id: %s , %s"F_PTR,
                           mdb_nodetype[ NODE_TYPE( $$)],
                           $$,
-                          $$->info.fun_name.id,
-                          mdb_nodetype[ NODE_TYPE( $$->node[0])],
-                          $$->node[0]));
+                          MODDEC_NAME( $$),
+                          mdb_nodetype[ NODE_TYPE( MODDEC_OWN( $$))],
+                          MODDEC_OWN( $$)));
           }
         }
       ;
@@ -2309,15 +2312,15 @@ varargtypes: argtype COMMA varargtypes
 
 modspec: modheader OWN COLON expdesc
          { $$ = $1;
-           $$->node[0] = $4;
-           $$->node[1] = NULL;
+           MODSPEC_OWN( $$) = $4;
+           MODSPEC_IMPORTS( $$) = NULL;
            DBUG_PRINT( "PARSE",
                        ("%s:"F_PTR" Id: %s , %s"F_PTR,
                         mdb_nodetype[ NODE_TYPE( $$)],
                         $$,
-                        $$->info.fun_name.id,
-                        mdb_nodetype[ NODE_TYPE( $$->node[0])],
-                        $$->node[0]));
+                        MODSPEC_NAME( $$),
+                        mdb_nodetype[ NODE_TYPE( MODSPEC_OWN( $$))],
+                        MODSPEC_OWN( $$)));
          }
        ;
 
