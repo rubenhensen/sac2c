@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.29  2002/10/11 16:27:14  dkr
+ * unused var removed
+ *
  * Revision 1.28  2002/10/10 23:56:18  dkr
  * comments added
  * type propagation modified
@@ -481,7 +484,6 @@ SSACSEPropagateSubst2Args (node *fun_args, node *ap_args, node *fundef)
     node *act_ap_arg;
     node *ext_ap_avis;
     types *ext_ap_type;
-    int cmp;
     node *search_fun_arg;
     node *search_ap_arg;
     bool found_match;
