@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 1.22  1998/04/09 21:20:57  dkr
+ * renamed macros:
+ *   INLINE -> DUP_INLINE
+ *   NORMAL -> DUP_NORMAL
+ *   INVARIANT -> DUP_INVARIANT
+ *
  * Revision 1.21  1998/04/07 15:17:54  srs
  * renamed DupId to DupModarray and
  *         DupIIds to DupId.
@@ -75,9 +81,9 @@
 #define _sac_DupTree_h
 
 #define DUPTYPE arg_info->flag
-#define NORMAL 0
-#define INLINE 1
-#define INVARIANT 2
+#define DUP_NORMAL 0
+#define DUP_INLINE 1
+#define DUP_INVARIANT 2
 
 #ifndef NEWTREE
 #define UNS_NO arg_info->nnode

@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 1.16  1998/04/09 21:24:31  dkr
+ * renamed macros:
+ *   INLINE -> DUP_INLINE
+ *   NORMAL -> DUP_NORMAL
+ *   INVARIANT -> DUP_INVARIANT
+ *
  * Revision 1.15  1998/02/06 11:21:11  srs
  * optimize.h was included twice
  *
@@ -221,8 +227,8 @@ INLfundef (node *arg_node, node *arg_info)
  *                  MakeAssignLet   (tree_compound.h)
  *		    AppendNodeChain (tree.h)
  *  macros        : AP_NAME, BLOCK_VARDEC, FUNDEF_BODY, AP_FUNDEF, FUNDEF_ARGS,
- *                  DUPTYPE, NORMAL, ARG_NAME, INL_TYPES, ASSIGN_INSTR, VARDEC_NEXT,
- *                  EXPRS_NEXT, NEWTREE, IDS_NEXT, INLINE,
+ *                  DUPTYPE, DUP_NORMAL, ARG_NAME, INL_TYPES, ASSIGN_INSTR, VARDEC_NEXT,
+ *                  EXPRS_NEXT, NEWTREE, IDS_NEXT, DUP_INLINE,
  *
  *  remarks       : ---
  *
@@ -255,7 +261,7 @@ DoInline (node *let_node, node *ap_node, node *arg_info)
     var_node = FUNDEF_ARGS (AP_FUNDEF (ap_node));
     expr_node = AP_ARGS (ap_node);
 
-    DUPTYPE = NORMAL;
+    DUPTYPE = DUP_NORMAL;
 
     while ((NULL != var_node) && (NULL != expr_node)) {
         new_name = RenameInlinedVar (ARG_NAME (var_node));
@@ -278,7 +284,7 @@ DoInline (node *let_node, node *ap_node, node *arg_info)
     ids_node = LET_IDS (let_node);
     expr_node = RETURN_EXPRS (FUNDEF_RETURN (AP_FUNDEF (ap_node)));
 
-    DUPTYPE = INLINE;
+    DUPTYPE = DUP_INLINE;
 
     while ((NULL != ids_node) && (NULL != expr_node)) {
         new_name = StringCopy (IDS_NAME (ids_node));
@@ -297,7 +303,7 @@ DoInline (node *let_node, node *ap_node, node *arg_info)
     /*
      * Duplicate function (with variable renameing)
      */
-    DUPTYPE = INLINE;
+    DUPTYPE = DUP_INLINE;
     inl_nodes = DupTree (BLOCK_INSTR (FUNDEF_BODY (AP_FUNDEF (ap_node))), arg_info);
 
     /*

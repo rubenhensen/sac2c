@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 1.55  1998/04/09 21:21:34  dkr
+ * renamed macros:
+ *   INLINE -> DUP_INLINE
+ *   NORMAL -> DUP_NORMAL
+ *   INVARIANT -> DUP_INVARIANT
+ *
  * Revision 1.54  1998/04/08 09:29:51  dkr
  * #ifdef changed to #if
  *
@@ -334,7 +340,7 @@ DupIds (ids *old_ids, node *arg_info)
 
     DBUG_ENTER ("DupIds");
     switch (DUPTYPE) {
-    case INLINE:
+    case DUP_INLINE:
         new_ids = MakeIds (RenameInlinedVar (old_ids->id), NULL, ST_regular);
         new_ids->node = SearchDecl (new_ids->id, INL_TYPES);
         DBUG_ASSERT ((NULL != new_ids->node), "No declaration found for ids-node");
@@ -484,7 +490,7 @@ DupAssign (node *arg_node, node *arg_info)
     DBUG_ENTER ("DupAssign");
     DBUG_PRINT ("DUP", ("Duplicating - %s", mdb_nodetype[arg_node->nodetype]));
     switch (DUPTYPE) {
-    case INLINE:
+    case DUP_INLINE:
         if ((0 == LEVEL) && (N_return == arg_node->node[0]->nodetype))
             break;
     default:
