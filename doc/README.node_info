@@ -1,8 +1,11 @@
 /*
  * $Log$
- * Revision 1.13  1995/03/02 09:10:10  hw
- * changed information about N_generator
+ * Revision 1.14  1995/03/14 10:51:52  asi
+ * added node informations created while optimization
  *
+# Revision 1.13  1995/03/02  09:10:10  hw
+# changed information about N_generator
+#
 # Revision 1.12  1995/02/14  12:47:18  sbs
 # N_foldfun, N_foldprf inserted
 #
@@ -59,6 +62,12 @@ typedef struct NODE
       prf   prf;       /* tag for primitive functions */
 
    }            info;     /* used for special informationen */
+   int          varno;    /* number of variables in function */
+   long         *mask[MAX_MASK]; /* informations about variables belonging to this node */
+                          /* mask[0] contains defined variables                         */
+			  /* mask[1] contains used variables                            */
+			  /* e.g. mask[0][10] = 10 means :                              */
+			  /*      variable number 10 is defined 10 times in this node   */
    int          nnode;    /* number of used children nodes */
    int          lineno;   /* commands linenumber */
    struct NODE *node[4];  /* children nodes */
@@ -118,18 +127,26 @@ info.types : first types structure contains the functions name and
                 id           *id;    /* Bezeichner  */
                 char         *id_mod;  /* name of modul belonging to 'id' */
                 } types;
-        
+-Created before optimizing:
+varno      : lenght of the masks in this function
+mask[0]    : contains number of definitions for all variables in this function
+mask[1]    : contains number of usages for all variables in this function
+
 N_arg:
 =====
 node[0]    : next argument (N_arg), if any
 info.types : contains name and type of the argument. For infomation
 	     about the structure of `types` look at description of
 	     N_fundef.
+-Created before optimizing:
+varno      : number assignd to this argument
 
 N_block:
 ========
 node[0]    : first node of the block (N_assign or N_empty)
 node[1]    : variable declaration, if there are any
+-Created before optimizing:
+see N_cond, N_do, N_while and N_with
 
 N_vardec:
 =========
@@ -137,11 +154,16 @@ node[0]    : next declaration (N_vardec), if any
 info.types : contains name and type of the declaration. For infomation
 	     about the structure of `types` look at description of
 	     N_fundef.
+-Created before optimizing:
+varno      : number assignd to this variable
 
 N_assign:
 =========
 node[0]    : instruction (N_let, N_cond, N_while, N_do, N_return, ...)
 node[1]    : next assign node(N_assign), if any
+-Created before optimizing:
+mask[0]    : contains number of definitions for all variables in the instruction
+mask[1]    : contains number of usages for all variables in the instruction
 
 N_let:
 ======
@@ -150,7 +172,9 @@ info.ids   : names of variables to assign to.
 	     The structure of ids is:
               typedef struct IDS{
                        id          *id;
-                       node        *node; /* will be set while typechecking */
+		       int         refcnt;
+		       struct NODE   *node;    /* ptr. to decleration after typechecking */
+		       struct NCHAIN *nchain;  /* ptr. to definition(s) resp. usage(s) */
                        struct IDS  *next;
                        } ids;
 
@@ -171,11 +195,22 @@ N_cond:
 node[0]    : condition (N_expr)
 node[1]    : then part
 node[2]    : else part
+-Created before optimizing:
+mask[1]    : contains number of usages for all variables in conditon 
+node[1]->mask[0] : contains number of definitions for all variables in then part
+node[1]->mask[1] : contains number of usages for all variables in then part
+node[2]->mask[0] : contains number of definitions for all variables in else part
+node[2]->mask[1] : contains number of usages for all variables in else part
+
 
 N_do, N_while:
 ==============
 node[0]    : termination conditon of the loop
 node[1]    : body of the loop
+-Created before optimizing:
+mask[1]    : contains number of usages for all variables in termination conditon 
+node[1]->mask[0] : contains number of definitions for all variables in loop body
+node[1]->mask[1] : contains number of usages for all variables in loop body
 /* for-loops are transformed into while-loops while parsing */
 
 N_ap:
@@ -192,10 +227,16 @@ N_with:
 =======
 node[0]    : generator (N_generator)
 node[1]    : body of with-statement
+-Created before optimizing:
+node[0]->mask[0] : contains number of definitions for all variables in generator
+node[0]->mask[1] : contains number of usages for all variables in generator
+node[1]->mask[1] : contains number of usages for all variables in genarray or modarray
+mask[0] : contains number of definitions for all variables in with body
+mask[1] : contains number of usages for all variables in with body
 
 N_id:
 =====
-info.id    : name of identificator
+info.ids   : name of identificator
 node[0]    : pointer to the belonging variable declaration.
              it will be set while typechecking. 
              nnode is still 0 !!!! 
