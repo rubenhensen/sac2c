@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 2.29  2000/10/26 14:17:48  dkr
+ * MakeShpseg used :-)
+ *
  * Revision 2.28  2000/10/24 12:46:04  dkr
  * CountArguments replaced by GetExprsLength
  *
@@ -2918,7 +2921,7 @@ types *GenComplexType( types *types, nums *numsp)
 
   DBUG_ENTER("GenComplexType");
 
-  types->shpseg=(shpseg *)MALLOC(sizeof(shpseg));
+  types->shpseg=MakeShpseg(NULL);
   destptr=types->shpseg->shp;
   do {
     types->dim++;
