@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.73  2005/03/10 09:41:09  cg
+ * -lac2fun and -fun2lac eliminated.
+ * Compiler phase names are now retrieved via function.
+ *
  * Revision 3.72  2005/02/11 14:40:30  jhb
  * added usage for treecheck -d INTERNAL DEBUG
  *
@@ -38,6 +42,7 @@
 #include "internal_lib.h"
 #include "dbug.h"
 #include "usage.h"
+#include "phase.h"
 
 #define PRINT_BREAK_SPEC(ph, spec, comment)                                              \
     {                                                                                    \
@@ -163,8 +168,7 @@ USGprintUsage ()
             "    -doPAB          Activates printing after break.\n\n");
 
     for (ph = 1; ph <= PH_genccode; ph++) {
-        printf ("    -b %2i           Stop after: %s.\n", ph,
-                global.compiler_phase_name[ph]);
+        printf ("    -b %2i           Stop after: %s.\n", ph, PHphaseName (ph));
     }
 
     printf ("\n\nBREAK SPECIFIERS:\n\n"
