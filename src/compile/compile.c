@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.19  1995/04/24 18:08:06  hw
+ * Revision 1.20  1995/04/27 14:24:48  hw
+ * added compilation of with-loop (modarray and genarray)
+ *
+ * Revision 1.19  1995/04/24  18:08:06  hw
  * - renamed CompWhile to CompLoop
  * -compilation of N_do done
  * - refcount after KS_ASSIGN_ARRAY is set corectly
@@ -148,6 +151,14 @@ extern int malloc_debug (int level);
 #define CREATE_5_ARY_ICM(assign, str, arg1, arg2, arg3, arg4, arg5)                      \
     CREATE_4_ARY_ICM (assign, str, arg1, arg2, arg3, arg4);                              \
     MAKE_NEXT_ICM_ARG (icm_arg, arg5)
+
+#define CREATE_6_ARY_ICM(assign, str, arg1, arg2, arg3, arg4, arg5, arg6)                \
+    CREATE_5_ARY_ICM (assign, str, arg1, arg2, arg3, arg4, arg5);                        \
+    MAKE_NEXT_ICM_ARG (icm_arg, arg6)
+
+#define CREATE_7_ARY_ICM(assign, str, arg1, arg2, arg3, arg4, arg5, arg6, arg7)          \
+    CREATE_6_ARY_ICM (assign, str, arg1, arg2, arg3, arg4, arg5, arg6);                  \
+    MAKE_NEXT_ICM_ARG (icm_arg, arg7)
 
 #define BIN_ICM_REUSE(reuse, str, arg1, arg2)                                            \
     reuse->nodetype = N_icm;                                                             \
@@ -955,7 +966,7 @@ CompPrf (node *arg_node, node *arg_info)
             /* compute length of arg1 */
             if (N_id == arg1->nodetype) {
                 GET_LENGTH (n_elems, arg1->IDS_NODE);
-                MAKENODE_NUM (length_node, n_elems);
+                MAKENODE_NUM (n_node, n_elems);
             } else {
                 n_elems = 0;
                 tmp = arg1->node[0];
@@ -1538,30 +1549,86 @@ CompReturn (node *arg_node, node *arg_info)
     DBUG_ENTER ("CompReturn");
 
     exprs = arg_node->node[0];
-    last = arg_node;
-    /* the new N_exprs chain will be stored in arg_node->node[1] */
+    if (NULL == arg_info->node[2]) {
 
-    do {
-        DBUG_ASSERT ((N_id == exprs->node[0]->nodetype), " wrong node (!= N_id)");
-        next = exprs->node[1];
-        if (1 == IsArray (exprs->node[0]->IDS_NODE->TYPES)) {
-            INSERT_ID_NODE (exprs, last, "out_a");
-        } else {
-            INSERT_ID_NODE (exprs, last, "out");
+        last = arg_node;
+        /* the new N_exprs chain will be stored in arg_node->node[1]
+         * temporaryly
+         */
+        do {
+            DBUG_ASSERT ((N_id == exprs->node[0]->nodetype), " wrong node (!= N_id)");
+            next = exprs->node[1];
+            if (1 == IsArray (exprs->node[0]->IDS_NODE->TYPES)) {
+                INSERT_ID_NODE (exprs, last, "out_a");
+            } else {
+                INSERT_ID_NODE (exprs, last, "out");
+            }
+            last = exprs;
+            exprs = next;
+            n += 1;
+        } while (NULL != exprs);
+
+        arg_node->nodetype = N_icm;
+        MAKE_ICM_NAME (arg_node, "ND_FUN_RET");
+        exprs = MakeNode (N_exprs);
+        MAKENODE_NUM (exprs->node[0], n);
+        exprs->node[1] = arg_node->node[1];
+        exprs->nnode = 2;
+        arg_node->node[0] = exprs;
+        arg_node->node[1] = NULL;
+    } else {
+        node *tmp_node, *with_icm_arg, *icm_arg;
+        int is_array = IsArray (exprs->node[0]->IDS_NODE->TYPES);
+
+        arg_node->nodetype = N_icm;
+        tmp_node = arg_node->node[0];
+        with_icm_arg = arg_info->node[2]->node[0];
+        MAKE_ICM_ARG (arg_node->node[0], with_icm_arg->node[0]);
+        icm_arg = arg_node->node[0];
+        with_icm_arg = with_icm_arg->node[1];
+        MAKE_NEXT_ICM_ARG (icm_arg, with_icm_arg->node[0]);
+
+        if ('M' == arg_info->node[2]->info.id[9]) {
+            /* add name of modified array */
+            with_icm_arg = with_icm_arg->node[1];
+            MAKE_NEXT_ICM_ARG (icm_arg, with_icm_arg->node[0]);
+
+            /* add name of return value */
+            icm_arg->node[1] = tmp_node;
+            icm_arg->nnode = 2;
+            icm_arg = icm_arg->node[1];
+
+            if (0 == is_array) {
+                MAKE_ICM_NAME (arg_node, "ND_END_MODARRAY_S");
+            } else {
+                MAKE_ICM_NAME (arg_node, "ND_END_MODARRAY_A");
+                /* look for length of index_vector (it is last argument
+                 *  of N_icm ND_BEGIN_MODARRAY)
+                 */
+                while (2 == with_icm_arg->nnode)
+                    with_icm_arg = with_icm_arg->node[1];
+                /* add length of index_vector */
+                MAKE_NEXT_ICM_ARG (icm_arg, with_icm_arg->node[0]);
+            }
+        } else if ('G' == arg_info->node[2]->info.id[9]) {
+            /* add name of return value */
+            icm_arg->node[1] = tmp_node;
+            icm_arg->nnode = 2;
+            icm_arg = icm_arg->node[1];
+            if (0 == is_array) {
+                MAKE_ICM_NAME (arg_node, "ND_END_GENARRAY_S");
+            } else {
+                MAKE_ICM_NAME (arg_node, "ND_END_GENARRAY_A");
+                /* look for length of index_vector (it is last argument
+                 *  of N_icm ND_BEGIN_MODARRAY)
+                 */
+                while (2 == with_icm_arg->nnode)
+                    with_icm_arg = with_icm_arg->node[1];
+                /* add length of index_vector */
+                MAKE_NEXT_ICM_ARG (icm_arg, with_icm_arg->node[0]);
+            }
         }
-        last = exprs;
-        exprs = next;
-        n += 1;
-    } while (NULL != exprs);
-
-    arg_node->nodetype = N_icm;
-    MAKE_ICM_NAME (arg_node, "ND_FUN_RET");
-    exprs = MakeNode (N_exprs);
-    MAKENODE_NUM (exprs->node[0], n);
-    exprs->node[1] = arg_node->node[1];
-    exprs->nnode = 2;
-    arg_node->node[0] = exprs;
-    arg_node->node[1] = NULL;
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -1579,12 +1646,76 @@ CompReturn (node *arg_node, node *arg_info)
  *  remarks       : arg_info->info.ids contains name of assigned variable
  *                  arg_info->node[0] contains pointer to next assign_node
  *                  arg_info->node[1] contains pointer to previous N_let
+ *                  arg_info->node[2] will be set to  pointer to N_icm
+ *                  of with_loop begin
  *
  */
 node *
 CompWith (node *arg_node, node *arg_info)
 {
+    node *old_info2, *first_assign, *next_assign, *tmp, *icm_arg, *form, *to,
+      *type_id_node, *arg, *res, *res_ref, *dim_node, *index, *indexlen, *old_arg_node,
+      *last_assign;
+    int dim;
+    simpletype s_type;
+
     DBUG_ENTER ("CompWith");
+
+    /* store arg_info->node[2] */
+    old_info2 = arg_info->node[2];
+
+    /* store res as N_id */
+    MAKENODE_ID_REUSE_IDS (res, arg_info->IDS);
+
+    /* store refcount of res as N_num */
+    MAKENODE_NUM (res_ref, arg_info->IDS_REFCNT);
+
+    /* compute basic_type of result */
+    GET_BASIC_TYPE (s_type, arg_info->IDS_NODE->TYPES);
+    MAKENODE_ID (type_id_node, type_string[s_type]);
+
+    /* compute dimension of res */
+    GET_DIM (dim, arg_info->IDS_NODE->TYPES);
+    MAKENODE_NUM (dim_node, dim);
+
+    /* store index_vector as N_id */
+    MAKENODE_ID_REUSE_IDS (index, arg_node->node[0]->IDS);
+
+    /* store length of index-vector */
+    MAKENODE_NUM (indexlen, arg_node->node[0]->IDS_NODE->SHP[0]);
+
+    /* set 'form' to left range of index-vector */
+    form = arg_node->node[0]->node[0];
+
+    /* set 'to' to left range of index-vector */
+    to = arg_node->node[0]->node[1];
+
+    /* first create N_icm to allocate memeory */
+    BIN_ICM_REUSE (arg_info->node[1], "ND_ALLOC_ARRAY", type_id_node, res);
+    MAKE_NEXT_ICM_ARG (icm_arg, res_ref);
+    SET_VARS_FOR_MORE_ICMS;
+
+    if (N_modarray == old_arg_node->node[1]->nodetype) {
+        arg = arg_node->node[1]->node[0];
+        CREATE_7_ARY_ICM (next_assign, "ND_BEGIN_MODARRAY", res, dim_node, arg, form, to,
+                          index, indexlen);
+        arg_info->node[2] = next_assign->node[0];
+        APPEND_ASSIGNS (first_assign, next_assign);
+    } else if (N_genarray == old_arg_node->node[1]->nodetype) {
+        CREATE_6_ARY_ICM (next_assign, "ND_BEGIN_MODARRAY", res, dim_node, form, to,
+                          index, indexlen);
+        arg_info->node[2] = next_assign->node[0];
+        APPEND_ASSIGNS (first_assign, next_assign);
+    }
+
+    next_assign = Trav (old_arg_node->node[1]->node[1]->node[0], arg_info);
+    arg_info->node[2] = old_info2;
+    APPEND_ASSIGNS (first_assign, next_assign);
+
+    /* set first_assign to the last N_assign node, that is generated by Trav() */
+    first_assign = arg_info->node[0];
+
+    INSERT_ASSIGN;
 
     DBUG_RETURN (arg_node);
 }
