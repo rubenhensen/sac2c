@@ -10,3 +10,4 @@ reuse.h
 rcopt.c
 rcopt.h
 rcphase.c
+rcphase.h
