@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.71  2002/09/05 16:33:16  dkr
+ * call of FreeAvis() replaced by FreeNode() !!!
+ *
  * Revision 3.70  2002/08/15 11:47:39  dkr
  * type LUT_t* replaced by LUT_t
  *
@@ -1075,7 +1078,7 @@ DupArg (node *arg_node, node *arg_info)
 
     if (ARG_AVIS (arg_node) != NULL) {
         /* we have to duplicate the containing avis node */
-        FreeAvis (ARG_AVIS (new_node), arg_info);
+        ARG_AVIS (new_node) = FreeNode (ARG_AVIS (new_node));
         ARG_AVIS (new_node) = DUPTRAV (ARG_AVIS (arg_node));
         /* correct backreference */
         AVIS_VARDECORARG (ARG_AVIS (new_node)) = new_node;
@@ -1219,7 +1222,7 @@ DupVardec (node *arg_node, node *arg_info)
 
     if (VARDEC_AVIS (arg_node) != NULL) {
         /* we have to duplicate the containing avis node */
-        FreeAvis (VARDEC_AVIS (new_node), arg_info);
+        VARDEC_AVIS (new_node) = FreeNode (VARDEC_AVIS (new_node));
         VARDEC_AVIS (new_node) = DUPTRAV (VARDEC_AVIS (arg_node));
         /* correct backreference */
         AVIS_VARDECORARG (VARDEC_AVIS (new_node)) = new_node;
@@ -2896,7 +2899,7 @@ CheckAndDupSpecialFundef (node *module, node *fundef, node *assign)
 
         /* rename fundef */
         new_name = TmpVarName (FUNDEF_NAME (fundef));
-        Free (FUNDEF_NAME (new_fundef));
+        FUNDEF_NAME (new_fundef) = Free (FUNDEF_NAME (new_fundef));
         FUNDEF_NAME (new_fundef) = new_name;
 
         /* rename recursive funap (only do/while fundefs */
@@ -2905,7 +2908,8 @@ CheckAndDupSpecialFundef (node *module, node *fundef, node *assign)
             DBUG_ASSERT ((FUNDEF_INT_ASSIGN (new_fundef) != NULL),
                          "missing link to recursive function call");
 
-            Free (AP_NAME (ASSIGN_RHS (FUNDEF_INT_ASSIGN (new_fundef))));
+            AP_NAME (ASSIGN_RHS (FUNDEF_INT_ASSIGN (new_fundef)))
+              = Free (AP_NAME (ASSIGN_RHS (FUNDEF_INT_ASSIGN (new_fundef))));
             AP_NAME (ASSIGN_RHS (FUNDEF_INT_ASSIGN (new_fundef)))
               = StringCopy (FUNDEF_NAME (new_fundef));
 
@@ -2917,7 +2921,7 @@ CheckAndDupSpecialFundef (node *module, node *fundef, node *assign)
         FUNDEF_USED (new_fundef) = 1;
 
         /* rename the external assign/funap */
-        Free (AP_NAME (ASSIGN_RHS (assign)));
+        AP_NAME (ASSIGN_RHS (assign)) = Free (AP_NAME (ASSIGN_RHS (assign)));
         AP_NAME (ASSIGN_RHS (assign)) = StringCopy (new_name);
         AP_FUNDEF (ASSIGN_RHS (assign)) = new_fundef;
 
