@@ -5,6 +5,10 @@ blocks_expand.c
 blocks_expand.h
 blocks_init.c
 blocks_init.h
+blocks_propagate.c
+blocks_propagate.h
+dataflow_analysis.c
+dataflow_analysis.h
 mtfuns_init.c
 mtfuns_init.h
 multithread.c
