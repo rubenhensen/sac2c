@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  1998/04/24 13:28:03  dkr
+ * fixed a bug with LOCAL
+ *
  * Revision 1.6  1998/04/24 12:16:11  dkr
  * added SPMD_LOCAL
  *
@@ -199,17 +202,14 @@ SpmdInitAssign (node *arg_node, node *arg_info)
 
             if (((ASSIGN_MASK (arg_node, 0))[i] > 0) && (ARG_VARNO (new_inout) != i)) {
                 vardec = FindVardec (i, fundefs);
+                DBUG_ASSERT ((NODE_TYPE (vardec) == N_vardec),
+                             "local var is arg of a fun");
 
-                if (NODE_TYPE (vardec) == N_vardec) {
-                    new_local
-                      = MakeArg (StringCopy (VARDEC_NAME (vardec)),
-                                 DuplicateTypes (VARDEC_TYPE (vardec), 1),
-                                 VARDEC_STATUS (vardec), VARDEC_ATTRIB (vardec), NULL);
-                    ARG_REFCNT (new_local) = VARDEC_REFCNT (vardec);
-                } else {
-                    DBUG_ASSERT ((NODE_TYPE (vardec) == N_arg), "wrong node type");
-                    new_local = DupNode (vardec);
-                }
+                new_local
+                  = MakeArg (StringCopy (VARDEC_NAME (vardec)),
+                             DuplicateTypes (VARDEC_TYPE (vardec), 1),
+                             VARDEC_STATUS (vardec), VARDEC_ATTRIB (vardec), NULL);
+                ARG_REFCNT (new_local) = VARDEC_REFCNT (vardec);
                 ARG_VARNO (new_local) = i;
 
                 if (SPMD_LOCAL (spmd) == NULL) {
