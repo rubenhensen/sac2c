@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.35  1998/03/03 16:13:03  dkr
+ * changed something in WLindex, WLgrid
+ *
  * Revision 1.34  1998/03/02 22:28:23  dkr
  * added nodes for precompilation of new with-loop
  *
@@ -1378,6 +1381,7 @@ MakeWLindex (node *bound1, node *bound2, node *step, node *grid, node *next)
     INIT_NODE (new_node);
 
     NODE_TYPE (new_node) = N_WLindex;
+
     WLINDEX_BOUND1 (new_node) = bound1;
     WLINDEX_BOUND2 (new_node) = bound2;
     WLINDEX_STEP (new_node) = step;

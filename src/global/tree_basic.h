@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.77  1998/03/03 16:13:26  dkr
+ * changed something in WLindex, WLgrid
+ *
  * Revision 1.76  1998/03/02 22:28:29  dkr
  * added nodes for precompilation of new with-loop
  *
@@ -2228,8 +2231,8 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop);
  ***
  ***  sons:
  ***
- ***    node*    INDEX    (0)     (N_index)
- ***    node*    NEXT     (0)     (N_seg)
+ ***    node*    INDEX    (0)     (N_WLindex)
+ ***    node*    NEXT     (0)     (N_WLseg)
  ***
  ***  temporary attributes:
  ***
@@ -2249,11 +2252,11 @@ extern node *MakeWLseg (node *index, node *next);
  *
  *  sons:
  *
- *    node*    BOUND1   (0)     (N_num)
- *    node*    BOUND2   (0)     (N_num)
- *    node*    STEP     (0)     (N_num)
- *    node*    GRID     (0)     (N_grid)
- *    node*    NEXT     (0)     (N_index)
+ *    node*    BOUND1   (0)     (int)
+ *    node*    BOUND2   (0)     (int)
+ *    node*    STEP     (0)     (int)
+ *    node*    GRID     (0)     (N_WLgrid)
+ *    node*    NEXT     (0)     (N_WLindex)
  *
  *  temporary attributes:
  *
@@ -2263,11 +2266,11 @@ extern node *MakeWLseg (node *index, node *next);
 
 extern node *MakeWLindex (node *bound1, node *bound2, node *step, node *grid, node *next);
 
-#define WLINDEX_BOUND1(n) (n->node[0])
-#define WLINDEX_BOUND2(n) (n->node[1])
-#define WLINDEX_STEP(n) (n->node[2])
-#define WLINDEX_GRID(n) (n->node[3])
-#define WLINDEX_NEXT(n) (n->node[4])
+#define WLINDEX_BOUND1(n) (n->refcnt)
+#define WLINDEX_BOUND2(n) (n->flag)
+#define WLINDEX_STEP(n) (n->counter)
+#define WLINDEX_GRID(n) (n->node[0])
+#define WLINDEX_NEXT(n) (n->node[1])
 
 /*--------------------------------------------------------------------------*/
 
@@ -2276,11 +2279,11 @@ extern node *MakeWLindex (node *bound1, node *bound2, node *step, node *grid, no
  ***
  ***  sons:
  ***
- ***    node*    OFFSET   (0)     (N_num)
- ***    node*    WIDTH    (0)     (N_num)
+ ***    node*    OFFSET   (0)     (int)
+ ***    node*    WIDTH    (0)     (int)
  ***    node*    NEXTDIM  (0)     (N_WLindex)
  ***    node*    CODE     (0)     (N_Ncode)
- ***    node*    NEXT     (0)     (N_grid)
+ ***    node*    NEXT     (0)     (N_WLgrid)
  ***
  ***  remark:
  ***    it is impossible (and makes no sense anyway) to use the nodes NEXTDIM and CODE
@@ -2294,10 +2297,10 @@ extern node *MakeWLindex (node *bound1, node *bound2, node *step, node *grid, no
 
 extern node *MakeWLgrid (node *offset, node *width, node *next);
 
-#define WLGRID_OFFSET(n) (n->node[0])
-#define WLGRID_WIDTH(n) (n->node[1])
-#define WLGRID_NEXTDIM(n) (n->node[2])
-#define WLGRID_CODE(n) (n->node[2])
-#define WLGRID_NEXT(n) (n->node[3])
+#define WLGRID_OFFSET(n) (n->refcnt)
+#define WLGRID_WIDTH(n) (n->flag)
+#define WLGRID_NEXTDIM(n) (n->node[0])
+#define WLGRID_CODE(n) (n->node[0])
+#define WLGRID_NEXT(n) (n->node[1])
 
 #endif /* _sac_tree_basic_h */
