@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.21  1995/04/27 14:44:10  hw
+ * Revision 1.22  1995/04/28 09:02:38  hw
+ * bug fixed in creation of N_icm ND_BEGIN_MODARRAY ( now 3. argument is set correctly)
+ *
+ * Revision 1.21  1995/04/27  14:44:10  hw
  * bug fixed in CompWith (renamed N_icm for genarray)
  *
  * Revision 1.20  1995/04/27  14:24:48  hw
@@ -1699,7 +1702,7 @@ CompWith (node *arg_node, node *arg_info)
     SET_VARS_FOR_MORE_ICMS;
 
     if (N_modarray == old_arg_node->node[1]->nodetype) {
-        arg = arg_node->node[1]->node[0];
+        arg = old_arg_node->node[1]->node[0];
         CREATE_7_ARY_ICM (next_assign, "ND_BEGIN_MODARRAY", res, dim_node, arg, form, to,
                           index, indexlen);
         arg_info->node[2] = next_assign->node[0];
