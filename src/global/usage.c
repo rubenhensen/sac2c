@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.84  1999/01/26 14:25:08  cg
+ * Added option -intrinsic p for intrinsic array-valued psi().
+ *
  * Revision 1.83  1999/01/18 12:53:29  sbs
  * -b15:cycN:wlt, -b15:cycN:wlf, -b15:cycN:cf2 inserted
  *
@@ -383,9 +386,9 @@ usage ()
 
             "\n\nINTRINSIC ARRAY OPERATIONS OPTIONS:\n\n"
 
-            "\t -intrinsic [a+-x/tdcro]+ \tuse intrinsic array operations\n"
+            "\t -intrinsic [a+-x/tdcrpo]+ \tuse intrinsic array operations\n"
             "\t\t\t\t\t  a: use all intrinsic operations available\n"
-            "\t\t\t\t\t     (same as +-x/tdcro)\n"
+            "\t\t\t\t\t     (same as +-x/tdcrpo)\n"
             "\t\t\t\t\t  +: use intrinsic add\n"
             "\t\t\t\t\t  -: use intrinsic sub\n"
             "\t\t\t\t\t  x: use intrinsic mul\n"
@@ -394,6 +397,7 @@ usage ()
             "\t\t\t\t\t  d: use intrinsic drop\n"
             "\t\t\t\t\t  c: use intrinsic cat\n"
             "\t\t\t\t\t  r: use intrinsic rotate\n"
+            "\t\t\t\t\t  r: use intrinsic psi\n"
             "\t\t\t\t\t  o: use intrinsic type conversion\n"
 
             "\n\nLINK OPTIONS:\n\n"
