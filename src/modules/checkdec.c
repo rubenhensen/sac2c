@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.8  1995/11/10 15:04:14  cg
+ * Revision 1.9  1995/11/16 19:44:22  cg
+ * Former call of function FreeImplist converted to new free.c standard
+ *
+ * Revision 1.8  1995/11/10  15:04:14  cg
  * converted to new error macros
  *
  * Revision 1.7  1995/11/06  18:45:22  cg
@@ -206,8 +209,9 @@ CheckDec (node *syntax_tree)
 
     act_tab = checkdec_tab;
 
-    if (MODUL_STORE_IMPORTS (syntax_tree) != NULL)
-        FreeImplist (MODUL_STORE_IMPORTS (syntax_tree));
+    if (MODUL_STORE_IMPORTS (syntax_tree) != NULL) {
+        MODUL_STORE_IMPORTS (syntax_tree) = FreeTree (MODUL_STORE_IMPORTS (syntax_tree));
+    }
 
     MODUL_DECL (syntax_tree) = Trav (decl, syntax_tree);
 
