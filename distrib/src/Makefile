@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.4  2001/11/14 16:59:18  sbs
+# make deps eliminated.
+#
 # Revision 3.3  2000/11/21 18:37:26  dkr
 # .SECONDARY reactivated and targets libsac.tar.for.% and sac2c.for....
 # splitted:
@@ -243,7 +246,6 @@ sac2c.for.SOLARIS_SPARC:
 	cp $(SAC2CDIR)/src.tar.gz $(SOLARIS_DIR)
 	( cd $(SOLARIS_DIR); gunzip -f src.tar.gz )
 	( cd $(SOLARIS_DIR); tar xvf src.tar )
-	( cd $(SOLARIS_DIR); $(MAKE) deps OS=SOLARIS_SPARC )
 	( cd $(SOLARIS_DIR); $(MAKE) distrib_product OS=SOLARIS_SPARC )
 	cp $(SOLARIS_DIR)/sac2c sac2c.for.SOLARIS_SPARC
 	( cd $(SOLARIS_DIR)/src/runtime; tar cvfh libsac.tar libsac*.a ) 
@@ -276,7 +278,6 @@ sac2c.for.LINUX_X86:
 	    'tar xvf src.tar;'                \
 	    'chmod -R u+w *;'                 \
 	    'touch src/*/*;'                  \
-	    '$(LX86_MAKE) deps OS=LINUX_X86;' \
 	    '$(LX86_MAKE) distrib_product OS=LINUX_X86'
 	rcp $(LX86_USER)@$(LX86_HOST):$(LX86_DIR)/sac2c sac2c.for.LINUX_X86
 	rsh -l $(LX86_USER) $(LX86_HOST)  \
@@ -313,7 +314,6 @@ sac2c.for.OSF_ALPHA:
 	    'tar xvf src.tar;'                                           \
 	    'chmod -R u+w *;'                                            \
 	    'touch src/*/*;'                                             \
-	    '$(ALPHA_MAKE) deps OS=OSF_ALPHA;'                           \
 	    '$(ALPHA_MAKE) distrib_product OS=OSF_ALPHA'
 	rcp $(ALPHA_USER)@$(ALPHA_HOST):$(ALPHA_DIR)/sac2c sac2c.for.OSF_ALPHA
 	rsh -l $(ALPHA_USER) $(ALPHA_HOST) \
