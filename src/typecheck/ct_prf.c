@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2003/04/08 12:26:19  sbs
+ * ApplyCF extended for non-binary functions;
+ * modarray now folds as well 8-)
+ *
  * Revision 1.12  2003/04/07 14:34:41  sbs
  * (most) type computations extended for AKV types 8-)
  *
@@ -69,9 +73,17 @@ ApplyCF (te_info *info, ntype *args)
     DBUG_ENTER ("NTCApplyCF");
 
     switch (TYGetProductSize (args)) {
+    case 1:
+        res = ((monCF)TEGetCFFun (info)) (TYGetValue (TYGetProductMember (args, 0)));
+        break;
     case 2:
         res = ((binCF)TEGetCFFun (info)) (TYGetValue (TYGetProductMember (args, 0)),
                                           TYGetValue (TYGetProductMember (args, 1)));
+        break;
+    case 3:
+        res = ((triCF)TEGetCFFun (info)) (TYGetValue (TYGetProductMember (args, 0)),
+                                          TYGetValue (TYGetProductMember (args, 1)),
+                                          TYGetValue (TYGetProductMember (args, 2)));
         break;
     default:
         DBUG_ASSERT (FALSE, "Constant Folding failed for the given number of arguments!");
@@ -492,7 +504,16 @@ NTCPRF_modarrayS (te_info *info, ntype *args)
     TEAssureSameSimpleType (TEArg2Obj (2), idx, TEPrfArg2Obj (TEGetNameStr (info), 3),
                             val);
 
-    res = TYCopyType (array);
+    if (TYIsAKV (array)) {
+        if (TYIsAKV (idx) && TYIsAKV (val)) {
+            res = TYMakeAKV (TYCopyType (TYGetScalar (array)), ApplyCF (info, args));
+        } else {
+            res = TYMakeAKS (TYCopyType (TYGetScalar (array)),
+                             SHCopyShape (TYGetShape (array)));
+        }
+    } else {
+        res = TYCopyType (array);
+    }
 
     DBUG_RETURN (TYMakeProductType (1, res));
 }
