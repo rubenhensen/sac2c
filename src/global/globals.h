@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.31  2003/09/16 16:09:35  sbs
+ * spec_mode and spec_mode_str added.
+ *
  * Revision 3.30  2003/09/09 14:57:00  sbs
  * act_info_chn for extended type error reporting added
  *
@@ -278,6 +281,11 @@ extern bool enforce_ieee;
 /* ast is in ssa form */
 extern bool valid_ssaform;
 
+/* type inference flags */
+extern int max_overload;
+extern spec_mode_t spec_mode;
+extern char spec_mode_str[][4];
+
 /* level of WLS aggressiveness */
 extern bool wls_aggressive;
 extern int maxwls;
@@ -287,7 +295,6 @@ extern int inlnum;
 extern int unrnum;
 extern int wlunrnum;
 extern int minarray;
-extern int max_overload;
 extern int max_optcycles;
 
 extern int initial_master_heapsize;

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.39  2003/09/16 16:09:35  sbs
+ * spec_mode and spec_mode_str added.
+ *
  * Revision 3.38  2003/09/09 14:57:00  sbs
  * act_info_chn for extended type error reporting added
  *
@@ -464,6 +467,15 @@ bool enforce_ieee = FALSE;
 
 /*
  * Command line options for specifying particular side conditions
+ * for the (new) type inference.
+ */
+
+int max_overload = 20;
+spec_mode_t spec_mode = SS_aks;
+char spec_mode_str[][4] = {"aks", "akd", "aud"};
+
+/*
+ * Command line options for specifying particular side conditions
  * for some optimizations.
  */
 
@@ -472,7 +484,6 @@ int inlnum = 1;
 int unrnum = 2;
 int wlunrnum = 9;
 int minarray = 4;
-int max_overload = 20;
 int max_optcycles = 10;
 
 int initial_master_heapsize = 1024;
