@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  1999/08/27 11:55:37  jhs
+ * Adjusted comments.
+ *
  * Revision 1.3  1999/08/02 09:48:35  jhs
  * Moved MeltBlocks[OnCopies] from spmd_opt.[ch] to concurrent_lib.[ch].
  *
@@ -123,7 +126,7 @@ BlocksLastInstruction (node *block)
 }
 
 /******************************************************************************
- * #### used by sync_opt also, move to more global place
+ *
  * functions:
  *   (1) node *MeltBlocks (node *first_block, node *second_block)
  *   (2) node *MeltBlocksOnCopies (node *first_block, node *second_block)
