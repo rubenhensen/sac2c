@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.37  1995/04/05 16:18:41  sbs
+ * Revision 1.38  1995/04/05 17:36:39  sbs
+ * adapted to new FindFile
+ *
+ * Revision 1.37  1995/04/05  16:18:41  sbs
  * gcc invocation debugged
  *
  * Revision 1.36  1995/04/05  15:52:38  asi
@@ -143,7 +146,7 @@
 extern int malloc_debug (int level);
 
 FILE *outfile;
-char filename[256];
+char filename[MAX_FILE_NAME];
 int opt_dcr = 1, opt_cf = 1, opt_wr = 1, opt_lir = 1;
 int optimize = 1;
 int show_refcnt = 0;
@@ -155,10 +158,10 @@ MAIN
     int Ccodeonly = 0;
     int breakparse = 0, breakimport = 0, breakflatten = 0, breaktype = 0, breakopt = 0,
         breakref = 0;
-    char prgname[256];
-    char outfilename[256];
-    char cfilename[256];
-    char cccallstr[1024];
+    char prgname[MAX_FILE_NAME];
+    char outfilename[MAX_FILE_NAME];
+    char cfilename[MAX_FILE_NAME];
+    char cccallstr[MAX_PATH_LEN];
 
     malloc_debug (0);
     strcpy (prgname, argv[0]);
@@ -248,7 +251,7 @@ MAIN
         ERROR2 (1, ("MAX_PATH_LEN too low!/n"));
 
     if (argc == 1) {
-        yyin = FindFile (PATH, *argv);
+        yyin = fopen (FindFile (PATH, *argv), "r");
         strcpy (filename, *argv);
         if (yyin == NULL) {
             ERROR2 (1, ("Couldn't open file \"%s\"!\n", *argv));
@@ -305,7 +308,7 @@ MAIN
 
     if (!Ccodeonly) {
         fclose (outfile);
-        sprintf (cccallstr, "gcc -O2 -Wall -I $RCSROOT/src/compile/ -o %s %s %s",
+        sprintf (cccallstr, "gcc -g -Wall -I $RCSROOT/src/compile/ -o %s %s %s",
                  outfilename, cfilename, GenLinkerList ());
         NOTE (("%s\n", cccallstr));
         system (cccallstr);
