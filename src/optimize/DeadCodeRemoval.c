@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.15  1996/09/11 14:25:55  asi
+ * Revision 1.16  1997/04/23 12:52:36  cg
+ * decleration changed to declaration
+ *
+ * Revision 1.15  1996/09/11  14:25:55  asi
  * *** empty log message ***
  *
  * Revision 1.14  1996/09/11  14:13:08  asi
@@ -276,7 +279,7 @@ DFRap (node *arg_node, node *arg_info)
  *  arguments     : 1) N_vardec - node
  *                  2) N_info - node
  *                  R) N_vardec - node
- *  description   : removes declerations if variable not used and defined
+ *  description   : removes declarations if variable not used and defined
  *                  in this function
  *  global vars   : elim_arrays, dead_var
  *  internal funs : --
@@ -307,7 +310,7 @@ DCRvardec (node *arg_node, node *arg_info)
             elim_arrays++;
         dead_var++;
         DBUG_PRINT ("DCR",
-                    ("Variable decleration for `%s' removed", VARDEC_NAME (arg_node)));
+                    ("Variable declaration for `%s' removed", VARDEC_NAME (arg_node)));
         arg_node = FreeNode (arg_node);
     }
     DBUG_RETURN (arg_node);

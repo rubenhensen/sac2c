@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.20  1996/09/06 16:19:37  cg
+ * Revision 1.21  1997/04/23 12:52:36  cg
+ * decleration changed to declaration
+ *
+ * Revision 1.20  1996/09/06  16:19:37  cg
  * bug fixed in DupIIds: empty ids lists no longer cause segmentation faults.
  *
  * Revision 1.19  1996/02/21  15:07:02  cg
@@ -182,7 +185,7 @@ DupIds (ids *old_ids, node *arg_info)
         new_ids = MakeIds (RenameInlinedVar (old_ids->id), NULL, ST_regular);
         new_ids->node = SearchDecl (new_ids->id, INL_TYPES);
         DBUG_ASSERT ((NULL != new_ids->node),
-                     ("No decleration found for %s", new_ids->id));
+                     ("No declaration found for %s", new_ids->id));
         break;
     default:
         new_ids = MakeIds (StringCopy (old_ids->id), NULL, ST_regular);
