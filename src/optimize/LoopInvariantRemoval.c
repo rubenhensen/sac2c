@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.15  2002/02/21 15:18:53  dkr
+ * access macros used
+ *
  * Revision 3.14  2002/02/21 13:39:25  dkr
  * access macros used
  *
@@ -460,7 +463,7 @@ DupDecleration (node *var_node, char *var_name, node *arg_info)
 
     DBUG_ASSERT ((0 != optvar_counter), "Not enough variables for LIR");
     optvar_counter--;
-    new_node = MakeVardec (var_name, DupAllTypes (var_node->info.types), NULL);
+    new_node = MakeVardec (var_name, DupAllTypes (VARDEC_OR_ARG_TYPE (var_node)), NULL);
     new_node->varno = INFO_VARNO (arg_info)++;
 
     DBUG_RETURN (new_node);

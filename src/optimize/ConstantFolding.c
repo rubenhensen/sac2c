@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.19  2002/02/21 15:17:40  dkr
+ * access macros used
+ *
  * Revision 3.18  2002/02/20 16:08:48  dkr
  * function DupOneTypesOnly_Replace() used instead of DupOneTypesOnly()
  *
@@ -2028,9 +2031,9 @@ ArrayPrf (node *arg_node, node *arg_info)
         old_arg[1] = arg[1];
 
         if (N_id == NODE_TYPE (arg[0])) {
-            value = MRD_GETDATA (arg[0]->info.ids->node->varno, INFO_VARNO (arg_info));
+            value = MRD_GETDATA (ID_VARNO (arg[0]), INFO_VARNO (arg_info));
             if (IsConst (value)) {
-                DEC_VAR (arg_info->mask[1], arg[0]->info.ids->node->varno);
+                DEC_VAR (arg_info->mask[1], ID_VARNO (arg[0]));
                 arg[0] = DupTree (value);
                 used_sofar = arg_info->mask[1];
                 arg_info->mask[1] = GenMask (INFO_VARNO (arg_info));
@@ -2212,8 +2215,7 @@ ArrayPrf (node *arg_node, node *arg_info)
         case N_id:
             DBUG_PRINT ("CF",
                         ("primitive function %s folded", prf_string[arg_node->info.prf]));
-            tmp
-              = Types2Array (arg[0]->info.ids->node->info.types, INFO_CF_TYPE (arg_info));
+            tmp = Types2Array (ID_TYPE (arg[0]), INFO_CF_TYPE (arg_info));
 
             if (tmp != NULL) {
                 /*
@@ -2227,7 +2229,7 @@ ArrayPrf (node *arg_node, node *arg_info)
                  * When called from TC no masks present!
                  */
                 if (arg_info->mask[1])
-                    DEC_VAR (arg_info->mask[1], arg[0]->info.ids->node->varno);
+                    DEC_VAR (arg_info->mask[1], ID_VARNO (arg[0]));
                 ((int *)ARRAY_CONSTVEC (tmp))
                   = Array2IntVec (ARRAY_AELEMS (tmp), &ARRAY_VECLEN (tmp));
                 ARRAY_VECTYPE (tmp) = T_int;
@@ -2331,9 +2333,9 @@ ArrayPrf (node *arg_node, node *arg_info)
              * get result
              */
             NODE_TYPE (arg_node) = N_num;
-            arg_node->info.cint = GetShapeDim (arg[0]->info.ids->node->info.types);
+            arg_node->info.cint = GetShapeDim (ID_TYPE (arg[0]));
 
-            DEC_VAR (arg_info->mask[1], arg[0]->info.ids->node->varno);
+            DEC_VAR (arg_info->mask[1], ID_VARNO (arg[0]));
             /*
              * Free argument of prim function
              */
