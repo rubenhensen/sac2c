@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2002/08/14 09:27:41  sbs
+ * HMNwithop debugged and calls to TravSons inserted.
+ *
  * Revision 1.6  2002/08/13 17:17:24  sbs
  * bug eliminated
  *
@@ -420,9 +423,7 @@ HMap (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("HMap");
 
-    if (AP_ARGS (arg_node) != NULL) {
-        AP_ARGS (arg_node) = Trav (AP_ARGS (arg_node), arg_info);
-    }
+    arg_node = TravSons (arg_node, arg_info);
 
     if (sbs == 1) {
         res = arg_node;
@@ -476,6 +477,7 @@ HMNwithop (node *arg_node, node *arg_info)
             NWITHOP_PRF (arg_node) = primfun;
         }
     }
+    arg_node = TravSons (arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
 }
