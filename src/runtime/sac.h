@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.5  1999/07/08 12:36:33  cg
+ * Include of sac_malloc.h replaced by include of mew file sac_heapmgr.h
+ *
  * Revision 2.4  1999/06/24 14:01:27  sbs
  * sac_icm.h only included iff TAGGED_ARRAYS.
  *
@@ -51,16 +54,18 @@
 #define SAC_H
 
 #include "sac_boundcheck.h"
-#include "sac_malloc.h"
+#include "sac_heapmgr.h"
 #include "sac_misc.h"
 #include "sac_message.h"
 #include "sac_bool.h"
+
 #ifdef TAGGED_ARRAYS
 #include "sac_icm.h"
 #include "sac_std.tagged.h"
-#else
+#else /* TAGGED_ARRAYS */
 #include "sac_std.h"
 #endif /* TAGGED_ARRAYS */
+
 #include "sac_idx.h"
 #include "sac_prf.h"
 #include "sac_mt.h"
