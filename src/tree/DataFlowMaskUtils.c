@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2001/02/14 14:37:56  dkr
+ * DFM2...(): STATUS and ATTRIB are set correctly now
+ *
  * Revision 3.1  2000/11/20 18:03:17  sacbase
  * new release made
  *
@@ -279,19 +282,20 @@ DFM2ReturnTypes (DFMmask_t mask)
     while (decl != NULL) {
         tmp = rettypes;
         rettypes = DupTypes (VARDEC_OR_ARG_TYPE (decl));
-        /*
-         * Unfortunately the 'attrib' value is part of the type structure.
-         * But an attrib value 'ST_reference' or 'ST_readonly_reference'
-         *  makes no sense for a return type.
-         */
-        if ((rettypes->attrib == ST_reference)
-            || (rettypes->attrib == ST_readonly_reference)) {
-            rettypes->attrib = ST_unique;
-        }
 
-        DBUG_PRINT ("DFMU",
-                    ("%-16s - attrib: %-16s, status: %-16s", TYPES_NAME (rettypes),
-                     mdb_statustype[rettypes->attrib], mdb_statustype[rettypes->status]));
+        /*
+         * VARDEC_OR_ARG_ATTRIB == 'ST_was_reference'
+         *   -> TYPES_STATUS = 'ST_artificial'
+         */
+        if (VARDEC_OR_ARG_ATTRIB (decl) == ST_was_reference) {
+            TYPES_STATUS (rettypes) = ST_artificial;
+            DBUG_PRINT ("DFMU", ("TYPES_STATUS[ %s ] := ST_artificial !!!",
+                                 TYPES_NAME (rettypes)));
+        } else {
+            TYPES_STATUS (rettypes) = VARDEC_OR_ARG_STATUS (decl);
+            DBUG_PRINT ("DFMU", ("TYPES_STATUS[ %s ] == %s", TYPES_NAME (rettypes),
+                                 mdb_statustype[TYPES_STATUS (rettypes)]));
+        }
 
         TYPES_NEXT (rettypes) = tmp;
         decl = DFMGetMaskEntryDeclSet (NULL);
@@ -342,10 +346,9 @@ DFM2Vardecs (DFMmask_t mask, LUT_t lut)
             VARDEC_OBJDEF (vardecs) = ARG_OBJDEF (decl);
         }
 
-        DBUG_PRINT ("DFMU",
-                    ("%-16s - attrib: %-16s, status: %-16s", VARDEC_NAME (vardecs),
-                     mdb_statustype[VARDEC_ATTRIB (vardecs)],
-                     mdb_statustype[VARDEC_STATUS (vardecs)]));
+        DBUG_PRINT ("DFMU", ("VARDEC_ATTRIB/STATUS[ %s ] == %s/%s", VARDEC_NAME (vardecs),
+                             mdb_statustype[VARDEC_ATTRIB (vardecs)],
+                             mdb_statustype[VARDEC_STATUS (vardecs)]));
 
         lut = InsertIntoLUT (lut, decl, vardecs);
         decl = DFMGetMaskEntryDeclSet (NULL);
@@ -388,7 +391,7 @@ DFM2Args (DFMmask_t mask, LUT_t lut)
             ARG_OBJDEF (args) = VARDEC_OBJDEF (decl);
         }
 
-        DBUG_PRINT ("DFMU", ("%-16s - attrib: %-16s, status: %-16s", ARG_NAME (args),
+        DBUG_PRINT ("DFMU", ("ARG_ATTRIB/STATUS[ %s ] == %s/%s", ARG_NAME (args),
                              mdb_statustype[ARG_ATTRIB (args)],
                              mdb_statustype[ARG_STATUS (args)]));
 
@@ -402,22 +405,22 @@ DFM2Args (DFMmask_t mask, LUT_t lut)
 /******************************************************************************
  *
  * function:
- *   node *DFM2Exprs( DFMmask_t mask, LUT_t lut)
+ *   node *DFM2ReturnExprs( DFMmask_t mask, LUT_t lut)
  *
  * description:
- *   Creates a exprs/id-node chain based on the given DFmask.
+ *   Creates a exprs/id-node chain for RETURN_EXPRS based on the given DFmask.
  *   If (lut != NULL) the attribute ID_VARDEC of the created IDs is set
  *   according to the given LUT, which should contain the old/new declarations.
  *
  ******************************************************************************/
 
 node *
-DFM2Exprs (DFMmask_t mask, LUT_t lut)
+DFM2ReturnExprs (DFMmask_t mask, LUT_t lut)
 {
     node *decl, *id;
     node *exprs = NULL;
 
-    DBUG_ENTER ("DFM2Exprs");
+    DBUG_ENTER ("DFM2ReturnExprs");
 
     decl = DFMGetMaskEntryDeclSet (mask);
     while (decl != NULL) {
@@ -426,13 +429,26 @@ DFM2Exprs (DFMmask_t mask, LUT_t lut)
          * ID_VARDEC and ID_OBJDEF are mapped to the same node!
          */
         ID_VARDEC (id) = SearchInLUT (lut, decl);
-        ID_ATTRIB (id) = VARDEC_OR_ARG_ATTRIB (decl);
-        ID_STATUS (id) = VARDEC_OR_ARG_STATUS (decl);
-        exprs = MakeExprs (id, exprs);
 
-        DBUG_PRINT ("DFMU",
-                    ("%-16s - attrib: %-16s, status: %-16s", ID_NAME (id),
-                     mdb_statustype[ID_ATTRIB (id)], mdb_statustype[ID_STATUS (id)]));
+        /*
+         * VARDEC_OR_ARG_ATTRIB == 'ST_was_reference'
+         *   -> ID_STATUS = 'ST_artificial'
+         */
+        if (VARDEC_OR_ARG_ATTRIB (decl) == ST_was_reference) {
+            ID_ATTRIB (id) = ST_unique;
+            ID_STATUS (id) = ST_artificial;
+            DBUG_PRINT ("DFMU", ("ID_ATTRIB/STATUS[ return( %s) ] :="
+                                 " ST_unique/ST_artificial !!!",
+                                 ID_NAME (id)));
+        } else {
+            ID_ATTRIB (id) = VARDEC_OR_ARG_ATTRIB (decl);
+            ID_STATUS (id) = VARDEC_OR_ARG_STATUS (decl);
+
+            DBUG_PRINT ("DFMU",
+                        ("ID_ATTRIB/STATUS[ return( %s) ] == %s/%s", ID_NAME (id),
+                         mdb_statustype[ID_ATTRIB (id)], mdb_statustype[ID_STATUS (id)]));
+        }
+        exprs = MakeExprs (id, exprs);
 
         decl = DFMGetMaskEntryDeclSet (NULL);
     }
@@ -443,7 +459,50 @@ DFM2Exprs (DFMmask_t mask, LUT_t lut)
 /******************************************************************************
  *
  * function:
- *   ids *DFM2Ids( DFMmask_t mask, LUT_t lut)
+ *   node *DFM2ApArgs( DFMmask_t mask, LUT_t lut)
+ *
+ * description:
+ *   Creates a exprs/id-node chain for AP/PRF_ARGS based on the given DFmask.
+ *   If (lut != NULL) the attribute ID_VARDEC of the created IDs is set
+ *   according to the given LUT, which should contain the old/new declarations.
+ *
+ ******************************************************************************/
+
+node *
+DFM2ApArgs (DFMmask_t mask, LUT_t lut)
+{
+    node *decl, *id;
+    node *exprs = NULL;
+
+    DBUG_ENTER ("DFM2ApArgs");
+
+    decl = DFMGetMaskEntryDeclSet (mask);
+    while (decl != NULL) {
+        id = MakeId_Copy (VARDEC_OR_ARG_NAME (decl));
+        /*
+         * ID_VARDEC and ID_OBJDEF are mapped to the same node!
+         */
+        ID_VARDEC (id) = SearchInLUT (lut, decl);
+
+        ID_ATTRIB (id) = VARDEC_OR_ARG_ATTRIB (decl);
+        ID_STATUS (id) = VARDEC_OR_ARG_STATUS (decl);
+
+        DBUG_PRINT ("DFMU",
+                    ("ID_ATTRIB/STATUS[ fun( %s) ] == %s/%s", ID_NAME (id),
+                     mdb_statustype[ID_ATTRIB (id)], mdb_statustype[ID_STATUS (id)]));
+
+        exprs = MakeExprs (id, exprs);
+
+        decl = DFMGetMaskEntryDeclSet (NULL);
+    }
+
+    DBUG_RETURN (exprs);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   ids *DFM2LetIds( DFMmask_t mask, LUT_t lut)
  *
  * description:
  *   Creates an ids chain based on the given DFmask.
@@ -453,26 +512,42 @@ DFM2Exprs (DFMmask_t mask, LUT_t lut)
  ******************************************************************************/
 
 ids *
-DFM2Ids (DFMmask_t mask, LUT_t lut)
+DFM2LetIds (DFMmask_t mask, LUT_t lut)
 {
     node *decl;
     ids *tmp;
     ids *_ids = NULL;
 
-    DBUG_ENTER ("DFM2Ids");
+    DBUG_ENTER ("DFM2LetIds");
 
     decl = DFMGetMaskEntryDeclSet (mask);
     while (decl != NULL) {
         tmp = _ids;
         _ids = MakeIds_Copy (VARDEC_OR_ARG_NAME (decl));
-        IDS_ATTRIB (_ids) = VARDEC_OR_ARG_ATTRIB (decl);
-        IDS_STATUS (_ids) = VARDEC_OR_ARG_STATUS (decl);
         IDS_VARDEC (_ids) = SearchInLUT (lut, decl);
         IDS_NEXT (_ids) = tmp;
 
-        DBUG_PRINT ("DFMU", ("%-16s - attrib: %-16s, status: %-16s", IDS_NAME (_ids),
-                             mdb_statustype[IDS_ATTRIB (_ids)],
-                             mdb_statustype[IDS_STATUS (_ids)]));
+        /*
+         * VARDEC_OR_ARG_ATTRIB == 'ST_was_reference'
+         *   -> ID_STATUS = 'ST_artificial'
+         * All left hand side ids with attrib 'ST_was_reference' must have the status
+         *  'ST_artificial'
+         */
+        if (VARDEC_OR_ARG_ATTRIB (decl) == ST_was_reference) {
+            IDS_ATTRIB (_ids) = ST_unique;
+            IDS_STATUS (_ids) = ST_artificial;
+
+            DBUG_PRINT ("DFMU", ("IDS_ATTRIB/STATUS[ %s = ... ] :="
+                                 " ST_unique/ST_artificial !!!",
+                                 IDS_NAME (_ids)));
+        } else {
+            IDS_ATTRIB (_ids) = VARDEC_OR_ARG_ATTRIB (decl);
+            IDS_STATUS (_ids) = VARDEC_OR_ARG_STATUS (decl);
+
+            DBUG_PRINT ("DFMU", ("IDS_ATTRIB/STATUS[ %s = ... ] == %s/%s",
+                                 IDS_NAME (_ids), mdb_statustype[IDS_ATTRIB (_ids)],
+                                 mdb_statustype[IDS_STATUS (_ids)]));
+        }
 
         decl = DFMGetMaskEntryDeclSet (NULL);
     }
