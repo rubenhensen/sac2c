@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2004/11/26 21:25:44  jhb
+ * IDXchangeId to IVEchangeId
+ *
  * Revision 1.1  2004/11/25 19:26:48  ktr
  * Initial revision
  *
@@ -525,7 +528,7 @@ ReuseIdxSel (node *arg1, node *arg2, info *arg_info)
         type = IDS_TYPE (INFO_REUSE_WL_IDS (arg_info));
 #if 1
         shp = TCtype2Shape (type);
-        idx_sel_name = IDXchangeId (IDS_NAME (INFO_REUSE_IDX (arg_info)), shp);
+        idx_sel_name = IVEchangeId (IDS_NAME (INFO_REUSE_IDX (arg_info)), shp);
         shp = SHfreeShape (shp);
 #else
         /**
