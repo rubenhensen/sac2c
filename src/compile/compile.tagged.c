@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2002/04/16 21:16:18  dkr
+ * AddThreadIdVardec() no longer needed.
+ * This is done by GSCPrintMain() now.
+ *
  * Revision 1.10  2002/04/03 14:47:50  dkr
  * COMPAp() renamed into COMP2Ap()
  *
@@ -804,33 +808,6 @@ DFM2AllocArrayIcm_CheckReuse (char *name, types *type, int rc, node *pragma,
 /******************************************************************************
  *
  * Function:
- *   node *AddThreadIdVardec( node *block)
- *
- * Description:
- *
- *
- ******************************************************************************/
-
-static node *
-AddThreadIdVardec (node *block)
-{
-    DBUG_ENTER ("AddThreadIdVardec");
-
-    DBUG_ASSERT ((NODE_TYPE (block) == N_block), "no block found!");
-
-    if ((gen_mt_code == GEN_MT_OLD) && (optimize & OPT_PHM)) {
-        BLOCK_VARDEC (block) = MakeVardec (StringCopy ("SAC_MT_mythread"),
-                                           MakeTypes1 (T_int), BLOCK_VARDEC (block));
-
-        VARDEC_ICM (BLOCK_VARDEC (block)) = MakeIcm0 ("MT_DECL_MYTHREAD");
-    }
-
-    DBUG_RETURN (block);
-}
-
-/******************************************************************************
- *
- * Function:
  *   node *AddThreadIdIcm_ND_FUN_DEC( node *icm)
  *
  * Description:
@@ -1014,11 +991,7 @@ MakeIcm_ND_FUN_DEC (node *fundef)
      * add the thread id
      */
     if (FUNDEF_BODY (fundef) != NULL) {
-        if (!strcmp (FUNDEF_NAME (fundef), "main")) {
-            FUNDEF_BODY (fundef) = AddThreadIdVardec (FUNDEF_BODY (fundef));
-        } else {
-            ret_node = AddThreadIdIcm_ND_FUN_DEC (ret_node);
-        }
+        ret_node = AddThreadIdIcm_ND_FUN_DEC (ret_node);
     }
 
     DBUG_RETURN (ret_node);
