@@ -3,7 +3,12 @@
 /*
  *
  * $Log$
- * Revision 1.19  1995/07/06 17:26:00  cg
+ * Revision 1.20  1995/07/07 16:20:56  hw
+ * - added macro FILTER7
+ * - exchanged FILTER2 with FILTER7 to generate tokens for
+ *    primitive functions
+ *
+ * Revision 1.19  1995/07/06  17:26:00  cg
  * Modul -> Module, & added
  *
  * Revision 1.18  1995/07/06  16:58:44  hw
@@ -85,7 +90,10 @@
                          yytext[strlen(yytext)]='\0';                   \
                          yylval.cfloat=atof(yytext);                    \
                          return(token); }
-
+#define FILTER7(token, name) if (0==commlevel)  {                       \
+                               yylval.id=name;                          \
+                               return(token); }
+        
 extern int indent;
 extern int i;
 
@@ -125,19 +133,19 @@ int start_token;
 ":="				{FILTER( ASSIGN );}
 "&"				{FILTER( AMPERS );}
 
-"&&"				{FILTER2( AND );}
-"||"				{FILTER2( OR );}
-"=="				{FILTER2( EQ );}
-"!="				{FILTER2( NEQ );}
-"!"                             {FILTER2( NOT );}
-"<="				{FILTER2( LE );}
-"<"				{FILTER2( LT );}
-">="				{FILTER2( GE );}
-">"				{FILTER2( GT );}
-"+"				{FILTER2( PLUS);}
-"-"				{FILTER2( MINUS);}
-"/"				{FILTER2( DIV );}
-"*"				{FILTER2( MUL );}
+"&&"				{FILTER7( AND,prf_name_str[F_and]);}
+"||"				{FILTER7( OR,prf_name_str[F_or] );}
+"=="				{FILTER7( EQ,prf_name_str[F_eq] );}
+"!="				{FILTER7( NEQ,prf_name_str[F_neq] );}
+"!"                             {FILTER7( NOT,prf_name_str[F_not] );}
+"<="				{FILTER7( LE,prf_name_str[F_le] );}
+"<"				{FILTER7( LT,prf_name_str[F_lt] );}
+">="				{FILTER7( GE,prf_name_str[F_ge] );}
+">"				{FILTER7( GT,prf_name_str[F_gt] );}
+"+"				{FILTER7( PLUS,prf_name_str[F_add] );}
+"-"				{FILTER7( MINUS,prf_name_str[F_sub] );}
+"/"				{FILTER7( DIV,prf_name_str[F_div] );}
+"*"				{FILTER7( MUL,prf_name_str[F_mul] );}
 
 "++"				{FILTER( INC );}
 "--" 				{FILTER( DEC );}
@@ -148,14 +156,14 @@ int start_token;
 "/="				{FILTER( DIVON );}
 
 
-"reshape"			{FILTER2( RESHAPE );}
-"shape"				{FILTER2( SHAPE );}
-"take"				{FILTER2( TAKE );}
-"drop"				{FILTER2( DROP );}
-"dim"				{FILTER2( DIM );}
-"rotate"			{FILTER2( ROTATE );}
-"cat"                           {FILTER2( CAT );}
-"psi"                           {FILTER2( PSI );}
+"reshape"			{FILTER7( RESHAPE, prf_name_str[F_reshape] );}
+"shape"				{FILTER7( SHAPE,prf_name_str[F_shape] );}
+"take"				{FILTER7( TAKE,prf_name_str[F_take] );}
+"drop"				{FILTER7( DROP,prf_name_str[F_drop] );}
+"dim"				{FILTER7( DIM,prf_name_str[F_dim] );}
+"rotate"			{FILTER7( ROTATE,prf_name_str[F_rotate] );}
+"cat"                           {FILTER7( CAT,prf_name_str[F_cat] );}
+"psi"                           {FILTER7( PSI,prf_name_str[F_psi] );}
 "ftoi"                          {FILTER( F2I );}
 "ftod"                          {FILTER( F2D );}
 "itof"                          {FILTER( I2F );}
@@ -173,8 +181,8 @@ int start_token;
 "while"				{FILTER( WHILE );}
 "for"				{FILTER( FOR );}
 "with" 				{FILTER( WITH );}
-"genarray"			{FILTER2( GENARRAY );}
-"modarray"			{FILTER2( MODARRAY );}
+"genarray"			{FILTER7( GENARRAY,"_genarray" );}
+"modarray"			{FILTER7( MODARRAY,"_modarray" );}
 "fold"				{FILTER( FOLD );}
 "inline"			{FILTER( INLINE );}
 
