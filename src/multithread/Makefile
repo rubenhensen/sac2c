@@ -1,6 +1,9 @@
 #
 # 
 # $Log$
+# Revision 3.3  2000/12/07 14:19:55  dkr
+# include path modified
+#
 # Revision 3.2  2000/12/06 20:09:11  dkr
 # make deps done
 #
@@ -46,7 +49,7 @@ CC        := gcc
 CCFLAGS   := -ansi -Wall -g -O3
 CFLAGS    := -D__EXTENSIONS__
 
-INCS=-I../global -I../tree -I../../inc -I../optimize -I../typecheck -I../refcount \
+INCS=-I../global -I../tree -I../../inc -I../optimize -I../typecheck -I../flatten \
      -I../print -I../compile
 
 all: multithread.o \
