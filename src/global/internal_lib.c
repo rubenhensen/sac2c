@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.8  1999/06/03 14:29:21  sbs
+ * missing code for T_bool const-vecs added in ModConstVec.
+ *
  * Revision 2.7  1999/05/17 11:24:26  jhs
  * CopyConstVec will be called only if ID/ARRAY_ISCONST.
  *
@@ -336,6 +339,10 @@ ModConstVec (simpletype vectype, void *const_vec, int idx, node *const_node)
     DBUG_ENTER ("ModConstVec");
     switch (vectype) {
     case T_bool:
+        DBUG_ASSERT ((NODE_TYPE (const_node) == N_bool),
+                     "array element type does not match infered vectype!");
+        ((int *)const_vec)[idx] = BOOL_VAL (const_node);
+        break;
     case T_int:
         DBUG_ASSERT ((NODE_TYPE (const_node) == N_num),
                      "array element type does not match infered vectype!");
