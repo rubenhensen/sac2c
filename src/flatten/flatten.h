@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.16  1997/12/02 19:08:38  srs
+ * *** empty log message ***
+ *
  * Revision 1.15  1997/11/25 12:37:33  srs
  * *** empty log message ***
  *
@@ -72,7 +75,6 @@ extern node *FltnCon (node *arg_node, node *arg_info);
 extern node *FltnPrf (node *arg_node, node *arg_info);
 extern node *FltnNwith (node *arg_node, node *arg_info);
 extern node *FltnNpart (node *arg_node, node *arg_info);
-extern node *FltnNwithid (node *arg_node, node *arg_info);
 extern node *FltnNgenerator (node *arg_node, node *arg_info);
 extern node *FltnNwithop (node *arg_node, node *arg_info);
 extern node *FltnNcode (node *arg_node, node *arg_info);
