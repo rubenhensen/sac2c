@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.38  2004/06/09 13:17:07  mwe
+ * using new types (ntype*) for type requests
+ * changes on types are done for new types (ntype*) also
+ *
  * Revision 1.37  2004/05/04 14:27:30  khf
  * NCODE_CEXPR in SSACSENcode() replaced by NCODE_CEXPRS
  *
@@ -372,11 +376,12 @@ CmpIdsTypes (ids *ichain1, ids *ichain2)
 
     if (ichain1 != NULL) {
         DBUG_ASSERT ((ichain2 != NULL), "comparing different ids chains");
-        if (CompareTypesImplementation (VARDEC_OR_ARG_TYPE (
-                                          AVIS_VARDECORARG (IDS_AVIS (ichain1))),
-                                        VARDEC_OR_ARG_TYPE (
-                                          AVIS_VARDECORARG (IDS_AVIS (ichain2))))
-            == 0) {
+        /*types->ntype*/
+        /*if (CompareTypesImplementation(
+         *     VARDEC_OR_ARG_TYPE(AVIS_VARDECORARG(IDS_AVIS(ichain1))),
+         *     VARDEC_OR_ARG_TYPE(AVIS_VARDECORARG(IDS_AVIS(ichain2))))
+         *     == 0) {*/
+        if (TYEqTypes (AVIS_TYPE (IDS_AVIS (ichain1)), AVIS_TYPE (IDS_AVIS (ichain2)))) {
             result = CmpIdsTypes (IDS_NEXT (ichain1), IDS_NEXT (ichain2));
         } else {
             result = FALSE;
@@ -514,7 +519,6 @@ SSACSEPropagateSubst2Args (node *fun_args, node *ap_args, node *fundef)
     node *search_fun_arg;
     node *search_ap_arg;
     bool found_match;
-    int cmp;
     char *stype1, *stype2;
 
     DBUG_ENTER ("SSACSEPropagateSubst2Args");
@@ -537,10 +541,16 @@ SSACSEPropagateSubst2Args (node *fun_args, node *ap_args, node *fundef)
         /*
          * specialize types of formal parameters if possible
          */
-        cmp = CompareTypesImplementation (ARG_TYPE (act_fun_arg), ext_ap_type);
+        /*cmp = CompareTypesImplementation( ARG_TYPE( act_fun_arg),
+                                          ext_ap_type);*/
         stype1 = Type2String (ARG_TYPE (act_fun_arg), 0, TRUE);
         stype2 = Type2String (ext_ap_type, 0, TRUE);
-        if ((cmp == 0) || (cmp == 1)) {
+        /*types->ntype*/
+        /*if ((cmp == 0) || (cmp == 1)) {*/
+        if ((TYCmpTypes (AVIS_TYPE (ARG_AVIS (act_fun_arg)), AVIS_TYPE (ext_ap_avis))
+             == TY_eq)
+            || (TYCmpTypes (AVIS_TYPE (ARG_AVIS (act_fun_arg)), AVIS_TYPE (ext_ap_avis))
+                == TY_gt)) {
             DBUG_PRINT ("SSACSE",
                         ("type of formal LaC-fun (%s) arg specialized in line %d:"
                          "  %s:%s->%s",
@@ -551,7 +561,23 @@ SSACSEPropagateSubst2Args (node *fun_args, node *ap_args, node *fundef)
              */
             ARG_TYPE (act_fun_arg) = FreeAllTypes (ARG_TYPE (act_fun_arg));
             ARG_TYPE (act_fun_arg) = DupAllTypes (ext_ap_type);
-        } else if (cmp == 2) {
+
+            /*
+             * type->ntype
+             * do the same modification of types for ntype in AVIS node
+             */
+            DBUG_ASSERT ((ARG_AVIS (act_fun_arg) != NULL),
+                         ("Pointer to AVIS node is missing"));
+            AVIS_TYPE (ARG_AVIS (act_fun_arg))
+              = TYFreeType (AVIS_TYPE (ARG_AVIS (act_fun_arg)));
+            AVIS_TYPE (ARG_AVIS (act_fun_arg)) = TYCopyType (AVIS_TYPE (ext_ap_avis));
+
+        } else if ((TYCmpTypes (AVIS_TYPE (ARG_AVIS (act_fun_arg)),
+                                AVIS_TYPE (ext_ap_avis))
+                    == TY_hcs)
+                   || (TYCmpTypes (AVIS_TYPE (ARG_AVIS (act_fun_arg)),
+                                   AVIS_TYPE (ext_ap_avis))
+                       == TY_dis)) {
             /*
              * special function application with incompatible types found
              */
@@ -1188,6 +1214,7 @@ SSACSElet (node *arg_node, node *arg_info)
              && (! ForbiddenSubstitution( LET_IDS( arg_node)))
 #endif
              ) {
+    /*types->ntype*/
     types *type1 = VARDEC_OR_ARG_TYPE( AVIS_VARDECORARG(
                                                IDS_AVIS( LET_IDS( arg_node))));
     types *type2 = VARDEC_OR_ARG_TYPE( AVIS_VARDECORARG(
@@ -1196,8 +1223,13 @@ SSACSElet (node *arg_node, node *arg_info)
     char *stype2 = Type2String( type2, 0, TRUE);
 
     /* only substitute ids of equal or more generic types */
-    cmp = CompareTypesImplementation( type1, type2);
-    if ((cmp == 0) || (cmp == 1)) {
+    /*cmp = CompareTypesImplementation( type1, type2);
+    if ((cmp == 0) || (cmp == 1)) {*/
+    if ( (TYCmpTypes(AVIS_TYPE( IDS_AVIS( LET_IDS( arg_node))), 
+		     AVIS_TYPE( ID_AVIS( LET_EXPR( arg_node)))) == TY_eq) ||
+	 (TYCmpTypes(AVIS_TYPE( IDS_AVIS( LET_IDS( arg_node))), 
+		     AVIS_TYPE( ID_AVIS( LET_EXPR( arg_node)))) == TY_gt) ){
+
       /*
        *  Since we want to substitute ids with more generic types, we have to
        *  tolerate (some) type errors:
@@ -1232,7 +1264,8 @@ SSACSElet (node *arg_node, node *arg_info)
       /* remove copy assignment */
       INFO_SSACSE_REMASSIGN(arg_info) = TRUE;
     }
-    else if (cmp == -1) {
+    else if (TYCmpTypes(AVIS_TYPE( IDS_AVIS( LET_IDS( arg_node))), 
+			AVIS_TYPE( ID_AVIS( LET_EXPR( arg_node)))) == TY_gt) /*(cmp == -1) {*/{
 #if 0
       /*
        *  We have an assignment of this form:
@@ -1269,8 +1302,15 @@ SSACSElet (node *arg_node, node *arg_info)
        */
       node *decl = ID_VARDEC( LET_EXPR( arg_node));  /* N_arg or N_vardec */
       if (NODE_TYPE( decl) == N_vardec) {
+	/*types->ntype*/
         VARDEC_TYPE( decl) = FreeAllTypes( VARDEC_TYPE( decl));
         VARDEC_TYPE( decl) = DupAllTypes( IDS_TYPE( LET_IDS( arg_node)));
+	/* 
+	 * type->ntype
+	 * do the same modification of types in VARDEC for ntype in AVIS node
+	 */ 
+	AVIS_TYPE(VARDEC_AVIS( decl)) = TYFreeType( AVIS_TYPE(VARDEC_AVIS( decl)));
+	AVIS_TYPE(VARDEC_AVIS( decl)) = TYCopyType( AVIS_TYPE(IDS_AVIS(LET_IDS(arg_node))));
       }
 
       DBUG_PRINT( "SSACSE",
