@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.4  1998/05/07 10:08:31  dkr
+ * uses now StringCopy() in DFMGenMaskBase(), DFMExtendMaskBase() when
+ *   extracting the vardec-, arg-names (no sharing!!).
+ *
  * Revision 1.3  1998/05/06 17:19:11  dkr
  * added DFMGenMaskMinus(), DFMSetMaskMinus()
  *
@@ -139,7 +143,7 @@ DFMGenMaskBase (node *arguments, node *vardecs)
     cnt = 0;
 
     while (tmp != NULL) {
-        base->ids[cnt] = ARG_NAME (tmp);
+        base->ids[cnt] = StringCopy (ARG_NAME (tmp));
         cnt += 1;
         tmp = ARG_NEXT (tmp);
     }
@@ -147,7 +151,7 @@ DFMGenMaskBase (node *arguments, node *vardecs)
     tmp = vardecs;
 
     while (tmp != NULL) {
-        base->ids[cnt] = VARDEC_NAME (tmp);
+        base->ids[cnt] = StringCopy (VARDEC_NAME (tmp));
         cnt += 1;
         tmp = VARDEC_NEXT (tmp);
     }
@@ -226,7 +230,7 @@ DFMExtendMaskBase (mask_base_t *mask_base, node *arguments, node *vardecs)
             }
         }
 
-        mask_base->ids[cnt] = ARG_NAME (tmp);
+        mask_base->ids[cnt] = StringCopy (ARG_NAME (tmp));
         cnt += 1;
 
     arg_found:
@@ -243,7 +247,7 @@ DFMExtendMaskBase (mask_base_t *mask_base, node *arguments, node *vardecs)
             }
         }
 
-        mask_base->ids[cnt] = VARDEC_NAME (tmp);
+        mask_base->ids[cnt] = StringCopy (VARDEC_NAME (tmp));
         cnt += 1;
 
     vardec_found:
