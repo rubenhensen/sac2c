@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.21  2000/06/14 12:04:02  jhs
+ * Dups ST_IDENTIFIER and MT_IDENTIFIER now.
+ *
  * Revision 1.20  2000/03/31 12:25:43  jhs
  * Added duplication of dfmmasks at lte, return, mt, st.
  *
@@ -1896,6 +1899,7 @@ DupMt (node *arg_node, node *arg_info)
     DBUG_ENTER ("DupMt");
 
     new_node = MakeMT (DUPTRAV (MT_REGION (arg_node)));
+    MT_IDENTIFIER (new_node) = MT_IDENTIFIER (arg_node);
 
     if (INFO_DUP_DFMBASE (arg_info) != NULL) {
         MT_USEMASK (new_node)
@@ -1919,6 +1923,7 @@ DupSt (node *arg_node, node *arg_info)
     DBUG_ENTER ("DupSt");
 
     new_node = MakeST (DUPTRAV (ST_REGION (arg_node)));
+    ST_IDENTIFIER (new_node) = ST_IDENTIFIER (arg_node);
 
     if (INFO_DUP_DFMBASE (arg_info) != NULL) {
         ST_USEMASK (new_node)
