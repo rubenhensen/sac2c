@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2001/02/14 17:51:03  dkr
+ * redundant VARDEC_TYPEDEF replaced by VARDEC_TDEF
+ *
  * Revision 3.13  2001/02/14 10:17:47  dkr
  * MakeNode(N_vardec) replaced by MakeVardec
  *
@@ -4725,18 +4728,7 @@ TCfundef (node *arg_node, node *arg_info)
                                 ModName (VARDEC_TMOD (vardec), VARDEC_TNAME (vardec))));
                     }
 
-                    VARDEC_TYPEDEF (vardec) = VARDEC_TDEF (vardec);
-                    /*
-                     * Unfortunatly, there are two links from a variable declaration
-                     * to the respective type definition, one in the vardec node itself
-                     * and one in the types data structure accessible by a compound
-                     * macro. The former one is the way it should be since the definition
-                     * obviously is an attribute of the type and not that of a variable
-                     * declaration. The latter one is only maintained for compatibility
-                     * concerns.
-                     */
-
-                    VARDEC_ATTRIB (vardec) = TYPEDEF_ATTRIB (VARDEC_TYPEDEF (vardec));
+                    VARDEC_ATTRIB (vardec) = TYPEDEF_ATTRIB (VARDEC_TDEF (vardec));
                 }
             }
 

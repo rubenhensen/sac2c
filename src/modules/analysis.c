@@ -1,5 +1,9 @@
 /*
+ *
  * $Log$
+ * Revision 3.3  2001/02/14 17:50:57  dkr
+ * redundant VARDEC_TYPEDEF replaced by VARDEC_TDEF
+ *
  * Revision 3.2  2000/11/24 14:51:13  nmw
  * analysis ignores fundefs marked as ST_ignore
  *
@@ -64,14 +68,13 @@
  *
  * Revision 1.1  1995/10/19  11:04:05  cg
  * Initial revision
+ *
  */
 
 #include "dbug.h"
-
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
-
 #include "traverse.h"
 
 /*
@@ -85,11 +88,6 @@
  *                  This information is needed later for handling global
  *                  objects and writing SIBs.
  *  global vars   : act_tab, analy_tab
- *  internal funs : ---
- *  external funs : Trav
- *  macros        : ---
- *
- *  remarks       :
  *
  */
 
@@ -110,10 +108,6 @@ Analysis (node *syntaxtree)
  *  description   : This function takes care of those global objects which
  *                  are only indirectly needed by the given function, i.e.
  *                  global objects which are needed by applied functions.
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : StoreNeededNodes, StoreUnresolvedNodes
- *  macros        : ---
  *
  *  remarks       : Since only fundef nodes are traversed, the universal
  *                  traversal mechanism is not used to spare one table
@@ -182,12 +176,6 @@ FindAllNeededObjects (node *arg_node)
  *  arguments     : 1) N_modul node of syntax tree
  *                  2) arg_info unused
  *  description   : If the module has functions, these are traversed.
- *  global vars   : ---
- *  internal funs : FindAllNeededObjects
- *  external funs : Trav
- *  macros        : ---
- *
- *  remarks       :
  *
  */
 
@@ -213,12 +201,6 @@ ANAmodul (node *arg_node, node *arg_info)
  *  arguments     : 1) pointer to N_fundef node
  *                  2) arg_info unused
  *  description   : If the function is not imported, its body is traversed.
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : Trav, TidyUpNodelist
- *  macros        : ---
- *
- *  remarks       :
  *
  */
 
@@ -249,12 +231,6 @@ ANAfundef (node *arg_node, node *arg_info)
  *  description   : If information about the type of the declared variable
  *                  is available, then the respective typedef node is
  *                  added to this functions's list of needed types.
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : StoreNeededNode, Trav
- *  macros        : ---
- *
- *  remarks       :
  *
  */
 
@@ -264,8 +240,8 @@ ANAvardec (node *arg_node, node *arg_info)
     DBUG_ENTER ("ANAvardec");
 
     if (FUNDEF_INLINE (arg_info)) {
-        if (VARDEC_TYPEDEF (arg_node) != NULL) {
-            StoreNeededNode (VARDEC_TYPEDEF (arg_node), arg_info, ST_regular);
+        if (VARDEC_TDEF (arg_node) != NULL) {
+            StoreNeededNode (VARDEC_TDEF (arg_node), arg_info, ST_regular);
         }
 
         if (VARDEC_NEXT (arg_node) != NULL) {
@@ -284,12 +260,6 @@ ANAvardec (node *arg_node, node *arg_info)
  *  description   : If the id node represents a global object, then the
  *                  respective objdef node is added to the function's
  *                  list of needed global objects.
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : StoreNeededNode
- *  macros        : ---
- *
- *  remarks       :
  *
  */
 
@@ -312,12 +282,6 @@ ANAid (node *arg_node, node *arg_info)
  *                  2) fundef node which contains this vardec
  *  description   : The applied user-defined function is added to the
  *                  defined function's list of needed functions.
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : StoreNeededNode, Trav
- *  macros        : ---
- *
- *  remarks       :
  *
  */
 
