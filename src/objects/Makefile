@@ -1,5 +1,9 @@
 #
+#
 # $Log$
+# Revision 2.15  2000/09/22 14:20:03  dkr
+# INCS modified
+#
 # Revision 2.14  2000/08/17 10:17:35  dkr
 # make deps done
 #
@@ -31,9 +35,6 @@
 # Handling of target platform unified: One of the following
 # is always defined:
 # SAC_FOR_SOLARIS_SPARC, SAC_FOR_LINUX_X86, OR SAC_FOR_OSF_ALPHA.
-#
-# Revision 2.4  1999/12/13 11:27:22  dkr
-# *** empty log message ***
 #
 # Revision 2.3  1999/03/11 18:18:26  dkr
 # make deps done
@@ -89,7 +90,6 @@
 # Initial revision
 #
 #
-#
 
 
 
@@ -110,7 +110,7 @@ CFLAGS    := -D__EXTENSIONS__
 
 RM=rm -f
 
-INCS= -I../global -I../tree -I../../inc -I../typecheck -I../modules
+INCS= -I../global -I../tree -I../../inc -I../typecheck -I../modules -I../print
 
 all: objinit.o objects.o uniquecheck.o rmvoidfun.o
 
