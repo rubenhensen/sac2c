@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.20  2004/08/10 13:31:30  ktr
+# reuse.o added.
+#
 # Revision 3.19  2004/08/09 14:57:13  ktr
 # added allocation.o
 #
@@ -86,7 +89,7 @@ INCS = -I../global -I../tree -I../../inc -I../flatten -I../typecheck \
        -I../optimize -I../compile -I../constants -I../print
 
 
-all: allocation.o alloc.o refcount.o refcounting.o
+all: allocation.o alloc.o refcount.o refcounting.o reuse.o
 
 
 %.o: %.c
