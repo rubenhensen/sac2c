@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.46  1998/03/21 18:54:34  srs
+ * MakeNWith initializes NWITH_PARTS with -1 instead of 0
+ *
  * Revision 1.45  1998/03/21 14:05:50  dkr
  * changed MakeWLublock
  *
@@ -1279,7 +1282,7 @@ MakeNWith (node *part, node *code, node *withop)
     NWITH_WITHOP (tmp) = withop;
 
     tmp->info2 = Malloc (sizeof (wl_info));
-    NWITH_PARTS (tmp) = 0;
+    NWITH_PARTS (tmp) = -1;
     NWITH_REFERENCED (tmp) = 0;
     NWITH_REFERENCED_FOLD (tmp) = 0;
     NWITH_COMPLEX (tmp) = 0;
