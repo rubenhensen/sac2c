@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.52  1995/06/23 10:04:25  sacbase
+ * Revision 1.53  1995/06/23 13:57:56  hw
+ * added new parameter -maxoverload and variable max_overload
+ *
+ * Revision 1.52  1995/06/23  10:04:25  sacbase
  * CPP invocation inserted.
  *
  * Revision 1.51  1995/06/15  14:57:37  hw
@@ -199,7 +202,7 @@ int opt_dcr = 1, opt_cf = 1, opt_wr = 1, opt_lir = 1, opt_inl = 1, opt_unr = 1;
 int optvar = 50;
 int inlnum = 1;
 int unrnum = 2;
-
+int max_overload = 10;
 int psi_optimize = 1;
 int psi_opt_ive = 1;
 
@@ -397,6 +400,12 @@ MAIN
                     ++argv;
                     --argc;
                     unrnum = atoi (*argv);
+                } else {
+                    if (!strncmp (*argv, "axoverload", 10)) {
+                        ++argv;
+                        --argc;
+                        max_overload = atoi (*argv);
+                    }
                 }
             }
         }
