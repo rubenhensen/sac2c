@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.15  2004/09/29 12:51:54  skt
+  some debugging (sorry)
+
   Revision 1.14  2004/09/28 16:40:17  skt
   added DATAFLOWNODE_USEDNODES support
 
@@ -3909,7 +3912,6 @@
 	    <all />
 	  </phases>
 	</attribute>
-      <attributes>
         <attribute name="UsedNodes" mandatory="no">
 	  <type name="NodeList" />
 	  <phases>
