@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2004/11/24 15:05:23  ktr
+ * added EMIAret.
+ *
  * Revision 1.4  2004/11/24 13:11:01  ktr
  * ismop^2
  *
@@ -38,6 +41,7 @@ extern node *EMIAfuncond (node *arg_node, info *arg_info);
 extern node *EMIAfundef (node *arg_node, info *arg_info);
 extern node *EMIAid (node *arg_node, info *arg_info);
 extern node *EMIAlet (node *arg_node, info *arg_info);
+extern node *EMIAret (node *arg_node, info *arg_info);
 extern node *EMIAreturn (node *arg_node, info *arg_info);
 extern node *EMIAvardec (node *arg_node, info *arg_info);
 extern node *EMIAwith (node *arg_node, info *arg_info);
