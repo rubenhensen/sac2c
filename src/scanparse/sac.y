@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 1.145  1998/02/09 16:06:28  srs
+ * adjust Ngenidx to new MakeNWithid syntax
+ *
  * Revision 1.144  1998/02/09 15:40:33  sbs
  * forced check in 8-(((
  * not yet cleaned up!
@@ -1970,8 +1973,8 @@ Nwidth: /* empty */ { $$ = NULL; }
       | WIDTH expr  { $$ = $2;}
       ;
 
-Ngenidx: id { $$ = MakeNWithid( WI_vector, MakeIds($1, NULL, ST_regular)); }
-       | SQBR_L ids SQBR_R { $$ = MakeNWithid( WI_scalars, $2); }
+Ngenidx: id { $$ = MakeNWithid(MakeIds($1, NULL, ST_regular), NULL); }
+       | SQBR_L ids SQBR_R { $$ = MakeNWithid( NULL, $2); }
        ;
 
 Ngenop:   LT {$$=F_lt;}
