@@ -304,7 +304,7 @@
           <node name="Array" />
           <node name="Return" />
           <node name="Id" />
-          <node name="Args" />
+          <node name="Arg" />
           <node name="Prf" />
           <node name="With" />
           <node name="Withid" />
@@ -445,7 +445,7 @@
     </phase>
     <phase id="export" name="Exporting symbols">
       <traversal id="EXP" name="Export Symbols" default="sons" include="export.h">
-        <travsons>
+        <travuser>
 	  <node name="Use" />
 	  <node name="Import" />
 	  <node name="Provide" />
@@ -455,7 +455,7 @@
 	  <node name="Typedef" />
 	  <node name="Objdef" />
 	  <node name="Module" />
-	</travsons>
+	</travuser>
       </traversal>
       <traversal id="SER" name="Serialize Module" default="sons" include="serialize_node.h" />
     </phase>
@@ -1030,7 +1030,7 @@
           <node name="Ret" />
           <node name="Return" />
           <node name="Vardec" />
-          <node name="with" />
+          <node name="With" />
           <node name="With2" />
         </travuser>
         <travsons>
@@ -1151,10 +1151,10 @@
       </traversal>
       <traversal id="SCHED" name="Schedule" default="sons" include="schedule.h">
         <travuser>
-          <node name="Wlsegvar" />
+          <node name="WLsegVar" />
           <node name="Sync" />
           <node name="With2" />
-          <node name="Wlseg" />
+          <node name="WLseg" />
         </travuser>
         <travsons>
         </travsons>
@@ -1320,10 +1320,10 @@
         <travuser>
           <node name="Ap" />
           <node name="Assign" />
-          <node name="Ex" />
+          <node name="EX" />
           <node name="Fundef" />
-          <node name="Mt" />
-          <node name="St" />
+          <node name="MT" />
+          <node name="ST" />
         </travuser>
         <travsons>
         </travsons>
@@ -1334,10 +1334,10 @@
       </traversal>
       <traversal id="CONCEL" name="Consolidate Cells" default="sons" include="consolidate_cells.h">
         <travuser>
-          <node name="Ex" />
+          <node name="EX" />
           <node name="Fundef" />
-          <node name="Mt" />
-          <node name="St" />
+          <node name="MT" />
+          <node name="ST" />
         </travuser>
         <travsons>
         </travsons>
@@ -1430,8 +1430,8 @@
           <node name="Vardec" />
           <node name="With" />
           <node name="With2" />
-          <node name="Wlseg" />
-          <node name="Wlsegvar" />
+          <node name="WLseg" />
+          <node name="WLsegVar" />
         </travuser>
       </traversal>
       <traversal id="FPC" name="Function Precompilation" default="sons" include="functionprecompile.h">
@@ -1481,7 +1481,7 @@
           <node name="Fundef" />
           <node name="Id" />
           <node name="Let" />
-          <node name="Loop" />
+          <node name="Do" />
           <node name="Module" />
           <node name="Objdef" />
           <node name="Prf" />
@@ -1497,15 +1497,15 @@
 
           <node name="With" />
           <node name="With2" />
-          <node name="Wlseg" />
-          <node name="Wlsegvar" />
-          <node name="Wlblock" />
-          <node name="Wlublock" />
-          <node name="Wlstride" />
-          <node name="Wlstridevar" />
-          <node name="Wlgrid" />
-          <node name="Wlgridvar" />
-          <node name="Wlcode" />
+          <node name="WLseg" />
+          <node name="WLsegVar" />
+          <node name="WLblock" />
+          <node name="WLublock" />
+          <node name="WLstride" />
+          <node name="WLstrideVar" />
+          <node name="WLgrid" />
+          <node name="WLgridVar" />
+          <node name="Code" />
 
           <node name="Spmd" />
           <node name="Sync" />
