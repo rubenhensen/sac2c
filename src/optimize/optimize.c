@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2001/02/15 17:09:14  nmw
+ * ssa transformation switch and break specifier implemented
+ *
  * Revision 3.2  2000/11/23 16:51:24  sbs
  * old_xxx_expr vars in OPT_fundef (superfluously) initialized to avoid
  * compiler warnings in product version.
@@ -173,6 +176,9 @@
 #include "traverse.h"
 #include "print.h"
 #include "convert.h"
+#include "CheckAvis.h"
+#include "SSATransform.h"
+#include "lac2fun.h"
 
 #include "optimize.h"
 #include "generatemasks.h"
@@ -455,6 +461,32 @@ OPTmodul (node *arg_node, node *arg_info)
     if ((break_after == PH_sacopt) && (break_cycle_specifier == 0)
         && (0 == strcmp (break_specifier, "dfr"))) {
         goto DONE;
+    }
+
+    /*
+     * Starting intra-functional optimizations
+     *
+     * first of all: check for correct Avis nodes and references!
+     *
+     * then:
+     *   remove loops and conditional with lac2fun
+     *   bring AST in SSA form
+     *   do optimizations
+     *   remove optimizations infos from nodes
+     *   convert back to standard form ?
+     *   convert back fun2lac ?
+     */
+
+    if (use_ssaform) {
+        NOTE (("using ssa-form based optimizations:"));
+        arg_node = Lac2Fun (arg_node);
+        arg_node = CheckAvis (arg_node);
+        arg_node = SSATransform (arg_node);
+
+        if ((break_after == PH_sacopt) && (break_cycle_specifier == 0)
+            && (0 == strcmp (break_specifier, "ssa"))) {
+            goto DONE;
+        }
     }
 
     if (MODUL_FUNS (arg_node)) {
