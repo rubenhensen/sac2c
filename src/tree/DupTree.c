@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.28  2001/03/27 10:52:13  dkr
+ * minor changes done
+ *
  * Revision 3.27  2001/03/27 09:50:04  dkr
  * DBUG-ASSERT in DupBlock added
  *
@@ -796,6 +799,15 @@ DupFundef (node *arg_node, node *arg_info)
     DBUG_ENTER ("DupFundef");
 
     /*
+     * DUP_INLINE
+     *  -> N_return nodes are not duplicated
+     *  -> would result in an illegal N_fundef node
+     *  -> stop here!
+     */
+    DBUG_ASSERT ((INFO_DUP_TYPE (arg_info) != DUP_INLINE),
+                 "N_fundef node can't be duplicated in DUP_INLINE mode!");
+
+    /*
      *  We can't copy the FUNDEF_DFM_BASE and DFMmasks belonging to this base
      *  directly!
      *  Such DFMmasks are attached to N_with, N_with2, N_sync and N_spmd.
@@ -958,15 +970,6 @@ DupBlock (node *arg_node, node *arg_info)
     DFMmask_base_t old_base, new_base;
 
     DBUG_ENTER ("DupBlock");
-
-    /*
-     * DUP_INLINE
-     *  -> N_return nodes are not duplicated
-     *  -> would result in an illegal N_block node
-     *  -> stop here!
-     */
-    DBUG_ASSERT ((INFO_DUP_TYPE (arg_info) != DUP_INLINE),
-                 "N_block node can't be duplicated in DUP_INLINE mode!");
 
     new_vardecs = DUPTRAV (BLOCK_VARDEC (arg_node));
 

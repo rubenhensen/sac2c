@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.30  2001/03/27 10:53:02  dkr
+ * minor changes done
+ *
  * Revision 3.29  2001/03/22 19:15:58  dkr
  * include of tree.h elimiated
  *
@@ -316,7 +319,8 @@ GenericFun (int which, types *type)
 node *
 GetFoldCode (node *fundef)
 {
-    node *fold_code, *tmp;
+    node *fold_code;
+    node *tmp;
 
     DBUG_ENTER ("GetFoldCode");
 
@@ -327,6 +331,9 @@ GetFoldCode (node *fundef)
      * get code of the pseudo fold-fun
      */
     fold_code = DupTree (FUNDEF_INSTR (fundef));
+    /*
+    fold_code = DupTree_Type( FUNDEF_INSTR( fundef), DUP_INLINE);
+    */
 
     /*
      * remove declaration-ICMs ('ND_KS_DECL_ARRAY_ARG') from code.
@@ -337,13 +344,16 @@ GetFoldCode (node *fundef)
     }
 
     /*
-     * we must remove the return node of the code (it is the last node)
+     * remove return-ICMs ('ND_FUN_RET') from code
+     * (it is the last assignment)
      */
     tmp = fold_code;
-    DBUG_ASSERT ((ASSIGN_NEXT (tmp) != NULL), "no assign found");
+    DBUG_ASSERT ((ASSIGN_NEXT (tmp) != NULL), "corrupted fold code found!");
     while (ASSIGN_NEXT (ASSIGN_NEXT (tmp)) != NULL) {
         tmp = ASSIGN_NEXT (tmp);
     }
+    DBUG_ASSERT ((!strcmp (ICM_NAME (ASSIGN_INSTR (ASSIGN_NEXT (tmp))), "ND_FUN_RET")),
+                 "no ND_FUN_RET icm found in fold code!");
     ASSIGN_NEXT (tmp) = FreeNode (ASSIGN_NEXT (tmp));
 
     DBUG_RETURN (fold_code);
