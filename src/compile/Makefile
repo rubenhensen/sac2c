@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.25  2002/09/09 14:19:32  dkr
+# icm2c_error.o
+#
 # Revision 3.24  2002/07/02 13:01:57  dkr
 # icm2c_basic.o added
 #
@@ -70,13 +73,14 @@ INCS = -I../global -I../tree -I../../inc -I../print -I../typecheck \
 MACS = icm.data icm_comment.c icm_trace.c
 
 BETEST_OBJS = icm2c_std.BEtest.o icm2c_wl.BEtest.o icm2c_mt.BEtest.o \
-              icm2c_sched.BEtest.o icm2c_basic.o icm2c_utils.o \
+              icm2c_sched.BEtest.o icm2c_error.BEtest.o \
+              icm2c_basic.o icm2c_utils.o \
               ../global/NameTuples.o ../global/globals.o ../../lib/dbug.o
 
 SAC2C_OBJS = wltransform.o wlpragma_funs.o precompile.o compile.o compile.tagged.o \
              ReuseWithArrays.o gen_startup_code.o PatchWith.o icm2c.o \
-             icm2c_std.o icm2c_wl.o icm2c_mt.o icm2c_sched.o icm2c_basic.o \
-             icm2c_utils.o
+             icm2c_std.o icm2c_wl.o icm2c_mt.o icm2c_sched.o icm2c_error.o \
+             icm2c_basic.o icm2c_utils.o
 
 
 all: $(SAC2C_OBJS) BEtest
