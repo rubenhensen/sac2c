@@ -1,3 +1,49 @@
+/*
+ * This modul converts every WL into a new WL with a layout as defined via
+ * stdin.
+ *
+ * The layout data must be given in the following format (BNF):
+ *     layout  ->  [ row ]+
+ *     row     ->  bound1 bound2 step width expr
+ * Where bound1, bound2, step, width are space separated vectors of the same
+ * dimension as *all* WLs in the used SAC code!!! (E.g. dim=3: 0 10 5)
+ *
+ *************
+ *
+ * Example:
+ *
+ *   Let a file named 'wlconv.sac' contain the following SAC program:
+ *
+ *     int main()
+ *     {
+ *       B = with([0,0] <= idx=[i,j] < [5,5] step [1,1] width [1,1])
+ *           genarray([5,5], 1);
+ *       return (B[0,0]);
+ *     }
+ *
+ *   Let a file named 'nwith2.in' contain the following data:
+ *
+ *     00 0  100 100  15 1  12 1  0
+ *     12 0  100 100  15 1  03 1  1
+ *
+ *   (Note, that the dimension of the array B in 'wlconv.sac' and the dimension
+ *   of the new layout in 'nwith2.in' are equal (2)!)
+ *
+ *   Then Old2NewWith() modifies the abtract syntax tree by analogy with the
+ *   following SAC program:
+ *
+ *     with
+ *       ([  0, 0 ] <= iv < [ 100, 100 ] step [ 15, 1 ] width [ 12, 1 ]) {} : 0,
+ *       ([ 12, 0 ] <= iv < [ 100, 100 ] step [ 15, 1 ] width [  3, 1 ]) {} : 1
+ *     genarray( [ 100, 100 ])
+ *
+ *************
+ *
+ * This modul can be activated with the sac2c flag
+ *   -wlconv
+ * and is then called between the compiler phases 17 and 18. (just before the
+ * transformation into the intermediate WL representation is performed.)
+ */
 
 #include "tree.h"
 #include "traverse.h"
