@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 1.3  2001/03/05 16:57:04  sbs
+# zipcv.o added
+#
 # Revision 1.2  2001/03/02 14:46:05  sbs
 # make deps done
 #
@@ -31,7 +34,7 @@ INCS=-I../../inc -I../tree -I../global
 
 all: shape.o \
      constants_basic.o constants_struc_ops.o constants_ari_ops.o \
-     cv2scalar.o cv2cv.o cv2str.o
+     cv2scalar.o cv2cv.o cv2str.o zipcv.o
 
 
 #
@@ -46,6 +49,9 @@ cv2scalar.c: ../tree/type_info.mac
 	touch $@
 
 cv2str.c: ../tree/type_info.mac
+	touch $@
+
+zipcv.c: ../tree/type_info.mac
 	touch $@
 
 
@@ -65,8 +71,8 @@ constants_ari_ops.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 constants_ari_ops.o: /usr/include/sys/isa_defs.h ../../inc/dbug.h
 constants_ari_ops.o: /usr/include/stdio.h /usr/include/sys/va_list.h
 constants_ari_ops.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-constants_ari_ops.o: constants.h shape.h ../global/types.h
-constants_ari_ops.o: constants_internal.h
+constants_ari_ops.o: ../global/internal_lib.h ../global/types.h constants.h
+constants_ari_ops.o: shape.h constants_internal.h zipcv.h
 constants_basic.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 constants_basic.o: /usr/include/sys/isa_defs.h ../global/globals.h
 constants_basic.o: /usr/include/stdio.h /usr/include/sys/va_list.h
@@ -104,3 +110,9 @@ shape.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
 shape.o: ../tree/tree_basic.h ../global/types.h ../tree/free.h
 shape.o: /usr/include/stdlib.h ../global/my_debug.h ../global/globals.h
 shape.o: ../global/internal_lib.h shape.h
+zipcv.o: /usr/include/strings.h /usr/include/sys/types.h
+zipcv.o: /usr/include/sys/isa_defs.h /usr/include/sys/feature_tests.h
+zipcv.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
+zipcv.o: /usr/include/stdlib.h ../../inc/dbug.h /usr/include/stdio.h
+zipcv.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
+zipcv.o: /usr/include/stdio_impl.h zipcv.h
