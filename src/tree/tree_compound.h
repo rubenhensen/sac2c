@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.139  2004/11/24 20:38:24  khf
+ * added OBJDEF_NAME
+ *
  * Revision 3.138  2004/11/24 17:28:01  sbs
  * WITH_CEXPR added
  *
@@ -534,6 +537,7 @@ extern node *TCappendTypedef (node *tdef_chain, node *tdef);
 #define OBJDEF_TNAME(n) (TYPES_NAME (OBJDEF_TYPE (n)))
 #define OBJDEF_TMOD(n) (TYPES_MOD (OBJDEF_TYPE (n)))
 #define OBJDEF_TDEF(n) (TYPES_TDEF (OBJDEF_TYPE (n)))
+#define OBJDEF_NAME(n) (AVIS_NAME (OBJDEF_AVIS (n)))
 
 #define OBJDEF_LINKNAME(n)                                                               \
     (OBJDEF_PRAGMA (n) == NULL ? NULL : PRAGMA_LINKNAME (OBJDEF_PRAGMA (n)))
