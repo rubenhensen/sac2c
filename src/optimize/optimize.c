@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.30  2001/05/23 15:49:32  nmw
+ * break specifier after fundef optimization cycle
+ *
  * Revision 3.29  2001/05/22 14:54:17  nmw
  * call to RemoveCasts() in front of all optimizations added
  *
@@ -639,6 +642,12 @@ OPTmodul (node *arg_node, node *arg_info)
         if (do_break) {
             goto DONE;
         }
+    }
+
+    /* allows to stop after fundef optimizations */
+    if ((break_after == PH_sacopt) && (break_cycle_specifier == 0)
+        && (0 == strcmp (break_specifier, "funopt"))) {
+        goto DONE;
     }
 
     if (use_ssaform) {
