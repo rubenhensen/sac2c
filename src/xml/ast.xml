@@ -1417,6 +1417,7 @@
     <phase id="precompile" name="Preparing C code generation" >
       <traversal id="MMV" name="MarkMemVals" default="sons" include="markmemvals.h" >
         <travuser>
+          <node name="Block" />
           <node name="Code" />
           <node name="Fold" />
           <node name="Fundef" />
@@ -2194,9 +2195,9 @@
             <node name="Empty" />
           </target>
         </son>
-        <son name="VarDec" mandatory="yes">
+        <son name="Vardec" >
           <target>
-            <node name="VarDec" />
+            <node name="Vardec" />
           </target>
         </son>
       </sons>
@@ -2927,10 +2928,10 @@
             <all />
           </phases>
         </attribute>
-        <attribute name="VarDec" default="NULL" mandatory="no">
+        <attribute name="Vardec" default="NULL" mandatory="no">
           <type name="Link">
             <target>
-              <node name="VarDec" />
+              <node name="Vardec" />
             </target>
           </type>
           <phases>
@@ -3442,7 +3443,7 @@
         <attribute name="Decl" default="NULL" mandatory="yes">
           <type name="Link">
             <target>
-              <node name="VarDec" />
+              <node name="Vardec" />
               <node name="Arg" />
 	      <node name="Objdef" />
             </target>
