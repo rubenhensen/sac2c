@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.46  1997/04/30 11:53:36  cg
+ * Revision 1.47  1997/08/04 17:13:17  dkr
+ * removed strcpy/strlen-bug in GenSyms
+ *
+ * Revision 1.46  1997/04/30  11:53:36  cg
  * Bug fixed in InsertClassType()
  *
  * Revision 1.45  1997/04/24  10:02:15  cg
@@ -1325,7 +1328,7 @@ GenSyms (mod *mod)
                             ("inserting symbol %s of kind %d", ptr->info.types->id, i));
 
                 new = (syms *)Malloc (sizeof (syms));
-                new->id = (char *)Malloc (strlen (ptr->info.types->id));
+                new->id = (char *)Malloc (strlen (ptr->info.types->id) + 1);
                 strcpy (new->id, ptr->info.types->id);
                 new->flag = NOT_IMPORTED;
                 new->next = mod->syms[i];
