@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.13  1999/07/26 11:24:10  jhs
+ * Commented restructured version. Reformated and brushed up the code.
+ *
  * Revision 2.12  1999/07/23 17:17:46  jhs
  * Restructured node_info.mac and simplified it's usage.
  *
@@ -118,38 +121,68 @@
  *
  */
 
-/*
- * info:
+/******************************************************************************
  *
- * Some macro definitions used for the automatic creation
- * of tables which depend on the correct order of the tags
- * for the nodes of the syntax tree.
+ * description:
+ *   Macro definitions used for automatic creation of node-types, node-names,
+ *   and traverse-tables (used in traverse.[ch]).
+ *
+ * the following (traverse-)tables are included:
+ *   (tables are marked with suffix _tab)
+ *
+ *   Node_name       mdb_nodetype
+ *   imp_tab         flat_tab        print_tab        type_tab
+ *   genmask_tab     dcr_tab         wlf_tab          free_tab
+ *   cf_tab          refcnt_tab      comp_tab         lir_tab
+ *   dup_tab         inline_tab      unroll_tab       lir_mov_tab
+ *   idx_tab         unswitch_tab    wli_tab          ae_tab
+ *
+ *   writesib_tab    obj_tab         impltype_tab     objinit_tab
+ *   analy_tab       checkdec_tab    writedec_tab     unique_tab
+ *   rmvoid_tab      precomp_tab     active_tab       readsib_tab
+ *   wlt_tab         cse_tab         dfr_tab          tcwl_tab
+ *   spmdinit_tab    spmdopt_tab     spmdlift_tab     syncinit_tab
+ *
+ *   syncopt_tab     wltrans_tab     gsc_tab          reuse_tab
+ *   o2nWith_tab     sched_tab       conc_tab         opt_tab
+ *   wlaa_tab        freemask_tab    smpdrmtrav_tab   spmdrotrav_tav
+ *   unused1_tab     unused2_tab     unused3_tab      unused4_tab
+ *   unused5_tab     unused6_tab     unused7_tab      unused8_tab
+ *   nnode
+ *
+ * usage (in this file):
+ *   To define a table one needs an identifier for this table (e.g. item),
+ *   for this identfier one needs an selector (NIFitem), this selector is
+ *   defined as a macro at the beginning of this file (see below for exact
+ *   format of circumfencing ifndef-endif), translating it's only  argument
+ *   nto nothing, and undefined at the end of this file.
+ *   One then inserts a new parameter (it_item) into the NIF macro, and inserts
+ *   at corresponding position the selector in the body of NIF, handing over
+ *   the new argument.
+ *   The NIF macros are then used to define table-entries for each node-type.
  *
  *   #ifndef NIFitem
  *   #define NIFitem(it_item)
  *   #endif
- *   ...
+ *
+ *   #define NIF (... it_item ...) ... NIFitem(it_item) ...
+ *
+ *   ... NIF usages ...
+ *
  *   #undef NIFitem
  *
- */
-
-/*   Node_name   mdb_nodetype  imp_tab       flat_tab      print_tab     type_tab
- *                             genmask_tab   dcr_tab       wlf_tab       free_tab
- *                             cf_tab        refcnt_tab    comp_tab      lir_tab
- *                             dup_tab       inline_tab    unroll_tab    lir_mov_tab
- *                             idx_tab       unswitch_tab  wli_tab       ae_tab
+ * usage (in other files, import):
+ *   DO NOT DEFINE A NIF MACRO ANYMORE!!!
+ *   One just defines the selector (e.g. NIFitem) needed, passing it's only
+ *   argument and imports this file. The selector-macro will be undefined by
+ *   node_info.mac.
  *
- *                             writesib_tab  obj_tab       impltype_tab  objinit_tab
- *                             analy_tab     checkdec_tab  writedec_tab  unique_tab
- *                             rmvoid_tab    precomp_tab   active_tab    readsib_tab
- *                             wlt_tab       cse_tab       dfr_tab       tcwl_tab
- *                             spmdinit_tab  spmdopt_tab   spmdlift_tab  syncinit_tab
+ *   #define NIFitem(it_item) it_item
+ *   itemtab_t itemtab[]={
+ *     #include "node_info.mac"
+ *   };
  *
- *                             syncopt_tab   wltrans_tab   gsc_tab       reuse_tab
- *                             o2nWith_tab   sched_tab     conc_tab      opt_tab
- *                             wlaa_tab      freemask_tab  smpdrmtrav_tab spmdrotrav_tav
- *                             nnode
- */
+ ******************************************************************************/
 
 #ifndef NIFNode_name
 #define NIFNode_name(Node_name)
@@ -402,6 +435,12 @@
                                         NIFunused3 (it_unused7) NIFunused4 (it_unused8)  \
                                                                                          \
                                           NIFnnode (nnode)
+
+/******************************************************************************
+ *
+ * Here starts the definitions of tables ...
+ *
+ ******************************************************************************/
 
 NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons, TravSons,
      FreeNum, TravSons, TravSons, TravSons, TravSons, DupInt, TravSons, TravSons,
@@ -1048,27 +1087,27 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
   NIF (N_Ngenerator, "N_Ngenerator", TravSons, FltnNgenerator, NoTrav, TravSons, TravSons,
        TravSons, TravSons, FreeNGenerator, TravSons, RCNgen, TravSons, TravSons, DupNgen,
-       TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
 
-       TravSons, TravSons, TravSons, TravSons, NoTrav, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       WLTNgenerator, TravSons, TravSons, TravSons,
+       NoTrav, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, WLTNgenerator, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 4),
+       TravSons, TravSons, TravSons, TravSons, 4),
 
   NIF (N_Nwithop, "N_Nwithop", TravSons, FltnNwithop, PrintNwithop, TravSons, TravSons,
        TravSons, TravSons, FreeNWithOp, TravSons, RCNwithop, TravSons, TravSons,
-       DupNwithop, TravSons, TravSons, TravSons,
+       DupNwithop, TravSons, TravSons, TravSons, TravSons, TravSons, WLINwithop, TravSons,
 
-       TravSons, TravSons, WLINwithop, TravSons, PrintNwithop, TravSons, TravSons,
-       TravSons, ANAnwithop, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       PrintNwithop, TravSons, TravSons, TravSons, ANAnwithop, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons,
 
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, ReuseNwithop,
-       TravSons, TravSons, TravSons, TravSons, TravSons, FMTravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 1),
+       TravSons, TravSons, TravSons, ReuseNwithop, TravSons, TravSons, TravSons, TravSons,
+       TravSons, FMTravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, 1),
 
   NIF (N_Ncode, "N_Ncode", TravSons, FltnNcode, PrintNcode, TCNcode, TravSons, TravSons,
        WLFNcode, FreeNCode, CFNcode, RCNcode, COMPNcode, TravSons, DupNcode, TravSons,
@@ -1216,6 +1255,10 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 2)
+
+/*
+ *  UNDEFINE ALL USED MACROS HERE!!!
+ */
 
 #undef NIFNode_name
 #undef NIFmdb_nodetype
