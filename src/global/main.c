@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.66  2004/10/21 17:20:01  ktr
+ * Added a nasty hack to traverse MODUL_TYPES with the new typechecker even
+ * when the old typechecker is used.
+ *
  * Revision 3.65  2004/10/17 17:48:16  sah
  * reactivated CreateLibrary in new ast mode
  *
@@ -275,6 +279,7 @@
 #include "multithread.h"
 #include "WLEnhancement.h"
 #include "export.h"
+#include "traverse.h"
 
 #include <stdlib.h>
 #include <unistd.h>
@@ -513,6 +518,14 @@ main (int argc, char *argv[])
 #ifndef NEW_AST
     } else {
         syntax_tree = Typecheck (syntax_tree); /* type_tab */
+        /*
+         * Traverse typedefs with ntc_tab in order to create user type
+         * repository
+         */
+        act_tab = ntc_tab;
+        if ((NODE_TYPE (syntax_tree) == N_modul) && (MODUL_TYPES (syntax_tree) != NULL)) {
+            MODUL_TYPES (syntax_tree) = Trav (MODUL_TYPES (syntax_tree), NULL);
+        }
     }
 #endif /* NEW_AST */
     PHASE_DONE_EPILOG;
