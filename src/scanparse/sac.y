@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/04/08 17:15:55  jhs
+ * Added empty arrays [] and cast on empty arrays (:type)[].
+ *
  * Revision 2.1  1999/02/23 12:40:33  sacbase
  * new release made
  *
@@ -1681,7 +1684,11 @@ expr_ar: SQBR_L {$<cint>$=linenum;} exprsNOar SQBR_R
          { $$=MakeArray( $3);
            NODE_LINE($$)=$<cint>2;
          }
-       ;
+       | SQBR_L {$<cint>$=linenum;} SQBR_R
+         { $$=MakeArray( NULL);
+           NODE_LINE($$) = $<cint>2;
+         }
+       ;       
 
 expr_ap: id BRACKET_L {$<cint>$=linenum;} opt_arguments BRACKET_R
          { $$=MakeAp( $1, NULL, $4);
@@ -2135,6 +2142,10 @@ localtype_main: simpletype {$$ = $1; }
                 { $$ = $1;
                   TYPES_DIM($$) = $3;
                 }
+              | simpletype_main SQBR_L MUL SQBR_R
+                { $$ = $1;
+                  TYPES_DIM($$) = EMPTY_ARRAY;
+                }
               | id SQBR_L SQBR_R
                 { $$=MakeTypes(T_user);
                   TYPES_NAME($$) = $1;
@@ -2149,6 +2160,11 @@ localtype_main: simpletype {$$ = $1; }
                 { $$=MakeTypes(T_user);
                   TYPES_NAME($$) = $1;
                   TYPES_DIM($$)  = $3;
+                }
+              | id SQBR_L MUL SQBR_R
+                { $$=MakeTypes(T_user);
+                  TYPES_NAME($$) = $1;
+                  TYPES_DIM($$)  = EMPTY_ARRAY;
                 }
              ;
 
