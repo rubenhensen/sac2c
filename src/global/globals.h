@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.10  1997/05/14 08:17:34  sbs
+ * Revision 1.11  1997/05/27 09:18:25  sbs
+ * analyseflag renamed to profileflag
+ *
+ * Revision 1.10  1997/05/14  08:17:34  sbs
  * analyseflag activated
  *
  * Revision 1.9  1997/03/19  13:35:34  cg
@@ -90,7 +93,7 @@ extern int show_refcnt;
 extern int show_idx;
 extern int show_icm;
 extern int traceflag;
-extern int analyseflag;
+extern int profileflag;
 
 extern int breakae;
 
