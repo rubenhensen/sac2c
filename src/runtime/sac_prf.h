@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.22  2004/11/17 13:37:15  ktr
+ * added SAC_ND_PRF_IS_REUSED( to_NT, from_NT, from2_NT)
+ *
  * Revision 3.21  2004/09/21 17:31:01  ktr
  * Added ND_PRF_IDX_SHAPE_SEL, ND_PRF_SHAPE_SEL
  *
@@ -182,6 +185,8 @@
  * ND_PRF_SHAPE_IDX_SEL__DATA( to_NT, to_sdim, from_NT, from_sdim, scl)
  * ND_PRF_SHAPE_SEL__DATA( to_NT, to_sdim, from_NT, from_sdim, from2_NT)
  *
+ * ND_PRF_IS_REUSED( to_NT, from_NT, from2_NT)
+ *
  ******************************************************************************/
 
 #define SAC_ND_PRF_DIM__DATA(to_NT, to_sdim, from_NT, from_sdim)                         \
@@ -298,5 +303,19 @@
                        NT_STR (to_NT), to_sdim, NT_STR (from_NT), from_sdim, from2_NT))  \
     SAC_ND_CREATE__SCALAR__DATA (to_NT,                                                  \
                                  SAC_ND_A_SHAPE (from_NT, SAC_ND_READ (from2_NT, 0)))
+
+#define SAC_ND_PRF_IS_REUSED(to_NT, from_NT, from2_NT)                                   \
+    CAT17 (SAC_ND_PRF_IS_REUSED__, NT_SHP (from_NT) BuildArgs3 (to_NT, from_NT, from2_NT))
+
+#define SAC_ND_PRF_IS_REUSED__SCL(to_NT, from_NT, from2_NT) SAC_ND_A_FIELD (to_NT) = 0;
+
+#define SAC_ND_PRF_IS_REUSED__AKS(to_NT, from_NT, from2_NT)                              \
+    SAC_ND_A_FIELD (to_NT) = (SAC_ND_A_FIELD (from_NT) == SAC_ND_A_FIELD (from2_NT));
+
+#define SAC_ND_PRF_IS_REUSED__AKD(to_NT, from_NT, from2_NT)                              \
+    SAC_ND_PRF_IS_REUSED_AKS (to_NT, from_NT, from2_NT)
+
+#define SAC_ND_PRF_IS_REUSED__AUD(to_NT, from_NT, from2_NT)                              \
+    SAC_ND_PRF_IS_REUSED_AKS (to_NT, from_NT, from2_NT)
 
 #endif /* _SAC_PRF_H_ */
