@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.4  1994/12/20 15:58:18  sbs
+ * Revision 1.5  1994/12/31 13:54:17  sbs
+ * types->name_mod inserted
+ *
+ * Revision 1.4  1994/12/20  15:58:18  sbs
  * "void *" as primitive type inserted
  *
  * Revision 1.3  1994/12/19  16:51:48  hw
@@ -56,28 +59,29 @@ Type2String (types *type, int print_id)
     tmp_string[0] = '\0';
 
     do {
-        if (0 == type->dim)
-            strcat (tmp_string, SIMPLE2STR (type));
-        else if (-1 == type->dim) {
-            strcat (tmp_string, SIMPLE2STR (type));
-            strcat (tmp_string, "[]");
-        } else {
-            int i;
-            static char int_string[INT_STRING_LENGTH];
+        if (type->name_mod != NULL)
+            sprintf (tmp_string, "%s__", type->name_mod);
+        strcat (tmp_string, SIMPLE2STR (type));
 
-            strcat (tmp_string, SIMPLE2STR (type));
-            strcat (tmp_string, "[ ");
-            for (i = 0; i < type->dim; i++)
-                if (i != (type->dim - 1)) {
-                    DBUG_PRINT ("PRINT", ("shp[%d]=%d", i, type->shpseg->shp[i]));
-                    sprintf (int_string, "%d, ", type->shpseg->shp[i]);
-                    strcat (tmp_string, int_string);
-                } else {
-                    DBUG_PRINT ("PRINT", ("shp[%d]=%d", i, type->shpseg->shp[i]));
-                    sprintf (int_string, "%d ]", type->shpseg->shp[i]);
-                    strcat (tmp_string, int_string);
-                }
-        }
+        if (0 != type->dim)
+            if (-1 == type->dim)
+                strcat (tmp_string, "[]");
+            else {
+                int i;
+                static char int_string[INT_STRING_LENGTH];
+
+                strcat (tmp_string, "[ ");
+                for (i = 0; i < type->dim; i++)
+                    if (i != (type->dim - 1)) {
+                        DBUG_PRINT ("PRINT", ("shp[%d]=%d", i, type->shpseg->shp[i]));
+                        sprintf (int_string, "%d, ", type->shpseg->shp[i]);
+                        strcat (tmp_string, int_string);
+                    } else {
+                        DBUG_PRINT ("PRINT", ("shp[%d]=%d", i, type->shpseg->shp[i]));
+                        sprintf (int_string, "%d ]", type->shpseg->shp[i]);
+                        strcat (tmp_string, int_string);
+                    }
+            }
         if ((NULL != type->id) && print_id) {
             strcat (tmp_string, " ");
             strcat (tmp_string, type->id);
