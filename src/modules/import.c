@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2002/02/21 15:45:40  dkr
+ * TOFDEF_..., ..._TOF access macros added
+ *
  * Revision 3.10  2001/11/16 14:02:41  cg
  * sac2c now supports preprocessor directives in module/class
  * declaration files.
@@ -82,6 +85,78 @@
 
 #include "filemgr.h"
 #include "import.h"
+
+#define MODUL_TOF(n, id)                                                                 \
+    (id == 0)                                                                            \
+      ? (MODUL_TYPES (n))                                                                \
+      : ((id == 1)                                                                       \
+           ? (MODUL_TYPES (n))                                                           \
+           : ((id == 2) ? (MODUL_FUNS (n)) : ((id == 3) ? (MODUL_OBJS (n)) : NULL)))
+
+#define MODUL_TOF_L(n, id, rhs)                                                          \
+    if (id == 0) {                                                                       \
+        MODUL_TYPES (n) = rhs;                                                           \
+    } else if (id == 1) {                                                                \
+        MODUL_TYPES (n) = rhs;                                                           \
+    } else if (id == 2) {                                                                \
+        MODUL_FUNS (n) = rhs;                                                            \
+    } else if (id == 3) {                                                                \
+        MODUL_OBJS (n) = rhs;                                                            \
+    } else {                                                                             \
+        DBUG_ASSERT ((0), "illegal symbol type found");                                  \
+    }
+
+#define EXPLIST_TOF(n, id)                                                               \
+    (id == 0)                                                                            \
+      ? (EXPLIST_ITYPES (n))                                                             \
+      : ((id == 1)                                                                       \
+           ? (EXPLIST_ETYPES (n))                                                        \
+           : ((id == 2) ? (EXPLIST_FUNS (n)) : ((id == 3) ? (EXPLIST_OBJS (n)) : NULL)))
+
+#define EXPLIST_TOF_L(n, id, rhs)                                                        \
+    if (id == 0) {                                                                       \
+        EXPLIST_ITYPES (n) = rhs;                                                        \
+    } else if (id == 1) {                                                                \
+        EXPLIST_ETYPES (n) = rhs;                                                        \
+    } else if (id == 2) {                                                                \
+        EXPLIST_FUNS (n) = rhs;                                                          \
+    } else if (id == 3) {                                                                \
+        EXPLIST_OBJS (n) = rhs;                                                          \
+    } else {                                                                             \
+        DBUG_ASSERT ((0), "illegal symbol type found");                                  \
+    }
+
+#define TOFDEF_NAME(n)                                                                   \
+    (NODE_TYPE (n) == N_typedef)                                                         \
+      ? (TYPEDEF_NAME (n))                                                               \
+      : ((NODE_TYPE (n) == N_fundef)                                                     \
+           ? (FUNDEF_NAME (n))                                                           \
+           : ((NODE_TYPE (n) == N_objdef) ? (OBJDEF_NAME (n)) : NULL))
+
+#define TOFDEF_TYPES(n)                                                                  \
+    (NODE_TYPE (n) == N_typedef)                                                         \
+      ? (TYPEDEF_TYPE (n))                                                               \
+      : ((NODE_TYPE (n) == N_fundef)                                                     \
+           ? (FUNDEF_TYPES (n))                                                          \
+           : ((NODE_TYPE (n) == N_objdef) ? (OBJDEF_TYPE (n)) : NULL))
+
+#define TOFDEF_NEXT(n)                                                                   \
+    (NODE_TYPE (n) == N_typedef)                                                         \
+      ? (TYPEDEF_NEXT (n))                                                               \
+      : ((NODE_TYPE (n) == N_fundef)                                                     \
+           ? (FUNDEF_NEXT (n))                                                           \
+           : ((NODE_TYPE (n) == N_objdef) ? (OBJDEF_NEXT (n)) : NULL))
+
+#define TOFDEF_NEXT_L(n, rhs)                                                            \
+    if (NODE_TYPE (n) == N_typedef) {                                                    \
+        TYPEDEF_NEXT (n) = rhs;                                                          \
+    } else if (NODE_TYPE (n) == N_fundef) {                                              \
+        FUNDEF_NEXT (n) = rhs;                                                           \
+    } else if (NODE_TYPE (n) == N_objdef) {                                              \
+        OBJDEF_NEXT (n) = rhs;                                                           \
+    } else {                                                                             \
+        DBUG_ASSERT ((0), "illegal symbol nodetype found");                              \
+    }
 
 extern void DoImport (node *modul, node *implist, char *mastermod);
 
@@ -1117,7 +1192,8 @@ GenSyms (mod *mod)
 {
     node *explist, *ptr;
     syms *new;
-    int i, next;
+    char *pname;
+    int i;
 
     DBUG_ENTER ("GenSyms");
 
@@ -1125,24 +1201,21 @@ GenSyms (mod *mod)
 
     if (explist != NULL) {
         for (i = 0; i < 4; i++) {
-            if (i == 2) /* fundefs ! */
-                next = 1;
-            else
-                next = 0;
-            ptr = explist->node[i];
+            ptr = EXPLIST_TOF (explist, i);
 
             while (ptr != NULL) {
-                DBUG_PRINT ("IMPORT",
-                            ("inserting symbol %s of kind %d", ptr->info.types->id, i));
+                pname = TOFDEF_NAME (ptr);
+
+                DBUG_PRINT ("IMPORT", ("inserting symbol %s of kind %d", pname, i));
 
                 new = (syms *)Malloc (sizeof (syms));
-                new->id = (char *)Malloc (strlen (ptr->info.types->id) + 1);
-                strcpy (new->id, ptr->info.types->id);
+                new->id = (char *)Malloc (strlen (pname) + 1);
+                strcpy (new->id, pname);
                 new->flag = NOT_IMPORTED;
                 new->next = mod->syms[i];
                 mod->syms[i] = new;
 
-                ptr = ptr->node[next]; /* next declaration! */
+                ptr = TOFDEF_NEXT (ptr); /* next declaration! */
             }
         }
     }
@@ -1255,14 +1328,14 @@ FindSymbolInModul (char *modname, char *name, int symbkind, mods *found, int rec
  *                     node of symbol
  *                  2) name of the modul which owns the symbol
  *  description   : runs for all user defined types FindSymbolInModul
- *                  and inserts the respective modul-name in types->name_mod.
+ *                  and inserts the respective modul-name in TYPES_MOD( types).
  *
  */
 
 void
 AppendModnameToSymbol (node *symbol, char *modname)
 {
-    node *arg = symbol->node[2];
+    node *arg;
     mods *mods, *mods2;
     types *types;
     int done;
@@ -1275,22 +1348,28 @@ AppendModnameToSymbol (node *symbol, char *modname)
     filename = decfilename;
     /* only for error messages */
 
-    types = symbol->info.types;
+    if (NODE_TYPE (symbol) == N_fundef) {
+        arg = FUNDEF_ARGS (symbol);
+    } else {
+        arg = NULL;
+    }
+
+    types = TOFDEF_TYPES (symbol);
     while (types != NULL) {
-        if (types->simpletype == T_user) {
+        if (TYPES_BASETYPE (types) == T_user) {
             done = 0;
-            if (types->name_mod != NULL) {
-                modname = types->name_mod;
-                mods = FindSymbolInModul (modname, types->name, 0, NULL, 0);
-                mods2 = FindSymbolInModul (modname, types->name, 1, NULL, 0);
+            if (TYPES_MOD (types) != NULL) {
+                modname = TYPES_MOD (types);
+                mods = FindSymbolInModul (modname, TYPES_NAME (types), 0, NULL, 0);
+                mods2 = FindSymbolInModul (modname, TYPES_NAME (types), 1, NULL, 0);
 
                 if ((mods == NULL) && (mods2 != NULL)) {
-                    types->name_mod = mods2->mod->prefix;
+                    TYPES_MOD (types) = mods2->mod->prefix;
                     done = 1;
                 }
 
                 if ((mods != NULL) && (mods2 == NULL)) {
-                    types->name_mod = mods->mod->prefix;
+                    TYPES_MOD (types) = mods->mod->prefix;
                     done = 1;
                 }
 
@@ -1299,72 +1378,74 @@ AppendModnameToSymbol (node *symbol, char *modname)
             };
 
             if (done != 1) {
-                mods = FindSymbolInModul (modname, types->name, 0, NULL, 1);
-                mods2 = FindSymbolInModul (modname, types->name, 1, NULL, 1);
+                mods = FindSymbolInModul (modname, TYPES_NAME (types), 0, NULL, 1);
+                mods2 = FindSymbolInModul (modname, TYPES_NAME (types), 1, NULL, 1);
 
                 if (mods != NULL) {
                     if (mods2 != NULL) {
-                        if ((strcmp (mods->mod->name, types->name) == 0)
+                        if ((strcmp (mods->mod->name, TYPES_NAME (types)) == 0)
                             && (mods->mod->moddec->nodetype == N_classdec)) {
-                            ERROR (symbol->lineno,
-                                   ("Explicit type '%s:%s` "
-                                    "conflicts with class '%s`"
-                                    "in module/class '%s`",
-                                    mods2->mod->name, types->name, types->name, modname));
+                            ERROR (symbol->lineno, ("Explicit type '%s:%s` "
+                                                    "conflicts with class '%s`"
+                                                    "in module/class '%s`",
+                                                    mods2->mod->name, TYPES_NAME (types),
+                                                    TYPES_NAME (types), modname));
                         } else {
                             ERROR (symbol->lineno,
                                    ("Implicit type '%s:%s` "
                                     "and explicit type '%s:%s` available "
                                     "in module/class '%s`",
-                                    mods->mod->name, types->name, mods2->mod->name,
-                                    types->name, modname));
+                                    mods->mod->name, TYPES_NAME (types), mods2->mod->name,
+                                    TYPES_NAME (types), modname));
                         }
                     } else { /* mods2 == NULL */
                         if (mods->next != NULL) {
-                            if ((strcmp (mods->mod->name, types->name) == 0)
+                            if ((strcmp (mods->mod->name, TYPES_NAME (types)) == 0)
                                 && (mods->mod->moddec->nodetype == N_classdec)) {
                                 ERROR (symbol->lineno,
                                        ("Implicit type '%s:%s` "
                                         "conflicts with class '%s` "
                                         "in module/class '%s`",
-                                        mods->next->mod->name, types->name, types->name,
-                                        modname));
+                                        mods->next->mod->name, TYPES_NAME (types),
+                                        TYPES_NAME (types), modname));
                             } else {
-                                if ((strcmp (mods->next->mod->name, types->name) == 0)
+                                if ((strcmp (mods->next->mod->name, TYPES_NAME (types))
+                                     == 0)
                                     && (mods->next->mod->moddec->nodetype
                                         == N_classdec)) {
-                                    ERROR (symbol->lineno, ("Implicit type '%s:%s` "
-                                                            "conflicts with class '%s` "
-                                                            "in module/class '%s`",
-                                                            mods->mod->name, types->name,
-                                                            types->name, modname));
+                                    ERROR (symbol->lineno,
+                                           ("Implicit type '%s:%s` "
+                                            "conflicts with class '%s` "
+                                            "in module/class '%s`",
+                                            mods->mod->name, TYPES_NAME (types),
+                                            TYPES_NAME (types), modname));
                                 } else {
                                     ERROR (
                                       symbol->lineno,
                                       ("Implicit types '%s:%s` and '%s:%s` available ",
                                        "in module/class '%s`", mods->mod->name,
-                                       types->name, mods->next->mod->name, types->name,
-                                       modname));
+                                       TYPES_NAME (types), mods->next->mod->name,
+                                       TYPES_NAME (types), modname));
                                 }
                             }
                         } else { /* mods->next == NULL */
-                            types->name_mod = mods->mod->prefix;
+                            TYPES_MOD (types) = mods->mod->prefix;
                         }
                     }
-
                 } else { /* mods == NULL */
                     if (mods2 == NULL) {
                         ERROR (symbol->lineno, ("No type '%s` available "
                                                 "in module/class '%s`",
-                                                types->name, modname));
+                                                TYPES_NAME (types), modname));
                     } else { /* mods2 != NULL */
                         if (mods2->next != NULL) {
                             ERROR (symbol->lineno,
                                    ("Explicit types '%s:%s` and '%s:%s` available ",
-                                    "in module/class '%s`", mods2->mod->name, types->name,
-                                    mods2->next->mod->name, types->name, modname));
+                                    "in module/class '%s`", mods2->mod->name,
+                                    TYPES_NAME (types), mods2->next->mod->name,
+                                    TYPES_NAME (types), modname));
                         } else {
-                            types->name_mod = mods2->mod->prefix;
+                            TYPES_MOD (types) = mods2->mod->prefix;
                         }
                     }
                 }
@@ -1373,11 +1454,11 @@ AppendModnameToSymbol (node *symbol, char *modname)
                 FreeMods (mods2);
             }
         }
-        types = types->next;
+        types = TYPES_NEXT (types);
 
-        if ((types == NULL) && (symbol->nodetype == N_fundef) && (arg != NULL)) {
-            types = arg->info.types;
-            arg = arg->node[0];
+        if ((types == NULL) && (arg != NULL)) {
+            types = ARG_TYPE (arg);
+            arg = ARG_NEXT (arg);
         }
     }
 
@@ -1501,7 +1582,6 @@ ImportSymbol (int symbtype, char *name, mod *mod, node *modul)
 {
     node *explist;
     node *tmpdef, *last;
-    int next, son;
 
     DBUG_ENTER ("ImportSymbol");
     DBUG_PRINT ("IMPORT", ("importing symbol %s of kind %d (0=imp/1=exp/2=fun/3=obj)"
@@ -1509,53 +1589,40 @@ ImportSymbol (int symbtype, char *name, mod *mod, node *modul)
                            name, symbtype, mod->name));
 
     explist = mod->moddec->node[0];
+    tmpdef = EXPLIST_TOF (explist, symbtype);
 
-    if (symbtype == 2) {
-        next = 1; /* next pointer in N_fundef nodes */
-    } else {
-        next = 0; /* next pointer in N_typedef and N_objdef nodes */
-    }
-
-    if (symbtype == 0) {
-        son = 1;
-    } else {
-        son = symbtype;
-    }
-
-    tmpdef = explist->node[symbtype];
-
-    while ((tmpdef != NULL) && (strcmp (tmpdef->info.types->id, name) == 0)) {
+    while ((tmpdef != NULL) && (strcmp (TOFDEF_NAME (tmpdef), name) == 0)) {
         /* The first entry has to be moved ! */
 
-        explist->node[symbtype] = tmpdef->node[next];
+        EXPLIST_TOF_L (explist, symbtype, TOFDEF_NEXT (tmpdef));
         /* eliminating tmpdef from the chain */
         /* tmpdef points on the def which is to be inserted */
 
         AppendModnameToSymbol (tmpdef, mod->name);
 
-        tmpdef->node[next] = modul->node[son];
-        modul->node[son] = tmpdef;
+        TOFDEF_NEXT_L (tmpdef, MODUL_TOF (modul, symbtype));
+        MODUL_TOF_L (modul, symbtype, tmpdef);
 
-        tmpdef = explist->node[symbtype];
+        tmpdef = EXPLIST_TOF (explist, symbtype);
     }
 
     if (tmpdef != NULL) {
         last = tmpdef;
-        tmpdef = tmpdef->node[next];
+        tmpdef = TOFDEF_NEXT (tmpdef);
 
         while (tmpdef != NULL) {
-            if (strcmp (tmpdef->info.types->id, name) == 0) {
-                last->node[next] = tmpdef->node[next];
+            if (strcmp (TOFDEF_NAME (tmpdef), name) == 0) {
+                TOFDEF_NEXT_L (last, TYPEDEF_NEXT (tmpdef));
 
                 AppendModnameToSymbol (tmpdef, mod->name);
 
-                tmpdef->node[next] = modul->node[son];
-                modul->node[son] = tmpdef;
+                TOFDEF_NEXT_L (tmpdef, MODUL_TYPES (modul));
+                MODUL_TYPES (modul) = tmpdef;
 
-                tmpdef = last->node[next];
+                tmpdef = TOFDEF_NEXT (last);
             } else {
                 last = tmpdef;
-                tmpdef = tmpdef->node[next];
+                tmpdef = TOFDEF_NEXT (tmpdef);
             }
         }
     }
