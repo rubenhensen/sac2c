@@ -4,17 +4,63 @@
 
 char buffer[255];
 
-int
-main ()
+static void
+AnalyserSetup (int argc, char *argv[])
 {
-    int nr_of_cpu, profilinglevel;
-    ULINT cachesize1, cachesize2, cachesize3;
-    int cachelinesize1, cachelinesize2, cachelinesize3, associativity1, associativity2,
-      associativity3;
-    int writepolicy1, writepolicy2, writepolicy3;
+    tProfilingLevel profilinglevel = SAC_CS_LEVEL;
+    unsigned long int cachesize1 = 0;
+    int cachelinesize1 = 1;
+    int associativity1 = 1;
+    tWritePolicy writepolicy1 = SAC_CS_default;
+
+    unsigned long int cachesize2 = 0;
+    int cachelinesize2 = 1;
+    int associativity2 = 1;
+    tWritePolicy writepolicy2 = SAC_CS_default;
+
+    unsigned long int cachesize3 = 0;
+    int cachelinesize3 = 1;
+    int associativity3 = 1;
+    tWritePolicy writepolicy3 = SAC_CS_default;
+
+    SAC_CS_CheckArguments (argc, argv, &profilinglevel, &cachesize1, &cachelinesize1,
+                           &associativity1, &writepolicy1, &cachesize2, &cachelinesize2,
+                           &associativity2, &writepolicy2, &cachesize3, &cachelinesize3,
+                           &associativity3, &writepolicy3);
+
+    /* The CacheSimAnalyser must not get an profilinglevel
+     * like SAC_CS_piped_X!!!
+     */
+    switch (profilinglevel) {
+    case SAC_CS_piped_simple:
+        profilinglevel = SAC_CS_simple;
+        break;
+    case SAC_CS_piped_advanced:
+        profilinglevel = SAC_CS_advanced;
+        break;
+    case SAC_CS_file:
+        profilinglevel = SAC_CS_default;
+        break;
+    default:
+        break;
+    }
+
+    SAC_CS_Initialize (1, profilinglevel, cachesize1, cachelinesize1, associativity1,
+                       writepolicy1, cachesize2, cachelinesize2, associativity2,
+                       writepolicy2, cachesize3, cachelinesize3, associativity3,
+                       writepolicy3);
+
+    SAC_CS_START_GLOBAL ();
+} /* AnalyserSetup */
+
+int
+main (int argc, char *argv[])
+{
     ULINT baseaddress, elemaddress;
     unsigned size;
     char tag[255];
+
+    AnalyserSetup (argc, argv);
 
     while (fgets (buffer, 255, stdin) != 0) {
         /*printf("r: %s", buffer);*/
@@ -48,32 +94,15 @@ main ()
             SAC_CS_Stop ();
             break;
 
-        case 'I':
-            sscanf (buffer,
-                    "I %d %d "
-                    "%lu %d %d %d "
-                    "%lu %d %d %d "
-                    "%lu %d %d %d\n",
-                    &nr_of_cpu, &profilinglevel, &cachesize1, &cachelinesize1,
-                    &associativity1, &writepolicy1, &cachesize2, &cachelinesize2,
-                    &associativity2, &writepolicy2, &cachesize3, &cachelinesize3,
-                    &associativity3, &writepolicy3);
-
-            SAC_CS_Initialize (nr_of_cpu, profilinglevel, cachesize1, cachelinesize1,
-                               associativity1, writepolicy1, cachesize2, cachelinesize2,
-                               associativity2, writepolicy2, cachesize3, cachelinesize3,
-                               associativity3, writepolicy3);
-            break;
-
         case 'F':
             SAC_CS_Finalize ();
             break;
 
         default:
-            fprintf (stderr, "CacheSimAnalyser: unknown input - '%s'\n", buffer);
+            fprintf (stderr, "CacheSimAnalyser: unknown input - %s", buffer);
             exit (1);
             break;
         } /*switch */
     }
     return (0);
-}
+} /* main */
