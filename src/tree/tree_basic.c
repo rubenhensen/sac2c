@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.29  2000/10/26 13:22:20  dkr
+ * more access macros used
+ *
  * Revision 1.28  2000/10/24 14:47:31  dkr
  * MakeTypes1 added
  * MakeType renamed into MakeTypes
@@ -139,7 +142,7 @@ CreateCleanNode (nodetype nt)
 
     new_node = ALLOCATE (node);
 
-    new_node->nodetype = nt;
+    NODE_TYPE (new_node) = nt;
 
     new_node->info.id = NULL;
     new_node->info.ids = NULL;
@@ -187,27 +190,29 @@ MakeShpseg (nums *numsp)
 
     tmp = ALLOCATE (shpseg);
 
-    tmp->next = NULL;
-
 #if 0
-  for (i=0;i<SHP_SEG_SIZE;i++)
-    SHPSEG_SHAPE(tmp,i)=-1;
+  for (i = 0; i < SHP_SEG_SIZE; i++) {
+    SHPSEG_SHAPE( tmp, i) = -1;
+  }
 #endif
 
     i = 0;
     while (numsp != NULL) {
-        if (i >= SHP_SEG_SIZE)
+        if (i >= SHP_SEG_SIZE) {
             SYSABORT (("Maximum number of dimensions exceeded"));
+        }
 
         SHPSEG_SHAPE (tmp, i) = NUMS_NUM (numsp);
 
-        DBUG_PRINT ("GENTREE", ("shape-element: %d", numsp->num));
+        DBUG_PRINT ("GENTREE", ("shape-element: %d", NUMS_NUM (numsp)));
 
         i++;
         oldnumsp = numsp;
         numsp = NUMS_NEXT (numsp);
         FREE (oldnumsp);
     }
+
+    SHPSEG_NEXT (tmp) = NULL;
 
     DBUG_RETURN (tmp);
 }
@@ -1005,7 +1010,7 @@ MakeId (char *name, char *mod, statustype status)
 
     tmp = CreateCleanNode (N_id);
 
-    tmp->info.ids = MakeIds (name, mod, status);
+    ID_IDS (tmp) = MakeIds (name, mod, status);
 
     DBUG_PRINT ("MAKENODE",
                 ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
