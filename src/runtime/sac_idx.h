@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.3  2000/07/25 13:55:36  dkr
+ * superfluous parameter 'line' in ICMs for array-prfs removed
+ *
  * Revision 2.2  1999/04/12 09:37:48  cg
  * All accesses to C arrays are now performed through the new ICMs
  * ND_WRITE_ARRAY and ND_READ_ARRAY. This allows for an integration
@@ -70,9 +73,9 @@
  * ================================================
  */
 
-#define SAC_ND_IDX_MODARRAY_AxVxA_CHECK_REUSE(line, basetype, res, a, s, val)            \
-    SAC_TR_PRF_PRINT (("ND_IDX_MODARRAY_AxVxA_CHECK_REUSE( %s, %s, %s, %s, %s, %s)\n",   \
-                       #line, #basetype, #res, #a, #s, #val));                           \
+#define SAC_ND_IDX_MODARRAY_AxVxA_CHECK_REUSE(basetype, res, a, s, val)                  \
+    SAC_TR_PRF_PRINT (("ND_IDX_MODARRAY_AxVxA_CHECK_REUSE( %s, %s, %s, %s, %s)\n",       \
+                       #basetype, #res, #a, #s, #val));                                  \
     SAC_ND_CHECK_REUSE_ARRAY (a, res)                                                    \
     {                                                                                    \
         int __i;                                                                         \
@@ -88,9 +91,9 @@
             SAC_ND_WRITE_ARRAY (res, __i) = SAC_ND_READ_ARRAY (val, __s);                \
     }
 
-#define SAC_ND_IDX_MODARRAY_AxVxA(line, basetype, res, a, s, val)                        \
-    SAC_TR_PRF_PRINT (("ND_IDX_MODARRAY_AxVxA( %s, %s, %s, %s, %s, %s)\n", #line,        \
-                       #basetype, #res, #a, #s, #val));                                  \
+#define SAC_ND_IDX_MODARRAY_AxVxA(basetype, res, a, s, val)                              \
+    SAC_TR_PRF_PRINT (                                                                   \
+      ("ND_IDX_MODARRAY_AxVxA( %s, %s, %s, %s, %s)\n", #basetype, #res, #a, #s, #val));  \
     {                                                                                    \
         int __i, __s;                                                                    \
         SAC_ND_ALLOC_ARRAY (basetype, res, 0);                                           \
@@ -102,9 +105,9 @@
             SAC_ND_WRITE_ARRAY (res, __i) = SAC_ND_READ_ARRAY (a, __i);                  \
     }
 
-#define SAC_ND_IDX_MODARRAY_AxVxS_CHECK_REUSE(line, basetype, res, a, s, val)            \
-    SAC_TR_PRF_PRINT (("ND_IDX_MODARRAY_AxVxS_CHECK_REUSE( %s, %s, %s, %s, %s, %s)\n",   \
-                       #line, #basetype, #res, #a, #s, #val));                           \
+#define SAC_ND_IDX_MODARRAY_AxVxS_CHECK_REUSE(basetype, res, a, s, val)                  \
+    SAC_TR_PRF_PRINT (("ND_IDX_MODARRAY_AxVxS_CHECK_REUSE( %s, %s, %s, %s, %s)\n",       \
+                       #basetype, #res, #a, #s, #val));                                  \
     SAC_ND_CHECK_REUSE_ARRAY (a, res)                                                    \
     {                                                                                    \
         int __i;                                                                         \
@@ -114,9 +117,9 @@
     }                                                                                    \
     SAC_ND_WRITE_ARRAY (res, s) = val;
 
-#define SAC_ND_IDX_MODARRAY_AxVxS(line, basetype, res, a, s, val)                        \
-    SAC_TR_PRF_PRINT (("ND_IDX_MODARRAY_AxVxS( %s, %s, %s, %s, %s, %s)\n", #line,        \
-                       #basetype, #res, #a, #s, #val));                                  \
+#define SAC_ND_IDX_MODARRAY_AxVxS(basetype, res, a, s, val)                              \
+    SAC_TR_PRF_PRINT (                                                                   \
+      ("ND_IDX_MODARRAY_AxVxS( %s, %s, %s, %s, %s)\n", #basetype, #res, #a, #s, #val));  \
     {                                                                                    \
         int __i;                                                                         \
         SAC_ND_ALLOC_ARRAY (basetype, res, 0);                                           \
