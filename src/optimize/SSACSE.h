@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.7  2004/11/26 15:00:42  khf
+ * SacDevCamp04: COMPILES!!!
+ *
  * Revision 1.6  2004/11/22 18:10:19  sbs
  * SacDevCamp04
  *
@@ -42,7 +45,7 @@
 
 #include "types.h"
 
-extern node *CSEdoCSE (node *fundef, node *modul);
+extern node *CSEdoCse (node *fundef, node *modul);
 
 extern node *CSEfundef (node *arg_node, info *arg_info);
 extern node *CSEarg (node *arg_node, info *arg_info);
@@ -53,6 +56,7 @@ extern node *CSEcond (node *arg_node, info *arg_info);
 extern node *CSEreturn (node *arg_node, info *arg_info);
 extern node *CSElet (node *arg_node, info *arg_info);
 extern node *CSEap (node *arg_node, info *arg_info);
+extern node *CSEids (node *arg_node, info *arg_info);
 extern node *CSEid (node *arg_node, info *arg_info);
 extern node *CSEwith (node *arg_node, info *arg_info);
 extern node *CSEcode (node *arg_node, info *arg_info);

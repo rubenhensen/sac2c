@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.42  2004/11/26 15:00:42  khf
+ * SacDevCamp04: COMPILES!!!
+ *
  * Revision 1.41  2004/11/10 18:27:29  mwe
  * code for type upgrade added
  * use ntype-structure instead of type-structure
@@ -139,6 +142,7 @@
  *
  * prefix: SSACSE
  *
+ * WARNING: This travesal works with new types only
  * description:
  *   This module does the Common Subexpression Elimination in the AST for a
  *   single function (including the special functions in order of application).
@@ -192,12 +196,12 @@
  *
  *****************************************************************************/
 
-#define NEW_INFO
-
-#include "types.h"
 #include "tree_basic.h"
+#include "node_basic.h"
 #include "tree_compound.h"
 #include "internal_lib.h"
+#include "globals.h"
+#include "new_types.h"
 #include "dbug.h"
 #include "traverse.h"
 #include "free.h"
@@ -214,7 +218,7 @@ struct INFO {
     bool remassign;
     node *fundef;
     node *cse;
-    node *modul;
+    node *module;
     node *assign;
     bool recfunap;
     nodelist *resultarg;
@@ -223,13 +227,13 @@ struct INFO {
 /*
  * INFO macros
  */
-#define INFO_SSACSE_REMASSIGN(n) (n->remassign)
-#define INFO_SSACSE_FUNDEF(n) (n->fundef)
-#define INFO_SSACSE_CSE(n) (n->cse)
-#define INFO_SSACSE_MODUL(n) (n->modul)
-#define INFO_SSACSE_ASSIGN(n) (n->assign)
-#define INFO_SSACSE_RECFUNAP(n) (n->recfunap)
-#define INFO_SSACSE_RESULTARG(n) (n->resultarg)
+#define INFO_CSE_REMASSIGN(n) (n->remassign)
+#define INFO_CSE_FUNDEF(n) (n->fundef)
+#define INFO_CSE_CSE(n) (n->cse)
+#define INFO_CSE_MODULE(n) (n->module)
+#define INFO_CSE_ASSIGN(n) (n->assign)
+#define INFO_CSE_RECFUNAP(n) (n->recfunap)
+#define INFO_CSE_RESULTARG(n) (n->resultarg)
 
 /*
  * INFO functions
@@ -241,15 +245,15 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = Malloc (sizeof (info));
+    result = ILIBmalloc (sizeof (info));
 
-    INFO_SSACSE_REMASSIGN (result) = FALSE;
-    INFO_SSACSE_FUNDEF (result) = NULL;
-    INFO_SSACSE_CSE (result) = NULL;
-    INFO_SSACSE_MODUL (result) = NULL;
-    INFO_SSACSE_ASSIGN (result) = NULL;
-    INFO_SSACSE_RECFUNAP (result) = FALSE;
-    INFO_SSACSE_RESULTARG (result) = NULL;
+    INFO_CSE_REMASSIGN (result) = FALSE;
+    INFO_CSE_FUNDEF (result) = NULL;
+    INFO_CSE_CSE (result) = NULL;
+    INFO_CSE_MODULE (result) = NULL;
+    INFO_CSE_ASSIGN (result) = NULL;
+    INFO_CSE_RECFUNAP (result) = FALSE;
+    INFO_CSE_RESULTARG (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -259,38 +263,33 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = Free (info);
+    info = ILIBfree (info);
 
     DBUG_RETURN (info);
 }
 
 typedef enum { THENPART, ELSEPART } condpart;
 
-static ids *TravIDS (ids *arg_ids, info *arg_info);
-static ids *SSACSEids (ids *arg_ids, info *arg_info);
-
 /* functions to handle cseinfo chains */
-static node *AddCSEinfo (node *cseinfo, node *let);
-static node *CreateNewCSElayer (node *cseinfo);
-static node *RemoveTopCSElayer (node *cseinfo);
-static ids *SetSubstAttributes (ids *subst, ids *with);
+static node *AddCseinfo (node *cseinfo, node *let);
+static node *CreateNewCselayer (node *cseinfo);
+static node *RemoveTopCselayer (node *cseinfo);
+static node *SetSubstAttributes (node *subst, node *with);
 
 /* helper functions for internal use only */
-static node *FindCSE (node *cselist, node *let);
-#ifndef CREATE_UNIQUE_BY_HEAP
-static bool ForbiddenSubstitution (ids *chain);
-#endif
-static bool CmpIdsTypes (ids *ichain1, ids *ichain2);
-static node *SSACSEPropagateSubst2Args (node *fun_args, node *ap_args, node *fundef);
-static ids *SSACSEPropagateReturn2Results (node *ap_fundef, ids *ids_chain);
-static nodelist *SSACSEBuildSubstNodelist (node *return_exprs, node *fundef);
+static node *FindCse (node *cselist, node *let);
+
+static bool CmpIdsTypes (node *ichain1, node *ichain2);
+static node *PropagateSubst2Args (node *fun_args, node *ap_args, node *fundef);
+static node *PropagateReturn2Results (node *ap_fundef, node *ids_chain);
+static nodelist *BuildSubstNodelist (node *return_exprs, node *fundef);
 static node *GetResultArgAvis (node *id, condpart cp);
 static node *GetApAvisOfArgAvis (node *arg_avis, node *fundef);
 
 /******************************************************************************
  *
  * function:
- *   node *AddCSEinfo(node *cseinfo, node *let)
+ *   node *AddCseinfo(node *cseinfo, node *let)
  *
  * description:
  *   Adds an new let node to the actual cse layer to store an available
@@ -298,14 +297,14 @@ static node *GetApAvisOfArgAvis (node *arg_avis, node *fundef);
  *
  ******************************************************************************/
 static node *
-AddCSEinfo (node *cseinfo, node *let)
+AddCseinfo (node *cseinfo, node *let)
 {
-    DBUG_ENTER ("AddCSEinfo");
+    DBUG_ENTER ("AddCseInfo");
 
     DBUG_ASSERT ((cseinfo != NULL), "cseinfo layer stack is NULL");
     DBUG_ASSERT ((let != NULL), "add NULL let to cseinfo layer stack");
 
-    DBUG_PRINT ("SSACSE", ("add let node " F_PTR " to cse layer " F_PTR, let, cseinfo));
+    DBUG_PRINT ("CSE", ("add let node " F_PTR " to cse layer " F_PTR, let, cseinfo));
 
     if (CSEINFO_LET (cseinfo) == NULL) {
         /* add letnode top existing empty cseinfo node */
@@ -315,7 +314,7 @@ AddCSEinfo (node *cseinfo, node *let)
          * create new cseinfo node with let attribute on actual layer
          * and adds it in front of the cseinfo chain.
          */
-        cseinfo = MakeCSEinfo (cseinfo, CSEINFO_LAYER (cseinfo), let);
+        cseinfo = TBmakeCseinfo (CSEINFO_LAYER (cseinfo), let, cseinfo);
     }
 
     DBUG_RETURN (cseinfo);
@@ -324,7 +323,7 @@ AddCSEinfo (node *cseinfo, node *let)
 /******************************************************************************
  *
  * function:
- *   node *CreateNewCSElayer(node *cseinfo)
+ *   node *CreateNewCselayer(node *cseinfo)
  *
  * description:
  *   starts a new layer of cse let nodes. this happens when we enter a new
@@ -332,13 +331,13 @@ AddCSEinfo (node *cseinfo, node *let)
  *
  ******************************************************************************/
 static node *
-CreateNewCSElayer (node *cseinfo)
+CreateNewCselayer (node *cseinfo)
 {
-    DBUG_ENTER ("CreateNewCSElayer");
+    DBUG_ENTER ("CreateNewCselayer");
 
-    cseinfo = MakeCSEinfo (cseinfo, NULL, NULL);
+    cseinfo = TBmakeCseinfo (NULL, NULL, cseinfo);
 
-    DBUG_PRINT ("SSACSE", ("create new cse layer " F_PTR, cseinfo));
+    DBUG_PRINT ("CSE", ("create new cse layer " F_PTR, cseinfo));
 
     /* set selfreference to mark new starting layer */
     CSEINFO_LAYER (cseinfo) = cseinfo;
@@ -359,12 +358,12 @@ CreateNewCSElayer (node *cseinfo)
  *
  ******************************************************************************/
 static node *
-RemoveTopCSElayer (node *cseinfo)
+RemoveTopCselayer (node *cseinfo)
 {
     node *tmp;
     node *freetmp;
 
-    DBUG_ENTER ("RemoveTopCSElayer");
+    DBUG_ENTER ("RemoveTopCselayer");
 
     tmp = cseinfo;
 
@@ -377,8 +376,8 @@ RemoveTopCSElayer (node *cseinfo)
         } else {
             tmp = CSEINFO_NEXT (tmp);
         }
-        DBUG_PRINT ("SSACSE", ("removing csenode " F_PTR, freetmp));
-        FreeNode (freetmp);
+        DBUG_PRINT ("CSE", ("removing csenode " F_PTR, freetmp));
+        FREEdoFreeNode (freetmp);
     }
 
     DBUG_RETURN (cseinfo);
@@ -387,7 +386,7 @@ RemoveTopCSElayer (node *cseinfo)
 /******************************************************************************
  *
  * function:
- *   node *FindCSE(node *cselist, node *let)
+ *   node *FindCse(node *cselist, node *let)
  *
  * description:
  *   traverses the cseinfo chain until matching expression is found and
@@ -402,20 +401,21 @@ RemoveTopCSElayer (node *cseinfo)
  *
  ******************************************************************************/
 static node *
-FindCSE (node *cselist, node *let)
+FindCse (node *cselist, node *let)
 {
     node *match;
     node *csetmp;
 
-    DBUG_ENTER ("FindCSE");
-    DBUG_ASSERT ((let != NULL), "FindCSE is called with empty let node");
+    DBUG_ENTER ("FindCse");
+    DBUG_ASSERT ((let != NULL), "FindCse is called with empty let node");
 
     match = NULL;
     csetmp = cselist;
 
     while ((csetmp != NULL) && (match == NULL)) {
         if ((CSEINFO_LET (csetmp) != NULL)
-            && (CompareTree (LET_EXPR (let), LET_EXPR (CSEINFO_LET (csetmp))) == CMPT_EQ)
+            && (CMPTdoCompareTree (LET_EXPR (let), LET_EXPR (CSEINFO_LET (csetmp)))
+                == CMPT_EQ)
             && CmpIdsTypes (LET_IDS (let), LET_IDS (CSEINFO_LET (csetmp)))) {
             match = CSEINFO_LET (csetmp);
         }
@@ -436,7 +436,7 @@ FindCSE (node *cselist, node *let)
  *
  ******************************************************************************/
 static bool
-CmpIdsTypes (ids *ichain1, ids *ichain2)
+CmpIdsTypes (node *ichain1, node *ichain2)
 {
     bool result;
 
@@ -444,17 +444,7 @@ CmpIdsTypes (ids *ichain1, ids *ichain2)
 
     if (ichain1 != NULL) {
         DBUG_ASSERT ((ichain2 != NULL), "comparing different ids chains");
-#ifdef MWE_NTYPE_READY
-        if (TYCmpTypes (AVIS_TYPES (AVIS_VARDECORARG (IDS_AVIS (ichain1))),
-                        AVIS_TYPES (AVIS_VARDECORARG (IDS_AVIS (ichain2))))
-            == TY_eq) {
-#else
-        if (CompareTypesImplementation (VARDEC_OR_ARG_TYPE (
-                                          AVIS_VARDECORARG (IDS_AVIS (ichain1))),
-                                        VARDEC_OR_ARG_TYPE (
-                                          AVIS_VARDECORARG (IDS_AVIS (ichain2))))
-            == 0) {
-#endif
+        if (TYcmpTypes (IDS_NTYPE (ichain1), IDS_NTYPE (ichain2)) == TY_eq) {
             result = CmpIdsTypes (IDS_NEXT (ichain1), IDS_NEXT (ichain2));
         } else {
             result = FALSE;
@@ -471,18 +461,18 @@ CmpIdsTypes (ids *ichain1, ids *ichain2)
 /******************************************************************************
  *
  * function:
- *   ids *SetSubstAttributes(ids *subst, ids *with)
+ *   node *SetSubstAttributes(node *subst, node *with)
  *
  * description:
  *   set AVIS_SUBST attribute for all ids to the corresponding avis node from
  *   the with-ids chain (that we get from the stored available let expression).
  *
  ******************************************************************************/
-static ids *
-SetSubstAttributes (ids *subst, ids *with)
+static node *
+SetSubstAttributes (node *subst, node *with)
 {
-    ids *tmpsubst;
-    ids *tmpwith;
+    node *tmpsubst;
+    node *tmpwith;
 
     DBUG_ENTER ("SetSubstAttributes");
 
@@ -490,10 +480,8 @@ SetSubstAttributes (ids *subst, ids *with)
     tmpwith = with;
 
     while (tmpsubst != NULL) {
-        DBUG_PRINT ("SSACSE",
-                    ("substitute ids %s with %s",
-                     VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (IDS_AVIS (tmpsubst))),
-                     VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (IDS_AVIS (tmpwith)))));
+        DBUG_PRINT ("CSE", ("substitute ids %s with %s", (IDS_NAME (tmpsubst)),
+                            (IDS_NAME (tmpwith))));
 
         AVIS_SUBST (IDS_AVIS (tmpsubst)) = IDS_AVIS (tmpwith);
 
@@ -507,43 +495,12 @@ SetSubstAttributes (ids *subst, ids *with)
     DBUG_RETURN (subst);
 }
 
-#ifndef CREATE_UNIQUE_BY_HEAP
-
 /******************************************************************************
  *
  * function:
- *   bool ForbiddenSubstitution(ids *chain)
- *
- * description:
- *   Checks if there is any ids in chain with vardec marked as ST_unique so
- *   we should better not substitute it, to avoid problems with global
- *   objects.
- *
- *****************************************************************************/
-static bool
-ForbiddenSubstitution (ids *chain)
-{
-    bool res;
-
-    DBUG_ENTER ("ForbiddenSubstitution");
-
-    res = FALSE;
-    while ((chain != NULL) && (!res)) {
-        res |= (VARDEC_OR_ARG_ATTRIB (AVIS_VARDECORARG (IDS_AVIS (chain))) == ST_unique);
-        chain = IDS_NEXT (chain);
-    }
-
-    DBUG_RETURN (res);
-}
-
-#endif
-
-/******************************************************************************
- *
- * function:
- *   node *SSACSEPropagateSubst2Args( node *fun_args,
- *                                    node *ap_args,
- *                                    node *fundef)
+ *   node *PropagateSubst2Args( node *fun_args,
+ *                              node *ap_args,
+ *                              node *fundef)
  *
  * description:
  *   Propagates substitution information into the called special fundef.
@@ -583,27 +540,19 @@ ForbiddenSubstitution (ids *chain)
  *
  *****************************************************************************/
 static node *
-SSACSEPropagateSubst2Args (node *fun_args, node *ap_args, node *fundef)
+PropagateSubst2Args (node *fun_args, node *ap_args, node *fundef)
 {
     node *act_fun_arg;
     node *act_ap_arg;
     node *ext_ap_avis;
-#ifdef MWE_NTYPES_READY
     ntype *ext_ap_type;
-#else
-    types *ext_ap_type;
-#endif
     node *search_fun_arg;
     node *search_ap_arg;
     bool found_match;
-#ifdef MWE_NTYPE_READY
-    CT_res cmp;
-#else
-    int cmp;
-#endif
+    ct_res cmp;
     char *stype1, *stype2;
 
-    DBUG_ENTER ("SSACSEPropagateSubst2Args");
+    DBUG_ENTER ("PropagateSubst2Args");
 
     act_fun_arg = fun_args;
     act_ap_arg = ap_args;
@@ -618,68 +567,45 @@ SSACSEPropagateSubst2Args (node *fun_args, node *ap_args, node *fundef)
         DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (act_ap_arg)) == N_id),
                      "non N_id node as arg in special function application");
         ext_ap_avis = ID_AVIS (EXPRS_EXPR (act_ap_arg));
-#ifdef MWE_NTYPE_READY
         ext_ap_type = AVIS_TYPE (ext_ap_avis);
-#else
-        ext_ap_type = VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ext_ap_avis));
-#endif
         /*
          * specialize types of formal parameters if possible
          */
-#ifdef MWE_NTYPE_READY
-        cmp = TYCmpTypes (AVIS_TYPE (ARG_AVIS (act_fun_arg)), ext_ap_type);
+        cmp = TYcmpTypes (AVIS_TYPE (ARG_AVIS (act_fun_arg)), ext_ap_type);
 
-#else
-        cmp = CompareTypesImplementation (ARG_TYPE (act_fun_arg), ext_ap_type);
-#endif
-        stype1 = Type2String (ARG_TYPE (act_fun_arg), 0, TRUE);
-#ifdef MWE_NTYPE_READY
-        stype1 = TYType2String (AVIS_TYPE (ARG_AVIS (act_fun_arg)), TRUE, 0);
+        stype1 = TYtype2String (AVIS_TYPE (ARG_AVIS (act_fun_arg)), TRUE, 0);
+        stype2 = TYtype2String (ext_ap_type, TRUE, 0);
         if ((cmp == TY_eq) || (cmp == TY_gt)) {
-#else
-        stype2 = Type2String (ext_ap_type, 0, TRUE);
-        if ((cmp == 0) || (cmp == 1)) {
-#endif
-            DBUG_PRINT ("SSACSE",
-                        ("type of formal LaC-fun (%s) arg specialized in line %d:"
-                         "  %s:%s->%s",
-                         FUNDEF_NAME (fundef), NODE_LINE (act_fun_arg),
-                         ARG_NAME (act_fun_arg), stype1, stype2));
+
+            DBUG_PRINT ("CSE", ("type of formal LaC-fun (%s) arg specialized in line %d:"
+                                "  %s:%s->%s",
+                                FUNDEF_NAME (fundef), NODE_LINE (act_fun_arg),
+                                ARG_NAME (act_fun_arg), stype1, stype2));
             /*
              * actual type is subtype of formal type -> specialize
              */
-            ARG_TYPE (act_fun_arg) = FreeAllTypes (ARG_TYPE (act_fun_arg));
-#ifdef MWE_NTYPE_READY
-            AVIS_TYPE (ARG_AVIS (act_fun_arg)) = TYCopyType (ext_ap_type);
-#else
-            ARG_TYPE (act_fun_arg) = DupAllTypes (ext_ap_type);
-#endif
-        }
-#ifdef MWE_NTYPE_READY
-        else if ((cmp == TY_dis) || (TY_hcs)) {
-#else
-        else if (cmp == 2) {
-#endif
+            AVIS_TYPE (ARG_AVIS (act_fun_arg))
+              = TYfreeType (AVIS_TYPE (ARG_AVIS (act_fun_arg)));
+            AVIS_TYPE (ARG_AVIS (act_fun_arg)) = TYcopyType (ext_ap_type);
+        } else if ((cmp == TY_dis) || (TY_hcs)) {
             /*
              * special function application with incompatible types found
              */
-            DBUG_PRINT ("SSACSE",
-                        ("application of LaC-function %s with incompatible types"
-                         " in line %d:  %s:%s->%s",
-                         FUNDEF_NAME (fundef), NODE_LINE (act_fun_arg),
-                         ARG_NAME (act_fun_arg), stype1, stype2));
+            DBUG_PRINT ("CSE", ("application of LaC-function %s with incompatible types"
+                                " in line %d:  %s:%s->%s",
+                                FUNDEF_NAME (fundef), NODE_LINE (act_fun_arg),
+                                ARG_NAME (act_fun_arg), stype1, stype2));
         }
-        stype1 = Free (stype1);
-        stype2 = Free (stype2);
+        stype1 = ILIBfree (stype1);
+        stype2 = ILIBfree (stype2);
 
         /*
          * now search the application args for identical id to substitute it.
          * this is possible only for args of cond-funs and loopinvariant args
          * of loop-funs.
          */
-        if ((FUNDEF_IS_CONDFUN (fundef))
-            || ((FUNDEF_IS_LOOPFUN (fundef))
-                && (AVIS_SSALPINV (ARG_AVIS (act_fun_arg))))) {
+        if ((FUNDEF_ISCONDFUN (fundef))
+            || ((FUNDEF_ISDOFUN (fundef)) && (AVIS_SSALPINV (ARG_AVIS (act_fun_arg))))) {
             found_match = FALSE;
 
             search_fun_arg = fun_args;
@@ -697,9 +623,9 @@ SSACSEPropagateSubst2Args (node *fun_args, node *ap_args, node *fundef)
                      */
                     found_match = TRUE;
                     AVIS_SUBST (ARG_AVIS (act_fun_arg)) = ARG_AVIS (search_fun_arg);
-                    DBUG_PRINT ("SSACSE", ("propagate copy propagation info for %s -> %s",
-                                           VARDEC_OR_ARG_NAME (act_fun_arg),
-                                           VARDEC_OR_ARG_NAME (search_fun_arg)));
+                    DBUG_PRINT ("CSE", ("propagate copy propagation info for %s -> %s",
+                                        VARDEC_OR_ARG_NAME (act_fun_arg),
+                                        VARDEC_OR_ARG_NAME (search_fun_arg)));
                 }
 
                 /* parallel traversal to next arg in ap and fundef */
@@ -720,7 +646,7 @@ SSACSEPropagateSubst2Args (node *fun_args, node *ap_args, node *fundef)
 /******************************************************************************
  *
  * function:
- *   nodelist *SSACSEBuildSubstNodelist( node *return_exprs, node *fundef)
+ *   nodelist *BuildSubstNodelist( node *return_exprs, node *fundef)
  *
  * description:
  *   analyse the return statement of a special fundef for results that
@@ -756,25 +682,25 @@ SSACSEPropagateSubst2Args (node *fun_args, node *ap_args, node *fundef)
  *
  *****************************************************************************/
 static nodelist *
-SSACSEBuildSubstNodelist (node *return_exprs, node *fundef)
+BuildSubstNodelist (node *return_exprs, node *fundef)
 {
     nodelist *nl;
     node *ext_avis;
     node *avis1;
     node *avis2;
 
-    DBUG_ENTER ("SSACSEBuildSubstNodelist");
+    DBUG_ENTER ("BuildSubstNodelist");
 
-    DBUG_ASSERT ((FUNDEF_IS_LACFUN (fundef)),
-                 "SSACSEBuildSubstNodelist called for non special fundef");
+    DBUG_ASSERT ((FUNDEF_ISLACFUN (fundef)),
+                 "BuildSubstNodelist called for non special fundef");
 
     if (return_exprs != NULL) {
         /* check for arg as result */
         avis1 = GetResultArgAvis (EXPRS_EXPR (return_exprs), THENPART);
         avis2 = GetResultArgAvis (EXPRS_EXPR (return_exprs), ELSEPART);
 
-        if (((FUNDEF_IS_LOOPFUN (fundef)) && (avis2 != NULL) && (AVIS_SSALPINV (avis2)))
-            || ((FUNDEF_IS_CONDFUN (fundef)) && (avis1 == avis2) && (avis2 != NULL))) {
+        if (((FUNDEF_ISDOFUN (fundef)) && (avis2 != NULL) && (AVIS_SSALPINV (avis2)))
+            || ((FUNDEF_ISCONDFUN (fundef)) && (avis1 == avis2) && (avis2 != NULL))) {
             /*
              * we get an arg that is result of this fundef,
              * now search for the external corresponding avis node in application
@@ -789,9 +715,8 @@ SSACSEBuildSubstNodelist (node *return_exprs, node *fundef)
          * nodelist we can use in the bottom down travsersal of the corresponding
          * ids chain in the calling let node.
          */
-        nl = MakeNodelistNode (ext_avis,
-                               SSACSEBuildSubstNodelist (EXPRS_NEXT (return_exprs),
-                                                         fundef));
+        nl = TBmakeNodelistNode (ext_avis,
+                                 BuildSubstNodelist (EXPRS_NEXT (return_exprs), fundef));
     } else {
         /* no more return expression available */
         nl = NULL;
@@ -803,7 +728,7 @@ SSACSEBuildSubstNodelist (node *return_exprs, node *fundef)
 /******************************************************************************
  *
  * function:
- *   ids *SSACSEPropagateReturn2Results(node *ap_fundef, ids *ids_chain)
+ *   node *PropagateReturn2Results(node *ap_fundef, node *ids_chain)
  *
  * description:
  *   searches in the return statement of loops (here the then-part phi-copy-
@@ -812,23 +737,23 @@ SSACSEBuildSubstNodelist (node *return_exprs, node *fundef)
  *   for later substitutions.
  *
  *****************************************************************************/
-static ids *
-SSACSEPropagateReturn2Results (node *ap_fundef, ids *ids_chain)
+static node *
+PropagateReturn2Results (node *ap_fundef, node *ids_chain)
 {
-    ids *act_result;
+    node *act_result;
     node *act_exprs;
-    ids *search_result;
+    node *search_result;
     node *search_exprs;
 
     bool found_match;
 
-    DBUG_ENTER ("SSACSEPropagateReturn2Results");
+    DBUG_ENTER ("PropagateReturn2Results");
 
     /* process all identifier of result chain of a loop special fundef */
     act_result = ids_chain;
     act_exprs = RETURN_EXPRS (FUNDEF_RETURN (ap_fundef));
 
-    while ((FUNDEF_IS_LOOPFUN (ap_fundef)) && (act_result != NULL)) {
+    while ((FUNDEF_ISDOFUN (ap_fundef)) && (act_result != NULL)) {
         /* search the the processed results for identical results */
         search_result = ids_chain;
         search_exprs = RETURN_EXPRS (FUNDEF_RETURN (ap_fundef));
@@ -900,7 +825,7 @@ GetResultArgAvis (node *id, condpart cp)
 
     DBUG_ASSERT ((NODE_TYPE (id) == N_id), "GetResultArgAvis called for non id node");
 
-    if (isPhiFun (id)) {
+    if (TCisPhiFun (id)) {
 
         defassign = AVIS_SSAASSIGN (ID_AVIS (id));
 
@@ -914,7 +839,7 @@ GetResultArgAvis (node *id, condpart cp)
 
         /* check if id is defined as arg */
         if ((NODE_TYPE (defassign) == N_id)
-            && (NODE_TYPE (AVIS_VARDECORARG (ID_AVIS (defassign))) == N_arg)) {
+            && (NODE_TYPE (AVIS_DECL (ID_AVIS (defassign))) == N_arg)) {
             result = ID_AVIS (defassign);
         }
     }
@@ -941,7 +866,7 @@ GetApAvisOfArgAvis (node *arg_avis, node *fundef)
 
     DBUG_ENTER ("GetApAvisOfArgAvis");
 
-    DBUG_ASSERT ((FUNDEF_IS_LACFUN (fundef)),
+    DBUG_ASSERT ((FUNDEF_ISLACFUN (fundef)),
                  "GetApAvisOfArgAvis called for non special fundef");
 
     arg_chain = FUNDEF_ARGS (fundef);
@@ -978,7 +903,7 @@ GetApAvisOfArgAvis (node *arg_avis, node *fundef)
 /******************************************************************************
  *
  * function:
- *   node *SSACSEfundef(node *arg_node, info *arg_info)
+ *   node *CSEfundef(node *arg_node, info *arg_info)
  *
  * description:
  *   traverses args for initialization.
@@ -988,27 +913,27 @@ GetApAvisOfArgAvis (node *arg_avis, node *fundef)
  *
  *****************************************************************************/
 node *
-SSACSEfundef (node *arg_node, info *arg_info)
+CSEfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSACSEfundef");
+    DBUG_ENTER ("CSEfundef");
 
-    INFO_SSACSE_FUNDEF (arg_info) = arg_node;
-    INFO_SSACSE_RESULTARG (arg_info) = NULL;
+    INFO_CSE_FUNDEF (arg_info) = arg_node;
+    INFO_CSE_RESULTARG (arg_info) = NULL;
 
-    if ((FUNDEF_ARGS (arg_node) != NULL) && (!(FUNDEF_IS_LACFUN (arg_node)))) {
+    if ((FUNDEF_ARGS (arg_node) != NULL) && (!(FUNDEF_ISLACFUN (arg_node)))) {
         /*
          * traverse args of fundef to init the AVIS_SUBST attribute. this is done
          * here only for normal fundefs. in special fundefs that are traversed via
-         * SSACSEap() we do a substitution information propagation (see
-         * SSACSEPropagateSubst2Args() ) that sets the correct AVIS_SUBST
+         * CSEap() we do a substitution information propagation (see
+         * CSEPropagateSubst2Args() ) that sets the correct AVIS_SUBST
          * attributes for all args.
          */
-        FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), arg_info);
+        FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
     }
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         /* traverse block of fundef */
-        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -1017,21 +942,21 @@ SSACSEfundef (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSACSEarg( node *arg_node, info *arg_info)
+ *   node *CSEarg( node *arg_node, info *arg_info)
  *
  * description:
  *   traverses chain of args to init SUBST attribute with NULL.
  *
  *****************************************************************************/
 node *
-SSACSEarg (node *arg_node, info *arg_info)
+CSEarg (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSACSEarg");
+    DBUG_ENTER ("CSEarg");
 
     AVIS_SUBST (ARG_AVIS (arg_node)) = NULL;
 
     if (ARG_NEXT (arg_node) != NULL) {
-        ARG_NEXT (arg_node) = Trav (ARG_NEXT (arg_node), arg_info);
+        ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
     }
     DBUG_RETURN (arg_node);
 }
@@ -1039,7 +964,7 @@ SSACSEarg (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSACSEblock( node *arg_node, info *arg_info)
+ *   node *CSEblock( node *arg_node, info *arg_info)
  *
  * description:
  *   traverses chain of vardecs for initialization.
@@ -1050,30 +975,30 @@ SSACSEarg (node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 node *
-SSACSEblock (node *arg_node, info *arg_info)
+CSEblock (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSACSEblock");
+    DBUG_ENTER ("CSEblock");
 
     if (BLOCK_VARDEC (arg_node) != NULL) {
         /* traverse vardecs of block */
-        BLOCK_VARDEC (arg_node) = Trav (BLOCK_VARDEC (arg_node), arg_info);
+        BLOCK_VARDEC (arg_node) = TRAVdo (BLOCK_VARDEC (arg_node), arg_info);
     }
 
     /* start new cse frame */
-    INFO_SSACSE_CSE (arg_info) = CreateNewCSElayer (INFO_SSACSE_CSE (arg_info));
+    INFO_CSE_CSE (arg_info) = CreateNewCselayer (INFO_CSE_CSE (arg_info));
 
     if (BLOCK_INSTR (arg_node) != NULL) {
         /* traverse assignments of block */
-        BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
+        BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
     }
 
     if (BLOCK_INSTR (arg_node) == NULL) {
         /* insert at least the N_empty node in an empty block */
-        BLOCK_INSTR (arg_node) = MakeEmpty ();
+        BLOCK_INSTR (arg_node) = TBmakeEmpty ();
     }
 
     /* remove top cse frame */
-    INFO_SSACSE_CSE (arg_info) = RemoveTopCSElayer (INFO_SSACSE_CSE (arg_info));
+    INFO_CSE_CSE (arg_info) = RemoveTopCselayer (INFO_CSE_CSE (arg_info));
 
     DBUG_RETURN (arg_node);
 }
@@ -1081,7 +1006,7 @@ SSACSEblock (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSACSEvardec(node *arg_node, info *arg_info)
+ *   node *CSEvardec(node *arg_node, info *arg_info)
  *
  * description:
  *   traverse chain of vardecs to init avis subst attribute.
@@ -1089,14 +1014,14 @@ SSACSEblock (node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 node *
-SSACSEvardec (node *arg_node, info *arg_info)
+CSEvardec (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSACSEvardec");
+    DBUG_ENTER ("CSEvardec");
 
     AVIS_SUBST (VARDEC_AVIS (arg_node)) = NULL;
 
     if (VARDEC_NEXT (arg_node) != NULL) {
-        VARDEC_NEXT (arg_node) = Trav (VARDEC_NEXT (arg_node), arg_info);
+        VARDEC_NEXT (arg_node) = TRAVdo (VARDEC_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -1105,40 +1030,40 @@ SSACSEvardec (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSACSEassign (node *arg_node, info *arg_info)
+ *   node *CSEassign (node *arg_node, info *arg_info)
  *
  * description:
  *   traverses assignment chain top-down and removes unused assignment.
  *
  *****************************************************************************/
 node *
-SSACSEassign (node *arg_node, info *arg_info)
+CSEassign (node *arg_node, info *arg_info)
 {
     node *old_assign;
     bool remassign;
     node *tmp;
 
-    DBUG_ENTER ("SSACSEassign");
+    DBUG_ENTER ("SSEassign");
 
     DBUG_ASSERT ((ASSIGN_INSTR (arg_node) != NULL), "assign node without instruction");
 
-    old_assign = INFO_SSACSE_ASSIGN (arg_info);
-    INFO_SSACSE_ASSIGN (arg_info) = arg_node;
-    INFO_SSACSE_REMASSIGN (arg_info) = FALSE;
-    ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
-    remassign = INFO_SSACSE_REMASSIGN (arg_info);
-    INFO_SSACSE_ASSIGN (arg_info) = old_assign;
+    old_assign = INFO_CSE_ASSIGN (arg_info);
+    INFO_CSE_ASSIGN (arg_info) = arg_node;
+    INFO_CSE_REMASSIGN (arg_info) = FALSE;
+    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    remassign = INFO_CSE_REMASSIGN (arg_info);
+    INFO_CSE_ASSIGN (arg_info) = old_assign;
 
     /* traverse to next assignment in chain */
     if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
     }
 
     /* in bottom-up traversal free this assignment if it was marked as unused */
     if (remassign) {
         tmp = arg_node;
         arg_node = ASSIGN_NEXT (arg_node);
-        FreeNode (tmp);
+        FREEdoFreeNode (tmp);
     }
 
     DBUG_RETURN (arg_node);
@@ -1147,31 +1072,31 @@ SSACSEassign (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSACSEcond(node *arg_node, info *arg_info)
+ *   node *CSEcond(node *arg_node, info *arg_info)
  *
  * description:
  *   the stacking of available cse-expressions for both parts of the
- *   conditional is done by SSACSEblock.
+ *   conditional is done by CSEblock.
  *   traverses condition, then- and else-part (in this order).
  *
  *****************************************************************************/
 node *
-SSACSEcond (node *arg_node, info *arg_info)
+CSEcond (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSACSEcond");
+    DBUG_ENTER ("CSEcond");
 
     DBUG_ASSERT ((COND_COND (arg_node) != NULL), "conditional without condition");
-    COND_COND (arg_node) = Trav (COND_COND (arg_node), arg_info);
+    COND_COND (arg_node) = TRAVdo (COND_COND (arg_node), arg_info);
 
     if (COND_THEN (arg_node) != NULL) {
-        COND_THEN (arg_node) = Trav (COND_THEN (arg_node), arg_info);
+        COND_THEN (arg_node) = TRAVdo (COND_THEN (arg_node), arg_info);
     }
 
     if (COND_ELSE (arg_node) != NULL) {
-        COND_ELSE (arg_node) = Trav (COND_ELSE (arg_node), arg_info);
+        COND_ELSE (arg_node) = TRAVdo (COND_ELSE (arg_node), arg_info);
     }
 
-    INFO_SSACSE_REMASSIGN (arg_info) = FALSE;
+    INFO_CSE_REMASSIGN (arg_info) = FALSE;
 
     DBUG_RETURN (arg_node);
 }
@@ -1179,7 +1104,7 @@ SSACSEcond (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSACSEreturn(node *arg_node, info *arg_info)
+ *   node *CSEreturn(node *arg_node, info *arg_info)
  *
  * description:
  *  traverses the result expressions and starts analysis of return values
@@ -1187,27 +1112,26 @@ SSACSEcond (node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 node *
-SSACSEreturn (node *arg_node, info *arg_info)
+CSEreturn (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSACSEreturn");
+    DBUG_ENTER ("CSEreturn");
 
     if (RETURN_EXPRS (arg_node) != NULL) {
-        RETURN_EXPRS (arg_node) = Trav (RETURN_EXPRS (arg_node), arg_info);
+        RETURN_EXPRS (arg_node) = TRAVdo (RETURN_EXPRS (arg_node), arg_info);
     }
 
     /*
      * analyse results and build up RESULTARG nodelist for results
      * that are args and therefore can be used directly in the calling context
      */
-    if (FUNDEF_IS_LACFUN (INFO_SSACSE_FUNDEF (arg_info))) {
-        INFO_SSACSE_RESULTARG (arg_info)
-          = SSACSEBuildSubstNodelist (RETURN_EXPRS (arg_node),
-                                      INFO_SSACSE_FUNDEF (arg_info));
+    if (FUNDEF_ISLACFUN (INFO_CSE_FUNDEF (arg_info))) {
+        INFO_CSE_RESULTARG (arg_info)
+          = BuildSubstNodelist (RETURN_EXPRS (arg_node), INFO_CSE_FUNDEF (arg_info));
     } else {
-        INFO_SSACSE_RESULTARG (arg_info) = NULL;
+        INFO_CSE_RESULTARG (arg_info) = NULL;
     }
 
-    INFO_SSACSE_REMASSIGN (arg_info) = FALSE;
+    INFO_CSE_REMASSIGN (arg_info) = FALSE;
 
     DBUG_RETURN (arg_node);
 }
@@ -1215,11 +1139,11 @@ SSACSEreturn (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSACSElet( node *arg_node, info *arg_info)
+ *   node *CSElet( node *arg_node, info *arg_info)
  *
  * description:
  *   first do a variable substitution on the right side expression (but
- *   only for simple expressions) or do SSACSE for a right-side with-loop
+ *   only for simple expressions) or do CSE for a right-side with-loop
  *   by traversing the RHS.
  *
  *   next compare the right side with all available common subexpressions that
@@ -1233,14 +1157,14 @@ SSACSEreturn (node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 node *
-SSACSElet (node *arg_node, info *arg_info)
+CSElet (node *arg_node, info *arg_info)
 {
     node *match;
     nodetype nt_expr;
 
-    DBUG_ENTER ("SSACSElet");
+    DBUG_ENTER ("CSElet");
 
-    DBUG_PRINT ("SSACSE", ("inspecting expression for cse"));
+    DBUG_PRINT ("CSE", ("inspecting expression for cse"));
 
     DBUG_ASSERT ((LET_EXPR (arg_node) != NULL), "let without expression");
     DBUG_ASSERT ((LET_IDS (arg_node) != NULL), "let without ids");
@@ -1249,9 +1173,9 @@ SSACSElet (node *arg_node, info *arg_info)
      * traverse right side expression to do variable substitutions
      * or CSE in with-loops/special fundefs
      */
-    LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
+    LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
-    match = FindCSE (INFO_SSACSE_CSE (arg_info), arg_node);
+    match = FindCse (INFO_CSE_CSE (arg_info), arg_node);
 
     nt_expr = NODE_TYPE (LET_EXPR (arg_node));
 
@@ -1261,162 +1185,23 @@ SSACSElet (node *arg_node, info *arg_info)
      * and let is NO assignment to some UNIQUE variable
      * do the necessary substitution.
      */
-    if ((match != NULL)
-#ifndef CREATE_UNIQUE_BY_HEAP
-        && (!ForbiddenSubstitution (LET_IDS (arg_node)))
-#endif
-    ) {
+    if ((match != NULL)) {
         /* set subst attributes for results */
         LET_IDS (arg_node) = SetSubstAttributes (LET_IDS (arg_node), LET_IDS (match));
 
-        DBUG_PRINT ("SSACSE",
+        DBUG_PRINT ("CSE",
                     ("Common subexpression eliminated in line %d", NODE_LINE (arg_node)));
         cse_expr++;
 
         /* remove assignment */
-        INFO_SSACSE_REMASSIGN (arg_info) = TRUE;
-
-/*
- * Maybe (and hopefully) the following excluded code is obsolete
- * because of the new constant and variable propagation phase CVP.
- * If that's the case the excluded code could be removed completly.
- * Otherwise it should be included again.
- */
-
-/* start exclution */
-#if 0
-
-  /* needed by this part of code
-   * please reinsert on top when including code again
-   */
-  int cmp;
-
-  } else if ((nt_expr == N_id)
-#ifndef CREATE_UNIQUE_BY_HEAP
-             && (! ForbiddenSubstitution( LET_IDS( arg_node)))
-#endif
-             ) {
-    types *type1 = VARDEC_OR_ARG_TYPE( AVIS_VARDECORARG(
-                                               IDS_AVIS( LET_IDS( arg_node))));
-    types *type2 = VARDEC_OR_ARG_TYPE( AVIS_VARDECORARG(
-                                               ID_AVIS( LET_EXPR( arg_node))));
-    char *stype1 = Type2String( type1, 0, TRUE);
-    char *stype2 = Type2String( type2, 0, TRUE);
-
-    /* only substitute ids of equal or more generic types */
-    cmp = CompareTypesImplementation( type1, type2);
-    if ((cmp == 0) || (cmp == 1)) {
-      /*
-       *  Since we want to substitute ids with more generic types, we have to
-       *  tolerate (some) type errors:
-       *
-       *    int[3] a;
-       *    int[+] b;
-       *    int[2] c;
-       *
-       *    a = [1,2,3];
-       *    b = a;                  # copy assignment
-       *    if (shape( b) == [2]) {
-       *      c = b;                # don't complain about a type error here,
-       *    }                       # once 'b' have been replaced by 'a'!
-       *    else {
-       *      ...
-       *    }
-       */
-
-      /* set subst attributes for results */
-      LET_IDS( arg_node) = SetSubstAttributes( LET_IDS (arg_node),
-                                               ID_IDS( LET_EXPR( arg_node)));
-
-      DBUG_PRINT( "SSACSE",
-                  ("copy assignment eliminated in line %d:  %s:%s = %s:%s",
-                   NODE_LINE( arg_node),
-                   IDS_NAME( LET_IDS( arg_node)),
-                   stype1,
-                   ID_NAME( LET_EXPR( arg_node)),
-                   stype2));
-      cse_expr++;
-    
-      /* remove copy assignment */
-      INFO_SSACSE_REMASSIGN(arg_info) = TRUE;
-    }
-    else if (cmp == -1) {
-#if 0
-      /*
-       *  We have an assignment of this form:
-       *
-       *    a:TA = b:TB;    where (TA=type(a) < TB=type(b))
-       *    Rest
-       *
-       *  It does not make sense to substitute 'b' for 'a' in 'Rest'
-       *  because this would destroy type information!
-       *
-       *  Note here, that it is *illegal* to replace 'TB' by 'TA' because
-       *  the actual type of 'b' is not necessaryly a subtype of 'TA':
-       *
-       *    int[2] a;
-       *    int[+] b;
-       *    int[3] c;
-       *
-       *    c = [1,2,3];
-       *    b = id( c);              // result has shape [3], but the TC fails
-       *    if (shape( b) == [2]) {
-       *      a = b;                 // dead code!!!
-       *      ...                    // do not update the type of 'b'!!!
-       *    }
-       *    else {
-       *      ...
-       *    }
-       *
-       *  Unfortunately, there is no easy way to get rid of the generic type
-       *  TB here. But... here we go --- no risk no fun:
-       *  Actually, we *can* replace 'TB' by 'TA' if the definition of 'b' is
-       *  *not* outside a loop/conditional.
-       *  If the vardec of 'b' points to a N_arg node (might be a LaC-fun),
-       *  we better leave the type untouched.
-       */
-      node *decl = ID_VARDEC( LET_EXPR( arg_node));  /* N_arg or N_vardec */
-      if (NODE_TYPE( decl) == N_vardec) {
-        VARDEC_TYPE( decl) = FreeAllTypes( VARDEC_TYPE( decl));
-        VARDEC_TYPE( decl) = DupAllTypes( IDS_TYPE( LET_IDS( arg_node)));
-      }
-
-      DBUG_PRINT( "SSACSE",
-                  ("type on RHS of copy assignment specialized in line %d:"
-                   "  %s:%s = %s:%s",
-                   NODE_LINE( arg_node),
-                   IDS_NAME( LET_IDS( arg_node)),
-                   stype1,
-                   ID_NAME( LET_EXPR( arg_node)),
-                   stype2));
-#endif
-    }
-    else {
-      DBUG_PRINT( "SSACSE",
-                  ("incompatible copy assignment in line %d:  %s:%s = %s:%s",
-                   NODE_LINE( arg_node),
-                   IDS_NAME( LET_IDS( arg_node)),
-                   stype1,
-                   ID_NAME( LET_EXPR( arg_node)),
-                   stype2));
-      /*
-       * Do *not* produce an error here, since this may be dead code!
-       * (See comment for the function SSACSEPropagateSubst2Args() as well!)
-       */
-    }
-    stype1 = Free( stype1);
-    stype2 = Free( stype2);
-
-/* end exclution */
-#endif
-    } else if ((nt_expr == N_ap)
-               && (FUNDEF_IS_LACFUN (AP_FUNDEF (LET_EXPR (arg_node))))) {
+        INFO_CSE_REMASSIGN (arg_info) = TRUE;
+    } else if ((nt_expr == N_ap) && (FUNDEF_ISLACFUN (AP_FUNDEF (LET_EXPR (arg_node))))) {
 
         /*
          * traverse the result ids to set the infered subst information stored
-         * in INFO_SSACSE_RESULTARG nodelist
+         * in INFO_CSE_RESULTARG nodelist
          */
-        LET_IDS (arg_node) = TravIDS (LET_IDS (arg_node), arg_info);
+        LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
 
         /*
          * propagate identical results into calling fundef,
@@ -1424,16 +1209,15 @@ SSACSElet (node *arg_node, info *arg_info)
          * DeadCodeRemoval() will remove the unused result later.
          */
         LET_IDS (arg_node)
-          = SSACSEPropagateReturn2Results (AP_FUNDEF (LET_EXPR (arg_node)),
-                                           LET_IDS (arg_node));
+          = PropagateReturn2Results (AP_FUNDEF (LET_EXPR (arg_node)), LET_IDS (arg_node));
 
     } else {
         /* new expression found */
-        DBUG_PRINT ("SSACSE", ("add new expression to cselist"));
-        INFO_SSACSE_CSE (arg_info) = AddCSEinfo (INFO_SSACSE_CSE (arg_info), arg_node);
+        DBUG_PRINT ("CSE", ("add new expression to cselist"));
+        INFO_CSE_CSE (arg_info) = AddCseinfo (INFO_CSE_CSE (arg_info), arg_node);
 
         /* do not remove assignment */
-        INFO_SSACSE_REMASSIGN (arg_info) = FALSE;
+        INFO_CSE_REMASSIGN (arg_info) = FALSE;
     }
 
     DBUG_RETURN (arg_node);
@@ -1442,7 +1226,7 @@ SSACSElet (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSACSEap(node *arg_node, info *arg_info)
+ *   node *CSEap(node *arg_node, info *arg_info)
  *
  * description:
  *   traverses parameter to do correct variable substitution.
@@ -1450,10 +1234,10 @@ SSACSElet (node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 node *
-SSACSEap (node *arg_node, info *arg_info)
+CSEap (node *arg_node, info *arg_info)
 {
     info *new_arg_info;
-    DBUG_ENTER ("SSACSEap");
+    DBUG_ENTER ("CSEap");
 
     DBUG_ASSERT ((AP_FUNDEF (arg_node) != NULL), "missing fundef in ap-node");
 
@@ -1462,29 +1246,29 @@ SSACSEap (node *arg_node, info *arg_info)
      * we set RECFUNAP flag to TRUE, to avoid renamings of loop
      * independend args that could be replaced otherwise.
      */
-    if ((FUNDEF_IS_LOOPFUN (INFO_SSACSE_FUNDEF (arg_info)))
-        && (AP_FUNDEF (arg_node) == INFO_SSACSE_FUNDEF (arg_info))) {
-        INFO_SSACSE_RECFUNAP (arg_info) = TRUE;
+    if ((FUNDEF_ISDOFUN (INFO_CSE_FUNDEF (arg_info)))
+        && (AP_FUNDEF (arg_node) == INFO_CSE_FUNDEF (arg_info))) {
+        INFO_CSE_RECFUNAP (arg_info) = TRUE;
     } else {
-        INFO_SSACSE_RECFUNAP (arg_info) = FALSE;
+        INFO_CSE_RECFUNAP (arg_info) = FALSE;
     }
 
     if (AP_ARGS (arg_node) != NULL) {
-        AP_ARGS (arg_node) = Trav (AP_ARGS (arg_node), arg_info);
+        AP_ARGS (arg_node) = TRAVdo (AP_ARGS (arg_node), arg_info);
     }
 
     /* reset traversal flag */
-    INFO_SSACSE_RECFUNAP (arg_info) = FALSE;
+    INFO_CSE_RECFUNAP (arg_info) = FALSE;
 
     /* traverse special fundef without recursion */
-    if ((FUNDEF_IS_LACFUN (AP_FUNDEF (arg_node)))
-        && (AP_FUNDEF (arg_node) != INFO_SSACSE_FUNDEF (arg_info))) {
-        DBUG_PRINT ("SSACSE", ("traverse in special fundef %s",
-                               FUNDEF_NAME (AP_FUNDEF (arg_node))));
+    if ((FUNDEF_ISLACFUN (AP_FUNDEF (arg_node)))
+        && (AP_FUNDEF (arg_node) != INFO_CSE_FUNDEF (arg_info))) {
+        DBUG_PRINT ("CSE", ("traverse in special fundef %s",
+                            FUNDEF_NAME (AP_FUNDEF (arg_node))));
 
-        INFO_SSACSE_MODUL (arg_info)
-          = CheckAndDupSpecialFundef (INFO_SSACSE_MODUL (arg_info), AP_FUNDEF (arg_node),
-                                      INFO_SSACSE_ASSIGN (arg_info));
+        INFO_CSE_MODULE (arg_info)
+          = DUPcheckAndDupSpecialFundef (INFO_CSE_MODULE (arg_info), AP_FUNDEF (arg_node),
+                                         INFO_CSE_ASSIGN (arg_info));
 
         DBUG_ASSERT ((FUNDEF_USED (AP_FUNDEF (arg_node)) == 1),
                      "more than one instance of special function used.");
@@ -1493,31 +1277,31 @@ SSACSEap (node *arg_node, info *arg_info)
         new_arg_info = MakeInfo ();
 
         /* start with empty cse stack */
-        INFO_SSACSE_CSE (new_arg_info) = NULL;
-        INFO_SSACSE_MODUL (new_arg_info) = INFO_SSACSE_MODUL (arg_info);
+        INFO_CSE_CSE (new_arg_info) = NULL;
+        INFO_CSE_MODULE (new_arg_info) = INFO_CSE_MODULE (arg_info);
 
         /* propagate id substitutions into called fundef */
         FUNDEF_ARGS (AP_FUNDEF (arg_node))
-          = SSACSEPropagateSubst2Args (FUNDEF_ARGS (AP_FUNDEF (arg_node)),
-                                       AP_ARGS (arg_node), AP_FUNDEF (arg_node));
+          = PropagateSubst2Args (FUNDEF_ARGS (AP_FUNDEF (arg_node)), AP_ARGS (arg_node),
+                                 AP_FUNDEF (arg_node));
 
         /* start traversal of special fundef */
-        AP_FUNDEF (arg_node) = Trav (AP_FUNDEF (arg_node), new_arg_info);
+        AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), new_arg_info);
 
-        DBUG_PRINT ("SSACSE", ("traversal of special fundef %s finished\n",
-                               FUNDEF_NAME (AP_FUNDEF (arg_node))));
+        DBUG_PRINT ("CSE", ("traversal of special fundef %s finished\n",
+                            FUNDEF_NAME (AP_FUNDEF (arg_node))));
 
         /*
          * save RESULTARG nodelist for processing bypassed identifiers
          * in surrounding let
          */
-        INFO_SSACSE_RESULTARG (arg_info) = INFO_SSACSE_RESULTARG (new_arg_info);
+        INFO_CSE_RESULTARG (arg_info) = INFO_CSE_RESULTARG (new_arg_info);
 
         new_arg_info = FreeInfo (new_arg_info);
 
     } else {
-        DBUG_PRINT ("SSACSE", ("do not traverse in normal fundef %s",
-                               FUNDEF_NAME (AP_FUNDEF (arg_node))));
+        DBUG_PRINT ("CSE", ("do not traverse in normal fundef %s",
+                            FUNDEF_NAME (AP_FUNDEF (arg_node))));
     }
 
     DBUG_RETURN (arg_node);
@@ -1526,18 +1310,115 @@ SSACSEap (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSACSEid( node *arg_node, info *arg_info)
+ *   ids *CSEids( ids *arg_ids, info *arg_info)
+ *
+ * description:
+ *   Traverses chain of ids to do variable substitution as annotated in
+ *   AVIS_SUBST attribute, but does not substitute loop invariant args in a
+ *   recursive funap (iff INFO_CSE_RECFUNAP() is TRUE),
+ *
+ *   If we have some nodelist stored in INFO_CSE_RESULTARG annotate the
+ *   stored subst avis information after processing, so further uses will be
+ *   renamed according to this information.
+ *
+ *****************************************************************************/
+
+node *
+CSEids (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("CSEids");
+
+    DBUG_ASSERT ((IDS_AVIS (arg_node) != NULL), "missing Avis backlink in ids");
+
+    /* check for necessary substitution */
+    if ((AVIS_SUBST (IDS_AVIS (arg_node)) != NULL)
+        && (!((INFO_CSE_RECFUNAP (arg_info)) && (AVIS_SSALPINV (IDS_AVIS (arg_node)))))) {
+        DBUG_PRINT ("CSE",
+                    ("substitution: %s -> %s",
+                     VARDEC_OR_ARG_NAME (AVIS_DECL (IDS_AVIS (arg_node))),
+                     VARDEC_OR_ARG_NAME (AVIS_DECL (AVIS_SUBST (IDS_AVIS (arg_node))))));
+
+        /* do renaming to new ssa vardec */
+        IDS_AVIS (arg_node) = AVIS_SUBST (IDS_AVIS (arg_node));
+    }
+
+    /* process stored INFO_CSE_RESULTARG information */
+    if (INFO_CSE_RESULTARG (arg_info) != NULL) {
+        DBUG_ASSERT ((AVIS_SUBST (IDS_AVIS (arg_node)) == NULL),
+                     "there must not exist any subst setting for"
+                     " a fresh defined vardec");
+
+        /* set AVIS_SUBST corresponding avis infered by */
+        AVIS_SUBST (IDS_AVIS (arg_node)) = NODELIST_NODE (INFO_CSE_RESULTARG (arg_info));
+
+        /* remove info of this result */
+        INFO_CSE_RESULTARG (arg_info)
+          = FREEfreeNodelistNode (INFO_CSE_RESULTARG (arg_info));
+
+#ifndef DBUG_OFF
+        if (AVIS_SUBST (IDS_AVIS (arg_node)) != NULL) {
+            DBUG_PRINT ("CSE", ("bypassing result %s",
+                                VARDEC_OR_ARG_NAME (AVIS_DECL (IDS_AVIS (arg_node)))));
+        }
+#endif
+    }
+
+    /* traverse to next ids in chain */
+    if (IDS_NEXT (arg_node) != NULL) {
+        IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *CSEid( node *arg_node, info *arg_info)
  *
  * description:
  *   traverse ids data to do substitution.
  *
  *****************************************************************************/
 node *
-SSACSEid (node *arg_node, info *arg_info)
+CSEid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSACSEid");
+    DBUG_ENTER ("CSEid");
 
-    ID_IDS (arg_node) = TravIDS (ID_IDS (arg_node), arg_info);
+    DBUG_ASSERT ((ID_AVIS (arg_node) != NULL), "missing Avis backlink in id");
+
+    /* check for necessary substitution */
+    if ((AVIS_SUBST (ID_AVIS (arg_node)) != NULL)
+        && (!((INFO_CSE_RECFUNAP (arg_info)) && (AVIS_SSALPINV (ID_AVIS (arg_node)))))) {
+        DBUG_PRINT ("CSE",
+                    ("substitution: %s -> %s",
+                     VARDEC_OR_ARG_NAME (AVIS_DECL (ID_AVIS (arg_node))),
+                     VARDEC_OR_ARG_NAME (AVIS_DECL (AVIS_SUBST (ID_AVIS (arg_node))))));
+
+        /* do renaming to new ssa vardec */
+        ID_AVIS (arg_node) = AVIS_SUBST (ID_AVIS (arg_node));
+    }
+
+    /* process stored INFO_CSE_RESULTARG information */
+    if (INFO_CSE_RESULTARG (arg_info) != NULL) {
+        DBUG_ASSERT ((AVIS_SUBST (ID_AVIS (arg_node)) == NULL),
+                     "there must not exist any subst setting for"
+                     " a fresh defined vardec");
+
+        /* set AVIS_SUBST corresponding avis infered by */
+        AVIS_SUBST (ID_AVIS (arg_node)) = NODELIST_NODE (INFO_CSE_RESULTARG (arg_info));
+
+        /* remove info of this result */
+        INFO_CSE_RESULTARG (arg_info)
+          = FREEfreeNodelistNode (INFO_CSE_RESULTARG (arg_info));
+
+#ifndef DBUG_OFF
+        if (AVIS_SUBST (ID_AVIS (arg_node)) != NULL) {
+            DBUG_PRINT ("CSE", ("bypassing result %s",
+                                VARDEC_OR_ARG_NAME (AVIS_DECL (ID_AVIS (arg_node)))));
+        }
+#endif
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -1545,31 +1426,31 @@ SSACSEid (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSACSENwith(node *arg_node, info *arg_info)
+ *   node *CSEwith(node *arg_node, info *arg_info)
  *
  * description:
- *   traverse NPart, Nwithop and NCode in this order
+ *   traverse Part, withop and Code in this order
  *
  *
  *****************************************************************************/
 node *
-SSACSENwith (node *arg_node, info *arg_info)
+CSEwith (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSACSENwith");
+    DBUG_ENTER ("CSEwith");
 
     /* traverse and do variable substitution in partitions */
-    if (NWITH_PART (arg_node) != NULL) {
-        NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
+    if (WITH_PART (arg_node) != NULL) {
+        WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
     }
 
     /* traverse and do variable substitution in withops */
-    if (NWITH_WITHOP (arg_node) != NULL) {
-        NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
+    if (WITH_WITHOP (arg_node) != NULL) {
+        WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
     }
 
     /* traverse and do cse in code blocks */
-    if (NWITH_CODE (arg_node) != NULL) {
-        NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
+    if (WITH_CODE (arg_node) != NULL) {
+        WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -1578,7 +1459,7 @@ SSACSENwith (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSACSENcode(node *arg_node, info *arg_info)
+ *   node *CSEcode(node *arg_node, info *arg_info)
  *
  * description:
  *   traverse codeblock and expressions for each Ncode node
@@ -1586,23 +1467,23 @@ SSACSENwith (node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 node *
-SSACSENcode (node *arg_node, info *arg_info)
+CSEcode (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSACSENcode");
+    DBUG_ENTER ("CSEcode");
 
     /* traverse codeblock */
-    if (NCODE_CBLOCK (arg_node) != NULL) {
-        NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
+    if (CODE_CBLOCK (arg_node) != NULL) {
+        CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
     }
 
     /*traverse expression to do variable substitution */
-    if (NCODE_CEXPRS (arg_node) != NULL) {
-        NCODE_CEXPRS (arg_node) = Trav (NCODE_CEXPRS (arg_node), arg_info);
+    if (CODE_CEXPRS (arg_node) != NULL) {
+        CODE_CEXPRS (arg_node) = TRAVdo (CODE_CEXPRS (arg_node), arg_info);
     }
 
     /* traverse to next node */
-    if (NCODE_NEXT (arg_node) != NULL) {
-        NCODE_NEXT (arg_node) = Trav (NCODE_NEXT (arg_node), arg_info);
+    if (CODE_NEXT (arg_node) != NULL) {
+        CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -1611,106 +1492,7 @@ SSACSENcode (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   ids *SSACSEids( ids *arg_ids, info *arg_info)
- *
- * description:
- *   Traverses chain of ids to do variable substitution as annotated in
- *   AVIS_SUBST attribute, but does not substitute loop invariant args in a
- *   recursive funap (iff INFO_SSACSE_RECFUNAP() is TRUE),
- *
- *   If we have some nodelist stored in INFO_SSACSE_RESULTARG annotate the
- *   stored subst avis information after processing, so further uses will be
- *   renamed according to this information.
- *
- *****************************************************************************/
-static ids *
-SSACSEids (ids *arg_ids, info *arg_info)
-{
-    DBUG_ENTER ("SSACSEids");
-
-    DBUG_ASSERT ((IDS_AVIS (arg_ids) != NULL), "missing Avis backlink in ids");
-
-    /* check for necessary substitution */
-    if ((AVIS_SUBST (IDS_AVIS (arg_ids)) != NULL)
-        && (!((INFO_SSACSE_RECFUNAP (arg_info))
-              && (AVIS_SSALPINV (IDS_AVIS (arg_ids)))))) {
-        DBUG_PRINT ("SSACSE", ("substitution: %s -> %s",
-                               VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (IDS_AVIS (arg_ids))),
-                               VARDEC_OR_ARG_NAME (
-                                 AVIS_VARDECORARG (AVIS_SUBST (IDS_AVIS (arg_ids))))));
-
-        /* do renaming to new ssa vardec */
-        IDS_AVIS (arg_ids) = AVIS_SUBST (IDS_AVIS (arg_ids));
-
-        /* restore all depended attributes with correct values */
-        IDS_VARDEC (arg_ids) = AVIS_VARDECORARG (IDS_AVIS (arg_ids));
-
-#ifndef NO_ID_NAME
-        /* for compatiblity only
-         * there is no real need for name string in ids structure because
-         * you can get it from vardec without redundancy.
-         */
-        IDS_NAME (arg_ids) = Free (IDS_NAME (arg_ids));
-        IDS_NAME (arg_ids) = StringCopy (VARDEC_OR_ARG_NAME (IDS_VARDEC (arg_ids)));
-#endif
-    }
-
-    /* process stored INFO_SSACSE_RESULTARG information */
-    if (INFO_SSACSE_RESULTARG (arg_info) != NULL) {
-        DBUG_ASSERT ((AVIS_SUBST (IDS_AVIS (arg_ids)) == NULL),
-                     "there must not exist any subst setting for"
-                     " a fresh defined vardec");
-
-        /* set AVIS_SUBST corresponding avis infered by */
-        AVIS_SUBST (IDS_AVIS (arg_ids))
-          = NODELIST_NODE (INFO_SSACSE_RESULTARG (arg_info));
-
-        /* remove info of this result */
-        INFO_SSACSE_RESULTARG (arg_info)
-          = FreeNodelistNode (INFO_SSACSE_RESULTARG (arg_info));
-
-#ifndef DBUG_OFF
-        if (AVIS_SUBST (IDS_AVIS (arg_ids)) != NULL) {
-            DBUG_PRINT ("SSACSE",
-                        ("bypassing result %s",
-                         VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (IDS_AVIS (arg_ids)))));
-        }
-#endif
-    }
-
-    /* traverse to next ids in chain */
-    if (IDS_NEXT (arg_ids) != NULL) {
-        IDS_NEXT (arg_ids) = TravIDS (IDS_NEXT (arg_ids), arg_info);
-    }
-
-    DBUG_RETURN (arg_ids);
-}
-
-/******************************************************************************
- *
- * function:
- *   ids *TravIDS(ids *arg_ids, info *arg_info)
- *
- * description:
- *   implements a simple TravIDS function like Trav for nodes to have
- *   an similar implementation.
- *
- *****************************************************************************/
-static ids *
-TravIDS (ids *arg_ids, info *arg_info)
-{
-    DBUG_ENTER ("TravIDS");
-
-    DBUG_ASSERT ((arg_ids != NULL), "traversal in NULL ids");
-    arg_ids = SSACSEids (arg_ids, arg_info);
-
-    DBUG_RETURN (arg_ids);
-}
-
-/******************************************************************************
- *
- * function:
- *   node* SSACSE(node* fundef, node* modul)
+ *   node* CSEdoCse(node* fundef, node* modul)
  *
  * description:
  *   Starts the traversal for a given fundef.
@@ -1720,33 +1502,29 @@ TravIDS (ids *arg_ids, info *arg_info)
  *
  *****************************************************************************/
 node *
-SSACSE (node *fundef, node *modul)
+CSEdoCse (node *fundef, node *modul)
 {
     info *arg_info;
-    funtab *old_tab;
 
-    DBUG_ENTER ("SSACSE");
+    DBUG_ENTER ("CSEdoCse");
 
-    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef), "SSACSE called for non-fundef node");
+    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef), "CSE called for non-fundef node");
 
     DBUG_PRINT ("OPT", ("starting common subexpression elimination (ssa) in function %s",
                         FUNDEF_NAME (fundef)));
 
     /* do not start traversal in special functions */
-    if (!(FUNDEF_IS_LACFUN (fundef))) {
-        DBUG_ASSERT ((optimize & OPT_DCR), "SSACSE requieres SSADCR");
+    if (!(FUNDEF_ISLACFUN (fundef))) {
+        DBUG_ASSERT ((global.optimize.dodcr), "CSE requieres DCR");
 
         arg_info = MakeInfo ();
 
-        INFO_SSACSE_CSE (arg_info) = NULL;
-        INFO_SSACSE_MODUL (arg_info) = modul;
+        INFO_CSE_CSE (arg_info) = NULL;
+        INFO_CSE_MODULE (arg_info) = modul;
 
-        old_tab = act_tab;
-        act_tab = ssacse_tab;
-
-        fundef = Trav (fundef, arg_info);
-
-        act_tab = old_tab;
+        TRAVpush (TR_cse);
+        fundef = TRAVdo (fundef, arg_info);
+        TRAVpop ();
 
         arg_info = FreeInfo (arg_info);
     }
