@@ -1,7 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.9  1995/04/28 17:27:34  hw
+ * Revision 1.10  1995/05/03 07:46:17  hw
+ * bug fixed in Store, StoreAndInit & Restore (now refcounting will
+ *  work after optimization ; eliminated variable declarations don't
+ *  matter anymore )
+ *
+ * Revision 1.9  1995/04/28  17:27:34  hw
  * - added RCgen
  * - store information about used before defined variables
  *   only arrays) of a with_loop in arg_node->node[2] od N_with
@@ -209,10 +214,16 @@ StoreAndInit (int n)
     }
     var_dec = fundef_node->node[0]->node[1]; /* variable declaration */
     for (k = i; k < varno; k++) {
-        dump[k] = var_dec->refcnt;
-        if (var_dec->refcnt > 0)
-            var_dec->refcnt = n;
-        var_dec = var_dec->node[0];
+        if (k == var_dec->varno) {
+            /* var_dec is the right node belonging to 'k', so store the refcount */
+            dump[k] = var_dec->refcnt;
+            if (var_dec->refcnt > 0)
+                var_dec->refcnt = n;
+            var_dec = var_dec->node[0];
+        } else
+            dump[k] = -1; /* var_dec belonging to 'k' was eliminated while
+                           * optimasation, so store -1 at this position
+                           */
     }
 
     DBUG_RETURN (dump);
@@ -246,10 +257,15 @@ Store ()
         var_dec = var_dec->node[0];
     }
     var_dec = fundef_node->node[0]->node[1]; /* variable declaration */
-    for (k = i; k < varno; k++) {
-        dump[k] = var_dec->refcnt;
-        var_dec = var_dec->node[0];
-    }
+    for (k = i; k < varno; k++)
+        if (k == var_dec->varno) {
+            /* var_dec is the right node belonging to 'k', so store the refcount */
+            dump[k] = var_dec->refcnt;
+            var_dec = var_dec->node[0];
+        } else
+            dump[k] = -1; /* var_dec belonging to 'k' was eliminated while
+                           * optimasation, so store -1 at this position
+                           */
 
     DBUG_RETURN (dump);
 }
@@ -270,7 +286,7 @@ Store ()
 void
 Restore (int *dump)
 {
-    int i, k;
+    int i;
     node *var_dec;
 
     DBUG_ENTER ("Restore");
@@ -281,8 +297,8 @@ Restore (int *dump)
         var_dec = var_dec->node[0];
     }
     var_dec = fundef_node->node[0]->node[1]; /* variable declaration */
-    for (k = i; k < varno; k++) {
-        var_dec->refcnt = dump[k];
+    while (NULL != var_dec) {
+        var_dec->refcnt = dump[var_dec->varno];
         var_dec = var_dec->node[0];
     }
 
