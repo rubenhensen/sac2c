@@ -1,14 +1,14 @@
 /*
  *
  * $Log$
+ * Revision 3.46  2001/04/03 18:00:06  dkr
+ * signature of IsHomSV modified
+ *
  * Revision 3.45  2001/04/03 17:52:21  dkr
  * calculation of WLSEG_SV corrected (BV is also taken into account now)
  *
  * Revision 3.44  2001/04/03 10:47:08  dkr
  * minor changes in ComputeIndexMinMax() done
- *
- * Revision 3.43  2001/04/03 09:31:02  dkr
- * no changes done
  *
  * Revision 3.42  2001/04/02 17:06:42  dkr
  * illegal wlcomp-pragma functions produce a warning now instead of an
@@ -2011,7 +2011,9 @@ IndexRearStride (node *stride)
  *   of the 'nodes'-tree and calculate the lcm of their steps.
  *
  *   'include_blocks' denotes whether N_WLblock nodes are considered to be
- *   undivisible (WLSEG_SV -> multi-threading) or not.
+ *   undivisible or not.
+ *   For the time being the backend (WLSEG_SV -> multi-threading) needs
+ *   (include_blocks = TRUE) !!!
  *
  ******************************************************************************/
 
@@ -6273,26 +6275,31 @@ InferSegsParams_Pre (node *segs, shpseg *shape)
 /******************************************************************************
  *
  * Function:
- *   bool IsHomSV( node *nodes, int dim, int sv)
+ *   bool IsHomSV( node *nodes, int dim, int sv, bool include_blocks)
  *
  * Description:
  *   Infers for the given wlnode tree whether in dimension 'dim' the extend
  *   of each top-level block-, ublock- or stride- node is a multiple of 'sv'.
  *
+ *   'include_blocks' denotes whether N_WLblock nodes are considered to be
+ *   undivisible or not.
+ *   For the time being the backend needs (include_blocks = TRUE) !!!
+ *
  ******************************************************************************/
 
 static bool
-IsHomSV (node *nodes, int dim, int sv)
+IsHomSV (node *nodes, int dim, int sv, bool include_blocks)
 {
     int ishom = TRUE;
 
     DBUG_ENTER ("IsHomSV");
 
     if (nodes != NULL) {
-        ishom = IsHomSV (WLNODE_NEXT (nodes), dim, sv);
+        ishom = IsHomSV (WLNODE_NEXT (nodes), dim, sv, include_blocks);
 
         if ((WLNODE_DIM (nodes) == dim)
-            && ((NODE_TYPE (nodes) == N_WLblock) || (NODE_TYPE (nodes) == N_WLublock)
+            && (((NODE_TYPE (nodes) == N_WLblock) && (include_blocks))
+                || (NODE_TYPE (nodes) == N_WLublock)
                 || (NODE_TYPE (nodes) == N_WLstride))) {
             /*
              * we have found a relevant node
@@ -6306,16 +6313,16 @@ IsHomSV (node *nodes, int dim, int sv)
             case N_WLblock:
                 /* here is no break missing! */
             case N_WLublock:
-                ishom &= IsHomSV (WLXBLOCK_NEXTDIM (nodes), dim, sv);
-                ishom &= IsHomSV (WLXBLOCK_CONTENTS (nodes), dim, sv);
+                ishom &= IsHomSV (WLXBLOCK_NEXTDIM (nodes), dim, sv, include_blocks);
+                ishom &= IsHomSV (WLXBLOCK_CONTENTS (nodes), dim, sv, include_blocks);
                 break;
 
             case N_WLstride:
-                ishom &= IsHomSV (WLSTRIDE_CONTENTS (nodes), dim, sv);
+                ishom &= IsHomSV (WLSTRIDE_CONTENTS (nodes), dim, sv, include_blocks);
                 break;
 
             case N_WLgrid:
-                ishom &= IsHomSV (WLGRID_NEXTDIM (nodes), dim, sv);
+                ishom &= IsHomSV (WLGRID_NEXTDIM (nodes), dim, sv, include_blocks);
                 break;
 
             default:
@@ -6363,12 +6370,13 @@ InferSegsParams_Post (node *segs)
                  * We must recalculate SV here because the with-loop transformations
                  * (especially the fitting) probabily have modified the layout!
                  * Moreover we have to consider blocks as undivisible here!
-                 * (I.e. only complete blocks can be scheduled for multi-threading!)
+                 * (I.e. For the time being due to backend-limitations only complete
+                 * blocks can be scheduled (multi-threading) !!!)
                  */
                 sv = GetLcmUnroll (WLSEG_CONTENTS (segs), d, TRUE);
                 (WLSEG_SV (segs))[d] = sv;
 
-                if (!IsHomSV (WLSEG_CONTENTS (segs), d, sv)) {
+                if (!IsHomSV (WLSEG_CONTENTS (segs), d, sv, TRUE)) {
                     WLSEG_MAXHOMDIM (segs) = (d - 1);
                 }
             }
