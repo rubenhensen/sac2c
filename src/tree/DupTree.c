@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.20  2001/03/19 14:22:45  nmw
+ * AVIS_ASSIGN2 added
+ *
  * Revision 3.19  2001/03/16 11:54:16  nmw
  * DupAvis for new macros modified
  *
@@ -2069,8 +2072,9 @@ DupAvis (node *arg_node, node *arg_info)
     AVIS_SSACOUNT (new_node) = AVIS_SSACOUNT (arg_node);
     AVIS_SSAASSIGN (new_node)
       = SearchInLUT (INFO_DUP_LUT (arg_info), AVIS_SSAASSIGN (arg_node));
+    /* ##nmw## */
     AVIS_SSAASSIGN2 (new_node)
-      = SearchInLUT (INFO_DUP_LUT (arg_info), AVIS_SSAASSIGN (arg_node));
+      = SearchInLUT (INFO_DUP_LUT (arg_info), AVIS_SSAASSIGN2 (arg_node));
     if (AVIS_SSACONST (arg_node) != NULL) {
         AVIS_SSACONST (new_node) = COCopyConstant (AVIS_SSACONST (arg_node));
     }
