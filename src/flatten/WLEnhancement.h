@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/11/24 20:41:43  khf
+ * SacDevCamp04
+ *
  * Revision 1.3  2004/11/22 12:37:33  ktr
  * Ismop SacDevCamp 04
  * ,.
@@ -20,6 +23,6 @@
 
 #include "types.h"
 
-extern node *WLEdoWlenhancement (node *arg_node);
+extern node *WLEdoWlEnhancement (node *arg_node);
 
 #endif /* _SAC_WLENHANCEMENT_H_ */
