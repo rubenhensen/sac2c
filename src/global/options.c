@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2001/05/28 09:01:00  nmw
+ * SSACSE requieres SSADCR - additional check and warning implemented
+ *
  * Revision 3.13  2001/05/17 11:15:59  sbs
  * return value of Free used now 8-()
  *
@@ -862,6 +865,13 @@ CheckOptionConsistency ()
       optimize &= ~OPT_PHM;
     }
 #endif
+    }
+
+    if (use_ssaform && (optimize & OPT_CSE) && (!(optimize & OPT_DCR))) {
+        SYSWARN (("Common Subexpressions elimination in ssaform "
+                  "requires DeadCodeRemoval enabled! - "
+                  "CSE disabled"));
+        optimize &= ~OPT_CSE;
     }
 
     if ((!(optimize & OPT_PHM)) && (runtimecheck & RUNTIMECHECK_HEAP)) {
