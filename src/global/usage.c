@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.68  1998/05/15 15:44:31  srs
+ * added -maxoptcycles
+ *
  * Revision 1.67  1998/05/15 13:48:22  dkr
  * added flag -bn:conv
  *
@@ -319,7 +322,10 @@ usage ()
             "\t -noRCO\t\tno refcount optimization \n"
             "\n\tLower case letters may be used instead!\n");
 
-    printf ("\n\t -maxoptvar <no>\treserve <no> variables for optimization\n"
+    printf ("\n\t -maxoptcycles <no>\trepeat optimization phase <no> times\n"
+            "\t\t\t\t  Default: -maxoptcycles %d\n",
+            max_optcycles);
+    printf ("\t -maxoptvar <no>\treserve <no> variables for optimization\n"
             "\t\t\t\t  Default: -maxoptvar %d\n",
             optvar);
     printf ("\t -maxinline <no>\tinline recursive functions <no> times\n"
