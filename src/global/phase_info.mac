@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2000/12/12 11:38:12  dkr
+ * refcount is phase 18 now
+ *
  * Revision 3.1  2000/11/20 17:59:37  sacbase
  * new release made
  *
@@ -73,11 +76,11 @@ PH_SEL (PH_initial, "", 0, 0),
 
   PH_SEL (PH_sacopt, "Running SAC optimizations", 0, 0),
 
-  PH_SEL (PH_refcnt, "Running reference count inference system", 0, 0),
-
   PH_SEL (PH_wltrans, "Transforming with-loop representation", 0, 0),
 
   PH_SEL (PH_spmdregions, "Generating SPMD- and SYNC-regions", 0, 0),
+
+  PH_SEL (PH_refcnt, "Running reference count inference system", 0, 0),
 
   PH_SEL (PH_precompile, "Preparing C code generation", 0, 0),
 
