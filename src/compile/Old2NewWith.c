@@ -75,67 +75,67 @@ SeperateBlockReturn (node *block_node)
 node *
 O2Nwith (node *arg_node, node *arg_info)
 {
-    node *old_gen;
-    node *old_op;
+    node *old_generator;
+    node *old_operator;
     node *new_withid;
     node *new_withop;
     node *new_block;
     node *new_expr;
-    node *new_gen;
-    ids *new_withid_ids;
+    node *new_generator;
+    node *new_code;
+    node *new_part;
 
     DBUG_ENTER ("O2Nwith");
 
-    old_gen = WITH_GEN (arg_node);
-    old_op = WITH_OPERATOR (arg_node);
+    old_generator = WITH_GEN (arg_node);
+    old_operator = WITH_OPERATOR (arg_node);
 
-    new_withid_ids = MakeIds (GEN_ID (old_gen), NULL, ST_regular);
-    IDS_VARDEC (new_withid_ids) = GEN_VARDEC (old_gen);
-    IDS_USE (new_withid_ids) = GEN_USE (old_gen);
+    new_withid
+      = MakeNWithid (WI_vector, MakeIds (GEN_ID (old_generator), NULL, ST_regular));
+    new_generator
+      = MakeNGenerator (GEN_LEFT (old_generator),
+                        MakePrf (F_add, MakeExprs (GEN_RIGHT (old_generator),
+                                                   MakeExprs (MakeNum (1), NULL))),
+                        F_le, F_lt, NULL, NULL);
+    GEN_LEFT (old_generator) = GEN_RIGHT (old_generator) = NULL;
 
-    new_withid = MakeNWithid (1, new_withid_ids);
-    new_gen = MakeNGenerator (GEN_LEFT (old_gen),
-                              MakePrf (F_add, MakeExprs (GEN_RIGHT (old_gen),
-                                                         MakeExprs (MakeNum (1), NULL))),
-                              F_le, F_lt, NULL, NULL);
-    GEN_LEFT (old_gen) = GEN_RIGHT (old_gen) = NULL;
-
-    switch (NODE_TYPE (old_op)) {
+    switch (NODE_TYPE (old_operator)) {
     case N_genarray:
         new_withop = MakeNWithOp (WO_genarray);
-        NWITHOP_SHAPE (new_withop) = GENARRAY_ARRAY (old_op);
-        new_block = GENARRAY_BODY (old_gen);
+        NWITHOP_SHAPE (new_withop) = GENARRAY_ARRAY (old_operator);
+        new_block = GENARRAY_BODY (old_operator);
 
-        GENARRAY_ARRAY (old_gen) = NULL;
-        GENARRAY_BODY (old_gen) = NULL;
+        GENARRAY_ARRAY (old_operator) = NULL;
+        GENARRAY_BODY (old_operator) = NULL;
         break;
     case N_modarray:
         new_withop = MakeNWithOp (WO_modarray);
-        NWITHOP_ARRAY (new_withop) = MakeId (MODARRAY_ID (old_op), NULL, ST_regular);
-        FreeArray (MODARRAY_ARRAY (old_gen), MODARRAY_ARRAY (old_gen));
-        new_block = MODARRAY_BODY (old_gen);
+        NWITHOP_ARRAY (new_withop)
+          = MakeId (MODARRAY_ID (old_operator), NULL, ST_regular);
+        FreeArray (MODARRAY_ARRAY (old_operator), MODARRAY_ARRAY (old_operator));
+        new_block = MODARRAY_BODY (old_operator);
 
-        MODARRAY_ARRAY (old_gen) = NULL;
-        MODARRAY_BODY (old_gen) = NULL;
+        MODARRAY_ARRAY (old_operator) = NULL;
+        MODARRAY_BODY (old_operator) = NULL;
         break;
     case N_foldprf:
         new_withop = MakeNWithOp (WO_foldprf);
-        NWITHOP_PRF (new_withop) = FOLDPRF_PRF (old_op);
-        NWITHOP_NEUTRAL (new_withop) = FOLDPRF_NEUTRAL (old_op);
-        new_block = FOLDPRF_BODY (old_gen);
+        NWITHOP_PRF (new_withop) = FOLDPRF_PRF (old_operator);
+        NWITHOP_NEUTRAL (new_withop) = FOLDPRF_NEUTRAL (old_operator);
+        new_block = FOLDPRF_BODY (old_operator);
 
-        FOLDPRF_NEUTRAL (old_gen) = NULL;
-        FOLDPRF_BODY (old_gen) = NULL;
+        FOLDPRF_NEUTRAL (old_operator) = NULL;
+        FOLDPRF_BODY (old_operator) = NULL;
         break;
     case N_foldfun:
         new_withop = MakeNWithOp (WO_foldfun);
-        NWITHOP_FUN (new_withop).id = FOLDFUN_NAME (old_op);
-        NWITHOP_FUN (new_withop).id_mod = FOLDFUN_MOD (old_op);
-        NWITHOP_NEUTRAL (new_withop) = FOLDFUN_NEUTRAL (old_op);
-        new_block = FOLDFUN_BODY (old_gen);
+        NWITHOP_FUN (new_withop).id = FOLDFUN_NAME (old_operator);
+        NWITHOP_FUN (new_withop).id_mod = FOLDFUN_MOD (old_operator);
+        NWITHOP_NEUTRAL (new_withop) = FOLDFUN_NEUTRAL (old_operator);
+        new_block = FOLDFUN_BODY (old_operator);
 
-        FOLDPRF_NEUTRAL (old_gen) = NULL;
-        FOLDPRF_BODY (old_gen) = NULL;
+        FOLDPRF_NEUTRAL (old_operator) = NULL;
+        FOLDPRF_BODY (old_operator) = NULL;
         break;
     default:
         DBUG_ASSERT (0, "Unknown type of with-loop-operator");
@@ -143,10 +143,15 @@ O2Nwith (node *arg_node, node *arg_info)
     }
     new_expr = SeperateBlockReturn (new_block);
 
+    new_code = MakeNCode (new_block, new_expr);
+    new_part = MakeNPart (new_withid, new_generator);
+    NPART_CODE (new_part) = new_code;
+
     FreeWith (arg_node, arg_node);
 
-    DBUG_RETURN (MakeNWith (MakeNPart (new_withid, new_gen),
-                            MakeNCode (new_block, new_expr), new_withop));
+    arg_node = MakeNWith (new_part, new_code, new_withop);
+
+    DBUG_RETURN (arg_node);
 }
 
 /*
