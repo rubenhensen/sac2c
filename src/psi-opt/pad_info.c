@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.3  2002/02/20 14:58:20  dkr
+ * fundef DupTypes() renamed into DupAllTypes()
+ *
  * Revision 3.2  2001/05/17 13:41:26  nmw
  * MALLOC/FREE replaced by Malloc/Free, using result of Free()
  *
@@ -39,9 +42,6 @@
  *
  * Revision 1.5  2000/07/05 09:13:10  mab
  * fixed problem with global data structure pad_info
- *
- * Revision 1.4  2000/06/30 15:21:01  mab
- * *** empty log message ***
  *
  * Revision 1.3  2000/06/28 10:43:10  mab
  * made some code modifications according to code review
@@ -1694,7 +1694,7 @@ PIgetNewType (types *old_type)
     table_entry = GetNewTableEntry (old_type);
 
     if (table_entry != NULL) {
-        new_type = DupTypes (old_type);
+        new_type = DupAllTypes (old_type);
         FreeShpseg (TYPES_SHPSEG (new_type));
         TYPES_SHPSEG (new_type) = DupShpseg (PI_NEW_SHAPE (table_entry));
         FreeOneTypes (old_type);
@@ -1731,7 +1731,7 @@ PIgetOldType (types *new_type)
     table_entry = GetOldTableEntry (new_type);
 
     if (table_entry != NULL) {
-        old_type = DupTypes (new_type);
+        old_type = DupAllTypes (new_type);
         FreeShpseg (TYPES_SHPSEG (old_type));
         TYPES_SHPSEG (old_type) = DupShpseg (PI_OLD_SHAPE (table_entry));
         FreeOneTypes (new_type);

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.34  2002/02/20 15:06:10  dkr
+ * fundef DupTypes() renamed into DupAllTypes()
+ *
  * Revision 3.33  2001/11/19 20:34:58  dkr
  * TI() renamed into TypeInference() in order to avoid linker warning
  *
@@ -621,7 +624,7 @@ Types2Array (types *type, types *res_type)
         if (0 < b_type->dim + type->dim) {
             node *dummy = MakeExprs (NULL, NULL);
             shape_array = MakeArray (NULL);
-            ARRAY_TYPE (shape_array) = DupTypes (res_type);
+            ARRAY_TYPE (shape_array) = DupAllTypes (res_type);
             shape_array->node[0] = dummy;
             for (i = 0; i < type->dim - 1; i++) {
                 dummy->node[0] = MakeNum (type->shpseg->shp[i]);
@@ -648,7 +651,7 @@ Types2Array (types *type, types *res_type)
         if (0 < type->dim) {
             node *dummy = MakeExprs (NULL, NULL);
             shape_array = MakeArray (NULL);
-            ARRAY_TYPE (shape_array) = DupTypes (res_type);
+            ARRAY_TYPE (shape_array) = DupAllTypes (res_type);
             shape_array->node[0] = dummy;
             for (i = 0; i < type->dim - 1; i++) {
                 dummy->node[0] = MakeNum (type->shpseg->shp[i]);
@@ -2067,7 +2070,7 @@ TI_fun (node *arg_node, fun_tab_elem *fun_p, node *arg_info)
                 } else
                     arg_node->FUN_MOD_NAME = StringCopy (fun_p->node->ID_MOD);
 #endif
-                return_type = DupTypes (fun_p->node->info.types);
+                return_type = DupAllTypes (fun_p->node->info.types);
 
 #ifndef DBUG_OFF
                 db_str = Type2String (return_type, 0, TRUE);
@@ -2115,7 +2118,7 @@ TI_fun (node *arg_node, fun_tab_elem *fun_p, node *arg_info)
 #ifndef DO_NOT_SET_FUN_MOD_NAME
                 arg_node->FUN_MOD_NAME = fun_p->node->ID_MOD;
 #endif
-                return_type = DupTypes (fun_p->node->info.types);
+                return_type = DupAllTypes (fun_p->node->info.types);
 
 #ifndef DBUG_OFF
                 db_str = Type2String (return_type, 0, TRUE);
@@ -3698,7 +3701,7 @@ CompatibleTypes (types *type_one, types *type_two, int convert_prim_type, int li
                           ModName (type_one->name_mod, type_one->name)));
         } else {
             TYPES_TDEF (type_one) = t_node;
-            type_1 = DupTypes (t_node->TYPES);
+            type_1 = DupAllTypes (t_node->TYPES);
             if (type_one->dim > 0) {
                 if (type_1->dim >= 0) {
                     int dim;
@@ -3730,7 +3733,7 @@ CompatibleTypes (types *type_one, types *type_two, int convert_prim_type, int li
                           ModName (type_two->name_mod, type_two->name)));
         } else {
             TYPES_TDEF (type_two) = t_node;
-            type_2 = DupTypes (t_node->TYPES);
+            type_2 = DupAllTypes (t_node->TYPES);
             if (type_two->dim > 0) {
                 if (type_2->dim >= 0) {
                     int i, dim;
@@ -4642,7 +4645,7 @@ AddIdToStack (ids *ids, types *type, node *arg_info, int line)
         node *vardec;
 
         vardec_p = INFO_TC_VARDEC (arg_info); /* pointer to var declaration */
-        vardec = MakeVardec (StringCopy (ids->id), DupTypes (type), NULL);
+        vardec = MakeVardec (StringCopy (ids->id), DupAllTypes (type), NULL);
         VARDEC_STATUS (vardec) = ST_used;
         VARDEC_ATTRIB (vardec) = ST_regular;
 
@@ -4940,7 +4943,7 @@ TypeInference (node *arg_node, node *arg_info)
             arg_node->info.ids->mod = OBJDEF_MOD (odef);
             ID_OBJDEF (arg_node) = odef; /* link to object definition */
 
-            return_type = DupTypes (OBJDEF_TYPE (odef));
+            return_type = DupAllTypes (OBJDEF_TYPE (odef));
         } else {
             /*
              *  The identifier may be a local variable or a global object.
@@ -4949,7 +4952,7 @@ TypeInference (node *arg_node, node *arg_info)
             stack_p = LookupVar (arg_node->info.ids->id);
 
             if (stack_p) {
-                return_type = DupTypes (stack_p->node->info.types);
+                return_type = DupAllTypes (stack_p->node->info.types);
                 ID_VARDEC (arg_node) = stack_p->node;
 
                 DBUG_PRINT ("REF", ("added reference" F_PTR " for %s to %s",
@@ -4968,7 +4971,7 @@ TypeInference (node *arg_node, node *arg_info)
                     ID_ATTRIB (arg_node) = ST_global;
                     ID_OBJDEF (arg_node) = odef;
 
-                    return_type = DupTypes (OBJDEF_TYPE (odef));
+                    return_type = DupAllTypes (OBJDEF_TYPE (odef));
                 } else {
                     /*
                      *  The identifier is still unknown, so no type can be infered.
@@ -5480,7 +5483,7 @@ TClet (node *arg_node, node *arg_info)
                                    ("Unable to infer type of variable %s",
                                     IDS_NAME (ids)));
                     }
-                    declared_type = DupTypes (VARDEC_TYPE (declaration));
+                    declared_type = DupAllTypes (VARDEC_TYPE (declaration));
                     AddIdToStack (ids, declared_type, arg_info, NODE_LINE (arg_node));
                 } else {
                     AddIdToStack (ids, type, arg_info, NODE_LINE (arg_node));
@@ -6222,7 +6225,7 @@ TI_array (node *arg_node, node *arg_info)
         db_str = Free (db_str);
 #endif
         /* store type of array in arg_node->info.types */
-        ARRAY_TYPE (arg_node) = DupTypes (return_type);
+        ARRAY_TYPE (arg_node) = DupAllTypes (return_type);
     } else {
         ABORT (NODE_LINE (arg_node), ("Type of array not inferable"));
     }
@@ -6630,7 +6633,7 @@ TI_cast (node *arg_node, node *arg_info)
     DBUG_ENTER ("TI_cast");
 
     /* store casted types in ret_type */
-    ret_type = DupTypes (CAST_TYPE (arg_node));
+    ret_type = DupAllTypes (CAST_TYPE (arg_node));
 
     if (TYPES_BASETYPE (ret_type) == T_user) {
         t_node = LookupType (TYPES_NAME (ret_type), TYPES_MOD (ret_type),
@@ -6715,7 +6718,7 @@ TI_cast (node *arg_node, node *arg_info)
              * ARRAY_TYPE( sbs_tmp) with a duplicate of type!
              */
             FreeOneTypes (ARRAY_TYPE (sbs_tmp));
-            ARRAY_TYPE (sbs_tmp) = DupTypes (ret_type);
+            ARRAY_TYPE (sbs_tmp) = DupAllTypes (ret_type);
         }
     }
 
@@ -7508,7 +7511,7 @@ TI_Npart (node *arg_node, types *default_bound_type, node *new_shp, node *arg_in
     TI_NPART_HELP (step_type, "step");
     TI_NPART_HELP (width_type, "width");
 
-    gen_type = (concrete_type) ? DupTypes (*concrete_type) : NULL;
+    gen_type = (concrete_type) ? DupAllTypes (*concrete_type) : NULL;
     if (gen_type && TYPES_NAME (gen_type))
         TYPES_NAME (gen_type) = Free (TYPES_NAME (gen_type));
     if (gen_type && TYPES_MOD (gen_type))

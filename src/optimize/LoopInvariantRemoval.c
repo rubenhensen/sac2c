@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2002/02/20 14:52:30  dkr
+ * fundef DupTypes() renamed into DupAllTypes()
+ *
  * Revision 3.12  2001/07/18 12:57:45  cg
  * Applications of old tree construction function
  * AppendNodeChain eliminated.
@@ -461,7 +464,7 @@ DupDecleration (node *var_node, char *var_name, node *arg_info)
 
     DBUG_ASSERT ((0 != optvar_counter), "Not enough variables for LIR");
     optvar_counter--;
-    new_node = MakeVardec (var_name, DupTypes (var_node->info.types), NULL);
+    new_node = MakeVardec (var_name, DupAllTypes (var_node->info.types), NULL);
     new_node->varno = INFO_VARNO (arg_info)++;
 
     DBUG_RETURN (new_node);

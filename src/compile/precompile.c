@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.28  2002/02/20 15:02:47  dkr
+ * fundef DupTypes() renamed into DupAllTypes()
+ *
  * Revision 3.27  2002/02/06 17:08:53  dkr
  * PREC1let() modified: *all* primitive functions are flattened now
  *
@@ -164,6 +167,11 @@
  *   - Artificial arguments and return values are removed.
  *   - All names and identifiers are renamed in order to avoid name clashes.
  *
+ * Things done during third traversal:
+ *   - Function signatures are transformed into the final form:
+ *     At most a single return value, remapping because of a linksign pragma,
+ *     parameter tags (in, in_rc, out, out_rc, inout_rc, upd, upd_bx).
+ *
  ******************************************************************************/
 
 #include <string.h>
@@ -185,6 +193,20 @@
 #include "scheduling.h"
 #include "compile.h"
 #include "precompile.h"
+
+#define FUNDEF_DOES_REFCOUNT(n, idx)                                                     \
+    ((FUNDEF_STATUS (n) != ST_Cfun) || (FUNDEF_WANTS_REFCOUNT (n, idx)))
+
+#define FUNDEF_WANTS_REFCOUNT(n, idx)                                                    \
+    ((FUNDEF_STATUS (n) == ST_Cfun) && (FUNDEF_PRAGMA (n) != NULL)                       \
+     && (FUNDEF_REFCOUNTING (n) != NULL) && (PRAGMA_NUMPARAMS (FUNDEF_PRAGMA (n)) > idx) \
+     && (FUNDEF_REFCOUNTING (n)[idx]))
+
+#define FUNDEF_GET_LINKSIGN(n, idx)                                                      \
+    ((FUNDEF_STATUS (n) == ST_Cfun) && (FUNDEF_PRAGMA (n) != NULL)                       \
+     && (FUNDEF_LINKSIGN (n) != NULL) && (PRAGMA_NUMPARAMS (FUNDEF_PRAGMA (n)) > idx))   \
+      ? (FUNDEF_LINKSIGN (fundef))[idx]                                                  \
+      : (idx + 1)
 
 /******************************************************************************
  *
@@ -285,7 +307,7 @@ AddVardec (node *fundef, types *type, char *name)
     /*
      * generate new vardec node
      */
-    new_vardec = MakeVardec (StringCopy (name), DupTypes (type), NULL);
+    new_vardec = MakeVardec (StringCopy (name), DupAllTypes (type), NULL);
 
     /*
      * insert new vardec into AST
@@ -1045,7 +1067,8 @@ RenameFun (node *fun)
  *   ids *RenameIds( ids *arg)
  *
  * description:
- *   This function performs the renaming of identifiers stored within ids-chains.
+ *   This function performs the renaming of identifiers stored within
+ *   ids-chains.
  *
  ******************************************************************************/
 
@@ -1192,7 +1215,7 @@ PREC2modul (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *PREC2typedef(node *arg_node, node *arg_info)
+ *   node *PREC2typedef( node *arg_node, node *arg_info)
  *
  * Description:
  *   Renames types. All types defined in SAC get the prefix "SAC_" to avoid
@@ -1463,7 +1486,7 @@ PREC2fundef (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PREC2arg(node *arg_node, node *arg_info)
+ *   node *PREC2arg( node *arg_node, node *arg_info)
  *
  * description:
  *   An artificial argument is removed, the attribs are switched:
@@ -1518,7 +1541,7 @@ PREC2arg (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *PREC2vardec(node *arg_node, node *arg_info)
+ *   node *PREC2vardec( node *arg_node, node *arg_info)
  *
  * Description:
  *   Renames types of declared variables.
@@ -1611,7 +1634,7 @@ PREC2let (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *PREC2exprs_ap(node *current, node *formal)
+ *   node *PREC2exprs_ap( node *current, node *formal)
  *
  * Description:
  *   Removes all artificial parameters.
@@ -1661,7 +1684,7 @@ PREC2exprs_ap (node *current, node *formal)
 /******************************************************************************
  *
  * Function:
- *   node *PREC2exprs_return(node *ret_exprs, node *ret_node)
+ *   node *PREC2exprs_return( node *ret_exprs, node *ret_node)
  *
  * Description:
  *   Removes all artificial return values from the chain.
@@ -1776,7 +1799,7 @@ PREC2ap (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *PREC2return(node *arg_node, node *arg_info)
+ *   node *PREC2return( node *arg_node, node *arg_info)
  *
  * Description:
  *   Traverses the return values using function PREC2exprs_return.
@@ -1832,7 +1855,7 @@ PREC2id (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *PREC2array(node *arg_node, node *arg_info)
+ *   node *PREC2array( node *arg_node, node *arg_info)
  *
  * Description:
  *
@@ -1932,7 +1955,7 @@ PREC2while (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PREC2cond(node *arg_node, node *arg_info)
+ *   node *PREC2cond( node *arg_node, node *arg_info)
  *
  * description:
  *   The compiler phase refcount unfortunately produces chains of identifiers
@@ -2085,6 +2108,203 @@ PREC2WLsegx (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/*
+ *
+ * THIRD TRAVERSAL
+ *
+ */
+
+typedef struct {
+    void *node;
+    argtag_t tag;
+} argtabentry_t;
+
+typedef struct {
+    int size;
+    argtabentry_t **tab;
+} argtab_t;
+
+/******************************************************************************
+ *
+ * Function:
+ *   argtab_t Argtab_Init( int size)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+argtab_t
+Argtab_Init (int size)
+{
+    argtab_t argtab;
+    int i;
+
+    DBUG_ENTER ("InitArgtab");
+
+    argtab.size = size;
+    argtab.tab = malloc ((size + 2) * sizeof (argtabentry_t *));
+
+    for (i = 0; i < size + 2; i++) {
+        argtab.tab[i] = NULL;
+    }
+
+    DBUG_RETURN (argtab);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   argtab_t Argtab_InsertEntry( argtab_t argtab, node *fundef, int param_id,
+ *                                void *tabnode, argtag_t tabtag)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+static argtab_t
+Argtab_InsertEntry (argtab_t argtab, node *fundef, int param_id, void *tabnode,
+                    argtag_t tabtag)
+{
+    int idx;
+
+    DBUG_ENTER ("Argtab_InsertEntry");
+
+    idx = FUNDEF_GET_LINKSIGN (fundef, param_id) + 1;
+
+    if (idx < argtab.size) {
+        argtab.tab[idx] = malloc (sizeof (argtabentry_t));
+        argtab.tab[idx]->node = tabnode;
+        argtab.tab[idx]->tag = tabtag;
+    } else {
+        ERROR (NODE_LINE (fundef), ("illegal linksign pragma: entry [%d] == %d >= %d",
+                                    param_id, idx, argtab.size));
+    }
+
+    DBUG_RETURN (argtab);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *PREC3fundef( node *arg_node, node *arg_info)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+PREC3fundef (node *arg_node, node *arg_info)
+{
+    types *rettypes;
+    node *args;
+    argtab_t argtab;
+    node *tabnode;
+    argtag_t tabtag;
+    int param_id;
+    int cnt_params;
+
+    DBUG_ENTER ("PREC3fundef");
+
+    if (FUNDEF_STATUS (arg_node) != ST_zombiefun) {
+        rettypes = FUNDEF_TYPES (arg_node);
+        args = FUNDEF_ARGS (arg_node);
+        param_id = 0;
+        argtab = Argtab_Init (CountFunctionParams (arg_node));
+
+        while (rettypes != NULL) {
+            tabnode
+              = MakeArg (NULL, DupAllTypes (rettypes), ST_regular, ST_regular, NULL);
+            if ((MUST_REFCOUNT (rettypes))
+                && (FUNDEF_DOES_REFCOUNT (arg_node, param_id))) {
+                tabtag = ATG_out_rc;
+            } else {
+                tabtag = ATG_out;
+            }
+            argtab = Argtab_InsertEntry (argtab, arg_node, param_id, tabnode, tabtag);
+
+            rettypes = TYPES_NEXT (rettypes);
+            param_id++;
+        }
+
+        while (args != NULL) {
+
+            args = ARG_NEXT (args);
+            param_id++;
+        }
+
+        /*
+         * traverse next fundef
+         */
+        if (FUNDEF_NEXT (arg_node) != NULL) {
+            FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+        }
+
+        /*
+         * traverse body
+         */
+        if (FUNDEF_BODY (arg_node) != NULL) {
+            FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+        }
+
+        /*
+         * all functions traversed -> we can remove the pragmas
+         */
+        if (FUNDEF_PRAGMA (arg_node) != NULL) {
+            FUNDEF_PRAGMA (arg_node) = FreeNode (FUNDEF_PRAGMA (arg_node));
+        }
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *PREC3return( node *arg_node, node *arg_info)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+PREC3return (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PREC3return");
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *PREC3let( node *arg_node, node *arg_info)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+PREC3let (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PREC3let");
+
+    if (NODE_TYPE (LET_EXPR (arg_node)) == N_ap) {
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/*
+ *
+ * Precompile()
+ *
+ */
+
 /******************************************************************************
  *
  * function:
@@ -2093,22 +2313,21 @@ PREC2WLsegx (node *arg_node, node *arg_info)
  * description:
  *   Prepares syntax tree for code generation.
  *
- *   optional traversal of AST when generating c-library:
- *     - look for overloaded functions and build up a list of wrappers
- *     remark: this has to be done before the following steps, because
- *             of the renaming
+ *   Optional traversal of AST when generating c-library:
+ *     - Look for overloaded functions and build up a list of wrappers
+ *   (This has to be done before the following steps, because of the renaming.)
  *
  *   First traversal of the AST:
- *     - renaming of the local identifiers of each dummy fold-function
+ *     - Renaming of the local identifiers of each dummy fold-function
  *       definition in order to prepare them for naive inlining during
  *       compilation.
  *   Second traversal of the AST:
- *     - renames functions and global objects
- *     - removes all casts
- *     - inserts extern declarations for function definitions
- *     - removes all artificial parameters and return values
- *     - marks reference parameters in function applications
- *   Unfortunately it is impossible to merge these two traversals in a concise
+ *     - Renames functions and global objects
+ *     - Removes all casts
+ *     - Inserts extern declarations for function definitions
+ *     - Removes all artificial parameters and return values
+ *     - Marks reference parameters in function applications
+ *   Unfortunately it is impossible to merge these traversals in a concise
  *   way ...
  *
  ******************************************************************************/
@@ -2128,6 +2347,9 @@ Precompile (node *syntax_tree)
     syntax_tree = Trav (syntax_tree, info);
 
     act_tab = precomp2_tab;
+    syntax_tree = Trav (syntax_tree, info);
+
+    act_tab = precomp3_tab;
     syntax_tree = Trav (syntax_tree, info);
 
     info = FreeTree (info);

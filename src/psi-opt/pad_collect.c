@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.5  2002/02/20 14:56:53  dkr
+ * fundef DupTypes() renamed into DupAllTypes()
+ *
  * Revision 3.4  2001/06/28 07:46:51  cg
  * Primitive function psi() renamed to sel().
  *
@@ -333,7 +336,7 @@ AddUnsupported (node *arg_info, types *array_type)
      * scalar types do not have a shpseg!
      */
     if (TYPES_DIM (array_type) > 0) {
-        if (PIaddUnsupportedShape (DupTypes (array_type))) {
+        if (PIaddUnsupportedShape (DupAllTypes (array_type))) {
             INFO_APC_COUNT_CHANGES (arg_info)++;
         }
     }

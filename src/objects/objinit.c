@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2002/02/20 14:54:28  dkr
+ * fundef DupTypes() renamed into DupAllTypes()
+ *
  * Revision 3.1  2000/11/20 18:02:00  sacbase
  * new release made
  *
@@ -116,7 +119,7 @@ OImodul (node *arg_node, node *arg_info)
 
         MODUL_TYPES (arg_node)
           = MakeTypedef (StringCopy (MODUL_NAME (arg_node)), MODUL_NAME (arg_node),
-                         DupTypes (MODUL_CLASSTYPE (arg_node)), ST_unique,
+                         DupAllTypes (MODUL_CLASSTYPE (arg_node)), ST_unique,
                          MODUL_TYPES (arg_node));
 
         toclass = (char *)Malloc (MAX_FILE_NAME);
@@ -132,8 +135,8 @@ OImodul (node *arg_node, node *arg_info)
           = MakeFundef (toclass, MODUL_NAME (arg_node),
                         MakeTypes (T_user, 0, NULL, StringCopy (MODUL_NAME (arg_node)),
                                    MODUL_NAME (arg_node)),
-                        MakeArg (NULL, DupTypes (MODUL_CLASSTYPE (arg_node)), ST_regular,
-                                 ST_regular, NULL),
+                        MakeArg (NULL, DupAllTypes (MODUL_CLASSTYPE (arg_node)),
+                                 ST_regular, ST_regular, NULL),
                         NULL, MODUL_FUNS (arg_node));
 
         FUNDEF_STATUS (MODUL_FUNS (arg_node)) = ST_classfun;

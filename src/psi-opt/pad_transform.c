@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.8  2002/02/20 14:56:49  dkr
+ * fundef DupTypes() renamed into DupAllTypes()
+ *
  * Revision 3.7  2001/07/17 15:12:51  cg
  * Bug fixed: new noop codes introduced by pad_transform are now
  * annotated with respective array access analysis information.
@@ -398,7 +401,7 @@ AddDummyCode (node *with_node)
     /* append new vardec-node */
     DBUG_ASSERT ((TYPES_NEXT (ID_TYPE (NCODE_CEXPR (NWITH_CODE (with_node)))) == NULL),
                  " single type expected");
-    newvardec_type = DupTypes (ID_TYPE (NCODE_CEXPR (NWITH_CODE (with_node))));
+    newvardec_type = DupAllTypes (ID_TYPE (NCODE_CEXPR (NWITH_CODE (with_node))));
     TYPES_NAME (newvardec_type) = TmpVar ();
     VARDEC_NEXT (vardec_node)
       = MakeVardec (TYPES_NAME (newvardec_type), newvardec_type, NULL);
@@ -840,7 +843,7 @@ APTwithop (node *arg_node, node *arg_info)
            Attention: only elements with scalar types are supported yet !!!
         */
         oldtype = MakeTypes (simpletype, dim, shape, NULL, NULL);
-        newtype = PIgetNewType (DupTypes (oldtype));
+        newtype = PIgetNewType (DupAllTypes (oldtype));
 
         if (newtype != NULL) {
             /* apply padding (genarray-specific)*/
@@ -865,8 +868,8 @@ APTwithop (node *arg_node, node *arg_info)
             /* apply padding (modarray-specific)*/
 
             /* attention: id-node already points to padded shape! */
-            newtype = DupTypes (ID_TYPE (NWITHOP_ARRAY (arg_node)));
-            oldtype = PIgetOldType (DupTypes (newtype));
+            newtype = DupAllTypes (ID_TYPE (NWITHOP_ARRAY (arg_node)));
+            oldtype = PIgetOldType (DupAllTypes (newtype));
 
             /* pad array referenced by NWITHOP_ARRAY (pointing to id-node)*/
             DBUG_ASSERT ((NWITHOP_ARRAY (arg_node) != NULL), " unexpected empty ARRAY!");
@@ -1043,8 +1046,8 @@ APTprf (node *arg_node, node *arg_info)
                containing padded shape */
             types *old_type;
 
-            old_type
-              = PIgetOldType (DupTypes (VARDEC_TYPE (ID_VARDEC (PRF_ARG1 (arg_node)))));
+            old_type = PIgetOldType (
+              DupAllTypes (VARDEC_TYPE (ID_VARDEC (PRF_ARG1 (arg_node)))));
             arg_node = Shpseg2Array (TYPES_SHPSEG (old_type), TYPES_DIM (old_type));
             old_type = Free (old_type);
         }

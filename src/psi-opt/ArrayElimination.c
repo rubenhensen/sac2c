@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.15  2002/02/20 14:55:46  dkr
+ * fundef DupTypes() renamed into DupAllTypes()
+ *
  * Revision 3.14  2001/12/11 15:55:31  dkr
  * GetDim() renamed into GetShapeDim()
  *
@@ -259,7 +262,7 @@ GenSel (ids *ids_node, node *arg_info)
         if (IDS_VARDEC (LET_IDS (new_let)) == NULL) {
             DBUG_PRINT ("AE", ("Generating new vardec for %s", new_let->info.ids->id));
             new_vardec = MakeVardec (StringCopy (IDS_NAME (LET_IDS (new_let))),
-                                     DupTypes (GetTypes (type)), NULL);
+                                     DupAllTypes (GetTypes (type)), NULL);
             VARDEC_DIM (new_vardec) = 0;
             INFO_AE_TYPES (arg_info)
               = AppendVardec (new_vardec, INFO_AE_TYPES (arg_info));

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2002/02/20 15:00:08  dkr
+ * fundef DupTypes() renamed into DupAllTypes()
+ *
  * Revision 3.7  2001/05/17 12:52:48  nmw
  * MALLOC/FREE replaced by Malloc/Free, using result of Free()
  *
@@ -365,7 +368,7 @@ AddSpecializedFundef (node *fundefs, node *spec_fundef, node *gen_fundef)
     while (n_arg != NULL) {
         arg_name = StringCopy (ARG_NAME (n_arg)); /* make a copy of original arg. id */
         ARG_TYPE (n_arg) = FreeOneTypes (ARG_TYPE (n_arg));
-        ARG_TYPE (n_arg) = DupTypes (ARG_TYPE (s_arg));
+        ARG_TYPE (n_arg) = DupAllTypes (ARG_TYPE (s_arg));
         ARG_NAME (n_arg)
           = Free (ARG_NAME (n_arg)); /* free identifier of spec declaration */
         ARG_NAME (n_arg) = arg_name; /* reset original arg. identifier */
@@ -376,7 +379,7 @@ AddSpecializedFundef (node *fundefs, node *spec_fundef, node *gen_fundef)
 
     /* adjust to specialized resulttypes */
     old_type = FUNDEF_TYPES (new_fundef);
-    FUNDEF_TYPES (new_fundef) = DupTypes (FUNDEF_TYPES (spec_fundef));
+    FUNDEF_TYPES (new_fundef) = DupAllTypes (FUNDEF_TYPES (spec_fundef));
 
     /* transfer fundef data stored in type and free old type */
     FUNDEF_NAME (new_fundef) = old_type->id;

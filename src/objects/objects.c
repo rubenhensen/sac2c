@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2002/02/20 14:54:06  dkr
+ * fundef DupTypes() renamed into DupAllTypes()
+ *
  * Revision 3.5  2002/02/12 16:28:32  dkr
  * OBJarg(), OBJlet(): non-unique reference parameters cause an error now
  *
@@ -362,7 +365,7 @@ OBJfundef (node *arg_node, node *arg_info)
 
     while (need_objs != NULL) {
         obj = NODELIST_NODE (need_objs);
-        new_type = DupTypes (OBJDEF_TYPE (obj));
+        new_type = DupAllTypes (OBJDEF_TYPE (obj));
 
         new_arg = MakeArg (StringCopy (OBJDEF_VARNAME (obj)), new_type, ST_artificial,
                            ST_reference, FUNDEF_ARGS (arg_node));
@@ -534,7 +537,7 @@ OBJarg (node *arg_node, node *arg_info)
             DBUG_PRINT ("OBJ", ("Converted return type void to %s:%s",
                                 FUNDEF_TMOD (arg_info), FUNDEF_TNAME (arg_info)));
         } else {
-            new_return_type = DupTypes (ARG_TYPE (arg_node));
+            new_return_type = DupAllTypes (ARG_TYPE (arg_node));
             TYPES_STATUS (new_return_type) = ST_artificial;
             TYPES_NEXT (new_return_type) = FUNDEF_TYPES (arg_info);
             FUNDEF_TYPES (arg_info) = new_return_type;

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2002/02/20 14:58:58  dkr
+ * fundef DupTypes() renamed into DupAllTypes()
+ *
  * Revision 3.4  2001/04/26 09:23:18  dkr
  * - DFMs for lifted function are explicitly rebuild now
  *   (DupTree no longer duplicates DFMs)
@@ -159,7 +162,7 @@ SPMDLspmd (node *arg_node, node *arg_info)
                 DBUG_PRINT ("SPMDL", ("inserted vardec out %s", VARDEC_NAME (vardec)));
             } else {
                 new_fvardec = MakeVardec (StringCopy (ARG_NAME (vardec)),
-                                          DupTypes (ARG_TYPE (vardec)), fvardecs);
+                                          DupAllTypes (ARG_TYPE (vardec)), fvardecs);
                 VARDEC_REFCNT (new_fvardec) = ARG_REFCNT (vardec);
 
                 DBUG_PRINT ("SPMDL", ("inserted arg out %s", ARG_NAME (vardec)));
@@ -178,7 +181,7 @@ SPMDLspmd (node *arg_node, node *arg_info)
             VARDEC_NEXT (new_fvardec) = fvardecs;
         } else {
             new_fvardec = MakeVardec (StringCopy (ARG_NAME (vardec)),
-                                      DupTypes (ARG_TYPE (vardec)), fvardecs);
+                                      DupAllTypes (ARG_TYPE (vardec)), fvardecs);
             VARDEC_REFCNT (new_fvardec) = ARG_REFCNT (vardec);
         }
         lut = InsertIntoLUT_P (lut, vardec, new_fvardec);
@@ -199,7 +202,7 @@ SPMDLspmd (node *arg_node, node *arg_info)
                 DBUG_PRINT ("SPMDL", ("inserted vardec shared %s", VARDEC_NAME (vardec)));
             } else {
                 new_fvardec = MakeVardec (StringCopy (ARG_NAME (vardec)),
-                                          DupTypes (ARG_TYPE (vardec)), fvardecs);
+                                          DupAllTypes (ARG_TYPE (vardec)), fvardecs);
                 VARDEC_REFCNT (new_fvardec) = ARG_REFCNT (vardec);
 
                 DBUG_PRINT ("SPMDL", ("inserted arg shared %s", ARG_NAME (vardec)));
@@ -221,9 +224,9 @@ SPMDLspmd (node *arg_node, node *arg_info)
             new_farg = DupNode (vardec);
             ARG_NEXT (new_farg) = fargs;
         } else {
-            new_farg
-              = MakeArg (StringCopy (ARG_NAME (vardec)), DupTypes (VARDEC_TYPE (vardec)),
-                         ST_regular, ST_regular, fargs);
+            new_farg = MakeArg (StringCopy (ARG_NAME (vardec)),
+                                DupAllTypes (VARDEC_TYPE (vardec)), ST_regular,
+                                ST_regular, fargs);
             /* refcnt and varno also need corrections */
             ARG_REFCNT (new_farg) = GET_STD_REFCNT (VARDEC, vardec);
             ARG_VARNO (new_farg) = VARDEC_VARNO (vardec);
@@ -244,7 +247,7 @@ SPMDLspmd (node *arg_node, node *arg_info)
     vardec = DFMGetMaskEntryDeclSet (SPMD_OUT (arg_node));
     while (vardec != NULL) {
         if (NODE_TYPE (vardec) == N_arg) {
-            new_rettype = DupTypes (ARG_TYPE (vardec));
+            new_rettype = DupAllTypes (ARG_TYPE (vardec));
 
             new_retexpr
               = MakeExprs (MakeId (StringCopy (ARG_NAME (vardec)), NULL, ST_regular),
@@ -252,7 +255,7 @@ SPMDLspmd (node *arg_node, node *arg_info)
             ID_ATTRIB (EXPRS_EXPR (new_retexpr)) = ST_regular;
             ID_REFCNT (EXPRS_EXPR (new_retexpr)) = GET_ZERO_REFCNT (ARG, vardec);
         } else {
-            new_rettype = DupTypes (VARDEC_TYPE (vardec));
+            new_rettype = DupAllTypes (VARDEC_TYPE (vardec));
 
             new_retexpr
               = MakeExprs (MakeId (StringCopy (VARDEC_NAME (vardec)), NULL, ST_regular),
