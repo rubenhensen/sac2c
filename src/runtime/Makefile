@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.15  2003/06/17 18:49:20  dkr
+# target test_icm modified
+#
 # Revision 3.14  2003/06/17 18:18:40  dkr
 # target 'icm_test' added
 #
@@ -129,7 +132,22 @@ runtime.tar: *.h sac2crc.README
 # call the CC preprocessor on 'icm_test.C' to test the expansion of H-ICMs
 #
 icm_test: icm_test.C
-	$(CC) -I$$SACBASE/runtime -E $^
+	$(CC) -D_SHP_=SCL -D_HID_=NHD -D_UNQ_=NUQ -I$$SACBASE/runtime -E $^
+	$(CC) -D_SHP_=SCL -D_HID_=NHD -D_UNQ_=UNQ -I$$SACBASE/runtime -E $^
+	$(CC) -D_SHP_=SCL -D_HID_=HID -D_UNQ_=NUQ -I$$SACBASE/runtime -E $^
+	$(CC) -D_SHP_=SCL -D_HID_=HID -D_UNQ_=UNQ -I$$SACBASE/runtime -E $^
+	$(CC) -D_SHP_=AKS -D_HID_=NHD -D_UNQ_=NUQ -I$$SACBASE/runtime -E $^
+	$(CC) -D_SHP_=AKS -D_HID_=NHD -D_UNQ_=UNQ -I$$SACBASE/runtime -E $^
+	$(CC) -D_SHP_=AKS -D_HID_=HID -D_UNQ_=NUQ -I$$SACBASE/runtime -E $^
+	$(CC) -D_SHP_=AKS -D_HID_=HID -D_UNQ_=UNQ -I$$SACBASE/runtime -E $^
+	$(CC) -D_SHP_=AKD -D_HID_=NHD -D_UNQ_=NUQ -I$$SACBASE/runtime -E $^
+	$(CC) -D_SHP_=AKD -D_HID_=NHD -D_UNQ_=UNQ -I$$SACBASE/runtime -E $^
+	$(CC) -D_SHP_=AKD -D_HID_=HID -D_UNQ_=NUQ -I$$SACBASE/runtime -E $^
+	$(CC) -D_SHP_=AKD -D_HID_=HID -D_UNQ_=UNQ -I$$SACBASE/runtime -E $^
+	$(CC) -D_SHP_=AUD -D_HID_=NHD -D_UNQ_=NUQ -I$$SACBASE/runtime -E $^
+	$(CC) -D_SHP_=AUD -D_HID_=NHD -D_UNQ_=UNQ -I$$SACBASE/runtime -E $^
+	$(CC) -D_SHP_=AUD -D_HID_=HID -D_UNQ_=NUQ -I$$SACBASE/runtime -E $^
+	$(CC) -D_SHP_=AUD -D_HID_=HID -D_UNQ_=UNQ -I$$SACBASE/runtime -E $^
 
 clean:
 	$(RM) *.o *.a *.bak *~ .*.d
