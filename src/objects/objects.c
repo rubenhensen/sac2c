@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2004/02/20 08:27:38  mwe
+ * now functions with (MODUL_FUNS) and without (MODUL_FUNDECS) body are separated
+ * changed tree traversal according to that
+ *
  * Revision 3.9  2003/05/30 16:25:55  dkr
  * bug in OBJlet() fixed: read-only references are NOT propagated to the
  * LHS
@@ -320,6 +324,10 @@ OBJmodul (node *arg_node, node *arg_info)
 
     if (MODUL_OBJS (arg_node) != NULL) {
         MODUL_OBJS (arg_node) = Trav (MODUL_OBJS (arg_node), arg_info);
+    }
+
+    if (MODUL_FUNDECS (arg_node) != NULL) {
+        MODUL_FUNDECS (arg_node) = Trav (MODUL_FUNDECS (arg_node), arg_info);
     }
 
     if (MODUL_FUNS (arg_node) != NULL) {

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2004/02/20 08:28:48  mwe
+ * now functions with (MODUL_FUNS) and without (MODUL_FUNDECS) body are separated
+ * changed tree traversal according to that
+ *
  * Revision 3.10  2002/02/22 14:30:23  dkr
  * AddSpecializedFundef: workaround for FUNDEF_NAME as a part of TYPES is no
  * longer needed :-)
@@ -175,7 +179,7 @@ MapSpecialized2Generic (node *spec_fundef, node *arg_info)
     DBUG_ENTER ("MapSpecialized2Generic");
 
     gen_fundef = NULL;
-    fundef = MODUL_FUNS (INFO_IMPSPEC_MODUL (arg_info));
+    fundef = MODUL_FUNDECS (INFO_IMPSPEC_MODUL (arg_info));
     while (fundef) {
         if (isSpecialization (FUNDEF_NAME (spec_fundef), FUNDEF_ARGS (spec_fundef),
                               FUNDEF_TYPES (spec_fundef), FUNDEF_NAME (fundef),

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.74  2004/02/20 08:25:40  mwe
+ * now functions with (MODUL_FUNS) and without (MODUL_FUNDECS) body are separated
+ * changed tree traversal according to that
+ *
  * Revision 3.73  2003/09/29 19:08:23  dkr
  * PREC2apORprf() corrected
  *
@@ -583,6 +587,10 @@ PREC1modul (node *arg_node, node *arg_info)
 
     if (MODUL_FUNS (arg_node) != NULL) {
         MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
+    }
+
+    if (MODUL_FUNDECS (arg_node) != NULL) {
+        MODUL_FUNDECS (arg_node) = Trav (MODUL_FUNDECS (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -1170,6 +1178,10 @@ node *
 PREC2modul (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PREC2modul");
+
+    if (MODUL_FUNDECS (arg_node) != NULL) {
+        MODUL_FUNDECS (arg_node) = Trav (MODUL_FUNDECS (arg_node), arg_info);
+    }
 
     if (MODUL_FUNS (arg_node) != NULL) {
         MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
@@ -2959,6 +2971,10 @@ PREC4modul (node *arg_node, node *arg_info)
 
     if (MODUL_FUNS (arg_node) != NULL) {
         MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
+    }
+
+    if (MODUL_FUNDECS (arg_node) != NULL) {
+        MODUL_FUNDECS (arg_node) = Trav (MODUL_FUNDECS (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.29  2004/02/20 08:27:38  mwe
+ * now functions with (MODUL_FUNS) and without (MODUL_FUNDECS) body are separated
+ * changed tree traversal according to that
+ *
  * Revision 3.28  2003/11/18 17:19:06  dkr
  * bug fixed: NWITHOP_DEFAULT may be NULL
  *
@@ -573,10 +577,22 @@ Refcount (node *arg_node)
     INFO_RC_ONLYNAIVE (arg_info) = FALSE;
 
     if (N_modul == NODE_TYPE (arg_node)) {
+
+        if (MODUL_FUNDECS (arg_node) != NULL) {
+
+            DBUG_PRINT ("RC", ("starting with fundecs"));
+            DBUG_ASSERT ((N_fundef == NODE_TYPE (MODUL_FUNDECS (arg_node))),
+                         "wrong node ");
+            MODUL_FUNDECS (arg_node) = Trav (MODUL_FUNDECS (arg_node), arg_info);
+        }
+
         if (MODUL_FUNS (arg_node) != NULL) {
+
+            DBUG_PRINT ("RC", ("starting with funs"));
             DBUG_ASSERT ((N_fundef == NODE_TYPE (MODUL_FUNS (arg_node))), "wrong node ");
             MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
         }
+
     } else {
         DBUG_ASSERT ((N_fundef == NODE_TYPE (arg_node)), "wrong node");
         arg_node = Trav (arg_node, arg_info);
@@ -648,6 +664,8 @@ RCfundef (node *arg_node, node *arg_info)
     int old_info_rc_varno;
 
     DBUG_ENTER ("RCfundef");
+    DBUG_PRINT ("RC",
+                ("enter RCfundef, function name: %s", ((char *)(arg_node->mask[4]))));
 
     /*
      * special module name -> must be an external C-fun
@@ -663,6 +681,8 @@ RCfundef (node *arg_node, node *arg_info)
          *  Refcounted objects are initialized by 0 others by -1.
          *  This information is needed by compile.c.
          */
+        DBUG_PRINT ("RC", ("traverse in args, function name: %s",
+                           ((char *)(arg_node->mask[4]))));
         FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), arg_info);
     }
 
@@ -673,6 +693,10 @@ RCfundef (node *arg_node, node *arg_info)
          *
          *  some of them are stored in arg_info, old values restored before
          */
+
+        DBUG_PRINT ("RC", ("traverse in body, function name: %s",
+                           ((char *)(arg_node->mask[4]))));
+
         old_info_rc_varno = INFO_RC_VARNO (arg_info);
         INFO_RC_VARNO (arg_info) = FUNDEF_VARNO (arg_node);
         fundef_node = arg_node;

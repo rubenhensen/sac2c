@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2004/02/20 08:27:38  mwe
+ * now functions with (MODUL_FUNS) and without (MODUL_FUNDECS) body are separated
+ * changed tree traversal according to that
+ *
  * Revision 3.3  2002/10/18 16:54:30  dkr
  * interpretation of OBJDEF_MOD modified and corrected
  *
@@ -134,26 +138,26 @@ OImodul (node *arg_node, node *arg_info)
         strcat (toclass, MODUL_NAME (arg_node));
         strcat (fromclass, MODUL_NAME (arg_node));
 
-        MODUL_FUNS (arg_node)
+        MODUL_FUNDECS (arg_node)
           = MakeFundef (toclass, MODUL_NAME (arg_node),
                         MakeTypes (T_user, 0, NULL, StringCopy (MODUL_NAME (arg_node)),
                                    MODUL_NAME (arg_node)),
                         MakeArg (NULL, DupAllTypes (MODUL_CLASSTYPE (arg_node)),
                                  ST_regular, ST_regular, NULL),
-                        NULL, MODUL_FUNS (arg_node));
+                        NULL, MODUL_FUNDECS (arg_node));
 
-        FUNDEF_STATUS (MODUL_FUNS (arg_node)) = ST_classfun;
+        FUNDEF_STATUS (MODUL_FUNDECS (arg_node)) = ST_classfun;
 
-        MODUL_FUNS (arg_node)
+        MODUL_FUNDECS (arg_node)
           = MakeFundef (fromclass, MODUL_NAME (arg_node), MODUL_CLASSTYPE (arg_node),
                         MakeArg (NULL,
                                  MakeTypes (T_user, 0, NULL,
                                             StringCopy (MODUL_NAME (arg_node)),
                                             MODUL_NAME (arg_node)),
                                  ST_regular, ST_regular, NULL),
-                        NULL, MODUL_FUNS (arg_node));
+                        NULL, MODUL_FUNDECS (arg_node));
 
-        FUNDEF_STATUS (MODUL_FUNS (arg_node)) = ST_classfun;
+        FUNDEF_STATUS (MODUL_FUNDECS (arg_node)) = ST_classfun;
 
         MODUL_CLASSTYPE (arg_node) = NULL;
     }
@@ -256,16 +260,16 @@ OIobjdef (node *arg_node, node *arg_info)
         }
 
         new_node = MakeFundef (new_fun_name, OBJDEF_MOD (arg_node), new_fun_type, NULL,
-                               NULL, MODUL_FUNS (arg_info));
+                               NULL, MODUL_FUNDECS (arg_info));
 
         FUNDEF_STATUS (new_node) = ST_objinitfun;
 
-        MODUL_FUNS (arg_info) = new_node;
+        MODUL_FUNDECS (arg_info) = new_node;
 
         new_node = MakeAp (StringCopy (new_fun_name), OBJDEF_MOD (arg_node), NULL);
         OBJDEF_EXPR (arg_node) = new_node;
 
-        AP_FUNDEF (OBJDEF_EXPR (arg_node)) = MODUL_FUNS (arg_info);
+        AP_FUNDEF (OBJDEF_EXPR (arg_node)) = MODUL_FUNDECS (arg_info);
     }
 
     if ((OBJDEF_PRAGMA (arg_node) != NULL)

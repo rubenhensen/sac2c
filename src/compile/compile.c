@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.106  2004/02/20 08:25:40  mwe
+ * now functions with (MODUL_FUNS) and without (MODUL_FUNDECS) body are separated
+ * changed tree traversal according to that
+ *
  * Revision 3.105  2004/02/05 10:37:14  cg
  * Re-factorized handling of different modes in multithreaded code
  * generation:
@@ -1694,6 +1698,28 @@ COMPModul (node *arg_node, node *arg_info)
          */
         INFO_COMP_FOLDFUNS (arg_info) = TRUE;
         MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
+    }
+
+    if (MODUL_FUNDECS (arg_node) != NULL) {
+        /*
+         * compile all special fold-funs only
+         */
+        INFO_COMP_FOLDFUNS (arg_info) = TRUE;
+        MODUL_FUNDECS (arg_node) = Trav (MODUL_FUNDECS (arg_node), arg_info);
+
+        /*
+         * compile all other functions
+         */
+        INFO_COMP_FOLDFUNS (arg_info) = FALSE;
+        MODUL_FUNDECS (arg_node) = Trav (MODUL_FUNDECS (arg_node), arg_info);
+    }
+
+    if (MODUL_FUNS (arg_node) != NULL) {
+        /*
+         * compile all special fold-funs only
+         */
+        /* INFO_COMP_FOLDFUNS( arg_info) = TRUE;
+         MODUL_FUNS( arg_node) = Trav( MODUL_FUNS( arg_node), arg_info);*/
 
         /*
          * compile all other functions
