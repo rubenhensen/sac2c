@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.16  1997/10/29 14:36:13  srs
+# added CFLAGS to compilerarguments for CCL
+#
 # Revision 1.15  1997/08/05 11:32:25  sbs
 # make deps done
 #
@@ -44,8 +47,8 @@
 #
 #
 
-CC=gcc -ansi -g 
-CCL=gcc -ansi -g 
+CC=gcc -ansi -g
+CCL=gcc -ansi -g $(CFLAGS)
 LEX=lex -n
 YACC=yacc -dv
 LIBS=-ly -ll
