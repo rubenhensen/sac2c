@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.35  2000/03/23 21:38:51  dkr
+ * consistency check for -lac2fun, -fun2lac added
+ *
  * Revision 2.34  2000/03/17 20:27:35  dkr
  * option -# without / in parameter: my_dbug_from and my_dbug_to are explicitely
  * set to the first and last phase, respectively.
@@ -400,7 +403,7 @@ AnalyseCommandline (int argc, char *argv[])
         char *new_s;                                                                     \
                                                                                          \
         for (phase = 0; phase < PH_final; phase++) {                                     \
-            array[phase] = 0;                                                            \
+            array[phase] = FALSE;                                                        \
         }                                                                                \
                                                                                          \
         old_s = ARG;                                                                     \
@@ -421,7 +424,7 @@ AnalyseCommandline (int argc, char *argv[])
                 break;                                                                   \
             } else {                                                                     \
                 if (new_s != old_s) {                                                    \
-                    array[phase] = 1;                                                    \
+                    array[phase] = TRUE;                                                 \
                 } else {                                                                 \
                     ARGS_ERROR ("no phase number found");                                \
                     break;                                                               \
@@ -694,10 +697,12 @@ AnalyseCommandline (int argc, char *argv[])
 void
 CheckOptionConsistency ()
 {
+    int write_dummyfuns_into_sib, l2f_between_analysis_and_resolve;
+    int ph_l2f, i;
+
     DBUG_ENTER ("CheckOptionConsistency");
 
     if ((gen_mt_code == GEN_MT_OLD) || (gen_mt_code == GEN_MT_NEW)) {
-
         if (cachesim & CACHESIM_YES) {
             SYSERROR (("Cache simulation is not available for multi-threaded "
                        "program execution"));
@@ -708,19 +713,62 @@ CheckOptionConsistency ()
                        "program execution"));
         }
 
-        /*
-        if (optimize & OPT_PHM) {
-          SYSWARN(("Private heap management is not (yet) available for "
-                   "multi-threaded program execution.\n"
-                   "Conventional heap management is used instead"));
-          optimize &= ~OPT_PHM;
-        }
-        */
+#if 0
+    if (optimize & OPT_PHM) {
+      SYSWARN( ("Private heap management is not (yet) available for "
+                "multi-threaded program execution.\n"
+                "Conventional heap management is used instead"));
+      optimize &= ~OPT_PHM;
+    }
+#endif
     }
 
     if ((!(optimize & OPT_PHM)) && (runtimecheck & RUNTIMECHECK_HEAP)) {
         SYSWARN (("Diagnostic heap management is only available in "
                   "conjunction with private heap management"));
+    }
+
+    /*
+     * check -lac2fun, -fun2lac options
+     */
+
+    /*
+     * For the time being the dummy-tag of the lac-functions is lost
+     * when these functions are written into the SIB.
+     *  -> give a warning if relevant.
+     */
+    write_dummyfuns_into_sib = FALSE;
+    ph_l2f = PH_initial;
+    for (i = PH_initial; i <= PH_writesib; i++) {
+        if (do_lac2fun[i]) {
+            ph_l2f = i;
+            write_dummyfuns_into_sib = TRUE;
+        }
+    }
+    for (; i < PH_writesib; i++) {
+        if (do_fun2lac[i]) {
+            write_dummyfuns_into_sib = FALSE;
+        }
+    }
+    if (write_dummyfuns_into_sib) {
+        SYSWARN (("The tag of lac2fun-functions is lost when these functions"
+                  " are written into the SIB"));
+    }
+
+    /*
+     * Between PH_analysis and PH_objects no transformations are allowed!
+     */
+
+    l2f_between_analysis_and_resolve = FALSE;
+    for (i = PH_analysis; i < PH_objects; i++) {
+        if ((do_lac2fun[i + 1]) || (do_fun2lac[i])) {
+            l2f_between_analysis_and_resolve = TRUE;
+        }
+    }
+    if (l2f_between_analysis_and_resolve) {
+        SYSERROR (("No transformation of loops and conditionals into functions"
+                   " or vice versa is allowed between phases %i and %i",
+                   PH_analysis, PH_objects));
     }
 
     DBUG_VOID_RETURN;
