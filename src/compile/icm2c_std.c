@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  1998/06/05 19:41:43  dkr
+ * added some INDENTs
+ *
  * Revision 1.5  1998/06/04 17:03:29  cg
  * switched to new variable names.
  *
@@ -1986,6 +1989,7 @@ ICMCompileND_KS_VECT2OFFSET (char *name, int dim, int dims, char **s)
     indent += idxlen + 1;
 #endif /* TEST_BACKEND */
 
+    INDENT;
     fprintf (outfile, "SAC_%s", name);
     {
         int i;
