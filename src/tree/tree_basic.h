@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.102  2000/11/02 15:45:53  dkr
+ * comments for N_icm modified
+ *
  * Revision 1.101  2000/10/31 18:17:51  cg
  * Added new attributes for re-implementation of dead function removal:
  *  FUNDEF_EXPORT and INFO_DFR_SPINE.
@@ -1982,10 +1985,7 @@ extern node *MakePre (nodetype incdec, char *id);
  ***    bool   END_OF_STATEMENT
  ***
  *** remarks:
- ***    NEXT at least (!) is used for the compilation of N_typedef's
- ***    whenever the defining type is an array type!!
- ***
- ***    INDENT is used for indenting ICMs in output. This value is set
+ ***    INDENT_??? are used for indenting ICMs in output. This values are set
  ***    by 'MakeIcm' and used by 'PrintIcm'.
  ***
  ***    The END_OF_STATEMENT flag causes a semicolon to be printed behind
