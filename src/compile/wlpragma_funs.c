@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.28  2004/11/25 21:36:44  jhb
+ * fixed WLTRAinsertWlNodes
+ *
  * Revision 3.27  2004/10/11 14:57:53  sah
  * made INC/DEC NCODE_USED explicit 
  *
@@ -105,6 +108,9 @@
 #include "wltransform.h"
 #include "scheduling.h"
 #include "wlpragma_funs.h"
+#include "Error.h"
+
+#include <string.h>
 
 /******************************************************************************
  ******************************************************************************
@@ -134,14 +140,15 @@ ExtractNaiveCompPragmaAp (bool *do_naive_comp, node *exprs, int line)
         ap = EXPRS_EXPR (exprs);
         DBUG_ASSERT ((NODE_TYPE (ap) == N_ap), ("Illegal wlcomp pragma!"));
 
-        if (!strcmp (AP_NAME (ap), "Naive")) {
+        if (!strcmp (FUNDEF_NAME (AP_FUNDEF (ap)), "Naive")) {
             if (AP_ARGS (ap) != NULL) {
                 ABORT (line, ("Illegal argument in wlcomp-pragma found;"
                               " Naive(): Parameters found"));
             }
             (*do_naive_comp) = TRUE;
 
-            exprs = ExtractNaiveCompPragmaAp (do_naive_comp, FreeNode (exprs), line);
+            exprs
+              = ExtractNaiveCompPragmaAp (do_naive_comp, FREEdoFreeNode (exprs), line);
         } else {
             EXPRS_NEXT (exprs)
               = ExtractNaiveCompPragmaAp (do_naive_comp, EXPRS_NEXT (exprs), line);
@@ -204,7 +211,7 @@ ExtractAplPragmaAp (node *exprs, node *pragma, int line)
         DBUG_ASSERT ((NODE_TYPE (exprs) == N_exprs), "Illegal wlcomp pragma.");
         ap = EXPRS_EXPR (exprs);
         DBUG_ASSERT ((NODE_TYPE (ap) == N_ap), "Illegal wlcomp pragma.");
-        if (0 == strcmp (AP_NAME (ap), "APL")) {
+        if (0 == strcmp (FUNDEF_NAME (AP_FUNDEF (ap)), "APL")) {
             if ((AP_EXPRS1 (ap) == NULL) || (NODE_TYPE (AP_ARG1 (ap)) != N_id)
                 || (AP_EXPRS2 (ap) == NULL) || (NODE_TYPE (AP_ARG2 (ap)) != N_num)
                 || (AP_EXPRS3 (ap) == NULL) || (NODE_TYPE (AP_ARG3 (ap)) != N_num)) {
@@ -212,13 +219,13 @@ ExtractAplPragmaAp (node *exprs, node *pragma, int line)
             } else {
                 switch (NUM_VAL (AP_ARG3 (ap))) {
                 case 1:
-                    size = 1024 * config.cache1_size;
+                    size = 1024 * global.config.cache1_size;
                     break;
                 case 2:
-                    size = 1024 * config.cache2_size;
+                    size = 1024 * global.config.cache2_size;
                     break;
                 case 3:
-                    size = 1024 * config.cache3_size;
+                    size = 1024 * global.config.cache3_size;
                     break;
                 default:
                     size = 0;
@@ -227,12 +234,12 @@ ExtractAplPragmaAp (node *exprs, node *pragma, int line)
                     NUM_VAL (AP_ARG3 (ap)) = size;
                     PRAGMA_APL (pragma) = ap;
                 } else {
-                    FreeTree (ap);
+                    FREEdoFreeTree (ap);
                 }
             }
             EXPRS_EXPR (exprs) = NULL;
 
-            exprs = ExtractAplPragmaAp (FreeNode (exprs), pragma, line);
+            exprs = ExtractAplPragmaAp (FREEdoFreeNode (exprs), pragma, line);
         } else {
             EXPRS_NEXT (exprs) = ExtractAplPragmaAp (EXPRS_NEXT (exprs), pragma, line);
         }
@@ -262,7 +269,8 @@ ExtractAplPragma (node *pragma, int line)
         PRAGMA_WLCOMP_APS (pragma)
           = ExtractAplPragmaAp (PRAGMA_WLCOMP_APS (pragma), pragma, line);
         if (PRAGMA_APL (pragma) != NULL) {
-            res = MakePragma ();
+            res = TBmakePragma (NULL, NULL, NULL, NULL, NULL);
+            /* TODO check arguments of TBmakePragma - former call was MakePragma();*/
             PRAGMA_APL (res) = PRAGMA_APL (pragma);
             PRAGMA_APL (pragma) = NULL;
         } else {
@@ -283,7 +291,7 @@ ExtractAplPragma (node *pragma, int line)
  **  All wlcomp-pragma-funs have the signature
  **    node *WLCOMP_Fun( node *segs, node *parms, node *cubes, int dims,
  **                      int line)
- **  and return a N_WLseg(Var)-chain with annotated temporary attributes
+ **  and return a N_wlseg(Var)-chain with annotated temporary attributes
  **  (BV, UBV, SCHEDULING, ...).
  **
  **  The meaning of the parameters:
@@ -307,7 +315,7 @@ ExtractAplPragma (node *pragma, int line)
  *                                int line)
  *
  * Description:
- *   returns the intersection of the N_WLstride-chain 'strides' with
+ *   returns the intersection of the N_wlstride-chain 'strides' with
  *    the index vector space ['alemes1', 'aelems2'].
  *    (-> 'aelems1' is the upper, 'aelems2' the lower bound).
  *
@@ -325,7 +333,7 @@ IntersectStridesArray (node *strides, node *aelems1, node *aelems2, int line)
     isect = NULL;
     if (strides != NULL) {
 
-        DBUG_ASSERT ((NODE_TYPE (strides) == N_WLstride), "no constant stride found");
+        DBUG_ASSERT ((NODE_TYPE (strides) == N_wlstride), "no constant stride found");
 
         if ((aelems1 == NULL) || (aelems2 == NULL)) {
             ABORT (line, ("Illegal argument in wlcomp-pragma found;"
@@ -346,16 +354,17 @@ IntersectStridesArray (node *strides, node *aelems1, node *aelems2, int line)
 
         /* compute grids */
         if (width > 0) {
-            isect
-              = MakeWLstride (WLSTRIDE_LEVEL (strides), WLSTRIDE_DIM (strides), bound1,
-                              bound2, step, WLSTRIDE_UNROLLING (strides), NULL, NULL);
+            isect = TBmakeWlstride (WLSTRIDE_LEVEL (strides), WLSTRIDE_DIM (strides),
+                                    bound1, bound2, step, NULL, NULL);
+
+            WLSTRIDE_DOUNROLL (isect) = WLSTRIDE_DOUNROLL (strides);
 
             new_grids = NULL;
             grids = WLSTRIDE_CONTENTS (strides);
             do {
                 /* compute offset for current grid */
-                offset = GridOffset (bound1, WLSTRIDE_BOUND1 (strides),
-                                     WLSTRIDE_STEP (strides), WLGRID_BOUND2 (grids));
+                offset = WLTRAgridOffset (bound1, WLSTRIDE_BOUND1 (strides),
+                                          WLSTRIDE_STEP (strides), WLGRID_BOUND2 (grids));
 
                 if (offset <= WLGRID_BOUND1 (grids)) {
                     /* grid is still in one pice :) */
@@ -393,10 +402,11 @@ IntersectStridesArray (node *strides, node *aelems1, node *aelems2, int line)
 
                     if (!empty) {
                         new_grids
-                          = MakeWLgrid (WLGRID_LEVEL (grids), WLGRID_DIM (grids),
-                                        grid1_b1, grid1_b2, WLGRID_UNROLLING (grids),
-                                        nextdim, new_grids, code);
-                        NCODE_INC_USED (code);
+                          = TBmakeWlgrid (WLGRID_LEVEL (grids), WLGRID_DIM (grids),
+                                          grid1_b1, grid1_b2, code, nextdim, new_grids);
+
+                        WLGRID_DOUNROLL (new_grids) = WLGRID_DOUNROLL (grids);
+                        CODE_INC_USED (code);
                     }
                 }
                 if (grid2_b1 < width) {
@@ -405,10 +415,12 @@ IntersectStridesArray (node *strides, node *aelems1, node *aelems2, int line)
 
                     if (!empty) {
                         new_grids
-                          = MakeWLgrid (WLGRID_LEVEL (grids), WLGRID_DIM (grids),
-                                        grid2_b1, grid2_b2, WLGRID_UNROLLING (grids),
-                                        DupTree (nextdim), new_grids, code);
-                        NCODE_INC_USED (code);
+                          = TBmakeWlgrid (WLGRID_LEVEL (grids), WLGRID_DIM (grids),
+                                          grid2_b1, grid2_b2, code,
+                                          DUPdoDupTree (nextdim), new_grids);
+
+                        WLGRID_DOUNROLL (new_grids) = WLGRID_DOUNROLL (grids);
+                        CODE_INC_USED (code);
                     }
                 }
 
@@ -418,11 +430,11 @@ IntersectStridesArray (node *strides, node *aelems1, node *aelems2, int line)
             if (!empty) {
                 /* sorted insertion of new grids */
                 WLSTRIDE_CONTENTS (isect)
-                  = InsertWLnodes (WLSTRIDE_CONTENTS (isect), new_grids);
+                  = WLTRAinsertWlNodes (WLSTRIDE_CONTENTS (isect), new_grids);
             } else {
                 /* next dim is empty -> erase current dim */
                 DBUG_ASSERT ((new_grids == NULL), "cubes not consistent");
-                isect = FreeTree (isect);
+                isect = FREEdoFreeTree (isect);
             }
         }
 
@@ -528,7 +540,7 @@ StoreBv (node *segs, node *parms, node *cubes, int dims, char *fun_name, int lin
 
     if ((parms != NULL) && (seg != NULL)) {
         while (seg != NULL) {
-            if (NODE_TYPE (seg) != N_WLseg) {
+            if (NODE_TYPE (seg) != N_wlseg) {
                 WARN (line, ("wlcomp-pragma function %s() ignored"
                              " because generator is not constant",
                              fun_name));
@@ -573,7 +585,7 @@ StoreBv (node *segs, node *parms, node *cubes, int dims, char *fun_name, int lin
  *   init blocking vectors ('NoBlocking')
  *
  * caution:
- *   'segs' can contain N_WLstriVar- as well as N_WLgridVar-nodes!!
+ *   'segs' can contain N_wlstriVar- as well as N_wlgridVar-nodes!!
  *
  ******************************************************************************/
 
@@ -588,10 +600,10 @@ WLCOMP_All (node *segs, node *parms, node *cubes, int dims, int line)
     }
 
     if (segs != NULL) {
-        segs = FreeTree (segs);
+        segs = FREEdoFreeTree (segs);
     }
 
-    segs = MakeWLsegX (dims, DupTree (cubes), NULL);
+    segs = MakeWLsegX (dims, DUPdoDupTree (cubes), NULL);
     segs = WLCOMP_NoBlocking (segs, parms, cubes, dims, line);
 
     DBUG_RETURN (segs);
@@ -623,7 +635,7 @@ WLCOMP_Cubes (node *segs, node *parms, node *cubes, int dims, int line)
     }
 
     if (segs != NULL) {
-        segs = FreeTree (segs);
+        segs = FREEdoFreeTree (segs);
     }
 
     DBUG_ASSERT ((cubes != NULL), "no cubes found!");
@@ -632,7 +644,7 @@ WLCOMP_Cubes (node *segs, node *parms, node *cubes, int dims, int line)
         /*
          * build new segment
          */
-        new_seg = MakeWLsegX (dims, DupNode (cubes), NULL);
+        new_seg = MakeWLsegX (dims, DUPdoDupNode (cubes), NULL);
 
         /*
          * append 'new_seg' at 'segs'
@@ -640,11 +652,11 @@ WLCOMP_Cubes (node *segs, node *parms, node *cubes, int dims, int line)
         if (segs == NULL) {
             segs = new_seg;
         } else {
-            WLSEGX_NEXT (last_seg) = new_seg;
+            L_WLSEGX_NEXT (last_seg, new_seg);
         }
         last_seg = new_seg;
 
-        cubes = WLSTRIDEX_NEXT (cubes);
+        cubes = WLSTRIDE_NEXT (cubes);
     }
 
     segs = WLCOMP_NoBlocking (segs, parms, cubes, dims, line);
@@ -673,12 +685,12 @@ WLCOMP_ConstSegs (node *segs, node *parms, node *cubes, int dims, int line)
 
     DBUG_ENTER ("WLCOMP_ConstSegs");
 
-    if (NODE_TYPE (cubes) != N_WLstride) {
+    if (NODE_TYPE (cubes) != N_wlstride) {
         WARN (line, ("wlcomp-pragma function ConstSeg() ignored"
                      " because generator is not constant"));
     } else {
         if (segs != NULL) {
-            segs = FreeTree (segs);
+            segs = FREEdoFreeTree (segs);
         }
 
         if (parms == NULL) {
@@ -709,7 +721,7 @@ WLCOMP_ConstSegs (node *segs, node *parms, node *cubes, int dims, int line)
                 if (segs == NULL) {
                     segs = new_seg;
                 } else {
-                    WLSEGX_NEXT (last_seg) = new_seg;
+                    L_WLSEGX_NEXT (last_seg, new_seg);
                 }
                 last_seg = new_seg;
             }
@@ -752,7 +764,7 @@ WLCOMP_NoBlocking (node *segs, node *parms, node *cubes, int dims, int line)
         /*
          * set ubv
          */
-        if (NODE_TYPE (seg) == N_WLseg) {
+        if (NODE_TYPE (seg) == N_wlseg) {
             MALLOC_INIT_VECT (WLSEG_UBV (seg), WLSEGX_DIMS (seg), int, 1);
 
             /*
@@ -786,9 +798,9 @@ WLCOMP_BvL0 (node *segs, node *parms, node *cubes, int dims, int line)
 {
     DBUG_ENTER ("WLCOMP_BvL0");
 
-    parms = MakeExprs (MakeNum (0), parms);
+    parms = TBmakeExprs (TBmakeNum (0), parms);
     segs = StoreBv (segs, parms, cubes, dims, "BvL0", line);
-    parms = FreeNode (parms);
+    parms = FREEdoFreeNode (parms);
 
     DBUG_RETURN (segs);
 }
@@ -809,9 +821,9 @@ WLCOMP_BvL1 (node *segs, node *parms, node *cubes, int dims, int line)
 {
     DBUG_ENTER ("WLCOMP_BvL1");
 
-    parms = MakeExprs (MakeNum (1), parms);
+    parms = TBmakeExprs (TBmakeNum (1), parms);
     segs = StoreBv (segs, parms, cubes, dims, "BvL1", line);
-    parms = FreeNode (parms);
+    parms = FREEdoFreeNode (parms);
 
     DBUG_RETURN (segs);
 }
@@ -832,9 +844,9 @@ WLCOMP_BvL2 (node *segs, node *parms, node *cubes, int dims, int line)
 {
     DBUG_ENTER ("WLCOMP_BvL2");
 
-    parms = MakeExprs (MakeNum (2), parms);
+    parms = TBmakeExprs (TBmakeNum (2), parms);
     segs = StoreBv (segs, parms, cubes, dims, "BvL2", line);
-    parms = FreeNode (parms);
+    parms = FREEdoFreeNode (parms);
 
     DBUG_RETURN (segs);
 }
@@ -856,9 +868,9 @@ WLCOMP_Ubv (node *segs, node *parms, node *cubes, int dims, int line)
     DBUG_ENTER ("WLCOMP_Ubv");
 
     if (segs != NULL) {
-        parms = MakeExprs (MakeNum (-1), parms);
+        parms = TBmakeExprs (TBmakeNum (-1), parms);
         segs = StoreBv (segs, parms, cubes, dims, "Ubv", line);
-        parms = FreeNode (parms);
+        parms = FREEdoFreeNode (parms);
     }
 
     DBUG_RETURN (segs);
@@ -883,7 +895,7 @@ WLCOMP_Scheduling (node *segs, node *parms, node *cubes, int dims, int line)
 
     DBUG_ENTER ("WLCOMP_Scheduling");
 
-    if (mtmode == MT_none) {
+    if (global.mtmode == MT_none) {
         WARN (line, ("wlcomp-pragma function Scheduling() ignored"
                      " because multi-threading is inactive"));
     } else {
@@ -906,9 +918,9 @@ WLCOMP_Scheduling (node *segs, node *parms, node *cubes, int dims, int line)
              * set SCHEDULING
              */
             if (WLSEGX_SCHEDULING (seg) != NULL) {
-                WLSEGX_SCHEDULING (seg) = SCHRemoveScheduling (WLSEGX_SCHEDULING (seg));
+                L_WLSEGX_SCHEDULING (seg, SCHremoveScheduling (WLSEGX_SCHEDULING (seg)));
             }
-            WLSEGX_SCHEDULING (seg) = SCHMakeSchedulingByPragma (arg, line);
+            L_WLSEGX_SCHEDULING (seg, SCHmakeSchedulingByPragma (arg, line));
 
             seg = WLSEGX_NEXT (seg);
             if (EXPRS_NEXT (parms) != NULL) {
@@ -939,7 +951,7 @@ WLCOMP_Tasksel (node *segs, node *parms, node *cubes, int dims, int line)
 
     DBUG_ENTER ("WLCOMP_Tasksel");
 
-    if (mtmode == MT_none) {
+    if (global.mtmode == MT_none) {
         WARN (line, ("wlcomp-pragma function Tasksel() ignored"
                      " because multi-threading is inactive"));
     } else {
@@ -963,10 +975,10 @@ WLCOMP_Tasksel (node *segs, node *parms, node *cubes, int dims, int line)
              */
 
             if (WLSEGX_TASKSEL (seg) != NULL) {
-                WLSEGX_TASKSEL (seg) = SCHRemoveTasksel (WLSEGX_TASKSEL (seg));
+                L_WLSEGX_TASKSEL (seg, SCHremoveTasksel (WLSEGX_TASKSEL (seg)));
             }
 
-            WLSEGX_TASKSEL (seg) = SCHMakeTaskselByPragma (arg, line);
+            L_WLSEGX_TASKSEL (seg, SCHmakeTaskselByPragma (arg, line));
 
             seg = WLSEGX_NEXT (seg);
 
