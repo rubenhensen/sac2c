@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.48  1995/06/14 15:32:25  hw
+ * Revision 1.49  1995/06/16 15:29:11  hw
+ * bug fixed in CompVardec( rmoveing of vardec-nodes)
+ *
+ * Revision 1.48  1995/06/14  15:32:25  hw
  * changed Compile( "extern"-declaration for each not imported function inserted)
  *
  * Revision 1.47  1995/06/14  14:24:48  hw
@@ -933,17 +936,13 @@ CompVardec (node *arg_node, node *arg_info)
             else
                 arg_node->nnode = 2;
         }
-    } else
-
-      if (arg_node->DIM < 0) {
+    } else if (arg_node->DIM < 0) {
         /* current vardec-node has unknown shape and will be removed */
         node *tmp;
         tmp = arg_node;
-        if (1 == arg_node->nnode) {
+        if (1 == arg_node->nnode)
             arg_node = Trav (arg_node->node[0], NULL);
-            if (NULL == arg_node)
-                arg_node->nnode = 0;
-        } else
+        else
             arg_node = NULL;
         FREE_VARDEC (tmp);
     } else
