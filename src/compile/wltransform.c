@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.25  1998/06/16 13:59:02  dkr
+ * fixed a bug:
+ *   call of NormalizeWL now with correct WLSEG_IDX_MAX
+ *
  * Revision 1.24  1998/06/09 16:47:24  dkr
  * IDX_MIN, IDX_MAX now segment-specific
  *
@@ -4504,7 +4508,7 @@ WLTRANwith (node *arg_node, node *arg_info)
                     if (WL_break_after >= WL_PH_norm) {
                         DBUG_EXECUTE ("WLprec", NOTE (("step 9: normalization\n")));
                         WLSEG_CONTENTS (seg)
-                          = NormalizeWL (WLSEG_CONTENTS (seg), WLSEG_IDX_MAX (new_node));
+                          = NormalizeWL (WLSEG_CONTENTS (seg), WLSEG_IDX_MAX (seg));
                     }
 
                     seg = WLSEG_NEXT (seg);
