@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2002/07/11 13:37:27  dkr
+ * function renamed
+ *
  * Revision 3.6  2002/07/11 08:42:59  dkr
  * bug in VectToOffset() fixed
  *
@@ -43,13 +46,17 @@ extern int print_comment; /* bool */
 
 #ifdef TAGGED_ARRAYS
 
-extern void AccessVect (void *v, char *i_str, int i);
+extern void ReadId (void *nt, char *idx_str, int idx);
 
-extern void AccessConst (void *v, char *i_str, int i);
+extern void ReadScalar (void *scl, char *idx_str, int idx);
 
-extern void AccessDim (void *v);
+extern void ReadScalar_Check (void *scl, char *idx_str, int idx);
 
-extern void AccessShape (void *v, char *i_str, int i);
+extern void ReadConstArray (void *v, char *idx_str, int idx);
+
+extern void DimId (void *nt);
+
+extern void ShapeId (void *nt, char *idx_str, int idx);
 
 extern void VectToOffset2 (char *offset, void *v, int dimv, void (*v_acc_dim) (void *),
                            void (*v_acc_shp) (void *, char *, int), void *a, int dima,
