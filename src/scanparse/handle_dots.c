@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2002/09/06 12:45:56  sah
+ * some minor modifications.
+ *
  * Revision 1.11  2002/09/06 11:45:32  sah
  * added support for N_selwl.
  *
@@ -741,20 +744,29 @@ BuildWithLoop (node *shape, node *iv, node *array, node *index, node *block)
 }
 
 idtable *
-BuildIdTable (ids *ids)
+BuildIdTable (node *ids)
 {
     idtable *result = NULL;
 
     DBUG_ENTER ("BuildIdTable");
 
     while (ids != NULL) {
+        node *id = EXPRS_EXPR (ids);
         idtable *newtab = Malloc (sizeof (idtable));
 
-        newtab->id = StringCopy (ids->id);
+        if (NODE_TYPE (id) != N_id) {
+            ERROR (linenum, ("found non-id as index in WL set notation"));
+
+            /* we create a dummy entry within the idtable in order */
+            /* to go on and search for further errors.             */
+            newtab->id = StringCopy ("_non_id_expr");
+        } else
+            newtab->id = StringCopy (ID_NAME (id));
+
         newtab->shapes = NULL;
         newtab->next = result;
         result = newtab;
-        ids = ids->next;
+        ids = EXPRS_NEXT (ids);
     }
 
     DBUG_RETURN (result);
@@ -895,31 +907,6 @@ node *
 HDwith (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("HDwith");
-
-    /* checking for a '.' as shape */
-
-    if (NODE_TYPE (NWITHOP_SHAPE (NWITH_WITHOP (arg_node))) == N_dot) {
-        if (NWITHOP_TYPE (NWITH_WITHOP (arg_node)) == WO_genarray) {
-            travstate oldstate = INFO_HD_TRAVSTATE (arg_info);
-            idtable *oldtable = INFO_HD_IDTABLE (arg_info);
-            node *shape = NULL;
-
-            INFO_HD_TRAVSTATE (arg_info) = HD_scan;
-            INFO_HD_IDTABLE (arg_info)
-              = BuildIdTable (NWITHID_IDS (NPART_WITHID (NWITH_PART (arg_node))));
-
-            TravSons (arg_node, arg_info);
-
-            shape = BuildWLShape (INFO_HD_IDTABLE (arg_info));
-
-            FreeNode (NWITHOP_SHAPE (NWITH_WITHOP (arg_node)));
-            NWITHOP_SHAPE (NWITH_WITHOP (arg_node)) = shape;
-
-            FreeIdTable (INFO_HD_IDTABLE (arg_info));
-            INFO_HD_IDTABLE (arg_info) = oldtable;
-            INFO_HD_TRAVSTATE (arg_info) = oldstate;
-        }
-    }
 
     /*
      * by default (TravSons), withop would be traversed last, but
@@ -1242,7 +1229,30 @@ HDassign (node *arg_node, node *arg_info)
 node *
 HDsetwl (node *arg_node, node *arg_info)
 {
+    node *result = NULL;
+
     DBUG_ENTER ("HDsetwl");
 
-    DBUG_RETURN (arg_node);
+    if (NODE_TYPE (arg_node) == N_id) {
+        ERROR (linenum, ("indexvector not supported yet"));
+    } else {
+        travstate oldstate = INFO_HD_TRAVSTATE (arg_info);
+        idtable *oldtable = INFO_HD_IDTABLE (arg_info);
+        node *shape = NULL;
+
+        INFO_HD_TRAVSTATE (arg_info) = HD_scan;
+        INFO_HD_IDTABLE (arg_info) = BuildIdTable (SETWL_IDS (arg_node));
+
+        TravSons (arg_node, arg_info);
+
+        shape = BuildWLShape (INFO_HD_IDTABLE (arg_info));
+
+        result = NULL;
+
+        FreeIdTable (INFO_HD_IDTABLE (arg_info));
+        INFO_HD_IDTABLE (arg_info) = oldtable;
+        INFO_HD_TRAVSTATE (arg_info) = oldstate;
+    }
+
+    DBUG_RETURN (result);
 }
