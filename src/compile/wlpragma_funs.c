@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.6  1998/04/17 15:44:19  dkr
+ * fixed a few bugs:
+ *   IntersectStridesArray() now uses InsertWLnodes to sort the strides/grids
+ *   ConstArrays() now ignores empty segments
+ *
  * Revision 1.5  1998/04/17 02:15:15  dkr
  * ConstSegs() is now implemented
  *
@@ -40,15 +45,14 @@
 node *
 IntersectStridesArray (node *strides, node *aelems1, node *aelems2)
 {
-    node *stride, *last_stride, *grid, *grid2, *last_grid;
-    int width, old_bound1, old_step, offset;
-    int empty = 0;
+    node *isect, *nextdim, *code, *new_grids, *grids, *grid1, *grid2;
+    int bound1, bound2, step, width, offset, grid1_b1, grid1_b2, grid2_b1, grid2_b2;
+    int empty = 0; /* is the intersection empty in the current dim? */
 
     DBUG_ENTER ("IntersectStridesArray");
 
-    last_stride = NULL;
-    stride = strides;
-    while (stride != NULL) {
+    isect = NULL;
+    if (strides != NULL) {
 
         DBUG_ASSERT (((aelems1 != NULL) && (aelems2 != NULL)),
                      "ConstSegs(): arg has wrong dim");
@@ -56,106 +60,103 @@ IntersectStridesArray (node *strides, node *aelems1, node *aelems2)
                       && (NODE_TYPE (EXPRS_EXPR (aelems2)) == N_num)),
                      "ConstSegs(): array element not an int");
 
-        /* intersect outline */
-        old_bound1 = WLSTRIDE_BOUND1 (stride);
-        WLSTRIDE_BOUND1 (stride) = MAX (old_bound1, NUM_VAL (EXPRS_EXPR (aelems1)));
-        WLSTRIDE_BOUND2 (stride)
-          = MIN (WLSTRIDE_BOUND2 (stride), NUM_VAL (EXPRS_EXPR (aelems2)));
+        /* compute outline of intersection in current dim */
+        bound1 = MAX (WLSTRIDE_BOUND1 (strides), NUM_VAL (EXPRS_EXPR (aelems1)));
+        bound2 = MIN (WLSTRIDE_BOUND2 (strides), NUM_VAL (EXPRS_EXPR (aelems2)));
 
-        old_step = WLSTRIDE_STEP (stride);
-        WLSTRIDE_STEP (stride) = MIN (old_step, width);
+        width = bound2 - bound1;
+        step = MIN (WLSTRIDE_STEP (strides), width);
 
-        /* adjust grids */
-        width = WLSTRIDE_BOUND2 (stride) - WLSTRIDE_BOUND1 (stride);
+        /* compute grids */
         if (width > 0) {
-            last_grid = NULL;
-            grid = WLSTRIDE_CONTENTS (stride);
-            do {
-                /* compute offset */
-                offset = GridOffset (WLSTRIDE_BOUND1 (stride), old_bound1, old_step,
-                                     WLGRID_BOUND2 (grid));
+            isect
+              = MakeWLstride (WLSTRIDE_LEVEL (strides), WLSTRIDE_DIM (strides), bound1,
+                              bound2, step, WLSTRIDE_UNROLLING (strides), NULL, NULL);
 
-                if (offset <= WLGRID_BOUND1 (grid)) {
+            new_grids = NULL;
+            grids = WLSTRIDE_CONTENTS (strides);
+            do {
+                /* compute offset for current grid */
+                offset = GridOffset (bound1, WLSTRIDE_BOUND1 (strides),
+                                     WLSTRIDE_STEP (strides), WLGRID_BOUND2 (grids));
+
+                if (offset <= WLGRID_BOUND1 (grids)) {
                     /* grid is still in one pice :) */
-                    grid2 = NULL;
-                    WLGRID_BOUND1 (grid) -= offset;
-                    WLGRID_BOUND2 (grid) -= offset;
+
+                    grid1_b1 = WLGRID_BOUND1 (grids) - offset;
+                    grid1_b2 = WLGRID_BOUND2 (grids) - offset;
+                    grid2_b1 = width; /* dummy value */
                 } else {
                     /* the grid is split into two parts :( */
-                    grid2 = DupNode (grid);
+
                     /* first part: */
-                    WLGRID_BOUND1 (grid) -= offset - old_step;
-                    WLGRID_BOUND2 (grid) = old_step;
-                    /* second part: duplicate old grid first */
-                    WLGRID_BOUND1 (grid2) = 0;
-                    WLGRID_BOUND2 (grid2) -= offset;
+                    grid1_b1 = 0;
+                    grid1_b2 = WLGRID_BOUND2 (grids) - offset;
+                    /* second part: */
+                    grid2_b1 = WLGRID_BOUND1 (grids) - (offset - WLSTRIDE_STEP (strides));
+                    grid2_b2 = WLSTRIDE_STEP (strides);
                 }
 
-                if (WLGRID_BOUND1 (grid) >= width) {
-                    if (last_grid == NULL) {
-                        grid = WLSTRIDE_CONTENTS (stride)
-                          = FreeNode (WLSTRIDE_CONTENTS (stride));
-                    } else {
-                        grid = WLGRID_NEXT (last_grid)
-                          = FreeNode (WLGRID_NEXT (last_grid));
-                    }
-                } else {
-                    WLGRID_BOUND2 (grid) = MIN (WLGRID_BOUND2 (grid), width);
+                nextdim = code = NULL;
+                if (grid1_b1 < width) {
+                    grid1_b2 = MIN (grid1_b2, width);
 
-                    if (WLGRID_NEXTDIM (grid) != NULL) {
-                        WLGRID_NEXTDIM (grid)
-                          = IntersectStridesArray (WLGRID_NEXTDIM (grid),
-                                                   EXPRS_NEXT (aelems1),
-                                                   EXPRS_NEXT (aelems2));
-                        if (WLGRID_NEXTDIM (grid) == NULL) {
+                    if (WLGRID_NEXTDIM (grids) != NULL) {
+                        /* compute intersection of next dim */
+                        nextdim = IntersectStridesArray (WLGRID_NEXTDIM (grids),
+                                                         EXPRS_NEXT (aelems1),
+                                                         EXPRS_NEXT (aelems2));
+                        if (nextdim == NULL) {
+                            /* next dim is empty */
                             empty = 1;
                         }
-                    }
-
-                    last_grid = grid;
-                    grid = WLGRID_NEXT (grid);
-                }
-
-                if (grid2 != NULL) {
-                    WLGRID_BOUND2 (grid2) = MIN (WLGRID_BOUND2 (grid2), width);
-
-                    if (WLGRID_NEXTDIM (grid2) != NULL) {
-                        WLGRID_NEXTDIM (grid2)
-                          = IntersectStridesArray (WLGRID_NEXTDIM (grid2),
-                                                   EXPRS_NEXT (aelems1),
-                                                   EXPRS_NEXT (aelems2));
-                        if (WLGRID_NEXTDIM (grid2) == NULL) {
-                            empty = 1;
-                        }
-                    }
-
-                    if (last_grid == NULL) {
-                        WLGRID_NEXT (grid2) = WLSTRIDE_CONTENTS (stride);
-                        WLSTRIDE_CONTENTS (stride) = grid2;
                     } else {
-                        WLGRID_NEXT (grid2) = WLGRID_NEXT (last_grid);
-                        WLGRID_NEXT (last_grid) = grid2;
+                        code = WLGRID_CODE (grids);
                     }
-                    last_grid = grid2;
+
+                    if (empty == 0) {
+                        new_grids
+                          = MakeWLgrid (WLGRID_LEVEL (grids), WLGRID_DIM (grids),
+                                        grid1_b1, grid1_b2, WLGRID_UNROLLING (grids),
+                                        nextdim, new_grids, code);
+                    }
                 }
-            } while ((empty == 0) && (grid != NULL));
+                if (grid2_b1 < width) {
+                    DBUG_ASSERT ((grid1_b1 < width), "wrong grid bounds");
+                    grid2_b2 = MIN (grid2_b2, width);
+
+                    if (empty == 0) {
+                        new_grids
+                          = MakeWLgrid (WLGRID_LEVEL (grids), WLGRID_DIM (grids),
+                                        grid2_b1, grid2_b2, WLGRID_UNROLLING (grids),
+                                        DupTree (nextdim, NULL), new_grids, code);
+                    }
+                }
+
+                grids = WLGRID_NEXT (grids);
+            } while ((grids != NULL) && (empty == 0));
+
+            if (empty == 0) {
+                /* sorted insertion of new grids */
+                WLSTRIDE_CONTENTS (isect)
+                  = InsertWLnodes (WLSTRIDE_CONTENTS (isect), new_grids);
+            } else {
+                /* next dim is empty -> erase current dim */
+                DBUG_ASSERT ((new_grids == NULL), "cubes not consistent");
+                isect = FreeTree (isect);
+            }
         }
 
-        if ((width < 1) || (empty == 1)) {
-            /* stride is empty -> remove it */
-            if (last_stride == NULL) {
-                stride = strides = FreeNode (strides);
-            } else {
-                stride = WLSTRIDE_NEXT (last_stride)
-                  = FreeNode (WLSTRIDE_NEXT (last_stride));
-            }
+        /* compute intersection of next stride */
+        if (isect == NULL) {
+            isect = IntersectStridesArray (WLSTRIDE_NEXT (strides), aelems1, aelems2);
         } else {
-            last_stride = stride;
-            stride = WLSTRIDE_NEXT (stride);
+            WLSTRIDE_NEXT (isect)
+              = IntersectStridesArray (WLSTRIDE_NEXT (strides), aelems1, aelems2);
         }
     }
 
-    DBUG_RETURN (strides);
+    DBUG_RETURN (isect);
 }
 
 /******************************************************************************
@@ -316,7 +317,9 @@ Cubes (node *segs, node *parms, node *cubes, int dims)
  *   node *ConstSegs(node *segs, node *parms, node *cubes, int dims)
  *
  * description:
- *
+ *   Defines a new set of segments in reliance on the given extra parameters
+ *    'parms'. Each segment is described by two N_array nodes containing
+ *    the start, stop index vector, respectively.
  *
  ******************************************************************************/
 
@@ -338,18 +341,19 @@ ConstSegs (node *segs, node *parms, node *cubes, int dims)
                      "ConstSegs(): argument is not an array");
 
         new_cubes
-          = IntersectStridesArray (DupTree (cubes, NULL),
-                                   ARRAY_AELEMS (EXPRS_EXPR (parms)),
+          = IntersectStridesArray (cubes, ARRAY_AELEMS (EXPRS_EXPR (parms)),
                                    ARRAY_AELEMS (EXPRS_EXPR (EXPRS_NEXT (parms))));
 
-        new_seg = MakeWLseg (dims, new_cubes, NULL);
+        if (new_cubes != NULL) {
+            new_seg = MakeWLseg (dims, new_cubes, NULL);
 
-        if (segs == NULL) {
-            segs = new_seg;
-        } else {
-            WLSEG_NEXT (last_seg) = new_seg;
+            if (segs == NULL) {
+                segs = new_seg;
+            } else {
+                WLSEG_NEXT (last_seg) = new_seg;
+            }
+            last_seg = new_seg;
         }
-        last_seg = new_seg;
 
         parms = EXPRS_NEXT (EXPRS_NEXT (parms));
     }
