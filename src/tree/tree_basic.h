@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.67  2001/04/02 11:16:58  nmw
+ * INFO_xxx macros for MODUL, ASSIGN added for optimizations
+ *
  * Revision 3.66  2001/03/30 13:10:07  dkr
  * N_fundef definition modified, FUNDEF_USED added
  *
@@ -1072,7 +1075,7 @@ extern node *MakeFundef (char *name, char *mod, types *types, node *args, node *
 
 /* LaC functions */
 #define FUNDEF_USED(n) (n->int_data)
-#define FUNDEF_EXT_ASSIGN(n) ((nodelist *)(n->dfmask[1]))
+#define FUNDEF_EXT_ASSIGNS(n) ((nodelist *)(n->dfmask[1]))
 #define FUNDEF_INT_ASSIGN(n) ((node *)(n->dfmask[2]))
 
 /* concurrent: ST_spmdfun */
@@ -2435,6 +2438,7 @@ extern node *MakeAvis (node *vardecOrArg);
  ***    node*      FOLDTARGET        (new AVIS as unique fold-target)
  ***    node*      CONSTASSIGNS      (assignments to move from else to pre-return)
  ***    int        ASSIGNOP          (operation to perform on actual assignment)
+ ***    node*      MODUL             (current working modul)
  ***
  ***  when used in SSADeadCodeRemoval.c
  ***    int        DEPTH             (recursion depth of special functions)
@@ -2446,12 +2450,15 @@ extern node *MakeAvis (node *vardecOrArg);
  ***    int        RESNEEDED         (counter for needed results of a fun_ap)
  ***    node*      LET               (actual let node)
  ***    node*      ASSIGN            (actual assign node)
+ ***    node*      MODUL             (current working modul)
  ***
  ***  when used in SSACSE.c
  ***    int        DEPTH             (stacked depth of special functions)
  ***    bool       REMASSIGN         (flag, if assignment can be removed)
  ***    node*      FUNDEF            (current working fundef)
  ***    node*      CSE               (cseinfo chain of available expressions)
+ ***    node*      MODUL             (current working modul)
+ ***    node*      ASSIGN            (current working assignment)
  ***
  ***  when used in compare_tree.c
  ***    cmptree_t  EQFLAG            (current equal flag for whole tree)
@@ -2467,6 +2474,8 @@ extern node *MakeAvis (node *vardecOrArg);
  ***    node*      TOPBLOCK          (vardec chain of actual function)
  ***    node*      RESULTS           (exprs chain of return statement)
  ***    bool       INLINEAP          (flag, to inline special function)
+ ***    node*      MODUL             (current working modul)
+ ***    node*      ASSIGN            (current worling assignment)
  ***
  ***  when used in SSALIR.c
  ***    node*      FUNDEF            (current working fundef)
@@ -2474,7 +2483,15 @@ extern node *MakeAvis (node *vardecOrArg);
  ***    node*      PREASSIGN         (assignments to add before assignment)
  ***    node*      POSTASSIGN        (assignments to add behind assignment)
  ***    node*      ARGCHAIN          (argument chain of recursive call)
+ ***    node*      MODUL             (current working modul)
+ ***    node*      ASSIGN            (current working assignment)
  ***
+ ***  when used in free.c
+ ***    node*      FLAG              (mode flag for FreeTrav/FreeNode)
+ ***    node*      ASSIGN            (current working assignment)
+ ***
+ ***  when used in optimize.c
+ ***    node*      MODUL             (current working modul)
  ***
  ***  remarks:
  ***
@@ -2875,6 +2892,7 @@ extern node *MakeInfo ();
 #define INFO_USSA_FOLDTARGET(n) (n->node[2])
 #define INFO_USSA_CONSTASSIGNS(n) (n->node[3])
 #define INFO_USSA_OPASSIGN(n) (n->int_data)
+#define INFO_USSA_MODUL(n) (n->node[4])
 
 /* when used in SSADeadCodeRemoval.c */
 #define INFO_SSADCR_DEPTH(n) (n->int_data)
@@ -2886,12 +2904,15 @@ extern node *MakeInfo ();
 #define INFO_SSADCR_RESNEEDED(n) (n->refcnt)
 #define INFO_SSADCR_LET(n) (n->node[2])
 #define INFO_SSADCR_ASSIGN(n) (n->node[3])
+#define INFO_SSADCR_MODUL(n) (n->node[4])
 
 /* when used in SSACSE.c */
 #define INFO_SSACSE_DEPTH(n) (n->int_data)
 #define INFO_SSACSE_REMASSIGN(n) ((bool)(n->flag))
 #define INFO_SSACSE_FUNDEF(n) (n->node[0])
 #define INFO_SSACSE_CSE(n) (n->node[1])
+#define INFO_SSACSE_MODUL(n) (n->node[2])
+#define INFO_SSACSE_ASSIGN(n) (n->node[3])
 
 /* when used in compare_tree.c */
 #define INFO_CMPT_EQFLAG(n) ((cmptree_t) (n->flag))
@@ -2909,6 +2930,8 @@ extern node *MakeInfo ();
 #define INFO_SSACF_TOPBLOCK(n) (n->node[2])
 #define INFO_SSACF_RESULTS(n) (n->node[3])
 #define INFO_SSACF_INLINEAP(n) ((bool)(n->counter))
+#define INFO_SSACF_MODUL(n) (n->node[4])
+#define INFO_SSACF_ASSIGN(n) (n->node[5])
 
 /* when used in SSALIR.c */
 #define INFO_SSALIR_FUNDEF(n) (n->node[0])
@@ -2916,6 +2939,14 @@ extern node *MakeInfo ();
 #define INFO_SSALIR_PREASSIGN(n) (n->node[1])
 #define INFO_SSALIR_POSTASSIGN(n) (n->node[2])
 #define INFO_SSALIR_ARGCHAIN(n) (n->node[3])
+#define INFO_SSALIR_MODUL(n) (n->node[4])
+#define INFO_SSALIR_ASSIGN(n) (n->node[5])
+
+/* when used in free.c */
+#define INFO_FREE_FLAG(n) (n->node[0])
+#define INFO_FREE_ASSIGN(n) (n->node[1])
+/* when used in optimize.c */
+#define INFO_OPT_MODUL(n) (n->node[0])
 
 /*--------------------------------------------------------------------------*/
 
