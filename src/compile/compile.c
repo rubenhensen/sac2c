@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.123  1998/04/09 13:59:39  dkr
+ * changed CompConc
+ *
  * Revision 1.122  1998/04/07 14:50:03  dkr
  * added CompNcode
  *
@@ -823,9 +826,7 @@ AdjustAddedAssigns (node *before, node *after)
                                  == strcmp (ICM_NAME (ASSIGN_INSTR (tmp)), "ND_ALLOC_RC"))
                                 && (0
                                     == strcmp (ID_NAME (ICM_ARG1 (ASSIGN_INSTR (tmp))),
-                                               new_id))))
-
-                        {
+                                               new_id)))) {
                             ASSIGN_NEXT (last) = ASSIGN_NEXT (tmp);
                         } else {
                             if ((0
@@ -2423,8 +2424,8 @@ CompFundef (node *arg_node, node *arg_info)
     cnt_param = 0;
 
     tab_size = CountFunctionParams (arg_node) + 2;
-    icm_tab = (node **)Malloc (sizeof (node *) * (tab_size));
-    type_tab = (types **)Malloc (sizeof (types *) * (tab_size));
+    icm_tab = (node **)Malloc (sizeof (node *) * tab_size);
+    type_tab = (types **)Malloc (sizeof (types *) * tab_size);
 
     for (i = 0; i < tab_size; i++) {
         icm_tab[i] = NULL;
@@ -2433,6 +2434,7 @@ CompFundef (node *arg_node, node *arg_info)
 
     while ((NULL != rettypes) && (TYPES_BASETYPE (rettypes) != T_void)
            && (TYPES_BASETYPE (rettypes) != T_dots)) {
+
         if ((MUST_REFCOUNT (TYPE, rettypes))
             && (FUN_DOES_REFCOUNT (arg_node, cnt_param))) {
             MAKENODE_ID (tag_node, "out_rc");
@@ -2448,7 +2450,7 @@ CompFundef (node *arg_node, node *arg_info)
         MAKENODE_ID (type_id_node, MakeTypeString (fulltype));
         MAKE_NEXT_ICM_ARG (icm_arg, type_id_node);
 
-        if (NULL == arg_node->node[0]) {
+        if (NULL == FUNDEF_BODY (arg_node)) {
             /* it is an extern declaration */
 #ifdef IMPORTED_WITH_NAME
             MAKENODE_ID (var_name_node, GenName (i, DUMMY_NAME));
@@ -2460,11 +2462,12 @@ CompFundef (node *arg_node, node *arg_info)
             DBUG_ASSERT (N_id == return_node->node[0]->nodetype,
                          "wrong nodetype != N_id");
             MAKENODE_ID_REUSE_IDS (var_name_node, LET_IDS (EXPRS_EXPR (return_node)));
-            if (return_node->node[1] != NULL)
+            if (return_node->node[1] != NULL) {
                 /* put return_node to next N_exprs where a function return_value
                  * is behind
                  */
                 return_node = return_node->node[1]->node[1];
+            }
         }
 
         MAKE_NEXT_ICM_ARG (icm_arg, var_name_node);
@@ -3439,24 +3442,29 @@ CompPrf (node *arg_node, node *arg_info)
                     CREATE_3_ARY_ICM (next_assign, "ND_ALLOC_ARRAY", type_id_node, res,
                                       num);
                     APPEND_ASSIGNS (first_assign, next_assign);
-                } else if (1 == arg1->refcnt) {
-                    CHECK_REUSE__ALLOC_ARRAY_ND (res, res_stype, arg1, arg1_stype);
-                } else if (1 == arg2->refcnt) {
-                    CHECK_REUSE__ALLOC_ARRAY_ND (res, res_stype, arg2, arg2_stype);
                 } else {
-                    node *num;
+                    if (1 == arg1->refcnt) {
+                        CHECK_REUSE__ALLOC_ARRAY_ND (res, res_stype, arg1, arg1_stype);
+                    } else {
+                        if (1 == arg2->refcnt) {
+                            CHECK_REUSE__ALLOC_ARRAY_ND (res, res_stype, arg2,
+                                                         arg2_stype);
+                        } else {
+                            node *num;
 
-                    MAKENODE_NUM (num, 0);
-                    TRI_ICM_REUSE (arg_info->node[1], "ND_ALLOC_ARRAY", type_id_node, res,
-                                   num);
-                    first_assign = LAST_ASSIGN (arg_info);
-                    old_arg_node = arg_node;
-                    last_assign = NEXT_ASSIGN (arg_info);
-                    arg_node = arg_info->node[1]->node[0];
+                            MAKENODE_NUM (num, 0);
+                            TRI_ICM_REUSE (arg_info->node[1], "ND_ALLOC_ARRAY",
+                                           type_id_node, res, num);
+                            first_assign = LAST_ASSIGN (arg_info);
+                            old_arg_node = arg_node;
+                            last_assign = NEXT_ASSIGN (arg_info);
+                            arg_node = arg_info->node[1]->node[0];
 
-                    DBUG_ASSERT ((((-1 == arg1->refcnt) && (-1 == arg2->refcnt))
-                                  || (opt_rco == 0)),
-                                 "Refcnt of BINOP_A_A arg neither -1 nor 1 !");
+                            DBUG_ASSERT ((((-1 == arg1->refcnt) && (-1 == arg2->refcnt))
+                                          || (opt_rco == 0)),
+                                         "Refcnt of BINOP_A_A arg neither -1 nor 1 !");
+                        }
+                    }
                 }
             } else {
                 arg_info->node[1]->nodetype = N_block; /*  reuse previous N_let*/
@@ -3795,8 +3803,9 @@ CompPrf (node *arg_node, node *arg_info)
              if (T_user == TYPES_BASETYPE(VARDEC_TYPE(ID_VARDEC(arg_info)))) {
                GET_BASIC_TYPE(b_type, VARDEC_TYPE(ID_VARDEC(arg_info)), 0);
              }
-             else
+             else {
                b_type=VARDEC_TYPE(ID_VARDEC(arg_info));
+             }
 
              length=1;
              for (i=0; i < b_type->dim; i++) {
@@ -4488,8 +4497,9 @@ CompAp (node *arg_node, node *arg_info)
     tab_size = CountFunctionParams (AP_FUNDEF (arg_node)) + 2;
     icm_tab = (node **)Malloc (sizeof (node *) * (tab_size));
 
-    for (i = 0; i < tab_size; i++)
+    for (i = 0; i < tab_size; i++) {
         icm_tab[i] = NULL;
+    }
 
     DBUG_PRINT ("COMP", ("Compiling application of function %s",
                          ItemName (AP_FUNDEF (arg_node))));
@@ -4660,14 +4670,17 @@ CompAp (node *arg_node, node *arg_info)
             } else {
                 if (ID_ATTRIB (EXPRS_EXPR (exprs)) == ST_inout) {
                     if (FUNDEF_STATUS (AP_FUNDEF (arg_node)) == ST_Cfun) {
-                        if (IsBoxed (ARG_TYPE (fundef_args)))
+                        if (IsBoxed (ARG_TYPE (fundef_args))) {
                             tag = "upd_bx";
-                        else
+                        } else {
                             tag = "upd";
-                    } else
+                        }
+                    } else {
                         tag = "inout";
-                } else
+                    }
+                } else {
                     tag = "in";
+                }
 
                 if (ID_REFCNT (EXPRS_EXPR (exprs)) > 1) {
                     CREATE_2_ARY_ICM (next_assign, "ND_DEC_RC",
@@ -4708,14 +4721,17 @@ CompAp (node *arg_node, node *arg_info)
             if ((NODE_TYPE (EXPRS_EXPR (exprs)) == N_id)
                 && (ID_ATTRIB (EXPRS_EXPR (exprs)) == ST_inout)) {
                 if (FUNDEF_STATUS (AP_FUNDEF (arg_node)) == ST_Cfun) {
-                    if (IsBoxed (ARG_TYPE (fundef_args)))
+                    if (IsBoxed (ARG_TYPE (fundef_args))) {
                         tag = "upd_bx";
-                    else
+                    } else {
                         tag = "upd";
-                } else
+                    }
+                } else {
                     tag = "inout";
-            } else
+                }
+            } else {
                 tag = "in";
+            }
         }
 
         if (ids_for_dots) {
@@ -4733,8 +4749,9 @@ CompAp (node *arg_node, node *arg_info)
              *  in macros like CREATE_3_ARY_ICM.
              */
 
-            if (next == NULL)
+            if (next == NULL) {
                 InsertApDotsParam (icm_tab, icm_tab_entry);
+            }
         } else {
             if (ARG_BASETYPE (fundef_args) == T_dots) {
                 ids_for_dots = 1;
@@ -4795,8 +4812,9 @@ CompAp (node *arg_node, node *arg_info)
 
         tmp = ASSIGN_NEXT (add_assigns_before);
 
-        while (ASSIGN_NEXT (tmp) != NULL)
+        while (ASSIGN_NEXT (tmp) != NULL) {
             tmp = ASSIGN_NEXT (tmp);
+        }
 
         ASSIGN_NEXT (tmp) = last_assign;
     }
@@ -4923,58 +4941,62 @@ CompWithReturn (node *arg_node, node *arg_info)
             /* add length of index_vector */
             MAKE_NEXT_ICM_ARG (icm_arg, index_length);
         }
-    } else if (GEN == con_type) {
-        MAKE_ICM_ARG (arg_node->node[0], res);
-        icm_arg = arg_node->node[0];
-        MAKE_NEXT_ICM_ARG (icm_arg, res_dim);
-        /* N_return belongs to a 'genarray' with-loop */
-        /* add name of return value */
-        MAKE_NEXT_ICM_ARG (icm_arg, ret_val);
-        if (0 == is_array) {
-            MAKE_ICM_NAME (arg_node, "ND_END_GENARRAY_S");
+    } else {
+        if (GEN == con_type) {
+            MAKE_ICM_ARG (arg_node->node[0], res);
+            icm_arg = arg_node->node[0];
+            MAKE_NEXT_ICM_ARG (icm_arg, res_dim);
+            /* N_return belongs to a 'genarray' with-loop */
+            /* add name of return value */
+            MAKE_NEXT_ICM_ARG (icm_arg, ret_val);
+            if (0 == is_array) {
+                MAKE_ICM_NAME (arg_node, "ND_END_GENARRAY_S");
+            } else {
+                MAKE_ICM_NAME (arg_node, "ND_END_GENARRAY_A");
+                MAKE_NEXT_ICM_ARG (icm_arg, index_length);
+            }
         } else {
-            MAKE_ICM_NAME (arg_node, "ND_END_GENARRAY_A");
-            MAKE_NEXT_ICM_ARG (icm_arg, index_length);
-        }
-    } else if (FOLD == con_type) {
-        node *let, *exprs1, *exprs2, *last_assign, *tmp_res;
+            if (FOLD == con_type) {
+                node *let, *exprs1, *exprs2, *last_assign, *tmp_res;
 
-        arg_node->nodetype = N_let;
-        let = arg_node;
-        /* in arg_info->node[2]->node[2] the kind of the fold-function
-         * is stored (as N_prf or as N_ap)
-         */
-        let->node[0] = arg_info->node[2]->node[2];
-        LET_IDS (let) = MakeIds (ID_NAME (res), NULL, ST_regular);
-        IDS_REFCNT (LET_IDS (let)) = ID_REFCNT (res) == -1 ? -1 : 1;
-        ID_VARDEC (let) = ID_VARDEC (res);
+                arg_node->nodetype = N_let;
+                let = arg_node;
+                /* in arg_info->node[2]->node[2] the kind of the fold-function
+                 * is stored (as N_prf or as N_ap)
+                 */
+                let->node[0] = arg_info->node[2]->node[2];
+                LET_IDS (let) = MakeIds (ID_NAME (res), NULL, ST_regular);
+                IDS_REFCNT (LET_IDS (let)) = ID_REFCNT (res) == -1 ? -1 : 1;
+                ID_VARDEC (let) = ID_VARDEC (res);
 #if 0
             IDS_REFCNT(LET_IDS(let))=1;
 #endif
-        exprs1 = MakeNode (N_exprs);
-        MAKENODE_ID (tmp_res, StringCopy (ID_NAME (res)));
-        ID_REFCNT (tmp_res) = ID_REFCNT (res);
-        ID_VARDEC (tmp_res) = ID_VARDEC (res);
-        exprs1->node[0] = tmp_res;
-        exprs2 = MakeNode (N_exprs);
-        exprs2->node[0] = ret_val;
-        exprs1->node[1] = exprs2;
-        let->node[0]->node[0] = exprs1;
-        LET_IDS (arg_info) = LET_IDS (let);
-        INFO_LASTLET (arg_info) = let;
-        let->node[0] = Trav (let->node[0], arg_info);
+                exprs1 = MakeNode (N_exprs);
+                MAKENODE_ID (tmp_res, StringCopy (ID_NAME (res)));
+                ID_REFCNT (tmp_res) = ID_REFCNT (res);
+                ID_VARDEC (tmp_res) = ID_VARDEC (res);
+                exprs1->node[0] = tmp_res;
+                exprs2 = MakeNode (N_exprs);
+                exprs2->node[0] = ret_val;
+                exprs1->node[1] = exprs2;
+                let->node[0]->node[0] = exprs1;
+                LET_IDS (arg_info) = LET_IDS (let);
+                INFO_LASTLET (arg_info) = let;
+                let->node[0] = Trav (let->node[0], arg_info);
 
-        last_assign = LAST_ASSIGN (arg_info);
-        while (last_assign->node[1] != NULL)
-            last_assign = last_assign->node[1];
+                last_assign = LAST_ASSIGN (arg_info);
+                while (last_assign->node[1] != NULL)
+                    last_assign = last_assign->node[1];
 
-        MAKE_ICM (next_assign);
-        MAKE_ICM_NAME (next_assign->node[0], "ND_END_FOLD");
-        MAKE_ICM_ARG (next_assign->node[0]->node[0], index_length);
+                MAKE_ICM (next_assign);
+                MAKE_ICM_NAME (next_assign->node[0], "ND_END_FOLD");
+                MAKE_ICM_ARG (next_assign->node[0]->node[0], index_length);
 
-        /* now insert next_assign */
-        last_assign->node[1] = next_assign;
-        first_assign = next_assign;
+                /* now insert next_assign */
+                last_assign->node[1] = next_assign;
+                first_assign = next_assign;
+            }
+        }
     }
 
     /* now create N_icm to decrement refcount of index_vector ,
@@ -4994,6 +5016,7 @@ CompWithReturn (node *arg_node, node *arg_info)
     if (NULL != mod_array) {
         DEC_RC_FREE_ND (mod_array, n_node);
     }
+
     while (NULL != dec_rc) {
         if ((0 != strcmp (ID_NAME (index_node), ID_NAME (dec_rc)))
             && ((NULL == mod_array)
@@ -5906,9 +5929,14 @@ CompNcode (node *arg_node, node *arg_info)
      * after flattening NCODE_CEXPR is useless, because we can find
      *  the return expression on the right side of the last
      *  assignment in NCODE_CBLOCK.
-     *   -> traverse only NCODE_CBLOCK
+     *   -> traverse only NCODE_CBLOCK, NCODE_NEXT
+     *   -> free NCODE_CEXPR
      */
     NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
+    if (NCODE_NEXT (arg_node) != NULL) {
+        NCODE_NEXT (arg_node) = Trav (NCODE_NEXT (arg_node), arg_info);
+    }
+    NCODE_CEXPR (arg_node) = FreeTree (NCODE_CEXPR (arg_node));
 
     DBUG_RETURN (arg_node);
 }
