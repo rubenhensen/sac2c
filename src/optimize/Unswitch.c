@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.3  1995/07/12 15:24:43  asi
+ * Revision 1.4  1995/07/12 15:33:53  asi
+ * bug removed
+ *
+ * Revision 1.3  1995/07/12  15:24:43  asi
  * added UNSid and WhereUnswitch
  * pointers to varables definitions added
  *
@@ -262,7 +265,7 @@ DoUnswitch (node *arg_node, node *arg_info, position pos)
     case first:
         break;
     case medium:
-        cond_node break;
+        break;
     case last:
         break;
     default:
