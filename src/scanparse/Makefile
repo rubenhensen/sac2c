@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.7  1994/12/30 17:37:07  sbs
+# Revision 1.8  1995/04/04 11:03:48  sbs
+# make deps done
+#
+# Revision 1.7  1994/12/30  17:37:07  sbs
 # *** empty log message ***
 #
 # Revision 1.6  1994/12/30  17:28:08  sbs
@@ -53,8 +56,9 @@ clean:
 
 lex.yy.o: /usr/include/stdio.h /usr/include/stdlib.h
 lex.yy.o: /usr/include/sys/stdtypes.h ../global/tree.h
-lex.yy.o: ../global/node_info.mac ../global/prf_node_info.mac y.tab.h
+lex.yy.o: ../global/type_info.mac ../global/node_info.mac
+lex.yy.o: ../global/prf_node_info.mac y.tab.h
 y.tab.o: /usr/include/stdio.h /usr/include/stdlib.h
 y.tab.o: /usr/include/sys/stdtypes.h /usr/include/memory.h ../../inc/dbug.h
-y.tab.o: ../global/tree.h ../global/node_info.mac ../global/prf_node_info.mac
-y.tab.o: ../global/my_debug.h
+y.tab.o: ../global/tree.h ../global/type_info.mac ../global/node_info.mac
+y.tab.o: ../global/prf_node_info.mac ../global/my_debug.h

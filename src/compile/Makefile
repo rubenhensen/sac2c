@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.3  1995/04/03 13:59:44  sbs
+# Revision 1.4  1995/04/04 11:03:54  sbs
+# make deps done
+#
+# Revision 1.3  1995/04/03  13:59:44  sbs
 # icm2c.o line included
 #
 # Revision 1.2  1995/03/31  14:05:38  sbs
@@ -45,10 +48,11 @@ compile.o: ../global/my_debug.h ../global/internal_lib.h
 compile.o: ../global/access_macros.h ../global/traverse.h compile.h
 compile.o: ../print/convert.h ../refcount/refcount.h ../typecheck/typecheck.h
 compile.o: ../global/free.h
-icm2c.o: /usr/include/stdio.h ../print/print.h ../global/tree.h
-icm2c.o: ../global/type_info.mac ../global/node_info.mac
-icm2c.o: ../global/prf_node_info.mac ../../inc/dbug.h icm_decl.c icm.data
-icm2c.o: icm_args.c icm_comment.c
+icm2c.o: /usr/include/malloc.h /usr/include/stdio.h ../print/print.h
+icm2c.o: ../global/tree.h ../global/type_info.mac ../global/node_info.mac
+icm2c.o: ../global/prf_node_info.mac ../../inc/dbug.h ../global/my_debug.h
+icm2c.o: icm_decl.c icm.data icm_args.c icm_comment.c
 icm_args.o: icm.data
 icm_comment.o: icm.data
 icm_decl.o: icm.data
+tutu.o: icm2c.h

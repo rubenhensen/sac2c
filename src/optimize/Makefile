@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.5  1995/03/17 17:42:24  asi
+# Revision 1.6  1995/04/04 11:03:51  sbs
+# make deps done
+#
+# Revision 1.5  1995/03/17  17:42:24  asi
 # added work reduction
 #
 # Revision 1.4  1995/03/06  11:09:01  asi
@@ -68,4 +71,4 @@ optimize.o: /usr/include/sys/stdtypes.h ../global/tree.h
 optimize.o: ../global/type_info.mac ../global/node_info.mac
 optimize.o: ../global/prf_node_info.mac ../global/free.h ../global/Error.h
 optimize.o: ../../inc/dbug.h ../global/my_debug.h ../global/traverse.h
-optimize.o: optimize.h ConstantFolding.h DeadCodeRemoval.h
+optimize.o: optimize.h ConstantFolding.h DeadCodeRemoval.h WorkReduction.h
