@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.80  2005/02/15 14:53:00  mwe
+ * changes for esd and uesd
+ *
  * Revision 3.79  2005/02/14 11:18:34  cg
  * Old inlining replaced by complete re-implementation.
  *
@@ -1550,8 +1553,14 @@ OPTfundef (node *arg_node, info *arg_info)
                 /*
                  * apply ESD (eliminate subtraction and divison)
                  */
-                if ((global.optimize.doal) || (global.optimize.dodl)) {
+                if (global.optimize.doesd) {
                     arg_node = ESDdoElimSubDiv (arg_node);
+                }
+
+                if ((global.break_after == PH_sacopt)
+                    && (global.break_cycle_specifier == loop1)
+                    && (0 == strcmp (global.break_specifier, "esd"))) {
+                    goto INFO;
                 }
 
                 /*
@@ -1682,7 +1691,7 @@ OPTfundef (node *arg_node, info *arg_info)
             /*
              * apply UESD (undo eliminate substraction and division)
              */
-            if ((global.optimize.doal) || (global.optimize.dodl)) {
+            if (global.optimize.doesd) {
                 arg_node = UESDdoUndoElimSubDiv (arg_node);
             }
 
