@@ -3,6 +3,11 @@
 /*
  *
  * $Log$
+ * Revision 1.166  1998/12/02 16:25:33  cg
+ * Real function names for overloaded primitive operations are now
+ * generated in the yacc-file rather than in the lex file.
+ * Conversion operations itod, dtof, etc. removed.
+ *
  * Revision 1.165  1998/12/01 09:43:02  cg
  * All binary operators may now also be applied in the form of
  * a standard function call.
@@ -291,6 +296,7 @@ static file_type file_kind = F_prog;
        }
 
 %token PARSE_PRG, PARSE_DEC, PARSE_SIB, PARSE_RC
+
 %token BRACE_L, BRACE_R, BRACKET_L, BRACKET_R, SQBR_L, SQBR_R, COLON, SEMIC,
        COMMA, AMPERS, ASSIGN, DOT,
        INLINE, LET, TYPEDEF, CONSTDEF, OBJDEF, CLASSTYPE,
@@ -302,12 +308,13 @@ static file_type file_kind = F_prog;
        PRAGMA, LINKNAME, LINKSIGN, EFFECT, READONLY, REFCOUNTING,
        TOUCH, COPYFUN, FREEFUN, INITFUN, LINKWITH,
        WLCOMP, DEFAULT
-       STEP, WIDTH, TARGET, EQUALS
-%token <id> ID, STR, AND, OR, EQ, NEQ, NOT, LE, LT, GE, GT, MUL, DIV, PRF_MOD, PLUS,
-            F2I, F2D, I2F,I2D, D2I, D2F, ALL,
-            TOI, TOF, TOD, 
-            MINUS, PRIVATEID, OPTION, ABS, PRF_MIN, PRF_MAX
-            RESHAPE, SHAPE, TAKE, DROP, DIM, ROTATE, CAT, PSI, GENARRAY, MODARRAY
+       STEP, WIDTH, TARGET, EQUALS,
+       AND, OR, EQ, NEQ, NOT, LE, LT, GE, GT, MUL, DIV, PRF_MOD, PLUS,
+       TOI, TOF, TOD, ABS, PRF_MIN, PRF_MAX, ALL,
+       RESHAPE, SHAPE, TAKE, DROP, DIM, ROTATE, CAT, PSI, GENARRAY, MODARRAY
+
+%token <id> ID, STR, MINUS, PRIVATEID, OPTION
+
 %token <types> TYPE_INT, TYPE_FLOAT, TYPE_BOOL, TYPE_UNS, TYPE_SHORT,
                TYPE_LONG, TYPE_CHAR, TYPE_DBL, TYPE_VOID, TYPE_DOTS
 %token <cint> NUM
@@ -1235,43 +1242,38 @@ fun_name : id { $$=$1; }
          | prf_name { $$=$1; }
          ;
 
-prf_name : AND { $$=$1; }
-         | OR { $$=$1; }
-         | EQ { $$=$1; }
-         | NEQ { $$=$1; }
-         | NOT { $$=$1; }
-         | LE { $$=$1; }
-         | LT { $$=$1; }
-         | GE { $$=$1; }
-         | GT { $$=$1; }
-         | ABS { $$=$1; }
-         | PLUS { $$=$1; }
-         | MINUS { $$=$1; }
-         | DIV { $$=$1; }
-         | MUL { $$=$1; }
-         | PRF_MOD { $$=$1; }
-         | RESHAPE { $$=$1; }
-         | SHAPE { $$=$1; }
-         | TAKE { $$=$1; }
-         | DROP { $$=$1; }
-         | DIM { $$=$1; }
-         | ROTATE { $$=$1; }
-         | CAT { $$=$1; }
-         | PSI { $$=$1; }
-         | GENARRAY { $$=$1; }
-         | MODARRAY { $$=$1; }
-         | TOI { $$=$1; }
-         | TOF { $$=$1; }
-         | TOD { $$=$1; }
-         | I2F { $$=$1; }
-         | I2D { $$=$1; }
-         | F2I { $$=$1; }
-         | F2D { $$=$1; }
-         | D2I { $$=$1; }
-         | D2F { $$=$1; }
-         | PRF_MIN { $$=$1; }
-         | PRF_MAX { $$=$1; }
-         | ALL { $$=$1; /* necessary because all function from array library conflicts
+prf_name : AND        { $$=StringCopy(prf_name_str[F_and]); }
+         | OR         { $$=StringCopy(prf_name_str[F_or]); }
+         | EQ         { $$=StringCopy(prf_name_str[F_eq]); }
+         | NEQ        { $$=StringCopy(prf_name_str[F_neq]); }
+         | NOT        { $$=StringCopy(prf_name_str[F_not]); }
+         | LE         { $$=StringCopy(prf_name_str[F_le]); }
+         | LT         { $$=StringCopy(prf_name_str[F_lt]); }
+         | GE         { $$=StringCopy(prf_name_str[F_ge]); }
+         | GT         { $$=StringCopy(prf_name_str[F_gt]); }
+         | ABS        { $$=StringCopy(prf_name_str[F_abs]); }
+         | PLUS       { $$=StringCopy(prf_name_str[F_add]); }
+         | MINUS      { $$=StringCopy(prf_name_str[F_sub]); }
+         | DIV        { $$=StringCopy(prf_name_str[F_div]); }
+         | MUL        { $$=StringCopy(prf_name_str[F_mul]); }
+         | PRF_MOD    { $$=StringCopy(prf_name_str[F_mod]); }
+         | RESHAPE    { $$=StringCopy(prf_name_str[F_reshape]); }
+         | SHAPE      { $$=StringCopy(prf_name_str[F_shape]); }
+         | TAKE       { $$=StringCopy(prf_name_str[F_take]); }
+         | DROP       { $$=StringCopy(prf_name_str[F_drop]); }
+         | DIM        { $$=StringCopy(prf_name_str[F_dim]); }
+         | ROTATE     { $$=StringCopy(prf_name_str[F_rotate]); }
+         | CAT        { $$=StringCopy(prf_name_str[F_cat]); }
+         | PSI        { $$=StringCopy(prf_name_str[F_psi]); }
+         | GENARRAY   { $$=StringCopy(prf_name_str[F_genarray]); }
+         | MODARRAY   { $$=StringCopy(prf_name_str[F_modarray]); }
+         | TOI        { $$=StringCopy(prf_name_str[F_toi]); }
+         | TOF        { $$=StringCopy(prf_name_str[F_tof]); }
+         | TOD        { $$=StringCopy(prf_name_str[F_tod]); }
+         | PRF_MIN    { $$=StringCopy(prf_name_str[F_min]); }
+         | PRF_MAX    { $$=StringCopy(prf_name_str[F_max]); }
+         | ALL        { $$=StringCopy("all");
+                        /* necessary because all function from array library conflicts
                            with key word. */}
         ;
 
@@ -2009,12 +2011,6 @@ monop: ABS   { $$=F_abs;   }
      | TOI   { $$=F_toi;   }
      | TOF   { $$=F_tof;   }
      | TOD   { $$=F_tod;   }
-     | F2I   { $$=F_ftoi;  }
-     | F2D   { $$=F_ftod;  }
-     | I2F   { $$=F_itof;  }
-     | I2D   { $$=F_itod;  }
-     | D2I   { $$=F_dtoi;  }
-     | D2F   { $$=F_dtof;  }
      ;
 
 /* left for later BRUSHING BEGIN */
