@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.22  2002/06/24 14:36:24  dkr
+ * -intrinsic flag removed for TAGGED_ARRAYS
+ *
  * Revision 3.21  2002/06/07 17:11:23  mwe
  * OPT_AL added for AssociativeLaw
  *
@@ -517,6 +520,7 @@ AnalyseCommandline (int argc, char *argv[])
     ARGS_OPTION ("initwheap", ARG_NUM (initial_worker_heapsize));
     ARGS_OPTION ("inituheap", ARG_NUM (initial_unified_heapsize));
 
+#ifndef TAGGED_ARRAYS
     ARGS_OPTION ("intrinsic", {
         ARG_FLAGMASK_BEGIN ();
         ARG_FLAGMASK ('a', intrinsics = INTRINSIC_ALL);
@@ -532,6 +536,7 @@ AnalyseCommandline (int argc, char *argv[])
         ARG_FLAGMASK ('o', intrinsics |= INTRINSIC_TO);
         ARG_FLAGMASK_END ();
     });
+#endif
 
     ARGS_OPTION ("I", AppendPath (MODDEC_PATH, AbsolutePathname (ARG)));
 

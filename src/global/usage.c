@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.21  2002/06/24 14:35:34  dkr
+ * -intrinsic flag removed for TAGGED_ARRAYS
+ *
  * Revision 3.20  2002/06/07 17:04:03  mwe
  * help information for AssociativeLaw added.
  *
@@ -623,6 +626,7 @@ usage ()
             STR_OR_EMPTY (env),
             ((NULL != env) && (env[strlen (env) - 1] != '/')) ? "/" : "", version_id);
 
+#ifndef TAGGED_ARRAYS
     printf ("\n\nINTRINSIC ARRAY OPERATIONS OPTIONS:\n\n"
 
             "\t -intrinsic [a+-x/tdcrpo]+ \tuse intrinsic array operations.\n"
@@ -638,6 +642,7 @@ usage ()
             "\t\t\t\t\t  r: use intrinsic rotate.\n"
             "\t\t\t\t\t  s: use intrinsic sel.\n"
             "\t\t\t\t\t  o: use intrinsic type conversion.\n");
+#endif
 
     printf ("\n\nLIBRARY OPTIONS:\n\n"
             "\t -genlib <lang>\tlanguage interface to generate from module.\n"
