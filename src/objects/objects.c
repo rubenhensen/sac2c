@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.1  1995/10/31 17:22:05  cg
+ * Revision 1.2  1995/10/31 17:39:12  cg
+ * first compilable revision.
+ *
+ * Revision 1.1  1995/10/31  17:22:05  cg
  * Initial revision
  *
  *
@@ -14,6 +17,9 @@
 
 #include "dbug.h"
 #include "traverse.h"
+#include "internal_lib.h"
+
+#include <string.h>
 
 /*
  *
@@ -215,6 +221,8 @@ OBJobjdef (node *arg_node, node *arg_info)
 node *
 OBJarg (node *arg_node, node *arg_info)
 {
+    node *new_return_expr, *ret;
+    types *new_return_type;
 
     DBUG_ENTER ("OBJarg");
 
