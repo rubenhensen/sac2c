@@ -1,5 +1,8 @@
 dnl
 dnl $Log$
+dnl Revision 1.28  2003/11/24 16:57:46  sah
+dnl fixed bison/yacc test
+dnl
 dnl Revision 1.27  2003/09/18 14:06:35  dkr
 dnl test for -pthread flag of gcc: linker file removed as well now
 dnl
@@ -196,8 +199,13 @@ if [ test "$YACC" != "yacc" ]; then
   if [ $YACC sac.y >/dev/null 2>/dev/null ]; then
     AC_MSG_RESULT(ok)
   else
-    YACC=yacc
     AC_MSG_RESULT(failed)
+    AC_CHECK_PROG(YACC, [yacc], [yacc], [!fail])
+    if [ test "$YACC" != "yacc" ]; then
+      AC_MSG_ERROR([cannot find working bison/yacc], 10)
+    else
+      AC_MSG_NOTICE([using yacc instead])
+    fi
   fi
   cd ..
   rm -rf .ac_yacc_test
