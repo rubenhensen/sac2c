@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2001/04/30 12:20:29  nmw
+ * integrate traversal of special fundefs in WLT traversal
+ *
  * Revision 3.8  2001/04/10 13:16:53  dkr
  * WLTNgenerator() modified:
  * all bounds/step/width vectors (not only constant ones) are propagated
@@ -753,6 +756,44 @@ WLTwhile (node *arg_node, node *arg_info)
 
     WHILE_COND (arg_node) = OPTTrav (WHILE_COND (arg_node), arg_info, arg_node);
     WHILE_INSTR (arg_node) = OPTTrav (WHILE_INSTR (arg_node), arg_info, arg_node);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *WLTap(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   traverse args
+ *   traverse in applicated fundef if special one.
+ *
+ ******************************************************************************/
+
+node *
+WLTap (node *arg_node, node *arg_info)
+{
+    node *new_arg_info;
+
+    DBUG_ENTER ("WLTap");
+
+    if (AP_ARGS (arg_node) != NULL) {
+        AP_ARGS (arg_node) = Trav (AP_ARGS (arg_node), arg_info);
+    }
+
+    /* non-recursive call of special fundef */
+    if ((AP_FUNDEF (arg_node) != NULL) && (FUNDEF_IS_LACFUN (AP_FUNDEF (arg_node)))
+        && (INFO_WLI_FUNDEF (arg_info) != AP_FUNDEF (arg_node))) {
+
+        /* stack arg_info frame for new fundef */
+        new_arg_info = MakeInfo ();
+
+        /* start traversal of special fundef */
+        AP_FUNDEF (arg_node) = Trav (AP_FUNDEF (arg_node), new_arg_info);
+
+        FREE (new_arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }

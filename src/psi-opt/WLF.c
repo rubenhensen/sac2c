@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2001/04/30 12:18:21  nmw
+ * integrate traversal of special fundefs in WLT traversal
+ *
  * Revision 3.7  2001/04/19 07:47:42  dkr
  * macro F_PTR used as format string for pointers
  *
@@ -1588,12 +1591,12 @@ Modarray2Genarray (node *wln, node *substwln)
  *   initializations to arg_info.
  *
  ******************************************************************************/
-
 node *
 WLFfundef (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("WLFfundef");
 
+    DBUG_PRINT ("WLF", ("entering %s for WLF", FUNDEF_NAME (arg_node)));
     INFO_WLI_WL (arg_info) = NULL;
     INFO_WLI_FUNDEF (arg_info) = arg_node;
 
