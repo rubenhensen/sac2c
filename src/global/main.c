@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.74  2004/11/14 15:19:10  sah
+ * changed the order of exports
+ *
  * Revision 3.73  2004/11/07 18:03:18  sah
  * more parts of new module system activated
  *
@@ -477,10 +480,10 @@ main (int argc, char *argv[])
     ResolveAll (syntax_tree);
     NOTE (("Resolving namespaces..."));
     DoAnnotateNamespace (syntax_tree);
-    NOTE (("Resolving dependencies..."));
-    DoResolveDependencies (syntax_tree);
     NOTE (("Getting used symbols..."));
     DoUseSymbols (syntax_tree);
+    NOTE (("Resolving dependencies..."));
+    DoResolveDependencies (syntax_tree);
 
     ABORT_ON_ERROR;
 #endif /* NEW_AST */
