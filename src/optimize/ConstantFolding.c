@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.13  1995/04/03 16:17:42  asi
+ * Revision 1.14  1995/04/06 11:35:20  asi
+ * GetShapeVector now depends on SHP_SEG_SIZE
+ *
+ * Revision 1.13  1995/04/03  16:17:42  asi
  * Bug fixed in psi-calculation
  *
  * Revision 1.12  1995/03/24  15:54:25  asi
@@ -969,7 +972,7 @@ GetShapeVector (node *array, int *vec_shape)
     expr = array->node[0];
     vec_dim = 0;
 
-    for (i = 0; i <= 3; i++) {
+    for (i = 0; i <= SHP_SEG_SIZE; i++) {
 
         if (NULL != expr) {
             vec_dim++;
