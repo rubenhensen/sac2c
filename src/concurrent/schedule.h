@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2004/11/27 02:37:42  sah
+ * .-.
+ *
  * Revision 3.2  2004/11/21 23:01:01  ktr
  * ISMOP 2004!!!!!!!
  *
@@ -31,9 +34,9 @@
  * prefix: SCHED
  *
  *****************************************************************************/
-extern node *SCHEDwlseg (node *arg_node, node *arg_info);
-extern node *SCHEDwlsegvar (node *arg_node, node *arg_info);
-extern node *SCHEDsync (node *arg_node, node *arg_info);
-extern node *SCHEDwith2 (node *arg_node, node *arg_info);
+extern node *SCHEDwlseg (node *arg_node, info *arg_info);
+extern node *SCHEDwlsegvar (node *arg_node, info *arg_info);
+extern node *SCHEDsync (node *arg_node, info *arg_info);
+extern node *SCHEDwith2 (node *arg_node, info *arg_info);
 
 #endif /* _SAC_SCHEDULE_H_ */
