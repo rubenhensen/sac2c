@@ -1,6 +1,10 @@
 #
 #
 # $Log$
+# Revision 3.32  2004/08/09 10:04:35  sah
+# xml generates files are removed on clean
+# now
+#
 # Revision 3.31  2004/08/01 19:34:29  sah
 # removed target node_compat.o
 #
@@ -113,6 +117,7 @@ traverse.c: node_info.mac
 clean:
 	$(RM) *.o *.a *.bak *~ .*.d
 	$(RM) -r .sb SunWS_cache
+	(cd xml; $(MAKE) clean)
 
 
 #######################################################################################
