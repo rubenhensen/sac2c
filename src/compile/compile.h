@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.10  1995/06/28 09:30:22  hw
+ * Revision 1.11  1995/12/18 16:20:52  cg
+ * added declaration of node *CompObjdef(node *arg_node, node *arg_info);
+ *
+ * Revision 1.10  1995/06/28  09:30:22  hw
  * moved some macros form compile.h to typecheck.h
  *
  * Revision 1.9  1995/06/26  14:06:24  hw
@@ -55,6 +58,7 @@ extern node *CompCond (node *arg_node, node *arg_info);
 extern node *CompBlock (node *arg_node, node *arg_info);
 extern node *CompCast (node *arg_node, node *arg_info);
 extern node *CompTypedef (node *arg_node, node *arg_info);
+extern node *CompObjdef (node *arg_node, node *arg_info);
 
 /* and now some macros for creation of N_icms */
 
