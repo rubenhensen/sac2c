@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/05/06 12:10:12  sbs
+ * implicit linenum-setting mechanism added to Trav !!
+ * => Makexxx-calls might yield better line-numbers now...
+ *
  * Revision 2.1  1999/02/23 12:39:44  sacbase
  * new release made
  *
@@ -42,186 +46,7 @@
  * Revision 1.60  1998/04/03 11:27:55  dkr
  * concregs renamed to concregions
  *
- * Revision 1.59  1998/04/02 16:11:29  dkr
- * added new traverse tabular concregs_tab
- * changed signature for NIF
- *
- * Revision 1.58  1998/03/22 18:06:33  srs
- * added new tab wlt_tab and included new WL-files WLT.h, WLI.h and WLF.h
- *
- * Revision 1.57  1998/03/06 13:20:40  srs
- * added wli_tab (gather information for WLF)
- *
- * Revision 1.56  1998/02/06 16:51:08  srs
- * included WithloopFolding.h
- *
- * Revision 1.55  1998/02/05 17:07:42  srs
- * removed wr_tab and changed fusion_tab into wlf_tab.
- * wr(work reduction) and fusion are unused optimizations.
- *
- * Revision 1.54  1997/12/02 18:42:56  srs
- * removed NEWTREE
- *
- * Revision 1.52  1997/11/19 19:40:05  dkr
- * added o2nWith_tab
- *
- * Revision 1.51  1997/11/10 23:37:06  dkr
- * removed a bug with NEWTREE
- *
- * Revision 1.50  1997/11/10 19:28:16  dkr
- * removed a bug with NEWTREE
- *
- * Revision 1.49  1997/11/05 16:29:46  dkr
- * moved nnode[] from tree_compound.[ch] to traverse.[ch]
- *
- * Revision 1.48  1997/11/05 09:55:19  dkr
- * fixed a bug with nnode[]
- *
- * Revision 1.47  1997/11/05 09:35:00  dkr
- * usage of NIF-macro has changed
- * uses the new array nnode[]: TravSons traverses the sons 0 .. nnode[node->type]
- *
- * Revision 1.46  1997/10/30 12:17:32  dkr
- * with defined NEWTREE, node->nnode is not used anymore
- *
- * Revision 1.45  1997/03/19 13:37:55  cg
- * The entire link_tab is removed
- *
- * Revision 1.44  1996/08/09  16:44:12  asi
- * dead function removal added
- *
- * Revision 1.43  1996/01/22  08:15:23  asi
- * includes CSE.h now
- *
- * Revision 1.42  1996/01/17  16:49:21  asi
- * added common subexpression elimination
- *
- * Revision 1.41  1996/01/02  15:49:35  cg
- * added link_tab, macro NIF extended.
- *
- * Revision 1.40  1995/12/29  10:27:33  cg
- * added readsib_tab
- *
- * Revision 1.39  1995/12/21  13:23:18  asi
- * changed dead_tab to dcr_tab and added active_tab
- *
- * Revision 1.38  1995/12/07  14:15:09  cg
- * removed DummyFun2
- * renamed DummyFun to TravSons
- *
- * Revision 1.37  1995/12/01  17:08:14  cg
- * new fun table 'precomp_tab'
- *
- * Revision 1.36  1995/11/16  19:38:34  cg
- * added new tab: rmvoid_tab.
- * NIF macro extended by 4 new parameters.
- *
- * Revision 1.35  1995/11/06  09:21:59  cg
- * added unique_tab
- *
- * Revision 1.34  1995/11/01  08:02:02  cg
- * added obj_tab and include of objects.h
- *
- * Revision 1.33  1995/10/22  17:26:20  cg
- * added checkdec_tab and writedec_tab
- *  renamed sib_tab to writesib_tab
- *
- * Revision 1.32  1995/10/20  09:25:35  cg
- * added 'analy_tab`.
- * DummyFun now traverses only sub nodes != NULL
- *
- * Revision 1.31  1995/10/16  12:03:24  cg
- * added new function table objinit_tab.
- *
- * Revision 1.30  1995/10/05  16:03:28  cg
- * new traversal tab: impltype_tab
- *
- * Revision 1.29  1995/09/01  07:48:13  cg
- * now sib.h is included for call of function SIBmodul
- *
- * Revision 1.28  1995/08/03  14:52:45  cg
- * NIF-macros adjusted to 26 parameters.
- * sib_tab and obj_tab inserted.
- *
- * Revision 1.27  1995/07/24  11:47:35  asi
- * added ae_tab for array elimination
- *
- * Revision 1.26  1995/07/07  14:58:38  asi
- * added loop unswitching - basic version
- *
- * Revision 1.25  1995/06/23  12:04:13  hw
- * changed name in DBUG_ENTER of function DummyFun2
- *
- * Revision 1.24  1995/06/06  15:19:36  sbs
- * DummyFun2 inserted
- *
- * Revision 1.23  1995/06/02  12:13:35  sbs
- * NIF macro prolongated
- *
- * Revision 1.22  1995/05/26  14:23:42  asi
- * function inlineing and loop unrolling added
- *
- * Revision 1.21  1995/05/01  15:34:57  asi
- * dup_tab inserted
- *
- * Revision 1.20  1995/04/11  15:57:47  asi
- * NIF macro enlarged
- *
- * Revision 1.19  1995/04/07  10:16:26  hw
- * added function NoTrav
- *
- * Revision 1.18  1995/04/05  15:52:38  asi
- * loop invariant removal added
- *
- * Revision 1.17  1995/04/04  12:21:56  asi
- * added include files WorkReduction.h
- *
- * Revision 1.16  1995/03/29  12:00:31  hw
- * comp_tab inserted
- *
- * Revision 1.15  1995/03/17  17:41:48  asi
- * added work reduction
- *
- * Revision 1.14  1995/03/10  10:45:25  hw
- * refcnt_tab inserted
- *
- * Revision 1.13  1995/02/13  17:22:28  asi
- * added include files ConstantFolding.h and DeadCodeRemoval.h
- *
- * Revision 1.12  1995/02/07  10:59:23  asi
- * renamed opt1_tab -> opt_tab, opt2_tab -> dead_tab, opt3_tab -> lir.tab and
- * added functionlist cf_tab for constant folding
- *
- * Revision 1.11  1995/01/31  14:59:33  asi
- * opt4_tab inserted and NIF macro enlarged
- *
- * Revision 1.10  1995/01/18  17:37:16  asi
- * added include free.h
- *
- * Revision 1.9  1995/01/16  10:54:50  asi
- * added opt3_tab for loop independent removal
- * and free_tree for deletion of a syntax(sub)-tree
- *
- * Revision 1.8  1995/01/11  13:25:14  sbs
- * traverse.c:145: warning: unsigned value >= 0 is always 1 fixed
- *
- * Revision 1.7  1995/01/02  16:04:46  asi
- * Renamed opt_tab in opt1_tab and all OPT.. in OPT1..
- * Added OPT1while, OPT1do, OPT1cond, OPT1cc
- * Added opt2_tab
- *
- * Revision 1.6  1994/12/31  14:09:00  sbs
- * DBUG_ASSERT inserted checking the range of node-types!
- *
- * Revision 1.5  1994/12/16  14:22:10  sbs
- * imp_tab inserted and NIF macro enlarged
- *
- * Revision 1.4  1994/12/09  10:13:19  sbs
- * optimize inserted
- *
- * Revision 1.3  1994/12/01  17:41:40  hw
- * added funptr type_tab[]
- * changed parameters of NIF
+ * ... [eliminated] ...
  *
  * Revision 1.2  1994/11/10  15:44:34  sbs
  * RCS-header inserted
@@ -287,6 +112,7 @@
 #include "sync_opt.h"
 #include "schedule.h"
 #include "tile_size_inference.h"
+#include "scnprs.h" /* needed for linenum only!!! */
 
 #include "traverse.h"
 
@@ -1103,7 +929,16 @@ node *Trav(node *arg_node, node *arg_info)
 node *
 Trav (node *arg_node, node *arg_info)
 {
+    int old_linenum = linenum;
+    node *result;
+
     DBUG_ENTER ("Trav");
+
+    /*
+     * Make sure the line-number will be set
+     * correctly in case MakeXxx is called.
+     */
+    linenum = NODE_LINE (arg_node);
 
 #ifndef DBUG_OFF
     if (arg_node == NULL) {
@@ -1118,7 +953,10 @@ Trav (node *arg_node, node *arg_info)
                          arg_node));
 #endif /* not DBUG_OFF */
 
-    DBUG_RETURN ((*act_tab[arg_node->nodetype]) (arg_node, arg_info));
+    result = (*act_tab[arg_node->nodetype]) (arg_node, arg_info);
+    linenum = old_linenum;
+
+    DBUG_RETURN (result);
 }
 
 #endif
