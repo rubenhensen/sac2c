@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2004/11/25 11:12:59  cg
+ * Moved deprecated bit manipulation macros from internal_lib.
+ *
  * Revision 1.6  2004/11/24 18:37:09  sah
  * Sac DevCamp DK
  *
@@ -31,7 +34,24 @@
 #define HIDE_LOCALS_WITH 8
 #define HIDE_LOCALS_WITH2 16
 
-/* pre-defined bit field values */
+/*
+ * macros for handling bit fields
+ */
+
+/* without assignment */
+#define SET_BIT(bf, bit) (bf | bit)
+#define UNSET_BIT(bf, bit) (bf & ~bit)
+
+/* with assignment (is a l-value) */
+#define L_SET_BIT(bf, bit) bf = SET_BIT (bf, bit)
+#define L_UNSET_BIT(bf, bit) bf = UNSET_BIT (bf, bit)
+
+#define TEST_BIT(bf, bit) ((bf & bit) != 0)
+
+/*
+ * pre-defined bit field values
+ */
+
 #define HIDE_LOCALS_NEVER 0
 #define HIDE_LOCALS_LAC                                                                  \
     SET_BIT (SET_BIT (SET_BIT (HIDE_LOCALS_NEVER, HIDE_LOCALS_DO), HIDE_LOCALS_WHILE),   \
