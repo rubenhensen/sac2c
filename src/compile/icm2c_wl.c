@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2001/05/18 09:58:03  cg
+ * #include <malloc.h> removed.
+ *
  * Revision 3.11  2001/02/06 01:43:55  dkr
  * WL_NOOP_... replaced by WL_ADJUST_OFFSET
  *
@@ -39,7 +42,6 @@
  *
  */
 
-#include <malloc.h>
 #include <stdio.h>
 
 #include "icm2c_basic.h"

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2001/05/18 09:58:03  cg
+ * #include <malloc.h> removed.
+ *
  * Revision 3.4  2001/05/17 13:22:54  dkr
  * static strings instead of Malloc/Free used
  * (this is needed for BEtest!!!)
@@ -31,7 +34,6 @@
  *
  *****************************************************************************/
 
-#include <malloc.h>
 #include <stdio.h>
 #include <string.h>
 

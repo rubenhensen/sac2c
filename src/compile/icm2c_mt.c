@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.24  2001/05/18 09:58:03  cg
+ * #include <malloc.h> removed.
+ *
  * Revision 3.23  2001/05/17 12:08:34  dkr
  * FREE, MALLOC eliminated
  *
@@ -216,7 +219,6 @@
  *
  *****************************************************************************/
 
-#include <malloc.h>
 #include <stdio.h>
 #include <string.h>
 

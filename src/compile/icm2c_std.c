@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2001/05/18 09:58:03  cg
+ * #include <malloc.h> removed.
+ *
  * Revision 3.4  2001/02/09 13:35:28  dkr
  * DEC_RC_FREE in ND_KS_VECT2OFFSET removed:
  * the RC is done by Refcount/Compile now :-)
@@ -91,7 +94,6 @@
  *
  */
 
-#include <malloc.h>
 #include <stdio.h>
 #include <ctype.h>
 
