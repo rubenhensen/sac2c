@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.8  2000/07/21 08:19:44  nmw
+ * FreeModspec added
+ *
  * Revision 1.7  2000/06/23 15:32:30  nmw
  * FreeCWrapper added
  *
@@ -1968,6 +1971,27 @@ FreeCWrapper (node *arg_node, node *arg_info)
      * FREE( CWRAPPER_MOD(arg_node)); */
 
     FreeNodelist (CWRAPPER_FUNS (arg_node));
+
+    FREE (arg_node);
+
+    DBUG_RETURN (tmp);
+}
+
+/*--------------------------------------------------------------------------*/
+node *
+FreeModspec (node *arg_node, node *arg_info)
+{
+    node *tmp = NULL;
+
+    DBUG_ENTER ("FreeModspec");
+
+    DBUG_PRINT ("FREE", ("Removing contents of N_modspec node ..."));
+
+    FREETRAV (MODSPEC_OWN (arg_node));
+
+    FREE (MODSPEC_NAME (arg_node));
+
+    DBUG_PRINT ("FREE", ("Removing N_moddec node ..."));
 
     FREE (arg_node);
 

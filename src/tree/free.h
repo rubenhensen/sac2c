@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2000/07/21 08:20:15  nmw
+ * FreeModspec added
+ *
  * Revision 1.4  2000/06/23 15:32:44  nmw
  * FreeCWrapper added
  *
@@ -263,6 +266,8 @@ extern node *FreeWLstriVar (node *arg_node, node *arg_info);
 extern node *FreeWLgridVar (node *arg_node, node *arg_info);
 
 extern node *FreeCWrapper (node *arg_node, node *arg_info);
+extern node *FreeModspec (node *arg_node, node *arg_info);
+
 /* special functions */
 extern void FreePrf2 (node *arg_node, int arg_no); /* CF */
 
