@@ -1,6 +1,9 @@
 
 /*
  * $Log$
+ * Revision 2.11  2000/03/15 15:59:27  dkr
+ * SET_VARDEC_OR_ARG_COLCHN renamed to L_VARDEC_OR_ARG_COLCHN
+ *
  * Revision 2.10  2000/03/15 15:54:56  dkr
  * VARDEC_OR_ARG_ACTCHN on left hand side is replaced by
  * L_VARDEC_OR_ARG_ACTCHN
@@ -1147,7 +1150,7 @@ CreateVect2OffsetIcm (node *vardec, types *type)
      * Finally, we mark vardec as VECT!
      */
 
-    SET_VARDEC_OR_ARG_COLCHN (vardec, SetVect (VARDEC_OR_ARG_COLCHN (vardec)));
+    L_VARDEC_OR_ARG_COLCHN (vardec, SetVect (VARDEC_OR_ARG_COLCHN (vardec)));
 
     DBUG_RETURN (MakeAssign (icm, NULL));
 }
@@ -2192,7 +2195,7 @@ IdxNpart (node *arg_node, node *arg_info)
          * generator would be deleted anyways ( see above)!!
          */
         decl = IDS_VARDEC (NPART_VEC (arg_node));
-        SET_VARDEC_OR_ARG_COLCHN (decl, SetVect (VARDEC_OR_ARG_COLCHN (decl)));
+        L_VARDEC_OR_ARG_COLCHN (decl, SetVect (VARDEC_OR_ARG_COLCHN (decl)));
     }
 #endif
 

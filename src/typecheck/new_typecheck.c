@@ -1,6 +1,9 @@
 
 /*
  * $Log$
+ * Revision 1.4  2000/03/15 15:59:08  dkr
+ * SET_VARDEC_OR_ARG_COLCHN renamed to L_VARDEC_OR_ARG_COLCHN
+ *
  * Revision 1.3  2000/01/26 17:28:10  dkr
  * type of traverse-function-table changed.
  *
@@ -1216,7 +1219,7 @@ node *IdxNpart( node *arg_node, node *arg_info)
      * generator would be deleted anyways ( see above)!!
      */
     vardec = IDS_VARDEC( NPART_VEC( arg_node));
-    SET_VARDEC_OR_ARG_COLCHN( vardec, SetVect( VARDEC_COLCHN( vardec)));
+    L_VARDEC_OR_ARG_COLCHN( vardec, SetVect( VARDEC_COLCHN( vardec)));
   }
 #endif
 
