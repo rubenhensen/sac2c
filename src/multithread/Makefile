@@ -1,6 +1,9 @@
 #
 # 
 # $Log$
+# Revision 1.4  2000/01/28 13:49:43  jhs
+# blocks_init added
+#
 # Revision 1.3  2000/01/25 13:52:39  dkr
 # make deps done
 #
@@ -20,7 +23,7 @@ CFLAGS    := -D__EXTENSIONS__
 INCS=-I../global -I../tree -I../../inc -I../optimize -I../typecheck -I../refcount \
      -I../print -I../compile
 
-all: multithread.o
+all: multithread.o schedule_init.o blocks_init.o
 
 %.o: %.c 
 	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) -o $@ -c $<
@@ -34,6 +37,13 @@ clean:
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
+blocks_init.o: ../../inc/dbug.h /usr/include/stdio.h
+blocks_init.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
+blocks_init.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
+blocks_init.o: /usr/include/stdio_impl.h ../global/types.h
+blocks_init.o: ../tree/tree_basic.h ../tree/tree_compound.h ../global/Error.h
+blocks_init.o: /usr/include/string.h /usr/include/stdlib.h
+blocks_init.o: ../global/globals.h ../tree/traverse.h ../tree/scheduling.h
 multithread.o: ../../inc/dbug.h /usr/include/stdio.h
 multithread.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 multithread.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
@@ -41,9 +51,11 @@ multithread.o: /usr/include/stdio_impl.h ../global/types.h
 multithread.o: ../tree/tree_basic.h ../tree/traverse.h ../global/globals.h
 multithread.o: ../tree/free.h ../global/my_debug.h /usr/include/malloc.h
 multithread.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
-multithread.o: /usr/include/sys/int_types.h ../global/internal_lib.h
-multithread.o: ../global/Error.h /usr/include/string.h /usr/include/stdlib.h
-multithread.o: schedule_init.c ../tree/tree_compound.h ../tree/scheduling.h
+multithread.o: /usr/include/sys/int_types.h /usr/include/sys/select.h
+multithread.o: /usr/include/sys/time.h /usr/include/sys/time.h
+multithread.o: ../global/internal_lib.h ../global/Error.h
+multithread.o: /usr/include/string.h /usr/include/stdlib.h schedule_init.c
+multithread.o: ../tree/tree_compound.h ../tree/scheduling.h
 schedule_init.o: ../../inc/dbug.h /usr/include/stdio.h
 schedule_init.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 schedule_init.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
@@ -51,4 +63,4 @@ schedule_init.o: /usr/include/stdio_impl.h ../global/types.h
 schedule_init.o: ../tree/tree_basic.h ../tree/tree_compound.h
 schedule_init.o: ../global/Error.h /usr/include/string.h
 schedule_init.o: /usr/include/stdlib.h ../global/globals.h ../tree/traverse.h
-schedule_init.o: ../tree/scheduling.h
+schedule_init.o: ../tree/scheduling.h ../global/internal_lib.h
