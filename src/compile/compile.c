@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.104  1997/11/22 23:07:52  dkr
+ * removed a bug in CompPrf() with F_{add,sub,...}_AxA, arg{1,2}->refcnt==-1
+ *   - previous N_let replaced by ND_ALLOC_ARRAY (reuse)
+ *   - old_arg_node now correctly set (-> FREE(old_arg_node) !!)
+ *
  * Revision 1.103  1997/11/11 00:43:13  dkr
  * removed a bug with NEWTREE in CompTypedef
  *
@@ -3345,6 +3350,7 @@ CompConvert (node *arg_node, node *arg_info)
             case 2:
                 CREATE_2_ARY_ICM (next_assign, "ND_2D_A", arg1, res);
                 break;
+            default:
                 DBUG_ASSERT (0, "wrong tag (convert)");
                 break;
             }
@@ -3430,8 +3436,9 @@ CompPrf (node *arg_node, node *arg_info)
 {
     node *array, *scalar, *tmp, *res, *res_ref, *n_node, *icm_arg, *prf_id_node,
       *type_id_node, *arg1, *arg2, *arg3, *n_node1, *n_elems_node, *first_assign,
-      *next_assign, *last_assign, *old_arg_node, *length_node, *tmp_array1, *tmp_array2,
-      *dim_node, *tmp_rc, *exprs;
+      *next_assign, *last_assign, *length_node, *tmp_array1, *tmp_array2, *dim_node,
+      *tmp_rc, *exprs;
+    node *old_arg_node;
     simpletype res_stype = LET_BASETYPE (arg_info->node[1]);
     int dim, is_SxA = 0, n_elems = 0, is_drop = 0, array_is_const = 0, convert = 0;
     simpletype s_type;
@@ -3634,6 +3641,7 @@ CompPrf (node *arg_node, node *arg_info)
                 last_assign = NEXT_ASSIGN (arg_info);
                 if ((1 == arg1->refcnt) && (1 == arg2->refcnt)) {
                     node *num;
+
                     CHECK_REUSE (arg1);
                     CREATE_2_ARY_ICM (next_assign, "ND_CHECK_REUSE_ARRAY", arg2, res);
                     APPEND_ASSIGNS (first_assign, next_assign);
@@ -3646,7 +3654,20 @@ CompPrf (node *arg_node, node *arg_info)
                 } else if (1 == arg2->refcnt) {
                     CHECK_REUSE__ALLOC_ARRAY_ND (res, res_stype, arg2, arg2_stype);
                 } else {
+                    node *num;
+
+#if 0
+	      first_assign=LAST_ASSIGN(arg_info);
+#else
+                    MAKENODE_NUM (num, 0);
+                    TRI_ICM_REUSE (arg_info->node[1], "ND_ALLOC_ARRAY", type_id_node, res,
+                                   num);
                     first_assign = LAST_ASSIGN (arg_info);
+                    old_arg_node = arg_node;
+                    last_assign = NEXT_ASSIGN (arg_info);
+                    arg_node = arg_info->node[1]->node[0];
+
+#endif
                     DBUG_ASSERT ((((-1 == arg1->refcnt) && (-1 == arg2->refcnt))
                                   || (opt_rco == 0)),
                                  "Refcnt of BINOP_A_A arg neither -1 nor 1 !");
