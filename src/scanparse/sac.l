@@ -3,7 +3,11 @@
 /*
  *
  * $Log$
- * Revision 1.33  1996/04/02 19:36:41  cg
+ * Revision 1.34  1996/05/21 20:16:52  sbs
+ * default type for floating numbers set to double! (like in C)
+ * and leading zeros for exponents enabled!
+ *
+ * Revision 1.33  1996/04/02  19:36:41  cg
  * strings are now scanned which contain '\"'
  *
  * Revision 1.32  1996/04/02  13:47:24  cg
@@ -131,7 +135,7 @@
                          return(token); }
 
 #define FILTER4(token) if (0==commlevel) {                              \
-                         yylval.cfloat=atof(yytext);		       \
+                         yylval.cdbl=atof(yytext);		       \
                          return(token); }
 
 #define FILTER5(token) if (0==commlevel) {                              \
@@ -345,13 +349,13 @@ int start_token;
 
 (0?|([1-9][0-9]*))              {FILTER3 ( NUM);}
 
-(0?|([1-9][0-9]*))[.][0-9]+(e([+]?|[-]?)[1-9][0-9]*)? \
-				{FILTER4 ( FLOAT);}
+(0?|([1-9][0-9]*))[.][0-9]+(e([+]?|[-]?)[0-9]+)? \
+				{FILTER4 ( DOUBLE);}
 
-(0?|([1-9][0-9]*))([.][0-9]+(e([+]?|[-]?)[1-9][0-9]*)?)?[fF] \
+(0?|([1-9][0-9]*))([.][0-9]+(e([+]?|[-]?)[0-9]+)?)?[fF] \
                                 {FILTER6 ( FLOAT);}
 
-(0?|([1-9][0-9]*))([.][0-9]+(e([+]?|[-]?)[1-9][0-9]*)?)?[Dd] \
+(0?|([1-9][0-9]*))([.][0-9]+(e([+]?|[-]?)[0-9]+)?)?[Dd] \
                                 {FILTER5 ( DOUBLE);}
 
 
