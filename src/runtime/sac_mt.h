@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2001/03/14 10:16:22  ben
+ * new ICM  SAC_MT_SCHEDULER_BlockVar_DIM0 added
+ *
  * Revision 3.5  2001/01/22 13:46:02  dkr
  * ICM SAC_MT_ADJUST_SCHEDULER renamed into SAC_MT_ADJUST_SCHEDULER_OFFSET
  * new ICM SAC_MT_ADJUST_SCHEDULER added
@@ -680,6 +683,28 @@ typedef union {
 #define SAC_MT_SCHEDULER_Static_END()
 
 #define SAC_MT_SCHEDULER_Block_DIM0(lower, upper, unrolling)                             \
+    {                                                                                    \
+        const int iterations = (upper - lower) / unrolling;                              \
+        const int iterations_per_thread = (iterations / SAC_MT_THREADS ()) * unrolling;  \
+        const int iterations_rest = iterations % SAC_MT_THREADS ();                      \
+                                                                                         \
+        if (iterations_rest && (SAC_MT_MYTHREAD () < iterations_rest)) {                 \
+            SAC_WL_MT_SCHEDULE_START (0)                                                 \
+              = lower + SAC_MT_MYTHREAD () * (iterations_per_thread + unrolling);        \
+            SAC_WL_MT_SCHEDULE_STOP (0)                                                  \
+              = SAC_WL_MT_SCHEDULE_START (0) + (iterations_per_thread + unrolling);      \
+        } else {                                                                         \
+            SAC_WL_MT_SCHEDULE_START (0) = (lower + iterations_rest * unrolling)         \
+                                           + SAC_MT_MYTHREAD () * iterations_per_thread; \
+            SAC_WL_MT_SCHEDULE_STOP (0)                                                  \
+              = SAC_WL_MT_SCHEDULE_START (0) + iterations_per_thread;                    \
+        }                                                                                \
+                                                                                         \
+        SAC_TR_MT_PRINT (("Scheduler 'Block': dim 0: %d -> %d",                          \
+                          SAC_WL_MT_SCHEDULE_START (0), SAC_WL_MT_SCHEDULE_STOP (0)));   \
+    }
+
+#define SAC_MT_SCHEDULER_BlockVar_DIM0(lower, upper, unrolling)                          \
     {                                                                                    \
         const int iterations = (upper - lower) / unrolling;                              \
         const int iterations_per_thread = (iterations / SAC_MT_THREADS ()) * unrolling;  \
