@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.33  2004/12/09 14:46:09  sah
+ * fixed a not copied shape! this caused
+ * lots of unpredicted behaviour!
+ *
  * Revision 1.32  2004/12/08 18:03:14  ktr
  * removed ARRAY_TYPE/ARRAY_NTYPE
  *
@@ -760,7 +764,7 @@ COaST2Constant (node *n)
             atype = NTCnewTypeCheck_Expr (n);
             if (TYisAKS (atype) || TYisAKV (atype)) {
                 simple = TYgetSimpleType (TYgetScalar (atype));
-                new_co = COmakeConstant (simple, TYgetShape (atype),
+                new_co = COmakeConstant (simple, SHcopyShape (TYgetShape (atype)),
                                          TCarray2Vec (simple, ARRAY_AELEMS (n), NULL));
             } else {
                 new_co = NULL;
