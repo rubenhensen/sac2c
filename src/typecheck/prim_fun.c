@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.18  2002/09/09 17:42:32  dkr
+ * F_{add,sub,mul,div}_SxS added
+ *
  * Revision 3.17  2002/09/09 16:27:22  dkr
  * no changes done
  *
@@ -334,6 +337,7 @@ GenPrimTabEntries (prf prf_old, int type_c, prf prf_new)
     case F_add_AxA:
     case F_add_AxS:
     case F_add_SxA:
+    case F_add_SxS:
     case F_add:
         wanted = (INTRINSIC_ADD & intrinsics);
         intrinsic
@@ -344,6 +348,7 @@ GenPrimTabEntries (prf prf_old, int type_c, prf prf_new)
     case F_sub_AxA:
     case F_sub_AxS:
     case F_sub_SxA:
+    case F_sub_SxS:
     case F_sub:
         wanted = (INTRINSIC_SUB & intrinsics);
         intrinsic
@@ -354,6 +359,7 @@ GenPrimTabEntries (prf prf_old, int type_c, prf prf_new)
     case F_mul_AxA:
     case F_mul_AxS:
     case F_mul_SxA:
+    case F_mul_SxS:
     case F_mul:
         wanted = (INTRINSIC_MUL & intrinsics);
         intrinsic
@@ -364,6 +370,7 @@ GenPrimTabEntries (prf prf_old, int type_c, prf prf_new)
     case F_div_AxA:
     case F_div_AxS:
     case F_div_SxA:
+    case F_div_SxS:
     case F_div:
         wanted = (INTRINSIC_DIV & intrinsics);
         intrinsic
@@ -491,7 +498,6 @@ InitPrimFunDeclarations ()
 void
 InitPrimFunTab ()
 {
-
     DBUG_ENTER ("InitPrimFunTab");
 
     InitPrimFunDeclarations ();
@@ -1606,33 +1612,6 @@ TakeDropS (node *s_node, types *array, int tag)
             }
         }
     }
-#if 0
-   else
-      if(1<array->dim)
-      {
-         if(((1==tag)?(s_node->info.cint < array->shpseg->shp[0])
-             :(s_node->info.cint <= array->shpseg->shp[0]) ) &&
-            (0 <=s_node->info.cint))
-         {
-            GEN_TYPE_NODE(ret_type, array->simpletype);
-            ret_type->dim=array->dim;
-            ret_type->shpseg=MakeShpseg(NULL);
-            if(1==tag)
-               /* drop */
-               ret_type->shpseg->shp[0]=array->shpseg->shp[0]-s_node->info.cint;
-            else
-               /* take */
-               ret_type->shpseg->shp[0]=s_node->info.cint;
-            
-            for(i=1;i<array->dim;i++)
-               ret_type->shpseg->shp[i]=array->shpseg->shp[i];
-         }
-         else
-            GEN_TYPE_NODE(ret_type,T_unknown);
-      }
-      else
-         GEN_TYPE_NODE(ret_type,T_unknown);
-#endif /* if 0 , kann geloescht werden */
 
     DBUG_RETURN (ret_type);
 }

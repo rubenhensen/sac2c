@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.44  2002/09/09 17:42:51  dkr
+ * F_{add,sub,mul,div}_SxS added
+ *
  * Revision 3.43  2002/08/07 09:50:31  sbs
  * now, there is a life behind the new type checker....8-)
  *
@@ -1649,6 +1652,7 @@ ComputeNeutralElem (prf prf_fun, types *neutral_type, node *arg_info)
 
     switch (prf_fun) {
     case F_add:
+    case F_add_SxS:
     case F_add_AxA:
         switch (stype) {
         case T_int:
@@ -1666,6 +1670,7 @@ ComputeNeutralElem (prf prf_fun, types *neutral_type, node *arg_info)
         break;
 
     case F_mul:
+    case F_mul_SxS:
     case F_mul_AxA:
         switch (stype) {
         case T_int:
@@ -1777,68 +1782,6 @@ ComputeNeutralElem (prf prf_fun, types *neutral_type, node *arg_info)
 
     DBUG_RETURN (neutral_elem);
 }
-
-#if 0
-node *ComputeNeutralElem(prf prf_fun, types *neutral_type)
-{
-   node *neutral_elem=NULL, *tmp;
-   int  i,length, neutral_int;
-   float neutral_float;
-   double neutral_double;
-   simpletype stype;
-   
-   DBUG_ENTER("ComputeNeutralElem");
-
-   GET_LENGTH(length, neutral_type);
-   GET_BASIC_SIMPLETYPE(stype, neutral_type);
-      
-   switch(prf_fun)
-   {
-   case F_add: case F_add_AxA: 
-      neutral_int=0;
-      break;
-   case F_mul: case F_mul_AxA: 
-      neutral_int=1;
-      break;
-   case F_and:
-      neutral_int=1;
-      break;
-   case F_or:
-      neutral_int=0;
-      break;
-   case F_min:
-      break;
-   case F_max:
-      break;
-   default:
-      DBUG_PRINT("NEUTRAL",("prf :%s (%d)",mdb_prf[prf_fun], prf_fun));
-      DBUG_ASSERT(0,"wrong N_prf-tag");
-   }
-
-   if(length>0)
-   {
-      neutral_elem=MakeArray( NULL);
-      tmp=MakeNode(N_exprs);
-      neutral_elem->node[0]=tmp;
-      for(i=1; i<=length; i++)
-      {
-         MAKE_NEUTRAL_ELEM(tmp->node[0], stype, neutral_int);
-         if(i<length)
-         {
-            tmp->node[1]=MakeExprs( NULL, NULL);
-            tmp=tmp->node[1];
-         }
-      }
-      GET_BASIC_TYPE(neutral_elem->TYPES, neutral_type, -64);
-   }
-   else
-   {
-      MAKE_NEUTRAL_ELEM(neutral_elem, stype, neutral_int);
-   }
-   
-   DBUG_RETURN(neutral_elem);
-}
-#endif /* 0 */
 
 /******************************************************************************
  *
