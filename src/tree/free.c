@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.61  2004/07/30 17:50:33  sah
+ * switch to new INFO structure
+ * PHASE I
+ *
  * Revision 3.60  2004/07/29 17:18:58  sah
  * as NCODE_WLAA_INFO now is of type access_info_t,
  * it has to be freed using Free instead of FreeNode.
@@ -226,6 +230,8 @@
  */
 #define FREE_MODNAMES 0
 
+#define NEW_INFO
+
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -243,6 +249,47 @@
 #include "constants.h"
 
 #include "free.h"
+
+/*
+ * INFO structure
+ */
+struct INFO {
+    node *flag;
+    node *assign;
+};
+
+/*
+ * INFO macros
+ */
+#define INFO_FREE_FLAG(n) (n->flag)
+#define INFO_FREE_ASSIGN(n) (n->assign)
+/*
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = Malloc (sizeof (info));
+
+    INFO_FREE_FLAG (result) = NULL;
+    INFO_FREE_ASSIGN (result) = NULL;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeLocalInfo (info *info)
+{
+    DBUG_ENTER ("FreeLocalInfo");
+
+    info = Free (info);
+
+    DBUG_RETURN (info);
+}
 
 /*
  *  Important Remarks:
@@ -665,7 +712,7 @@ node *
 FreeNode (node *free_node)
 {
     funtab *store_tab;
-    node *arg_info;
+    info *arg_info;
 
     DBUG_ENTER ("FreeNode");
 
@@ -677,8 +724,7 @@ FreeNode (node *free_node)
 
     free_node = Trav (free_node, arg_info);
 
-    /* no not use FreeNode to avoid recursion */
-    arg_info = Free (arg_info);
+    arg_info = FreeLocalInfo (arg_info);
 
     act_tab = store_tab;
 
@@ -702,7 +748,7 @@ node *
 FreeTree (node *free_node)
 {
     funtab *store_tab;
-    node *arg_info;
+    info *arg_info;
 
     DBUG_ENTER ("FreeTree");
 
@@ -843,7 +889,7 @@ RemoveAllZombies (node *arg_node)
  */
 
 node *
-FreeModul (node *arg_node, node *arg_info)
+FreeModul (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("FreeModul");
 
@@ -874,7 +920,7 @@ FreeModul (node *arg_node, node *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreeModdec (node *arg_node, node *arg_info)
+FreeModdec (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("FreeModdec");
 
@@ -896,7 +942,7 @@ FreeModdec (node *arg_node, node *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreeClassdec (node *arg_node, node *arg_info)
+FreeClassdec (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("FreeClassdec");
 
@@ -918,7 +964,7 @@ FreeClassdec (node *arg_node, node *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreeSib (node *arg_node, node *arg_info)
+FreeSib (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("FreeSib");
 
@@ -941,7 +987,7 @@ FreeSib (node *arg_node, node *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreeImplist (node *arg_node, node *arg_info)
+FreeImplist (node *arg_node, info *arg_info)
 {
     node *ret_node;
 
@@ -968,7 +1014,7 @@ FreeImplist (node *arg_node, node *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreeExplist (node *arg_node, node *arg_info)
+FreeExplist (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("FreeExplist");
 
@@ -989,7 +1035,7 @@ FreeExplist (node *arg_node, node *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreeTypedef (node *arg_node, node *arg_info)
+FreeTypedef (node *arg_node, info *arg_info)
 {
     node *ret_node;
 
@@ -1018,7 +1064,7 @@ FreeTypedef (node *arg_node, node *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreeObjdef (node *arg_node, node *arg_info)
+FreeObjdef (node *arg_node, info *arg_info)
 {
     node *ret_node;
 
@@ -1058,7 +1104,7 @@ FreeObjdef (node *arg_node, node *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreeFundef (node *arg_node, node *arg_info)
+FreeFundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("FreeFundef");
 
@@ -1143,7 +1189,7 @@ FreeFundef (node *arg_node, node *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreeArg (node *arg_node, node *arg_info)
+FreeArg (node *arg_node, info *arg_info)
 {
     node *ret_node;
 
@@ -1169,7 +1215,7 @@ FreeArg (node *arg_node, node *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreeBlock (node *arg_node, node *arg_info)
+FreeBlock (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("FreeBlock");
 
@@ -1194,7 +1240,7 @@ FreeBlock (node *arg_node, node *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreeVardec (node *arg_node, node *arg_info)
+FreeVardec (node *arg_node, info *arg_info)
 {
     node *ret_node;
 
@@ -1219,7 +1265,7 @@ FreeVardec (node *arg_node, node *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreeAssign (node *arg_node, node *arg_info)
+FreeAssign (node *arg_node, info *arg_info)
 {
     node *ret_node;
     index_info *index;
@@ -1251,7 +1297,7 @@ FreeAssign (node *arg_node, node *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreeLet (node *arg_node, node *arg_info)
+FreeLet (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("FreeLet");
 
@@ -1270,7 +1316,7 @@ FreeLet (node *arg_node, node *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreeCast (node *arg_node, node *arg_info)
+FreeCast (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("FreeCast");
 
@@ -1289,7 +1335,7 @@ FreeCast (node *arg_node, node *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreeReturn (node *arg_node, node *arg_info)
+FreeReturn (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("FreeReturn");
 
@@ -1308,7 +1354,7 @@ FreeReturn (node *arg_node, node *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreeCond (node *arg_node, node *arg_info)
+FreeCond (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("FreeCond");
 
@@ -1331,7 +1377,7 @@ FreeCond (node *arg_node, node *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreeDo (node *arg_node, node *arg_info)
+FreeDo (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("FreeDo");
 
@@ -1359,7 +1405,7 @@ FreeDo (node *arg_node, node *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreeWhile (node *arg_node, node *arg_info)
+FreeWhile (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("FreeWhile");
 
@@ -1383,7 +1429,7 @@ FreeWhile (node *arg_node, node *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreeAp (node *arg_node, node *arg_info)
+FreeAp (node *arg_node, info *arg_info)
 {
     node *fundef;
 
@@ -1470,7 +1516,7 @@ FreeAp (node *arg_node, node *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreeMop (node *arg_node, node *arg_info)
+FreeMop (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("FreeMop");
 
@@ -1489,7 +1535,7 @@ FreeMop (node *arg_node, node *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreeExprs (node *arg_node, node *arg_info)
+FreeExprs (node *arg_node, info *arg_info)
 {
     node *ret_node;
 
@@ -1511,7 +1557,7 @@ FreeExprs (node *arg_node, node *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreeArray (node *arg_node, node *arg_info)
+FreeArray (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("FreeArray");
 
@@ -1547,7 +1593,7 @@ FreeArray (node *arg_node, node *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreeVinfo (node *arg_node, node *arg_info)
+FreeVinfo (node *arg_node, info *arg_info)
 {
     node *ret_node;
 
@@ -1567,7 +1613,7 @@ FreeVinfo (node *arg_node, node *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreeId (node *arg_node, node *arg_info)
+FreeId (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("FreeId");
 
@@ -1596,7 +1642,7 @@ FreeId (node *arg_node, node *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreeNum (node *arg_node, node *arg_info)
+FreeNum (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("FreeNum");
 
@@ -1610,7 +1656,7 @@ FreeNum (node *arg_node, node *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreeChar (node *arg_node, node *arg_info)
+FreeChar (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("FreeChar");
 
@@ -1624,7 +1670,7 @@ FreeChar (node *arg_node, node *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreeFloat (node *arg_node, node *arg_info)
+FreeFloat (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("FreeFloat");
 
@@ -1638,7 +1684,7 @@ FreeFloat (node *arg_node, node *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreeDouble (node *arg_node, node *arg_info)
+FreeDouble (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("FreeDouble");
 
@@ -1652,7 +1698,7 @@ FreeDouble (node *arg_node, node *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreeBool (node *arg_node, node *arg_info)
+FreeBool (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("FreeBool");
 
@@ -1666,7 +1712,7 @@ FreeBool (node *arg_node, node *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreeStr (node *arg_node, node *arg_info)
+FreeStr (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("FreeStr");
 
@@ -1685,7 +1731,7 @@ FreeStr (node *arg_node, node *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreeDot (node *arg_node, node *arg_info)
+FreeDot (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("FreeDot");
 
@@ -1699,7 +1745,7 @@ FreeDot (node *arg_node, node *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreeSetWL (node *arg_node, node *arg_info)
+FreeSetWL (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("FreeSetWL");
 
@@ -1716,7 +1762,7 @@ FreeSetWL (node *arg_node, node *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreePrf (node *arg_node, node *arg_info)
+FreePrf (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("FreePrf");
 
@@ -1734,7 +1780,7 @@ FreePrf (node *arg_node, node *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreeEmpty (node *arg_node, node *arg_info)
+FreeEmpty (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("FreeEmpty");
 
@@ -1748,7 +1794,7 @@ FreeEmpty (node *arg_node, node *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreeIcm (node *arg_node, node *arg_info)
+FreeIcm (node *arg_node, info *arg_info)
 {
     node *fundef;
 
@@ -1796,7 +1842,7 @@ FreeIcm (node *arg_node, node *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreePragma (node *arg_node, node *arg_info)
+FreePragma (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("FreePragma");
 
@@ -1830,7 +1876,7 @@ FreePragma (node *arg_node, node *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreeSpmd (node *arg_node, node *arg_info)
+FreeSpmd (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("FreeSpmd");
 
@@ -1870,7 +1916,7 @@ FreeSpmd (node *arg_node, node *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreeSync (node *arg_node, node *arg_info)
+FreeSync (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("FreeSync");
 
@@ -1901,7 +1947,7 @@ FreeSync (node *arg_node, node *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreeEX (node *arg_node, node *arg_info)
+FreeEX (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("FreeEX");
 
@@ -1927,7 +1973,7 @@ FreeEX (node *arg_node, node *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreeMT (node *arg_node, node *arg_info)
+FreeMT (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("FreeMT");
 
@@ -1953,7 +1999,7 @@ FreeMT (node *arg_node, node *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreeST (node *arg_node, node *arg_info)
+FreeST (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("FreeMT");
 
@@ -1982,7 +2028,7 @@ FreeST (node *arg_node, node *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreeInfo (node *arg_node, node *arg_info)
+FreeInfo (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("FreeInfo");
 
@@ -1994,7 +2040,7 @@ FreeInfo (node *arg_node, node *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreeNWith (node *arg_node, node *arg_info)
+FreeNWith (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("FreeNWith");
     DBUG_PRINT ("FREE", ("Removing N_with node ..."));
@@ -2003,7 +2049,9 @@ FreeNWith (node *arg_node, node *arg_info)
     NWITH_CODE (arg_node) = FREETRAV (NWITH_CODE (arg_node));
     NWITH_WITHOP (arg_node) = FREETRAV (NWITH_WITHOP (arg_node));
 
+#ifndef NEW_AST
     arg_node->info2 = Free (arg_node->info2);
+#endif /* NEW_AST */
 
     if (NWITH_PRAGMA (arg_node) != NULL) {
         NWITH_PRAGMA (arg_node) = FREETRAV (NWITH_PRAGMA (arg_node));
@@ -2029,7 +2077,7 @@ FreeNWith (node *arg_node, node *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreeNPart (node *arg_node, node *arg_info)
+FreeNPart (node *arg_node, info *arg_info)
 {
     node *ret_node;
 
@@ -2056,7 +2104,7 @@ FreeNPart (node *arg_node, node *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreeNWithID (node *arg_node, node *arg_info)
+FreeNWithID (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("FreeNWithID");
     DBUG_PRINT ("FREE", ("Removing N_Nwithid node ..."));
@@ -2072,7 +2120,7 @@ FreeNWithID (node *arg_node, node *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreeNGenerator (node *arg_node, node *arg_info)
+FreeNGenerator (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("FreeNGenerator");
 
@@ -2091,7 +2139,7 @@ FreeNGenerator (node *arg_node, node *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreeNWithOp (node *arg_node, node *arg_info)
+FreeNWithOp (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("FreeNWithOp");
 
@@ -2130,7 +2178,7 @@ FreeNWithOp (node *arg_node, node *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreeNCode (node *arg_node, node *arg_info)
+FreeNCode (node *arg_node, info *arg_info)
 {
     node *ret_node;
 
@@ -2158,7 +2206,7 @@ FreeNCode (node *arg_node, node *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreeNwith2 (node *arg_node, node *arg_info)
+FreeNwith2 (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("FreeNWith2");
     DBUG_PRINT ("FREE", ("Removing N_Nwith2 node ..."));
@@ -2192,7 +2240,7 @@ FreeNwith2 (node *arg_node, node *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreeWLseg (node *arg_node, node *arg_info)
+FreeWLseg (node *arg_node, info *arg_info)
 {
     node *ret_node;
     int b;
@@ -2218,8 +2266,8 @@ FreeWLseg (node *arg_node, node *arg_info)
         WLSEG_SCHEDULING (arg_node) = SCHRemoveScheduling (WLSEG_SCHEDULING (arg_node));
     }
 
-    if (WLSEGX_TASKSEL (arg_node) != NULL) {
-        WLSEGX_TASKSEL (arg_node) = SCHRemoveTasksel (WLSEGX_TASKSEL (arg_node));
+    if (WLSEG_TASKSEL (arg_node) != NULL) {
+        WLSEG_TASKSEL (arg_node) = SCHRemoveTasksel (WLSEG_TASKSEL (arg_node));
     }
 
     ret_node = FREECONT (WLSEG_NEXT (arg_node));
@@ -2232,7 +2280,7 @@ FreeWLseg (node *arg_node, node *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreeWLsegVar (node *arg_node, node *arg_info)
+FreeWLsegVar (node *arg_node, info *arg_info)
 {
     node *ret_node;
     int d;
@@ -2264,8 +2312,8 @@ FreeWLsegVar (node *arg_node, node *arg_info)
           = SCHRemoveScheduling (WLSEGVAR_SCHEDULING (arg_node));
     }
 
-    if (WLSEGX_TASKSEL (arg_node) != NULL) {
-        WLSEGX_TASKSEL (arg_node) = SCHRemoveTasksel (WLSEGX_TASKSEL (arg_node));
+    if (WLSEG_TASKSEL (arg_node) != NULL) {
+        WLSEG_TASKSEL (arg_node) = SCHRemoveTasksel (WLSEG_TASKSEL (arg_node));
     }
 
     ret_node = FREECONT (WLSEGVAR_NEXT (arg_node));
@@ -2278,7 +2326,7 @@ FreeWLsegVar (node *arg_node, node *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreeWLblock (node *arg_node, node *arg_info)
+FreeWLblock (node *arg_node, info *arg_info)
 {
     node *ret_node;
 
@@ -2299,7 +2347,7 @@ FreeWLblock (node *arg_node, node *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreeWLublock (node *arg_node, node *arg_info)
+FreeWLublock (node *arg_node, info *arg_info)
 {
     node *ret_node;
 
@@ -2320,7 +2368,7 @@ FreeWLublock (node *arg_node, node *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreeWLstride (node *arg_node, node *arg_info)
+FreeWLstride (node *arg_node, info *arg_info)
 {
     node *ret_node;
 
@@ -2340,7 +2388,7 @@ FreeWLstride (node *arg_node, node *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreeWLstrideVar (node *arg_node, node *arg_info)
+FreeWLstrideVar (node *arg_node, info *arg_info)
 {
     node *ret_node;
 
@@ -2363,7 +2411,7 @@ FreeWLstrideVar (node *arg_node, node *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreeWLgrid (node *arg_node, node *arg_info)
+FreeWLgrid (node *arg_node, info *arg_info)
 {
     node *ret_node;
 
@@ -2389,7 +2437,7 @@ FreeWLgrid (node *arg_node, node *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreeWLgridVar (node *arg_node, node *arg_info)
+FreeWLgridVar (node *arg_node, info *arg_info)
 {
     node *ret_node;
 
@@ -2417,7 +2465,7 @@ FreeWLgridVar (node *arg_node, node *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreeCWrapper (node *arg_node, node *arg_info)
+FreeCWrapper (node *arg_node, info *arg_info)
 {
     node *ret_node;
 
@@ -2441,7 +2489,7 @@ FreeCWrapper (node *arg_node, node *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreeModspec (node *arg_node, node *arg_info)
+FreeModspec (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("FreeModspec");
 
@@ -2460,7 +2508,7 @@ FreeModspec (node *arg_node, node *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreeCSEinfo (node *arg_node, node *arg_info)
+FreeCSEinfo (node *arg_node, info *arg_info)
 {
     node *ret_node;
 
@@ -2480,7 +2528,7 @@ FreeCSEinfo (node *arg_node, node *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreeSSAcnt (node *arg_node, node *arg_info)
+FreeSSAcnt (node *arg_node, info *arg_info)
 {
     node *ret_node;
 
@@ -2502,7 +2550,7 @@ FreeSSAcnt (node *arg_node, node *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreeSSAstack (node *arg_node, node *arg_info)
+FreeSSAstack (node *arg_node, info *arg_info)
 {
     node *ret_node;
 
@@ -2522,7 +2570,7 @@ FreeSSAstack (node *arg_node, node *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreeAvis (node *arg_node, node *arg_info)
+FreeAvis (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("FreeAvis");
 
@@ -2546,7 +2594,7 @@ FreeAvis (node *arg_node, node *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreeFuncond (node *arg_node, node *arg_info)
+FreeFuncond (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("FreeFuncond");
 
