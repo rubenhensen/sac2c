@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.6  1999/04/12 13:22:02  cg
+ * added BLOCK_CACHESIM()
+ *
  * Revision 2.5  1999/04/08 12:44:05  bs
  * Access macro ID_INDEX isn't needed any longer.
  * The access macro INFO_TSI_TMPACCESS was inserted instead.
@@ -1003,6 +1006,10 @@ extern node *MakeArg (char *name, types *type, statustype status, statustype att
  ***    node*      INSTR           (N_assign, N_empty)
  ***    node*      VARDEC     (O)  (N_vardec)
  ***
+ ***  permanent attributes:
+ ***
+ ***    char*      CACHESIM   (O)
+ ***
  ***  temporary attributes:
  ***
  ***    nodelist*  NEEDFUNS   (O)         (analysis -> )
@@ -1032,6 +1039,7 @@ extern node *MakeBlock (node *instr, node *vardec);
 #define BLOCK_NEEDFUNS(n) ((nodelist *)(n->node[2]))
 #define BLOCK_NEEDTYPES(n) ((nodelist *)(n->node[3]))
 #define BLOCK_SPMD_PROLOG_ICMS(n) (n->node[4])
+#define BLOCK_CACHESIM(n) (n->info.id)
 
 /*--------------------------------------------------------------------------*/
 
