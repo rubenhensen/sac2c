@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.46  1995/06/14 12:41:55  hw
+ * Revision 1.47  1995/06/14 14:24:48  hw
+ * bug fixed in CompPrf ( new variable declaration will be inserted
+ *  now in all cases )
+ *
+ * Revision 1.46  1995/06/14  12:41:55  hw
  * - N_cast nodes in argument position of primitive functions
  *   will be deleted
  * - bug fixed in creation of ND_KD_PSI_VxA_S & ND_KD_PSI_CxA_S
@@ -996,6 +1000,8 @@ CompPrf (node *arg_node, node *arg_info)
                                 insert_vardec = 1;
                             else
                                 insert_vardec = 0;
+                        else
+                            insert_vardec = 1;
                         if (1 == insert_vardec) {
                             new_vardec = MakeNode (N_vardec);
                             new_vardec->TYPES = DuplicateTypes (vardec_p->TYPES);
