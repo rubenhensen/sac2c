@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.16  1995/06/01 10:10:54  cg
+ * Revision 1.17  1995/06/01 15:08:38  cg
+ * Bug in MakeNode fixed.
+ *
+ * Revision 1.16  1995/06/01  10:10:54  cg
  * status in MakeTypes initialized.
  *
  * Revision 1.15  1995/04/24  15:13:46  asi
@@ -122,7 +125,7 @@ MakeNode (nodetype nodetype)
 
     tmp = GEN_NODE (node);
     tmp->nodetype = nodetype;
-    for (i = 0; i < 4; i++)
+    for (i = 0; i < MAX_SONS; i++)
         tmp->node[i] = NULL;
     tmp->nnode = 0;
     tmp->info.id = NULL;
