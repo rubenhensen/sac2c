@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.15  1998/02/27 16:31:40  cg
+ * added support for correct setting of file names for diagnostic output
+ * while parsing (global variable 'filename'.
+ *
  * Revision 1.14  1997/08/08 08:49:14  sbs
  * warning that -p is turned off in modules is now only given, iff -p is
  * actually set!
@@ -55,6 +59,7 @@
  */
 
 #include <stdio.h>
+#include <string.h>
 
 #include "types.h"
 #include "tree_basic.h"
@@ -192,6 +197,8 @@ ScanParse ()
 
     if (sacfilename[0] == '\0') {
         yyin = stdin;
+        filename = "stdin"; /* set for better error messages only */
+
         NOTE (("Parsing from stdin ..."));
     } else {
         pathname = FindFile (PATH, sacfilename);
@@ -202,9 +209,16 @@ ScanParse ()
 
         yyin = fopen (pathname, "r");
         NOTE (("Parsing file \"%s\" ...", pathname));
+        filename = strrchr (sacfilename, '/');
+        if (filename == NULL)
+            filename = sacfilename; /* set for better error messages only */
+        else
+            filename++;
     }
 
     start_token = PARSE_PRG;
+    linenum = 1;
+
     yyparse ();
 
     fclose (yyin);
@@ -234,6 +248,7 @@ ScanParse ()
             }
         }
         NOTE (("Parsing from stdin ..."));
+        filename = "stdin"; /* set for better error messages only */
     } else {
         pathname = FindFile (PATH, sacfilename);
 
@@ -251,6 +266,12 @@ ScanParse ()
         strcat (cccallstr, " ");
         strcat (cccallstr, pathname);
         NOTE (("Parsing file \"%s\" ...", pathname));
+
+        filename = strrchr (sacfilename, '/');
+        if (filename == NULL)
+            filename = sacfilename; /* set for better error messages only */
+        else
+            filename++;
     }
 
     yyin = popen (cccallstr, "r");
