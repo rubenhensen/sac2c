@@ -1,5 +1,8 @@
 <!--
   $Log$
+  Revision 1.74  2004/11/25 17:10:16  sbs
+  added CWC
+
   Revision 1.73  2004/11/25 15:32:19  ktr
   From denmark with love!
 
@@ -350,6 +353,16 @@
           <node name="code" />
           <node name="genarray" />
           <node name="modarray" />
+          <node name="fold" />
+        </travuser>
+      </traversal>
+      <traversal id="CWC" name="Create Wrapper Code" default="sons" include="create_wrapper_code.h" >
+        <travuser>
+          <node name="module" />
+          <node name="fundef" />
+          <node name="ap" />
+          <node name="with" />
+          <node name="genarray" />
           <node name="fold" />
         </travuser>
       </traversal>
