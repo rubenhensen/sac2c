@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2000/11/22 16:24:18  nmw
+ * null-pointer access removed
+ *
  * Revision 3.1  2000/11/20 18:00:50  sacbase
  * new release made
  *
@@ -286,20 +289,34 @@ CheckDec (node *syntax_tree)
     decl = ImportOwnDeclaration (MODUL_NAME (syntax_tree), MODUL_FILETYPE (syntax_tree));
 
     if (decl == NULL) {
-        SYSWARN (("Unable to open file \"%s\"", filename));
+        if (!(generatelibrary & GENERATELIBRARY_C)) {
+            /*
+             * when compiling for a c library a missing dec file
+             * can be ignored. in this case sac2c creates a temporaly
+             * dec file.
+             * This file cannot be used with sac libraries because
+             * it contains specialized functions from the spec file.
+             * When compiling for a sac library these functions are
+             * missing and you will get an error. So this dec file
+             * is removed after compiling. (nmw)
+             */
 
-        if (MODUL_FILETYPE (syntax_tree) == F_modimp) {
-            CONT_WARN (
-              ("Declaration of module '%s` missing !", MODUL_NAME (syntax_tree)));
-        } else {
-            CONT_WARN (("Declaration of class '%s` missing !", MODUL_NAME (syntax_tree)));
+            SYSWARN (("Unable to open file \"%s\"", filename));
+
+            if (MODUL_FILETYPE (syntax_tree) == F_modimp) {
+                CONT_WARN (
+                  ("Declaration of module '%s` missing !", MODUL_NAME (syntax_tree)));
+            } else {
+                CONT_WARN (
+                  ("Declaration of class '%s` missing !", MODUL_NAME (syntax_tree)));
+            }
+
+            NEWLINE (1);
+
+            SYSWARN (("Generating default declaration file ..."));
+            CONT_WARN (("File \"%s\" should be edited !", filename));
+            NEWLINE (1);
         }
-
-        NEWLINE (1);
-
-        SYSWARN (("Generating default declaration file ..."));
-        CONT_WARN (("File \"%s\" should be edited !", filename));
-        NEWLINE (1);
 
         act_tab = writedec_tab;
 
@@ -617,10 +634,10 @@ CDECfundef (node *arg_node, node *arg_info)
                         ItemName (arg_node)));
             }
         }
+        FUNDEF_STATUS (fundef) = ST_exported;
     }
 
     FUNDEC_DEF (arg_node) = fundef;
-    FUNDEF_STATUS (fundef) = ST_exported;
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
         FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
