@@ -4,6 +4,9 @@
 /*
 *
 * $Log$
+* Revision 1.20  2004/11/25 15:37:40  sbs
+* some maior changes
+*
 * Revision 1.19  2004/11/23 11:14:06  sbs
 * next
 *
@@ -897,7 +900,7 @@ exprblock2: ntype ids SEMIC exprblock2
                * types-structure from $1!
                */
               while (IDS_NEXT( $2) != NULL) {  /* at least 2 vardecs! */
-                vardec_ptr = TBmakeVardec( TBmakeAvis( ILIBstrinCopy( IDS_NAME( $2)),
+                vardec_ptr = TBmakeVardec( TBmakeAvis( ILIBstrinCopy( IDS_SPNAME( $2)),
                                                        TYcopyType( $1)),
                                            vardec_ptr);
                 /*
@@ -914,7 +917,7 @@ exprblock2: ntype ids SEMIC exprblock2
                * duplicating it as done in the loop above!
                */
               $$ = $4;
-              BLOCK_VARDEC( $$) = TBmakeVardec( TBmakeAvis( ILIBstrinCopy( IDS_NAME( $2)), $1),
+              BLOCK_VARDEC( $$) = TBmakeVardec( TBmakeAvis( ILIBstrinCopy( IDS_SPNAME( $2)), $1),
                                                 vardec_ptr);
               $2 = FREEdoFreeTree( $2);   /* Finally, we free the last IDS-node! */
             }
@@ -1274,8 +1277,8 @@ expr_sel: expr SQBR_L exprs SQBR_R
 expr_ap: qual_ext_id BRACKET_L { $<cint>$ = linenum; } opt_arguments BRACKET_R
          {
            $$ = TBmakeAp( NULL, $4);
-           AP_NAME( $$) = ILIBstringCopy( ID_NAME( $1));
-           AP_MOD( $$)  = ILIBstringCopy( ID_MOD( $1));
+           AP_NAME( $$) = ILIBstringCopy( ID_SPNAME( $1));
+           AP_MOD( $$)  = ILIBstringCopy( ID_SPMOD( $1));
            NODE_LINE( $$) = $<cint>3;
            $1 = FREEdoFreeTree( $1);
          }
@@ -1402,8 +1405,8 @@ nwithop: GENARRAY BRACKET_L expr COMMA expr BRACKET_R
          }
        | FOLD BRACKET_L qual_ext_id COMMA expr BRACKET_R
          { $$ = TBmakeFold( $5);
-           FOLD_FUN( $$) = ILIBstringCopy( ID_NAME( $3));
-           FOLD_MOD( $$) = ILIBstringCopy( ID_MOD( $3));
+           FOLD_FUN( $$) = ILIBstringCopy( ID_SPNAME( $3));
+           FOLD_MOD( $$) = ILIBstringCopy( ID_SPMOD( $3));
            $3 = FREEdoFreeTree( $3);
          }
        ;
@@ -1427,8 +1430,8 @@ withop: GENARRAY BRACKET_L expr COMMA expr BRACKET_R
         }
       | FOLD BRACKET_L qual_ext_id COMMA expr COMMA expr BRACKET_R
         { $$ = TBmakeFold( $5);
-          FOLD_FUN( $$) = ILIBstringCopy( ID_NAME( $3));
-          FOLD_MOD( $$) = ILIBstringCopy( ID_MOD( $3));
+          FOLD_FUN( $$) = ILIBstringCopy( ID_SPNAME( $3));
+          FOLD_MOD( $$) = ILIBstringCopy( ID_SPMOD( $3));
           $3 = FREEdoFreeTree( $3);
           // NWITHOP_EXPR( $$) = $7;
         }
@@ -1486,32 +1489,32 @@ prf: foldop        { $$ = $1;        }
 
 qual_ext_id: ext_id
              { $$ = TBmakeId( NULL);
-               ID_NAME( $$) = $1;
+               ID_SPNAME( $$) = $1;
              }
            | ID COLON ext_id
              { $$ = TBmakeId( NULL);
-               ID_NAME( $$) = $3;
-               ID_MOD( $$) = $1;
+               ID_SPNAME( $$) = $3;
+               ID_SPMOD( $$) = $1;
              }
            ; 
 
 qual_ext_ids: ext_id 
               { $$ = TBmakeIds( NULL, NULL);
-                IDS_NAME( $$) = $1;
+                IDS_SPNAME( $$) = $1;
               }
             | ID COLON ext_id
               { $$ = TBmakeIds( NULL, NULL);
-                IDS_NAME( $$) = $3;
-                IDS_MOD( $$) = $1;
+                IDS_SPNAME( $$) = $3;
+                IDS_SPMOD( $$) = $1;
               }
             | ext_id COMMA qual_ext_ids
               { $$ = TBmakeIds( NULL, $3);
-                IDS_NAME( $$) = $1;
+                IDS_SPNAME( $$) = $1;
               }
             | ID COLON ext_id COMMA qual_ext_ids
               { $$ = TBmakeIds( NULL, $5);
-                IDS_NAME( $$) = $3;
-                IDS_MOD( $$) = $1;
+                IDS_SPNAME( $$) = $3;
+                IDS_SPMOD( $$) = $1;
               }
 
             ;
@@ -1522,11 +1525,11 @@ ext_id: ID         { $$ = $1; }
 
 ids: ID COMMA ids
      { $$ = TBmakeIds( NULL, $3);
-       IDS_NAME( $$) = $1;
+       IDS_SPNAME( $$) = $1;
      }
    | ID
      { $$ = ILIBmakeIds( NULL, NULL);
-       IDS_NAME( $$) = $1;
+       IDS_SPNAME( $$) = $1;
      }
    ;
 
@@ -1975,8 +1978,8 @@ types *Exprs2ShpInfo( types *types, node *exprs)
   } else {
     nt = NODE_TYPE( EXPRS_EXPR1( exprs));
     if( nt == N_id) {
-      name = ID_NAME( EXPRS_EXPR1( exprs));
-      mod = ID_MOD( EXPRS_EXPR1( exprs));
+      name = ID_SPNAME( EXPRS_EXPR1( exprs));
+      mod = ID_SPMOD( EXPRS_EXPR1( exprs));
       if( (strcmp( name, "*") == 0) && (( file_kind == F_sib) || (mod == NULL)) ) {
         TYPES_DIM( types) = ARRAY_OR_SCALAR;
       } else if( (strcmp( name, "+") == 0) && (( file_kind == F_sib) || (mod == NULL)) ) {
@@ -2123,8 +2126,8 @@ node *CheckWlcompConf( node *conf, node *exprs)
   DBUG_ASSERT( (conf != NULL), "wlcomp-pragma is empty!");
 
   if (NODE_TYPE( conf) == N_id) {
-    if (strcmp( ID_NAME( conf), "Default")) {
-      strcpy( yytext, ID_NAME( conf));
+    if (strcmp( ID_SPNAME( conf), "Default")) {
+      strcpy( yytext, ID_SPNAME( conf));
       yyerror( "innermost configuration is not 'Default'");
     }
 
@@ -2246,12 +2249,12 @@ static ntype *Exprs2NType( ntype *basetype, node *exprs)
 
   switch (NODE_TYPE( EXPRS_EXPR1( exprs))) {
     case N_id:
-      if (ID_MOD( EXPRS_EXPR1( exprs)) != NULL) {
+      if (ID_SPMOD( EXPRS_EXPR1( exprs)) != NULL) {
         yyerror("illegal shape specification");
-      } else if (ID_NAME( EXPRS_EXPR1( exprs))[1] != '\0') {
+      } else if (ID_SPNAME( EXPRS_EXPR1( exprs))[1] != '\0') {
         yyerror("illegal shape specification");
       } else {
-        switch (ID_NAME( EXPRS_EXPR1( exprs))[0]) {
+        switch (ID_SPNAME( EXPRS_EXPR1( exprs))[0]) {
           case '*':
             result = TYmakeAUD( basetype);
             break;
