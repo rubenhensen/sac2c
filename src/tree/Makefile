@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.17  2001/03/21 11:20:07  dkr
+# make deps done
+#
 # Revision 3.16  2001/03/09 11:53:45  sbs
 # make deps done
 #
@@ -140,9 +143,9 @@ DupTree.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
 DupTree.o: /usr/include/stdio_impl.h /usr/include/stdlib.h
 DupTree.o: ../global/globals.h ../global/internal_lib.h traverse.h free.h
 DupTree.o: ../../inc/dbug.h ../global/my_debug.h DupTree.h LookUpTable.h
-DupTree.o: DataFlowMask.h DataFlowMaskUtils.h ../optimize/Inline.h
-DupTree.o: ../typecheck/typecheck.h scheduling.h ../optimize/generatemasks.h
-DupTree.o: ../constants/constants.h ../constants/shape.h
+DupTree.o: DataFlowMask.h DataFlowMaskUtils.h scheduling.h
+DupTree.o: ../optimize/generatemasks.h ../constants/constants.h
+DupTree.o: ../constants/shape.h
 InferDFMs.o: tree.h ../global/types.h tree_basic.h tree_compound.h
 InferDFMs.o: ../global/Error.h /usr/include/stdio.h
 InferDFMs.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
@@ -176,7 +179,8 @@ UndoSSATransform.o: ../global/types.h tree_basic.h tree_compound.h
 UndoSSATransform.o: ../global/Error.h /usr/include/string.h
 UndoSSATransform.o: /usr/include/stdlib.h ../global/globals.h
 UndoSSATransform.o: ../global/internal_lib.h traverse.h free.h
-UndoSSATransform.o: ../global/my_debug.h UndoSSATransform.h
+UndoSSATransform.o: ../global/my_debug.h UndoSSATransform.h DupTree.h
+UndoSSATransform.o: LookUpTable.h
 adjust_ids.o: ../../inc/dbug.h /usr/include/stdio.h
 adjust_ids.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 adjust_ids.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
@@ -211,6 +215,7 @@ compare_tree.o: tree_basic.h tree_compound.h ../global/Error.h
 compare_tree.o: /usr/include/string.h /usr/include/stdlib.h
 compare_tree.o: ../global/globals.h ../global/internal_lib.h traverse.h
 compare_tree.o: free.h ../global/my_debug.h compare_tree.h
+compare_tree.o: ../typecheck/typecheck.h
 free.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 free.o: /usr/include/sys/isa_defs.h /usr/include/stdio.h
 free.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
@@ -281,15 +286,12 @@ tree.o: tree_compound.h ../global/Error.h /usr/include/stdio.h
 tree.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
 tree.o: /usr/include/stdio_impl.h /usr/include/string.h ../global/globals.h
 tree.o: ../global/internal_lib.h ../../inc/dbug.h ../global/my_debug.h
-tree.o: ../scanparse/scnprs.h ../global/resource.h ../scanparse/y.tab.h
-tree.o: ../optimize/optimize.h free.h
 tree_basic.o: ../global/types.h tree_basic.h ../global/Error.h
 tree_basic.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 tree_basic.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 tree_basic.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
 tree_basic.o: /usr/include/string.h /usr/include/stdlib.h ../global/globals.h
-tree_basic.o: ../../inc/dbug.h ../global/my_debug.h ../scanparse/scnprs.h
-tree_basic.o: ../global/resource.h ../scanparse/y.tab.h free.h
+tree_basic.o: ../../inc/dbug.h ../global/my_debug.h free.h
 tree_basic.o: ../global/internal_lib.h prf_node_info.mac
 tree_compound.o: ../global/types.h tree_basic.h tree_compound.h
 tree_compound.o: ../global/Error.h /usr/include/stdio.h

@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.8  2001/03/21 11:19:57  dkr
+# make deps done
+#
 # Revision 3.7  2001/03/02 10:36:30  dkr
 # /home/dkr/sac/BASE/sac2c/src/compile/RCS/Makefile,v used in touch-rules
 #
@@ -255,7 +258,8 @@ wlpragma_funs.o: ../global/Error.h /usr/include/string.h
 wlpragma_funs.o: /usr/include/stdlib.h ../global/globals.h
 wlpragma_funs.o: ../global/internal_lib.h ../tree/free.h ../global/my_debug.h
 wlpragma_funs.o: ../tree/DupTree.h ../tree/LookUpTable.h ../global/resource.h
-wlpragma_funs.o: wltransform.h wlpragma_funs.h wlpragma_funs.mac
+wlpragma_funs.o: wltransform.h ../tree/scheduling.h wlpragma_funs.h
+wlpragma_funs.o: wlpragma_funs.mac
 wltransform.o: ../tree/tree.h ../global/types.h ../tree/tree_basic.h
 wltransform.o: ../tree/tree_compound.h ../global/Error.h /usr/include/stdio.h
 wltransform.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h

@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.11  2001/03/21 11:19:55  dkr
+# make deps done
+#
 # Revision 3.10  2001/03/20 16:17:00  nmw
 # SSAConstantFolding.o added
 #
@@ -265,4 +268,4 @@ optimize.o: ../psi-opt/WithloopFolding.h ../psi-opt/wl_access_analyze.h
 optimize.o: ../psi-opt/tile_size_inference.h ../psi-opt/index.h
 optimize.o: ../psi-opt/pad.h ../tree/CheckAvis.h ../tree/SSATransform.h
 optimize.o: ../tree/UndoSSATransform.h ../flatten/lac2fun.h
-optimize.o: SSADeadCodeRemoval.h SSACSE.h
+optimize.o: SSADeadCodeRemoval.h SSACSE.h ../tree/cleanup_decls.h

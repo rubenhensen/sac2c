@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.5  2001/03/21 11:19:56  dkr
+# make deps done
+#
 # Revision 3.4  2001/02/02 10:39:02  dkr
 # make deps done
 #
@@ -124,9 +127,8 @@ cccall.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
 cccall.o: /usr/include/stdlib.h ../global/types.h ../tree/tree_basic.h
 cccall.o: ../tree/tree_compound.h ../global/Error.h /usr/include/string.h
 cccall.o: ../global/globals.h ../../inc/dbug.h ../global/internal_lib.h
-cccall.o: ../tree/free.h ../global/my_debug.h ../scanparse/scnprs.h
-cccall.o: ../global/resource.h ../scanparse/y.tab.h filemgr.h
-cccall.o: ../tree/traverse.h ../compile/gen_startup_code.h
+cccall.o: ../tree/free.h ../global/my_debug.h filemgr.h ../tree/traverse.h
+cccall.o: ../global/resource.h ../compile/gen_startup_code.h
 checkdec.o: /usr/include/string.h /usr/include/sys/feature_tests.h
 checkdec.o: /usr/include/sys/isa_defs.h ../global/types.h ../tree/prf.h
 checkdec.o: ../tree/tree_basic.h ../tree/tree_compound.h ../global/Error.h
@@ -135,7 +137,6 @@ checkdec.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
 checkdec.o: /usr/include/stdlib.h ../global/globals.h ../../inc/dbug.h
 checkdec.o: ../global/my_debug.h ../tree/traverse.h ../tree/free.h
 checkdec.o: ../global/internal_lib.h import.h ../print/convert.h filemgr.h
-checkdec.o: ../scanparse/scnprs.h ../global/resource.h ../scanparse/y.tab.h
 checkdec.o: implicittypes.h ../print/print.h ../tree/tree.h checkdec.h
 filemgr.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 filemgr.o: /usr/include/sys/isa_defs.h /usr/include/string.h
