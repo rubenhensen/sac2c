@@ -2,6 +2,9 @@
 /*
  *
  * $Log$
+ * Revision 1.15  2004/09/23 16:37:32  ktr
+ * DFM entries of variables no longer present are cleared now.
+ *
  * Revision 1.14  2004/09/22 18:11:37  khf
  * moved renaming of cexprs from markmemvals
  * to third traversal of precompile
@@ -199,6 +202,7 @@ UpdateDFM (DFMmask_t dfm, info *arg_info)
     while (vardec != NULL) {
 
         if (DFMTestMaskEntry (dfm, NULL, vardec)) {
+            DFMSetMaskEntryClear (dfm, NULL, vardec);
             DFMSetMaskEntrySet (dfm, NULL,
                                 SearchInLUT_PP (INFO_MMV_LUT (arg_info), vardec));
         }
@@ -278,25 +282,24 @@ MMVfundef (node *arg_node, info *arg_info)
             info = MakeInfo ();
             INFO_MMV_FUNDEF (info) = arg_node;
 
-            DBUG_EXECUTE ("MMV", PrintNode (arg_node););
             arg = FUNDEF_ARGS (arg_node);
             while (arg != NULL) {
-                newname = SearchInLUT_SS (INFO_MMV_LUT (arg_info), ARG_NAME (arg));
-                if (newname != ARG_NAME (arg)) {
-                    InsertIntoLUT_S (INFO_MMV_LUT (info), ARG_NAME (arg),
-                                     StringCopy (newname));
+                if (ARG_NAME (arg) != NULL) {
+                    newname = SearchInLUT_SS (INFO_MMV_LUT (arg_info), ARG_NAME (arg));
+                    if (newname != ARG_NAME (arg)) {
+                        InsertIntoLUT_S (INFO_MMV_LUT (info), ARG_NAME (arg),
+                                         StringCopy (newname));
 
-                    ARG_NAME (arg) = Free (ARG_NAME (arg));
-                    ARG_NAME (arg) = StringCopy (newname);
+                        ARG_NAME (arg) = Free (ARG_NAME (arg));
+                        ARG_NAME (arg) = StringCopy (newname);
+                    }
                 }
-
                 arg = ARG_NEXT (arg);
             }
 
             if (FUNDEF_BODY (arg_node) != NULL) {
                 FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), info);
             }
-            DBUG_EXECUTE ("MMV", PrintNode (arg_node););
 
             INFO_MMV_LUT (info) = RemoveContentLUT (INFO_MMV_LUT (info));
             info = FreeInfo (info);
