@@ -268,11 +268,15 @@ UESDlet (node *arg_node, node *arg_info)
     if (LET_EXPR (arg_node) != NULL) {
 
         if ((LET_IDS (arg_node) != NULL) && (IDS_AVIS (LET_IDS (arg_node)) != NULL)) {
-            types *tmp
-              = VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (IDS_AVIS (LET_IDS (arg_node))));
+            /*types->ntype*/
+            /*types* tmp = VARDEC_OR_ARG_TYPE( AVIS_VARDECORARG( IDS_AVIS(
+            LET_IDS(arg_node)))); if ( (!enforce_ieee) || ( (TYPES_BASETYPE(tmp) !=
+            T_double) && (TYPES_BASETYPE(tmp) != T_float)))*/
             if ((!enforce_ieee)
-                || ((TYPES_BASETYPE (tmp) != T_double)
-                    && (TYPES_BASETYPE (tmp) != T_float)))
+                || ((TYGetSimpleType (AVIS_TYPE (IDS_AVIS (LET_IDS (arg_node))))
+                     != T_double)
+                    && (TYGetSimpleType (AVIS_TYPE (IDS_AVIS (LET_IDS (arg_node))))
+                        != T_float)))
 
                 LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
         }

@@ -16,6 +16,7 @@
 #include "ElimSubDiv.h"
 
 #define INFO_ESD_TYPE(n) ((types *)(n->dfmask[0]))
+#define INFO_ESD_NTYPE(n) ((ntype *)(n->dfmask[1]))
 #define INFO_ESD_BLOCKNODE(n) (n->node[0])
 #define INFO_ESD_LETNODE(n) (n->node[1])
 #define INFO_ESD_NEWNODE(n) (n->node[2])
@@ -86,6 +87,7 @@ MakeAssignNode (node *newnode, node *arg_info)
     shpseg *shp;
     node *shpnode;
     int shpint;
+    ntype *newtype;
 
     DBUG_ENTER ("MakeAssignNode");
 
@@ -98,19 +100,34 @@ MakeAssignNode (node *newnode, node *arg_info)
     if (TYPES_MOD (INFO_ESD_TYPE (arg_info)) != NULL)
         newmod = StringCopy (TYPES_MOD (INFO_ESD_TYPE (arg_info)));
 
-    if ((PRF_PRF (newnode) == F_mul_SxS) || (PRF_PRF (newnode) == F_div_SxS)) {
-        type
-          = MakeTypes (TYPES_BASETYPE ((INFO_ESD_TYPE (arg_info))), 0, NULL, NULL, NULL);
-    } else {
-        newshpseg = NULL;
-        shpint = TYPES_DIM ((INFO_ESD_TYPE (arg_info)));
-        shpnode = Shpseg2Array (TYPES_SHPSEG (INFO_ESD_TYPE (arg_info)), shpint);
-        shp = Array2Shpseg (shpnode, &shpint);
+    /*  if ((PRF_PRF(newnode) == F_mul_SxS) || (PRF_PRF(newnode) == F_div_SxS)){
+        type = MakeTypes(TYPES_BASETYPE( (INFO_ESD_TYPE(arg_info))  ) ,
+                          0,
+                        NULL,
+                        NULL,
+                        NULL);
 
-        type = VARDEC_TYPE (ID_VARDEC (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (newnode)))));
-        type = MakeTypes (TYPES_BASETYPE ((INFO_ESD_TYPE (arg_info))),
-                          TYPES_DIM ((INFO_ESD_TYPE (arg_info))), shp, NULL, NULL);
-    }
+
+      }
+      else{
+        newshpseg = NULL;
+        shpint = TYPES_DIM(( INFO_ESD_TYPE(arg_info)));
+        shpnode = Shpseg2Array(TYPES_SHPSEG( INFO_ESD_TYPE(arg_info)), shpint);
+        shp = Array2Shpseg(shpnode, &shpint);
+
+
+        type = VARDEC_TYPE( ID_VARDEC( EXPRS_EXPR( EXPRS_NEXT( PRF_ARGS( newnode)))));
+        type = MakeTypes( TYPES_BASETYPE( (INFO_ESD_TYPE(arg_info))  ),
+                          TYPES_DIM(( INFO_ESD_TYPE(arg_info)) ),
+                        shp,
+                        NULL,
+                        NULL);
+      }
+    */
+
+    type = DupAllTypes (INFO_ESD_TYPE (arg_info));
+    /*type->ntype*/
+    newtype = TYCopyType (INFO_ESD_NTYPE (arg_info));
 
     newname1 = TmpVar ();
 
@@ -124,6 +141,9 @@ MakeAssignNode (node *newnode, node *arg_info)
 
     VARDEC_OBJDEF (newvardec) = newnode;
     AVIS_SSAASSIGN (VARDEC_AVIS (newvardec)) = newnode;
+
+    /*type->ntype*/
+    AVIS_TYPE (VARDEC_AVIS (newvardec)) = newtype;
 
     DBUG_RETURN (newnode);
 }
@@ -289,6 +309,7 @@ ESDblock (node *arg_node, node *arg_info)
          */
         if (BLOCK_VARDEC (arg_node) != NULL) {
             INFO_ESD_TYPE (arg_info) = VARDEC_TYPE (BLOCK_VARDEC (arg_node));
+            INFO_ESD_NTYPE (arg_info) = AVIS_TYPE (VARDEC_AVIS (BLOCK_VARDEC (arg_node)));
             INFO_ESD_BLOCKNODE (arg_info) = arg_node;
         }
 
@@ -373,6 +394,7 @@ ESDlet (node *arg_node, node *arg_info)
         if ((LET_IDS (arg_node) != NULL) && (IDS_AVIS (LET_IDS (arg_node)) != NULL)) {
             INFO_ESD_TYPE (arg_info)
               = VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (IDS_AVIS (LET_IDS (arg_node))));
+            INFO_ESD_NTYPE (arg_info) = AVIS_TYPE (IDS_AVIS (LET_IDS (arg_node)));
 
             if ((!enforce_ieee)
                 || ((TYPES_BASETYPE (INFO_ESD_TYPE (arg_info)) != T_double)

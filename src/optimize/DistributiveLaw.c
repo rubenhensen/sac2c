@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.12  2004/06/10 14:43:06  mwe
+ * usage of ntype* instead of type added
+ *
  * Revision 1.11  2004/02/06 14:19:33  mwe
  * remove ASSIGN2
  *
@@ -1109,9 +1112,11 @@ IsAnArray (node *expr, node *arg_info)
         result = FALSE;
     else if (N_id == NODE_TYPE (expr)) {
 
-        if (!(TYPES_DIM (VARDEC_TYPE (ID_VARDEC (expr))) > 0))
+        /*types->ntype*/
+        /*if (!( TYPES_DIM( VARDEC_TYPE( ID_VARDEC( expr))) > 0 ))
+          result = FALSE;*/
+        if (!(TYGetDim (AVIS_TYPE (ID_AVIS (expr))) > 0))
             result = FALSE;
-
     } else {
         DBUG_ASSERT ((FALSE), "Unexpected EXPRS_EXPR node!");
     }
