@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.10  2004/07/14 15:20:57  ktr
+ * WITHID is treated as RHS if the variables were allocated using alloc, too.
+ *
  * Revision 1.9  2004/06/21 19:01:15  mwe
  * check compiler phase before creating new types (create no types before PH_typecheck)
  *
@@ -1136,8 +1139,10 @@ SSANwithid (node *arg_node, node *arg_info)
         && (AVIS_SSAASSIGN (IDS_AVIS (NWITHID_VEC (arg_node))) != NULL)
         && (NODE_TYPE (ASSIGN_RHS (AVIS_SSAASSIGN (IDS_AVIS (NWITHID_VEC (arg_node)))))
             == N_prf)
-        && (PRF_PRF (ASSIGN_RHS (AVIS_SSAASSIGN (IDS_AVIS (NWITHID_VEC (arg_node)))))
-            == F_alloc_or_reuse)) {
+        && ((PRF_PRF (ASSIGN_RHS (AVIS_SSAASSIGN (IDS_AVIS (NWITHID_VEC (arg_node)))))
+             == F_alloc_or_reuse)
+            || (PRF_PRF (ASSIGN_RHS (AVIS_SSAASSIGN (IDS_AVIS (NWITHID_VEC (arg_node)))))
+                == F_alloc))) {
         if (NWITHID_VEC (arg_node) != NULL) {
             NWITHID_VEC (arg_node) = TravRightIDS (NWITHID_VEC (arg_node), arg_info);
         }
