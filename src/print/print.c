@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.107  2000/11/03 16:31:46  dkr
+ * \n in front of do-, while-loop added
+ *
  * Revision 2.106  2000/10/31 08:58:30  cg
  * Made dummy symbol in file globals.c :
  * __dummy_value_which_is_completely_useless
@@ -1959,12 +1962,35 @@ PrintVardec (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
+PrintEmpty (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintEmpty");
+
+    INDENT;
+    fprintf (outfile, "/* empty */\n");
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+node *
 PrintDo (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintDo");
 
-    DBUG_EXECUTE ("PRINT_MASKS", fprintf (outfile, "\n"); INDENT;
-                  fprintf (outfile, "**used vars - do loop: ");
+    fprintf (outfile, "\n");
+    INDENT;
+
+    DBUG_EXECUTE ("PRINT_MASKS", fprintf (outfile, "**used vars - do loop: ");
                   PrintDefUseMask (outfile, DO_TERMMASK (arg_node),
                                    INFO_PRINT_VARNO (arg_info));
                   INDENT;);
@@ -2013,33 +2039,14 @@ PrintDo (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PrintEmpty (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("PrintEmpty");
-
-    INDENT;
-    fprintf (outfile, "/* empty */\n");
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * Function:
- *
- *
- * Description:
- *
- *
- ******************************************************************************/
-
-node *
 PrintWhile (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintWhile");
 
-    DBUG_EXECUTE ("PRINT_MASKS", fprintf (outfile, "\n"); INDENT;
-                  fprintf (outfile, "**used vars - while loop: ");
+    fprintf (outfile, "\n");
+    INDENT;
+
+    DBUG_EXECUTE ("PRINT_MASKS", fprintf (outfile, "**used vars - while loop: ");
                   PrintDefUseMask (outfile, WHILE_TERMMASK (arg_node),
                                    INFO_PRINT_VARNO (arg_info));
                   INDENT;);
