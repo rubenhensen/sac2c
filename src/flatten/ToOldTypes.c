@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2004/12/19 14:33:45  sbs
+ * made functional
+ *
  * Revision 1.3  2004/12/08 17:59:15  ktr
  * removed ARRAY_TYPE/ARRAY_NTYPE
  *
@@ -35,6 +38,7 @@
 #include "traverse.h"
 #include "free.h"
 #include "ToOldTypes.h"
+#include "type_utils.h"
 
 /***************************************************************
  *
@@ -98,21 +102,20 @@ TOTassign (node *arg_node, info *arg_info)
 node *
 TOTvardec (node *arg_node, info *arg_info)
 {
+    ntype *type;
 
     DBUG_ENTER ("TOTvardec");
 
-#ifdef MWE_NTYPE_READY
-    DBUG_ASSERT ((NULL != AVIS_TYPE (VARDEC_AVIS (arg_node))),
-                 "missing ntype information");
+    type = AVIS_TYPE (VARDEC_AVIS (arg_node));
+    DBUG_ASSERT ((type != NULL), "missing ntype information");
 
     if (VARDEC_TYPE (arg_node) != NULL) {
         VARDEC_TYPE (arg_node) = FREEfreeAllTypes (VARDEC_TYPE (arg_node));
     }
 
-    VARDEC_TYPE (arg_node) = TYtype2OldType (AVIS_TYPE (VARDEC_AVIS (arg_node)));
+    VARDEC_TYPE (arg_node) = TYtype2OldType (type);
 
     AVIS_TYPE (VARDEC_AVIS (arg_node)) = TYfreeType (AVIS_TYPE (VARDEC_AVIS (arg_node)));
-#endif
 
     if (VARDEC_NEXT (arg_node) != NULL)
         VARDEC_NEXT (arg_node) = TRAVdo (VARDEC_NEXT (arg_node), arg_info);
@@ -135,19 +138,19 @@ TOTvardec (node *arg_node, info *arg_info)
 node *
 TOTarg (node *arg_node, info *arg_info)
 {
+    ntype *type;
 
     DBUG_ENTER ("TOTarg");
 
-#ifdef MWE_NTYPE_READY
-    DBUG_ASSERT ((NULL != AVIS_TYPE (ARG_AVIS (arg_node))), "missing ntype information");
+    type = AVIS_TYPE (ARG_AVIS (arg_node));
+    DBUG_ASSERT ((type != NULL), "missing ntype information");
 
     if (ARG_TYPE (arg_node) != NULL)
         ARG_TYPE (arg_node) = FREEfreeAllTypes (ARG_TYPE (arg_node));
 
-    ARG_TYPE (arg_node) = TYtype2OldType (AVIS_TYPE (ARG_AVIS (arg_node)));
+    ARG_TYPE (arg_node) = TYtype2OldType (type);
 
     AVIS_TYPE (ARG_AVIS (arg_node)) = TYfreeType (AVIS_TYPE (ARG_AVIS (arg_node)));
-#endif
 
     if (ARG_NEXT (arg_node) != NULL)
         ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
@@ -194,6 +197,7 @@ TOTblock (node *arg_node, info *arg_info)
 node *
 TOTfundef (node *arg_node, info *arg_info)
 {
+    ntype *type;
 
     DBUG_ENTER ("TOTfundef");
 
@@ -202,6 +206,14 @@ TOTfundef (node *arg_node, info *arg_info)
 
     if (FUNDEF_ARGS (arg_node) != NULL)
         FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
+
+    if (FUNDEF_TYPES (arg_node) != NULL) {
+        FUNDEF_TYPES (arg_node) = FREEfreeAllTypes (FUNDEF_TYPES (arg_node));
+    }
+    type = TUmakeProductTypeFromRets (FUNDEF_RETS (arg_node));
+    DBUG_ASSERT ((type != NULL), "missing ntypes in N_rets!");
+    FUNDEF_TYPES (arg_node) = TYtype2OldType (type);
+    type = TYfreeType (type);
 
     if (FUNDEF_NEXT (arg_node) != NULL)
         FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
