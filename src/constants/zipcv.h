@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.3  2003/04/09 15:37:16  sbs
+ * zipcv_neg added.
+ *
  * Revision 1.2  2001/03/22 14:28:07  nmw
  * macros and function tables for primitive ari functions added
  *
@@ -34,6 +37,7 @@ extern zipcvfunptr zipcv_toi[];
 extern zipcvfunptr zipcv_tof[];
 extern zipcvfunptr zipcv_tod[];
 extern zipcvfunptr zipcv_abs[];
+extern zipcvfunptr zipcv_neg[];
 
 #define EXT_DECLS(fun)                                                                   \
     extern void COZipCvUShort##fun (void *arg1, int pos1, void *arg2, int pos2,          \
@@ -82,5 +86,6 @@ EXT_DECLS (Toi)
 EXT_DECLS (Tof)
 EXT_DECLS (Tod)
 EXT_DECLS (Abs)
+EXT_DECLS (Neg)
 
 #endif /* _zipcv_h */

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2003/04/09 15:37:16  sbs
+ * zipcv_neg added.
+ *
  * Revision 1.2  2001/03/22 14:28:07  nmw
  * macros and function tables for primitive ari functions added
  *
@@ -125,6 +128,11 @@ zipcvfunptr zipcv_tod[] = {
 
 #define TYP_IFzipcv(fun) fun##Abs
 zipcvfunptr zipcv_abs[] = {
+#include "type_info.mac"
+};
+
+#define TYP_IFzipcv(fun) fun##Neg
+zipcvfunptr zipcv_neg[] = {
 #include "type_info.mac"
 };
 
@@ -294,6 +302,19 @@ zipcvfunptr zipcv_abs[] = {
                     COZipCvUNARYTEMPLATE (fun, fname, long double, LongDouble, target_t) \
                       COZipCvDUMMYTEMP (Bool, fname) COZipCvDUMMYTEMP (Dummy, fname)
 
+#define MAP_NUM_NUM(fun, fname)                                                          \
+    COZipCvUNARYTEMPLATE (fun, fname, unsigned short, UShort, unsigned short)            \
+      COZipCvUNARYTEMPLATE (fun, fname, unsigned int, UInt, unsigned int)                \
+        COZipCvUNARYTEMPLATE (fun, fname, unsigned long, ULong, unsigned long)           \
+          COZipCvUNARYTEMPLATE (fun, fname, short, Short, short)                         \
+            COZipCvUNARYTEMPLATE (fun, fname, int, Int, int)                             \
+              COZipCvUNARYTEMPLATE (fun, fname, long, Long, long)                        \
+                COZipCvUNARYTEMPLATE (fun, fname, float, Float, float)                   \
+                  COZipCvUNARYTEMPLATE (fun, fname, double, Double, double)              \
+                    COZipCvUNARYTEMPLATE (fun, fname, long double, LongDouble,           \
+                                          long double) COZipCvDUMMYTEMP (Bool, fname)    \
+                      COZipCvDUMMYTEMP (Dummy, fname)
+
 #define MAP_ABS_NUM_NUM(fun, fname)                                                      \
     COZipCvUNARYTEMPLATE (, fname, unsigned short, UShort, unsigned short)               \
       COZipCvUNARYTEMPLATE (, fname, unsigned int, UInt, unsigned int)                   \
@@ -348,3 +369,5 @@ MAP_NUMxNUM_NUM (+, Plus)
                                     MAP_NUM_TYPE ((double), Tod, double)
 
                                       MAP_ABS_NUM_NUM (NOP, Abs)
+
+                                        MAP_NUM_NUM (-, Neg)
