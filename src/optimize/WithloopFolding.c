@@ -1,6 +1,9 @@
 /*      $Id$
  *
  * $Log$
+ * Revision 1.26  1999/02/15 11:15:00  srs
+ * MakeNullVec() can create scalars of all simpletypes now
+ *
  * Revision 1.25  1999/02/12 13:48:08  srs
  * fixed infinite recursion in SearchWL()
  *
@@ -1183,7 +1186,7 @@ StartSearchWL (node *idn, node *assignn, int mode)
  *
  * description:
  *   returns an N_array node with 'dim' components, each 0. If dim == 0,
- *   an N_num node (0) is returned.
+ *   a scalar 0 is returned.
  *
  ******************************************************************************/
 
@@ -1196,9 +1199,27 @@ MakeNullVec (int dim, simpletype type)
 
     DBUG_ENTER ("MakeNullVec");
 
-    if (0 == dim)
-        resultn = MakeNum (0);
-    else {
+    if (0 == dim) {
+        switch (type) {
+        case T_int:
+            resultn = MakeNum (0);
+            break;
+        case T_float:
+            resultn = MakeFloat (0);
+            break;
+        case T_double:
+            resultn = MakeDouble (0);
+            break;
+        case T_bool:
+            resultn = MakeBool (0);
+            break;
+        case T_char:
+            resultn = MakeChar ('\0');
+            break;
+        default:
+            DBUG_ASSERT (0, ("unkown type"));
+        }
+    } else {
         tmpn = NULL;
         for (i = 0; i < dim; i++)
             switch (type) {
