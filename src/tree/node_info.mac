@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.198  2004/09/02 16:06:31  skt
+ * support for consolidate_cells (concel_tab) added
+ *
  * Revision 3.197  2004/09/02 15:27:01  khf
  * DDEPENDwithop and TDEPENDwithop removed
  *
@@ -393,7 +396,7 @@
  *   spmdcons_tab    tsi_tab         spmdlc_tab      spmddn_tab
  *   spmdpm_tab      spmdco_tab      ntc_tab         infdfms_tab
  *
- *   muth_tab        crwiw_tab       unused_tab32    repfun_tab
+ *   muth_tab        crwiw_tab       concel_tab      repfun_tab
  *   func2lac_tab    ai_tab          unused_tab31    unused_tab36
  *   l2f_tab         unused_tab30    unused_tab35    unused_tab34
  *   cudecls_tab     unused_tab29    unused_tab33    unused_tab27
@@ -666,8 +669,8 @@
 #ifndef NIFcrwiw
 #define NIFcrwiw(it_crwiw)
 #endif
-#ifndef NIFunused_32
-#define NIFunused_32(it_unused_32)
+#ifndef NIFconcel
+#define NIFconcel(it_concel)
 #endif
 #ifndef NIFrepfun
 #define NIFrepfun(it_repfun)
@@ -948,7 +951,7 @@
   it_wlaa, it_mmv, it_spmdrm, it_spmdro, it_spmdcons, it_tsi, it_spmdlc, it_spmddn,                              \
   it_spmdpm, it_spmdco, it_ntc, it_infdfms,                                                                      \
                                                                                                                  \
-  it_muth, it_crwiw, it_unused_32, it_repfun, it_fun2lac, it_ai, it_unused_31,                                   \
+  it_muth, it_crwiw, it_concel, it_repfun, it_fun2lac, it_ai, it_unused_31,                                      \
   it_unused_36, it_l2f, it_unused_30, it_unused_35, it_unused_34, it_cudecls,                                    \
   it_unused_29, it_unused_33, it_unused_27, it_unused_28, it_precomp3, it_apc, it_apt,                           \
                                                                                                                  \
@@ -994,8 +997,8 @@
                           NIFspmdpm (it_spmdpm) NIFspmdco (it_spmdco) NIFntc (                                   \
                             it_ntc) NIFinfdfms (it_infdfms)                                                      \
                                                                                                                  \
-                            NIFmuth (it_muth) NIFcrwiw (it_crwiw) NIFunused_32 (                                 \
-                              it_unused_32) NIFrepfun (it_repfun) NIFfun2lac (it_fun2lac)                        \
+                            NIFmuth (it_muth) NIFcrwiw (it_crwiw) NIFconcel (                                    \
+                              it_concel) NIFrepfun (it_repfun) NIFfun2lac (it_fun2lac)                           \
                               NIFai (it_ai) NIFunused_31 (it_unused_31) NIFunused_36 (                           \
                                 it_unused_36) NIFl2f (it_l2f) NIFunused_30 (it_unused_30)                        \
                                 NIFunused_35 (it_unused_35) NIFunused_34 (                                       \
@@ -1473,9 +1476,9 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        OPTfundef, WLAAfundef, MMVfundef, TravSons, TravSons, TravSons, TSIfundef,
        TravSons, TravSons, TravSons, TravSons, NTCfundef, INFDFMSfundef,
 
-       MUTHfundef, CRWIWfundef, TravSons, REPFUNfundef, FUN2LACfundef, AIfundef, TravSons,
-       TravSons, L2Ffundef, TravSons, TravSons, TravSons, CUDfundef, TravSons, TravSons,
-       TravSons, TravSons, PREC3fundef, APCfundef, APTfundef,
+       MUTHfundef, CRWIWfundef, CONCELfundef, REPFUNfundef, FUN2LACfundef, AIfundef,
+       TravSons, TravSons, L2Ffundef, TravSons, TravSons, TravSons, CUDfundef, TravSons,
+       TravSons, TravSons, TravSons, PREC3fundef, APCfundef, APTfundef,
 
        MCWfundef, PIHfundef, PIWfundef, IMPSPECfundef, TCCPfundef, SSAfundef, CAVfundef,
        USSAfundef, SSADCRfundef, SSACSEfundef, CMPTunknown, PFfundef, SSACFfundef,
@@ -1642,7 +1645,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
-       TravSons, TravSons, TravSons, REPFUNex, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, CONCELex, REPFUNex, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
@@ -1670,7 +1673,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
-       TravSons, TravSons, TravSons, REPFUNmt, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, CONCELmt, REPFUNmt, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
@@ -1698,7 +1701,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
-       TravSons, TravSons, TravSons, REPFUNst, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, CONCELst, REPFUNst, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
@@ -3255,7 +3258,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
 #undef NIFmuth
 #undef NIFcrwiw
-#undef NIFunused_32
+#undef NIFconcel
 #undef NIFrepfun
 
 #undef NIFfun2lac

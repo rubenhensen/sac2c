@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.73  2004/09/02 16:06:31  skt
+ * support for consolidate_cells (concel_tab) added
+ *
  * Revision 3.72  2004/08/31 16:57:28  skt
  * added support for function replication (mtmode 3)
  * -
@@ -318,6 +321,7 @@
 #include "create_cells.h"
 #include "cell_growth.h"
 #include "replicate_functions.h"
+#include "consolidate_cells.h"
 #include "blocks_lift.h"
 #include "adjust_calls.h"
 #include "pad_collect.h"
@@ -1038,15 +1042,15 @@ static funtab crwiw_tab_rec = {{
 funtab *crwiw_tab = &crwiw_tab_rec;
 
 /*
- *  (62) unused_tab32
+ *  (62) concel_tab
  */
-static funtab unused_tab32_rec = {{
-#define NIFunused_32(it_unused_32) it_unused_32
+static funtab concel_tab_rec = {{
+#define NIFconcel(it_concel) it_concel
 #include "node_info.mac"
-                                  },
-                                  NULL,
-                                  NULL};
-funtab *unused_tab32 = &unused_tab32_rec;
+                                },
+                                NULL,
+                                NULL};
+funtab *concel_tab = &concel_tab_rec;
 
 /*
  *  (63) repfun_tab

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.58  2004/09/02 16:06:31  skt
+ * support for consolidate_cells (concel_tab) added
+ *
  * Revision 3.57  2004/08/31 16:57:28  skt
  * added support for function replication (mtmode 3)
  * -
@@ -349,8 +352,8 @@ extern funtab *spmdco_tab;
 extern funtab *ntc_tab;
 extern funtab *muth_tab;
 extern funtab *crwiw_tab;
-extern funtab *unused_tab32;
 extern funtab *repfun_tab;
+extern funtab *concel_tab;
 extern funtab *fun2lac_tab;
 extern funtab *ai_tab;
 extern funtab *unused_tab31;
