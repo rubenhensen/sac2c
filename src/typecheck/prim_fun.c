@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 2.13  2000/02/17 17:04:17  cg
+ * Prototype of function DuplicateTypes() is now included from
+ * DupTree.h instead of typecheck.h.
+ *
  * Revision 2.12  1999/06/28 14:44:36  cg
  * ID_ISCONST is now used instead of ID_VECLEN in order to determine
  * whether an identifier represents a constant vector or not.
@@ -49,159 +53,7 @@
  * Revision 2.1  1999/02/23 12:40:48  sacbase
  * new release made
  *
- * Revision 1.42  1999/01/25 14:04:44  sbs
- * some minor beautifications...
- *
- * Revision 1.41  1999/01/19 14:40:21  sbs
- * some "might be used uninitialized" warnings eliminated.
- *
- * Revision 1.40  1999/01/19 08:52:26  sbs
- * error message for drop corrected.
- *
- * Revision 1.39  1999/01/18 15:30:18  sbs
- * to[dif] made selectable for intrinsics
- *
- * Revision 1.38  1999/01/15 15:27:39  cg
- * Usage of INTRINSIC_PSI removed.
- *
- * Revision 1.37  1999/01/08 11:32:51  sbs
- * enabled rotate only...
- *
- * Revision 1.36  1999/01/07 17:53:53  sbs
- * some breaks were missing in GenPrimTabEntries!
- * => rotate and friends couldn't be used from the stdlib!
- *
- * Revision 1.35  1999/01/07 10:50:49  cg
- * The rotate function now accepts 1. arguments (rotation dimension)
- * which are not constants. However, if a constant is provided, it
- * is checked against the dimension of the array to be rotated.
- *
- * Revision 1.34  1998/12/07 10:27:02  sbs
- * +,-,*,/ on int[.] x int[.], int[.] x int , and int x int[.]
- * now are intrinsic iff intrinsic is turned off (default)!!!
- * This enables IVE in all cases ...
- *
- * Revision 1.33  1998/11/02 17:00:36  sbs
- * intrinsic-mechanism added, i.e., only those versions of
- * primitive functions will be used that are either marked
- * intrinsic (by calling sac2c with -intrinsic) or are inherently
- * intrinsic, e.g., + on scalars, toi, etc. pp.
- *
- * Revision 1.32  1998/06/05 15:30:54  cg
- * *** empty log message ***
- *
- * Revision 1.31  1998/03/10 17:11:28  srs
- * improved orthography
- *
- * Revision 1.30  1998/03/03 14:02:09  cg
- * Last occurrence of function Error() replaced by macro SYSABORT
- *
- * Revision 1.29  1997/11/23 14:23:48  dkr
- * 2nd argument of MakeType(): NULL -> 0
- *
- * Revision 1.28  1997/11/04 11:37:59  srs
- * NEWTREE: nnode is ignored
- *
- * Revision 1.27  1997/10/29 14:34:11  srs
- * free -> FREE
- *
- * Revision 1.26  1997/10/28 18:26:25  srs
- * dead code removed
- *
- * Revision 1.25  1997/10/03 18:00:54  dkr
- * added type-classes ixi_i, i_i
- *
- * Revision 1.24  1996/02/20 17:53:43  hw
- * now primitive funktions infere types of known dimension, but unknown
- * shape (in modules only)
- *
- * Revision 1.23  1996/02/06  16:17:19  hw
- * added macros CHAR, CHAR
- * added type-class CxC_B to enum (for use with primitive functions
- *  eq, neq, ...)
- *
- * Revision 1.22  1996/02/06  13:14:14  hw
- * bug fixed in Genarray_S ( checking whether the elements of the
- *  shape-vector are konstant)
- *
- * Revision 1.21  1996/01/25  16:19:07  hw
- * added typechecking of primitive functions in modules
- * (in modules the resultung type can be also one with known dimension only
- *  (without known shape). This feature can be added by compiling this file
- *  with #define KNOWN_DIM.
- *  KNOWN_DIM isn't set in this version, but can be added later)
- *
- * Revision 1.20  1995/12/06  17:03:37  hw
- * added typecheck of primitive function 'genarray'
- *
- * Revision 1.19  1995/08/15  14:42:25  hw
- * changed typecheck of "modarray" (shapes will be compared)
- *
- * Revision 1.18  1995/08/11  17:27:32  hw
- * function Modarray inserted
- *
- * Revision 1.17  1995/07/13  15:29:48  hw
- * bug fixed in function Psi
- *
- * Revision 1.16  1995/07/07  16:22:48  hw
- * - changed functions AxA, TakeV, DropV, Psi( now they work with
- *   userdefined types, i hope ;-)
- *
- * Revision 1.15  1995/07/04  09:07:30  hw
- * - Axs_F, F2I & I2F removed
- * - ConvertType inserted
- * - enum type_class extended
- * - some DBUG_PRINTs inserted (tag: PRIM_FUN)
- *
- * Revision 1.14  1995/06/30  11:29:34  hw
- * - functions F2I & I2F inserted
- * - enlarged enum "type_class" with F_I, f_i, I_F, i_f
- *
- * Revision 1.13  1995/06/28  09:25:52  hw
- * bug fixed in Shp( userdefined types will be treated correctly)
- *
- * Revision 1.12  1995/06/23  12:36:57  hw
- * added argument to call of 'DuplicateTypes'
- *
- * Revision 1.11  1995/06/06  16:09:36  hw
- * changed errormessages
- *
- * Revision 1.10  1995/05/03  12:26:06  hw
- * - changes range of first argument of primitive function rotate
- *   (rotate(i,n,a) : 0 <= i <= dim(a) -1 )
- * - first argument of of primitive function rotate has to be constant
- * - new error-messages if 1. argumnet of primitive function 'cat' or
- *   'rotate' isn't constant
- *
- * Revision 1.9  1995/04/13  14:38:53  hw
- * bug fixed in 'Cat' (type of concatenated array will be computed
- *  correct now)
- *
- * Revision 1.8  1995/04/13  10:00:22  hw
- * changed typecheck of primitive function cat ( types *Cat(..) )
- *
- * Revision 1.7  1995/03/28  12:17:27  hw
- * internal_lib.h included
- *
- * Revision 1.6  1995/03/08  14:03:54  hw
- * added enumerator  SxA_A, SxA_F to enum type_class
- *
- * Revision 1.5  1995/02/27  11:09:35  hw
- * bug fixed in function `Psi`
- *
- * Revision 1.4  1995/02/13  17:51:38  hw
- * added B_B to enum type_class
- *
- * Revision 1.3  1995/02/09  11:07:13  hw
- *  - added macros TT1, TT3, BOOL_A
- * - enlarged enum type_class
- *  - changed function AxA
- * - renamed function Ixf_F to Axs_f
- * - added new functions: Shp, Reshp, TakeV, DropV, Psi, TakeDropS, Rot, Cat
- *
- * Revision 1.2  1995/02/03  16:03:33  hw
- * added new functions AxA & Ixf_F
- * changed enum type_class
+ *   [...]
  *
  * Revision 1.1  1995/02/03  07:45:32  hw
  * Initial revision
@@ -217,10 +69,11 @@
 #include "Error.h"
 #include "my_debug.h"
 #include "internal_lib.h"
-#include "typecheck.h"
+#include "DupTree.h"
 #include "access_macros.h"
 #include "convert.h"
 #include "free.h"
+#include "typecheck.h"
 
 /* to infere types with known dimension and unknown_shape in typechecking of
  * modules KNOWN_DIM has to be set.

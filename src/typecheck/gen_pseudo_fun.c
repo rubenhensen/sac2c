@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 2.2  2000/02/17 17:04:17  cg
+ * Prototype of function DuplicateTypes() is now included from
+ * DupTree.h instead of typecheck.h.
+ *
  * Revision 2.1  1999/02/23 12:40:44  sacbase
  * new release made
  *
@@ -24,14 +28,16 @@
  */
 
 #include <stdlib.h>
+
 #include "dbug.h"
 #include "types.h"
 #include "tree_basic.h"
 #include "tree.h"
 #include "free.h"
-#include "typecheck.h"
+#include "DupTree.h"
 #include "internal_lib.h"
 #include "gen_pseudo_fun.h"
+#include "typecheck.h"
 
 /******************************************************************************
  *
