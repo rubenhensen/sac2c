@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2005/01/10 17:30:05  cg
+ * Removed useless #include Error.h.
+ *
  * Revision 3.5  2004/11/23 21:49:39  cg
  * brushed usage of genlib
  * min_array_rep_t turned into enum type.
@@ -61,7 +64,6 @@
 #include "my_debug.h"
 #include "dbug.h"
 #include "traverse.h"
-#include "Error.h"
 #include "convert.h"
 #include "filemgr.h"
 #include "globals.h"

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2005/01/10 17:30:05  cg
+ * Removed useless #include Error.h.
+ *
  * Revision 3.6  2001/05/17 12:52:48  nmw
  * MALLOC/FREE replaced by Malloc/Free, using result of Free()
  *
@@ -151,7 +154,6 @@
 #include "my_debug.h"
 #include "dbug.h"
 #include "traverse.h"
-#include "Error.h"
 #include "convert.h"
 #include "filemgr.h"
 #include "globals.h"
