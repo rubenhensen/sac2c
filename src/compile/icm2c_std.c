@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  1998/08/06 17:20:05  dkr
+ * changed ICM ND_KS_VECT2OFFSET
+ *
  * Revision 1.10  1998/06/25 08:03:45  cg
  * ND_FUN_DEC ICM modified.
  *
@@ -1975,17 +1978,18 @@ ICMCompileND_END_FOLD (int idxlen)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_KS_VECT2OFFSET( char *name, int dim, int dims, char **s)
+ *   void ICMCompileND_KS_VECT2OFFSET( char *off_name, char *arr_name,
+ *                                     int dim, int dims, char **s)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_KS_VECT2OFFSET( name, dim, s )
+ *   ND_KS_VECT2OFFSET( off_name, arr_name, dim, dims, s )
  *
  ******************************************************************************/
 
 void
-ICMCompileND_KS_VECT2OFFSET (char *name, int dim, int dims, char **s)
+ICMCompileND_KS_VECT2OFFSET (char *off_name, char *arr_name, int dim, int dims, char **s)
 {
     DBUG_ENTER ("ICMCompileND_KS_VECT2OFFSET");
 
@@ -1999,16 +2003,9 @@ ICMCompileND_KS_VECT2OFFSET (char *name, int dim, int dims, char **s)
 #endif /* TEST_BACKEND */
 
     INDENT;
-    fprintf (outfile, "%s", name);
-    {
-        int i;
-        for (i = 0; i < dims; i++) {
-            fprintf (outfile, "_%s", s[i]);
-        }
-        fprintf (outfile, "__ = ");
-        VectToOffset2 (dim, AccessVect (name, i), dims, AccessConst (s, i));
-        fprintf (outfile, ";\n");
-    }
+    fprintf (outfile, "%s = ", off_name);
+    VectToOffset2 (dim, AccessVect (arr_name, i), dims, AccessConst (s, i));
+    fprintf (outfile, ";\n");
 
     DBUG_VOID_RETURN;
 }
