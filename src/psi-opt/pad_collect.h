@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.3  2000/06/08 11:13:37  mab
+ * added functions for nodes arg, vardec, array
+ *
  * Revision 1.2  2000/05/31 16:16:58  mab
  * initial version
  *
@@ -14,6 +17,9 @@
 #define sac_pad_collect_h
 
 void APcollect ();
+extern node *APCarg (node *arg_node, node *arg_info);
+extern node *APCvardec (node *arg_node, node *arg_info);
+extern node *APCarray (node *arg_node, node *arg_info);
 extern node *APCNwith (node *arg_node, node *arg_info);
 
 #endif /* sac_pad_collect_h */

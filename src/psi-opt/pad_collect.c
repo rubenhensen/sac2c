@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.3  2000/06/08 11:13:37  mab
+ * added functions for nodes arg, vardec, array
+ *
  * Revision 1.2  2000/05/31 16:16:58  mab
  * initial version
  *
@@ -18,7 +21,7 @@
 #include "free.h"
 #include "globals.h"
 
-#include "pad.h"
+#include "pad_info.h"
 #include "pad_collect.h"
 
 /* main function */
@@ -46,18 +49,42 @@ APcollect (node *arg_node)
     DBUG_VOID_RETURN;
 }
 
-/* Nwith-node */
+node *
+APCarg (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("APCarg");
+
+    DBUG_PRINT ("AP", ("arg-node detected\n"));
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+APCvardec (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("APCvardec");
+
+    DBUG_PRINT ("AP", ("vardec-node detected\n"));
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+APCarray (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("APCarray");
+
+    DBUG_PRINT ("AP", ("array-node detected\n"));
+
+    DBUG_RETURN (arg_node);
+}
+
 node *
 APCNwith (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("APCNwith");
 
     DBUG_PRINT ("AP", ("Nwith-node detected\n"));
-
-    /*  if (FUNDEF_BODY(arg_node) != NULL) {
-      FUNDEF_BODY(arg_node) = Trav(FUNDEF_BODY(arg_node), arg_info);
-
-      } */
 
     DBUG_RETURN (arg_node);
 }
