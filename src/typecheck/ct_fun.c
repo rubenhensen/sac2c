@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2004/10/26 10:46:29  sbs
+ * FUNDEF_MOD printed as well know
+ *
  * Revision 1.4  2003/09/09 14:56:11  sbs
  * extended type error reporting added
  *
@@ -62,7 +65,8 @@ DispatchFunType (node *wrapper, ntype *args)
     DBUG_ENTER ("DispatchFunType");
 
     DBUG_EXECUTE ("NTC", tmp_str = TYType2String (args, 0, 0););
-    DBUG_PRINT ("NTC", ("dispatching %s for %s", FUNDEF_NAME (wrapper), tmp_str));
+    DBUG_PRINT ("NTC", ("dispatching %s for %s:%s", FUNDEF_MOD (wrapper),
+                        FUNDEF_NAME (wrapper), tmp_str));
 
     res = TYDispatchFunType (FUNDEF_TYPE (wrapper), args);
 
@@ -138,7 +142,8 @@ NTCFUNDispatchFunType (node *wrapper, ntype *args)
     DBUG_ENTER ("NTCFUNDispatchFunType");
 
     DBUG_EXECUTE ("NTC", tmp_str = TYType2String (args, 0, 0););
-    DBUG_PRINT ("NTC", ("dispatching %s for %s", FUNDEF_NAME (wrapper), tmp_str));
+    DBUG_PRINT ("NTC", ("dispatching %s:%s for %s", FUNDEF_MOD (wrapper),
+                        FUNDEF_NAME (wrapper), tmp_str));
 
     res = TYDispatchFunType (FUNDEF_TYPE (wrapper), args);
 
@@ -224,9 +229,10 @@ NTCFUN_udf (te_info *info, ntype *args)
                  * no match at all!
                  */
                 ERROR (linenum,
-                       ("No matching definition found for the application of \"%s\" "
+                       ("No matching definition found for the application of \"%s:%s\" "
                         " to arguments %s",
-                        FUNDEF_NAME (fundef), TYType2String (args, FALSE, 0)));
+                        FUNDEF_MOD (fundef), FUNDEF_NAME (fundef),
+                        TYType2String (args, FALSE, 0)));
                 act_info_chn = TEGetParent (act_info_chn);
                 TEExtendedAbort ();
             }
