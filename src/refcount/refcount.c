@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.33  1998/02/11 17:21:25  srs
+ * removed unused var new_info.
+ * changed NPART_IDX to NPART_WITHID
+ *
  * Revision 1.32  1998/02/10 14:58:50  dkr
  * bugfix in RCNpart()
  *
@@ -1120,7 +1124,7 @@ node *
 RCwith (node *arg_node, node *arg_info)
 {
     int *ref_dump, *with_dump, index_vec_varno, i, mod_array_varno;
-    node *var_dec, *new_info, *id_node;
+    node *var_dec, *id_node;
     long *used_mask;
 
     DBUG_ENTER ("RCwith");
@@ -1287,7 +1291,7 @@ RCNpart (node *arg_node, node *arg_info)
 
     NPART_CODE (arg_node) = Trav (NPART_CODE (arg_node), arg_info);
     NPART_GEN (arg_node) = Trav (NPART_GEN (arg_node), arg_info);
-    NPART_IDX (arg_node) = Trav (NPART_IDX (arg_node), arg_info);
+    NPART_WITHID (arg_node) = Trav (NPART_WITHID (arg_node), arg_info);
 
     with_dump = Store (); /* store refcounts of with-loop */
 
