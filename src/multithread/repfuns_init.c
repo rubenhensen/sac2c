@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2004/09/28 13:22:48  ktr
+ * Removed generatemasks.
+ *
  * Revision 3.1  2000/11/20 18:03:13  sacbase
  * new release made
  *
@@ -63,7 +66,6 @@
 #include "traverse.h"
 #include "scheduling.h"
 #include "DupTree.h"
-#include "generatemasks.h"
 #include "globals.h"
 #include "free.h"
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2004/09/28 13:22:48  ktr
+ * Removed generatemasks.
+ *
  * Revision 3.6  2004/01/16 12:55:02  skt
  * added some DBUG-Output
  *
@@ -88,7 +91,6 @@
 #include "traverse.h"
 #include "scheduling.h"
 #include "DupTree.h"
-#include "generatemasks.h"
 #include "globals.h"
 #include "free.h"
 #include "DataFlowMask.h"

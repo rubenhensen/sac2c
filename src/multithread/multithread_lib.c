@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2004/09/28 13:22:48  ktr
+ * Removed generatemasks.
+ *
  * Revision 3.10  2004/08/26 17:01:36  skt
  * moved MUTHDecodeExecmode from multithread to multithread_lib
  *
@@ -80,7 +83,6 @@
 #include "free.h"
 #include "DupTree.h"
 #include "DataFlowMask.h"
-#include "generatemasks.h"
 #include "multithread_lib.h"
 #include "multithread.h"
 #include "internal_lib.h"
@@ -328,32 +330,6 @@ MUTHReduceFundefName (node *fundef, int count)
 /******************************************************************************
  *
  * function:
- *   long *DupMask_(long *oldmask, int varno)
- *
- * description:
- *   copies Mask via DupMask, but is able to handle NULL also (returns NULL
- *   when it has to copy a NULL).
- *
- ******************************************************************************/
-static long *
-DupMask_ (long *oldmask, int varno)
-{
-    long *result;
-
-    DBUG_ENTER ("DupMask_");
-
-    if (oldmask == NULL) {
-        result = NULL;
-    } else {
-        result = DupMask (oldmask, varno);
-    }
-
-    DBUG_RETURN (result);
-}
-
-/******************************************************************************
- *
- * function:
  *   static node *MUTHInsertBlock(node *assign, node *block, node *fundef)
  *
  * description:
@@ -382,9 +358,6 @@ MUTHInsertBlock (node *assign, node *block, node *fundef)
     L_MT_OR_ST_REGION (block, MakeBlock (newassign, NULL));
     ASSIGN_INSTR (assign) = block;
     varno = FUNDEF_VARNO (fundef);
-    ASSIGN_DEFMASK (newassign) = DupMask_ (ASSIGN_DEFMASK (assign), varno);
-    ASSIGN_USEMASK (newassign) = DupMask_ (ASSIGN_USEMASK (assign), varno);
-    ASSIGN_MRDMASK (newassign) = DupMask_ (ASSIGN_MRDMASK (assign), varno);
 
     DBUG_RETURN (assign);
 }

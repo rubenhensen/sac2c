@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2004/09/28 13:22:48  ktr
+ * Removed generatemasks.
+ *
  * Revision 3.8  2004/08/26 17:01:36  skt
  * moved MUTHDecodeExecmode from multithread to multithread_lib
  *
@@ -51,7 +54,7 @@
 #ifndef _SAC_MULTITHREAD_LIB_H_
 #define _SAC_MULTITHREAD_LIB_H_
 
-#include "refcount.h"
+#include "tree_compound.h"
 
 /*
  *  returns 0 for refcounting-objects and -1 otherwise

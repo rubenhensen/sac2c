@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2004/09/28 13:22:48  ktr
+ * Removed generatemasks.
+ *
  * Revision 3.4  2002/10/18 13:29:17  sbs
  * ID_ATTRIB replaced by accesses to the FLAGS of N_id
  *
@@ -71,7 +74,6 @@
 #include "traverse.h"
 #include "scheduling.h"
 #include "DupTree.h"
-#include "generatemasks.h"
 #include "globals.h"
 #include "my_debug.h"
 #include "DataFlowMask.h"

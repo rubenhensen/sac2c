@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2004/09/28 13:22:48  ktr
+ * Removed generatemasks.
+ *
  * Revision 3.2  2000/12/06 19:22:16  cg
  * Removed compiler warnings in production mode.
  *
@@ -50,7 +53,6 @@
 #include "traverse.h"
 #include "scheduling.h"
 #include "DupTree.h"
-#include "generatemasks.h"
 #include "globals.h"
 #include "free.h"
 #include "DataFlowMask.h"

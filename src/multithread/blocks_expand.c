@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2004/09/28 13:22:48  ktr
+ * Removed generatemasks.
+ *
  * Revision 3.2  2004/01/16 12:46:30  skt
  * handling of do-loops enabled
  *
@@ -54,7 +57,6 @@
 #include "traverse.h"
 #include "scheduling.h"
 #include "DupTree.h"
-#include "generatemasks.h"
 #include "globals.h"
 #include "my_debug.h"
 #include "multithread_lib.h"
