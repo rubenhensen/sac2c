@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.61  2000/06/29 14:56:47  mab
+ * added INFO_APT_WITHOP_TYPE and INFO_APT_WITH_PARTS
+ *
  * Revision 1.60  2000/06/29 12:18:21  nmw
  * additional macros for INFO_PIW_ added
  *
@@ -2567,6 +2570,8 @@ extern node *MakeInfo ();
 
 /* when used in pad_transform.c */
 #define INFO_APT_EXPRESSION_PADDED(n) ((bool)(n->flag))
+#define INFO_APT_WITHOP_TYPE(n) (n->int_data)
+#define INFO_APT_WITH_PARTS(n) (n->counter)
 
 /*--------------------------------------------------------------------------*/
 
