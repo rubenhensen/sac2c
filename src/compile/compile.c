@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.100  2000/11/05 13:41:06  dkr
+ * some sharing of ICM args removed
+ *
  * Revision 2.99  2000/11/03 16:16:39  dkr
  * COMPAssign, COMPLet brushed
  *
@@ -340,7 +343,7 @@ static node *wl_seg = NULL;
 
 #define LABEL_NAME "SAC__Label" /* basic-name for goto label */
 
-#define ICMPARAM_TAG(expr) ID_NAME (EXPRS_EXPR (expr))
+#define ICMPARAM_TAG(expr) EXPRS_EXPR (expr)
 #define ICMPARAM_ARG(expr) EXPRS_EXPR (EXPRS_NEXT (expr))
 
 /*
@@ -957,72 +960,57 @@ IdOrNumToIndex (node *id_or_num, int dim)
 static void
 AdjustAddedAssigns (node *before, node *after)
 {
-    char *new_id, *old_id;
+    node *new_id, *old_id;
     node *tmp, *last;
 
     DBUG_ENTER ("AdjustAddedAssigns");
 
     while (before != NULL) {
         if (NODE_TYPE (ASSIGN_INSTR (before)) == N_icm) {
-            if ((0
-                 == strcmp (ICM_NAME (ASSIGN_INSTR (before)), "ND_KS_MAKE_UNIQUE_ARRAY"))
-                || (0
-                    == strcmp (ICM_NAME (ASSIGN_INSTR (before)),
-                               "ND_MAKE_UNIQUE_HIDDEN"))) {
+            if ((!strcmp (ICM_NAME (ASSIGN_INSTR (before)), "ND_KS_MAKE_UNIQUE_ARRAY"))
+                || (!strcmp (ICM_NAME (ASSIGN_INSTR (before)),
+                             "ND_MAKE_UNIQUE_HIDDEN"))) {
                 tmp = ASSIGN_NEXT (after);
                 last = after;
-                old_id = ID_NAME (ICM_ARG1 (ASSIGN_INSTR (before)));
-                new_id = ID_NAME (ICM_ARG2 (ASSIGN_INSTR (before)));
+                old_id = ICM_ARG1 (ASSIGN_INSTR (before));
+                new_id = ICM_ARG2 (ASSIGN_INSTR (before));
 
                 while (tmp != NULL) {
                     if (NODE_TYPE (ASSIGN_INSTR (tmp)) == N_icm) {
-                        if (((0
-                              == strcmp (ICM_NAME (ASSIGN_INSTR (tmp)),
-                                         "ND_DEC_RC_FREE_HIDDEN"))
-                             && (0
-                                 == strcmp (ID_NAME (ICM_ARG1 (ASSIGN_INSTR (tmp))),
-                                            old_id)))
-                            || ((0
-                                 == strcmp (ICM_NAME (ASSIGN_INSTR (tmp)),
-                                            "ND_DEC_RC_FREE_ARRAY"))
-                                && (0
-                                    == strcmp (ID_NAME (ICM_ARG1 (ASSIGN_INSTR (tmp))),
-                                               old_id)))
-                            || ((0
-                                 == strcmp (ICM_NAME (ASSIGN_INSTR (tmp)), "ND_ALLOC_RC"))
-                                && (0
-                                    == strcmp (ID_NAME (ICM_ARG1 (ASSIGN_INSTR (tmp))),
-                                               new_id)))) {
+                        if (((!strcmp (ICM_NAME (ASSIGN_INSTR (tmp)),
+                                       "ND_DEC_RC_FREE_HIDDEN"))
+                             && (!strcmp (ID_NAME (ICM_ARG1 (ASSIGN_INSTR (tmp))),
+                                          ID_NAME (old_id))))
+                            || ((!strcmp (ICM_NAME (ASSIGN_INSTR (tmp)),
+                                          "ND_DEC_RC_FREE_ARRAY"))
+                                && (!strcmp (ID_NAME (ICM_ARG1 (ASSIGN_INSTR (tmp))),
+                                             ID_NAME (old_id))))
+                            || ((!strcmp (ICM_NAME (ASSIGN_INSTR (tmp)), "ND_ALLOC_RC"))
+                                && (!strcmp (ID_NAME (ICM_ARG1 (ASSIGN_INSTR (tmp))),
+                                             ID_NAME (new_id))))) {
                             ASSIGN_NEXT (last) = ASSIGN_NEXT (tmp);
-                        } else if ((0
-                                    == strcmp (ICM_NAME (ASSIGN_INSTR (tmp)),
-                                               "ND_NO_RC_FREE_ARRAY"))
-                                   && (0
-                                       == strcmp (ID_NAME (ICM_ARG1 (ASSIGN_INSTR (tmp))),
-                                                  new_id))) {
+                        } else if ((!strcmp (ICM_NAME (ASSIGN_INSTR (tmp)),
+                                             "ND_NO_RC_FREE_ARRAY"))
+                                   && (!strcmp (ID_NAME (ICM_ARG1 (ASSIGN_INSTR (tmp))),
+                                                ID_NAME (new_id)))) {
                             ICM_NAME (ASSIGN_INSTR (before))
                               = "ND_KS_NO_RC_MAKE_UNIQUE_ARRAY";
-                        } else if ((0
-                                    == strcmp (ICM_NAME (ASSIGN_INSTR (tmp)),
-                                               "ND_NO_RC_FREE_HIDDEN"))
-                                   && (0
-                                       == strcmp (ID_NAME (ICM_ARG1 (ASSIGN_INSTR (tmp))),
-                                                  new_id))) {
+                        } else if ((!strcmp (ICM_NAME (ASSIGN_INSTR (tmp)),
+                                             "ND_NO_RC_FREE_HIDDEN"))
+                                   && (!strcmp (ID_NAME (ICM_ARG1 (ASSIGN_INSTR (tmp))),
+                                                ID_NAME (new_id)))) {
                             ICM_NAME (ASSIGN_INSTR (before))
                               = "ND_NO_RC_MAKE_UNIQUE_HIDDEN";
-                        } else if (((0
-                                     == strcmp (ICM_NAME (ASSIGN_INSTR (tmp)),
-                                                "ND_NO_RC_ASSIGN_HIDDEN"))
-                                    || (0
-                                        == strcmp (ICM_NAME (ASSIGN_INSTR (tmp)),
-                                                   "ND_KS_NO_RC_ASSIGN_ARRAY")))
-                                   && (0
-                                       == strcmp (ID_NAME (ICM_ARG1 (ASSIGN_INSTR (tmp))),
-                                                  new_id))
-                                   && (0
-                                       == strcmp (ID_NAME (ICM_ARG2 (ASSIGN_INSTR (tmp))),
-                                                  old_id))) {
-                            new_id = old_id;
+                        } else if (((!strcmp (ICM_NAME (ASSIGN_INSTR (tmp)),
+                                              "ND_NO_RC_ASSIGN_HIDDEN"))
+                                    || (!strcmp (ICM_NAME (ASSIGN_INSTR (tmp)),
+                                                 "ND_KS_NO_RC_ASSIGN_ARRAY")))
+                                   && (!strcmp (ID_NAME (ICM_ARG1 (ASSIGN_INSTR (tmp))),
+                                                ID_NAME (new_id)))
+                                   && (!strcmp (ID_NAME (ICM_ARG2 (ASSIGN_INSTR (tmp))),
+                                                ID_NAME (old_id)))) {
+                            new_id = FreeTree (new_id);
+                            new_id = DupNode (old_id);
                         }
                     }
 
@@ -1066,7 +1054,8 @@ MergeIcmsAp (node *out_icm, node *in_icm, types *type, int rc)
                  "out-argument of application must be a N_id node");
 
     if (IsBoxed (type)) {
-        ICMPARAM_TAG (out_icm) = "upd_bx";
+        ICMPARAM_TAG (out_icm) = FreeTree (ICMPARAM_TAG (out_icm));
+        ICMPARAM_TAG (out_icm) = MakeId_Copy ("upd_bx");
 
         DBUG_ASSERT ((NODE_TYPE (ICMPARAM_ARG (in_icm)) == N_id),
                      "boxed in-argument of application must be a N_id node");
@@ -1137,7 +1126,8 @@ MergeIcmsAp (node *out_icm, node *in_icm, types *type, int rc)
                                 MakeId_Copy (GenericFun (0, type)));
         }
     } else {
-        ICMPARAM_TAG (out_icm) = "upd";
+        ICMPARAM_TAG (out_icm) = FreeTree (ICMPARAM_TAG (out_icm));
+        ICMPARAM_TAG (out_icm) = MakeId_Copy ("upd");
 
         DBUG_PRINT ("COMP",
                     ("Merging ICM-args unboxed %s", ID_NAME (ICMPARAM_ARG (out_icm))));
@@ -1185,9 +1175,11 @@ MergeIcmsFundef (node *out_icm, node *in_icm, types *out_type, types *in_type, i
 
     if (CMP_equal == CmpTypes (out_type, in_type)) {
         if (IsBoxed (out_type)) {
-            ID_NAME (EXPRS_EXPR (out_icm)) = "upd_bx";
+            EXPRS_EXPR (out_icm) = FreeTree (EXPRS_EXPR (out_icm));
+            EXPRS_EXPR (out_icm) = MakeId_Copy ("upd_bx");
         } else {
-            ID_NAME (EXPRS_EXPR (out_icm)) = "upd";
+            EXPRS_EXPR (out_icm) = FreeTree (EXPRS_EXPR (out_icm));
+            EXPRS_EXPR (out_icm) = MakeId_Copy ("upd");
         }
 
         DBUG_PRINT ("COMP", ("Merging icm args of \"ND_FUN_DEC\", new tag=\"%s\"",
@@ -2747,10 +2739,8 @@ COMPAssign (node *arg_node, node *arg_info)
     if (NODE_TYPE (instr) == N_assign) {
         /*
          * a N_assign chain was returned.
-         *  -> free the old assignment.
          *  -> insert N_assign chain at the current position into the tree.
          */
-        ASSIGN_INSTR (arg_node) = FreeTree (ASSIGN_INSTR (arg_node));
 
         /* insert head of 'instr' into AST */
         ASSIGN_INSTR (arg_node) = ASSIGN_INSTR (instr);
@@ -3093,7 +3083,7 @@ COMPReturn (node *arg_node, node *arg_info)
  * Description:
  *   Compiles a N_let node.
  *   The return value is a RHS expression or a N_assign chain of ICMs.
- *   In the latter case the old 'arg_node' is removed by COMPAssign.
+ *   In the latter case the old 'arg_node' is removed.
  *
  ******************************************************************************/
 
@@ -3121,10 +3111,10 @@ COMPLet (node *arg_node, node *arg_info)
         /*
          * 'expr' is a N_assign chain
          *  -> return this N_assign chain
-         *
-         * Note here, that the old 'arg_node' is removed by COMPAssign.
+         *  -> remove old 'arg_node'
          */
         ret_node = expr;
+        arg_node = FreeTree (arg_node);
     } else {
         /*
          * 'expr' is a RHS expression
@@ -3146,7 +3136,7 @@ COMPLet (node *arg_node, node *arg_info)
  * Description:
  *   Creates an ICM for function application and insert ICMs to decrement the
  *   RC of function arguments.
- *   Note, that the old 'arg_node' is removed by COMPAssign.
+ *   Note, that the old 'arg_node' is removed by COMPLet.
  *
  * Remarks:
  *   The flattening phase assures that no one of the arguments occurs on the LHS
@@ -3415,7 +3405,7 @@ COMPAp (node *arg_node, node *arg_info)
  *
  * Description:
  *   Transforms N_prf node of type F_dim into ICM chain.
- *   Note, that the old 'arg_node' is removed by COMPAssign.
+ *   Note, that the old 'arg_node' is removed by COMPLet.
  *
  * Remarks:
  *   INFO_COMP_LASTIDS(arg_info) contains name of assigned variable.
@@ -3448,7 +3438,7 @@ COMPPrfDim (node *arg_node, node *arg_info)
  *
  * Description:
  *   Transforms N_prf node of type F_shape into ICM chain.
- *   Note, that the old 'arg_node' is removed by COMPAssign.
+ *   Note, that the old 'arg_node' is removed by COMPLet.
  *
  * Remarks:
  *   INFO_COMP_LASTIDS(arg_info) contains name of assigned variable.
@@ -3493,7 +3483,7 @@ COMPPrfShape (node *arg_node, node *arg_info)
  *
  * Description:
  *   Transforms N_prf node of type F_reshape into ICM chain.
- *   Note, that the old 'arg_node' is removed by COMPAssign.
+ *   Note, that the old 'arg_node' is removed by COMPLet.
  *
  * Remarks:
  *   INFO_COMP_LASTIDS(arg_info) contains name of assigned variable.
@@ -3538,7 +3528,7 @@ COMPPrfReshape (node *arg_node, node *arg_info)
  * Description:
  *   Compiles N_prf node of type F_add_SxA, F_sub_SxA, F_mul_SxA, F_div_SxA.
  *   The return value is a N_assign chain of ICMs.
- *   Note, that the old 'arg_node' is removed by COMPAssign.
+ *   Note, that the old 'arg_node' is removed by COMPLet.
  *
  * Remarks:
  *   INFO_COMP_LASTIDS(arg_info) contains name of assigned variable.
@@ -3599,7 +3589,7 @@ COMPPrfArith_SxA (node *arg_node, node *arg_info)
  * Description:
  *   Compiles N_prf node of type F_add_AxS, F_sub_AxS, F_mul_AxS, F_div_AxS.
  *   The return value is a N_assign chain of ICMs.
- *   Note, that the old 'arg_node' is removed by COMPAssign.
+ *   Note, that the old 'arg_node' is removed by COMPLet.
  *
  * Remarks:
  *   INFO_COMP_LASTIDS(arg_info) contains name of assigned variable.
@@ -3660,7 +3650,7 @@ COMPPrfArith_AxS (node *arg_node, node *arg_info)
  * Description:
  *   Compiles N_prf node of type F_add_AxA, F_sub_AxA, F_mul_AxA, F_div_AxA.
  *   The return value is a N_assign chain of ICMs.
- *   Note, that the old 'arg_node' is removed by COMPAssign.
+ *   Note, that the old 'arg_node' is removed by COMPLet.
  *
  * Remarks:
  *   INFO_COMP_LASTIDS(arg_info) contains name of assigned variable.
@@ -3730,7 +3720,7 @@ COMPPrfArith_AxA (node *arg_node, node *arg_info)
  *
  * Description:
  *   Transforms N_prf node of type F_idx_psi into ICM chain.
- *   Note, that the old 'arg_node' is removed by COMPAssign.
+ *   Note, that the old 'arg_node' is removed by COMPLet.
  *
  * Remarks:
  *   INFO_COMP_LASTIDS(arg_info) contains name of assigned variable.
@@ -3785,7 +3775,7 @@ COMPPrfIdxPsi (node *arg_node, node *arg_info)
  *
  * Description:
  *   Transforms N_prf node of type F_idx_modarray into ICM chain.
- *   Note, that the old 'arg_node' is removed by COMPAssign.
+ *   Note, that the old 'arg_node' is removed by COMPLet.
  *
  * Remarks:
  *   INFO_COMP_LASTIDS(arg_info) contains name of assigned variable.
@@ -3862,7 +3852,7 @@ COMPPrfIdxModarray (node *arg_node, node *arg_info)
  *
  * Description:
  *   Transforms N_prf node of type F_psi into ICM chain.
- *   Note, that the old 'arg_node' is removed by COMPAssign.
+ *   Note, that the old 'arg_node' is removed by COMPLet.
  *
  * Remarks:
  *   INFO_COMP_LASTIDS(arg_info) contains name of assigned variable.
@@ -3945,7 +3935,7 @@ COMPPrfPsi (node *arg_node, node *arg_info)
  *
  * Description:
  *   Transforms N_prf node of type F_modarray into ICM chain.
- *   Note, that the old 'arg_node' is removed by COMPAssign.
+ *   Note, that the old 'arg_node' is removed by COMPLet.
  *
  * Remarks:
  *   INFO_COMP_LASTIDS(arg_info) contains name of assigned variable.
@@ -4136,7 +4126,7 @@ COMPPrfConvertScalar (node *arg_node, node *arg_info)
  * Description:
  *   Compiles N_prf node of type F_toi_A, F_tof_A, F_tod_A.
  *   The return value is a N_assign chain of ICMs.
- *   Note, that the old 'arg_node' is removed by COMPAssign.
+ *   Note, that the old 'arg_node' is removed by COMPLet.
  *
  * Remark:
  *   INFO_COMP_LASTIDS(arg_info) contains name of assigned variable.
@@ -4190,7 +4180,7 @@ COMPPrfConvertArr (node *arg_node, node *arg_info)
  * Description:
  *   Compiles N_prf node of type F_take, F_drop.
  *   The return value is a N_assign chain of ICMs.
- *   Note, that the old 'arg_node' is removed by COMPAssign.
+ *   Note, that the old 'arg_node' is removed by COMPLet.
  *
  * Remark:
  *   INFO_COMP_LASTIDS(arg_info) contains name of assigned variable.
@@ -4254,7 +4244,7 @@ COMPPrfTakeDrop (node *arg_node, node *arg_info)
  * Description:
  *   Compiles N_prf node of type F_cat.
  *   The return value is a N_assign chain of ICMs.
- *   Note, that the old 'arg_node' is removed by COMPAssign.
+ *   Note, that the old 'arg_node' is removed by COMPLet.
  *
  * Remarks:
  *   INFO_COMP_LASTIDS(arg_info) contains name of assigned variable.
@@ -4305,7 +4295,7 @@ COMPPrfCat (node *arg_node, node *arg_info)
  * Description:
  *   Compiles N_prf node of type F_rotate.
  *   The return value is a N_assign chain of ICMs.
- *   Note, that the old 'arg_node' is removed by COMPAssign.
+ *   Note, that the old 'arg_node' is removed by COMPLet.
  *
  * Remarks:
  *   INFO_COMP_LASTIDS(arg_info) contains name of assigned variable.
@@ -4356,7 +4346,7 @@ COMPPrfRotate (node *arg_node, node *arg_info)
  *   Compilation of a N_prf node.
  *   The return value is a N_assign chain of ICMs, a single N_icm node, or
  *   the unchanged N_prf node.
- *   Note, that the old 'arg_node' is removed by COMPAssign.
+ *   Note, that the old 'arg_node' is removed by COMPLet.
  *
  ******************************************************************************/
 
@@ -4541,7 +4531,7 @@ COMPPrf (node *arg_node, node *arg_info)
  * Description:
  *   Compiles let expression with id on RHS.
  *   The return value is a (possibly empty) N_assign chain of ICMs.
- *   Note, that the old 'arg_node' is removed by COMPAssign.
+ *   Note, that the old 'arg_node' is removed by COMPLet.
  *
  ******************************************************************************/
 
@@ -4596,7 +4586,7 @@ COMPIdLet (node *arg_node, node *arg_info)
  *   Compiles let expression with a N_id node representing an application of
  *   the from_class() conversion function on RHS.
  *   The return value is a (possibly empty) N_assign chain of ICMs.
- *   Note, that the old 'arg_node' is removed by COMPAssign.
+ *   Note, that the old 'arg_node' is removed by COMPLet.
  *
  ******************************************************************************/
 
@@ -4649,7 +4639,7 @@ COMPIdFromClass (node *arg_node, node *arg_info)
  *   Compiles let expression with a N_id node representing an application of
  *   the to_class() conversion function on RHS.
  *   The return value is a (possibly empty) N_assign chain of ICMs.
- *   Note, that the old 'arg_node' is removed by COMPAssign.
+ *   Note, that the old 'arg_node' is removed by COMPLet.
  *
  ******************************************************************************/
 
@@ -4728,7 +4718,7 @@ COMPIdToClass (node *arg_node, node *arg_info)
  *   Compiles let expression with a N_id node (which possibly represents an
  *   application of a class conversion function!) on RHS.
  *   The return value is a N_assign chain of ICMs (the old 'arg_node' is
- *   removed by COMPAssign) or the unchanged N_id node.
+ *   removed by COMPLet) or the unchanged N_id node.
  *
  ******************************************************************************/
 
@@ -4776,7 +4766,7 @@ COMPId (node *arg_node, node *arg_info)
  * Description:
  *   Compiles let expression with a constant array on the RHS.
  *   The return value is a N_assign chain of ICMs (the old 'arg_node' is
- *   removed by COMPAssign) or the unchanged N_id node.
+ *   removed by COMPLet) or the unchanged N_id node.
  *
  ******************************************************************************/
 
@@ -4898,15 +4888,6 @@ COMPLoop (node *arg_node, node *arg_info)
     ret_node = MakeAssign ((NODE_TYPE (arg_node) == N_do) ? MakeDo (cond, body)
                                                           : MakeWhile (cond, body),
                            NULL);
-    /*
-     * CAUTION: 'arg_node' will be removed by COMPAssign.
-     * Therefore we must set the sons to NULL here, in order to recycle
-     * them in 'ret_node'!!!
-     */
-    L_DO_OR_WHILE_COND (arg_node, NULL);
-    L_DO_OR_WHILE_BODY (arg_node, NULL);
-
-    /* now add some DEC_RC at begining of and after the loop */
 
     /*
      * Build icm's and insert them *before* the first instruction in the loop.
@@ -5076,6 +5057,15 @@ COMPLoop (node *arg_node, node *arg_info)
         ret_node = icm_node;
     }
 
+    /*
+     * The old 'arg_node' can be removed now.
+     * We must set the sons to NULL here, in order to recycle them in
+     * 'ret_node'!!!
+     */
+    L_DO_OR_WHILE_COND (arg_node, NULL);
+    L_DO_OR_WHILE_BODY (arg_node, NULL);
+    arg_node = FreeTree (arg_node);
+
     DBUG_RETURN (ret_node);
 }
 
@@ -5147,8 +5137,10 @@ COMPCond (node *arg_node, node *arg_info)
  *   Compilation of a N_with2 node.
  *   If this is a fold-with-loop, we append the vardecs of the pseudo fold-fun
  *    to the vardec-chain of the current function.
+ *   The return value is a N_assign chain of ICMs.
+ *   The old 'arg_node' is removed by COMPLet.
  *
- * remarks:
+ * Remarks:
  *   - 'wl_ids' points always to LET_IDS of the current with-loop.
  *   - 'wl_node' points always to the N_Nwith2-node.
  *
@@ -5161,7 +5153,7 @@ node *
 COMPNwith2 (node *arg_node, node *arg_info)
 {
     node *fundef, *vardec, *icm_args, *fold_vardecs;
-    node *let_neutral, *info, *comp_neutral, *tmp, *new;
+    node *let_neutral, *comp_neutral, *tmp, *new;
     node *old_wl_node;
     ids *old_wl_ids;
     char *icm_name1, *icm_name2, *profile_name;
@@ -5281,21 +5273,11 @@ COMPNwith2 (node *arg_node, node *arg_info)
          * compile 'wl_ids = neutral' !!!
          */
         let_neutral = MakeLet (DupTree (NWITH2_NEUTRAL (arg_node)), DupOneIds (wl_ids));
-        info = MakeInfo ();
-        comp_neutral = Trav (let_neutral, info);
-        FREE (info);
-        if (NODE_TYPE (comp_neutral) == N_assign) {
-            /*
-             * compiled  'wl_ids = neutral'  is already a N_assign chain
-             *  -> N_let node can be removed
-             */
-            let_neutral = FreeTree (let_neutral);
-        } else {
+        comp_neutral = Compile (let_neutral);
+        if (NODE_TYPE (comp_neutral) != N_assign) {
             /*
              * compiled  'wl_ids = neutral'  is still a N_let node
              *  -> build a N_assign node
-             *
-             * CAUTION: N_let node is already consumed!! Do not free it!
              */
             DBUG_ASSERT ((NODE_TYPE (let_neutral) == N_let),
                          "Compiled N_let node is neither a N_assign chain nor"
@@ -5376,11 +5358,6 @@ COMPNwith2 (node *arg_node, node *arg_info)
     if (IDS_REFCNT (NWITH2_VEC (arg_node)) > 0) {
         assigns = AppendAssign (assigns, Ids2DecRcICMs (NWITH2_VEC (arg_node), NULL));
     }
-
-    /*
-     * with-loop representation is useless now!
-     */
-    arg_node = FreeTree (arg_node);
 
     /*
      * pop 'wl_ids', 'wl_node'.
