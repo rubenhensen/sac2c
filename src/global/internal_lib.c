@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.21  2000/07/14 15:36:08  nmw
+ * oops, big crash ... MALLOC reverted to Malloc
+ *
  * Revision 2.20  2000/07/14 14:42:31  nmw
  * malloc in StringConcat changed to MALLOC
  *
@@ -288,7 +291,7 @@ StringCopy (char *source)
     if (source) {
         DBUG_PRINT ("STRINGCOPY", ("copying string \"%s\"", source));
 
-        ret = (char *)MALLOC (sizeof (char) * (strlen (source) + 1));
+        ret = (char *)Malloc (sizeof (char) * (strlen (source) + 1));
         strcpy (ret, source);
     } else
         ret = NULL;
@@ -315,7 +318,7 @@ StringConcat (char *first, char *second)
 
     DBUG_ENTER ("StringConcat");
 
-    result = (char *)MALLOC (strlen (first) + strlen (second) + 1);
+    result = (char *)Malloc (strlen (first) + strlen (second) + 1);
 
     strcpy (result, first);
     strcat (result, second);
