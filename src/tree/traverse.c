@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.28  2002/02/21 15:46:40  dkr
+ * new traversal-tab for precompile added
+ *
  * Revision 3.27  2001/12/10 15:36:11  dkr
  * comp2_tab added
  *
@@ -1328,6 +1331,17 @@ static funtab comp2_tab_rec = {{
                                NULL,
                                NULL};
 funtab *comp2_tab = &comp2_tab_rec;
+
+/*
+ *  (103) precomp3_tab
+ */
+static funtab precomp3_tab_rec = {{
+#define NIFprecomp3(it_precomp3) it_precomp3
+#include "node_info.mac"
+                                  },
+                                  NULL,
+                                  NULL};
+funtab *precomp3_tab = &precomp3_tab_rec;
 
 /*
  *  nnode

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.21  2002/02/21 15:47:04  dkr
+ * new traversal-tab for precompile added
+ *
  * Revision 3.20  2001/12/10 15:35:48  dkr
  * comp2_tab added
  *
@@ -200,6 +203,7 @@ extern funtab *writedec_tab;
 extern funtab *unique_tab;
 extern funtab *precomp1_tab;
 extern funtab *precomp2_tab;
+extern funtab *precomp3_tab;
 extern funtab *readsib_tab;
 extern funtab *wlt_tab;
 extern funtab *cse_tab;
