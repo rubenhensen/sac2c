@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2002/06/03 13:42:57  dkr
+ * behaviour for TAGGED_ARRAYS modified
+ *
  * Revision 3.7  2002/06/02 22:02:11  dkr
  * support for TAGGED_ARRAYS added
  *
@@ -1246,12 +1249,9 @@ FltnExprs (node *arg_node, node *arg_info)
         break;
     case CT_array:
 #ifdef TAGGED_ARRAYS
-        abstract = ((NODE_TYPE (expr) == N_num) || (NODE_TYPE (expr) == N_float)
-                    || (NODE_TYPE (expr) == N_double) || (NODE_TYPE (expr) == N_bool)
-                    || (NODE_TYPE (expr) == N_char) || (NODE_TYPE (expr) == N_str)
-                    || (NODE_TYPE (expr) == N_array) || (NODE_TYPE (expr) == N_ap)
-                    || (NODE_TYPE (expr) == N_prf) || (NODE_TYPE (expr) == N_Nwith)
-                    || (NODE_TYPE (expr) == N_cast));
+        abstract = ((NODE_TYPE (expr) == N_str) || (NODE_TYPE (expr) == N_array)
+                    || (NODE_TYPE (expr) == N_ap) || (NODE_TYPE (expr) == N_prf)
+                    || (NODE_TYPE (expr) == N_Nwith) || (NODE_TYPE (expr) == N_cast));
 #else
         abstract = ((NODE_TYPE (expr) == N_ap) || (NODE_TYPE (expr) == N_prf)
                     || (NODE_TYPE (expr) == N_Nwith) || (NODE_TYPE (expr) == N_cast));
