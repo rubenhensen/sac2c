@@ -1,14 +1,14 @@
 /*
  *
  * $Log$
+ * Revision 3.71  2001/12/12 12:45:51  dkr
+ * some minor changes in PrintId() done
+ *
  * Revision 3.70  2001/12/11 13:04:50  dkr
  * PrintId: ID_NT_TAG used for TAGGED_ARRAYS
  *
  * Revision 3.69  2001/12/10 15:36:46  dkr
  * some modifications for TAGGED_ARRAYS done
- *
- * Revision 3.68  2001/11/21 10:25:28  dkr
- * some cosmetical changes done
  *
  * Revision 3.67  2001/11/19 14:54:24  sbs
  * WLARRAY and WLINDEXVAR now printed in WLAAprintAccesses as well.
@@ -51,149 +51,6 @@
  *
  * Revision 3.55  2001/04/26 09:23:36  dkr
  * DoPrintAST: minor modifications done
- *
- * Revision 3.54  2001/04/26 01:39:51  dkr
- * some minor changes done
- *
- * Revision 3.53  2001/04/25 13:55:40  dkr
- * PrintFundef: ST_zombiefun added
- *
- * Revision 3.52  2001/04/25 01:21:24  dkr
- * - bug in DoPrintDFMaskAST() fixed
- * - PrintAST: FUNDEF_INT_ASSIGN, FUNDEF_EXT_ASSIGNS added
- *
- * Revision 3.51  2001/04/24 16:56:18  dkr
- * - function DoPrintDFMaskAST() added.
- * - PrintAST: base of each DFM added
- *
- * Revision 3.50  2001/04/24 10:12:08  dkr
- * macros PRINT_STRING, PRINT_POINTER_... added
- * PrintAST: FUNDEF_USED added
- *
- * Revision 3.49  2001/04/23 13:40:01  dkr
- * DoPrintAST: FUNDEF_DFM_BASE added
- *
- * Revision 3.48  2001/04/19 15:36:03  dkr
- * DBUG output for COND_CONDUSEMASK removed
- *
- * Revision 3.47  2001/04/19 15:16:45  dkr
- * stuff for DBUG string PRINT_VARS removed
- *
- * Revision 3.45  2001/04/10 09:37:03  dkr
- * macro F_PTR moved to internal_lib.h
- *
- * Revision 3.44  2001/04/03 17:51:17  dkr
- * PrintWLsegx modified: output for WLSEG_SV, WLSEG_MAXHOMDIM added
- *
- * Revision 3.43  2001/04/03 15:27:17  dkr
- * minor changes in DoPrintAST() done
- *
- * Revision 3.42  2001/04/03 12:08:32  dkr
- * GSCPrintFileHeader() modified: PrintDefines() must be called *after* the
- * typedefs have been printed because the defines may contain user
- * defined types!
- *
- * Revision 3.41  2001/04/03 09:16:27  dkr
- * fixed a bug in PrintWLsegx()
- *
- * Revision 3.40  2001/04/02 16:58:57  dkr
- * DoPrintAST modified: NWITH2_MT added
- *
- * Revision 3.39  2001/04/02 16:02:51  dkr
- * NodeOrInt_Print used
- *
- * Revision 3.38  2001/04/02 11:41:53  dkr
- * include of wltransform.h replaced by wl_bounds.h
- *
- * Revision 3.37  2001/03/29 14:46:29  dkr
- * NWITH2_SCHEDULING removed
- *
- * Revision 3.36  2001/03/29 01:35:51  dkr
- * WLSEGVAR_IDX_MIN, WLSEGVAR_IDX_MAX are now node-vectors
- *
- * Revision 3.34  2001/03/22 14:07:35  sbs
- * F_abs now printed prefix rather than infix 8-)
- *
- * Revision 3.33  2001/03/21 17:12:08  dkr
- * PrintAST: address of ID_VARDEC, IDS_VARDEC printed
- *
- * Revision 3.32  2001/03/20 16:00:29  ben
- * DoPrintAST: WLSEGX_SCHEDULER is printed now
- *
- * Revision 3.31  2001/03/19 16:43:58  dkr
- * WLSEG_HOMSV removed (WLSEG_SV used instead)
- *
- * Revision 3.30  2001/03/15 20:35:16  dkr
- * PrintAssign: DBUG-string PRINT_PROFILE is handled correctly now
- *
- * Revision 3.29  2001/03/15 16:49:46  dkr
- * PrintArg: the '&' for reference objects is no longer printed by
- * Type2String().
- * Note, that types->attrib is *not* part of the virtual TYPES types.
- *
- * Revision 3.28  2001/03/14 17:27:08  nmw
- * DoPrintIdsAST: order of attributes modified
- *
- * Revision 3.27  2001/03/08 12:26:53  dkr
- * DBUG-string PRINT_PROFILE added:
- * prints profiling instructions in *all* phases
- *
- * Revision 3.26  2001/03/07 14:24:19  dkr
- * PrintAssign modified:
- * N_annotate nodes are printed after phase 20 only
- *
- * Revision 3.25  2001/03/05 15:11:12  dkr
- * NCODE_NO renamed into NCODE_ID
- * handling of NCODE_ID modified
- *
- * Revision 3.24  2001/03/05 13:32:50  dkr
- * NGEN_OP?_GEN removed
- *
- * Revision 3.23  2001/03/05 12:52:17  dkr
- * some debug output for PRINT_RC added
- *
- * Revision 3.22  2001/02/14 14:39:58  dkr
- * DoPrintStatusAST modified
- *
- * Revision 3.21  2001/02/14 10:22:13  dkr
- * PrintAST extended: FUNDEF_TYPES, ..._STATUS, ..._ATTRIB are printed
- * now, too
- *
- * Revision 3.20  2001/02/12 16:56:07  nmw
- * warning corrected
- *
- * Revision 3.19  2001/02/12 15:57:34  nmw
- * Print functions for N_cseinfo, N_ssacnt and N_avis added
- *
- * Revision 3.18  2001/02/07 21:14:52  dkr
- * space after keyword 'extern' added
- *
- * Revision 3.17  2001/02/07 20:15:03  dkr
- * fixed a bug in PrintWLgridx()
- *
- * Revision 3.16  2001/02/06 01:43:28  dkr
- * output for new with-loop modified
- * PrintAST... updated
- *
- * Revision 3.14  2001/01/30 09:56:00  dkr
- * output for N_WLgrid(Var)-nodes modified
- *
- * Revision 3.13  2001/01/29 18:34:03  dkr
- * some superfluous attributes of N_WLsegVar removed
- *
- * Revision 3.12  2001/01/29 16:07:21  dkr
- * PrintWLstrideVar and PrintWLstride replaced by PrintWLstridex
- * PrintWLgridVar and PrintWLgrid replaced by PrintWLgridx
- *
- * Revision 3.11  2001/01/24 23:40:07  dkr
- * PrintWLseg and PrintWLsegVar replaced by PrintWLsegx
- * PrintWLblock and PrintWLublock replaced by PrintWLxblock
- *
- * Revision 3.10  2001/01/17 17:38:37  dkr
- * printing of dummy code changed (AP, naive compilation)
- *
- * Revision 3.9  2001/01/09 17:25:45  dkr
- * N_WLstriVar renamed into N_WLstrideVar
  *
  * [ eliminated ]
  *
@@ -2116,11 +1973,7 @@ PrintId (node *arg_node, node *arg_info)
                       || (NODE_TYPE (ID_NT_TAG (arg_node)) == N_arg)),
                      "ID_NT_TAG is neither N_vardec nor N_arg node!");
 
-        DBUG_EXECUTE ("PRINT_NT", print_nt = TRUE;);
-
-        if (compiler_phase >= PH_compile) {
-            print_nt = TRUE;
-        }
+        print_nt = TRUE;
     }
 #endif
 
