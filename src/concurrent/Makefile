@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.16  2000/01/25 13:52:36  dkr
+# make deps done
+#
 # Revision 2.15  2000/01/24 17:58:38  dkr
 # make deps done
 #
@@ -182,8 +185,8 @@ spmd_lift.o: /usr/include/stdio_impl.h ../global/types.h ../tree/tree_basic.h
 spmd_lift.o: ../tree/tree_compound.h ../global/Error.h /usr/include/string.h
 spmd_lift.o: /usr/include/stdlib.h ../global/globals.h ../tree/traverse.h
 spmd_lift.o: ../tree/DupTree.h ../tree/DataFlowMask.h
-spmd_lift.o: ../typecheck/typecheck.h ../refcount/refcount.h
-spmd_lift.o: ../global/internal_lib.h concurrent_lib.h
+spmd_lift.o: ../typecheck/typecheck.h ../global/internal_lib.h
+spmd_lift.o: concurrent_lib.h
 spmd_opt.o: ../../inc/dbug.h /usr/include/stdio.h
 spmd_opt.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 spmd_opt.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
@@ -202,7 +205,7 @@ spmd_trav.o: ../tree/tree_compound.h ../global/Error.h /usr/include/string.h
 spmd_trav.o: /usr/include/stdlib.h ../global/globals.h ../tree/free.h
 spmd_trav.o: ../global/my_debug.h /usr/include/malloc.h
 spmd_trav.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
-spmd_trav.o: /usr/include/sys/int_types.h ../refcount/refcount.h spmd_trav.h
+spmd_trav.o: /usr/include/sys/int_types.h spmd_trav.h
 sync_init.o: ../../inc/dbug.h /usr/include/stdio.h
 sync_init.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 sync_init.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
@@ -210,7 +213,7 @@ sync_init.o: /usr/include/stdio_impl.h ../global/types.h ../tree/tree_basic.h
 sync_init.o: ../tree/tree_compound.h ../global/Error.h /usr/include/string.h
 sync_init.o: /usr/include/stdlib.h ../global/globals.h ../tree/traverse.h
 sync_init.o: ../tree/DupTree.h ../tree/DataFlowMask.h
-sync_init.o: ../global/internal_lib.h ../refcount/refcount.h
+sync_init.o: ../global/internal_lib.h
 sync_opt.o: ../../inc/dbug.h /usr/include/stdio.h
 sync_opt.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 sync_opt.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h

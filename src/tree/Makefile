@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.6  2000/01/25 13:52:40  dkr
+# make deps done
+#
 # Revision 1.5  2000/01/24 17:58:43  dkr
 # make deps done
 #
@@ -135,7 +138,8 @@ traverse.o: ../concurrent/spmd_trav.h DataFlowMask.h
 traverse.o: ../concurrent/spmd_cons.h ../concurrent/schedule.h
 traverse.o: ../psi-opt/wl_access_analyze.h ../psi-opt/tile_size_inference.h
 traverse.o: ../typecheck/new_typecheck.h ../multithread/multithread.h
-traverse.o: ../flatten/lac2fun.h traverse.h node_info.mac
+traverse.o: ../flatten/lac2fun.h ../multithread/schedule_init.h traverse.h
+traverse.o: node_info.mac
 tree.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 tree.o: /usr/include/sys/isa_defs.h tree.h ../global/types.h tree_basic.h
 tree.o: tree_compound.h ../global/Error.h /usr/include/stdio.h

@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.14  2000/01/25 13:52:31  dkr
+# make deps done
+#
 # Revision 2.13  2000/01/24 17:58:33  dkr
 # make deps done
 #
@@ -178,12 +181,11 @@ compile.o: ../global/Error.h /usr/include/stdio.h /usr/include/sys/va_list.h
 compile.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
 compile.o: ../global/globals.h ../global/internal_lib.h ../print/print.h
 compile.o: ../../inc/dbug.h ../global/my_debug.h ../tree/traverse.h
-compile.o: ../tree/DataFlowMask.h ../optimize/optimize.h ../tree/free.h
-compile.o: /usr/include/malloc.h /usr/include/sys/types.h
-compile.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-compile.o: compile.h ../print/convert.h ../tree/DupTree.h
-compile.o: ../refcount/refcount.h ../typecheck/typecheck.h ReuseWithArrays.h
-compile.o: ../tree/scheduling.h
+compile.o: ../tree/DataFlowMask.h compile.h ../print/convert.h
+compile.o: ../tree/DupTree.h ../refcount/refcount.h ../typecheck/typecheck.h
+compile.o: ReuseWithArrays.h ../tree/free.h /usr/include/malloc.h
+compile.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
+compile.o: /usr/include/sys/int_types.h ../tree/scheduling.h
 gen_startup_code.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 gen_startup_code.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 gen_startup_code.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
@@ -280,5 +282,4 @@ wltransform.o: ../global/internal_lib.h ../tree/free.h ../../inc/dbug.h
 wltransform.o: ../global/my_debug.h /usr/include/malloc.h
 wltransform.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
 wltransform.o: /usr/include/sys/int_types.h ../tree/traverse.h
-wltransform.o: ../tree/DataFlowMask.h ../optimize/optimize.h wlpragma_funs.h
-wltransform.o: ../tree/DupTree.h
+wltransform.o: ../tree/DataFlowMask.h wlpragma_funs.h ../tree/DupTree.h

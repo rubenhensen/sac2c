@@ -1,6 +1,9 @@
 #
 # 
 # $Log$
+# Revision 1.3  2000/01/25 13:52:39  dkr
+# make deps done
+#
 # Revision 1.2  2000/01/21 14:46:09  dkr
 # directory tree added
 #
@@ -40,3 +43,12 @@ multithread.o: ../tree/free.h ../global/my_debug.h /usr/include/malloc.h
 multithread.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
 multithread.o: /usr/include/sys/int_types.h ../global/internal_lib.h
 multithread.o: ../global/Error.h /usr/include/string.h /usr/include/stdlib.h
+multithread.o: schedule_init.c ../tree/tree_compound.h ../tree/scheduling.h
+schedule_init.o: ../../inc/dbug.h /usr/include/stdio.h
+schedule_init.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
+schedule_init.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
+schedule_init.o: /usr/include/stdio_impl.h ../global/types.h
+schedule_init.o: ../tree/tree_basic.h ../tree/tree_compound.h
+schedule_init.o: ../global/Error.h /usr/include/string.h
+schedule_init.o: /usr/include/stdlib.h ../global/globals.h ../tree/traverse.h
+schedule_init.o: ../tree/scheduling.h
