@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.18  1994/12/16 10:24:00  sbs
- * N_explist & N-moddec inserted
+ * Revision 1.19  1994/12/16 11:12:36  sbs
+ * N_classdec inserted
  *
+;; Revision 1.18  1994/12/16  10:24:00  sbs
+;; N_explist & N-moddec inserted
+;;
 ;; Revision 1.17  1994/12/15  17:13:41  sbs
 ;; N_cast inserted
 ;;
@@ -71,6 +74,7 @@ NIF (N_num, "N_num", DummyFun, PrintNum, DummyFun, DummyFun),
   NIF (N_typedef, "N_typedef", DummyFun, PrintTypedef, DummyFun, DummyFun),
   NIF (N_modul, "N_modul", FltnModul, PrintModul, DummyFun, DummyFun),
   NIF (N_moddec, "N_moddec", DummyFun, DummyFun, DummyFun, DummyFun),
+  NIF (N_classdec, "N_classdec", DummyFun, DummyFun, DummyFun, DummyFun),
   NIF (N_explist, "N_explist", DummyFun, DummyFun, DummyFun, DummyFun),
   NIF (N_implist, "N_implist", DummyFun, PrintImplist, DummyFun, DummyFun),
   NIF (N_fundef, "N_fundef", DummyFun, PrintFundef, TCfundef, DummyFun),
