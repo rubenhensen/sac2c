@@ -1,7 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.1  1995/08/31 08:37:41  cg
+ * Revision 1.2  1995/09/01 07:51:33  cg
+ * first working revision.
+ * writes implementation of implicit types to SIB-file end checks
+ * implementation of explicit types against their declaration
+ *
+ * Revision 1.1  1995/08/31  08:37:41  cg
  * Initial revision
  *
  *
@@ -36,6 +41,8 @@
 #include "sib.h"
 
 FILE *sibfile;
+
+extern char filename[]; /* is set in main.c */
 
 /*
  *
@@ -93,7 +100,7 @@ LoadDeclaration (char *name, node *modtype)
     yyin = fopen (FindFile (MODDEC_PATH, buffer), "r");
 
     if (yyin == NULL) {
-        ERROR2 (1, ("Couldn't open file \"%s\"!\n", buffer));
+        ERROR2 (1, ("ERROR: Unable to open file \"%s\"", buffer));
     }
 
     NOTE (("\n  Loading %s ...", buffer));
@@ -104,19 +111,19 @@ LoadDeclaration (char *name, node *modtype)
     decl = decl_tree;
 
     if (strcmp (decl->info.fun_name.id, name) != 0) {
-        ERROR2 (1,
-                ("file \"%s\" does not provide module/class %s, but module/class %s!\n",
-                 buffer, name, decl->info.fun_name.id));
+        ERROR2 (
+          1, ("%s :ERROR: File does not provide module/class %s, but module/class %s!\n",
+              buffer, name, decl->info.fun_name.id));
     }
 
     if ((decl->nodetype == N_classdec) && (modtype == NULL)) {
-        ERROR2 (1, ("module implementation of %s incompatible with class declaration",
-                    name));
+        ERROR2 (1, ("%s :ERROR: implementation of module but declaration of class",
+                    filename, name));
     }
 
     if ((decl->nodetype == N_moddec) && (modtype != NULL)) {
-        ERROR2 (1, ("class implementation of %s incompatible with module declaration",
-                    name));
+        ERROR2 (1, ("%s :ERROR: implementation of class but declaration of module",
+                    filename, name));
     }
 
     if (decl->nodetype == N_classdec) {
@@ -153,7 +160,7 @@ OpenSibFile (char *name)
     tmp = fopen (buffer, "w");
 
     if (tmp == NULL) {
-        ERROR2 (1, ("Couldn't open file \"%s\" for writing!\n", buffer));
+        ERROR2 (1, ("ERROR: Unable to open file \"%s\" for writing!\n", buffer));
     }
 
     DBUG_RETURN (tmp);
@@ -387,7 +394,8 @@ HandleImplicitTypes (node *declarations, node *implementations)
     while (tmp != NULL) {
         def = SearchType (tmp, implementations);
         if (def == NULL) {
-            ERROR2 (1, ("Implementation of implicit type %s missing", tmp->ID));
+            ERROR2 (1, ("%s :ERROR: Implementation of implicit type %s missing", filename,
+                        tmp->ID));
         }
 
         fprintf (sibfile, "typedef %s ", Type2String (def->TYPES, 0));
@@ -434,12 +442,14 @@ HandleExplicitTypes (node *declarations, node *implementations)
     while (tmp != NULL) {
         def = SearchType (tmp, implementations);
         if (def == NULL) {
-            ERROR2 (1, ("implementation of explicit type %s missing", tmp->ID));
-        }
-
-        if (CheckExplicitType (tmp, def) == 0) {
-            ERROR2 (1, ("implementation of explicit type %s different from declaration",
-                        tmp->ID));
+            WARN1 (("%s :WARNING: implementation of explicit type %s missing", filename,
+                    tmp->ID));
+        } else {
+            if (CheckExplicitType (tmp, def) == 0) {
+                ERROR2 (1, ("%s :ERROR: implementation of explicit type %s different "
+                            "from declaration",
+                            filename, tmp->ID));
+            }
         }
 
         tmp = tmp->node[0];
@@ -498,6 +508,8 @@ SIBmodul (node *arg_node, node *arg_info)
         /*
             HandleFunctions(decl->node[0]->node[2], arg_node->node[2]);
         */
+
+        fprintf (sibfile, "\n");
 
         fclose (sibfile);
     }
