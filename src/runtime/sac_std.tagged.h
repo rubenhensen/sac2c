@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.46  2003/09/25 13:45:25  dkr
+ * ND_WRITE_READ added.
+ * some bugs fixed.
+ *
  * Revision 3.45  2003/09/19 12:26:49  dkr
  * postfixes _nt, _any of varnames renamed into _NT, _ANY
  *
@@ -417,6 +421,8 @@ typedef int *SAC_array_descriptor_t;
  *   read access at specified index position
  * ND_WRITE( to_NT, to_pos) :
  *   write access at specified index position
+ * ND_WRITE_READ( to_NT, to_pos, from_NT, from_pos) :
+ *   write/read access at specified index positions
  *
  * ND_WRITE_COPY( to_NT, to_pos, expr, copyfun) :
  *   write/copy access at specified index position
@@ -431,6 +437,9 @@ typedef int *SAC_array_descriptor_t;
 #define SAC_ND_WRITE(to_NT, to_pos)                                                      \
     CAT9 (SAC_ND_WRITE__, NT_SHP (to_NT) BuildArgs2 (to_NT, to_pos))
 
+#define SAC_ND_WRITE_READ(to_NT, to_pos, from_NT, from_pos)                              \
+    SAC_ND_WRITE (to_NT, to_pos, SAC_ND_READ (from_NT, from_pos))
+
 #define SAC_ND_WRITE_COPY(to_NT, to_pos, expr, copyfun)                                  \
     CAT10 (SAC_ND_WRITE_COPY__, NT_HID (to_NT) BuildArgs4 (to_NT, to_pos, expr, copyfun))
 
@@ -442,7 +451,9 @@ typedef int *SAC_array_descriptor_t;
  */
 
 #define SAC_ND_WRITE_COPY__NHD(to_NT, to_pos, expr, copyfun)                             \
-    SAC_ND_WRITE (to_NT, to_pos) = expr;
+    {                                                                                    \
+        SAC_ND_WRITE (to_NT, to_pos) = expr;                                             \
+    }
 
 /*
  * HID
@@ -1305,7 +1316,7 @@ typedef int *SAC_array_descriptor_t;
     SAC_ND_ASSIGN__DATA__SCL_NHD__AUD_NHD (to_NT, from_NT, copyfun)
 #define SAC_ND_ASSIGN__DATA__SCL_HID_NUQ__AUD_HID_UNQ(to_NT, from_NT, copyfun)           \
     {                                                                                    \
-        SAC_ND_WRITE (to_NT, 0) = SAC_ND_READ (from_NT, 0);                              \
+        SAC_ND_WRITE_READ (to_NT, 0, from_NT, 0)                                         \
         /* free data vector but keep its content (i.e. the hidden object itself)! */     \
         SAC_ND_FREE__DATA__AUD_NHD (from_NT, freefun)                                    \
     }
@@ -1390,16 +1401,17 @@ typedef int *SAC_array_descriptor_t;
                                                                     copyfun))))))        \
     }
 #define SAC_ND_ASSIGN__DATA__AUD_NHD__SCL_NHD_NUQ(to_NT, from_NT, copyfun)               \
-    SAC_ND_WRITE_READ_COPY (to_NT, 0, from_NT, 0, copyfun)
+    {                                                                                    \
+        SAC_ND_WRITE_READ_COPY (to_NT, 0, from_NT, 0, copyfun)                           \
+    }
 #define SAC_ND_ASSIGN__DATA__AUD_NHD__SCL_NHD_UNQ(to_NT, from_NT, copyfun)               \
     SAC_ND_ASSIGN__DATA__AUD_NHD__SCL_NHD_NUQ (to_NT, from_NT, copyfun)
 #define SAC_ND_ASSIGN__DATA__AUD_HID__SCL_HID_NUQ(to_NT, from_NT, copyfun)               \
-    {                                                                                    \
-        SAC_ND_WRITE_READ_COPY (to_NT, 0 from_NT, 0, copyfun)                            \
-        SAC_ND_DEC_RC_FREE (from_NT, 1, )                                                \
-    }
+    SAC_ND_ASSIGN__DATA__SCL_NHD__AUD_NHD (to_NT, from_NT, copyfun)
 #define SAC_ND_ASSIGN__DATA__AUD_HID__SCL_HID_UNQ(to_NT, from_NT, copyfun)               \
-    SAC_ND_ASSIGN__DATA__AUD_NHD__SCL_NHD_NUQ (to_NT, from_NT, copyfun)
+    {                                                                                    \
+        SAC_ND_WRITE_READ (to_NT, 0, from_NT, 0);                                        \
+    }
 
 #define SAC_ND_ASSIGN__DATA__AUD__AKS(to_NT, from_NT, copyfun)                           \
     SAC_ND_ASSIGN__DATA__AKS__AKS (to_NT, from_NT, copyfun)
@@ -1409,7 +1421,9 @@ typedef int *SAC_array_descriptor_t;
     SAC_ND_ASSIGN__DATA__AKS__AKS (to_NT, from_NT, copyfun)
 
 #define SAC_ND_COPY__DATA__AUD__SCL(to_NT, from_NT, copyfun)                             \
-    SAC_ND_WRITE_READ_COPY (to_NT, 0, from_NT, 0, copyfun)
+    {                                                                                    \
+        SAC_ND_WRITE_READ_COPY (to_NT, 0, from_NT, 0, copyfun)                           \
+    }
 #define SAC_ND_COPY__DATA__AUD__AKS(to_NT, from_NT, copyfun)                             \
     SAC_ND_COPY__DATA__AKS__AKS (to_NT, from_NT, copyfun)
 #define SAC_ND_COPY__DATA__AUD__AKD(to_NT, from_NT, copyfun)                             \
@@ -1439,7 +1453,7 @@ typedef int *SAC_array_descriptor_t;
 
 #define SAC_ND_CREATE__SCALAR__DATA(var_NT, val)                                         \
     {                                                                                    \
-        SAC_ND_WRITE (var_NT, 0) = val;                                                  \
+        SAC_ND_WRITE_COPY (var_NT, 0, val, );                                            \
     }
 
 #define SAC_ND_CREATE__STRING__DATA(var_NT, str)                                         \
@@ -1646,7 +1660,7 @@ typedef int *SAC_array_descriptor_t;
  * UNQ
  */
 
-#define SAC_IS_LASTREF__BLOCK_BEGIN__UNQ(var_NT) if (0) {
+#define SAC_IS_LASTREF__BLOCK_BEGIN__UNQ(var_NT) if (1) {
 
 /*
  * SCL, NUQ
@@ -1654,15 +1668,15 @@ typedef int *SAC_array_descriptor_t;
 
 #define SAC_IS_LASTREF__BLOCK_BEGIN__SCL_NUQ(var_NT)                                     \
     CAT19 (SAC_IS_LASTREF__BLOCK_BEGIN__SCL_, CAT19 (NT_HID (var_NT), _NUQ (var_NT)))
-#define SAC_IS_LASTREF__BLOCK_BEGIN__SCL_NHD_NUQ(var_NT) if (0) {
-#define SAC_IS_LASTREF__BLOCK_BEGIN__SCL_HID_NUQ(var_NT)                                 \
-    SAC_IS_LASTREF__BLOCK_BEGIN__AKS_NUQ (var_NT)
+#define SAC_IS_LASTREF__BLOCK_BEGIN__SCL_NHD_NUQ(var_NT) if (1) {
+#define SAC_IS_LASTREF__BLOCK_BEGIN__SCL_HID_NUQ(var_NT) if (SAC_ND_A_RC (var_NT) == 1) {
 
 /*
  * AKS, NUQ
  */
 
-#define SAC_IS_LASTREF__BLOCK_BEGIN__AKS_NUQ(var_NT) if (SAC_ND_A_RC (var_NT) == 1) {
+#define SAC_IS_LASTREF__BLOCK_BEGIN__AKS_NUQ(var_NT)                                     \
+    SAC_IS_LASTREF__BLOCK_BEGIN__SCL_HID_NUQ (var_NT)
 
 /*
  * AKD, NUQ
