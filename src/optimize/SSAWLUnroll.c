@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.18  2005/01/14 08:45:14  cg
+ * Replaced strcmp by ILIBstringCompare.
+ *
  * Revision 1.17  2005/01/11 12:58:15  cg
  * Converted output from Error.h to ctinfo.c
  *
@@ -533,14 +536,15 @@ WLUcheckUnrollModarray (node *wln)
             exprn = LET_EXPR (tmpn);
             PART_ISCOPY (partn)
               = (N_let == NODE_TYPE (tmpn)
-                 && !strcmp (ID_NAME (EXPRS_EXPR (CODE_CEXPRS (coden))),
-                             IDS_NAME (LET_IDS (tmpn)))
+                 && ILIBstringCompare (ID_NAME (EXPRS_EXPR (CODE_CEXPRS (coden))),
+                                       IDS_NAME (LET_IDS (tmpn)))
                  && N_prf == NODE_TYPE (exprn) && F_sel == PRF_PRF (exprn)
                  && N_id == NODE_TYPE (PRF_ARG1 (exprn))
-                 && !strcmp (IDS_NAME (PART_VEC (partn)), ID_NAME (PRF_ARG1 (exprn)))
+                 && ILIBstringCompare (IDS_NAME (PART_VEC (partn)),
+                                       ID_NAME (PRF_ARG1 (exprn)))
                  && N_id == NODE_TYPE (PRF_ARG2 (exprn))
-                 && !strcmp (ID_NAME (MODARRAY_ARRAY (WITH_WITHOP (wln))),
-                             ID_NAME (PRF_ARG2 (exprn))));
+                 && ILIBstringCompare (ID_NAME (MODARRAY_ARRAY (WITH_WITHOP (wln))),
+                                       ID_NAME (PRF_ARG2 (exprn))));
         }
 
         if (!PART_ISCOPY (partn)) {
