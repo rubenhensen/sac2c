@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2002/08/05 20:42:19  dkr
+ * ND_WL_GENARRAY__SHAPE... added
+ *
  * Revision 3.10  2002/08/05 18:46:02  dkr
  * ND_WL_GENARRAY__SHAPE_... added
  *
@@ -36,9 +39,9 @@
 #define _icm2c_wl_h
 
 extern void ICMCompileND_WL_GENARRAY__SHAPE_id (char *to_nt, int to_sdim, char *shp_nt,
-                                                char *val);
+                                                char *val_nt);
 extern void ICMCompileND_WL_GENARRAY__SHAPE_arr (char *to_nt, int to_sdim, int shp_size,
-                                                 char **shpa_any, char *val);
+                                                 char **shpa_any, char *val_nt);
 
 extern void ICMCompileWL_BEGIN__OFFSET (char *to_nt, char *idx_vec_nt, int dims);
 extern void ICMCompileWL_BEGIN (char *to_nt, char *idx_vec_nt, int dims);

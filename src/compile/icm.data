@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.48  2002/08/05 20:41:44  dkr
+ * ND_WL_GENARRAY__SHAPE... added
+ *
  * Revision 3.47  2002/08/05 18:22:27  dkr
  * ND_ASSIGN__SHAPE renamed into ND_ASSIGN__DIMSHP
  *
@@ -696,6 +699,26 @@ ICM_END( ND_KS_VECT2OFFSET, (off_name, arr_name, dim, dims, shp_any))
 /*
  * ICMs for compilation of new with-loop
  */
+
+#if defined(ND_WL_GENARRAY__SHAPE_id) || defined(ICM_ALL)
+ICM_DEF( ND_WL_GENARRAY__SHAPE_id, TRACE_NONE)
+  ICM_NT( to_nt)
+  ICM_INT( to_sdim)
+  ICM_NT( shp_nt)
+  ICM_NT( val_nt)
+ICM_END( ND_WL_GENARRAY__SHAPE_id, (to_nt, to_sdim, shp_nt, val_nt))
+#endif
+
+#if defined(ND_WL_GENARRAY__SHAPE_arr) || defined(ICM_ALL)
+ICM_DEF( ND_WL_GENARRAY__SHAPE_arr, TRACE_NONE)
+  ICM_NT( to_nt)
+  ICM_INT( to_sdim)
+  ICM_INT( shp_size)
+  ICM_VARANY( shp_size, shpa_any)
+  ICM_NT( val_nt)
+ICM_END( ND_WL_GENARRAY__SHAPE_arr, (to_nt, to_sdim, shp_size, shpa_any,
+                                     val_nt))
+#endif
 
 #if defined(WL_BEGIN__OFFSET) || defined(ICM_ALL)
 ICM_DEF( WL_BEGIN__OFFSET, TRACE_NONE)
