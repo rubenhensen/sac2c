@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.4  1996/01/05 12:37:34  cg
+ * Revision 1.5  1996/01/07 16:57:30  cg
+ * InvokeCC and CreateLibrary entirely rewritten
+ *
+ * Revision 1.4  1996/01/05  12:37:34  cg
  * Now, SAC library files are generated when compiling module/class
  * implementations.
  *
@@ -38,89 +41,163 @@ static strings *linklist = NULL;
 static strings *ofilelist = NULL;
 static strings *afilelist = NULL;
 
+/*
+ *
+ *  functionname  :
+ *  arguments     :
+ *  description   :
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
+
+/*
+ *
+ *  functionname  :
+ *  arguments     :
+ *  description   :
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
+
 #if 0
 
-#define MAKESYSCALL                                                                      \
-    NOTE (("%s", systemcall));                                                           \
-    system (systemcall);                                                                 \
-    DBUG_EXECUTE ("SYSSTEP", printf ("\nHit key to continue\n");                         \
-                  scanf ("%s", systemcall););
+/*
+ *
+ *  functionname  : CheckExternalImplementation
+ *  arguments     : 1) name of external module/class
+ *  description   : looks for implementation of module/class
+ *                  and copies it to store_dirname
+ *  global vars   : store_dirname, ext_mods, sibs
+ *  internal funs : ---
+ *  external funs : SystemCall, strcpy, strcat, FindFile
+ *  macros        : MODIMP_PATH
+ *
+ *  remarks       : 
+ *
+ */
 
+void CheckExternalImplementation(char *name)
+{
+  strings *tmp;
+  static char buffer[MAX_FILE_NAME];
+  char *pathname;
+  node *tmpsibs;
+  
+  DBUG_ENTER("CheckExternalImplementation");
+  
+  DBUG_ASSERT(name!=NULL,
+              "called CheckExternalImplementation with name==NULL");
+  
+  /*
+   *  First, we look among sibs because even external items can be imported
+   *  through sibs rather than directly.
+   */
+
+  strcpy(buffer, name);
+  strcat(buffer, ".a");
+  
+  if (!SystemTest("-f %s%s", store_dirname, buffer))
+  {
+    strcpy(buffer, name);
+    strcat(buffer, ".o");
+
+    if (!SystemTest("-f %s%s", store_dirname, buffer))
+    {
+      NOTE(("Searching for implementation of external module/class '%s` ..."
+            , name));
+
+      pathname=FindFile(MODIMP_PATH, buffer);
+
+      if (pathname==NULL)
+      {
+        strcpy(buffer, name);
+        strcat(buffer, ".a");
+    
+        pathname=FindFile(MODIMP_PATH, buffer);
+
+        if (pathname==NULL)
+        {
+          SYSABORT(("Unable to find implementation of external "
+                    "module/class '%s`",
+                    name));
+        }
+        else
+        {
+          NOTE(("  Found archive file \"%s\" !", pathname));
+          SystemCall("cp %s %s", pathname, store_dirname);
+        }
+      }
+      else
+      {
+        NOTE(("  Found object file \"%s\"", pathname));
+        SystemCall("cp %s %s", pathname, store_dirname);
+      }
+    }
+  }
+  
+  DBUG_VOID_RETURN;
+}
 #endif
 
+#if 0
 /*
  *
- *  functionname  :
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
+ *  functionname  : 
+ *  arguments     : 
+ *  description   : 
+ *  global vars   : 
+ *  internal funs : 
+ *  external funs : 
+ *  macros        : 
  *
- *  remarks       :
+ *  remarks       : 
  *
  */
 
-/*
- *
- *  functionname  :
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
- *
- *  remarks       :
- *
- */
-
-/*
- *
- *  functionname  :
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
- *
- *  remarks       :
- *
- */
-
-void
-MakeObjectFile (char *name)
+void MakeObjectFile(char *name)
 {
-    char *systemcall;
-    int exit_code;
+  char *systemcall;
+  int exit_code;
+  
+  DBUG_ENTER("MakeObjectFile");
+  
+  systemcall=(char*)Malloc((strlen(ccflagsstr)
+                            + 2*strlen(name)
+                            + MAX_PATH_LEN)
+                           *sizeof(char));
+  
+  sprintf(systemcall,
+          "gcc %s -Wall -Wno-unused -I $RCSROOT/src/compile/"
+          " -o %s%s -c %s%s",
+          ccflagsstr, build_dirname, outfilename, targetdir, cfilename);
 
-    DBUG_ENTER ("MakeObjectFile");
-
-    systemcall = (char *)Malloc ((strlen (ccflagsstr) + 2 * strlen (name) + MAX_PATH_LEN)
-                                 * sizeof (char));
-
-    sprintf (systemcall,
-             "gcc %s -Wall -Wno-unused -I $RCSROOT/src/compile/"
-             " -o %s%s -c %s%s",
-             ccflagsstr, build_dirname, outfilename, targetdir, cfilename);
-
-    NEWLINE (3);
-
-    NOTE (("%s", systemcall));
-
-    exit_code = system (systemcall);
-
-    if (exit_code > 0) {
-        NEWLINE (0);
-        SYSABORT (("Compilation to object file failed (%d)", exit_code / 256));
-    }
-
-    FREE (systemcall);
-
-    DBUG_VOID_RETURN;
+  NEWLINE(3);
+  
+  NOTE(("%s", systemcall));
+  
+  exit_code=system(systemcall);
+  
+  if (exit_code>0)
+  {
+    NEWLINE(0);
+    SYSABORT(("Compilation to object file failed (%d)", exit_code/256));
+  }
+  
+  FREE(systemcall);
+  
+  DBUG_VOID_RETURN;
 }
+#endif
 
 /*
  *
@@ -139,52 +216,32 @@ MakeObjectFile (char *name)
 void
 CreateLibrary (node *syntax_tree)
 {
-    strings *tmp;
     char *name;
+    strings *tmp;
 
     DBUG_ENTER ("CreateLibrary");
 
     name = MODUL_NAME (syntax_tree);
 
-    /*
-      if (!SystemTest("-d %s", targetdir))
-      {
-          SYSWARN(("Specified target directory \"%s\" does not exist",
-                   targetdir));
-
-          strcpy(targetdir, ".");
-      }
-    */
-
     NOTE (("Creating SAC library \"%s%s.lib\"", targetdir, name));
-
-    if (SystemTest ("-f *.o")) {
-        SystemCall ("mv *.o %s", tmp_dirname);
-    }
 
     tmp = afilelist;
 
     while (tmp != NULL) {
-        SystemCall ("ar x %s", STRINGS_STRING (tmp));
-        SystemCall ("mv *.o %s", build_dirname);
-
-        tmp = FreeOneStrings (tmp);
+        SystemCall ("cd %s; ar x %s", build_dirname, STRINGS_STRING (tmp));
+        tmp = STRINGS_NEXT (tmp);
     }
-
-    SystemCall ("rm -f __.SYMDEF");
 
     SystemCall ("ar rc %s%s.a %s*.o", build_dirname, name, build_dirname);
     SystemCall ("ranlib %s%s.a", build_dirname, name);
-
-    if (SystemTest ("-f %s*.o", tmp_dirname)) {
-        SystemCall ("mv  %s*.o .", tmp_dirname);
-    }
 
     SystemCall ("cat %s%s.sib %s%s.a > %s%s.lib", store_dirname, name, build_dirname,
                 name, targetdir, name);
 
     DBUG_VOID_RETURN;
 }
+
+#if 0
 
 /*
  *
@@ -198,68 +255,68 @@ CreateLibrary (node *syntax_tree)
  *                  StringsLength
  *  macros        : MAX_PATH_LEN, FREE
  *
- *  remarks       :
+ *  remarks       : 
  *
  */
 
-void
-MakeExecutable ()
+void MakeExecutable()
 {
-    char *systemcall;
-    strings *tmp;
-    int exit_code;
+  strings *tmp;
+  int exit_code;
+  
+  DBUG_ENTER("MakeExecutable");
+  
+  SystemCall("gcc %s -Wall -Wno-unused -I $RCSROOT/src/compile/ "
+             "-o %s %s %s*.o %s*.a",
+             ccflagsstr, outfilename, cfilename,
+             build_dirname, build_dirname);
+ 
+  tmp=ofilelist;
+  
+  while (tmp!=NULL)
+  {
+    strcat(systemcall, " ");
+    strcat(systemcall, STRINGS_STRING(tmp));
 
-    DBUG_ENTER ("MakeExecutable");
+    tmp=FreeOneStrings(tmp);
+  }
+ 
+  tmp=afilelist;
+  
+  while (tmp!=NULL)
+  {
+    strcat(systemcall, " ");
+    strcat(systemcall, STRINGS_STRING(tmp));
 
-    systemcall = (char *)Malloc ((StringsLength (afilelist) + StringsLength (ofilelist)
-                                  + strlen (ccflagsstr) + strlen (outfilename)
-                                  + strlen (cfilename) + MAX_PATH_LEN)
-                                 * sizeof (char));
+    tmp=FreeOneStrings(tmp);
+  }
 
-    sprintf (systemcall, "gcc %s -Wall -Wno-unused -I $RCSROOT/src/compile/ -o %s %s",
-             ccflagsstr, outfilename, cfilename);
-
-    tmp = ofilelist;
-
-    while (tmp != NULL) {
-        strcat (systemcall, " ");
-        strcat (systemcall, STRINGS_STRING (tmp));
-
-        tmp = FreeOneStrings (tmp);
-    }
-
-    tmp = afilelist;
-
-    while (tmp != NULL) {
-        strcat (systemcall, " ");
-        strcat (systemcall, STRINGS_STRING (tmp));
-
-        tmp = FreeOneStrings (tmp);
-    }
-
-    NEWLINE (3);
-
-    NOTE (("%s", systemcall));
-
-    exit_code = system (systemcall);
-
-    if (exit_code > 0) {
-        NEWLINE (0);
-        SYSABORT (("Compilation to executable failed (%d)", exit_code / 256));
-    }
-
-    FREE (systemcall);
-
-    DBUG_VOID_RETURN;
+  NEWLINE(3);
+  
+  NOTE(("%s", systemcall));
+  
+  exit_code=system(systemcall);
+  
+  if (exit_code>0)
+  {
+    NEWLINE(0);
+    SYSABORT(("Compilation to executable failed (%d)", exit_code/256));
+  }
+  
+  FREE(systemcall);
+  
+  DBUG_VOID_RETURN;
 }
+#endif
 
 /*
  *
  *  functionname  : InvokeCC
  *  arguments     : 1) syntax tree
  *  description   : starts the gcc for final compilation
- *  global vars   : ---
- *  internal funs : MakeExecutable, MakeObjectFile
+ *  global vars   : ccflagsstr, outfilename, cfilename, build_dirname,
+ *                  targetdir
+ *  internal funs : SystemCall
  *  external funs : ---
  *  macros        :
  *
@@ -273,9 +330,24 @@ InvokeCC (node *syntax_tree)
     DBUG_ENTER ("InvokeCC");
 
     if (MODUL_FILETYPE (syntax_tree) == F_prog) {
-        MakeExecutable ();
+        char ofiles[MAX_FILE_NAME] = "";
+        char afiles[MAX_FILE_NAME] = "";
+
+        if (ofilelist != NULL) {
+            sprintf (ofiles, "%s*.o", build_dirname);
+        }
+
+        if (afilelist != NULL) {
+            sprintf (afiles, "%s*.a", build_dirname);
+        }
+
+        SystemCall ("gcc %s -Wall -Wno-unused -I $RCSROOT/src/compile/ "
+                    "-o %s %s %s %s",
+                    ccflagsstr, outfilename, cfilename, ofiles, afiles);
     } else {
-        MakeObjectFile (MODUL_NAME (syntax_tree));
+        SystemCall ("gcc %s -Wall -Wno-unused -I $RCSROOT/src/compile/"
+                    " -o %s%s -c %s%s",
+                    ccflagsstr, build_dirname, outfilename, targetdir, cfilename);
     }
 
     DBUG_VOID_RETURN;
@@ -303,34 +375,49 @@ void
 SearchLinkFiles ()
 {
     strings *tmp, *old;
-    char pathname[MAX_PATH_LEN];
+    char buffer[MAX_FILE_NAME];
+    char *pathname;
 
     DBUG_ENTER ("SearchLinkFiles");
 
     tmp = linklist;
 
     while (tmp != NULL) {
-        sprintf (pathname, "%s%s.a", store_dirname, STRINGS_STRING (tmp));
+        if (SystemTest ("-f %s%s.a", store_dirname, STRINGS_STRING (tmp))) {
+            SystemCall ("mv %s%s.a %s", store_dirname, STRINGS_STRING (tmp),
+                        build_dirname);
 
-        if (SystemTest ("-f %s", pathname)) {
-            afilelist = MakeStrings (StringCopy (pathname), afilelist);
-
-            DBUG_PRINT ("LINK", ("Added %s to afilelist", pathname));
+            strcpy (buffer, STRINGS_STRING (tmp));
+            strcat (buffer, ".a");
+            afilelist = MakeStrings (StringCopy (buffer), afilelist);
         } else {
-            sprintf (pathname, "%s%s.o", store_dirname, STRINGS_STRING (tmp));
+            NOTE (("Searching for implementation of external module/class '%s` ...",
+                   STRINGS_STRING (tmp)));
 
-            if (SystemTest ("-f %s%s.o", store_dirname, STRINGS_STRING (tmp))) {
-                SystemCall ("mv %s%s.o %s", store_dirname, STRINGS_STRING (tmp),
-                            build_dirname);
+            strcpy (buffer, STRINGS_STRING (tmp));
+            strcat (buffer, ".o");
 
-                sprintf (pathname, "%s%s.o", build_dirname, STRINGS_STRING (tmp));
-                ofilelist = MakeStrings (StringCopy (pathname), ofilelist);
+            pathname = FindFile (MODIMP_PATH, buffer);
 
-                DBUG_PRINT ("LINK", ("Added %s to ofilelist", pathname));
+            if (pathname == NULL) {
+                strcpy (buffer, STRINGS_STRING (tmp));
+                strcat (buffer, ".a");
+
+                pathname = FindFile (MODIMP_PATH, buffer);
+
+                if (pathname == NULL) {
+                    SYSERROR (("Unable to find implementation of external "
+                               "module/class '%s`",
+                               STRINGS_STRING (tmp)));
+                } else {
+                    NOTE (("  Found archive file \"%s\" !", pathname));
+                    SystemCall ("cp %s %s", pathname, build_dirname);
+                    afilelist = MakeStrings (StringCopy (buffer), afilelist);
+                }
             } else {
-                SYSERROR (("No implementation of module/class '%s` available "
-                           "in directory \"%s\"",
-                           STRINGS_STRING (tmp), store_dirname));
+                NOTE (("  Found object file \"%s\"", pathname));
+                SystemCall ("cp %s %s", pathname, build_dirname);
+                ofilelist = MakeStrings (StringCopy (buffer), ofilelist);
             }
         }
 
