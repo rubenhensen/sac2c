@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.97  1998/03/24 10:56:23  srs
+ * added comment to N_Ncode
+ *
  * Revision 1.96  1998/03/22 23:45:19  dkr
  * fixed a bug with WLNODE_BOUND1
  *
@@ -2129,9 +2132,10 @@ extern node *MakeNWith (node *part, node *code, node *withop);
  ***
  ***  temporary attributes:
  ***    long*  MASK                    (optimize -> )
+ ***
  ***/
 
-extern node *MakeNPart (node *withid, node *generator);
+extern node *MakeNPart (node *withid, node *generator, node *code);
 
 #define NPART_WITHID(n) (n->node[0])
 #define NPART_GEN(n) (n->node[1])
@@ -2253,7 +2257,8 @@ extern node *MakeNWithOp (WithOpType WithOp);
  ***                                   (precompile -> )
  ***    int    FLAG                    (WLI -> WLF)
  ***
- ***  remark:
+ ***  remarks:
+ ***   1)
  ***   The CBLOCK 'plus' the CEXPR is the whole assignment block
  ***   to calculate each element of the WL. The CEXPR is the pseudo
  ***   return statement of the block.
@@ -2261,6 +2266,13 @@ extern node *MakeNWithOp (WithOpType WithOp);
  ***   the CEXPR into the CBLOCK. After that we do not have to inspect the
  ***   CEXPR for every reason because we know that the *last let assignment*
  ***   in CBLOCK holds the return statement (CEXPR).
+ ***
+ ***   2)
+ ***   The USED component is a reference counter for the NPART_CODE pointer.
+ ***   MakeNPart increments it if the code parameter is != NULL,
+ ***   FreeNPart decrements it (unconditionally),
+ ***   DupNpart  increments it (implicitly in MakeNPart).
+ ***
  ***/
 
 extern node *MakeNCode (node *block, node *expr);
