@@ -2,6 +2,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2001/04/20 08:50:42  nmw
+ * additional assert for undefined identifiers added
+ *
  * Revision 1.11  2001/04/19 16:34:38  nmw
  * with-loop independend removal implemented
  *
@@ -81,6 +84,9 @@
 #define LIRMOVE_UP 0x1
 #define LIRMOVE_DOWN 0x2
 #define LIRMOVE_LOCAL 0x4
+
+/* AVIS_DEFDEPTH */
+#define DD_UNDEFINED -1
 
 /* functions for local usage only */
 static ids *SSALIRleftids (ids *arg_ids, node *arg_info);
@@ -764,7 +770,7 @@ SSALIRvardec (node *arg_node, node *arg_info)
     DBUG_ENTER ("SSALIRvardec");
 
     AVIS_NEEDCOUNT (VARDEC_AVIS (arg_node)) = 0;
-    AVIS_DEFDEPTH (VARDEC_AVIS (arg_node)) = 0;
+    AVIS_DEFDEPTH (VARDEC_AVIS (arg_node)) = DD_UNDEFINED;
     AVIS_SSALPINV (VARDEC_AVIS (arg_node)) = FALSE;
     AVIS_LIRMOVE (ARG_AVIS (arg_node)) = LIRMOVE_NONE;
     AVIS_EXPRESULT (ARG_AVIS (arg_node)) = FALSE;
@@ -1072,6 +1078,8 @@ SSALIRid (node *arg_node, node *arg_info)
          * calc the maximum definition depth of all identifiers in the
          * current assignment
          */
+        DBUG_ASSERT ((AVIS_DEFDEPTH (ID_AVIS (arg_node)) != DD_UNDEFINED),
+                     "usage of undefined identifier");
         if (INFO_SSALIR_MAXDEPTH (arg_info) < AVIS_DEFDEPTH (ID_AVIS (arg_node))) {
             INFO_SSALIR_MAXDEPTH (arg_info) = AVIS_DEFDEPTH (ID_AVIS (arg_node));
         }
