@@ -1,0 +1,23 @@
+/*
+ *
+ * $Log$
+ * Revision 1.1  1994/12/21 11:32:37  hw
+ * Initial revision
+ *
+;;
+;;
+ *
+ */
+
+/*
+**
+** Some macro definitions used for the automatic creation
+** of tables which depend on the correct order of the tags
+** for the type Type
+**
+*/
+
+/*   type_name       dbug-string    */
+
+TYP_IF (T_int, "int"), TYP_IF (T_float, "float"), TYP_IF (T_bool, "bool"),
+  TYP_IF (T_hidden, "hidden"), TYP_IF (T_user, "user"), TYP_IF (T_unknown, "unknown")
