@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.4  2005/02/16 22:29:13  sah
+  flags are processed correctly now
+
   Revision 1.3  2004/11/25 22:32:51  sah
   adapted
 
@@ -142,7 +145,7 @@ version="1.0">
     <xsl:value-of select="'va_start( args, sfile);'" />
     <xsl:apply-templates select="attributes/attribute" mode="gen-fill-fun" />
     <xsl:apply-templates select="sons/son" mode="gen-fill-fun" />
-    <xsl:apply-templates select="flag/flag" mode="gen-fill-fun" />
+    <xsl:apply-templates select="flags/flag" mode="gen-fill-fun" />
     <xsl:value-of select="'va_end( args);'" />
   </xsl:if>
 </xsl:template>
@@ -224,7 +227,7 @@ version="1.0">
   <xsl:value-of select="'= va_arg( args, node*);'" />
 </xsl:template>
 
-<xsl:template match="flags/flagd" mode="gen-fill-fun" >
+<xsl:template match="flags/flag" mode="gen-fill-fun" >
   <xsl:call-template name="node-access">
     <xsl:with-param name="node">this</xsl:with-param>
     <xsl:with-param name="nodetype">
