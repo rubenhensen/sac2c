@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 2.6  2000/11/15 13:56:41  dkr
+# some minor changes done
+#
 # Revision 2.5  2000/11/15 13:38:09  dkr
 # OSF_ALPHA corrected
 #
@@ -119,7 +122,8 @@ solaris: check_existing_files $(BINTARGETDIR)/SAC-$(VERSION)-SOLARIS_SPARC-$(DAT
 
 alpha: check_existing_files $(BINTARGETDIR)/SAC-$(VERSION)-OSF_ALPHA-$(DATE).tar.gz
 
-source: check_existing_files $(SRCTARGETDIR)/SAC-$(VERSION)-$(DATE).tar.gz
+source: check_existing_files $(SRCDISTRIBS)
+
 
 $(BINTARGETDIR)/SAC-$(VERSION)-%-$(DATE).tar.gz: \
    $(PACKAGES) $(FILES) $(addsuffix .for.%,$(SPECIFICS))
@@ -142,7 +146,7 @@ sac2c.for.SOLARIS_SPARC libsac.tar.for.SOLARIS_SPARC:
 	cp $(SAC2CDIR)/src.tar.gz $(SOLARIS_DIR)
 	(cd $(SOLARIS_DIR); gunzip -f src.tar.gz)
 	(cd $(SOLARIS_DIR); tar xvf src.tar)
-	(cd $(SOLARIS_DIR); make deps)
+	(cd $(SOLARIS_DIR); $(MAKE) deps OS=SOLARIS_SPARC)
 	(cd $(SOLARIS_DIR); $(MAKE) distrib_product OS=SOLARIS_SPARC)
 	cp $(SOLARIS_DIR)/sac2c sac2c.for.SOLARIS_SPARC
 	(cd $(SOLARIS_DIR)/src/runtime; tar cvfh libsac.tar libsac*.a) 
@@ -174,7 +178,7 @@ sac2c.for.LINUX_X86 libsac.tar.for.LINUX_X86:
 	    'tar xvf src.tar;'       \
 	    'chmod -R u+w *;'        \
 	    'touch src/*/*;'         \
-	    '$(LX86_MAKE) deps;'     \
+	    '$(LX86_MAKE) deps OS=LINUX_X86;'     \
 	    '$(LX86_MAKE) distrib_product OS=LINUX_X86'
 	rcp $(LX86_USER)@$(LX86_HOST):$(LX86_DIR)/sac2c ./sac2c.for.LINUX_X86
 	rsh -l $(LX86_USER) $(LX86_HOST)   \
