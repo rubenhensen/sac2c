@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.31  2004/12/11 14:47:26  ktr
+ * some bugfixes
+ *
  * Revision 3.30  2004/11/27 02:05:38  jhb
  * compile
  *
@@ -662,7 +665,7 @@ WLCOMP_Cubes (node *segs, node *parms, node *cubes, int dims, int line)
         }
         last_seg = new_seg;
 
-        cubes = WLSTRIDE_NEXT (cubes);
+        cubes = WLSTRIDEX_NEXT (cubes);
     }
 
     segs = WLCOMP_NoBlocking (segs, parms, cubes, dims, line);

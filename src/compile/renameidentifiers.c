@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2004/12/11 14:47:26  ktr
+ * some bugfixes
+ *
  * Revision 1.9  2004/12/08 18:01:17  ktr
  * removed ARRAY_TYPE/ARRAY_NTYPE
  *
@@ -52,6 +55,8 @@
 #include "DataFlowMask.h"
 #include "new_types.h"
 #include "tree_compound.h"
+#include "free.h"
+#include "convert.h"
 
 /*
  * INFO structure
@@ -536,13 +541,17 @@ RIDfundef (node *arg_node, info *arg_info)
 node *
 RIDarg (node *arg_node, info *arg_info)
 {
+    types *ot;
+
     DBUG_ENTER ("RIDarg");
 
     /*
      * Here, a string representation for the argument types is built which
      * is lateron used when renaming the function
      */
-    ARG_TYPESTRING (arg_node) = TYtype2String (ARG_NTYPE (arg_node), FALSE, 0);
+    ot = TYtype2OldType (ARG_NTYPE (arg_node));
+    ARG_TYPESTRING (arg_node) = CVtype2String (ot, 2, TRUE);
+    ot = FREEfreeOneTypes (ot);
 
     if (ARG_TYPE (arg_node) != NULL) {
         ARG_TYPE (arg_node) = RenameTypes (ARG_TYPE (arg_node));

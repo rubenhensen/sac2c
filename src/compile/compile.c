@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.148  2004/12/11 14:47:26  ktr
+ * some bugfixes
+ *
  * Revision 3.147  2004/11/29 10:27:41  sah
  * renamed some functions
  *
@@ -566,7 +569,7 @@ FreeInfo (info *info)
  * macros for internal purposes
  */
 #define WITHOP_ISOFFSETNEEDED(n)                                                         \
-    ((NODE_TYPE (n) == N_genarray) && (NODE_TYPE (n) == N_modarray))
+    ((NODE_TYPE (n) == N_genarray) || (NODE_TYPE (n) == N_modarray))
 
 /******************************************************************************
  *
@@ -6076,7 +6079,7 @@ COMPwlblock (node *arg_node, info *arg_info)
 
     res = COMPwlxblock (arg_node, arg_info);
 
-    DBUG_RETURN (arg_node);
+    DBUG_RETURN (res);
 }
 
 /** <!--********************************************************************-->
@@ -6104,7 +6107,7 @@ COMPwlublock (node *arg_node, info *arg_info)
 
     res = COMPwlxblock (arg_node, arg_info);
 
-    DBUG_RETURN (arg_node);
+    DBUG_RETURN (res);
 }
 
 /** <!--********************************************************************-->
@@ -6293,7 +6296,7 @@ COMPwlstride (node *arg_node, info *arg_info)
 
     res = COMPwlstridex (arg_node, arg_info);
 
-    DBUG_RETURN (arg_node);
+    DBUG_RETURN (res);
 }
 
 /** <!--********************************************************************-->
@@ -6322,7 +6325,7 @@ COMPwlstridevar (node *arg_node, info *arg_info)
 
     res = COMPwlstridex (arg_node, arg_info);
 
-    DBUG_RETURN (arg_node);
+    DBUG_RETURN (res);
 }
 
 /** <!--********************************************************************-->
