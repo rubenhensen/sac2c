@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.14  1995/11/01 16:27:04  cg
+ * Revision 1.15  1995/11/02 13:13:31  cg
+ * added new macros OBJDEF_ARG(n) and renamed IDS_DECL(i)
+ * to IDS_VARDEC(i).
+ *
+ * Revision 1.14  1995/11/01  16:27:04  cg
  * added some comments
  *
  * Revision 1.13  1995/11/01  07:10:12  sbs
@@ -218,7 +222,7 @@ extern types *MakeType (simpletype basetype, int dim, shpseg *shpseg, char *name
  ***  temporary attributes:
  ***
  ***    int         REFCNT       (refcount -> )
- ***    node*       DECL         (typecheck -> )
+ ***    node*       VARDEC       (typecheck -> )
  ***    node*       DEF          (optimize -> )
  ***    node*       USE          (optimize -> )
  ***    statustype  STATUS       (obj-handling -> compile !!)
@@ -237,7 +241,7 @@ extern ids *MakeIds (char *name, char *mod, statustype status);
 #define IDS_MOD(i) (i->mod)
 #define IDS_REFCNT(i) (i->refcnt)
 #define IDS_NEXT(i) (i->next)
-#define IDS_DECL(i) (i->node)
+#define IDS_VARDEC(i) (i->node)
 #define IDS_DEF(i) (i->def)
 #define IDS_USE(i) (i->use)
 #define IDS_STATUS(i) (i->status)
@@ -530,6 +534,7 @@ extern node *MakeTypedef (char *name, char *mod, types *type, statustype attrib,
  ***  temporary attributes:
  ***
  ***    char*       VARNAME    (typecheck -> obj-handling -> )
+ ***    node*       ARG   (O)  (obj-handling !!)
  ***/
 
 /*
@@ -538,6 +543,10 @@ extern node *MakeTypedef (char *name, char *mod, types *type, statustype attrib,
  *
  *  The VARNAME is a combination of NAME and MOD. It's used as parameter
  *  name when making global objects local.
+ *
+ *  ARG is a pointer to the additional argument which is added to a function's
+ *  parameter list for this global object. ARG changes while traversing
+ *  the functions !!
  */
 
 extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *next);
@@ -549,6 +558,7 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
 #define OBJDEF_NEXT(n) (n->node[0])
 #define OBJDEF_STATUS(n) (n->info.types->status)
 #define OBJDEF_VARNAME(n) ((char *)(n->node[2]))
+#define OBJDEF_ARG(n) (n->node[3])
 
 /*--------------------------------------------------------------------------*/
 

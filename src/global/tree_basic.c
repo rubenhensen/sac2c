@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.6  1995/11/01 07:08:46  sbs
+ * Revision 1.7  1995/11/02 13:13:31  cg
+ * added new macros OBJDEF_ARG(n) and renamed IDS_DECL(i)
+ * to IDS_VARDEC(i).
+ *
+ * Revision 1.6  1995/11/01  07:08:46  sbs
  * neutral addded to N_foldprf;
  * some DBUG_PRINTS inserted
  *
@@ -154,7 +158,7 @@ MakeIds (char *name, char *mod, statustype status)
     IDS_MOD (tmp) = mod;
     IDS_REFCNT (tmp) = 0;
     IDS_NEXT (tmp) = NULL;
-    IDS_DECL (tmp) = NULL;
+    IDS_VARDEC (tmp) = NULL;
     IDS_DEF (tmp) = NULL;
     IDS_USE (tmp) = NULL;
     IDS_STATUS (tmp) = status;
