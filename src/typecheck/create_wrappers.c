@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2002/05/31 14:43:06  sbs
+ * CRTWRPlet added
+ *
  * Revision 1.4  2002/03/12 15:13:32  sbs
  * CRTWRPxxxx traversal function added.
  *
@@ -34,6 +37,7 @@
 #include "create_wrappers.h"
 
 #define INFO_CRTWRP_WRAPPERS(n) (n->node[0])
+#define INFO_CRTWRP_EXPRETS(n) (n->flag)
 
 /******************************************************************************
  *
@@ -50,9 +54,6 @@ CreateWrappers (node *arg_node)
 {
     funtab *tmp_tab;
     node *info_node;
-    ntype *a, *b, *c, *d, *e;
-    tvar *aa, *bb, *cc;
-    bool r1, r2, r3, r4, r5;
 
     DBUG_ENTER ("CreateWrappers");
 
@@ -60,54 +61,9 @@ CreateWrappers (node *arg_node)
     act_tab = crtwrp_tab;
 
     info_node = MakeInfo ();
-#if 0
-  arg_node = Trav( arg_node, info_node);
-#else
-    a = TYMakeAKS (TYMakeSimpleType (T_int), SHCreateShape (2, 3, 4));
-    b = TYMakeAKS (TYMakeSimpleType (T_int), SHCreateShape (1, 5));
-    c = TYMakeAUD (TYMakeSimpleType (T_int));
-    d = TYMakeFunType (a, c, NULL);
-    e = TYMakeFunType (b, c, NULL);
-    e = TYMakeOverloadedFunType (d, e);
 
-    printf ("%s \n", TYType2String (a, TRUE, 0));
-    printf ("%s \n", TYType2String (b, TRUE, 0));
-    printf ("%s \n", TYType2String (c, TRUE, 0));
-    printf ("%s \n", TYType2String (d, TRUE, 0));
-    printf ("%s \n", TYType2String (e, TRUE, 0));
+    arg_node = Trav (arg_node, info_node);
 
-    aa = SSIMakeVariable ();
-    bb = SSIMakeVariable ();
-    cc = SSIMakeVariable ();
-
-    r1 = SSINewMax (aa, a);
-    if (!r1)
-        printf ("Error for SSINewMax( aa, a)\n");
-
-    r2 = SSINewMax (bb, b);
-    if (!r2)
-        printf ("Error for SSINewMax( bb, a)\n");
-
-    r3 = SSINewMax (cc, c);
-    if (!r3)
-        printf ("Error for SSINewMax( cc, a)\n");
-
-    r4 = SSINewRel (bb, aa);
-    if (!r4)
-        printf ("Error for SSINewRel( bb, aa)\n");
-
-    printf ("%s \n", SSIVariable2DebugString (aa));
-    printf ("%s \n", SSIVariable2DebugString (bb));
-    printf ("%s \n", SSIVariable2DebugString (cc));
-
-    r5 = SSINewRel (cc, bb);
-    if (!r5)
-        printf ("Error for SSINewRel( cc, bb)\n");
-
-    printf ("%s \n", SSIVariable2DebugString (aa));
-    printf ("%s \n", SSIVariable2DebugString (bb));
-    printf ("%s \n", SSIVariable2DebugString (cc));
-#endif
     info_node = FreeNode (info_node);
 
     act_tab = tmp_tab;
@@ -118,7 +74,7 @@ CreateWrappers (node *arg_node)
 /******************************************************************************
  *
  * function:
- *    node *FindWrapper(char *name, int num_args, node *wrappers)
+ *    node *FindWrapper(char *name, int num_args, int num_rets, node *wrappers)
  *
  * description:
  *
@@ -126,23 +82,29 @@ CreateWrappers (node *arg_node)
  ******************************************************************************/
 
 static node *
-FindWrapper (char *name, int num_args, node *wrappers)
+FindWrapper (char *name, int num_args, int num_rets, node *wrappers)
 {
     int found = FALSE;
-    int last_is_dots = FALSE;
-    int num_parms;
+    int last_parm_is_dots = FALSE;
+    int last_res_is_dots = FALSE;
+    int num_parms, num_res;
 
     DBUG_ENTER ("FindWrapper");
 
-    DBUG_PRINT ("CRTWRP", ("Searching for %s %d args", name, num_args));
+    DBUG_PRINT ("CRTWRP", ("Searching for %s %d args %d rets", name, num_args, num_rets));
 
     while (wrappers && !found) {
         num_parms = CountArgs (FUNDEF_ARGS (wrappers));
-        last_is_dots = HasDotArgs (FUNDEF_ARGS (wrappers));
-        DBUG_PRINT ("CRTWRP",
-                    (" ... checking %s %d args", FUNDEF_NAME (wrappers), num_parms));
+        num_res = CountTypes (FUNDEF_TYPES (wrappers));
+        last_parm_is_dots = HasDotArgs (FUNDEF_ARGS (wrappers));
+        last_res_is_dots = HasDotTypes (FUNDEF_TYPES (wrappers));
+        DBUG_PRINT ("CRTWRP", (" ... checking %s %s%d args %s%d rets",
+                               FUNDEF_NAME (wrappers), (last_parm_is_dots ? ">=" : ""),
+                               num_parms, (last_res_is_dots ? ">=" : ""), num_res));
         if ((strcmp (name, FUNDEF_NAME (wrappers)) == 0)
-            && ((num_parms == num_args) || (last_is_dots && (num_parms <= num_args)))) {
+            && ((num_res == num_rets) || (last_res_is_dots && (num_res <= num_rets)))
+            && ((num_parms == num_args)
+                || (last_parm_is_dots && (num_parms <= num_args)))) {
             found = TRUE;
         } else {
             wrappers = FUNDEF_NEXT (wrappers);
@@ -169,6 +131,10 @@ CreateWrapperFor (node *fundef)
     types *rettypes;
 
     DBUG_ENTER ("CreateWrapperFor");
+    DBUG_PRINT ("CRTWRP",
+                ("Creating wrapper for %s %s%d args %d rets", FUNDEF_NAME (fundef),
+                 (HasDotArgs (FUNDEF_ARGS (fundef)) ? ">=" : ""),
+                 CountArgs (FUNDEF_ARGS (fundef)), CountTypes (FUNDEF_TYPES (fundef))));
 
     body = FUNDEF_BODY (fundef);
     FUNDEF_BODY (fundef) = NULL;
@@ -181,13 +147,19 @@ CreateWrapperFor (node *fundef)
     FUNDEF_STATUS (wrapper) = ST_wrapperfun;
 
     /*
-     * setting the wrapper function's return types to _unknown_[*] :
+     * setting the wrapper function's return types to _unknown_[*]
+     * unless the function turns out to be void, or their basetype
+     * turns out to be T_dots:
      */
-    rettypes = FUNDEF_TYPES (wrapper);
-    while (rettypes) {
-        TYPES_DIM (rettypes) = ARRAY_OR_SCALAR;
-        TYPES_BASETYPE (rettypes) = T_unknown;
-        rettypes = TYPES_NEXT (rettypes);
+    if (TYPES_BASETYPE (FUNDEF_TYPES (wrapper)) != T_void) {
+        rettypes = FUNDEF_TYPES (wrapper);
+        while (rettypes) {
+            if (TYPES_BASETYPE (rettypes) != T_dots) {
+                TYPES_DIM (rettypes) = ARRAY_OR_SCALAR;
+                TYPES_BASETYPE (rettypes) = T_unknown;
+            }
+            rettypes = TYPES_NEXT (rettypes);
+        }
     }
 
     /*
@@ -204,6 +176,63 @@ CreateWrapperFor (node *fundef)
     }
 
     DBUG_RETURN (wrapper);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    ntype *CreateFuntype(node *fundef)
+ *
+ * description:
+ *    creates a function type from the given arg/return types. While doing so,
+ *    the return type is put into FUNDEF_RET_TYPE( fundef) !!!!
+ *    This shortcut is very useful during type inference, when the return
+ *    statement is reached (cf. NTCreturn). Otherwise, it would be necessary
+ *    to dig through the intersection type in order to find the return type.
+ *
+ ******************************************************************************/
+
+static ntype *
+FuntypeFromArgs (ntype *res, node *args, node *fundef)
+{
+    DBUG_ENTER ("FuntypeFromArgs");
+
+    if (args != NULL) {
+        res = FuntypeFromArgs (res, ARG_NEXT (args), fundef);
+        res = TYMakeFunType (TYOldType2Type (ARG_TYPE (args), TY_symb), res, fundef);
+    }
+
+    DBUG_RETURN (res);
+}
+
+ntype *
+CreateFuntype (node *fundef)
+{
+    int num_rets;
+    types *old_ret;
+    ntype *res;
+    int i;
+
+    DBUG_ENTER ("CreateFuntype");
+    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
+                 "CreateFuntype applied to non-fundef node!");
+
+    old_ret = FUNDEF_TYPES (fundef);
+    num_rets = CountTypes (old_ret);
+
+    res = TYMakeEmptyProductType (num_rets);
+
+    for (i = 0; i < num_rets; i++) {
+        res = TYSetProductMember (res, i,
+                                  TYMakeAlphaType (TYOldType2Type (old_ret, TY_symb)));
+        old_ret = TYPES_NEXT (old_ret);
+    }
+
+    FUNDEF_RET_TYPE (fundef) = TYCopyType (res);
+
+    res = FuntypeFromArgs (res, FUNDEF_ARGS (fundef), fundef);
+
+    DBUG_RETURN (res);
 }
 
 /******************************************************************************
@@ -245,22 +274,22 @@ CRTWRPmodul (node *arg_node, node *arg_info)
 node *
 CRTWRPfundef (node *arg_node, node *arg_info)
 {
-    ntype *funtype;
     node *wrapper;
 
     DBUG_ENTER ("CRTWRPfundef");
 
     wrapper = FindWrapper (FUNDEF_NAME (arg_node), CountArgs (FUNDEF_ARGS (arg_node)),
+                           CountTypes (FUNDEF_TYPES (arg_node)),
                            INFO_CRTWRP_WRAPPERS (arg_info));
     if (wrapper == NULL) {
         wrapper = CreateWrapperFor (arg_node);
         FUNDEF_NEXT (wrapper) = INFO_CRTWRP_WRAPPERS (arg_info);
         INFO_CRTWRP_WRAPPERS (arg_info) = wrapper;
     }
-#if 0
-  funtype = CreateFuntype( arg_node);
-  InsertFuntype( funtype, wrapper);
-#endif
+
+    FUNDEF_TYPE (arg_node) = CreateFuntype (arg_node);
+    FUNDEF_TYPE (wrapper) = TYMakeOverloadedFunType (TYCopyType (FUNDEF_TYPE (arg_node)),
+                                                     FUNDEF_TYPE (wrapper));
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
         FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
@@ -272,11 +301,47 @@ CRTWRPfundef (node *arg_node, node *arg_info)
      * to the appropriate wrappers, AND we infer the "down-projections".
      */
 
+    /*
+     * Usually, we expect all functions applied in the function body to return a
+     * single value. Therefore, INFO_CRTWRP_EXPRETS is set to 1.
+     * Only on RHSs of N_let nodes with more than one Id on the LHS, this
+     * value is changed (and reset afterwards!) -> CRTWRPlet.
+     */
+    INFO_CRTWRP_EXPRETS (arg_info) = 1;
+
     if (FUNDEF_BODY (arg_node) != NULL) {
         FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
     }
 
     /* Infer Down-Projections still missing */
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    node *CRTWRPlet(node *arg_node, node *arg_info)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+CRTWRPlet (node *arg_node, node *arg_info)
+{
+    int old_exprets;
+
+    DBUG_ENTER ("CRTWRPlet");
+
+    old_exprets = INFO_CRTWRP_EXPRETS (arg_info);
+    INFO_CRTWRP_EXPRETS (arg_info) = CountIds (LET_IDS (arg_node));
+
+    if (LET_EXPR (arg_node) != NULL) {
+        LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
+    }
+    INFO_CRTWRP_EXPRETS (arg_info) = old_exprets;
 
     DBUG_RETURN (arg_node);
 }
@@ -300,12 +365,14 @@ CRTWRPap (node *arg_node, node *arg_info)
     DBUG_ENTER ("CRTWRPap");
 
     num_args = CountExprs (AP_ARGS (arg_node));
-    wrapper = FindWrapper (AP_NAME (arg_node), num_args, INFO_CRTWRP_WRAPPERS (arg_info));
+    wrapper = FindWrapper (AP_NAME (arg_node), num_args, INFO_CRTWRP_EXPRETS (arg_info),
+                           INFO_CRTWRP_WRAPPERS (arg_info));
 
     if (wrapper == NULL) {
         ABORT (NODE_LINE (arg_node),
-               ("No definition found for a function \"%s\" that expects %i argument(s)",
-                AP_NAME (arg_node), num_args));
+               ("No definition found for a function \"%s\" that expects %i argument(s)"
+                " and yields %i return value(s)",
+                AP_NAME (arg_node), num_args, INFO_CRTWRP_EXPRETS (arg_info)));
     } else {
         AP_FUNDEF (arg_node) = wrapper;
     }

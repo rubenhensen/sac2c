@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2002/05/31 14:43:06  sbs
+ * CRTWRPlet added
+ *
  * Revision 1.5  2002/03/12 15:13:32  sbs
  * CRTWRPxxxx traversal function added.
  *
@@ -23,14 +26,17 @@
 #define _create_wrappers_h
 
 #include "types.h"
+#include "new_types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "internal_lib.h"
 
 extern node *CreateWrappers (node *arg_node);
+extern ntype *CreateFuntype (node *fundef);
 
 extern node *CRTWRPmodul (node *arg_node, node *arg_info);
 extern node *CRTWRPfundef (node *arg_node, node *arg_info);
+extern node *CRTWRPlet (node *arg_node, node *arg_info);
 extern node *CRTWRPap (node *arg_node, node *arg_info);
 
 #endif /* _create_wrappers_h */
