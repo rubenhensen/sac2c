@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.30  2004/11/27 02:05:38  jhb
+ * compile
+ *
  * Revision 3.29  2004/11/26 20:31:34  jhb
  * changed MakeWlseg to MakeWlSeg
  *
@@ -606,7 +609,7 @@ WLCOMP_All (node *segs, node *parms, node *cubes, int dims, int line)
         segs = FREEdoFreeTree (segs);
     }
 
-    segs = MakeWlSegX (dims, DUPdoDupTree (cubes), NULL);
+    segs = TCmakeWlSegX (dims, DUPdoDupTree (cubes), NULL);
     segs = WLCOMP_NoBlocking (segs, parms, cubes, dims, line);
 
     DBUG_RETURN (segs);
@@ -647,7 +650,7 @@ WLCOMP_Cubes (node *segs, node *parms, node *cubes, int dims, int line)
         /*
          * build new segment
          */
-        new_seg = MakeWlSegX (dims, DUPdoDupNode (cubes), NULL);
+        new_seg = TCmakeWlSegX (dims, DUPdoDupNode (cubes), NULL);
 
         /*
          * append 'new_seg' at 'segs'
@@ -719,7 +722,7 @@ WLCOMP_ConstSegs (node *segs, node *parms, node *cubes, int dims, int line)
                                                ARRAY_AELEMS (EXPRS_EXPR2 (parms)), line);
 
             if (new_cubes != NULL) {
-                new_seg = MakeWlSegX (dims, new_cubes, NULL);
+                new_seg = TCmakeWlSegX (dims, new_cubes, NULL);
 
                 if (segs == NULL) {
                     segs = new_seg;
