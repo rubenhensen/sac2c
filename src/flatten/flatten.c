@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.75  1998/05/28 23:48:38  dkr
+ * in old with-loop the neutral element is not flattened anymore
+ *
  * Revision 1.74  1998/05/21 09:59:47  dkr
  * added missing 'break' in switch-statement (FltnNWithop)
  *
@@ -1563,16 +1566,29 @@ FltnCon (node *arg_node, node *arg_info)
         break;
     }
     case N_foldfun: {
+/*
+ * in old with-loop 'compile' can handle unflattened neutral elements only!!
+ */
+#if 1
+        expr = NULL;
+#else
         expr = FOLDFUN_NEUTRAL (arg_node);
         if ((NODE_TYPE (expr) == N_prf) || (NODE_TYPE (expr) == N_ap)
             || (NODE_TYPE (expr) == N_array) || (NODE_TYPE (expr) == N_with)
             || (NODE_TYPE (expr) == N_Nwith)) {
             FOLDFUN_NEUTRAL (arg_node) = Abstract (expr, arg_info);
         }
+#endif
         body = &FOLDFUN_BODY (arg_node);
         break;
     }
     case N_foldprf: {
+/*
+ * in old with-loop 'compile' can handle unflattened neutral elements only!!
+ */
+#if 1
+        expr = NULL;
+#else
         expr = FOLDPRF_NEUTRAL (arg_node);
         if ((expr != NULL)
             && ((NODE_TYPE (expr) == N_prf) || (NODE_TYPE (expr) == N_ap)
@@ -1580,6 +1596,7 @@ FltnCon (node *arg_node, node *arg_info)
                 || (NODE_TYPE (expr) == N_Nwith))) {
             FOLDPRF_NEUTRAL (arg_node) = Abstract (expr, arg_info);
         }
+#endif
         body = &FOLDPRF_BODY (arg_node);
         break;
     }
