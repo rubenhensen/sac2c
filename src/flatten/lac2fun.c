@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.18  2002/09/05 19:38:45  dkr
+ * L2Ffundef: ignore fundefs that are LaC-funs already!!
+ *
  * Revision 3.17  2002/04/16 21:11:15  dkr
  * cpp-flag MAIN_HAS_MODNAME no longer needed
  *
@@ -514,9 +517,10 @@ L2Ffundef (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("L2Ffundef");
 
-    INFO_L2F_FUNDEF (arg_info) = arg_node;
-
-    if (FUNDEF_BODY (arg_node) != NULL) {
+    if ((FUNDEF_BODY (arg_node) != NULL) && (FUNDEF_STATUS (arg_node) != ST_condfun)
+        && (FUNDEF_STATUS (arg_node) != ST_dofun)
+        && (FUNDEF_STATUS (arg_node) != ST_whilefun)) {
+        INFO_L2F_FUNDEF (arg_info) = arg_node;
         INFO_L2F_FUNS (arg_info) = NULL;
 
         FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
