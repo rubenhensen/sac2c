@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/06/30 12:24:54  khf
+ * Only WLs with non-empty iteration space are considered
+ *
  * Revision 1.3  2004/05/07 13:07:08  khf
  * some debugging
  *
@@ -52,7 +55,7 @@
 #include "optimize.h"
 #include "WithloopFusion.h"
 
-typedef enum { WO_gen, WO_mod, WO_fold } wo_type_t;
+typedef enum { WO_gen, WO_mod, WO_fold, WL_unkown } wo_type_t;
 
 typedef enum { WL_fused, WL_2fuse, WL_travback, WL_nothing } wl_action_t;
 
@@ -91,28 +94,26 @@ CheckDependency (node *checkid, nodelist *nl)
 
 /** <!--********************************************************************-->
  *
- * @fn bool CheckArraySize( node *current_wl_assign, node *test_wl_assign)
+ * @fn bool CheckIterationSpace( node *current_wl, node *extendable_wl)
  *
- *   @brief checks whether the size of both withloops is equal.
- *          For this version it is enough to check the first idenfifiers
- *          of both withloop.
+ *   @brief checks whether the size of both iteration spaces are equal.
  *
- *   @param  node *current_wl_assign:  N_assign node of current withloop
- *           node *test_wl_assign   :  N_assign node of extendable withloop
- *   @return bool                   :  returns TRUE iff they have equal size
+ *   @param  node *current_wl    :  N_Nwith node of current withloop
+ *           node *extendable_wl :  N_Nwith node of extendable withloop
+ *   @return bool                :  returns TRUE iff they have equal size
  ******************************************************************************/
 static bool
-CheckArraySize (node *current_wl_assign, node *test_wl_assign)
+CheckIterationSpace (node *current_wl, node *extendable_wl)
 {
     shpseg *shape1, *shape2;
     int dim1, dim2;
     bool is_equal;
 
-    DBUG_ENTER ("CheckArraySize");
+    DBUG_ENTER ("CheckIterationSpace");
 
-    shape1 = Type2Shpseg (IDS_TYPE (LET_IDS (ASSIGN_INSTR (current_wl_assign))), &dim1);
+    shape1 = Type2Shpseg (IDS_TYPE (NWITH_VEC (current_wl)), &dim1);
 
-    shape2 = Type2Shpseg (IDS_TYPE (LET_IDS (ASSIGN_INSTR (test_wl_assign))), &dim2);
+    shape2 = Type2Shpseg (IDS_TYPE (NWITH_VEC (extendable_wl)), &dim2);
 
     if (dim1 == dim2) {
         if (dim1 > 0) {
@@ -139,7 +140,7 @@ static bool
 CompGenSon (node *gen_son1, node *gen_son2)
 {
     node *elems1, *elems2;
-    bool is_equal;
+    bool is_equal = FALSE;
 
     DBUG_ENTER ("CompGenSon");
 
@@ -870,8 +871,11 @@ WLFSNwith (node *arg_node, node *arg_info)
          * If the generators of the current withloop build a full partition
          * the PARTS attribute carries a positive value. Only those withloops
          * are considered further.
+         * Futhermore we consider only WLs with non-empty iteration space
          */
-        if (NWITH_PARTS (arg_node) >= 1) {
+
+        if (NWITH_PARTS (arg_node) >= 1
+            && GetShapeDim (IDS_TYPE (NWITH_VEC (arg_node))) > 0) {
 
             /*
              * initialize WL traversal
@@ -899,9 +903,10 @@ WLFSNwith (node *arg_node, node *arg_info)
                         is_equal
                           = (NWITH_PARTS (arg_node) == NWITH_PARTS (ASSIGN_RHS (wln)));
 
-                        /* is the size of both arrays equal? */
+                        /* is the size of both wl iteration space equal? */
                         is_equal = (is_equal
-                                    && CheckArraySize (INFO_WLFS_ASSIGN (arg_info), wln));
+                                    && CheckIterationSpace (arg_node, ASSIGN_RHS (wln)));
+
                         if (is_equal) {
                             /*
                              * traverse the N_PARTs.
@@ -989,7 +994,7 @@ WLFSNwith (node *arg_node, node *arg_info)
 node *
 WLFSNwithop (node *arg_node, node *arg_info)
 {
-    wo_type_t current_type;
+    wo_type_t current_type = WL_unkown;
 
     DBUG_ENTER ("WLFSNwithop");
 
@@ -1103,7 +1108,7 @@ node *
 WLFSNgenerator (node *arg_node, node *arg_info)
 {
     node *wl_assign, *parts, *gen;
-    bool is_equal;
+    bool is_equal = FALSE;
 
     DBUG_ENTER ("WLFSNgenerator");
 
