@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.4  2000/07/14 12:59:25  dkr
+ * DFRfundef: body of function is always traversed now
+ *
  * Revision 2.3  2000/07/14 12:05:14  dkr
  * DFRblock() added
  *
@@ -99,8 +102,7 @@ DFRmodul (node *arg_node, node *info_node)
  *   node *DFRfundef( node *arg_node, node *arg_info)
  *
  * Description:
- *   Traverses instruction- (if not inline marked) and function-chain
- *   in this order.
+ *   Traverses instruction- and function-chain in this order.
  *
  ******************************************************************************/
 
@@ -113,8 +115,8 @@ DFRfundef (node *arg_node, node *arg_info)
 
     DBUG_PRINT ("DFR", ("Dead Function Removal in function: %s", FUNDEF_NAME (arg_node)));
 
-    if ((FUNDEF_BODY (arg_node) != NULL) && (FUNDEF_INLINE (arg_node) == 0)) {
-        FUNDEF_INSTR (arg_node) = Trav (FUNDEF_INSTR (arg_node), arg_info);
+    if (FUNDEF_BODY (arg_node) != NULL) {
+        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
     }
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
