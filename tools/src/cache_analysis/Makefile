@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 1.5  2001/11/20 10:17:20  sacbase
+# rule for $(LIBS) added.
+#
 # Revision 1.4  2001/11/20 10:13:38  sacbase
 # new destination directory $(TOOLS)/bin added.
 #
@@ -36,6 +39,9 @@ $(TOOLS)/bin/ctest: $(TOOLS)/bin accesstime.o ctest.o verbose.o l1.o l2.o bits.o
 
 $(TOOLS)/bin:
 	mkdir -p $(TOOLS)/bin
+
+$(LIBS):
+	$(MAKE) -C $(LIBDIR)/src
 
 clean:
 	$(RM) *.o *~
