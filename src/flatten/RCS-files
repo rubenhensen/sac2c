@@ -4,6 +4,8 @@ flatten.c
 flatten.h
 fun2lac.c
 fun2lac.h
+handle_mops.c
+handle_mops.h
 insert_vardec.c
 insert_vardec.h
 lac2fun.c
