@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.35  1995/07/24 09:04:47  asi
+ * Revision 1.36  1995/08/07 10:10:51  asi
+ * now using macros defined in typecheck.h for folding of shape and dim
+ *
+ * Revision 1.35  1995/07/24  09:04:47  asi
  * bug fixed in function ArrayPrf case F_psi
  *
  * Revision 1.34  1995/07/21  13:16:52  asi
@@ -133,6 +136,7 @@
 #include "traverse.h"
 #include "typecheck.h"
 #include "internal_lib.h"
+#include "access_macros.h"
 
 #include "optimize.h"
 #include "DupTree.h"
@@ -1335,7 +1339,6 @@ node *
 ArrayPrf (node *arg_node, types *res_type, node *arg_info)
 {
     node *arg[MAXARG], *expr[MAXARG], *expr_arg[MAXARG], *tmp;
-    shpseg *shape;
     int swap, i;
     long *used_sofar;
 
@@ -1557,38 +1560,48 @@ ArrayPrf (node *arg_node, types *res_type, node *arg_info)
         case N_id:
             DBUG_PRINT ("CF",
                         ("primitive function %s folded", prf_string[arg_node->info.prf]));
-            /*
-             * free prf_node
-             */
-            FREE (arg_node);
-
-            /*
-             * Generate shape vector
-             */
-            arg_node = MakeNode (N_array);
-            arg_node->nnode = 1;
-
-            shape = arg[0]->info.ids->node->info.types->shpseg;
-
-            arg_node->node[0] = MakeNode (N_exprs);
-            arg_node->node[0]->node[0] = MakeNode (N_num);
-            arg_node->node[0]->nnode = 1;
-            arg_node->node[0]->node[0]->info.cint = shape->shp[0];
-
-            tmp = arg_node->node[0];
-            for (i = 1; i < res_type->shpseg->shp[0]; i++) {
-                tmp->nnode++;
-                tmp->node[1] = MakeNode (N_exprs);
-                tmp = tmp->node[1];
-                tmp->nnode = 1;
-                tmp->node[0] = MakeNode (N_num);
-                tmp->node[0]->info.cint = shape->shp[i];
-            }
-
+            SHAPE_2_ARRAY (tmp, arg[0]->info.ids->node->info.types);
             DEC_VAR (arg_info->mask[1], arg[0]->info.ids->node->varno);
-            FreeTree (arg[0]);
+            FreeTree (arg_node);
+            arg_node = tmp;
             cf_expr++;
             break;
+#if 0
+	  DBUG_PRINT("CF",("primitive function %s folded",prf_string[arg_node->info.prf]));
+	  /*
+	   * free prf_node
+	   */
+	  FREE(arg_node);
+	  
+	  /*
+	   * Generate shape vector
+	   */
+	  arg_node=MakeNode(N_array);
+	  arg_node->nnode=1;
+	  
+	  shape=arg[0]->info.ids->node->info.types->shpseg;
+	  
+	  arg_node->node[0]			= MakeNode(N_exprs);
+	  arg_node->node[0]->node[0]		= MakeNode(N_num);
+	  arg_node->node[0]->nnode		= 1;
+	  arg_node->node[0]->node[0]->info.cint	= shape->shp[0];
+	  
+	  tmp = arg_node->node[0];
+	  for (i=1; i < res_type->shpseg->shp[0]; i++)
+	    {
+	    tmp->nnode++;
+	    tmp->node[1]		= MakeNode(N_exprs);
+	    tmp				= tmp->node[1];
+	    tmp->nnode			= 1;
+	    tmp->node[0]		= MakeNode(N_num);
+	    tmp->node[0]->info.cint	= shape->shp[i];
+	    }
+	  
+	  DEC_VAR(arg_info->mask[1], arg[0]->info.ids->node->varno);
+	  FreeTree(arg[0]);
+	  cf_expr++;
+	  break;
+#endif
         default:
             break;
         }
@@ -1624,7 +1637,7 @@ ArrayPrf (node *arg_node, types *res_type, node *arg_info)
              * get result
              */
             arg_node->nodetype = N_num;
-            arg_node->info.cint = arg[0]->info.ids->node->info.types->dim;
+            GET_DIM (arg_node->info.cint, arg[0]->info.ids->node->info.types);
 
             /*
              * Free argument of prim function
