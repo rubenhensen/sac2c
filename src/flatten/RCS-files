@@ -7,5 +7,7 @@ flatten.c
 flatten.h
 fun2lac.c
 fun2lac.h
+infer_dfms.c
+infer_dfms.h
 lac2fun.c
 lac2fun.h
