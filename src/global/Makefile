@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.6  1999/06/16 14:36:17  dkr
+# make deps done
+#
 # Revision 2.5  1999/05/12 15:13:22  cg
 # make deps done
 #
@@ -252,5 +255,6 @@ tree_compound.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
 tree_compound.o: /usr/include/sys/int_types.h internal_lib.h
 usage.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 usage.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
-usage.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h usage.h globals.h
-usage.o: types.h build.h ../../inc/dbug.h
+usage.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
+usage.o: /usr/include/stdlib.h usage.h globals.h types.h build.h
+usage.o: ../../inc/dbug.h
