@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.16  2004/11/26 16:19:26  cg
+ * void pointer in definition of argtab_t removed.
+ *
  * Revision 1.15  2004/11/25 17:28:30  cg
  * Added inherit_list_t for parsing resource files.
  *
@@ -359,7 +362,7 @@ typedef struct NODELIST {
     struct NODE *node;
     statustype attrib;
     statustype status;
-    void *attrib2;
+    struct NODE *attrib2;
     struct NODELIST *next;
 } nodelist;
 
@@ -619,7 +622,7 @@ typedef enum {
 typedef struct ARGTAB_T {
     int size;
     node **ptr_in;  /* N_arg or N_exprs node */
-    void **ptr_out; /* 'types*' or 'ids*' */
+    node **ptr_out; /* N_ret or N_ids node */
     argtag_t *tag;
 } argtab_t;
 
