@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.92  2004/10/05 09:09:35  sah
+ * replaced some NULL by 0 in macros on int
+ *
  * Revision 3.91  2004/10/04 17:15:12  sah
  * created new L_WLNODE and WLNODE macros
  *
@@ -2580,7 +2583,7 @@ extern node *MakeWLsegX (int dims, node *contents, node *next);
                       : ((NODE_TYPE (n) == N_WLgrid)                                     \
                            ? WLGRID_LEVEL (n)                                            \
                            : ((NODE_TYPE (n) == N_WLgridVar) ? WLGRIDVAR_LEVEL (n)       \
-                                                             : NULL))))))
+                                                             : 0))))))
 
 #define WLNODE_DIM(n)                                                                    \
     ((NODE_TYPE (n) == N_WLblock)                                                        \
@@ -2594,7 +2597,7 @@ extern node *MakeWLsegX (int dims, node *contents, node *next);
                       : ((NODE_TYPE (n) == N_WLgrid)                                     \
                            ? WLGRID_DIM (n)                                              \
                            : ((NODE_TYPE (n) == N_WLgridVar) ? WLGRIDVAR_DIM (n)         \
-                                                             : NULL))))))
+                                                             : 0))))))
 
 #define WLNODE_BOUND1_INT(n)                                                             \
     ((NODE_TYPE (n) == N_WLblock)                                                        \
@@ -2603,7 +2606,7 @@ extern node *MakeWLsegX (int dims, node *contents, node *next);
             ? WLUBLOCK_BOUND1 (n)                                                        \
             : ((NODE_TYPE (n) == N_WLstride)                                             \
                  ? WLSTRIDE_BOUND1 (n)                                                   \
-                 : ((NODE_TYPE (n) == N_WLgrid) ? WLGRID_BOUND1 (n) : NULL))))
+                 : ((NODE_TYPE (n) == N_WLgrid) ? WLGRID_BOUND1 (n) : 0))))
 
 #define WLNODE_BOUND1_NODE(n)                                                            \
     ((NODE_TYPE (n) == N_WLstrideVar)                                                    \
@@ -2617,7 +2620,7 @@ extern node *MakeWLsegX (int dims, node *contents, node *next);
             ? WLUBLOCK_BOUND2 (n)                                                        \
             : ((NODE_TYPE (n) == N_WLstride)                                             \
                  ? WLSTRIDE_BOUND2 (n)                                                   \
-                 : ((NODE_TYPE (n) == N_WLgrid) ? WLGRID_BOUND2 (n) : NULL))))
+                 : ((NODE_TYPE (n) == N_WLgrid) ? WLGRID_BOUND2 (n) : 0))))
 
 #define WLNODE_BOUND2_NODE(n)                                                            \
     ((NODE_TYPE (n) == N_WLstrideVar)                                                    \
@@ -2629,7 +2632,7 @@ extern node *MakeWLsegX (int dims, node *contents, node *next);
        ? WLBLOCK_STEP (n)                                                                \
        : ((NODE_TYPE (n) == N_WLublock)                                                  \
             ? WLUBLOCK_STEP (n)                                                          \
-            : ((NODE_TYPE (n) == N_WLstride) ? WLSTRIDE_STEP (n) : NULL)))
+            : ((NODE_TYPE (n) == N_WLstride) ? WLSTRIDE_STEP (n) : 0)))
 
 #define WLNODE_NEXTDIM(n)                                                                \
     ((NODE_TYPE (n) == N_WLblock)                                                        \
