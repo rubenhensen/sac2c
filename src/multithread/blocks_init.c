@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2000/02/04 14:43:55  jhs
+ * Improved MustExecuteSingleThreaded.
+ *
  * Revision 1.4  2000/02/03 15:17:31  jhs
  * First step of MustExecuteSingleThreaded implemented.
  *
@@ -36,6 +39,7 @@
 #include "scheduling.h"
 #include "DupTree.h"
 #include "generatemasks.h"
+#include "globals.h"
 
 #include "internal_lib.h"
 
@@ -75,6 +79,49 @@ BlocksInit (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
+ *   static int CheckLHSforBigArrays(node* let, int max_small_size)
+ *
+ * description:
+ *   test whether any result on the lhs is an array, with more elements
+ *   as max_small_size.
+ *
+ ******************************************************************************/
+static int
+CheckLHSforBigArrays (node *let, int max_small_size)
+{
+    int i;
+    int result;
+    int sum;
+    ids *letids;
+    node *vardec;
+    types *type;
+
+    DBUG_ENTER ("CheckLHSforBigArrays");
+
+    result = FALSE;
+    /* run through ids-chain */
+    letids = LET_IDS (let);
+    while (letids != NULL) {
+        vardec = IDS_VARDEC (letids);
+        type = VARDEC_TYPE (vardec);
+
+        if ((KNOWN_SHAPE (type)) && (TYPES_DIM (type) > 0)) {
+            sum = 1;
+            for (i = 0; i < TYPES_DIM (type); i++) {
+                sum = sum * TYPES_SHAPE (type, i);
+            }
+            result = (result || (sum > max_small_size));
+        } else {
+            /* nothing happens #### error? warning?  */
+        }
+        letids = IDS_NEXT (letids);
+    }
+    DBUG_RETURN (result);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   static int MustExecuteSingleThreaded(node *arg_node, node *arg_info)
  *
  * description:
@@ -86,11 +133,7 @@ static int
 MustExecuteSingleThreaded (node *arg_node, node *arg_info)
 {
     int result;
-    int sum, i;
     node *instr;
-    ids *letids;
-    node *vardec;
-    types *type;
 
     DBUG_ENTER ("MustExecuteSingleThreeaded");
 
@@ -98,49 +141,29 @@ MustExecuteSingleThreaded (node *arg_node, node *arg_info)
 
     instr = ASSIGN_INSTR (arg_node);
 
-    NOTE (("hit0"));
     if (NODE_TYPE (instr) == N_let) {
-        /* test lhs if arrays > threshold */
-        NOTE (("hit1"));
-        if (NODE_TYPE (LET_EXPR (instr)) == N_ap) {
-            /* it is a function */
-            NOTE (("hit2"));
-
-            /* unknown body and array-result > threshold? */
-            /*   if (FUNDEF_BODY( AP_FUNDEF( LET_EXPR( instr))) == NULL) { */
-            if (1) {
-                NOTE (("hit3"));
-                result = FALSE;
-                letids = LET_IDS (instr);
-                while (letids != NULL) {
-                    vardec = IDS_VARDEC (letids);
-                    type = VARDEC_TYPE (vardec);
-
-                    if ((KNOWN_SHAPE (type)) && (TYPES_DIM (type) > 0)) {
-
-                        sum = 1;
-                        for (i = 0; i < TYPES_DIM (type); i++) {
-                            sum = sum * TYPES_SHAPE (type, i);
-                        }
-                        if (sum > 10) { /* threshold einsetzen #### */
-                            result = TRUE;
-                        }
-                    } else {
-                        /* nothing happens #### error? warning?  */
-                    }
-                    letids = IDS_NEXT (letids);
-                }
-            }
+        if ((NODE_TYPE (LET_EXPR (instr)) == N_ap)
+            && (FUNDEF_BODY (AP_FUNDEF (LET_EXPR (instr))) == NULL)) {
+            /*
+             *  it is a function with unknown body,
+             *  is any array-result > threshold?
+             */
+            result = CheckLHSforBigArrays (instr, max_replication_size);
         } else if (NODE_TYPE (LET_EXPR (instr)) == N_prf) {
-            /* it is a primitive function */
-
-            /* array-result > threshold? */
-            result = FALSE;
-
+            /*
+             *  it is a primitive function with no body
+             *  is any array-result > threshold?
+             */
+            result = CheckLHSforBigArrays (instr, max_replication_size);
+        } else if (NODE_TYPE (LET_EXPR (instr)) == N_array) {
+            /*
+             *  it is a let, assigning a constant
+             *  is any array-result > threshold?
+             */
+            result = CheckLHSforBigArrays (instr, max_replication_size);
         } else {
             result = FALSE;
         }
-
     } else if (NODE_TYPE (instr) == N_while) {
         /* ??? #### */
         result = FALSE;
