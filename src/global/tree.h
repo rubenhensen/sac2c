@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.51  1995/07/13 15:23:25  hw
+ * Revision 1.52  1995/07/24 09:07:41  hw
+ * new typedef file_type inserted (moved from sac.y)
+ *
+ * Revision 1.51  1995/07/13  15:23:25  hw
  * macros MAKENODE_BOOL & MAKENODE_FLOAT added
  *
  * Revision 1.50  1995/07/10  07:31:59  asi
@@ -201,6 +204,16 @@ typedef enum {
                   /* signature expansion                    */
 } statustype;
 typedef enum { VECT, IDX } useflag;
+
+typedef enum {
+    F_prog,
+    F_modimp,
+    F_classimp,
+    F_moddec,
+    F_extmoddec,
+    F_classdec,
+    F_extclassdec
+} file_type;
 
 typedef char id;
 
