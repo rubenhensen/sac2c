@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.130  1998/06/18 13:41:09  cg
+ * function SpmdRegion renamed to BuildSpmdRegion and now included
+ * from concurrent.h instead of spmdregion.h
+ *
  * Revision 1.129  1998/06/09 09:46:14  cg
  * added command line options -mt-static, -mt-dynamic, and -maxsyncfold.
  *
@@ -450,7 +454,7 @@
 #include "uniquecheck.h"
 #include "rmvoidfun.h"
 #include "wltransform.h"
-#include "spmdregions.h"
+#include "concurrent.h"
 #include "precompile.h"
 #include "compile.h"
 #include "cccall.h"
@@ -1292,7 +1296,7 @@ MAIN
 
     NOTE_COMPILER_PHASE;
     CHECK_DBUG_START;
-    syntax_tree = SpmdRegions (syntax_tree); /* spmd..._tab, sync..._tab */
+    syntax_tree = BuildSpmdRegions (syntax_tree); /* spmd..._tab, sync..._tab */
     CHECK_DBUG_STOP;
     ABORT_ON_ERROR;
 
