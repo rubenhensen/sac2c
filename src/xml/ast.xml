@@ -1132,6 +1132,29 @@
           <node name="Cond" />
         </travsons>
       </traversal>
+      <traversal id="EMIP" name="Inplace Computation" default="sons" include="inplacecomp.h">
+        <travuser>
+          <node name="Ap" />
+          <node name="Code" />
+          <node name="Cond" />
+          <node name="Fundef" />
+          <node name="Let" />
+          <node name="Prf" />
+        </travuser>
+        <travnone>
+          <node name="Objdef" />
+        </travnone>
+      </traversal>
+      <traversal id="EMIPH" name="Inplace Computation helper" default="sons" include="inplacecomp.h">
+        <travuser>
+          <node name="Ap" />
+          <node name="Assign" />
+          <node name="Id" />
+        </travuser>
+        <travnone>
+          <node name="Objdef" />
+        </travnone>
+      </traversal>
     </phase>
     <phase id="concurrent" name="Generating annotations for MT 2">
       <traversal id="CONC" name="Build SPMD Regions (MT2)" default="sons" include="concurrent.h">
