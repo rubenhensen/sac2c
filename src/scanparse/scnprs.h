@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2000/11/24 11:57:56  sbs
+ * export of yyparse eliminated My_yyparse should be used instead.
+ *
  * Revision 3.1  2000/11/20 17:59:52  sacbase
  * new release made
  *
@@ -59,7 +62,6 @@
 #include "globals.h"
 #include "y.tab.h"
 
-extern int yyparse ();
 extern FILE *yyin;
 extern int start_token;
 
