@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2001/01/10 18:34:37  dkr
+ * icm WL_GRID_SET_IDX renamed into WL_GRID_SET_IDXVEC
+ *
  * Revision 3.4  2001/01/09 20:00:45  dkr
  * ICMs for naive compilation added
  *
@@ -520,7 +523,7 @@
  *** with-loop-body.
  ***/
 
-#define SAC_WL_GRID_SET_IDX(dim, idx_vec, idx_sca, bnd1, bnd2)                           \
+#define SAC_WL_GRID_SET_IDXVEC(dim, idx_vec, idx_sca, bnd1, bnd2)                        \
     SAC_ND_WRITE_ARRAY (idx_vec, dim) = idx_sca;
 
 /*****************************************************************************/
