@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2002/04/03 14:47:50  dkr
+ * COMPAp() renamed into COMP2Ap()
+ *
  * Revision 1.9  2002/04/03 14:11:09  dkr
  * code updated (compile.c)
  *
@@ -2506,7 +2509,7 @@ COMPApArgs (node *ap, node *arg_info)
  ******************************************************************************/
 
 node *
-COMPAp (node *arg_node, node *arg_info)
+COMP2Ap (node *arg_node, node *arg_info)
 {
     node *ret_node;
     ids *let_ids;
