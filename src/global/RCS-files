@@ -26,3 +26,4 @@ status_info.mac
 types.h
 usage.c
 usage.h
+config.h.in
