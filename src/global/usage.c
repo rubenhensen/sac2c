@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.63  1998/05/05 12:36:04  srs
+ * added -noWLT
+ *
  * Revision 1.62  1998/04/29 17:09:44  dkr
  * changed phase order
  *
@@ -294,6 +297,7 @@ usage ()
             "\t -noDFR\t\tno dead function removal \n"
             "\t -noLIR\t\tno loop invariant removal \n"
             "\t -noCSE\t\tno common subexpression elimination \n"
+            "\t -noWLT\t\tno withloop transformations \n"
             "\t -noWLF\t\tno withloop folding \n"
             "\t -noIVE\t\tno index vector elimination \n"
             "\t -noAE \t\tno array elimination \n"
