@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  1998/05/04 16:21:11  dkr
+ * removed MT_SPMD_BLOCK macro (temporary used only)
+ *
  * Revision 1.4  1998/05/04 15:36:06  dkr
  * WL_ASSIGN is now a C-ICM
  *
@@ -37,10 +40,6 @@
 /*
  * Macros used for compilation of with-loop:
  */
-
-#if 1
-#define MT_SPMD_BLOCK(a, b, c, d) /* temporary needed */
-#endif
 
 #define VAR(type, level, idx_scalar) __##type##level##_##idx_scalar
 
