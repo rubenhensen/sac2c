@@ -1,7 +1,6 @@
 AssociativeLaw.c
 AssociativeLaw.h
 ConstantFolding.c
-ConstantFolding.h
 DeadCodeRemoval.c
 DeadCodeRemoval.h
 DeadFunctionRemoval.c
@@ -12,7 +11,6 @@ LoopInvariantRemoval.c
 LoopInvariantRemoval.h
 Makefile
 SSAConstantFolding.c
-SSAConstantFolding.h
 SSADeadCodeRemoval.c
 SSADeadCodeRemoval.h
 SSAInferLI.c
