@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 2.23  1999/06/15 12:32:14  jhs
+ * Added code to print out the naive refcounters, when the normal refcounters
+ * are printed. The naive one is introduced by "::" in front, an error message is
+ * printed as comment, when refcounters are NOT optimized and normal and naive
+ * refcounters differ.
+ *
  * Revision 2.22  1999/06/08 08:32:42  cg
  * The print phase now always carries an N_info node with it in order
  * to distinguish between different layouts. The distinction between
@@ -455,6 +461,13 @@ PrintIds (ids *arg)
         fprintf (outfile, "%s", IDS_NAME (arg));
         if ((IDS_REFCNT (arg) != -1) && show_refcnt) {
             fprintf (outfile, ":%d", IDS_REFCNT (arg));
+        }
+        if ((IDS_NAIVE_REFCNT (arg) != -1) && show_refcnt) {
+            fprintf (outfile, "::%d", IDS_NAIVE_REFCNT (arg));
+        }
+        if ((!(optimize & OPT_RCO)) && show_refcnt
+            && (IDS_REFCNT (arg) != IDS_NAIVE_REFCNT (arg))) {
+            fprintf (outfile, "*** NAIVE REFCOUNT IS DIFFERENT !!! ***");
         }
         if (show_idx && IDS_USE (arg)) {
             Trav (IDS_USE (arg), NULL);
@@ -1116,10 +1129,16 @@ PrintId (node *arg_node, node *arg_info)
         fprintf (outfile, "%s:", ID_MOD (arg_node));
     }
 
-    if ((0 == show_refcnt) || (-1 == ID_REFCNT (arg_node))) {
-        fprintf (outfile, "%s", ID_NAME (arg_node));
-    } else {
-        fprintf (outfile, "%s:%d", ID_NAME (arg_node), ID_REFCNT (arg_node));
+    fprintf (outfile, "%s", ID_NAME (arg_node));
+    if ((ID_REFCNT (arg_node) != -1) && show_refcnt) {
+        fprintf (outfile, ":%d", ID_REFCNT (arg_node));
+    }
+    if ((ID_NAIVE_REFCNT (arg_node) != -1) && show_refcnt) {
+        fprintf (outfile, "::%d", ID_NAIVE_REFCNT (arg_node));
+    }
+    if ((!(optimize & OPT_RCO)) && show_refcnt
+        && (ID_REFCNT (arg_node) != ID_NAIVE_REFCNT (arg_node))) {
+        fprintf (outfile, "*** NAIVE REFCOUNT IS DIFFERENT !!! ***");
     }
 
     if (compiler_phase != PH_genccode) {
@@ -1318,6 +1337,13 @@ PrintArg (node *arg_node, node *arg_info)
 
     if ((1 == show_refcnt) && (-1 != ARG_REFCNT (arg_node))) {
         fprintf (outfile, ":%d", ARG_REFCNT (arg_node));
+    }
+    if ((1 == show_refcnt) && (-1 != ARG_NAIVE_REFCNT (arg_node))) {
+        fprintf (outfile, "::%d", ARG_NAIVE_REFCNT (arg_node));
+    }
+    if ((!(optimize & OPT_RCO)) && show_refcnt
+        && (ARG_REFCNT (arg_node) != ARG_NAIVE_REFCNT (arg_node))) {
+        fprintf (outfile, "*** NAIVE REFCOUNT IS DIFFERENT !!! ***");
     }
 
     if (ARG_COLCHN (arg_node) && show_idx) {
@@ -1936,22 +1962,27 @@ PrintSpmd (node *arg_node, node *arg_info)
 
         INDENT
         fprintf (outfile, " * in:");
-        DFMPrintMask (outfile, " %s", SYNC_IN (arg_node));
+        DFMPrintMask (outfile, " %s", SPMD_IN (arg_node));
         fprintf (outfile, "\n");
 
         INDENT
         fprintf (outfile, " * inout:");
-        DFMPrintMask (outfile, " %s", SYNC_INOUT (arg_node));
+        DFMPrintMask (outfile, " %s", SPMD_INOUT (arg_node));
         fprintf (outfile, "\n");
 
         INDENT
         fprintf (outfile, " * out:");
-        DFMPrintMask (outfile, " %s", SYNC_OUT (arg_node));
+        DFMPrintMask (outfile, " %s", SPMD_OUT (arg_node));
+        fprintf (outfile, "\n");
+
+        INDENT
+        fprintf (outfile, " * shared:");
+        DFMPrintMask (outfile, " %s", SPMD_SHARED (arg_node));
         fprintf (outfile, "\n");
 
         INDENT
         fprintf (outfile, " * local:");
-        DFMPrintMask (outfile, " %s", SYNC_LOCAL (arg_node));
+        DFMPrintMask (outfile, " %s", SPMD_LOCAL (arg_node));
         fprintf (outfile, "\n");
 
         INDENT
@@ -2960,7 +2991,12 @@ PrintNodeTreeIds (ids *vars)
 
     fprintf (outfile, "( ");
     while (vars != NULL) {
-        fprintf (outfile, "%s:%d ", IDS_NAME (vars), IDS_REFCNT (vars));
+        fprintf (outfile, "%s:%d::%d ", IDS_NAME (vars), IDS_REFCNT (vars),
+                 IDS_NAIVE_REFCNT (vars));
+        if ((!(optimize & OPT_RCO)) && show_refcnt
+            && (IDS_REFCNT (vars) != IDS_NAIVE_REFCNT (vars))) {
+            fprintf (outfile, "*** NAIVE REFCOUNT IS DIFFERENT !!! ***");
+        }
         vars = IDS_NEXT (vars);
     }
     fprintf (outfile, ")");
@@ -3011,7 +3047,12 @@ PrintNodeTree (node *node)
             fprintf (outfile, "\n");
             break;
         case N_id:
-            fprintf (outfile, "(%s:%d)\n", ID_NAME (node), ID_REFCNT (node));
+            fprintf (outfile, "(%s:%d::%d)\n", ID_NAME (node), ID_REFCNT (node),
+                     ID_NAIVE_REFCNT (node));
+            if ((!(optimize & OPT_RCO)) && show_refcnt
+                && (ID_REFCNT (node) != ID_NAIVE_REFCNT (node))) {
+                fprintf (outfile, "*** NAIVE REFCOUNT IS DIFFERENT !!! ***");
+            }
             break;
         case N_num:
             fprintf (outfile, "(%i)\n", NUM_VAL (node));
@@ -3023,14 +3064,23 @@ PrintNodeTree (node *node)
             fprintf (outfile, "(%s)\n", AP_NAME (node));
             break;
         case N_arg:
-            fprintf (outfile, "(%s %s:%d)\n", mdb_type[TYPES_BASETYPE (ARG_TYPE (node))],
-                     (ARG_NAME (node) != NULL) ? ARG_NAME (node) : "?",
-                     ARG_REFCNT (node));
+            fprintf (outfile, "(%s %s:%d::%d)\n",
+                     mdb_type[TYPES_BASETYPE (ARG_TYPE (node))],
+                     (ARG_NAME (node) != NULL) ? ARG_NAME (node) : "?", ARG_REFCNT (node),
+                     ARG_NAIVE_REFCNT (node));
+            if ((!(optimize & OPT_RCO)) && show_refcnt
+                && (ARG_REFCNT (node) != ARG_NAIVE_REFCNT (node))) {
+                fprintf (outfile, "*** NAIVE REFCOUNT IS DIFFERENT !!! ***");
+            }
             break;
         case N_vardec:
-            fprintf (outfile, "(%s %s:%d)\n",
+            fprintf (outfile, "(%s %s:%d::%d)\n",
                      mdb_type[TYPES_BASETYPE (VARDEC_TYPE (node))], VARDEC_NAME (node),
-                     VARDEC_REFCNT (node));
+                     VARDEC_REFCNT (node), VARDEC_NAIVE_REFCNT (node));
+            if ((!(optimize & OPT_RCO)) && show_refcnt
+                && (VARDEC_REFCNT (node) != VARDEC_NAIVE_REFCNT (node))) {
+                fprintf (outfile, "*** NAIVE REFCOUNT IS DIFFERENT !!! ***");
+            }
             break;
         case N_fundef:
             fprintf (outfile, "(%s)\n", FUNDEF_NAME (node));
@@ -3046,8 +3096,14 @@ PrintNodeTree (node *node)
         case N_Nwithid:
             fprintf (outfile, "( ");
             if (NWITHID_VEC (node) != NULL) {
-                fprintf (outfile, "%s:%d", IDS_NAME (NWITHID_VEC (node)),
-                         IDS_REFCNT (NWITHID_VEC (node)));
+                fprintf (outfile, "%s:%d::%d", IDS_NAME (NWITHID_VEC (node)),
+                         IDS_REFCNT (NWITHID_VEC (node)),
+                         IDS_NAIVE_REFCNT (NWITHID_VEC (node)));
+                if ((!(optimize & OPT_RCO)) && show_refcnt
+                    && (IDS_REFCNT (NWITHID_VEC (node))
+                        != IDS_NAIVE_REFCNT (NWITHID_VEC (node)))) {
+                    fprintf (outfile, "*** NAIVE REFCOUNT IS DIFFERENT !!! ***");
+                }
             } else {
                 fprintf (outfile, "?");
             }
