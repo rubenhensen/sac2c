@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.22  2000/07/11 15:49:34  dkr
+ * IVE is part of Optimize() now
+ * PsiOpt() removed
+ *
  * Revision 2.21  2000/06/13 13:40:01  dkr
  * Old2NewWith() renamed into PatchWith()
  *
@@ -196,7 +200,6 @@
 #include "import.h"
 #include "refcount.h"
 #include "scnprs.h"
-#include "psi-opt.h"
 #include "writesib.h"
 #include "readsib.h"
 #include "implicittypes.h"
@@ -486,17 +489,6 @@ main (int argc, char *argv[])
     PHASE_EPILOG;
 
     if (break_after == PH_sacopt)
-        goto BREAK;
-    compiler_phase++;
-
-    PHASE_PROLOG;
-    if (optimize) {
-        NOTE_COMPILER_PHASE;
-        syntax_tree = PsiOpt (syntax_tree); /* idx_tab */
-    }
-    PHASE_EPILOG;
-
-    if (break_after == PH_psiopt)
         goto BREAK;
     compiler_phase++;
 
