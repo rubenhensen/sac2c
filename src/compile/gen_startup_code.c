@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.24  2003/03/13 17:10:49  dkr
+ * support for the -minarrayrep flag added to GSCPrintMain()
+ *
  * Revision 3.23  2003/03/09 19:15:59  dkr
  * TRACE_AA added
  *
@@ -72,7 +75,7 @@
  * Revision 3.2  2000/12/08 10:11:42  nmw
  * no more warnings on alpha
  *
- *   [...]
+ * [...]
  *
  * Revision 1.1  1998/03/24 14:33:35  cg
  * Initial revision
@@ -110,6 +113,7 @@
 #include "free.h"
 #include "NameTuplesUtils.h"
 #include "precompile.h"
+#include "icm2c_std.h"
 #include "gen_startup_code.h"
 
 /******************************************************************************
@@ -855,7 +859,8 @@ void
 GSCPrintMain ()
 {
 #ifdef TAGGED_ARRAYS
-    char *nt;
+    char *tmp_nt;
+    types *tmp_type;
 #endif
     bool print_thread_id = ((gen_mt_code == GEN_MT_OLD) && (optimize & OPT_PHM));
 
@@ -866,13 +871,18 @@ GSCPrintMain ()
     if (print_thread_id) {
         fprintf (outfile, "  SAC_MT_DECL_MYTHREAD()\n");
     }
+#ifdef TAGGED_ARRAYS
+    tmp_type = MakeTypes1 (T_int);
+    tmp_nt = CreateNtTag ("SAC_res", tmp_type);
+    tmp_type = FreeAllTypes (tmp_type);
+    ICMCompileND_DECL (tmp_nt, "int", 0, NULL); /* create ND_DECL icm */
+#else
     fprintf (outfile, "  int SAC_res;\n\n");
+#endif
     GSCPrintMainBegin ();
 
 #ifdef TAGGED_ARRAYS
-    nt = CreateNtTag ("SAC_res", MakeTypes1 (T_int));
-    fprintf (outfile, "  SACf_main( SAC_ND_ARG_out( %s)", nt);
-    nt = Free (nt);
+    fprintf (outfile, "  SACf_main( SAC_ND_ARG_out( %s)", tmp_nt);
 #else
     fprintf (outfile, "  SAC_res = SACf_main(");
 #endif
@@ -881,7 +891,12 @@ GSCPrintMain ()
     }
     fprintf (outfile, ");\n\n");
     GSCPrintMainEnd ();
+#ifdef TAGGED_ARRAYS
+    fprintf (outfile, "  return( SAC_ND_READ( %s, 0));\n", tmp_nt);
+    tmp_nt = Free (tmp_nt);
+#else
     fprintf (outfile, "  return( SAC_res);\n");
+#endif
     fprintf (outfile, "}\n");
 
     DBUG_VOID_RETURN;
