@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2001/02/02 10:33:01  dkr
+ * some superfluous macros removed
+ *
  * Revision 3.2  2001/02/02 09:53:20  dkr
  * comment added
  *
@@ -64,23 +67,15 @@
 
 /* macros for access to elements of struct info.types */
 #define TYPES info.types
-#define SIMPLETYPE TYPES->simpletype
 #define DIM TYPES->dim
 #define ID TYPES->id
 #define ID_MOD TYPES->id_mod
 #define SHP TYPES->shpseg->shp
 #define NAME TYPES->name
 #define NAME_MOD TYPES->name_mod
-#define ATTRIB TYPES->attrib
-#define STATUS TYPES->status
 
 /* macros used for N_ap nodes to get the function's name */
 #define FUN_NAME info.fun_name.id
 #define FUN_MOD_NAME info.fun_name.id_mod
-
-/* macros for access arguments of a ap or prf - node */
-#define ARG1 node[0]->node[0]
-#define ARG2 node[0]->node[1]->node[0]
-#define ARG3 node[0]->node[1]->node[1]->node[0]
 
 #endif /* _access_macros_h */
