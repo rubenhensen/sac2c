@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.78  2000/07/14 13:17:14  nmw
+ * macro for precompile added, comments updated
+ *
  * Revision 1.77  2000/07/13 11:58:12  jhs
  * Splited ICM_INDENT into ICM_INDENT_BEFORE and ICM_INDENT_AFTER.
  *
@@ -900,7 +903,7 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  ***    statustype      STATUS
  ***    statustype      ATTRIB        (?? -> multithread  && multithread!! )
  ***                                  FLAGS IS CHANGED IN multithread!!!
- ***    int             INLINE
+ ***    bool            INLINE
  ***    int             FUNNO
  ***    node*           PRAGMA   (O)   (N_pragma)
  ***
@@ -1086,7 +1089,7 @@ extern node *MakeArg (char *name, types *type, statustype status, statustype att
  ***
  ***    nodelist*  NEEDFUNS   (O)         (analysis -> )
  ***                                      ( -> analysis -> )
- ***                                      ( -> write-SIB -> )
+ ***                                      ( -> write-SIB -> DFR!! )
  ***    nodelist*  NEEDTYPES  (O)         (analysis -> )
  ***                                      ( -> write-SIB -> )
  ***    long*      MASK[x]                (optimize -> )
@@ -2020,7 +2023,8 @@ extern node *MakePragma ();
  ***  when used in precompile.c :
  ***
  ***    char*      NAME          (0)
- ***    node*      FUNDEFS       (0)  (N_fundef)
+ ***    node*      FUNDEFS       (0) (N_fundef)
+ ***    node*      OBJINITFUNDEF (O) (N_fundef)
  ***
  ***  when used in compile.c :
  ***
@@ -2458,6 +2462,7 @@ extern node *MakeInfo ();
 /* precompile */
 #define INFO_PREC_MODUL(n) (n->node[0])
 #define INFO_PREC_CNT_ARTIFICIAL(n) (n->lineno)
+#define INFO_PREC_OBJINITFUNDEF(n) (n->node[1])
 
 /* ArrayElemination */
 #define INFO_AE_TYPES(n) (n->node[1])
