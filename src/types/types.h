@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2004/11/23 20:00:49  cg
+ * *** empty log message ***
+ *
  * Revision 1.6  2004/11/23 15:52:58  cg
  * *** empty log message ***
  *
@@ -942,16 +945,33 @@ typedef struct ST_SYMBOL_T stsymbol_t;
  */
 
 /*
- * Read in optimization flags from optimize.mac
+ * Read in optimization flag type from optimize.mac
  */
 
-typedef struct OPTIMIZE_T {
-#define OPTabbr(abbr) unsigned int do##abbr : 1
-#define OPTdelim ;
+typedef struct OPTIMIZE_FLAGS_T {
+#define OPTabbr(abbr) unsigned int do##abbr : 1;
 #include "optimize.mac"
-#undef OPTdelim
 #undef OPTabbr
-} optimize_t;
+} optimize_flags_t;
+
+/*
+ * Read in configuration flag types from flags.mac
+ */
+
+typedef struct TRACE_FLAGS_T {
+#define TRACEflag(flag) unsigned int do##flag : 1;
+#include "flags.mac"
+} trace_flags_t;
+
+typedef struct CACHESIM_FLAGS_T {
+#define CSflag(flag) unsigned int do##flag : 1;
+#include "flags.mac"
+} cachesim_flags_t;
+
+typedef struct RUNTIMECHECK_FLAGS_T {
+#define RTCflag(flag) unsigned int do##flag : 1;
+#include "flags.mac"
+} runtimecheck_flags_t;
 
 /*
  * Read in global variables from globals.mac
