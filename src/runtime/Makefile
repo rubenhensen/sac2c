@@ -1,5 +1,10 @@
 #
 # $Log$
+# Revision 2.14  1999/07/08 12:34:12  cg
+# Complete implementation of libsac is now moved to new directory
+# src/libsac; implementation of CacheSimAnalyser is moved to new
+# directory /src/tools.
+#
 # Revision 2.13  1999/07/05 14:40:26  sbs
 # sac2crc rule corrected.
 # Now, a make after make clean will "automatically" create
@@ -67,38 +72,40 @@
 
 
 CC        := gcc
-CCFLAGS   := -ansi -Wall -D__EXTENSIONS__ -g -O3
+CCFLAGS   := -ansi -Wall -D__EXTENSIONS__ -g 
 
-INCS := -I../global -I../../inc
-LIBS := -L.
+INCS := 
+LIBS := 
 
-OBJS := $(patsubst %.c,%.o,$(wildcard libsac_*.c)) libsac_trace_mt.o\
-        libsac_cachesim_access_advanced.o ../../lib/main_args.o
 
 #
 # just in case we want to make sac2crc locally!!
 #
 OS        := SOLARIS_SPARC
 
-.PHONY: all tar
+.PHONY: all tar deps clean
 
 
-all:  libsac.a CacheSimAnalyser sac2crc
+all:  libsac.a libsac_mt.a libsac_heapmgr.a libsac_noheapmgr.a  libsac_noheapmgr_mt.a  \
+      CacheSimAnalyser sac2crc
 
 tar: runtime.tar
 
-libsac.a: $(OBJS)
-	ar rc libsac.a $(OBJS)
-	ranlib libsac.a
+%.a : 
+	@ if [ ! -f $@ ]; \
+	    then ln -s ../libsac/$@; \
+	  fi
 
-libsac_trace_mt.o: libsac_mt.c 
-	$(CC) -DTRACE $(CCFLAGS) $(CFLAGS) $(INCS) -o $@ -c $<
+sac2crc: 
+	@ if [ ! -f $@ ]; \
+	    then ln -s $@.$(OS) $@; \
+	  fi
 
-libsac_cachesim_access_advanced.o: libsac_cachesim_access.c 
-	$(CC) -D TYPE=D -D DETAILED $(CCFLAGS) $(CFLAGS) $(INCS) -o $@ -c $<
+CacheSimAnalyser: 
+	@ if [ ! -f $@ ]; \
+	    then ln -s ../tools/$@; \
+	  fi
 
-%.o: %.c 
-	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) -o $@ -c $<
 
 runtime.tar: *.h sac2crc.README
 	tar cvf $@ $^
@@ -106,80 +113,10 @@ runtime.tar: *.h sac2crc.README
 deps:
 	makedepend $(INCS) *.c
 
-sac2crc: 
-	@ if [ ! -f sac2crc ]; \
-	    then ln -s sac2crc.$(OS) sac2crc; \
-	  fi
-
 clean:
-	$(RM) *.o libsac.a *.bak *.old *~
+	$(RM) *.o *.a *.bak *.old *~
 	$(RM) -r .sb
 	$(RM) runtime.tar
-	$(RM) sac2crc CacheSimTest CacheSimAnalyser
-
-CacheSimAnalyser: CacheSimAnalyser.o libsac.a
-	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) $(LIBS) -o $@ $< -lsac -lm
-
-CacheSimTest: CacheSimTest.o libsac.a
-	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) $(LIBS) -o $@ $< -lsac -lm
+	$(RM) sac2crc CacheSimAnalyser
 
 
-# DO NOT DELETE THIS LINE -- make depend depends on it.
-
-CacheSimAnalyser.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-CacheSimAnalyser.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
-CacheSimAnalyser.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-CacheSimAnalyser.o: sac_cachesim.h libsac_cachesim.h sac_message.h
-CacheSimTest.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-CacheSimTest.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
-CacheSimTest.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-CacheSimTest.o: sac_cachesim.h
-libsac_cachesim_access.o: /usr/include/memory.h /usr/include/sys/types.h
-libsac_cachesim_access.o: /usr/include/sys/isa_defs.h
-libsac_cachesim_access.o: /usr/include/sys/feature_tests.h
-libsac_cachesim_access.o: /usr/include/sys/machtypes.h
-libsac_cachesim_access.o: /usr/include/sys/int_types.h /usr/include/stdlib.h
-libsac_cachesim_access.o: /usr/include/stdio.h /usr/include/sys/va_list.h
-libsac_cachesim_access.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-libsac_cachesim_access.o: sac_cachesim.h libsac_cachesim.h
-libsac_cachesim_basic.o: /usr/include/memory.h /usr/include/sys/types.h
-libsac_cachesim_basic.o: /usr/include/sys/isa_defs.h
-libsac_cachesim_basic.o: /usr/include/sys/feature_tests.h
-libsac_cachesim_basic.o: /usr/include/sys/machtypes.h
-libsac_cachesim_basic.o: /usr/include/sys/int_types.h /usr/include/stdlib.h
-libsac_cachesim_basic.o: /usr/include/stdio.h /usr/include/sys/va_list.h
-libsac_cachesim_basic.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-libsac_cachesim_basic.o: /usr/include/string.h /usr/include/math.h
-libsac_cachesim_basic.o: sac_cachesim.h libsac_cachesim.h sac_message.h
-libsac_cachesim_basic.o: ../../inc/main_args.h
-libsac_malloc.o: /usr/include/malloc.h /usr/include/sys/types.h
-libsac_malloc.o: /usr/include/sys/isa_defs.h /usr/include/sys/feature_tests.h
-libsac_malloc.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-libsac_malloc.o: /usr/include/stdio.h /usr/include/sys/va_list.h
-libsac_malloc.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-libsac_malloc.o: sac_message.h
-libsac_message.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-libsac_message.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
-libsac_message.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-libsac_message.o: /usr/include/stdarg.h /usr/include/varargs.h
-libsac_message.o: /usr/include/stdlib.h
-libsac_mt.o: /usr/include/pthread.h /usr/include/sys/types.h
-libsac_mt.o: /usr/include/sys/isa_defs.h /usr/include/sys/feature_tests.h
-libsac_mt.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-libsac_mt.o: /usr/include/time.h /usr/include/sched.h /usr/include/stdio.h
-libsac_mt.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-libsac_mt.o: /usr/include/stdio_impl.h sac_message.h
-libsac_profile.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-libsac_profile.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
-libsac_profile.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-libsac_profile.o: /usr/include/sys/time.h /usr/include/sys/types.h
-libsac_profile.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-libsac_profile.o: /usr/include/sys/resource.h
-libsac_trace.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-libsac_trace.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
-libsac_trace.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-libsac_trace.o: /usr/include/stdarg.h /usr/include/varargs.h
-libsac_trace.o: /usr/include/string.h
-testmac.o: sac.h sac_boundcheck.h sac_malloc.h sac_misc.h sac_message.h
-testmac.o: sac_bool.h sac_icm.h sac_std.h sac_idx.h sac_prf.h sac_mt.h
-testmac.o: sac_wl.h sac_trace.h sac_profile.h sac_cachesim.h
