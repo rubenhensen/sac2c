@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.11  1999/10/28 19:39:50  dkr
+ * *** empty log message ***
+ *
  * Revision 2.10  1999/10/28 18:06:39  dkr
  * output of PrintMrdMask() changed
  *
@@ -667,27 +670,30 @@ PrintMrdMask (FILE *handle, long *mrdmask, int varno)
         handle = stdout;
     }
 
-    fprintf (handle, "**MRD list: \n");
+    fprintf (handle, "**MRD list: ");
     if (mrdmask) {
         for (i = 0; i < varno; i++) {
             if (mrdmask[i]) {
+                if (!empty) {
+                    fprintf (handle, ", ");
+                }
                 empty = 0;
                 n_type = NODE_TYPE ((node *)mrdmask[i]);
                 switch (n_type) {
                 case N_assign:
-                    typestr = mdb_nodetype[NODE_TYPE (nodeptr)];
                     nodeptr = ASSIGN_INSTR (((node *)mrdmask[i]));
+                    typestr = mdb_nodetype[NODE_TYPE (nodeptr)];
                     break;
                 default:
+                    nodeptr = (node *)mrdmask[i];
                     if ((N_num <= n_type) && (n_type <= N_ok)) {
                         typestr = mdb_nodetype[n_type];
                     } else {
                         typestr = "N_unknown";
                     }
-                    nodeptr = (node *)mrdmask[i];
                     break;
                 }
-                fprintf (handle, "(%3d, %-8.8s(0x%p))\n", i, typestr, nodeptr);
+                fprintf (handle, "(%d, %s(0x%p))", i, typestr, nodeptr);
             }
         }
         if (empty) {
