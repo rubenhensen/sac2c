@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.73  2004/11/23 12:52:04  cg
+ * SacDevCamp update.
+ *
  * Revision 3.72  2004/11/23 11:36:42  cg
  * Switched mac-file based declaration of global variables.
  *
@@ -457,11 +460,13 @@ static const cv2strfunptr cv2str_init[] = {
 #undef TYP_IFcv2str
 };
 
+#if 0
 static const char *mdb_nodetype_init[] = {
 #define NIFmdb_nodetype(mdb_nodetype) mdb_nodetype
 #include "node_info.mac"
 #undef NIFmdb_nodetype
 };
+#endif
 
 static const char *mdb_prf_init[] = {
 #define PRF_IF(a, b, c, d, e, f, g, h) b

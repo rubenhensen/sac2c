@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.52  2004/11/23 12:52:04  cg
+ * SacDevCamp update.
+ *
  * Revision 3.51  2004/11/23 11:36:42  cg
  * Switched mac-file based declaration of global variables.
  *
@@ -168,6 +171,6 @@
 #define MIN_ARRAY_REP_SCL_AUD 0x0004
 #define MIN_ARRAY_REP_AUD 0x0008
 
-extern globals_t globals;
+extern global_t global;
 
 #endif /* _SAC_GLOBALS_H_ */
