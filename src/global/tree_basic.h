@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.61  1997/11/24 17:05:06  sbs
+ * Nwithop modified :
+ * FUN points to funname.id
+ * and MOD points to funname.modid
+ *
  * Revision 1.60  1997/11/22 23:32:14  dkr
  * uups! it is not recommended to use c-comments in this message ... :(
  *
@@ -2014,21 +2019,21 @@ extern node *MakeNGenerator (node *bound1, node *bound2, prf op1, prf op2, node 
  ***  N_Nwithop :
  ***
  ***  sons:
- ***  exactly one of this sons exists (depends on WithOpType):
- ***    genarray : node*  SHAPE      ("N_expr": N_array, N_id)
- ***    modarray : node*  ARRAY      ("N_expr": N_array, N_id)
- ***    foldfun  : node*  NEUTRAL    ("N_expr")
- ***    foldprf  : node*  NEUTRAL    ("N_expr")
+ ***  exactly one of these sons exists (depends on WithOpType):
+ ***    node*  SHAPE      ("N_expr": N_array, N_id) (iff WithOpType == WO_genarray)
+ ***    node*  ARRAY      ("N_expr": N_array, N_id) (iff WithOpType == WO_modarray)
+ ***    node*  NEUTRAL    ("N_expr")                (otherwise )
  ***
  ***  permanent attributes:
  ***
- ***              WithOpType TYPE
- ***    foldfun : fun_name   FUN
- ***    foldprf : prf        PRF
+ ***    WithOpType TYPE
+ ***    char*      FUN         (iff WithOpType == WO_foldfun)
+ ***    char*      MOD         (iff WithOpType == WO_foldfun)
+ ***    prf        PRF         (iff WithOpType == WO_foldprf)
  ***
  ***  temporary attributes:
+ ***     node*  EXPR           (scanparse -> )
  ***
- ***     ?
  ***/
 
 extern node *MakeNWithOp (WithOpType WithOp);
@@ -2037,7 +2042,9 @@ extern node *MakeNWithOp (WithOpType WithOp);
 #define NWITHOP_SHAPE(n) (n->node[0])
 #define NWITHOP_ARRAY(n) (n->node[0])
 #define NWITHOP_NEUTRAL(n) (n->node[0])
-#define NWITHOP_FUN(n) (n->info.fun_name)
+#define NWITHOP_EXPR(n) (n->node[1])
+#define NWITHOP_FUN(n) (n->info.fun_name.id)
+#define NWITHOP_MOD(n) (n->info.fun_name.id_mod)
 #define NWITHOP_PRF(n) (n->info.prf)
 
 /*--------------------------------------------------------------------------*/
