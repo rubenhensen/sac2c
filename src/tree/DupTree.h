@@ -1,6 +1,9 @@
 /*
- *
  * $Log$
+ * Revision 1.10  2000/06/23 15:33:27  dkr
+ * signature of DupTree changed
+ * function DupTreeInfo added
+ *
  * Revision 1.9  2000/03/17 18:30:44  dkr
  * type lut_t* replaced by LUT_t
  *
@@ -56,7 +59,6 @@
  *
  * Revision 1.1  1995/05/01  15:32:32  asi
  * Initial revision
- *
  */
 
 #ifndef _sac_DupTree_h
@@ -81,13 +83,11 @@
         }                                                                                \
     }
 
-extern node *DupTreeLUT (node *arg_node, node *arg_info, LUT_t lut);
-extern node *DupTree (node *arg_node, node *arg_info);
+extern node *DupTreeLUT (node *arg_node, LUT_t lut);
+extern node *DupTree (node *arg_node);
+extern node *DupTreeInfo (node *arg_node, node *arg_info);
 extern node *DupNodeLUT (node *arg_node, LUT_t lut);
 extern node *DupNode (node *arg_node);
-
-extern node *DupTreePre (node *arg_node, node *arg_info);
-extern node *DupTreePost (node *arg_node, node *arg_info);
 
 extern shpseg *DupShpSeg (shpseg *shp_seg);
 extern ids *DupOneIds (ids *ids, node *arg_info);
@@ -146,5 +146,8 @@ extern node *DupWLgrid (node *arg_node, node *arg_info);
 extern node *DupWLsegVar (node *arg_node, node *arg_info);
 extern node *DupWLstriVar (node *arg_node, node *arg_info);
 extern node *DupWLgridVar (node *arg_node, node *arg_info);
+
+extern node *DupTreePre (node *arg_node, node *arg_info);
+extern node *DupTreePost (node *arg_node, node *arg_info);
 
 #endif /* _sac_DupTree_h */
