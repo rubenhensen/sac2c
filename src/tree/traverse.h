@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.63  2004/09/28 14:11:18  ktr
+ * removed old refcount and generatemasks
+ *
  * Revision 3.62  2004/09/23 20:45:04  sah
  * added DS traversal
  *
@@ -305,13 +308,13 @@ extern funtab *imp_tab;
 extern funtab *flat_tab;
 extern funtab *print_tab;
 extern funtab *type_tab;
-extern funtab *genmask_tab;
+extern funtab *unused_tab40;
 extern funtab *mmv_tab;
 extern funtab *spmdemm_tab;
 extern funtab *crece_tab;
 extern funtab *cdfg_tab;
 extern funtab *free_tab;
-extern funtab *refcnt_tab;
+extern funtab *unused_tab41;
 extern funtab *emrefcnt_tab;
 extern funtab *emri_tab;
 extern funtab *cegro_tab;

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.102  2004/09/28 14:11:18  ktr
+ * removed old refcount and generatemasks
+ *
  * Revision 3.101  2004/09/27 09:18:25  sah
  * now, for Avis nodes the new type is copied as well
  * see bug #64
@@ -249,7 +252,6 @@
 #include "DataFlowMaskUtils.h"
 #include "LookUpTable.h"
 #include "scheduling.h"
-#include "generatemasks.h"
 #include "constants.h"
 
 /*
@@ -1154,13 +1156,6 @@ DupFundef (node *arg_node, info *arg_info)
     FUNDEF_NEEDOBJS (new_node) = DupNodelist_ (FUNDEF_NEEDOBJS (arg_node), arg_info);
     FUNDEF_VARNO (new_node) = FUNDEF_VARNO (arg_node);
 
-#if 0
-  FUNDEF_SIB( new_node) = ???;
-  FUNDEF_ICM( new_node) = ???;
-  FUNDEC_DEF( new_node) = ???;
-  FUNDEF_MASK( new_node, ?) = ???;
-#endif
-
     CopyCommonNodeData (new_node, arg_node);
 
     FUNDEF_NEXT (new_node) = DUPCONT (FUNDEF_NEXT (arg_node));
@@ -1360,12 +1355,6 @@ DupBlock (node *arg_node, info *arg_info)
      */
     BLOCK_SSACOUNTER (new_node) = BLOCK_SSACOUNTER (arg_node);
 
-#if 0
-  BLOCK_MASK( new_node, ?) = ???;
-  BLOCK_SPMD_PROLOG_ICMS( new_node) = ???;
-  BLOCK_SPMD_SETUP_ARGS( new_node) = ???;
-#endif
-
     CopyCommonNodeData (new_node, arg_node);
 
     /*
@@ -1535,16 +1524,6 @@ DupAssign (node *arg_node, info *arg_info)
         ASSIGN_STATUS (new_node) = ASSIGN_STATUS (arg_node);
         ASSIGN_LEVEL (new_node) = ASSIGN_LEVEL (arg_node);
 
-#if 0
-    ASSIGN_MASK( new_node, ?) = ???;
-    ASSIGN_CSE( new_node) = ???;
-    ASSIGN_CF( new_node) = ???;
-    ASSIGN_INDEX( new_node) = ???;
-    ASSIGN_DEFMASK( new_node) = DupMask( ASSIGN_DEFMASK( arg_node), 400);
-    ASSIGN_USEMASK( new_node) = DupMask( ASSIGN_USEMASK( arg_node), 400);
-    ASSIGN_MRDMASK( new_node) = DupMask( ASSIGN_MRDMASK( arg_node), 400);
-#endif
-
         CopyCommonNodeData (new_node, arg_node);
     } else {
         new_node = NULL;
@@ -1568,10 +1547,6 @@ DupCond (node *arg_node, info *arg_info)
     COND_THENVARS (new_node) = DupIds_ (COND_THENVARS (arg_node), arg_info);
     COND_ELSEVARS (new_node) = DupIds_ (COND_ELSEVARS (arg_node), arg_info);
 
-#if 0
-  COND_MASK( new_node, ?) = ???;
-#endif
-
     CopyCommonNodeData (new_node, arg_node);
 
     DBUG_RETURN (new_node);
@@ -1590,10 +1565,6 @@ DupDo (node *arg_node, info *arg_info)
 
     DO_USEVARS (new_node) = DupIds_ (DO_USEVARS (arg_node), arg_info);
     DO_DEFVARS (new_node) = DupIds_ (DO_DEFVARS (arg_node), arg_info);
-
-#if 0
-  DO_MASK( new_node, ?) = ???;
-#endif
 
     DO_SKIP (new_node) = DUPTRAV (DO_SKIP (arg_node));
     DO_LABEL (new_node)
@@ -1618,10 +1589,6 @@ DupWhile (node *arg_node, info *arg_info)
 
     WHILE_USEVARS (new_node) = DupIds_ (WHILE_USEVARS (arg_node), arg_info);
     WHILE_DEFVARS (new_node) = DupIds_ (WHILE_DEFVARS (arg_node), arg_info);
-
-#if 0
-  WHILE_MASK( new_node, ?) = ???;
-#endif
 
     CopyCommonNodeData (new_node, arg_node);
 
@@ -2084,10 +2051,6 @@ DupNwithop (node *arg_node, info *arg_info)
 
     NWITHOP_NEXT (new_node) = DUPCONT (NWITHOP_NEXT (arg_node));
 
-#if 0
-  NWITHOP_MASK( new_node, ?) = ???;
-#endif
-
     CopyCommonNodeData (new_node, arg_node);
 
     DBUG_RETURN (new_node);
@@ -2108,10 +2071,6 @@ DupNpart (node *arg_node, info *arg_info)
                    SearchInLUT_PP (INFO_DUP_LUT (arg_info), NPART_CODE (arg_node)));
 
     NPART_NEXT (new_node) = DUPCONT (NPART_NEXT (arg_node));
-
-#if 0
-  NPART_MASK( new_node, ?) = ???;
-#endif
 
     CopyCommonNodeData (new_node, arg_node);
 
@@ -2151,10 +2110,6 @@ DupNcode (node *arg_node, info *arg_info)
     NCODE_FLAG (new_node) = NCODE_FLAG (arg_node);
 
     NCODE_INC_RC_IDS (new_node) = DupIds_ (NCODE_INC_RC_IDS (arg_node), arg_info);
-
-#if 0
-  NCODE_MASK( new_node, ?) = ???;
-#endif
 
     CopyCommonNodeData (new_node, arg_node);
 

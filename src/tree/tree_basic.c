@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.99  2004/09/28 14:11:18  ktr
+ * removed old refcount and generatemasks
+ *
  * Revision 3.98  2004/08/30 14:26:58  skt
  * changed NWITH2_ISSCHEDULED into NWITH2_CALCPARALLEL
  *
@@ -236,7 +239,6 @@
 #include "free.h"
 #include "internal_lib.h"
 #include "NameTuplesUtils.h"
-#include "refcount.h"
 
 /*--------------------------------------------------------------------------*/
 /* local macros for heap allocation                                         */

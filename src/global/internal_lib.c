@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.53  2004/09/28 14:07:30  ktr
+ * removed old refcount and generatemasks
+ *
  * Revision 3.52  2004/09/23 21:13:47  sah
  * TmpVar(): added set traversal
  *
@@ -1059,12 +1062,8 @@ PrefixForTmpVar (void)
         s = "type";
     } else if (act_tab == tccp_tab) {
         s = "type";
-    } else if (act_tab == genmask_tab) {
-        s = "gnm";
     } else if (act_tab == free_tab) {
         s = "free";
-    } else if (act_tab == refcnt_tab) {
-        s = "rc";
     } else if (act_tab == comp_tab) {
         s = "comp";
     } else if (act_tab == dup_tab) {

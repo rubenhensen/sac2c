@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2004/09/28 14:11:18  ktr
+ * removed old refcount and generatemasks
+ *
  * Revision 1.6  2004/09/22 17:40:40  ktr
  * Commented out some lines not needed in EMM
  *
@@ -90,7 +93,6 @@
 #include "traverse.h"
 #include "free.h"
 #include "DupTree.h"
-#include "refcount.h"
 #include "print.h"
 
 /*

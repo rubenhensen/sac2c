@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.58  2004/09/28 14:07:30  ktr
+ * removed old refcount and generatemasks
+ *
  * Revision 3.57  2004/09/22 17:48:32  sbs
  * now, the setup phase is properly surrounded by PHASE_xxx macros....
  * this allows tracing to be done before scanning-parsing, e.g., for -libstat
@@ -224,7 +227,6 @@
 #include "optimize.h"
 #include "filemgr.h"
 #include "import.h"
-#include "refcount.h"
 #include "allocation.h"
 #include "refcounting.h"
 #include "scnprs.h"
@@ -594,25 +596,6 @@ main (int argc, char *argv[])
         goto BREAK;
     compiler_phase++;
 
-    if (!emm) {
-        PHASE_PROLOG;
-        NOTE_COMPILER_PHASE;
-        syntax_tree = Refcount (syntax_tree); /* refcnt_tab */
-        PHASE_DONE_EPILOG;
-        PHASE_EPILOG;
-    }
-    if (break_after == PH_oldrefcnt)
-        goto BREAK;
-    compiler_phase++;
-
-#if 0
-  if (patch_with) {
-    NOTE2( ("   \n"
-            "** Patching with-loops (generating multiple parts) ...\n"));
-    syntax_tree = PatchWith( syntax_tree);  /* patchwith_tab */
-  }
-#endif
-
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
     syntax_tree = WlTransform (syntax_tree); /* wltrans_tab */
@@ -670,13 +653,11 @@ main (int argc, char *argv[])
          */
     }
 
-    if (emm) {
-        PHASE_PROLOG;
-        NOTE_COMPILER_PHASE;
-        syntax_tree = EMRefCount (syntax_tree); /* emrefcnt_tab */
-        PHASE_DONE_EPILOG;
-        PHASE_EPILOG;
-    }
+    PHASE_PROLOG;
+    NOTE_COMPILER_PHASE;
+    syntax_tree = EMRefCount (syntax_tree); /* emrefcnt_tab */
+    PHASE_DONE_EPILOG;
+    PHASE_EPILOG;
 
     if (break_after == PH_refcnt)
         goto BREAK;
@@ -687,31 +668,23 @@ main (int argc, char *argv[])
 
     switch (mtmode) {
     case MT_none:
-        if (emm) {
-            syntax_tree = UndoSSA (syntax_tree);
-        }
+        syntax_tree = UndoSSA (syntax_tree);
         break;
     case MT_createjoin:
         NOTE (("Using create-join version of multithreading (MT1)"));
         /* spmd..._tab, sync..._tab */
-        if (emm) {
-            syntax_tree = UndoSSA (syntax_tree);
-        }
+        syntax_tree = UndoSSA (syntax_tree);
         syntax_tree = BuildSpmdRegions (syntax_tree);
         break;
     case MT_startstop:
         NOTE (("Using start-stop version of multithreading (MT2)"));
         /* spmd..._tab, sync..._tab */
-        if (emm) {
-            syntax_tree = UndoSSA (syntax_tree);
-        }
+        syntax_tree = UndoSSA (syntax_tree);
         syntax_tree = BuildSpmdRegions (syntax_tree);
         break;
     case MT_mtstblock:
         /* something's missing... */
-        if (emm) {
-            syntax_tree = UndoSSA (syntax_tree);
-        }
+        syntax_tree = UndoSSA (syntax_tree);
         break;
     }
 

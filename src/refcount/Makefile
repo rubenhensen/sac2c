@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.21  2004/09/28 14:08:58  ktr
+# removed old refcount and generatemasks
+#
 # Revision 3.20  2004/08/10 13:31:30  ktr
 # reuse.o added.
 #
@@ -86,10 +89,10 @@ include $(PROJECT_ROOT)/Makefile.Config
 #
 
 INCS = -I../global -I../tree -I../../inc -I../flatten -I../typecheck \
-       -I../optimize -I../compile -I../constants -I../print
+       -I../compile -I../constants -I../print -I../optimize
 
 
-all: allocation.o alloc.o refcount.o refcounting.o reuse.o
+all: allocation.o alloc.o refcounting.o reuse.o
 
 
 %.o: %.c

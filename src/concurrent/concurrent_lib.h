@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2004/09/28 14:09:59  ktr
+ * removed old refcount and generatemasks
+ *
  * Revision 3.2  2001/05/08 12:28:02  dkr
  * new macros for RC used
  *
@@ -21,7 +24,7 @@
 #ifndef _SAC_CONCURRENT_LIB_H_
 #define _SAC_CONCURRENT_LIB_H_
 
-#include "refcount.h"
+#include "tree_compound.h"
 
 /*
  *  returns 0 for refcounting-objects and -1 otherwise

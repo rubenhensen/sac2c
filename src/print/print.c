@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.164  2004/09/28 14:07:55  ktr
+ * removed old refcount and generatemasks
+ *
  * Revision 3.163  2004/09/27 19:12:34  sbs
  * ntype information now is printed irrespective of the phase
  * where Print is called.
@@ -303,13 +306,11 @@
 #include "Error.h"
 #include "convert.h"
 #include "DataFlowMask.h"
-#include "generatemasks.h"
 #include "filemgr.h"
 #include "globals.h"
 #include "gen_startup_code.h"
 #include "SSAWithloopFolding.h"
 #include "scheduling.h"
-#include "refcount.h"
 #include "wl_bounds.h"
 #include "wltransform.h"
 #include "multithread_lib.h"
@@ -1836,13 +1837,6 @@ PrintFundef (node *arg_node, info *arg_info)
                     fprintf (outfile, "#if SAC_DO_MULTITHREAD\n\n");
                 }
 
-                DBUG_EXECUTE ("PRINT_MASKS",
-                              fprintf (outfile, "\n**MASKS - function: \n");
-                              PrintDefMask (outfile, FUNDEF_DEFMASK (arg_node),
-                                            INFO_PRINT_VARNO (arg_info));
-                              PrintUseMask (outfile, FUNDEF_USEMASK (arg_node),
-                                            INFO_PRINT_VARNO (arg_info)););
-
                 if ((FUNDEF_ICM (arg_node) == NULL)
                     || (NODE_TYPE (FUNDEF_ICM (arg_node)) != N_icm)) {
                     PrintFunctionHeader (arg_node, arg_info, FALSE);
@@ -2180,15 +2174,6 @@ PrintAssign (node *arg_node, info *arg_info)
 
     DBUG_PRINT ("PRINT", ("%s " F_PTR, mdb_nodetype[NODE_TYPE (arg_node)], arg_node));
 
-    DBUG_EXECUTE ("PRINT_MASKS", fprintf (outfile, "\n"); INDENT;
-                  fprintf (outfile, "**MASKS - assign: \n"); INDENT;
-                  PrintDefMask (outfile, ASSIGN_DEFMASK (arg_node),
-                                INFO_PRINT_VARNO (arg_info));
-                  INDENT; PrintUseMask (outfile, ASSIGN_USEMASK (arg_node),
-                                        INFO_PRINT_VARNO (arg_info));
-                  INDENT; PrintMrdMask (outfile, ASSIGN_MRDMASK (arg_node),
-                                        INFO_PRINT_VARNO (arg_info)););
-
     instr = ASSIGN_INSTR (arg_node);
     DBUG_ASSERT ((instr != NULL), "instruction of N_assign is NULL");
 
@@ -2271,14 +2256,6 @@ PrintDo (node *arg_node, info *arg_info)
     }
 
     if (DO_BODY (arg_node) != NULL) {
-        DBUG_EXECUTE ("PRINT_MASKS", INDENT; fprintf (outfile, "**MASKS - do body: \n");
-                      INDENT; PrintDefMask (outfile, DO_DEFMASK (arg_node),
-                                            INFO_PRINT_VARNO (arg_info));
-                      INDENT; PrintUseMask (outfile, DO_USEMASK (arg_node),
-                                            INFO_PRINT_VARNO (arg_info));
-                      INDENT; PrintMrdMask (outfile, DO_MRDMASK (arg_node),
-                                            INFO_PRINT_VARNO (arg_info)););
-
         Trav (DO_BODY (arg_node), arg_info);
         fprintf (outfile, "\n");
     }
@@ -2317,15 +2294,6 @@ PrintWhile (node *arg_node, info *arg_info)
     fprintf (outfile, ") \n");
 
     if (WHILE_BODY (arg_node) != NULL) {
-        DBUG_EXECUTE ("PRINT_MASKS", INDENT;
-                      fprintf (outfile, "**MASKS - while body: \n"); INDENT;
-                      PrintDefMask (outfile, WHILE_DEFMASK (arg_node),
-                                    INFO_PRINT_VARNO (arg_info));
-                      INDENT; PrintUseMask (outfile, WHILE_USEMASK (arg_node),
-                                            INFO_PRINT_VARNO (arg_info));
-                      INDENT; PrintMrdMask (outfile, WHILE_MRDMASK (arg_node),
-                                            INFO_PRINT_VARNO (arg_info)););
-
         Trav (WHILE_BODY (arg_node), arg_info);
     }
 
@@ -2354,12 +2322,6 @@ PrintCond (node *arg_node, info *arg_info)
     fprintf (outfile, ") \n");
 
     if (COND_THEN (arg_node) != NULL) {
-        DBUG_EXECUTE ("PRINT_MASKS", INDENT; fprintf (outfile, "**MASKS - then: \n");
-                      INDENT; PrintDefMask (outfile, COND_THENDEFMASK (arg_node),
-                                            INFO_PRINT_VARNO (arg_info));
-                      INDENT; PrintUseMask (outfile, COND_THENUSEMASK (arg_node),
-                                            INFO_PRINT_VARNO (arg_info)););
-
         Trav (COND_THEN (arg_node), arg_info);
         fprintf (outfile, "\n");
     }
@@ -2368,12 +2330,6 @@ PrintCond (node *arg_node, info *arg_info)
     fprintf (outfile, "else\n");
 
     if (COND_ELSE (arg_node) != NULL) {
-        DBUG_EXECUTE ("PRINT_MASKS", INDENT; fprintf (outfile, "**MASKS - else: \n");
-                      INDENT; PrintDefMask (outfile, COND_ELSEDEFMASK (arg_node),
-                                            INFO_PRINT_VARNO (arg_info));
-                      INDENT; PrintUseMask (outfile, COND_ELSEUSEMASK (arg_node),
-                                            INFO_PRINT_VARNO (arg_info)););
-
         Trav (COND_ELSE (arg_node), arg_info);
     }
 
@@ -3872,12 +3828,6 @@ PrintNcode (node *arg_node, info *arg_info)
 
     DBUG_ASSERT ((NCODE_USED (arg_node) >= 0), "illegal NCODE_USED value!");
 
-    DBUG_EXECUTE ("PRINT_MASKS", INDENT; fprintf (outfile, "**MASKS - Ncode: \n"); INDENT;
-                  PrintDefMask (outfile, NCODE_DEFMASK (arg_node),
-                                INFO_PRINT_VARNO (arg_info));
-                  INDENT; PrintUseMask (outfile, NCODE_USEMASK (arg_node),
-                                        INFO_PRINT_VARNO (arg_info)););
-
     DBUG_EXECUTE ("PRINT_RC", INDENT; fprintf (outfile, "/* INC_RC: "); if (
                     NCODE_INC_RC_IDS (arg_node)
                     != NULL) { PrintIds (NCODE_INC_RC_IDS (arg_node), arg_info); } else {
@@ -3938,14 +3888,6 @@ PrintNpart (node *arg_node, info *arg_info)
     tmp_npart = INFO_PRINT_NPART (arg_info);
     INFO_PRINT_NPART (arg_info) = arg_node;
 
-    DBUG_EXECUTE ("PRINT_MASKS", fprintf (outfile, "\n"); INDENT;
-                  fprintf (outfile, "**MASKS - Npart: \n"); INDENT;
-                  PrintDefMask (outfile, NPART_DEFMASK (arg_node),
-                                INFO_PRINT_VARNO (arg_info));
-                  INDENT; PrintUseMask (outfile, NPART_USEMASK (arg_node),
-                                        INFO_PRINT_VARNO (arg_info));
-                  INDENT;);
-
     /* print generator */
     INDENT; /* each gen in a new line. */
     Trav (NPART_GEN (arg_node), arg_info);
@@ -3987,12 +3929,6 @@ node *
 PrintNwithop (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("PrintNwithop");
-
-    DBUG_EXECUTE ("PRINT_MASKS", INDENT; fprintf (outfile, "**MASKS - Nwithop: \n");
-                  INDENT; PrintDefMask (outfile, NWITHOP_DEFMASK (arg_node),
-                                        INFO_PRINT_VARNO (arg_info));
-                  INDENT; PrintUseMask (outfile, NWITHOP_USEMASK (arg_node),
-                                        INFO_PRINT_VARNO (arg_info)););
 
     INDENT;
     switch (NWITHOP_TYPE (arg_node)) {

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.66  2004/09/28 14:08:21  ktr
+ * removed old refcount and generatemasks
+ *
  * Revision 3.65  2004/07/22 15:09:09  ktr
  * updated call to WithloopScalarization
  *
@@ -322,7 +325,6 @@
 #include "convert.h"
 
 #include "optimize.h"
-#include "generatemasks.h"
 #include "DeadFunctionRemoval.h"
 #include "Inline.h"
 #include "ArrayElimination.h"

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.89  2004/09/28 14:11:18  ktr
+ * removed old refcount and generatemasks
+ *
  * Revision 3.88  2004/08/03 11:11:19  khf
  * CreateSel(): setting of avis added
  *
@@ -332,7 +335,6 @@
 #include "typecheck.h"
 #include "DataFlowMask.h"
 #include "wltransform.h"
-#include "refcount.h"
 #include "globals.h"
 #include "NameTuplesUtils.h"
 

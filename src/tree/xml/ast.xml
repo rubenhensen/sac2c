@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.13  2004/09/28 14:11:38  ktr
+  removed old refcount and generatemasks
+
   Revision 1.12  2004/09/25 21:22:08  sah
   for whatever reason, the funcond node
   has exprs sons ?!?
@@ -843,12 +846,6 @@
             <range from="optimize" to="final" />
           </phases>
         </attribute>
-        <attribute name="Mask" mandatory="yes">
-          <type name="Mask" />
-          <phases>
-            <range from="optimize" to="final" />
-          </phases>
-        </attribute>
         <attribute name="InlRec" mandatory="yes">
           <type name="Integer" />
           <phases>
@@ -1102,12 +1099,6 @@
             <range from="analysis" to="final" />
           </phases>
         </attribute>
-        <attribute name="Mask" mandatory="yes">
-          <type name="Mask" />
-          <phases>
-            <range from="optimize" to="final" />
-          </phases>
-        </attribute>
         <attribute name="VarNo" mandatory="yes">
           <type name="Integer" />
           <phases>
@@ -1290,12 +1281,6 @@
         </son>
       </sons>
       <attributes>
-        <attribute name="Mask" mandatory="yes">
-          <type name="Mask" />
-          <phases>
-            <range from="optimize" to="final" />
-          </phases>
-        </attribute>
         <attribute name="Status" mandatory="yes">
           <type name="Integer" />
           <phases>
@@ -1475,12 +1460,6 @@
         </son>
       </sons>
       <attributes>
-        <attribute name="Mask" mandatory="yes">
-          <type name="Mask" />
-          <phases>
-            <range from="optimize" to="final" />
-          </phases>
-        </attribute>
         <attribute name="In_Mask" mandatory="yes">
           <type name="DFMMask" />
           <phases>
@@ -1562,12 +1541,6 @@
             <range from="refcount" to="final" />
           </phases>
         </attribute>
-        <attribute name="Mask" mandatory="yes">
-          <type name="Mask" />
-          <phases>
-            <range from="optimize" to="final" />
-          </phases>
-        </attribute>
         <attribute name="In_Mask" mandatory="yes">
           <type name="DFMMask" />
           <phases>
@@ -1613,12 +1586,6 @@
           <type name="Ids" />
           <phases>
             <range from="refcount" to="final" />
-          </phases>
-        </attribute>
-        <attribute name="Mask" mandatory="yes">
-          <type name="Mask" />
-          <phases>
-            <range from="optimize" to="final" />
           </phases>
         </attribute>
         <attribute name="In_Mask" mandatory="yes">
@@ -3016,12 +2983,6 @@
             <all />
           </phases>
         </attribute>
-        <attribute name="Mask" mandatory="yes">
-          <type name="Mask" />
-          <phases>
-            <range from="optimize" to="final" />
-          </phases>
-        </attribute>
         <attribute name="Copy" mandatory="yes">
           <type name="Bool" />
           <phases>
@@ -3142,12 +3103,6 @@
           <type name="Integer" />
           <phases>
             <phase name="print" />
-          </phases>
-        </attribute>
-        <attribute name="Mask" mandatory="yes">
-          <type name="Mask" />
-          <phases>
-            <range from="optimize" to="final" />
           </phases>
         </attribute>
         <attribute name="Use" mandatory="yes">
@@ -3341,12 +3296,6 @@
             <range from="typecheck" to="precompile" />
             <range from="precompile" to="compile" />
             <range from="compile" to="final" />
-          </phases>
-        </attribute>
-        <attribute name="Mask" mandatory="yes">
-          <type name="Mask" />
-          <phases>
-            <range from="optimize" to="final" />
           </phases>
         </attribute>
 	<attribute name="Mem" mandatory="no">

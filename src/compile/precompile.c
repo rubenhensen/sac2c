@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.94  2004/09/28 14:08:45  ktr
+ * removed old refcount and generatemasks
+ *
  * Revision 3.93  2004/09/24 20:18:53  sah
  * made RenameFunName static again
  * made ReplaceSpecialCharacters externally available
@@ -301,7 +304,6 @@
 #include "DataFlowMask.h"
 #include "adjust_ids.h"
 #include "typecheck.h"
-#include "refcount.h"
 #include "NameTuplesUtils.h"
 #include "map_cwrapper.h"
 #include "scheduling.h"

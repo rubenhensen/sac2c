@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.136  2004/09/28 14:08:45  ktr
+ * removed old refcount and generatemasks
+ *
  * Revision 3.135  2004/09/22 19:11:24  khf
  * fixed bug in MakeIcm_WL_ADJUST_OFFSET (infinite loop)
  *
@@ -424,7 +427,6 @@
 #include "NameTuplesUtils.h"
 #include "scheduling.h"
 #include "wl_bounds.h"
-#include "refcount.h"
 #include "compile.h"
 
 /*

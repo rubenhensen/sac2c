@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.22  2004/09/28 14:09:18  ktr
+ * removed old refcount and generatemasks
+ *
  * Revision 3.21  2004/07/19 14:19:38  sah
  * switch to new INFO structure
  * PHASE I
@@ -82,7 +85,6 @@
 #include "DupTree.h"
 
 #include "optimize.h"
-#include "generatemasks.h"
 #include "ArrayElimination.h"
 
 /*

@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.106  2004/09/28 14:11:51  ktr
+# removed old refcount and generatemasks
+#
 # Revision 3.105  2004/09/27 13:21:02  sah
 # added serialization files
 #
@@ -274,7 +277,6 @@ TYPECHECK= src/typecheck/typecheck.o src/typecheck/prim_fun.o \
            src/typecheck/specialize.o src/typecheck/new2old.o \
            src/typecheck/create_wrapper_code.o src/typecheck/type_statistics.o
 OPTIMIZE= src/optimize/optimize.o \
-          src/optimize/generatemasks.o \
           src/optimize/DeadFunctionRemoval.o \
 	  src/optimize/Inline.o \
           src/optimize/AssociativeLaw.o \
@@ -301,7 +303,7 @@ MODULES= src/modules/filemgr.o src/modules/import.o src/modules/writesib.o \
          src/modules/checkdec.o src/modules/readsib.o src/modules/cccall.o \
          src/modules/symboltable.o
 OBJECTS= src/objects/objinit.o src/objects/objects.o src/objects/uniquecheck.o
-REFCOUNT= src/refcount/refcount.o src/refcount/allocation.o \
+REFCOUNT= src/refcount/allocation.o \
           src/refcount/alloc.o src/refcount/refcounting.o src/refcount/reuse.o
 CONCURRENT= src/concurrent/concurrent.o \
             src/concurrent/spmd_init.o src/concurrent/spmd_opt.o \

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2004/09/28 14:09:59  ktr
+ * removed old refcount and generatemasks
+ *
  * Revision 3.4  2004/09/18 16:05:48  ktr
  * DFMs are adjusted differently in EMM because memory is allocated explicitly.
  *
@@ -189,24 +192,6 @@ SYNCIassign (node *arg_node, node *arg_info)
         SYNC_OUT (sync) = DFMGenMaskClear (maskbase);
         SYNC_OUTREP (sync) = DFMGenMaskClear (maskbase);
         SYNC_LOCAL (sync) = DFMGenMaskClear (maskbase);
-
-        DBUG_PRINT ("SYNCI", ("varno %i", FUNDEF_VARNO (INFO_CONC_FUNDEF (arg_info))));
-        for (i = 0; i < FUNDEF_VARNO (INFO_CONC_FUNDEF (arg_info)); i++) {
-            DBUG_PRINT ("SYNCI", ("begin step i %i", i));
-            if ((ASSIGN_DEFMASK (arg_node) != NULL)
-                && (ASSIGN_DEFMASK (arg_node)[i] > 0)) {
-                DBUG_PRINT ("SYNCI", ("def[i=%i]=%i", i, ASSIGN_DEFMASK (arg_node)[i]));
-                DFMSetMaskEntrySet (SYNC_OUTREP (sync), NULL,
-                                    FindVardec_Varno (i, INFO_CONC_FUNDEF (arg_info)));
-            }
-            if ((ASSIGN_USEMASK (arg_node) != NULL)
-                && (ASSIGN_USEMASK (arg_node)[i] > 0)) {
-                DBUG_PRINT ("SYNCI", ("use i %i", i));
-                DFMSetMaskEntrySet (SYNC_IN (sync), NULL,
-                                    FindVardec_Varno (i, INFO_CONC_FUNDEF (arg_info)));
-            }
-            DBUG_PRINT ("SYNCI", ("end step i %i", i));
-        }
 
         /*
          * unset flag: next N_sync node is not the first one in SPMD-region

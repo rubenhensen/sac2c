@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.81  2004/09/28 14:11:18  ktr
+ * removed old refcount and generatemasks
+ *
  * Revision 3.80  2004/09/24 20:21:21  sah
  * now precompile is visible in NEW_AST mode
  * as well
@@ -277,7 +280,6 @@
 #include "typecheck_WL.h"
 #include "optimize.h"
 #include "free.h"
-#include "generatemasks.h"
 #include "DeadFunctionRemoval.h"
 #include "import.h"
 #include "DupTree.h"
@@ -292,7 +294,6 @@
 #include "checkdec.h"
 #include "objects.h"
 #include "uniquecheck.h"
-#include "refcount.h"
 #include "alloc.h"
 #include "refcounting.h"
 #include "reuse.h"
@@ -441,15 +442,15 @@ static funtab type_tab_rec = {{
 funtab *type_tab = &type_tab_rec;
 
 /*
- *  (5) genmask_tab
+ *  (5) unused_tab40
  */
-static funtab genmask_tab_rec = {{
-#define NIFgenmask(it_genmask) it_genmask
+static funtab unused_tab40_rec = {{
+#define NIFunused_40(it_unused_40) it_unused_40
 #include "node_info.mac"
-                                 },
-                                 NULL,
-                                 NULL};
-funtab *genmask_tab = &genmask_tab_rec;
+                                  },
+                                  NULL,
+                                  NULL};
+funtab *unused_tab40 = &unused_tab40_rec;
 
 /*
  *  (6) crece_tab
@@ -496,15 +497,15 @@ static funtab spmdemm_tab_rec = {{
 
 funtab *spmdemm_tab = &spmdemm_tab_rec;
 /*
- *  (10) refcnt_tab
+ *  (10) unused_tab41
  */
-static funtab refcnt_tab_rec = {{
-#define NIFrefcnt(it_refcnt) it_refcnt
+static funtab unused_tab41_rec = {{
+#define NIFunused_41(it_unused_41) it_unused_41
 #include "node_info.mac"
-                                },
-                                NULL,
-                                NULL};
-funtab *refcnt_tab = &refcnt_tab_rec;
+                                  },
+                                  NULL,
+                                  NULL};
+funtab *unused_tab41 = &unused_tab41_rec;
 
 /*
  *  (11) emrefcnt_tab

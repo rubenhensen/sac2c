@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.63  2004/09/28 14:07:30  ktr
+ * removed old refcount and generatemasks
+ *
  * Revision 3.62  2004/08/12 12:09:29  ktr
  * replaced flag reuse with flag noreuse.
  *
@@ -498,8 +501,6 @@ Usage ()
       "                    Currently implemented for:\n"
       "                      - associative law optimization,\n"
       "                      - segmentation and tiling of fold-with-loops.\n"
-      "\n"
-      "    -emm            Use explicit memory management (experimental).\n"
       "\n"
       "    -noreuse        Disable reuse inference in emm.\n"
       "\n"

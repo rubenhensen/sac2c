@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.33  2004/09/28 14:08:21  ktr
+# removed old refcount and generatemasks
+#
 # Revision 3.32  2004/07/14 23:23:37  sah
 # removed all old ssa optimizations and the use_ssaform flag
 #
@@ -79,9 +82,7 @@ include $(PROJECT_ROOT)/Makefile.Config
 INCS = -I../global -I../../inc -I../typecheck -I../print -I../psi-opt -I../modules \
        -I../compile -I../concurrent -I../tree -I../flatten -I../constants
 
-all: optimize.o generatemasks.o \
-     Inline.o \
-     DeadFunctionRemoval.o \
+all: optimize.o Inline.o DeadFunctionRemoval.o \
      SSADeadCodeRemoval.o SSACSE.o SSAConstantFolding.o SSALIR.o SSALUR.o \
      SSAWLUnroll.o SSAInferLI.o AssociativeLaw.o rmcasts.o DistributiveLaw.o \
      UndoElimSubDiv.o ElimSubDiv.o SelectionPropagation.o ConstVarPropagation.o

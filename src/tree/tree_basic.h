@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.221  2004/09/28 14:11:18  ktr
+ * removed old refcount and generatemasks
+ *
  * Revision 3.220  2004/08/30 14:26:58  skt
  * changed NWITH2_ISSCHEDULED into NWITH2_CALCPARALLEL
  *
@@ -1303,7 +1306,6 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  ***                                                ( -> liftspmd !!)
  ***    node*           ICM         (N_icm)       (compile -> print )
  ***    int             VARNO                     (optimize -> )
- ***    long*           MASK[x]                   (optimize -> )
  ***    int             INLREC                    (inline !!)
  ***    bool            EXPORT                    (dfr !!)
  ***    bool            TCSTAT                    (new_typecheck !!)
@@ -1411,7 +1413,6 @@ extern node *MakeFundef (char *name, char *mod, types *types, node *args, node *
 #define FUNDEF_INLREC(n) (n->refcnt)
 #define FUNDEF_EXPORT(n) (n->refcnt)
 #define FUNDEF_TCSTAT(n) (n->refcnt)
-#define FUNDEF_MASK(n, x) (n->mask[x])
 #define FUNDEF_DFM_BASE(n) ((DFMmask_base_t) (n->dfmask[0]))
 #define FUNDEF_ARGTAB(n) ((argtab_t *)(n->dfmask[4]))
 #define FUNDEF_ICM(n) (n->node[5])
@@ -1543,7 +1544,6 @@ extern node *MakeArg (char *name, types *type, statustype status, statustype att
  ***                                             ( -> write-SIB -> DFR !!)
  ***    nodelist*  NEEDTYPES                     (analysis -> )
  ***                                             ( -> write-SIB -> )
- ***    long*      MASK[x]                       (optimize -> )
  ***    int        VARNO                         (optimize -> )
  ***
  ***    node*      SPMD_PROLOG_ICMS  (N_fundef)  (compile !!)
@@ -1566,7 +1566,6 @@ extern node *MakeArg (char *name, types *type, statustype status, statustype att
 extern node *MakeBlock (node *instr, node *vardec);
 
 #define BLOCK_VARNO(n) (n->varno)
-#define BLOCK_MASK(n, x) (n->mask[x])
 #define BLOCK_INSTR(n) (n->node[0])
 #define BLOCK_VARDEC(n) (n->node[1])
 #define BLOCK_NEEDFUNS(n) ((nodelist *)(n->dfmask[0]))
@@ -1655,7 +1654,6 @@ extern node *MakeVardec (char *name, types *type, node *next);
  ***
  ***  temporary attributes:
  ***
- ***    long*  MASK[x]                    (optimize -> )
  ***    int    STATUS                     (dcr1 -> dcr2 !!)
  ***    node*  CSE                        (CSE (GenerateMasks()) -> ??? )
  ***    node*  CF                         (CF !!)
@@ -1686,7 +1684,6 @@ extern node *MakeAssign (node *instr, node *next);
 #define ASSIGN_NEXT(n) (n->node[1])
 #define ASSIGN_CSE(n) (n->node[2])
 #define ASSIGN_CF(n) (n->node[3])
-#define ASSIGN_MASK(n, x) (n->mask[x])
 #define ASSIGN_STATUS(n) (n->flag)
 #define ASSIGN_INDEX(n) (n->info2)
 #define ASSIGN_LEVEL(n) (n->info.cint)
@@ -1791,7 +1788,6 @@ extern node *MakeReturn (node *exprs);
  ***
  ***  temporary attributes:
  ***
- ***    long*     MASK[x]                (optimize -> )
  ***    DFMmask_t IN_MASK                (infer_dfms -> lac2fun -> refcount -> )
  ***    DFMmask_t OUT_MASK               (infer_dfms -> lac2fun -> refcount -> )
  ***    DFMmask_t LOCAL_MASK             (infer_dfms -> lac2fun -> refcount -> )
@@ -1811,7 +1807,6 @@ extern node *MakeCond (node *cond, node *thenpart, node *elsepart);
 #define COND_COND(n) (n->node[0])
 #define COND_THEN(n) (n->node[1])
 #define COND_ELSE(n) (n->node[2])
-#define COND_MASK(n, x) (n->mask[x])
 #define COND_IN_MASK(n) (n->dfmask[0])
 #define COND_OUT_MASK(n) (n->dfmask[1])
 #define COND_LOCAL_MASK(n) (n->dfmask[2])
@@ -1836,7 +1831,6 @@ extern node *MakeCond (node *cond, node *thenpart, node *elsepart);
  ***    char*     LABEL                  (fun2lac2 ->)
  ***    ids*      USEVARS                (refcount -> compile -> )
  ***    ids*      DEFVARS                (refcount -> compile -> )
- ***    long*     MASK[x]                (optimize -> )
  ***    DFMmask_t IN_MASK                (infer_dfms -> lac2fun -> refcount -> )
  ***    DFMmask_t OUT_MASK               (infer_dfms -> lac2fun -> refcount -> )
  ***    DFMmask_t LOCAL_MASK             (infer_dfms -> lac2fun -> refcount -> )
@@ -1862,7 +1856,6 @@ extern node *MakeDo (node *cond, node *body);
 #define DO_BODY(n) (n->node[1])
 #define DO_SKIP(n) ((node *)(n->info.ids))
 #define DO_LABEL(n) (*((char **)(&(n->dfmask[4]))))
-#define DO_MASK(n, x) (n->mask[x])
 #define DO_IN_MASK(n) (n->dfmask[0])
 #define DO_OUT_MASK(n) (n->dfmask[1])
 #define DO_LOCAL_MASK(n) (n->dfmask[2])
@@ -1885,7 +1878,6 @@ extern node *MakeDo (node *cond, node *body);
  ***
  ***    ids*      USEVARS                (refcount -> compile -> )
  ***    ids*      DEFVARS                (refcount -> compile -> )
- ***    long*     MASK[x]                (optimize -> )
  ***    DFMmask_t IN_MASK                (infer_dfms -> lac2fun -> refcount -> )
  ***    DFMmask_t OUT_MASK               (infer_dfms -> lac2fun -> refcount -> )
  ***    DFMmask_t LOCAL_MASK             (infer_dfms -> lac2fun -> refcount -> )
@@ -1908,7 +1900,6 @@ extern node *While2Do (node *while_node);
 
 #define WHILE_COND(n) (n->node[0])
 #define WHILE_BODY(n) (n->node[1])
-#define WHILE_MASK(n, x) (n->mask[x])
 #define WHILE_IN_MASK(n) (n->dfmask[0])
 #define WHILE_OUT_MASK(n) (n->dfmask[1])
 #define WHILE_LOCAL_MASK(n) (n->dfmask[2])
@@ -3889,7 +3880,6 @@ extern node *MakeNWith (node *part, node *code, node *withop);
  ***
  ***  temporary attributes:
  ***
- ***    long*  MASK          (optimize -> )
  ***    bool   COPY          (Unroll !!)
  ***/
 
@@ -3900,7 +3890,6 @@ extern node *MakeNPart (node *withid, node *generator, node *code);
 #define NPART_NEXT(n) ((n)->node[2])
 #define NPART_CODE(n) ((n)->node[3])
 #define NPART_COPY(n) ((bool)((n)->flag))
-#define NPART_MASK(n, x) ((n)->mask[x])
 
 /*--------------------------------------------------------------------------*/
 
@@ -3998,7 +3987,6 @@ extern node *MakeNGenerator (node *bound1, node *bound2, prf op1, prf op2, node 
  ***
  ***    node*  EXPR                  (scanparse !!)
  ***    node*  FUNDEF    (N_fundef)  (typecheck -> precompile -> compile -> )
- ***    long*  MASK                  (optimize -> )
  ***    node*  MEM                   (emalloc -> )
  ***    bool   OFFSET_NEEDED         (wltransform -> compile -> )
  ***
@@ -4023,7 +4011,6 @@ extern node *MakeNWithOp (WithOpType WithOp, node *shape_array_neutral);
 #define NWITHOP_EXPR(n) ((n)->node[3])
 #define NWITHOP_FUNDEF(n) ((n)->node[4])
 #define NWITHOP_MEM(n) ((n)->node[3])
-#define NWITHOP_MASK(n, x) ((n)->mask[x])
 #define NWITHOP_OFFSET_NEEDED(n) ((bool)((n)->int_data))
 
 /*--------------------------------------------------------------------------*/
@@ -4045,7 +4032,6 @@ extern node *MakeNWithOp (WithOpType WithOp, node *shape_array_neutral);
  ***  temporary attributes:
  ***
  ***    int        ID                      (print !!)
- ***    long*      MASK                    (optimize -> )
  ***    node *     USE         (N_vinfo)   (IVE -> )
  ***    bool       FLAG                    (WLI -> WLF)
  ***    ids*       INC_RC_IDS              (refcount -> compile -> )
@@ -4098,7 +4084,6 @@ extern node *MakeNCode (node *block, node *exprs);
 #define NCODE_INC_RC_IDS(n) ((ids *)((n)->dfmask[0]))
 #define NCODE_USE(n) ((n)->node[4])
 #define NCODE_USED(n) ((n)->info.cint)
-#define NCODE_MASK(n, x) ((n)->mask[x])
 #define NCODE_ID(n) ((n)->refcnt)
 #define NCODE_FLAG(n) ((bool)((n)->flag))
 

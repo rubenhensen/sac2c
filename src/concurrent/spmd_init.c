@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2004/09/28 14:09:59  ktr
+ * removed old refcount and generatemasks
+ *
  * Revision 3.7  2004/09/18 16:05:48  ktr
  * DFMs are adjusted differently in EMM because memory is allocated explicitly.
  *
@@ -96,7 +99,6 @@
 #include "internal_lib.h"
 #include "my_debug.h"
 #include "spmd_trav.h"
-#include "generatemasks.h"
 #include "spmd_opt.h"
 
 /******************************************************************************
@@ -184,33 +186,6 @@ WithLoopIsAllowedConcurrentExecution (node *withloop)
 /******************************************************************************
  *
  * function:
- *   long *DupMask_(long *oldmask, int varno)
- *
- * description:
- *   copies Mask via DupMask, but is able to handle NULL also (returns NULL
- *   when it has to copy a NULL).
- *
- ******************************************************************************/
-
-static long *
-DupMask_ (long *oldmask, int varno)
-{
-    long *result;
-
-    DBUG_ENTER ("DupMask_");
-
-    if (oldmask == NULL) {
-        result = NULL;
-    } else {
-        result = DupMask (oldmask, varno);
-    }
-
-    DBUG_RETURN (result);
-}
-
-/******************************************************************************
- *
- * function:
  *   node *InsertSPMD (node *assign, node *fundef)
  *
  * description:
@@ -246,9 +221,6 @@ InsertSPMD (node *assign, node *fundef)
     DBUG_PRINT ("SPMDI", ("after delete nested"));
     ASSIGN_INSTR (assign) = spmd;
     varno = FUNDEF_VARNO (fundef);
-    ASSIGN_DEFMASK (newassign) = DupMask_ (ASSIGN_DEFMASK (assign), varno);
-    ASSIGN_USEMASK (newassign) = DupMask_ (ASSIGN_USEMASK (assign), varno);
-    ASSIGN_MRDMASK (newassign) = DupMask_ (ASSIGN_MRDMASK (assign), varno);
 
     if (NODE_TYPE (instr) == N_let) {
         if (NODE_TYPE (LET_EXPR (instr)) == N_Nwith2) {

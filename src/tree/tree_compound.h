@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.89  2004/09/28 14:11:18  ktr
+ * removed old refcount and generatemasks
+ *
  * Revision 3.88  2004/09/24 11:15:14  khf
  * ID_NTYPE added
  *
@@ -410,6 +413,39 @@ specific implementation of a function should remain with the source code.
 /*  macros and functions for non-node structures                            */
 /*--------------------------------------------------------------------------*/
 /*--------------------------------------------------------------------------*/
+
+/***
+ ***  RC: moved here temporarily for compatibility reasons from refcount.h
+ ***/
+
+/* value, representing an undefined reference counter */
+#define RC_UNDEF (-2)
+/* value, representing an inactive reference counter */
+#define RC_INACTIVE (-1)
+
+/*
+ * macros for testing the RC status
+ */
+#define RC_IS_UNDEF(rc) ((rc) == RC_UNDEF)
+#define RC_IS_INACTIVE(rc) ((rc) == RC_INACTIVE)
+#define RC_IS_ACTIVE(rc) ((rc) >= 0) /* == (RC_IS_ZERO(rc) || RC_IS_VITAL(rc)) */
+
+#define RC_INIT(rc) (RC_IS_ACTIVE (rc) ? 1 : (rc))
+
+#define RC_IS_LEGAL(rc) ((RC_IS_INACTIVE (rc)) || (RC_IS_ACTIVE (rc)))
+
+#define RC_IS_ZERO(rc) ((rc) == 0)
+#define RC_IS_VITAL(rc) ((rc) > 0)
+
+/*
+ *  Steering which variables to be refcounted.
+ */
+#define DECL_MUST_REFCOUNT(vardec_or_arg)                                                \
+    (VARDEC_OR_ARG_STATUS (vardec_or_arg) != ST_artificial)
+#define DECL_MUST_NAIVEREFCOUNT(vardec_or_arg)                                           \
+    (VARDEC_OR_ARG_STATUS (vardec_or_arg) != ST_artificial)
+
+#define TYPE_MUST_REFCOUNT(type) (TRUE)
 
 /***
  ***  SHAPE :
@@ -903,9 +939,6 @@ extern node *AppendObjdef (node *objdef_chain, node *objdef);
 #define FUNDEF_BODY_VARNO(n) (BLOCK_VARNO (FUNDEF_BODY (n)))
 #define FUNDEF_RC_ICMS(n) (BLOCK_RC_ICMS (FUNDEF_BODY (n)))
 
-#define FUNDEF_DEFMASK(n) (FUNDEF_MASK (n, 0))
-#define FUNDEF_USEMASK(n) (FUNDEF_MASK (n, 1))
-
 #define FUNDEF_LINKNAME(n) (PRAGMA_LINKNAME (FUNDEF_PRAGMA (n)))
 #define FUNDEF_LINKSIGN(n) (PRAGMA_LINKSIGN (FUNDEF_PRAGMA (n)))
 #define FUNDEF_REFCOUNTING(n) (PRAGMA_REFCOUNTING (FUNDEF_PRAGMA (n)))
@@ -995,11 +1028,6 @@ extern node *AppendFundef (node *fundef_chain, node *fundef);
 /*
  *  compound access macros
  */
-
-#define BLOCK_DEFMASK(n) (BLOCK_MASK (n, 0))
-#define BLOCK_USEMASK(n) (BLOCK_MASK (n, 1))
-#define BLOCK_MRDMASK(n) (BLOCK_MASK (n, 2))
-
 #define MAKE_EMPTY_BLOCK() MakeBlock (MakeEmpty (), NULL)
 
 /*--------------------------------------------------------------------------*/
@@ -1286,9 +1314,6 @@ extern node *SearchDecl (char *name, node *decl_node);
  *  compound access macros
  */
 
-#define ASSIGN_DEFMASK(n) ASSIGN_MASK (n, 0)
-#define ASSIGN_USEMASK(n) ASSIGN_MASK (n, 1)
-#define ASSIGN_MRDMASK(n) ASSIGN_MASK (n, 2)
 #define ASSIGN_INSTRTYPE(n) NODE_TYPE (ASSIGN_INSTR (n))
 #define ASSIGN_NAME(n) IDS_NAME (ASSIGN_LHS (n))
 #define ASSIGN_LHS(n) LET_IDS (ASSIGN_INSTR (n))
@@ -1565,12 +1590,6 @@ extern node *NodeBehindCast (node *arg_node);
 /*
  *  compound access macros
  */
-
-#define COND_CONDUSEMASK(n) (COND_MASK (n, 1))
-#define COND_THENDEFMASK(n) (BLOCK_DEFMASK (COND_THEN (n)))
-#define COND_THENUSEMASK(n) (BLOCK_USEMASK (COND_THEN (n)))
-#define COND_ELSEDEFMASK(n) (BLOCK_DEFMASK (COND_ELSE (n)))
-#define COND_ELSEUSEMASK(n) (BLOCK_USEMASK (COND_ELSE (n)))
 #define COND_THENINSTR(n) (BLOCK_INSTR (COND_THEN (n)))
 #define COND_ELSEINSTR(n) (BLOCK_INSTR (COND_ELSE (n)))
 
@@ -1583,12 +1602,7 @@ extern node *NodeBehindCast (node *arg_node);
 /*
  *  compound access macros
  */
-
-#define DO_DEFMASK(n) (BLOCK_DEFMASK (DO_BODY (n)))
-#define DO_USEMASK(n) (BLOCK_USEMASK (DO_BODY (n)))
-#define DO_MRDMASK(n) (BLOCK_MRDMASK (DO_BODY (n)))
 #define DO_INSTR(n) (BLOCK_INSTR (DO_BODY (n)))
-#define DO_TERMMASK(n) (DO_MASK (n, 1))
 
 /*--------------------------------------------------------------------------*/
 
@@ -1599,12 +1613,7 @@ extern node *NodeBehindCast (node *arg_node);
 /*
  *  compound access macros
  */
-
-#define WHILE_DEFMASK(n) (BLOCK_DEFMASK (WHILE_BODY (n)))
-#define WHILE_USEMASK(n) (BLOCK_USEMASK (WHILE_BODY (n)))
-#define WHILE_MRDMASK(n) (BLOCK_MRDMASK (WHILE_BODY (n)))
 #define WHILE_INSTR(n) (BLOCK_INSTR (WHILE_BODY (n)))
-#define WHILE_TERMMASK(n) (WHILE_MASK (n, 1))
 
 /*--------------------------------------------------------------------------*/
 
@@ -1621,15 +1630,6 @@ extern node *NodeBehindCast (node *arg_node);
 #define DO_OR_WHILE_BODY(n) ((NODE_TYPE (n) == N_do) ? DO_BODY (n) : WHILE_BODY (n))
 
 #define DO_OR_WHILE_INSTR(n) ((NODE_TYPE (n) == N_do) ? DO_INSTR (n) : WHILE_INSTR (n))
-
-#define DO_OR_WHILE_MASK(n, x)                                                           \
-    ((NODE_TYPE (n) == N_do) ? DO_MASK (n, x) : WHILE_MASK (n, x))
-#define DO_OR_WHILE_DEFMASK(n)                                                           \
-    ((NODE_TYPE (n) == N_do) ? DO_DEFMASK (n) : WHILE_DEFMASK (n))
-#define DO_OR_WHILE_USEMASK(n)                                                           \
-    ((NODE_TYPE (n) == N_do) ? DO_USEMASK (n) : WHILE_USEMASK (n))
-#define DO_OR_WHILE_TERMMASK(n)                                                          \
-    ((NODE_TYPE (n) == N_do) ? DO_TERMMASK (n) : WHILE_TERMMASK (n))
 
 #define DO_OR_WHILE_IN_MASK(n)                                                           \
     ((NODE_TYPE (n) == N_do) ? DO_IN_MASK (n) : WHILE_IN_MASK (n))
@@ -2148,9 +2148,6 @@ extern node *CreateSel (ids *sel_vec, ids *sel_ids, node *sel_array, bool no_wl,
 #define NPART_STEP(n) (NGEN_STEP (NPART_GEN (n)))
 #define NPART_WIDTH(n) (NGEN_WIDTH (NPART_GEN (n)))
 
-#define NPART_DEFMASK(n) (NPART_MASK (n, 0))
-#define NPART_USEMASK(n) (NPART_MASK (n, 1))
-
 #define NPART_CEXPR(n) (NCODE_CEXPR (NPART_CODE (n)))
 #define NPART_CBLOCK(n) (NCODE_CBLOCK (NPART_CODE (n)))
 
@@ -2162,8 +2159,6 @@ extern node *CreateSel (ids *sel_vec, ids *sel_ids, node *sel_array, bool no_wl,
 
 #define NCODE_CBLOCK_INSTR(n) (BLOCK_INSTR (NCODE_CBLOCK (n)))
 #define NCODE_CEXPR(n) EXPRS_EXPR (NCODE_CEXPRS (n))
-#define NCODE_DEFMASK(n) (NCODE_MASK (n, 0))
-#define NCODE_USEMASK(n) (NCODE_MASK (n, 1))
 
 #define NCODE_WLAA_ACCESS(n) (NCODE_WLAA_INFO (n)->access)
 #define NCODE_WLAA_ACCESSCNT(n) (NCODE_WLAA_INFO (n)->accesscnt)
@@ -2185,9 +2180,6 @@ extern node *CreateSel (ids *sel_vec, ids *sel_ids, node *sel_array, bool no_wl,
     ((WO_modarray == NWITHOP_TYPE (n))                                                   \
        ? NWITHOP_ARRAY (n)                                                               \
        : (WO_genarray == NWITHOP_TYPE (n)) ? NWITHOP_SHAPE (n) : NWITHOP_NEUTRAL (n))
-
-#define NWITHOP_DEFMASK(n) (NWITHOP_MASK (n, 0))
-#define NWITHOP_USEMASK(n) (NWITHOP_MASK (n, 1))
 
 #define NWITHOP_IS_FOLD(n)                                                               \
     ((NWITHOP_TYPE (n) == WO_foldprf) || (NWITHOP_TYPE (n) == WO_foldfun))

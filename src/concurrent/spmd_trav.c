@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2004/09/28 14:09:59  ktr
+ * removed old refcount and generatemasks
+ *
  * Revision 3.7  2004/02/25 08:17:44  cg
  * Elimination of while-loops by conversion into do-loops with
  * leading conditional integrated into flatten.
@@ -76,7 +79,6 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "free.h"
-#include "refcount.h"
 #include "spmd_trav.h"
 
 /******************************************************************************
@@ -394,33 +396,6 @@ SPMDPMassign (node *arg_node, node *arg_info)
     } else {
         DBUG_PRINT ("SPMDPM",
                     ("for pm -> %i", FUNDEF_VARNO (INFO_CONC_FUNDEF (arg_info))));
-
-        for (i = 0; i < FUNDEF_VARNO (INFO_CONC_FUNDEF (arg_info)); i++) {
-            /*
-                  DBUG_PRINT( "SPMDPM", ("for pm (%i) use = %i def = %i",
-                                         i,
-                                         (ASSIGN_USEMASK( arg_node) != NULL)
-                                           ? ASSIGN_USEMASK( arg_node)[i] : -1,
-                                         (ASSIGN_DEFMASK( arg_node) != NULL)
-                                           ? ASSIGN_DEFMASK( arg_node)[i] : -1));
-            */
-            if (((ASSIGN_USEMASK (arg_node) != NULL)
-                 && (ASSIGN_USEMASK (arg_node)[i] > 0))
-                || ((ASSIGN_DEFMASK (arg_node) != NULL)
-                    && (ASSIGN_DEFMASK (arg_node)[i] > 0))) {
-                vardec = FindVardec_Varno (i, INFO_CONC_FUNDEF (arg_info));
-                if ((ASSIGN_USEMASK (arg_node) != NULL)
-                    && (ASSIGN_USEMASK (arg_node)[i] > 0)) {
-                    DBUG_PRINT ("SPMDPM", ("use hit %i", i));
-                    DFMSetMaskEntrySet (INFO_SPMDPM_IN (arg_info), NULL, vardec);
-                }
-                if ((ASSIGN_DEFMASK (arg_node) != NULL)
-                    && (ASSIGN_DEFMASK (arg_node)[i] > 0)) {
-                    DBUG_PRINT ("SPMDPM", ("def hit %i", i));
-                    DFMSetMaskEntrySet (INFO_SPMDPM_OUT (arg_info), NULL, vardec);
-                }
-            }
-        }
     }
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
@@ -557,34 +532,12 @@ SPMDCOassign (node *arg_node, node *arg_info)
         vardec = DFMGetMaskEntryDeclSet (INFO_SPMDCO_WHICH (arg_info));
         while (vardec != NULL) {
             DBUG_PRINT ("SPMDCO", ("checking varno %i", VARDEC_VARNO (vardec)));
-            if (ASSIGN_USEMASK (arg_node) != NULL) {
-                if (isWith (arg_node)) {
-                    /* all references to one variable in a with-loop count only 1 */
-                    DBUG_PRINT ("SPMDCO", ("withhit"));
-                    if (ASSIGN_USEMASK (arg_node)[VARDEC_VARNO (vardec)]) {
-                        count = 1;
-                    } else {
-                        count = 0;
-                    }
-                } else {
-                    count = ASSIGN_USEMASK (arg_node)[VARDEC_VARNO (vardec)];
-                }
-            } else {
-                count = 0;
-            }
+            count = 0;
             DBUG_PRINT ("SPMDCO", ("count = %i", count));
             INFO_SPMDCO_RESULT (arg_info)
             [VARDEC_VARNO (vardec)]
               = INFO_SPMDCO_RESULT (arg_info)[VARDEC_VARNO (vardec)] + count;
 
-            DBUG_PRINT ("SPMDCO", ("change which1"));
-            if (ASSIGN_DEFMASK (arg_node) != NULL) {
-                DBUG_PRINT ("SPMDCO", ("change which2"));
-                if (ASSIGN_DEFMASK (arg_node)[VARDEC_VARNO (vardec)] > 0) {
-                    DBUG_PRINT ("SPMDCO", ("change which3"));
-                    DFMSetMaskEntryClear (INFO_SPMDCO_WHICH (arg_info), NULL, vardec);
-                }
-            }
             vardec = DFMGetMaskEntryDeclSet (NULL);
         }
     }

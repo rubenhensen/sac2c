@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.74  2004/09/28 14:07:30  ktr
+ * removed old refcount and generatemasks
+ *
  * Revision 3.73  2004/09/24 12:53:00  ktr
  * MT&EMM reactivated (Once more, fingers crossing).
  *
@@ -473,9 +476,6 @@ AnalyseCommandline (int argc, char *argv[])
         case PH_sacopt:
             show_idx = TRUE;
             break;
-        case PH_oldrefcnt:
-            show_refcnt = TRUE;
-            break;
         default:
             break;
         }
@@ -676,8 +676,6 @@ AnalyseCommandline (int argc, char *argv[])
 
     ARGS_OPTION ("D", cppvars[num_cpp_vars++] = ARG);
 
-    ARGS_FLAG ("emm", emm = TRUE);
-
     ARGS_FLAG ("enforceIEEE", enforce_ieee = TRUE);
 
     ARGS_OPTION ("genlib", {
@@ -826,8 +824,6 @@ AnalyseCommandline (int argc, char *argv[])
             num_threads = store_num_threads;
         }
     });
-
-    ARGS_FLAG ("noemm", emm = FALSE);
 
     ARGS_FLAG ("noreuse", reuse = FALSE);
 
