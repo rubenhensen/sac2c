@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.68  2001/11/21 10:25:28  dkr
+ * some cosmetical changes done
+ *
  * Revision 3.67  2001/11/19 14:54:24  sbs
  * WLARRAY and WLINDEXVAR now printed in WLAAprintAccesses as well.
  *
