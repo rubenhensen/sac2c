@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.5  2004/11/24 14:54:15  skt
+ * changed DFMtestMaskEntry from int to bool
+ *
  * Revision 3.4  2004/11/23 10:05:24  sah
  * SaC DevCamp 04
  *
@@ -148,7 +151,7 @@ extern void DFMprintMaskDetailed (FILE *handle, dfmask_t *mask);
 
 extern void DFMsetMaskEntryClear (dfmask_t *mask, char *id, node *avis);
 extern void DFMsetMaskEntrySet (dfmask_t *mask, char *id, node *avis);
-extern int DFMtestMaskEntry (dfmask_t *mask, char *id, node *avis);
+extern bool DFMtestMaskEntry (dfmask_t *mask, char *id, node *avis);
 
 extern char *DFMgetMaskEntryNameSet (dfmask_t *mask);
 extern char *DFMgetMaskEntryNameClear (dfmask_t *mask);
