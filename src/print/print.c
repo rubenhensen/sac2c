@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.232  1998/05/24 00:40:34  dkr
+ * removed WLGRID_CODE_TEMPLATE
+ *
  * Revision 1.231  1998/05/21 14:45:45  dkr
  * added a \n in PrintModarray, PrintGenarray, PrintFold...
  *
@@ -2883,8 +2886,7 @@ PrintWLgrid (node *arg_node, node *arg_info)
         fprintf (outfile, "\n");
         WLGRID_NEXTDIM (arg_node) = Trav (WLGRID_NEXTDIM (arg_node), arg_info);
     } else {
-        DBUG_ASSERT ((WLGRID_CODE (arg_node) != NULL), "no code found");
-        if (WLGRID_CODE_TEMPLATE (arg_node) == 0) {
+        if (WLGRID_CODE (arg_node) != NULL) {
             fprintf (outfile, "op_%d\n", NCODE_NO (WLGRID_CODE (arg_node)));
         } else {
             switch (NWITH2_TYPE (INFO_PRINT_NWITH2 (arg_info))) {
@@ -3017,7 +3019,7 @@ PrintWLgridVar (node *arg_node, node *arg_info)
         fprintf (outfile, "\n");
         WLGRIDVAR_NEXTDIM (arg_node) = Trav (WLGRIDVAR_NEXTDIM (arg_node), arg_info);
     } else {
-        if (WLGRIDVAR_CODE_TEMPLATE (arg_node) == 0) {
+        if (WLGRIDVAR_CODE (arg_node) != NULL) {
             fprintf (outfile, "op_%d\n", NCODE_NO (WLGRIDVAR_CODE (arg_node)));
         } else {
             switch (NWITH2_TYPE (INFO_PRINT_NWITH2 (arg_info))) {
@@ -3217,7 +3219,7 @@ PrintNodeTree (node *node)
         case N_WLgrid:
             fprintf (outfile, "(%d->%d [%d])", WLUBLOCK_BOUND1 (node),
                      WLUBLOCK_BOUND2 (node), WLUBLOCK_DIM (node));
-            if (WLGRID_CODE_TEMPLATE (node) == 0) {
+            if (WLGRID_CODE (node) != NULL) {
                 fprintf (outfile, ": op\n");
             } else {
                 fprintf (outfile, ": ..\n");

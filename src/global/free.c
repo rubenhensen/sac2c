@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.66  1998/05/24 00:40:13  dkr
+ * removed WLGRID_CODE_TEMPLATE
+ *
  * Revision 1.65  1998/05/21 13:30:35  dkr
  * renamed NCODE_DEC_RC_IDS into NCODE_INC_RC_IDS
  *
@@ -1965,7 +1968,7 @@ FreeWLgrid (node *arg_node, node *arg_info)
     FREETRAV (WLGRID_NEXTDIM (arg_node));
     tmp = FREECONT (WLGRID_NEXT (arg_node));
 
-    if ((WLGRID_CODE (arg_node) != NULL) && (WLGRID_CODE_TEMPLATE (arg_node) == 0)) {
+    if (WLGRID_CODE (arg_node) != NULL) {
         NCODE_USED (WLGRID_CODE (arg_node))--;
     }
 
@@ -2010,8 +2013,7 @@ FreeWLgridVar (node *arg_node, node *arg_info)
     FREETRAV (WLGRIDVAR_NEXTDIM (arg_node));
     tmp = FREECONT (WLGRIDVAR_NEXT (arg_node));
 
-    if ((WLGRIDVAR_CODE (arg_node) != NULL)
-        && (WLGRIDVAR_CODE_TEMPLATE (arg_node) == 0)) {
+    if (WLGRIDVAR_CODE (arg_node) != NULL) {
         NCODE_USED (WLGRIDVAR_CODE (arg_node))--;
     }
 

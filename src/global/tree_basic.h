@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.179  1998/05/24 00:40:00  dkr
+ * removed WLGRID_CODE_TEMPLATE
+ *
  * Revision 1.178  1998/05/21 13:29:42  dkr
  * renamed NCODE_DEC_RC_IDS into NCODE_INC_RC_IDS
  *
@@ -3015,8 +3018,6 @@ extern node *MakeWLstride (int level, int dim, int bound1, int bound2, int step,
  ***    int     BOUND2
  ***    int     UNROLLING
  ***
- ***    int     CODE_TEMPLATE
- ***
  ***  temporary attributes:
  ***
  ***    int     MODIFIED                      (wltransform ! )
@@ -3024,17 +3025,9 @@ extern node *MakeWLstride (int level, int dim, int bound1, int bound2, int step,
  ***  remarks:
  ***
  ***    - it makes no sense to use the nodes NEXTDIM and CODE simultaneous!
- ***    - CODE_TEMPLATE indicates, whether CODE is only a template or not.
- ***      If this grid-node represents an otherwise-case of a genarray-
- ***      with-loop, ...
- ***                  0 -> 10 step 1
- ***                          0 -> 1: op0
- ***                          1 -> 2: init
- ***      ... then CODE_TEMPLATE is set to 1, and CODE points to a nearby
- ***      CODE-node.
- ***      In the example above, CODE of the 'init'-grid points to 'op0'.
- ***      This is needed by 'compile' to infer the right data-size for
- ***      the 'init/copy'-code.
+ ***    - (NEXTDIM == NULL) *and* (CODE == NULL) means that this is a dummy grid,
+ ***      representing a simple init- (genarray), copy- (modarray), noop- (fold)
+ ***      operation.
  ***
  ***/
 
@@ -3049,8 +3042,6 @@ extern node *MakeWLgrid (int level, int dim, int bound1, int bound2, int unrolli
 #define WLGRID_NEXTDIM(n) (WLNODE_NEXTDIM (n))
 #define WLGRID_NEXT(n) (WLNODE_NEXT (n))
 #define WLGRID_CODE(n) (n->node[2])
-
-#define WLGRID_CODE_TEMPLATE(n) (n->varno)
 
 #define WLGRID_MODIFIED(n) (n->info.prf_dec.tc)
 
@@ -3100,8 +3091,6 @@ extern node *MakeWLstriVar (int dim, node *bound1, node *bound2, node *step,
  ***    node*    CODE            (N_Ncode)
  ***    int      DIM
  ***
- ***    int      CODE_TEMPLATE
- ***
  ***  temporary attributes:
  ***
  ***    ---
@@ -3109,7 +3098,9 @@ extern node *MakeWLstriVar (int dim, node *bound1, node *bound2, node *step,
  ***  remarks:
  ***
  ***    - it makes no sense to use the nodes NEXTDIM and CODE simultaneous!
- ***    - CODE_TEMPLATE: see N_WLgrid
+ ***    - (NEXTDIM == NULL) *and* (CODE == NULL) means that this is a dummy grid,
+ ***      representing a simple init- (genarray), copy- (modarray), noop- (fold)
+ ***      operation.
  ***
  ***/
 
@@ -3122,7 +3113,5 @@ extern node *MakeWLgridVar (int dim, node *bound1, node *bound2, node *nextdim,
 #define WLGRIDVAR_NEXTDIM(n) (n->node[0])
 #define WLGRIDVAR_NEXT(n) (n->node[1])
 #define WLGRIDVAR_CODE(n) (n->node[2])
-
-#define WLGRIDVAR_CODE_TEMPLATE(n) (n->flag)
 
 #endif /* _sac_tree_basic_h */

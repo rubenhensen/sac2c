@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.94  1998/05/24 00:40:25  dkr
+ * removed WLGRID_CODE_TEMPLATE
+ *
  * Revision 1.93  1998/05/21 15:27:16  dkr
  * fixed a bug in DupNwith, DupNwith2, DupNcode:
  *   argument of DupIds is always != NULL now
@@ -1348,8 +1351,6 @@ DupWLgrid (node *arg_node, node *arg_info)
                     WLGRID_UNROLLING (arg_node), DUPTRAV (WLGRID_NEXTDIM (arg_node)),
                     DUPCONT (WLGRID_NEXT (arg_node)), new_code);
 
-    WLGRID_CODE_TEMPLATE (new_node) = WLGRID_CODE_TEMPLATE (arg_node);
-
     /*
      * duplicated grids are not modified yet ;)
      */
@@ -1403,8 +1404,6 @@ DupWLgridVar (node *arg_node, node *arg_info)
                        DUPTRAV (WLGRIDVAR_BOUND2 (arg_node)),
                        DUPTRAV (WLGRIDVAR_NEXTDIM (arg_node)),
                        DUPCONT (WLGRIDVAR_NEXT (arg_node)), new_code);
-
-    WLGRIDVAR_CODE_TEMPLATE (new_node) = WLGRIDVAR_CODE_TEMPLATE (arg_node);
 
     DBUG_RETURN (new_node);
 }
