@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.2  1994/11/10 15:44:34  sbs
+ * Revision 1.3  1994/12/02 11:08:24  hw
+ * inserted extern char *type_string[]
+ *
+ * Revision 1.2  1994/11/10  15:44:34  sbs
  * RCS-header inserted
  *
  *
@@ -16,6 +19,8 @@
 extern char *mdb_nodetype[];
 
 extern char *mdb_prf[];
+
+extern char *type_string[];
 
 #define P_FORMAT "(%06x)" /* formatstring for pointer address */
 
