@@ -3,6 +3,15 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2002/08/13 10:29:53  sbs
+ * completely new scanner / parser built!
+ * supports N_mop's (user defined infix operators),
+ * supports new primitive operators (_add_xxx)
+ * builds N_ap for old prfs such as sel, +, etc.pp.
+ * supports dots in any legal expr position
+ * handles signs correctly
+ * allows for vardecs with array types of user defined types.
+ *
  * Revision 3.13  2002/08/06 15:52:11  sbs
  * _add_SxS_ and friends (needed for the newTS ) added.
  *
@@ -42,132 +51,6 @@
  *
  * Revision 3.1  2000/11/20 17:59:48  sacbase
  * new release made
- *
- * Revision 2.19  2000/11/15 14:42:30  sbs
- * initialization of yy_init deleted on ALPHA since flex 2.5.4 is available
- * on that machine now!
- *
- * Revision 2.18  2000/11/14 10:53:57  sbs
- * changed OSF_ALPHA into SAC_FOR_OSF_ALPHA
- *
- * Revision 2.17  2000/11/03 14:04:10  dkr
- * unterminated comments are detected now
- *
- * Revision 2.16  2000/08/30 13:04:29  dkr
- * rule '#\ .*\n' revisited:
- * 'linenum' must be incremented by 1 because \n is still in
- * input-buffer!
- *
- * Revision 2.15  2000/08/15 19:39:18  dkr
- * rule '#\ .*\n':
- * yyless(yyleng-1) added in order to leave the '\n' in input.
- * This '\n' is needed for the look-ahead-rule '\n.*', too!!!
- *
- * Revision 2.14  2000/07/21 14:47:35  nmw
- * keyword ModuleSpec for specialization files added
- *
- * Revision 2.13  2000/06/13 12:54:40  dkr
- * old_with removed
- *
- * Revision 2.12  2000/05/25 14:56:30  dkr
- * leading 0 for INT is allowed now
- * leading 00 for DOUBLE or FLOAT is allowed now
- *
- * Revision 2.11  2000/02/23 14:26:44  cg
- * Identifiers with a single trailing underscore are now supported.
- *
- * Revision 2.10  2000/01/07 13:04:30  dkr
- * tabs in source code replaced by spaces
- *
- * Revision 2.9  1999/10/19 17:03:51  sbs
- * yy_init only reset for OSF_ALPHA...
- *
- * Revision 2.8  1999/10/08 09:16:41  sbs
- * for compliance with older versions of lex/yacc yy_init = 1 is forced
- * whenever a new start token is smuggled in!
- *
- * Revision 2.7  1999/10/04 09:24:07  sbs
- * linenum moved to globals.[ch]
- *
- * Revision 2.6  1999/05/07 10:00:41  sbs
- * rules with overlength changed; they now contain { instead of being
- * terminated by \.
- *
- * Revision 2.5  1999/05/06 15:36:55  sbs
- * the global var filename now is copied whenever yyparse is called
- * or a line-pragma is found. This allows to attach the filename
- * to EACH node!!
- *
- * Revision 2.4  1999/05/05 13:52:56  sbs
- * streamlined the entire file....
- * no more FILTERxxx macros anymore...
- * support for charpos and linebuf_ptr added which
- * enables much better error reporting during scanning/parsing....
- *
- * Revision 2.3  1999/04/19 13:07:28  jhs
- * Renamed TRUE and FALSE token to TRUETOKEN and FALSETOKEN to
- * avoid conflicts with TRUE and FALSE macros.
- *
- * Revision 2.2  1999/04/13 14:00:40  cg
- * added #pragma cachesim.
- *
- * Revision 2.1  1999/02/23 12:40:30  sacbase
- * new release made
- *
- * Revision 1.57  1999/01/19 16:16:03  cg
- * added the '?' for types that match both scalars and arrays.
- *
- * Revision 1.56  1998/12/02 16:25:33  cg
- * some bugs fixed: primitive function tokens are now returned without
- * the name associated thus closing a memory leak since these names are
- * usually not needed for the syntax tree.
- *
- * Revision 1.55  1998/10/30 09:52:16  cg
- * key word 'all' is now allowed as function name,
- * required by array library.
- *
- * Revision 1.54  1998/10/26 12:51:29  cg
- * key words exchanged:
- * new_with -> with
- * with     -> old_with
- * The new with-loop is now the default.
- *
- * Revision 1.53  1998/04/09 21:32:40  dkr
- * new tokens DEFAULT, WLCOMP for wlcomp-pragmas
- *
- * Revision 1.52  1998/03/04 16:24:27  cg
- * Bug fixed in scanning configuration file resource 'cat'
- * (same as primitive array function), fixed by new filter
- *
- * Revision 1.51  1998/02/27 16:30:05  cg
- * added lexical analysis for sac2crc files
- *
- * Revision 1.50  1997/11/24 18:06:40  sbs
- * new_with inserted as NWITH token!
- *
- * Revision 1.49  1997/10/28 10:35:10  dkr
- *  a few <cr>s in lex-rules have been removed
- *  because some (f)lex-implementations can not handle them.
- *
- * Revision 1.48  1997/10/07 13:27:21  srs
- * new primitive functions min and max
- *
- * Revision 1.47  1997/10/05 13:31:58  dkr
- * a few <cr>s in lex-rules have been removed
- * because some (f)lex-implementations can not handle them.
- *
- * Revision 1.46  1997/10/03 17:57:27  dkr
- * added prf abs()
- *
- * Revision 1.44  1997/10/01 12:32:02  dkr
- * added % and %=
- *
- * Revision 1.41  1997/08/04 19:09:30  dkr
- * added strcpy in FILTER7
- *
- * Revision 1.40  1997/06/03 13:51:54  sbs
- * # line - capability integrated into sac2c.
- * Now, the line-number in error messages should be correct 8-)))
  *
  * [...]
  *
@@ -211,6 +94,7 @@ int charpos = 0;
 
 %p 6000 /* set positions to 6000 */
 %e 2000 /* set nodes to 1100 */
+%option noyywrap
 
 
 %%
@@ -244,33 +128,27 @@ int charpos = 0;
 ";"                        { FILTER( SEMIC ); }
 ","                        { FILTER( COMMA ); }
 "="                        { FILTER( LET ); }
-"&"                        { FILTER( AMPERS ); }
-"?"                        { FILTER( QUESTION ); }
 "."                        { FILTER( DOT); }
-"&&"                       { FILTER( AND ); }
-"||"                       { FILTER( OR ); }
-"=="                       { FILTER( EQ ); }
-"!="                       { FILTER( NEQ ); }
-"!"                        { FILTER( NOT ); }
-"<="                       { FILTER( LE ); }
-"<"                        { FILTER( LT ); }
-">="                       { FILTER( GE ); }
-">"                        { FILTER( GT ); }
-"+"                        { FILTER( PLUS ); }
-"-"                        { FILTER( MINUS ); }
-"/"                        { FILTER( DIV ); }
-"*"                        { FILTER( MUL ); }
-"%"                        { FILTER( PRF_MOD ); }
 
-"++"                       { FILTER( INC ); }
-"--"                       { FILTER( DEC ); }
+"!"                        { FILTER( EXCL); }  /* needed for monop supp    */
+"~"                        { FILTER( TILDE); } /* needed for monop supp    */
+"-"                        { FILTER( MINUS); } /* needed for monop supp    */
+"+"                        { FILTER( PLUS); }  /* needed for AUDGZ types   */
+"*"                        { FILTER( STAR); }  /* needed for AUD types     */
+"++"                       { FILTER( INC ); }  /* needed for increment     */
+"--"                       { FILTER( DEC ); }  /* needed for decrement     */
+"<="                       { FILTER( LE);   }  /* needed for WL generators */
+"<"                        { FILTER( LT);   }  /* needed for WL generators */
+">"                        { FILTER( GT);   }  /* needed for SIBs          */
 
 "+="                       { FILTER( ADDON ); }
 "-="                       { FILTER( SUBON ); }
 "*="                       { FILTER( MULON ); }
 "/="                       { FILTER( DIVON ); }
 "%="                       { FILTER( MODON ); }
+"->"                       { FILTER( ARROW ); }
 
+"_reshape_"                { FILTER( RESHAPE ); }
 "_dim_"                    { FILTER( DIM); }
 "_shape_"                  { FILTER( SHAPE); }
 "_sel_S_"                  { FILTER( SEL); }
@@ -295,27 +173,21 @@ int charpos = 0;
 "_div_AxS_"                { FILTER( DIV_AxS); }
 "_div_AxA_"                { FILTER( DIV_AxA); }
 
-"abs"                      { FILTER( ABS ); }
-"reshape"                  { FILTER( RESHAPE ); }
-"shape"                    { FILTER( SHAPE ); }
-"take"                     { FILTER( TAKE ); }
-"drop"                     { FILTER( DROP ); }
-"dim"                      { FILTER( DIM ); }
-"rotate"                   { FILTER( ROTATE ); }
-"cat"                      { if (compiler_phase == PH_setup) {
-                               yylval.id = StringCopy( yytext);
-                               FILTER( ID );
-                               Free( yylval.id);
-                             } else {
-                               FILTER( CAT );
-                             }
-                           }
-"sel"                      { FILTER( SEL ); }
-"toi"                      { FILTER( TOI ); }
-"tof"                      { FILTER( TOF ); }
-"tod"                      { FILTER( TOD ); }
-"min"                      { FILTER( PRF_MIN ); }
-"max"                      { FILTER( PRF_MAX ); }
+"_eq_SxS_"                 { FILTER( EQ_SxS); }
+"_neq_SxS_"                { FILTER( NEQ_SxS); }
+"_le_SxS_"                 { FILTER( LE_SxS); }
+"_lt_SxS_"                 { FILTER( LT_SxS); }
+"_ge_SxS_"                 { FILTER( GE_SxS); }
+"_gt_SxS_"                 { FILTER( GT_SxS); }
+
+"_toi_"                    { FILTER( TOI ); }
+"_tof_"                    { FILTER( TOF ); }
+"_tod_"                    { FILTER( TOD ); }
+"_min_"                    { FILTER( PRF_MIN ); }
+"_max_"                    { FILTER( PRF_MAX ); }
+"_abs_"                    { FILTER( ABS ); }
+
+
 "typedef"                  { FILTER( TYPEDEF ); }
 "classtype"                { FILTER( CLASSTYPE ); }
 "objdef"                   { FILTER( OBJDEF ); }
@@ -377,7 +249,6 @@ int charpos = 0;
 "double"                   { FILTER( TYPE_DBL ); }
 
 "void"                     { FILTER( TYPE_VOID ); }
-"..."                      { FILTER( TYPE_DOTS ); }
 
 "true"                     { FILTER( TRUETOKEN ); }
 "false"                    { FILTER( FALSETOKEN ); }
@@ -424,7 +295,9 @@ int charpos = 0;
                                    break;
                                  case '/':
                                    yyless(1);
-                                   FILTER(DIV);
+                                   yylval.id=StringCopy(yytext);
+                                   FILTER( ID);
+                                   Free(yylval.id);
                                    break;
                                  case '_':
                                    yylval.id=StringCopy(yytext);
@@ -448,6 +321,10 @@ int charpos = 0;
 
 [A-Za-z]([A-Za-z0-9]|[_A-Za-z0-9][A-Za-z0-9])*_? {
                              yylval.id=StringCopy(yytext);
+                             FILTER( ID );
+                             Free(yylval.id);
+                           }
+[|&>!%=-]+           { yylval.id=StringCopy(yytext);
                              FILTER( ID );
                              Free(yylval.id);
                            }
