@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2000/12/12 15:33:25  dkr
+ * macro FUN_DOES_REFCOUNT corrected
+ *
  * Revision 3.2  2000/12/12 12:17:40  dkr
  * macros MUST_REFCOUNT, FUN_DOES_REFCOUNT added
  *
@@ -99,11 +102,10 @@
 #define MUST_NAIVEREFCOUNT(type) (TRUE)
 
 #define FUN_DOES_REFCOUNT(fundef, i)                                                     \
-    ((FUNDEF_STATUS (fundef) != ST_spmdfun)                                              \
-     && ((FUNDEF_STATUS (fundef) != ST_Cfun)                                             \
-         || ((FUNDEF_PRAGMA (fundef) != NULL) && (FUNDEF_REFCOUNTING (fundef) != NULL)   \
-             && (PRAGMA_NUMPARAMS (FUNDEF_PRAGMA (fundef)) > i)                          \
-             && FUNDEF_REFCOUNTING (fundef)[i])))
+    ((FUNDEF_STATUS (fundef) != ST_Cfun)                                                 \
+     || ((FUNDEF_PRAGMA (fundef) != NULL) && (FUNDEF_REFCOUNTING (fundef) != NULL)       \
+         && (PRAGMA_NUMPARAMS (FUNDEF_PRAGMA (fundef)) > i)                              \
+         && FUNDEF_REFCOUNTING (fundef)[i]))
 
 extern node *Refcount (node *arg_node);
 
