@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.29  1998/04/02 12:49:18  dkr
+ * added ST_WLfun
+ *
  * Revision 1.28  1998/04/01 08:01:03  srs
  * removed NEWTREE
  *
@@ -225,6 +228,7 @@ typedef enum {
     ST_external,           /* external module/class                  */
     ST_system,             /* external system library                */
     ST_own                 /* own declaration of module impl.        */
+      ST_WLfun             /* function with parallelized with-loop   */
 } statustype;
 
 typedef enum { VECT, IDX } useflag;
