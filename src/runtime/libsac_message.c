@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  1998/03/24 13:51:45  cg
+ * First working revision
+ *
  * Revision 1.1  1998/03/19 16:34:14  cg
  * Initial revision
  *
@@ -28,6 +31,10 @@
 #include <stdarg.h>
 #include <stdlib.h>
 
+/*
+ * Function definitions
+ */
+
 void
 _SAC_RuntimeError (char *format, ...)
 {
@@ -53,14 +60,4 @@ _SAC_Print (char *format, ...)
     va_start (arg_p, format);
     vfprintf (stderr, format, arg_p);
     va_end (arg_p);
-}
-
-void
-_SAC_PrintHeader (char *title)
-{
-    _SAC_Print ("****************************************"
-                "****************************************\n");
-    _SAC_Print ("*** %-72s ***\n", title);
-    _SAC_Print ("****************************************"
-                "****************************************\n");
 }
