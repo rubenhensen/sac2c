@@ -3,7 +3,11 @@
 /*
  *
  * $Log$
- * Revision 1.6  1997/03/19 13:54:30  cg
+ * Revision 1.7  1997/04/24 09:55:55  cg
+ * standard library search paths relative to environment variable SACBASE
+ * added in addition to user-defined paths
+ *
+ * Revision 1.6  1997/03/19  13:54:30  cg
  * Converted  to single tmp directory tmp_dirname instaed of build_dirnameand
  * store_dirname
  *
@@ -41,8 +45,8 @@ extern char *tmp_dirname;
 
 extern char *FindFile (pathkind p, char *name);
 extern void InitPaths ();
-extern int AppendPath (pathkind p, char *path);
-extern int AppendEnvVar (pathkind p, char *var);
+extern void AppendPath (pathkind p, char *path);
+extern void AppendEnvVar (pathkind p, char *var);
 extern void RearrangePaths ();
 extern char *AbsolutePathname (char *path);
 
