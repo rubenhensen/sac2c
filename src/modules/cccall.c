@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.18  1998/07/10 15:20:37  cg
+ * corrected superfluous warning
+ *
  * Revision 1.17  1998/07/07 13:42:55  cg
  *  implemented the command line option -mt-all
  *
@@ -592,8 +595,11 @@ InvokeCC ()
         }
 
     } else {
-        SYSWARN (("Command line option '-mt-all <num>` not allowed for"
-                  " compiling module/class implementations."));
+        if (all_threads > 0) {
+            all_threads = 0;
+            SYSWARN (("Command line option '-mt-all <num>` not allowed for"
+                      " compiling module/class implementations."));
+        }
 
         if (linkstyle == 1) {
             SystemCall ("%s %s %s %s -o %s/%s.o -c %s/%s.c", config.cc, config.ccflags,
