@@ -1,5 +1,10 @@
 /*
  * $Log$
+ * Revision 3.2  2000/11/21 17:35:37  cg
+ * Bug fixed in piped cache simulation on selected blocks:
+ * Block characterization tags are encoded for piping in a way that
+ * all blank characters are replaced by '+'.
+ *
  * Revision 3.1  2000/11/20 18:02:42  sacbase
  * new release made
  *
@@ -1439,10 +1444,32 @@ Piped_WriteAccess (void *baseaddress, void *elemaddress)
              (ULINT)elemaddress);
 } /* Piped_WriteAccessFun */
 
+static char *
+EncodeString (char *tag)
+{
+    int i;
+    static char buffer[MAX_TAG_LENGTH];
+
+    i = 0;
+
+    while (tag[i] != '\0') {
+        if (tag[i] == ' ') {
+            buffer[i] = '+';
+        } else {
+            buffer[i] = tag[i];
+        }
+
+        i += 1;
+    }
+    buffer[i] = '\0';
+
+    return (buffer);
+}
+
 static void
 Piped_Start (char *tag)
 {
-    fprintf (SAC_CS_pipehandle, "B %s\n", tag);
+    fprintf (SAC_CS_pipehandle, "B %s\n", EncodeString (tag));
 } /* Piped_Start */
 
 static void
