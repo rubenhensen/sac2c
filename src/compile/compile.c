@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.24  1999/07/28 13:12:10  jhs
+ * Added some comments.
+ *
  * Revision 2.23  1999/07/28 13:02:01  jhs
  * Added new barrier MT_SYNC_FOLD.
  *
@@ -6864,12 +6867,15 @@ COMPSync (node *arg_node, node *arg_info)
                                   NULL));
     /*
      * insert ICM 'MT_SYNC_...'
+     *
+     * MT_SYNC_FOLD needs number of folds, MT_SYNC_NONFOLD and MT_SYNC_ONEFOLD
+     * do not need this number, so it is only added at the MT_SYNC_FOLD arguments.
      */
 
     if (DFMTestMask (SYNC_INOUT (arg_node)) > 0) {
         if (DFMTestMask (SYNC_OUT (arg_node)) > 0) {
             if (DFMTestMask (SYNC_OUT (arg_node)) > 1) {
-                /* icm_name = "MT_SYNC_FOLD_NONFOLD"; */
+                /* possible, but not implemented: icm_name = "MT_SYNC_FOLD_NONFOLD"; */
                 icm_args2 = MakeExprs (MakeNum (num_folds), icm_args2);
                 icm_args2 = MakeExprs (MakeNum (barrier_id), icm_args2);
                 icm_name = "MT_SYNC_FOLD";
@@ -6877,7 +6883,7 @@ COMPSync (node *arg_node, node *arg_info)
                 DBUG_PRINT ("COMPi", ("MT_SYNC_FOLD (instead of MT_SYNC_FOLD_NONFOLD)"));
             } else {
                 /* DFMTestMask( SYNC_OUT( arg_node)) == 1  */
-                /* icm_name = "MT_SYNC_ONEFOLD_NONFOLD"; */
+                /* possible, but not implemented: icm_name = "MT_SYNC_ONEFOLD_NONFOLD"; */
                 icm_args2 = MakeExprs (MakeNum (num_folds), icm_args2);
                 icm_args2 = MakeExprs (MakeNum (barrier_id), icm_args2);
                 icm_name = "MT_SYNC_FOLD";
