@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.6  1999/12/13 16:57:57  dkr
+ * in function Equal:
+ *   a combined assignment ID_DEF(arg1) = arg1 = ... splitted into single
+ *   assignments in order to get deterministic results *<:-(
+ *
  * Revision 2.5  1999/11/15 18:07:53  dkr
  * VARNO replaced, INFO_VARNO with changed signature
  *
@@ -79,7 +84,7 @@
  *
  *  functionname  : CSE
  *  arguments     : 1) ptr to root of the syntaxtree or a N_fundef - node.
- *		    2) NULL
+ *                  2) NULL
  *                  R) ptr to root of the optimized syntax-tree
  *  description   :i
  *  global vars   : syntax_tree, cse_tab, act_tab, mrdl_stack
@@ -120,8 +125,8 @@ CSE (node *arg_node, node *info_node)
  *
  *  functionname  : CSEfundef
  *  arguments     : 1) N_fundef - node
- *		    2) N_info - node
- *		    R) N_fundef - node
+ *                  2) N_info - node
+ *                  R) N_fundef - node
  *  description   : calls OPTTrav to fold constants in current and following functions
  *  global vars   : syntax_tree, mrdl_stack
  *  internal funs : ---
@@ -136,8 +141,9 @@ CSEfundef (node *arg_node, node *arg_info)
     DBUG_ENTER ("CSEfundef");
 
     DBUG_PRINT ("CSE", ("CSE function: %s", FUNDEF_NAME (arg_node)));
-    if (NULL != FUNDEF_BODY (arg_node))
+    if (NULL != FUNDEF_BODY (arg_node)) {
         FUNDEF_INSTR (arg_node) = OPTTrav (FUNDEF_INSTR (arg_node), arg_info, arg_node);
+    }
     DBUG_RETURN (arg_node);
 }
 
@@ -145,8 +151,8 @@ CSEfundef (node *arg_node, node *arg_info)
  *
  *  functionname  : CSEwhile
  *  arguments     : 1) N_while - node
- *		    2) N_info  - node
- *		    R) N_while - node
+ *                  2) N_info  - node
+ *                  R) N_while - node
  *  description   : initiates cse inside while-loop
  *  global vars   : syntax_tree, mrdl_stack
  *  internal funs : ---
@@ -172,8 +178,8 @@ CSEwhile (node *arg_node, node *arg_info)
  *
  *  functionname  : CSEdo
  *  arguments     : 1) N_do   - node
- *		    2) N_info - node
- *		    R) N_do   - node
+ *                  2) N_info - node
+ *                  R) N_do   - node
  *  description   : initiates cse inside do-loop
  *  global vars   : syntax_tree, mrdl_stack
  *  internal funs : ---
@@ -199,8 +205,8 @@ CSEdo (node *arg_node, node *arg_info)
  *
  *  functionname  : CSEcond
  *  arguments     : 1) N_cond - node
- *		    2) N_info - node
- *		    R) N_cond - node , N_assign - node or N_empty - node
+ *                  2) N_info - node
+ *                  R) N_cond - node , N_assign - node or N_empty - node
  *  description   : initiates cse for the conditional
  *  global vars   : syntax_tree, mrdl_stack
  *  internal funs : ---
@@ -352,9 +358,14 @@ Equal (node *arg1, node *arg2, node *arg_info)
 
     DBUG_ENTER ("Equal");
 
+    DBUG_ASSERT ((arg1 != NULL), "first argument is NULL!");
+    DBUG_ASSERT ((arg2 != NULL), "second argument is NULL!");
+    DBUG_ASSERT ((arg_info != NULL), "arg_info is NULL!");
+
     if (N_id == NODE_TYPE (arg1)) {
         varno1 = ID_VARNO (arg1);
-        ID_DEF (arg1) = arg1 = MRD_GETCSE (ID_VARNO (arg1), INFO_VARNO (arg_info));
+        ID_DEF (arg1) = MRD_GETCSE (ID_VARNO (arg1), INFO_VARNO (arg_info));
+        arg1 = ID_DEF (arg1);
     }
 
     if (N_id == NODE_TYPE (arg2)) {
@@ -578,8 +589,9 @@ Eliminate (node *arg_node, node *equal_node, node *arg_info)
             ids_node = DupIds (LET_IDS (ASSIGN_INSTR (arg_node)), arg_info);
             let_node = MakeLet (id_node, ids_node);
             new_node = MakeAssign (let_node, NULL);
-        } else
+        } else {
             new_node = NULL;
+        }
         break;
     case N_ap:
         if (CheckScope (MRD_LIST, equal_node, INFO_VARNO (arg_info), TRUE)) {
@@ -588,8 +600,9 @@ Eliminate (node *arg_node, node *equal_node, node *arg_info)
             ids1 = DupIds (LET_IDS (ASSIGN_INSTR (arg_node)), arg_info);
             ids2 = DupIds (LET_IDS (ASSIGN_INSTR (equal_node)), arg_info);
             new_node = GenNodes4Ap (ids1, ids2, arg_info);
-        } else
+        } else {
             new_node = NULL;
+        }
         break;
     default:
         new_node = NULL;
