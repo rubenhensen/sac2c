@@ -1,6 +1,9 @@
 /*      $Id$
  *
  * $Log$
+ * Revision 1.18  1998/05/15 14:41:01  srs
+ * changed MakeNullVec() and added break specifier bo:wli
+ *
  * Revision 1.17  1998/05/05 13:00:44  srs
  * splitted WLT and WLI/WLF
  *
@@ -127,48 +130,52 @@ DbugIndexInfo (index_info *iinfo)
 
     DBUG_ENTER ("DbugIndexInfo");
 
+    printf (
+      "\n|-------------------------INDEX-INFO----------------------------------------\n");
     if (!iinfo)
-        printf ("\nNULL\n");
+        printf ("|NULL\n");
     else if (iinfo->vector) {
-        printf ("\nVECTOR shape [%d]:\n", iinfo->vector);
+        printf ("|VECTOR shape [%d]:\n", iinfo->vector);
         for (i = 0; i < iinfo->vector; i++) {
-            printf ("---%d---\n", i);
+            printf ("|---%d---\n", i);
 
             if (!iinfo->permutation[i]) { /* constant */
-                printf ("  constant %d\n", iinfo->const_arg[i]);
+                printf ("|  constant %d\n", iinfo->const_arg[i]);
                 continue;
             }
 
-            printf ("  base %d\n", iinfo->permutation[i]);
+            printf ("|  base %d\n", iinfo->permutation[i]);
             tmpii = iinfo;
             while (tmpii) {
                 sel = tmpii->vector ? i : 0;
                 if (tmpii->arg_no) {
                     if (1 == tmpii->arg_no)
-                        printf ("   %d%s. ", tmpii->const_arg[sel],
+                        printf ("|   %d%s. ", tmpii->const_arg[sel],
                                 prf_string[tmpii->prf]);
                     else
-                        printf ("   .%s%d ", prf_string[tmpii->prf],
+                        printf ("|   .%s%d ", prf_string[tmpii->prf],
                                 tmpii->const_arg[sel]);
                 } else
-                    printf ("   no prf ");
-                printf ("(p:%d, v:%d)\n", tmpii->permutation[sel], tmpii->vector);
+                    printf ("|   no prf ");
+                printf ("|(p:%d, v:%d)\n", tmpii->permutation[sel], tmpii->vector);
                 tmpii = tmpii->last[sel];
             }
         }
     } else {
-        printf ("\nSCALAR:\n");
-        printf ("  base %d\n", iinfo->permutation[0]);
+        printf ("|SCALAR:\n");
+        printf ("|  base %d\n", iinfo->permutation[0]);
         tmpii = iinfo;
         sel = 0;
         if (tmpii->arg_no) {
             if (1 == tmpii->arg_no)
-                printf ("   %d%s. ", tmpii->const_arg[sel], prf_string[tmpii->prf]);
+                printf ("|   %d%s. ", tmpii->const_arg[sel], prf_string[tmpii->prf]);
             else
-                printf ("   %s%d. ", prf_string[tmpii->prf], tmpii->const_arg[sel]);
-            printf ("(p:%d, v:%d)\n", tmpii->permutation[sel], tmpii->vector);
+                printf ("|   %s%d. ", prf_string[tmpii->prf], tmpii->const_arg[sel]);
+            printf ("|(p:%d, v:%d)\n", tmpii->permutation[sel], tmpii->vector);
         }
     }
+    printf (
+      "|---------------------------------------------------------------------------\n");
 
     DBUG_VOID_RETURN;
 }
@@ -587,6 +594,7 @@ ArrayST2ArrayInt (node *arrayn, int **iarray, int shape)
     int i;
 
     DBUG_ENTER ("ArrayST2ArrayInt");
+
     DBUG_ASSERT (!arrayn || N_array == NODE_TYPE (arrayn), ("Wrong arrayn"));
 
     if (arrayn)
@@ -1081,7 +1089,7 @@ StartSearchWL (node *idn, node *assignn, int mode)
  ******************************************************************************/
 
 node *
-MakeNullVec (int dim)
+MakeNullVec (int dim, simpletype type)
 {
     node *resultn, *tmpn;
     int i;
@@ -1094,13 +1102,25 @@ MakeNullVec (int dim)
     else {
         tmpn = NULL;
         for (i = 0; i < dim; i++)
-            tmpn = MakeExprs (MakeNum (0), tmpn);
+            switch (type) {
+            case T_int:
+                tmpn = MakeExprs (MakeNum (0), tmpn);
+                break;
+            case T_float:
+                tmpn = MakeExprs (MakeFloat (0), tmpn);
+                break;
+            case T_double:
+                tmpn = MakeExprs (MakeDouble (0), tmpn);
+                break;
+            default:
+                DBUG_ASSERT (0, ("unkown type"));
+            }
 
         resultn = MakeArray (tmpn);
 
         shpseg = MakeShpseg (
           MakeNums (dim, NULL)); /* nums struct is freed inside MakeShpseg. */
-        ARRAY_TYPE (resultn) = MakeType (T_int, 1, shpseg, NULL, NULL);
+        ARRAY_TYPE (resultn) = MakeType (type, 1, shpseg, NULL, NULL);
     }
 
     DBUG_RETURN (resultn);
@@ -1146,20 +1166,23 @@ WithloopFolding (node *arg_node, node *arg_info)
     act_tab = wli_tab;
     arg_node = Trav (arg_node, arg_info);
 
-    /* WLF traversal: fold WLs */
-    DBUG_PRINT ("OPT", ("  WLF"));
-    DBUG_PRINT ("WLF", ("allocated mem before folding: %d", current_allocated_mem));
-    act_tab = wlf_tab;
-    arg_node = Trav (arg_node, arg_info);
-    expr = (wlf_expr - old_wlf_expr);
-    if (expr)
-        DBUG_PRINT ("OPT", ("                        result: %d", expr));
-    DBUG_PRINT ("WLF", ("allocated mem after folding : %d", current_allocated_mem));
+    /* break after WLI? */
+    if (break_after != PH_sacopt || strcmp (break_specifier, "wli")) {
+        /* WLF traversal: fold WLs */
+        DBUG_PRINT ("OPT", ("  WLF"));
+        DBUG_PRINT ("WLF", ("allocated mem before folding: %d", current_allocated_mem));
+        act_tab = wlf_tab;
+        arg_node = Trav (arg_node, arg_info);
+        expr = (wlf_expr - old_wlf_expr);
+        if (expr)
+            DBUG_PRINT ("OPT", ("                        result: %d", expr));
+        DBUG_PRINT ("WLF", ("allocated mem after folding : %d", current_allocated_mem));
 
-    /* rebuild mask which is necessary because of WL-body-substitutions and
-       inserted new variables to prevent wrong variable bindings. */
-    DBUG_PRINT ("OPT", ("  GENERATEMASKS"));
-    arg_node = GenerateMasks (arg_node, NULL);
+        /* rebuild mask which is necessary because of WL-body-substitutions and
+         inserted new variables to prevent wrong variable bindings. */
+        DBUG_PRINT ("OPT", ("  GENERATEMASKS"));
+        arg_node = GenerateMasks (arg_node, NULL);
+    }
 
     FREE (arg_info);
 
