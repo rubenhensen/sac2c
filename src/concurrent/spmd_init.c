@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  1998/07/03 10:20:52  cg
+ * attribute attribute SPMD_INOUT_IDS no longer needed and set
+ *
  * Revision 1.1  1998/06/18 14:35:53  cg
  * Initial revision
  *
@@ -65,10 +68,8 @@ SPMDIassign (node *arg_node, node *arg_info)
         ASSIGN_INSTR (arg_node) = spmd;
 
         /*
-         * get INOUT_IDS, IN/INOUT/OUT/LOCAL from the N_Nwith2 node.
+         * get IN/INOUT/OUT/LOCAL from the N_Nwith2 node.
          */
-
-        SPMD_INOUT_IDS (spmd) = DupOneIds (LET_IDS (spmd_let), NULL);
 
         SPMD_IN (spmd) = DFMGenMaskCopy (NWITH2_IN (with));
         SPMD_INOUT (spmd) = DFMGenMaskCopy (NWITH2_INOUT (with));
