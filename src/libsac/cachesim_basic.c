@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 2.19  1999/07/22 14:56:13  cg
+ * Added safety checks concerning existence and executability of
+ * external CacheSimAnalyser for piped cache simulation.
+ *
  * Revision 2.18  1999/07/22 09:53:06  cg
  * Added new routine to compute the number of digits required to
  * represent the final counter values. Before, this was done
@@ -71,7 +75,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <math.h>
+#include <unistd.h>
 
 #include "sac_cachesim.h"
 #include "sac_message.h"
@@ -818,7 +822,7 @@ SAC_CS_Initialize (int nr_of_cpu, tProfilingLevel profilinglevel, int cs_global,
                    tWritePolicy writepolicy2, ULINT cachesize3, int cachelinesize3,
                    int associativity3, tWritePolicy writepolicy3)
 {
-    char filename[1024];
+    char filename[256], call[1024], *sacbase;
 
     profiling_level = profilinglevel;
     global_simulation = cs_global;
@@ -862,27 +866,48 @@ SAC_CS_Initialize (int nr_of_cpu, tProfilingLevel profilinglevel, int cs_global,
     if ((profilinglevel == SAC_CS_piped_simple)
         || (profilinglevel == SAC_CS_piped_advanced)) {
 
+        /*
+         * Since we want to start an external program, we first check whether it
+         * exists at the location we assume and whether it is actually executbale
+         * in the given context (user/group permissions, etc.).
+         */
+
+        sacbase = getenv ("SACBASE");
+
+        if (sacbase == NULL) {
+            SAC_RuntimeError ("Unable to invoke external cache simulation analyser:\n"
+                              "*** environment variable $SACBASE undefined");
+        }
+
+        sprintf (filename, "%s/runtime/CacheSimAnalyser", sacbase);
+
+        if (0 != access (filename, X_OK)) {
+            SAC_RuntimeError ("Unable to invoke external cache simulation analyser:\n"
+                              "*** %s",
+                              filename);
+        }
+
         if (cshost[0] == '\0') {
-            sprintf (filename,
-                     "$SACBASE/runtime/CacheSimAnalyser"
+            sprintf (call,
+                     "%s"
                      " -cs %s%s"
                      " -cs1 %lu/%d/%d/%s"
                      " -cs2 %lu/%d/%d/%s"
                      " -cs3 %lu/%d/%d/%s",
-                     ProfilingLevelShortName (profilinglevel),
+                     filename, ProfilingLevelShortName (profilinglevel),
                      global_simulation ? "g" : "b", cachesize1, cachelinesize1,
                      associativity1, WritePolicyShortName (writepolicy1), cachesize2,
                      cachelinesize2, associativity2, WritePolicyShortName (writepolicy2),
                      cachesize3, cachelinesize3, associativity3,
                      WritePolicyShortName (writepolicy3));
         } else {
-            sprintf (filename,
-                     "rsh %s $SACBASE/runtime/CacheSimAnalyser"
+            sprintf (call,
+                     "rsh %s %s"
                      " -cs %s%s"
                      " -cs1 %lu/%d/%d/%s"
                      " -cs2 %lu/%d/%d/%s"
                      " -cs3 %lu/%d/%d/%s",
-                     cshost, ProfilingLevelShortName (profilinglevel),
+                     cshost, filename, ProfilingLevelShortName (profilinglevel),
                      global_simulation ? "g" : "b", cachesize1, cachelinesize1,
                      associativity1, WritePolicyShortName (writepolicy1), cachesize2,
                      cachelinesize2, associativity2, WritePolicyShortName (writepolicy2),
@@ -890,11 +915,11 @@ SAC_CS_Initialize (int nr_of_cpu, tProfilingLevel profilinglevel, int cs_global,
                      WritePolicyShortName (writepolicy3));
         }
 
-        SAC_CS_pipehandle = popen (filename, "w");
+        SAC_CS_pipehandle = popen (call, "w");
 
         if (SAC_CS_pipehandle == NULL) {
-            SAC_RuntimeError ("Unable to invoke external cache simulation analyser:\n%s",
-                              filename);
+            SAC_RuntimeError (
+              "Unable to invoke external cache simulation analyser:\n*** %s", call);
         }
 
         /*
