@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.178  1998/04/01 23:56:46  dkr
+ * added PrintWLstriVar, PrintWLgridVar
+ *
  * Revision 1.177  1998/04/01 19:17:12  dkr
  * changed output for N_Nwith2...
  *
@@ -2438,6 +2441,114 @@ PrintWLgrid (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
+ *   void PrintWLvar(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   prints a son of N_WLstriVar- and N_WLgridVar-nodes.
+ *
+ ******************************************************************************/
+
+void
+PrintWLvar (node *arg_node, int dim)
+{
+    DBUG_ENTER ("PrintWLvar");
+
+    switch (NODE_TYPE (arg_node)) {
+    case N_num:
+
+        fprintf (outfile, "%d", NUM_VAL (arg_node));
+        break;
+
+    case N_id:
+
+        fprintf (outfile, "%s[%d]", ID_NAME (arg_node), dim);
+        break;
+
+    default:
+
+        DBUG_ASSERT ((0), "wrong node type found");
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *PrintWLstriVar(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   prints N_WLstriVar-nodes
+ *
+ ******************************************************************************/
+
+node *
+PrintWLstriVar (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintWLstriVar");
+
+    INDENT
+    fprintf (outfile, "(");
+    PrintWLvar (WLSTRIVAR_BOUND1 (arg_node), WLSTRIVAR_DIM (arg_node));
+    fprintf (outfile, " -> ");
+    PrintWLvar (WLSTRIVAR_BOUND2 (arg_node), WLSTRIVAR_DIM (arg_node));
+    fprintf (outfile, "), step[%d] ", WLSTRIVAR_DIM (arg_node));
+    PrintWLvar (WLSTRIVAR_STEP (arg_node), WLSTRIVAR_DIM (arg_node));
+    fprintf (outfile, "\n");
+
+    indent++;
+    WLSTRIVAR_CONTENTS (arg_node) = Trav (WLSTRIVAR_CONTENTS (arg_node), arg_info);
+    indent--;
+
+    if (WLSTRIVAR_NEXT (arg_node) != NULL) {
+        WLSTRIVAR_NEXT (arg_node) = Trav (WLSTRIVAR_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *PrintWLgridVar(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   prints N_WLgrid-nodes
+ *
+ ******************************************************************************/
+
+node *
+PrintWLgridVar (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintWLgridVar");
+
+    INDENT
+    fprintf (outfile, "(");
+    PrintWLvar (WLGRIDVAR_BOUND1 (arg_node), WLGRIDVAR_DIM (arg_node));
+    fprintf (outfile, " -> ");
+    PrintWLvar (WLGRIDVAR_BOUND2 (arg_node), WLGRIDVAR_DIM (arg_node));
+    fprintf (outfile, "): ");
+
+    indent++;
+    if (WLGRIDVAR_NEXTDIM (arg_node) != NULL) {
+        fprintf (outfile, "\n");
+        WLGRIDVAR_NEXTDIM (arg_node) = Trav (WLGRIDVAR_NEXTDIM (arg_node), arg_info);
+    } else {
+        DBUG_ASSERT ((WLGRIDVAR_CODE (arg_node) != NULL), "WLGRIDVAR_CODE not found");
+        fprintf (outfile, "op_%d\n", NCODE_NO (WLGRIDVAR_CODE (arg_node)));
+    }
+    indent--;
+
+    if (WLGRIDVAR_NEXT (arg_node) != NULL) {
+        WLGRIDVAR_NEXT (arg_node) = Trav (WLGRIDVAR_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   node *Print(node *arg_node)
  *
  * description:
@@ -2580,6 +2691,22 @@ PrintNodeTree (node *node)
         case N_WLgrid:
             fprintf (outfile, "(%d->%d [%d])\n", WLUBLOCK_BOUND1 (node),
                      WLUBLOCK_BOUND2 (node), WLUBLOCK_DIM (node));
+            break;
+        case N_WLstriVar:
+            fprintf (outfile, "(");
+            PrintWLvar (WLSTRIVAR_BOUND1 (node), WLSTRIVAR_DIM (node));
+            fprintf (outfile, "->");
+            PrintWLvar (WLSTRIVAR_BOUND2 (node), WLSTRIVAR_DIM (node));
+            fprintf (outfile, ", step[%d] ", WLSTRIVAR_DIM (node));
+            PrintWLvar (WLSTRIVAR_STEP (node), WLSTRIVAR_DIM (node));
+            fprintf (outfile, ")\n");
+            break;
+        case N_WLgridVar:
+            fprintf (outfile, "(");
+            PrintWLvar (WLGRIDVAR_BOUND1 (node), WLGRIDVAR_DIM (node));
+            fprintf (outfile, "->");
+            PrintWLvar (WLGRIDVAR_BOUND2 (node), WLGRIDVAR_DIM (node));
+            fprintf (outfile, " [%d])\n", WLGRIDVAR_DIM (node));
             break;
         default:
             fprintf (outfile, "\n");

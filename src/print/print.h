@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.26  1998/04/01 23:56:54  dkr
+ * added PrintWLstriVar, PrintWLgridVar
+ *
  * Revision 1.25  1998/03/27 18:39:38  dkr
  * PrintWLproj -> PrintWLstride
  *
@@ -149,6 +152,8 @@ extern node *PrintWLblock (node *arg_node, node *arg_info);
 extern node *PrintWLublock (node *arg_node, node *arg_info);
 extern node *PrintWLstride (node *arg_node, node *arg_info);
 extern node *PrintWLgrid (node *arg_node, node *arg_info);
+extern node *PrintWLstriVar (node *arg_node, node *arg_info);
+extern node *PrintWLgridVar (node *arg_node, node *arg_info);
 
 extern void PrintFunctionHeader (node *arg_node, node *arg_info);
 
