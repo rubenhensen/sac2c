@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.147  2004/05/06 17:52:10  ktr
+ * Added SSARCicm
+ *
  * Revision 3.146  2004/05/05 15:02:59  ktr
  * Added support for fourth son of Ncode: NCODE_EPILOGUE and added a few
  * SSARC functions (SSARCNwith, SSARCNcode, SSARCNwithid)
@@ -2116,7 +2119,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 0),
 
   NIF (N_icm, "N_icm", TravSons, TravSons, PrintIcm, TravSons, GNMicm, TravSons, TravSons,
-       FreeIcm, TravSons, RCicm, TravSons, TravSons, DupIcm, TravSons, TravSons, TravSons,
+       FreeIcm, TravSons, RCicm, SSARCicm, TravSons, DupIcm, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,

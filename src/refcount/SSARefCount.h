@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2004/05/06 17:50:43  ktr
+ * Added SSARCicm
+ *
  * Revision 1.5  2004/05/05 15:34:05  ktr
  * Log added.
  *
@@ -34,5 +37,5 @@ extern node *SSARCcond (node *arg_node, node *arg_info);
 extern node *SSARCNwith (node *arg_node, node *arg_info);
 extern node *SSARCNcode (node *arg_node, node *arg_info);
 extern node *SSARCNwithid (node *arg_node, node *arg_info);
-
+extern node *SSARCicm (node *arg_node, node *arg_info);
 #endif /* _sac_ssarefcount_h */
