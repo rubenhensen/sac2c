@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.25  2001/03/27 15:40:17  nmw
+ * Array2Vec as wrapper for different Array2<XYZ>Vec added
+ *
  * Revision 3.24  2001/03/19 18:23:11  dkr
  * no changes done
  *
@@ -1337,12 +1340,15 @@ extern node *IntVec2Array (int length, int *intvec);
  *   float  *Array2FloatVec(node* aelems, int* length);
  *   double *Array2DblVec(node* aelems, int* length);
  *
+ *   void   *Array2Vec(simpletype t, node* aelems, int* length);
+ *
  * Description:
  *   Returns an iteger (char | float | double) vector and stores the number of
  *   constant integer (char | float | double) elements in *length if first
  *   argument is an N_exprs and all its elements are N_num otherwise the
  *   result is not defined.
  *   If the length of the vector is not of interest, length may be NULL.
+ *   The Array2Vec function is a dispatching wrapper for all above.
  *
  ******************************************************************************/
 
@@ -1351,6 +1357,7 @@ extern int *Array2BoolVec (node *aelems, int *length);
 extern char *Array2CharVec (node *aelems, int *length);
 extern float *Array2FloatVec (node *aelems, int *length);
 extern double *Array2DblVec (node *aelems, int *length);
+extern void *Array2Vec (simpletype t, node *aelems, int *length);
 
 /*--------------------------------------------------------------------------*/
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.21  2001/03/27 15:40:17  nmw
+ * Array2Vec as wrapper for different Array2<XYZ>Vec added
+ *
  * Revision 3.20  2001/03/21 17:48:12  dkr
  * comment for AppendAssign() modified
  *
@@ -2461,6 +2464,38 @@ Array2DblVec (node *aelems, int *length)
     }
 
     DBUG_RETURN (dblvec);
+}
+
+/* type dispatch for some standard simpletypes */
+void *
+Array2Vec (simpletype t, node *aelems, int *length)
+{
+    void *res;
+
+    DBUG_ENTER ("Array2Vec");
+
+    switch (t) {
+    case T_int:
+        res = (void *)Array2IntVec (aelems, length);
+        break;
+    case T_float:
+        res = (void *)Array2FloatVec (aelems, length);
+        break;
+    case T_double:
+        res = (void *)Array2DblVec (aelems, length);
+        break;
+    case T_bool:
+        res = (void *)Array2BoolVec (aelems, length);
+        break;
+    case T_char:
+        res = (void *)Array2CharVec (aelems, length);
+        break;
+    default:
+        DBUG_ASSERT ((FALSE), "unknown type for array");
+        res = NULL;
+    }
+
+    DBUG_RETURN (res);
 }
 
 /*--------------------------------------------------------------------------*/
