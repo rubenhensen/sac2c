@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.15  2004/07/31 21:26:11  ktr
+ * corrected WL-shape descriptor for scalar withloops.
+ *
  * Revision 1.14  2004/07/29 12:08:16  ktr
  * MakeDimArg, MakeShapeArg and MakeSizeArg added.
  * Constants must now only be filled if they are used on a RHS of an assignment
@@ -671,9 +674,13 @@ EMALcode (node *arg_node, info *arg_info)
             }
             if (als->shape == NULL) {
                 if (TYIsAKS (AVIS_TYPE (cexavis))) {
-                    als->shape
-                      = MakePrf2 (F_cat_VxV, DupNode (NWITHOP_SHAPE (withops)),
-                                  SHShape2Array (TYGetShape (AVIS_TYPE (cexavis))));
+                    if (TYGetDim (AVIS_TYPE (cexavis)) == 0) {
+                        als->shape = DupNode (NWITHOP_SHAPE (withops));
+                    } else {
+                        als->shape
+                          = MakePrf2 (F_cat_VxV, DupNode (NWITHOP_SHAPE (withops)),
+                                      SHShape2Array (TYGetShape (AVIS_TYPE (cexavis))));
+                    }
                 }
             }
         }
