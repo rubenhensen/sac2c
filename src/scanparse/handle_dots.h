@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2003/12/10 16:00:15  sah
+ * added HDid
+ *
  * Revision 1.6  2003/11/12 14:32:30  sbs
  * HDpart inserted.
  *
@@ -40,5 +43,6 @@ extern node *HDap (node *arg_node, node *arg_info);
 extern node *HDprf (node *arg_node, node *arg_info);
 extern node *HDassign (node *arg_node, node *arg_info);
 extern node *HDsetwl (node *arg_node, node *arg_info);
+extern node *HDid (node *arg_node, node *arg_info);
 
 #endif /* _handle_dots_h */
