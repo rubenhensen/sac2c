@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.28  2004/11/25 00:12:30  mwe
+ * SacDevCamp Dk: Compiles!!
+ *
  * Revision 3.27  2004/10/22 17:19:03  ktr
  * F_free is allowed  in the beginning of DOFUN-Conditional branches.
  *
@@ -124,12 +127,11 @@
  *
  *****************************************************************************/
 
-#define NEW_INFO
-
 #include "dbug.h"
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
+#include "node_basic.h"
 #include "internal_lib.h"
 #include "traverse.h"
 #include "free.h"
@@ -138,6 +140,7 @@
 #include "UndoSSATransform.h"
 #include "Inline.h"
 #include "globals.h"
+#include "Error.h"
 
 /*
  * INFO structure
@@ -165,7 +168,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = Malloc (sizeof (info));
+    result = ILIBmalloc (sizeof (info));
 
     INFO_F2L_FUNDEF (result) = NULL;
     INFO_F2L_INLINED (result) = NULL;
@@ -179,7 +182,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = Free (info);
+    info = ILIBfree (info);
 
     DBUG_RETURN (info);
 }
@@ -187,17 +190,17 @@ FreeInfo (info *info)
 /******************************************************************************
  *
  * function:
- *   int IsRecursiveCall( node *assign, node *fundef)
+ *   bool IsRecursiveCall( node *assign, node *fundef)
  *
  * description:
  *
  *
  ******************************************************************************/
 
-static int
+static bool
 IsRecursiveCall (node *assign, node *fundef)
 {
-    int res;
+    bool res;
     node *instr, *expr;
 
     DBUG_ENTER ("IsRecursiveCall");
@@ -211,12 +214,12 @@ IsRecursiveCall (node *assign, node *fundef)
         expr = LET_EXPR (instr);
 
         if ((NODE_TYPE (expr) == N_ap) && (AP_FUNDEF (expr) == fundef)) {
-            res = 1;
+            res = TRUE;
         } else {
-            res = 0;
+            res = FALSE;
         }
     } else {
-        res = 0;
+        res = FALSE;
     }
 
     DBUG_RETURN (res);
@@ -248,7 +251,7 @@ ArgIsInternalArg (node *ext_arg, node *int_args)
         DBUG_ASSERT ((NODE_TYPE (int_args) == N_exprs), "illegal parameter found!");
         int_expr = EXPRS_EXPR (int_args);
 
-        if ((NODE_TYPE (int_expr) == N_id) && (ID_VARDEC (int_expr) == ext_arg)) {
+        if ((NODE_TYPE (int_expr) == N_id) && (ID_DECL (int_expr) == ext_arg)) {
             found = TRUE;
         } else {
             found = ArgIsInternalArg (ext_arg, EXPRS_NEXT (int_args));
@@ -281,7 +284,7 @@ ArgIsReturnValue (node *ext_arg, node *ret_args)
         is_ret = FALSE;
     } else {
         DBUG_ASSERT ((NODE_TYPE (ret_args) == N_exprs), "illegal parameter found!");
-        if (ID_VARDEC (EXPRS_EXPR (ret_args)) == ext_arg) {
+        if (ID_DECL (EXPRS_EXPR (ret_args)) == ext_arg) {
             is_ret = TRUE;
         } else {
             is_ret = ArgIsReturnValue (ext_arg, EXPRS_NEXT (ret_args));
@@ -404,58 +407,53 @@ BuildRenamingAssignsForDo (node **vardecs, node **ass1, node **ass2, node **ass3
 
         int_expr = EXPRS_EXPR (int_args);
 
-        DBUG_ASSERT ((ID_VARDEC (int_expr) != NULL), "vardec not found!");
+        DBUG_ASSERT ((ID_DECL (int_expr) != NULL), "vardec not found!");
 
-        if ((NODE_TYPE (int_expr) != N_id) || (ext_args != ID_VARDEC (int_expr))) {
+        if ((NODE_TYPE (int_expr) != N_id) || (ext_args != ID_DECL (int_expr))) {
             if (ArgIsReturnValue (ext_args, ret_args)
                 || ArgIsInternalArg (ext_args, int_args)) {
                 /*
                  * build a fresh vardec (tmp_a_i)
                  */
-                new_name = TmpVarName (ARG_NAME (ext_args));
+                new_name = ILIBtmpVarName (ARG_NAME (ext_args));
                 (*vardecs)
-                  = MakeVardec (new_name, DupAllTypes (ARG_TYPE (ext_args)), *vardecs);
-                AVIS_TYPE (VARDEC_AVIS ((*vardecs)))
-                  = TYCopyType (AVIS_TYPE (ARG_AVIS (ext_args)));
+                  = TBmakeVardec (TBmakeAvis (new_name, AVIS_TYPE (ARG_AVIS (ext_args))),
+                                  *vardecs);
+                VARDEC_TYPE ((*vardecs)) = DUPdupAllTypes (ARG_TYPE (ext_args));
 
                 /*
                  * tmp_a_i = a_i;
                  */
-                new_id = MakeId_Copy (ARG_NAME (ext_args));
-                ID_VARDEC (new_id) = ext_args;
-                SET_FLAG (ID, new_id, IS_GLOBAL,
-                          (NODE_TYPE (ID_VARDEC (new_id)) == N_objdef));
-                SET_FLAG (ID, new_id, IS_REFERENCE, FALSE);
-                assign = MakeAssignLet (StringCopy (new_name), *vardecs, new_id);
+                new_id = TBmakeId (ARG_AVIS (ext_args));
+                ID_ISGLOBAL (new_id)
+                  = (NODE_TYPE (AVIS_DECL (ID_AVIS (new_id))) == N_objdef);
+                ID_ISREFERENCE (new_id) = FALSE;
+                assign = TCmakeAssignLet (DECL_AVIS (*vardecs), new_id);
                 ASSIGN_NEXT (assign) = (*ass1);
                 (*ass1) = assign;
 
                 /*
                  * a_i = tmp_a_i;
                  */
-                new_id = MakeId_Copy (new_name);
-                ID_VARDEC (new_id) = (*vardecs);
-                SET_FLAG (ID, new_id, IS_GLOBAL,
-                          (NODE_TYPE (ID_VARDEC (new_id)) == N_objdef));
-                SET_FLAG (ID, new_id, IS_REFERENCE, FALSE);
-                assign
-                  = MakeAssignLet (StringCopy (ARG_NAME (ext_args)), ext_args, new_id);
+                new_id = TBmakeId (VARDEC_AVIS (*vardecs));
+                ID_ISGLOBAL (new_id)
+                  = (NODE_TYPE (AVIS_DECL (ID_AVIS (new_id))) == N_objdef);
+                ID_ISREFERENCE (new_id) = FALSE;
+                assign = TCmakeAssignLet (DECL_AVIS (ext_args), new_id);
                 ASSIGN_NEXT (assign) = (*ass2);
                 (*ass2) = assign;
 
                 /*
                  * tmp_a_i = A_i;
                  */
-                assign
-                  = MakeAssignLet (StringCopy (new_name), *vardecs, DupNode (int_expr));
+                assign = TCmakeAssignLet (DECL_AVIS (*vardecs), DUPdoDupNode (int_expr));
                 ASSIGN_NEXT (assign) = (*ass3);
                 (*ass3) = assign;
             } else {
                 /*
                  * a_i = A_i;
                  */
-                assign = MakeAssignLet (StringCopy (ARG_NAME (ext_args)), ext_args,
-                                        DupNode (int_expr));
+                assign = TCmakeAssignLet (DECL_AVIS (ext_args), DUPdoDupNode (int_expr));
                 ASSIGN_NEXT (assign) = (*ass3);
                 (*ass3) = assign;
             }
@@ -479,7 +477,7 @@ BuildRenamingAssignsForDo (node **vardecs, node **ass1, node **ass2, node **ass3
  ******************************************************************************/
 
 static bool
-ReturnVarsAreIdentical (node *ext_rets, ids *int_rets)
+ReturnVarsAreIdentical (node *ext_rets, node *int_rets)
 {
     bool ok = TRUE;
 
@@ -488,17 +486,17 @@ ReturnVarsAreIdentical (node *ext_rets, ids *int_rets)
     DBUG_ASSERT (((ext_rets == NULL) || (NODE_TYPE (ext_rets) == N_exprs)),
                  "illegal parameter found!");
 
-    DBUG_ASSERT ((CountExprs (ext_rets) == CountIds (int_rets)),
+    DBUG_ASSERT ((TCcountExprs (ext_rets) == TCcountIds (int_rets)),
                  "inconsistent LAC-signature found");
 
     while (ext_rets != NULL) {
         DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (ext_rets)) == N_id),
                      "return value of special LaC function must be a N_id node!");
-        DBUG_ASSERT (((ID_VARDEC (EXPRS_EXPR (ext_rets)) != NULL)
+        DBUG_ASSERT (((ID_DECL (EXPRS_EXPR (ext_rets)) != NULL)
                       && (IDS_VARDEC (int_rets) != NULL)),
                      "vardec not found!");
 
-        if (ID_VARDEC (EXPRS_EXPR (ext_rets)) != IDS_VARDEC (int_rets)) {
+        if (ID_DECL (EXPRS_EXPR (ext_rets)) != IDS_VARDEC (int_rets)) {
             ok = FALSE;
             break;
         }
@@ -645,7 +643,7 @@ TransformIntoDoLoop (node *fundef)
          */
 
         if (NODE_TYPE (cond) != N_return) {
-            if (compiler_phase >= PH_refcnt) {
+            if (global.compiler_phase >= PH_refcnt) {
                 /* Adjust_RC Operations in the THEN-Tree must be moved
                    in to the Do-Loops SKIP-Block */
                 while (
@@ -659,7 +657,7 @@ TransformIntoDoLoop (node *fundef)
                           == F_free))) {
                     tmp = ASSIGN_NEXT (BLOCK_INSTR (COND_THEN (cond)));
                     ASSIGN_NEXT (BLOCK_INSTR (COND_THEN (cond))) = NULL;
-                    skip = AppendAssign (skip, BLOCK_INSTR (COND_THEN (cond)));
+                    skip = TCappendAssign (skip, BLOCK_INSTR (COND_THEN (cond)));
                     BLOCK_INSTR (COND_THEN (cond)) = tmp;
                 }
 
@@ -676,12 +674,12 @@ TransformIntoDoLoop (node *fundef)
                           == F_free))) {
                     tmp = ASSIGN_NEXT (BLOCK_INSTR (COND_ELSE (cond)));
                     ASSIGN_NEXT (BLOCK_INSTR (COND_ELSE (cond))) = NULL;
-                    epilogue = AppendAssign (epilogue, BLOCK_INSTR (COND_ELSE (cond)));
+                    epilogue = TCappendAssign (epilogue, BLOCK_INSTR (COND_ELSE (cond)));
                     BLOCK_INSTR (COND_ELSE (cond)) = tmp;
                 }
 
                 if (BLOCK_INSTR (COND_ELSE (cond)) == NULL)
-                    BLOCK_INSTR (COND_ELSE (cond)) = MakeEmpty ();
+                    BLOCK_INSTR (COND_ELSE (cond)) = TBmakeEmpty ();
             }
 
             ret = ASSIGN_INSTR (ASSIGN_NEXT (cond_assign));
@@ -695,7 +693,7 @@ TransformIntoDoLoop (node *fundef)
                          " allowed");
 
             loop_pred = COND_COND (cond);
-            COND_COND (cond) = MakeBool (FALSE);
+            COND_COND (cond) = TBmakeBool (FALSE);
 
             /*
              * cond_assign: if (false) { ... = DoLoopFun(...); }  return(...);
@@ -730,12 +728,12 @@ TransformIntoDoLoop (node *fundef)
                                        AP_ARGS (ASSIGN_RHS (int_call)),
                                        RETURN_EXPRS (ret));
 
-            loop_body = AppendAssign (ass2, AppendAssign (loop_body, ass3));
+            loop_body = TCappendAssign (ass2, TCappendAssign (loop_body, ass3));
 
             if (loop_body == NULL) {
-                loop_body = MakeEmpty ();
+                loop_body = TBmakeEmpty ();
             }
-            loop_body = MakeBlock (loop_body, NULL);
+            loop_body = TBmakeBlock (loop_body, NULL);
 
             /*
              * cond_assign: if (false) { ... = DoLoopFun(...); }  return(...);
@@ -747,24 +745,21 @@ TransformIntoDoLoop (node *fundef)
              */
 
             /* replace cond by do-loop */
-            ASSIGN_INSTR (cond_assign) = FreeTree (ASSIGN_INSTR (cond_assign));
-            ASSIGN_INSTR (cond_assign) = MakeDo (loop_pred, loop_body);
+            ASSIGN_INSTR (cond_assign) = FREEdoFreeTree (ASSIGN_INSTR (cond_assign));
+            ASSIGN_INSTR (cond_assign) = TBmakeDo (loop_pred, loop_body);
 
-            if (emm) {
-                /* Insert skip */
-                if (skip == NULL) {
-                    skip = MakeEmpty ();
-                }
-                DO_SKIP (ASSIGN_INSTR (cond_assign)) = MakeBlock (skip, NULL);
-                DO_LABEL (ASSIGN_INSTR (cond_assign)) = TmpVar ();
+            if (skip == NULL) {
+                skip = TBmakeEmpty ();
             }
-
-            /* Insert epilogue */
-            epilogue = AppendAssign (epilogue, ASSIGN_NEXT (cond_assign));
-            ASSIGN_NEXT (cond_assign) = epilogue;
-
-            FUNDEF_INSTR (fundef) = AppendAssign (ass1, cond_assign);
+            DO_SKIP (ASSIGN_INSTR (cond_assign)) = TBmakeBlock (skip, NULL);
+            DO_LABEL (ASSIGN_INSTR (cond_assign)) = ILIBtmpVar ();
         }
+
+        /* Insert epilogue */
+        epilogue = TCappendAssign (epilogue, ASSIGN_NEXT (cond_assign));
+        ASSIGN_NEXT (cond_assign) = epilogue;
+
+        FUNDEF_INSTR (fundef) = TCappendAssign (ass1, cond_assign);
     }
 
     DBUG_RETURN (fundef);
@@ -800,7 +795,7 @@ TransformIntoCond (node *fundef)
  ******************************************************************************/
 
 node *
-FUN2LACap (node *arg_node, info *arg_info)
+F2Lap (node *arg_node, info *arg_info)
 {
     node *fundef;
     node *inl_code;
@@ -809,36 +804,33 @@ FUN2LACap (node *arg_node, info *arg_info)
 
     fundef = AP_FUNDEF (arg_node);
 
-    if (FUNDEF_IS_LACFUN (fundef)) {
-        switch (FUNDEF_STATUS (fundef)) {
-        case ST_condfun:
+    if (FUNDEF_ISLACFUN (fundef)) {
+        if (FUNDEF_ISCONDFUN (fundef)) {
+
             DBUG_PRINT ("F2L", ("Naive inlining of conditional function %s.",
-                                ItemName (fundef)));
+                                ERRitemName (fundef)));
 
             fundef = TransformIntoCond (fundef);
-            break;
+        } else if (FUNDEF_ISDOFUN (fundef)) {
 
-        case ST_dofun:
             DBUG_PRINT ("F2L",
-                        ("Naive inlining of do-loop function %s.", ItemName (fundef)));
+                        ("Naive inlining of do-loop function %s.", ERRitemName (fundef)));
 
             fundef = TransformIntoDoLoop (fundef);
-            break;
-
-        default:
+        } else {
             DBUG_ASSERT (0, "Illegal status of abstracted cond or loop fun");
         }
 
-        DBUG_EXECUTE ("F2L", PrintNode (fundef););
+        DBUG_EXECUTE ("F2L", PRTdoPrintNode (fundef););
 
-        inl_code
-          = InlineSingleApplication (INFO_F2L_LET (arg_info), INFO_F2L_FUNDEF (arg_info));
+        inl_code = INLinlineSingleApplication (INFO_F2L_LET (arg_info),
+                                               INFO_F2L_FUNDEF (arg_info));
 
-        DBUG_EXECUTE ("F2L", Print (inl_code););
+        DBUG_EXECUTE ("F2L", PRTdoPrint (inl_code););
 
         INFO_F2L_INLINED (arg_info) = inl_code;
     } else {
-        DBUG_PRINT ("F2L", ("function %s is no LaC-function.", ItemName (fundef)));
+        DBUG_PRINT ("F2L", ("function %s is no LaC-function.", ERRitemName (fundef)));
     }
 
     DBUG_RETURN (arg_node);
@@ -855,13 +847,13 @@ FUN2LACap (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 node *
-FUN2LAClet (node *arg_node, info *arg_info)
+F2Llet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("FUN2LAClet");
+    DBUG_ENTER ("F2Llet");
 
     INFO_F2L_LET (arg_info) = arg_node;
 
-    LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
+    LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -879,25 +871,25 @@ FUN2LAClet (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 node *
-FUN2LACassign (node *arg_node, info *arg_info)
+F2Lassign (node *arg_node, info *arg_info)
 {
     node *inl_code;
 
-    DBUG_ENTER ("FUN2LACassign");
+    DBUG_ENTER ("F2Lassign");
 
-    ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
     inl_code = INFO_F2L_INLINED (arg_info);
     if (inl_code != NULL) {
         INFO_F2L_INLINED (arg_info) = NULL;
 
-        arg_node = AppendAssign (inl_code, FreeNode (arg_node));
+        arg_node = TCappendAssign (inl_code, FREEdoFreeNode (arg_node));
 
-        ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+        ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
     }
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -915,12 +907,12 @@ FUN2LACassign (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 node *
-FUN2LACblock (node *arg_node, info *arg_info)
+F2Lblock (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("FUN2LACblock");
+    DBUG_ENTER ("F2Lblock");
 
     if (BLOCK_INSTR (arg_node) != NULL) {
-        BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
+        BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -938,18 +930,18 @@ FUN2LACblock (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 node *
-FUN2LACfundef (node *arg_node, info *arg_info)
+F2Lfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("FUN2LACfundef");
+    DBUG_ENTER ("F2Lfundef");
 
     INFO_F2L_FUNDEF (arg_info) = arg_node;
 
-    if ((!FUNDEF_IS_LACFUN (arg_node)) && (FUNDEF_BODY (arg_node) != NULL)) {
-        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+    if ((!FUNDEF_ISLACFUN (arg_node)) && (FUNDEF_BODY (arg_node) != NULL)) {
+        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
     }
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -967,19 +959,19 @@ FUN2LACfundef (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 node *
-FUN2LACmodul (node *arg_node, info *arg_info)
+F2Lmodule (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("FUN2LACmodul");
 
-    if (MODUL_FUNS (arg_node) != NULL) {
-        MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
+    if (MODULE_FUNS (arg_node) != NULL) {
+        MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
 
         /*
          * After inlining the special LaC functions and removing the external
          * reference (N_ap node) of it, all LaC functions should be zombies
          * with (FUNDEF_USED == 0), now.
          */
-        arg_node = RemoveAllZombies (arg_node);
+        arg_node = FREEremoveAllZombies (arg_node);
     }
 
     DBUG_RETURN (arg_node);
@@ -998,23 +990,23 @@ FUN2LACmodul (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 node *
-Fun2Lac (node *syntax_tree)
+F2LdoFun2Lac (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("Fun2Lac");
+    DBUG_ENTER ("F2LdoFun2Lac");
 
     /*
      * Fun2Lac() does not work on SSA form!!
      */
-    if (valid_ssaform) {
-        syntax_tree = UndoSSATransform (syntax_tree);
+    if (global.valid_ssaform) {
+        syntax_tree = USSATdoUndoSsaTransform (syntax_tree);
     }
 
-    act_tab = fun2lac_tab;
     info = MakeInfo ();
-
-    syntax_tree = Trav (syntax_tree, info);
+    TRAVpush (TR_f2l);
+    syntax_tree = TRAVdo (syntax_tree, info);
+    TRAVpop ();
 
     FreeInfo (info);
 
