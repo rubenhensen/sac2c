@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.50  2000/04/13 09:00:03  jhs
+ * Beautified.
+ *
  * Revision 2.49  2000/03/29 16:06:27  jhs
  * Brushing.
  *
@@ -2606,6 +2609,7 @@ COMPPrfModarray (node *arg_node, node *arg_info)
     node *arg3 = PRF_ARG3 (arg_node);
     int n, dim;
     simpletype s_type;
+    char *icm_name;
 
     DBUG_ENTER ("COMPPrfModarray");
 
@@ -2626,8 +2630,10 @@ COMPPrfModarray (node *arg_node, node *arg_info)
     /* store line of prf function */
     line = MakeNum (NODE_LINE (arg_node));
 
-    if (NODE_TYPE (arg2) == N_array) {     /* index is constant! */
-        if (NODE_TYPE (arg3) == N_array) { /* value is constant! */
+    if (NODE_TYPE (arg2) == N_array) {
+        /* index is constant! */
+        if (NODE_TYPE (arg3) == N_array) {
+            /* value is constant! */
             DBUG_ASSERT (0, "sorry compilation of ND_PRF_MODARRAY_AxCxC not yet done");
         } else {
             COUNT_ELEMS (n, ARRAY_AELEMS (arg2));
@@ -2635,12 +2641,11 @@ COMPPrfModarray (node *arg_node, node *arg_info)
 
             if ((N_id == NODE_TYPE (arg3))
                 && (1 == IsArray (VARDEC_TYPE (ID_VARDEC (arg3))))) {
-                char *icm_name;
-
-                if (1 == arg1->refcnt)
+                if (1 == arg1->refcnt) {
                     icm_name = "ND_PRF_MODARRAY_AxCxA_CHECK_REUSE";
-                else
+                } else {
                     icm_name = "ND_PRF_MODARRAY_AxCxA";
+                }
 
                 BIN_ICM_REUSE (INFO_COMP_LASTLET (arg_info), icm_name, line,
                                type_id_node);
@@ -2653,12 +2658,11 @@ COMPPrfModarray (node *arg_node, node *arg_info)
                 SET_VARS_FOR_MORE_ICMS;
                 DEC_OR_FREE_RC_ND (arg3, MakeNum (1));
             } else {
-                char *icm_name;
-
-                if (1 == arg1->refcnt)
+                if (1 == arg1->refcnt) {
                     icm_name = "ND_PRF_MODARRAY_AxCxS_CHECK_REUSE";
-                else
+                } else {
                     icm_name = "ND_PRF_MODARRAY_AxCxS";
+                }
 
                 BIN_ICM_REUSE (INFO_COMP_LASTLET (arg_info), icm_name, line,
                                type_id_node);
@@ -2674,7 +2678,8 @@ COMPPrfModarray (node *arg_node, node *arg_info)
             DEC_OR_FREE_RC_ND (arg1, MakeNum (1));
             INSERT_ASSIGN;
         }
-    } else { /* index is a variable ! */
+    } else {
+        /* index is a variable ! */
         DBUG_ASSERT ((NODE_TYPE (arg2) == N_id),
                      "wrong 2nd arg of modarray (neither N_array nor N_id!");
 
@@ -2688,12 +2693,11 @@ COMPPrfModarray (node *arg_node, node *arg_info)
             length = MakeNum (TYPES_SHAPE (ID_TYPE (arg2), 0));
 
             if ((N_id == NODE_TYPE (arg3)) && (1 == IsArray (ID_TYPE (arg3)))) {
-                char *icm_name;
-
-                if (1 == arg1->refcnt)
+                if (1 == arg1->refcnt) {
                     icm_name = "ND_PRF_MODARRAY_AxVxA_CHECK_REUSE";
-                else
+                } else {
                     icm_name = "ND_PRF_MODARRAY_AxVxA";
+                }
 
                 BIN_ICM_REUSE (INFO_COMP_LASTLET (arg_info), icm_name, line,
                                type_id_node);
@@ -2706,8 +2710,6 @@ COMPPrfModarray (node *arg_node, node *arg_info)
                 SET_VARS_FOR_MORE_ICMS;
                 DEC_OR_FREE_RC_ND (arg3, MakeNum (1));
             } else {
-                char *icm_name;
-
                 if (1 == arg1->refcnt) {
                     icm_name = "ND_PRF_MODARRAY_AxVxS_CHECK_REUSE";
                 } else {
