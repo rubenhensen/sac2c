@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.47  2001/04/10 13:17:22  dkr
+ * file description modified
+ *
  * Revision 3.46  2001/04/03 18:00:06  dkr
  * signature of IsHomSV modified
  *
@@ -148,10 +151,14 @@
  *
  * *** CAUTION ***
  * For a successful transformation the AST has to meet some requirements:
- *   - All N_Ngenerator nodes of a with-loop ...
- *       - ... use <= as OP1 and < as OP2.
- *       - ... have non-NULL sons BOUND1, BOUND2, STEP, WIDTH.
- *   - All N_withid nodes of a single with-loop use the same VEC and IDS names.
+ *   - For all N_Ngenerator nodes of a with-loop is hold:
+ *       - OP1 equals <= and OP2 equals <.
+ *       - BOUND1, BOUND2, STEP, WIDTH are not NULL.
+ *       - BOUND1, BOUND2, STEP, WIDTH are N_id nodes, N_array nodes containing
+ *         N_id nodes or N_array nodes containing N_num nodes
+ *         (A, [a,b,c] or [1,2,3]).
+ *   - For all N_withid nodes of a single with-loop is hold:
+ *       - the same VEC and IDS names are used.
  *
  ******************************************************************************/
 
