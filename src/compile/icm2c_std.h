@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.18  2002/08/02 20:48:41  dkr
+ * ..__DIM.. icms added
+ *
  * Revision 3.17  2002/07/31 16:34:12  dkr
  * parameter 'copyfun' added for several ICMs
  *
@@ -126,6 +129,8 @@ extern void ICMCompileND_COPY__SHAPE (char *to_nt, int to_sdim, char *from_nt,
 extern void ICMCompileND_MAKE_UNIQUE (char *to_nt, int to_sdim, char *from_nt,
                                       int from_sdim, char *copyfun);
 
+extern void ICMCompileND_CREATE__VECT__DIM (int val_size, char **vala_any);
+
 extern void ICMCompileND_CREATE__VECT__SHAPE (char *name, int sdim, int val_size,
                                               char **vala_any);
 
@@ -140,16 +145,22 @@ extern void ICMCompileND_PRF_RESHAPE__SHAPE_id (char *to_nt, int to_sdim, char *
 extern void ICMCompileND_PRF_RESHAPE__SHAPE_arr (char *to_nt, int to_sdim, int shp_size,
                                                  char **shpa_any);
 
+extern void ICMCompileND_PRF_SEL__DIM_id (char *from_nt, int from_sdim, int idx_size,
+                                          char *idx_nt);
+
+extern void ICMCompileND_PRF_SEL__DIM_arr (char *from_nt, int from_sdim, int idx_size,
+                                           char **idxa_any);
+
 extern void ICMCompileND_PRF_SEL__SHAPE_id (char *to_nt, int to_sdim, char *from_nt,
                                             int from_sdim, int idx_size, char *idx_nt);
-
-extern void ICMCompileND_PRF_SEL__DATA_id (char *to_nt, int to_sdim, char *from_nt,
-                                           int from_sdim, int idx_size, char *idx_nt,
-                                           char *copyfun);
 
 extern void ICMCompileND_PRF_SEL__SHAPE_arr (char *to_nt, int to_sdim, char *from_nt,
                                              int from_sdim, int idx_size,
                                              char **idxa_any);
+
+extern void ICMCompileND_PRF_SEL__DATA_id (char *to_nt, int to_sdim, char *from_nt,
+                                           int from_sdim, int idx_size, char *idx_nt,
+                                           char *copyfun);
 
 extern void ICMCompileND_PRF_SEL__DATA_arr (char *to_nt, int to_sdim, char *from_nt,
                                             int from_sdim, int idx_size, char **idxa_any,

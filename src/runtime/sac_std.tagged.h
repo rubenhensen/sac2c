@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.23  2002/08/02 20:48:56  dkr
+ * ..__DIM.. icms added
+ *
  * Revision 3.22  2002/08/01 12:08:41  dkr
  * macros DESC_... added
  *
@@ -92,22 +95,28 @@
 typedef void *SAC_hidden;
 
 /*
- * descriptors used by dynamic shape support
+ * array descriptor:
+ *   [0]     -> reference count
+ *   [1]     -> # of dimensions
+ *   [2]     -> # of elements
+ *   [3,...] -> shape vector
  */
+typedef int *SAC_array_descriptor_t;
 
-#define MAXDIM 10
+/* (max.) dim of descriptor for allocation optimization */
+#define MAX_DIM_OF_DESC 10
 
-typedef struct {
-    int rc;          /* reference count */
-    int dim;         /* # of dimensions */
-    int sz;          /* # of elements   */
-    int shp[MAXDIM]; /* shape vector    */
-} SAC_array_descriptor;
+/* size of dimension-independent parts of the descriptor */
+#define FIXED_SIZE_OF_DESC 3
+/* size of dimension-dependent parts of the descriptor */
+#define VAR_SIZE_OF_DESC 1
+/* size of the descriptor = (FIXED_SIZE_OF_DESC + dim * VAR_SIZE_OF_DESC) */
+#define SIZE_OF_DESC(dim) (FIXED_SIZE_OF_DESC + dim * VAR_SIZE_OF_DESC)
 
-#define DESC_RC(desc) CAT1 (desc, ->rc)
-#define DESC_DIM(desc) CAT1 (desc, ->dim)
-#define DESC_SIZE(desc) CAT1 (desc, ->sz)
-#define DESC_SHAPE(desc, pos) CAT1 (desc, ->shp[pos])
+#define DESC_RC(desc) CAT1 (desc, [0])
+#define DESC_DIM(desc) CAT1 (desc, [1])
+#define DESC_SIZE(desc) CAT1 (desc, [2])
+#define DESC_SHAPE(desc, pos) CAT1 (desc, [FIXED_SIZE_OF_DESC + pos])
 
 /**********************************
  **********************************
@@ -377,7 +386,7 @@ typedef struct {
  * AKS
  */
 
-#define SAC_ND_DESC_TYPE__AKS(nt) SAC_array_descriptor *
+#define SAC_ND_DESC_TYPE__AKS(nt) SAC_array_descriptor_t
 
 #define SAC_ND_TYPE__AKS(basetype) basetype *
 
@@ -755,7 +764,7 @@ typedef struct {
  * ICMs for allocation of data objects
  * ===================================
  *
- * ND_ALLOC( nt, rc, set_shape_icm) :
+ * ND_ALLOC( nt, rc, dim, set_shape_icm) :
  *   allocates a data object (no initialization but descriptor!)
  * ND_FREE( nt, freefun) :
  *   frees a data object
@@ -765,8 +774,8 @@ typedef struct {
  * ND_FREE__DATA( nt, freefun) :
  *   frees memory for a data object (without descriptor)
  *
- * ND_ALLOC__DESC( nt) :
- *   allocates memory for descriptor (no initialization!)
+ * ND_ALLOC__DESC( nt, dim) :
+ *   allocates memory for descriptor (no initialization but dimension!)
  * ND_FREE__DESC( nt) :
  *   frees memory for descriptor
  *
@@ -779,20 +788,20 @@ typedef struct {
  * for the time being this ICM is not used :-( because 'set_shape_icm' is
  * usually a C-ICM but this macro support H-ICMs only:
  */
-#define SAC_ND_ALLOC(nt, rc, set_shape_icm)                                              \
+#define SAC_ND_ALLOC(nt, rc, dim, set_shape_icm)                                         \
     {                                                                                    \
-        SAC_ND_ALLOC__DESC (nt)                                                          \
+        SAC_ND_ALLOC__DESC (nt, dim)                                                     \
         SAC_ND_SET__RC (nt, rc)                                                          \
         set_shape_icm SAC_ND_ALLOC__DATA (nt)                                            \
     }
 /*
  * these two macros are used instead:
  */
-#define SAC_ND_ALLOC_BEGIN(nt, rc)                                                       \
+#define SAC_ND_ALLOC_BEGIN(nt, rc, dim)                                                  \
     {                                                                                    \
-        SAC_ND_ALLOC__DESC (nt)                                                          \
+        SAC_ND_ALLOC__DESC (nt, dim)                                                     \
         SAC_ND_SET__RC (nt, rc)
-#define SAC_ND_ALLOC_END(nt, rc)                                                         \
+#define SAC_ND_ALLOC_END(nt, rc, dim)                                                    \
     SAC_ND_ALLOC__DATA (nt)                                                              \
     }
 
@@ -809,7 +818,8 @@ typedef struct {
            CAT11 (NT_SHP (nt),                                                           \
                   CAT11 (_, CAT11 (NT_HID (nt), BuildArgs2 (nt, freefun)))))
 
-#define SAC_ND_ALLOC__DESC(nt) CAT11 (SAC_ND_ALLOC__DESC__, CAT11 (NT_SHP (nt), (nt)))
+#define SAC_ND_ALLOC__DESC(nt, dim)                                                      \
+    CAT11 (SAC_ND_ALLOC__DESC__, CAT11 (NT_SHP (nt), BuildArgs2 (nt, dim)))
 
 #define SAC_ND_FREE__DESC(nt) CAT11 (SAC_ND_FREE__DESC__, CAT11 (NT_SHP (nt), (nt)))
 
@@ -830,13 +840,13 @@ typedef struct {
         SAC_TR_DEC_HIDDEN_MEMCNT (1)                                                     \
     }
 
-#define SAC_ND_ALLOC__DESC__SCL(nt)                                                      \
-    CAT12 (SAC_ND_ALLOC__DESC__SCL_, CAT12 (NT_HID (nt), (nt)))
-#define SAC_ND_ALLOC__DESC__SCL_NHD(nt) SAC_NOOP ()
-#define SAC_ND_ALLOC__DESC__SCL_HID(nt)                                                  \
-    CAT13 (SAC_ND_ALLOC__DESC__SCL_HID_, CAT13 (NT_UNQ (nt), (nt)))
-#define SAC_ND_ALLOC__DESC__SCL_HID_NUQ(nt) SAC_ND_ALLOC__DESC__AKS (nt)
-#define SAC_ND_ALLOC__DESC__SCL_HID_UNQ(nt) SAC_NOOP ()
+#define SAC_ND_ALLOC__DESC__SCL(nt, dim)                                                 \
+    CAT12 (SAC_ND_ALLOC__DESC__SCL_, CAT12 (NT_HID (nt), BuildArgs2 (nt, dim)))
+#define SAC_ND_ALLOC__DESC__SCL_NHD(nt, dim) SAC_NOOP ()
+#define SAC_ND_ALLOC__DESC__SCL_HID(nt, dim)                                             \
+    CAT13 (SAC_ND_ALLOC__DESC__SCL_HID_, CAT13 (NT_UNQ (nt), BuildArgs2 (nt, dim)))
+#define SAC_ND_ALLOC__DESC__SCL_HID_NUQ(nt, dim) SAC_ND_ALLOC__DESC__AKS (nt, dim)
+#define SAC_ND_ALLOC__DESC__SCL_HID_UNQ(nt, dim) SAC_NOOP ()
 
 #define SAC_ND_FREE__DESC__SCL(nt)                                                       \
     CAT12 (SAC_ND_FREE__DESC__SCL_, CAT12 (NT_HID (nt), (nt)))
@@ -887,28 +897,32 @@ typedef struct {
         SAC_ND_FREE__DATA__AKS_NHD (nt, freefun)                                         \
     }
 
-#define SAC_ND_ALLOC__DESC__AKS(nt)                                                      \
+#define SAC_ND_ALLOC__DESC__AKS(nt, dim)                                                 \
     {                                                                                    \
-        SAC_HM_MALLOC_FIXED_SIZE (SAC_ND_A_DESC (nt), sizeof (*SAC_ND_A_DESC (nt)))      \
-        SAC_TR_MEM_PRINT (("ND_ALLOC__DESC( %s) at addr: %p", #nt, SAC_ND_A_DESC (nt)))  \
+        SAC_HM_MALLOC_FIXED_SIZE (SAC_ND_A_DESC (nt), SIZE_OF_DESC (SAC_ND_A_DIM (nt))   \
+                                                        * sizeof (*SAC_ND_A_DESC (nt)))  \
+        SAC_TR_MEM_PRINT (                                                               \
+          ("ND_ALLOC__DESC( %s, %d) at addr: %p", #nt, #dim, SAC_ND_A_DESC (nt)))        \
+        SAC_ASSURE_TYPE ((SAC_ND_A_DIM (nt) == dim), "Illegal dimension found!");        \
     }
 
 #define SAC_ND_FREE__DESC__AKS(nt)                                                       \
     {                                                                                    \
         SAC_TR_MEM_PRINT (("ND_FREE__DESC( %s) at addr: %p", #nt, SAC_ND_A_DESC (nt)))   \
-        SAC_HM_FREE_FIXED_SIZE (SAC_ND_A_DESC (nt), sizeof (*SAC_ND_A_DESC (nt)))        \
+        SAC_HM_FREE_FIXED_SIZE (SAC_ND_A_DESC (nt), SIZE_OF_DESC (SAC_ND_A_DIM (nt))     \
+                                                      * sizeof (*SAC_ND_A_DESC (nt)))    \
     }
 
 /*
  * AKD
  */
 
-#define SAC_ND_ALLOC__DATA__AKD(nt) SAC_ND_ALLOC__DATA__AKS (nt)
+#define SAC_ND_ALLOC__DATA__AKD(nt, dim) SAC_ND_ALLOC__DATA__AKS (nt, dim)
 
 #define SAC_ND_FREE__DATA__AKD_NHD(nt, freefun) SAC_ND_FREE__DATA__AKS_NHD (nt, freefun)
 #define SAC_ND_FREE__DATA__AKD_HID(nt, freefun) SAC_ND_FREE__DATA__AKS_HID (nt, freefun)
 
-#define SAC_ND_ALLOC__DESC__AKD(nt) SAC_ND_ALLOC__DESC__AKS (nt)
+#define SAC_ND_ALLOC__DESC__AKD(nt, dim) SAC_ND_ALLOC__DESC__AKS (nt, dim)
 
 #define SAC_ND_FREE__DESC__AKD(nt) SAC_ND_FREE__DESC__AKS (nt)
 
@@ -921,9 +935,25 @@ typedef struct {
 #define SAC_ND_FREE__DATA__AUD_NHD(nt, freefun) SAC_ND_FREE__DATA__AKS_NHD (nt, freefun)
 #define SAC_ND_FREE__DATA__AUD_HID(nt, freefun) SAC_ND_FREE__DATA__AKS_HID (nt, freefun)
 
-#define SAC_ND_ALLOC__DESC__AUD(nt) SAC_ND_ALLOC__DESC__AKS (nt)
+#define SAC_ND_ALLOC__DESC__AUD(nt, dim)                                                 \
+    {                                                                                    \
+        SAC_HM_MALLOC_FIXED_SIZE (SAC_ND_A_DESC (nt),                                    \
+                                  SIZE_OF_DESC (MAX_DIM_OF_DESC /* should be: dim */)    \
+                                    * sizeof (*SAC_ND_A_DESC (nt)))                      \
+        SAC_TR_MEM_PRINT (                                                               \
+          ("ND_ALLOC__DESC( %s, %d) at addr: %p", #nt, #dim, SAC_ND_A_DESC (nt)))        \
+        SAC_ND_A_DESC_DIM (nt) = dim;                                                    \
+    }
 
-#define SAC_ND_FREE__DESC__AUD(nt) SAC_ND_FREE__DESC__AKS (nt)
+#define SAC_ND_FREE__DESC__AUD(nt)                                                       \
+    {                                                                                    \
+        SAC_TR_MEM_PRINT (("ND_FREE__DESC( %s) at addr: %p", #nt, SAC_ND_A_DESC (nt)))   \
+        SAC_HM_FREE_FIXED_SIZE (SAC_ND_A_DESC (nt),                                      \
+                                SIZE_OF_DESC (                                           \
+                                  MAX_DIM_OF_DESC /* should be: SAC_ND_A_DIM( nt) */)    \
+                                  * sizeof (*SAC_ND_A_DESC (nt)))                        \
+    }
+/* should be: SAC_ND_FREE__DESC__AKS( nt) */
 
 /******************************************************************************
  *
@@ -1120,8 +1150,10 @@ typedef struct {
  * ND_CREATE__STRING__DATA( nt, str) :
  *   creates data of a constant character array (string)
  *
+ * ND_CREATE__VECT__DIM( val_size, ...val...) :
+ *   computes dim of a constant vector
  * ND_CREATE__VECT__SHAPE( nt, sdim, val_size, ...val...) :
- *   creates shape of a constant vector
+ *   computes shape of a constant vector
  * ND_CREATE__VECT__DATA( nt, sdim, val_size, ...val..., copyfun) :
  *   creates data of a constant vector
  *
@@ -1137,6 +1169,7 @@ typedef struct {
         SAC_String2Array (SAC_ND_A_FIELD (nt), str);                                     \
     }
 
+/* ND_CREATE__VECT__DIM( ...) is a C-ICM */
 /* ND_CREATE__VECT__SHAPE( ...) is a C-ICM */
 /* ND_CREATE__VECT__DATA( ...) is a C-ICM */
 

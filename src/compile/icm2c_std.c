@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.26  2002/08/02 20:48:50  dkr
+ * ..__DIM.. icms added
+ *
  * Revision 3.25  2002/07/31 16:35:48  dkr
  * - tags reorganized: HID/NHD are seperate classes now
  * - support for arrays of hidden added
@@ -809,7 +812,15 @@ ICMCompileND_SET__SHAPE (char *to_nt, int dim, char **shp_any)
     switch (to_sc) {
     case C_aud:
         INDENT;
-        fprintf (outfile, "SAC_ND_A_DESC_DIM( %s) = SAC_ND_A_DIM( %s) = %d;\n", to_nt,
+        fprintf (outfile,
+                 "/* SAC_ND_A_DESC_DIM( %s) = */ "
+                 /* ND_A_DESC_DIM has already been set by ND_ALLOC__DESC! */
+                 "SAC_ND_A_DIM( %s) = %d;\n",
+                 to_nt, to_nt, dim);
+        INDENT;
+        fprintf (outfile,
+                 "SAC_ASSURE_TYPE( (SAC_ND_A_DESC_DIM( %s) == %d),"
+                 " (\"Assignment with incompatible types found!\"));\n",
                  to_nt, dim);
         /* here is no break missing! */
 
@@ -982,6 +993,14 @@ ICMCompileND_CHECK_MIRROR (char *to_nt, int to_sdim, char *from_nt, int from_sdi
 #include "icm_trace.c"
 #undef ND_CHECK_MIRROR
 
+#if 1
+    if ((runtimecheck & RUNTIMECHECK_TYPE) && (from_sc == C_aud)) {
+        INDENT;
+        fprintf (outfile, "if (SAC_ND_A_DIM( %s) > 0) {\n", from_nt);
+        indent++;
+    }
+#endif
+
     /*
      * check constant parts of mirror
      */
@@ -1070,6 +1089,14 @@ ICMCompileND_CHECK_MIRROR (char *to_nt, int to_sdim, char *from_nt, int from_sdi
         DBUG_ASSERT ((0), "Unknown data class found!");
         break;
     }
+
+#if 1
+    if ((runtimecheck & RUNTIMECHECK_TYPE) && (from_sc == C_aud)) {
+        indent--;
+        INDENT;
+        fprintf (outfile, "}\n");
+    }
+#endif
 
     DBUG_VOID_RETURN;
 }
@@ -1167,7 +1194,7 @@ ICMCompileND_ASSIGN__DESC (char *to_nt, char *from_nt)
                && ((from_sc == C_scl) && ((from_hc == C_nhd) || (from_uc == C_unq)))) {
         /* 'to_nt' has a desc, 'from_nt' has not a desc */
         INDENT;
-        fprintf (outfile, "SAC_ND_ALLOC__DESC( %s)\n", to_nt);
+        fprintf (outfile, "SAC_ND_ALLOC__DESC( %s, 1)\n", to_nt);
         INDENT;
         fprintf (outfile, "SAC_ND_SET__RC( %s, 1)\n", to_nt);
     } else if (((to_sc == C_aks) || (to_sc == C_akd) || (to_sc == C_aud))
@@ -1181,11 +1208,11 @@ ICMCompileND_ASSIGN__DESC (char *to_nt, char *from_nt)
         if ((to_sc == C_aud) || ((from_sc == C_aud) && (from_uc == C_nuq))) {
             /*
              * 'from_nt' is a non-unique hidden and cannot be reused by 'to_nt'
-             *   -> ND_ALLOC__DESC( to_nt)
+             *   -> ND_ALLOC__DESC( to_nt, 1)
              *   -> ND_DEC_RC_FREE( from_nt) in ND_ASSIGN__DATA
              */
             INDENT;
-            fprintf (outfile, "SAC_ND_ALLOC__DESC( %s)\n", to_nt);
+            fprintf (outfile, "SAC_ND_ALLOC__DESC( %s, 1)\n", to_nt);
         } else {
             INDENT;
             fprintf (outfile, "SAC_ND_A_DESC( %s) = SAC_ND_A_DESC( %s);\n", to_nt,
@@ -1368,13 +1395,13 @@ ICMCompileND_COPY (char *to_nt, int to_sdim, char *from_nt, int from_sdim, char 
 
     /* allocate descriptor */
     INDENT;
-    fprintf (outfile, "SAC_ND_ALLOC_BEGIN( %s, 1)\n", to_nt);
+    fprintf (outfile, "SAC_ND_ALLOC_BEGIN( %s, 1, SAC_ND_A_DIM( %s))\n", to_nt, from_nt);
 
     /* copy descriptor entries and mirror */
     ICMCompileND_COPY__SHAPE (to_nt, to_sdim, from_nt, from_sdim);
 
     INDENT;
-    fprintf (outfile, "SAC_ND_ALLOC_END( %s, 1)\n", to_nt);
+    fprintf (outfile, "SAC_ND_ALLOC_END( %s, 1, SAC_ND_A_DIM( %s))\n", to_nt, from_nt);
 
     INDENT;
     fprintf (outfile, "SAC_ND_COPY__DATA( %s, %s, %s)\n", to_nt, from_nt, copyfun);
@@ -1535,6 +1562,58 @@ ICMCompileND_MAKE_UNIQUE (char *to_nt, int to_sdim, char *from_nt, int from_sdim
     indent--;
     INDENT;
     fprintf (outfile, "SAC_IS_LASTREF__BLOCK_END( %s)\n", from_nt);
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileND_CREATE__VECT__DIM( int val_size, char **vala_any)
+ *
+ * description:
+ *   implements the compilation of the following ICM:
+ *
+ *   ND_CREATE__VECT__DIM( val_size, vala_0 ... vala_n)
+ *
+ ******************************************************************************/
+
+void
+ICMCompileND_CREATE__VECT__DIM (int val_size, char **vala_any)
+{
+    bool entries_are_scalars;
+    int i;
+
+    DBUG_ENTER ("ICMCompileND_CREATE__VECT__DIM");
+
+#define ND_CREATE__VECT__DIM
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef ND_CREATE__VECT__DIM
+
+    /*
+     * CAUTION:
+     * 'vala_any[i]' is either a tagged identifier or a constant scalar!!!
+     */
+
+    if (val_size > 0) {
+        entries_are_scalars = FALSE;
+        for (i = 0; i < val_size; i++) {
+            if ((vala_any[i][0] != '(') ||
+                /* not a tagged id -> is a constant scalar! */
+                (ICUGetShapeClass (vala_any[i]) == C_scl)) {
+                entries_are_scalars = TRUE;
+            }
+        }
+
+        if (entries_are_scalars) {
+            fprintf (outfile, "1");
+        } else {
+            fprintf (outfile, "SAC_ND_A_DIM( %s) + 1", vala_any[0]);
+        }
+    } else {
+        fprintf (outfile, "SAC_ICM_UNDEF()");
+    }
 
     DBUG_VOID_RETURN;
 }
@@ -1934,6 +2013,70 @@ PrfSel_Data (char *to_nt, int to_sdim, char *from_nt, int from_sdim, void *idx,
 /******************************************************************************
  *
  * Function:
+ *   void ICMCompileND_PRF_SEL__DIM_id( char *from_nt, int from_sdim,
+ *                                      int idx_size, char *idx_nt)
+ *
+ * Description:
+ *   implements the compilation of the following ICM:
+ *
+ *   ND_PRF_SEL__DIM_id( from_nt, from_sdim, idx_size, idx_nt)
+ *
+ ******************************************************************************/
+
+void
+ICMCompileND_PRF_SEL__DIM_id (char *from_nt, int from_sdim, int idx_size, char *idx_nt)
+{
+    DBUG_ENTER ("ICMCompileND_PRF_SEL__DIM_id");
+
+#define ND_PRF_SEL__DIM_id
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef ND_PRF_SEL__DIM_id
+
+    fprintf (outfile, "SAC_ND_A_DIM( %s) - SAC_ND_A_SIZE( %s)", from_nt, idx_nt);
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   void ICMCompileND_PRF_SEL__DIM_arr( char *from_nt, int from_sdim,
+ *                                       int idx_size, char **idxa_any)
+ *
+ * Description:
+ *   implements the compilation of the following ICM:
+ *
+ *   ND_PRF_SEL__DIM_arr( from_nt, from_sdim, idx_size, ...idxa_any...)
+ *
+ ******************************************************************************/
+
+void
+ICMCompileND_PRF_SEL__DIM_arr (char *from_nt, int from_sdim, int idx_size,
+                               char **idxa_any)
+{
+    DBUG_ENTER ("ICMCompileND_PRF_SEL__DIM_arr");
+
+#define ND_PRF_SEL__DIM_arr
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef ND_PRF_SEL__DIM_arr
+
+    /*
+     * CAUTION:
+     * 'idxa_any[i]' is either a tagged identifier or a constant scalar!!
+     */
+
+    DBUG_ASSERT ((idx_size >= 0), "illegal size found!");
+
+    fprintf (outfile, "SAC_ND_A_DIM( %s) - %d", from_nt, idx_size);
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * Function:
  *   void ICMCompileND_PRF_SEL__SHAPE_id( char *to_nt, int to_sdim,
  *                                        char *from_nt, int from_sdim,
  *                                        int idx_size, char *idx_nt)
@@ -1955,6 +2098,50 @@ ICMCompileND_PRF_SEL__SHAPE_id (char *to_nt, int to_sdim, char *from_nt, int fro
 #include "icm_comment.c"
 #include "icm_trace.c"
 #undef ND_PRF_SEL__SHAPE_id
+
+    INDENT;
+    fprintf (outfile,
+             "SAC_TR_PRF_PRINT("
+             " (\"ND_PRF_SEL__SHAPE( %s, %d, %s, %d, ...)\"))\n",
+             to_nt, to_sdim, from_nt, from_sdim);
+
+    if (to_sdim < 0) {
+        DBUG_ASSERT ((0), "not yet implemented");
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   void ICMCompileND_PRF_SEL__SHAPE_arr( char *to_nt, int to_sdim,
+ *                                         char *from_nt, int from_sdim,
+ *                                         int idx_size, char **idxa_any)
+ *
+ * Description:
+ *   implements the compilation of the following ICM:
+ *
+ *   ND_PRF_SEL__SHAPE_arr( to_nt, to_sdim, from_nt, from_sdim,
+ *                          idx_size, ...idxa_any...)
+ *
+ ******************************************************************************/
+
+void
+ICMCompileND_PRF_SEL__SHAPE_arr (char *to_nt, int to_sdim, char *from_nt, int from_sdim,
+                                 int idx_size, char **idxa_any)
+{
+    DBUG_ENTER ("ICMCompileND_PRF_SEL__SHAPE_arr");
+
+#define ND_PRF_SEL__SHAPE_arr
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef ND_PRF_SEL__SHAPE_arr
+
+    /*
+     * CAUTION:
+     * 'idxa_any[i]' is either a tagged identifier or a constant scalar!!
+     */
 
     INDENT;
     fprintf (outfile,
@@ -2015,50 +2202,6 @@ ICMCompileND_PRF_SEL__DATA_id (char *to_nt, int to_sdim, char *from_nt, int from
 
     PrfSel_Data (to_nt, to_sdim, from_nt, from_sdim, idx_nt, idx_size, SizeId, ReadId,
                  copyfun);
-
-    DBUG_VOID_RETURN;
-}
-
-/******************************************************************************
- *
- * Function:
- *   void ICMCompileND_PRF_SEL__SHAPE_arr( char *to_nt, int to_sdim,
- *                                         char *from_nt, int from_sdim,
- *                                         int idx_size, char **idxa_any)
- *
- * Description:
- *   implements the compilation of the following ICM:
- *
- *   ND_PRF_SEL__SHAPE_arr( to_nt, to_sdim, from_nt, from_sdim,
- *                          idx_size, ...idxa_any...)
- *
- ******************************************************************************/
-
-void
-ICMCompileND_PRF_SEL__SHAPE_arr (char *to_nt, int to_sdim, char *from_nt, int from_sdim,
-                                 int idx_size, char **idxa_any)
-{
-    DBUG_ENTER ("ICMCompileND_PRF_SEL__SHAPE_arr");
-
-#define ND_PRF_SEL__SHAPE_arr
-#include "icm_comment.c"
-#include "icm_trace.c"
-#undef ND_PRF_SEL__SHAPE_arr
-
-    /*
-     * CAUTION:
-     * 'idxa_any[i]' is either a tagged identifier or a constant scalar!!
-     */
-
-    INDENT;
-    fprintf (outfile,
-             "SAC_TR_PRF_PRINT("
-             " (\"ND_PRF_SEL__SHAPE( %s, %d, %s, %d, ...)\"))\n",
-             to_nt, to_sdim, from_nt, from_sdim);
-
-    if (to_sdim < 0) {
-        DBUG_ASSERT ((0), "not yet implemented");
-    }
 
     DBUG_VOID_RETURN;
 }
