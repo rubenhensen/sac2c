@@ -1,6 +1,10 @@
 #
 # $Log$
-# Revision 1.4  1994/12/01 17:35:42  hw
+# Revision 1.5  1994/12/05 13:00:58  hw
+# called  'make deps'
+# ,.
+#
+# Revision 1.4  1994/12/01  17:35:42  hw
 # added -I../typecheck
 #
 # Revision 1.3  1994/11/22  13:48:29  sbs
@@ -38,6 +42,7 @@ deps:
 
 clean:
 	$(RM) *.o *.bak
+
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
 Error.o: Error.h /usr/include/stdio.h
@@ -46,7 +51,7 @@ main.o: node_info.mac prf_node_info.mac Error.h usage.h ../flatten/flatten.h
 main.o: ../print/print.h ../typecheck/typecheck.h ../scanparse/scnprs.h
 main.o: /usr/include/stdlib.h /usr/include/sys/stdtypes.h
 main.o: /usr/include/string.h
-my_debug.o: node_info.mac prf_node_info.mac
+my_debug.o: tree.h node_info.mac prf_node_info.mac ../print/convert.h
 traverse.o: /usr/include/stdio.h /usr/include/stdlib.h
 traverse.o: /usr/include/sys/stdtypes.h tree.h node_info.mac
 traverse.o: prf_node_info.mac Error.h ../../inc/dbug.h my_debug.h
