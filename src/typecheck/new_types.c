@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.46  2003/04/08 08:14:57  sbs
+ * nasty error in CmpTypes eliminated
+ *
  * Revision 3.45  2003/04/07 14:31:32  sbs
  * support for AKV types added.
  * functions TYGetValue, TYIsProdOfAKV, and TYIsProdContainingAKV built
@@ -2980,14 +2983,6 @@ TYCmpTypes (ntype *t1, ntype *t2)
     case TC_akd:
         switch (NTYPE_CON (t2)) {
         case TC_akv:
-            if (TYCmpTypes (AKS_BASE (t1), AKV_BASE (t2)) == TY_eq) {
-                if (SHCompareShapes (AKS_SHP (t1), COGetShape (AKV_CONST (t2)))) {
-                    res = TY_gt;
-                } else {
-                    res = TY_hcs;
-                }
-            }
-            break;
         case TC_aks:
             if (TYCmpTypes (AKD_BASE (t1), AKS_BASE (t2)) == TY_eq) {
                 if (TYGetDim (t1) == TYGetDim (t2)) {
@@ -3027,25 +3022,9 @@ TYCmpTypes (ntype *t1, ntype *t2)
     case TC_audgz:
         switch (NTYPE_CON (t2)) {
         case TC_akv:
-            if (TYCmpTypes (AKS_BASE (t1), AKV_BASE (t2)) == TY_eq) {
-                if (SHCompareShapes (AKS_SHP (t1), COGetShape (AKV_CONST (t2)))) {
-                    res = TY_gt;
-                } else {
-                    res = TY_hcs;
-                }
-            }
-            break;
         case TC_aks:
-            if (TYCmpTypes (AUDGZ_BASE (t1), AKS_BASE (t2)) == TY_eq) {
-                if (TYGetDim (t2) > 0) {
-                    res = TY_gt;
-                } else {
-                    res = TY_hcs;
-                }
-            }
-            break;
         case TC_akd:
-            if (TYCmpTypes (AUDGZ_BASE (t1), AKD_BASE (t2)) == TY_eq) {
+            if (TYCmpTypes (AUDGZ_BASE (t1), TYGetScalar (t2)) == TY_eq) {
                 if (TYGetDim (t2) > 0) {
                     res = TY_gt;
                 } else {
@@ -3070,26 +3049,10 @@ TYCmpTypes (ntype *t1, ntype *t2)
     case TC_aud:
         switch (NTYPE_CON (t2)) {
         case TC_akv:
-            if (TYCmpTypes (AKS_BASE (t1), AKV_BASE (t2)) == TY_eq) {
-                if (SHCompareShapes (AKS_SHP (t1), COGetShape (AKV_CONST (t2)))) {
-                    res = TY_gt;
-                } else {
-                    res = TY_hcs;
-                }
-            }
-            break;
         case TC_aks:
-            if (TYCmpTypes (AUD_BASE (t1), AKS_BASE (t2)) == TY_eq) {
-                res = TY_gt;
-            }
-            break;
         case TC_akd:
-            if (TYCmpTypes (AUD_BASE (t1), AKD_BASE (t2)) == TY_eq) {
-                res = TY_gt;
-            }
-            break;
         case TC_audgz:
-            if (TYCmpTypes (AUD_BASE (t1), AUDGZ_BASE (t2)) == TY_eq) {
+            if (TYCmpTypes (AUD_BASE (t1), TYGetScalar (t2)) == TY_eq) {
                 res = TY_gt;
             }
             break;
