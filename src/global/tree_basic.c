@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.17  1997/03/19 13:38:16  cg
+ * Revision 1.18  1997/04/25 09:12:13  sbs
+ * DBUG_ASSERT in MakeNodelist adjusted (no varargs)
+ *
+ * Revision 1.17  1997/03/19  13:38:16  cg
  * Added new data type 'deps' with respective access macros and
  * creation function
  *
@@ -274,8 +277,7 @@ MakeNodelist (node *node, statustype status, nodelist *next)
         NODELIST_ATTRIB (tmp) = ST_regular;
         break;
     default:
-        DBUG_ASSERT (0, ("Wrong node type in MakeNodelist (%s)",
-                         mdb_nodetype[NODE_TYPE (node)]));
+        DBUG_ASSERT (0, ("Wrong node type in MakeNodelist"));
     }
 
     DBUG_RETURN (tmp);
