@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.154  2005/03/19 23:19:45  sbs
+ * AUD support added!!!!!!
+ *
  * Revision 3.153  2005/02/24 15:53:47  cg
  * Removed obsolete code for handling LaC funs.
  *
@@ -231,7 +234,10 @@ struct INFO {
     int schedid;
     node *schedinit;
     node *idxvec;
+    node *lowervec;
+    node *uppervec;
     node *icmchain;
+    bool isfold;
 };
 /*
  * INFO macros
@@ -244,7 +250,10 @@ struct INFO {
 #define INFO_COMP_SCHEDULERID(n) (n->schedid)
 #define INFO_COMP_SCHEDULERINIT(n) (n->schedinit)
 #define INFO_COMP_IDXVEC(n) (n->idxvec)
+#define INFO_COMP_LOWERVEC(n) (n->lowervec)
+#define INFO_COMP_UPPERVEC(n) (n->uppervec)
 #define INFO_COMP_ICMCHAIN(n) (n->icmchain)
+#define INFO_COMP_ISFOLD(n) (n->isfold)
 
 /*
  * INFO functions
@@ -5230,8 +5239,10 @@ MakeIcm_WL_SET_OFFSET (node *arg_node, node *assigns)
 node *
 COMPwith (node *arg_node, info *arg_info)
 {
-    node *icm_chain = NULL, *body_icms;
-    node *res_ids, *idx_id;
+    node *icm_chain = NULL, *body_icms, *default_icms;
+    node *let_neutral;
+    node *res_ids, *idx_id, *lower_id, *upper_id;
+    bool isfold;
 
     DBUG_ENTER ("COMPwith");
 
@@ -5244,14 +5255,21 @@ COMPwith (node *arg_node, info *arg_info)
      * Whereas the former is a back-link only (and thus has to be copied!), the latter
      * has been produced for insertion here (and thus can be used as is!).
      *  Furthermore, note that the index vector comes as N_id as we are after EMM!!
+     * Another aspect to be noticed here is that COMPpart relies on INFO_COMP_ISFOLD to be
+     * set properly since for With-Loops different code has to be created.
      */
     DBUG_ASSERT ((WITH_PARTS (arg_node) < 2),
                  "with-loop with non-AKS withid and multiple generators found!");
 
+    isfold = (NODE_TYPE (WITH_WITHOP (arg_node)) == N_fold);
+    INFO_COMP_ISFOLD (arg_info) = isfold;
     DBUG_ASSERT (WITH_PART (arg_node) != NULL, "missing part in AUD with loop!");
     WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
 
     idx_id = INFO_COMP_IDXVEC (arg_info);
+    lower_id = INFO_COMP_LOWERVEC (arg_info);
+    upper_id = INFO_COMP_UPPERVEC (arg_info);
+
     INFO_COMP_IDXVEC (arg_info) = NULL;
 
     DBUG_ASSERT (WITH_CODE (arg_node) != NULL, "missing code in AUD with loop!");
@@ -5259,21 +5277,61 @@ COMPwith (node *arg_node, info *arg_info)
 
     body_icms = DUPdoDupTree (BLOCK_INSTR (WITH_CBLOCK (arg_node)));
 
-    icm_chain
-      = TCmakeAssignIcm2 ("AUD_WL_END",
-                          TCmakeIdCopyStringNt (ID_NAME (idx_id), ID_TYPE (idx_id)),
-                          TCmakeIdCopyStringNt (IDS_NAME (res_ids), IDS_TYPE (res_ids)),
-                          icm_chain);
-    icm_chain = TCmakeAssignIcm0 ("AUD_WL_COND_END", icm_chain);
-    icm_chain = TCmakeAssignIcm0 ("AUD_WL_COND_DEFAULT", icm_chain);
-    icm_chain = TCappendAssign (body_icms, icm_chain);
-    icm_chain = TCmakeAssignIcm0 ("AUD_WL_COND_BODY", icm_chain);
-    icm_chain = TCappendAssign (INFO_COMP_ICMCHAIN (arg_info), icm_chain);
-    icm_chain
-      = TCmakeAssignIcm2 ("AUD_WL_BEGIN",
-                          TCmakeIdCopyStringNt (ID_NAME (idx_id), ID_TYPE (idx_id)),
-                          TCmakeIdCopyStringNt (IDS_NAME (res_ids), IDS_TYPE (res_ids)),
-                          icm_chain);
+    if (isfold) {
+        icm_chain
+          = TCmakeAssignIcm3 ("AUD_WL_FOLD_END",
+                              TCmakeIdCopyStringNt (ID_NAME (idx_id), ID_TYPE (idx_id)),
+                              TCmakeIdCopyStringNt (ID_NAME (lower_id),
+                                                    ID_TYPE (lower_id)),
+                              TCmakeIdCopyStringNt (ID_NAME (upper_id),
+                                                    ID_TYPE (upper_id)),
+                              icm_chain);
+        icm_chain = TCmakeAssignIcm0 ("AUD_WL_COND_END", icm_chain);
+        icm_chain = TCappendAssign (body_icms, icm_chain);
+        icm_chain = TCmakeAssignIcm0 ("AUD_WL_COND_BODY", icm_chain);
+        icm_chain = TCappendAssign (INFO_COMP_ICMCHAIN (arg_info), icm_chain);
+        icm_chain
+          = TCmakeAssignIcm3 ("AUD_WL_FOLD_BEGIN",
+                              TCmakeIdCopyStringNt (ID_NAME (idx_id), ID_TYPE (idx_id)),
+                              TCmakeIdCopyStringNt (ID_NAME (lower_id),
+                                                    ID_TYPE (lower_id)),
+                              TCmakeIdCopyStringNt (ID_NAME (upper_id),
+                                                    ID_TYPE (upper_id)),
+                              icm_chain);
+        let_neutral = TBmakeLet (DUPdoDupNode (res_ids),
+                                 DUPdoDupNode (FOLD_NEUTRAL (WITH_WITHOP (arg_node))));
+
+        icm_chain = TCappendAssign (COMPdoCompile (let_neutral), icm_chain);
+
+    } else {
+
+        if (CODE_NEXT (WITH_CODE (arg_node)) == NULL) {
+            CTIabortLine (NODE_LINE (arg_node),
+                          "cannot infer default element for with-loop");
+        }
+
+        default_icms
+          = DUPdoDupTree (BLOCK_INSTR (CODE_CBLOCK (CODE_NEXT (WITH_CODE (arg_node)))));
+
+        icm_chain
+          = TCmakeAssignIcm2 ("AUD_WL_END",
+                              TCmakeIdCopyStringNt (ID_NAME (idx_id), ID_TYPE (idx_id)),
+                              TCmakeIdCopyStringNt (IDS_NAME (res_ids),
+                                                    IDS_TYPE (res_ids)),
+                              icm_chain);
+        icm_chain = TCmakeAssignIcm0 ("AUD_WL_COND_END", icm_chain);
+        icm_chain = TCappendAssign (default_icms, icm_chain);
+        icm_chain = TCmakeAssignIcm0 ("AUD_WL_COND_DEFAULT", icm_chain);
+        icm_chain = TCappendAssign (body_icms, icm_chain);
+        icm_chain = TCmakeAssignIcm0 ("AUD_WL_COND_BODY", icm_chain);
+        icm_chain = TCappendAssign (INFO_COMP_ICMCHAIN (arg_info), icm_chain);
+        icm_chain
+          = TCmakeAssignIcm2 ("AUD_WL_BEGIN",
+                              TCmakeIdCopyStringNt (ID_NAME (idx_id), ID_TYPE (idx_id)),
+                              TCmakeIdCopyStringNt (IDS_NAME (res_ids),
+                                                    IDS_TYPE (res_ids)),
+                              icm_chain);
+    }
 
     INFO_COMP_ICMCHAIN (arg_info) = NULL;
 
@@ -5332,7 +5390,8 @@ COMPwithid (node *arg_node, info *arg_info)
  *
  * @brief
  *     creates an ICM for the generator-check and returns it via INFO_COMP_ICMCHAIN.
- *     expects INFO_COMP_IDXVEC to be set properly!
+ *     returns lower and upper bound in INFO_COMP_LOWERVEC and INFO_COMP_UPPERVEC,
+ *respectively. expects INFO_COMP_IDXVEC and INFO_COMP_ISFOLD to be set properly!
  *     ATTENTION: this is used in case of AUD only! i.e. when being called
  *     from N_with but NOT from N_with2!
  *
@@ -5350,17 +5409,21 @@ COMPgenerator (node *arg_node, info *arg_info)
     width = GENERATOR_WIDTH (arg_node);
 
     idx = INFO_COMP_IDXVEC (arg_info);
+    INFO_COMP_LOWERVEC (arg_info) = lower;
+    INFO_COMP_UPPERVEC (arg_info) = upper;
 
     if (step == NULL) {
         INFO_COMP_ICMCHAIN (arg_info)
-          = TCmakeAssignIcm3 ("AUD_WL_LU_GEN",
+          = TCmakeAssignIcm3 ((INFO_COMP_ISFOLD (arg_info) ? "AUD_WL_FOLD_LU_GEN"
+                                                           : "AUD_WL_LU_GEN"),
                               TCmakeIdCopyStringNt (ID_NAME (lower), ID_TYPE (lower)),
                               TCmakeIdCopyStringNt (ID_NAME (idx), ID_TYPE (idx)),
                               TCmakeIdCopyStringNt (ID_NAME (upper), ID_TYPE (upper)),
                               NULL);
     } else if (width == NULL) {
         INFO_COMP_ICMCHAIN (arg_info)
-          = TCmakeAssignIcm4 ("AUD_WL_LUS_GEN",
+          = TCmakeAssignIcm4 ((INFO_COMP_ISFOLD (arg_info) ? "AUD_WL_FOLD_LUS_GEN"
+                                                           : "AUD_WL_LUS_GEN"),
                               TCmakeIdCopyStringNt (ID_NAME (lower), ID_TYPE (lower)),
                               TCmakeIdCopyStringNt (ID_NAME (idx), ID_TYPE (idx)),
                               TCmakeIdCopyStringNt (ID_NAME (upper), ID_TYPE (upper)),
@@ -5368,7 +5431,8 @@ COMPgenerator (node *arg_node, info *arg_info)
                               NULL);
     } else {
         INFO_COMP_ICMCHAIN (arg_info)
-          = TCmakeAssignIcm5 ("AUD_WL_LUSW_GEN",
+          = TCmakeAssignIcm5 ((INFO_COMP_ISFOLD (arg_info) ? "AUD_WL_FOLD_LUSW_GEN"
+                                                           : "AUD_WL_LUSW_GEN"),
                               TCmakeIdCopyStringNt (ID_NAME (lower), ID_TYPE (lower)),
                               TCmakeIdCopyStringNt (ID_NAME (idx), ID_TYPE (idx)),
                               TCmakeIdCopyStringNt (ID_NAME (upper), ID_TYPE (upper)),
@@ -5546,9 +5610,9 @@ COMPwith2 (node *arg_node, info *arg_info)
              * compile 'tmp_ids = neutral' !!!
              */
             let_neutral
-              = TBmakeLet (DUPdoDupNode (FOLD_NEUTRAL (withop)), DUPdoDupNode (tmp_ids));
+              = TBmakeLet (DUPdoDupNode (tmp_ids), DUPdoDupNode (FOLD_NEUTRAL (withop)));
 
-            fold_icms = TBmakeAssign (COMPdoCompile (let_neutral), fold_icms);
+            fold_icms = TCappendAssign (COMPdoCompile (let_neutral), fold_icms);
         }
 
         tmp_ids = IDS_NEXT (tmp_ids);
@@ -6205,7 +6269,7 @@ COMPwlgridx (node *arg_node, info *arg_info)
     dim = WLGRIDX_DIM (arg_node);
 
     mt_active = WITH2_MT (wlnode);
-    is_fitted = WLGRID_ISFITTED (arg_node);
+    is_fitted = WLGRIDX_FITTED (arg_node);
 
     if (WLGRIDX_ISNOOP (arg_node)) {
         node_icms = MakeIcm_WL_ADJUST_OFFSET (arg_node, NULL);
