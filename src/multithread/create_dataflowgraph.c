@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.3  2004/08/06 17:24:38  skt
+ * some adaptions made
+ *
  * Revision 1.2  2004/08/05 13:50:18  skt
  * welcome to the new INFO structure
  *
@@ -49,23 +52,39 @@
  */
 struct INFO {
     node *dataflowgraph;
-    node *outerassignment;
-    node *actualnode;
-    int executionmode;
+    node *dataflownode;
+    node *dataflowgraph_cond;
+    node *dataflownode_cond;
     int withdeep;
+    bool condflag;
 };
 
 /*
  * INFO macros
  *   node*      DATAFLOWGRAPH  (the dataflowgraph of the currunt function
  *                              as far as it has been constructed)
- *   int        EXECUTIONMODE  (the current execution mode)
+ *   node*      CURRENTDFNODE  (the the dataflownode belonging to the current
+ *                              assignment)
+ *   int        WITHDEEP       (counts the deepness of a withloop)
+ *
+ *    There's a problem concerning N_conds:
+ *      N_block
+ *       |
+ *      N_assign - N_cond - N_block (then) HERE
+ *       |                \ N_block (else) HERE
+ *      ...
+ *    => you have to handle two different dataflowgraphs, when you are HERE
+ *       that's the reason for
+ *   bool       WITHINCOND,
+ *   node*      DATAFLOWGRAPH_COND and
+ *   node*      CURRENTDFNODE_COND.
  */
 #define INFO_CDFG_DATAFLOWGRAPH(n) (n->dataflowgraph)
-#define INFO_CDFG_OUTERASSIGN(n) (n->outerassignment)
-#define INFO_CDFG_ACTNODE(n) (n->actualnode)
-#define INFO_CDFG_EXECUTIONMODE(n) (n->executionmode)
+#define INFO_CDFG_CURRENTDFNODE(n) (n->dataflownode)
 #define INFO_CDFG_WITHDEEP(n) (n->withdeep)
+#define INFO_CDFG_WITHINCOND(n) (n->condflag)
+#define INFO_CDFG_DATAFLOWGRAPH_COND(n) (n->dataflowgraph_cond)
+#define INFO_CDFG_CURRENTDFNODE_COND(n) (n->dataflownode_cond)
 
 /*
  * INFO functions
@@ -80,10 +99,11 @@ MakeInfo ()
     result = Malloc (sizeof (info));
 
     INFO_CDFG_DATAFLOWGRAPH (result) = NULL;
-    INFO_CDFG_OUTERASSIGN (result) = NULL;
-    INFO_CDFG_ACTNODE (result) = NULL;
-    INFO_CDFG_EXECUTIONMODE (result) = MUTH_ANY;
+    INFO_CDFG_CURRENTDFNODE (result) = NULL;
     INFO_CDFG_WITHDEEP (result) = 0;
+    INFO_CDFG_WITHINCOND (result) = FALSE;
+    INFO_CDFG_DATAFLOWGRAPH_COND (result) = NULL;
+    INFO_CDFG_CURRENTDFNODE_COND (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -136,128 +156,193 @@ CreateDataflowgraph (node *arg_node)
 
 /** <!--********************************************************************->>
  *
- * @fn node *CDFGfundef(node *arg_node, info *arg_info)
+ * @fn node *CDFGblock(node *arg_node, info *arg_info)
  *
  * @brief
  *
- ******************************************************************************/
+ * @param arg_node
+ * @param arg_info
+ * @return the block-node with its belonging dataflowgraph
+ *
+ *****************************************************************************/
 node *
-CDFGfundef (node *arg_node, info *arg_info)
+CDFGblock (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CDFGfundef");
+    node *old_dataflowgraph;
+    node *old_dataflowgraph_cond;
+    DBUG_ENTER ("CDFGblock");
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_block), "node is not a N_block");
 
-    DBUG_PRINT ("CDFG", ("Welcome to ASMRAfundef"));
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_fundef), "node is not a N_fundef");
+    /* push info... */
+    old_dataflowgraph = INFO_CDFG_DATAFLOWGRAPH (arg_info);
+    old_dataflowgraph_cond = INFO_CDFG_DATAFLOWGRAPH_COND (arg_info);
 
-    INFO_CDFG_WITHDEEP (arg_info) = 0;
+    /* avoid to build dataflowgraphs within with-loops */
+    if (INFO_CDFG_WITHDEEP (arg_info) == 0) {
+        /* Initialisation of the dataflowgraph for this N_block */
+        BLOCK_DATAFLOWGRAPH (arg_node) = MakeDataflowgraph ();
 
-    /* Initialisation of the Dataflowgraph for this N_fundef */
-    INFO_CDFG_EXECUTIONMODE (arg_info) = MUTH_ANY;
-    INFO_CDFG_DATAFLOWGRAPH (arg_info)
-      = InitiateDataflowgraph (FUNDEF_NAME (arg_node), arg_info);
+        /* last question - is it a cond-block (then/else) or not */
+        if (INFO_CDFG_WITHINCOND (arg_info) == FALSE) {
+            DBUG_ASSERT ((INFO_CDFG_DATAFLOWGRAPH (arg_info) == NULL),
+                         "is impossible to have a dataflowgraph yet");
+            DBUG_ASSERT ((INFO_CDFG_CURRENTDFNODE (arg_info) == NULL),
+                         "is impossible to have a dataflownode yet");
+            INFO_CDFG_DATAFLOWGRAPH (arg_info) = BLOCK_DATAFLOWGRAPH (arg_node);
+        } else {
+            DBUG_ASSERT ((INFO_CDFG_DATAFLOWGRAPH_COND (arg_info) == NULL),
+                         "is impossible to have a cond-dataflowgraph yet");
+            DBUG_ASSERT ((INFO_CDFG_CURRENTDFNODE_COND (arg_info) == NULL),
+                         "is impossible to have a cond-dataflownode yet");
+            INFO_CDFG_DATAFLOWGRAPH_COND (arg_info) = BLOCK_DATAFLOWGRAPH (arg_node);
+        }
+    }
 
     /* continue traversal */
-    DBUG_PRINT ("CDFG", ("trav into body"));
-    FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
-    DBUG_PRINT ("CDFG", ("trav from body"));
+    DBUG_PRINT ("CDFG", ("trav into instruction(s)"));
+    BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
+    DBUG_PRINT ("CDFG", ("trav from instruction(s)"));
 
-    /* now the dataflowgraph is ready to be used for rearranging the assignment*/
-#if CDFG_DEBUG
-    PrintDataflowgraph (INFO_CDFG_DATAFLOWGRAPH (arg_info), FUNDEF_NAME (arg_node));
-#endif
-
-    FUNDEF_DATAFLOWGRAPH (arg_node) = INFO_CDFG_DATAFLOWGRAPH (arg_info);
-
-    if (FUNDEF_NEXT (arg_node) != NULL) {
-        DBUG_PRINT ("CDFG", ("trav into fundef-next"));
-        FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
-        DBUG_PRINT ("CDFG", ("trav from fundef-next"));
+    if (INFO_CDFG_WITHINCOND (arg_info) == FALSE) {
+        PrintDataflowgraph (INFO_CDFG_DATAFLOWGRAPH (arg_info));
+    } else {
+        PrintDataflowgraph (INFO_CDFG_DATAFLOWGRAPH_COND (arg_info));
     }
+
+    /* pop info... */
+    INFO_CDFG_DATAFLOWGRAPH (arg_info) = old_dataflowgraph;
+    INFO_CDFG_DATAFLOWGRAPH_COND (arg_info) = old_dataflowgraph_cond;
 
     DBUG_RETURN (arg_node);
 }
 
+/** <!--********************************************************************->>
+ *
+ * @fn node *CDFGassign(node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ * @param arg_node
+ * @param arg_info
+ * @return
+ *
+ *****************************************************************************/
 node *
 CDFGassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CDFGassign");
+    node *old_dataflownode;
+    node *old_dataflownode_cond;
 
+    DBUG_ENTER ("CDFGassign");
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_assign), "node is not a N_assign");
 
-    /* there's a problem concerning finding the correct assign belonging to a
-       N_let (the new nodes of the dataflowgraph are build in N_let-nodes):
-       the current structure is
-        N_block
-         |
-        N_assign(a)
-         |
-        N_assign(b1) -> N_mt -> N_block -> N_assign(b2) -> instr
-         |
-        N_assign(c1) -> N_st -> N_block -> N_assign(c2) -> instr
-        ...
-       the corresponding N_avis-nodes point to (a),(b2) and (c2), but if you want
-       to rearrange the assignment-chain, you need pointer to (a),(b1) and (c1);
-       so you habe to keep the assign in your mind if the current executionmode
-       is MUTH_ANY (if the current executionmode != MUTH_ANY, you are already in
-       an ex-, st- or mt-cell) */
+    /* push info... */
+    old_dataflownode = INFO_CDFG_CURRENTDFNODE (arg_info);
+    old_dataflownode_cond = INFO_CDFG_CURRENTDFNODE_COND (arg_info);
 
-    INFO_CDFG_EXECUTIONMODE (arg_info) = ASSIGN_EXECMODE (arg_node);
-
-    if (ASSIGN_EXECMODE (arg_node) == MUTH_ANY) {
-        INFO_CDFG_OUTERASSIGN (arg_info) = arg_node;
+    /* only assignments on the top-level will be represented in the dataflowgraph
+     */
+    if (INFO_CDFG_WITHDEEP (arg_info) == 0
+        && (NODE_TYPE (ASSIGN_INSTR (arg_node)) != N_return)) {
+        /* are we within a conditional? No - handle the "outer" dataflowgraph
+         *                              Yes - handle the "inner" cond-dataflowgraph
+         */
+        if (INFO_CDFG_WITHINCOND (arg_info) == FALSE) {
+            INFO_CDFG_CURRENTDFNODE (arg_info)
+              = MakeDataflownode (arg_node, StringCopy ("DF__test"));
+            INFO_CDFG_DATAFLOWGRAPH (arg_info)
+              = AddDataflownode (INFO_CDFG_DATAFLOWGRAPH (arg_info),
+                                 INFO_CDFG_CURRENTDFNODE (arg_info));
+        } else {
+            INFO_CDFG_CURRENTDFNODE_COND (arg_info)
+              = MakeDataflownode (arg_node, StringCopy ("DF__test"));
+            INFO_CDFG_DATAFLOWGRAPH_COND (arg_info)
+              = AddDataflownode (INFO_CDFG_DATAFLOWGRAPH_COND (arg_info),
+                                 INFO_CDFG_CURRENTDFNODE_COND (arg_info));
+        }
     }
-
     /* if it's the return-instruction, one need not to traverse into the
        instruction, because the dataflownode for return already exists
+       -> the sink
     */
     if (NODE_TYPE (ASSIGN_INSTR (arg_node)) != N_return) {
         DBUG_PRINT ("CDFG", ("trav into instruction"));
         ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
         DBUG_PRINT ("CDFG", ("trav from instruction"));
+
+        /* continue traversal */
+        if (ASSIGN_NEXT (arg_node) != NULL) {
+            DBUG_PRINT ("CDFG", ("trav into next"));
+            ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+            DBUG_PRINT ("CDFG", ("trav from next"));
+        }
     } else {
-        /* but you have to update the returnassignment in the dataflowgraph*/
-        INFO_CDFG_DATAFLOWGRAPH (arg_info)
-          = UpdateReturn (INFO_CDFG_DATAFLOWGRAPH (arg_info), arg_node);
+        /* but you have to update the sink in the dataflowgraph */
+        DATAFLOWNODE_ASSIGN (DATAFLOWGRAPH_SINK (INFO_CDFG_DATAFLOWGRAPH (arg_info)))
+          = arg_node;
+        DBUG_ASSERT ((ASSIGN_NEXT (arg_node) == NULL),
+                     "it's forbitten to have an assignment after the N_return");
     }
 
-    /* continue traversal */
-    if (ASSIGN_NEXT (arg_node) != NULL) {
-        DBUG_PRINT ("CDFG", ("trav into next"));
-        ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
-        DBUG_PRINT ("CDFG", ("trav from next"));
-    }
+    /* pop info ... */
+    INFO_CDFG_CURRENTDFNODE (arg_info) = old_dataflownode;
+    INFO_CDFG_CURRENTDFNODE_COND (arg_info) = old_dataflownode_cond;
 
     DBUG_RETURN (arg_node);
 }
 
+/** <!--********************************************************************->>
+ *
+ * @fn node *CDFGcond(node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ * @param arg_node
+ * @param arg_info
+ * @return
+ *
+ *****************************************************************************/
 node *
-CDFGlet (node *arg_node, info *arg_info)
+CDFGcond (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CDFGlet");
+    DBUG_ENTER ("CDFGCond");
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_cond), "CDFGcond expects a N_cond");
+    DBUG_ASSERT ((INFO_CDFG_WITHINCOND (arg_info) == FALSE),
+                 "nesting conditionals is forbitten");
 
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_let), "node is not a N_let");
+    DBUG_PRINT ("CDFG", ("trav into cond-condition"));
+    COND_COND (arg_node) = Trav (COND_COND (arg_node), arg_info);
+    DBUG_PRINT ("CDFG", ("trav from cond-condition"));
 
-    if (INFO_CDFG_WITHDEEP (arg_info) == 0) {
-        /* create dataflownode out of the let-ids */
-        DBUG_PRINT ("CDFG", ("before MakeDataflowNode"));
-        INFO_CDFG_ACTNODE (arg_info)
-          = MakeDataflowNode (IDS_NAME (LET_IDS (arg_node)),
-                              AVIS_SSAASSIGN (IDS_AVIS (LET_IDS (arg_node))), arg_info);
-        DBUG_PRINT ("CDFG", ("after MakeDataflowNode"));
+    INFO_CDFG_WITHINCOND (arg_info) = TRUE;
 
-        /* insert the node into the dataflowgraph */
-        INFO_CDFG_DATAFLOWGRAPH (arg_info)
-          = AddDataflowNode (INFO_CDFG_DATAFLOWGRAPH (arg_info),
-                             INFO_CDFG_ACTNODE (arg_info));
+    if (COND_THEN (arg_node) != NULL) {
+        DBUG_PRINT ("CDFG", ("trav into then-branch"));
+        COND_THEN (arg_node) = Trav (COND_THEN (arg_node), arg_info);
+        DBUG_PRINT ("CDFG", ("trav from then-branch"));
     }
-    /* continue traversal */
-    DBUG_PRINT ("CDFG", ("trav into expr"));
-    LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
-    DBUG_PRINT ("CDFG", ("trav from expr"));
+    if (COND_ELSE (arg_node) != NULL) {
+        DBUG_PRINT ("CDFG", ("trav into else-branch"));
+        COND_ELSE (arg_node) = Trav (COND_ELSE (arg_node), arg_info);
+        DBUG_PRINT ("CDFG", ("trav from else-branch"));
+    }
+
+    INFO_CDFG_WITHINCOND (arg_info) = FALSE;
 
     DBUG_RETURN (arg_node);
 }
 
+/** <!--********************************************************************->>
+ *
+ * @fn node *CDFGid(node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ * @param arg_node
+ * @param arg_info
+ * @return
+ *
+ *****************************************************************************/
 node *
 CDFGid (node *arg_node, info *arg_info)
 {
@@ -265,19 +350,37 @@ CDFGid (node *arg_node, info *arg_info)
 
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_id), "node is not a N_id");
 
-    /*fprintf(stdout,"act. id = %s\n",ID_NAME(arg_node));*/
+#if CDFG_DEBUG
+    fprintf (stdout, "act. id = %s\n", ID_NAME (arg_node));
+#endif
+
     INFO_CDFG_DATAFLOWGRAPH (arg_info)
       = UpdateDependencies (INFO_CDFG_DATAFLOWGRAPH (arg_info), ID_AVIS (arg_node),
-                            INFO_CDFG_ACTNODE (arg_info));
+                            INFO_CDFG_CURRENTDFNODE (arg_info));
+    if (INFO_CDFG_WITHINCOND (arg_info) == TRUE) {
+        UpdateDependencies (INFO_CDFG_DATAFLOWGRAPH_COND (arg_info), ID_AVIS (arg_node),
+                            INFO_CDFG_CURRENTDFNODE_COND (arg_info));
+    }
 
     DBUG_RETURN (arg_node);
 }
 
+/** <!--********************************************************************->>
+ *
+ * @fn node *CDFGwith2(node *arg_node, info *arg_info)
+ *
+ * @brief increases & drecreases the withdeep counter to mark wheter the
+ *        traversal is within a withloop or not
+ *
+ * @param arg_node
+ * @param arg_info
+ * @return
+ *
+ *****************************************************************************/
 node *
 CDFGwith2 (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CDFGNwith2");
-
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_Nwith2), "node is not a N_Nwith2");
 
     /* increase the "deepness of the withloop"-counter */
@@ -295,162 +398,95 @@ CDFGwith2 (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-node *
-InitiateDataflowgraph (char *name, info *arg_info)
+void
+PrintDataflowgraph (node *dataflowgraph)
 {
-    node *graph;
-    DBUG_ENTER ("CreateDataflowgraph");
-
-    /* build initial datanode */
-    graph = MakeDataflowNode (name, NULL, arg_info);
-
-    /* add the sink to the dataflowgraph */
-    INFO_MUTH_DFGDEPENDENT (graph)
-      = NodeListAppend (INFO_MUTH_DFGDEPENDENT (graph),
-                        MakeDataflowNode (NULL, NULL, arg_info), NULL);
-
-    /* return datanode as new graph */
-    DBUG_RETURN (graph);
-}
-
-int
-PrintDataflowgraph (node *dataflowgraph, char *name)
-{
-    int status;
-    nodelist *list_iterator;
+    nodelist *member_iterator;
     DBUG_ENTER ("PrintDataflowgraph");
-    status = 0;
+    DBUG_ASSERT ((NODE_TYPE (dataflowgraph) == N_dataflowgraph),
+                 "PrintDataflowgraph expects a N_dataflowgraph");
 
-    fprintf (stdout, "The Dataflowgraph for %s:\n", name);
-
-    list_iterator = INFO_MUTH_DFGDEPENDENT (dataflowgraph);
-    while (list_iterator != NULL) {
-        PrintDataflownode (NODELIST_NODE (list_iterator));
-        list_iterator = NODELIST_NEXT (list_iterator);
+    member_iterator = DATAFLOWGRAPH_MEMBERS (dataflowgraph);
+    while (member_iterator != NULL) {
+        PrintDataflownode (NODELIST_NODE (member_iterator));
+        member_iterator = NODELIST_NEXT (member_iterator);
     }
     fprintf (stdout, "\n");
-    DBUG_RETURN (status);
+    DBUG_VOID_RETURN;
 }
 
-int
+void
 PrintDataflownode (node *datanode)
 {
-    int status;
-    nodelist *list_iterator;
+    nodelist *dependent_iterator;
     DBUG_ENTER ("PrintDataflownode");
 
-    if (INFO_MUTH_DFGNAME (datanode) != NULL) {
-        fprintf (stdout, "- Name: %s, mode: %i\n", INFO_MUTH_DFGNAME (datanode),
-                 INFO_MUTH_DFGEXECUTIONMODE (datanode));
+    DBUG_ASSERT ((NODE_TYPE (datanode) == N_dataflownode),
+                 "PrintDataflownode expects a N_dataflownode");
+    if (DATAFLOWNODE_ASSIGN (datanode) != NULL) {
+        PrintNode (DATAFLOWNODE_ASSIGN (datanode));
     } else {
-        fprintf (stdout, "- Return, mode: %i\n", INFO_MUTH_DFGEXECUTIONMODE (datanode));
+        fprintf (stdout, "NULL found!\n");
     }
 
-    list_iterator = INFO_MUTH_DFGDEPENDENT (datanode);
+    fprintf (stdout, "DFN_Name: %s, mode: %s\n", DATAFLOWNODE_NAME (datanode),
+             MUTHDecodeExecmode (DATAFLOWNODE_EXECMODE (datanode)));
 
-    if (list_iterator != NULL) {
+    dependent_iterator = DATAFLOWNODE_DEPENDENT (datanode);
+
+    if (dependent_iterator != NULL) {
         fprintf (stdout, "  ->");
 
-        while (list_iterator != NULL) {
-            if (NODE_TYPE (
-                  ASSIGN_INSTR (INFO_MUTH_DFGINNERASSIGN (NODELIST_NODE (list_iterator))))
-                != N_return) {
-                fprintf (stdout, " %s,",
-                         INFO_MUTH_DFGNAME (NODELIST_NODE (list_iterator)));
-            } else {
-                fprintf (stdout, " Return");
-            }
-            list_iterator = NODELIST_NEXT (list_iterator);
+        while (dependent_iterator != NULL) {
+            fprintf (stdout, " %s,",
+                     DATAFLOWNODE_NAME (NODELIST_NODE (dependent_iterator)));
+            dependent_iterator = NODELIST_NEXT (dependent_iterator);
         }
         fprintf (stdout, "\n");
     } else {
         fprintf (stdout, "  -> No dependent nodes\n");
     }
 
-    status = 0;
-
-    DBUG_RETURN (status);
+    DBUG_VOID_RETURN;
 }
 
+/** <!--********************************************************************->>
+ *
+ * @fn node *AddDataflownode(node *graph, node *newnode)
+ *
+ * @brief adds the dataflownode newnode to the dataflowgraph graph and updates
+ *        the dependencies source->newnode and newnode->sink
+ *        Attention! all other dependencies are made during the normal
+ *                   traversal mechanism
+ *
+ * @param graph
+ * @param newnode
+ * @return graph, including newnode and all dependencies
+ *
+ *****************************************************************************/
 node *
-GetReturnNode (node *graph)
+AddDataflownode (node *graph, node *newnode)
 {
-    nodelist *list_iterator;
+    DBUG_ENTER ("AddDataflownode");
+    DBUG_ASSERT ((NODE_TYPE (graph) == N_dataflowgraph),
+                 "AddDataflownode expects a N_dataflowgraph as 1st parameter");
+    DBUG_ASSERT ((NODE_TYPE (newnode) == N_dataflownode),
+                 "AddDataflownode expects a N_dataflownode as 2nd parameter");
 
-    DBUG_ENTER ("GetReturnNode");
-
-    list_iterator = INFO_MUTH_DFGDEPENDENT (graph);
-
-    while ((list_iterator != NULL)
-           && (INFO_MUTH_DFGINNERASSIGN (NODELIST_NODE (list_iterator)) != NULL)) {
-        list_iterator = NODELIST_NEXT (list_iterator);
-    }
-    DBUG_ASSERT (list_iterator != NULL, "the dataflowgraph has no returnnode!");
-
-    DBUG_RETURN (NODELIST_NODE (list_iterator));
-}
-
-node *
-UpdateReturn (node *graph, node *arg_node)
-{
-    node *returnnode;
-
-    DBUG_ENTER ("UpdateReturn");
-
-    returnnode = GetReturnNode (graph);
-
-    INFO_MUTH_DFGINNERASSIGN (returnnode) = arg_node;
-    INFO_MUTH_DFGOUTERASSIGN (returnnode) = arg_node;
-
-    DBUG_RETURN (graph);
-}
-
-node *
-MakeDataflowNode (char *name, node *inner_assign, info *arg_info)
-{
-    node *tmp;
-
-    DBUG_ENTER ("MakeDataflowNode");
-
-    /*tmp = MakeInfo();*/
-
-    INFO_MUTH_DFGNAME (tmp) = name;
-    /* the inner assignment means, that its instruction is the N_let of the
-       identifier */
-    INFO_MUTH_DFGINNERASSIGN (tmp) = inner_assign;
-
-    /* it is impossible to have a outer assign without an inner assign */
-    if (inner_assign == NULL) {
-        INFO_MUTH_DFGOUTERASSIGN (tmp) = NULL;
-    } else {
-        INFO_MUTH_DFGOUTERASSIGN (tmp) = INFO_CDFG_OUTERASSIGN (arg_info);
-    }
-
-    INFO_MUTH_DFGEXECUTIONMODE (tmp) = INFO_CDFG_EXECUTIONMODE (arg_info);
-    INFO_MUTH_DFGDEPENDENT (tmp) = NULL;
-
-    /* initial value for the reference-counter is 0
-       the reference of the spring is implicit*/
-    INFO_MUTH_DFGNODEREFCOUNT (tmp) = 0;
-
-    DBUG_RETURN (tmp);
-}
-
-node *
-AddDataflowNode (node *graph, node *newnode)
-{
-    node *return_node;
-    DBUG_ENTER ("AddDataflowNode");
+    /* add node to the graph members*/
+    DATAFLOWGRAPH_MEMBERS (graph)
+      = NodeListAppend (DATAFLOWGRAPH_MEMBERS (graph), newnode, NULL);
 
     /* node added to the graph -> made dependent from the spring */
-    INFO_MUTH_DFGDEPENDENT (graph)
-      = NodeListAppend (INFO_MUTH_DFGDEPENDENT (graph), newnode, NULL);
+    DATAFLOWNODE_DEPENDENT (DATAFLOWGRAPH_SOURCE (graph))
+      = NodeListAppend (DATAFLOWNODE_DEPENDENT (DATAFLOWGRAPH_SOURCE (graph)), newnode,
+                        NULL);
+    DATAFLOWNODE_REFCOUNT (newnode) = 1;
 
-    return_node = GetReturnNode (graph);
-
-    INFO_MUTH_DFGDEPENDENT (newnode)
-      = NodeListAppend (INFO_MUTH_DFGDEPENDENT (newnode), return_node, NULL);
-    INFO_MUTH_DFGNODEREFCOUNT (return_node) += 1;
+    /* well, the return-node must depend on the new-member*/
+    DATAFLOWNODE_DEPENDENT (newnode) = NodeListAppend (DATAFLOWNODE_DEPENDENT (newnode),
+                                                       DATAFLOWGRAPH_SINK (graph), NULL);
+    DATAFLOWNODE_REFCOUNT (DATAFLOWGRAPH_SINK (graph))++;
 
     DBUG_RETURN (graph);
 }
@@ -458,51 +494,72 @@ AddDataflowNode (node *graph, node *newnode)
 node *
 UpdateDependencies (node *graph, node *avisnode, node *actnode)
 {
-    nodelist *list_iterator;
-    node *tmp;
+    bool found;
+    nodelist *member_iterator;
+    node *father;
     DBUG_ENTER ("UpdateDependencies");
-
     DBUG_ASSERT ((NODE_TYPE (avisnode) == N_avis), "node is not a N_avis");
 
-    /*fprintf(stdout,"UpdateDependencies for %s\n",INFO_MUTH_DFGNAME(actnode));*/
+    found = FALSE;
 
-    /* is it a with_id?*/
-    if (AVIS_WITHID (avisnode) == NULL) {
-        /* no - let us have a closer look on it */
+    /* Does the variable depend on an assignment ? */
+    if (AVIS_SSAASSIGN (avisnode) != NULL) {
+        member_iterator = DATAFLOWGRAPH_MEMBERS (graph);
 
-        /* Does the variable depend on an assignment ? */
-        if (AVIS_SSAASSIGN (avisnode) != NULL) {
-            list_iterator = INFO_MUTH_DFGDEPENDENT (graph);
-
-            /* time to search for the corresponding node */
-            while (INFO_MUTH_DFGINNERASSIGN (NODELIST_NODE (list_iterator))
-                   != AVIS_SSAASSIGN (avisnode)) {
-                list_iterator = NODELIST_NEXT (list_iterator);
-                DBUG_ASSERT ((list_iterator != NULL),
-                             "Variable without any correspondent lefthandside");
+        /* time to search for the corresponding node */
+        while (found == FALSE && member_iterator != NULL) {
+            if ((DATAFLOWNODE_ASSIGN (NODELIST_NODE (member_iterator)))
+                == AVIS_SSAASSIGN (avisnode)) {
+                found = TRUE;
             }
-
-            /* tmp points on the dataflownode, that has to be a father of actnode */
-            tmp = NODELIST_NODE (list_iterator);
-
-            /*fprintf(stdout,"%s ist the father of %s\n",INFO_MUTH_DFGNAME(tmp),
-              INFO_MUTH_DFGNAME(actnode));*/
-
-            /* let us insert actnode into tmp's dependent_nodes, if this has not be
-               done yet */
-            if (NodeListFind (INFO_MUTH_DFGDEPENDENT (tmp), actnode) == NULL) {
-                INFO_MUTH_DFGDEPENDENT (tmp)
-                  = NodeListAppend (INFO_MUTH_DFGDEPENDENT (tmp), actnode, NULL);
-                INFO_MUTH_DFGNODEREFCOUNT (tmp) += 1;
-            }
-        } else { /* AVIS_SSAASSIGN */
-                 /* nothing to do - by default it depends on the spring of the graph*/
+            member_iterator = NODELIST_NEXT (member_iterator);
         }
-    } /* AVIS_WITHID */
-    else {
-        /* Yes - we can ignore it for the dataflowgraph */
+
+        if (found == TRUE) {
+            /* father points on the dataflownode, which is a father of actnode */
+            father = NODELIST_NODE (member_iterator);
+
+            /* let us insert actnode into father's dependent_nodes,
+             * if this has not be done yet */
+            if (NodeListFind (DATAFLOWNODE_DEPENDENT (father), actnode) == NULL) {
+                DATAFLOWNODE_DEPENDENT (father)
+                  = NodeListAppend (DATAFLOWNODE_DEPENDENT (father), actnode, NULL);
+                DATAFLOWNODE_REFCOUNT (actnode)++;
+            } else {
+                /* actnode already depends on the father -> nothing to do */
+            }
+        } else {
+            /* we can ignore it, cause it's assignment is not part of the
+             * dataflowgraph */
+        }
+    } else { /* (AVIS_SSAASSIGN(avisnode) != NULL) */
+             /* nothing to do - by default it depends on the spring of the graph*/
     }
     DBUG_RETURN (graph);
+}
+
+char *
+SetName (node *assign)
+{
+    node *instr;
+    char *return_value;
+    DBUG_ENTER ("SetName");
+    DBUG_ASSERT ((NODE_TYPE (assign) == N_assign), "SetName expects a N_assign");
+
+    instr = ASSIGN_INSTR (assign);
+    return_value = NULL;
+    if (NODE_TYPE (instr) == N_let) {
+        return_value
+          = StringCopy ("DF__condi tion"); /*IDS_NAME(LET_IDS(ASSIGN_INSTR(assign))));*/
+    } else if (NODE_TYPE (instr) == N_cond) {
+        return_value = StringCopy ("DF__condition");
+    } else if (NODE_TYPE (instr) == N_Nwith2) {
+        return_value = StringCopy ("DF__with-loop");
+    } else {
+        PrintNode (assign);
+        DBUG_ASSERT (0, "SetName was called with an invalid assignment");
+    }
+    DBUG_RETURN (return_value);
 }
 
 /**
