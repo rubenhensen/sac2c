@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.112  1998/04/02 13:13:30  dkr
+ * added NWITH2_FUNAP
+ *
  * Revision 1.111  1998/04/02 13:00:49  srs
  * added ID_WL()
  *
@@ -2350,6 +2353,10 @@ extern node *MakeNCode (node *block, node *expr);
  ***    node*    CODE     (0)     (N_Ncode)
  ***    node*    WITHOP   (0)     (N_Nwithop)
  ***
+ ***  temporary attributes:
+ ***
+ ***    node*    FUNAP    (0)     (N_ap)     (call of parallelized WL-fun)
+ ***
  ***/
 
 extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop);
@@ -2358,6 +2365,8 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop);
 #define NWITH2_SEG(n) (n->node[1])
 #define NWITH2_CODE(n) (n->node[2])
 #define NWITH2_WITHOP(n) (n->node[3])
+
+#define NWITH2_FUNAP(n) (n->node[4])
 
 /*--------------------------------------------------------------------------*/
 
@@ -2433,11 +2442,11 @@ extern node *MakeWLseg (int dims, node *contents, node *next);
  ***
  ***  permanent attributes:
  ***
- ***    int      LEVEL     (0)
+ ***    int      LEVEL     (0)           (number of blocking-levels so far)
  ***    int      DIM       (0)
  ***    int      BOUND1    (0)
  ***    int      BOUND2    (0)
- ***    int      STEP  (0)
+ ***    int      STEP      (0)
  ***
  ***  temporary attributes:
  ***
@@ -2519,11 +2528,12 @@ extern node *MakeWLublock (int level, int dim, int bound1, int bound2, int step,
  ***    int      BOUND1    (0)
  ***    int      BOUND2    (0)
  ***    int      STEP      (0)
- ***    int      UNROLLING (0)
+ ***    int      UNROLLING (0)                     (unrolling wanted?)
  ***
  ***  temporary attributes:
  ***
- ***    node*    PART      (0)    (Precompile ! )
+ ***    node*    PART      (0)    (Precompile ! )  (part this stride is ...
+ ***                                                ... generated from)
  ***    int      MODIFIED  (0)    (Precompile ! )
  ***
  ***/
