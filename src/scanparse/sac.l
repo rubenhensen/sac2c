@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.32  1996/04/02 13:47:24  cg
+ * Revision 1.33  1996/04/02 19:36:41  cg
+ * strings are now scanned which contain '\"'
+ *
+ * Revision 1.32  1996/04/02  13:47:24  cg
  * scanparse converted to new strings: key word string removed
  *
  * Revision 1.31  1996/02/21  18:01:33  cg
@@ -329,7 +332,7 @@ int start_token;
 "break"                         {FILTER( C_KEYWORD);}
 
 
-\"[^"\n]*\"			{FILTER9( STR );}
+\"([^"\n]|(\\\"))*\"			{FILTER9( STR );}
 
 [A-Za-z]([A-Za-z0-9]|[_A-Za-z0-9][A-Za-z0-9])*  \
                                 {FILTER2( ID );}
