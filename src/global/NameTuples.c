@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2001/12/12 15:00:30  dkr
+ * minor changes in PrintNT() done
+ *
  * Revision 3.1  2000/11/20 17:59:26  sacbase
  * new release made
  *
@@ -55,7 +58,7 @@ PrintNT (FILE *handle, char *name, types *type)
 
     DBUG_ASSERT ((type != NULL), "No type information found!");
 
-    fprintf (handle, (compiler_phase < PH_compile) ? "%s__%s__%s" : "(%s,(%s,(%s,)))",
+    fprintf (handle, (compiler_phase < PH_compile) ? "%s__%s_%s" : "(%s, (%s,(%s,)))",
              name, nt_class_string[GetClassFromTypes (type)],
              nt_unq_string[GetUnqFromTypes (type)]);
 
