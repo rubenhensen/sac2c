@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.148  1998/05/08 02:00:55  dkr
+ * fixed a bug in COMPLet:
+ *   recycling of N_let node is now tolerated
+ *
  * Revision 1.147  1998/05/08 00:55:50  dkr
  * removed unused vars
  *
@@ -2769,7 +2773,14 @@ COMPLet (node *arg_node, node *arg_info)
 
     expr = Trav (LET_EXPR (arg_node), arg_info);
 
-    if (NODE_TYPE (expr) == N_assign) {
+    if ((NODE_TYPE (expr) == N_assign) && (NODE_TYPE (arg_node) == N_let)) {
+
+        /*
+         * CAUTION: Some old routines recycles the let-node as a N_block node!!!
+         *          (e.g. COMPprf when inserting 'ND_KS_DECL_ARRAY'-ICMs ...)
+         *          In these cases we must not free 'arg_node'!!!
+         */
+
         LET_EXPR (arg_node) = NULL;
         arg_node = FreeTree (arg_node);
         arg_node = expr;
