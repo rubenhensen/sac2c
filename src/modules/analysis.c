@@ -1,7 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.5  1995/10/31 09:00:31  cg
+ * Revision 1.6  1995/11/01 16:29:55  cg
+ * bug fixed in function ANAap. Now, functions are stored for all
+ * functions, not only inline functions, which is necessary for finding
+ * all needed global objects.
+ *
+ * Revision 1.5  1995/10/31  09:00:31  cg
  * Information about needed types and function is only stored
  * for inline functions.
  *
@@ -277,9 +282,7 @@ ANAap (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("ANAap");
 
-    if (FUNDEF_INLINE (arg_info)) {
-        StoreNeededNode (AP_FUNDEF (arg_node), arg_info, ST_regular);
-    }
+    StoreNeededNode (AP_FUNDEF (arg_node), arg_info, ST_regular);
 
     if (AP_ARGS (arg_node) != NULL) {
         AP_ARGS (arg_node) = Trav (AP_ARGS (arg_node), arg_info);
