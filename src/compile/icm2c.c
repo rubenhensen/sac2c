@@ -1,7 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.30  1995/10/08 11:22:36  sbs
+ * Revision 1.31  1995/12/18 16:27:17  cg
+ * ICMs ND_FUN_DEC, ND_FUN_AP and ND_FUN_RET modified
+ * new ICMs ND_KS_DECL_GLOBAL_ARRAY and ND_KD_DECL_EXTERN_ARRAY for
+ * arrays as global objects.
+ *
+ * Revision 1.30  1995/10/08  11:22:36  sbs
  * some bugs fixed
  *
  * Revision 1.29  1995/09/05  11:36:50  hw
@@ -309,24 +314,9 @@
     }
 #endif
 
-#define FirstOut(arg, n, body, default, step)                                            \
+#define ScanArglist(arg, n, bin, bout, binout, bina, bouta, binouta, sepstr)             \
     {                                                                                    \
         int i = 0;                                                                       \
-        int out = 1;                                                                     \
-        while (out && (i < n)) {                                                         \
-            if (strcmp (arg[i++], "out") == 0) {                                         \
-                body;                                                                    \
-                out = 0;                                                                 \
-            }                                                                            \
-            i += step;                                                                   \
-        }                                                                                \
-        if (out)                                                                         \
-        default;                                                                         \
-    }
-#define ScanArglist(arg, n, bin, bfout, bout, binout, bina, bouta, binouta, sepstr)      \
-    {                                                                                    \
-        int i = 0;                                                                       \
-        int out = 0;                                                                     \
         int sep = 0;                                                                     \
         while (i < n) {                                                                  \
             if (sep)                                                                     \
@@ -337,19 +327,14 @@
                 bin;                                                                     \
             } else if (strcmp (arg[i], "out") == 0) {                                    \
                 i++;                                                                     \
-                if (out) {                                                               \
-                    bout;                                                                \
-                } else {                                                                 \
-                    out = 1;                                                             \
-                    bfout;                                                               \
-                }                                                                        \
+                bout;                                                                    \
             } else if (strcmp (arg[i], "inout") == 0) {                                  \
                 i++;                                                                     \
                 binout;                                                                  \
-            } else if (strcmp (arg[i], "in_a") == 0) {                                   \
+            } else if (strcmp (arg[i], "in_rc") == 0) {                                  \
                 i++;                                                                     \
                 bina;                                                                    \
-            } else if (strcmp (arg[i], "out_a") == 0) {                                  \
+            } else if (strcmp (arg[i], "out_rc") == 0) {                                 \
                 i++;                                                                     \
                 bouta;                                                                   \
             } else {                                                                     \
@@ -549,13 +534,15 @@ MAIN
     FILE *outfile = stdout;
     char type[] = "double";
     char name[] = "array_name";
+    char rettype[] = "int";
+    char retname[] = "result";
     int dim = 3, dims = 3, dima = 4, dimv = 3, dimres = 4;
     char *s[] = {"40", "50", "60"};
     char *vi[] = {"10", "20", "30"};
     char *ar[] = {"firstarray", "secondarray"};
-    char *arg[] = {"in", "i", "in_a", "ia", "out", "o1", "out", "o2", "out_a", "oa"};
-    char *tyarg[] = {"in", "int", "i",   "in_a", "int",   "ia",  "out", "int",
-                     "o1", "out", "int", "o2",   "out_a", "int", "oa"};
+    char *arg[] = {"in", "i", "in_rc", "ia", "out", "o1", "out", "o2", "out_rc", "oa"};
+    char *tyarg[] = {"in", "int", "i",   "in_rc", "int *",  "ia",    "out", "int",
+                     "o1", "out", "int", "o2",    "out_rc", "int *", "oa"};
     char *rotdimstr[] = {"rotindim"};
     char *numstr[] = {"rotnum"};
     char *valstr[] = {"ret-val"};
@@ -603,9 +590,12 @@ extern int check_boundary; /* defined in main.c */
 #endif /* TEST_BACKEND */
 
     /*
-     * ND_FUN_DEC( name, n, [ {in, in_a, out, out_a, inout, inout_a}, type, arg ] )
+     * ND_FUN_DEC( name, rettype, narg, [ TAG, type, arg ]* )
+     *
+     * {in, in_rc, out, out_rc, inout, inout_rc} TAG
      *
      * char *name;
+     * char *rettype;
      * int narg;
      * char **tyarg;
      */
@@ -621,29 +611,40 @@ extern int check_boundary; /* defined in main.c */
 #include "icm_trace.c"
 
     INDENT;
-    FirstOut (tyarg, 3 * narg, fprintf (outfile, "%s ", tyarg[i]),
-              fprintf (outfile, "void "), 2);
+    fprintf (outfile, "%s ", rettype);
     fprintf (outfile, "%s( ", name);
     ScanArglist (
       tyarg, 3 * narg, fprintf (outfile, " %s %s", tyarg[i++], tyarg[i++]);
-      sep = 1, i += 2; sep = 0, fprintf (outfile, " %s *%s__p", tyarg[i++], tyarg[i++]);
       sep = 1, fprintf (outfile, " %s *%s__p", tyarg[i++], tyarg[i++]);
-      sep = 1, if (NULL != (tyarg[i + 1])[0])
-                 fprintf (outfile, " ND_KS_DEC_IN_ARRAY(%s, %s)", tyarg[i++], tyarg[i++]);
+      sep = 1, fprintf (outfile, " %s *%s__p", tyarg[i++], tyarg[i++]);
+      sep = 1,
+
+      if (NULL != (tyarg[i + 1])[0])
+        fprintf (outfile, " ND_KS_DEC_IN_RC(%s, %s)", tyarg[i++], tyarg[i++]);
       else {
-          fprintf (outfile, "ND_KS_DEC_IMPORT_IN_ARRAY(%s)", tyarg[i++]);
+          fprintf (outfile, "ND_KS_DEC_IMPORT_IN_RC(%s)", tyarg[i++]);
           i++;
       };
       sep = 1,
+
       if (NULL != (tyarg[i + 1])[0])
-        fprintf (outfile, " ND_KS_DEC_OUT_ARRAY(%s, %s)", tyarg[i++], tyarg[i++]);
+        fprintf (outfile, " ND_KS_DEC_OUT_RC(%s, %s)", tyarg[i++], tyarg[i++]);
       else {
-          fprintf (outfile, "ND_KS_DEC_IMPORT_OUT_ARRAY(%s)", tyarg[i++]);
+          fprintf (outfile, "ND_KS_DEC_IMPORT_OUT_RC(%s)", tyarg[i++]);
           i++;
       };
-      sep = 1, fprintf (outfile, " ND_KS_DEC_OUT_ARRAY(%s, %s)", tyarg[i++], tyarg[i++]);
-      sep = 1, ",");
-    fprintf (outfile, ")\n");
+      sep = 1,
+
+      if (NULL != (tyarg[i + 1])[0])
+        fprintf (outfile, " ND_KS_DEC_INOUT_RC(%s, %s)", tyarg[i++], tyarg[i++]);
+      else {
+          fprintf (outfile, "ND_KS_DEC_IMPORT_INOUT_RC(%s)", tyarg[i++]);
+          i++;
+      };
+      sep = 1,
+
+      ",");
+    fprintf (outfile, ")");
 
 #undef ND_FUN_DEC
 
@@ -653,9 +654,11 @@ extern int check_boundary; /* defined in main.c */
 #endif /* no TEST_BACKEND */
 
 /*
- * ND_FUN_AP( name, n, [ {in, in_a, out, out_a, inout, inout_a}, arg ] )
+ * ND_FUN_AP( name, retname, n,
+ *            [ {in, in_rc, out, out_rc, inout, inout_rc}, arg ] )
  *
  * char *name;
+ * char *retname;
  * int narg;
  * char **arg;
  */
@@ -671,16 +674,17 @@ extern int check_boundary; /* defined in main.c */
 #include "icm_trace.c"
 
 INDENT;
-FirstOut (arg, 2 * narg, fprintf (outfile, "%s =", arg[i]), {}, 1);
+if (0 != strcmp (retname, ""))
+    fprintf (outfile, "%s =", retname);
 fprintf (outfile, "%s( ", name);
-ScanArglist (arg, 2 * narg, fprintf (outfile, " %s", arg[i++]); sep = 1, i++; sep = 0;
-             , fprintf (outfile, " &%s", arg[i++]);
+ScanArglist (arg, 2 * narg, fprintf (outfile, " %s", arg[i++]);
              sep = 1, fprintf (outfile, " &%s", arg[i++]);
-             sep = 1, fprintf (outfile, " ND_KS_AP_IN_ARRAY(%s)", arg[i++]);
-             sep = 1, fprintf (outfile, " ND_KS_AP_OUT_ARRAY(%s)", arg[i++]);
-             sep = 1, fprintf (outfile, " ND_KS_AP_OUT_ARRAY(%s)", arg[i++]);
+             sep = 1, fprintf (outfile, " &%s", arg[i++]);
+             sep = 1, fprintf (outfile, " ND_KS_AP_IN_RC(%s)", arg[i++]);
+             sep = 1, fprintf (outfile, " ND_KS_AP_OUT_RC(%s)", arg[i++]);
+             sep = 1, fprintf (outfile, " ND_KS_AP_INOUT_RC(%s)", arg[i++]);
              sep = 1, ",");
-fprintf (outfile, ");\n");
+fprintf (outfile, ");");
 
 #undef ND_FUN_AP
 
@@ -690,9 +694,9 @@ DBUG_VOID_RETURN;
 #endif /* no TEST_BACKEND */
 
 /*
- * ND_FUN_RET( n, [ { out, out_a, inout, inout_a}, arg ] )
+ * ND_FUN_RET( retname, n, [ { out, out_rc, inout, inout_rc}, arg ] )
  *
- * char *name;
+ * char *retname;
  * int narg;
  * char **arg;
  */
@@ -708,14 +712,15 @@ DBUG_VOID_RETURN;
 #include "icm_trace.c"
 
 INDENT;
-ScanArglist (arg, 2 * narg, i++; sep = 0, i++;
+ScanArglist (arg, 2 * narg, i++;
              sep = 0, fprintf (outfile, "*%s__p = %s;\n", arg[i], arg[i++]); INDENT;
              sep = 1, fprintf (outfile, "*%s__p = %s;\n", arg[i], arg[i++]); INDENT;
-             sep = 1, i += 1;
-             sep = 0, fprintf (outfile, "ND_KS_RET_OUT_ARRAY(%s);\n", arg[i++]); INDENT;
-             sep = 1, fprintf (outfile, "ND_KS_RET_OUT_ARRAY(%s);\n", arg[i++]); INDENT;
+             sep = 1, i++;
+             sep = 0, fprintf (outfile, "ND_KS_RET_OUT_RC(%s);\n", arg[i++]); INDENT;
+             sep = 1, fprintf (outfile, "ND_KS_RET_INOUT_RC(%s);\n", arg[i++]); INDENT;
              sep = 1, "");
-FirstOut (arg, 2 * narg, fprintf (outfile, "return(%s);\n", arg[i]), {}, 1);
+if (0 != strcmp (retname, ""))
+    fprintf (outfile, "return(%s);", retname);
 
 #undef ND_FUN_RET
 
@@ -793,9 +798,12 @@ DBUG_VOID_RETURN;
 #endif /* no TEST_BACKEND */
 
 /*
- * ND_KS_DECL_ARRAY( basic_type, name, dim, s0,..., sn)   : declares an array
+ * ND_KS_DECL_ARRAY( basetype, name, dim, s0,..., sn)
  *
- * char *type, *name;
+ * declares an array
+ *
+ * char *basetype;      e.g. "int" for an integer array
+ * char *name;
  * int dim;
  * char **s;
  */
@@ -832,6 +840,97 @@ fprintf (outfile, "%s", s[0]);
 fprintf (outfile, "\n");
 
 #undef ND_KS_DECL_ARRAY
+
+#ifndef TEST_BACKEND
+DBUG_VOID_RETURN;
+}
+#endif /* no TEST_BACKEND */
+
+/*
+ * ND_KS_DECL_GLOBAL_ARRAY( basetype, name, dim, s0,..., sn)   :
+ *
+ * declares an array which is a global object
+ *
+ * char *type, *name;
+ * int dim;
+ * char **s;
+ */
+
+#define ND_KS_DECL_GLOBAL_ARRAY
+
+#ifndef TEST_BACKEND
+#include "icm_decl.c"
+#include "icm_args.c"
+#endif /* no TEST_BACKEND */
+
+#include "icm_comment.c"
+#include "icm_trace.c"
+
+INDENT;
+fprintf (outfile, "%s *%s;\n", type, name);
+INDENT;
+fprintf (outfile, "int *__%s_rc;\n", name);
+INDENT;
+fprintf (outfile, "int __%s_sz=", name);
+fprintf (outfile, "%s", s[0]);
+{
+    int i;
+    for (i = 1; i < dim; i++)
+        fprintf (outfile, "*%s", s[i]);
+    fprintf (outfile, ";\n");
+    INDENT;
+    fprintf (outfile, "int __%s_d=%d;\n", name, dim);
+    for (i = 0; i < dim; i++) {
+        INDENT;
+        fprintf (outfile, "int __%s_s%d=%s;\n", name, i, s[i]);
+    }
+}
+fprintf (outfile, "\n");
+
+#undef ND_KS_DECL_GLOBAL_ARRAY
+
+#ifndef TEST_BACKEND
+DBUG_VOID_RETURN;
+}
+#endif /* no TEST_BACKEND */
+
+/*
+ * ND_KD_DECL_EXTERN_ARRAY( basetype, name, dim)
+ *
+ * declares an array which is an imported global object
+ *
+ * char *basetype, *name;
+ * int dim;
+ */
+
+#define ND_KD_DECL_EXTERN_ARRAY
+
+#ifndef TEST_BACKEND
+#include "icm_decl.c"
+#include "icm_args.c"
+#endif /* no TEST_BACKEND */
+
+#include "icm_comment.c"
+#include "icm_trace.c"
+
+INDENT;
+fprintf (outfile, "extern %s *%s;\n", type, name);
+INDENT;
+fprintf (outfile, "extern int *__%s_rc;\n", name);
+INDENT;
+fprintf (outfile, "extern int __%s_sz;\n", name);
+{
+    int i;
+    INDENT;
+    fprintf (outfile, "extern int __%s_d;\n", name);
+    for (i = 0; i < dim; i++) {
+        INDENT;
+        fprintf (outfile, "extern int __%s_s%d;\n", name, i);
+    }
+}
+fprintf (outfile, "\n");
+
+#undef ND_KD_DECL_EXTERN_ARRAY
 
 #ifndef TEST_BACKEND
 DBUG_VOID_RETURN;
@@ -1250,7 +1349,7 @@ DBUG_VOID_RETURN;
 #include "icm_comment.c"
 #include "icm_trace.c"
 
-fprintf (outfile, " ND_CHECK_REUSE(%s,%s)\n", old, res);
+fprintf (outfile, " ND_CHECK_REUSE_ARRAY(%s,%s)\n", old, res);
 INDENT;
 fprintf (outfile, "{ int __i;\n");
 fprintf (outfile, "  ND_ALLOC_ARRAY(%s, %s, 0);\n", res_type, res);
@@ -1445,7 +1544,7 @@ if (check_boundary) {
 fprintf (outfile, "if(ND_A_RC(%s)==1){\n", old);
 indent++;
 INDENT;
-fprintf (outfile, "ND_REUSE(%s,%s)\n", old, res);
+fprintf (outfile, "ND_REUSE_ARRAY(%s,%s)\n", old, res);
 INDENT;
 fprintf (outfile, "for(__i=__idx,__j=0; __j<ND_A_SIZE(%s); __i++,__j++)\n", value);
 indent++;
