@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.18  1998/05/06 21:21:24  dkr
+ * new macro FOREACH_VARDEC_AND_ARG
+ *
  * Revision 1.17  1998/05/05 11:24:24  dkr
  * added RCNwithop
  *
@@ -60,6 +63,19 @@
 #ifndef _refcount_h
 
 #define _refcount_h
+
+/*
+ * this macro is usefull for traversing the arg- und vardec-list
+ */
+#define FOREACH_VARDEC_AND_ARG(fundef, vardec, code)                                     \
+    vardec = FUNDEF_ARGS (fundef);                                                       \
+    while (vardec != NULL) {                                                             \
+        code vardec = ARG_NEXT (vardec);                                                 \
+    }                                                                                    \
+    vardec = FUNDEF_VARDEC (fundef);                                                     \
+    while (vardec != NULL) {                                                             \
+        code vardec = VARDEC_NEXT (vardec);                                              \
+    }
 
 extern node *Refcount (node *arg_node);
 extern node *RCblock (node *arg_node, node *arg_info);
