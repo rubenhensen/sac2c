@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.43  1997/04/28 08:09:06  cg
+ * Revision 1.44  1997/05/06 15:41:52  sbs
+ * ANALYSE_TIME_BEGIN / END for with-loops inserted
+ *
+ * Revision 1.43  1997/04/28  08:09:06  cg
  * Global world object Parameters renamed to TheCommandLine.
  * Special treatment in function definition and application of
  * create function adjusted.
@@ -181,7 +184,9 @@
     INDENT;                                                                              \
     fprintf (outfile, "}\n")
 
-#define BeginWith(res, dimres, from, to, idx, idxlen, fillstr)                           \
+#define BeginWith(res, dimres, from, to, idx, idxlen, fillstr, withkind)                 \
+    INDENT;                                                                              \
+    fprintf (outfile, "ANALYSE_TIME_BEGIN( \"" withkind "\" );\n");                      \
     INDENT;                                                                              \
     fprintf (outfile, "{ int __i;\n");                                                   \
     indent++;                                                                            \
@@ -263,6 +268,8 @@
     fprintf (outfile, "\n")
 #else
 #define BeginFoldWith(res, sizeres, form, to, idx, idixlen, n_neutral, neutral)          \
+    INDENT;                                                                              \
+    fprintf (outfile, "ANALYSE_TIME_BEGIN( \"FOLD\" );\n");                              \
     if (0 < sizeres) {                                                                   \
         indent++;                                                                        \
         INDENT;                                                                          \
@@ -299,7 +306,7 @@
 
 #endif
 
-#define EndWith(res, dimres, idxlen, fillstr)                                            \
+#define EndWith(res, dimres, idxlen, fillstr, withkind)                                  \
     indent--;                                                                            \
     INDENT;                                                                              \
     fprintf (outfile, "}\n");                                                            \
@@ -337,7 +344,9 @@
     fprintf (outfile, "}\n");                                                            \
     indent--;                                                                            \
     INDENT;                                                                              \
-    fprintf (outfile, "}\n\n")
+    fprintf (outfile, "}\n");                                                            \
+    INDENT;                                                                              \
+    fprintf (outfile, "ANALYSE_TIME_END( \"" withkind "\" );\n\n")
 
 #ifdef OLD_FOLD
 #define EndFoldWith(idxlen)                                                              \
@@ -358,7 +367,9 @@
             INDENT;                                                                      \
             fprintf (outfile, "}\n");                                                    \
         }                                                                                \
-    }
+    }                                                                                    \
+    INDENT;                                                                              \
+    fprintf (outfile, "ANALYSE_TIME_END( \"FOLD\" );\n\n")
 #endif
 
 #define ScanArglist(arg, n, bin, bout, binout, bupd, bupdbox, binrc, boutrc, binoutrc,   \
@@ -1870,7 +1881,7 @@ DBUG_VOID_RETURN;
 #include "icm_comment.c"
 #include "icm_trace.c"
 
-BeginWith (res, dimres, from, to, idx, idxlen, fprintf (outfile, "0"));
+BeginWith (res, dimres, from, to, idx, idxlen, fprintf (outfile, "0"), "GENARRAY");
 
 #ifdef TEST_BACKEND
 indent -= idxlen + 1;
@@ -1898,7 +1909,7 @@ DBUG_VOID_RETURN;
 #include "icm_trace.c"
 
 BeginWith (res, dimres, from, to, idx, idxlen,
-           fprintf (outfile, "ND_A_FIELD(%s)[%s__destptr]", a, res));
+           fprintf (outfile, "ND_A_FIELD(%s)[%s__destptr]", a, res), "MODARRAY");
 
 #ifdef TEST_BACKEND
 indent -= idxlen + 1;
@@ -1994,7 +2005,7 @@ indent += dimres + 1;
 #endif /* TEST_BACKEND */
 
 RetWithScal (res, valstr);
-EndWith (res, dimres, dimres, fprintf (outfile, "0"));
+EndWith (res, dimres, dimres, fprintf (outfile, "0"), "GENARRAY");
 
 #undef ND_END_GENARRAY_S
 
@@ -2022,7 +2033,7 @@ indent += idxlen + 1;
 #endif /* TEST_BACKEND */
 
 RetWithArray (res, reta);
-EndWith (res, dimres, idxlen, fprintf (outfile, "0"));
+EndWith (res, dimres, idxlen, fprintf (outfile, "0"), "GENARRAY");
 
 #undef ND_END_GENARRAY_A
 
@@ -2050,7 +2061,8 @@ indent += dimres + 1;
 #endif /* TEST_BACKEND */
 
 RetWithScal (res, valstr);
-EndWith (res, dimres, dimres, fprintf (outfile, "ND_A_FIELD(%s)[%s__destptr]", a, res));
+EndWith (res, dimres, dimres, fprintf (outfile, "ND_A_FIELD(%s)[%s__destptr]", a, res),
+         "MODARRAY");
 
 #undef ND_END_MODARRAY_S
 
@@ -2149,7 +2161,8 @@ indent += idxlen + 1;
 #endif /* TEST_BACKEND */
 
 RetWithArray (res, reta);
-EndWith (res, dimres, idxlen, fprintf (outfile, "ND_A_FIELD(%s)[%s__destptr]", a, res));
+EndWith (res, dimres, idxlen, fprintf (outfile, "ND_A_FIELD(%s)[%s__destptr]", a, res),
+         "MODARRAY");
 
 #undef ND_END_MODARRAY_A
 
