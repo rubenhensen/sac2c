@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.32  1998/06/05 15:30:54  cg
+ * *** empty log message ***
+ *
  * Revision 1.31  1998/03/10 17:11:28  srs
  * improved orthography
  *
@@ -128,7 +131,7 @@
 #include "internal_lib.h"
 #include "typecheck.h"
 #include "access_macros.h"
-#include "convert.h" /* to use macro MOD_NAME_CON */
+#include "convert.h"
 #include "free.h"
 
 /* to infere types with known dimension and unknown_shape in typechecking of
