@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.23  1996/01/05 18:20:22  asi
+ * Revision 1.24  1996/01/07 16:55:09  cg
+ * function CountFunctionParams now counts return type void
+ *
+ * Revision 1.23  1996/01/05  18:20:22  asi
  * bug fixed in GetCompoundNode
  *
  * Revision 1.22  1996/01/02  12:48:41  cg
@@ -657,13 +660,11 @@ CountFunctionParams (node *fundef)
 
     DBUG_ENTER ("CountFunctionParams");
 
-    if (FUNDEF_BASETYPE (fundef) != T_void) {
-        tmp = FUNDEF_TYPES (fundef);
+    tmp = FUNDEF_TYPES (fundef);
 
-        do {
-            count++;
-            tmp = TYPES_NEXT (tmp);
-        } while (tmp != NULL);
+    while (tmp != NULL) {
+        count++;
+        tmp = TYPES_NEXT (tmp);
     }
 
     tmp2 = FUNDEF_ARGS (fundef);

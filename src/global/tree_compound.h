@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.31  1996/01/02 12:48:41  cg
+ * Revision 1.32  1996/01/07 16:55:09  cg
+ * function CountFunctionParams now counts return type void
+ *
+ * Revision 1.31  1996/01/02  12:48:41  cg
  * added function StringsLength
  *
  * Revision 1.30  1995/12/29  16:04:12  asi
@@ -586,9 +589,6 @@ extern nodelist *ConcatNodelist (nodelist *first, nodelist *second);
 #define TYPEDEF_TMOD(n) (TYPES_MOD (TYPEDEF_TYPE (n)))
 #define TYPEDEF_TDEF(n) (TYPES_TDEF (TYPEDEF_TYPE (n)))
 
-#define TYPEDEF_COPYFUN(n) (PRAGMA_COPYFUN (TYPEDEF_PRAGMA (n)))
-#define TYPEDEF_FREEFUN(n) (PRAGMA_FREEFUN (TYPEDEF_PRAGMA (n)))
-
 /*
  *  The following compound access macros are useful whenever a typedef
  *  node is used to represent a type declaration rather than a type
@@ -683,8 +683,6 @@ extern node *SearchTypedef (char *name, char *mod, node *implementations);
 #define OBJDEF_TNAME(n) (TYPES_NAME (OBJDEF_TYPE (n)))
 #define OBJDEF_TMOD(n) (TYPES_MOD (OBJDEF_TYPE (n)))
 #define OBJDEF_TDEF(n) (TYPES_TDEF (OBJDEF_TYPE (n)))
-
-#define OBJDEF_LINKNAME(n) (PRAGMA_LINKNAME (OBJDEF_PRAGMA (n)))
 
 /*
  *
@@ -814,7 +812,7 @@ extern node *SearchObjdef (char *name, char *mod, node *implementations);
  *  external funs : ---
  *  macros        : DBUG, TREE
  *
- *  remarks       :
+ *  remarks       : even the return type 'void' counts !
  *
  */
 
