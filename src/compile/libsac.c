@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  1998/03/17 17:03:54  cg
+ * *** empty log message ***
+ *
  * Revision 1.7  1998/03/17 12:22:40  cg
  * Now, an alternative way of initializing character arrays derived from
  * strings is implemented. This uses the new ICM ND_CREATE_CONST_ARRAY_C
@@ -234,9 +237,9 @@ __SAC__Runtime_PrintHeader (char *title)
  *   void __SAC__Runtime_string2array(char *array, const char *string)
  *
  * description:
- *
- *
- *
+ *   This function converts string representations of character arrays
+ *   into real character arrays. It's used in conjunction with the ICM
+ *   ND_CREATE_CONST_ARRAY.
  *
  *
  ******************************************************************************/
