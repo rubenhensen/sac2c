@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2001/03/27 21:40:09  dkr
+ * macro MALLOC_INIT_VECT used
+ *
  * Revision 3.15  2001/03/22 19:19:16  dkr
  * include of tree.h eliminated
  *
@@ -611,7 +614,7 @@ WLCOMP_ConstSegs (node *segs, node *parms, node *cubes, int dims, int line)
 node *
 WLCOMP_NoBlocking (node *segs, node *parms, node *cubes, int dims, int line)
 {
-    int b, d;
+    int b;
     node *seg = segs;
 
     DBUG_ENTER ("WLCOMP_NoBlocking");
@@ -626,24 +629,14 @@ WLCOMP_NoBlocking (node *segs, node *parms, node *cubes, int dims, int line)
          * set ubv
          */
         if (NODE_TYPE (seg) == N_WLseg) {
-            if (WLSEG_UBV (seg) == NULL) {
-                WLSEG_UBV (seg) = (int *)MALLOC (sizeof (int) * dims);
-            }
-            for (d = 0; d < dims; d++) {
-                (WLSEG_UBV (seg))[d] = 1;
-            }
+            MALLOC_INIT_VECT (WLSEG_UBV (segs), WLSEGX_DIMS (segs), int, 1);
 
             /*
              * set bv[]
              */
             WLSEG_BLOCKS (seg) = 3; /* three blocking levels */
             for (b = 0; b < WLSEG_BLOCKS (seg); b++) {
-                if (WLSEG_BV (seg, b) == NULL) {
-                    WLSEG_BV (seg, b) = (int *)MALLOC (sizeof (int) * dims);
-                }
-                for (d = 0; d < dims; d++) {
-                    (WLSEG_BV (seg, b))[d] = 1;
-                }
+                MALLOC_INIT_VECT (WLSEG_UBV (segs), WLSEGX_DIMS (segs), int, 1);
             }
         }
 
