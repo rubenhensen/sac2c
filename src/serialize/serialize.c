@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.5  2004/11/27 01:36:44  cg
+ * Functions renamed.
+ *
  * Revision 1.4  2004/11/27 01:21:40  ktr
  * ILIBreplaceSpecialCharacters.
  *
@@ -318,12 +321,12 @@ GenerateSerFunTypeSignature (char *funname, node *args)
 }
 
 const char *
-GenerateSerFunName (stentrytype_t type, node *node)
+SERgenerateSerFunName (stentrytype_t type, node *node)
 {
     static char result[MAX_FUN_NAME_LEN];
     char *tmp;
 
-    DBUG_ENTER ("GenerateSerFunName");
+    DBUG_ENTER ("SERgenerateSerFunName");
 
     switch (type) {
     case SET_funbody:
@@ -372,7 +375,7 @@ GenerateSerFunHead (node *elem, stentrytype_t type, info *info)
 {
     DBUG_ENTER ("GenerateSerFunBodyHead");
 
-    fprintf (INFO_SER_FILE (info), "void *%s()", GenerateSerFunName (type, elem));
+    fprintf (INFO_SER_FILE (info), "void *%s()", SERgenerateSerFunName (type, elem));
     fprintf (INFO_SER_FILE (info), "{\n");
     fprintf (INFO_SER_FILE (info), "void *result;\n");
     fprintf (INFO_SER_FILE (info), "void *stack;\n");
@@ -417,7 +420,7 @@ SerializeFundefBody (node *fundef, info *info)
         vis = SVT_local;
     }
 
-    STadd (FUNDEF_NAME (fundef), vis, GenerateSerFunName (SET_funbody, fundef),
+    STadd (FUNDEF_NAME (fundef), vis, SERgenerateSerFunName (SET_funbody, fundef),
            FUNDEF_ISWRAPPERFUN (fundef) ? SET_wrapperbody : SET_funbody,
            INFO_SER_TABLE (info));
 
@@ -454,7 +457,7 @@ SerializeFundefHead (node *fundef, info *info)
     }
 
     FUNDEF_SYMBOLNAME (fundef)
-      = ILIBstringCopy (GenerateSerFunName (SET_funhead, fundef));
+      = ILIBstringCopy (SERgenerateSerFunName (SET_funhead, fundef));
 
     STadd (FUNDEF_NAME (fundef), vis, FUNDEF_SYMBOLNAME (fundef),
            FUNDEF_ISWRAPPERFUN (fundef) ? SET_wrapperhead : SET_funhead,
@@ -484,7 +487,8 @@ SerializeTypedef (node *tdef, info *info)
 
     INFO_SER_STACK (info) = SerializeBuildSerStack (tdef);
 
-    TYPEDEF_SYMBOLNAME (tdef) = ILIBstringCopy (GenerateSerFunName (SET_typedef, tdef));
+    TYPEDEF_SYMBOLNAME (tdef)
+      = ILIBstringCopy (SERgenerateSerFunName (SET_typedef, tdef));
 
     if (TYPEDEF_ISEXPORTED (tdef)) {
         vis = SVT_exported;
@@ -521,7 +525,8 @@ SerializeObjdef (node *objdef, info *info)
 
     INFO_SER_STACK (info) = SerializeBuildSerStack (objdef);
 
-    OBJDEF_SYMBOLNAME (objdef) = ILIBstringCopy (GenerateSerFunName (SET_objdef, objdef));
+    OBJDEF_SYMBOLNAME (objdef)
+      = ILIBstringCopy (SERgenerateSerFunName (SET_objdef, objdef));
 
     if (OBJDEF_ISEXPORTED (objdef)) {
         vis = SVT_exported;
@@ -590,7 +595,7 @@ SerializeFundefLink (node *fundef, FILE *file)
         fprintf (file, "NULL");
     } else {
         fprintf (file, "DeserializeLookupFunction( \"%s\", \"%s\")", FUNDEF_MOD (fundef),
-                 GenerateSerFunName (SET_funhead, fundef));
+                 SERgenerateSerFunName (SET_funhead, fundef));
     }
 
     DBUG_VOID_RETURN;
