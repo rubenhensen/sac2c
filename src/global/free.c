@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.58  1998/05/02 17:47:21  dkr
+ * changed FreeSync, FreeSpmd, FreeNwith2
+ *
  * Revision 1.57  1998/04/29 17:13:09  dkr
  * changed FreeSPMD, FreeSync
  *
@@ -1598,10 +1601,15 @@ FreeSpmd (node *arg_node, node *arg_info)
 
     FREETRAV (SPMD_REGION (arg_node));
 
+    FreeAllIds (SPMD_INOUT_IDS (arg_node));
+
     FREE (SPMD_IN (arg_node));
     FREE (SPMD_OUT (arg_node));
     FREE (SPMD_INOUT (arg_node));
     FREE (SPMD_LOCAL (arg_node));
+    FREE (SPMD_FUNNAME (arg_node));
+
+    FREETRAV (SPMD_ICM (arg_node));
 
     DBUG_PRINT ("FREE", ("Removing N_spmd node ..."));
 
@@ -1622,6 +1630,8 @@ FreeSync (node *arg_node, node *arg_info)
     DBUG_PRINT ("FREE", ("Removing contents of N_sync node ..."));
 
     FREETRAV (SYNC_REGION (arg_node));
+
+    FreeAllIds (SYNC_INOUT_IDS (arg_node));
 
     FREE (SYNC_IN (arg_node));
     FREE (SYNC_OUT (arg_node));
@@ -1792,6 +1802,8 @@ FreeNwith2 (node *arg_node, node *arg_info)
     FREETRAV (NWITH2_SEGS (arg_node));
     FREETRAV (NWITH2_CODE (arg_node));
     FREETRAV (NWITH2_WITHOP (arg_node));
+
+    FreeAllIds (NWITH2_LETIDS (arg_node));
 
     FREE (NWITH2_IN (arg_node));
     FREE (NWITH2_OUT (arg_node));
