@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.38  2000/10/20 15:38:40  dkr
+ * some functions on types added
+ *
  * Revision 1.37  2000/10/17 13:02:13  dkr
  * macro EXPRS_LENGTH added
  *
@@ -210,6 +213,12 @@ extern shpseg *MergeShpseg (shpseg *first, int dim1, shpseg *second, int dim2);
 #define CMP_TYPE_USER(a, b)                                                              \
     ((!strcmp (TYPES_NAME (a), TYPES_NAME (b)))                                          \
      && (!strcmp (CHECK_NULL (TYPES_MOD (a)), CHECK_NULL (TYPES_MOD (b)))))
+
+extern types *GetTypes_Line (types *type, int line);
+extern types *GetTypes (types *type);
+extern int GetDim (types *type);
+extern simpletype GetSimpletype (types *type);
+extern int GetTypesLength (types *type);
 
 /******************************************************************************
  *
@@ -1095,19 +1104,17 @@ extern node *AppendExprs (node *exprs1, node *exprs2);
 
 extern node *MakeExprsNum (int num);
 
-/*
- * length of N_exprs-chain
- */
-#define EXPRS_LENGTH(n, exprs)                                                           \
-    {                                                                                    \
-        node *_tmp;                                                                      \
-        n = 0;                                                                           \
-        _tmp = exprs;                                                                    \
-        while (_tmp != NULL) {                                                           \
-            n++;                                                                         \
-            _tmp = EXPRS_NEXT (_tmp);                                                    \
-        }                                                                                \
-    }
+/******************************************************************************
+ *
+ * function:
+ *   node *GetExprsLength( node *exprs)
+ *
+ * description:
+ *   Computes the length of the given N_exprs chain.
+ *
+ ******************************************************************************/
+
+extern int GetExprsLength (node *exprs);
 
 /*--------------------------------------------------------------------------*/
 

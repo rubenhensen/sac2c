@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.20  2000/10/20 15:38:30  dkr
+ * some functions on types added
+ *
  * Revision 1.19  2000/10/12 18:41:07  dkr
  * return value type of Is...() functions is bool, new
  *
@@ -184,6 +187,8 @@
 #include "my_debug.h"
 #include "free.h"
 
+#include "typecheck.h"
+
 /*--------------------------------------------------------------------------*/
 /*  macros and functions for non-node structures                            */
 /*--------------------------------------------------------------------------*/
@@ -239,6 +244,165 @@ MergeShpseg (shpseg *first, int dim1, shpseg *second, int dim2)
 /***
  ***  Types :
  ***/
+
+/******************************************************************************
+ *
+ * Function:
+ *   type *GetTypes_Line( types* type, int line)
+ *
+ * Description:
+ *   line > 0:  generate an error message if error occurs.
+ *   otherwise: DBUG assert.
+ *
+ ******************************************************************************/
+
+types *
+GetTypes_Line (types *type, int line)
+{
+    node *tdef;
+    types *res;
+
+    DBUG_ENTER ("GetTypesLine");
+
+    if (TYPES_BASETYPE (type) == T_user) {
+        tdef = TYPES_TDEF (type);
+
+        if ((tdef == NULL) && (compiler_phase <= PH_typecheck)) {
+            tdef = LookupType (TYPES_NAME (type), TYPES_MOD (type), line);
+        }
+
+        if (line > 0) {
+            ABORT (line, ("type '%s' is unknown",
+                          ModName (TYPES_MOD (type), TYPES_NAME (type))));
+        } else {
+            DBUG_ASSERT ((tdef != NULL), "typedef not found!");
+        }
+
+        res = TYPEDEF_TYPE (tdef);
+    } else {
+        res = type;
+    }
+
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   type *GetTypes( types* type)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+types *
+GetTypes (types *type)
+{
+    types *res;
+
+    DBUG_ENTER ("GetSimpletype");
+
+    res = GetTypes_Line (type, 0);
+
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   int GetDim( types* type)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+int
+GetDim (types *type)
+{
+    int result;
+
+    DBUG_ENTER ("GetDim");
+
+    result = TYPES_DIM (GetTypes (type));
+
+    DBUG_RETURN (result);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   simpletype GetSimpletype( types* type)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+simpletype
+GetSimpletype (types *type)
+{
+    simpletype res;
+
+    DBUG_ENTER ("GetSimpletype");
+
+    res = TYPES_BASETYPE (GetTypes (type));
+
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   int GetTypesLength( types *type)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+int
+GetTypesLength (types *type)
+{
+    types *b_type;
+    int length, i;
+
+    DBUG_ENTER ("GetTypeLength");
+
+    b_type = GetTypes (type);
+
+    if (b_type != type) {
+        /*
+         * user-defined type
+         */
+        if (TYPES_DIM (b_type) + TYPES_DIM (type) > 0) {
+            length = 1;
+            for (i = 0; i < TYPES_DIM (type); i++) {
+                length *= TYPES_SHAPE (type, i);
+            }
+            for (i = 0; i < TYPES_DIM (b_type); i++) {
+                length *= TYPES_SHAPE (b_type, i);
+            }
+        } else {
+            length = 0;
+        }
+    } else {
+        /*
+         * basic type
+         */
+        if (TYPES_DIM (type) > 0) {
+            length = 1;
+            for (i = 0; i < TYPES_DIM (type); i++) {
+                length *= TYPES_SHAPE (type, i);
+            }
+        } else {
+            length = 0;
+        }
+    }
+
+    DBUG_RETURN (length);
+}
 
 /******************************************************************************
  *
@@ -1560,11 +1724,37 @@ MakeExprsNum (int num)
 {
     node *result;
 
-    DBUG_ENTER (" MakeExprsNum");
+    DBUG_ENTER ("MakeExprsNum");
 
     result = MakeExprs (MakeNum (num), NULL);
 
     DBUG_RETURN (result);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *GetExprsLength( node *exprs)
+ *
+ * description:
+ *   Computes the length of the given N_exprs chain.
+ *
+ ******************************************************************************/
+
+int
+GetExprsLength (node *exprs)
+{
+    int length;
+
+    DBUG_ENTER ("GetExprsLength");
+
+    length = 0;
+    while (exprs != NULL) {
+        length++;
+        exprs = EXPRS_NEXT (exprs);
+    }
+
+    DBUG_RETURN (length);
 }
 
 /*--------------------------------------------------------------------------*/
