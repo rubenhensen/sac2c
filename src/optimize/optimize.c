@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.24  2001/05/09 12:29:40  nmw
+ * removed all unused SSATransform operations between the several
+ * optimizations
+ *
  * Revision 3.23  2001/05/07 09:04:20  nmw
  * call to Unroll() in ssa optimizations removed. the withloop
  * unrolling is done be SSALUR now (it uses WLUnroll.c)
@@ -266,6 +270,7 @@
 #include "SSATransform.h"
 #include "UndoSSATransform.h"
 #include "lac2fun.h"
+#include "fun2lac.h"
 #include "SSADeadCodeRemoval.h"
 #include "SSACSE.h"
 #include "SSAConstantFolding.h"
@@ -567,7 +572,7 @@ OPTmodul (node *arg_node, node *arg_info)
      *   bring AST in SSA form
      *   do function-optimizations
      *   convert back to standard form
-     *   (convert back with fun2lac)
+     *   convert back with fun2lac
      */
 
     if (use_ssaform) {
@@ -623,6 +628,17 @@ OPTmodul (node *arg_node, node *arg_info)
             && (0 == strcmp (break_specifier, "ussa"))) {
             goto DONE;
         }
+
+        /*undo lac2fun transformation */
+        arg_node = Fun2Lac (arg_node);
+
+        if ((break_after == PH_sacopt) && (break_cycle_specifier == 0)
+            && (0 == strcmp (break_specifier, "f2l"))) {
+            goto DONE;
+        }
+
+        /* update mask information for later phases */
+        arg_node = GenerateMasks (arg_node, NULL);
     }
 
     /*
@@ -812,6 +828,10 @@ OPTfundef (node *arg_node, node *arg_info)
             arg_node = GenerateMasks (arg_node, NULL);
 
             arg_node = ArrayElimination (arg_node, arg_node); /* ae_tab */
+            if (use_ssaform) {
+                arg_node = CheckAvisOneFunction (arg_node);
+                arg_node = SSATransformOneFunction (arg_node);
+            }
         }
 
         if ((break_after == PH_sacopt) && (break_cycle_specifier == 0)
@@ -827,8 +847,6 @@ OPTfundef (node *arg_node, node *arg_info)
 
         if (optimize & OPT_DCR) {
             if (use_ssaform) {
-                arg_node = CheckAvisOneFunction (arg_node);
-                arg_node = SSATransformOneFunction (arg_node);
                 arg_node = SSADeadCodeRemoval (arg_node, INFO_OPT_MODUL (arg_info));
             } else {
                 arg_node = DeadCodeRemoval (arg_node, arg_info);
@@ -863,13 +881,11 @@ OPTfundef (node *arg_node, node *arg_info)
 
             if (optimize & OPT_CSE) {
                 if (use_ssaform) {
-                    arg_node = CheckAvisOneFunction (arg_node);
-                    arg_node = SSATransformOneFunction (arg_node);
                     arg_node = SSACSE (arg_node, INFO_OPT_MODUL (arg_info));
                 } else {
                     arg_node = CSE (arg_node, arg_info);
+                    arg_node = GenerateMasks (arg_node, NULL);
                 }
-                arg_node = GenerateMasks (arg_node, NULL);
             }
 
             if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
@@ -879,13 +895,12 @@ OPTfundef (node *arg_node, node *arg_info)
 
             if (optimize & OPT_CF) {
                 if (use_ssaform) {
-                    arg_node = CheckAvisOneFunction (arg_node);
-                    arg_node = SSATransformOneFunction (arg_node);
                     arg_node
                       = SSAConstantFolding (arg_node,
                                             INFO_OPT_MODUL (arg_info)); /* ssacf_tab */
                 } else {
                     arg_node = ConstantFolding (arg_node, arg_info); /* cf_tab */
+                    arg_node = GenerateMasks (arg_node, NULL);
                 }
                 /* srs: CF does not handle the USE mask correctly. For example
                    a = f(3);
@@ -899,7 +914,6 @@ OPTfundef (node *arg_node, node *arg_info)
                    This leads to a DCR problem (b = a is removed but variable declaration
                    for b not. */
                 /* quick fix: always rebuild masks after CF */
-                arg_node = GenerateMasks (arg_node, NULL);
             }
 
             if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
@@ -908,6 +922,7 @@ OPTfundef (node *arg_node, node *arg_info)
             }
 
             if (optimize & OPT_WLT) {
+                arg_node = GenerateMasks (arg_node, NULL);
                 arg_node = WithloopFoldingWLT (arg_node); /* wlt */
                 arg_node = GenerateMasks (arg_node, NULL);
             }
@@ -932,6 +947,11 @@ OPTfundef (node *arg_node, node *arg_info)
                 goto INFO;
             }
 
+            if (use_ssaform && (((optimize & OPT_WLF) || (optimize & OPT_WLT)))) {
+                arg_node = CheckAvisOneFunction (arg_node);
+                arg_node = SSATransformOneFunction (arg_node);
+            }
+
             if (wlf_expr != old_wlf_expr) {
                 /*
                  * this may speed up the optimization phase a lot if a lot of code
@@ -939,15 +959,13 @@ OPTfundef (node *arg_node, node *arg_info)
                  */
                 if (optimize & OPT_CF) {
                     if (use_ssaform) {
-                        arg_node = CheckAvisOneFunction (arg_node);
-                        arg_node = SSATransformOneFunction (arg_node);
                         arg_node
                           = SSAConstantFolding (arg_node, INFO_OPT_MODUL (
                                                             arg_info)); /* ssacf_tab */
                     } else {
                         arg_node = ConstantFolding (arg_node, arg_info); /* cf_tab */
+                        arg_node = GenerateMasks (arg_node, NULL);
                     }
-                    arg_node = GenerateMasks (arg_node, NULL);
                 }
             }
 
@@ -958,13 +976,11 @@ OPTfundef (node *arg_node, node *arg_info)
 
             if (optimize & OPT_DCR) {
                 if (use_ssaform) {
-                    arg_node = CheckAvisOneFunction (arg_node);
-                    arg_node = SSATransformOneFunction (arg_node);
                     arg_node = SSADeadCodeRemoval (arg_node, INFO_OPT_MODUL (arg_info));
                 } else {
                     arg_node = DeadCodeRemoval (arg_node, arg_info);
+                    arg_node = GenerateMasks (arg_node, NULL);
                 }
-                arg_node = GenerateMasks (arg_node, NULL);
             }
 
             if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
@@ -974,10 +990,7 @@ OPTfundef (node *arg_node, node *arg_info)
 
             if ((optimize & OPT_LUR) || (optimize & OPT_WLUR)) {
                 if (use_ssaform) {
-                    arg_node = CheckAvisOneFunction (arg_node);
-                    arg_node = SSATransformOneFunction (arg_node);
                     arg_node = SSALoopUnrolling (arg_node, INFO_OPT_MODUL (arg_info));
-                    arg_node = GenerateMasks (arg_node, NULL);
                     /*
                      * important:
                      *   SSALoopUnrolling uses internally WLUnroll to get the
@@ -1004,8 +1017,6 @@ OPTfundef (node *arg_node, node *arg_info)
 
             if (optimize & OPT_LIR) {
                 if (use_ssaform) {
-                    arg_node = CheckAvisOneFunction (arg_node);
-                    arg_node = SSATransformOneFunction (arg_node);
                     arg_node
                       = SSALoopInvariantRemoval (arg_node, INFO_OPT_MODUL (arg_info));
                 } else {
@@ -1017,17 +1028,6 @@ OPTfundef (node *arg_node, node *arg_info)
             if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
                 && (0 == strcmp (break_specifier, "lir"))) {
                 goto INFO;
-            }
-
-            /* restore ssa-from for usage in next cycle */
-            if (use_ssaform) {
-                DBUG_PRINT ("SSA", ("restoring SSA form:"));
-                arg_node = CheckAvisOneFunction (arg_node);
-                arg_node = SSATransformOneFunction (arg_node);
-                if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
-                    && (0 == strcmp (break_specifier, "ssa"))) {
-                    goto INFO;
-                }
             }
 
         } while (((cse_expr != old_cse_expr) || (cf_expr != old_cf_expr)
@@ -1059,8 +1059,6 @@ OPTfundef (node *arg_node, node *arg_info)
 
             if (optimize & OPT_CF) {
                 if (use_ssaform) {
-                    arg_node = CheckAvisOneFunction (arg_node);
-                    arg_node = SSATransformOneFunction (arg_node);
                     arg_node
                       = SSAConstantFolding (arg_node,
                                             INFO_OPT_MODUL (arg_info)); /* ssacf_tab */
@@ -1082,7 +1080,10 @@ OPTfundef (node *arg_node, node *arg_info)
              */
             if (optimize & OPT_WLT) {
                 arg_node = WithloopFoldingWLT (arg_node); /* wlt */
-                arg_node = GenerateMasks (arg_node, NULL);
+                if (use_ssaform) {
+                    arg_node = CheckAvisOneFunction (arg_node);
+                    arg_node = SSATransformOneFunction (arg_node);
+                }
             }
 
             if ((break_after == PH_sacopt) && (break_cycle_specifier == (loop1 + loop2))
@@ -1096,8 +1097,6 @@ OPTfundef (node *arg_node, node *arg_info)
          */
         if (optimize & OPT_DCR) {
             if (use_ssaform) {
-                arg_node = CheckAvisOneFunction (arg_node);
-                arg_node = SSATransformOneFunction (arg_node);
                 arg_node = SSADeadCodeRemoval (arg_node, INFO_OPT_MODUL (arg_info));
             } else {
                 arg_node = DeadCodeRemoval (arg_node, arg_info);
