@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.75  1998/08/11 12:08:27  dkr
+ * FreeWLsegVar changed
+ *
  * Revision 1.74  1998/08/11 00:03:34  dkr
  * changed FreeWLsegVar
  *
@@ -2038,6 +2041,9 @@ FreeWLsegVar (node *arg_node, node *arg_info)
     }
     if (WLSEGVAR_UBV (arg_node) != NULL) {
         FREE (WLSEGVAR_UBV (arg_node));
+    }
+    if (WLSEGVAR_SV (arg_node) != NULL) {
+        FREE (WLSEGVAR_SV (arg_node));
     }
 
     if (WLSEGVAR_SCHEDULING (arg_node) != NULL) {
