@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.16  1999/05/10 15:52:30  bs
+ * Bug fixed in WLAAprintAccesses
+ *
  * Revision 2.15  1999/05/10 13:24:36  bs
  * WLAA infos will be printed if compilation breaks after phase 15 (sacopt).
  *
@@ -378,7 +381,7 @@ WLAAprintAccesses (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("WLAAprintAccesses");
 
-    feature = INFO_WLAA_FEATURE (INFO_PRINT_ACCESS (arg_info));
+    feature = NCODE_FEATURE (arg_node);
     fprintf (outfile, "/*\n");
     INDENT;
     fprintf (outfile, " * WITH-LOOP features:\n");
