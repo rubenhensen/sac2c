@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.8  2000/06/23 15:20:04  dkr
+ * signature of DupTree chagned
+ *
  * Revision 2.7  2000/06/13 12:24:06  dkr
  * function for old with-loop removed
  *
@@ -678,7 +681,7 @@ DoUnswitch (node *arg_node, node *arg_info, cinfo *cond_info, linfo *loop_info)
         if (cond_info->last_test != cond_info->test_num) {
             /* creat second loop */
             cond_info->insert_node->node[0] = cond_info->chain1;
-            second_loop = DupTree (arg_node, NULL);
+            second_loop = DupTree (arg_node);
 
             /* Generate masks */
             second_loop = GenerateMasks (second_loop, arg_info);
@@ -709,7 +712,7 @@ DoUnswitch (node *arg_node, node *arg_info, cinfo *cond_info, linfo *loop_info)
 
         /* create unrolled loop */
         cond_info->insert_node->node[0] = cond_info->chain2;
-        unrolled_loop = DupTree (DO_INSTR (ASSIGN_INSTR (arg_node)), NULL);
+        unrolled_loop = DupTree (DO_INSTR (ASSIGN_INSTR (arg_node)));
 
         /* Generate masks */
         unrolled_loop = GenerateMasks (unrolled_loop, arg_info);
@@ -754,7 +757,7 @@ DoUnswitch (node *arg_node, node *arg_info, cinfo *cond_info, linfo *loop_info)
              * GNMassign in GenerateMasks eliminates this situation!
              */
             cond_info->insert_node->node[0] = cond_info->chain2;
-            second_loop = DupTree (arg_node, NULL);
+            second_loop = DupTree (arg_node);
 
             /* Generate masks */
             second_loop = GenerateMasks (second_loop, arg_info);
