@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.77  2002/10/18 13:48:08  sbs
+ * handling of ID_ATTRIB replaced by FLAG usages
+ *
  * Revision 3.76  2002/10/16 11:42:10  sbs
  * OBJDEF_AVIS handling inserted.
  *
@@ -780,7 +783,11 @@ DupId (node *arg_node, node *arg_info)
 
     ID_DEF (new_node) = SearchInLUT_PP (INFO_DUP_LUT (arg_info), ID_DEF (arg_node));
 
-    ID_ATTRIB (new_node) = ID_ATTRIB (arg_node);
+    ID_FLAGS (new_node) = ID_FLAGS (arg_node);
+#ifndef DBUG_OFF
+    ID_DBUG_FLAGS (new_node) = ID_DBUG_FLAGS (arg_node);
+#endif
+
     ID_REFCNT (new_node) = ID_REFCNT (arg_node);
     ID_NAIVE_REFCNT (new_node) = ID_NAIVE_REFCNT (arg_node);
 #ifndef TAGGED_ARRAYS
@@ -2767,7 +2774,7 @@ DupId_Ids (node *old_id)
     IDS_REFCNT (new_ids) = ID_REFCNT (old_id);
     IDS_NAIVE_REFCNT (new_ids) = ID_NAIVE_REFCNT (old_id);
     IDS_VARDEC (new_ids) = ID_VARDEC (old_id);
-    IDS_ATTRIB (new_ids) = ID_ATTRIB (old_id);
+    IDS_ATTRIB (new_ids) = IDS_ATTRIB (ID_IDS (old_id));
 
 #if 0
   IDS_DEF( new_ids) = ???
