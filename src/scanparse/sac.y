@@ -3,6 +3,11 @@
 /*
  *
  * $Log$
+ * Revision 1.147  1998/02/27 16:30:29  cg
+ * added parsing rules for sac2crc files
+ * bug fixed in parsing primitive function NOT
+ * bug fixed in parsing for-loops
+ *
  * Revision 1.146  1998/02/13 12:48:45  srs
  * extended generator syntax Ngenidx
  *
@@ -521,6 +526,7 @@
 #include "free.h"
 
 #include "readsib.h"
+#include "resource.h"
 
 
 extern int linenum;
@@ -561,9 +567,11 @@ static file_type file_kind = F_prog;
          prf             prf;
          statustype      statustype;
          strings         *strings;
+         resource_list_t *resource_list_t;
+         target_list_t   *target_list_t;
        }
 
-%token PARSE_PRG, PARSE_DEC, PARSE_SIB
+%token PARSE_PRG, PARSE_DEC, PARSE_SIB, PARSE_RC
 %token BRACE_L, BRACE_R, BRACKET_L, BRACKET_R, SQBR_L, SQBR_R, COLON, SEMIC,
        COMMA, AMPERS, ASSIGN, DOT,
        INLINE, LET, TYPEDEF, CONSTDEF, OBJDEF, CLASSTYPE,
@@ -574,11 +582,11 @@ static file_type file_kind = F_prog;
        ARRAY,SC, TRUE, FALSE, EXTERN, C_KEYWORD,
        PRAGMA, LINKNAME, LINKSIGN, EFFECT, READONLY, REFCOUNTING,
        TOUCH, COPYFUN, FREEFUN, INITFUN, LINKWITH,
-       STEP, WIDTH
+       STEP, WIDTH, TARGET, EQUALS
 %token <id> ID, STR, AND, OR, EQ, NEQ, NOT, LE, LT, GE, GT, MUL, DIV, PRF_MOD, PLUS,
             F2I, F2D, I2F,I2D, D2I, D2F,
             TOI, TOF, TOD, 
-            MINUS, PRIVATEID, ABS, PRF_MIN, PRF_MAX
+            MINUS, PRIVATEID, OPTION, ABS, PRF_MIN, PRF_MAX
             RESHAPE, SHAPE, TAKE, DROP, DIM, ROTATE, CAT, PSI, GENARRAY, MODARRAY
 %token <types> TYPE_INT, TYPE_FLOAT, TYPE_BOOL, TYPE_UNS, TYPE_SHORT,
                TYPE_LONG, TYPE_CHAR, TYPE_DBL, TYPE_VOID, TYPE_DOTS
@@ -617,6 +625,9 @@ static file_type file_kind = F_prog;
              sib, sibtypes, sibtype, sibfuns, sibfun, sibfunbody,
              sibobjs, sibobj, sibpragmas, sibarglist,
              sibargs, sibarg, sibfunlist, sibfunlistentry
+%type <target_list_t> targets
+%type <resource_list_t> resources
+
 
 %left OR
 %left AND
@@ -642,7 +653,7 @@ file:   PARSE_PRG prg {syntax_tree=$2;}
       | PARSE_PRG modimp {syntax_tree=$2;}
       | PARSE_DEC moddec {decl_tree=$2;}
       | PARSE_SIB sib {sib_tree=$2;}
-
+      | PARSE_RC  targets {target_list=RSCAddTargetList($2, target_list);}
                  
   
 	;
@@ -1679,7 +1690,7 @@ assignsOPTret: /*
                     *      \
                     *     NULL
                     */
-                   DBUG_ASSERT( (NODE_TYPE( ASSIGN_NEXT($1))==N_while)
+                   DBUG_ASSERT( (NODE_TYPE( ASSIGN_INSTR( ASSIGN_NEXT($1)))==N_while)
                                  && (ASSIGN_NEXT( ASSIGN_NEXT($1))==NULL),
                                 "corrupted node returned for \"assign\"!");
                    $$=$1;
@@ -1705,7 +1716,7 @@ assigns: /* empty */  { $$=NULL; }
               *      \
               *     NULL
               */
-             DBUG_ASSERT( (NODE_TYPE( ASSIGN_NEXT($1))==N_while)
+             DBUG_ASSERT( (NODE_TYPE( ASSIGN_INSTR( ASSIGN_NEXT($1)))==N_while)
                            && (ASSIGN_NEXT( ASSIGN_NEXT($1))==NULL),
                           "corrupted node returned for \"assign\"!");
              $$=$1;
@@ -1795,8 +1806,7 @@ forassign: DO {$<cint>$=linenum;} assignblock
               * x=e1;
               * while( e2) { AssBlock; y=e3;}
               */
-             $$=$4; 
-             ASSIGN_NEXT($$)=MakeAssign( MakeWhile( $5, Append($9,$7)), NULL);
+             $$=MakeAssign($4, MakeAssign( MakeWhile( $5, Append($9,$7)), NULL)); 
              NODE_LINE( ASSIGN_INSTR( ASSIGN_NEXT($$)))=$<cint>2;
            } 
          ;
@@ -1873,9 +1883,8 @@ expr_main: id  { $$=MakeId( $1, NULL, ST_regular); }
            { $$=MakeCast( $5, $3);
            }
          | NOT expr
-           { MakePrf( F_not,
-               MakeExprs( $2,
-                 NULL));
+           { $$=MakePrf( F_not,
+                         MakeExprs( $2, NULL));
            }
          | BRACKET_L expr BRACKET_R { $$=$2; }
          | expr SQBR_L exprNOnum SQBR_R
@@ -2735,6 +2744,54 @@ sibfunlistentry: id BRACKET_L sibarglist BRACKET_R
                ;
 
      
+
+/*
+ *********************************************************************
+ *
+ *  rules for sac2crc files
+ *
+ *********************************************************************
+ */
+
+
+targets: TARGET ID COLON resources targets
+         {
+           $$=RSCMakeTargetListEntry($2, $4, $5);
+	 }
+       | /* empty */
+         {
+	   $$=NULL;
+	 }
+       ;
+
+resources: ID EQUALS STR resources
+           {
+             $$=RSCMakeResourceListEntry($1, $3, 0, $4);
+	   }
+         | 
+           ID EQUALS OPTION resources
+           {
+             $$=RSCMakeResourceListEntry($1, $3, 0, $4);
+	   }
+         | ID EQUALS ID resources
+           {
+             $$=RSCMakeResourceListEntry($1, $3, 0, $4);
+	   }
+         | ID EQUALS PRIVATEID resources
+           {
+             $$=RSCMakeResourceListEntry($1, $3, 0, $4);
+	   }
+         | 
+           ID EQUALS NUM resources
+           {
+             $$=RSCMakeResourceListEntry($1, NULL, $3, $4);
+	   }
+         |  /* empty */
+           {
+	     $$=NULL;
+	   }
+         ;
+
 
 %%
 
