@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.22  1998/08/06 01:15:40  dkr
+ * Fixed a bug in WL_ADJUST_OFFSET
+ *
  * Revision 1.21  1998/07/02 09:26:16  cg
  * tracing capabilities improved
  *
@@ -627,7 +630,7 @@ ICMCompileWL_ADJUST_OFFSET (int dim, int dims_target, char *target, char *idx_ve
     }
     fprintf (outfile, "%s", idx_scalars[0]);
     for (i = 1; i < dims; i++) {
-        if (i < dim) {
+        if (i <= dim) {
             fprintf (outfile, " + %s )", idx_scalars[i]);
         } else {
             fprintf (outfile, " + SAC_WL_VAR( start, %s) )", idx_scalars[i]);
