@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.4  1999/04/12 10:13:50  cg
+ * Array access and register macros added.
+ *
  * Revision 2.3  1999/04/06 13:44:27  cg
  * internal declarations moved to libsac_cachesim.h
  * added startup macros
@@ -199,6 +202,12 @@ extern void SAC_CS_Start (char *tag);
  *****************************************************************************/
 extern void SAC_CS_Stop (void);
 
+/*****************************************************************************
+ *
+ *  Macro definitions
+ *
+ *****************************************************************************/
+
 #if (SAC_SET_CACHESIM)
 
 #if (SAC_SET_CACHESIM == SAC_CS_FILE)
@@ -241,7 +250,7 @@ extern void SAC_CS_Stop (void);
                            cachelinesize2, associativity2, writepolicy2, cachesize3,     \
                            cachelinesize3, associativity3, writepolicy3);                \
                                                                                          \
-        SAC_CS_Start ("");                                                               \
+        SAC_CS_Start (NULL);                                                             \
     }
 
 #define SAC_CS_PRINT()                                                                   \
@@ -250,10 +259,25 @@ extern void SAC_CS_Stop (void);
         SAC_CS_Finalize ();                                                              \
     }
 
+#define SAC_CS_READ_ARRAY(name, pos)                                                     \
+    SAC_CS_ReadAccess (SAC_ND_A_FIELD (name), SAC_ND_A_FIELD (name) + (pos)),
+
+#define SAC_CS_WRITE_ARRAY(name, pos)                                                    \
+    SAC_CS_WriteAccess (SAC_ND_A_FIELD (name), SAC_ND_A_FIELD (name) + (pos)),
+
+#define SAC_CS_REGISTER_ARRAY(name)                                                      \
+    SAC_CS_RegisterArray (SAC_ND_A_FIELD (name), SAC_ND_A_SIZE (name))
+
+#define SAC_CS_UNREGISTER_ARRAY(name) SAC_CS_UnregisterArray (SAC_ND_A_FIELD (name))
+
 #else
 
 #define SAC_CS_SETUP()
 #define SAC_CS_PRINT()
+#define SAC_CS_READ_ARRAY(name, pos)
+#define SAC_CS_WRITE_ARRAY(name, pos)
+#define SAC_CS_REGISTER_ARRAY(name)
+#define SAC_CS_UNREGISTER_ARRAY(name)
 
 #endif
 
