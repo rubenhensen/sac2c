@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2002/10/29 17:34:09  dkr
+ * Type2String() modified: 'X' used for dot-shapes instead of 'x'
+ *
  * Revision 3.15  2002/10/08 01:51:46  dkr
  * Type2String() corrected
  *
@@ -263,7 +266,7 @@ Type2String (types *type, int flag, bool all)
                                         sprintf (int_string, "%d_",
                                                  TYPES_SHAPE (type, i));
                                     } else {
-                                        sprintf (int_string, "x_");
+                                        sprintf (int_string, "X_");
                                     }
                                 } else {
                                     if (known_shape == 1) {
@@ -279,7 +282,7 @@ Type2String (types *type, int flag, bool all)
                                     if (known_shape == 1) {
                                         sprintf (int_string, "%d", TYPES_SHAPE (type, i));
                                     } else {
-                                        sprintf (int_string, "x");
+                                        sprintf (int_string, "X");
                                     }
                                 } else {
                                     if (1 == known_shape) {
