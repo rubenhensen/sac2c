@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.163  2004/11/26 11:30:53  sbs
+ * ID_DECL_NAME eliminated
+ *
  * Revision 3.162  2004/11/26 11:22:44  cg
  * TCappendRets renamed to TCappendRet to be consistent
  * with other append functions.
@@ -1494,10 +1497,10 @@ extern node *TCmakeVinfoDollar (node *next);
  */
 
 #define ID_VARNO(n) VARDEC_OR_ARG_VARNO (ID_DECL (n))
+#define ID_DECL(n) (AVIS_DECL (ID_AVIS (n)))
 #define ID_NAME(n) AVIS_NAME (ID_AVIS (n))
 #define ID_NTYPE(n) AVIS_TYPE (ID_AVIS (n))
 #define ID_DIM(n) VARDEC_OR_ARG_DIM (ID_DECL (n))
-#define ID_DECL_NAME(n) VARDEC_OR_ARG_NAME (ID_DECL (n))
 #define ID_DECL_NEXT(n) VARDEC_OR_ARG_NEXT (ID_DECL (n))
 #define ID_PADDED(n) VARDEC_OR_ARG_PADDED (ID_DECL (n))
 
@@ -1515,8 +1518,6 @@ extern node *TCmakeVinfoDollar (node *next);
 
 #define ID_OR_CAST_TYPE(n) ((NODE_TYPE (n) == N_id) ? ID_TYPE (n) : CAST_TYPE (n))
 #define ID_OR_ARRAY_TYPE(n) ((NODE_TYPE (n) == N_id) ? ID_TYPE (n) : ARRAY_TYPE (n))
-
-#define ID_DECL(n) (AVIS_DECL (ID_AVIS (n)))
 
 extern node *TCmakeIdCopyString (const char *str);
 extern node *TCmakeIdCopyStringNt (const char *str, types *type);
