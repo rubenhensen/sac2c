@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.9  2004/08/17 10:29:06  skt
+ * changed two return into DBUG_RETURN
+ *
  * Revision 1.8  2004/08/13 16:16:39  skt
  * some comments added
  *
@@ -685,7 +688,7 @@ ASMRAFreeCluster (struct asmra_cluster_s *cluster)
     }
     cluster = Free (cluster);
 
-    return cluster;
+    DBUG_RETURN (cluster);
 }
 
 /** <!--********************************************************************-->
@@ -857,7 +860,7 @@ ASMRAFreeList (struct asmra_list_s *list)
     }
     list = Free (list);
 
-    return list;
+    DBUG_RETURN (list);
 }
 
 /** <!--********************************************************************-->
