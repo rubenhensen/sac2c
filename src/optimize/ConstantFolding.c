@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2001/04/26 17:10:24  dkr
+ * CFcast reactivated
+ *
  * Revision 3.7  2001/03/22 21:09:02  dkr
  * no changes done
  *
@@ -809,13 +812,7 @@ CFarray (node *arg_node, node *arg_info)
  *		    R) id-node or modified node representing constant value:
  *		       num-, float-, bool- or array-node.
  *  description   : the id-node will be replaced with a new node reppresenting the
- *                  constant value of the identifikator in this context
- *  global vars   : syntax_tree, info_node, mrdl_stack
- *  internal funs :
- *  external funs : DupTree
- *  macros        : DBUG..., TOS
- *
- *  remarks       : --
+ *                  constant value of the identificator in this context
  *
  */
 node *
@@ -905,8 +902,14 @@ CFid (node *arg_node, node *arg_info)
                   = DupShpseg (VARDEC_SHPSEG (ID_VARDEC (arg_node)));
             }
 
-            FreeTree (arg_node);
+            arg_node = FreeTree (arg_node);
             arg_node = DupTree (mrd);
+            if (ID_STATUS (arg_node) == ST_artificial) {
+                /*
+                 * dkr: here is something wrong!!
+                 */
+                arg_node = arg_node;
+            }
             INC_VAR (ASSIGN_USEMASK (INFO_CF_ASSIGN (arg_info)), ID_VARNO (arg_node));
             cf_expr++;
             break;
@@ -929,71 +932,59 @@ CFid (node *arg_node, node *arg_info)
         case N_ap:
         case N_Nwith:
         case N_Npart: /* index vars point to this node. */
+        case N_cast:
             break;
         default:
             DBUG_ASSERT ((FALSE), "Substitution not implemented for constant folding");
             break;
         }
     }
+
     DBUG_RETURN (arg_node);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : CFap
- *  arguments     : 1) N_ap   - node
- *                  2) N_info - node
- *                  R) N_ap   - node
- *  description   : Do not traverse arguments of user defined functions
- *  global vars   : syntax_tree
- *  internal funs : ---
- *  external funs : ---
- *  macros        : ---
+ * Function:
+ *   node *CFap( node *arg_node, node *arg_info)
  *
- *  remarks       : ---
+ * Description:
+ *   Arguments of user defined functions are not traversed.
  *
- */
+ ******************************************************************************/
+
 node *
 CFap (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("CFap");
+
     DBUG_RETURN (arg_node);
 }
 
-#if 0
+/******************************************************************************
+ *
+ * Function:
+ *   node *CFcast( node *arg_node, node *arg_info)
+ *
+ * Description:
+ *   Removes N_cast node from AST.
+ *
+ ******************************************************************************/
 
-All cast expressions are now removed by rmvoidfun.c !!
-
-/* 
- * 
- *  functionname  : CFcast
- *  arguments     : 1) cast-node
- *                  2) info-node
- *                  R) cast-node
- *  description   : removes N_cast-node from syntax_tree
- *  global vars   : syntax_tree, info_node
- *  internal funs : ---
- *  external funs : OPTTrav (optimize.h), FreeTree (free.h)
- *  macros        : CAST_EXPR
- * 
- *  remarks       : ---
- * 
- */
-node *CFcast(node *arg_node, node *arg_info)
+node *
+CFcast (node *arg_node, node *arg_info)
 {
-  node *next_node;
-  
-          
-  DBUG_ENTER("CFcast");
-  
-  next_node = Trav(CAST_EXPR(arg_node), arg_info);
-  
-  CAST_EXPR(arg_node) = NULL;
-  FreeTree(arg_node);
-  DBUG_RETURN(next_node);
-}
+    node *next_node;
 
-#endif
+    DBUG_ENTER ("CFcast");
+
+    next_node = Trav (CAST_EXPR (arg_node), arg_info);
+
+    CAST_EXPR (arg_node) = NULL;
+    arg_node = FreeTree (arg_node);
+
+    DBUG_RETURN (next_node);
+}
 
 /*
  *
@@ -1002,14 +993,6 @@ node *CFcast(node *arg_node, node *arg_info)
  *		    2) N_info  - node
  *		    R) N_while - node
  *  description   : initiates constant folding inside while-loop
- *  global vars   : syntax_tree, mrdl_stack, cf_expr
- *  internal funs : ---
- *  external funs : OPTTrav, MinusMask (optimize.h), While2Do, MakeEmpty (tree_basic.h),
- *                  FreeTree (free.h)
- *  macros        : WHILE_INSTR, WHILE_COND, NODE_TYPE, BOOL_VAL, MRD_GETLAST, ID_VARNO,
- *                  WHILE_DEFMASK, WHILE_USEMASK, WHILE_TERMMASK
- *
- *  remarks       : ---
  *
  */
 node *
@@ -1486,10 +1469,10 @@ FoundZero (node *arg_node)
 /******************************************************************************
  *
  * function:
- *   node *FoldPrfScalars( prf prf_name, node **arg, types *res_type, int swap)
+ *   node *FoldPrfScalars( prf prf_name, node **arg, types *res_type, bool swap)
  *
  * description:
- *   computes prf_name( arg[0], ...., arg[n]) in case (swap==FALSE),
+ *   computes prf_name( arg[0], ...., arg[n]) in case (swap == FALSE),
  *            prf_name( arg[1], arg[0], arg[2], ..., arg[n]) otherwise;
  *   and returns either a new node of type "res_type" which carries the result
  *               or NULL (!) if the folding could not be performed.
@@ -1497,7 +1480,7 @@ FoundZero (node *arg_node)
  ******************************************************************************/
 
 node *
-FoldPrfScalars (prf prf_name, node **arg, types *res_type, int swap)
+FoldPrfScalars (prf prf_name, node **arg, types *res_type, bool swap)
 {
     node *tmp, *res;
 
@@ -1650,8 +1633,6 @@ FoldPrfScalars (prf prf_name, node **arg, types *res_type, int swap)
  *  external funs : FreePrf2
  *  macros        : DEC_VAR, SELARG, NULL, PRF_ARG1, PRF_ARG2, NODE_TYPE
  *
- *  remarks       :
- *
  */
 node *
 FoldExpr (node *arg_node, int test_arg, int res_arg, int test_pattern, node *arg_info)
@@ -1787,12 +1768,6 @@ NoConstScalarPrf (node *arg_node, node *arg_info)
  *                  2) ptr to the array
  *                  R) ptr to fetchted element
  *  description   : picks up and duplicates the element at position pos
- *  global vars   : --
- *  internal funs : --
- *  external funs : DupTree
- *  macros        : ARRAY_AELEMS, EXPRS_NEXT, EXPRS_EXPR
- *
- *  remarks       : --
  *
  */
 node *
@@ -1918,7 +1893,8 @@ node *
 ArrayPrf (node *arg_node, node *arg_info)
 {
     node *arg[MAXARG], *expr[MAXARG], *expr_arg[MAXARG], *tmp;
-    int swap, i;
+    bool swap;
+    int i;
     int tmp_len;
     long *used_sofar;
 
