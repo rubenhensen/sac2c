@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.29  1998/04/23 17:33:02  dkr
+ * added CompSync
+ *
  * Revision 1.28  1998/04/21 13:31:28  dkr
  * added funs CompWL...
  *
@@ -107,6 +110,7 @@ extern node *CompTypedef (node *arg_node, node *arg_info);
 extern node *CompObjdef (node *arg_node, node *arg_info);
 extern node *CompWith (node *arg_node, node *arg_info);
 extern node *CompSPMD (node *arg_node, node *arg_info);
+extern node *CompSync (node *arg_node, node *arg_info);
 extern node *CompNcode (node *arg_node, node *arg_info);
 extern node *CompNwith2 (node *arg_node, node *arg_info);
 extern node *CompWLseg (node *arg_node, node *arg_info);
