@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.133  1998/04/21 13:31:57  dkr
+ * added funs CompWL...
+ *
  * Revision 1.132  1998/04/21 12:28:28  dkr
  * fixed a bug in CompSPMD
  *
@@ -737,12 +740,12 @@ int basetype_size[] = {
     }
 
 /*
- * Macro used in COMP_SPMD:
- *  inserts a new instr into an assignment chain
+ * Macro used in CompSPMD:
+ *  inserts a new instr into assignment chain:
+ *
  */
-#define INSERT_INSTR(last_assign, curr_assign, instr, tmp)                               \
+#define INSERT_INSTR(curr_assign, instr, tmp)                                            \
     if (instr != NULL) {                                                                 \
-        last_assign = curr_assign;                                                       \
         ASSIGN_INSTR (curr_assign) = instr;                                              \
         tmp = MakeAssign (NULL, ASSIGN_NEXT (curr_assign));                              \
         ASSIGN_NEXT (curr_assign) = tmp;                                                 \
@@ -5771,7 +5774,7 @@ CompSPMD (node *arg_node, node *arg_info)
     simpletype s_type;
     ids *let_ids;
     node *region, *new_fundef, *body, *icm, *icm_args, *tmp;
-    node *first_assign, *curr_assign, *last_assign = NULL;
+    node *first_assign, *curr_assign, *last_assign;
 
     DBUG_ENTER ("CompSPMD");
 
@@ -5807,18 +5810,8 @@ CompSPMD (node *arg_node, node *arg_info)
      **
      **/
 
-    /* get current assign node */
-    switch (NODE_TYPE (INFO_COMP_LASTASSIGN (arg_info))) {
-    case N_block:
-        first_assign = BLOCK_INSTR (INFO_COMP_LASTASSIGN (arg_info));
-        break;
-    case N_assign:
-        first_assign = ASSIGN_NEXT (INFO_COMP_LASTASSIGN (arg_info));
-        break;
-    default:
-        DBUG_ASSERT ((0), "wrong node type");
-    }
-    curr_assign = first_assign;
+    /* get last assign node */
+    curr_assign = first_assign = LAST_ASSIGN (arg_info);
 
     /*
      * insert a ND_ALLOC_ARRAY for every RC-object in LET_IDS( SPMD_AP_LET( arg_node))
@@ -5836,7 +5829,7 @@ CompSPMD (node *arg_node, node *arg_info)
                                                MakeExprs (MakeNum (IDS_REFCNT (let_ids)),
                                                           NULL))),
                          NULL);
-            INSERT_INSTR (last_assign, curr_assign, icm, tmp)
+            INSERT_INSTR (curr_assign, icm, tmp)
         }
 
         let_ids = IDS_NEXT (let_ids);
@@ -5857,51 +5850,48 @@ CompSPMD (node *arg_node, node *arg_info)
     icm_args = ICM_ARGS (icm);
 
     icm = MakeIcm ("MT_IF_PARALLEL", NULL, NULL);
-    INSERT_INSTR (last_assign, curr_assign, icm, tmp)
+    INSERT_INSTR (curr_assign, icm, tmp)
 
     icm = MakeIcm ("MT_FUN_AP_SETUP", icm_args, NULL);
-    INSERT_INSTR (last_assign, curr_assign, icm, tmp)
+    INSERT_INSTR (curr_assign, icm, tmp)
 
     DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (icm_args)) == N_id), "wrong arg found");
     icm = MakeIcm ("MT_FUN_AP_START", MakeExprs (DupNode (EXPRS_EXPR (icm_args)), NULL),
                    NULL);
-    INSERT_INSTR (last_assign, curr_assign, icm, tmp)
+    INSERT_INSTR (curr_assign, icm, tmp)
 
     icm = MakeIcm ("MT_FUN_AP_RESUME", icm_args, NULL);
-    INSERT_INSTR (last_assign, curr_assign, icm, tmp)
+    INSERT_INSTR (curr_assign, icm, tmp)
 
     icm = MakeIcm ("MT_ELSEIF_SEQUENTIAL", NULL, NULL);
-    INSERT_INSTR (last_assign, curr_assign, icm, tmp)
+    last_assign = curr_assign;
+    INSERT_INSTR (curr_assign, icm, tmp)
 
     /*
      * insert sequentiell SPMD-region code
      *
      * CAUTION: 'last_assign' must point to the predecessor of 'curr_assign'.
-     *          take care about the side effect of macro INSERT_INSTR !
      */
 
-    DBUG_ASSERT ((last_assign != NULL), "last assign not found");
     last_assign = ASSIGN_NEXT (last_assign) = BLOCK_INSTR (region);
     while (ASSIGN_NEXT (last_assign) != NULL) {
         last_assign = ASSIGN_NEXT (last_assign);
     }
-    ASSIGN_NEXT (last_assign) = curr_assign;
+    last_assign = ASSIGN_NEXT (last_assign) = curr_assign;
 
     /*
      * MT_ENDIF_SEQUENTIAL
      */
 
     icm = MakeIcm ("MT_ENDIF_SEQUENTIAL", NULL, NULL);
-    INSERT_INSTR (last_assign, curr_assign, icm, tmp)
+    INSERT_INSTR (curr_assign, icm, tmp)
 
     /*
      * remove empty assignment at 'curr_assign')
      *
      * CAUTION: 'last_assign' must point to the predecessor of 'curr_assign'.
-     *          take care about the side effect of macro INSERT_INSTR !
      */
 
-    DBUG_ASSERT ((last_assign != NULL), "last assign not found");
     ASSIGN_NEXT (last_assign) = FreeNode (ASSIGN_NEXT (last_assign));
 
     /*
@@ -5939,7 +5929,6 @@ CompNcode (node *arg_node, node *arg_info)
      *  the return expression on the right side of the last
      *  assignment in NCODE_CBLOCK.
      *   -> traverse only NCODE_CBLOCK, NCODE_NEXT
-     *   -> free NCODE_CEXPR
      */
     DBUG_ASSERT ((NCODE_CBLOCK (arg_node) != NULL), "block in N_Ncode is empty");
     NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
@@ -5963,9 +5952,138 @@ CompNcode (node *arg_node, node *arg_info)
 node *
 CompNwith2 (node *arg_node, node *arg_info)
 {
+    node *segs;
+
     DBUG_ENTER ("CompNwith2");
 
     NWITH2_CODE (arg_node) = Trav (NWITH2_CODE (arg_node), arg_info);
+    segs = Trav (NWITH2_SEGS (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *CompWLseg(node *arg_node, node *arg_info)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+CompWLseg (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("CompWLseg");
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *CompWLblock(node *arg_node, node *arg_info)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+CompWLblock (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("CompWLblock");
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *CompWLublock(node *arg_node, node *arg_info)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+CompWLublock (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("CompWLublock");
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *CompWLstride(node *arg_node, node *arg_info)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+CompWLstride (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("CompWLstride");
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *CompWLgrid(node *arg_node, node *arg_info)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+CompWLgrid (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("CompWLgrid");
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *CompWLstriVar(node *arg_node, node *arg_info)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+CompWLstriVar (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("CompWLstriVar");
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *CompWLgridVar(node *arg_node, node *arg_info)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+CompWLgridVar (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("CompWLgridVar");
 
     DBUG_RETURN (arg_node);
 }

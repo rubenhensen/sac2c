@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.28  1998/04/21 13:31:28  dkr
+ * added funs CompWL...
+ *
  * Revision 1.27  1998/04/19 17:48:00  dkr
  * uses now access macros
  *
@@ -106,6 +109,13 @@ extern node *CompWith (node *arg_node, node *arg_info);
 extern node *CompSPMD (node *arg_node, node *arg_info);
 extern node *CompNcode (node *arg_node, node *arg_info);
 extern node *CompNwith2 (node *arg_node, node *arg_info);
+extern node *CompWLseg (node *arg_node, node *arg_info);
+extern node *CompWLblock (node *arg_node, node *arg_info);
+extern node *CompWLublock (node *arg_node, node *arg_info);
+extern node *CompWLstride (node *arg_node, node *arg_info);
+extern node *CompWLgrid (node *arg_node, node *arg_info);
+extern node *CompWLstriVar (node *arg_node, node *arg_info);
+extern node *CompWLgridVar (node *arg_node, node *arg_info);
 
 /* and now some macros for creation of N_icms */
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.183  1998/04/21 13:30:04  dkr
+ * added funs CompWL...
+ *
  * Revision 1.182  1998/04/17 17:28:40  dkr
  * 'concurrent regions' are now called 'SPMD regions'
  *
@@ -936,47 +939,48 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 4),
 
   NIF (N_WLseg, "N_WLseg", TravSons, TravSons, PrintWLseg, TravSons, TravSons, TravSons,
-       TravSons, FreeWLseg, TravSons, TravSons, TravSons, TravSons, DupWLseg, TravSons,
+       TravSons, FreeWLseg, TravSons, TravSons, CompWLseg, TravSons, DupWLseg, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 2),
 
   NIF (N_WLblock, "N_WLblock", TravSons, TravSons, PrintWLblock, TravSons, TravSons,
-       TravSons, TravSons, FreeWLblock, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, FreeWLblock, TravSons, TravSons, CompWLblock TravSons,
        DupWLblock, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, 3),
 
   NIF (N_WLublock, "N_WLublock", TravSons, TravSons, PrintWLublock, TravSons, TravSons,
-       TravSons, TravSons, FreeWLublock, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, FreeWLublock, TravSons, TravSons, CompWLublock, TravSons,
        DupWLublock, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, 3),
 
   NIF (N_WLstride, "N_WLstride", TravSons, TravSons, PrintWLstride, TravSons, TravSons,
-       TravSons, TravSons, FreeWLstride, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, FreeWLstride, TravSons, TravSons, CompWLstride, TravSons,
        DupWLstride, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, 2),
 
   NIF (N_WLgrid, "N_WLgrid", TravSons, TravSons, PrintWLgrid, TravSons, TravSons,
-       TravSons, TravSons, FreeWLgrid, TravSons, TravSons, TravSons, TravSons, DupWLgrid,
+       TravSons, TravSons, FreeWLgrid, TravSons, TravSons, CompWLgrid, TravSons,
+       DupWLgrid, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 2),
+       TravSons, 2),
 
   NIF (N_WLstriVar, "N_WLstriVar", TravSons, TravSons, PrintWLstriVar, TravSons, TravSons,
-       TravSons, TravSons, FreeWLstriVar, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, FreeWLstriVar, TravSons, TravSons, CompWLstriVar, TravSons,
        DupWLstriVar, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, 2),
 
   NIF (N_WLgridVar, "N_WLgridVar", TravSons, TravSons, PrintWLgridVar, TravSons, TravSons,
-       TravSons, TravSons, FreeWLgridVar, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, FreeWLgridVar, TravSons, TravSons, CompWLgridVar, TravSons,
        DupWLgridVar, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
