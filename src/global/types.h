@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/04/08 17:14:31  jhs
+ * Changed value for KNOWN_DIM_OFFSET from -2 to -3.
+ * Added EMPTY_ARRAZY with value -2.
+ *
  * Revision 2.2  1999/02/28 21:07:06  srs
  * moved types from WithloopFolding.h to this file.
  *
@@ -424,16 +428,18 @@ typedef struct {
 
 /* and now some macros for the use with 'types->dim'
  * They are used to classify :
- * -shape of type is known:             dim > SCALAR
- * -dimension is only known:            dim < KNOWN_DIM_OFFSET
- * -shape and dimension are not known:  dim == UNKNOWN_SHAPE
- * - type of on array or a scalar:      dim == ARRAY_OR_SCALAR
- * - type of an scalar:                 dim == SCALAR
+ * - shape of type is known:               dim > SCALAR
+ * - dimension is only known:              dim < KNOWN_DIM_OFFSET
+ * - shape and dimension are not known:    dim == UNKNOWN_SHAPE
+ * - type of on array or a scalar:         dim == ARRAY_OR_SCALAR
+ * - type of an scalar:                    dim == SCALAR
+ * - empty array, so shape is known as []: dim == EMPTY_ARRAY
  */
 #define SCALAR 0
 #define UNKNOWN_SHAPE -1
-#define KNOWN_DIM_OFFSET -2
 #define ARRAY_OR_SCALAR -2
+#define EMPTY_ARRAY -3
+#define KNOWN_DIM_OFFSET -3
 
 typedef types shapes; /* this definition is primarily needed for
                        * the vinfo nodes; there we need the shape
