@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2003/09/16 13:23:12  dkr
+ * sac_misc.h included
+ *
  * Revision 3.2  2003/04/29 11:55:05  cg
  * Added function SAC_RuntimeWarning in analogy to SAC_RuntimeError.
  *
@@ -64,6 +67,7 @@
 #include <stdarg.h>
 #include <stdlib.h>
 
+#include "sac_misc.h"
 #include "sac_heapmgr.h"
 
 #ifdef MT

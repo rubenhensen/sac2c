@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2003/09/16 13:23:04  dkr
+ * sac_misc.h included
+ *
  * Revision 3.2  2001/05/31 09:12:59  sbs
  * corrected output for SAC_TR_DecArrayMemcnt 8-)
  *
@@ -67,6 +70,8 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
+
+#include "sac_misc.h"
 
 #ifdef MT
 #define SAC_DO_MULTITHREAD 1
