@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.49  2004/11/22 16:53:43  sah
+  new version
+
   Revision 1.48  2004/11/22 13:23:48  sah
   added even more
 
@@ -592,6 +595,12 @@
             <all />
           </phases>
         </attribute>
+	<attribute name="Type" mandatory="no" >
+	  <type name="OldType" />
+	  <phases>
+	    <range from="typecheck" to="final" />
+	  </phases>
+	</attribute>
         <attribute name="Used" default="USED_INACTIVE"
         mandatory="no">
           <type name="Integer" />
@@ -1508,6 +1517,16 @@
 	    <range from="scanparse" to="typecheck" />
 	  </phases>
 	</attribute>
+	<attribute name="Avis" mandatory="yes" >
+	  <type name="Link" >
+	    <target>
+	      <node name="Avis" />
+	    </target>
+	  </type>
+	  <phases>
+	    <all />
+	  </phases>
+	</attribute>
         <attribute name="WL" mandatory="yes">
           <type name="Link">
             <target>
@@ -1674,19 +1693,6 @@
       <attributes></attributes>
       <flags></flags>
     </node>
-    <node name="Ok">
-      <description>Dummy node, last declared in
-      node_info.mac</description>
-      <sons></sons>
-      <attributes></attributes>
-      <flags></flags>
-    </node>
-    <node name="Stop">
-      <description>barely used in typecheck.c</description>
-      <sons></sons>
-      <attributes></attributes>
-      <flags></flags>
-    </node>
     <node name="Icm">
       <sons>
         <son name="Args" mandatory="no">
@@ -1719,13 +1725,6 @@
             <all />
           </phases>
         </attribute>
-        <attribute name="End_Of_Statement" default="FALSE"
-        mandatory="yes">
-          <type name="Bool" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
         <attribute name="Fundef" mandatory="yes">
           <type name="Link">
             <target>
@@ -1737,7 +1736,9 @@
           </phases>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags>
+        <flag name="IsEndOfStatement" />
+      </flags>
     </node>
     <node name="Pragma">
       <sons>
@@ -1747,8 +1748,18 @@
 	  </target>
 	</son>
 	<son name="Refcounting" mandatory="no">
-	  <target name="Nums">
+	  <target>
 	    <node name="Nums" />
+	  </target>
+	</son>
+	<son name="Effect" mandatory="no">
+	  <target>
+	    <node name="Ids" />
+	  </target>
+	</son>
+	<son name="Touch" mandatory="no">
+	  <target>
+	    <node name="Ids" />
 	  </target>
 	</son>
       </sons>
@@ -1777,12 +1788,6 @@
             <all />
           </phases>
         </attribute>
-        <attribute name="InitFun" default="NULL" mandatory="no">
-          <type name="String" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
         <attribute name="WLComp_APS" default="NULL" mandatory="no">
           <type name="Link">
             <target>
@@ -1803,14 +1808,8 @@
             <all />
           </phases>
         </attribute>
-        <attribute name="Effect" mandatory="no">
-          <type name="Ids" />
-          <phases>
-            <range from="import" to="readsib" />
-          </phases>
-        </attribute>
-        <attribute name="Touch" mandatory="no">
-          <type name="Ids" />
+        <attribute name="InitFun" mandatory="no">
+          <type name="String" />
           <phases>
             <range from="import" to="readsib" />
           </phases>
@@ -1823,22 +1822,6 @@
         </attribute>
         <attribute name="FreeFun" mandatory="no">
           <type name="String" />
-          <phases>
-            <range from="import" to="readsib" />
-          </phases>
-        </attribute>
-        <attribute name="NeedTypes" mandatory="no">
-          <type name="Ids" />
-          <phases>
-            <range from="import" to="readsib" />
-          </phases>
-        </attribute>
-        <attribute name="NeedFuns" mandatory="no">
-          <type name="Link">
-            <target>
-              <unknown />
-            </target>
-          </type>
           <phases>
             <range from="import" to="readsib" />
           </phases>
@@ -1929,30 +1912,33 @@
             <all />
           </phases>
         </attribute>
-        <attribute name="InUse" default="FALSE" mandatory="yes">
-          <type name="Bool" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
       </attributes>
-      <flags></flags>
+      <flags>
+        <flag name="InUse" />
+      </flags>
     </node>
     <node name="Avis">
       <sons></sons>
       <attributes>
-        <attribute name="VarDecOrArg" mandatory="yes">
+        <attribute name="Decl" default="NULL" mandatory="yes">
           <type name="Link">
             <target>
               <node name="VarDec" />
               <node name="Arg" />
+	      <node name="Objdef" />
             </target>
           </type>
           <phases>
             <all />
           </phases>
         </attribute>
-        <attribute name="Type" default="NULL" mandatory="yes">
+	<attribute name="Name" mandatory="yes">
+	  <type name="String" />
+	  <phases>
+	    <all />
+	  </phases>
+	</attribute>
+        <attribute name="Type" mandatory="no">
           <type name="NewType" />
           <phases>
             <all />
@@ -1994,25 +1980,13 @@
             <range from="cf" to="undossa" />
           </phases>
         </attribute>
-        <attribute name="SSALPInv" mandatory="no">
-          <type name="Bool" />
-          <phases>
-            <range from="lir" to="undossa" />
-          </phases>
-        </attribute>
         <attribute name="SSAstack"
-        default="MakeSSAstack(NULL, NULL)" mandatory="yes">
+        default="TBmakeSsastack(NULL, NULL)" mandatory="yes">
           <type name="Node">
             <target>
               <node name="SSAstack" />
             </target>
           </type>
-          <phases>
-            <range from="ssaform" to="undossa" />
-          </phases>
-        </attribute>
-        <attribute name="SSAUndoFlag" mandatory="no">
-          <type name="Bool" />
           <phases>
             <range from="ssaform" to="undossa" />
           </phases>
@@ -2025,12 +1999,6 @@
           </type>
           <phases>
             <all />
-          </phases>
-        </attribute>
-        <attribute name="SSADefined" mandatory="no">
-          <type name="Bool" />
-          <phases>
-            <phase name="ssaform" />
           </phases>
         </attribute>
         <attribute name="SSAThen" mandatory="no">
@@ -2054,7 +2022,7 @@
           </phases>
         </attribute>
         <attribute name="NeedCount" mandatory="no">
-          <type name="Bool" />
+          <type name="Integer" />
           <phases>
             <phase name="SSALIR" />
             <phase name="SSADeadCodeRemoval" />
@@ -2129,20 +2097,19 @@
 	    <phase name="emmrc" />
 	  </phases>
 	</attribute>
-	<attribute name="Alias" default="TRUE" mandatory="yes">
-	  <type name="Bool" />
-	  <phases>
-	    <range from="ssatransform" to="undossatransform" />
-	  </phases>
-	</attribute>
 	<attribute name="AliasMask" mandatory="no">
-	  <type name="DFMMask" />
+	  <type name="DFMask" />
 	  <phases>
 	    <phase name="interfaceanalysis" />
 	  </phases>
 	</attribute>
       </attributes>
-      <flags></flags>
+      <flags>
+        <flag name="SSAUndoFLag" />
+        <flag name="SSADefined" />
+        <flag name="SSALPINV" />
+        <flag name="IsAlias" />
+      </flags>
     </node>
     <node name="Spmd">
       <sons>
@@ -2154,31 +2121,31 @@
       </sons>
       <attributes>
         <attribute name="In" default="NULL" mandatory="yes">
-          <type name="DFMMask" />
+          <type name="DFMask" />
           <phases>
             <all />
           </phases>
         </attribute>
         <attribute name="Out" default="NULL" mandatory="yes">
-          <type name="DFMMask" />
+          <type name="DFMask" />
           <phases>
             <all />
           </phases>
         </attribute>
         <attribute name="InOut" default="NULL" mandatory="yes">
-          <type name="DFMMask" />
+          <type name="DFMask" />
           <phases>
             <all />
           </phases>
         </attribute>
         <attribute name="Local" default="NULL" mandatory="yes">
-          <type name="DFMMask" />
+          <type name="DFMask" />
           <phases>
             <all />
           </phases>
         </attribute>
         <attribute name="Shared" default="NULL" mandatory="yes">
-          <type name="DFMMask" />
+          <type name="DFMask" />
           <phases>
             <all />
           </phases>
@@ -2243,16 +2210,6 @@
             <range from="compile" to="final" />
           </phases>
         </attribute>
-        <attribute name="Static" mandatory="yes">
-          <description>This flag is used to distinguish between
-          static spmd-blocks, i.e. the decision whether to execute
-          in parallel or not is done at compile time, and dynamic
-          ones.</description>
-          <type name="Integer" />
-          <phases>
-            <unknown />
-          </phases>
-        </attribute>
       </attributes>
       <flags></flags>
     </node>
@@ -2265,22 +2222,6 @@
         </son>
       </sons>
       <attributes>
-        <attribute name="First" default="FALSE" mandatory="yes">
-          <description>Flag whether the sync-region is the first
-          one of the current SMPD-region</description>
-          <type name="Integer" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
-        <attribute name="Last" default="TRUE" mandatory="yes">
-          <description>Flag whether the sync-region is the last one
-          of the current SMPD-region</description>
-          <type name="Integer" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
         <attribute name="FoldCount" default="0" mandatory="yes">
           <type name="Integer" />
           <phases>
@@ -2288,31 +2229,31 @@
           </phases>
         </attribute>
         <attribute name="In" default="NULL" mandatory="yes">
-          <type name="DFMMask" />
+          <type name="DFMask" />
           <phases>
             <all />
           </phases>
         </attribute>
         <attribute name="Out" default="NULL" mandatory="yes">
-          <type name="DFMMask" />
+          <type name="DFMask" />
           <phases>
             <all />
           </phases>
         </attribute>
         <attribute name="InOut" default="NULL" mandatory="yes">
-          <type name="DFMMask" />
+          <type name="DFMask" />
           <phases>
             <all />
           </phases>
         </attribute>
         <attribute name="OutRep" default="NULL" mandatory="yes">
-          <type name="DFMMask" />
+          <type name="DFMask" />
           <phases>
             <all />
           </phases>
         </attribute>
         <attribute name="Local" default="NULL" mandatory="yes">
-          <type name="DFMMask" />
+          <type name="DFMask" />
           <phases>
             <all />
           </phases>
@@ -2329,7 +2270,16 @@
           </phases>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags>
+        <flag name="First">
+          <description>Flag whether the sync-region is the first
+          one of the current SMPD-region</description>
+        </flag>
+        <flag>
+          <description>Flag whether the sync-region is the last one
+          of the current SMPD-region</description>
+        </flag>
+      </flags>
     </node>
     <node name="MT">
       <sons>
@@ -2340,30 +2290,6 @@
         </son>
       </sons>
       <attributes>
-        <attribute name="UseMask" mandatory="yes">
-          <type name="DFMMask" />
-          <phases>
-            <range from="multithread.dfa" to="final" />
-          </phases>
-        </attribute>
-        <attribute name="DefMask" mandatory="yes">
-          <type name="DFMMask" />
-          <phases>
-            <range from="multithread.dfa" to="final" />
-          </phases>
-        </attribute>
-        <attribute name="NeedLater" mandatory="yes">
-          <type name="DFMMask" />
-          <phases>
-            <range from="multithread.dfa" to="final" />
-          </phases>
-        </attribute>
-        <attribute name="Alloc" mandatory="yes">
-          <type name="DFMMask" />
-          <phases>
-            <unknown />
-          </phases>
-        </attribute>
         <attribute name="Fundef" mandatory="yes">
           <type name="ExtLink">
             <target>
@@ -2386,24 +2312,6 @@
         </son>
       </sons>
       <attributes>
-        <attribute name="UseMask" mandatory="yes">
-          <type name="DFMMask" />
-          <phases>
-            <range from="multithread.dfa" to="final" />
-          </phases>
-        </attribute>
-        <attribute name="DefMask" mandatory="yes">
-          <type name="DFMMask" />
-          <phases>
-            <range from="multithread.dfa" to="final" />
-          </phases>
-        </attribute>
-        <attribute name="NeedLater" mandatory="yes">
-          <type name="DFMMask" />
-          <phases>
-            <range from="multithread.dfa" to="final" />
-          </phases>
-        </attribute>
       </attributes>
       <flags></flags>
     </node>
@@ -2416,90 +2324,6 @@
         </son>
       </sons>
       <attributes>
-        <attribute name="UseMask" mandatory="yes">
-          <type name="DFMMask" />
-          <phases>
-            <range from="multithread.dfa" to="final" />
-          </phases>
-        </attribute>
-        <attribute name="DefMask" mandatory="yes">
-          <type name="DFMMask" />
-          <phases>
-            <range from="multithread.dfa" to="final" />
-          </phases>
-        </attribute>
-        <attribute name="NeedLater_MT" mandatory="yes">
-          <type name="DFMMask" />
-          <phases>
-            <range from="multithread.dfa" to="final" />
-          </phases>
-        </attribute>
-        <attribute name="NeedLater_ST" mandatory="yes">
-          <type name="DFMMask" />
-          <phases>
-            <range from="multithread.dfa" to="final" />
-          </phases>
-        </attribute>
-        <attribute name="Alloc" mandatory="no">
-          <type name="DFMMask" />
-          <phases>
-            <range from="multithread.dfa" to="final" />
-          </phases>
-        </attribute>
-        <attribute name="Sync" mandatory="no">
-          <type name="DFMMask" />
-          <phases>
-            <range from="multithread.dfa" to="final" />
-          </phases>
-        </attribute>
-      </attributes>
-      <flags></flags>
-    </node>
-    <node name="MTsignal">
-      <sons></sons>
-      <attributes>
-        <attribute name="IdSet" default="NULL" mandatory="yes">
-          <type name="DFMMask" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
-      </attributes>
-      <flags></flags>
-    </node>
-    <node name="MTsync">
-      <sons></sons>
-      <attributes>
-        <attribute name="Wait" default="NULL" mandatory="yes">
-          <type name="DFMMask" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
-        <attribute name="Fold" default="NULL" mandatory="yes">
-          <type name="DFMFoldMask" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
-        <attribute name="Alloc" default="NULL" mandatory="yes">
-          <type name="DFMMask" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
-      </attributes>
-      <flags></flags>
-    </node>
-    <node name="MTalloc">
-      <sons></sons>
-      <attributes>
-        <attribute name="IdSet" default="NULL" mandatory="yes">
-          <type name="DFMMask" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
       </attributes>
       <flags></flags>
     </node>
@@ -2507,12 +2331,12 @@
       <sons>
         <son name="Part" mandatory="yes">
           <target>
-            <node name="NPart" />
+            <node name="Part" />
           </target>
         </son>
         <son name="Code" mandatory="yes">
           <target>
-            <node name="NCode" />
+            <node name="Code" />
           </target>
         </son>
         <son name="WithOp" mandatory="yes">
@@ -2556,24 +2380,6 @@
             <range from="wlt" to="wlf" />
           </phases>
         </attribute>
-        <attribute name="Foldable" mandatory="yes">
-          <type name="Bool" />
-          <phases>
-            <range from="wlt" to="wlf" />
-          </phases>
-        </attribute>
-        <attribute name="No_Chance" mandatory="yes">
-          <type name="Bool" />
-          <phases>
-            <range from="wlt" to="wlf" />
-          </phases>
-        </attribute>
-        <attribute name="Dec_RC_Ids" mandatory="yes">
-          <type name="Ids" />
-          <phases>
-            <range from="refcount" to="wltransform" />
-          </phases>
-        </attribute>
         <attribute name="In_Mask" mandatory="yes">
           <type name="DFMMask" />
           <phases>
@@ -2592,22 +2398,13 @@
             <range from="infer_dfms" to="wltransform" />
           </phases>
         </attribute>
-        <attribute name="Dependent" mandatory="no">
-          <type name="Bool" />
-          <phases>
-                        <phase name="wlfs" />
-          </phases>
-        </attribute>
-        <attribute name="Mto_Offset_Needed" mandatory="no">
-          <type name="Bool" />
-          <phases>
-                        <phase name="wlfs" />
-          </phases>
-        </attribute>
       </attributes>
-      <flags></flags>
+      <flags>
+        <flag name="IsFolable" />
+	<flag name="IsDependent" />
+      </flags>
     </node>
-    <node name="NPart">
+    <node name="Part">
       <sons>
         <son name="WithId" mandatory="yes">
           <target>
@@ -2621,7 +2418,7 @@
         </son>
         <son name="Next" default="NULL" mandatory="no">
           <target>
-            <node name="NPart" />
+            <node name="Part" />
           </target>
         </son>
       </sons>
@@ -2631,45 +2428,36 @@
           should be increased which is not done yet</description>
           <type name="Link">
             <target>
-              <node name="NCode" />
+              <node name="Code" />
             </target>
           </type>
           <phases>
             <all />
           </phases>
         </attribute>
-        <attribute name="Copy" mandatory="yes">
-          <type name="Bool" />
-          <phases>
-            <phase name="unroll" />
-          </phases>
-        </attribute>
       </attributes>
-      <flags></flags>
+      <flags>
+        <flag name="IsCopy" />
+      </flags>
     </node>
     <node name="Withid">
-      <sons></sons>
+      <sons>
+        <son name="Vec" mandatory="yes">
+	  <target>
+	    <node name="Ids" />
+	  </target>
+	</son>
+        <son name="Ids" mandatory="yes">
+	  <target>
+	    <node name="Ids" />
+	  </target>
+	</son>
+      </sons>
       <attributes>
-        <attribute name="Vec" mandatory="yes">
-          <type name="Ids" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
-        <attribute name="Ids" mandatory="yes">
-          <type name="Ids" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
-	<attribute name="VecNeeded" mandatory="yes">
-	  <type name="Bool" />
-	  <phases>
-	    <range from="refcounting" to="compile" />
-	  </phases>
-	</attribute>
       </attributes>
-      <flags></flags>
+      <flags>
+        <flag name="VecNeeded" />
+      </flags>
     </node>
     <node name="Generator">
       <sons>
@@ -2724,7 +2512,7 @@
       </attributes>
       <flags></flags>
     </node>
-    <node name="NCode">
+    <node name="Code">
       <sons>
         <son name="CBlock" mandatory="no">
           <target>
@@ -2738,7 +2526,7 @@
         </son>
         <son name="Next" default="NULL" mandatory="no">
           <target>
-            <node name="NCode" />
+            <node name="Code" />
           </target>
         </son>
         <son name="Epilogue" default="NULL" mandatory="no">
@@ -2770,24 +2558,6 @@
             <phase name="IVE" />
           </phases>
         </attribute>
-        <attribute name="Flag" mandatory="yes">
-          <type name="Bool" />
-          <phases>
-            <range from="wli" to="wlf" />
-          </phases>
-        </attribute>
-        <attribute name="Inc_RC_Ids" mandatory="yes">
-          <type name="Ids" />
-          <phases>
-            <range from="refcount" to="final" />
-          </phases>
-        </attribute>
-        <attribute name="Resolveable_Depend" mandatory="no">
-          <type name="Bool" />
-          <phases>
-            <phase name="wlfs" />
-          </phases>
-        </attribute>
         <attribute name="WLAA_Info" mandatory="yes">
           <type name="AccessInfo" />
           <phases>
@@ -2800,14 +2570,12 @@
             <range from="tli" to="final" />
           </phases>
         </attribute>
-        <attribute name="AP_Dummy_Code" mandatory="yes">
-          <type name="Bool" />
-          <phases>
-            <range from="ap" to="final" />
-          </phases>
-        </attribute>
       </attributes>
-      <flags></flags>
+      <flags>
+        <flag name="Visited" />
+        <flag name="HasResolveabledDependencies" />
+	<flag name="IsDummyCode" />
+      </flags>
     </node>
     <node name="With2">
       <sons>
@@ -2824,7 +2592,7 @@
         </son>
         <son name="Code" mandatory="yes">
           <target>
-            <node name="NCode" />
+            <node name="Code" />
           </target>
         </son>
         <son name="WithOp" mandatory="yes">
@@ -2840,12 +2608,6 @@
             <all />
           </phases>
         </attribute>
-        <attribute name="MT" default="FALSE" mandatory="yes">
-          <type name="Bool" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
         <attribute name="Pragma" default="NULL" mandatory="yes">
           <type name="Node" >
             <target>
@@ -2857,49 +2619,35 @@
           </phases>
         </attribute>
         <attribute name="In_Mask" mandatory="yes">
-          <type name="DFMMask" />
+          <type name="DFMask" />
           <phases>
             <range from="infer_dfms" to="final" />
           </phases>
         </attribute>
         <attribute name="Out_Mask" mandatory="yes">
-          <type name="DFMMask" />
+          <type name="DFMask" />
           <phases>
             <range from="infer_dfms" to="final" />
           </phases>
         </attribute>
         <attribute name="Local_Mask" mandatory="yes">
-          <type name="DFMMask" />
+          <type name="DFMask" />
           <phases>
             <range from="infer_dfms" to="final" />
           </phases>
         </attribute>
         <attribute name="ReUse" mandatory="yes">
-          <type name="DFMMask" />
+          <type name="DFMask" />
           <phases>
             <range from="ReuseWithArrays" to="final" />
           </phases>
         </attribute>
-        <attribute name="Dec_RC_Ids" mandatory="yes">
-          <type name="Ids" />
-          <phases>
-            <range from="wltransform" to="final" />
-          </phases>
-        </attribute>
-        <attribute name="Offset_Needed" mandatory="yes">
-          <type name="Bool" />
-          <phases>
-            <range from="wltransform" to="final" />
-          </phases>
-        </attribute>
-        <attribute name="CalcParallel" mandatory="yes">
-          <type name="Bool" />
-          <phases>
-            <range from="new_mt" to="final" />
-          </phases>
-        </attribute>
       </attributes>
-      <flags></flags>
+      <flags>
+        <flag name="MT" />
+	<flag name="NeedsOffset" />
+	<flag name="CalcParallel" />
+      </flags>
     </node>
     <node name="Genarray">
       <description>withloop operation</description>
@@ -2909,7 +2657,7 @@
             <set name="Expr" />
           </target>
         </son>
-        <son name="Default" default="NULL" mandatory="no">
+        <son name="Default" mandatory="no">
           <target>
             <set name="Expr" />
           </target>
@@ -3297,7 +3045,7 @@
         <attribute name="Part" mandatory="yes">
           <type name="Link">
             <target>
-              <node name="NPart" />
+              <node name="Part" />
             </target>
           </type>
           <phases>
@@ -3408,24 +3156,6 @@
             <all />
           </phases>
         </attribute>
-        <attribute name="Unrolling" mandatory="yes">
-          <type name="Bool" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
-        <attribute name="Fitted" default="FALSE" mandatory="yes">
-          <type name="Bool" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
-        <attribute name="NoOp" default="FALSE" mandatory="yes">
-          <type name="Bool" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
         <attribute name="Modified" mandatory="yes">
           <type name="Node">
             <target>
@@ -3439,7 +3169,7 @@
         <attribute name="Code" mandatory="no">
 	  <type name="Link">
             <target>
-              <node name="NCode" />
+              <node name="Code" />
             </target>
 	  </type>
 	  <phases>
@@ -3447,7 +3177,11 @@
 	  </phases>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags>
+        <flag name="IsFitted" />
+        <flag name="DoUnroll" />
+        <flag name="IsNoOp" />
+      </flags>
     </node>
     <node name="WLgridVar">
       <sons>
@@ -3489,22 +3223,10 @@
             <all />
           </phases>
         </attribute>
-        <attribute name="Fitted" default="FALSE" mandatory="yes">
-          <type name="Bool" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
-        <attribute name="NoOp" default="FALSE" mandatory="yes">
-          <type name="Bool" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
         <attribute name="Code" mandatory="no">
 	  <type name="Link">
             <target>
-              <node name="NCode" />
+              <node name="Code" />
             </target>
 	  </type>
 	  <phases>
@@ -3512,7 +3234,11 @@
 	  </phases>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags>
+        <flag name="IsFitted" />
+        <flag name="DoUnroll" />
+        <flag name="IsNoOp" />
+      </flags>
     </node>
     <node name="CWrapper">
       <sons>
@@ -3635,14 +3361,10 @@
 	    <phase name="AssignmentsRearrange" />
 	  </phases>
 	</attribute>
-	<attribute name="Used" mandatory="yes">
-	  <type name="Bool" />
-	  <phases>
-	    <phase name="AssignmentsRearrange" />
-	  </phases>
-	</attribute>
       </attributes>
-      <flags></flags>
+      <flags>
+        <flag name="IsUsed" />
+      </flags>
     </node>
     <node name="Dataflowgraph">
       <sons></sons>
@@ -3706,14 +3428,10 @@
 	    <all />
 	  </phases>
 	</attribute>
-	<attribute name="All" mandatory="yes">
-	  <type name="Bool" />
-	  <phases>
-	    <all />
-	  </phases>
-	</attribute>
       </attributes>
-      <flags></flags>
+      <flags>
+        <flag name="All" />
+      </flags>
     </node>
     <node name="Export">
       <sons>
@@ -3729,14 +3447,10 @@
 	</son>
       </sons>
       <attributes>
-	<attribute name="All" mandatory="yes">
-	  <type name="Bool" />
-	  <phases>
-	    <all />
-	  </phases>
-	</attribute>
       </attributes>
-      <flags></flags>
+      <flags>
+        <flag name="All" />
+      </flags>
     </node>
     <node name="Use">
       <sons>
@@ -3758,14 +3472,10 @@
 	    <all />
 	  </phases>
 	</attribute>
-	<attribute name="All" mandatory="yes">
-	  <type name="Bool" />
-	  <phases>
-	    <all />
-	  </phases>
-	</attribute>
       </attributes>
-      <flags></flags>
+      <flags>
+        <flag name="All" />
+      </flags>
     </node>
     <node name="Provide">
       <sons>
@@ -3781,14 +3491,10 @@
 	</son>
       </sons>
       <attributes>
-	<attribute name="All" mandatory="yes">
-	  <type name="Bool" />
-	  <phases>
-	    <all />
-	  </phases>
-	</attribute>
       </attributes>
-      <flags></flags>
+      <flags>
+        <flag name="All" />
+      </flags>
     </node>
     <node name="Symbol">
       <sons>
@@ -3827,6 +3533,59 @@
             <all />
           </phases>
         </attribute>
+      </attributes>
+      <flags></flags>
+    </node>
+    <node name="Ret">
+      <sons>
+        <son name="Next" mandatory="no">
+	  <target>
+	    <node name="Ret" />
+	  </target>
+	</son>
+      </sons>
+      <attributes>
+        <attribute name="Type" mandatory="yes">
+	  <type name="NewTYpe" />
+	  <phases>
+	    <all />
+	  </phases>
+	</attribute>
+      </attributes>
+      <flags>
+      </flags>
+    </node>
+    <node name="Ids">
+      <sons>
+        <son name="Next" mandatory="no">
+	  <target>
+	    <node name="Next" />
+	  </target>
+	</son>
+      </sons>
+      <attributes>
+        <attribute name="Name" default="NULL" mandatory="no" >
+	  <type name="String" />
+	  <phases>
+	    <all />
+	  </phases>
+	</attribute>
+	<attribute name="Mod" default="NULL" mandatory="no" >
+	  <type name="String" />
+	  <phases>
+	    <all />
+	  </phases>
+	</attribute>
+	<attribute name="Avis" mandatory="yes" >
+	  <type name="Link">
+	    <target>
+	      <node name="Avis" />
+	    </target>
+	  </type>
+	  <phases>
+	    <all />
+	  </phases>
+	</attribute>
       </attributes>
       <flags></flags>
     </node>
