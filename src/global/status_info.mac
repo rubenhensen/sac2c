@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2001/02/13 13:38:45  dkr
+ * ST_undef added
+ *
  * Revision 3.2  2000/11/24 14:47:45  nmw
  * ST_ignore added
  * to mark fundefs of generic templates after specialization
@@ -51,8 +54,11 @@
 #define SELECT(it_element, it_text, it_comment)                                          \
     SELECTelement (it_element) SELECTtext (it_text)
 
-SELECT (ST_sac, "ST_sac",
-        /* deps: SAC module/class                                          */),
+SELECT (ST_undef, "ST_undef",
+        /* undefined                                                       */),
+
+  SELECT (ST_sac, "ST_sac",
+          /* deps: SAC module/class                                          */),
 
   SELECT (ST_external, "ST_external",
           /* deps: external module/class                                     */),
