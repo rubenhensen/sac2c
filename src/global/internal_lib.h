@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.10  2000/02/11 16:26:43  dkr
+ * function StringConcat added
+ *
  * Revision 2.9  2000/01/25 13:39:26  dkr
  * all the constvec stuff moved to tree_compound.h
  *
@@ -96,7 +99,9 @@
  *********************************/
 
 extern void *Malloc (int size);
+
 extern char *StringCopy (char *source);
+extern char *StringConcat (char *first, char *second);
 
 extern int lcm (int x, int y);
 extern char *itoa (long number);

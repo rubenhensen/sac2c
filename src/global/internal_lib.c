@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.13  2000/02/11 16:26:29  dkr
+ * function StringConcat added
+ *
  * Revision 2.12  2000/01/26 17:29:22  dkr
  * type of traverse-function-table changed.
  *
@@ -270,6 +273,33 @@ StringCopy (char *source)
         ret = NULL;
 
     DBUG_RETURN (ret);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   char *StringConcat(char *first, char* second)
+ *
+ * description
+ *   Reserves new memory for the concatinated string first + second,
+ *   and returns the concatination. Does not free any memory used by
+ *   first or second.
+ *
+ ******************************************************************************/
+
+char *
+StringConcat (char *first, char *second)
+{
+    char *result;
+
+    DBUG_ENTER ("StringConcat");
+
+    result = malloc (strlen (first) + strlen (second) + 1);
+
+    strcpy (result, first);
+    strcat (result, second);
+
+    DBUG_RETURN (result);
 }
 
 /******************************************************************************
