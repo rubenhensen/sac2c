@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.13  1999/07/09 12:45:32  cg
+ * Basic prerequisites for diagnostic heap management introduced.
+ *
  * Revision 2.12  1999/07/09 07:31:24  cg
  * SAC heap manager integrated into sac2c.
  *
@@ -215,7 +218,7 @@ extern unsigned int runtimecheck;
 #define RUNTIMECHECK_MALLOC 0x0001
 #define RUNTIMECHECK_BOUNDARY 0x0002
 #define RUNTIMECHECK_ERRNO 0x0004
-#define RUNTIMECHECK_HEAPMGR 0x0008
+#define RUNTIMECHECK_HEAP 0x0008
 
 extern unsigned int intrinsics;
 

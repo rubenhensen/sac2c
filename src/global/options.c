@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.15  1999/07/09 12:45:32  cg
+ * Basic prerequisites for diagnostic heap management introduced.
+ *
  * Revision 2.14  1999/07/09 11:52:18  cg
  * Added consistency check for command line options.
  *
@@ -160,7 +163,7 @@ AnalyseCommandline (int argc, char *argv[])
         ARG_FLAGMASK ('m', runtimecheck |= RUNTIMECHECK_MALLOC);
         ARG_FLAGMASK ('b', runtimecheck |= RUNTIMECHECK_BOUNDARY);
         ARG_FLAGMASK ('e', runtimecheck |= RUNTIMECHECK_ERRNO);
-        ARG_FLAGMASK ('h', runtimecheck |= RUNTIMECHECK_HEAPMGR);
+        ARG_FLAGMASK ('h', runtimecheck |= RUNTIMECHECK_HEAP);
         ARG_FLAGMASK_END ();
     });
 
@@ -551,7 +554,7 @@ CheckOptionConsistency ()
         }
     }
 
-    if ((!(optimize & OPT_PHM)) && (runtimecheck & RUNTIMECHECK_HEAPMGR)) {
+    if ((!(optimize & OPT_PHM)) && (runtimecheck & RUNTIMECHECK_HEAP)) {
         SYSWARN (("Diagnostic heap management is only available in "
                   "conjunction with private heap management"));
     }

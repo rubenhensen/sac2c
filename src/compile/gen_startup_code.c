@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.10  1999/07/09 12:45:32  cg
+ * Basic prerequisites for diagnostic heap management introduced.
+ *
  * Revision 2.9  1999/07/09 07:34:16  cg
  * SAC heap manager integrated into sac2c.
  *
@@ -220,8 +223,8 @@ PrintGlobalSwitches ()
              (runtimecheck & RUNTIMECHECK_BOUNDARY) ? 1 : 0);
     fprintf (outfile, "#define SAC_DO_CHECK_ERRNO     %d\n",
              (runtimecheck & RUNTIMECHECK_ERRNO) ? 1 : 0);
-    fprintf (outfile, "#define SAC_DO_CHECK_HEAPMGR   %d\n",
-             (runtimecheck & RUNTIMECHECK_HEAPMGR) ? 1 : 0);
+    fprintf (outfile, "#define SAC_DO_CHECK_HEAP      %d\n",
+             (runtimecheck & RUNTIMECHECK_HEAP) ? 1 : 0);
     fprintf (outfile, "\n");
 
     fprintf (outfile, "#define SAC_DO_PHM             %d\n",
