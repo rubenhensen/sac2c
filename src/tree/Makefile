@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.19  2001/04/02 11:45:39  dkr
+# wl_bounds.o added
+#
 # Revision 3.18  2001/03/22 20:20:20  dkr
 # make deps done
 #
@@ -55,11 +58,7 @@
 # Revision 3.1  2000/11/20 18:03:22  sacbase
 # new release made
 #
-# 
-#  [ eliminated ] .....
-#
-# Revision 1.1  2000/01/21 12:46:00  dkr
-# Initial revision
+# [ eliminated ] .....
 #
 #
 
@@ -89,7 +88,7 @@ all: tree.o tree_basic.o tree_compound.o free.o DupTree.o traverse.o \
      DataFlowMask.o DataFlowMaskUtils.o InferDFMs.o CheckAvis.o \
      LookUpTable.o adjust_ids.o cleanup_decls.o scheduling.o \
      SSATransform.o UndoSSATransform.o change_signature.o \
-     compare_tree.o
+     compare_tree.o wl_bounds.o
 
 
 #
