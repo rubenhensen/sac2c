@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.74  2000/07/14 14:43:11  nmw
+ * free changed to FREE, when used with StringConcat()
+ *
  * Revision 2.73  2000/07/13 13:33:46  jhs
  * Modified creation of allocs for new mt.
  *
@@ -5441,7 +5444,7 @@ BuildParamsByDFM (DFMmask_t *mask, char *tag, int *num_args, node *icm_args)
         vardec = DFMGetMaskEntryDeclSet (NULL);
     }
 
-    free (rc_tag);
+    FREE (rc_tag);
 
     DBUG_RETURN (icm_args);
 }
@@ -5502,7 +5505,7 @@ BuildParamsByDFMfold (DFMfoldmask_t *mask, char *tag, int *num_args, node *icm_a
         mask = DFMFM_NEXT (mask);
     }
 
-    free (rc_tag);
+    FREE (rc_tag);
 
     DBUG_PRINT ("JHS", ("end"));
     DBUG_RETURN (icm_args);
