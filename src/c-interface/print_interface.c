@@ -1,3 +1,6 @@
+/*
+ *
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -73,7 +76,7 @@ PIHmodul (node *arg_node, node *arg_info)
     fprintf (outfile, "/* Interface SAC <-> C for %s \n", MODUL_NAME (arg_node));
     fprintf (outfile, " * use this %s.h file with lib%s.a */\n", MODUL_NAME (arg_node),
              MODUL_NAME (arg_node));
-    fprintf (outfile, "#include \"SAC_interface.h\"\n");
+    fprintf (outfile, "#include \"sac_cinterface.h\"\n");
     fprintf (outfile, "\n");
 
     /*Generate fixed manual and usage hints in headerfile*/
@@ -321,9 +324,9 @@ PIWmodul (node *arg_node, node *arg_info)
              " * this file is only used when compiling the c-library lib%s.a */\n",
              modulename);
     fprintf (outfile, "#include <stdio.h>\n");
-    fprintf (outfile, "#include \"SAC_interface.h\"\n");
-    fprintf (outfile, "#include \"SAC_arg.h\"\n");
-    fprintf (outfile, "#include \"SAC_wrapper_macrodefs.h\"\n");
+    fprintf (outfile, "#include \"sac_cinterface.h\"\n");
+    fprintf (outfile, "#include \"sac_arg.h\"\n");
+    fprintf (outfile, "#include \"sac_cwrapper.h\"\n");
 
     /* declarations for external SAC functions */
     fprintf (outfile, "#include \"header.h\"\n");
