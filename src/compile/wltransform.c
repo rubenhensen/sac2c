@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.22  1998/05/29 00:06:38  dkr
+ * fixed a bug with unrolling
+ *
  * Revision 1.21  1998/05/25 13:15:11  dkr
  * ASSERTs about wrong arguments in wlcomp-pragmas are now ABORT-messages
  *
@@ -2525,7 +2528,7 @@ SplitWL (node *strides)
 /******************************************************************************
  *
  * function:
- *   node *BlockStride( node *stride, long *bv)
+ *   node *BlockStride( node *stride, long *bv, int unroll)
  *
  * description:
  *   returns 'stride' with corrected bounds, blocking levels and
@@ -2535,7 +2538,7 @@ SplitWL (node *strides)
  ******************************************************************************/
 
 node *
-BlockStride (node *stride, long *bv)
+BlockStride (node *stride, long *bv, int unroll)
 {
     node *curr_stride, *curr_grid, *grids;
 
@@ -2550,11 +2553,11 @@ BlockStride (node *stride, long *bv)
 
             /* correct blocking level and unrolling-flag */
             WLSTRIDE_LEVEL (curr_stride)++;
-            WLSTRIDE_UNROLLING (curr_stride) = 1; /* we want to unroll this stride */
+            WLSTRIDE_UNROLLING (curr_stride) = unroll;
             grids = WLSTRIDE_CONTENTS (curr_stride);
             do {
                 WLGRID_LEVEL (grids)++;
-                WLGRID_UNROLLING (grids) = 1; /* we want to unroll this grid */
+                WLGRID_UNROLLING (grids) = unroll;
                 grids = WLGRID_NEXT (grids);
             } while (grids != NULL);
 
@@ -2589,7 +2592,8 @@ BlockStride (node *stride, long *bv)
              */
             curr_grid = WLSTRIDE_CONTENTS (curr_stride);
             do {
-                WLGRID_NEXTDIM (curr_grid) = BlockStride (WLGRID_NEXTDIM (curr_grid), bv);
+                WLGRID_NEXTDIM (curr_grid)
+                  = BlockStride (WLGRID_NEXTDIM (curr_grid), bv, unroll);
                 curr_grid = WLGRID_NEXT (curr_grid);
             } while (curr_grid != NULL);
 
@@ -2759,7 +2763,7 @@ BlockWL (node *stride, int dims, long *bv, int unroll)
                     WLSTRIDE_NEXT (WLBLOCK_CONTENTS (lastdim)) = NULL;
                     /* correct the bounds and blocking level in contents of block */
                     WLBLOCK_CONTENTS (lastdim)
-                      = BlockStride (WLBLOCK_CONTENTS (lastdim), bv);
+                      = BlockStride (WLBLOCK_CONTENTS (lastdim), bv, unroll);
                 }
             }
             break;
