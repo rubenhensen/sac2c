@@ -755,6 +755,7 @@
 	<travuser>
 	  <node name="Assign" />
           <node name="Fundef" />
+          <node name="Cond" />
           <node name="Funcond" />
 	  <node name="Block" />
 	  <node name="With" />
