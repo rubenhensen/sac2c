@@ -1,25 +1,177 @@
 /******************************************************************************
  * 
- * file:  .sac2crc
+ * file:  sac2crc
  * 
  * description:
  *
- *  sac2c private configuration file
+ *  sac2c public configuration file
  *
+ *  This file allows to customize sac2c for specific target systems.
+ *  Here are the definitions of the targets which can be specified 
+ *  using the -target option when calling sac2c.
+ *  
+ *  The special default target presets each configuration entry. The value 
+ *  of an entry is always a string. Embracing the string with quotation
+ *  marks is only required if it contains whitespaces or special characters.
+ *  Once a single entry string becomes lengthy, it may easily be cut into
+ *  several substrings and written in consecutive lines.
+ *  
+ *  Targets other than default implicitly inherit all settings from the
+ *  default target. Selected entries may then be updated for the specific
+ *  needs of a particular target system. Strings may also be extended rather
+ *  than updated by writing "+=" instead of ":=".
+ *  
+ *  Each target may inherit settings from other targets. This is simply
+ *  specified by "::<name>" follwing directly behind the name of the new
+ *  target. Multiple inheritence is possible and will be resolved in the
+ *  same sequence as the inherited targets appear.
+ *  
+ *
+ * caution:
+ *
+ *  sac2c will not check for recursively inheriting targets. This may cause
+ *  non-terminating compiler runs.
+ *
+ ******************************************************************************/
+ 
+
+
+/******************************************************************************
  * 
+ * description of configuration entries:
  *
+ ******************************************************************************
+ *
+ *  CC              CC specifies the C compiler which is called by sac2c in 
+ *                  order to generate machine code.
+ *                  
+ *  CCFLAGS         CCFLAGS specifies the flags CC is always called with.
+ *                  
+ *  CCDIR           CCDIR specifies the directories where CC has to look for
+ *                  non-standard header files, object code files, and libraries.
+ *                  
+ *  CCLINK          CCLINK specifies the libraries an executable always has to
+ *                  be linked with. 
+ *                  
+ *  CCMTLINK        CCMTLINK specifies the libraries a multi-threaded executable
+ *                  has to be linked with, additionally. 
+ *   
+ *  OPT_O0          OPT_O0 specifies the C compiler option to disable optimizations.
+ *                  This is triggered by the sac2c option -O0.
+ *                  
+ *  OPT_O1          OPT_O1 specifies the C compiler option to enable minor
+ *                  optimization. This is triggered by the sac2c option -O1.
+ *                  
+ *  OPT_O2          OPT_O2 specifies the C compiler option to enable medium
+ *                  optimization. This is triggered by the sac2c option -O2.
+ *                  
+ *  OPT_O3          OPT_O3 specifies the C compiler option to enable full
+ *                  optimization. This is triggered by the sac2c option -O3.
+ *                  
+ *  OPT_g           OPT_g specifies the C compiler option to add debug information
+ *                  into the generated machine code for later usage by a debugger.
+ *                  This is triggered by the sac2c option -g.
+ *                  
+ *  OPT_D           OPT_D specifies the C compiler option to define a macro.
+ *                  
+ *  CPP_STDIN       CPP_STDIN specifies how to call the C preprocessor if SAC code
+ *                  is to be read from stdin. The preprocessed code must be sent
+ *                  to stdout.
+ *                  Usage: <CPP_STDIN> <options> 
+ *                  
+ *  CPP_FILE        CPP_FILE specifies how to call the C preprocessor if SAC code
+ *                  is to be read from a file.The preprocessed code must be sent
+ *                  to stdout.
+ *                  Usage: <CPP_FILE> <options> <file>
+ *                  
+ *  TAR_CREATE      TAR_CREATE specifies how to create a SAC library, usually,
+ *                  by the help of tar.
+ *                  Usage: <TAR_CREATE> <library> <files to be assembled>
+ *                  
+ *  TAR_EXTRACT     TAR_EXTRACT specifies how to extract files from a SAC library, 
+ *                  usually, by the help of tar.
+ *                  Usage: <TAR_EXTRACT> <library> <files to be extracted>
+ *                  
+ *  AR_CREATE       AR_CREATE specifies how to create an archive.
+ *                  Usage: <AR_CREATE> <archive> <object files>
+ *                  
+ *  RANLIB          RANLIB specifies how to run ranlib in order to add a symbol table
+ *                  to an archive.
+ *                  Usage: <RANLIB> <archive> 
+ *                  If RANLIB is set to the empty string "", any call to ranlib is 
+ *                  omitted.
+ *                  
+ *  MKDIR           MKDIR specifies how to create a directory.
+ *                  Usage: <MKDIR> <directory>
+ *                  
+ *  RMDIR           RMDIR specifies how to remove a directory including its contents.
+ *                  Usage: <RMDIR> <directory>
+ *                  
+ *  CHDIR           CHDIR specifies how to switch to a different directory.
+ *                  Usage: <CHDIR> <directory>
+ *                  
+ *  CAT             CAT specifies how to display the contents of a file.
+ *                  Usage: <CAT> <file>
+ *                  
+ *  MOVE            MOVE specifies how to move a file to a new location.
+ *                  Usage: <MOVE> <file> <new location>
+ *                  
+ *  DUMP_OUTPUT     DUMP_OUTPUT specifies how to redirect all output in order to 
+ *                  dump it.
+ *
+ *  STDLIB_DECPATH  STDLIB_DECPATH specifies the directories where sac2c looks for
+ *                  declaration files belonging to the SAC standard library.
+ *                 
+ *  STDLIB_LIBPATH  STDLIB_LIBPATH specifies the directories where sac2c looks for
+ *                  library files belonging to the SAC standard library.
+ *                 
+ *  SYSTEM_LIBPATH  SYSTEM_LIBPATH specifies the directories where sac2c looks for
+ *                  system libraries (C standard libraries).
+ *                  
+ *  CACHE1_SIZE     CACHE1_SIZE specifies the size of the L1 (data) cache in kb.
+ *                  A size of 0 means that the system has no L1 cache or its
+ *                  characteristics are unknown.
+ *                  
+ *  CACHE1_LINE     CACHE1_LINE specifies the length of a L1 cache line in bytes.
+ *                  
+ *  CACHE1_ASSOC    CACHE1_ASSOC specifies the set associativity of the L1 cache.
+ *
+ *  CACHE2_SIZE     CACHE2_SIZE specifies the size of the L2 (data) cache in kb.
+ *                  A size of 0 means that the system has no L2 cache or its
+ *                  characteristics are unknown.
+ *                  
+ *  CACHE2_LINE     CACHE2_LINE specifies the length of a L2 cache line in bytes.
+ *                  
+ *  CACHE2_ASSOC    CACHE2_ASSOC specifies the set associativity of the L2 cache.
+ *
+ *  CACHE3_SIZE     CACHE3_SIZE specifies the size of the L3 (data) cache in kb.
+ *                  A size of 0 means that the system has no L3 cache or its
+ *                  characteristics are unknown.
+ *                  
+ *  CACHE3_LINE     CACHE3_LINE specifies the length of a L3 cache line in bytes.
+ *                  
+ *  CACHE3_ASSOC    CACHE3_ASSOC specifies the set associativity of the L3 cache.
+ *  
+ * 
  *
  ******************************************************************************/
  
 
  
+/*******************************************************************************
+ *
+ * target default: default settings for all configuration entries
+ *
+ */
+
 target default:
  
 CC             :=  gcc
 CCFLAGS        :=  "-Wall -Wno-unused -fno-builtin"
 CCDIR          :=  "-I$SACBASE/runtime/ "
                    "-L$SACBASE/runtime/"
-CCLINK         :=  "-lsac"
+CCLINK         :=  -lsac
+CCMTLINK       :=  -lpthread
  
 OPT_O0         :=  ""
 OPT_O1         :=  -O1
@@ -86,73 +238,13 @@ CACHE3_ASSOC   :=  0
  
  
  
-/*******************************************************************************/
- 
-
-target par:
-
-CCLINK         :=  "-lsac -lpthread"
-
-
-
-/*
- * targets using gcc
+/*******************************************************************************
+ *
+ * target suncc: use the Sun C compiler instead of gcc
+ *
  */
 
-target tummy::par:
-
-CACHE1_SIZE    :=  16
-CACHE1_LINE    :=  32
-CACHE1_ASSOC   :=  1
-
-CACHE2_SIZE    :=  256
-CACHE2_LINE    :=  64
-CACHE2_ASSOC   :=  1
-
-
-target twice::par:
-
-CACHE1_SIZE    :=  16
-CACHE1_LINE    :=  32
-CACHE1_ASSOC   :=  4
-
-CACHE2_SIZE    :=  1024
-CACHE2_LINE    :=  32
-CACHE2_ASSOC   :=  1
-
-
-target blitz::par:
-
-CACHE1_SIZE    :=  16
-CACHE1_LINE    :=  32
-CACHE1_ASSOC   :=  1
-
-CACHE2_SIZE    :=  512
-CACHE2_LINE    :=  64
-CACHE2_ASSOC   :=  1
-
-
-target picard::par:
-
-CACHE1_SIZE    :=  16
-CACHE1_LINE    :=  32
-CACHE1_ASSOC   :=  1
-
-CACHE2_SIZE    :=  1024
-CACHE2_LINE    :=  64
-CACHE2_ASSOC   :=  1
-
-
-target epikur::par:
-
-
-
-
-/*
- * targets using cc
- */
-
-target suncc::par:
+target suncc:
 
 CC             :=  cc
 CCFLAGS        :=  "-dalign -fsimple -xsafe=mem"
@@ -172,30 +264,119 @@ SYSTEM_LIBPATH :=  "/usr/ccs/bin/sparc-sun-solaris2.5.1/2.7.2.1:"
                    "/usr/lib"
 
 
-target tummy_cc::suncc::tummy:
+
+/*******************************************************************************
+ *
+ * targets for the specification of different cache architectures
+ *
+ */
+
+target sparc_4:
+
+CACHE1_SIZE    :=  8
+CACHE1_LINE    :=  16
+CACHE1_ASSOC   :=  1
+
+
+target sparc_5:
+
+CACHE1_SIZE    :=  8
+CACHE1_LINE    :=  16
+CACHE1_ASSOC   :=  1
+
+
+target sparc_20_61:
+
+CACHE1_SIZE    :=  16
+CACHE1_LINE    :=  32
+CACHE1_ASSOC   :=  4
+
+
+target sparc_20_71:
+
+CACHE1_SIZE    :=  16
+CACHE1_LINE    :=  32
+CACHE1_ASSOC   :=  4
+
+CACHE2_SIZE    :=  1024
+CACHE2_LINE    :=  32
+CACHE2_ASSOC   :=  1
+
+
+target ultra_entr3000:
+
+CACHE1_SIZE    :=  16
+CACHE1_LINE    :=  32
+CACHE1_ASSOC   :=  1
+
+CACHE2_SIZE    :=  512
+CACHE2_LINE    :=  64
+CACHE2_ASSOC   :=  1
+
+
+target ultra2_entr4000:
+
+CACHE1_SIZE    :=  16
+CACHE1_LINE    :=  32
+CACHE1_ASSOC   :=  1
+
+CACHE2_SIZE    :=  1024
+CACHE2_LINE    :=  64
+CACHE2_ASSOC   :=  1
+
+
+
+/*******************************************************************************
+ *
+ * specific machine targets using gcc
+ *
+ */
+
+target tummy::sparc_5:
+
+
+target cheops::sparc_20_61:
+
+
+target twice::sparc_20_71:
+
+
+target blitz::ultra_entr3000:
+
+
+target picard::ultra2_entr4000:
+
+
+
+
+/*******************************************************************************
+ *
+ * specific machine targets using Sun cc
+ *
+ */
+
+target tummy_cc::suncc::sparc_5:
 
 CCFLAGS        +=  "-xtarget=ss5"
 
 
+target cheops_cc::suncc::sparc_20_61:
 
-target twice_cc::suncc::twice:
+CCFLAGS        +=  "-xtarget=ss20/71 -xcache=16/32/4"
+
+
+target twice_cc::suncc::sparc_20_71:
 
 CCFLAGS        +=  "-xtarget=ss20/71"
 
 
-
-target blitz_cc::suncc::blitz:
+target blitz_cc::suncc::ultra_entr3000:
 
 CCFLAGS        +=  "-xtarget=ultra -xcache=16/32/1:512/64/1"
 
 
-
-target picard_cc::suncc::picard:
+target picard_cc::suncc::ultra2_entr4000:
 
 CCFLAGS        +=  "-xtarget=ultra2 -xcache=16/32/1:1024/64/1"
 
 
-
-target epikur_cc::suncc::epikur:
-
-CCFLAGS        +=  "-xtarget=ultra"
