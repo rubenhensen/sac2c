@@ -1,5 +1,9 @@
 /*
+ *
  * $Log$
+ * Revision 1.4  2001/03/15 15:25:59  dkr
+ * no changes done
+ *
  * Revision 1.3  2001/03/15 15:18:11  dkr
  * signature of Type2String modified
  *
@@ -8,7 +12,6 @@
  *
  * Revision 1.1  2001/03/09 11:08:07  sbs
  * Initial revision
- *
  *
  */
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2001/03/15 15:28:09  dkr
+ * no changes done
+ *
  * Revision 3.2  2001/03/15 15:12:50  dkr
  * signature of Type2String modified
  *
@@ -278,13 +281,13 @@ PIHarg (node *arg_node, node *arg_info)
     case PIH_PRINT_COMMENT:
         /* print internal accepted types of argument */
         typestring = Type2String (ARG_TYPE (arg_node), 0, TRUE);
-
         fprintf (outfile, "%s %s", typestring, ARG_NAME (arg_node));
         FREE (typestring);
         break;
 
     default:
         SYSERROR (("undefined case in PIWtypes!\n"));
+        break;
     }
 
     /* traverse to next arg */
@@ -324,7 +327,6 @@ PIHtypes (types *arg_type, node *arg_info)
             fprintf (outfile, "void");
         } else {
             typestring = Type2String (arg_type, 0, FALSE);
-
             fprintf (outfile, "%s out%d", typestring, INFO_PIH_COUNTER (arg_info));
             FREE (typestring);
         }
@@ -336,6 +338,7 @@ PIHtypes (types *arg_type, node *arg_info)
 
     default:
         SYSERROR (("undefined case in PIWtypes!\n"));
+        break;
     }
 
     /* traverse to next returntype */
