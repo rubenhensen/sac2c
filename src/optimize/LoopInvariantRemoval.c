@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.22  1997/11/26 14:21:03  srs
+ * *** empty log message ***
+ *
  * Revision 1.21  1997/11/26 14:06:26  srs
  * removed use of old macros from acssass_macros.h
  *
@@ -1175,8 +1178,8 @@ CheckDown (node *arg_node, node *arg_info)
 
     if (((CAUTION_UNSWITCH == MOVE) || (UNSWITCH == MOVE))
         && (N_id == arg_node->node[0]->node[0]->nodetype))
-        cond = arg_node->node[0]->node[0]->IDS_VARNO;
-    cond = VARDEC_VARNO (ID_VARDEC (arg_node->node[0]->node[0]));
+        /*     cond = arg_node->node[0]->node[0]->IDS_VARNO; */
+        cond = VARDEC_VARNO (ID_VARDEC (arg_node->node[0]->node[0]));
 
     if (CAUTION_UNSWITCH == MOVE) {
         trap = TRUE;
