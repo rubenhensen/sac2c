@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.22  2001/04/18 13:17:37  dkr
+ * fixed a bug in TClet
+ *
  * Revision 3.21  2001/03/22 21:03:58  dkr
  * no changes done
  *
@@ -5454,8 +5457,9 @@ TClet (node *arg_node, node *arg_info)
                 type = next_type;
         } /* while */
 
-        if (type && (TYPES_BASETYPE (type) == T_dots))
+        if (type && (TYPES_BASETYPE (type) == T_dots)) {
             type = NULL;
+        }
 
         if (type) {
             char *str1, *str2, *str3;
@@ -5464,14 +5468,19 @@ TClet (node *arg_node, node *arg_info)
             str1 = Type2String (type, 0, TRUE);
             str2 = Type2String (tmp, 0, TRUE); /* infered type */
             str3_len
-              = strlen (str2) - strlen (str1) - 2; /* -2 to delete comma and space*/
+              = strlen (str2) - strlen (str1) - 2; /* -2 to delete comma and space */
             /* in str3 the type of the left side of a let-statement will be
              * stored
              */
-            str3 = (char *)MALLOC (sizeof (char) * (str3_len + 1));
-            for (i = 0; i < str3_len; i++)
-                str3[i] = str2[i];
-            str3[str3_len] = '\0';
+            if (str3_len <= 0) {
+                /* dkr: 'str3_len' is < 0 if the LHS is void!! */
+                str3 = "void";
+            } else {
+                str3 = (char *)MALLOC (sizeof (char) * (str3_len + 1));
+                for (i = 0; i < str3_len; i++)
+                    str3[i] = str2[i];
+                str3[str3_len] = '\0';
+            }
 
             ABORT (NODE_LINE (arg_node), ("Different types (%s != %s)", str3, str2));
         } else if (ids) {
