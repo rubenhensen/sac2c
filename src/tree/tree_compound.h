@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.55  2002/03/01 02:35:14  dkr
+ * type ARGTAB added
+ *
  * Revision 3.54  2002/02/22 13:56:09  dkr
  * L_NWITH_OR_NWITH2_DEC_RC_IDS added
  *
@@ -340,7 +343,7 @@ extern node *AnnotateIdWithConstVec (node *expr, node *id);
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  Nodelist :
+ ***  NODELIST :
  ***/
 
 /*
@@ -437,6 +440,15 @@ extern nodelist *NodeListAppend (nodelist *nl, node *newnode, void *attrib);
 extern nodelist *NodeListDelete (nodelist *nl, node *node, bool free_attrib);
 extern nodelist *NodeListFree (nodelist *nl, bool free_attrib);
 extern nodelist *NodeListFind (nodelist *nl, node *node);
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  ARGTAB :
+ ***/
+
+extern int GetArgtabIndexOut (types *type, argtab_t *argtab);
+extern int GetArgtabIndexIn (types *type, argtab_t *argtab);
 
 /*--------------------------------------------------------------------------*/
 /*--------------------------------------------------------------------------*/
