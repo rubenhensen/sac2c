@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.2  1995/10/31 17:39:12  cg
+ * Revision 1.3  1995/11/01 08:30:25  cg
+ * some bug fixes in using nnode.
+ *
+ * Revision 1.2  1995/10/31  17:39:12  cg
  * first compilable revision.
  *
  * Revision 1.1  1995/10/31  17:22:05  cg
@@ -124,6 +127,13 @@ OBJfundef (node *arg_node, node *arg_info)
         new_arg = MakeArg (OBJDEF_VARNAME (obj), new_type, ST_artificial, ST_reference,
                            FUNDEF_ARGS (arg_node));
 
+        /*-------------------------------------------------------------*/
+        if (FUNDEF_ARGS (arg_node) == NULL) {
+            arg_node->nnode += 1;
+            new_arg->nnode = 0;
+        }
+        /*-------------------------------------------------------------*/
+
         FUNDEF_ARGS (arg_node) = new_arg;
 
         need_objs = NODELIST_NEXT (need_objs);
@@ -229,13 +239,24 @@ OBJarg (node *arg_node, node *arg_info)
     if (ARG_ATTRIB (arg_node) == ST_reference) {
         new_return_expr = MakeId (ARG_NAME (arg_node), NULL, ST_artificial);
         ret = FUNDEF_RETURN (arg_info);
-        RETURN_EXPRS (ret) = MakeExprs (new_return_expr, RETURN_EXPRS (ret));
+        new_return_expr = MakeExprs (new_return_expr, RETURN_EXPRS (ret));
+
+        /*-------------------------------------------------------------*/
+        if (RETURN_EXPRS (ret) == NULL) {
+            ret->nnode += 1;
+            new_return_expr->nnode = 1;
+        }
+        /*-------------------------------------------------------------*/
+
+        RETURN_EXPRS (ret) = new_return_expr;
 
         new_return_type
           = MakeType (ARG_BASETYPE (arg_node), ARG_DIM (arg_node), ARG_SHPSEG (arg_node),
                       ARG_TNAME (arg_node), ARG_TMOD (arg_node));
         TYPES_NEXT (new_return_type) = FUNDEF_TYPES (arg_info);
         FUNDEF_TYPES (arg_info) = new_return_type;
+
+        ARG_ATTRIB (arg_node) = ST_was_reference;
     }
 
     if (ARG_NEXT (arg_node) != NULL) {
