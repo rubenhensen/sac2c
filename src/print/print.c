@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.80  2000/06/23 14:10:14  dkr
+ * NWITH_COMPLEX removed
+ *
  * Revision 2.79  2000/06/21 13:30:40  jhs
  * Added assertion, detecting ASSIGN_INSTR == NULL in PrintAssign.
  *
@@ -2302,12 +2305,11 @@ PrintNwith (node *arg_node, node *arg_info)
     DBUG_EXECUTE ("WLI",
                   fprintf (outfile,
                            "\n** WLI N_Nwith : "
-                           "(PARTS %d, REF %d(%d,%d), CPLX %d, FOLDABLE %d, NO_CHANCE "
-                           "%d)\n",
+                           "(PARTS %d, REF %d(%d,%d), FOLDABLE %d, NO_CHANCE %d)\n",
                            NWITH_PARTS (arg_node), NWITH_REFERENCED (arg_node),
                            NWITH_REFERENCED_FOLD (arg_node),
-                           NWITH_REFERENCES_FOLDED (arg_node), NWITH_COMPLEX (arg_node),
-                           NWITH_FOLDABLE (arg_node), NWITH_NO_CHANCE (arg_node)););
+                           NWITH_REFERENCES_FOLDED (arg_node), NWITH_FOLDABLE (arg_node),
+                           NWITH_NO_CHANCE (arg_node)););
 
     INFO_PRINT_ACCESS (arg_info) = NWITH_WLAA (arg_node);
 
