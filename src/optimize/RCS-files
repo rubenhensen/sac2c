@@ -6,6 +6,8 @@ DataFlowMask.c
 DataFlowMask.h
 DeadCodeRemoval.c
 DeadCodeRemoval.h
+DeadFunctionRemoval.c
+DeadFunctionRemoval.h
 DupTree.c
 DupTree.h
 Inline.c
@@ -29,5 +31,7 @@ WithloopFolding.c
 WithloopFolding.h
 WorkReduction.c
 WorkReduction.h
+generatemasks.c
+generatemasks.h
 optimize.c
 optimize.h
