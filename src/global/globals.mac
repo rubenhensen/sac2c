@@ -2,6 +2,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2004/11/23 21:51:49  cg
+ * Added genlib flags.
+ *
  * Revision 1.10  2004/11/23 20:29:03  cg
  * Added profile flags.
  *
@@ -445,7 +448,9 @@ GLOBAL (char *, break_specifier, (char *)ILIBmalloc (MAX_BREAK_SPECIFIER))
  * compiler phase at any position.
  */
 
-GLOBAL (unsigned int, generatelibrary, GENERATELIBRARY_NOTHING)
+GLOBAL (genlib_flags_t, genlib, genlib_init)
+GLOBAL (genlib_flags_t, genlib_all, genlib_all_init)
+GLOBAL (genlib_flags_t, genlib_none, genlib_none_init)
 /*
  * Specify interfaces to generate from SAC modules.
  * Init: nothing, but changed to default standard SAC library
@@ -625,7 +630,7 @@ GLOBAL (const char **, prf_string, prf_string_init)
  * This array maintains debug print names of primitive functions.
  */
 
-GLOBAL (int, min_array_rep, MIN_ARRAY_REP_SCL_AKS)
+GLOBAL (min_array_rep_t, min_array_rep, MAR_scl_aks)
 /*
  * This global variable can be used to restrict the set of
  * array representations used by the backend

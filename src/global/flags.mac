@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2004/11/23 21:51:49  cg
+ * Added genlib flags.
+ *
  * Revision 1.4  2004/11/23 20:29:03  cg
  * Added profile flags.
  *
@@ -120,3 +123,26 @@ RTC (heap, FALSE)
 #undef RTCflag
 #undef RTCdefault
 #undef RTC
+
+/*************************************************************/
+
+/*
+ * Library generation flags
+ */
+
+#ifndef GENLIBflag
+#define GENLIBflag(flag)
+#endif
+
+#ifndef GENLIBdefault
+#define GENLIBdefault(default)
+#endif
+
+#define GENLIB(flag, default) GENLIBflag (flag) GENLIBdefault (default)
+
+GENLIB (sac, FALSE)
+GENLIB (c, FALSE)
+
+#undef GENLIBflag
+#undef GENLIBdefault
+#undef GENLIB

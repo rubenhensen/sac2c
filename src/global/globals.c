@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.78  2004/11/23 21:51:49  cg
+ * Added genlib flags.
+ *
  * Revision 3.77  2004/11/23 20:29:03  cg
  * Added profile flags.
  *
@@ -610,6 +613,25 @@ static runtimecheck_flags_t runtimecheck_all_init = {
 
 static runtimecheck_flags_t runtimecheck_none_init = {
 #define RTCdefault(default) FALSE,
+#include "flags.mac"
+};
+
+/*
+ * Initialize runtime check flags from flags.mac
+ */
+
+static genlib_flags_t genlib_init = {
+#define GENLIBdefault(default) default,
+#include "flags.mac"
+};
+
+static genlib_flags_t genlib_all_init = {
+#define GENLIBdefault(default) TRUE,
+#include "flags.mac"
+};
+
+static genlib_flags_t genlib_none_init = {
+#define GENLIBdefault(default) FALSE,
 #include "flags.mac"
 };
 

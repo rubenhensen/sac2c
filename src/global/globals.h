@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.55  2004/11/23 21:51:49  cg
+ * Added genlib flags.
+ *
  * Revision 3.54  2004/11/23 19:43:26  cg
  * Added flags for triggering tracing, cache simulation and runtime checks.
  *
@@ -100,49 +103,21 @@
 /*
  * File : globals.h
  *
- * Declaration of global variables
- * which are all defined and initialized in globals.c
+ * Description:
  *
- * This file is mostly generated from globals.mac.
+ * We alow exactly one global variable named 'global', which is a huge
+ * structure containing all globally available information.
+ *
+ * Most of the work is done in types.h where the complicated type
+ * global_t is generated from globals.mac and in globals.c where the
+ * initialization code again is generated from globals.mac.
+ *
  */
 
 #ifndef _SAC_GLOBALS_H_
 #define _SAC_GLOBALS_H_
 
 #include "types.h"
-
-#if 0
-
-/*
- * The following macro definitions should be replaced by flags.
- */
-
-#define PROFILE_NONE 0x0000
-#define PROFILE_ALL 0xffff
-
-#define PROFILE_FUN 0x0001
-#define PROFILE_INL 0x0002
-#define PROFILE_LIB 0x0004
-#define PROFILE_WITH 0x0008
-
-#endif
-
-/*
- * Library generation flags
- */
-
-#define GENERATELIBRARY_NOTHING 0x0000
-#define GENERATELIBRARY_SAC 0x0001
-#define GENERATELIBRARY_C 0x0002
-
-/*
- * Array representation flags
- */
-
-#define MIN_ARRAY_REP_SCL_AKS 0x0001
-#define MIN_ARRAY_REP_SCL_AKD 0x0002
-#define MIN_ARRAY_REP_SCL_AUD 0x0004
-#define MIN_ARRAY_REP_AUD 0x0008
 
 extern global_t global;
 
