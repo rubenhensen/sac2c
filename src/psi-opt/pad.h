@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.3  2004/11/25 19:33:17  jhb
+ * guards changed _SAC_PAD_H_
+ *
  * Revision 3.2  2002/10/02 14:53:07  cg
  * External declaration of apdiag_file removed since it is
  * declared static in pad.c
@@ -40,12 +43,12 @@
  *
  *****************************************************************************/
 
-#ifndef sac_pad_h
+#ifndef _SAC_PAD_H_
 
-#define sac_pad_h
+#define _SAC_PAD_H_
 
 extern void APprintDiag (char *format, ...);
 
 extern node *ArrayPadding (node *arg_node);
 
-#endif /* sac_pad_h */
+#endif /* _SAC_PAD_H_  */
