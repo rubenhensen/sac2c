@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2005/01/07 19:54:13  cg
+ * Converted compile time output from Error.h to ctinfo.c
+ *
  * Revision 3.13  2004/11/27 05:02:55  ktr
  * Some Bugfixes.
  *
@@ -450,7 +453,7 @@ RSCshowResources ()
                     *((int *)(resource_table[i].store)));
             break;
         default:
-            SYSABORT (("Internal data structure resource_table corrupted"));
+            CTIabort ("Internal data structure resource_table corrupted");
         }
     }
 
@@ -525,8 +528,8 @@ ParseResourceFiles ()
     envvar = getenv ("SACBASE");
 
     if (envvar == NULL) {
-        SYSABORT (("Unable to open public sac2crc file.\n"
-                   "Probably, the environment variable SACBASE is not set."));
+        CTIabort ("Unable to open public sac2crc file.\n"
+                  "Probably, the environment variable SACBASE is not set.");
     }
 
     strcpy (buffer, envvar);
@@ -535,8 +538,8 @@ ParseResourceFiles ()
     ok = RSCparseResourceFile (buffer);
 
     if (!ok) {
-        SYSABORT (("Unable to parse public sac2crc file.\n"
-                   "Probably, your installation is corrupted."));
+        CTIabort ("Unable to parse public sac2crc file.\n"
+                  "Probably, your installation is corrupted.");
     }
 
     /*
@@ -586,7 +589,7 @@ EvaluateDefaultTarget (target_list_t *target)
     }
 
     if (target == NULL) {
-        SYSABORT (("Configuration files do not contain default target specification"));
+        CTIabort ("Configuration files do not contain default target specification");
     }
 
     for (i = 0; resource_table[i].name[0] != '\0'; i++) {
@@ -599,14 +602,14 @@ EvaluateDefaultTarget (target_list_t *target)
         }
 
         if (resource == NULL) {
-            SYSERROR (("Default target specification of resource '%s` missing",
-                       resource_table[i].name));
+            CTIerror ("Default target specification of resource '%s` missing",
+                      resource_table[i].name);
         } else {
             switch (resource_table[i].tag) {
             case str:
                 if (resource->value_str == NULL) {
-                    SYSABORT (("Default target specification of resource '%s` illegal",
-                               resource_table[i].name));
+                    CTIabort ("Default target specification of resource '%s` illegal",
+                              resource_table[i].name);
                 }
                 *((char **)(resource_table[i].store)) = resource->value_str;
                 resource->value_str = NULL;
@@ -614,14 +617,14 @@ EvaluateDefaultTarget (target_list_t *target)
 
             case num:
                 if (resource->value_str != NULL) {
-                    SYSABORT (("Default target specification of resource '%s` illegal",
-                               resource_table[i].name));
+                    CTIabort ("Default target specification of resource '%s` illegal",
+                              resource_table[i].name);
                 }
                 *((int *)(resource_table[i].store)) = resource->value_num;
                 break;
 
             default:
-                SYSABORT (("Internal data structure resource_table corrupted"));
+                CTIabort ("Internal data structure resource_table corrupted");
             }
         }
     }
@@ -661,9 +664,9 @@ EvaluateCustomTarget (char *target, target_list_t *target_list)
     }
 
     if (tmp == NULL) {
-        SYSABORT (("Configuration files do not contain specification of custom "
-                   "target '%s`",
-                   target));
+        CTIabort ("Configuration files do not contain specification of custom "
+                  "target '%s`",
+                  target);
     }
 
     super_target = tmp->super_targets;
@@ -683,15 +686,15 @@ EvaluateCustomTarget (char *target, target_list_t *target_list)
         }
 
         if (resource_table[i].name[0] == '\0') {
-            SYSWARN (("Specification of target '%s` contains unrecognized resource '%s`",
-                      target, resource->name));
+            CTIwarn ("Specification of target '%s` contains unrecognized resource '%s`",
+                     target, resource->name);
         } else {
             switch (resource_table[i].tag) {
             case str:
                 if (resource->value_str == NULL) {
-                    SYSWARN (("Specification of target '%s` contains illegal value for "
-                              "resource '%s`",
-                              target, resource->name));
+                    CTIwarn ("Specification of target '%s` contains illegal value for "
+                             "resource '%s`",
+                             target, resource->name);
                 } else {
                     if (resource->add_flag) {
                         char *new;
@@ -708,9 +711,9 @@ EvaluateCustomTarget (char *target, target_list_t *target_list)
                 break;
             case num:
                 if (resource->value_str != NULL) {
-                    SYSWARN (("Specification of target '%s` contains illegal value for "
-                              "resource '%s`",
-                              target, resource->name));
+                    CTIwarn ("Specification of target '%s` contains illegal value for "
+                             "resource '%s`",
+                             target, resource->name);
                 } else {
                     if (resource->add_flag) {
                         *((int *)(resource_table[i].store)) += resource->value_num;
@@ -720,7 +723,7 @@ EvaluateCustomTarget (char *target, target_list_t *target_list)
                 }
                 break;
             default:
-                SYSABORT (("Internal data structure resource_table corrupted"));
+                CTIabort ("Internal data structure resource_table corrupted");
             }
         }
 

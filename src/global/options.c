@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.80  2005/01/07 19:54:13  cg
+ * Converted compile time output from Error.h to ctinfo.c
+ *
  * Revision 3.79  2004/11/25 17:53:48  cg
  * SacDevCamp 04
  *
@@ -173,8 +176,8 @@
 
 #define ARGS_ERROR(msg)                                                                  \
     {                                                                                    \
-        SYSERROR (                                                                       \
-          ("%s: %s %s %s", msg, ARGS_argv[0], STR_OR_EMPTY (OPT), STR_OR_EMPTY (ARG)));  \
+        CTIerror ("%s: %s %s %s", msg, ARGS_argv[0], STR_OR_EMPTY (OPT),                 \
+                  STR_OR_EMPTY (ARG));                                                   \
     }
 
 #include "main_args.h"
@@ -183,7 +186,7 @@
 #include "filemgr.h"
 #include "globals.h"
 #include "internal_lib.h"
-#include "Error.h"
+#include "ctinfo.h"
 
 /******************************************************************************
  *
@@ -643,46 +646,46 @@ OPTcheckOptionConsistency ()
 
     if (global.runtimecheck.boundary && global.optimize.doap) {
         global.optimize.doap = FALSE;
-        SYSWARN (("Boundary check (-check b) and array padding (AP) may not be used"
-                  " simultaneously.\n"
-                  "Array padding disabled"));
+        CTIwarn ("Boundary check (-check b) and array padding (AP) may not be used"
+                 " simultaneously.\n"
+                 "Array padding disabled");
     }
 
 #ifdef DISABLE_MT
     if (global.mtmode != MT_none) {
         global.mtmode = MT_none;
         global.num_threads = 1;
-        SYSWARN (("Code generation for multi-threaded program execution not"
-                  " yet available for " ARCH " running " OS ".\n"
-                  "Code for sequential execution generated instead"));
+        CTIwarn ("Code generation for multi-threaded program execution not"
+                 " yet available for " ARCH " running " OS ".\n"
+                 "Code for sequential execution generated instead");
     }
 #endif
 
 #ifdef DISABLE_PHM
     if (global.optimize.dophm) {
-        SYSWARN (("Private heap management is not yet available for " ARCH " running " OS
-                  ".\n"
-                  "Conventional heap management is used instead"));
+        CTIwarn ("Private heap management is not yet available for " ARCH " running " OS
+                 ".\n"
+                 "Conventional heap management is used instead");
         global.optimize.dophm = FALSE;
     }
 #endif
 
     if (global.mtmode != MT_none) {
         if (global.docachesim) {
-            SYSERROR (("Cache simulation is not available for multi-threaded "
-                       "program execution"));
+            CTIerror ("Cache simulation is not available for multi-threaded "
+                      "program execution");
         }
 
         if (global.doprofile) {
-            SYSERROR (("Profiling is not available for multi-threaded "
-                       "program execution"));
+            CTIerror ("Profiling is not available for multi-threaded "
+                      "program execution");
         }
     }
 
     if (global.runtimecheck.heap && !global.optimize.dophm) {
-        SYSWARN (("Diagnostic heap management is only available in "
-                  "conjunction with private heap management.\n"
-                  "Diagnostic disabled"));
+        CTIwarn ("Diagnostic heap management is only available in "
+                 "conjunction with private heap management.\n"
+                 "Diagnostic disabled");
         global.runtimecheck.heap = FALSE;
     }
 
@@ -695,9 +698,9 @@ OPTcheckOptionConsistency ()
     }
 
     if (global.genlib.c && (global.mtmode != MT_none)) {
-        SYSWARN (("Multithreading is not yet available when compiling for "
-                  "a C-library.\n"
-                  "Generation of C-library disabled"));
+        CTIwarn ("Multithreading is not yet available when compiling for "
+                 "a C-library.\n"
+                 "Generation of C-library disabled");
         global.genlib.c = FALSE;
     }
 

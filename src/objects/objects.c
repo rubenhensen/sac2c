@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2005/01/07 19:50:35  cg
+ * Converted compile time output from Error.h to ctinfo.c
+ *
  * Revision 3.15  2004/11/26 20:27:30  jhb
  * ccompile
  *
@@ -355,20 +358,20 @@ RearrangeObjdefs (node *objects)
     } while (inserted);
 
     if (not_ready) {
-        ERROR (0, ("The following global objects cannot be initialized due "
-                   "to mutual dependencies"));
+        CTIerror ("The following global objects cannot be initialized due "
+                  "to mutual dependencies: ");
 
         tmp = objects;
 
         while (tmp != NULL) {
             if (OBJDEF_ATTRIB (tmp) == ST_regular) {
-                CONT_ERROR (("'%s`", ItemName (tmp)));
+                CTIerrorContinued ("%s:%s", OBJDEF_MOD (tmp), OBJDEF_NAME (tmp));
             }
 
             tmp = OBJDEF_NEXT (tmp);
         }
 
-        ABORT_ON_ERROR;
+        CTIabortOnError ();
     }
 
     DBUG_ASSERT (already_done != NULL, "RearrangeObjdefs called with 0 objects");
@@ -441,20 +444,20 @@ RearrangeObjdefs (node *objects)
      */
 
     if (!resolvedall) {
-        ERROR (0, ("The following global objects cannot be initialized due "
-                   "to mutual dependencies"));
+        CTIerror ("The following global objects cannot be initialized due "
+                  "to mutual dependencies: ");
 
         tmp = objects;
 
         while (tmp != NULL) {
             if (OBJDEF_STATUS (tmp) != ST_resolved) {
-                CONT_ERROR (("%s:%s", OBJDEF_MOD (tmp), OBJDEF_NAME (tmp)));
+                CTIerrorContinued ("%s:%s", OBJDEF_MOD (tmp), OBJDEF_NAME (tmp));
             }
 
             tmp = OBJDEF_NEXT (tmp);
         }
 
-        ABORT_ON_ERROR;
+        CTIabortOnError ();
     }
 
     /*
@@ -753,9 +756,9 @@ OBJarg (node *arg_node, info *arg_info)
 
     if (ARG_ATTRIB (arg_node) == ST_reference) {
         if (!IsUnique (ARG_TYPE (arg_node))) {
-            ERROR (NODE_LINE (arg_node),
-                   ("Parameter '%s` is reference parameter but not unique",
-                    ARG_NAME (arg_node)));
+            CTIerrorLine (NODE_LINE (arg_node),
+                          "Parameter '%s` is reference parameter, but not unique",
+                          ARG_NAME (arg_node));
         }
 
         ret = FUNDEF_RETURN (INFO_OBJECTS_FUNDEF (arg_info));
@@ -997,10 +1000,10 @@ OBJlet (node *arg_node, info *arg_info)
                                                 IDS_NAME (last_ids)));
 
                             if (!IsUnique (ID_TYPE (arg_id))) {
-                                ERROR (
-                                  NODE_LINE (arg_node),
-                                  ("Argument '%s` is reference parameter but not unique",
-                                   ID_NAME (arg_id)));
+                                CTIerrorLine (NODE_LINE (arg_node),
+                                              "Argument '%s` is reference parameter but "
+                                              "not unique",
+                                              ID_NAME (arg_id));
                             }
                         }
                         args = EXPRS_NEXT (args);
@@ -1057,10 +1060,10 @@ OBJlet (node *arg_node, info *arg_info)
 
                         if (arg_id != NULL) {
                             if (!IsUnique (ID_TYPE (arg_id))) {
-                                ERROR (
-                                  NODE_LINE (arg_node),
-                                  ("Argument '%s` is reference parameter but not unique",
-                                   ID_NAME (arg_id)));
+                                CTIerrorLine (NODE_LINE (arg_node),
+                                              "Argument '%s` is reference parameter but "
+                                              "not unique",
+                                              ID_NAME (arg_id));
                             }
                         }
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.34  2005/01/07 19:56:38  cg
+ * Converted compile time output from Error.h to ctinfo.c
+ *
  * Revision 3.33  2005/01/07 18:01:31  cg
  * Updated usage of ctinfo
  *
@@ -157,8 +160,8 @@ ExtractNaiveCompPragmaAp (bool *do_naive_comp, node *exprs, int line)
 
         if (!strcmp (FUNDEF_NAME (AP_FUNDEF (ap)), "Naive")) {
             if (AP_ARGS (ap) != NULL) {
-                ABORT (line, ("Illegal argument in wlcomp-pragma found;"
-                              " Naive(): Parameters found"));
+                CTIabortLine (line, "Illegal argument in wlcomp-pragma found;"
+                                    " Naive(): Parameters found");
             }
             (*do_naive_comp) = TRUE;
 
@@ -351,13 +354,13 @@ IntersectStridesArray (node *strides, node *aelems1, node *aelems2, int line)
         DBUG_ASSERT ((NODE_TYPE (strides) == N_wlstride), "no constant stride found");
 
         if ((aelems1 == NULL) || (aelems2 == NULL)) {
-            ABORT (line, ("Illegal argument in wlcomp-pragma found;"
-                          " ConstSegs(): Argument has wrong dimension"));
+            CTIabortLine (line, "Illegal argument in wlcomp-pragma found;"
+                                " ConstSegs(): Argument has wrong dimension");
         }
         if ((NODE_TYPE (EXPRS_EXPR (aelems1)) != N_num)
             || (NODE_TYPE (EXPRS_EXPR (aelems2)) != N_num)) {
-            ABORT (line, ("Illegal argument in wlcomp-pragma found;"
-                          " ConstSegs(): Argument is not an 'int'-array"));
+            CTIabortLine (line, "Illegal argument in wlcomp-pragma found;"
+                                " ConstSegs(): Argument is not an 'int'-array");
         }
 
         /* compute outline of intersection in current dim */
@@ -487,22 +490,25 @@ Array2Bv (node *array, int *bv, int dims, char *fun_name, int line)
     array = ARRAY_AELEMS (array);
     for (d = 0; d < dims; d++) {
         if (array == NULL) {
-            ABORT (line, ("Illegal argument in wlcomp-pragma found;"
+            CTIabortLine (line,
+                          "Illegal argument in wlcomp-pragma found;"
                           " %s(): Blocking vector has wrong dimension",
-                          fun_name));
+                          fun_name);
         }
         if (NODE_TYPE (EXPRS_EXPR (array)) != N_num) {
-            ABORT (line, ("Illegal argument in wlcomp-pragma found;"
+            CTIabortLine (line,
+                          "Illegal argument in wlcomp-pragma found;"
                           " %s(): Blocking vector is not an 'int'-array",
-                          fun_name));
+                          fun_name);
         }
         bv[d] = NUM_VAL (EXPRS_EXPR (array));
         array = EXPRS_NEXT (array);
     }
     if (array != NULL) {
-        ABORT (line, ("Illegal argument in wlcomp-pragma found;"
+        CTIabortLine (line,
+                      "Illegal argument in wlcomp-pragma found;"
                       " %s(): Blocking vector has wrong dimension",
-                      fun_name));
+                      fun_name);
     }
 
     DBUG_RETURN (bv);
@@ -536,18 +542,20 @@ StoreBv (node *segs, node *parms, node *cubes, int dims, char *fun_name, int lin
     DBUG_ENTER ("StoreBv");
 
     if (parms == NULL) {
-        ABORT (line, ("Illegal argument in wlcomp-pragma found;"
+        CTIabortLine (line,
+                      "Illegal argument in wlcomp-pragma found;"
                       " %s(): No parameters found",
-                      fun_name));
+                      fun_name);
     }
 
     DBUG_ASSERT ((NODE_TYPE (parms) == N_exprs),
                  "illegal parameter of wlcomp-pragma found!");
 
     if (NODE_TYPE (EXPRS_EXPR (parms)) != N_num) {
-        ABORT (line, ("Illegal argument in wlcomp-pragma found;"
+        CTIabortLine (line,
+                      "Illegal argument in wlcomp-pragma found;"
                       " %s(): First argument is not an 'int'",
-                      fun_name));
+                      fun_name);
     }
 
     level = NUM_VAL (EXPRS_EXPR (parms));
@@ -556,14 +564,16 @@ StoreBv (node *segs, node *parms, node *cubes, int dims, char *fun_name, int lin
     if ((parms != NULL) && (seg != NULL)) {
         while (seg != NULL) {
             if (NODE_TYPE (seg) != N_wlseg) {
-                WARN (line, ("wlcomp-pragma function %s() ignored"
+                CTIwarnLine (line,
+                             "wlcomp-pragma function %s() ignored"
                              " because generator is not constant",
-                             fun_name));
+                             fun_name);
             } else {
                 if (NODE_TYPE (EXPRS_EXPR (parms)) != N_array) {
-                    ABORT (line, ("Illegal argument in wlcomp-pragma found;"
+                    CTIabortLine (line,
+                                  "Illegal argument in wlcomp-pragma found;"
                                   " %s(): Blocking-vector is not an array",
-                                  fun_name));
+                                  fun_name);
                 }
 
                 if (level >= 0) {
@@ -610,8 +620,8 @@ WLCOMP_All (node *segs, node *parms, node *cubes, int dims, int line)
     DBUG_ENTER ("WLCOMP_All");
 
     if (parms != NULL) {
-        ABORT (line, ("Illegal argument in wlcomp-pragma found;"
-                      " All(): Too many parameters found"));
+        CTIabortLine (line, "Illegal argument in wlcomp-pragma found;"
+                            " All(): Too many parameters found");
     }
 
     if (segs != NULL) {
@@ -645,8 +655,8 @@ WLCOMP_Cubes (node *segs, node *parms, node *cubes, int dims, int line)
     DBUG_ENTER ("WLCOMP_Cubes");
 
     if (parms != NULL) {
-        ABORT (line, ("Illegal argument in wlcomp-pragma found;"
-                      " Cubes(): Too many parameters found"));
+        CTIabortLine (line, "Illegal argument in wlcomp-pragma found;"
+                            " Cubes(): Too many parameters found");
     }
 
     if (segs != NULL) {
@@ -701,16 +711,16 @@ WLCOMP_ConstSegs (node *segs, node *parms, node *cubes, int dims, int line)
     DBUG_ENTER ("WLCOMP_ConstSegs");
 
     if (NODE_TYPE (cubes) != N_wlstride) {
-        WARN (line, ("wlcomp-pragma function ConstSeg() ignored"
-                     " because generator is not constant"));
+        CTIwarnLine (line, "wlcomp-pragma function ConstSeg() ignored"
+                           " because generator is not constant");
     } else {
         if (segs != NULL) {
             segs = FREEdoFreeTree (segs);
         }
 
         if (parms == NULL) {
-            ABORT (line, ("Illegal argument in wlcomp-pragma found;"
-                          " ConstSegs(): No arguments found"));
+            CTIabortLine (line, "Illegal argument in wlcomp-pragma found;"
+                                " ConstSegs(): No arguments found");
         }
 
         do {
@@ -718,13 +728,13 @@ WLCOMP_ConstSegs (node *segs, node *parms, node *cubes, int dims, int line)
                          "illegal parameter of wlcomp-pragma found!");
 
             if (EXPRS_NEXT (parms) == NULL) {
-                ABORT (line, ("Illegal argument in wlcomp-pragma found;"
-                              " ConstSegs(): Upper bound not found"));
+                CTIabortLine (line, "Illegal argument in wlcomp-pragma found;"
+                                    " ConstSegs(): Upper bound not found");
             }
             if ((NODE_TYPE (EXPRS_EXPR1 (parms)) != N_array)
                 || (NODE_TYPE (EXPRS_EXPR2 (parms)) != N_array)) {
-                ABORT (line, ("Illegal argument in wlcomp-pragma found;"
-                              " ConstSegs(): Argument is not an array"));
+                CTIabortLine (line, "Illegal argument in wlcomp-pragma found;"
+                                    " ConstSegs(): Argument is not an array");
             }
 
             new_cubes = IntersectStridesArray (cubes, ARRAY_AELEMS (EXPRS_EXPR1 (parms)),
@@ -771,8 +781,8 @@ WLCOMP_NoBlocking (node *segs, node *parms, node *cubes, int dims, int line)
     DBUG_ENTER ("WLCOMP_NoBlocking");
 
     if (parms != NULL) {
-        ABORT (line, ("Illegal argument in wlcomp-pragma found;"
-                      " NoBlocking(): Too many parameters found"));
+        CTIabortLine (line, "Illegal argument in wlcomp-pragma found;"
+                            " NoBlocking(): Too many parameters found");
     }
 
     while (seg != NULL) {
@@ -911,13 +921,13 @@ WLCOMP_Scheduling (node *segs, node *parms, node *cubes, int dims, int line)
     DBUG_ENTER ("WLCOMP_Scheduling");
 
     if (global.mtmode == MT_none) {
-        WARN (line, ("wlcomp-pragma function Scheduling() ignored"
-                     " because multi-threading is inactive"));
+        CTIwarnLine (line, "wlcomp-pragma function Scheduling() ignored"
+                           " because multi-threading is inactive");
     } else {
         while (seg != NULL) {
             if (parms == NULL) {
-                ABORT (line, ("Illegal argument in wlcomp-pragma found;"
-                              " Scheduling(): Missing Parameter"));
+                CTIabortLine (line, "Illegal argument in wlcomp-pragma found;"
+                                    " Scheduling(): Missing Parameter");
             }
 
             DBUG_ASSERT ((NODE_TYPE (parms) == N_exprs),
@@ -925,8 +935,8 @@ WLCOMP_Scheduling (node *segs, node *parms, node *cubes, int dims, int line)
 
             arg = EXPRS_EXPR (parms);
             if (NODE_TYPE (arg) != N_ap) {
-                ABORT (line, ("Illegal argument in wlcomp-pragma found;"
-                              " Scheduling(): Argument is not an application"));
+                CTIabortLine (line, "Illegal argument in wlcomp-pragma found;"
+                                    " Scheduling(): Argument is not an application");
             }
 
             /*
@@ -967,13 +977,13 @@ WLCOMP_Tasksel (node *segs, node *parms, node *cubes, int dims, int line)
     DBUG_ENTER ("WLCOMP_Tasksel");
 
     if (global.mtmode == MT_none) {
-        WARN (line, ("wlcomp-pragma function Tasksel() ignored"
-                     " because multi-threading is inactive"));
+        CTIwarnLine (line, "wlcomp-pragma function Tasksel() ignored"
+                           " because multi-threading is inactive");
     } else {
         while (seg != NULL) {
             if (parms == NULL) {
-                ABORT (line, ("Illegal argument in wlcomp-pragma found;"
-                              " Tasksel(): Missing Parameter"));
+                CTIabortLine (line, "Illegal argument in wlcomp-pragma found;"
+                                    " Tasksel(): Missing Parameter");
             }
 
             DBUG_ASSERT ((NODE_TYPE (parms) == N_exprs),
@@ -981,8 +991,8 @@ WLCOMP_Tasksel (node *segs, node *parms, node *cubes, int dims, int line)
 
             arg = EXPRS_EXPR (parms);
             if (NODE_TYPE (arg) != N_ap) {
-                ABORT (line, ("Illegal argument in wlcomp-pragma found;"
-                              " Tasksel(): Argument is not an application"));
+                CTIabortLine (line, "Illegal argument in wlcomp-pragma found;"
+                                    " Tasksel(): Argument is not an application");
             }
 
             /*
