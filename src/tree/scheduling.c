@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2001/03/14 15:36:51  ben
+ * SCHAdjustmentRequired works correctly even for var. segments now :-)
+ *
  * Revision 3.6  2001/03/14 14:18:51  ben
  * comment for scheduler_table modified
  *
@@ -495,14 +498,15 @@ SCHAdjustmentRequired (int dim, node *wlseg)
     DBUG_ENTER ("SCHAdjustmentRequired");
 
     while (0
-           != strcmp (((sched_t *)WLSEG_SCHEDULING (wlseg))->discipline,
+           != strcmp (((sched_t *)WLSEGX_SCHEDULING (wlseg))->discipline,
                       scheduler_table[i].discipline)) {
         i++;
     }
 
     if ((dim <= scheduler_table[i].max_sched_dim)
-        && (!scheduler_table[i].adjust_flag || (dim > WLSEG_MAXHOMDIM (wlseg)))
-        && (MAX (WLSEG_SV (wlseg)[dim], WLSEG_UBV (wlseg)[dim]) > 1)) {
+        && ((NODE_TYPE (wlseg) == N_WLsegVar)
+            || (((!scheduler_table[i].adjust_flag) || (dim > WLSEG_MAXHOMDIM (wlseg)))
+                && (MAX (WLSEG_SV (wlseg)[dim], WLSEG_UBV (wlseg)[dim]) > 1)))) {
         adjust = TRUE;
     } else {
         adjust = FALSE;
@@ -909,6 +913,8 @@ CompileConstSegSchedulingArgs (char *wl_name, node *wlseg, sched_t *sched)
 
     DBUG_ENTER ("CompileConstSegSchedulingArgs");
 
+    DBUG_ASSERT ((NODE_TYPE (wlseg) == N_WLseg), "no constant segment found!");
+
     args = NULL;
 
     if (sched != NULL) {
@@ -963,6 +969,8 @@ CompileVarSegSchedulingArgs (char *wl_name, node *wlseg, sched_t *sched)
     int d;
 
     DBUG_ENTER ("CompileVarSegSchedulingArgs");
+
+    DBUG_ASSERT ((NODE_TYPE (wlseg) == N_WLsegVar), "no var. segment found!");
 
     args = NULL;
 
