@@ -1,6 +1,11 @@
 #
 #
 # $Log$
+# Revision 3.18  2003/03/25 16:25:09  sah
+# added portable way to get the
+# current hostname to build.c
+# mechanism
+#
 # Revision 3.17  2002/06/07 14:42:16  dkr
 # header compressed
 #
@@ -94,7 +99,7 @@ my_debug.c:  ../tree/node_info.mac ../tree/prf_node_info.mac \
 build.c: 
 	echo "char build_date[] = \"`date`\";"  >  build.c
 	echo "char build_user[] = \"$(USER)\";" >> build.c
-	echo "char build_host[] = \"$(HOST)\";" >> build.c
+	echo "char build_host[] = \"`hostname`\";" >> build.c
 	echo "char build_os[]   = \"$(OS)\";"   >> build.c
 	cat build.c
 	$(CLOCK_SKEW_ELIMINATION) $@
