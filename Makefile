@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.69  2003/03/25 11:58:15  sbs
+# configure target added.
+#
 # Revision 3.68  2003/03/21 16:40:07  sbs
 # if DISABLE_PHM is set, libsac_heapmgr_xxx.a will not be created anymore!
 #
@@ -372,6 +375,14 @@ tags:
 
 $(PROJECT_ROOT)/Makefile.Config: $(PROJECT_ROOT)/Makefile.Config.in
 	(cd $(PROJECT_ROOT); ./configure)
+
+configure: configure.ac
+	co -l configure
+	co -l src/global/config.h.in
+	autoconf
+	autoheader
+	ci -u configure
+	ci -u src/global/config.h.in
 
 
 LINUX_HOST = bunasera
