@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.21  2000/08/18 23:03:12  dkr
+ * signature of ND_FUN_RET changed (renaming of out-args in case of name
+ * conflicts is now supported)
+ *
  * Revision 2.20  2000/07/28 21:48:04  dkr
  * some minor indentation error fixed
  *
@@ -498,7 +502,7 @@ ICMCompileND_FUN_AP (char *name, char *retname, int narg, char **arg)
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_FUN_RET( retname, narg, [ TAG, arg ]* )
+ *   ND_FUN_RET( retname, narg, [ TAG, arg, decl_arg ]* )
  *
  *   where TAG is element in { out, out_rc, inout, inout_rc}.
  *
@@ -520,14 +524,16 @@ ICMCompileND_FUN_RET (char *retname, int narg, char **arg, node *arg_info)
 #undef ND_FUN_RET
 
     INDENT;
-    ScanArglist (arg, 2 * narg, i++;
-                 sep = 0, fprintf (outfile, "*%s__p = %s;\n", arg[i], arg[i]); i++;
-                 INDENT; sep = 1, fprintf (outfile, "*%s__p = %s;\n", arg[i], arg[i]);
-                 i++; INDENT; sep = 1, i++; sep = 0, i++; sep = 0, i++;
-                 sep = 0, fprintf (outfile, "SAC_ND_KS_RET_OUT_RC(%s);\n", arg[i]); i++;
-                 INDENT;
-                 sep = 1, fprintf (outfile, "SAC_ND_KS_RET_INOUT_RC(%s);\n", arg[i]); i++;
-                 INDENT; sep = 1, "");
+    ScanArglist (arg, 3 * narg, i += 2;
+                 sep = 0, fprintf (outfile, "*%s__p = %s;\n", arg[i], arg[i + 1]); i += 2;
+                 INDENT; sep = 1, fprintf (outfile, "*%s__p = %s;\n", arg[i], arg[i + 1]);
+                 i += 2; INDENT; sep = 1, i += 2; sep = 0, i += 2; sep = 0, i += 2;
+                 sep = 0, fprintf (outfile, "SAC_ND_KS_RET_OUT_RC( %s, %s);\n", arg[i],
+                                   arg[i + 1]);
+                 i += 2; INDENT;
+                 sep = 1, fprintf (outfile, "SAC_ND_KS_RET_INOUT_RC( %s, %s);\n", arg[i],
+                                   arg[i + 1]);
+                 i += 2; INDENT; sep = 1, "");
 
     if (arg_info != NULL) {
         if (strcmp (FUNDEF_NAME (INFO_FUNDEF (arg_info)), "main") == 0) {
