@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.48  2001/04/26 18:17:43  dkr
+ * fixed a bug in WLTRAlet: LET_IDS may be NULL ...
+ *
  * Revision 3.47  2001/04/10 13:17:22  dkr
  * file description modified
  *
@@ -6544,7 +6547,7 @@ AnalyzeBreakSpecifier (void)
  *   transforms with-loop (N_Nwith-node) into new representation (N_Nwith2).
  *
  * Remark:
- *   'INFO_WL_TYPES( arg_info)' points to the type of the let-ids.
+ *   'INFO_WL_TYPES( arg_info)' points to the type of the (first) let-ids.
  *
  ******************************************************************************/
 
@@ -6863,7 +6866,7 @@ WLTRAcode (node *arg_node, node *arg_info)
  *   node *WLTRAlet( node *arg_node, node *arg_info)
  *
  * Description:
- *   'INFO_WL_TYPES( arg_info)' points to the type of the let-ids.
+ *   'INFO_WL_TYPES( arg_info)' points to the type of the (first) let-ids.
  *
  ******************************************************************************/
 
@@ -6874,14 +6877,20 @@ WLTRAlet (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("WLTRAlet");
 
-    DBUG_ASSERT ((LET_VARDEC (arg_node) != NULL), "vardec of let-variable not found!");
-
-    DBUG_ASSERT (((NODE_TYPE (LET_VARDEC (arg_node)) == N_vardec)
-                  || (NODE_TYPE (LET_VARDEC (arg_node)) == N_arg)),
-                 "vardec-node of let-variable has wrong type!");
-
     tmp = INFO_WL_TYPES (arg_info);
-    INFO_WL_TYPES (arg_info) = LET_TYPE (arg_node);
+
+    if (LET_IDS (arg_node) != NULL) {
+        DBUG_ASSERT ((LET_VARDEC (arg_node) != NULL),
+                     "vardec of let-variable not found!");
+
+        DBUG_ASSERT (((NODE_TYPE (LET_VARDEC (arg_node)) == N_vardec)
+                      || (NODE_TYPE (LET_VARDEC (arg_node)) == N_arg)),
+                     "vardec-node of let-variable has wrong type!");
+
+        INFO_WL_TYPES (arg_info) = LET_TYPE (arg_node);
+    } else {
+        INFO_WL_TYPES (arg_info) = NULL;
+    }
 
     LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
 
