@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.51  2000/11/15 20:34:57  sbs
+ * -mt disabled for DEC ALPHA
+ * if check b and doAP => AP is turned off, warning is given
+ * and the program is still compiled.
+ *
  * Revision 2.50  2000/10/27 13:23:13  cg
  * Added new command line options -aplimit and -apdiaglimit.
  *
@@ -766,8 +771,20 @@ CheckOptionConsistency ()
     DBUG_ENTER ("CheckOptionConsistency");
 
     if (runtimecheck & RUNTIMECHECK_BOUNDARY && (optimize & OPT_AP)) {
-        SYSERROR (("Boundary check and array padding may not be used simultaneously"));
+        optimize &= ~OPT_AP;
+        SYSWARN (("Boundary check and array padding may not be used simultaneously.\n"
+                  "Array padding turned off"));
     }
+
+#ifdef SAC_FOR_OSF_ALPHA
+    if ((gen_mt_code == GEN_MT_OLD) || (gen_mt_code == GEN_MT_NEW)) {
+        gen_mt_code = GEN_MT_NONE;
+        num_threads = 1;
+        SYSWARN (("Code generation for multi-threaded program execution not"
+                  " yet available for DEC-alpha.\n"
+                  "Code for sequential execution generated instead"));
+    }
+#endif
 
     if ((gen_mt_code == GEN_MT_OLD) || (gen_mt_code == GEN_MT_NEW)) {
         if (cachesim & CACHESIM_YES) {
