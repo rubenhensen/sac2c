@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.78  2002/04/08 14:11:58  dkr
+ * PrintFundef(): prototype of zombie funs in no longer printed
+ *
  * Revision 3.77  2002/03/08 10:12:54  sbs
  * printing of xombie functions prevented from declaration section
  * printing of wrapper functions insrerted
@@ -1281,8 +1284,9 @@ PrintFundef (node *arg_node, node *arg_info)
          * print function declaration
          */
 
-        if ((FUNDEF_STATUS (arg_node) != ST_spmdfun)
-            && (FUNDEF_STATUS (arg_node) != ST_wrapperfun)) {
+        if ((FUNDEF_STATUS (arg_node) != ST_zombiefun)
+            && (FUNDEF_STATUS (arg_node) != ST_wrapperfun)
+            && (FUNDEF_STATUS (arg_node) != ST_spmdfun)) {
             if ((FUNDEF_BODY (arg_node) == NULL)
                 || ((FUNDEF_RETURN (arg_node) != NULL)
                     && (NODE_TYPE (FUNDEF_RETURN (arg_node)) == N_icm)
