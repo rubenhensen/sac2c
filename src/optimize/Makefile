@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.20  2000/07/11 15:52:12  dkr
+# explicit *.o rules removed
+#
 # Revision 2.19  2000/05/29 14:36:38  dkr
 # make deps done
 #
@@ -139,44 +142,8 @@ all: optimize.o generatemasks.o ConstantFolding.o DeadCodeRemoval.o \
      LoopInvariantRemoval.o Inline.o Unroll.o Unswitch.o CSE.o \
      WLUnroll.o DeadFunctionRemoval.o freemasks.o
 
-freemasks.o: freemasks.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o freemasks.o -c freemasks.c $(INCS)
-
-generatemasks.o: generatemasks.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o generatemasks.o -c generatemasks.c $(INCS)
-
-optimize.o: optimize.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o optimize.o -c optimize.c $(INCS)
-
-ConstantFolding.o: ConstantFolding.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o ConstantFolding.o -c ConstantFolding.c $(INCS)
-
-DeadCodeRemoval.o: DeadCodeRemoval.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o DeadCodeRemoval.o -c DeadCodeRemoval.c $(INCS)
-
-DeadFunctionRemoval.o: DeadFunctionRemoval.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o DeadFunctionRemoval.o -c DeadFunctionRemoval.c $(INCS)
-
-WorkReduction.o: WorkReduction.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o WorkReduction.o -c WorkReduction.c $(INCS)
-
-LoopInvariantRemoval.o: LoopInvariantRemoval.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o LoopInvariantRemoval.o -c LoopInvariantRemoval.c $(INCS)
-
-Inline.o: Inline.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o Inline.o -c Inline.c $(INCS)
-
-Unroll.o: Unroll.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o Unroll.o -c Unroll.c $(INCS)
-
-WLUnroll.o: WLUnroll.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o WLUnroll.o -c WLUnroll.c $(INCS)
-
-Unswitch.o: Unswitch.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o Unswitch.o -c Unswitch.c $(INCS)
-
-CSE.o: CSE.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o CSE.o -c CSE.c $(INCS)
+%.o: %.c
+	$(CC) $(CCFLAGS) $(CFLAGS) -o $@ -c $< $(INCS)
 
 deps:
 	makedepend $(INCS) *.c
