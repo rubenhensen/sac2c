@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.19  2003/09/29 17:58:19  dkr
+ * comment for GetAttr() corrected
+ *
  * Revision 1.18  2003/09/19 15:39:19  dkr
  * postfix _nt of varnames renamed into _NT
  *
@@ -294,7 +297,7 @@ SizeId (void *var_NT)
 /******************************************************************************
  *
  * Function:
- *   char *PrintAttr( void *v, int v_attr, void (*v_attr_fun)( void *))
+ *   char *GetAttr( void *v, int v_attr, void (*v_attr_fun)( void *))
  *
  * Description:
  *
