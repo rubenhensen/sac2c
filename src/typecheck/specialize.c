@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.20  2004/12/07 16:49:30  sbs
+ * FixSignature now handles unknown[*] args of LaCfuns properly
+ *
  * Revision 1.19  2004/12/07 14:36:54  sbs
  * UpdateFixSignature now expects new rather than old types on the N_arg's
  *
@@ -208,9 +211,13 @@ UpdateFixSignature (node *fundef, ntype *arg_ts)
         old_type = ARG_NTYPE (args);
         DBUG_ASSERT (old_type != NULL,
                      "UpdateFixSignature called on fundef w/o arg type");
-        if (TYleTypes (type, old_type)) {
+        if (TYgetSimpleType (TYgetScalar (old_type)) == T_unknown) {
+            DBUG_ASSERT (FUNDEF_ISLACFUN (fundef), "unknown arg type at non-LaC fun!");
+            old_type = TYfreeType (old_type);
             new_type = TYcopyType (type);
+        } else if (TYleTypes (type, old_type)) {
             TYfreeType (old_type);
+            new_type = TYcopyType (type);
         } else {
             DBUG_ASSERT (TYleTypes (old_type, type),
                          "UpdateFixSignature called with incompatible args");
