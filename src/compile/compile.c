@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.61  2000/06/21 13:31:35  jhs
+ * Parts of N_mt- compilation added.
+ *
  * Revision 2.60  2000/06/05 12:34:56  dkr
  * minor corrections in comments done
  *
@@ -7420,24 +7423,70 @@ MakeAssigns5 (node *part1, node *part2, node *part3, node *part4, node *part5)
     return (MakeAssign (part1, MakeAssigns4 (part2, part3, part4, part5)));
 }
 
+#define DO_NOT_COMPILE_MTN_xxx
+
 node *
 COMPMt (node *arg_node, node *arg_info)
 {
+    node *result;
+    node *allocate;
+    node *broadcast;
+    node *activate;
+    node *code;
+    node *barrier;
+
     DBUG_ENTER ("COMPMt");
 
+#ifdef DO_NOT_COMPILE_MTN
     DBUG_ASSERT (0, ("COMPMt not implemented yet, cannot compile this"));
+#endif
 
-    DBUG_RETURN (arg_node);
+    allocate = MakeIcm0 ("ALLOCATE");
+
+    /*
+     *  Part 2 - Broadcast
+     */
+
+    broadcast = MakeIcm4 ("MTN_MASTER_BROADCAST", MakeId1 ("ALLOC"),
+                          MakeNum (MT_IDENTIFIER (arg_node)),
+                          MakeNum (DFMTestMask (MT_ALLOC (arg_node))),
+                          MakeNum (DFMTestMask (MT_USEMASK (arg_node))));
+
+    activate = MakeIcm0 ("MTN_ACTIVATE");
+
+    /*
+     *  Part 4 - Code
+     *  Compile region and move compilation to result.
+     */
+    MT_REGION (arg_node) = Trav (MT_REGION (arg_node), arg_info);
+    code = BLOCK_INSTR (MT_REGION (arg_node));
+    BLOCK_INSTR (MT_REGION (arg_node)) = NULL;
+
+    barrier = MakeIcm0 ("MTN_MASTER_BARRIER");
+
+    result = MakeAssigns5 (allocate, broadcast, activate, code, barrier);
+
+    arg_node = FreeTree (arg_node);
+
+    DBUG_RETURN (result);
 }
 
 node *
 COMPSt (node *arg_node, node *arg_info)
 {
+    node *result;
+
     DBUG_ENTER ("COMPSt");
 
+#ifdef DO_NOT_COMPILE_MTN
     DBUG_ASSERT (0, ("COMPSt not implemented yet, cannot compile this"));
+#endif
 
-    DBUG_RETURN (arg_node);
+    result = MakeAssigns1 (MakeIcm0 ("CANNOT_COMPILE_N_ST"));
+
+    arg_node = FreeTree (arg_node);
+
+    DBUG_RETURN (result);
 }
 
 node *
@@ -7447,11 +7496,13 @@ COMPMTsignal (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("COMPMTsignal");
 
+#ifdef DO_NOT_COMPILE_MTN
     DBUG_ASSERT (0, ("COMPMTsignal not implemented yet, cannot compile this"));
+#endif
 
-    assigns = MakeAssign (MakeIcm1 ("MT2_SIGNAL", NULL /* #### */), NULL);
+    assigns = MakeAssign (MakeIcm0 ("MT2_SIGNAL" /*  secondarg#### */), NULL);
 
-    FreeTree (arg_node);
+    arg_node = FreeTree (arg_node);
 
     DBUG_RETURN (assigns);
 }
@@ -7468,25 +7519,37 @@ COMPMTalloc (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("COMPMTalloc");
 
+#ifdef DO_NOT_COMPILE_MTN
     DBUG_ASSERT (0, ("COMPMTalloc not implemented yet, cannot compile this"));
+#endif
 
     if_icm = MakeIcm0 ("MT2_IF_I_AM_FIRST");
-    if_block = NULL; /* #### */
+    if_block = MakeIcm0 ("EMPTY"); /* #### */
     else_icm = MakeIcm0 ("MT2_ELSE_IF_I_AM_NOT_FIRST");
-    else_block = NULL; /* #### */
+    else_block = MakeIcm0 ("EMPTY"); /* #### */
     end_icm = MakeIcm0 ("MT2_END_I_AM_FIRST");
 
     assigns = MakeAssigns5 (if_icm, if_block, else_icm, else_block, end_icm);
 
-    DBUG_RETURN (arg_node);
+    arg_node = FreeTree (arg_node);
+
+    DBUG_RETURN (assigns);
 }
 
 node *
 COMPMTsync (node *arg_node, node *arg_info)
 {
+    node *result;
+
     DBUG_ENTER ("COMPMTsync");
 
+#ifdef DO_NOT_COMPILE_MTN
     DBUG_ASSERT (0, ("COMPMTsync not implemented yet, cannot compile this"));
+#endif
 
-    DBUG_RETURN (arg_node);
+    result = MakeAssigns1 (MakeIcm0 ("CANNOT_COMPILE_N_ST"));
+
+    arg_node = FreeTree (arg_node);
+
+    DBUG_RETURN (result);
 }
