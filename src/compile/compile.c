@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.119  1998/03/24 13:45:48  cg
+ * Primitive function abs() is now compiled to ICM ND_ABS
+ *
  * Revision 1.118  1998/03/17 12:22:40  cg
  * Now, an alternative way of initializing character arrays derived from
  * strings is implemented. This uses the new ICM ND_CREATE_CONST_ARRAY_C
@@ -4138,25 +4141,46 @@ CompPrf (node *arg_node, node *arg_info)
             break;
         }
     } else /* (arg_node->info.prf > F_neq) */
-      if ((arg_node->info.prf == F_ftoi) || (arg_node->info.prf == F_ftod)
-          || (arg_node->info.prf == F_itof) || (arg_node->info.prf == F_itod)
-          || (arg_node->info.prf == F_dtof) || (arg_node->info.prf == F_dtoi)) {
-#ifndef NOFREE
-        node *dummy = arg_node;
-#endif /* NOFREE */
+    {
 
-        /* return argument of ftoi */
-        arg_node = arg_node->node[0]->node[0];
-        FREE (dummy->node[0]); /* free N_exprs node */
-        FREE (dummy);          /* free N_prf node */
-    } else if ((PRF_PRF (arg_node) == F_toi) || (PRF_PRF (arg_node) == F_tof)
-               || (PRF_PRF (arg_node) == F_tod))
-        arg_node = CompConvert (arg_node, arg_info);
+        switch (PRF_PRF (arg_node)) {
+        case F_ftoi:
+        case F_ftod:
+        case F_itof:
+        case F_itod:
+        case F_dtof:
+        case F_dtoi: {
+            node *dummy = arg_node;
+            arg_node = arg_node->node[0]->node[0];
+            FREE (dummy->node[0]); /* free N_exprs node */
+            FREE (dummy);          /* free N_prf node */
+            break;
+        }
 
-    else if ((PRF_PRF (arg_node) == F_min) || (PRF_PRF (arg_node) == F_max)) {
-        /* srs: replace N_prf with icm-macros for min() and max() */
-        NODE_TYPE (arg_node) = N_icm;
-        ICM_NAME (arg_node) = PRF_PRF (arg_node) == F_min ? "ND_MIN" : "ND_MAX";
+        case F_toi:
+        case F_tof:
+        case F_tod:
+            arg_node = CompConvert (arg_node, arg_info);
+            break;
+
+        case F_min:
+            NODE_TYPE (arg_node) = N_icm;
+            ICM_NAME (arg_node) = "ND_MIN";
+            break;
+
+        case F_max:
+            NODE_TYPE (arg_node) = N_icm;
+            ICM_NAME (arg_node) = "ND_MAX";
+            break;
+
+        case F_abs:
+            NODE_TYPE (arg_node) = N_icm;
+            ICM_NAME (arg_node) = "ND_ABS";
+            break;
+
+        default:
+            break;
+        }
     }
 
     DBUG_RETURN (arg_node);
