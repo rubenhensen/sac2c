@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2005/01/11 15:11:46  cg
+ * Added some useful functionality.
+ *
  * Revision 1.2  2005/01/07 19:54:13  cg
  * Some streamlining done.
  *
@@ -58,6 +61,11 @@
 static char *message_buffer = NULL;
 static int message_buffer_size = 0;
 static int message_line_length = 76;
+
+static char *error_message_header = "ERROR: ";
+static char *warn_message_header = "WARNING: ";
+static char *state_message_header = "";
+static char *note_message_header = "  ";
 
 static int errors = 0;
 static int warnings = 0;
@@ -345,7 +353,7 @@ CTIerror (const char *format, ...)
     va_start (arg_p, format);
 
     fprintf (stderr, "\n");
-    PrintMessage ("ERROR: ", format, arg_p);
+    PrintMessage (error_message_header, format, arg_p);
 
     va_end (arg_p);
 
@@ -376,8 +384,8 @@ CTIerrorLine (int line, const char *format, ...)
     va_start (arg_p, format);
 
     fprintf (stderr, "\n");
-    fprintf (stderr, "ERROR: line %d  file: %s", line, global.filename);
-    PrintMessage ("ERROR: ", format, arg_p);
+    fprintf (stderr, "%sline %d  file: %s", error_message_header, line, global.filename);
+    PrintMessage (error_message_header, format, arg_p);
 
     va_end (arg_p);
 
@@ -405,11 +413,29 @@ CTIerrorContinued (const char *format, ...)
 
     va_start (arg_p, format);
 
-    PrintMessage ("ERROR: ", format, arg_p);
+    PrintMessage (error_message_header, format, arg_p);
 
     va_end (arg_p);
 
     DBUG_VOID_RETURN;
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn int CTIgetErrorMessageLineLength( )
+ *
+ *   @brief  yields useful line length for error messages
+ *
+ *   @return line length
+ *
+ ******************************************************************************/
+
+int
+CTIgetErrorMessageLineLength ()
+{
+    DBUG_ENTER ("CTIgetErrorMessageLineLength");
+
+    DBUG_RETURN (message_line_length - strlen (error_message_header));
 }
 
 /** <!--********************************************************************-->
@@ -513,8 +539,9 @@ CTIwarnLine (int line, const char *format, ...)
     if (global.verbose_level >= 1) {
         va_start (arg_p, format);
 
-        fprintf (stderr, "WARNING: line %d  file: %s", line, global.filename);
-        PrintMessage ("WARNING: ", format, arg_p);
+        fprintf (stderr, "%sline %d  file: %s", warn_message_header, line,
+                 global.filename);
+        PrintMessage (warn_message_header, format, arg_p);
 
         va_end (arg_p);
 
@@ -544,7 +571,7 @@ CTIwarn (const char *format, ...)
     if (global.verbose_level >= 1) {
         va_start (arg_p, format);
 
-        PrintMessage ("WARNING: ", format, arg_p);
+        PrintMessage (warn_message_header, format, arg_p);
 
         va_end (arg_p);
 
@@ -552,6 +579,50 @@ CTIwarn (const char *format, ...)
     }
 
     DBUG_VOID_RETURN;
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn void CTIwarnContinued( const char *format, ...)
+ *
+ *   @brief  continues a warning message without file name and line number.
+ *
+ *   @param format  format string like in printf
+ *
+ ******************************************************************************/
+
+void
+CTIwarnContinued (const char *format, ...)
+{
+    va_list arg_p;
+
+    DBUG_ENTER ("CTIwarnContinued");
+
+    va_start (arg_p, format);
+
+    PrintMessage (warn_message_header, format, arg_p);
+
+    va_end (arg_p);
+
+    DBUG_VOID_RETURN;
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn int CTIgetWarnMessageLineLength( )
+ *
+ *   @brief  yields useful line length for warning messages
+ *
+ *   @return line length
+ *
+ ******************************************************************************/
+
+int
+CTIgetWarnMessageLineLength ()
+{
+    DBUG_ENTER ("CTIgetWarnMessageLineLength");
+
+    DBUG_RETURN (message_line_length - strlen (warn_message_header));
 }
 
 /** <!--********************************************************************-->
@@ -574,7 +645,7 @@ CTIstate (const char *format, ...)
     if (global.verbose_level >= 2) {
         va_start (arg_p, format);
 
-        PrintMessage ("  ", format, arg_p);
+        PrintMessage (state_message_header, format, arg_p);
 
         va_end (arg_p);
     }
@@ -602,7 +673,7 @@ CTInote (const char *format, ...)
     if (global.verbose_level >= 3) {
         va_start (arg_p, format);
 
-        PrintMessage ("", format, arg_p);
+        PrintMessage (note_message_header, format, arg_p);
 
         va_end (arg_p);
     }
