@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.74  2002/10/10 23:51:53  dkr
+ * no changes done
+ *
  * Revision 3.73  2002/10/10 00:43:23  dkr
  * bug in CompareTypesImplementation() fixed
  *
@@ -3331,6 +3334,7 @@ IsConstArray (node *array)
 
     DBUG_RETURN (isconst);
 }
+
 /*****************************************************************************
  *
  * function:
