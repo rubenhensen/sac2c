@@ -3,7 +3,11 @@
 /*
  *
  * $Log$
- * Revision 1.69  1995/07/11 10:02:45  cg
+ * Revision 1.70  1995/07/13 15:24:36  hw
+ * the neutral element of a primitive function can be spezified
+ * in the fold-part of a with-loop now
+ *
+ * Revision 1.69  1995/07/11  10:02:45  cg
  * bug in parsing typedefs fixed.
  *
  * Revision 1.68  1995/07/11  09:00:45  cg
@@ -1628,7 +1632,7 @@ conexpr: GENARRAY {$$=MakeNode(N_genarray);} BRACKET_L exprORarray BRACKET_R
 	   retassignblock
 	   { $$=$<node>5;
 	     $$->info.prf=$3;
-        $$->node[0]=$6;          /* Rumpf */
+        $$->node[0]=$6;          /* body */
 	     $$->nnode=1;
 
              DBUG_PRINT("GENTREE",
@@ -1636,6 +1640,21 @@ conexpr: GENARRAY {$$=MakeNode(N_genarray);} BRACKET_L exprORarray BRACKET_R
                          mdb_nodetype[$$->nodetype], $$,
                          mdb_prf[$$->info.prf], 
 			 mdb_nodetype[$$->node[0]->nodetype], $$->node[0] ));
+           }
+	 | FOLD BRACKET_L foldop COMMA exprORarray BRACKET_R 
+      { $$=MakeNode(N_foldprf); } retassignblock
+	   { $$=$<node>7;
+	     $$->info.prf=$3;
+        $$->node[0]=$8;          /* body */
+        $$->node[1]=$5; 
+	     $$->nnode=2;
+
+        DBUG_PRINT("GENTREE",
+                   ("%s " P_FORMAT ": %s , %s "P_FORMAT", %s "P_FORMAT,
+                    mdb_nodetype[$$->nodetype], $$,
+                    mdb_prf[$$->info.prf], 
+                    mdb_nodetype[$$->node[0]->nodetype], $$->node[0],
+                    mdb_nodetype[$$->node[1]->nodetype], $$->node[1]));
            }
 	 | FOLD BRACKET_L foldfun exprORarray BRACKET_R 
 	   retassignblock
