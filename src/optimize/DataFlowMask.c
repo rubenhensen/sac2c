@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.6  1998/05/11 17:33:09  dkr
+ * DFMTest?Masks() returns now the bit-sum of the given mask.
+ * (we want to know *how many* bits are set)
+ *
  * Revision 1.5  1998/05/07 15:36:04  cg
  * mechanism added that allows general updates of data flow masks,
  * i.e. with newly introduced identifiers as well as old ones removed.
@@ -778,7 +782,7 @@ DFMTestMask (mask_t *mask)
 
     for (i = 0; i < mask->num_bitfields; i++) {
         if (mask->bitfield[i] != 0) {
-            res = 1;
+            res++;
             break;
         }
     }
@@ -802,7 +806,7 @@ DFMTest2Masks (mask_t *mask1, mask_t *mask2)
 
     for (i = 0; i < mask1->num_bitfields; i++) {
         if ((mask1->bitfield[i] & mask2->bitfield[i]) != 0) {
-            res = 1;
+            res++;
             break;
         }
     }
@@ -829,7 +833,7 @@ DFMTest3Masks (mask_t *mask1, mask_t *mask2, mask_t *mask3)
 
     for (i = 0; i < mask1->num_bitfields; i++) {
         if ((mask1->bitfield[i] & mask2->bitfield[i] & mask3->bitfield[i]) != 0) {
-            res = 1;
+            res++;
             break;
         }
     }
