@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.19  2002/08/07 10:07:25  dkr
+ * bug in GSCPrintMain() fixed: SAC_argc/v renamed into __argc/v
+ *
  * Revision 3.18  2002/08/06 08:52:31  dkr
  * cc warning eliminated
  *
@@ -788,7 +791,7 @@ GSCPrintMainBegin ()
                  "  SAC_HM_SETUP();\n"
                  "  SAC_MT_SETUP();\n"
                  "  SAC_CS_SETUP();\n"
-                 "  %s( SAC_argc, SAC_argv);\n\n",
+                 "  %s( __argc, __argv);\n\n",
                  funname);
     }
     funname = Free (funname);
@@ -841,7 +844,7 @@ GSCPrintMain ()
 
     DBUG_ENTER ("GSCPrintMain");
 
-    fprintf (outfile, "int main( int SAC_argc, char *SAC_argv[])\n");
+    fprintf (outfile, "int main( int __argc, char *__argv[])\n");
     fprintf (outfile, "{\n");
     if (print_thread_id) {
         fprintf (outfile, "  SAC_MT_DECL_MYTHREAD()\n");
