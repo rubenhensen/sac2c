@@ -1,15 +1,14 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2001/01/10 11:26:21  dkr
+ * WLXBLOCK_... macros added
+ *
  * Revision 3.12  2001/01/09 18:14:25  dkr
  * INFO_WL_SHPSEG replaced by INFO_WL_TYPES
  *
  * Revision 3.11  2001/01/09 17:26:37  dkr
  * N_WLstriVar renamed into N_WLstrideVar
- *
- * Revision 3.10  2001/01/09 16:42:05  dkr
- * macros WLNODE_..., WLSEGX_..., WLSTRIX_..., WLGRIDX_... moved to
- * tree_compound.h
  *
  * Revision 3.9  2001/01/08 16:11:13  dkr
  * NWITH2_NAIVE_COMP added
@@ -274,28 +273,6 @@
  *
  * [...]
  *
- * Revision 1.1  2000/01/21 15:38:35  dkr
- * Initial revision
- *
- * Revision 2.63  2000/01/21 12:42:52  dkr
- * function MakeIds1 added
- * macros INFO_LAC2FUN_... added
- *
- * [...]
- *
- * Revision 2.1  1999/02/23 12:39:56  sacbase
- * new release made
- *
- * Revision 1.216  1999/02/12 17:44:51  cg
- * WLSEGX mechanism now also used for WLSEG_SCHEDULING and WLSEGVAR_SCHEDULING
- *
- * [...]
- *
- * Revision 1.176  1998/05/17 00:08:15  dkr
- * WLGRID_CEXPR_TEMPLATE is now WLGRID_CODE_TEMPLATE
- *
- * [...]
- *
  */
 
 /*============================================================================
@@ -389,7 +366,6 @@ file can be found in tree_basic.c
 #define _sac_tree_basic_h
 
 #include "types.h"
-#include "tree_compound.h"
 
 /*
  *   Decalarations of global variables exported by tree_basic.c
@@ -3261,6 +3237,81 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int 
 
 /*--------------------------------------------------------------------------*/
 
+/*
+ * Here are some macros for N_WL... nodes
+ *
+ * CAUTION: Not every macro is suitable for all node types.
+ *          e.g. NEXTDIM is not a son of N_WLstride nodes
+ *
+ *          It would be better to contruct these macros like this:
+ *            #define WLNODE_NEXTDIM(n) ((NODE_TYPE(n) == N_WLstride) ?
+ *                                        DBUG_ASSERT(...) :
+ *                                        (NODE_TYPE(n) == N_WLblock) ?
+ *                                         WLBLOCK_NEXTDIM(n) :
+ *                                         (NODE_TYPE(n) == N_WLublock) ?
+ *                                          WLUBLOCK_NEXTDIM(n) : ...)
+ *          but unfortunately this is not a modifiable l-value in ANSI-C :(
+ *          so it would be impossible to use them on the left side of an
+ *          assignment.
+ */
+
+#define WLNODE_LEVEL(n) ((n)->lineno)
+#define WLNODE_DIM(n) ((n)->refcnt)
+#define WLNODE_BOUND1(n) ((n)->flag)
+#define WLNODE_BOUND2(n) ((n)->counter)
+#define WLNODE_STEP(n) ((n)->varno)
+#define WLNODE_NEXTDIM(n) ((n)->node[0])
+#define WLNODE_NEXT(n) ((n)->node[1])
+
+/*
+ * some macros for N_WLseg, N_WLsegVar nodes
+ */
+
+#define WLSEGX_DIMS(n) ((n)->refcnt)
+#define WLSEGX_CONTENTS(n) ((n)->node[0])
+#define WLSEGX_NEXT(n) (WLNODE_NEXT (n))
+#define WLSEGX_IDX_MIN(n) (*((int **)(&((n)->node[2]))))
+#define WLSEGX_IDX_MAX(n) (*((int **)(&((n)->node[3]))))
+#define WLSEGX_BLOCKS(n) ((n)->flag)
+#define WLSEGX_SV(n) ((int *)(n)->mask[0])
+#define WLSEGX_BV(n, level) ((int *)(n)->mask[level + 2])
+#define WLSEGX_UBV(n) ((int *)(n)->mask[1])
+#define WLSEGX_SCHEDULING(n) ((SCHsched_t *)(n)->info2)
+
+/*
+ * some macros for N_WLblock, N_WLublock nodes
+ */
+
+#define WLXBLOCK_LEVEL(n) (WLNODE_LEVEL (n))
+#define WLXBLOCK_DIM(n) (WLNODE_DIM (n))
+#define WLXBLOCK_BOUND1(n) (WLNODE_BOUND1 (n))
+#define WLXBLOCK_BOUND2(n) (WLNODE_BOUND2 (n))
+#define WLXBLOCK_STEP(n) (WLNODE_STEP (n))
+#define WLXBLOCK_NEXTDIM(n) (WLNODE_NEXTDIM (n))
+#define WLXBLOCK_CONTENTS(n) ((n)->node[2])
+#define WLXBLOCK_NEXT(n) (WLNODE_NEXT (n))
+
+/*
+ * some macros for N_WLstride, N_WLstrideVar nodes
+ */
+
+#define WLSTRIDEX_LEVEL(n) (WLNODE_LEVEL (n))
+#define WLSTRIDEX_DIM(n) (WLNODE_DIM (n))
+#define WLSTRIDEX_CONTENTS(n) ((n)->node[0])
+#define WLSTRIDEX_NEXT(n) (WLNODE_NEXT (n))
+
+/*
+ * some macros for N_WLgrid, N_WLgridVar nodes
+ */
+
+#define WLGRIDX_LEVEL(n) (WLNODE_LEVEL (n))
+#define WLGRIDX_DIM(n) (WLNODE_DIM (n))
+#define WLGRIDX_NEXTDIM(n) (WLNODE_NEXTDIM (n))
+#define WLGRIDX_NEXT(n) (WLNODE_NEXT (n))
+#define WLGRIDX_CODE(n) ((n)->node[4])
+
+/*--------------------------------------------------------------------------*/
+
 /***
  *** N_WLseg :
  ***
@@ -3348,14 +3399,14 @@ extern node *MakeWLseg (int dims, node *contents, node *next);
 extern node *MakeWLblock (int level, int dim, int bound1, int bound2, int step,
                           node *nextdim, node *contents, node *next);
 
-#define WLBLOCK_LEVEL(n) (WLNODE_LEVEL (n))
-#define WLBLOCK_DIM(n) (WLNODE_DIM (n))
-#define WLBLOCK_BOUND1(n) (WLNODE_BOUND1 (n))
-#define WLBLOCK_BOUND2(n) (WLNODE_BOUND2 (n))
-#define WLBLOCK_STEP(n) (WLNODE_STEP (n))
-#define WLBLOCK_NEXTDIM(n) (WLNODE_NEXTDIM (n))
-#define WLBLOCK_CONTENTS(n) ((n)->node[2])
-#define WLBLOCK_NEXT(n) (WLNODE_NEXT (n))
+#define WLBLOCK_LEVEL(n) (WLXBLOCK_LEVEL (n))
+#define WLBLOCK_DIM(n) (WLXBLOCK_DIM (n))
+#define WLBLOCK_BOUND1(n) (WLXBLOCK_BOUND1 (n))
+#define WLBLOCK_BOUND2(n) (WLXBLOCK_BOUND2 (n))
+#define WLBLOCK_STEP(n) (WLXBLOCK_STEP (n))
+#define WLBLOCK_NEXTDIM(n) (WLXBLOCK_NEXTDIM (n))
+#define WLBLOCK_CONTENTS(n) (WLXBLOCK_CONTENTS (n))
+#define WLBLOCK_NEXT(n) (WLXBLOCK_NEXT (n))
 
 /*--------------------------------------------------------------------------*/
 
@@ -3388,14 +3439,14 @@ extern node *MakeWLblock (int level, int dim, int bound1, int bound2, int step,
 extern node *MakeWLublock (int level, int dim, int bound1, int bound2, int step,
                            node *nextdim, node *contents, node *next);
 
-#define WLUBLOCK_LEVEL(n) (WLBLOCK_LEVEL (n))
-#define WLUBLOCK_DIM(n) (WLBLOCK_DIM (n))
-#define WLUBLOCK_BOUND1(n) (WLBLOCK_BOUND1 (n))
-#define WLUBLOCK_BOUND2(n) (WLBLOCK_BOUND2 (n))
-#define WLUBLOCK_STEP(n) (WLBLOCK_STEP (n))
-#define WLUBLOCK_NEXTDIM(n) (WLBLOCK_NEXTDIM (n))
-#define WLUBLOCK_CONTENTS(n) (WLBLOCK_CONTENTS (n))
-#define WLUBLOCK_NEXT(n) (WLBLOCK_NEXT (n))
+#define WLUBLOCK_LEVEL(n) (WLXBLOCK_LEVEL (n))
+#define WLUBLOCK_DIM(n) (WLXBLOCK_DIM (n))
+#define WLUBLOCK_BOUND1(n) (WLXBLOCK_BOUND1 (n))
+#define WLUBLOCK_BOUND2(n) (WLXBLOCK_BOUND2 (n))
+#define WLUBLOCK_STEP(n) (WLXBLOCK_STEP (n))
+#define WLUBLOCK_NEXTDIM(n) (WLXBLOCK_NEXTDIM (n))
+#define WLUBLOCK_CONTENTS(n) (WLXBLOCK_CONTENTS (n))
+#define WLUBLOCK_NEXT(n) (WLXBLOCK_NEXT (n))
 
 /*--------------------------------------------------------------------------*/
 
