@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2001/04/05 12:31:32  nmw
+ * re-renaming of global objects improved (works for inlined code, too)
+ *
  * Revision 1.10  2001/04/03 14:24:49  nmw
  * debug messages added
  *
@@ -205,21 +208,24 @@ USSAarg (node *arg_node, node *arg_info)
  *   node *USSAvardec(node *arg_node, node *arg_info)
  *
  * description:
- * 1. if a vardec is marked as SSAPHITRAGET, the complete copy assignment must
- *    be removed to enable the fun2lac transformation. therfore the right-side
- *    identifier has to be renamed to the SSAPHITRAGET identifier.
  *
- * 2. if a vardec is marked with SSAUNDOFALG the corresponsing original vardec
+ * 1. if a vardec is marked with SSAUNDOFALG the corresponsing original vardec
  *    or arg is searched. if the original node has been deleted by optimizations
  *    the actual node is renamed to this orginal name (stored in SSACNT_BASEID).
  *    in the follwing tree traversal all corresponding identifiers are renamed
  *    back to their original name.
+ *
+ * 2. if a vardec is marked as SSAPHITRAGET, the complete copy assignment must
+ *    be removed to enable the fun2lac transformation. therfore the right-side
+ *    identifier has to be renamed to the SSAPHITRAGET identifier (or direct to
+ *    its rename target (see 1).
  *
  * 3. after traversing all vardecs, check on back traversal for different
  *    renamings in AVIS_SUBST and AVIS_SUBSTUSSA. set the correct AVIS_SUBSTUSSA
  *    entry for each vardec (AVIS_SUBSTUSSA overrides AVIS_SUBST entry).
  *
  ******************************************************************************/
+
 node *
 USSAvardec (node *arg_node, node *arg_info)
 {
@@ -232,48 +238,7 @@ USSAvardec (node *arg_node, node *arg_info)
                  mdb_statustype[VARDEC_STATUS (arg_node)],
                  mdb_statustype[VARDEC_ATTRIB (arg_node)], VARDEC_AVIS (arg_node)));
 
-    /* 1. handle SSAPHITARGET */
-    if ((AVIS_SSAPHITARGET (VARDEC_AVIS (arg_node)) == PHIT_DO)
-        || (AVIS_SSAPHITARGET (VARDEC_AVIS (arg_node)) == PHIT_WHILE)) {
-
-        DBUG_ASSERT ((AVIS_SSAASSIGN (VARDEC_AVIS (arg_node)) != NULL),
-                     "missing first assignment for phitarget");
-        DBUG_ASSERT ((LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (VARDEC_AVIS (arg_node))))),
-                     "missing let expr in first assignment");
-
-        expr = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (VARDEC_AVIS (arg_node))));
-
-        if (NODE_TYPE (expr) == N_id) {
-            /*
-             * ssa phi target copy assignment:
-             * mark right side identifier for renming to left side identifer
-             */
-            DBUG_PRINT ("USSA", ("PHITARGET: rename %s -> %s (1)",
-                                 VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (ID_AVIS (expr))),
-                                 VARDEC_NAME (arg_node)));
-            AVIS_SUBST (ID_AVIS (expr)) = VARDEC_AVIS (arg_node);
-        }
-
-        DBUG_ASSERT ((AVIS_SSAASSIGN2 (VARDEC_AVIS (arg_node)) != NULL),
-                     "missing second assignment for phitarget");
-        DBUG_ASSERT ((LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN2 (VARDEC_AVIS (arg_node))))),
-                     "missing let expr in second assignment");
-
-        expr = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN2 (VARDEC_AVIS (arg_node))));
-
-        if (NODE_TYPE (expr) == N_id) {
-            /*
-             * ssa phi target copy assignment:
-             * mark right side identifier for renming to left side identifer
-             */
-            DBUG_PRINT ("USSA", ("PHITARGET: rename %s -> %s (2)",
-                                 VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (ID_AVIS (expr))),
-                                 VARDEC_NAME (arg_node)));
-            AVIS_SUBST (ID_AVIS (expr)) = VARDEC_AVIS (arg_node);
-        }
-    }
-
-    /* 2. SSAUNDOFLAG */
+    /* 1. SSAUNDOFLAG */
     if ((AVIS_SSAUNDOFLAG (VARDEC_AVIS (arg_node)))
         && (strcmp (SSACNT_BASEID (AVIS_SSACOUNT (VARDEC_AVIS (arg_node))),
                     VARDEC_NAME (arg_node))
@@ -321,6 +286,69 @@ USSAvardec (node *arg_node, node *arg_info)
 
         DBUG_ASSERT ((AVIS_SUBSTUSSA (VARDEC_AVIS (arg_node)) != NULL),
                      "no matching baseid found - no re-renaming possible.");
+    }
+
+    /* 2. handle SSAPHITARGET */
+    if ((AVIS_SSAPHITARGET (VARDEC_AVIS (arg_node)) == PHIT_DO)
+        || (AVIS_SSAPHITARGET (VARDEC_AVIS (arg_node)) == PHIT_WHILE)) {
+
+        DBUG_ASSERT ((AVIS_SSAASSIGN (VARDEC_AVIS (arg_node)) != NULL),
+                     "missing first assignment for phitarget");
+        DBUG_ASSERT ((LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (VARDEC_AVIS (arg_node))))),
+                     "missing let expr in first assignment");
+
+        expr = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (VARDEC_AVIS (arg_node))));
+
+        if (NODE_TYPE (expr) == N_id) {
+            /*
+             * ssa phi target copy assignment:
+             * mark right side identifier for renming to left side identifer
+             */
+            if (AVIS_SUBSTUSSA (VARDEC_AVIS (arg_node)) == NULL) {
+                /* no further renaming of the this vardec */
+                AVIS_SUBST (ID_AVIS (expr)) = VARDEC_AVIS (arg_node);
+            } else {
+                /*
+                 * this vardec must be renamed, so everything that will be renamed
+                 * to this vardec has to be renamed to the substussa vardec
+                 */
+                AVIS_SUBST (ID_AVIS (expr)) = AVIS_SUBSTUSSA (VARDEC_AVIS (arg_node));
+            }
+
+            DBUG_PRINT ("USSA", ("PHITARGET: rename %s -> %s (1)",
+                                 VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (ID_AVIS (expr))),
+                                 VARDEC_OR_ARG_NAME (
+                                   AVIS_VARDECORARG (AVIS_SUBST (ID_AVIS (expr))))));
+        }
+
+        DBUG_ASSERT ((AVIS_SSAASSIGN2 (VARDEC_AVIS (arg_node)) != NULL),
+                     "missing second assignment for phitarget");
+        DBUG_ASSERT ((LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN2 (VARDEC_AVIS (arg_node))))),
+                     "missing let expr in second assignment");
+
+        expr = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN2 (VARDEC_AVIS (arg_node))));
+
+        if (NODE_TYPE (expr) == N_id) {
+            /*
+             * ssa phi target copy assignment:
+             * mark right side identifier for renming to left side identifer
+             */
+            if (AVIS_SUBSTUSSA (VARDEC_AVIS (arg_node)) == NULL) {
+                /* no further renaming of the this vardec */
+                AVIS_SUBST (ID_AVIS (expr)) = VARDEC_AVIS (arg_node);
+            } else {
+                /*
+                 * this vardec must be renamed, so everything that will be renamed
+                 * to this vardec has to be renamed to the substussa vardec
+                 */
+                AVIS_SUBST (ID_AVIS (expr)) = AVIS_SUBSTUSSA (VARDEC_AVIS (arg_node));
+            }
+
+            DBUG_PRINT ("USSA", ("PHITARGET: rename %s -> %s (2)",
+                                 VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (ID_AVIS (expr))),
+                                 VARDEC_OR_ARG_NAME (
+                                   AVIS_VARDECORARG (AVIS_SUBST (ID_AVIS (expr))))));
+        }
     }
 
     if (VARDEC_NEXT (arg_node) != NULL) {
