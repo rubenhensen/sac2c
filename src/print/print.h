@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.10  1995/03/29 12:01:34  hw
+ * Revision 1.11  1995/06/02 16:53:33  sbs
+ * PrintVectInfo inser5ed.
+ *
+ * Revision 1.10  1995/03/29  12:01:34  hw
  * PrintIcm added
  *
  * Revision 1.9  1995/03/28  12:37:39  hw
@@ -82,6 +85,7 @@ extern node *PrintDec (node *, node *);
 extern node *PrintPost (node *, node *);
 extern node *PrintPre (node *, node *);
 extern node *PrintIcm (node *, node *);
+extern node *PrintVectInfo (node *, node *);
 
 extern node *Print (node *);
 
