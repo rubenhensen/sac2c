@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.12  1999/06/10 09:52:13  cg
+ * Added piped cache simulation on remote host machine.
+ *
  * Revision 2.11  1999/06/03 13:40:36  her
  * added the line "self & cross int." to the output of SAC_CS_ShowResults.
  *
@@ -339,12 +342,13 @@ ResetCacheParms (char *spec, unsigned long int *cachesize, int *cachelinesize,
 
 void
 SAC_CS_CheckArguments (int argc, char *argv[], tProfilingLevel *profilinglevel,
-                       int *cs_global, unsigned long int *cachesize1, int *cachelinesize1,
-                       int *associativity1, tWritePolicy *writepolicy1,
-                       unsigned long int *cachesize2, int *cachelinesize2,
-                       int *associativity2, tWritePolicy *writepolicy2,
-                       unsigned long int *cachesize3, int *cachelinesize3,
-                       int *associativity3, tWritePolicy *writepolicy3)
+                       int *cs_global, char **cshost, unsigned long int *cachesize1,
+                       int *cachelinesize1, int *associativity1,
+                       tWritePolicy *writepolicy1, unsigned long int *cachesize2,
+                       int *cachelinesize2, int *associativity2,
+                       tWritePolicy *writepolicy2, unsigned long int *cachesize3,
+                       int *cachelinesize3, int *associativity3,
+                       tWritePolicy *writepolicy3)
 {
     unsigned int cachesim = CACHESIM_NO;
 
@@ -383,6 +387,8 @@ SAC_CS_CheckArguments (int argc, char *argv[], tProfilingLevel *profilinglevel,
     ARGS_OPTION ("cs3", {
         ResetCacheParms (ARG, cachesize3, cachelinesize3, associativity3, writepolicy3);
     });
+
+    ARGS_OPTION ("cshost", { *cshost = ARG; });
 
     ARGS_OPTION ("cs", {
         ARG_FLAGMASK_BEGIN ();
@@ -569,7 +575,7 @@ InitializeOneCacheLevel (int L, int nr_of_cpu, tProfilingLevel profilinglevel,
 
 void
 SAC_CS_Initialize (int nr_of_cpu, tProfilingLevel profilinglevel, int cs_global,
-                   ULINT cachesize1, int cachelinesize1, int associativity1,
+                   char *cshost, ULINT cachesize1, int cachelinesize1, int associativity1,
                    tWritePolicy writepolicy1, ULINT cachesize2, int cachelinesize2,
                    int associativity2, tWritePolicy writepolicy2, ULINT cachesize3,
                    int cachelinesize3, int associativity3, tWritePolicy writepolicy3)
@@ -620,17 +626,33 @@ SAC_CS_Initialize (int nr_of_cpu, tProfilingLevel profilinglevel, int cs_global,
     if ((profilinglevel == SAC_CS_piped_simple)
         || (profilinglevel == SAC_CS_piped_advanced)) {
 
-        sprintf (filename,
-                 "$SACBASE/runtime/CacheSimAnalyser"
-                 " -cs %s%s"
-                 " -cs1 %lu/%d/%d/%s"
-                 " -cs2 %lu/%d/%d/%s"
-                 " -cs3 %lu/%d/%d/%s",
-                 ProfilingLevelShortName (profilinglevel), global_simulation ? "g" : "b",
-                 cachesize1, cachelinesize1, associativity1,
-                 WritePolicyShortName (writepolicy1), cachesize2, cachelinesize2,
-                 associativity2, WritePolicyShortName (writepolicy2), cachesize3,
-                 cachelinesize3, associativity3, WritePolicyShortName (writepolicy3));
+        if (cshost[0] == '\0') {
+            sprintf (filename,
+                     "$SACBASE/runtime/CacheSimAnalyser"
+                     " -cs %s%s"
+                     " -cs1 %lu/%d/%d/%s"
+                     " -cs2 %lu/%d/%d/%s"
+                     " -cs3 %lu/%d/%d/%s",
+                     ProfilingLevelShortName (profilinglevel),
+                     global_simulation ? "g" : "b", cachesize1, cachelinesize1,
+                     associativity1, WritePolicyShortName (writepolicy1), cachesize2,
+                     cachelinesize2, associativity2, WritePolicyShortName (writepolicy2),
+                     cachesize3, cachelinesize3, associativity3,
+                     WritePolicyShortName (writepolicy3));
+        } else {
+            sprintf (filename,
+                     "rsh %s $SACBASE/runtime/CacheSimAnalyser"
+                     " -cs %s%s"
+                     " -cs1 %lu/%d/%d/%s"
+                     " -cs2 %lu/%d/%d/%s"
+                     " -cs3 %lu/%d/%d/%s",
+                     cshost, ProfilingLevelShortName (profilinglevel),
+                     global_simulation ? "g" : "b", cachesize1, cachelinesize1,
+                     associativity1, WritePolicyShortName (writepolicy1), cachesize2,
+                     cachelinesize2, associativity2, WritePolicyShortName (writepolicy2),
+                     cachesize3, cachelinesize3, associativity3,
+                     WritePolicyShortName (writepolicy3));
+        }
 
         SAC_CS_pipehandle = popen (filename, "w");
 

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.5  1999/06/10 09:51:20  cg
+ * Added piped cache simulation on remote host machine.
+ *
  * Revision 1.4  1999/05/20 14:14:37  cg
  * Input scanning facilities optimized.
  * All simulation parameters may now be set dynamically, including
@@ -33,6 +36,7 @@ AnalyserSetup (int argc, char *argv[])
 {
     tProfilingLevel profilinglevel = SAC_CS_none;
     int cs_global = 1;
+    char *cshost = "";
 
     unsigned long int cachesize1 = 0;
     int cachelinesize1 = 1;
@@ -49,7 +53,7 @@ AnalyserSetup (int argc, char *argv[])
     int associativity3 = 1;
     tWritePolicy writepolicy3 = SAC_CS_default;
 
-    SAC_CS_CheckArguments (argc, argv, &profilinglevel, &cs_global, &cachesize1,
+    SAC_CS_CheckArguments (argc, argv, &profilinglevel, &cs_global, &cshost, &cachesize1,
                            &cachelinesize1, &associativity1, &writepolicy1, &cachesize2,
                            &cachelinesize2, &associativity2, &writepolicy2, &cachesize3,
                            &cachelinesize3, &associativity3, &writepolicy3);
@@ -72,7 +76,7 @@ AnalyserSetup (int argc, char *argv[])
         break;
     }
 
-    SAC_CS_Initialize (1, profilinglevel, cs_global, cachesize1, cachelinesize1,
+    SAC_CS_Initialize (1, profilinglevel, cs_global, cshost, cachesize1, cachelinesize1,
                        associativity1, writepolicy1, cachesize2, cachelinesize2,
                        associativity2, writepolicy2, cachesize3, cachelinesize3,
                        associativity3, writepolicy3);
