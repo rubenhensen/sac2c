@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 3.96  2002/07/01 19:56:41  sah
+ * PrintNgenerator now prints ". (NULL)" instead of "."
+ * on NULL entries for generator boundaries in withloops.
+ * Needed to distinguish between new N_dot nodes and NULL
+ * entries.
+ *
  * Revision 3.95  2002/07/01 12:54:09  dkr
  * ICM_ICM added
  *
@@ -3206,7 +3212,7 @@ PrintNgenerator (node *arg_node, node *arg_info)
     if (NGEN_BOUND1 (arg_node)) {
         Trav (NGEN_BOUND1 (arg_node), arg_info);
     } else {
-        fprintf (outfile, ".");
+        fprintf (outfile, ". (NULL)");
     }
     /* print first operator */
     fprintf (outfile, " %s ", prf_string[NGEN_OP1 (arg_node)]);
@@ -3227,7 +3233,7 @@ PrintNgenerator (node *arg_node, node *arg_info)
     if (NGEN_BOUND2 (arg_node)) {
         Trav (NGEN_BOUND2 (arg_node), arg_info);
     } else {
-        fprintf (outfile, ".");
+        fprintf (outfile, ". (NULL)");
     }
 
     /* print step and width */
