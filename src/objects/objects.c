@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2004/11/19 21:02:52  sah
+ * adapted travwersal to new linkist structure
+ *
  * Revision 3.12  2004/11/18 14:34:31  mwe
  * changed CheckAvis and chkavis to ToNewTypes and to tonewtypes
  *
@@ -245,14 +248,17 @@ HandleObjects (node *syntax_tree)
     DBUG_RETURN (syntax_tree);
 }
 
-/*
- *
- *  functionname  : InsertIntoInitlist
- *
- */
+#ifndef NEW_AST
 
-int
-InsertIntoInitlist (node *objdef, nodelist **already_done)
+5A
+  /*
+   *
+   *  functionname  : InsertIntoInitlist
+   *
+   */
+
+  int
+  InsertIntoInitlist (node *objdef, nodelist **already_done)
 {
     nodelist *needed, *tmp;
     int success = 1;
@@ -368,6 +374,96 @@ RearrangeObjdefs (node *objects)
     DBUG_RETURN (first);
 }
 
+#else
+
+node *
+RearrangeObjdefs (node *objects)
+{
+    node *neworder;
+    node *tmp;
+    node *trav;
+    bool resolvedall;
+    bool resolvedone;
+
+    DBUG_ENTER ("RearrangeObjdefs");
+
+    do {
+        /*
+         * we try to insert those objdefs whose dependencies are
+         * already in the neworder chain of objdefs
+         */
+        tmp = objects;
+        resolvedall = TRUE;
+        resolvedone = FALSE;
+
+        while ((tmp != NULL) && (!resolvedone)) {
+            if (OBJDEF_STATUS (tmp) == ST_regular) {
+                resolvedall = FALSE;
+
+                if (LinklistIsSubset (neworder,
+                                      FUNDEF_OBJECTS (AP_FUNDEF (OBJDEF_EXPR (tmp))))) {
+                    /*
+                     * all dependencies of this object are resolved!
+                     * so add it and mark it as resolved
+                     */
+                    AddLinkToLinks (&neworder, tmp);
+                    OBJDEF_STATUS (tmp) = ST_resolved;
+                    resolvedone = TRUE;
+                }
+            }
+        }
+    } while (resolvedone);
+
+    /*
+     * at this stage, either all objects could be resolved,
+     * or there is a mutual dependency!
+     */
+
+    if (!resolvedall) {
+        ERROR (0, ("The following global objects cannot be initialized due "
+                   "to mutual dependencies"));
+
+        tmp = objects;
+
+        while (tmp != NULL) {
+            if (OBJDEF_STATUS (tmp) != ST_resolved) {
+                CONT_ERROR (("%s:%s", OBJDEF_MOD (tmp), OBJDEF_NAME (tmp)));
+            }
+
+            tmp = OBJDEF_NEXT (tmp);
+        }
+
+        ABORT_ON_ERROR;
+    }
+
+    /*
+     * at this stage, all objects could be resolved, so we just create
+     * a new objdef chain
+     */
+
+    if (neworder == NULL) {
+        objects = NULL;
+    } else {
+        objects = LINKLIST_LINK (neworder);
+        tmp = objects;
+        trav = LINKLIST_NEXT (neworder);
+
+        while (trav != NULL) {
+            OBJDEF_NEXT (tmp) = LINKLIST_LINK (trav);
+            tmp = OBJDEF_NEXT (tmp);
+            trav = LINKLIST_NEXT (trav);
+        }
+
+        OBJDEF_NEXT (tmp) = NULL;
+    }
+
+    neworder = FreeTree (neworder);
+
+    DBUG_RETURN (objects);
+}
+
+#endif /* NEW_AST */
+
 /*
  *
  *  functionname  : OBJmodul
@@ -440,7 +536,11 @@ OBJmodul (node *arg_node, info *arg_info)
 node *
 OBJfundef (node *arg_node, info *arg_info)
 {
+#ifndef NEW_AST
     nodelist *need_objs;
+#else
+    node *need_objs;
+#endif
     node *obj, *new_arg;
     types *new_type;
     char *keep_name, *keep_mod;
@@ -450,10 +550,18 @@ OBJfundef (node *arg_node, info *arg_info)
 
     DBUG_PRINT ("OBJ", ("Handling function %s", ItemName (arg_node)));
 
+#ifndef NEW_AST
     need_objs = FUNDEF_NEEDOBJS (arg_node);
+#else
+    need_objs = FUNDEF_OBJECTS (arg_node);
+#endif
 
     while (need_objs != NULL) {
+#ifndef NEW_AST
         obj = NODELIST_NODE (need_objs);
+#else
+        obj = LINKLIST_LINK (need_objs);
+#endif
         new_type = DupAllTypes (OBJDEF_TYPE (obj));
 
         new_arg = MakeArg (StringCopy (OBJDEF_VARNAME (obj)), new_type, ST_artificial,
@@ -465,7 +573,11 @@ OBJfundef (node *arg_node, info *arg_info)
         FUNDEF_ARGS (arg_node) = new_arg;
         OBJDEF_ARG (obj) = new_arg;
 
+#ifndef NEW_AST
         need_objs = NODELIST_NEXT (need_objs);
+#else
+        need_objs = LINKLIST_NEXT (need_objs);
+#endif
     }
 
     /*
@@ -688,7 +800,11 @@ OBJarg (node *arg_node, info *arg_info)
 node *
 OBJap (node *arg_node, info *arg_info)
 {
+#ifndef NEW_AST
     nodelist *need_objs;
+#else
+    node *need_objs;
+#endif
     node *obj, *new_arg;
 
     DBUG_ENTER ("OBJap");
@@ -699,10 +815,18 @@ OBJap (node *arg_node, info *arg_info)
         AP_ARGS (arg_node) = Trav (AP_ARGS (arg_node), NULL);
     }
 
+#ifndef NEW_AST
     need_objs = FUNDEF_NEEDOBJS (AP_FUNDEF (arg_node));
+#else
+    need_objs = FUNDEF_OBJECTS (AP_FUNDEF (arg_node));
+#endif
 
     while (need_objs != NULL) {
+#ifndef NEW_AST
         obj = NODELIST_NODE (need_objs);
+#else
+        obj = LINKLIST_LINK (need_objs);
+#endif
 
         new_arg = MakeId (StringCopy (OBJDEF_VARNAME (obj)), NULL, ST_artificial);
         ID_VARDEC (new_arg) = OBJDEF_ARG (obj);
@@ -717,7 +841,11 @@ OBJap (node *arg_node, info *arg_info)
 
         AP_ARGS (arg_node) = new_arg;
 
+#ifndef NEW_AST
         need_objs = NODELIST_NEXT (need_objs);
+#else
+        need_objs = LINKLIST_NEXT (need_objs);
+#endif
     }
 
     DBUG_RETURN (arg_node);
