@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.40  1996/03/12 17:02:44  hw
+ * Revision 1.41  1996/03/21 18:00:20  cg
+ * added function string2array for new-fashioned string handling
+ *
+ * Revision 1.40  1996/03/12  17:02:44  hw
  * added macro APPEND_VARDECS
  *
  * Revision 1.39  1996/02/27  15:23:13  hw
@@ -1270,7 +1273,24 @@ extern node *GetCompoundNode (node *arg_node);
  *  function declarations
  */
 
-node *Shape2Array (shapes *shp);
+extern node *Shape2Array (shapes *shp);
+
+/*
+ *
+ *  functionname  : string2array
+ *  arguments     : 1) string
+ *  description   : converts string into char array,
+ *                  used by sac.y for handling of string constants
+ *  global vars   : ---
+ *  internal funs : ---
+ *  external funs : MakeArray, MakeChar, MakeExprs, strlen
+ *  macros        : ---
+ *
+ *  remarks       :
+ *
+ */
+
+extern node *string2array (char *str);
 
 /*--------------------------------------------------------------------------*/
 

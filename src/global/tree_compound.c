@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.26  1996/02/21 15:03:13  cg
+ * Revision 1.27  1996/03/21 18:00:20  cg
+ * added function string2array for new-fashioned string handling
+ *
+ * Revision 1.26  1996/02/21  15:03:13  cg
  * added new function CopyNodelist
  *
  * Revision 1.25  1996/02/21  10:56:08  cg
@@ -101,6 +104,7 @@
 
 #include "dbug.h"
 #include "my_debug.h"
+#include "free.h"
 
 #include <malloc.h>
 
@@ -295,6 +299,35 @@ Shape2Array (shapes *shp)
         next->nnode = 2;
     }
     DBUG_RETURN (MakeArray (next));
+}
+
+/***
+ ***  string2array
+ ***/
+
+node *
+string2array (char *str)
+{
+    node *new_exprs;
+    int i;
+
+    DBUG_ENTER ("string2array");
+
+    new_exprs = MakeExprs (MakeChar (0), NULL);
+
+/*********************************************************/
+#ifndef NEWTREE
+    new_exprs->nnode = 1;
+#endif
+    /*********************************************************/
+
+    for (i = strlen (str) - 1; i >= 0; i--) {
+        new_exprs = MakeExprs (MakeChar (str[i]), new_exprs);
+    }
+
+    FREE (str);
+
+    DBUG_RETURN (MakeArray (new_exprs));
 }
 
 /***
