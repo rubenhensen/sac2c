@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.5  1995/01/04 12:35:56  sbs
+ * Revision 1.6  1995/01/04 13:44:59  sbs
+ * bug in AppendModnameToSymbol fixed:
+ * done resetted to 0 after each types-node!
+ *
+ * Revision 1.5  1995/01/04  12:35:56  sbs
  * import mechanism including renaming (of imported symbols)
  * done. FindSymbolInModul & FreeMods provided for external use
  * (needed from the typechecker.
@@ -395,13 +399,14 @@ AppendModnameToSymbol (node *symbol)
     mods *mods, *mods2;
     char *modname;
     types *types;
-    int done = 0;
+    int done;
 
     DBUG_ENTER ("AppendModnameToSymbol");
 
     types = symbol->info.types;
     while (types != NULL) {
         if (types->simpletype == T_user) {
+            done = 0;
             if (types->name_mod == NULL)
                 modname = symbol->info.types->id_mod;
             else {
