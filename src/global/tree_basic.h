@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.176  1998/05/17 00:08:15  dkr
+ * WLGRID_CEXPR_TEMPLATE is now WLGRID_CODE_TEMPLATE
+ *
  * Revision 1.175  1998/05/16 19:50:58  dkr
  * changed comments for N_WLgridVar, N_WLgrid, ...
  *
@@ -3012,27 +3015,26 @@ extern node *MakeWLstride (int level, int dim, int bound1, int bound2, int step,
  ***    int     BOUND2
  ***    int     UNROLLING
  ***
+ ***    int     CODE_TEMPLATE
+ ***
  ***  temporary attributes:
  ***
- ***    node*   CEXPR_TEMPLATE  ("N_expr")    (wltransform -> compile )
  ***    int     MODIFIED                      (wltransform ! )
  ***
  ***  remarks:
  ***
  ***    - it makes no sense to use the nodes NEXTDIM and CODE simultaneous!
- ***    - CEXPR_TEMPLATE is a pointer to a NCODE_CEXPR-node.
- ***      If this grid-node contains no explicit code, but represents an
- ***      otherwise-case of a genarray-with-loop ...
- ***                  op0 = { ... } : e0    // e.g. e0 = [1,2,3]
+ ***    - CODE_TEMPLATE indicates, whether CODE is only a template or not.
+ ***      If this grid-node represents an otherwise-case of a genarray-
+ ***      with-loop, ...
  ***                  0 -> 10 step 1
  ***                          0 -> 1: op0
  ***                          1 -> 2: init
- ***      ... (we have CODE, NEXTDIM == NULL), then this attribute points
- ***      to a nearby NCODE_CEXPR-node.
- ***      In the example above, CEXPR_TEMPLATE of the 'init'-grid points
- ***      to 'e0'.
- ***      This is needed by 'compile' to infer the right data-size
- ***      for the 'init'-code.
+ ***      ... then CODE_TEMPLATE is set to 1, and CODE points to a nearby
+ ***      CODE-node.
+ ***      In the example above, CODE of the 'init'-grid points to 'op0'.
+ ***      This is needed by 'compile' to infer the right data-size for
+ ***      the 'init/copy'-code.
  ***
  ***/
 
@@ -3048,7 +3050,8 @@ extern node *MakeWLgrid (int level, int dim, int bound1, int bound2, int unrolli
 #define WLGRID_NEXT(n) (WLNODE_NEXT (n))
 #define WLGRID_CODE(n) (n->node[2])
 
-#define WLGRID_CEXPR_TEMPLATE(n) (n->node[3])
+#define WLGRID_CODE_TEMPLATE(n) (n->varno)
+
 #define WLGRID_MODIFIED(n) (n->info.prf_dec.tc)
 
 /*--------------------------------------------------------------------------*/
@@ -3097,14 +3100,16 @@ extern node *MakeWLstriVar (int dim, node *bound1, node *bound2, node *step,
  ***    node*    CODE            (N_Ncode)
  ***    int      DIM
  ***
+ ***    int      CODE_TEMPLATE
+ ***
  ***  temporary attributes:
  ***
- ***    node*    CEXPR_TEMPLATE  ("N_expr")    (wltransform -> compile )
+ ***    ---
  ***
  ***  remarks:
  ***
  ***    - it makes no sense to use the nodes NEXTDIM and CODE simultaneous!
- ***    - CEXPR_TEMPLATE: see N_WLgrid
+ ***    - CODE_TEMPLATE: see N_WLgrid
  ***
  ***/
 
@@ -3118,6 +3123,6 @@ extern node *MakeWLgridVar (int dim, node *bound1, node *bound2, node *nextdim,
 #define WLGRIDVAR_NEXT(n) (n->node[1])
 #define WLGRIDVAR_CODE(n) (n->node[2])
 
-#define WLGRIDVAR_CEXPR_TEMPLATE(n) (n->node[5])
+#define WLGRIDVAR_CODE_TEMPLATE(n) (n->flag)
 
 #endif /* _sac_tree_basic_h */

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.70  1998/05/17 00:08:39  dkr
+ * WLGRID_CEXPR_TEMPLATE is now WLGRID_CODE_TEMPLATE
+ *
  * Revision 1.69  1998/05/15 23:04:22  dkr
  * changed MakeNwith2: NWITH2_IDX_MIN, NWITH2_IDX_MAX are no longer
  * preallocated
@@ -1736,6 +1739,7 @@ MakeWLgrid (int level, int dim, int bound1, int bound2, int unrolling, node *nex
     }
     WLGRID_CODE (new_node) = code;
 
+    WLGRID_CODE_TEMPLATE (new_node) = 0;
     WLGRID_MODIFIED (new_node) = 0;
 
     DBUG_RETURN (new_node);
@@ -1786,6 +1790,8 @@ MakeWLgridVar (int dim, node *bound1, node *bound2, node *nextdim, node *next, n
         NCODE_USED (code)++;
     }
     WLGRIDVAR_CODE (new_node) = code;
+
+    WLGRIDVAR_CODE_TEMPLATE (new_node) = 0;
 
     DBUG_RETURN (new_node);
 }

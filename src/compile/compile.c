@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.154  1998/05/17 00:11:51  dkr
+ * WLGRID_CEXPR_TEMPLATE is now WLGRID_CODE_TEMPLATE
+ *
  * Revision 1.153  1998/05/15 23:58:52  dkr
  * compilation of new with-loop:
  *   added support for var. generators
@@ -595,7 +598,7 @@ int basetype_size[] = {
 
 #endif /* DBUG_OFF */
 
-/* the following macros are while generation of N_icms */
+/* the following macros are used while generation of N_icm-nodes */
 
 #define MAKE_IDNODE(id) MakeId (StringCopy (id), NULL, ST_regular)
 
@@ -1560,11 +1563,7 @@ CreateFundefIcm (char *name, statustype status, node **icm_tab, int tab_size)
 
     DBUG_PRINT ("COMP", ("Creating ICM \"ND_FUN_DEC\""));
 
-    if (status == ST_spmdfun) {
-        icm = MakeIcm ("MT_SPMD_FUN_DEC", NULL, NULL);
-    } else {
-        icm = MakeIcm ("ND_FUN_DEC", NULL, NULL);
-    }
+    icm = MakeIcm ("ND_FUN_DEC", NULL, NULL);
 
     MAKE_ICM_ARG (icm_arg, MAKE_IDNODE (StringCopy (name)));
     ICM_ARGS (icm) = icm_arg;
@@ -2445,35 +2444,30 @@ COMPModul (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : COMPFundef
- *  arguments     : 1) N_fundef node
- *                  2) info node
- *  description   : traverses child-nodes.
- *  remarks       :- sets INFO_COMP_FIRSTASSIGN(arg_info) to first N_assign
- *                    of function before traversing the function's
- *                    arguments
- *                 - sets INFO_COMP_VARDECS(arg_info) to variable declaration
- *                 - calls Trav to `compile` variable declarations.
- */
+ * function:
+ *   node *COMPNormalFundef( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   compiles a non-SPMD fundef.
+ *
+ * remarks:
+ *   - sets INFO_COMP_FIRSTASSIGN(arg_info) to first N_assign
+ *     of function before traversing the function's arguments.
+ *   - calls Trav to `compile` variable declarations.
+ *
+ ******************************************************************************/
 
 node *
-COMPFundef (node *arg_node, node *arg_info)
+COMPNormalFundef (node *arg_node, node *arg_info)
 {
     node *return_node, *icm_arg, *type_id_node, *var_name_node, *tag_node, **icm_tab,
       *icm_tab_entry;
     types *rettypes, *fulltype, **type_tab;
     int cnt_param, tab_size, i;
 
-    DBUG_ENTER ("COMPFundef");
-
-    INFO_COMP_FUNDEF (arg_info) = arg_node;
-
-    if (FUNDEF_BODY (arg_node) != NULL) {
-        INFO_COMP_VARDECS (arg_info) = FUNDEF_VARDEC (arg_node);
-        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
-    }
+    DBUG_ENTER ("COMPNormalFundef");
 
     rettypes = FUNDEF_TYPES (arg_node);
 
@@ -2598,8 +2592,15 @@ COMPFundef (node *arg_node, node *arg_info)
         ReorganizeReturnIcm (ICM_ARGS (FUNDEF_RETURN (arg_node)));
     }
 
-    FUNDEF_ICM (arg_node) = CreateFundefIcm (FUNDEF_NAME (arg_node),
-                                             FUNDEF_STATUS (arg_node), icm_tab, tab_size);
+    if (FUNDEF_STATUS (arg_node) == ST_spmdfun) {
+        FUNDEF_ICM (arg_node)
+          = CreateFundefIcm (FUNDEF_NAME (arg_node), FUNDEF_STATUS (arg_node), icm_tab,
+                             tab_size);
+    } else {
+        FUNDEF_ICM (arg_node)
+          = CreateFundefIcm (FUNDEF_NAME (arg_node), FUNDEF_STATUS (arg_node), icm_tab,
+                             tab_size);
+    }
 
     /*
      * From now on FUNDEF_RETURN(fundef) points to N_icm instead of function's
@@ -2609,11 +2610,74 @@ COMPFundef (node *arg_node, node *arg_info)
     FREE (icm_tab);
     FREE (type_tab);
 
-    /* traverse next function if any */
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *COMPSpmdFundef( node *arg_node, node *arg_info)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+COMPSpmdFundef (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("COMPSpmdFundef");
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *COMPFundef(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   traverses child-nodes.
+ *
+ * remarks:
+ *   - sets INFO_COMP_VARDECS(arg_info) to variable declaration.
+ *
+ ******************************************************************************/
+
+node *
+COMPFundef (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("COMPFundef");
+
+    INFO_COMP_FUNDEF (arg_info) = arg_node;
+
+    /*
+     * traverse body
+     */
+    if (FUNDEF_BODY (arg_node) != NULL) {
+        INFO_COMP_VARDECS (arg_info) = FUNDEF_VARDEC (arg_node);
+        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+    }
+
+    /*
+     * different compilation schemes for non-SPMD- and SPMD-funs
+     */
+    if (FUNDEF_STATUS (arg_node) == ST_spmdfun) {
+        arg_node = COMPSpmdFundef (arg_node, arg_info);
+    } else {
+        arg_node = COMPNormalFundef (arg_node, arg_info);
+    }
+
+    /*
+     * traverse next function if any
+     */
     if (NULL != FUNDEF_NEXT (arg_node)) {
         FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
     }
 
+    /*
+     * traverse pragma
+     */
     if (FUNDEF_PRAGMA (arg_node) != NULL) {
         FUNDEF_PRAGMA (arg_node) = FreeNode (FUNDEF_PRAGMA (arg_node));
     }
@@ -4925,17 +4989,22 @@ COMPAp (node *arg_node, node *arg_info)
     DBUG_RETURN (ICM_ARGS (INFO_COMP_LASTLET (arg_info)));
 }
 
-/*
- *  functionname  : COMPWithReturn
- *  arguments     : 1) N_return node
- *                  2) info node
- *  description   : generates N_icms of a with-loop
- *  remarks       : if N_return node contains to a with_loop, then
- *                   INFO_COMP_WITHBEGIN(arg_info) will point to the first argument
- *                   (N_exprs) of corresponding N_icm for start of with_loop.
- *                  INFO_COMP_LASTASSIGN(arg_info) contains pointer to node before last
- *                    assign_node.
- */
+/******************************************************************************
+ *
+ * function:
+ *   node *COMPWithReturn(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   generates N_icms of a with-loop
+ *
+ *  remarks:
+ *    if N_return node contains to a with_loop, then
+ *    'INFO_COMP_WITHBEGIN(arg_info)' will point to the first argument
+ *    (N_exprs) of corresponding N_icm for start of with_loop.
+ *    'INFO_COMP_LASTASSIGN(arg_info)' contains pointer to node before last
+ *    assign_node.
+ *
+ ******************************************************************************/
 
 node *
 COMPWithReturn (node *arg_node, node *arg_info)
@@ -5140,138 +5209,208 @@ COMPWithReturn (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : COMPReturn
- *  arguments     : 1) N_return node
- *                  2) info node
- *  description   : generates N_icms for N_return of a function (ND or MT)
- *                   or of a with-loop
- *  remarks       : if N_return node belongs to a with_loop, then
- *                  INFO_COMP_WITHBEGIN will point to the first argument (N_exprs)
- *                  of corresponding N_icm for start of with_loop.
+ * function:
+ *   node *COMPNormalFunReturn(node *arg_node, node *arg_info)
  *
- */
+ * description:
+ *   generates ICMs for N_return-node found in body of a non-SPMD-function.
+ *
+ ******************************************************************************/
+
+node *
+COMPNormalFunReturn (node *arg_node, node *arg_info)
+{
+    node *tmp, *next, *exprs, *last, *ret;
+    int cnt_param;
+
+    DBUG_ENTER ("COMPNormalFunReturn");
+
+    ret = RenameReturn (arg_node, arg_info);
+    exprs = RETURN_EXPRS (arg_node);
+    last = arg_node;
+    /*
+     * The new N_exprs chain will be stored in arg_node->node[1]
+     * temporarily due to INSERT_ID_NODE and initial setting of 'last'.
+     */
+
+    /*
+     * First, the real return values are traversed.
+     */
+
+    DBUG_PRINT ("COMP", ("Starting evaluation of return parameters"));
+
+    DBUG_ASSERT ((arg_node->node[1] == NULL), "node[1] already used");
+
+    cnt_param = 0;
+
+    while (NULL != exprs) {
+        DBUG_ASSERT ((N_id == NODE_TYPE (EXPRS_EXPR (exprs))),
+                     " wrong node type (!= N_id)");
+
+        DBUG_PRINT ("COMP", ("Current return id: %s", ID_NAME (EXPRS_EXPR (exprs))));
+
+        next = EXPRS_NEXT (exprs);
+
+        if (MUST_REFCOUNT (ID, EXPRS_EXPR (exprs))) {
+            INSERT_ID_NODE (exprs, last, "out_rc");
+        } else {
+            INSERT_ID_NODE (exprs, last, "out");
+        }
+
+        /*
+         *  In COMPReturn, we don't have to distinguish between functions
+         *  that do the refcounting on their own and those that do not
+         *  because we're definitely inside a SAC function and these
+         *  always do their own refcounting.
+         */
+
+        last = exprs;
+        exprs = next;
+        cnt_param++;
+    }
+
+    DBUG_PRINT ("COMP", ("Handled original return values finished"));
+
+    exprs = RETURN_REFERENCE (arg_node);
+
+    /*
+     * Second, the counterparts of reference parameters are traversed
+     * and added to the chain.
+     */
+
+    while (NULL != exprs) {
+        DBUG_ASSERT ((N_id == NODE_TYPE (EXPRS_EXPR (exprs))), " wrong node (!= N_id)");
+
+        DBUG_PRINT ("COMP", ("Current return id: %s", ID_NAME (EXPRS_EXPR (exprs))));
+
+        next = EXPRS_NEXT (exprs);
+
+        if (MUST_REFCOUNT (ID, EXPRS_EXPR (exprs))) {
+            INSERT_ID_NODE (exprs, last, "inout_rc");
+        } else {
+            INSERT_ID_NODE (exprs, last, "inout");
+        }
+
+        last = exprs;
+        exprs = next;
+    }
+
+    DBUG_PRINT ("COMP", ("Handling counterparts of reference parameters finished"));
+
+    NODE_TYPE (arg_node) = N_icm;
+
+    if (arg_node->node[1] == NULL) {
+        ICM_NAME (arg_node) = "NOOP";
+    } else {
+        ICM_NAME (arg_node) = "ND_FUN_RET";
+
+        exprs = MakeNode (N_exprs);
+        MAKENODE_NUM (EXPRS_EXPR (exprs), 0);
+        EXPRS_NEXT (exprs) = arg_node->node[1];
+        /* put number of ret-values in front */
+        RETURN_EXPRS (arg_node) = exprs;
+        arg_node->node[1] = NULL; /* was only used temporarily */
+
+        exprs = MakeExprs (NULL, NULL);
+        MAKENODE_ID (EXPRS_EXPR (exprs), "");
+        EXPRS_NEXT (exprs) = RETURN_EXPRS (arg_node);
+        RETURN_EXPRS (arg_node) = exprs;
+
+        /*
+         *  Function ReorganizeParameters is called later by COMPFunf.
+         */
+    }
+
+    arg_node = ret; /* set new return_value of current function
+                     * (N_let node if at least one variable in the "return"
+                     * statement has been renamed, or  N_return otherwise)
+                     */
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *COMPSpmdFunReturn(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   generates ICMs for N_return-node found in body of a SPMD-function.
+ *
+ ******************************************************************************/
+
+node *
+COMPSpmdFunReturn (node *arg_node, node *arg_info)
+{
+    node *exprs, *args, *last_arg, *tag;
+    int cnt_params;
+
+    DBUG_ENTER ("COMPSpmdFunReturn");
+
+    exprs = RETURN_EXPRS (arg_node);
+    args = NULL;
+    cnt_params = 0;
+
+    while (exprs != NULL) {
+        DBUG_ASSERT ((N_id == NODE_TYPE (EXPRS_EXPR (exprs))), "wrong node type found");
+
+        if (ID_REFCNT (EXPRS_EXPR (exprs)) >= 0) {
+            tag = MakeExprs (MakeId ("out_rc", NULL, ST_regular), NULL);
+        } else {
+            tag = MakeExprs (MakeId ("out", NULL, ST_regular), NULL);
+        }
+
+        if (args == NULL) {
+            args = tag;
+        } else {
+            EXPRS_NEXT (last_arg) = tag;
+        }
+        EXPRS_NEXT (tag) = last_arg = exprs;
+
+        exprs = EXPRS_NEXT (exprs);
+        cnt_params++;
+    }
+
+    args = MakeExprs (MakeNum (cnt_params), args);
+
+    arg_node = MakeIcm ("MT_FUN_RET", args, NULL);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *COMPReturn(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   generates N_icms for N_return of a function (ND or MT) or of a with-loop.
+ *
+ * remarks:
+ *   if N_return node belongs to a with_loop, then 'INFO_COMP_WITHBEGIN'
+ *   will point to the first argument (N_exprs) of corresponding N_icm for
+ *   start of with_loop.
+ *
+ ******************************************************************************/
 
 node *
 COMPReturn (node *arg_node, node *arg_info)
 {
-    node *tmp, *next, *exprs, *last;
-    int cnt_param;
-
     DBUG_ENTER ("COMPReturn");
 
     if (NULL == INFO_COMP_WITHBEGIN (arg_info)) {
         /* this is a N_return of a function-body */
 
-        node *ret;
-
-        ret = RenameReturn (arg_node, arg_info);
-        exprs = RETURN_EXPRS (arg_node);
-        last = arg_node;
-        /*
-         * The new N_exprs chain will be stored in arg_node->node[1]
-         * temporarily due to INSERT_ID_NODE and initial setting of 'last'.
-         */
-
-        /*
-         * First, the real return values are traversed.
-         */
-
-        DBUG_PRINT ("COMP", ("Starting evaluation of return parameters"));
-
-        DBUG_ASSERT ((arg_node->node[1] == NULL), "node[1] already used");
-
-        cnt_param = 0;
-
-        while (NULL != exprs) {
-            DBUG_ASSERT ((N_id == NODE_TYPE (EXPRS_EXPR (exprs))),
-                         " wrong node type (!= N_id)");
-
-            DBUG_PRINT ("COMP", ("Current return id: %s", ID_NAME (EXPRS_EXPR (exprs))));
-
-            next = EXPRS_NEXT (exprs);
-
-            if (MUST_REFCOUNT (ID, EXPRS_EXPR (exprs))) {
-                INSERT_ID_NODE (exprs, last, "out_rc");
-            } else {
-                INSERT_ID_NODE (exprs, last, "out");
-            }
-
-            /*
-             *  In COMPReturn, we don't have to distinguish between functions
-             *  that do the refcounting on their own and those that do not
-             *  because we're definitely inside a SAC function and these
-             *  always do their own refcounting.
-             */
-
-            last = exprs;
-            exprs = next;
-            cnt_param++;
-        }
-
-        DBUG_PRINT ("COMP", ("Handled original return values finished"));
-
-        exprs = RETURN_REFERENCE (arg_node);
-
-        /*
-         * Second, the counterparts of reference parameters are traversed
-         * and added to the chain.
-         */
-
-        while (NULL != exprs) {
-            DBUG_ASSERT ((N_id == NODE_TYPE (EXPRS_EXPR (exprs))),
-                         " wrong node (!= N_id)");
-
-            DBUG_PRINT ("COMP", ("Current return id: %s", ID_NAME (EXPRS_EXPR (exprs))));
-
-            next = EXPRS_NEXT (exprs);
-
-            if (MUST_REFCOUNT (ID, EXPRS_EXPR (exprs))) {
-                INSERT_ID_NODE (exprs, last, "inout_rc");
-            } else {
-                INSERT_ID_NODE (exprs, last, "inout");
-            }
-
-            last = exprs;
-            exprs = next;
-        }
-
-        DBUG_PRINT ("COMP", ("Handling counterparts of reference parameters finished"));
-
-        NODE_TYPE (arg_node) = N_icm;
-
-        if (arg_node->node[1] == NULL) {
-            ICM_NAME (arg_node) = "NOOP";
+        if (FUNDEF_STATUS (INFO_COMP_FUNDEF (arg_info)) == ST_spmdfun) {
+            arg_node = COMPSpmdFunReturn (arg_node, arg_info);
         } else {
-            if (FUNDEF_STATUS (INFO_COMP_FUNDEF (arg_info)) == ST_spmdfun) {
-                ICM_NAME (arg_node) = "MT_SPMD_FUN_RET";
-            } else {
-                ICM_NAME (arg_node) = "ND_FUN_RET";
-            }
-
-            exprs = MakeNode (N_exprs);
-            MAKENODE_NUM (EXPRS_EXPR (exprs), 0);
-            EXPRS_NEXT (exprs) = arg_node->node[1];
-            /* put number of ret-values in front */
-            RETURN_EXPRS (arg_node) = exprs;
-            arg_node->node[1] = NULL; /* was only used temporarily */
-
-            exprs = MakeExprs (NULL, NULL);
-            MAKENODE_ID (EXPRS_EXPR (exprs), "");
-            EXPRS_NEXT (exprs) = RETURN_EXPRS (arg_node);
-            RETURN_EXPRS (arg_node) = exprs;
-
-            /*
-             *  Function ReorganizeParameters is called later by COMPFunf.
-             */
+            arg_node = COMPNormalFunReturn (arg_node, arg_info);
         }
 
-        arg_node = ret; /* set new return_value of current function
-                         * (N_let node if at least one variable in the "return"
-                         * statement has been renamed, or  N_return otherwise)
-                         */
     } else {
+        /* this is a N_return of a with-loop-body */
         arg_node = COMPWithReturn (arg_node, arg_info);
     }
 
@@ -6456,8 +6595,7 @@ COMPNwith2 (node *arg_node, node *arg_info)
     /*
      * insert 'WL_END'-ICM
      */
-    assigns
-      = AppendAssign (assigns, MakeAssign (MakeIcm ("WL_END", icm_args, NULL), NULL));
+    assigns = AppendAssign (assigns, MakeAssign (MakeIcm ("WL_END", NULL, NULL), NULL));
 
     /*
      * insert ICMs for memory management ('DEC_RC_FREE').
@@ -6836,27 +6974,36 @@ COMPWLgrid (node *arg_node, node *arg_info)
                                                NULL)),
                                   MakeExprs (MakeNum (num_args), icm_args2)));
 
-        /*
-         * insert compiled code
-         */
+        DBUG_ASSERT ((WLGRID_CODE (arg_node) != NULL), "no code found");
+        cexpr = NCODE_CEXPR (WLGRID_CODE (arg_node));
+        DBUG_ASSERT ((cexpr != NULL), "no code expr found");
 
-        if (WLGRID_CODE (arg_node) != NULL) {
+        icm_args2
+          = AppendExpr (icm_args2, MakeExprs (MakeNum (TYPES_DIM (ID_TYPE (cexpr))),
+                                              MakeExprs (DupNode (cexpr), NULL)));
 
-            cexpr = NCODE_CEXPR (WLGRID_CODE (arg_node));
-            DBUG_ASSERT ((cexpr != NULL), "no code expr found");
-
-            icm_args2
-              = AppendExpr (icm_args2, MakeExprs (MakeNum (TYPES_DIM (ID_TYPE (cexpr))),
-                                                  MakeExprs (DupNode (cexpr), NULL)));
-
+        if (WLGRID_CODE_TEMPLATE (arg_node) == 0) {
+            /*
+             * code is not just a template
+             *  -> insert compiled code.
+             */
             if (NCODE_CBLOCK (WLGRID_CODE (arg_node)) != NULL) {
                 assigns
                   = DupTree (BLOCK_INSTR (NCODE_CBLOCK (WLGRID_CODE (arg_node))), NULL);
             }
-
+        } else {
             /*
-             * choose right ICM ('WL_ASSIGN' for non-fold, 'WL_FOLD' for fold)
+             * code is just a template
+             *  -> ignore it.
              */
+            assigns = NULL;
+        }
+
+        /*
+         * choose right ICM.
+         */
+
+        if (WLGRID_CODE_TEMPLATE (arg_node) == 0) {
             switch (NWITH2_TYPE (wl_node)) {
             case WO_genarray:
                 /* here is no break missing! */
@@ -6873,23 +7020,7 @@ COMPWLgrid (node *arg_node, node *arg_info)
             default:
                 DBUG_ASSERT ((0), "wrong withop type found");
             }
-
-            assigns
-              = AppendAssign (assigns,
-                              MakeAssign (MakeIcm (icm_name, icm_args2, NULL), NULL));
         } else {
-
-            cexpr = WLGRID_CEXPR_TEMPLATE (arg_node);
-            DBUG_ASSERT ((cexpr != NULL), "no code template found");
-
-            icm_args2
-              = AppendExpr (icm_args2, MakeExprs (MakeNum (TYPES_DIM (ID_TYPE (cexpr))),
-                                                  MakeExprs (DupNode (cexpr), NULL)));
-
-            /*
-             * choose right ICM
-             */
-
             switch (NWITH2_TYPE (wl_node)) {
             case WO_genarray:
                 icm_name = "WL_ASSIGN_INIT";
@@ -6911,9 +7042,10 @@ COMPWLgrid (node *arg_node, node *arg_info)
             default:
                 DBUG_ASSERT ((0), "wrong withop type found");
             }
-
-            assigns = MakeAssign (MakeIcm (icm_name, icm_args2, NULL), NULL);
         }
+
+        assigns = AppendAssign (assigns,
+                                MakeAssign (MakeIcm (icm_name, icm_args2, NULL), NULL));
     }
 
     /* build argument list for 'WL_GRID_...'-ICMs */
@@ -7077,27 +7209,36 @@ COMPWLgridVar (node *arg_node, node *arg_info)
                                                NULL)),
                                   MakeExprs (MakeNum (num_args), icm_args2)));
 
-        /*
-         * insert compiled code
-         */
+        DBUG_ASSERT ((WLGRIDVAR_CODE (arg_node) != NULL), "no code found");
+        cexpr = NCODE_CEXPR (WLGRIDVAR_CODE (arg_node));
+        DBUG_ASSERT ((cexpr != NULL), "no code expr found");
 
-        if (WLGRIDVAR_CODE (arg_node) != NULL) {
+        icm_args2
+          = AppendExpr (icm_args2, MakeExprs (MakeNum (TYPES_DIM (ID_TYPE (cexpr))),
+                                              MakeExprs (DupNode (cexpr), NULL)));
 
-            cexpr = NCODE_CEXPR (WLGRIDVAR_CODE (arg_node));
-            DBUG_ASSERT ((cexpr != NULL), "no code expr found");
-
-            icm_args2
-              = AppendExpr (icm_args2, MakeExprs (MakeNum (TYPES_DIM (ID_TYPE (cexpr))),
-                                                  MakeExprs (DupNode (cexpr), NULL)));
-
+        if (WLGRIDVAR_CODE_TEMPLATE (arg_node) == 0) {
+            /*
+             * code is not just a template
+             *  -> insert compiled code.
+             */
             if (NCODE_CBLOCK (WLGRIDVAR_CODE (arg_node)) != NULL) {
                 assigns = DupTree (BLOCK_INSTR (NCODE_CBLOCK (WLGRIDVAR_CODE (arg_node))),
                                    NULL);
             }
-
+        } else {
             /*
-             * choose right ICM ('WL_ASSIGN' for non-fold, 'WL_FOLD' for fold)
+             * code is just a template
+             *  -> ignore it.
              */
+            assigns = NULL;
+        }
+
+        /*
+         * choose right ICM.
+         */
+
+        if (WLGRIDVAR_CODE_TEMPLATE (arg_node) == 0) {
             switch (NWITH2_TYPE (wl_node)) {
             case WO_genarray:
                 /* here is no break missing! */
@@ -7114,23 +7255,7 @@ COMPWLgridVar (node *arg_node, node *arg_info)
             default:
                 DBUG_ASSERT ((0), "wrong withop type found");
             }
-
-            assigns
-              = AppendAssign (assigns,
-                              MakeAssign (MakeIcm (icm_name, icm_args2, NULL), NULL));
         } else {
-
-            cexpr = WLGRIDVAR_CEXPR_TEMPLATE (arg_node);
-            DBUG_ASSERT ((cexpr != NULL), "no code template found");
-
-            icm_args2
-              = AppendExpr (icm_args2, MakeExprs (MakeNum (TYPES_DIM (ID_TYPE (cexpr))),
-                                                  MakeExprs (DupNode (cexpr), NULL)));
-
-            /*
-             * choose right ICM
-             */
-
             switch (NWITH2_TYPE (wl_node)) {
             case WO_genarray:
                 icm_name = "WL_ASSIGN_INIT";
@@ -7152,9 +7277,10 @@ COMPWLgridVar (node *arg_node, node *arg_info)
             default:
                 DBUG_ASSERT ((0), "wrong withop type found");
             }
-
-            assigns = MakeAssign (MakeIcm (icm_name, icm_args2, NULL), NULL);
         }
+
+        assigns = AppendAssign (assigns,
+                                MakeAssign (MakeIcm (icm_name, icm_args2, NULL), NULL));
     }
 
     /* build argument list for 'WL_GRID_...'-ICMs */
