@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.3  1996/01/05 12:39:04  cg
+ * Revision 1.4  1997/03/19 13:52:48  cg
+ * new function PrintDependencies() which corresponds to -M compiler option
+ * (moved from import.c to this place)
+ *
+ * Revision 1.3  1996/01/05  12:39:04  cg
  * added functions CreateArchive and RSIBobjdef
  *
  * Revision 1.2  1995/12/29  10:41:52  cg
@@ -25,6 +29,6 @@ extern node *RSIBtypedef (node *arg_node, node *arg_info);
 extern node *RSIBfundef (node *arg_node, node *arg_info);
 extern node *RSIBobjdef (node *arg_node, node *arg_info);
 
-extern void CreateArchive (char *name);
+extern void PrintDependencies (deps *depends);
 
 #endif /* _sac_readsib_h  */
