@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  2002/10/31 16:15:26  sbs
+ * ... for return values now is preserved 8-)))
+ *
  * Revision 1.13  2002/10/30 13:23:59  sbs
  * handling of dot args introduced.
  *
@@ -165,6 +168,7 @@ node *
 NT2OTfundef (node *arg_node, node *arg_info)
 {
     ntype *type;
+    types *old_type;
 
     DBUG_ENTER ("NT2OTfundef");
 
@@ -173,8 +177,15 @@ NT2OTfundef (node *arg_node, node *arg_info)
     type = TYFixAndEliminateAlpha (type);
 
     if (TYIsProdOfArray (type)) {
-        FUNDEF_TYPES (arg_node) = FreeAllTypes (FUNDEF_TYPES (arg_node));
-        FUNDEF_TYPES (arg_node) = TYType2OldType (type);
+        old_type = FUNDEF_TYPES (arg_node);
+
+        if (HasDotTypes (old_type)) {
+            FUNDEF_TYPES (arg_node)
+              = AppendTypes (TYType2OldType (type), MakeTypes1 (T_dots));
+        } else {
+            FUNDEF_TYPES (arg_node) = TYType2OldType (type);
+        }
+        old_type = FreeAllTypes (old_type);
     } else {
         ABORT (linenum,
                ("could not infer proper type for fun %s", FUNDEF_NAME (arg_node)));
