@@ -1,8 +1,11 @@
 
 /* $Log$
- * Revision 1.6  1995/06/23 12:36:57  hw
- * added argument to call of 'DuplicateTypes'
+ * Revision 1.7  1995/06/30 11:37:14  hw
+ * F_I, f_i, I_F, i_f inserted
  *
+;; Revision 1.6  1995/06/23  12:36:57  hw
+;; added argument to call of 'DuplicateTypes'
+;;
 ;; Revision 1.5  1995/03/08  14:05:03  hw
 ;; changed some AxS-... to SxA_... to distinguish the argumenttypes
 ;;
@@ -113,3 +116,7 @@ TT1 (203, A_S, INT_A, MakeTypes (T_int))
 TT1 (204, A_S, FLOAT_A, MakeTypes (T_int))
 TT1 (205, A_S, BOOL_A, MakeTypes (T_int))
 TT1 (206, B_B, BOOL, MakeTypes (T_bool))
+TT1 (207, f_i, FLOAT, MakeTypes (T_int))
+TT1 (208, F_I, FLOAT_A, F2I (arg_type[0]))
+TT1 (209, i_f, INT, MakeTypes (T_float))
+TT1 (210, I_F, INT_A, I2F (arg_type[0]))
