@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.175  1998/05/16 19:50:58  dkr
+ * changed comments for N_WLgridVar, N_WLgrid, ...
+ *
  * Revision 1.174  1998/05/15 23:43:09  dkr
  * changed NWITH2_IDX_MIN, NWITH2_IDX_MAX
  * (very complicated now, but 'gcc' depends on it ...)
@@ -2997,22 +3000,22 @@ extern node *MakeWLstride (int level, int dim, int bound1, int bound2, int step,
  ***
  ***  sons:
  ***
- ***    node*      NEXTDIM         (N_WLblock, N_WLublock, N_WLstride)
- ***    node*      NEXT            (N_WLgrid)
+ ***    node*   NEXTDIM     (N_WLblock, N_WLublock, N_WLstride, N_WLstriVar)
+ ***    node*   NEXT        (N_WLgrid, N_WLgridVar)
  ***
  ***  permanent attributes:
  ***
- ***    node*      CODE            (N_Ncode)
- ***    int        LEVEL
- ***    int        DIM
- ***    int        BOUND1
- ***    int        BOUND2
- ***    int        UNROLLING
+ ***    node*   CODE        (N_Ncode)
+ ***    int     LEVEL
+ ***    int     DIM
+ ***    int     BOUND1
+ ***    int     BOUND2
+ ***    int     UNROLLING
  ***
  ***  temporary attributes:
  ***
- ***    node*      CEXPR_TEMPLATE  ("N_expr")    (wltransform -> compile )
- ***    int        MODIFIED                      (wltransform ! )
+ ***    node*   CEXPR_TEMPLATE  ("N_expr")    (wltransform -> compile )
+ ***    int     MODIFIED                      (wltransform ! )
  ***
  ***  remarks:
  ***
@@ -3055,7 +3058,7 @@ extern node *MakeWLgrid (int level, int dim, int bound1, int bound2, int unrolli
  ***
  ***  sons:
  ***
- ***    node*    CONTENTS      (N_WLgridVar)
+ ***    node*    CONTENTS      (N_WLgridVar, N_WLgrid)
  ***    node*    NEXT          (N_WLstriVar)
  ***
  ***  permanent attributes:
@@ -3085,7 +3088,7 @@ extern node *MakeWLstriVar (int dim, node *bound1, node *bound2, node *step,
  ***  sons:
  ***
  ***    node*    NEXTDIM         (N_WLstriVar)
- ***    node*    NEXT            (N_WLgridVar)
+ ***    node*    NEXT            (N_WLgridVar, N_WLgrid)
  ***
  ***  permanent attributes:
  ***
@@ -3109,11 +3112,11 @@ extern node *MakeWLgridVar (int dim, node *bound1, node *bound2, node *nextdim,
                             node *next, node *code);
 
 #define WLGRIDVAR_DIM(n) (n->refcnt)
-#define WLGRIDVAR_BOUND1(n) (n->node[2])
-#define WLGRIDVAR_BOUND2(n) (n->node[3])
+#define WLGRIDVAR_BOUND1(n) (n->node[3])
+#define WLGRIDVAR_BOUND2(n) (n->node[4])
 #define WLGRIDVAR_NEXTDIM(n) (n->node[0])
 #define WLGRIDVAR_NEXT(n) (n->node[1])
-#define WLGRIDVAR_CODE(n) (n->node[4])
+#define WLGRIDVAR_CODE(n) (n->node[2])
 
 #define WLGRIDVAR_CEXPR_TEMPLATE(n) (n->node[5])
 
