@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.44  2003/09/17 12:34:05  sbs
+ * ts_tab added
+ *
  * Revision 3.43  2003/08/16 08:45:54  ktr
  * SelectionPropagation added. Must currently be activated with -dosp.
  *
@@ -258,6 +261,7 @@
 #include "UndoElimSubDiv.h"
 #include "blir.h"
 #include "SelectionPropagation.h"
+#include "type_statistics.h"
 
 #include "traverse.h"
 
@@ -1553,6 +1557,17 @@ static funtab sp_tab_rec = {{
                             NULL,
                             NULL};
 funtab *sp_tab = &sp_tab_rec;
+
+/*
+ *  (117) ts_tab
+ */
+static funtab ts_tab_rec = {{
+#define NIFsp(it_ts) it_ts
+#include "node_info.mac"
+                            },
+                            NULL,
+                            NULL};
+funtab *ts_tab = &ts_tab_rec;
 
 /*
  *  nnode

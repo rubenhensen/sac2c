@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.35  2003/09/17 12:34:05  sbs
+ * ts_tab added
+ *
  * Revision 3.34  2003/08/16 08:45:54  ktr
  * SelectionPropagation added. Must currently be activated with -dosp.
  *
@@ -327,6 +330,7 @@ extern funtab *blir_tab;
 extern funtab *esd_tab;
 extern funtab *uesd_tab;
 extern funtab *sp_tab;
+extern funtab *ts_tab;
 
 extern int nnode[];
 

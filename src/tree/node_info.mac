@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.123  2003/09/17 12:34:05  sbs
+ * ts_tab added
+ *
  * Revision 3.122  2003/08/19 17:22:13  ktr
  * Added SPwithid and SPfundef for SelectionPropagation
  *
@@ -122,139 +125,6 @@
  * Revision 3.83  2002/08/05 17:03:45  sbs
  * several extensions required for the alpha version of the new type checker
  *
- * Revision 3.82  2002/07/19 13:27:49  sah
- * added HDdot traversal function
- *
- * Revision 3.81  2002/07/15 08:53:13  dkr
- * PREC2ap added
- *
- * Revision 3.80  2002/07/09 12:53:19  sbs
- * hd_tab added
- *
- * Revision 3.79  2002/06/25 15:02:19  sah
- * PrintDot entered in print_tab
- *
- * Revision 3.78  2002/06/25 14:08:01  sbs
- * N_dot added.
- *
- * Revision 3.77  2002/06/18 10:18:08  ktr
- * WLSblock added
- *
- * Revision 3.76  2002/06/12 17:19:50  ktr
- * Removed some unused WLS-Traversals
- *
- * Revision 3.75  2002/06/07 17:19:08  mwe
- * al_tab added
- *
- * Revision 3.74  2002/06/05 12:19:42  sbs
- * N_tcfuninfo added .
- *
- * Revision 3.73  2002/06/02 21:47:41  dkr
- * COMP2Scalar added
- *
- * Revision 3.72  2002/05/31 14:55:10  sbs
- * several NTC functions added
- *
- * Revision 3.71  2002/04/26 14:56:33  sbs
- * CRTWRPlet added .
- *
- * Revision 3.70  2002/04/16 18:39:42  dkr
- * functions PREC4... added
- *
- * Revision 3.69  2002/04/09 08:24:47  dkr
- * COMP2Arg removed
- * PrintInfo added
- *
- * Revision 3.68  2002/04/09 08:09:54  ktr
- * wls_tab added
- *
- * Revision 3.67  2002/03/07 02:20:28  dkr
- * precompile functions renamed
- *
- * Revision 3.66  2002/03/05 18:15:18  sbs
- * CRTWRPmodul and CRTWRPap inserted.
- *
- * Revision 3.65  2002/03/05 15:52:04  sbs
- * CRTWRP-tab added
- *
- * Revision 3.64  2002/03/01 02:31:57  dkr
- * PREC3return() removed
- *
- * Revision 3.63  2002/02/27 14:48:42  dkr
- * PREC3assign added
- *
- * Revision 3.62  2002/02/27 11:56:22  dkr
- * PREC3modul added
- *
- * Revision 3.61  2002/02/21 17:00:51  sbs
- * INSVDwithid inserted
- *
- * Revision 3.60  2002/02/21 15:08:37  sbs
- * insvd_tab added
- *
- * Revision 3.59  2002/02/21 14:49:35  dkr
- * functions for precompile added
- *
- * Revision 3.58  2001/12/10 15:35:38  dkr
- * comp2_tab added
- *
- * Revision 3.57  2001/06/01 14:47:07  dkr
- * RCNwith2 mapped to RCNwith
- *
- * Revision 3.56  2001/05/30 14:04:11  nmw
- * ssalil_tab traversal added (SSAInferLoopInvariants())
- *
- * Revision 3.55  2001/05/25 08:41:46  nmw
- * SSALURlet removed
- *
- * Revision 3.54  2001/05/23 15:48:55  nmw
- * useless SSACFvardec removed
- *
- * Revision 3.53  2001/05/22 14:58:27  nmw
- * rmcasts traversal added
- *
- * Revision 3.52  2001/05/15 15:51:08  nmw
- * ssawli and ssawlf traversals added
- *
- * Revision 3.51  2001/05/14 15:59:39  nmw
- * ssawlt traversal added
- *
- * Revision 3.50  2001/05/07 09:05:48  nmw
- * SSALURNwith added
- *
- * Revision 3.49  2001/04/30 12:25:40  nmw
- * some XXXap calls added to get special function traversals
- *
- * Revision 3.48  2001/04/26 17:06:43  dkr
- * rmvoidtab removed
- *
- * Revision 3.47  2001/04/26 15:28:14  dkr
- * CFcast, COMPCast added
- *
- * Revision 3.46  2001/04/20 11:18:59  nmw
- * SSALUR traversal added
- *
- * Revision 3.45  2001/04/19 09:51:49  dkr
- * INFDFMSwith, INFDFMSwith2 replaced by INFDFMSwithx
- *
- * Revision 3.44  2001/04/18 15:39:35  nmw
- * while2do added
- *
- * Revision 3.43  2001/04/18 12:59:46  nmw
- * SSAap, CAVap for single functions traversals added
- *
- * Revision 3.42  2001/04/12 12:38:57  nmw
- * SSALIRexpr for traversing return statement added
- *
- * Revision 3.41  2001/04/09 15:54:39  nmw
- * partial traversal lirmov_tab added
- *
- * Revision 3.40  2001/04/04 09:57:39  nmw
- * DupSSAcnt added
- *
- * Revision 3.39  2001/03/29 16:30:47  nmw
- * SSACFNgen added
- *
  * [...]
  *
  */
@@ -304,7 +174,7 @@
  *   crtwrp_tab      wls_tab         precomp4_tab    al_tab4
  *   hd_tab          nt2ot_tab       cwc_tab         unused_tab9
  *   dl_tab          blir_tab        esd_tab11       uesd_tab12
- *   sp_tab          unused_tab14    unused_tab15    unused_tab16
+ *   sp_tab          ts_tab          unused_tab15    unused_tab16
  *
  *   nnode
  *
@@ -734,8 +604,8 @@
 #ifndef NIFsp
 #define NIFsp(it_sp)
 #endif
-#ifndef NIFunused14
-#define NIFunused14(it_unused14)
+#ifndef NIFts
+#define NIFts(it_ts)
 #endif
 #ifndef NIFunused15
 #define NIFunused15(it_unused15)
@@ -781,7 +651,7 @@
   it_ssalur, it_ssawlt, it_ssawli, it_ssawlf,                                            \
                                                                                          \
   it_ssaili, it_comp2, it_precomp2, it_insvd, it_crtwrp, it_wls, it_precomp4, it_al,     \
-  it_hd, it_nt2ot, it_cwc, it_hm, it_dl, it_blir, it_esd, it_uesd, it_sp, it_unused14,   \
+  it_hd, it_nt2ot, it_cwc, it_hm, it_dl, it_blir, it_esd, it_uesd, it_sp, it_ts,         \
   it_unused15, it_unused16,                                                              \
                                                                                          \
   nnode)                                                                                 \
@@ -848,8 +718,7 @@
                                                                 NIFesd (it_esd)          \
                                                                   NIFuesd (it_uesd)      \
                                                                     NIFsp (it_sp)        \
-                                                                      NIFunused14 (      \
-                                                                        it_unused14)     \
+                                                                      NIFts (it_ts)      \
                                                                         NIFunused15 (    \
                                                                           it_unused15)   \
                                                                           NIFunused16 (  \
@@ -1225,7 +1094,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
        SSAILIfundef, COMP2Fundef, PREC2fundef, INSVDfundef, CRTWRPfundef, WLSfundef,
        PREC4fundef, TravSons, TravSons, NT2OTfundef, CWCfundef, TravSons, TravSons,
-       TravSons, TravSons, TravSons, SPfundef, TravSons, TravSons, TravSons, 3),
+       TravSons, TravSons, TravSons, SPfundef, TSfundef, TravSons, TravSons, 3),
 
   NIF (N_arg, "N_arg", TravSons, FltnArgs, PrintArg, TravSons, GNMarg, TravSons, TravSons,
        FreeArg, TravSons, RCarg, TravSons, TravSons, DupArg, TravSons, TravSons, TravSons,
@@ -1249,7 +1118,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
        SSAILIarg, TravSons, TravSons, TravSons, TravSons, TravSons, PREC4arg, TravSons,
        TravSons, NT2OTarg, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       SParg, TravSons, TravSons, TravSons, 1),
+       SParg, TSarg, TravSons, TravSons, 1),
 
   NIF (N_vardec, "N_vardec", TravSons, TravSons, PrintVardec, TCvardec, GNMvardec,
        DCRvardec, TravSons, FreeVardec, TravSons, RCvardec, COMPVardec, TravSons,
@@ -1273,7 +1142,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
        TravSons, COMP2Vardec, TravSons, TravSons, TravSons, TravSons, PREC4vardec,
        TravSons, TravSons, NT2OTvardec, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, 1),
+       TravSons, TravSons, TSvardec, TravSons, TravSons, 1),
 
   NIF (N_block, "N_block", TravSons, FltnBlock, PrintBlock, TCblock, GNMblock, TravSons,
        TravSons, FreeBlock, TravSons, RCblock, COMPBlock, TravSons, DupBlock, TravSons,
@@ -2726,7 +2595,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 #undef NIFuesd
 
 #undef NIFsp
-#undef NIFunused14
+#undef NIFts
 #undef NIFunused15
 #undef NIFunused16
 
