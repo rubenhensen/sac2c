@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2004/12/13 13:55:59  ktr
+ * added functionality to branch over with-loops (work in progress)
+ *
  * Revision 1.12  2004/12/01 16:36:22  ktr
  * post DK bugfix
  *
@@ -73,6 +76,7 @@
 #include "shape.h"
 
 #include <string.h>
+
 /*
  * INFO structure
  */
@@ -81,15 +85,21 @@ struct INFO {
     node *branches;
     node *memvars;
     node *locals;
+    dfmask_base_t *maskbase;
+    dfmask_t *drcs;
+    dfmask_t *localvars;
 };
 
 /*
  * INFO macros
  */
-#define INFO_RB_FUNDEF(n) (n->fundef)
-#define INFO_RB_BRANCHES(n) (n->branches)
-#define INFO_RB_MEMVARS(n) (n->memvars)
-#define INFO_RB_LOCALS(n) (n->locals)
+#define INFO_RB_FUNDEF(n) ((n)->fundef)
+#define INFO_RB_BRANCHES(n) ((n)->branches)
+#define INFO_RB_MEMVARS(n) ((n)->memvars)
+#define INFO_RB_LOCALS(n) ((n)->locals)
+#define INFO_RB_MASKBASE(n) ((n)->maskbase)
+#define INFO_RB_DRCS(n) ((n)->drcs)
+#define INFO_RB_LOCALVARS(n) ((n)->localvars)
 
 /*
  * INFO functions
@@ -107,6 +117,9 @@ MakeInfo ()
     INFO_RB_BRANCHES (result) = NULL;
     INFO_RB_MEMVARS (result) = NULL;
     INFO_RB_LOCALS (result) = NULL;
+    INFO_RB_MASKBASE (result) = NULL;
+    INFO_RB_DRCS (result) = NULL;
+    INFO_RB_LOCALVARS (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -161,33 +174,6 @@ EMRBdoReuseBranching (node *syntax_tree)
  * Helper functions
  *
  *****************************************************************************/
-/** <!--********************************************************************-->
- *
- * @fn bool IsIdInList( node *id, node *exprs)
- *
- * @param id
- * @param exprs
- *
- * @return Returns whether id is found in exprs.
- *
- *****************************************************************************/
-bool
-IsIdInList (node *id, node *exprs)
-{
-    bool res = FALSE;
-
-    DBUG_ENTER ("IsIdInList");
-
-    while (exprs != NULL) {
-        if (ID_AVIS (EXPRS_EXPR (exprs)) == ID_AVIS (id)) {
-            res = TRUE;
-            break;
-        }
-        exprs = EXPRS_NEXT (exprs);
-    }
-
-    DBUG_RETURN (res);
-}
 
 /** <!--********************************************************************-->
  *
@@ -195,14 +181,14 @@ IsIdInList (node *id, node *exprs)
  *
  * @brief Returns sublist of reuse candidates that are data reuse candidates
  *
- * @param drcs Data Reuse Candidates ( will be consumed )
+ * @param drcs Data Reuse Candidates mask
  * @param memop Memory operation
  *
  * @return sublist of reuse candidates that are also data reuse candidates
  *
  *****************************************************************************/
 static node *
-GetReuseBranches (node *drcs, node *memop)
+GetReuseBranches (dfmask_t *drcs, node *memop)
 {
     node *res = NULL;
 
@@ -215,15 +201,11 @@ GetReuseBranches (node *drcs, node *memop)
         while (rcs != NULL) {
             node *rc = EXPRS_EXPR (rcs);
 
-            if (IsIdInList (rc, drcs)) {
+            if (DFMtestMaskEntry (drcs, NULL, ID_AVIS (rc))) {
                 res = TCappendExprs (res, TBmakeExprs (DUPdoDupNode (rc), NULL));
             }
             rcs = EXPRS_NEXT (rcs);
         }
-    }
-
-    if (drcs != NULL) {
-        drcs = FREEdoFreeTree (drcs);
     }
 
     DBUG_RETURN (res);
@@ -621,11 +603,46 @@ EMRBfundef (node *arg_node, info *arg_info)
         DBUG_PRINT ("EMRB", ("Traversing function %s", FUNDEF_NAME (arg_node)));
 
         INFO_RB_FUNDEF (arg_info) = arg_node;
+        INFO_RB_MASKBASE (arg_info)
+          = DFMgenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDEC (arg_node));
 
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
 
+        INFO_RB_MASKBASE (arg_info) = DFMremoveMaskBase (INFO_RB_MASKBASE (arg_info));
+
         DBUG_PRINT ("EMRB",
                     ("Traversal of function %s complete", FUNDEF_NAME (arg_node)));
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *EMRBids( node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ * @param arg_node
+ * @param arg_info
+ *
+ * @return arg_node
+ *
+ *****************************************************************************/
+node *
+EMRBids (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("EMRBids");
+
+    /*
+     * Mark declared variables in LOCALMASK
+     */
+    if (INFO_RB_LOCALVARS (arg_info) != NULL) {
+        DFMsetMaskEntrySet (INFO_RB_LOCALVARS (arg_info), NULL, IDS_AVIS (arg_node));
+    }
+
+    if (IDS_NEXT (arg_node) != NULL) {
+        IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -652,8 +669,12 @@ EMRBprf (node *arg_node, info *arg_info)
     case F_fill:
         if (NODE_TYPE (PRF_ARG1 (arg_node)) == N_prf) {
             node *branches;
-            node *prf = PRF_ARG1 (arg_node);
-            node *mem = PRF_ARG2 (arg_node);
+            node *prf;
+            node *mem;
+            dfmask_t *drcs;
+
+            prf = PRF_ARG1 (arg_node);
+            mem = PRF_ARG2 (arg_node);
 
             switch (PRF_PRF (prf)) {
             case F_copy:
@@ -662,8 +683,13 @@ EMRBprf (node *arg_node, info *arg_info)
                  *
                  * b is the only data reuse candidate
                  */
-                branches = GetReuseBranches (DUPdoDupTree (PRF_ARGS (prf)),
-                                             ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (mem))));
+                drcs = DFMgenMaskClear (INFO_RB_MASKBASE (arg_info));
+                DFMsetMaskEntrySet (drcs, NULL, ID_AVIS (PRF_ARG1 (prf)));
+
+                branches
+                  = GetReuseBranches (drcs, ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (mem))));
+
+                drcs = DFMremoveMask (drcs);
 
                 /*
                  * Add branches to INFO_RB_BRANCHES if there are any
@@ -695,6 +721,110 @@ EMRBprf (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *EMRBcode( node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ * @param arg_node
+ * @param arg_info
+ *
+ * @return arg_node
+ *
+ *****************************************************************************/
+node *
+EMRBcode (node *arg_node, info *arg_info)
+{
+    dfmask_t *oldlocals;
+    node *cexprs;
+
+    DBUG_ENTER ("EMRBcode");
+
+    /*
+     * stack local indentifiers
+     */
+    oldlocals = INFO_RB_LOCALVARS (arg_info);
+    INFO_RB_LOCALVARS (arg_info) = DFMgenMaskClear (INFO_RB_MASKBASE (arg_info));
+
+    if (CODE_CBLOCK (arg_node) != NULL) {
+        CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
+    }
+
+    cexprs = CODE_CEXPRS (arg_node);
+
+    while (cexprs != NULL) {
+        node *cid = EXPRS_EXPR (cexprs);
+        node *wlass = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (cid))));
+        node *mem;
+        node *memop;
+        node *val;
+        node *cval;
+        node *memval;
+
+        switch (PRF_PRF (wlass)) {
+        case F_fill:
+            /*
+             * Search for suballoc situation
+             *
+             *   a  = with ...
+             *   m' = suballoc( A, iv);
+             *   m  = fill( copy( a), m');
+             * }: m
+             */
+            val = PRF_ARG1 (wlass);
+            mem = PRF_ARG2 (wlass);
+            DBUG_ASSERT ((NODE_TYPE (val) == N_prf) && (PRF_PRF (val) == F_copy),
+                         "Illegal code situation");
+            cval = PRF_ARG1 (val);
+            memop = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (mem))));
+            if ((PRF_PRF (memop) == F_suballoc)
+                && (DFMtestMaskEntry (INFO_RB_LOCALVARS (arg_info), NULL, ID_AVIS (cval)))
+                && ((NODE_TYPE (ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (cval)))) == N_with)
+                    || (NODE_TYPE (ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (cval))))
+                        == N_with2))) {
+                /*
+                 * Full branch in order to be able to move suballoc upwards
+                 */
+                DFMsetMaskSet (INFO_RB_DRCS (arg_info));
+            }
+            break;
+
+        case F_wl_assign:
+            /*
+             * Search for selection
+             *
+             *   a = fill( B[...], ...)
+             *   r = wl_assign( a, ..., ...);
+             * }: r
+             *
+             * OR
+             *
+             *   a = fill ( idx_sel( ..., B), ...);
+             *   r = wl_assign( a, ..., ...);
+             * }: r
+             */
+            memval = ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (PRF_ARG1 (wlass))));
+            if ((NODE_TYPE (memval) == N_prf) && (PRF_PRF (memval) = F_fill)
+                && (NODE_TYPE (PRF_ARG1 (memval)) == N_prf)
+                && ((PRF_PRF (PRF_ARG1 (memval)) == F_sel)
+                    || (PRF_PRF (PRF_ARG1 (memval)) == F_idx_sel))) {
+                DFMsetMaskEntrySet (INFO_RB_DRCS (arg_info), NULL,
+                                    ID_AVIS (PRF_ARG2 (PRF_ARG1 (memval))));
+            }
+            break;
+
+        default:
+            DBUG_ASSERT ((0), "Illegal WITH-LOOP assignment found!");
+            break;
+        }
+
+        cexprs = EXPRS_NEXT (cexprs);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *EMRBwith( node *arg_node, info *arg_info)
  *
  * @brief
@@ -708,7 +838,24 @@ EMRBprf (node *arg_node, info *arg_info)
 node *
 EMRBwith (node *arg_node, info *arg_info)
 {
+    dfmask_t *olddrcs;
+
     DBUG_ENTER ("EMRBwith");
+
+    /*
+     * Stack outer data reuse candidates
+     */
+    olddrcs = INFO_RB_DRCS (arg_info);
+    INFO_RB_DRCS (arg_info) = DFMgenMaskClear (INFO_RB_MASKBASE (arg_info));
+
+    WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
+    WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
+
+    /*
+     * restore outer data reuse candidates
+     */
+    INFO_RB_DRCS (arg_info) = DFMremoveMask (INFO_RB_DRCS (arg_info));
+    INFO_RB_DRCS (arg_info) = olddrcs;
 
     DBUG_RETURN (arg_node);
 }
@@ -728,14 +875,66 @@ EMRBwith (node *arg_node, info *arg_info)
 node *
 EMRBwith2 (node *arg_node, info *arg_info)
 {
+    dfmask_t *olddrcs;
+
     DBUG_ENTER ("EMRBwith2");
+
+    /*
+     * Stack outer data reuse candidates
+     */
+    olddrcs = INFO_RB_DRCS (arg_info);
+    INFO_RB_DRCS (arg_info) = DFMgenMaskClear (INFO_RB_MASKBASE (arg_info));
+
+    WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
+    WITH2_WITHOP (arg_node) = TRAVdo (WITH2_WITHOP (arg_node), arg_info);
+
+    /*
+     * restore outer data reuse candidates
+     */
+    INFO_RB_DRCS (arg_info) = DFMremoveMask (INFO_RB_DRCS (arg_info));
+    INFO_RB_DRCS (arg_info) = olddrcs;
 
     DBUG_RETURN (arg_node);
 }
 
 /** <!--********************************************************************-->
  *
- * @fn node *EMRB( node *arg_node, info *arg_info)
+ * @fn void MakeWithopReuseBranches( node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ * @param arg_node
+ * @param arg_info
+ *
+ * @return arg_node
+ *
+ *****************************************************************************/
+static void
+MakeWithopReuseBranches (node *mem, info *arg_info)
+{
+    node *branches;
+
+    DBUG_ENTER ("MakeWithopReuseBranches");
+
+    branches = GetReuseBranches (INFO_RB_DRCS (arg_info),
+                                 ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (mem))));
+
+    /*
+     * Add branches to INFO_RB_BRANCHES if there are any
+     */
+    if (branches != NULL) {
+        INFO_RB_BRANCHES (arg_info) = TBmakeExprs (branches, INFO_RB_BRANCHES (arg_info));
+
+        INFO_RB_MEMVARS (arg_info)
+          = TBmakeExprs (DUPdoDupNode (mem), INFO_RB_MEMVARS (arg_info));
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *EMRBgenarray( node *arg_node, info *arg_info)
  *
  * @brief
  *
@@ -749,6 +948,38 @@ node *
 EMRBgenarray (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("EMRBgenarray");
+
+    MakeWithopReuseBranches (GENARRAY_MEM (arg_node), arg_info);
+
+    if (GENARRAY_NEXT (arg_node) != NULL) {
+        TRAVdo (GENARRAY_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *EMRBmodarray( node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ * @param arg_node
+ * @param arg_info
+ *
+ * @return arg_node
+ *
+ *****************************************************************************/
+node *
+EMRBmodarray (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("EMRBmodarray");
+
+    MakeWithopReuseBranches (MODARRAY_MEM (arg_node), arg_info);
+
+    if (MODARRAY_NEXT (arg_node) != NULL) {
+        TRAVdo (MODARRAY_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
