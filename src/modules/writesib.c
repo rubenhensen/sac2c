@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.3  1995/12/29 10:43:13  cg
+ * Revision 1.4  1996/01/02 16:10:01  cg
+ * types of implicitly used global objects are now written to the SIB
+ *
+ * Revision 1.3  1995/12/29  10:43:13  cg
  * All preparations for several link styles removed
  *
  * Revision 1.2  1995/12/23  17:02:41  cg
@@ -25,14 +28,14 @@
 #include "Error.h"
 #include "dbug.h"
 #include "my_debug.h"
+#include "globals.h"
 
 #include "traverse.h"
 
 #include "convert.h"
 #include "filemgr.h"
 #include "print.h"
-
-extern FILE *outfile; /* is set in main.c */
+#include "typecheck.h" /* for LookupType  */
 
 #define PRINTMODNAME(mod, name)                                                          \
     if (mod == NULL) {                                                                   \
@@ -133,6 +136,7 @@ void
 StoreExportNode (node *insert, node *info)
 {
     nodelist *act, *last, *list;
+    node *obj_tdef;
 
     DBUG_ENTER ("StoreExportNode");
 
@@ -164,6 +168,8 @@ StoreExportNode (node *insert, node *info)
 
         case N_objdef:
             INFO_EXPORTOBJS (info) = MakeNodelist (insert, ST_regular, NULL);
+            obj_tdef = LookupType (OBJDEF_TNAME (insert), OBJDEF_TMOD (insert), 042);
+            StoreExportNode (obj_tdef, info);
             break;
 
         case N_typedef:
@@ -184,6 +190,11 @@ StoreExportNode (node *insert, node *info)
 
         if (act == NULL) {
             NODELIST_NEXT (last) = MakeNodelist (insert, ST_regular, NULL);
+
+            if (NODE_TYPE (insert) == N_objdef) {
+                obj_tdef = LookupType (OBJDEF_TNAME (insert), OBJDEF_TMOD (insert), 042);
+                StoreExportNode (obj_tdef, info);
+            }
         }
     }
 
