@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.10  2000/08/04 11:41:31  mab
+ * fixed bug in APCwith and APTwith (case nested with-loops)
+ *
  * Revision 1.9  2000/08/03 15:32:00  mab
  * completed collection of access patterns and unsupported shapes
  *
@@ -341,9 +344,14 @@ APCarray (node *arg_node, node *arg_info)
 node *
 APCwith (node *arg_node, node *arg_info)
 {
+    node *save_ptr;
+
     DBUG_ENTER ("APCwith");
 
     DBUG_PRINT ("APC", ("with-node detected"));
+
+    /* save pointer to outer with-loop to support nested loops */
+    save_ptr = INFO_APC_WITH (arg_info);
 
     INFO_APC_WITH (arg_info) = arg_node;
 
@@ -356,7 +364,8 @@ APCwith (node *arg_node, node *arg_info)
 
     /* no need to traverse part-node here */
 
-    INFO_APC_WITH (arg_info) = NULL;
+    /* restore pointer to outer with-loop */
+    INFO_APC_WITH (arg_info) = save_ptr;
 
     DBUG_RETURN (arg_node);
 }

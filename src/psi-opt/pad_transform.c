@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.14  2000/08/04 11:41:31  mab
+ * fixed bug in APCwith and APTwith (case nested with-loops)
+ *
  * Revision 1.13  2000/08/03 15:36:33  mab
  * debugged transformation
  * (conversion functions not yet supported)
@@ -650,12 +653,17 @@ node *
 APTwith (node *arg_node, node *arg_info)
 {
 
+    node *save_ptr;
+
     DBUG_ENTER ("APTwith");
 
     DBUG_PRINT ("APT", ("with-node detected"));
 
-    INFO_APT_EXPRESSION_PADDED (arg_info) = FALSE;
+    /* save pointer to outer with-loop to support nested loops */
+    save_ptr = INFO_APT_WITH (arg_info);
+
     INFO_APT_WITH (arg_info) = arg_node;
+    INFO_APT_EXPRESSION_PADDED (arg_info) = FALSE;
 
     /* check withop, if with-loop needs to be padded */
     DBUG_ASSERT ((NWITH_WITHOP (arg_node) != NULL), " unexpected empty WITHOP!");
@@ -668,6 +676,9 @@ APTwith (node *arg_node, node *arg_info)
     /* no need to traverse part-nodes */
 
     /* EXPRESSION_PADDED is returned to upper function */
+
+    /* restore pointer to outer with-loop */
+    INFO_APT_WITH (arg_info) = save_ptr;
 
     DBUG_RETURN (arg_node);
 }
