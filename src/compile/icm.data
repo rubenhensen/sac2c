@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.33  2002/06/06 18:22:15  dkr
+ * some signatures modified
+ *
  * Revision 3.32  2002/06/02 21:35:22  dkr
  * ICMs for TAGGED_ARRAYS added
  *
@@ -162,36 +165,72 @@ ICM_DEF( ND_DECL_ARG, TRACE_NONE)
 ICM_END( ND_DECL_ARG, (nt, sdim, shp))
 #endif
 
+
+#if defined(ND_SET_SHP) || defined(ICM_ALL)
+ICM_DEF( ND_SET_SHP, TRACE_NONE)
+  ICM_STR( nt)
+  ICM_INT( sdim)
+  ICM_VARINT( sdim, shp)
+ICM_END( ND_SET_SHP, (nt, sdim, shp))
+#endif
+
+
+#if defined(ND_REFRESH_MIRROR) || defined(ICM_ALL)
+ICM_DEF( ND_REFRESH_MIRROR, TRACE_NONE)
+  ICM_STR( nt)
+  ICM_INT( sdim)
+ICM_END( ND_REFRESH_MIRROR, (nt, sdim))
+#endif
+
+
+#if defined(ND_CHECK_REUSE) || defined(ICM_ALL)
+ICM_DEF( ND_CHECK_REUSE, TRACE_NONE)
+  ICM_STR( nt)
+ICM_END( ND_CHECK_REUSE, (nt))
+#endif
+
 #if defined(ND_ALLOC) || defined(ICM_ALL)
 ICM_DEF( ND_ALLOC, TRACE_NONE)
-  ICM_INT( rc)
   ICM_STR( nt)
   ICM_STR( basetype)
   ICM_INT( sdim)
   ICM_VARINT( sdim, shp)
-ICM_END( ND_ALLOC, (rc, nt, basetype, sdim, shp))
+  ICM_INT( rc)
+ICM_END( ND_ALLOC, (nt, basetype, sdim, shp, rc))
 #endif
+
+#if defined(ND_ALLOC_PLACE) || defined(ICM_ALL)
+ICM_DEF( ND_ALLOC_PLACE, TRACE_NONE)
+  ICM_STR( nt)
+  ICM_STR( basetype)
+  ICM_INT( sdim)
+  ICM_VARINT( sdim, shp)
+  ICM_INT( rc)
+ICM_END( ND_ALLOC_PLACE, (nt, basetype, sdim, shp, rc))
+#endif
+
 
 #if defined(ND_ASSIGN) || defined(ICM_ALL)
 ICM_DEF( ND_ASSIGN, TRACE_NONE)
-  ICM_STR( dest_nt)
-  ICM_STR( src_nt)
-ICM_END( ND_ASSIGN, (dest_nt, src_nt))
+  ICM_STR( to_nt)
+  ICM_INT( to_sdim)
+  ICM_STR( from_nt)
+ICM_END( ND_ASSIGN, (to_nt, to_sdim, from_nt))
 #endif
 
 #if defined(ND_COPY) || defined(ICM_ALL)
 ICM_DEF( ND_COPY, TRACE_NONE)
-  ICM_STR( dest_nt)
-  ICM_STR( src_nt)
-ICM_END( ND_COPY, (dest_nt, src_nt))
+  ICM_STR( to_nt)
+  ICM_STR( from_nt)
+ICM_END( ND_COPY, (to_nt, from_nt))
 #endif
 
 #if defined(ND_MAKE_UNIQUE) || defined(ICM_ALL)
 ICM_DEF( ND_MAKE_UNIQUE, TRACE_NONE)
-  ICM_STR( dest_nt)
-  ICM_STR( src_nt)
+  ICM_STR( to_nt)
+  ICM_STR( from_nt)
   ICM_STR( basetype)
-ICM_END( ND_MAKE_UNIQUE, (dest_nt, src_nt, basetype))
+ICM_END( ND_MAKE_UNIQUE, (to_nt, from_nt, basetype))
 #endif
 
 
@@ -203,13 +242,13 @@ ICM_DEF( ND_ASSIGN_CONST_VECT, TRACE_NONE)
 ICM_END( ND_ASSIGN_CONST_VECT, (nt, len, s))
 #endif
 
-#if defined(ND_ASSIGN_CONST_H) || defined(ICM_ALL)
-ICM_DEF( ND_ASSIGN_CONST_H, TRACE_NONE)
-  ICM_STR( nt)
-  ICM_STR( copyfun)
-  ICM_INT( len)
-  ICM_VAR( len, A)
-ICM_END( ND_ASSIGN_CONST_H, (nt, copyfun, len, A))
+
+#if defined(ND_PRF_SHAPE) || defined(ICM_ALL)
+ICM_DEF( ND_PRF_SHAPE, TRACE_NONE)
+  ICM_STR( to_nt)
+  ICM_STR( from_nt)
+  ICM_INT( from_sdim)
+ICM_END( ND_PRF_SHAPE, (to_nt, from_nt, from_sdim))
 #endif
 
 

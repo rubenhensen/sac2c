@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2002/06/06 18:22:31  dkr
+ * some signatures modified
+ *
  * Revision 3.8  2002/06/02 21:35:54  dkr
  * ICMs for TAGGED_ARRAYS added
  *
@@ -76,19 +79,26 @@ extern void ICMCompileND_DECL (char *nt, char *basetype, int sdim, int *shp);
 
 extern void ICMCompileND_DECL_ARG (char *nt, int sdim, int *shp);
 
-extern void ICMCompileND_ALLOC (int rc, char *nt, char *basetype, int sdim, int *shp);
+extern void ICMCompileND_SET_SHP (char *nt, int sdim, int *shp);
 
-extern void ICMCompileND_ASSIGN (char *dest_nt, char *src_nt);
+extern void ICMCompileND_REFRESH_MIRROR (char *nt, int sdim);
 
-extern void ICMCompileND_COPY (char *dest_nt, char *src_nt);
+extern void ICMCompileND_CHECK_REUSE (char *nt);
 
-extern void ICMCompileND_MAKE_UNIQUE (char *dest_nt, char *src_nt, char *basetype);
+extern void ICMCompileND_ALLOC (char *nt, char *basetype, int sdim, int *shp, int rc);
+
+extern void ICMCompileND_ALLOC_PLACE (char *nt, char *basetype, int sdim, int *shp,
+                                      int rc);
+
+extern void ICMCompileND_ASSIGN (char *to_nt, int to_sdim, char *from_nt);
+
+extern void ICMCompileND_COPY (char *to_nt, char *from_nt);
+
+extern void ICMCompileND_MAKE_UNIQUE (char *to_nt, char *from_nt, char *basetype);
 
 extern void ICMCompileND_ASSIGN_CONST_VECT (char *name, int len, char **s);
 
-extern void ICMCompileND_ASSIGN_CONST_H (char *name, char *copyfun, int len, char **A);
-
-extern void ICMCompileND_ASSIGN_CONST_A (char *name, int len2, int len, char **A);
+extern void ICMCompileND_PRF_SHAPE (char *to_nt, char *from_nt, int from_sdim);
 
 #else /* TAGGED_ARRAYS */
 
