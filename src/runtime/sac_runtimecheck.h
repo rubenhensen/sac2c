@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2003/11/10 20:22:56  dkrHH
+ * debug output: NT objs are converted into strings correctly now
+ *
  * Revision 1.6  2003/09/19 12:26:54  dkr
  * postfixes _nt, _any of varnames renamed into _NT, _ANY
  *
@@ -113,7 +116,7 @@
        ? 0                                                                               \
        : (SAC_RuntimeError ("Memory access violation on reading from array %s\n"         \
                             "*** with size %d at index position %d !\n",                 \
-                            #var_NT, SAC_ND_A_SIZE (var_NT), pos),                       \
+                            NT_STR (var_NT), SAC_ND_A_SIZE (var_NT), pos),               \
           0)),
 
 #define SAC_BC_WRITE(var_NT, pos)                                                        \
@@ -121,7 +124,7 @@
        ? 0                                                                               \
        : (SAC_RuntimeError ("Memory access violation on writing into array %s\n"         \
                             "*** with size %d at index position %d !\n",                 \
-                            #var_NT, SAC_ND_A_SIZE (var_NT), pos),                       \
+                            NT_STR (var_NT), SAC_ND_A_SIZE (var_NT), pos),               \
           0)),
 
 #else /* SAC_DO_CHECK_BOUNDARY */

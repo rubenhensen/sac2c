@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2003/11/10 20:22:56  dkrHH
+ * debug output: NT objs are converted into strings correctly now
+ *
  * Revision 3.10  2003/10/14 14:50:05  cg
  * SAC_TR_MT_PRINT_FOLD_RESULT__AKS prints first array elements now
  * SAC_TR_REF_PRINT_RC prints addr of data vector now
@@ -137,7 +140,7 @@ extern void SAC_TR_DecHiddenMemcnt (int size);
 #define SAC_TR_REF_PRINT(msg) SAC_TR_PRINT (msg);
 
 #define SAC_TR_REF_PRINT_RC(var_NT)                                                      \
-    SAC_TR_REF_PRINT (("refcnt of %s at address %p: %d", #var_NT,                        \
+    SAC_TR_REF_PRINT (("refcnt of %s at address %p: %d", NT_STR (var_NT),                \
                        SAC_ND_A_FIELD (var_NT), SAC_ND_A_RC (var_NT)))
 
 #else /* SAC_DO_TRACE_REF */

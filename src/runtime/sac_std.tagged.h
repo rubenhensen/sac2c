@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.54  2003/11/10 20:22:56  dkrHH
+ * debug output: NT objs are converted into strings correctly now
+ *
  * Revision 3.53  2003/10/20 18:15:12  dkr
  * some comments added
  *
@@ -180,6 +183,8 @@
 #define NT_SHP(var_NT) Item1 var_NT
 #define NT_HID(var_NT) Item2 var_NT
 #define NT_UNQ(var_NT) Item3 var_NT
+
+#define NT_STR(var_NT) TO_STR (NT_NAME (var_NT))
 
 /*
  * implementation type for hidden objects
@@ -1047,10 +1052,10 @@ typedef int *SAC_array_descriptor_t;
     {                                                                                    \
         SAC_ASSURE_TYPE ((dim == SAC_ND_A_MIRROR_DIM (var_NT)),                          \
                          ("Inconsistant dimension for array %s found!",                  \
-                          NT_NAME (var_NT)));                                            \
+                          NT_STR (var_NT)));                                             \
         SAC_HM_MALLOC_FIXED_SIZE (SAC_ND_A_DESC (var_NT),                                \
                                   BYTE_SIZE_OF_DESC (SAC_ND_A_MIRROR_DIM (var_NT)))      \
-        SAC_TR_MEM_PRINT (("ND_ALLOC__DESC( %s, %s) at addr: %p", #var_NT, #dim,         \
+        SAC_TR_MEM_PRINT (("ND_ALLOC__DESC( %s, %s) at addr: %p", NT_STR (var_NT), #dim, \
                            SAC_ND_A_DESC (var_NT)))                                      \
     }
 
@@ -1060,7 +1065,7 @@ typedef int *SAC_array_descriptor_t;
                                   SAC_ND_A_SIZE (var_NT)                                 \
                                     * sizeof (*SAC_ND_A_FIELD (var_NT)))                 \
         SAC_TR_MEM_PRINT (                                                               \
-          ("ND_ALLOC__DATA( %s) at addr: %p", #var_NT, SAC_ND_A_FIELD (var_NT)))         \
+          ("ND_ALLOC__DATA( %s) at addr: %p", NT_STR (var_NT), SAC_ND_A_FIELD (var_NT))) \
         SAC_TR_INC_ARRAY_MEMCNT (SAC_ND_A_SIZE (var_NT))                                 \
         SAC_CS_REGISTER_ARRAY (var_NT)                                                   \
     }
@@ -1069,16 +1074,16 @@ typedef int *SAC_array_descriptor_t;
     {                                                                                    \
         SAC_ASSURE_TYPE ((dim == SAC_ND_A_MIRROR_DIM (var_NT)),                          \
                          ("Inconsistant dimension for array %s found!",                  \
-                          NT_NAME (var_NT)));                                            \
+                          NT_STR (var_NT)));                                             \
         SAC_HM_MALLOC_FIXED_SIZE_WITH_DESC (SAC_ND_A_FIELD (var_NT),                     \
                                             SAC_ND_A_DESC (var_NT),                      \
                                             SAC_ND_A_MIRROR_SIZE (var_NT)                \
                                               * sizeof (*SAC_ND_A_FIELD (var_NT)),       \
                                             SAC_ND_A_MIRROR_DIM (var_NT))                \
-        SAC_TR_MEM_PRINT (("ND_ALLOC__DESC( %s, %s) at addr: %p", #var_NT, #dim,         \
+        SAC_TR_MEM_PRINT (("ND_ALLOC__DESC( %s, %s) at addr: %p", NT_STR (var_NT), #dim, \
                            SAC_ND_A_DESC (var_NT)))                                      \
         SAC_TR_MEM_PRINT (                                                               \
-          ("ND_ALLOC__DATA( %s) at addr: %p", #var_NT, SAC_ND_A_FIELD (var_NT)))         \
+          ("ND_ALLOC__DATA( %s) at addr: %p", NT_STR (var_NT), SAC_ND_A_FIELD (var_NT))) \
         SAC_TR_INC_ARRAY_MEMCNT (SAC_ND_A_SIZE (var_NT))                                 \
         SAC_CS_REGISTER_ARRAY (var_NT)                                                   \
     }
@@ -1113,7 +1118,7 @@ typedef int *SAC_array_descriptor_t;
         SAC_HM_MALLOC (SAC_ND_A_FIELD (var_NT),                                          \
                        SAC_ND_A_SIZE (var_NT) * sizeof (*SAC_ND_A_FIELD (var_NT)))       \
         SAC_TR_MEM_PRINT (                                                               \
-          ("ND_ALLOC__DATA( %s) at addr: %p", #var_NT, SAC_ND_A_FIELD (var_NT)))         \
+          ("ND_ALLOC__DATA( %s) at addr: %p", NT_STR (var_NT), SAC_ND_A_FIELD (var_NT))) \
         SAC_TR_INC_ARRAY_MEMCNT (SAC_ND_A_SIZE (var_NT))                                 \
         SAC_CS_REGISTER_ARRAY (var_NT)                                                   \
     }
@@ -1133,9 +1138,9 @@ typedef int *SAC_array_descriptor_t;
 #define SAC_ND_ALLOC__DESC__AUD(var_NT, dim)                                             \
     {                                                                                    \
         SAC_ASSURE_TYPE ((dim >= 0),                                                     \
-                         ("Illegal dimension for array %s found!", NT_NAME (var_NT)));   \
+                         ("Illegal dimension for array %s found!", NT_STR (var_NT)));    \
         SAC_HM_MALLOC (SAC_ND_A_DESC (var_NT), BYTE_SIZE_OF_DESC (dim))                  \
-        SAC_TR_MEM_PRINT (("ND_ALLOC__DESC( %s, %s) at addr: %p", #var_NT, #dim,         \
+        SAC_TR_MEM_PRINT (("ND_ALLOC__DESC( %s, %s) at addr: %p", NT_STR (var_NT), #dim, \
                            SAC_ND_A_DESC (var_NT)))                                      \
         SAC_ND_A_DESC_DIM (var_NT) = SAC_ND_A_MIRROR_DIM (var_NT) = dim;                 \
     }
@@ -1193,8 +1198,8 @@ typedef int *SAC_array_descriptor_t;
 
 #define SAC_ND_FREE__DATA__SCL_HID(var_NT, freefun)                                      \
     {                                                                                    \
-        SAC_TR_MEM_PRINT (("ND_FREE__DATA( %s, %s) at addr: %p", #var_NT, #freefun,      \
-                           SAC_ND_A_FIELD (var_NT)))                                     \
+        SAC_TR_MEM_PRINT (("ND_FREE__DATA( %s, %s) at addr: %p", NT_STR (var_NT),        \
+                           #freefun, SAC_ND_A_FIELD (var_NT)))                           \
         freefun (SAC_ND_A_FIELD (var_NT));                                               \
         SAC_TR_DEC_HIDDEN_MEMCNT (1)                                                     \
     }
@@ -1206,14 +1211,14 @@ typedef int *SAC_array_descriptor_t;
 #define SAC_ND_FREE__DESC__AKS(var_NT)                                                   \
     {                                                                                    \
         SAC_TR_MEM_PRINT (                                                               \
-          ("ND_FREE__DESC( %s) at addr: %p", #var_NT, SAC_ND_A_DESC (var_NT)))           \
+          ("ND_FREE__DESC( %s) at addr: %p", NT_STR (var_NT), SAC_ND_A_DESC (var_NT)))   \
         SAC_HM_FREE_DESC (SAC_ND_A_DESC (var_NT))                                        \
     }
 
 #define SAC_ND_FREE__DATA__AKS_NHD(var_NT, freefun)                                      \
     {                                                                                    \
-        SAC_TR_MEM_PRINT (("ND_FREE__DATA( %s, %s) at addr: %p", #var_NT, #freefun,      \
-                           SAC_ND_A_FIELD (var_NT)))                                     \
+        SAC_TR_MEM_PRINT (("ND_FREE__DATA( %s, %s) at addr: %p", NT_STR (var_NT),        \
+                           #freefun, SAC_ND_A_FIELD (var_NT)))                           \
         SAC_HM_FREE_FIXED_SIZE (SAC_ND_A_FIELD (var_NT),                                 \
                                 SAC_ND_A_SIZE (var_NT)                                   \
                                   * sizeof (*SAC_ND_A_FIELD (var_NT)))                   \
@@ -1238,8 +1243,8 @@ typedef int *SAC_array_descriptor_t;
 
 #define SAC_ND_FREE__DATA__AKD_NHD(var_NT, freefun)                                      \
     {                                                                                    \
-        SAC_TR_MEM_PRINT (("ND_FREE__DATA( %s, %s) at addr: %p", #var_NT, #freefun,      \
-                           SAC_ND_A_FIELD (var_NT)))                                     \
+        SAC_TR_MEM_PRINT (("ND_FREE__DATA( %s, %s) at addr: %p", NT_STR (var_NT),        \
+                           #freefun, SAC_ND_A_FIELD (var_NT)))                           \
         SAC_HM_FREE (SAC_ND_A_FIELD (var_NT))                                            \
         SAC_TR_DEC_ARRAY_MEMCNT (SAC_ND_A_SIZE (var_NT))                                 \
         SAC_CS_UNREGISTER_ARRAY (var_NT)                                                 \
@@ -1353,7 +1358,8 @@ typedef int *SAC_array_descriptor_t;
 
 #define SAC_ND_COPY__DATA__SCL__SCL(to_NT, from_NT, copyfun)                             \
     {                                                                                    \
-        SAC_TR_MEM_PRINT (("ND_COPY__DATA( %s, %s, %s)" #to_NT, #from_NT, #copyfun))     \
+        SAC_TR_MEM_PRINT (                                                               \
+          ("ND_COPY__DATA( %s, %s, %s)" NT_STR (to_NT), #from_NT, #copyfun))             \
         SAC_ND_WRITE_READ_COPY (to_NT, 0, from_NT, 0, copyfun)                           \
     }
 #define SAC_ND_COPY__DATA__SCL__AKS(to_NT, from_NT, copyfun) SAC_ICM_UNDEF ();
@@ -1379,8 +1385,8 @@ typedef int *SAC_array_descriptor_t;
 #define SAC_ND_COPY__DATA__AKS__AKS(to_NT, from_NT, copyfun)                             \
     {                                                                                    \
         int SAC_i;                                                                       \
-        SAC_TR_MEM_PRINT (("ND_COPY__DATA( %s, %s, %s) at addr: %p", #from_NT, #to_NT,   \
-                           #copyfun, SAC_ND_A_FIELD (to_NT)))                            \
+        SAC_TR_MEM_PRINT (("ND_COPY__DATA( %s, %s, %s) at addr: %p", NT_STR (from_NT),   \
+                           #to_NT, #copyfun, SAC_ND_A_FIELD (to_NT)))                    \
         SAC_ASSURE_TYPE ((SAC_ND_A_SIZE (to_NT) == SAC_ND_A_SIZE (from_NT)),             \
                          ("Assignment with incompatible types found!"));                 \
         for (SAC_i = 0; SAC_i < SAC_ND_A_SIZE (from_NT); SAC_i++) {                      \
@@ -1589,28 +1595,29 @@ typedef int *SAC_array_descriptor_t;
 
 #define SAC_ND_SET__RC__AKS_NUQ(var_NT, rc)                                              \
     {                                                                                    \
-        SAC_TR_REF_PRINT (("ND_SET__RC( %s, %d)", #var_NT, rc))                          \
+        SAC_TR_REF_PRINT (("ND_SET__RC( %s, %d)", NT_STR (var_NT), rc))                  \
         SAC_ND_A_RC (var_NT) = rc;                                                       \
         SAC_TR_REF_PRINT_RC (var_NT)                                                     \
     }
 
 #define SAC_ND_INC_RC__AKS_NUQ(var_NT, rc)                                               \
     {                                                                                    \
-        SAC_TR_REF_PRINT (("ND_INC_RC( %s, %d)", #var_NT, rc))                           \
+        SAC_TR_REF_PRINT (("ND_INC_RC( %s, %d)", NT_STR (var_NT), rc))                   \
         SAC_ND_A_RC (var_NT) += rc;                                                      \
         SAC_TR_REF_PRINT_RC (var_NT)                                                     \
     }
 
 #define SAC_ND_DEC_RC__AKS_NUQ(var_NT, rc)                                               \
     {                                                                                    \
-        SAC_TR_REF_PRINT (("ND_DEC_RC( %s, %d)", #var_NT, rc))                           \
+        SAC_TR_REF_PRINT (("ND_DEC_RC( %s, %d)", NT_STR (var_NT), rc))                   \
         SAC_ND_A_RC (var_NT) -= rc;                                                      \
         SAC_TR_REF_PRINT_RC (var_NT)                                                     \
     }
 
 #define SAC_ND_DEC_RC_FREE__AKS_NUQ(var_NT, rc, freefun)                                 \
     {                                                                                    \
-        SAC_TR_REF_PRINT (("ND_DEC_RC_FREE( %s, %d, %s)", #var_NT, rc, #freefun))        \
+        SAC_TR_REF_PRINT (                                                               \
+          ("ND_DEC_RC_FREE( %s, %d, %s)", NT_STR (var_NT), rc, #freefun))                \
         if ((SAC_ND_A_RC (var_NT) -= rc) == 0) {                                         \
             SAC_TR_REF_PRINT_RC (var_NT)                                                 \
             SAC_ND_FREE (var_NT, freefun)                                                \

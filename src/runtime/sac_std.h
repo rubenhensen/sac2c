@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2003/11/10 20:22:56  dkrHH
+ * debug output: NT objs are converted into strings correctly now
+ *
  * Revision 3.15  2003/09/29 17:10:56  dkr
  * bug in SAC_ND_FREE_ARRAY fixed (relevant for SECURE_ALLOC_FREE only)
  *
@@ -157,6 +160,7 @@
  * dummy macros for tagged identifiers (TAGGED_ARRAYS)
  */
 #define NT_NAME(var_NT) var_NT
+#define NT_STR(var_NT) #var_NT
 #define SAC_ND_WRITE(var_NT, idx) SAC_ND_WRITE_ARRAY (var_NT, idx)
 #define SAC_ND_READ(var_NT, idx) SAC_ND_READ_ARRAY (var_NT, idx)
 #define SAC_ND_WRITE_COPY(to_NT, to_pos, expr, copyfun)                                  \

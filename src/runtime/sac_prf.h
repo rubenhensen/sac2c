@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.19  2003/11/10 20:22:56  dkrHH
+ * debug output: NT objs are converted into strings correctly now
+ *
  * Revision 3.18  2003/09/29 23:38:34  dkr
  * comment about ICMs for prfs corrected
  *
@@ -175,8 +178,8 @@
  ******************************************************************************/
 
 #define SAC_ND_PRF_DIM__DATA(to_NT, to_sdim, from_NT, from_sdim)                         \
-    SAC_TR_PRF_PRINT (                                                                   \
-      ("ND_PRF_DIM__...( %s, %d, %s, %d)\n", #to_NT, to_sdim, #from_NT, from_sdim))      \
+    SAC_TR_PRF_PRINT (("ND_PRF_DIM__...( %s, %d, %s, %d)\n", NT_STR (to_NT), to_sdim,    \
+                       NT_STR (from_NT), from_sdim))                                     \
     SAC_ND_CREATE__SCALAR__DATA (to_NT, SAC_ND_A_DIM (from_NT))
 
 /* ND_PRF_SHAPE__DATA( ...) is a C-ICM */
@@ -214,7 +217,8 @@
     }
 
 #define SAC_ND_PRF_CONV_A__DATA(to_NT, from_NT)                                          \
-    SAC_TR_PRF_PRINT (("ND_PRF_CONV_A__DATA( %s, %s)\n", #to_NT, #from_NT));             \
+    SAC_TR_PRF_PRINT (                                                                   \
+      ("ND_PRF_CONV_A__DATA( %s, %s)\n", NT_STR (to_NT), NT_STR (from_NT)));             \
     {                                                                                    \
         int SAC_i;                                                                       \
         for (SAC_i = 0; SAC_i < SAC_ND_A_SIZE (to_NT); SAC_i++) {                        \
@@ -224,12 +228,12 @@
 
 #define SAC_ND_PRF_S__DATA(to_NT, op_macro, op, scl)                                     \
     SAC_TR_PRF_PRINT (                                                                   \
-      ("ND_PRF_S__DATA( %s, %s, %s, %s)\n", #to_NT, #op_macro, #op, #scl));              \
+      ("ND_PRF_S__DATA( %s, %s, %s, %s)\n", NT_STR (to_NT), #op_macro, #op, #scl));      \
     SAC_ND_WRITE_COPY (to_NT, 0, op_macro (op, scl), );
 
 #define SAC_ND_PRF_A__DATA(to_NT, op_macro, op, arg_NT)                                  \
-    SAC_TR_PRF_PRINT (                                                                   \
-      ("ND_PRF_A__DATA( %s, %s, %s, %s)\n", #to_NT, #op_macro, #op, #arg_NT));           \
+    SAC_TR_PRF_PRINT (("ND_PRF_A__DATA( %s, %s, %s, %s)\n", NT_STR (to_NT), #op_macro,   \
+                       #op, NT_STR (arg_NT)));                                           \
     {                                                                                    \
         int SAC_i;                                                                       \
         for (SAC_i = 0; SAC_i < SAC_ND_A_SIZE (to_NT); SAC_i++) {                        \
@@ -239,13 +243,13 @@
     }
 
 #define SAC_ND_PRF_SxS__DATA(to_NT, op_macro, op, scl1, scl2)                            \
-    SAC_TR_PRF_PRINT (("ND_PRF_SxS__DATA( %s, %s, %s, %s, %s)\n", #to_NT, #op_macro,     \
-                       #op, #scl1, #scl2));                                              \
+    SAC_TR_PRF_PRINT (("ND_PRF_SxS__DATA( %s, %s, %s, %s, %s)\n", NT_STR (to_NT),        \
+                       #op_macro, #op, #scl1, #scl2));                                   \
     SAC_ND_WRITE_COPY (to_NT, 0, op_macro (op, scl1, scl2), );
 
 #define SAC_ND_PRF_SxA__DATA(to_NT, op_macro, op, scl, from_NT)                          \
-    SAC_TR_PRF_PRINT (("ND_PRF_SxA__DATA( %s, %s, %s, %s, %s)\n", #to_NT, #op_macro,     \
-                       #op, #scl, #from_NT));                                            \
+    SAC_TR_PRF_PRINT (("ND_PRF_SxA__DATA( %s, %s, %s, %s, %s)\n", NT_STR (to_NT),        \
+                       #op_macro, #op, #scl, NT_STR (from_NT)));                         \
     {                                                                                    \
         int SAC_i;                                                                       \
         for (SAC_i = 0; SAC_i < SAC_ND_A_SIZE (to_NT); SAC_i++) {                        \
@@ -255,8 +259,8 @@
     }
 
 #define SAC_ND_PRF_AxS__DATA(to_NT, op_macro, op, from_NT, scl)                          \
-    SAC_TR_PRF_PRINT (("ND_PRF_AxS__DATA( %s, %s, %s, %s, %s)\n", #to_NT, #op_macro,     \
-                       #op, #from_NT, #scl));                                            \
+    SAC_TR_PRF_PRINT (("ND_PRF_AxS__DATA( %s, %s, %s, %s, %s)\n", NT_STR (to_NT),        \
+                       #op_macro, #op, NT_STR (from_NT), #scl));                         \
     {                                                                                    \
         int SAC_i;                                                                       \
         for (SAC_i = 0; SAC_i < SAC_ND_A_SIZE (to_NT); SAC_i++) {                        \
@@ -266,8 +270,8 @@
     }
 
 #define SAC_ND_PRF_AxA__DATA(to_NT, op_macro, op, from1_NT, from2_NT)                    \
-    SAC_TR_PRF_PRINT (("ND_PRF_AxA__DATA( %s, %s, %s, %s, %s)\n", #to_NT, #op_macro,     \
-                       #op, #from1_NT, #from2_NT));                                      \
+    SAC_TR_PRF_PRINT (("ND_PRF_AxA__DATA( %s, %s, %s, %s, %s)\n", NT_STR (to_NT),        \
+                       #op_macro, #op, NT_STR (from1_NT), NT_STR (from2_NT)));           \
     {                                                                                    \
         int SAC_i;                                                                       \
         for (SAC_i = 0; SAC_i < SAC_ND_A_SIZE (to_NT); SAC_i++) {                        \
