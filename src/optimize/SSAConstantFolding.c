@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.80  2005/01/26 10:25:40  mwe
+ * AVIS_SSACONST removed and replaced by usage of akv types
+ * traversals changed: now constant values are infered when type is akv
+ *
  * Revision 1.79  2005/01/11 12:58:15  cg
  * Converted output from Error.h to ctinfo.c
  *
@@ -399,7 +403,6 @@ struct STRUCT_CONSTANT {
 #define SCO_ELEMDIM(n) (SHgetDim (SCO_SHAPE (n)) - COgetDim (SCO_HIDDENCO (n)))
 
 /* local used helper functions */
-static node *PropagateConstants2Args (node *arg_chain, node *param_chain);
 static node *SetSsaAssign (node *chain, node *assign);
 static node **GetPrfArgs (node **array, node *prf_arg_chain, int max_args);
 static constant **Args2Const (constant **co_array, node **arg_expr, int max_args);
@@ -567,8 +570,13 @@ CFscoWithidVec2StructConstant (node *expr)
     /* create struct_constant */
     struc_co = ILIBmalloc (sizeof (struct_constant));
     SCO_BASETYPE (struc_co) = T_int;
-    SCO_NAME (struc_co) = TYgetName (vtype);
-    SCO_MOD (struc_co) = TYgetMod (vtype);
+    if (TYisUser (vtype)) {
+        SCO_NAME (struc_co) = TYgetName (vtype);
+        SCO_MOD (struc_co) = TYgetMod (vtype);
+    } else {
+        SCO_NAME (struc_co) = NULL;
+        SCO_MOD (struc_co) = NULL;
+    }
     SCO_SHAPE (struc_co) = SHcopyShape (vshape);
 
     SCO_HIDDENCO (struc_co) = COmakeConstant (T_hidden, vshape, node_vec);
@@ -654,8 +662,13 @@ CFscoArray2StructConstant (node *expr)
         /* create struct_constant */
         struc_co = (struct_constant *)ILIBmalloc (sizeof (struct_constant));
         SCO_BASETYPE (struc_co) = TYgetSimpleType (TYgetScalar (atype));
-        SCO_NAME (struc_co) = TYgetName (atype);
-        SCO_MOD (struc_co) = TYgetMod (atype);
+        if (TYisUser (atype)) {
+            SCO_NAME (struc_co) = TYgetName (atype);
+            SCO_MOD (struc_co) = TYgetMod (atype);
+        } else {
+            SCO_NAME (struc_co) = NULL;
+            SCO_MOD (struc_co) = NULL;
+        }
         SCO_SHAPE (struc_co) = realshape;
 
         SCO_HIDDENCO (struc_co) = COmakeConstant (T_hidden, ashape, node_vec);
@@ -714,8 +727,13 @@ CFscoScalar2StructConstant (node *expr)
         /* create struct_constant */
         struc_co = (struct_constant *)ILIBmalloc (sizeof (struct_constant));
         SCO_BASETYPE (struc_co) = TYgetSimpleType (TYgetScalar (ctype));
-        SCO_NAME (struc_co) = TYgetName (ctype);
-        SCO_MOD (struc_co) = TYgetMod (ctype);
+        if (TYisUser (ctype)) {
+            SCO_NAME (struc_co) = TYgetName (ctype);
+            SCO_MOD (struc_co) = TYgetMod (ctype);
+        } else {
+            SCO_NAME (struc_co) = NULL;
+            SCO_MOD (struc_co) = NULL;
+        }
         SCO_SHAPE (struc_co) = SHcopyShape (cshape);
         SCO_HIDDENCO (struc_co) = COmakeConstant (T_hidden, cshape, elem);
 
@@ -805,43 +823,6 @@ CFscoFreeStructConstant (struct_constant *struc_co)
 /*
  * functions for internal use only
  */
-
-/******************************************************************************
- *
- * function:
- *   node *PropagateConstants2Args(node *arg_chain, node *const_arg_chain)
- *
- * description:
- *   to propagate constant expressions from the calling context into a special
- *   function, this functions does a parallel traversal of the function args
- *   (stored in arg_chain) and the calling parameters (stored param_chain)
- *
- *****************************************************************************/
-
-static node *
-PropagateConstants2Args (node *arg_chain, node *param_chain)
-{
-    node *arg;
-
-    DBUG_ENTER ("PropagateConstants2Args");
-
-    arg = arg_chain;
-    while (arg != NULL) {
-        DBUG_ASSERT ((param_chain != NULL),
-                     "different arg chains in fun definition/fun application");
-
-        if (AVIS_SSACONST (ARG_AVIS (arg)) == NULL) {
-            /* arg not marked as constant - try to make new constant */
-            AVIS_SSACONST (ARG_AVIS (arg)) = COaST2Constant (EXPRS_EXPR (param_chain));
-        }
-
-        /* traverse to next element in both chains */
-        arg = ARG_NEXT (arg);
-        param_chain = EXPRS_NEXT (param_chain);
-    }
-
-    DBUG_RETURN (arg_chain);
-}
 
 /******************************************************************************
  *
@@ -2031,13 +2012,13 @@ RemovePhiCopyTargetAttributes (bool thenpart, info *arg_info)
 
             if (thenpart) {
                 /* append then argument to assignment */
-                LET_EXPR (tmp) = EXPRS_EXPR (FUNCOND_THEN (LET_EXPR (tmp)));
-                EXPRS_EXPR (FUNCOND_THEN (del)) = NULL;
+                LET_EXPR (tmp) = FUNCOND_THEN (LET_EXPR (tmp));
+                FUNCOND_THEN (del) = NULL;
 
             } else {
                 /* append else argument to assignment */
-                LET_EXPR (tmp) = EXPRS_EXPR (FUNCOND_ELSE (LET_EXPR (tmp)));
-                EXPRS_EXPR (FUNCOND_ELSE (del)) = NULL;
+                LET_EXPR (tmp) = FUNCOND_ELSE (LET_EXPR (tmp));
+                FUNCOND_ELSE (del) = NULL;
             }
 
             /* delete obsolete argument */
@@ -2127,23 +2108,15 @@ CFblock (node *arg_node, info *arg_info)
  *   CFarg is only called for  special loop fundefs
  *
  *****************************************************************************/
-
+/*
+ * MWE
+ * done by type_upgrade
+ * remove
+ */
 node *
 CFarg (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CFarg");
-
-    /* constants for non loop invariant args are useless */
-    if ((!(AVIS_SSALPINV (ARG_AVIS (arg_node)))
-         && (AVIS_SSACONST (ARG_AVIS (arg_node)) != NULL))) {
-        /* free constant */
-        AVIS_SSACONST (ARG_AVIS (arg_node))
-          = COfreeConstant (AVIS_SSACONST (ARG_AVIS (arg_node)));
-    }
-
-    if (ARG_NEXT (arg_node) != NULL) {
-        ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
-    }
 
     DBUG_RETURN (arg_node);
 }
@@ -2235,12 +2208,11 @@ CFfuncond (node *arg_node, info *arg_info)
      * a simple N_bool node for the condition (if constant)
      */
     INFO_CF_INSCONST (arg_info) = SUBST_SCALAR;
-    EXPRS_EXPR (FUNCOND_IF (arg_node))
-      = TRAVdo (EXPRS_EXPR (FUNCOND_IF (arg_node)), arg_info);
+    FUNCOND_IF (arg_node) = TRAVdo (FUNCOND_IF (arg_node), arg_info);
     INFO_CF_INSCONST (arg_info) = SUBST_NONE;
 
     /* check for constant condition */
-    if (NODE_TYPE (EXPRS_EXPR (FUNCOND_IF (arg_node))) == N_bool) {
+    if (NODE_TYPE (FUNCOND_IF (arg_node)) == N_bool) {
 
         INFO_CF_POSTASSIGN (arg_info) = NULL;
         /* ex special function can be simply inlined in calling context */
@@ -2409,9 +2381,6 @@ CFreturn (node *arg_node, info *arg_info)
 node *
 CFlet (node *arg_node, info *arg_info)
 {
-    ntype *computed_type, *inferred_type;
-    constant *new_co;
-    node *ids;
 
     DBUG_ENTER ("CFlet");
 
@@ -2425,11 +2394,14 @@ CFlet (node *arg_node, info *arg_info)
      * application there is no constant propagation allowed.
      */
 
-    if ((LET_IDS (arg_node) != NULL)
-        && (AVIS_SSACONST (IDS_AVIS (LET_IDS (arg_node))) == NULL)) {
+    if ((LET_IDS (arg_node) != NULL)) {
 
         /* traverse expression to calculate constants */
         LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
+
+        if (LET_IDS (arg_node) != NULL) {
+            LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
+        }
 
         if (NODE_TYPE (LET_EXPR (arg_node)) == N_ap) {
             /*
@@ -2440,9 +2412,6 @@ CFlet (node *arg_node, info *arg_info)
              * function application with a dummy identifier (that will be
              * removed by the next dead code removal)
              */
-            if (INFO_CF_RESULTS (arg_info) != NULL) {
-                LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
-            }
 
             /* called function can be inlined */
             if (INFO_CF_INLINEAP (arg_info)) {
@@ -2463,52 +2432,17 @@ CFlet (node *arg_node, info *arg_info)
                 INFO_CF_REMASSIGN (arg_info) = TRUE;
 
                 INFO_CF_INLINEAP (arg_info) = FALSE;
+
+                /* update defining assigns after inlining */
+                LET_IDS (arg_node)
+                  = SetSsaAssign (LET_IDS (arg_node), INFO_CF_ASSIGN (arg_info));
             }
-
-        } else {
-            /* set AVIS_SSACONST attributes */
-            ids = LET_IDS (arg_node);
-
-            /*
-             * Only ids nodes with one entry are considered.
-             * Tuple of constants are not provided/supported in SaC until now.
-             */
-            if (IDS_NEXT (ids) == NULL) {
-
-                new_co = COaST2Constant (LET_EXPR (arg_node));
-
-                if (new_co != NULL) {
-                    AVIS_SSACONST (IDS_AVIS (ids)) = new_co;
-                    DBUG_PRINT ("CF", ("identifier %s marked as constant",
-                                       VARDEC_OR_ARG_NAME (AVIS_DECL (IDS_AVIS (ids)))));
-                    /**
-                     * No we might have to update the type of the LHS var as well:
-                     */
-                    computed_type = TYmakeAKS (TYmakeSimpleType (COgetType (new_co)),
-                                               SHcopyShape (COgetShape (new_co)));
-                    inferred_type = AVIS_TYPE (IDS_AVIS (ids));
-                    DBUG_ASSERT (TYleTypes (computed_type, inferred_type),
-                                 "CF lead to a result type that is not a proper subtype "
-                                 "of the inferred type!");
-
-                    AVIS_TYPE (IDS_AVIS (ids)) = TYfreeType (AVIS_TYPE (IDS_AVIS (ids)));
-                    AVIS_TYPE (IDS_AVIS (ids)) = computed_type;
-                    inferred_type = TYfreeType (inferred_type);
-
-                } else {
-                    /* expression is not constant */
-                    DBUG_PRINT ("CF", ("identifier %s is not constant",
-                                       VARDEC_OR_ARG_NAME (AVIS_DECL (IDS_AVIS (ids)))));
-                }
-            }
+        } else if (NODE_TYPE (LET_EXPR (arg_node)) == N_with) {
         }
 
     } else {
         /* left side is already maked as constant - no further processing needed */
     }
-
-    /* update defining assigns after inlining */
-    LET_IDS (arg_node) = SetSsaAssign (LET_IDS (arg_node), INFO_CF_ASSIGN (arg_info));
 
     DBUG_RETURN (arg_node);
 }
@@ -2530,43 +2464,17 @@ CFap (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("CFap");
 
-    DBUG_ASSERT ((AP_FUNDEF (arg_node) != NULL), "missing fundef in ap-node");
-
-    /*
-     * Do not subsitute constants in arguments as this is now handled
-     * by ConstVarPropagation
-     */
-    INFO_CF_INSCONST (arg_info) = SUBST_NONE;
-
     /* traverse special fundef without recursion */
     if ((FUNDEF_ISLACFUN (AP_FUNDEF (arg_node)))
         && (AP_FUNDEF (arg_node) != INFO_CF_FUNDEF (arg_info))) {
-
-        DBUG_PRINT ("CF", ("traverse in special fundef %s",
-                           FUNDEF_NAME (AP_FUNDEF (arg_node))));
-        INFO_CF_MODULE (arg_info)
-          = DUPcheckAndDupSpecialFundef (INFO_CF_MODULE (arg_info), AP_FUNDEF (arg_node),
-                                         INFO_CF_ASSIGN (arg_info));
-
-        DBUG_ASSERT ((FUNDEF_USED (AP_FUNDEF (arg_node)) == 1),
-                     "more than one instance of special function used.");
-
         /* stack arg_info frame for new fundef */
         new_arg_info = MakeInfo ();
 
         INFO_CF_MODULE (new_arg_info) = INFO_CF_MODULE (arg_info);
         INFO_CF_INLFUNDEF (new_arg_info) = FALSE;
 
-        /* propagate constant args into called special function */
-        FUNDEF_ARGS (AP_FUNDEF (arg_node))
-          = PropagateConstants2Args (FUNDEF_ARGS (AP_FUNDEF (arg_node)),
-                                     AP_ARGS (arg_node));
-
         /* start traversal of special fundef */
         AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), new_arg_info);
-
-        /* save exprs chain of return list for later propagating constants */
-        INFO_CF_RESULTS (arg_info) = RETURN_EXPRS (FUNDEF_RETURN (AP_FUNDEF (arg_node)));
 
         /* can this special function be inlined? */
         if (INFO_CF_INLFUNDEF (new_arg_info) == TRUE) {
@@ -2578,12 +2486,6 @@ CFap (node *arg_node, info *arg_info)
         DBUG_PRINT ("CF", ("traversal of special fundef %s finished\n",
                            FUNDEF_NAME (AP_FUNDEF (arg_node))));
         new_arg_info = FreeInfo (new_arg_info);
-
-    } else {
-        /* no traversal into a normal fundef */
-        DBUG_PRINT ("CF", ("do not traverse in normal fundef %s",
-                           FUNDEF_NAME (AP_FUNDEF (arg_node))));
-        INFO_CF_RESULTS (arg_info) = NULL;
     }
 
     DBUG_RETURN (arg_node);
@@ -2602,18 +2504,24 @@ CFap (node *arg_node, info *arg_info)
  *      EXPRS chain of N_array AELEMS
  *
  *****************************************************************************/
-
+/*
+ * MWE
+ * still necessary
+ * replace SSACONST by const from akv-type
+ */
 node *
 CFid (node *arg_node, info *arg_info)
 {
     node *new_node;
+    constant *const_node;
     int dim;
 
     DBUG_ENTER ("CFid");
 
     /* check for constant scalar identifier */
-    if (AVIS_SSACONST (ID_AVIS (arg_node)) != NULL) {
-        dim = COgetDim (AVIS_SSACONST (ID_AVIS (arg_node)));
+    if (TYisAKV (AVIS_TYPE (ID_AVIS (arg_node)))) {
+        const_node = TYgetValue (AVIS_TYPE (ID_AVIS (arg_node)));
+        dim = COgetDim (const_node);
 
         if (((dim == SCALAR) && (INFO_CF_INSCONST (arg_info) >= SUBST_SCALAR))
             || ((dim > SCALAR)
@@ -2622,10 +2530,11 @@ CFid (node *arg_node, info *arg_info)
                                VARDEC_OR_ARG_NAME (AVIS_DECL (ID_AVIS (arg_node)))));
 
             /* substitute identifier with its value */
-            new_node = COconstant2AST (AVIS_SSACONST (ID_AVIS (arg_node)));
+            new_node = COconstant2AST (const_node);
             arg_node = FREEdoFreeTree (arg_node);
             arg_node = new_node;
         }
+        /*const_node = COfreeConstant( const_node);*/
     }
 
     DBUG_RETURN (arg_node);
@@ -2773,44 +2682,46 @@ CFids (node *arg_ids, info *arg_info)
 
     DBUG_ENTER ("CFids");
 
-    DBUG_ASSERT ((INFO_CF_RESULTS (arg_info) != NULL), "different ids and result chains");
-
-    new_co = COaST2Constant (EXPRS_EXPR (INFO_CF_RESULTS (arg_info)));
-
-    if (new_co != NULL) {
-        DBUG_PRINT ("CF", ("identifier %s marked as constant",
-                           VARDEC_OR_ARG_NAME (AVIS_DECL (IDS_AVIS (arg_ids)))));
-
-        AVIS_SSACONST (IDS_AVIS (arg_ids)) = new_co;
-
-        /* create one let assign for constant definition */
-        assign_let = TCmakeAssignLet (TBmakeAvis (ILIBstringCopy (IDS_NAME (arg_ids)),
-                                                  TYcopyType (IDS_NTYPE (arg_ids))),
-                                      COconstant2AST (new_co));
-
-        /* append new copy assignment to then-part block */
-        INFO_CF_POSTASSIGN (arg_info)
-          = TCappendAssign (INFO_CF_POSTASSIGN (arg_info), assign_let);
-
-        /* store definition assignment */
-        AVIS_SSAASSIGN (IDS_AVIS (arg_ids)) = assign_let;
-
-        DBUG_PRINT ("CF", ("create constant assignment for %s", (IDS_NAME (arg_ids))));
-
-        /* create new dummy identifier */
-        new_vardec = SSATnewVardec (AVIS_DECL (IDS_AVIS (arg_ids)));
-        BLOCK_VARDEC (INFO_CF_TOPBLOCK (arg_info))
-          = TCappendVardec (BLOCK_VARDEC (INFO_CF_TOPBLOCK (arg_info)), new_vardec);
-
-        AVIS_SSAASSIGN (VARDEC_AVIS (new_vardec)) = INFO_CF_ASSIGN (arg_info);
-
-        /* rename this identifier */
-        IDS_AVIS (arg_ids) = VARDEC_AVIS (new_vardec);
-    }
-
     if (IDS_NEXT (arg_ids) != NULL) {
-        INFO_CF_RESULTS (arg_info) = EXPRS_NEXT (INFO_CF_RESULTS (arg_info));
+        if (TYisAKV (AVIS_TYPE (IDS_AVIS (arg_ids)))) {
+            new_co = TYgetValue (AVIS_TYPE (IDS_AVIS (arg_ids)));
+
+            DBUG_PRINT ("CF", ("identifier %s marked as constant",
+                               VARDEC_OR_ARG_NAME (AVIS_DECL (IDS_AVIS (arg_ids)))));
+
+            /* create one let assign for constant definition, reuse old avis/vardec */
+            assign_let = TCmakeAssignLet (IDS_AVIS (arg_ids), COconstant2AST (new_co));
+
+            /* append new copy assignment to then-part block */
+            INFO_CF_POSTASSIGN (arg_info)
+              = TCappendAssign (INFO_CF_POSTASSIGN (arg_info), assign_let);
+
+            DBUG_PRINT ("CF",
+                        ("create constant assignment for %s", (IDS_NAME (arg_ids))));
+
+            /* create new dummy identifier */
+            new_vardec = SSATnewVardec (AVIS_DECL (IDS_AVIS (arg_ids)));
+            BLOCK_VARDEC (INFO_CF_TOPBLOCK (arg_info))
+              = TCappendVardec (BLOCK_VARDEC (INFO_CF_TOPBLOCK (arg_info)), new_vardec);
+
+            /*
+             * set new dummy values
+             */
+            AVIS_SSAASSIGN (VARDEC_AVIS (new_vardec)) = INFO_CF_ASSIGN (arg_info);
+            IDS_AVIS (arg_ids) = VARDEC_AVIS (new_vardec);
+            AVIS_TYPE (IDS_AVIS (arg_ids))
+              = TYcopyType (AVIS_TYPE (IDS_AVIS (LET_IDS (ASSIGN_INSTR (assign_let)))));
+        }
+
         IDS_NEXT (arg_ids) = TRAVdo (IDS_NEXT (arg_ids), arg_info);
+    } else {
+
+        if (TYisAKV (AVIS_TYPE (IDS_AVIS (arg_ids)))) {
+            new_co = TYgetValue (AVIS_TYPE (IDS_AVIS (arg_ids)));
+
+            LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (IDS_AVIS (arg_ids))))
+              = COconstant2AST (new_co);
+        }
     }
 
     DBUG_RETURN (arg_ids);
@@ -2857,8 +2768,6 @@ CFwith (node *arg_node, info *arg_info)
 node *
 CFpart (node *arg_node, info *arg_info)
 {
-    node *_ids;
-
     DBUG_ENTER ("CFpart");
 
     PART_WITHID (arg_node) = TRAVdo (PART_WITHID (arg_node), arg_info);
@@ -2873,28 +2782,6 @@ CFpart (node *arg_node, info *arg_info)
     PART_GENERATOR (arg_node) = TRAVdo (PART_GENERATOR (arg_node), arg_info);
 
     PART_CODE (arg_node) = TRAVdo (PART_CODE (arg_node), arg_info);
-
-    /*
-     * Constants must be removed again
-     */
-    if (CODE_USED (PART_CODE (arg_node)) == 1) {
-        _ids = WITHID_VEC (PART_WITHID (arg_node));
-        if (_ids != NULL) {
-            if (AVIS_SSACONST (IDS_AVIS (_ids)) != NULL) {
-                AVIS_SSACONST (IDS_AVIS (_ids))
-                  = COfreeConstant (AVIS_SSACONST (IDS_AVIS (_ids)));
-            }
-        }
-
-        _ids = WITHID_IDS (PART_WITHID (arg_node));
-        while (_ids != NULL) {
-            if (AVIS_SSACONST (IDS_AVIS (_ids)) != NULL) {
-                AVIS_SSACONST (IDS_AVIS (_ids))
-                  = COfreeConstant (AVIS_SSACONST (IDS_AVIS (_ids)));
-            }
-            _ids = IDS_NEXT (_ids);
-        }
-    }
 
     if (PART_NEXT (arg_node) != NULL) {
         PART_NEXT (arg_node) = TRAVdo (PART_NEXT (arg_node), arg_info);
@@ -2946,37 +2833,43 @@ CFgenerator (node *arg_node, info *arg_info)
          */
         if ((GENERATOR_BOUND1 (arg_node) != NULL)
             && (GENERATOR_BOUND2 (arg_node) != NULL)) {
-            constant *lower, *upper, *diff;
-            shape *diffshp;
-            node *_ids;
+#if 0
+      constant *lower, *upper, *diff;
+      shape *diffshp;
+      node *_ids;
 
-            lower = COaST2Constant (GENERATOR_BOUND1 (arg_node));
-            upper = COaST2Constant (GENERATOR_BOUND2 (arg_node));
+      /*MWE
+       * change to usage of akv
+       * types are modified: move to type_upgrade
+       */ 
+      lower = COaST2Constant( GENERATOR_BOUND1( arg_node));
+      upper = COaST2Constant( GENERATOR_BOUND2( arg_node));
 
-            if ((lower != NULL) && (upper != NULL)) {
-                diff = COsub (upper, lower);
-                diffshp = COconstant2Shape (diff);
-                diff = COfreeConstant (diff);
+      if (( lower != NULL) && ( upper != NULL)) {
+        diff     = COsub( upper, lower);
+        diffshp  = COconstant2Shape( diff);
+        diff     = COfreeConstant( diff);
+        
+        /*
+         * Check whether the whole index vector is constant
+         */
+        if  ( SHgetUnrLen( diffshp) == 1) {
+          _ids = WITHID_VEC( INFO_CF_WITHID( arg_info));
+          if ( _ids != NULL) {
+            AVIS_SSACONST( IDS_AVIS( _ids)) = COcopyConstant( lower);
+          }
+        }
+        diffshp = SHfreeShape( diffshp);
+      }
 
-                /*
-                 * Check whether the whole index vector is constant
-                 */
-                if (SHgetUnrLen (diffshp) == 1) {
-                    _ids = WITHID_VEC (INFO_CF_WITHID (arg_info));
-                    if (_ids != NULL) {
-                        AVIS_SSACONST (IDS_AVIS (_ids)) = COcopyConstant (lower);
-                    }
-                }
-                diffshp = SHfreeShape (diffshp);
-            }
+      if (lower != NULL) {
+        lower = COfreeConstant( lower);
+      }
+      if (upper != NULL) {
+        upper = COfreeConstant( upper);
+      }
 
-            if (lower != NULL) {
-                lower = COfreeConstant (lower);
-            }
-            if (upper != NULL) {
-                upper = COfreeConstant (upper);
-            }
-
+#endif
             if ((NODE_TYPE (GENERATOR_BOUND1 (arg_node)) == N_array)
                 && (NODE_TYPE (GENERATOR_BOUND2 (arg_node)) == N_array)) {
                 /*
@@ -2984,36 +2877,43 @@ CFgenerator (node *arg_node, info *arg_info)
                  */
                 node *_ids;
                 node *lb, *ub;
-                constant *lbc, *ubc;
-
+#if 0
+        constant *lbc, *ubc;
+#endif
                 lb = ARRAY_AELEMS (GENERATOR_BOUND1 (arg_node));
                 ub = ARRAY_AELEMS (GENERATOR_BOUND2 (arg_node));
                 _ids = WITHID_IDS (INFO_CF_WITHID (arg_info));
 
-                while (_ids != NULL) {
-                    lbc = COaST2Constant (EXPRS_EXPR (lb));
-                    ubc = COaST2Constant (EXPRS_EXPR (ub));
+#if 0
+	/* MWE
+	 * change to akv
+	 * types are modified: move to type upgrade
+	 */
+        while (_ids != NULL) {
+          lbc = COaST2Constant( EXPRS_EXPR( lb));
+          ubc = COaST2Constant( EXPRS_EXPR( ub));
 
-                    if ((lbc != NULL) && (ubc != NULL)) {
-                        diff = COsub (ubc, lbc);
-                        if (COisOne (diff, TRUE)) {
-                            AVIS_SSACONST (IDS_AVIS (_ids)) = COcopyConstant (lbc);
-                        }
-                        diff = COfreeConstant (diff);
-                    }
+          if ( ( lbc != NULL) && ( ubc != NULL)) {
+            diff = COsub( ubc, lbc);
+            if ( COisOne( diff, TRUE)) {
+              AVIS_SSACONST( IDS_AVIS( _ids)) = COcopyConstant( lbc);
+            }
+            diff = COfreeConstant( diff);
+          }
 
-                    if (lbc != NULL) {
-                        lbc = COfreeConstant (lbc);
-                    }
+          if ( lbc != NULL) {
+            lbc = COfreeConstant( lbc);
+          }
 
-                    if (ubc != NULL) {
-                        ubc = COfreeConstant (ubc);
-                    }
-
-                    lb = EXPRS_NEXT (lb);
-                    ub = EXPRS_NEXT (ub);
-                    _ids = IDS_NEXT (_ids);
-                }
+          if ( ubc != NULL) {
+            ubc = COfreeConstant( ubc);
+          }
+          
+          lb = EXPRS_NEXT( lb);
+          ub = EXPRS_NEXT( ub);
+          _ids = IDS_NEXT( _ids);
+        }
+#endif
             }
         }
         INFO_CF_WITHID (arg_info) = NULL;
