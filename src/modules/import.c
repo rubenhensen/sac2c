@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.52  1998/04/03 20:45:08  dkr
+ * removed a wrong cast in AddClasstypeOnSelectiveImport
+ *   (type of IMPLIST_ITYPES is not *node but *ids)
+ *
  * Revision 1.51  1998/02/27 16:32:58  cg
  * added correct setting of file names for diagnostic output
  * while parsing (global variable 'filename')
@@ -1916,8 +1920,8 @@ AddClasstypeOnSelectiveImport (mod *modptr)
              */
 
             tmp = MakeIds (IMPLIST_NAME (implist), NULL, ST_regular);
-            tmp->next = (ids *)IMPLIST_ITYPES (implist);
-            IMPLIST_ITYPES (implist) = (node *)tmp;
+            tmp->next = IMPLIST_ITYPES (implist);
+            IMPLIST_ITYPES (implist) = tmp;
         }
 
         implist = IMPLIST_NEXT (implist);
