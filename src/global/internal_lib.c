@@ -1,7 +1,17 @@
 /*
  *
  * $Log$
- * Revision 1.12  1996/01/16 16:44:42  cg
+ * Revision 1.13  1996/05/24 16:18:26  sbs
+ *   * if -dnocleanup flag is set print all syscalls !
+ *    * This allows for easy C-code patches.
+ *    *
+ *   if (!cleanup)
+ *     NOTE(("%s", syscall));
+ *
+ * inserted in SystemCall since EVERYBODY who uses -dnocleanup
+ * ALLWAYS wants to know how to invoce the compiler!!
+ *
+ * Revision 1.12  1996/01/16  16:44:42  cg
  * added function TmpVar for generation of variable names
  *
  * Revision 1.11  1996/01/07  16:53:11  cg
@@ -188,6 +198,12 @@ SystemCall (char *format, ...)
     va_end (arg_p);
 
     DBUG_PRINT ("SYSCALL", ("%s", syscall));
+
+    /* if -dnocleanup flag is set print all syscalls !
+     * This allows for easy C-code patches.
+     */
+    if (!cleanup)
+        NOTE (("%s", syscall));
 
     exit_code = system (syscall);
 
