@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.25  2002/08/03 03:17:16  dkr
+ * bug in SAC_ND_ALLOC__DATA__AKD fixed
+ *
  * Revision 3.24  2002/08/02 20:58:54  dkr
  * bug in SAC_ND_ALLOC__DESC__AKS fixed
  *
@@ -919,7 +922,7 @@ typedef int *SAC_array_descriptor_t;
  * AKD
  */
 
-#define SAC_ND_ALLOC__DATA__AKD(nt, dim) SAC_ND_ALLOC__DATA__AKS (nt, dim)
+#define SAC_ND_ALLOC__DATA__AKD(nt) SAC_ND_ALLOC__DATA__AKS (nt)
 
 #define SAC_ND_FREE__DATA__AKD_NHD(nt, freefun) SAC_ND_FREE__DATA__AKS_NHD (nt, freefun)
 #define SAC_ND_FREE__DATA__AKD_HID(nt, freefun) SAC_ND_FREE__DATA__AKS_HID (nt, freefun)
