@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2005/02/14 14:15:04  cg
+ * Layout bug fixed.
+ *
  * Revision 1.7  2005/02/07 16:35:04  cg
  * Adapted usage of vsnprintf Solaris.
  *
@@ -402,7 +405,8 @@ CTIerrorLine (int line, const char *format, ...)
     va_start (arg_p, format);
 
     fprintf (stderr, "\n");
-    fprintf (stderr, "%sline %d  file: %s", error_message_header, line, global.filename);
+    fprintf (stderr, "%sline %d  file: %s\n", error_message_header, line,
+             global.filename);
     PrintMessage (error_message_header, format, arg_p);
 
     va_end (arg_p);
