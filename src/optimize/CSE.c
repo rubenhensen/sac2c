@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 1.8  1998/04/23 18:44:31  srs
+ * removed feature:
+ * constants have been replaced by variables of the same value. This
+ * is always reversed by CF which resulted in max_cycles loops of
+ * optimization.
+ *
  * Revision 1.7  1998/04/03 12:21:51  srs
  * fixed bug in eleminate(),
  * fixed bug for WL-traversing, added CSENcode()
@@ -390,8 +396,8 @@ FindCS (node *arg1, node *arg2, node *arg_info)
                 case N_double:
                 case N_char:
                     /* srs: why is this done? CF reverses this step. */
-                    if (Equal (arg1_expr, arg2_expr, arg_info))
-                        cs = arg2;
+                    /*           if (Equal(arg1_expr, arg2_expr, arg_info)) */
+                    /*             cs = arg2; */
                     DBUG_PRINT ("CSE", (">CSE, same constant value"));
                     break;
 
