@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.23  1995/10/16 12:03:24  cg
+ * Revision 1.24  1995/10/20 09:26:21  cg
+ * added 'analy_tab`.
+ *
+ * Revision 1.23  1995/10/16  12:03:24  cg
  * added new function table objinit_tab.
  *
  * Revision 1.22  1995/10/05  16:03:28  cg
@@ -137,5 +140,7 @@ extern funptr obj_tab[];
 extern funptr impltype_tab[];
 
 extern funptr objinit_tab[];
+
+extern funptr analy_tab[];
 
 #endif /* _sac_traverse_h */
