@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.12  2000/07/05 15:34:11  nmw
+ * compilation and generation of c-library added
+ *
  * Revision 2.11  2000/06/09 13:27:55  nmw
  * moving of libfile to targetdir added
  *
@@ -578,8 +581,10 @@ CreateLibrary ()
         SystemCall ("%s %s/%s.lib %s", config.move, tmp_dirname, modulename, targetdir);
     }
 
-    /* generating c library files
+    /*
+     * generating c library files
      * here: only moving generated files to target dir
+     *
      */
     if (generatelibrary & GENERATELIBRARY_C) {
         NOTE (("Creating c library \"lib%s.a\" and interface \"%s.h\"", modulename,
@@ -720,6 +725,14 @@ InvokeCC ()
                 NOTEDOT;
             }
             NOTE (("\n"));
+        }
+
+        if (generatelibrary & GENERATELIBRARY_C) {
+            /* compile wrapper-file */
+            SystemCall ("%s %s %s %s -o %s/cwrapper.o -c %s/cwrapper.c", config.cc,
+                        config.ccflags, config.ccdir, opt_buffer, tmp_dirname,
+                        tmp_dirname);
+            NOTEDOT;
         }
     }
 
