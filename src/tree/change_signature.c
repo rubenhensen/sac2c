@@ -1,11 +1,14 @@
 /*
+ *
  * $Log$
+ * Revision 1.3  2001/03/22 20:00:46  dkr
+ * include of tree.h eliminated
+ *
  * Revision 1.2  2001/03/02 15:50:21  nmw
  * missing includes added
  *
  * Revision 1.1  2001/03/02 15:46:04  nmw
  * Initial revision
- *
  *
  */
 
@@ -22,9 +25,13 @@
  *
  *
  *****************************************************************************/
+
+#include "types.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
+#include "internal_lib.h"
 #include "dbug.h"
 #include "globals.h"
-#include "tree.h"
 #include "free.h"
 #include "DupTree.h"
 #include "optimize.h"

@@ -1,5 +1,9 @@
 /*
+ *
  * $Log$
+ * Revision 1.8  2001/03/22 20:01:53  dkr
+ * include of tree.h eliminated
+ *
  * Revision 1.7  2001/03/20 14:22:28  nmw
  * documentation added
  *
@@ -20,8 +24,6 @@
  *
  * Revision 1.1  2001/02/22 13:14:06  nmw
  * Initial revision
- *
- *
  *
  */
 
@@ -87,8 +89,11 @@
  *
  *****************************************************************************/
 
+#include "types.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
+#include "internal_lib.h"
 #include "dbug.h"
-#include "tree.h"
 #include "traverse.h"
 #include "free.h"
 #include "UndoSSATransform.h"

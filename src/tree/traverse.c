@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.15  2001/03/22 20:02:17  dkr
+ * include of tree.h eliminated
+ *
  * Revision 3.14  2001/03/20 16:15:18  nmw
  * SSACF Constant Folding on ssa from added
  *
@@ -57,7 +60,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "tree.h"
+#include "types.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
+#include "internal_lib.h"
 #include "Error.h"
 #include "dbug.h"
 #include "my_debug.h"

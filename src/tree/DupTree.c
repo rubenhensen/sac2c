@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.25  2001/03/22 20:01:08  dkr
+ * include of tree.h eliminated
+ *
  * Revision 3.24  2001/03/22 13:29:03  dkr
  * InsertIntoLUT renamed into InsertIntoLUT_P
  * SearchInLUT renamed into SearchInLUT_P
@@ -124,7 +127,10 @@
 
 #include <string.h>
 
-#include "tree.h"
+#include "types.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
+#include "internal_lib.h"
 #include "traverse.h"
 #include "free.h"
 #include "dbug.h"

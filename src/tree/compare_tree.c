@@ -1,5 +1,9 @@
 /*
+ *
  * $Log$
+ * Revision 1.6  2001/03/22 20:02:03  dkr
+ * include of tree.h eliminated
+ *
  * Revision 1.5  2001/03/20 14:22:50  nmw
  * CMPTarray added, checks for equal types, too
  *
@@ -15,8 +19,6 @@
  * Revision 1.1  2001/03/06 13:16:50  nmw
  * Initial revision
  *
- *
- *
  */
 
 /*****************************************************************************
@@ -31,8 +33,12 @@
  *   this modules is used by SSACSE to find common subexpressions.
  *
  *****************************************************************************/
+
+#include "types.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
+#include "internal_lib.h"
 #include "dbug.h"
-#include "tree.h"
 #include "traverse.h"
 #include "free.h"
 #include "compare_tree.h"

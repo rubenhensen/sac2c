@@ -1,5 +1,9 @@
 /*
+ *
  * $Log$
+ * Revision 1.5  2001/03/22 20:03:49  dkr
+ * include of tree.h eliminated
+ *
  * Revision 1.4  2001/02/20 15:51:02  nmw
  * debug output added
  *
@@ -11,7 +15,6 @@
  *
  * Revision 1.1  2001/02/12 16:59:27  nmw
  * Initial revision
- *
  *
  */
 
@@ -30,7 +33,10 @@
  *****************************************************************************/
 
 #include "dbug.h"
-#include "tree.h"
+#include "types.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
+#include "internal_lib.h"
 #include "traverse.h"
 #include "free.h"
 #include "CheckAvis.h"

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2001/03/22 20:02:31  dkr
+ * include of tree.h eliminated
+ *
  * Revision 3.11  2001/03/19 16:44:39  dkr
  * WLSEG_HOMSV removed (WLSEG_SV used instead)
  *
@@ -128,7 +131,9 @@
 #include "my_debug.h"
 
 #include "types.h"
-#include "tree.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
+#include "internal_lib.h"
 
 #include "traverse.h"
 #include "DataFlowMask.h"

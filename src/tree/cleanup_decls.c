@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2001/03/22 20:03:01  dkr
+ * include of tree.h eliminated
+ *
  * Revision 1.3  2001/02/13 16:14:39  nmw
  * save/restore of act_tab added
  *
@@ -29,7 +32,10 @@
  *
  */
 
-#include "tree.h"
+#include "types.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
+#include "internal_lib.h"
 #include "traverse.h"
 #include "free.h"
 #include "dbug.h"

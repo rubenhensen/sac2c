@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/03/22 20:01:32  dkr
+ * include of tree.h eliminated
+ *
  * Revision 3.3  2001/03/22 17:56:14  dkr
  * hash key functions implemented :-)
  *
@@ -98,7 +101,10 @@
 
 #include <string.h>
 
-#include "tree.h"
+#include "types.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
+#include "internal_lib.h"
 #include "free.h"
 #include "dbug.h"
 
