@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.43  1995/01/09 12:16:07  sbs
+ * Revision 1.44  1995/01/25 16:01:45  sbs
+ * Priority of cast changed to %right CAST
+ *
+ * Revision 1.43  1995/01/09  12:16:07  sbs
  * bug fixed: mod_name set earlier in moddec.
  *
  * Revision 1.42  1995/01/06  19:05:51  sbs
@@ -213,6 +216,7 @@ static char *mod_name;
 %left MUL, DIV
 %left TAKE, DROP, RESHAPE
 %left SQBR_L
+%right CAST
 %nonassoc UMINUS
 
 %start file
@@ -947,7 +951,7 @@ expr:   apl {$$=$1; $$->info.fun_name.id_mod=NULL; }
            DBUG_PRINT("GENTREE",("%s " P_FORMAT ": %s ",
                                 mdb_nodetype[$$->nodetype], $$, $$->info.id));  
          }
-      | BRACKET_L COLON type BRACKET_R expr %prec UMINUS
+      | BRACKET_L COLON type BRACKET_R expr %prec CAST
          {$$=MakeNode(N_cast);
           $$->info.types=$3;
           $$->node[0]=$5;
