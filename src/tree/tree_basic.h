@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.70  2001/04/04 09:57:59  nmw
+ * INFO_INL macros added
+ *
  * Revision 3.69  2001/04/03 15:39:42  dkr
  * uuups, typo corrected
  *
@@ -2735,6 +2738,7 @@ extern node *MakeInfo ();
 #define INFO_INL_EPILOG(n) (n->node[3])
 #define INFO_INL_ARG(n) (n->node[4])
 #define INFO_INL_IDS(n) (n->info.ids)
+#define INFO_INL_FUNDEF(n) (n->node[5])
 
 /* WLF, all phases of WLF use these macros, not only WLI. */
 #define INFO_WLI_NEXT(n) (n->node[0])
