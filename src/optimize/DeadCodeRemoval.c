@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.13  1996/09/10 13:42:32  asi
+ * Revision 1.14  1996/09/11 14:13:08  asi
+ * DFRmodul added
+ *
+ * Revision 1.13  1996/09/10  13:42:32  asi
  * Dead function removal no longer enabled in modules
  *
  * Revision 1.12  1996/08/09  16:42:52  asi
@@ -98,7 +101,7 @@ DeadCodeRemoval (node *arg_node, node *info_node)
     arg_node = Trav (arg_node, info_node);
     FREE (info_node);
 
-    if (opt_dfr && (F_prog == MODUL_FILETYPE (arg_node))) {
+    if (opt_dfr) {
         act_tab = dfr_tab;
         info_node = MakeNode (N_info);
         arg_node = Trav (arg_node, info_node);
@@ -107,6 +110,29 @@ DeadCodeRemoval (node *arg_node, node *info_node)
     DBUG_RETURN (arg_node);
 }
 
+/*
+ *
+ *  functionname  : DFRmodul
+ *  arguments     : 1) N_modul - node
+ *                  R) N_modul - node
+ *  description   : Prevents DFR in modules
+ *  global vars   : syntax_tree,
+ *  internal funs : ---
+ *  external funs : Trav
+ *  macros        : DBUG..., MODUL_FILETYPE
+ *
+ *  remarks       :
+ *
+ *
+ */
+node *
+DFRmodul (node *arg_node, node *info_node)
+{
+    DBUG_ENTER ("DFRmodul");
+    if (F_prog == MODUL_FILETYPE (arg_node))
+        arg_node = Trav (arg_node, info_node);
+    DBUG_RETURN (arg_node);
+}
 /*
  *
  *  functionname  : DCRfundef

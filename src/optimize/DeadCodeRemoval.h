@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.4  1996/08/09 16:42:52  asi
+ * Revision 1.5  1996/09/11 14:13:08  asi
+ * DFRmodul added
+ *
+ * Revision 1.4  1996/08/09  16:42:52  asi
  * dead function removal added
  *
  * Revision 1.3  1995/12/21  13:27:48  asi
@@ -22,6 +25,7 @@
 
 extern node *DeadCodeRemoval (node *arg_node, node *arg_info);
 
+extern node *DFRmodul (node *arg_node, node *arg_info);
 extern node *ACTfundef (node *arg_node, node *arg_info);
 extern node *DCRfundef (node *arg_node, node *arg_info);
 extern node *DFRfundef (node *arg_node, node *arg_info);
