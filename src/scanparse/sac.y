@@ -4,6 +4,9 @@
 /*
  *
  * $Log$
+ * Revision 3.42  2002/08/02 09:56:40  sah
+ * added some missing ;
+ *
  * Revision 3.41  2002/07/02 15:24:07  sah
  * added support for ., ... in sel statements. updated
  * parsing of WLs to use N_dot nodes instead of NULL
@@ -273,6 +276,7 @@ static node *CheckWlcompConf( node *ap, node *exprs);
 %%
 
 all: file eof { CleanUpParser(); }
+   ;
 
 file: PARSE_PRG prg
         {
@@ -319,7 +323,7 @@ eof:
 #endif
        }
      }
-
+   ;
 
 id: ID
       {
@@ -914,6 +918,7 @@ defs: imports def2
         }
     | def2
         { $$ = $1; }
+    ;
 
 def2: typedefs def3
         { $$ = $2;
@@ -921,6 +926,7 @@ def2: typedefs def3
         }
     | def3
         { $$ = $1; }
+    ;
 
 def3: objdefs def4
         { $$ = $2;
@@ -1006,7 +1012,7 @@ typedef: TYPEDEF type id SEMIC
                          TYPEDEF_TYPE( $$),
                          TYPEDEF_NAME( $$)));
            }
-
+       ;
 
 objdefs: objdef objdefs
            { $$ = $1;
@@ -1649,8 +1655,10 @@ exprsNOarWITHdot: exprNOarWITHdot COMMA exprsNOarWITHdot { $$ = MakeExprs( $1, $
                 ;
 
 expr_dot: DOT { $$ = MakeDot(1); }
+        ;
 
 expr_tridot: TYPE_DOTS { $$ = MakeDot(3); }
+           ;
 
 exprORdot: expr  %prec GENERATOR { $$ = $1; }
          | expr_dot              { $$ = $1; }
@@ -2341,6 +2349,7 @@ sibtype: sibevclass TYPEDEF type id SEMIC sibpragmas
 sibevclass: CLASSTYPE
               { $$ = ST_unique; }
           |   { $$ = ST_regular; }
+          ;
 
 sibobjs: sibobj sibobjs
          {
