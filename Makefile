@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.13  1999/07/27 08:33:19  jhs
+# Added spmd_cons.o.
+#
 # Revision 2.12  1999/07/08 15:41:12  cg
 # Sequence of src directories modifified in order to enable
 # compilation after gmake clean.
@@ -250,7 +253,7 @@ CONCURRENT= src/concurrent/concurrent.o src/concurrent/scheduling.o  \
             src/concurrent/spmd_init.o src/concurrent/spmd_opt.o     \
             src/concurrent/spmd_lift.o src/concurrent/sync_init.o    \
             src/concurrent/sync_opt.o src/concurrent/schedule.o      \
-            src/concurrent/spmd_trav.o
+            src/concurrent/spmd_trav.o src/concurrent/spmd_cons.o
 COMPILE=  src/compile/wltransform.o src/compile/wlpragma_funs.o \
           src/compile/precompile.o \
           src/compile/compile.o src/compile/gen_startup_code.o \
