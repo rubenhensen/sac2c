@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.49  2004/07/21 17:28:10  ktr
+ * Added MarkMemVals and removed BLIR
+ *
  * Revision 3.48  2004/07/21 12:40:38  khf
  * ea_tab added
  *
@@ -262,7 +265,7 @@ extern funtab *flat_tab;
 extern funtab *print_tab;
 extern funtab *type_tab;
 extern funtab *genmask_tab;
-extern funtab *unused_tab25;
+extern funtab *mmv_tab;
 extern funtab *unused_tab22;
 extern funtab *unused_tab3;
 extern funtab *unused_tab27;
@@ -368,7 +371,7 @@ extern funtab *nt2ot_tab;
 extern funtab *cwc_tab;
 extern funtab *hm_tab;
 extern funtab *dl_tab;
-extern funtab *blir_tab;
+extern funtab *unused_tab25;
 extern funtab *esd_tab;
 extern funtab *uesd_tab;
 extern funtab *sp_tab;

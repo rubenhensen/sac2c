@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.61  2004/07/21 17:28:10  ktr
+ * Added MarkMemVals and removed BLIR
+ *
  * Revision 3.60  2004/07/21 12:40:38  khf
  * ea_tab added
  *
@@ -280,6 +283,7 @@
 #include "print_interface_header.h"
 #include "print_interface_wrapper.h"
 #include "map_cwrapper.h"
+#include "markmemvals.h"
 #include "import_specialization.h"
 #include "CheckAvis.h"
 #include "SSATransform.h"
@@ -303,7 +307,6 @@
 #include "handle_mops.h"
 #include "ElimSubDiv.h"
 #include "UndoElimSubDiv.h"
-#include "blir.h"
 #include "SelectionPropagation.h"
 #include "type_statistics.h"
 #include "WLPartitionGeneration.h"
@@ -859,15 +862,15 @@ static funtab wlaa_tab_rec = {{
 funtab *wlaa_tab = &wlaa_tab_rec;
 
 /*
- *  (50) unused_tab25
+ *  (50) mmv_tab
  */
-static funtab unused_tab25_rec = {{
-#define NIFunused_25(it_unused_25) it_unused_25
+static funtab mmv_tab_rec = {{
+#define NIFmmv(it_mmv) it_mmv
 #include "node_info.mac"
-                                  },
-                                  NULL,
-                                  NULL};
-funtab *unused25_tab = &unused_tab25_rec;
+                             },
+                             NULL,
+                             NULL};
+funtab *mmv_tab = &mmv_tab_rec;
 
 /*
  *  (51) spmdrmtrav_tab
@@ -1563,15 +1566,15 @@ static funtab dl_tab_rec = {{
 funtab *dl_tab = &dl_tab_rec;
 
 /*
- *  (114) blir_tab
+ *  (114) unused_tab25
  */
-static funtab blir_tab_rec = {{
-#define NIFblir(it_blir) it_blir
+static funtab unused_tab25_rec = {{
+#define NIFunused_25(it_unused_25) it_unused_25
 #include "node_info.mac"
-                              },
-                              NULL,
-                              NULL};
-funtab *blir_tab = &blir_tab_rec;
+                                  },
+                                  NULL,
+                                  NULL};
+funtab *unused_tab25 = &unused_tab25_rec;
 
 /*
  *  (115) esd_tab
