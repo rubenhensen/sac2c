@@ -1,6 +1,12 @@
 /*
  * $Log$
- * Revision 1.14  1995/06/30 11:29:34  hw
+ * Revision 1.15  1995/07/04 09:07:30  hw
+ * - Axs_F, F2I & I2F removed
+ * - ConvertType inserted
+ * - enum type_class extended
+ * - some DBUG_PRINTs inserted (tag: PRIM_FUN)
+ *
+ * Revision 1.14  1995/06/30  11:29:34  hw
  * - functions F2I & I2F inserted
  * - enlarged enum "type_class" with F_I, f_i, I_F, i_f
  *
@@ -94,8 +100,16 @@ enum type_class {
     SxA_F,
     F_I,
     f_i,
+    F_D,
+    f_d,
     I_F,
-    i_f
+    i_f,
+    I_D,
+    i_d,
+    D_I,
+    d_i,
+    D_F,
+    d_f
 };
 
 #define GEN_TYPE_NODE(node, type)                                                        \
@@ -108,7 +122,7 @@ enum type_class {
         node->id_mod = NULL;                                                             \
         node->name = NULL;                                                               \
         node->name_mod = NULL;                                                           \
-        DBUG_PRINT ("TYPE", ("new type" P_FORMAT, node));                                \
+        DBUG_PRINT ("PRIM_FUN", ("param: %s" P_FORMAT, type_string[type], node));        \
     } else                                                                               \
         Error ("out of memory", 1)
 
@@ -120,23 +134,34 @@ enum type_class {
     tmp->typed_tag = t_tag;                                                              \
     tmp->user_tag = u_tag;                                                               \
     tmp->new_prf = p_new;                                                                \
-    tmp->next = NULL;
+    tmp->next = NULL;                                                                    \
+    DBUG_PRINT ("PRIM_FUN", ("prim_fun_elem:" P_FORMAT " %s  fun_dec:" P_FORMAT, tmp,    \
+                             mdb_prf[p_new], node_p))
 
 #define INT GEN_TYPE_NODE (type, T_int)
 #define FLOAT GEN_TYPE_NODE (type, T_float)
 #define BOOL GEN_TYPE_NODE (type, T_bool)
 #define INT_A                                                                            \
     type = MakeTypes (T_int);                                                            \
-    type->dim = -1;
+    type->dim = -1;                                                                      \
+    DBUG_PRINT ("PRIM_FUN", ("param: int[]" P_FORMAT, type))
 #define FLOAT_A                                                                          \
     type = MakeTypes (T_float);                                                          \
-    type->dim = -1;
+    type->dim = -1;                                                                      \
+    DBUG_PRINT ("PRIM_FUN", ("param: float[]" P_FORMAT, type))
 #define BOOL_A                                                                           \
     type = MakeTypes (T_bool);                                                           \
-    type->dim = -1;
+    type->dim = -1;                                                                      \
+    DBUG_PRINT ("PRIM_FUN", ("param: bool[]" P_FORMAT, type))
+#define DOUBLE GEN_TYPE_NODE (type, T_double)
+#define DOUBLE_A                                                                         \
+    type = MakeTypes (T_double);                                                         \
+    type->dim = -1;                                                                      \
+    DBUG_PRINT ("PRIM_FUN", ("param: double[]" P_FORMAT, type))
 
 #define TT2(n, a, t1, t2, res)                                                           \
     tmp_node->node[1] = MakeNode (N_fundef);                                             \
+    DBUG_PRINT ("PRIM_FUN", ("prim_fun_dec: " P_FORMAT, tmp_node->node[1]));             \
     arg1 = MakeNode (N_arg);                                                             \
     t1;                                                                                  \
     arg1->info.types = type;                                                             \
@@ -152,6 +177,7 @@ enum type_class {
 
 #define TT3(n, a, t1, t2, t3, res)                                                       \
     tmp_node->node[1] = MakeNode (N_fundef);                                             \
+    DBUG_PRINT ("PRIM_FUN", ("prim_fun_dec: " P_FORMAT, tmp_node->node[1]));             \
     arg1 = MakeNode (N_arg);                                                             \
     t1;                                                                                  \
     arg1->info.types = type;                                                             \
@@ -172,14 +198,15 @@ enum type_class {
 
 #define TT1(n, a, t1, res)                                                               \
     tmp_node->node[1] = MakeNode (N_fundef);                                             \
+    DBUG_PRINT ("PRIM_FUN", ("prim_fun_dec: " P_FORMAT, tmp_node->node[1]));             \
     arg1 = MakeNode (N_arg);                                                             \
     t1;                                                                                  \
     arg1->info.types = type;                                                             \
     tmp_node->node[1]->node[2] = arg1;                                                   \
     tmp_node->node[1]->info.prf_dec.tc = a;                                              \
-    DBUG_PRINT ("TYPE", ("tc: %d (%d)", tmp_node->node[1]->info.prf_dec.tc, a));         \
+    DBUG_PRINT ("PRIM_FUN", ("tc: %d (%d)", tmp_node->node[1]->info.prf_dec.tc, a));     \
     tmp_node->node[1]->info.prf_dec.tag = n;                                             \
-    DBUG_PRINT ("TYPE",                                                                  \
+    DBUG_PRINT ("PRIM_FUN",                                                              \
                 ("tc: %d (%d), tag: %d (%d)", tmp_node->node[1]->info.prf_dec.tc, a,     \
                  tmp_node->node[1]->info.prf_dec.tag, n));                               \
     tmp_node = tmp_node->node[1];
@@ -342,33 +369,6 @@ AxA (types *array1, types *array2, simpletype s_type)
     } else {
         GEN_TYPE_NODE (ret_type, T_unknown);
     }
-
-    DBUG_RETURN (ret_type);
-}
-
-/*
- *
- *  functionname  : Axs_F
- *  arguments     : 1) type of an array
- *  description   : returns the type of an array with shape of 1) and
- *                  simpletype T_float
- *  global vars   :
- *  internal funs :
- *  external funs : DuplicateTypes
- *  macros        : DBUG...
- *
- *  remarks       : is part of macro TT2 and is used in typecheck.c
- *
- */
-types *
-Axs_F (types *array1)
-{
-    types *ret_type;
-
-    DBUG_ENTER ("Axs_F");
-
-    ret_type = DuplicateTypes (array1, 0);
-    ret_type->simpletype = T_float;
 
     DBUG_RETURN (ret_type);
 }
@@ -792,54 +792,27 @@ Cat (node *s_node, types *array1, types *array2)
 
 /*
  *
- *  functionname  : F2I
+ *  functionname  : ConvertType
  *  arguments     : 1) type of array
- *  description   :  returns the type T_int with shape of 1)
+ *                  2) new simpletype
+ *  description   :  returns the type 2) with shape of 1)
  *  global vars   :
  *  internal funs :
  *  external funs : DuplicateTypes
  *  macros        : DBUG...,
  *
- *  remarks       : is part of macro TT1 and is used in typecheck.c
+ *  remarks       : is part of macros TT1 & TT2 and is used in typecheck.c
  *
  */
 types *
-F2I (types *array1)
+ConvertType (types *array1, simpletype s_type)
 {
     types *ret_type = NULL;
 
-    DBUG_ENTER ("F2I");
+    DBUG_ENTER ("ConvertType");
 
     GET_BASIC_TYPE (ret_type, array1, 0);
-    ret_type->simpletype = T_int;
-    ret_type->name = NULL; /* has to be set to NULL, because of output */
-    ret_type->name_mod = NULL;
-
-    DBUG_RETURN (ret_type);
-}
-
-/*
- *
- *  functionname  : I2F
- *  arguments     : 1) type of array
- *  description   :  returns the type T_float with shape of 1)
- *  global vars   :
- *  internal funs :
- *  external funs : DuplicateTypes
- *  macros        : DBUG...,
- *
- *  remarks       : is part of macro TT1 and is used in typecheck.c
- *
- */
-types *
-I2F (types *array1)
-{
-    types *ret_type = NULL;
-
-    DBUG_ENTER ("I2F");
-
-    GET_BASIC_TYPE (ret_type, array1, 0);
-    ret_type->simpletype = T_float;
+    ret_type->simpletype = s_type;
     ret_type->name = NULL; /* has to be set to NULL, because of output */
     ret_type->name_mod = NULL;
 
