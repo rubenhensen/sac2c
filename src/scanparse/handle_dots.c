@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.36  2004/07/16 18:37:33  sah
+ * rearranged Malloc in MakeInfo function
+ *
  * Revision 1.35  2004/07/16 14:41:34  sah
  * switch to new INFO structure
  * PHASE I
@@ -296,13 +299,13 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
+    result = Malloc (sizeof (info));
+
     INFO_HD_DOTSHAPE (result) = NULL;
     INFO_HD_TRAVSTATE (result) = HD_sel;
     INFO_HD_IDTABLE (result) = NULL;
     INFO_HD_ASSIGNS (result) = NULL;
     INFO_HD_SETASSIGNS (result) = NULL;
-
-    result = Malloc (sizeof (info));
 
     DBUG_RETURN (result);
 }
