@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.23  2005/01/11 13:32:21  cg
+ * Converted output from Error.h to ctinfo.c
+ *
  * Revision 1.22  2004/12/16 17:47:47  ktr
  * TYisAKV inserted.
  *
@@ -89,7 +92,7 @@
 #include "shape.h"
 #include "DupTree.h"
 #include "LookUpTable.h"
-#include "Error.h"
+#include "ctinfo.h"
 #include "globals.h"
 #include "dbug.h"
 #include "traverse.h"
@@ -648,8 +651,8 @@ CompGenSon (node *gen_son1, node *gen_son2)
                         gen_prob = GEN_constant;
             } else if ((NODE_TYPE (EXPRS_EXPR (elems1)) == N_id)
                        && (NODE_TYPE (EXPRS_EXPR (elems2)) == N_id)) {
-                if (!strcmp (ID_NAME (EXPRS_EXPR (elems1)),
-                             ID_NAME (EXPRS_EXPR (elems2)))) {
+                if (ILIBstringCompare (ID_NAME (EXPRS_EXPR (elems1)),
+                                       ID_NAME (EXPRS_EXPR (elems2)))) {
                     if (gen_prob == GEN_equal)
                         gen_prob = GEN_equal_var;
                     else if (gen_prob == GEN_constant) {
@@ -1434,8 +1437,9 @@ IntersectParts (node *parts_1, node *parts_2, node **new_parts_2)
                          * Max. numbers of new generators is exceeded.
                          * Remove all new generators.
                          */
-                        WARN (global.linenum, ("WLFS: number of new generators exceeds "
-                                               "max_newgens -> roll back"));
+                        CTIwarnLine (global.linenum,
+                                     "WLFS: number of new generators exceeds max_newgens"
+                                     " -> roll back");
 
                         nparts_1 = FREEdoFreeTree (nparts_1);
                         nparts_2 = FREEdoFreeTree (nparts_2);
@@ -1477,8 +1481,9 @@ IntersectParts (node *parts_1, node *parts_2, node **new_parts_2)
                  * Max. numbers of new generators is exceeded.
                  * Remove all new generators.
                  */
-                WARN (global.linenum, ("WLFS: number of new generators exceeds "
-                                       "max_newgens -> roll back"));
+                CTIwarnLine (global.linenum,
+                             "WLFS: number of new generators exceeds max_newgens"
+                             " -> roll back");
 
                 nparts_1 = FREEdoFreeTree (nparts_1);
                 nparts_2 = FREEdoFreeTree (nparts_2);

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.6  2005/01/11 13:32:21  cg
+ * Converted output from Error.h to ctinfo.c
+ *
  * Revision 3.5  2004/11/26 21:02:09  jhb
  * compile
  *
@@ -70,7 +73,8 @@
 #include "globals.h"
 #include "DupTree.h"
 #include "optimize.h"
-#include "Error.h"
+#include "ctinfo.h"
+#include "internal_lib.h"
 #include "convert.h"
 
 #include "pad_info.h"
@@ -1632,8 +1636,8 @@ PInoteResults ()
         overhead = PIpaddingOverhead (PI_DIM (pi_ptr), PI_OLD_SHAPE (pi_ptr),
                                       PI_PADDING (pi_ptr));
 
-        NOTE (("  %s%s  by  %s", basetype, old, pad));
-        NOTE (("     ->  %s%s    <= %d%% overhead", basetype, new, overhead));
+        CTInote ("%s%s  by  %s", basetype, old, pad);
+        CTInote ("   ->  %s%s    <= %d%% overhead", basetype, new, overhead);
 
         old = ILIBfree (old);
         new = ILIBfree (new);

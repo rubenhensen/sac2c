@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2005/01/11 13:32:21  cg
+ * Converted output from Error.h to ctinfo.c
+ *
  * Revision 1.8  2004/11/27 00:44:46  khf
  * adjusted startfunction
  *
@@ -79,7 +82,6 @@
 #include "internal_lib.h"
 #include "free.h"
 #include "DupTree.h"
-#include "Error.h"
 #include "globals.h"
 #include "dbug.h"
 #include "traverse.h"

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.23  2005/01/11 13:32:21  cg
+ * Converted output from Error.h to ctinfo.c
+ *
  * Revision 1.22  2004/12/08 18:02:10  ktr
  * removed ARRAY_TYPE/ARRAY_NTYPE
  *
@@ -125,7 +128,7 @@
 #include "free.h"
 #include "DupTree.h"
 #include "globals.h"
-#include "Error.h"
+#include "ctinfo.h"
 #include "dbug.h"
 #include "traverse.h"
 #include "optimize.h"
@@ -621,11 +624,11 @@ WLFtree2InternGen (node *wln, node *filter)
             /* normalize step and width */
             switch (WLFnormalizeInternGen (tmp_ig)) {
             case 1:
-                ABORT (NODE_LINE (wln), ("component of width greater than step"));
+                CTIabortLine (NODE_LINE (wln), "Component of width greater than step");
             case 2:
-                ABORT (NODE_LINE (wln), ("component of width less 0"));
+                CTIabortLine (NODE_LINE (wln), "Component of width less 0");
             case 3:
-                ABORT (NODE_LINE (wln), ("width vector without step vector"));
+                CTIabortLine (NODE_LINE (wln), "Width vector without step vector");
             }
         }
 

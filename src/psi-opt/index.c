@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.70  2005/01/11 13:32:21  cg
+ * Converted output from Error.h to ctinfo.c
+ *
  * Revision 3.69  2004/12/08 18:02:10  ktr
  * removed ARRAY_TYPE/ARRAY_NTYPE
  *
@@ -255,7 +258,7 @@
 #include "internal_lib.h"
 #include "shape.h"
 #include "dbug.h"
-#include "Error.h"
+#include "ctinfo.h"
 #include "print.h"
 #include "traverse.h"
 #include "DupTree.h"
@@ -2964,8 +2967,8 @@ IVEdoIndexVectorElimination (node *syntax_tree)
     info = FreeInfo (info);
     TRAVpop ();
 
-    NOTE (("  %d index-vector(s) eliminated", ive_expr));
-    NOTE (("  %d index-vector-operation(s) eliminated", ive_op));
+    CTInote ("%d index-vector(s) eliminated", ive_expr);
+    CTInote ("%d index-vector-operation(s) eliminated", ive_op);
 
     DBUG_RETURN (syntax_tree);
 }

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.7  2005/01/11 13:32:21  cg
+ * Converted output from Error.h to ctinfo.c
+ *
  * Revision 3.6  2004/11/25 20:33:30  jhb
  * comcompile! SACDECCAMP 04
  *
@@ -83,9 +86,9 @@
 #include "free.h"
 #include "globals.h"
 #include "DupTree.h"
-#include "Error.h"
 #include "resource.h"
 #include "convert.h"
+#include "internal_lib.h"
 
 #include "pad_infer.h"
 #include "pad_info.h"

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.23  2005/01/11 13:32:21  cg
+ * Converted output from Error.h to ctinfo.c
+ *
  * Revision 1.22  2004/12/08 18:02:10  ktr
  * removed ARRAY_TYPE/ARRAY_NTYPE
  *
@@ -134,7 +137,6 @@
 #include "internal_lib.h"
 #include "free.h"
 #include "globals.h"
-#include "Error.h"
 #include "dbug.h"
 #include "constants.h"
 #include "traverse.h"
@@ -786,7 +788,8 @@ WLIap (node *arg_node, info *arg_info)
         TRAVpop ();
 
         /* break after WLI? */
-        if ((global.break_after != PH_sacopt) || strcmp (global.break_specifier, "wli")) {
+        if ((global.break_after != PH_sacopt)
+            || !ILIBstringCompare (global.break_specifier, "wli")) {
             /* SSAWLF traversal: fold WLs */
 
             TRAVpush (TR_wlf);

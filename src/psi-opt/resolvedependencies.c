@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2005/01/11 13:32:21  cg
+ * Converted output from Error.h to ctinfo.c
+ *
  * Revision 1.4  2004/11/24 23:16:39  khf
  * SacDevCamp04
  *
@@ -61,7 +64,6 @@
 #include "internal_lib.h"
 #include "free.h"
 #include "DupTree.h"
-#include "Error.h"
 #include "globals.h"
 #include "dbug.h"
 #include "traverse.h"

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.28  2005/01/11 13:32:21  cg
+ * Converted output from Error.h to ctinfo.c
+ *
  * Revision 3.27  2004/12/08 18:02:10  ktr
  * removed ARRAY_TYPE/ARRAY_NTYPE
  *
@@ -95,7 +98,6 @@
 #include "tree_compound.h"
 #include "internal_lib.h"
 #include "globals.h"
-#include "Error.h"
 #include "dbug.h"
 #include "traverse.h"
 #include "free.h"

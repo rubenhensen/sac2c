@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2005/01/11 13:32:21  cg
+ * Converted output from Error.h to ctinfo.c
+ *
  * Revision 3.15  2004/11/26 20:33:33  jhb
  * compile
  *
@@ -169,7 +172,7 @@
 #include "traverse.h"
 #include "free.h"
 #include "globals.h"
-#include "Error.h"
+#include "ctinfo.h"
 #include "wl_access_analyze.h"
 
 #ifndef WLAA_DEACTIVATED
@@ -1278,8 +1281,8 @@ WLAAprf (node *arg_node, info *arg_info)
 
                 if ((NODE_TYPE (arg_node_arg1) != N_id)
                     || (NODE_TYPE (arg_node_arg2) != N_id)) {
-                    SYSWARN (("WLAA only works correctly with constant folding,"
-                              " N_id exspected !"));
+                    CTIwarn ("WLAA only works correctly with constant folding,"
+                             " N_id exspected !");
                 } else {
                     access = SearchAccess (INFO_WLAA_ACCESS (arg_info), arg_info);
 
@@ -1330,8 +1333,8 @@ WLAAprf (node *arg_node, info *arg_info)
                   if ((ID_VECLEN(arg_node_arg1) < 0)
                       && (ID_VECLEN(arg_node_arg2) < 0)) {
                     
-                    SYSWARN(("WLAA only works correctly with constant"
-                             " folding, variable exspected !"));
+                    CTIwarn( "WLAA only works correctly with constant"
+                             " folding, variable exspected !");
                   }
 #endif
                                     if (ID_CONSTVEC (arg_node_arg1) != NULL) {
@@ -1433,8 +1436,8 @@ WLAAprf (node *arg_node, info *arg_info)
 
                 if ((NODE_TYPE (arg_node_arg1) != N_id)
                     || (NODE_TYPE (arg_node_arg2) != N_id)) {
-                    SYSWARN (("WLAA only works correctly with constant folding,"
-                              " N_id exspected !"));
+                    CTIwarn ("WLAA only works correctly with constant folding,"
+                             " N_id exspected !");
                 } else {
                     access = SearchAccess (INFO_WLAA_ACCESS (arg_info), arg_info);
 
@@ -1478,8 +1481,8 @@ WLAAprf (node *arg_node, info *arg_info)
                   if ((ID_VECLEN(arg_node_arg1) < 0)
                       && (ID_VECLEN(arg_node_arg2) < 0)) {
                     
-                    SYSWARN(("WLAA only works correctly with constant folding,"
-                             " variable exspected !"));
+                    CTIwarn( "WLAA only works correctly with constant folding,"
+                             " variable exspected !");
                   }
 #endif
                                     if (ID_CONSTVEC (arg_node_arg1) != NULL) {

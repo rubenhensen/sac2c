@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2005/01/11 13:32:21  cg
+ * Converted output from Error.h to ctinfo.c
+ *
  * Revision 3.3  2004/11/27 02:51:24  mwe
  * APTdoTransform deactivated
  *
@@ -76,7 +79,7 @@
 #include "globals.h"
 #include "filemgr.h"
 #include "resource.h"
-#include "Error.h"
+#include "ctinfo.h"
 
 #include "pad.h"
 #include "pad_info.h"
@@ -180,8 +183,7 @@ ArrayPadding (node *arg_node)
     DBUG_PRINT ("OPT", ("ARRAY PADDING"));
     DBUG_PRINT ("AP", ("Entering Array Padding"));
 
-    NOTE ((""));
-    NOTE (("optimizing array types:"));
+    CTInote ("Optimizing array types:");
 
     if (global.config.cache1_size > 0) {
 

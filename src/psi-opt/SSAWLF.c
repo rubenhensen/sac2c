@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.23  2005/01/11 13:32:21  cg
+ * Converted output from Error.h to ctinfo.c
+ *
  * Revision 1.22  2004/12/08 18:02:10  ktr
  * removed ARRAY_TYPE/ARRAY_NTYPE
  *
@@ -134,6 +137,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <limits.h>
 
 #include "types.h"
@@ -143,7 +147,7 @@
 #include "free.h"
 #include "DupTree.h"
 #include "globals.h"
-#include "Error.h"
+#include "ctinfo.h"
 #include "dbug.h"
 #include "traverse.h"
 #include "optimize.h"
@@ -1241,8 +1245,8 @@ Fold (node *idn, index_info *transformations, node *targetwln, node *substwln)
     error = TransformationRangeCheck (transf2, substwln, target_ig);
     transf2 = FREEfreeIndexInfo (transf2);
     if (error) {
-        ABORT (NODE_LINE (idn),
-               ("array access to %s out of range in dimension %i", ID_NAME (idn), error));
+        CTIabortLine (NODE_LINE (idn), "Array access to %s out of range in dimension %i",
+                      ID_NAME (idn), error);
     }
 
     /* create subst_ig */
@@ -1256,7 +1260,7 @@ Fold (node *idn, index_info *transformations, node *targetwln, node *substwln)
     subst_ig = FinalTransformations (subst_ig, transformations, target_ig->shape);
 
     if (!subst_ig) {
-        ABORT (NODE_LINE (idn), ("constants of index vector out of range"));
+        CTIabortLine (NODE_LINE (idn), "Constants of index vector out of range");
     }
 
     /* intersect target_ig and subst_ig

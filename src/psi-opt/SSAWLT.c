@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.42  2005/01/11 13:32:21  cg
+ * Converted output from Error.h to ctinfo.c
+ *
  * Revision 1.41  2004/11/27 01:48:09  khf
  * crossed fingers
  *
@@ -189,7 +192,7 @@
 #include "internal_lib.h"
 #include "free.h"
 #include "DupTree.h"
-#include "Error.h"
+#include "ctinfo.h"
 #include "dbug.h"
 #include "traverse.h"
 #include "constants.h"
@@ -931,15 +934,15 @@ node * CropBounds( node *wl, shape *max_shp)
     tnum = SHGetExtent(max_shp, dim);
     if (lbnum < 0) {
       NUM_VAL(EXPRS_EXPR(lbe)) = 0;
-      WARN( NODE_LINE( wl),
-            ("lower bound of WL-generator in dim %d below zero: set to 0",
-             dim));
+      CTIerrorLine( NODE_LINE( wl),
+                    "Lower bound of WL-generator in dim %d below zero: set to 0",
+                    dim);
     }
     if (ubnum > tnum) {
       NUM_VAL(EXPRS_EXPR(ube)) = tnum;
-      WARN( NODE_LINE( wl),
-            ("upper bound of WL-generator in dim %d greater than shape:"
-             " set to %d", dim, tnum));
+      CTIerrorLine( NODE_LINE( wl),
+                    "Upper bound of WL-generator in dim %d greater than shape:"
+                    " set to %d", dim, tnum);
     }
 
     dim++;
