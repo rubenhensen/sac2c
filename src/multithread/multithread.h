@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2004/08/06 13:02:16  skt
+ * added FUNDEF_DATAFLOWGRAPH temporary
+ *
  * Revision 3.7  2004/08/06 10:45:41  skt
  * MUTHDecodeExecmode added
  *
@@ -77,6 +80,7 @@
 #define INFO_MUTH_DFGEXECUTIONMODE(n) (n->flag)
 #define INFO_MUTH_DFGNODEREFCOUNT(n) (n->refcnt)
 #define INFO_MUTH_DFGDEPENDENT(n) ((nodelist *)(n->dfmask[0]))
+#define FUNDEF_DATAFLOWGRAPH(n) ((node *)(n->dfmask[1]))
 
 extern node *BuildMultiThread (node *syntax_tree);
 
