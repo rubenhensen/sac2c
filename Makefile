@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.74  2003/09/20 14:15:43  dkr
+# icm2c_prf.o added
+#
 # Revision 3.73  2003/09/17 12:34:55  sbs
 # type_statistics.o added
 #
@@ -210,7 +213,7 @@ COMPILE= src/compile/wltransform.o src/compile/wlpragma_funs.o \
          src/compile/precompile.o src/compile/gen_startup_code.o \
          src/compile/compile.o src/compile/compile.tagged.o \
          src/compile/icm2c.o src/compile/icm2c_basic.o \
-         src/compile/icm2c_utils.o src/compile/icm2c_std.o \
+         src/compile/icm2c_utils.o src/compile/icm2c_std.o src/compile/icm2c_prf.o \
          src/compile/icm2c_mt.o src/compile/icm2c_sched.o \
          src/compile/icm2c_wl.o src/compile/icm2c_error.o \
          src/compile/ReuseWithArrays.o src/compile/PatchWith.o \
