@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2004/11/24 13:22:33  khf
+ * removed WLPGfold and WLPGmodarray
+ *
  * Revision 1.8  2004/11/22 12:37:33  ktr
  * Ismop SacDevCamp 04
  * ,.
@@ -54,8 +57,6 @@ extern node *WLPGap (node *arg_node, info *arg_info);
 
 extern node *WLPGwith (node *arg_node, info *arg_info);
 extern node *WLPGgenarray (node *arg_node, info *arg_info);
-extern node *WLPGmodarray (node *arg_node, info *arg_info);
-extern node *WLPGfold (node *arg_node, info *arg_info);
 extern node *WLPGpart (node *arg_node, info *arg_info);
 extern node *WLPGgenerator (node *arg_node, info *arg_info);
 
