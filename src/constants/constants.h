@@ -1,0 +1,92 @@
+/*
+ * $Log$
+ * Revision 1.1  2001/03/02 14:32:52  sbs
+ * Initial revision
+ *
+ * Revision 3.2  2001/02/23 18:04:22  sbs
+ * extended for negative take's and drop's
+ * added print facility
+ *
+ * Revision 3.1  2000/11/20 18:00:03  sacbase
+ * new release made
+ *
+ * Revision 1.3  2000/05/03 16:49:17  dkr
+ * COFreeConstant returns NULL now
+ *
+ * Revision 1.2  1999/10/22 14:12:24  sbs
+ * inserted comments and added reshape, take, drop, and psi with non
+ * scalar results.
+ * ..
+ *
+ * Revision 1.1  1999/10/19 13:02:59  sacbase
+ * Initial revision
+ *
+ *
+ *
+ */
+
+#ifndef _constants_h
+#define _constants_h
+
+/*
+ * The module "constants" implements an abstract datatype for keeping "machine"
+ * constants (scalars as well as arbitrary shaped arrays). This file describes
+ * the interface to that module.
+ *
+ * For avoiding un-intended pointer sharing and for avoiding memory leaks
+ * we establish the following rules:
+ * - whenever a constant is given as argument, it will be inspected only!
+ *   Neither the pointer to it nor any pointer to a sub structure will be
+ *   returned or used within a data structure that serves as a result!
+ *   There are EXACTLY ONE CLASSE OF FUNCTIONS that is an EXEPTION OF
+ *   THIS RULE: - the GETxyz - functions for extracting components of constants
+ * - The only function for freeing a shape structure is COFreeConstant!
+ * - If the result is a shape structure, it has been freshly allocated!
+ *
+ */
+
+#include "shape.h"
+#include "types.h"
+
+typedef struct CONSTANT constant;
+
+/***
+ ***
+ *** Basic operations implemented in constants_basic.c:
+ ***
+ ***/
+
+/*
+ * Functions for creating constants:
+ */
+extern constant *COMakeConstant (simpletype type, shape *shp, void *elems);
+extern constant *COMakeConstantFromInt (int val);
+extern constant *COMakeConstantFromArray (node *a);
+
+/*
+ * Functions for extracting info from constants:
+ */
+extern simpletype COGetType (constant *a);
+extern int COGetDim (constant *a);
+extern shape *COGetShape (constant *a);
+
+/*
+ * Functions for handling / converting constants:
+ */
+extern constant *COCopyConstant (constant *a);
+extern void COPrintConstant (FILE *file, constant *a);
+extern constant *COFreeConstant (constant *a);
+extern node *COConstant2AST (constant *a);
+
+/***
+ ***
+ *** structural operations implemented in constants_struc_ops.c:
+ ***
+ ***/
+
+extern constant *COReshape (constant *idx, constant *a);
+extern constant *COPsi (constant *idx, constant *a);
+extern constant *COTake (constant *idx, constant *a);
+extern constant *CODrop (constant *idx, constant *a);
+
+#endif /* _constants_h */
