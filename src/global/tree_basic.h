@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.13  1999/05/05 13:06:05  jhs
+ * Macros added to access the original operators.
+ *
  * Revision 2.12  1999/05/03 19:46:07  sbs
  * some new INFO_TC_xxx macros inserted.
  *
@@ -2512,6 +2515,8 @@ extern node *MakeNWithid (ids *vec, ids *scalars);
  ***
  ***    prf    OP1
  ***    prf    OP2
+ ***    prf    OP1_ORIG     Set in MakeNGenerator, not to be changed!
+ ****   prf    OP2_ORIG     Set in MakeNGenerator, not to be changed!
  ***
  ***  remarks:
  ***    the BOUNDs are NULL if upper or lower bounds are not specified.
@@ -2529,6 +2534,8 @@ extern node *MakeNGenerator (node *bound1, node *bound2, prf op1, prf op2, node 
 #define NGEN_WIDTH(n) (n->node[3])
 #define NGEN_OP1(n) (n->info.genrel.op1)
 #define NGEN_OP2(n) (n->info.genrel.op2)
+#define NGEN_OP1_ORIG(n) (n->info.genrel.op1_orig)
+#define NGEN_OP2_ORIG(n) (n->info.genrel.op2_orig)
 
 /*--------------------------------------------------------------------------*/
 
