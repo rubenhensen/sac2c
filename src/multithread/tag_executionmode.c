@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.10  2004/08/06 11:14:54  skt
+ * DecodeExecmode deleted - it had been moved into multithread.[ch]
+ *
  * Revision 1.9  2004/08/05 17:42:19  skt
  * moved TagAllocs into multithread_lib
  *
@@ -214,13 +217,6 @@ TEMassign (node *arg_node, info *arg_info)
         } else if (MustExecuteSingle (arg_node, arg_info)) {
             ASSIGN_EXECMODE (arg_node) = MUTH_SINGLE;
         }
-#if TEM_DEBUG
-        if (ASSIGN_EXECMODE (arg_node) != MUTH_ANY) {
-            PrintNode (arg_node);
-            fprintf (stdout, "The upper assignment is %s.\n",
-                     DecodeExecmode (ASSIGN_EXECMODE (arg_node)));
-        }
-#endif
     } else {
         DBUG_PRINT ("TEM", ("trav into instruction"));
         ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
@@ -828,37 +824,6 @@ AnyUniqueTypeInThere (ids *letids)
 
     DBUG_RETURN (unique_found);
 }
-
-#if TEM_DEBUG
-/** <!--********************************************************************-->
- *
- * @fn char *DecodeExecmode(int execmode)
- *
- *   @brief A small helper function to make debug-output more readable
- *          !It must be adapted if the names of the modes change!
- *
- *   @param execmode the executionmode to decode
- *   @return the name of the executionmode as a string
- *
- *****************************************************************************/
-char *
-DecodeExecmode (int execmode)
-{
-    switch (execmode) {
-    case MUTH_ANY:
-        return ("AT");
-    case MUTH_EXCLUSIVE:
-        return ("EX");
-    case MUTH_SINGLE:
-        return ("ST");
-    case MUTH_MULTI:
-        return ("MT");
-    default:
-        DBUG_ASSERT (0, "DecodeExecmode expects a valid executionmode");
-    }
-    return "NN";
-}
-#endif
 
 /**
  * @}

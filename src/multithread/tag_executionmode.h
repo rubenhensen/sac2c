@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.10  2004/08/06 11:14:54  skt
+ * DecodeExecmode deleted - it had been moved into multithread.[ch]
+ *
  * Revision 1.9  2004/08/05 17:42:19  skt
  * moved TagAllocs into multithread_lib
  *
@@ -43,7 +46,6 @@
 
 #define TAG_EXECUTIONMODE_H
 
-#define TEM_DEBUG 0
 #define TEM_TRAVMODE_DEFAULT 0
 #define TEM_TRAVMODE_MUSTEX 1
 #define TEM_TRAVMODE_MUSTST 2
@@ -79,7 +81,4 @@ int MustExecuteSingle (node *assign, info *arg_info);
 
 int AnyUniqueTypeInThere (ids *letids);
 
-#if TEM_DEBUG
-char *DecodeExecmode (int execmode);
-#endif
 #endif /* TAG_EXECUTIONMODE_H */
