@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 1.9  1998/05/15 14:48:47  srs
+ * several changed/fixes
+ *
  * Revision 1.8  1998/05/07 16:12:39  srs
  * added more transformation functions,
  * fixed a bug in IntersectGrids(),
@@ -67,11 +70,15 @@
 
  Usage of ID_WL:
 
- We have to distinguish between the Ids which are in the original code (1) and
- those in newly created code blocks (2).
- (1) ID_WL points to a WL which is referenced by this Id or is NULL. This
-     pointer is set in WLI phase.
- (2) Creation of new code is initiated in CreateCode() and the resulting N_Ncode
+ ID_WL is used in 2 ways:
+ (1) in WLI phase we store a pointer to (assign node of) a WL in ID_WL if
+     the Id references a new WL. This pointer is used in WLF.
+ (2) When the decision to fold the Id has been made it is necessary to
+     create new code blocks. In this new code blocks ID_WL is used to
+     point to it's original Id. So we have to distinguish between the Ids
+     which are in the original code (1) and those in newly created code
+     blocks (2).
+     Creation of new code is initiated in CreateCode() and the resulting N_Ncode
      nodes are collected in new_codes until they are inserted into the syntax
      tree in WLFNwith(). While a code is in new_codes, ID_WL of every Id inside
      the code points to it's original Id (this is the Id which was copied by
@@ -392,6 +399,28 @@ FreeCC (code_constr_type *cc)
 /******************************************************************************
  *
  * function:
+ *   intern_gen *MergeGenerators(intern_gen *ig)
+ *
+ * description:
+ *   tries to merge gererators (grids) to reduce effort of further
+ *   intersections.
+ *   This optimization can result in better codeproduction of compile
+ *   (wltransform.c, OptimizeWL does something similar but it not that
+ *    powerful).
+ *
+ ******************************************************************************/
+
+intern_gen *
+MergeGenerators (intern_gen *ig)
+{
+    DBUG_ENTER ("MergeGenerators");
+
+    DBUG_RETURN (ig);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   intern_gen *LinearTransformationsHelp(intern_gen *ig, int dim, prf prf, int arg_no,
  *int const)
  *
@@ -689,7 +718,7 @@ FinalTransformations (intern_gen *substig, index_info *transformations, int targ
 node *
 CreateCode (node *target, node *subst)
 {
-    node *coden, *new_arg_info;
+    node *coden, *new_arg_info, *dup_info;
 
     DBUG_ENTER ("CreateCode");
     DBUG_ASSERT (N_Ncode == NODE_TYPE (target), ("wrong Parameter"));
@@ -707,11 +736,17 @@ CreateCode (node *target, node *subst)
     INFO_WLI_NEW_ID (new_arg_info) = NULL;
     new_arg_info->varno = ref_mode_arg_info->varno;
 
-    coden = DupTree (NCODE_CBLOCK (target), NULL);
+    /* DupTree() shall fill ID_WL of Id nodes with special information. So
+       we have to call DupTree() with DUP_WLF. */
+    dup_info = MakeInfo ();
+    dup_info->flag = DUP_WLF; /* compare DUPTYPE in DupTree.h */
+
+    coden = DupTree (NCODE_CBLOCK (target), dup_info);
     coden = Trav (coden, new_arg_info);
-    coden = MakeNCode (coden, DupTree (NCODE_CEXPR (target), NULL));
+    coden = MakeNCode (coden, DupTree (NCODE_CEXPR (target), dup_info));
 
     FreeNode (new_arg_info);
+    FreeNode (dup_info);
 
     wlf_mode = wlfm_search_ref;
 
@@ -1185,6 +1220,14 @@ Fold (node *idn, index_info *transformations, node *targetwln, node *substwln)
  * description:
  *   decides whether subst_wl shall be folded into target_wl or not.
  *
+ *   The flag FOLDABLE of every WL is
+ *     1 if there are const array bounds
+ *     0 else.
+ *
+ *   PARTS is
+ *    -1 for WL which have no full partition
+ *    >0 otherwise
+ *     1 for fold-WL with constant bounds.
  *
  ******************************************************************************/
 
@@ -1199,6 +1242,7 @@ FoldDecision (node *target_wl, node *subst_wl)
 
     result
       = (NWITH_PARTS (target_wl) > 0 && NWITH_PARTS (subst_wl) > 0
+         && NWITH_FOLDABLE (target_wl) > 0
          && NWITH_REFERENCED (subst_wl) == NWITH_REFERENCED_FOLD (subst_wl)
          && (WO_genarray == NWITH_TYPE (subst_wl) || WO_modarray == NWITH_TYPE (subst_wl))
          && !NWITH_NO_CHANCE (subst_wl));
@@ -1340,8 +1384,8 @@ WLFassign (node *arg_node, node *arg_info)
             /* paste the new code (subst WL code) into the assign chain (target WL
                code). The current assign node is appended to the new INFO_WLI_SUBST
                chain. Therefor, reuse the current assign node because the
-               previous assign node (which annot be reached from here) points
-               to is. */
+               previous assign node (which cannot be reached from here) points
+               to it. */
             last_assign = MakeAssign (ASSIGN_INSTR (arg_node), ASSIGN_NEXT (arg_node));
             substn = INFO_WLI_SUBST (arg_info);
 
@@ -1407,8 +1451,10 @@ WLFid (node *arg_node, node *arg_info)
     switch (wlf_mode) {
     case wlfm_search_WL:
         /* check if we want to fold this Id.
-           If no, clear ID_WL(). This is the sign for the following phases to fold.
-           If yes, set INFO_WLI_FLAG. */
+           If no, clear ID_WL. This is the sign for the following phases to fold.
+           If yes, set INFO_WLI_FLAG. This is only a speed-up flag. If it is 0,
+           we do not enter the wlfm_search_ref phase.
+           We used ID_WL in case (1) here (see header of file) */
         if (ID_WL (arg_node))             /* a WL is referenced (this is an array Id), */
             if (INFO_WLI_WL (arg_info) && /* inside WL, */
                 INDEX (INFO_WLI_ASSIGN (arg_info)) && /* valid index transformation */
@@ -1423,6 +1469,7 @@ WLFid (node *arg_node, node *arg_info)
         break;
 
     case wlfm_replace:
+        /* This ID_WL is used in case (2) here (see header of file) */
         if (ID_WL (arg_node) == INFO_WLI_ID (arg_info)) {
             /* this is the Id which has to be replaced. Create substitution code. */
             coden = INFO_WLI_SUBST (arg_info);
@@ -1452,6 +1499,7 @@ WLFid (node *arg_node, node *arg_info)
             vectorn = PRF_ARG1 (LET_EXPR (ASSIGN_INSTR (INFO_WLI_ASSIGN (arg_info))));
             /* We have to remember that new assignments have been inserted. */
             count = 0;
+            /* This ID_WL is used in case (1) here (see header of file) */
             subst_wl_partn
               = NWITH_PART (LET_EXPR (ASSIGN_INSTR (ID_WL (INFO_WLI_ID (arg_info)))));
             subst_wl_ids = NPART_IDS (subst_wl_partn);
@@ -1557,6 +1605,7 @@ WLFlet (node *arg_node, node *arg_info)
 
     case wlfm_search_ref:
         /* is this a prf psi() which can be folded? */
+        /* All occurences of ID_WL are used in case (1) here (see header of file) */
         prfn = LET_EXPR (arg_node);
         if (N_prf == NODE_TYPE (prfn) && F_psi == PRF_PRF (prfn)
             && ID_WL (PRF_ARG2 (prfn))) { /* second arg of psi() references a WL. */
@@ -1576,7 +1625,7 @@ WLFlet (node *arg_node, node *arg_info)
 
             /* We just traversed the original code in the wlfm_search_ref phase, so
                ASSIGN_INDEX provides the correct index_info.*/
-            transformation = ASSIGN_INDEX (INFO_WLI_ASSIGN (arg_info));
+            transformation = INDEX (INFO_WLI_ASSIGN (arg_info));
 
             Fold (idn, transformation, targetwln, substwln);
             wlf_expr++;
@@ -1654,6 +1703,7 @@ WLFNwith (node *arg_node, node *arg_info)
         /* if WO_modarray, save referenced WL to transform modarray into
            genarray later. */
         if (WO_modarray == NWITH_TYPE (arg_node))
+            /* This ID_WL is used in case (1) here (see header of file) */
             substwln = ID_WL (NWITHOP_ARRAY (NWITH_WITHOP (arg_node)));
 
         /* It's faster to
@@ -1682,7 +1732,7 @@ WLFNwith (node *arg_node, node *arg_info)
             FREE (intersect_grids_os);
 
             /* all codes have been traversed. Now append new_codes to WL and
-             exchange old generators with all_new_ig. */
+               exchange old generators with all_new_ig. */
             if (new_codes) {
                 /* We have new codes. This means at least one folding action has been
                    done and we have to replace the N_Nparts, too. */
@@ -1691,21 +1741,25 @@ WLFNwith (node *arg_node, node *arg_info)
                     tmpn = NCODE_NEXT (tmpn);
                 NCODE_NEXT (tmpn) = new_codes;
 
+                /* before replacing the old generators with the new ones, we
+                   can try to merge several of the new generators. */
+                all_new_ig = MergeGenerators (all_new_ig);
+
                 arg_node = InternGen2Tree (arg_node, all_new_ig);
                 all_new_ig = FreeInternGenChain (all_new_ig);
                 arg_node = CheckForSuperfluousCodes (arg_node);
-
-                /* After successful folding every modarray-WL which references a folded
-                   array has to be transformed into a genarray-WL. Else DCR would
-                   not remove the subst WL. */
-                if (WO_modarray == NWITH_TYPE (arg_node)
-                    && FoldDecision (arg_node, substwln))
-                    arg_node = Modarray2Genarray (arg_node);
             }
 
             /* this WL is finisched. Search other WLs on same level. */
             wlf_mode = wlfm_search_WL;
         }
+
+        /* If the current WL is a modarray-WL and the referenced base array
+             was chosen to be folded (FoldDecision) we have to eleminate
+             the modarray, epecially the reference to the base array.
+             Else DCR would not remove the subst WL. */
+        if (WO_modarray == NWITH_TYPE (arg_node) && FoldDecision (arg_node, substwln))
+            arg_node = Modarray2Genarray (arg_node);
 
         /* restore arg_info */
         tmpn = arg_info;
