@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.4  1995/11/01 09:38:08  cg
+ * Revision 1.5  1995/11/01 16:33:55  cg
+ * Now, additional parameters and return values are concerned in
+ * function applications as well as in function definitions.
+ *
+ * Revision 1.4  1995/11/01  09:38:08  cg
  * Now, the special meaning of the return type T_void is considered.
  *
  * Revision 1.3  1995/11/01  08:30:25  cg
@@ -167,6 +171,10 @@ OBJfundef (node *arg_node, node *arg_info)
         FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
     }
 
+    if (FUNDEF_BODY (arg_node) != NULL) {
+        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+    }
+
     DBUG_RETURN (arg_node);
 }
 
@@ -196,9 +204,8 @@ OBJobjdef (node *arg_node, node *arg_info)
     DBUG_ENTER ("OBJobjdef");
 
     buffer = Malloc (strlen (OBJDEF_NAME (arg_node)) + strlen (OBJDEF_MOD (arg_node))
-                     + 2 * strlen (mod_name_con) + 1);
+                     + strlen (mod_name_con) + 1);
 
-    strcpy (buffer, mod_name_con);
     strcat (buffer, MOD (OBJDEF_MOD (arg_node)));
     strcat (buffer, mod_name_con);
     strcat (buffer, OBJDEF_NAME (arg_node));
@@ -239,19 +246,26 @@ OBJarg (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("OBJarg");
 
+    if (ARG_NEXT (arg_node) != NULL) {
+        ARG_NEXT (arg_node) = Trav (ARG_NEXT (arg_node), arg_info);
+    }
+
     if (ARG_ATTRIB (arg_node) == ST_reference) {
-        new_return_expr = MakeId (ARG_NAME (arg_node), NULL, ST_artificial);
         ret = FUNDEF_RETURN (arg_info);
-        new_return_expr = MakeExprs (new_return_expr, RETURN_EXPRS (ret));
 
-        /*-------------------------------------------------------------*/
-        if (RETURN_EXPRS (ret) == NULL) {
-            ret->nnode += 1;
-            new_return_expr->nnode = 1;
+        if (ret != NULL) {
+            new_return_expr = MakeId (ARG_NAME (arg_node), NULL, ST_artificial);
+            new_return_expr = MakeExprs (new_return_expr, RETURN_EXPRS (ret));
+
+            /*-------------------------------------------------------------*/
+            if (RETURN_EXPRS (ret) == NULL) {
+                ret->nnode += 1;
+                new_return_expr->nnode = 1;
+            }
+            /*-------------------------------------------------------------*/
+
+            RETURN_EXPRS (ret) = new_return_expr;
         }
-        /*-------------------------------------------------------------*/
-
-        RETURN_EXPRS (ret) = new_return_expr;
 
         if (FUNDEF_BASETYPE (arg_info) == T_void) {
             FUNDEF_BASETYPE (arg_info) = ARG_BASETYPE (arg_node);
@@ -270,8 +284,57 @@ OBJarg (node *arg_node, node *arg_info)
         ARG_ATTRIB (arg_node) = ST_was_reference;
     }
 
-    if (ARG_NEXT (arg_node) != NULL) {
-        ARG_NEXT (arg_node) = Trav (ARG_NEXT (arg_node), arg_info);
+    DBUG_RETURN (arg_node);
+}
+
+/*
+ *
+ *  functionname  : OBJap
+ *  arguments     : 1) pointer to N_ap node
+ *                  2) arg_info unused
+ *  description   : For each global object which is needed by the applied
+ *                  function, a new current argument is added,
+ *                  i.e. the global object is made local.
+ *  global vars   : ---
+ *  internal funs : ---
+ *  external funs : MakeId, MakeExprs, Trav
+ *  macros        : DBUG, TREE
+ *
+ *  remarks       :
+ *
+ */
+
+node *
+OBJap (node *arg_node, node *arg_info)
+{
+    nodelist *need_objs;
+    node *obj, *new_arg;
+
+    DBUG_ENTER ("OBJap");
+
+    if (AP_ARGS (arg_node) != NULL) {
+        AP_ARGS (arg_node) = Trav (AP_ARGS (arg_node), NULL);
+    }
+
+    need_objs = FUNDEF_NEEDOBJS (AP_FUNDEF (arg_node));
+
+    while (need_objs != NULL) {
+        obj = NODELIST_NODE (need_objs);
+
+        new_arg = MakeId (OBJDEF_VARNAME (obj), NULL, ST_artificial);
+
+        new_arg = MakeExprs (new_arg, AP_ARGS (arg_node));
+
+        /*-------------------------------------------------------------*/
+        if (AP_ARGS (arg_node) == NULL) {
+            arg_node->nnode += 1;
+            new_arg->nnode = 1;
+        }
+        /*-------------------------------------------------------------*/
+
+        AP_ARGS (arg_node) = new_arg;
+
+        need_objs = NODELIST_NEXT (need_objs);
     }
 
     DBUG_RETURN (arg_node);
@@ -279,7 +342,37 @@ OBJarg (node *arg_node, node *arg_info)
 
 /*
  *
- *  functionname  :
+ *  functionname  : OBJid
+ *  arguments     : 1) pointer to N_id node
+ *                  2) arg_info unused
+ *  description   : For all applied appearances of global objects, the
+ *                  "varname" is used as name instead of the combination
+ *                  object and  module name.
+ *  global vars   : ---
+ *  internal funs : ---
+ *  external funs : ---
+ *  macros        : TREE, DBUG
+ *
+ *  remarks       :
+ *
+ */
+
+node *
+OBJid (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("OBJid");
+
+    if (ID_ATTRIB (arg_node) == ST_global) {
+        ID_NAME (arg_node) = OBJDEF_VARNAME (ID_OBJDEF (arg_node));
+        ID_MOD (arg_node) = NULL;
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/*
+ *
+ *  functionname  : OBJlet
  *  arguments     :
  *  description   :
  *  global vars   :
@@ -291,19 +384,42 @@ OBJarg (node *arg_node, node *arg_info)
  *
  */
 
-/*
- *
- *  functionname  :
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
- *
- *  remarks       :
- *
- */
+node *
+OBJlet (node *arg_node, node *arg_info)
+{
+    node *args, *params;
+    ids *new_ids = NULL, *last_ids;
+
+    DBUG_ENTER ("OBJlet");
+
+    if (LET_EXPR (arg_node) != NULL) {
+        LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
+    }
+
+    if (NODE_TYPE (LET_EXPR (arg_node)) == N_ap) {
+        args = AP_ARGS (LET_EXPR (arg_node));
+        params = FUNDEF_ARGS (AP_FUNDEF (LET_EXPR (arg_node)));
+
+        while (params != NULL) {
+            if (ARG_ATTRIB (params) == ST_was_reference) {
+                if (new_ids == NULL) {
+                    new_ids = MakeIds (ID_NAME (EXPRS_EXPR (args)), NULL, ST_artificial);
+                    last_ids = new_ids;
+                } else {
+                    IDS_NEXT (last_ids)
+                      = MakeIds (ID_NAME (EXPRS_EXPR (args)), NULL, ST_artificial);
+                    last_ids = IDS_NEXT (last_ids);
+                }
+            }
+            args = EXPRS_NEXT (args);
+            params = ARG_NEXT (params);
+        }
+
+        LET_IDS (arg_node) = AppendIdsChain (new_ids, LET_IDS (arg_node));
+    }
+
+    DBUG_RETURN (arg_node);
+}
 
 /*
  *
