@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2000/11/23 16:12:19  nmw
+ * implementation checked and beautyfied
+ *
  * Revision 3.2  2000/11/22 16:22:25  nmw
  * when compiling for a c library, generic functions
  * are not checked anymore to avoid conflicts for the
@@ -3287,22 +3290,31 @@ Typecheck (node *arg_node)
                 if ((FUNDEF_BODY (fun_p->node) != NULL)
                     && (FUNDEF_STATUS (fun_p->node) != ST_imported_mod)
                     && (FUNDEF_STATUS (fun_p->node) != ST_imported_class)
-                    && (FUNDEF_STATUS (fun_p->node) != ST_foldfun)
-                    && (!(((generatelibrary & GENERATELIBRARY_C)
+                    && (FUNDEF_STATUS (fun_p->node) != ST_foldfun)) {
+
+                    if (!(((generatelibrary & GENERATELIBRARY_C)
                            && ((FUNDEF_ATTRIB (fun_p->node) == ST_shp_indep)
                                || (FUNDEF_ATTRIB (fun_p->node) == ST_dim_indep)
-                               || (FUNDEF_ATTRIB (fun_p->node) == ST_generic)))))) {
-                    /*
-                     * When typechecking a module/class implementation, we cannot simply
-                     * start with the main function. Aleternatively, each function that is
-                     * actually implemented in this module and not imported from another
-                     * one, is tagged PLEASE_CHECK and thereby acts as starting point for
-                     * typechecking.
-                     */
-                    fun_p->tag = PLEASE_CHECK;
+                               || (FUNDEF_ATTRIB (fun_p->node) == ST_generic))))) {
+                        /*
+                         * When typechecking a module/class implementation, we cannot
+                         * simply start with the main function. Aleternatively, each
+                         * function that is actually implemented in this module and not
+                         * imported from another one, is tagged PLEASE_CHECK and thereby
+                         * acts as starting point for typechecking.
+                         */
+                        fun_p->tag = PLEASE_CHECK;
 
-                    DBUG_PRINT ("CHECK", ("function %s has tag :%s", fun_p->id,
-                                          CHECK_NAME (fun_p->tag)));
+                        DBUG_PRINT ("CHECK", ("function %s has tag :%s", fun_p->id,
+                                              CHECK_NAME (fun_p->tag)));
+                    } else {
+                        fun_p->tag = NOT_CHECKED;
+                        /*
+                         * generic functions in modules compiled for a c-library must not
+                         * be checked. There may be a conflict between specialized and
+                         * generic versions the typchechecker cannot resolve.
+                         */
+                    }
                 }
             }
 
