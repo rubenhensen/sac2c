@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.62  1995/05/22 15:51:12  sbs
+ * Revision 1.63  1995/05/22 18:08:19  sbs
+ * __trace_buffer inswerted
+ *
+ * Revision 1.62  1995/05/22  15:51:12  sbs
  * __trace_mem_cnt inserted
  *
  * Revision 1.61  1995/05/22  15:09:02  sbs
@@ -933,6 +936,7 @@ Print (node *arg_node)
     if (show_icm == 0) {
         if (traceflag != 0) {
             fprintf (outfile, "#include <stdio.h>\n");
+            fprintf (outfile, "\nchar __trace_buffer[128];\n\n");
             if (traceflag & TRACE_MEM) {
                 fprintf (outfile, "#define TRACE_MEM\n");
                 fprintf (outfile, "\nint __trace_mem_cnt=0;\n\n");
