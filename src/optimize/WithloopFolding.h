@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 1.10  1998/04/01 07:45:57  srs
+ * added new struct definitions, macros and export declarations
+ *
  * Revision 1.9  1998/03/22 18:15:53  srs
  * moved typedefs and macros from WithloopFolding.c,
  * moved some export declarations to WLT.h, WLI.h, WLF.h
@@ -70,20 +73,43 @@ typedef struct INDEX_INFO {
                        If arg_no is 0, prf is undefined */
 } index_info;
 
+/* internal representation of WL generators on which the intersection
+   creation is based. */
+typedef struct INTERN_GEN {
+    int shape;
+
+    int *l, *u;
+    int *step, *width;
+
+    node *code;
+
+    struct INTERN_GEN *next;
+} intern_gen;
+
 /******************************************************************************
  *
  * exported functions
  *
  ******************************************************************************/
 
+/* general functions */
 extern node *WithloopFolding (node *, node *);
+extern int LocateIndexVar (node *idn, node *wln);
+extern node *CreateVardec (char *name, types *type, node **vardecs);
+extern node *SearchWL (int id_varno, node *start_search, int *valid);
 
+/* index_info related functions */
 extern void DbugIndexInfo (index_info *iinfo);
 extern index_info *CreateIndex (int vector);
 extern index_info *DuplicateIndexInfo (index_info *iinfo);
 extern index_info *ValidLocalId (node *idn);
 
-extern int LocateIndexVar (node *idn, node *wln);
+/* intern_gen related functions */
+extern intern_gen *AppendInternGen (intern_gen *, int, node *, int);
+extern intern_gen *Tree2InternGen (node *wln);
+extern node *InternGen2Tree (node *wln, intern_gen *ig);
+extern int NormalizeInternGen (intern_gen *ig);
+extern void ArrayST2ArrayInt (node *arrayn, int **iarray, int shape);
 
 /******************************************************************************
  *
@@ -91,15 +117,28 @@ extern int LocateIndexVar (node *idn, node *wln);
  *
  ******************************************************************************/
 
-#define INDEX(n) ((index_info *)ASSIGN_INDEX (n))
+/* general macros */
 #define DEF_MASK 0
 #define USE_MASK 1
 
+/* index_info related macros */
+#define INDEX(n) ((index_info *)ASSIGN_INDEX (n))
 #define FREE_INDEX(tmp)                                                                  \
     {                                                                                    \
         FREE (tmp->permutation);                                                         \
         FREE (tmp->last);                                                                \
         FREE (tmp->const_arg);                                                           \
+        FREE (tmp);                                                                      \
+        tmp = NULL;                                                                      \
+    }
+
+/* intern_gen related macros*/
+#define FREE_INTERN_GEN(tmp)                                                             \
+    {                                                                                    \
+        FREE (tmp->l);                                                                   \
+        FREE (tmp->u);                                                                   \
+        FREE (tmp->step);                                                                \
+        FREE (tmp->width);                                                               \
         FREE (tmp);                                                                      \
         tmp = NULL;                                                                      \
     }
