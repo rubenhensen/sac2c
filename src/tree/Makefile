@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.7  2000/01/28 12:46:27  dkr
+# LookUpTable.o added
+#
 # Revision 1.6  2000/01/25 13:52:40  dkr
 # make deps done
 #
@@ -42,7 +45,7 @@ INCS=-I../../inc -I../tree -I../print -I../flatten -I../scanparse -I../typecheck
      -I../psi-opt -I../objects -I../concurrent -I../Old2NewWith \
      -I../multithread
 
-all: tree.o tree_basic.o tree_compound.o free.o traverse.o DupTree.o \
+all: tree.o tree_basic.o tree_compound.o free.o traverse.o DupTree.o LookUpTable.o \
      DataFlowMask.o DataFlowMaskUtils.o scheduling.o
 
 %.o: %.c
