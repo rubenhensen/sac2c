@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.10  1998/04/30 13:56:13  dkr
+# added path to INCS
+#
 # Revision 1.9  1998/04/25 13:17:53  dkr
 # make deps done
 #
@@ -37,7 +40,7 @@ CC        := gcc
 CCFLAGS   := -ansi -Wall -g
 CFLAGS    := -D__EXTENSIONS__
 
-INCS=-I../global -I../../inc -I../optimize -I../typecheck -I../refcount
+INCS=-I../global -I../../inc -I../optimize -I../typecheck -I../refcount -I../print
 
 all: spmdregions.o
 
