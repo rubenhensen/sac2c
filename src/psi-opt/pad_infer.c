@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.3  2000/07/13 15:25:05  mab
+ * added static declaration
+ * added APinfer
+ *
  * Revision 1.2  2000/07/13 12:08:58  cg
  * Initial version of inference algorithm identical to the standalone
  * implementation developed for PDPTA'2000.
@@ -12,41 +16,53 @@
 
 /*****************************************************************************
  *
- * file:
+ * file: pad_infer.c
  *
- * prefix:
+ * prefix: API
  *
  * description:
  *
- *
+ *   This compiler module infers new shapes for array padding.
  *
  *
  *
  *
  *****************************************************************************/
 
-#include "pad_infer.h"
+#include "dbug.h"
 
-#include <stdio.h>
+#include "types.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
+
+#include "pad_infer.h"
+#include "pad_info.h"
 
 #define DIM 3
 #define ACCESS 6
 
-#ifdef PRINTALL
-#define PRINT
-#endif
-
-/******************************************************************************
+/*****************************************************************************
  *
  * function:
+ *   void APinfer ()
  *
+ * description:
+ *   main function for infering new shapes for array padding
  *
- * description
- *
- *
- *
- *
- ******************************************************************************/
+ *****************************************************************************/
+
+void
+APinfer ()
+{
+
+    DBUG_ENTER ("APinfer");
+
+    DBUG_PRINT ("API", ("Array Padding: infering new shapes..."));
+
+    /* to be done */
+
+    DBUG_VOID_RETURN;
+}
 
 /******************************************************************************
  *
@@ -116,7 +132,7 @@ typedef struct {
 /******************************************************************************
  *
  * function:
- *   void ComputeCache(cache_t *cache, cache_spec_t *cache_spec, int el_size)
+ *   static void ComputeCache(cache_t *cache, cache_spec_t *cache_spec, int el_size)
  *
  * description
  *
@@ -125,7 +141,7 @@ typedef struct {
  *
  ******************************************************************************/
 
-void
+static void
 ComputeCache (cache_t *cache, cache_spec_t *cache_spec, int el_size)
 {
     unsigned int tmp, cnt;
@@ -160,7 +176,7 @@ ComputeCache (cache_t *cache, cache_spec_t *cache_spec, int el_size)
 /******************************************************************************
  *
  * function:
- *   void PrintCache(cache_t *cache)
+ *   static void PrintCache(cache_t *cache)
  *
  * description
  *
@@ -169,7 +185,7 @@ ComputeCache (cache_t *cache, cache_spec_t *cache_spec, int el_size)
  *
  ******************************************************************************/
 
-void
+static void
 PrintCache (cache_t *cache)
 {
     printf (" assoc       :  %d\n", cache->assoc);
@@ -193,7 +209,7 @@ PrintCache (cache_t *cache)
  *
  ******************************************************************************/
 
-void
+static void
 SetVect (int *pv, int val)
 {
     int i;
@@ -203,7 +219,7 @@ SetVect (int *pv, int val)
     }
 }
 
-void
+static void
 CopyVect (int *new, int *old)
 {
     int i;
@@ -213,7 +229,7 @@ CopyVect (int *new, int *old)
     }
 }
 
-void
+static void
 AddVect (int *res, int *a, int *b)
 {
     int i;
@@ -223,7 +239,7 @@ AddVect (int *res, int *a, int *b)
     }
 }
 
-void
+static void
 PrintVect (int *v)
 {
     int j;
@@ -238,7 +254,7 @@ PrintVect (int *v)
 /******************************************************************************
  *
  * function:
- *   void PrintCacheUtil(cache_util_t cache_util[])
+ *   static void PrintCacheUtil(cache_util_t cache_util[])
  *
  * description
  *
@@ -247,7 +263,7 @@ PrintVect (int *v)
  *
  ******************************************************************************/
 
-void
+static void
 PrintCacheUtil (cache_util_t cache_util[])
 {
     int a;
@@ -266,7 +282,8 @@ PrintCacheUtil (cache_util_t cache_util[])
 /******************************************************************************
  *
  * function:
- *   void InitCacheUtil( cache_util_t *cache_util, int access[ACCESS][DIM])
+ *   static cache_util_t* InitCacheUtil( cache_util_t *cache_util, int
+ *access[ACCESS][DIM])
  *
  * description
  *
@@ -275,7 +292,7 @@ PrintCacheUtil (cache_util_t cache_util[])
  *
  ******************************************************************************/
 
-cache_util_t *
+static cache_util_t *
 InitCacheUtil (cache_util_t *cache_util, int access[][DIM])
 {
     int a;
@@ -299,7 +316,7 @@ InitCacheUtil (cache_util_t *cache_util, int access[][DIM])
 /******************************************************************************
  *
  * function:
- *   int IsSpatialReuseConflict(cache_util_t *cache_util, cache_t cache,
+ *   static int IsSpatialReuseConflict(cache_util_t *cache_util, cache_t cache,
  *                              int a, int b)
  *
  * description
@@ -309,7 +326,7 @@ InitCacheUtil (cache_util_t *cache_util, int access[][DIM])
  *
  ******************************************************************************/
 
-int
+static int
 IsSpatialReuseConflict (cache_util_t *cache_util, cache_t *cache, int a, int b)
 {
     int is_conflict = 0;
@@ -330,7 +347,7 @@ IsSpatialReuseConflict (cache_util_t *cache_util, cache_t *cache, int a, int b)
 /******************************************************************************
  *
  * function:
- *   int IsPotentialTemporalReuse(cache_util_t *cache_util, cache_t cache,
+ *   static int IsPotentialTemporalReuse(cache_util_t *cache_util, cache_t cache,
  *                                int a)
  *
  * description
@@ -340,7 +357,7 @@ IsSpatialReuseConflict (cache_util_t *cache_util, cache_t *cache, int a, int b)
  *
  ******************************************************************************/
 
-int
+static int
 IsPotentialTemporalReuse (cache_util_t *cache_util, cache_t *cache, int a)
 {
     int is_reuse = 0;
@@ -356,7 +373,7 @@ IsPotentialTemporalReuse (cache_util_t *cache_util, cache_t *cache, int a)
 /******************************************************************************
  *
  * function:
- *   int IsTemporalReuseConflict(cache_util_t *cache_util, cache_t cache,
+ *   static int IsTemporalReuseConflict(cache_util_t *cache_util, cache_t cache,
  *                               int a, int b)
  *
  * description
@@ -367,7 +384,7 @@ IsPotentialTemporalReuse (cache_util_t *cache_util, cache_t *cache, int a)
  *
  ******************************************************************************/
 
-int
+static int
 IsTemporalReuseConflict (cache_util_t *cache_util, cache_t *cache, int a, int b)
 {
     int is_conflict = 0;
@@ -391,7 +408,7 @@ IsTemporalReuseConflict (cache_util_t *cache_util, cache_t *cache, int a, int b)
 /******************************************************************************
  *
  * function:
- *   cache_util_t *ComputeAccessData( cache_util_t *cache_util,
+ *   static cache_util_t *ComputeAccessData( cache_util_t *cache_util,
  *                                    cache_t *cache, int *shp)
  *
  * description
@@ -417,7 +434,7 @@ IsTemporalReuseConflict (cache_util_t *cache_util, cache_t *cache, int a, int b)
  *
  ******************************************************************************/
 
-cache_util_t *
+static cache_util_t *
 ComputeAccessData (cache_util_t *cache_util, cache_t *cache, int *shp)
 {
     int offset, i, a;
@@ -445,7 +462,7 @@ ComputeAccessData (cache_util_t *cache_util, cache_t *cache, int *shp)
 /******************************************************************************
  *
  * function:
- *   cache_util_t *ComputeSpatialReuse( cache_util_t *cache_util, cache_t *cache)
+ *   static cache_util_t *ComputeSpatialReuse( cache_util_t *cache_util, cache_t *cache)
  *
  * description
  *
@@ -456,7 +473,7 @@ ComputeAccessData (cache_util_t *cache_util, cache_t *cache, int *shp)
  *
  ******************************************************************************/
 
-cache_util_t *
+static cache_util_t *
 ComputeSpatialReuse (cache_util_t *cache_util, cache_t *cache)
 {
     int a, i, d, conflicts, minpaddim, maxpaddim;
@@ -510,7 +527,7 @@ ComputeSpatialReuse (cache_util_t *cache_util, cache_t *cache)
  *
  ******************************************************************************/
 
-int
+static int
 ComputeTemporalMinpaddim (cache_util_t *cache_util, int a, int i, int current_minpaddim)
 {
     int d, min1, min2, res, h;
@@ -562,7 +579,7 @@ ComputeTemporalMinpaddim (cache_util_t *cache_util, int a, int i, int current_mi
 /******************************************************************************
  *
  * function:
- *   int ComputeTemporalMaxpaddim(cache_util_t *cache_util, int a)
+ *   static int ComputeTemporalMaxpaddim(cache_util_t *cache_util, int a)
  *
  * description
  *
@@ -572,7 +589,7 @@ ComputeTemporalMinpaddim (cache_util_t *cache_util, int a, int i, int current_mi
  *
  ******************************************************************************/
 
-int
+static int
 ComputeTemporalMaxpaddim (cache_util_t *cache_util, int a)
 {
     int d;
@@ -602,7 +619,7 @@ ComputeTemporalMaxpaddim (cache_util_t *cache_util, int a)
  *
  ******************************************************************************/
 
-cache_util_t *
+static cache_util_t *
 ComputeTemporalReuse (cache_util_t *cache_util, cache_t *cache)
 {
     int a, i, conflicts, minpaddim;
@@ -654,7 +671,7 @@ ComputeTemporalReuse (cache_util_t *cache_util, cache_t *cache)
 /******************************************************************************
  *
  * function:
- *   int SelectPaddim(int min, int max, int *shp)
+ *   static int SelectPaddim(int min, int max, int *shp)
  *
  * description
  *
@@ -666,7 +683,7 @@ ComputeTemporalReuse (cache_util_t *cache_util, cache_t *cache)
  *
  ******************************************************************************/
 
-int
+static int
 SelectPaddim (int min, int max, int *shp)
 {
     int d, res;
@@ -685,7 +702,7 @@ SelectPaddim (int min, int max, int *shp)
 /******************************************************************************
  *
  * function:
- *   int ChoosePaddimForTemporalReuse(cache_util_t *cache_util,
+ *   static int ChoosePaddimForTemporalReuse(cache_util_t *cache_util,
  *                                    cache_t *cache, int *shp)
  *
  * description
@@ -695,7 +712,7 @@ SelectPaddim (int min, int max, int *shp)
  *
  ******************************************************************************/
 
-int
+static int
 ChoosePaddimForTemporalReuse (cache_util_t *cache_util, cache_t *cache, int *shp)
 {
     int res, a, minpaddim, maxpaddim, d;
@@ -737,7 +754,7 @@ ChoosePaddimForTemporalReuse (cache_util_t *cache_util, cache_t *cache, int *shp
 /******************************************************************************
  *
  * function:
- *   int ChoosePaddimForSpatialReuse(cache_util_t *cache_util,
+ *   static int ChoosePaddimForSpatialReuse(cache_util_t *cache_util,
  *                                   cache_t *cache, int *shp)
  *
  * description
@@ -747,7 +764,7 @@ ChoosePaddimForTemporalReuse (cache_util_t *cache_util, cache_t *cache, int *shp
  *
  ******************************************************************************/
 
-int
+static int
 ChoosePaddimForSpatialReuse (cache_util_t *cache_util, cache_t *cache, int *shp)
 {
     int res, a, minpaddim, maxpaddim, d;
@@ -795,7 +812,7 @@ ChoosePaddimForSpatialReuse (cache_util_t *cache_util, cache_t *cache, int *shp)
  *
  ******************************************************************************/
 
-void
+static void
 ComputePadding (cache_spec_t *cache_spec, int dim, int *pv_sr, int *pv_tr, int *shp,
                 int el_size, int access[ACCESS][DIM])
 {
@@ -812,10 +829,7 @@ ComputePadding (cache_spec_t *cache_spec, int dim, int *pv_sr, int *pv_tr, int *
      */
     ComputeCache (&cache, cache_spec, el_size);
 
-#ifdef PRINTALL
-    PrintCache (&cache);
-    printf ("\n\n");
-#endif
+    DBUG_EXECUTE ("API", PrintCache (&cache); printf ("\n\n"););
 
     cache_util = InitCacheUtil (cache_util, access);
 
@@ -828,14 +842,10 @@ ComputePadding (cache_spec_t *cache_spec, int dim, int *pv_sr, int *pv_tr, int *
         cache_util = ComputeSpatialReuse (cache_util, &cache);
         cache_util = ComputeTemporalReuse (cache_util, &cache);
 
-#ifdef PRINTALL
-        printf ("Current shape :");
-        PrintVect (actual_shp);
-        printf ("\n\n");
+        DBUG_EXECUTE ("API", printf ("Current shape :"); PrintVect (actual_shp);
+                      printf ("\n\n");
 
-        PrintCacheUtil (cache_util);
-        printf ("\n\n");
-#endif
+                      PrintCacheUtil (cache_util); printf ("\n\n"););
 
         paddim = ChoosePaddimForSpatialReuse (cache_util, &cache, actual_shp);
 
@@ -869,7 +879,7 @@ ComputePadding (cache_spec_t *cache_spec, int dim, int *pv_sr, int *pv_tr, int *
 /******************************************************************************
  *
  * function:
- *   int ComputePaddingOverhead(int *orig_shape, int *padding)
+ *   static int ComputePaddingOverhead(int *orig_shape, int *padding)
  *
  * description
  *
@@ -879,7 +889,7 @@ ComputePadding (cache_spec_t *cache_spec, int dim, int *pv_sr, int *pv_tr, int *
  *
  ******************************************************************************/
 
-int
+static int
 ComputePaddingOverhead (int *orig_shape, int *padding)
 {
     int i, orig_size, padding_size, overhead;
@@ -904,7 +914,7 @@ ComputePaddingOverhead (int *orig_shape, int *padding)
 /******************************************************************************
  *
  * function:
- *   int *SelectRecommendedPadding(int *nopad,
+ *   static int *SelectRecommendedPadding(int *nopad,
  *                                 int *pv_sr_L1, int *pv_sr_L2,
  *                                 int *pv_tr_L1, int *pv_tr_L2,
  *                                 int threshold)
@@ -916,7 +926,7 @@ ComputePaddingOverhead (int *orig_shape, int *padding)
  *
  ******************************************************************************/
 
-int *
+static int *
 SelectRecommendedPadding (int *shp, int *nopad, int *pv_sr_L1, int *pv_sr_L2,
                           int *pv_tr_L1, int *pv_tr_L2, int threshold)
 {
@@ -940,7 +950,7 @@ SelectRecommendedPadding (int *shp, int *nopad, int *pv_sr_L1, int *pv_sr_L2,
 /******************************************************************************
  *
  * function:
- *   int main()
+ *   static int main()
  *
  * description
  *
@@ -951,7 +961,7 @@ SelectRecommendedPadding (int *shp, int *nopad, int *pv_sr_L1, int *pv_sr_L2,
 
 #if 0
 
-int main()
+static int main()
 {
   int i, j;
   int pv_sr_L1[DIM], pv_sr_L2[DIM], pv_tr_L1[DIM], pv_tr_L2[DIM];
@@ -989,38 +999,42 @@ int main()
     CopyVect(pv_sr_L2, pv_tr_L1);
     
     ComputePadding( &(cache[1]), DIM, pv_sr_L2, pv_tr_L2, shp, 8, access);
+  
+ DBUG_EXECUTE("API",      
+     
+	      printf("Original shape                       :  ");
+	      PrintVect(shp);
+	      printf("\n");
+	      
+	      printf("L1 Padding vector for spatial reuse  :  ");
+	      PrintVect(pv_sr_L1);
+	      printf("    Overhead: <= %4d%%\n", ComputePaddingOverhead(shp, pv_sr_L1));
+	      
+	      printf("L1 Padding vector for temporal reuse :  ");
+	      PrintVect(pv_tr_L1);
+	      printf("    Overhead: <= %4d%%\n", ComputePaddingOverhead(shp, pv_tr_L1));
+	      
+	      printf("L2 Padding vector for spatial reuse  :  ");
+	      PrintVect(pv_sr_L2);
+	      printf("    Overhead: <= %4d%%\n", ComputePaddingOverhead(shp, pv_sr_L2));
+	      
+	      printf("L2 Padding vector for temporal reuse :  ");
+	      PrintVect(pv_tr_L2);
+	      printf("    Overhead: <= %4d%%\n", ComputePaddingOverhead(shp, pv_tr_L2));
+	      
+	      printf("Recommended padding vector           :  ");
+	      recommended_pv = SelectRecommendedPadding(shp, nopad,
+							pv_sr_L1, pv_sr_L2,
+							pv_tr_L1, pv_tr_L2,
+							overhead_threshold);
+	      
+	      PrintVect(recommended_pv);
+	      printf("    Overhead: <= %4d%%\n", ComputePaddingOverhead(shp, recommended_pv));
+	      
+	      printf("\n\n============================================================\n\n\n");
+	      );
 
-#ifdef PRINT      
-    printf("Original shape                       :  ");
-    PrintVect(shp);
-    printf("\n");
-
-    printf("L1 Padding vector for spatial reuse  :  ");
-    PrintVect(pv_sr_L1);
-    printf("    Overhead: <= %4d%%\n", ComputePaddingOverhead(shp, pv_sr_L1));
-    
-    printf("L1 Padding vector for temporal reuse :  ");
-    PrintVect(pv_tr_L1);
-    printf("    Overhead: <= %4d%%\n", ComputePaddingOverhead(shp, pv_tr_L1));
-
-    printf("L2 Padding vector for spatial reuse  :  ");
-    PrintVect(pv_sr_L2);
-    printf("    Overhead: <= %4d%%\n", ComputePaddingOverhead(shp, pv_sr_L2));
-    
-    printf("L2 Padding vector for temporal reuse :  ");
-    PrintVect(pv_tr_L2);
-    printf("    Overhead: <= %4d%%\n", ComputePaddingOverhead(shp, pv_tr_L2));
-
-    printf("Recommended padding vector           :  ");
-    recommended_pv = SelectRecommendedPadding(shp, nopad,
-                                              pv_sr_L1, pv_sr_L2,
-                                              pv_tr_L1, pv_tr_L2,
-                                              overhead_threshold);
-    
-    PrintVect(recommended_pv);
-    printf("    Overhead: <= %4d%%\n", ComputePaddingOverhead(shp, recommended_pv));
-
-    printf("\n\n============================================================\n\n\n");
+    /*
 #else
     printf("#elif N==%d\n", i);
     printf("#define PAD ");
@@ -1030,7 +1044,7 @@ int main()
                                        overhead_threshold));    
     printf("\n");
 #endif
-    
+    */    
   }
   
   return(0);
