@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.66  2001/03/30 13:10:07  dkr
+ * N_fundef definition modified, FUNDEF_USED added
+ *
  * Revision 3.65  2001/03/29 16:30:03  nmw
  * INFO_DUP_ macros added, comments for scheduling modified
  *
@@ -949,46 +952,45 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  ***  permanent attributes:
  ***
  ***    char*           NAME
- ***    char*           MOD      (O)
- ***    char*           LINKMOD  (O)
+ ***    char*           MOD
+ ***    char*           LINKMOD
  ***    types*          TYPES
  ***    statustype      STATUS
- ***    statustype      ATTRIB        (?? -> multithread !!)
- ***                                  FLAGS IS CHANGED IN multithread!
+ ***    statustype      ATTRIB
  ***    bool            INLINE
  ***    int             FUNNO
- ***    node*           PRAGMA   (O)   (N_pragma)
+ ***    node*           PRAGMA      (N_pragma)
+ ***
+ ***  permanent attributes for ST_condfun, ST_dofun, ST_whilefun fundefs only:
+ ***
+ ***    int             USED        [ref. count]  (lac2fun -> )
+ ***    nodelist*       EXT_ASSIGNS (N_assign's)  (lac2fun -> )
+ ***    node*           INT_ASSIGN  (N_assign)    (lac2fun -> )
  ***
  ***  temporary attributes:
  ***
- ***    node*           SIB      (O)   (N_sib)    (readsib !!)
- ***    node*           RETURN         (N_return) (typecheck -> compile !!)
- ***    nodelist*       NEEDOBJS (O)              (import -> )
- ***                                              ( -> analysis -> )
- ***                                              ( -> write-SIB -> )
- ***                                              ( -> obj-handling -> )
- ***                                              ( -> liftspmd !!)
- ***    node*           ICM            (N_icm)    (compile -> print )
+ ***    node*           SIB         (N_sib)       (readsib !!)
+ ***    node*           RETURN      (N_return)    (typecheck -> compile !!)
+ ***    nodelist*       NEEDOBJS                  (import -> )
+ ***                                               ( -> analysis -> )
+ ***                                               ( -> write-SIB -> )
+ ***                                               ( -> obj-handling -> )
+ ***                                               ( -> liftspmd !!)
+ ***    node*           ICM         (N_icm)       (compile -> print )
  ***    int             VARNO                     (optimize -> )
  ***    long*           MASK[x]                   (optimize -> )
  ***    int             INLREC                    (inline !!)
- ***    bool            EXPORT                    ( -> dfr !!)
+ ***    bool            EXPORT                    (dfr !!)
  ***
- ***    DFMmask_base_t  DFM_BASE            (lac2fun/rc -> spmd -> compile -> )
+ ***    DFMmask_base_t  DFM_BASE             (lac2fun/rc -> spmd -> compile -> )
  ***
- ***    node*           FUNDEC_DEF     (N_fundef) (checkdec -> writesib !!)
- ***
- ***  temporary attributes for ST_condfun, ST_dofun, ST_whilefun fundefs only:
- ***
- ***    node*           EXT_ASSIGN                (lac2fun -> )
- ***    node*           INT_ASSIGN                (lac2fun -> )
+ ***    node*           FUNDEC_DEF  (N_fundef)    (checkdec -> writesib !!)
  ***
  ***  temporary attributes for ST_spmdfun fundefs only:
  ***
  ***    node*           LIFTEDFROM  (N_fundef)    (liftspmd -> compile -> )
  ***    node*           WORKER      ( ?? )
- ***    node*           COMPANION   (N_fundef)    (rfin and mtfin)
- ***                                      FLAG WILL BE CLEANED before mt-phases!
+ ***    node*           COMPANION   (N_fundef)    (rfin, mtfin -> )
  ***/
 
 /*
@@ -1001,9 +1003,9 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  *   ST_classfun       : class conversion function
  *   ST_Cfun           : function implemented in C
  *   ST_foldfun        : dummy function containing fold code for with-loop
- *   ST_condfun        : function representing an if-else-clause
- *   ST_dofun          : function representing a do-loop
- *   ST_whilefun       : function representing a while-loop
+ *   ST_condfun        : function representing an if-else-clause (LaC function)
+ *   ST_dofun          : function representing a do-loop (LaC function)
+ *   ST_whilefun       : function representing a while-loop (LaC function)
  *
  * before multithreading:
  * ATTRIB:
@@ -1037,44 +1039,51 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  * in order to make the code of this function available. If LINKMOD is
  * NULL, then link with the module given by MOD.
  *
- * If the fundef is a definition of a LAC-dummy-function, LAC_LET is a link to
- * the (unambiguous!) let-node outside of the fundef-body containing a call of
- * this function.
+ * If the fundef is a definition of a special LaC function, USED counts
+ * the number of times this function is referenced outside its own body.
  */
 
 extern node *MakeFundef (char *name, char *mod, types *types, node *args, node *body,
                          node *next);
 
-#define FUNDEF_TYPES(n) (n->info.types)
-#define FUNDEF_NAME(n) (n->info.types->id)
-#define FUNDEF_MOD(n) (n->info.types->id_mod)
-#define FUNDEF_LINKMOD(n) (n->info.types->id_cmod)
-#define FUNDEF_STATUS(n) (n->info.types->status)
-#define FUNDEF_ATTRIB(n) (n->info.types->attrib)
 #define FUNDEF_BODY(n) (n->node[0])
 #define FUNDEF_ARGS(n) (n->node[2])
 #define FUNDEF_NEXT(n) (n->node[1])
-#define FUNDEF_FUNNO(n) (n->counter)
+#define FUNDEF_NAME(n) (n->info.types->id)
+#define FUNDEF_MOD(n) (n->info.types->id_mod)
+#define FUNDEF_LINKMOD(n) (n->info.types->id_cmod)
+#define FUNDEF_TYPES(n) (n->info.types)
+#define FUNDEF_STATUS(n) (n->info.types->status)
+#define FUNDEF_ATTRIB(n) (n->info.types->attrib)
 #define FUNDEF_INLINE(n) (n->flag)
+#define FUNDEF_FUNNO(n) (n->counter)
 #define FUNDEF_PRAGMA(n) (n->node[4])
-#define FUNDEF_RETURN(n) (n->node[3])
+
 #define FUNDEF_SIB(n) (n->node[3])
-#define FUNDEF_ICM(n) (n->node[5])
+#define FUNDEF_RETURN(n) (n->node[3])
 #define FUNDEC_DEF(n) (n->node[3])
 #define FUNDEF_NEEDOBJS(n) ((nodelist *)(n->dfmask[6]))
 #define FUNDEF_VARNO(n) (n->varno)
-#define FUNDEF_MASK(n, x) (n->mask[x])
 #define FUNDEF_INLREC(n) (n->refcnt)
-#define FUNDEF_EXPORT(n) (n->int_data)
+#define FUNDEF_EXPORT(n) (n->refcnt)
+#define FUNDEF_MASK(n, x) (n->mask[x])
 #define FUNDEF_DFM_BASE(n) ((DFMmask_base_t) (n->dfmask[0]))
+#define FUNDEF_ICM(n) (n->node[5])
+
+/* LaC functions */
+#define FUNDEF_USED(n) (n->int_data)
+#define FUNDEF_EXT_ASSIGN(n) ((nodelist *)(n->dfmask[1]))
+#define FUNDEF_INT_ASSIGN(n) ((node *)(n->dfmask[2]))
+
+/* concurrent: ST_spmdfun */
+#define FUNDEF_LIFTEDFROM(n) ((node *)(n->dfmask[1]))
+#define FUNDEF_WORKER(n) ((node *)(n->dfmask[2]))
+#define FUNDEF_COMPANION(n) ((node *)(n->dfmask[3]))
+
+/* multithreading: ST_spmdfun */
 #define FUNDEF_IDENTIFIER(n) (n->int_data)
 #define FUNDEF_MT2USE(n) (n->dfmask[1])
 #define FUNDEF_MT2DEF(n) (n->dfmask[2])
-#define FUNDEF_LIFTEDFROM(n) ((node *)(n->dfmask[3]))
-#define FUNDEF_WORKER(n) ((node *)(n->dfmask[4]))
-#define FUNDEF_COMPANION(n) ((node *)(n->dfmask[5]))
-#define FUNDEF_EXT_ASSIGN(n) ((node *)(n->dfmask[3]))
-#define FUNDEF_INT_ASSIGN(n) ((node *)(n->dfmask[4]))
 
 /*--------------------------------------------------------------------------*/
 
