@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.4  2004/11/23 12:34:52  khf
+  added DUP traversal
+
   Revision 1.3  2004/11/23 12:31:28  sah
   chnages ;)
 
@@ -101,7 +104,8 @@
 	   error TravError
 	 include the include file needed for the traversal
     -->
-    <traversal id="CF" name="Constant Folding" default="sons" include="SSAConstantFolding.g" />
+    <traversal id="CF" name="Constant Folding" default="sons" include="SSAConstantFolding.h" />
+    <traversal id="DUP" name="Tree duplication" default="user" include="DupTree.h" />
   </traversals>
   <nodesets>
     <nodeset name="Expr">
