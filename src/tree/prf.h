@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2000/11/02 13:51:55  dkr
+ * dito
+ *
  * Revision 1.2  2000/10/16 13:55:41  dkr
  * order of array-prfs changed
  *
@@ -20,7 +23,7 @@
 
 #define FIRST_LEGAL_PRF F_toi
 
-#define LAST_LEGAL_PRF F_div_AxA
+#define LAST_LEGAL_PRF F_rotate
 
 /* ... */
 
