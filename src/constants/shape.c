@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.22  2004/11/27 00:14:41  sbs
+ * some further renamings
+ *
  * Revision 1.21  2004/11/26 15:48:40  jhb
  * compile
  *
@@ -164,7 +167,7 @@ SHmakeShape (int dim)
 
 /** <!--********************************************************************-->
  *
- * @fn shape *SHCreateShape( int dim, ...)
+ * @fn shape *SHcreateShape( int dim, ...)
  *
  * @brief creates a new shape-structure of size dim which is initialized by
  *        the given argument values
@@ -177,7 +180,7 @@ SHmakeShape (int dim)
  ******************************************************************************/
 
 shape *
-SHCreateShape (int dim, ...)
+SHcreateShape (int dim, ...)
 {
     va_list Argp;
     int i;
@@ -286,11 +289,11 @@ SHfreeShape (shape *shp)
 }
 
 void
-SHSerializeShape (FILE *file, shape *shp)
+SHserializeShape (FILE *file, shape *shp)
 {
     int cnt;
 
-    DBUG_ENTER ("SHSerializeShape");
+    DBUG_ENTER ("SHserializeShape");
 
     fprintf (file, "SHCreateShape( %d", SHAPE_DIM (shp));
 
@@ -363,7 +366,7 @@ SHgetUnrLen (shape *shp)
 
 /** <!--********************************************************************-->
  *
- * @fn int SHSubarrayDim( shape *shp, int n)
+ * @fn int SHsubarrayDim( shape *shp, int n)
  *
  * @brief returns the dimension of each subarray if an array of shape shp
  *        would be broken up in n subarrays.
@@ -376,11 +379,11 @@ SHgetUnrLen (shape *shp)
  ******************************************************************************/
 
 int
-SHSubarrayDim (shape *shp, int n)
+SHsubarrayDim (shape *shp, int n)
 {
     int i, length;
 
-    DBUG_ENTER ("SHSubarrayDim");
+    DBUG_ENTER ("SHsubarrayDim");
     DBUG_ASSERT ((shp != NULL), ("SHSubarrayDim called with NULL shape!"));
 
     length = 1;
@@ -445,7 +448,7 @@ SHcompareShapes (shape *a, shape *b)
 
 /** <!--********************************************************************-->
  *
- * @fn shape *SHAppendShapes( shape *a, shape *b)
+ * @fn shape *SHappendShapes( shape *a, shape *b)
  *
  * @brief appends two given shapes a and b into a new shape.
  *        Note here that both argument shapes are read only! They are neither
@@ -454,7 +457,7 @@ SHcompareShapes (shape *a, shape *b)
  ******************************************************************************/
 
 shape *
-SHAppendShapes (shape *a, shape *b)
+SHappendShapes (shape *a, shape *b)
 {
     int m, n, i, j;
     shape *res;
@@ -478,7 +481,7 @@ SHAppendShapes (shape *a, shape *b)
 
 /** <!--********************************************************************-->
  *
- * @fn shape *SHDropFromShape( int n, shape *a)
+ * @fn shape *SHdropFromShape( int n, shape *a)
  *
  * @brief creates a new shape from a by dropping n elements.
  *        If n < 0, the the last n elements will be dropped!
@@ -487,12 +490,12 @@ SHAppendShapes (shape *a, shape *b)
  ******************************************************************************/
 
 shape *
-SHDropFromShape (int n, shape *a)
+SHdropFromShape (int n, shape *a)
 {
     int m, i;
     shape *res;
 
-    DBUG_ENTER ("SHDropFromShape");
+    DBUG_ENTER ("SHdropFromShape");
     DBUG_ASSERT ((a != NULL), ("SHDropFromShape called with NULL arg!"));
 
     m = SHAPE_DIM (a);
@@ -515,7 +518,7 @@ SHDropFromShape (int n, shape *a)
 
 /** <!--********************************************************************-->
  *
- * @fn shape *SHTakeFromShape( int n, shape *a)
+ * @fn shape *SHtakeFromShape( int n, shape *a)
  *
  * @brief creates a new shape from a by taking n elements.
  *        If n < 0, the the last n elements will be taken!
@@ -524,7 +527,7 @@ SHDropFromShape (int n, shape *a)
  ******************************************************************************/
 
 shape *
-SHTakeFromShape (int n, shape *a)
+SHtakeFromShape (int n, shape *a)
 {
     int m, i;
     shape *res;
