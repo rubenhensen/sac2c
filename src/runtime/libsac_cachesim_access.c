@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.3  1999/04/06 13:45:19  cg
+ * added #include "libsac_cachesim.h"
+ *
  * Revision 2.2  1999/03/26 14:36:59  her
  * more comments
  *
@@ -14,7 +17,9 @@
 #include <memory.h>
 #include <stdlib.h>
 #include <stdio.h>
+
 #include "sac_cachesim.h"
+#include "libsac_cachesim.h"
 
 /******************************************************************************
  *
