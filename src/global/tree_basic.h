@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.12  1995/10/30 09:53:35  cg
+ * Revision 1.13  1995/11/01 07:10:12  sbs
+ * neutral addded to N_foldprf;
+ *
+ * Revision 1.12  1995/10/30  09:53:35  cg
  * added temporary attribute FUNDEF_INLINE(n)
  *
  * Revision 1.11  1995/10/26  15:58:58  cg
@@ -991,17 +994,19 @@ extern node *MakeModarray (node *array, node *body);
  ***
  ***  sons:
  ***
- ***    node*  BODY  (N_block)
+ ***    node*  BODY         (N_block)
+ ***    node*  NEUTRAL  (O) ("N_expr")
  ***
  ***  permanent attributes:
  ***
  ***    prf    PRF
  ***/
 
-extern node *MakeFoldprf (prf prf, node *body);
+extern node *MakeFoldprf (prf prf, node *body, node *neutral);
 
 #define FOLDPRF_PRF(n) (n->info.prf)
 #define FOLDPRF_BODY(n) (n->node[0])
+#define FOLDPRF_NEUTRAL(n) (n->node[1])
 
 /*--------------------------------------------------------------------------*/
 
