@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.17  2000/03/17 12:07:00  dkr
+ * macros PHASE_PROLOG and PHASE_EPILOG are now always called even if a
+ * phase is skipped
+ *
  * Revision 2.16  2000/03/16 14:29:45  dkr
  * CHECK_DBUG_START replaced by PHASE_PROLOG
  * CHECK_DBUG_STOP replaced by PHASE_EPILOG
@@ -203,8 +207,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define LAC2FUN 1
-
 /*
  *  And now, the main function which triggers the whole compilation.
  */
@@ -244,15 +246,13 @@ main (int argc, char *argv[])
         puresacfilename = "stdin";
     }
 
+    ABORT_ON_ERROR;
+
     /*
      * Now, we read in the sac2c configuration files.
      */
 
-    ABORT_ON_ERROR;
-
-    if (!libstat) {
-        NOTE_COMPILER_PHASE;
-    }
+    NOTE_COMPILER_PHASE;
 
     RSCEvaluateConfiguration (target_name);
 
@@ -311,26 +311,25 @@ main (int argc, char *argv[])
      *  Finally the compilation process is started.
      */
 
-    NOTE_COMPILER_PHASE;
     PHASE_PROLOG;
+    NOTE_COMPILER_PHASE;
     syntax_tree = ScanParse ();
     PHASE_EPILOG;
-    ABORT_ON_ERROR;
 
     if (break_after == PH_scanparse)
         goto BREAK;
     compiler_phase++;
 
+    PHASE_PROLOG;
     if (MODUL_IMPORTS (syntax_tree) != NULL) {
         NOTE_COMPILER_PHASE;
-        PHASE_PROLOG;
         syntax_tree = Import (syntax_tree); /* imp_tab */
-        PHASE_EPILOG;
-        ABORT_ON_ERROR;
     }
+    PHASE_EPILOG;
 
     if (break_after == PH_import)
         goto BREAK;
+    compiler_phase++;
 
     if (makedeps) {
         /*
@@ -339,11 +338,10 @@ main (int argc, char *argv[])
          */
 
         compiler_phase = PH_writedeps;
-        NOTE_COMPILER_PHASE;
         PHASE_PROLOG;
+        NOTE_COMPILER_PHASE;
         PrintDependencies (dependencies, makedeps);
         PHASE_EPILOG;
-        ABORT_ON_ERROR;
 
         FreeTree (syntax_tree);
         CleanUp ();
@@ -361,119 +359,106 @@ main (int argc, char *argv[])
         return (0);
     }
 
-    compiler_phase++;
-
+    PHASE_PROLOG;
     if (MODUL_STORE_IMPORTS (syntax_tree) != NULL) {
         NOTE_COMPILER_PHASE;
-        PHASE_PROLOG;
         syntax_tree = ReadSib (syntax_tree); /* readsib_tab */
-        PHASE_EPILOG;
-        ABORT_ON_ERROR;
     }
+    PHASE_EPILOG;
 
     if (break_after == PH_readsib)
         goto BREAK;
     compiler_phase++;
 
-    NOTE_COMPILER_PHASE;
     PHASE_PROLOG;
+    NOTE_COMPILER_PHASE;
     syntax_tree = objinit (syntax_tree); /* objinit_tab */
     PHASE_EPILOG;
-    ABORT_ON_ERROR;
 
     if (break_after == PH_objinit)
         goto BREAK;
     compiler_phase++;
 
-    NOTE_COMPILER_PHASE;
     PHASE_PROLOG;
+    NOTE_COMPILER_PHASE;
     syntax_tree = Flatten (syntax_tree); /* flat_tab */
     PHASE_EPILOG;
-    ABORT_ON_ERROR;
 
     if (break_after == PH_flatten)
         goto BREAK;
     compiler_phase++;
 
-    NOTE_COMPILER_PHASE;
     PHASE_PROLOG;
+    NOTE_COMPILER_PHASE;
     syntax_tree = Typecheck (syntax_tree); /* type_tab */
     PHASE_EPILOG;
-    ABORT_ON_ERROR;
 
     if (break_after == PH_typecheck)
         goto BREAK;
     compiler_phase++;
 
+    PHASE_PROLOG;
     if (MODUL_FILETYPE (syntax_tree) != F_prog) {
         NOTE_COMPILER_PHASE;
-        PHASE_PROLOG;
         syntax_tree = CheckDec (syntax_tree); /* writedec_tab and checkdec_tab */
-        PHASE_EPILOG;
-        ABORT_ON_ERROR;
     }
+    PHASE_EPILOG;
 
     if (break_after == PH_checkdec)
         goto BREAK;
     compiler_phase++;
 
-    NOTE_COMPILER_PHASE;
     PHASE_PROLOG;
+    NOTE_COMPILER_PHASE;
     syntax_tree = RetrieveImplicitTypeInfo (syntax_tree); /* impltype_tab */
     PHASE_EPILOG;
-    ABORT_ON_ERROR;
 
     if (break_after == PH_impltype)
         goto BREAK;
     compiler_phase++;
 
-    NOTE_COMPILER_PHASE;
     PHASE_PROLOG;
+    NOTE_COMPILER_PHASE;
     syntax_tree = Analysis (syntax_tree); /* analy_tab */
     PHASE_EPILOG;
-    ABORT_ON_ERROR;
 
     if (break_after == PH_analysis)
         goto BREAK;
     compiler_phase++;
 
+    PHASE_PROLOG;
     if (MODUL_FILETYPE (syntax_tree) != F_prog) {
         NOTE_COMPILER_PHASE;
-        PHASE_PROLOG;
         syntax_tree = WriteSib (syntax_tree); /* writesib_tab */
-        PHASE_EPILOG;
-        ABORT_ON_ERROR;
     }
+    PHASE_EPILOG;
 
     if (break_after == PH_writesib)
         goto BREAK;
     compiler_phase++;
 
-    NOTE_COMPILER_PHASE;
     PHASE_PROLOG;
+    NOTE_COMPILER_PHASE;
     syntax_tree = HandleObjects (syntax_tree); /* obj_tab */
     PHASE_EPILOG;
-    ABORT_ON_ERROR;
 
     if (break_after == PH_objects)
         goto BREAK;
     compiler_phase++;
 
-    NOTE_COMPILER_PHASE;
     PHASE_PROLOG;
+    NOTE_COMPILER_PHASE;
     syntax_tree = UniquenessCheck (syntax_tree); /* unique_tab */
     PHASE_EPILOG;
-    ABORT_ON_ERROR;
 
     if (break_after == PH_uniquecheck)
         goto BREAK;
     compiler_phase++;
 
-    NOTE_COMPILER_PHASE;
     PHASE_PROLOG;
+    NOTE_COMPILER_PHASE;
     syntax_tree = RemoveVoidFunctions (syntax_tree); /* rmvoid_tab */
     PHASE_EPILOG;
-    ABORT_ON_ERROR;
 
     if (break_after == PH_rmvoidfun)
         goto BREAK;
@@ -484,7 +469,6 @@ main (int argc, char *argv[])
         PHASE_PROLOG;
         syntax_tree = Optimize (syntax_tree); /* see optimize.c, Optimize() */
         PHASE_EPILOG;
-        ABORT_ON_ERROR;
     }
 
     if (break_after == PH_sacopt)
@@ -496,7 +480,6 @@ main (int argc, char *argv[])
         PHASE_PROLOG;
         syntax_tree = PsiOpt (syntax_tree); /* idx_tab */
         PHASE_EPILOG;
-        ABORT_ON_ERROR;
     }
 
     if (break_after == PH_psiopt)
@@ -507,7 +490,6 @@ main (int argc, char *argv[])
     PHASE_PROLOG;
     syntax_tree = Refcount (syntax_tree); /* refcnt_tab */
     PHASE_EPILOG;
-    ABORT_ON_ERROR;
 
     if (break_after == PH_refcnt)
         goto BREAK;
@@ -524,7 +506,6 @@ main (int argc, char *argv[])
     PHASE_PROLOG;
     syntax_tree = WlTransform (syntax_tree); /* wltrans_tab */
     PHASE_EPILOG;
-    ABORT_ON_ERROR;
 
     if (break_after == PH_wltrans)
         goto BREAK;
@@ -536,14 +517,12 @@ main (int argc, char *argv[])
         PHASE_PROLOG;
         syntax_tree = BuildSpmdRegions (syntax_tree); /* spmd..._tab, sync..._tab */
         PHASE_EPILOG;
-        ABORT_ON_ERROR;
     } else if (gen_mt_code == GEN_MT_NEW) {
         NOTE_COMPILER_PHASE;
         NOTE (("using new version of mt"));
         PHASE_PROLOG;
         syntax_tree = BuildMultiThread (syntax_tree);
         PHASE_EPILOG;
-        ABORT_ON_ERROR;
     }
 
     if (break_after == PH_spmdregions)
@@ -554,7 +533,6 @@ main (int argc, char *argv[])
     PHASE_PROLOG;
     syntax_tree = precompile (syntax_tree); /* precomp_tab */
     PHASE_EPILOG;
-    ABORT_ON_ERROR;
 
     if (break_after == PH_precompile)
         goto BREAK;
@@ -564,7 +542,6 @@ main (int argc, char *argv[])
     PHASE_PROLOG;
     syntax_tree = Compile (syntax_tree); /* comp_tab */
     PHASE_EPILOG;
-    ABORT_ON_ERROR;
 
     if (break_after == PH_compile)
         goto BREAK;
@@ -574,7 +551,6 @@ main (int argc, char *argv[])
     PHASE_PROLOG;
     Print (syntax_tree);
     PHASE_EPILOG;
-    ABORT_ON_ERROR;
 
     if (break_after == PH_genccode)
         goto BREAK;
@@ -590,16 +566,15 @@ main (int argc, char *argv[])
     PHASE_PROLOG;
     InvokeCC ();
     PHASE_EPILOG;
-    ABORT_ON_ERROR;
+
     compiler_phase++;
 
+    PHASE_PROLOG;
     if (filetype != F_prog) {
         NOTE_COMPILER_PHASE;
-        PHASE_PROLOG;
         CreateLibrary ();
-        PHASE_EPILOG;
-        ABORT_ON_ERROR;
     }
+    PHASE_EPILOG;
 
     /*
      *  Finally, we do some clean up.
@@ -631,9 +606,7 @@ BREAK:
 
     if (compiler_phase >= PH_scanparse) {
         if ((print_after_break == PAB_YES) && (compiler_phase < PH_genccode)) {
-            PHASE_PROLOG;
             Print (syntax_tree);
-            PHASE_EPILOG;
         }
         FreeTree (syntax_tree);
 
