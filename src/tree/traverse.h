@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.69  2004/10/15 09:08:32  ktr
+ * added emaa_tab
+ *
  * Revision 3.68  2004/10/12 10:24:15  ktr
  * Added emfrc_tab.
  *
@@ -449,7 +452,7 @@ extern funtab *wlsb_tab;
 extern funtab *wlsw_tab;
 extern funtab *emrco_tab;
 extern funtab *emfrc_tab;
-extern funtab *unused_tab12;
+extern funtab *emaa_tab;
 extern funtab *unused_tab13;
 extern funtab *unused_tab14;
 extern funtab *unused_tab15;

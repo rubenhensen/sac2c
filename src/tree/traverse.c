@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.90  2004/10/15 09:08:32  ktr
+ * added emaa_tab
+ *
  * Revision 3.89  2004/10/12 10:24:15  ktr
  * Added emfrc_tab.
  *
@@ -402,6 +405,7 @@
 #include "deserialize.h"
 #include "serialize_buildstack.h"
 #include "filterrc.h"
+#include "aliasanalysis.h"
 
 #include "traverse.h"
 
@@ -1884,15 +1888,15 @@ static funtab emfrc_tab_rec = {{
 funtab *emfrc_tab = &emfrc_tab_rec;
 
 /*
- *  (132) unused_tab12
+ *  (132) emaa_tab
  */
-static funtab unused_tab12_rec = {{
-#define NIFunused_12(it_unused_12) it_unused_12
+static funtab emaa_tab_rec = {{
+#define NIFemaa(it_emaa) it_emaa
 #include "node_info.mac"
-                                  },
-                                  NULL,
-                                  NULL};
-funtab *unused_tab12 = &unused_tab12_rec;
+                              },
+                              NULL,
+                              NULL};
+funtab *emaa_tab = &emaa_tab_rec;
 
 /*
  *  (133) unused_tab13
