@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.28  2003/02/08 16:00:01  mwe
+# DistributiveLaw.o added
+#
 # Revision 3.27  2002/10/08 22:10:47  dkr
 # SSAWLUnroll.o added
 #
@@ -68,7 +71,7 @@ all: optimize.o generatemasks.o ConstantFolding.o DeadCodeRemoval.o \
      LoopInvariantRemoval.o Inline.o Unroll.o Unswitch.o CSE.o \
      WLUnroll.o DeadFunctionRemoval.o freemasks.o \
      SSADeadCodeRemoval.o SSACSE.o SSAConstantFolding.o SSALIR.o SSALUR.o \
-     SSAWLUnroll.o SSAInferLI.o AssociativeLaw.o rmcasts.o
+     SSAWLUnroll.o SSAInferLI.o AssociativeLaw.o rmcasts.o DistributiveLaw.o
 
 
 %.o: %.c
