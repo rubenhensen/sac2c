@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.22  2000/07/14 15:44:01  nmw
+ * some dead code removed
+ *
  * Revision 2.21  2000/07/14 15:19:33  dkr
  * FUNDEF_INLINE is bool!
  *
@@ -174,13 +177,6 @@ PRECObjInitFunctionName ()
 {
     char *new_name;
     DBUG_ENTER ("PRECNObjInitFunctionName");
-
-    /*
-      new_name = MALLOC( strlen("SACf__GlobalObjInit_for_") + strlen(modulename) + 1);
-
-      strcpy( new_name, "SACf__GlobalObjInit_for_");
-      strcat( new_name, modulename);
-    */
 
     new_name = StringConcat ("SACf_GlobalObjInit_for_", modulename);
 
