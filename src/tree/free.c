@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.37  2002/07/04 11:26:25  dkr
+ * FreeOneTypes: comment modified
+ *
  * Revision 3.36  2002/07/02 17:52:55  dkr
  * FreeArray(): ARRAY_STRING is removed now
  *
@@ -280,9 +283,9 @@ FreeOneTypes (types *fr)
             TYPES_SHPSEG (tmp) = FreeShpseg (TYPES_SHPSEG (tmp));
         }
         TYPES_NAME (tmp) = Free (TYPES_NAME (tmp));
-        /*
-         * fr->id is not freed by purpose !!
-         */
+#if FREE_MODNAMES
+        TYPES_MOD (tmp) = Free (TYPES_MOD (tmp));
+#endif
 
         tmp = Free (tmp);
     }
