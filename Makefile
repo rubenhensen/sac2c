@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.103  1999/01/25 16:27:20  sbs
+# interrupt.o in global added.
+#
 # Revision 1.102  1999/01/15 16:59:46  sbs
 # freemasks.o added
 #
@@ -183,7 +186,8 @@ GLOBAL= src/global/main.o src/global/Error.o src/global/usage.o \
         src/global/my_debug.o src/global/traverse.o  src/global/tree.o \
 	src/global/tree_basic.o src/global/tree_compound.o \
         src/global/free.o src/global/internal_lib.o \
-        src/global/globals.o src/global/resource.o src/global/build.o
+        src/global/globals.o src/global/resource.o src/global/build.o \
+	src/global/interrupt.o
 SCANP= src/scanparse/y.tab.o src/scanparse/lex.yy.o \
        src/scanparse/scnprs.o
 PRINT= src/print/print.o src/print/convert.o
