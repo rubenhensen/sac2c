@@ -29,3 +29,4 @@ ccmanager.c
 ccmanager.h
 libbuilder.c
 libbuilder.h
+resolveall.c
