@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.36  1995/07/13 15:21:56  hw
+ * Revision 1.37  1995/08/15 12:36:55  hw
+ * changed FltnLet (now the left part of a let can be empty)
+ *
+ * Revision 1.36  1995/07/13  15:21:56  hw
  * changed comments in FltnCon
  *
  * Revision 1.35  1995/07/13  15:16:33  hw
@@ -1187,7 +1190,7 @@ FltnLet (node *arg_node, node *arg_info)
 
     ids = arg_node->IDS;
     if (N_with != arg_node->node[0]->nodetype) {
-        do {
+        while (NULL != ids) {
             tmp = FindId (ids->id);
             if (NULL == tmp) {
                 PUSH (ids->id, ids->id, with_level);
@@ -1205,7 +1208,8 @@ FltnLet (node *arg_node, node *arg_info)
                 }
             }
             ids = ids->next;
-        } while (NULL != ids);
+        }
+
     } else {
         new_assign = MakeNode (N_assign);
         tmp = FindId (ids->id);
