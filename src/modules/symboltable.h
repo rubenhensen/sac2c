@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2004/10/21 17:20:13  sah
+ * Added SymbolTableRemove
+ *
  * Revision 1.2  2004/09/23 21:14:23  sah
  * ongoing implementation
  *
@@ -25,6 +28,7 @@ extern symboltable_t *SymbolTableInit ();
 extern symboltable_t *SymbolTableDestroy (symboltable_t *table);
 extern void SymbolTableAdd (const char *symbol, const char *name, symbolentrytype_t type,
                             symboltable_t *table);
+extern void SymbolTableRemove (const char *symbol, symboltable_t *table);
 
 extern symbolchain_t *SymbolTableSymbolChainGet (symboltable_t *table);
 extern symbolchain_t *SymbolTableSymbolChainRelease (symbolchain_t *chain);

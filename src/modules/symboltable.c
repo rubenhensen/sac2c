@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2004/10/21 17:20:13  sah
+ * Added SymbolTableRemove
+ *
  * Revision 1.2  2004/09/23 21:14:23  sah
  * ongoing implementation
  *
@@ -206,6 +209,34 @@ SymbolTableAdd (const char *symbol, const char *name, symbolentrytype_t type,
 
     entry = SymbolTableEntryInit (name, type);
     SymbolTableEntryAdd (symbol, entry, table);
+
+    DBUG_VOID_RETURN;
+}
+
+void
+SymbolTableRemove (const char *symbol, symboltable_t *table)
+{
+    symboltablesymbol_t *symp;
+
+    DBUG_ENTER ("SymbolTableRemove");
+
+    symp = SymbolTableSymbolLookup (symbol, table);
+
+    if (symp != NULL) {
+        if (table->head == symp) {
+            table->head = symp->next;
+        } else {
+            symboltablesymbol_t *pos = table->head;
+
+            while (pos->next != symp) {
+                pos = pos->next;
+            }
+
+            pos->next = symp->next;
+        }
+
+        symp = SymbolTableSymbolDestroy (symp);
+    }
 
     DBUG_VOID_RETURN;
 }
