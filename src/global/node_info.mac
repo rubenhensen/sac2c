@@ -1,9 +1,13 @@
 /*
  *
  * $Log$
- * Revision 1.9  1994/11/23 09:46:23  hw
- * inserted N_bool
+ * Revision 1.10  1994/12/01 17:39:37  hw
+ * added new functions for typechecking
+ * changed dimension of NIF
  *
+;; Revision 1.9  1994/11/23  09:46:23  hw
+;; inserted N_bool
+;;
 ;; Revision 1.8  1994/11/22  16:40:39  hw
 ;; added FltnDo
 ;;
@@ -33,40 +37,40 @@
 **
 */
 
-/*   Node_name   dbug-string   flat_tab    print_tab    .......        */
+/*   Node_name   dbug-string   flat_tab    print_tab    type_tab   ....    */
 
-NIF (N_num, "N_num", DummyFun, PrintNum, DummyFun),
-  NIF (N_id, "N_id", DummyFun, PrintId, DummyFun),
-  NIF (N_float, "N_float", DummyFun, PrintFloat, DummyFun),
-  NIF (N_fundef, "N_fundef", DummyFun, PrintFundef, DummyFun),
-  NIF (N_vardec, "N_vardec", DummyFun, PrintVardec, DummyFun),
-  NIF (N_block, "N_block", DummyFun, PrintBlock, DummyFun),
-  NIF (N_arg, "N_arg", DummyFun, PrintArg, DummyFun),
-  NIF (N_assign, "N_assign", FltnAssign, PrintAssign, DummyFun),
-  NIF (N_return, "N_return", DummyFun, PrintReturn, DummyFun),
-  NIF (N_do, "N_do", FltnDo, PrintDo, DummyFun),
-  NIF (N_while, "N_while", FltnWhile, PrintWhile, DummyFun),
-  NIF (N_cond, "N_cond", FltnCond, PrintCond, DummyFun),
-  NIF (N_let, "N_let", DummyFun, PrintLet, DummyFun),
-  NIF (N_addon, "N_addon", DummyFun, PrintLeton, DummyFun),
-  NIF (N_mulon, "N_mulon", DummyFun, PrintLeton, DummyFun),
-  NIF (N_subon, "N_subon", DummyFun, PrintLeton, DummyFun),
-  NIF (N_divon, "N_divon", DummyFun, PrintLeton, DummyFun),
-  NIF (N_with, "N_with", FltnWith, PrintWith, DummyFun),
-  NIF (N_generator, "N_generator", DummyFun, PrintGenator, DummyFun),
-  NIF (N_genarray, "N_genarray", DummyFun, PrintConexpr, DummyFun),
-  NIF (N_modarray, "N_modarray", DummyFun, PrintConexpr, DummyFun),
-  NIF (N_prf, "N_prf", FltnPrf, PrintPrf, DummyFun),
-  NIF (N_ap, "N_ap", DummyFun, PrintAp, DummyFun),
-  NIF (N_exprs, "N_exprs", FltnExprs, PrintExprs, DummyFun),
-  NIF (N_array, "N_array", DummyFun, PrintArray, DummyFun),
-  NIF (N_info, "N_info", DummyFun, DummyFun, DummyFun),
-  NIF (N_empty, "N_empty", DummyFun, PrintEmpty, DummyFun),
-  NIF (N_inc, "N_inc", DummyFun, PrintInc, DummyFun),
-  NIF (N_dec, "N_dec", DummyFun, PrintDec, DummyFun),
-  NIF (N_post, "N_post", DummyFun, PrintPost, DummyFun),
-  NIF (N_pre, "N_pre", DummyFun, PrintPre, DummyFun),
-  NIF (N_bool, "N_bool", DummyFun, PrintBool, Dummyfun)
+NIF (N_num, "N_num", DummyFun, PrintNum, DummyFun, DummyFun),
+  NIF (N_id, "N_id", DummyFun, PrintId, DummyFun, DummyFun),
+  NIF (N_float, "N_float", DummyFun, PrintFloat, DummyFun, DummyFun),
+  NIF (N_fundef, "N_fundef", DummyFun, PrintFundef, TCfundef, DummyFun),
+  NIF (N_vardec, "N_vardec", DummyFun, PrintVardec, DummyFun, DummyFun),
+  NIF (N_block, "N_block", DummyFun, PrintBlock, DummyFun, DummyFun),
+  NIF (N_arg, "N_arg", DummyFun, PrintArg, DummyFun, DummyFun),
+  NIF (N_assign, "N_assign", FltnAssign, PrintAssign, DummyFun, DummyFun),
+  NIF (N_return, "N_return", DummyFun, PrintReturn, DummyFun, DummyFun),
+  NIF (N_do, "N_do", FltnDo, PrintDo, DummyFun, DummyFun),
+  NIF (N_while, "N_while", FltnWhile, PrintWhile, DummyFun, DummyFun),
+  NIF (N_cond, "N_cond", FltnCond, PrintCond, DummyFun, DummyFun),
+  NIF (N_let, "N_let", DummyFun, PrintLet, TClet, DummyFun),
+  NIF (N_addon, "N_addon", DummyFun, PrintLeton, DummyFun, DummyFun),
+  NIF (N_mulon, "N_mulon", DummyFun, PrintLeton, DummyFun, DummyFun),
+  NIF (N_subon, "N_subon", DummyFun, PrintLeton, DummyFun, DummyFun),
+  NIF (N_divon, "N_divon", DummyFun, PrintLeton, DummyFun, DummyFun),
+  NIF (N_with, "N_with", FltnWith, PrintWith, DummyFun, DummyFun),
+  NIF (N_generator, "N_generator", DummyFun, PrintGenator, DummyFun, DummyFun),
+  NIF (N_genarray, "N_genarray", DummyFun, PrintConexpr, DummyFun, DummyFun),
+  NIF (N_modarray, "N_modarray", DummyFun, PrintConexpr, DummyFun, DummyFun),
+  NIF (N_prf, "N_prf", FltnPrf, PrintPrf, DummyFun, DummyFun),
+  NIF (N_ap, "N_ap", DummyFun, PrintAp, DummyFun, DummyFun),
+  NIF (N_exprs, "N_exprs", FltnExprs, PrintExprs, DummyFun, DummyFun),
+  NIF (N_array, "N_array", DummyFun, PrintArray, DummyFun, DummyFun),
+  NIF (N_info, "N_info", DummyFun, DummyFun, DummyFun, DummyFun),
+  NIF (N_empty, "N_empty", DummyFun, PrintEmpty, DummyFun, DummyFun),
+  NIF (N_inc, "N_inc", DummyFun, PrintInc, DummyFun, DummyFun),
+  NIF (N_dec, "N_dec", DummyFun, PrintDec, DummyFun, DummyFun),
+  NIF (N_post, "N_post", DummyFun, PrintPost, DummyFun, DummyFun),
+  NIF (N_pre, "N_pre", DummyFun, PrintPre, DummyFun, DummyFun),
+  NIF (N_bool, "N_bool", DummyFun, PrintBool, DummyFun, DummyFun)
 
 #if 0
 NIF( N_and,      "N_and",      DummyFun, DummyFun, DummyFun ),
