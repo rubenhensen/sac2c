@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.5  2000/08/03 10:23:06  nmw
+ * removal of generic fundefs after specialization added
+ *
  * Revision 1.4  2000/07/28 14:45:56  nmw
  * minor bugfixes
  *
@@ -40,6 +43,7 @@ static node *AddSpecializedFundef (node *fundefs, node *spec_fundef, node *gen_f
 static bool isSpecialization (char *spec_name, node *spec_args, types *spec_types,
                               char *gen_name, node *gen_args, types *gen_types);
 static bool isSpecializationType (types *spec_type, types *gen_type);
+static node *RemoveGenericTemplates (node *module_node);
 
 /******************************************************************************
  *
@@ -88,6 +92,9 @@ IMPSPECfundef (node *arg_node, node *arg_info)
     DBUG_ENTER ("IMPSPECfundef");
 
     generic_fundef = MapSpecialized2Generic (arg_node, arg_info);
+
+    /* this function can be removed after specialization */
+    FUNDEF_ATTRIB (generic_fundef) = ST_gen_remove;
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
         FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
@@ -398,6 +405,45 @@ ScanParseSpecializationFile (char *modname)
 /******************************************************************************
  *
  * function:
+ *   node *RemoveGenericTemplates(node *module_node)
+ *
+ * description:
+ *   checks all fundefs for tag ST_gen_remove. these functions have been
+ *   specialized and are no longer needed in their generic version (they
+ *   might produce confilcts in the typechecker). All tagged fundefs are
+ *   removed from the fundef list
+ *
+ ******************************************************************************/
+
+static node *
+RemoveGenericTemplates (node *module_node)
+{
+    node *funs;
+    node *fnext;
+
+    DBUG_ENTER ("RemoveGenericTemplates");
+
+    funs = MODUL_FUNS (module_node);
+    DBUG_ASSERT ((FUNDEF_ATTRIB (funs) != ST_gen_remove),
+                 "RemoveGenerocTemplates: illegal fundef order!");
+    /* first fundef in list cannot be a ST_gen_remove tagged one */
+
+    while (funs != NULL) {
+        fnext = FUNDEF_NEXT (funs);
+        /* check for removal */
+        if ((fnext != NULL) && (FUNDEF_ATTRIB (fnext) == ST_gen_remove)) {
+            FUNDEF_NEXT (funs) = FUNDEF_NEXT (fnext);
+            FreeNode (fnext);
+        } else {
+            funs = FUNDEF_NEXT (funs);
+        }
+    }
+    DBUG_RETURN (module_node);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   node *ImportSpecialization( node *syntax_tree )
  *
  * description:
@@ -439,6 +485,8 @@ ImportSpecialization (node *modul_node)
         FREE (arg_info);
 
         FreeNode (modspec);
+
+        modul_node = RemoveGenericTemplates (modul_node);
     }
 
     DBUG_RETURN (modul_node);
