@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.12  1999/10/26 15:51:00  dkr
+ * Bug in MakeIcm{4,5,6} fixed
+ *
  * Revision 2.11  1999/09/20 11:33:32  jhs
  * Added (L_)VARDEC_OR_ARG_BNEXT.
  * Brushed MakeIcm(0..6).
@@ -1430,7 +1433,7 @@ MakeIcm4 (char *name, node *arg1, node *arg2, node *arg3, node *arg4)
     DBUG_ENTER ("MakeIcm4");
 
     arg4 = CombineExprs (arg4, NULL);
-    arg3 = CombineExprs (arg4, arg4);
+    arg3 = CombineExprs (arg3, arg4);
     arg2 = CombineExprs (arg2, arg3);
     arg1 = CombineExprs (arg1, arg2);
 
@@ -1448,7 +1451,7 @@ MakeIcm5 (char *name, node *arg1, node *arg2, node *arg3, node *arg4, node *arg5
 
     arg5 = CombineExprs (arg5, NULL);
     arg4 = CombineExprs (arg4, arg5);
-    arg3 = CombineExprs (arg4, arg4);
+    arg3 = CombineExprs (arg3, arg4);
     arg2 = CombineExprs (arg2, arg3);
     arg1 = CombineExprs (arg1, arg2);
 
@@ -1468,7 +1471,7 @@ MakeIcm6 (char *name, node *arg1, node *arg2, node *arg3, node *arg4, node *arg5
     arg6 = CombineExprs (arg6, NULL);
     arg5 = CombineExprs (arg5, arg6);
     arg4 = CombineExprs (arg4, arg5);
-    arg3 = CombineExprs (arg4, arg4);
+    arg3 = CombineExprs (arg3, arg4);
     arg2 = CombineExprs (arg2, arg3);
     arg1 = CombineExprs (arg1, arg2);
 
