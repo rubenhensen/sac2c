@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.32  1995/11/16 19:43:21  cg
+ * Revision 1.33  1995/12/01 17:12:23  cg
+ * added break parameter -bl to stop after precompiler
+ *
+ * Revision 1.32  1995/11/16  19:43:21  cg
  * added new break parameter -bv to stop after removing void-functions
  *
  * Revision 1.31  1995/11/10  15:01:59  cg
@@ -142,6 +145,7 @@ usage (char *prg_name)
     printf ("\t -bo \t\t\tstop after sac-optimizations\n");
     printf ("\t -bs \t\t\tstop after psi-optimizations\n");
     printf ("\t -br \t\t\tstop after refcount inference\n");
+    printf ("\t -bl \t\t\tstop after preparing code generation\n");
     printf ("\t -bc \t\t\tstop unresolved ICM code\n");
 
     printf ("\nOPTIMIZATION OPTIONS:\n");
