@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2000/03/09 18:35:32  jhs
+ * Additional macros.
+ *
  * Revision 1.8  2000/03/01 17:44:20  dkr
  * macros for N_Nwith2 nodes reorganized
  *
@@ -35,172 +38,13 @@
  * Revision 2.25  1999/12/01 15:20:55  dkr
  * macro VARDEC_OR_ARG_SHPSEG added
  *
- * Revision 2.24  1999/11/11 20:09:13  dkr
- * function IsConstantArray changed:
- *   new name (IsConstArray)
- *   new signature (no type parameter anymore)
- *   new return value (boolean instead of #elements)
- *   NOW THIS FUNCTION (hopefully) works correct :)
- *
- * Revision 2.23  1999/11/11 18:27:15  dkr
- * added NWITH_WITHID
- *
- * Revision 2.22  1999/11/09 21:15:57  dkr
- * Functions MakeIcm7, MakeAssignIcm7 added.
- *
- * Revision 2.21  1999/10/28 17:06:54  dkr
- * compound macros for masks added
- *
- * Revision 2.20  1999/10/27 15:12:41  sbs
- * MakeAssignIcmX(...) added.
- *
- * Revision 2.19  1999/09/20 11:33:32  jhs
- * Added (L_)VARDEC_OR_ARG_BNEXT.
- * Brushed MakeIcm(0..6).
- *
- * Revision 2.18  1999/09/10 14:24:39  jhs
- * Added some DO_OR_WHILE_xxx macros to access both type of loops with one
- * type of macro.
- *
- * Revision 2.17  1999/09/01 12:40:34  sbs
- * typo corrected
- *
- * Revision 2.16  1999/09/01 12:37:56  sbs
- * SET_VARDEC_OR_ARG_COLCHN added.
- *
- * Revision 2.15  1999/09/01 11:49:38  sbs
- * VARDEC_OR_ARG_ACTCHN and SET_VARDEC_OR_ARG_ACTCHN added!
- *
- * Revision 2.14  1999/08/09 15:45:27  dkr
- * L_VARDEC_OR_ARG_REFCNT, ... added
- *
- * Revision 2.13  1999/07/14 12:14:36  sbs
- * proper support for arg_info during IVE added.
- *
- * Revision 2.12  1999/07/13 20:26:28  sbs
- * VARDEC_OR_ARG_MOD added
- *
- * Revision 2.11  1999/07/13 16:41:17  sbs
- * VARDEC_OR_ARG_COLCHN added.
- * ./
- *
- * Revision 2.10  1999/07/13 16:27:16  sbs
- * VARDEC_OR_ARG_SHAPE added.
- *
- * Revision 2.9  1999/07/08 14:59:12  sbs
- * Array2BoolVec added
- *
- * Revision 2.8  1999/07/07 05:59:33  sbs
- * Added function MakeVinfoDollar
- *
- * Revision 2.7  1999/06/17 14:31:34  sbs
- * added new compound-macro TYPES_DIM
- *
- * Revision 2.6  1999/06/15 12:31:13  jhs
- * Added VARDEC_OR_ARG_NAIVE_REFCNT.
- *
- * Revision 2.5  1999/05/12 08:34:07  sbs
- * some logging info eliminated
- *
- * Revision 2.4  1999/03/31 10:51:57  bs
- *  Function Array2CharVec added.
- *
- * Revision 2.3  1999/03/15 14:10:13  bs
- * Access macros renamed (take a look at tree_basic.h).
- * Functions Array2FloatVec and Array2Dblvec added.
- *
- * Revision 2.2  1999/03/04 10:08:02  bs
- * Functions IntVec2Array() and Array2IntVec added.
+ * [...]
  *
  * Revision 2.1  1999/02/23 12:40:11  sacbase
  * new release made
  *
  * Revision 1.79  1999/02/06 12:50:27  srs
  * declared four functions to handle Nodelist
- *
- * Revision 1.78  1999/01/26 14:25:46  cg
- * Added functions MakePrf1(), MakePrf2(), and MakePrf3() to
- * create N_prf nodes with 1,2, or 3 arguments, repsectively.
- *
- * Revision 1.77  1999/01/15 15:18:55  cg
- * added compound macro for type access from ids structures and
- * N_id nodes.
- *
- * Revision 1.76  1998/07/16 13:49:30  sbs
- * LET_TYPE inserted
- *
- * Revision 1.75  1998/07/03 10:16:38  cg
- * new functions MakeIcm[012345] added
- * function AppendExpr renamed to AppendExprs
- *
- * Revision 1.74  1998/06/07 18:39:29  dkr
- * addded NWITH2_VEC
- *
- * Revision 1.73  1998/06/05 15:27:49  cg
- * global variable mod_name_con and macros MOD_NAME_CON MOD MOD_NAME MOD_CON removed
- * Now, module name and symbol name are combined correctly by ':'.
- * Only when it really comes to the generation of C code, the ':' is
- * replaced by '__'. This is done by the renaming of all identifiers
- * during the precompilation phase.
- *
- * Revision 1.72  1998/06/04 16:59:20  cg
- * added function LookupIds that looks for a given identifier
- * within an ids-chain.
- *
- * Revision 1.71  1998/05/27 13:17:03  sbs
- * Nwith-loop MACROS BRUSHED
- *
- * Revision 1.70  1998/05/16 19:47:07  dkr
- * added some WLGRID..., WLSTRIDE... macros
- *
- * Revision 1.69  1998/05/12 12:20:19  dkr
- * added AppendAssign, AppendExpr
- *
- * Revision 1.68  1998/05/07 21:38:46  dkr
- * added VARDEC_OR_ARG_TYPE
- *
- * Revision 1.67  1998/05/06 17:20:31  dkr
- * added macros NWITH_IDS, NWITH_VEC
- *
- * Revision 1.66  1998/05/04 17:56:41  sbs
- * LET_VARDEC(n) moved from tree_basic.h to tree_compound.h!!!!
- *
- * Revision 1.65  1998/05/02 17:44:52  dkr
- * added macros VARDEC_OR_ARG_...
- *
- * Revision 1.64  1998/04/28 15:34:51  dkr
- * added compound macros for N_Nwith2
- *
- * Revision 1.63  1998/04/24 17:19:56  dkr
- * added compound macros for N_spmd
- *
- * Revision 1.62  1998/03/25 18:10:40  srs
- * renamed IDS_VARDEV_TYPE to IDS_TYPE
- *
- * Revision 1.61  1998/03/23 18:59:20  srs
- * added macro NWITH_TYPE()
- *
- * Revision 1.60  1998/03/12 14:05:32  srs
- * new macro IDS_SHAPE
- *
- * Revision 1.59  1998/03/10 11:10:47  srs
- * changed parameters of IsConstantArray
- *
- * Revision 1.58  1998/03/07 17:00:55  srs
- * added IsConstantArray() and ID_SHAPE
- *
- * Revision 1.57  1998/03/02 13:55:08  srs
- * new macro MAKE_INCDEC_LET
- *
- * Revision 1.56  1998/02/23 13:05:37  srs
- * added macro for new WL
- *
- * Revision 1.55  1998/02/12 11:06:39  srs
- * added FUNDEF_BODY_VARNO and two compound macros for the new WL
- *
- * Revision 1.54  1998/02/09 15:41:40  sbs
- * forced check in 8-(((
- *  not yet cleaned up!
  *
  * ... [eliminated] ...
  *
@@ -1426,6 +1270,9 @@ extern node *AppendExprs (node *exprs1, node *exprs2);
 
 /***
  ***  N_ap :
+ ***
+ ***  watch combined macros for N_ap and N_prf
+ ***  (search for "N_ap :" or "N_prf :").
  ***/
 
 /*--------------------------------------------------------------------------*/
@@ -1647,7 +1494,21 @@ extern node *MakeVinfoDollar (node *next);
 /*--------------------------------------------------------------------------*/
 
 /***
+ ***  N_prf :   N_ap :
+ ***
+ ***  watch simple macros for N_ap and N_prf
+ ***  (search for "N_ap :" or "N_prf :").
+ ***/
+
+#define AP_OR_PRF_ARGS(n) ((NODE_TYPE (n) == N_ap) ? AP_ARGS (n) : PRF_ARGS (n))
+
+/*--------------------------------------------------------------------------*/
+
+/***
  ***  N_prf :
+ ***
+ ***  watch combined macros for N_ap and N_prf
+ ***  (search for "N_ap :" or "N_prf :").
  ***/
 
 /*
