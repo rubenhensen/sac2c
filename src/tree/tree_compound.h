@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.124  2004/11/23 22:36:58  sbs
+ * TCcountRets added.
+ *
  * Revision 3.123  2004/11/23 22:27:57  khf
  * added TCmakeFlatArray
  *
@@ -750,6 +753,14 @@ extern node *TCadjustAvisData (node *new_vardec, node *fundef);
 
 extern int TCcountArgs (node *args);
 extern int TCcmpDomain (node *args1, node *args2);
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_ret :
+ ***/
+
+extern int TCcountRets (node *rets);
 
 /*--------------------------------------------------------------------------*/
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.101  2004/11/23 22:36:58  sbs
+ * TCcountRets added.
+ *
  * Revision 3.100  2004/11/23 22:27:57  khf
  * added TCmakeFlatArray
  *
@@ -2249,33 +2252,36 @@ CountArgs (node *args)
     DBUG_RETURN (count);
 }
 
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_rets :
+ ***/
+
 /******************************************************************************
  *
  * function:
- *   int HasDotArgs( node *args)
+ *   int CountRets( node *rets)
  *
  * description:
- *   Checks whether any T_dot type is contained in the given argument chain.
+ *   Counts the number of N_arg nodes.
  *
  ******************************************************************************/
 
 int
-HasDotArgs (node *args)
+CountRets (node *rets)
 {
-    int flag = FALSE;
+    int count = 0;
 
-    DBUG_ENTER ("HasDotArgs");
+    DBUG_ENTER ("CountRets");
 
-    while (args != NULL) {
-        DBUG_ASSERT ((NODE_TYPE (args) == N_arg), "no N_arg node found!");
-        if ((ARG_TYPE (args) != NULL) && (ARG_BASETYPE (args) == T_dots)) {
-            flag = TRUE;
-            break;
-        }
-        args = ARG_NEXT (args);
+    while (rets != NULL) {
+        DBUG_ASSERT ((NODE_TYPE (rets) == N_ret), "no N_ret node found!");
+        count++;
+        rets = RET_NEXT (rets);
     }
 
-    DBUG_RETURN (flag);
+    DBUG_RETURN (count);
 }
 
 /******************************************************************************
