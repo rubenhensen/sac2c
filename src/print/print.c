@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.153  2004/05/12 13:04:23  ktr
+ * PrintDo now prints goto statement if DO_SKIP is != NULL.
+ *
  * Revision 3.152  2004/05/05 15:08:16  ktr
  * Added support for NCODE_EPILOGUE
  *
@@ -2134,7 +2137,23 @@ PrintDo (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintDo");
 
+    if (DO_LABEL (arg_node) != NULL) {
+        fprintf (outfile, "goto %s;\n", DO_LABEL (arg_node));
+        INDENT;
+    }
     fprintf (outfile, "do \n");
+
+    if (DO_SKIP (arg_node) != NULL) {
+        INDENT;
+        fprintf (outfile, "{\n");
+        indent += 1;
+        Trav (DO_SKIP (arg_node), arg_info);
+        fprintf (outfile, "\n");
+        indent -= 1;
+        INDENT;
+        fprintf (outfile, "%s:\n", DO_LABEL (arg_node));
+        indent += 1;
+    }
 
     if (DO_BODY (arg_node) != NULL) {
         DBUG_EXECUTE ("PRINT_MASKS", INDENT; fprintf (outfile, "**MASKS - do body: \n");
@@ -2147,6 +2166,12 @@ PrintDo (node *arg_node, node *arg_info)
 
         Trav (DO_BODY (arg_node), arg_info);
         fprintf (outfile, "\n");
+    }
+
+    if (DO_SKIP (arg_node) != NULL) {
+        indent -= 1;
+        INDENT;
+        fprintf (outfile, "}\n");
     }
 
     INDENT;
