@@ -1,6 +1,9 @@
 /*
- *
  * $Log$
+ * Revision 2.17  2000/06/23 15:30:39  dkr
+ * local functions are static now
+ * WLTRANcode redesigned
+ *
  * Revision 2.16  2000/05/31 14:08:45  dkr
  * fixed a bug in CheckParams()
  *
@@ -175,7 +178,6 @@
  *
  * Revision 1.1  1998/04/29 17:17:15  dkr
  * Initial revision
- *
  */
 
 #include "tree.h"
@@ -1455,6 +1457,110 @@ Internal representation in the abstract syntax tree:
     }                                                                                    \
     }
 
+/* forward declaration */
+static int CompareWLnode (node *node1, node *node2, int outline);
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *InsertWLnodes( node *nodes, node *insert_nodes)
+ *
+ * Description:
+ *   inserts all elements of the chain 'insert_nodes' into the sorted chain
+ *     'nodes'.
+ *   all elements of 'insert_nodes' that exist already in 'nodes' are freed.
+ *   the function 'CompareWLnode' is used to sort the elements.
+ *
+ *   insert_nodes: (unsorted) chain of N_WL...-nodes
+ *   nodes:        sorted chain of N_WL...-nodes
+ *   return:       sorted chain of N_WL...-nodes containing all the data of
+ *                   'nodes' and 'insert_nodes'
+ *
+ ******************************************************************************/
+
+node *
+InsertWLnodes (node *nodes, node *insert_nodes)
+{
+    node *tmp, *insert_here;
+    int compare;
+
+    DBUG_ENTER ("InsertWLnodes");
+
+    /*
+     * insert all elements of 'insert_nodes' in 'nodes'
+     */
+    while (insert_nodes != NULL) {
+        /* compare the first element to insert with the first element in 'nodes' */
+        compare = CompareWLnode (insert_nodes, nodes, 0);
+
+        if ((nodes == NULL) || (compare < 0)) {
+            /* insert current element of 'insert_nodes' at head of 'nodes' */
+            tmp = insert_nodes;
+            insert_nodes = WLNODE_NEXT (insert_nodes);
+            WLNODE_NEXT (tmp) = nodes;
+            nodes = tmp;
+        } else {
+            /* search for insert-position in 'nodes' */
+            insert_here = nodes;
+            while ((compare > 0) && (WLNODE_NEXT (insert_here) != NULL)) {
+                compare = CompareWLnode (insert_nodes, WLNODE_NEXT (insert_here), 0);
+
+                if (compare > 0) {
+                    insert_here = WLNODE_NEXT (insert_here);
+                }
+            }
+
+            if (compare == 0) {
+                /* current element of 'insert_nodes' exists already -> free it */
+                insert_nodes = FreeNode (insert_nodes);
+            } else {
+                /* insert current element of 'insert_nodes' after the found position */
+                tmp = insert_nodes;
+                insert_nodes = WLNODE_NEXT (insert_nodes);
+                WLNODE_NEXT (tmp) = WLNODE_NEXT (insert_here);
+                WLNODE_NEXT (insert_here) = tmp;
+            }
+        }
+    }
+
+    DBUG_RETURN (nodes);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   int GridOffset( int new_bound1,
+ *                   int bound1, int step, int grid_b2)
+ *
+ * Description:
+ *   computes a offset for a grid relating to 'new_bound1':
+ *     what happens to the bounds of a grid if 'new_bound1' is the new
+ *     upper bound for the accessory stride?
+ *
+ *   if (offset <= grid_b1) the new bounds of the grid are
+ *       "(grid_b1 - offset) -> (grid_b2 - offset)"
+ *   if (offset > grid_b1) the grid must be devided in two parts:
+ *       "(grid_b1 - offset + step) -> step" and
+ *       "0 -> (grid_b2 - offset)" !!
+ *
+ ******************************************************************************/
+
+int
+GridOffset (int new_bound1, int bound1, int step, int grid_b2)
+{
+    int offset;
+
+    DBUG_ENTER ("GridOffset");
+
+    offset = (new_bound1 - bound1) % step;
+
+    if (offset >= grid_b2) {
+        offset -= step;
+    }
+
+    DBUG_RETURN (offset);
+}
+
 /******************************************************************************
  ******************************************************************************
  **
@@ -1484,7 +1590,7 @@ Internal representation in the abstract syntax tree:
  *
  ******************************************************************************/
 
-int
+static int
 CompareWLnode (node *node1, node *node2, int outline)
 {
     node *grid1, *grid2;
@@ -1571,72 +1677,6 @@ CompareWLnode (node *node1, node *node2, int outline)
 /******************************************************************************
  *
  * Function:
- *   node *InsertWLnodes( node *nodes, node *insert_nodes)
- *
- * Description:
- *   inserts all elements of the chain 'insert_nodes' into the sorted chain
- *     'nodes'.
- *   all elements of 'insert_nodes' that exist already in 'nodes' are freed.
- *   the function 'CompareWLnode' is used to sort the elements.
- *
- *   insert_nodes: (unsorted) chain of N_WL...-nodes
- *   nodes:        sorted chain of N_WL...-nodes
- *   return:       sorted chain of N_WL...-nodes containing all the data of
- *                   'nodes' and 'insert_nodes'
- *
- ******************************************************************************/
-
-node *
-InsertWLnodes (node *nodes, node *insert_nodes)
-{
-    node *tmp, *insert_here;
-    int compare;
-
-    DBUG_ENTER ("InsertWLnodes");
-
-    /*
-     * insert all elements of 'insert_nodes' in 'nodes'
-     */
-    while (insert_nodes != NULL) {
-        /* compare the first element to insert with the first element in 'nodes' */
-        compare = CompareWLnode (insert_nodes, nodes, 0);
-
-        if ((nodes == NULL) || (compare < 0)) {
-            /* insert current element of 'insert_nodes' at head of 'nodes' */
-            tmp = insert_nodes;
-            insert_nodes = WLNODE_NEXT (insert_nodes);
-            WLNODE_NEXT (tmp) = nodes;
-            nodes = tmp;
-        } else {
-            /* search for insert-position in 'nodes' */
-            insert_here = nodes;
-            while ((compare > 0) && (WLNODE_NEXT (insert_here) != NULL)) {
-                compare = CompareWLnode (insert_nodes, WLNODE_NEXT (insert_here), 0);
-
-                if (compare > 0) {
-                    insert_here = WLNODE_NEXT (insert_here);
-                }
-            }
-
-            if (compare == 0) {
-                /* current element of 'insert_nodes' exists already -> free it */
-                insert_nodes = FreeNode (insert_nodes);
-            } else {
-                /* insert current element of 'insert_nodes' after the found position */
-                tmp = insert_nodes;
-                insert_nodes = WLNODE_NEXT (insert_nodes);
-                WLNODE_NEXT (tmp) = WLNODE_NEXT (insert_here);
-                WLNODE_NEXT (insert_here) = tmp;
-            }
-        }
-    }
-
-    DBUG_RETURN (nodes);
-}
-
-/******************************************************************************
- *
- * Function:
  *   node *NormalizeStride_1( node *stride)
  *
  * Description:
@@ -1660,7 +1700,7 @@ InsertWLnodes (node *nodes, node *insert_nodes)
  *
  ******************************************************************************/
 
-node *
+static node *
 NormalizeStride_1 (node *stride)
 {
     node *grid;
@@ -1767,7 +1807,7 @@ NormalizeStride_1 (node *stride)
  *
  ******************************************************************************/
 
-int
+static int
 IndexHeadStride (node *stride)
 {
     int result;
@@ -1794,7 +1834,7 @@ IndexHeadStride (node *stride)
  *
  ******************************************************************************/
 
-int
+static int
 IndexRearStride (node *stride)
 {
     node *grid;
@@ -1830,41 +1870,6 @@ IndexRearStride (node *stride)
 /******************************************************************************
  *
  * Function:
- *   int GridOffset( int new_bound1,
- *                   int bound1, int step, int grid_b2)
- *
- * Description:
- *   computes a offset for a grid relating to 'new_bound1':
- *     what happens to the bounds of a grid if 'new_bound1' is the new
- *     upper bound for the accessory stride?
- *
- *   if (offset <= grid_b1) the new bounds of the grid are
- *       "(grid_b1 - offset) -> (grid_b2 - offset)"
- *   if (offset > grid_b1) the grid must be devided in two parts:
- *       "(grid_b1 - offset + step) -> step" and
- *       "0 -> (grid_b2 - offset)" !!
- *
- ******************************************************************************/
-
-int
-GridOffset (int new_bound1, int bound1, int step, int grid_b2)
-{
-    int offset;
-
-    DBUG_ENTER ("GridOffset");
-
-    offset = (new_bound1 - bound1) % step;
-
-    if (offset >= grid_b2) {
-        offset -= step;
-    }
-
-    DBUG_RETURN (offset);
-}
-
-/******************************************************************************
- *
- * Function:
  *   int GetLcmUnroll( node *nodes, int dim)
  *
  * Description:
@@ -1875,7 +1880,7 @@ GridOffset (int new_bound1, int bound1, int step, int grid_b2)
  *
  ******************************************************************************/
 
-int
+static int
 GetLcmUnroll (node *nodes, int dim)
 {
     int unroll = 1;
@@ -1938,7 +1943,7 @@ GetLcmUnroll (node *nodes, int dim)
  *
  ******************************************************************************/
 
-node *
+static node *
 Parts2Strides (node *parts, int dims)
 {
     node *parts_stride, *stride, *new_stride, *new_grid, *last_grid, *gen, *bound1,
@@ -2111,8 +2116,8 @@ Parts2Strides (node *parts, int dims)
 /******************************************************************************
  *
  * Function:
- *   int StridesNotDisjoint_OneDim( int lb1, int ub1, int step1, int width1,
- *                                  int lb2, int ub2, int step2, int width2)
+ *   bool StridesDisjoint_OneDim( int lb1, int ub1, int step1, int width1,
+ *                                int lb2, int ub2, int step2, int width2)
  *
  * Description:
  *   checks whether the given strides are disjoint.
@@ -2120,14 +2125,14 @@ Parts2Strides (node *parts, int dims)
  *   stride1: lb1 <= iv1 < ub1 STEP step1 WIDTH width1
  *   stride2: lb2 <= iv1 < ub2 STEP step2 WIDTH width2
  *
- *   return value: 0 - disjoint
- *                 1 - not disjoint
+ *   return value: 0 - not disjoint
+ *                 1 - disjoint
  *
  ******************************************************************************/
 
-int
-StridesNotDisjoint_OneDim (int lb1, int ub1, int step1, int width1, int lb2, int ub2,
-                           int step2, int width2)
+static bool
+StridesDisjoint_OneDim (int lb1, int ub1, int step1, int width1, int lb2, int ub2,
+                        int step2, int width2)
 {
     int ub, lb, step;
 #ifdef DO_NOT_USE_MOD
@@ -2135,9 +2140,9 @@ StridesNotDisjoint_OneDim (int lb1, int ub1, int step1, int width1, int lb2, int
 #else
     int iv;
 #endif
-    int not_disjoint = 0;
+    bool disjoint = TRUE;
 
-    DBUG_ENTER ("StridesNotDisjoint_OneDim");
+    DBUG_ENTER ("StridesDisjoint_OneDim");
 
     lb = MAX (lb1, lb2);
     ub = MIN (ub1, ub2);
@@ -2163,7 +2168,7 @@ StridesNotDisjoint_OneDim (int lb1, int ub1, int step1, int width1, int lb2, int
 
     while ((iv1 < ub) && (iv2 < ub)) {
         if (iv1 == iv2) {
-            not_disjoint = 1;
+            disjoint = FALSE;
             break;
         }
         if (iv1 < iv2) {
@@ -2187,35 +2192,35 @@ StridesNotDisjoint_OneDim (int lb1, int ub1, int step1, int width1, int lb2, int
 #else
     for (iv = lb; iv < ub; iv++) {
         if (((iv - lb1) % step1 < width1) && ((iv - lb2) % step2 < width2)) {
-            not_disjoint = 1;
+            disjoint = FALSE;
             break;
         }
     }
 #endif
 
-    DBUG_RETURN (not_disjoint);
+    DBUG_RETURN (disjoint);
 }
 
 /******************************************************************************
  *
  * Function:
- *   int StridesNotDisjoint_AllDims( node *stride1, node *stride2)
+ *   bool StridesDisjoint_AllDims( node *stride1, node *stride2)
  *
  * Description:
  *   checks whether the given strides are disjoint (in at least one dimension).
  *
- *   return value: 0 - disjoint
- *                 1 - not disjoint
+ *   return value: 0 - not disjoint
+ *                 1 - disjoint
  *
  ******************************************************************************/
 
-int
-StridesNotDisjoint_AllDims (node *stride1, node *stride2)
+static bool
+StridesDisjoint_AllDims (node *stride1, node *stride2)
 {
-    int not_disjoint = 1;
+    int disjoint = FALSE;
     node *grid1, *grid2;
 
-    DBUG_ENTER ("StridesNotDisjoint_AllDims");
+    DBUG_ENTER ("StridesDisjoint_AllDims");
 
     while (stride1 != NULL) {
         DBUG_ASSERT ((stride2 != NULL), "stride1 contains more dimensions than stride2");
@@ -2224,15 +2229,13 @@ StridesNotDisjoint_AllDims (node *stride1, node *stride2)
         DBUG_ASSERT (((grid1 != NULL) && (grid2 != NULL)),
                      "stride with missing grid found");
 
-        if (!StridesNotDisjoint_OneDim (WLSTRIDE_BOUND1 (stride1) + WLGRID_BOUND1 (grid1),
-                                        WLSTRIDE_BOUND2 (stride1),
-                                        WLSTRIDE_STEP (stride1),
-                                        WLGRID_BOUND2 (grid1) - WLGRID_BOUND1 (grid1),
-                                        WLSTRIDE_BOUND1 (stride2) + WLGRID_BOUND1 (grid2),
-                                        WLSTRIDE_BOUND2 (stride2),
-                                        WLSTRIDE_STEP (stride2),
-                                        WLGRID_BOUND2 (grid2) - WLGRID_BOUND1 (grid2))) {
-            not_disjoint = 0;
+        if (StridesDisjoint_OneDim (WLSTRIDE_BOUND1 (stride1) + WLGRID_BOUND1 (grid1),
+                                    WLSTRIDE_BOUND2 (stride1), WLSTRIDE_STEP (stride1),
+                                    WLGRID_BOUND2 (grid1) - WLGRID_BOUND1 (grid1),
+                                    WLSTRIDE_BOUND1 (stride2) + WLGRID_BOUND1 (grid2),
+                                    WLSTRIDE_BOUND2 (stride2), WLSTRIDE_STEP (stride2),
+                                    WLGRID_BOUND2 (grid2) - WLGRID_BOUND1 (grid2))) {
+            disjoint = TRUE;
             break;
         }
 
@@ -2240,35 +2243,35 @@ StridesNotDisjoint_AllDims (node *stride1, node *stride2)
         stride2 = WLGRID_NEXTDIM (grid2);
     }
 
-    DBUG_RETURN (not_disjoint);
+    DBUG_RETURN (disjoint);
 }
 
 /******************************************************************************
  *
  * Function:
- *   int CheckDisjointness( node *strides)
+ *   bool CheckDisjointness( node *strides)
  *
  * Description:
  *   checks whether all strides are pairwise disjoint.
  *
- *   return value: 0 - disjoint
- *                 1 - not disjoint
+ *   return value: 0 - not disjoint
+ *                 1 - disjoint
  *
  ******************************************************************************/
 
-int
+static bool
 CheckDisjointness (node *strides)
 {
     node *stride2;
-    int not_disjoint = 0;
+    int disjoint = TRUE;
 
     DBUG_ENTER ("CheckDisjointness");
 
     while (strides != NULL) {
         stride2 = WLSTRIDE_NEXT (strides);
         while (stride2 != NULL) {
-            if (StridesNotDisjoint_AllDims (strides, stride2)) {
-                not_disjoint = 1;
+            if (!StridesDisjoint_AllDims (strides, stride2)) {
+                disjoint = FALSE;
                 goto ret;
             }
             stride2 = WLSTRIDE_NEXT (stride2);
@@ -2277,7 +2280,7 @@ CheckDisjointness (node *strides)
     }
 
 ret:
-    DBUG_RETURN (not_disjoint);
+    DBUG_RETURN (disjoint);
 }
 
 /**
@@ -2297,7 +2300,7 @@ ret:
  *
  ******************************************************************************/
 
-node *
+static node *
 SetSegs (node *pragma, node *cubes, int dims)
 {
     node *aps;
@@ -2359,7 +2362,7 @@ SetSegs (node *pragma, node *cubes, int dims)
  *
  ******************************************************************************/
 
-void
+static void
 CheckParams (node *seg)
 {
     int last, first_block, d, j;
@@ -2492,7 +2495,7 @@ CheckParams (node *seg)
  *
  ******************************************************************************/
 
-node *
+static node *
 NewBoundsStride (node *stride, int dim, int new_bound1, int new_bound2)
 {
     node *grids, *new_grids, *grid, *grid2;
@@ -2592,7 +2595,7 @@ NewBoundsStride (node *stride, int dim, int new_bound1, int new_bound2)
  *
  ******************************************************************************/
 
-void
+static void
 SplitStride (node *stride1, node *stride2, node **s_stride1, node **s_stride2)
 {
     node *tmp1, *tmp2;
@@ -2659,11 +2662,11 @@ SplitStride (node *stride1, node *stride2, node **s_stride1, node **s_stride2)
  *
  ******************************************************************************/
 
-node *
+static node *
 SplitWL (node *strides)
 {
     node *stride1, *stride2, *split_stride1, *split_stride2, *new_strides, *tmp;
-    int fixpoint;
+    bool fixpoint;
 
     DBUG_ENTER ("SplitWL");
 
@@ -2675,7 +2678,7 @@ SplitWL (node *strides)
              * this is done until no new intersections are generated (fixpoint).
              */
             do {
-                fixpoint = 1;       /* initialize 'fixpoint' */
+                fixpoint = TRUE;    /* initialize 'fixpoint' */
                 new_strides = NULL; /* here we collect the new stride-set */
 
                 /* check WLSTRIDE_MODIFIED */
@@ -2696,7 +2699,7 @@ SplitWL (node *strides)
                         SplitStride (stride1, stride2, &split_stride1, &split_stride2);
                         if (split_stride1 != NULL) {
                             DBUG_ASSERT ((split_stride2 != NULL), "wrong splitting");
-                            fixpoint = 0; /* no, not a fixpoint yet :( */
+                            fixpoint = FALSE; /* no, not a fixpoint yet :( */
                             WLSTRIDE_MODIFIED (stride1) = WLSTRIDE_MODIFIED (stride2)
                               = stride1;
                             new_strides = InsertWLnodes (new_strides, split_stride1);
@@ -2758,7 +2761,7 @@ SplitWL (node *strides)
 /******************************************************************************
  *
  * Function:
- *   node *BlockStride( node *stride, int *bv, int unroll)
+ *   node *BlockStride( node *stride, int *bv, bool unroll)
  *
  * Description:
  *   returns 'stride' with corrected bounds, blocking levels and
@@ -2767,8 +2770,8 @@ SplitWL (node *strides)
  *
  ******************************************************************************/
 
-node *
-BlockStride (node *stride, int *bv, int unroll)
+static node *
+BlockStride (node *stride, int *bv, bool unroll)
 {
     node *curr_stride, *curr_grid, *grids;
 
@@ -2780,7 +2783,6 @@ BlockStride (node *stride, int *bv, int unroll)
 
         curr_stride = stride;
         do {
-
             /* correct blocking level and unrolling-flag */
             WLSTRIDE_LEVEL (curr_stride)++;
             WLSTRIDE_UNROLLING (curr_stride) = unroll;
@@ -2815,7 +2817,7 @@ BlockStride (node *stride, int *bv, int unroll)
 /******************************************************************************
  *
  * Function:
- *   node *BlockWL( node *stride, int dims, int *bv, int unroll)
+ *   node *BlockWL( node *stride, int dims, int *bv, bool unroll)
  *
  * Description:
  *   returns with blocking-vector 'bv' blocked 'stride'.
@@ -2824,13 +2826,13 @@ BlockStride (node *stride, int *bv, int unroll)
  *   when called multiple times in a row, this function even realizes
  *     hierarchical blocking!! (top-down: coarse blocking first!)
  *
- *   ('unroll' > 0) means unrolling-blocking --- allowed only once after all
- *     convential blocking!
+ *   ('unroll' > 0): performs unrolling-blocking --- allowed only once after
+ *     all the convential blocking!
  *
  ******************************************************************************/
 
-node *
-BlockWL (node *stride, int dims, int *bv, int unroll)
+static node *
+BlockWL (node *stride, int dims, int *bv, bool unroll)
 {
     node *curr_block, *curr_dim, *curr_stride, *curr_grid, *contents, *lastdim,
       *last_block, *block;
@@ -3012,7 +3014,7 @@ BlockWL (node *stride, int dims, int *bv, int unroll)
  *
  ******************************************************************************/
 
-node *
+static node *
 NewStepGrids (node *grids, int step, int new_step, int offset)
 {
     node *last_old, *last, *new_grid, *tmp;
@@ -3079,7 +3081,7 @@ NewStepGrids (node *grids, int step, int new_step, int offset)
  *
  ******************************************************************************/
 
-void
+static void
 IntersectGrid (node *grid1, node *grid2, int step, node **i_grid1, node **i_grid2)
 {
     int bound11, bound21, bound12, bound22, i_bound1, i_bound2;
@@ -3128,11 +3130,12 @@ IntersectGrid (node *grid1, node *grid2, int step, node **i_grid1, node **i_grid
  *
  ******************************************************************************/
 
-node *
+static node *
 MergeWL (node *nodes)
 {
     node *node1, *grids, *new_grids, *grid1, *grid2, *i_grid1, *i_grid2, *tmp;
-    int bound1, bound2, step, rear1, count, fixpoint, i;
+    int bound1, bound2, step, rear1, count, i;
+    bool fixpoint;
 
     DBUG_ENTER ("MergeWL");
 
@@ -3229,7 +3232,7 @@ MergeWL (node *nodes)
              *   until fixpoint is reached.
              */
             do {
-                fixpoint = 1;
+                fixpoint = TRUE;
                 new_grids = NULL;
 
                 /* check WLGRID_MODIFIED */
@@ -3247,12 +3250,12 @@ MergeWL (node *nodes)
                         if (i_grid1 != NULL) {
                             new_grids = InsertWLnodes (new_grids, i_grid1);
                             WLGRID_MODIFIED (grid1) = new_grids;
-                            fixpoint = 0;
+                            fixpoint = FALSE;
                         }
                         if (i_grid2 != NULL) {
                             new_grids = InsertWLnodes (new_grids, i_grid2);
                             WLGRID_MODIFIED (grid2) = new_grids;
-                            fixpoint = 0;
+                            fixpoint = FALSE;
                         }
                         grid2 = WLGRID_NEXT (grid2);
                     }
@@ -3318,7 +3321,7 @@ MergeWL (node *nodes)
 /******************************************************************************
  *
  * Function:
- *   int CompareWLtrees( node *tree1, node *tree2)
+ *   bool CompareWLtrees( node *tree1, node *tree2)
  *
  * Description:
  *   returns 1 if the N_WL...-trees 'tree1' and 'tree2' are equal.
@@ -3331,11 +3334,11 @@ MergeWL (node *nodes)
  *
  ******************************************************************************/
 
-int
+static bool
 CompareWLtrees (node *tree1, node *tree2)
 {
     node *tmp1, *tmp2;
-    int equal = 1;
+    bool equal = TRUE;
 
     DBUG_ENTER ("CompareWLtrees");
 
@@ -3420,7 +3423,7 @@ CompareWLtrees (node *tree1, node *tree2)
                 }
 
             } else {
-                equal = 0;
+                equal = FALSE;
             }
 
             tmp1 = WLNODE_NEXT (tmp1);
@@ -3444,7 +3447,7 @@ CompareWLtrees (node *tree1, node *tree2)
  *
  ******************************************************************************/
 
-node *
+static node *
 OptWL (node *nodes)
 {
     node *next, *grids, *comp1, *comp2;
@@ -3602,7 +3605,7 @@ OptWL (node *nodes)
  *
  ******************************************************************************/
 
-int
+static int
 AdjustBlockingFactor (int old_bv, int unroll)
 {
     int mod, new_bv;
@@ -3640,7 +3643,7 @@ AdjustBlockingFactor (int old_bv, int unroll)
  *
  ******************************************************************************/
 
-node *
+static node *
 FitNode (node *wlnode, int unroll)
 {
     int width, remain;
@@ -3676,7 +3679,7 @@ FitNode (node *wlnode, int unroll)
  *
  ******************************************************************************/
 
-node *
+static node *
 FitWL (node *nodes)
 {
     node *node, *grids;
@@ -3876,7 +3879,7 @@ FitWL (node *nodes)
  *
  ******************************************************************************/
 
-node *
+static node *
 NormalizeWLnodes (node *nodes, int *width)
 {
     node *node;
@@ -3977,7 +3980,7 @@ NormalizeWLnodes (node *nodes, int *width)
  *
  ******************************************************************************/
 
-node *
+static node *
 NormWL (node *nodes, int *idx_max)
 {
     DBUG_ENTER ("NormWL");
@@ -4033,7 +4036,7 @@ NormWL (node *nodes, int *idx_max)
  *
  ******************************************************************************/
 
-node *
+static node *
 GenerateCompleteGrid (node *stride)
 {
     node *grid;
@@ -4137,7 +4140,7 @@ GenerateCompleteGrid (node *stride)
  *
  ******************************************************************************/
 
-node *
+static node *
 GenerateShapeStrides (int dim, int dims, shpseg *shape)
 {
     node *new_grid, *strides = NULL;
@@ -4202,7 +4205,7 @@ GenerateShapeStrides (int dim, int dims, shpseg *shape)
  *
  ******************************************************************************/
 
-node *
+static node *
 GenerateCompleteDomain (node *strides, int dims, shpseg *shape)
 {
     node *new_strides, *comp_strides, *stride, *grid, *comp_stride, *comp_grid,
@@ -4414,7 +4417,7 @@ GenerateCompleteDomain (node *strides, int dims, shpseg *shape)
  *
  ******************************************************************************/
 
-node *
+static node *
 GenerateCompleteDomainVar (node *stride_var, int dims, shpseg *shape)
 {
     node *grid_var, *new_grid;
@@ -4570,7 +4573,7 @@ GenerateCompleteDomainVar (node *stride_var, int dims, shpseg *shape)
  *
  ******************************************************************************/
 
-node *
+static node *
 ComputeOneCube (node *stride, WithOpType wltype, int dims, shpseg *shape)
 {
     DBUG_ENTER ("ComputeOneCube");
@@ -4621,7 +4624,7 @@ ComputeOneCube (node *stride, WithOpType wltype, int dims, shpseg *shape)
  *
  ******************************************************************************/
 
-int
+static int
 TestAndDivideStrides (node *stride1, node *stride2, node **divided_stridea,
                       node **divided_strideb)
 {
@@ -4788,8 +4791,8 @@ TestAndDivideStrides (node *stride1, node *stride2, node **divided_stridea,
 /******************************************************************************
  *
  * Function:
- *   int IntersectStrideWithOutline( node *stride1, node *stride2,
- *                                   node **i_stride1, node **i_stride2)
+ *   bool IntersectStrideWithOutline( node *stride1, node *stride2,
+ *                                    node **i_stride1, node **i_stride2)
  *
  * Description:
  *   returns in 'i_stride1' and 'i_stride2' the part of 'stride1', 'stride2'
@@ -4802,14 +4805,14 @@ TestAndDivideStrides (node *stride1, node *stride2, node **divided_stridea,
  *
  ******************************************************************************/
 
-int
+static bool
 IntersectStrideWithOutline (node *stride1, node *stride2, node **i_stride1,
                             node **i_stride2)
 {
     node *grid1, *grid2, *trav_i_stride1, *trav_i_stride2;
     int bound11, bound21, grid1_b1, grid1_b2, bound12, bound22, grid2_b1, grid2_b2, head1,
       rear1, head2, rear2, i_bound1, i_bound2, i_offset1, i_offset2;
-    int result = 1;
+    bool result = TRUE;
 
     DBUG_ENTER ("IntersectStrideWithOutline");
 
@@ -4948,7 +4951,7 @@ IntersectStrideWithOutline (node *stride1, node *stride2, node **i_stride1,
                     *i_stride2 = FreeTree (*i_stride2);
                 }
             }
-            result = 0;
+            result = FALSE;
 
             /* we can give up here */
             break;
@@ -4982,7 +4985,7 @@ IntersectStrideWithOutline (node *stride1, node *stride2, node **i_stride1,
  *
  ******************************************************************************/
 
-int
+static int
 IsSubsetStride (node *stride1, node *stride2)
 {
     node *new_stride1, *new_stride2;
@@ -5063,7 +5066,7 @@ IsSubsetStride (node *stride1, node *stride2)
  *
  ******************************************************************************/
 
-int
+static int
 AdjustBounds (node **stride1, node **stride2)
 {
     node *new_stride1, *new_stride2;
@@ -5160,7 +5163,7 @@ AdjustBounds (node **stride1, node **stride2)
  *
  ******************************************************************************/
 
-node *
+static node *
 EleminateDuplicatesAndAdjustBounds (node *strides)
 {
     node *stride1, *prev_stride1, *stride2, *prev_stride2;
@@ -5240,12 +5243,13 @@ EleminateDuplicatesAndAdjustBounds (node *strides)
  *
  ******************************************************************************/
 
-node *
+static node *
 ComputeCubes (node *strides)
 {
     node *new_strides, *stride1, *stride2, *i_stride1, *i_stride2, *divided_stridea,
       *divided_strideb, *remain, *last_remain, *last_stride1, *tmp;
-    int fixpoint, res;
+    int res;
+    bool fixpoint;
 
     DBUG_ENTER ("ComputeCubes");
 
@@ -5313,7 +5317,7 @@ ComputeCubes (node *strides)
      *  Therefore fixpoint-iteration is needed!
      */
     do {
-        fixpoint = 1;
+        fixpoint = TRUE;
         new_strides = NULL;
 
         /* check WLSTRIDE_MODIFIED */
@@ -5332,11 +5336,11 @@ ComputeCubes (node *strides)
                                             &divided_strideb);
 
                 if (res == 1) {
-                    fixpoint = 0;
+                    fixpoint = FALSE;
                     WLSTRIDE_MODIFIED (stride1) = divided_stridea;
                 } else {
                     if (res == 2) {
-                        fixpoint = 0;
+                        fixpoint = FALSE;
                         WLSTRIDE_MODIFIED (stride2) = divided_stridea;
                     } else {
                         DBUG_ASSERT (((divided_stridea == NULL)
@@ -5376,7 +5380,7 @@ ComputeCubes (node *strides)
      *  -> every stride lies in one and only one cube
      */
     do {
-        fixpoint = 1;
+        fixpoint = TRUE;
         new_strides = NULL;
 
         /* check WLSTRIDE_MODIFIED */
@@ -5396,7 +5400,7 @@ ComputeCubes (node *strides)
 
                 if (i_stride1 != NULL) {
                     if (CompareWLnode (stride1, i_stride1, 1) != 0) {
-                        fixpoint = 0;
+                        fixpoint = FALSE;
                         WLSTRIDE_MODIFIED (stride1) = i_stride1;
                         new_strides = InsertWLnodes (new_strides, i_stride1);
                     } else {
@@ -5410,7 +5414,7 @@ ComputeCubes (node *strides)
 
                 if (i_stride2 != NULL) {
                     if (CompareWLnode (stride2, i_stride2, 1) != 0) {
-                        fixpoint = 0;
+                        fixpoint = FALSE;
                         WLSTRIDE_MODIFIED (stride2) = i_stride2;
                         new_strides = InsertWLnodes (new_strides, i_stride2);
                     } else {
@@ -5538,7 +5542,7 @@ ComputeCubes (node *strides)
  *
  ******************************************************************************/
 
-void
+static void
 ComputeIndexMinMax (int *idx_min, int *idx_max, int dims, node *strides)
 {
     node *stride;
@@ -5639,7 +5643,7 @@ ComputeIndexMinMax (int *idx_min, int *idx_max, int dims, node *strides)
  *
  ******************************************************************************/
 
-node *
+static node *
 InferSegParams (node *seg)
 {
     int d;
@@ -5695,7 +5699,7 @@ InferSegParams (node *seg)
 /******************************************************************************
  *
  * Function:
- *   int IsHomSV( node *nodes, int dim, int sv)
+ *   bool IsHomSV( node *nodes, int dim, int sv)
  *
  * Description:
  *   Infers for the given wlnode tree whether in dimension 'dim' the extend
@@ -5703,7 +5707,7 @@ InferSegParams (node *seg)
  *
  ******************************************************************************/
 
-int
+static bool
 IsHomSV (node *nodes, int dim, int sv)
 {
     int ishom = TRUE;
@@ -5758,7 +5762,7 @@ IsHomSV (node *nodes, int dim, int sv)
  *
  ******************************************************************************/
 
-node *
+static node *
 InferSchedulingParams (node *seg)
 {
     int new_sv, d;
@@ -5941,7 +5945,7 @@ WLTRANwith (node *arg_node, node *arg_info)
      */
     DBUG_EXECUTE ("WLprec", NOTE (("step 0.2: checking disjointness of strides\n")));
 #ifndef DBUG_OFF
-    if (CheckDisjointness (strides) != 0) {
+    if (!CheckDisjointness (strides)) {
         DBUG_ASSERT ((0),
                      "Consistence check failed: Not all strides are pairwise disjoint!\n"
                      "This is probably due to an error during with-loop-folding.");
@@ -6097,30 +6101,26 @@ WLTRANwith (node *arg_node, node *arg_info)
  *   node *WLTRANcode( node *arg_node, node *arg_info)
  *
  * Description:
- *   precompilation of Ncode-nodes.
- *
- * Remarks:
- *   - CODE_NO is set in the whole Ncode-chain
+ *   CODE_NO is set.
  *
  ******************************************************************************/
 
 node *
 WLTRANcode (node *arg_node, node *arg_info)
 {
-    node *code;
-    int no = 0;
+    static int no = 0;
 
     DBUG_ENTER ("WLTRANcode");
 
-    code = arg_node;
-    while (code != NULL) {
-        NCODE_NO (code) = no;
-        if (NCODE_CBLOCK (code) != NULL) {
-            NCODE_CBLOCK (code) = Trav (NCODE_CBLOCK (code), arg_info);
-        }
-        NCODE_CEXPR (code) = Trav (NCODE_CEXPR (code), arg_info);
-        no++;
-        code = NCODE_NEXT (code);
+    NCODE_NO (arg_node) = no++;
+
+    if (NCODE_CBLOCK (arg_node) != NULL) {
+        NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
+    }
+    NCODE_CEXPR (arg_node) = Trav (NCODE_CEXPR (arg_node), arg_info);
+
+    if (NCODE_NEXT (arg_node) != NULL) {
+        NCODE_NEXT (arg_node) = Trav (NCODE_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -6157,7 +6157,7 @@ WLTRAFundef (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *WLTRAFundef(node *arg_node, node *arg_info)
+ *   node *WLTRALet( node *arg_node, node *arg_info)
  *
  * Description:
  *   'INFO_WL_SHPSEG( arg_info)' points to the shape-segs of 'LET_IDS'
@@ -6172,12 +6172,13 @@ WLTRALet (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("WLTRALet");
 
-    tmp = INFO_WL_SHPSEG (arg_info);
-
     DBUG_ASSERT ((LET_VARDEC (arg_node) != NULL), "vardec of let-variable not found!");
+
     DBUG_ASSERT (((NODE_TYPE (LET_VARDEC (arg_node)) == N_vardec)
                   || (NODE_TYPE (LET_VARDEC (arg_node)) == N_arg)),
                  "vardec-node of let-variable has wrong type!");
+
+    tmp = INFO_WL_SHPSEG (arg_info);
     INFO_WL_SHPSEG (arg_info) = VARDEC_OR_ARG_SHPSEG (LET_VARDEC (arg_node));
 
     LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
@@ -6193,8 +6194,7 @@ WLTRALet (node *arg_node, node *arg_info)
  *   node *WlTransform( node *syntax_tree)
  *
  * Description:
- *   In this compiler phase all N_Nwith nodes are transformed in N_Nwith2
- *   nodes.
+ *   Transforms all N_Nwith nodes into N_Nwith2 nodes.
  *
  ******************************************************************************/
 
