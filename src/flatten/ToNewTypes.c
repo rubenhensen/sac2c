@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.9  2004/12/19 14:51:02  sbs
+ * old types killed now
+ *
  * Revision 1.8  2004/12/08 17:59:15  ktr
  * removed ARRAY_TYPE/ARRAY_NTYPE
  *
@@ -221,11 +224,9 @@ TNTarg (node *arg_node, info *arg_info)
         DBUG_EXECUTE ("TNT", tmp_str = ILIBfree (tmp_str););
     }
 
-#ifdef MWE_NTYPE_READY
-    if ((ARG_TYPE (arg_node) != NULL) && (global.compiler_phase > PH_typecheck)) {
+    if (ARG_TYPE (arg_node) != NULL) {
         ARG_TYPE (arg_node) = FREEfreeAllTypes (ARG_TYPE (arg_node));
     }
-#endif
 
     if (ARG_NEXT (arg_node) != NULL) {
         ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
@@ -272,10 +273,9 @@ TNTvardec (node *arg_node, info *arg_info)
         DBUG_EXECUTE ("TNT", tmp_str = ILIBfree (tmp_str););
     }
 
-#ifdef MWE_NTYPE_READY
-    if ((VARDEC_TYPE (arg_node) != NULL) && (global.compiler_phase > PH_typecheck))
+    if (VARDEC_TYPE (arg_node) != NULL) {
         VARDEC_TYPE (arg_node) = FREEfreeAllTypes (VARDEC_TYPE (arg_node));
-#endif
+    }
 
     if (VARDEC_NEXT (arg_node) != NULL) {
         VARDEC_NEXT (arg_node) = TRAVdo (VARDEC_NEXT (arg_node), arg_info);
@@ -444,7 +444,6 @@ node *
 TNTfundef (node *arg_node, info *arg_info)
 {
     types *chain;
-    node *ret;
     DBUG_ENTER ("TNTfundef");
 
     INFO_TNT_FUNDEF (arg_info) = arg_node;
@@ -464,14 +463,16 @@ TNTfundef (node *arg_node, info *arg_info)
         FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
     }
 
-    if (FUNDEF_RETS (arg_node) == NULL) {
-        DBUG_ASSERT ((FUNDEF_TYPES (arg_node) != NULL), "old type in arg missing");
+    chain = FUNDEF_TYPES (arg_node);
 
-        chain = FUNDEF_TYPES (arg_node);
-
-        ret = TCreturnTypes2Ret (chain);
-
-        FUNDEF_RETS (arg_node) = ret;
+    if (chain != NULL) {
+        DBUG_ASSERT (FUNDEF_RETS (arg_node) != NULL,
+                     "Rets missing despite non-NULL FUNDEF_TYPES");
+        FUNDEF_RETS (arg_node) = FREEdoFreeTree (FUNDEF_RETS (arg_node));
+        FUNDEF_RETS (arg_node) = TCreturnTypes2Ret (chain);
+        FUNDEF_TYPES (arg_node) = FREEfreeAllTypes (chain);
+    } else {
+        DBUG_ASSERT (FUNDEF_RETS (arg_node) == NULL, "missing FUNDEF_TYPES!");
     }
 
     DBUG_RETURN (arg_node);
