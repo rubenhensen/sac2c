@@ -1,6 +1,12 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.6  2004/11/03 17:19:24  sah
+  the sons are always initialised to NULL now, as
+  TravSons may try to traverse into sons that in
+  fact are not used and thus do not get an initial
+  value assigned!
+
   Revision 1.5  2004/08/08 16:07:21  sah
   beautified generated code
   include more doxygen comments
@@ -56,6 +62,22 @@ version="1.0">
 
 #define AST_NO_COMPAT
 #include "node_compat.h"
+
+static node *MakeEmptyNode()
+{
+  node *result;
+  int cnt;
+
+  DBUG_ENTER("MakeEmptyNode");
+
+  result = (node *) Malloc( sizeof( node));
+
+  for (cnt = 0; cnt &lt; MAX_SONS; cnt++) {
+    result->node[cnt] = NULL;
+  }
+
+  DBUG_RETURN( result);
+}
 
   </xsl:text>
   <xsl:apply-templates select="//syntaxtree/node"/>

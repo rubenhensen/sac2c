@@ -1,6 +1,12 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.9  2004/11/03 17:19:24  sah
+  the sons are always initialised to NULL now, as
+  TravSons may try to traverse into sons that in
+  fact are not used and thus do not get an initial
+  value assigned!
+
   Revision 1.8  2004/10/26 09:36:43  sah
   flags are initialised now
 
@@ -55,7 +61,7 @@ version="1.0">
   <xsl:value-of select="'&quot;);'"/>
   <!-- allocate new node this -->
   <xsl:value-of select="'DBUG_PRINT( &quot;MAKE&quot;, (&quot;allocating node structure&quot;));'"/>
-  <xsl:value-of select="'this = Malloc(sizeof(node));'"/>
+  <xsl:value-of select="'this = MakeEmptyNode();'" />
   <!-- clear all node pointers -->
   <xsl:value-of select="'for(cnt=0;cnt&lt;MAX_SONS;cnt++){this-&gt;node[cnt]=NULL;}'"/>
   <!-- allocate the attrib structure -->

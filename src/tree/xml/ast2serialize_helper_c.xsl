@@ -1,6 +1,12 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.9  2004/11/03 17:19:24  sah
+  the sons are always initialised to NULL now, as
+  TravSons may try to traverse into sons that in
+  fact are not used and thus do not get an initial
+  value assigned!
+
   Revision 1.8  2004/11/02 10:43:38  sah
   fixe typoe
 
@@ -111,6 +117,7 @@ version="1.0">
   <xsl:value-of select="'this->nodetype=node_type;'" />
   <xsl:value-of select="'this->lineno=lineno;'" />
   <xsl:value-of select="'this->src_file=sfile;'" />
+  <xsl:value-of select="'for (cnt=0; cnt &lt; MAX_SONS; cnt++) { this->node[cnt] = NULL; } '" />
   <xsl:value-of select="'switch (node_type) {'" />
   <xsl:apply-templates select="//syntaxtree/node" mode="gen-case" />
   <xsl:value-of select="'default: /* error */ '" />
