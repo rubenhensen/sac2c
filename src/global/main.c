@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.32  1995/03/29 11:59:41  hw
+ * Revision 1.33  1995/04/03 06:19:49  sbs
+ * options converted to -b[piftorc] and show_icm inserted
+ *
+ * Revision 1.32  1995/03/29  11:59:41  hw
  * option -c (compile) inserted
  *
  * Revision 1.31  1995/03/24  15:44:19  asi
@@ -134,12 +137,13 @@ char filename[256];
 int opt_dcr = 1, opt_cf = 1, opt_wr = 1;
 int optimize = 1;
 int show_refcnt = 0;
+int show_icm = 0;
 
 MAIN
 {
     int set_outfile = 0;
-    int breakparse = 0, breakimport = 0, breakflatten = 0, breaktype = 0,
-        print_refcnt = 0, refcount = 1, compile = 0;
+    int breakparse = 0, breakimport = 0, breakflatten = 0, breaktype = 0, breakopt = 0,
+        breakref = 0;
     char prgname[256];
     char outfilename[256] = "out.txt";
 
@@ -152,33 +156,39 @@ MAIN
         usage (prgname);
         exit (0);
     }
-    ARG 'p':
+    ARG 'b' : PARM
     {
-        breakparse = 1;
+        switch (**argv) {
+        case 'p':
+            breakparse = 1;
+            break;
+        case 'i':
+            breakimport = 1;
+            break;
+        case 'f':
+            breakflatten = 1;
+            break;
+        case 't':
+            breaktype = 1;
+            break;
+        case 'o':
+            breakopt = 1;
+            break;
+        case 'r':
+            breakref = 1;
+            show_refcnt = 1;
+            break;
+        case 'c':
+            show_icm = 1;
+            break;
+        default:
+            ERROR1 (("unknown break parameter \"%s\"\n", *argv));
+        }
     }
-    ARG 'i':
-    {
-        breakimport = 1;
-    }
-    ARG 'f':
-    {
-        breakflatten = 1;
-    }
-    ARG 't':
-    {
-        breaktype = 1;
-    }
+    NEXTOPT
     ARG 's':
     {
         silent = 1;
-    }
-    ARG 'r':
-    {
-        print_refcnt = 1;
-    }
-    ARG 'c':
-    {
-        compile = 1;
     }
     ARG 'n' : PARM
     {
@@ -190,8 +200,6 @@ MAIN
             opt_wr = 0;
         if (!strncmp (*argv, "oOPT", 4))
             optimize = 0;
-        if (!strncmp (*argv, "oRC", 3))
-            refcount = 0;
     }
     NEXTOPT
     ARG 'o' : PARM
@@ -247,18 +255,16 @@ MAIN
                 NOTE (("\n%d Warnings, %d Errors \n", warnings, errors));
                 if ((!breaktype) && (errors == 0)) {
                     syntax_tree = Optimize (syntax_tree);
-                    if ((1 == refcount) || (1 == compile)) {
+                    if (!breakopt) {
+                        NOTE (("Refcounting: ...\n"));
                         syntax_tree = Refcount (syntax_tree);
-                        if (1 == print_refcnt)
-                            show_refcnt = 1;
+                        if (!breakref) {
+                            NOTE (("Compiling: ...\n"));
+                            syntax_tree = Compile (syntax_tree);
+                        }
                     }
-                    if (1 == compile)
-                        syntax_tree = Compile (syntax_tree);
-
-                    /*  GenCCode(); */
                 }
-            } else
-                NOTE (("\n%d Warnings, %d Errors \n", warnings, errors));
+            }
         }
     }
 
