@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.36  1996/01/02 16:03:09  cg
+ * Revision 1.37  1996/01/07 16:59:29  cg
+ * pragmas copyfun, freefun, linkname, effect, touch and readonly
+ * are now immediately resolved
+ *
+ * Revision 1.36  1996/01/02  16:03:09  cg
  * handling of global variable filename simplified
  *
  * Revision 1.35  1995/12/29  10:39:37  cg
@@ -382,6 +386,58 @@ InsertClassType (node *classdec)
 
 /*
  *
+ *  functionname  : CheckExistObjects
+ *  arguments     : 1) global object from pragma touch or effect
+ *                  2) N_modul node of current program
+ *                  3) attrib of global object
+ *                     (effect->ST_reference, touch->ST_readonly_reference)
+ *                  4) line number of function for error message
+ *  description   : checks if the global objects mentioned in touch or
+ *                  effect pragmas of external modules/classes actually
+ *                  exist in the current context.
+ *                  A node list of needed objects for this particular
+ *                  function is returned.
+ *  global vars   : ---
+ *  internal funs : ---
+ *  external funs : SearchObjdef, MakeNodelist, ModName, FreeOneIds
+ *  macros        : DBUG, TREE, ERROR
+ *
+ *  remarks       :
+ *
+ */
+
+nodelist *
+CheckExistObjects (ids *object, node *modul, statustype attrib, int line)
+{
+    node *find;
+    nodelist *objlist = NULL;
+
+    DBUG_ENTER ("CheckExistObjects");
+
+    while (object != NULL) {
+        find = SearchObjdef (IDS_NAME (object), IDS_MOD (object), MODUL_OBJS (modul));
+
+        if (find == NULL) {
+            if (attrib == ST_reference) {
+                ERROR (line, ("Effected global object '%s` unknown",
+                              ModName (IDS_MOD (object), IDS_NAME (object))));
+            } else {
+                ERROR (line, ("Touched global object '%s` unknown",
+                              ModName (IDS_MOD (object), IDS_NAME (object))));
+            }
+        } else {
+            objlist = MakeNodelist (find, ST_regular, objlist);
+            NODELIST_ATTRIB (objlist) = attrib;
+        }
+
+        object = FreeOneIds (object);
+    }
+
+    DBUG_RETURN (objlist);
+}
+
+/*
+ *
  *  functionname  : Nums2IntArray
  *  arguments     : 1) line number for error messages
  *                  2) number of parameters of function == array size
@@ -496,18 +552,134 @@ Nums2BoolArray (int line, int size, nums *numsp)
 
 /*
  *
- *  functionname  : CheckPragmaTypedef
+ *  functionname  : InitGenericFuns
+ *  arguments     :
+ *  description   :
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
+
+node *
+InitGenericFuns (node *arg_node, node *pragma)
+{
+    DBUG_ENTER ("InitGenericFuns");
+
+    DBUG_PRINT ("PRAGMA",
+                ("Initializing generic functions of type %s", ItemName (arg_node)));
+
+    if (TYPEDEF_ATTRIB (arg_node) != ST_unique) {
+        if (pragma == NULL) {
+            TYPEDEF_COPYFUN (arg_node)
+              = (char *)Malloc (sizeof (char) * (strlen (TYPEDEF_NAME (arg_node)) + 7));
+            strcpy (TYPEDEF_COPYFUN (arg_node), "copy_");
+            strcat (TYPEDEF_COPYFUN (arg_node), TYPEDEF_NAME (arg_node));
+
+            TYPEDEF_FREEFUN (arg_node)
+              = (char *)Malloc (sizeof (char) * (strlen (TYPEDEF_NAME (arg_node)) + 7));
+            strcpy (TYPEDEF_FREEFUN (arg_node), "free_");
+            strcat (TYPEDEF_FREEFUN (arg_node), TYPEDEF_NAME (arg_node));
+        } else {
+            if (PRAGMA_COPYFUN (pragma) != NULL) {
+                TYPEDEF_COPYFUN (arg_node) = PRAGMA_COPYFUN (pragma);
+            } else {
+                TYPEDEF_COPYFUN (arg_node) = (char *)Malloc (
+                  sizeof (char) * (strlen (TYPEDEF_NAME (arg_node)) + 7));
+                strcpy (TYPEDEF_COPYFUN (arg_node), "copy_");
+                strcat (TYPEDEF_COPYFUN (arg_node), TYPEDEF_NAME (arg_node));
+            }
+
+            if (PRAGMA_FREEFUN (pragma) != NULL) {
+                TYPEDEF_FREEFUN (arg_node) = PRAGMA_FREEFUN (pragma);
+            } else {
+                TYPEDEF_FREEFUN (arg_node) = (char *)Malloc (
+                  sizeof (char) * (strlen (TYPEDEF_NAME (arg_node)) + 7));
+                strcpy (TYPEDEF_FREEFUN (arg_node), "free_");
+                strcat (TYPEDEF_FREEFUN (arg_node), TYPEDEF_NAME (arg_node));
+            }
+
+            FREE (TYPEDEF_PRAGMA (arg_node));
+        }
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/*
+ *
+ *  functionname  : ResolvePragmaReadonly
+ *  arguments     :
+ *  description   :
+ *  global vars   :
+ *  internal funs : Nums2BoolArray
+ *  external funs :
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
+
+node *
+ResolvePragmaReadonly (node *arg_node, node *pragma, int count_params)
+{
+    int cnt;
+    node *tmp_args;
+    types *tmp_types;
+
+    DBUG_ENTER ("ResolvePragmaReadonly");
+
+    DBUG_PRINT ("PRAGMA",
+                ("Resolving pragma readonly for function %s", ItemName (arg_node)));
+
+    PRAGMA_READONLY (pragma)
+      = Nums2BoolArray (NODE_LINE (arg_node), count_params, PRAGMA_READONLYNUMS (pragma));
+
+    cnt = 0;
+    tmp_types = FUNDEF_TYPES (arg_node);
+
+    while (tmp_types != NULL) {
+        cnt++;
+        tmp_types = TYPES_NEXT (tmp_types);
+    }
+
+    tmp_args = FUNDEF_ARGS (arg_node);
+
+    while (tmp_args != NULL) {
+        if (PRAGMA_READONLY (pragma)[cnt]) {
+            if (ARG_ATTRIB (tmp_args) == ST_reference) {
+                ARG_ATTRIB (tmp_args) = ST_readonly_reference;
+            } else {
+                WARN (NODE_LINE (arg_node),
+                      ("Parameter no. %d of function '%s` is not a reference "
+                       "parameter, so pragma 'readonly` has no effect on it",
+                       cnt, ItemName (arg_node)));
+            }
+        }
+
+        tmp_args = ARG_NEXT (tmp_args);
+        cnt++;
+    }
+
+    FREE (PRAGMA_READONLY (pragma));
+
+    DBUG_RETURN (arg_node);
+}
+
+/*
+ *
+ *  functionname  : IMtypedef
  *  arguments     : 1) N_typedef node
- *                  2) arg_info is used as flag:
- *                     arg_info == NULL -> external module/class
- *                     arg_info != NULL -> SAC module/class
- *  description   : checks the correctness of pragmas for a typedef
- *                  For SAC-modules/classes the whole pragma node is
- *                  removed. For external modules/classes, all those pragmas
- *                  are removed which do not belong to types.
+ *                  2) arg_info unused
+ *  description   : checks the correctness of pragmas for a typedef.
+ *                  The whole pragma node is removed afterwards.
+ *                  The slots FREEFUN and COPYFUN are initialized.
  *  global vars   : ---
- *  internal funs : CheckPragmaTypedef
- *  external funs : FreeAllNums, FreeAllIds, FreeTree, FreeNode
+ *  internal funs : ---
+ *  external funs : Trav, FreeAllNums, FreeAllIds, FreeTree, FreeNode
  *  macros        : DBUG, FREE, ERROR, TREE
  *
  *  remarks       :
@@ -515,16 +687,16 @@ Nums2BoolArray (int line, int size, nums *numsp)
  */
 
 node *
-CheckPragmaTypedef (node *arg_node, node *arg_info)
+IMtypedef (node *arg_node, node *arg_info)
 {
     node *pragma = TYPEDEF_PRAGMA (arg_node);
 
-    DBUG_ENTER ("CheckPragmaTypedef");
+    DBUG_ENTER ("IMtypedef");
 
     DBUG_PRINT ("PRAGMA", ("Checking pragmas of type %s", ItemName (arg_node)));
 
     if (pragma != NULL) {
-        if (arg_info != NULL) {
+        if (TYPEDEF_MOD (arg_node) != NULL) {
             /*
              *  typedef from SAC-module/class
              */
@@ -585,8 +757,12 @@ CheckPragmaTypedef (node *arg_node, node *arg_info)
         }
     }
 
+    if ((TYPEDEF_BASETYPE (arg_node) == T_hidden) && (TYPEDEF_MOD (arg_node) == NULL)) {
+        InitGenericFuns (arg_node, pragma);
+    }
+
     if (TYPEDEF_NEXT (arg_node) != NULL) {
-        TYPEDEF_NEXT (arg_node) = CheckPragmaTypedef (TYPEDEF_NEXT (arg_node), arg_info);
+        TYPEDEF_NEXT (arg_node) = Trav (TYPEDEF_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -594,21 +770,25 @@ CheckPragmaTypedef (node *arg_node, node *arg_info)
 
 /*
  *
- *  functionname  : CheckPragmaFundef
+ *  functionname  : IMfundef
  *  arguments     : 1) N_fundef node
- *                  2) arg_info is used as flag:
- *                     arg_info == NULL -> external module/class
- *                     arg_info != NULL -> SAC module/class
+ *                  2) arg_info points to N_modul node
  *  description   : checks pragmas of functions.
  *                  For SAC-modules/classes the whole pragma node is
  *                  removed. For external modules/classes, all those pragmas
  *                  are removed which do not belong to functions.
- *                  The pragmas linksign, refcounting and readonly are
+ *                  The pragmas linksign and refcounting are
  *                  converted from their first representation as nums chain
  *                  to an array representation.
+ *                  The existence of all objects referenced in effect or
+ *                  touch pragmas is checked and node lists of the defining
+ *                  N_objdef nodes are generated.
+ *                  The readonly pragma is resolved by traversing the
+ *                  function's arguments and switching from attribute
+ *                  ST_reference to ST_readonly_reference.
  *  global vars   : ---
- *  internal funs : Nums2IntArray, Nums2BoolArray, CheckPragmaFundef
- *  external funs : FreeAllIds, FreeTree, FreeNode
+ *  internal funs : Nums2IntArray, Nums2BoolArray, CheckExistObjects
+ *  external funs : FreeAllIds, FreeTree, FreeNode, ConcatNodelist
  *  macros        : DBUG, TREE, ERROR, FREE
  *
  *  remarks       :
@@ -616,17 +796,17 @@ CheckPragmaTypedef (node *arg_node, node *arg_info)
  */
 
 node *
-CheckPragmaFundef (node *arg_node, node *arg_info)
+IMfundef (node *arg_node, node *arg_info)
 {
     int count_params = 0;
     node *pragma = FUNDEF_PRAGMA (arg_node);
 
-    DBUG_ENTER ("CheckPragmaFundef");
+    DBUG_ENTER ("IMfundef");
 
     DBUG_PRINT ("PRAGMA", ("Checking pragmas of function %s", ItemName (arg_node)));
 
     if (pragma != NULL) {
-        if (arg_info != NULL) {
+        if (FUNDEF_MOD (arg_node) != NULL) {
             /*
              *  fundef from SAC-module/class
              */
@@ -665,18 +845,37 @@ CheckPragmaFundef (node *arg_node, node *arg_info)
                                     PRAGMA_REFCOUNTINGNUMS (pragma));
             }
 
+            PRAGMA_NUMPARAMS (pragma) = count_params;
+
             if (PRAGMA_READONLYNUMS (pragma) != NULL) {
-                PRAGMA_READONLY (pragma)
-                  = Nums2BoolArray (NODE_LINE (arg_node), count_params,
-                                    PRAGMA_READONLYNUMS (pragma));
+                arg_node = ResolvePragmaReadonly (arg_node, pragma, count_params);
             }
 
-            PRAGMA_NUMPARAMS (pragma) = count_params;
+            if (PRAGMA_EFFECT (pragma) != NULL) {
+                FUNDEF_NEEDOBJS (arg_node)
+                  = CheckExistObjects (PRAGMA_EFFECT (pragma), arg_info, ST_reference,
+                                       NODE_LINE (arg_node));
+                PRAGMA_EFFECT (pragma) = NULL;
+            }
+
+            if (PRAGMA_TOUCH (pragma) != NULL) {
+                FUNDEF_NEEDOBJS (arg_node)
+                  = ConcatNodelist (FUNDEF_NEEDOBJS (arg_node),
+                                    CheckExistObjects (PRAGMA_TOUCH (pragma), arg_info,
+                                                       ST_readonly_reference,
+                                                       NODE_LINE (arg_node)));
+                PRAGMA_TOUCH (pragma) = NULL;
+            }
+
+            if ((PRAGMA_LINKNAME (pragma) == NULL) && (PRAGMA_LINKSIGN (pragma) == NULL)
+                && (PRAGMA_REFCOUNTING (pragma) == NULL)) {
+                FUNDEF_PRAGMA (arg_node) = FreeNode (pragma);
+            }
         }
     }
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = CheckPragmaFundef (FUNDEF_NEXT (arg_node), arg_info);
+        FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -684,18 +883,14 @@ CheckPragmaFundef (node *arg_node, node *arg_info)
 
 /*
  *
- *  functionname  : CheckPragmaObjdef
- *  arguments     : 1) N_typedef node
- *                  2) arg_info is used as flag:
- *                     arg_info == NULL -> external module/class
- *                     arg_info != NULL -> SAC module/class
- *  description   : checks pragmas of global objects
- *                  For SAC-modules/classes the whole pragma node is
- *                  removed. For external modules/classes, all those pragmas
- *                  are removed which do not belong to global objects.
+ *  functionname  : IMobjdef
+ *  arguments     : 1) N_objdef node
+ *                  2) arg_info unused
+ *  description   : checks pragmas of global objects.
+ *                  Afterwards, the whole pragma node is removed.
  *  global vars   : ---
- *  internal funs : CheckPragmaObjdef
- *  external funs : FreeAllNums, FreeAllIds, FreeTree, FreeNode
+ *  internal funs : ---
+ *  external funs : Trav, FreeAllNums, FreeAllIds, FreeTree, FreeNode
  *  macros        : DBUG, TREE, FREE, ERROR
  *
  *  remarks       :
@@ -703,16 +898,16 @@ CheckPragmaFundef (node *arg_node, node *arg_info)
  */
 
 node *
-CheckPragmaObjdef (node *arg_node, node *arg_info)
+IMobjdef (node *arg_node, node *arg_info)
 {
     node *pragma = OBJDEF_PRAGMA (arg_node);
 
-    DBUG_ENTER ("CheckPragmaObjdef");
+    DBUG_ENTER ("IMobjdef");
 
     DBUG_PRINT ("PRAGMA", ("Checking pragmas of object %s", ItemName (arg_node)));
 
     if (pragma != NULL) {
-        if (arg_info != NULL) {
+        if (OBJDEF_MOD (arg_node) != NULL) {
             /*
              *  fundef from SAC-module/class
              */
@@ -767,15 +962,25 @@ CheckPragmaObjdef (node *arg_node, node *arg_info)
                       ("Pragma 'freefun` has no effect on global object"));
                 FREE (PRAGMA_FREEFUN (pragma));
             }
+
+            if (PRAGMA_LINKNAME (pragma) != NULL) {
+                OBJDEF_LINKNAME (arg_node) = PRAGMA_LINKNAME (pragma);
+                FREE (pragma);
+
+                DBUG_PRINT ("PRAGMA", ("object %s has linkname %s", ItemName (arg_node),
+                                       OBJDEF_LINKNAME (arg_node)));
+            }
         }
     }
 
     if (OBJDEF_NEXT (arg_node) != NULL) {
-        OBJDEF_NEXT (arg_node) = CheckPragmaObjdef (OBJDEF_NEXT (arg_node), arg_info);
+        OBJDEF_NEXT (arg_node) = Trav (OBJDEF_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
 }
+
+#if 0
 
 /*
  *
@@ -793,35 +998,41 @@ CheckPragmaObjdef (node *arg_node, node *arg_info)
  *
  */
 
-node *
-CheckPragmas (node *moddec, char *prefix)
+node *CheckPragmas(node *moddec, char *prefix)
 {
-    DBUG_ENTER ("CheckPragmas");
-
-    if (MODDEC_OWN (moddec) != NULL) {
-        if (MODDEC_ITYPES (moddec) != NULL) {
-            MODDEC_ITYPES (moddec)
-              = CheckPragmaTypedef (MODDEC_ITYPES (moddec), (node *)prefix);
-        }
-
-        if (MODDEC_ETYPES (moddec) != NULL) {
-            MODDEC_ETYPES (moddec)
-              = CheckPragmaTypedef (MODDEC_ETYPES (moddec), (node *)prefix);
-        }
-
-        if (MODDEC_OBJS (moddec) != NULL) {
-            MODDEC_OBJS (moddec)
-              = CheckPragmaObjdef (MODDEC_OBJS (moddec), (node *)prefix);
-        }
-
-        if (MODDEC_FUNS (moddec) != NULL) {
-            MODDEC_FUNS (moddec)
-              = CheckPragmaFundef (MODDEC_FUNS (moddec), (node *)prefix);
-        }
+  DBUG_ENTER("CheckPragmas");
+  
+  if (MODDEC_OWN(moddec)!=NULL)
+  {
+    if (MODDEC_ITYPES(moddec)!=NULL)
+    {
+      MODDEC_ITYPES(moddec)
+        =CheckPragmaTypedef(MODDEC_ITYPES(moddec), (node*)prefix);
     }
-
-    DBUG_RETURN (moddec);
+    
+    if (MODDEC_ETYPES(moddec)!=NULL)
+    {
+      MODDEC_ETYPES(moddec)
+        =CheckPragmaTypedef(MODDEC_ETYPES(moddec), (node*)prefix);
+    }
+    
+    if (MODDEC_OBJS(moddec)!=NULL)
+    {
+      MODDEC_OBJS(moddec)
+        =CheckPragmaObjdef(MODDEC_OBJS(moddec), (node*)prefix);
+    }
+    
+    if (MODDEC_FUNS(moddec)!=NULL)
+    {
+      MODDEC_FUNS(moddec)
+        =CheckPragmaFundef(MODDEC_FUNS(moddec), (node*)prefix);
+    }
+  }
+  
+  DBUG_RETURN(moddec);
 }
+
+#endif
 
 /*
  *
@@ -890,7 +1101,7 @@ GenMod (char *name, int checkdec)
         tmp->prefix = decl_tree->info.fun_name.id_mod;
         tmp->name = decl_tree->info.fun_name.id;
 
-        tmp->moddec = CheckPragmas (tmp->moddec, tmp->prefix);
+        /*    tmp->moddec=CheckPragmas(tmp->moddec, tmp->prefix);  */
 
         tmp->next = NULL;
 
@@ -1596,6 +1807,23 @@ IMmodul (node *arg_node, node *arg_info)
 
         MODUL_STORE_IMPORTS (arg_node) = MODUL_IMPORTS (arg_node);
         MODUL_IMPORTS (arg_node) = NULL;
+
+        /*
+         *  In the following, types, functions, and objects are traversed
+         *  in order to check and resolve pragmas.
+         */
+
+        if (MODUL_TYPES (arg_node) != NULL) {
+            MODUL_TYPES (arg_node) = Trav (MODUL_TYPES (arg_node), arg_info);
+        }
+
+        if (MODUL_OBJS (arg_node) != NULL) {
+            MODUL_OBJS (arg_node) = Trav (MODUL_OBJS (arg_node), arg_info);
+        }
+
+        if (MODUL_FUNS (arg_node) != NULL) {
+            MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_node);
+        }
     }
 
     DBUG_RETURN (arg_node);
@@ -1703,8 +1931,6 @@ ImportOwnDeclaration (char *name, file_type modtype)
             }
         }
     }
-
-    /* free(mod_tab); */
 
     mod_tab = old_mod_tab;
 

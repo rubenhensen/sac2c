@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.5  1996/01/05 12:39:26  cg
+ * Revision 1.6  1996/01/07 16:59:29  cg
+ * pragmas copyfun, freefun, linkname, effect, touch and readonly
+ * are now immediately resolved
+ *
+ * Revision 1.5  1996/01/05  12:39:26  cg
  * Now, SIB information is retrieved from SAC library files.
  * The existence of all necessary module/class implementations
  * is checked and archive files are extracted from library files.
@@ -43,8 +47,6 @@
 
 static node *sibs = NULL; /* start of list of N_sib nodes storing parsed
                              SAC Information Blocks    */
-
-static strings *extmods = NULL; /* list of imported external modules */
 
 /*
  *  forward declarations
@@ -149,81 +151,6 @@ CreateArchive (char *name)
 
 /*
  *
- *  functionname  : CheckExternalImplementation
- *  arguments     : 1) name of external module/class
- *  description   : looks for implementation of module/class
- *                  and copies it to store_dirname
- *  global vars   : store_dirname, ext_mods, sibs
- *  internal funs : ---
- *  external funs : SystemCall, strcpy, strcat, FindFile
- *  macros        : MODIMP_PATH
- *
- *  remarks       :
- *
- */
-
-void
-CheckExternalImplementation (char *name)
-{
-    strings *tmp;
-    static char buffer[MAX_FILE_NAME];
-    char *pathname;
-    node *tmpsibs;
-
-    DBUG_ENTER ("CheckExternalImplementation");
-
-    DBUG_ASSERT (name != NULL, "called CheckExternalImplementation with name==NULL");
-
-    /*
-     *  First, we look among sibs because even external items can be imported
-     *  through sibs rather than directly.
-     */
-
-    tmpsibs = sibs;
-
-    while ((tmpsibs != NULL) && (0 != strcmp (name, SIB_NAME (tmpsibs)))) {
-        tmpsibs = SIB_NEXT (tmpsibs);
-    }
-
-    tmp = extmods;
-
-    while ((tmp != NULL) && (0 != strcmp (STRINGS_STRING (tmp), name))) {
-        tmp = STRINGS_NEXT (tmp);
-    }
-
-    if ((tmp == NULL) && (tmpsibs == NULL)) {
-        strcpy (buffer, name);
-        strcat (buffer, ".o");
-
-        NOTE (("Searching for implementation of module/class '%s` ...", name));
-
-        pathname = FindFile (MODIMP_PATH, buffer);
-
-        if (pathname == NULL) {
-            strcpy (buffer, name);
-            strcat (buffer, ".a");
-
-            pathname = FindFile (MODIMP_PATH, buffer);
-
-            if (pathname == NULL) {
-                SYSABORT (("Unable to find implementation of module/class '%s`", name));
-            } else {
-                NOTE (("  Found archive file \"%s\" !", pathname));
-                SystemCall ("cp %s %s", pathname, store_dirname);
-            }
-        } else {
-            NOTE (("  Found object file \"%s\"", pathname));
-            SystemCall ("cp %s %s", pathname, store_dirname);
-        }
-
-        extmods = MakeStrings (name, extmods);
-    }
-
-    DBUG_VOID_RETURN;
-}
-
-/*
- *
  *  functionname  : FindSib
  *  arguments     : 1) name of module/class
  *  description   : checks in the list of sibs if this sib has already been
@@ -261,12 +188,12 @@ FindSib (char *name)
         strcpy (buffer, name);
         strcat (buffer, ".lib");
 
-        NOTE (("Searching for implementation of module/class '%s` ...", name));
+        NOTE (("Searching for implementation of SAC module/class '%s` ...", name));
 
         pathname = FindFile (MODIMP_PATH, buffer);
 
         if (pathname == NULL) {
-            SYSABORT (("Unable to find implementation of module/class '%s`", name));
+            SYSABORT (("Unable to find implementation of SAC module/class '%s`", name));
         }
 
         NOTE (("  Evaluating SAC library \"%s\" !", pathname));
@@ -355,7 +282,7 @@ FindSibEntry (node *item, node *sib)
  *                  added to the beginning of the chain of typedefs in 3)
  *  global vars   : ---
  *  internal funs : ---
- *  external funs : ---
+ *  external funs : InitGenericFuns
  *  macros        :
  *
  *  remarks       : compare ExtractObjFromSib
@@ -381,6 +308,8 @@ ExtractTypeFromSib (node *type, node *sib, node *modul)
         }
         TYPEDEF_NEXT (tmp) = TYPEDEF_NEXT (type);
     }
+
+    type = InitGenericFuns (type, TYPEDEF_PRAGMA (type));
 
     if (MODUL_TYPES (modul) == NULL) {
         MODUL_TYPES (modul) = type;
@@ -444,6 +373,13 @@ ExtractObjFromSib (node *obj, node *sib, node *modul)
     }
 
     OBJDEF_LINKMOD (obj) = SIB_NAME (sib);
+
+    if (OBJDEF_PRAGMA (obj) != NULL) {
+        DBUG_ASSERT (PRAGMA_LINKNAME (OBJDEF_PRAGMA (obj)) != NULL,
+                     "Objdef from SIB has pragma but no linkname");
+
+        OBJDEF_LINKNAME (obj) = PRAGMA_LINKNAME (OBJDEF_PRAGMA (obj));
+    }
 
     if (MODUL_OBJS (modul) == NULL) {
         MODUL_OBJS (modul) = obj;
@@ -511,53 +447,6 @@ AddFunToModul (node *fun, node *modul)
     /******************************************************/
 
     DBUG_VOID_RETURN;
-}
-
-/*
- *
- *  functionname  : CheckExistObjects
- *  arguments     : 1) global object from pragma touch or effect
- *                  2) N_modul node of current program
- *                  3) attrib of global object
- *                     (effect->ST_reference, touch->ST_readonly_reference)
- *                  4) line number of function for error message
- *  description   : checks if the global objects mentioned in touch or
- *                  effect pragmas of external modules/classes actually
- *                  exist in the current context.
- *                  A node list of needed objects for this particular
- *                  function is returned.
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : SearchObjdef, MakeNodelist, ModName
- *  macros        : DBUG, TREE, ERROR
- *
- *  remarks       :
- *
- */
-
-nodelist *
-CheckExistObjects (ids *object, node *modul, statustype attrib, int line)
-{
-    node *find;
-    nodelist *objlist = NULL;
-
-    DBUG_ENTER ("CheckExistObjects");
-
-    while (object != NULL) {
-        find = SearchObjdef (IDS_NAME (object), IDS_MOD (object), MODUL_OBJS (modul));
-
-        if (find == NULL) {
-            ERROR (line, ("Needed global object '%s` unknown",
-                          ModName (IDS_MOD (object), IDS_NAME (object))));
-        } else {
-            objlist = MakeNodelist (find, ST_regular, objlist);
-            NODELIST_ATTRIB (objlist) = attrib;
-        }
-
-        object = IDS_NEXT (object);
-    }
-
-    DBUG_RETURN (objlist);
 }
 
 /*
@@ -831,9 +720,9 @@ RSIBfundef (node *arg_node, node *arg_info)
             if (FUNDEF_PRAGMA (sib_entry) != NULL) {
                 pragma = FUNDEF_PRAGMA (sib_entry);
 
-                FUNDEF_PRAGMA (arg_node) = pragma;
-
                 count_params = CountFunctionParams (arg_node);
+
+                PRAGMA_NUMPARAMS (pragma) = count_params;
 
                 if (PRAGMA_LINKSIGNNUMS (pragma) != NULL) {
                     DBUG_PRINT ("READSIB", ("Converting pragma linksign"));
@@ -851,7 +740,9 @@ RSIBfundef (node *arg_node, node *arg_info)
                                         PRAGMA_REFCOUNTINGNUMS (pragma));
                 }
 
-                PRAGMA_NUMPARAMS (pragma) = count_params;
+                if (PRAGMA_READONLYNUMS (pragma) != NULL) {
+                    arg_node = ResolvePragmaReadonly (arg_node, pragma, count_params);
+                }
 
                 DBUG_PRINT ("READSIB", ("Resolving touched objects of function %s",
                                         ItemName (arg_node)));
@@ -885,35 +776,6 @@ RSIBfundef (node *arg_node, node *arg_info)
                 PRAGMA_NEEDFUNS (pragma) = NULL;
             }
         }
-    } else {
-        /*
-         *  Even if no SIB-information is available for this function, it may
-         *  be an external function having pragmas effect and/or touch.
-         *  In these cases, we have to check that the named objects exist and
-         *  generate a node list of the respective N_objdef nodes.
-         */
-
-        if (FUNDEF_MOD (arg_node) == NULL) {
-            if (FUNDEF_PRAGMA (arg_node) != NULL) {
-                FUNDEF_NEEDOBJS (arg_node)
-                  = CheckExistObjects (FUNDEF_EFFECT (arg_node), arg_info, ST_reference,
-                                       NODE_LINE (arg_node));
-
-                FUNDEF_NEEDOBJS (arg_node)
-                  = ConcatNodelist (FUNDEF_NEEDOBJS (arg_node),
-                                    CheckExistObjects (FUNDEF_EFFECT (arg_node), arg_info,
-                                                       ST_readonly_reference,
-                                                       NODE_LINE (arg_node)));
-            }
-
-            if (NULL != FUNDEF_LINKMOD (arg_node)) {
-                CheckExternalImplementation (FUNDEF_LINKMOD (arg_node));
-            }
-            /*
-             *  The existence of an implementation is checked for all external
-             *  functions. The above if only excludes the main function.
-             */
-        }
     }
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
@@ -943,9 +805,7 @@ RSIBobjdef (node *arg_node, node *arg_info)
     DBUG_ENTER ("RSIBobjdef");
 
     if (OBJDEF_STATUS (arg_node) == ST_imported) {
-        if (OBJDEF_MOD (arg_node) == NULL) {
-            CheckExternalImplementation (OBJDEF_LINKMOD (arg_node));
-        } else {
+        if (OBJDEF_MOD (arg_node) != NULL) {
             FindSib (OBJDEF_MOD (arg_node));
         }
     }
