@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2004/11/26 17:35:58  ktr
+ * COMPILES!!!
+ *
  * Revision 3.15  2004/11/21 22:04:36  ktr
  * Ismop SacDevCamp 04
  *
@@ -55,35 +58,45 @@ extern node *COMPap (node *arg_node, info *arg_info);
 extern node *COMParray (node *arg_node, info *arg_info);
 extern node *COMPassign (node *arg_node, info *arg_info);
 extern node *COMPblock (node *arg_node, info *arg_info);
-extern node *COMPcast (node *arg_node, info *arg_info);
 extern node *COMPcond (node *arg_node, info *arg_info);
 extern node *COMPfundef (node *arg_node, info *arg_info);
-extern node *COMPicm (node *arg_node, info *arg_info);
 extern node *COMPid (node *arg_node, info *arg_info);
 extern node *COMPlet (node *arg_node, info *arg_info);
 extern node *COMPloop (node *arg_node, info *arg_info);
-extern node *COMPmodul (node *arg_node, info *arg_info);
+extern node *COMPmodule (node *arg_node, info *arg_info);
 extern node *COMPobjdef (node *arg_node, info *arg_info);
 extern node *COMPprf (node *arg_node, info *arg_info);
 extern node *COMPreturn (node *arg_node, info *arg_info);
-extern node *COMPscalar (node *arg_node, info *arg_info);
-extern node *COMPspmd (node *arg_node, info *arg_info);
-extern node *COMPsync (node *arg_node, info *arg_info);
 extern node *COMPtypedef (node *arg_node, info *arg_info);
 extern node *COMPvardec (node *arg_node, info *arg_info);
 
+extern node *COMPnum (node *arg_node, info *arg_info);
+extern node *COMPchar (node *arg_node, info *arg_info);
+extern node *COMPbool (node *arg_node, info *arg_info);
+extern node *COMPfloat (node *arg_node, info *arg_info);
+extern node *COMPdouble (node *arg_node, info *arg_info);
+
 extern node *COMPwith (node *arg_node, info *arg_info);
 extern node *COMPwith2 (node *arg_node, info *arg_info);
-extern node *COMPwlsegx (node *arg_node, info *arg_info);
-extern node *COMPwlxblock (node *arg_node, info *arg_info);
-extern node *COMPwlstridex (node *arg_node, info *arg_info);
-extern node *COMPwlgridx (node *arg_node, info *arg_info);
+extern node *COMPwlseg (node *arg_node, info *arg_info);
+extern node *COMPwlsegvar (node *arg_node, info *arg_info);
+extern node *COMPwlblock (node *arg_node, info *arg_info);
+extern node *COMPwlublock (node *arg_node, info *arg_info);
+extern node *COMPwlstride (node *arg_node, info *arg_info);
+extern node *COMPwlstridevar (node *arg_node, info *arg_info);
+extern node *COMPwlgrid (node *arg_node, info *arg_info);
+extern node *COMPwlgridvar (node *arg_node, info *arg_info);
 extern node *COMPwlcode (node *arg_node, info *arg_info);
 
-extern node *COMPmt (node *arg_node, info *arg_info);
-extern node *COMPst (node *arg_node, info *arg_info);
-extern node *COMPmtsignal (node *arg_node, info *arg_info);
-extern node *COMPmtalloc (node *arg_node, info *arg_info);
-extern node *COMPmtsync (node *arg_node, info *arg_info);
+extern node *COMPspmd (node *arg_node, info *arg_info);
+extern node *COMPsync (node *arg_node, info *arg_info);
+
+/******************************************************************************
+ *
+ * NODES WHICH RESULT IN A TRAVERROR
+ *
+ * N_cast
+ *
+ *****************************************************************************/
 
 #endif /* _SAC_COMPILE_H_ */
