@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.15  2000/10/24 11:53:55  dkr
+ * MakeType renamed into MakeTypes
+ *
  * Revision 2.14  2000/10/23 18:39:47  dkr
  * AEfundef:
  * superfluous assignment to arg_node->refcnt removed
@@ -288,7 +291,7 @@ GenPsi (ids *ids_node, node *arg_info)
         ARRAY_VECTYPE (arg[0]) = T_int;
         ARRAY_VECLEN (arg[0]) = 1;
         ARRAY_TYPE (arg[0])
-          = MakeType (T_int, 1, MakeShpseg (MakeNums (1, NULL)), NULL, NULL);
+          = MakeTypes (T_int, 1, MakeShpseg (MakeNums (1, NULL)), NULL, NULL);
 
         arg[1] = MakeNode (N_id);
         arg[1]->info.ids = DupIds (ids_node, NULL);

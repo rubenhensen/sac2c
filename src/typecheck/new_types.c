@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.3  2000/10/24 11:46:10  dkr
+ * MakeType renamed into MakeTypes
+ *
  * Revision 1.2  1999/10/20 15:45:10  sbs
  * some code brushing done.
  *
@@ -990,5 +993,5 @@ TYType2OldType (ntype *new)
 {
 
     DBUG_ENTER ("TYType2OldType");
-    DBUG_RETURN (MakeType (T_int, 0, NULL, "no yet", "implemented"));
+    DBUG_RETURN (MakeTypes (T_int, 0, NULL, "no yet", "implemented"));
 }

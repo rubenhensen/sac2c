@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.23  2000/10/24 11:42:40  dkr
+ * MakeType renamed into MakeTypes
+ *
  * Revision 1.22  2000/10/24 10:06:01  dkr
  * GetBasetypeSize() added
  *
@@ -2157,7 +2160,7 @@ Shpseg2Array (shpseg *shape, int dim)
     array_node = MakeArray (next);
     array_shape = MakeShpseg (NULL);
     SHPSEG_SHAPE (array_shape, 0) = dim;
-    ARRAY_TYPE (array_node) = MakeType (T_int, 1, array_shape, NULL, NULL);
+    ARRAY_TYPE (array_node) = MakeTypes (T_int, 1, array_shape, NULL, NULL);
 
     DBUG_RETURN (array_node);
 }

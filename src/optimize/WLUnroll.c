@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.16  2000/10/24 11:48:31  dkr
+ * MakeType renamed into MakeTypes
+ *
  * Revision 2.15  2000/10/20 15:36:09  dkr
  * macro GET_LENGTH replaced by function GetLength
  *
@@ -340,7 +343,7 @@ ForEachElementHelp (int *l, int *u, int *s, int *w, int dim, int maxdim, node *a
             index = MakeArray (index);
             /* nums struct is freed inside MakeShpseg. */
             shpseg = MakeShpseg (MakeNums (maxdim, NULL));
-            type = MakeType (T_int, 1, shpseg, NULL, NULL);
+            type = MakeTypes (T_int, 1, shpseg, NULL, NULL);
             ARRAY_TYPE (index) = type;
             ARRAY_VECTYPE (index) = T_int;
             ARRAY_VECLEN (index) = maxdim;

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.14  2000/10/24 11:54:25  dkr
+ * MakeType renamed into MakeTypes
+ *
  * Revision 2.13  2000/08/11 12:26:42  dkr
  * bug in WLFassign fixed:
  * INFO_WLI_NEW_ID(arg_info) is reset to NULL now after replacement is
@@ -1533,7 +1536,7 @@ Modarray2Genarray (node *wln, node *substwln)
 
     shpseg = MakeShpseg (
       MakeNums (dimensions, NULL)); /* nums struct is freed inside MakeShpseg. */
-    ARRAY_TYPE (shape) = MakeType (T_int, 1, shpseg, NULL, NULL);
+    ARRAY_TYPE (shape) = MakeTypes (T_int, 1, shpseg, NULL, NULL);
 
     /* delete old withop and create new one */
     FreeTree (NWITH_WITHOP (wln));
@@ -1822,7 +1825,7 @@ WLFid (node *arg_node, node *arg_info)
                       = Array2IntVec (ARRAY_AELEMS (arrayn), NULL);
                     shpseg = MakeShpseg (
                       MakeNums (1, NULL)); /* nums struct is freed inside MakeShpseg. */
-                    ARRAY_TYPE (arrayn) = MakeType (T_int, 1, shpseg, NULL, NULL);
+                    ARRAY_TYPE (arrayn) = MakeTypes (T_int, 1, shpseg, NULL, NULL);
                     argsn = MakeExprs (arrayn, MakeExprs (DupTree (vectorn), NULL));
 
                     /* maybe the index scalar variable of the subst wl has to be renamed

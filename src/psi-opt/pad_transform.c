@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.16  2000/10/24 11:52:25  dkr
+ * MakeType renamed into MakeTypes
+ *
  * Revision 1.15  2000/08/04 14:32:52  mab
  * added some comments
  *
@@ -787,7 +790,7 @@ APTwithop (node *arg_node, node *arg_info)
         /* infer result of with-loop
            Attention: only elements with scalar types are supported yet !!!
         */
-        oldtype = MakeType (simpletype, dim, shape, NULL, NULL);
+        oldtype = MakeTypes (simpletype, dim, shape, NULL, NULL);
         newtype = PIgetNewType (DupTypes (oldtype));
 
         if (newtype != NULL) {

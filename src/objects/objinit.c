@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.5  2000/10/24 11:50:55  dkr
+ * MakeType renamed into MakeTypes
+ *
  * Revision 2.4  2000/08/04 17:19:40  dkr
  * NEWTREE removed
  *
@@ -121,8 +124,8 @@ OImodul (node *arg_node, node *arg_info)
 
         MODUL_FUNS (arg_node)
           = MakeFundef (toclass, MODUL_NAME (arg_node),
-                        MakeType (T_user, 0, NULL, StringCopy (MODUL_NAME (arg_node)),
-                                  MODUL_NAME (arg_node)),
+                        MakeTypes (T_user, 0, NULL, StringCopy (MODUL_NAME (arg_node)),
+                                   MODUL_NAME (arg_node)),
                         MakeArg (NULL, DupTypes (MODUL_CLASSTYPE (arg_node)), ST_regular,
                                  ST_regular, NULL),
                         NULL, MODUL_FUNS (arg_node));
@@ -132,9 +135,9 @@ OImodul (node *arg_node, node *arg_info)
         MODUL_FUNS (arg_node)
           = MakeFundef (fromclass, MODUL_NAME (arg_node), MODUL_CLASSTYPE (arg_node),
                         MakeArg (NULL,
-                                 MakeType (T_user, 0, NULL,
-                                           StringCopy (MODUL_NAME (arg_node)),
-                                           MODUL_NAME (arg_node)),
+                                 MakeTypes (T_user, 0, NULL,
+                                            StringCopy (MODUL_NAME (arg_node)),
+                                            MODUL_NAME (arg_node)),
                                  ST_regular, ST_regular, NULL),
                         NULL, MODUL_FUNS (arg_node));
 
@@ -177,9 +180,9 @@ OIobjdef (node *arg_node, node *arg_info)
 
     if (OBJDEF_EXPR (arg_node) != NULL) {
         new_fun_type
-          = MakeType (OBJDEF_BASETYPE (arg_node), OBJDEF_DIM (arg_node),
-                      CopyShpseg (OBJDEF_SHPSEG (arg_node)),
-                      StringCopy (OBJDEF_TNAME (arg_node)), OBJDEF_TMOD (arg_node));
+          = MakeTypes (OBJDEF_BASETYPE (arg_node), OBJDEF_DIM (arg_node),
+                       CopyShpseg (OBJDEF_SHPSEG (arg_node)),
+                       StringCopy (OBJDEF_TNAME (arg_node)), OBJDEF_TMOD (arg_node));
 
         new_fun_name = (char *)Malloc (strlen (OBJDEF_NAME (arg_node)) + 10);
 
@@ -220,9 +223,9 @@ OIobjdef (node *arg_node, node *arg_info)
 
     } else {
         new_fun_type
-          = MakeType (OBJDEF_BASETYPE (arg_node), OBJDEF_DIM (arg_node),
-                      CopyShpseg (OBJDEF_SHPSEG (arg_node)),
-                      StringCopy (OBJDEF_TNAME (arg_node)), OBJDEF_TMOD (arg_node));
+          = MakeTypes (OBJDEF_BASETYPE (arg_node), OBJDEF_DIM (arg_node),
+                       CopyShpseg (OBJDEF_SHPSEG (arg_node)),
+                       StringCopy (OBJDEF_TNAME (arg_node)), OBJDEF_TMOD (arg_node));
 
         if (OBJDEF_INITFUN (arg_node) != NULL) {
             new_fun_name = OBJDEF_INITFUN (arg_node);

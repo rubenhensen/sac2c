@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.12  2000/10/24 11:52:47  dkr
+ * MakeType renamed into MakeTypes
+ *
  * Revision 1.11  2000/08/11 20:58:59  mab
  * fixed bug in CollectAccessPatterns
  *
@@ -632,7 +635,7 @@ APCwithop (node *arg_node, node *arg_info)
             basetype = TYPES_BASETYPE (ID_TYPE (NWITH_CEXPR (INFO_APC_WITH (arg_info))));
             dim = SHPSEG_SHAPE (TYPES_SHPSEG (ARRAY_TYPE (NWITHOP_SHAPE (arg_node))), 0);
             shape = Array2Shpseg (NWITHOP_SHAPE (arg_node));
-            type = MakeType (basetype, dim, shape, NULL, NULL);
+            type = MakeTypes (basetype, dim, shape, NULL, NULL);
             arg_info = AddUnsupported (arg_info, type);
             FreeOneTypes (type);
         }
