@@ -12,3 +12,4 @@ rcopt.h
 rcphase.c
 rcphase.h
 filterrc.c
+filterrc.h
