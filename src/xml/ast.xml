@@ -1,5 +1,8 @@
 <!--
   $Log$
+  Revision 1.84  2004/11/25 21:22:21  sah
+  added EXP
+
   Revision 1.83  2004/11/25 21:02:30  sbs
   SPEXPRs added in withops
 
@@ -443,6 +446,19 @@
       </traversal>
     </phase>
     <phase id="export" name="Exporting symbols">
+      <traversal id="EXP" name="Export Symbols" default="sons" include="export.h">
+        <travsons>
+	  <node name="Use" />
+	  <node name="Import" />
+	  <node name="Provide" />
+	  <node name="Export" />
+	  <node name="Symbol" />
+	  <node name="Fundef" />
+	  <node name="Typedef" />
+	  <node name="Objdef" />
+	  <node name="Module" />
+	</travsons>
+      </traversal>
       <traversal id="SER" name="Serialize Module" default="sons" include="serialize_node.h" />
     </phase>
     <phase id="wlenhance" name="Enhancement of With-Loops">
