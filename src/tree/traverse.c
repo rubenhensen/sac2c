@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.24  2000/06/13 13:40:38  dkr
+ * O2NWith_tab renamed into patchwith_tab
+ *
  * Revision 1.23  2000/06/08 15:47:34  nmw
  * missing include added
  *
@@ -212,7 +215,7 @@
 #include "compile.h"
 #include "ReuseWithArrays.h"
 #include "cccall.h"
-#include "Old2NewWith.h"
+#include "PatchWith.h"
 #include "WithloopFolding.h"
 #include "WLT.h"
 #include "WLI.h"
@@ -745,15 +748,15 @@ static funtab reuse_tab_rec = {{
 funtab *reuse_tab = &reuse_tab_rec;
 
 /*
- *  (45) o2nWith_tab
+ *  (45) patchwith_tab
  */
-static funtab o2nWith_tab_rec = {{
-#define NIFo2nWith(it_o2nWith) it_o2nWith
+static funtab patchwith_tab_rec = {{
+#define NIFpatchwith(it_patchwith) it_patchwith
 #include "node_info.mac"
-                                 },
-                                 NULL,
-                                 NULL};
-funtab *o2nWith_tab = &o2nWith_tab_rec;
+                                   },
+                                   NULL,
+                                   NULL};
+funtab *patchwith_tab = &patchwith_tab_rec;
 
 /*
  *  (46) sched_tab

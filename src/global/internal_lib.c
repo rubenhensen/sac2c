@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.19  2000/06/13 13:40:24  dkr
+ * O2NWith_tab renamed into patchwith_tab
+ *
  * Revision 2.18  2000/05/31 14:39:33  mab
  * renamed tables for array padding
  *
@@ -618,8 +621,8 @@ TmpVar ()
         s = "cse";
     } else if (act_tab == dfr_tab) {
         s = "dfr";
-    } else if (act_tab == o2nWith_tab) {
-        s = "o2nW";
+    } else if (act_tab == patchwith_tab) {
+        s = "pw";
     } else if (act_tab == spmdinit_tab) {
         s = "spmdi";
     } else if (act_tab == spmdopt_tab) {

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.19  2000/06/13 13:40:43  dkr
+ * O2NWith_tab renamed into patchwith_tab
+ *
  * Revision 1.18  2000/06/08 15:29:45  nmw
  * pih_tab and piw_tab added
  *
@@ -142,7 +145,7 @@ extern funtab *syncinit_tab;
 extern funtab *syncopt_tab;
 extern funtab *gsc_tab;
 extern funtab *reuse_tab;
-extern funtab *o2nWith_tab;
+extern funtab *patchwith_tab;
 extern funtab *sched_tab;
 extern funtab *conc_tab;
 extern funtab *opt_tab;
