@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.47  2005/03/12 15:56:13  ktr
+ * bugfix
+ *
  * Revision 3.46  2005/01/11 11:19:19  cg
  * Converted output from Error.h to ctinfo.c
  *
@@ -516,7 +519,7 @@ FltnMgwith (node *wloop)
         /**
          * Finally, we construct the resulting WL:
          */
-        if (NODE_TYPE (WITH_WITHOP (withop)) == N_fold) {
+        if (NODE_TYPE (WITH_WITHOP (wloop)) == N_fold) {
             WITH_WITHOP (wloop) = TBmakeFold (first_wl);
             FOLD_MOD (WITH_WITHOP (wloop)) = ILIBstringCopy (FOLD_MOD (withop));
             FOLD_FUN (WITH_WITHOP (wloop)) = ILIBstringCopy (FOLD_FUN (withop));
