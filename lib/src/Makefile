@@ -1,5 +1,9 @@
 #
 # $Log$
+# Revision 3.9  2001/11/15 16:13:12  sacbase
+# CLOCK_SKEW_ELIMINATION and dpendency machanism eliminated
+# due to circular reference with cse!!
+#
 # Revision 3.8  2001/11/15 15:52:39  sacbase
 # PROJECT_ROOT and CLOCK_SKEW_ELIMINATION added.
 #
@@ -53,25 +57,14 @@ all: ../dbug.o ../main_args.o
 
 ../dbug.o: dbug.c
 	$(CC) $(CFLAGS) $(MYFLAGS) -o ../dbug.o -c dbug.c $(INCS)
-	$(CLOCK_SKEW_ELIMINATION) $@
 
 ../main_args.o: main_args.c
 	$(CC) $(CFLAGS) $(MYFLAGS) -o ../main_args.o -c main_args.c $(INCS)
-	$(CLOCK_SKEW_ELIMINATION) $@
 
 clean:
 	$(RM) ../dbug.o ../main_args.o *.bak *~ .*.d
 
 
-
-#######################################################################################
-#
-# include automatic dependency mechanism
-#
-# - relies on INCS to be set appropriately
-#
-
-include ../../Makefile.Deps
 
 
 
