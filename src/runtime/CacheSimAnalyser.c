@@ -1,13 +1,39 @@
+/*
+ * $Log$
+ * Revision 1.4  1999/05/20 14:14:37  cg
+ * Input scanning facilities optimized.
+ * All simulation parameters may now be set dynamically, including
+ * global/blocked simulation.
+ *
+ *
+ */
+
+/*****************************************************************************
+ *
+ * file:   CacheSimAnalyser.c
+ *
+ * prefix: SAC_CS
+ *
+ * description:
+ *
+ *
+ *
+ *
+ *
+ *
+ *****************************************************************************/
+
 #include <stdio.h>
 #include "sac_cachesim.h"
 #include "libsac_cachesim.h"
-
-char buffer[255];
+#include "sac_message.h"
 
 static void
 AnalyserSetup (int argc, char *argv[])
 {
-    tProfilingLevel profilinglevel = SAC_CS_LEVEL;
+    tProfilingLevel profilinglevel = SAC_CS_none;
+    int cs_global = 1;
+
     unsigned long int cachesize1 = 0;
     int cachelinesize1 = 1;
     int associativity1 = 1;
@@ -23,12 +49,13 @@ AnalyserSetup (int argc, char *argv[])
     int associativity3 = 1;
     tWritePolicy writepolicy3 = SAC_CS_default;
 
-    SAC_CS_CheckArguments (argc, argv, &profilinglevel, &cachesize1, &cachelinesize1,
-                           &associativity1, &writepolicy1, &cachesize2, &cachelinesize2,
-                           &associativity2, &writepolicy2, &cachesize3, &cachelinesize3,
-                           &associativity3, &writepolicy3);
+    SAC_CS_CheckArguments (argc, argv, &profilinglevel, &cs_global, &cachesize1,
+                           &cachelinesize1, &associativity1, &writepolicy1, &cachesize2,
+                           &cachelinesize2, &associativity2, &writepolicy2, &cachesize3,
+                           &cachelinesize3, &associativity3, &writepolicy3);
 
-    /* The CacheSimAnalyser must not get an profilinglevel
+    /*
+     * The CacheSimAnalyser must not get a profiling level
      * like SAC_CS_piped_X!!!
      */
     switch (profilinglevel) {
@@ -45,12 +72,11 @@ AnalyserSetup (int argc, char *argv[])
         break;
     }
 
-    SAC_CS_Initialize (1, profilinglevel, cachesize1, cachelinesize1, associativity1,
-                       writepolicy1, cachesize2, cachelinesize2, associativity2,
-                       writepolicy2, cachesize3, cachelinesize3, associativity3,
-                       writepolicy3);
+    SAC_CS_Initialize (1, profilinglevel, cs_global, cachesize1, cachelinesize1,
+                       associativity1, writepolicy1, cachesize2, cachelinesize2,
+                       associativity2, writepolicy2, cachesize3, cachelinesize3,
+                       associativity3, writepolicy3);
 
-    SAC_CS_START_GLOBAL ();
 } /* AnalyserSetup */
 
 int
@@ -58,51 +84,63 @@ main (int argc, char *argv[])
 {
     ULINT baseaddress, elemaddress;
     unsigned size;
-    char tag[255];
+    char op;
+    FILE *in_stream = stdin;
+    char tagbuffer[MAX_TAG_LENGTH];
+
+    fprintf (stderr,
+             "%s"
+             "Running external SAC cache simulation analyser:\n"
+             "  %s\n",
+             SAC_CS_separator, argv[0]);
 
     AnalyserSetup (argc, argv);
 
-    while (fgets (buffer, 255, stdin) != 0) {
-        /*printf("r: %s", buffer);*/
-        switch (buffer[0]) {
+    op = getc (in_stream);
+
+    while (!feof (stdin)) {
+        switch (op) {
         case 'R':
-            sscanf (buffer, "R %lx %lx\n", &baseaddress, &elemaddress);
+            fscanf (in_stream, "%lx %lx\n", &baseaddress, &elemaddress);
             SAC_CS_ReadAccess ((void *)baseaddress, (void *)elemaddress);
             break;
 
         case 'W':
-            sscanf (buffer, "W %lx %lx\n", &baseaddress, &elemaddress);
+            fscanf (in_stream, "%lx %lx\n", &baseaddress, &elemaddress);
             SAC_CS_WriteAccess ((void *)baseaddress, (void *)elemaddress);
             break;
 
         case 'G':
-            sscanf (buffer, "G %lx %u\n", &baseaddress, &size);
+            fscanf (in_stream, "%lx %u\n", &baseaddress, &size);
             SAC_CS_RegisterArray ((void *)baseaddress, size);
             break;
 
         case 'U':
-            sscanf (buffer, "U %lx\n", &baseaddress);
+            fscanf (in_stream, "%lx\n", &baseaddress);
             SAC_CS_UnregisterArray ((void *)baseaddress);
             break;
 
         case 'B':
-            strcpy (tag, &(buffer[2]));
-            SAC_CS_Start (tag);
+            fscanf (in_stream, " %s\n", tagbuffer);
+            SAC_CS_Start (tagbuffer);
             break;
 
         case 'E':
+            fscanf (in_stream, " \n");
             SAC_CS_Stop ();
             break;
 
         case 'F':
+            fscanf (in_stream, " \n");
             SAC_CS_Finalize ();
             break;
 
         default:
-            fprintf (stderr, "CacheSimAnalyser: unknown input - %s", buffer);
-            exit (1);
-            break;
+            fscanf (in_stream, "%s\n", tagbuffer);
+            SAC_RuntimeError ("CacheSimAnalyser: unknown input: %c %s", op, tagbuffer);
         } /*switch */
+
+        op = getc (in_stream);
     }
     return (0);
 } /* main */
