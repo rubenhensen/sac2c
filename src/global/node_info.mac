@@ -1,10 +1,13 @@
 /*
  *
  * $Log$
- * Revision 1.70  1995/05/30 06:44:02  hw
- * FltnMod deleted
- * FltnCon inserted
+ * Revision 1.71  1995/05/30 10:15:16  cg
+ * N_constdef and N_objdef nodes added.
  *
+;; Revision 1.70  1995/05/30  06:44:02  hw
+;; FltnMod deleted
+;; FltnCon inserted
+;;
 ;; Revision 1.69  1995/05/26  14:23:42  asi
 ;; function inlineing and loop unrolling added
 ;;
@@ -248,6 +251,12 @@ NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun,
   NIF (N_typedef, "N_typedef", DummyFun, DummyFun, PrintTypedef, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun),
+  NIF (N_constdef, "N_constdef", DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
+       DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
+       DummyFun, DummyFun, DummyFun),
+  NIF (N_objdef, "N_objdef", DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
+       DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
+       DummyFun, DummyFun),
   NIF (N_modul, "N_modul", IMmodul, FltnModul, PrintModul, DummyFun, OPTmodul, OPTmodul,
        OPTmodul, FreeModul, OPTmodul, DummyFun, DummyFun, OPTmodul, DummyFun, DummyFun,
        DummyFun, DummyFun),
