@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2002/09/05 14:45:55  dkr
+ * CWCwithop() added
+ *
  * Revision 1.7  2002/09/03 18:54:41  dkr
  * this modul is complete now :-)
  *
@@ -37,6 +40,25 @@
 
 #define INFO_CWC_TRAVNO(n) ((n)->flag)
 #define INFO_CWC_WRAPPERFUNS(n) ((LUT_t) ((n)->dfmask[0]))
+
+/**
+ **
+ ** Function:
+ **   node *CreateWrapperCode( node *ast)
+ **
+ ** Description:
+ **   Modifies all wrappers of the AST in a way that they represent correct
+ **   SAC functions and that they contain correct code for dispatching
+ **   overloaded functions at runtime. In more detail:
+ **     - Replaces generic wrappers (valid for more than a single simpletype)
+ **       by individual wrappers for each simpletype.
+ *      - Generates the bodies of the wrapper functions.
+ **   Moreover, all references to replaced wrapper functions are corrected
+ **   accordingly:
+ **     - AP_FUNDEF,
+ **     - NWITHOP_FUNDEF.
+ **
+ **/
 
 /******************************************************************************
  *
@@ -187,6 +209,74 @@ InsertWrapperCode (node *fundef)
 /******************************************************************************
  *
  * Function:
+ *   bool SignatureMatches( node *formal, node *actual)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+static bool
+SignatureMatches (node *formal, node *actual)
+{
+    ntype *formal_type, *actual_type, *tmp_type;
+    bool match = TRUE;
+
+    DBUG_ENTER ("SignatureMatches");
+
+    while (formal != NULL) {
+        DBUG_ASSERT ((actual != NULL), "inconsistant application found!");
+        DBUG_ASSERT (((NODE_TYPE (formal) == N_arg) && (NODE_TYPE (actual) == N_exprs)),
+                     "illegal args found!");
+
+        formal_type = AVIS_TYPE (ARG_AVIS (formal));
+        tmp_type = NewTypeCheck_Expr (EXPRS_EXPR (actual));
+        actual_type = TYFixAndEliminateAlpha (tmp_type);
+        tmp_type = TYFreeType (tmp_type);
+
+        if (!TYLeTypes (actual_type, formal_type)) {
+            match = FALSE;
+            break;
+        }
+
+        formal = ARG_NEXT (formal);
+        actual = EXPRS_NEXT (actual);
+    }
+
+    DBUG_RETURN (match);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *CorrectFundef( node *old_fundef, char *funname, node *args)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+CorrectFundef (node *fundef, char *funname, node *args)
+{
+    DBUG_ENTER ("CorrectFundef");
+
+    DBUG_ASSERT ((fundef != NULL), "fundef not found!");
+    if (FUNDEF_STATUS (fundef) == ST_zombiefun) {
+        do {
+            fundef = FUNDEF_NEXT (fundef);
+            DBUG_ASSERT ((fundef != NULL), "no appropriate wrapper function found!");
+        } while (!SignatureMatches (FUNDEF_ARGS (fundef), args));
+        DBUG_ASSERT (((fundef == NULL) || (!strcmp (funname, FUNDEF_NAME (fundef)))),
+                     "no appropriate wrapper function found!");
+    }
+
+    DBUG_RETURN (fundef);
+}
+
+/******************************************************************************
+ *
+ * Function:
  *   node *CWCfundef( node *arg_node, node *arg_info);
  *
  * Description:
@@ -284,58 +374,46 @@ CWCfundef (node *arg_node, node *arg_info)
  *
  ******************************************************************************/
 
-static bool
-SignatureMatches (node *formal, node *actual)
-{
-    ntype *formal_type, *actual_type, *tmp_type;
-    bool match = TRUE;
-
-    DBUG_ENTER ("SignatureMatches");
-
-    while (formal != NULL) {
-        DBUG_ASSERT ((actual != NULL), "inconsistant application found!");
-        DBUG_ASSERT (((NODE_TYPE (formal) == N_arg) && (NODE_TYPE (actual) == N_exprs)),
-                     "illegal args found!");
-
-        formal_type = AVIS_TYPE (ARG_AVIS (formal));
-        tmp_type = NewTypeCheck_Expr (EXPRS_EXPR (actual));
-        actual_type = TYFixAndEliminateAlpha (tmp_type);
-        tmp_type = TYFreeType (tmp_type);
-
-        if (!TYLeTypes (actual_type, formal_type)) {
-            match = FALSE;
-            break;
-        }
-
-        formal = ARG_NEXT (formal);
-        actual = EXPRS_NEXT (actual);
-    }
-
-    DBUG_RETURN (match);
-}
-
 node *
 CWCap (node *arg_node, node *arg_info)
 {
-    node *fundef;
-
     DBUG_ENTER ("CWCap");
 
     if (AP_ARGS (arg_node) != NULL) {
         AP_ARGS (arg_node) = Trav (AP_ARGS (arg_node), arg_info);
     }
 
-    fundef = AP_FUNDEF (arg_node);
-    DBUG_ASSERT ((fundef != NULL), "AP_FUNDEF not found!");
-    if (FUNDEF_STATUS (fundef) == ST_zombiefun) {
-        do {
-            fundef = FUNDEF_NEXT (fundef);
-            DBUG_ASSERT ((fundef != NULL), "no appropriate wrapper function found!");
-        } while (!SignatureMatches (FUNDEF_ARGS (fundef), AP_ARGS (arg_node)));
-        DBUG_ASSERT (((fundef == NULL)
-                      || (!strcmp (AP_NAME (arg_node), FUNDEF_NAME (fundef)))),
-                     "no appropriate wrapper function found!");
-        AP_FUNDEF (arg_node) = fundef;
+    AP_FUNDEF (arg_node)
+      = CorrectFundef (AP_FUNDEF (arg_node), AP_NAME (arg_node), AP_ARGS (arg_node));
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *CWCwithop( node *arg_node, node *arg_info)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+CWCwithop (node *arg_node, node *arg_info)
+{
+    node *args;
+
+    DBUG_ENTER ("CWCwithop");
+
+    if (NWITHOP_TYPE (arg_node) == WO_foldfun) {
+        args = MakeExprs (DupNode (NWITHOP_NEUTRAL (arg_node)), NULL);
+        EXPRS_NEXT (args) = DupNode (args);
+
+        NWITHOP_FUNDEF (arg_node)
+          = CorrectFundef (NWITHOP_FUNDEF (arg_node), NWITHOP_FUN (arg_node), args);
+
+        args = FreeTree (args);
     }
 
     DBUG_RETURN (arg_node);
