@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.52  1995/07/24 09:07:41  hw
+ * Revision 1.53  1995/07/26 08:40:10  cg
+ * new status ST_readonly_reference
+ *
+ * Revision 1.52  1995/07/24  09:07:41  hw
  * new typedef file_type inserted (moved from sac.y)
  *
  * Revision 1.51  1995/07/13  15:23:25  hw
@@ -195,13 +198,14 @@ typedef enum { L_for, L_do, L_while } looptype;
 typedef enum { ARG_int, ARG_float, ARG_id } argtype;
 typedef enum { C_gen, C_mod } contype;
 typedef enum {
-    ST_regular,   /* normal types */
-    ST_unique,    /* unique types */
-    ST_reference, /* reference parameter (unique)           */
-    ST_ref,       /* Id must be referenced                  */
-    ST_deref,     /* Id must be dereferenced                */
-    ST_artificial /* unique type inserted during            */
-                  /* signature expansion                    */
+    ST_regular,            /* normal types */
+    ST_unique,             /* unique types */
+    ST_reference,          /* reference parameter (unique)           */
+    ST_readonly_reference, /* readonly reference param (unique)  */
+    ST_ref,                /* Id must be referenced                  */
+    ST_deref,              /* Id must be dereferenced                */
+    ST_artificial          /* unique type inserted during            */
+                           /* signature expansion                    */
 } statustype;
 typedef enum { VECT, IDX } useflag;
 
