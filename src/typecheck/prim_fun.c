@@ -1,6 +1,9 @@
 /*
  * $Log$
- * Revision 1.17  1995/07/13 15:29:48  hw
+ * Revision 1.18  1995/08/11 17:27:32  hw
+ * function Modarray inserted
+ *
+ * Revision 1.17  1995/07/13  15:29:48  hw
  * bug fixed in function Psi
  *
  * Revision 1.16  1995/07/07  16:22:48  hw
@@ -116,7 +119,9 @@ enum type_class {
     D_I,
     d_i,
     D_F,
-    d_f
+    d_f,
+    AxAxS_A,
+    AxAxA_A
 };
 
 #define FREE(a)                                                                          \
@@ -885,6 +890,57 @@ ConvertType (types *array1, simpletype s_type)
     ret_type->simpletype = s_type;
     ret_type->name = NULL; /* has to be set to NULL, because of output */
     ret_type->name_mod = NULL;
+
+    DBUG_RETURN (ret_type);
+}
+
+/*
+ *
+ *  functionname  : Modarray
+ *  arguments     : 1) type of array to modify
+ *                  2) type of access vector
+ *                  3) type of new value
+ *  description   :  returns the type 1)
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        : DBUG..., GET_BASIC_TYPE
+ *
+ *  remarks       : is part of macros TT1 & TT2 and is used in typecheck.c
+ *
+ */
+types *
+Modarray (types *array, types *vec, types *value, int line)
+{
+    types *b_array, *b_vec, *b_value;
+    types *ret_type = NULL;
+
+    DBUG_ENTER ("Modarray");
+
+    GET_BASIC_TYPE (b_array, array, line);
+    GET_BASIC_TYPE (b_vec, vec, line);
+    GET_BASIC_TYPE (b_value, value, line);
+
+    DBUG_PRINT ("PRF_TYPE", ("b_array: %s", Type2String (b_array, 0)));
+    DBUG_PRINT ("PRF_TYPE", ("b_vec: %s", Type2String (b_vec, 0)));
+    DBUG_PRINT ("PRF_TYPE", ("b_value: %s", Type2String (b_value, 0)));
+
+    if (b_vec->dim != 1) {
+        ERROR2 (3, ("%s, %d: 2.argument of function 'modarray' has incompatible "
+                    "type ( int[x] != %s)",
+                    filename, line, Type2String (vec, 0)));
+    } else if (b_array->dim != b_vec->shpseg->shp[0] + b_value->dim) {
+        ERROR2 (3, ("%s, %d: arguments of function 'modarray' have wrong "
+                    "types ( %s, %s, %s)",
+                    filename, line, Type2String (array, 0), Type2String (vec, 0),
+                    Type2String (value, 0)));
+    } else {
+        FREE (b_vec);
+        FREE (b_value);
+        ret_type = b_array;
+    }
+
+    DBUG_ASSERT (ret_type != NULL, " wrong return value");
 
     DBUG_RETURN (ret_type);
 }

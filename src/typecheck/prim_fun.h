@@ -1,8 +1,11 @@
 /*
  *  $Log$
- *  Revision 1.5  1995/07/04 09:06:30  hw
- *  - Axs_F, F2I & I2F removed
- *  - ConvertType inserted
+ *  Revision 1.6  1995/08/11 17:27:49  hw
+ *  function Modarray inserted
+ *
+ * Revision 1.5  1995/07/04  09:06:30  hw
+ * - Axs_F, F2I & I2F removed
+ * - ConvertType inserted
  *
  * Revision 1.4  1995/06/30  11:35:12  hw
  * - #if 0 .. deleted
@@ -51,6 +54,7 @@ extern types *TakeDropS (node *vec, types *array, int tag);
 extern types *Cat (node *s_node, types *array1, types *array2);
 extern types *Rot (node *s_node, types *array);
 extern types *ConvertType (types *array1, simpletype s_type);
+extern types *Modarray (types *array, types *vec, types *value, int line);
 
 #if 0 
 extern types *Psi(types *array1, types *array2);
