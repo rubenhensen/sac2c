@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.26  2001/11/22 08:36:43  sbs
+ * foldop initialized to NULL; just to please gcc 8-)
+ *
  * Revision 3.25  2001/07/13 13:23:41  cg
  * Some useless DBUG_PRINTs eliminated.
  *
@@ -485,7 +488,7 @@ ICMCompileMT_SYNC_FOLD (int barrier_id, int narg, char **vararg)
 #ifndef BEtest
     node **foldcodes;
 #endif /*BEtest*/
-    char *foldop;
+    char *foldop = NULL;
     int i;
 
     DBUG_ENTER ("ICMCompileMT_SYNC_FOLD");
