@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.40  2000/04/13 09:00:48  jhs
+ * Added INFO_MUTH_TOPDOWN.
+ *
  * Revision 1.39  2000/04/12 17:27:26  jhs
  * Added INFO_MUTH_ALLOW_OOOC.
  *
@@ -2270,6 +2273,7 @@ extern node *MakePragma ();
  ***  in all:
  ***    node*      INFO_MUTH_FUNDEF   (N_fundef)
  ***    int(bool)  INFO_MUTH_ALLOW_OOOC
+ ***    int(bool)  INFO_MUTH_TOPDOWN
  ***    funptr     INFO_MUTH_DRIVER
  ***    ignorefun  INFO_MUTH_IGNORE
  ***
@@ -2504,6 +2508,7 @@ extern node *MakeInfo ();
 /* DO NOT OVERRIDE ANY INFO_YYYY_xxx HERE, were YYYY is any other miniphase!!! */
 #define INFO_MUTH_FUNDEF(n) (n->node[0])
 #define INFO_MUTH_ALLOW_OOOC(n) (n->counter)
+#define INFO_MUTH_TOPDOWN(n) (n->refcnt)
 #define INFO_MUTH_DRIVER(n) ((funptr) (n->node[1]))
 #define INFO_MUTH_IGNORE(n) ((ignorefun) (n->node[2]))
 
