@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2001/01/08 16:12:22  dkr
+ * support for naive compilation of with-loops added
+ *
  * Revision 3.5  2001/01/08 13:40:09  dkr
  * functions ExtractAplPragma... moved from wltransform.c to
  * wlpragma_funs.c
@@ -92,6 +95,79 @@
 /******************************************************************************
  ******************************************************************************
  **
+ **  Functions for naive-compilation pragma
+ **/
+
+/******************************************************************************
+ *
+ * Function:
+ *   bool ExtractNaivePragmaAp( bool *do_naive_comp,
+ *                              node *expr, int line);
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+static node *
+ExtractNaiveCompPragmaAp (bool *do_naive_comp, node *exprs, int line)
+{
+    node *ap, *del;
+
+    DBUG_ENTER ("ExtractNaiveCompPragmaAp");
+
+    if (exprs != NULL) {
+        DBUG_ASSERT ((NODE_TYPE (exprs) == N_exprs), "Illegal wlcomp pragma!");
+        ap = EXPRS_EXPR (exprs);
+        DBUG_ASSERT ((NODE_TYPE (ap) == N_ap), ("Illegal wlcomp pragma!"));
+
+        if (!strcmp (AP_NAME (ap), "Naive")) {
+            if (AP_ARGS (ap) != NULL) {
+                ABORT (line, ("Illegal argument in wlcomp-pragma found; "
+                              "Naive(): Parameters found"));
+            }
+            (*do_naive_comp) = TRUE;
+
+            del = exprs;
+            exprs = ExtractNaiveCompPragmaAp (do_naive_comp, EXPRS_NEXT (exprs), line);
+            FreeTree (del);
+        } else {
+            EXPRS_NEXT (exprs)
+              = ExtractNaiveCompPragmaAp (do_naive_comp, EXPRS_NEXT (exprs), line);
+        }
+    }
+
+    DBUG_RETURN (exprs);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   bool ExtractNaivePragma( node *pragma, int line);
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+bool
+ExtractNaiveCompPragma (node *pragma, int line)
+{
+    bool do_naive_comp = FALSE;
+
+    DBUG_ENTER ("ExtractNaiveCompPragma");
+
+    if (pragma != NULL) {
+        PRAGMA_WLCOMP_APS (pragma)
+          = ExtractNaiveCompPragmaAp (&do_naive_comp, PRAGMA_WLCOMP_APS (pragma), line);
+    }
+
+    DBUG_RETURN (do_naive_comp);
+}
+
+/******************************************************************************
+ ******************************************************************************
+ **
  **  Functions for array-placement pragmas
  **/
 
@@ -114,15 +190,16 @@ ExtractAplPragmaAp (node *exprs, node *pragma, int line)
     DBUG_ENTER ("ExtractAplPragmaAp");
 
     if (exprs != NULL) {
+        DBUG_ASSERT ((NODE_TYPE (exprs) == N_exprs), "Illegal wlcomp pragma.");
         ap = EXPRS_EXPR (exprs);
-        DBUG_ASSERT ((NODE_TYPE (ap) == N_ap), ("Illegal wlcomp pragma."));
+        DBUG_ASSERT ((NODE_TYPE (ap) == N_ap), "Illegal wlcomp pragma.");
         if (0 == strcmp (AP_NAME (ap), "APL")) {
             if (!((AP_ARGS (ap) != NULL) && (NODE_TYPE (AP_ARG1 (ap)) == N_id)
                   && (EXPRS_NEXT (AP_ARGS (ap)) != NULL)
                   && (NODE_TYPE (AP_ARG2 (ap)) == N_num)
                   && (EXPRS_NEXT (EXPRS_NEXT (AP_ARGS (ap))) != NULL)
                   && (NODE_TYPE (AP_ARG3 (ap)) == N_num))) {
-                ERROR (line, ("Illegal wlcomp pragma entry APL found"));
+                ERROR (line, ("Illegal wlcomp-pragma entry APL found"));
             } else {
                 switch (NUM_VAL (EXPRS_EXPR (EXPRS_NEXT (EXPRS_NEXT (AP_ARGS (ap)))))) {
                 case 1:

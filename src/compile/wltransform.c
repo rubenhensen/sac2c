@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.8  2001/01/08 16:11:57  dkr
+ * support for naive compilation of with-loops added
+ *
  * Revision 3.7  2001/01/08 13:40:34  dkr
  * functions ExtractAplPragma... moved from wltransform.c to
  * wlpragma_funs.c
@@ -1757,12 +1760,88 @@ CompareWLnode (node *node1, node *node2, int outline)
 /******************************************************************************
  *
  * Function:
- *   node *NormalizeStride_1( node *stride, bool *is_empty)
+ *   void CheckStride( int bound1, int bound2, int step, int grid_b1, int grid_b2,
+ *                     bool should_be_non_empty)
+ *
+ * Description:
+ *   Assures that the given stride parameters are legal.
+ *   The parameter 'should_be_non_empty' triggers whether empty strides are
+ *   allowed or not.
+ *
+ ******************************************************************************/
+
+static void
+CheckStride (int bound1, int bound2, int step, int grid_b1, int grid_b2,
+             bool should_be_non_empty)
+{
+    DBUG_ENTER ("CheckStride");
+
+    DBUG_ASSERT ((0 <= bound1), "given stride has illegal lower bound (<= 0)");
+    if (should_be_non_empty) {
+        DBUG_ASSERT ((bound1 < bound2),
+                     "given stride is empty (lower bound >= upper bound)!");
+    }
+    DBUG_ASSERT ((0 < step), "given step is illegal (<= 0)");
+    DBUG_ASSERT ((0 <= grid_b1), "given grid has illegal lower bound (<= 0)");
+    DBUG_ASSERT ((grid_b1 < grid_b2),
+                 "given grid is empty (lower bound >= upper bound)!");
+    DBUG_ASSERT ((grid_b2 <= step), "given grid has illegal upper bound (> step)!");
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   bool IsEmptyStride_1( node *stride)
+ *
+ * Description:
+ *   Checks whether the FIRST dimension of the given stride is empty or not.
+ *
+ ******************************************************************************/
+
+static bool
+IsEmptyStride_1 (node *stride)
+{
+    node *grid;
+    int bound1, bound2, step, grid_b1, grid_b2;
+    bool is_empty;
+
+    DBUG_ENTER ("IsEmptyStride_1");
+
+    DBUG_ASSERT ((NODE_TYPE (stride) == N_WLstride),
+                 "given node is not a constant stride!");
+
+    grid = WLSTRIDE_CONTENTS (stride);
+    DBUG_ASSERT ((grid != NULL), "given stride contains no grid!");
+    /*
+     * For the time being support for multiple grids is not needed
+     * and therefore not yet implemented ...
+     */
+    DBUG_ASSERT ((WLGRID_NEXT (grid) == NULL),
+                 "given stride contains more than one grid!");
+
+    bound1 = WLSTRIDE_BOUND1 (stride);
+    bound2 = WLSTRIDE_BOUND2 (stride);
+    step = WLSTRIDE_STEP (stride);
+    grid_b1 = WLGRID_BOUND1 (grid);
+    grid_b2 = WLGRID_BOUND2 (grid);
+
+    CheckStride (bound1, bound2, step, grid_b1, grid_b2, FALSE);
+
+    is_empty = (bound1 >= bound2);
+
+    DBUG_RETURN (is_empty);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *NormalizeStride_1( node *stride)
  *
  * Description:
  *   Normalizes the given stride in the FIRST dimension and returns it.
- *   If 'is_empty' is != NULL, '*is_empty' notifies whether 'stride' is empty
- *   or not. Otherwise 'stride' has to be non-empty!!
+ *   'stride' has to be non-empty!!
  *
  *   This normalization has two major goals:
  *     * every stride has a unambiguous form
@@ -1782,7 +1861,7 @@ CompareWLnode (node *node1, node *node2, int outline)
  ******************************************************************************/
 
 static node *
-NormalizeStride_1 (node *stride, bool *is_empty)
+NormalizeStride_1 (node *stride)
 {
     node *grid;
     int bound1, bound2, step, grid_b1, grid_b2, new_bound1, new_bound2;
@@ -1810,13 +1889,7 @@ NormalizeStride_1 (node *stride, bool *is_empty)
     /*
      * assure, that the stride is legal!
      */
-    DBUG_ASSERT ((0 <= bound1), "given stride has illegal lower bound (<= 0)");
-    DBUG_ASSERT (((is_empty != NULL) || (bound1 < bound2)),
-                 "given stride is empty (lower bound >= upper bound)!");
-    DBUG_ASSERT ((0 < step), "given step is illegal (<= 0)");
-    DBUG_ASSERT ((0 <= grid_b1), "given grid has illegal lower bound (<= 0)");
-    DBUG_ASSERT ((grid_b1 < grid_b2),
-                 "given grid is empty (lower bound >= upper bound)!");
+    CheckStride (bound1, bound2, step, grid_b1, grid_b2, TRUE);
 
     /*
      * if (bound2 - bound1 <= step), we can set (step = 1)
@@ -1843,16 +1916,10 @@ NormalizeStride_1 (node *stride, bool *is_empty)
     /*
      * assure, that the stride is still legal!
      */
-    DBUG_ASSERT ((0 <= bound1), "modified stride has illegal lower bound (<= 0)");
-    DBUG_ASSERT (((is_empty != NULL) || (bound1 < bound2)),
-                 "modified stride is empty (lower bound >= upper bound)!");
-    DBUG_ASSERT ((0 < step), "modified step is illegal (<= 0)");
-    DBUG_ASSERT ((0 <= grid_b1), "modified grid has illegal lower bound (<= 0)");
-    DBUG_ASSERT ((grid_b1 < grid_b2),
-                 "modified grid is empty (lower bound >= upper bound)!");
+    CheckStride (bound1, bound2, step, grid_b1, grid_b2, TRUE);
 
     /*
-     * maximize the outline:
+     * maximize the outline
      */
 
     /* calculate minimum for 'bound1' */
@@ -1869,13 +1936,6 @@ NormalizeStride_1 (node *stride, bool *is_empty)
     WLSTRIDE_STEP (stride) = step;
     WLGRID_BOUND1 (grid) = grid_b1 + (bound1 - new_bound1);
     WLGRID_BOUND2 (grid) = grid_b2 + (bound1 - new_bound1);
-
-    if (is_empty != NULL) {
-        /*
-         * stride is empty!!!
-         */
-        (*is_empty) = (bound1 >= bound2);
-    }
 
     DBUG_RETURN (stride);
 }
@@ -2020,8 +2080,6 @@ GetLcmUnroll (node *nodes, int dim)
  *
  * Description:
  *   Returns strides/grids of the size found in 'shape'.
- *   If 'is_empty' is != NULL, '*is_empty' notifies whether the generated
- *   stride is empty or not. Otherwise the stride has to be non-empty!!
  *
  *   This function is called by 'GenerateCompleteDomain',
  *    'GenerateCompleteDomainVar'.
@@ -2199,7 +2257,7 @@ Parts2Strides (node *parts, int dims, shpseg *shape)
                 /* the PART-information is needed by 'IntersectStrideWithOutline' */
                 WLSTRIDE_PART (new_stride) = parts;
 
-                new_stride = NormalizeStride_1 (new_stride, &is_empty);
+                is_empty = IsEmptyStride_1 (new_stride);
                 if (is_empty) {
                     new_stride = FreeTree (new_stride);
                     break;
@@ -2236,7 +2294,6 @@ Parts2Strides (node *parts, int dims, shpseg *shape)
             ;
 
     } else {
-
         /*
          * not all generator parameters are constant
          */
@@ -2375,7 +2432,7 @@ EmptyParts2StridesOrExpr (node **strides, node **new_node, node *arg_node, int w
 /******************************************************************************
  ******************************************************************************
  **
- ** functions for CheckDisjointness()
+ **  functions for CheckDisjointness()
  **
  **/
 
@@ -2386,7 +2443,7 @@ EmptyParts2StridesOrExpr (node **strides, node **new_node, node *arg_node, int w
  *                                int lb2, int ub2, int step2, int width2)
  *
  * Description:
- *   checks whether the given strides are disjoint.
+ *   Checks whether the given strides are disjoint.
  *
  *   stride1: lb1 <= iv1 < ub1 STEP step1 WIDTH width1
  *   stride2: lb2 <= iv1 < ub2 STEP step2 WIDTH width2
@@ -2555,11 +2612,45 @@ ret:
 
 /**
  **
- ** functions for CheckDisjointness()
+ **  functions for CheckDisjointness()
  **
  ******************************************************************************
  ******************************************************************************/
 #endif
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *NormalizeAllStrides( node *strides);
+ *
+ * Description:
+ *   Normalizes all the given strides in all dimensions.
+ *
+ ******************************************************************************/
+
+node *
+NormalizeAllStrides (node *strides)
+{
+    node *grid;
+
+    DBUG_ENTER ("NormalizeAllStrides");
+
+    if (strides != NULL) {
+        DBUG_ASSERT (((NODE_TYPE (strides) == N_WLstride)
+                      || (NODE_TYPE (strides) == N_WLstriVar)),
+                     "no stride found!");
+
+        if (NODE_TYPE (strides) == N_WLstride) {
+            strides = NormalizeStride_1 (strides);
+            grid = WLSTRIDE_CONTENTS (strides);
+            DBUG_ASSERT ((WLGRID_NEXT (grid) == NULL), "multiple grids found!");
+            WLGRID_NEXTDIM (grid) = NormalizeAllStrides (WLGRID_NEXTDIM (grid));
+            WLSTRIDE_NEXT (strides) = NormalizeAllStrides (WLSTRIDE_NEXT (strides));
+        }
+    }
+
+    DBUG_RETURN (strides);
+}
 
 /******************************************************************************
  *
@@ -2581,14 +2672,11 @@ SetSegs (node *pragma, node *cubes, int dims)
     DBUG_ENTER ("SetSegs");
 
     /*
-     * create default configuration
-     */
-    segs = All (NULL, NULL, cubes, dims, line);
-    /*
+     * create default configuration.
      * also possible:
      *   segs = Cubes( NULL, NULL, cubes, dims, line);
-     * (it might be a good idea to introduce a sac2c-flag for this ...)
      */
+    segs = All (NULL, NULL, cubes, dims, line);
 
     /*
      * create pragma-dependent configuration
@@ -2649,7 +2737,7 @@ CheckParams (node *seg)
   }
 #endif
 
-    /* test, whether (bv0 >= bv1 >= bv2 >= ... >= 1), (ubv >= 1) */
+    /* check whether (bv0 >= bv1 >= bv2 >= ... >= 1), (ubv >= 1) */
     for (d = 0; d < WLSEGX_DIMS (seg); d++) {
         j = WLSEGX_BLOCKS (seg) - 1;
         if ((WLSEGX_BV (seg, j))[d] < 1) {
@@ -2749,7 +2837,7 @@ CheckParams (node *seg)
 /******************************************************************************
  ******************************************************************************
  **
- ** functions for SplitWL()
+ **  functions for SplitWL()
  **
  **/
 
@@ -3016,7 +3104,7 @@ SplitWL (node *strides)
 
 /**
  **
- ** functions for SplitWL()
+ **  functions for SplitWL()
  **
  ******************************************************************************
  ******************************************************************************/
@@ -3024,7 +3112,7 @@ SplitWL (node *strides)
 /******************************************************************************
  ******************************************************************************
  **
- ** functions for BlockWL()
+ **  functions for BlockWL()
  **
  **/
 
@@ -3259,7 +3347,7 @@ BlockWL (node *stride, int dims, int *bv, bool unroll)
 
 /**
  **
- ** functions for BlockWL()
+ **  functions for BlockWL()
  **
  ******************************************************************************
  ******************************************************************************/
@@ -3267,7 +3355,7 @@ BlockWL (node *stride, int dims, int *bv, bool unroll)
 /******************************************************************************
  ******************************************************************************
  **
- ** functions for MergeWL()
+ **  functions for MergeWL()
  **
  **/
 
@@ -3576,7 +3664,7 @@ MergeWL (node *nodes)
 
 /**
  **
- ** functions for MergeWL()
+ **  functions for MergeWL()
  **
  ******************************************************************************
  ******************************************************************************/
@@ -3584,7 +3672,7 @@ MergeWL (node *nodes)
 /******************************************************************************
  ******************************************************************************
  **
- ** functions for OptWL()
+ **  functions for OptWL()
  **
  **/
 
@@ -3853,7 +3941,7 @@ OptWL (node *nodes)
 
 /**
  **
- ** functions for OptWL()
+ **  functions for OptWL()
  **
  ******************************************************************************
  ******************************************************************************/
@@ -3861,7 +3949,7 @@ OptWL (node *nodes)
 /******************************************************************************
  ******************************************************************************
  **
- ** functions for FitWL()
+ **  functions for FitWL()
  **
  **/
 
@@ -4092,7 +4180,7 @@ FitWL (node *nodes)
 
 /**
  **
- ** functions for FitWL()
+ **  functions for FitWL()
  **
  ******************************************************************************
  ******************************************************************************/
@@ -4100,7 +4188,7 @@ FitWL (node *nodes)
 /******************************************************************************
  ******************************************************************************
  **
- ** functions for NormWL()
+ **  functions for NormWL()
  **
  **/
 
@@ -4269,7 +4357,7 @@ NormWL (node *nodes, int *idx_max)
 
 /**
  **
- ** functions for NormWL()
+ **  functions for NormWL()
  **
  ******************************************************************************
  ******************************************************************************/
@@ -4277,7 +4365,7 @@ NormWL (node *nodes, int *idx_max)
 /******************************************************************************
  ******************************************************************************
  **
- **   functions for ComputeOneCube()
+ **  functions for ComputeOneCube()
  **
  **/
 
@@ -4839,7 +4927,7 @@ ComputeOneCube (node *stride, WithOpType wltype, int dims, shpseg *shape)
 
 /**
  **
- ** functions for ComputeOneCube()
+ **  functions for ComputeOneCube()
  **
  ******************************************************************************
  ******************************************************************************/
@@ -4847,7 +4935,7 @@ ComputeOneCube (node *stride, WithOpType wltype, int dims, shpseg *shape)
 /******************************************************************************
  ******************************************************************************
  **
- **   functions for ComputeCubes()
+ **  functions for ComputeCubes()
  **
  **/
 
@@ -4973,8 +5061,8 @@ TestAndDivideStrides (node *stride1, node *stride2, node **divided_stridea,
                 WLGRID_BOUND2 (WLSTRIDE_CONTENTS (trav_d_stride1b)) -= offset;
 
                 result = 1;
-                trav_d_stride1a = NormalizeStride_1 (trav_d_stride1a, NULL);
-                trav_d_stride1b = NormalizeStride_1 (trav_d_stride1b, NULL);
+                trav_d_stride1a = NormalizeStride_1 (trav_d_stride1a);
+                trav_d_stride1b = NormalizeStride_1 (trav_d_stride1b);
             } else {
                 if (i_bound1 + grid2_b1 - i_offset2 >= i_bound2) {
                     /*
@@ -4992,8 +5080,8 @@ TestAndDivideStrides (node *stride1, node *stride2, node **divided_stridea,
                     WLGRID_BOUND2 (WLSTRIDE_CONTENTS (trav_d_stride2b)) -= offset;
 
                     result = 2;
-                    trav_d_stride2a = NormalizeStride_1 (trav_d_stride2a, NULL);
-                    trav_d_stride2b = NormalizeStride_1 (trav_d_stride2b, NULL);
+                    trav_d_stride2a = NormalizeStride_1 (trav_d_stride2a);
+                    trav_d_stride2b = NormalizeStride_1 (trav_d_stride2b);
                 }
             }
 
@@ -5172,7 +5260,7 @@ IntersectStrideWithOutline (node *stride1, node *stride2, node **i_stride1,
                 WLSTRIDE_BOUND2 (trav_i_stride1) = i_bound2;
                 WLGRID_BOUND1 (WLSTRIDE_CONTENTS (trav_i_stride1)) = grid1_b1 - i_offset1;
                 WLGRID_BOUND2 (WLSTRIDE_CONTENTS (trav_i_stride1)) = grid1_b2 - i_offset1;
-                trav_i_stride1 = NormalizeStride_1 (trav_i_stride1, NULL);
+                trav_i_stride1 = NormalizeStride_1 (trav_i_stride1);
             }
 
             /* intersect 'stride2' with the outline of 'stride1' */
@@ -5181,7 +5269,7 @@ IntersectStrideWithOutline (node *stride1, node *stride2, node **i_stride1,
                 WLSTRIDE_BOUND2 (trav_i_stride2) = i_bound2;
                 WLGRID_BOUND1 (WLSTRIDE_CONTENTS (trav_i_stride2)) = grid2_b1 - i_offset2;
                 WLGRID_BOUND2 (WLSTRIDE_CONTENTS (trav_i_stride2)) = grid2_b2 - i_offset2;
-                trav_i_stride2 = NormalizeStride_1 (trav_i_stride2, NULL);
+                trav_i_stride2 = NormalizeStride_1 (trav_i_stride2);
             }
 
         } else {
@@ -5225,7 +5313,7 @@ IntersectStrideWithOutline (node *stride1, node *stride2, node **i_stride1,
  *   int IsSubsetStride( node *stride1, node *stride2)
  *
  * Description:
- *   determines, whether stride2 is a subset of stride1 (return value 1) or
+ *   determines whether stride2 is a subset of stride1 (return value 1) or
  *   stride1 is a subset of stride2 (return value 2) or nothing of these
  *   (return value 0).
  *
@@ -5346,7 +5434,7 @@ AdjustBounds (node **stride1, node **stride2)
                 if (IndexRearStride (new_stride1) > bound12) { /* bound21 > bound12 */
                     res = 1;
                     WLSTRIDE_BOUND2 (new_stride1) = bound12;
-                    new_stride1 = NormalizeStride_1 (new_stride1, NULL);
+                    new_stride1 = NormalizeStride_1 (new_stride1);
                 }
                 break;
             } else {
@@ -5355,7 +5443,7 @@ AdjustBounds (node **stride1, node **stride2)
                     if (IndexRearStride (new_stride2) > bound11) { /* bound22 > bound11 */
                         res = 2;
                         WLSTRIDE_BOUND2 (new_stride2) = bound11;
-                        new_stride2 = NormalizeStride_1 (new_stride2, NULL);
+                        new_stride2 = NormalizeStride_1 (new_stride2);
                     }
                     break;
                 } else {
@@ -5761,7 +5849,7 @@ ComputeCubes (node *strides)
 
 /**
  **
- **   functions for ComputeCubes()
+ **  functions for ComputeCubes()
  **
  ******************************************************************************
  ******************************************************************************/
@@ -5769,7 +5857,7 @@ ComputeCubes (node *strides)
 /******************************************************************************
  ******************************************************************************
  **
- **   functions for InferSegParams()
+ **  functions for InferSegParams()
  **
  **/
 
@@ -5932,7 +6020,7 @@ InferSegParams (node *seg)
 
 /**
  **
- **   functions for InferSegParams()
+ **  functions for InferSegParams()
  **
  ******************************************************************************
  ******************************************************************************/
@@ -5940,7 +6028,7 @@ InferSegParams (node *seg)
 /******************************************************************************
  ******************************************************************************
  **
- **   functions for InferSchedulingParams()
+ **  functions for InferSchedulingParams()
  **
  **/
 
@@ -6061,7 +6149,7 @@ InferSchedulingParams (node *seg)
 
 /**
  **
- **   functions for InferSchedulingParams()
+ **  functions for InferSchedulingParams()
  **
  ******************************************************************************
  ******************************************************************************/
@@ -6193,6 +6281,21 @@ WLTRAwith (node *arg_node, node *arg_info)
         new_node = MakeNWith2 (NWITH_WITHID (arg_node), NULL, NWITH_CODE (arg_node),
                                NWITH_WITHOP (arg_node), wl_dims);
 
+        /*
+         * Extract naive-compilation and array-placement pragmas
+         */
+        NWITH2_NAIVE_COMP (new_node)
+          = ExtractNaiveCompPragma (NWITH_PRAGMA (arg_node), line);
+        NWITH2_PRAGMA (new_node) = ExtractAplPragma (NWITH_PRAGMA (arg_node), line);
+        if ((NWITH2_PRAGMA (new_node) != NULL)
+            && ((NWITH2_TYPE (new_node) == WO_foldfun)
+                || (NWITH2_TYPE (new_node) == WO_foldprf))) {
+            /*
+             * No array placement for fold with-loops.
+             */
+            NWITH2_PRAGMA (new_node) = FreeTree (NWITH2_PRAGMA (new_node));
+        }
+
         NWITH2_DEC_RC_IDS (new_node) = NWITH_DEC_RC_IDS (arg_node);
         NWITH2_IN_MASK (new_node) = NWITH_IN_MASK (arg_node);
         NWITH2_OUT_MASK (new_node) = NWITH_OUT_MASK (arg_node);
@@ -6214,145 +6317,9 @@ WLTRAwith (node *arg_node, node *arg_info)
         NWITH_OUT_MASK (arg_node) = NULL;
         NWITH_LOCAL_MASK (arg_node) = NULL;
 
-        if (WL_break_after >= WL_PH_cubes) {
+        if (NWITH2_NAIVE_COMP (new_node)) {
             /*
-             * build the cubes
-             */
-            DBUG_EXECUTE ("WLprec", NOTE (("step 1: cube-building\n")));
-            if (NPART_NEXT (NWITH_PART (arg_node)) == NULL) {
-                /*
-                 * we have one part only.
-                 *  -> the index-range of the generator is possibly a *proper* subset of
-                 *     the index-vector-space.
-                 *  -> the generator params are possibly vars.
-                 */
-                cubes
-                  = ComputeOneCube (strides, NWITH2_TYPE (new_node), wl_dims, wl_shpseg);
-            } else {
-                /*
-                 * we have multiple parts.
-                 *  -> the index-ranges of the generators partitionize the
-                 * index-vector-space.
-                 *  -> the generator params are constant.
-                 *
-                 * Remark: for the time being these assertions are not a restriction,
-                 * because in a SAC-source we can specifiy one part only. Therefore
-                 * multiple parts are generated exclusiv by WLF, and these multiple parts
-                 * meet the above conditions.
-                 */
-                cubes = ComputeCubes (strides);
-            }
-
-            /*
-             * full-featured wltransformation
-             */
-
-            if (WL_break_after >= WL_PH_segs) {
-                DBUG_EXECUTE ("WLprec", NOTE (("step 2: choice of segments\n")));
-
-                NWITH2_PRAGMA (new_node)
-                  = ExtractAplPragma (NWITH_PRAGMA (arg_node), line);
-                if ((NWITH2_PRAGMA (new_node) != NULL)
-                    && ((NWITH2_TYPE (new_node) == WO_foldfun)
-                        || (NWITH2_TYPE (new_node) == WO_foldprf))) {
-                    /*
-                     * No array placement for fold with-loops.
-                     */
-                    NWITH2_PRAGMA (new_node) = FreeTree (NWITH2_PRAGMA (new_node));
-                }
-
-                segs = SetSegs (NWITH_PRAGMA (arg_node), cubes, wl_dims);
-                /* free temporary data */
-                if (NWITH_PRAGMA (arg_node) != NULL) {
-                    NWITH_PRAGMA (arg_node) = FreeTree (NWITH_PRAGMA (arg_node));
-                }
-                if (cubes != NULL) {
-                    cubes = FreeTree (cubes);
-                }
-
-                seg = segs;
-                while (seg != NULL) {
-                    /*
-                     * compute SEG_IDX_MIN, SEG_IDX_MAX, SEG_IDX_SV
-                     */
-                    seg = InferSegParams (seg);
-
-                    /*
-                     * check params of segment
-                     */
-                    CheckParams (seg);
-
-                    /* splitting */
-                    if (WL_break_after >= WL_PH_split) {
-                        DBUG_EXECUTE ("WLprec", NOTE (("step 3: splitting\n")));
-                        WLSEGX_CONTENTS (seg) = SplitWL (WLSEGX_CONTENTS (seg));
-                    }
-
-                    /* hierarchical blocking */
-                    if (WL_break_after >= WL_PH_block) {
-                        DBUG_EXECUTE ("WLprec",
-                                      NOTE (("step 4: hierarchical blocking\n")));
-                        for (b = 0; b < WLSEGX_BLOCKS (seg); b++) {
-                            DBUG_EXECUTE (
-                              "WLprec",
-                              NOTE (("step 4.%d: hierarchical blocking (level %d)\n",
-                                     b + 1, b)));
-                            WLSEGX_CONTENTS (seg)
-                              = BlockWL (WLSEGX_CONTENTS (seg), wl_dims,
-                                         WLSEGX_BV (seg, b), 0);
-                        }
-                    }
-
-                    /* unrolling-blocking */
-                    if (WL_break_after >= WL_PH_ublock) {
-                        DBUG_EXECUTE ("WLprec", NOTE (("step 5: unrolling-blocking\n")));
-                        WLSEGX_CONTENTS (seg)
-                          = BlockWL (WLSEGX_CONTENTS (seg), wl_dims, WLSEGX_UBV (seg), 1);
-                    }
-
-                    /* merging */
-                    if (WL_break_after >= WL_PH_merge) {
-                        DBUG_EXECUTE ("WLprec", NOTE (("step 6: merging\n")));
-                        WLSEGX_CONTENTS (seg) = MergeWL (WLSEGX_CONTENTS (seg));
-                    }
-
-                    /* optimization */
-                    if (WL_break_after >= WL_PH_opt) {
-                        DBUG_EXECUTE ("WLprec", NOTE (("step 7: optimization\n")));
-                        WLSEGX_CONTENTS (seg) = OptWL (WLSEGX_CONTENTS (seg));
-                    }
-
-                    /* fitting */
-                    if (WL_break_after >= WL_PH_fit) {
-                        DBUG_EXECUTE ("WLprec", NOTE (("step 8: fitting\n")));
-                        WLSEGX_CONTENTS (seg) = FitWL (WLSEGX_CONTENTS (seg));
-                    }
-
-                    /* normalization */
-                    if (WL_break_after >= WL_PH_norm) {
-                        DBUG_EXECUTE ("WLprec", NOTE (("step 9: normalization\n")));
-                        WLSEGX_CONTENTS (seg)
-                          = NormWL (WLSEGX_CONTENTS (seg), WLSEGX_IDX_MAX (seg));
-                    }
-
-                    seg = InferSchedulingParams (seg);
-
-                    seg = WLSEG_NEXT (seg);
-                }
-            } else {
-                /*
-                 * we want to stop after cube-building.
-                 *  -> build one segment containing all cubes.
-                 */
-                segs = All (NULL, NULL, cubes, wl_dims, line);
-                /*
-                 * compute SEG_IDX_MIN, SEG_IDX_MAX, SEG_IDX_SV
-                 */
-                segs = InferSegParams (segs);
-            }
-        } else {
-            /*
-             * we want to stop after converting.
+             * naive compilation activated
              *  -> build one segment containing the strides.
              */
             segs = All (NULL, NULL, strides, wl_dims, line);
@@ -6360,6 +6327,146 @@ WLTRAwith (node *arg_node, node *arg_info)
              * compute SEG_IDX_MIN, SEG_IDX_MAX, SEG_IDX_SV
              */
             segs = InferSegParams (segs);
+        } else {
+            strides = NormalizeAllStrides (strides);
+
+            if (WL_break_after < WL_PH_cubes) {
+                /*
+                 * we want to stop after converting.
+                 *  -> build one segment containing the strides.
+                 */
+                segs = All (NULL, NULL, strides, wl_dims, line);
+                /*
+                 * compute SEG_IDX_MIN, SEG_IDX_MAX, SEG_IDX_SV
+                 */
+                segs = InferSegParams (segs);
+            } else {
+                /*
+                 * build the cubes
+                 */
+                DBUG_EXECUTE ("WLprec", NOTE (("step 1: cube-building\n")));
+                if (NPART_NEXT (NWITH_PART (arg_node)) == NULL) {
+                    /*
+                     * we have one part only.
+                     *  -> the index-range of the generator is possibly a *proper* subset
+                     *     of the index-vector-space.
+                     *  -> the generator params are possibly vars.
+                     */
+                    cubes = ComputeOneCube (strides, NWITH2_TYPE (new_node), wl_dims,
+                                            wl_shpseg);
+                } else {
+                    /*
+                     * we have multiple parts.
+                     *  -> the index-ranges of the generators partitionize the
+                     *     index-vector-space.
+                     *  -> the generator params are constant.
+                     *
+                     * Remark: For the time being these assertions are not a restriction,
+                     *         because in a SAC-source we can specifiy one part only.
+                     *         Therefore multiple parts are generated exclusiv by WLF,
+                     *         and these multiple parts meet the above conditions.
+                     */
+                    cubes = ComputeCubes (strides);
+                }
+
+                /*
+                 * full-featured wltransformation
+                 */
+
+                if (WL_break_after < WL_PH_segs) {
+                    /*
+                     * we want to stop after cube-building.
+                     *  -> build one segment containing all cubes.
+                     */
+                    segs = All (NULL, NULL, cubes, wl_dims, line);
+                    /*
+                     * compute SEG_IDX_MIN, SEG_IDX_MAX, SEG_IDX_SV
+                     */
+                    segs = InferSegParams (segs);
+                } else {
+                    DBUG_EXECUTE ("WLprec", NOTE (("step 2: choice of segments\n")));
+                    segs = SetSegs (NWITH_PRAGMA (arg_node), cubes, wl_dims);
+                    /* free temporary data */
+                    if (NWITH_PRAGMA (arg_node) != NULL) {
+                        NWITH_PRAGMA (arg_node) = FreeTree (NWITH_PRAGMA (arg_node));
+                    }
+                    if (cubes != NULL) {
+                        cubes = FreeTree (cubes);
+                    }
+
+                    seg = segs;
+                    while (seg != NULL) {
+                        /*
+                         * compute SEG_IDX_MIN, SEG_IDX_MAX, SEG_IDX_SV
+                         */
+                        seg = InferSegParams (seg);
+
+                        /*
+                         * check params of segment
+                         */
+                        CheckParams (seg);
+
+                        /* splitting */
+                        if (WL_break_after >= WL_PH_split) {
+                            DBUG_EXECUTE ("WLprec", NOTE (("step 3: splitting\n")));
+                            WLSEGX_CONTENTS (seg) = SplitWL (WLSEGX_CONTENTS (seg));
+                        }
+
+                        /* hierarchical blocking */
+                        if (WL_break_after >= WL_PH_block) {
+                            DBUG_EXECUTE ("WLprec",
+                                          NOTE (("step 4: hierarchical blocking\n")));
+                            for (b = 0; b < WLSEGX_BLOCKS (seg); b++) {
+                                DBUG_EXECUTE (
+                                  "WLprec",
+                                  NOTE (("step 4.%d: hierarchical blocking (level %d)\n",
+                                         b + 1, b)));
+                                WLSEGX_CONTENTS (seg)
+                                  = BlockWL (WLSEGX_CONTENTS (seg), wl_dims,
+                                             WLSEGX_BV (seg, b), 0);
+                            }
+                        }
+
+                        /* unrolling-blocking */
+                        if (WL_break_after >= WL_PH_ublock) {
+                            DBUG_EXECUTE ("WLprec",
+                                          NOTE (("step 5: unrolling-blocking\n")));
+                            WLSEGX_CONTENTS (seg)
+                              = BlockWL (WLSEGX_CONTENTS (seg), wl_dims, WLSEGX_UBV (seg),
+                                         1);
+                        }
+
+                        /* merging */
+                        if (WL_break_after >= WL_PH_merge) {
+                            DBUG_EXECUTE ("WLprec", NOTE (("step 6: merging\n")));
+                            WLSEGX_CONTENTS (seg) = MergeWL (WLSEGX_CONTENTS (seg));
+                        }
+
+                        /* optimization */
+                        if (WL_break_after >= WL_PH_opt) {
+                            DBUG_EXECUTE ("WLprec", NOTE (("step 7: optimization\n")));
+                            WLSEGX_CONTENTS (seg) = OptWL (WLSEGX_CONTENTS (seg));
+                        }
+
+                        /* fitting */
+                        if (WL_break_after >= WL_PH_fit) {
+                            DBUG_EXECUTE ("WLprec", NOTE (("step 8: fitting\n")));
+                            WLSEGX_CONTENTS (seg) = FitWL (WLSEGX_CONTENTS (seg));
+                        }
+
+                        /* normalization */
+                        if (WL_break_after >= WL_PH_norm) {
+                            DBUG_EXECUTE ("WLprec", NOTE (("step 9: normalization\n")));
+                            WLSEGX_CONTENTS (seg)
+                              = NormWL (WLSEGX_CONTENTS (seg), WLSEGX_IDX_MAX (seg));
+                        }
+
+                        seg = InferSchedulingParams (seg);
+
+                        seg = WLSEG_NEXT (seg);
+                    }
+                }
+            }
         }
 
         NWITH2_SEGS (new_node) = segs;
