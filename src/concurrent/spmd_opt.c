@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.5  1999/07/02 09:57:39  jhs
+ * Removed some memory leaks when combinig masks in MeltSpmds.
+ *
  * Revision 2.4  1999/07/01 13:04:24  jhs
  * Added comments.
  *
@@ -203,13 +206,15 @@ MeltSPMDs (node *first_spmd, node *second_spmd, node *fundef)
                  "SPMD_STATIC differs in SPMDs to be melted");
 
     /*
-     *  Count which varibales are consumned how often in second block ...
+     *  Count which varibales are consumned how often in second block and ...
      */
     DBUG_PRINT ("SPMD", ("Entering CountOccurences"));
     counters = CountOccurences (SPMD_REGION (second_spmd), SPMD_OUT (first_spmd));
+    DBUG_PRINT ("SPMD", ("Leaving CountOccurences"));
+
     /*
      *  this is only to debug, it prints out all variables (each with a varno
-     *  and the correspondin value of counter[varno].
+     *  and the corresponding value of counter[varno].
      */
     vv = BLOCK_VARDEC (FUNDEF_BODY (fundef));
     for (i = 0; i < 20; i++) {
@@ -223,7 +228,6 @@ MeltSPMDs (node *first_spmd, node *second_spmd, node *fundef)
             break;
         }
     }
-    DBUG_PRINT ("SPMD", ("Leaving CountOccurences"));
 
     /*
      *  ... reduce all this occurences in the first block.
@@ -239,7 +243,6 @@ MeltSPMDs (node *first_spmd, node *second_spmd, node *fundef)
     SPMD_REGION (second_spmd) = NULL;
 
     /* melt the masks of used variables */
-    /* #### masken checken und fertig machen!!!!  */
 
     /*  -> IN <- */
     /*  newin = first's ins and second's ins,
@@ -259,7 +262,6 @@ MeltSPMDs (node *first_spmd, node *second_spmd, node *fundef)
      */
     DBUG_PRINT ("SPMD", ("Entering ReduceMasks"));
     newout = ReduceMasks (SPMD_REGION (first_spmd), newout);
-    /* memory leak #### */
     DBUG_PRINT ("SPMD", ("Leaving ReduceMasks"));
 
     /* -> SHARED <- */
@@ -270,6 +272,14 @@ MeltSPMDs (node *first_spmd, node *second_spmd, node *fundef)
     DFMSetMaskOr (newshared, SPMD_SHARED (first_spmd));
     DFMSetMaskOr (newshared, SPMD_SHARED (second_spmd));
 
+    /* -> IN, OUT, SHARED <- */
+    /*
+     *  First one destroys the old masks of the first block, and then sets
+     *  them to new values.
+     */
+    SPMD_IN (first_spmd) = DFMRemoveMask (SPMD_IN (first_spmd));
+    SPMD_OUT (first_spmd) = DFMRemoveMask (SPMD_OUT (first_spmd));
+    SPMD_SHARED (first_spmd) = DFMRemoveMask (SPMD_SHARED (first_spmd));
     SPMD_IN (first_spmd) = newin;
     SPMD_OUT (first_spmd) = newout;
     SPMD_SHARED (first_spmd) = newshared;
