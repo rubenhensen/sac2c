@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.6  1995/03/28 12:09:38  hw
+ * Revision 1.7  1995/04/04 16:21:04  hw
+ * changed IsArray   (now arrays with unknown shapes will be treated as arrays)
+ *
+ * Revision 1.6  1995/03/28  12:09:38  hw
  * added #include "internal_lib.h"
  *
  * Revision 1.5  1995/03/16  17:40:35  hw
@@ -81,13 +84,13 @@ IsArray (node *arg_node)
     DBUG_ENTER ("IsArray");
     DBUG_PRINT ("RC", ("looking for %s", arg_node->info.types->id));
 
-    if (1 <= arg_node->info.types->dim)
+    if ((1 <= arg_node->info.types->dim) || (-1 == arg_node->info.types->dim))
         ret = 1;
     else if (T_user == arg_node->info.types->simpletype) {
         type_node
           = LookupType (arg_node->info.types->name, arg_node->info.types->name_mod, 042);
         /* 042 is only a dummy argument */
-        if (1 <= type_node->info.types->dim)
+        if ((1 <= type_node->info.types->dim) || (-1 == type_node->info.types->dim))
             ret = 1;
     }
     DBUG_PRINT ("RC", ("%d", ret));
