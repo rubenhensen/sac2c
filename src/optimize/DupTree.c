@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.89  1998/05/15 23:54:21  dkr
+ * changed DupNwith2
+ *
  * Revision 1.88  1998/05/14 21:38:59  dkr
  * added WLGRID_CEXPR_TEMPLATE in DupWLgrid()
  *
@@ -1179,11 +1182,14 @@ DupNwith2 (node *arg_node, node *arg_info)
 
     new_node = MakeNWith2 (id, seg, code, withop, NWITH2_DIMS (arg_node));
 
-    NWITH2_IDX_MIN (new_node) = (int *)MALLOC (NWITH2_DIMS (new_node) * sizeof (int));
-    NWITH2_IDX_MAX (new_node) = (int *)MALLOC (NWITH2_DIMS (new_node) * sizeof (int));
-    for (d = 0; d < NWITH2_DIMS (new_node); d++) {
-        (NWITH2_IDX_MIN (new_node))[d] = (NWITH2_IDX_MIN (arg_node))[d];
-        (NWITH2_IDX_MAX (new_node))[d] = (NWITH2_IDX_MAX (arg_node))[d];
+    if (NWITH2_IDX_MIN (arg_node) != NULL) {
+        DBUG_ASSERT ((NWITH2_IDX_MAX (arg_node) != NULL), "IDX_MAX not found");
+        NWITH2_IDX_MIN (new_node) = (int *)MALLOC (NWITH2_DIMS (new_node) * sizeof (int));
+        NWITH2_IDX_MAX (new_node) = (int *)MALLOC (NWITH2_DIMS (new_node) * sizeof (int));
+        for (d = 0; d < NWITH2_DIMS (new_node); d++) {
+            (NWITH2_IDX_MIN (new_node))[d] = (NWITH2_IDX_MIN (arg_node))[d];
+            (NWITH2_IDX_MAX (new_node))[d] = (NWITH2_IDX_MAX (arg_node))[d];
+        }
     }
 
     if (NWITH2_IN (arg_node) != NULL) {
