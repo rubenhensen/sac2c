@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.20  2001/04/03 09:50:33  dkr
+ * some warning/error messages modified
+ *
  * Revision 3.19  2001/04/02 17:07:03  dkr
  * Scheduling() is ignored if multi-threading is inactive
  *
@@ -430,18 +433,18 @@ Array2Bv (node *array, int *bv, int dims, int line)
     for (d = 0; d < dims; d++) {
         if (array == NULL) {
             ABORT (line, ("Illegal argument in wlcomp-pragma found;"
-                          " Bv(): Blocking vector has wrong dimension"));
+                          " Ubv/Bv...(): Blocking vector has wrong dimension"));
         }
         if (NODE_TYPE (EXPRS_EXPR (array)) != N_num) {
             ABORT (line, ("Illegal argument in wlcomp-pragma found;"
-                          " Bv(): Blocking vector is not an 'int'-array"));
+                          " Ubv/Bv...(): Blocking vector is not an 'int'-array"));
         }
         bv[d] = NUM_VAL (EXPRS_EXPR (array));
         array = EXPRS_NEXT (array);
     }
     if (array != NULL) {
         ABORT (line, ("Illegal argument in wlcomp-pragma found;"
-                      " Bv(): Blocking vector has wrong dimension"));
+                      " Ubv/Bv...(): Blocking vector has wrong dimension"));
     }
 
     DBUG_RETURN (bv);
@@ -684,7 +687,7 @@ WLCOMP_Bv (node *segs, node *parms, node *cubes, int dims, int line)
 
     if (parms == NULL) {
         ABORT (line, ("Illegal argument in wlcomp-pragma found;"
-                      " Bv(): No parameters found"));
+                      " Ubv/Bv...(): No parameters found"));
     }
 
     DBUG_ASSERT ((NODE_TYPE (parms) == N_exprs),
@@ -692,7 +695,7 @@ WLCOMP_Bv (node *segs, node *parms, node *cubes, int dims, int line)
 
     if (NODE_TYPE (EXPRS_EXPR (parms)) != N_num) {
         ABORT (line, ("Illegal argument in wlcomp-pragma found;"
-                      " Bv(): First argument is not an 'int'"));
+                      " Ubv/Bv...(): First argument is not an 'int'"));
     }
 
     level = NUM_VAL (EXPRS_EXPR (parms));
@@ -701,11 +704,12 @@ WLCOMP_Bv (node *segs, node *parms, node *cubes, int dims, int line)
     if ((parms != NULL) && (seg != NULL)) {
         while (seg != NULL) {
             if (NODE_TYPE (seg) != N_WLseg) {
-                WARN (line, ("Blocking on variable segments not supported"));
+                WARN (line, ("wlcomp-pragma function Ubv/Bv...() ignored"
+                             " because generator is not constant"));
             } else {
                 if (NODE_TYPE (EXPRS_EXPR (parms)) != N_array) {
                     ABORT (line, ("Illegal argument in wlcomp-pragma found;"
-                                  " Bv(): Blocking-vector is not an array"));
+                                  " Ubv/Bv...(): Blocking-vector is not an array"));
                 }
 
                 if (level >= 0) {
