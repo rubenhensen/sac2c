@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.82  2002/04/16 11:05:42  dkr
+ * PrintArgtab() and PrintAssign() modified
+ *
  * Revision 3.81  2002/04/15 16:08:34  dkr
  * bug in PrintArgtab() fixed
  *
@@ -623,55 +626,60 @@ PrintArgtab (argtab_t *argtab, bool is_def)
 
     DBUG_ENTER ("PrintArgtab");
 
-    fprintf (outfile, "[");
-    for (i = 0; i < argtab->size; i++) {
-        if (argtab->tag[i] != ATG_notag) {
-            fprintf (outfile, " %s:", mdb_argtag[argtab->tag[i]]);
+    if (argtab != NULL) {
+        fprintf (outfile, "[");
+        for (i = 0; i < argtab->size; i++) {
+            if (argtab->tag[i] != ATG_notag) {
+                fprintf (outfile, " %s:", mdb_argtag[argtab->tag[i]]);
 
-            if (argtab->ptr_in[i] != NULL) {
-                PRINT_POINTER_BRACKETS (outfile, argtab->ptr_in[i]);
-                if (is_def) {
-                    DBUG_ASSERT ((NODE_TYPE (argtab->ptr_in[i]) == N_arg),
-                                 "illegal argtab entry found!");
+                if (argtab->ptr_in[i] != NULL) {
+                    PRINT_POINTER_BRACKETS (outfile, argtab->ptr_in[i]);
+                    if (is_def) {
+                        DBUG_ASSERT ((NODE_TYPE (argtab->ptr_in[i]) == N_arg),
+                                     "illegal argtab entry found!");
 
-                    if (ARG_NAME (argtab->ptr_in[i]) != NULL) {
-                        fprintf (outfile, "%s", ARG_NAME (argtab->ptr_in[i]));
+                        if (ARG_NAME (argtab->ptr_in[i]) != NULL) {
+                            fprintf (outfile, "%s", ARG_NAME (argtab->ptr_in[i]));
+                        }
+                    } else {
+                        DBUG_ASSERT ((NODE_TYPE (argtab->ptr_in[i]) == N_exprs),
+                                     "illegal argtab entry found!");
+
+                        fprintf (outfile, "%s",
+                                 mdb_nodetype[NODE_TYPE (
+                                   EXPRS_EXPR (argtab->ptr_in[i]))]);
                     }
                 } else {
-                    DBUG_ASSERT ((NODE_TYPE (argtab->ptr_in[i]) == N_exprs),
-                                 "illegal argtab entry found!");
-
-                    fprintf (outfile, "%s",
-                             mdb_nodetype[NODE_TYPE (EXPRS_EXPR (argtab->ptr_in[i]))]);
+                    fprintf (outfile, "-");
                 }
-            } else {
-                fprintf (outfile, "-");
-            }
 
-            fprintf (outfile, "/");
+                fprintf (outfile, "/");
 
-            if (argtab->ptr_out[i] != NULL) {
-                PRINT_POINTER_BRACKETS (outfile, argtab->ptr_out[i]);
-                if (is_def) {
+                if (argtab->ptr_out[i] != NULL) {
+                    PRINT_POINTER_BRACKETS (outfile, argtab->ptr_out[i]);
+                    if (is_def) {
+                    } else {
+                        fprintf (outfile, "%s",
+                                 STR_OR_EMPTY (IDS_NAME (((ids *)argtab->ptr_out[i]))));
+                    }
                 } else {
-                    fprintf (outfile, "%s",
-                             STR_OR_EMPTY (IDS_NAME (((ids *)argtab->ptr_out[i]))));
+                    fprintf (outfile, "-");
                 }
             } else {
-                fprintf (outfile, "-");
+                DBUG_ASSERT ((argtab->ptr_in[i] == NULL), "illegal argtab entry found!");
+                DBUG_ASSERT ((argtab->ptr_out[i] == NULL), "illegal argtab entry found!");
+
+                fprintf (outfile, " ---");
             }
-        } else {
-            DBUG_ASSERT ((argtab->ptr_in[i] == NULL), "illegal argtab entry found!");
-            DBUG_ASSERT ((argtab->ptr_out[i] == NULL), "illegal argtab entry found!");
 
-            fprintf (outfile, " ---");
+            if (i < argtab->size - 1) {
+                fprintf (outfile, ",");
+            }
         }
-
-        if (i < argtab->size - 1) {
-            fprintf (outfile, ",");
-        }
+        fprintf (outfile, " ]");
+    } else {
+        fprintf (outfile, "-");
     }
-    fprintf (outfile, " ]");
 
     DBUG_VOID_RETURN;
 }
@@ -1564,7 +1572,7 @@ PrintAnnotate (node *arg_node, node *arg_info)
             sprintf (strbuffer1, "PROFILE_END_UDF( %d, %d)",
                      ANNOTATE_FUNNUMBER (arg_node), ANNOTATE_FUNAPNUMBER (arg_node));
         } else {
-            DBUG_ASSERT ((1 == 0), "wrong tag at N_annotate");
+            DBUG_ASSERT ((0), "wrong tag at N_annotate");
         }
     }
 
@@ -1845,49 +1853,42 @@ PrintAssign (node *arg_node, node *arg_info)
                   INDENT; PrintMrdMask (outfile, ASSIGN_MRDMASK (arg_node),
                                         INFO_PRINT_VARNO (arg_info)););
 
-    DBUG_EXECUTE ("WLI", if ((N_let == NODE_TYPE (ASSIGN_INSTR (arg_node)))
-                             && (F_sel == PRF_PRF (LET_EXPR (ASSIGN_INSTR (arg_node))))) {
+    instr = ASSIGN_INSTR (arg_node);
+    DBUG_ASSERT ((instr != NULL), "instruction of N_assign is NULL");
+
+    DBUG_EXECUTE ("WLI", if ((NODE_TYPE (instr) == N_let)
+                             && (PRF_PRF (LET_EXPR (instr)) == F_sel)) {
         DbugIndexInfo (ASSIGN_INDEX (arg_node));
     });
 
-    DBUG_ASSERT ((ASSIGN_INSTR (arg_node) != NULL), "instruction of N_assign is NULL");
+    if (NODE_TYPE (instr) == N_icm) {
+        indent += ICM_INDENT_BEFORE (instr);
+    }
 
-    if (N_icm == NODE_TYPE (ASSIGN_INSTR (arg_node))) {
-        indent += ICM_INDENT_BEFORE (ASSIGN_INSTR (arg_node));
-        INDENT;
-        Trav (ASSIGN_INSTR (arg_node), arg_info);
-        fprintf (outfile, "\n");
-        indent += ICM_INDENT_AFTER (ASSIGN_INSTR (arg_node));
-        if (ASSIGN_NEXT (arg_node) != NULL) {
-            PRINT_CONT (Trav (ASSIGN_NEXT (arg_node), arg_info), ;);
-        }
-    } else {
-        PRINT_LINE_PRAGMA_IN_SIB (outfile, arg_node);
+    PRINT_LINE_PRAGMA_IN_SIB (outfile, arg_node);
 
-        DBUG_EXECUTE ("LINE", fprintf (outfile, "/*%03d*/", arg_node->lineno););
+    DBUG_EXECUTE ("LINE", fprintf (outfile, "/*%03d*/", arg_node->lineno););
 
-        instr = ASSIGN_INSTR (arg_node);
-        if (((NODE_TYPE (instr) != N_return) && (NODE_TYPE (instr) != N_annotate))
-            || ((NODE_TYPE (instr) == N_return) && (RETURN_EXPRS (instr) != NULL))
-            || ((NODE_TYPE (instr) == N_annotate) && (compiler_phase >= PH_compile))) {
-            trav_instr = TRUE;
-        } else {
+    trav_instr = TRUE;
+    if (NODE_TYPE (instr) == N_annotate) {
+        if (compiler_phase < PH_compile) {
             trav_instr = FALSE;
         }
+        DBUG_EXECUTE ("PRINT_PROFILE", trav_instr = TRUE;);
+    }
 
-        if (NODE_TYPE (instr) == N_annotate) {
-            DBUG_EXECUTE ("PRINT_PROFILE", trav_instr = TRUE;);
-        }
+    if (trav_instr) {
+        INDENT;
+        Trav (instr, arg_info);
+        fprintf (outfile, "\n");
+    }
 
-        if (trav_instr) {
-            INDENT;
-            Trav (instr, arg_info);
-            fprintf (outfile, "\n");
-        }
+    if (NODE_TYPE (instr) == N_icm) {
+        indent += ICM_INDENT_AFTER (instr);
+    }
 
-        if (ASSIGN_NEXT (arg_node) != NULL) {
-            PRINT_CONT (Trav (ASSIGN_NEXT (arg_node), arg_info), ;);
-        }
+    if (ASSIGN_NEXT (arg_node) != NULL) {
+        PRINT_CONT (Trav (ASSIGN_NEXT (arg_node), arg_info), ;);
     }
 
     DBUG_RETURN (arg_node);
@@ -4342,7 +4343,7 @@ DoPrintTypesAST (types *type, bool print_status, bool print_addr)
             fprintf (outfile, " }");
         }
     } else {
-        fprintf (outfile, "NULL");
+        fprintf (outfile, "-");
     }
 
     DBUG_VOID_RETURN;
@@ -4580,7 +4581,12 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
             PRINT_POINTER_BRACKETS (outfile, FUNDEF_DFM_BASE (arg_node));
 
             fprintf (outfile, ", ");
-            fprintf (outfile, "used: %d", FUNDEF_USED (arg_node));
+            fprintf (outfile, "used: ");
+            if (FUNDEF_USED (arg_node) != USED_INACTIVE) {
+                fprintf (outfile, "%d", FUNDEF_USED (arg_node));
+            } else {
+                fprintf (outfile, "-");
+            }
 
             if (FUNDEF_IS_LACFUN (arg_node)) {
                 fprintf (outfile, ", ");
