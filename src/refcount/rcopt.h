@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/10/22 15:18:40  ktr
+ * Moved some functionality into reuseelimination.c
+ *
  * Revision 1.3  2004/10/21 16:22:07  ktr
  * Added support for static reuse.
  *
@@ -25,7 +28,6 @@ extern node *EMRCORefCountOpt (node *syntax_tree);
 
 extern node *EMRCOassign (node *arg_node, info *arg_info);
 extern node *EMRCOblock (node *arg_node, info *arg_info);
-extern node *EMRCOfundef (node *arg_node, info *arg_info);
 extern node *EMRCOlet (node *arg_node, info *arg_info);
 extern node *EMRCOprf (node *arg_node, info *arg_info);
 extern node *EMRCOwithop (node *arg_node, info *arg_info);
