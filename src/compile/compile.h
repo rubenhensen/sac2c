@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/02/02 09:46:15  dkr
+ * COMPWLstride and COMPWLstrideVar replaced by COMPWLstridex, ...
+ *
  * Revision 3.3  2001/01/09 17:21:46  dkr
  * COMPWLstriVar renamed into COMPWLstrideVar
  *
@@ -88,15 +91,13 @@ extern node *COMPObjdef (node *arg_node, node *arg_info);
 extern node *COMPSpmd (node *arg_node, node *arg_info);
 extern node *COMPSync (node *arg_node, node *arg_info);
 extern node *COMPNcode (node *arg_node, node *arg_info);
+
 extern node *COMPNwith2 (node *arg_node, node *arg_info);
-extern node *COMPWLseg (node *arg_node, node *arg_info);
-extern node *COMPWLblock (node *arg_node, node *arg_info);
-extern node *COMPWLublock (node *arg_node, node *arg_info);
-extern node *COMPWLstride (node *arg_node, node *arg_info);
-extern node *COMPWLgrid (node *arg_node, node *arg_info);
-extern node *COMPWLsegVar (node *arg_node, node *arg_info);
-extern node *COMPWLstrideVar (node *arg_node, node *arg_info);
-extern node *COMPWLgridVar (node *arg_node, node *arg_info);
+extern node *COMPWLsegx (node *arg_node, node *arg_info);
+extern node *COMPWLxblock (node *arg_node, node *arg_info);
+extern node *COMPWLstridex (node *arg_node, node *arg_info);
+extern node *COMPWLgridx (node *arg_node, node *arg_info);
+
 extern node *COMPMt (node *arg_node, node *arg_info);
 extern node *COMPSt (node *arg_node, node *arg_info);
 extern node *COMPMTsignal (node *arg_node, node *arg_info);
