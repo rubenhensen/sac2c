@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.90  2003/11/11 19:12:07  dkr
+ * COMP2With2(): NWITH2_DEFAULT used if necessary
+ *
  * Revision 1.89  2003/10/20 15:39:14  dkr
  * COMPSync(): MT_SYNCBLOCK_UPDATE added
  *
@@ -5368,66 +5371,134 @@ COMP2With2 (node *arg_node, node *arg_info)
         }
 
         if (NWITH2_TYPE (arg_node) == WO_genarray) {
-            int dim = GetDim (IDS_TYPE (wlids));
-            node *shp = NWITH2_SHAPE (arg_node);
-            node *cexpr = NWITH2_CEXPR (arg_node);
-#ifndef DBUG_OFF
-            int cexpr_dim = GetShapeDim (ID_TYPE (cexpr));
-            int wlids_dim = GetShapeDim (IDS_TYPE (wlids));
-#endif
+            node *cexpr;
+            node *shp;
+            node *def;
+            int wlids_sdim;
+            int cexpr_sdim;
 
+            cexpr = NWITH2_CEXPR (arg_node);
             DBUG_ASSERT ((NODE_TYPE (cexpr) == N_id), "NWITH2_CEXPR is not a N_id");
+            shp = NWITH2_SHAPE (arg_node);
+            def = NWITH2_DEFAULT (arg_node);
+            wlids_sdim = GetShapeDim (IDS_TYPE (wlids));
+            cexpr_sdim = GetShapeDim (ID_TYPE (cexpr));
 
             /*
-             * for the time being, either the WL expression or the LHS of the WL
-             * must be AKS or SCL ... 8-(
+             *    B = with( iv)
+             *          (...): val;
+             *        genarray( sv, def);
+             *
+             * The shape of 'B' can be computed in three different ways.
+             * In the most general case we have to use 'def':
+             *
+             *    B__dim  <-  size( sv) + dim( def)
+             *    B__shp  <-  sv ++ shape( def)
+             *
+             * However, to get rid of 'def', we should use simpler alternatives
+             * whenever possible.
+             * If 'val' is SCL/AKS we can compute the shape of 'B' without 'def':
+             *
+             *    B__dim  <-  size( sv) + dim( val)
+             *    B__shp  <-  sv ++ shape( val)
+             *
+             * And in the simplest case 'B' itself is SCL/AKS:
+             *
+             *    B__dim  <-  dim( B)
+             *    B__shp  <-  shape( B)
              */
-            DBUG_ASSERT ((KNOWN_SHAPE (cexpr_dim) || KNOWN_SHAPE (wlids_dim)),
-                         "genarray-WL found with expression and result both of"
-                         " unknown shape!");
-
-            if (dim >= 0) {
-                get_dim = MakeNum (dim);
-            } else {
-                get_dim = MakeIcm3 ("ND_BINOP", MakeId_Copy (prf_symbol[F_add_SxS]),
-                                    MakeSizeArg (shp, FALSE), MakeDimArg (cexpr, FALSE));
-            }
 
             /*
-             *   B = with (...) genarray( sv, val);
-             *
-             ************************************************************************
-             *
              * For efficiency reasons, constant arrays are excepted as 1st argument
              * of genarray-WLs as well:
              *
-             *   B = with (...) genarray( [3,4], ...);
+             *   B = with( iv)
+             *         (...): val;
+             *       genarray( [3,4], def);
              *
              * Here, the backend can avoid the creation of the array containing the
              * shape [3,4].
              */
 
-            if (NODE_TYPE (shp) == N_id) {
-                set_shape_icm
-                  = MakeIcm1 ("ND_WL_GENARRAY__SHAPE_id",
-                              MakeTypeArgs (IDS_NAME (wlids), IDS_TYPE (wlids), FALSE,
-                                            TRUE, FALSE,
-                                            MakeExprs (DupId_NT (shp),
-                                                       MakeTypeArgs (ID_NAME (cexpr),
-                                                                     ID_TYPE (cexpr),
-                                                                     FALSE, TRUE, FALSE,
-                                                                     NULL))));
-            } else {
-                DBUG_ASSERT ((NODE_TYPE (shp) == N_array),
-                             "shape of genarray-WL is neither N_id nor N_array!");
+            if (KNOWN_SHAPE (wlids_sdim)) {
+                /*
+                 * 'B' is SCL/AKS   ->   use shape information of 'B'
+                 */
+                node *tmp;
 
-                set_shape_icm
-                  = MakeIcm4 ("ND_WL_GENARRAY__SHAPE_arr",
-                              MakeTypeArgs (IDS_NAME (wlids), IDS_TYPE (wlids), FALSE,
-                                            TRUE, FALSE, NULL),
-                              MakeSizeArg (shp, TRUE), DupExprs_NT (ARRAY_AELEMS (shp)),
-                              MakeTypeArgs (ID_NAME (cexpr), ID_TYPE (cexpr), FALSE, TRUE,
-                                            FALSE, NULL));
+                get_dim = MakeNum (DIM_NO_OFFSET (wlids_sdim));
+
+                tmp = Shpseg2Array (IDS_SHPSEG (wlids), DIM_NO_OFFSET (wlids_sdim));
+                set_shape_icm = MakeIcm3 ("ND_SET__SHAPE_arr", DupIds_Id_NT (wlids),
+                                          DupTree (get_dim), ARRAY_AELEMS (tmp));
+                ARRAY_AELEMS (tmp) = NULL;
+                tmp = FreeTree (tmp);
+            } else if (KNOWN_SHAPE (cexpr_sdim)) {
+                /*
+                 * 'val' is SCL/AKS   ->   use shape information of 'val'
+                 */
+                DBUG_ASSERT ((NODE_TYPE (cexpr) == N_id), "NWITH2_CEXPR is no N_id!");
+
+                get_dim = MakeIcm3 ("ND_BINOP", MakeId_Copy (prf_symbol[F_add_SxS]),
+                                    MakeSizeArg (shp, FALSE),
+                                    MakeNum (DIM_NO_OFFSET (cexpr_sdim)));
+
+                if (NODE_TYPE (shp) == N_id) {
+                    set_shape_icm
+                      = MakeIcm1 ("ND_WL_GENARRAY__SHAPE_id",
+                                  MakeTypeArgs (IDS_NAME (wlids), IDS_TYPE (wlids), FALSE,
+                                                TRUE, FALSE,
+                                                MakeExprs (DupId_NT (shp),
+                                                           MakeTypeArgs (ID_NAME (cexpr),
+                                                                         ID_TYPE (cexpr),
+                                                                         FALSE, TRUE,
+                                                                         FALSE, NULL))));
+                } else {
+                    DBUG_ASSERT ((NODE_TYPE (shp) == N_array),
+                                 "shape of genarray-WL is neither N_id nor N_array!");
+
+                    set_shape_icm
+                      = MakeIcm4 ("ND_WL_GENARRAY__SHAPE_arr",
+                                  MakeTypeArgs (IDS_NAME (wlids), IDS_TYPE (wlids), FALSE,
+                                                TRUE, FALSE, NULL),
+                                  MakeSizeArg (shp, TRUE),
+                                  DupExprs_NT (ARRAY_AELEMS (shp)),
+                                  MakeTypeArgs (ID_NAME (cexpr), ID_TYPE (cexpr), FALSE,
+                                                TRUE, FALSE, NULL));
+                }
+            } else {
+                /*
+                 * most general case   ->   use 'def'
+                 */
+                DBUG_ASSERT (((def != NULL) && (NODE_TYPE (def) == N_id)),
+                             "NWITH2_DEFAULT missing or no N_id!");
+
+                get_dim = MakeIcm3 ("ND_BINOP", MakeId_Copy (prf_symbol[F_add_SxS]),
+                                    MakeSizeArg (shp, FALSE), MakeDimArg (def, FALSE));
+
+                if (NODE_TYPE (shp) == N_id) {
+                    set_shape_icm
+                      = MakeIcm1 ("ND_WL_GENARRAY__SHAPE_id",
+                                  MakeTypeArgs (IDS_NAME (wlids), IDS_TYPE (wlids), FALSE,
+                                                TRUE, FALSE,
+                                                MakeExprs (DupId_NT (shp),
+                                                           MakeTypeArgs (ID_NAME (def),
+                                                                         ID_TYPE (def),
+                                                                         FALSE, TRUE,
+                                                                         FALSE, NULL))));
+                } else {
+                    DBUG_ASSERT ((NODE_TYPE (shp) == N_array),
+                                 "shape of genarray-WL is neither N_id nor N_array!");
+
+                    set_shape_icm
+                      = MakeIcm4 ("ND_WL_GENARRAY__SHAPE_arr",
+                                  MakeTypeArgs (IDS_NAME (wlids), IDS_TYPE (wlids), FALSE,
+                                                TRUE, FALSE, NULL),
+                                  MakeSizeArg (shp, TRUE),
+                                  DupExprs_NT (ARRAY_AELEMS (shp)),
+                                  MakeTypeArgs (ID_NAME (def), ID_TYPE (def), FALSE, TRUE,
+                                                FALSE, NULL));
+                }
             }
         } else {
             /* modarray */
