@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 2.8  1999/05/03 11:54:17  her
+ * corrected the functioncall of SAC_CS_RegisterArray from 'size in elements'
+ * to 'size in bytes'
+ *
  * Revision 2.7  1999/04/26 11:44:08  her
  * modifications for the piped-cachesimulation
  *
@@ -273,7 +277,8 @@ extern void (*SAC_CS_Stop) (void);
     SAC_CS_WriteAccess (SAC_ND_A_FIELD (name), SAC_ND_A_FIELD (name) + (pos)),
 
 #define SAC_CS_REGISTER_ARRAY(name)                                                      \
-    SAC_CS_RegisterArray (SAC_ND_A_FIELD (name), SAC_ND_A_SIZE (name));
+    SAC_CS_RegisterArray (SAC_ND_A_FIELD (name),                                         \
+                          SAC_ND_A_SIZE (name) * sizeof (*(SAC_ND_A_FIELD (name))));
 
 #define SAC_CS_UNREGISTER_ARRAY(name) SAC_CS_UnregisterArray (SAC_ND_A_FIELD (name));
 
