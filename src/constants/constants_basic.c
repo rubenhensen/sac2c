@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.27  2004/11/26 23:46:57  mwe
+ * changes according to fit header file
+ *
  * Revision 1.26  2004/11/26 16:09:53  jhb
  * compile
  *
@@ -112,7 +115,7 @@
  ******************************************************************************/
 
 constant *
-MakeConstant (simpletype type, shape *shp, void *elems, int vlen)
+COmakeConstant (simpletype type, shape *shp, void *elems, int vlen)
 {
     constant *res;
 
