@@ -1,3 +1,5 @@
 Makefile
+objects.c
+objects.h
 objinit.c
 objinit.h
