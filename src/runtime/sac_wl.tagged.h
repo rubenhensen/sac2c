@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2003/09/25 13:44:21  dkr
+ * ND_WRITE replaced by ND_WRITE_READ.
+ *
  * Revision 1.3  2003/09/19 12:07:45  dkr
  * code for old backend (no TAGGED_ARRAYS) removed
  *
@@ -628,8 +631,8 @@
  *** with-loop-body.
  ***/
 
-#define SAC_WL_SET_IDXVEC(dim, idx_vec_NT_NT, idx_scl_NT, bnd1, bnd2)                    \
-    SAC_ND_WRITE (idx_vec_NT_NT, dim) = SAC_ND_READ (idx_scl_NT, 0);
+#define SAC_WL_SET_IDXVEC(dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2)                       \
+    SAC_ND_WRITE_READ (idx_vec_NT, dim, idx_scl_NT, 0);
 
 /*****************************************************************************/
 
