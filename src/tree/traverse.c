@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.21  2001/04/26 17:08:46  dkr
+ * rmvoid_tab removed
+ *
  * Revision 3.20  2001/04/20 11:18:59  nmw
  * SSALUR traversal added
  *
@@ -111,7 +114,6 @@
 #include "checkdec.h"
 #include "objects.h"
 #include "uniquecheck.h"
-#include "rmvoidfun.h"
 #include "refcount.h"
 #include "wltransform.h"
 #include "precompile.h"
@@ -490,15 +492,15 @@ static funtab unique_tab_rec = {{
 funtab *unique_tab = &unique_tab_rec;
 
 /*
- *  (29) rmvoid_tab
+ *  (29) unused1
  */
-static funtab rmvoid_tab_rec = {{
-#define NIFrmvoid(it_rmvoid) it_rmvoid
+static funtab unused1_tab_rec = {{
+#define NIFunused1(it_unused1) it_unused1
 #include "node_info.mac"
-                                },
-                                NULL,
-                                NULL};
-funtab *rmvoid_tab = &rmvoid_tab_rec;
+                                 },
+                                 NULL,
+                                 NULL};
+funtab *unused1_tab = &unused1_tab_rec;
 
 /*
  *  (30) precomp2_tab

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.15  2001/04/26 17:08:53  dkr
+ * rmvoid_tab removed
+ *
  * Revision 3.14  2001/04/20 11:18:59  nmw
  * SSALUR traversal added
  *
@@ -180,7 +183,6 @@ extern funtab *analy_tab;
 extern funtab *checkdec_tab;
 extern funtab *writedec_tab;
 extern funtab *unique_tab;
-extern funtab *rmvoid_tab;
 extern funtab *precomp1_tab;
 extern funtab *precomp2_tab;
 extern funtab *readsib_tab;
