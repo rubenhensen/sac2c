@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.98  2004/11/08 16:58:38  sah
+ * ':' is treated as special caracter now and replaced by _CL
+ * in ReplaceSpecialChar
+ *
  * Revision 3.97  2004/10/21 15:22:52  sah
  * added some DBUG_ASSERTS and fixed a macro
  *
@@ -2831,6 +2835,11 @@ ReplaceSpecialCharacters (char *name)
             break;
         case '\\':
             tmp = "_BS";
+            strcat (&(new_name[j]), tmp);
+            j += strlen (tmp) - 1;
+            break;
+        case ':':
+            tmp = "_CL";
             strcat (&(new_name[j]), tmp);
             j += strlen (tmp) - 1;
             break;
