@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.106  2004/11/19 21:04:13  sah
+ * added some linklist features
+ *
  * Revision 3.105  2004/11/19 10:18:29  sah
  * ST_classfuns are external now as well
  *
@@ -2815,5 +2818,16 @@ extern node *MakeWLsegX (int dims, node *contents, node *next);
  ***/
 
 extern node *MakeStr_Copy (char *str);
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_linklist
+ ***/
+
+extern int AddLinkToLinks (node **links, node *link);
+extern int AddLinksToLinks (node **links, node *add);
+extern bool LinklistContains (node *set, node *link);
+extern bool LinklistIsSubset (node *super, node *sub);
 
 #endif /* _sac_tree_compound_h */

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.96  2004/11/19 21:04:13  sah
+ * added some linklist features
+ *
  * Revision 3.95  2004/11/19 15:11:10  sah
  * removed NEEDOBJS
  * added OBJECTS
@@ -4644,6 +4647,88 @@ MakeStr_Copy (char *str)
     }
 
     result = MakeStr (StringCopy (str));
+
+    DBUG_RETURN (result);
+}
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ *** N_linklist
+ ***/
+
+int
+AddLinkToLinks (node **links, node *link)
+{
+    int result = 0;
+
+    DBUG_ENTER ("AddLinkToLinks");
+
+    if (*links == NULL) {
+        /*
+         * it has not been found so far, so append it
+         */
+        *links = MakeLinklist (link, NULL);
+        result = 1;
+    } else if (LINKLIST_LINK (*links) != link) {
+        /*
+         * its not the current one, so go on
+         */
+        result = AddLinkToLinks (&LINKLIST_NEXT (*links), link);
+    }
+
+    DBUG_RETURN (result);
+}
+
+int
+AddLinksToLinks (node **links, node *add)
+{
+    int result = 0;
+
+    DBUG_ENTER ("AddLinksToLinks");
+
+    while (add != NULL) {
+        result += AddLinkToLinks (links, LINKLIST_LINK (add));
+        add = LINKLIST_NEXT (add);
+    }
+
+    DBUG_RETURN (result);
+}
+
+bool
+LinklistContains (node *set, node *link)
+{
+    bool result = FALSE;
+
+    DBUG_ENTER ("LinklistContains");
+
+    while ((set != NULL) && (!result)) {
+        DBUG_ASSERT ((NODE_TYPE (set) == N_linklist),
+                     "called LinklistContains with non N_linklist node!");
+
+        result = (LINKLIST_LINK (set) == link);
+
+        set = LINKLIST_NEXT (set);
+    }
+
+    DBUG_RETURN (result);
+}
+
+bool
+LinklistIsSubset (node *super, node *sub)
+{
+    bool result = TRUE;
+
+    DBUG_ENTER ("LinklistIsSubset");
+
+    while ((sub != NULL) && result) {
+        DBUG_ASSERT ((NODE_TYPE (sub) == N_linklist),
+                     "called LinklistIsSubset with non N_linklist node!");
+
+        result = result && LinklistContains (super, LINKLIST_LINK (sub));
+
+        sub = LINKLIST_NEXT (sub);
+    }
 
     DBUG_RETURN (result);
 }
