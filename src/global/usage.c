@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.26  2002/09/03 22:27:21  dkr
+ * CONT_BREAK_SPEC added
+ *
  * Revision 3.25  2002/08/13 10:51:44  sbs
  * break specifiers for flatten and typecheck (new type checker)
  * added.
@@ -132,6 +135,11 @@
         printf ("%s\n", comment);                                                        \
     }
 
+#define CONT_BREAK_SPEC(comment)                                                         \
+    {                                                                                    \
+        printf ("\t                     %s\n", comment);                                 \
+    }
+
 void
 usage ()
 {
@@ -248,19 +256,21 @@ usage ()
     printf ("\n");
 
     PRINT_BREAK_SPEC (PH_flatten, "mop",
-                      "stop after resolving (multiple) applications of infix operations");
+                      "stop after resolving (multiple) applications of infix");
+    CONT_BREAK_SPEC ("operations");
 
     printf ("\n");
 
     PRINT_BREAK_SPEC (PH_typecheck, "ivd", "stop after inserting vardecs");
     PRINT_BREAK_SPEC (PH_typecheck, "cwr", "stop after creating wrappers");
     PRINT_BREAK_SPEC (PH_typecheck, "l2f",
-                      "stop after converting loops and conditionals into functions");
+                      "stop after converting loops and conditionals into");
+    CONT_BREAK_SPEC ("functions");
     PRINT_BREAK_SPEC (PH_typecheck, "cha", "stop after checking avis consistency");
     PRINT_BREAK_SPEC (PH_typecheck, "ssa", "stop after converting into SSA form");
     PRINT_BREAK_SPEC (PH_typecheck, "ntc", "stop after infering all types");
     PRINT_BREAK_SPEC (PH_typecheck, "cwc",
-                      "stop after creating SAC code for the wrapper functions");
+                      "stop after creating SAC code for wrapper functions");
 
     printf ("\n");
 
@@ -291,8 +301,7 @@ usage ()
     PRINT_BREAK_SPEC (PH_sacopt, "cyc<N>:lus", "stop after loop unswitching ...");
     PRINT_BREAK_SPEC (PH_sacopt, "cyc<N>:lir",
                       "stop after (with-)loop invariant removal ...");
-
-    printf ("\t                     ... in cycle <N>\n");
+    CONT_BREAK_SPEC ("... in cycle <N>");
 
     PRINT_BREAK_SPEC (PH_sacopt, "funopt", "stop after fundef optimization cycle");
     PRINT_BREAK_SPEC (PH_sacopt, "ussa", "stop after undo ssa transformation (ssa only)");
@@ -329,11 +338,9 @@ usage ()
     PRINT_BREAK_SPEC (PH_multithread, "syncopt", "stop after optimizing SYNC blocks");
     PRINT_BREAK_SPEC (PH_multithread, "scheduling",
                       "stop after scheduling SYNC blocks and with-loop");
-    printf ("\t                     segments\n");
+    CONT_BREAK_SPEC ("segments");
+    PRINT_BREAK_SPEC (PH_multithread, "spmdcons", "stop after constraining SPMD blocks");
 
-    PRINT_BREAK_SPEC (PH_multithread, "spmdcons", "stop after constrainig SPMD blocks");
-
-    printf ("\t                     (same as [-mt] -b16 only)\n");
     printf ("\n");
     printf ("\t with -mtn (UNDER CONSTRUCTION!!!)\n");
 
