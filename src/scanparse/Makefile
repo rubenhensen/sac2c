@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.9  1995/05/15 13:38:46  asi
+# Revision 1.10  1995/06/30 11:28:05  hw
+# parameter( -n) to call of lex inserted
+#
+# Revision 1.9  1995/05/15  13:38:46  asi
 # make deps done
 #
 # Revision 1.8  1995/04/04  11:03:48  sbs
@@ -28,7 +31,7 @@
 
 CC=gcc -ansi -g 
 CCL=gcc -ansi -g 
-LEX=lex
+LEX=lex -n
 YACC=yacc -dv
 LIBS=-ly -ll
 
