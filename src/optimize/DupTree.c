@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.98  1998/06/08 12:37:52  cg
+ * Function DupTypes now only duplicates the types structure if
+ * an original one is present.
+ *
  * Revision 1.97  1998/06/06 13:30:20  dkr
  * fixed a bug in DupCond, DupLoop:
  *   ids duplicated only, if != NULL !!!
@@ -748,7 +752,11 @@ DupTypes (node *arg_node, node *arg_info)
     DBUG_PRINT ("DUP", ("Duplicating - %s", mdb_nodetype[arg_node->nodetype]));
 
     new_node = MakeNode (arg_node->nodetype);
-    new_node->info.types = DuplicateTypes (arg_node->info.types, 1);
+    if (arg_node->info.types != NULL)
+        new_node->info.types = DuplicateTypes (arg_node->info.types, 1);
+    else
+        new_node->info.types = NULL;
+
     DUP (arg_node, new_node);
     for (i = 0; i < nnode[NODE_TYPE (arg_node)]; i++) {
         if (arg_node->node[i] != NULL) {
