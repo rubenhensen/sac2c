@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2001/07/18 12:57:45  cg
+ * Applications of old tree construction function
+ * AppendNodeChain eliminated.
+ *
  * Revision 3.7  2001/05/17 12:46:31  nmw
  * MALLOC/FREE changed to Malloc/Free, result of Free() used
  *
@@ -119,7 +123,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "tree.h" /* old tree definition */
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -499,7 +502,7 @@ DoUnroll (node *arg_node, node *arg_info, linfo *loop_info)
                 MinusMask (arg_info->mask[1], arg_node->mask[1], INFO_VARNO (arg_info));
                 for (i = 0; i < loop_info->loop_num; i++) {
                     tmp = DupTree (arg_node->node[1]->node[0]);
-                    unroll = AppendNodeChain (1, unroll, tmp);
+                    unroll = AppendAssign (unroll, tmp);
                 }
                 unroll = GenerateMasks (unroll, arg_info);
                 FreeTree (arg_node);
@@ -871,15 +874,13 @@ UNRassign (node *arg_node, node *arg_info)
         DBUG_PRINT ("UNR", ("double assign node moved into tree"));
         if (N_do == ntype) {
             ASSIGN_NEXT (arg_node) = OPTTrav (ASSIGN_NEXT (arg_node), arg_info, arg_node);
-            tmp_node
-              = AppendNodeChain (1, ASSIGN_INSTR (arg_node), ASSIGN_NEXT (arg_node));
+            tmp_node = AppendAssign (ASSIGN_INSTR (arg_node), ASSIGN_NEXT (arg_node));
             ASSIGN_INSTR (arg_node) = NULL;
             ASSIGN_NEXT (arg_node) = NULL;
             FreeTree (arg_node);
             arg_node = tmp_node;
         } else {
-            tmp_node
-              = AppendNodeChain (1, ASSIGN_INSTR (arg_node), ASSIGN_NEXT (arg_node));
+            tmp_node = AppendAssign (ASSIGN_INSTR (arg_node), ASSIGN_NEXT (arg_node));
             ASSIGN_INSTR (arg_node) = NULL;
             ASSIGN_NEXT (arg_node) = NULL;
             FreeTree (arg_node);
@@ -891,8 +892,8 @@ UNRassign (node *arg_node, node *arg_info)
         /* if WL unrolling was done (modarray and fold), an N_assign node is
            received and put into the LET_EXPR. Insert this subtree into the tree. */
         if (N_assign == NODE_TYPE (LET_EXPR (ASSIGN_INSTR (arg_node)))) {
-            tmp_node = AppendNodeChain (1, LET_EXPR (ASSIGN_INSTR (arg_node)),
-                                        ASSIGN_NEXT (arg_node));
+            tmp_node
+              = AppendAssign (LET_EXPR (ASSIGN_INSTR (arg_node)), ASSIGN_NEXT (arg_node));
             LET_EXPR (ASSIGN_INSTR (arg_node)) = NULL;
             ASSIGN_NEXT (arg_node) = NULL;
             FreeTree (arg_node);

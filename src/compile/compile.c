@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.64  2001/07/18 12:57:45  cg
+ * Applications of old tree construction function
+ * AppendNodeChain eliminated.
+ *
  * Revision 3.63  2001/07/13 13:23:41  cg
  * DBUG tags brushed.
  *
@@ -7025,7 +7029,7 @@ COMPSync (node *arg_node, node *arg_info)
             tag = "in";
         }
         icm_args3
-          = ExprsConcat (icm_args3,
+          = AppendExprs (icm_args3,
                          MakeExprs (MakeId_Copy (tag),
                                     MakeExprs (MakeTypeNode (VARDEC_OR_ARG_TYPE (vardec)),
                                                MakeExprs (MakeId_Copy (
@@ -7048,7 +7052,7 @@ COMPSync (node *arg_node, node *arg_info)
     while (vardec != NULL) {
 
         sync_args
-          = ExprsConcat (sync_args,
+          = AppendExprs (sync_args,
                          MakeExprs (MakeId_Copy (VARDEC_OR_ARG_NAME (vardec)), NULL));
 
         DBUG_PRINT ("COMP_MT", ("%s", VARDEC_OR_ARG_NAME (vardec)));
@@ -7148,7 +7152,7 @@ COMPSync (node *arg_node, node *arg_info)
             icm_args = MakeExprs (MakeId_Copy (fold_type),
                                   MakeExprs (DupIds_Id (with_ids), NULL));
 
-            barrier_args = ExprsConcat (barrier_args, icm_args);
+            barrier_args = AppendExprs (barrier_args, icm_args);
 
             DBUG_PRINT ("COMP", ("%s", IDS_NAME (with_ids)));
 
@@ -7156,7 +7160,7 @@ COMPSync (node *arg_node, node *arg_info)
              * <tmp_var>, <fold_op>
              */
             DBUG_ASSERT ((NWITH2_FUNDEF (with) != NULL), "no fundef found");
-            barrier_args = ExprsConcat (barrier_args,
+            barrier_args = AppendExprs (barrier_args,
                                         MakeExprs (DupNode (NWITH2_CEXPR (with)),
                                                    MakeExprs (MakeId_Copy (FUNDEF_NAME (
                                                                 NWITH2_FUNDEF (with))),

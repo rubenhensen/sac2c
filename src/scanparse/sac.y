@@ -4,6 +4,10 @@
 /*
  *
  * $Log$
+ * Revision 3.34  2001/07/18 12:57:45  cg
+ * Applications of old tree construction function
+ * AppendNodeChain eliminated.
+ *
  * Revision 3.33  2001/07/16 08:23:11  cg
  * Old tree construction function MakeNode eliminated.
  *
@@ -128,7 +132,6 @@
 #include <stdlib.h>
 #include <memory.h>
 
-#include "tree.h"           /* old tree definition */
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"

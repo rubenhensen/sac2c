@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2001/07/18 12:57:45  cg
+ * Applications of old tree construction function
+ * AppendNodeChain eliminated.
+ *
  * Revision 3.13  2001/07/13 13:23:41  cg
  * Some useless DBUG_PRINTs eliminated.
  *
@@ -337,7 +341,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "tree.h" /* old tree definition */
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -697,7 +700,7 @@ CFfundef (node *arg_node, node *arg_info)
  *  global vars   : syntax_tree, mrdl_stack
  *  internal funs : CFassign
  *  external funs : OPTTrav (optimize.h), FreeNode (free.h),
- *                  AppendNodeChain (internal_lib.h)
+ *
  *  macros        : NODE_LINE, NODE_TYPE, ASSIGN_INSTR, ASSIGN_NEXT
  *
  *  remarks       : --
@@ -730,13 +733,13 @@ CFassign (node *arg_node, node *arg_info)
                 ASSIGN_NEXT (arg_node)
                   = OPTTrav (ASSIGN_NEXT (arg_node), arg_info, arg_node);
                 returnnode
-                  = AppendNodeChain (1, ASSIGN_INSTR (arg_node), ASSIGN_NEXT (arg_node));
+                  = AppendAssign (ASSIGN_INSTR (arg_node), ASSIGN_NEXT (arg_node));
                 ASSIGN_INSTR (arg_node) = NULL;
                 ASSIGN_NEXT (arg_node) = NULL;
                 FreeTree (arg_node);
             } else {
                 returnnode
-                  = AppendNodeChain (1, ASSIGN_INSTR (arg_node), ASSIGN_NEXT (arg_node));
+                  = AppendAssign (ASSIGN_INSTR (arg_node), ASSIGN_NEXT (arg_node));
                 ASSIGN_INSTR (arg_node) = NULL;
                 ASSIGN_NEXT (arg_node) = NULL;
                 FreeTree (arg_node);

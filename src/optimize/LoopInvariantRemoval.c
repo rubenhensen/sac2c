@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2001/07/18 12:57:45  cg
+ * Applications of old tree construction function
+ * AppendNodeChain eliminated.
+ *
  * Revision 3.11  2001/05/17 16:49:30  sbs
  * NEVER call FreeTree on arg_info unless you really know what you are doing!
  *
@@ -153,7 +157,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "tree.h" /* old tree definition */
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -272,8 +275,7 @@ LIRfundef (node *arg_node, node *arg_info)
     arg_node = OptTrav (arg_node, arg_info, 0); /* functionbody */
 
     if (NULL != LIR_TYPE) {
-        arg_node->node[0]->node[1]
-          = AppendNodeChain (0, arg_node->node[0]->node[1], LIR_TYPE);
+        arg_node->node[0]->node[1] = AppendVardec (arg_node->node[0]->node[1], LIR_TYPE);
         LIR_TYPE = NULL;
     }
     arg_node->varno = INFO_VARNO (arg_info);
@@ -534,7 +536,7 @@ LIRMassign (node *arg_node, node *arg_info)
         old_node1 = arg_node->node[1];
         arg_node->node[1] = NULL;
         arg_node->flag = invaruns;
-        UP = AppendNodeChain (1, UP, arg_node);
+        UP = AppendAssign (UP, arg_node);
         arg_node = MakeAssign (NULL, NULL);
         arg_node->node[0] = MakeInfo ();
         arg_node->node[0]->flag = invaruns++;
@@ -553,11 +555,11 @@ LIRMassign (node *arg_node, node *arg_info)
             next_node = move_node->node[1];
             move_node->node[1] = NULL;
             move_node->flag = NONE;
-            UP = AppendNodeChain (1, UP, move_node);
+            UP = AppendAssign (UP, move_node);
             arg_node = LIRMassign (next_node, arg_info);
         } else {
             arg_node->flag = NONE;
-            UP = AppendNodeChain (1, UP, arg_node);
+            UP = AppendAssign (UP, arg_node);
             arg_node = NULL;
         }
         break;
@@ -604,7 +606,7 @@ LIRMassign (node *arg_node, node *arg_info)
                 new_node = MakeAssign (NULL, NULL);
                 new_node->flag = NONE;
                 new_node->lineno = arg_node->lineno;
-                DOWN = AppendNodeChain (1, DOWN, new_node);
+                DOWN = AppendAssign (DOWN, new_node);
 
                 /* generate new mask's for new node */
                 new_node->mask[0] = GenMask (INFO_VARNO (arg_info));
@@ -613,7 +615,7 @@ LIRMassign (node *arg_node, node *arg_info)
                 /* make new vardec for defined variable */
                 new_vardec = DupDecleration (arg_node->node[0]->info.ids->node,
                                              GenCseVar (lir_expr_no), arg_info);
-                LIR_TYPE = AppendNodeChain (0, LIR_TYPE, new_vardec);
+                LIR_TYPE = AppendVardec (LIR_TYPE, new_vardec);
 
                 /* make new ids-node for move-node */
                 new_ids = MakeIds (GenCseVar (lir_expr_no), NULL, ST_regular);
@@ -652,7 +654,7 @@ LIRMassign (node *arg_node, node *arg_info)
                 /* make new vardec for defined variable */
                 new_vardec = DupDecleration (arg_node->node[0]->info.ids->node,
                                              GenCseVar (lir_expr_no), arg_info);
-                LIR_TYPE = AppendNodeChain (0, LIR_TYPE, new_vardec);
+                LIR_TYPE = AppendVardec (LIR_TYPE, new_vardec);
 
                 /* make new ids-node for move-node */
                 new_ids = MakeIds (GenCseVar (lir_expr_no), NULL, ST_regular);
@@ -686,7 +688,7 @@ LIRMassign (node *arg_node, node *arg_info)
             }
         } while (NULL != arg_node->node[0]->info.ids);
 
-        UP = AppendNodeChain (1, UP, move_node);
+        UP = AppendAssign (UP, move_node);
         lir_expr++;
         new_node = OptTrav (new_node, arg_info, 1);
         last_node = arg_node;
@@ -705,11 +707,11 @@ LIRMassign (node *arg_node, node *arg_info)
             next_node = move_node->node[1];
             move_node->node[1] = NULL;
             move_node->flag = NONE;
-            DOWN = AppendNodeChain (1, DOWN, move_node);
+            DOWN = AppendAssign (DOWN, move_node);
             arg_node = LIRMassign (next_node, arg_info);
         } else {
             arg_node->flag = NONE;
-            DOWN = AppendNodeChain (1, DOWN, arg_node);
+            DOWN = AppendAssign (DOWN, arg_node);
             arg_node = NULL;
         }
         break;
@@ -1351,7 +1353,7 @@ InvarUnswitch (node *arg_node, node *loop_node, node *arg_info)
         arg_node->node[0]->node[2]->node[0] = DupTree (loop_node);
         MOVE = NONE;
     } else {
-        arg_node = AppendNodeChain (1, arg_node, loop_node);
+        arg_node = AppendAssign (arg_node, loop_node);
     }
     DBUG_RETURN (arg_node);
 }
@@ -1411,9 +1413,9 @@ LIRsubexpr (node *arg_node, node *arg_info)
                 FreeTree (arg_node);
                 UP = NULL;
                 arg_info2 = Free (arg_info2);
-                next_node = AppendNodeChain (1, DOWN, next_node);
+                next_node = AppendAssign (DOWN, next_node);
                 DOWN = NULL;
-                arg_node = AppendNodeChain (1, new_node, next_node);
+                arg_node = AppendAssign (new_node, next_node);
                 arg_node = GenerateMasks (arg_node, arg_info);
             } else {
                 /* Calculate variables, which are relative in loop       */
@@ -1429,11 +1431,11 @@ LIRsubexpr (node *arg_node, node *arg_info)
                     arg_node->node[0]->flag = DONE;
 
                 PlusChainMasks (1, DOWN, arg_info);
-                arg_node->node[1] = AppendNodeChain (1, DOWN, arg_node->node[1]);
+                arg_node->node[1] = AppendAssign (DOWN, arg_node->node[1]);
                 DOWN = NULL;
 
                 PlusChainMasks (1, UP, arg_info);
-                arg_node = AppendNodeChain (1, UP, arg_node);
+                arg_node = AppendAssign (UP, arg_node);
                 UP = NULL;
             }
             break;
@@ -1507,11 +1509,11 @@ LIRsubexpr (node *arg_node, node *arg_info)
 
                 PlusChainMasks (1, DOWN, arg_info);
                 new_node->node[0]->node[1]->node[0]
-                  = AppendNodeChain (1, new_node->node[0]->node[1]->node[0], DOWN);
+                  = AppendAssign (new_node->node[0]->node[1]->node[0], DOWN);
                 DOWN = NULL;
                 PlusChainMasks (1, UP, arg_info);
                 new_node->node[0]->node[1]->node[0]
-                  = AppendNodeChain (1, UP, new_node->node[0]->node[1]->node[0]);
+                  = AppendAssign (UP, new_node->node[0]->node[1]->node[0]);
                 UP = NULL;
 
                 PlusMask (new_node->node[0]->node[1]->mask[0], arg_info->mask[0],
@@ -1564,7 +1566,7 @@ LIRsubexpr (node *arg_node, node *arg_info)
 	      arg_node->node[0]->flag=DONE;
 	    act_tab=lir_tab;
 	    PlusChainMasks(1, UP, arg_info);
-	    arg_node = AppendNodeChain(1, UP, arg_node);
+	    arg_node = AppendAssign( UP, arg_node);
 	    UP = NULL;
 	    }
 #endif

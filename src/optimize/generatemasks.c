@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2001/07/18 12:57:45  cg
+ * Applications of old tree construction function
+ * AppendNodeChain eliminated.
+ *
  * Revision 3.12  2001/06/25 13:04:37  dkr
  * fixed a bug in GNMap():
  * FreeTree() on arg_info replaced by Free()
@@ -150,7 +154,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "tree.h" /* old tree definition */
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -2287,7 +2290,7 @@ GNMassign (node *arg_node, node *arg_info)
     case N_assign:
         /* e.g. unswitching */
         DBUG_PRINT ("UNS", ("double assign node moved into tree"));
-        tmp_node = AppendNodeChain (1, arg_node->node[0], arg_node->node[1]);
+        tmp_node = AppendAssign (arg_node->node[0], arg_node->node[1]);
         ASSIGN_INSTR (arg_node) = NULL;
         ASSIGN_NEXT (arg_node) = NULL;
         FreeTree (arg_node);

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2001/07/18 12:57:45  cg
+ * Applications of old tree construction function
+ * AppendNodeChain eliminated.
+ *
  * Revision 3.13  2001/07/17 08:37:28  nmw
  * call to MakeArg() without type fixed
  *
@@ -127,7 +131,6 @@
 
 #include <stdlib.h>
 
-#include "tree.h" /* old tree definition */
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"

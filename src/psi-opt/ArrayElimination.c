@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2001/07/18 12:57:45  cg
+ * Applications of old tree construction function
+ * AppendNodeChain eliminated.
+ *
  * Revision 3.12  2001/07/16 08:23:11  cg
  * Old tree construction function MakeNode eliminated.
  *
@@ -140,7 +144,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "tree.h" /* old tree definition */
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -150,7 +153,6 @@
 #include "dbug.h"
 #include "my_debug.h"
 #include "traverse.h"
-#include "typecheck.h" /* macro GET_BASIC_TYPE */
 #include "free.h"
 #include "DupTree.h"
 
@@ -364,14 +366,15 @@ GenSel (ids *ids_node, node *arg_info)
                                      DupTypes (GetTypes (type)), NULL);
             VARDEC_DIM (new_vardec) = 0;
             INFO_AE_TYPES (arg_info)
-              = AppendNodeChain (0, new_vardec, INFO_AE_TYPES (arg_info));
+              = AppendVardec (new_vardec, INFO_AE_TYPES (arg_info));
             IDS_VARDEC (LET_IDS (new_let)) = new_vardec;
         }
         LET_EXPR (new_let)
           = MakePrf (F_sel, MakeExprs (arg[0], MakeExprs (arg[1], NULL)));
         new_assign = MakeAssign (new_let, NULL);
-        new_nodes = AppendNodeChain (1, new_nodes, new_assign);
+        new_nodes = AppendAssign (new_nodes, new_assign);
     }
+
     DBUG_RETURN (new_nodes);
 }
 
@@ -459,7 +462,7 @@ AEfundef (node *arg_node, node *arg_info)
         FUNDEF_INSTR (arg_node)
           = SELTRAV (use_ssaform, FUNDEF_INSTR (arg_node), arg_info, arg_node);
         FUNDEF_VARDEC (arg_node)
-          = AppendNodeChain (0, INFO_AE_TYPES (arg_info), FUNDEF_VARDEC (arg_node));
+          = AppendVardec (INFO_AE_TYPES (arg_info), FUNDEF_VARDEC (arg_node));
         INFO_AE_TYPES (arg_info) = NULL;
     }
 
@@ -505,7 +508,7 @@ AEassign (node *arg_node, node *arg_info)
           = SELTRAV (use_ssaform, ASSIGN_NEXT (arg_node), arg_info, arg_node);
 
     if (new_nodes)
-        ASSIGN_NEXT (arg_node) = AppendNodeChain (1, new_nodes, ASSIGN_NEXT (arg_node));
+        ASSIGN_NEXT (arg_node) = AppendAssign (new_nodes, ASSIGN_NEXT (arg_node));
 
     DBUG_RETURN (arg_node);
 }

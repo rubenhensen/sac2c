@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2001/07/18 12:57:45  cg
+ * Applications of old tree construction function
+ * AppendNodeChain eliminated.
+ *
  * Revision 3.8  2001/05/17 16:49:30  sbs
  * NEVER call FreeTree on arg_info unless you really know what you are doing!
  *
@@ -101,7 +105,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "tree.h" /* old tree definition */
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -740,7 +743,7 @@ DoUnswitch (node *arg_node, node *arg_info, cinfo *cond_info, linfo *loop_info)
                 if (tmp_node->node[0] == second_loop) {
                     second_loop = tmp_node;
                     let_index = GenLetNode (loop_info, arg_info);
-                    second_loop = AppendNodeChain (1, let_index, second_loop);
+                    second_loop = AppendAssign (let_index, second_loop);
                 }
             } else {
                 second_loop = FreeTree (second_loop);
@@ -764,10 +767,10 @@ DoUnswitch (node *arg_node, node *arg_info, cinfo *cond_info, linfo *loop_info)
         arg_node = GenerateMasks (arg_node, arg_info);
 
         /* append later assign nodes to second loop, ... */
-        second_loop = AppendNodeChain (1, second_loop, ASSIGN_NEXT (arg_node));
+        second_loop = AppendAssign (second_loop, ASSIGN_NEXT (arg_node));
 
         /* ... unrolled loop to second loop ... */
-        unrolled_loop = AppendNodeChain (1, unrolled_loop, second_loop);
+        unrolled_loop = AppendAssign (unrolled_loop, second_loop);
 
         /* ... and second loop to first loop */
         ASSIGN_NEXT (arg_node) = unrolled_loop;
@@ -821,7 +824,7 @@ DoUnswitch (node *arg_node, node *arg_info, cinfo *cond_info, linfo *loop_info)
                 if (tmp_node->node[0] == second_loop) {
                     second_loop = tmp_node;
                     let_index = GenLetNode (loop_info, arg_info);
-                    second_loop = AppendNodeChain (1, let_index, second_loop);
+                    second_loop = AppendAssign (let_index, second_loop);
                 }
             } else {
                 second_loop = FreeTree (second_loop);
@@ -839,7 +842,7 @@ DoUnswitch (node *arg_node, node *arg_info, cinfo *cond_info, linfo *loop_info)
         arg_node = GenerateMasks (arg_node, arg_info);
 
         /* append later assign nodes to second loop */
-        second_loop = AppendNodeChain (1, second_loop, arg_node1);
+        second_loop = AppendAssign (second_loop, arg_node1);
 
         /* and second loop to first loop */
         ASSIGN_NEXT (arg_node) = second_loop;

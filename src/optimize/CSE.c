@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2001/07/18 12:57:45  cg
+ * Applications of old tree construction function
+ * AppendNodeChain eliminated.
+ *
  * Revision 3.5  2001/05/17 12:46:31  nmw
  * MALLOC/FREE changed to Malloc/Free, result of Free() used
  *
@@ -94,7 +98,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "tree.h" /* old tree definition */
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -539,7 +542,7 @@ GenNodes4Ap (ids *ids1, ids *ids2, node *arg_info)
     id_node = MakeId (NULL, NULL, ST_regular);
     ID_IDS (id_node) = ids2;
     let_node = MakeLet (id_node, ids1);
-    new_node = AppendNodeChain (1, MakeAssign (let_node, NULL), new_node);
+    new_node = AppendAssign (MakeAssign (let_node, NULL), new_node);
     DBUG_RETURN (new_node);
 }
 
@@ -636,14 +639,14 @@ CSEassign (node *arg_node, node *arg_info)
             DBUG_PRINT ("CSE", (">Found common subexpression in line %d",
                                 NODE_LINE (equal_node)));
             new_node = Eliminate (arg_node, equal_node, arg_info);
-            if (new_node) {
+            if (new_node != NULL) {
                 DBUG_PRINT ("CSE", (">Common subexpression eliminated in line %d",
                                     NODE_LINE (arg_node)));
                 cse_expr++;
                 MinusMask (INFO_DEF, ASSIGN_DEFMASK (arg_node), INFO_VARNO (arg_info));
                 MinusMask (INFO_USE, ASSIGN_USEMASK (arg_node), INFO_VARNO (arg_info));
                 new_node = GenerateMasks (new_node, arg_info);
-                AppendNodeChain (1, new_node, ASSIGN_NEXT (arg_node));
+                new_node = AppendAssign (new_node, ASSIGN_NEXT (arg_node));
                 ASSIGN_NEXT (arg_node) = NULL;
                 FreeTree (arg_node);
                 arg_node = CSEassign (new_node, arg_info);

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2001/07/18 12:57:45  cg
+ * Applications of old tree construction function
+ * AppendNodeChain eliminated.
+ *
  * Revision 3.7  2001/05/17 13:08:53  nmw
  * MALLOC/FREE replaced by Malloc/Free, using result of Free()
  *
@@ -52,14 +56,9 @@
  *
  */
 
-/*
- * This file contains .....
- */
-
 #include <string.h>
 #include <limits.h>
 
-#include "tree.h" /* old tree definition */
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -1378,28 +1377,75 @@ ImportAll (mod *mod, node *modul)
     if (mod->allflag != 1) {
         explist = mod->moddec->node[0];
 
-        for (i = 0; i < 4; i++) {
-            if (i == 2) {
-                next = 1;
-            } else {
-                next = 0;
-            }
+#if 0
 
-            tmpnode = explist->node[i];
+    for(i=0; i<4; i++) {
+      if (i==2) {
+        next=1;
+      }
+      else {
+        next=0;
+      }
 
-            while (tmpnode != NULL) {
-                AppendModnameToSymbol (tmpnode, mod->name);
-                tmpnode = tmpnode->node[next];
-            }
+      tmpnode=explist->node[i];
 
-            if (i == 0) {
-                son = 1;
-            } else {
-                son = i;
-            }
+      while(tmpnode != NULL) {
+        AppendModnameToSymbol(tmpnode, mod->name);
+        tmpnode=tmpnode->node[next];
+      }
 
-            modul->node[son] = AppendNodeChain (next, explist->node[i], modul->node[son]);
+      if (i==0) {
+         son=1;
+      }
+      else {
+         son=i;
+      }
+
+      modul->node[son]=AppendNodeChain(next, explist->node[i],
+                                       modul->node[son]);
+    }
+
+#else
+
+        tmpnode = EXPLIST_ITYPES (explist);
+
+        while (tmpnode != NULL) {
+            AppendModnameToSymbol (tmpnode, mod->name);
+            tmpnode = TYPEDEF_NEXT (tmpnode);
         }
+
+        MODUL_TYPES (modul)
+          = AppendTypedef (EXPLIST_ITYPES (explist), MODUL_TYPES (modul));
+
+        tmpnode = EXPLIST_ETYPES (explist);
+
+        while (tmpnode != NULL) {
+            AppendModnameToSymbol (tmpnode, mod->name);
+            tmpnode = TYPEDEF_NEXT (tmpnode);
+        }
+
+        MODUL_TYPES (modul)
+          = AppendTypedef (EXPLIST_ETYPES (explist), MODUL_TYPES (modul));
+
+        tmpnode = EXPLIST_OBJS (explist);
+
+        while (tmpnode != NULL) {
+            AppendModnameToSymbol (tmpnode, mod->name);
+            tmpnode = OBJDEF_NEXT (tmpnode);
+        }
+
+        MODUL_OBJS (modul) = AppendObjdef (EXPLIST_OBJS (explist), MODUL_OBJS (modul));
+
+        tmpnode = EXPLIST_FUNS (explist);
+
+        while (tmpnode != NULL) {
+            AppendModnameToSymbol (tmpnode, mod->name);
+            tmpnode = FUNDEF_NEXT (tmpnode);
+        }
+
+        MODUL_FUNS (modul) = AppendFundef (EXPLIST_FUNS (explist), MODUL_FUNS (modul));
+
+#endif
 
         /* We mark all syms entries as imported! */
         for (i = 0; i < 4; i++) {

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.32  2001/07/18 12:57:45  cg
+ * Applications of old tree construction function
+ * AppendNodeChain eliminated.
+ *
  * Revision 3.31  2001/07/16 08:23:11  cg
  * Old tree construction function MakeNode eliminated.
  *
@@ -266,7 +270,6 @@
 #include <limits.h> /* for INT_MIN, INT_MAX */
 #include <float.h>  /* for FLT_MIN, DBL_MIN, FLT_MAX, DBL_MAX */
 
-#include "tree.h" /* old tree definition */
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
