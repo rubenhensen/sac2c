@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.5  2000/07/06 14:50:00  dkr
+ * icm2c_utils only included if TAGGED_ARAYS is defined
+ *
  * Revision 2.4  1999/06/16 17:06:13  rob
  * Add hash-include "../runtime/sac.h".
  * Add include for icm2c_utils.h
@@ -30,7 +33,6 @@
  * Revision 1.1  1998/04/25 16:18:08  sbs
  * Initial revision
  *
- *
  */
 
 #include <stdio.h>
@@ -39,7 +41,10 @@
 
 #include "globals.h"
 
+#ifdef TAGGED_ARRAYS
 #include "icm2c_utils.h"
+#endif
+
 #include "icm2c_std.h"
 #include "icm2c_wl.h"
 #include "icm2c_mt.h"
@@ -74,8 +79,6 @@ GSCPrintMainEnd ()
 
     DBUG_VOID_RETURN;
 }
-
-/******************************************************************************/
 
 int
 main (int argc, char *argv[])
