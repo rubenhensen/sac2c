@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 2.13  2000/06/13 12:54:40  dkr
+ * old_with removed
+ *
  * Revision 2.12  2000/05/25 14:56:30  dkr
  * leading 0 for INT is allowed now
  * leading 00 for DOUBLE or FLOAT is allowed now
@@ -231,7 +234,6 @@ int start_token;
 "do"                            { FILTER( DO );}
 "while"                         { FILTER( WHILE );}
 "for"                           { FILTER( FOR );}
-"old_with"                      { FILTER( WITH );}
 "with"                          { FILTER( NWITH );}
 "step"                          { FILTER( STEP );}
 "width"                         { FILTER( WIDTH );}
