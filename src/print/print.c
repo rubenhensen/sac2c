@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.130  1997/10/03 17:47:46  dkr
+ * added support for F_abs
+ *
  * Revision 1.129  1997/08/29 12:03:59  sbs
  * missing }
  *
@@ -1056,6 +1059,7 @@ PrintPrf (node *arg_node, node *arg_info)
     case F_dim:
     case F_rotate:
     case F_not:
+    case F_abs:
     case F_ftoi:
     case F_ftoi_A:
     case F_ftod:
