@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.47  1995/06/06 09:50:44  sbs
+ * Revision 1.48  1995/06/07 15:38:28  hw
+ * gcc-option -Wno-unused inserted
+ *
+ * Revision 1.47  1995/06/06  09:50:44  sbs
  * max... opts inserted.
  *
  * Revision 1.46  1995/06/02  16:42:22  sbs
@@ -465,7 +468,8 @@ MAIN
 
     if (!Ccodeonly) {
         fclose (outfile);
-        sprintf (cccallstr, "gcc %s-Wall -I $RCSROOT/src/compile/ -o %s %s %s",
+        sprintf (cccallstr,
+                 "gcc %s-Wall -Wno-unused -I $RCSROOT/src/compile/ -o %s %s %s",
                  ccflagsstr, outfilename, cfilename, GenLinkerList ());
         NOTE (("%s\n", cccallstr));
         system (cccallstr);
