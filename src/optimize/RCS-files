@@ -13,11 +13,8 @@ SSALIR.c
 SSALIR.h
 SSALUR.c
 SSALUR.h
-SSAWLUnroll.h
-Unroll.h
 Unswitch.c
 Unswitch.h
-WLUnroll.h
 WorkReduction.c
 WorkReduction.h
 freemasks.c
