@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.37  2000/04/12 17:26:38  jhs
+# OS will now be pushed into all sub-makes.
+#
 # Revision 2.36  2000/03/30 15:09:05  jhs
 # Added adjust_calls.o
 #
@@ -168,8 +171,8 @@ CCPROD_FLAGS := $($(CCPROD)_PROD_FLAGS) $($(OS)_FLAGS)
 CFLAGS       := -DSHOW_MALLOC -DSAC_FOR_$(OS) 
 CPROD_FLAGS  := -DDBUG_OFF -DPRODUCTION -DSAC_FOR_$(OS)
 
-MAKE_NORM    :=$(MAKE) CC="$(CC)" CCFLAGS="$(CCFLAGS)" CFLAGS="$(CFLAGS)"
-MAKE_PROD    :=$(MAKE) CC="$(CCPROD)" CCFLAGS="$(CCPROD_FLAGS)" CFLAGS="$(CPROD_FLAGS)"
+MAKE_NORM    :=$(MAKE) CC="$(CC)" CCFLAGS="$(CCFLAGS)" CFLAGS="$(CFLAGS)" OS="$(OS)"
+MAKE_PROD    :=$(MAKE) CC="$(CCPROD)" CCFLAGS="$(CCPROD_FLAGS)" CFLAGS="$(CPROD_FLAGS)" OS="$(OS)"
 MAKEFLAGS    += --no-print-directory
 
 TAR          :=tar
