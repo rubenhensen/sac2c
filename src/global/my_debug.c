@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.4  2000/03/02 14:08:39  jhs
+ * Added statustype_info.mac for statustype and mdb_statustype.
+ *
  * Revision 2.3  1999/10/19 12:56:48  sacbase
  * inclusion of type_info.mac adjusted to new .mac mechanism
  *
@@ -93,21 +96,23 @@
  *  global array used for DBUG purposes only
  */
 
-#define NIFmdb_nodetype(mdb_nodetype) mdb_nodetype
 char *mdb_nodetype[] = {
+#define NIFmdb_nodetype(mdb_nodetype) mdb_nodetype
 #include "node_info.mac"
 };
 
-#define PRF_IF(n, s, x, y) s
-
 char *mdb_prf[] = {
+#define PRF_IF(n, s, x, y) s
 #include "prf_node_info.mac"
-};
 #undef PRF_IF
+};
 
-#define TYP_IFdb_str(str) str
 char *mdb_type[] = {
+#define TYP_IFdb_str(str) str
 #include "type_info.mac"
 };
 
-/* #endif  DBUG_OFF */
+char *mdb_statustype[] = {
+#define SELECTtext(it_text) it_text
+#include "status_info.mac"
+};

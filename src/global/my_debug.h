@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  2000/03/02 14:08:39  jhs
+ * Added statustype_info.mac for statustype and mdb_statustype.
+ *
  * Revision 2.1  1999/02/23 12:39:32  sacbase
  * new release made
  *
@@ -42,6 +45,8 @@ extern char *mdb_nodetype[];
 extern char *mdb_prf[];
 
 extern char *mdb_type[];
+
+extern char *mdb_statustype[];
 
 #define P_FORMAT "(%06x)" /* formatstring for pointer address */
 
