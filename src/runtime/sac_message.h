@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2002/04/30 08:05:18  dkr
+ * no changes done
+ *
  * Revision 3.1  2000/11/20 18:02:16  sacbase
  * new release made
  *
@@ -16,7 +19,6 @@
  * Revision 1.1  1998/03/19 16:54:15  cg
  * Initial revision
  *
- *
  */
 
 /*****************************************************************************
@@ -31,11 +33,10 @@
  *
  *****************************************************************************/
 
-#ifndef SAC_MESSAGE_H
-
-#define SAC_MESSAGE_H
+#ifndef _SAC_MESSAGE_H
+#define _SAC_MESSAGE_H
 
 extern void SAC_RuntimeError (char *format, ...);
 extern void SAC_Print (char *format, ...);
 
-#endif /* SAC_MESSAGE_H */
+#endif /* _SAC_MESSAGE_H */
