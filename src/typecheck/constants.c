@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.3  2000/05/03 18:00:51  dkr
+ * COFreeConstant returns NULL now
+ * TileFromArray works correctly now (even for empty index vectors :-)
+ *
  * Revision 1.2  1999/10/22 14:12:24  sbs
  * inserted comments and added reshape, take, drop, and psi with non
  * scalar results.
@@ -7,9 +11,6 @@
  *
  * Revision 1.1  1999/10/19 13:02:59  sacbase
  * Initial revision
- *
- *
- *
  */
 
 /*
@@ -33,7 +34,7 @@
  * - whenever a constant is given as argument, it will be inspected only!
  *   Neither the pointer to it nor any pointer to a sub structure will be
  *   returned or used within a data structure that serves as a result!
- *   There are EXACTLY ONE CLASSE OF FUNCTIONS that is an EXEPTION OF
+ *   There are EXACTLY ONE CLASS OF FUNCTIONS that is an EXEPTION OF
  *   THIS RULE: - the GETxyz - functions for extracting components of constants
  * - The only function for freeing a shape structure is COFreeConstant!
  * - If the result is a shape structure, it has been freshly allocated!
@@ -87,6 +88,7 @@ typedef struct CONSTANT {
  *** local helper functions:
  ***
  ******************************************************************************/
+
 /******************************************************************************
  *
  * function:
@@ -147,7 +149,7 @@ MakeScalarConstantFromCV (simpletype type, void *cv)
 /******************************************************************************
  *
  * function:
- *    void *AllocCV( simpletype type, int len)
+ *    void *AllocCV( simpletype type, int length)
  *
  * description:
  *    internal function for allocating a CV of length len.
@@ -268,7 +270,7 @@ Idx2Offset (constant *idx, constant *a)
 /******************************************************************************
  *
  * function:
- *    constant *IncrementIndex( constant * min, constant *idx, constant *max)
+ *    constant *IncrementIndex( constant *min, constant *idx, constant *max)
  *
  * description:
  *    internal function for generating new indices idx between min and max!
@@ -289,17 +291,27 @@ IncrementIndex (constant *min, constant *idx, constant *max)
 
     DBUG_ENTER ("IncrementIndex");
 
-    dim = ((int *)CONSTANT_ELEMS (idx))[CONSTANT_VLEN (idx) - 1];
-    while ((((int *)CONSTANT_ELEMS (idx))[dim] == ((int *)CONSTANT_ELEMS (max))[dim])
-           && (dim > 0)) {
-        ((int *)CONSTANT_ELEMS (idx))[dim] = ((int *)CONSTANT_ELEMS (min))[dim];
-        dim--;
-    }
-    if (((int *)CONSTANT_ELEMS (idx))[dim] == ((int *)CONSTANT_ELEMS (max))[dim]) {
-        COFreeConstant (idx);
-        idx = NULL;
+    dim = CONSTANT_VLEN (idx) - 1;
+    if (dim >= 0) {
+        /*
+         * 'idx' is non-empty
+         */
+        while (
+          (dim > 0)
+          && (((int *)CONSTANT_ELEMS (idx))[dim] == ((int *)CONSTANT_ELEMS (max))[dim])) {
+            ((int *)CONSTANT_ELEMS (idx))[dim] = ((int *)CONSTANT_ELEMS (min))[dim];
+            dim--;
+        }
+        if (((int *)CONSTANT_ELEMS (idx))[dim] == ((int *)CONSTANT_ELEMS (max))[dim]) {
+            idx = COFreeConstant (idx);
+        } else {
+            (((int *)CONSTANT_ELEMS (idx))[dim])++;
+        }
     } else {
-        ((int *)CONSTANT_ELEMS (idx))[dim] += 1;
+        /*
+         * 'idx' is empty
+         */
+        idx = COFreeConstant (idx);
     }
 
     DBUG_RETURN (idx);
@@ -308,29 +320,31 @@ IncrementIndex (constant *min, constant *idx, constant *max)
 /******************************************************************************
  *
  * function:
- *    constant *TileFromArray( constant *min, shape *res_shp, constant *a)
+ *    constant *TileFromArray( constant *idx, shape *res_shp, constant *a)
  *
  * description:
  *    internal function for creating an array of shape "res_shp" whose elems
- *    are copied from "a" starting at offset "min". Note here, that len(idx)
- *    may be smaller than dim( a) !!! If so, the following assumption is made:
- *    Let m = len(idx) n=dim(a), then res_shp[m] <= shape(a)[m]
- *    && forall k in {m+1, ..., n-1} : res_shp[k] == shape(a)[k]!!
- *
- *    This allows us to copy chunks of  res_shp[m] *... * res_shp[n-1] elems!
+ *    are copied from "a" starting at offset "idx". Note here, that len(idx)
+ *    may be smaller than dim(a) !!! If so, the following assumption is made:
+ *    Let m = len(idx) n = dim(a), then
+ *       res_shp[m-1] <= shape(a)[m-1]  &&
+ *       forall k in {m, ..., n-1} : res_shp[k] == shape(a)[k]
+ *    This allows us to copy chunks of  res_shp[m-1] * ... * res_shp[n-1] elems!
  *
  ******************************************************************************/
 
 constant *
-TileFromArray (constant *min, shape *res_shp, constant *a)
+TileFromArray (constant *idx, shape *res_shp, constant *a)
 {
-    int res_vlen, i, chunk_size, res_off;
-    void *res_elems;
-    constant *max, *idx, *res;
+    int res_vlen, res_off, chunk_size, off_size, off_len, i;
+    void *res_elems, *off_elems;
+    shape *off_shp;
+    constant *min, *max, *off, *res;
 
     DBUG_ENTER ("TileFromArray");
-    DBUG_ASSERT ((CONSTANT_TYPE (min) == T_int), "TileFromArray applied to non-int!");
-    DBUG_ASSERT ((CONSTANT_DIM (min) == 1), "TileFromArray applied to non-vector!");
+    DBUG_ASSERT ((CONSTANT_TYPE (idx) == T_int), "TileFromArray applied to non-int!");
+    DBUG_ASSERT ((CONSTANT_DIM (idx) == 1), "TileFromArray applied to non-vector!");
+    DBUG_ASSERT ((CONSTANT_VLEN (idx) >= 1), "TileFromArray applied to empty vector!");
 
     /*
      * First, we allocate the CV for the result:
@@ -339,30 +353,58 @@ TileFromArray (constant *min, shape *res_shp, constant *a)
     res_elems = AllocCV (CONSTANT_TYPE (a), res_vlen);
 
     /*
-     * Now, we compute the maximum index!
+     * Now, we create an offset-vector 'off' = drop( -1, idx)
+     * (This usually guarantees pretty big chunks to be copied at once)
      */
-    max = COCopyConstant (min);
+    off_shp = SHMakeShape (1);
+    /* 'idx' is an empty index vector  ->  off = idx */
+    off_len = MAX (0, CONSTANT_VLEN (idx) - 1);
+    SHSetExtent (off_shp, 0, off_len);
+    off_elems = AllocCV (T_int, off_len);
+    for (i = 0; i < off_len; i++) {
+        ((int *)off_elems)[i] = ((int *)CONSTANT_ELEMS (idx))[i];
+    }
+    off = MakeConstant (T_int, off_shp, off_elems, off_len);
+
+    /*
+     * Now, we compute the minimum and maximum index
+     */
+    min = COCopyConstant (off);
+    max = COCopyConstant (off);
     for (i = 0; i < CONSTANT_VLEN (min); i++) {
         ((int *)CONSTANT_ELEMS (max))[i] += SHGetExtent (res_shp, i) - 1;
     }
 
     /*
-     * Now, we copy the desired values from a to the new CV:
-     *
+     * calculate the chunk size ('chunk_size') and the number of elements
+     * we have omited in 'off' ('off_size')
+     * (remember, that we are using  off = drop( -1, idx)  instead of  off = idx !!)
      */
     chunk_size = 1;
-    for (i = CONSTANT_VLEN (min); i < CONSTANT_DIM (a); i++) {
+    for (i = CONSTANT_VLEN (off) + 1; i < CONSTANT_DIM (a); i++) {
         chunk_size *= SHGetExtent (res_shp, i);
     }
+    if (CONSTANT_VLEN (idx) >= 1) {
+        off_size = chunk_size * (((int *)CONSTANT_ELEMS (idx))[CONSTANT_VLEN (idx) - 1]);
+    } else {
+        /* 'idx' is an empty index vector  ->  off_size = 0 */
+        off_size = 0;
+    }
+    chunk_size *= SHGetExtent (res_shp, CONSTANT_VLEN (off));
+    /*
+     * Now, we copy the desired values from 'a' to the new CV:
+     */
     res_off = 0;
-    idx = COCopyConstant (min);
     do {
-        CopyElemsFromCVToCV (CONSTANT_TYPE (a), CONSTANT_ELEMS (a), Idx2Offset (idx, a),
-                             chunk_size, res_elems, res_off);
+        CopyElemsFromCVToCV (CONSTANT_TYPE (a), CONSTANT_ELEMS (a),
+                             Idx2Offset (off, a) + off_size, chunk_size, res_elems,
+                             res_off);
         res_off += chunk_size;
-        idx = IncrementIndex (min, idx, max); /* This function eventually frees idx!!! */
-    } while (idx != NULL);
-    COFreeConstant (max);
+        off
+          = IncrementIndex (min, off, max); /* This function eventually frees 'off' !!! */
+    } while (off != NULL);
+    min = COFreeConstant (min);
+    max = COFreeConstant (max);
 
     /*
      * Finally, the resulting constant node is created:
@@ -377,6 +419,7 @@ TileFromArray (constant *min, shape *res_shp, constant *a)
  *** Functions for creating constants and extracting infos from them:
  ***
  ******************************************************************************/
+
 /******************************************************************************
  *
  * function:
@@ -505,6 +548,7 @@ COGetShape (constant *a)
  *** Functions for handling / converting constants:
  ***
  ******************************************************************************/
+
 /******************************************************************************
  *
  * function:
@@ -532,23 +576,24 @@ COCopyConstant (constant *a)
 /******************************************************************************
  *
  * function:
- *    void COFreeConstant( constant *a)
+ *    constant *COFreeConstant( constant *a)
  *
  * description:
  *    frees a including all of its sub-structures.
  *
  ******************************************************************************/
 
-void
+constant *
 COFreeConstant (constant *a)
 {
     DBUG_ENTER ("COFreeConstant");
 
-    SHFreeShape (CONSTANT_SHAPE (a));
+    CONSTANT_SHAPE (a) = SHFreeShape (CONSTANT_SHAPE (a));
     FREE (CONSTANT_ELEMS (a));
     FREE (a);
+    a = NULL;
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN (a);
 }
 
 /******************************************************************************
@@ -616,6 +661,7 @@ COConstant2AST (constant *a)
  ***
  ***
  ******************************************************************************/
+
 /******************************************************************************
  *
  * function:
@@ -751,18 +797,16 @@ COTake (constant *idx, constant *a)
      * res_shp = idx ++ drop( len(idx), shape(a))!
      */
     res_shp = SHCopyShape (CONSTANT_SHAPE (a));
-
     for (i = 0; i < CONSTANT_VLEN (idx); i++) {
         curr_val_idx = ((int *)CONSTANT_ELEMS (idx))[i];
         res_shp = SHSetExtent (res_shp, i, curr_val_idx);
     }
 
     /*
-     * Now, we create an offset-vector with length len(idx)-1 and values 0!
-     * ( This usually guarantees pretty big chunks to be copied at once)
+     * Now, we create an offset-vector with length len(idx) and values 0!
      */
     off_shp = SHMakeShape (1);
-    off_len = CONSTANT_VLEN (idx) - 1;
+    off_len = CONSTANT_VLEN (idx);
     SHSetExtent (off_shp, 0, off_len);
 
     off_elems = AllocCV (T_int, off_len);
@@ -772,10 +816,10 @@ COTake (constant *idx, constant *a)
     off = MakeConstant (T_int, off_shp, off_elems, off_len);
 
     /*
-     * Finally, we pick the tile of shp res_shp from a starting at pos off!
+     * Finally, we pick the tile of shape 'res_shp' from a starting at position 'off'
      */
     res = TileFromArray (off, res_shp, a);
-    COFreeConstant (off);
+    off = COFreeConstant (off);
 
     DBUG_RETURN (res);
 }
@@ -797,10 +841,7 @@ CODrop (constant *idx, constant *a)
 {
     shape *res_shp;
     int i, curr_val_idx;
-    int off_len;
-    shape *off_shp;
-    void *off_elems;
-    constant *off, *res;
+    constant *res;
 
     DBUG_ENTER ("CODrop");
     DBUG_ASSERT ((CONSTANT_TYPE (idx) == T_int), "idx to CODrop not int!");
@@ -814,31 +855,15 @@ CODrop (constant *idx, constant *a)
      * res_shp = (take( len(idx), shape(a)) - idx ) ++ drop( len(idx), shape(a))!
      */
     res_shp = SHCopyShape (CONSTANT_SHAPE (a));
-
     for (i = 0; i < CONSTANT_VLEN (idx); i++) {
         curr_val_idx = SHGetExtent (res_shp, i) - ((int *)CONSTANT_ELEMS (idx))[i];
         res_shp = SHSetExtent (res_shp, i, curr_val_idx);
     }
 
     /*
-     * Now, we create an offset-vector off = drop( -1 , idx)!
-     * ( This usually guarantees pretty big chunks to be copied at once)
+     * Now, we pick the tile of shape 'res_shp' from a starting at position 'idx'
      */
-    off_shp = SHMakeShape (1);
-    off_len = CONSTANT_VLEN (idx) - 1;
-    SHSetExtent (off_shp, 0, off_len);
-
-    off_elems = AllocCV (T_int, off_len);
-    for (i = 0; i < off_len; i++) {
-        ((int *)off_elems)[i] = ((int *)CONSTANT_ELEMS (idx))[i];
-    }
-    off = MakeConstant (T_int, off_shp, off_elems, off_len);
-
-    /*
-     * Finally, we pick the tile of shp res_shp from a starting at pos off!
-     */
-    res = TileFromArray (off, res_shp, a);
-    COFreeConstant (off);
+    res = TileFromArray (idx, res_shp, a);
 
     DBUG_RETURN (res);
 }
