@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.48  2000/08/07 14:57:43  dkr
+ * FindFun: handling of [.] types corrected
+ *
  * Revision 2.47  2000/08/07 14:09:09  dkr
  * ST_independent replaced by ST_shp_indep and ST_dim_indep
  *
@@ -4360,15 +4363,15 @@ FindFun (char *fun_name, char *mod_name, types **arg_type, int count_args, node 
                 fun_p = ret_node;
                 fun_args = FUN_ARGS;
                 for (i = 0; i < count_args; fun_args = ARG_NEXT (fun_args), i++) {
-                    if ((UNKNOWN_SHAPE == ARG_DIM (fun_args))
+                    if ((!KNOWN_SHAPE (ARG_DIM (fun_args)))
                         && (KNOWN_SHAPE (TYPES_DIM (arg_type[i]))
                             || (KNOWN_DIMENSION (TYPES_DIM (arg_type[i]))
                                 && (dynamic_shapes == 1)))) {
                         update = 1;
                         break;
                     } else if ((SAC_PRG == kind_of_file)
-                               && (UNKNOWN_SHAPE == TYPES_DIM (arg_type[i]))
-                               && (UNKNOWN_SHAPE == ARG_DIM (fun_args))) {
+                               && (!KNOWN_SHAPE (TYPES_DIM (arg_type[i])))
+                               && (!KNOWN_SHAPE (ARG_DIM (fun_args)))) {
                         ABORT (line,
                                ("Argument %d of function '%s' has"
                                 "unknown shape (%s)",
@@ -4383,9 +4386,9 @@ FindFun (char *fun_name, char *mod_name, types **arg_type, int count_args, node 
                     fun_p = DuplicateFun (ret_node);
                     fun_args = FUN_ARGS;
                     for (i = 0; i < count_args; fun_args = ARG_NEXT (fun_args), i++)
-                        if (UNKNOWN_SHAPE == ARG_DIM (fun_args)) {
+                        if (!KNOWN_SHAPE (ARG_DIM (fun_args))) {
                             /* update types only if arg_type has known shape */
-                            if (UNKNOWN_SHAPE != TYPES_DIM (arg_type[i])) {
+                            if (KNOWN_SHAPE (TYPES_DIM (arg_type[i]))) {
                                 UpdateType (arg_type[i], ARG_TYPE (fun_args),
                                             NODE_LINE (fun_p->node));
 #ifdef SHAPE_NOTE
@@ -5814,7 +5817,8 @@ TI_ap (node *arg_node, node *arg_info)
 {
     fun_tab_elem *fun_p;
     types *return_type, **arg_type;
-    int count_args = 0, tmp, i;
+    int count_args = 0;
+    int tmp, i;
     node *current_args;
     char *fun_name = arg_node->FUN_NAME;
     char *mod_name = arg_node->FUN_MOD_NAME;
@@ -5832,8 +5836,9 @@ TI_ap (node *arg_node, node *arg_info)
             count_args++;
             current_args = EXPRS_NEXT (current_args);
         }
-        if ((EXPRS_NEXT (current_args) == NULL) && (EXPRS_EXPR (current_args)) != NULL)
+        if ((EXPRS_NEXT (current_args) == NULL) && (EXPRS_EXPR (current_args)) != NULL) {
             count_args++;
+        }
         arg_type = (types **)Malloc (sizeof (types) * count_args);
     }
 
@@ -5841,9 +5846,10 @@ TI_ap (node *arg_node, node *arg_info)
     current_args = AP_ARGS (arg_node);
     for (i = 0; i < count_args; i++) {
         arg_type[i] = TI (current_args->node[0], arg_info);
-        if (NULL == arg_type[i])
+        if (NULL == arg_type[i]) {
             ABORT (NODE_LINE (arg_node), ("%d. argument of function '%s` not inferable",
                                           (i + 1), ModName (mod_name, fun_name)));
+        }
         current_args = current_args->node[1];
     }
     tmp = -1;
@@ -5925,7 +5931,6 @@ TI_ap (node *arg_node, node *arg_info)
                 /*
                  * Enumerate the actual function application!
                  */
-
                 if (PFfunapcntr[FUNDEF_FUNNO (fun_p->node)] == PF_MAXFUNAP) {
                     SYSWARN (("\"PF_MAXFUNAP\" too low"));
                     CONT_WARN (
@@ -5936,8 +5941,9 @@ TI_ap (node *arg_node, node *arg_info)
                     tmp_funap = 0;
                 } else {
                     tmp_funap = PFfunapcntr[tmp_fun]++;
-                    if (PFfunapcntr[tmp_fun] > PFfunapmax)
+                    if (PFfunapcntr[tmp_fun] > PFfunapmax) {
                         PFfunapmax = PFfunapcntr[tmp_fun];
+                    }
                     /*
                      * The above lines allow for determining the actual maximum of
                      * applications of a single function.
@@ -5965,19 +5971,22 @@ TI_ap (node *arg_node, node *arg_info)
                 if (FUNDEF_INLINE (fun_p->node))
                     funtypemask = funtypemask | INL_FUN;
                 if ((FUNDEF_STATUS (fun_p->node) == ST_imported_mod)
-                    || (FUNDEF_STATUS (fun_p->node) == ST_imported_class))
+                    || (FUNDEF_STATUS (fun_p->node) == ST_imported_class)) {
                     funtypemask = funtypemask | LIB_FUN;
-                if (FUNDEF_ATTRIB (fun_p->node) == ST_generic)
+                }
+                if (FUNDEF_ATTRIB (fun_p->node) == ST_generic) {
                     funtypemask = funtypemask | OVRLD_FUN;
+                }
 
                 if (NODE_TYPE (INFO_TC_LASSIGN (arg_info)) == N_block) {
                     ASSIGN_NEXT (BLOCK_INSTR (INFO_TC_LASSIGN (arg_info)))
                       = MakeAssign (MakeAnnotate (funtypemask | RETURN_FROM_FUN, tmp_fun,
                                                   tmp_funap),
                                     INFO_TC_NEXTASSIGN (arg_info));
-                    if (INFO_TC_NEXTASSIGN (arg_info) == NULL) /* ??? */
+                    if (INFO_TC_NEXTASSIGN (arg_info) == NULL) { /* ??? */
                         ASSIGN_NEXT (BLOCK_INSTR (INFO_TC_LASSIGN (arg_info)))->node[1]
                           = NULL;
+                    }
                     BLOCK_INSTR (INFO_TC_LASSIGN (arg_info))
                       = MakeAssign (MakeAnnotate (funtypemask | CALL_FUN, tmp_fun,
                                                   tmp_funap),
@@ -5987,9 +5996,10 @@ TI_ap (node *arg_node, node *arg_info)
                       = MakeAssign (MakeAnnotate (funtypemask | RETURN_FROM_FUN, tmp_fun,
                                                   tmp_funap),
                                     INFO_TC_NEXTASSIGN (arg_info));
-                    if (INFO_TC_NEXTASSIGN (arg_info) == NULL) /* ??? */
+                    if (INFO_TC_NEXTASSIGN (arg_info) == NULL) { /* ??? */
                         ASSIGN_NEXT (ASSIGN_NEXT (INFO_TC_LASSIGN (arg_info)))->node[1]
                           = NULL;
+                    }
                     ASSIGN_NEXT (INFO_TC_LASSIGN (arg_info))
                       = MakeAssign (MakeAnnotate (funtypemask | CALL_FUN, tmp_fun,
                                                   tmp_funap),
@@ -6000,8 +6010,9 @@ TI_ap (node *arg_node, node *arg_info)
     }
 
     /* now free the infered type information */
-    for (i = 0; i < count_args; i++)
+    for (i = 0; i < count_args; i++) {
         FREE_TYPES (arg_type[i]);
+    }
 
     if (0 < count_args) {
         FREE (arg_type);
