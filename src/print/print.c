@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.51  2001/04/24 16:56:18  dkr
+ * - function DoPrintDFMaskAST() added.
+ * - PrintAST: base of each DFM added
+ *
  * Revision 3.50  2001/04/24 10:12:08  dkr
  * macros PRINT_STRING, PRINT_POINTER_... added
  * PrintAST: FUNDEF_USED added
@@ -2737,7 +2741,6 @@ PrintMTsync (node *arg_node, node *arg_info)
         fprintf (outfile, " [");
         foldmask = MTSYNC_FOLD (arg_node);
         while (foldmask != NULL) {
-
             fprintf (outfile, " %s:%s", VARDEC_OR_ARG_NAME (DFMFM_VARDEC (foldmask)),
                      FUNDEF_NAME (NWITHOP_FUNDEF (DFMFM_FOLDOP (foldmask))));
 
@@ -3850,11 +3853,33 @@ DoIndentAST (void)
 
 /******************************************************************************
  *
+ * Function:
+ *   void DoPrintDFMaskAST( DFMmask_t mask)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+void
+DoPrintDFMaskAST (DFMmask_t mask)
+{
+    DBUG_ENTER ("DoPrintDFMaskAST");
+
+    PRINT_POINTER_BRACKETS (outfile, mask);
+    fprintf (outfile, "/");
+    PRINT_POINTER_BRACKETS (outfile, DFMGetMaskBase (mask));
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
  * function:
  *   void DoPrintShapeAST( int dim, shpseg *shape)
  *
  * description:
- *   This function is called from 'DoPrintAST' only.
+ *
  *
  ******************************************************************************/
 
@@ -3989,8 +4014,8 @@ DoPrintTypesAST (types *type, bool print_status)
  *   void DoPrintIdsAST( ids *vars, bool print_status)
  *
  * description:
- *   This function is called from 'DoPrintAST' only.
  *   Prints a 'ids'-chain.
+ *   This function is called from 'DoPrintAST' only.
  *
  ******************************************************************************/
 
@@ -4034,8 +4059,8 @@ DoPrintIdsAST (ids *vars, bool print_status)
  *   void DoPrintAttrAST( int num, node *arg_node)
  *
  * description:
- *   This function is called from 'DoPrintAST' only.
  *   Prints an attribute containing a node-pointer.
+ *   This function is called from 'DoPrintAST' only.
  *
  ******************************************************************************/
 
@@ -4068,8 +4093,8 @@ static void DoPrintAST (node *arg_node, bool skip_next, bool print_attr);
  *                       bool skip_node, bool print_attr)
  *
  * description:
- *   This function is called from 'DoPrintAST' only.
  *   Prints a son containing a hole sub-tree.
+ *   This function is called from 'DoPrintAST' only.
  *
  ******************************************************************************/
 
@@ -4253,15 +4278,19 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
             fprintf (outfile, "(");
 
             fprintf (outfile, "in-mask: ");
-            PRINT_POINTER_BRACKETS (outfile, COND_IN_MASK (arg_node));
+            DoPrintDFMaskAST (COND_IN_MASK (arg_node));
 
             fprintf (outfile, ", ");
             fprintf (outfile, "out-mask: ");
-            PRINT_POINTER_BRACKETS (outfile, COND_OUT_MASK (arg_node));
+            DoPrintDFMaskAST (COND_OUT_MASK (arg_node));
+            fprintf (outfile, "/");
+            DoPrintDFMaskAST (COND_OUT_MASK (arg_node));
 
             fprintf (outfile, ", ");
             fprintf (outfile, "local-mask: ");
-            PRINT_POINTER_BRACKETS (outfile, COND_LOCAL_MASK (arg_node));
+            DoPrintDFMaskAST (COND_LOCAL_MASK (arg_node));
+            fprintf (outfile, "/");
+            DoPrintDFMaskAST (COND_LOCAL_MASK (arg_node));
 
             fprintf (outfile, ")");
             break;
@@ -4270,15 +4299,15 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
             fprintf (outfile, "(");
 
             fprintf (outfile, "in-mask: ");
-            PRINT_POINTER_BRACKETS (outfile, DO_IN_MASK (arg_node));
+            DoPrintDFMaskAST (DO_IN_MASK (arg_node));
 
             fprintf (outfile, ", ");
             fprintf (outfile, "out-mask: ");
-            PRINT_POINTER_BRACKETS (outfile, DO_OUT_MASK (arg_node));
+            DoPrintDFMaskAST (DO_OUT_MASK (arg_node));
 
             fprintf (outfile, ", ");
             fprintf (outfile, "local-mask: ");
-            PRINT_POINTER_BRACKETS (outfile, DO_LOCAL_MASK (arg_node));
+            DoPrintDFMaskAST (DO_LOCAL_MASK (arg_node));
 
             fprintf (outfile, ")");
             break;
@@ -4287,15 +4316,15 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
             fprintf (outfile, "(");
 
             fprintf (outfile, "in-mask: ");
-            PRINT_POINTER_BRACKETS (outfile, WHILE_IN_MASK (arg_node));
+            DoPrintDFMaskAST (WHILE_IN_MASK (arg_node));
 
             fprintf (outfile, ", ");
             fprintf (outfile, "out-mask: ");
-            PRINT_POINTER_BRACKETS (outfile, WHILE_OUT_MASK (arg_node));
+            DoPrintDFMaskAST (WHILE_OUT_MASK (arg_node));
 
             fprintf (outfile, ", ");
             fprintf (outfile, "local-mask: ");
-            PRINT_POINTER_BRACKETS (outfile, WHILE_LOCAL_MASK (arg_node));
+            DoPrintDFMaskAST (WHILE_LOCAL_MASK (arg_node));
 
             fprintf (outfile, ")");
             break;
@@ -4372,15 +4401,15 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
             fprintf (outfile, "(");
 
             fprintf (outfile, "in-mask: ");
-            PRINT_POINTER_BRACKETS (outfile, NWITH_IN_MASK (arg_node));
+            DoPrintDFMaskAST (NWITH_IN_MASK (arg_node));
 
             fprintf (outfile, ", ");
             fprintf (outfile, "out-mask: ");
-            PRINT_POINTER_BRACKETS (outfile, NWITH_OUT_MASK (arg_node));
+            DoPrintDFMaskAST (NWITH_OUT_MASK (arg_node));
 
             fprintf (outfile, ", ");
             fprintf (outfile, "local-mask: ");
-            PRINT_POINTER_BRACKETS (outfile, NWITH_LOCAL_MASK (arg_node));
+            DoPrintDFMaskAST (NWITH_LOCAL_MASK (arg_node));
 
             fprintf (outfile, ")");
 
@@ -4455,15 +4484,15 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
             fprintf (outfile, "(");
 
             fprintf (outfile, "in-mask: ");
-            PRINT_POINTER_BRACKETS (outfile, NWITH2_IN_MASK (arg_node));
+            DoPrintDFMaskAST (NWITH2_IN_MASK (arg_node));
 
             fprintf (outfile, ", ");
             fprintf (outfile, "out-mask: ");
-            PRINT_POINTER_BRACKETS (outfile, NWITH2_OUT_MASK (arg_node));
+            DoPrintDFMaskAST (NWITH2_OUT_MASK (arg_node));
 
             fprintf (outfile, ", ");
             fprintf (outfile, "local-mask: ");
-            PRINT_POINTER_BRACKETS (outfile, NWITH2_LOCAL_MASK (arg_node));
+            DoPrintDFMaskAST (NWITH2_LOCAL_MASK (arg_node));
 
             fprintf (outfile, ", ");
             fprintf (outfile, "offset needed: %i", NWITH2_OFFSET_NEEDED (arg_node));
