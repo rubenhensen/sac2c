@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2004/12/05 21:05:20  sah
+ * added namespace detection for ids aka global objects
+ *
  * Revision 1.5  2004/12/05 16:45:38  sah
  * added SPIds SPId SPAp in frontend
  *
@@ -44,6 +47,10 @@ extern node *ANStypedef (node *arg_node, info *arg_info);
 extern node *ANSobjdef (node *arg_node, info *arg_info);
 extern node *ANSspap (node *arg_node, info *arg_info);
 extern node *ANSarg (node *arg_node, info *arg_info);
+extern node *ANSspids (node *arg_node, info *arg_info);
+extern node *ANSspid (node *arg_node, info *arg_info);
+extern node *ANSlet (node *arg_node, info *arg_info);
+extern node *ANSwith (node *arg_node, info *arg_info);
 extern node *ANSvardec (node *arg_node, info *arg_info);
 extern node *ANSmodule (node *arg_node, info *arg_info);
 

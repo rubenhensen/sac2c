@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.16  2004/12/05 21:05:20  sah
+ * added namespace detection for ids aka global objects
+ *
  * Revision 1.15  2004/12/05 16:45:38  sah
  * added SPIds SPId SPAp in frontend
  *
@@ -30,14 +33,16 @@ struct INFO {
     sttable_t *symbols;
     const char *current;
     node *module;
+    stringset_t *ids;
 };
 
 /*
  * INFO macros
  */
-#define INFO_ANS_SYMBOLS(info) (info->symbols)
-#define INFO_ANS_CURRENT(info) (info->current)
-#define INFO_ANS_MODULE(info) (info->module)
+#define INFO_ANS_SYMBOLS(info) ((info)->symbols)
+#define INFO_ANS_CURRENT(info) ((info)->current)
+#define INFO_ANS_MODULE(info) ((info)->module)
+#define INFO_ANS_IDS(info) ((info)->ids)
 
 /*
  * INFO functions
@@ -319,7 +324,11 @@ ANSfundef (node *arg_node, info *arg_info)
         FUNDEF_TYPES (arg_node) = ANStypes (FUNDEF_TYPES (arg_node), arg_info);
     }
 
+    INFO_ANS_IDS (arg_info) = NULL;
+
     arg_node = TRAVcont (arg_node, arg_info);
+
+    INFO_ANS_IDS (arg_info) = STRSfree (INFO_ANS_IDS (arg_info));
 
     DBUG_RETURN (arg_node);
 }
@@ -412,6 +421,85 @@ ANSvardec (node *arg_node, info *arg_info)
 
     if (VARDEC_NEXT (arg_node) != NULL) {
         VARDEC_NEXT (arg_node) = TRAVdo (VARDEC_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+ANSspids (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("ANSspids");
+
+    /*
+     * mark this id as locally defined
+     */
+    INFO_ANS_IDS (arg_info)
+      = STRSadd (SPIDS_NAME (arg_node), STRS_unknown, INFO_ANS_IDS (arg_info));
+
+    arg_node = TRAVcont (arg_node, arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+ANSspid (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("ANSspid");
+
+    if (SPID_MOD (arg_node) == NULL) {
+        /*
+         * check whether this id is local
+         */
+        if (!STRScontains (SPID_NAME (arg_node), INFO_ANS_IDS (arg_info))) {
+            /*
+             * look up the correct namespace
+             */
+
+            SPID_MOD (arg_node)
+              = LookupNamespaceForSymbol (SPID_NAME (arg_node), arg_info);
+        }
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+ANSlet (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("ANSlet");
+
+    /*
+     * first traverse all defining ids
+     */
+    if (LET_IDS (arg_node) != NULL) {
+        LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
+    }
+
+    /*
+     * then the RHS
+     */
+    if (LET_EXPR (arg_node) != NULL) {
+        LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+ANSwith (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("ANSwith");
+
+    /*
+     * make sure, the withid is traversed prior to the code!
+     */
+    if (WITH_PART (arg_node) != NULL) {
+        WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
+    }
+
+    if (WITH_CODE (arg_node) != NULL) {
+        WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
