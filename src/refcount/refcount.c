@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.36  1998/03/01 00:16:56  dkr
+ * added DBUG_ASSERTs for info-node in RCloop(), RCcond()
+ *
  * Revision 1.35  1998/02/28 23:35:53  dkr
  * RCcond() uses now COND_THENVARS(arg_node), COND_ELSEVARS() instead of arg_node->node[3]
  *
@@ -721,6 +724,8 @@ RCloop (node *arg_node, node *arg_info)
 
     WHILE_BODY (arg_node) = Trav (WHILE_BODY (arg_node), arg_info);
 
+    DBUG_ASSERT ((arg_node->node[2] != NULL),
+                 "info-node for DO_USEVARS, DO_DEFVARS not found");
     usevars = DO_USEVARS (arg_node);
     defvars = DO_DEFVARS (arg_node);
 
@@ -1043,6 +1048,8 @@ RCcond (node *arg_node, node *arg_info)
      * - COND_THEN if then_dump[i] < else_dump[i] (else_dump[i] - then_dump[i])
      * - COND_ELSE if else_dump[i] < then_dump[i] (then_dump[i] - else_dump[i])
      */
+    DBUG_ASSERT ((arg_node->node[3] != NULL),
+                 "info-node for COND_THENVARS, COND_ELSEVARS not found");
     thenvars = COND_THENVARS (arg_node);
     elsevars = COND_ELSEVARS (arg_node);
 
