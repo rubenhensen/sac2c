@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.87  1995/10/26 16:04:59  cg
+ * Revision 1.88  1995/10/31 08:55:23  cg
+ * function PrintArg now is able to print arguments with or without
+ * identifier name depending on the second parameter.
+ *
+ * Revision 1.87  1995/10/26  16:04:59  cg
  * Files without any functions can be printed now.
  * Converted from macro MOD_NAME_CON to global variable mod_name_con
  *
@@ -803,7 +807,8 @@ PrintArg (node *arg_node, node *arg_info)
 
     DBUG_EXECUTE ("MASK", fprintf (outfile, "\n**Number %d -> ", arg_node->varno););
 
-    fprintf (outfile, "%s", Type2String (arg_node->info.types, 1));
+    fprintf (outfile, "%s",
+             Type2String (arg_node->info.types, (arg_info == NULL) ? 1 : 0));
 
     if (arg_node->node[2] && show_idx)
         Trav (arg_node->node[2], arg_info);
