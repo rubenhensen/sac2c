@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.30  1998/03/24 21:09:53  dkr
+ * removed a bug in IntersectOutline
+ *
  * Revision 1.29  1998/03/22 23:43:35  dkr
  * N_WLgrid: OFFSET, WIDTH -> BOUND1, BOUND2
  *
@@ -1251,6 +1254,7 @@ CompareWLnode (node *node1, node *node2, int outline)
 
         COMP_BEGIN (WLNODE_BOUND1 (node1), WLNODE_BOUND1 (node2), result)
         COMP_BEGIN (WLNODE_BOUND2 (node1), WLNODE_BOUND2 (node2), result)
+
         switch (NODE_TYPE (node1)) {
 
         case N_WLblock:
@@ -1483,6 +1487,8 @@ Parts2Projs (node *parts)
                             MakeWLgrid (dim, 0, NUM_VAL (EXPRS_EXPR (width)), 0, NULL,
                                         NULL, NULL),
                             NULL);
+            WLPROJ_PART (new_proj)
+              = parts; /* this information is needed by 'IntersectOutline' */
             new_proj = NormalizeProj_1 (new_proj);
 
             /* append 'new_proj' to 'projs'-chain */
@@ -1604,9 +1610,13 @@ IntersectOutline (node *proj1, node *proj2, node **isect1, node **isect2)
 {
     node *grid1, *grid2, *last_isect1, *last_isect2, *new_isect1, *new_isect2;
     int bound11, bound21, step1, grid1_b1, grid1_b2, bound12, bound22, step2, grid2_b1,
-      grid2_b2, i_bound1, i_bound2, i_offset1, i_offset2;
+      grid2_b2, head1, rear1, head2, rear2, i_bound1, i_bound2, i_offset1, i_offset2;
+    int flag = 0;
 
     DBUG_ENTER ("IntersectOutline");
+
+    DBUG_ASSERT ((WLPROJ_PART (proj1) != NULL), "no part found");
+    DBUG_ASSERT ((WLPROJ_PART (proj2) != NULL), "no part found");
 
     *isect1 = *isect2 = NULL;
 
@@ -1632,34 +1642,50 @@ IntersectOutline (node *proj1, node *proj2, node **isect1, node **isect2)
         grid2_b1 = WLGRID_BOUND1 (grid2);
         grid2_b2 = WLGRID_BOUND2 (grid2);
 
+        head1 = IndexHead (bound11, grid1_b1);
+        rear1 = IndexRear (bound11, bound21, step1, grid1_b1, grid1_b2);
+        head2 = IndexHead (bound12, grid2_b1);
+        rear2 = IndexRear (bound12, bound22, step2, grid2_b1, grid2_b2);
+
         i_bound1 = MAX (bound11, bound12);
         i_bound2 = MIN (bound21, bound22);
 
-        if ((IndexHead (bound11, grid1_b1)
-             < IndexRear (bound12, bound22, step2, grid2_b1, grid2_b2))
-            && (IndexHead (bound12, grid2_b1)
-                < IndexRear (bound11, bound21, step1, grid1_b1, grid1_b2))) {
+        i_offset1 = GridOffset (i_bound1, bound11, step1, grid1_b2);
+        i_offset2 = GridOffset (i_bound1, bound12, step2, grid2_b2);
 
-            i_offset1 = GridOffset (i_bound1, bound11, step1, grid1_b2);
-            i_offset2 = GridOffset (i_bound1, bound12, step2, grid2_b2);
+        if ((head1 < rear2) && (head2 < rear1)
+            && /* are the outlines of 'proj1' and 'proj2' not disjunkt? */
+            (i_offset1 <= grid1_b1)
+            && (i_offset2 <= grid2_b1)) { /* are the grids compatible? */
 
-            if (i_offset1 > grid1_b1) {
-                /* 'grid1' must be split into two parts */
-                new_isect1
-                  = MakeWLproj (WLPROJ_LEVEL (proj1), WLPROJ_DIM (proj1), i_bound1,
-                                i_bound2, step1, WLPROJ_UNROLLING (proj1),
-                                MakeWLgrid (WLGRID_DIM (grid1), 0, grid1_b2 - i_offset1,
-                                            WLGRID_UNROLLING (grid1), NULL, NULL, NULL),
-                                NULL);
-                new_isect1 = NormalizeProj_1 (new_isect1);
-                new_isect1
-                  = MakeWLproj (WLPROJ_LEVEL (proj1), WLPROJ_DIM (proj1), i_bound1,
-                                i_bound2, step1, WLPROJ_UNROLLING (proj1),
-                                MakeWLgrid (WLGRID_DIM (grid1),
-                                            grid1_b1 - (i_offset1 - step1), step1,
-                                            WLGRID_UNROLLING (grid1), NULL, NULL, NULL),
-                                new_isect1);
-                new_isect1 = NormalizeProj_1 (new_isect1);
+            if ((WLPROJ_PART (proj1) == WLPROJ_PART (proj2))
+                &&         /* are 'proj1' and 'proj2' descended from the same Npart? */
+                (!flag)) { /* we should deal with this exception only once !! */
+                /*
+                 * example: 0->6  step 3, 0->1: op1
+                 *          0->16 step 3, 1->3: op2
+                 *          4->20 step 3, 2->3: op3
+                 *         ------------------------- after first round with
+                 * IntersectOutline: 0->7  step 3, 1->3: op2  <- intersection of 'op2' and
+                 * outline('op1') 3->16 step 3, 1->3: op2  <- intersection of 'op2' and
+                 * outline('op3')
+                 *
+                 *    these two projs are NOT DISJUNCT !!! but they are part of the same
+                 * Npart !!
+                 */
+
+                /* modify the bounds of the first proj, so that the new outlines are
+                 * disjunkt */
+                flag = 1;
+                new_isect1 = DupNode (proj1);
+                new_isect2 = DupNode (proj2);
+                if (WLPROJ_BOUND2 (proj1) < WLPROJ_BOUND2 (proj2)) {
+                    WLPROJ_BOUND2 (new_isect1) = i_bound1;
+                    new_isect1 = NormalizeProj_1 (new_isect1);
+                } else {
+                    WLPROJ_BOUND2 (new_isect2) = i_bound1;
+                    new_isect2 = NormalizeProj_1 (new_isect2);
+                }
             } else {
                 new_isect1
                   = MakeWLproj (WLPROJ_LEVEL (proj1), WLPROJ_DIM (proj1), i_bound1,
@@ -1668,27 +1694,9 @@ IntersectOutline (node *proj1, node *proj2, node **isect1, node **isect2)
                                             grid1_b2 - i_offset1,
                                             WLGRID_UNROLLING (grid1), NULL, NULL, NULL),
                                 NULL);
+                WLPROJ_PART (new_isect1) = WLPROJ_PART (proj1);
                 new_isect1 = NormalizeProj_1 (new_isect1);
-            }
 
-            if (i_offset2 > grid2_b1) {
-                /* 'grid2' must be split into two parts */
-                new_isect2
-                  = MakeWLproj (WLPROJ_LEVEL (proj2), WLPROJ_DIM (proj2), i_bound1,
-                                i_bound2, step2, WLPROJ_UNROLLING (proj2),
-                                MakeWLgrid (WLGRID_DIM (grid2), 0, grid2_b2 - i_offset2,
-                                            WLGRID_UNROLLING (grid2), NULL, NULL, NULL),
-                                NULL);
-                new_isect2 = NormalizeProj_1 (new_isect2);
-                new_isect2
-                  = MakeWLproj (WLPROJ_LEVEL (proj2), WLPROJ_DIM (proj2), i_bound1,
-                                i_bound2, step2, WLPROJ_UNROLLING (proj2),
-                                MakeWLgrid (WLGRID_DIM (grid2),
-                                            grid2_b1 - (i_offset2 - step2), step2,
-                                            WLGRID_UNROLLING (grid2), NULL, NULL, NULL),
-                                new_isect2);
-                new_isect2 = NormalizeProj_1 (new_isect2);
-            } else {
                 new_isect2
                   = MakeWLproj (WLPROJ_LEVEL (proj2), WLPROJ_DIM (proj2), i_bound1,
                                 i_bound2, step2, WLPROJ_UNROLLING (proj2),
@@ -1696,23 +1704,11 @@ IntersectOutline (node *proj1, node *proj2, node **isect1, node **isect2)
                                             grid2_b2 - i_offset2,
                                             WLGRID_UNROLLING (grid2), NULL, NULL, NULL),
                                 NULL);
+                WLPROJ_PART (new_isect2) = WLPROJ_PART (proj2);
                 new_isect2 = NormalizeProj_1 (new_isect2);
             }
-        } else {
-            new_isect1 = new_isect2 = NULL;
-        }
 
-        if (new_isect1 == NULL) {
-            DBUG_ASSERT ((new_isect2 == NULL), "intersection missed");
-            if (*isect1 != NULL) {
-                *isect1 = FreeTree (*isect1);
-            }
-            if (*isect2 != NULL) {
-                *isect2 = FreeTree (*isect2);
-            }
-            break;
-        } else {
-            DBUG_ASSERT ((new_isect2 != NULL), "intersection missed");
+            /* append new dimension to 'isect1', 'isect2' */
             if (*isect1 == NULL) {
                 DBUG_ASSERT ((*isect2 == NULL), "intersection missed");
                 *isect1 = new_isect1;
@@ -1734,6 +1730,16 @@ IntersectOutline (node *proj1, node *proj2, node **isect1, node **isect2)
                 DBUG_ASSERT ((WLGRID_CODE (grid2) != NULL), "no code found");
                 WLGRID_CODE (WLPROJ_CONTENTS ((last_isect2))) = WLGRID_CODE (grid2);
             }
+
+        } else {
+            /* free the useless data in 'isect1', 'isect2' */
+            if (*isect1 != NULL) {
+                *isect1 = FreeTree (*isect1);
+            }
+            if (*isect2 != NULL) {
+                *isect2 = FreeTree (*isect2);
+            }
+            break;
         }
 
         proj1 = WLGRID_NEXTDIM (grid1);
@@ -1834,7 +1840,9 @@ MergeCube (node *proj1, node *proj2)
     DBUG_RETURN (proj1);
 }
 
-#if 0 /* equalize steps */
+#if 0 
+
+    /* equalize steps */
     while (tmp != NULL) {
       offset = NUM_VAL(INDEX_BOUND1(tmp));
       step = NUM_VAL(INDEX_STEP(tmp));
@@ -1853,6 +1861,43 @@ MergeCube (node *proj1, node *proj2)
       tmp = INDEX_NEXT(tmp);
     }
 
+
+        /* must 'grid1' be split into two parts? */
+        if (i_offset1 > grid1_b1) {
+          new_isect1 = MakeWLproj(WLPROJ_LEVEL(proj1),
+                                  WLPROJ_DIM(proj1),
+                                  i_bound1,
+                                  i_bound2,
+                                  step1,
+                                  WLPROJ_UNROLLING(proj1),
+                                  MakeWLgrid(WLGRID_DIM(grid1),
+                                             0,
+                                             grid1_b2 - i_offset1,
+                                             WLGRID_UNROLLING(grid1),
+                                             NULL,
+                                             NULL,
+                                             NULL),
+                                  NULL);
+          WLPROJ_PART(new_isect1) = WLPROJ_PART(proj1);
+          new_isect1 = NormalizeProj_1(new_isect1);
+
+          new_isect1 = MakeWLproj(WLPROJ_LEVEL(proj1),
+                                  WLPROJ_DIM(proj1),
+                                  i_bound1,
+                                  i_bound2,
+                                  step1,
+                                  WLPROJ_UNROLLING(proj1),
+                                  MakeWLgrid(WLGRID_DIM(grid1),
+                                             grid1_b1 - (i_offset1 - step1),
+                                             step1,
+                                             WLGRID_UNROLLING(grid1),
+                                             NULL,
+                                             NULL,
+                                             NULL),
+                                  new_isect1);
+          WLPROJ_PART(new_isect1) = WLPROJ_PART(proj1);
+          new_isect1 = NormalizeProj_1(new_isect1);
+        }
 #endif
 
 /******************************************************************************
