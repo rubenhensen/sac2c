@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.29  1998/03/03 17:32:19  dkr
+ * removed unused var 'i' in DupCond(), DupLoop()
+ *
  * Revision 1.28  1998/03/02 22:27:10  dkr
  * removed bugs in duplication of N_cond, N_do, N_while
  *
@@ -281,7 +284,6 @@ node *
 DupCond (node *arg_node, node *arg_info)
 {
     node *new_node;
-    int i;
 
     DBUG_ENTER ("DupCond");
 
@@ -310,7 +312,6 @@ node *
 DupLoop (node *arg_node, node *arg_info)
 {
     node *new_node;
-    int i;
 
     DBUG_ENTER ("DupLoop");
 
