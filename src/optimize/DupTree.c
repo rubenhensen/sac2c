@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.102  1998/07/20 16:52:28  dkr
+ * fixed a bug in DupPragma
+ *
  * Revision 1.101  1998/06/18 13:44:04  cg
  * file is now able to deal correctly with data objects of
  * the abstract data type for the representation of schedulings.
@@ -962,7 +965,7 @@ DupPragma (node *arg_node, node *arg_info)
     }
 
     if (PRAGMA_WLCOMP_APS (arg_node) != NULL) {
-        PRAGMA_WLCOMP_APS (arg_node) = DUPTRAV (PRAGMA_WLCOMP_APS (arg_node));
+        PRAGMA_WLCOMP_APS (new_node) = DUPTRAV (PRAGMA_WLCOMP_APS (arg_node));
     }
 
     DBUG_RETURN (new_node);
