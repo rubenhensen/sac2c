@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.26  2002/10/09 22:17:39  dkr
+ * SSACSElet() modified: type propagation added
+ * SSACSEPropagateSubst2Args() modified: type propagation added
+ *
  * Revision 1.25  2002/09/03 18:49:58  dkr
  * some cosmetical changes done
  *
@@ -426,32 +430,32 @@ ForbiddenSubstitution (ids *chain)
  *                                    node *fundef)
  *
  * description:
- *   propagates substitution information into the called special fundef.
- *   this allows to continue the copy propagation in the called fundef
+ *   Propagates substitution information into the called special fundef.
+ *   This allows to continue the copy propagation in the called fundef
  *   and reduces the number of variables that have to be transfered
  *   into a special fundef as arg (inter-procedural copy propagation).
- *   this is possible for all args in cond-funs and loop invariant args
+ *   This is possible for all args in cond-funs and loop invariant args
  *   of loop-funs.
+ *   Moreover, the types of the formal arguments are specialized if possible.
  *
- * example:
- *   a = expr;                   int f_cond(int x, int y)
- *   b = a;                      {
- *   c = f_cond(a, b);              ...
- *   ...                            return (x + y);
- *                               }
+ *   example:
+ *       a = 1;                       int f_cond( int[*] x, int[*] y)
+ *       b = a;                       { ...
+ *       c = f_cond( a, b);             return( x + y);
+ *       ...                          }
  *
- * will be transformed to
- *   a = expr;                   int f_cond(int x, int y)
- *   b = a;                      {
- *   c = f_cond(a, a);              ...
- *   ...                            return (x + x);
- *                               }
+ *     will be transformed to
  *
- *   unused code will be removed later by DeadCodeRemoval!
+ *       a = 1;                       int f_cond( int[] x, int[] y)
+ *       b = a;                       { ...
+ *       c = f_cond( a, a);             return (x + x);
+ *       ...                          }
+ *
+ *     Unused code will be removed later by DeadCodeRemoval!
  *
  * implementation:
- *    set the AVIS_SUBST attribute for the args in the called fundef to
- *    matching identical arg in signature or NULL otherwise.
+ *   set the AVIS_SUBST attribute for the args in the called fundef to
+ *   matching identical arg in signature or NULL otherwise.
  *
  *****************************************************************************/
 static node *
@@ -460,6 +464,8 @@ SSACSEPropagateSubst2Args (node *fun_args, node *ap_args, node *fundef)
     node *act_fun_arg;
     node *act_ap_arg;
     node *ext_ap_avis;
+    types *ext_ap_type;
+    int cmp;
     node *search_fun_arg;
     node *search_ap_arg;
     bool found_match;
@@ -479,6 +485,21 @@ SSACSEPropagateSubst2Args (node *fun_args, node *ap_args, node *fundef)
         DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (act_ap_arg)) == N_id),
                      "non N_id node as arg in special function application");
         ext_ap_avis = ID_AVIS (EXPRS_EXPR (act_ap_arg));
+        ext_ap_type = VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ext_ap_avis));
+
+        /*
+         * specialize types of formal parameters if possible
+         */
+        cmp = CompareTypesImplementation (ARG_TYPE (act_fun_arg), ext_ap_type);
+        DBUG_ASSERT ((cmp != 2),
+                     "special function application with incompatible types found");
+        if ((cmp == 0) || (cmp == 1)) {
+            /*
+             * actual type is subtype of formal type -> specialize
+             */
+            ARG_TYPE (act_fun_arg) = FreeAllTypes (ARG_TYPE (act_fun_arg));
+            ARG_TYPE (act_fun_arg) = DupAllTypes (ext_ap_type);
+        }
 
         /*
          * now search the application args for identical id to substitute it.
@@ -1090,7 +1111,7 @@ SSACSElet (node *arg_node, node *arg_info)
 #endif
     ) {
 
-        /* only substitute ids of equal types */
+        /* only substitute ids of equal or more generic types */
         cmp = CompareTypesImplementation (VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (
                                             IDS_AVIS (LET_IDS (arg_node)))),
                                           VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (
@@ -1109,6 +1130,47 @@ SSACSElet (node *arg_node, node *arg_info)
 
             /* remove copy assignment */
             INFO_SSACSE_REMASSIGN (arg_info) = TRUE;
+        } else {
+            /*
+             *  We have an assignment of this form:
+             *
+             *    a:TA = b:TB;    where (TA=type(a) < TB=type(b))
+             *    Rest
+             *
+             *  It does not make sense to substitute 'b' for 'a' in 'Rest'
+             *  because this would destroy type information!
+             *
+             *  Note here, that it is *illegal* to replace 'TB' by 'TA' because
+             *  the actual type of 'b' is not necessaryly a subtype of 'TA':
+             *
+             *    int[2] a;
+             *    int[3] aa;
+             *    int[+] b;
+             *
+             *    b = id( [1,2,3]);          # id(x) == x
+             *    if (shape(b) == [2]) {
+             *      a = b;                   # !!!!!
+             *    } else {
+             *      aa = b;
+             *    }
+             *
+             *  Unfortunately, there is no easy way to get rid of the generic type
+             *  TB here.
+             */
+
+            /*
+             *  Okay, here we go (dirty(?) hack!):
+             *  Actually, we *can* replace 'TB' by 'TA' if the definition of 'b' is
+             *  *not* outside a loop/conditional.
+             *  If the vardec of 'b' points to a N_arg node (might be a LaC-fun),
+             *  we better leave the type untouched.
+             */
+            if (NODE_TYPE (ID_VARDEC (LET_EXPR (arg_node))) == N_vardec) {
+                ID_TYPE (LET_EXPR (arg_node))
+                  = FreeAllTypes (ID_TYPE (LET_EXPR (arg_node)));
+                ID_TYPE (LET_EXPR (arg_node))
+                  = DupAllTypes (IDS_TYPE (LET_IDS (arg_node)));
+            }
         }
 
     } else if ((nt_expr == N_ap)
@@ -1419,7 +1481,6 @@ TravIDS (ids *arg_ids, node *arg_info)
  *   Starting fundef must not be a special fundef (do, while, cond) created by
  *   lac2fun transformation. These "inline" functions will be traversed in
  *   their order of usage.
- *
  *
  *****************************************************************************/
 node *
