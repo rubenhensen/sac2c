@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2001/11/13 22:17:30  dkr
+ * platform OSX_MAC added
+ *
  * Revision 3.13  2001/07/13 13:23:41  cg
  * Useless global variable total_allocated_memory eliminated.
  *
@@ -214,6 +217,10 @@ char target_platform[] = "LINUX_X86";
 #elif defined(SAC_FOR_OSF_ALPHA)
 
 char target_platform[] = "OSF_ALPHA";
+
+#elif defined(SAC_FOR_OSX_MAC)
+
+char target_platform[] = "OSX_MAC";
 
 #else
 /*
