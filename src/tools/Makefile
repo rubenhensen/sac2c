@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.7  2000/07/28 09:16:27  mab
+# make deps done
+#
 # Revision 1.6  2000/07/11 15:56:37  dkr
 # make deps done
 #
@@ -75,7 +78,11 @@ clean:
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
 CacheSimAnalyser.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-CacheSimAnalyser.o: /usr/include/sys/va_list.h ../runtime/sac_cachesim.h
-CacheSimAnalyser.o: ../runtime/sac_message.h ../libsac/cachesim.h
+CacheSimAnalyser.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
+CacheSimAnalyser.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
+CacheSimAnalyser.o: ../runtime/sac_cachesim.h ../runtime/sac_message.h
+CacheSimAnalyser.o: ../libsac/cachesim.h
 CacheSimTest.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-CacheSimTest.o: /usr/include/sys/va_list.h ../runtime/sac_cachesim.h
+CacheSimTest.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
+CacheSimTest.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
+CacheSimTest.o: ../runtime/sac_cachesim.h

@@ -49,7 +49,8 @@ import_specialization.o: /usr/include/malloc.h /usr/include/sys/types.h
 import_specialization.o: /usr/include/sys/machtypes.h
 import_specialization.o: /usr/include/sys/int_types.h
 import_specialization.o: /usr/include/sys/select.h /usr/include/sys/time.h
-import_specialization.o: /usr/include/sys/time.h ../global/resource.h
+import_specialization.o: /usr/include/sys/time.h ../tree/DupTree.h
+import_specialization.o: ../tree/LookUpTable.h ../global/resource.h
 import_specialization.o: ../scanparse/scnprs.h ../scanparse/y.tab.h
 import_specialization.o: import_specialization.h
 map_cwrapper.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h

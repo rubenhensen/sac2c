@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.17  2000/07/28 09:16:27  mab
+# make deps done
+#
 # Revision 1.16  2000/07/20 11:39:19  nmw
 # free_cinterface_handler.c added
 #
@@ -154,19 +157,20 @@ cinterface.o: /usr/include/stdarg.h /usr/include/sys/va_list.h
 cinterface.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 cinterface.o: /usr/include/sys/isa_defs.h /usr/include/stdio.h
 cinterface.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-cinterface.o: ../runtime/sac.h ../runtime/sac_boundcheck.h
-cinterface.o: ../runtime/sac_misc.h ../runtime/sac_message.h
-cinterface.o: ../runtime/sac_bool.h ../runtime/sac_std.h ../runtime/sac_idx.h
-cinterface.o: ../runtime/sac_prf.h ../runtime/sac_mt.h
-cinterface.o: ../runtime/sac_heapmgr.h ../runtime/sac_wl.h
-cinterface.o: ../runtime/sac_trace.h ../runtime/sac_profile.h
-cinterface.o: ../runtime/sac_cachesim.h ../runtime/sac_arg.h
-cinterface.o: ../runtime/sac_cinterface.h
+cinterface.o: ../runtime/sac.h ../runtime/sac_free_interface_handler.h
+cinterface.o: ../runtime/sac_boundcheck.h ../runtime/sac_misc.h
+cinterface.o: ../runtime/sac_message.h ../runtime/sac_bool.h
+cinterface.o: ../runtime/sac_std.h ../runtime/sac_idx.h ../runtime/sac_prf.h
+cinterface.o: ../runtime/sac_mt.h ../runtime/sac_heapmgr.h
+cinterface.o: ../runtime/sac_wl.h ../runtime/sac_trace.h
+cinterface.o: ../runtime/sac_profile.h ../runtime/sac_cachesim.h
+cinterface.o: ../runtime/sac_arg.h ../runtime/sac_cinterface.h
 free_interface_handler.o: /usr/include/stdlib.h
 free_interface_handler.o: /usr/include/sys/feature_tests.h
 free_interface_handler.o: /usr/include/sys/isa_defs.h /usr/include/stdio.h
 free_interface_handler.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
 free_interface_handler.o: /usr/include/stdio_impl.h ../runtime/sac.h
+free_interface_handler.o: ../runtime/sac_free_interface_handler.h
 free_interface_handler.o: ../runtime/sac_boundcheck.h ../runtime/sac_misc.h
 free_interface_handler.o: ../runtime/sac_message.h ../runtime/sac_bool.h
 free_interface_handler.o: ../runtime/sac_std.h ../runtime/sac_idx.h
@@ -175,7 +179,6 @@ free_interface_handler.o: ../runtime/sac_heapmgr.h ../runtime/sac_wl.h
 free_interface_handler.o: ../runtime/sac_trace.h ../runtime/sac_profile.h
 free_interface_handler.o: ../runtime/sac_cachesim.h ../runtime/sac_arg.h
 free_interface_handler.o: ../runtime/sac_cinterface.h
-free_interface_handler.o: ../runtime/sac_free_interface_handler.h
 message.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 message.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 message.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
@@ -203,7 +206,8 @@ sac_arg.o: /usr/include/stdarg.h /usr/include/sys/va_list.h
 sac_arg.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 sac_arg.o: /usr/include/sys/isa_defs.h /usr/include/stdio.h
 sac_arg.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-sac_arg.o: ../runtime/sac.h ../runtime/sac_boundcheck.h ../runtime/sac_misc.h
+sac_arg.o: ../runtime/sac.h ../runtime/sac_free_interface_handler.h
+sac_arg.o: ../runtime/sac_boundcheck.h ../runtime/sac_misc.h
 sac_arg.o: ../runtime/sac_message.h ../runtime/sac_bool.h
 sac_arg.o: ../runtime/sac_std.h ../runtime/sac_idx.h ../runtime/sac_prf.h
 sac_arg.o: ../runtime/sac_mt.h ../runtime/sac_heapmgr.h ../runtime/sac_wl.h
