@@ -3,7 +3,12 @@
 /*
  *
  * $Log$
- * Revision 1.4  1995/01/02 17:05:03  sbs
+ * Revision 1.5  1995/01/04 12:35:56  sbs
+ * import mechanism including renaming (of imported symbols)
+ * done. FindSymbolInModul & FreeMods provided for external use
+ * (needed from the typechecker.
+ *
+ * Revision 1.4  1995/01/02  17:05:03  sbs
  * flag inserted in mods structure...
  *
  * Revision 1.3  1995/01/02  16:32:06  sbs
@@ -45,11 +50,13 @@ typedef struct MOD {
 
 typedef struct MODS {
     mod *mod;
-    int flag; /* IMPORTED / NOT_IMPORTED */
+    syms *syms;
     struct MODS *next;
 } mods;
 
-extern mods *FindSymbolInModul (char *modname, char *name, int symbkind, mods *found);
+extern void FreeMods (mods *mods);
+extern mods *FindSymbolInModul (char *modname, char *name, int symbkind, mods *found,
+                                int recursive);
 
 extern node *IMmodul (node *, node *);
 extern node *Import (node *);

@@ -1,7 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.4  1995/01/02 19:24:34  sbs
+ * Revision 1.5  1995/01/04 12:35:56  sbs
+ * import mechanism including renaming (of imported symbols)
+ * done. FindSymbolInModul & FreeMods provided for external use
+ * (needed from the typechecker.
+ *
+ * Revision 1.4  1995/01/02  19:24:34  sbs
  * first release with new N_explist nodes!
  * does not (yet?) automaticly introduce the modul names for applied
  * user defined types!
@@ -42,7 +47,6 @@
 extern void DoImport (node *modul, node *implist, char *mastermod);
 
 static mod *mod_tab = NULL;
-static int cnt = 1;
 
 /*
  *
@@ -97,6 +101,36 @@ FindModul (char *name)
     }
 
     DBUG_RETURN (tmp);
+}
+
+/*
+ *
+ *  functionname  : FreeMods
+ *  arguments     : 1) mods-list to be free'd
+ *  description   : frees the mods-list given
+ *  global vars   : ---
+ *  internal funs : ---
+ *  external funs : free
+ *  macros        : DBUG...
+ *
+ *  remarks       :
+ *
+ */
+
+void
+FreeMods (mods *mod)
+{
+    mods *tmp;
+
+    DBUG_ENTER ("FreeMods");
+
+    while (mod != NULL) {
+        tmp = mod;
+        mod = mod->next;
+        free (tmp);
+    }
+
+    DBUG_VOID_RETURN;
 }
 
 /*
@@ -218,27 +252,207 @@ GenSyms (mod *mod)
 {
     node *explist, *ptr;
     syms *new;
-    int i;
+    int i, next;
 
     DBUG_ENTER ("GenSyms");
 
     explist = mod->moddec->node[0];
     if (explist != NULL) {
         for (i = 0; i < 3; i++) {
+            if (i < 2) /*typedefs ! */
+                next = 0;
+            else
+                next = 1;
             ptr = explist->node[i];
             while (ptr != NULL) {
-                DBUG_PRINT ("MODUL", ("inserting symbol %s", ptr->info.types->id));
+                DBUG_PRINT ("MODUL",
+                            ("inserting symbol %s of kind %d", ptr->info.types->id, i));
                 new = (syms *)malloc (sizeof (syms));
                 new->id = (char *)malloc (strlen (ptr->info.types->id));
                 strcpy (new->id, ptr->info.types->id);
                 new->flag = NOT_IMPORTED;
                 new->next = mod->syms[1];
-                mod->syms[1] = new;
-                if (i < 2)              /*typedefs ! */
-                    ptr = ptr->node[0]; /* next type declaration! */
-                else
-                    ptr = ptr->node[1]; /* next function declaration! */
+                mod->syms[i] = new;
+
+                ptr = ptr->node[next]; /* next declaration! */
             }
+        }
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/*
+ *
+ *  functionname  : FindSymbolInModul
+ *  arguments     : 1) name of modul
+ *                  2) name of the symbol
+ *                  3) symbol-kind: 0 : implicit type
+ *                                  1 : explicit type
+ *                                  2 : fun-declaration
+ *                  4) search strategy: 0 : search in the given modul only
+ *                                      1 : search in imported modules as well
+ *                  5) mods found previously; initially a NULL is given here.
+ *  description   : searches for a symbol of given kind in a prespecified
+ *                  modul; returns a pointer linked list of modul-entries
+ *                  for all those modules which own a definition of the
+ *                  given symbol and are imported into the given modul.
+ *  global vars   : ---
+ *  internal funs : FindModul
+ *  external funs : malloc
+ *  macros        : DBUG...
+ *
+ *  remarks       :
+ *
+ */
+
+mods *
+FindSymbolInModul (char *modname, char *name, int symbkind, mods *found, int recursive)
+
+{
+    node *imports;
+    mods *new;
+    mod *tmpmod;
+    syms *syms;
+    ids *tmpids;
+    static int cnt = 1;
+
+    DBUG_ENTER ("FindSymbolInModul");
+
+    DBUG_PRINT ("MODUL", ("searching for symbol %s in modul %s...", name, modname));
+    cnt++;
+    tmpmod = FindModul (modname);
+    if (tmpmod != NULL) {
+        if (tmpmod->flag != cnt) {
+            tmpmod->flag = cnt;
+
+            /* Find syms entry name */
+            syms = tmpmod->syms[symbkind];
+            while ((syms != NULL) && (strcmp (syms->id, name) != 0))
+                syms = syms->next;
+
+            if (syms != NULL) { /* name is declared in this modul; insert it in result! */
+                DBUG_PRINT ("MODUL", ("symbol %s found in modul %s...", name, modname));
+
+                new = (mods *)malloc (sizeof (mods));
+                new->mod = tmpmod;
+                new->syms = syms;
+                new->next = found;
+                found = new;
+            }
+
+            if (recursive == 1) {
+                /* Now, we recursively investigate all imports! */
+                imports = tmpmod->moddec->node[1]; /* pointer to imports ! */
+
+                while (imports != NULL) {
+                    if ((imports->node[1] == NULL) && (imports->node[2] == NULL)
+                        && (imports->node[3] == NULL)) {
+                        /* import all ! */
+                        cnt--;
+                        found = FindSymbolInModul (imports->info.id, name, symbkind,
+                                                   found, 1);
+                    } else {
+                        /* selective import! */
+                        /* Find name in ids */
+                        tmpids = (ids *)imports->node[symbkind + 1];
+                        while ((tmpids != NULL) && (strcmp (tmpids->id, name) != 0))
+                            tmpids = tmpids->next;
+
+                        if (tmpids != NULL) { /* Symbol found! */
+                            cnt--;
+                            found = FindSymbolInModul (imports->info.id, name, symbkind,
+                                                       found, 1);
+                        }
+                    }
+                    imports = imports->node[0];
+                }
+            }
+        }
+    }
+
+    DBUG_RETURN (found);
+}
+
+/*
+ *
+ *  functionname  : AppendModnameToSymbol
+ *  arguments     : 1) N_typedef or N_fundef node of symbol
+ *  description   : runs for all user defined types FindSymbolInModul
+ *                  and inserts the respective modul-name in types->name_mod.
+ *  global vars   : ---
+ *  internal funs : FindSymbolInModul, FreeMods
+ *  external funs : ---
+ *  macros        : DBUG...
+ *
+ */
+
+void
+AppendModnameToSymbol (node *symbol)
+
+{
+    node *arg = symbol->node[2];
+    mods *mods, *mods2;
+    char *modname;
+    types *types;
+    int done = 0;
+
+    DBUG_ENTER ("AppendModnameToSymbol");
+
+    types = symbol->info.types;
+    while (types != NULL) {
+        if (types->simpletype == T_user) {
+            if (types->name_mod == NULL)
+                modname = symbol->info.types->id_mod;
+            else {
+                modname = types->name_mod;
+                mods = FindSymbolInModul (modname, types->name, 0, NULL, 0);
+                mods2 = FindSymbolInModul (modname, types->name, 1, NULL, 0);
+                if (((mods == NULL) && (mods2 != NULL))
+                    || ((mods != NULL) && (mods2 == NULL)))
+                    done = 1;
+                FreeMods (mods);
+                FreeMods (mods2);
+            }
+            if (done != 1) {
+                mods = FindSymbolInModul (modname, types->name, 0, NULL, 1);
+                mods2 = FindSymbolInModul (modname, types->name, 1, NULL, 1);
+
+                if (mods != NULL)
+                    if (mods2 != NULL) {
+                        ERROR1 (("declaration error in modul %s: "
+                                 "implicit type %s:%s and explicit type %s:%s available",
+                                 modname, mods->mod->name, types->name, mods2->mod->name,
+                                 types->name));
+                    } else /* mods2 == NULL */
+                      if (mods->next != NULL) {
+                        ERROR1 (("declaration error in modul %s: "
+                                 "implicit types %s:%s and %s:%s available",
+                                 modname, mods->mod->name, types->name,
+                                 mods->next->mod->name, types->name));
+                    } else /* mods->next == NULL */
+                        types->name_mod = mods->mod->name;
+                else /* mods == NULL */
+                  if (mods2 == NULL) {
+                    ERROR1 (("declaration error in modul %s: "
+                             "no type-symbol %s available",
+                             modname, types->name));
+                } else /* mods2 != NULL */
+                  if (mods2->next != NULL) {
+                    ERROR1 (("declaration error in modul %s: "
+                             "explicit types %s:%s and %s:%s available",
+                             modname, mods2->mod->name, types->name,
+                             mods2->next->mod->name, types->name));
+                } else
+                    types->name_mod = mods2->mod->name;
+                FreeMods (mods);
+                FreeMods (mods2);
+            }
+        }
+        types = types->next;
+        if ((types == NULL) && (symbol->nodetype == N_fundef) && (arg != NULL)) {
+            types = arg->info.types;
+            arg = arg->node[0];
         }
     }
 
@@ -265,7 +479,7 @@ ImportAll (mod *mod, node *modul)
 
 {
     syms *symptr;
-    node *explist;
+    node *explist, *tmpnode;
     int i, next;
 
     DBUG_ENTER ("ImportAll");
@@ -279,6 +493,11 @@ ImportAll (mod *mod, node *modul)
                 next = 0;
             else
                 next = 1;
+            tmpnode = explist->node[i];
+            while (tmpnode != NULL) {
+                AppendModnameToSymbol (tmpnode);
+                tmpnode = tmpnode->node[next];
+            }
             modul->node[next + 1]
               = AppendNodeChain (next, explist->node[i], modul->node[next + 1]);
         }
@@ -301,91 +520,6 @@ ImportAll (mod *mod, node *modul)
     }
 
     DBUG_VOID_RETURN;
-}
-
-/*
- *
- *  functionname  : FindSymbolInModul
- *  arguments     : 1) name of modul
- *                  2) name of the symbol
- *                  3) symbol-kind: 0 : implicit type
- *                                  1 : explicit type
- *                                  2 : fun-declaration
- *                  4) mods found previously; initially a NULL is given here.
- *  description   : searches for a symbol of given kind in a prespecified
- *                  modul; returns a pointer linked list of modul-entries
- *                  for all those modules which own a definition of the
- *                  given symbol and are imported into the given modul.
- *  global vars   : ---
- *  internal funs : FindModul
- *  external funs : malloc
- *  macros        : DBUG...
- *
- *  remarks       :
- *
- */
-
-mods *
-FindSymbolInModul (char *modname, char *name, int symbkind, mods *found)
-
-{
-    node *imports;
-    mods *new;
-    mod *tmpmod;
-    syms *syms;
-    ids *tmpids;
-    int done = 0;
-
-    DBUG_ENTER ("FindSymbolInModul");
-
-    DBUG_PRINT ("MODUL", ("searching for symbol %s in modul %s...", name, modname));
-    tmpmod = FindModul (modname);
-    if (tmpmod != NULL) {
-        if (tmpmod->flag != cnt) {
-            tmpmod->flag = cnt;
-
-            /* Find syms entry name */
-            syms = tmpmod->syms[symbkind];
-            while ((syms != NULL) && (strcmp (syms->id, name) != 0))
-                syms = syms->next;
-
-            if (syms != NULL) { /* name is declared in this modul; insert it in result! */
-                DBUG_PRINT ("MODUL", ("symbol %s found in modul %s...", name, modname));
-
-                new = (mods *)malloc (sizeof (mods));
-                new->mod = tmpmod;
-                new->flag = syms->flag;
-                syms->flag = IMPORTED; /* mark symbol as imported */
-                new->next = found;
-                found = new;
-            }
-
-            /* Now, we recursively investigate all imports! */
-            imports = tmpmod->moddec->node[1]; /* pointer to imports ! */
-
-            while ((imports != NULL) && (done != 1)) {
-                if ((imports->node[1] == NULL) && (imports->node[2] == NULL)
-                    && (imports->node[3] == NULL)) {
-                    /* import all ! */
-                    found = FindSymbolInModul (imports->info.id, name, symbkind, found);
-                } else {
-                    /* selective import! */
-                    /* Find name in ids */
-                    tmpids = (ids *)imports->node[symbkind + 1];
-                    while ((tmpids != NULL) && (strcmp (tmpids->id, name) != 0))
-                        tmpids = tmpids->next;
-
-                    if (tmpids != NULL) { /* Symbol found! */
-                        found
-                          = FindSymbolInModul (imports->info.id, name, symbkind, found);
-                    }
-                }
-                imports = imports->node[0];
-            }
-        }
-    }
-
-    DBUG_RETURN (found);
 }
 
 /*
@@ -444,6 +578,7 @@ ImportSymbol (int symbtype, char *name, mod *mod, node *modul)
     }
 
     /* tmpdef points on the def which is to be inserted */
+    AppendModnameToSymbol (tmpdef);
     if (tmpdef->node[next] == NULL)
         tmpdef->nnode++;
 
@@ -497,7 +632,7 @@ DoImport (node *modul, node *implist, char *mastermod)
             for (i = 0; i < 3; i++) {
                 tmp = (ids *)implist->node[i + 1];
                 while (tmp != NULL) { /* importing some symbol! */
-                    mods = FindSymbolInModul (implist->info.id, tmp->id, i, NULL);
+                    mods = FindSymbolInModul (implist->info.id, tmp->id, i, NULL, 1);
                     if (mods == NULL)
                         switch (i) {
                         case 0:
@@ -519,15 +654,16 @@ DoImport (node *modul, node *implist, char *mastermod)
                     else {
                         do {
                             tmpmods = mods;
-                            if (mods->flag == NOT_IMPORTED)
+                            if (mods->syms->flag == NOT_IMPORTED) {
+                                mods->syms->flag = IMPORTED; /* mark symbol as imported */
                                 ImportSymbol (i, tmp->id, mods->mod, modul);
+                            }
                             mods = mods->next;
                             free (tmpmods);
                         } while (mods != NULL);
                     }
 
                     tmp = tmp->next;
-                    cnt++;
                 }
             }
         }
