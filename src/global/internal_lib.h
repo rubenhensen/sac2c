@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2000/12/15 10:43:20  dkr
+ * macros for bit fields added
+ *
  * Revision 3.1  2000/11/20 17:59:31  sacbase
  * new release made
  *
@@ -142,6 +145,10 @@ extern void ComputeMallocAlignStep (void);
  * macro definitions
  *********************************/
 
+/*
+ * swapping two pointers
+ */
+
 #define SWAP(ptr1, ptr2)                                                                 \
     {                                                                                    \
         void *tmp;                                                                       \
@@ -150,13 +157,43 @@ extern void ComputeMallocAlignStep (void);
         ptr2 = (void *)tmp;                                                              \
     }
 
+/*
+ * min, max
+ */
+
 #define MAX(a, b) ((a < b) ? b : a)
 #define MIN(a, b) ((a < b) ? a : b)
+
+/*
+ * bool values
+ */
 
 #define TRUE 1
 #define FALSE 0
 
+/*
+ * macros for handling bit fields
+ */
+
+/* without assignment */
+#define SET_BIT(bf, bit) (bf | bit)
+#define UNSET_BIT(bf, bit) (bf & ~bit)
+
+/* with assignment (is a l-value) */
+#define L_SET_BIT(bf, bit) bf = SET_BIT (bf, bit)
+#define L_UNSET_BIT(bf, bit) bf = UNSET_BIT (bf, bit)
+
+#define TEST_BIT(bf, bit) ((bf & bit) != 0)
+
+/*
+ * malloc
+ */
+
 #define MALLOC(size) Malloc (size)
+
+/*
+ * macros defining the prolog and epilog code for each phase
+ */
 
 #define PHASE_PROLOG                                                                     \
     CHECK_DBUG_START;                                                                    \
@@ -173,6 +210,10 @@ extern void ComputeMallocAlignStep (void);
         ABORT_ON_ERROR;                                                                  \
     }                                                                                    \
     CHECK_DBUG_STOP;
+
+/*
+ * macros for steering the DBUG tool
+ */
 
 #ifndef DBUG_OFF
 #define CHECK_DBUG_START                                                                 \
