@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.20  2005/01/29 21:40:38  mwe
+ * definition of sigspec_mode_t
+ *
  * Revision 1.19  2004/12/05 21:06:43  sah
  * extended stringset type
  *
@@ -332,6 +335,8 @@ typedef enum { CMPT_EQ, CMPT_NEQ, CMPT_UKNWN } cmptree_t;
 typedef enum { PHIT_NONE, PHIT_COND, PHIT_DO, PHIT_WHILE } ssaphit_t;
 
 typedef enum { SS_aks, SS_akd, SS_aud } spec_mode_t;
+
+typedef enum { SSP_akv, SSP_aks, SSP_akd, SSP_aud } sigspec_mode_t;
 
 typedef enum { MT_none = 0, MT_createjoin, MT_startstop, MT_mtstblock } mtmode_t;
 
