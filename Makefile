@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.87  1998/06/29 09:16:04  cg
+# The SAC runtime library is now compiled with optimizations.
+#
 # Revision 1.86  1998/06/18 13:24:00  cg
 # added linking of spmd_init.o spmd_opt.o spmd_lift.o sync_init.o
 # sync_opt.o sched.o and scheduling.o
@@ -358,7 +361,7 @@ dummy:
 	(cd src/concurrent; $(MAKE) )
 	(cd src/compile; $(MAKE) )
 	(cd src/psi-opt; $(MAKE) )
-	(cd src/runtime; $(MAKE) )
+	(cd src/runtime; $(MAKEPROD) )
 	(cd lib/src; $(MAKE) )
 
 prod:
