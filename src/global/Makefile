@@ -1,6 +1,10 @@
 #
 # $Log$
-# Revision 1.15  1995/03/10 10:48:11  hw
+# Revision 1.16  1995/03/28 12:08:16  hw
+#  added internal_lib.o
+# make deps done
+#
+# Revision 1.15  1995/03/10  10:48:11  hw
 # -I../refcount.c inserted
 # make deps done
 #
@@ -56,7 +60,7 @@ INCS=-I../../inc -I../print -I../flatten -I../scanparse -I../typecheck \
      -I../optimize -I../modules -I../global -I../refcount \
      -I/usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include
 
-all: main.o Error.o traverse.o usage.o my_debug.o tree.o free.o
+all: main.o Error.o traverse.o usage.o my_debug.o tree.o free.o internal_lib.o
 
 main.o: main.c 
 	$(CC) -c main.c $(INCS)
@@ -79,6 +83,9 @@ tree.o: tree.c
 free.o: free.c
 	$(CC) -o free.o -c free.c $(INCS)
 
+internal_lib.o: internal_lib.c
+	$(CC) -o internal_lib.o -c internal_lib.c  $(INCS)
+
 deps:
 	makedepend $(INCS) *.c
 
@@ -95,6 +102,12 @@ free.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdio.h
 free.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdarg.h
 free.o: ../../inc/dbug.h tree.h type_info.mac node_info.mac prf_node_info.mac
 free.o: traverse.h ../optimize/optimize.h
+internal_lib.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdlib.h
+internal_lib.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/sys/stdtypes.h
+internal_lib.o: Error.h
+internal_lib.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdio.h
+internal_lib.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdarg.h
+internal_lib.o: ../../inc/dbug.h my_debug.h internal_lib.h
 main.o: ../../inc/main.h ../../inc/dbug.h
 main.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdio.h
 main.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdarg.h
