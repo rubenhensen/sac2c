@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2004/10/13 15:19:44  sah
+ * added NODE_ISALIVE check when processing Link attributes
+ *
  * Revision 1.9  2004/10/11 16:48:33  sah
  * fixed problem with NCODE_DEC_USED
  *
@@ -145,7 +148,10 @@ FreeLinkAttrib (node *attr)
 {
     DBUG_ENTER ("FreeLinkAttrib");
 
-    if (attr != NULL) {
+    /* when handling link attributes, always check whether the target   */
+    /* has already been freed. This can be done using the NODE_ISALIVE  */
+    /* macro...                                                         */
+    if ((attr != NULL) && (NODE_ISALIVE (attr))) {
         if (NODE_TYPE (attr) == N_ncode) {
             NCODE_DEC_USED (attr);
         }
