@@ -3,7 +3,11 @@
 /*
  *
  * $Log$
- * Revision 1.97  1995/12/01 20:28:09  cg
+ * Revision 1.98  1995/12/04 16:12:24  hw
+ * - changed parsing of primitive function genarray
+ * - added primitive functions toi, tod & tof
+ *
+ * Revision 1.97  1995/12/01  20:28:09  cg
  * Changed generic module name for SAC programs to "__MAIN"
  *
  * Revision 1.96  1995/12/01  17:16:53  cg
@@ -396,6 +400,7 @@ static file_type file_kind = F_prog;
        COMMA, AMPERS, ASSIGN,
        INLINE, LET, TYPEDEF, CONSTDEF, OBJDEF,
        F2I, F2D, I2F,I2D, D2I, D2F,
+       TOI, TOF, TOD, 
        INC, DEC, ADDON, SUBON, MULON, DIVON,
        K_MAIN, RETURN, IF, ELSE, DO, WHILE, FOR, WITH, FOLD,
        MODDEC, MODIMP, CLASSDEC, IMPORT, ALL, IMPLICIT, EXPLICIT, TYPES, FUNS,
@@ -2175,6 +2180,18 @@ monop: DIM
              $$=MakeNode(N_prf);
              $$->info.prf=F_shape;
           }
+       | TOI
+          {  $$=MakeNode(N_prf);
+             $$->info.prf=F_toi; 
+          }
+       | TOF
+          {  $$=MakeNode(N_prf);
+             $$->info.prf=F_tof; 
+          }
+       | TOD
+          {  $$=MakeNode(N_prf);
+             $$->info.prf=F_tod; 
+          }
        | F2I
           {  $$=MakeNode(N_prf);
              $$->info.prf=F_ftoi; 
@@ -2228,6 +2245,10 @@ binop : PSI
          { $$=MakeNode(N_prf);
            $$->info.prf=F_reshape;
         }
+      | GENARRAY
+         { $$=MakeNode(N_prf);
+           $$->info.prf=F_genarray;
+         }
       ;
 
 
@@ -2242,10 +2263,6 @@ triop : ROTATE
       | MODARRAY
          { $$=MakeNode(N_prf);
            $$->info.prf=F_modarray;
-         }
-      | GENARRAY
-         { $$=MakeNode(N_prf);
-           $$->info.prf=F_genarray;
          }
        ;
 
