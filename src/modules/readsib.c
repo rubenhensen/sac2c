@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.13  1997/04/24 10:04:25  cg
+ * Revision 1.14  1997/04/30 11:54:05  cg
+ * Now, full library path names are stored in all external entries of
+ * global dependency tree, including copies of identical ones.
+ *
+ * Revision 1.13  1997/04/24  10:04:25  cg
  * function PrintDependencies moved to import.[ch]
  *
  * Revision 1.12  1997/03/19  13:51:15  cg
@@ -203,12 +207,12 @@ CheckLibraries (deps *depends, strings *done, char *required_by, int level)
 
         while ((tmp_done != NULL)
                && (0 != strcmp (DEPS_NAME (tmp), STRINGS_STRING (tmp_done)))) {
-            tmp_done = STRINGS_NEXT (tmp_done);
+            tmp_done = STRINGS_NEXT (STRINGS_NEXT (tmp_done));
         }
 
-        if (tmp_done == NULL) {
-            done = MakeStrings (DEPS_NAME (tmp), done);
-
+        if (tmp_done != NULL) {
+            DEPS_LIBNAME (tmp) = StringCopy (STRINGS_STRING (STRINGS_NEXT (tmp_done)));
+        } else {
             strcpy (buffer, DEPS_NAME (tmp));
 
             switch (DEPS_STATUS (tmp)) {
@@ -323,6 +327,8 @@ CheckLibraries (deps *depends, strings *done, char *required_by, int level)
                     }
                 }
             }
+
+            done = MakeStrings (DEPS_NAME (tmp), MakeStrings (DEPS_LIBNAME (tmp), done));
         }
 
         tmp = DEPS_NEXT (tmp);
