@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.137  1998/04/25 14:57:39  dkr
+ * traversal of vardec is now started by COMPBlock instead of COMPFundef
+ *
  * Revision 1.136  1998/04/25 13:20:13  dkr
  * extended COMPSPMD
  *
@@ -2287,11 +2290,6 @@ COMPFundef (node *arg_node, node *arg_info)
     if (FUNDEF_BODY (arg_node) != NULL) {
         INFO_COMP_VARDECS (arg_info) = FUNDEF_VARDEC (arg_node);
         FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
-#if 0
-      if (FUNDEF_VARDEC(arg_node) != NULL) {
-        FUNDEF_VARDEC(arg_node) = Trav(FUNDEF_VARDEC(arg_node), arg_info);
-      }
-#endif
     }
 
     rettypes = FUNDEF_TYPES (arg_node);
