@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2004/11/15 12:29:30  ktr
+ * ongoing implementation
+ *
  * Revision 1.1  2004/11/14 13:43:35  ktr
  * Initial revision
  *
@@ -202,12 +205,12 @@ GetReuseBranches (node *drcs, node *memop)
 static node *
 BuildCondTree (node *ass, node *branches, node *memvars, node *fundef)
 {
-    node *res;
+    node *res = NULL;
 
     DBUG_ENTER ("BuildCondTree");
 
     if (branches == NULL) {
-        res = DupNode (ass);
+        res = DupTreeSSA (ass, fundef);
     } else {
         if (EXPRS_EXPR (branches) == NULL) {
             res
@@ -216,9 +219,13 @@ BuildCondTree (node *ass, node *branches, node *memvars, node *fundef)
             node *cond;
             node *thenass;
             node *elseass;
+            node *thenlast;
+            node *elselast;
+            node *retexprs;
             node *rc, *stack;
             node *memavis, *valavis;
             ids *memids, *valids;
+            ids *thenids, *elseids;
 
             /*
              * Create pattern:
@@ -240,11 +247,6 @@ BuildCondTree (node *ass, node *branches, node *memvars, node *fundef)
                               ST_regular);
             IDS_AVIS (memids) = memavis;
             IDS_VARDEC (memids) = AVIS_VARDECORARG (IDS_AVIS (memids));
-
-            res = MakeAssign (MakeLet (MakePrf2 (F_alloc, MakeNum (0),
-                                                 MakeFlatArray (NULL)),
-                                       memids),
-                              NULL);
 
             /*
              * Create variable c
@@ -276,10 +278,86 @@ BuildCondTree (node *ass, node *branches, node *memvars, node *fundef)
             elseass = BuildCondTree (ass, branches, memvars, fundef);
             EXPRS_EXPR (branches) = rc;
 
+            /*
+             * Find last assignments of both blocks
+             */
+            thenlast = thenass;
+            while (ASSIGN_NEXT (thenlast) != NULL) {
+                thenlast = ASSIGN_NEXT (thenlast);
+            }
+
+            elselast = elseass;
+            while (ASSIGN_NEXT (elselast) != NULL) {
+                elselast = ASSIGN_NEXT (elselast);
+            }
+
+            /*
+             * Set up thenids, elseids
+             */
+            thenids = ASSIGN_LHS (thenlast);
+            elseids = ASSIGN_LHS (elselast);
+
+            /*
+             * Create funconds
+             */
+            retexprs = NULL;
+            while (thenids != NULL) {
+                node *cavis;
+                ids *cids;
+                /*
+                 * Create new lhs variable for FUNCOND
+                 */
+                FUNDEF_VARDEC (fundef)
+                  = MakeVardec (TmpVar (),
+                                DupOneTypes (VARDEC_TYPE (IDS_VARDEC (thenids))),
+                                FUNDEF_VARDEC (fundef));
+
+                cavis = VARDEC_AVIS (FUNDEF_VARDEC (fundef));
+                AVIS_TYPE (cavis) = TYCopyType (AVIS_TYPE (IDS_AVIS (thenids)));
+
+                cids = MakeIds (StringCopy (VARDEC_NAME (AVIS_VARDECORARG (cavis))), NULL,
+                                ST_regular);
+                IDS_AVIS (cids) = valavis;
+                IDS_VARDEC (cids) = AVIS_VARDECORARG (IDS_AVIS (cids));
+
+                /*
+                 * create FUNCOND
+                 */
+                res = MakeAssign (MakeLet (MakeFuncond (MakeExprs (DupNode (cond), NULL),
+                                                        MakeExprs (MakeIdFromIds (
+                                                                     DupOneIds (thenids)),
+                                                                   NULL),
+                                                        MakeExprs (MakeIdFromIds (
+                                                                     DupOneIds (elseids)),
+                                                                   NULL)),
+                                           cids),
+                                  res);
+                AVIS_SSAASSIGN (IDS_AVIS (cids)) = res;
+
+                /*
+                 * Put cids into retexprs
+                 */
+                retexprs = MakeExprs (MakeIdFromIds (DupOneIds (cids)), NULL);
+
+                thenids = IDS_NEXT (thenids);
+                elseids = IDS_NEXT (elseids);
+            }
+
+            /*
+             * Append return( retexprs);
+             */
+            res = AppendAssign (res, MakeAssign (MakeReturn (retexprs), NULL));
+
+            /*
+             * Create conditional
+             */
             res = MakeAssign (MakeCond (cond, MakeBlock (thenass, NULL),
                                         MakeBlock (elseass, NULL)),
-                              NULL);
+                              res);
 
+            /*
+             * Create  c  = fill( isreused( a, b), c');
+             */
             res
               = MakeAssign (MakeLet (MakePrf2 (F_fill,
                                                MakePrf2 (F_isreused,
@@ -290,11 +368,16 @@ BuildCondTree (node *ass, node *branches, node *memvars, node *fundef)
                             res);
             AVIS_SSAASSIGN (IDS_AVIS (valids)) = res;
 
+            /*
+             * Create c" = alloc( 0, []);
+             */
             res = MakeAssign (MakeLet (MakePrf2 (F_alloc, MakeNum (0),
                                                  MakeFlatArray (NULL)),
                                        memids),
                               res);
             AVIS_SSAASSIGN (IDS_AVIS (memids)) = res;
+
+            DBUG_EXECUTE ("EMRB", Print (res););
         }
     }
 
@@ -332,15 +415,20 @@ EMRBassign (node *arg_node, info *arg_info)
     ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
 
     if (INFO_RB_BRANCHES (arg_info) != NULL) {
-        node *newass
-          = BuildCondTree (arg_node, INFO_RB_BRANCHES (arg_info),
-                           INFO_RB_MEMVARS (arg_info), INFO_RB_FUNDEF (arg_info));
+        node *next, *newass;
+
+        next = ASSIGN_NEXT (arg_node);
+        ASSIGN_NEXT (arg_node) = NULL;
+
+        newass = BuildCondTree (arg_node, INFO_RB_BRANCHES (arg_info),
+                                INFO_RB_MEMVARS (arg_info), INFO_RB_FUNDEF (arg_info));
 
         INFO_RB_BRANCHES (arg_info) = FreeTree (INFO_RB_BRANCHES (arg_info));
         INFO_RB_MEMVARS (arg_info) = FreeTree (INFO_RB_MEMVARS (arg_info));
 
         arg_node = FreeNode (arg_node);
         arg_node = AppendAssign (newass, arg_node);
+        arg_node = AppendAssign (arg_node, next);
     }
 
     DBUG_RETURN (arg_node);
