@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  1998/05/08 00:50:25  dkr
+ * added macro WL_GRID_SET_IDX
+ *
  * Revision 1.2  1998/05/07 16:21:03  dkr
  * new name conventions
  *
@@ -115,6 +118,9 @@
     {                                                                                    \
         int grid_##idx_scalar = idx_scalar + bound2 - bound1;                            \
         for (; idx_scalar < grid_##idx_scalar; idx_scalar++) {
+
+#define SAC_WL_GRID_SET_IDX(level, next_level, dim, idx_vec, idx_scalar, bound1, bound2) \
+    SAC_ND_A_FIELD (idx_vec)[dim] = idx_scalar;
 
 #define SAC_WL_GRID_LOOP_END(level, next_level, dim, idx_vec, idx_scalar, bound1,        \
                              bound2)                                                     \
