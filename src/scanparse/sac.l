@@ -3,6 +3,10 @@
 /*
  *
  * $Log$
+ * Revision 1.55  1998/10/30 09:52:16  cg
+ * key word 'all' is now allowed as function name,
+ * required by array library.
+ *
  * Revision 1.54  1998/10/26 12:51:29  cg
  * key words exchanged:
  * new_with -> with
@@ -408,7 +412,7 @@ int start_token;
 "Class"	                        {FILTER( CLASSIMP );}
 
 "import"			{FILTER( IMPORT );}
-"all"				{FILTER( ALL );}
+"all"				{FILTER7( ALL, "all" );}
 "implicit"			{FILTER( IMPLICIT );}
 "explicit"			{FILTER( EXPLICIT );}
 "types"				{FILTER( TYPES );}
