@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.29  1998/03/25 19:22:53  srs
+ * added new WL phases to TmpVar()
+ *
  * Revision 1.28  1998/03/17 11:54:31  dkr
  * added fun lcm()
  *
@@ -448,9 +451,6 @@ TmpVar ()
     if (act_tab == opt_tab) {
         s = "opt";
     }
-    if (act_tab == active_tab) {
-        s = "act";
-    }
     if (act_tab == dcr_tab) {
         s = "dcr";
     }
@@ -487,8 +487,14 @@ TmpVar ()
     if (act_tab == idx_tab) {
         s = "idx";
     }
+    if (act_tab == wlt_tab) {
+        s = "wlt";
+    }
+    if (act_tab == wli_tab) {
+        s = "wli";
+    }
     if (act_tab == wlf_tab) {
-        s = "fusn";
+        s = "wlf";
     }
     if (act_tab == ae_tab) {
         s = "ae";
