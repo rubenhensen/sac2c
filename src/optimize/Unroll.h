@@ -1,5 +1,9 @@
 /*
+ *
  * $Log$
+ * Revision 2.3  2000/10/10 11:31:08  dkr
+ * no changes done
+ *
  * Revision 2.2  2000/06/13 12:31:01  dkr
  * function for old with-loop removed
  *
@@ -29,10 +33,10 @@
  *
  * Revision 1.1  1995/05/26  14:22:26  asi
  * Initial revision
+ *
  */
 
 #ifndef _Unroll_h
-
 #define _Unroll_h
 
 #define LEVEL arg_info->flag
@@ -53,15 +57,15 @@
  */
 
 typedef struct LINFO {
-    nodetype ltype;  /* loop type				*/
-    node *decl_node; /* decleration node of index variable	*/
-    long start_num;  /* initialization			*/
-    prf mod_prf;     /* modification function		*/
-    long mod_num;    /* modification nummber			*/
-    long end_num;    /* value of index variable after loop	*/
-    prf test_prf;    /* test function			*/
-    long test_num;   /* test nummber				*/
-    long loop_num;   /* number of loop passes		*/
+    nodetype ltype;  /* loop type                            */
+    node *decl_node; /* decleration node of index variable   */
+    long start_num;  /* initialization                       */
+    prf mod_prf;     /* modification function                */
+    long mod_num;    /* modification nummber                 */
+    long end_num;    /* value of index variable after loop   */
+    prf test_prf;    /* test function                        */
+    long test_num;   /* test nummber                         */
+    long loop_num;   /* number of loop passes                */
 } linfo;
 
 extern node *Unroll (node *arg_node, node *arg_info);
