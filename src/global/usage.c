@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2001/02/05 15:55:42  dkr
+ * break specifier for -b16 updated
+ *
  * Revision 3.6  2001/01/25 10:17:29  dkr
  * -b21 added
  *
@@ -46,113 +49,6 @@
  *
  * Revision 2.34  2000/06/14 10:56:57  jhs
  * Added information about "out-of-order" phase 17 while doing -mtn
- *
- * Revision 2.33  2000/06/08 09:18:52  nmw
- * default setting using the genlib switch added
- *
- * Revision 2.32  2000/06/07 12:10:47  nmw
- * description for genlib switch added
- *
- * Revision 2.31  2000/05/26 14:22:11  sbs
- * AP, TSI, WLAA added
- *
- * Revision 2.30  2000/05/25 23:03:19  dkr
- * usage(): fold-inline-bug removed from BUGS section :-))
- *
- * Revision 2.29  2000/05/25 11:57:18  dkr
- * output of compiler phase names corrected
- * typo corrected
- *
- * Revision 2.28  2000/05/11 10:31:05  dkr
- * some minor corrections made
- *
- * Revision 2.27  2000/04/13 08:20:42  jhs
- * Updated -mtn break-specifiers.
- *
- * Revision 2.26  2000/04/10 15:46:22  jhs
- * Added some mtn-infos..
- *
- * Revision 2.25  2000/03/23 14:02:37  jhs
- * Added build_os.
- *
- * Revision 2.24  2000/03/21 15:51:41  jhs
- * Added some information about mtn.
- *
- * Revision 2.23  2000/03/21 11:05:16  dkr
- * code brushed
- *
- * Revision 2.22  2000/03/21 10:39:02  dkr
- * -lac2fun and -fun2lac added
- *
- * Revision 2.21  2000/02/04 14:45:50  jhs
- * Added -maxrepsize.
- *
- * Revision 2.20  2000/02/03 16:47:41  cg
- * Added new optimization option MSCA.
- *
- * Revision 2.19  2000/01/24 12:23:08  jhs
- * Added options to activate/dactivate printing after a break
- * (-noPAB, -doPAB).
- *
- * Revision 2.18  2000/01/17 17:58:45  cg
- * Added new heap manager optimization options
- * APS (arena preselection) and
- * RCAO (reference counter allocation optimization).
- *
- * Revision 2.17  2000/01/17 16:25:58  cg
- * Added new options to control initial heap sizes separately
- * for master's arena of arenas, workers' arena of arenas and the
- * top arena.
- *
- * Revision 2.15  1999/09/16 16:01:21  cg
- * Removed small bug in description of -check option.
- *
- * Revision 2.14  1999/08/05 08:21:18  jhs
- * Added missign linebreak.
- *
- * Revision 2.13  1999/07/28 13:01:14  jhs
- * Added information about spmdcons.
- *
- * Revision 2.12  1999/07/21 16:28:19  jhs
- * needed_sync_fold introduced, max_sync_fold adjusted, command-line and usage
- * updated.
- *
- * Revision 2.11  1999/07/09 07:31:24  cg
- * SAC heap manager integrated into sac2c.
- *
- * Revision 2.10  1999/06/11 12:55:17  cg
- * Added options -cshost, -csfile, -csdir.
- * Explanation of cache simulation improved in general.
- *
- * Revision 2.9  1999/06/10 09:49:03  cg
- * Added usage of option -cshost.
- *
- * Revision 2.8  1999/05/26 14:32:23  jhs
- * Added options MTO and SBE for multi-thread optimsation and
- * synchronisation barrier elimination, both options are by
- * default disabled.
- *
- * Revision 2.7  1999/05/20 14:40:10  dkr
- * output adjusted to 80 columns
- *
- * Revision 2.6  1999/05/20 14:09:34  cg
- * typos fixed.
- *
- * Revision 2.5  1999/05/18 12:54:13  cg
- * Option -minae renamed to -maxae.
- * No default value printed for option -numthreads
- *
- * Revision 2.4  1999/05/12 14:28:54  cg
- * command line options streamlined.
- *
- * Revision 2.3  1999/04/14 09:22:00  cg
- * Cache simulation is now explained in detail.
- *
- * Revision 2.2  1999/03/31 11:30:27  cg
- * added command line parameter -cachesim
- *
- * Revision 2.1  1999/02/23 12:40:16  sacbase
- * new release made
  *
  * [...]
  *
@@ -312,6 +208,7 @@ usage ()
             "\n"
             "\t -b16:conv         stop after converting\n"
             "\t -b16:cubes        stop after cube-building\n"
+            "\t -b16:fill1        stop after gap filling (grids only)\n"
             "\t -b16:segs         stop after choice of segments\n"
             "\t -b16:split        stop after splitting\n"
             "\t -b16:block        stop after hierarchical blocking\n"
@@ -320,6 +217,7 @@ usage ()
             "\t -b16:opt          stop after optimization\n"
             "\t -b16:fit          stop after fitting\n"
             "\t -b16:norm         stop after normalization\n"
+            "\t -b16:fill2        stop after gap filling (all nodes)\n"
             "\n"
             "\twith -mt\n"
             "\t -b17:spmdinit     stop after building SPMD blocks\n"
