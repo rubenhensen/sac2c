@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.30  1998/04/02 16:06:11  dkr
+ * added new compiler phase PH_concregs
+ *
  * Revision 1.29  1998/04/02 12:49:18  dkr
  * added ST_WLfun
  *
@@ -191,6 +194,7 @@ typedef enum {
     PH_sacopt,
     PH_psiopt,
     PH_refcnt,
+    PH_concregs,
     PH_precompile,
     PH_compile,
     PH_genccode,
@@ -227,8 +231,8 @@ typedef enum {
     ST_sac,                /* SAC module/class                       */
     ST_external,           /* external module/class                  */
     ST_system,             /* external system library                */
-    ST_own                 /* own declaration of module impl.        */
-      ST_WLfun             /* function with parallelized with-loop   */
+    ST_own,                /* own declaration of module impl.        */
+    ST_WLfun               /* function with parallelized with-loop   */
 } statustype;
 
 typedef enum { VECT, IDX } useflag;
@@ -246,11 +250,10 @@ typedef enum {
 
 /*
  * new nodes for yacc and the syntax tree
- *
  */
 
-#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, aa, ab, ac,   \
-            ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ap, aq, ar, nn)                  \
+#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
+            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, aq, nn)              \
     n
 
 typedef enum {
