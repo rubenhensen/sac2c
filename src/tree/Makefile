@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.5  2001/01/19 14:19:06  dkr
+# make deps done
+#
 # Revision 3.4  2001/01/17 10:13:12  dkr
 # make deps done
 #
@@ -229,6 +232,7 @@ tree_compound.o: ../global/Error.h /usr/include/stdio.h
 tree_compound.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 tree_compound.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
 tree_compound.o: /usr/include/stdio_impl.h /usr/include/string.h
-tree_compound.o: /usr/include/stdlib.h ../global/globals.h ../../inc/dbug.h
-tree_compound.o: ../global/my_debug.h free.h ../global/internal_lib.h
-tree_compound.o: ../typecheck/typecheck.h ../compile/wltransform.h
+tree_compound.o: /usr/include/stdlib.h ../global/globals.h DupTree.h
+tree_compound.o: LookUpTable.h ../../inc/dbug.h ../global/my_debug.h free.h
+tree_compound.o: ../global/internal_lib.h ../typecheck/typecheck.h
+tree_compound.o: ../compile/wltransform.h
