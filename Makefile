@@ -1,8 +1,8 @@
 #
 #
 # $Log$
-# Revision 3.53  2002/07/02 12:52:42  dkr
-# no changes done
+# Revision 3.54  2002/07/02 13:01:50  dkr
+# icm2c_basic.o added
 #
 # Revision 3.52  2002/06/07 17:20:09  mwe
 # Added AssociativeLaw.o for linking
@@ -39,45 +39,6 @@
 #
 # Revision 3.40  2001/11/14 13:19:06  sbs
 # TARGET clean added for avoiding deps mechanism on clean.
-#
-# Revision 3.39  2001/11/14 13:06:31  sbs
-# deps line inserted.
-# (when called via script a warning is issued)
-#
-# Revision 3.38  2001/11/14 12:59:48  sbs
-# deps line replaced by inclusion of Makefile.Deps
-# (.xxx.d mechanism)
-# global setup included via Makefile.Config
-#
-# Revision 3.37  2001/11/13 21:31:39  dkr
-# OSX_MAC_LIBS corrected
-#
-# Revision 3.36  2001/11/13 20:42:42  dkr
-# OSX_MAC added in 'check_os'
-#
-# Revision 3.35  2001/11/13 20:02:35  dkr
-# new system OSX_MAC added
-#
-# Revision 3.34  2001/07/18 12:57:45  cg
-# Linking of file tree.o eliminated.
-#
-# Revision 3.33  2001/05/30 14:00:22  nmw
-# SSAInferLI.o added
-#
-# Revision 3.32  2001/05/22 14:51:57  nmw
-# rmcasts.o added
-#
-# Revision 3.31  2001/05/15 16:38:01  nmw
-# SSAWLI.o and SSAWLF.o in src/psi-opt added
-#
-# Revision 3.30  2001/05/14 15:59:18  nmw
-# SSAWLT.o and SSAWithloopFOlding.o added
-#
-# Revision 3.29  2001/05/11 14:42:36  cg
-# Added linking of new file icm2c_sched.o
-#
-# Revision 3.28  2001/05/02 07:57:34  nmw
-# basecv.o added
 #
 # ... [eliminated] 
 #
@@ -177,7 +138,8 @@ MULTITHREAD= src/multithread/multithread.o src/multithread/schedule_init.o \
 COMPILE= src/compile/wltransform.o src/compile/wlpragma_funs.o \
          src/compile/precompile.o src/compile/gen_startup_code.o \
          src/compile/compile.o src/compile/compile.tagged.o \
-         src/compile/icm2c.o src/compile/icm2c_utils.o src/compile/icm2c_std.o \
+         src/compile/icm2c.o src/compile/icm2c_basic.o \
+         src/compile/icm2c_utils.o src/compile/icm2c_std.o \
          src/compile/icm2c_mt.o src/compile/icm2c_sched.o \
          src/compile/icm2c_wl.o src/compile/ReuseWithArrays.o \
          src/compile/PatchWith.o
