@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2000/03/23 14:03:33  jhs
+ * Added macros for DFMmfoldmask_t (DFMFM) ann MakeDFMfoldmask.
+ *
  * Revision 1.12  2000/03/22 17:37:28  jhs
  * Added N_MTsignal, N_MTalloc, N_MTsync macros.
  *
@@ -384,6 +387,24 @@ MakeAccess (node *array, node *iv, accessclass_t class, shpseg *offset,
     ACCESS_OFFSET (tmp) = offset;
     ACCESS_DIR (tmp) = direction;
     ACCESS_NEXT (tmp) = next;
+
+    DBUG_RETURN (tmp);
+}
+
+/*--------------------------------------------------------------------------*/
+
+DFMfoldmask_t *
+MakeDFMfoldmask (char *name, node *foldop, DFMfoldmask_t *next)
+{
+    DFMfoldmask_t *tmp;
+
+    DBUG_ENTER ("MakeDFMfoldmask");
+
+    ALLOCATE (tmp, DFMfoldmask_t);
+
+    DFMFM_NAME (tmp) = name;
+    DFMFM_FOLDOP (tmp) = foldop;
+    DFMFM_NEXT (tmp) = next;
 
     DBUG_RETURN (tmp);
 }
@@ -1585,6 +1606,7 @@ MakeMTsync ()
 
     tmp = CreateCleanNode (N_MTsync);
     MTSYNC_WAIT (tmp) = NULL;
+    MTSYNC_FOLD (tmp) = NULL;
     MTSYNC_ALLOC (tmp) = NULL;
 
     DBUG_RETURN (tmp);

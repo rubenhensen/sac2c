@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.33  2000/03/23 14:03:33  jhs
+ * Added macros for DFMmfoldmask_t (DFMFM) ann MakeDFMfoldmask.
+ *
  * Revision 1.32  2000/03/22 17:37:28  jhs
  * Added N_MTsignal, N_MTalloc, N_MTsync macros.
  *
@@ -479,6 +482,19 @@ extern access_t *MakeAccess (node *array, node *iv, accessclass_t class, shpseg 
 #define ACCESS_OFFSET(a) (a->offset)
 #define ACCESS_DIR(a) (a->direction)
 #define ACCESS_NEXT(a) (a->next)
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ *** DFMfoldmask_t :
+ ***
+ ***/
+
+extern DFMfoldmask_t *MakeDFMfoldmask (char *name, node *foldop, DFMfoldmask_t *next);
+
+#define DFMFM_NAME(n) (n->name)
+#define DFMFM_FOLDOP(n) (n->foldop)
+#define DFMFM_NEXT(n) (n->next)
 
 /*==========================================================================*/
 
@@ -2232,6 +2248,7 @@ extern node *MakePragma ();
  ***    (ng) mtfuns_init.[ch]
  ***    (nh) blocks_cons.[ch]
  ***    (ni) dataflow_analysis.[ch]
+ ***    (nj) barriers_init.[ch]
  ***
  ***  in all:
  ***    node*      INFO_MUTH_FUNDEF   (N_fundef)
@@ -2261,6 +2278,12 @@ extern node *MakePragma ();
  ***  in (na), (nh):
  ***    statustype INFO_BLKCO_CURRENTATTRIB(n)
  ***    node*      INFO_BLKCO_THISASSIGN(n)     (N_assign)
+ ***
+ ***  in (na), (ni):
+ ***    ####
+ ***
+ ***  in (na), (nj):
+ ***    int (bool) INFO_BARIN_WITHINMT
  ***
  ***  when used in tile_size_inference.c :
  ***
@@ -2488,6 +2511,10 @@ extern node *MakeInfo ();
 #define INFO_DFA_NEEDBLOCK(n) (n->dfmask[3])
 #define INFO_DFA_CONT(n) (n->node[3])
 #define INFO_DFA_THISASSIGN(n) (n->node[4])
+
+/* multithread - blocks_expand */
+/* DO NOT OVERRIDE ANY INFO_MUTH_XXX HERE!!! */
+#define INFO_BARIN_WITHINMT(n) (n->int_data)
 
 /* precompile */
 #define INFO_PREC_MODUL(n) (n->node[0])
@@ -2807,14 +2834,15 @@ extern node *MakeMTsignal ();
  ***  N_MTsync :
  ***
  ***  permanent atrributes:
- ***    DFMmask_t   WAIT
- ***    ####        FOLD
- ***    DFMmask_t   ALLOC
+ ***    DFMmask_t      WAIT
+ ***    DFMfoldmask_t  FOLD
+ ***    DFMmask_t      ALLOC
  ***/
 
 extern node *MakeMTsync ();
 
 #define MTSYNC_WAIT(n) (n->dfmask[0])
+#define MTSYNC_FOLD(n) ((DFMfoldmask_t *)(n->node[0]))
 #define MTSYNC_ALLOC(n) (n->dfmask[1])
 
 /*--------------------------------------------------------------------------*/
