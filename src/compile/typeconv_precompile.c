@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/12/08 11:19:45  sah
+ * fixed a not-enough-sleep-in-dk bug
+ *
  * Revision 1.3  2004/12/07 17:46:23  sah
  * rearranged code to fix segfault
  *
@@ -390,8 +393,8 @@ TCPap (node *arg_node, info *arg_info)
 
             DBUG_ASSERT (id != NULL, "Malformed argtab!");
 
-            actual_cls = NTUgetShapeClassFromNType (ID_NTYPE (ids));
-            formal_cls = NTUgetShapeClassFromNType (ARG_NTYPE (ret));
+            actual_cls = NTUgetShapeClassFromNType (ID_NTYPE (id));
+            formal_cls = NTUgetShapeClassFromNType (ARG_NTYPE (arg));
 
             if ((actual_cls != formal_cls)
                 && (global.argtag_has_shp[fun_argtab->tag[idx]] || (actual_cls == C_scl)
@@ -401,7 +404,7 @@ TCPap (node *arg_node, info *arg_info)
                                     FUNDEF_NAME (INFO_TCP_FUNDEF (arg_info)),
                                     ID_NAME (id), global.nt_shape_string[actual_cls],
                                     global.nt_shape_string[formal_cls]));
-                LiftArg (id, INFO_TCP_FUNDEF (arg_info), RET_TYPE (ret),
+                LiftArg (id, INFO_TCP_FUNDEF (arg_info), ARG_NTYPE (arg),
                          &(INFO_TCP_POSTASSIGNS (arg_info)));
             }
         }
