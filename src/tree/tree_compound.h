@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.142  2004/11/25 11:49:55  skt
+ * OVRLD_FUN bitmask added
+ *
  * Revision 3.141  2004/11/25 01:00:21  skt
  * bitmasks for profiling added
  *
@@ -159,7 +162,7 @@ specific implementation of a function should remain with the source code.
 #define CALL_FUN 0x0001
 #define RETURN_FROM_FUN 0x0002
 #define INL_FUN 0x0004
-
+#define OVRLD_FUN 0x0008
 /*--------------------------------------------------------------------------*/
 
 /***
