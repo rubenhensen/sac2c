@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2000/11/02 16:03:10  dkr
+ * FreeIcm: ICM args are no longer shared in the AST
+ * -> free them :-)
+ *
  * Revision 1.12  2000/10/27 14:49:53  dkr
  * cpp-flag FREE_MODNAMES added
  *
@@ -82,7 +86,7 @@
  * For the time being modulnames are shared in the AST
  *  -> no free!
  */
-#define FREE_MODNAMES 0
+#undef FREE_MODNAMES
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -562,7 +566,7 @@ FreeModul (node *arg_node, node *arg_info)
     FREETRAV (MODUL_FOLDFUNS (arg_node));
     FREETRAV (MODUL_STORE_IMPORTS (arg_node));
 
-#if FREE_MODNAMES
+#ifdef FREE_MODNAMES
     FREE (MODUL_NAME (arg_node));
 #endif
 
@@ -711,7 +715,7 @@ FreeTypedef (node *arg_node, node *arg_info)
     tmp = FREECONT (TYPEDEF_NEXT (arg_node));
 
     FREE (TYPEDEF_NAME (arg_node));
-#if FREE_MODNAMES
+#ifdef FREE_MODNAMES
     FREE (TYPEDEF_MOD (arg_node));
 #endif
     FreeAllTypes (TYPEDEF_TYPE (arg_node));
@@ -743,15 +747,19 @@ FreeObjdef (node *arg_node, node *arg_info)
     FREETRAV (OBJDEF_PRAGMA (arg_node));
 
     FREE (OBJDEF_NAME (arg_node));
-#if FREE_MODNAMES
+#ifdef FREE_MODNAMES
     FREE (OBJDEF_MOD (arg_node));
     FREE (OBJDEF_LINKMOD (arg_node));
 #endif
     FREE (OBJDEF_VARNAME (arg_node));
     FreeOneTypes (OBJDEF_TYPE (arg_node));
-#if 0
-  FreeNodelist(OBJDEF_NEEDOBJS(arg_node));
-#endif
+
+    /*
+     * The nodes contained in OBJDEF_NEEDOBJS are all(?) shared.
+     * Therefore, please do not free this list!
+     *
+     * FreeNodelist( OBJDEF_NEEDOBJS( arg_node));
+     */
 
     DBUG_PRINT ("FREE", ("Removing N_objdef node ..."));
 
@@ -791,7 +799,7 @@ FreeFundef (node *arg_node, node *arg_info)
     }
 
     FREE (FUNDEF_NAME (arg_node));
-#if FREE_MODNAMES
+#ifdef FREE_MODNAMES
     FREE (FUNDEF_MOD (arg_node));
     FREE (FUNDEF_LINKMOD (arg_node));
 #endif
@@ -1067,7 +1075,7 @@ FreeAp (node *arg_node, node *arg_info)
 
     FREETRAV (AP_ARGS (arg_node));
     FREE (AP_NAME (arg_node));
-#if FREE_MODNAMES
+#ifdef FREE_MODNAMES
     FREE (AP_MOD (arg_node));
 #endif
 
@@ -1159,7 +1167,7 @@ FreeId (node *arg_node, node *arg_info)
     DBUG_PRINT ("FREE", ("Removing contents of N_id node %s ...", ID_NAME (arg_node)));
 
     FREE (ID_NAME (arg_node));
-#if FREE_MODNAMES
+#ifdef FREE_MODNAMES
     FREE (ID_MOD (arg_node));
 #endif
 
@@ -1394,18 +1402,12 @@ FreeIcm (node *arg_node, node *arg_info)
     DBUG_PRINT ("FREE", ("Removing contents of N_icm node %s ...", ICM_NAME (arg_node)));
 
     /*
-     * In 'compile' arguments of ICMs are often shared 8-(
+     * ICM names are all static. Therefore, please do not free them!!
      *
-     * brute force try!
+     * FREE( ICM_NAME( arg_node));
      */
-#if 0
-  FREETRAV(ICM_ARGS(arg_node));
-#endif
 
-    /*
-     * Since the name in most (all?) cases is static,
-     *  please do not free ICM_NAME(arg_node) !!!
-     */
+    FREETRAV (ICM_ARGS (arg_node));
 
     DBUG_PRINT ("FREE", ("Removing N_icm node ..."));
 
@@ -1709,7 +1711,7 @@ FreeNWithOp (node *arg_node, node *arg_info)
      */
     if (WO_foldfun == NWITHOP_TYPE (arg_node)) {
         FREE (NWITHOP_FUN (arg_node));
-#if FREE_MODNAMES
+#ifdef FREE_MODNAMES
         FREE (NWITHOP_MOD (arg_node));
 #endif
     }
@@ -1999,7 +2001,7 @@ FreeCWrapper (node *arg_node, node *arg_info)
     tmp = FREECONT (CWRAPPER_NEXT (arg_node));
 
     FREE (CWRAPPER_NAME (arg_node));
-#if FREE_MODNAMES
+#ifdef FREE_MODNAMES
     FREE (CWRAPPER_MOD (arg_node));
 #endif
 
