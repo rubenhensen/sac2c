@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.71  1998/04/29 13:44:40  srs
+ * functions which are imported from moduls are not flattened anymore.
+ * This has already been done while compiling the module.
+ *
  * Revision 1.70  1998/03/17 14:19:32  cg
  * filename is now reset to sacfilename in order to produce correct
  * error messages
@@ -1078,7 +1082,11 @@ FltnFundef (node *arg_node, node *arg_info)
 
     tmp_tos = tos; /* store tos */
 
-    if (FUNDEF_BODY (arg_node)) {
+    /* Do not flatten imported functions. These functions have already been
+       flattened and if this is done again there may arise name clashes.
+       A new temp variable __flat42 may conflict with __flat42 which was
+       inserted in the first flatten phase (module compiliation). */
+    if (FUNDEF_BODY (arg_node) && ST_imported != FUNDEF_STATUS (arg_node)) {
         if (FUNDEF_ARGS (arg_node))
             FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), arg_info);
 
