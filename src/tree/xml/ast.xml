@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.38  2004/11/07 18:11:45  sah
+  lots of small changes due to new module system
+
   Revision 1.37  2004/11/02 16:12:32  sah
   added SymbolName attribute to Fundef and Objdef
 
@@ -167,8 +170,6 @@
     <type name="NodeList" ctype="nodelist*" init="NULL"
     copy="function" />
     <type name="SharedNodeList" ctype="nodelist*" init="NULL"
-    copy="function" />
-    <type name="PragmaLink" ctype="node*" init="NULL"
     copy="function" />
     <type name="DFMMask" ctype="DFMmask_t" init="NULL"
     copy="function" persist="no" />
@@ -370,12 +371,6 @@
             <all />
           </phases>
         </attribute>
-        <attribute name="LinkMod" default="NULL" mandatory="no">
-          <type name="String" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
         <attribute name="Type" mandatory="yes">
           <type name="OldType" />
           <phases>
@@ -402,7 +397,11 @@
           </phases>
         </attribute>
         <attribute name="Pragma" mandatory="no">
-          <type name="PragmaLink" />
+          <type name="Node">
+            <target>
+              <node name="Pragma" />
+            </target>
+          </type>
           <phases>
             <range from="import" to="writesib" />
           </phases>
@@ -474,12 +473,6 @@
             <all />
           </phases>
         </attribute>
-        <attribute name="LinkMod" default="NULL" mandatory="yes">
-          <type name="String" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
         <attribute name="Type" mandatory="yes">
           <type name="OldType" />
           <phases>
@@ -518,7 +511,11 @@
           </phases>
         </attribute>
         <attribute name="Pragma" mandatory="yes">
-          <type name="PragmaLink" />
+          <type name="Node" >
+            <target>
+              <node name="Pragma" />
+            </target>
+          </type>
           <phases>
             <range from="import" to="final" />
           </phases>
@@ -609,12 +606,6 @@
             <all />
           </phases>
         </attribute>
-        <attribute name="LinkMod" default="NULL" mandatory="no">
-          <type name="String" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
         <attribute name="SymbolName" default="NULL" mandatory="no">
           <type name="String" />
           <phases>
@@ -672,7 +663,11 @@
           </phases>
         </attribute>
         <attribute name="Pragma" default="NULL" mandatory="no">
-          <type name="PragmaLink" />
+          <type name="Node" >
+            <target>
+              <node name="Pragma" />
+            </target>
+          </type>
           <phases>
             <all />
           </phases>
@@ -2083,6 +2078,18 @@
             <all />
           </phases>
         </attribute>
+        <attribute name="LinkMod" default="NULL" mandatory="no">
+          <type name="String" />
+          <phases>
+            <all />
+          </phases>
+        </attribute>
+        <attribute name="LinkObj" default="NULL" mandatory="no">
+          <type name="String" />
+          <phases>
+            <all />
+          </phases>
+        </attribute>
         <attribute name="LinkSign" default="NULL" mandatory="no">
           <type name="IntegerArray" />
           <phases>
@@ -2164,12 +2171,6 @@
               <unknown />
             </target>
           </type>
-          <phases>
-            <range from="import" to="readsib" />
-          </phases>
-        </attribute>
-        <attribute name="LinkMod" mandatory="no">
-          <type name="String" />
           <phases>
             <range from="import" to="readsib" />
           </phases>
@@ -2878,7 +2879,11 @@
           </phases>
         </attribute>
         <attribute name="Pragma" mandatory="yes">
-          <type name="PragmaLink" />
+          <type name="Node" >
+            <target>
+              <node name="Pragma" />
+            </target>
+          </type>
           <phases>
             <range from="scanparse" to="wltransform" />
           </phases>
@@ -3192,7 +3197,11 @@
           </phases>
         </attribute>
         <attribute name="Pragma" default="NULL" mandatory="yes">
-          <type name="PragmaLink" />
+          <type name="Node" >
+            <target>
+              <node name="Pragma" />
+            </target>
+          </type>
           <phases>
             <all />
           </phases>
@@ -3255,6 +3264,11 @@
             <set name="Expr" />
           </target>
         </son>
+	<son name="Mem" default="NULL" mandatory="no">
+	  <target>
+	    <node name="Id" />
+	  </target>
+	</son>
         <son name="Next" default="NULL" mandatory="no">
           <target>
             <node name="Nwithop" />
@@ -3304,16 +3318,6 @@
             <range from="compile" to="final" />
           </phases>
         </attribute>
-	<attribute name="Mem" mandatory="no">
-	  <type name="Node">
-	    <target>
-	      <unknown/>
-	    </target>
-	  </type>
-	  <phases>
-	    <range from="emalloc" to="final" />
-	  </phases>
-	</attribute>
 	<attribute name="Offset_Needed" mandatory="yes">
 	  <type name="Bool"/>
 	  <phases>
