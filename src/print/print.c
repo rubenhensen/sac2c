@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.143  2003/11/04 17:26:38  cg
+ * Fixed a bug in printing/scanning of individual escape characters.
+ * Escape characters are stored in OCTAL representation !!
+ * So, scanning using atoi is NOT promising.
+ *
  * Revision 3.142  2003/10/19 21:39:45  dkrHH
  * prf_string moved from print.[ch] to globals.[ch] (for BEtest)
  *
@@ -2820,7 +2825,31 @@ PrintChar (node *arg_node, node *arg_info)
         && (CHAR_VAL (arg_node) != '\'')) {
         fprintf (outfile, "'%c'", CHAR_VAL (arg_node));
     } else {
-        fprintf (outfile, "'\\%o'", CHAR_VAL (arg_node));
+        switch (CHAR_VAL (arg_node)) {
+        case '\n':
+            fprintf (outfile, "'\\n'");
+            break;
+        case '\t':
+            fprintf (outfile, "'\\t'");
+            break;
+        case '\v':
+            fprintf (outfile, "'\\v'");
+            break;
+        case '\b':
+            fprintf (outfile, "'\\b'");
+            break;
+        case '\r':
+            fprintf (outfile, "'\\r'");
+            break;
+        case '\f':
+            fprintf (outfile, "'\\f'");
+            break;
+        case '\a':
+            fprintf (outfile, "'\\a'");
+            break;
+        default:
+            fprintf (outfile, "'\\%o'", CHAR_VAL (arg_node));
+        }
     }
 
     DBUG_RETURN (arg_node);

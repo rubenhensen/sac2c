@@ -3,6 +3,11 @@
 /*
  *
  * $Log$
+ * Revision 3.23  2003/11/04 17:26:38  cg
+ * Fixed a bug in printing/scanning of individual escape characters.
+ * Escape characters are stored in OCTAL representation !!
+ * So, scanning using atoi is NOT promising.
+ *
  * Revision 3.22  2003/04/09 13:53:02  sbs
  * _neg_ added.
  *
@@ -372,13 +377,33 @@ int charpos = 0;
 '.'                        { yylval.cchar=yytext[1];
                              FILTER( CHAR);
                            }
-'\\[0-9]+'                 { yylval.cchar=(char)atoi(yytext+2);
+'\\[0-9]+'                 { yylval.cchar=(char)strtol(yytext+2, NULL, 8);
                              FILTER( CHAR);
                            }
 '\\n'                      { yylval.cchar='\n';
                              FILTER( CHAR);
                            }
 '\\t'                      { yylval.cchar='\t';
+                             FILTER( CHAR);
+                           }
+
+'\\v'                      { yylval.cchar='\v';
+                             FILTER( CHAR);
+                           }
+
+'\\b'                      { yylval.cchar='\b';
+                             FILTER( CHAR);
+                           }
+
+'\\r'                      { yylval.cchar='\r';
+                             FILTER( CHAR);
+                           }
+
+'\\f'                      { yylval.cchar='\f';
+                             FILTER( CHAR);
+                           }
+
+'\\a'                      { yylval.cchar='\a';
                              FILTER( CHAR);
                            }
 
