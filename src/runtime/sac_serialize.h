@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2004/11/14 15:24:04  sah
+ * DeserializeLookupFunction now uses internal state
+ *
  * Revision 1.7  2004/11/07 18:07:31  sah
  * added two more funtions
  *
@@ -40,7 +43,7 @@ extern void *CreateIds (char *s1, char *s2, int a, int b, int c, int d, void *p1
 extern void *CreateNums (int s, ...);
 extern void *CreateIntegerArray (int s, ...);
 extern void *SerializeBuildSerStack (void *node);
-extern void *DeserializeLookupFunction (const char *s, const char *t, void *p);
+extern void *DeserializeLookupFunction (const char *s, const char *t);
 extern void *STInit ();
 extern void STAdd (char *s1, char *s2, int i, void *table);
 extern void *SSAdd (char *s1, int i, void *p);
