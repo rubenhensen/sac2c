@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.89  2003/10/20 15:39:14  dkr
+ * COMPSync(): MT_SYNCBLOCK_UPDATE added
+ *
  * Revision 1.88  2003/10/15 12:28:34  dkrHH
  * MT_START_SYNCBLOCK renamed into MT_SYNCBLOCK_BEGIN.
  * MT_SYNCBLOCK_END added.
@@ -6438,6 +6441,7 @@ GetFoldTypeTag (ids *with_ids)
  *     MT_CONTINUE( ...)                 // if (FIRST == 0) only
  *     MT_SYNCBLOCK_BEGIN( ...)
  *     < with-loop code without malloc/free-ICMs >
+ *     MT_SYNCBLOCK_CLEANUP( ...)
  *     MT_SYNC...( ...)
  *     MT_SYNCBLOCK_END( ...)
  *     < free-ICMs >
@@ -6478,7 +6482,7 @@ COMP2Sync (node *arg_node, node *arg_info)
     DBUG_ENTER ("COMPSync");
 
     /*
-     * build arguments of ICMs 'MT_SYNCBLOCK_BEGIN', 'MT_SYNCBLOCK_END'
+     * build arguments of ICMs 'MT_SYNCBLOCK_...'
      */
     icm_args3 = NULL;
     num_args = 0;
@@ -6891,6 +6895,13 @@ COMP2Sync (node *arg_node, node *arg_info)
       = AppendAssign (assigns,
                       MakeAssignIcm2 ("MT_SYNCBLOCK_BEGIN", MakeNum (barrier_id),
                                       icm_args3, BLOCK_INSTR (SYNC_REGION (arg_node))));
+
+    /*
+     * insert ICM 'MT_SYNCBLOCK_CLEANUP'
+     */
+    assigns = AppendAssign (assigns,
+                            MakeAssignIcm2 ("MT_SYNCBLOCK_CLEANUP", MakeNum (barrier_id),
+                                            DupTree (icm_args3), NULL));
 
     /*
      *  see comment on setting backup!
