@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2004/11/27 02:15:54  sah
+ * ...
+ *
  * Revision 1.1  2004/11/27 01:19:24  sah
  * Initial revision
  *
@@ -29,5 +32,7 @@ extern node *RIDarray (node *arg_node, info *arg_info);
 extern node *RIDwlseg (node *arg_node, info *arg_info);
 extern node *RIDwlsegvar (node *arg_node, info *arg_info);
 extern node *RIDavis (node *arg_node, info *arg_info);
+
+extern char *RIDobjInitFunctionName (bool before_rename);
 extern char *RIDrenameLocalIdentifier (char *id);
 #endif /* _SAC_RENAMEIDENTIFIERS_H_ */

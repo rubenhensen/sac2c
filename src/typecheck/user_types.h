@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.5  2004/11/27 02:12:28  sah
+ * ...
+ *
  * Revision 3.4  2004/11/22 15:36:00  sbs
  * SacDevCamp04
  *
@@ -59,6 +62,8 @@ extern node *UTgetTdef (usertype t1);
 
 extern void UTsetTypedef (usertype t1, ntype *type);
 extern void UTsetBaseType (usertype t1, ntype *type);
+extern void UTsetName (usertype t1, const char *name);
+extern void UTsetMod (usertype t1, const char *mod);
 
 extern void UTprintRepository (FILE *outfile);
 

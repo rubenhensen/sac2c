@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.7  2004/11/27 02:12:28  sah
+ * ...
+ *
  * Revision 3.6  2004/11/23 13:25:10  sbs
  * SacDevCamp04: compiles again
  *
@@ -290,6 +293,8 @@ UTgetTdef (usertype udt)
  * function:
  *    ntype *UTsetTypedef( usertype udt)
  *    ntype *UTsetBaseType( usertype udt)
+ *    void   UTsetName( usertype udt, const char *name)
+ *    void   UTsetMod( usertype udt, const char *mod)
  *
  * description:
  *   several functions for changing the values of the definition of the user
@@ -315,6 +320,26 @@ UTsetBaseType (usertype udt, ntype *type)
     DBUG_ASSERT ((udt < udt_no), "UTsetBaseType called with illegal udt!");
 
     ENTRY_BASE (udt_rep[udt]) = type;
+    DBUG_VOID_RETURN;
+}
+
+void
+UTsetName (usertype udt, const char *name)
+{
+    DBUG_ENTER ("UTsetName");
+    DBUG_ASSERT ((udt < udt_no), "UTsetName called with illegal udt!");
+
+    ENTRY_NAME (udt_rep[udt]) = ILIBstringCopy (name);
+    DBUG_VOID_RETURN;
+}
+
+void
+UTsetMod (usertype udt, const char *mod)
+{
+    DBUG_ENTER ("UTsetMod");
+    DBUG_ASSERT ((udt < udt_no), "UTsetMod called with illegal udt!");
+
+    ENTRY_MOD (udt_rep[udt]) = ILIBstringCopy (mod);
     DBUG_VOID_RETURN;
 }
 

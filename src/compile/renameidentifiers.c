@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/11/27 02:15:54  sah
+ * ...
+ *
  * Revision 1.3  2004/11/27 01:41:11  ktr
  * RID
  *
@@ -270,6 +273,39 @@ RenameFun (node *fun)
 /******************************************************************************
  *
  * function:
+ *   char *RIDobjInitFunctionName( bool before_rename)
+ *
+ * description:
+ *   Returns new allocated string with objinitfunction name
+ *
+ * parameters:
+ *   uses global variable modulename!
+ *
+ ******************************************************************************/
+
+char *
+RIDobjInitFunctionName (bool before_rename)
+{
+    char *name = "GlobalObjInit";
+    char *new_name;
+
+    DBUG_ENTER ("RIDobjInitFunctionName");
+
+    if (before_rename) {
+        new_name = (char *)ILIBmalloc (strlen (name) + 1);
+
+        strcpy (new_name, name);
+    } else {
+        new_name = ILIBmalloc (strlen (name) + strlen (MAIN_MOD_NAME) + 8);
+        sprintf (new_name, "SASf_%s__%s", MAIN_MOD_NAME, name);
+    }
+
+    DBUG_RETURN (new_name);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   node *RIDmodule( node *arg_node, info *arg_info)
  *
  * description:
@@ -280,7 +316,7 @@ RenameFun (node *fun)
 node *
 RIDmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("PREC4modul");
+    DBUG_ENTER ("RIDmodul");
 
     INFO_RID_MODULE (arg_info) = arg_node;
 
@@ -581,7 +617,7 @@ RIDap (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 node *
-PREC4icm (node *arg_node, info *arg_info)
+RIDicm (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("RIDicm");
 
