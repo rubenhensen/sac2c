@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2000/11/23 16:51:24  sbs
+ * old_xxx_expr vars in OPT_fundef (superfluously) initialized to avoid
+ * compiler warnings in product version.
+ *
  * Revision 3.1  2000/11/20 18:00:44  sacbase
  * new release made
  *
@@ -581,8 +585,15 @@ OPTfundef (node *arg_node, node *arg_info)
     int mem_wlt_expr = wlt_expr;
     int mem_cse_expr = cse_expr;
 
-    int old_cse_expr, old_cf_expr, old_wlt_expr, old_wlf_expr, old_dcr_expr;
-    int old_lunr_expr, old_wlunr_expr, old_uns_expr, old_lir_expr;
+    int old_cse_expr = cse_expr;
+    int old_cf_expr = cf_expr;
+    int old_wlt_expr = wlt_expr;
+    int old_wlf_expr = wlf_expr;
+    int old_dcr_expr = dead_fun + dead_var + dead_expr;
+    int old_lunr_expr = lunr_expr;
+    int old_wlunr_expr = wlunr_expr;
+    int old_uns_expr = uns_expr;
+    int old_lir_expr = lir_expr;
 
     int loop1 = 0;
     int loop2 = 0;
