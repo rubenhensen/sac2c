@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.9  2004/10/19 15:29:12  sah
+ * the negative One in GF(2) is 1 ;)
+ *
  * Revision 1.8  2004/10/19 14:38:52  sah
  * Added support for T_bool types...
  *
@@ -235,7 +238,7 @@ CreateNegOne (info *arg_info)
         newnode = MakeFloat (-1.0f);
 
     } else if (TYPES_BASETYPE (INFO_ESD_TYPE (arg_info)) == T_bool) {
-        newnode = MakeBool (FALSE);
+        newnode = MakeBool (TRUE);
     } else {
         DBUG_ASSERT (FALSE, "Unexpected BASETYPE!");
     }
