@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.20  2003/04/23 19:53:44  mwe
+ * small changes in code
+ *
  * Revision 1.19  2003/04/10 21:26:06  mwe
  * implement support for arrays
  *
@@ -1188,9 +1191,9 @@ ALassign (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("ALassign");
 
-    if (ASSIGN_NEXT (arg_node) != NULL) {
+    ASSIGN_STATUS (arg_node) = 1;
 
-        ASSIGN_STATUS (arg_node) = 1;
+    if (ASSIGN_NEXT (arg_node) != NULL) {
 
         ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
 
