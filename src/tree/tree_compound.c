@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.32  2001/04/09 15:56:33  nmw
+ * MakeArgFromVardec added
+ *
  * Revision 3.31  2001/04/06 18:50:10  dkr
  * CountArgs() and CountTypes() added
  *
@@ -1676,7 +1679,7 @@ MakeVardecFromArg (node *arg_node)
 
     /* duplicate avis node manually */
     FreeNode (VARDEC_AVIS (new_vardec));
-    VARDEC_AVIS (new_vardec) = DupNode (VARDEC_AVIS (arg_node));
+    VARDEC_AVIS (new_vardec) = DupNode (ARG_AVIS (arg_node));
     AVIS_VARDECORARG (VARDEC_AVIS (new_vardec)) = new_vardec;
 
     /* delete wrong data in copied AVIS node */
@@ -1699,6 +1702,61 @@ MakeVardecFromArg (node *arg_node)
     }
 
     DBUG_RETURN (new_vardec);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *MakeArgFromVardec( node *varde_node)
+ *
+ * description:
+ *   copies all attributes from an vardec node to a new allocated arg node.
+ *
+ * remark:
+ *   This function is used in context of loop invariant removal in ssa form.
+ *
+ *
+ ******************************************************************************/
+
+node *
+MakeArgFromVardec (node *vardec_node)
+{
+    node *new_arg;
+
+    DBUG_ENTER ("MakeArgFromVardec");
+
+    new_arg = MakeArg (StringCopy (VARDEC_NAME (vardec_node)),
+                       DupTypes (VARDEC_TYPE (vardec_node)), VARDEC_STATUS (vardec_node),
+                       ST_undef, NULL);
+
+    ARG_TDEF (new_arg) = VARDEC_TDEF (vardec_node);
+    ARG_OBJDEF (new_arg) = VARDEC_OBJDEF (vardec_node);
+
+    /* duplicate avis node manually */
+    FreeNode (ARG_AVIS (new_arg));
+    ARG_AVIS (new_arg) = DupNode (VARDEC_AVIS (vardec_node));
+    AVIS_VARDECORARG (ARG_AVIS (new_arg)) = new_arg;
+
+    /* delete wrong data in copied AVIS node */
+    AVIS_SSAASSIGN (ARG_AVIS (new_arg)) = NULL;
+    AVIS_SSAASSIGN2 (ARG_AVIS (new_arg)) = NULL;
+    AVIS_SSAPHITARGET (ARG_AVIS (new_arg)) = PHIT_NONE;
+    AVIS_SSALPINV (ARG_AVIS (new_arg)) = FALSE;
+    AVIS_SSASTACK_TOP (ARG_AVIS (new_arg)) = NULL;
+
+    /*
+     * unique vardecs will be changed to reference args that
+     * will be re-renamed in UndoSSATransform
+     */
+    if (VARDEC_ATTRIB (vardec_node) == ST_unique) {
+        ARG_ATTRIB (new_arg) = ST_reference;
+        /* set the corresponding undo flag for UndoSSATransform */
+        AVIS_SSAUNDOFLAG (ARG_AVIS (new_arg)) = TRUE;
+    } else {
+        ARG_ATTRIB (new_arg) = VARDEC_ATTRIB (vardec_node);
+    }
+
+    DBUG_RETURN (new_arg);
 }
 
 /******************************************************************************

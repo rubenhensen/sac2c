@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.36  2001/04/09 15:56:33  nmw
+ * MakeArgFromVardec added
+ *
  * Revision 3.35  2001/04/06 16:05:10  dkr
  * CountTypes(), CountArgs() added
  *
@@ -840,6 +843,18 @@ extern node *AppendVardec (node *vardec_chain, node *vardec);
  ******************************************************************************/
 
 extern node *MakeVardecFromArg (node *arg_node);
+
+/******************************************************************************
+ *
+ * function:
+ *   node *MakeArgFromVardec( node *vardec_node)
+ *
+ * description:
+ *   copies all attributes from an vardec node to a new allocated arg node.
+ *
+ ******************************************************************************/
+
+extern node *MakeArgFromVardec (node *vardec_node);
 
 /******************************************************************************
  *
