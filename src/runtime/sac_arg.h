@@ -1,4 +1,14 @@
+/*
+ * $Log$
+ * Revision 1.2  2000/07/06 08:18:57  dkr
+ * RCS header added
+ * absolute path of type_info.mac-include removed
+ * -> but I think type_info.mac should NOT be included here anyway!
+ *
+ */
+
 #ifndef _sac_arg_h
+
 #define _sac_arg_h
 
 /* abstract datatype for SAC <-> c arguments and return types */
@@ -8,10 +18,10 @@
 /* basetypes (same as in sac2c internally used) */
 typedef enum {
 #define TYP_IFname(name) name
-#include "/home/nmw/sac/sac2c/src/tree/type_info.mac"
+#include "type_info.mac"
 } SAC_ARG_simpletype;
 
-/*SAC integer array*/
+/* SAC integer array */
 typedef struct SAC_ARG_STRUCT {
     SAC_ARG_simpletype type; /* type of argument */
     int *shpvec;             /* shapevector of argument */
@@ -32,4 +42,5 @@ extern SAC_arg SAC_CI_NewSACArg (SAC_ARG_simpletype basetype, int dim, int *shpv
 extern SAC_arg SAC_CI_CreateSACArg (SAC_ARG_simpletype basetype, int dim, ...);
 extern bool SAC_CI_CmpSACArgType (SAC_arg sa, SAC_ARG_simpletype basetype, int dim, ...);
 extern void SAC_CI_FreeSACArg (SAC_arg sa);
+
 #endif
