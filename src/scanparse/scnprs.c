@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.17  1998/05/27 11:19:44  cg
+ * global variable 'filename' which contains the current file name in order
+ * to provide better error messages is now handled correctly.
+ *
  * Revision 1.16  1998/03/04 16:23:27  cg
  *  C compiler invocations and file handling converted to new
  * to usage of new  configuration files.
@@ -122,7 +126,7 @@ SetFileNames (node *modul)
             strcpy (buffer, MODUL_NAME (modul));
             strcat (buffer, ".sac");
 
-            if (0 != strcmp (buffer, sacfilename)) {
+            if (0 != strcmp (buffer, puresacfilename)) {
                 SYSWARN (("Module/class '%s` should be in a file named \"%s\" "
                           "instead of \"%s\"",
                           MODUL_NAME (modul), buffer, sacfilename));
@@ -178,10 +182,10 @@ ScanParse ()
 
     DBUG_ENTER ("ScanParse");
 
+    filename = puresacfilename;
+
     if (sacfilename[0] == '\0') {
         yyin = stdin;
-        filename = "stdin"; /* set for better error messages only */
-
         NOTE (("Parsing from stdin ..."));
     } else {
         pathname = FindFile (PATH, sacfilename);
@@ -192,11 +196,6 @@ ScanParse ()
 
         yyin = fopen (pathname, "r");
         NOTE (("Parsing file \"%s\" ...", pathname));
-        filename = strrchr (sacfilename, '/');
-        if (filename == NULL)
-            filename = sacfilename; /* set for better error messages only */
-        else
-            filename++;
     }
 
     start_token = PARSE_PRG;
@@ -222,6 +221,8 @@ ScanParse ()
 
     DBUG_ENTER ("ScanParse");
 
+    filename = puresacfilename;
+
     if (sacfilename[0] == '\0') {
         strcpy (cccallstr, config.cpp_stdin);
 
@@ -232,7 +233,6 @@ ScanParse ()
         }
 
         NOTE (("Parsing from stdin ..."));
-        filename = "stdin"; /* set for better error messages only */
     } else {
         pathname = FindFile (PATH, sacfilename);
 
@@ -251,12 +251,6 @@ ScanParse ()
         strcat (cccallstr, " ");
         strcat (cccallstr, pathname);
         NOTE (("Parsing file \"%s\" ...", pathname));
-
-        filename = strrchr (sacfilename, '/');
-        if (filename == NULL)
-            filename = sacfilename; /* set for better error messages only */
-        else
-            filename++;
     }
 
     yyin = popen (cccallstr, "r");

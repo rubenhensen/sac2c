@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.4  1998/05/27 11:19:44  cg
+ * global variable 'filename' which contains the current file name in order
+ * to provide better error messages is now handled correctly.
+ *
  * Revision 1.3  1998/03/17 12:14:24  cg
  * added resource SYSTEM_LIBPATH.
  * This makes the gcc special feature '--print-file-name' obsolete.
@@ -428,6 +432,8 @@ ParseResourceFiles ()
             fclose (yyin);
         }
     }
+
+    filename = puresacfilename;
 
     DBUG_VOID_RETURN;
 }

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.233  1998/05/27 11:19:44  cg
+ * global variable 'filename' which contains the current file name in order
+ * to provide better error messages is now handled correctly.
+ *
  * Revision 1.232  1998/05/24 00:40:34  dkr
  * removed WLGRID_CODE_TEMPLATE
  *
@@ -1108,7 +1112,7 @@ PrintModul (node *arg_node, node *arg_info)
             fprintf (outfile, " */\n");
             break;
         case F_prog:
-            fprintf (outfile, "\n/*\n *  SAC-Program %s :\n */\n", filename);
+            fprintf (outfile, "\n/*\n *  SAC-Program %s :\n */\n", puresacfilename);
             break;
         default:;
         }

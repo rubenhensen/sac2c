@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.20  1998/05/27 11:19:44  cg
+ * global variable 'filename' which contains the current file name in order
+ * to provide better error messages is now handled correctly.
+ *
  * Revision 1.19  1998/03/25 10:41:43  cg
  * library format of SAC libraries slightly modified:
  * archives are now called lib<modname>.a instead of <modname>.a
@@ -138,6 +142,13 @@ ReadSib (node *syntax_tree)
     ABORT_ON_ERROR;
 
     act_tab = readsib_tab;
+
+    filename = puresacfilename;
+    /*
+     * The global variable filename is used for generating error messages.
+     * After all imports have been done, it is reset to the original file
+     * to be compiled.
+     */
 
     DBUG_RETURN (Trav (syntax_tree, NULL));
 }

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.128  1998/05/27 11:19:44  cg
+ * global variable 'filename' which contains the current file name in order
+ * to provide better error messages is now handled correctly.
+ *
  * Revision 1.127  1998/05/13 14:06:14  srs
  * added -maxwlunroll
  *
@@ -981,6 +985,16 @@ MAIN
 
     if (argc == 1) {
         strcpy (sacfilename, *argv);
+
+        puresacfilename = strrchr (sacfilename, '/');
+
+        if (puresacfilename == NULL) {
+            puresacfilename = sacfilename;
+        } else {
+            puresacfilename += 1;
+        }
+    } else {
+        puresacfilename = "stdin";
     }
 
     /*

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.13  1998/05/27 11:19:44  cg
+ * global variable 'filename' which contains the current file name in order
+ * to provide better error messages is now handled correctly.
+ *
  * Revision 1.12  1996/01/22 18:32:35  cg
  * Now, a reference to the N_objdef node of the module implementation
  * is stored for each N_objdef node in a module declaration
@@ -222,7 +226,7 @@ CheckDec (node *syntax_tree)
 
     MODUL_DECL (syntax_tree) = Trav (decl, syntax_tree);
 
-    filename = sacfilename;
+    filename = puresacfilename;
 
     DBUG_RETURN (syntax_tree);
 }

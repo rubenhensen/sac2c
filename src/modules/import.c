@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.53  1998/05/27 11:19:44  cg
+ * global variable 'filename' which contains the current file name in order
+ * to provide better error messages is now handled correctly.
+ *
  * Revision 1.52  1998/04/03 20:45:08  dkr
  * removed a wrong cast in AddClasstypeOnSelectiveImport
  *   (type of IMPLIST_ITYPES is not *node but *ids)
@@ -261,6 +265,13 @@ Import (node *arg_node)
     DBUG_ENTER ("Import");
 
     act_tab = imp_tab;
+
+    filename = puresacfilename;
+    /*
+     * The global variable filename is used for generating error messages.
+     * After all imports have been done, it is reset to the original file
+     * to be compiled.
+     */
 
     DBUG_RETURN (Trav (arg_node, NULL));
 }
@@ -1598,7 +1609,7 @@ AppendModnameToSymbol (node *symbol, char *modname)
         }
     }
 
-    filename = sacfilename;
+    filename = puresacfilename;
 
     DBUG_VOID_RETURN;
 }
@@ -2118,6 +2129,8 @@ ImportOwnDeclaration (char *name, file_type modtype)
     }
 
     mod_tab = old_mod_tab;
+
+    filename = puresacfilename;
 
     DBUG_RETURN (decl);
 }
