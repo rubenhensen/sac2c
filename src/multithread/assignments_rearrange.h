@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.6  2004/08/12 12:52:19  skt
+ * some debugging...
+ *
  * Revision 1.5  2004/08/11 09:31:54  skt
  * ASMRAPrintCluster bug fixed
  *
@@ -31,7 +34,7 @@
 
 #define ASSIGNMENTS_REARRANGE_H
 
-#define ASMRA_DEBUG 1
+#define ASMRA_DEBUG 0
 
 /*
  * some structures
@@ -96,6 +99,9 @@ struct asmra_cluster_s *ASMRAMakeCluster (node *arg_node);
 struct asmra_cluster_s *ASMRAFreeCluster (struct asmra_cluster_s *cluster);
 
 struct asmra_cluster_s *ASMRAClusterAdd (struct asmra_cluster_s *cluster, node *dfn);
+
+struct asmra_cluster_s *ASMRAClusterMerge (struct asmra_cluster_s *cluster_1,
+                                           struct asmra_cluster_s *cluster_2);
 
 struct asmra_cluster_s *ASMRAClusterRefUpdate (struct asmra_cluster_s *cluster);
 

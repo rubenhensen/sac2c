@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.7  2004/08/12 12:52:19  skt
+ * some debugging...
+ *
  * Revision 1.6  2004/08/11 09:31:54  skt
  * ASMRAPrintCluster bug fixed
  *
@@ -45,12 +48,13 @@
 #define NEW_INFO
 
 #include "dbug.h"
-
+#include <limits.h> /* for INT_MAX */
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
 #include "assignments_rearrange.h"
+#include "create_dataflowgraph.h"
 #include "print.h"
 #include "multithread.h"
 
@@ -90,9 +94,6 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    if (INFO_ASMRA_NEXT (info) != NULL) {
-        info = FreeInfo (info);
-    }
     info = Free (info);
 
     DBUG_RETURN (info);
@@ -153,9 +154,19 @@ ASMRAblock (node *arg_node, info *arg_info)
     DBUG_ENTER ("ASMRAblock");
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_block), "node is not a N_block");
 
+#if ASMRA_DEBUG
+    fprintf (stdout, "before");
+    PrintNode (arg_node);
+#endif
+
     if (NODE_TYPE (BLOCK_INSTR (arg_node)) == N_assign) {
         arg_node = ASMRACreateNewAssignmentOrder (arg_node);
     }
+
+#if ASMRA_DEBUG
+    fprintf (stdout, "after:\n");
+    PrintNode (arg_node);
+#endif
 
     /* continue traversal */
     DBUG_PRINT ("ASMRA", ("trav into instruction(s)"));
@@ -242,23 +253,27 @@ ASMRABuildCluster (node *graph, int execmode)
 {
     node *nextnode;
     struct asmra_cluster_s *result;
+    struct asmra_cluster_s *result_part;
     bool node_added;
     DBUG_ENTER ("ASMRABuildCluster");
 
-    nextnode = ASMRAFindElement (graph, execmode);
     result = NULL;
-
-    do {
-        node_added = FALSE;
-        while (nextnode != NULL) {
-            result = ASMRAClusterAdd (result, nextnode);
-            node_added = TRUE;
-            nextnode = ASMRAFindElement (graph, execmode);
-        }
-
-        ASMRAPrintCluster (result);
-        result = ASMRAClusterRefUpdate (result);
-    } while ((execmode != MUTH_MULTI) && (node_added == TRUE));
+    result_part = NULL;
+    /*  do {*/
+    nextnode = ASMRAFindElement (graph, execmode);
+    node_added = FALSE;
+    while (nextnode != NULL) {
+        result_part = ASMRAClusterAdd (result_part, nextnode);
+        nextnode = ASMRAFindElement (graph, execmode);
+    }
+    if (result_part != NULL) {
+        result_part = ASMRAClusterRefUpdate (result_part);
+        result = ASMRAClusterMerge (result, result_part);
+        result_part = NULL;
+        node_added = TRUE;
+    }
+    /*}
+      while((node_added == TRUE) && (execmode != MUTH_MULTI));*/
 
     DBUG_RETURN (result);
 }
@@ -286,7 +301,6 @@ ASMRAFindElement (node *graph, int execmode)
 
             /* set the executionmode of the result
              * (important for ASMRADissolveCLuster) */
-            DATAFLOWNODE_EXECMODE (result) = execmode;
             DATAFLOWNODE_USED (result) = TRUE;
             member_iterator = NULL;
         } else {
@@ -303,18 +317,31 @@ ASMRADissolveAllCluster (struct asmra_list_s *list)
     struct asmra_cluster_s *act_cluster;
     node *act_node;
 
+#if ASMRA_DEBUG
+    int counter = 0;
+#endif
+
     DBUG_ENTER ("ASMRADissolveAllCluster");
     list_of_dfn = NULL;
     act_node = NULL;
     iterator = list;
 
-    while (ASMRA_LIST_ELEMENT (iterator) != NULL) {
+    while (iterator != NULL) {
         act_cluster = ASMRA_LIST_ELEMENT (iterator);
         act_cluster = ASMRACalculateDistances (act_cluster, iterator);
 
+#if ASMRA_DEBUG
+        fprintf (stdout, " cluster no. %i:\n", ++counter);
+        ASMRAPrintCluster (act_cluster);
+        fprintf (stdout, "\n\n");
+#endif
+
         act_node = ASMRAGetNodeWithLowestDistance (act_cluster);
+
         while (act_node != NULL) {
+            DATAFLOWNODE_USED (act_node) = FALSE;
             list_of_dfn = ASMRAListAppend (list_of_dfn, act_node);
+
             act_node = ASMRAGetNodeWithLowestDistance (act_cluster);
         }
 
@@ -332,24 +359,34 @@ ASMRACalculateDistances (struct asmra_cluster_s *cluster, struct asmra_list_s *l
 {
     struct asmra_cluster_s *act_member;
     struct asmra_list_s *list_iterator;
+    bool found_dep;
+    nodelist *dependent_nodes;
 
     DBUG_ENTER ("ASMRACalculateDistances");
 
     act_member = cluster;
 
-    while (act_member != NULL) {
-        ASMRA_CLUSTER_DISTANCE (act_member) = 0;
-        list_iterator = list;
-        while ((list_iterator != NULL)
-               && (ASMRAFoundDependent (DATAFLOWNODE_DEPENDENT (
-                                          ASMRA_CLUSTER_DFN (act_member)),
-                                        ASMRA_LIST_ELEMENT (list_iterator))
-                   == FALSE))
-            ;
-        {
+    /* is impossible to calculate a distance to someone without someone */
+    if (list != NULL) {
+        /* is impossible to calculate a distance from someone without someone */
+        while (act_member != NULL) {
 
-            list_iterator = ASMRA_LIST_NEXT (list_iterator);
-            ASMRA_CLUSTER_DISTANCE (act_member)++;
+            ASMRA_CLUSTER_DISTANCE (act_member) = 0;
+            list_iterator = list;
+            dependent_nodes = DATAFLOWNODE_DEPENDENT (ASMRA_CLUSTER_DFN (act_member));
+
+            while (list_iterator != NULL) {
+                found_dep = ASMRAFoundDependent (dependent_nodes,
+                                                 ASMRA_LIST_ELEMENT (list_iterator));
+                if (found_dep == FALSE) {
+                    ASMRA_CLUSTER_DISTANCE (act_member)++;
+                    list_iterator = ASMRA_LIST_NEXT (list_iterator);
+                } else {
+                    list_iterator = NULL;
+                }
+            }
+
+            act_member = ASMRA_CLUSTER_NEXT (act_member);
         }
     }
     DBUG_RETURN (cluster);
@@ -378,11 +415,11 @@ ASMRAIsInCluster (node *dfn, struct asmra_cluster_s *search_area)
     DBUG_ENTER ("ASMRAIsInCluster");
     result = FALSE;
 
-    while (search_area != NULL) {
+    while ((search_area != NULL) && (result == FALSE)) {
         if (dfn == ASMRA_CLUSTER_DFN (search_area)) {
             result = TRUE;
-            search_area = NULL;
         }
+        search_area = ASMRA_CLUSTER_NEXT (search_area);
     }
 
     DBUG_RETURN (result);
@@ -396,19 +433,22 @@ ASMRAGetNodeWithLowestDistance (struct asmra_cluster_s *act_cluster)
     struct asmra_cluster_s *iterator;
     DBUG_ENTER ("ASMRAGetNodeWithLowestDistance");
 
+    result = NULL;
     iterator = act_cluster;
-    if (iterator != NULL) {
-        result = ASMRA_CLUSTER_DFN (iterator);
-        lowest_distance = ASMRA_CLUSTER_DISTANCE (iterator);
-        iterator = ASMRA_CLUSTER_NEXT (iterator);
-    }
+    lowest_distance = INT_MAX;
 
     while (iterator != NULL) {
-        if (ASMRA_CLUSTER_DISTANCE (iterator) < lowest_distance) {
-            lowest_distance = ASMRA_CLUSTER_DISTANCE (iterator);
+        if ((DATAFLOWNODE_USED (ASMRA_CLUSTER_DFN (iterator)) == TRUE)
+            && (ASMRA_CLUSTER_DISTANCE (iterator) < lowest_distance)) {
             result = ASMRA_CLUSTER_DFN (iterator);
+            lowest_distance = ASMRA_CLUSTER_DISTANCE (iterator);
         }
         iterator = ASMRA_CLUSTER_NEXT (iterator);
+    }
+    /* mark the result node as "used" - caution, this is a inversion of the
+     * original intention */
+    if (result != NULL) {
+        DATAFLOWNODE_USED (result) = FALSE;
     }
 
     DBUG_RETURN (result);
@@ -418,21 +458,29 @@ node *
 ASMRABuildNewAssignmentChain (struct asmra_list_s *list_of_dfn, node *arg_node)
 {
     struct asmra_list_s *list_iterator;
+    node *act_dfn;
     node *act_assign, *last_assign;
     DBUG_ENTER ("ASMRABuildNewAssignmentChain");
 
     list_iterator = list_of_dfn;
-    act_assign = ASMRA_LIST_ELEMENT (list_iterator);
+    act_dfn = ASMRA_LIST_ELEMENT (list_iterator);
+    act_assign = DATAFLOWNODE_ASSIGN (act_dfn);
+    /*PrintNode(DATAFLOWNODE_ASSIGN(act_assign));*/
     BLOCK_INSTR (arg_node) = act_assign;
 
     list_iterator = ASMRA_LIST_NEXT (list_iterator);
 
     while (list_iterator != NULL) {
+
         last_assign = act_assign;
-        act_assign = ASMRA_LIST_ELEMENT (list_iterator);
+        act_dfn = ASMRA_LIST_ELEMENT (list_iterator);
+        act_assign = DATAFLOWNODE_ASSIGN (act_dfn);
+
+        /*PrintNode(act_assign);*/
         ASSIGN_NEXT (last_assign) = act_assign;
         list_iterator = ASMRA_LIST_NEXT (list_iterator);
     }
+    ASSIGN_NEXT (act_assign) = NULL;
 
     list_of_dfn = ASMRAFreeList (list_of_dfn);
     DBUG_RETURN (arg_node);
@@ -462,8 +510,7 @@ ASMRAFreeCluster (struct asmra_cluster_s *cluster)
     if (ASMRA_CLUSTER_NEXT (cluster) != NULL) {
         ASMRA_CLUSTER_NEXT (cluster) = ASMRAFreeCluster (ASMRA_CLUSTER_NEXT (cluster));
     }
-    free (ASMRA_CLUSTER_DFN (cluster));
-    free (ASMRA_CLUSTER_NEXT (cluster));
+    cluster = Free (cluster);
 
     return cluster;
 }
@@ -480,6 +527,26 @@ ASMRAClusterAdd (struct asmra_cluster_s *cluster, node *dfn)
 }
 
 struct asmra_cluster_s *
+ASMRAClusterMerge (struct asmra_cluster_s *cluster_1, struct asmra_cluster_s *cluster_2)
+{
+    struct asmra_cluster_s *tmp;
+    DBUG_ENTER ("ASMRAClusterMerge");
+
+    if (cluster_1 == NULL) {
+        cluster_1 = cluster_2;
+    } else {
+        tmp = cluster_1;
+        do {
+            tmp = ASMRA_CLUSTER_NEXT (tmp);
+        } while (ASMRA_CLUSTER_NEXT (tmp) != NULL);
+
+        ASMRA_CLUSTER_NEXT (tmp) = cluster_2;
+    }
+
+    DBUG_RETURN (cluster_1);
+}
+
+struct asmra_cluster_s *
 ASMRAClusterRefUpdate (struct asmra_cluster_s *cluster)
 {
     struct asmra_cluster_s *tmp;
@@ -491,8 +558,7 @@ ASMRAClusterRefUpdate (struct asmra_cluster_s *cluster)
         /* update the reflefts in the member of the cluster */
         DATAFLOWNODE_REFLEFT (ASMRA_CLUSTER_DFN (tmp))--;
 
-        /* update the re#define DATAFLOWNODE_USED(n)          ((bool)(n->varno))flefts in
-         * its dependent nodes */
+        /* update the reflefts in its dependent nodes */
         dependent_iterator = DATAFLOWNODE_DEPENDENT (ASMRA_CLUSTER_DFN (tmp));
         while (dependent_iterator != NULL) {
             DATAFLOWNODE_REFLEFT (NODELIST_NODE (dependent_iterator))--;
@@ -510,8 +576,13 @@ ASMRAPrintCluster (struct asmra_cluster_s *cluster)
     DBUG_ENTER ("ASMRAPrintCluster");
 
     if (cluster != NULL) {
-        fprintf (stdout, "%s,", DATAFLOWNODE_NAME (ASMRA_CLUSTER_DFN (cluster)));
+        fprintf (stdout, "%s dist:%i execm:%s; ",
+                 DATAFLOWNODE_NAME (ASMRA_CLUSTER_DFN (cluster)),
+                 ASMRA_CLUSTER_DISTANCE (cluster),
+                 MUTHDecodeExecmode (
+                   DATAFLOWNODE_EXECMODE (ASMRA_CLUSTER_DFN (cluster))));
         ASMRAPrintCluster (ASMRA_CLUSTER_NEXT (cluster));
+        fflush (stdout);
     }
     DBUG_VOID_RETURN;
 }
@@ -536,10 +607,9 @@ ASMRAFreeList (struct asmra_list_s *list)
     DBUG_ENTER ("ASMRAFreeList");
 
     if (ASMRA_LIST_NEXT (list) != NULL) {
-        ASMRA_LIST_NEXT (list) = ASMRAFreeList (ASMRA_LIST_NEXT (list));
+        list = ASMRAFreeList (ASMRA_LIST_NEXT (list));
     }
-    free (ASMRA_LIST_ELEMENT (list));
-    free (ASMRA_LIST_NEXT (list));
+    list = Free (list);
 
     return list;
 }
@@ -569,7 +639,7 @@ node *
 ASMRAPrepareDataflowgraph (node *graph)
 {
     nodelist *iter;
-    DBUG_ENTER ("ASMRAPrepareDAtaflowgraph");
+    DBUG_ENTER ("ASMRAPrepareDataflowgraph");
     DBUG_ASSERT ((NODE_TYPE (graph) == N_dataflowgraph), "N_dataflowgraph expected");
 
     iter = DATAFLOWGRAPH_MEMBERS (graph);
