@@ -1,6 +1,10 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.2  2004/07/31 16:16:57  sah
+  added support for flags and moved to memory saving attribute
+  structure.
+
   Revision 1.1  2004/07/11 18:22:03  sah
   Initial revision
 
@@ -23,6 +27,12 @@ version="1.0">
   <xsl:value-of select="'&quot;);'"/>
   <!-- allocate new node this -->
   <xsl:value-of select="'node *this = Malloc(sizeof(node));'"/>
+  <!-- allocate the attrib structure -->
+  <xsl:value-of select="'this->attribs.N_'"/>
+  <xsl:value-of select="@name"/>
+  <xsl:value-of select="' = Malloc(sizeof(AttribS_N_'"/>
+  <xsl:value-of select="@name"/>
+  <xsl:value-of select="'));'"/>
   <!-- assign sons and attributes a value -->
   <xsl:apply-templates select="sons/son" mode="make-body"/>
   <xsl:apply-templates select="attributes/attribute" mode="make-body"/>

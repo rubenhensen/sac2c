@@ -1,6 +1,10 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.2  2004/07/31 16:16:57  sah
+  added support for flags and moved to memory saving attribute
+  structure.
+
   Revision 1.1  2004/07/03 15:14:25  sah
   Initial revision
 
@@ -56,10 +60,11 @@
     <xsl:value-of select="'struct AttribS_N_'"/>
     <xsl:value-of select="concat( @name, '{ ')"/>
     <xsl:apply-templates select="attributes/attribute" mode="generate-attrib-structs"/>
+    <xsl:apply-templates select="flags" mode="generate-attrib-structs"/>
     <xsl:value-of select="' } ;'"/>
   </xsl:template>
 
-  <!-- generate an entry within the attribute structure -->
+  <!-- generate an entry for an attribute within the attribute structure -->
   <xsl:template match="attribute" mode="generate-attrib-structs">
     <xsl:value-of select="//attributetypes/type[@name = current()/type/@name]/@ctype"/>
     <xsl:value-of select="' '"/>
@@ -72,12 +77,17 @@
     <xsl:value-of select="'; '"/>
   </xsl:template>
 
+  <!-- generate the fields required for a flag -->
+  <xsl:template match="flags[flag]" mode="generate-attrib-structs">
+    <xsl:value-of select="'long _flags; long _dbug_flags; '"/>
+  </xsl:template>
+
   <!-- this template starts generation of the attribstruct union -->
   <xsl:template match="syntaxtree" mode="generate-attrib-union">
     <xsl:text>
 /*****************************************************************************
  * This union handles all different types of attributes. Its members are
- * called nodename.
+ * called N_nodename.
  ****************************************************************************/
     </xsl:text>
     <xsl:value-of select="'union AttribUnion { '"/>
@@ -88,7 +98,7 @@
   <!-- generate an entry for each node within the union -->
   <xsl:template match="node" mode="generate-attrib-union">
     <xsl:value-of select="'struct AttribS_N_'"/>
-    <xsl:value-of select="concat( @name, ' N_')"/>
+    <xsl:value-of select="concat( @name, ' *N_')"/>
     <xsl:value-of select="concat( @name, '; ')"/>
   </xsl:template>
 </xsl:stylesheet>

@@ -1,6 +1,10 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.2  2004/07/31 16:16:57  sah
+  added support for flags and moved to memory saving attribute
+  structure.
+
   Revision 1.1  2004/07/11 18:21:13  sah
   Initial revision
 
@@ -47,7 +51,7 @@ version="1.0">
   </xsl:if>
   <xsl:value-of select="') n->attribs.N_'"/> 
   <xsl:value-of select="../../@name"/>
-  <xsl:value-of select="'.'"/>
+  <xsl:value-of select="'->'"/>
   <xsl:value-of select="@name"/>
   <!-- if the attribute is an array, we need to add the index to the macro -->
   <xsl:if test="//attributetypes/type[@name = current()/type/@name]/@size" >

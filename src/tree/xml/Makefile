@@ -1,6 +1,10 @@
 #
 #
 # $Log$
+# Revision 1.3  2004/07/31 16:16:57  sah
+# added support for flags and moved to memory saving attribute
+# structure.
+#
 # Revision 1.2  2004/07/15 00:08:34  sah
 # modularized the xslt scripts
 #
@@ -38,7 +42,8 @@ all: $(TARGETS)
 	| $(CODE_BEAUTIFIER) >$@
 
 ../node_basic.h: ast.xml ast2node_basic_h.xsl common-c-code.xsl \
-                 common-make-head.xsl
+                 common-make-head.xsl common-flag-defines.xsl \
+                 common-accessor-macros.xsl
 	$(XSLTENGINE) ast2node_basic_h.xsl ast.xml \
 	| $(CODE_BEAUTIFIER) >$@
                                                                                 

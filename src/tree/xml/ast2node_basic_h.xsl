@@ -1,6 +1,10 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.3  2004/07/31 16:16:57  sah
+  added support for flags and moved to memory saving attribute
+  structure.
+
   Revision 1.2  2004/07/11 18:24:57  sah
   modularizes the templates
   added support for default values and init values
@@ -15,6 +19,7 @@ version="1.0">
 
 <xsl:import href="common-accessor-macros.xsl"/>
 <xsl:import href="common-make-head.xsl"/>
+<xsl:import href="common-flag-defines.xsl"/>
 
 <xsl:output method="text" indent="no"/>
 <xsl:strip-space elements="*"/>
@@ -61,6 +66,7 @@ version="1.0">
   </xsl:text>
   <xsl:apply-templates select="sons/son" mode="accessor-macros"/>
   <xsl:apply-templates select="attributes/attribute" mode="accessor-macros"/>
+  <xsl:apply-templates select="flags" mode="flag-defines"/>
   <xsl:apply-templates select="." mode="make-head"/>
 </xsl:template>
 
