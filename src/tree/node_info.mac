@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.182  2004/08/09 03:47:34  skt
+ * kicked CDFGcond and CDFGwith2, added TravNone instead CDFGreturn
+ *
  * Revision 3.181  2004/08/08 15:47:55  ktr
  * PREC1prf added.
  *
@@ -1804,7 +1807,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 0),
 
   NIF (N_return, "N_return", TravSons, FltnReturn, PrintReturn, TCreturn, TravSons,
-       TravSons, TravSons, FreeReturn, TravSons, TravSons, EMRCreturn, TravSons,
+       TravSons, TravNone, FreeReturn, TravSons, TravSons, EMRCreturn, TravSons,
        DupReturn, TravSons, TravSons, TravSons, IdxReturn, TravSons, TravSons, TravSons,
 
        PrintReturn, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
@@ -1889,7 +1892,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 2),
 
   NIF (N_cond, "N_cond", TravSons, FltnCond, PrintCond, TCcond, GNMcond, TravSons,
-       CDFGblock, FreeCond, TravSons, RCcond, EMRCcond, TravSons, DupCond, TravSons,
+       TravSons, FreeCond, TravSons, RCcond, EMRCcond, TravSons, DupCond, TravSons,
        TravSons, TravSons, IdxCond, TravSons, TravSons, AEcond,
 
        PrintCond, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, UNQcond,
@@ -2457,8 +2460,8 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
    */
 
   NIF (N_nwith2, "N_nwith2", TravSons, TravSons, PrintNwith2, TravSons, GNMwith2,
-       TravSons, CDFGwith2, FreeNwith2, TravSons, RCNwith, EMRCNwith2, TravSons,
-       DupNwith2, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, FreeNwith2, TravSons, RCNwith, EMRCNwith2, TravSons, DupNwith2,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
