@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2004/10/21 16:22:07  ktr
+ * Added support for static reuse.
+ *
  * Revision 1.2  2004/10/11 14:49:27  ktr
  * alloc/with/inc_rc combinations are now treated as well.
  *
@@ -22,6 +25,7 @@ extern node *EMRCORefCountOpt (node *syntax_tree);
 
 extern node *EMRCOassign (node *arg_node, info *arg_info);
 extern node *EMRCOblock (node *arg_node, info *arg_info);
+extern node *EMRCOfundef (node *arg_node, info *arg_info);
 extern node *EMRCOlet (node *arg_node, info *arg_info);
 extern node *EMRCOprf (node *arg_node, info *arg_info);
 extern node *EMRCOwithop (node *arg_node, info *arg_info);

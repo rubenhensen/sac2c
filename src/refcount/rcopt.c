@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2004/10/21 16:22:07  ktr
+ * Added support for static reuse.
+ *
  * Revision 1.2  2004/10/11 14:49:27  ktr
  * alloc/with/inc_rc combinations are now treated as well.
  *
@@ -34,6 +37,7 @@
 #include "dbug.h"
 #include "print.h"
 #include "LookUpTable.h"
+#include "DataFlowMask.h"
 
 /**
  * INFO structure
@@ -46,6 +50,7 @@ struct INFO {
     node *nextexpr;
     ids *lhs;
     LUT_t filllut;
+    DFMmask_t reusemask;
 };
 
 /**
@@ -58,6 +63,7 @@ struct INFO {
 #define INFO_RCO_NEXTEXPR(n) (n->nextexpr)
 #define INFO_RCO_LHS(n) (n->lhs)
 #define INFO_RCO_FILLLUT(n) (n->filllut)
+#define INFO_RCO_REUSEMASK(n) (n->reusemask)
 
 /**
  * INFO functions
@@ -78,6 +84,7 @@ MakeInfo ()
     INFO_RCO_NEXTEXPR (result) = NULL;
     INFO_RCO_LHS (result) = NULL;
     INFO_RCO_FILLLUT (result) = NULL;
+    INFO_RCO_REUSEMASK (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -233,6 +240,43 @@ EMRCOblock (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *EMRCOfundef(node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ * @param arg_node
+ * @param arg_info
+ *
+ * @return arg_node
+ *
+ *****************************************************************************/
+node *
+EMRCOfundef (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("EMRCOfundef");
+
+    if (FUNDEF_BODY (arg_node) != NULL) {
+        DFMmask_base_t maskbase
+          = DFMGenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDEC (arg_node));
+
+        INFO_RCO_REUSEMASK (arg_info) = DFMGenMaskClear (maskbase);
+
+        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+
+        INFO_RCO_REUSEMASK (arg_info) = DFMRemoveMask (INFO_RCO_REUSEMASK (arg_info));
+
+        maskbase = DFMRemoveMaskBase (maskbase);
+    }
+
+    if (FUNDEF_NEXT (arg_node) != NULL) {
+        FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *EMRCOlet(node *arg_node, info *arg_info)
  *
  * @brief
@@ -284,12 +328,34 @@ EMRCOprf (node *arg_node, info *arg_info)
         node *avis;
 
         switch (PRF_PRF (arg_node)) {
+        case F_reuse:
+            /*
+             * Add reused variable to REUSEMASK
+             */
+            DFMSetMaskEntrySet (INFO_RCO_REUSEMASK (arg_info), NULL,
+                                ID_VARDEC (PRF_ARG2 (arg_node)));
+
+            /*
+             * This node must be revisited in bottom-up traversal
+             */
+            INFO_RCO_SECONDTRAV (arg_info) = TRUE;
+            break;
+
         case F_alloc:
         case F_alloc_or_reuse:
             /*
              * This node must be revisited in bottom-up traversal
              */
             INFO_RCO_SECONDTRAV (arg_info) = TRUE;
+            break;
+
+        case F_dec_rc:
+            if (DFMTestMaskEntry (INFO_RCO_REUSEMASK (arg_info), NULL,
+                                  ID_VARDEC (PRF_ARG1 (arg_node)))) {
+                DBUG_PRINT ("EMRCO", ("dec_rc removed because of static reuse!"));
+
+                INFO_RCO_REMASSIGN (arg_info) = TRUE;
+            }
             break;
 
         case F_inc_rc:
@@ -328,6 +394,7 @@ EMRCOprf (node *arg_node, info *arg_info)
             switch (PRF_PRF (arg_node)) {
             case F_alloc:
             case F_alloc_or_reuse:
+            case F_reuse:
                 if ((PRF_PRF (prf) == F_dec_rc)
                     && (ID_AVIS (PRF_ARG1 (prf)) == IDS_AVIS (INFO_RCO_LHS (arg_info)))
                     && (NUM_VAL (PRF_ARG1 (arg_node)) == NUM_VAL (PRF_ARG2 (prf)))) {
