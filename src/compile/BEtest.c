@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/05/12 14:39:05  cg
+ * NO_TRACE renamed to TRACE_NONE
+ *
  * Revision 2.1  1999/02/23 12:42:18  sacbase
  * new release made
  *
@@ -76,7 +79,7 @@ MAIN
      */
     check_boundary = 0;
     outfile = stdout;
-    traceflag = NO_TRACE;
+    traceflag = TRACE_NONE;
     print_objdef_for_header_file = 0;
     indent = 0;
 
@@ -114,3 +117,5 @@ MAIN
 
     return (0);
 }
+
+ÿ
