@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.3  2000/12/08 15:21:10  dkr
+# include path extended
+#
 # Revision 3.2  2000/12/06 20:09:08  dkr
 # make deps done
 #
@@ -74,7 +77,7 @@ CCFLAGS   := -ansi -Wall -g -DSAC_FOR_$(OS)
 CFLAGS    := -D__EXTENSIONS__
 
 INCS= -I../global -I../tree -I../../inc -I../optimize -I../typecheck -I../refcount \
-      -I../print -I../compile
+      -I../flatten -I../print -I../compile
 
 all: concurrent.o spmd_init.o spmd_opt.o spmd_lift.o sync_init.o \
      sync_opt.o schedule.o spmd_trav.o spmd_cons.o concurrent_lib.o
