@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.238  2004/11/23 12:58:16  ktr
+ * invalid storage specifier removed.
+ *
  * Revision 3.237  2004/11/23 10:30:03  sah
  * SaC DevCamp DK
  *
@@ -73,7 +76,7 @@
  ***
  ***/
 
-extern shpseg *TBmakeShpseg (static node *num);
+extern shpseg *TBmakeShpseg (node *num);
 
 #define SHPSEG_ELEMS(s) (s->shp)
 #define SHPSEG_SHAPE(s, x) (SHPSEG_ELEMS (s)[x])
