@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.75  1998/06/08 08:57:34  cg
+ * handling of attribute ARRAY_TYPE corrected.
+ *
  * Revision 1.74  1998/05/30 15:41:43  dkr
  * added some ICM_INDENT cases
  *
@@ -276,6 +279,10 @@ char *prf_name_str[] = {
         int i;                                                                           \
         ALLOCATE (v, node);                                                              \
         v->info.id = NULL;                                                               \
+        v->info.ids = NULL;                                                              \
+        v->info.types = NULL;                                                            \
+        v->info.fun_name.id = NULL;                                                      \
+        v->info.fun_name.id_mod = NULL;                                                  \
         v->refcnt = 0;                                                                   \
         v->flag = 0;                                                                     \
         v->varno = 0;                                                                    \
@@ -1100,6 +1107,8 @@ MakeArray (node *aelems)
     NODE_TYPE (tmp) = N_array;
 
     ARRAY_AELEMS (tmp) = aelems;
+
+    ARRAY_TYPE (tmp) = NULL;
 
     DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
                              mdb_nodetype[NODE_TYPE (tmp)], tmp));

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.69  1998/06/08 08:57:34  cg
+ * handling of attribute ARRAY_TYPE corrected.
+ *
  * Revision 1.68  1998/06/04 16:57:07  cg
  * information about refcounted variables in the context of loops,
  * conditionals and the old with-loop are now stored in ids-chains
@@ -1270,7 +1273,10 @@ FreeArray (node *arg_node, node *arg_info)
     DBUG_PRINT ("FREE", ("Removing contents of N_array node ..."));
 
     FREETRAV (ARRAY_AELEMS (arg_node));
-    FreeOneTypes (ARRAY_TYPE (arg_node));
+
+    if (ARRAY_TYPE (arg_node) != NULL) {
+        FreeOneTypes (ARRAY_TYPE (arg_node));
+    }
 
     DBUG_PRINT ("FREE", ("Removing N_array node ..."));
 
