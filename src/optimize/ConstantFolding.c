@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.36  2000/06/23 13:54:38  dkr
+ * nodewtype N_with removed
+ *
  * Revision 2.35  2000/06/13 12:23:54  dkr
  * function for old with-loop removed
  *
@@ -871,7 +874,6 @@ CFid (node *arg_node, node *arg_info)
             break;
         case N_prf:
         case N_ap:
-        case N_with:
         case N_Nwith:
         case N_Npart: /* index vars point to this node. */
             break;
