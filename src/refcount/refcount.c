@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.32  1998/02/10 14:58:50  dkr
+ * bugfix in RCNpart()
+ *
  * Revision 1.31  1998/02/09 17:41:31  dkr
  * declaration of function GenerateMasks is now taken from optimize.h
  *
@@ -143,15 +146,13 @@
 #include "refcount.h"
 
 #define DUB_ID_NODE(a, b)                                                                \
-    a = MakeNode (N_id);                                                                 \
-    a->info.ids = MakeIds (StringCopy (b->info.ids->id), NULL, ST_regular);              \
+    a = MakeId (StringCopy (ID_NAME (b)), NULL, ST_regular);                             \
     ID_VARDEC (a) = ID_VARDEC (b)
 
 #define VAR_DEC_2_ID_NODE(a, b)                                                          \
-    a = MakeNode (N_id);                                                                 \
-    a->info.ids = MakeIds (StringCopy (b->info.types->id), NULL, ST_regular);            \
+    a = MakeId (StringCopy (VARDEC_NAME (b)), NULL, ST_regular);                         \
     ID_VARDEC (a) = b;                                                                   \
-    ID_REFCNT (a) = b->refcnt;
+    ID_REFCNT (a) = VARDEC_REFCNT (b);
 
 #define MUST_REFCOUNT(type) (IsArray (type) || IsNonUniqueHidden (type))
 
@@ -1140,28 +1141,25 @@ RCwith (node *arg_node, node *arg_info)
 
     with_dump = Store ();
 
-    used_mask = arg_node->mask[1]; /* mask of used variables */
-    new_info = MakeNode (N_info);
-    /* store refcounts of variables that are used before they will be defined in
-     * a with_loop in new_info.
+    used_mask = WITH_MASK (arg_node, 1); /* mask of variables that are used in body */
+    WITH_USEDVARS (arg_node) = MakeInfo ();
+    /* store refcounts of variables that are used in body before they will be defined in
+     * a with_loop in WITH_USEDVARS(arg_node).
      */
     for (i = 0; i < varno; i++)
         if (used_mask[i] > 0) {
             var_dec = FindVarDec (i);
             DBUG_ASSERT ((NULL != var_dec), "variable not found");
             if (MUST_REFCOUNT (VARDEC_TYPE (var_dec)))
-                if (0 < var_dec->refcnt) {
-                    /* store refcount of used variables in new_info->node[0]
-                     */
-
+                if (0 < VARDEC_REFCNT (var_dec)) {
+                    /* store refcount of used variables in WITH_USEDVARS() */
                     VAR_DEC_2_ID_NODE (id_node, var_dec);
-                    id_node->node[0] = new_info->node[0];
-                    new_info->node[0] = id_node;
+                    id_node->node[0] = WITH_USEDVARS (arg_node)->node[0];
+                    WITH_USEDVARS (arg_node)->node[0] = id_node;
                     DBUG_PRINT ("RC", ("store used variables %s:%d", ID_NAME (id_node),
                                        ID_REFCNT (id_node)));
                 }
         }
-    arg_node->node[2] = new_info;
 
     /* now increase refcount of variables that are used before they will be
      * defined in a with_loop.
@@ -1258,7 +1256,6 @@ RCNwith (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("RCNwith");
 
-    NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
     NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
@@ -1278,7 +1275,10 @@ RCNwith (node *arg_node, node *arg_info)
 node *
 RCNpart (node *arg_node, node *arg_info)
 {
-    int *ref_dump, *with_dump, indexvec_varno, modarray_varno, i;
+    int *ref_dump, *with_dump, i;
+#if 0
+  long *used_mask;
+#endif
     node *var_dec;
 
     DBUG_ENTER ("RCNpart");
@@ -1292,24 +1292,36 @@ RCNpart (node *arg_node, node *arg_info)
     with_dump = Store (); /* store refcounts of with-loop */
 
 #if 0
-  indexvec_varno=IDS_VARNO(NWITHID_VEC(PART_IDX(arg_node)));
-  if (N_modarray == WITH_OPERATOR(arg_node)->nodetype) {
-    DBUG_ASSERT(N_id == MODARRAY_ARRAY(WITH_OPERATOR(arg_node))->nodetype,
-                "wrong nodetype != N_id");
-    modarray_varno=VARDEC_VARNO(ID_VARDEC(MODARRAY_ARRAY(WITH_OPERATOR(arg_node))));
-  }
-  else
-    modarray_varno=-1;
+  /*
+   * store refcounts of variables that are used in body before they will be defined in
+   * a with_loop in NPART_USEDVARS(arg_node).
+   */
+  used_mask=NPART_MASK(arg_node, 1);       /* mask of variables that are used in body */
+  NPART_USEDVARS(arg_node) = MakeInfo();
+  for (i=0; i<varno; i++)
+    if (used_mask[i] > 0) {
+      var_dec=FindVarDec(i);
+      DBUG_ASSERT((NULL!=var_dec),"variable not found");
+      if (0 < VARDEC_REFCNT(var_dec)) {
+        /* store refcount of used variables in NPART_USEDVARS() */
+        VAR_DEC_2_ID_NODE(id_node, var_dec);
+        id_node->node[0]= NPART_USEDVARS(arg_node)->node[0];
+        NPART_USEDVARS(arg_node)->node[0]=id_node;
+        DBUG_PRINT("RC",("store used variables %s:%d",
+                         ID_NAME(id_node), ID_REFCNT(id_node)));
+      }
+    }
 #endif
+
     /*
      * increase refcount of variables that are used in with-loop before they will be
      * defined
      */
     for (i = 0; i < varno; i++) {
-        if ((with_dump[i] > 0) && (i != indexvec_varno) && (i != modarray_varno)) {
+        if (with_dump[i] > 0) {
             var_dec = FindVarDec (i);
-            DBUG_ASSERT ((NULL != var_dec), "var not found");
-            if (0 < var_dec->refcnt) {
+            DBUG_ASSERT ((NULL != var_dec), "variable not found");
+            if (0 < VARDEC_REFCNT (var_dec)) {
                 ref_dump[i]++;
                 DBUG_PRINT ("RC", ("set refcount of %s to %d:", var_dec->info.types->id,
                                    ref_dump[i]));
@@ -1362,8 +1374,10 @@ RCNgen (node *arg_node, node *arg_info)
 
     NGEN_BOUND1 (arg_node) = Trav (NGEN_BOUND1 (arg_node), arg_info);
     NGEN_BOUND2 (arg_node) = Trav (NGEN_BOUND2 (arg_node), arg_info);
-    NGEN_STEP (arg_node) = Trav (NGEN_STEP (arg_node), arg_info);
-    NGEN_WIDTH (arg_node) = Trav (NGEN_WIDTH (arg_node), arg_info);
+    if (NGEN_STEP (arg_node) != NULL)
+        NGEN_STEP (arg_node) = Trav (NGEN_STEP (arg_node), arg_info);
+    if (NGEN_WIDTH (arg_node) != NULL)
+        NGEN_WIDTH (arg_node) = Trav (NGEN_WIDTH (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
