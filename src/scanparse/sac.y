@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.25  1994/12/14 10:09:04  sbs
+ * Revision 1.26  1994/12/14 12:42:08  hw
+ * error fixed in rule 'fundef2'
+ *
+ * Revision 1.25  1994/12/14  10:09:04  sbs
  * modul, imports and typedefs inserted;
  * typedeclarations with user defined types
  * are not yet possible:-(
@@ -285,9 +288,14 @@ fundefs: fundef fundefs { $1->node[1]=$2;
 	| main {$$=$1;}
 	;
 
-fundef: types fundef2 {$$=$2;
-                       $$->info.types=$1;          /*  Typ der Funktion */
-                      }
+fundef: types fundef2 
+        {
+           id *function_name;
+           $$=$2;
+           function_name=$2->info.id;
+           $$->info.types=$1;          /*  Typ der Funktion */
+           $$->info.types->id=function_name;
+        }
 	| types INLINE {warn("inline not yet implemented!");} fundef2
             {$$=$4;
              $$->info.types=$1;          /*  Typ der Funktion */
@@ -298,11 +306,12 @@ fundef2: ID BRACKET_L args BRACKET_R  {$$=MakeNode(N_fundef);}   exprblock
             $$=$<node>5;
             $$->node[0]=$6;             /* Funktionsrumpf  */
             $$->node[2]=$3;             /* Funktionsargumente */
+            $$->info.id=$1;      /* name of function */
             $$->nnode=2;
          
             DBUG_PRINT("GENTREE",
                        ("%s:"P_FORMAT" Id: %s , %s"P_FORMAT" %s," P_FORMAT,
-                        mdb_nodetype[ $$->nodetype ], $$, $$->info.types->id,
+                        mdb_nodetype[ $$->nodetype ], $$, $$->info.id,
                         mdb_nodetype[ $$->node[0]->nodetype ], $$->node[0],
                         mdb_nodetype[ $$->node[2]->nodetype ], $$->node[2]));
           }
@@ -311,11 +320,12 @@ fundef2: ID BRACKET_L args BRACKET_R  {$$=MakeNode(N_fundef);}   exprblock
           { 
             $$=$<node>4;
             $$->node[0]=$5;             /* Funktionsrumpf  */
+            $$->info.id=$1;      /* name of function */
             $$->nnode=1;
          
             DBUG_PRINT("GENTREE",
                        ("%s:"P_FORMAT" Id: %s , %s"P_FORMAT,
-                        mdb_nodetype[ $$->nodetype ], $$, $$->info.types->id,
+                        mdb_nodetype[ $$->nodetype ], $$, $$->info.id,
                         mdb_nodetype[ $$->node[0]->nodetype ], $$->node[0]));
          }
         ;
