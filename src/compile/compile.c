@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.84  2002/06/27 16:59:18  dkr
+ * wrong comment in COMPPrfIdxSel() removed
+ *
  * Revision 3.83  2002/06/21 12:25:46  dkr
  * COMPPrfReshape() modified
  *
@@ -2871,15 +2874,7 @@ COMPPrfIdxSel (node *arg_node, node *arg_info)
     DBUG_ASSERT ((NODE_TYPE (arg2) == N_id), "N_id as 2nd arg of F_idx_sel expected!");
 
     ret_node
-      = MakeAssignIcm3 (IsArray (IDS_TYPE (let_ids))
-                          /*
-                           * This is possible only in case of an instrinsic array-sel:
-                           *   sel( iv, A): int[*] -> type[*] -> type[*]
-                           * Normally an array-sel is transformed into a with-loop
-                           * containing scalar-sel's only.
-                           */
-                          ? "ND_IDX_SEL_A"
-                          : "ND_IDX_SEL_S",
+      = MakeAssignIcm3 (IsArray (IDS_TYPE (let_ids)) ? "ND_IDX_SEL_A" : "ND_IDX_SEL_S",
                         DupNode (arg1), DupNode (arg2), DupIds_Id (let_ids), NULL);
 
     DBUG_RETURN (ret_node);
