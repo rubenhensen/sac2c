@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.2  2002/10/18 14:29:31  sbs
+ * made the type definition node part of the repository record
+ *
  * Revision 3.1  2000/11/20 18:00:23  sacbase
  * new release made
  *
@@ -38,7 +41,7 @@
 #define UT_NOT_DEFINED -1
 
 extern usertype UTAddUserType (char *name, char *mod, ntype *type, ntype *base,
-                               int lineno);
+                               int lineno, node *tdef);
 extern usertype UTFindUserType (char *name, char *mod);
 
 extern int UTGetNumberOfUserTypes ();
@@ -48,6 +51,7 @@ extern char *UTGetName (usertype t1);
 extern ntype *UTGetTypedef (usertype t1);
 extern ntype *UTGetBaseType (usertype t1);
 extern int UTGetLine (usertype t1);
+extern node *UTGetTdef (usertype t1);
 
 extern void UTSetTypedef (usertype t1, ntype *type);
 extern void UTSetBaseType (usertype t1, ntype *type);

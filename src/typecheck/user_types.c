@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.4  2002/10/18 14:30:12  sbs
+ * made the type definition node part of the repository record
+ *
  * Revision 3.3  2002/08/05 17:01:02  sbs
  * minor bugs fixed
  *
@@ -21,6 +24,7 @@
 
 #include "free.h"
 #include "user_types.h"
+#include "types.h"
 
 /*
  * This module "user_type" implements a repository for user defined types.
@@ -49,6 +53,7 @@ typedef struct UDT_ENTRY {
     ntype *type;
     ntype *base;
     int line;
+    node *tdef;
 } udt_entry;
 
 /*
@@ -61,6 +66,7 @@ typedef struct UDT_ENTRY {
 #define ENTRY_DEF(e) (e->type)
 #define ENTRY_BASE(e) (e->base)
 #define ENTRY_LINE(e) (e->line)
+#define ENTRY_TDEF(e) (e->tdef)
 
 /*
  * We use a global datastructure "udt_rep", in order to keep all the information
@@ -89,7 +95,7 @@ static int udt_no = 0;
  *
  * function:
  *    usertype UTAddUserType( char *name, char *mod, ntype *type, ntype *base,
- *                            int lineno)
+ *                            int lineno, node *tdef)
  *
  * description:
  *   adds a udt to the repository and enlarges it whenever (udt_no % CHUNKSIZE)
@@ -98,7 +104,7 @@ static int udt_no = 0;
  ******************************************************************************/
 
 usertype
-UTAddUserType (char *name, char *mod, ntype *type, ntype *base, int lineno)
+UTAddUserType (char *name, char *mod, ntype *type, ntype *base, int lineno, node *tdef)
 {
     udt_entry *entry;
     udt_entry **new_rep;
@@ -115,6 +121,7 @@ UTAddUserType (char *name, char *mod, ntype *type, ntype *base, int lineno)
     ENTRY_DEF (entry) = type;
     ENTRY_BASE (entry) = base;
     ENTRY_LINE (entry) = lineno;
+    ENTRY_TDEF (entry) = tdef;
 
     /*
      * Before putting the new entry into the repository, we have to make sure
@@ -209,6 +216,7 @@ UTGetNumberOfUserTypes ()
  *    ntype *UTGetTypedef( usertype udt)
  *    ntype *UTGetBaseType( usertype udt)
  *    int UTGetLine( usertype udt)
+ *    node *UTGetTdef( usertype udt)
  *
  * description:
  *   several functions for accessing the values of the definition of the user
@@ -261,6 +269,15 @@ UTGetLine (usertype udt)
     DBUG_RETURN (ENTRY_LINE (udt_rep[udt]));
 }
 
+node *
+UTGetTdef (usertype udt)
+{
+    DBUG_ENTER ("UTGetTdef");
+    DBUG_ASSERT ((udt < udt_no), "UTGetTdef called with illegal udt!");
+
+    DBUG_RETURN (ENTRY_TDEF (udt_rep[udt]));
+}
+
 /******************************************************************************
  *
  * function:
@@ -304,7 +321,7 @@ UTSetBaseType (usertype udt, ntype *type)
  *
  ******************************************************************************/
 
-#define UTPRINT_FORMAT "| %-10.10s | %-10.10s | %-29.29s | %-29.29s |"
+#define UTPRINT_FORMAT "| %-10.10s | %-10.10s | %-20.20s | %-20.20s |"
 
 void
 UTPrintRepository (FILE *outfile)
@@ -313,12 +330,13 @@ UTPrintRepository (FILE *outfile)
 
     DBUG_ENTER ("UTPrintRepository");
 
-    fprintf (outfile, "\n %4.4s " UTPRINT_FORMAT " %6s \n",
-             "udt:", "module:", "name:", "defining type:", "base type:", "line:");
+    fprintf (outfile, "\n %4.4s " UTPRINT_FORMAT " %6s | %9s\n", "udt:", "module:",
+             "name:", "defining type:", "base type:", "line:", "def node:");
     for (i = 0; i < udt_no; i++) {
-        fprintf (outfile, " %4d " UTPRINT_FORMAT " %6d \n", i, UTGetMod (i),
+        fprintf (outfile, " %4d " UTPRINT_FORMAT " %6d |  %8p\n", i, UTGetMod (i),
                  UTGetName (i), TYType2String (UTGetTypedef (i), TRUE, 0),
-                 TYType2String (UTGetBaseType (i), TRUE, 0), UTGetLine (i));
+                 TYType2String (UTGetBaseType (i), TRUE, 0), UTGetLine (i),
+                 UTGetTdef (i));
     }
 
     DBUG_VOID_RETURN;
