@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2001/01/09 16:42:05  dkr
+ * macros WLNODE_..., WLSEGX_..., WLSTRIX_..., WLGRIDX_... moved to
+ * tree_compound.h
+ *
  * Revision 3.9  2001/01/08 16:11:13  dkr
  * NWITH2_NAIVE_COMP added
  *
@@ -379,6 +383,7 @@ file can be found in tree_basic.c
 #define _sac_tree_basic_h
 
 #include "types.h"
+#include "tree_compound.h"
 
 /*
  *   Decalarations of global variables exported by tree_basic.c
@@ -3247,71 +3252,6 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int 
 #define NWITH2_OUT_MASK(n) ((DFMmask_t) ((n)->dfmask[1]))
 #define NWITH2_LOCAL_MASK(n) ((DFMmask_t) ((n)->dfmask[2]))
 #define NWITH2_REUSE(n) ((DFMmask_t) ((n)->dfmask[3]))
-
-/*--------------------------------------------------------------------------*/
-
-/*
- * here are some macros for N_WL... nodes
- *
- *
- * CAUTION: not every macro is suitable for all node tpyes.
- *          e.g. NEXTDIM is not a son of N_WLstride nodes
- *
- *          it would be better to contruct these macros like this:
- *            #define WLNODE_NEXTDIM(n) ((NODE_TYPE(n) == N_WLstride) ?
- *                                        DBUG_ASSERT(...) :
- *                                        (NODE_TYPE(n) == N_WLblock) ?
- *                                         WLBLOCK_NEXTDIM(n) :
- *                                         (NODE_TYPE(n) == N_WLublock) ?
- *                                          WLUBLOCK_NEXTDIM(n) : ...)
- *          but unfortunately this is not a modifiable l-value in ANSI-C :(
- *          so it would be impossible to use them on the left side of an
- *          assignment.
- *          because of that I designed this "static" macros to make a
- *          concise modelling of routines still possible.
- */
-
-#define WLNODE_LEVEL(n) ((n)->lineno)
-#define WLNODE_DIM(n) ((n)->refcnt)
-#define WLNODE_BOUND1(n) ((n)->flag)
-#define WLNODE_BOUND2(n) ((n)->counter)
-#define WLNODE_STEP(n) ((n)->varno)
-#define WLNODE_NEXTDIM(n) ((n)->node[0])
-#define WLNODE_NEXT(n) ((n)->node[1])
-
-/*
- * some macros for N_WLseg, N_WLsegVar nodes
- */
-
-#define WLSEGX_DIMS(n) ((n)->refcnt)
-#define WLSEGX_CONTENTS(n) ((n)->node[0])
-#define WLSEGX_NEXT(n) (WLNODE_NEXT (n))
-#define WLSEGX_IDX_MIN(n) (*((int **)(&((n)->node[2]))))
-#define WLSEGX_IDX_MAX(n) (*((int **)(&((n)->node[3]))))
-#define WLSEGX_BLOCKS(n) ((n)->flag)
-#define WLSEGX_SV(n) ((int *)(n)->mask[0])
-#define WLSEGX_BV(n, level) ((int *)(n)->mask[level + 2])
-#define WLSEGX_UBV(n) ((int *)(n)->mask[1])
-#define WLSEGX_SCHEDULING(n) ((SCHsched_t *)(n)->info2)
-
-/*
- * some macros for N_WLstride, N_WLstriVar nodes
- */
-
-#define WLSTRIX_LEVEL(n) (WLNODE_LEVEL (n))
-#define WLSTRIX_DIM(n) (WLNODE_DIM (n))
-#define WLSTRIX_CONTENTS(n) ((n)->node[0])
-#define WLSTRIX_NEXT(n) (WLNODE_NEXT (n))
-
-/*
- * some macros for N_WLgrid, N_WLgridVar nodes
- */
-
-#define WLGRIDX_LEVEL(n) (WLNODE_LEVEL (n))
-#define WLGRIDX_DIM(n) (WLNODE_DIM (n))
-#define WLGRIDX_NEXTDIM(n) (WLNODE_NEXTDIM (n))
-#define WLGRIDX_NEXT(n) (WLNODE_NEXT (n))
-#define WLGRIDX_CODE(n) ((n)->node[4])
 
 /*--------------------------------------------------------------------------*/
 
