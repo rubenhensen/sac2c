@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.19  1998/06/19 16:34:11  dkr
+ * added opt_uip
+ *
  * Revision 1.18  1998/05/27 11:17:57  cg
  * added global variable 'puresacfilename' which provides the file to be
  * compiled without leading path information as contained in sacfilename.
@@ -230,6 +233,9 @@ int opt_ae = 1;
 
 int opt_rco = 1;
 /* enable/disable refcount optimization */
+
+int opt_uip = 1;
+/* enable/disable update-in-place */
 
 /*
  * Command line options for specifying particular side conditions
