@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.106  1998/02/05 12:43:37  srs
+ * added some comments
+ *
  * Revision 1.105  1997/12/06 17:16:35  srs
  * added call of compute_malloc_align_step()
  *
@@ -1067,7 +1070,7 @@ MAIN
         if (MODUL_IMPORTS (syntax_tree) != NULL) {
             NOTE_COMPILER_PHASE;
             CHECK_DBUG_START;
-            syntax_tree = Import (syntax_tree);
+            syntax_tree = Import (syntax_tree); /* imp_tab */
             CHECK_DBUG_STOP;
             ABORT_ON_ERROR;
         }
@@ -1077,7 +1080,7 @@ MAIN
             if (MODUL_STORE_IMPORTS (syntax_tree) != NULL) {
                 NOTE_COMPILER_PHASE;
                 CHECK_DBUG_START;
-                syntax_tree = ReadSib (syntax_tree);
+                syntax_tree = ReadSib (syntax_tree); /* readsib_tab */
                 CHECK_DBUG_STOP;
                 ABORT_ON_ERROR;
             }
@@ -1086,7 +1089,7 @@ MAIN
             if (!breakreadsib) {
                 NOTE_COMPILER_PHASE;
                 CHECK_DBUG_START;
-                syntax_tree = objinit (syntax_tree);
+                syntax_tree = objinit (syntax_tree); /* objinit_tab */
                 CHECK_DBUG_STOP;
                 ABORT_ON_ERROR;
                 compiler_phase++;
@@ -1094,7 +1097,7 @@ MAIN
                 if (!breakobjinit) {
                     NOTE_COMPILER_PHASE;
                     CHECK_DBUG_START;
-                    syntax_tree = Flatten (syntax_tree);
+                    syntax_tree = Flatten (syntax_tree); /* flat_tab */
                     CHECK_DBUG_STOP;
                     ABORT_ON_ERROR;
                     compiler_phase++;
@@ -1102,7 +1105,7 @@ MAIN
                     if (!breakflatten) {
                         NOTE_COMPILER_PHASE;
                         CHECK_DBUG_START;
-                        syntax_tree = Typecheck (syntax_tree);
+                        syntax_tree = Typecheck (syntax_tree); /* type_tab */
                         CHECK_DBUG_STOP;
                         ABORT_ON_ERROR;
                         compiler_phase++;
@@ -1111,7 +1114,8 @@ MAIN
                             if (MODUL_FILETYPE (syntax_tree) != F_prog) {
                                 NOTE_COMPILER_PHASE;
                                 CHECK_DBUG_START;
-                                syntax_tree = CheckDec (syntax_tree);
+                                syntax_tree = CheckDec (
+                                  syntax_tree); /* writedec_tab and checkdec_tab */
                                 CHECK_DBUG_STOP;
                                 ABORT_ON_ERROR;
                             }
@@ -1120,7 +1124,8 @@ MAIN
                             if (!breakcheckdec) {
                                 NOTE_COMPILER_PHASE;
                                 CHECK_DBUG_START;
-                                syntax_tree = RetrieveImplicitTypeInfo (syntax_tree);
+                                syntax_tree = RetrieveImplicitTypeInfo (
+                                  syntax_tree); /* impltype_tab */
                                 CHECK_DBUG_STOP;
                                 ABORT_ON_ERROR;
                                 compiler_phase++;
@@ -1128,7 +1133,7 @@ MAIN
                                 if (!breakimpltype) {
                                     NOTE_COMPILER_PHASE;
                                     CHECK_DBUG_START;
-                                    syntax_tree = Analysis (syntax_tree);
+                                    syntax_tree = Analysis (syntax_tree); /* analy_tab */
                                     CHECK_DBUG_STOP;
                                     ABORT_ON_ERROR;
                                     compiler_phase++;
@@ -1137,7 +1142,8 @@ MAIN
                                         if (MODUL_FILETYPE (syntax_tree) != F_prog) {
                                             NOTE_COMPILER_PHASE;
                                             CHECK_DBUG_START;
-                                            syntax_tree = WriteSib (syntax_tree);
+                                            syntax_tree
+                                              = WriteSib (syntax_tree); /* writesib_tab */
                                             CHECK_DBUG_STOP;
                                             ABORT_ON_ERROR;
                                         }
@@ -1146,7 +1152,8 @@ MAIN
                                         if (!breakwritesib) {
                                             NOTE_COMPILER_PHASE;
                                             CHECK_DBUG_START;
-                                            syntax_tree = HandleObjects (syntax_tree);
+                                            syntax_tree
+                                              = HandleObjects (syntax_tree); /* obj_tab */
                                             CHECK_DBUG_STOP;
                                             ABORT_ON_ERROR;
                                             compiler_phase++;
@@ -1154,8 +1161,8 @@ MAIN
                                             if (!breakobjects) {
                                                 NOTE_COMPILER_PHASE;
                                                 CHECK_DBUG_START;
-                                                syntax_tree
-                                                  = UniquenessCheck (syntax_tree);
+                                                syntax_tree = UniquenessCheck (
+                                                  syntax_tree); /* unique_tab */
                                                 CHECK_DBUG_STOP;
                                                 ABORT_ON_ERROR;
                                                 compiler_phase++;
@@ -1163,8 +1170,8 @@ MAIN
                                                 if (!breakuniquecheck) {
                                                     NOTE_COMPILER_PHASE;
                                                     CHECK_DBUG_START;
-                                                    syntax_tree
-                                                      = RemoveVoidFunctions (syntax_tree);
+                                                    syntax_tree = RemoveVoidFunctions (
+                                                      syntax_tree); /* rmvoid_tab */
                                                     CHECK_DBUG_STOP;
                                                     ABORT_ON_ERROR;
                                                     compiler_phase++;
@@ -1173,8 +1180,11 @@ MAIN
                                                         if (sac_optimize) {
                                                             NOTE_COMPILER_PHASE;
                                                             CHECK_DBUG_START;
-                                                            syntax_tree
-                                                              = Optimize (syntax_tree);
+                                                            syntax_tree = Optimize (
+                                                              syntax_tree); /* see
+                                                                               optimize.c,
+                                                                               Optimize()
+                                                                             */
                                                             CHECK_DBUG_STOP;
                                                             ABORT_ON_ERROR;
                                                         }
@@ -1184,8 +1194,9 @@ MAIN
                                                             if (psi_optimize) {
                                                                 NOTE_COMPILER_PHASE;
                                                                 CHECK_DBUG_START;
-                                                                syntax_tree
-                                                                  = PsiOpt (syntax_tree);
+                                                                syntax_tree = PsiOpt (
+                                                                  syntax_tree); /* idx_tab
+                                                                                 */
                                                                 CHECK_DBUG_STOP;
                                                                 ABORT_ON_ERROR;
                                                             }
@@ -1195,7 +1206,8 @@ MAIN
                                                                 NOTE_COMPILER_PHASE;
                                                                 CHECK_DBUG_START;
                                                                 syntax_tree = Refcount (
-                                                                  syntax_tree);
+                                                                  syntax_tree); /* refcnt_tab
+                                                                                 */
                                                                 CHECK_DBUG_STOP;
                                                                 ABORT_ON_ERROR;
                                                                 compiler_phase++;
@@ -1203,14 +1215,16 @@ MAIN
                                                                 if (Make_Old2NewWith)
                                                                     syntax_tree
                                                                       = Old2NewWith (
-                                                                        syntax_tree);
+                                                                        syntax_tree); /* o2nWith_tab
+                                                                                       */
 
                                                                 if (!breakref) {
                                                                     NOTE_COMPILER_PHASE;
                                                                     CHECK_DBUG_START;
                                                                     syntax_tree
                                                                       = precompile (
-                                                                        syntax_tree);
+                                                                        syntax_tree); /* precomp_tab
+                                                                                       */
                                                                     CHECK_DBUG_STOP;
                                                                     ABORT_ON_ERROR;
                                                                     compiler_phase++;
@@ -1221,7 +1235,7 @@ MAIN
                                                                         CHECK_DBUG_START;
                                                                         syntax_tree
                                                                           = Compile (
-                                                                            syntax_tree);
+                                                                            syntax_tree); /* comp_tab */
                                                                         CHECK_DBUG_STOP;
                                                                         ABORT_ON_ERROR;
                                                                         compiler_phase++;
