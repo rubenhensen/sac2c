@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.3  2004/08/31 16:59:10  skt
+ * some comments added
+ *
  * Revision 1.2  2004/08/26 17:05:04  skt
  * implementation finished
  *
@@ -55,12 +58,8 @@ struct INFO {
 /*
  * INFO macros
  *    bool    CRWIW_WITHINMULTI
- *    bool    CRWIW_CREATESPECIALIZED
- *    bool    CRWIW_DUPLICATEMODE
  */
 #define INFO_CRWIW_WITHINMULTI(n) (n->withinmulti)
-#define INFO_CRWIW_CREATESPECIALIZED(n) (n->createspecialized)
-#define INFO_CRWIW_DUPLICATEMODE(n) (n->duplicatemode)
 #define INFO_CRWIW_ACTASSIGN(n) (n->actassign)
 #define INFO_CRWIW_MODUL(n) (n->modul)
 
@@ -77,8 +76,6 @@ MakeInfo ()
     result = Malloc (sizeof (info));
 
     INFO_CRWIW_WITHINMULTI (result) = FALSE;
-    INFO_CRWIW_CREATESPECIALIZED (result) = FALSE;
-    INFO_CRWIW_DUPLICATEMODE (result) = FALSE;
     INFO_CRWIW_ACTASSIGN (result) = NULL;
     INFO_CRWIW_MODUL (result) = NULL;
 
@@ -111,9 +108,9 @@ CreateWithinwith (node *arg_node)
 {
     funtab *old_tab;
     info *arg_info;
-    DBUG_ENTER ("CellGrowth");
+    DBUG_ENTER ("CreateWithinwith");
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_modul),
-                 "CellGrowth expects a N_modul as arg_node");
+                 "CreateWithinwith expects a N_modul as arg_node");
 
     arg_info = MakeInfo ();
     /* push info ... */
@@ -255,7 +252,7 @@ CRWIWap (node *arg_node, info *arg_info)
             }
 
             FUNDEF_EXECMODE (tmp) = MUTH_MULTI_SPECIALIZED;
-            tmp = MUTHExpandFundefName (tmp, "__MULTI_");
+            tmp = MUTHExpandFundefName (tmp, "__MS_");
 
             FUNDEF_COMPANION (my_fundef) = tmp;
             FUNDEF_COMPANION (tmp) = my_fundef;
