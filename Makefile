@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.134  2004/11/07 18:03:34  sah
+# more parts of new module system activated
+#
 # Revision 3.133  2004/11/04 14:53:43  sah
 # implemented dependencies between modules
 #
@@ -354,7 +357,8 @@ TREE= src/tree/traverse.o src/tree/tree_basic.o src/tree/free.o \
 TREE_OLD=
 
 SCANP= src/scanparse/y.tab.o src/scanparse/lex.yy.o \
-       src/scanparse/scnprs.o src/scanparse/handle_dots.o
+       src/scanparse/scnprs.o src/scanparse/handle_dots.o \
+       src/scanparse/resolvepragma.o
 SCANP_OLD=
 
 PRINT= src/print/print.o src/print/convert.o

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.73  2004/11/07 18:03:18  sah
+ * more parts of new module system activated
+ *
  * Revision 3.72  2004/11/04 14:53:43  sah
  * implemented dependencies between modules
  *
@@ -296,6 +299,7 @@
 #include "libbuilder.h"
 #include "prepareinline.h"
 #include "dependencies.h"
+#include "resolvepragma.h"
 #else
 #include "cccall.h"
 #endif /* NEW_AST */
@@ -452,6 +456,9 @@ main (int argc, char *argv[])
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
     syntax_tree = ScanParse ();
+#ifdef NEW_AST
+    DoResolvePragmas (syntax_tree);
+#endif
     PHASE_DONE_EPILOG;
     PHASE_EPILOG;
 
@@ -853,10 +860,21 @@ main (int argc, char *argv[])
     PHASE_PROLOG;
     if (filetype != F_prog) {
         NOTE_COMPILER_PHASE;
+#ifndef NEW_AST
         CreateLibrary ();
+#else
+        CreateLibrary (dependencies);
+#endif
         PHASE_DONE_EPILOG;
     }
     PHASE_EPILOG;
+
+#ifdef NEW_AST
+    /*
+     * now we can free the set of dependencies now as well
+     */
+    dependencies = SSFree (dependencies);
+#endif
 
     compiler_phase = PH_final;
 
