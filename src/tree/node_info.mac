@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.61  2002/02/21 17:00:51  sbs
+ * INSVDwithid inserted
+ *
  * Revision 3.60  2002/02/21 15:08:37  sbs
  * insvd_tab added
  *
@@ -1673,7 +1676,8 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        USSANwithid, SSADCRNwithid, TravSons, CMPTNwithid, TravSons, TravSons,
        SSALIRNwithid, LIRMOVNwithid, TravSons, TravSons, TravSons, TravSons, TravSons,
 
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 0),
+       TravSons, TravSons, TravSons, INSVDwithid, TravSons, TravSons, TravSons, TravSons,
+       0),
 
   NIF (N_Ngenerator, "N_Ngenerator", TravSons, FltnNgenerator, PrintNgenerator, TravSons,
        TravSons, TravSons, TravSons, FreeNGenerator, TravSons, RCNgen, TravSons, TravSons,
