@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.117  2004/10/15 09:09:41  ktr
+# added src/refcount/aliasanalysis.o
+#
 # Revision 3.116  2004/10/12 10:23:46  ktr
 # added src/refcount/filterrc.o
 #
@@ -371,7 +374,7 @@ OBJECTS_OLD=
 REFCOUNT= src/refcount/allocation.o src/refcount/rcopt.o \
           src/refcount/rcphase.o src/refcount/filterrc.o \
           src/refcount/alloc.o src/refcount/refcounting.o \
-          src/refcount/reuse.o
+          src/refcount/reuse.o src/refcount/aliasanalysis.o
 REFCOUNT_OLD=
 
 CONCURRENT=
