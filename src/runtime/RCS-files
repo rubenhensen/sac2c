@@ -9,7 +9,6 @@ sac_boundcheck.h
 sac_cachesim.h
 sac_cinterface.h
 sac_cwrapper.h
-sac_free_interface_handler.h
 sac_heapmgr.h
 sac_icm.h
 sac_idx.h
