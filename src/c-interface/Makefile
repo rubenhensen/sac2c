@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.16  2004/11/26 20:39:10  sbs
+# dependency mechanism deactivated (temporarily)
+#
 # Revision 3.15  2004/11/21 12:48:08  sah
 # removed some old ast info
 #
@@ -111,4 +114,4 @@ clean:
 # - relies on INCS to be set appropriately
 #
 
-include ../../Makefile.Deps
+# include ../../Makefile.Deps
