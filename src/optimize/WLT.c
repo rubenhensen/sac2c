@@ -1,6 +1,10 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 1.12  1998/08/20 12:22:57  srs
+ * added comments
+ * freed pointers in CutSlices() and CompleteGrid()
+ *
  * Revision 1.11  1998/05/15 14:46:40  srs
  * fixed bug in WLTlet()
  * adjusted MakeNullVec()
@@ -98,7 +102,7 @@
  *
  * description:
  *   Creates a (full) partition by adding new intern_gen structs.
- *   If the know part is a grid, this is ignored here (so the resulting
+ *   If the known part is a grid, this is ignored here (so the resulting
  *   intern_gen chain may still not be a full partition, see CompleteGrid()).
  *   The list of intern_gen is returned.
  *
@@ -161,6 +165,9 @@ CutSlices (int *ls, int *us, int *l, int *u, int dim, intern_gen *ig, node *code
         usc[d] = u[d];
     }
 
+    FREE (lsc);
+    FREE (usc);
+
     DBUG_RETURN (root_ig);
 }
 
@@ -170,7 +177,7 @@ CutSlices (int *ls, int *us, int *l, int *u, int dim, intern_gen *ig, node *code
  *   intern_gen *CompleteGrid(int *ls, int *us, int *step, int *width,
  *
  * description:
- *
+ *   adds new generators which specify the elements left out by a grid.
  *
  *
  ******************************************************************************/
@@ -209,6 +216,8 @@ CompleteGrid (int *ls, int *us, int *step, int *width, int dim, intern_gen *ig,
 
         nw[d] = width[d];
     }
+
+    FREE (nw);
 
     DBUG_RETURN (root_ig);
 }
@@ -308,7 +317,7 @@ CreateFullPartition (node *wln, node *arg_info)
         coden
           = MakeNCode (MakeBlock (MakeAssign (MakeLet (coden, _ids), NULL), NULL), idn);
 
-        /* now, copy the only part to*/
+        /* now, copy the only part to ig */
         ig = Tree2InternGen (wln, NULL);
         DBUG_ASSERT (!ig->next, ("more than one part exist"));
         /* create surrounding cuboids */
