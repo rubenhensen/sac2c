@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.32  2000/10/02 09:02:05  sbs
+ * ID_OR_CAST_TYPE added.
+ *
  * Revision 1.31  2000/08/05 13:02:15  dkr
  * some macros for N_Nwith added
  *
@@ -1353,6 +1356,8 @@ extern node *MakeVinfoDollar (node *next);
 #define ID_VARDEC_NAME(n) VARDEC_OR_ARG_NAME (ID_VARDEC (n))
 #define ID_VARDEC_NEXT(n) VARDEC_OR_ARG_NEXT (ID_VARDEC (n))
 #define ID_PADDED(n) VARDEC_OR_ARG_PADDED (ID_VARDEC (n))
+
+#define ID_OR_CAST_TYPE(n) ((NODE_TYPE (n) == N_id) ? ID_TYPE (n) : CAST_TYPE (n))
 
 /*--------------------------------------------------------------------------*/
 
