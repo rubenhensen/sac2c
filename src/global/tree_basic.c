@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.32  1998/02/27 13:20:09  dkr
+ * change in MakeDo(), MakeWhile():
+ *   ->node[2] initialized with MakeInfo()
+ *
  * Revision 1.31  1998/02/16 16:34:57  srs
  * Changed MakeNwith
  *
@@ -711,7 +715,7 @@ MakeCond (node *cond, node *Then, node *Else)
     COND_THEN (tmp) = Then;
     COND_ELSE (tmp) = Else;
 
-    INIT_NODE (tmp->node[3]);
+    INIT_NODE (tmp->node[3]); /* dkr: sure ???? */
 
     DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
                              mdb_nodetype[NODE_TYPE (tmp)], tmp));
@@ -731,7 +735,7 @@ MakeDo (node *cond, node *body)
     DO_COND (tmp) = cond;
     DO_BODY (tmp) = body;
 
-    INIT_NODE (tmp->node[2]);
+    tmp->node[2] = MakeInfo ();
 
     DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
                              mdb_nodetype[NODE_TYPE (tmp)], tmp));
@@ -751,7 +755,7 @@ MakeWhile (node *cond, node *body)
     WHILE_COND (tmp) = cond;
     WHILE_BODY (tmp) = body;
 
-    INIT_NODE (tmp->node[2]);
+    tmp->node[2] = MakeInfo ();
 
     DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
                              mdb_nodetype[NODE_TYPE (tmp)], tmp));
