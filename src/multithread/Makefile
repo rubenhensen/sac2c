@@ -1,6 +1,9 @@
 #
 # 
 # $Log$
+# Revision 1.8  2000/03/02 12:55:48  jhs
+# Added mtfuns_init.o and blkco_cons.o.
+#
 # Revision 1.7  2000/03/01 14:52:44  dkr
 # make deps done
 #
@@ -37,7 +40,10 @@ all: multithread.o \
      schedule_init.o \
      repfuns_init.o \
      blocks_init.o \
-     blocks_expand.o
+     blocks_expand.o \
+     mtfuns_init.o \
+     blocks_cons.o
+
 
 %.o: %.c 
 	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) -o $@ -c $<
