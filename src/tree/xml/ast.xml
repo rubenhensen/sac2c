@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.45  2004/11/21 14:22:39  skt
+  extend Dataflowgraph and Dataflownode
+
   Revision 1.44  2004/11/19 21:04:45  sah
   adaption to mwes changes
 
@@ -1089,6 +1092,16 @@
             <range from="ssaform" to="optimize" />
           </phases>
         </attribute>
+        <attribute name="Dataflowgraph" mandatory="no">
+          <type name="Node">
+            <target>
+              <node name="Dataflowgraph" />
+            </target>
+          </type>
+          <phases>
+            <range from="multithread" to="multithread" />
+          </phases>
+        </attribute>
       </attributes>
       <flags></flags>
     </node>
@@ -1300,6 +1313,16 @@
           </type>
           <phases>
             <phase name="wlf" />
+          </phases>
+        </attribute>
+        <attribute name="Dataflownode" mandatory="no">
+          <type name="Node">
+            <target>
+              <node name="Dataflownode" />
+            </target>
+          </type>
+          <phases>
+            <range from="multithread" to="multithread" />
           </phases>
         </attribute>
       </attributes>
@@ -3897,26 +3920,12 @@
     <node name="Dataflownode">
       <sons></sons>
       <attributes>
-        <attribute name="Dependent" mandatory="no">
-	  <type name="NodeList" />
-	  <phases>
-	    <all />
-	  </phases>
-	</attribute>
-        <attribute name="UsedNodes" mandatory="no">
-	  <type name="NodeList" />
-	  <phases>
-	    <all />
-	  </phases>
-	</attribute>
-	<attribute name="Name" mandatory="no">
-	  <type name="String" />
-	  <phases>
-	    <all />
-	  </phases>
-	</attribute>
-	<attribute name="RefCount" mandatory="yes">
-	  <type name="Integer" />
+	<attribute name="Graph" mandatory="yes">
+	  <type name="Link">
+	    <target>
+	      <node name="Dataflowgraph"/>
+	    </target>
+	  </type>
 	  <phases>
 	    <all />
 	  </phases>
@@ -3931,23 +3940,37 @@
 	    <all />
 	  </phases>
 	</attribute>
-	<attribute name="ExecMode" mandatory="yes">
+	<attribute name="Name" mandatory="no">
+	  <type name="String" />
+	  <phases>
+	    <all />
+	  </phases>
+	</attribute>
+        <attribute name="Dependent" default="NULL" mandatory="no">
+	  <type name="NodeList" />
+	  <phases>
+	    <all />
+	  </phases>
+	</attribute>
+        <attribute name="UsedNodes" default="NULL" mandatory="no">
+	  <type name="NodeList" />
+	  <phases>
+	    <all />
+	  </phases>
+	</attribute>
+	<attribute name="RefCount" default="1" mandatory="yes">
+	  <type name="Integer" />
+	  <phases>
+	    <all />
+	  </phases>
+	</attribute>
+	<attribute name="ExecMode" default="MUTH_ANY" mandatory="yes">
 	  <type name="MTExecMode" />
 	  <phases>
 	    <all />
 	  </phases>
 	</attribute>
-	<attribute name="Graph" mandatory="yes">
-	  <type name="Link">
-	    <target>
-	      <node name="Dataflowgraph"/>
-	    </target>
-	  </type>
-	  <phases>
-	    <all />
-	  </phases>
-	</attribute>
-	<attribute name="DFGThen" mandatory="no">
+	<attribute name="DFGThen" default="NULL" mandatory="no">
 	  <type name="Link">
 	    <target>
 	      <node name="Block" />
@@ -3957,7 +3980,7 @@
 	    <all />
 	  </phases>
 	</attribute>
-	<attribute name="DFGElse" mandatory="no">
+	<attribute name="DFGElse" default="NULL" mandatory="no">
 	  <type name="Link">
 	    <target>
 	      <node name="Block" />
@@ -3985,13 +4008,13 @@
     <node name="Dataflowgraph">
       <sons></sons>
       <attributes>
-        <attribute name="Members" mandatory="yes">
+        <attribute name="Members" default="NULL" mandatory="yes">
 	  <type name="NodeList" />
 	  <phases>
 	    <all />
 	  </phases>
 	</attribute>
-	<attribute name="Source" mandatory="yes">
+	<attribute name="Source" default="NULL" mandatory="yes">
 	  <type name="Node">
 	    <target>
 	      <node name="Dataflownode"/>
@@ -4001,7 +4024,7 @@
 	    <all />
 	  </phases>
 	</attribute>
-	<attribute name="Sink" mandatory="yes">
+	<attribute name="Sink" default="NULL" mandatory="yes">
 	  <type name="Node">
 	    <target>
 	      <node name="Dataflownode"/>
@@ -4011,7 +4034,7 @@
 	    <all />
 	  </phases>
 	</attribute>
-	<attribute name="MyHomeDFN" mandatory="no">
+	<attribute name="MyHomeDFN" default="NULL" mandatory="no">
 	  <type name="Node">
 	    <target>
 	      <node name="Dataflownode"/>
