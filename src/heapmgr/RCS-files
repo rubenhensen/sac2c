@@ -7,7 +7,6 @@ internal.c
 large_chunks.c
 malloc.c
 memalign.c
-nophm.c
 realloc.c
 setup.c
 small_chunks.c
