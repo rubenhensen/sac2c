@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.31  2004/03/02 16:39:40  mwe
+# ConstVarPropagation added
+#
 # Revision 3.30  2003/08/16 08:44:25  ktr
 # SelectionPropagation added. Must currently be activated with -dosp.
 #
@@ -78,7 +81,7 @@ all: optimize.o generatemasks.o ConstantFolding.o DeadCodeRemoval.o \
      WLUnroll.o DeadFunctionRemoval.o freemasks.o \
      SSADeadCodeRemoval.o SSACSE.o SSAConstantFolding.o SSALIR.o SSALUR.o \
      SSAWLUnroll.o SSAInferLI.o AssociativeLaw.o rmcasts.o DistributiveLaw.o \
-     UndoElimSubDiv.o ElimSubDiv.o SelectionPropagation.o
+     UndoElimSubDiv.o ElimSubDiv.o SelectionPropagation.o ConstVarPropagation.o
 
 
 %.o: %.c

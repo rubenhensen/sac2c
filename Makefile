@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.81  2004/03/02 16:39:40  mwe
+# ConstVarPropagation added
+#
 # Revision 3.80  2004/02/26 13:04:21  khf
 # WLPartitionGeneration.o added
 #
@@ -207,7 +210,8 @@ OPTIMIZE= src/optimize/optimize.o src/optimize/ConstantFolding.o \
           src/optimize/SSALUR.o src/optimize/SSAInferLI.o \
           src/optimize/SSAWLUnroll.o src/optimize/rmcasts.o \
           src/optimize/DistributiveLaw.o src/optimize/ElimSubDiv.o \
-          src/optimize/UndoElimSubDiv.o src/optimize/SelectionPropagation.o
+          src/optimize/UndoElimSubDiv.o src/optimize/SelectionPropagation.o \
+          src/optimize/ConstVarPropagation.o
 
 PROFILE= src/profile/annotate_fun_calls.o
 PSIOPT= src/psi-opt/index.o src/psi-opt/ArrayElimination.o \
