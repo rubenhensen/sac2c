@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2001/01/30 09:56:00  dkr
+ * output for N_WLgrid(Var)-nodes modified
+ *
  * Revision 3.13  2001/01/29 18:34:03  dkr
  * some superfluous attributes of N_WLsegVar removed
  *
@@ -3412,6 +3415,10 @@ PrintWLxblock (node *arg_node, node *arg_info)
  * description:
  *   prints N_WLstride- and N_WLstrideVar-nodes.
  *
+ * remark:
+ *   N_WLstride-nodes    are printed as '->',
+ *   N_WLstrideVar-nodes are printed as '=>'.
+ *
  ******************************************************************************/
 
 node *
@@ -3510,7 +3517,12 @@ PrintWLcode (node *arg_node, node *arg_info)
  *   node *PrintWLgridx( node *arg_node, node *arg_info)
  *
  * description:
- *   prints N_WLgridx- and N_WLgridVar-nodes.
+ *   prints N_WLgrid- and N_WLgridVar-nodes.
+ *
+ * remark:
+ *   N_WLgrid-nodes    are printed as '-->' (fitted) and '->>' (unfitted),
+ *   N_WLgridVar-nodes are printed as '==>' (fitted) and '=>>' (unfitted)
+ *   respectively.
  *
  ******************************************************************************/
 
@@ -3526,11 +3538,18 @@ PrintWLgridx (node *arg_node, node *arg_info)
     fprintf (outfile, " ");
     if (NODE_TYPE (arg_node) == N_WLgrid) {
         fprintf (outfile, "-");
+        if (WLGRIDX_FITTED (arg_node)) {
+            fprintf (outfile, "-");
+        } else {
+            fprintf (outfile, ">");
+        }
     } else {
         fprintf (outfile, "=");
-    }
-    if (!WLGRIDX_FITTED (arg_node)) {
-        fprintf (outfile, ">");
+        if (WLGRIDX_FITTED (arg_node)) {
+            fprintf (outfile, "=");
+        } else {
+            fprintf (outfile, ">");
+        }
     }
     fprintf (outfile, "> ");
     PrintWLbound (NODE_TYPE (arg_node), WLGRIDX_GET_ADDR (arg_node, BOUND2),
