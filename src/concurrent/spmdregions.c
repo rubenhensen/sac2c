@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  1998/04/26 16:47:07  dkr
+ * fixed a bug in SPMDAssign
+ *
  * Revision 1.9  1998/04/24 18:03:29  dkr
  * changed comments
  *
@@ -175,6 +178,8 @@ SPMDInitAssign (node *arg_node, node *arg_info)
                     new_in = MakeIds (StringCopy (VARDEC_NAME (vardec)), NULL,
                                       VARDEC_STATUS (vardec));
                     IDS_ATTRIB (new_in) = VARDEC_ATTRIB (vardec);
+                    IDS_REFCNT (new_in)
+                      = VARDEC_REFCNT (vardec); /* ??? --- always >= 0 */
                 } else {
                     DBUG_ASSERT ((NODE_TYPE (vardec) == N_arg), "wrong node type");
                     new_in = MakeIds (StringCopy (ARG_NAME (vardec)), NULL,
@@ -211,6 +216,8 @@ SPMDInitAssign (node *arg_node, node *arg_info)
                                          VARDEC_STATUS (vardec));
                     IDS_ATTRIB (new_local) = VARDEC_ATTRIB (vardec);
                     IDS_VARDEC (new_local) = vardec;
+                    IDS_REFCNT (new_local)
+                      = VARDEC_REFCNT (vardec); /* ??? --- always >= 0 */
 
                     if (SPMD_LOCAL (spmd) == NULL) {
                         SPMD_LOCAL (spmd) = new_local;
