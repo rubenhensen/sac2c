@@ -2,6 +2,9 @@
 /*
  *
  * $Log$
+ * Revision 1.21  2004/11/27 00:16:00  ktr
+ * New barebones precompile.
+ *
  * Revision 1.20  2004/11/25 11:38:37  ktr
  * COMPILES!
  *

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.3  2004/11/27 00:16:00  ktr
+ * New barebones precompile.
+ *
  * Revision 1.2  2004/11/26 23:13:36  sah
  * *** empty log message ***
  * Revision 1.1  2004/11/26 22:10:23  sah Initial
@@ -41,7 +44,7 @@
 #include "DupTree.h"
 #include "types.h"
 #include "globals.h"
-
+#include "type_utils.h"
 /*
  * INFO structure
  */
@@ -89,26 +92,6 @@ FreeInfo (info *info)
 
     DBUG_RETURN (info);
 }
-
-#define FUNDEF_NO_DESC(n, idx)                                                           \
-    ((FUNDEF_STATUS (n) == ST_Cfun)                                                      \
-     && ((FUNDEF_PRAGMA (n) == NULL) || (FUNDEF_REFCOUNTING (n) == NULL)                 \
-         || (PRAGMA_NUMPARAMS (FUNDEF_PRAGMA (n)) <= (idx))                              \
-         || (!(FUNDEF_REFCOUNTING (n)[idx]))))
-
-#define FUNDEF_HAS_LINKSIGN(n, idx)                                                      \
-    (((FUNDEF_STATUS (n) == ST_Cfun) && (FUNDEF_PRAGMA (n) != NULL)                      \
-      && (FUNDEF_LINKSIGN (n) != NULL)                                                   \
-      && (PRAGMA_NUMPARAMS (FUNDEF_PRAGMA (n)) > (idx)))                                 \
-       ? TRUE                                                                            \
-       : FALSE)
-
-#define FUNDEF_GET_LINKSIGN(n, idx, dots)                                                \
-    (((FUNDEF_STATUS (n) == ST_Cfun) && (FUNDEF_PRAGMA (n) != NULL)                      \
-      && (FUNDEF_LINKSIGN (n) != NULL)                                                   \
-      && (PRAGMA_NUMPARAMS (FUNDEF_PRAGMA (n)) > (idx)))                                 \
-       ? (FUNDEF_LINKSIGN (fundef))[idx]                                                 \
-       : ((dots) ? (idx) : ((idx) + 1)))
 
 /*
  * helper functions
@@ -329,7 +312,7 @@ InsertIntoIn (argtab_t *argtab, node *fundef, node *arg)
 
     if (!ARG_ISREFCOUNTED (arg)) {
         if (ARG_ISREFERENCE (arg)) {
-            if ((FUNDEF_ISEXTERN (fundef)) && (TCisBoxed (ARG_NTYPE (arg)))) {
+            if ((FUNDEF_ISEXTERN (fundef)) && (TUisBoxed (ARG_NTYPE (arg)))) {
                 argtag = ATG_inout_nodesc_bx;
             } else {
                 argtag = ATG_inout_nodesc;
@@ -379,7 +362,7 @@ InsertIntoIn (argtab_t *argtab, node *fundef, node *arg)
                          */
                         if (TYeqTypes (RET_TYPE (argtab->ptr_out[idx]),
                                        ARG_NTYPE (arg))) {
-                            if (TCisBoxed (ARG_NTYPE (arg))) {
+                            if (TUisBoxed (ARG_NTYPE (arg))) {
                                 argtag = ATG_inout_nodesc_bx;
                             } else {
                                 argtag = ATG_inout_nodesc;
@@ -740,7 +723,7 @@ FPCdoFunctionPrecompile (node *syntax_tree)
 
     info = MakeInfo ();
 
-    TRAVpush (TR_FPC);
+    TRAVpush (TR_fpc);
 
     syntax_tree = TRAVdo (syntax_tree, info);
 
