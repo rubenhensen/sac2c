@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.182  1998/04/07 11:32:37  dkr
+ * now more access macros are used
+ *
  * Revision 1.181  1998/04/04 20:33:54  dkr
  * added an INDENT in PrintIcm
  *
@@ -732,8 +735,9 @@ PrintAssign (node *arg_node, node *arg_info)
             fprintf (outfile, "\n");
         }
 
-        if (ASSIGN_NEXT (arg_node))
+        if (ASSIGN_NEXT (arg_node)) {
             Trav (ASSIGN_NEXT (arg_node), arg_info);
+        }
     }
 
     DBUG_RETURN (arg_node);
@@ -796,7 +800,7 @@ PrintLet (node *arg_node, node *arg_info)
         PrintIds (LET_IDS (arg_node));
         fprintf (outfile, " = ");
     }
-    Trav (arg_node->node[0], arg_info);
+    Trav (LET_EXPR (arg_node), arg_info);
     fprintf (outfile, "; ");
 
     DBUG_RETURN (arg_node);
@@ -1392,7 +1396,7 @@ PrintReturn (node *arg_node, node *arg_info)
         }
 
         fprintf (outfile, "return( ");
-        Trav (arg_node->node[0], arg_info);
+        Trav (RETURN_EXPRS (arg_node), arg_info);
         fprintf (outfile, " );");
     }
 
