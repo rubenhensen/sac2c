@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.10  1999/06/11 12:54:04  cg
+ * Added global variables csfile and csdir to implement the corresponding
+ * sac2c command line arguments.
+ *
  * Revision 2.9  1999/06/09 08:41:02  rob
  * Introduce support for dynamic shape arrays option "ds".
  *
@@ -359,6 +363,8 @@ unsigned int runtimecheck = RUNTIMECHECK_NONE;
 unsigned int intrinsics = INTRINSIC_NONE;
 unsigned int cachesim = CACHESIM_NO | CACHESIM_PIPE;
 char cachesim_host[MAX_FILE_NAME] = "";
+char cachesim_file[MAX_FILE_NAME] = "";
+char cachesim_dir[MAX_FILE_NAME] = "";
 
 /*
  * Profiling information storage facilities
