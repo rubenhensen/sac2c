@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.28  2001/06/07 11:26:54  cg
+ * Bug fixed in TC constant propagation: specialized functions
+ * now get the module name of the currently compiled module name
+ * rather than sticking to their old module name.
+ *
  * Revision 3.27  2001/05/25 14:33:41  sbs
  * ARRAY_TYPE adjusted when casting empty arrays.
  * required for SSA optimizations.
@@ -5900,8 +5905,12 @@ TI_ap (node *arg_node, node *arg_info)
         fun_p = TryConstantPropagation (fun_p, AP_ARGS (arg_node));
 
         if (0 != strcmp (fun_p->id, AP_NAME (arg_node))) {
+            /*
+             * Constant propagation successfull
+             */
             Free (AP_NAME (arg_node));
             AP_NAME (arg_node) = StringCopy (fun_p->id);
+            AP_MOD (arg_node) = fun_p->id_mod;
         }
     }
 
@@ -8040,15 +8049,22 @@ DoConstantPropagation (fun_tab_elem *fun_p, nodelist *propas)
      * want to further specialize already type-specialized functions. However, their
      * counter is set to -2 which is subsequently used for identification of
      * specialized functions.
-     * Unfortunately, this implies that their is no limit on the number of
-     * function specializations due to constant propagation.
+     * Unfortunately, this implies that there is no limit on the number of
+     * function specializations resulting from constant propagation.
      */
 
     newname = TmpVarName (FUNDEF_NAME (new_fun_p->node));
     Free (FUNDEF_NAME (new_fun_p->node));
     FUNDEF_NAME (new_fun_p->node) = newname;
-
+    FUNDEF_MOD (new_fun_p->node) = module_name;
+    /*
+     * The module name must be set to current module's name because the function
+     * itself is renamed during constant propagation specialization, othwerwise
+     * the symbol is searched for in the original module and, hence, found to be
+     * non-existant.
+     */
     new_fun_p->id = FUNDEF_NAME (new_fun_p->node);
+    new_fun_p->id_mod = FUNDEF_MOD (new_fun_p->node);
     /*
      * The entry in the fun table must be updated accordingly.
      * However, it shares the name with the "real" synatax tree.
