@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  2004/12/11 14:48:06  ktr
+ * bugfix.
+ *
  * Revision 1.13  2004/12/08 21:22:02  ktr
  * minor bugfix
  *
@@ -627,8 +630,8 @@ EMRIwith2 (node *arg_node, info *arg_info)
 
             if (INFO_RI_RHSCAND (arg_info) != NULL) {
                 node *mem;
-                mem = (NODE_TYPE (arg_node) == N_genarray) ? GENARRAY_MEM (arg_node)
-                                                           : MODARRAY_MEM (arg_node);
+                mem = (NODE_TYPE (withop) == N_genarray) ? GENARRAY_MEM (withop)
+                                                         : MODARRAY_MEM (withop);
 
                 INFO_RI_TRAVMODE (arg_info) = ri_annotate;
                 AVIS_SSAASSIGN (ID_AVIS (mem))
