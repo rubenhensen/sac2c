@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.19  2001/04/26 15:12:28  dkr
+ * declarations of volatile pointers to non-volatile objects are correct
+ * now
+ *
  * Revision 3.18  2001/04/04 07:47:29  ben
  * SAC_MT_SCHEDULER_Select_Block modified for better tasksizes
  *
@@ -239,8 +243,18 @@
  */
 
 typedef struct ARRAYRC {
-    /* volatile */ void *ptr;
-    /* volatile */ int *rc;
+    /*
+     * REMARK:
+     *
+     * volatile void * ptr
+     * void volatile * ptr
+     *    'ptr' is a non-volatile pointer to a volatile object
+     *
+     * 'void * volatile ptr'
+     *    'ptr' is a volatile pointer to a non-volatile object
+     */
+    void *volatile ptr;
+    int *volatile rc;
 } arrayrc_t;
 
 typedef union {
@@ -249,9 +263,9 @@ typedef union {
         volatile float result_float;
         volatile double result_double;
         volatile char result_char;
-        volatile void *result_array;
+        void *volatile result_array;
         volatile arrayrc_t result_array_rc;
-        volatile void *result_hidden;
+        void *volatile result_hidden;
     } b[SAC_SET_MAX_SYNC_FOLD + 1];
 } SAC_MT_barrier_dummy_t;
 
@@ -270,13 +284,23 @@ typedef union {
 typedef union {
     char dummy[SAC_MT_BARRIER_OFFSET ()];
     union {
+        /*
+         * REMARK:
+         *
+         * volatile void * ptr
+         * void volatile * ptr
+         *    'ptr' is a non-volatile pointer to a volatile object
+         *
+         * 'void * volatile ptr'
+         *    'ptr' is a volatile pointer to a non-volatile object
+         */
         volatile int result_int;
         volatile float result_float;
         volatile double result_double;
         volatile char result_char;
-        volatile void *result_array;
+        void *volatile result_array;
         volatile arrayrc_t result_array_rc;
-        volatile void *result_hidden;
+        void *volatile result_hidden;
     } b[SAC_SET_MAX_SYNC_FOLD + 1];
 } SAC_MT_barrier_t;
 
