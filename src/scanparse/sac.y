@@ -3,7 +3,11 @@
 /*
  *
  * $Log$
- * Revision 1.94  1995/11/01 09:51:31  sbs
+ * Revision 1.95  1995/11/02 09:19:20  sbs
+ * old with-loop syntax converted into
+ * with(...) {...} operator( .., returnval) !
+ *
+ * Revision 1.94  1995/11/01  09:51:31  sbs
  * both with-versions enabled!
  *
  * Revision 1.93  1995/11/01  07:06:36  sbs
@@ -414,7 +418,7 @@ static file_type file_kind = F_prog;
              typedefs, typedef, defs, def2, def3, def4, fundef2,
              objdefs, objdef, exprblock, exprblock2,
              exprblock3, assign, assigns, assignblock, letassign, retassign,
-             selassign, forassign, optretassign,retassignblock,
+             selassign, forassign, optretassign,
              apl, expr, exprs, monop, binop, triop, 
              conexpr, generator, unaryop,
              moddec, expdesc, expdesc2, expdesc3, expdesc4, fundecs, fundec,
@@ -1254,13 +1258,12 @@ assignblock: SEMIC
 
 /*
  * used for old with-expr-syntax only:
- */
 
 retassignblock: BRACE_L {$$=MakeNode(N_block);} assigns retassign SEMIC BRACE_R
                   {  $$=$<node>2;
                    
-                    /* append retassign node($4) to assigns nodes($3), if any
-                     */
+                    * append retassign node($4) to assigns nodes($3), if any
+                     *
                     if (NULL != $3)
                        $$->node[0]=Append($3,$4);
                     else
@@ -1280,10 +1283,10 @@ retassignblock: BRACE_L {$$=MakeNode(N_block);} assigns retassign SEMIC BRACE_R
                 | retassign
                     { $$=MakeNode(N_block);
                       $$->node[0]=MakeNode(N_assign);
-                      $$->node[0]->node[0]=$1;  /* Returnanweisung */
+                      $$->node[0]->node[0]=$1;  * Returnanweisung *
                       $$->node[0]->nnode=1;
                       $$->nnode=1;
-                      $$->lineno=$1->lineno; /* set lineno correktly */
+                      $$->lineno=$1->lineno; * set lineno correktly *
                       
                       DBUG_PRINT("GENTREE",
                                  ("%s "P_FORMAT", %s " P_FORMAT ,
@@ -1299,6 +1302,7 @@ retassignblock: BRACE_L {$$=MakeNode(N_block);} assigns retassign SEMIC BRACE_R
                                   $$->node[0]));
                     }
                 ;
+ */
 
 assigns: /* empty */ 
          { $$=NULL; 
@@ -1976,10 +1980,16 @@ generator: exprORarray  LE ID LE exprORarray
             }
         ;
 
-conexpr: GENARRAY BRACKET_L exprORarray BRACKET_R {$$=MakeGenarray($3, NULL);}
-         retassignblock
-           { $$=$<node>5;
-             GENARRAY_BODY($$)=$6;
+conexpr: assignblock GENARRAY BRACKET_L exprORarray COMMA {$$=MakeGenarray($4, NULL);}
+         exprORarray BRACKET_R
+           { node *ret;
+
+             $$=$<node>6;
+             ret = MakeReturn( MakeExprs($7, NULL) );
+             GENARRAY_BODY($$)=Append( $1, ret);
+/*--------------------------------------------------------------------------*/
+             RETURN_EXPRS(ret)->nnode = 1;
+/*--------------------------------------------------------------------------*/
            }
          | GENARRAY BRACKET_L exprORarray COMMA {$$=MakeGenarray($3, NULL);}
            exprORarray BRACKET_R
@@ -1996,10 +2006,16 @@ conexpr: GENARRAY BRACKET_L exprORarray BRACKET_R {$$=MakeGenarray($3, NULL);}
            }
 
 
-         | MODARRAY BRACKET_L exprORarray COMMA ID BRACKET_R {$$=MakeModarray($3, NULL);}
-           retassignblock
-           { $$=$<node>7;
-             MODARRAY_BODY($$)=$8;
+         | assignblock MODARRAY BRACKET_L exprORarray COMMA ID COMMA
+           {$$=MakeModarray($4, NULL);} exprORarray BRACKET_R
+           { node *ret;
+
+             $$=$<node>8;
+             ret = MakeReturn( MakeExprs($9, NULL) );
+             MODARRAY_BODY($$)=Append( $1, ret);
+/*--------------------------------------------------------------------------*/
+             RETURN_EXPRS(ret)->nnode = 1;
+/*--------------------------------------------------------------------------*/
            }
          | MODARRAY BRACKET_L exprORarray COMMA ID COMMA {$$=MakeModarray($3, NULL);}
            exprORarray BRACKET_R
@@ -2015,11 +2031,14 @@ conexpr: GENARRAY BRACKET_L exprORarray BRACKET_R {$$=MakeGenarray($3, NULL);}
 /*--------------------------------------------------------------------------*/
            }
 
-         | FOLD BRACKET_L foldop BRACKET_R {$$=MakeFoldprf($3, NULL, NULL);}
-           retassignblock
-           { $$=$<node>5;
-             FOLDPRF_BODY($$)=$6;
+         | assignblock FOLD BRACKET_L foldop COMMA exprORarray BRACKET_R
+           { node *ret;
+
+             $$=MakeFoldprf($4, NULL, NULL);
+             ret = MakeReturn( MakeExprs($6, NULL) );
+             FOLDPRF_BODY($$)=Append( $1, ret);
 /*--------------------------------------------------------------------------*/
+             RETURN_EXPRS(ret)->nnode = 1;
              $$->nnode=1;
 /*--------------------------------------------------------------------------*/
            }
@@ -2037,10 +2056,16 @@ conexpr: GENARRAY BRACKET_L exprORarray BRACKET_R {$$=MakeGenarray($3, NULL);}
 /*--------------------------------------------------------------------------*/
            }
 
-         | FOLD BRACKET_L foldop COMMA exprORarray BRACKET_R
-           { $$=MakeFoldprf($3,NULL,$5); } retassignblock
-           { $$=$<node>7;
-             FOLDPRF_BODY($$)=$8;
+         | assignblock FOLD BRACKET_L foldop COMMA exprORarray COMMA exprORarray
+           BRACKET_R
+           { node *ret;
+
+             $$=MakeFoldprf($4,NULL,$6);
+             ret = MakeReturn( MakeExprs($8, NULL) );
+             FOLDPRF_BODY($$)=Append($1, ret);
+/*--------------------------------------------------------------------------*/
+             RETURN_EXPRS(ret)->nnode = 1;
+/*--------------------------------------------------------------------------*/
            }
          | FOLD BRACKET_L foldop COMMA exprORarray COMMA exprORarray BRACKET_R
            { $$=MakeFoldprf($3,
@@ -2055,12 +2080,16 @@ conexpr: GENARRAY BRACKET_L exprORarray BRACKET_R {$$=MakeGenarray($3, NULL);}
 /*--------------------------------------------------------------------------*/
            }
 
-         | FOLD BRACKET_L foldfun exprORarray BRACKET_R
-           retassignblock
-           { $$=$<node>3;
-              FOLDFUN_BODY($$)=$6;
-              FOLDFUN_NEUTRAL($$)= $4;
+         | assignblock FOLD BRACKET_L foldfun exprORarray COMMA exprORarray 
+           BRACKET_R
+           { node *ret;
+
+              $$=$<node>4;
+              ret = MakeReturn( MakeExprs($7, NULL) );
+              FOLDFUN_BODY($$)=Append( $1, ret);
+              FOLDFUN_NEUTRAL($$)= $5;
 /*--------------------------------------------------------------------------*/
+             RETURN_EXPRS(ret)->nnode = 1;
              $$->nnode=2;
 /*--------------------------------------------------------------------------*/
            }
@@ -2844,7 +2873,7 @@ siblinklist: ID
                  $$->name=$1;
                  $$->next=$3;
                }
-              
+              ;
 
 %%
 
