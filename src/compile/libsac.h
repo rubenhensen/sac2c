@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.5  1996/02/05 09:21:48  sbs
+ * Revision 1.6  1996/02/21 15:10:33  cg
+ * typedefs and defines taken from icm2c.h
+ * new typedef char* string
+ *
+ * Revision 1.5  1996/02/05  09:21:48  sbs
  * RuntimError => Runtime_Error
  *
  * Revision 1.4  1996/01/25  15:04:57  cg
@@ -24,6 +28,12 @@
 #ifndef _sac_libsac_h
 
 #define _sac_libsac_h
+
+#define true 1
+#define false 0
+
+typedef int bool;
+typedef char *string;
 
 extern int __SAC__Runtime_hidden_memcnt;
 extern int __SAC__Runtime_array_memcnt;
