@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.126  1997/05/29 13:42:20  sbs
+ * Revision 1.127  1997/08/04 17:09:45  dkr
+ * extended conditionals before printing PROFILE_SETUP
+ *
+ * Revision 1.126  1997/05/29  13:42:20  sbs
  * F_idx_modarray added
  *
  * Revision 1.125  1997/05/28  12:37:20  sbs
@@ -604,7 +607,8 @@ PrintBlock (node *arg_node, node *arg_info)
         fprintf (outfile, "\n");
     }
 
-    if ((strcmp (FUNDEF_NAME (INFO_FUNDEF (arg_info)), "main") == 0)
+    if ((INFO_FUNDEF (arg_info) != NULL)
+        && (strcmp (FUNDEF_NAME (INFO_FUNDEF (arg_info)), "main") == 0)
         && (profile_setup_flag == 0)) {
         profile_setup_flag = 1;
         INDENT;
@@ -1191,7 +1195,8 @@ PrintReturn (node *arg_node, node *arg_info)
     DBUG_ENTER ("PrintReturn");
 
     if ((arg_node->node[0] != NULL) && (!RETURN_INWITH (arg_node))) {
-        if ((strcmp (FUNDEF_NAME (INFO_FUNDEF (arg_info)), "main") == 0)) {
+        if ((INFO_FUNDEF (arg_info) != NULL)
+            && (strcmp (FUNDEF_NAME (INFO_FUNDEF (arg_info)), "main") == 0)) {
             INDENT;
             fprintf (outfile, "PROFILE_PRINT();\n");
         }
