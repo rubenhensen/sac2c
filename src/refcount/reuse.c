@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2004/08/12 12:10:10  ktr
+ * now only args with ARG_STATUS == ST_artificial are not treated as
+ * potential reuse candidates.
+ *
  * Revision 1.4  2004/08/11 13:13:25  ktr
  * empty fundefs are no longer traversed.
  *
@@ -189,7 +193,7 @@ RIarg (node *arg_node, info *arg_info)
         ARG_NEXT (arg_node) = Trav (ARG_NEXT (arg_node), arg_info);
     }
 
-    if (ARG_STATUS (arg_node) == ST_regular) {
+    if (ARG_STATUS (arg_node) != ST_artificial) {
         node *id;
 
         id = MakeId (StringCopy (ARG_NAME (arg_node)), NULL, ST_regular);
@@ -500,8 +504,24 @@ RIprf (node *arg_node, info *arg_info)
         break;
 
     default:
+        if (PRF_ARGS (arg_node) != NULL) {
+            DBUG_PRINT ("RI", ("prf args"));
+            DBUG_EXECUTE ("RI", Print (PRF_ARGS (arg_node)););
+        }
+
         rhc = TypeMatch (DupTree (PRF_ARGS (arg_node)), INFO_RI_LHS (arg_info));
+
+        if (rhc != NULL) {
+            DBUG_PRINT ("RI", ("rhc"));
+            DBUG_EXECUTE ("RI", Print (rhc); Print (INFO_RI_CANDIDATES (arg_info)););
+        }
+
         INFO_RI_RHSCAND (arg_info) = CutExprs (INFO_RI_CANDIDATES (arg_info), rhc);
+
+        if (INFO_RI_RHSCAND (arg_info) != NULL) {
+            DBUG_PRINT ("RI", ("RHSCAND"));
+            DBUG_EXECUTE ("RI", Print (INFO_RI_RHSCAND (arg_info)););
+        }
     }
     DBUG_RETURN (arg_node);
 }
