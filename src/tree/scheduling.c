@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.24  2001/05/04 11:45:12  ben
+ * scheduler_table[] modified:
+ * Even deleted, Cyclic renamed to Static, Afs renamed to Affinity
+ *
  * Revision 3.23  2001/05/03 17:31:55  dkr
  * MAXHOMDIM replaced by HOMSV
  *
@@ -265,11 +269,15 @@ static struct {
     char *arg_spec;
 } scheduler_table[] = {
   /* Name            Class          Adjust Dim  Args  ArgTypes */
-  {"Block", SC_const_seg, 1, 0, 0, ""},   {"BlockVar", SC_var_seg, 1, 0, 0, ""},
-  {"Even", SC_var_seg, 1, 0, 0, ""},      {"Cyclic", SC_var_seg, 1, 0, 1, "n"},
-  {"Self", SC_var_seg, 1, 0, 1, "n"},     {"Afs", SC_var_seg, 1, 0, 1, "n"},
-  {"AllByOne", SC_var_seg, 0, 0, 1, "i"}, {"BlockBySome", SC_const_seg, 0, 0, 2, "i,i"},
-  {"Static", SC_withloop, 0, 0, 0, ""},   {"", SC_const_seg, 0, 0, 0, ""}};
+  {"Block", SC_const_seg, 1, 0, 0, ""},
+  {"BlockVar", SC_var_seg, 1, 0, 0, ""},
+  {"Static", SC_var_seg, 1, 0, 1, "n"},
+  {"Self", SC_var_seg, 1, 0, 1, "n"},
+  {"Affinity", SC_var_seg, 1, 0, 1, "n"},
+  {"AllByOne", SC_var_seg, 0, 0, 1, "i"},
+  {"BlockBySome", SC_const_seg, 0, 0, 2, "i,i"},
+  {"Static", SC_withloop, 0, 0, 0, ""},
+  {"", SC_const_seg, 0, 0, 0, ""}};
 
 /******************************************************************************
  *
