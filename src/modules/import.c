@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.27  1995/10/31 09:41:02  cg
+ * Revision 1.28  1995/10/31 14:47:21  sbs
+ * GenLinkerList modifyed : ERROR->WARNING
+ *
+ * Revision 1.27  1995/10/31  09:41:02  cg
  * Now, SIB information will be retrieved for functions which themselves
  * are only needed by other imported inline functions.
  *
@@ -1807,7 +1810,7 @@ GenLinkerList ()
             strcat (list, " ");
             strcat (list, file);
         } else {
-            SYSERROR (("Unable to find file \"%s\"", buffer));
+            SYSWARN (("Unable to find file \"%s\"", buffer));
         }
         linklist = linklist->next;
     }
