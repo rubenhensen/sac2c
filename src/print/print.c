@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.161  1998/03/19 20:31:20  dkr
+ * changed output in PrintNcode:
+ *   prints "{}" if CBLOCK is NULL
+ *
  * Revision 1.160  1998/03/19 19:06:27  dkr
  * changed output in PrintWL...
  *
@@ -2074,8 +2078,9 @@ PrintNcode (node *arg_node, node *arg_info)
 
     /* print the code section; first the body */
     block = NCODE_CBLOCK (arg_node);
+    fprintf (outfile, " {");
     if (block != NULL) {
-        fprintf (outfile, " {\n");
+        fprintf (outfile, "\n");
         indent++;
 
         if (BLOCK_VARDEC (block) != NULL) {
@@ -2089,11 +2094,11 @@ PrintNcode (node *arg_node, node *arg_info)
 
         indent--;
         INDENT;
-        fprintf (outfile, "}");
     }
+    fprintf (outfile, "}");
 
-    /* print the expression if internal syntax should be used. Else
-       return expr in arg_info->node[2] */
+    /* print the expression if internal syntax should be used.
+       else return expr in arg_info->node[2] */
     DBUG_ASSERT (NCODE_CEXPR (arg_node), "no expression at N_Ncode");
     if (arg_info->node[2] != NULL) {
         arg_info->node[2] = NCODE_CEXPR (arg_node);
