@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.12  1995/10/08 11:29:46  sbs
+# Revision 1.13  1995/12/15 10:41:07  cg
+# make deps done
+#
+# Revision 1.12  1995/10/08  11:29:46  sbs
 # make deps done
 #
 # Revision 1.11  1995/05/26  12:12:23  asi
@@ -52,12 +55,13 @@ clean:
 
 convert.o: /usr/include/string.h /usr/include/sys/stdtypes.h
 convert.o: /usr/include/stdlib.h ../global/tree.h ../global/types.h
-convert.o: ../global/tree_basic.h ../global/tree_compound.h ../../inc/dbug.h
-convert.o: /usr/include/stdio.h convert.h ../global/type_info.mac
+convert.o: ../global/tree_basic.h ../global/tree_compound.h ../global/Error.h
+convert.o: /usr/include/stdio.h ../global/internal_lib.h ../../inc/dbug.h
+convert.o: convert.h ../global/type_info.mac
 print.o: /usr/include/stdio.h /usr/include/stdlib.h
 print.o: /usr/include/sys/stdtypes.h /usr/include/string.h print.h
 print.o: ../global/tree.h ../global/types.h ../global/tree_basic.h
-print.o: ../global/tree_compound.h ../global/my_debug.h ../../inc/dbug.h
-print.o: ../global/traverse.h ../global/Error.h convert.h
-print.o: ../optimize/optimize.h ../compile/trace.h ../compile/icm.data
-print.o: ../global/prf_node_info.mac
+print.o: ../global/tree_compound.h ../global/Error.h ../global/internal_lib.h
+print.o: ../global/my_debug.h ../../inc/dbug.h ../global/traverse.h convert.h
+print.o: ../optimize/optimize.h ../global/free.h ../compile/trace.h
+print.o: ../compile/icm.data ../global/prf_node_info.mac

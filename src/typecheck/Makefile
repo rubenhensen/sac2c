@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.10  1995/10/08 11:29:50  sbs
+# Revision 1.11  1995/12/15 10:41:09  cg
+# make deps done
+#
+# Revision 1.10  1995/10/08  11:29:50  sbs
 # make deps done
 #
 # Revision 1.9  1995/07/07  15:47:48  asi
@@ -56,15 +59,16 @@ clean:
 
 prim_fun.o: /usr/include/stdlib.h /usr/include/sys/stdtypes.h
 prim_fun.o: ../global/tree.h ../global/types.h ../global/tree_basic.h
-prim_fun.o: ../global/tree_compound.h prim_fun.h ../../inc/dbug.h
-prim_fun.o: /usr/include/stdio.h ../global/Error.h ../global/my_debug.h
-prim_fun.o: ../global/internal_lib.h typecheck.h ../global/access_macros.h
-prim_fun.o: ../print/convert.h prim_fun_tt.mac prim_fun_ft.mac
+prim_fun.o: ../global/tree_compound.h ../global/Error.h /usr/include/stdio.h
+prim_fun.o: /usr/include/string.h ../global/internal_lib.h prim_fun.h
+prim_fun.o: ../../inc/dbug.h ../global/my_debug.h typecheck.h
+prim_fun.o: ../global/access_macros.h ../print/convert.h prim_fun_tt.mac
+prim_fun.o: prim_fun_ft.mac
 typecheck.o: /usr/include/stdlib.h /usr/include/sys/stdtypes.h
 typecheck.o: /usr/include/stddef.h /usr/include/string.h ../global/tree.h
 typecheck.o: ../global/types.h ../global/tree_basic.h
-typecheck.o: ../global/tree_compound.h ../global/my_debug.h ../../inc/dbug.h
-typecheck.o: /usr/include/stdio.h ../global/traverse.h typecheck.h
-typecheck.o: ../global/Error.h ../print/convert.h ../modules/import.h
-typecheck.o: prim_fun.h ../global/free.h ../global/internal_lib.h
+typecheck.o: ../global/tree_compound.h ../global/Error.h /usr/include/stdio.h
+typecheck.o: ../global/internal_lib.h ../global/my_debug.h ../../inc/dbug.h
+typecheck.o: ../global/traverse.h typecheck.h ../print/convert.h
+typecheck.o: ../modules/import.h prim_fun.h ../global/free.h
 typecheck.o: ../global/access_macros.h ../optimize/DupTree.h prim_fun_tt.mac

@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.11  1995/10/08 11:29:48  sbs
+# Revision 1.12  1995/12/15 10:41:08  cg
+# make deps done
+#
+# Revision 1.11  1995/10/08  11:29:48  sbs
 # make deps done
 #
 # Revision 1.10  1995/06/30  11:28:05  hw
@@ -65,9 +68,10 @@ clean:
 
 lex.yy.o: /usr/include/stdio.h /usr/include/stdlib.h
 lex.yy.o: /usr/include/sys/stdtypes.h ../global/tree.h ../global/types.h
-lex.yy.o: ../global/tree_basic.h ../global/tree_compound.h y.tab.h
+lex.yy.o: ../global/tree_basic.h ../global/tree_compound.h ../global/Error.h
+lex.yy.o: /usr/include/string.h ../global/internal_lib.h y.tab.h
 y.tab.o: /usr/include/stdio.h /usr/include/stdlib.h
 y.tab.o: /usr/include/sys/stdtypes.h /usr/include/memory.h ../../inc/dbug.h
 y.tab.o: ../global/tree.h ../global/types.h ../global/tree_basic.h
-y.tab.o: ../global/tree_compound.h ../global/my_debug.h
-y.tab.o: ../global/internal_lib.h
+y.tab.o: ../global/tree_compound.h ../global/Error.h /usr/include/string.h
+y.tab.o: ../global/internal_lib.h ../global/my_debug.h

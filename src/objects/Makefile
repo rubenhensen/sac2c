@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.5  1995/11/16 19:45:25  cg
+# Revision 1.6  1995/12/15 10:41:14  cg
+# make deps done
+#
+# Revision 1.5  1995/11/16  19:45:25  cg
 # added compilation of rmvoidfun.c
 #
 # Revision 1.4  1995/11/06  09:23:30  cg
@@ -53,14 +56,21 @@ clean:
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
 objects.o: ../global/types.h ../global/tree_basic.h ../global/tree_compound.h
-objects.o: ../global/Error.h /usr/include/stdio.h ../../inc/dbug.h
+objects.o: ../global/Error.h /usr/include/stdio.h /usr/include/string.h
+objects.o: /usr/include/sys/stdtypes.h /usr/include/stdlib.h ../../inc/dbug.h
 objects.o: ../global/traverse.h ../global/internal_lib.h
-objects.o: /usr/include/string.h /usr/include/sys/stdtypes.h
 objinit.o: /usr/include/string.h /usr/include/sys/stdtypes.h
 objinit.o: ../global/types.h ../global/tree_basic.h ../global/tree_compound.h
-objinit.o: ../global/Error.h /usr/include/stdio.h ../global/traverse.h
-objinit.o: ../../inc/dbug.h ../global/internal_lib.h
+objinit.o: ../global/Error.h /usr/include/stdio.h /usr/include/stdlib.h
+objinit.o: ../global/traverse.h ../../inc/dbug.h ../global/internal_lib.h
+rmvoidfun.o: ../global/types.h ../global/tree_basic.h
+rmvoidfun.o: ../global/tree_compound.h ../global/Error.h /usr/include/stdio.h
+rmvoidfun.o: /usr/include/string.h /usr/include/sys/stdtypes.h
+rmvoidfun.o: /usr/include/stdlib.h ../../inc/dbug.h ../global/traverse.h
+rmvoidfun.o: ../global/internal_lib.h ../global/free.h ../global/my_debug.h
 uniquecheck.o: ../global/types.h ../global/tree_basic.h
 uniquecheck.o: ../global/tree_compound.h ../global/Error.h
-uniquecheck.o: /usr/include/stdio.h ../../inc/dbug.h ../global/traverse.h
-uniquecheck.o: ../global/internal_lib.h /usr/include/malloc.h
+uniquecheck.o: /usr/include/stdio.h /usr/include/string.h
+uniquecheck.o: /usr/include/sys/stdtypes.h /usr/include/stdlib.h
+uniquecheck.o: ../../inc/dbug.h ../global/traverse.h ../global/internal_lib.h
+uniquecheck.o: /usr/include/malloc.h
