@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2001/03/21 11:05:37  dkr
+ * some superfluous includes removed
+ *
  * Revision 3.1  2000/11/20 18:03:31  sacbase
  * new release made
  *
@@ -139,8 +142,6 @@
 #include "tree.h"
 #include "dbug.h"
 #include "my_debug.h"
-#include "scnprs.h"
-#include "optimize.h"
 
 #define GEN_NODE(type) (type *)Malloc (sizeof (type))
 
