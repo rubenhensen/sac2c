@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.26  1995/09/06 16:14:11  hw
+ * Revision 1.27  1995/12/04 16:16:01  hw
+ * added ICM ND_2F, ND_2I & ND_2D
+ *
+ * Revision 1.26  1995/09/06  16:14:11  hw
  * added macro ND_IDX_PSI_A
  * renamed macro ND_IDX_PSI to ND_IDX_PSI_S
  *
@@ -404,6 +407,21 @@
 #define ND_F2D_A(a1, res) ND_F2I_A (a1, res)
 #define ND_D2I_A(a1, res) ND_F2I_A (a1, res)
 #define ND_D2F_A(a1, res) ND_F2I_A (a1, res)
+
+/*
+ * Macro for primitive function itof & ftoi:
+ * ===================================
+ */
+#define ND_2I_A(a1, res)                                                                 \
+    {                                                                                    \
+        int __i;                                                                         \
+        for (__i = 0; __i < ND_A_SIZE (res); __i++)                                      \
+            ND_A_FIELD (res)[__i] = ND_A_FIELD (a1)[__i];                                \
+    }
+
+#define ND_2F_A(a1, res) ND_2I_A (a1, res)
+#define ND_2D_A(a1, res) ND_2I_A (a1, res)
+
 /* and now some macros that don't belong to N_icm
  */
 #define OUT_OF_BOUND(line, prf, size, idx)                                               \
