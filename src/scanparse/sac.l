@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 1.48  1997/10/07 13:27:21  srs
+ * new primitive functions min and max
+ *
  * Revision 1.47  1997/10/05 13:31:58  dkr
  * a few <cr>s in lex-rules have been removed
  * because some (f)lex-implementations can not handle them.
@@ -290,6 +293,8 @@ int start_token;
 "toi"                           {FILTER7( TOI,prf_name_str[F_toi] );}
 "tof"                           {FILTER7( TOF,prf_name_str[F_tof] );}
 "tod"                           {FILTER7( TOD,prf_name_str[F_tod] );}
+"min"                           {FILTER7( PRF_MIN,prf_name_str[F_min] );}
+"max"                           {FILTER7( PRF_MAX,prf_name_str[F_max] );}
 "typedef"			{FILTER( TYPEDEF );}
 "classtype"			{FILTER( CLASSTYPE );}
 "objdef"		        {FILTER( OBJDEF );}
