@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.40  1995/03/08 14:40:10  sbs
+ * Revision 1.41  1995/03/10 13:10:01  hw
+ * - changed PrintId , PrintIds ( now refcounts can be printed)
+ *
+ * Revision 1.40  1995/03/08  14:40:10  sbs
  * include "tree.h" moved from tree.c to tree.h
  *
  * Revision 1.39  1995/03/08  14:04:01  sbs
@@ -128,6 +131,7 @@
 #include "convert.h"
 #include "optimize.h"
 
+extern show_refcnt;   /* imported from main.c */
 extern FILE *outfile; /* outputfile for PrintTree defined in main.c*/
 
 int indent = 0;
@@ -153,9 +157,14 @@ PrintIds (ids *ids)
         DBUG_PRINT ("PRINT", ("%s", ids->id));
 
         if (NULL != ids->next)
-            fprintf (outfile, "%s, ", ids->id);
-        else
+            if ((-1 == ids->refcnt) || (0 == show_refcnt))
+                fprintf (outfile, "%s, ", ids->id);
+            else
+                fprintf (outfile, "%s:%d, ", ids->id, ids->refcnt);
+        else if ((-1 == ids->refcnt) || (0 == show_refcnt))
             fprintf (outfile, "%s ", ids->id);
+        else
+            fprintf (outfile, "%s:%d ", ids->id, ids->refcnt);
         ids = ids->next;
     } while (NULL != ids);
 
@@ -377,7 +386,10 @@ PrintId (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintId");
 
-    fprintf (outfile, "%s", arg_node->info.id);
+    if ((0 == show_refcnt) || (-1 == arg_node->refcnt))
+        fprintf (outfile, "%s", arg_node->info.id);
+    else
+        fprintf (outfile, "%s:%d", arg_node->info.id, arg_node->refcnt);
 
     DBUG_RETURN (arg_node);
 }
