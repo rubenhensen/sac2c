@@ -4,6 +4,9 @@
 /*
  *
  * $Log$
+ * Revision 3.50  2002/08/13 15:28:06  sbs
+ * id / id COLON id    substituted by fun_id  in sib-funs
+ *
  * Revision 3.49  2002/08/13 15:15:33  sbs
  * error in constructing unary ops eliminated.
  *
@@ -2193,10 +2196,11 @@ sibfuns: sibfun sibfuns
          }
        ;
 
-sibfun: sibevmarker varreturntypes id BRACKET_L sibarglist
+sibfun: sibevmarker varreturntypes fun_id BRACKET_L sibarglist
         BRACKET_R { $<cint>$ = linenum; } sibfunbody sibpragmas
           {
-            $$ = MakeFundef( $3, NULL, $2, $5, $8, NULL);
+            $$ = MakeFundef( StringCopy( IDS_NAME( $3)), IDS_MOD( $3), $2, $5, $8, NULL);
+            $3 = FreeOneIds( $3);
             NODE_LINE( $$) = $<cint>7;
             switch ($1) {
               case 0:
@@ -2217,31 +2221,6 @@ sibfun: sibevmarker varreturntypes id BRACKET_L sibarglist
            DBUG_PRINT("PARSE_SIB",("%s"F_PTR"SibFun %s",
                                mdb_nodetype[ NODE_TYPE( $$)],
                                $$, ItemName( $$)));
-          }
-      | sibevmarker varreturntypes id COLON id BRACKET_L sibarglist
-        BRACKET_R { $<cint>$ = linenum; } sibfunbody sibpragmas
-          {
-            $$ = MakeFundef( $5, $3, $2, $7, $10, NULL);
-            NODE_LINE( $$) = $<cint>9;
-            switch ($1) {
-              case 0:
-                FUNDEF_STATUS( $$) = sib_imported_status;
-                FUNDEF_INLINE( $$) = FALSE;
-                break;
-              case 1:
-                FUNDEF_STATUS( $$) = sib_imported_status;
-                FUNDEF_INLINE( $$) = TRUE;
-                break;
-              case 2:
-                FUNDEF_STATUS( $$) = ST_classfun;
-                FUNDEF_INLINE( $$) = FALSE;
-                break;
-            }
-            FUNDEF_PRAGMA( $$) = $11;
-
-            DBUG_PRINT("PARSE_SIB",("%s"F_PTR"SibFun %s",
-                                mdb_nodetype[ NODE_TYPE( $$)],
-                                $$, ItemName( $$)));
           }
         ;
 
@@ -2370,9 +2349,10 @@ sibfunlist: sibfunlistentry COMMA sibfunlist
             }
           ;
 
-sibfunlistentry: id BRACKET_L sibarglist BRACKET_R
+sibfunlistentry: fun_id BRACKET_L sibarglist BRACKET_R
                  {
-                   $$ = MakeFundef( $1, NULL,
+                   $$ = MakeFundef( StringCopy( IDS_NAME( $1)),
+                                    IDS_MOD( $1),
                                     MakeTypes1( T_unknown),
                                     $3, NULL, NULL);
                    FUNDEF_STATUS( $$) = sib_imported_status;
@@ -2381,18 +2361,6 @@ sibfunlistentry: id BRACKET_L sibarglist BRACKET_R
                                        mdb_nodetype[ NODE_TYPE( $$)],
                                        $$, ItemName( $$)));
                 }
-               | id COLON id BRACKET_L sibarglist BRACKET_R
-                 {
-                   $$ = MakeFundef( $3, $1,
-                                    MakeTypes1( T_unknown),
-                                    $5, NULL, NULL);
-
-                   FUNDEF_STATUS( $$) = sib_imported_status;
-
-                   DBUG_PRINT("PARSE_SIB",("%s"F_PTR"SibNeedFun %s",
-                                       mdb_nodetype[ NODE_TYPE( $$)],
-                                       $$, ItemName( $$)));
-                 }
                ;
 
 
