@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2002/07/15 19:44:19  dkr
+ * CAT6 added
+ *
  * Revision 3.3  2002/06/28 12:58:46  dkr
  * ICM_UNDEF moved to sac_misc.h
  *
@@ -144,6 +147,9 @@
 
 #define CAT5(x, y) xCAT5 (x, y)
 #define xCAT5(x, y) x##y
+
+#define CAT6(x, y) xCAT6 (x, y)
+#define xCAT6(x, y) x##y
 
 #define AddParens(a) xAddParens (a)
 #define xAddParens(a) (##a##)
