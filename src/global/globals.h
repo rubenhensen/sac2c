@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.5  1999/05/20 14:05:14  cg
+ * cachesim bit mask macros reorganized.
+ *
  * Revision 2.4  1999/05/12 14:31:16  cg
  * some global variables associated with options renamed.
  * Optimizations are now triggered by bit field optimize instead
@@ -168,7 +171,8 @@ extern unsigned int cachesim;
 #define CACHESIM_ADVANCED 0x0002
 #define CACHESIM_FILE 0x0004
 #define CACHESIM_PIPE 0x0008
-#define CACHESIM_PRAGMA 0x0010
+#define CACHESIM_IMMEDIATE 0x0010
+#define CACHESIM_BLOCK 0x0020
 
 extern unsigned int runtimecheck;
 
