@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.2  2001/03/22 14:25:41  nmw
+ * COAST2Constant, COIsConstant, DebugPrint added
+ *
  * Revision 1.1  2001/03/02 14:32:55  sbs
  * Initial revision
  *
@@ -202,6 +205,35 @@ DbugPrintBinOp (char *fun, constant *arg1, constant *arg2, constant *res)
     COPrintConstant (stderr, arg1);
     fprintf (stderr, " ");
     COPrintConstant (stderr, arg2);
+    fprintf (stderr, "results in: ");
+    COPrintConstant (stderr, res);
+
+    DBUG_VOID_RETURN;
+}
+
+#endif
+
+/******************************************************************************
+ *
+ * function:
+ *   void DbugPrintUnaryOp( char *fun,
+ *                          constant *arg1,
+ *                          constant *res)
+ *
+ * description:
+ *   logs the arg and result of unary ops to stderr.
+ *
+ ******************************************************************************/
+
+#ifndef DBUG_OFF
+
+void
+DbugPrintUnaryOp (char *fun, constant *arg1, constant *res)
+{
+    DBUG_ENTER ("DbugPrintUnaryOp");
+
+    fprintf (stderr, "%s applied to\n ", fun);
+    COPrintConstant (stderr, arg1);
     fprintf (stderr, "results in: ");
     COPrintConstant (stderr, res);
 
@@ -495,6 +527,127 @@ COConstant2AST (constant *a)
          * constvec infos. This is not done here, since it is not yet clear how
          * the representation of constant arrays should be in the long term....
          */
+    }
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    constant *COAST2Constant( node *n)
+ *
+ * description:
+ *    converts a given node from the AST to a constant.
+ *    return NULL if n is not a simple constant.
+ *
+ *    this funtion can deal with scalar types like
+ *      N_num, N_double, N_float, N_bool
+ *    arrays (N_array)
+ *    and identifier (N_id with marked AVIS_SSACONST attribute)
+ *
+ ******************************************************************************/
+constant *
+COAST2Constant (node *n)
+{
+    constant *new_co;
+    void *element;
+
+    DBUG_ENTER ("COAST2Constant");
+
+    if ((n != NULL) && (COIsConstant (n))) {
+        /* convert the given constant node */
+
+        switch (NODE_TYPE (n)) {
+        case N_num:
+            element = (int *)MALLOC (sizeof (int));
+            *((int *)element) = NUM_VAL (n);
+            new_co = COMakeConstant (T_int, SHMakeShape (0), element);
+            break;
+
+        case N_double:
+            element = (double *)MALLOC (sizeof (double));
+            *((double *)element) = DOUBLE_VAL (n);
+            new_co = COMakeConstant (T_double, SHMakeShape (0), element);
+            break;
+
+        case N_float:
+            element = (float *)MALLOC (sizeof (float));
+            *((float *)element) = FLOAT_VAL (n);
+            new_co = COMakeConstant (T_float, SHMakeShape (0), element);
+            break;
+
+        case N_bool:
+            element = (bool *)MALLOC (sizeof (bool));
+            *((bool *)element) = BOOL_VAL (n);
+            new_co = COMakeConstant (T_bool, SHMakeShape (0), element);
+            break;
+
+        case N_array:
+            new_co = COMakeConstant (TYPES_BASETYPE (ARRAY_TYPE (n)),
+                                     SHOldTypes2Shape (ARRAY_TYPE (n)),
+                                     Array2IntVec (ARRAY_AELEMS (n), NULL));
+
+            break;
+
+        case N_id:
+            new_co = COCopyConstant (AVIS_SSACONST (ID_AVIS (n)));
+            break;
+
+        default:
+            DBUG_ASSERT ((FALSE), "missing implementation for given nodetype");
+        }
+    } else {
+        /* node is not a constant */
+        new_co = NULL;
+    }
+    DBUG_RETURN (new_co);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    bool COIsConstant( node *n)
+ *
+ * description:
+ *    checks if a given node is constant
+ *
+ *    this funtion can deal with scalar types like
+ *      N_num, N_double, N_float, N_bool
+ *    arrays (N_array)
+ *    and identifier (N_id with marked AVIS_SSACONST attribute)
+ *
+ ******************************************************************************/
+bool
+COIsConstant (node *n)
+{
+    bool res;
+
+    DBUG_ENTER ("COIsConstant");
+
+    if (n != NULL) {
+        switch (NODE_TYPE (n)) {
+        case N_num:
+        case N_double:
+        case N_float:
+        case N_bool:
+            res = TRUE;
+            break;
+
+        case N_array:
+            res = IsConstArray (n);
+            break;
+
+        case N_id:
+            res = (AVIS_SSACONST (ID_AVIS (n)) != NULL);
+            break;
+
+        default:
+            /* unknown node is not constant */
+            res = FALSE;
+        }
+    } else {
+        /* NULL is not a constant */
+        res = FALSE;
     }
     DBUG_RETURN (res);
 }
