@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.88  1997/04/24 14:57:25  sbs
+ * Revision 1.89  1997/04/25 09:25:44  sbs
+ * dummy-decls in CompConvert and CompPrf commented out in case
+ * of NOFREE.
+ *
+ * Revision 1.88  1997/04/24  14:57:25  sbs
  * HAVE_MALLOC_O included
  *
  * Revision 1.87  1996/09/11  06:27:38  cg
@@ -3021,7 +3025,9 @@ CompConvert (node *arg_node, node *arg_info)
     case F_toi:
     case F_tod:
     case F_tof: {
+#ifndef NOFREE
         node *dummy = arg_node;
+#endif /* NOFREE */
 
         /* return argument of ftoi */
         arg_node = PRF_ARG1 (arg_node);
@@ -4050,7 +4056,10 @@ CompPrf (node *arg_node, node *arg_info)
       if ((arg_node->info.prf == F_ftoi) || (arg_node->info.prf == F_ftod)
           || (arg_node->info.prf == F_itof) || (arg_node->info.prf == F_itod)
           || (arg_node->info.prf == F_dtof) || (arg_node->info.prf == F_dtoi)) {
+#ifndef NOFREE
         node *dummy = arg_node;
+#endif /* NOFREE */
+
         /* return argument of ftoi */
         arg_node = arg_node->node[0]->node[0];
         FREE (dummy->node[0]); /* free N_exprs node */
