@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.40  2004/12/01 18:49:01  sah
+ * post DK bugfixing
+ *
  * Revision 1.39  2004/12/01 14:17:41  sah
  * fixed usage of AP_NAME
  *
@@ -839,7 +842,7 @@ BuildIndex (node *args, node *iv, node *block, dotinfo *info)
         leftid = MakeTmpId ("left_index");
         BLOCK_INSTR (block)
           = TCappendAssign (BLOCK_INSTR (block),
-                            MakeAssignLetNV (ILIBstringCopy (ID_NAME (leftid)),
+                            MakeAssignLetNV (ILIBstringCopy (ID_SPNAME (leftid)),
                                              leftindex));
     }
 
@@ -848,7 +851,7 @@ BuildIndex (node *args, node *iv, node *block, dotinfo *info)
         middleid = MakeTmpId ("middle_index");
         BLOCK_INSTR (block)
           = TCappendAssign (BLOCK_INSTR (block),
-                            MakeAssignLetNV (ILIBstringCopy (ID_NAME (middleid)),
+                            MakeAssignLetNV (ILIBstringCopy (ID_SPNAME (middleid)),
                                              middleindex));
     }
 
@@ -857,7 +860,7 @@ BuildIndex (node *args, node *iv, node *block, dotinfo *info)
         rightid = MakeTmpId ("right_index");
         BLOCK_INSTR (block)
           = TCappendAssign (BLOCK_INSTR (block),
-                            MakeAssignLetNV (ILIBstringCopy (ID_NAME (rightid)),
+                            MakeAssignLetNV (ILIBstringCopy (ID_SPNAME (rightid)),
                                              rightindex));
     }
 
@@ -868,7 +871,7 @@ BuildIndex (node *args, node *iv, node *block, dotinfo *info)
 
         BLOCK_INSTR (block)
           = TCappendAssign (BLOCK_INSTR (block),
-                            MakeAssignLetNV (ILIBstringCopy (ID_NAME (tmpid)),
+                            MakeAssignLetNV (ILIBstringCopy (ID_SPNAME (tmpid)),
                                              BuildConcat (middleid, rightid)));
 
         middleid = tmpid;
@@ -886,7 +889,7 @@ BuildIndex (node *args, node *iv, node *block, dotinfo *info)
 
             BLOCK_INSTR (block)
               = TCappendAssign (BLOCK_INSTR (block),
-                                MakeAssignLetNV (ILIBstringCopy (ID_NAME (tmpid)),
+                                MakeAssignLetNV (ILIBstringCopy (ID_SPNAME (tmpid)),
                                                  BuildConcat (leftid, middleid)));
 
             leftid = tmpid;
@@ -1042,7 +1045,7 @@ BuildIdTable (node *ids, idtable *appendto)
                 /* to go on and search for further errors.             */
                 newtab->id = ILIBstringCopy ("_non_id_expr");
             } else {
-                newtab->id = ILIBstringCopy (ID_NAME (id));
+                newtab->id = ILIBstringCopy (ID_SPNAME (id));
             }
 
             newtab->type = ID_scalar;
@@ -1055,7 +1058,7 @@ BuildIdTable (node *ids, idtable *appendto)
 #ifdef HD_SETWL_VECTOR
     {
         idtable *newtab = ILIBmalloc (sizeof (idtable));
-        newtab->id = ILIBstringCopy (ID_NAME (ids));
+        newtab->id = ILIBstringCopy (ID_SPNAME (ids));
         newtab->type = ID_vector;
         newtab->shapes = NULL;
         newtab->next = result;
@@ -1163,7 +1166,8 @@ ScanVector (node *vector, node **array, info *arg_info)
 
             while (handle != NULL) {
                 if ((handle->type == ID_scalar)
-                    && (ILIBstringCompare (handle->id, ID_NAME (EXPRS_EXPR (vector))))) {
+                    && (ILIBstringCompare (handle->id,
+                                           ID_SPNAME (EXPRS_EXPR (vector))))) {
                     node *position = NULL;
                     node *shape = NULL;
                     shpchain *chain = NULL;
@@ -1198,7 +1202,7 @@ ScanVector (node *vector, node **array, info *arg_info)
                     /* insert assign into chain */
                     /* if not already done */
                     if (code == NULL) {
-                        code = MakeAssignLetNV (ILIBstringCopy (ID_NAME (id)), *array);
+                        code = MakeAssignLetNV (ILIBstringCopy (ID_SPNAME (id)), *array);
                         INFO_HD_SETASSIGNS (arg_info)
                           = TCappendAssign (INFO_HD_SETASSIGNS (arg_info), code);
                         *array = id;
@@ -1240,9 +1244,9 @@ ScanId (node *id, node **array, info *arg_info)
     DBUG_ENTER ("ScanId");
 
     while (ids != NULL) {
-        if ((ids->type == ID_vector) && (ILIBstringCompare (ids->id, ID_NAME (id)))) {
+        if ((ids->type == ID_vector) && (ILIBstringCompare (ids->id, ID_SPNAME (id)))) {
             node *id = MakeTmpId ("setassign");
-            node *code = MakeAssignLetNV (ILIBstringCopy (ID_NAME (id)), *array);
+            node *code = MakeAssignLetNV (ILIBstringCopy (ID_SPNAME (id)), *array);
             node *shape = TBmakePrf (F_shape, TBmakeExprs (DUPdoDupTree (id), NULL));
             shpchain *chain = ILIBmalloc (sizeof (shpchain));
 
@@ -1394,7 +1398,7 @@ Exprs2Ids (node *exprs)
 
         if (NODE_TYPE (EXPRS_EXPR (exprs)) == N_id) {
             newid = TBmakeIds (NULL, NULL);
-            IDS_SPNAME (newid) = ID_NAME (EXPRS_EXPR (exprs));
+            IDS_SPNAME (newid) = ILIBstringCopy (ID_SPNAME (EXPRS_EXPR (exprs)));
         } else {
             /* create dummy id in order to go on until end of phase */
             ERROR (global.linenum, ("found non-id expression in index vector"));
@@ -2167,7 +2171,7 @@ HDsetwl (node *arg_node, info *arg_info)
 
         INFO_HD_ASSIGNS (arg_info)
           = TCappendAssign (INFO_HD_ASSIGNS (arg_info),
-                            MakeAssignLetNV (ILIBstringCopy (ID_NAME (setid)), result));
+                            MakeAssignLetNV (ILIBstringCopy (ID_SPNAME (setid)), result));
 
         /* create permutation code */
 
@@ -2210,10 +2214,10 @@ HDid (node *arg_node, info *arg_info)
     DBUG_ENTER ("HDid");
 
     if (INFO_HD_TRAVSTATE (arg_info) == HD_default) {
-        if (IdTableContains (ID_NAME (arg_node), INFO_HD_IDTABLE (arg_info))) {
+        if (IdTableContains (ID_SPNAME (arg_node), INFO_HD_IDTABLE (arg_info))) {
             WARN (global.linenum,
                   ("cannot infer default value for %s in set notation, using 0",
-                   ID_NAME (arg_node)));
+                   ID_SPNAME (arg_node)));
 
             FREEdoFreeTree (arg_node);
             arg_node = TBmakeNum (0);
