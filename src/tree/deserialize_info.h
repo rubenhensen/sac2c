@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2004/11/22 21:29:55  ktr
+ * Big Switch Header! SacDevCamp 04
+ *
  * Revision 1.5  2004/11/21 12:48:08  sah
  * removed some old ast info
  *
@@ -20,8 +23,11 @@
  *
  */
 
-#ifndef _DESERIALIZE_INFO_H
-#define _DESERIALIZE_INFO_H
+#ifndef _SAC_DESERIALIZE_INFO_H_
+#define _SAC_DESERIALIZE_INFO_H_
+
+#include "types.h"
+
 /*
  * INFO structure
  */
@@ -50,4 +56,4 @@ struct INFO {
 #define INFO_DS_VARDECS(n) (n->vardecs)
 #define INFO_DS_ARGS(n) (n->args)
 
-#endif /* _DESERIALIZE_INFO_H */
+#endif /* _SAC_DESERIALIZE_INFO_H_ */

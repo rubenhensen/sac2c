@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2004/11/22 21:29:55  ktr
+ * Big Switch Header! SacDevCamp 04
+ *
  * Revision 3.3  2002/09/11 23:23:35  dkr
  * ..._LEGAL_PRF corrected
  *
@@ -21,8 +24,8 @@
  *
  */
 
-#ifndef _sac_prf_h_
-#define _sac_prf_h_
+#ifndef _SAC_PRF_H_
+#define _SAC_PRF_H_
 
 /* the bounds of the prf list */
 
@@ -34,4 +37,4 @@
 
 #define LEGAL_PRF(prf) ((prf >= FIRST_LEGAL_PRF) && (prf <= LAST_LEGAL_PRF))
 
-#endif
+#endif /* _SAC_PRF_H_ */

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.86  2004/11/22 21:29:55  ktr
+ * Big Switch Header! SacDevCamp 04
+ *
  * Revision 3.85  2004/11/19 21:03:30  sah
  * added OAN traversal
  *
@@ -352,16 +355,10 @@
  *
  */
 
-#ifndef _sac_traverse_h
-#define _sac_traverse_h
+#ifndef _SAC_TRAVERSE_H_
+#define _SAC_TRAVERSE_H_
 
-typedef node *(*funptr) (node *, info *);
-
-typedef struct FUNREC {
-    funptr travtab[N_ok + 1];
-    funptr prefun;
-    funptr postfun;
-} funtab;
+#include "types.h"
 
 extern node *Trav (node *arg_node, info *arg_info);
 extern node *TravSons (node *arg_node, info *arg_info);
@@ -513,4 +510,4 @@ extern funtab *rsa_tab;
 
 extern int nnode[];
 
-#endif /* _sac_traverse_h */
+#endif /* _SAC_TRAVERSE_H_ */

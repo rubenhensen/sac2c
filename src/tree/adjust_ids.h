@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.3  2004/11/22 21:29:55  ktr
+ * Big Switch Header! SacDevCamp 04
+ *
  * Revision 1.2  2004/08/01 16:00:43  sah
  * switch to new INFO structure
  * PHASE I
@@ -20,6 +23,11 @@
  * Initial revision
  */
 
+#ifndef _SAC_ADJUST_IDS_H_
+#define _SAC_ADJUST_IDS_H_
+
+#include "types.h"
+
 /*****************************************************************************
  *
  * file:   adjust_ids.h
@@ -32,11 +40,7 @@
  *
  *
  *****************************************************************************/
-
-#ifndef ADJUST_IDS_H
-#define ADJUST_IDS_H
-
-extern node *AdjustIdentifiers (node *fundef, node *let);
+extern node *AIdoAdjustIdentifiers (node *fundef, node *let);
 
 extern node *AIfundef (node *arg_node, info *arg_info);
 extern node *AIblock (node *arg_node, info *arg_info);
@@ -54,4 +58,4 @@ extern node *AIwith2 (node *arg_node, info *arg_info);
 extern node *AIwithid (node *arg_node, info *arg_info);
 extern node *AIcode (node *arg_node, info *arg_info);
 
-#endif /* ADJUST_IDS_H */
+#endif /* _SAC_ADJUST_IDS_H_ */

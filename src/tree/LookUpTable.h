@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2004/11/22 21:29:55  ktr
+ * Big Switch Header! SacDevCamp 04
+ *
  * Revision 3.12  2004/08/01 16:27:45  sah
  * added import of types.h as bool
  * is defined there
@@ -130,40 +133,47 @@
  *
  */
 
-#ifndef _sac_LookUpTable_h_
-#define _sac_LookUpTable_h_
+#ifndef _SAC_LOOKUPTABLE_H_
+#define _SAC_LOOKUPTABLE_H_
 
 #include "types.h"
 
-typedef struct LUT_T *LUT_t;
+/******************************************************************************
+ *
+ * Look up table
+ *
+ * Prefix: LUT
+ *
+ *****************************************************************************/
+extern lut_t *LUTgenerateLut (void);
+extern lut_t *LUTduplicateLut (lut_t *lut);
+extern lut_t *LUTremoveContentLut (lut_t *lut);
+extern lut_t *LUTremoveLut (lut_t *lut);
 
-extern LUT_t GenerateLUT (void);
-extern LUT_t DuplicateLUT (LUT_t lut);
-extern LUT_t RemoveContentLUT (LUT_t lut);
-extern LUT_t RemoveLUT (LUT_t lut);
+extern bool LUTisEmptyLut (lut_t *lut);
 
-extern bool IsEmptyLUT (LUT_t lut);
+extern void LUTprintLut (FILE *handle, lut_t *lut);
 
-extern void PrintLUT (FILE *handle, LUT_t lut);
+extern void **LUTsearchInLutP (lut_t *lut, void *old_item);
+extern void **LUTsearchInLutS (lut_t *lut, char *old_item);
 
-extern void **SearchInLUT_P (LUT_t lut, void *old_item);
-extern void **SearchInLUT_S (LUT_t lut, char *old_item);
+extern void **LUTsearchInLutNextP (void);
+extern void **LUTsearchInLutNextS (void);
 
-extern void **SearchInLUT_NextP (void);
-extern void **SearchInLUT_NextS (void);
+extern void *LUTsearchInLutPp (lut_t *lut, void *old_item);
+extern char *LUTsearchInLutSs (lut_t *lut, char *old_item);
 
-extern void *SearchInLUT_PP (LUT_t lut, void *old_item);
-extern char *SearchInLUT_SS (LUT_t lut, char *old_item);
+extern lut_t LUTinsertIntoLutP (lut_t *lut, void *old_item, void *new_item);
+extern lut_t LUTinsertIntoLutS (lut_t *lut, char *old_item, void *new_item);
 
-extern LUT_t InsertIntoLUT_P (LUT_t lut, void *old_item, void *new_item);
-extern LUT_t InsertIntoLUT_S (LUT_t lut, char *old_item, void *new_item);
+extern lut_t LUTupdateLutP (lut_t *lut, void *old_item, void *new_item,
+                            void **found_item);
+extern lut_t LUTupdateLutS (lut_t *lut, char *old_item, void *new_item,
+                            void **found_item);
 
-extern LUT_t UpdateLUT_P (LUT_t lut, void *old_item, void *new_item, void **found_item);
-extern LUT_t UpdateLUT_S (LUT_t lut, char *old_item, void *new_item, void **found_item);
+extern lut_t LUTmapLutS (lut_t *lut, void *(*fun) (void *));
+extern lut_t LUTmapLutP (lut_t *lut, void *(*fun) (void *));
+extern void *LUTfoldLutS (lut_t *lut, void *init, void *(*fun) (void *, void *));
+extern void *LUTfoldLutP (lut_t *lut, void *init, void *(*fun) (void *, void *));
 
-extern LUT_t MapLUT_S (LUT_t lut, void *(*fun) (void *));
-extern LUT_t MapLUT_P (LUT_t lut, void *(*fun) (void *));
-extern void *FoldLUT_S (LUT_t lut, void *init, void *(*fun) (void *, void *));
-extern void *FoldLUT_P (LUT_t lut, void *init, void *(*fun) (void *, void *));
-
-#endif /* _sac_LookUpTable_h_ */
+#endif /* _SAC_LOOKUPTABLE_H_ */

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2004/11/22 21:29:55  ktr
+ * Big Switch Header! SacDevCamp 04
+ *
  * Revision 1.3  2001/04/17 15:48:35  nmw
  * AddResult implemented
  *
@@ -12,9 +15,14 @@
  *
  */
 
+#ifndef _SAC_CHANGE_SIGNATURE_H_
+#define _SAC_CHANGE_SIGNATURE_H_
+
+#include "types.h"
+
 /*****************************************************************************
  *
- * file:   change_signature.h
+ * change_signature.h
  *
  * prefix: CS
  *
@@ -25,14 +33,10 @@
  *
  *
  *****************************************************************************/
+extern node *CSremoveArg (node *fundef, node *arg, nodelist *letlist, bool freearg);
+extern node *CSremoveResult (node *fundef, int position, nodelist *letlist);
 
-#ifndef SAC_CHANGE_SIGNATURE_H
+extern node *CSaddArg (node *fundef, node *arg, nodelist *letlist);
+extern node *CSaddResult (node *fundef, node *vardec, nodelist *letlist);
 
-#define SAC_CHANGE_SIGNATURE_H
-extern node *CSRemoveArg (node *fundef, node *arg, nodelist *letlist, bool freearg);
-extern node *CSRemoveResult (node *fundef, int position, nodelist *letlist);
-
-extern node *CSAddArg (node *fundef, node *arg, nodelist *letlist);
-extern node *CSAddResult (node *fundef, node *vardec, nodelist *letlist);
-
-#endif /* SAC_CHANGE_SIGNATURE_H */
+#endif /* _SAC_CHANGE_SIGNATURE_H_ */

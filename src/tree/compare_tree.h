@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.8  2004/11/22 21:29:55  ktr
+ * Big Switch Header! SacDevCamp 04
+ *
  * Revision 1.7  2004/08/01 18:44:21  sah
  * switch to new INFO structure
  * PHASE I
@@ -26,6 +29,12 @@
  *
  */
 
+#ifndef SAC_COMPARETREE_H
+#define SAC_COMPARETREE_H
+
+#include "types.h"
+#include "LookUpTable.h"
+
 /*****************************************************************************
  *
  * file:   compare_tree.h
@@ -44,16 +53,8 @@
  * remarks:
  *   identifier are compared by their avis pointers.
  *****************************************************************************/
-
-#ifndef SAC_COMPARETREE_H
-
-#define SAC_COMPARETREE_H
-
-#include "types.h"
-#include "LookUpTable.h"
-
-extern cmptree_t CompareTreeLUT (node *tree1, node *tree2, LUT_t lut);
-extern cmptree_t CompareTree (node *tree1, node *tree2);
+extern cmptree_t CMPTdoCompareTreeLut (node *tree1, node *tree2, lut_t *lut);
+extern cmptree_t CMPTdoCompareTree (node *tree1, node *tree2);
 
 extern node *CMPTnum (node *arg_node, info *arg_info);
 extern node *CMPTchar (node *arg_node, info *arg_info);
@@ -66,12 +67,12 @@ extern node *CMPTarray (node *arg_node, info *arg_info);
 extern node *CMPTlet (node *arg_node, info *arg_info);
 extern node *CMPTprf (node *arg_node, info *arg_info);
 extern node *CMPTap (node *arg_node, info *arg_info);
-extern node *CMPTNwithid (node *arg_node, info *arg_info);
-extern node *CMPTNgenerator (node *arg_node, info *arg_info);
-extern node *CMPTNwithop (node *arg_node, info *arg_info);
-extern node *CMPTNcode (node *arg_node, info *arg_info);
+extern node *CMPTwithid (node *arg_node, info *arg_info);
+extern node *CMPTgenerator (node *arg_node, info *arg_info);
+extern node *CMPTfold (node *arg_node, info *arg_info);
+extern node *CMPTcode (node *arg_node, info *arg_info);
 extern node *CMPTunknown (node *arg_node, info *arg_info);
-extern node *CMPTTravSons (node *arg_node, info *arg_info);
+extern node *CMPTtravSons (node *arg_node, info *arg_info);
 extern node *CMPTnodeType (node *arg_node, info *arg_info);
 
 #endif /* SAC_CHECKAVIS_H */

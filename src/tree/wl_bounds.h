@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2004/11/22 21:29:55  ktr
+ * Big Switch Header! SacDevCamp 04
+ *
  * Revision 1.9  2004/07/04 00:54:47  dkrHH
  * GET_SHAPE_IDX modified: shape is a SHPSEG again...
  *
@@ -33,12 +36,17 @@
  *
  */
 
-#ifndef _sac_wl_bounds_h_
-#define _sac_wl_bounds_h_
+#ifndef _SAC_WL_BOUNDS_H_
+#define _SAC_WL_BOUNDS_H_
+
+#include "types.h"
+#include "tree_basic.h"
 
 /******************************************************************************
  *
  *  Modul: wl_bounds
+ *
+ *  Prefix: WLB
  *
  *  Description:
  *
@@ -51,13 +59,6 @@
  *    respresentations of index bounds uniformly.
  *
  ******************************************************************************/
-
-#include "types.h"
-#include "tree_basic.h"
-#include "tree_compound.h"
-#include "internal_lib.h"
-#include "dbug.h"
-
 /*
  * symbolic bounds for strides/grids and IDX_MIN, IDX_MAX
  */
@@ -69,34 +70,35 @@
 #define GET_SHAPE_IDX(shape, dim)                                                        \
     (((shape) != NULL) ? SHPSEG_SHAPE ((shape), (dim)) : IDX_SHAPE)
 
-extern bool NameOrVal_CheckConsistency (char *name, int val);
+extern bool WLBnameOrVal_CheckConsistency (char *name, int val);
 
-extern bool NameOrVal_IsInt (char *name, int val);
-extern bool NodeOrInt_IsInt (nodetype nt, void *node_or_int);
+extern bool WLBnameOrVal_IsInt (char *name, int val);
+extern bool WLBnodeOrInt_IsInt (nodetype nt, void *node_or_int);
 
-extern void NodeOrInt_GetNameOrVal (char **ret_name, int *ret_val, nodetype nt,
-                                    void *node_or_int);
+extern void WLBnodeOrInt_GetNameOrVal (char **ret_name, int *ret_val, nodetype nt,
+                                       void *node_or_int);
 
-extern void NameOrVal_SetNodeOrInt (nodetype ret_nt, void *ret_node_or_int, char *name,
-                                    int val);
-extern void NodeOrInt_SetNodeOrInt (nodetype ret_nt, void *ret_node_or_int, nodetype nt,
-                                    void *node_or_int);
+extern void WLBnameOrVal_SetNodeOrInt (nodetype ret_nt, void *ret_node_or_int, char *name,
+                                       int val);
+extern void WLBnodeOrInt_SetNodeOrInt (nodetype ret_nt, void *ret_node_or_int,
+                                       nodetype nt, void *node_or_int);
 
-extern node *NameOrVal_MakeNode (char *name, int val);
-extern node *NodeOrInt_MakeNode (nodetype nt, void *node_or_int);
+extern node *WLBnameOrVal_MakeNode (char *name, int val);
+extern node *WLBnodeOrInt_MakeNode (nodetype nt, void *node_or_int);
 
-extern node *NodeOrInt_MakeIndex (nodetype nt, void *node_or_int, int dim, ids *wl_ids);
+extern node *WLBnodeOrInt_MakeIndex (nodetype nt, void *node_or_int, int dim,
+                                     ids *wl_ids);
 
-extern bool NameOrVal_Eq (char *name1, int val1, char *name2, int val2, int shape);
-extern bool NodeOrInt_Eq (nodetype nt1, void *node_or_int1, nodetype nt2,
-                          void *node_or_int2, int shape);
-extern bool NodeOrInt_IntEq (nodetype nt1, void *node_or_int1, int val2, int shape);
-extern bool NodeOrInt_StrEq (nodetype nt1, void *node_or_int1, char *name2, int shape);
+extern bool WLBnameOrVal_Eq (char *name1, int val1, char *name2, int val2, int shape);
+extern bool WLBnodeOrInt_Eq (nodetype nt1, void *node_or_int1, nodetype nt2,
+                             void *node_or_int2, int shape);
+extern bool WLBnodeOrInt_IntEq (nodetype nt1, void *node_or_int1, int val2, int shape);
+extern bool WLBnodeOrInt_StrEq (nodetype nt1, void *node_or_int1, char *name2, int shape);
 
-extern bool NameOrVal_Le (char *name1, int val1, char *name2, int val2, int shape);
-extern bool NodeOrInt_Le (nodetype nt1, void *node_or_int1, nodetype nt2,
-                          void *node_or_int2, int shape);
+extern bool WLBnameOrVal_Le (char *name1, int val1, char *name2, int val2, int shape);
+extern bool WLBnodeOrInt_Le (nodetype nt1, void *node_or_int1, nodetype nt2,
+                             void *node_or_int2, int shape);
 
-extern void NodeOrInt_Print (FILE *handle, nodetype nt, void *node_or_int, int dim);
+extern void WLBnodeOrInt_Print (FILE *handle, nodetype nt, void *node_or_int, int dim);
 
-#endif /* _sac_wl_bounds_h_ */
+#endif /* _SAC_WL_BOUNDS_H_ */

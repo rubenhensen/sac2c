@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2004/11/22 21:29:55  ktr
+ * Big Switch Header! SacDevCamp 04
+ *
  * Revision 3.12  2004/08/28 14:31:03  sah
  * modified definition of SCHsched_t in
  * NEW_AST mode
@@ -67,9 +70,16 @@
  *
  */
 
+#ifndef _SAC_SCHEDULING_H_
+#define _SAC_SCHEDULING_H_
+
+#include <stdio.h>
+#include "LookUpTable.h"
+#include "types.h"
+
 /*****************************************************************************
  *
- * file:   scheduling.h
+ * Scheduling
  *
  * prefix: SCH
  *
@@ -86,63 +96,42 @@
  *   See file scheduling.c for additional information.
  *
  *****************************************************************************/
+extern sched_t *SCHmakeScheduling (char *discipline, ...);
+extern sched_t *SCHmakeSchedulingByPragma (node *ap_node, int line);
 
-#ifndef _SAC_SCHEDULING_H_
-#define _SAC_SCHEDULING_H_
+extern sched_t *SCHremoveScheduling (sched_t *sched);
+extern sched_t *SCHcopyScheduling (sched_t *sched);
+extern sched_t *SCHprecompileScheduling (sched_t *sched);
+extern sched_t *SCHmarkmemvalscheduling (sched_t *sched, lut_t *lut);
+extern void SCHprintScheduling (FILE *outfile, sched_t *sched);
 
-#include <stdio.h>
-#include "LookUpTable.h"
+extern void SCHcheckSuitabilityConstSeg (sched_t *sched);
+extern void SCHcheckSuitabilityVarSeg (sched_t *sched);
+extern void SCHcheckSuitabilityWithloop (sched_t *sched);
+extern bool SCHadjustmentRequired (int dim, node *wlseg);
 
-#ifdef NEW_AST
-typedef struct SCHED_T sched_t;
-typedef sched_t *SCHsched_t;
-#else
-typedef void *SCHsched_t;
-#endif
-
-extern SCHsched_t SCHMakeScheduling (char *discipline, ...);
-extern SCHsched_t SCHMakeSchedulingByPragma (node *ap_node, int line);
-
-extern SCHsched_t SCHRemoveScheduling (SCHsched_t sched);
-extern SCHsched_t SCHCopyScheduling (SCHsched_t sched);
-extern SCHsched_t SCHPrecompileScheduling (SCHsched_t sched);
-extern SCHsched_t SCHMMVScheduling (SCHsched_t sched, LUT_t lut);
-extern void SCHPrintScheduling (FILE *outfile, SCHsched_t sched);
-
-extern void SCHCheckSuitabilityConstSeg (SCHsched_t sched);
-extern void SCHCheckSuitabilityVarSeg (SCHsched_t sched);
-extern void SCHCheckSuitabilityWithloop (SCHsched_t sched);
-extern bool SCHAdjustmentRequired (int dim, node *wlseg);
-
-extern node *SCHCompileSchedulingBegin (int seg_id, ids *wl_ids, SCHsched_t sched,
+extern node *SCHcompileSchedulingBegin (int seg_id, node *wl_ids, sched_t *sched,
                                         node *arg_node);
-extern node *SCHCompileSchedulingEnd (int seg_id, ids *wl_ids, SCHsched_t sched,
+extern node *SCHcompileSchedulingEnd (int seg_id, node *wl_ids, sched_t *sched,
                                       node *arg_node);
-extern node *SCHCompileSchedulingInit (int seg_id, ids *wl_ids, SCHsched_t sched,
+extern node *SCHcompileSchedulingInit (int seg_id, node *wl_ids, sched_t *sched,
                                        node *arg_node);
 
-#ifdef NEW_AST
-typedef struct TASKSEL_T *SCHtasksel_t;
-#else
-typedef void *SCHtasksel_t;
-#endif
+extern tasksel_t *SCHmakeTaskselByPragma (node *ap_node, int line);
 
-extern SCHtasksel_t SCHMakeTaskselByPragma (node *ap_node, int line);
+extern tasksel_t *SCHremoveTasksel (tasksel_t *tasksel);
+extern tasksel_t *SCHcopyTasksel (tasksel_t *tasksel);
+extern tasksel_t *SCHprecompileTasksel (tasksel_t *tasksel);
+extern tasksel_t *SCHmarkmemvalsTasksel (tasksel_t *tasksel, lut_t *lut);
+extern void SCHprintTasksel (FILE *outfile, tasksel_t *tasksel);
 
-extern SCHtasksel_t SCHRemoveTasksel (SCHtasksel_t tasksel);
-extern SCHtasksel_t SCHCopyTasksel (SCHtasksel_t tasksel);
-extern SCHtasksel_t SCHPrecompileTasksel (SCHtasksel_t tasksel);
-extern SCHtasksel_t SCHMMVTasksel (SCHtasksel_t tasksel, LUT_t lut);
-extern void SCHPrintTasksel (FILE *outfile, SCHtasksel_t tasksel);
-
-extern node *SCHCompileSchedulingWithTaskselBegin (int seg_id, ids *wl_ids,
-                                                   SCHsched_t sched, SCHtasksel_t tasksel,
+extern node *SCHcompileSchedulingWithTaskselBegin (int seg_id, node *wl_ids,
+                                                   sched_t *sched, tasksel_t *tasksel,
                                                    node *arg_node);
-extern node *SCHCompileSchedulingWithTaskselEnd (int seg_id, ids *wl_ids,
-                                                 SCHsched_t sched, SCHtasksel_t tasksel,
-                                                 node *arg_node);
-extern node *SCHCompileSchedulingWithTaskselInit (int seg_id, ids *wl_ids,
-                                                  SCHsched_t sched, SCHtasksel_t tasksel,
+extern node *SCHcompileSchedulingWithTaskselEnd (int seg_id, node *wl_ids, sched_t *sched,
+                                                 tasksel_t *tasksel, node *arg_node);
+extern node *SCHcompileSchedulingWithTaskselInit (int seg_id, node *wl_ids,
+                                                  sched_t *sched, tasksel_t *tasksel,
                                                   node *arg_node);
 
 #endif /* _SAC_SCHEDULING_H_ */
