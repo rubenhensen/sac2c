@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.18  2000/02/04 16:50:20  cg
+ * Changed setting of cache sizes from a KB representation to bytes.
+ * Added MSCA (memory size cache adjustment)
+ *
  * Revision 2.17  2000/01/26 17:30:02  dkr
  * type of traverse-function-table changed.
  *
@@ -258,6 +262,8 @@ PrintGlobalSwitches ()
              (optimize & OPT_APS) ? 1 : 0);
     fprintf (outfile, "#define SAC_DO_RCAO            %d\n",
              (optimize & OPT_RCAO) ? 1 : 0);
+    fprintf (outfile, "#define SAC_DO_MSCA            %d\n",
+             (optimize & OPT_MSCA) ? 1 : 0);
     fprintf (outfile, "\n");
 
     fprintf (outfile, "#define SAC_DO_PROFILE         %d\n", profileflag ? 1 : 0);
@@ -440,73 +446,84 @@ PrintGlobalSettings (node *syntax_tree)
 
     fprintf (outfile, "#define NULL                      (void*) 0\n\n");
 
-    fprintf (outfile, "#define SAC_SET_INITIAL_MASTER_HEAPSIZE   %d\n",
+    fprintf (outfile, "#define SAC_SET_INITIAL_MASTER_HEAPSIZE      %d\n",
              initial_master_heapsize * 1024);
-    fprintf (outfile, "#define SAC_SET_INITIAL_WORKER_HEAPSIZE   %d\n",
+    fprintf (outfile, "#define SAC_SET_INITIAL_WORKER_HEAPSIZE      %d\n",
              initial_worker_heapsize * 1024);
-    fprintf (outfile, "#define SAC_SET_INITIAL_UNIFIED_HEAPSIZE  %d\n\n",
+    fprintf (outfile, "#define SAC_SET_INITIAL_UNIFIED_HEAPSIZE     %d\n\n",
              initial_unified_heapsize * 1024);
 
     fprintf (outfile, "#ifndef SAC_SET_THREADS_MAX\n");
-    fprintf (outfile, "#define SAC_SET_THREADS_MAX       %d\n", max_threads);
+    fprintf (outfile, "#define SAC_SET_THREADS_MAX          %d\n", max_threads);
     fprintf (outfile, "#endif\n\n");
 
     fprintf (outfile, "#ifndef SAC_SET_THREADS\n");
-    fprintf (outfile, "#define SAC_SET_THREADS           %d\n", num_threads);
+    fprintf (outfile, "#define SAC_SET_THREADS              %d\n", num_threads);
     fprintf (outfile, "#endif\n\n");
 
     fprintf (outfile, "#ifndef SAC_SET_MASTERCLASS\n");
-    fprintf (outfile, "#define SAC_SET_MASTERCLASS       %d\n",
+    fprintf (outfile, "#define SAC_SET_MASTERCLASS          %d\n",
              GSCCalcMasterclass (num_threads));
     fprintf (outfile, "#endif\n\n");
 
     if (max_sync_fold == -1) {
-        fprintf (outfile, "#define SAC_SET_MAX_SYNC_FOLD     %d\n\n", needed_sync_fold);
+        fprintf (outfile, "#define SAC_SET_MAX_SYNC_FOLD        %d\n\n",
+                 needed_sync_fold);
     } else {
-        fprintf (outfile, "#define SAC_SET_MAX_SYNC_FOLD     %d\n\n", max_sync_fold);
+        fprintf (outfile, "#define SAC_SET_MAX_SYNC_FOLD        %d\n\n", max_sync_fold);
     }
 
-    fprintf (outfile, "#define SAC_SET_CACHE_1_SIZE      %d\n", config.cache1_size);
-    fprintf (outfile, "#define SAC_SET_CACHE_1_LINE      %d\n",
+    fprintf (outfile, "#define SAC_SET_CACHE_1_SIZE         %d\n",
+             config.cache1_size * 1024);
+    fprintf (outfile, "#define SAC_SET_CACHE_1_LINE         %d\n",
              config.cache1_line == 0 ? 4 : config.cache1_line);
-    fprintf (outfile, "#define SAC_SET_CACHE_1_ASSOC     %d\n",
+    fprintf (outfile, "#define SAC_SET_CACHE_1_ASSOC        %d\n",
              config.cache1_assoc == 0 ? 1 : config.cache1_assoc);
-    fprintf (outfile, "#define SAC_SET_CACHE_1_WRITEPOL  SAC_CS_%s\n\n",
+    fprintf (outfile, "#define SAC_SET_CACHE_1_WRITEPOL     SAC_CS_%s\n",
              config.cache1_writepol);
+    fprintf (outfile, "#define SAC_SET_CACHE_1_MSCA_FACTOR  %.2f\n\n",
+             ((float)config.cache1_msca_factor) / 100);
 
-    fprintf (outfile, "#define SAC_SET_CACHE_2_SIZE      %d\n", config.cache2_size);
-    fprintf (outfile, "#define SAC_SET_CACHE_2_LINE      %d\n",
+    fprintf (outfile, "#define SAC_SET_CACHE_2_SIZE         %d\n",
+             config.cache2_size * 1024);
+    fprintf (outfile, "#define SAC_SET_CACHE_2_LINE         %d\n",
              config.cache2_line == 0 ? 4 : config.cache2_line);
-    fprintf (outfile, "#define SAC_SET_CACHE_2_ASSOC     %d\n",
+    fprintf (outfile, "#define SAC_SET_CACHE_2_ASSOC        %d\n",
              config.cache2_assoc == 0 ? 1 : config.cache2_assoc);
-    fprintf (outfile, "#define SAC_SET_CACHE_2_WRITEPOL  SAC_CS_%s\n\n",
+    fprintf (outfile, "#define SAC_SET_CACHE_2_WRITEPOL     SAC_CS_%s\n",
              config.cache2_writepol);
+    fprintf (outfile, "#define SAC_SET_CACHE_2_MSCA_FACTOR  %.2f\n\n",
+             ((float)config.cache2_msca_factor) / 100);
 
-    fprintf (outfile, "#define SAC_SET_CACHE_3_SIZE      %d\n", config.cache3_size);
-    fprintf (outfile, "#define SAC_SET_CACHE_3_LINE      %d\n",
+    fprintf (outfile, "#define SAC_SET_CACHE_3_SIZE         %d\n",
+             config.cache3_size * 1024);
+    fprintf (outfile, "#define SAC_SET_CACHE_3_LINE         %d\n",
              config.cache3_line == 0 ? 4 : config.cache3_line);
-    fprintf (outfile, "#define SAC_SET_CACHE_3_ASSOC     %d\n",
+    fprintf (outfile, "#define SAC_SET_CACHE_3_ASSOC        %d\n",
              config.cache3_assoc == 0 ? 1 : config.cache3_assoc);
-    fprintf (outfile, "#define SAC_SET_CACHE_3_WRITEPOL  SAC_CS_%s\n\n",
+    fprintf (outfile, "#define SAC_SET_CACHE_3_WRITEPOL     SAC_CS_%s\n",
              config.cache3_writepol);
+    fprintf (outfile, "#define SAC_SET_CACHE_3_MSCA_FACTOR  %.2f\n\n",
+             ((float)config.cache3_msca_factor) / 100);
 
-    fprintf (outfile, "#define SAC_SET_CACHESIM_HOST     \"%s\"\n",
+    fprintf (outfile, "#define SAC_SET_CACHESIM_HOST        \"%s\"\n",
              cachesim_host[0] == '\0' ? "" : cachesim_host);
 
     if (cachesim_file[0] == '\0') {
-        fprintf (outfile, "#define SAC_SET_CACHESIM_FILE     \"%s.cs\"\n", outfilename);
+        fprintf (outfile, "#define SAC_SET_CACHESIM_FILE        \"%s.cs\"\n",
+                 outfilename);
     } else {
-        fprintf (outfile, "#define SAC_SET_CACHESIM_FILE     \"%s\"\n", cachesim_file);
+        fprintf (outfile, "#define SAC_SET_CACHESIM_FILE        \"%s\"\n", cachesim_file);
     }
 
     if (cachesim_dir[0] == '\0') {
-        fprintf (outfile, "#define SAC_SET_CACHESIM_DIR      \"%s\"\n", config.tmpdir);
+        fprintf (outfile, "#define SAC_SET_CACHESIM_DIR         \"%s\"\n", config.tmpdir);
     } else {
-        fprintf (outfile, "#define SAC_SET_CACHESIM_DIR      \"%s\"\n", cachesim_dir);
+        fprintf (outfile, "#define SAC_SET_CACHESIM_DIR         \"%s\"\n", cachesim_dir);
     }
 
-    fprintf (outfile, "#define SAC_SET_MAXFUN            %d\n", PFfuncntr);
-    fprintf (outfile, "#define SAC_SET_MAXFUNAP          %d\n", PFfunapmax);
+    fprintf (outfile, "#define SAC_SET_MAXFUN               %d\n", PFfuncntr);
+    fprintf (outfile, "#define SAC_SET_MAXFUNAP             %d\n", PFfunapmax);
 
     fprintf (outfile, "\n");
 
