@@ -1,6 +1,13 @@
 /*
  * $Log$
- * Revision 1.9  1995/04/13 14:38:53  hw
+ * Revision 1.10  1995/05/03 12:26:06  hw
+ * - changes range of first argument of primitive function rotate
+ *   (rotate(i,n,a) : 0 <= i <= dim(a) -1 )
+ * - first argument of of primitive function rotate has to be constant
+ * - new error-messages if 1. argumnet of primitive function 'cat' or
+ *   'rotate' isn't constant
+ *
+ * Revision 1.9  1995/04/13  14:38:53  hw
  * bug fixed in 'Cat' (type of concatenated array will be computed
  *  correct now)
  *
@@ -672,19 +679,16 @@ TakeDropS (node *s_node, types *array, int tag)
  *  arguments     : 1) pointer to first argument of function rotate
  *                  2) array that should be rotated
  *  description   : computes the resulttype of a 'rotate' operation
- *                  if 1) is a N_num node then it will be checked weather
- *                   the number is in range
- *                     if it is: the type given by 2) wiull be returned
- *                      otherwise type T_unknown
- *                  otherwise the type given by 2) will be returned
+ *                  if 0 <= 1) < dim( 2) ) the type given by 2) will be returned
+ *                  otherwise type T_unknown
  *  global vars   :
  *  internal funs :DuplicateTypes
  *  external funs :
  *  macros        : DBUG..., GEN_TYPE_NODE
  *
  *  remarks       : is part of macro TT2 and is used in typecheck.c
- *                  - the range of the first argument of function rotate has
- *                    to be checked while run-time (or compiling) again
+ *                  1) has to be a N_num node
+ *                  range of 1): 0 <= 1) < dim( 2)
  */
 types *
 Rot (node *s_node, types *array)
@@ -694,12 +698,14 @@ Rot (node *s_node, types *array)
     DBUG_ENTER ("Rot");
 
     if (N_num == s_node->nodetype)
-        if ((s_node->info.cint <= array->dim) && (0 < s_node->info.cint))
+        if ((0 <= s_node->info.cint) && (s_node->info.cint < array->dim))
             ret_type = DuplicateTypes (array);
         else
             GEN_TYPE_NODE (ret_type, T_unknown);
     else
-        ret_type = DuplicateTypes (array);
+        ERROR2 (3, ("type error in line %d: 1.argument of function `rotate` "
+                    " should be a constant",
+                    s_node->lineno));
 
     DBUG_RETURN (ret_type);
 }
@@ -710,7 +716,7 @@ Rot (node *s_node, types *array)
  *  arguments     : 1) pointer to first argument of function cat
  *                  2) first array
  *                  3) second array
- *  description   : computes the resulttype of a 'cat' operation, whoes
+ *  description   : computes the resulttype of a 'cat' operation, whose
  *                  first argument is a constant scalar
  *                  if the 1) is not a scalar type T_unknown will be returned
  *
@@ -720,6 +726,7 @@ Rot (node *s_node, types *array)
  *  macros        : DBUG..., GEN_TYPE_NODE
  *
  *  remarks       : is part of macro TT2 and is used in typecheck.c
+ *                  the range of 1) is: 0 <= 1) < dim( 2) )
  *
  */
 types *
@@ -754,7 +761,9 @@ Cat (node *s_node, types *array1, types *array2)
         } else
             GEN_TYPE_NODE (ret_type, T_unknown);
     } else
-        GEN_TYPE_NODE (ret_type, T_unknown);
+        ERROR2 (3, ("type error in line %d: 1.argument of function `cat` "
+                    " should be a constant",
+                    s_node->lineno));
 
     DBUG_RETURN (ret_type);
 }
