@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2004/07/04 00:54:47  dkrHH
+ * GET_SHAPE_IDX modified: shape is a SHPSEG again...
+ *
  * Revision 1.8  2004/03/09 23:57:59  dkrHH
  * old backend removed
  *
@@ -63,7 +66,8 @@
 
 #define IDX_IS_NUM(idx) ((idx) >= 0)
 
-#define GET_SHAPE_IDX(shape, dim) (((shape) != NULL) ? (shape)[dim] : IDX_SHAPE)
+#define GET_SHAPE_IDX(shape, dim)                                                        \
+    (((shape) != NULL) ? SHPSEG_SHAPE ((shape), (dim)) : IDX_SHAPE)
 
 extern bool NameOrVal_CheckConsistency (char *name, int val);
 
