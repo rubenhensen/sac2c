@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.58  2000/07/21 08:21:42  nmw
+ * N_modspec added, impspec_tab added
+ *
  * Revision 1.57  2000/07/14 12:47:33  dkr
  * DupModul and DupImplist added
  *
@@ -199,7 +202,7 @@
  *   cudecls_tab     barin_tab       blkli_tab       adjca1_tab
  *   adjca2_tab      precomp1_tab    apc_tab         apt_tab
  *
- *   pih_tab         piw_tab         unused_tab3     unused_tab4
+ *   mapcw_tab       pih_tab         piw_tab         impspec_tab
  *   nnode
  *
  ***  Always (!!!) fill the tab-lines up to 4 tables by using
@@ -517,6 +520,9 @@
 #ifndef NIFpiw
 #define NIFpiw(it_piw)
 #endif
+#ifndef NIFimpspec
+#define NIFimpspec(it_impspec)
+#endif
 
 #ifndef NIFnnode
 #define NIFnnode(nnode)
@@ -546,7 +552,7 @@
   it_l2f_lift, it_blkco, it_dfa, it_blkpp, it_cudecls, it_barin, it_blkli, it_adjca1,    \
   it_adjca2, it_precomp1, it_apc, it_apt,                                                \
                                                                                          \
-  it_mapcw, it_pih, it_piw, it_unused4, nnode)                                           \
+  it_mapcw, it_pih, it_piw, it_impspec, nnode)                                           \
                                                                                          \
     NIFNode_name (Node_name) NIFmdb_nodetype (mdb_nodetype)                              \
                                                                                          \
@@ -589,7 +595,8 @@
                                                           NIFmapcw (it_mapcw)            \
                                                             NIFpih (it_pih)              \
                                                               NIFpiw (it_piw)            \
-                                                                NIFnnode (nnode)
+                                                                NIFimpspec (it_impspec)  \
+                                                                  NIFnnode (nnode)
 
 /******************************************************************************
  *
@@ -867,7 +874,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        BARINfundef, BLKLIfundef, ADJCA1fundef, ADJCA2fundef, TravSons, APCfundef,
        APTfundef,
 
-       MCWfundef, PIHfundef, PIWfundef, TravSons, 3),
+       MCWfundef, PIHfundef, PIWfundef, IMPSPECfundef, 3),
 
   NIF (N_vardec, "N_vardec", TravSons, TravSons, PrintVardec, TCvardec, GNMvardec,
        DCRvardec, TravSons, FreeVardec, TravSons, RCvardec, COMPVardec, TravSons,
@@ -921,7 +928,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, APCarg, APTarg,
 
-       MCWarg, PIHarg, PIWarg, TravSons, 1),
+       MCWarg, PIHarg, PIWarg, IMPSPECarg, 1),
 
   NIF (N_mt, "N_mt", TravSons, TravSons, PrintMT, TravSons, TravSons, TravSons, TravSons,
        FreeMT, TravSons, TravSons, COMPMt, TravSons, DupMt, TravSons, TravSons, TravSons,
@@ -1764,6 +1771,24 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
        MCWcwrapper, PIHcwrapper, PIWcwrapper, TravSons, 0),
 
+  NIF (N_modspec, "N_modspec", TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, FreeModspec, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons,
+
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons,
+
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons,
+
+       TravSons, TravSons, TravSons, IMPSPECmodspec, 0),
+
   /* ATTENTION !!!! N_ok has to be the last node declared here;
    *                otherwise a DBUG_ASSERT in traverse.c: Trav will
    *                cause nice :-> errors!
@@ -1903,6 +1928,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 #undef NIFmapcw
 #undef NIFpih
 #undef NIFpiw
+#undef NIFimpspec
 
 #undef NIFnnode
 
