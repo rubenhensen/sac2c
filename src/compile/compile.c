@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.84  2000/08/24 10:12:38  dkr
+ * fixed a bug in COMPAp():
+ * icm ND_FREE_... replaced by ND_DEC_RC_FREE...
+ *
  * Revision 2.83  2000/08/18 23:07:48  dkr
  * COMPNormalFunReturn() recoded in order to resolve name clashes of
  * out-parameters correctly.
@@ -519,42 +523,6 @@ GenericFun (int which, types *type)
 /******************************************************************************
  *
  * function:
- *   node *MakeAdjustRcICM(ids *varname, int num)
- *
- * description:
- *   According to num, either ND_INC_RC( varname, num),
- *                            ----,
- *                       or   ND_DEC_RC_FREE_ARRAY( varname, -num)
- *   is created.
- *
- ******************************************************************************/
-
-static node *
-MakeAdjustRcICM (ids *varname, int num)
-{
-    node *result;
-
-    DBUG_ENTER ("MakeAdjustRcICM");
-
-    if (num > 0) {
-        result = MakeAssignIcm2 ("ND_INC_RC", MakeId2 (DupOneIds (varname, NULL)),
-                                 MakeNum (num));
-    } else {
-        if (num == 0) {
-            result = NULL;
-        } else {
-            /* num < 0 */
-            result = MakeAssignIcm2 ("ND_DEC_RC_FREE_ARRAY",
-                                     MakeId2 (DupOneIds (varname, NULL)), MakeNum (-num));
-        }
-    }
-
-    DBUG_RETURN (result);
-}
-
-/******************************************************************************
- *
- * function:
  *   node *GetUnadjustedFoldCode( node *fundef)
  *
  * description:
@@ -701,10 +669,10 @@ GetIndexIds (ids *index_ids, int dim)
 /******************************************************************************
  *
  * function:
- *   node *MakeAllocArrayICMs( ids *mm_ids, node *next)
+ *   node *MakeAllocArrayICMs( ids *ids_chain, node *next)
  *
  * description:
- *   Builds a ND_ALLOC_ARRAY icm for each RC-ids in 'mm_ids'.
+ *   Builds a ND_ALLOC_ARRAY icm for each RC-ids in 'ids_chain'.
  *   The given node 'next' is appended to the created assign-chain.
  *
  *   CAUTION: Do not use this function in conjunction with a
@@ -714,7 +682,7 @@ GetIndexIds (ids *index_ids, int dim)
  ******************************************************************************/
 
 static node *
-MakeAllocArrayICMs (ids *mm_ids, node *next)
+MakeAllocArrayICMs (ids *ids_chain, node *next)
 {
     simpletype s_type;
     node *assign;
@@ -723,12 +691,12 @@ MakeAllocArrayICMs (ids *mm_ids, node *next)
 
     DBUG_ENTER ("MakeAllocArrayICMs");
 
-    while (mm_ids != NULL) {
-        if (IDS_REFCNT (mm_ids) >= 0) {
-            GET_BASIC_SIMPLETYPE (s_type, IDS_TYPE (mm_ids));
+    while (ids_chain != NULL) {
+        if (IDS_REFCNT (ids_chain) >= 0) {
+            GET_BASIC_SIMPLETYPE (s_type, IDS_TYPE (ids_chain));
             assign = MakeAssignIcm3 ("ND_ALLOC_ARRAY", MakeId1 (type_string[s_type]),
-                                     MakeId2 (DupOneIds (mm_ids, NULL)),
-                                     MakeNum (IDS_REFCNT (mm_ids)));
+                                     MakeId2 (DupOneIds (ids_chain, NULL)),
+                                     MakeNum (IDS_REFCNT (ids_chain)));
 
             if (assigns == NULL) {
                 assigns = assign;
@@ -737,7 +705,7 @@ MakeAllocArrayICMs (ids *mm_ids, node *next)
             }
             last_assign = assign;
         }
-        mm_ids = IDS_NEXT (mm_ids);
+        ids_chain = IDS_NEXT (ids_chain);
     }
 
     if (last_assign != NULL) {
@@ -750,12 +718,12 @@ MakeAllocArrayICMs (ids *mm_ids, node *next)
 /******************************************************************************
  *
  * function:
- *   node *MakeAllocArrayICMs_reuse( ids *mm_ids, node *next)
+ *   node *MakeAllocArrayICMs_reuse( ids *ids_chain, node *next)
  *
  * description:
- *   builds a 'ND_ALLOC_ARRAY, ND_INC_RC' icm for each RC-ids in 'mm_ids':
- *     ND_ALLOC_ARRAY( <type>, mm_ids, 0);
- *     ND_INC_RC( mm_ids, IDS_RC( mm_ids));
+ *   builds a 'ND_ALLOC_ARRAY, ND_INC_RC' icm for each RC-ids in 'ids_chain':
+ *     ND_ALLOC_ARRAY( <type>, ids_chain, 0);
+ *     ND_INC_RC( ids_chain, IDS_RC( ids_chain));
  *   The extra 'ND_INC_RC' is needed, if there are any 'ND_CHECK_REUSE_ARRAY'
  *   ICMs above 'ND_ALLOC_ARRAY' !!!
  *
@@ -764,7 +732,7 @@ MakeAllocArrayICMs (ids *mm_ids, node *next)
  ******************************************************************************/
 
 static node *
-MakeAllocArrayICMs_reuse (ids *mm_ids, node *next)
+MakeAllocArrayICMs_reuse (ids *ids_chain, node *next)
 {
     simpletype s_type;
     node *assign;
@@ -773,15 +741,15 @@ MakeAllocArrayICMs_reuse (ids *mm_ids, node *next)
 
     DBUG_ENTER ("MakeAllocArrayICMs_reuse");
 
-    while (mm_ids != NULL) {
-        if (IDS_REFCNT (mm_ids) >= 0) {
-            GET_BASIC_SIMPLETYPE (s_type, IDS_TYPE (mm_ids));
+    while (ids_chain != NULL) {
+        if (IDS_REFCNT (ids_chain) >= 0) {
+            GET_BASIC_SIMPLETYPE (s_type, IDS_TYPE (ids_chain));
             assign
               = MakeAssign (MakeIcm3 ("ND_ALLOC_ARRAY", MakeId1 (type_string[s_type]),
-                                      MakeId2 (DupOneIds (mm_ids, NULL)), MakeNum (0)),
+                                      MakeId2 (DupOneIds (ids_chain, NULL)), MakeNum (0)),
                             MakeAssignIcm2 ("ND_INC_RC",
-                                            MakeId2 (DupOneIds (mm_ids, NULL)),
-                                            MakeNum (IDS_REFCNT (mm_ids))));
+                                            MakeId2 (DupOneIds (ids_chain, NULL)),
+                                            MakeNum (IDS_REFCNT (ids_chain))));
 
             if (assigns == NULL) {
                 assigns = assign;
@@ -790,7 +758,7 @@ MakeAllocArrayICMs_reuse (ids *mm_ids, node *next)
             }
             last_assign = ASSIGN_NEXT (assign);
         }
-        mm_ids = IDS_NEXT (mm_ids);
+        ids_chain = IDS_NEXT (ids_chain);
     }
 
     if (last_assign != NULL) {
@@ -803,87 +771,132 @@ MakeAllocArrayICMs_reuse (ids *mm_ids, node *next)
 /******************************************************************************
  *
  * function:
- *   node *MakeIncRcICMs( ids *mm_ids, node *next)
+ *   node *MakeIncRcICM( char *name, int rc, int num)
  *
  * description:
- *   Builds a 'ND_INC_RC' icm for each ids in 'mm_ids', which rc is >=0.
- *   The given node 'next' is appended to the created assign-chain.
+ *   Builds a ND_INC_RC( name, num) icm if (rc >= 0) and (num > 0).
  *
  ******************************************************************************/
 
 static node *
-MakeIncRcICMs (ids *mm_ids, node *next)
+MakeIncRcICM (char *name, int rc, int num)
 {
-    node *assign;
-    node *last_assign = NULL;
-    node *assigns = NULL;
+    node *icm = NULL;
 
-    DBUG_ENTER ("MakeIncRcICMs");
+    DBUG_ENTER ("MakeIncRcICM");
 
-    while (mm_ids != NULL) {
-        if (IDS_REFCNT (mm_ids) >= 0) {
-            assign = MakeAssignIcm2 ("ND_INC_RC", MakeId2 (DupOneIds (mm_ids, NULL)),
-                                     MakeNum (IDS_REFCNT (mm_ids)));
+    if (rc >= 0) { /* is it a refcounted data? */
+        DBUG_ASSERT ((num >= 0), "increment for rc must be >= 0.");
 
-            if (assigns == NULL) {
-                assigns = assign;
-            } else {
-                ASSIGN_NEXT (last_assign) = assign;
-            }
-            last_assign = assign;
+        if (num > 0) {
+            icm
+              = MakeAssignIcm2 ("ND_INC_RC", MakeId1 (StringCopy (name)), MakeNum (num));
         }
-        mm_ids = IDS_NEXT (mm_ids);
     }
 
-    if (last_assign != NULL) {
-        ASSIGN_NEXT (last_assign) = next;
-    }
-
-    DBUG_RETURN (assigns);
+    DBUG_RETURN (icm);
 }
 
 /******************************************************************************
  *
  * function:
- *   node *MakeDecRcICMs( ids *mm_ids, node *next)
+ *   node *MakeDecRcICM( char *name, types* type, int rc, int num)
  *
  * description:
- *   According to RC and type, builds either
- *             a ND_DEC_RC( varname, num),
- *          or a ND_DEC_RC_FREE_ARRAY( varname, num)
- *          or a ND_DEC_RC_FREE_HIDDEN( varname, num, freefun)
- *   icm for each ids in 'mm_ids'.
- *   The given node 'next' is appended to the created assign-chain.
+ *   According to 'type', 'rc' and 'num', builds either
+ *             a ND_DEC_RC( name, num) icm,
+ *          or a ND_DEC_RC_FREE_HIDDEN( name, num, freefun) icm,
+ *          or a ND_DEC_RC_FREE_ARRAY( name, num) icm,
+ *          or no icm at all.
  *
  ******************************************************************************/
 
 static node *
-MakeDecRcICMs (ids *mm_ids, node *next)
+MakeDecRcICM (char *name, types *type, int rc, int num)
 {
-    node *assign;
-    node *last_assign = NULL;
-    node *assigns = NULL;
+    node *icm = NULL;
 
-    DBUG_ENTER ("MakeDecRcICMs");
+    DBUG_ENTER ("MakeDecRcICM");
 
-    while (mm_ids != NULL) {
-        if (IDS_REFCNT (mm_ids) >= 0) {
-            if (IDS_REFCNT (mm_ids) > 1) {
-                assign = MakeAssignIcm2 ("ND_DEC_RC", MakeId2 (DupOneIds (mm_ids, NULL)),
-                                         MakeNum (1));
+    if (rc >= 0) { /* is it a refcounted data? */
+        DBUG_ASSERT ((num >= 0), "decrement for rc must be >= 0.");
+
+        if (num > 0) {
+            if (rc - num > 0) { /* definitely no FREE needed? */
+                icm = MakeAssignIcm2 ("ND_DEC_RC", MakeId1 (StringCopy (name)),
+                                      MakeNum (num));
             } else {
-                if (IsNonUniqueHidden (IDS_TYPE (mm_ids))) {
-                    assign
-                      = MakeAssignIcm3 ("ND_DEC_RC_FREE_HIDDEN",
-                                        MakeId2 (DupOneIds (mm_ids, NULL)), MakeNum (1),
-                                        MakeId1 (GenericFun (1, IDS_TYPE (mm_ids))));
+                if (IsNonUniqueHidden (type)) {
+                    icm = MakeAssignIcm3 ("ND_DEC_RC_FREE_HIDDEN",
+                                          MakeId1 (StringCopy (name)), MakeNum (num),
+                                          MakeId1 (GenericFun (1, type)));
                 } else {
-                    assign
-                      = MakeAssignIcm2 ("ND_DEC_RC_FREE_ARRAY",
-                                        MakeId2 (DupOneIds (mm_ids, NULL)), MakeNum (1));
+                    icm = MakeAssignIcm2 ("ND_DEC_RC_FREE_ARRAY",
+                                          MakeId1 (StringCopy (name)), MakeNum (num));
                 }
             }
+        }
+    }
 
+    DBUG_RETURN (icm);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *MakeAdjustRcICM( char *name, types* type, int rc, int num)
+ *
+ * description:
+ *   According to num, either a ND_INC_RC( varname, num) icm,
+ *                       or   no ICM at all,
+ *                       or   a ND_DEC_RC_...( varname, -num) icm
+ *   is created.
+ *
+ ******************************************************************************/
+
+static node *
+MakeAdjustRcICM (char *name, types *type, int rc, int num)
+{
+    node *icm = NULL;
+
+    DBUG_ENTER ("MakeAdjustRcICM");
+
+    if (rc >= 0) { /* is it a refcounted data? */
+        if (num > 0) {
+            icm = MakeIncRcICM (name, rc, num);
+        } else if (num < 0) {
+            icm = MakeDecRcICM (name, type, rc, -num);
+        }
+    }
+
+    DBUG_RETURN (icm);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *Ids2IncRcICMs( ids *ids_chain, node *next)
+ *
+ * description:
+ *   Builds a ND_INC_RC( name, rc) icm for each ids in 'ids_chain'.
+ *   The given node 'next' is appended to the created assign-chain.
+ *
+ ******************************************************************************/
+
+static node *
+Ids2IncRcICMs (ids *ids_chain, node *next)
+{
+    node *assign;
+    node *last_assign = NULL;
+    node *assigns = NULL;
+
+    DBUG_ENTER ("Ids2IncRcICMs");
+
+    while (ids_chain != NULL) {
+        assign = MakeIncRcICM (IDS_NAME (ids_chain), IDS_REFCNT (ids_chain),
+                               IDS_REFCNT (ids_chain));
+
+        if (assign != NULL) {
             if (assigns == NULL) {
                 assigns = assign;
             } else {
@@ -891,7 +904,55 @@ MakeDecRcICMs (ids *mm_ids, node *next)
             }
             last_assign = assign;
         }
-        mm_ids = IDS_NEXT (mm_ids);
+
+        ids_chain = IDS_NEXT (ids_chain);
+    }
+
+    if (last_assign != NULL) {
+        ASSIGN_NEXT (last_assign) = next;
+    }
+
+    DBUG_RETURN (assigns);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *Ids2DecRcICMs( ids *ids_chain, node *next)
+ *
+ * description:
+ *   According to rc and type, builds either
+ *             a ND_DEC_RC( name, 1)
+ *          or a ND_DEC_RC_FREE_HIDDEN( name, 1, freefun)
+ *          or a ND_DEC_RC_FREE_ARRAY( name, 1)
+ *   icm for each ids in 'ids_chain'.
+ *   The given node 'next' is appended to the created assign-chain.
+ *
+ ******************************************************************************/
+
+static node *
+Ids2DecRcICMs (ids *ids_chain, node *next)
+{
+    node *assign;
+    node *last_assign = NULL;
+    node *assigns = NULL;
+
+    DBUG_ENTER ("Ids2DecRcICMs");
+
+    while (ids_chain != NULL) {
+        assign = MakeDecRcICM (IDS_NAME (ids_chain), IDS_TYPE (ids_chain),
+                               IDS_REFCNT (ids_chain), 1);
+
+        if (assign != NULL) {
+            if (assigns == NULL) {
+                assigns = assign;
+            } else {
+                ASSIGN_NEXT (last_assign) = assign;
+            }
+            last_assign = assign;
+        }
+
+        ids_chain = IDS_NEXT (ids_chain);
     }
 
     if (last_assign != NULL) {
@@ -3215,13 +3276,21 @@ COMPPrf (node *arg_node, node *arg_info)
         /* test whether an identifier occurs on the right and left side of a
          * let. In this case rename the one on the right side, assign old and new
          * variable and add vardec for the new variable.
-         * (e.g: A=A+1 => __A=A; A=__A+1; )
+         * CAUTION: The RC of the new variable must be set accordingly!!!
+         * Example:
+         *     A:n = prf( A:1, ...);
+         *     ... A:n ... A:1 ...    // n references of 'A'
+         *   ist transformed into
+         *     __A:1 = A:1;
+         *     A:n = prf( __A:1, ...);
+         *     ... A:n ... A:1 ...
          */
         while (NULL != exprs) {
             if (N_id == NODE_TYPE (EXPRS_EXPR (exprs))) {
                 if (0 == strcmp (IDS_NAME (let_ids), ID_NAME (EXPRS_EXPR (exprs)))) {
                     if (0 == insert_assign) {
                         new_id = MakeId1 (TmpVarName (IDS_NAME (let_ids)));
+                        ID_REFCNT (new_id) = 1; /* very important!! */
                         old_id = MakeId3 (let_ids);
                         CREATE_2_ARY_ICM (new_assign, "ND_KS_ASSIGN_ARRAY", old_id,
                                           new_id);
@@ -3609,7 +3678,7 @@ COMPPrf (node *arg_node, node *arg_info)
 
             DBUG_ASSERT ((NODE_TYPE (arg2) == N_id),
                          "N_id as 2nd arg of F_reshape expected!");
-            if (0 == strcmp (ID_NAME (arg2), IDS_NAME (INFO_COMP_LASTIDS (arg_info)))) {
+            if (0 == strcmp (ID_NAME (arg2), IDS_NAME (let_ids))) {
                 /*
                  * We are dealing with an assignment of the kind:
                  *   a = reshape( b, a);
@@ -3618,14 +3687,16 @@ COMPPrf (node *arg_node, node *arg_info)
                  */
                 icms = MakeAssignIcm0 ("NOOP");
             } else {
-                res = MakeId3 (DupOneIds (INFO_COMP_LASTIDS (arg_info), NULL));
-                icms = MakeAssignIcm2 ("ND_KS_ASSIGN_ARRAY", DupTree (arg2), res);
-                ASSIGN_NEXT (icms) = MakeAdjustRcICM (ID_IDS (res), ID_REFCNT (res) - 1);
+                icms = MakeAssignIcm2 ("ND_KS_ASSIGN_ARRAY", DupTree (arg2),
+                                       MakeId3 (DupOneIds (let_ids, NULL)));
+                ASSIGN_NEXT (icms)
+                  = MakeAdjustRcICM (IDS_NAME (let_ids), IDS_TYPE (let_ids),
+                                     IDS_REFCNT (let_ids), IDS_REFCNT (let_ids) - 1);
             }
 
             DBUG_ASSERT ((NODE_TYPE (arg1) == N_id),
                          "N_id as 1st arg of F_reshape expected!");
-            icms = MakeDecRcICMs (ID_IDS (arg1), icms);
+            icms = Ids2DecRcICMs (ID_IDS (arg1), icms);
             break;
         }
         case F_psi: {
@@ -4380,25 +4451,13 @@ COMPArray (node *arg_node, node *arg_info)
                     id_node = MakeId3 (ids);
                     tag_node = MakeId1 ("out_rc");
 
-                    if (IDS_REFCNT (ids) > 1) {
-                        /*
-                         * create N_icm to increment refcount of function result.
-                         * It will be stored in refs_node->node[1]->.. and will be
-                         * inserted later.
-                         */
-                        INC_RC_ND (id_node, MakeNum (ids->refcnt - 1));
-                    } else if (IDS_REFCNT (ids) == 0) {
-                        if (IsNonUniqueHidden (IDS_TYPE (ids))) {
-                            CREATE_2_ARY_ICM (next_assign, "ND_FREE_HIDDEN",
-                                              MakeId1 (IDS_NAME (ids)),
-                                              MakeId1 (GenericFun (1, IDS_TYPE (ids))));
-                        } else {
-                            CREATE_1_ARY_ICM (next_assign, "ND_FREE_ARRAY",
-                                              MakeId1 (IDS_NAME (ids)));
-                        }
+                    next_assign
+                      = MakeAdjustRcICM (IDS_NAME (ids), IDS_TYPE (ids), IDS_REFCNT (ids),
+                                         IDS_REFCNT (ids) - 1);
+                    if (next_assign != NULL) {
                         APPEND_ASSIGNS (first_assign, next_assign);
                     }
-                } else {
+                } else { /* FUN_DOES_REFCOUNT */
                     if ((tmp == NULL) || (IsUnique (VARDEC_TYPE (IDS_VARDEC (ids))))) {
                         id_node = MakeId3 (ids);
                     } else {
@@ -4441,8 +4500,9 @@ COMPArray (node *arg_node, node *arg_info)
                     APPEND_ASSIGNS (first_assign, next_assign);
 
                     tag_node = MakeId1 ("out");
-                }
-            } else {
+                } /* FUN_DOES_REFCOUNT */
+            }     /* MUST_REFCOUNT */
+            else {
                 id_node = MakeId3 (ids);
                 tag_node = MakeId1 ("out");
             }
@@ -4482,7 +4542,7 @@ COMPArray (node *arg_node, node *arg_info)
             }
 
             ids = IDS_NEXT (ids);
-        }
+        } /* while( ids) */
 
         /*
          *  Now, do the arguments of the function
@@ -4794,6 +4854,9 @@ COMPArray (node *arg_node, node *arg_info)
         /*
          * replace N_return node by a new N_icm node
          */
+        DBUG_ASSERT ((FUNDEF_RETURN (INFO_COMP_FUNDEF (arg_info)) == arg_node),
+                     "FUNDEF_RETURN not found via 'arg_info'!");
+
         arg_node = FreeTree (arg_node);
         if (last_icm_arg == EXPRS_NEXT (icm_args)) {
             icm_args = FreeTree (icm_args);
@@ -4801,6 +4864,8 @@ COMPArray (node *arg_node, node *arg_info)
         } else {
             arg_node = MakeIcm ("ND_FUN_RET", icm_args);
         }
+
+        FUNDEF_RETURN (INFO_COMP_FUNDEF (arg_info)) = arg_node;
 
         DBUG_RETURN (arg_node);
     }
@@ -5427,13 +5492,13 @@ COMPArray (node *arg_node, node *arg_info)
 
         if (COND_THENVARS (arg_node) != NULL) {
             BLOCK_INSTR (COND_THEN (arg_node))
-              = MakeDecRcICMs (COND_THENVARS (arg_node),
+              = Ids2DecRcICMs (COND_THENVARS (arg_node),
                                BLOCK_INSTR (COND_THEN (arg_node)));
         }
 
         if (COND_ELSEVARS (arg_node) != NULL) {
             BLOCK_INSTR (COND_ELSE (arg_node))
-              = MakeDecRcICMs (COND_ELSEVARS (arg_node),
+              = Ids2DecRcICMs (COND_ELSEVARS (arg_node),
                                BLOCK_INSTR (COND_ELSE (arg_node)));
         }
 
@@ -6400,13 +6465,13 @@ COMPArray (node *arg_node, node *arg_info)
          * insert ICMs for memory management ('DEC_RC_FREE').
          */
         assigns
-          = AppendAssign (assigns, MakeDecRcICMs (NWITH2_DEC_RC_IDS (arg_node), NULL));
+          = AppendAssign (assigns, Ids2DecRcICMs (NWITH2_DEC_RC_IDS (arg_node), NULL));
 
         /*
          * insert 'DEC_RC_FREE'-ICM for index-vector.
          */
         if (IDS_REFCNT (NWITHID_VEC (NWITH2_WITHID (arg_node))) > 0) {
-            assigns = AppendAssign (assigns, MakeDecRcICMs (NWITH2_VEC (arg_node), NULL));
+            assigns = AppendAssign (assigns, Ids2DecRcICMs (NWITH2_VEC (arg_node), NULL));
         }
 
         /*
@@ -6444,7 +6509,7 @@ COMPArray (node *arg_node, node *arg_info)
         /*
          * build a 'ND_INC_RC'-ICM for each ids in 'NCODE_INC_RC_IDS( arg_node)'.
          */
-        icm_assigns = MakeIncRcICMs (NCODE_INC_RC_IDS (arg_node), NULL);
+        icm_assigns = Ids2IncRcICMs (NCODE_INC_RC_IDS (arg_node), NULL);
 
         if (icm_assigns != NULL) {
             /*
