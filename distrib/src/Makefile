@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.6  2002/01/18 14:32:29  sacbase
+# tools.tar added.
+#
 # Revision 3.5  2002/01/18 11:48:35  sbs
 # rsh and rcp substituted by ssh and scp.
 #
@@ -80,17 +83,17 @@
 #  Settings for version control
 #
 
-VERSION    =  0_9
+VERSION    =  0_91
 
 
 #
 #  Settings for file and package sets
 #
 
-SYSTEMS  =  SOLARIS_SPARC-2_5 SOLARIS_SPARC-2_7 LINUX_X86 OSF_ALPHA
+SYSTEMS  =  LINUX_X86 SOLARIS_SPARC-2_5 SOLARIS_SPARC-2_7 OSF_ALPHA
 INST_PACKAGES   =  runtime.tar stdlib.tar demo.tar
 INST_FILES      =  install_sac LICENSE README
-INST_SPECIFICS  =  sac2c sac2crc
+INST_SPECIFICS  =  sac2c sac2crc tools.tar
 SPECIFICS  =  $(INST_SPECIFICS) libsac.tar Makefile.Config
 
 
@@ -154,6 +157,7 @@ ALPHA_MAKE  =  gmake
 #
 
 RSH           :=  ssh -oProtocol=1
+RSH_LOCAL     :=  ssh
 RCP           :=  scp -oProtocol=1
 DATE          :=  $(shell date +%d_%b_%y)
 BINDISTRIBS   :=  $(addprefix $(BINTARGETDIR)/SAC-$(VERSION)-, \
@@ -236,15 +240,16 @@ sac2c.for.SOLARIS_SPARC-%:
 	@echo "**************************************************************"
 	@echo "*  Creating sac2c for SOLARIS_SPARC-$* on host $(SOLARIS_HOST-$*)"
 	@echo "**************************************************************"
-	$(RSH) $(SOLARIS_HOST-$*)            \
+	$(RSH_LOCAL) $(SOLARIS_HOST-$*)            \
 	    'setenv PATH $(PATH);'        \
             'cd $(SAC2CDIR)/distrib/src;' \
 	    '$(MAKE) sac2c.for.SOLARIS_SPARC'
 	mv -f sac2c.for.SOLARIS_SPARC sac2c.for.SOLARIS_SPARC-$*
+	mv -f tools.tar.for.SOLARIS_SPARC tools.tar.for.SOLARIS_SPARC-$*
 	mv -f libsac.tar.for.SOLARIS_SPARC libsac.tar.for.SOLARIS_SPARC-$*
 
 
-sac2c.for.SOLARIS_SPARC:
+sac2c.for.SOLARIS_SPARC tools.tar.for.SOLARIS_SPARC:
 	( cd $(SAC2CDIR); $(MAKE) tar )
 	rm -rf $(SOLARIS_DIR)
 	mkdir -p $(SOLARIS_DIR)
@@ -253,6 +258,8 @@ sac2c.for.SOLARIS_SPARC:
 	( cd $(SOLARIS_DIR); tar xvf src.tar )
 	( cd $(SOLARIS_DIR); $(MAKE) distrib_product OS=SOLARIS_SPARC )
 	cp $(SOLARIS_DIR)/sac2c sac2c.for.SOLARIS_SPARC
+	( cd $(SAC2CDIR)/tools/bin tar cvf tools.tar.for.SOLARIS_SPARC *)
+	cp $(SAC2CDIR)/tools/bin/tools.tar.for.SOLARIS_SPARC .
 	( cd $(SOLARIS_DIR)/src/runtime; tar cvfh libsac.tar libsac*.a ) 
 	cp $(SOLARIS_DIR)/src/runtime/libsac.tar libsac.tar.for.SOLARIS_SPARC
 	@ if [ $${?} -eq 0 ]; then                                 \
@@ -263,7 +270,7 @@ sac2c.for.SOLARIS_SPARC:
             exit 1;                                                \
           fi
 
-sac2c.for.LINUX_X86:
+sac2c.for.LINUX_X86 tools.tar.for.LINUX_X86:
 	@echo "**************************************************************"
 	@echo "*  Creating sac2c for LINUX_X86"
 	@echo "**************************************************************"
@@ -285,6 +292,10 @@ sac2c.for.LINUX_X86:
 	    'touch src/*/*;'                  \
 	    '$(LX86_MAKE) distrib_product OS=LINUX_X86'
 	$(RCP) $(LX86_USER)@$(LX86_HOST):$(LX86_DIR)/sac2c sac2c.for.LINUX_X86
+	$(RSH) -l $(LX86_USER) $(LX86_HOST)      \
+	    'cd $(LX86_DIR)/tools/bin;'           \
+	    'tar cvf tools.tar.for.LINUX_X86 *;'
+	$(RCP) $(LX86_USER)@$(LX86_HOST):$(LX86_DIR)/tools/bin/tools.tar.for.LINUX_X86 .
 	$(RSH) -l $(LX86_USER) $(LX86_HOST)  \
 	    'cd $(LX86_DIR)/src/runtime;' \
 	    'tar cvfh libsac.tar libsac*.a'
@@ -298,7 +309,7 @@ sac2c.for.LINUX_X86:
 	    exit 1;                                                \
 	  fi
 
-sac2c.for.OSF_ALPHA:
+sac2c.for.OSF_ALPHA tools.tar.for.OSF_ALPHA:
 	@echo "**************************************************************"
 	@echo "*  Creating sac2c for OSF_ALPHA"
 	@echo "**************************************************************"
@@ -321,6 +332,10 @@ sac2c.for.OSF_ALPHA:
 	    'touch src/*/*;'                                             \
 	    '$(ALPHA_MAKE) distrib_product OS=OSF_ALPHA'
 	$(RCP) $(ALPHA_USER)@$(ALPHA_HOST):$(ALPHA_DIR)/sac2c sac2c.for.OSF_ALPHA
+	$(RSH) -l $(ALPHA_USER) $(ALPHA_HOST)      \
+            'cd $(ALPHA_DIR)/tools/bin;'           \
+            'tar cvf tools.tar.for.OSF_ALPHA *;'
+	$(RCP) $(ALPHA_USER)@$(ALPHA_HOST):$(LX86_DIR)/tools/bin/tools.tar.for.OSF_ALPHA .
 	$(RSH) -l $(ALPHA_USER) $(ALPHA_HOST) \
 	    'cd $(ALPHA_DIR)/src/runtime;' \
 	    'tar cvfh libsac.tar libsac*.a'
