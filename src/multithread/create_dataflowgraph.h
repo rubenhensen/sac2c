@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.7  2004/11/22 16:27:16  skt
+ * code brushing in SACDevCampDK 2004
+ *
  * Revision 1.6  2004/08/13 10:27:48  skt
  * comments, comments, comments...
  *
@@ -32,13 +35,12 @@
  *
  *****************************************************************************/
 
-#ifndef CREATE_DATAFLOWGRAPH_H
+#ifndef _SAC_CREATE_DATAFLOWGRAPH_H
+#define _SAC_CREATE_DATAFLOWGRAPH_H
 
-#define CREATE_DATAFLOWGRAPH_H
+#include "types.h"
 
-#define CDFG_DEBUG 0
-
-extern node *CreateDataflowgraph (node *arg_node);
+extern node *CDFGdoCreateDataflowgraph (node *arg_node);
 
 extern node *CDFGblock (node *arg_node, info *arg_info);
 
@@ -48,18 +50,6 @@ extern node *CDFGcond (node *arg_node, info *arg_info);
 
 extern node *CDFGid (node *arg_node, info *arg_info);
 
-node *CDFGwithid (node *arg_node, info *arg_info);
+extern node *CDFGwithid (node *arg_node, info *arg_info);
 
-node *CDFGUpdateDependency (node *dfn_assign, node *outer_graph, node *current_node);
-
-node *CDFGFindAssignCorrespondingNode (node *graph, node *dfn_assign);
-
-node *CDFGLowestCommonLevel (node *node_one, node *node_two);
-
-void CDFGUpdateDataflowgraph (node *graph, node *node_one, node *two);
-
-bool CDFGFirstIsWithinSecond (node *node_one, node *node_two);
-
-char *CDFGGetName (node *assign);
-
-#endif /* CREATE_DATAFLOWGRAPH_H */
+#endif /* _SAC_CREATE_DATAFLOWGRAPH_H */
