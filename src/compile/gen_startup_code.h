@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2004/11/26 11:52:53  cg
+ * file names brushed.
+ *
  * Revision 3.5  2004/11/21 22:04:36  ktr
  * Ismop SacDevCamp 04
  *
@@ -58,14 +61,14 @@
 
 #include "types.h"
 
-extern void GSCPrintFileHeader (node *syntax_tree);
-extern void GSCPrintInternalInitFileHeader (node *syntax_tree);
-extern void GSCPrintDefines ();
-extern void GSCPrintMain ();
-extern void GSCPrintMainBegin ();
-extern void GSCPrintMainEnd ();
+extern void GSCprintFileHeader (node *syntax_tree);
+extern void GSCprintInternalInitFileHeader (node *syntax_tree);
+extern void GSCprintDefines ();
+extern void GSCprintMain ();
+extern void GSCprintMainBegin ();
+extern void GSCprintMainEnd ();
 
-extern int GSCCalcMasterclass (int num_threads);
+extern int GSCcalcMasterclass (int num_threads);
 
 /******************************************************************************
  *
@@ -74,6 +77,7 @@ extern int GSCCalcMasterclass (int num_threads);
  * Prefix: GSC
  *
  *****************************************************************************/
+
 extern node *GSCfundef (node *arg_node, info *arg_info);
 extern node *GSCspmd (node *arg_node, info *arg_info);
 extern node *GSCicm (node *arg_node, info *arg_info);
