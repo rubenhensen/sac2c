@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.6  1995/10/30 10:22:01  cg
+ * Revision 1.7  1995/10/31 09:02:21  cg
+ * Parameters of implicitly needed functions are now printed without
+ * identifier name.
+ *
+ * Revision 1.6  1995/10/30  10:22:01  cg
  * now, SIB information about functions (inline info and needed
  * global objects) is printed to SIB-file.
  *
@@ -30,6 +34,7 @@
  */
 
 #include <string.h>
+#include <malloc.h>
 
 #include "types.h"
 #include "tree_basic.h"
@@ -130,7 +135,7 @@ OpenSibFile (char *name)
  *  description   :
  *  global vars   :
  *  internal funs :
- *  external funs :
+ *  external funs : free
  *  macros        :
  *
  *  remarks       :
@@ -141,6 +146,7 @@ void
 SibPrintTypes (nodelist *types)
 {
     node *type;
+    nodelist *tmp;
 
     DBUG_ENTER ("SibPrintTypes");
 
@@ -158,7 +164,9 @@ SibPrintTypes (nodelist *types)
         fprintf (sibfile, "%s=%s;\n", TYPEDEF_NAME (type),
                  Type2String (TYPEDEF_TYPE (type), 0));
 
+        tmp = types;
         types = NODELIST_NEXT (types);
+        free (tmp);
     }
 
     DBUG_VOID_RETURN;
@@ -182,7 +190,7 @@ void
 SibPrintFunctions (nodelist *funs)
 {
     node *fun, *obj;
-    nodelist *objs;
+    nodelist *objs, *tmp;
 
     DBUG_ENTER ("SibPrintFunctions");
 
@@ -204,8 +212,14 @@ SibPrintFunctions (nodelist *funs)
         fprintf (sibfile, "(");
 
         if (FUNDEF_ARGS (fun) != NULL) {
-            Trav (FUNDEF_ARGS (fun), NULL);
+            Trav (FUNDEF_ARGS (fun), fun);
         }
+
+        /*
+         *  The second argument in the above start of the traversal mechanism
+         *  causes PrintArg to omit the name of the formal parameter.
+         *  Normally the Print functions are used with NULL as second argument.
+         */
 
         fprintf (sibfile, ")");
 
@@ -231,7 +245,9 @@ SibPrintFunctions (nodelist *funs)
 
         fprintf (sibfile, ";\n");
 
+        tmp = funs;
         funs = NODELIST_NEXT (funs);
+        free (tmp);
     }
 
     DBUG_VOID_RETURN;
@@ -307,12 +323,8 @@ SIBfundef (node *arg_node, node *arg_info)
     funs = FUNDEF_NEEDFUNS (fundef);
     objs = FUNDEF_NEEDOBJS (fundef);
 
-    if (FUNDEF_INLINE (fundef) || (FUNDEF_NEEDOBJS (fundef) != NULL)) {
+    if (FUNDEF_INLINE (fundef) || (objs != NULL)) {
         fprintf (sibfile, "\n");
-
-        if (FUNDEF_MOD (fundef) != NULL) {
-            fprintf (sibfile, "%s:", FUNDEF_MOD (fundef));
-        }
 
         fprintf (sibfile, "%s(", FUNDEF_NAME (fundef));
 
@@ -331,9 +343,10 @@ SIBfundef (node *arg_node, node *arg_info)
 
         fprintf (sibfile, "implicit:\n{\n");
 
-        if ((types != NULL) && (FUNDEF_INLINE (fundef))) {
+        if (types != NULL) {
             fprintf (sibfile, "types:\n");
             SibPrintTypes (types);
+            types = NULL;
         }
 
         if (objs != NULL) {
@@ -341,9 +354,10 @@ SIBfundef (node *arg_node, node *arg_info)
             SibPrintObjects (objs);
         }
 
-        if ((funs != NULL) && (FUNDEF_INLINE (fundef))) {
+        if (funs != NULL) {
             fprintf (sibfile, "functions:\n");
             SibPrintFunctions (funs);
+            funs = NULL;
         }
 
         fprintf (sibfile, "}\n");
