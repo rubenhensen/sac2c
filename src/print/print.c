@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.65  2000/03/21 17:21:02  dkr
+ * I really hope that the indentation is now *always* correct ... %-]
+ *
  * Revision 2.64  2000/03/21 16:04:14  dkr
  * indentation of ICMs corrected
  *
@@ -1826,7 +1829,6 @@ PrintIcm (node *arg_node, node *arg_info)
             GSCPrintMainEnd ();
         }
 
-        INDENT;
         fprintf (outfile, "SAC_%s( ", ICM_NAME (arg_node));
         if (NULL != ICM_ARGS (arg_node)) {
             Trav (ICM_ARGS (arg_node), arg_info);
@@ -2007,12 +2009,18 @@ PrintSpmd (node *arg_node, node *arg_info)
         /*
          * print ICMs
          */
+        INDENT;
         Trav (SPMD_ICM_BEGIN (arg_node), arg_info);
         fprintf (outfile, "\n");
         Trav (SPMD_ICM_PARALLEL (arg_node), arg_info);
+        INDENT;
+        fprintf (outfile, "\n");
+        INDENT;
         Trav (SPMD_ICM_ALTSEQ (arg_node), arg_info);
         fprintf (outfile, "\n");
         Trav (SPMD_ICM_SEQUENTIAL (arg_node), arg_info);
+        fprintf (outfile, "\n");
+        INDENT;
         Trav (SPMD_ICM_END (arg_node), arg_info);
         fprintf (outfile, "\n");
     }
