@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.68  1998/03/16 14:44:52  srs
+ * fixed bug resulted from changes in 1.65
+ *
  * Revision 1.67  1998/03/15 10:59:28  srs
  * fixed bug in FltnGen
  *
@@ -642,7 +645,7 @@ FltnExprs (node *arg_node, node *arg_info)
         EXPRS_EXPR (arg_node) = id_node;
 
         let_node = MakeNode (N_let);
-        let_node->info.ids = MakeIds (tmp_var_name, NULL, ST_regular);
+        let_node->info.ids = MakeIds (StringCopy (tmp_var_name), NULL, ST_regular);
         LET_EXPR (let_node) = tmp_node1;
 
         assign_node = MakeNode (N_assign);
@@ -1088,7 +1091,7 @@ FltnFundef (node *arg_node, node *arg_info)
 node *
 FltnGen (node *arg_node, node *arg_info)
 {
-    node *tmp_node1, *id_node, *let_node, *assign_node, *boundn;
+    node *tmp_node1, *id_node, *let_node, *assign_node, **bound;
     int i;
     local_stack *tmp;
     char *old_name, *tmp_var_name;
@@ -1096,24 +1099,25 @@ FltnGen (node *arg_node, node *arg_info)
     DBUG_ENTER ("FltnGen");
     for (i = 0; i < 2; i++) {
         if (i == 0)
-            boundn = GEN_LEFT (arg_node);
+            bound = &GEN_LEFT (arg_node);
         else
-            boundn = GEN_RIGHT (arg_node);
+            bound = &GEN_RIGHT (arg_node);
 
-        if (boundn)
-            if (NODE_TYPE (boundn) == N_ap || NODE_TYPE (boundn) == N_prf
-                || NODE_TYPE (boundn) == N_array) {
+        if (*bound)
+            if (NODE_TYPE (*bound) == N_ap || NODE_TYPE (*bound) == N_prf
+                || NODE_TYPE (*bound) == N_array) {
                 /* This argument is a function application and thus has to be abstracted
                 ** out. Therefore a new N_assign, a new N_let, and a new temporary
                 ** variable are generated and inserted.
                 */
-                tmp_node1 = boundn;
+                tmp_node1 = *bound;
                 tmp_var_name = TmpVar ();
                 id_node = MakeId (tmp_var_name, NULL, ST_regular);
-                boundn = id_node;
+                *bound = id_node;
 
                 let_node = MakeNode (N_let);
-                let_node->info.ids = MakeIds (tmp_var_name, NULL, ST_regular);
+                let_node->info.ids
+                  = MakeIds (StringCopy (tmp_var_name), NULL, ST_regular);
 
                 /*         assign_node=MakeNode(N_assign); */
                 /*         ASSIGN_INSTR(assign_node)=let_node; */
@@ -1128,7 +1132,7 @@ FltnGen (node *arg_node, node *arg_info)
                 /* Now, we have to flatten the child "tmp_node1" recursively! */
                 LET_EXPR (let_node) = Trav (tmp_node1, arg_info);
             } else
-                boundn = Trav (boundn, arg_info);
+                *bound = Trav (*bound, arg_info);
     }
 
     /* rename index-vector if necessary */
@@ -1288,7 +1292,6 @@ FltnId (node *arg_node, node *arg_info)
             if (with_level >= tmp->w_level) {
                 old_name = ID_NAME (arg_node);
                 ID_NAME (arg_node) = StringCopy (tmp->id_new);
-                ;
 
                 FREE (old_name);
             }
@@ -1338,10 +1341,7 @@ FltnLet (node *arg_node, node *arg_info)
             } else {
                 /* if not inside a WL the with_level is exactly 0 so nothing happens */
                 if ((0 < with_level) && (with_level > tmp->w_level)) {
-                    /* srs: We need to store a reference to the memory area of the OLD
-                       (or first) appearence because mey be freed in FltnId. */
                     old_name = ids->id;
-                    /* 	  old_name=tmp->id_old; */
                     ids->id = RenameWithVar (old_name, with_level);
                     PUSH (old_name, ids->id, with_level);
                     /* arg_info->node[1]=AppendIdentity(arg_info->node[1],
@@ -1689,7 +1689,7 @@ FltnNgenerator (node *arg_node, node *arg_info)
             let_node = MakeLet (NULL, MakeIds (new_id, NULL, ST_regular));
             arg_info->node[0] = MakeAssign (let_node, arg_info->node[0]);
             LET_EXPR (let_node) = Trav (*act_son, arg_info);
-            *act_son = MakeId (new_id, NULL, ST_regular);
+            *act_son = MakeId (StringCopy (new_id), NULL, ST_regular);
         }
     }
 
