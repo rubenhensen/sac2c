@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.2  2000/12/06 20:11:20  dkr
+ * GNMwith2 added (dummy function)
+ *
  * Revision 3.1  2000/11/20 18:00:42  sacbase
  * new release made
  *
@@ -1106,7 +1109,6 @@ MaxMask (long *mask1, long *mask2, int varno)
  *   node *OPTTrav(node *trav_node, node *arg_info, node *arg_node)
  *
  * description:
- *
  *   Already created DEF and USE masks are needed to do an OPTTrav() traversal.
  *   OPTTrav() create the MRD-list and modifies DEF and USE masks.
  *
@@ -1506,7 +1508,7 @@ OPTTrav (node *trav_node, node *arg_info, node *arg_node)
                 break;
             }
             break;
-            /*************************************************************************************/
+            /***********************************************************************/
 
         case N_Nwith:
             /* MRDs in WL:
@@ -1515,7 +1517,6 @@ OPTTrav (node *trav_node, node *arg_info, node *arg_node)
                and the information may not be necessary (e.g. CF does not need it -
                if there is no MRD entry CF is ignored for the index variable).
                ATTENTION: This was changed in 5.98 to avoid problems in SearchWL().
-
                But logically it is wrong. The MRD for the usage of an index variable
                in the WL body (before the first definition within the body) can
                always be found in the generator.
@@ -1531,15 +1532,6 @@ OPTTrav (node *trav_node, node *arg_info, node *arg_node)
                 old_mask[1] = INFO_USE;
                 INFO_USE = GenMask (INFO_VARNO (arg_info));
 
-                /*         if (WO_modarray == NWITHOP_TYPE(trav_node))  */
-                /*           NWITHOP_ARRAY(trav_node) = Trav(NWITHOP_ARRAY(trav_node),
-                 * arg_info); */
-                /*         else if (WO_genarray == NWITHOP_TYPE(trav_node)) */
-                /*           NWITHOP_SHAPE(trav_node) = Trav(NWITHOP_SHAPE(trav_node),
-                 * arg_info); */
-                /*         else if (NWITHOP_NEUTRAL(trav_node)) */
-                /*           NWITHOP_NEUTRAL(trav_node) = Trav(NWITHOP_NEUTRAL(trav_node),
-                 * arg_info); */
                 trav_node = Trav (trav_node, arg_info);
 
                 PlusMask (trav_node->mask[1], INFO_USE, INFO_VARNO (arg_info));
@@ -1603,7 +1595,7 @@ OPTTrav (node *trav_node, node *arg_info, node *arg_node)
                 break;
             }
             break;
-            /*************************************************************************************/
+            /***********************************************************************/
 
 #if 0
     case N_with:
@@ -2397,7 +2389,7 @@ GNMblock (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *GNMNwith(node *arg_node, node *arg_info)
+ *   node *GNMwith(node *arg_node, node *arg_info)
  *
  * description:
  *   computes DEF and USE for a new WL.
@@ -2412,7 +2404,7 @@ GNMblock (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-GNMNwith (node *arg_node, node *arg_info)
+GNMwith (node *arg_node, node *arg_info)
 {
     node *code, *part, *withop;
     ids *_ids;
@@ -2443,7 +2435,6 @@ GNMNwith (node *arg_node, node *arg_info)
         part = OptTrav (part, arg_info, 0);
 
         /* add the ids from N_Nwithid to DEFs */
-        /*    DBUG_ASSERT(NPART_IDS(part), "NWITHID_IDS == NULL");  */
         DBUG_ASSERT (NPART_VEC (part), "NWITHID_VEC == NULL");
 
         INC_VAR (part->mask[0], IDS_VARNO (NPART_VEC (part)));
@@ -2464,8 +2455,33 @@ GNMNwith (node *arg_node, node *arg_info)
 
 /******************************************************************************
  *
+ * Function:
+ *   node *GNMwith2( node *arg_node, node *arg_info)
+ *
+ * Description:
+ *   computes DEF and USE for a new WL.
+ *   - USE mask of N_Nwithop is stored within itself.
+ *   - USE and DEF masks of NCODE_CBLOCK and NCODE_CEXPR are stored in N_Ncode
+ *   - masks of N_WLstride/grid (USE) plus N_Nwithid (DEF) are stored in
+ *     N_Nwith2.
+ *   all other nodes of the new WL structure do not contain mask information.
+ *
+ ******************************************************************************/
+
+node *
+GNMwith2 (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("GNMNwith2");
+
+    DBUG_ASSERT ((0), "Not implemented! Use InferDFMs() instead!");
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
  * function:
- *   node *GNMicm(node *arg_node, node *arg_info)
+ *   node *GNMicm( node *arg_node, node *arg_info)
  *
  * description:
  *   computes DEF and USE for IVE-ICMs.
