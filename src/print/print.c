@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.27  1999/08/04 14:30:39  bs
+ * WLAAprintAccesses modified, using new access macros now.
+ *
  * Revision 2.26  1999/07/28 10:41:51  bs
  * Function WLAAprintAccesses modified.
  *
@@ -336,7 +339,7 @@ WLAAprintAccesses (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("WLAAprintAccesses");
 
-    feature = NCODE_FEATURE (arg_node);
+    feature = NCODE_WLAA_FEATURE (arg_node);
     fprintf (outfile, "/*\n");
     INDENT;
     fprintf (outfile, " * WITH-LOOP features:\n");
@@ -391,7 +394,7 @@ WLAAprintAccesses (node *arg_node, node *arg_info)
     }
 
     dim = SHP_SEG_SIZE;
-    access = NCODE_ACCESS (arg_node);
+    access = NCODE_WLAA_ACCESS (arg_node);
     INDENT;
     fprintf (outfile, " * WLAA:\n");
     do {
@@ -2321,9 +2324,9 @@ PrintNcode (node *arg_node, node *arg_info)
         INDENT;
     }
     /*
-     *  NCODE_ACCESS(arg_node) is set to NULL by initializing the N_Ncode node.
+     *  NCODE_WLAA_ACCESS(arg_node) is set to NULL by initializing the N_Ncode node.
      */
-    if ((compiler_phase == PH_sacopt) && (NCODE_ACCESS (arg_node) != NULL))
+    if ((compiler_phase == PH_sacopt) && (NCODE_WLAA_ACCESS (arg_node) != NULL))
         WLAAprintAccesses (arg_node, arg_info);
 
     fprintf (outfile, "}");
