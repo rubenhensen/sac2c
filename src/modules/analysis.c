@@ -1,7 +1,13 @@
 /*
  *
  * $Log$
- * Revision 1.3  1995/10/20 13:51:10  cg
+ * Revision 1.4  1995/10/20 16:55:01  cg
+ * Now, indirectly needed global objects are concerned as well.
+ * These are those global objects which do not occur in a function's
+ * body but are needed by another function which is applied in the
+ * body of the first one.
+ *
+ * Revision 1.3  1995/10/20  13:51:10  cg
  * calls to function InsertNode are extended to 3 parameters
  *
  * Revision 1.2  1995/10/20  09:29:02  cg
@@ -53,12 +59,80 @@ Analysis (node *syntaxtree)
 
 /*
  *
+ *  functionname  : FindAllNeededObjects
+ *  arguments     : 1) fundef node
+ *  description   : This function takes care of those global objects which
+ *                  are only indirectly needed by the given function, i.e.
+ *                  global objects which are needed by applied functions.
+ *  global vars   : ---
+ *  internal funs : ---
+ *  external funs : StoreNeededNodes, StoreUnresolvedNodes
+ *  macros        : ---
+ *
+ *  remarks       : Since only fundef nodes are traversed, the universal
+ *                  traversal mechanism is not used to spare one table
+ *
+ */
+
+node *
+FindAllNeededObjects (node *arg_node)
+{
+    nodelist *tmp;
+
+    DBUG_ENTER ("FindAllNeededObjects");
+
+    if (FUNDEF_STATUS (arg_node) != ST_imported) {
+        /*
+         *  For each not imported function the list of called functions
+         *  is traversed.
+         */
+
+        DBUG_PRINT ("ANA", ("Collecting global objects for '%s`", ItemName (arg_node)));
+
+        tmp = FUNDEF_NEEDFUNS (arg_node);
+        while (tmp != NULL) {
+            /*
+             *  First, the global objects needed by the called function are
+             *  added to this function's list of needed global objects.
+             */
+
+            StoreNeededNodes (FUNDEF_NEEDOBJS (NODELIST_NODE (tmp)), arg_node,
+                              ST_artificial);
+
+            if (FUNDEF_STATUS (NODELIST_NODE (tmp)) != ST_imported) {
+                /*
+                 *  If the called function is not imported, its called functions
+                 *  are added to this function's list of needed functions.
+                 *  Only those functions are concerned which still have attribute
+                 *  ST_unresolved which means that they have not been treated
+                 *  by this algorithm yet.
+                 */
+
+                StoreUnresolvedNodes (FUNDEF_NEEDFUNS (NODELIST_NODE (tmp)), arg_node,
+                                      ST_artificial);
+            }
+
+            NODELIST_ATTRIB (tmp) = ST_resolved;
+
+            tmp = NODELIST_NEXT (tmp);
+        }
+    }
+
+    if (FUNDEF_NEXT (arg_node) != NULL) {
+        FUNDEF_NEXT (arg_node) = FindAllNeededObjects (FUNDEF_NEXT (arg_node));
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/*
+ *
  *  functionname  : ANAmodul
  *  arguments     : 1) N_modul node of syntax tree
  *                  2) arg_info unused
  *  description   : If the module has functions, these are traversed.
  *  global vars   : ---
- *  internal funs : ---
+ *  internal funs : FindAllNeededObjects
  *  external funs : Trav
  *  macros        : ---
  *
@@ -73,6 +147,10 @@ ANAmodul (node *arg_node, node *arg_info)
 
     if (MODUL_FUNS (arg_node) != NULL) {
         MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
+    }
+
+    if (MODUL_FUNS (arg_node) != NULL) {
+        MODUL_FUNS (arg_node) = FindAllNeededObjects (MODUL_FUNS (arg_node));
     }
 
     DBUG_RETURN (arg_node);
@@ -119,7 +197,7 @@ ANAfundef (node *arg_node, node *arg_info)
  *                  added to this functions's list of needed types.
  *  global vars   : ---
  *  internal funs : ---
- *  external funs : InsertNode, Trav
+ *  external funs : StoreNeededNode, Trav
  *  macros        : ---
  *
  *  remarks       :
@@ -132,8 +210,7 @@ ANAvardec (node *arg_node, node *arg_info)
     DBUG_ENTER ("ANAvardec");
 
     if (VARDEC_TYPEDEF (arg_node) != NULL) {
-        FUNDEF_NEEDTYPES (arg_info)
-          = InsertNode (VARDEC_TYPEDEF (arg_node), arg_info, ST_regular);
+        StoreNeededNode (VARDEC_TYPEDEF (arg_node), arg_info, ST_regular);
     }
 
     if (VARDEC_NEXT (arg_node) != NULL) {
@@ -153,7 +230,7 @@ ANAvardec (node *arg_node, node *arg_info)
  *                  list of needed global objects.
  *  global vars   : ---
  *  internal funs : ---
- *  external funs : InsertNode
+ *  external funs : StoreNeededNode
  *  macros        : ---
  *
  *  remarks       :
@@ -166,8 +243,7 @@ ANAid (node *arg_node, node *arg_info)
     DBUG_ENTER ("ANAid");
 
     if (ID_ATTRIB (arg_node) == ST_global) {
-        FUNDEF_NEEDOBJS (arg_info)
-          = InsertNode (ID_OBJDEF (arg_node), arg_info, ST_regular);
+        StoreNeededNode (ID_OBJDEF (arg_node), arg_info, ST_regular);
     }
 
     DBUG_RETURN (arg_node);
@@ -182,7 +258,7 @@ ANAid (node *arg_node, node *arg_info)
  *                  defined function's list of needed functions.
  *  global vars   : ---
  *  internal funs : ---
- *  external funs : InsertNode, Trav
+ *  external funs : StoreNeededNode, Trav
  *  macros        : ---
  *
  *  remarks       :
@@ -194,7 +270,7 @@ ANAap (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("ANAap");
 
-    FUNDEF_NEEDFUNS (arg_info) = InsertNode (AP_FUNDEF (arg_node), arg_info, ST_regular);
+    StoreNeededNode (AP_FUNDEF (arg_node), arg_info, ST_regular);
 
     if (AP_ARGS (arg_node) != NULL) {
         AP_ARGS (arg_node) = Trav (AP_ARGS (arg_node), arg_info);
@@ -202,20 +278,6 @@ ANAap (node *arg_node, node *arg_info)
 
     DBUG_RETURN (arg_node);
 }
-
-/*
- *
- *  functionname  :
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
- *
- *  remarks       :
- *
- */
 
 /*
  *
