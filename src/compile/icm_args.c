@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.8  1995/08/04 13:47:46  sbs
+ * Revision 1.9  1995/12/18 16:29:25  cg
+ * now, icm args with no occurrence at all are supported as well.
+ *
+ * Revision 1.8  1995/08/04  13:47:46  sbs
  * GetNextString inserted
  *
  * Revision 1.7  1995/07/04  09:27:22  hw
@@ -135,7 +138,10 @@
 #define ICM_DEF(prf, trf)
 #define ICM_STR(name) GetNextId (name, exprs);
 #define ICM_INT(name) GetNextInt (name, exprs);
-#define ICM_VAR(dim, name) GetShape (dim, name, exprs);
+#define ICM_VAR(dim, name)                                                               \
+    if (dim > 0)                                                                         \
+        GetShape (dim, name, exprs);
+
 #define ICM_END(prf)
 
 #include "icm.data"
