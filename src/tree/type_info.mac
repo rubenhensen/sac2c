@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2002/10/11 16:04:40  sbs
+ * T_classtype added.
+ *
  * Revision 3.8  2002/07/30 15:09:58  dkr
  * _hidden_ renamed into SAC_hidden
  * _user_ renamed into SAC_user
@@ -164,6 +167,9 @@ TYP_IF (T_unknown, "unknown", "_unknown_", "", COCv2ScalarDummy, COCv2CvDummy,
           sizeof (char), COZipCvDummy, COBaseCvDummy, unused, unused),
 
   TYP_IF (T_hidden, "hidden", "SAC_hidden", "h", COCv2ScalarDummy, COCv2CvHidden,
+          COCv2StrDummy, sizeof (void *), COZipCvDummy, COBaseCvDummy, unused, unused),
+
+  TYP_IF (T_classtype, "classtype", "SAC_classtype", "u", COCv2ScalarDummy, COCv2CvHidden,
           COCv2StrDummy, sizeof (void *), COZipCvDummy, COBaseCvDummy, unused, unused),
 
   TYP_IF (T_void, "void", "void", "v", COCv2ScalarDummy, COCv2CvDummy, COCv2StrDummy, 0,
