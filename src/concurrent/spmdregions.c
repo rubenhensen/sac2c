@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.21  1998/05/12 14:54:09  dkr
+ * fixed a bug in SPMDLift...:
+ *   in lifted regions the vardec-pointers of ids are now corrected, too.
+ *
  * Revision 1.20  1998/05/12 12:37:00  dkr
  * removed SPMD-funs (temporary)
  *
@@ -247,7 +251,9 @@ SPMDLiftFundef (node *arg_node, node *arg_info)
  *   lifts a SPMD-region into a function.
  *
  * remarks:
- *   INFO_SPMD_FUNDEF( arg_info) points to the current fundef-node.
+ *   - INFO_SPMD_FUNDEF( arg_info) points to the current fundef-node.
+ *   - INFO_SPMD_FIRST( arg_info) shows, weather the next sync-region would be
+ *     the first one of the SPMD_region or not.
  *
  ******************************************************************************/
 
@@ -392,7 +398,8 @@ SPMDLiftSpmd (node *arg_node, node *arg_info)
                              body, NULL);
     FUNDEF_STATUS (new_fundef) = ST_spmdfun;
 
-    SPMD_FUNNAME (arg_node) = StringCopy (FUNDEF_NAME (new_fundef));
+    SPMD_LIFTED_FROM (arg_node) = FUNDEF_NAME (fundef);
+    SPMD_FUNNAME (arg_node) = FUNDEF_NAME (new_fundef);
 
     /*
      * append return expressions to body of SPMD-function
@@ -609,10 +616,13 @@ SYNCInitAssign (node *arg_node, node *arg_info)
         ASSIGN_INSTR (arg_node) = sync;
 
         /*
-         * get INOUT_IDS, IN/INOUT/OUT/LOCAL from the N_Nwith2 node.
+         * get INOUT_IDS/DEC_RC_IDS, IN/INOUT/OUT/LOCAL from the N_Nwith2 node.
          */
 
         SYNC_INOUT_IDS (sync) = DupOneIds (LET_IDS (sync_let), NULL);
+        if (NWITH2_DEC_RC_IDS (with) != NULL) {
+            SYNC_DEC_RC_IDS (sync) = DupIds (NWITH2_DEC_RC_IDS (with), NULL);
+        }
 
         SYNC_IN (sync) = DFMGenMaskCopy (NWITH2_IN (with));
         SYNC_INOUT (sync) = DFMGenMaskCopy (NWITH2_INOUT (with));
