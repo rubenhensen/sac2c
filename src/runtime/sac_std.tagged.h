@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.18  2002/07/15 19:44:06  dkr
+ * bug with use of CAT? macros fixed
+ *
  * Revision 3.17  2002/07/15 12:44:42  dkr
  * SAC_ND_PRF_... macros moved to sac_prf.h
  *
@@ -268,10 +271,10 @@ typedef int SAC_hidden_descriptor; /* reference count */
  ******************************************************************************/
 
 #define SAC_ND_READ(nt, pos)                                                             \
-    CAT2 (SAC_ND_READ__, CAT2 (NT_DATA (nt), BuildArgs2 (nt, pos)))
+    CAT3 (SAC_ND_READ__, CAT3 (NT_DATA (nt), BuildArgs2 (nt, pos)))
 
 #define SAC_ND_WRITE(nt, pos)                                                            \
-    CAT2 (SAC_ND_WRITE__, CAT2 (NT_DATA (nt), BuildArgs2 (nt, pos)))
+    CAT3 (SAC_ND_WRITE__, CAT3 (NT_DATA (nt), BuildArgs2 (nt, pos)))
 
 /*
  * SCL
@@ -332,12 +335,12 @@ typedef int SAC_hidden_descriptor; /* reference count */
  *
  ******************************************************************************/
 
-#define SAC_ND_DESC_TYPE(nt) CAT2 (SAC_ND_DESC_TYPE__, CAT2 (NT_DATA (nt), (nt)))
+#define SAC_ND_DESC_TYPE(nt) CAT3 (SAC_ND_DESC_TYPE__, CAT3 (NT_DATA (nt), (nt)))
 
 #define SAC_ND_TYPE_NT(basetype_nt)                                                      \
-    CAT2 (SAC_ND_TYPE__, CAT2 (NT_DATA (basetype_nt), (NT_NAME (basetype_nt))))
+    CAT3 (SAC_ND_TYPE__, CAT3 (NT_DATA (basetype_nt), (NT_NAME (basetype_nt))))
 
-#define SAC_ND_TYPE(nt, basetype) CAT2 (SAC_ND_TYPE__, CAT2 (NT_DATA (nt), (basetype)))
+#define SAC_ND_TYPE(nt, basetype) CAT3 (SAC_ND_TYPE__, CAT3 (NT_DATA (nt), (basetype)))
 
 /*
  * SCL
@@ -438,9 +441,9 @@ typedef int SAC_hidden_descriptor; /* reference count */
     decoration SAC_ND_TYPE (nt, basetype) SAC_ND_A_FIELD (nt);
 
 #define SAC_ND_DECL__DESC(nt, decoration)                                                \
-    CAT3 (SAC_ND_DECL__DESC__,                                                           \
-          CAT3 (NT_DATA (nt),                                                            \
-                CAT3 (_, CAT3 (NT_UNQ (nt), BuildArgs2 (nt, decoration)))))
+    CAT4 (SAC_ND_DECL__DESC__,                                                           \
+          CAT4 (NT_DATA (nt),                                                            \
+                CAT4 (_, CAT4 (NT_UNQ (nt), BuildArgs2 (nt, decoration)))))
 
 /* ND_DECL__MIRROR( ...)  is a C-ICM */
 
@@ -542,16 +545,16 @@ typedef int SAC_hidden_descriptor; /* reference count */
         SAC_ND_FREE__DESC (nt)                                                           \
     }
 
-#define SAC_ND_ALLOC__DATA(nt) CAT4 (SAC_ND_ALLOC__DATA__, CAT4 (NT_DATA (nt), (nt)))
+#define SAC_ND_ALLOC__DATA(nt) CAT5 (SAC_ND_ALLOC__DATA__, CAT5 (NT_DATA (nt), (nt)))
 
 #define SAC_ND_FREE__DATA(nt, freefun)                                                   \
-    CAT4 (SAC_ND_FREE__DATA__, CAT4 (NT_DATA (nt), BuildArgs2 (nt, freefun)))
+    CAT5 (SAC_ND_FREE__DATA__, CAT5 (NT_DATA (nt), BuildArgs2 (nt, freefun)))
 
 #define SAC_ND_ALLOC__DESC(nt)                                                           \
-    CAT3 (SAC_ND_ALLOC__DESC__, CAT3 (NT_DATA (nt), CAT3 (_, CAT3 (NT_UNQ (nt), (nt)))))
+    CAT5 (SAC_ND_ALLOC__DESC__, CAT5 (NT_DATA (nt), CAT5 (_, CAT5 (NT_UNQ (nt), (nt)))))
 
 #define SAC_ND_FREE__DESC(nt)                                                            \
-    CAT3 (SAC_ND_FREE__DESC__, CAT3 (NT_DATA (nt), CAT3 (_, CAT3 (NT_UNQ (nt), (nt)))))
+    CAT5 (SAC_ND_FREE__DESC__, CAT5 (NT_DATA (nt), CAT5 (_, CAT5 (NT_UNQ (nt), (nt)))))
 
 /* ND_CHECK_REUSE( ...)  is a C-ICM */
 
@@ -749,21 +752,21 @@ typedef int SAC_hidden_descriptor; /* reference count */
  ******************************************************************************/
 
 /* creates name for formal function parameter */
-#define SAC_NAMEP(name) CAT0 (name, __p)
+#define SAC_NAMEP(name) CAT1 (name, __p)
 
 #define SAC_ND_PARAM_(dummy, basetype) basetype
 
 #define SAC_ND_PARAM_in(nt, basetype)                                                    \
-    CAT3 (SAC_ND_PARAM_in__,                                                             \
-          CAT3 (NT_DATA (nt), CAT3 (_, CAT3 (NT_UNQ (nt), BuildArgs2 (nt, basetype)))))
+    CAT4 (SAC_ND_PARAM_in__,                                                             \
+          CAT4 (NT_DATA (nt), CAT4 (_, CAT4 (NT_UNQ (nt), BuildArgs2 (nt, basetype)))))
 
 #define SAC_ND_PARAM_in_nodesc(nt, basetype)                                             \
     SAC_ND_TYPE (nt, basetype)                                                           \
     SAC_ND_A_FIELD (nt)
 
 #define SAC_ND_PARAM_out(nt, basetype)                                                   \
-    CAT3 (SAC_ND_PARAM_out__,                                                            \
-          CAT3 (NT_DATA (nt), CAT3 (_, CAT3 (NT_UNQ (nt), BuildArgs2 (nt, basetype)))))
+    CAT4 (SAC_ND_PARAM_out__,                                                            \
+          CAT4 (NT_DATA (nt), CAT4 (_, CAT4 (NT_UNQ (nt), BuildArgs2 (nt, basetype)))))
 
 #define SAC_ND_PARAM_out_nodesc(nt, basetype)                                            \
     SAC_ND_TYPE (nt, basetype)                                                           \
@@ -776,12 +779,12 @@ typedef int SAC_hidden_descriptor; /* reference count */
 #define SAC_ND_PARAM_inout_nodesc_bx(nt, basetype) SAC_ND_PARAM_in_nodesc (nt, basetype)
 
 #define SAC_ND_ARG_in(nt)                                                                \
-    CAT3 (SAC_ND_ARG_in__, CAT3 (NT_DATA (nt), CAT3 (_, CAT3 (NT_UNQ (nt), (nt)))))
+    CAT4 (SAC_ND_ARG_in__, CAT4 (NT_DATA (nt), CAT4 (_, CAT4 (NT_UNQ (nt), (nt)))))
 
 #define SAC_ND_ARG_in_nodesc(nt) SAC_ND_A_FIELD (nt)
 
 #define SAC_ND_ARG_out(nt)                                                               \
-    CAT3 (SAC_ND_ARG_out__, CAT3 (NT_DATA (nt), CAT3 (_, CAT3 (NT_UNQ (nt), (nt)))))
+    CAT4 (SAC_ND_ARG_out__, CAT4 (NT_DATA (nt), CAT4 (_, CAT4 (NT_UNQ (nt), (nt)))))
 
 #define SAC_ND_ARG_out_nodesc(nt) &SAC_ND_A_FIELD (nt)
 
@@ -792,14 +795,14 @@ typedef int SAC_hidden_descriptor; /* reference count */
 #define SAC_ND_ARG_inout_nodesc_bx(nt) SAC_ND_ARG_in_nodesc (nt)
 
 #define SAC_ND_RET_out(nt, ntp)                                                          \
-    CAT3 (SAC_ND_RET_out__,                                                              \
-          CAT3 (NT_DATA (nt), CAT3 (_, CAT3 (NT_UNQ (nt), BuildArgs2 (nt, ntp)))))
+    CAT4 (SAC_ND_RET_out__,                                                              \
+          CAT4 (NT_DATA (nt), CAT4 (_, CAT4 (NT_UNQ (nt), BuildArgs2 (nt, ntp)))))
 
 #define SAC_ND_RET_inout(nt, ntp) SAC_ND_RET_out (nt, ntp)
 
 #define SAC_ND_DECL_PARAM_inout(nt, basetype)                                            \
-    CAT3 (SAC_ND_DECL_PARAM_inout__,                                                     \
-          CAT3 (NT_DATA (nt), CAT3 (_, CAT3 (NT_UNQ (nt), BuildArgs2 (nt, basetype)))))
+    CAT4 (SAC_ND_DECL_PARAM_inout__,                                                     \
+          CAT4 (NT_DATA (nt), CAT4 (_, CAT4 (NT_UNQ (nt), BuildArgs2 (nt, basetype)))))
 
 /*
  * SCL
@@ -964,9 +967,9 @@ typedef int SAC_hidden_descriptor; /* reference count */
 /* ND_ASSIGN( ...)  is a C-ICM */
 
 #define SAC_ND_ASSIGN__DATA(to_nt, from_nt)                                              \
-    CAT5 (SAC_ND_ASSIGN__DATA__,                                                         \
-          CAT5 (NT_DATA (to_nt),                                                         \
-                CAT5 (_, CAT5 (NT_DATA (from_nt), BuildArgs2 (to_nt, from_nt)))))
+    CAT6 (SAC_ND_ASSIGN__DATA__,                                                         \
+          CAT6 (NT_DATA (to_nt),                                                         \
+                CAT6 (_, CAT6 (NT_DATA (from_nt), BuildArgs2 (to_nt, from_nt)))))
 
 /* ND_ASSIGN__DESC( ...)  is a C-ICM */
 
@@ -975,8 +978,8 @@ typedef int SAC_hidden_descriptor; /* reference count */
 /* ND_COPY( ...)  is a C-ICM */
 
 #define SAC_ND_COPY__DATA(to_nt, from_nt, copyfun)                                       \
-    CAT5 (SAC_ND_COPY__DATA__,                                                           \
-          CAT5 (NT_DATA (to_nt), CAT5 (_, CAT5 (NT_DATA (from_nt),                       \
+    CAT6 (SAC_ND_COPY__DATA__,                                                           \
+          CAT6 (NT_DATA (to_nt), CAT6 (_, CAT6 (NT_DATA (from_nt),                       \
                                                 BuildArgs3 (to_nt, from_nt, copyfun)))))
 
 /* ND_COPY__SHAPE( ...)  is a C-ICM */
@@ -1136,21 +1139,21 @@ typedef int SAC_hidden_descriptor; /* reference count */
  ******************************************************************************/
 
 #define SAC_ND_SET__RC(nt, rc)                                                           \
-    CAT5 (SAC_ND_SET__RC__,                                                              \
-          CAT5 (NT_DATA (nt), CAT5 (_, CAT5 (NT_UNQ (nt), BuildArgs2 (nt, rc)))))
+    CAT6 (SAC_ND_SET__RC__,                                                              \
+          CAT6 (NT_DATA (nt), CAT6 (_, CAT6 (NT_UNQ (nt), BuildArgs2 (nt, rc)))))
 
 #define SAC_ND_INC_RC(nt, rc)                                                            \
-    CAT5 (SAC_ND_INC_RC__,                                                               \
-          CAT5 (NT_DATA (nt), CAT5 (_, CAT5 (NT_UNQ (nt), BuildArgs2 (nt, rc)))))
+    CAT6 (SAC_ND_INC_RC__,                                                               \
+          CAT6 (NT_DATA (nt), CAT6 (_, CAT6 (NT_UNQ (nt), BuildArgs2 (nt, rc)))))
 
 #define SAC_ND_DEC_RC(nt, rc)                                                            \
-    CAT5 (SAC_ND_DEC_RC__,                                                               \
-          CAT5 (NT_DATA (nt), CAT5 (_, CAT5 (NT_UNQ (nt), BuildArgs2 (nt, rc)))))
+    CAT6 (SAC_ND_DEC_RC__,                                                               \
+          CAT6 (NT_DATA (nt), CAT6 (_, CAT6 (NT_UNQ (nt), BuildArgs2 (nt, rc)))))
 
 #define SAC_ND_DEC_RC_FREE(nt, rc, freefun)                                              \
-    CAT5 (SAC_ND_DEC_RC_FREE__,                                                          \
-          CAT5 (NT_DATA (nt),                                                            \
-                CAT5 (_, CAT5 (NT_UNQ (nt), BuildArgs3 (nt, rc, freefun)))))
+    CAT6 (SAC_ND_DEC_RC_FREE__,                                                          \
+          CAT6 (NT_DATA (nt),                                                            \
+                CAT6 (_, CAT6 (NT_UNQ (nt), BuildArgs3 (nt, rc, freefun)))))
 
 /*
  * SCL
@@ -1308,7 +1311,7 @@ typedef int SAC_hidden_descriptor; /* reference count */
  ******************************************************************************/
 
 #define SAC_IS_LASTREF__THEN(nt)                                                         \
-    CAT3 (SAC_IS_LASTREF__THEN__, CAT3 (NT_DATA (nt), CAT3 (_, CAT3 (NT_UNQ (nt), (nt)))))
+    CAT6 (SAC_IS_LASTREF__THEN__, CAT6 (NT_DATA (nt), CAT6 (_, CAT6 (NT_UNQ (nt), (nt)))))
 #define SAC_IS_LASTREF__ELSE(nt) else
 
 #define SAC_IS_LASTREF__BLOCK_BEGIN(nt)                                                  \
@@ -1371,8 +1374,8 @@ typedef int SAC_hidden_descriptor; /* reference count */
  * initialized by another module (uses varname as flag).
  */
 #define SAC_INITGLOBALOBJECT_BEGIN(varname)                                              \
-    if (!CAT0 (SAC_INIT_FLAG_, varname)) {                                               \
-        CAT0 (SAC_INIT_FLAG_, varname) = true;
+    if (!CAT1 (SAC_INIT_FLAG_, varname)) {                                               \
+        CAT1 (SAC_INIT_FLAG_, varname) = true;
 #define SAC_INITGLOBALOBJECT_END() }
 #else
 /*
