@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2000/03/17 15:57:47  dkr
+ * cudecls_tab added
+ *
  * Revision 1.10  2000/03/09 18:37:00  jhs
  * dfa, blkpp
  *
@@ -144,6 +147,7 @@ extern funtab *l2f_lift_tab;
 extern funtab *blkco_tab;
 extern funtab *dfa_tab;
 extern funtab *blkpp_tab;
+extern funtab *cudecls_tab;
 
 extern int nnode[];
 

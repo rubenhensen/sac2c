@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2000/03/17 15:57:37  dkr
+ * cudecls_tab added
+ *
  * Revision 1.12  2000/03/09 18:37:00  jhs
  * dfa, blkpp
  *
@@ -1015,6 +1018,17 @@ static funtab blkpp_tab_rec = {{
                                NULL,
                                NULL};
 funtab *blkpp_tab = &blkpp_tab_rec;
+
+/*
+ *  (74) cudecls_tab
+ */
+static funtab cudecls_tab_rec = {{
+#define NIFcudecls(it_cudecls) it_cudecls
+#include "node_info.mac"
+                                 },
+                                 NULL,
+                                 NULL};
+funtab *cudecls_tab = &cudecls_tab_rec;
 
 /*
  *  nnode
