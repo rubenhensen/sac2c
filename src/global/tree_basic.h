@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.211  1999/02/06 12:52:47  srs
+ * added MakeNodelistNode() and macro ATTRIB2 for struct NODELIST
+ *
  * Revision 1.210  1999/01/27 16:01:52  dkr
  * comment about NWITH_PRAGMA changed
  *
@@ -406,6 +409,7 @@ extern deps *MakeDeps (char *name, char *decname, char *libname, statustype stat
  ***
  ***    node*       NODE
  ***    statustype  ATTRIB
+ ***    void*       ATTRIB2
  ***    statustype  STATUS
  ***    nodelist*   NEXT    (O)
  ***/
@@ -418,10 +422,19 @@ extern deps *MakeDeps (char *name, char *decname, char *libname, statustype stat
  *  Possible values for STATUS : ST_regular | ST_artificial
  */
 
+/* srs: to use a nodelist in more general situations I have inserted a
+   new attribut ATTRIB2 which can store any suitable information.
+   Functions to handle a general node list can be found in tree_compound.h,
+   starting with NodeList... .
+   MakeNodelist(), MakeNodelistNode() are not needed to create the general
+   node list. */
+
 extern nodelist *MakeNodelist (node *node, statustype status, nodelist *next);
+extern nodelist *MakeNodelistNode (node *node, nodelist *next);
 
 #define NODELIST_NODE(n) (n->node)
 #define NODELIST_ATTRIB(n) (n->attrib)
+#define NODELIST_ATTRIB2(n) (n->attrib2)
 #define NODELIST_STATUS(n) (n->status)
 #define NODELIST_NEXT(n) (n->next)
 
