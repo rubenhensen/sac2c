@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.55  2004/09/29 16:42:33  sbs
+ * fixed a memory leak in StrBufprint
+ *
  * Revision 3.54  2004/09/28 16:32:19  ktr
  * cleaned up concurrent (removed everything not working / not working with emm)
  *
@@ -596,7 +599,8 @@ StrBufprint (str_buf *s, const char *string)
                                new_size));
 
         new_buf = (char *)Malloc (new_size * sizeof (char));
-        s->pos = sprintf (new_buf, "%s", s->buf);
+        memcpy (new_buf, s->buf, s->pos + 1);
+        s->buf = Free (s->buf);
         s->buf = new_buf;
         s->size = new_size;
     }
