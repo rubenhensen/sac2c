@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.181  1998/04/17 11:39:27  srs
+ * added DupNcode
+ *
  * Revision 1.180  1998/04/16 15:59:45  srs
  * INLvar splitted into INLvardec and INLarg
  *
@@ -913,7 +916,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, 1),
 
   NIF (N_Ncode, "N_Ncode", TravSons, FltnNcode, PrintNcode, TCNcode, TravSons, TravSons,
-       WLFNcode, FreeNCode, CFNcode, RCNcode, CompNcode, TravSons, DupChain, TravSons,
+       WLFNcode, FreeNCode, CFNcode, RCNcode, CompNcode, TravSons, DupNcode, TravSons,
        TravSons, TravSons, TravSons, TravSons, WLINcode, TravSons, PrintNcode, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, PRECncode,
        ACTNcode, TravSons, WLTNcode, CSENcode, TravSons, ConcNcode, TravSons, 3),
