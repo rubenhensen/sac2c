@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.17  1995/06/01 15:08:38  cg
+ * Revision 1.18  1995/07/06 17:28:34  cg
+ * MakeIds and MakeTypes adjusted for new statustype
+ *
+ * Revision 1.17  1995/06/01  15:08:38  cg
  * Bug in MakeNode fixed.
  *
  * Revision 1.16  1995/06/01  10:10:54  cg
@@ -93,6 +96,7 @@ MakeTypes (simpletype simple)
     tmp->next = NULL;
     tmp->id = NULL;
     tmp->id_mod = NULL;
+    tmp->attrib = ST_regular;
     tmp->status = ST_regular;
 
     DBUG_PRINT ("MAKETYPES", (P_FORMAT, tmp));
@@ -245,6 +249,8 @@ MakeIds (char *id)
     tmp->refcnt = 0;
     tmp->node = NULL;
     tmp->nchain = NULL;
+    tmp->attrib = ST_regular;
+    tmp->status = ST_regular;
     tmp->next = NULL;
 
     DBUG_RETURN (tmp);
