@@ -3,7 +3,11 @@
 /*
  *
  * $Log$
- * Revision 1.110  1996/01/26 15:29:57  cg
+ * Revision 1.111  1996/02/08 18:05:46  hw
+ * type-declaration with known dimenson, but unknown shape will be parsed
+ * now e.g int[.,.]
+ *
+ * Revision 1.110  1996/01/26  15:29:57  cg
  * prefix 'class' introduced to functions to mark generic class conversion
  * functions
  *
@@ -445,7 +449,7 @@ static file_type file_kind = F_prog;
 
 %token PARSE_PRG, PARSE_DEC, PARSE_SIB
 %token BRACE_L, BRACE_R, BRACKET_L, BRACKET_R, SQBR_L, SQBR_R, COLON, SEMIC,
-       COMMA, AMPERS, ASSIGN,
+       COMMA, AMPERS, ASSIGN, DOT,
        INLINE, LET, TYPEDEF, CONSTDEF, OBJDEF, CLASSTYPE,
        F2I, F2D, I2F,I2D, D2I, D2F,
        TOI, TOF, TOD, 
@@ -468,7 +472,7 @@ static file_type file_kind = F_prog;
 
 %type <prf> foldop
 %type <nodetype> modclass
-%type <cint> evextern, sibheader, evmarker
+%type <cint> evextern, sibheader, evmarker, dots
 %type <ids> ids, modnames, modname
 %type <id> fun_name, prf_name, sibparam, id
 %type <nums> nums
@@ -2546,6 +2550,13 @@ nums:   NUM COMMA nums
            DBUG_PRINT("GENTREE",("nums: %d", $$->num));
          }
        ; 
+dots: DOT COMMA dots
+      { $$=$3-1;
+      }
+    | DOT
+      { $$=KNOWN_DIM_OFFSET -1;
+      }
+    ;
 
 returntypes: TYPE_VOID
              {
@@ -2624,6 +2635,11 @@ complextype:  simpletype SQBR_L nums SQBR_R
             | simpletype  SQBR_L SQBR_R  
                { $$=$1;
                  $$->dim=-1;
+              }
+            | simpletype SQBR_L dots SQBR_R
+              {
+                $$=$1;
+                $$->dim=$3;
               }
              ;
 
