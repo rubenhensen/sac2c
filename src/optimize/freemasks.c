@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2001/05/17 12:46:31  nmw
+ * MALLOC/FREE changed to Malloc/Free, result of Free() used
+ *
  * Revision 3.2  2001/03/22 21:11:46  dkr
  * include of tree.h eliminated
  *
@@ -92,7 +95,7 @@ FMTravSons (node *arg_node, node *arg_info)
     DBUG_ENTER ("FMTravSons");
 
     for (i = 0; i < MAX_MASK; i++)
-        FREE (arg_node->mask[i]);
+        arg_node->mask[i] = Free (arg_node->mask[i]);
 
     for (i = 0; i < nnode[NODE_TYPE (arg_node)]; i++)
         if (arg_node->node[i] != NULL)

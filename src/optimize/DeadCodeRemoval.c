@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/05/17 12:46:31  nmw
+ * MALLOC/FREE changed to Malloc/Free, result of Free() used
+ *
  * Revision 3.3  2001/03/22 21:09:36  dkr
  * include of tree.h eliminated
  *
@@ -172,12 +175,12 @@ DeadCodeRemoval (node *arg_node, node *info_node)
     act_tab = active_tab;
     info_node = MakeInfo ();
     arg_node = Trav (arg_node, info_node);
-    FREE (info_node);
+    info_node = FreeTree (info_node);
 
     act_tab = dcr_tab;
     info_node = MakeInfo ();
     arg_node = Trav (arg_node, info_node);
-    FREE (info_node);
+    info_node = FreeTree (info_node);
 
     DBUG_PRINT ("OPT", ("                        result: %d",
                         (dead_var + dead_expr) - (mem_dead_var + mem_dead_expr)));
@@ -257,7 +260,7 @@ ACTfundef (node *arg_node, node *arg_info)
     INFO_DCR_ACT (arg_info) = GenMask (INFO_VARNO (arg_info));
     if (NULL != FUNDEF_BODY (arg_node) && NULL != FUNDEF_INSTR (arg_node))
         FUNDEF_INSTR (arg_node) = Trav (FUNDEF_INSTR (arg_node), arg_info);
-    FREE (INFO_ACT);
+    INFO_ACT = Free (INFO_ACT);
 
     DBUG_RETURN (arg_node);
 }
@@ -499,8 +502,8 @@ ACTcond (node *arg_node, node *arg_info)
              || then_ACT[i] || else_ACT[i] || COND_CONDUSEMASK (arg_node)[i]);
     }
 
-    FREE (then_ACT);
-    FREE (else_ACT);
+    then_ACT = Free (then_ACT);
+    else_ACT = Free (else_ACT);
     DBUG_RETURN (arg_node);
 }
 
@@ -650,7 +653,7 @@ ACTwhile (node *arg_node, node *arg_info)
     for (i = 0; i < INFO_VARNO (arg_info); i++)
         INFO_ACT[i] = INFO_ACT[i] || WHILE_TERMMASK (arg_node)[i] || old_INFOACT[i];
 
-    FREE (old_INFOACT);
+    old_INFOACT = Free (old_INFOACT);
     INFO_TRAVTYPE = old_nodetype;
     DBUG_RETURN (arg_node);
 }
@@ -757,7 +760,7 @@ ACTNpart (node *arg_node, node *arg_info)
     for (i = 0; i < INFO_VARNO (arg_info); i++)
         INFO_ACT[i] = INFO_ACT[i] || old_INFOACT[i];
 
-    FREE (old_INFOACT);
+    old_INFOACT = Free (old_INFOACT);
 
     /* next N_Npart */
     if (NPART_NEXT (arg_node))

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/05/17 12:46:31  nmw
+ * MALLOC/FREE changed to Malloc/Free, result of Free() used
+ *
  * Revision 3.3  2001/03/22 21:14:58  dkr
  * include of tree.h elimianted
  *
@@ -59,7 +62,7 @@ WorkReduction (node *arg_node, node *info_node)
 
     arg_node = Trav (arg_node, info_node);
 
-    FREE (info_node);
+    info_node = FreeTree (info_node);
     DBUG_RETURN (arg_node);
 }
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.21  2001/05/17 12:46:31  nmw
+ * MALLOC/FREE changed to Malloc/Free, result of Free() used
+ *
  * Revision 3.20  2001/05/15 14:20:08  dkr
  * bug found: Inlining on LaC functions does not work correctly yet :-(
  *  -> comment and DBUG_ASSERT added in INLfundef()
@@ -163,7 +166,7 @@ CreateInlineName (char *old_name, node *arg_info)
 
     DBUG_ENTER ("CreateInlineName");
 
-    new_name = (char *)MALLOC (sizeof (char)
+    new_name = (char *)Malloc (sizeof (char)
                                * (strlen (old_name) + strlen (INLINE_PREFIX) + 1 + /* _ */
                                   NumberOfDigits (inline_nr) + 1)); /* '\0' */
 
@@ -311,7 +314,7 @@ InlineArg (node *arg_node, node *arg_info)
      */
     new_vardec = MakeVardecFromArg (arg_node);
     new_name = CreateInlineName (ARG_NAME (arg_node), arg_info);
-    FREE (VARDEC_NAME (new_vardec));
+    VARDEC_NAME (new_vardec) = Free (VARDEC_NAME (new_vardec));
     VARDEC_NAME (new_vardec) = new_name;
 
     new_avis = AdjustAvisData (new_vardec, INFO_INL_FUNDEF (arg_info));
@@ -388,7 +391,7 @@ InlineVardec (node *arg_node, node *arg_info)
     new_vardec = DupNode (arg_node);
 
     new_name = CreateInlineName (VARDEC_NAME (arg_node), arg_info);
-    FREE (VARDEC_NAME (new_vardec));
+    VARDEC_NAME (new_vardec) = Free (VARDEC_NAME (new_vardec));
     VARDEC_NAME (new_vardec) = new_name;
 
     /*

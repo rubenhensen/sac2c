@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2001/05/17 12:46:31  nmw
+ * MALLOC/FREE changed to Malloc/Free, result of Free() used
+ *
  * Revision 3.9  2001/03/22 21:14:46  dkr
  * no changes done
  *
@@ -227,7 +230,7 @@ LoopInvariantRemoval (node *arg_node, node *arg_info)
 
     arg_node = Trav (arg_node, arg_info);
 
-    FREE (arg_info);
+    arg_info = FreeTree (arg_info);
     act_tab = tmp_tab;
     DBUG_PRINT ("OPT", ("                        result: %d", lir_expr - mem_lir_expr));
     DBUG_PRINT ("OPTMEM", ("mem currently allocated: %d bytes", current_allocated_mem));
@@ -379,14 +382,14 @@ LIRloop (node *arg_node, node *arg_info)
     case N_while:
     case N_cond:
     case N_do:
-        FREE (LINVAR);
+        LINVAR = Free (LINVAR);
         LINVAR = oldmask[0];
         COND_USE = oldmask[2];
-        FREE (UBD_MAKE);
+        UBD_MAKE = Free (UBD_MAKE);
         UBD_MAKE = oldmask[3];
         LOOP_TYPE = oldtype;
         if (NULL != arg_node->mask[2])
-            FREE (arg_node->mask[2]);
+            arg_node->mask[2] = Free (arg_node->mask[2]);
         arg_node->mask[2] = UBD;
         UBD = oldmask[1];
         break;
@@ -399,11 +402,11 @@ LIRloop (node *arg_node, node *arg_info)
         case N_do:
             COND_USE = NULL;
             if (NULL != arg_node->mask[2])
-                FREE (arg_node->mask[2]);
+                arg_node->mask[2] = Free (arg_node->mask[2]);
             arg_node->mask[2] = UBD;
             UBD = NULL;
-            FREE (LINVAR);
-            FREE (UBD_MAKE);
+            LINVAR = Free (LINVAR);
+            UBD_MAKE = Free (UBD_MAKE);
             LOOP_TYPE = oldtype;
             break;
         default:
@@ -817,10 +820,10 @@ LIRcond (node *arg_node, node *arg_info)
             }
         }
 
-        FREE (then_UBD);
-        FREE (then_LINVAR);
-        FREE (else_UBD);
-        FREE (else_LINVAR);
+        then_UBD = Free (then_UBD);
+        then_LINVAR = Free (then_LINVAR);
+        else_UBD = Free (else_UBD);
+        else_LINVAR = Free (else_LINVAR);
 
         UBD = old_mask[0];
         LINVAR = old_mask[1];
@@ -1404,7 +1407,7 @@ LIRsubexpr (node *arg_node, node *arg_info)
                   = InvarUnswitch (UP, arg_node, arg_info2); /* UP: arg_info->node[0] */
                 FreeTree (arg_node);
                 UP = NULL;
-                FREE (arg_info2);
+                arg_info2 = Free (arg_info2);
                 next_node = AppendNodeChain (1, DOWN, next_node);
                 DOWN = NULL;
                 arg_node = AppendNodeChain (1, new_node, next_node);
@@ -1519,13 +1522,13 @@ LIRsubexpr (node *arg_node, node *arg_info)
                 PlusMask (arg_info->mask[0], oldmask[0], INFO_VARNO (arg_info));
                 PlusMask (arg_info->mask[1], oldmask[1], INFO_VARNO (arg_info));
 
-                FREE (oldmask[0]);
-                FREE (oldmask[1]);
+                oldmask[0] = Free (oldmask[0]);
+                oldmask[1] = Free (oldmask[1]);
 
                 arg_node = new_node;
 
             } else
-                FREE (used_mask);
+                used_mask = Free (used_mask);
         } break;
         case N_let: {
             node *node_behind;
@@ -1691,7 +1694,8 @@ LIRassign (node *arg_node, node *arg_info)
                             }
                         }
                         if (once_more) {
-                            FREE (arg_node->node[0]->mask[3]);
+                            arg_node->node[0]->mask[3]
+                              = Free (arg_node->node[0]->mask[3]);
                             MOVE = NONE;
                             for (i = 0; i < INFO_VARNO (arg_info); i++) {
                                 if (0 < DEF[i]) {
@@ -1703,14 +1707,14 @@ LIRassign (node *arg_node, node *arg_info)
                 }
 
                 if (TRUE == once_more) {
-                    FREE (LINVAR);
+                    LINVAR = Free (LINVAR);
                     LINVAR = old_LINVAR;
-                    FREE (UBD_MAKE);
+                    UBD_MAKE = Free (UBD_MAKE);
                     UBD_MAKE = old_UBD_MAKE;
                     DBUG_PRINT ("LIR", ("Once more in Line %d", arg_node->lineno));
                 } else {
-                    FREE (old_LINVAR);
-                    FREE (old_UBD_MAKE);
+                    old_LINVAR = Free (old_LINVAR);
+                    old_UBD_MAKE = Free (old_UBD_MAKE);
                 }
             } while (once_more);
 

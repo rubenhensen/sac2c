@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.28  2001/05/17 12:46:31  nmw
+ * MALLOC/FREE changed to Malloc/Free, result of Free() used
+ *
  * Revision 3.27  2001/05/16 09:53:58  nmw
  * missing ) added :-)
  *
@@ -505,7 +508,7 @@ Optimize (node *arg_node)
 
     Trav (arg_node, arg_info);
 
-    FREE (arg_info);
+    arg_info = FreeTree (arg_info);
 
     act_tab = tmp_tab;
 
@@ -821,7 +824,7 @@ OPTfundef (node *arg_node, node *arg_info)
                 buffer_space = 0;
             }
 
-            FREE (tmp_str);
+            tmp_str = Free (tmp_str);
             arg = ARG_NEXT (arg);
         }
 

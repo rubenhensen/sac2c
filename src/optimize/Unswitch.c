@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2001/05/17 12:46:31  nmw
+ * MALLOC/FREE changed to Malloc/Free, result of Free() used
+ *
  * Revision 3.6  2001/03/22 21:10:21  dkr
  * no changes done
  *
@@ -159,7 +162,7 @@ Unswitch (node *arg_node, node *arg_info)
 
     arg_node = Trav (arg_node, arg_info);
 
-    FREE (arg_info);
+    arg_info = FreeTree (arg_info);
     act_tab = tmp_tab;
 
     DBUG_PRINT ("OPT", ("                        result: %d", uns_expr - mem_uns_expr));
@@ -886,8 +889,7 @@ UNSassign (node *arg_node, node *arg_info)
         }
 
         if (NULL != LOOP_INFO) {
-            FREE (LOOP_INFO);
-            LOOP_INFO = NULL;
+            LOOP_INFO = Free (LOOP_INFO);
         }
     }
 
@@ -945,7 +947,7 @@ UNSdo (node *arg_node, node *arg_info)
 
     if (2 > loop_info->loop_num) {
         LOOP_INFO = NULL;
-        FREE (loop_info);
+        loop_info = Free (loop_info);
     } else {
         LOOP_INFO = (node *)loop_info;
     }

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2001/05/17 12:46:31  nmw
+ * MALLOC/FREE changed to Malloc/Free, result of Free() used
+ *
  * Revision 3.4  2001/03/22 21:12:52  dkr
  * no changes done
  *
@@ -143,7 +146,7 @@ CSE (node *arg_node, node *info_node)
 
     arg_node = Trav (arg_node, info_node);
 
-    FREE (info_node);
+    info_node = FreeTree (info_node);
     act_tab = tmp_tab;
 
     DBUG_PRINT ("OPT", ("                        result: %d", cse_expr - mem_cse_expr));

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2001/05/17 12:46:31  nmw
+ * MALLOC/FREE changed to Malloc/Free, result of Free() used
+ *
  * Revision 3.6  2001/04/30 12:23:16  nmw
  * integrate traversal of special fundefs in unroll traversal
  *
@@ -624,7 +627,7 @@ UNRap (node *arg_node, node *arg_info)
         /* start traversal of special fundef */
         AP_FUNDEF (arg_node) = Trav (AP_FUNDEF (arg_node), new_arg_info);
 
-        FREE (new_arg_info);
+        new_arg_info = FreeTree (new_arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -681,7 +684,7 @@ UNRdo (node *arg_node, node *arg_info)
 
         if (UNDEF != loop_info->loop_num) {
             arg_node = DoUnroll (arg_node, arg_info, loop_info);
-            FREE (loop_info);
+            loop_info = Free (loop_info);
         }
     }
 

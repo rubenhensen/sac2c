@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2001/05/17 12:46:31  nmw
+ * MALLOC/FREE changed to Malloc/Free, result of Free() used
+ *
  * Revision 3.9  2001/04/30 12:12:36  nmw
  * integrate traversal of special fundefs in generatemasks traversal
  *
@@ -207,7 +210,7 @@ CheckStack (stack *my_stack)
 
         memcpy (tmp, mrdl_stack->stack, sizeof (stelm) * mrdl_stack->st_len);
 
-        FREE (mrdl_stack->stack);
+        mrdl_stack->stack = Free (mrdl_stack->stack);
 
         mrdl_stack->stack = tmp;
         mrdl_stack->st_len *= 2;
@@ -304,7 +307,7 @@ PopMRDL ()
 {
     DBUG_ENTER ("PopMRDL");
     DBUG_PRINT ("STACK", ("Pop TOS = %d -> %d", mrdl_stack->tos, (mrdl_stack->tos) - 1));
-    FREE (MRD_LIST);
+    MRD_LIST = Free (MRD_LIST);
     mrdl_stack->tos--;
     DBUG_VOID_RETURN;
 }
@@ -336,7 +339,7 @@ ExpandMRDL (int new_num)
         for (i = 0; i < NumVar; i++) {
             MRD (i) = varlist[i];
         }
-        FREE (varlist);
+        varlist = Free (varlist);
         for (i = NumVar; i < new_num; i++) {
             MRD (i) = NULL;
         }
@@ -591,7 +594,7 @@ ReGenMask (long *mask, int varno)
 {
     DBUG_ENTER ("ReGenMask");
     if (mask)
-        FREE (mask);
+        mask = Free (mask);
     DBUG_RETURN (GenMask (varno));
 }
 
@@ -1184,8 +1187,8 @@ OPTTrav (node *trav_node, node *arg_info, node *arg_node)
 
                 PlusMask (FUNDEF_DEFMASK (arg_node), INFO_DEF, INFO_VARNO (arg_info));
                 PlusMask (FUNDEF_USEMASK (arg_node), INFO_USE, INFO_VARNO (arg_info));
-                FREE (INFO_DEF);
-                FREE (INFO_USE);
+                INFO_DEF = Free (INFO_DEF);
+                INFO_USE = Free (INFO_USE);
                 INFO_VARNO (arg_info) = 0;
                 DBUG_PRINT ("TRAV",
                             ("Travers function %s - body END", FUNDEF_NAME (arg_node)));
@@ -1226,7 +1229,7 @@ OPTTrav (node *trav_node, node *arg_info, node *arg_node)
                         /* in this N-let node we define a new var. The old MRDs are
                            stored in the N_assign node. */
                         if (ASSIGN_MRDMASK (arg_node))
-                            FREE (ASSIGN_MRDMASK (arg_node));
+                            ASSIGN_MRDMASK (arg_node) = Free (ASSIGN_MRDMASK (arg_node));
                         ASSIGN_MRDMASK (arg_node) = DupMask (MRD_LIST, MRD_VLEN);
 
                         /* srs: I don't know, why the MRD for the new array is set here
@@ -1306,7 +1309,7 @@ OPTTrav (node *trav_node, node *arg_info, node *arg_node)
                     } break;
                     case N_cond:
                         if (ASSIGN_MRDMASK (arg_node))
-                            FREE (ASSIGN_MRDMASK (arg_node));
+                            ASSIGN_MRDMASK (arg_node) = Free (ASSIGN_MRDMASK (arg_node));
                         ASSIGN_MRDMASK (arg_node) = DupMask (MRD_LIST, MRD_VLEN);
 
                         assign_level++;
@@ -1327,7 +1330,7 @@ OPTTrav (node *trav_node, node *arg_info, node *arg_node)
                     case N_do:
                         /* recreate MRD mask */
                         if (ASSIGN_MRDMASK (arg_node))
-                            FREE (ASSIGN_MRDMASK (arg_node));
+                            ASSIGN_MRDMASK (arg_node) = Free (ASSIGN_MRDMASK (arg_node));
                         ASSIGN_MRDMASK (arg_node) = DupMask (MRD_LIST, MRD_VLEN);
                         /* for every variable defined inside the body the MRD is set
                            to arg_node. */
@@ -1342,14 +1345,14 @@ OPTTrav (node *trav_node, node *arg_info, node *arg_node)
 
                         if ((N_empty == NODE_TYPE (trav_node))
                             || (N_assign == NODE_TYPE (trav_node))) {
-                            FREE (MRD_LIST);
+                            MRD_LIST = Free (MRD_LIST);
                             MRD_LIST = (long *)ASSIGN_MRDMASK (arg_node);
                             ASSIGN_MRDMASK (arg_node) = NULL;
                         }
                         break;
                     case N_while:
                         if (ASSIGN_MRDMASK (arg_node))
-                            FREE (ASSIGN_MRDMASK (arg_node));
+                            ASSIGN_MRDMASK (arg_node) = Free (ASSIGN_MRDMASK (arg_node));
                         ASSIGN_MRDMASK (arg_node) = DupMask (MRD_LIST, MRD_VLEN);
                         for (i = 0; i < MRD_VLEN; i++) {
                             if (ReadMask (WHILE_DEFMASK (ASSIGN_INSTR (arg_node)), i)
@@ -1362,7 +1365,7 @@ OPTTrav (node *trav_node, node *arg_info, node *arg_node)
                         assign_level--;
 
                         if (N_empty == NODE_TYPE (trav_node)) {
-                            FREE (MRD_LIST);
+                            MRD_LIST = Free (MRD_LIST);
                             MRD_LIST = (long *)ASSIGN_MRDMASK (arg_node);
                             ASSIGN_MRDMASK (arg_node) = NULL;
                         }
@@ -1372,7 +1375,7 @@ OPTTrav (node *trav_node, node *arg_info, node *arg_node)
                         /* srs: the default case can be:
                            trav_node == N_return or trav_node == N_annotate */
                         if (ASSIGN_MRDMASK (arg_node))
-                            FREE (ASSIGN_MRDMASK (arg_node));
+                            ASSIGN_MRDMASK (arg_node) = Free (ASSIGN_MRDMASK (arg_node));
                         ASSIGN_MRDMASK (arg_node) = DupMask (MRD_LIST, MRD_VLEN);
                         trav_node = Trav (trav_node, arg_info);
                         break;
@@ -1382,8 +1385,8 @@ OPTTrav (node *trav_node, node *arg_info, node *arg_node)
                     PlusMask (ASSIGN_USEMASK (arg_node), INFO_USE, INFO_VARNO (arg_info));
                     PlusMask (INFO_DEF, old_mask[0], INFO_VARNO (arg_info));
                     PlusMask (INFO_USE, old_mask[1], INFO_VARNO (arg_info));
-                    FREE (old_mask[0]);
-                    FREE (old_mask[1]);
+                    old_mask[0] = Free (old_mask[0]);
+                    old_mask[1] = Free (old_mask[1]);
                 } else {
                     old_mask[0] = INFO_DEF;
                     old_mask[1] = INFO_USE;
@@ -1396,8 +1399,8 @@ OPTTrav (node *trav_node, node *arg_info, node *arg_node)
                     PlusMask (ASSIGN_USEMASK (arg_node), INFO_USE, INFO_VARNO (arg_info));
                     PlusMask (INFO_DEF, old_mask[0], INFO_VARNO (arg_info));
                     PlusMask (INFO_USE, old_mask[1], INFO_VARNO (arg_info));
-                    FREE (old_mask[0]);
-                    FREE (old_mask[1]);
+                    old_mask[0] = Free (old_mask[0]);
+                    old_mask[1] = Free (old_mask[1]);
                 }
             }
             break;
@@ -1446,8 +1449,8 @@ OPTTrav (node *trav_node, node *arg_info, node *arg_node)
                 }
                 PlusMask (INFO_DEF, old_mask[0], INFO_VARNO (arg_info));
                 PlusMask (INFO_USE, old_mask[1], INFO_VARNO (arg_info));
-                FREE (old_mask[0]);
-                FREE (old_mask[1]);
+                old_mask[0] = Free (old_mask[0]);
+                old_mask[1] = Free (old_mask[1]);
                 break;
             default: /* condition */
                 DBUG_PRINT ("TRAV", ("Travers cond - condition"));
@@ -1458,7 +1461,7 @@ OPTTrav (node *trav_node, node *arg_info, node *arg_node)
 
                 PlusMask (COND_CONDUSEMASK (arg_node), INFO_USE, INFO_VARNO (arg_info));
                 PlusMask (INFO_USE, old_mask[1], INFO_VARNO (arg_info));
-                FREE (old_mask[1]);
+                old_mask[1] = Free (old_mask[1]);
                 break;
             }
             break;
@@ -1482,8 +1485,8 @@ OPTTrav (node *trav_node, node *arg_info, node *arg_node)
                 PlusMask (DO_USEMASK (arg_node), INFO_USE, INFO_VARNO (arg_info));
                 PlusMask (INFO_DEF, old_mask[0], INFO_VARNO (arg_info));
                 PlusMask (INFO_USE, old_mask[1], INFO_VARNO (arg_info));
-                FREE (old_mask[0]);
-                FREE (old_mask[1]);
+                old_mask[0] = Free (old_mask[0]);
+                old_mask[1] = Free (old_mask[1]);
                 DBUG_PRINT ("TRAV", ("Travers do-body END"));
                 break;
             default: /* break condition */
@@ -1493,7 +1496,7 @@ OPTTrav (node *trav_node, node *arg_info, node *arg_node)
                 trav_node = Trav (trav_node, arg_info);
                 PlusMask (DO_TERMMASK (arg_node), INFO_USE, INFO_VARNO (arg_info));
                 PlusMask (INFO_USE, old_mask[1], INFO_VARNO (arg_info));
-                FREE (old_mask[1]);
+                old_mask[1] = Free (old_mask[1]);
                 break;
             }
             break;
@@ -1529,8 +1532,8 @@ OPTTrav (node *trav_node, node *arg_info, node *arg_node)
                 PlusMask (WHILE_USEMASK (arg_node), INFO_USE, INFO_VARNO (arg_info));
                 PlusMask (INFO_DEF, old_mask[0], INFO_VARNO (arg_info));
                 PlusMask (INFO_USE, old_mask[1], INFO_VARNO (arg_info));
-                FREE (old_mask[0]);
-                FREE (old_mask[1]);
+                old_mask[0] = Free (old_mask[0]);
+                old_mask[1] = Free (old_mask[1]);
                 DBUG_PRINT ("TRAV", ("Travers while-body END"));
                 break;
 
@@ -1541,7 +1544,7 @@ OPTTrav (node *trav_node, node *arg_info, node *arg_node)
                 trav_node = Trav (trav_node, arg_info);
                 PlusMask (WHILE_TERMMASK (arg_node), INFO_USE, INFO_VARNO (arg_info));
                 PlusMask (INFO_USE, old_mask[1], INFO_VARNO (arg_info));
-                FREE (old_mask[1]);
+                old_mask[1] = Free (old_mask[1]);
                 break;
             }
             break;
@@ -1573,7 +1576,7 @@ OPTTrav (node *trav_node, node *arg_info, node *arg_node)
 
                 PlusMask (trav_node->mask[1], INFO_USE, INFO_VARNO (arg_info));
                 PlusMask (INFO_USE, old_mask[1], INFO_VARNO (arg_info));
-                FREE (old_mask[1]);
+                old_mask[1] = Free (old_mask[1]);
                 break;
             case N_Ncode:
                 /* see comment below (N_Npart) */
@@ -1602,8 +1605,8 @@ OPTTrav (node *trav_node, node *arg_info, node *arg_node)
                 PlusMask (trav_node->mask[1], INFO_USE, INFO_VARNO (arg_info));
                 PlusMask (INFO_DEF, old_mask[0], INFO_VARNO (arg_info));
                 PlusMask (INFO_USE, old_mask[1], INFO_VARNO (arg_info));
-                FREE (old_mask[0]);
-                FREE (old_mask[1]);
+                old_mask[0] = Free (old_mask[0]);
+                old_mask[1] = Free (old_mask[1]);
                 break;
             case N_Npart:
                 /* IMPORTANT:
@@ -1625,7 +1628,7 @@ OPTTrav (node *trav_node, node *arg_info, node *arg_node)
                 trav_node = Trav (trav_node, arg_info);
                 PlusMask (trav_node->mask[1], INFO_USE, INFO_VARNO (arg_info));
                 PlusMask (INFO_USE, old_mask[1], INFO_VARNO (arg_info));
-                FREE (old_mask[1]);
+                old_mask[1] = Free (old_mask[1]);
                 break;
             default:
                 DBUG_ASSERT ((FALSE), "Subtree not implemented for OPTTrav N_Nwith node");
@@ -1650,8 +1653,8 @@ OPTTrav (node *trav_node, node *arg_info, node *arg_node)
         PlusMask(WITH_BODYUSEMASK(arg_node), INFO_USE, INFO_VARNO( arg_info) );
         PlusMask(INFO_DEF, old_mask[0], INFO_VARNO( arg_info) );
         PlusMask(INFO_USE, old_mask[1], INFO_VARNO( arg_info) );
-        FREE(old_mask[0]);
-        FREE(old_mask[1]);
+        old_mask[0] = Free(old_mask[0]);
+        old_mask[1] = Free(old_mask[1]);
         DBUG_PRINT("TRAV",("Travers with-body END"));
         break;
       case N_generator:
@@ -1668,7 +1671,7 @@ OPTTrav (node *trav_node, node *arg_info, node *arg_node)
             
         PlusMask(WITH_GENUSEMASK(arg_node), INFO_USE, INFO_VARNO( arg_info) );
         PlusMask(INFO_USE, old_mask[1], INFO_VARNO( arg_info) );
-        FREE(old_mask[1]);
+        old_mask[1] = Free(old_mask[1]);
         DBUG_PRINT("TRAV",("Travers with-generator END"));
         break;
       default:
@@ -1726,11 +1729,8 @@ OptTrav (node *arg_node, node *arg_info, int node_no)
                           INFO_VARNO (arg_info));
                 PlusMask (FUNDEF_MASK (arg_node, 1), arg_info->mask[1],
                           INFO_VARNO (arg_info));
-                FREE (arg_info->mask[0]);
-                FREE (arg_info->mask[1]);
-                /*        srs: FREE() does it */
-                /*        arg_info->mask[0]=NULL; */
-                /*        arg_info->mask[1]=NULL; */
+                arg_info->mask[0] = Free (arg_info->mask[0]);
+                arg_info->mask[1] = Free (arg_info->mask[1]);
                 DBUG_PRINT ("TRAV",
                             ("Travers function %s - body END", arg_node->info.types->id));
             }
@@ -1773,8 +1773,8 @@ OptTrav (node *arg_node, node *arg_info, int node_no)
             PlusMask (arg_node->mask[1], arg_info->mask[1], INFO_VARNO (arg_info));
             PlusMask (arg_info->mask[0], oldmask[0], INFO_VARNO (arg_info));
             PlusMask (arg_info->mask[1], oldmask[1], INFO_VARNO (arg_info));
-            FREE (oldmask[0]);
-            FREE (oldmask[1]);
+            oldmask[0] = Free (oldmask[0]);
+            oldmask[1] = Free (oldmask[1]);
             break;
 
         case 1: /* Trav next assign */
@@ -1800,7 +1800,7 @@ OptTrav (node *arg_node, node *arg_info, int node_no)
             arg_node->node[0] = Trav (arg_node->node[0], arg_info);
             PlusMask (arg_node->mask[1], arg_info->mask[1], INFO_VARNO (arg_info));
             PlusMask (arg_info->mask[1], oldmask[1], INFO_VARNO (arg_info));
-            FREE (oldmask[1]);
+            oldmask[1] = Free (oldmask[1]);
             break;
 
         case 1: /* Trav body */
@@ -1822,8 +1822,8 @@ OptTrav (node *arg_node, node *arg_info, int node_no)
             }
             PlusMask (arg_info->mask[0], oldmask[0], INFO_VARNO (arg_info));
             PlusMask (arg_info->mask[1], oldmask[1], INFO_VARNO (arg_info));
-            FREE (oldmask[0]);
-            FREE (oldmask[1]);
+            oldmask[0] = Free (oldmask[0]);
+            oldmask[1] = Free (oldmask[1]);
             DBUG_PRINT ("TRAV", ("Travers loop - body END"));
             break;
 
@@ -1843,7 +1843,7 @@ OptTrav (node *arg_node, node *arg_info, int node_no)
             COND_COND (arg_node) = Trav (COND_COND (arg_node), arg_info);
             PlusMask (arg_node->mask[1], arg_info->mask[1], INFO_VARNO (arg_info));
             PlusMask (arg_info->mask[1], oldmask[1], INFO_VARNO (arg_info));
-            FREE (oldmask[1]);
+            oldmask[1] = Free (oldmask[1]);
             break;
 
         case 1: /* Trav then  part */
@@ -1868,8 +1868,8 @@ OptTrav (node *arg_node, node *arg_info, int node_no)
 
             PlusMask (arg_info->mask[0], oldmask[0], INFO_VARNO (arg_info));
             PlusMask (arg_info->mask[1], oldmask[1], INFO_VARNO (arg_info));
-            FREE (oldmask[0]);
-            FREE (oldmask[1]);
+            oldmask[0] = Free (oldmask[0]);
+            oldmask[1] = Free (oldmask[1]);
             DBUG_PRINT ("TRAV", ("Travers cond - body %d END", node_no));
             break;
 
@@ -1893,7 +1893,7 @@ OptTrav (node *arg_node, node *arg_info, int node_no)
           
           PlusMask(arg_node->node[0]->mask[1], arg_info->mask[1], INFO_VARNO(arg_info));
           PlusMask(arg_info->mask[1], oldmask[1], INFO_VARNO(arg_info));
-          FREE(oldmask[1]);
+          oldmask[1] = Free(oldmask[1]);
           break;
 
         case 1: /* Trav genarray, modarray or foldfun */
@@ -1909,7 +1909,7 @@ OptTrav (node *arg_node, node *arg_info, int node_no)
               arg_node->node[1]->node[0]=Trav(arg_node->node[1]->node[0], arg_info);
               PlusMask(arg_node->node[1]->mask[1], arg_info->mask[1], INFO_VARNO(arg_info));
               PlusMask(arg_info->mask[1], oldmask[1], INFO_VARNO(arg_info));
-              FREE(oldmask[1]);
+              oldmask[1] = Free(oldmask[1]);
             }
           if (N_foldfun==arg_node->node[1]->nodetype)
             {
@@ -1921,7 +1921,7 @@ OptTrav (node *arg_node, node *arg_info, int node_no)
               arg_node->node[1]->node[1]=Trav(arg_node->node[1]->node[1], arg_info);
               PlusMask(arg_node->node[1]->mask[1], arg_info->mask[1], INFO_VARNO(arg_info));
               PlusMask(arg_info->mask[1], oldmask[1], INFO_VARNO(arg_info));
-              FREE(oldmask[1]);
+              oldmask[1] = Free(oldmask[1]);
             }
           break;
         
@@ -1950,8 +1950,8 @@ OptTrav (node *arg_node, node *arg_info, int node_no)
           PlusMask(arg_node->mask[1], arg_info->mask[1], INFO_VARNO(arg_info));
           PlusMask(arg_info->mask[0], oldmask[0], INFO_VARNO(arg_info));
           PlusMask(arg_info->mask[1], oldmask[1], INFO_VARNO(arg_info));
-          FREE(oldmask[0]);
-          FREE(oldmask[1]);
+          oldmask[0] = Free(oldmask[0]);
+          oldmask[1] = Free(oldmask[1]);
           DBUG_PRINT("TRAV",("Travers with - body END"));
           break;
         
@@ -1973,7 +1973,7 @@ OptTrav (node *arg_node, node *arg_info, int node_no)
             NWITHOP_NEUTRAL (arg_node) = Trav (NWITHOP_NEUTRAL (arg_node), arg_info);
         PlusMask (arg_node->mask[1], arg_info->mask[1], INFO_VARNO (arg_info));
         PlusMask (arg_info->mask[1], oldmask[1], INFO_VARNO (arg_info));
-        FREE (oldmask[1]);
+        oldmask[1] = Free (oldmask[1]);
         break;
 
     case N_Ncode: /* Trav with body */
@@ -1990,8 +1990,8 @@ OptTrav (node *arg_node, node *arg_info, int node_no)
         PlusMask (arg_node->mask[1], arg_info->mask[1], INFO_VARNO (arg_info));
         PlusMask (arg_info->mask[0], oldmask[0], INFO_VARNO (arg_info));
         PlusMask (arg_info->mask[1], oldmask[1], INFO_VARNO (arg_info));
-        FREE (oldmask[0]);
-        FREE (oldmask[1]);
+        oldmask[0] = Free (oldmask[0]);
+        oldmask[1] = Free (oldmask[1]);
         break;
 
     case N_Npart: /* Trav generator */
@@ -2001,7 +2001,7 @@ OptTrav (node *arg_node, node *arg_info, int node_no)
         NPART_GEN (arg_node) = Trav (NPART_GEN (arg_node), arg_info);
         PlusMask (arg_node->mask[1], arg_info->mask[1], INFO_VARNO (arg_info));
         PlusMask (arg_info->mask[1], oldmask[1], INFO_VARNO (arg_info));
-        FREE (oldmask[1]);
+        oldmask[1] = Free (oldmask[1]);
         break;
 
     default:
@@ -2237,7 +2237,7 @@ GNMap (node *arg_node, node *arg_info)
         /* start traversal of special fundef */
         AP_FUNDEF (arg_node) = Trav (AP_FUNDEF (arg_node), new_arg_info);
 
-        FREE (new_arg_info);
+        new_arg_info = FreeTree (new_arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -2599,7 +2599,7 @@ GenerateMasks (node *arg_node, node *arg_info)
         if (NULL == arg_info) {
             arg_info = MakeInfo ();
             arg_node = Trav (arg_node, arg_info);
-            FREE (arg_info);
+            arg_info = FreeTree (arg_info);
         } else {
             /* arg_info is modified here so I guess it's better to avoid this branch. */
             arg_node = Trav (arg_node, arg_info);

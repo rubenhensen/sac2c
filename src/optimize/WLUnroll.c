@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2001/05/17 12:46:31  nmw
+ * MALLOC/FREE changed to Malloc/Free, result of Free() used
+ *
  * Revision 3.8  2001/05/09 12:26:30  nmw
  * DoUnrollFold uses the correct result id of each part when unrolling
  * a multigenerator withloop
@@ -254,8 +257,7 @@ CreateModGenarray (node *assignn, node *index)
 
     /* create prf modarray */
     cexpr = NCODE_CEXPR (NPART_CODE (partn));
-    tmpn
-      = MakeId (StringCopy (IDS_NAME (array)), StringCopy (IDS_MOD (array)), ST_regular);
+    tmpn = MakeId (StringCopy (IDS_NAME (array)), IDS_MOD (array), ST_regular);
     ID_VARDEC (tmpn) = IDS_VARDEC (array);
     exprs = MakeExprs (tmpn, MakeExprs (index, MakeExprs (DupTree (cexpr), NULL)));
 
@@ -315,10 +317,10 @@ CreateFold (node *assignn, node *index)
      *              (can be found in 'opfunarg[2]')
      */
 
-    accvar = MakeId (StringCopy (IDS_NAME (acc)), StringCopy (IDS_MOD (acc)), ST_regular);
+    accvar = MakeId (StringCopy (IDS_NAME (acc)), IDS_MOD (acc), ST_regular);
     ID_VARDEC (accvar) = IDS_VARDEC (acc);
 
-    funap = MakeAp (StringCopy (NWITHOP_FUN (withop)), StringCopy (NWITHOP_MOD (withop)),
+    funap = MakeAp (StringCopy (NWITHOP_FUN (withop)), NWITHOP_MOD (withop),
                     MakeExprs (accvar, MakeExprs (DupTree (cexpr), NULL)));
     AP_FUNDEF (funap) = NWITHOP_FUNDEF (withop);
 
@@ -439,10 +441,10 @@ ForEachElement (node *partn, node *assignn)
 
     res = ForEachElementHelp (l, u, s, w, 0, maxdim, assignn);
 
-    FREE (l);
-    FREE (u);
-    FREE (s);
-    FREE (w);
+    l = Free (l);
+    u = Free (u);
+    s = Free (s);
+    w = Free (w);
 
     DBUG_RETURN (res);
 }
