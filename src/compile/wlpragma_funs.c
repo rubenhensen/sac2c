@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2001/01/10 14:27:50  dkr
+ * function MakeWLsegX used
+ *
  * Revision 3.7  2001/01/09 16:17:23  dkr
  * All() and Cubes() use function AllStridesAreConstant() now
  *
@@ -496,12 +499,7 @@ All (node *segs, node *parms, node *cubes, int dims, int line)
         segs = FreeTree (segs);
     }
 
-    if (AllStridesAreConstant (cubes)) {
-        segs = MakeWLseg (dims, DupTree (cubes), NULL);
-    } else {
-        segs = MakeWLsegVar (dims, DupTree (cubes), NULL);
-    }
-
+    segs = MakeWLsegX (dims, TRUE, DupTree (cubes), NULL);
     segs = NoBlocking (segs, parms, cubes, dims, line);
 
     DBUG_RETURN (segs);
@@ -522,6 +520,7 @@ node *
 Cubes (node *segs, node *parms, node *cubes, int dims, int line)
 {
     node *new_seg;
+    bool full_range;
     node *last_seg = NULL;
 
     DBUG_ENTER ("Cubes");
@@ -535,15 +534,15 @@ Cubes (node *segs, node *parms, node *cubes, int dims, int line)
         segs = FreeTree (segs);
     }
 
+    DBUG_ASSERT ((cubes != NULL), "no cubes found!");
+
+    full_range = (WLSTRIDEX_NEXT (cubes) == NULL);
+
     while (cubes != NULL) {
         /*
          * build new segment
          */
-        if (AllStridesAreConstant (cubes)) {
-            new_seg = MakeWLseg (dims, DupNode (cubes), NULL);
-        } else {
-            new_seg = MakeWLsegVar (dims, DupNode (cubes), NULL);
-        }
+        new_seg = MakeWLsegX (dims, full_range, DupNode (cubes), NULL);
 
         /*
          * append 'new_seg' at 'segs'
@@ -555,7 +554,7 @@ Cubes (node *segs, node *parms, node *cubes, int dims, int line)
         }
         last_seg = new_seg;
 
-        cubes = WLSTRIDE_NEXT (cubes);
+        cubes = WLSTRIDEX_NEXT (cubes);
     }
 
     segs = NoBlocking (segs, parms, cubes, dims, line);
@@ -579,6 +578,7 @@ node *
 ConstSegs (node *segs, node *parms, node *cubes, int dims, int line)
 {
     node *new_cubes, *new_seg;
+    bool full_range;
     node *last_seg = NULL;
 
     DBUG_ENTER ("ConstSegs");
@@ -588,7 +588,15 @@ ConstSegs (node *segs, node *parms, node *cubes, int dims, int line)
             segs = FreeTree (segs);
         }
 
-        while (parms != NULL) {
+        if (parms == NULL) {
+            ABORT (line, ("Illegal argument in wlcomp-pragma found; "
+                          "ConstSegs(): No arguments found"));
+        }
+
+        full_range
+          = ((EXPRS_NEXT (parms) == NULL) || (EXPRS_NEXT (EXPRS_NEXT (parms)) == NULL));
+
+        do {
             if (EXPRS_NEXT (parms) == NULL) {
                 ABORT (line, ("Illegal argument in wlcomp-pragma found; "
                               "ConstSegs(): Upper bound not found"));
@@ -605,18 +613,18 @@ ConstSegs (node *segs, node *parms, node *cubes, int dims, int line)
                                        line);
 
             if (new_cubes != NULL) {
-                new_seg = MakeWLseg (dims, new_cubes, NULL);
+                new_seg = MakeWLsegX (dims, full_range, new_cubes, NULL);
 
                 if (segs == NULL) {
                     segs = new_seg;
                 } else {
-                    WLSEG_NEXT (last_seg) = new_seg;
+                    WLSEGX_NEXT (last_seg) = new_seg;
                 }
                 last_seg = new_seg;
             }
 
             parms = EXPRS_NEXT (EXPRS_NEXT (parms));
-        }
+        } while (parms != NULL);
 
         segs = NoBlocking (segs, parms, cubes, dims, line);
     } else {
@@ -735,7 +743,7 @@ Bv (node *segs, node *parms, node *cubes, int dims, int line)
                   = Array2Bv (EXPRS_EXPR (parms), WLSEGX_UBV (seg), dims, line);
             }
 
-            seg = WLSTRIDE_NEXT (seg);
+            seg = WLSEGX_NEXT (seg);
             parms = EXPRS_NEXT (parms);
         }
 
@@ -748,7 +756,7 @@ Bv (node *segs, node *parms, node *cubes, int dims, int line)
                   = Array2Bv (EXPRS_EXPR (parms), WLSEGX_UBV (seg), dims, line);
             }
 
-            seg = WLSTRIDE_NEXT (seg);
+            seg = WLSEGX_NEXT (seg);
         }
     }
 
