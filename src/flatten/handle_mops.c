@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2002/08/14 11:51:08  sbs
+ * HMAdjustFunNames debugged....
+ *
  * Revision 1.7  2002/08/14 09:27:41  sbs
  * HMNwithop debugged and calls to TravSons inserted.
  *
@@ -485,7 +488,7 @@ HMNwithop (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *    node *HMAdjustFundef(node *fundef)
+ *    ids *HMAdjustFunNames(ids *funid)
  *
  * description:
  *   this function is only needed for converting the "new prf notation",
@@ -496,23 +499,26 @@ HMNwithop (node *arg_node, node *arg_info)
  *
  ******************************************************************************/
 
-node *
-HMAdjustFundef (node *fundef)
+ids *
+HMAdjustFunNames (ids *funid)
 {
     prf primfun;
     bool found;
 
-    DBUG_ENTER ("HMAdjustFundef");
+    DBUG_ENTER ("HMAdjustFunNames");
 
     if (sbs != 1) {
 
-        found = Name2Prf (FUNDEF_NAME (fundef), &primfun);
+        found = Name2Prf (IDS_NAME (funid), &primfun);
 
         if (found) {
-            FUNDEF_NAME (fundef) = Free (FUNDEF_NAME (fundef));
-            FUNDEF_NAME (fundef) = StringCopy (prf_name_str[primfun]);
+            IDS_NAME (funid) = Free (IDS_NAME (funid));
+            IDS_NAME (funid) = StringCopy (prf_name_str[primfun]);
         }
     }
+    if (IDS_NEXT (funid) != NULL) {
+        IDS_NEXT (funid) = HMAdjustFunNames (IDS_NEXT (funid));
+    }
 
-    DBUG_RETURN (fundef);
+    DBUG_RETURN (funid);
 }

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2002/08/14 11:51:22  sbs
+ * HMAdjustFunNames debugged....
+ *
  * Revision 1.4  2002/08/13 17:14:34  sbs
  * HMfundef changed into HMAdjustFundef
  *
@@ -32,6 +35,6 @@ extern node *HMmop (node *arg_node, node *arg_info);
 extern node *HMap (node *arg_node, node *arg_info);
 extern node *HMNwithop (node *arg_node, node *arg_info);
 
-extern node *HMAdjustFundef (node *fundef);
+extern ids *HMAdjustFunNames (ids *funid);
 
 #endif /* _handle_mops_h */
