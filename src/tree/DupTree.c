@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.137  2004/12/13 13:54:05  ktr
+ * some changes made regarding DUPdoDupTreeSSA
+ *
  * Revision 3.136  2004/12/09 12:26:27  sbs
  * never correct AP_NAMEs anymore pls!!!!
  * corrected severe problem in DUPcheckAndDupSpecialFundef
@@ -1447,52 +1450,56 @@ DUPassign (node *arg_node, info *arg_info)
     node *vardec;
     node *oldids, *newids;
     char *nvarname;
+    node *newavis;
 
     DBUG_ENTER ("DUPassign");
 
     if ((INFO_DUP_TYPE (arg_info) != DUP_INLINE)
         || (NODE_TYPE (ASSIGN_INSTR (arg_node)) != N_return)) {
 
-        if (INFO_DUP_TYPE (arg_info) == DUP_SSA) {
-            /*
-             * to keep the ssa-form we have to create new ids
-             * and insert them into LUT
-             */
+        new_node = TBmakeAssign (NULL, NULL);
 
-            oldids = ASSIGN_LHS (arg_node);
-            while (oldids != NULL) {
-                nvarname = ILIBtmpVarName (IDS_NAME (oldids));
-                newids
-                  = TBmakeIds (TBmakeAvis (nvarname, TYcopyType (IDS_NTYPE (oldids))),
-                               NULL);
+#if 0
+    if (INFO_DUP_TYPE( arg_info) == DUP_SSA){
+      /*
+       * to keep the ssa-form we have to create new ids
+       * and insert them into LUT 
+       */
 
-                vardec = TBmakeVardec (IDS_AVIS (newids), NULL);
+      oldids = ASSIGN_LHS( arg_node);
+      while (oldids != NULL) {
+        nvarname = ILIBtmpVarName( IDS_NAME( oldids));
 
-                if (IDS_TYPE (oldids) != NULL) {
-                    VARDEC_TYPE (vardec) = DUPdupOneTypes (IDS_TYPE (oldids));
-                }
+        newavis = TBmakeAvis( nvarname, TYcopyType( IDS_NTYPE( oldids)));
+        AVIS_SSAASSIGN( newavis) = new_node;
 
-                INFO_DUP_FUNDEFSSA (arg_info)
-                  = TCaddVardecs (INFO_DUP_FUNDEFSSA (arg_info), vardec);
+        newids = TBmakeIds( newavis, NULL);
+        
+        vardec =TBmakeVardec( IDS_AVIS( newids), NULL);
 
-                INFO_DUP_LUT (arg_info)
-                  = LUTinsertIntoLutS (INFO_DUP_LUT (arg_info), IDS_NAME (oldids),
-                                       IDS_NAME (newids));
-                INFO_DUP_LUT (arg_info)
-                  = LUTinsertIntoLutP (INFO_DUP_LUT (arg_info), IDS_DECL (oldids),
-                                       IDS_DECL (newids));
-                INFO_DUP_LUT (arg_info)
-                  = LUTinsertIntoLutP (INFO_DUP_LUT (arg_info), IDS_AVIS (oldids),
-                                       IDS_AVIS (newids));
-                oldids = IDS_NEXT (oldids);
-            }
+        if ( IDS_TYPE( oldids) != NULL) {
+          VARDEC_TYPE( vardec) = DUPdupOneTypes( IDS_TYPE( oldids));
         }
 
-        new_node = TBmakeAssign (NULL, NULL);
+        INFO_DUP_FUNDEFSSA( arg_info) 
+          = TCaddVardecs( INFO_DUP_FUNDEFSSA( arg_info), vardec);
+
+        INFO_DUP_LUT( arg_info) = LUTinsertIntoLutS( INFO_DUP_LUT( arg_info),
+                                    IDS_NAME(oldids),    IDS_NAME(newids));
+        INFO_DUP_LUT( arg_info) = LUTinsertIntoLutP( INFO_DUP_LUT( arg_info),
+                                    IDS_DECL(oldids), IDS_DECL(newids));
+        INFO_DUP_LUT( arg_info) = LUTinsertIntoLutP( INFO_DUP_LUT( arg_info),
+                                    IDS_AVIS(oldids),    IDS_AVIS(newids));
+        oldids = IDS_NEXT(oldids);
+      }      
+    }
+#endif
 
         stacked_assign = INFO_DUP_ASSIGN (arg_info);
         INFO_DUP_ASSIGN (arg_info) = new_node;
+
         ASSIGN_INSTR (new_node) = DUPTRAV (ASSIGN_INSTR (arg_node));
+
         INFO_DUP_ASSIGN (arg_info) = stacked_assign;
 
         ASSIGN_NEXT (new_node) = DUPCONT (ASSIGN_NEXT (arg_node));
@@ -1596,6 +1603,39 @@ DUPids (node *arg_node, info *arg_info)
     node *new_node, *avis;
 
     DBUG_ENTER ("DUPids");
+
+    if ((INFO_DUP_TYPE (arg_info) == DUP_SSA)
+        && (LUTsearchInLutPp (INFO_DUP_LUT (arg_info), IDS_AVIS (arg_node))
+            == IDS_AVIS (arg_node))) {
+        node *newavis;
+        /*
+         * To maintain SSA form, new variables must be generated
+         */
+        newavis = TBmakeAvis (ILIBtmpVarName (IDS_NAME (arg_node)),
+                              TYcopyType (IDS_NTYPE (arg_node)));
+
+        if (AVIS_SSAASSIGN (IDS_AVIS (arg_node)) != NULL) {
+            AVIS_SSAASSIGN (newavis) = INFO_DUP_ASSIGN (arg_info);
+        }
+
+        FUNDEF_VARDEC (INFO_DUP_FUNDEFSSA (arg_info))
+          = TBmakeVardec (newavis, FUNDEF_VARDEC (INFO_DUP_FUNDEFSSA (arg_info)));
+
+        if (IDS_TYPE (arg_node) != NULL) {
+            VARDEC_TYPE (AVIS_DECL (newavis)) = DUPdupOneTypes (IDS_TYPE (arg_node));
+        }
+
+        INFO_DUP_LUT (arg_info)
+          = LUTinsertIntoLutS (INFO_DUP_LUT (arg_info), IDS_NAME (arg_node),
+                               AVIS_NAME (newavis));
+
+        INFO_DUP_LUT (arg_info)
+          = LUTinsertIntoLutP (INFO_DUP_LUT (arg_info), IDS_DECL (arg_node),
+                               AVIS_DECL (newavis));
+
+        INFO_DUP_LUT (arg_info)
+          = LUTinsertIntoLutP (INFO_DUP_LUT (arg_info), IDS_AVIS (arg_node), newavis);
+    }
 
     avis = LUTsearchInLutPp (INFO_DUP_LUT (arg_info), IDS_AVIS (arg_node));
 
@@ -2130,48 +2170,48 @@ DUPwith (node *arg_node, info *arg_info)
 {
     node *new_node, *partn, *coden, *withopn, *vardec, *oldvec, *newvec, *oldids, *newids;
     char *nvarname;
+    node *newavis;
 
     DBUG_ENTER ("DUPwith");
 
-    if (INFO_DUP_TYPE (arg_info) == DUP_SSA) {
+    if ((INFO_DUP_TYPE (arg_info) == DUP_SSA)
+        && (NODE_TYPE (WITH_VEC (arg_node)) == N_ids)) {
         /*
-         * to keep the ssa-form we have to create new ids
+         * to maintain the ssa-form we have to create new ids
          * for the elements of N_Nwithid and insert them into LUT
          */
+        oldids = WITH_VEC (arg_node);
 
-        oldvec = WITH_VEC (arg_node);
-        nvarname = ILIBtmpVarName (IDS_NAME (oldvec));
+        newavis = TBmakeAvis (ILIBtmpVarName (IDS_NAME (oldids)),
+                              TYcopyType (IDS_NTYPE (oldids)));
 
-        newvec = TBmakeIds (TBmakeAvis (nvarname, TYcopyType (IDS_NTYPE (oldvec))), NULL);
+        vardec = TBmakeVardec (newavis, NULL);
 
-        vardec = TBmakeVardec (IDS_AVIS (newvec), NULL);
-
-        if (IDS_TYPE (oldvec) != NULL) {
-            VARDEC_TYPE (vardec) = DUPdupOneTypes (IDS_TYPE (oldvec));
+        if (IDS_TYPE (oldids) != NULL) {
+            VARDEC_TYPE (vardec) = DUPdupOneTypes (IDS_TYPE (oldids));
         }
 
         INFO_DUP_FUNDEFSSA (arg_info)
           = TCaddVardecs (INFO_DUP_FUNDEFSSA (arg_info), vardec);
 
         INFO_DUP_LUT (arg_info)
-          = LUTinsertIntoLutS (INFO_DUP_LUT (arg_info), IDS_NAME (oldvec),
-                               IDS_NAME (newvec));
+          = LUTinsertIntoLutS (INFO_DUP_LUT (arg_info), IDS_NAME (oldids),
+                               AVIS_NAME (newavis));
+
         INFO_DUP_LUT (arg_info)
-          = LUTinsertIntoLutP (INFO_DUP_LUT (arg_info), IDS_DECL (oldvec),
-                               IDS_DECL (newvec));
+          = LUTinsertIntoLutP (INFO_DUP_LUT (arg_info), IDS_DECL (oldids),
+                               AVIS_DECL (newavis));
+
         INFO_DUP_LUT (arg_info)
-          = LUTinsertIntoLutP (INFO_DUP_LUT (arg_info), IDS_AVIS (oldvec),
-                               IDS_AVIS (newvec));
+          = LUTinsertIntoLutP (INFO_DUP_LUT (arg_info), IDS_AVIS (oldids), newavis);
 
         oldids = WITH_IDS (arg_node);
         while (oldids != NULL) {
 
-            nvarname = ILIBtmpVarName (IDS_NAME (oldids));
+            newavis = TBmakeAvis (ILIBtmpVarName (IDS_NAME (oldids)),
+                                  TYcopyType (IDS_NTYPE (oldids)));
 
-            newids
-              = TBmakeIds (TBmakeAvis (nvarname, TYcopyType (IDS_NTYPE (oldids))), NULL);
-
-            vardec = TBmakeVardec (IDS_AVIS (newids), NULL);
+            vardec = TBmakeVardec (newavis, NULL);
 
             if (IDS_TYPE (oldids) != NULL) {
                 VARDEC_TYPE (vardec) = DUPdupOneTypes (IDS_TYPE (oldids));
@@ -2182,19 +2222,20 @@ DUPwith (node *arg_node, info *arg_info)
 
             INFO_DUP_LUT (arg_info)
               = LUTinsertIntoLutS (INFO_DUP_LUT (arg_info), IDS_NAME (oldids),
-                                   IDS_NAME (newids));
+                                   AVIS_NAME (newavis));
+
             INFO_DUP_LUT (arg_info)
               = LUTinsertIntoLutP (INFO_DUP_LUT (arg_info), IDS_DECL (oldids),
-                                   IDS_DECL (newids));
+                                   AVIS_DECL (newavis));
+
             INFO_DUP_LUT (arg_info)
-              = LUTinsertIntoLutP (INFO_DUP_LUT (arg_info), IDS_AVIS (oldids),
-                                   IDS_AVIS (newids));
+              = LUTinsertIntoLutP (INFO_DUP_LUT (arg_info), IDS_AVIS (oldids), newavis);
         }
     }
 
     /*
      * very important: duplicate codes before parts! Otherwise the code
-     * references of the parts can not set correctly!
+     * references of the parts can not be set correctly!
      */
     coden = DUPTRAV (WITH_CODE (arg_node));
     partn = DUPTRAV (WITH_PART (arg_node));
@@ -2396,8 +2437,8 @@ DUPwith2 (node *arg_node, info *arg_info)
      * very important: duplicate codes before parts! Otherwise the code
      * references of the parts can not set correctly!
      */
-    code = DUPTRAV (WITH2_CODE (arg_node));
     id = DUPTRAV (WITH2_WITHID (arg_node));
+    code = DUPTRAV (WITH2_CODE (arg_node));
     segs = DUPTRAV (WITH2_SEGS (arg_node));
     withop = DUPTRAV (WITH2_WITHOP (arg_node));
 
@@ -2485,8 +2526,8 @@ DUPwlsegvar (node *arg_node, info *arg_info)
           = SCHcopyScheduling (WLSEGVAR_SCHEDULING (arg_node));
     }
 
-    if (WLSEG_TASKSEL (arg_node) != NULL) {
-        WLSEG_TASKSEL (new_node) = SCHcopyTasksel (WLSEG_TASKSEL (arg_node));
+    if (WLSEGVAR_TASKSEL (arg_node) != NULL) {
+        WLSEGVAR_TASKSEL (new_node) = SCHcopyTasksel (WLSEGVAR_TASKSEL (arg_node));
     }
 
     CopyCommonNodeData (new_node, arg_node);
