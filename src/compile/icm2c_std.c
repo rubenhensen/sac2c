@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/05/05 09:12:55  jhs
+ * ICMCompileND_KD_ROT_CxSxA_A changed, it can handle empty arrays now.
+ *
  * Revision 2.2  1999/04/12 09:37:48  cg
  * All accesses to C arrays are now performed through the new ICMs
  * ND_WRITE_ARRAY and ND_READ_ARRAY. This allows for an integration
@@ -1033,7 +1036,6 @@ ICMCompileND_KD_PSI_VxA_A (int line, int dima, char *a, char *res, int dimv, cha
 
     DBUG_VOID_RETURN;
 }
-
 /******************************************************************************
  *
  * function:
@@ -1092,6 +1094,7 @@ ICMCompileND_KD_DROP_CxA_A (int dima, char *a, char *res, int dimv, char **vi)
 #undef ND_KD_DROP_CxA_A
 
     INDENT;
+
     TakeSeg (a, dima, VectToOffset (dimv, AccessConst (vi, i), dima, a), /* offset */
              dimv, /* dim of sizes & offsets */
              fprintf (outfile, "SAC_ND_KD_A_SHAPE(%s, %d) - ", a, i);
@@ -1188,11 +1191,14 @@ ICMCompileND_KD_ROT_CxSxA_A (int rotdim, char **numstr, int dima, char *a, char 
                                 fprintf (outfile, "SAC_ND_KD_A_SHAPE(%s, %d)*", a, j);
                             fprintf (outfile, "(%s<0 ? ", numstr[0]);
                             fprintf (outfile,
+                                     "( SAC_ND_KD_A_SHAPE(%s, %d)==0 ? 0 : "
                                      "SAC_ND_KD_A_SHAPE(%s, %d)+ (%s %% "
-                                     "SAC_ND_KD_A_SHAPE(%s, %d)) : ",
+                                     "SAC_ND_KD_A_SHAPE(%s, %d))) : ",
+                                     a, rotdim, a, rotdim, numstr[0], a, rotdim);
+                            fprintf (outfile,
+                                     "( SAC_ND_KD_A_SHAPE(%s, %d)==0 ? 0 : %s %% "
+                                     "SAC_ND_KD_A_SHAPE(%s, %d)))",
                                      a, rotdim, numstr[0], a, rotdim);
-                            fprintf (outfile, "%s %% SAC_ND_KD_A_SHAPE(%s, %d))",
-                                     numstr[0], a, rotdim);
                         });
               InitVecs (0, 1, "SAC_bl",
                         {
