@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.25  2003/03/12 18:05:36  dkr
+ * comment for RCicm() corrected
+ *
  * Revision 3.24  2003/03/12 17:53:47  dkr
  * no modifications done
  *
@@ -1310,9 +1313,9 @@ RCicm (node *arg_node, node *arg_info)
         INFO_RC_PRF (arg_info) = NULL;
     } else if (strstr (name, "IDXS2OFFSET") != NULL) {
         /*
-         * IDXS2OFFSET( off_nt, ., idxs_nt, ., ...)
+         * IDXS2OFFSET( off_nt, ., idx_1_nt ... idx_n_nt, ., ...)
          * needs RC on all but the first argument. It is expanded to
-         *     off_nt = ... idxs_nt[i] ...    ,
+         *     off_nt = ... idx_1_nt[i] ... idx_n_nt[i] ...   ,
          * where 'off_nt' is a scalar variable.
          *  -> store actual RC of the first argument (defined)
          *  -> traverse all but the first argument (used)
