@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.10  1995/04/12 15:14:00  sbs
+ * Revision 1.11  1995/04/18 14:09:33  sbs
+ * args of BINOP_AxS_A exchanged
+ *
+ * Revision 1.10  1995/04/12  15:14:00  sbs
  * cat & rot inserted.
  *
  * Revision 1.9  1995/04/12  07:02:53  sbs
@@ -161,7 +164,7 @@
             ND_A_FIELD (res)[__i] = ND_A_FIELD (a1)[__i] op ND_A_FIELD (a2)[__i];        \
     };
 
-#define ND_BINOP_AxS_A(op, s, a2, res)                                                   \
+#define ND_BINOP_AxS_A(op, a2, s, res)                                                   \
     {                                                                                    \
         int __i;                                                                         \
         for (__i = 0; __i < ND_A_SIZE (res); __i++)                                      \
