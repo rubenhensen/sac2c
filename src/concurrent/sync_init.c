@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2001/03/05 16:42:00  dkr
+ * no macros NWITH???_IS_FOLD used
+ *
  * Revision 3.2  2000/12/12 12:11:43  dkr
  * NWITH_INOUT removed
  * interpretation of NWITH_IN changed:
@@ -41,7 +44,6 @@
  *
  * Revision 1.1  1998/06/18 14:35:53  cg
  * Initial revision
- *
  *
  */
 
@@ -90,7 +92,6 @@ node *
 SYNCIassign (node *arg_node, node *arg_info)
 {
     node *with, *sync_let, *sync;
-    node *withop;
     ids *with_ids;
     DFMmask_base_t maskbase;
     int i;
@@ -126,8 +127,7 @@ SYNCIassign (node *arg_node, node *arg_info)
         SYNC_FIRST (sync) = INFO_SYNCI_FIRST (arg_info);
         ASSIGN_INSTR (arg_node) = sync;
 
-        withop = NWITH2_WITHOP (with);
-        if (NWITHOP_TYPE (withop) == WO_foldfun) {
+        if (NWITH2_TYPE (with) == WO_foldfun) {
             SYNC_FOLDCOUNT (sync) = 1;
             needed_sync_fold = MAX (needed_sync_fold, 1);
         } else {
@@ -230,7 +230,9 @@ SYNCIassign (node *arg_node, node *arg_info)
  *
  * description:
  *   ####
+ *
  ******************************************************************************/
+
 node *
 SYNCIwhile (node *arg_node, node *arg_info)
 {
@@ -251,6 +253,7 @@ SYNCIwhile (node *arg_node, node *arg_info)
  * description:
  *   ####
  ******************************************************************************/
+
 node *
 SYNCIdo (node *arg_node, node *arg_info)
 {

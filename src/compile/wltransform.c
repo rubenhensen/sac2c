@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.34  2001/03/05 16:42:27  dkr
+ * no macros NWITH???_IS_FOLD used
+ *
  * Revision 3.33  2001/03/05 15:00:00  dkr
  * NCODE_NO no longer used here (but in print.c only)
  *
@@ -6374,8 +6377,7 @@ WLTRAwith (node *arg_node, node *arg_info)
                  " the same VEC and IDS names!\n"
                  "This is probably due to an error during with-loop-folding.");
 
-    is_fold
-      = ((NWITH_TYPE (arg_node) == WO_foldfun) || (NWITH_TYPE (arg_node) == WO_foldprf));
+    is_fold = NWITH_IS_FOLD (arg_node);
     /* get number of dims of with-loop index range */
     wl_dims = IDS_SHAPE (NWITH_VEC (arg_node), 0);
     wl_shape = is_fold ? NULL : TYPES_SHPSEG (INFO_WL_TYPES (arg_info));

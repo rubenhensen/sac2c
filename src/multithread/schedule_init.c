@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2001/03/05 16:41:56  dkr
+ * no macros NWITH???_IS_FOLD used
+ *
  * Revision 3.1  2000/11/20 18:03:14  sacbase
  * new release made
  *
@@ -33,7 +36,6 @@
  *
  * Revision 1.1  2000/01/24 10:27:35  jhs
  * Initial revision
- *
  *
  */
 
@@ -78,6 +80,7 @@
  *     functions f with FUNDEF_ATTRIB( f) = ST_call_rep
  *
  ******************************************************************************/
+
 node *
 ScheduleInit (node *arg_node, node *arg_info)
 {
@@ -120,8 +123,8 @@ ScheduleInit (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   static int WithLoopIsWorthConcurrentExecution( node *withloop,
- *                                                  ids *let_var)
+ *   int WithLoopIsWorthConcurrentExecution( node *withloop,
+ *                                           ids *let_var)
  *
  * description:
  *   This function decides whether a with-loop is actually worth to be executed
@@ -134,6 +137,7 @@ ScheduleInit (node *arg_node, node *arg_info)
  *   concurrently (by WithLoopIsAllowedConcurrentExecution, see below).
  *
  ******************************************************************************/
+
 static int
 WithLoopIsWorthConcurrentExecution (node *withloop, ids *let_var)
 {
@@ -141,8 +145,7 @@ WithLoopIsWorthConcurrentExecution (node *withloop, ids *let_var)
 
     DBUG_ENTER ("WithLoopIsWorthConcurrentExecution");
 
-    if ((NWITHOP_TYPE (NWITH2_WITHOP (withloop)) == WO_foldfun)
-        || (NWITHOP_TYPE (NWITH2_WITHOP (withloop)) == WO_foldprf)) {
+    if (NWITH2_IS_FOLD (withloop)) {
         res = TRUE;
     } else {
         target_dim = VARDEC_DIM (IDS_VARDEC (let_var));
@@ -167,7 +170,7 @@ WithLoopIsWorthConcurrentExecution (node *withloop, ids *let_var)
 /******************************************************************************
  *
  * function:
- *   static int WithLoopIsAllowedConcurrentExecution(node *withloop)
+ *   int WithLoopIsAllowedConcurrentExecution(node *withloop)
  *
  * description:
  *   This function decides whether a with-loop is actually allowed to be
@@ -179,6 +182,7 @@ WithLoopIsWorthConcurrentExecution (node *withloop, ids *let_var)
  *   concurrently (by WithLoopIsWorthConcurrentExecution, above).
  *
  ******************************************************************************/
+
 static int
 WithLoopIsAllowedConcurrentExecution (node *withloop)
 {
@@ -188,7 +192,7 @@ WithLoopIsAllowedConcurrentExecution (node *withloop)
     DBUG_ENTER ("WithLoopIsAllowedConcurrentExecution");
 
     withop = NWITH2_WITHOP (withloop);
-    if ((NWITHOP_TYPE (withop) == WO_foldfun) || (NWITHOP_TYPE (withop) == WO_foldprf)) {
+    if (NWITHOP_IS_FOLD (withop)) {
         if (max_sync_fold == 0) {
             res = FALSE;
         } else {
@@ -204,9 +208,8 @@ WithLoopIsAllowedConcurrentExecution (node *withloop)
 /******************************************************************************
  *
  * function:
- *   static SCHsched_t MakeDefaultSchedulingConstSegment()
- *   static SCHsched_t MakeDefaultSchedulingVarSegment()
- *   static SCHsched_t MakeDefaultSchedulingWithloop()
+ *   SCHsched_t MakeDefaultSchedulingConstSegment()
+ *   SCHsched_t MakeDefaultSchedulingVarSegment()
  *
  * description:
  *   These functions generate default schedulings for the three different
@@ -215,6 +218,7 @@ WithLoopIsAllowedConcurrentExecution (node *withloop)
  *   arguments are.
  *
  ******************************************************************************/
+
 static SCHsched_t
 MakeDefaultSchedulingConstSegment ()
 {
@@ -242,13 +246,14 @@ MakeDefaultSchedulingVarSegment ()
 /******************************************************************************
  *
  * function:
- *   static SCHsched_t InferSchedulingConstSegment(node *wlseg, node *arg_info)
+ *   SCHsched_t InferSchedulingConstSegment(node *wlseg, node *arg_info)
  *
  * description:
  *   This function defines the inference strategy for the scheduling of
  *   constant segments.
  *
  ******************************************************************************/
+
 static SCHsched_t
 InferSchedulingConstSegment (node *wlseg, node *arg_info)
 {
@@ -264,7 +269,7 @@ InferSchedulingConstSegment (node *wlseg, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   static SCHsched_t InferSchedulingVarSegment( node *wlsegvar,
+ *   SCHsched_t InferSchedulingVarSegment( node *wlsegvar,
  *                                                node *arg_info)
  *
  * description:
@@ -272,6 +277,7 @@ InferSchedulingConstSegment (node *wlseg, node *arg_info)
  *   variable segments.
  *
  ******************************************************************************/
+
 static SCHsched_t
 InferSchedulingVarSegment (node *wlsegvar, node *arg_info)
 {
@@ -300,6 +306,7 @@ InferSchedulingVarSegment (node *wlsegvar, node *arg_info)
  *   While traversing the with-loop the Segments will be scheduled.
  *
  ******************************************************************************/
+
 node *
 SCHINassign (node *arg_node, node *arg_info)
 {
@@ -364,6 +371,7 @@ SCHINassign (node *arg_node, node *arg_info)
  *   and Scheduling of the with-loop.
  *
  ******************************************************************************/
+
 node *
 SCHINnwith2 (node *arg_node, node *arg_info)
 {
@@ -439,6 +447,7 @@ SCHINnwith2 (node *arg_node, node *arg_info)
  *   comment is referenced in SCHINwlsegVar
  *
  ******************************************************************************/
+
 node *
 SCHINwlseg (node *arg_node, node *arg_info)
 {
@@ -496,6 +505,7 @@ SCHINwlseg (node *arg_node, node *arg_info)
  *   See comment on SCHINwlseg above.
  *
  ******************************************************************************/
+
 node *
 SCHINwlsegVar (node *arg_node, node *arg_info)
 {

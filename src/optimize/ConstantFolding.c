@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2001/03/05 16:41:49  dkr
+ * no macros NWITH???_IS_FOLD used
+ *
  * Revision 3.4  2001/02/13 17:14:50  dkr
  * MakeNode(N_info) replaced by MakeInfo()
  *
@@ -1178,8 +1181,9 @@ CFNwith (node *arg_node, node *arg_info)
        - genarray : TC assures constant array anyway
        - modarray : the Id has not to be substituted. This would destroy the
          work of flatten. */
-    if (WO_foldprf == NWITH_TYPE (arg_node) || WO_foldfun == NWITH_TYPE (arg_node))
+    if (NWITH_IS_FOLD (arg_node)) {
         NWITH_WITHOP (arg_node) = OPTTrav (NWITH_WITHOP (arg_node), arg_info, arg_node);
+    }
 
     /* traverse all generators */
     /* in CFwith type information of the index variable is stored in

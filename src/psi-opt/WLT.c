@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/03/05 16:41:44  dkr
+ * no macros NWITH???_IS_FOLD used
+ *
  * Revision 3.3  2001/02/06 01:19:04  dkr
  * include of print.h removed
  *
@@ -894,9 +897,7 @@ WLTNwith (node *arg_node, node *arg_info)
         /*
          * If withop is fold, we cannot create additional N_Npart nodes (based on what?)
          */
-        if (NWITH_FOLDABLE (arg_node)
-            && ((WO_foldfun == NWITH_TYPE (arg_node))
-                || (WO_foldprf == NWITH_TYPE (arg_node)))) {
+        if (NWITH_FOLDABLE (arg_node) && NWITH_IS_FOLD (arg_node)) {
             NWITH_PARTS (arg_node) = 1;
         }
     }

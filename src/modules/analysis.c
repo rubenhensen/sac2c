@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/03/05 16:42:04  dkr
+ * no macros NWITH???_IS_FOLD used
+ *
  * Revision 3.3  2001/02/14 17:50:57  dkr
  * redundant VARDEC_TYPEDEF replaced by VARDEC_TDEF
  *
@@ -315,8 +318,7 @@ ANAnwithop (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("ANAnwithop");
 
-    if ((NWITHOP_TYPE (arg_node) == WO_foldfun)
-        || (NWITHOP_TYPE (arg_node) == WO_foldprf)) {
+    if (NWITHOP_IS_FOLD (arg_node)) {
         StoreNeededNode (NWITHOP_FUNDEF (arg_node), arg_info, ST_regular);
     }
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.23  2001/03/05 16:42:11  dkr
+ * no macros NWITH???_IS_FOLD used
+ *
  * Revision 3.22  2001/03/02 16:11:27  dkr
  * some comments and DBUG_ASSERTs added
  *
@@ -6403,8 +6406,7 @@ COMPSync (node *arg_node, node *arg_info)
 
                 with_ids = LET_IDS (let);
 
-                if ((NWITH2_TYPE (with) == WO_foldprf)
-                    || (NWITH2_TYPE (with) == WO_foldfun)) {
+                if (NWITH2_IS_FOLD (with)) {
                     num_fold_args++;
 
                     type = IDS_TYPE (with_ids);
@@ -6455,9 +6457,7 @@ COMPSync (node *arg_node, node *arg_info)
          *  Is this assignment a fold-with-loop?
          *  If so, one needs some arguments for the barrier from it.
          */
-        if ((NODE_TYPE (with) == N_Nwith2)
-            && ((NWITH2_TYPE (with) == WO_foldprf)
-                || (NWITH2_TYPE (with) == WO_foldfun))) {
+        if ((NODE_TYPE (with) == N_Nwith2) && NWITH2_IS_FOLD (with)) {
             /*
              *  Increase the number of fold-with-loops.
              */

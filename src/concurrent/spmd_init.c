@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2001/03/05 16:41:53  dkr
+ * no macros NWITH???_IS_FOLD used
+ *
  * Revision 3.5  2000/12/12 12:11:29  dkr
  * NWITH_INOUT removed
  * interpretation of NWITH_IN changed:
@@ -117,8 +120,7 @@ WithLoopIsWorthConcurrentExecution (node *withloop, ids *let_var)
 
     DBUG_ENTER ("WithLoopIsWorthConcurrentExecution");
 
-    if ((NWITHOP_TYPE (NWITH2_WITHOP (withloop)) == WO_foldfun)
-        || (NWITHOP_TYPE (NWITH2_WITHOP (withloop)) == WO_foldprf)) {
+    if (NWITH2_IS_FOLD (withloop)) {
         res = TRUE;
     } else {
         target_dim = VARDEC_DIM (IDS_VARDEC (let_var));
@@ -160,12 +162,10 @@ static int
 WithLoopIsAllowedConcurrentExecution (node *withloop)
 {
     int res;
-    node *withop;
 
     DBUG_ENTER ("WithLoopIsAllowedConcurrentExecution");
 
-    withop = NWITH2_WITHOP (withloop);
-    if ((NWITHOP_TYPE (withop) == WO_foldfun) || (NWITHOP_TYPE (withop) == WO_foldprf)) {
+    if (NWITH2_IS_FOLD (withloop)) {
         if (max_sync_fold == 0) {
             res = FALSE;
         } else {
@@ -188,6 +188,7 @@ WithLoopIsAllowedConcurrentExecution (node *withloop)
  *   when it has to copy a NULL).
  *
  ******************************************************************************/
+
 static long *
 DupMask_ (long *oldmask, int varno)
 {
@@ -214,6 +215,7 @@ DupMask_ (long *oldmask, int varno)
  *   all the masks are inferred and attached to this new spmd-block.
  *
  ******************************************************************************/
+
 node *
 InsertSPMD (node *assign, node *fundef)
 {
