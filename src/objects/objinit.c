@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.4  1995/12/01 17:25:00  cg
+ * Revision 1.5  1995/12/01 20:30:51  cg
+ * extern declarations are now generated for generic object init
+ * functions if it is a SAC-program (not module implementation)
+ *
+ * Revision 1.4  1995/12/01  17:25:00  cg
  * now shape segments and strings are always copied when generated
  * from existing nodes.
  *
@@ -91,62 +95,94 @@ OIobjdef (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("OIobjdef");
 
-    new_fun_type
-      = MakeType (OBJDEF_BASETYPE (arg_node), OBJDEF_DIM (arg_node),
-                  CopyShpseg (OBJDEF_SHPSEG (arg_node)),
-                  StringCopy (OBJDEF_TNAME (arg_node)), OBJDEF_TMOD (arg_node));
+    if (OBJDEF_EXPR (arg_node) != NULL) {
+        new_fun_type
+          = MakeType (OBJDEF_BASETYPE (arg_node), OBJDEF_DIM (arg_node),
+                      CopyShpseg (OBJDEF_SHPSEG (arg_node)),
+                      StringCopy (OBJDEF_TNAME (arg_node)), OBJDEF_TMOD (arg_node));
 
-    new_fun_name = (char *)Malloc (strlen (OBJDEF_NAME (arg_node)) + 10);
+        new_fun_name = (char *)Malloc (strlen (OBJDEF_NAME (arg_node)) + 10);
 
-    new_fun_name = strcpy (new_fun_name, "_CREATE_");
-    new_fun_name = strcat (new_fun_name, OBJDEF_NAME (arg_node));
+        new_fun_name = strcpy (new_fun_name, "CREATE__");
+        new_fun_name = strcat (new_fun_name, OBJDEF_NAME (arg_node));
 
-    new_node = MakeExprs (OBJDEF_EXPR (arg_node), NULL);
-    NODE_LINE (new_node) = NODE_LINE (OBJDEF_EXPR (arg_node));
+        new_node = MakeExprs (OBJDEF_EXPR (arg_node), NULL);
+        NODE_LINE (new_node) = NODE_LINE (OBJDEF_EXPR (arg_node));
 
-    /*------------------------------------------------------------------*/
-    new_node->nnode = 1;
-    /*------------------------------------------------------------------*/
+        /*------------------------------------------------------------------*/
+        new_node->nnode = 1;
+        /*------------------------------------------------------------------*/
 
-    new_node = MakeReturn (new_node);
-    NODE_LINE (new_node) = NODE_LINE (OBJDEF_EXPR (arg_node));
+        new_node = MakeReturn (new_node);
+        NODE_LINE (new_node) = NODE_LINE (OBJDEF_EXPR (arg_node));
 
-    new_node = MakeAssign (new_node, NULL);
-    NODE_LINE (new_node) = NODE_LINE (OBJDEF_EXPR (arg_node));
+        new_node = MakeAssign (new_node, NULL);
+        NODE_LINE (new_node) = NODE_LINE (OBJDEF_EXPR (arg_node));
 
-    /*------------------------------------------------------------------*/
-    new_node->nnode = 1;
-    /*------------------------------------------------------------------*/
+        /*------------------------------------------------------------------*/
+        new_node->nnode = 1;
+        /*------------------------------------------------------------------*/
 
-    new_node = MakeBlock (new_node, NULL);
-    NODE_LINE (new_node) = NODE_LINE (OBJDEF_EXPR (arg_node));
+        new_node = MakeBlock (new_node, NULL);
+        NODE_LINE (new_node) = NODE_LINE (OBJDEF_EXPR (arg_node));
 
-    /*------------------------------------------------------------------*/
-    new_node->nnode = 1;
-    /*------------------------------------------------------------------*/
+        /*------------------------------------------------------------------*/
+        new_node->nnode = 1;
+        /*------------------------------------------------------------------*/
 
-    new_node = MakeFundef (new_fun_name, OBJDEF_MOD (arg_node), new_fun_type, NULL,
-                           new_node, MODUL_FUNS (arg_info));
-    NODE_LINE (new_node) = NODE_LINE (OBJDEF_EXPR (arg_node));
+        new_node = MakeFundef (new_fun_name, OBJDEF_MOD (arg_node), new_fun_type, NULL,
+                               new_node, MODUL_FUNS (arg_info));
+        NODE_LINE (new_node) = NODE_LINE (OBJDEF_EXPR (arg_node));
 
-    /*------------------------------------------------------------------*/
-    new_node->nnode = (MODUL_FUNS (arg_info) == NULL) ? 1 : 2;
-    /*------------------------------------------------------------------*/
+        /*------------------------------------------------------------------*/
+        new_node->nnode = (MODUL_FUNS (arg_info) == NULL) ? 1 : 2;
+        /*------------------------------------------------------------------*/
 
-    FUNDEF_STATUS (new_node) = ST_objinitfun;
+        FUNDEF_STATUS (new_node) = ST_objinitfun;
 
-    /*
-     * The new functions have status ST_objinitfun.
-     * This tag is needed by the typechecker to ensure that these functions
-     * are actually typechecked even if they are exclusively applied in
-     * a global object initialization of a SAC-program.
-     */
+        /*
+         * The new functions have status ST_objinitfun.
+         * This tag is needed by the typechecker to ensure that these functions
+         * are actually typechecked even if they are exclusively applied in
+         * a global object initialization of a SAC-program.
+         */
 
-    MODUL_FUNS (arg_info) = new_node;
-    OBJDEF_INITFUN (arg_node) = new_node;
+        MODUL_FUNS (arg_info) = new_node;
 
-    new_node = MakeAp (StringCopy (new_fun_name), OBJDEF_MOD (arg_node), NULL);
-    OBJDEF_EXPR (arg_node) = new_node;
+        new_node = MakeAp (StringCopy (new_fun_name), OBJDEF_MOD (arg_node), NULL);
+        OBJDEF_EXPR (arg_node) = new_node;
+
+        AP_FUNDEF (OBJDEF_EXPR (arg_node)) = MODUL_FUNS (arg_info);
+
+    } else {
+        if (MODUL_FILETYPE (arg_info) == F_prog) {
+            new_fun_type
+              = MakeType (OBJDEF_BASETYPE (arg_node), OBJDEF_DIM (arg_node),
+                          CopyShpseg (OBJDEF_SHPSEG (arg_node)),
+                          StringCopy (OBJDEF_TNAME (arg_node)), OBJDEF_TMOD (arg_node));
+
+            new_fun_name = (char *)Malloc (strlen (OBJDEF_NAME (arg_node)) + 10);
+
+            new_fun_name = strcpy (new_fun_name, "CREATE__");
+            new_fun_name = strcat (new_fun_name, OBJDEF_NAME (arg_node));
+
+            new_node = MakeFundef (new_fun_name, OBJDEF_MOD (arg_node), new_fun_type,
+                                   NULL, NULL, MODUL_FUNS (arg_info));
+
+            /*------------------------------------------------------------------*/
+            new_node->nnode = (MODUL_FUNS (arg_info) == NULL) ? 1 : 2;
+            /*------------------------------------------------------------------*/
+
+            FUNDEF_STATUS (new_node) = ST_imported;
+
+            MODUL_FUNS (arg_info) = new_node;
+
+            new_node = MakeAp (StringCopy (new_fun_name), OBJDEF_MOD (arg_node), NULL);
+            OBJDEF_EXPR (arg_node) = new_node;
+
+            AP_FUNDEF (OBJDEF_EXPR (arg_node)) = MODUL_FUNS (arg_info);
+        }
+    }
 
     if (OBJDEF_NEXT (arg_node) != NULL) {
         OBJDEF_NEXT (arg_node) = Trav (OBJDEF_NEXT (arg_node), arg_info);
