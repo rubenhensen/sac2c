@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.72  1995/06/15 16:13:46  hw
+ * Revision 1.73  1995/06/19 16:27:41  asi
+ * debug option LINE modified
+ *
+ * Revision 1.72  1995/06/15  16:13:46  hw
  * changed PrintIcm( ND_TYPEDEF_ARRAY will be printed in another way)
  *
  * Revision 1.71  1995/06/13  15:40:35  hw
@@ -305,8 +308,8 @@ PrintAssign (node *arg_node, node *arg_info)
         if (2 == arg_node->nnode)
             Trav (arg_node->node[1], arg_info);
     } else {
+        DBUG_EXECUTE ("LINE", fprintf (outfile, "/*%03d*/", arg_node->lineno););
         INDENT;
-        DBUG_EXECUTE ("LINE", fprintf (outfile, "[%d]", arg_node->lineno););
         Trav (arg_node->node[0], arg_info);
         if (2 == arg_node->nnode) {
             fprintf (outfile, "\n");
