@@ -1,7 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.8  1995/10/20 16:52:35  cg
+ * Revision 1.9  1995/10/22 17:29:59  cg
+ * new function SearchObjdef
+ * new compound access macros for fundec and typedec
+ * macro CMP_TYPE_USER now tests if argument actually is T_user.
+ *
+ * Revision 1.8  1995/10/20  16:52:35  cg
  * functions InsertNode, InsertNodes, and InsertUnresolvedNodes
  * transformed into void functions and renamed into
  * StoreNeededNode, StoreNeededNodes, and StoreUnresolvedNodes
@@ -181,13 +186,34 @@ SearchTypedef (char *name, char *mod, node *implementations)
 {
     node *tmp;
 
-    DBUG_ENTER ("SearchType");
+    DBUG_ENTER ("SearchTypedef");
 
-    DBUG_PRINT ("WRITESIB", ("Searching type %s:%s", mod, name));
+    DBUG_PRINT ("CHECKDEC", ("Searching type %s:%s", mod, name));
 
     tmp = implementations;
     while ((tmp != NULL) && (CMP_TYPE_TYPEDEF (name, mod, tmp) == 0)) {
         tmp = TYPEDEF_NEXT (tmp);
+    }
+
+    DBUG_RETURN (tmp);
+}
+
+/***
+ ***  SearchObjdef
+ ***/
+
+node *
+SearchObjdef (char *name, char *mod, node *implementations)
+{
+    node *tmp;
+
+    DBUG_ENTER ("SearchObjdef");
+
+    DBUG_PRINT ("CHECKDEC", ("Searching type %s:%s", mod, name));
+
+    tmp = implementations;
+    while ((tmp != NULL) && (CMP_OBJ_OBJDEF (name, mod, tmp) == 0)) {
+        tmp = OBJDEF_NEXT (tmp);
     }
 
     DBUG_RETURN (tmp);
