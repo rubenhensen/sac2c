@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2002/10/29 14:34:56  dkr
+ * dummy macros for TAGGED_ARRAYS added
+ *
  * Revision 3.10  2002/06/07 15:45:39  dkr
  * SAC_ND_TYPEDEF_...: semicolon added
  *
@@ -121,9 +124,8 @@
  *
  *****************************************************************************/
 
-#ifndef SAC_STD_H
-
-#define SAC_STD_H
+#ifndef _SAC_STD_H_
+#define _SAC_STD_H_
 
 /*
  *  README: The difference between 'type' and 'basetype'
@@ -138,6 +140,13 @@
  *  'int' for an integer, 'void*' for a hidden, etc.
  *
  */
+
+/*
+ * dummy macros for tagged identifiers (TAGGED_ARRAYS)
+ */
+#define NT_NAME(nt) nt
+#define SAC_ND_WRITE(nt, idx) SAC_ND_WRITE_ARRAY (nt, idx)
+#define SAC_ND_READ(nt, idx) SAC_ND_READ_ARRAY (nt, idx)
 
 /*
  * ICMs for array access:
@@ -724,4 +733,4 @@
 #define SAC_INITGLOBALOBJECT_END()
 #endif
 
-#endif /* SAC_STD_H */
+#endif /* _SAC_STD_H_ */
