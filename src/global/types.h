@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.21  1997/11/07 15:43:23  srs
+ * added alternative with_ids to infotype.
+ * with_ids is used in N_withid
+ *
  * Revision 1.20  1997/11/05 09:40:49  dkr
  * usage of NIF-macro has changed
  *
@@ -275,6 +279,11 @@ typedef struct {
     int tc;  /* type class */
 } prf_tag;
 
+typedef struct {
+    int type;
+    ids *ids;
+} with_ids;
+
 typedef union {
     ids *ids;          /* list  of identifiers               */
     char *id;          /* identifier                         */
@@ -290,6 +299,8 @@ typedef union {
                         * this declarations are used to look for argument
                         * and result type of primitive functions
                         */
+    with_ids with_ids; /* here is stored the form of the index vector
+                          which is used in the respective generator*/
 } infotype;
 
 /*
