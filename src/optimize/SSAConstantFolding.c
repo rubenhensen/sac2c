@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2001/04/26 13:30:44  nmw
+ * inline flag INFO_SSACF_INLFUNDEF used instead of ST_inlinefun
+ *
  * Revision 1.6  2001/04/18 12:55:42  nmw
  * debug output for OPT traversal added
  *
@@ -57,8 +60,6 @@
 #define SUBST_SCALAR 1
 #define SUBST_SCALAR_AND_ARRAY 2
 
-#define SSACF_TOPLEVEL 0
-
 /* Prf-function name for debug output */
 #ifndef DBUG_OFF
 #define PRF_IF(n, s, x, y) x
@@ -72,6 +73,29 @@ static char *prf_string[] = {
 static ids *TravIDS (ids *arg_ids, node *arg_info);
 static ids *SSACFids (ids *arg_ids, node *arg_info);
 static node *SSACFPropagateConstants2Args (node *arg_chain, node *param_chain);
+
+/*
+ * primitive functions for non full-constant expressions like:
+ *   dimension constant
+ *   shape constant
+ *   structural constant
+ *
+ * they have to be implemented seperatly as long as there is no constant type
+ * that can handle all these cases internally
+ *
+ */
+
+static constant *SSACFDim (node *expr);
+static constant *SSACFShape (node *expr);
+/* missing:
+static node *SSACFReshape  ( constant *idx, node *expr);
+static node *SSACFPsi      ( constant *idx, node *expr);
+static node *SSACFTake     ( constant *idx, node *expr);
+static node *SSACFDrop     ( constant *idx, node *expr);
+static node *SSACFModarray ( node *a, constant *idx, node *elem);
+static node *SSACFCat      ( constant *dim, node *a, node *b);
+static node *SSACFRotate   ( constant *dim, constant *num, node *a);
+*/
 
 /* functions for internal use only */
 /******************************************************************************
@@ -110,6 +134,69 @@ SSACFPropagateConstants2Args (node *arg_chain, node *param_chain)
     }
 
     DBUG_RETURN (arg_chain);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   constant *SSACFDim(node *expr)
+ *
+ * description:
+ *   tries computes the dimension of an identifier and returns it as
+ *   NUM expression for later usage or NULL if the dimension is not known.
+ *
+ ******************************************************************************/
+static constant *
+SSACFDim (node *expr)
+{
+    constant *result;
+    int dim;
+    DBUG_ENTER ("SSACFDim");
+
+    if (NODE_TYPE (expr) == N_id) {
+        dim = GetDim (VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (expr))));
+        if (dim != UNKNOWN_SHAPE) {
+            result = COMakeConstantFromInt (dim);
+        } else {
+            result = NULL;
+        }
+    } else {
+        result = NULL;
+    }
+
+    DBUG_RETURN (result);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *SSACFShape(node *expr)
+ *
+ * description:
+ *   computes the shape of a given identifier. returns the shape as expression
+ *   or NULL if no constant Shape can be infered
+ *
+ ******************************************************************************/
+static constant *
+SSACFShape (node *expr)
+{
+    constant *result;
+    int dim;
+    shape *cshape;
+
+    DBUG_ENTER ("SSACFDim");
+
+    if (NODE_TYPE (expr) == N_id) {
+        if (TRUE) {
+            result = NULL;
+        } else {
+            result = NULL;
+        }
+    } else {
+        result = NULL;
+    }
+
+    DBUG_RETURN (result);
 }
 
 /* traversal functions */
@@ -274,7 +361,7 @@ SSACFassign (node *arg_node, node *arg_info)
         arg_node = ASSIGN_NEXT (arg_node);
 
         ASSIGN_NEXT (tmp) = NULL;
-        FreeTree (tmp);
+        FreeNode (tmp);
     }
 
     DBUG_RETURN (arg_node);
@@ -312,6 +399,8 @@ SSACFcond (node *arg_node, node *arg_info)
     /* check for constant condition */
     if (NODE_TYPE (COND_COND (arg_node)) == N_bool) {
         if (BOOL_VAL (COND_COND (arg_node)) == TRUE) {
+            DBUG_PRINT ("SSACF",
+                        ("found condition with condition == true, select then part"));
             /* select then part */
             INFO_SSACF_POSTASSIGN (arg_info) = BLOCK_INSTR (COND_THEN (arg_node));
 
@@ -327,6 +416,8 @@ SSACFcond (node *arg_node, node *arg_info)
             }
         } else {
             /* select else part */
+            DBUG_PRINT ("SSACF",
+                        ("found condition with condition == false, select else part"));
             INFO_SSACF_POSTASSIGN (arg_info) = BLOCK_INSTR (COND_ELSE (arg_node));
 
             if (NODE_TYPE (INFO_SSACF_POSTASSIGN (arg_info)) == N_empty) {
@@ -353,7 +444,7 @@ SSACFcond (node *arg_node, node *arg_info)
          * is no special function anymore. this function can now be inlined
          * without any problems.
          * if this is a do- or while function and the condition is evaluated
-         * to true we have an endless loop and will rise an error message.
+         * to true we have an endless loop and will rise a warning message.
          */
         if ((BOOL_VAL (COND_COND (arg_node)) == TRUE)
             && ((FUNDEF_STATUS (INFO_SSACF_FUNDEF (arg_info)) == ST_dofun)
@@ -364,7 +455,7 @@ SSACFcond (node *arg_node, node *arg_info)
             FUNDEF_STATUS (INFO_SSACF_FUNDEF (arg_info)) = ST_regular;
         } else {
             /* ex special function can be simply inlined */
-            FUNDEF_STATUS (INFO_SSACF_FUNDEF (arg_info)) = ST_inlinefun;
+            INFO_SSACF_INLFUNDEF (arg_info) = TRUE;
         }
 
     } else {
@@ -496,6 +587,7 @@ SSACFlet (node *arg_node, node *arg_info)
             } else {
                 new_co = COAST2Constant (LET_EXPR (arg_node));
             }
+
             if (new_co != NULL) {
                 AVIS_SSACONST (IDS_AVIS (LET_IDS (arg_node))) = new_co;
                 DBUG_PRINT ("SSACF", ("identifier %s marked as constant",
@@ -534,9 +626,7 @@ SSACFap (node *arg_node, node *arg_info)
     DBUG_ASSERT ((AP_FUNDEF (arg_node) != NULL), "missing fundef in ap-node");
 
     /* substitute scalar constants in arguments (if no special function)*/
-    if ((FUNDEF_STATUS (AP_FUNDEF (arg_node)) == ST_dofun)
-        || (FUNDEF_STATUS (AP_FUNDEF (arg_node)) == ST_whilefun)
-        || (FUNDEF_STATUS (AP_FUNDEF (arg_node)) == ST_condfun)) {
+    if (FUNDEF_IS_LACFUN (AP_FUNDEF (arg_node))) {
         INFO_SSACF_INSCONST (arg_info) = SUBST_NONE;
     } else {
         INFO_SSACF_INSCONST (arg_info)
@@ -550,9 +640,7 @@ SSACFap (node *arg_node, node *arg_info)
     INFO_SSACF_INSCONST (arg_info) = SUBST_NONE;
 
     /* traverse special fundef without recursion */
-    if (((FUNDEF_STATUS (AP_FUNDEF (arg_node)) == ST_condfun)
-         || (FUNDEF_STATUS (AP_FUNDEF (arg_node)) == ST_dofun)
-         || (FUNDEF_STATUS (AP_FUNDEF (arg_node)) == ST_whilefun))
+    if ((FUNDEF_IS_LACFUN (AP_FUNDEF (arg_node)))
         && (AP_FUNDEF (arg_node) != INFO_SSACF_FUNDEF (arg_info))) {
 
         DBUG_PRINT ("SSACF", ("traverse in special fundef %s",
@@ -567,8 +655,8 @@ SSACFap (node *arg_node, node *arg_info)
         /* stack arg_info frame for new fundef */
         new_arg_info = MakeInfo ();
 
-        INFO_SSACF_DEPTH (new_arg_info) = INFO_SSACF_DEPTH (arg_info) + 1;
         INFO_SSACF_MODUL (new_arg_info) = INFO_SSACF_MODUL (arg_info);
+        INFO_SSACF_INLFUNDEF (new_arg_info) = FALSE;
 
         /* propagate constant args to called special function */
         FUNDEF_ARGS (AP_FUNDEF (arg_node))
@@ -583,7 +671,7 @@ SSACFap (node *arg_node, node *arg_info)
           = RETURN_EXPRS (FUNDEF_RETURN (AP_FUNDEF (arg_node)));
 
         /* can this special function be inlined? */
-        if (FUNDEF_STATUS (AP_FUNDEF (arg_node)) == ST_inlinefun) {
+        if (INFO_SSACF_INLFUNDEF (new_arg_info) == TRUE) {
             INFO_SSACF_INLINEAP (arg_info) = TRUE;
         } else {
             INFO_SSACF_INLINEAP (arg_info) = FALSE;
@@ -686,6 +774,8 @@ SSACFprf (node *arg_node, node *arg_info)
     constant *new_co;
     constant *arg1;
     constant *arg2;
+    node *arg1_expr;
+    node *arg2_expr;
 
     DBUG_ENTER ("SSACFprf");
 
@@ -705,15 +795,19 @@ SSACFprf (node *arg_node, node *arg_info)
     /* try to convert args to constants */
     if (EXPRS_EXPR (PRF_ARGS (arg_node)) != NULL) {
         arg1 = COAST2Constant (EXPRS_EXPR (PRF_ARGS (arg_node)));
+        arg1_expr = EXPRS_EXPR (PRF_ARGS (arg_node));
     } else {
         arg1 = NULL;
+        arg1_expr = NULL;
     }
 
     if ((EXPRS_NEXT (PRF_ARGS (arg_node)) != NULL)
         && (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node))) != NULL)) {
         arg2 = COAST2Constant (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node))));
+        arg2_expr = EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node)));
     } else {
         arg2 = NULL;
+        arg2_expr = NULL;
     }
 
     /* do constant folding on primitive functions */
@@ -856,9 +950,12 @@ SSACFprf (node *arg_node, node *arg_info)
         break;
 
     case F_dim:
-        /* for pure constant arg */
         if (arg1 != NULL) {
+            /* for pure constant arg */
             new_co = CODim (arg1);
+        } else if (arg1_expr != NULL) {
+            /* for some non full constant expressions arg */
+            new_co = SSACFDim (arg1_expr);
         }
         break;
 
@@ -876,16 +973,23 @@ SSACFprf (node *arg_node, node *arg_info)
         }
         break;
 
-    case F_psi:
     case F_idx_psi:
+        /* not implemented yet */
+        break;
+
+    case F_psi:
         /* for pure constant args */
         if ((arg1 != NULL) && (arg2 != NULL)) {
             new_co = COPsi (arg1, arg2);
         }
         break;
 
-    case F_modarray:
     case F_idx_modarray:
+        /* not implemeted yet */
+        break;
+
+    case F_modarray:
+        /* not implemented yet */
         break;
 
     case F_take:
@@ -903,16 +1007,17 @@ SSACFprf (node *arg_node, node *arg_info)
         break;
 
     case F_cat:
+        /* not implemeted yet */
         break;
 
     case F_rotate:
+        /* not implemented yet */
         break;
 
     default:
         DBUG_PRINT ("SSACF", ("no implementation in SSAConstantFolding for  prf %s",
                               prf_string[PRF_PRF (arg_node)]));
     }
-    /* cf_expr++; */
 
     /* free used constant data */
     if (arg1 != NULL) {
@@ -923,10 +1028,14 @@ SSACFprf (node *arg_node, node *arg_info)
         arg2 = COFreeConstant (arg2);
     }
 
-    if (new_co != NULL) {
-        /* create new node with constant value instead of prf node */
-        new_node = COConstant2AST (new_co);
-        new_co = COFreeConstant (new_co);
+    if ((new_co != NULL) || (new_node != NULL)) {
+        if (new_co != NULL) {
+            /* create new node with constant value instead of prf node */
+            new_node = COConstant2AST (new_co);
+            new_co = COFreeConstant (new_co);
+        } else {
+            /* some constant expression of non full constant args have been computed */
+        }
 
         /* free this primitive function */
         FreeTree (arg_node);
@@ -1102,7 +1211,6 @@ SSAConstantFolding (node *fundef, node *modul)
         && (FUNDEF_STATUS (fundef) != ST_whilefun)) {
         arg_info = MakeInfo ();
 
-        INFO_SSACF_DEPTH (arg_info) = SSACF_TOPLEVEL; /* start on toplevel */
         INFO_SSACF_MODUL (arg_info) = modul;
 
         old_tab = act_tab;
