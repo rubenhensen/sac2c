@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.146  2003/11/14 15:41:17  sbs
+ * minor bug eliminated.
+ *
  * Revision 3.145  2003/11/12 11:58:05  sbs
  * optional default expression now is printed correctly 8-)
  *
@@ -3515,7 +3518,7 @@ PrintNwith (node *arg_node, node *arg_info)
         }
         Trav (INFO_PRINT_INT_SYN (arg_info), arg_info);
         if (WO_genarray == NWITH_TYPE (arg_node)) {
-            if (NWITHOP_DEFAULT (arg_node) != NULL) {
+            if (NWITHOP_DEFAULT (NWITH_WITHOP (arg_node)) != NULL) {
                 fprintf (outfile, ", ");
                 Trav (NWITHOP_DEFAULT (NWITH_WITHOP (arg_node)), arg_info);
             }
