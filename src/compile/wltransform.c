@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.23  1998/06/03 13:48:08  dkr
+ * added some comments for ComputeOneCube and its helper-routines
+ *
  * Revision 1.22  1998/05/29 00:06:38  dkr
  * fixed a bug with unrolling
  *
@@ -3641,6 +3644,20 @@ NormalizeWL (node *nodes, int *idx_max)
  * description:
  *   Supplements missings parts of the grid in 'stride_var'.
  *
+ *   Example (with shape [300,300]):
+ *
+ *         60 -> 200 step[0] 50
+ *                     40 -> 50:  60 -> 200 step[1] 50
+ *                                            40 -> 50: op0
+ *
+ *   =>>
+ *
+ *        100 -> 200 step[0] 50
+ *                      0 -> 10: 100 -> 200 step[1] 50
+ *                                             0 -> 10: op0
+ *                                            10 -> 50: noop
+ *                     10 -> 50: noop
+ *
  *   This function is called by 'ComputeOneCube'.
  *
  ******************************************************************************/
@@ -3780,32 +3797,38 @@ GenerateShapeStrides (int dim, int dims, shpseg *shape)
  *
  *   For constant strides we must *not* optimize and merge strides, because
  *   'BlockWL()' can not handle them!! We must create simple cubes instead.
- *   Example:
+ *   Example (with shape [10,10]):
  *
- *       0 -> 10 step 2
- *               0 -> 1: 0 -> 5  step 1
- *                               0 -> 1: op
+ *       5 -> 10 step[0] 2
+ *                  0 -> 1: 0 -> 5  step[1] 1
+ *                                     0 -> 1: op
  *
  *     is *not* converted into (the following is not a cube!!)
  *
- *       0 -> 10 step 2
- *               0 -> 1: 0 -> 5  step 1
- *                               0 -> 1: op
- *                       5 -> 10 step 1
- *                               0 -> 1: init/copy/noop
- *               1 -> 2: 0 -> 10 step 1
- *                               0 -> 1: init/copy/noop
+ *       0 ->  5 step[0] 1
+ *                  0 -> 1: 0 -> 10 step[1] 1
+ *                                     0 -> 1: init/copy/noop
+ *       5 -> 10 step[0] 2
+ *                  0 -> 1: 0 -> 5  step[1] 1
+ *                                     0 -> 1: op
+ *                          5 -> 10 step[1] 1
+ *                                     0 -> 1: init/copy/noop
+ *                  1 -> 2: 0 -> 10 step[1] 1
+ *                                     0 -> 1: init/copy/noop
  *
  *     but into
  *
- *       0 -> 10 step 2
- *               0 -> 1: 0 -> 5  step 1
- *                               0 -> 1: op
- *               1 -> 2: 0 -> 5  step 1
- *                               0 -> 1: init/copy/noop
- *       0 -> 10 step 1
- *               0 -> 1: 5 -> 10 step 1
- *                               0 -> 1: init/copy/noop
+ *       0 ->  5 step[0] 1
+ *                  0 -> 1: 0 -> 10 step[1] 1
+ *                                     0 -> 1: init/copy/noop
+ *       5 -> 10 step[0] 2
+ *                  0 -> 1: 0 -> 5  step[1] 1
+ *                                     0 -> 1: op
+ *                  1 -> 2: 0 -> 5  step[1] 1
+ *                                     0 -> 1: init/copy/noop
+ *       5 -> 10 step[0] 1
+ *                  0 -> 1: 5 -> 10 step[1] 1
+ *                                     0 -> 1: init/copy/noop
  *
  *   This function is called by 'ComputeOneCube'.
  *
@@ -3998,23 +4021,26 @@ GenerateCompleteDomain (node *strides, int dims, shpseg *shape)
  *   For variable strides we do not call 'SplitWL()', 'MergeWL()', 'OptWL()', ...
  *   therefore we must create optimized and merged strides/grids.
  *   (This means, we actually do not create a cube!!!)
- *   Example:
+ *   Example (with shape [10,10]):
  *
- *       0 -> 10 step 2
- *               0 -> 1: a -> b  step 1
- *                               0 -> 1: op
+ *       5 -> 10 step[0] 2
+ *                  0 -> 1: a -> b  step[1] 1
+ *                                     0 -> 1: op
  *
  *     is converted into
  *
- *       0 -> 10 step 1
- *               0 -> 1: 0 -> a  step 1
- *                               0 -> 1: init/copy/noop
- *                       a -> b  step 1
- *                               0 -> 1: op
- *                       b -> 10 step 1
- *                               0 -> 1: init/copy/noop
- *               1 -> 2: 0 -> 10 step 1
- *                               0 -> 1: init/copy/noop
+ *       0 ->  5 step[0] 1
+ *                  0 -> 1: 0 -> 10 step[1] 1
+ *                                     0 -> 1: init/copy/noop
+ *       5 -> 10 step[0] 2
+ *                  0 -> 1: 0 -> a  step[1] 1
+ *                                     0 -> 1: init/copy/noop
+ *                          a -> b  step[1] 1
+ *                                     0 -> 1: op
+ *                          b -> 10 step[1] 1
+ *                                     0 -> 1: init/copy/noop
+ *                  1 -> 2: 0 -> 10 step[1] 1
+ *                                     0 -> 1: init/copy/noop
  *
  *   This function is called by 'ComputeOneCube'.
  *
@@ -4161,23 +4187,6 @@ GenerateCompleteDomainVar (node *stride_var, int dims, shpseg *shape)
  * description:
  *   If the with-loop contains one part/generator only, we must supplement
  *   new generators for the complement.
- *   If the wl contains a fold operation, and the generator is not a complete
- *   cube but a grid, we must supplement missings parts of the grid only:
- *
- *         60 -> 200 step 50                  100 -> 200 step 50
- *                  40 -> 50: op0     =>>                0 -> 10: op0
- *                                                      40 -> 50: noop
- *
- *   If the wl contains a non-fold operation, we must supplement generators
- *   for the whole complement:
- *
- *                                              0 -> 100 step  1
- *                                                       0 ->  1: init/copy
- *         60 -> 200 step 50                  100 -> 200 step 50
- *                  40 -> 50: op0     =>>                0 -> 10: op0
- *                                                      40 -> 50: init/copy
- *                                            200 -> 500 step  1:
- *                                                       0 ->  1: init/copy
  *
  * remark:
  *   The new generators contain no pointer to a code-block. We inspect the
