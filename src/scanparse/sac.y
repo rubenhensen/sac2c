@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.89  1995/10/16 12:36:22  cg
+ * Revision 1.90  1995/10/18 13:15:03  cg
+ * converted to new error macros.
+ *
+ * Revision 1.89  1995/10/16  12:36:22  cg
  * added:
  * - global objects with module name in identifier positions
  * - module name in function applications
@@ -322,6 +325,7 @@
 #include "tree.h"
 #include "my_debug.h"
 #include "internal_lib.h" /* for use of StringCopy */
+#include "Error.h"
 
 extern int linenum;
 extern char yytext[];
@@ -2765,20 +2769,26 @@ siblinklist: ID
 
 %%
 
-int yyerror( char *errname)
+int yyerror(char *errname)
 {
+/*
   fprintf(stderr, "sac2c : %s in line %d at \"%s\"\n", errname, linenum, yytext);
   exit(1);
+*/
+  ABORT(linenum,("%s at '%s`", errname, yytext));
+  
 }
 
+
+
+/*
 int warn( char *warnname)
 {
   fprintf(stderr, "sac2c: Warning: %s in line %d  at \"%s\"\n",warnname, 
           linenum, yytext);
   return(1);
 }
-
-
+*/
 
 
 node *GenPrfNode( prf prf, node *arg1, node *arg2)
