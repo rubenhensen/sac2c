@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.121  1996/01/22 14:34:29  asi
- * added some functions for CSE
+ * Revision 1.122  1996/01/22 17:29:05  cg
+ * added WSIBobjdef for writesib_tab
  *
+;; Revision 1.121  1996/01/22  14:34:29  asi
+;; added some functions for CSE
+;;
 ;; Revision 1.120  1996/01/21  13:55:33  cg
 ;; added function RCarg for refcount_tab
 ;;
@@ -452,7 +455,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
   NIF (N_objdef, "N_objdef", IMobjdef, TravSons, PrintObjdef, TCobjdef, TravSons,
        TravSons, TravSons, FreeObjdef, TravSons, TravSons, CompObjdef, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, WSIBobjdef,
        OBJobjdef, TravSons, OIobjdef, TravSons, CDECobjdef, WDECobjdef, TravSons,
        TravSons, PRECobjdef, TravSons, RSIBobjdef, LINKobjdef, TravSons, TravSons,
        TravSons),
