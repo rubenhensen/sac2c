@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.22  2005/02/11 12:10:42  mwe
+ * names of flags changed
+ *
  * Revision 1.21  2005/02/08 22:29:21  mwe
  * doxygen comments added
  *
@@ -75,9 +78,12 @@
 
 /**<!--******************************************************************-->
  *
- * @file
+ * @file type_upgrade.c
  *
- *
+ * This file implements functionality of type upgrade (infer types of lhs
+ * dependent on rhs), reverse type upgrade (infer types of rhs dependent
+ * on lhs), function dispatch (removes calls of wrapper functions) and
+ * function specialization (create more special function instances).
  *
  **************************************************************************/
 
@@ -332,7 +338,7 @@ GetLowestType (ntype *a, ntype *b)
  *
  * @param root arg-node or exprs-node
  *
- * @return number of nodes in chain
+ * @result number of nodes in chain
  *
  **********************************************************************/
 static int
@@ -367,6 +373,8 @@ GetSizeOfChain (node *root)
  * @brief Type information is appended at the corresponding
  *   avis-node of id-node.
  *
+ *  This function has to be called only(!) from TUPgenerator.
+ *
  * @param expr id-node to be updated, array-nodes are ignored
  * @param type type information to be appended
  *
@@ -385,6 +393,13 @@ AssignTypeToExpr (node *expr, ntype *type)
          * store type in avis node of expr
          */
         DBUG_ASSERT ((NULL != ID_AVIS (expr)), "missing AVIS node!");
+
+        /*
+         * check if type in id is less special as type to be assigned
+         */
+        if (TY_lt == TYcmpTypes (type, AVIS_TYPE (ID_AVIS (expr)))) {
+            tup_rtu_expr++;
+        }
 
         AVIS_TYPE (ID_AVIS (expr)) = TYfreeType (AVIS_TYPE (ID_AVIS (expr)));
         AVIS_TYPE (ID_AVIS (expr)) = TYcopyType (type);
@@ -1308,7 +1323,7 @@ TryToFindSpecializedFunction (node *fundef, node *args, info *arg_info)
         }
     }
 
-    if (result != NULL) {
+    if ((result != NULL) && (result != fundef)) {
         tup_fdp_expr++;
     }
     /*
@@ -1485,8 +1500,7 @@ TUPassign (node *arg_node, info *arg_info)
 
 /**<!--****************************************************************-->
  *
- * @fn
- *   node *TUPreturn(node* arg_node, node* arg_info)
+ * @fn node *TUPreturn(node* arg_node, node* arg_info)
  *
  * @brief The type of the expressions in the return statement are compared to
  *   the return type of the function in ret-nodes. If necessary the return type of
@@ -1510,7 +1524,8 @@ TUPreturn (node *arg_node, info *arg_info)
         && (!FUNDEF_ISEXPORTED (INFO_TUP_FUNDEF (arg_info)))
         && (!FUNDEF_ISPROVIDED (INFO_TUP_FUNDEF (arg_info)))) {
 
-        /* convert ntypes of return values to return type of @fn add them to ret-node*/
+        /* convert ntypes of return values to return type of function add them to
+         * ret-node*/
 
         ret = FUNDEF_RETS (INFO_TUP_FUNDEF (arg_info));
         exprs = RETURN_EXPRS (arg_node);
@@ -2052,7 +2067,8 @@ TUPap (node *arg_node, info *arg_info)
                  */
 
                 if ((!FUNDEF_ISPROVIDED (AP_FUNDEF (arg_node)))
-                    && (!FUNDEF_ISEXPORTED (AP_FUNDEF (arg_node)))) {
+                    && (!FUNDEF_ISEXPORTED (AP_FUNDEF (arg_node)))
+                    && (FUNDEF_BODY (arg_node) != NULL)) {
                     result = TryToSpecializeFunction (AP_FUNDEF (arg_node), arg_node);
                 }
             }
