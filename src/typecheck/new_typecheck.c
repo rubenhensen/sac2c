@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 3.29  2003/05/30 17:55:22  sbs
+ * patched NTCcond to deal with function predicates better!
+ * This is not the proper solution to the conceptual problem
+ * (see comments in NTCcond!) but it is a good enough work-around
+ * for the time being!
+ *
  * Revision 3.28  2003/05/26 13:31:57  sbs
  * moved traversal of N_arg nodes from TypeCheckFunctionBody to NTCmodul.
  * Reason: correct N_avis nodes for args are in some situations needed for
@@ -937,7 +943,13 @@ NTCcond (node *arg_node, node *arg_info)
 
     COND_COND (arg_node) = Trav (COND_COND (arg_node), arg_info);
 
-    TEAssureBoolS ("predicate", INFO_NTC_TYPE (arg_info));
+    /**
+     * this is still buggy here:
+     * the predicate may be a not yet fixed alpha!
+     * In this case we have to create a signature-dependency
+     * => all this has to move into the ct_xxx section....
+     */
+    TEAssureBoolS ("predicate", TYEliminateAlpha (INFO_NTC_TYPE (arg_info)));
 
     COND_THEN (arg_node) = Trav (COND_THEN (arg_node), arg_info);
     COND_ELSE (arg_node) = Trav (COND_ELSE (arg_node), arg_info);
