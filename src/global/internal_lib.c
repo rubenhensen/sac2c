@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.15  2001/07/13 13:23:41  cg
+ * Some useless DBUG_PRINTs eliminated, memory management DBUG_PRINTs
+ * converted to some standardized form.
+ *
  * Revision 3.14  2001/06/21 11:04:40  ben
  * one bug fixed in StrTok
  *
@@ -166,7 +170,6 @@ Malloc (int size)
 
     DBUG_ENTER ("Malloc");
 
-    DBUG_PRINT ("MEMALLOC_TRY", ("trying to allocate %d bytes", size));
     DBUG_ASSERT ((size >= 0), "Malloc called with negative size!");
 
     tmp = malloc (size + malloc_align_step);
@@ -176,19 +179,20 @@ Malloc (int size)
      * we do complain for ((NULL == tmp) && (size > 0)) only!!
      */
     if ((NULL == tmp) && (size > 0)) {
-        SYSABORT (("Out of memory: %d Bytes allocated!", current_allocated_mem));
+        SYSABORT (("Out of memory: %d Bytes already allocated!", current_allocated_mem));
     }
+
     *(int *)tmp = size;
     tmp = (char *)tmp + malloc_align_step;
 
-    total_allocated_mem += size;
     current_allocated_mem += size;
-    DBUG_PRINT ("MEM_OBSERVE", ("mem currently allocated: %d", current_allocated_mem));
+
     if (max_allocated_mem < current_allocated_mem) {
         max_allocated_mem = current_allocated_mem;
     }
 
-    DBUG_PRINT ("MEMALLOC", ("new memory: " F_PTR, tmp));
+    DBUG_PRINT ("MEM_ALLOC", ("Alloc memory: %d Bytes at adress: " F_PTR, size, tmp));
+    DBUG_PRINT ("MEM_TOTAL", ("Currently allocated memory: %d", current_allocated_mem));
 
     DBUG_RETURN (tmp);
 }
@@ -199,7 +203,6 @@ void *
 Free (void *address)
 {
     DBUG_ENTER ("Free");
-    DBUG_PRINT ("FREEMEM", ("Not freeing memory at adress: " F_PTR, address));
     DBUG_RETURN ((void *)NULL);
 }
 
@@ -208,14 +211,23 @@ Free (void *address)
 void *
 Free (void *address)
 {
+    void *orig_address;
+    int size;
+
     DBUG_ENTER ("Free");
 
     if (address != NULL) {
-        DBUG_PRINT ("FREEMEM", ("Free memory at adress: " F_PTR, address));
-        address = (void *)((char *)address - malloc_align_step);
-        current_allocated_mem -= *(int *)address;
+        orig_address = (void *)((char *)address - malloc_align_step);
+        size = *(int *)orig_address;
+        current_allocated_mem -= size;
 
-        free (address);
+        free (orig_address);
+
+        DBUG_PRINT ("MEM_ALLOC",
+                    ("Free memory: %d Bytes at adress: " F_PTR, size, address));
+        DBUG_PRINT ("MEM_TOTAL",
+                    ("Currently allocated memory: %d", current_allocated_mem));
+
         address = NULL;
     }
 
@@ -233,7 +245,6 @@ Malloc (int size)
 
     DBUG_ENTER ("Malloc");
 
-    DBUG_PRINT ("MEMALLOC_TRY", ("trying to allocate %d bytes", size));
     DBUG_ASSERT ((size >= 0), "Malloc called with negative size!");
 
     tmp = malloc (size);
@@ -246,7 +257,7 @@ Malloc (int size)
         SYSABORT (("Out of memory"));
     }
 
-    DBUG_PRINT ("MEMALLOC", ("new memory: " F_PTR, tmp));
+    DBUG_PRINT ("MEM_ALLOC", ("Alloc memory: %d Bytes at adress: " F_PTR, size, tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -257,7 +268,6 @@ void *
 Free (void *address)
 {
     DBUG_ENTER ("Free");
-    DBUG_PRINT ("FREEMEM", ("Not freeing memory at adress: " F_PTR, address));
     DBUG_RETURN ((void *)NULL);
 }
 
@@ -269,9 +279,11 @@ Free (void *address)
     DBUG_ENTER ("Free");
 
     if (address != NULL) {
-        DBUG_PRINT ("FREEMEM", ("Free memory at adress: " F_PTR, address));
 
         free (address);
+
+        DBUG_PRINT ("MEM_ALLOC", ("Free memory: ?? Bytes at adress: " F_PTR, address));
+
         address = NULL;
     }
 
@@ -298,8 +310,6 @@ StringCopy (char *source)
     DBUG_ENTER ("StringCopy");
 
     if (source) {
-        DBUG_PRINT ("STRINGCOPY", ("copying string \"%s\"", source));
-
         ret = (char *)Malloc (sizeof (char) * (strlen (source) + 1));
         strcpy (ret, source);
     } else {
@@ -398,12 +408,15 @@ itoa (long number)
 
     tmp = number;
     length = 1;
+
     while (9 < tmp) {
         tmp /= 10;
         length++;
     }
+
     str = (char *)Malloc (sizeof (char) * length + 1);
     str[length] = atoi ("\0");
+
     for (i = 0; (i < length); i++) {
         str[i] = ((int)'0') + (number / pow (10, (length - 1)));
         number = number % ((int)pow (10, (length - 1)));
@@ -468,8 +481,6 @@ SystemCall (char *format, ...)
     vsprintf (syscall, format, arg_p);
     va_end (arg_p);
 
-    DBUG_PRINT ("SYSCALL", ("%s", syscall));
-
     /* if -dnocleanup flag is set print all syscalls !
      * This allows for easy C-code patches.
      */
@@ -511,8 +522,6 @@ SystemCall2 (char *format, ...)
     vsprintf (syscall, format, arg_p);
     va_end (arg_p);
 
-    DBUG_PRINT ("SYSCALL", ("%s", syscall));
-
     /* if -dnocleanup flag is set print all syscalls !
      * This allows for easy C-code patches.
      */
@@ -548,8 +557,6 @@ SystemTest (char *format, ...)
     va_start (arg_p, format);
     vsprintf (syscall + 5 * sizeof (char), format, arg_p);
     va_end (arg_p);
-
-    DBUG_PRINT ("SYSCALL", ("%s", syscall));
 
     exit_code = system (syscall);
 
