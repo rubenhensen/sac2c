@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.9  1999/10/28 20:01:43  sbs
+ * comment changed from ARRAY_FLAT to PRINT_xxx.
+ *
  * Revision 2.8  1999/09/20 11:32:34  jhs
  * Added commented FreeTree after syntaxtree is not used anymore,
  * but it is not possible to free the tree ... :((
@@ -589,7 +592,7 @@ BREAK:
 
     if (compiler_phase >= PH_scanparse) {
         if (compiler_phase < PH_genccode) {
-            CHECK_DBUG_START; /* needed for DBUG-infos during print, e.g. ARRAY_FLAT */
+            CHECK_DBUG_START; /* needed for DBUG-infos during print, i.e. PRINT_xxx */
             Print (syntax_tree);
             CHECK_DBUG_STOP;
         }
