@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.66  1998/06/07 18:36:36  dkr
+ * added new fun_tab (reuse_tab)
+ *
  * Revision 1.65  1998/05/11 09:43:44  cg
  * added syntax tree traversal for generating startup code.
  *
@@ -246,6 +249,7 @@
 #include "wltransform.h"
 #include "precompile.h"
 #include "compile.h"
+#include "ReuseWithArrays.h"
 #include "cccall.h"
 #include "Old2NewWith.h"
 #include "WithloopFolding.h"
@@ -864,9 +868,8 @@ funptr gsc_tab[] = {
 };
 #undef NIF
 
-#if 0
 /*
- * 44) *unused*
+ * 44) reuse_tab
  */
 
 #define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
@@ -874,11 +877,10 @@ funptr gsc_tab[] = {
             t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, nn)    \
     t44
 
-funptr ???[]={
+funptr reuse_tab[] = {
 #include "node_info.mac"
-                  };
+};
 #undef NIF
-#endif
 
 /*
  * 45) o2nWith_tab

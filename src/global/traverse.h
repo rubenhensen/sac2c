@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.48  1998/06/07 18:36:55  dkr
+ * added new fun_tab (reuse_tab)
+ *
  * Revision 1.47  1998/05/11 09:43:44  cg
  * added syntax tree traversal for generating startup code.
  *
@@ -203,8 +206,9 @@ extern funptr spmdopt_tab[];
 extern funptr spmdlift_tab[];
 extern funptr syncinit_tab[];
 extern funptr syncopt_tab[];
-extern funptr o2nWith_tab[];
 extern funptr gsc_tab[];
+extern funptr reuse_tab[];
+extern funptr o2nWith_tab[];
 
 extern int nnode[];
 
