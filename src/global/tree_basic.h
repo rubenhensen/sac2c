@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 1.102  1998/03/26 14:00:25  dkr
+ * some changes in N_WLgrid:
+ *   changed usage of MakeWLgrid
+ *   CODE is now a attribute, not a son!
+ * fixed a bug with WLNODE_NEXT
+ *
  * Revision 1.101  1998/03/26 11:03:22  dkr
  * changed WLNODE-macros
  *
@@ -2360,7 +2366,7 @@ extern node *MakeWLseg (int dims, node *contents, node *next);
 #define WLNODE_BOUND1(n) (n->flag)
 #define WLNODE_BOUND2(n) (n->counter)
 #define WLNODE_STEP(n) (n->varno)
-#define WLNODE_NEXT(n) (n->node[4])
+#define WLNODE_NEXT(n) (n->node[1])
 
 /*--------------------------------------------------------------------------*/
 
@@ -2400,7 +2406,7 @@ extern node *MakeWLblock (int level, int dim, int bound1, int bound2, int step,
 #define WLBLOCK_BOUND2(n) (WLNODE_BOUND2 (n))
 #define WLBLOCK_STEP(n) (WLNODE_STEP (n))
 #define WLBLOCK_NEXTDIM(n) (n->node[0])
-#define WLBLOCK_CONTENTS(n) (n->node[1])
+#define WLBLOCK_CONTENTS(n) (n->node[2])
 #define WLBLOCK_NEXT(n) (WLNODE_NEXT (n))
 
 /*--------------------------------------------------------------------------*/
@@ -2493,11 +2499,11 @@ extern node *MakeWLproj (int level, int dim, int bound1, int bound2, int step,
  ***  sons:
  ***
  ***    node*    NEXTDIM   (0)    (N_WLblock, N_WLublock, N_WLproj)
- ***    node*    CODE      (0)    (N_Ncode)
  ***    node*    NEXT      (0)    (N_WLgrid)
  ***
  ***  permanent attributes:
  ***
+ ***    node*    CODE      (0)    (N_Ncode)
  ***    int      DIM       (0)
  ***    int      BOUND1    (0)
  ***    int      BOUND2    (0)
@@ -2510,14 +2516,14 @@ extern node *MakeWLproj (int level, int dim, int bound1, int bound2, int step,
  ***/
 
 extern node *MakeWLgrid (int dim, int bound1, int bound2, int unrolling, node *nextdim,
-                         node *code, node *next);
+                         node *next, node *code);
 
 #define WLGRID_DIM(n) (WLNODE_DIM (n))
 #define WLGRID_BOUND1(n) (WLNODE_BOUND1 (n))
 #define WLGRID_BOUND2(n) (WLNODE_BOUND2 (n))
 #define WLGRID_UNROLLING(n) (n->info.prf_dec.tag)
 #define WLGRID_NEXTDIM(n) (n->node[0])
-#define WLGRID_CODE(n) (n->node[1])
 #define WLGRID_NEXT(n) (WLNODE_NEXT (n))
+#define WLGRID_CODE(n) (n->node[2])
 
 #endif /* _sac_tree_basic_h */
