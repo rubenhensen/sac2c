@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2004/11/23 15:00:04  jhb
+ * SACDevCamp 04
+ *
  * Revision 1.4  2004/11/19 15:42:41  ktr
  * Support for F_alloc_or_reshape added.
  *
@@ -33,6 +36,8 @@
  */
 #define NEW_INFO
 
+#include "datareuse.h"
+
 #include "globals.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -47,9 +52,9 @@
  */
 struct INFO {
     node *fundef;
-    ids *lhs;
-    LUT_t reuselut;
-    LUT_t renamelut;
+    node *lhs;
+    lut_t *reuselut;
+    lut_t *renamelut;
 };
 
 /*
@@ -70,7 +75,7 @@ MakeInfo (node *fundef)
 
     DBUG_ENTER ("MakeInfo");
 
-    result = Malloc (sizeof (info));
+    result = ILIBmalloc (sizeof (info));
 
     INFO_EMDR_FUNDEF (result) = fundef;
     INFO_EMDR_LHS (result) = NULL;
@@ -85,7 +90,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = Free (info);
+    info = ILIBfree (info);
 
     DBUG_RETURN (info);
 }
@@ -108,9 +113,11 @@ EMDRDataReuse (node *syntax_tree)
 
     DBUG_PRINT ("EMDR", ("Data reuse optimization..."));
 
-    act_tab = emdr_tab;
+    TRAVpush (TR_emdr);
 
-    syntax_tree = Trav (syntax_tree, NULL);
+    syntax_tree = TRAVdo (syntax_tree, NULL);
+
+    TRAVpop ();
 
     DBUG_PRINT ("EMDR", ("Data reuse optimization complete."));
 
@@ -142,14 +149,14 @@ EMDRap (node *arg_node, info *arg_info)
     DBUG_ENTER ("EMDRap");
 
     if (AP_ARGS (arg_node) != NULL) {
-        AP_ARGS (arg_node) = Trav (AP_ARGS (arg_node), arg_info);
+        AP_ARGS (arg_node) = TRAVdo (AP_ARGS (arg_node), arg_info);
     }
 
     /*
      * CONDFUNs are traversed in order of appearance
      */
-    if (FUNDEF_IS_CONDFUN (AP_FUNDEF (arg_node))) {
-        AP_FUNDEF (arg_node) = Trav (AP_FUNDEF (arg_node), arg_info);
+    if (FUNDEF_ISCONDFUN (AP_FUNDEF (arg_node))) {
+        AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -175,10 +182,10 @@ EMDRassign (node *arg_node, info *arg_info)
     /*
      * Top-down traversal
      */
-    ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -206,20 +213,20 @@ EMDRcode (node *arg_node, info *arg_info)
     /*
      * Traverse into CBLOCK in order to apply datareuse in nested with-loops
      */
-    if (NCODE_CBLOCK (arg_node) != NULL) {
-        NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
+    if (CODE_CBLOCK (arg_node) != NULL) {
+        CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
     }
 
     /*
      * rename CEXPRS if applicable
      */
-    NCODE_CEXPRS (arg_node) = Trav (NCODE_CEXPRS (arg_node), arg_info);
+    CODE_CEXPRS (arg_node) = TRAVdo (CODE_CEXPRS (arg_node), arg_info);
 
     /*
      * The great moment:
      * check whether CEXPRS perform INPLACE-COPY-OPERATIONS
      */
-    exprs = NCODE_CEXPRS (arg_node);
+    exprs = CODE_CEXPRS (arg_node);
     while (exprs != NULL) {
         node *id = NULL;
         node *iv = NULL;
@@ -258,10 +265,10 @@ EMDRcode (node *arg_node, info *arg_info)
                         node *vec = PRF_ARG1 (sel);
                         node *arr = PRF_ARG2 (sel);
 
-                        if ((ID_VARDEC (iv) == ID_VARDEC (vec))
+                        if ((ID_AVIS (iv) == ID_AVIS (vec))
                             && (SearchInLUT_PP (INFO_EMDR_REUSELUT (arg_info),
-                                                ID_VARDEC (mem))
-                                == ID_VARDEC (arr))) {
+                                                ID_AVIS (mem))
+                                == ID_AVIS (arr))) {
                             inplace = TRUE;
                         }
                     }
@@ -294,7 +301,7 @@ EMDRcode (node *arg_node, info *arg_info)
                                     DBUG_ASSERT (lastass != NULL,
                                                  "Write a better SSADCR, Man!");
                                     ASSIGN_NEXT (lastass)
-                                      = FreeNode (ASSIGN_NEXT (lastass));
+                                      = FREEdoFreeNode (ASSIGN_NEXT (lastass));
                                     inplace = TRUE;
                                     break;
                                 }
@@ -309,37 +316,39 @@ EMDRcode (node *arg_node, info *arg_info)
 
         if (inplace) {
             node *avis;
-            ids *lhs;
+            node *lhs;
 
             DBUG_PRINT ("EMDR", ("Inplace copy situation recognized!"));
 
             /*
              * Create a variable for new cexpr
              */
-            FUNDEF_VARDEC (INFO_EMDR_FUNDEF (arg_info))
-              = MakeVardec (TmpVar (), DupOneTypes (VARDEC_TYPE (ID_VARDEC (id))),
-                            FUNDEF_VARDEC (INFO_EMDR_FUNDEF (arg_info)));
+            avis = TBmakeAvis (ILIBtmpVar (), TYcopyType (AVIS_TYPE (ID_AVIS (id))));
 
-            avis = VARDEC_AVIS (FUNDEF_VARDEC (INFO_EMDR_FUNDEF (arg_info)));
-            AVIS_TYPE (avis) = TYCopyType (AVIS_TYPE (ID_AVIS (id)));
+            FUNDEF_VARDEC (INFO_EMDR_FUNDEF (arg_info))
+              = TBmakeVardec (avis, FUNDEF_VARDEC (INFO_EMDR_FUNDEF (arg_info)));
+
+#ifdef OLDTYPE
+            /*
+             * For the time being, an old type is required
+             */
+            VARDEC_TYPE (FUNDEF_VARDEC (INFO_EMDR_FUNDEF (arg_info)))
+              = TYtype2OldType (AVIS_TYPE (avis));
+#endif
 
             /*
              * Create noop
              * a = noop( iv);
              */
-            lhs = MakeIds (StringCopy (VARDEC_NAME (AVIS_VARDECORARG (avis))), NULL,
-                           ST_regular);
-            IDS_AVIS (lhs) = avis;
-            IDS_VARDEC (lhs) = AVIS_VARDECORARG (avis);
+            CODE_CBLOCK_INSTR (arg_node)
+              = TBmakeAssign (TBmakeLet (TCmakePrf1 (F_noop, DUPdoDupNode (iv)),
+                                         TBmakeIds (avis, NULL)),
+                              CODE_CBLOCK_INSTR (arg_node));
 
-            NCODE_CBLOCK_INSTR (arg_node)
-              = MakeAssign (MakeLet (MakePrf1 (F_noop, DupNode (iv)), lhs),
-                            NCODE_CBLOCK_INSTR (arg_node));
+            AVIS_SSAASSIGN (avis) = CODE_CBLOCK_INSTR (arg_node);
 
-            AVIS_SSAASSIGN (IDS_AVIS (lhs)) = NCODE_CBLOCK_INSTR (arg_node);
-
-            EXPRS_EXPR (exprs) = FreeNode (EXPRS_EXPR (exprs));
-            EXPRS_EXPR (exprs) = MakeIdFromIds (DupOneIds (lhs));
+            EXPRS_EXPR (exprs) = FREEdoFreeNode (EXPRS_EXPR (exprs));
+            EXPRS_EXPR (exprs) = TBmakeId (avis);
         }
 
         exprs = EXPRS_NEXT (exprs);
@@ -349,7 +358,7 @@ EMDRcode (node *arg_node, info *arg_info)
      * Traverse next code
      */
     if (NCODE_NEXT (arg_node) != NULL) {
-        NCODE_NEXT (arg_node) = Trav (NCODE_NEXT (arg_node), arg_info);
+        NCODE_NEXT (arg_node) = TRAVdo (NCODE_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -375,18 +384,18 @@ EMDRfundef (node *arg_node, info *arg_info)
     /*
      * CONDFUNs may only be traversed from AP-nodes
      */
-    if ((!FUNDEF_IS_CONDFUN (arg_node)) || (arg_info != NULL)) {
+    if ((!FUNDEF_ISCONDFUN (arg_node)) || (arg_info != NULL)) {
 
         if (FUNDEF_BODY (arg_node) != NULL) {
-            info *info = MakeInfo (arg_node);
+            info *info = TBmakeInfo (arg_node);
 
-            INFO_EMDR_REUSELUT (info) = GenerateLUT ();
-            INFO_EMDR_RENAMELUT (info) = GenerateLUT ();
+            INFO_EMDR_REUSELUT (info) = LUTgenerateLut ();
+            INFO_EMDR_RENAMELUT (info) = LUTgenerateLut ();
 
-            FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), info);
+            FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), info);
 
-            INFO_EMDR_REUSELUT (info) = RemoveLUT (INFO_EMDR_REUSELUT (info));
-            INFO_EMDR_RENAMELUT (info) = RemoveLUT (INFO_EMDR_RENAMELUT (info));
+            INFO_EMDR_REUSELUT (info) = LUTremoveLut (INFO_EMDR_REUSELUT (info));
+            INFO_EMDR_RENAMELUT (info) = LUTremoveLut (INFO_EMDR_RENAMELUT (info));
 
             info = FreeInfo (info);
         }
@@ -397,7 +406,7 @@ EMDRfundef (node *arg_node, info *arg_info)
      */
     if (arg_info == NULL) {
         if (FUNDEF_NEXT (arg_node) != NULL) {
-            FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+            FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
         }
     }
 
@@ -419,19 +428,16 @@ EMDRfundef (node *arg_node, info *arg_info)
 node *
 EMDRid (node *arg_node, info *arg_info)
 {
-    node *vardec;
+    node *avis;
 
     DBUG_ENTER ("EMDRid");
 
-    vardec = SearchInLUT_PP (INFO_EMDR_RENAMELUT (arg_info), ID_VARDEC (arg_node));
+    avis = LUTsearchInLutPp (INFO_EMDR_RENAMELUT (arg_info), ID_AVIS (arg_node));
 
-    if (vardec != ID_VARDEC (arg_node)) {
-        arg_node = FreeNode (arg_node);
+    if (avis != ID_AVIS (arg_node)) {
+        arg_node = FREEdoFreeNode (arg_node);
 
-        arg_node = MakeId (StringCopy (VARDEC_NAME (vardec)), NULL, ST_regular);
-
-        ID_VARDEC (arg_node) = vardec;
-        ID_AVIS (arg_node) = VARDEC_AVIS (vardec);
+        arg_node = TBmakeId (avis);
     }
 
     DBUG_RETURN (arg_node);
@@ -455,7 +461,7 @@ EMDRlet (node *arg_node, info *arg_info)
     DBUG_ENTER ("EMDRlet");
 
     INFO_EMDR_LHS (arg_info) = LET_IDS (arg_node);
-    LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
+    LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -478,7 +484,7 @@ EMDRprf (node *arg_node, info *arg_info)
     DBUG_ENTER ("EMDRprf");
 
     if (PRF_ARGS (arg_node) != NULL) {
-        PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
+        PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
     }
 
     switch (PRF_PRF (arg_node)) {
@@ -488,9 +494,9 @@ EMDRprf (node *arg_node, info *arg_info)
          *
          * Insert (b, a) into REUSELUT
          */
-        InsertIntoLUT_P (INFO_EMDR_REUSELUT (arg_info),
-                         IDS_VARDEC (INFO_EMDR_LHS (arg_info)),
-                         ID_VARDEC (PRF_ARG1 (arg_node)));
+        LUTinsertIntoLutP (INFO_EMDR_REUSELUT (arg_info),
+                           IDS_AVIS (INFO_EMDR_LHS (arg_info)),
+                           ID_AVIS (PRF_ARG1 (arg_node)));
         break;
 
     case F_reshape:
@@ -500,8 +506,8 @@ EMDRprf (node *arg_node, info *arg_info)
          * Insert (b, a) into REUSELUT
          */
         InsertIntoLUT_P (INFO_EMDR_REUSELUT (arg_info),
-                         IDS_VARDEC (INFO_EMDR_LHS (arg_info)),
-                         ID_VARDEC (PRF_ARG3 (arg_node)));
+                         IDS_AVIS (INFO_EMDR_LHS (arg_info)),
+                         ID_AVIS (PRF_ARG3 (arg_node)));
         break;
 
     case F_fill:
@@ -519,13 +525,13 @@ EMDRprf (node *arg_node, info *arg_info)
                  *   Insert ( c, a) into RENAMELUT
                  */
                 if (SearchInLUT_PP (INFO_EMDR_REUSELUT (arg_info),
-                                    ID_VARDEC (PRF_ARG2 (arg_node)))
-                    == ID_VARDEC (PRF_ARG1 (prf))) {
+                                    ID_AVIS (PRF_ARG2 (arg_node)))
+                    == ID_AVIS (PRF_ARG1 (prf))) {
                     PRF_PRF (prf) = F_noop;
                     /*
-                    InsertIntoLUT_P( INFO_EMDR_RENAMELUT( arg_info),
-                                     IDS_VARDEC( INFO_EMDR_LHS( arg_info)),
-                                     ID_VARDEC( PRF_ARG1( prf)));
+                    LUTInsertIntoLutP( INFO_EMDR_RENAMELUT( arg_info),
+                                       IDS_AVIS( INFO_EMDR_LHS( arg_info)),
+                                       ID_AVIS( PRF_ARG1( prf)));
                     */
                 }
                 break;
