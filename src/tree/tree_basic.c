@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2000/02/22 11:58:36  jhs
+ * Added and adapted NODE_TEXT.
+ * /
+ *
  * Revision 1.6  2000/02/10 15:48:13  jhs
  * Added NWITH2_ISSCHEDULED.
  *
@@ -345,8 +349,8 @@ MakeNodelist (node *node, statustype status, nodelist *next)
     nodelist *tmp;
     DBUG_ENTER ("MakeNodelist");
 
-    DBUG_PRINT ("ANA", ("New nodelist entry : %s (%s)", ItemName (node),
-                        mdb_nodetype[NODE_TYPE (node)]));
+    DBUG_PRINT ("ANA",
+                ("New nodelist entry : %s (%s)", ItemName (node), NODE_TEXT (node)));
 
     ALLOCATE (tmp, nodelist);
     NODELIST_NODE (tmp) = node;
@@ -428,8 +432,8 @@ MakeModul (char *name, file_type filetype, node *imports, node *types, node *obj
     MODUL_FUNS (tmp) = funs;
     MODUL_NAME (tmp) = name;
 
-    DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
-                             mdb_nodetype[NODE_TYPE (tmp)], tmp));
+    DBUG_PRINT ("MAKENODE",
+                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), XTNODE_TE (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -451,8 +455,8 @@ MakeModdec (char *name, deps *linkwith, int isexternal, node *imports, node *exp
     MODDEC_IMPORTS (tmp) = imports;
     MODDEC_OWN (tmp) = exports;
 
-    DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
-                             mdb_nodetype[NODE_TYPE (tmp)], tmp));
+    DBUG_PRINT ("MAKENODE",
+                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -474,8 +478,8 @@ MakeClassdec (char *name, deps *linkwith, int isexternal, node *imports, node *e
     CLASSDEC_IMPORTS (tmp) = imports;
     CLASSDEC_OWN (tmp) = exports;
 
-    DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
-                             mdb_nodetype[NODE_TYPE (tmp)], tmp));
+    DBUG_PRINT ("MAKENODE",
+                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -498,8 +502,8 @@ MakeSib (char *name, int linkstyle, deps *linkwith, node *types, node *objs, nod
     SIB_LINKSTYLE (tmp) = linkstyle;
     SIB_LINKWITH (tmp) = linkwith;
 
-    DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
-                             mdb_nodetype[NODE_TYPE (tmp)], tmp));
+    DBUG_PRINT ("MAKENODE",
+                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -522,8 +526,8 @@ MakeImplist (char *name, ids *itypes, ids *etypes, ids *objs, ids *funs, node *n
     IMPLIST_FUNS (tmp) = funs;
     IMPLIST_NEXT (tmp) = next;
 
-    DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
-                             mdb_nodetype[NODE_TYPE (tmp)], tmp));
+    DBUG_PRINT ("MAKENODE",
+                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -544,8 +548,8 @@ MakeExplist (node *itypes, node *etypes, node *objs, node *funs)
     EXPLIST_OBJS (tmp) = objs;
     EXPLIST_FUNS (tmp) = funs;
 
-    DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
-                             mdb_nodetype[NODE_TYPE (tmp)], tmp));
+    DBUG_PRINT ("MAKENODE",
+                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -567,8 +571,8 @@ MakeTypedef (char *name, char *mod, types *type, statustype attrib, node *next)
     TYPEDEF_ATTRIB (tmp) = attrib;
     TYPEDEF_NEXT (tmp) = next;
 
-    DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
-                             mdb_nodetype[NODE_TYPE (tmp)], tmp));
+    DBUG_PRINT ("MAKENODE",
+                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -590,8 +594,8 @@ MakeObjdef (char *name, char *mod, types *type, node *expr, node *next)
     OBJDEF_EXPR (tmp) = expr;
     OBJDEF_NEXT (tmp) = next;
 
-    DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
-                             mdb_nodetype[NODE_TYPE (tmp)], tmp));
+    DBUG_PRINT ("MAKENODE",
+                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -615,8 +619,8 @@ MakeFundef (char *name, char *mod, types *types, node *args, node *body, node *n
     FUNDEF_NEXT (tmp) = next;
     FUNDEF_FUNNO (tmp) = 0;
 
-    DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
-                             mdb_nodetype[NODE_TYPE (tmp)], tmp));
+    DBUG_PRINT ("MAKENODE",
+                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -640,8 +644,8 @@ MakeArg (char *name, types *type, statustype status, statustype attrib, node *ne
     ARG_ACTCHN (tmp) = NULL;
     ARG_COLCHN (tmp) = NULL;
 
-    DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
-                             mdb_nodetype[NODE_TYPE (tmp)], tmp));
+    DBUG_PRINT ("MAKENODE",
+                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -662,7 +666,7 @@ MakeBlock (node *instr, node *vardec)
 
     DBUG_PRINT ("MAKENODE",
                 ("%d:nodetype: %s " P_FORMAT " instr: " P_FORMAT " vardec: " P_FORMAT,
-                 NODE_LINE (tmp), mdb_nodetype[NODE_TYPE (tmp)], tmp, BLOCK_INSTR (tmp),
+                 NODE_LINE (tmp), NODE_TEXT (tmp), tmp, BLOCK_INSTR (tmp),
                  BLOCK_VARDEC (tmp)));
 
     DBUG_RETURN (tmp);
@@ -683,8 +687,8 @@ MakeVardec (char *name, types *type, node *next)
     VARDEC_NAME (tmp) = name;
     VARDEC_NEXT (tmp) = next;
 
-    DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
-                             mdb_nodetype[NODE_TYPE (tmp)], tmp));
+    DBUG_PRINT ("MAKENODE",
+                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -706,7 +710,7 @@ MakeAssign (node *instr, node *next)
 
     DBUG_PRINT ("MAKENODE",
                 ("%d:nodetype: %s " P_FORMAT " instr: " P_FORMAT " next: " P_FORMAT,
-                 NODE_LINE (tmp), mdb_nodetype[NODE_TYPE (tmp)], tmp, ASSIGN_INSTR (tmp),
+                 NODE_LINE (tmp), NODE_TEXT (tmp), tmp, ASSIGN_INSTR (tmp),
                  ASSIGN_NEXT (tmp)));
 
     DBUG_RETURN (tmp);
@@ -726,8 +730,8 @@ MakeLet (node *expr, ids *ids)
     LET_EXPR (tmp) = expr;
     LET_IDS (tmp) = ids;
 
-    DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
-                             mdb_nodetype[NODE_TYPE (tmp)], tmp));
+    DBUG_PRINT ("MAKENODE",
+                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -746,8 +750,8 @@ MakeCast (node *expr, types *type)
     CAST_TYPE (tmp) = type;
     CAST_EXPR (tmp) = expr;
 
-    DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
-                             mdb_nodetype[NODE_TYPE (tmp)], tmp));
+    DBUG_PRINT ("MAKENODE",
+                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -765,8 +769,8 @@ MakeReturn (node *exprs)
 
     RETURN_EXPRS (tmp) = exprs;
 
-    DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
-                             mdb_nodetype[NODE_TYPE (tmp)], tmp));
+    DBUG_PRINT ("MAKENODE",
+                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -786,8 +790,8 @@ MakeCond (node *cond, node *Then, node *Else)
     COND_THEN (tmp) = Then;
     COND_ELSE (tmp) = Else;
 
-    DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
-                             mdb_nodetype[NODE_TYPE (tmp)], tmp));
+    DBUG_PRINT ("MAKENODE",
+                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -806,8 +810,8 @@ MakeDo (node *cond, node *body)
     DO_COND (tmp) = cond;
     DO_BODY (tmp) = body;
 
-    DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
-                             mdb_nodetype[NODE_TYPE (tmp)], tmp));
+    DBUG_PRINT ("MAKENODE",
+                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -826,8 +830,8 @@ MakeWhile (node *cond, node *body)
     WHILE_COND (tmp) = cond;
     WHILE_BODY (tmp) = body;
 
-    DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
-                             mdb_nodetype[NODE_TYPE (tmp)], tmp));
+    DBUG_PRINT ("MAKENODE",
+                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -857,8 +861,8 @@ MakeAnnotate (int tag, int funno, int funapno)
     ANNOTATE_FUNNUMBER (tmp) = funno;
     ANNOTATE_FUNAPNUMBER (tmp) = funapno;
 
-    DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
-                             mdb_nodetype[NODE_TYPE (tmp)], tmp));
+    DBUG_PRINT ("MAKENODE",
+                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -879,8 +883,8 @@ MakeAp (char *name, char *mod, node *args)
     AP_ARGS (tmp) = args;
     AP_ATFLAG (tmp) = 0;
 
-    DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
-                             mdb_nodetype[NODE_TYPE (tmp)], tmp));
+    DBUG_PRINT ("MAKENODE",
+                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -899,8 +903,8 @@ MakeWith (node *gen, node *operator)
     WITH_GEN (tmp) = gen;
     WITH_OPERATOR (tmp) = operator;
 
-    DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
-                             mdb_nodetype[NODE_TYPE (tmp)], tmp));
+    DBUG_PRINT ("MAKENODE",
+                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -920,8 +924,8 @@ MakeGenerator (node *left, node *right, char *id)
     GEN_RIGHT (tmp) = right;
     GEN_ID (tmp) = id;
 
-    DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
-                             mdb_nodetype[NODE_TYPE (tmp)], tmp));
+    DBUG_PRINT ("MAKENODE",
+                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -940,8 +944,8 @@ MakeGenarray (node *array, node *body)
     GENARRAY_ARRAY (tmp) = array;
     GENARRAY_BODY (tmp) = body;
 
-    DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
-                             mdb_nodetype[NODE_TYPE (tmp)], tmp));
+    DBUG_PRINT ("MAKENODE",
+                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -960,8 +964,8 @@ MakeModarray (node *array, node *body)
     MODARRAY_ARRAY (tmp) = array;
     MODARRAY_BODY (tmp) = body;
 
-    DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
-                             mdb_nodetype[NODE_TYPE (tmp)], tmp));
+    DBUG_PRINT ("MAKENODE",
+                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -983,7 +987,7 @@ MakeFoldprf (prf prf, node *body, node *neutral)
 
     DBUG_PRINT ("MAKENODE",
                 ("%d:nodetype: %s " P_FORMAT " body: " P_FORMAT " neutral: " P_FORMAT,
-                 NODE_LINE (tmp), mdb_nodetype[NODE_TYPE (tmp)], tmp, FOLDPRF_BODY (tmp),
+                 NODE_LINE (tmp), NODE_TEXT (tmp), tmp, FOLDPRF_BODY (tmp),
                  FOLDPRF_NEUTRAL (tmp)));
 
     DBUG_RETURN (tmp);
@@ -1005,8 +1009,8 @@ MakeFoldfun (char *name, char *mod, node *body, node *neutral)
     FOLDFUN_BODY (tmp) = body;
     FOLDFUN_NEUTRAL (tmp) = neutral;
 
-    DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
-                             mdb_nodetype[NODE_TYPE (tmp)], tmp));
+    DBUG_PRINT ("MAKENODE",
+                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -1025,8 +1029,8 @@ MakeExprs (node *expr, node *next)
     EXPRS_EXPR (tmp) = expr;
     EXPRS_NEXT (tmp) = next;
 
-    DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
-                             mdb_nodetype[NODE_TYPE (tmp)], tmp));
+    DBUG_PRINT ("MAKENODE",
+                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -1046,8 +1050,8 @@ MakeArray (node *aelems)
 
     ARRAY_TYPE (tmp) = NULL;
 
-    DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
-                             mdb_nodetype[NODE_TYPE (tmp)], tmp));
+    DBUG_PRINT ("MAKENODE",
+                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -1069,8 +1073,8 @@ MakeVinfo (useflag flag, types *type, node *next, node *dollar)
     VINFO_DOLLAR (tmp) = dollar;
     VINFO_VARDEC (tmp) = NULL;
 
-    DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
-                             mdb_nodetype[NODE_TYPE (tmp)], tmp));
+    DBUG_PRINT ("MAKENODE",
+                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -1088,8 +1092,8 @@ MakeId (char *name, char *mod, statustype status)
 
     tmp->info.ids = MakeIds (name, mod, status);
 
-    DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
-                             mdb_nodetype[NODE_TYPE (tmp)], tmp));
+    DBUG_PRINT ("MAKENODE",
+                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -1121,8 +1125,8 @@ MakeId2 (ids *ids_node)
 
     tmp->info.ids = ids_node;
 
-    DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
-                             mdb_nodetype[NODE_TYPE (tmp)], tmp));
+    DBUG_PRINT ("MAKENODE",
+                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -1141,8 +1145,8 @@ MakeId3 (ids *ids_node)
     tmp->info.ids = ids_node;
     tmp->refcnt = ids_node->refcnt;
 
-    DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
-                             mdb_nodetype[NODE_TYPE (tmp)], tmp));
+    DBUG_PRINT ("MAKENODE",
+                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -1160,8 +1164,8 @@ MakeNum (int val)
 
     NUM_VAL (tmp) = val;
 
-    DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
-                             mdb_nodetype[NODE_TYPE (tmp)], tmp));
+    DBUG_PRINT ("MAKENODE",
+                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -1179,8 +1183,8 @@ MakeChar (char val)
 
     CHAR_VAL (tmp) = val;
 
-    DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
-                             mdb_nodetype[NODE_TYPE (tmp)], tmp));
+    DBUG_PRINT ("MAKENODE",
+                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -1198,8 +1202,8 @@ MakeFloat (float val)
 
     FLOAT_VAL (tmp) = val;
 
-    DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
-                             mdb_nodetype[NODE_TYPE (tmp)], tmp));
+    DBUG_PRINT ("MAKENODE",
+                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -1217,8 +1221,8 @@ MakeDouble (double val)
 
     DOUBLE_VAL (tmp) = val;
 
-    DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
-                             mdb_nodetype[NODE_TYPE (tmp)], tmp));
+    DBUG_PRINT ("MAKENODE",
+                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -1236,8 +1240,8 @@ MakeBool (int val)
 
     BOOL_VAL (tmp) = val;
 
-    DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
-                             mdb_nodetype[NODE_TYPE (tmp)], tmp));
+    DBUG_PRINT ("MAKENODE",
+                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -1255,8 +1259,8 @@ MakeStr (char *str)
 
     STR_STRING (tmp) = str;
 
-    DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
-                             mdb_nodetype[NODE_TYPE (tmp)], tmp));
+    DBUG_PRINT ("MAKENODE",
+                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -1275,8 +1279,8 @@ MakePrf (prf prf, node *args)
     PRF_PRF (tmp) = prf;
     PRF_ARGS (tmp) = args;
 
-    DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
-                             mdb_nodetype[NODE_TYPE (tmp)], tmp));
+    DBUG_PRINT ("MAKENODE",
+                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -1292,8 +1296,8 @@ MakeEmpty ()
 
     tmp = CreateCleanNode (N_empty);
 
-    DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
-                             mdb_nodetype[NODE_TYPE (tmp)], tmp));
+    DBUG_PRINT ("MAKENODE",
+                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -1327,8 +1331,8 @@ MakePost (int incdec, char *id)
 
     tmp->node[0] = CreateCleanNode (0 == incdec ? N_dec : N_inc);
 
-    DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
-                             mdb_nodetype[NODE_TYPE (tmp)], tmp));
+    DBUG_PRINT ("MAKENODE",
+                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -1362,8 +1366,8 @@ MakePre (nodetype incdec, char *id)
 
     tmp->node[0] = CreateCleanNode (0 == incdec ? N_dec : N_inc);
 
-    DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
-                             mdb_nodetype[NODE_TYPE (tmp)], tmp));
+    DBUG_PRINT ("MAKENODE",
+                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -1465,8 +1469,8 @@ MakeIcm (char *name, node *args, node *next)
     } else
         ICM_INDENT (tmp) = 0;
 
-    DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
-                             mdb_nodetype[NODE_TYPE (tmp)], tmp));
+    DBUG_PRINT ("MAKENODE",
+                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -1484,8 +1488,8 @@ MakePragma ()
 
     PRAGMA_NUMPARAMS (tmp) = 0;
 
-    DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
-                             mdb_nodetype[NODE_TYPE (tmp)], tmp));
+    DBUG_PRINT ("MAKENODE",
+                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -1501,8 +1505,8 @@ MakeInfo ()
 
     tmp = CreateCleanNode (N_info);
 
-    DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
-                             mdb_nodetype[NODE_TYPE (tmp)], tmp));
+    DBUG_PRINT ("MAKENODE",
+                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }

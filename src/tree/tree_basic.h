@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.17  2000/02/22 11:58:36  jhs
+ * Added and adapted NODE_TEXT.
+ * /
+ *
  * Revision 1.16  2000/02/17 16:22:03  cg
  * Added several new access macros for usage of N_info node
  * in fun2lac.c and adjust_ids.c.
@@ -386,6 +390,8 @@ extern char *prf_name_str[];
 #define NODE_LINE(n) ((n)->lineno)
 
 #define NODE_FILE(n) ((n)->src_file)
+
+#define NODE_TEXT(n) (mdb_nodetype[NODE_TYPE (n)])
 
 /*
  *   Non-node-structures
