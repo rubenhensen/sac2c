@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.17  1995/07/04 11:13:49  hw
+ * Revision 1.18  1995/07/06 16:58:44  hw
+ * tokens of primitive functions contain in yyval.id there name now
+ *
+ * Revision 1.17  1995/07/04  11:13:49  hw
  * - scanning of 'double constants'( e.g. 3d, 3D, 3.0d, 3.0D) inserted
  * - scanning of 'float constants'( e.g. 3f, 3F, 3.0, 3.0F, 3.0f) changed
  * - scanning of primitive functions ifod, ftod, dtoi, dtof inserted.
@@ -117,19 +120,19 @@ int start_token;
 ","				{FILTER( COMMA );}
 "="				{FILTER( LET );}
 
-"&&"				{FILTER( AND );}
-"||"				{FILTER( OR );}
-"=="				{FILTER( EQ );}
-"!="				{FILTER( NEQ );}
-"!"                             {FILTER( NOT );}
-"<="				{FILTER( LE );}
-"<"				{FILTER( LT );}
-">="				{FILTER( GE );}
-">"				{FILTER( GT );}
-"+"				{FILTER( PLUS);}
-"-"				{FILTER( MINUS);}
-"/"				{FILTER( DIV );}
-"*"				{FILTER( MUL );}
+"&&"				{FILTER2( AND );}
+"||"				{FILTER2( OR );}
+"=="				{FILTER2( EQ );}
+"!="				{FILTER2( NEQ );}
+"!"                             {FILTER2( NOT );}
+"<="				{FILTER2( LE );}
+"<"				{FILTER2( LT );}
+">="				{FILTER2( GE );}
+">"				{FILTER2( GT );}
+"+"				{FILTER2( PLUS);}
+"-"				{FILTER2( MINUS);}
+"/"				{FILTER2( DIV );}
+"*"				{FILTER2( MUL );}
 
 "++"				{FILTER( INC );}
 "--" 				{FILTER( DEC );}
@@ -140,14 +143,14 @@ int start_token;
 "/="				{FILTER( DIVON );}
 
 
-"reshape"			{FILTER( RESHAPE );}
-"shape"				{FILTER( SHAPE );}
-"take"				{FILTER( TAKE );}
-"drop"				{FILTER( DROP );}
-"dim"				{FILTER( DIM );}
-"rotate"			{FILTER( ROTATE );}
-"cat"                           {FILTER( CAT );}
-"psi"                           {FILTER( PSI );}
+"reshape"			{FILTER2( RESHAPE );}
+"shape"				{FILTER2( SHAPE );}
+"take"				{FILTER2( TAKE );}
+"drop"				{FILTER2( DROP );}
+"dim"				{FILTER2( DIM );}
+"rotate"			{FILTER2( ROTATE );}
+"cat"                           {FILTER2( CAT );}
+"psi"                           {FILTER2( PSI );}
 "ftoi"                          {FILTER( F2I );}
 "ftod"                          {FILTER( F2D );}
 "itof"                          {FILTER( I2F );}
@@ -165,8 +168,8 @@ int start_token;
 "while"				{FILTER( WHILE );}
 "for"				{FILTER( FOR );}
 "with" 				{FILTER( WITH );}
-"genarray"			{FILTER( GENARRAY );}
-"modarray"			{FILTER( MODARRAY );}
+"genarray"			{FILTER2( GENARRAY );}
+"modarray"			{FILTER2( MODARRAY );}
 "fold"				{FILTER( FOLD );}
 "inline"			{FILTER( INLINE );}
 
