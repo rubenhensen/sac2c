@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.2  1995/11/03 16:40:41  cg
+ * Revision 1.3  1995/11/06 09:23:57  cg
+ * first compilable revision
+ *
+ * Revision 1.2  1995/11/03  16:40:41  cg
  * added traversal mechanism and check functions,
  * but still not compilable.
  *
@@ -49,7 +52,7 @@ typedef struct HISTORYLIST {
 
 typedef struct UNQSTATELIST {
     int *state;
-    historylist history;
+    historylist *history;
     struct UNQSTATELIST *next;
 } unqstatelist;
 
@@ -119,8 +122,8 @@ typedef struct UNQSTATELIST {
  */
 
 #define ID_IS_UNIQUE(n)                                                                  \
-    ((NODE_TYPE (ID_VARDEC (n)) == N_vardec) ? (VARDEC_VARNO (IDS_VARDEC (n)) >= 0)      \
-                                             : (ARG_VARNO (IDS_VARDEC (n)) >= 0))
+    ((NODE_TYPE (ID_VARDEC (n)) == N_vardec) ? (VARDEC_VARNO (ID_VARDEC (n)) >= 0)       \
+                                             : (ARG_VARNO (ID_VARDEC (n)) >= 0))
 
 /************************************************************************
  *  global variable definitions
@@ -128,7 +131,7 @@ typedef struct UNQSTATELIST {
 
 static int varno; /* to count arguments and local variables */
 static int argno; /* to count arguments */
-static unqstatelist unqstate;
+static unqstatelist *unqstate;
 
 /************************************************************************
  *  The 'main' function of this compiler module
@@ -155,7 +158,7 @@ UniquenessCheck (node *syntax_tree)
 {
     DBUG_ENTER ("UniquenessCheck");
 
-    act_tab = unq_tab;
+    act_tab = unique_tab;
 
     DBUG_RETURN (Trav (syntax_tree, NULL));
 }
@@ -241,6 +244,46 @@ InitUnqstate ()
 
 /*
  *
+ *  functionname  : FreeUnqstate
+ *  arguments     :
+ *  description   :
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
+
+void
+FreeUnqstate (unqstatelist *unqstate)
+{
+    unqstatelist *tmp;
+    historylist *tmp_hist, *hist;
+
+    DBUG_ENTER ("FreeUnqstate");
+
+    while (unqstate != NULL) {
+        tmp = unqstate;
+        unqstate = UNQ_NEXT (unqstate);
+        hist = UNQ_HISTORY (tmp);
+
+        while (hist != NULL) {
+            tmp_hist = hist;
+            hist = HL_NEXT (hist);
+            free (tmp_hist);
+        }
+
+        free (UNQ_STATE (tmp));
+        free (tmp);
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/*
+ *
  *  functionname  : CopyUnqstate
  *  arguments     :
  *  description   :
@@ -253,8 +296,8 @@ InitUnqstate ()
  *
  */
 
-unqstatelist
-CopyUnqstate ()
+unqstatelist *
+CopyUnqstate (unqstatelist *unqstate)
 {
     unqstatelist *new;
     int i;
@@ -268,7 +311,7 @@ CopyUnqstate ()
     UNQ_STATE (new) = (int *)Malloc (varno * sizeof (int));
 
     for (i = 0; i < varno; i++) {
-        UNQ_STATE (new)[i] = UNQ_STATE (unqstate)[i]
+        UNQ_STATE (new)[i] = UNQ_STATE (unqstate)[i];
     }
 
     if (UNQ_NEXT (unqstate) == NULL) {
@@ -370,46 +413,6 @@ MergeUnqstate (unqstatelist *first, unqstatelist *second)
 
 /*
  *
- *  functionname  : FreeUnqstate
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
- *
- *  remarks       :
- *
- */
-
-void *
-FreeUnqstate (unqstatelist *unqstate)
-{
-    unqstatelist *tmp;
-    historylist *tmp_hist, *hist;
-
-    DEBUG_ENTER ("FreeUnqstate");
-
-    while (unqstate != NULL) {
-        tmp = unqstate;
-        unqstate = UNQ_NEXT (unqstate);
-        hist = UNQ_HISTORY (tmp);
-
-        while (hist != NULL) {
-            tmp_hist = hist;
-            hist = HL_NEXT (hist);
-            free (tmp_hist);
-        }
-
-        free (UNQ_STATE (tmp));
-        free (tmp);
-    }
-
-    DBUG_VOID_RETURN;
-}
-
-/*
- *
  *  functionname  : AddHistory
  *  arguments     :
  *  description   :
@@ -452,28 +455,65 @@ AddHistory (unqstatelist *unq, historytype history)
 void
 PrintHistory (historylist *history)
 {
+    static int indent;
+
     DBUG_ENTER ("PrintHistory");
 
-    while (history != NULL) {
+    if (history == NULL) {
+        NOTE (("uniqueness check path:"));
+        NOTE (("-> body of function"));
+        indent = 1;
+    } else {
+        PrintHistory (HL_NEXT (history));
+
         switch (HL_HISTORY (history)) {
         case H_then_enter:
-            NOTE (("\tafter entering then-part of conditional"));
+            NOTE_INDENT (indent++, ("-> then-part of conditional"));
             break;
 
         case H_then_leave:
-            NOTE (("\tafter leaving then-part of conditional"));
+            NOTE_INDENT (indent--, ("<- then-part of conditional"));
             break;
 
         case H_else_enter:
-            NOTE (("\tafter entering else-part of conditional"));
+            NOTE_INDENT (indent++, ("-> else-part of conditional"));
             break;
 
         case H_else_leave:
-            NOTE (("\tafter leaving else-part of conditional"));
+            NOTE_INDENT (indent--, ("<- else-part of conditional"));
             break;
-        }
 
-        history = HL_NEXT (history);
+        case H_while_enter:
+            NOTE_INDENT (indent++, ("-> body of while/for-loop"));
+            break;
+
+        case H_while_leave:
+            NOTE_INDENT (indent--, ("<- body of while/for-loop"));
+            break;
+
+        case H_while_skipped:
+            NOTE_INDENT (indent, ("-- skipping while/for-loop"));
+            break;
+
+        case H_do_enter:
+            NOTE_INDENT (indent++, ("-> body of do-loop"));
+            break;
+
+        case H_do_leave:
+            NOTE_INDENT (indent--, ("<- body of do-loop"));
+            break;
+
+        case H_with_enter:
+            NOTE_INDENT (indent++, ("-> body of with-loop"));
+            break;
+
+        case H_with_leave:
+            NOTE_INDENT (indent--, ("<- body of with-loop"));
+            break;
+
+        case H_with_skipped:
+            NOTE_INDENT (indent, ("-- skipping with-loop"));
+        }
     }
 
     DBUG_VOID_RETURN;
@@ -543,25 +583,31 @@ CheckApplied (node *var)
 {
     unqstatelist *tmp = unqstate;
     int not_yet_errored = 1;
+    statustype attrib;
 
     DBUG_ENTER ("CheckApplied");
 
     varno = (NODE_TYPE (ID_VARDEC (var)) == N_vardec) ? VARDEC_VARNO (ID_VARDEC (var))
                                                       : ARG_VARNO (ID_VARDEC (var));
 
-    while (tmp != NULL) {
-        if ((UNQ_STATE (tmp)[varno] == 0) && not_yet_errored) {
-            UNQ_ERROR (NODE_LINE (var), UNQ_HISTORY (tmp),
-                       ("Object '%s` already deleted and no longer existing\n\t"
-                        " -> Uniqueness Violation",
-                        IDS_NAME (var)));
+    attrib = (NODE_TYPE (ID_VARDEC (var)) == N_vardec) ? VARDEC_ATTRIB (ID_VARDEC (var))
+                                                       : ARG_ATTRIB (ID_VARDEC (var));
 
-            not_yet_errored = 0;
-        } else {
-            UNQ_STATE (tmp)[varno] = 0;
+    if (attrib != ST_readonly_reference) {
+        while (tmp != NULL) {
+            if ((UNQ_STATE (tmp)[varno] == 0) && not_yet_errored) {
+                UNQ_ERROR (NODE_LINE (var), UNQ_HISTORY (tmp),
+                           ("Object '%s` already deleted and no longer existing\n\t"
+                            " -> Uniqueness Violation",
+                            ID_NAME (var)));
+
+                not_yet_errored = 0;
+            } else {
+                UNQ_STATE (tmp)[varno] = 0;
+            }
+
+            tmp = UNQ_NEXT (tmp);
         }
-
-        tmp = UNQ_NEXT (tmp);
     }
 
     DBUG_VOID_RETURN;
@@ -754,6 +800,8 @@ UNQarg (node *arg_node, node *arg_info)
 node *
 UNQlet (node *arg_node, node *arg_info)
 {
+    ids *tmp;
+
     DBUG_ENTER ("UNQlet");
 
     Trav (LET_EXPR (arg_node), arg_info);
@@ -822,10 +870,12 @@ UNQdo (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("UNQdo");
 
-    AddHistory (unqstate, H_do);
+    AddHistory (unqstate, H_do_enter);
 
     Trav (DO_BODY (arg_node), arg_info);
     Trav (DO_BODY (arg_node), arg_info);
+
+    AddHistory (unqstate, H_do_leave);
 
     DBUG_RETURN (arg_node);
 }
@@ -851,12 +901,14 @@ UNQwhile (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("UNQwhile");
 
-    skipped_state = CopyUnqstate ();
-    AddHistory (unqstate, H_while);
+    skipped_state = CopyUnqstate (unqstate);
+    AddHistory (unqstate, H_while_enter);
     AddHistory (skipped_state, H_while_skipped);
 
     Trav (WHILE_BODY (arg_node), arg_info);
     Trav (WHILE_BODY (arg_node), arg_info);
+
+    AddHistory (unqstate, H_while_leave);
 
     unqstate = MergeUnqstate (skipped_state, unqstate);
 
@@ -865,7 +917,7 @@ UNQwhile (node *arg_node, node *arg_info)
 
 /*
  *
- *  functionname  :
+ *  functionname  : UNQcond
  *  arguments     :
  *  description   :
  *  global vars   :
@@ -884,9 +936,9 @@ UNQcond (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("UNQcond");
 
-    else_state = CopyUnqstate ();
-    AddHistory (unqstate, H_then);
-    AddHistory (else_state, H_else);
+    else_state = CopyUnqstate (unqstate);
+    AddHistory (unqstate, H_then_enter);
+    AddHistory (else_state, H_else_enter);
 
     Trav (COND_THEN (arg_node), arg_info);
 
@@ -895,6 +947,9 @@ UNQcond (node *arg_node, node *arg_info)
 
     Trav (COND_ELSE (arg_node), arg_info);
 
+    AddHistory (then_state, H_then_leave);
+    AddHistory (unqstate, H_else_leave);
+
     unqstate = MergeUnqstate (then_state, unqstate);
 
     DBUG_RETURN (arg_node);
@@ -902,7 +957,7 @@ UNQcond (node *arg_node, node *arg_info)
 
 /*
  *
- *  functionname  :
+ *  functionname  : UNQwith
  *  arguments     :
  *  description   :
  *  global vars   :
@@ -921,11 +976,13 @@ UNQwith (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("UNQwith");
 
-    skipped_state = CopyUnqstate ();
-    AddHistory (unqstate, H_with);
+    skipped_state = CopyUnqstate (unqstate);
+    AddHistory (unqstate, H_with_enter);
     AddHistory (skipped_state, H_with_skipped);
 
     Trav (WITH_BODY (arg_node), arg_node);
+
+    AddHistory (unqstate, H_with_leave);
 
     unqstate = MergeUnqstate (skipped_state, unqstate);
 
