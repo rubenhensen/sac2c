@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.74  2004/11/30 14:50:42  sah
+ * fixed a segfault in ILIBcreateCppCallString
+ *
  * Revision 3.73  2004/11/27 00:47:56  cg
  * function name typos fixed
  *
@@ -1175,7 +1178,7 @@ ILIBcreateCppCallString (char *file, char *cccallstr, char *cppfile)
 
     DBUG_ENTER ("ILIBcreateCppCallString");
 
-    if (file[0] == '\0') { /*we are reading from stdin! */
+    if (file == NULL) { /*we are reading from stdin! */
         strcpy (cccallstr, global.config.cpp_stdin);
     } else {
         strcpy (cccallstr, global.config.cpp_file);
@@ -1190,7 +1193,7 @@ ILIBcreateCppCallString (char *file, char *cccallstr, char *cppfile)
         strcat (cccallstr, global.config.opt_I);
         strcat (cccallstr, global.cpp_incs[i]);
     }
-    if (file[0] != '\0') {
+    if (file != NULL) {
         strcat (cccallstr, " ");
         strcat (cccallstr, file);
     }
