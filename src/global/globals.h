@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.14  1999/07/20 07:56:22  cg
+ * Added global variable malloc_align_step.
+ *
  * Revision 2.13  1999/07/09 12:45:32  cg
  * Basic prerequisites for diagnostic heap management introduced.
  *
@@ -274,6 +277,7 @@ extern compiler_phase_t my_dbug_to;
 extern int my_dbug;
 extern int my_dbug_active;
 extern char *my_dbug_str;
+extern int malloc_align_step;
 
 extern unsigned int total_allocated_mem;
 extern unsigned int current_allocated_mem;

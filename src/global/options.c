@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.17  1999/07/20 07:53:42  cg
+ * Added global variable malloc_align_step.
+ *
  * Revision 2.16  1999/07/16 17:04:12  jhs
  * Fixed Bug in CheckOptionConsistency.
  *
@@ -539,7 +542,7 @@ CheckOptionConsistency ()
 
     if (gen_mt_code) {
 
-        if (cachesim & CACHESIM_NO) {
+        if (cachesim & CACHESIM_YES) {
             SYSERROR (("Cache simulation is not available for multi-threaded "
                        "program execution"));
         }

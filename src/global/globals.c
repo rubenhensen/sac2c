@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.13  1999/07/20 07:56:22  cg
+ * Added global variable malloc_align_step.
+ *
  * Revision 2.12  1999/07/09 07:31:24  cg
  * SAC heap manager integrated into sac2c.
  *
@@ -486,6 +489,9 @@ compiler_phase_t my_dbug_to = PH_final;
 int my_dbug = 0;
 int my_dbug_active = 0;
 char *my_dbug_str = NULL;
+#ifdef SHOW_MALLOC
+int malloc_align_step;
+#endif
 
 /*
  * Memory counters
