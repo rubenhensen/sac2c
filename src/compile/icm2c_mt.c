@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  1998/06/25 08:05:29  cg
+ * syntax bug in produced C code fixed.
+ *
  * Revision 1.10  1998/06/23 12:49:48  cg
  * added implementations of scheduling ICMs
  * MT_SCHEDULER_Block_BEGIN and MT_SCHEDULER_Block_END
@@ -653,7 +656,7 @@ ICMCompileMT_SPMD_BLOCK (char *name, int narg, char **vararg)
     indent++;
 
     INDENT;
-    fprintf (outfile, "SAC_MT_not_yet_parallel=0\n");
+    fprintf (outfile, "SAC_MT_not_yet_parallel=0;\n");
 
     for (i = 0; i < 3 * narg; i += 3) {
         if (0 == strncmp (vararg[i], "inout_rc", 8)) {
@@ -682,7 +685,7 @@ ICMCompileMT_SPMD_BLOCK (char *name, int narg, char **vararg)
     fprintf (outfile, "SAC_MT_START_SPMD(%s);\n", name);
 
     INDENT;
-    fprintf (outfile, "SAC_MT_not_yet_parallel=1\n");
+    fprintf (outfile, "SAC_MT_not_yet_parallel=1;\n");
 
     indent--;
     INDENT;
