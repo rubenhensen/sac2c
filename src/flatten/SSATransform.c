@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.30  2005/01/26 17:32:20  mwe
+ * initialization of fungroups added
+ *
  * Revision 1.29  2005/01/11 13:05:10  cg
  * Added notification of SSA transform
  *
@@ -332,6 +335,7 @@ struct INFO {
     bool funcond_found;
     node *withid;
     node *first_withid;
+    node *fungroup;
 };
 
 /**
@@ -365,6 +369,7 @@ struct INFO {
 #define INFO_SSA_FUNCOND_FOUND(n) (n->funcond_found)
 #define INFO_SSA_WITHID(n) (n->withid)
 #define INFO_SSA_FIRST_WITHID(n) (n->first_withid)
+#define INFO_SSA_FUNGROUP(n) (n->fungroup)
 
 /*
  * INFO functions:
@@ -391,6 +396,7 @@ MakeInfo ()
     INFO_SSA_FUNCOND_FOUND (result) = FALSE;
     INFO_SSA_WITHID (result) = NULL;
     INFO_SSA_FIRST_WITHID (result) = NULL;
+    INFO_SSA_FUNGROUP (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -534,6 +540,7 @@ SaveTopSsastackElse (node *avis)
  * node *SSANewVardec(node *old_vardec_or_arg)
  * node *CreateFuncondAssign( node *cond, node *id, node *assign)
  * node* GetSsacnt(char *baseid, int initvalue, node *block)
+ * node* InitializeFungroup(node *arg_node, info* arg_info)
  * -->
  *
  */
@@ -663,6 +670,51 @@ GetSsacnt (char *baseid, int initvalue, node *block)
 
     DBUG_RETURN (ssacnt);
 }
+
+/**<!--**********************************************************************
+ *
+ * @fn static node *InitializeFungroup(node *fundef, info *arg_info)
+ *
+ * @brief This function looks for existing fungroups or creates a
+ *        fungroup-node from corresponding fundef-node.
+ *
+ ************************************************************************/
+static node *
+InitializeFungroup (node *arg_node, info *arg_info)
+{
+    node *tmp, *fg;
+    DBUG_ENTER ("InitializeFungroup");
+
+    tmp = INFO_SSA_FUNGROUP (arg_info);
+
+    /*
+     * search for corresponding fungroup in grouplist
+     * nothing found: create new fungroup
+     */
+
+    while (tmp != NULL) {
+        if (ILIBstringCompare (FUNDEF_NAME (arg_node),
+                               FUNDEF_NAME (LINKLIST_LINK (
+                                 FUNGROUP_FUNLIST (LINKLIST_LINK (tmp)))))) {
+            FUNGROUP_FUNLIST (LINKLIST_LINK (tmp))
+              = TBmakeLinklist (arg_node, FUNGROUP_FUNLIST (LINKLIST_LINK (tmp)));
+            (FUNGROUP_REFCOUNTER (LINKLIST_LINK (tmp))) += 1;
+            FUNDEF_FUNGROUP (arg_node) = LINKLIST_LINK (tmp);
+            break;
+        }
+        tmp = LINKLIST_NEXT (tmp);
+    }
+    if (tmp == NULL) {
+        fg = TBmakeFungroup ();
+        FUNGROUP_FUNLIST (fg) = TBmakeLinklist (arg_node, NULL);
+        FUNGROUP_REFCOUNTER (fg) = 1;
+        INFO_SSA_FUNGROUP (arg_info) = TBmakeLinklist (fg, INFO_SSA_FUNGROUP (arg_info));
+        FUNDEF_FUNGROUP (arg_node) = fg;
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
 /*@}*/
 
 /**
@@ -689,6 +741,8 @@ SSATfundef (node *arg_node, info *arg_info)
 
     INFO_SSA_CONDSTMT (arg_info) = NULL;
     INFO_SSA_FUNCOND_FOUND (arg_info) = FALSE;
+
+    arg_node = InitializeFungroup (arg_node, arg_info);
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         /* stores access points for later insertions in this fundef */
