@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.116  1998/04/02 16:05:57  dkr
+ * new compiler phase:
+ *   generating concurrent regions (phase 18)
+ *
  * Revision 1.115  1998/03/24 15:30:29  cg
  * #include "profile.h" removed since file no longer exists.
  *
@@ -60,9 +64,6 @@
  *
  * Revision 1.99  1997/10/09 13:53:25  srs
  * counter for memory allocation
- *
- * Revision 1.98  1997/08/07 13:53:30  dkr
- * *** empty log message ***
  *
  * Revision 1.97  1997/08/07 11:11:43  dkr
  * added option -_DBUG<from>/<to>/<string>
@@ -179,9 +180,6 @@
  *
  * Revision 1.65  1995/10/18  16:47:58  cg
  * some beautifications
- *
- * Revision 1.64  1995/10/18  13:45:49  cg
- * *** empty log message ***
  *
  * Revision 1.62  1995/10/16  12:01:20  cg
  * added new compilation phase 'objinit'.
@@ -323,9 +321,6 @@
  * Revision 1.19  1995/01/05  09:55:17  asi
  * bug removed
  *
- * Revision 1.18  1995/01/03  15:09:02  asi
- * *** empty log message ***
- *
  * Revision 1.17  1995/01/03  15:00:47  asi
  * No optimization if errors occures while typechecking
  *
@@ -343,9 +338,6 @@
  *
  * Revision 1.12  1994/12/16  14:23:10  sbs
  * Import inserted
- *
- * Revision 1.11  1994/12/15  16:37:49  asi
- * *** empty log message ***
  *
  * Revision 1.10  1994/12/13  11:23:54  hw
  * changed call of NOTE
@@ -401,7 +393,6 @@
 #include "import.h"
 #include "refcount.h"
 #include "scnprs.h"
-#include "compile.h"
 #include "psi-opt.h"
 #include "writesib.h"
 #include "readsib.h"
@@ -412,7 +403,9 @@
 #include "objects.h"
 #include "uniquecheck.h"
 #include "rmvoidfun.h"
+#include "concregs.h"
 #include "precompile.h"
+#include "compile.h"
 #include "cccall.h"
 #include "Old2NewWith.h"
 #include "internal_lib.h"
@@ -553,7 +546,6 @@ MAIN
             break_after = PH_setup;
             break;
         case 'p':
-        case '2':
             break_after = PH_scanparse;
             break;
         case 'j':
@@ -654,13 +646,12 @@ MAIN
                 show_refcnt = 1;
                 break;
             case '8':
-                break_after = PH_precompile;
+                break_after = PH_concregs;
                 tmp_break = 2;
                 break;
             case '9':
-                break_after = PH_compile;
+                break_after = PH_precompile;
                 tmp_break = 2;
-                show_icm = 1;
                 break;
             case '\0':
                 break_after = PH_setup;
@@ -669,7 +660,20 @@ MAIN
                 SYSWARN (("Unknown break parameter '%s`", *argv));
             }
             break;
-
+        case '2':
+            switch (*(*argv + 1)) {
+            case '0':
+                break_after = PH_compile;
+                tmp_break = 2;
+                show_icm = 1;
+                break;
+            case '\0':
+                break_after = PH_scanparse;
+                break;
+            default:
+                SYSWARN (("Unknown break parameter '%s`", *argv));
+            }
+            break;
         default:
             SYSWARN (("Unknown break parameter '%s`", *argv));
         }
@@ -1185,6 +1189,16 @@ MAIN
 
     if (Make_Old2NewWith)
         syntax_tree = Old2NewWith (syntax_tree); /* o2nWith_tab */
+
+    NOTE_COMPILER_PHASE;
+    CHECK_DBUG_START;
+    syntax_tree = ConcRegions (syntax_tree); /* concregs_tab */
+    CHECK_DBUG_STOP;
+    ABORT_ON_ERROR;
+
+    if (break_after == PH_concregs)
+        goto BREAK;
+    compiler_phase++;
 
     NOTE_COMPILER_PHASE;
     CHECK_DBUG_START;

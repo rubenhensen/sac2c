@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.61  1998/04/02 16:05:24  dkr
+ * new compiler phase:
+ *   generating concurrent regions (phase 18)
+ *
  * Revision 1.60  1998/04/01 19:07:51  dkr
  * renamed break specifiers for precompile
  *
@@ -29,9 +33,6 @@
  * Revision 1.52  1997/08/07 15:28:33  dkr
  * eliminated typerror
  *
- * Revision 1.51  1997/08/07 13:52:13  dkr
- * *** empty log message ***
- *
  * Revision 1.50  1997/08/07 11:13:38  dkr
  * added option -_DBUG<from>/<to>/<string>
  *
@@ -40,9 +41,6 @@
  *
  * Revision 1.48  1997/05/28  12:36:51  sbs
  * Profiling integrated
- *
- * Revision 1.47  1997/05/27  08:53:59  sbs
- * *** empty log message ***
  *
  * Revision 1.46  1997/05/06  13:54:18  sbs
  * -a[at] option included
@@ -258,8 +256,9 @@ usage ()
     printf ("\t -bo -b15\tstop after: %s\n", compiler_phase_name[15]);
     printf ("\t -bs -b16\tstop after: %s\n", compiler_phase_name[16]);
     printf ("\t -br -b17\tstop after: %s\n", compiler_phase_name[17]);
-    printf ("\t -bl -b18\tstop after: %s\n", compiler_phase_name[18]);
-    printf ("\t -bc -b19\tstop after: %s\n", compiler_phase_name[19]);
+    printf ("\t -bc -b18\tstop after: %s\n", compiler_phase_name[18]);
+    printf ("\t -bl -b19\tstop after: %s\n", compiler_phase_name[19]);
+    printf ("\t -bc -b20\tstop after: %s\n", compiler_phase_name[20]);
 
     printf ("\n\nBREAK SPECIFIERS:\n\n"
             "\tBreak specifiers allow you to stop the compilation process\n"
@@ -270,15 +269,15 @@ usage ()
             "\t-bo:ae    \t-b15:ae    \tstop after array elimination\n"
             "\t-bo:cyc   \t-b15:cyc   \tstop after one complete optimization cycle\n\n"
 
-            "\t-bl:cubes \t-b18:cubes \tstop after cube-building\n"
-            "\t-bl:segs  \t-b18:segs  \tstop after choice of segments\n"
-            "\t-bl:split \t-b18:split \tstop after splitting\n"
-            "\t-bl:block \t-b18:block \tstop after hierarchical blocking\n"
-            "\t-bl:ublock\t-b18:ublock\tstop after unrolling-blocking\n"
-            "\t-bl:merge \t-b18:merge \tstop after merging\n"
-            "\t-bl:opt   \t-b18:opt   \tstop after optimization\n"
-            "\t-bl:fit   \t-b18:fit   \tstop after fitting\n"
-            "\t-bl:norm  \t-b18:norm  \tstop after normalization\n");
+            "\t-bl:cubes \t-b19:cubes \tstop after cube-building\n"
+            "\t-bl:segs  \t-b19:segs  \tstop after choice of segments\n"
+            "\t-bl:split \t-b19:split \tstop after splitting\n"
+            "\t-bl:block \t-b19:block \tstop after hierarchical blocking\n"
+            "\t-bl:ublock\t-b19:ublock\tstop after unrolling-blocking\n"
+            "\t-bl:merge \t-b19:merge \tstop after merging\n"
+            "\t-bl:opt   \t-b19:opt   \tstop after optimization\n"
+            "\t-bl:fit   \t-b19:fit   \tstop after fitting\n"
+            "\t-bl:norm  \t-b19:norm  \tstop after normalization\n");
 
     printf ("\n\nOPTIMIZATION OPTIONS:\n\n"
 
