@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.28  2002/09/11 23:19:03  dkr
+ * CreateInlineName(): bug fixed
+ *
  * Revision 3.27  2002/09/05 20:37:03  dkr
  * CreateInlineName() modified: PrefixForTmpVar() used
  *
@@ -181,9 +184,9 @@ CreateInlineName (char *old_name, node *arg_info)
     DBUG_ENTER ("CreateInlineName");
 
     prefix = PrefixForTmpVar ();
-    new_name = (char *)Malloc (sizeof (char)
-                               * (strlen (old_name) + strlen (prefix) + 1 + /* _ */
-                                  NumberOfDigits (inline_nr) + 1));         /* '\0' */
+    new_name = (char *)Malloc (
+      (strlen (old_name) + strlen (prefix) + NumberOfDigits (inline_nr) + 3)
+      * sizeof (char));
 
     sprintf (new_name, "_%s%d_%s", prefix, inline_nr, old_name);
 
