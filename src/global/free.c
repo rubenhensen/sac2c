@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.5  1995/01/18 17:28:37  asi
+ * Revision 1.6  1995/01/26 15:16:55  asi
+ * *** empty log message ***
+ *
+ * Revision 1.5  1995/01/18  17:28:37  asi
  * Added FreeTree, FreeNoInfo, FreeInfoId, FreeInfoIds, FreeInfoType, FreeModul
  *
  * Revision 1.4  1994/12/30  16:59:33  sbs
@@ -165,7 +168,7 @@ FreeInfoIds (node *arg_node, node *arg_info)
     for (i = 0; i < arg_node->nnode; i++)
         arg_node->node[i] = Trav (arg_node->node[i], arg_info);
     FreeMask (arg_node);
-    FreeIds (arg_node->info.ids);
+    /*  FreeIds(arg_node->info.ids);*/
     free (arg_node);
     DBUG_RETURN ((node *)NULL);
 }
