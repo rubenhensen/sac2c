@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.23  2004/10/01 08:47:36  sah
+ * removed some direct ast referenced and
+ * added macro accesses instead
+ *
  * Revision 3.22  2004/09/28 14:09:18  ktr
  * removed old refcount and generatemasks
  *
@@ -315,12 +319,13 @@ GenSel (ids *ids_node, info *arg_info)
 #endif
         new_let = MakeLet (NULL, GenIds (arg));
 
-        DBUG_PRINT ("AE", ("Generating new value for %s", new_let->info.ids->id));
+        DBUG_PRINT ("AE", ("Generating new value for %s", IDS_NAME (LET_IDS (new_let))));
         IDS_VARDEC (LET_IDS (new_let))
-          = SearchDecl (new_let->info.ids->id, INFO_AE_TYPES (arg_info));
+          = SearchDecl (IDS_NAME (LET_IDS (new_let)), INFO_AE_TYPES (arg_info));
 
         if (IDS_VARDEC (LET_IDS (new_let)) == NULL) {
-            DBUG_PRINT ("AE", ("Generating new vardec for %s", new_let->info.ids->id));
+            DBUG_PRINT ("AE",
+                        ("Generating new vardec for %s", IDS_NAME (LET_IDS (new_let))));
             new_vardec = MakeVardec (StringCopy (IDS_NAME (LET_IDS (new_let))),
                                      DupAllTypes (GetTypes (type)), NULL);
             VARDEC_DIM (new_vardec) = 0;
@@ -377,7 +382,7 @@ AEprf (node *arg_node, info *arg_info)
         if (N_id == NODE_TYPE (arg[1]) && tmpn && N_array == NODE_TYPE (tmpn)
             && IsConstArray (tmpn) && CorrectArraySize (ID_IDS (arg[1]))) {
             DBUG_PRINT ("AE", ("sel function with array %s to eliminated found",
-                               arg[1]->info.ids->id));
+                               IDS_NAME (ID_IDS (arg[0]))));
             new_node = MakeId (NULL, NULL, ST_regular);
             ID_IDS (new_node) = GenIds (arg);
             ID_VARDEC (new_node)
