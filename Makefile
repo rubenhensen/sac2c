@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.51  2000/08/17 10:10:23  dkr
+# NameTupels.o added
+#
 # Revision 2.50  2000/08/02 14:28:54  nmw
 # print_interface_*.o added
 #
@@ -42,91 +45,6 @@
 #
 # Revision 2.37  2000/04/12 17:26:38  jhs
 # OS will now be pushed into all sub-makes.
-#
-# Revision 2.36  2000/03/30 15:09:05  jhs
-# Added adjust_calls.o
-#
-# Revision 2.35  2000/03/29 16:12:23  jhs
-# AdAdded /src/mu[tab]/blocks_lift.o
-#
-# Revision 2.34  2000/03/23 14:04:54  jhs
-# Added echoing of OS at begin of compilation.
-#
-# Revision 2.33  2000/03/22 17:38:17  jhs
-# Added barrier_init.o
-#
-# Revision 2.32  2000/03/17 16:07:18  dkr
-# cleanup_decls.o added
-#
-# Revision 2.31  2000/03/09 18:31:31  jhs
-# Added blkpp and dfa.
-#
-# Revision 2.30  2000/03/02 13:09:55  jhs
-# Added src/multithread/(mtfuns_init|blkco_cons).(c|h).
-#
-# Revision 2.29  2000/02/21 17:59:42  jhs
-# Added multithread_lib.o and blocks_expand.o.
-#
-# Revision 2.28  2000/02/17 16:10:58  cg
-# Added linking of new files flatten/fun2lac.o and flatten/adjust_ids.o.
-#
-# Revision 2.27  2000/02/04 14:47:37  jhs
-# Added repfuns_init.o.
-#
-# Revision 2.26  2000/01/28 13:49:23  jhs
-# Added blocks_init.
-#
-# Revision 2.25  2000/01/28 12:47:08  dkr
-# added LookUpTable.o
-#
-# Revision 2.24  2000/01/24 11:54:32  jhs
-# Moved scheduling.[ch] from concurrent to tree.
-#
-# Revision 2.23  2000/01/21 17:02:01  dkr
-# make deps done
-#
-# Revision 2.22  2000/01/21 16:45:03  dkr
-# tree related stuff moved into directory tree
-#
-# Revision 2.21  2000/01/21 13:19:00  jhs
-# Added net mt ... Added new path ...
-#
-# Revision 2.20  2000/01/21 12:01:55  dkr
-# directory tree added
-# lac2fun.o added
-#
-# Revision 2.19  2000/01/17 18:35:55  cg
-# Handling of target platform unified: One of the following
-# is always defined:
-# SAC_FOR_SOLARIS_SPARC, SAC_FOR_LINUX_X86, OR SAC_FOR_OSF_ALPHA.
-#
-# Revision 2.18  2000/01/04 11:48:52  cg
-# Added recursive make call for new subdirectory src/heapmgr.
-#
-# Revision 2.17  1999/12/13 11:26:07  dkr
-# target 'clean': '$(RM) -r SunWS_cache' for new version of Sun Workshop added.
-#
-# Revision 2.16  1999/10/19 17:11:34  sbs
-# new files in typecheck included and UNIX_ALPHA changed to OSF_ALPHA
-#
-# Revision 2.15  1999/09/15 16:26:35  sbs
-# OSF_ALPHA as new OS added.
-#
-# Revision 2.14  1999/07/30 13:49:50  jhs
-# Added concurrent_lib.o
-#
-# Revision 2.13  1999/07/27 08:33:19  jhs
-# Added spmd_cons.o.
-#
-# Revision 2.12  1999/07/08 15:41:12  cg
-# Sequence of src directories modifified in order to enable
-# compilation after gmake clean.
-#
-# Revision 2.11  1999/07/08 12:45:46  cg
-# Added making of new source directories src/tools and src/libsac.
-#
-# Revision 2.10  1999/06/25 14:49:54  jhs
-# Added src/concurrent/spmd_trav.o to includes.
 #
 # ... [eliminated] 
 #
@@ -250,7 +168,7 @@ SOURCE_FILES := $(foreach dir,$(SOURCE_DIRS),$(addprefix $(dir)/,RCS-files $(she
 GLOBAL= src/global/main.o src/global/Error.o src/global/usage.o \
         src/global/my_debug.o src/global/internal_lib.o src/global/globals.o \
         src/global/resource.o src/global/build.o src/global/interrupt.o \
-        src/global/options.o
+        src/global/options.o src/global/NameTuples.o
 TREE= src/tree/traverse.o src/tree/tree.o src/tree/tree_basic.o src/tree/free.o \
       src/tree/tree_compound.o src/tree/DupTree.o src/tree/LookUpTable.o \
       src/tree/DataFlowMask.o src/tree/DataFlowMaskUtils.o \
