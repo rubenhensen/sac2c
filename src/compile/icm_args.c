@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.7  1995/07/04 09:27:22  hw
+ * Revision 1.8  1995/08/04 13:47:46  sbs
+ * GetNextString inserted
+ *
+ * Revision 1.7  1995/07/04  09:27:22  hw
  * - macro GetNextDouble inserted
  * - N_double in GetShape integrated
  *
@@ -32,6 +35,15 @@
         DBUG_ASSERT ((ex->nodetype == N_exprs), "wrong icm-arg: N_exprs expected");      \
         DBUG_ASSERT ((ex->node[0]->nodetype == N_id), "wrong icm-arg: N_id expected");   \
         res = ex->node[0]->info.ids->id;                                                 \
+        DBUG_PRINT ("PRINT", ("icm-arg found: %s", res));                                \
+        ex = ex->node[1];                                                                \
+    }
+
+#define GetNextString(res, ex)                                                           \
+    {                                                                                    \
+        DBUG_ASSERT ((ex->nodetype == N_exprs), "wrong icm-arg: N_exprs expected");      \
+        DBUG_ASSERT ((ex->node[0]->nodetype == N_str), "wrong icm-arg: N_str expected"); \
+        res = ex->node[0]->info.id;                                                      \
         DBUG_PRINT ("PRINT", ("icm-arg found: %s", res));                                \
         ex = ex->node[1];                                                                \
     }
@@ -86,6 +98,9 @@
             switch (ex->node[0]->nodetype) {                                             \
             case N_id:                                                                   \
                 GetNextId (v[i], ex);                                                    \
+                break;                                                                   \
+            case N_str:                                                                  \
+                GetNextString (v[i], ex);                                                \
                 break;                                                                   \
             case N_num:                                                                  \
                 GetNextInt (num, ex);                                                    \
