@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.13  2000/06/08 12:47:38  nmw
+# print_interface added
+#
 # Revision 2.12  2000/05/29 14:36:36  dkr
 # make deps done
 #
@@ -107,7 +110,7 @@ CFLAGS    := -D__EXTENSIONS__
 INCS=-I../global -I../tree -I../../inc -I../compile -I../modules -I../concurrent \
      -I../psi-opt -I../optimize
 
-all: print.o convert.o
+all: print.o convert.o print_interface.o
 
 print.o: print.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o print.o -c print.c $(INCS)
@@ -115,11 +118,14 @@ print.o: print.c
 convert.o: convert.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o convert.o -c convert.c $(INCS)
 
+print_interface.o: print_interface.c
+	$(CC) $(CCFLAGS) $(CFLAGS) -o print_interface.o -c print_interface.c $(INCS)
+
 deps:
 	makedepend $(INCS) *.c
 
 clean:
-	$(RM) print.o convert.o *.bak
+	$(RM) print.o convert.o print_interface.o *.bak
 	$(RM) -r .sb SunWS_cache
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
@@ -137,12 +143,27 @@ print.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
 print.o: /usr/include/stdlib.h /usr/include/string.h ../tree/tree.h
 print.o: ../global/types.h ../tree/tree_basic.h ../tree/tree_compound.h
 print.o: ../global/Error.h ../global/globals.h ../global/internal_lib.h
-print.o: print.h ../global/my_debug.h ../../inc/dbug.h ../tree/traverse.h
-print.o: convert.h ../tree/DataFlowMask.h ../optimize/optimize.h
-print.o: ../tree/free.h /usr/include/malloc.h /usr/include/sys/types.h
-print.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
+print.o: print.h print_interface.h ../global/my_debug.h ../../inc/dbug.h
+print.o: ../tree/traverse.h convert.h ../tree/DataFlowMask.h
+print.o: ../optimize/optimize.h ../tree/free.h /usr/include/malloc.h
+print.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
+print.o: /usr/include/sys/int_types.h /usr/include/sys/select.h
+print.o: /usr/include/sys/time.h /usr/include/sys/time.h
 print.o: ../optimize/generatemasks.h ../modules/filemgr.h
 print.o: ../compile/gen_startup_code.h ../psi-opt/WithloopFolding.h
 print.o: ../tree/scheduling.h ../psi-opt/wl_access_analyze.h
 print.o: ../psi-opt/tile_size_inference.h ../compile/icm.data
 print.o: ../tree/prf_node_info.mac
+print_interface.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
+print_interface.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
+print_interface.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
+print_interface.o: /usr/include/stdlib.h /usr/include/string.h ../tree/tree.h
+print_interface.o: ../global/types.h ../tree/tree_basic.h
+print_interface.o: ../tree/tree_compound.h ../global/Error.h
+print_interface.o: ../global/globals.h ../global/internal_lib.h
+print_interface.o: print_interface.h print.h ../global/my_debug.h
+print_interface.o: ../../inc/dbug.h ../tree/traverse.h convert.h
+print_interface.o: ../modules/filemgr.h ../tree/free.h /usr/include/malloc.h
+print_interface.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
+print_interface.o: /usr/include/sys/int_types.h /usr/include/sys/select.h
+print_interface.o: /usr/include/sys/time.h /usr/include/sys/time.h
