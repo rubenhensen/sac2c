@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.7  2004/11/26 21:27:29  khf
+ * added DCRids
+ *
  * Revision 1.6  2004/11/22 18:10:19  sbs
  * SacDevCamp04
  *
@@ -37,6 +40,7 @@ extern node *DCRvardec (node *arg_node, info *arg_info);
 extern node *DCRassign (node *arg_node, info *arg_info);
 extern node *DCRlet (node *arg_node, info *arg_info);
 extern node *DCRid (node *arg_node, info *arg_info);
+extern node *DCRids (node *arg_node, info *arg_info);
 extern node *DCRcond (node *arg_node, info *arg_info);
 extern node *DCRreturn (node *arg_node, info *arg_info);
 extern node *DCRap (node *arg_node, info *arg_info);
