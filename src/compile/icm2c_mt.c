@@ -1,8 +1,8 @@
 /*
  *
  * $Log$
- * Revision 2.11  2000/05/25 17:35:12  dkr
- * a comment added
+ * Revision 2.12  2000/05/25 18:30:07  dkr
+ * *** empty log message ***
  *
  * Revision 2.10  2000/01/17 16:25:58  cg
  * Removed static and dynamic versions of the ICMs
@@ -163,10 +163,10 @@ SearchFoldImplementation (char *foldop)
         fundef = FUNDEF_NEXT (fundef);
     }
 
-  DBUG_ASSERT( (fundef != NULL),
-               "Unknown fold operation specified in synchronisation ICM"));
+    DBUG_ASSERT ((fundef != NULL),
+                 "Unknown fold operation specified in synchronisation ICM");
 
-  DBUG_RETURN (GetFoldCode (fundef));
+    DBUG_RETURN (GetFoldCode (fundef));
 }
 #endif /* BEtest */
 
