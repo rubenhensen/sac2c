@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.91  2003/11/14 22:19:01  dkrHH
+ * new with-loop syntax incorporated: DEFAULT value used for elements
+ * not covered by generators.
+ *
  * Revision 1.90  2003/11/11 19:12:07  dkr
  * COMP2With2(): NWITH2_DEFAULT used if necessary
  *
@@ -6111,10 +6115,11 @@ COMP2WLgridx (node *arg_node, node *arg_info)
             node *icm_args;
             char *icm_name;
             node *code_rc_icms = NULL;
+            node *cexpr, *def;
 
             if (WLGRIDX_CODE (arg_node) == NULL) {
                 /*
-                 * no code found
+                 * no code found  ->  default value / noop
                  */
 
                 /*
@@ -6123,8 +6128,25 @@ COMP2WLgridx (node *arg_node, node *arg_info)
                 switch (NWITH2_TYPE (wlnode)) {
                 case WO_genarray:
                     DBUG_ASSERT ((offset_needed), "wrong value for OFFSET_NEEDED found!");
-                    icm_name = "WL_ASSIGN__INIT";
-                    icm_args = MakeIcmArgs_WL_OP2 (arg_node);
+                    def = NWITH2_DEFAULT (wlnode);
+                    if (def != NULL) {
+                        DBUG_ASSERT ((NODE_TYPE (def) == N_id),
+                                     "NWITH2_DEFAULT is no N_id node");
+                        icm_name = "WL_ASSIGN";
+                        icm_args
+                          = AppendExprs (MakeTypeArgs (ID_NAME (def), ID_TYPE (def),
+                                                       FALSE, TRUE, FALSE,
+                                                       MakeIcmArgs_WL_OP2 (arg_node)),
+                                         MakeExprs (MakeId_Copy (
+                                                      GenericFun (0, ID_TYPE (def))),
+                                                    NULL));
+                    } else {
+                        /*
+                         * no default value found  ->  fill with 0
+                         */
+                        icm_name = "WL_ASSIGN__INIT";
+                        icm_args = MakeIcmArgs_WL_OP2 (arg_node);
+                    }
                     break;
 
                 case WO_modarray:
@@ -6161,8 +6183,7 @@ COMP2WLgridx (node *arg_node, node *arg_info)
                  * insert compiled code.
                  */
 
-                node *cexpr = WLGRIDX_CEXPR (arg_node);
-
+                cexpr = WLGRIDX_CEXPR (arg_node);
                 DBUG_ASSERT ((cexpr != NULL), "no code expr found");
 
                 DBUG_ASSERT ((WLGRIDX_CBLOCK (arg_node) != NULL),
