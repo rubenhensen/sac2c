@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.73  2002/10/22 12:40:49  sbs
+ * DBUG_ASSERTs in expression position replaced by DBUG_ASSERT_EXPR
+ *
  * Revision 3.72  2002/10/18 13:46:16  sbs
  * various VARDEC_OR_ARG_.... macros extended to handle
  * N_objdef backlinks as well.
@@ -1091,35 +1094,39 @@ extern int CmpDomain (node *args1, node *args2);
        ? ARG_TYPE (n)                                                                    \
        : ((NODE_TYPE (n) == N_vardec) ? VARDEC_TYPE (n) : OBJDEF_TYPE (n)))
 #define VARDEC_OR_ARG_STATUS(n)                                                          \
-    ((NODE_TYPE (n) == N_arg) ? ARG_STATUS (n)                                           \
-                              : ((NODE_TYPE (n) == N_vardec)                             \
-                                   ? VARDEC_STATUS (n)                                   \
-                                   : DBUG_ASSERT (0, "VARDEC_OR_ARG_STATUS on objdef")))
+    ((NODE_TYPE (n) == N_arg)                                                            \
+       ? ARG_STATUS (n)                                                                  \
+       : ((NODE_TYPE (n) == N_vardec)                                                    \
+            ? VARDEC_STATUS (n)                                                          \
+            : DBUG_ASSERT_EXPR (0, "VARDEC_OR_ARG_STATUS on objdef", 0)))
 #define VARDEC_OR_ARG_ATTRIB(n)                                                          \
-    ((NODE_TYPE (n) == N_arg) ? ARG_ATTRIB (n)                                           \
-                              : ((NODE_TYPE (n) == N_vardec)                             \
-                                   ? VARDEC_ATTRIB (n)                                   \
-                                   : DBUG_ASSERT (0, "VARDEC_OR_ARG_ATTRIB on objdef")))
+    ((NODE_TYPE (n) == N_arg)                                                            \
+       ? ARG_ATTRIB (n)                                                                  \
+       : ((NODE_TYPE (n) == N_vardec)                                                    \
+            ? VARDEC_ATTRIB (n)                                                          \
+            : DBUG_ASSERT_EXPR (0, "VARDEC_OR_ARG_ATTRIB on objdef", 0)))
 #define VARDEC_OR_ARG_AVIS(n)                                                            \
     ((NODE_TYPE (n) == N_arg)                                                            \
        ? ARG_AVIS (n)                                                                    \
        : ((NODE_TYPE (n) == N_vardec) ? VARDEC_AVIS (n) : OBJDEF_AVIS (n)))
 #define VARDEC_OR_ARG_VARNO(n)                                                           \
-    ((NODE_TYPE (n) == N_arg) ? ARG_VARNO (n)                                            \
-                              : ((NODE_TYPE (n) == N_vardec)                             \
-                                   ? VARDEC_VARNO (n)                                    \
-                                   : DBUG_ASSERT (0, "VARDEC_OR_ARG_VARNO on objdef")))
+    ((NODE_TYPE (n) == N_arg)                                                            \
+       ? ARG_VARNO (n)                                                                   \
+       : ((NODE_TYPE (n) == N_vardec)                                                    \
+            ? VARDEC_VARNO (n)                                                           \
+            : DBUG_ASSERT_EXPR (0, "VARDEC_OR_ARG_VARNO on objdef", 0)))
 #define VARDEC_OR_ARG_REFCNT(n)                                                          \
-    ((NODE_TYPE (n) == N_arg) ? ARG_REFCNT (n)                                           \
-                              : ((NODE_TYPE (n) == N_vardec)                             \
-                                   ? VARDEC_REFCNT (n)                                   \
-                                   : DBUG_ASSERT (0, "VARDEC_OR_ARG_REFCNT on objdef")))
+    ((NODE_TYPE (n) == N_arg)                                                            \
+       ? ARG_REFCNT (n)                                                                  \
+       : ((NODE_TYPE (n) == N_vardec)                                                    \
+            ? VARDEC_REFCNT (n)                                                          \
+            : DBUG_ASSERT_EXPR (0, "VARDEC_OR_ARG_REFCNT on objdef", 0)))
 #define VARDEC_OR_ARG_NAIVE_REFCNT(n)                                                    \
     ((NODE_TYPE (n) == N_arg)                                                            \
        ? ARG_NAIVE_REFCNT (n)                                                            \
        : ((NODE_TYPE (n) == N_vardec)                                                    \
             ? VARDEC_NAIVE_REFCNT (n)                                                    \
-            : DBUG_ASSERT (0, "VARDEC_OR_ARG_NAIVE_REFCNT on objdef")))
+            : DBUG_ASSERT_EXPR (0, "VARDEC_OR_ARG_NAIVE_REFCNT on objdef", 0)))
 #define VARDEC_OR_ARG_NEXT(n)                                                            \
     ((NODE_TYPE (n) == N_arg)                                                            \
        ? ARG_NEXT (n)                                                                    \
