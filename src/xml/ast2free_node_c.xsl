@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.7  2005/03/10 09:41:09  cg
+  Added some necessary includes.
+
   Revision 1.6  2005/03/04 21:21:42  cg
   Setting of zombie flag is hidden behind function FREEzombify.
   This allows us to recall the existence of zombie functions
@@ -89,6 +92,7 @@ version="1.0">
   <!-- includes -->
   <xsl:text>
 
+#include "free.h"
 #include "free_node.h"
 #include "free_attribs.h"
 #include "free_info.h"

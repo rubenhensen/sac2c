@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.122  2005/03/10 09:41:09  cg
+ * Added some necessary includes.
+ *
  * Revision 3.121  2005/03/04 21:21:42  cg
  * Whenever the traversal reaches an N_module node, the
  * situation is considered save to add silently duplicated
@@ -41,9 +44,12 @@
 #include "traverse_tables.h"
 #include "traverse_helper.h"
 #include "globals.h"
+#include "free.h"
+#include "DupTree.h"
 #include "internal_lib.h"
 #include "dbug.h"
 #include "tree_basic.h"
+#include "tree_compound.h"
 
 struct TRAVSTACK_T {
     struct TRAVSTACK_T *next;
