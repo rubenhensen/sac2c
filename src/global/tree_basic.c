@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.41  1998/03/18 10:48:38  dkr
+ * changed MakeWLproj
+ *
  * Revision 1.40  1998/03/17 10:36:06  dkr
  * changed MakeWLseg()
  *
@@ -1445,8 +1448,8 @@ MakeWLublock (int level, int dim, int bound1, int bound2, int blocking, node *ne
 /*--------------------------------------------------------------------------*/
 
 node *
-MakeWLproj (int level, int dim, int bound1, int bound2, int step, int unrolling,
-            node *inner, node *next)
+MakeWLproj (int dim, int bound1, int bound2, int step, int unrolling, node *inner,
+            node *next)
 {
     node *new_node;
 
@@ -1455,7 +1458,6 @@ MakeWLproj (int level, int dim, int bound1, int bound2, int step, int unrolling,
 
     NODE_TYPE (new_node) = N_WLproj;
 
-    WLPROJ_LEVEL (new_node) = level;
     WLPROJ_DIM (new_node) = dim;
     WLPROJ_BOUND1 (new_node) = bound1;
     WLPROJ_BOUND2 (new_node) = bound2;
