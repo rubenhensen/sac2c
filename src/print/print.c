@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.193  1998/04/17 19:04:23  dkr
+ * changed output of PrintWLseg, PrintNwith2
+ *
  * Revision 1.192  1998/04/17 17:27:46  dkr
  * 'concurrent regions' are now called 'SPMD regions'
  *
@@ -2424,7 +2427,6 @@ PrintNwith2 (node *arg_node, node *arg_info)
 
     INDENT
     fprintf (outfile, "/********** operators: **********/\n");
-    indent++;
     code = NWITH2_CODE (arg_node);
     while (code != NULL) {
         INDENT
@@ -2440,12 +2442,9 @@ PrintNwith2 (node *arg_node, node *arg_info)
             fprintf (outfile, "\n");
         }
     }
-    indent--;
 
     if (NWITH2_SEG (arg_node) != NULL) {
-        indent++;
         NWITH2_SEG (arg_node) = Trav (NWITH2_SEG (arg_node), arg_info);
-        indent--;
     }
 
     INDENT
@@ -2478,10 +2477,8 @@ PrintWLseg (node *arg_node, node *arg_info)
 
     seg = arg_node;
     while (seg != NULL) {
-        indent--;
         INDENT
         fprintf (outfile, "/********** segment %d: **********/\n", i++);
-        indent++;
         WLSEG_CONTENTS (seg) = Trav (WLSEG_CONTENTS (seg), arg_info);
         seg = WLSEG_NEXT (seg);
     }
