@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.14  1995/02/16 15:50:07  asi
+ * Revision 1.15  1995/02/22 18:18:44  asi
+ * ClearMask, ReadMask added -- GenMask, OPTfundef modified
+ *
+ * Revision 1.14  1995/02/16  15:50:07  asi
  * MAlloc added
  *
  * Revision 1.13  1995/02/13  16:40:29  asi
@@ -78,6 +81,7 @@ extern node *Optimize (node *arg_node);
 
 extern void *MAlloc (int size);
 extern char *PrintMask (long *mask);
+extern void ClearMask (long *mask);
 extern long *GenMask ();
 extern void MinusMask (long *mask1, long *mask2);
 extern long *DupMask (long *oldmask);
@@ -86,6 +90,7 @@ extern short CheckMask (long *mask1, long *mask2);
 extern void PlusMask (long *mask1, long *mask2);
 extern void If3_2Mask (long *mask1, long *mask2, long *mask3);
 extern short MaskIsNotZero (long *mask);
+extern long ReadMask (long *mask, long number);
 
 extern node *OPTfundef (node *arg_node, node *arg_info);
 extern node *OPTarg (node *arg_node, node *arg_info);
