@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2004/12/13 14:08:21  mwe
+ * new traversals added
+ *
  * Revision 1.1  2004/12/08 12:18:07  mwe
  * Initial revision
  *
@@ -20,5 +23,10 @@ extern node *TUPwith (node *arg_node, info *arg_info);
 extern node *TUPpart (node *arg_node, info *arg_info);
 extern node *TUPgenerator (node *arg_node, info *arg_info);
 extern node *TUPcode (node *arg_node, info *arg_info);
+extern node *TUPap (node *arg_node, info *arg_info);
+extern node *TUPids (node *arg_node, info *arg_info);
+extern node *TUPfold (node *arg_node, info *arg_info);
+extern node *TUPmodarray (node *arg_node, info *arg_info);
+extern node *TUPgenarray (node *arg_node, info *arg_info);
 
 #endif /*_SAC_TYPEUPGRADE_H_ */

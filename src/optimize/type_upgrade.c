@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.5  2004/12/13 14:08:21  mwe
+ * new traversals added
+ *
  * Revision 1.4  2004/12/09 13:38:43  mwe
  * some small changes
  *
@@ -31,6 +34,9 @@
 #include "free.h"
 #include "DupTree.h"
 #include "globals.h"
+#include "type_utils.h"
+#include "ct_with.h"
+#include "type_errors.h"
 
 #include "type_upgrade.h"
 
@@ -48,12 +54,18 @@ struct INFO {
     node *withid;
     bool corrlf;
     bool chklf;
+    int counter;
+    ntype *type;
+    ntype *wlexpr;
 };
 
 #define INFO_TUP_FUNDEF(n) (n->fundef)
 #define INFO_TUP_WITHID(n) (n->withid)
 #define INFO_TUP_CORRECTFUNCTION(n) (n->corrlf)
 #define INFO_TUP_CHECKLOOPFUN(n) (n->chklf)
+#define INFO_TUP_NEWTYPE(n) (n->type)
+#define INFO_TUP_TYPECOUNTER(n) (n->counter)
+#define INFO_TUP_WLEXPR(n) (n->wlexpr)
 
 static info *
 MakeInfo ()
@@ -67,6 +79,9 @@ MakeInfo ()
     INFO_TUP_WITHID (result) = NULL;
     INFO_TUP_CORRECTFUNCTION (result) = TRUE;
     INFO_TUP_CHECKLOOPFUN (result) = FALSE;
+    INFO_TUP_NEWTYPE (result) = NULL;
+    INFO_TUP_TYPECOUNTER (result) = 0;
+    INFO_TUP_WLEXPR (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -417,6 +432,7 @@ TryToSpecializeFunction (node *fundef, node *args, info *arg_info)
 
             /*
              * function is no special function
+             * TODO
              */
         }
     }
@@ -432,7 +448,8 @@ TryStaticDispatch (node *fundef, info *arg_info)
     if (FUNDEF_ISWRAPPERFUN (fundef)) {
 
         /*
-         * current fundef is fundef of wrapper function
+         * current fundef belongs to wrapper function
+         * TODO
          */
     }
 
@@ -606,166 +623,23 @@ node *
 TUPlet (node *arg_node, info *arg_info)
 {
 
-    ntype *type, *old_type, *tmp;
-    node *ret, *ids;
-
     DBUG_ENTER ("TUPlet");
 
-    if (N_ap == NODE_TYPE (LET_EXPR (arg_node))) {
+    INFO_TUP_NEWTYPE (arg_info) = NULL;
 
-        /*
-         *  expression is a function application
-         */
+    /*
+     * traverse in ap or with node
+     */
+    LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
-        if (INFO_TUP_CHECKLOOPFUN (arg_info)) {
+    if (INFO_TUP_CORRECTFUNCTION (arg_info)) {
 
-            /*
-             * at the moment we are checking, if the recursive call of a loop function
-             * will work with specialized signature
-             */
-
-            node *signature, *args;
-
-            signature = FUNDEF_ARGS (AP_FUNDEF (LET_EXPR (arg_node)));
-            args = AP_ARGS (LET_EXPR (arg_node));
-
-            while ((INFO_TUP_CORRECTFUNCTION (arg_info)) && (signature != NULL)) {
-
-                switch (TYcmpTypes (AVIS_TYPE (ARG_AVIS (signature)),
-                                    AVIS_TYPE (ID_AVIS (EXPRS_EXPR (args))))) {
-
-                case TY_eq: /* same types, that's ok */
-                    break;
-                case TY_gt: /* argument is more special than signature, that's ok */
-                    break;
-                case TY_lt: /* signature is more special than argument, that's a problem
-                             */
-                    INFO_TUP_CORRECTFUNCTION (arg_info) = FALSE;
-                    break;
-                case TY_hcs:
-                case TY_dis: /* both types are unrelated, should not be possible */
-                    DBUG_ASSERT ((FALSE), "former type is unrelated to new type! ");
-                    break;
-
-                default: /* no other cases exist */
-                    DBUG_ASSERT ((FALSE), "New element in enumeration added?");
-                }
-                signature = ARG_NEXT (signature);
-                args = EXPRS_NEXT (args);
-            }
-        } else {
-
-            /* first of all, try to specialize function */
-            AP_FUNDEF (LET_EXPR (arg_node))
-              = TryToSpecializeFunction (AP_FUNDEF (LET_EXPR (arg_node)),
-                                         AP_ARGS (LET_EXPR (arg_node)), arg_info);
-
-            /* now we have the possibility to do an static dispatch */
-            AP_FUNDEF (LET_EXPR (arg_node))
-              = TryStaticDispatch (AP_FUNDEF (LET_EXPR (arg_node)), arg_info);
+        if (INFO_TUP_NEWTYPE (arg_info) == NULL) {
+            INFO_TUP_NEWTYPE (arg_info) = NTCnewTypeCheck_Expr (LET_EXPR (arg_node));
         }
 
-        if (INFO_TUP_CORRECTFUNCTION (arg_info)) {
-            /*
-             * update left side
-             * here is the only possibility for multiple ids on left side
-             */
-
-            ret = FUNDEF_RETS (AP_FUNDEF (LET_EXPR (arg_node)));
-            ids = LET_IDS (arg_node);
-
-            while (ret != NULL) {
-
-                switch (TYcmpTypes (RET_TYPE (ret), AVIS_TYPE (IDS_AVIS (ids)))) {
-
-                case TY_eq: /* same types, nothing changed */
-                    break;
-
-                case TY_gt: /* lost type information, should not happen */
-                    DBUG_ASSERT ((FALSE), "lost type information");
-                    break;
-
-                case TY_hcs:
-                case TY_dis: /* both types are unrelated, should not be possible */
-                    DBUG_ASSERT ((FALSE), "former type is unrelated to new type! ");
-                    break;
-
-                case TY_lt: /* return type is more special: update */
-                    AVIS_TYPE (IDS_AVIS (ids)) = TYfreeType (AVIS_TYPE (IDS_AVIS (ids)));
-                    AVIS_TYPE (IDS_AVIS (ids)) = TYcopyType (RET_TYPE (ret));
-                    break;
-
-                default: /* no other cases exist */
-                    DBUG_ASSERT ((FALSE), "New element in enumeration added?");
-                }
-
-                ret = RET_NEXT (ret);
-                ids = IDS_NEXT (ids);
-            }
-        }
-    } else if (N_with == NODE_TYPE (LET_EXPR (arg_node))) {
-
-        /*
-         * expression is a with loop
-         */
-
-        /* first traverse in withloop, update all expr parts */
-
-        LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
-
-    } else {
-        /*
-         * all other expressions: no need to traverse in substructures
-         */
-    }
-
-    if (N_ap != NODE_TYPE (LET_EXPR (arg_node))) {
-
-        /*
-         * upgrade for N_ap nodes already done
-         */
-
-        DBUG_ASSERT ((IDS_AVIS (LET_IDS (arg_node)) != NULL),
-                     "AVIS is NULL in IDS node!");
-
-        old_type = AVIS_TYPE (IDS_AVIS (LET_IDS (arg_node)));
-        AVIS_TYPE (IDS_AVIS (LET_IDS (arg_node))) = NULL;
-
-        type = NTCnewTypeCheck_Expr (LET_EXPR (arg_node));
-
-        if (TYisProd (type)) {
-            tmp = TYcopyType (TYgetProductMember (type, 0));
-            type = TYfreeType (type);
-            type = tmp;
-        }
-
-        switch (TYcmpTypes (type, old_type)) {
-
-        case TY_eq: /* types are equal, nothing to do */
-            old_type = TYfreeType (old_type);
-            AVIS_TYPE (IDS_AVIS (LET_IDS (arg_node))) = type;
-            break;
-
-        case TY_gt: /* old type is more specific, lost type information */
-            DBUG_ASSERT ((FALSE), "Lost type information!");
-            break;
-
-        case TY_hcs:
-        case TY_dis: /* both types are unrelated, should not be possible */
-            DBUG_ASSERT ((FALSE), "former type is unrelated to new type! ");
-            break;
-
-        case TY_lt: /* new type is more specific, do upgrade */
-            /*AVIS_TYPE(IDS_AVIS(LET_IDS(arg_node))) =
-             * TYfreeType(AVIS_TYPE(IDS_AVIS(LET_IDS(arg_node))));*/
-            old_type = TYfreeType (old_type);
-            AVIS_TYPE (IDS_AVIS (LET_IDS (arg_node))) = type;
-            tup_expr++;
-            break;
-
-        default: /* all cases are listed above, so default should never be entered*/
-            DBUG_ASSERT ((FALSE), "New element in enumeration added?");
-        }
+        INFO_TUP_TYPECOUNTER (arg_info) = 0;
+        LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -796,6 +670,14 @@ TUPwith (node *arg_node, info *arg_info)
 
     if (NULL != WITH_CODE (arg_node)) {
         WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
+    }
+
+    /*
+     * get result type of withloop
+     */
+
+    if (NULL != WITH_WITHOP (arg_node)) {
+        WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -901,12 +783,24 @@ TUPgenerator (node *arg_node, info *arg_info)
 
     withid = INFO_TUP_WITHID (arg_info);
 
-    DBUG_ASSERT (TYleTypes (current, AVIS_TYPE (IDS_AVIS (WITHID_VEC (withid)))),
-                 "Lost type information!");
+    switch (TYcmpTypes (current, AVIS_TYPE (IDS_AVIS (WITHID_VEC (withid))))) {
+    case TY_eq:
+        break;
 
-    AVIS_TYPE (IDS_AVIS (WITHID_VEC (withid)))
-      = TYfreeType (AVIS_TYPE (IDS_AVIS (WITHID_VEC (withid))));
-    AVIS_TYPE (IDS_AVIS (WITHID_VEC (withid))) = TYcopyType (current);
+    case TY_gt:
+        DBUG_ASSERT ((FALSE), "Lost type information!");
+        break;
+
+    case TY_lt:
+        AVIS_TYPE (IDS_AVIS (WITHID_VEC (withid)))
+          = TYfreeType (AVIS_TYPE (IDS_AVIS (WITHID_VEC (withid))));
+        AVIS_TYPE (IDS_AVIS (WITHID_VEC (withid))) = TYcopyType (current);
+        tup_expr++;
+        break;
+
+    default:
+        DBUG_ASSERT ((FALSE), "unexpected result of type comparison!");
+    }
 
     current = TYfreeType (current);
 
@@ -929,7 +823,7 @@ TUPcode (node *arg_node, info *arg_info)
 
     /*
      * this is the code block of a with loop
-     * CBLOCK contains this code, CEXPRS conains the raturn value(s)
+     * CBLOCK contains this code, CEXPRS conains the return value(s)
      * CEXPRS has to be an id-node, so no typeupgrade has to be done
      */
 
@@ -940,6 +834,173 @@ TUPcode (node *arg_node, info *arg_info)
     if (CODE_NEXT (arg_node) != NULL) {
         CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
     }
+
+    INFO_TUP_WLEXPR (arg_info) = NULL;
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+TUPap (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("TUPap");
+
+    if (INFO_TUP_CHECKLOOPFUN (arg_info)) {
+
+        /*
+         * at the moment we are checking, if the recursive call of a loop function
+         * will work with specialized signature
+         */
+
+        node *signature, *args;
+
+        signature = FUNDEF_ARGS (AP_FUNDEF (arg_node));
+        args = AP_ARGS (arg_node);
+
+        while ((INFO_TUP_CORRECTFUNCTION (arg_info)) && (signature != NULL)) {
+
+            switch (TYcmpTypes (AVIS_TYPE (ARG_AVIS (signature)),
+                                AVIS_TYPE (ID_AVIS (EXPRS_EXPR (args))))) {
+
+            case TY_eq: /* same types, that's ok */
+                break;
+            case TY_gt: /* argument is more special than signature, that's ok */
+                break;
+            case TY_lt: /* signature is more special than argument, that's a problem */
+                INFO_TUP_CORRECTFUNCTION (arg_info) = FALSE;
+                break;
+            case TY_hcs:
+            case TY_dis: /* both types are unrelated, should not be possible */
+                DBUG_ASSERT ((FALSE), "former type is unrelated to new type! ");
+                break;
+
+            default: /* no other cases exist */
+                DBUG_ASSERT ((FALSE), "New element in enumeration added?");
+            }
+            signature = ARG_NEXT (signature);
+            args = EXPRS_NEXT (args);
+        }
+    } else {
+
+        /* first of all, try to specialize function */
+        AP_FUNDEF (arg_node)
+          = TryToSpecializeFunction (AP_FUNDEF (arg_node), AP_ARGS (arg_node), arg_info);
+
+        /* now we have the possibility to do an static dispatch */
+        AP_FUNDEF (arg_node) = TryStaticDispatch (AP_FUNDEF (arg_node), arg_info);
+    }
+
+    if (INFO_TUP_CORRECTFUNCTION (arg_info)) {
+
+        INFO_TUP_NEWTYPE (arg_info)
+          = TUmakeProductTypeFromRets (FUNDEF_RETS (AP_FUNDEF (arg_node)));
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+TUPids (node *arg_node, info *arg_info)
+{
+    ntype *type, *oldtype;
+
+    DBUG_ENTER ("TUPids");
+
+    oldtype = AVIS_TYPE (IDS_AVIS (arg_node));
+    type
+      = TYgetProductMember (INFO_TUP_NEWTYPE (arg_info), INFO_TUP_TYPECOUNTER (arg_info));
+
+    switch (TYcmpTypes (type, oldtype)) {
+
+    case TY_eq: /* types are equal, nothing to do */
+        break;
+
+    case TY_gt: /* old type is more specific, lost type information */
+        DBUG_ASSERT ((FALSE), "Lost type information!");
+        break;
+
+    case TY_hcs:
+    case TY_dis: /* both types are unrelated, should not be possible */
+        DBUG_ASSERT ((FALSE), "former type is unrelated to new type! ");
+        break;
+
+    case TY_lt: /* new type is more specific, do upgrade */
+        AVIS_TYPE (IDS_AVIS (arg_node)) = TYfreeType (AVIS_TYPE (IDS_AVIS (arg_node)));
+        AVIS_TYPE (IDS_AVIS (arg_node)) = TYcopyType (type);
+        tup_expr++;
+        break;
+
+    default: /* all cases are listed above, so default should never be entered*/
+        DBUG_ASSERT ((FALSE), "New element in enumeration added?");
+    }
+    type = TYfreeType (type);
+
+    INFO_TUP_TYPECOUNTER (arg_info) = INFO_TUP_TYPECOUNTER (arg_info) + 1;
+
+    IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+TUPmodarray (node *arg_node, info *arg_info)
+{
+    ntype *idx, *array, *expr, *prod;
+    te_info *info;
+    DBUG_ENTER ("TUPmodarray");
+
+    idx = TYcopyType (AVIS_TYPE (IDS_AVIS (WITHID_IDS (INFO_TUP_WITHID (arg_info)))));
+    array = NTCnewTypeCheck_Expr (MODARRAY_ARRAY (arg_node));
+    expr = INFO_TUP_WLEXPR (arg_info);
+
+    info = TEmakeInfo (global.linenum, "with", "", "modarray", NULL, NULL, NULL, NULL);
+    prod = TYmakeProductType (3, idx, array, expr);
+
+    INFO_TUP_NEWTYPE (arg_info) = NTCCTwl_mod (info, prod);
+
+    prod = TYfreeType (prod);
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+TUPgenarray (node *arg_node, info *arg_info)
+{
+    ntype *idx, *shp, *expr, *dexpr, *prod;
+    te_info *info;
+    DBUG_ENTER ("TUPgenarray");
+
+    idx = TYcopyType (AVIS_TYPE (IDS_AVIS (WITHID_IDS (INFO_TUP_WITHID (arg_info)))));
+    shp = NTCnewTypeCheck_Expr (GENARRAY_SHAPE (arg_node));
+    expr = INFO_TUP_WLEXPR (arg_info);
+    dexpr = NTCnewTypeCheck_Expr (GENARRAY_DEFAULT (arg_node));
+
+    prod = TYmakeProductType (4, idx, shp, expr, dexpr);
+    info = TEmakeInfo (global.linenum, "with", "", "genarray", NULL, NULL, NULL, NULL);
+
+    INFO_TUP_NEWTYPE (arg_info) = NTCCTwl_gen (info, prod);
+
+    prod = TYfreeType (prod);
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+TUPfold (node *arg_node, info *arg_info)
+{
+    ntype *neutr, *expr, *prod;
+    te_info *info;
+    DBUG_ENTER ("TUPfold");
+
+    neutr = NTCnewTypeCheck_Expr (FOLD_NEUTRAL (arg_node));
+    expr = INFO_TUP_WLEXPR (arg_info);
+
+    prod = TYmakeProductType (2, neutr, expr);
+    info = TEmakeInfo (global.linenum, "with", "", "fold", NULL, NULL, NULL, NULL);
+
+    INFO_TUP_NEWTYPE (arg_info) = NTCCTwl_fold (info, prod);
+
+    prod = TYfreeType (prod);
 
     DBUG_RETURN (arg_node);
 }
