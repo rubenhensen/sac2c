@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.11  1995/01/06 16:45:15  hw
+ * Revision 1.12  1995/01/12 14:04:53  hw
+ * initialized node of structure 'ids' with NULL
+ *
+ * Revision 1.11  1995/01/06  16:45:15  hw
  * added FltnFundef
  *
  * Revision 1.10  1994/12/15  11:47:06  hw
@@ -246,6 +249,7 @@ FltnPrf (node *arg_node, node *arg_info)
             let_node->info.ids = GEN_NODE (ids);
             let_node->info.ids->id = GenTmpVar (var_counter++);
             let_node->info.ids->next = NULL;
+            let_node->info.ids->node = NULL;
 
             assign_node = MakeNode (N_assign);
             assign_node->node[0] = let_node;
@@ -305,6 +309,7 @@ FltnExprs (node *arg_node, node *arg_info)
         let_node->info.ids = GEN_NODE (ids);
         let_node->info.ids->id = GenTmpVar (var_counter++);
         let_node->info.ids->next = NULL;
+        let_node->info.ids->node = NULL;
 
         assign_node = MakeNode (N_assign);
         assign_node->node[0] = let_node;
