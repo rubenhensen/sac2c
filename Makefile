@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.16  1995/03/22 11:19:57  asi
+# Revision 1.17  1995/03/28 12:07:46  hw
+# added internal_lib.o
+#
+# Revision 1.16  1995/03/22  11:19:57  asi
 # added debuging tools for malloc, free etc. - malloc.o
 # should be removed in final version
 #
@@ -56,7 +59,7 @@ RM=rm -f
 LIB=lib/dbug.o /usr/lib/debug/malloc.o
 GLOBAL= src/global/main.o src/global/Error.o src/global/usage.o \
         src/global/my_debug.o src/global/traverse.o  src/global/tree.o \
-        src/global/free.o
+        src/global/free.o src/global/internal_lib.o
 SCANP= src/scanparse/y.tab.o src/scanparse/lex.yy.o
 PRINT= src/print/print.o src/print/convert.o
 FLATTEN= src/flatten/flatten.o
