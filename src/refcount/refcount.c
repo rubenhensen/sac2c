@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.43  1998/04/28 13:22:35  dkr
+ * added RCblock, RCvardec
+ * VARDEC_REFCNT is now (-1) for non-RC-objects :-))
+ *
  * Revision 1.42  1998/04/23 19:13:40  dkr
  * changed RCnwith
  *
@@ -700,6 +704,62 @@ RCfundef (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/******************************************************************************
+ *
+ * function:
+ *   node *RCblock( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   performs the reference-counting for a N_block node:
+ *     - traversal of vardecs first
+ *         (initializes the refcounters of the vardecs)
+ *     - then traversal of intructions
+ *
+ ******************************************************************************/
+
+node *
+RCblock (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("RCblock");
+
+    if (BLOCK_VARDEC (arg_node) != NULL) {
+        BLOCK_VARDEC (arg_node) = Trav (BLOCK_VARDEC (arg_node), arg_info);
+    }
+    BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *RCvardec( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   initializes the refcounters of a vardec:
+ *      0, if vardec of a RC-object,
+ *     -1, otherwise.
+ *
+ ******************************************************************************/
+
+node *
+RCvardec (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("RCvardec");
+
+    if (MUST_REFCOUNT (VARDEC_TYPE (arg_node))) {
+        VARDEC_REFCNT (arg_node) = 0;
+    } else {
+        VARDEC_REFCNT (arg_node) = -1;
+    }
+
+    if (VARDEC_NEXT (arg_node) != NULL) {
+        VARDEC_NEXT (arg_node) = Trav (VARDEC_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
 /*
  *
  *  functionname  : RCassign
@@ -974,7 +1034,7 @@ RCid (node *arg_node, node *arg_info)
 
     if (MUST_REFCOUNT (ID_TYPE (arg_node))) {
         if ((arg_info == NULL) || (VARDEC_REFCNT (ID_VARDEC (arg_node)) == 0)
-            || !opt_rco) {
+            || (!opt_rco)) {
             /* This N_id node either is NOT an argument of a primitive
              * function, or it is the last usage within the body of the
              * current function. (or refcount-optimization is turned off!)
