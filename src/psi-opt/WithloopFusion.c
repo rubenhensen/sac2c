@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2004/05/07 13:07:08  khf
+ * some debugging
+ *
  * Revision 1.2  2004/05/04 17:06:49  khf
  * some debugging
  *
@@ -17,12 +20,12 @@
 #define INFO_WLFS_ASSIGN(n) (n->node[2])
 #define INFO_WLFS_LET(n) (n->node[3])
 #define INFO_WLFS_WLACTION(n) (n->flag)
-#define INFO_WLFS_GENAREEQUAL(n) (n->varno)
-#define INFO_WLFS_INSIDEWL(n) (n->varno)
+#define INFO_WLFS_GENAREEQUAL(n) ((bool)(n->varno))
+#define INFO_WLFS_INSIDEWL(n) ((bool)(n->varno))
 #define INFO_WLFS_WOTYPE(n) (n->counter)
-#define INFO_WLFS_DCTDEPENDENCIES(n) (n->int_data)
-#define INFO_WLFS_TAGDEPENDENCIES(n) (n->lineno)
-#define INFO_WLFS_WLDEPENDENT(n) (n->refcnt)
+#define INFO_WLFS_DCTDEPENDENCIES(n) ((bool)(n->int_data))
+#define INFO_WLFS_TAGDEPENDENCIES(n) ((bool)(n->lineno))
+#define INFO_WLFS_WLDEPENDENT(n) ((bool)(n->refcnt))
 #define INFO_WLFS_WL2EXTEND(n) (n->dfmask[0])
 #define INFO_WLFS_SONSOFWL2EXTEND(n) ((nodelist *)(n->dfmask[1]))
 #define INFO_WLFS_ASSIGNS2SHIFT(n) (n->dfmask[2])
@@ -30,7 +33,6 @@
 /* Macros for N_assign: */
 #define WLFS_TRAVWITHWL2EXTEND(n) (n->dfmask[0])
 #define WLFS_TAGGEDWITHWL(n) (n->dfmask[1])
-#define WLFS_VISITED(n) (n->counter)
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -53,60 +55,6 @@
 typedef enum { WO_gen, WO_mod, WO_fold } wo_type_t;
 
 typedef enum { WL_fused, WL_2fuse, WL_travback, WL_nothing } wl_action_t;
-
-/** <!--********************************************************************-->
- *
- * @fn nodelist *CopyNodeList( nodelist *nl)
- *
- *   @brief copies nodelist nl
- *
- *   @param  nodelist *nl :
- *   @return nodelist *   :  copied nodelist
- ******************************************************************************/
-static nodelist *
-CopyNodeList (nodelist *nl)
-{
-    nodelist *tmpnl;
-    nodelist *newnl = NULL;
-
-    DBUG_ENTER ("CopyNodeList");
-
-    tmpnl = nl;
-    while (tmpnl) {
-        newnl = NodeListAppend (newnl, NODELIST_NODE (tmpnl), NULL);
-        tmpnl = NODELIST_NEXT (tmpnl);
-    }
-
-    DBUG_RETURN (newnl);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn nodelist *DeleteIds( nodelist *nlsource, nodelist *nldel)
- *
- *   @brief deletes identifiers from nldel out of nlsource
- *
- *   @param  nodelist *nlsource :  contains identifiers of possible
- *                                 fusionable withloops
- *           nodelist *wlref    :  contains idenfiers of nested withloops
- *   @return nodelist *         :  modified nlsource
- ******************************************************************************/
-static nodelist *
-DeleteIds (nodelist *nlsource, nodelist *nldel)
-{
-    nodelist *tmpnl;
-
-    DBUG_ENTER ("DeleteIds");
-
-    tmpnl = nldel;
-
-    while (tmpnl != NULL) {
-        NodeListDelete (nlsource, NODELIST_NODE (tmpnl), TRUE);
-        tmpnl = NODELIST_NEXT (tmpnl);
-    }
-
-    DBUG_RETURN (nlsource);
-}
 
 /** <!--********************************************************************-->
  *
@@ -308,44 +256,8 @@ DeleteFittingPart (node *fit_part, node *wl)
 
 /** <!--********************************************************************-->
  *
- * @fn bool CheckRef( node * checkpart, node *parts)
- *
- *   @brief checks if checkpart's N_Ncode is referenced several.
- *
- *   @param  node *checkpart : N_Npart
- *           node *parts     : N_Npart list
- *   @return bool            : TRUE iff no other N_Npart has the same
- *                             N_Ncode
- ******************************************************************************/
-static bool
-CheckRef (node *checkpart, node *parts)
-{
-    node *ncode;
-    bool unique_ref = FALSE;
-    int used;
-    int num = 0;
-
-    DBUG_ENTER ("CheckRef");
-
-    ncode = NPART_CODE (checkpart);
-
-    while (parts != NULL) {
-        if (ncode == NPART_CODE (parts))
-            num++;
-        parts = NPART_NEXT (parts);
-    }
-    if (num == 1)
-        unique_ref = TRUE;
-
-    used = NCODE_USED (ncode);
-
-    DBUG_RETURN (unique_ref);
-}
-
-/** <!--********************************************************************-->
- *
  * @fn node *FuseNCodes( node *extend_part, node *fit_part,
- *                       bool unique_ref, node *wl2extend)
+ *                       bool unique_ref, node *wl2extend, node *fundef)
  *
  *   @brief inserts the whole assignment block of 'fit_part' in
  *          assignment block of 'extent_part'. If unique_ref is false, the
@@ -357,13 +269,14 @@ CheckRef (node *checkpart, node *parts)
  *           bool unique_ref    : TRUE iff N_Ncode of extent_part is unique
  *                                referenced
  *           node *wl2extend    : N_Nwith current WL will be fused with
+ *           node *fundef       : N_fundef
  *   @return node               : modified extent_part
  ******************************************************************************/
 static node *
-FuseNCodes (node *extend_part, node *fit_part, bool unique_ref, node *wl2extend)
+FuseNCodes (node *extend_part, node *fit_part, bool unique_ref, node *wl2extend,
+            node *fundef)
 {
-    node *wl2extend_ncode, *fit_nncode, *extend_nblock, *fit_assigns, *fit_vardec,
-      *fit_exprs;
+    node *wl2extend_ncode, *fit_nncode, *extend_nblock, *fit_assigns, *fit_exprs;
     LUT_t lut;
     ids *oldvec, *newvec, *oldids, *newids;
 
@@ -374,7 +287,7 @@ FuseNCodes (node *extend_part, node *fit_part, bool unique_ref, node *wl2extend)
 
         if (wl2extend_ncode == NPART_CODE (extend_part)) {
             NCODE_USED (wl2extend_ncode)--;
-            NPART_CODE (extend_part) = DupNode (NPART_CODE (extend_part));
+            NPART_CODE (extend_part) = DupNodeSSA (NPART_CODE (extend_part), fundef);
             NCODE_USED (NPART_CODE (extend_part)) = 1;
             NWITH_CODE (wl2extend) = NPART_CODE (extend_part);
             NCODE_NEXT (NPART_CODE (extend_part)) = wl2extend_ncode;
@@ -383,7 +296,7 @@ FuseNCodes (node *extend_part, node *fit_part, bool unique_ref, node *wl2extend)
                 wl2extend_ncode = NCODE_NEXT (wl2extend_ncode);
             }
             NCODE_USED (NCODE_NEXT (wl2extend_ncode))--;
-            NPART_CODE (extend_part) = DupNode (NPART_CODE (extend_part));
+            NPART_CODE (extend_part) = DupNodeSSA (NPART_CODE (extend_part), fundef);
             NCODE_USED (NPART_CODE (extend_part)) = 1;
             NCODE_NEXT (NPART_CODE (extend_part)) = NCODE_NEXT (wl2extend_ncode);
             NCODE_NEXT (wl2extend_ncode) = NPART_CODE (extend_part);
@@ -417,13 +330,16 @@ FuseNCodes (node *extend_part, node *fit_part, bool unique_ref, node *wl2extend)
         newids = IDS_NEXT (newids);
     }
 
-    fit_nncode = DupNodeLUT (NPART_CODE (fit_part), lut);
+    fit_nncode = DupNodeLUTSSA (NPART_CODE (fit_part), lut, fundef);
 
     fit_assigns = BLOCK_INSTR (NCODE_CBLOCK (fit_nncode));
     BLOCK_INSTR (NCODE_CBLOCK (fit_nncode)) = MakeEmpty ();
 
-    fit_vardec = BLOCK_VARDEC (NCODE_CBLOCK (fit_nncode));
-    BLOCK_VARDEC (NCODE_CBLOCK (fit_nncode)) = NULL;
+    /*
+     * vardec of N_blocks which are not the first N_block of
+     * the current N_fundef are empty and points to NULL.
+     * This holds especially for N_blocks of Withloops.
+     */
 
     fit_exprs = NCODE_CEXPRS (fit_nncode);
     NCODE_CEXPRS (fit_nncode) = MakeExprs (NULL, NULL);
@@ -433,27 +349,14 @@ FuseNCodes (node *extend_part, node *fit_part, bool unique_ref, node *wl2extend)
     RemoveLUT (lut);
 
     /*
-     * extent N_block of extent_part's N_Ncode by new assignments and
-     * instructions and vardecs of N_block of fit_part
+     * extent N_block of extent_part's N_Ncode by instructions
+     * of N_block of fit_part
      */
     extend_nblock = NCODE_CBLOCK (NPART_CODE (extend_part));
 
-    if (NODE_TYPE (BLOCK_INSTR (extend_nblock)) == N_empty) {
-        /* there is no instruction in the block right now. */
-        if (NODE_TYPE (fit_assigns) != N_empty) {
-            BLOCK_INSTR (extend_nblock) = FreeTree (BLOCK_INSTR (extend_nblock));
-            /* intructions of fitting_part */
-            BLOCK_INSTR (extend_nblock) = fit_assigns;
-        }
-    } else {
-        /* intructions of fitting_part after intructions of extent_part */
+    if (NODE_TYPE (fit_assigns) != N_empty) {
         BLOCK_INSTR (extend_nblock)
           = AppendAssign (BLOCK_INSTR (extend_nblock), fit_assigns);
-    }
-
-    if (fit_vardec) {
-        BLOCK_VARDEC (extend_nblock)
-          = AppendVardec (BLOCK_VARDEC (extend_nblock), fit_vardec);
     }
 
     /*
@@ -473,11 +376,11 @@ FuseNCodes (node *extend_part, node *fit_part, bool unique_ref, node *wl2extend)
  *          in code the current withloop has to fuse with the other in such
  *          way the current WL can be removed later.
  *
- *   @param  node *wl        :  current N_Nwith node
- *           node *arg_info  :  N_INFO
- *           node *wl2extend :  N_assign node of the second withloop where the
- *                              current withloop will be fused to
- *   @return node *          :  modified current N_Nwith node for DCR
+ *   @param  node *wl               :  current N_Nwith node
+ *           node *arg_info         :  N_INFO
+ *           node *wl2extend_assign :  N_assign node of the second withloop where the
+ *                                     current withloop will be fused to
+ *   @return node *                 :  modified current N_Nwith node for DCR
  ******************************************************************************/
 static node *
 FuseWithloops (node *wl, node *arg_info, node *wl2extend_assign)
@@ -499,6 +402,12 @@ FuseWithloops (node *wl, node *arg_info, node *wl2extend_assign)
         tmp_ids = IDS_NEXT (tmp_ids);
     }
     IDS_NEXT (tmp_ids) = DupAllIds (ASSIGN_LHS (INFO_WLFS_ASSIGN (arg_info)));
+    tmp_ids = IDS_NEXT (tmp_ids);
+    while (tmp_ids != NULL) {
+        /* set correct backref to defining assignment */
+        AVIS_SSAASSIGN (IDS_AVIS (tmp_ids)) = wl2extend_assign;
+        tmp_ids = IDS_NEXT (tmp_ids);
+    }
 
     /*
      * 2. extend each N_Npart's N_Ncode of the withloop belonging to
@@ -511,7 +420,8 @@ FuseWithloops (node *wl, node *arg_info, node *wl2extend_assign)
         fitting_part = FindFittingPart (NPART_GEN (parts), NWITH_PART (wl));
         DBUG_ASSERT ((fitting_part != NULL), "no fittig N_Npart is available!");
         unique_ref = NCODE_USED (NPART_CODE (parts)) == 1;
-        parts = FuseNCodes (parts, fitting_part, unique_ref, wl2extend);
+        parts = FuseNCodes (parts, fitting_part, unique_ref, wl2extend,
+                            INFO_WLFS_FUNDEF (arg_info));
         /* fitting_part is obsolete now */
         wl = DeleteFittingPart (fitting_part, wl);
         parts = NPART_NEXT (parts);
@@ -985,8 +895,7 @@ WLFSNwith (node *arg_node, node *arg_info)
 
                         wln = INFO_WLFS_WL2EXTEND (arg_info);
                         /* is the number of parts equal? */
-                        printf ("%d %d\n", NWITH_PARTS (arg_node),
-                                NWITH_PARTS (ASSIGN_RHS (wln)));
+
                         is_equal
                           = (NWITH_PARTS (arg_node) == NWITH_PARTS (ASSIGN_RHS (wln)));
 
@@ -1248,7 +1157,6 @@ WithloopFusion (node *arg_node)
     act_tab = wlfs_tab;
 
     arg_node = Trav (arg_node, arg_info);
-    arg_node = RestoreSSAOneFunction (arg_node);
 
     if (INFO_WLFS_SONSOFWL2EXTEND (arg_info) != NULL) {
         INFO_WLFS_SONSOFWL2EXTEND (arg_info)
