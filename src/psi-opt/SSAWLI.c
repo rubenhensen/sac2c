@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.17  2004/08/06 15:16:59  khf
+ * corrected setting of NWITH_FOLDABLE
+ *
  * Revision 1.16  2004/08/05 11:15:12  khf
  * earlier setting of NWITH_FOLDABLE
  *
@@ -119,6 +122,7 @@ struct INFO {
     node *assign;
     node *fundef;
     int foldable;
+    bool detfoldable;
 };
 
 /*
@@ -130,7 +134,7 @@ struct INFO {
 #define INFO_SSAWLI_ASSIGN(n) (n->assign)
 #define INFO_SSAWLI_FUNDEF(n) (n->fundef)
 #define INFO_SSAWLI_FOLDABLE(n) (n->foldable)
-
+#define INFO_SSAWLI_DETFOLDABLE(n) (n->detfoldable)
 /*
  * INFO functions
  */
@@ -149,6 +153,7 @@ MakeInfo ()
     INFO_SSAWLI_ASSIGN (result) = NULL;
     INFO_SSAWLI_FUNDEF (result) = NULL;
     INFO_SSAWLI_FOLDABLE (result) = 0;
+    INFO_SSAWLI_DETFOLDABLE (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -947,6 +952,14 @@ SSAWLINwith (node *arg_node, info *arg_info)
 
     /* initialize determination of FOLDABLE */
     INFO_SSAWLI_FOLDABLE (arg_info) = TRUE;
+    INFO_SSAWLI_DETFOLDABLE (arg_info) = TRUE;
+
+    /* determine FOLDABLE */
+    if (NWITH_PART (arg_node) != NULL) {
+        NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
+    }
+    NWITH_FOLDABLE (INFO_SSAWLI_WL (arg_info)) = INFO_SSAWLI_FOLDABLE (arg_info);
+    INFO_SSAWLI_DETFOLDABLE (arg_info) = FALSE;
 
     /* traverse all parts (and implicitely bodies) */
     DBUG_PRINT ("WLI", ("searching code of  WL in line %d", NODE_LINE (arg_node)));
@@ -1016,22 +1029,20 @@ SSAWLINpart (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSAWLINpart");
 
-    NPART_GEN (arg_node) = Trav (NPART_GEN (arg_node), arg_info);
+    if (INFO_SSAWLI_DETFOLDABLE (arg_info)) {
 
-    /* traverse first next part to determine FOLDABLE
-    if (NPART_NEXT(arg_node) != NULL) {
-      NPART_NEXT(arg_node) = Trav(NPART_NEXT(arg_node), arg_info);
-    }
+        NPART_GEN (arg_node) = Trav (NPART_GEN (arg_node), arg_info);
 
-    /* all parts are traversed */
-    NWITH_FOLDABLE (INFO_SSAWLI_WL (arg_info)) = INFO_SSAWLI_FOLDABLE (arg_info);
-
-    /* traverse code. But do this only once, even if there are more than
-       one referencing generators.
-       This is just a cross reference, so just traverse, do not assign the
-       resulting node.*/
-    if (!NCODE_FLAG (NPART_CODE (arg_node))) {
-        Trav (NPART_CODE (arg_node), arg_info);
+    } else {
+        /*
+         * traverse code. But do this only once, even if there are more than
+         * one referencing generators.
+         * This is just a cross reference, so just traverse, do not assign the
+         * resulting node.
+         */
+        if (!NCODE_FLAG (NPART_CODE (arg_node))) {
+            Trav (NPART_CODE (arg_node), arg_info);
+        }
     }
 
     if (NPART_NEXT (arg_node) != NULL) {
