@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.7  1999/07/07 06:00:19  sbs
+ * added VINFO_DOLLAR and adjusted MakeVinfo
+ *
  * Revision 2.6  1999/06/15 12:29:09  jhs
  * Added initilization of IDS_NAIVE_REFCNT in routine MakeIds.
  *
@@ -1002,7 +1005,7 @@ MakeArray (node *aelems)
 /*--------------------------------------------------------------------------*/
 
 node *
-MakeVinfo (useflag flag, types *type, node *next)
+MakeVinfo (useflag flag, types *type, node *next, node *dollar)
 {
     node *tmp;
 
@@ -1013,6 +1016,7 @@ MakeVinfo (useflag flag, types *type, node *next)
     VINFO_FLAG (tmp) = flag;
     VINFO_TYPE (tmp) = type;
     VINFO_NEXT (tmp) = next;
+    VINFO_DOLLAR (tmp) = dollar;
     VINFO_VARDEC (tmp) = NULL;
 
     DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.34  1999/07/07 06:00:19  sbs
+ * added VINFO_DOLLAR and adjusted MakeVinfo
+ *
  * Revision 2.33  1999/07/06 14:05:01  jhs
  * Added INFO_SYNCO_[THIS|NEXT]ASSIGN.
  *
@@ -1701,16 +1704,18 @@ extern node *MakeArray (node *aelems);
  ***
  ***    useflag  FLAG
  ***    types*   TYPE   (O)
+ ***    node*    DOLLAR   (O)  (N_vinfo)
  ***    node*    VARDEC (O)  (N_vardec)
  ***
  ***/
 
-extern node *MakeVinfo (useflag flag, types *type, node *next);
+extern node *MakeVinfo (useflag flag, types *type, node *next, node *dollar);
 
 #define VINFO_FLAG(n) (n->info.use)
 #define VINFO_TYPE(n) ((types *)n->node[1])
 #define VINFO_NEXT(n) (n->node[0])
-#define VINFO_VARDEC(n) (n->node[2])
+#define VINFO_DOLLAR(n) (n->node[2])
+#define VINFO_VARDEC(n) (n->node[3])
 
 /*--------------------------------------------------------------------------*/
 
