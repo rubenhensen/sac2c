@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 1.10  2004/07/01 14:32:39  sah
+# added NEW_AST flag
+#
 # Revision 1.9  2004/03/10 00:03:56  dkrHH
 # TAGGED_ARRAYS removed
 #
@@ -80,6 +83,12 @@ ifeq ($(OS),solaris2.8)
   YYFLAGS   := -DYYDEBUG=1
 else
   YYFLAGS   :=
+endif
+
+ifeq ($(shell test -f $(PROJECT_ROOT)/_NEW_AST && echo yes),yes)
+  CCFLAGS := $(CCFLAGS) -DNEW_AST
+  CCDEPS_FLAGS := $(CCDEPS_FLAGS) -DNEW_AST
+  CCPROD_FLAGS := $(CCPROD_FLAGS) -DNEW_AST
 endif
 
 CLOCK_SKEW_ELIMINATION   := $(PROJECT_ROOT)/tools/bin/cse
