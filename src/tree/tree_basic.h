@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.31  2000/03/21 15:52:31  jhs
+ * Rearrange arg_info usage in INFO_DFA.
+ *
  * Revision 1.30  2000/03/21 13:51:25  dkr
  * remarks for N_WLseg and N_WLsegVar added
  *
@@ -2478,10 +2481,10 @@ extern node *MakeInfo ();
 #define INFO_DFA_HEADING(n) (n->int_data)
 #define INFO_DFA_USEMASK(n) (n->dfmask[0])
 #define INFO_DFA_DEFMASK(n) (n->dfmask[1])
-#define INFO_DFA_NEEDCHAIN(n) ((DFMmask_t) (n->node[3]))
-#define INFO_DFA_NEEDBLOCK(n) ((DFMmask_t) (n->node[4]))
-#define INFO_DFA_CONT(n) (n->node[5])
-#define INFO_DFA_THISASSIGN(n) ((node *)(n->dfmask[2]))
+#define INFO_DFA_NEEDCHAIN(n) (n->dfmask[2])
+#define INFO_DFA_NEEDBLOCK(n) (n->dfmask[3])
+#define INFO_DFA_CONT(n) (n->node[3])
+#define INFO_DFA_THISASSIGN(n) (n->node[4])
 
 /* precompile */
 #define INFO_PREC_MODUL(n) (n->node[0])
