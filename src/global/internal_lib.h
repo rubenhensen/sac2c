@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.4  1999/04/19 09:56:42  jhs
+ * TRUE and FALSE added
+ *
  * Revision 2.3  1999/03/15 13:53:25  bs
  * CopyIntArray renamed into CopyIntVector, CopyFloatVector and CopyDoubleVector added.
  *
@@ -97,6 +100,9 @@ int malloc_align_step;
 
 #define MAX(a, b) ((a < b) ? b : a)
 #define MIN(a, b) ((a < b) ? a : b)
+
+#define TRUE 1
+#define FALSE 0
 
 #define MALLOC(size) Malloc (size)
 
