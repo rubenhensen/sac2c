@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.9  1995/06/16 13:10:46  asi
+ * Revision 1.10  1995/08/24 14:01:56  cg
+ * minor changes concerning objects etc.
+ *
+ * Revision 1.9  1995/06/16  13:10:46  asi
  * added FreePrf2, which will free memory occupied by a N_prf-subtree,
  *                 but it will not free one given argument.
  *
@@ -87,7 +90,7 @@ FreeImplist (node *implist)
     DBUG_ENTER ("FreeImplist");
     if (implist->node[0] != NULL)
         FreeImplist (implist->node[0]);
-    for (i = 1; i < 4; i++)
+    for (i = 1; i < MAX_SONS; i++)
         if (implist->node[i] != NULL)
             FreeIds ((ids *)implist->node[i]);
     FREE (implist);
@@ -128,6 +131,10 @@ FreeTypes (types *type)
         FREE (type->name);
     if (type->id != NULL)
         FREE (type->id);
+    if (type->name_mod != NULL)
+        FREE (type->name_mod);
+    if (type->id_mod != NULL)
+        FREE (type->id_mod);
     DBUG_VOID_RETURN;
 }
 
@@ -153,6 +160,10 @@ FreeModul (node *arg_node, node *arg_info)
         arg_node->node[1] = Trav (arg_node->node[1], arg_info);
     if (arg_node->node[2] != NULL)
         arg_node->node[2] = Trav (arg_node->node[2], arg_info);
+    if (arg_node->node[3] != NULL)
+        arg_node->node[3] = Trav (arg_node->node[3], arg_info);
+    if (arg_node->node[4] != NULL)
+        arg_node->node[4] = Trav (arg_node->node[4], arg_info);
     FREE (arg_node);
     DBUG_RETURN ((node *)NULL);
 }
