@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.212  1999/02/11 08:21:21  bs
+ * added access macros for the storage of constant integer arrays as
+ * arrays of integer ( int []).
+ *
  * Revision 1.211  1999/02/06 12:52:47  srs
  * added MakeNodelistNode() and macro ATTRIB2 for struct NODELIST
  *
@@ -1523,12 +1527,21 @@ extern node *MakeExprs (node *expr, node *next);
  ***  temporary attributes:
  ***
  ***    types* TYPE               (typecheck -> )
+ ***
+ ***    int*   INTARRAY     (O)   (flatten -> )
+ ***
+ ***    int    LENGTH       (O)   (flatten -> )
  ***/
 
 /*
  * In the case of constant character arrays defined as strings, the
  * optional permanent attribute STRING holds the original definition.
  * This may be retrieved for C code generation.
+ *
+ * In the case of constant integer arrays, the optional permanent
+ * attribute INTARRAY holds the original definition. In that case
+ * ARRAY_LENGTH holds the number of array elements.
+ * This may be retrieved for tiling.
  */
 
 extern node *MakeArray (node *aelems);
@@ -1536,6 +1549,8 @@ extern node *MakeArray (node *aelems);
 #define ARRAY_AELEMS(n) (n->node[0])
 #define ARRAY_TYPE(n) (n->info.types)
 #define ARRAY_STRING(n) ((char *)(n->node[1]))
+#define ARRAY_INTARRAY(n) ((int *)(n->node[2]))
+#define ARRAY_LENGTH(n) (n->varno)
 
 /*--------------------------------------------------------------------------*/
 
