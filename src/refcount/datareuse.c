@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2004/12/16 14:37:30  ktr
+ * added InplaceComputation
+ *
  * Revision 1.12  2004/12/13 18:54:49  ktr
  * Withids contain N_id/N_exprs of N_id after explicit allocation now.
  *
@@ -110,6 +113,9 @@ MakeInfo (node *fundef)
     INFO_EMDR_FUNDEF (result) = fundef;
     INFO_EMDR_LHS (result) = NULL;
     INFO_EMDR_REUSELUT (result) = NULL;
+    INFO_EMDR_PREDAVIS (result) = NULL;
+    INFO_EMDR_MEMAVIS (result) = NULL;
+    INFO_EMDR_RCAVIS (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -600,3 +606,5 @@ EMDRprf (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+/* @} */

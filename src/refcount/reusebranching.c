@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.16  2004/12/16 14:37:30  ktr
+ * added InplaceComputation
+ *
  * Revision 1.15  2004/12/14 12:51:44  ktr
  * added EMRBwithid
  *
@@ -826,7 +829,7 @@ EMRBcode (node *arg_node, info *arg_info)
              * }: r
              */
             memval = ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (PRF_ARG1 (wlass))));
-            if ((NODE_TYPE (memval) == N_prf) && (PRF_PRF (memval) = F_fill)
+            if ((NODE_TYPE (memval) == N_prf) && (PRF_PRF (memval) == F_fill)
                 && (NODE_TYPE (PRF_ARG1 (memval)) == N_prf)
                 && ((PRF_PRF (PRF_ARG1 (memval)) == F_sel)
                     || (PRF_PRF (PRF_ARG1 (memval)) == F_idx_sel))) {

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2004/12/16 14:37:30  ktr
+ * added InplaceComputation
+ *
  * Revision 1.9  2004/11/28 18:14:21  ktr
  * Changed name of starting function to EMRdoRefCountPhase
  *
@@ -77,23 +80,21 @@ EMRdoRefCountPhase (node *syntax_tree)
     DBUG_ASSERT ((NODE_TYPE (syntax_tree) == N_module),
                  "RCphase not started with N_module node");
 
-    DBUG_PRINT ("EMM", ("Performing reference counting (rc)"));
-
     /*
      * Reference counting
      */
+    DBUG_PRINT ("EMM", ("Performing reference counting (rc)"));
     syntax_tree = EMRCdoRefCounting (syntax_tree);
     if ((global.break_after == PH_refcnt)
         && (0 == strcmp (global.break_specifier, "rc"))) {
         goto DONE;
     }
 
-    DBUG_PRINT ("EMM", ("Performing reference counting optmizations (rco)"));
-
     /*
      * Reference counting optimizations
      */
     if (global.optimize.dorco) {
+        DBUG_PRINT ("EMM", ("Performing reference counting optmizations (rco)"));
         syntax_tree = EMRCOdoRefCountOpt (syntax_tree);
     }
     if ((global.break_after == PH_refcnt)
@@ -101,11 +102,10 @@ EMRdoRefCountPhase (node *syntax_tree)
         goto DONE;
     }
 
-    DBUG_PRINT ("EMM", ("Removing reuse operations (re)"));
-
     /*
      * Reuse elimination
      */
+    DBUG_PRINT ("EMM", ("Removing reuse operations (re)"));
     syntax_tree = EMREdoReuseElimination (syntax_tree);
     if ((global.break_after == PH_refcnt)
         && (0 == strcmp (global.break_specifier, "re"))) {

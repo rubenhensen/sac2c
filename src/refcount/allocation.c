@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2004/12/16 14:37:30  ktr
+ * added InplaceComputation
+ *
  * Revision 1.10  2004/12/09 21:09:26  ktr
  * bugfix roundup
  *
@@ -54,6 +57,7 @@
 #include "explicitcopy.h"
 #include "reusebranching.h"
 #include "print.h"
+#include "inplacecomp.h"
 #include <string.h>
 #include <stdio.h>
 
@@ -120,14 +124,13 @@ EMAdoAllocation (node *syntax_tree)
     DBUG_ASSERT ((NODE_TYPE (syntax_tree) == N_module),
                  "ExplicitAllocation not started with modul node");
 
-    DBUG_PRINT ("EMM", ("Transforming syntax tree into SSA form (l2f, cha, ssa)"));
-
     /*
      * Transformation into ssa form
      *
      * !!! IF THIS BECOMES UNNECESSARY ONE DAY: !!!
      *     CVP and DCR can be removed as well
      */
+    DBUG_PRINT ("EMM", ("Transforming syntax tree into SSA form (l2f, cha, ssa)"));
     syntax_tree = SSAdoSsa (syntax_tree);
     if ((global.break_after == PH_alloc)
         && ((0 == strcmp (global.break_specifier, "l2f"))
@@ -136,14 +139,13 @@ EMAdoAllocation (node *syntax_tree)
         goto DONE;
     }
 
-    DBUG_PRINT ("EMM", ("Performing Constant and Varible Propagation (cvp)"));
-
     /*
      * Constant and variable propagation
      *
      * !!! Only needed as long we retransform in SSA form
      */
     if (global.optimize.docvp) {
+        DBUG_PRINT ("EMM", ("Performing Constant and Varible Propagation (cvp)"));
         fundef = MODULE_FUNS (syntax_tree);
         while (fundef != NULL) {
             if (!(FUNDEF_ISLACFUN (fundef))) {
@@ -158,14 +160,13 @@ EMAdoAllocation (node *syntax_tree)
         goto DONE;
     }
 
-    DBUG_PRINT ("EMM", ("Applying Dead Code Removal (dcr)"));
-
     /*
      * Dead code removal
      *
      * !!! Only needed as long we retransform in SSA form
      */
     if (global.optimize.dodcr) {
+        DBUG_PRINT ("EMM", ("Applying Dead Code Removal (dcr)"));
         fundef = MODULE_FUNS (syntax_tree);
         while (fundef != NULL) {
             fundef = DCRdoDeadCodeRemoval (fundef, syntax_tree);
@@ -178,34 +179,31 @@ EMAdoAllocation (node *syntax_tree)
         goto DONE;
     }
 
-    DBUG_PRINT ("EMM", ("Making copy operations explicit (copy)"));
-
     /*
      * Explicit copy
      */
+    DBUG_PRINT ("EMM", ("Making copy operations explicit (copy)"));
     syntax_tree = EMECdoExplicitCopy (syntax_tree);
     if ((global.break_after == PH_alloc)
         && (0 == strcmp (global.break_specifier, "copy"))) {
         goto DONE;
     }
 
-    DBUG_PRINT ("EMM", ("Introducing ALLOC statements (alloc)"));
-
     /*
      * Explicit allocation
      */
+    DBUG_PRINT ("EMM", ("Introducing ALLOC statements (alloc)"));
     syntax_tree = EMALdoAlloc (syntax_tree);
     if ((global.break_after == PH_alloc)
         && (0 == strcmp (global.break_specifier, "alloc"))) {
         goto DONE;
     }
 
-    DBUG_PRINT ("EMM", ("Applying Dead Code Removal (dcr2)"));
-
     /*
      * Dead code removal
      */
     if (global.optimize.dodcr) {
+        DBUG_PRINT ("EMM", ("Applying Dead Code Removal (dcr2)"));
         fundef = MODULE_FUNS (syntax_tree);
         while (fundef != NULL) {
             fundef = DCRdoDeadCodeRemoval (fundef, syntax_tree);
@@ -218,12 +216,11 @@ EMAdoAllocation (node *syntax_tree)
         goto DONE;
     }
 
-    DBUG_PRINT ("EMM", ("Inferencing Reuse Candidates (ri)"));
-
     /*
      * Reuse inference
      */
     if (global.optimize.douip) {
+        DBUG_PRINT ("EMM", ("Inferencing Reuse Candidates (ri)"));
         syntax_tree = EMRIdoReuseInference (syntax_tree);
     }
     if ((global.break_after == PH_alloc)
@@ -233,12 +230,11 @@ EMAdoAllocation (node *syntax_tree)
 
     TRAVsetPreFun (TR_prt, EMAprintPreFun);
 
-    DBUG_PRINT ("EMM", ("Interface analysis (ia)"));
-
     /*
      * Interface analysis
      */
     if (global.optimize.dosrf) {
+        DBUG_PRINT ("EMM", ("Interface analysis (ia)"));
         syntax_tree = EMIAdoInterfaceAnalysis (syntax_tree);
     }
     if ((global.break_after == PH_alloc)
@@ -246,12 +242,11 @@ EMAdoAllocation (node *syntax_tree)
         goto DONE;
     }
 
-    DBUG_PRINT ("EMM", ("Loop reuse optimization (lro)"));
-
     /*
      * Loop reuse optimization
      */
     if ((global.optimize.dolro) && (global.optimize.dosrf)) {
+        DBUG_PRINT ("EMM", ("Loop reuse optimization (lro)"));
         syntax_tree = EMLRdoLoopReuseOptimization (syntax_tree);
     }
     if ((global.break_after == PH_alloc)
@@ -259,12 +254,11 @@ EMAdoAllocation (node *syntax_tree)
         goto DONE;
     }
 
-    DBUG_PRINT ("EMM", ("Alias analysis (aa)"));
-
     /*
      * Alias analysis
      */
     if (global.optimize.dosrf) {
+        DBUG_PRINT ("EMM", ("Alias analysis (aa)"));
         syntax_tree = EMAAdoAliasAnalysis (syntax_tree);
     }
     if ((global.break_after == PH_alloc)
@@ -272,66 +266,69 @@ EMAdoAllocation (node *syntax_tree)
         goto DONE;
     }
 
-    DBUG_PRINT ("EMM", ("Filtering reuse candidates (frc)"));
-
     /*
      * Filter reuse candidates
      */
+    DBUG_PRINT ("EMM", ("Filtering reuse candidates (frc)"));
     syntax_tree = EMFRCdoFilterReuseCandidates (syntax_tree);
     if ((global.break_after == PH_alloc)
         && (0 == strcmp (global.break_specifier, "frc"))) {
         goto DONE;
     }
 
-    DBUG_PRINT ("EMM", ("Static reuse (sr)"));
-
     /*
      * Static reuse
      */
-    syntax_tree = EMSRdoStaticReuse (syntax_tree);
+    if (global.optimize.dosrf) {
+        DBUG_PRINT ("EMM", ("Static reuse (sr)"));
+        syntax_tree = EMSRdoStaticReuse (syntax_tree);
+    }
     if ((global.break_after == PH_alloc)
         && (0 == strcmp (global.break_specifier, "sr"))) {
         goto DONE;
     }
 
-    DBUG_PRINT ("EMM", ("In-Place computation (ipc)"));
-
-    /*
-     * In Place computation
-     */
-    if ((global.break_after == PH_alloc)
-        && (0 == strcmp (global.break_specifier, "ipc"))) {
-        goto DONE;
-    }
-
-    DBUG_PRINT ("EMM", ("Reuse branching (rb)"));
-
     /*
      * Reuse case dependent branching
      */
-    syntax_tree = EMRBdoReuseBranching (syntax_tree);
+    if ((global.optimize.doipc) || (global.optimize.dodr)) {
+        DBUG_PRINT ("EMM", ("Reuse branching (rb)"));
+        syntax_tree = EMRBdoReuseBranching (syntax_tree);
+    }
     if ((global.break_after == PH_alloc)
         && (0 == strcmp (global.break_specifier, "rb"))) {
         goto DONE;
     }
 
-    DBUG_PRINT ("EMM", ("Data reuse (dr)"));
+    /*
+     * In Place computation
+     */
+    if (global.optimize.doipc) {
+        DBUG_PRINT ("EMM", ("In-Place computation (ipc)"));
+        syntax_tree = EMIPdoInplaceComputation (syntax_tree);
+    }
+    if ((global.break_after == PH_alloc)
+        && (0 == strcmp (global.break_specifier, "ipc"))) {
+        goto DONE;
+    }
 
     /*
      * Data reuse
      */
-    syntax_tree = EMDRdoDataReuse (syntax_tree);
+    if (global.optimize.dodr) {
+        DBUG_PRINT ("EMM", ("Data reuse (dr)"));
+        syntax_tree = EMDRdoDataReuse (syntax_tree);
+    }
     if ((global.break_after == PH_alloc)
         && (0 == strcmp (global.break_specifier, "dr"))) {
         goto DONE;
     }
 
-    DBUG_PRINT ("EMM", ("Applying Dead Code Removal (dcr3)"));
-
     /*
      * Dead code removal
      */
     if (global.optimize.dodcr) {
+        DBUG_PRINT ("EMM", ("Applying Dead Code Removal (dcr3)"));
         fundef = MODULE_FUNS (syntax_tree);
         while (fundef != NULL) {
             fundef = DCRdoDeadCodeRemoval (fundef, syntax_tree);
