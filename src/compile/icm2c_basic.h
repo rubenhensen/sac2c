@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2002/07/24 14:34:48  dkr
+ * signature of VectToOffset?() modified
+ *
  * Revision 3.8  2002/07/11 17:15:38  dkr
  * SizeId() added
  *
@@ -63,13 +66,13 @@ extern void ShapeId (void *nt, char *idx_str, int idx);
 
 extern void SizeId (void *nt);
 
-extern void VectToOffset2 (char *offset, void *v_any, int v_dim,
+extern void VectToOffset2 (char *off_any, void *v_any, int v_dim,
                            void (*v_size_fun) (void *),
                            void (*v_read_fun) (void *, char *, int), void *a_any,
                            int a_dim, void (*a_dim_fun) (void *),
                            void (*a_shape_fun) (void *, char *, int));
 
-extern void VectToOffset (char *offset, void *v_any, int v_dim,
+extern void VectToOffset (char *off_any, void *v_any, int v_dim,
                           void (*v_size_fun) (void *),
                           void (*v_read_fun) (void *, char *, int), void *a_nt,
                           int a_dim);
