@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.26  2003/04/14 14:55:54  sbs
+ * num_threads casted to unsigned int for correct comparison.
+ *
  * Revision 3.25  2003/03/21 18:05:29  sbs
  * PrintTargetPlatform eliminated.
  *
@@ -151,7 +154,7 @@ GSCCalcMasterclass (int num_threads)
 
     DBUG_ENTER ("GSCCalcMasterclass");
 
-    for (res = 1; res < num_threads; res <<= 1)
+    for (res = 1; res < (unsigned int)num_threads; res <<= 1)
         ;
 
     res >>= 1;
