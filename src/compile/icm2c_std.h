@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.15  2002/07/12 18:55:09  dkr
+ * first (almost) complete TAGGED_ARRAYS revision.
+ * some shape computations are missing yet (but SCL, AKS should be
+ * complete)
+ *
  * Revision 3.14  2002/07/11 17:44:24  dkr
  * F_modarray completed
  *
@@ -123,6 +128,24 @@ extern void ICMCompileND_CREATE__VECT__DATA (char *name, int sdim, int val_size,
 extern void ICMCompileND_PRF_SHAPE__DATA (char *to_nt, int to_sdim, char *from_nt,
                                           int from_sdim);
 
+extern void ICMCompileND_PRF_RESHAPE__SHAPE_id (char *to_nt, int to_sdim, char *shp_nt);
+
+extern void ICMCompileND_PRF_RESHAPE__SHAPE_arr (char *to_nt, int to_sdim, int shp_size,
+                                                 char **shpa_any);
+
+extern void ICMCompileND_PRF_SEL__SHAPE_id (char *to_nt, int to_sdim, char *from_nt,
+                                            int from_sdim, int idx_size, char *idx_nt);
+
+extern void ICMCompileND_PRF_SEL__DATA_id (char *to_nt, int to_sdim, char *from_nt,
+                                           int from_sdim, int idx_size, char *idx_nt);
+
+extern void ICMCompileND_PRF_SEL__SHAPE_arr (char *to_nt, int to_sdim, char *from_nt,
+                                             int from_sdim, int idx_size,
+                                             char **idxa_any);
+
+extern void ICMCompileND_PRF_SEL__DATA_arr (char *to_nt, int to_sdim, char *from_nt,
+                                            int from_sdim, int idx_size, char **idxa_any);
+
 extern void ICMCompileND_PRF_MODARRAY__DATA_id (char *to_nt, int to_sdim, char *from_nt,
                                                 int from_sdim, int idx_size, char *idx_nt,
                                                 char *val_any);
@@ -130,6 +153,12 @@ extern void ICMCompileND_PRF_MODARRAY__DATA_id (char *to_nt, int to_sdim, char *
 extern void ICMCompileND_PRF_MODARRAY__DATA_arr (char *to_nt, int to_sdim, char *from_nt,
                                                  int from_sdim, int idx_size,
                                                  char **idxa_any, char *val_any);
+
+extern void ICMCompileND_PRF_IDX_SEL__SHAPE (char *to_nt, int to_sdim, char *from_nt,
+                                             int from_sdim, char *idx_any);
+
+extern void ICMCompileND_PRF_IDX_SEL__DATA (char *to_nt, int to_sdim, char *from_nt,
+                                            int from_sdim, char *idx_any);
 
 extern void ICMCompileND_PRF_IDX_MODARRAY__DATA (char *to_nt, int to_sdim, char *from_nt,
                                                  int from_sdim, char *idx_any,
