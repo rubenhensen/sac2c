@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.5  2000/03/23 14:00:28  jhs
+ * Added build_os.
+ *
  * Revision 2.4  1999/11/16 11:55:31  sbs
  * translated UUUPS into proper English 8-)
  *
@@ -73,7 +76,8 @@ CompilerErrorBreak (int sig)
         fprintf (error_file, " *\n");
         fprintf (error_file, " * using sac2c %s for %s\n", version_id, target_platform);
         fprintf (error_file, " * built %s.\n", build_date);
-        fprintf (error_file, " * by user %s on host %s.\n", build_user, build_host);
+        fprintf (error_file, " * by user %s on host %s for %s.\n", build_user, build_host,
+                 build_os);
         fprintf (error_file, " *\n");
         if (commandline[0] != '\0') {
             fprintf (error_file, " * The compiler was called by\n");

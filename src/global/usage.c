@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.25  2000/03/23 14:02:37  jhs
+ * Added build_os.
+ *
  * Revision 2.24  2000/03/21 15:51:41  jhs
  * Added some information about mtn.
  *
@@ -638,6 +641,7 @@ version ()
             "BUILD:     %s\n"
             "BY USER:   %s\n"
             "ON HOST:   %s\n"
+            "FOR OS:    %s\n"
             "\n\n"
 
             "(c) Copyright 1994 - 2000 by\n\n"
@@ -651,7 +655,8 @@ version ()
             (target_platform[0] == '\0') ? "???" : target_platform,
             (build_date[0] == '\0') ? "???" : build_date,
             (build_user[0] == '\0') ? "???" : build_user,
-            (build_host[0] == '\0') ? "???" : build_host);
+            (build_host[0] == '\0') ? "???" : build_host,
+            (build_os[0] == '\0') ? "???" : build_os);
 
     DBUG_VOID_RETURN;
 }
