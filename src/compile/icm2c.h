@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.30  1996/01/21 14:52:31  cg
+ * Revision 1.31  1996/01/21 18:06:27  cg
+ * bug fixed in PRINTREF
+ *
+ * Revision 1.30  1996/01/21  14:52:31  cg
  * bug fixed in creating arrays of type void*
  *
  * Revision 1.29  1996/01/21  14:11:49  cg
@@ -132,7 +135,7 @@
 #if (defined(TRACE_MEM) || defined(TRACE_REF))
 
 #define PRINT_TRACEHEADER(text) __SAC__Runtime_PrintTraceHeader text
-#define PRINT_FREE(name) __SAC__RuntimePrintTraceInfo ("freeing %s", #name)
+#define PRINT_FREE(name) __SAC__Runtime_PrintTraceInfo ("freeing %s", #name)
 
 #else
 
