@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.37  1998/03/20 17:25:06  dkr
+ * in N_WL... nodes: INNER is now called CONTENTS
+ *
  * Revision 1.36  1998/03/19 20:18:19  dkr
  * removed a bug in FreeWLgrid
  *
@@ -1561,7 +1564,7 @@ FreeWLseg (node *arg_node, node *arg_info)
     DBUG_ENTER ("FreeWLseg");
     DBUG_PRINT ("FREE", ("Removing N_WLseg node ..."));
 
-    FREETRAV (WLSEG_INNER (arg_node));
+    FREETRAV (WLSEG_CONTENTS (arg_node));
     tmp = FREECONT (WLSEG_NEXT (arg_node));
 
     FREE (arg_node);
@@ -1579,7 +1582,7 @@ FreeWLblock (node *arg_node, node *arg_info)
     DBUG_PRINT ("FREE", ("Removing N_WLblock node ..."));
 
     FREETRAV (WLBLOCK_NEXTDIM (arg_node));
-    FREETRAV (WLBLOCK_INNER (arg_node));
+    FREETRAV (WLBLOCK_CONTENTS (arg_node));
     tmp = FREECONT (WLBLOCK_NEXT (arg_node));
 
     FREE (arg_node);
@@ -1597,7 +1600,7 @@ FreeWLublock (node *arg_node, node *arg_info)
     DBUG_PRINT ("FREE", ("Removing N_WLublock node ..."));
 
     FREETRAV (WLUBLOCK_NEXTDIM (arg_node));
-    FREETRAV (WLUBLOCK_INNER (arg_node));
+    FREETRAV (WLUBLOCK_CONTENTS (arg_node));
     tmp = FREECONT (WLUBLOCK_NEXT (arg_node));
 
     FREE (arg_node);
@@ -1614,7 +1617,7 @@ FreeWLproj (node *arg_node, node *arg_info)
     DBUG_ENTER ("FreeWLproj");
     DBUG_PRINT ("FREE", ("Removing N_WLproj node ..."));
 
-    FREETRAV (WLPROJ_INNER (arg_node));
+    FREETRAV (WLPROJ_CONTENTS (arg_node));
     tmp = FREECONT (WLPROJ_NEXT (arg_node));
 
     FREE (arg_node);

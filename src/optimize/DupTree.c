@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.36  1998/03/20 17:25:16  dkr
+ * in N_WL... nodes: INNER is now called CONTENTS
+ *
  * Revision 1.35  1998/03/19 20:17:57  dkr
  * removed a bug in DupWLgrid
  *
@@ -710,8 +713,8 @@ DupWLseg (node *arg_node, node *arg_info)
     node *new_node;
 
     DBUG_ENTER ("DupWLseg");
-    new_node
-      = MakeWLseg (WLSEG_DIM (arg_node), Trav (WLSEG_INNER (arg_node), arg_info), NULL);
+    new_node = MakeWLseg (WLSEG_DIM (arg_node),
+                          Trav (WLSEG_CONTENTS (arg_node), arg_info), NULL);
 
     if (WLSEG_NEXT (arg_node) != NULL) {
         WLSEG_NEXT (new_node) = Trav (WLSEG_NEXT (arg_node), arg_info);
@@ -736,8 +739,8 @@ DupWLblock (node *arg_node, node *arg_info)
         WLBLOCK_NEXTDIM (new_node) = Trav (WLBLOCK_NEXTDIM (arg_node), arg_info);
     }
 
-    if (WLBLOCK_INNER (arg_node) != NULL) {
-        WLBLOCK_INNER (new_node) = Trav (WLBLOCK_INNER (arg_node), arg_info);
+    if (WLBLOCK_CONTENTS (arg_node) != NULL) {
+        WLBLOCK_CONTENTS (new_node) = Trav (WLBLOCK_CONTENTS (arg_node), arg_info);
     }
 
     if (WLBLOCK_NEXT (arg_node) != NULL) {
@@ -763,8 +766,8 @@ DupWLublock (node *arg_node, node *arg_info)
         WLUBLOCK_NEXTDIM (new_node) = Trav (WLUBLOCK_NEXTDIM (arg_node), arg_info);
     }
 
-    if (WLUBLOCK_INNER (arg_node) != NULL) {
-        WLUBLOCK_INNER (new_node) = Trav (WLUBLOCK_INNER (arg_node), arg_info);
+    if (WLUBLOCK_CONTENTS (arg_node) != NULL) {
+        WLUBLOCK_CONTENTS (new_node) = Trav (WLUBLOCK_CONTENTS (arg_node), arg_info);
     }
 
     if (WLUBLOCK_NEXT (arg_node) != NULL) {
@@ -785,7 +788,7 @@ DupWLproj (node *arg_node, node *arg_info)
     new_node = MakeWLproj (WLPROJ_LEVEL (arg_node), WLPROJ_DIM (arg_node),
                            WLPROJ_BOUND1 (arg_node), WLPROJ_BOUND2 (arg_node),
                            WLPROJ_STEP (arg_node), WLPROJ_UNROLLING (arg_node),
-                           Trav (WLPROJ_INNER (arg_node), arg_info), NULL);
+                           Trav (WLPROJ_CONTENTS (arg_node), arg_info), NULL);
 
     if (WLPROJ_NEXT (arg_node) != NULL) {
         WLPROJ_NEXT (new_node) = Trav (WLPROJ_NEXT (arg_node), arg_info);

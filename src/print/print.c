@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.163  1998/03/20 17:23:53  dkr
+ * in N_WL... nodes: INNER is now called CONTENTS
+ *
  * Revision 1.162  1998/03/20 17:10:42  dkr
  * changed output in PrintWLblock:
  *   show LEVEL
@@ -2276,7 +2279,7 @@ PrintWLseg (node *arg_node, node *arg_info)
     while (seg != NULL) {
         INDENT
         fprintf (outfile, "/* segment %d: */\n", i++);
-        WLSEG_INNER (seg) = Trav (WLSEG_INNER (seg), arg_info);
+        WLSEG_CONTENTS (seg) = Trav (WLSEG_CONTENTS (seg), arg_info);
         seg = WLSEG_NEXT (seg);
     }
 
@@ -2310,10 +2313,10 @@ PrintWLblock (node *arg_node, node *arg_info)
         indent--;
     }
 
-    if (WLBLOCK_INNER (arg_node) != NULL) {
+    if (WLBLOCK_CONTENTS (arg_node) != NULL) {
         fprintf (outfile, "\n");
         indent++;
-        WLBLOCK_INNER (arg_node) = Trav (WLBLOCK_INNER (arg_node), arg_info);
+        WLBLOCK_CONTENTS (arg_node) = Trav (WLBLOCK_CONTENTS (arg_node), arg_info);
         indent--;
     }
 
@@ -2351,10 +2354,10 @@ PrintWLublock (node *arg_node, node *arg_info)
         indent--;
     }
 
-    if (WLUBLOCK_INNER (arg_node) != NULL) {
+    if (WLUBLOCK_CONTENTS (arg_node) != NULL) {
         fprintf (outfile, "\n");
         indent++;
-        WLUBLOCK_INNER (arg_node) = Trav (WLUBLOCK_INNER (arg_node), arg_info);
+        WLUBLOCK_CONTENTS (arg_node) = Trav (WLUBLOCK_CONTENTS (arg_node), arg_info);
         indent--;
     }
 
@@ -2385,7 +2388,7 @@ PrintWLproj (node *arg_node, node *arg_info)
              WLPROJ_BOUND2 (arg_node), WLPROJ_DIM (arg_node), WLPROJ_STEP (arg_node));
 
     indent++;
-    WLPROJ_INNER (arg_node) = Trav (WLPROJ_INNER (arg_node), arg_info);
+    WLPROJ_CONTENTS (arg_node) = Trav (WLPROJ_CONTENTS (arg_node), arg_info);
     indent--;
 
     if (WLPROJ_NEXT (arg_node) != NULL) {

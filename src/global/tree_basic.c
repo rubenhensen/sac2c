@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.43  1998/03/20 17:24:47  dkr
+ * in N_WL... nodes: INNER is now called CONTENTS
+ *
  * Revision 1.42  1998/03/18 11:03:58  dkr
  * *** empty log message ***
  *
@@ -1386,7 +1389,7 @@ MakeNWith2 (node *withid, node *seg, node *code, node *withop)
 /*--------------------------------------------------------------------------*/
 
 node *
-MakeWLseg (int dim, node *inner, node *next)
+MakeWLseg (int dim, node *contents, node *next)
 {
     node *new_node;
 
@@ -1395,7 +1398,7 @@ MakeWLseg (int dim, node *inner, node *next)
 
     NODE_TYPE (new_node) = N_WLseg;
     WLSEG_DIM (new_node) = dim;
-    WLSEG_INNER (new_node) = inner;
+    WLSEG_CONTENTS (new_node) = contents;
     WLSEG_NEXT (new_node) = next;
 
     DBUG_RETURN (new_node);
@@ -1404,7 +1407,7 @@ MakeWLseg (int dim, node *inner, node *next)
 
 node *
 MakeWLblock (int level, int dim, int bound1, int bound2, int blocking, node *nextdim,
-             node *inner, node *next)
+             node *contents, node *next)
 {
     node *new_node;
 
@@ -1419,7 +1422,7 @@ MakeWLblock (int level, int dim, int bound1, int bound2, int blocking, node *nex
     WLBLOCK_BOUND2 (new_node) = bound2;
     WLBLOCK_BLOCKING (new_node) = blocking;
     WLBLOCK_NEXTDIM (new_node) = nextdim;
-    WLBLOCK_INNER (new_node) = inner;
+    WLBLOCK_CONTENTS (new_node) = contents;
     WLBLOCK_NEXT (new_node) = next;
 
     DBUG_RETURN (new_node);
@@ -1428,7 +1431,7 @@ MakeWLblock (int level, int dim, int bound1, int bound2, int blocking, node *nex
 
 node *
 MakeWLublock (int level, int dim, int bound1, int bound2, int blocking, node *nextdim,
-              node *inner, node *next)
+              node *contents, node *next)
 {
     node *new_node;
 
@@ -1443,7 +1446,7 @@ MakeWLublock (int level, int dim, int bound1, int bound2, int blocking, node *ne
     WLUBLOCK_BOUND2 (new_node) = bound2;
     WLUBLOCK_BLOCKING (new_node) = blocking;
     WLUBLOCK_NEXTDIM (new_node) = nextdim;
-    WLUBLOCK_INNER (new_node) = inner;
+    WLUBLOCK_CONTENTS (new_node) = contents;
     WLUBLOCK_NEXT (new_node) = next;
 
     DBUG_RETURN (new_node);
@@ -1452,7 +1455,7 @@ MakeWLublock (int level, int dim, int bound1, int bound2, int blocking, node *ne
 
 node *
 MakeWLproj (int level, int dim, int bound1, int bound2, int step, int unrolling,
-            node *inner, node *next)
+            node *contents, node *next)
 {
     node *new_node;
 
@@ -1467,7 +1470,7 @@ MakeWLproj (int level, int dim, int bound1, int bound2, int step, int unrolling,
     WLPROJ_BOUND2 (new_node) = bound2;
     WLPROJ_STEP (new_node) = step;
     WLPROJ_UNROLLING (new_node) = unrolling;
-    WLPROJ_INNER (new_node) = inner;
+    WLPROJ_CONTENTS (new_node) = contents;
     WLPROJ_NEXT (new_node) = next;
 
     DBUG_RETURN (new_node);

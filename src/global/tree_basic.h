@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.89  1998/03/20 17:24:54  dkr
+ * in N_WL... nodes: INNER is now called CONTENTS
+ *
  * Revision 1.88  1998/03/18 11:04:12  dkr
  * added WLPROJ_MODIFIED
  *
@@ -2279,7 +2282,7 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop);
  ***
  ***  sons:
  ***
- ***    node*    INNER    (0)     (N_WLblock, N_WLublock, N_WLproj)
+ ***    node*    CONTENTS (0)     (N_WLblock, N_WLublock, N_WLproj)
  ***    node*    NEXT     (0)     (N_WLseg)
  ***
  ***  permanent attributes:
@@ -2293,12 +2296,12 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop);
  ***
  ***/
 
-extern node *MakeWLseg (int dim, node *inner, node *next);
+extern node *MakeWLseg (int dim, node *contents, node *next);
 
 #define WLSEG_DIM(n) (n->refcnt)
 #define WLSEG_BV(n) (n->mask[0])
 #define WLSEG_UBV(n) (n->mask[1])
-#define WLSEG_INNER(n) (n->node[0])
+#define WLSEG_CONTENTS(n) (n->node[0])
 #define WLSEG_NEXT(n) (n->node[1])
 
 /*--------------------------------------------------------------------------*/
@@ -2309,7 +2312,7 @@ extern node *MakeWLseg (int dim, node *inner, node *next);
  ***  sons:
  ***
  ***    node*    NEXTDIM   (0)    (N_WLblock)
- ***    node*    INNER     (0)    (N_WLublock, N_WLproj)
+ ***    node*    CONTENTS  (0)    (N_WLublock, N_WLproj)
  ***    node*    NEXT      (0)    (N_WLblock)
  ***
  ***  permanent attributes:
@@ -2322,12 +2325,12 @@ extern node *MakeWLseg (int dim, node *inner, node *next);
  ***
  ***
  ***  remark:
- ***    it makes no sense to use the nodes NEXTDIM and INNER simultaneous!
+ ***    it makes no sense to use the nodes NEXTDIM and CONTENTS simultaneous!
  ***
  ***/
 
 extern node *MakeWLblock (int level, int dim, int bound1, int bound2, int blocking,
-                          node *nextdim, node *inner, node *next);
+                          node *nextdim, node *contents, node *next);
 
 #define WLBLOCK_LEVEL(n) (n->refcnt)
 #define WLBLOCK_DIM(n) (n->flag)
@@ -2335,7 +2338,7 @@ extern node *MakeWLblock (int level, int dim, int bound1, int bound2, int blocki
 #define WLBLOCK_BOUND2(n) (n->varno)
 #define WLBLOCK_BLOCKING(n) (n->lineno)
 #define WLBLOCK_NEXTDIM(n) (n->node[0])
-#define WLBLOCK_INNER(n) (n->node[1])
+#define WLBLOCK_CONTENTS(n) (n->node[1])
 #define WLBLOCK_NEXT(n) (n->node[2])
 
 /*--------------------------------------------------------------------------*/
@@ -2346,7 +2349,7 @@ extern node *MakeWLblock (int level, int dim, int bound1, int bound2, int blocki
  ***  sons:
  ***
  ***    node*    NEXTDIM   (0)    (N_WLublock)
- ***    node*    INNER     (0)    (N_WLproj)
+ ***    node*    CONTENTS  (0)    (N_WLproj)
  ***    node*    NEXT      (0)    (N_WLublock)
  ***
  ***  permanent attributes:
@@ -2359,12 +2362,12 @@ extern node *MakeWLblock (int level, int dim, int bound1, int bound2, int blocki
  ***
  ***
  ***  remark:
- ***    it makes no sense to use the nodes NEXTDIM and INNER simultaneous!
+ ***    it makes no sense to use the nodes NEXTDIM and CONTENTS simultaneous!
  ***
  ***/
 
 extern node *MakeWLublock (int level, int dim, int bound1, int bound2, int blocking,
-                           node *nextdim, node *inner, node *next);
+                           node *nextdim, node *contents, node *next);
 
 #define WLUBLOCK_LEVEL(n) (n->refcnt)
 #define WLUBLOCK_DIM(n) (n->flag)
@@ -2372,7 +2375,7 @@ extern node *MakeWLublock (int level, int dim, int bound1, int bound2, int block
 #define WLUBLOCK_BOUND2(n) (n->varno)
 #define WLUBLOCK_BLOCKING(n) (n->lineno)
 #define WLUBLOCK_NEXTDIM(n) (n->node[0])
-#define WLUBLOCK_INNER(n) (n->node[1])
+#define WLUBLOCK_CONTENTS(n) (n->node[1])
 #define WLUBLOCK_NEXT(n) (n->node[2])
 
 /*--------------------------------------------------------------------------*/
@@ -2382,7 +2385,7 @@ extern node *MakeWLublock (int level, int dim, int bound1, int bound2, int block
  ***
  ***  sons:
  ***
- ***    node*    INNER     (0)    (N_WLgrid)
+ ***    node*    CONTENTS  (0)    (N_WLgrid)
  ***    node*    NEXT      (0)    (N_WLproj)
  ***
  ***  permanent attributes:
@@ -2401,7 +2404,7 @@ extern node *MakeWLublock (int level, int dim, int bound1, int bound2, int block
  ***/
 
 extern node *MakeWLproj (int level, int dim, int bound1, int bound2, int step,
-                         int unrolling, node *inner, node *next);
+                         int unrolling, node *contents, node *next);
 
 #define WLPROJ_LEVEL(n) (n->refcnt)
 #define WLPROJ_DIM(n) (n->flag)
@@ -2409,7 +2412,7 @@ extern node *MakeWLproj (int level, int dim, int bound1, int bound2, int step,
 #define WLPROJ_BOUND2(n) (n->varno)
 #define WLPROJ_STEP(n) (n->lineno)
 #define WLPROJ_UNROLLING(n) (n->info.prf_dec.tag)
-#define WLPROJ_INNER(n) (n->node[0])
+#define WLPROJ_CONTENTS(n) (n->node[0])
 #define WLPROJ_NEXT(n) (n->node[1])
 
 #define WLPROJ_MODIFIED(n) (n->info.prf_dec.tc)
