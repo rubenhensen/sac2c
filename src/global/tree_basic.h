@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.57  1997/11/18 18:05:43  srs
+ * changed new WL-macros
+ *
  * Revision 1.56  1997/11/18 17:33:31  dkr
  * modified MakeNWith()
  *
@@ -1953,13 +1956,13 @@ extern node *MakeNPart (node *withid, node *generator);
  ***
  ***  permanent attributes:
  ***
- ***    int    TYPE     (0: list of scalars, 1: vector idf)
- ***    ids*   IDS
+ ***    WithIdType   TYPE
+ ***    ids*         IDS
  ***/
 
-extern node *MakeNWithid (int type, ids *_ids);
+extern node *MakeNWithid (WithIdType type, ids *_ids);
 
-#define NWITHID_TYPE(n) (n->info.cint)
+#define NWITHID_TYPE(n) (n->info.withid)
 #define NWITHID_IDS(n) ((ids *)n->info2)
 
 /*--------------------------------------------------------------------------*/
@@ -1971,26 +1974,25 @@ extern node *MakeNWithid (int type, ids *_ids);
  ***
  ***    node*  BOUND1    ("N_expr")
  ***    node*  BOUND2    ("N_expr")
- ***    node*  OP1       (N_prf)
- ***    node*  OP2       (N_prf)
  ***    node*  STEP      ("N_expr")
  ***    node*  WIDTH     ("N_expr")
  ***
  ***  permanent attributes:
  ***
- ***    ?
+ ***    prf    OP1
+ ***    prf    OP2
  ***
  ***/
 
-extern node *MakeNGenerator (node *bound1, node *bound2, node *op1, node *op2, node *step,
+extern node *MakeNGenerator (node *bound1, node *bound2, prf op1, prf op2, node *step,
                              node *width);
 
 #define NGEN_BOUND1(n) (n->node[0])
 #define NGEN_BOUND2(n) (n->node[1])
-#define NGEN_OP1(n) (n->node[2])
-#define NGEN_OP2(n) (n->node[3])
 #define NGEN_STEP(n) (n->node[4])
 #define NGEN_WIDTH(n) (n->node[5])
+#define NGEN_OP1(n) (n->info.genrel.op1)
+#define NGEN_OP2(n) (n->info.genrel.op2)
 
 /*--------------------------------------------------------------------------*/
 
