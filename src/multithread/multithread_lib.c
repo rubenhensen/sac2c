@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2000/07/13 08:24:24  jhs
+ * Moved DupMask_ InsertBlock, InsertMT and InsertST from blocks_init.[ch]
+ * Renamed InsertXX to MUTHInsertXX.
+ *
  * Revision 1.7  2000/06/23 15:13:47  dkr
  * signature of DupTree changed
  *
@@ -42,9 +46,11 @@
 #include <string.h>
 
 #include "tree_basic.h"
+#include "tree_compound.h"
 #include "free.h"
 #include "DupTree.h"
 #include "DataFlowMask.h"
+#include "generatemasks.h"
 
 #include "internal_lib.h"
 
@@ -263,6 +269,15 @@ MUTHExpandFundefName (node *fundef, char *prefix)
     DBUG_RETURN (fundef);
 }
 
+/******************************************************************************
+ *
+ * function:
+ *   node *MUTHReduceFundefName( node *fundef, int count)
+ *
+ * description:
+ *   deletes the first "count" chars of the fundef name
+ *
+ ******************************************************************************/
 node *
 MUTHReduceFundefName (node *fundef, int count)
 {
@@ -280,4 +295,109 @@ MUTHReduceFundefName (node *fundef, int count)
     */
     DBUG_PRINT ("BARIN", ("end"));
     DBUG_RETURN (fundef);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   long *DupMask_(long *oldmask, int varno)
+ *
+ * description:
+ *   copies Mask via DupMask, but is able to handle NULL also (returns NULL
+ *   when it has to copy a NULL).
+ *
+ ******************************************************************************/
+static long *
+DupMask_ (long *oldmask, int varno)
+{
+    long *result;
+
+    DBUG_ENTER ("DupMask_");
+
+    if (oldmask == NULL) {
+        result = NULL;
+    } else {
+        result = DupMask (oldmask, varno);
+    }
+
+    DBUG_RETURN (result);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   static node *MUTHInsertBlock(node *assign, node *block, node *fundef)
+ *
+ * description:
+ *   Inserts an MT or ST-Block into assign, block contains a MT- or ST-Block
+ *   with REGION == NULL, fundef is the actual fundef node.
+ *   assign gets the block as new instruction, while the region of the block
+ *   will get the old instruction of the assignment.
+ *   So the instruction at the assign will be embedded into block.
+ *
+ ******************************************************************************/
+static node *
+MUTHInsertBlock (node *assign, node *block, node *fundef)
+{
+    node *newassign;
+    int varno;
+
+    DBUG_ENTER ("MUTHInsertBlock");
+
+    DBUG_ASSERT ((NODE_TYPE (assign) == N_assign), ("assign: N_assign expected"));
+    DBUG_ASSERT (((NODE_TYPE (block) == N_mt) || (NODE_TYPE (block) == N_st)),
+                 ("block: N_mt or N_st expected"));
+    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef), ("fundef: N_fundef expected"));
+
+    newassign = MakeAssign (ASSIGN_INSTR (assign), NULL);
+    L_MT_OR_ST_REGION (block, MakeBlock (newassign, NULL));
+    ASSIGN_INSTR (assign) = block;
+    varno = FUNDEF_VARNO (fundef);
+    ASSIGN_DEFMASK (newassign) = DupMask_ (ASSIGN_DEFMASK (assign), varno);
+    ASSIGN_USEMASK (newassign) = DupMask_ (ASSIGN_USEMASK (assign), varno);
+    ASSIGN_MRDMASK (newassign) = DupMask_ (ASSIGN_MRDMASK (assign), varno);
+
+    DBUG_RETURN (assign);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   static node *MUTHInsertMT(node *assign, node *arg_info)
+ *
+ * description:
+ *   inserts mt-block around the instruction of the assignment
+ *
+ ******************************************************************************/
+node *
+MUTHInsertMT (node *assign, node *arg_info)
+{
+    DBUG_ENTER ("MUTHInsertMT");
+
+    DBUG_ASSERT ((NODE_TYPE (assign) == N_assign), "assign-node is not a N_assign");
+
+    assign = MUTHInsertBlock (assign, MakeMT (NULL), INFO_MUTH_FUNDEF (arg_info));
+
+    DBUG_RETURN (assign);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   static node *MUTHInsertST(node *assign, node *arg_info)
+ *
+ * description:
+ *   inserts st-block around the instruction of the assignment
+ *
+ ******************************************************************************/
+node *
+MUTHInsertST (node *assign, node *arg_info)
+{
+    DBUG_ENTER ("MUTHInsertST");
+
+    DBUG_ASSERT ((NODE_TYPE (assign) == N_assign), "assign-node is not a N_assign");
+
+    assign = MUTHInsertBlock (assign, MakeST (NULL), INFO_MUTH_FUNDEF (arg_info));
+
+    DBUG_RETURN (assign);
 }

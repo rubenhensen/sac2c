@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2000/07/13 08:24:24  jhs
+ * Moved DupMask_ InsertBlock, InsertMT and InsertST from blocks_init.[ch]
+ * Renamed InsertXX to MUTHInsertXX.
+ *
  * Revision 1.5  2000/04/10 15:45:08  jhs
  * Added Reduce
  *
@@ -41,5 +45,7 @@ extern node *MUTHMeltBlocksOnCopies (node *first_block, node *second_block);
 extern node *MUTHExchangeApplication (node *arg_node, node *new_fundef);
 extern node *MUTHExpandFundefName (node *fundef, char *prefix);
 extern node *MUTHReduceFundefName (node *fundef, int count);
+extern node *MUTHInsertST (node *assign, node *arg_info);
+extern node *MUTHInsertMT (node *assign, node *arg_info);
 
 #endif /* CONCURRENT_LIB_H */
