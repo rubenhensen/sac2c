@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.10  2002/10/08 10:32:29  dkr
+ * SSAArrayST2ArrayInt(): AVIS_SSACONST(ID_AVIS()) used instead of
+ * ID_CONSTVEC
+ *
  * Revision 1.9  2002/09/11 23:17:23  dkr
  * prf_string replaced by mdb_prf
  *
@@ -81,6 +85,7 @@
 #include "traverse.h"
 #include "optimize.h"
 #include "CheckAvis.h"
+#include "constants.h"
 #include "SSATransform.h"
 #include "SSAWithloopFolding.h"
 #include "SSAWLT.h"
@@ -414,11 +419,14 @@ SSANormalizeInternGen (intern_gen *ig)
 void
 SSAArrayST2ArrayInt (node *arrayn, int **iarray, int shape)
 {
+    int *tmp;
     int i;
 
     DBUG_ENTER ("SSAArrayST2ArrayInt");
 
-    if (!*iarray) {
+    DBUG_ASSERT ((iarray != NULL), "no iarray found!");
+
+    if (*iarray == NULL) {
         *iarray = Malloc (shape * sizeof (int));
     }
 
@@ -431,10 +439,15 @@ SSAArrayST2ArrayInt (node *arrayn, int **iarray, int shape)
             (*iarray)[i] = ((int *)ARRAY_CONSTVEC (arrayn))[i];
         }
     } else /* (NODE_TYPE(arrayn) == N_id) */ {
-        DBUG_ASSERT ((NODE_TYPE (arrayn) == N_id), ("Wrong arrayn"));
+        DBUG_ASSERT ((NODE_TYPE (arrayn) == N_id), "Wrong arrayn");
 
-        for (i = 0; i < shape; i++) {
-            (*iarray)[i] = ((int *)ID_CONSTVEC (arrayn))[i];
+        if (AVIS_SSACONST (ID_AVIS (arrayn)) != NULL) {
+            tmp = COGetDataVec (AVIS_SSACONST (ID_AVIS (arrayn)));
+            for (i = 0; i < shape; i++) {
+                (*iarray)[i] = tmp[i];
+            }
+        } else {
+            *iarray = NULL;
         }
     }
 
