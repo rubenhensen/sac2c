@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2001/03/28 12:48:38  ben
+ * for SAC_MT_SCHEDULER_Afs_next_task the parameter param added
+ *
  * Revision 3.15  2001/03/27 11:49:20  ben
  *  SAC_MT_SCHEDULER_Afs_next_task() added
  *
@@ -827,14 +830,14 @@ typedef union {
         }                                                                                \
     }
 
-#define SAC_MT_SCHEDULER_Afs_next_task()                                                 \
+#define SAC_MT_SCHEDULER_Afs_next_task(param)                                            \
     {                                                                                    \
         worktodo = 0;                                                                    \
                                                                                          \
         /* first look if MYTHREAD has work to do */                                      \
         SAC_MT_ACQUIRE_LOCK (SAC_MT_TASKLOCK (SAC_MT_MYTHREAD ()));                      \
-        if (SAC_MT_TASK (SAC_MT_MYTHREAD ()) < 5) {                                      \
-            taskid = (5 * SAC_MT_MYTHREAD ()) + SAC_MT_TASK (SAC_MT_MYTHREAD ());        \
+        if (SAC_MT_TASK (SAC_MT_MYTHREAD ()) < param) {                                  \
+            taskid = (param * SAC_MT_MYTHREAD ()) + SAC_MT_TASK (SAC_MT_MYTHREAD ());    \
             SAC_MT_TASK (SAC_MT_MYTHREAD ())++;                                          \
             worktodo = 1;                                                                \
         }                                                                                \
@@ -852,10 +855,10 @@ typedef union {
                 }                                                                        \
                                                                                          \
             /* if there was a thread with work to do,get his next task */                \
-            if (mintask < 5) {                                                           \
+            if (mintask < param) {                                                       \
                 SAC_MT_ACQUIRE_LOCK (SAC_MT_TASKLOCK (maxloadthread));                   \
-                if (SAC_MT_TASK (maxloadthread) < 5) {                                   \
-                    taskid = 5 * maxloadthread + SAC_MT_TASK (maxloadthread);            \
+                if (SAC_MT_TASK (maxloadthread) < param) {                               \
+                    taskid = param * maxloadthread + SAC_MT_TASK (maxloadthread);        \
                     SAC_MT_TASK (maxloadthread)++;                                       \
                     worktodo = 1;                                                        \
                 }                                                                        \
