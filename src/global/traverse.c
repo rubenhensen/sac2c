@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.53  1997/11/24 17:03:34  srs
+ * *** empty log message ***
+ *
  * Revision 1.52  1997/11/19 19:40:05  dkr
  * added o2nWith_tab
  *
@@ -727,7 +730,6 @@ funptr o2nWith_tab[] = {
 int nnode[] = {
 #include "node_info.mac"
 };
-
 #undef NIF
 
 /*
