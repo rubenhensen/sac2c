@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.44  2000/10/31 23:25:40  dkr
+ * signature of Types2Shpseg modified
+ *
  * Revision 2.43  2000/10/26 23:11:20  dkr
  * functions GetDim(), Type2Shpseg() used instead of TYPES_DIM, TYPES_SHPSEG
  * in order to get correct results even for user-defined types!!
@@ -362,7 +365,7 @@ CalculateArrayOffset (types *array, node *index)
 
     n = TYPES_SHAPE (ARRAY_TYPE (index), 0); /* length of index vector */
     m = GetDim (array);                      /* dimension of array */
-    tmp_shpseg = Type2Shpseg (array);
+    tmp_shpseg = Type2Shpseg (array, NULL);
 
     index = ARRAY_AELEMS (index);
     offset = NUM_VAL (EXPRS_EXPR (index));
@@ -1845,7 +1848,7 @@ CalcPsi (node *shape, node *array, types *array_type, node *arg_info)
     vec_dim = GetShapeVector (shape, vec_shape);
     array_dim = GetDim (array_type);
     array_length = GetTypesLength (array_type);
-    array_shape = Type2Shpseg (array_type);
+    array_shape = Type2Shpseg (array_type, NULL);
     result_dim = GetDim (INFO_CF_TYPE (arg_info));
     length = GetTypesLength (INFO_CF_TYPE (arg_info));
 
