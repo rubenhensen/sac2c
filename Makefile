@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.10  1999/06/25 14:49:54  jhs
+# Added src/concurrent/spmd_trav.o to includes.
+#
 # Revision 2.9  1999/06/02 16:51:53  dkr
 # src/lib/*.o are now builded first
 #
@@ -237,9 +240,10 @@ OBJECTS= src/objects/objinit.o src/objects/objects.o \
          src/objects/uniquecheck.o src/objects/rmvoidfun.o
 REFCOUNT= src/refcount/refcount.o
 CONCURRENT= src/concurrent/concurrent.o src/concurrent/scheduling.o  \
-            src/concurrent/spmd_init.o src/concurrent/spmd_opt.o   \
-            src/concurrent/spmd_lift.o src/concurrent/sync_init.o   \
-            src/concurrent/sync_opt.o src/concurrent/schedule.o 
+            src/concurrent/spmd_init.o src/concurrent/spmd_opt.o     \
+            src/concurrent/spmd_lift.o src/concurrent/sync_init.o    \
+            src/concurrent/sync_opt.o src/concurrent/schedule.o      \
+            src/concurrent/spmd_trav.o
 COMPILE=  src/compile/wltransform.o src/compile/wlpragma_funs.o \
           src/compile/precompile.o \
           src/compile/compile.o src/compile/gen_startup_code.o \
