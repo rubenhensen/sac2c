@@ -1,5 +1,10 @@
 /*
+ *
  * $Log$
+ * Revision 1.46  2000/10/27 00:06:00  dkr
+ * Type2Shpseg and Type2Exprs added,
+ * some code brushing done.
+ *
  * Revision 1.45  2000/10/26 13:57:45  dkr
  * CopyShpseg replaced by DupShpseg (DupTree.[ch])
  *
@@ -14,9 +19,6 @@
  *
  * Revision 1.41  2000/10/23 18:04:22  dkr
  * syntax error in ICM_EXPRS1 corrected :-(
- *
- * Revision 1.40  2000/10/23 17:59:49  dkr
- * macros ICM_EXPRS? added
  *
  * Revision 1.39  2000/10/23 16:38:43  dkr
  * ICM_ARG5, ICM_ARG6 added
@@ -132,6 +134,7 @@
  *
  * Revision 1.1  1995/09/27  15:13:12  cg
  * Initial revision
+ *
  */
 
 /*============================================================================
@@ -187,18 +190,12 @@ specific implementation of a function should remain with the source code.
  ***  Shpseg :
  ***/
 
-/*
- *  functionname  : MergeShpseg
- *  arguments     : 1) pointer to first shpseg
- *                  2) dimension of first shpseg
- *                  3) pointer to second shpseg
- *                  4) dimension of second shpseg
- *  description   : returns a new shpseg that starts with the shapes of
- *                  the first shpseg and ends with the shapes of the
- *                  second shpseg
- */
-
+extern shpseg *DiffShpseg (int dim, shpseg *shape1, shpseg *shape2);
+extern bool EqualShpseg (int dim, shpseg *shape2, shpseg *shape1);
 extern shpseg *MergeShpseg (shpseg *first, int dim1, shpseg *second, int dim2);
+
+extern shpseg *Array2Shpseg (node *array);
+extern node *Shpseg2Array (shpseg *shape, int dim);
 
 /*--------------------------------------------------------------------------*/
 
@@ -232,6 +229,8 @@ extern int GetDim (types *type);
 extern simpletype GetBasetype (types *type);
 extern int GetBasetypeSize (types *type);
 extern int GetTypesLength (types *type);
+extern shpseg *Type2Shpseg (types *type);
+extern node *Type2Exprs (types *type);
 
 /******************************************************************************
  *
@@ -1075,7 +1074,7 @@ extern node *AppendAssignIcm (node *assign, char *name, node *args);
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  N_exprs :
+ ***  N_exprs :        (see also N_array !!!)
  ***/
 
 /******************************************************************************
@@ -1303,7 +1302,7 @@ extern int GetExprsLength (node *exprs);
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  N_array :
+ ***  N_array :    (see also N_exprs, Shpseg !!!)
  ***/
 
 /*
@@ -1323,41 +1322,60 @@ extern int GetExprsLength (node *exprs);
  *  function declarations
  */
 
-extern node *Shape2Array (shapes *shp);
+extern node *CreateZeroVector (int dim, simpletype type);
 
-extern int IsConstArray (node *array);
-
-/* description:
+/******************************************************************************
+ *
+ * Function:
+ *   int IsConstArray( node *array);
+ *
+ * Description:
  *   Returns number of constant elements if argument is an N_array and all
  *   its elements are N_num, N_char, N_float, N_double, N_bool or otherwise
  *   returns 0.
  *
  *   The parameter type specified the necessary type all elements have to
- *   be of (nodetype, e.g. N_num). If N_ok is given, the type is ignored.*/
+ *   be of (nodetype, e.g. N_num). If N_ok is given, the type is ignored.
+ *
+ ******************************************************************************/
+
+extern int IsConstArray (node *array);
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *IntVec2Array(int length, int* intvec);
+ *
+ * Description:
+ *   Returns an N_exprs node containing the elements of intvec.
+ *
+ ******************************************************************************/
 
 extern node *IntVec2Array (int length, int *intvec);
 
-/* description:
- *   Returns an N_exprs node containing the elements of intvec. */
+/******************************************************************************
+ *
+ * Function:
+ *   int    *Array2IntVec(node* aelems, int* length);
+ *   int    *Array2BoolVec(node* aelems, int* length);
+ *   char   *Array2CharVec(node* aelems, int* length);
+ *   float  *Array2FloatVec(node* aelems, int* length);
+ *   double *Array2DblVec(node* aelems, int* length);
+ *
+ * Description:
+ *   Returns an iteger (char | float | double) vector and stores the number of
+ *   constant integer (char | float | double) elements in *length if first
+ *   argument is an N_exprs and all its elements are N_num otherwise the
+ *   result is not defined.
+ *   If the length of the vector is not of interest, length may be NULL.
+ *
+ ******************************************************************************/
 
 extern int *Array2IntVec (node *aelems, int *length);
 extern int *Array2BoolVec (node *aelems, int *length);
 extern char *Array2CharVec (node *aelems, int *length);
 extern float *Array2FloatVec (node *aelems, int *length);
 extern double *Array2DblVec (node *aelems, int *length);
-
-/* description:
- *   Returns an iteger (char | float | double) vector and stores the number of
- *   constant integer (char | float | double) elements in *length if first
- *   argument is an N_exprs and all its elements are N_num otherwise the
- *   result is not defined.
- *   If the length of the vector is not of interest, length may be NULL.
- */
-
-extern shpseg *Array2Shpseg (node *array);
-extern node *Shpseg2Array (shpseg *shape, int dim);
-extern shpseg *DiffShpseg (int dim, shpseg *shape1, shpseg *shape2);
-extern bool EqualShpseg (int dim, shpseg *shape2, shpseg *shape1);
 
 /*--------------------------------------------------------------------------*/
 
@@ -1466,15 +1484,20 @@ extern node *MakePrf3 (prf prf, node *arg1, node *arg2, node *arg3);
  *  compound access macros
  */
 
-#define ICM_ARG1(n) EXPRS_EXPR (ICM_ARGS (n))
-#define ICM_ARG2(n) EXPRS_EXPR (EXPRS_NEXT (ICM_ARGS (n)))
-#define ICM_ARG3(n) EXPRS_EXPR (EXPRS_NEXT (EXPRS_NEXT (ICM_ARGS (n))))
-#define ICM_ARG4(n) EXPRS_EXPR (EXPRS_NEXT (EXPRS_NEXT (EXPRS_NEXT (ICM_ARGS (n)))))
-#define ICM_ARG5(n)                                                                      \
-    EXPRS_EXPR (EXPRS_NEXT (EXPRS_NEXT (EXPRS_NEXT (EXPRS_NEXT (ICM_ARGS (n))))))
-#define ICM_ARG6(n)                                                                      \
-    EXPRS_EXPR (                                                                         \
-      EXPRS_NEXT (EXPRS_NEXT (EXPRS_NEXT (EXPRS_NEXT (EXPRS_NEXT (ICM_ARGS (n)))))))
+#define ICM_EXPRS1(n) ICM_ARGS (n)
+#define ICM_EXPRS2(n) EXPRS_NEXT (ICM_ARGS (n))
+#define ICM_EXPRS3(n) EXPRS_NEXT (EXPRS_NEXT (ICM_ARGS (n)))
+#define ICM_EXPRS4(n) EXPRS_NEXT (EXPRS_NEXT (EXPRS_NEXT (ICM_ARGS (n))))
+#define ICM_EXPRS5(n) EXPRS_NEXT (EXPRS_NEXT (EXPRS_NEXT (EXPRS_NEXT (ICM_ARGS (n)))))
+#define ICM_EXPRS6(n)                                                                    \
+    EXPRS_NEXT (EXPRS_NEXT (EXPRS_NEXT (EXPRS_NEXT (EXPRS_NEXT (ICM_ARGS (n))))))
+
+#define ICM_ARG1(n) EXPRS_EXPR (ICM_EXPRS1 (n))
+#define ICM_ARG2(n) EXPRS_EXPR (ICM_EXPRS2 (n))
+#define ICM_ARG3(n) EXPRS_EXPR (ICM_EXPRS3 (n))
+#define ICM_ARG4(n) EXPRS_EXPR (ICM_EXPRS4 (n))
+#define ICM_ARG5(n) EXPRS_EXPR (ICM_EXPRS5 (n))
+#define ICM_ARG6(n) EXPRS_EXPR (ICM_EXPRS6 (n))
 
 /******************************************************************************
  *
