@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/11/01 21:49:59  sah
+ * added SSPrint
+ *
  * Revision 1.3  2004/10/28 22:07:43  sah
  * added missing include
  *
@@ -93,4 +96,24 @@ SSFree (stringset_t *set)
     }
 
     DBUG_RETURN (set);
+}
+
+void *
+SSPrintFoldFun (const char *entry, void *rest)
+{
+    DBUG_ENTER ("SSPrintFoldFun");
+
+    printf ("%s\n", entry);
+
+    DBUG_RETURN ((void *)0);
+}
+
+void
+SSPrint (stringset_t *set)
+{
+    DBUG_ENTER ("SSPrint");
+
+    SSFold (&SSPrintFoldFun, set, NULL);
+
+    DBUG_VOID_RETURN;
 }
