@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.24  2000/03/09 18:35:19  jhs
+ * Additinal macros.
+ *
  * Revision 1.23  2000/03/02 13:07:02  jhs
  * Added several macros for multithreaded.
  *
@@ -81,203 +84,7 @@
  * function MakeIds1 added
  * macros INFO_LAC2FUN_... added
  *
- * Revision 2.62  2000/01/18 16:57:07  bs
- * Access macro NCODE_TSI_TILESHP(n) added.
- *
- * Revision 2.61  2000/01/05 17:26:51  dkr
- * status type ST_loopfun in comment for N_fundef added
- *
- * Revision 2.60  1999/12/13 16:50:57  dkr
- * definition of COND_NAIVE_ELSE changed in order to satisfy CC
- *
- * Revision 2.59  1999/12/01 15:21:20  dkr
- * comment for IDS_VARDEC added
- *
- * Revision 2.58  1999/11/24 14:43:45  bs
- * INFO_TSI_WLCOMP(n) modified, INFO_TSI_BLOCKSHP renamed to INFO_TSI_TILESHP
- *
- * Revision 2.57  1999/11/15 18:04:03  dkr
- * INFO_CF_VARNO and INFO_DCR_VARNO replaced by INFO_VARNO
- *
- * Revision 2.56  1999/11/11 18:27:51  dkr
- * INFO_PRINT_NWITH2 renamed to INFO_PRINT_NWITH
- *
- * Revision 2.55  1999/09/20 14:40:11  bs
- * Access macros INFO_TSI_..., INFO_WLAA_... and NCODE_WLAA_... modified.
- *
- * Revision 2.54  1999/09/10 14:22:52  jhs
- * Added COND_NAIVE_(THEN|ELSE)VARS.
- * Added MakeId1 und MakeId3 for those ugly macros i killed in tree.[ch].
- *
- * Revision 2.53  1999/09/01 17:50:36  jhs
- * And again again ...
- *
- * Revision 2.52  1999/09/01 17:46:14  jhs
- * And again ...
- *
- * Revision 2.51  1999/09/01 17:09:28  jhs
- * Added naive use and defmasks.
- *
- * Revision 2.50  1999/08/30 18:27:19  bs
- * Access macros added.
- * (INFO_WLAA_INDEXDIM, INFO_TSI_INDEXDIM and NCODE_WLAA_INDEXDIM)
- *
- * Revision 2.50  1999/08/30 18:27:19  bs
- * Access macros added.
- * (INFO_WLAA_INDEXDIM, INFO_TSI_INDEXDIM and NCODE_WLAA_INDEXDIM)
- *
- * Revision 2.49  1999/08/27 11:08:25  jhs
- * Added some INFO_SPMDCO_XXX macros and INFO_SYNC_OUTREP.
- *
- * Revision 2.48  1999/08/09 18:36:47  dkr
- * some brackets added in macros
- *
- * Revision 2.47  1999/08/09 15:44:13  dkr
- * changed definition of macro INFO_COMP_LAST_SYNC (for usage with cc)
- *
- * Revision 2.46  1999/08/09 11:29:54  jhs
- * Cleaned up info-macros for concurrent phase.
- *
- * Revision 2.45  1999/08/05 13:34:57  jhs
- * Added some INFO_SPMDI_... macros.
- *
- * Revision 2.44  1999/08/04 14:30:39  bs
- * Access macros NCODE_WLAA_xxx added.
- *
- * Revision 2.43  1999/07/30 13:50:30  jhs
- * Deleted INFO_SPMDT_FIRSTOUT.
- *
- * Revision 2.42  1999/07/29 07:30:53  cg
- * Added new access macro ASSIGN_CF to hold temporary sub assign
- * chains during constant folding. This was necessary to make a
- * major bug fix in CF.
- *
- * Revision 2.41  1999/07/27 08:35:33  jhs
- * Added INFO_SPMDC_FIRSTSYNC.
- *
- * Revision 2.40  1999/07/22 12:28:51  jhs
- * Added BLOCK_SPMD_SETUP_ARGS.
- *
- * Revision 2.39  1999/07/20 16:39:19  jhs
- * Added SYNC_FOLDCOUNT.
- *
- * Revision 2.38  1999/07/19 14:44:51  jhs
- * Changed signature of MakeSync.
- *
- * Revision 2.37  1999/07/14 18:21:49  bs
- * Access macros added: INFO_WLAA_COUNT, NCODE_ACCESSNO
- *
- * Revision 2.36  1999/07/14 12:14:36  sbs
- * proper support for arg_info during IVE added.
- *
- * Revision 2.35  1999/07/07 15:30:22  jhs
- * Removed SYNC_WITH_PTRS.
- *
- * Revision 2.34  1999/07/07 06:00:19  sbs
- * added VINFO_DOLLAR and adjusted MakeVinfo
- *
- * Revision 2.33  1999/07/06 14:05:01  jhs
- * Added INFO_SYNCO_[THIS|NEXT]ASSIGN.
- *
- * Revision 2.32  1999/06/30 12:59:59  jhs
- * Added INFO_SPMD_LAST.
- *
- * Revision 2.31  1999/06/30 07:53:35  jhs
- * Added INFO_COMP_LAST_SYNC to the Mmacros of N_info.
- *
- * Revision 2.30  1999/06/25 14:56:26  jhs
- * Added some macros INFO_SPMDT_xxx.
- *
- * Revision 2.29  1999/06/17 16:59:36  jhs
- * Added INFO_SPMDT_RESULT.
- *
- * Revision 2.28  1999/06/16 10:35:27  jhs
- * Added INFO_SPMDT_FIRSTOUT.
- *
- * Revision 2.27  1999/06/15 12:30:07  jhs
- * Added some missing Macros to access NAIVE_REFCNT.
- * Added INFO_RC_NAIVE_RCDUMP.
- *
- * Revision 2.26  1999/06/09 13:58:06  jhs
- * Added new macros to access NAIVE_REFCNT.
- *
- * Revision 2.25  1999/06/08 08:11:23  cg
- * Added various attributes to the N_info node  for the print and
- * writesib phases.
- *
- * Revision 2.24  1999/06/03 08:42:20  cg
- * WLCOMP_APS in the pragma node is moved to a private (non shared)
- * location in the underlying data structure in order to simplify
- * the printing of these pragmas.
- *
- * Revision 2.23  1999/05/21 14:13:55  jhs
- * Added Macros to SPMDO-info-node, used in spmd_opt.c.
- *
- * Revision 2.22  1999/05/18 16:59:48  dkr
- * ID_VECTYPE changed to int_data to prevent CC-errors
- *
- * Revision 2.19  1999/05/17 11:35:42  jhs
- * Changed Macro to access ID_VECTYPE to node[1].
- *
- * Revision 2.18  1999/05/12 15:31:15  jhs
- * simpletype-cast in N_array corrected.
- *
- * Revision 2.17  1999/05/12 08:39:24  sbs
- * attribute names for handling constant vectors at N_id, N_array, and N_info
- * nodes adjusted to each other...
- *
- * Revision 2.16  1999/05/11 16:12:21  jhs
- * Added some missing comments.
- *
- * Revision 2.15  1999/05/10 11:04:21  bs
- * NWITH_TSI renamed to NWITH_WLAA.
- * all access macros INFO_TSI_xxx renamed to INFO_WLAA_xxx.
- *
- * Revision 2.14  1999/05/06 15:39:57  sbs
- * access-macro NODE_FILE added!
- *
- * Revision 2.13  1999/05/05 13:06:05  jhs
- * Macros added to access the original operators.
- *
- * Revision 2.12  1999/05/03 19:46:07  sbs
- * some new INFO_TC_xxx macros inserted.
- *
- * Revision 2.11  1999/04/29 07:31:42  bs
- * Declaration of MakeAccess modified
- *
- * Revision 2.10  1999/04/20 12:35:01  jhs
- * Corrected corrupted comment.
- *
- * Revision 2.9  1999/04/19 17:09:50  jhs
- * New Macro ID_CONSTARRAY added.
- *
- * Revision 2.8  1999/04/12 18:02:35  bs
- * INFO_PRINT_ACCESS modified.
- *
- * Revision 2.7  1999/04/12 13:30:18  bs
- * Access macro INFO_PRINT_ACCESS added.
- *
- * Revision 2.6  1999/04/12 13:22:02  cg
- * added BLOCK_CACHESIM()
- *
- * Revision 2.5  1999/04/08 12:44:05  bs
- * Access macro ID_INDEX isn't needed any longer.
- * The access macro INFO_TSI_TMPACCESS was inserted instead.
- *
- * Revision 2.4  1999/03/24 19:56:03  bs
- * Access macro ID_INDEX added.
- *
- * Revision 2.3  1999/03/17 21:24:09  bs
- * Access macro ARRAY_CHARVEC added.
- *
- * Revision 2.2  1999/03/15 13:54:23  bs
- * Renamed:
- * ID_CONSTARRAY => ID_INTVEC
- * ID_ARRAYLENGTH => ID_VECLEN
- * ARRAY_INTARRAY => ARRAY_INTVEC
- * ARRAY_LENGTH => ARRAY_VECLEN
- * Added:
- * ARRAY_FLOATVEC, ARRAY_DOUBLEVEC, ARRAY_VECTYPE
+ * [...]
  *
  * Revision 2.1  1999/02/23 12:39:56  sacbase
  * new release made
@@ -1032,6 +839,7 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  *          ST_objinitfun   generic function for object initialization
  *          ST_imported     imported function (maybe declaration only)
  *          ST_generic      class conversion function
+ *          ST_foldfun      function used within fold-operation of with-loop
  *          ST_spmdfun      function containing lifted SPMD-region
  *          ST_loopfun      function represents a loop
  *          ST_repfun       function replicated for multithreaded execution
@@ -1321,12 +1129,18 @@ extern node *MakeAssign (node *instr, node *next);
  ***
  ***    ids*   IDS   (O)
  ***
+ ***  temporary attributes:
+ ***
+ ***    DFMmask_t USEMASK                    (multithread ->)
+ ***    DFMmask_t DEFMASK                    (multithread ->)
  ***/
 
 extern node *MakeLet (node *expr, ids *ids);
 
 #define LET_EXPR(n) (n->node[0])
 #define LET_IDS(n) (n->info.ids)
+#define LET_USEMASK(n) (n->dfmask[0])
+#define LET_DEFMASK(n) (n->dfmask[1])
 
 /*--------------------------------------------------------------------------*/
 
@@ -1354,11 +1168,13 @@ extern node *MakeCast (node *expr, types *type);
  ***
  ***  sons:
  ***
- ***    node*  EXPRS      (N_exprs)  (O)
+ ***    node*     EXPRS      (N_exprs)  (O)
  ***
  ***  temporary attributes:
  ***
- ***    node*  REFERENCE  (N_exprs)  (O)  (precompile -> compile !!)
+ ***    node*     REFERENCE  (N_exprs)  (O)  (precompile -> compile !!)
+ ***    DFMmask_t USEMASK                    (multithread ->)
+ ***    DFMmask_t DEFMASK                    (multithread ->)
  ***/
 
 /*
@@ -1372,6 +1188,8 @@ extern node *MakeReturn (node *exprs);
 
 #define RETURN_EXPRS(n) (n->node[0])
 #define RETURN_REFERENCE(n) (n->node[2])
+#define RETURN_USEMASK(n) (n->dfmask[0])
+#define RETURN_DEFMASK(n) (n->dfmask[1])
 
 /*--------------------------------------------------------------------------*/
 
@@ -2390,10 +2208,11 @@ extern node *MakePragma ();
  ***    (nb) schedule_init.[ch]
  ***    (nc) repfuns_init.[ch]
  ***    (nd) blocks_init.[ch]
- ***    (ne)  ...
+ ***    (ne) blocks_propagate.[ch]
  ***    (nf) blocks_expand.[ch]
  ***    (ng) mtfuns_init.[ch]
  ***    (nh) blocks_cons.[ch]
+ ***    (ni) dataflow_analysis.[ch]
  ***
  ***  in all:
  ***    node*      INFO_MUTH_FUNDEF   (N_fundef)
@@ -2407,9 +2226,6 @@ extern node *MakePragma ();
  ***
  ***  in (na), (nc):
  ***    int(bool)  INFO_RFIN_WITHINWITH
- ***    node*      INFO_RFIN_FIRSTFUNDEF
- ***    node*      INFO_RFIN_LASTFUNDEF
- ***    int(bool)  INFO_RFIN_SEARCH
  ***
  ***  in (na), (nd):
  ***    [nothing]
@@ -2486,8 +2302,18 @@ extern node *MakeInfo ();
  *
  * ATTENTION: Usage of DUP and INL macros on arg_info are mixed. Be careful
  *            to avoid overlapping addresses.
+ *
+ *            INFO_INL_TYPES is used when DupTree is called from Inlining,
+ *            so do not override that one here. (jhs)
+ *
+ * INFO_DUP_DFMBASE carries the information of a new DFMbase for DFMmasks to be
+ *                  copied, when the body of a function is duplicated (jhs)
+ *
  */
 #define INFO_DUP_CONT(n) (n->node[1])
+/*      INFO_INL_TYPES(n)                     (n->node[2])   See comment!!! */
+#define INFO_DUP_DFMBASE(n) ((DFMmask_base_t) (n->node[3]))
+#define INFO_DUP_FUNDEF(n) (n->node[4])
 #define INFO_DUP_TYPE(n) (n->flag)
 #define INFO_DUP_ALL(n) (n->int_data)
 
@@ -2621,9 +2447,6 @@ extern node *MakeInfo ();
 /* multithread - repfuns_init */
 /* DO NOT OVERRIDE ANY INFO_MUTH_XXX HERE!!! */
 #define INFO_RFIN_WITHINWITH(n) (n->int_data)
-#define INFO_RFIN_FIRSTFUNDEF(n) (n->node[2])
-#define INFO_RFIN_LASTFUNDEF(n) (n->node[3])
-#define INFO_RFIN_SEARCH(n) (n->flag)
 
 /* multithread - blocks_expand */
 /* DO NOT OVERRIDE ANY INFO_MUTH_XXX HERE!!! */
@@ -2672,8 +2495,13 @@ extern node *MakeInfo ();
 #define INFO_VARNO(n) (n->varno)
 
 /* inline */
-/* ATTENTION: Usage of DUP and INL macros on arg_info are mixed. Be careful
-   to avoid overlapping addresses. */
+/*
+ * ATTENTION: Usage of DUP and INL macros on arg_info are mixed. Be careful
+ *            to avoid overlapping addresses.
+ *
+ *            INFO_INL_TYPES is used when DupTree is called by Inlining,
+ *            so do not override that one there (INFO_DUP_xxx). (jhs)
+ */
 #define INFO_INL_FIRST_FUNC(n) (n->node[0])
 #define INFO_INL_TYPES(n) (n->node[2])
 
