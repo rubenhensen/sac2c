@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.6  1996/01/05 12:41:18  cg
+ * Revision 1.7  1996/01/07 17:01:26  cg
+ * pragmas linkname, copyfun, and freefun are now generated
+ * for sib from internal information
+ *
+ * Revision 1.6  1996/01/05  12:41:18  cg
  * removed function OpenSibFile, WriteOpen from internal_lib.c
  * is used instead.
  *
@@ -527,15 +531,17 @@ PrintSibTypes (FILE *sibfile, nodelist *tdeflist, char *modname)
 
         if ((TYPEDEF_BASETYPE (tdef) == T_hidden) && (TYPEDEF_TNAME (tdef) == NULL)) {
             fprintf (sibfile, "typedef implicit ");
+            PRINTMODNAME (TYPEDEF_MOD (tdef), TYPEDEF_NAME (tdef));
+            fprintf (sibfile, ";\n");
+
+            if (TYPEDEF_ATTRIB (tdef) != ST_unique) {
+                fprintf (sibfile, "#pragma copyfun \"%s\"\n", TYPEDEF_COPYFUN (tdef));
+                fprintf (sibfile, "#pragma freefun \"%s\"\n", TYPEDEF_FREEFUN (tdef));
+            }
         } else {
             fprintf (sibfile, "typedef %s ", Type2String (TYPEDEF_TYPE (tdef), 0));
-        }
-
-        PRINTMODNAME (TYPEDEF_MOD (tdef), TYPEDEF_NAME (tdef));
-        fprintf (sibfile, ";\n");
-
-        if (TYPEDEF_PRAGMA (tdef) != NULL) {
-            PrintPragma (TYPEDEF_PRAGMA (tdef), tdef);
+            PRINTMODNAME (TYPEDEF_MOD (tdef), TYPEDEF_NAME (tdef));
+            fprintf (sibfile, ";\n");
         }
 
         tmp = NODELIST_NEXT (tmp);
@@ -579,8 +585,8 @@ PrintSibObjs (FILE *sibfile, nodelist *objdeflist, char *modname)
         PRINTMODNAME (OBJDEF_MOD (objdef), OBJDEF_NAME (objdef));
         fprintf (sibfile, ";\n");
 
-        if (OBJDEF_PRAGMA (objdef) != NULL) {
-            PrintPragma (OBJDEF_PRAGMA (objdef), objdef);
+        if (OBJDEF_LINKNAME (objdef) != NULL) {
+            fprintf (sibfile, "#pragma linkname \"%s\"\n", OBJDEF_LINKNAME (objdef));
         }
         /*
             if (OBJDEF_LINKMOD(objdef)!=NULL)
