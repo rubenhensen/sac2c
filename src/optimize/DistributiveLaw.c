@@ -1,5 +1,9 @@
 /* *
  * $Log$
+ * Revision 1.3  2003/02/10 18:01:30  mwe
+ * removed bugs
+ * enforce_ieee support added
+ *
  * Revision 1.2  2003/02/09 22:31:24  mwe
  * removed bugs
  *
@@ -18,7 +22,7 @@
  * INFO_DL_OPTLIST       :  sammeln der Knoten mit Opt-Fälle
  * INFO_DL_NONOPTLIST    :  sammeln von Knoten ohne Opt-Fälle
  * INFO_DL_CURRENTASSIGN :  Startknoten der aktuellen Optimierung
- * INFO_DL_LETNODE       :  let-node zum Einfügen der optim. Knoten ( ??? nötig ???)
+ * INFO_DL_LETNODE       :  let-node zum Einfügen der optim. Knoten
  * INFO_DL_MAINOPERATOR  :  äussere Operation
  *
  ********************/
@@ -37,6 +41,7 @@
 #define INFO_DL_SECONDOPERATOR(n) (n->node[5])
 #define INFO_DL_COUNTLIST(n) ((nodelist *)(n->info2))
 #define INFO_DL_TMPLIST(n) ((nodelist *)(n->dfmask[2]))
+#define INFO_DL_IEEEFLAG(n) (n->varno)
 
 #define DL_NODELIST_OPERATOR(n) ((node *)NODELIST_ATTRIB2 (n))
 #define DL_NODELIST_PARENTNODES(n) ((nodelist *)NODELIST_ATTRIB2 (n))
@@ -228,10 +233,16 @@ DLlet (node *arg_node, node *arg_info)
     if (LET_EXPR (arg_node) != NULL) {
 
         INFO_DL_LETNODE (arg_info) = arg_node;
+        INFO_DL_IEEEFLAG (arg_info) = 0;
 
         LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
 
-        if (INFO_DL_OCCURENCEOFMOSTFREQUENTNODE (arg_info) > 1)
+        /*
+         * if optimization was neccessary:
+         * both remaining nodes get arguments of start-assign-node
+         */
+        if ((INFO_DL_OCCURENCEOFMOSTFREQUENTNODE (arg_info) > 1)
+            && ((!enforce_ieee) || (INFO_DL_IEEEFLAG (arg_info) == 0)))
             arg_info = IntegrateResults (arg_info);
 
         INFO_DL_OCCURENCEOFMOSTFREQUENTNODE (arg_info) = 0;
@@ -258,7 +269,8 @@ DLPrfOrAp (node *arg_node, node *arg_info)
 
             arg_info = SearchMostFrequentNode (arg_node, arg_info);
 
-            if (INFO_DL_OCCURENCEOFMOSTFREQUENTNODE (arg_info) > 1) {
+            if ((INFO_DL_OCCURENCEOFMOSTFREQUENTNODE (arg_info) > 1)
+                && ((!enforce_ieee) || (INFO_DL_IEEEFLAG (arg_info) == 0))) {
 
                 /*
                  * Create OPTLIST and NONOPTLIST in regard to MOSTFREQUENTNODE
@@ -293,11 +305,6 @@ DLPrfOrAp (node *arg_node, node *arg_info)
                  * connect MFN with remaining node in OPTLIST
                  */
                 arg_info = IncludeMostFrequentNode (arg_info);
-
-                /*
-                 * both remaining nodes get arguments of start-assign-node
-                 */
-                /*arg_info = IntegrateResults(arg_info);*/
             }
         }
 
@@ -362,7 +369,7 @@ SearchTravElems (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("SearchTravElems");
 
-    if (DLIsConstant (EXPRS_EXPR (arg_node))) {
+    if (DLIsConstant (EXPRS_EXPR (arg_node), arg_info)) {
 
         /*
          * constant argument reached
@@ -423,7 +430,7 @@ SearchTravElems (node *arg_node, node *arg_info)
 }
 
 bool
-DLIsConstant (node *arg_node)
+DLIsConstant (node *arg_node, node *arg_info)
 {
     bool is_constant;
 
@@ -434,6 +441,7 @@ DLIsConstant (node *arg_node)
     switch (NODE_TYPE (arg_node)) {
     case N_float:
     case N_double:
+        INFO_DL_IEEEFLAG (arg_info) = 1;
     case N_bool:
     case N_num:
     case N_char:
@@ -954,7 +962,8 @@ OptTravElems (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("OptTravElems");
 
-    if (DLIsConstant (EXPRS_EXPR (arg_node)) || DLReachedArgument (EXPRS_EXPR (arg_node))
+    if (DLIsConstant (EXPRS_EXPR (arg_node), arg_info)
+        || DLReachedArgument (EXPRS_EXPR (arg_node))
         || DLReachedDefinition (EXPRS_EXPR (arg_node))
         || (!IsSupportedOperator (EXPRS_EXPR (arg_node), arg_info))
         || IsThirdOperatorReached (EXPRS_EXPR (arg_node), arg_info)) {
@@ -1283,7 +1292,7 @@ RemoveMostFrequentNode (node *arg_info)
                 current_elem = NODELIST_NODE (tmp_list);
                 second_argnode = NULL;
 
-                if (!DLIsConstant (EXPRS_EXPR (current_elem))
+                if (!DLIsConstant (EXPRS_EXPR (current_elem), arg_info)
                     && !DLReachedArgument (EXPRS_EXPR (current_elem))
                     && !DLReachedDefinition (EXPRS_EXPR (current_elem))) {
 
@@ -1303,7 +1312,8 @@ RemoveMostFrequentNode (node *arg_info)
                         second_argnode
                           = MakeExprNodes (EXPRS_EXPR (EXPRS_NEXT (current_elem)));
                     }
-                } else if (!DLIsConstant (EXPRS_EXPR (EXPRS_NEXT (current_elem)))
+                } else if (!DLIsConstant (EXPRS_EXPR (EXPRS_NEXT (current_elem)),
+                                          arg_info)
                            && !DLReachedArgument (EXPRS_EXPR (EXPRS_NEXT (current_elem)))
                            && !DLReachedDefinition (
                                 EXPRS_EXPR (EXPRS_NEXT (current_elem)))) {
@@ -1639,7 +1649,7 @@ MakeAllNodelistnodesToAssignNodes (nodelist *list, node *arg_info)
 
             node1 = (NODELIST_NODE (list));
 
-            DBUG_ASSERT ((DLIsConstant (node1) || (N_id == NODE_TYPE (node1))),
+            DBUG_ASSERT ((DLIsConstant (node1, arg_info) || (N_id == NODE_TYPE (node1))),
                          "Unexpected node! No supported EXPR_EXPRS result");
 
             newnode = DupTree (node1);
