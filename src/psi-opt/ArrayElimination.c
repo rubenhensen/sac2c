@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2001/04/30 12:16:59  nmw
+ * integrate traversal of special fundefs in ArrayElimination traversal
+ *
  * Revision 3.5  2001/04/18 13:42:30  dkr
  * bug in AEassign fixed: LHS might be void!
  *
@@ -151,7 +154,7 @@
  *  global vars   : syntax_tree, act_tab, ae_tab
  *
  */
-
+/* ##nmw## */
 node *
 ArrayElimination (node *arg_node, node *info_node)
 {
@@ -163,16 +166,22 @@ ArrayElimination (node *arg_node, node *info_node)
     DBUG_ENTER ("ArrayElimination");
     DBUG_PRINT ("OPT", ("ARRAY ELIMINATION"));
 
-    tmp_tab = act_tab;
-    act_tab = ae_tab;
-    info_node = MakeInfo ();
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_fundef),
+                 "ArrayElimination() called for non-fundef node");
 
-    arg_node = Trav (arg_node, info_node);
+    if (!(FUNDEF_IS_LACFUN (arg_node))) {
+        tmp_tab = act_tab;
+        act_tab = ae_tab;
+        info_node = MakeInfo ();
 
-    FREE (info_node);
-    act_tab = tmp_tab;
-    DBUG_PRINT ("OPT",
-                ("                        result: %d", elim_arrays - mem_elim_arrays));
+        arg_node = Trav (arg_node, info_node);
+
+        FREE (info_node);
+        act_tab = tmp_tab;
+        DBUG_PRINT ("OPT", ("                        result: %d",
+                            elim_arrays - mem_elim_arrays));
+    }
+
     DBUG_RETURN (arg_node);
 }
 
@@ -306,6 +315,8 @@ GenPsi (ids *ids_node, node *arg_info)
         ((int *)ARRAY_CONSTVEC (arg[0])) = Array2IntVec (exprn, NULL);
         /* srs: AE only works on arrays which have 1 dimension.
            type attribut was missing here. */
+        /* ##nmw## */
+        ARRAY_ISCONST (arg[0]) = TRUE;
         ARRAY_VECTYPE (arg[0]) = T_int;
         ARRAY_VECLEN (arg[0]) = 1;
         ARRAY_TYPE (arg[0])
@@ -404,6 +415,8 @@ node *
 AEfundef (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("AEfundef");
+
+    INFO_AE_FUNDEF (arg_info) = arg_node;
 
     if (FUNDEF_BODY (arg_node) && (!FUNDEF_INLINE (arg_node))) {
         DBUG_PRINT ("AE", ("*** Trav function %s", FUNDEF_NAME (arg_node)));
@@ -547,5 +560,41 @@ AENwith (node *arg_node, node *arg_info)
     NWITH_CODE (arg_node) = OPTTrav (NWITH_CODE (arg_node), arg_info, arg_node);
     NWITH_WITHOP (arg_node) = OPTTrav (NWITH_WITHOP (arg_node), arg_info, arg_node);
 
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *AEap(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   starts traversal of implicit inlined special fundef
+ *
+ ******************************************************************************/
+
+node *
+AEap (node *arg_node, node *arg_info)
+{
+    node *new_arg_info;
+
+    DBUG_ENTER ("AEap");
+
+    if (AP_ARGS (arg_node) != NULL) {
+        AP_ARGS (arg_node) = Trav (AP_ARGS (arg_node), arg_info);
+    }
+
+    /* non-recursive call of special fundef */
+    if ((AP_FUNDEF (arg_node) != NULL) && (FUNDEF_IS_LACFUN (AP_FUNDEF (arg_node)))
+        && (INFO_AE_FUNDEF (arg_info) != AP_FUNDEF (arg_node))) {
+
+        /* stack arg_info frame for new fundef */
+        new_arg_info = MakeInfo ();
+
+        /* start traversal of special fundef */
+        AP_FUNDEF (arg_node) = Trav (AP_FUNDEF (arg_node), new_arg_info);
+
+        FREE (new_arg_info);
+    }
     DBUG_RETURN (arg_node);
 }
