@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.19  2004/08/08 13:30:50  sbs
+ * some debugging information added.
+ *
  * Revision 1.18  2004/07/30 17:29:21  sbs
  * switch to new INFO structure
  * PHASE I
@@ -264,8 +267,8 @@ NT2OTfundef (node *arg_node, info *arg_info)
         }
         old_type = FreeAllTypes (old_type);
     } else {
-        ABORT (linenum,
-               ("could not infer proper type for fun %s", FUNDEF_NAME (arg_node)));
+        ABORT (linenum, ("could not infer proper type for fun %s; type found: %s",
+                         FUNDEF_NAME (arg_node), TYType2String (type, FALSE, 0)));
     }
 
     if (FUNDEF_ARGS (arg_node) != NULL) {
