@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.57  1998/05/21 15:00:06  dkr
+ * changed RCNwith
+ *
  * Revision 1.56  1998/05/21 13:33:22  dkr
  * renamed NCODE_DEC_RC_IDS into NCODE_INC_RC_IDS
  *
@@ -1653,7 +1656,7 @@ RCNwith (node *arg_node, node *arg_info)
         vardec = DFMGetMaskEntryDeclSet (NULL);
     }
 
-    vardec = DFMVar2Decl (NWITH_IN (arg_node), IDS_NAME (NWITH_VEC (arg_node)));
+    vardec = IDS_VARDEC (NWITH_VEC (arg_node));
     if (MUST_REFCOUNT (VARDEC_OR_ARG_TYPE (vardec))) {
         if (NODE_TYPE (vardec) == N_arg) {
             ARG_REFCNT (vardec) = 1;
