@@ -1,6 +1,10 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.6  2004/10/19 14:07:27  sah
+  added support for persist attribute
+  some code cleanup
+
   Revision 1.5  2004/10/17 17:04:05  sah
   the generated code now no more
   contains sac2c specific types or enums
@@ -112,9 +116,9 @@ version="1.0">
 </xsl:template>
 
 <!-- 
-     traversal main node[@name = "Fundef"]
+     traversal main node
 
-     generates a free functions for Fundef nodes
+     generates a free functions for each node type
 
      layout of output:
 
@@ -122,7 +126,6 @@ version="1.0">
        - call templates for @name
      - function body
        - call templates for sons
-       - call templates for attributes except those needed for zombies
 
      remarks:
 
@@ -134,7 +137,7 @@ version="1.0">
   <xsl:value-of select="'{'"/>
   <!-- if there is a for loop for initialising attributes, we 
          need a variable cnt, which is created here -->
-  <xsl:if test="attributes/attribute[key(&quot;arraytypes&quot;, ./type/@name)]">
+  <xsl:if test="attributes/attribute[key(&quot;arraytypes&quot;, ./type/@name)][not(key(&quot;types&quot;, ./type/@name)/@persist = &quot;no&quot;)]">
     <xsl:value-of select="'int cnt;'" />
   </xsl:if>
   <!-- DBUG_ENTER statement -->
@@ -157,7 +160,7 @@ version="1.0">
   <!-- print generators of all arguments -->
   <xsl:apply-templates select="." mode="gen-values"/>
   <!-- print end of block -->
-  <xsl:value-of select="'fprintf( INFO_SER_FILE( arg_info), &quot;)\n&quot;);'"/>
+  <xsl:value-of select="'fprintf( INFO_SER_FILE( arg_info), &quot;)&quot;);'"/>
   <!-- DBUG_RETURN call -->
   <xsl:value-of select="'DBUG_RETURN( arg_node);'"/>
   <!-- end of body -->
@@ -206,7 +209,15 @@ version="1.0">
   <xsl:apply-templates select="sons/son" mode="gen-values"/>
 </xsl:template>
 
-<xsl:template match="attributes/attribute" mode="gen-values">
+<!--
+     template gen-values attribute
+
+     generates the value of an attribute, if it has persist = yes (default).
+     All other attributes are ignored, as they will be set to their
+     default values lateron.
+-->
+
+<xsl:template match="attributes/attribute[not( key(&quot;types&quot;, ./type/@name)/@persist = &quot;no&quot;)]" mode="gen-values">
   <!-- if it is an array, we have to build a for loop over its elements -->
   <xsl:if test="key(&quot;arraytypes&quot;, ./type/@name)">
     <xsl:value-of select="'for( cnt = 0; cnt &lt; '" />
@@ -218,9 +229,7 @@ version="1.0">
   <!-- call serialization function for attribute -->
   <xsl:value-of select="'Serialize'" />
   <xsl:value-of select="key(&quot;types&quot;, ./type/@name)/@name" />
-  <xsl:value-of select="'Attrib( &quot;attr_'" />
-  <xsl:value-of select="@name" />
-  <xsl:value-of select="'&quot;, arg_info, '" />
+  <xsl:value-of select="'Attrib( arg_info, '" />
   <!-- if it is an array, we need to pass the selector as well -->
   <xsl:if test="key(&quot;arraytypes&quot;, ./type/@name)">
     <xsl:value-of select="'cnt, '" />
@@ -246,6 +255,14 @@ version="1.0">
     <xsl:value-of select="'}'"/>
   </xsl:if>
 </xsl:template>
+
+<!--
+     template gen-values attribute
+
+     all attributes that are not matched somewhere else
+-->
+
+<xsl:template match="attributes/attribute[key(&quot;types&quot;, ./type/@name)/@persist = &quot;no&quot;]" mode="gen-values" />
 
 <xsl:template match="son[@name = &quot;Next&quot;]" mode="gen-values-fundef">
   <xsl:value-of select="'fprintf( INFO_SER_FILE( arg_info), &quot;, NULL&quot;);'" />
