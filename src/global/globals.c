@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.32  2003/03/20 14:01:13  sbs
+ * config.h included; OS and ARCH used.
+ *
  * Revision 3.31  2003/03/13 13:59:51  dkr
  * min_array_rep added
  *
@@ -240,6 +243,7 @@
  *
  */
 
+#include "config.h"
 #include "filemgr.h"
 #include "types.h"
 #include "globals.h"
@@ -258,31 +262,7 @@ bool sbs = FALSE;
 char version_id[] = "v0.91";
 /* version identifier of sac2c */
 
-#if defined(SAC_FOR_SOLARIS_SPARC)
-
-char target_platform[] = "SOLARIS_SPARC";
-
-#elif defined(SAC_FOR_LINUX_X86)
-
-char target_platform[] = "LINUX_X86";
-
-#elif defined(SAC_FOR_OSF_ALPHA)
-
-char target_platform[] = "OSF_ALPHA";
-
-#elif defined(SAC_FOR_OSX_MAC)
-
-char target_platform[] = "OSX_MAC";
-
-#else
-/*
- * This case should never happen since the Makefile guarantees that any one
- * of the supported platforms is selected.
- */
-
-char target_platform[] = "unknown";
-
-#endif
+char target_platform[] = OS "_" ARCH;
 
 /*
  *  File handling
