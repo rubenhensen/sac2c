@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/05/12 14:30:40  cg
+ * converted to new build variables, included from build.h
+ *
  * Revision 2.1  1999/02/23 12:39:25  sacbase
  * new release made
  *
@@ -20,12 +23,12 @@
 #include "Error.h"
 #include "interrupt.h"
 #include "internal_lib.h"
-#include "usage.h"
+#include "build.h"
 #include "globals.h"
 
 /******************************************************************************
  *
- * function: void void CompilerErrorBreak( int sig)
+ * function: void CompilerErrorBreak( int sig)
  *
  * description: Interrupt handler for breaks that "should not occur" 8-))
  *   Here, we do not only clean up all temporarily created files/ directories,
@@ -63,14 +66,15 @@ CompilerErrorBreak (int sig)
 
         fprintf (error_file, " *\n");
         fprintf (error_file, " * using sac2c %s for %s\n", version_id, target_platform);
-        fprintf (error_file, " * built on %s.\n", build_date_time);
+        fprintf (error_file, " * built %s.\n", build_date);
+        fprintf (error_file, " * by user %s on host %s.\n", build_user, build_host);
         fprintf (error_file, " *\n");
         if (commandline[0] != '\0') {
             fprintf (error_file, " * The compiler was called by\n");
             fprintf (error_file, " * %s\n", commandline);
         } else {
             fprintf (error_file,
-                     " * Compiler crashed before the commandline was examined!\n");
+                     " * Compiler crashed before the commandline has been examined!\n");
         }
         fprintf (error_file, " *\n");
         if (sacfilename[0] != '\0') {
