@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.2  2004/08/17 15:47:39  skt
+ * comments added
+ *
  * Revision 1.1  2004/08/17 09:06:38  skt
  * Initial revision
  *
@@ -78,19 +81,17 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
-/* TODO: TravNone in node_info.mac for:
- *                nwith2, N_let, N_return, N_ex, N_st, N_mt
- */
-
 /** <!--********************************************************************-->
  *
  * @fn node *CellGrowth(node *arg_node)
  *
  *   @brief  Inits the traversal for this phase
  *
- *   @param arg_node a N_Modul
- *   @param arg_info
- *   @return
+ *   @param arg_node a N_modul
+ *   @return the N_modul which N_blocks have only cells of assignments and
+ *           no single assignment left. The only exception is a block which
+ *           assignments have just MUTH_ANY-assignments (they will be
+ *           specialized in a following phase)
  *
  *****************************************************************************/
 node *
@@ -105,7 +106,7 @@ CellGrowth (node *arg_node)
     arg_info = MakeInfo ();
     /* push info ... */
     old_tab = act_tab;
-    /*act_tab = cegro_tab;*/
+    act_tab = cegro_tab;
 
     DBUG_PRINT ("CEGRO", ("trav into modul-funs"));
     MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
@@ -119,9 +120,45 @@ CellGrowth (node *arg_node)
     DBUG_RETURN (arg_node);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn node *CEGROblock(node *arg_node, info *arg_info)
+ *
+ *   @brief Traverses into the assignment-chain to let the cells grow.
+ *          Afterwards the block-leading MUTH_ANY assignment-chain is moved
+ *          into the first cell of the block.
+ *   <pre>
+ *        example: let arg_node be
+ *        N_block->N_assign(A)
+ *                     |
+ *                 N_assign->N_mt->N_block->N_assign(B)
+ *                     |
+ *                 N_assign(C)
+ *
+ *        the traversal will return
+ *        N_block->N_assign(A)
+ *                     |
+ *                 N_assign->N_mt->N_block->N_assign(B)
+ *                                              |
+ *                                          N_assign(C)
+ *
+ *        and CEGROblock rebuilds it into
+ *        N_block->N_assign->N_mt->N_block->N_assign(A)
+ *                                              |
+ *                                          N_assign(B)
+ *                                              |
+ *                                          N_assign(C)
+ *   </pre>
+ *   @param arg_node a N_block
+ *   @param arg_info
+ *   @return the N_block with full cells
+ *
+ *****************************************************************************/
 node *
 CEGROblock (node *arg_node, info *arg_info)
 {
+    node *xcell;
+    node *iterator;
     node *old_nextcell;
     DBUG_ENTER ("CEGROblock");
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_block), "arg_node is not a N_block");
@@ -135,6 +172,37 @@ CEGROblock (node *arg_node, info *arg_info)
         DBUG_PRINT ("CEGRO", ("trav into instruction(s)"));
         BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
         DBUG_PRINT ("CEGRO", ("trav from instruction(s)"));
+
+        /* add the first assignments to the belonging cell, if their
+         * executionmode is MUTH_ANY and there exists an cell inside
+         * (see above comments for further details) */
+        if ((ASSIGN_EXECMODE (BLOCK_INSTR (arg_node)) == MUTH_ANY)
+            && (INFO_CEGRO_NEXTCELL (arg_info) != NULL)) {
+
+            iterator = BLOCK_INSTR (arg_node);
+            while (ASSIGN_NEXT (iterator) != NULL) {
+                iterator = ASSIGN_NEXT (iterator);
+            }
+            /* due to the algorithm in CEGROassign iterator points to the last
+             * assignment of the block, which isn't in a cell */
+            DBUG_ASSERT ((ASSIGN_EXECMODE (iterator) == MUTH_ANY),
+                         "the executionmode has to be MUTH_ANY");
+
+            /* get the EX-/ST-/MT-Cell (to make the code clearer) */
+            xcell = ASSIGN_INSTR (INFO_CEGRO_NEXTCELL (arg_info));
+
+            if (NODE_TYPE (xcell) == N_ex) {
+                ASSIGN_NEXT (iterator) = BLOCK_INSTR (EX_REGION (xcell));
+                BLOCK_INSTR (EX_REGION (xcell)) = BLOCK_INSTR (arg_node);
+            } else if (NODE_TYPE (xcell) == N_st) {
+                ASSIGN_NEXT (iterator) = BLOCK_INSTR (ST_REGION (xcell));
+                BLOCK_INSTR (ST_REGION (xcell)) = BLOCK_INSTR (arg_node);
+            } else if (NODE_TYPE (xcell) == N_mt) {
+                ASSIGN_NEXT (iterator) = BLOCK_INSTR (MT_REGION (xcell));
+                BLOCK_INSTR (MT_REGION (xcell)) = BLOCK_INSTR (arg_node);
+            }
+            BLOCK_INSTR (arg_node) = INFO_CEGRO_NEXTCELL (arg_info);
+        }
     }
 
     /* pop info... */
@@ -142,6 +210,44 @@ CEGROblock (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *CEGROassign(node *arg_node, info *arg_info)
+ *
+ *   @brief  fills the existing EX-/ST-/MT-cells with the following assignments
+ *           with the same executionmode/MUTH_ANY-executionmode
+ *   <pre>
+ *     example: let arg_node be
+ *      N_assign(A)
+ *         |
+ *      N_assign->N_st->N_block->N_assign(B)
+ *         |
+ *      N_assign(C)
+ *         |
+ *      N_assign->N_mt->N_block->N_assign(D)
+ *         |
+ *      N_assign(E)
+ *         |
+ *      N_assign(F)
+ *
+ *      this will lead into (N_assign(A) will be handled in CECROblock)
+ *      N_assign(A)
+ *         |
+ *      N_assign->N_st->N_block->N_assign(B)
+ *         |                        |
+ *         |                     N_assign(C)
+ *         |
+ *      N_assign->N_mt->N_block->N_assign(D)
+ *                                  |
+ *                               N_assign(E)
+ *                                  |
+ *                               N_assign(F)*
+ *   @param arg_node a N_assign
+ *   @param arg_info
+ *   @return
+ *
+ *****************************************************************************/
 
 node *
 CEGROassign (node *arg_node, info *arg_info)
@@ -180,6 +286,5 @@ CEGROassign (node *arg_node, info *arg_info)
         INFO_CEGRO_NEXTCELL (arg_info) = arg_node;
         arg_node = NULL;
     }
-
     DBUG_RETURN (arg_node);
 }
