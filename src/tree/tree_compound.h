@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.53  2002/02/21 14:38:00  dkr
+ * some VARDEC_OR_ARG_... macros added
+ *
  * Revision 3.52  2002/02/20 17:03:54  dkr
  * some FUNDEF_... macros added or removed
  *
@@ -1008,32 +1011,39 @@ extern int CmpDomain (node *args1, node *args2);
  *          Use the L_VARDEC_OR_... macros instead!!
  */
 #define VARDEC_OR_ARG_NAME(n) ((NODE_TYPE (n) == N_arg) ? ARG_NAME (n) : VARDEC_NAME (n))
-#define VARDEC_OR_ARG_ACTCHN(n)                                                          \
-    ((NODE_TYPE (n) == N_arg) ? ARG_ACTCHN (n) : VARDEC_ACTCHN (n))
-#define VARDEC_OR_ARG_COLCHN(n)                                                          \
-    ((NODE_TYPE (n) == N_arg) ? ARG_COLCHN (n) : VARDEC_COLCHN (n))
 #define VARDEC_OR_ARG_TYPE(n) ((NODE_TYPE (n) == N_arg) ? ARG_TYPE (n) : VARDEC_TYPE (n))
-#define VARDEC_OR_ARG_DIM(n) ((NODE_TYPE (n) == N_arg) ? ARG_DIM (n) : VARDEC_DIM (n))
-#define VARDEC_OR_ARG_SHAPE(n, x)                                                        \
-    ((NODE_TYPE (n) == N_arg) ? ARG_SHAPE (n, x) : VARDEC_SHAPE (n, x))
-#define VARDEC_OR_ARG_SHPSEG(n)                                                          \
-    ((NODE_TYPE (n) == N_arg) ? ARG_SHPSEG (n) : VARDEC_SHPSEG (n))
+#define VARDEC_OR_ARG_STATUS(n)                                                          \
+    ((NODE_TYPE (n) == N_arg) ? ARG_STATUS (n) : VARDEC_STATUS (n))
+#define VARDEC_OR_ARG_ATTRIB(n)                                                          \
+    ((NODE_TYPE (n) == N_arg) ? ARG_ATTRIB (n) : VARDEC_ATTRIB (n))
+#define VARDEC_OR_ARG_AVIS(n) ((NODE_TYPE (n) == N_arg) ? ARG_AVIS (n) : VARDEC_AVIS (n))
 #define VARDEC_OR_ARG_VARNO(n)                                                           \
     ((NODE_TYPE (n) == N_arg) ? ARG_VARNO (n) : VARDEC_VARNO (n))
 #define VARDEC_OR_ARG_REFCNT(n)                                                          \
     ((NODE_TYPE (n) == N_arg) ? ARG_REFCNT (n) : VARDEC_REFCNT (n))
 #define VARDEC_OR_ARG_NAIVE_REFCNT(n)                                                    \
     ((NODE_TYPE (n) == N_arg) ? ARG_NAIVE_REFCNT (n) : VARDEC_NAIVE_REFCNT (n))
-#define VARDEC_OR_ARG_ATTRIB(n)                                                          \
-    ((NODE_TYPE (n) == N_arg) ? ARG_ATTRIB (n) : VARDEC_ATTRIB (n))
-#define VARDEC_OR_ARG_STATUS(n)                                                          \
-    ((NODE_TYPE (n) == N_arg) ? ARG_STATUS (n) : VARDEC_STATUS (n))
+#define VARDEC_OR_ARG_PADDED(n)                                                          \
+    ((NODE_TYPE (n) == N_arg) ? ARG_PADDED (n) : VARDEC_PADDED (n))
+#define VARDEC_OR_ARG_ACTCHN(n)                                                          \
+    ((NODE_TYPE (n) == N_arg) ? ARG_ACTCHN (n) : VARDEC_ACTCHN (n))
+#define VARDEC_OR_ARG_COLCHN(n)                                                          \
+    ((NODE_TYPE (n) == N_arg) ? ARG_COLCHN (n) : VARDEC_COLCHN (n))
 #define VARDEC_OR_ARG_OBJDEF(n)                                                          \
     ((NODE_TYPE (n) == N_arg) ? ARG_OBJDEF (n) : VARDEC_OBJDEF (n))
 #define VARDEC_OR_ARG_NEXT(n) ((NODE_TYPE (n) == N_arg) ? ARG_NEXT (n) : VARDEC_NEXT (n))
-#define VARDEC_OR_ARG_PADDED(n)                                                          \
-    ((NODE_TYPE (n) == N_arg) ? ARG_PADDED (n) : VARDEC_PADDED (n))
-#define VARDEC_OR_ARG_AVIS(n) ((NODE_TYPE (n) == N_arg) ? ARG_AVIS (n) : VARDEC_AVIS (n))
+
+#define VARDEC_OR_ARG_BASETYPE(n)                                                        \
+    ((NODE_TYPE (n) == N_arg) ? ARG_BASETYPE (n) : VARDEC_BASETYPE (n))
+#define VARDEC_OR_ARG_DIM(n) ((NODE_TYPE (n) == N_arg) ? ARG_DIM (n) : VARDEC_DIM (n))
+#define VARDEC_OR_ARG_SHAPE(n, x)                                                        \
+    ((NODE_TYPE (n) == N_arg) ? ARG_SHAPE (n, x) : VARDEC_SHAPE (n, x))
+#define VARDEC_OR_ARG_SHPSEG(n)                                                          \
+    ((NODE_TYPE (n) == N_arg) ? ARG_SHPSEG (n) : VARDEC_SHPSEG (n))
+#define VARDEC_OR_ARG_TNAME(n)                                                           \
+    ((NODE_TYPE (n) == N_arg) ? ARG_TNAME (n) : VARDEC_TNAME (n))
+#define VARDEC_OR_ARG_TMOD(n) ((NODE_TYPE (n) == N_arg) ? ARG_TMOD (n) : VARDEC_TMOD (n))
+#define VARDEC_OR_ARG_TDEF(n) ((NODE_TYPE (n) == N_arg) ? ARG_TDEF (n) : VARDEC_TDEF (n))
 
 #define L_VARDEC_OR_ARG_ACTCHN(n, rhs)                                                   \
     if (NODE_TYPE (n) == N_arg) {                                                        \
