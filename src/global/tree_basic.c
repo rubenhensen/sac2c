@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.53  1998/03/27 18:37:02  dkr
+ * WLPROJ... renamed in WLSTRIDE
+ *
  * Revision 1.52  1998/03/26 14:00:07  dkr
  * changed usage of MakeWLgrid
  *
@@ -1474,27 +1477,27 @@ MakeWLublock (int level, int dim, int bound1, int bound2, int step, node *nextdi
 /*--------------------------------------------------------------------------*/
 
 node *
-MakeWLproj (int level, int dim, int bound1, int bound2, int step, int unrolling,
-            node *contents, node *next)
+MakeWLstride (int level, int dim, int bound1, int bound2, int step, int unrolling,
+              node *contents, node *next)
 {
     node *new_node;
 
-    DBUG_ENTER ("MakeWLproj");
+    DBUG_ENTER ("MakeWLstride");
     INIT_NODE (new_node);
 
-    NODE_TYPE (new_node) = N_WLproj;
+    NODE_TYPE (new_node) = N_WLstride;
 
-    WLPROJ_LEVEL (new_node) = level;
-    WLPROJ_DIM (new_node) = dim;
-    WLPROJ_BOUND1 (new_node) = bound1;
-    WLPROJ_BOUND2 (new_node) = bound2;
-    WLPROJ_STEP (new_node) = step;
-    WLPROJ_UNROLLING (new_node) = unrolling;
-    WLPROJ_CONTENTS (new_node) = contents;
-    WLPROJ_NEXT (new_node) = next;
+    WLSTRIDE_LEVEL (new_node) = level;
+    WLSTRIDE_DIM (new_node) = dim;
+    WLSTRIDE_BOUND1 (new_node) = bound1;
+    WLSTRIDE_BOUND2 (new_node) = bound2;
+    WLSTRIDE_STEP (new_node) = step;
+    WLSTRIDE_UNROLLING (new_node) = unrolling;
+    WLSTRIDE_CONTENTS (new_node) = contents;
+    WLSTRIDE_NEXT (new_node) = next;
 
-    WLPROJ_PART (new_node) = NULL;
-    WLPROJ_MODIFIED (new_node) = 0;
+    WLSTRIDE_PART (new_node) = NULL;
+    WLSTRIDE_MODIFIED (new_node) = 0;
 
     DBUG_RETURN (new_node);
 }
