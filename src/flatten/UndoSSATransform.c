@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.14  2004/11/25 12:50:11  khf
+ * SacDevCamp: COMPILES!
+ *
  * Revision 1.13  2004/08/05 21:00:05  sbs
  * global variable ssaform_phase modified now.
  *
@@ -181,10 +184,11 @@
  *
  *****************************************************************************/
 
-#define NEW_INFO
+#include <string.h>
 
 #include "types.h"
 #include "tree_basic.h"
+#include "node_basic.h"
 #include "tree_compound.h"
 #include "internal_lib.h"
 #include "dbug.h"
@@ -203,10 +207,9 @@
 struct INFO {
     node *args;
     node *topblock;
-    node *foldtarget;
     node *constassigns;
     int opassign;
-    node *modul;
+    node *module;
     node *phifun;
     node *fundef;
 };
@@ -216,10 +219,9 @@ struct INFO {
  */
 #define INFO_USSA_ARGS(n) (n->args)
 #define INFO_USSA_TOPBLOCK(n) (n->topblock)
-#define INFO_USSA_FOLDTARGET(n) (n->foldtarget)
 #define INFO_USSA_CONSTASSIGNS(n) (n->constassigns)
 #define INFO_USSA_OPASSIGN(n) (n->opassign)
-#define INFO_USSA_MODUL(n) (n->modul)
+#define INFO_USSA_MODULE(n) (n->module)
 #define INFO_USSA_PHIFUN(n) (n->phifun)
 #define INFO_USSA_FUNDEF(n) (n->fundef)
 
@@ -233,14 +235,13 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = Malloc (sizeof (info));
+    result = ILIBmalloc (sizeof (info));
 
     INFO_USSA_ARGS (result) = NULL;
     INFO_USSA_TOPBLOCK (result) = NULL;
-    INFO_USSA_FOLDTARGET (result) = NULL;
     INFO_USSA_CONSTASSIGNS (result) = NULL;
     INFO_USSA_OPASSIGN (result) = 0;
-    INFO_USSA_MODUL (result) = NULL;
+    INFO_USSA_MODULE (result) = NULL;
     INFO_USSA_PHIFUN (result) = NULL;
     INFO_USSA_FUNDEF (result) = NULL;
 
@@ -252,17 +253,14 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = Free (info);
+    info = ILIBfree (info);
 
     DBUG_RETURN (info);
 }
 
-static ids *TravIDS (ids *arg_ids, info *arg_info);
-static ids *USSAids (ids *arg_ids, info *arg_info);
-
 /* helper functions for local use */
-static void USSAInitAvisFlags (node *fundef);
-static node *USSARemoveUnusedVardecs (node *vardecs);
+static void UssaInitAvisFlags (node *fundef);
+static node *UssaRemoveUnusedVardecs (node *vardecs);
 
 static node *CondTransform (node *arg_node, info *arg_info);
 
@@ -277,11 +275,11 @@ static node *CondTransform (node *arg_node, info *arg_info);
  *
  ******************************************************************************/
 static void
-USSAInitAvisFlags (node *fundef)
+UssaInitAvisFlags (node *fundef)
 {
     node *tmp;
 
-    DBUG_ENTER ("USSAInitAvisFlags");
+    DBUG_ENTER ("UssaInitAvisFlags");
 
     /* process args */
     tmp = FUNDEF_ARGS (fundef);
@@ -307,22 +305,22 @@ USSAInitAvisFlags (node *fundef)
 /******************************************************************************
  *
  * function:
- *   node *USSARemoveUnusedVardecs(node *vardecs)
+ *   node *UssaRemoveUnusedVardecs(node *vardecs)
  *
  * description:
  *   free all vardecs marked for complete substitution.
  *
  ******************************************************************************/
 static node *
-USSARemoveUnusedVardecs (node *vardecs)
+UssaRemoveUnusedVardecs (node *vardecs)
 {
     node *avis;
 
-    DBUG_ENTER ("USSARemoveUnusedVardecs");
+    DBUG_ENTER ("UssaRemoveUnusedVardecs");
 
     /* traverse rest of chain */
     if (VARDEC_NEXT (vardecs) != NULL) {
-        VARDEC_NEXT (vardecs) = USSARemoveUnusedVardecs (VARDEC_NEXT (vardecs));
+        VARDEC_NEXT (vardecs) = UssaRemoveUnusedVardecs (VARDEC_NEXT (vardecs));
     }
 
     avis = VARDEC_AVIS (vardecs);
@@ -330,7 +328,7 @@ USSARemoveUnusedVardecs (node *vardecs)
     /* check vardec for removal */
     if ((AVIS_SUBSTUSSA (avis) != NULL) && (AVIS_SUBSTUSSA (avis) != avis)) {
         DBUG_PRINT ("USSA", ("remove unused vardec %s", VARDEC_NAME (vardecs)));
-        vardecs = FreeNode (vardecs);
+        vardecs = FREEdoFreeNode (vardecs);
     }
 
     DBUG_RETURN (vardecs);
@@ -339,7 +337,7 @@ USSARemoveUnusedVardecs (node *vardecs)
 /******************************************************************************
  *
  * function:
- *  node *USSAarg(node *arg_node, info *arg_info)
+ *  node *USSATarg(node *arg_node, info *arg_info)
  *
  * description:
  *  check args for AVIS_SUBST entries.
@@ -350,33 +348,32 @@ USSARemoveUnusedVardecs (node *vardecs)
  *
  ******************************************************************************/
 node *
-USSAarg (node *arg_node, info *arg_info)
+USSATarg (node *arg_node, info *arg_info)
 {
     node *tmp;
     node *vardec;
 
-    DBUG_ENTER ("USSAarg");
+    DBUG_ENTER ("USSATarg");
 
     if (AVIS_SUBST (ARG_AVIS (arg_node)) != NULL) {
         DBUG_PRINT ("USSA", ("using arg %s instead of vardec %s", ARG_NAME (arg_node),
-                             VARDEC_OR_ARG_NAME (
-                               AVIS_VARDECORARG (AVIS_SUBST (ARG_AVIS (arg_node))))));
+                             AVIS_NAME (AVIS_SUBST (ARG_AVIS (arg_node)))));
 
         /* use avis of vardec node as avis of arg node */
-        vardec = AVIS_VARDECORARG (AVIS_SUBST (ARG_AVIS (arg_node)));
+        vardec = AVIS_DECL (AVIS_SUBST (ARG_AVIS (arg_node)));
         tmp = ARG_AVIS (arg_node);
 
         ARG_AVIS (arg_node) = VARDEC_AVIS (vardec);
-        AVIS_VARDECORARG (ARG_AVIS (arg_node)) = arg_node;
+        AVIS_DECL (ARG_AVIS (arg_node)) = arg_node;
         AVIS_SUBSTUSSA (ARG_AVIS (arg_node)) = ARG_AVIS (arg_node); /* trigger renaming */
 
         VARDEC_AVIS (vardec) = tmp;
-        AVIS_VARDECORARG (VARDEC_AVIS (vardec)) = vardec;
+        AVIS_DECL (VARDEC_AVIS (vardec)) = vardec;
         AVIS_SUBSTUSSA (VARDEC_AVIS (vardec)) = NULL; /* no further renaming needed */
     }
 
     if (ARG_NEXT (arg_node) != NULL) {
-        ARG_NEXT (arg_node) = Trav (ARG_NEXT (arg_node), arg_info);
+        ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
     }
 
     /*
@@ -391,7 +388,7 @@ USSAarg (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *USSAvardec(node *arg_node, info *arg_info)
+ *   node *USSATvardec(node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -412,16 +409,12 @@ USSAarg (node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 node *
-USSAvardec (node *arg_node, info *arg_info)
+USSATvardec (node *arg_node, info *arg_info)
 {
     node *tmp;
     node *expr;
 
-    DBUG_ENTER ("USSAvardec");
-    DBUG_PRINT ("USSA",
-                ("name %s: STATUS %s, ATTRIB %s, AVIS " F_PTR "\n",
-                 VARDEC_NAME (arg_node), mdb_statustype[VARDEC_STATUS (arg_node)],
-                 mdb_statustype[VARDEC_ATTRIB (arg_node)], VARDEC_AVIS (arg_node)));
+    DBUG_ENTER ("USSATvardec");
 
     /* 1. SSAUNDOFLAG */
     if ((AVIS_SSAUNDOFLAG (VARDEC_AVIS (arg_node)))
@@ -457,9 +450,9 @@ USSAvardec (node *arg_node, info *arg_info)
          * so rename this vardec to original name.
          */
         if (AVIS_SUBSTUSSA (VARDEC_AVIS (arg_node)) == NULL) {
-            Free (VARDEC_NAME (arg_node));
+            ILIBfree (VARDEC_NAME (arg_node));
             VARDEC_NAME (arg_node)
-              = StringCopy (SSACNT_BASEID (AVIS_SSACOUNT (VARDEC_AVIS (arg_node))));
+              = ILIBstringCopy (SSACNT_BASEID (AVIS_SSACOUNT (VARDEC_AVIS (arg_node))));
 
             /* force renaming of identifier of this vardec */
             AVIS_SUBSTUSSA (VARDEC_AVIS (arg_node)) = VARDEC_AVIS (arg_node);
@@ -501,10 +494,9 @@ USSAvardec (node *arg_node, info *arg_info)
                 AVIS_SUBST (ID_AVIS (expr)) = AVIS_SUBSTUSSA (VARDEC_AVIS (arg_node));
             }
 
-            DBUG_PRINT ("USSA", ("PHITARGET: rename %s -> %s (1)",
-                                 VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (ID_AVIS (expr))),
-                                 VARDEC_OR_ARG_NAME (
-                                   AVIS_VARDECORARG (AVIS_SUBST (ID_AVIS (expr))))));
+            DBUG_PRINT ("USSA",
+                        ("PHITARGET: rename %s -> %s (1)", (AVIS_NAME (ID_AVIS (expr))),
+                         (AVIS_NAME (AVIS_SUBST (ID_AVIS (expr))))));
         }
 
         DBUG_ASSERT ((AVIS_SSAASSIGN2 (VARDEC_AVIS (arg_node)) != NULL),
@@ -530,15 +522,14 @@ USSAvardec (node *arg_node, info *arg_info)
                 AVIS_SUBST (ID_AVIS (expr)) = AVIS_SUBSTUSSA (VARDEC_AVIS (arg_node));
             }
 
-            DBUG_PRINT ("USSA", ("PHITARGET: rename %s -> %s (2)",
-                                 VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (ID_AVIS (expr))),
-                                 VARDEC_OR_ARG_NAME (
-                                   AVIS_VARDECORARG (AVIS_SUBST (ID_AVIS (expr))))));
+            DBUG_PRINT ("USSA",
+                        ("PHITARGET: rename %s -> %s (2)", AVIS_NAME (ID_AVIS (expr)),
+                         AVIS_NAME (AVIS_SUBST (ID_AVIS (expr)))));
         }
     }
 
     if (VARDEC_NEXT (arg_node) != NULL) {
-        VARDEC_NEXT (arg_node) = Trav (VARDEC_NEXT (arg_node), arg_info);
+        VARDEC_NEXT (arg_node) = TRAVdo (VARDEC_NEXT (arg_node), arg_info);
     }
 
     /* 3. check for different renamings */
@@ -559,39 +550,47 @@ USSAvardec (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *USSAid(node *arg_node, info *arg_info)
+ *   node *USSATids(node *arg_ids, info *arg_info)
  *
  * description:
- *   checks for consistent back reference from N_id node to N_arg or N_vardec
- *   node together with back reference to N_avis node. Here implemented in
- *   USSAids.
+ *   re-renames artificial vardecs to their original name
  *
  ******************************************************************************/
 node *
-USSAid (node *arg_node, info *arg_info)
+USSATids (node *arg_ids, info *arg_info)
 {
-    DBUG_ENTER ("USSAid");
+    DBUG_ENTER ("USSATids");
 
-    DBUG_ASSERT ((ID_IDS (arg_node) != NULL), "missing IDS in N_id!");
+    if (AVIS_SUBSTUSSA (IDS_AVIS (arg_ids)) != NULL) {
+        DBUG_PRINT ("USSA", ("rename ids %s(" F_PTR ") in %s(" F_PTR ")",
+                             AVIS_NAME (IDS_AVIS (arg_ids)), IDS_AVIS (arg_ids),
+                             AVIS_NAME (AVIS_SUBSTUSSA (IDS_AVIS (arg_ids))),
+                             AVIS_SUBSTUSSA (IDS_AVIS (arg_ids))));
 
-    ID_IDS (arg_node) = TravIDS (ID_IDS (arg_node), arg_info);
+        /* restore rename back to undo vardec */
+        IDS_AVIS (arg_ids) = AVIS_SUBSTUSSA (IDS_AVIS (arg_ids));
+    }
 
-    DBUG_RETURN (arg_node);
+    if (IDS_NEXT (arg_ids) != NULL) {
+        IDS_NEXT (arg_ids) = TRAVdo (IDS_NEXT (arg_ids), arg_info);
+    }
+
+    DBUG_RETURN (arg_ids);
 }
 
 /******************************************************************************
  *
  * function:
- *   node *USSAlet(node *arg_node, info *arg_info)
+ *   node *USSATlet(node *arg_node, info *arg_info)
  *
  * description:
  *   starts traversal in ids chain.
  *
  ******************************************************************************/
 node *
-USSAlet (node *arg_node, info *arg_info)
+USSATlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("USSAlet");
+    DBUG_ENTER ("USSATlet");
     DBUG_ASSERT ((LET_EXPR (arg_node) != NULL), "N_let with empty EXPR attribute.");
 
     /* special handling for removal of phi copy tragets */
@@ -610,10 +609,10 @@ USSAlet (node *arg_node, info *arg_info)
 
         if (LET_IDS (arg_node) != NULL) {
             /* there are some ids */
-            LET_IDS (arg_node) = TravIDS (LET_IDS (arg_node), arg_info);
+            LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
         }
 
-        LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
+        LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
     }
 
     /* remove assignments like a = a after renaming */
@@ -629,178 +628,33 @@ USSAlet (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *USSANwithid(node *arg_node, info *arg_info)
+ *   node *USSATwith(node *arg_node, info *arg_info)
  *
  * description:
- *   starts traversal for ids chains in Nwithid nodes.
  *
  ******************************************************************************/
 node *
-USSANwithid (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("USSANwithid");
-
-    if (NWITHID_VEC (arg_node) != NULL) {
-        NWITHID_VEC (arg_node) = TravIDS (NWITHID_VEC (arg_node), arg_info);
-    }
-
-    if (NWITHID_IDS (arg_node) != NULL) {
-        NWITHID_IDS (arg_node) = TravIDS (NWITHID_IDS (arg_node), arg_info);
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *USSANcode(node *arg_node, info *arg_info)
- *
- * description:
- *   traverses code blocks of with loop and inserts unique result name for
- *   multigenerator fold-withloops.
- *
- ******************************************************************************/
-node *
-USSANcode (node *arg_node, info *arg_info)
-{
-    node *src_id;
-
-    DBUG_ENTER ("USSANcode");
-
-    if (NCODE_CBLOCK (arg_node) != NULL) {
-        NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
-    }
-
-    if (INFO_USSA_FOLDTARGET (arg_info) != NULL) {
-        /*
-         * For the time beeing there are no fused multioperator WLs containing
-         * fold WLs, therefore the macro NCODE_CEXPR can be applied further
-         */
-
-        /* create source id node */
-        src_id = MakeId_Copy (
-          VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (ID_AVIS (NCODE_CEXPR (arg_node)))));
-        ID_VARDEC (src_id) = AVIS_VARDECORARG (ID_AVIS (NCODE_CEXPR (arg_node)));
-        ID_AVIS (src_id) = ID_AVIS (NCODE_CEXPR (arg_node));
-
-        /*
-         * append copy assignment: <fold-target> = cexprvar;
-         * to block
-         */
-        BLOCK_INSTR (NCODE_CBLOCK (arg_node))
-          = AppendAssign (BLOCK_INSTR (NCODE_CBLOCK (arg_node)),
-                          MakeAssignLet (StringCopy (VARDEC_NAME (AVIS_VARDECORARG (
-                                           INFO_USSA_FOLDTARGET (arg_info)))),
-                                         AVIS_VARDECORARG (
-                                           INFO_USSA_FOLDTARGET (arg_info)),
-                                         src_id));
-
-        /* set new fold target as cexpr */
-        DBUG_PRINT ("USSA",
-                    ("set new fold target %s",
-                     VARDEC_NAME (AVIS_VARDECORARG (INFO_USSA_FOLDTARGET (arg_info)))));
-
-        ID_VARDEC (NCODE_CEXPR (arg_node))
-          = AVIS_VARDECORARG (INFO_USSA_FOLDTARGET (arg_info));
-        ID_AVIS (NCODE_CEXPR (arg_node)) = INFO_USSA_FOLDTARGET (arg_info);
-#ifndef NO_ID_NAME
-        /* for compatiblity only
-         * there is no real need for name string in ids structure because
-         * you can get it from vardec without redundancy.
-         */
-        Free (ID_NAME (NCODE_CEXPR (arg_node)));
-        ID_NAME (NCODE_CEXPR (arg_node))
-          = StringCopy (VARDEC_NAME (AVIS_VARDECORARG (INFO_USSA_FOLDTARGET (arg_info))));
-#endif
-    } else {
-        /* do standard traversal */
-        if (NCODE_CEXPRS (arg_node) != NULL) {
-            NCODE_CEXPRS (arg_node) = Trav (NCODE_CEXPRS (arg_node), arg_info);
-        }
-    }
-
-    if (NCODE_EPILOGUE (arg_node) != NULL) {
-        NCODE_EPILOGUE (arg_node) = Trav (NCODE_EPILOGUE (arg_node), arg_info);
-    }
-
-    if (NCODE_NEXT (arg_node) != NULL) {
-        NCODE_NEXT (arg_node) = Trav (NCODE_NEXT (arg_node), arg_info);
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *USSANwith(node *arg_node, info *arg_info)
- *
- * description:
- *   if this is a fold-withloop and ExplicitAccumulate wasn't applied
- *   we have to create a new unique result valiable
- *   for all results of a multigenerator withloop. The renaming and inserting
- *   of the necessary copy assignment is done by USSANcode.
- *
- ******************************************************************************/
-node *
-USSANwith (node *arg_node, info *arg_info)
+USSATwith (node *arg_node, info *arg_info)
 {
     info *new_arg_info;
 
-    DBUG_ENTER ("USSANwith");
+    DBUG_ENTER ("USSATwith");
     /* stack arg_info node, copy pointer to vardec/args lists */
     new_arg_info = MakeInfo ();
     INFO_USSA_TOPBLOCK (new_arg_info) = INFO_USSA_TOPBLOCK (arg_info);
     INFO_USSA_ARGS (new_arg_info) = INFO_USSA_ARGS (arg_info);
 
-    /*
-     * If ExplicitAccumulate wasn't applied (activated by flag emm):
-     * check for fold-withloop with at least two code segments
-     * (first code has a next attribute set) that needs a new
-     * unique target variable
-     */
-    if ((!emm) && (NWITH_IS_FOLD (arg_node)) && (NWITH_CODE (arg_node) != NULL)
-        && (NCODE_NEXT (NWITH_CODE (arg_node)) != NULL)) {
-        /*
-         * For the time beeing there are no fused multioperator WLs containing
-         * fold WLs, therefore the macro NCODE_CEXPR can be applied further
-         */
-
-        DBUG_ASSERT ((NCODE_CEXPR (NWITH_CODE (arg_node)) != NULL),
-                     "fold-withloop without target expression");
-        DBUG_ASSERT ((NODE_TYPE (NCODE_CEXPR (NWITH_CODE (arg_node))) == N_id),
-                     "fold-withloop without target variable");
-
-        /* make new unique vardec as fold target and append it to vardec chain */
-        BLOCK_VARDEC (INFO_USSA_TOPBLOCK (new_arg_info))
-          = MakeVardec (TmpVar (),
-                        DupAllTypes (VARDEC_OR_ARG_TYPE (
-                          ID_VARDEC (NCODE_CEXPR (NWITH_CODE (arg_node))))),
-                        BLOCK_VARDEC (INFO_USSA_TOPBLOCK (arg_info)));
-
-        DBUG_PRINT ("USSA", ("create unique fold target %s",
-                             VARDEC_NAME (BLOCK_VARDEC (INFO_USSA_TOPBLOCK (arg_info)))));
-
-        /* set as new fold-target (will be inserted by USSANcode */
-        INFO_USSA_FOLDTARGET (new_arg_info)
-          = VARDEC_AVIS (BLOCK_VARDEC (INFO_USSA_TOPBLOCK (arg_info)));
-    } else {
-        /* no new target needed */
-        INFO_USSA_FOLDTARGET (new_arg_info) = NULL;
-    }
-
     /* now traverse all sons */
-    if (NWITH_PART (arg_node) != NULL) {
-        NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), new_arg_info);
+    if (WITH_PART (arg_node) != NULL) {
+        WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), new_arg_info);
     }
 
-    if (NWITH_WITHOP (arg_node) != NULL) {
-        NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), new_arg_info);
+    if (WITH_WITHOP (arg_node) != NULL) {
+        WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), new_arg_info);
     }
 
-    if (NWITH_CODE (arg_node) != NULL) {
-        NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), new_arg_info);
+    if (WITH_CODE (arg_node) != NULL) {
+        WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), new_arg_info);
     }
 
     /* free new_arg_info node */
@@ -812,23 +666,22 @@ USSANwith (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *    node* USSAfundef(node *arg_node, info *arg_info)
+ *    node* USSATfundef(node *arg_node, info *arg_info)
  *
  * description:
  *  traverses arg nodes and block in this order.
  *
  ******************************************************************************/
 node *
-USSAfundef (node *arg_node, info *arg_info)
+USSATfundef (node *arg_node, info *arg_info)
 {
 
     node *block, *assign, *cond;
-    DBUG_ENTER ("USSAfundef");
+    DBUG_ENTER ("USSATfundef");
 
     /* pre-traversal to find all cond nodes */
 
-    if ((FUNDEF_STATUS (arg_node) == ST_condfun) || (FUNDEF_STATUS (arg_node) == ST_dofun)
-        || (FUNDEF_STATUS (arg_node) == ST_whilefun)) {
+    if ((FUNDEF_ISCONDFUN (arg_node)) || (FUNDEF_ISDOFUN (arg_node))) {
 
         INFO_USSA_FUNDEF (arg_info) = arg_node;
 
@@ -838,11 +691,11 @@ USSAfundef (node *arg_node, info *arg_info)
             if ((assign != NULL)
                 && (NODE_TYPE (LET_EXPR (ASSIGN_INSTR (assign))) == N_funcond)) {
                 /* condition function without N_cond node found */
-                cond = MakeCond (DupTree (EXPRS_EXPR (
-                                   FUNCOND_IF (LET_EXPR (ASSIGN_INSTR (assign))))),
-                                 MakeBlock (MakeEmpty (), NULL),
-                                 MakeBlock (MakeEmpty (), NULL));
-                assign = MakeAssign (cond, assign);
+                cond = TBmakeCond (DUPdoDupTree (EXPRS_EXPR (
+                                     FUNCOND_IF (LET_EXPR (ASSIGN_INSTR (assign))))),
+                                   TBmakeBlock (TBmakeEmpty (), NULL),
+                                   TBmakeBlock (TBmakeEmpty (), NULL));
+                assign = TBmakeAssign (cond, assign);
                 BLOCK_INSTR (block) = assign;
             }
             while (assign != NULL) {
@@ -860,7 +713,7 @@ USSAfundef (node *arg_node, info *arg_info)
         }
     }
 
-    USSAInitAvisFlags (arg_node);
+    UssaInitAvisFlags (arg_node);
 
     DBUG_PRINT ("USSA", ("\nrestoring names in function %s", FUNDEF_NAME (arg_node)));
 
@@ -873,11 +726,11 @@ USSAfundef (node *arg_node, info *arg_info)
         /* save begin of vardec chain for later access */
         INFO_USSA_TOPBLOCK (arg_info) = FUNDEF_BODY (arg_node);
 
-        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
     }
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -886,47 +739,47 @@ USSAfundef (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *    node* USSAblock(node *arg_node, info *arg_info)
+ *    node* USSATblock(node *arg_node, info *arg_info)
  *
  * description:
  *  traverses vardec nodes and assignments in this order.
  *
  ******************************************************************************/
 node *
-USSAblock (node *arg_node, info *arg_info)
+USSATblock (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("USSAblock");
+    DBUG_ENTER ("USSATblock");
 
     if (BLOCK_VARDEC (arg_node) != NULL) {
         /*
          * there are some vardecs, check for artificial ones
          */
-        BLOCK_VARDEC (arg_node) = Trav (BLOCK_VARDEC (arg_node), arg_info);
+        BLOCK_VARDEC (arg_node) = TRAVdo (BLOCK_VARDEC (arg_node), arg_info);
     }
 
     if (INFO_USSA_ARGS (arg_info) != NULL) {
         /* traverse args for renaming args */
-        INFO_USSA_ARGS (arg_info) = Trav (INFO_USSA_ARGS (arg_info), arg_info);
+        INFO_USSA_ARGS (arg_info) = TRAVdo (INFO_USSA_ARGS (arg_info), arg_info);
     }
 
     if (BLOCK_INSTR (arg_node) != NULL) {
         /* there is a block */
-        BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
+        BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
     }
 
     if (BLOCK_INSTR (arg_node) == NULL) {
         /* insert N_empty node in empty block */
-        BLOCK_INSTR (arg_node) = MakeEmpty ();
+        BLOCK_INSTR (arg_node) = TBmakeEmpty ();
     }
 
     if (BLOCK_VARDEC (arg_node) != NULL) {
         /* remove unused vardecs (marked for complete substitution) */
-        BLOCK_VARDEC (arg_node) = USSARemoveUnusedVardecs (BLOCK_VARDEC (arg_node));
+        BLOCK_VARDEC (arg_node) = UssaRemoveUnusedVardecs (BLOCK_VARDEC (arg_node));
     }
 
     if (BLOCK_SSACOUNTER (arg_node) != NULL) {
         /* remove all ssacnt nodes - they are not needed anymore */
-        BLOCK_SSACOUNTER (arg_node) = FreeTree (BLOCK_SSACOUNTER (arg_node));
+        BLOCK_SSACOUNTER (arg_node) = FREEdoFreeTree (BLOCK_SSACOUNTER (arg_node));
     }
 
     DBUG_RETURN (arg_node);
@@ -935,19 +788,19 @@ USSAblock (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *    node* USSAassign(node *arg_node, info *arg_info)
+ *    node* USSATassign(node *arg_node, info *arg_info)
  *
  * description:
  *   traverses instruction and removes/moves tagges assignments.
  *
  ******************************************************************************/
 node *
-USSAassign (node *arg_node, info *arg_info)
+USSATassign (node *arg_node, info *arg_info)
 {
     int op;
     node *tmp;
 
-    DBUG_ENTER ("USSAassign");
+    DBUG_ENTER ("USSATassign");
     DBUG_ASSERT ((ASSIGN_INSTR (arg_node) != NULL), "missing instruction in assignment");
 
     INFO_USSA_OPASSIGN (arg_info) = OPASSIGN_NOOP;
@@ -958,7 +811,7 @@ USSAassign (node *arg_node, info *arg_info)
     INFO_USSA_PHIFUN (arg_info) = arg_node;
 
     /* traverse instruction */
-    ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
     /* save operation to perform on this assignment on bottom-up traveral */
     op = INFO_USSA_OPASSIGN (arg_info);
@@ -966,14 +819,14 @@ USSAassign (node *arg_node, info *arg_info)
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
         /* traverse next assignment */
-        ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
     }
 
     /* insert moved constant assignments, if available */
     if ((NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_return)
         && (INFO_USSA_CONSTASSIGNS (arg_info) != NULL)) {
         INFO_USSA_CONSTASSIGNS (arg_info)
-          = AppendAssign (INFO_USSA_CONSTASSIGNS (arg_info), arg_node);
+          = TCappendAssign (INFO_USSA_CONSTASSIGNS (arg_info), arg_node);
         arg_node = INFO_USSA_CONSTASSIGNS (arg_info);
         INFO_USSA_CONSTASSIGNS (arg_info) = NULL;
     }
@@ -986,12 +839,12 @@ USSAassign (node *arg_node, info *arg_info)
 
         if (op == OPASSIGN_REMOVE) {
             /* remove whole assignment */
-            tmp = FreeNode (tmp);
+            tmp = FREEdoFreeNode (tmp);
         } else {
             /* move assignment to temp assignment chain */
             ASSIGN_NEXT (tmp) = NULL;
             INFO_USSA_CONSTASSIGNS (arg_info)
-              = AppendAssign (INFO_USSA_CONSTASSIGNS (arg_info), tmp);
+              = TCappendAssign (INFO_USSA_CONSTASSIGNS (arg_info), tmp);
         }
     }
 
@@ -1036,7 +889,7 @@ CondTransform (node *arg_node, info *arg_info)
 
     node *then_node, *else_node;
     node *phifun, *old_assign, *then_assign, *else_assign, *old_cond;
-    ids *left_ids;
+    node *left_ids;
     node *return_node;
 
     DBUG_ENTER ("CondTransform");
@@ -1086,10 +939,8 @@ CondTransform (node *arg_node, info *arg_info)
 
         /* create let assign for else part with same left side as then part
            (right side from old funcond subtree) */
-        else_assign = MakeAssignLet (StringCopy (VARDEC_OR_ARG_NAME (
-                                       AVIS_VARDECORARG (IDS_AVIS (left_ids)))),
-                                     AVIS_VARDECORARG (IDS_AVIS (left_ids)),
-                                     EXPRS_EXPR (FUNCOND_ELSE (old_cond)));
+        else_assign
+          = TCmakeAssignLet (IDS_AVIS (left_ids), EXPRS_EXPR (FUNCOND_ELSE (old_cond)));
 
         /* add correct id node from funcond subtree to assignment for then block */
         LET_EXPR (ASSIGN_INSTR (then_assign)) = EXPRS_EXPR (FUNCOND_THEN (old_cond));
@@ -1097,7 +948,7 @@ CondTransform (node *arg_node, info *arg_info)
         /* delete unused prf subtree */
         EXPRS_EXPR (FUNCOND_THEN (old_cond)) = NULL;
         EXPRS_EXPR (FUNCOND_ELSE (old_cond)) = NULL;
-        FreeTree (old_cond);
+        FREEdoFreeTree (old_cond);
 
         /* append then_assignment to then block */
         if (then_node != NULL) {
@@ -1105,7 +956,7 @@ CondTransform (node *arg_node, info *arg_info)
                 ASSIGN_NEXT (then_node) = then_assign;
                 then_node = ASSIGN_NEXT (then_node);
             } else {
-                FreeTree (then_node);
+                FREEdoFreeTree (then_node);
                 BLOCK_INSTR (COND_THEN (arg_node)) = then_assign;
                 then_node = then_assign;
             }
@@ -1120,7 +971,7 @@ CondTransform (node *arg_node, info *arg_info)
                 ASSIGN_NEXT (else_node) = else_assign;
                 else_node = ASSIGN_NEXT (else_node);
             } else {
-                FreeTree (else_node);
+                FREEdoFreeTree (else_node);
                 BLOCK_INSTR (COND_ELSE (arg_node)) = else_assign;
                 else_node = else_assign;
             }
@@ -1135,22 +986,10 @@ CondTransform (node *arg_node, info *arg_info)
 
         /* set flag if conditional is used inside a loop */
 
-        switch (FUNDEF_STATUS (INFO_USSA_FUNDEF (arg_info))) {
-        case ST_condfun:
+        if (FUNDEF_ISCONDFUN (INFO_USSA_FUNDEF (arg_info))) {
             AVIS_SSAPHITARGET (IDS_AVIS (left_ids)) = PHIT_COND;
-            break;
-
-        case ST_whilefun:
+        } else if (FUNDEF_ISDOFUN (INFO_USSA_FUNDEF (arg_info))) {
             AVIS_SSAPHITARGET (IDS_AVIS (left_ids)) = PHIT_DO;
-            break;
-
-        case ST_dofun:
-            AVIS_SSAPHITARGET (IDS_AVIS (left_ids)) = PHIT_WHILE;
-            break;
-
-        default:
-            DBUG_ASSERT ((FALSE), "conditional in reglular function! (no cond, do or "
-                                  "while function)");
         }
     }
 
@@ -1163,108 +1002,40 @@ CondTransform (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *USSAids(node *arg_ids, info *arg_info)
- *
- * description:
- *   re-renames artificial vardecs to their original name
- *
- ******************************************************************************/
-static ids *
-USSAids (ids *arg_ids, info *arg_info)
-{
-    DBUG_ENTER ("USSAids");
-
-    if (AVIS_SUBSTUSSA (IDS_AVIS (arg_ids)) != NULL) {
-        DBUG_PRINT ("USSA", ("rename ids %s(" F_PTR ") in %s(" F_PTR ")",
-                             VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (IDS_AVIS (arg_ids))),
-                             IDS_AVIS (arg_ids),
-                             VARDEC_OR_ARG_NAME (
-                               AVIS_VARDECORARG (AVIS_SUBSTUSSA (IDS_AVIS (arg_ids)))),
-                             AVIS_SUBSTUSSA (IDS_AVIS (arg_ids))));
-
-        /* restore rename back to undo vardec */
-        IDS_AVIS (arg_ids) = AVIS_SUBSTUSSA (IDS_AVIS (arg_ids));
-        IDS_VARDEC (arg_ids) = AVIS_VARDECORARG (IDS_AVIS (arg_ids));
-
-#ifndef NO_ID_NAME
-        /* for compatiblity only
-         * there is no real need for name string in ids structure because
-         * you can get it from vardec without redundancy.
-         */
-        Free (IDS_NAME (arg_ids));
-        IDS_NAME (arg_ids) = StringCopy (VARDEC_OR_ARG_NAME (IDS_VARDEC (arg_ids)));
-#endif
-    }
-
-    if (IDS_NEXT (arg_ids) != NULL) {
-        IDS_NEXT (arg_ids) = TravIDS (IDS_NEXT (arg_ids), arg_info);
-    }
-
-    DBUG_RETURN (arg_ids);
-}
-
-/******************************************************************************
- *
- * function:
- *   ids *TravIDS(ids *arg_ids, info *arg_info)
- *
- * description:
- *   similar implementation of trav mechanism as used for nodes
- *   here used for ids.
- *
- ******************************************************************************/
-static ids *
-TravIDS (ids *arg_ids, info *arg_info)
-{
-    DBUG_ENTER ("TravIDS");
-
-    DBUG_ASSERT (arg_ids != NULL, "traversal in NULL ids");
-    arg_ids = USSAids (arg_ids, arg_info);
-
-    DBUG_RETURN (arg_ids);
-}
-
-/******************************************************************************
- *
- * function:
- *   node* UndoSSATransform(node* modul)
+ *   node* USSATdoUndoSsaTransform(node* module)
  *
  * description:
  *   Starts traversal of AST to restore original artificial identifier.
  *
  ******************************************************************************/
 node *
-UndoSSATransform (node *modul)
+USSATdoUndoSsaTransform (node *module)
 {
     info *arg_info;
-    funtab *old_tab;
 
-    DBUG_ENTER ("UndoSSATransform");
+    DBUG_ENTER ("USSATdoUndoSSATransform");
 
     DBUG_PRINT ("OPT", ("starting UNDO ssa transformation"));
 
     arg_info = MakeInfo ();
 
-    INFO_USSA_MODUL (arg_info) = modul;
+    INFO_USSA_MODULE (arg_info) = module;
 
-    old_tab = act_tab;
-    act_tab = undossa_tab;
-
-    modul = Trav (modul, arg_info);
-
-    act_tab = old_tab;
+    TRAVpush (TR_ussat);
+    module = TRAVdo (module, arg_info);
+    TRAVpop ();
 
     arg_info = FreeInfo (arg_info);
 
     /* ast is no longer in ssaform */
-    valid_ssaform = FALSE;
+    global.valid_ssaform = FALSE;
 
     /*
      * finally, we increase the ssaform_phase counter, in order to avoid
      * name clashes if the ast is transformed into ssa-form at a later stage
      * of the compiler again. cf. SSANewVardec in SSATransform.c !
      */
-    ssaform_phase++;
+    global.ssaform_phase++;
 
-    DBUG_RETURN (modul);
+    DBUG_RETURN (module);
 }
