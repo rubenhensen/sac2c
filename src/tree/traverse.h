@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2001/03/05 16:18:45  nmw
+ * SSACSE traversal added
+ *
  * Revision 3.6  2001/02/23 13:39:50  nmw
  * SSADeadCodeRemoval added
  *
@@ -215,6 +218,7 @@ extern funtab *ssafrm_tab;
 extern funtab *chkavis_tab;
 extern funtab *undossa_tab;
 extern funtab *ssadcr_tab;
+extern funtab *ssacse_tab;
 
 extern int nnode[];
 

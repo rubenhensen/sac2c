@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2001/03/05 16:18:45  nmw
+ * SSACSE traversal added
+ *
  * Revision 3.9  2001/02/23 13:39:50  nmw
  * SSADeadCodeRemoval added
  *
@@ -303,6 +306,7 @@
 #include "SSATransform.h"
 #include "UndoSSATransform.h"
 #include "SSADeadCodeRemoval.h"
+#include "SSACSE.h"
 
 #include "traverse.h"
 
@@ -1290,6 +1294,17 @@ static funtab ssadcr_tab_rec = {{
                                 NULL,
                                 NULL};
 funtab *ssadcr_tab = &ssadcr_tab_rec;
+
+/*
+ *  (90) ssacse_tab
+ */
+static funtab ssacse_tab_rec = {{
+#define NIFssacse(it_ssacse) it_ssacse
+#include "node_info.mac"
+                                },
+                                NULL,
+                                NULL};
+funtab *ssacse_tab = &ssacse_tab_rec;
 
 /*
  *  nnode
