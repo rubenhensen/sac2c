@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  1998/04/24 17:16:53  dkr
+ * renamed Spmd...() to SPMD...()
+ *
  * Revision 1.4  1998/04/24 12:13:12  dkr
  * removed SpmdInitNcode, SpmdInitNpart
  *
@@ -23,8 +26,8 @@
 #define _sac_spmdregions_h
 
 /* init SPMD/sync-regions */
-extern node *SpmdInitFundef (node *arg_node, node *arg_info);
-extern node *SpmdInitAssign (node *arg_node, node *arg_info);
+extern node *SPMDInitFundef (node *arg_node, node *arg_info);
+extern node *SPMDInitAssign (node *arg_node, node *arg_info);
 
 /* optimize SPMD/sync-regions */
 /* not yet implemented */
