@@ -1,43 +1,20 @@
 #
-# $Log$
-# Revision 1.21  2000/08/24 11:35:44  dkr
-# make deps done
 #
-# Revision 1.20  2000/08/17 10:17:38  dkr
-# make deps done
+# $Log$
+# Revision 1.22  2000/11/02 14:21:10  dkr
+# header compressed
 #
 # Revision 1.19  2000/08/01 15:05:17  nmw
 # c-interface in libsab_mt.a, too
 #
-# Revision 1.18  2000/08/01 14:00:41  nmw
-# *** empty log message ***
-#
-# Revision 1.17  2000/07/28 09:16:27  mab
-# make deps done
-#
 # Revision 1.16  2000/07/20 11:39:19  nmw
 # free_cinterface_handler.c added
-#
-# Revision 1.15  2000/07/11 15:56:35  dkr
-# make deps done
-#
-# Revision 1.14  2000/07/05 14:23:58  dkr
-# make deps done
 #
 # Revision 1.13  2000/07/05 12:52:17  nmw
 # sac_Arg.c and cinterface.c added
 #
-# Revision 1.12  2000/05/29 14:36:46  dkr
-# make deps done
-#
-# Revision 1.11  2000/03/31 09:33:48  jhs
-# make deps done
-#
 # Revision 1.10  2000/01/17 19:14:24  cg
 # Small bug fixed.
-#
-# Revision 1.9  2000/01/17 18:41:17  cg
-# make deps done
 #
 # Revision 1.8  2000/01/17 18:37:49  cg
 # Handling of target platform unified: One of the following
@@ -48,9 +25,6 @@
 # Reorganized generation of two runtime libraries, one for
 # sequential execution and one dedicated to multi-thraeded execution.
 #
-# Revision 1.6  1999/12/13 11:29:06  dkr
-# *** empty log message ***
-#
 # Revision 1.5  1999/09/20 13:16:23  cg
 # Added compilation of new source file heapmgr_diag.c
 #
@@ -60,9 +34,6 @@
 #
 # Revision 1.3  1999/07/16 09:41:16  cg
 # Added facilities for heap management diagnostics.
-#
-# Revision 1.2  1999/07/09 11:39:06  cg
-# make deps done
 #
 # Revision 1.1  1999/07/08 12:30:54  cg
 # Initial revision

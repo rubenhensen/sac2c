@@ -1,22 +1,8 @@
 #
+#
 # $Log$
-# Revision 1.9  2000/08/17 10:17:39  dkr
-# make deps done
-#
-# Revision 1.8  2000/07/28 09:16:28  mab
-# make deps done
-#
-# Revision 1.7  2000/07/11 15:56:38  dkr
-# make deps done
-#
-# Revision 1.6  2000/05/29 14:36:47  dkr
-# make deps done
-#
-# Revision 1.5  2000/03/31 09:33:49  jhs
-# make deps done
-#
-# Revision 1.4  2000/01/17 18:41:20  cg
-# make deps done
+# Revision 1.10  2000/11/02 14:22:25  dkr
+# header compressed
 #
 # Revision 1.3  2000/01/17 18:37:49  cg
 # Handling of target platform unified: One of the following

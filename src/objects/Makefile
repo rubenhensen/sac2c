@@ -1,32 +1,14 @@
 #
 #
 # $Log$
+# Revision 2.16  2000/11/02 14:23:11  dkr
+# header compressed
+#
 # Revision 2.15  2000/09/22 14:20:03  dkr
 # INCS modified
 #
-# Revision 2.14  2000/08/17 10:17:35  dkr
-# make deps done
-#
-# Revision 2.13  2000/07/28 09:16:24  mab
-# make deps done
-#
 # Revision 2.12  2000/07/24 14:47:30  dkr
 # suffix rule for .c.o added
-#
-# Revision 2.11  2000/07/11 15:56:30  dkr
-# make deps done
-#
-# Revision 2.10  2000/05/29 14:36:42  dkr
-# make deps done
-#
-# Revision 2.9  2000/05/29 14:35:19  dkr
-# make deps done
-#
-# Revision 2.8  2000/03/31 09:33:46  jhs
-# make deps done
-#
-# Revision 2.7  2000/03/01 14:52:38  dkr
-# make deps done
 #
 # Revision 2.6  2000/01/21 14:46:54  dkr
 # directory tree added
@@ -36,43 +18,16 @@
 # is always defined:
 # SAC_FOR_SOLARIS_SPARC, SAC_FOR_LINUX_X86, OR SAC_FOR_OSF_ALPHA.
 #
-# Revision 2.3  1999/03/11 18:18:26  dkr
-# make deps done
-#
-# Revision 2.2  1999/02/26 14:17:43  dkr
-# make deps done
-#
-# Revision 2.1  1999/02/23 12:43:19  sacbase
-# new release made
-#
 # Revision 1.14  1998/03/04 00:11:13  dkr
 # 'clean' now deletes the subdir .sb, too
-#
-# Revision 1.13  1997/11/20 15:02:11  dkr
-# make deps done
 #
 # Revision 1.12  1997/11/12 15:59:49  sbs
 # CC+CCFLAGS handling changed.
 # Now, it suffices to preset CC=cc if the SUN-compiler isdesired
 # Otherwise, gcc is set with -Wall and -ansi
 #
-# Revision 1.11  1997/11/11 16:49:33  sbs
-# make deps done
-#
-# Revision 1.10  1997/08/05 11:32:32  sbs
-# make deps done
-#
-# Revision 1.9  1996/02/16 09:46:58  sbs
-# make deps done
-#
 # Revision 1.8  1996/01/25  18:45:52  cg
 # added new include directories
-#
-# Revision 1.7  1996/01/04  18:11:12  cg
-# make deps done
-#
-# Revision 1.6  1995/12/15  10:41:14  cg
-# make deps done
 #
 # Revision 1.5  1995/11/16  19:45:25  cg
 # added compilation of rmvoidfun.c

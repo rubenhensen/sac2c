@@ -1,46 +1,17 @@
 #
+#
 # $Log$
-# Revision 2.22  2000/08/17 10:17:27  dkr
-# make deps done
-#
-# Revision 2.21  2000/07/28 09:16:19  mab
-# make deps done
-#
-# Revision 2.20  2000/07/11 15:56:18  dkr
-# make deps done
-#
-# Revision 2.19  2000/05/29 14:36:34  dkr
-# make deps done
-#
-# Revision 2.18  2000/05/29 14:35:08  dkr
-# make deps done
-#
-# Revision 2.17  2000/03/31 09:33:40  jhs
-# make deps done
-#
-# Revision 2.16  2000/03/31 09:22:10  cg
-# make deps done
-#
-# Revision 2.15  2000/03/19 11:08:52  dkr
-# make deps done
+# Revision 2.23  2000/11/02 14:23:58  dkr
+# header compressed
 #
 # Revision 2.14  2000/03/17 15:56:56  dkr
 # cleanup_decls.o added
-#
-# Revision 2.13  2000/03/01 14:51:30  dkr
-# make deps done
 #
 # Revision 2.12  2000/02/18 16:32:31  cg
 # Added -I../print
 #
 # Revision 2.11  2000/02/17 16:16:55  cg
 # Added compilation of adjust_ids.c and fun2lac.c.
-#
-# Revision 2.10  2000/01/23 15:01:10  dkr
-# make deps done
-#
-# Revision 2.9  2000/01/21 17:02:02  dkr
-# make deps done
 #
 # Revision 2.8  2000/01/21 12:53:35  dkr
 # target clean changed
@@ -52,21 +23,6 @@
 # Handling of target platform unified: One of the following
 # is always defined:
 # SAC_FOR_SOLARIS_SPARC, SAC_FOR_LINUX_X86, OR SAC_FOR_OSF_ALPHA.
-#
-# Revision 2.4  1999/05/12 15:13:21  cg
-# make deps done
-#
-# Revision 2.3  1999/03/11 18:18:18  dkr
-# make deps done
-#
-# Revision 2.2  1999/02/26 14:17:36  dkr
-# make deps done
-#
-# Revision 2.1  1999/02/23 12:39:06  sacbase
-# new release made
-#
-# Revision 1.17  1998/05/21 09:51:47  dkr
-# make deps done
 #
 # Revision 1.16  1998/05/20 20:16:07  sbs
 # since flatten.c uses DupNode ../optimize had to be added
@@ -85,27 +41,6 @@
 # CC+CCFLAGS handling changed.
 # Now, it suffices to preset CC=cc if the SUN-compiler isdesired
 # Otherwise, gcc is set with -Wall and -ansi
-#
-# Revision 1.11  1997/11/11 16:49:21  sbs
-# make deps done
-#
-# Revision 1.10  1997/08/05 11:32:22  sbs
-# make deps done
-#
-# Revision 1.9  1996/01/04 18:11:05  cg
-# make deps done
-#
-# Revision 1.8  1995/12/15  10:41:06  cg
-# make deps done
-#
-# Revision 1.7  1995/10/08  11:29:44  sbs
-# make deps done
-#
-# Revision 1.6  1995/05/15  13:38:40  asi
-# make deps done
-#
-# Revision 1.5  1995/04/04  11:03:44  sbs
-# make deps done
 #
 # Revision 1.3  1994/11/10  15:39:42  sbs
 # RCS-header inserted

@@ -1,22 +1,11 @@
 #
+#
 # $Log$
-# Revision 2.25  2000/08/17 10:17:34  dkr
-# make deps done
-#
-# Revision 2.24  2000/07/28 09:16:24  mab
-# make deps done
-#
-# Revision 2.23  2000/07/11 15:56:28  dkr
-# make deps done
+# Revision 2.26  2000/11/02 14:24:14  dkr
+# header compressed
 #
 # Revision 2.22  2000/07/11 15:51:50  dkr
 # psi-opt.o removed
-#
-# Revision 2.21  2000/07/05 14:23:47  dkr
-# make deps done
-#
-# Revision 2.20  2000/06/13 13:46:21  dkr
-# deps done
 #
 # Revision 2.19  2000/06/08 11:06:47  mab
 # added pad_info.o
@@ -24,59 +13,23 @@
 # Revision 2.18  2000/05/31 14:03:20  mab
 # lines for pad*.o completed
 #
-# Revision 2.17  2000/05/29 14:36:41  dkr
-# make deps done
-#
-# Revision 2.16  2000/05/29 14:35:18  dkr
-# make deps done
-#
 # Revision 2.15  2000/05/26 14:23:59  sbs
 # lines for pad*.o added
 # pad.o added as target
 #
-# Revision 2.14  2000/03/31 09:33:45  jhs
-# make deps done
-#
-# Revision 2.13  2000/03/01 14:52:38  dkr
-# make deps done
-#
-# Revision 2.12  2000/01/21 17:02:09  dkr
-# make deps done
-#
 # Revision 2.11  2000/01/21 12:03:22  dkr
 # directory tree added
-#
-# Revision 2.10  2000/01/17 18:41:06  cg
-# make deps done
 #
 # Revision 2.9  2000/01/17 18:37:49  cg
 # Handling of target platform unified: One of the following
 # is always defined:
 # SAC_FOR_SOLARIS_SPARC, SAC_FOR_LINUX_X86, OR SAC_FOR_OSF_ALPHA.
 #
-# Revision 2.7  1999/06/01 15:17:07  dkr
-# make deps done
-#
-# Revision 2.6  1999/05/12 15:13:27  cg
-# make deps done
-#
 # Revision 2.5  1999/05/10 10:48:37  bs
 # added compilation of wl_access_analyze.c
 #
-# Revision 2.4  1999/03/11 18:18:25  dkr
-# make deps done
-#
 # Revision 2.3  1999/02/26 14:24:48  dkr
 # include path changed
-#
-# Revision 2.2  1999/02/26 14:17:43  dkr
-# make deps done
-#
-# Revision 2.1  1999/02/23 12:43:10  sacbase
-# new release made
-#
-# Revision 1.21  1999/02/09 20:04:24  dkr
-# make deps done
 #
 # Revision 1.20  1999/01/15 15:29:01  cg
 # added compilation of file tile_size_inference.c
@@ -84,34 +37,19 @@
 # Revision 1.19  1998/03/04 00:11:05  dkr
 # 'clean' now deletes the subdir .sb, too
 #
-# Revision 1.17  1997/11/20 15:02:11  dkr
-# make deps done
-#
 # Revision 1.16  1997/11/12 15:59:49  sbs
 # CC+CCFLAGS handling changed.
 # Now, it suffices to preset CC=cc if the SUN-compiler isdesired
 # Otherwise, gcc is set with -Wall and -ansi
 #
-# Revision 1.15  1997/11/11 16:49:32  sbs
-# make deps done
-#
 # Revision 1.11  1996/07/18  12:23:42  sbs
 # ArrayElimination.o included in clean-line
-#
-# Revision 1.10  1996/02/16  09:46:57  sbs
-# make deps done
 #
 # Revision 1.8  1996/01/17  14:19:52  asi
 # added ../modules to INCS
 #
-# Revision 1.7  1995/12/15  10:41:13  cg
-# make deps done
-#
 # Revision 1.4  1995/07/24  11:54:09  asi
 # added array elimination
-#
-# Revision 1.3  1995/07/14  08:33:01  sbs
-# make deps done
 #
 # Revision 1.1  1995/06/02  10:09:27  sbs
 # Initial revision
@@ -238,8 +176,8 @@ pad.o: /usr/include/string.h /usr/include/stdlib.h ../global/globals.h
 pad.o: ../tree/traverse.h ../tree/free.h ../global/my_debug.h
 pad.o: /usr/include/malloc.h /usr/include/sys/types.h
 pad.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-pad.o: ../global/internal_lib.h ../modules/filemgr.h pad.h pad_info.h
-pad.o: pad_collect.h pad_infer.h pad_transform.h
+pad.o: ../global/internal_lib.h ../modules/filemgr.h ../global/resource.h
+pad.o: pad.h pad_info.h pad_collect.h pad_infer.h pad_transform.h
 pad_collect.o: ../../inc/dbug.h /usr/include/stdio.h
 pad_collect.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 pad_collect.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
@@ -262,7 +200,8 @@ pad_infer.o: ../global/my_debug.h /usr/include/malloc.h
 pad_infer.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
 pad_infer.o: /usr/include/sys/int_types.h ../global/internal_lib.h
 pad_infer.o: ../tree/DupTree.h ../tree/LookUpTable.h ../global/resource.h
-pad_infer.o: pad_infer.h pad_info.h pad.h ../tree/type_info.mac
+pad_infer.o: ../print/convert.h pad_infer.h pad_info.h pad.h
+pad_infer.o: ../tree/type_info.mac
 pad_info.o: ../../inc/dbug.h /usr/include/stdio.h
 pad_info.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 pad_info.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
@@ -273,7 +212,7 @@ pad_info.o: ../tree/free.h ../global/my_debug.h /usr/include/malloc.h
 pad_info.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
 pad_info.o: /usr/include/sys/int_types.h ../global/internal_lib.h
 pad_info.o: ../tree/DupTree.h ../tree/LookUpTable.h ../optimize/optimize.h
-pad_info.o: pad_info.h pad.h ../tree/type_info.mac
+pad_info.o: ../print/convert.h pad_info.h pad.h
 pad_transform.o: ../../inc/dbug.h /usr/include/stdio.h
 pad_transform.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 pad_transform.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
@@ -299,7 +238,7 @@ tile_size_inference.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
 tile_size_inference.o: /usr/include/sys/int_types.h ../global/internal_lib.h
 tile_size_inference.o: ../global/resource.h ../tree/DupTree.h
 tile_size_inference.o: ../tree/LookUpTable.h ../print/print.h ../tree/tree.h
-tile_size_inference.o: tile_size_inference.h ../tree/type_info.mac
+tile_size_inference.o: tile_size_inference.h
 wl_access_analyze.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 wl_access_analyze.o: /usr/include/sys/isa_defs.h ../../inc/dbug.h
 wl_access_analyze.o: /usr/include/stdio.h /usr/include/sys/va_list.h

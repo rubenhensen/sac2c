@@ -1,5 +1,9 @@
 #
+#
 # $Log$
+# Revision 2.20  2000/11/02 14:21:47  dkr
+# header compressed
+#
 # Revision 2.19  2000/01/17 18:37:49  cg
 # Handling of target platform unified: One of the following
 # is always defined:
@@ -8,14 +12,8 @@
 # Revision 2.18  2000/01/17 16:25:58  cg
 # New handling of heap manager library in new directory.
 #
-# Revision 2.17  1999/12/13 11:27:07  dkr
-# *** empty log message ***
-#
 # Revision 2.16  1999/07/16 09:45:19  cg
 # Added -libsac variant for heap management diagnostics.
-#
-# Revision 2.15  1999/07/09 11:39:00  cg
-# make deps done
 #
 # Revision 2.14  1999/07/08 12:34:12  cg
 # Complete implementation of libsac is now moved to new directory
@@ -33,9 +31,6 @@
 # Revision 2.11  1999/06/02 16:55:39  dkr
 # path to main_args.o is now correct
 #
-# Revision 2.10  1999/06/01 15:17:09  dkr
-# make deps done
-#
 # Revision 2.8  1999/05/20 14:13:44  cg
 # Compilation of CacheSimAnalyser streamlined:
 # it is now linked with the SAC runtime library.
@@ -49,10 +44,6 @@
 # Revision 2.4  1999/03/19 11:09:04  her
 # new OBJS (libsac_cachesim_access_detailed.o) added
 # new targets (CacheSimTest.o, CacheSimTest) added
-# make deps done
-#
-# Revision 2.1  1999/02/23 12:43:33  sacbase
-# new release made
 #
 # Revision 1.14  1999/01/14 13:16:19  sacbase
 # clean: rm sac2crc    added
@@ -83,7 +74,6 @@
 #
 # Revision 1.1  1998/03/19 16:32:50  cg
 # Initial revision
-#
 #
 # 
 

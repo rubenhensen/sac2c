@@ -1,19 +1,11 @@
 #
-# $Log$
-# Revision 2.22  2000/08/17 10:17:29  dkr
-# make deps done
 #
-# Revision 2.21  2000/07/28 09:16:20  mab
-# make deps done
+# $Log$
+# Revision 2.23  2000/11/02 14:24:44  dkr
+# header compressed
 #
 # Revision 2.20  2000/07/24 14:46:21  dkr
 # suffix rule for .c.o added
-#
-# Revision 2.19  2000/07/11 15:56:20  dkr
-# make deps done
-#
-# Revision 2.18  2000/07/05 14:23:41  dkr
-# make deps done
 #
 # Revision 2.17  2000/07/05 11:41:49  nmw
 # moved cinterface files from print to c-interface
@@ -24,49 +16,13 @@
 # Revision 2.15  2000/06/21 12:12:24  nmw
 # make deps, includes modified
 #
-# Revision 2.14  2000/06/13 13:46:07  dkr
-# deps done
-#
 # Revision 2.13  2000/06/08 12:47:38  nmw
 # print_interface added
-#
-# Revision 2.12  2000/05/29 14:36:36  dkr
-# make deps done
-#
-# Revision 2.11  2000/05/29 14:35:10  dkr
-# make deps done
-#
-# Revision 2.10  2000/03/31 09:33:42  jhs
-# make deps done
-#
-# Revision 2.9  2000/01/24 17:58:29  dkr
-# make deps done
-#
-# Revision 2.8  2000/01/21 17:02:04  dkr
-# make deps done
-#
-# Revision 2.7  2000/01/21 12:04:08  dkr
-# *** empty log message ***
 #
 # Revision 2.6  2000/01/17 18:37:49  cg
 # Handling of target platform unified: One of the following
 # is always defined:
 # SAC_FOR_SOLARIS_SPARC, SAC_FOR_LINUX_X86, OR SAC_FOR_OSF_ALPHA.
-#
-# Revision 2.4  1999/05/12 15:13:23  cg
-# make deps done
-#
-# Revision 2.3  1999/03/11 18:18:20  dkr
-# make deps done
-#
-# Revision 2.2  1999/02/26 14:17:37  dkr
-# make deps done
-#
-# Revision 2.1  1999/02/23 12:40:19  sacbase
-# new release made
-#
-# Revision 1.31  1999/02/09 20:04:19  dkr
-# make deps done
 #
 # Revision 1.29  1998/06/18 13:28:22  cg
 # added ../concurrent as include directory
@@ -77,37 +33,22 @@
 # Revision 1.23  1998/03/04 00:10:33  dkr
 # 'clean' now deletes the subdir .sb, too
 #
-# Revision 1.22  1997/11/20 15:02:04  dkr
-# make deps done
-#
 # Revision 1.21  1997/11/12 15:59:49  sbs
 # CC+CCFLAGS handling changed.
 # Now, it suffices to preset CC=cc if the SUN-compiler isdesired
 # Otherwise, gcc is set with -Wall and -ansi
 #
-# Revision 1.20  1997/11/11 16:49:23  sbs
-# make deps done
-#
 # Revision 1.17  1996/07/18  12:22:08  sbs
 # convert.o included in clean-line
 #
-# Revision 1.16  1996/02/16  09:46:46  sbs
-# make deps done
-#
 # Revision 1.15  1996/01/05  12:31:29  cg
 # Now, we look even in ../modules for include files
-#
-# Revision 1.14  1996/01/04  18:11:06  cg
-# make deps done
 #
 # Revision 1.8  1995/04/03  14:02:12  sbs
 # ../compile inserted for icm.data-access
 #
 # Revision 1.7  1995/02/28  18:27:34  asi
 # added optimize-dir to include-path
-#
-# Revision 1.6  1995/01/11  17:45:12  hw
-# make deps done
 #
 # Revision 1.5  1994/12/05  11:16:46  hw
 # added rule for conver.o

@@ -1,31 +1,11 @@
 #
+#
 # $Log$
-# Revision 2.18  2000/10/12 15:48:20  dkr
-# make deps done
-#
-# Revision 2.17  2000/08/17 10:17:32  dkr
-# make deps done
-#
-# Revision 2.16  2000/07/28 09:16:22  mab
-# make deps done
+# Revision 2.19  2000/11/02 14:23:46  dkr
+# header compressed
 #
 # Revision 2.15  2000/07/24 14:44:33  dkr
 # suffix rule for .c.o added
-#
-# Revision 2.14  2000/07/11 15:56:25  dkr
-# make deps done
-#
-# Revision 2.13  2000/05/29 14:36:39  dkr
-# make deps done
-#
-# Revision 2.12  2000/05/29 14:35:15  dkr
-# make deps done
-#
-# Revision 2.11  2000/03/31 09:33:44  jhs
-# make deps done
-#
-# Revision 2.10  2000/03/01 14:52:36  dkr
-# make deps done
 #
 # Revision 2.9  2000/01/21 14:45:28  dkr
 # directory tree added
@@ -35,88 +15,13 @@
 # is always defined:
 # SAC_FOR_SOLARIS_SPARC, SAC_FOR_LINUX_X86, OR SAC_FOR_OSF_ALPHA.
 #
-# Revision 2.7  1999/12/13 11:27:29  dkr
-# *** empty log message ***
-#
-# Revision 2.6  1999/07/09 11:38:49  cg
-# make deps done
-#
-# Revision 2.5  1999/06/01 15:17:05  dkr
-# make deps done
-#
-# Revision 2.4  1999/05/12 15:13:26  cg
-# make deps done
-#
-# Revision 2.3  1999/03/11 18:18:23  dkr
-# make deps done
-#
-# Revision 2.2  1999/02/26 14:17:40  dkr
-# make deps done
-#
-# Revision 2.1  1999/02/23 12:41:56  sacbase
-# new release made
-#
-# Revision 1.36  1999/02/09 20:04:22  dkr
-# make deps done
-#
-# Revision 1.35  1998/11/04 18:22:35  dkr
-# make deps done
-#
-# Revision 1.34  1998/07/03 14:34:10  cg
-# added ../compile as include directory
-#
-# Revision 1.33  1998/06/23 11:42:11  cg
-# make deps done
-#
-# Revision 1.32  1998/04/26 14:42:14  dkr
-# make deps done
-#
-# Revision 1.31  1998/04/09 23:47:32  dkr
-# make deps done
-#
-# Revision 1.30  1998/04/09 21:27:06  dkr
-# make deps done
-#
-# Revision 1.29  1998/03/13 12:55:30  dkr
-# make deps done
-#
 # Revision 1.28  1998/03/04 00:10:55  dkr
 # 'clean' now deletes the subdir .sb, too
-#
-# Revision 1.27  1998/03/03 22:08:59  dkr
-# make deps done
-#
-# Revision 1.26  1998/02/05 17:08:41  dkr
-# make deps done
-#
-# Revision 1.25  1997/11/20 15:02:08  dkr
-# make deps done
 #
 # Revision 1.24  1997/11/12 15:59:49  sbs
 # CC+CCFLAGS handling changed.
 # Now, it suffices to preset CC=cc if the SUN-compiler isdesired
 # Otherwise, gcc is set with -Wall and -ansi
-#
-# Revision 1.23  1997/11/11 16:49:28  sbs
-# make deps done
-#
-# Revision 1.22  1997/10/29 14:40:48  srs
-# make deps done
-#
-# Revision 1.21  1997/09/23 12:59:42  dkr
-# make deps done
-#
-# Revision 1.20  1997/08/05 11:32:28  sbs
-# make deps done
-#
-# Revision 1.19  1997/04/25 12:04:09  sbs
-# make deps done
-#
-# Revision 1.18  1996/01/18  13:05:42  asi
-# make deps done
-#
-# Revision 1.17  1996/01/04  18:11:09  cg
-# make deps done
 #
 # Revision 1.16  1996/01/02  16:01:02  cg
 # added compilation of cccall.c
@@ -124,20 +29,11 @@
 # Revision 1.15  1995/12/29  10:38:56  cg
 # added compilation of readsib.c
 #
-# Revision 1.14  1995/12/15  10:41:11  cg
-# make deps done
-#
-# Revision 1.13  1995/10/26  14:48:19  cg
-# make deps done
-#
 # Revision 1.12  1995/10/22  17:40:38  cg
-# make deps done and a bloody bug fixed.
+# a bloody bug fixed.
 #
 # Revision 1.11  1995/10/20  09:28:12  cg
 # added analysis.c
-#
-# Revision 1.10  1995/10/08  11:29:54  sbs
-# make deps done
 #
 # Revision 1.9  1995/10/05  16:14:11  cg
 # now implicittypes.o will be removed by make clean
@@ -165,7 +61,6 @@
 #
 # Revision 1.1  1994/12/11  17:33:27  sbs
 # Initial revision
-#
 #
 #
 
@@ -249,8 +144,9 @@ implicittypes.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 implicittypes.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 implicittypes.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
 implicittypes.o: /usr/include/string.h /usr/include/stdlib.h
-implicittypes.o: ../global/globals.h ../print/convert.h ../tree/free.h
-implicittypes.o: ../../inc/dbug.h ../global/my_debug.h /usr/include/malloc.h
+implicittypes.o: ../global/globals.h ../tree/DupTree.h ../tree/LookUpTable.h
+implicittypes.o: ../print/convert.h ../tree/free.h ../../inc/dbug.h
+implicittypes.o: ../global/my_debug.h /usr/include/malloc.h
 implicittypes.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
 implicittypes.o: /usr/include/sys/int_types.h ../global/internal_lib.h
 implicittypes.o: ../tree/traverse.h
