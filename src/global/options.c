@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.58  2004/03/02 16:49:15  mwe
+ * support for cvp added
+ *
  * Revision 3.57  2004/02/25 13:02:15  khf
  * added option -khf
  *
@@ -619,6 +622,9 @@ AnalyseCommandline (int argc, char *argv[])
         ARG_CHOICE ("sp", optimize |= OPT_SP);
         ARG_CHOICE ("SP", optimize |= OPT_SP);
 
+        ARG_CHOICE ("cvp", optimize |= OPT_CVP);
+        ARG_CHOICE ("CVP", optimize |= OPT_CVP);
+
         ARG_CHOICE ("pab", print_after_break = TRUE);
         ARG_CHOICE ("PAB", print_after_break = TRUE);
 
@@ -726,6 +732,9 @@ AnalyseCommandline (int argc, char *argv[])
 
         ARG_CHOICE ("sp", optimize |= OPT_SP);
         ARG_CHOICE ("SP", optimize |= OPT_SP);
+
+        ARG_CHOICE ("cvp", optimize |= OPT_CVP);
+        ARG_CHOICE ("CVP", optimize |= OPT_CVP);
 
         ARG_CHOICE ("pab", print_after_break = TRUE);
         ARG_CHOICE ("PAB", print_after_break = TRUE);
@@ -1025,6 +1034,9 @@ AnalyseCommandline (int argc, char *argv[])
         ARG_CHOICE ("sp", optimize &= ~OPT_SP);
         ARG_CHOICE ("SP", optimize &= ~OPT_SP);
 
+        ARG_CHOICE ("cvp", optimize &= ~OPT_CVP);
+        ARG_CHOICE ("CVP", optimize &= ~OPT_CVP);
+
         ARG_CHOICE ("pab", print_after_break = FALSE);
         ARG_CHOICE ("PAB", print_after_break = FALSE);
 
@@ -1132,6 +1144,9 @@ AnalyseCommandline (int argc, char *argv[])
 
         ARG_CHOICE ("sp", optimize &= ~OPT_SP);
         ARG_CHOICE ("SP", optimize &= ~OPT_SP);
+
+        ARG_CHOICE ("cvp", optimize &= ~OPT_CVP);
+        ARG_CHOICE ("CVP", optimize &= ~OPT_CVP);
 
         ARG_CHOICE ("pab", print_after_break = FALSE);
         ARG_CHOICE ("PAB", print_after_break = FALSE);
