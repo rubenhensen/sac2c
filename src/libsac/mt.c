@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2003/09/17 17:22:59  dkr
+ * a typo in trace message corrected
+ *
  * Revision 3.13  2003/09/15 15:03:48  dkr
  * sac_misc.h included
  *
@@ -430,7 +433,7 @@ SAC_MT_Setup (int cache_line_max, int barrier_offset, int num_schedulers)
 
     SAC_TR_PRINT (("Barrier base address is %p", SAC_MT_barrier));
 
-    SAC_TR_PRINT (("Initialzing Tasklocks."));
+    SAC_TR_PRINT (("Initializing Tasklocks."));
 
     for (n = 0; n < num_schedulers; n++) {
         pthread_mutex_init (&(SAC_MT_TS_TASKLOCK (n)), NULL);
