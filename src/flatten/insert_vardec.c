@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2002/02/22 14:07:45  sbs
+ * access macros to INFO nodes moved into tree_basic
+ *
  * Revision 1.3  2002/02/22 12:30:46  sbs
  * insvd_tab moved into traverse.c
  *
@@ -42,9 +45,6 @@
 #include "DupTree.h"
 
 #include "insert_vardec.h"
-
-#define INFO_INSVD_VARDECS(n) (n->node[0])
-#define INFO_INSVD_ARGS(n) (n->node[1])
 
 /******************************************************************************
  *
