@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.5  1999/04/08 12:44:05  bs
+ * Access macro ID_INDEX isn't needed any longer.
+ * The access macro INFO_TSI_TMPACCESS was inserted instead.
+ *
  * Revision 2.4  1999/03/24 19:56:03  bs
  * Access macro ID_INDEX added.
  *
@@ -287,6 +291,7 @@ extern char *prf_name_str[];
 #define SHAPES_DIM(s) (s->dim)
 #define SHAPES_SHPSEG(s) (s->shpseg)
 #define SHAPES_SELEMS(s) (s->shpseg->shp)
+#define SHAPES_SNEXT(s) (s->shpseg->next)
 
 /*--------------------------------------------------------------------------*/
 
@@ -742,11 +747,10 @@ extern node *MakeTypedef (char *name, char *mod, types *type, statustype attrib,
 #define TYPEDEF_STATUS(n) (n->info.types->status)
 #define TYPEDEF_IMPL(n) (n->info.types->next)
 #define TYPEDEF_NEXT(n) (n->node[0])
+#define TYPEDEC_DEF(n) (n->node[1])
 #define TYPEDEF_PRAGMA(n) (n->node[2])
 #define TYPEDEF_COPYFUN(n) ((char *)(n->node[3]))
 #define TYPEDEF_FREEFUN(n) ((char *)(n->node[4]))
-
-#define TYPEDEC_DEF(n) (n->node[1])
 
 /*--------------------------------------------------------------------------*/
 
@@ -817,18 +821,17 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
 #define OBJDEF_MOD(n) (n->info.types->id_mod)
 #define OBJDEF_LINKMOD(n) (n->info.types->id_cmod)
 #define OBJDEF_TYPE(n) (n->info.types)
-#define OBJDEF_EXPR(n) (n->node[1])
-#define OBJDEF_NEXT(n) (n->node[0])
 #define OBJDEF_STATUS(n) (n->info.types->status)
 #define OBJDEF_ATTRIB(n) (n->info.types->attrib)
 #define OBJDEF_VARNAME(n) ((char *)(n->info2))
-#define OBJDEF_ARG(n) (n->node[3])
-#define OBJDEF_PRAGMA(n) (n->node[4])
-#define OBJDEF_ICM(n) (n->node[3])
-#define OBJDEF_NEEDOBJS(n) ((nodelist *)(n->node[5]))
-#define OBJDEF_SIB(n) (n->node[3])
-
+#define OBJDEF_NEXT(n) (n->node[0])
+#define OBJDEF_EXPR(n) (n->node[1])
 #define OBJDEC_DEF(n) (n->node[2])
+#define OBJDEF_ARG(n) (n->node[3])
+#define OBJDEF_ICM(n) (n->node[3])
+#define OBJDEF_SIB(n) (n->node[3])
+#define OBJDEF_PRAGMA(n) (n->node[4])
+#define OBJDEF_NEEDOBJS(n) ((nodelist *)(n->node[5]))
 
 /*--------------------------------------------------------------------------*/
 
@@ -909,25 +912,24 @@ extern node *MakeFundef (char *name, char *mod, types *types, node *args, node *
 #define FUNDEF_NAME(n) (n->info.types->id)
 #define FUNDEF_MOD(n) (n->info.types->id_mod)
 #define FUNDEF_LINKMOD(n) (n->info.types->id_cmod)
-#define FUNDEF_PRAGMA(n) (n->node[5])
+#define FUNDEF_STATUS(n) (n->info.types->status)
+#define FUNDEF_ATTRIB(n) (n->info.types->attrib)
 #define FUNDEF_TYPES(n) (n->info.types)
 #define FUNDEF_BODY(n) (n->node[0])
 #define FUNDEF_ARGS(n) (n->node[2])
 #define FUNDEF_NEXT(n) (n->node[1])
 #define FUNDEF_RETURN(n) (n->node[3])
 #define FUNDEF_SIB(n) (n->node[3])
-#define FUNDEF_NEEDOBJS(n) ((nodelist *)(n->node[4]))
 #define FUNDEF_ICM(n) (n->node[3])
+#define FUNDEC_DEF(n) (n->node[3])
+#define FUNDEF_NEEDOBJS(n) ((nodelist *)(n->node[4]))
+#define FUNDEF_LIFTEDFROM(n) (n->node[4])
+#define FUNDEF_PRAGMA(n) (n->node[5])
 #define FUNDEF_VARNO(n) (n->varno)
 #define FUNDEF_MASK(n, x) (n->mask[x])
-#define FUNDEF_STATUS(n) (n->info.types->status)
-#define FUNDEF_ATTRIB(n) (n->info.types->attrib)
 #define FUNDEF_INLINE(n) (n->flag)
 #define FUNDEF_INLREC(n) (n->refcnt)
 #define FUNDEF_DFM_BASE(n) (n->dfmask[0])
-#define FUNDEF_LIFTEDFROM(n) (n->node[4])
-
-#define FUNDEC_DEF(n) (n->node[3])
 
 /*--------------------------------------------------------------------------*/
 
@@ -982,9 +984,9 @@ extern node *MakeArg (char *name, types *type, statustype status, statustype att
 #define ARG_TYPE(n) (n->info.types)
 #define ARG_STATUS(n) (n->info.types->status)
 #define ARG_ATTRIB(n) (n->info.types->attrib)
-#define ARG_NEXT(n) (n->node[0])
 #define ARG_VARNO(n) (n->varno)
 #define ARG_REFCNT(n) (n->refcnt)
+#define ARG_NEXT(n) (n->node[0])
 #define ARG_TYPESTRING(n) ((char *)(n->node[1]))
 #define ARG_OBJDEF(n) (n->node[2])
 #define ARG_ACTCHN(n) (n->node[3])
@@ -1023,12 +1025,12 @@ extern node *MakeArg (char *name, types *type, statustype status, statustype att
 
 extern node *MakeBlock (node *instr, node *vardec);
 
+#define BLOCK_VARNO(n) (n->varno)
+#define BLOCK_MASK(n, x) (n->mask[x])
 #define BLOCK_INSTR(n) (n->node[0])
 #define BLOCK_VARDEC(n) (n->node[1])
-#define BLOCK_MASK(n, x) (n->mask[x])
 #define BLOCK_NEEDFUNS(n) ((nodelist *)(n->node[2]))
 #define BLOCK_NEEDTYPES(n) ((nodelist *)(n->node[3]))
-#define BLOCK_VARNO(n) (n->varno)
 #define BLOCK_SPMD_PROLOG_ICMS(n) (n->node[4])
 
 /*--------------------------------------------------------------------------*/
@@ -1081,15 +1083,15 @@ extern node *MakeVardec (char *name, types *type, node *next);
 
 #define VARDEC_NAME(n) (n->info.types->id)
 #define VARDEC_TYPE(n) (n->info.types)
-#define VARDEC_NEXT(n) (n->node[0])
-#define VARDEC_VARNO(n) (n->varno)
-#define VARDEC_REFCNT(n) (n->refcnt)
 #define VARDEC_STATUS(n) (n->info.types->status)
 #define VARDEC_ATTRIB(n) (n->info.types->attrib)
+#define VARDEC_VARNO(n) (n->varno)
+#define VARDEC_REFCNT(n) (n->refcnt)
+#define VARDEC_FLAG(n) (n->flag)
+#define VARDEC_NEXT(n) (n->node[0])
 #define VARDEC_TYPEDEF(n) (n->node[1])
 #define VARDEC_ACTCHN(n) (n->node[2])
 #define VARDEC_COLCHN(n) (n->node[3])
-#define VARDEC_FLAG(n) (n->flag)
 #define VARDEC_OBJDEF(n) (n->node[4])
 
 /*--------------------------------------------------------------------------*/
@@ -1263,10 +1265,8 @@ extern node *MakeDo (node *cond, node *body);
 
 #define DO_COND(n) (n->node[0])
 #define DO_BODY(n) (n->node[1])
-
 #define DO_USEVARS(n) ((ids *)n->node[2])
 #define DO_DEFVARS(n) ((ids *)n->node[3])
-
 #define DO_MASK(n, x) (n->mask[x])
 
 /*--------------------------------------------------------------------------*/
@@ -1299,10 +1299,8 @@ extern node *While2Do (node *while_node);
 
 #define WHILE_COND(n) (n->node[0])
 #define WHILE_BODY(n) (n->node[1])
-
 #define WHILE_USEVARS(n) ((ids *)n->node[2])
 #define WHILE_DEFVARS(n) ((ids *)n->node[3])
-
 #define WHILE_MASK(n, x) (n->mask[x])
 
 /*--------------------------------------------------------------------------*/
@@ -1324,6 +1322,7 @@ extern node *MakeAnnotate (int tag, int funnumber, int funapnumber);
 #define INL_FUN 0x0004
 #define LIB_FUN 0x0008
 #define OVRLD_FUN 0x0010
+
 #define ANNOTATE_TAG(n) (n->flag)
 #define ANNOTATE_FUNNUMBER(n) (n->counter)
 #define ANNOTATE_FUNAPNUMBER(n) (n->varno)
@@ -1388,8 +1387,8 @@ extern node *MakeWith (node *gen, node *body);
 
 #define WITH_GEN(n) (n->node[0])
 #define WITH_OPERATOR(n) (n->node[1])
-#define WITH_MASK(n, x) (n->mask[x])
 #define WITH_USEVARS(n) ((ids *)n->node[2])
+#define WITH_MASK(n, x) (n->mask[x])
 
 /*--------------------------------------------------------------------------*/
 
@@ -1586,15 +1585,15 @@ extern node *MakeExprs (node *expr, node *next);
 
 extern node *MakeArray (node *aelems);
 
-#define ARRAY_AELEMS(n) (n->node[0])
 #define ARRAY_TYPE(n) (n->info.types)
+#define ARRAY_AELEMS(n) (n->node[0])
 #define ARRAY_STRING(n) ((char *)(n->node[1]))
 #define ARRAY_INTVEC(n) ((int *)(n->node[2]))
 #define ARRAY_FLOATVEC(n) ((float *)(n->node[3]))
 #define ARRAY_DOUBLEVEC(n) ((double *)(n->node[4]))
 #define ARRAY_CHARVEC(n) ((char *)(n->node[5]))
 #define ARRAY_VECLEN(n) (n->counter)
-#define ARRAY_VECTYPE(n) ((simpletype)n->varno)
+#define ARRAY_VECTYPE(n) ((simpletype) (n->varno))
 
 /*--------------------------------------------------------------------------*/
 
@@ -1616,7 +1615,7 @@ extern node *MakeArray (node *aelems);
 extern node *MakeVinfo (useflag flag, types *type, node *next);
 
 #define VINFO_FLAG(n) (n->info.use)
-#define VINFO_TYPE(n) ((types *)(n->node[1]))
+#define VINFO_TYPE(n) ((types *)n->node[1])
 #define VINFO_NEXT(n) (n->node[0])
 #define VINFO_VARDEC(n) (n->node[2])
 
@@ -1642,7 +1641,6 @@ extern node *MakeVinfo (useflag flag, types *type, node *next);
  ***    int         MAKEUNIQUE                  (precompile -> compile -> )
  ***    node*       DEF                         (Unroll !, Unswitch !)
  ***    node*       WL          (O)             (wli -> wlf !!)
- ***    node*       INDEX       (O)             (tile size inference -> )
  ***    node*       INTVEC      (O) (N_array)   (flatten -> )
  ***    int         VECLEN      (O) (N_array)   (flatten -> )
  ***
@@ -1660,12 +1658,6 @@ extern node *MakeVinfo (useflag flag, types *type, node *next);
  ***    distinguished in many places of the code. So for example
  ***    VARDEC_NAME and ARG_NAME should both be substitutions for
  ***    node->info.types->id
- ***
- ***  remark:
- ***    INDEX is a flag used for the status of a flattened variable. it is set to 0,
- ***    if the variable is not touched by the index vector of a with loop. it is set
- ***    to 1, if it is the index vector and it is set to 2 if it is the index vector
- ***    added with a constant integer vector.
  ***
  ***  remark:
  ***    INTVEC, VECTYPE and VECLEN now are used for propagation of constant
@@ -1709,10 +1701,9 @@ extern node *MakeId2 (ids *ids_node);
 #define ID_STATUS(n) (n->info.ids->status)
 #define ID_REFCNT(n) (n->refcnt)
 #define ID_MAKEUNIQUE(n) (n->flag)
-#define ID_WL(n) (n->node[0])
-#define ID_INDEX(n) (n->varno)
-#define ID_INTVEC(n) ((int *)(n->node[1]))
 #define ID_VECLEN(n) (n->counter)
+#define ID_WL(n) (n->node[0])
+#define ID_INTVEC(n) ((int *)n->node[1])
 
 /*--------------------------------------------------------------------------*/
 
@@ -1844,6 +1835,7 @@ extern node *MakeEmpty ();
 extern node *MakePost (int incdec, char *id);
 
 #define POST_INCDEC(n) ((n->node[0]->nodetype == N_dec) ? 0 : 1)
+
 #define POST_ID(n) (n->info.id)
 #define POST_DECL(n) (n->node[1])
 #define POST_REFCNT(n) (n->info.ids->refcnt)
@@ -1900,8 +1892,8 @@ extern node *MakePre (nodetype incdec, char *id);
 
 #define PRE_INCDEC(n) ((n->node[0]->nodetype == N_dec) ? 0 : 1)
 #define PRE_ID(n) (n->info.id)
-#define PRE_DECL(n) (n->node[1])
 #define PRE_REFCNT(n) (n->info.ids->refcnt)
+#define PRE_DECL(n) (n->node[1])
 
 /*
  * Attention : The way incrementations and decrementation are represented
@@ -1937,9 +1929,9 @@ extern node *MakePre (nodetype incdec, char *id);
 extern node *MakeIcm (char *name, node *args, node *next);
 
 #define ICM_NAME(n) (n->info.fun_name.id)
+#define ICM_INDENT(n) (n->flag)
 #define ICM_ARGS(n) (n->node[0])
 #define ICM_NEXT(n) (n->node[1])
-#define ICM_INDENT(n) (n->flag)
 
 /*--------------------------------------------------------------------------*/
 
@@ -1994,6 +1986,13 @@ extern node *MakeIcm (char *name, node *args, node *next);
 extern node *MakePragma ();
 
 #define PRAGMA_LINKNAME(n) (n->info.id)
+#define PRAGMA_NUMPARAMS(n) (n->flag)
+#define PRAGMA_INITFUN(n) ((char *)(n->node[3]))
+#define PRAGMA_LINKMOD(n) ((char *)(n->node[2]))
+#define PRAGMA_NEEDTYPES(n) ((ids *)(n->node[1]))
+#define PRAGMA_NEEDFUNS(n) (n->node[0])
+#define PRAGMA_WLCOMP_APS(n) (n->node[0])
+
 #define PRAGMA_LINKSIGN(n) ((int *)(n->mask[0]))
 #define PRAGMA_LINKSIGNNUMS(n) ((nums *)(n->mask[0]))
 #define PRAGMA_REFCOUNTING(n) ((int *)(n->mask[1]))
@@ -2004,13 +2003,6 @@ extern node *MakePragma ();
 #define PRAGMA_TOUCH(n) ((ids *)(n->mask[4]))
 #define PRAGMA_COPYFUN(n) ((char *)(n->mask[5]))
 #define PRAGMA_FREEFUN(n) ((char *)(n->mask[6]))
-#define PRAGMA_INITFUN(n) ((char *)(n->node[3]))
-#define PRAGMA_LINKMOD(n) ((char *)(n->node[2]))
-#define PRAGMA_NEEDTYPES(n) ((ids *)(n->node[1]))
-#define PRAGMA_NEEDFUNS(n) (n->node[0])
-#define PRAGMA_NUMPARAMS(n) (n->flag)
-
-#define PRAGMA_WLCOMP_APS(n) (n->node[0])
 
 /*--------------------------------------------------------------------------*/
 
@@ -2148,8 +2140,8 @@ extern node *MakeInfo ();
 /* typecheck */
 #define INFO_TC_NEXTASSIGN(n) (n->node[1])
 /* WARN: node[2] already used */
-#define INFO_TC_CURRENTASSIGN(n) (n->node[4])
 #define INFO_TC_LASSIGN(n) (n->node[3])
+#define INFO_TC_CURRENTASSIGN(n) (n->node[4])
 #define INFO_TC_LHSVARS(n) (n->info.ids)
 
 /* writesib */
@@ -2178,25 +2170,26 @@ extern node *MakeInfo ();
 #define INFO_AE_TYPES(n) (n->node[1])
 
 /* compile */
+#define INFO_COMP_LASTIDS(n) (n->info.ids)
+#define INFO_COMP_CNTPARAM(n) (n->lineno)
+#define INFO_COMP_TYPETAB(n) ((types **)(n->info.types))
+#define INFO_COMP_FIRSTASSIGN(n) (n->node[0])
 #define INFO_COMP_LASTASSIGN(n) (n->node[0])
 #define INFO_COMP_LASTLET(n) (n->node[1])
-#define INFO_COMP_LASTIDS(n) (n->info.ids)
+#define INFO_COMP_ICMTAB(n) ((node **)(n->node[1]))
 #define INFO_COMP_FUNDEF(n) (n->node[2])
 #define INFO_COMP_VARDECS(n) (n->node[3])
 #define INFO_COMP_WITHBEGIN(n) (n->node[4])
 #define INFO_COMP_MODUL(n) (n->node[5])
-#define INFO_COMP_FIRSTASSIGN(n) (n->node[0])
-#define INFO_COMP_CNTPARAM(n) (n->lineno)
-#define INFO_COMP_ICMTAB(n) ((node **)(n->node[1]))
-#define INFO_COMP_TYPETAB(n) ((types **)(n->info.types))
 
 /* reuse */
-#define INFO_REUSE_FUNDEF(n) (n->node[0])
 #define INFO_REUSE_WL_IDS(n) (n->info.ids)
+#define INFO_REUSE_FUNDEF(n) (n->node[0])
 #define INFO_REUSE_IDX(n) ((ids *)(n->node[1]))
 #define INFO_REUSE_DEC_RC_IDS(n) ((ids *)(n->node[2]))
-#define INFO_REUSE_MASK(n) ((DFMmask_t)n->dfmask[0])
-#define INFO_REUSE_NEGMASK(n) ((DFMmask_t)n->dfmask[1])
+
+#define INFO_REUSE_MASK(n) ((DFMmask_t) (n->dfmask[0]))
+#define INFO_REUSE_NEGMASK(n) ((DFMmask_t) (n->dfmask[1]))
 
 /* optimize */
 #define INFO_MASK(n, x) (n->mask[x])
@@ -2228,8 +2221,8 @@ extern node *MakeInfo ();
 /* DCR */
 #define INFO_DCR_VARNO(n) (n->varno)
 #define INFO_DCR_TRAVTYPE(n) (n->flag)
-#define INFO_DCR_ACT(n) (n->mask[2])
 #define INFO_DCR_NEWACT(n) (n->lineno)
+#define INFO_DCR_ACT(n) (n->mask[2])
 
 /* Unrolling */
 #define INFO_UNR_ASSIGN(n) (n->node[0])
@@ -2245,13 +2238,15 @@ extern node *MakeInfo ();
 #define INFO_PRINT_NWITH2(n) (n->node[4])
 
 /* Tile Size Inference */
-#define INFO_TSI_ACCESS(n) ((access_t *)n->info2)
-#define INFO_TSI_INDEXVAR(n) (n->node[0])
-#define INFO_TSI_FEATURE(n) ((feature_t)n->lineno)
-#define INFO_TSI_WOTYPE(n) ((WithOpType)n->varno)
 #define INFO_TSI_LASTLETIDS(n) (n->info.ids)
+#define INFO_TSI_ACCESS(n) ((access_t *)(n->info2))
+#define INFO_TSI_FEATURE(n) ((feature_t) (n->lineno))
+#define INFO_TSI_WOTYPE(n) ((WithOpType) (n->varno))
 #define INFO_TSI_BELOWAP(n) (n->flag)
-#define INFO_TSI_WLLEVEL(n) ((shpseg *)n->node[1])
+#define INFO_TSI_WLLEVEL(n) (n->counter)
+#define INFO_TSI_INDEXVAR(n) (n->node[0])
+#define INFO_TSI_ACCESSVEC(n) ((shpseg *)(n->node[1]))
+#define INFO_TSI_TMPACCESS(n) ((access_t *)(n->node[2]))
 
 /*--------------------------------------------------------------------------*/
 
@@ -2299,7 +2294,6 @@ extern node *MakeSpmd (node *region);
 #define SPMD_LOCAL(n) ((DFMmask_t)n->dfmask[3])
 
 #define SPMD_FUNDEF(n) (n->node[1])
-
 #define SPMD_ICM_BEGIN(n) (n->node[2])
 #define SPMD_ICM_ALTSEQ(n) (n->node[3])
 #define SPMD_ICM_END(n) (n->node[4])
@@ -2341,16 +2335,15 @@ extern node *MakeSpmd (node *region);
 
 extern node *MakeSync (node *region, int first);
 
-#define SYNC_REGION(n) (n->node[0])
 #define SYNC_FIRST(n) (n->flag)
+#define SYNC_REGION(n) (n->node[0])
+#define SYNC_WITH_PTRS(n) (n->node[1])
+#define SYNC_SCHEDULING(n) ((SCHsched_t) (n->node[2]))
 
 #define SYNC_IN(n) ((DFMmask_t)n->dfmask[0])
 #define SYNC_INOUT(n) ((DFMmask_t)n->dfmask[1])
 #define SYNC_OUT(n) ((DFMmask_t)n->dfmask[2])
 #define SYNC_LOCAL(n) ((DFMmask_t)n->dfmask[3])
-
-#define SYNC_WITH_PTRS(n) (n->node[1])
-#define SYNC_SCHEDULING(n) ((SCHsched_t)n->node[2])
 
 /*--------------------------------------------------------------------------*/
 
@@ -2379,6 +2372,7 @@ extern node *MakeSync (node *region, int first);
  ***    int        FOLDABLE               (wlt -> wlf !!)
  ***    int        NO_CHANCE              (wlt -> wlf !!)
  ***    ids*       DEC_RC_IDS             (refcount -> wltransform )
+ ***    node*      TSI                    (tile size inference -> )
  ***
  ***    DFMmask_t  IN                     (refcount -> wltransform )
  ***    DFMmask_t  INOUT                  (refcount -> wltransform )
@@ -2392,6 +2386,8 @@ extern node *MakeNWith (node *part, node *code, node *withop);
 #define NWITH_CODE(n) (n->node[1])
 #define NWITH_WITHOP(n) (n->node[2])
 #define NWITH_PRAGMA(n) (n->node[3])
+#define NWITH_DEC_RC_IDS(n) ((ids *)(n->node[4]))
+#define NWITH_TSI(n) (n->node[5])
 
 #define NWITH_PARTS(n) (((wl_info *)(n->info2))->parts)
 #define NWITH_REFERENCED(n) (((wl_info *)(n->info2))->referenced)
@@ -2400,7 +2396,6 @@ extern node *MakeNWith (node *part, node *code, node *withop);
 #define NWITH_COMPLEX(n) (((wl_info *)(n->info2))->complex)
 #define NWITH_FOLDABLE(n) (((wl_info *)(n->info2))->foldable)
 #define NWITH_NO_CHANCE(n) (((wl_info *)(n->info2))->no_chance)
-#define NWITH_DEC_RC_IDS(n) ((ids *)(n->node[4]))
 
 #define NWITH_IN(n) ((DFMmask_t)n->dfmask[0])
 #define NWITH_INOUT(n) ((DFMmask_t)n->dfmask[1])
@@ -2436,8 +2431,8 @@ extern node *MakeNPart (node *withid, node *generator, node *code);
 #define NPART_GEN(n) (n->node[1])
 #define NPART_NEXT(n) (n->node[2])
 #define NPART_CODE(n) (n->node[3])
-#define NPART_MASK(n, x) (n->mask[x])
 #define NPART_COPY(n) (n->flag)
+#define NPART_MASK(n, x) (n->mask[x])
 
 /*--------------------------------------------------------------------------*/
 
@@ -2524,13 +2519,13 @@ extern node *MakeNGenerator (node *bound1, node *bound2, prf op1, prf op2, node 
 extern node *MakeNWithOp (WithOpType WithOp);
 
 #define NWITHOP_TYPE(n) (*((WithOpType *)(n)->info2))
+#define NWITHOP_FUN(n) (n->info.fun_name.id)
+#define NWITHOP_MOD(n) (n->info.fun_name.id_mod)
+#define NWITHOP_PRF(n) (n->info.prf)
 #define NWITHOP_SHAPE(n) (n->node[0])
 #define NWITHOP_ARRAY(n) (n->node[0])
 #define NWITHOP_NEUTRAL(n) (n->node[0])
 #define NWITHOP_EXPR(n) (n->node[1])
-#define NWITHOP_FUN(n) (n->info.fun_name.id)
-#define NWITHOP_MOD(n) (n->info.fun_name.id_mod)
-#define NWITHOP_PRF(n) (n->info.prf)
 #define NWITHOP_FUNDEF(n) (n->node[2])
 #define NWITHOP_MASK(n, x) (n->mask[x])
 
@@ -2584,16 +2579,14 @@ extern node *MakeNCode (node *block, node *expr);
 #define NCODE_CBLOCK(n) (n->node[0])
 #define NCODE_CEXPR(n) (n->node[1])
 #define NCODE_NEXT(n) (n->node[2])
+#define NCODE_INC_RC_IDS(n) ((ids *)(n->node[3]))
+#define NCODE_COPY(n) (n->node[4])
 #define NCODE_USED(n) (n->info.cint)
-
 #define NCODE_MASK(n, x) (n->mask[x])
 #define NCODE_NO(n) (n->refcnt)
 #define NCODE_FLAG(n) (n->flag)
-#define NCODE_INC_RC_IDS(n) ((ids *)(n->node[3]))
-#define NCODE_FEATURE(n) ((feature_t)n->varno)
-#define NCODE_ACCESS(n) ((access_t *)n->info2)
-
-#define NCODE_COPY(n) (n->node[4])
+#define NCODE_FEATURE(n) ((feature_t) (n->varno))
+#define NCODE_ACCESS(n) ((access_t *)(n->info2))
 
 /*--------------------------------------------------------------------------*/
 
@@ -2630,23 +2623,21 @@ extern node *MakeNCode (node *block, node *expr);
 
 extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int dims);
 
+#define NWITH2_DIMS(n) (n->flag)
+#define NWITH2_MT(n) (n->counter)
 #define NWITH2_WITHID(n) (n->node[0])
 #define NWITH2_SEGS(n) (n->node[1])
 #define NWITH2_CODE(n) (n->node[2])
 #define NWITH2_WITHOP(n) (n->node[3])
-#define NWITH2_DIMS(n) (n->flag)
+
+#define NWITH2_SCHEDULING(n) ((SCHsched_t) (n->node[4]))
+#define NWITH2_DEC_RC_IDS(n) ((ids *)(n->node[5]))
 
 #define NWITH2_IN(n) ((DFMmask_t)n->dfmask[0])
 #define NWITH2_INOUT(n) ((DFMmask_t)n->dfmask[1])
 #define NWITH2_OUT(n) ((DFMmask_t)n->dfmask[2])
 #define NWITH2_LOCAL(n) ((DFMmask_t)n->dfmask[3])
-#define NWITH2_MT(n) (n->counter)
-
-#define NWITH2_DEC_RC_IDS(n) ((ids *)(n->node[5]))
-
 #define NWITH2_REUSE(n) ((DFMmask_t)n->dfmask[4])
-
-#define NWITH2_SCHEDULING(n) ((SCHsched_t)n->node[4])
 
 /*--------------------------------------------------------------------------*/
 
