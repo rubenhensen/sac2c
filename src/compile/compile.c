@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.64  1995/10/08 11:22:36  sbs
+ * Revision 1.65  1995/11/01 07:25:06  sbs
+ * dirty hack: sharing info.types in forward declarations
+ * in Compile !
+ *
+ * Revision 1.64  1995/10/08  11:22:36  sbs
  * some bugs fixed
  *
  * Revision 1.63  1995/09/06  16:13:35  hw
@@ -891,7 +895,8 @@ Compile (node *arg_node)
         if (0 != strcmp (tmp_fundef->ID, "main")) {
             /* this isn't the main function */
             new_fundef = MakeNode (N_fundef);
-            new_fundef->node[3] = tmp_fundef->node[3]; /* share N_icm ND_FUN_DEC */
+            new_fundef->info.types = tmp_fundef->info.types; /* share info.types! */
+            new_fundef->node[3] = tmp_fundef->node[3];       /* share N_icm ND_FUN_DEC */
             new_fundef->node[1] = fundef; /* put it in front of N_fundef nodes */
             fundef = new_fundef;
             tmp_fundef = tmp_fundef->node[1];
