@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.24  2005/01/07 16:49:00  cg
+# Added compilation of ctinfo.c
+#
 # Revision 3.23  2004/11/27 02:39:02  sbs
 # *** empty log message ***
 #
@@ -76,7 +79,8 @@ include $(PROJECT_ROOT)/Makefile.Config
 
 
 all: main.o Error.o usage.o internal_lib.o globals.o resource.o \
-     build.o interrupt.o options.o NameTuplesUtils.o filemgr.o
+     build.o interrupt.o options.o NameTuplesUtils.o filemgr.o \
+     ctinfo.o
 
 build.c: 
 	echo "char build_date[] = \"`date`\";"  >  build.c
