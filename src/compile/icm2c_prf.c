@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2003/09/30 19:29:24  dkr
+ * code brushed: Set_Shape() used
+ *
  * Revision 1.9  2003/09/30 00:03:25  dkr
  * unused variables removed
  *
@@ -190,7 +193,9 @@ void
 ICMCompileND_PRF_SHAPE__DATA (char *to_NT, int to_sdim, char *from_NT, int from_sdim)
 {
     int i;
+#ifndef DBUG_OFF
     hidden_class_t to_hc = ICUGetHiddenClass (to_NT);
+#endif
     shape_class_t from_sc = ICUGetShapeClass (from_NT);
     int from_dim = DIM_NO_OFFSET (from_sdim);
 
@@ -619,7 +624,7 @@ ICMCompileND_PRF_SEL__DATA_arr (char *to_NT, int to_sdim, char *from_NT, int fro
                      , fprintf (outfile, "1st argument of F_sel has illegal size!"););
 
     PrfSel_Data (to_NT, to_sdim, from_NT, from_sdim, idxs_ANY, idx_size, NULL,
-                 ReadConstArray, copyfun);
+                 ReadConstArray_Str, copyfun);
 
     DBUG_VOID_RETURN;
 }
@@ -867,7 +872,7 @@ ICMCompileND_PRF_MODARRAY__DATA_arr (char *to_NT, int to_sdim, char *from_NT,
                      fprintf (outfile, "2nd argument of F_modarray has illegal size!"););
 
     PrfModarray_Data (to_NT, to_sdim, from_NT, from_sdim, FALSE, idxs_ANY, idx_size, NULL,
-                      ReadConstArray, val_ANY, copyfun);
+                      ReadConstArray_Str, val_ANY, copyfun);
 
     DBUG_VOID_RETURN;
 }

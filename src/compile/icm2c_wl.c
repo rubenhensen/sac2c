@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.35  2003/09/30 19:29:21  dkr
+ * code brushed: Set_Shape() used
+ *
  * Revision 3.34  2003/09/29 22:53:49  dkr
  * WLGenarray_Shape() modified
  *
@@ -206,227 +209,6 @@ DefineShapeFactor (char *to_NT, int to_sdim, int current_dim)
 
 /******************************************************************************
  *
- * Function:
- *   void WLGenarray_Shape( char *to_NT, int to_sdim,
- *                          void *shp, int shp_size,
- *                          void (*shp_size_fun)( void *),
- *                          void (*shp_read_fun)( void *, char *, int),
- *                          char *val_NT)
- *
- * Description:
- *
- *
- ******************************************************************************/
-
-static void
-WLGenarray_Shape (char *to_NT, int to_sdim, void *shp, int shp_size,
-                  void (*shp_size_fun) (void *),
-                  void (*shp_read_fun) (void *, char *, int), char *val_NT, int val_sdim)
-{
-    int i;
-    shape_class_t to_sc = ICUGetShapeClass (to_NT);
-    int to_dim = DIM_NO_OFFSET (to_sdim);
-    int val_dim = DIM_NO_OFFSET (val_sdim);
-
-    DBUG_ENTER ("WLGenarray_Shape");
-
-    /*
-     * ND_A_DESC_DIM, ND_A_MIRROR_DIM have already been set by ND_ALLOC__DESC!
-     */
-    ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == ", to_NT);
-                     GetAttr (shp, shp_size, shp_size_fun);
-                     fprintf (outfile, " + SAC_ND_A_DIM( %s)", val_NT);
-                     , fprintf (outfile, "Assignment with incompatible types found!"););
-
-    /*
-     * check constant part of mirror
-     */
-    switch (to_sc) {
-    case C_scl:
-        DBUG_ASSERT ((0), "illegal dimension found!");
-        break;
-
-    case C_aks:
-        if (shp_size >= 0) {
-            for (i = 0; i < shp_size; i++) {
-                ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_SHAPE( %s, %d) == ", to_NT,
-                                          i);
-                                 shp_read_fun (shp, NULL, i);
-                                 ,
-                                 fprintf (outfile,
-                                          "Assignment with incompatible types found!"););
-            }
-            DBUG_ASSERT ((to_dim >= 0), "illegal dimension found!");
-            for (; i < to_dim; i++) {
-                ASSURE_TYPE_ASS (fprintf (outfile,
-                                          "SAC_ND_A_SHAPE( %s, %d) == SAC_ND_A_SHAPE( "
-                                          "%s, %d)",
-                                          to_NT, i, val_NT, i - shp_size);
-                                 ,
-                                 fprintf (outfile,
-                                          "Assignment with incompatible types found!"););
-            }
-        } else {
-            for (i = 0; i < to_dim; i++) {
-                ASSURE_TYPE_ASS (fprintf (outfile, "((%d < ", i); shp_size_fun (shp);
-                                 fprintf (outfile, ") && ");
-                                 fprintf (outfile, "(SAC_ND_A_SHAPE( %s, %d) == ", to_NT,
-                                          i);
-                                 shp_read_fun (shp, NULL, i); fprintf (outfile, ")) ||");
-
-                                 fprintf (outfile, "((%d >= ", i); shp_size_fun (shp);
-                                 fprintf (outfile, ") && ");
-                                 fprintf (outfile,
-                                          "(SAC_ND_A_SHAPE( %s, %d) == SAC_ND_A_SHAPE( "
-                                          "%s, %d)))",
-                                          to_NT, i, val_NT, i - shp_size);
-                                 ,
-                                 fprintf (outfile,
-                                          "Assignment with incompatible types found!"););
-            }
-        }
-        /* here is no break missing */
-
-    case C_akd:
-        ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == ", to_NT);
-                         GetAttr (shp, shp_size, shp_size_fun);
-                         fprintf (outfile, " + SAC_ND_A_DIM( %s)", val_NT);
-                         ,
-                         fprintf (outfile, "Assignment with incompatible types found!"););
-        break;
-
-    case C_aud:
-        /* noop */
-        break;
-
-    default:
-        DBUG_ASSERT ((0), "Unknown shape class found!");
-        break;
-    }
-
-    /*
-     * set descriptor entries and non-constant part of mirror
-     */
-    switch (to_sc) {
-    case C_aud:
-        BLOCK_VARDECS (fprintf (outfile, "int SAC_i, "); if (
-                         val_dim
-                         < 0) { fprintf (outfile, "SAC_j, "); } fprintf (outfile,
-                                                                         "SAC_size = 1;");
-                       ,
-                       if (shp_size >= 0) {
-                           SET_SHAPES_AUD__NUM (to_NT, i, 0, shp_size, INDENT;
-                                                fprintf (outfile, "SAC_size *= \n");
-                                                , shp_read_fun (shp, NULL, i););
-                           INDENT;
-                           /* to ease the code generation for the next loop */
-                           fprintf (outfile, "SAC_i = %d;", shp_size);
-                       } else {
-                           SET_SHAPES_AUD (to_NT, fprintf (outfile, "SAC_i");
-                                           , fprintf (outfile, "0");, shp_size_fun (shp);
-                                           , INDENT; fprintf (outfile, "SAC_size *= \n");
-                                           , shp_read_fun (shp, "SAC_i", -1););
-                       }
-
-                       if (val_dim >= 0) {
-                           for (i = 0; i < val_dim; i++) {
-                               INDENT;
-                               fprintf (outfile, "SAC_size *= \n");
-                               SET_SHAPE_AUD (to_NT, fprintf (outfile, "SAC_i + %d", i);
-                                              ,
-                                              fprintf (outfile, "SAC_ND_A_SHAPE( %s, %d)",
-                                                       val_NT, i););
-                           }
-                       } else {
-                           FOR_LOOP (fprintf (outfile, "SAC_j = 0");
-                                     , fprintf (outfile, "SAC_j < SAC_ND_A_DIM( %s)",
-                                                val_NT);
-                                     , fprintf (outfile, "SAC_i++, SAC_j++");, INDENT;
-                                     fprintf (outfile, "SAC_size *= \n");
-                                     SET_SHAPE_AUD (to_NT, fprintf (outfile, "SAC_i");
-                                                    ,
-                                                    fprintf (outfile,
-                                                             "SAC_ND_A_SHAPE( %s, SAC_j)",
-                                                             val_NT);););
-                       }
-
-                       SET_SIZE (to_NT, fprintf (outfile, "SAC_size");););
-        break;
-
-    case C_akd:
-        DBUG_ASSERT ((to_dim >= 0), "illegal dimension found!");
-        BLOCK_VARDECS (fprintf (outfile, "int ");
-                       if ((val_dim < 0)
-                           && (shp_size
-                               < 0)) { fprintf (outfile, "SAC_i, "); } fprintf (outfile,
-                                                                                "SAC_"
-                                                                                "size = "
-                                                                                "1;");
-                       ,
-                       if ((val_dim < 0) && (shp_size < 0)) {
-                           FOR_LOOP_INC (fprintf (outfile, "SAC_i");
-                                         , fprintf (outfile, "0");, shp_size_fun (shp);
-                                         , INDENT; fprintf (outfile, "SAC_size *= \n");
-                                         INDENT;
-                                         fprintf (outfile,
-                                                  "SAC_ND_A_DESC_SHAPE( %s, SAC_i) = ",
-                                                  to_NT);
-                                         shp_read_fun (shp, "SAC_i", -1);
-                                         fprintf (outfile, ";\n"););
-                           FOR_LOOP (fprintf (outfile, " ");
-                                     , fprintf (outfile, "SAC_i < %d", to_dim);
-                                     , fprintf (outfile, "SAC_i++");, INDENT;
-                                     fprintf (outfile, "SAC_size *= \n"); INDENT;
-                                     fprintf (outfile,
-                                              "SAC_ND_A_DESC_SHAPE( %s, SAC_i) = "
-                                              "SAC_ND_A_SHAPE( %s, SAC_i - ",
-                                              to_NT, val_NT);
-                                     shp_size_fun (shp); fprintf (outfile, ");\n"););
-                           for (i = 0; i < to_dim; i++) {
-                               INDENT;
-                               fprintf (outfile,
-                                        "SAC_ND_A_MIRROR_SHAPE( %s, %d)"
-                                        " = SAC_ND_A_DESC_SHAPE( %s, %d);\n",
-                                        to_NT, i, to_NT, i);
-                           }
-                       } else { /* ((val_dim >= 0) || (shp_size >= 0)) */
-                                if (val_dim >= 0) {
-                                    if (shp_size >= 0) {
-                                        DBUG_ASSERT ((shp_size == to_dim - val_dim),
-                                                     "inconsistant dimension found!");
-                                    } else {
-                                        shp_size = to_dim - val_dim;
-                                    }
-                                }
-                                SET_SHAPES_AKD (to_NT, i, 0, shp_size, INDENT;
-                                                fprintf (outfile, "SAC_size *= \n");
-                                                , shp_read_fun (shp, NULL, i););
-                                SET_SHAPES_AKD (to_NT, i, shp_size, to_dim, INDENT;
-                                                fprintf (outfile, "SAC_size *= \n");
-                                                , fprintf (outfile,
-                                                           "SAC_ND_A_SHAPE( %s, %d)",
-                                                           val_NT, i - shp_size););
-                       }
-
-                       SET_SIZE (to_NT, fprintf (outfile, "SAC_size");););
-        break;
-
-    case C_aks:
-        /* here is no break missing */
-    case C_scl:
-        /* noop */
-        break;
-
-    default:
-        DBUG_ASSERT ((0), "Unknown shape class found!");
-        break;
-    }
-
-    DBUG_VOID_RETURN;
-}
-
-/******************************************************************************
- *
  * function:
  *   void ICMCompileND_WL_GENARRAY__SHAPE_id( char *to_NT, int to_sdim,
  *                                            char *shp_NT,
@@ -443,6 +225,8 @@ void
 ICMCompileND_WL_GENARRAY__SHAPE_id (char *to_NT, int to_sdim, char *shp_NT, char *val_NT,
                                     int val_sdim)
 {
+    int val_dim = DIM_NO_OFFSET (val_sdim);
+
     DBUG_ENTER ("ICMCompileND_WL_GENARRAY__SHAPE_id");
 
 #define ND_WL_GENARRAY__SHAPE_id
@@ -459,7 +243,8 @@ ICMCompileND_WL_GENARRAY__SHAPE_id (char *to_NT, int to_sdim, char *shp_NT, char
     ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == 1", shp_NT);
                      , fprintf (outfile, "Shape of genarray with-loop has (dim != 1)!"););
 
-    WLGenarray_Shape (to_NT, to_sdim, shp_NT, -1, SizeId, ReadId, val_NT, val_sdim);
+    Set_Shape (to_NT, to_sdim, shp_NT, -1, SizeId, NULL, ReadId, val_NT, val_dim, DimId,
+               SizeId, ShapeId);
 
     DBUG_VOID_RETURN;
 }
@@ -483,6 +268,7 @@ void
 ICMCompileND_WL_GENARRAY__SHAPE_arr (char *to_NT, int to_sdim, int shp_size,
                                      char **shp_ANY, char *val_NT, int val_sdim)
 {
+    int val_dim = DIM_NO_OFFSET (val_sdim);
     int i;
 
     DBUG_ENTER ("ICMCompileND_WL_GENARRAY__SHAPE_arr");
@@ -512,8 +298,8 @@ ICMCompileND_WL_GENARRAY__SHAPE_arr (char *to_NT, int to_sdim, int shp_size,
         }
     }
 
-    WLGenarray_Shape (to_NT, to_sdim, shp_ANY, shp_size, NULL, ReadConstArray, val_NT,
-                      val_sdim);
+    Set_Shape (to_NT, to_sdim, shp_ANY, shp_size, NULL, NULL, ReadConstArray_Str, val_NT,
+               val_dim, DimId, SizeId, ShapeId);
 
     DBUG_VOID_RETURN;
 }
