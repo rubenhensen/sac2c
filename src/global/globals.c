@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.84  2005/03/10 09:41:09  cg
+ * Removed compiler_phase_name_init, do_lac2fun_init and do_fun2lac_init.
+ *
  * Revision 3.83  2005/01/29 21:40:38  mwe
  * sigspec compiler switch added
  *
@@ -219,21 +222,6 @@
 #include "cv2cv.h"
 #include "cv2scalar.h"
 #include "cv2str.h"
-
-static const char *compiler_phase_name_init[PH_final + 1] = {
-#define PH_SELtext(it_text) it_text
-#include "phase_info.mac"
-};
-
-static bool do_lac2fun_init[PH_final + 1] = {
-#define PH_SELlac2fun(it_lac2fun) it_lac2fun
-#include "phase_info.mac"
-};
-
-static bool do_fun2lac_init[PH_final + 1] = {
-#define PH_SELfun2lac(it_fun2lac) it_fun2lac
-#include "phase_info.mac"
-};
 
 static bool argtag_has_shp_init[] = {
 #define SELECTshp(it_shp) it_shp
