@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.114  1996/04/02 13:48:02  cg
+ * Revision 1.115  1996/04/02 14:26:49  hw
+ * changed DBUG_PRINT in rule "apl"
+ *
+ * Revision 1.114  1996/04/02  13:48:02  cg
  * scanparse converted to new strings:
  * primitive type string replaced by call of function to_string with
  * a char array as argument. to_string resides in module StringBase
@@ -1862,8 +1865,9 @@ apl: id BRACKET_L {$$=MakeNode(N_ap);} exprs BRACKET_R
            $$->nnode=1;
 
            DBUG_PRINT("GENTREE",
-                      ("%s: "P_FORMAT ": Id: %s, Arg:%s " P_FORMAT,
-                       mdb_nodetype[ $$->nodetype ], $$, $$->info.fun_name.id,
+                      ("%s: "P_FORMAT ": Id: %s:%s, Arg:%s " P_FORMAT,
+                       mdb_nodetype[ $$->nodetype ], $$, AP_MOD($$),
+                       $$->info.fun_name.id,
                        mdb_nodetype[ $$->node[0]->nodetype ], $$->node[0]));
          }
       | id COLON id BRACKET_L BRACKET_R
@@ -1872,8 +1876,9 @@ apl: id BRACKET_L {$$=MakeNode(N_ap);} exprs BRACKET_R
           $$->info.fun_name.id_mod=$1;            /* name of module */
 
           DBUG_PRINT("GENTREE",
-                     ("%s " P_FORMAT " Id: %s,",
-                      mdb_nodetype[ $$->nodetype ], $$, $$->info.fun_name.id));
+                     ("%s " P_FORMAT " Id: %s:%s,",
+                      mdb_nodetype[ $$->nodetype ], $$, AP_MOD($$),
+                      $$->info.fun_name.id));
         }
         ;
 
