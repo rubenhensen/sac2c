@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.63  2001/07/13 13:23:41  cg
+ * DBUG tags brushed.
+ *
  * Revision 3.62  2001/06/28 07:46:51  cg
  * Primitive function psi() renamed to sel().
  *
@@ -2063,15 +2066,15 @@ BuildParamsByDFM (DFMmask_t *mask, char *tag, int *num_args, node *icm_args)
 
     DBUG_ENTER ("BuildParamsByDFM");
 
-    DBUG_PRINT ("JHS", ("begin %s", tag));
+    DBUG_PRINT ("COMP_BUILD_PARAMS_BY_DFM", ("begin %s", tag));
 
     rc_tag = StringConcat (tag, "_rc");
 
     vardec = DFMGetMaskEntryDeclSet (mask);
     while (vardec != NULL) {
 
-        DBUG_PRINT ("JHS", ("%s", NODE_TEXT (vardec)));
-        DBUG_PRINT ("JHS", ("%s", VARDEC_OR_ARG_NAME (vardec)));
+        DBUG_PRINT ("COMP_BUILD_PARAMS_BY_DFM", ("%s", NODE_TEXT (vardec)));
+        DBUG_PRINT ("COMP_BUILD_PARAMS_BY_DFM", ("%s", VARDEC_OR_ARG_NAME (vardec)));
 
         if (RC_IS_ACTIVE (VARDEC_OR_ARG_REFCNT (vardec))) {
             this_tag = rc_tag;
@@ -2088,10 +2091,11 @@ BuildParamsByDFM (DFMmask_t *mask, char *tag, int *num_args, node *icm_args)
         }
 
         if (num_args != NULL) {
-            DBUG_PRINT ("SPMD", ("bpbdfm num_args:%i %s", *num_args,
-                                 VARDEC_OR_ARG_NAME (vardec)));
+            DBUG_PRINT ("COMP_BUILD_PARAMS_BY_DFM", ("bpbdfm num_args:%i %s", *num_args,
+                                                     VARDEC_OR_ARG_NAME (vardec)));
         } else {
-            DBUG_PRINT ("SPMD", ("bpbdfm num_args:- %s", VARDEC_OR_ARG_NAME (vardec)));
+            DBUG_PRINT ("COMP_BUILD_PARAMS_BY_DFM",
+                        ("bpbdfm num_args:- %s", VARDEC_OR_ARG_NAME (vardec)));
         }
 
         vardec = DFMGetMaskEntryDeclSet (NULL);
@@ -2099,7 +2103,7 @@ BuildParamsByDFM (DFMmask_t *mask, char *tag, int *num_args, node *icm_args)
 
     rc_tag = Free (rc_tag);
 
-    DBUG_PRINT ("JHS", ("end %s", tag));
+    DBUG_PRINT ("COMP_BUILD_PARAMS_BY_DFM", ("end %s", tag));
 
     DBUG_RETURN (icm_args);
 }
@@ -2129,15 +2133,15 @@ BuildParamsByDFMfold (DFMfoldmask_t *mask, char *tag, int *num_args, node *icm_a
 
     DBUG_ENTER ("BuildParamsByDFMfold");
 
-    DBUG_PRINT ("JHS", ("begin %s", tag));
+    DBUG_PRINT ("COMP_BUILD_PARAMS_BY_DFM", ("begin %s", tag));
 
     rc_tag = StringConcat (tag, "_rc");
 
     while (mask != NULL) {
         vardec = DFMFM_VARDEC (mask);
 
-        DBUG_PRINT ("JHS", ("%s", NODE_TEXT (vardec)));
-        DBUG_PRINT ("JHS", ("%s", VARDEC_OR_ARG_NAME (vardec)));
+        DBUG_PRINT ("COMP_BUILD_PARAMS_BY_DFM", ("%s", NODE_TEXT (vardec)));
+        DBUG_PRINT ("COMP_BUILD_PARAMS_BY_DFM", ("%s", VARDEC_OR_ARG_NAME (vardec)));
 
         if (RC_IS_ACTIVE (VARDEC_OR_ARG_REFCNT (vardec))) {
             this_tag = rc_tag;
@@ -2154,10 +2158,11 @@ BuildParamsByDFMfold (DFMfoldmask_t *mask, char *tag, int *num_args, node *icm_a
         }
 
         if (num_args != NULL) {
-            DBUG_PRINT ("SPMD", ("bpbdfm num_args:%i %s", *num_args,
-                                 VARDEC_OR_ARG_NAME (vardec)));
+            DBUG_PRINT ("COMP_BUILD_PARAMS_BY_DFM", ("bpbdfm num_args:%i %s", *num_args,
+                                                     VARDEC_OR_ARG_NAME (vardec)));
         } else {
-            DBUG_PRINT ("SPMD", ("bpbdfm num_args:- %s", VARDEC_OR_ARG_NAME (vardec)));
+            DBUG_PRINT ("COMP_BUILD_PARAMS_BY_DFM",
+                        ("bpbdfm num_args:- %s", VARDEC_OR_ARG_NAME (vardec)));
         }
 
         mask = DFMFM_NEXT (mask);
@@ -2165,7 +2170,7 @@ BuildParamsByDFMfold (DFMfoldmask_t *mask, char *tag, int *num_args, node *icm_a
 
     rc_tag = Free (rc_tag);
 
-    DBUG_PRINT ("JHS", ("end"));
+    DBUG_PRINT ("COMP_BUILD_PARAMS_BY_DFM", ("end"));
 
     DBUG_RETURN (icm_args);
 }
@@ -6898,7 +6903,7 @@ COMPSpmd (node *arg_node, node *arg_info)
          */
     }
 
-    DBUG_PRINT ("COMPi", ("catched num_args %i", num_args));
+    DBUG_PRINT ("COMP_MT", ("catched num_args %i", num_args));
 
 #if 0
   icm_args = BLOCK_SPMD_SETUP_ARGS(FUNDEF_BODY(SPMD_FUNDEF(arg_node)));
@@ -7032,9 +7037,9 @@ COMPSync (node *arg_node, node *arg_info)
     }
     icm_args3 = MakeExprs (MakeNum (num_args), icm_args3);
 
-    DBUG_PRINT ("COMPi", ("--- Enter sync ---"));
+    DBUG_PRINT ("COMP_MT", ("--- Enter sync ---"));
 
-    DBUG_PRINT ("COMPi", ("Enter sync-args"));
+    DBUG_PRINT ("COMP_MT", ("Enter sync-args"));
 
     /* inter-thread sync parameters */
     sync_args = NULL;
@@ -7046,27 +7051,27 @@ COMPSync (node *arg_node, node *arg_info)
           = ExprsConcat (sync_args,
                          MakeExprs (MakeId_Copy (VARDEC_OR_ARG_NAME (vardec)), NULL));
 
-        DBUG_PRINT ("COMPi", ("%s", VARDEC_OR_ARG_NAME (vardec)));
+        DBUG_PRINT ("COMP_MT", ("%s", VARDEC_OR_ARG_NAME (vardec)));
 
         num_sync_args++;
         vardec = DFMGetMaskEntryDeclSet (NULL);
     }
     sync_args = MakeExprs (MakeNum (num_sync_args), sync_args);
 
-    DBUG_PRINT ("COMPi", ("Enter fold-args"));
+    DBUG_PRINT ("COMP_MT", ("Enter fold-args"));
 
     last_sync = INFO_COMP_LASTSYNC (arg_info);
     fold_args = NULL;
     num_fold_args = 0;
     if (last_sync != NULL) {
-        DBUG_PRINT ("COMPi", ("last-sync found"));
+        DBUG_PRINT ("COMP_MT", ("last-sync found"));
         /*
          *  Traverse assignments
          */
         assign = BLOCK_INSTR (SYNC_REGION (last_sync));
 
         while (assign != NULL) {
-            DBUG_PRINT ("COMPi", ("assign found"));
+            DBUG_PRINT ("COMP_MT", ("assign found"));
 
             DBUG_ASSERT ((NODE_TYPE (assign) == N_assign), ("wrong node type"));
 
@@ -7091,15 +7096,15 @@ COMPSync (node *arg_node, node *arg_info)
                     fold_args = MakeExprs (MakeId_Copy (fold_type),
                                            MakeExprs (DupIds_Id (with_ids), fold_args));
 
-                    DBUG_PRINT ("COMPi", ("last's folds %s is %s", IDS_NAME (with_ids),
-                                          fold_type));
+                    DBUG_PRINT ("COMP_MT", ("last's folds %s is %s", IDS_NAME (with_ids),
+                                            fold_type));
                 }
             }
             assign = ASSIGN_NEXT (assign);
         } /* while (assign != NULL) */
     }
 
-    DBUG_PRINT ("COMPi", ("--- end ---"));
+    DBUG_PRINT ("COMP_MT", ("--- end ---"));
 
     /*
      * build arguments of ICMs
@@ -7343,7 +7348,7 @@ COMPSync (node *arg_node, node *arg_info)
         setup_args
           = BuildParamsByDFM (SYNC_INOUT (arg_node), "in", &num_args, setup_args);
 
-        DBUG_PRINT ("COMPi", ("num_args %i", num_args));
+        DBUG_PRINT ("COMP_MT", ("num_args %i", num_args));
 
         BLOCK_SPMD_PROLOG_ICMS (FUNDEF_BODY (INFO_COMP_FUNDEF (arg_info))) = prolog_icms;
         BLOCK_SPMD_SETUP_ARGS (FUNDEF_BODY (INFO_COMP_FUNDEF (arg_info))) = setup_args;
@@ -7379,7 +7384,8 @@ COMPSync (node *arg_node, node *arg_info)
                 barrier_args = MakeExprs (MakeNum (barrier_id), barrier_args);
                 icm_name = "MT_SYNC_FOLD";
 
-                DBUG_PRINT ("COMPi", ("MT_SYNC_FOLD (instead of MT_SYNC_FOLD_NONFOLD)"));
+                DBUG_PRINT ("COMP_MT",
+                            ("MT_SYNC_FOLD (instead of MT_SYNC_FOLD_NONFOLD)"));
             } else {
                 /* DFMTestMask( SYNC_OUT( arg_node)) == 1  */
                 /* possible, but not implemented: icm_name = "MT_SYNC_ONEFOLD_NONFOLD"; */
@@ -7387,19 +7393,19 @@ COMPSync (node *arg_node, node *arg_info)
                 barrier_args = MakeExprs (MakeNum (barrier_id), barrier_args);
                 icm_name = "MT_SYNC_FOLD";
 
-                DBUG_PRINT ("COMPi",
+                DBUG_PRINT ("COMP_MT",
                             ("MT_SYNC_FOLD (instead of MT_SYNC_ONEFOLD_NONFOLD)"));
             }
         } else {
             barrier_args = MakeExprs (MakeNum (barrier_id), barrier_args);
             icm_name = "MT_SYNC_NONFOLD";
 
-            DBUG_PRINT ("COMPi", (" MT_SYNC_NONFOLD"));
+            DBUG_PRINT ("COMP_MT", (" MT_SYNC_NONFOLD"));
         }
     } else {
         DBUG_ASSERT ((DFMTestMask (SYNC_OUT (arg_node)) > 0), "no target found");
 
-        DBUG_PRINT ("COMPi",
+        DBUG_PRINT ("COMP_MT",
                     ("DFMTestMask( OUT ): %i", DFMTestMask (SYNC_OUT (arg_node))));
 
         if (DFMTestMask (SYNC_OUT (arg_node)) > 1) {
@@ -7407,18 +7413,19 @@ COMPSync (node *arg_node, node *arg_info)
             barrier_args = MakeExprs (MakeNum (barrier_id), barrier_args);
             icm_name = "MT_SYNC_FOLD";
 
-            DBUG_PRINT ("COMPi", (" MT_SYNC_FOLD"));
+            DBUG_PRINT ("COMP_MT", (" MT_SYNC_FOLD"));
         } else {
             /* DFMTestMask( SYNC_OUT( arg_node)) == 1 */
             barrier_args = MakeExprs (MakeNum (num_barrier_args), barrier_args);
             barrier_args = MakeExprs (MakeNum (barrier_id), barrier_args);
             icm_name = "MT_SYNC_FOLD";
 
-            DBUG_PRINT ("COMPi", (" MT_SYNC_ONEFOLD"));
+            DBUG_PRINT ("COMP_MT", (" MT_SYNC_ONEFOLD"));
         }
     }
 
-    DBUG_PRINT ("COMPi", ("using syncronisation: %s barrier: %i", icm_name, barrier_id));
+    DBUG_PRINT ("COMP_MT",
+                ("using syncronisation: %s barrier: %i", icm_name, barrier_id));
 
     assigns = AppendAssignIcm (assigns, icm_name, barrier_args);
 
@@ -7801,7 +7808,7 @@ COMPMTalloc (node *arg_node, node *arg_info)
         receive_icm = "MT2_WORKER_RECEIVE";
     } else {
         broadcast_icm = receive_icm = NULL;
-        DBUG_PRINT ("JHS", ("%s", mdb_statustype[FUNDEF_ATTRIB (fundef)]));
+        DBUG_PRINT ("COMP_MT2", ("%s", mdb_statustype[FUNDEF_ATTRIB (fundef)]));
         DBUG_ASSERT (0, "can not handle such a function");
     }
 
@@ -7873,7 +7880,7 @@ COMPMTsync (node *arg_node, node *arg_info)
         receive_icm = "MT2_WORKER_RECEIVE";
     } else {
         broadcast_icm = receive_icm = NULL;
-        DBUG_PRINT ("JHS", ("%s", mdb_statustype[FUNDEF_ATTRIB (fundef)]));
+        DBUG_PRINT ("COMP_MT2", ("%s", mdb_statustype[FUNDEF_ATTRIB (fundef)]));
         DBUG_ASSERT (0, "can not handle such a function");
     }
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.41  2001/07/13 13:23:41  cg
+ * DBUG tags brushed.
+ *
  * Revision 3.40  2001/05/31 14:50:43  nmw
  * CompareTypesImplementation() added
  *
@@ -1520,8 +1523,6 @@ SearchTypedef (char *name, char *mod, node *implementations)
 
     DBUG_ENTER ("SearchTypedef");
 
-    DBUG_PRINT ("CHECKDEC", ("Searching type '%s`", ModName (mod, name)));
-
     tmp = implementations;
     while ((tmp != NULL) && (CMP_TYPE_TYPEDEF (name, mod, tmp) == 0)) {
         tmp = TYPEDEF_NEXT (tmp);
@@ -1554,8 +1555,6 @@ SearchObjdef (char *name, char *mod, node *implementations)
     node *tmp;
 
     DBUG_ENTER ("SearchObjdef");
-
-    DBUG_PRINT ("CHECKDEC", ("Searching global object '%s`", ModName (mod, name)));
 
     tmp = implementations;
     while ((tmp != NULL) && (CMP_OBJ_OBJDEF (name, mod, tmp) == 0)) {
@@ -2073,10 +2072,8 @@ CmpDomain (node *arg1, node *arg2)
     }
     if ((NULL == arg1) && (NULL == arg2)) {
         is_equal = 1;
-        DBUG_PRINT ("TREE", ("Domain compare positive !"));
     } else {
         is_equal = 0;
-        DBUG_PRINT ("TREE", ("Domain compare negative !"));
     }
 
     DBUG_RETURN (is_equal);
