@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2004/06/08 14:40:22  skt
+ * MUTHGetLastExpression added
+ *
  * Revision 3.3  2001/05/17 11:46:31  dkr
  * FREE eliminated
  *
@@ -406,4 +409,34 @@ MUTHInsertST (node *assign, node *arg_info)
     assign = MUTHInsertBlock (assign, MakeST (NULL), INFO_MUTH_FUNDEF (arg_info));
 
     DBUG_RETURN (assign);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node* MUTHGetLastExpression(node* expression)
+ *
+ *   @brief  Returns the last N_exprs of a N_exprs->N_exprs->NULL chain
+ *
+ *           after the insertion of the primitive function fill() by
+ *           SSARefCount(), this function ist useful to get the original
+ *           right-hand-side of the former Assignment
+ *
+ *   @param expression a chain of N_exprs
+ *   @return the last expression of the chain, an N_exprs
+ *
+ *****************************************************************************/
+node *
+MUTHGetLastExpression (node *expression)
+{
+    node *tmp;
+    DBUG_ENTER ("MUTH_GetLastExpression");
+
+    DBUG_ASSERT ((NODE_TYPE (expression) == N_exprs), "expression-node is not a N_exprs");
+
+    tmp = expression;
+    while (EXPRS_NEXT (tmp) != NULL) {
+        tmp = EXPRS_NEXT (tmp);
+    }
+
+    DBUG_RETURN (tmp);
 }

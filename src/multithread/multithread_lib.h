@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2004/06/08 14:39:11  skt
+ * MUTHGetLastExpression added
+ *
  * Revision 3.2  2001/05/08 12:27:57  dkr
  * new macros for RC used
  *
@@ -55,5 +58,6 @@ extern node *MUTHExpandFundefName (node *fundef, char *prefix);
 extern node *MUTHReduceFundefName (node *fundef, int count);
 extern node *MUTHInsertST (node *assign, node *arg_info);
 extern node *MUTHInsertMT (node *assign, node *arg_info);
+extern node *MUTHGetLastExpression (node *expression);
 
 #endif /* _SAC_CONCURRENT_LIB_H_ */
