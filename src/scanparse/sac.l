@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.25  1995/12/29 10:37:26  cg
+ * Revision 1.26  1996/01/05 13:13:55  cg
+ * modified storage format of strings which are now stored without '"'.
+ *
+ * Revision 1.25  1995/12/29  10:37:26  cg
  * added new token SIBLIMIT="<###>"
  *
  * Revision 1.24  1995/12/21  15:04:06  cg
@@ -97,8 +100,9 @@
 #define FILTER(token) if (0==commlevel)  return(token)
 
 #define FILTER2(token) if (0==commlevel)  {                             \
-                         yylval.id=(char *)malloc(strlen(yytext));      \
-                         strcpy(yylval.id, yytext);  	                \
+                         yylval.id=(char *)malloc(sizeof(char)          \
+                                                  *(strlen(yytext)+1)); \
+                         strcpy(yylval.id, yytext);                     \
                          return(token); }
 
 #define FILTER3(token) if (0==commlevel) {                              \
@@ -127,6 +131,13 @@
                          yylval.cchar=yytext[1];		        \
                          return(token); }
         
+#define FILTER9(token) if (0==commlevel)  {                             \
+                         yylval.id=(char *)malloc(sizeof(char)          \
+                                                  *(strlen(yytext)+1)); \
+                         strcpy(yylval.id, yytext+sizeof(char));        \
+                         yylval.id[strlen(yylval.id)-1]='\0';           \
+                         return(token); }
+
 
 extern int indent;
 extern int i;
@@ -285,7 +296,7 @@ int start_token;
 "break"                         {FILTER( C_KEYWORD);}
 
 
-\"[^"\n]*\"			{FILTER2( STR );}
+\"[^"\n]*\"			{FILTER9( STR );}
 
 [A-Za-z]([A-Za-z0-9]|[_A-Za-z0-9][A-Za-z0-9])*  \
                                 {FILTER2( ID );}
