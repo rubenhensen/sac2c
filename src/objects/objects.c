@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.7  2000/10/30 19:24:06  dkr
+ * OBJarg:
+ * new_return_type->attrib is set explicitly in order to get smarter
+ * output
+ *
  * Revision 2.6  2000/10/26 13:58:13  dkr
  * CopyShpseg replaced by DupShpseg (DupTree.[ch])
  *
@@ -555,6 +560,10 @@ OBJarg (node *arg_node, node *arg_info)
         } else {
             new_return_type = DupTypes (ARG_TYPE (arg_node));
             TYPES_STATUS (new_return_type) = ST_artificial;
+            /*
+             * DupTypes() duplicates the field 'attrib' :-((
+             */
+            new_return_type->attrib = ST_regular;
             TYPES_NEXT (new_return_type) = FUNDEF_TYPES (arg_info);
             FUNDEF_TYPES (arg_info) = new_return_type;
 
