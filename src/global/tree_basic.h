@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.171  1998/05/15 09:24:59  sbs
+ * INFO_FLTN_LASTWLBLOCK and INFO_FLTN_FINALASSIGN inserted
+ *
  * Revision 1.170  1998/05/14 21:34:30  dkr
  * added WLGRID_CEXPR_TEMPLATE
  *
@@ -2256,6 +2259,8 @@ extern node *MakePragma ();
  ***
  ***    contextflag CONTEXT       (O)
  ***    node *      LASTASSIGN    (O)  (N_assign)
+ ***    node *      LASTWLBLOCK   (O)  (N_block)
+ ***    node *      FINALASSIGN   (O)  (N_assign)
  ***
  ***  when used in typecheck.c :
  ***
@@ -2334,6 +2339,8 @@ extern node *MakeInfo ();
 /* flatten */
 #define INFO_FLTN_CONTEXT(n) (n->flag)
 #define INFO_FLTN_LASTASSIGN(n) (n->node[0])
+#define INFO_FLTN_LASTWLBLOCK(n) (n->node[1])
+#define INFO_FLTN_FINALASSIGN(n) (n->node[2])
 
 /* typecheck */
 #define INFO_TC_NEXTASSIGN(n) (n->node[1])
