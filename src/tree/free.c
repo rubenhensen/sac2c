@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.65  2004/08/10 20:48:45  sah
+ * moved INFO structure and macros
+ * to free_info.h
+ *
  * Revision 3.64  2004/08/10 13:42:56  sah
  * renamed FreeNWithId to FreeNWithid and
  * added switch to new xml generated free
@@ -257,25 +261,14 @@
 #include "DataFlowMask.h"
 #include "scheduling.h"
 #include "constants.h"
+#include "free_info.h"
 
 #include "free.h"
 
 /*
- * INFO structure
- */
-struct INFO {
-    node *flag;
-    node *assign;
-};
-
-/*
- * INFO macros
- */
-#define INFO_FREE_FLAG(n) (n->flag)
-#define INFO_FREE_ASSIGN(n) (n->assign)
-/*
  * INFO functions
  */
+
 static info *
 MakeInfo ()
 {
