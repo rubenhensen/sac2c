@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.211  1998/05/02 18:12:15  dkr
+ * fixed a bug in PrintSync, PrintSpmd
+ *
  * Revision 1.210  1998/05/02 17:45:11  dkr
  * changed PrintSpmd
  *
@@ -2132,7 +2135,7 @@ PrintSpmd (node *arg_node, node *arg_info)
     DBUG_ENTER ("PrintSpmd");
 
     if (SPMD_ICM (arg_node) == NULL) {
-        fprintf (outfile, "/*** begin of SPMD region ***\n");
+        fprintf (outfile, "/*** begin of SPMD region ***/\n");
     } else {
         /*
          * print ICM
@@ -2169,7 +2172,7 @@ PrintSync (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintSync");
 
-    fprintf (outfile, "/*** begin of sync region ***\n");
+    fprintf (outfile, "/*** begin of sync region ***/\n");
     DBUG_EXECUTE ("MASK", char *text;
                   text = PrintMask (SYNC_IN (arg_node), SYNC_VARNO (arg_node));
                   fprintf (outfile, "**IN:    %s\n", text);
