@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.5  1994/12/16 14:22:10  sbs
+ * Revision 1.6  1994/12/31 14:09:00  sbs
+ * DBUG_ASSERT inserted checking the range of node-types!
+ *
+ * Revision 1.5  1994/12/16  14:22:10  sbs
  * imp_tab inserted and NIF macro enlarged
  *
  * Revision 1.4  1994/12/09  10:13:19  sbs
@@ -121,6 +124,8 @@ Trav (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("Trav");
     DBUG_ASSERT ((NULL != arg_node), "wrong argument:NULL pointer");
+    DBUG_ASSERT (((arg_node->nodetype >= N_num) && (arg_node->nodetype <= N_ok)),
+                 "wrong argument: Type-tag out of range!");
     DBUG_PRINT ("TRAV", ("case %s: node adress: %06x number of nodes: %d",
                          mdb_nodetype[arg_node->nodetype], arg_node, arg_node->nnode));
 
