@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.63  2002/10/07 04:49:39  dkr
+ * several bugs fixed
+ *
  * Revision 3.62  2002/08/15 11:58:23  dkr
  * EmptyParts2Expr(): no cc warning anymore
  *
@@ -1500,11 +1503,17 @@ AllStridesAreConstant (node *wlnode, bool trav_cont, bool trav_nextdim)
     if (wlnode != NULL) {
         switch (NODE_TYPE (wlnode)) {
         case N_WLstride:
-            all_const = (((!trav_cont)
-                          || AllStridesAreConstant (WLSTRIDE_CONTENTS (wlnode), trav_cont,
-                                                    trav_nextdim))
-                         && AllStridesAreConstant (WLSTRIDE_NEXT (wlnode), trav_cont,
-                                                   trav_nextdim));
+            if (WLSTRIDE_BOUND2 (wlnode) >= 0) {
+                all_const = (((!trav_cont)
+                              || AllStridesAreConstant (WLSTRIDE_CONTENTS (wlnode),
+                                                        trav_cont, trav_nextdim))
+                             && AllStridesAreConstant (WLSTRIDE_NEXT (wlnode), trav_cont,
+                                                       trav_nextdim));
+            } else {
+                DBUG_ASSERT ((WLSTRIDE_BOUND2 (wlnode) == IDX_SHAPE),
+                             "illegal WLSTRIDE_BOUND2 found!");
+                all_const = FALSE;
+            }
             break;
 
         case N_WLgrid:
@@ -1994,15 +2003,19 @@ static int
 IndexHeadStride (node *stride)
 {
     int result;
+    int bound1, bound2;
 
     DBUG_ENTER ("IndexHeadStride");
 
     DBUG_ASSERT ((NODE_TYPE (stride) == N_WLstride),
                  "given node is not a constant stride!");
-    DBUG_ASSERT ((WLSTRIDE_BOUND1 (stride) < WLSTRIDE_BOUND2 (stride)),
+
+    bound1 = WLSTRIDE_BOUND1 (stride);
+    bound2 = WLSTRIDE_BOUND2 (stride);
+    DBUG_ASSERT ((bound1 < bound2),
                  "given stride is empty (lower bound >= upper bound)!");
 
-    result = WLSTRIDE_BOUND1 (stride) + WLGRID_BOUND1 (WLSTRIDE_CONTENTS (stride));
+    result = bound1 + WLGRID_BOUND1 (WLSTRIDE_CONTENTS (stride));
 
     DBUG_RETURN (result);
 }
@@ -2021,18 +2034,19 @@ static int
 IndexRearStride (node *stride)
 {
     node *grid;
-    int bound2, grid_b1, result;
+    int bound1, bound2, grid_b1, result;
 
     DBUG_ENTER ("IndexRearStride");
 
     DBUG_ASSERT ((NODE_TYPE (stride) == N_WLstride),
                  "given node is not a constant stride!");
-    DBUG_ASSERT ((WLSTRIDE_BOUND1 (stride) < WLSTRIDE_BOUND2 (stride)),
+
+    bound1 = WLSTRIDE_BOUND1 (stride);
+    bound2 = WLSTRIDE_BOUND2 (stride);
+    DBUG_ASSERT ((bound1 < bound2),
                  "given stride is empty (lower bound >= upper bound)!");
 
     grid = WLSTRIDE_CONTENTS (stride);
-    bound2 = WLSTRIDE_BOUND2 (stride);
-
     DBUG_ASSERT ((NODE_TYPE (grid) == N_WLgrid), "given stride contains no grid!");
 
     grid_b1 = WLGRID_BOUND1 (grid);
@@ -2043,9 +2057,8 @@ IndexRearStride (node *stride)
     }
 
     result = bound2
-             - MAX (0, ((bound2 - WLSTRIDE_BOUND1 (stride) - grid_b1 - 1)
-                        % WLSTRIDE_STEP (stride))
-                         + 1 - (WLGRID_BOUND2 (grid) - grid_b1));
+             - MAX (0, ((bound2 - bound1 - grid_b1 - 1) % WLSTRIDE_STEP (stride)) + 1
+                         - (WLGRID_BOUND2 (grid) - grid_b1));
 
     DBUG_RETURN (result);
 }
@@ -2836,7 +2849,59 @@ Parts2Strides (node *parts, int dims, int *shape)
 /******************************************************************************
  *
  * Function:
- *   node *EmptyParts2Expr( node *wl)
+ *   node *ConvertWith( node *wl, int dims)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+static node *
+ConvertWith (node *wl, int dims)
+{
+    node *new_node;
+
+    DBUG_ENTER ("ConvertWith");
+
+    new_node
+      = MakeNWith2 (NWITH_WITHID (wl), NULL, NWITH_CODE (wl), NWITH_WITHOP (wl), dims);
+
+    /* extract array-placement pragmas */
+    NWITH2_PRAGMA (new_node) = ExtractAplPragma (NWITH_PRAGMA (wl), line);
+    if ((NWITH2_PRAGMA (new_node) != NULL) && (NWITH_IS_FOLD (wl))) {
+        /* no array placement for fold with-loops */
+        NWITH2_PRAGMA (new_node) = FreeTree (NWITH2_PRAGMA (new_node));
+    }
+
+    NWITH2_OFFSET_NEEDED (new_node)
+      = ((NWITH_TYPE (wl) == WO_genarray) || (NWITH_TYPE (wl) == WO_modarray));
+
+    NWITH2_DEC_RC_IDS (new_node) = NWITH_DEC_RC_IDS (wl);
+    NWITH2_IN_MASK (new_node) = NWITH_IN_MASK (wl);
+    NWITH2_OUT_MASK (new_node) = NWITH_OUT_MASK (wl);
+    NWITH2_LOCAL_MASK (new_node) = NWITH_LOCAL_MASK (wl);
+
+    /*
+     * withid, code, withop and IN/INOUT/OUT/LOCAL are reused for the
+     *  Nwith2-tree.
+     * Because of that, these parts are cut off from the old nwith-tree,
+     *  before freeing it.
+     */
+    NPART_WITHID (NWITH_PART (wl)) = NULL;
+    NWITH_CODE (wl) = NULL;
+    NWITH_WITHOP (wl) = NULL;
+    NWITH_DEC_RC_IDS (wl) = NULL;
+    NWITH_IN_MASK (wl) = NULL;
+    NWITH_OUT_MASK (wl) = NULL;
+    NWITH_LOCAL_MASK (wl) = NULL;
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *EmptyParts2Expr( node *wl, int dims, int *shape)
  *
  * Description:
  *   This function handles the case in which all parts are empty.
@@ -2844,7 +2909,7 @@ Parts2Strides (node *parts, int dims, int *shape)
  ******************************************************************************/
 
 static node *
-EmptyParts2Expr (node *wl)
+EmptyParts2Expr (node *wl, int dims, int *shape)
 {
     node *new_node = NULL;
 
@@ -2852,10 +2917,43 @@ EmptyParts2Expr (node *wl)
 
     switch (NWITH_TYPE (wl)) {
     case WO_genarray:
-        /*
-         * empty genarray with-loops are not allowed!!!
-         */
-        ERROR (line, ("genarray-with-loop with empty index vector set found"));
+#if 0
+      /*
+       * empty genarray with-loops are not allowed!!!
+       */
+      ERROR( line, ("genarray-with-loop with empty index vector set found"));
+#else
+        if (
+#if 0
+          GetShpsegLength( dims, shape) > 0
+#else
+          TRUE
+#endif
+        ) {
+            /*
+             * result array of genarray-with-loop is non-empty
+             *  -> generate a single stride over the whole domain
+             */
+            new_node = ConvertWith (wl, dims);
+            NWITH2_SEGS (new_node)
+              = WLCOMP_All (NULL, NULL, GenerateShapeStrides (0, dims, shape), dims,
+                            line);
+        } else {
+            /*
+             * result array of genarray-with-loop is empty
+             *  -> replace with-loop by empty array
+             */
+            node *cexpr;
+            simpletype btype;
+
+            cexpr = NWITH_CEXPR (wl);
+            DBUG_ASSERT ((NODE_TYPE (cexpr) == N_id), "CEXPR must be a N_id node!");
+            btype = TYPES_BASETYPE (ID_TYPE (cexpr));
+            DBUG_ASSERT ((btype != T_user), "Array elements of genarray-with-loop have a "
+                                            "user-defined type!");
+            new_node = CreateZeroVector (0, btype);
+        }
+#endif
         break;
 
     case WO_modarray:
@@ -3022,58 +3120,6 @@ ret:
  ******************************************************************************
  ******************************************************************************/
 #endif
-
-/******************************************************************************
- *
- * Function:
- *   node *ConvertWith( node *wl, int dims)
- *
- * Description:
- *
- *
- ******************************************************************************/
-
-static node *
-ConvertWith (node *wl, int dims)
-{
-    node *new_node;
-
-    DBUG_ENTER ("ConvertWith");
-
-    new_node
-      = MakeNWith2 (NWITH_WITHID (wl), NULL, NWITH_CODE (wl), NWITH_WITHOP (wl), dims);
-
-    /* extract array-placement pragmas */
-    NWITH2_PRAGMA (new_node) = ExtractAplPragma (NWITH_PRAGMA (wl), line);
-    if ((NWITH2_PRAGMA (new_node) != NULL) && (NWITH_IS_FOLD (wl))) {
-        /* no array placement for fold with-loops */
-        NWITH2_PRAGMA (new_node) = FreeTree (NWITH2_PRAGMA (new_node));
-    }
-
-    NWITH2_OFFSET_NEEDED (new_node)
-      = ((NWITH_TYPE (wl) == WO_genarray) || (NWITH_TYPE (wl) == WO_modarray));
-
-    NWITH2_DEC_RC_IDS (new_node) = NWITH_DEC_RC_IDS (wl);
-    NWITH2_IN_MASK (new_node) = NWITH_IN_MASK (wl);
-    NWITH2_OUT_MASK (new_node) = NWITH_OUT_MASK (wl);
-    NWITH2_LOCAL_MASK (new_node) = NWITH_LOCAL_MASK (wl);
-
-    /*
-     * withid, code, withop and IN/INOUT/OUT/LOCAL are reused for the
-     *  Nwith2-tree.
-     * Because of that, these parts are cut off from the old nwith-tree,
-     *  before freeing it.
-     */
-    NPART_WITHID (NWITH_PART (wl)) = NULL;
-    NWITH_CODE (wl) = NULL;
-    NWITH_WITHOP (wl) = NULL;
-    NWITH_DEC_RC_IDS (wl) = NULL;
-    NWITH_IN_MASK (wl) = NULL;
-    NWITH_OUT_MASK (wl) = NULL;
-    NWITH_LOCAL_MASK (wl) = NULL;
-
-    DBUG_RETURN (new_node);
-}
 
 /******************************************************************************
  ******************************************************************************
@@ -4340,7 +4386,7 @@ GenerateCompleteDomainVar (node *stride, int dims, int *shape)
  *
  * Function:
  *   node *BuildCubes( node *strides, node *wl2, int dims, int *wl_shp,
- *                     bool do_naive_comp)
+ *                     bool *do_naive_comp)
  *
  * Description:
  *
@@ -4348,7 +4394,7 @@ GenerateCompleteDomainVar (node *stride, int dims, int *shape)
  ******************************************************************************/
 
 static node *
-BuildCubes (node *strides, node *wl2, int dims, int *wl_shp, bool do_naive_comp)
+BuildCubes (node *strides, node *wl2, int dims, int *wl_shp, bool *do_naive_comp)
 {
     bool all_const;
     node *cubes = NULL;
@@ -4365,7 +4411,7 @@ BuildCubes (node *strides, node *wl2, int dims, int *wl_shp, bool do_naive_comp)
          */
         if (!NWITH2_IS_FOLD (wl2)) {
             /* no fold with-loop  ->  add missing indices (init/copy) */
-            if (all_const) {
+            if (all_const && (wl_shp != NULL)) {
                 cubes = GenerateCompleteDomain (strides, dims, wl_shp);
             } else {
                 cubes = GenerateCompleteDomainVar (strides, dims, wl_shp);
@@ -4374,8 +4420,8 @@ BuildCubes (node *strides, node *wl2, int dims, int *wl_shp, bool do_naive_comp)
                  * the generated cubes are already splitted and merged
                  *  -> no naive compilation possible anymore ...
                  */
-                if (do_naive_comp) {
-                    do_naive_comp = FALSE;
+                if (*do_naive_comp) {
+                    *do_naive_comp = FALSE;
                     WARN (line, ("wlcomp-pragma function Naive() ignored for"
                                  " single-generator with-loops"));
                 }
@@ -4390,12 +4436,12 @@ BuildCubes (node *strides, node *wl2, int dims, int *wl_shp, bool do_naive_comp)
              * multiple strides, which are not all constant
              *  -> just naive compilation possible for the time being :-(
              */
-            do_naive_comp = TRUE;
+            *do_naive_comp = TRUE;
             WARN (line, ("naive compilation of multi-generator with-loop activated"));
 
             cubes = strides;
         } else {
-            if (do_naive_comp) {
+            if (*do_naive_comp) {
                 /*
                  * this is a trick in order to put each stride in a separate
                  * segment later on
@@ -6994,7 +7040,7 @@ WLTRAwith (node *arg_node, node *arg_info)
 
         if (strides == NULL) {
             /* all parts are empty  ->  set 'new_node' */
-            new_node = EmptyParts2Expr (arg_node);
+            new_node = EmptyParts2Expr (arg_node, idx_size, wl_shp);
         } else {
             node *cubes = NULL;
             node *segs = NULL;
@@ -7010,7 +7056,7 @@ WLTRAwith (node *arg_node, node *arg_info)
              * build the cubes
              */
             DBUG_EXECUTE ("WLtrans", NOTE (("step 1: build cubes\n")));
-            cubes = BuildCubes (strides, new_node, idx_size, wl_shp, do_naive_comp);
+            cubes = BuildCubes (strides, new_node, idx_size, wl_shp, &do_naive_comp);
 
             if (wl_break_after <= WL_PH_cubes) {
                 goto DONE;
@@ -7042,11 +7088,8 @@ WLTRAwith (node *arg_node, node *arg_info)
 
         DONE:
             if (segs == NULL) {
-                if (cubes == NULL) {
-                    segs = WLCOMP_All (NULL, NULL, strides, idx_size, line);
-                } else {
-                    segs = WLCOMP_All (NULL, NULL, cubes, idx_size, line);
-                }
+                segs = WLCOMP_All (NULL, NULL, (cubes == NULL) ? strides : cubes,
+                                   idx_size, line);
             }
 
             /* free temporary data */
