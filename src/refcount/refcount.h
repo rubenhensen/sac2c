@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.6  2000/06/08 12:13:54  jhs
+ * abstraction of InferWithDFM, used to infer DFMs of with-loops,
+ * can be used by other phases now
+ *
  * Revision 2.5  2000/03/31 14:10:39  dkr
  * N_Nwith2 added
  *
@@ -106,5 +110,7 @@ extern node *RCNgen (node *arg_node, node *arg_info);
 extern node *RCNwithid (node *arg_node, node *arg_info);
 extern node *RCNwithop (node *arg_node, node *arg_info);
 extern node *RCNwith2 (node *arg_node, node *arg_info);
+
+extern void InferWithDFM (node *arg_node, node *fundef);
 
 #endif /* _refcount_h */

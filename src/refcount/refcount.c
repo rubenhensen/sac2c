@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 2.21  2000/06/08 12:13:54  jhs
+ * abstraction of InferWithDFM, used to infer DFMs of with-loops,
+ * can be used by other phases now
+ *
  * Revision 2.20  2000/05/30 09:56:45  dkr
  * RCicm(): arguments of USE_GENVAR_OFFSET-icms are not traversed
  *
@@ -616,8 +620,10 @@ RCfundef (node *arg_node, node *arg_info)
 
     if (NULL != FUNDEF_BODY (arg_node)) {
 
-        FUNDEF_DFM_BASE (arg_node)
-          = DFMGenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDEC (arg_node));
+        if (FUNDEF_DFM_BASE (arg_node) == NULL) {
+            FUNDEF_DFM_BASE (arg_node)
+              = DFMGenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDEC (arg_node));
+        }
 
         /*
          *  setting some global variables to use with the 'mask'
@@ -719,31 +725,36 @@ RCvardec (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *RCassign( node *arg_node, node *arg_info)
+ *   void InferWithDFM( node *assign, node *fundef)
  *
  * description:
- *   Performs bottom-up traversal for refcounting.
- *   When containing a with-loop, NWITH(2)_IN/INOUT/OUT/LOCAL are infered.
+ *   Creates DFM-masks for with-loops (N_Nwith and N_Nwith2) from scratch.
+ *   assign contains the N_let with a with-loop as instruction
+ *   fundef contains the function the assigment is in
  *
  ******************************************************************************/
-
-node *
-RCassign (node *arg_node, node *arg_info)
+void
+InferWithDFM (node *arg_node, node *fundef)
 {
     node *with;
     ids *let_ids;
     DFMmask_t ids_mask;
     int i;
 
-    DBUG_ENTER ("RCassign");
+    DBUG_ENTER ("InferWithDFM");
+
+    DBUG_ASSERT ((NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_let), "not an N_let");
+
+    DBUG_ASSERT (((NODE_TYPE (LET_EXPR (ASSIGN_INSTR (arg_node))) == N_Nwith)
+                  || (NODE_TYPE (LET_EXPR (ASSIGN_INSTR (arg_node))) == N_Nwith2)),
+                 "not a with-loop (N_Nwith or N+NWith2)");
 
     /*
-     * if the instruction contains a with-loop, infer NWITH(2)_IN/INOUT/OUT/LOCAL
+     *  if one mask (IN) is NULL we assume the other masks (INOUT, OUT, LOCAL)
+     *  are also NULL, so all masks have to be created now
      */
-
-    if ((NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_let)
-        && ((NODE_TYPE (LET_EXPR (ASSIGN_INSTR (arg_node))) == N_Nwith)
-            || (NODE_TYPE (LET_EXPR (ASSIGN_INSTR (arg_node))) == N_Nwith2))) {
+    with = LET_EXPR (ASSIGN_INSTR (arg_node));
+    if (NWITH_OR_NWITH2_IN (with) == NULL) {
 
         /*
          * generate masks.
@@ -751,10 +762,9 @@ RCassign (node *arg_node, node *arg_info)
          * we must start at the fundef node to get the right value for VARNO
          *  in GenerateMasks().
          */
-        fundef_node = GenerateMasks (fundef_node, NULL);
+        fundef = GenerateMasks (fundef, NULL);
 
         let_ids = LET_IDS (ASSIGN_INSTR (arg_node));
-        with = LET_EXPR (ASSIGN_INSTR (arg_node));
 
         /*
          * INOUT (for genarray/modarray with-loops),
@@ -765,17 +775,16 @@ RCassign (node *arg_node, node *arg_info)
 
         DBUG_ASSERT ((IDS_NEXT (let_ids) == NULL), "more than one let-ids found");
 
-        ids_mask = DFMGenMaskClear (FUNDEF_DFM_BASE (fundef_node));
+        ids_mask = DFMGenMaskClear (FUNDEF_DFM_BASE (fundef));
         DFMSetMaskEntrySet (ids_mask, IDS_NAME (let_ids), IDS_VARDEC (let_ids));
 
         if ((NWITH_OR_NWITH2_TYPE (with) == WO_genarray)
             || (NWITH_OR_NWITH2_TYPE (with) == WO_modarray)) {
-            NWITH_OR_NWITH2_OUT (with) = DFMGenMaskClear (FUNDEF_DFM_BASE (fundef_node));
+            NWITH_OR_NWITH2_OUT (with) = DFMGenMaskClear (FUNDEF_DFM_BASE (fundef));
             NWITH_OR_NWITH2_INOUT (with) = ids_mask;
         } else {
             NWITH_OR_NWITH2_OUT (with) = ids_mask;
-            NWITH_OR_NWITH2_INOUT (with)
-              = DFMGenMaskClear (FUNDEF_DFM_BASE (fundef_node));
+            NWITH_OR_NWITH2_INOUT (with) = DFMGenMaskClear (FUNDEF_DFM_BASE (fundef));
         }
 
         /*
@@ -785,11 +794,11 @@ RCassign (node *arg_node, node *arg_info)
          *  for the let-var (ids_mask), are local.
          */
 
-        NWITH_OR_NWITH2_LOCAL (with) = DFMGenMaskClear (FUNDEF_DFM_BASE (fundef_node));
-        for (i = 0; i < INFO_RC_VARNO (arg_info); i++) {
-            if ((ASSIGN_MASK (arg_node, 0))[i] > 0) {
+        NWITH_OR_NWITH2_LOCAL (with) = DFMGenMaskClear (FUNDEF_DFM_BASE (fundef));
+        for (i = 0; i < FUNDEF_VARNO (fundef); i++) {
+            if ((ASSIGN_DEFMASK (arg_node))[i] > 0) {
                 DFMSetMaskEntrySet (NWITH_OR_NWITH2_LOCAL (with), NULL,
-                                    FindVardec_Varno (i, fundef_node));
+                                    FindVardec_Varno (i, fundef));
             }
         }
         DFMSetMaskMinus (NWITH_OR_NWITH2_LOCAL (with), ids_mask);
@@ -801,28 +810,54 @@ RCassign (node *arg_node, node *arg_info)
          *  except for local vars.
          */
 
-        NWITH_OR_NWITH2_IN (with) = DFMGenMaskClear (FUNDEF_DFM_BASE (fundef_node));
-        for (i = 0; i < INFO_RC_VARNO (arg_info); i++) {
-            if ((ASSIGN_MASK (arg_node, 1))[i] > 0) {
+        NWITH_OR_NWITH2_IN (with) = DFMGenMaskClear (FUNDEF_DFM_BASE (fundef));
+        for (i = 0; i < FUNDEF_VARNO (fundef); i++) {
+            if ((ASSIGN_USEMASK (arg_node))[i] > 0) {
                 DFMSetMaskEntrySet (NWITH_OR_NWITH2_IN (with), NULL,
-                                    FindVardec_Varno (i, fundef_node));
+                                    FindVardec_Varno (i, fundef));
             }
         }
         DFMSetMaskMinus (NWITH_OR_NWITH2_IN (with), NWITH_OR_NWITH2_LOCAL (with));
     }
 
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *RCassign( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   Performs bottom-up traversal for refcounting.
+ *   When containing a with-loop, NWITH(2)_IN/INOUT/OUT/LOCAL are infered.
+ *
+ ******************************************************************************/
+
+node *
+RCassign (node *arg_node, node *arg_info)
+{
+
+    DBUG_ENTER ("RCassign");
+
+    /*
+     * if the instruction contains a with-loop, infer NWITH(2)_IN/INOUT/OUT/LOCAL
+     */
+
+    if ((NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_let)
+        && ((NODE_TYPE (LET_EXPR (ASSIGN_INSTR (arg_node))) == N_Nwith)
+            || (NODE_TYPE (LET_EXPR (ASSIGN_INSTR (arg_node))) == N_Nwith2))) {
+
+        InferWithDFM (arg_node, fundef_node);
+    }
+
     /*
      * Bottom up traversal!!
      */
-    if (NULL != ASSIGN_NEXT (arg_node)) {
+    if (ASSIGN_NEXT (arg_node) != NULL) {
         ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
-        ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
-    } else {
-        /*
-         * this must be the return-statement!!
-         */
-        ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
     }
+    ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
