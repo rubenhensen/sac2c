@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.15  2001/05/18 11:51:01  dkr
+ * macro FREE_VECT added
+ *
  * Revision 3.14  2001/05/18 10:38:58  cg
  * Old memory management macros MALLOC and FREE removed.
  *
@@ -178,6 +181,11 @@ extern void DbugMemoryLeakCheck ();
 /*
  * macros for handling vectors
  */
+
+#define FREE_VECT(vect)                                                                  \
+    if (vect != NULL) {                                                                  \
+        Free (vect);                                                                     \
+    }
 
 #define MALLOC_VECT(vect, dims, type)                                                    \
     if (vect == NULL) {                                                                  \
