@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.16  2000/07/10 14:24:37  cg
+ * *** empty log message ***
+ *
  * Revision 2.15  2000/06/28 09:12:23  nmw
  * added traversal for mapping of fundctios to c wrappers to Precompile
  *
@@ -850,6 +853,9 @@ PREC2fundef (node *arg_node, node *arg_info)
      * because in the real syntax tree these are stored within the types
      * structure and not as part of the fundef node as in the virtual
      * syntax tree.
+     * Nowadays, artificial return types are tagged ST_artificial. This
+     * would allow a different implementation of removing them without
+     * first counting the corresponding arguments.
      */
     if (INFO_PREC_CNT_ARTIFICIAL (arg_info) > 0) {
         keep_name = FUNDEF_NAME (arg_node);
