@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.29  2002/09/11 23:19:24  dkr
+ * NumberOfDigits() used
+ *
  * Revision 3.28  2002/09/05 21:17:40  dkr
  * TmpVar() modified
  *
@@ -757,7 +760,7 @@ PrefixForTmpVar (void)
 {
     char *s;
 
-    DBUG_ENTER ("PrexfixForTmpVar");
+    DBUG_ENTER ("PrefixForTmpVar");
 
     if (act_tab == imp_tab) {
         s = "imp";
@@ -917,7 +920,8 @@ TmpVar (void)
     DBUG_ENTER ("TmpVar");
 
     prefix = PrefixForTmpVar ();
-    result = (char *)Malloc ((strlen (prefix) + 20 + 3) * sizeof (char));
+    result
+      = (char *)Malloc ((strlen (prefix) + NumberOfDigits (counter) + 3) * sizeof (char));
     sprintf (result, "_%s_%d", prefix, counter);
     counter++;
 
