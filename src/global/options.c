@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.83  2005/02/18 15:52:38  sbs
+ * strgcpy changed into ILIBstringCopy
+ * i.e., no more SEGFAULT on -o option
+ *
  * Revision 3.82  2005/02/11 14:40:30  jhb
  * added options for treecheck
  *
@@ -515,7 +519,7 @@ OPTanalyseCommandline (int argc, char *argv[])
     }
     ARGS_OPTION_END ("no");
 
-    ARGS_OPTION ("o", strcpy (global.outfilename, ARG));
+    ARGS_OPTION ("o", global.outfilename = ILIBstringCopy (ARG));
     /*
      * The option is only stored in outfilename,
      * the correct settings of the global variables
