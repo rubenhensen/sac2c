@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.13  1995/03/07 11:00:03  hw
+ * Revision 1.14  1995/03/08 17:01:41  hw
+ * changed FltnExprs (if an N_array node is a child of N_exprs node
+ *                    then N_array will be flattened too)
+ *
+ * Revision 1.13  1995/03/07  11:00:03  hw
  * added function FltnGen (flatten N_generator)
  *
  * Revision 1.12  1995/01/12  14:04:53  hw
@@ -312,7 +316,9 @@ FltnExprs (node *arg_node, node *arg_info)
 
         let_node->nnode = 1;
         let_node->node[0] = Trav (tmp_node1, arg_info);
-    }
+    } else if (arg_node->node[0]->nodetype == N_array)
+        /* an array has also to be flattend */
+        arg_node->node[0] = Trav (arg_node->node[0], arg_info);
 
     /* Last, but not least remaining exprs have to be done */
     if (arg_node->nnode == 2)
