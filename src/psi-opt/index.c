@@ -1,6 +1,9 @@
 
 /*
  * $Log$
+ * Revision 2.8  1999/09/27 06:43:03  sbs
+ * bug in index,.c fixed
+ *
  * Revision 2.7  1999/09/01 19:38:45  sbs
  * some errors concerning the handling of WL generators and the elimination
  * of superfluous vardecs solved!
@@ -1888,27 +1891,29 @@ IdxArray (node *arg_node, node *arg_info)
             ARRAY_AELEMS (arg_node) = Trav (ARRAY_AELEMS (arg_node), arg_info);
         }
     } else {
-        expr = ARRAY_AELEMS (arg_node);
-        shp = VINFO_SELEMS (INFO_IVE_TRANSFORM_VINFO (arg_info));
-        idx = EXPRS_EXPR (expr);
-        expr = EXPRS_NEXT (expr);
-        for (i = 1; i < VINFO_DIM (INFO_IVE_TRANSFORM_VINFO (arg_info)); i++) {
-            if (expr != NULL) {
-                DBUG_ASSERT ((NODE_TYPE (expr) == N_exprs),
-                             "corrupted syntax tree at N_array(N_exprs expected)!");
-                idx = MakeExprs (idx, MakeExprs (MakeNum (shp[i]), NULL));
-                idx = MakePrf (F_mul, idx);
-                idx = MakeExprs (idx, expr);
-                expr = EXPRS_NEXT (expr);
-                EXPRS_NEXT (EXPRS_NEXT (idx)) = NULL;
-                idx = MakePrf (F_add, idx);
-            } else {
-                idx = MakeExprs (idx, MakeExprs (MakeNum (shp[i]), NULL));
-                idx = MakePrf (F_mul, idx);
+        if (INFO_IVE_MODE (arg_info) == M_uses_and_transform) {
+            expr = ARRAY_AELEMS (arg_node);
+            shp = VINFO_SELEMS (INFO_IVE_TRANSFORM_VINFO (arg_info));
+            idx = EXPRS_EXPR (expr);
+            expr = EXPRS_NEXT (expr);
+            for (i = 1; i < VINFO_DIM (INFO_IVE_TRANSFORM_VINFO (arg_info)); i++) {
+                if (expr != NULL) {
+                    DBUG_ASSERT ((NODE_TYPE (expr) == N_exprs),
+                                 "corrupted syntax tree at N_array(N_exprs expected)!");
+                    idx = MakeExprs (idx, MakeExprs (MakeNum (shp[i]), NULL));
+                    idx = MakePrf (F_mul, idx);
+                    idx = MakeExprs (idx, expr);
+                    expr = EXPRS_NEXT (expr);
+                    EXPRS_NEXT (EXPRS_NEXT (idx)) = NULL;
+                    idx = MakePrf (F_add, idx);
+                } else {
+                    idx = MakeExprs (idx, MakeExprs (MakeNum (shp[i]), NULL));
+                    idx = MakePrf (F_mul, idx);
+                }
             }
+            arg_node = idx;
+            ive_expr++;
         }
-        arg_node = idx;
-        ive_expr++;
     }
     DBUG_RETURN (arg_node);
 }
