@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.32  1998/05/06 18:56:49  dkr
+ * added DupExprs
+ *
  * Revision 1.31  1998/04/26 21:52:53  dkr
  * DupSPMD renamed to DupSpmd
  *
@@ -140,6 +143,7 @@ extern node *DupDouble (node *arg_node, node *arg_info);
 extern node *DupStr (node *arg_node, node *arg_info);
 extern node *DupModarray (node *arg_node, node *arg_info);
 extern node *DupId (node *arg_node, node *arg_info);
+extern node *DupExprs (node *arg_node, node *arg_info);
 extern node *DupCond (node *arg_node, node *arg_info);
 extern node *DupLoop (node *arg_node, node *arg_info);
 extern node *DupChain (node *arg_node, node *arg_info);

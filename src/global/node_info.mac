@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.199  1998/05/06 18:55:47  dkr
+ * added DupExprs
+ *
  * Revision 1.198  1998/05/06 18:09:44  dkr
  * removed WLTRAAssign
  *
@@ -823,7 +826,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 1),
 
   NIF (N_exprs, "N_exprs", TravSons, FltnExprs, PrintExprs, TravSons, TravSons, TravSons,
-       TravSons, FreeExprs, TravSons, TravSons, TravSons, TravSons, DupChain, TravSons,
+       TravSons, FreeExprs, TravSons, TravSons, TravSons, TravSons, DupExprs, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, PrintExprs, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
