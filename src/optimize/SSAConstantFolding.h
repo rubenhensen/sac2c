@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.13  2004/11/26 19:44:47  khf
+ * corrected traversal functions
+ *
  * Revision 1.12  2004/11/23 20:58:19  sbs
  * include bug elimnated
  *
@@ -61,12 +64,12 @@
 /*
  * functions to handle SCOs
  */
-struct_constant *SCOexpr2StructConstant (node *expr);
-struct_constant *SCOarray2StructConstant (node *expr);
-struct_constant *SCOwithidVec2StructConstant (node *expr);
-struct_constant *SCOscalar2StructConstant (node *expr);
-node *SCOdupStructConstant2Expr (struct_constant *struc_co);
-struct_constant *SCOfreeStructConstant (struct_constant *struc_co);
+extern struct_constant *CFscoExpr2StructConstant (node *expr);
+extern struct_constant *CFscoArray2StructConstant (node *expr);
+extern struct_constant *CFscoWithidVec2StructConstant (node *expr);
+extern struct_constant *CFscoScalar2StructConstant (node *expr);
+extern node *CFscoDupStructConstant2Expr (struct_constant *struc_co);
+extern struct_constant *CFscoFreeStructConstant (struct_constant *struc_co);
 
 extern node *CFdoConstantFolding (node *fundef, node *modul);
 
@@ -78,13 +81,14 @@ extern node *CFcond (node *arg_node, info *arg_info);
 extern node *CFreturn (node *arg_node, info *arg_info);
 extern node *CFlet (node *arg_node, info *arg_info);
 extern node *CFap (node *arg_node, info *arg_info);
+extern node *CFids (node *arg_node, info *arg_info);
 extern node *CFid (node *arg_node, info *arg_info);
 extern node *CFarray (node *arg_node, info *arg_info);
 extern node *CFprf (node *arg_node, info *arg_info);
 extern node *CFwith (node *arg_node, info *arg_info);
 extern node *CFpart (node *arg_node, info *arg_info);
 extern node *CFcode (node *arg_node, info *arg_info);
-extern node *CFgen (node *arg_node, info *arg_info);
+extern node *CFgenerator (node *arg_node, info *arg_info);
 extern node *CFfuncond (node *arg_node, info *arg_info);
 
 extern node *CFfoldPrfExpr (prf op, node **arg_expr);

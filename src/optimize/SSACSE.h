@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.8  2004/11/26 19:43:02  khf
+ * corrected traversal functions
+ *
  * Revision 1.7  2004/11/26 15:00:42  khf
  * SacDevCamp04: COMPILES!!!
  *
@@ -45,7 +48,7 @@
 
 #include "types.h"
 
-extern node *CSEdoCse (node *fundef, node *modul);
+extern node *CSEdoCse (node *fundef, node *module);
 
 extern node *CSEfundef (node *arg_node, info *arg_info);
 extern node *CSEarg (node *arg_node, info *arg_info);
