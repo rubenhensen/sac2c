@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2001/01/09 20:00:10  dkr
+ * code brushed
+ * support for naive compilation added
+ * support for AKDs added (not finished yet)
+ *
  * Revision 3.9  2001/01/09 17:28:36  dkr
  * N_WLstriVar renamed into N_WLstrideVar
  *
@@ -2108,11 +2113,13 @@ ToFirstComponent (node *array)
 
     DBUG_ENTER ("ToFirstComponent");
 
-    DBUG_ASSERT (((NODE_TYPE (array) == N_array) || (NODE_TYPE (array) == N_id)),
-                 "illegal argument of GetFirstComponent() found!");
-
-    if (NODE_TYPE (array) == N_array) {
-        comp = ARRAY_AELEMS (array);
+    if (array != NULL) {
+        if (NODE_TYPE (array) == N_array) {
+            comp = ARRAY_AELEMS (array);
+        } else {
+            DBUG_ASSERT ((NODE_TYPE (array) == N_id), "wrong node type found!");
+            comp = array;
+        }
     } else {
         comp = NULL;
     }
@@ -2137,10 +2144,14 @@ ToNextComponent (node *aelems)
 
     DBUG_ENTER ("ToNextComponent");
 
-    if (NODE_TYPE (aelems) == N_exprs) {
-        comp = EXPRS_NEXT (aelems);
+    if (aelems != NULL) {
+        if (NODE_TYPE (aelems) == N_exprs) {
+            comp = EXPRS_NEXT (aelems);
+        } else {
+            comp = aelems;
+        }
     } else {
-        comp = aelems;
+        comp = NULL;
     }
 
     DBUG_RETURN (comp);
@@ -2225,7 +2236,7 @@ GetCurrentComponent_Node (node *aelems)
 /******************************************************************************
  *
  * Function:
- *   node* Parts2Strides( node *parts, int dims, shpseg* shape)
+ *   node* Parts2Strides( node *parts, int dims, types *type, bool is_fold)
  *
  * Description:
  *   Converts a N_Npart-chain ('parts') into a N_WLstride-chain (return).
@@ -2234,7 +2245,7 @@ GetCurrentComponent_Node (node *aelems)
  ******************************************************************************/
 
 static node *
-Parts2Strides (node *parts, int dims, shpseg *shape)
+Parts2Strides (node *parts, int dims, types *type, bool is_fold)
 {
     node *parts_stride, *stride, *new_stride, *new_grid, *gen, *bound1, *bound2, *step,
       *width;
@@ -2274,9 +2285,9 @@ Parts2Strides (node *parts, int dims, shpseg *shape)
                 /* build N_WLstride-node of current dimension */
                 new_stride
                   = MakeWLstride (0, dim, GetCurrentComponent_Int (bound1),
-                                  (shape != NULL) ? MIN (GetCurrentComponent_Int (bound2),
-                                                         SHPSEG_SHAPE (shape, dim))
-                                                  : GetCurrentComponent_Int (bound2),
+                                  (!is_fold) ? MIN (GetCurrentComponent_Int (bound2),
+                                                    TYPES_SHAPE (type, dim))
+                                             : GetCurrentComponent_Int (bound2),
                                   GetCurrentComponent_Int (step), 0,
                                   MakeWLgrid (0, dim, 0, GetCurrentComponent_Int (width),
                                               0, NULL, NULL, NULL),
@@ -2381,7 +2392,7 @@ Parts2Strides (node *parts, int dims, shpseg *shape)
  *
  * Function:
  *   void EmptyParts2StridesOrExpr( node **strides, node **new_node,
- *                                  node *arg_node, int wl_dims, shpseg *wl_shpseg)
+ *                                  node *arg_node, int dims, types *type)
  *
  * Description:
  *   This function handles the case in which all parts are empty.
@@ -2389,8 +2400,8 @@ Parts2Strides (node *parts, int dims, shpseg *shape)
  ******************************************************************************/
 
 static void
-EmptyParts2StridesOrExpr (node **strides, node **new_node, node *arg_node, int wl_dims,
-                          shpseg *wl_shpseg)
+EmptyParts2StridesOrExpr (node **strides, node **new_node, node *arg_node, int dims,
+                          types *type)
 {
     DBUG_ENTER ("EmptyParts2StridesOrExpr");
 
@@ -2402,12 +2413,12 @@ EmptyParts2StridesOrExpr (node **strides, node **new_node, node *arg_node, int w
 
     switch (NWITH_TYPE (arg_node)) {
     case WO_genarray:
-        if (GetShpsegLength (wl_dims, wl_shpseg) > 0) {
+        if (GetShpsegLength (dims, TYPES_SHPSEG (type)) > 0) {
             /*
              * result array of genarray-with-loop is non-empty
              *  -> generate a single stride over the whole domain
              */
-            (*strides) = GenerateShapeStrides (0, wl_dims, wl_shpseg);
+            (*strides) = GenerateShapeStrides (0, dims, TYPES_SHPSEG (type));
         } else {
             /*
              * result array of genarray-with-loop is empty
@@ -4497,8 +4508,7 @@ GenerateCompleteGrid (node *stride)
 /******************************************************************************
  *
  * Function:
- *   node *GenerateCompleteDomain( node *strides,
- *                                 int dims, shpseg *shape)
+ *   node *GenerateCompleteDomain( node *strides, int dims, shpseg *shape)
  *
  * Description:
  *   Supplements strides/grids for the complement of 'stride'.
@@ -4543,17 +4553,19 @@ GenerateCompleteGrid (node *stride)
  ******************************************************************************/
 
 static node *
-GenerateCompleteDomain (node *strides, int dims, shpseg *shape)
+GenerateCompleteDomain (node *strides, int dims, types *type)
 {
     node *new_strides, *comp_strides, *stride, *grid, *comp_stride, *last_comp_grid,
       *new_stride, *new_grid, *next_dim;
+    shpseg *shape;
     node *comp_grid = NULL;
     node *dup_strides = NULL;
     node *last_dup_grid = NULL;
 
     DBUG_ENTER ("GenerateCompleteDomain");
 
-    DBUG_ASSERT ((shape != NULL), "no shape found");
+    DBUG_ASSERT ((type != NULL), "no type information found");
+    shape = TYPES_SHPSEG (type);
 
     DBUG_ASSERT ((strides != NULL), "no stride found");
     DBUG_ASSERT ((WLSTRIDE_NEXT (strides) == NULL), "more than one stride found");
@@ -4726,7 +4738,7 @@ GenerateCompleteDomain (node *strides, int dims, shpseg *shape)
 /******************************************************************************
  *
  * Function:
- *   node *GenerateCompleteDomainVar( node *stride_var, int dims, shpseg *shape)
+ *   node *GenerateCompleteDomainVar( node *stride_var, int dims, types *type)
  *
  * Description:
  *   Supplements strides/grids for the complement of 'stride_var'.
@@ -4760,13 +4772,15 @@ GenerateCompleteDomain (node *strides, int dims, shpseg *shape)
  ******************************************************************************/
 
 static node *
-GenerateCompleteDomainVar (node *stride_var, int dims, shpseg *shape)
+GenerateCompleteDomainVar (node *stride_var, int dims, types *type)
 {
     node *grid_var, *new_grid;
+    shpseg *shape;
 
     DBUG_ENTER ("GenerateCompleteDomainVar");
 
-    DBUG_ASSERT ((shape != NULL), "no shape found");
+    DBUG_ASSERT ((type != NULL), "no type information found");
+    shape = TYPES_SHPSEG (type);
 
     if (stride_var != NULL) {
         DBUG_ASSERT ((NODE_TYPE (stride_var) == N_WLstrideVar),
@@ -4797,7 +4811,7 @@ GenerateCompleteDomainVar (node *stride_var, int dims, shpseg *shape)
              * next dim
              */
             WLGRID_NEXTDIM (grid_var)
-              = GenerateCompleteDomainVar (WLGRID_NEXTDIM (grid_var), dims, shape);
+              = GenerateCompleteDomainVar (WLGRID_NEXTDIM (grid_var), dims, type);
 
             /*
              * append lower part of complement
@@ -4855,7 +4869,7 @@ GenerateCompleteDomainVar (node *stride_var, int dims, shpseg *shape)
              * next dim
              */
             WLGRIDVAR_NEXTDIM (grid_var)
-              = GenerateCompleteDomainVar (WLGRIDVAR_NEXTDIM (grid_var), dims, shape);
+              = GenerateCompleteDomainVar (WLGRIDVAR_NEXTDIM (grid_var), dims, type);
 
             /*
              * append lower part of complement
@@ -4868,7 +4882,7 @@ GenerateCompleteDomainVar (node *stride_var, int dims, shpseg *shape)
                                                              dims, shape),
                                        NULL, NULL);
                 WLSTRIDEVAR_NEXT (stride_var)
-                  = MakeWLSTRIDEVAR (WLSTRIDEVAR_LEVEL (stride_var),
+                  = MakeWLstrideVar (WLSTRIDEVAR_LEVEL (stride_var),
                                      WLSTRIDEVAR_DIM (stride_var),
                                      DupNode (WLSTRIDEVAR_BOUND2 (stride_var)),
                                      MakeNum (SHPSEG_SHAPE (shape, WLSTRIDEVAR_DIM (
@@ -4885,7 +4899,7 @@ GenerateCompleteDomainVar (node *stride_var, int dims, shpseg *shape)
                                        GenerateShapeStrides (WLGRIDVAR_DIM (grid_var) + 1,
                                                              dims, shape),
                                        NULL, NULL);
-                stride_var = MakeWLSTRIDEVAR (WLSTRIDEVAR_LEVEL (stride_var),
+                stride_var = MakeWLstrideVar (WLSTRIDEVAR_LEVEL (stride_var),
                                               WLSTRIDEVAR_DIM (stride_var), MakeNum (0),
                                               DupNode (WLSTRIDEVAR_BOUND1 (stride_var)),
                                               MakeNum (1), new_grid, stride_var);
@@ -4899,17 +4913,15 @@ GenerateCompleteDomainVar (node *stride_var, int dims, shpseg *shape)
 /******************************************************************************
  *
  * Function:
- *   node* ComputeOneCube( node *stride, WithOpType wltype,
- *                         int dims, shpseg *shape)
+ *   node* ComputeOneCube( node *stride, int dims, types *type, bool is_fold)
  *
  * Description:
  *   If the with-loop contains one part/generator only, we must supplement
  *   new generators for the complement.
  *
  * Remark:
- *   The new generators contain no pointer to a code-block. We inspect the
- *   type of the with-loop (WO_genarray, WO_modarray, WO_fold...) to decide
- *   whether we must ...
+ *   The new generators contain no pointer to a code-block. During compilation
+ *   we have to inspect the type of the with-loop to decide whether we must ...
  *     ... initialize the array-part with 0 (WO_genarray -> 'init'),
  *     ... copy the source-array (WO_modarray -> 'copy'),
  *     ... do nothing (WO_fold -> 'noop').
@@ -4917,18 +4929,20 @@ GenerateCompleteDomainVar (node *stride_var, int dims, shpseg *shape)
  ******************************************************************************/
 
 static node *
-ComputeOneCube (node *stride, WithOpType wltype, int dims, shpseg *shape)
+ComputeOneCube (node *stride, int dims, types *type, bool is_fold)
 {
     DBUG_ENTER ("ComputeOneCube");
 
-    if ((wltype == WO_genarray) || (wltype == WO_modarray)) {
-        if (NODE_TYPE (stride) == N_WLstrideVar) {
-            stride = GenerateCompleteDomainVar (stride, dims, shape);
-        } else { /* N_WLstride */
-            stride = GenerateCompleteDomain (stride, dims, shape);
-        }
-    } else { /* WO_fold... */
+    if (is_fold) {
         stride = GenerateCompleteGrid (stride);
+    } else {
+        if (NODE_TYPE (stride) == N_WLstrideVar) {
+            stride = GenerateCompleteDomainVar (stride, dims, type);
+        } else {
+            DBUG_ASSERT ((NODE_TYPE (stride) == N_WLstride),
+                         "illegal stride node found!");
+            stride = GenerateCompleteDomain (stride, dims, type);
+        }
     }
 
     DBUG_RETURN (stride);
@@ -6216,7 +6230,7 @@ AnalyzeBreakSpecifier (void)
  *   transforms with-loop (N_Nwith-node) into new representation (N_Nwith2).
  *
  * Remark:
- *   'INFO_WL_SHPSEG( arg_info)' points to the shape-segs of the let-ids.
+ *   'INFO_WL_TYPES( arg_info)' points to the type of the let-ids.
  *
  ******************************************************************************/
 
@@ -6224,7 +6238,8 @@ node *
 WLTRAwith (node *arg_node, node *arg_info)
 {
     node *strides, *cubes, *segs, *seg;
-    shpseg *wl_shpseg;
+    types *wl_type;
+    bool is_fold;
     int wl_dims, b;
     wl_bs_t WL_break_after;
     node *new_node = NULL;
@@ -6250,30 +6265,24 @@ WLTRAwith (node *arg_node, node *arg_info)
                  " the same VEC and IDS names!\n"
                  "This is probably due to an error during with-loop-folding.");
 
-    /*
-     * get number of dims of with-loop index range
-     */
+    is_fold
+      = ((NWITH_TYPE (arg_node) == WO_foldfun) || (NWITH_TYPE (arg_node) == WO_foldprf));
+    /* get number of dims of with-loop index range */
     wl_dims = IDS_SHAPE (NWITH_VEC (arg_node), 0);
-
-    if ((NWITH_TYPE (arg_node) == WO_genarray)
-        || (NWITH_TYPE (arg_node) == WO_modarray)) {
-        wl_shpseg = INFO_WL_SHPSEG (arg_info);
-    } else {
-        wl_shpseg = NULL;
-    }
+    wl_type = INFO_WL_TYPES (arg_info);
 
     /*
      * convert parts of with-loop into new format
      */
     DBUG_EXECUTE ("WLprec", NOTE (("step 0.1: converting parts into strides\n")));
-    strides = Parts2Strides (NWITH_PART (arg_node), wl_dims, wl_shpseg);
+    strides = Parts2Strides (NWITH_PART (arg_node), wl_dims, wl_type, is_fold);
 
     if (strides == NULL) {
         /*
          * all parts are empty
          *  -> set 'strides' or 'new_node'
          */
-        EmptyParts2StridesOrExpr (&strides, &new_node, arg_node, wl_dims, wl_shpseg);
+        EmptyParts2StridesOrExpr (&strides, &new_node, arg_node, wl_dims, wl_type);
     }
 
     /*
@@ -6296,9 +6305,7 @@ WLTRAwith (node *arg_node, node *arg_info)
         NWITH2_NAIVE_COMP (new_node)
           = ExtractNaiveCompPragma (NWITH_PRAGMA (arg_node), line);
         NWITH2_PRAGMA (new_node) = ExtractAplPragma (NWITH_PRAGMA (arg_node), line);
-        if ((NWITH2_PRAGMA (new_node) != NULL)
-            && ((NWITH2_TYPE (new_node) == WO_foldfun)
-                || (NWITH2_TYPE (new_node) == WO_foldprf))) {
+        if ((NWITH2_PRAGMA (new_node) != NULL) && is_fold) {
             /*
              * No array placement for fold with-loops.
              */
@@ -6360,8 +6367,7 @@ WLTRAwith (node *arg_node, node *arg_info)
                  *     of the index-vector-space.
                  *  -> the generator params are possibly vars.
                  */
-                cubes
-                  = ComputeOneCube (strides, NWITH2_TYPE (new_node), wl_dims, wl_shpseg);
+                cubes = ComputeOneCube (strides, wl_dims, wl_type, is_fold);
             } else {
                 /*
                  * we have multiple parts.
@@ -6525,14 +6531,14 @@ WLTRAcode (node *arg_node, node *arg_info)
  *   node *WLTRAlet( node *arg_node, node *arg_info)
  *
  * Description:
- *   'INFO_WL_SHPSEG( arg_info)' points to the shape-segs of the let-ids.
+ *   'INFO_WL_TYPES( arg_info)' points to the type of the let-ids.
  *
  ******************************************************************************/
 
 node *
 WLTRAlet (node *arg_node, node *arg_info)
 {
-    shpseg *tmp;
+    types *tmp;
 
     DBUG_ENTER ("WLTRAlet");
 
@@ -6542,12 +6548,12 @@ WLTRAlet (node *arg_node, node *arg_info)
                   || (NODE_TYPE (LET_VARDEC (arg_node)) == N_arg)),
                  "vardec-node of let-variable has wrong type!");
 
-    tmp = INFO_WL_SHPSEG (arg_info);
-    INFO_WL_SHPSEG (arg_info) = TYPES_SHPSEG (LET_TYPE (arg_node));
+    tmp = INFO_WL_TYPES (arg_info);
+    INFO_WL_TYPES (arg_info) = LET_TYPE (arg_node);
 
     LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
 
-    INFO_WL_SHPSEG (arg_info) = tmp;
+    INFO_WL_TYPES (arg_info) = tmp;
 
     DBUG_RETURN (arg_node);
 }
