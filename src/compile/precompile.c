@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.27  2002/02/06 17:08:53  dkr
+ * PREC1let() modified: *all* primitive functions are flattened now
+ *
  * Revision 3.26  2001/12/13 13:18:57  dkr
  * signature of MakeAssignIcm?() modified
  *
@@ -460,13 +463,17 @@ PREC1assign (node *arg_node, node *arg_info)
  * description:
  *   For each id from the LHS:
  *     If we have   a ... a = fun( ... a ... a ... )   ,
- *     were   fun   is a user-defined function,
+ *     were   fun   is a user-defined function
  *       and   a   is a regular argument representing a refcounted data object,
  *       and the refcounting is *not* done by the function itself,
- *     or   fun   is a primitive function (on arrays) except F_dim or F_ids_sel,
+ *     or   fun   is a primitive function
  *       and   a   is a regular argument representing a refcounted data object,
  *     then we rename each RHS   a   into a temp-var   __tmp<n>   and insert
  *     an assignment   __tmp<n> = a;   in front of the function application.
+ *
+ * remark:
+ *   The 2nd argument of the primitive function reshape() need not to be
+ *   flattened! Note, that reshape() is simply compiled into an assignment.
  *
  ******************************************************************************/
 
@@ -495,10 +502,7 @@ PREC1let (node *arg_node, node *arg_info)
     while (let_ids != NULL) {
         ids_name = IDS_NAME (let_ids);
 
-        if (((NODE_TYPE (let_expr) == N_prf)
-             && (ARRAY_ARGS (PRF_PRF (let_expr)) && (PRF_PRF (let_expr) != F_dim)
-                 && (PRF_PRF (let_expr) != F_idx_sel)))
-            || (NODE_TYPE (let_expr) == N_ap)) {
+        if ((NODE_TYPE (let_expr) == N_prf) || (NODE_TYPE (let_expr) == N_ap)) {
             /*
              * does 'ids_name' occur as an argument of the function application??
              */
