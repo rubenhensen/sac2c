@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.18  2000/06/08 15:29:45  nmw
+ * pih_tab and piw_tab added
+ *
  * Revision 1.17  2000/05/31 14:38:22  mab
  * renamed tables for array padding
  *
@@ -173,6 +176,8 @@ extern funtab *adjca1_tab;
 extern funtab *adjca2_tab;
 extern funtab *apc_tab;
 extern funtab *apt_tab;
+extern funtab *pih_tab;
+extern funtab *piw_tab;
 
 extern int nnode[];
 
