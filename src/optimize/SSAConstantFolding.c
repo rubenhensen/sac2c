@@ -1,8 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.24  2001/12/14 16:37:54  dkr
+ * bug in SSACFExpr2StructConstant() fixed
+ *
  * Revision 1.23  2001/12/11 15:57:12  dkr
- * GetDim() added
+ * SSACFDim(): GetDim() used instead of GetShapeDim()
  *
  * Revision 1.22  2001/12/11 15:52:39  dkr
  * GetDim() replaced by GetShapeDim()
@@ -549,12 +552,11 @@ SSACFExpr2StructConstant (node *expr)
 
     struc_co = NULL;
 
-    dim = GetShapeDim (VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (expr))));
-
     if (NODE_TYPE (expr) == N_array) {
         /* this expression is an array */
         struc_co = SSACFArray2StructConstant (expr);
     } else if ((NODE_TYPE (expr) == N_id) && (AVIS_SSAASSIGN (ID_AVIS (expr)) != NULL)) {
+        dim = GetShapeDim (VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (expr))));
         /* expression is an identifier */
         if (dim > 0) {
             /* id is a defined array */
@@ -713,7 +715,7 @@ SSACFScalar2StructConstant (node *expr)
 /******************************************************************************
  *
  * function:
- *   static node *SSACFDupStructConstant2Expr(struc_constant *struc_co)
+ *   node *SSACFDupStructConstant2Expr(struc_constant *struc_co)
  *
  * description:
  *   builds an array of the given strucural constant and duplicate
@@ -1098,7 +1100,7 @@ SSACFModarray (node *a, constant *idx, node *elem)
 /******************************************************************************
  *
  * function:
- *   static node *SSACFSel(node *idx_expr, node *array_expr)
+ *   node *SSACFSel(node *idx_expr, node *array_expr)
  *
  * description:
  *   tries a special sel-modarray optimization for the following cases:
@@ -1198,7 +1200,7 @@ SSACFSel (node *idx_expr, node *array_expr)
 /******************************************************************************
  *
  * function:
- *   static node *RemovePhiCopyTargetAttributes(node* vardecs, bool thenpart)
+ *   node *RemovePhiCopyTargetAttributes(node* vardecs, bool thenpart)
  *
  * description:
  *   removes all phi copy target attributes from all vardecs and set
