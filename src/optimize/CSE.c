@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  1999/01/19 09:58:28  sbs
+ * dbug-vars put into #if-construct
+ *
  * Revision 1.10  1999/01/18 15:46:02  sbs
  * DBUG_PRINT( "OPTMEM",...) inserted for mem-info during optimization
  *
@@ -76,7 +79,9 @@ node *
 CSE (node *arg_node, node *info_node)
 {
     funptr *tmp_tab;
+#ifndef DBUG_OFF
     int mem_cse_expr = cse_expr;
+#endif
 
     DBUG_ENTER ("CSE");
     DBUG_PRINT ("OPT", ("CSE"));
