@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.8  1995/03/24 15:42:31  asi
+ * Revision 1.9  1995/06/16 13:10:46  asi
+ * added FreePrf2, which will free memory occupied by a N_prf-subtree,
+ *                 but it will not free one given argument.
+ *
+ * Revision 1.8  1995/03/24  15:42:31  asi
  * Bug fixed in FreeMask
  *
  * Revision 1.7  1995/03/17  15:54:56  hw
@@ -233,5 +237,40 @@ FreeTree (node *arg_node)
     act_tab = free_tab;
     arg_node = Trav (arg_node, NULL);
     act_tab = tmp_tab;
+    DBUG_VOID_RETURN;
+}
+
+/*
+ *
+ *  functionname  : FreePrf2
+ *  arguments     : 1) prf-node
+ *                  2) argument not to be freed
+ *  description   : frees whole primitive, without argument arg_no
+ *  global vars   : FreeTree
+ *  internal funs : --
+ *  external funs : --
+ *  macros        : DBUG..., NULL, FREE
+ *
+ *  remarks       :
+ *
+ */
+void
+FreePrf2 (node *arg_node, int arg_no)
+{
+    node *tmp1, *tmp2;
+    int i;
+
+    DBUG_ENTER ("FreePrf2");
+    tmp1 = arg_node->node[0];
+    i = 0;
+    while (NULL != tmp1) {
+        if (i != arg_no)
+            FreeTree (tmp1->node[0]);
+        tmp2 = tmp1;
+        tmp1 = tmp1->node[1];
+        FREE (tmp2);
+        i++;
+    }
+    FREE (arg_node);
     DBUG_VOID_RETURN;
 }
