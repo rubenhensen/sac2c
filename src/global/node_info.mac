@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.127  1996/08/09 16:44:12  asi
- * dead function removal added
+ * Revision 1.128  1996/09/11 06:14:24  cg
+ * added function FltnPrf.
  *
+;; Revision 1.127  1996/08/09  16:44:12  asi
+;; dead function removal added
+;;
 ;; Revision 1.126  1996/05/27  13:31:02  sbs
 ;; RCprf inserted
 ;;
@@ -629,7 +632,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons),
 
-  NIF (N_prf, "N_prf", TravSons, TravSons, PrintPrf, TravSons, TravSons, TravSons,
+  NIF (N_prf, "N_prf", TravSons, FltnPrf, PrintPrf, TravSons, TravSons, TravSons,
        TravSons, FreePrf, CFprf, RCprf, CompPrf, TravSons, DupPrf, TravSons, TravSons,
        TravSons, IdxPrf, TravSons, TravSons, AEprf, PrintPrf, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
