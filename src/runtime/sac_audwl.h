@@ -2,6 +2,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2005/03/16 09:17:38  sbs
+ * *** empty log message ***
+ *
  * Revision 1.2  2005/03/13 07:26:30  sbs
  * DEBUG_AUD_GENERATOR_CODE added for turning on/off aud-wl-debug output.
  *
@@ -37,7 +40,7 @@
  *  - printed output of the index vectors traversed
  */
 
-#define DEBUG_AUD_GENERATOR_CODE 0
+#define DEBUG_AUD_GENERATOR_CODE 1
 
 #if DEBUG_AUD_GENERATOR_CODE
 #define SAC_AUD_WL_DEBUG_PRINT(idx_vec_NT)                                               \
