@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.8  1995/05/16 09:05:03  hw
+ * Revision 1.9  1995/09/01 07:45:06  cg
+ * small layout change
+ *
+ * Revision 1.8  1995/05/16  09:05:03  hw
  * changed ERROR1 & WARN1 ( no '\n' is required at beginning or end of
  *                          formatstring anymore )
  *
@@ -57,7 +60,7 @@
     {                                                                                    \
         fprintf (stderr, "\n");                                                          \
         DoPrint s;                                                                       \
-        fprintf (stderr, "\n");                                                          \
+        fprintf (stderr, "\n\n");                                                        \
         exit (n);                                                                        \
     }
 
