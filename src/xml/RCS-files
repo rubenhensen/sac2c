@@ -30,3 +30,4 @@ Makefile
 ast2node_info_mac.xsl
 ast2traverse_tables_c.xsl
 ast2traverse_tables_h.xsl
+ast2sons_h.xsl
