@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.12  2000/03/16 16:38:10  dkr
+ * fixed a bug in PHASE_EPILOG
+ *
  * Revision 2.11  2000/03/16 14:30:53  dkr
  * macros PHASE_PROLOG and PHASE_EPILOG added
  *
@@ -150,7 +153,7 @@ extern void ComputeMallocAlignStep (void);
     }
 
 #define PHASE_EPILOG                                                                     \
-    if (do_lac2fun[compiler_phase + 1]) {                                                \
+    if (do_fun2lac[compiler_phase + 1]) {                                                \
         syntax_tree = Fun2Lac (syntax_tree);                                             \
         ABORT_ON_ERROR;                                                                  \
     }                                                                                    \
