@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.63  1998/02/06 13:18:57  srs
+# added WithloopFolding.o
+#
 # Revision 1.62  1998/02/05 16:47:34  srs
 # removed WorkReduction from OPTIMIZE
 #
@@ -245,7 +248,8 @@ OPTIMIZE= src/optimize/optimize.o src/optimize/ConstantFolding.o \
           src/optimize/DeadCodeRemoval.o \
 	  src/optimize/LoopInvariantRemoval.o src/optimize/DupTree.o \
 	  src/optimize/Inline.o src/optimize/Unroll.o \
-          src/optimize/Unswitch.o src/optimize/CSE.o
+          src/optimize/Unswitch.o src/optimize/CSE.o \
+	  src/optimize/WithloopFolding.o
 PSIOPT= src/psi-opt/index.o src/psi-opt/psi-opt.o src/psi-opt/ArrayElimination.o
 MODULES= src/modules/filemgr.o src/modules/import.o src/modules/writesib.o  \
          src/modules/implicittypes.o src/modules/analysis.o \
