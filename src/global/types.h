@@ -1,11 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2001/04/24 13:27:28  dkr
+ * - macro FUNDEF_UNUSED renamed into USED_INACTIVE
+ * - macros FALSE, TRUE moved from internal_lib.h to types.h
+ *
  * Revision 3.7  2001/04/02 11:07:30  nmw
  * symbol FUN_UNUSED added
- *
- * Revision 3.6  2001/03/30 16:37:09  nmw
- * *** empty log message ***
  *
  * Revision 3.5  2001/03/16 11:58:44  nmw
  * ssaphit_t enum type added
@@ -80,87 +81,34 @@
  * Revision 2.20  1999/11/18 12:51:57  bs
  * FEATURE_UNKNOWN added.
  *
- * Revision 2.19  1999/10/19 17:10:41  sbs
- * .mac format changed for type_info.mac  and typedef for usertype added.
- *
- * Revision 2.18  1999/10/01 14:57:31  sbs
- * typedef int bool added!
- *
- * Revision 2.17  1999/07/23 17:17:46  jhs
- * Restructured node_info.mac and simplified it's usage.
- *
- * Revision 2.16  1999/07/14 12:14:36  sbs
- * proper support for arg_info during IVE added.
- *
- * Revision 2.15  1999/07/07 06:00:57  sbs
- * added DOLLAR to useflag which is used for the N_vinfo nodes
- *
- * Revision 2.14  1999/06/25 14:50:36  rob
- * Introduce definitions and utility infrastructure for tagged array support.
- *
- * Revision 2.13  1999/06/09 13:56:43  jhs
- * Added new variable naive_refcnt in ids.
- *
- * Revision 2.12  1999/06/03 14:23:52  jhs
- * Brushed up some comments I 'hacked in' earlier.
- *
- * Revision 2.11  1999/05/18 16:55:33  dkr
- * added int_data in NODE
- *
- * Revision 2.9  1999/05/10 13:28:57  sbs
- * changed struct TYPES into struct TYPESS
- * due to collisions with the TYPES-token of sac.l
- *
- * Revision 2.8  1999/05/06 15:01:06  sbs
- * src_file added to node-struct.
- *
- * Revision 2.7  1999/05/05 13:03:21  jhs
- * Modified type GeneratorRel to store the original operators of
- * the withloop, these will not be changed during compilation.
- *
- * Revision 2.6  1999/04/28 12:17:18  bs
- * Typedefinition of access_t modified: direction (read | write) added.
- *
- * Revision 2.5  1999/04/14 16:23:48  jhs
- * EMPTY_ARRAY removed for second try on empty arrays.
- *
- * Revision 2.4  1999/04/09 13:53:13  jhs
- * Macros for known shape and known dimension added.
- *
- * Revision 2.3  1999/04/08 17:14:31  jhs
- * Changed value for KNOWN_DIM_OFFSET from -2 to -3.
- * Added EMPTY_ARRAZY with value -2.
- *
- * Revision 2.2  1999/02/28 21:07:06  srs
- * moved types from WithloopFolding.h to this file.
- *
- * Revision 2.1  1999/02/23 12:40:15  sacbase
- * new release made
- *
  * [...]
  *
- * Revision 1.1  1995/09/27  15:13:26  cg
- * Initial revision
  */
 
 /*
- *   This source code file does not contain any tabs any more. This is
- *   important to guarantee its unique appearance with all kinds of editors.
- *   So, please try to keep it this way !
+ *  This source code file does not contain any tabs any more. This is
+ *  important to guarantee its unique appearance with all kinds of editors.
+ *  So, please try to keep it this way !
  */
 
 #ifndef _sac_types_h
-
 #define _sac_types_h
+
+/*
+ * bool values
+ */
+
+typedef int bool;
+
+#define FALSE 0
+#define TRUE 1
 
 #define SHP_SEG_SIZE 16
 #define MAX_MASK 7
 #define MAX_SONS 6
 
-/* init value for FUNDEF_USED */
-#define FUN_UNUSED 0
-
-typedef char id; /* kept for compatibility reasons with old version only */
+/* value for FUNDEF_USED, if reference counting is inactive */
+#define USED_INACTIVE -99
 
 /*
  * The type faeture_t is used as a bit mask for tile size inference.
@@ -173,10 +121,6 @@ typedef /* unsigned */ int feature_t;
  * we better use 'int' here, to fool the cc compiler.
  * (a cast to 'unsigned int' is not a l-value !!)
  */
-
-#ifndef SAC_BOOL_H
-typedef int bool;
-#endif
 
 #define FEATURE_NONE 0  /* no special features at all */
 #define FEATURE_WL 1    /* with-loop containing array accesses */
