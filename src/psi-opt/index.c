@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.50  2003/03/26 15:22:17  sbs
+ * doxygen again
+ *
  * Revision 3.49  2003/03/26 14:56:13  sbs
  * more subtle adjustments of the grouping hierarchy.
  *
@@ -666,12 +669,14 @@
  */
 
 /**
- *
- * @var ive_expr counts the number of index vectors removed during optimization.
- * @var ive_op   counts the number of operations on index vectors removed.
+ * counts the number of index vectors removed during optimization.
  */
+static int ive_expr;
 
-static int ive_expr, ive_op;
+/**
+ * counts the number of operations on index vectors removed.
+ */
+static int ive_op;
 
 /**
  *
@@ -987,12 +992,9 @@ MergeVinfoChn (node *ca, node *cb)
         }                                                                                \
     }
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * function:
- *  node *DuplicateTop( node *actchn)
- *
- * description:
+ * @fn node *DuplicateTop( node *actchn)
  *
  ******************************************************************************/
 
@@ -1013,12 +1015,9 @@ DuplicateTop (node *actchn)
     DBUG_RETURN (res);
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * function:
- *  node *SwitchTop( node *actchn)
- *
- * description:
+ * @fn node *SwitchTop( node *actchn)
  *
  ******************************************************************************/
 
@@ -1040,12 +1039,9 @@ SwitchTop (node *actchn)
     DBUG_RETURN (res);
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * function:
- *  node *MergeTop( node *actchn)
- *
- * description:
+ * @fn node *MergeTop( node *actchn)
  *
  ******************************************************************************/
 
@@ -1067,12 +1063,9 @@ MergeTop (node *actchn)
     DBUG_RETURN (res);
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * function:
- *  node *FreeTop( node *actchn)
- *
- * description:
+ * @fn node *FreeTop( node *actchn)
  *
  ******************************************************************************/
 
@@ -1093,12 +1086,9 @@ FreeTop (node *actchn)
     DBUG_RETURN (res);
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * function:
- *  node *MergeCopyTop( node *actchn)
- *
- * description:
+ * @fn node *MergeCopyTop( node *actchn)
  *
  ******************************************************************************/
 
