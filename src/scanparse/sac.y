@@ -3,7 +3,11 @@
 /*
  *
  * $Log$
- * Revision 1.63  1995/06/09 10:01:34  cg
+ * Revision 1.64  1995/06/30 11:27:21  hw
+ * - new primitive functions "ftoi" & "itof" inserted
+ * - token C_KEYWORD for not used c-keywords inserted
+ *
+ * Revision 1.63  1995/06/09  10:01:34  cg
  * inline warning deleted.
  *
  * Revision 1.62  1995/05/31  13:03:11  hw
@@ -254,14 +258,14 @@ static char *mod_name;
 %token BRACE_L, BRACE_R, BRACKET_L, BRACKET_R, SQBR_L, SQBR_R, COLON, SEMIC,
        COMMA,
        INLINE, LET, TYPEDEF, CONSTDEF, OBJDEF
-       AND, OR, EQ, NEQ, NOT, LE, LT, GE, GT, MUL, DIV, PLUS, MINUS, 
+       AND, OR, EQ, NEQ, NOT, LE, LT, GE, GT, MUL, DIV, PLUS, MINUS, F2I, I2F,
        INC, DEC, ADDON, SUBON, MULON, DIVON,
        RESHAPE, SHAPE, TAKE, DROP, DIM, ROTATE,CAT,PSI,
        K_MAIN, RETURN, IF, ELSE, DO, WHILE, FOR, WITH, GENARRAY, MODARRAY,
        FOLD,
        MODDEC, MODIMP, CLASSDEC, IMPORT, ALL, IMPLICIT, EXPLICIT, TYPES, FUNS,
        OWN, CONSTANTS, GLOBAL, OBJECTS, CLASSIMP,
-       ARRAY,SC, TRUE, FALSE, EXTERN
+       ARRAY,SC, TRUE, FALSE, EXTERN, C_KEYWORD
 %token <id> ID, STR
 %token <types> TYPE_INT, TYPE_FLOAT, TYPE_BOOL, TYPE_STR, TYPE_UNS, TYPE_SHORT,
                TYPE_LONG, TYPE_CHAR, TYPE_DBL, TYPE_VOID, TYPE_DOTS
@@ -1462,6 +1466,17 @@ monop: DIM
              $$=MakeNode(N_prf);
              $$->info.prf=F_shape;
           }
+       | F2I
+          {
+             $$=MakeNode(N_prf);
+             $$->info.prf=F_ftoi; 
+          }
+       | I2F
+          {
+             $$=MakeNode(N_prf);
+             $$->info.prf=F_itof; 
+          }
+
           ;
 
 unaryop: INC
