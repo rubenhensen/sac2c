@@ -20,7 +20,6 @@ new_typecheck.c
 new_typecheck.h
 new_types.c
 new_types.h
-prim_fun.h
 prim_fun_ft.mac
 prim_fun_tt.mac
 sig_deps.c
