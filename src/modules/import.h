@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2002/10/31 13:42:20  sbs
+ * symbolic constants for sym_kind added for better program reading
+ *
  * Revision 3.1  2000/11/20 18:00:55  sacbase
  * new release made
  *
@@ -119,6 +122,11 @@ typedef struct MOD {
                    /* pointer to global object symbols */
     struct MOD *next;
 } mod;
+
+#define SYM_ITY 0
+#define SYM_ETY 1
+#define SYM_FUN 2
+#define SYM_OBJ 3
 
 typedef struct MODS {
     mod *mod;
