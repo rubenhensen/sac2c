@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2001/06/28 09:26:06  cg
+ * Syntax of array types changed:
+ * int[] -> int[+]  and  int[?] -> int[*]
+ * int[] is still supported as input.
+ *
  * Revision 3.8  2001/05/17 10:03:24  nmw
  * type mistake in IntByte2String corrected, warning eliminated
  *
@@ -200,11 +205,11 @@ Type2String (types *type, int flag, bool all)
         }
 
         if (TYPES_DIM (type) != 0) {
-            if (TYPES_DIM (type) == -1) {
-                strcat (tmp_string, "[]");
+            if (TYPES_DIM (type) == UNKNOWN_SHAPE) {
+                strcat (tmp_string, "[+]");
             } else {
                 if (ARRAY_OR_SCALAR == TYPES_DIM (type)) {
-                    strcat (tmp_string, "[?]");
+                    strcat (tmp_string, "[*]");
                 } else {
                     int i, dim;
                     static char int_string[INT_STRING_LENGTH];

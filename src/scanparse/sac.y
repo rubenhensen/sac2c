@@ -4,6 +4,11 @@
 /*
  *
  * $Log$
+ * Revision 3.30  2001/06/28 09:26:06  cg
+ * Syntax of array types changed:
+ * int[] -> int[+]  and  int[?] -> int[*]
+ * int[] is still supported as input.
+ *
  * Revision 3.29  2001/06/28 07:46:51  cg
  * Primitive function psi() renamed to sel().
  *
@@ -2057,7 +2062,11 @@ localtype_main: simpletype { $$ = $1; }
                 { $$ = $1;
                   TYPES_DIM( $$) = UNKNOWN_SHAPE;
                 }
-              | simpletype_main  SQBR_L QUESTION SQBR_R  
+              | simpletype_main SQBR_L PLUS SQBR_R  
+                { $$ = $1;
+                  TYPES_DIM( $$) = UNKNOWN_SHAPE;
+                }
+              | simpletype_main  SQBR_L MUL SQBR_R  
                 { $$ = $1;
                   TYPES_DIM( $$) = ARRAY_OR_SCALAR;
                 }
@@ -2070,7 +2079,12 @@ localtype_main: simpletype { $$ = $1; }
                   TYPES_NAME( $$) = $1;
                   TYPES_DIM( $$) = UNKNOWN_SHAPE;
                 }
-              | id SQBR_L QUESTION SQBR_R
+              | id SQBR_L PLUS SQBR_R
+                { $$ = MakeTypes1( T_user);
+                  TYPES_NAME( $$) = $1;
+                  TYPES_DIM( $$) = UNKNOWN_SHAPE;
+                }
+              | id SQBR_L MUL SQBR_R
                 { $$ = MakeTypes1( T_user);
                   TYPES_NAME( $$) = $1;
                   TYPES_DIM( $$) = ARRAY_OR_SCALAR;
