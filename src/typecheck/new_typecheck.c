@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.36  2003/11/26 13:53:19  sbs
+ * default value of new genarray WLs now is checked as well.
+ *
  * Revision 3.35  2003/11/04 12:36:08  sbs
  * rudimentary support for empty arrays added.
  *
@@ -1719,7 +1722,7 @@ node *
 NTCNwithop (node *arg_node, node *arg_info)
 {
     ntype *gen, *body, *res, *elems, *acc;
-    ntype *shp, *args;
+    ntype *shp, *dexpr, *args;
     node *wrapper;
     te_info *info;
     bool ok;
@@ -1739,8 +1742,18 @@ NTCNwithop (node *arg_node, node *arg_info)
         NWITHOP_SHAPE (arg_node) = Trav (NWITHOP_SHAPE (arg_node), arg_info);
         shp = INFO_NTC_TYPE (arg_info);
         INFO_NTC_TYPE (arg_info) = NULL;
+        /*
+         * Then, we check the shape of the default value, if available:
+         */
+        if (NWITHOP_DEFAULT (arg_node) != NULL) {
+            NWITHOP_DEFAULT (arg_node) = Trav (NWITHOP_DEFAULT (arg_node), arg_info);
+            dexpr = INFO_NTC_TYPE (arg_info);
+            INFO_NTC_TYPE (arg_info) = NULL;
+        } else {
+            dexpr = TYCopyType (body);
+        }
 
-        args = TYMakeProductType (3, gen, shp, body);
+        args = TYMakeProductType (4, gen, shp, body, dexpr);
         info = TEMakeInfo (linenum, "with", "genarray", NULL, NULL, NULL, NULL);
         res = NTCCTComputeType (NTCWL_gen, info, args);
 
