@@ -1,7 +1,13 @@
 /*
  *
  * $Log$
- * Revision 1.7  1995/10/20 13:46:47  cg
+ * Revision 1.8  1995/10/20 16:52:35  cg
+ * functions InsertNode, InsertNodes, and InsertUnresolvedNodes
+ * transformed into void functions and renamed into
+ * StoreNeededNode, StoreNeededNodes, and StoreUnresolvedNodes
+ * respectively.
+ *
+ * Revision 1.7  1995/10/20  13:46:47  cg
  * added additional parameter in functions InsertNode, InsertNodes,
  * and InsertUnresolvedNodes.
  * Now the status of the nodelist entry can be given as well.
@@ -254,15 +260,15 @@ MergeShpseg (shpseg *first, int dim1, shpseg *second, int dim2)
 }
 
 /***
- ***  InsertNode
+ ***  StoreNeededNode
  ***/
 
-nodelist *
-InsertNode (node *insert, node *fundef, statustype status)
+void
+StoreNeededNode (node *insert, node *fundef, statustype status)
 {
     nodelist *act, *last, *list;
 
-    DBUG_ENTER ("InsertNode");
+    DBUG_ENTER ("StoreNeededNode");
 
     DBUG_PRINT ("ANA", ("Function '%s` needs '%s` (%s)", ItemName (fundef),
                         ItemName (insert), mdb_nodetype[NODE_TYPE (insert)]));
@@ -281,11 +287,26 @@ InsertNode (node *insert, node *fundef, statustype status)
         break;
 
     default:
-        DBUG_ASSERT (0, "Wrong insert node in call to function 'InsertNode`");
+        DBUG_ASSERT (0, "Wrong insert node in call to function 'StoreNeededNode`");
     }
 
     if (list == NULL) {
-        list = MakeNodelist (insert, status, NULL);
+        switch (NODE_TYPE (insert)) {
+        case N_fundef:
+            FUNDEF_NEEDFUNS (fundef) = MakeNodelist (insert, status, NULL);
+            break;
+
+        case N_objdef:
+            FUNDEF_NEEDOBJS (fundef) = MakeNodelist (insert, status, NULL);
+            break;
+
+        case N_typedef:
+            FUNDEF_NEEDTYPES (fundef) = MakeNodelist (insert, status, NULL);
+            break;
+
+        default:
+            DBUG_ASSERT (0, "Wrong insert node in call to function 'StoreNeededNode`");
+        }
     } else {
         act = list;
         last = list;
@@ -300,45 +321,41 @@ InsertNode (node *insert, node *fundef, statustype status)
         }
     }
 
-    DBUG_RETURN (list);
+    DBUG_VOID_RETURN;
 }
 
 /***
- ***  InsertNodes
+ ***  StoreNeededNodes
  ***/
 
-nodelist *
-InsertNodes (nodelist *inserts, node *fundef, statustype status)
+void
+StoreNeededNodes (nodelist *inserts, node *fundef, statustype status)
 {
-    nodelist *list;
-
-    DBUG_ENTER ("InsertNodes");
+    DBUG_ENTER ("StoreNeededNodes");
 
     while (inserts != NULL) {
-        list = InsertNode (NODELIST_NODE (inserts), fundef, status);
+        StoreNeededNode (NODELIST_NODE (inserts), fundef, status);
         inserts = NODELIST_NEXT (inserts);
     }
 
-    DBUG_RETURN (list);
+    DBUG_VOID_RETURN;
 }
 
 /***
- ***  InsertUnresolvedNodes
+ ***  StoreUnresolvedNodes
  ***/
 
-nodelist *
-InsertUnresolvedNodes (nodelist *inserts, node *fundef, statustype status)
+void
+StoreUnresolvedNodes (nodelist *inserts, node *fundef, statustype status)
 {
-    nodelist *list;
-
-    DBUG_ENTER ("InsertNodes");
+    DBUG_ENTER ("StoreUnresolvedNodes");
 
     while (inserts != NULL) {
         if (NODELIST_ATTRIB (inserts) == ST_unresolved) {
-            list = InsertNode (NODELIST_NODE (inserts), fundef, status);
+            StoreNeededNode (NODELIST_NODE (inserts), fundef, status);
         }
         inserts = NODELIST_NEXT (inserts);
     }
 
-    DBUG_RETURN (list);
+    DBUG_VOID_RETURN;
 }

@@ -1,7 +1,13 @@
 /*
  *
  * $Log$
- * Revision 1.7  1995/10/20 13:46:47  cg
+ * Revision 1.8  1995/10/20 16:52:35  cg
+ * functions InsertNode, InsertNodes, and InsertUnresolvedNodes
+ * transformed into void functions and renamed into
+ * StoreNeededNode, StoreNeededNodes, and StoreUnresolvedNodes
+ * respectively.
+ *
+ * Revision 1.7  1995/10/20  13:46:47  cg
  * added additional parameter in functions InsertNode, InsertNodes,
  * and InsertUnresolvedNodes.
  * Now the status of the nodelist entry can be given as well.
@@ -225,16 +231,13 @@ extern int CountNums (nums *numsp);
 
 /*
  *
- *  functionname  : InsertNode
+ *  functionname  : StoreNeededNode
  *  arguments     : 1) node which has to be inserted
  *                  2) fundef node where 1) has to be inserted
  *                  3) status of the new nodelist entry
  *  description   : inserts the given node at the end of the correct
  *                  nodelist (funlist, objlist, or typelist) of the
  *                  given fundef node and
- *                  returns a pointer to the extended nodelist.
- *                  If node is already a member of the nodelist, then
- *                  the list is returned unchanged.
  *  global vars   : ---
  *  internal funs : ---
  *  external funs : ---
@@ -244,18 +247,18 @@ extern int CountNums (nums *numsp);
  *
  */
 
-extern nodelist *InsertNode (node *insert, node *fundef, statustype status);
+extern void StoreNeededNode (node *insert, node *fundef, statustype status);
 
 /*
  *
- *  functionname  : InsertNodes
+ *  functionname  : StoreNeededNodes
  *  arguments     : 1) list of nodes
  *                  2) fundef node where inserts are to be done
  *                  3) status of the new nodelist entry
  *  description   : inserts each node of the nodelist into the correct
  *                  nodelist of the fundef node
  *  global vars   : ---
- *  internal funs : InsertNode
+ *  internal funs : StoreNeededNode
  *  external funs : ---
  *  macros        :
  *
@@ -263,11 +266,11 @@ extern nodelist *InsertNode (node *insert, node *fundef, statustype status);
  *
  */
 
-extern nodelist *InsertNodes (nodelist *inserts, node *fundef, statustype status);
+extern void StoreNeededNodes (nodelist *inserts, node *fundef, statustype status);
 
 /*
  *
- *  functionname  : InsertUnresolvedNodes
+ *  functionname  : StoreUnresolvedNodes
  *  arguments     : 1) list of nodes
  *                  2) fundef node where inserts are to be done
  *                  3) status of the new nodelist entry
@@ -275,7 +278,7 @@ extern nodelist *InsertNodes (nodelist *inserts, node *fundef, statustype status
  *                  nodelist of the fundef node
  *                  which have attribute 'unresolved'.
  *  global vars   : ---
- *  internal funs : InsertNode
+ *  internal funs : StoreNeededNode
  *  external funs : ---
  *  macros        :
  *
@@ -283,8 +286,7 @@ extern nodelist *InsertNodes (nodelist *inserts, node *fundef, statustype status
  *
  */
 
-extern nodelist *InsertUnresolvedNodes (nodelist *inserts, node *fundef,
-                                        statustype status);
+extern void StoreUnresolvedNodes (nodelist *inserts, node *fundef, statustype status);
 
 /*--------------------------------------------------------------------------*/
 
