@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.208  1999/01/18 10:05:31  cg
+ * added access macros for the usage of N_info in readsib.c
+ *
  * Revision 1.207  1999/01/15 15:18:55  cg
  * added access macros for new data structure access_t used in tile size
  * selection.
@@ -1937,6 +1940,11 @@ extern node *MakePragma ();
  ***    node *      LASTWLBLOCK   (O)  (N_block)
  ***    node *      FINALASSIGN   (O)  (N_assign)
  ***
+ ***  when used in readsib.c :
+ ***
+ ***    node *     FOLDFUNS       (O)  (N_fundef)
+ ***    node *     MODUL          (O)  (N_modul)
+ ***
  ***  when used in typecheck.c :
  ***
  ***    node *     NEXTASSIGN    (O)  (N_assign)
@@ -2041,6 +2049,10 @@ extern node *MakeInfo ();
 #define INFO_FLTN_LASTASSIGN(n) (n->node[0])
 #define INFO_FLTN_LASTWLBLOCK(n) (n->node[1])
 #define INFO_FLTN_FINALASSIGN(n) (n->node[2])
+
+/* readsib */
+#define INFO_RSIB_FOLDFUNS(n) (n->node[0])
+#define INFO_RSIB_MODUL(n) (n->node[1])
 
 /* typecheck */
 #define INFO_TC_NEXTASSIGN(n) (n->node[1])
