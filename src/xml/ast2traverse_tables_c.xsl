@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.3  2004/11/26 11:58:04  sah
+  implemented pre/post tables
+
   Revision 1.2  2004/11/26 11:00:39  sah
   added default traversal function
 
@@ -35,27 +38,52 @@
     <xsl:text>
 #include "traverse_tables.h"
 #include "traverse_helper.h"
+#include "internal_lib.h"
     </xsl:text>
       <xsl:apply-templates select="/definition/phases//traversal" mode="include" />
     <xsl:text>
 
 travtables_t travtables = {
+    /* TR_undefined */
+    { &amp;TRAVerror
     </xsl:text>
+    <xsl:apply-templates select="/definition/syntaxtree/node" mode="errortraversal" />
+    <xsl:value-of select="'} '" />
     <xsl:apply-templates select="/definition/phases//traversal" />
+    <xsl:text>
+};
+
+preposttable_t pretable = {
+    NULL
+    </xsl:text>
+    <xsl:apply-templates select="/definition/phases//traversal" mode="pretable" />
+    <xsl:text>
+};
+
+preposttable_t posttable = {
+    NULL
+    </xsl:text>
+    <xsl:apply-templates select="/definition/phases//traversal" mode="posttable" />
     <xsl:text>
 };
 
     </xsl:text>
   </xsl:template>
 
+  <xsl:template match="node" mode="errortraversal" >
+    <xsl:value-of select="', &amp;TRAVerror'" />
+  </xsl:template>
+
   <xsl:template match="traversal">
     <xsl:variable name="phase">
       <xsl:value-of select="@id" />
     </xsl:variable>
-    <xsl:if test="position() > 1">
-      <xsl:value-of select="', '" />
-    </xsl:if>
-    <xsl:value-of select="' { &amp;TRAVerror'" />
+    <xsl:value-of select="'/* TR_'" />
+    <xsl:call-template name="lowercase" >
+      <xsl:with-param name="string" select="@id" />
+    </xsl:call-template>
+    <xsl:value-of select="' */'" />
+    <xsl:value-of select="', { &amp;TRAVerror'" />
     <xsl:for-each select="/definition/syntaxtree/node" >
       <xsl:value-of select="', &amp;'" />
       <xsl:choose>
@@ -157,6 +185,24 @@ travtables_t travtables = {
     <xsl:value-of select="@include" />
     <xsl:value-of select="'&quot;'" />
     <xsl:call-template name="newline" />
+  </xsl:template>
+
+  <xsl:template match="traversal[@prefun]" mode="pretable">
+    <xsl:value-of select="', &amp;'" />
+    <xsl:value-of select="@prefun" />
+  </xsl:template>
+ 
+  <xsl:template match="traversal" mode="pretable">
+    <xsl:value-of select="', NULL'" />
+  </xsl:template>
+
+  <xsl:template match="traversal[@prefun]" mode="posttable">
+    <xsl:value-of select="', &amp;'" />
+    <xsl:value-of select="@postfun" />
+  </xsl:template>
+
+  <xsl:template match="traversal" mode="posttable">
+    <xsl:value-of select="', NULL'" />
   </xsl:template>
 
 </xsl:stylesheet>

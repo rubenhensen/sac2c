@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.2  2004/11/26 11:58:04  sah
+  implemented pre/post tables
+
   Revision 1.1  2004/11/23 22:18:57  sah
   Initial revision
 
@@ -41,7 +44,11 @@ typedef travfun_p travfunarray_t [ </xsl:text><xsl:value-of select="count(//synt
 
 typedef travfunarray_t travtables_t [</xsl:text><xsl:value-of select="count(//traversal)+1" /><xsl:text>] ;
 
+typedef travfun_p preposttable_t [</xsl:text><xsl:value-of select="count(//traversal)+1" /><xsl:text>] ;
+
 extern travtables_t travtables;
+extern preposttable_t pretable;
+extern preposttable_t posttable;
 
 #endif /* _SAC_TRAVERSE_TABLES_H_ */
     </xsl:text>
