@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2004/11/23 22:25:39  ktr
+ * typo
+ *
  * Revision 1.7  2004/11/21 20:42:14  ktr
  * Ismop
  *
@@ -54,7 +57,7 @@
  * prefix: EMRC
  *
  *****************************************************************************/
-extern node *EMdoRefcounting (node *syntax_tree);
+extern node *EMRCdoRefcounting (node *syntax_tree);
 
 extern node *EMRCap (node *arg_node, info *arg_info);
 extern node *EMRCarg (node *arg_node, info *arg_info);
