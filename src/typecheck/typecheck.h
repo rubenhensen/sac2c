@@ -1,6 +1,9 @@
 /*
  * $Log$
- * Revision 1.24  1996/02/12 16:07:31  asi
+ * Revision 1.25  1996/05/31 09:43:06  asi
+ * macros defined in access_macros.h no longer used
+ *
+ * Revision 1.24  1996/02/12  16:07:31  asi
  * DuplicateTypes added to SHAPE_2_ARRAY
  *
  * Revision 1.23  1996/01/25  16:24:06  hw
@@ -104,24 +107,24 @@ extern char *module_name;      /* name of module to typecheck;
 
 #define GET_DIM(result, type)                                                            \
     if (T_user == type->simpletype) {                                                    \
-        result = LookupType (type->name, type->name_mod, 042)->DIM;                      \
+        result = LookupType (type->name, type->name_mod, 042)->info.types->dim;          \
         result += type->dim;                                                             \
     } else                                                                               \
         result = type->dim
 
 #define GET_BASIC_SIMPLETYPE(res, type)                                                  \
     if (T_user == type->simpletype)                                                      \
-        res = LookupType (type->name, type->name_mod, 042)->SIMPLETYPE;                  \
+        res = LookupType (type->name, type->name_mod, 042)->info.types->simpletype;      \
     else                                                                                 \
         res = type->simpletype
 
 #define GET_BASIC_SIMPLETYPE_OF_NODE(stype, Node)                                        \
     if (N_array == Node->nodetype) {                                                     \
-        DBUG_ASSERT (NULL != Node->TYPES, "info.types of node N_array missing");         \
-        GET_BASIC_SIMPLETYPE (stype, Node->TYPES);                                       \
+        DBUG_ASSERT (NULL != Node->info.types, "info.types of node N_array missing");    \
+        GET_BASIC_SIMPLETYPE (stype, Node->info.types);                                  \
     } else if (N_id == Node->nodetype) {                                                 \
-        DBUG_ASSERT (NULL != Node->IDS_NODE, "pointer to var_dec missing");              \
-        GET_BASIC_SIMPLETYPE (stype, Node->IDS_NODE->TYPES);                             \
+        DBUG_ASSERT (NULL != Node->info.ids->node, "pointer to var_dec missing");        \
+        GET_BASIC_SIMPLETYPE (stype, Node->info.ids->node->info.types);                  \
     } else                                                                               \
         DBUG_ASSERT (0, "wrong nodetype != N_id,N_array")
 
@@ -134,7 +137,7 @@ extern char *module_name;      /* name of module to typecheck;
                 ERROR2 (3, ("%s, %d: type '%s%s%s' is unknown", filename, line,          \
                             MOD_NAME (arg_type->name_mod), arg_type->name))              \
             else {                                                                       \
-                res_type = DuplicateTypes (t_node->TYPES, 0);                            \
+                res_type = DuplicateTypes (t_node->info.types, 0);                       \
                 if (arg_type->dim > 0) {                                                 \
                     if (res_type->dim >= 0) {                                            \
                         int dim, i;                                                      \
@@ -163,7 +166,7 @@ extern char *module_name;      /* name of module to typecheck;
     {                                                                                    \
         int i;                                                                           \
         if (T_user == type->simpletype) {                                                \
-            types *b_type = LookupType (type->name, type->name_mod, 042)->TYPES;         \
+            types *b_type = LookupType (type->name, type->name_mod, 042)->info.types;    \
             if (0 < b_type->dim + type->dim) {                                           \
                 for (i = 0, length = 1; i < type->dim; i++)                              \
                     length *= type->shpseg->shp[i];                                      \
@@ -185,7 +188,7 @@ extern char *module_name;      /* name of module to typecheck;
     {                                                                                    \
         int i;                                                                           \
         if (T_user == Type->simpletype) {                                                \
-            types *b_type = LookupType (Type->name, Type->name_mod, 042)->TYPES;         \
+            types *b_type = LookupType (Type->name, Type->name_mod, 042)->info.types;    \
             if (0 < b_type->dim + Type->dim) {                                           \
                 node *dummy = MakeNode (N_exprs);                                        \
                 Shape_array = MakeNode (N_array);                                        \
