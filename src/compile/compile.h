@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.9  2000/07/13 11:59:07  jhs
+ * Splited ICM_INDENT into ICM_INDENT_BEFORE and ICM_INDENT_AFTER.
+ *
  * Revision 2.8  2000/05/26 19:25:13  dkr
  * signature of GetAdjustedFoldCode() modified
  *
@@ -127,7 +130,8 @@ extern node *GetFoldVardecs (node *fundef);
     NODE_TYPE (reuse) = N_icm;                                                           \
     ICM_NAME (reuse) = str;                                                              \
     ICM_ARGS (reuse) = MakeExprs (arg1, NULL);                                           \
-    ICM_INDENT (reuse) = 0;                                                              \
+    ICM_INDENT_BEFORE (reuse) = 0;                                                       \
+    ICM_INDENT_AFTER (reuse) = 0;                                                        \
     icm_arg = ICM_ARGS (reuse);                                                          \
     MAKE_NEXT_ICM_ARG (icm_arg, arg2)
 
@@ -135,7 +139,8 @@ extern node *GetFoldVardecs (node *fundef);
     NODE_TYPE (reuse) = N_icm;                                                           \
     ICM_NAME (reuse) = str;                                                              \
     ICM_ARGS (reuse) = MakeExprs (arg1, NULL);                                           \
-    ICM_INDENT (reuse) = 0;                                                              \
+    ICM_INDENT_BEFORE (reuse) = 0;                                                       \
+    ICM_INDENT_AFTER (reuse) = 0;                                                        \
     icm_arg = ICM_ARGS (reuse);                                                          \
     MAKE_NEXT_ICM_ARG (icm_arg, arg2);                                                   \
     MAKE_NEXT_ICM_ARG (icm_arg, arg3)

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.72  2000/07/13 11:59:07  jhs
+ * Splited ICM_INDENT into ICM_INDENT_BEFORE and ICM_INDENT_AFTER.
+ *
  * Revision 2.71  2000/07/12 17:17:44  jhs
  * Fixed params.
  *
@@ -1335,7 +1338,8 @@ CreateApIcm (node *icm, char *name, node **icm_tab, int tab_size)
 
     NODE_TYPE (icm) = N_icm;
     ICM_NAME (icm) = "ND_FUN_AP";
-    ICM_INDENT (icm) = 0;
+    ICM_INDENT_BEFORE (icm) = 0;
+    ICM_INDENT_AFTER (icm) = 0;
 
     /* put function_name at beginning of ICM_ARGS */
 
@@ -3902,19 +3906,22 @@ COMPPrf (node *arg_node, node *arg_info)
         case F_min:
             NODE_TYPE (arg_node) = N_icm;
             ICM_NAME (arg_node) = "ND_MIN";
-            ICM_INDENT (arg_node) = 0;
+            ICM_INDENT_BEFORE (arg_node) = 0;
+            ICM_INDENT_AFTER (arg_node) = 0;
             break;
 
         case F_max:
             NODE_TYPE (arg_node) = N_icm;
             ICM_NAME (arg_node) = "ND_MAX";
-            ICM_INDENT (arg_node) = 0;
+            ICM_INDENT_BEFORE (arg_node) = 0;
+            ICM_INDENT_AFTER (arg_node) = 0;
             break;
 
         case F_abs:
             NODE_TYPE (arg_node) = N_icm;
             ICM_NAME (arg_node) = "ND_ABS";
-            ICM_INDENT (arg_node) = 0;
+            ICM_INDENT_BEFORE (arg_node) = 0;
+            ICM_INDENT_AFTER (arg_node) = 0;
             break;
 
         default:
@@ -4663,7 +4670,8 @@ COMPNormalFunReturn (node *arg_node, node *arg_info)
     DBUG_PRINT ("COMP", ("Handling counterparts of reference parameters finished"));
 
     NODE_TYPE (arg_node) = N_icm;
-    ICM_INDENT (arg_node) = 0;
+    ICM_INDENT_BEFORE (arg_node) = 0;
+    ICM_INDENT_AFTER (arg_node) = 0;
 
     if (arg_node->node[1] == NULL) {
         ICM_NAME (arg_node) = "NOOP";
@@ -7513,63 +7521,77 @@ COMPWLgridVar (node *arg_node, node *arg_info)
 /* move to tree_compound  !!! #### */
 
 node *
+MakeAssign_ (node *instr, node *next)
+{
+    node *result;
+
+    if (NODE_TYPE (instr) == N_assign) {
+        result = AppendAssign (instr, next);
+    } else {
+        result = MakeAssign (instr, next);
+    }
+
+    return (result);
+}
+
+node *
 MakeAssigns1 (node *part1)
 {
-    return (MakeAssign (part1, NULL));
+    return (MakeAssign_ (part1, NULL));
 }
 
 node *
 MakeAssigns2 (node *part1, node *part2)
 {
-    return (MakeAssign (part1, MakeAssigns1 (part2)));
+    return (MakeAssign_ (part1, MakeAssigns1 (part2)));
 }
 
 node *
 MakeAssigns3 (node *part1, node *part2, node *part3)
 {
-    return (MakeAssign (part1, MakeAssigns2 (part2, part3)));
+    return (MakeAssign_ (part1, MakeAssigns2 (part2, part3)));
 }
 
 node *
 MakeAssigns4 (node *part1, node *part2, node *part3, node *part4)
 {
-    return (MakeAssign (part1, MakeAssigns3 (part2, part3, part4)));
+    return (MakeAssign_ (part1, MakeAssigns3 (part2, part3, part4)));
 }
 
 node *
 MakeAssigns5 (node *part1, node *part2, node *part3, node *part4, node *part5)
 {
-    return (MakeAssign (part1, MakeAssigns4 (part2, part3, part4, part5)));
+    return (MakeAssign_ (part1, MakeAssigns4 (part2, part3, part4, part5)));
 }
 
 node *
 MakeAssigns6 (node *part1, node *part2, node *part3, node *part4, node *part5,
               node *part6)
 {
-    return (MakeAssign (part1, MakeAssigns5 (part2, part3, part4, part5, part6)));
+    return (MakeAssign_ (part1, MakeAssigns5 (part2, part3, part4, part5, part6)));
 }
 
 node *
 MakeAssigns7 (node *part1, node *part2, node *part3, node *part4, node *part5,
               node *part6, node *part7)
 {
-    return (MakeAssign (part1, MakeAssigns6 (part2, part3, part4, part5, part6, part7)));
+    return (MakeAssign_ (part1, MakeAssigns6 (part2, part3, part4, part5, part6, part7)));
 }
 
 node *
 MakeAssigns8 (node *part1, node *part2, node *part3, node *part4, node *part5,
               node *part6, node *part7, node *part8)
 {
-    return (
-      MakeAssign (part1, MakeAssigns7 (part2, part3, part4, part5, part6, part7, part8)));
+    return (MakeAssign_ (part1,
+                         MakeAssigns7 (part2, part3, part4, part5, part6, part7, part8)));
 }
 
 node *
 MakeAssigns9 (node *part1, node *part2, node *part3, node *part4, node *part5,
               node *part6, node *part7, node *part8, node *part9)
 {
-    return (MakeAssign (part1, MakeAssigns8 (part2, part3, part4, part5, part6, part7,
-                                             part8, part9)));
+    return (MakeAssign_ (part1, MakeAssigns8 (part2, part3, part4, part5, part6, part7,
+                                              part8, part9)));
 }
 
 /*

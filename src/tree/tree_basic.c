@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.22  2000/07/13 11:58:12  jhs
+ * Splited ICM_INDENT into ICM_INDENT_BEFORE and ICM_INDENT_AFTER.
+ *
  * Revision 1.21  2000/07/11 15:44:14  jhs
  * Added ST_ALLOC and ST_SYNC.
  * DFMfoldmask changed name to vardec.
@@ -1260,90 +1263,140 @@ MakeIcm (char *name, node *args, node *next)
 
     if (name != NULL) {
         if (strcmp (name, "WL_NONFOLD_BEGIN") == 0) {
-            ICM_INDENT (tmp) = 1;
+            ICM_INDENT_BEFORE (tmp) = 0;
+            ICM_INDENT_AFTER (tmp) = 1;
         } else if (strcmp (name, "WL_NONFOLD_END") == 0) {
-            ICM_INDENT (tmp) = -1;
+            ICM_INDENT_BEFORE (tmp) = -1;
+            ICM_INDENT_AFTER (tmp) = 0;
         } else if (strcmp (name, "WL_FOLD_BEGIN") == 0) {
-            ICM_INDENT (tmp) = 1;
+            ICM_INDENT_BEFORE (tmp) = 0;
+            ICM_INDENT_AFTER (tmp) = 1;
         } else if (strcmp (name, "WL_FOLD_END") == 0) {
-            ICM_INDENT (tmp) = -1;
+            ICM_INDENT_BEFORE (tmp) = -1;
+            ICM_INDENT_AFTER (tmp) = 0;
         } else if (strcmp (name, "WL_BLOCK_LOOP0_BEGIN") == 0) {
-            ICM_INDENT (tmp) = 1;
+            ICM_INDENT_BEFORE (tmp) = 0;
+            ICM_INDENT_AFTER (tmp) = 1;
         } else if (strcmp (name, "WL_BLOCK_LOOP_BEGIN") == 0) {
-            ICM_INDENT (tmp) = 1;
+            ICM_INDENT_BEFORE (tmp) = 0;
+            ICM_INDENT_AFTER (tmp) = 1;
         } else if (strcmp (name, "WL_BLOCK_LOOP_END") == 0) {
-            ICM_INDENT (tmp) = -1;
+            ICM_INDENT_BEFORE (tmp) = -1;
+            ICM_INDENT_AFTER (tmp) = 0;
         } else if (strcmp (name, "WL_UBLOCK_LOOP0_BEGIN") == 0) {
-            ICM_INDENT (tmp) = 1;
+            ICM_INDENT_BEFORE (tmp) = 0;
+            ICM_INDENT_AFTER (tmp) = 1;
         } else if (strcmp (name, "WL_UBLOCK_LOOP_BEGIN") == 0) {
-            ICM_INDENT (tmp) = 1;
+            ICM_INDENT_BEFORE (tmp) = 1;
+            ICM_INDENT_AFTER (tmp) = 0;
         } else if (strcmp (name, "WL_UBLOCK_LOOP_END") == 0) {
-            ICM_INDENT (tmp) = -1;
+            ICM_INDENT_BEFORE (tmp) = -1;
+            ICM_INDENT_AFTER (tmp) = 0;
         } else if (strcmp (name, "WL_STRIDE_LOOP0_BEGIN") == 0) {
-            ICM_INDENT (tmp) = 1;
+            ICM_INDENT_BEFORE (tmp) = 0;
+            ICM_INDENT_AFTER (tmp) = 1;
         } else if (strcmp (name, "WL_STRIDE_LOOP_BEGIN") == 0) {
-            ICM_INDENT (tmp) = 1;
+            ICM_INDENT_BEFORE (tmp) = 0;
+            ICM_INDENT_AFTER (tmp) = 1;
         } else if (strcmp (name, "WL_STRIDE_LOOP_END") == 0) {
-            ICM_INDENT (tmp) = -1;
+            ICM_INDENT_BEFORE (tmp) = -1;
+            ICM_INDENT_AFTER (tmp) = 0;
         } else if (strcmp (name, "WL_STRIDE_UNROLL_BEGIN") == 0) {
-            ICM_INDENT (tmp) = 1;
+            ICM_INDENT_BEFORE (tmp) = 0;
+            ICM_INDENT_AFTER (tmp) = 1;
         } else if (strcmp (name, "WL_STRIDE_UNROLL_END") == 0) {
-            ICM_INDENT (tmp) = -1;
+            ICM_INDENT_BEFORE (tmp) = -1;
+            ICM_INDENT_AFTER (tmp) = 0;
         } else if (strcmp (name, "WL_GRID_LOOP_BEGIN") == 0) {
-            ICM_INDENT (tmp) = 1;
+            ICM_INDENT_BEFORE (tmp) = 0;
+            ICM_INDENT_AFTER (tmp) = 1;
         } else if (strcmp (name, "WL_GRID_LOOP_END") == 0) {
-            ICM_INDENT (tmp) = -1;
+            ICM_INDENT_BEFORE (tmp) = -1;
+            ICM_INDENT_AFTER (tmp) = 0;
         } else if (strcmp (name, "WL_GRID_UNROLL_BEGIN") == 0) {
-            ICM_INDENT (tmp) = 1;
+            ICM_INDENT_BEFORE (tmp) = 0;
+            ICM_INDENT_AFTER (tmp) = 1;
         } else if (strcmp (name, "WL_GRID_UNROLL_END") == 0) {
-            ICM_INDENT (tmp) = -1;
+            ICM_INDENT_BEFORE (tmp) = -1;
+            ICM_INDENT_AFTER (tmp) = 0;
         } else if (strcmp (name, "WL_MT_BLOCK_LOOP0_BEGIN") == 0) {
-            ICM_INDENT (tmp) = 1;
+            ICM_INDENT_BEFORE (tmp) = 0;
+            ICM_INDENT_AFTER (tmp) = 1;
         } else if (strcmp (name, "WL_MT_BLOCK_LOOP_BEGIN") == 0) {
-            ICM_INDENT (tmp) = 1;
+            ICM_INDENT_BEFORE (tmp) = 0;
+            ICM_INDENT_AFTER (tmp) = 1;
         } else if (strcmp (name, "WL_MT_BLOCK_LOOP_END") == 0) {
-            ICM_INDENT (tmp) = -1;
+            ICM_INDENT_BEFORE (tmp) = -1;
+            ICM_INDENT_AFTER (tmp) = 0;
         } else if (strcmp (name, "WL_MT_UBLOCK_LOOP0_BEGIN") == 0) {
-            ICM_INDENT (tmp) = 1;
+            ICM_INDENT_BEFORE (tmp) = 0;
+            ICM_INDENT_AFTER (tmp) = 1;
         } else if (strcmp (name, "WL_MT_UBLOCK_LOOP_BEGIN") == 0) {
-            ICM_INDENT (tmp) = 1;
+            ICM_INDENT_BEFORE (tmp) = 0;
+            ICM_INDENT_AFTER (tmp) = 1;
         } else if (strcmp (name, "WL_MT_UBLOCK_LOOP_END") == 0) {
-            ICM_INDENT (tmp) = -1;
+            ICM_INDENT_BEFORE (tmp) = -1;
+            ICM_INDENT_AFTER (tmp) = 0;
         } else if (strcmp (name, "WL_MT_STRIDE_LOOP0_BEGIN") == 0) {
-            ICM_INDENT (tmp) = 1;
+            ICM_INDENT_BEFORE (tmp) = 0;
+            ICM_INDENT_AFTER (tmp) = 1;
         } else if (strcmp (name, "WL_MT_STRIDE_LOOP_BEGIN") == 0) {
-            ICM_INDENT (tmp) = 1;
+            ICM_INDENT_BEFORE (tmp) = 0;
+            ICM_INDENT_AFTER (tmp) = 1;
         } else if (strcmp (name, "WL_MT_STRIDE_LOOP_END") == 0) {
-            ICM_INDENT (tmp) = -1;
+            ICM_INDENT_BEFORE (tmp) = -1;
+            ICM_INDENT_AFTER (tmp) = 0;
         } else if (strcmp (name, "WL_MT_STRIDE_UNROLL_BEGIN") == 0) {
-            ICM_INDENT (tmp) = 1;
+            ICM_INDENT_BEFORE (tmp) = 0;
+            ICM_INDENT_AFTER (tmp) = 1;
         } else if (strcmp (name, "WL_MT_STRIDE_UNROLL_END") == 0) {
-            ICM_INDENT (tmp) = -1;
+            ICM_INDENT_BEFORE (tmp) = -1;
+            ICM_INDENT_AFTER (tmp) = 0;
         } else if (strcmp (name, "WL_MT_GRID_LOOP_BEGIN") == 0) {
-            ICM_INDENT (tmp) = 1;
+            ICM_INDENT_BEFORE (tmp) = 0;
+            ICM_INDENT_AFTER (tmp) = 1;
         } else if (strcmp (name, "WL_MT_GRID_LOOP_END") == 0) {
-            ICM_INDENT (tmp) = -1;
+            ICM_INDENT_BEFORE (tmp) = -1;
+            ICM_INDENT_AFTER (tmp) = 0;
         } else if (strcmp (name, "WL_MT_GRID_UNROLL_BEGIN") == 0) {
-            ICM_INDENT (tmp) = 1;
+            ICM_INDENT_BEFORE (tmp) = 0;
+            ICM_INDENT_AFTER (tmp) = 1;
         } else if (strcmp (name, "WL_MT_GRID_UNROLL_END") == 0) {
-            ICM_INDENT (tmp) = -1;
+            ICM_INDENT_BEFORE (tmp) = -1;
+            ICM_INDENT_AFTER (tmp) = 0;
         } else if (strcmp (name, "MT_START_SYNCBLOCK") == 0) {
-            ICM_INDENT (tmp) = 1;
+            ICM_INDENT_BEFORE (tmp) = 0;
+            ICM_INDENT_AFTER (tmp) = 1;
         } else if (strncmp (name, "MT_SYNC_", 8) == 0) {
-            ICM_INDENT (tmp) = -1;
+            ICM_INDENT_BEFORE (tmp) = -1;
+            ICM_INDENT_AFTER (tmp) = 0;
         } else if (strncmp (name, "MT_SCHEDULER_", 13) == 0) {
             if (strcmp (name + strlen (name) - 6, "_BEGIN") == 0) {
-                ICM_INDENT (tmp) = 1;
+                ICM_INDENT_BEFORE (tmp) = 0;
+                ICM_INDENT_AFTER (tmp) = 1;
             } else if (strcmp (name + strlen (name) - 4, "_END") == 0) {
-                ICM_INDENT (tmp) = -1;
+                ICM_INDENT_BEFORE (tmp) = -1;
+                ICM_INDENT_AFTER (tmp) = 0;
             } else {
-                ICM_INDENT (tmp) = 0;
+                ICM_INDENT_BEFORE (tmp) = 0;
+                ICM_INDENT_AFTER (tmp) = 0;
             }
+        } else if (strcmp (name, "MT2_IF_I_AM_FIRST") == 0) {
+            ICM_INDENT_BEFORE (tmp) = 0;
+            ICM_INDENT_AFTER (tmp) = 1;
+        } else if (strcmp (name, "MT2_ELSE_IF_I_AM_NOT_FIRST") == 0) {
+            ICM_INDENT_BEFORE (tmp) = -1;
+            ICM_INDENT_AFTER (tmp) = 1;
+        } else if (strcmp (name, "MT2_END_I_AM_FIRST") == 0) {
+            ICM_INDENT_BEFORE (tmp) = -1;
+            ICM_INDENT_AFTER (tmp) = 0;
         } else {
-            ICM_INDENT (tmp) = 0;
+            ICM_INDENT_BEFORE (tmp) = 0;
+            ICM_INDENT_AFTER (tmp) = 0;
         }
     } else {
-        ICM_INDENT (tmp) = 0;
+        ICM_INDENT_AFTER (tmp) = 0;
+        ICM_INDENT_BEFORE (tmp) = 0;
     }
 
     DBUG_PRINT ("MAKENODE",

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.77  2000/07/13 11:58:12  jhs
+ * Splited ICM_INDENT into ICM_INDENT_BEFORE and ICM_INDENT_AFTER.
+ *
  * Revision 1.76  2000/07/12 17:22:57  dkr
  * comments for N_typedef added
  *
@@ -1880,7 +1883,8 @@ extern node *MakePre (nodetype incdec, char *id);
  ***  permanent attributes:
  ***
  ***    char*  NAME
- ***    int    INDENT
+ ***    int    INDENT_BEFORE
+ ***    int    INDENT_AFTER
  ***
  *** remarks:
  ***    NEXT at least (!) is used for the compilation of N_typedef's
@@ -1893,7 +1897,8 @@ extern node *MakePre (nodetype incdec, char *id);
 extern node *MakeIcm (char *name, node *args, node *next);
 
 #define ICM_NAME(n) (n->info.fun_name.id)
-#define ICM_INDENT(n) (n->flag)
+#define ICM_INDENT_BEFORE(n) (n->flag)
+#define ICM_INDENT_AFTER(n) (n->int_data)
 #define ICM_ARGS(n) (n->node[0])
 #define ICM_NEXT(n) (n->node[1])
 

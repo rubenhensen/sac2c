@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.29  2000/07/13 11:59:29  jhs
+ * Splited ICM_INDENT into ICM_INDENT_BEFORE and ICM_INDENT_AFTER.
+ *
  * Revision 1.28  2000/07/13 07:14:13  jhs
  * Added Comments for DupDFMmask, DupMt, DupSt, DupMTsignal, DupMTsync
  * and DupMTalloc.
@@ -1429,7 +1432,8 @@ DupIcm (node *arg_node, node *arg_info)
 
     new_node = MakeIcm (ICM_NAME (arg_node), DUPTRAV (ICM_ARGS (arg_node)),
                         DUPCONT (ICM_NEXT (arg_node)));
-    ICM_INDENT (new_node) = ICM_INDENT (arg_node);
+    ICM_INDENT_BEFORE (new_node) = ICM_INDENT_BEFORE (arg_node);
+    ICM_INDENT_AFTER (new_node) = ICM_INDENT_AFTER (arg_node);
 
     DBUG_RETURN (new_node);
 }
