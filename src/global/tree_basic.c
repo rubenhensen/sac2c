@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.73  1998/05/28 23:55:58  dkr
+ * in MakeIcm:
+ *   added some ICM_INDENTs
+ *
  * Revision 1.72  1998/05/28 16:30:47  dkr
  * added an indent-machanismus for H-ICMs
  *
@@ -1398,7 +1402,11 @@ MakeIcm (char *name, node *args, node *next)
     ICM_ARGS (tmp) = args;
     ICM_NEXT (tmp) = next;
 
-    if (strcmp (name, "WL_BLOCK_LOOP0_BEGIN") == 0)
+    if (strcmp (name, "WL_NONFOLD_BEGIN") == 0)
+        ICM_INDENT (tmp) = 1;
+    else if (strcmp (name, "WL_FOLD_BEGIN") == 0)
+        ICM_INDENT (tmp) = 1;
+    else if (strcmp (name, "WL_BLOCK_LOOP0_BEGIN") == 0)
         ICM_INDENT (tmp) = 1;
     else if (strcmp (name, "WL_BLOCK_LOOP_BEGIN") == 0)
         ICM_INDENT (tmp) = 1;
