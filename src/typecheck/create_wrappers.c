@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2002/08/05 17:00:38  sbs
+ * first alpha version of the new type checker !!
+ *
  * Revision 1.5  2002/05/31 14:43:06  sbs
  * CRTWRPlet added
  *
@@ -45,7 +48,19 @@
  *    node *CreateWrappers(node *arg_node)
  *
  * description:
- *
+ *    creates wrapper functions for all functions found. These wrapper functions
+ *     - obtain generic argument / result types (old types): _unknown_[*]
+ *     - obtain overloaded function types (new types) that include all
+ *       function definitions found
+ *     - get a STATUS ST_wrapperfun
+ *     - have a NULL BODY
+ *     - are inserted into the N_fundef chain
+ *    Furthermore,
+ *     - all fundefs obtain a non-overloaded function type (new type)
+ *     - all fundefs obtain a copy of their return type (product type) attached
+ *       to the fundef node directly. (Redundant but convenient in new_typecheck.c!)
+ *     - all function applications obtain a backref to the wrapper function
+ *       responsible for the function dspatch
  *
  ******************************************************************************/
 
@@ -77,7 +92,21 @@ CreateWrappers (node *arg_node)
  *    node *FindWrapper(char *name, int num_args, int num_rets, node *wrappers)
  *
  * description:
+ *    searches for a wrapper function in the N_fundef chain "wrappers" that
+ *    matches the given name (name), the given number of arguments (num_args),
+ *    and the given number of return values (num_rets). This matching mechanism
+ *    does allow for dots to be used "on both sides", i.e., for non-fixed numbers
+ *    of arguments and non-fixed numbers of return values.
+ *    Once a matching wrapper function is found, its N_fundef is returned.
+ *    Otherwise, FindWrapper returns NULL.
  *
+ *    NOTE HERE, that only the first match is returned! There is no check that
+ *    ensures the "best fit"! For example, assuming the following chain of wrappers:
+ *      (ptr_a) ->  <alpha> tutu( <beta> x, ...)
+ *      (ptr_b) ->  <alpha> tutu( <beta> a, <gamma> b)
+ *
+ *    FindWrapper( "tutu", 2, 1, (ptr_a))     yields (ptr_a)!!!  Only a call
+ *    FindWrapper( "tutu", 2, 1, (ptr_b))     yields (ptr_b)!
  *
  ******************************************************************************/
 
@@ -120,7 +149,12 @@ FindWrapper (char *name, int num_args, int num_rets, node *wrappers)
  *    node *CreateWrapperFor(node *fundef)
  *
  * description:
- *
+ *   using a given fundef (fundef) as a template, a wrapper function is
+ *   created. It consists of a duplicate of the function header given
+ *   whose types (old types!!) have been modified to "_unknown_[*]"
+ *   unless they are "void" or "...".
+ *   The STATUS of the function returned is set to ST_wrapperfun and its
+ *   body is NULL!
  *
  ******************************************************************************/
 
@@ -175,6 +209,16 @@ CreateWrapperFor (node *fundef)
         args = ARG_NEXT (args);
     }
 
+    /*
+     * Now, we implement a dirty trick for 0 ary functions.
+     * Since we do not allow them to be overloaded, we include
+     * a pointer to the fundef here.
+     * It is used when dispatching such functions (cf. new_types.c)!!
+     */
+    if (FUNDEF_ARGS (wrapper) == NULL) {
+        FUNDEF_RETURN (wrapper) = fundef;
+    }
+
     DBUG_RETURN (wrapper);
 }
 
@@ -185,7 +229,7 @@ CreateWrapperFor (node *fundef)
  *
  * description:
  *    creates a function type from the given arg/return types. While doing so,
- *    the return type is put into FUNDEF_RET_TYPE( fundef) !!!!
+ *    a copy of the return type is put into FUNDEF_RET_TYPE( fundef) !!!!
  *    This shortcut is very useful during type inference, when the return
  *    statement is reached (cf. NTCreturn). Otherwise, it would be necessary
  *    to dig through the intersection type in order to find the return type.
@@ -199,7 +243,7 @@ FuntypeFromArgs (ntype *res, node *args, node *fundef)
 
     if (args != NULL) {
         res = FuntypeFromArgs (res, ARG_NEXT (args), fundef);
-        res = TYMakeFunType (TYOldType2Type (ARG_TYPE (args), TY_symb), res, fundef);
+        res = TYMakeFunType (TYOldType2Type (ARG_TYPE (args)), res, fundef);
     }
 
     DBUG_RETURN (res);
@@ -223,8 +267,7 @@ CreateFuntype (node *fundef)
     res = TYMakeEmptyProductType (num_rets);
 
     for (i = 0; i < num_rets; i++) {
-        res = TYSetProductMember (res, i,
-                                  TYMakeAlphaType (TYOldType2Type (old_ret, TY_symb)));
+        res = TYSetProductMember (res, i, TYMakeAlphaType (TYOldType2Type (old_ret)));
         old_ret = TYPES_NEXT (old_ret);
     }
 
@@ -275,10 +318,12 @@ node *
 CRTWRPfundef (node *arg_node, node *arg_info)
 {
     node *wrapper;
+    int num_args;
 
     DBUG_ENTER ("CRTWRPfundef");
 
-    wrapper = FindWrapper (FUNDEF_NAME (arg_node), CountArgs (FUNDEF_ARGS (arg_node)),
+    num_args = CountArgs (FUNDEF_ARGS (arg_node));
+    wrapper = FindWrapper (FUNDEF_NAME (arg_node), num_args,
                            CountTypes (FUNDEF_TYPES (arg_node)),
                            INFO_CRTWRP_WRAPPERS (arg_info));
     if (wrapper == NULL) {
@@ -290,7 +335,6 @@ CRTWRPfundef (node *arg_node, node *arg_info)
     FUNDEF_TYPE (arg_node) = CreateFuntype (arg_node);
     FUNDEF_TYPE (wrapper) = TYMakeOverloadedFunType (TYCopyType (FUNDEF_TYPE (arg_node)),
                                                      FUNDEF_TYPE (wrapper));
-
     if (FUNDEF_NEXT (arg_node) != NULL) {
         FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
     }
@@ -298,7 +342,7 @@ CRTWRPfundef (node *arg_node, node *arg_info)
     /*
      * Now, we do have wrappers for all fundefs!
      * On our way back up, we traverse the body in order to insert the backrefs
-     * to the appropriate wrappers, AND we infer the "down-projections".
+     * to the appropriate wrappers.
      */
 
     /*
@@ -312,8 +356,6 @@ CRTWRPfundef (node *arg_node, node *arg_info)
     if (FUNDEF_BODY (arg_node) != NULL) {
         FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
     }
-
-    /* Infer Down-Projections still missing */
 
     DBUG_RETURN (arg_node);
 }
@@ -375,6 +417,62 @@ CRTWRPap (node *arg_node, node *arg_info)
                 AP_NAME (arg_node), num_args, INFO_CRTWRP_EXPRETS (arg_info)));
     } else {
         AP_FUNDEF (arg_node) = wrapper;
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    node *CRTWRPNwithop(node *arg_node, node *arg_info)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+CRTWRPNwithop (node *arg_node, node *arg_info)
+{
+    int num_args;
+    node *wrapper;
+
+    DBUG_ENTER ("CRTWRPNwithop");
+
+    switch (NWITHOP_TYPE (arg_node)) {
+    case WO_genarray:
+        NWITHOP_SHAPE (arg_node) = Trav (NWITHOP_SHAPE (arg_node), arg_info);
+        break;
+
+    case WO_modarray:
+        NWITHOP_ARRAY (arg_node) = Trav (NWITHOP_ARRAY (arg_node), arg_info);
+        break;
+    case WO_foldfun:
+        NWITHOP_NEUTRAL (arg_node) = Trav (NWITHOP_NEUTRAL (arg_node), arg_info);
+
+        num_args = 2;
+        wrapper
+          = FindWrapper (NWITHOP_FUN (arg_node), 2, 1, INFO_CRTWRP_WRAPPERS (arg_info));
+
+        if (wrapper == NULL) {
+            ABORT (NODE_LINE (arg_node),
+                   ("No definition found for a function \"%s\" that expects 2 arguments"
+                    " and yields 1 return value",
+                    NWITHOP_FUN (arg_node)));
+        } else {
+            NWITHOP_FUNDEF (arg_node) = wrapper;
+        }
+        break;
+
+    case WO_foldprf:
+        if (NWITHOP_NEUTRAL (arg_node) != NULL) {
+            NWITHOP_NEUTRAL (arg_node) = Trav (NWITHOP_NEUTRAL (arg_node), arg_info);
+        }
+        break;
+    default:
+        DBUG_ASSERT (FALSE, "corrupted WL tag found");
+        break;
     }
 
     DBUG_RETURN (arg_node);

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.4  2002/08/05 17:00:38  sbs
+ * first alpha version of the new type checker !!
+ *
  * Revision 3.3  2002/05/31 14:51:54  sbs
  * intermediate version to ensure compilable overall state.
  *
@@ -82,13 +85,11 @@
  *    functions for handling function types such as TYMakeOverloadedFunType
  *    (see below) or TYDispatchFunType (see below).
  *    Another consequence of this design decision is the need to keep some
- *    type inference related information attached to the individual elements
- *    of the intersection types e.g. pointers to potential function bodies etc.
- *    Therefore, two functions have to be specified which, respectively,
- *      a) add function information to the element directly specified
- *         (int[3] -> int[.] in the example above)
- *      b) add function information to all projected elements
- *         (int[.] -> int[.] and int[*] -> int[.] in the example above)
+ *    function information attached to the individual elements of the intersection types
+ *    Therefore,
+ *      -  TYMakeFunType            obtains a    node* fun_info         argument, and
+ *      -  TYMakeOverloadedFunType  obtains a function pointer argument that merges two
+ *                                  such fun_info nodes into a single one.
  *
  *
  * 3) Product types
@@ -161,12 +162,25 @@ typedef struct NTYPE ntype;
 #include "ssi.h"
 
 /*
+ * basic stuff which should only be used if essential from a performance
+ * point of view, as it unleashes part of the implementation...
+ */
+
+typedef enum {
+#define TCITypeConstr(a) a
+#include "type_constructor_info.mac"
+} typeconstr;
+
+typeconstr TYGetConstr (ntype *type);
+
+/*
  * Scalar Types: Simple / User / Symbol
  */
 extern ntype *TYMakeSimpleType (simpletype base);
 extern ntype *TYMakeUserType (usertype base);
 extern ntype *TYMakeSymbType (char *name, char *mod);
 
+extern simpletype TYGetSimpleType (ntype *simple);
 extern char *TYGetName (ntype *symb);
 extern char *TYGetMod (ntype *symb);
 
@@ -177,6 +191,8 @@ extern ntype *TYMakeAKS (ntype *scalar, shape *shp);
 extern ntype *TYMakeAKD (ntype *scalar, int dots, shape *shp);
 extern ntype *TYMakeAUDGZ (ntype *scalar);
 extern ntype *TYMakeAUD (ntype *scalar);
+
+extern ntype *TYSetScalar (ntype *array, ntype *scalar);
 
 extern int TYGetDim (ntype *array);
 extern shape *TYGetShape (ntype *array);
@@ -203,6 +219,22 @@ extern ntype *TYGetProductMember (ntype *prod, int pos);
 extern ntype *TYMakeFunType (ntype *arg, ntype *res, node *fun_info);
 extern ntype *TYMakeOverloadedFunType (ntype *fun1, ntype *fun2);
 
+typedef struct dft {
+    ntype *type;
+    node *def;
+    node *deriveable;
+    int num_partials;
+    node **partials;
+    int num_deriveable_partials;
+    node **deriveable_partials;
+} DFT_res;
+
+extern DFT_res *TYDispatchFunType (ntype *fun, ntype *args);
+
+extern DFT_res *TYMakeDFT_res (ntype *type, int max_funs);
+extern void TYFreeDFT_res (DFT_res *res);
+extern char *TYDFT_res2DebugString (DFT_res *dft);
+
 /*
  * Type Variables:
  */
@@ -219,6 +251,7 @@ extern bool TYIsScalar (ntype *);
 
 extern bool TYIsAlpha (ntype *);
 extern bool TYIsFixedAlpha (ntype *);
+extern bool TYIsNonFixedAlpha (ntype *);
 extern bool TYIsAKS (ntype *);
 extern bool TYIsAKD (ntype *);
 extern bool TYIsAUDGZ (ntype *);
@@ -232,7 +265,11 @@ extern bool TYIsProd (ntype *);
 extern bool TYIsFun (ntype *);
 
 extern bool TYIsAKSSymb (ntype *);
+extern bool TYIsProdOfArray (ntype *);
 extern bool TYIsProdOfArrayOrFixedAlpha (ntype *);
+
+extern int TYCountNonFixedAlpha (ntype *);
+extern int TYCountNoMinAlpha (ntype *);
 
 /*
  * Type-Comparison
@@ -255,6 +292,7 @@ extern bool TYEqTypes (ntype *t1, ntype *t2);
 
 extern ntype *TYLubOfTypes (ntype *t1, ntype *t2);
 extern ntype *TYEliminateAlpha (ntype *t1);
+extern ntype *TYFixAndEliminateAlpha (ntype *t1);
 
 /*
  * General Type handling functions
@@ -263,9 +301,11 @@ extern void TYFreeTypeConstructor (ntype *type);
 extern void TYFreeType (ntype *type);
 
 extern ntype *TYCopyType (ntype *type);
+extern ntype *TYCopyTypeConstructor (ntype *type);
+extern ntype *TYCopyFixedType (ntype *type);
 extern ntype *TYDeriveSubtype (ntype *type);
 extern char *TYType2String (ntype *new, bool multiline, int offset);
-extern char *TYType2DebugString (ntype *new);
+extern char *TYType2DebugString (ntype *new, bool multiline, int offset);
 extern ntype *TYNestTypes (ntype *outer, ntype *inner);
 
 /*
@@ -273,7 +313,7 @@ extern ntype *TYNestTypes (ntype *outer, ntype *inner);
  */
 typedef enum { TY_symb, TY_user } type_conversion_flag;
 
-extern ntype *TYOldType2Type (types *old, type_conversion_flag flag);
+extern ntype *TYOldType2Type (types *old);
 extern types *TYType2OldType (ntype *new);
 
 #endif /* _new_types_h */

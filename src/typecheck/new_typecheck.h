@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2002/08/05 17:00:38  sbs
+ * first alpha version of the new type checker !!
+ *
  * Revision 3.3  2002/05/31 14:51:54  sbs
  * intermediate version to ensure compilable overall state.
  *
@@ -19,6 +22,7 @@
 #define _new_typecheck_h
 
 #include "types.h"
+#include "new_types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "internal_lib.h"
@@ -29,9 +33,11 @@ extern node *NTCmodul (node *arg_node, node *arg_info);
 extern node *NTCfundef (node *arg_node, node *arg_info);
 extern node *NTCarg (node *arg_node, node *arg_info);
 extern node *NTCblock (node *arg_node, node *arg_info);
+extern node *NTCcond (node *arg_node, node *arg_info);
 extern node *NTClet (node *arg_node, node *arg_info);
 extern node *NTCreturn (node *arg_node, node *arg_info);
 extern node *NTCap (node *arg_node, node *arg_info);
+extern node *NTCprf (node *arg_node, node *arg_info);
 extern node *NTCarray (node *arg_node, node *arg_info);
 extern node *NTCexprs (node *arg_node, node *arg_info);
 extern node *NTCid (node *arg_node, node *arg_info);
@@ -40,5 +46,14 @@ extern node *NTCbool (node *arg_node, node *arg_info);
 extern node *NTCchar (node *arg_node, node *arg_info);
 extern node *NTCdouble (node *arg_node, node *arg_info);
 extern node *NTCfloat (node *arg_node, node *arg_info);
+
+extern node *NTCNwith (node *arg_node, node *arg_info);
+extern node *NTCNpart (node *arg_node, node *arg_info);
+extern node *NTCNgenerator (node *arg_node, node *arg_info);
+extern node *NTCNwithid (node *arg_node, node *arg_info);
+extern node *NTCNcode (node *arg_node, node *arg_info);
+extern node *NTCNwithop (node *arg_node, node *arg_info);
+
+extern node *NTCTriggerTypeCheck (node *fundef);
 
 #endif /* _new_typecheck_h */

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2002/08/05 17:00:38  sbs
+ * first alpha version of the new type checker !!
+ *
  * Revision 3.8  2002/05/31 14:51:54  sbs
  * intermediate version to ensure compilable overall state.
  *
@@ -48,16 +51,25 @@
 #include "tree_compound.h"
 #include "internal_lib.h"
 #include "traverse.h"
+#include "DupTree.h"
 #include "globals.h"
 #include "lac2fun.h"
 #include "CheckAvis.h"
 #include "SSATransform.h"
 #include "insert_vardec.h"
 #include "create_wrappers.h"
+#include "new2old.h"
 
 #include "user_types.h"
 #include "new_types.h"
+#include "sig_deps.h"
 #include "new_typecheck.h"
+#include "ct_basic.h"
+#include "ct_fun.h"
+#include "ct_prf.h"
+#include "ct_with.h"
+#include "type_errors.h"
+#include "specialize.h"
 
 /*
  * OPEN PROBLEMS:
@@ -81,6 +93,7 @@
  */
 
 #define INFO_NTC_TYPE(n) ((ntype *)(n->dfmask[0]))
+#define INFO_NTC_GEN_TYPE(n) ((ntype *)(n->dfmask[1]))
 #define INFO_NTC_NUM_EXPRS_SOFAR(n) (n->flag)
 
 typedef enum { NTC_not_checked, NTC_checking, NTC_checked } NTC_stat;
@@ -127,77 +140,83 @@ NewTypeCheck (node *arg_node)
 /******************************************************************************
  *
  * function:
- *    node *UpdateSignature( node *fundef, ntype *args)
+ *    node *TypeCheckFunctionBody( node *fundef, node *arg_info)
  *
  * description:
- *    Here, we assume that all argument types are either array types or
- *    type variables with identical Min and Max!
- *    This function replaces the old type siganture (in the N_arg nodes)
- *    by the given argument types (arg_ts), and updates the function type
- *    ( FUNDEF_TYPE( fundef) ) as well. It returns the modified N_fundef
- *    node.
+ *    main function for type checking a given fundef node.
  *
  ******************************************************************************/
 
 static node *
-UpdateSignature (node *fundef, ntype *arg_ts)
+TypeCheckFunctionBody (node *fundef, node *arg_info)
 {
-    node *args;
-    ntype *type;
-    int i = 0;
-
-    DBUG_ENTER ("UpdateSignature");
-    DBUG_ASSERT ((CountArgs (FUNDEF_ARGS (fundef)) == TYGetProductSize (arg_ts)),
-                 "UpdateSignature called with incompatible no of arguments!");
-    DBUG_ASSERT ((TYIsProdOfArrayOrFixedAlpha (arg_ts)),
-                 "UpdateSignature called with non-fixed args!");
-
-    args = FUNDEF_ARGS (fundef);
-    while (args) {
-        type = TYGetProductMember (arg_ts, i);
-        ARG_TYPE (args) = FreeOneTypes (ARG_TYPE (args));
-        ARG_TYPE (args) = TYType2OldType (type);
-        args = ARG_NEXT (args);
-        i++;
-    }
-
-    DBUG_RETURN (fundef);
-}
-
-/******************************************************************************
- *
- * function:
- *    node *DispatchFunction( node *fundef, ntype *args)
- *
- * description:
- *    Here, we assume that all argument types are either array types or
- *    type variables with identical Min and Max!
- *
- ******************************************************************************/
-
-static node *
-DispatchFunction (node *fundef, ntype *args)
-{
+    ntype *spec_type, *inf_type;
+    ntype *stype, *itype;
+    int i;
+    bool ok;
 #ifndef DBUG_OFF
     char *tmp_str;
 #endif
-    node *res;
 
-    DBUG_ENTER ("DispatchFunction");
-    DBUG_ASSERT ((TYIsProdOfArrayOrFixedAlpha (args)),
-                 "DispatchFunction called with non-fixed args!");
+    DBUG_ENTER ("TypeCheckFunctionBody");
 
-    if (FUNDEF_IS_LACFUN (fundef)) {
-        UpdateSignature (fundef, args);
-        FUNDEF_TYPE (fundef) = CreateFuntype (fundef);
-        res = fundef;
-    } else {
-        DBUG_EXECUTE ("NTC", tmp_str = TYType2String (args, 0, 0););
-        DBUG_PRINT ("NTC", ("dispatching %s for %s", FUNDEF_NAME (fundef), tmp_str));
-        DBUG_EXECUTE ("NTC", Free (tmp_str););
-        res = fundef;
+    FUNDEF_TCSTAT (fundef) = NTC_checking;
+
+    DBUG_EXECUTE ("NTC", tmp_str = TYType2String (FUNDEF_RET_TYPE (fundef), FALSE, 0););
+    DBUG_PRINT ("NTC", ("type checking function \"%s\" return type %s",
+                        FUNDEF_NAME (fundef), tmp_str));
+    DBUG_EXECUTE ("NTC", tmp_str = Free (tmp_str););
+
+    /*
+     * First, we convert the old argument types into ntype nodes and attach
+     * these to the AVIS_TYPE fields of the N_arg nodes:
+     */
+    if (NULL != FUNDEF_ARGS (fundef)) {
+        FUNDEF_ARGS (fundef) = Trav (FUNDEF_ARGS (fundef), arg_info);
     }
-    DBUG_RETURN (res);
+
+    /*
+     * Then, we infer the type of the body:
+     */
+    if (NULL != FUNDEF_BODY (fundef)) {
+        FUNDEF_BODY (fundef) = Trav (FUNDEF_BODY (fundef), arg_info);
+
+        /*
+         * The inferred result type is now available in INFO_NTC_TYPE( arg_info).
+         * Iff legal, we insert it into the specified result type:
+         */
+
+        inf_type = INFO_NTC_TYPE (arg_info);
+
+        DBUG_EXECUTE ("NTC", tmp_str = TYType2String (inf_type, FALSE, 0););
+        DBUG_PRINT ("NTC", ("inferred return type of \"%s\" is %s", FUNDEF_NAME (fundef),
+                            tmp_str));
+        DBUG_EXECUTE ("NTC", tmp_str = Free (tmp_str););
+
+        spec_type = FUNDEF_RET_TYPE (fundef);
+
+        for (i = 0; i < TYGetProductSize (spec_type); i++) {
+            stype = TYGetProductMember (spec_type, i);
+            itype = TYGetProductMember (inf_type, i);
+
+            ok = SSINewTypeRel (itype, stype);
+
+            if (!ok) {
+                ABORT (NODE_LINE (fundef),
+                       ("component #%d of inferred return type (%s) is not within %s", i,
+                        TYType2String (itype, FALSE, 0),
+                        TYType2String (stype, FALSE, 0)));
+            }
+        }
+        TYFreeType (inf_type);
+        INFO_NTC_TYPE (arg_info) = NULL;
+
+        DBUG_EXECUTE ("NTC", tmp_str = TYType2String (spec_type, FALSE, 0););
+        DBUG_PRINT ("NTC", ("final return type of \"%s\" is: %s", FUNDEF_NAME (fundef),
+                            tmp_str));
+        DBUG_EXECUTE ("NTC", tmp_str = Free (tmp_str););
+    }
+    DBUG_RETURN (fundef);
 }
 
 /******************************************************************************
@@ -219,19 +238,18 @@ DispatchFunction (node *fundef, ntype *args)
 node *
 NTCmodul (node *arg_node, node *arg_info)
 {
-    node *fundef;
+    bool ok;
+    node *fundef, *ignore;
 
     DBUG_ENTER ("NTCmodul");
-#if 0
-  /*
-   * First, we gather all typedefs and setup the global table
-   * which is kept in "new_types".
-   */
-  if ( NULL != MODUL_TYPES(arg_node))
-    MODUL_TYPES(arg_node)=Trav(MODUL_TYPES(arg_node), arg_info);
-  DBUG_EXECUTE( "UDT", UTPrintRepository( stderr););
-  ABORT_ON_ERROR;
-#endif
+    /*
+     * First, we gather all typedefs and setup the global table
+     * which is kept in "new_types".
+     */
+    if (NULL != MODUL_TYPES (arg_node))
+        MODUL_TYPES (arg_node) = Trav (MODUL_TYPES (arg_node), arg_info);
+    DBUG_EXECUTE ("UDT", UTPrintRepository (stderr););
+    ABORT_ON_ERROR;
 
     /*
      * Before doing the actual type inference, we want to switch to the FUN-
@@ -292,6 +310,11 @@ NTCmodul (node *arg_node, node *arg_info)
      * All others are marked NTC_checked:
      */
 
+    ok = SSIInitAssumptionSystem (SDHandleContradiction, SDHandleElimination);
+    DBUG_ASSERT (ok, "Initialisation of Assumption System went wrong!");
+
+    ignore = SPECResetSpecChain ();
+
     fundef = MODUL_FUNS (arg_node);
     while (fundef != NULL) {
         if (FUNDEF_STATUS (fundef) != ST_wrapperfun) {
@@ -302,8 +325,21 @@ NTCmodul (node *arg_node, node *arg_info)
         fundef = FUNDEF_NEXT (fundef);
     }
 
-    if (NULL != MODUL_FUNS (arg_node))
+    if (NULL != MODUL_FUNS (arg_node)) {
         MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
+    }
+
+    if ((break_after == PH_typecheck) && (0 == strcmp (break_specifier, "ntc"))) {
+        goto DONE;
+    }
+
+    /*
+     *
+     * Finally, we compute the old type representation from the ntypes
+     * we just inferred.
+     */
+
+    arg_node = NT2OTTransform (arg_node);
 
 DONE:
     DBUG_RETURN (arg_node);
@@ -451,7 +487,7 @@ NTCtypedef (node *arg_node, node *arg_info)
     DBUG_ENTER ("NTCtypedef");
     name = TYPEDEF_NAME (arg_node);
     mod = TYPEDEF_MOD (arg_node);
-    nt = TYOldType2Type (TYPEDEF_TYPE (arg_node), TY_symb);
+    nt = TYOldType2Type (TYPEDEF_TYPE (arg_node));
 
     udt = UTFindUserType (name, mod);
     if (udt != UT_NOT_DEFINED) {
@@ -479,78 +515,10 @@ NTCtypedef (node *arg_node, node *arg_info)
  *
  ******************************************************************************/
 
-static node *
-TypeCheckFunctionBody (node *arg_node, node *arg_info)
-{
-    ntype *res_type;
-    ntype *ret_type;
-    ntype *dtype, *itype;
-    tvar *alpha;
-    int i;
-    bool ok;
-
-    DBUG_ENTER ("TypeCheckFunctionBody");
-
-    FUNDEF_TCSTAT (arg_node) = NTC_checking;
-
-    /*
-     * First, we put the ntype info into the AVIS_TYPE fields:
-     */
-    if (NULL != FUNDEF_ARGS (arg_node)) {
-        FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), arg_info);
-    }
-
-    /*
-     * Then, we infer the type of the body:
-     */
-    if (NULL != FUNDEF_BODY (arg_node)) {
-        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
-
-#if 0
-    /*
-     * The result type is now available in INFO_NTC_TYPE( arg_info).
-     * It should be a product type of array types or type variables
-     * with identical lower and upper limits !!! (cf. NTCreturn).
-     */
-
-    DBUG_ASSERT( TYIsProdOfArrayOrFixedAlpha( INFO_NTC_TYPE( arg_info)),
-                 "type inference of a function body did not return a fixed product type");
-#endif
-
-        /*
-         * Finaly, we insert the inferred type into the result type, iff legal
-         */
-        ret_type = INFO_NTC_TYPE (arg_info);
-        res_type = FUNDEF_RET_TYPE (arg_node);
-
-        for (i = 0; i < TYGetProductSize (ret_type); i++) {
-            dtype = TYGetProductMember (res_type, i);
-            alpha = TYGetAlpha (dtype);
-            itype = TYGetProductMember (ret_type, i);
-            /*
-             * Since we know that INFO_NTC_TYPE( arg_info) is fixed now, we can convert
-             * it into a type varibale free form (which is required by SSINewMin and
-             * SSINewMax)
-             */
-            itype = TYEliminateAlpha (itype);
-            ok = (SSINewMin (alpha, itype) && SSINewMax (alpha, itype));
-            if (!ok) {
-                ABORT (NODE_LINE (arg_node),
-                       ("component #%d of inferred return type (%s) is not within %s", i,
-                        TYType2String (itype, FALSE, 0),
-                        TYType2String (dtype, FALSE, 0)));
-            } else {
-                TYFreeType (itype);
-            }
-        }
-        TYFreeTypeConstructor (ret_type);
-    }
-    DBUG_RETURN (arg_node);
-}
-
 node *
 NTCfundef (node *arg_node, node *arg_info)
 {
+    node *specialized_fundefs;
 
     DBUG_ENTER ("NTCfundef");
 
@@ -558,8 +526,15 @@ NTCfundef (node *arg_node, node *arg_info)
         arg_node = TypeCheckFunctionBody (arg_node, arg_info);
     }
 
-    if (NULL != FUNDEF_NEXT (arg_node))
+    if (NULL != FUNDEF_NEXT (arg_node)) {
         FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+    } else {
+        specialized_fundefs = SPECResetSpecChain ();
+        if (specialized_fundefs != NULL) {
+            FUNDEF_NEXT (arg_node) = specialized_fundefs;
+            FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+        }
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -578,7 +553,7 @@ NTCarg (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("NTCarg");
 
-    AVIS_TYPE (ARG_AVIS (arg_node)) = TYOldType2Type (ARG_TYPE (arg_node), TY_symb);
+    AVIS_TYPE (ARG_AVIS (arg_node)) = TYOldType2Type (ARG_TYPE (arg_node));
 
     if (NULL != ARG_NEXT (arg_node))
         ARG_NEXT (arg_node) = Trav (ARG_NEXT (arg_node), arg_info);
@@ -601,13 +576,38 @@ NTCblock (node *arg_node, node *arg_info)
     DBUG_ENTER ("NTCblock");
 
     /*
-     * The vardecs can be ignored as they are modified during the traversal of the
-     * instructions!
+     * The vardecs are ignored so far.....
      */
 
     if (BLOCK_INSTR (arg_node) != NULL) {
         BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
     }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    node *NTCcond(node *arg_node, node *arg_info)
+ *
+ * description:
+ *
+ *
+ *
+ ******************************************************************************/
+
+node *
+NTCcond (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("NTCcond");
+
+    COND_COND (arg_node) = Trav (COND_COND (arg_node), arg_info);
+
+    TEAssureBoolS ("predicate", INFO_NTC_TYPE (arg_info));
+
+    COND_THEN (arg_node) = Trav (COND_THEN (arg_node), arg_info);
+    COND_ELSE (arg_node) = Trav (COND_ELSE (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -627,27 +627,40 @@ node *
 NTClet (node *arg_node, node *arg_info)
 {
     ntype *rhs_type;
-    ntype *type;
     node *avis;
     ids *lhs;
     int i;
+    bool ok;
 #ifndef DBUG_OFF
-    char *tmp_str, *tmp_str2;
+    char *tmp_str, *tmp2_str;
 #endif
 
     DBUG_ENTER ("NTClet");
 
+    /*
+     * Infer the RHS type :
+     */
     LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
     rhs_type = INFO_NTC_TYPE (arg_info);
 
+    /*
+     * attach the RHS type(s) to the var(s) on the LHS:
+     */
     lhs = LET_IDS (arg_node);
 
-    if (NODE_TYPE (LET_EXPR (arg_node)) == N_ap) {
+    if ((NODE_TYPE (LET_EXPR (arg_node)) == N_ap)
+        || (NODE_TYPE (LET_EXPR (arg_node)) == N_prf)) {
         DBUG_ASSERT ((CountIds (lhs) == TYGetProductSize (rhs_type)),
                      "fun ap does not match no of lhs vars!");
         i = 0;
         while (lhs) {
             AVIS_TYPE (IDS_AVIS (lhs)) = TYGetProductMember (rhs_type, i);
+
+            DBUG_EXECUTE ("NTC", tmp_str
+                                 = TYType2String (AVIS_TYPE (IDS_AVIS (lhs)), FALSE, 0););
+            DBUG_PRINT ("NTC", ("  type of \"%s\" is %s", IDS_NAME (lhs), tmp_str));
+            DBUG_EXECUTE ("NTC", tmp_str = Free (tmp_str););
+
             i++;
             lhs = IDS_NEXT (lhs);
         }
@@ -660,45 +673,35 @@ NTClet (node *arg_node, node *arg_info)
         /*
          * Now, we must check whether we do have a pseudo PHI function here
          */
-        if ((AVIS_SSAPHITARGET (avis) == PHIT_NONE) || (AVIS_TYPE (avis) == NULL)) {
+        if (AVIS_SSAPHITARGET (avis) == PHIT_NONE) {
             AVIS_TYPE (avis) = rhs_type;
+
+            DBUG_EXECUTE ("NTC", tmp_str = TYType2String (AVIS_TYPE (avis), FALSE, 0););
+            DBUG_PRINT ("NTC", ("  type of \"%s\" is %s", IDS_NAME (lhs), tmp_str));
+            DBUG_EXECUTE ("NTC", tmp_str = Free (tmp_str););
+
         } else {
             /*
-             * "second branch of a conditional"!
+             * we are dealing with a PHI target here:
              */
-            rhs_type = TYEliminateAlpha (rhs_type);
-            AVIS_TYPE (avis) = TYEliminateAlpha (AVIS_TYPE (avis));
+            if (AVIS_TYPE (avis) == NULL) {
+                AVIS_TYPE (avis) = TYMakeAlphaType (NULL);
 
-            DBUG_EXECUTE ("NTC", tmp_str = TYType2String (rhs_type, FALSE, 0););
-            DBUG_EXECUTE ("NTC", tmp_str2 = TYType2String (AVIS_TYPE (avis), FALSE, 0););
-            DBUG_PRINT ("NTC", ("fusing types \"%s\" and \"%s\"...", tmp_str, tmp_str2));
-            DBUG_EXECUTE ("NTC", Free (tmp_str););
-            DBUG_EXECUTE ("NTC", Free (tmp_str2););
+                DBUG_EXECUTE ("NTC",
+                              tmp_str = TYType2String (AVIS_TYPE (avis), FALSE, 0););
+                DBUG_PRINT ("NTC", ("  type of \"%s\" is %s", IDS_NAME (lhs), tmp_str));
+                DBUG_EXECUTE ("NTC", tmp_str = Free (tmp_str););
+            }
 
-            if (TYIsArray (rhs_type)) {
-                if (TYIsArray (AVIS_TYPE (avis))) {
-                    /* both are array types! */
-                    type = TYLubOfTypes (rhs_type, AVIS_TYPE (avis));
-                    if (type == NULL) {
-                        ABORT (NODE_LINE (arg_node),
-                               ("variable \"%s\" has two alternative definitions of "
-                                "types \"%s\" and \"%s\""
-                                " which do not have a common supertype",
-                                strtok (IDS_NAME (lhs), "__SSA"),
-                                TYType2String (AVIS_TYPE (avis), FALSE, 0),
-                                TYType2String (rhs_type, FALSE, 0)));
-                    } else {
-                        AVIS_TYPE (avis) = type;
-                    }
-                } else {
-                    /* first is alpha! */
-                }
-            } else {
-                if (TYIsArray (AVIS_TYPE (avis))) {
-                    /* second is alpha! */
-                } else {
-                    /* both are alpha! */
-                }
+            DBUG_EXECUTE ("NTC", tmp_str = TYType2String (AVIS_TYPE (avis), FALSE, 0););
+            DBUG_EXECUTE ("NTC", tmp2_str = TYType2String (rhs_type, FALSE, 0););
+            DBUG_PRINT ("NTC", ("  making %s bigger than %s", tmp_str, tmp2_str));
+            DBUG_EXECUTE ("NTC", tmp_str = Free (tmp_str););
+            DBUG_EXECUTE ("NTC", tmp2_str = Free (tmp_str););
+
+            ok = SSINewTypeRel (rhs_type, AVIS_TYPE (avis));
+            if (!ok) {
+                ABORT (linenum, ("nasty type error"));
             }
         }
     }
@@ -727,7 +730,12 @@ NTCreturn (node *arg_node, node *arg_info)
      */
     INFO_NTC_NUM_EXPRS_SOFAR (arg_info) = 0;
 
-    RETURN_EXPRS (arg_node) = Trav (RETURN_EXPRS (arg_node), arg_info);
+    if (RETURN_EXPRS (arg_node) == NULL) {
+        /* we are dealing with a void function here! */
+        INFO_NTC_TYPE (arg_info) = TYMakeProductType (0);
+    } else {
+        RETURN_EXPRS (arg_node) = Trav (RETURN_EXPRS (arg_node), arg_info);
+    }
 
     DBUG_ASSERT (TYIsProd (INFO_NTC_TYPE (arg_info)),
                  "NTCexprs did not create a product type");
@@ -747,7 +755,10 @@ NTCreturn (node *arg_node, node *arg_info)
 node *
 NTCap (node *arg_node, node *arg_info)
 {
-    node *fundef;
+    ntype *args, *res;
+    node *wrapper;
+    te_info *info;
+
     DBUG_ENTER ("NTCap");
 
     /*
@@ -766,42 +777,64 @@ NTCap (node *arg_node, node *arg_info)
     DBUG_ASSERT (TYIsProd (INFO_NTC_TYPE (arg_info)),
                  "NTCexprs did not create a product type");
 
-    /*
-     * At this point, we have to distinguish two fundamentally different
-     * situations:
-     * -  either all argument types are fixed; then we try to infer the exact
-     *    result shape!!
-     * -  or at least one argument type is not yet fixed! In this case we
-     *    are dealing with a recursive call, which means that we have to
-     *    postpone the inference and try to go one with freshly introduced
-     *    result type variables!
-     */
-    if (TYIsProdOfArrayOrFixedAlpha (INFO_NTC_TYPE (arg_info))) {
-        /*
-         * all argument types are fixed:
-         */
-        fundef = DispatchFunction (AP_FUNDEF (arg_node), INFO_NTC_TYPE (arg_info));
-        if (FUNDEF_TCSTAT (fundef) == NTC_not_checked) {
-            fundef = TypeCheckFunctionBody (fundef, arg_info);
-        }
-        if (TYIsProdOfArrayOrFixedAlpha (FUNDEF_RET_TYPE (fundef))) {
-            INFO_NTC_TYPE (arg_info) = FUNDEF_RET_TYPE (fundef);
-        } else {
-#if 0
-      DBUG_ASSERT( 0, "TypeCheckFunctionBody did not yield a fixed return type!");
-#endif
-        }
+    args = INFO_NTC_TYPE (arg_info);
+    INFO_NTC_TYPE (arg_info) = NULL;
 
+    wrapper = AP_FUNDEF (arg_node);
+    info = TEMakeInfo (linenum, "udf", FUNDEF_NAME (wrapper), wrapper);
+    res = NTCCTComputeType (NTCFUN_udf, info, args);
+
+    TYFreeType (args);
+    INFO_NTC_TYPE (arg_info) = res;
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    node *NTCprf(node *arg_node, node *arg_info)
+ *
+ * description:
+ *
+ ******************************************************************************/
+
+node *
+NTCprf (node *arg_node, node *arg_info)
+{
+    ntype *args, *res;
+    prf prf;
+    te_info *info;
+
+    DBUG_ENTER ("NTCprf");
+
+    /*
+     * First we collect the argument types. NTCexprs puts them into a product type
+     * which is expected in INFO_NTC_TYPE( arg_info) afterwards!
+     * INFO_NTC_NUM_EXPRS_SOFAR is used to count the number of exprs "on the fly"!
+     */
+    INFO_NTC_NUM_EXPRS_SOFAR (arg_info) = 0;
+
+    if (NULL != PRF_ARGS (arg_node)) {
+        PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
     } else {
-        /*
-         * At least one argument type is not yet fixed:
-         *
-         * we push this function application on the postponed stack and
-         * generate a product type with fresh type variables for the result!
-         */
-        fundef = AP_FUNDEF (arg_node); /* wrapper or LaC function !*/
-        INFO_NTC_TYPE (arg_info) = TYDeriveSubtype (FUNDEF_RET_TYPE (fundef));
+        INFO_NTC_TYPE (arg_info) = TYMakeProductType (0);
     }
+
+    DBUG_ASSERT (TYIsProd (INFO_NTC_TYPE (arg_info)),
+                 "NTCexprs did not create a product type");
+
+    args = INFO_NTC_TYPE (arg_info);
+    INFO_NTC_TYPE (arg_info) = NULL;
+
+    prf = PRF_PRF (arg_node);
+    info = TEMakeInfo (linenum, "prf", prf_name_str[prf], NULL);
+    res = NTCCTComputeType (NTCPRF_funtab[prf], info, args);
+
+    TYFreeType (args);
+    INFO_NTC_TYPE (arg_info) = res;
+
+    DBUG_RETURN (arg_node);
 
     DBUG_RETURN (arg_node);
 }
@@ -859,6 +892,7 @@ NTCarray (node *arg_node, node *arg_info)
     ntype *scalar = NULL;
     ntype *tmp;
     ntype *type;
+    shape *shp;
     int i;
 
     DBUG_ENTER ("NTCarray");
@@ -896,12 +930,33 @@ NTCarray (node *arg_node, node *arg_info)
             tmp = TYGetProductMember (INFO_NTC_TYPE (arg_info), i);
             if (TYCmpTypes (scalar, tmp) != TY_eq) {
                 ABORT (NODE_LINE (arg_node),
-                       ("Different element types used in one array"));
+                       ("Different element types used in one array;"
+                        " element #0 has type %s, element #%d has type %s",
+                        TYType2String (scalar, FALSE, 0), i,
+                        TYType2String (tmp, FALSE, 0)));
             }
             TYFreeType (tmp);
         }
 
-        type = TYMakeAKS (TYGetScalar (scalar), SHCreateShape (1, num_elems));
+        switch (TYGetConstr (scalar)) {
+        case TC_aks:
+            shp = SHCreateShape (1, num_elems);
+            type = TYMakeAKS (TYGetScalar (scalar),
+                              SHAppendShapes (shp, TYGetShape (scalar)));
+            SHFreeShape (shp);
+            break;
+        case TC_akd:
+            type
+              = TYMakeAKD (TYGetScalar (scalar), TYGetDim (scalar) + 1, SHMakeShape (0));
+            break;
+        case TC_audgz:
+        case TC_aud:
+            type = TYMakeAUDGZ (TYGetScalar (scalar));
+            break;
+        default:
+            DBUG_ASSERT (FALSE, "array elements of non array types not yet supported");
+        }
+
         TYFreeTypeConstructor (scalar);
         TYFreeTypeConstructor (INFO_NTC_TYPE (arg_info));
     } else {
@@ -974,3 +1029,370 @@ NTCBASIC (double, T_double)
 NTCBASIC (float, T_float)
 NTCBASIC (char, T_char)
 NTCBASIC (bool, T_bool)
+
+/******************************************************************************
+ *
+ * function:
+ *    node *NTCNwith( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   steers the type inference of with loops and dbug prints the individual
+ *   findings of the generator inference, the body inference, and the
+ *   composition of them which is done in NTCNwithop.
+ *
+ ******************************************************************************/
+
+node *
+NTCNwith (node *arg_node, node *arg_info)
+{
+    ntype *gen, *body, *res;
+#ifndef DBUG_OFF
+    char *tmp_str;
+#endif
+
+    DBUG_ENTER ("NTCNwith");
+
+    /*
+     * First, we infer the generator type
+     */
+    NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
+    gen = TYGetProductMember (INFO_NTC_TYPE (arg_info), 0);
+    TYFreeTypeConstructor (INFO_NTC_TYPE (arg_info));
+    INFO_NTC_TYPE (arg_info) = NULL;
+
+    DBUG_EXECUTE ("NTC", tmp_str = TYType2String (gen, FALSE, 0););
+    DBUG_PRINT ("NTC", ("  WL - generator type: %s", tmp_str));
+    DBUG_EXECUTE ("NTC", tmp_str = Free (tmp_str););
+
+    /*
+     * Then, we infer the type of the WL body:
+     */
+    NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
+    body = INFO_NTC_TYPE (arg_info);
+    INFO_NTC_TYPE (arg_info) = NULL;
+
+    DBUG_EXECUTE ("NTC", tmp_str = TYType2String (body, FALSE, 0););
+    DBUG_PRINT ("NTC", ("  WL - body type: %s", tmp_str));
+    DBUG_EXECUTE ("NTC", tmp_str = Free (tmp_str););
+
+    /*
+     * Finally, we compute the return type from "gen" and "body".
+     * This is done in NTCNwithop. The two types are transferred via
+     * INFO_NTC_GEN_TYPE and INFO_NTC_TYPE, respectively.
+     */
+    INFO_NTC_GEN_TYPE (arg_info) = gen;
+    INFO_NTC_TYPE (arg_info) = body;
+
+    NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
+    res = TYGetProductMember (INFO_NTC_TYPE (arg_info), 0);
+    TYFreeTypeConstructor (INFO_NTC_TYPE (arg_info));
+    INFO_NTC_TYPE (arg_info) = res;
+
+    DBUG_EXECUTE ("NTC", tmp_str = TYType2String (INFO_NTC_TYPE (arg_info), FALSE, 0););
+    DBUG_PRINT ("NTC", ("  WL - final type: %s", tmp_str));
+    DBUG_EXECUTE ("NTC", tmp_str = Free (tmp_str););
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    node *NTCNpart( node *arg_node, node *arg_info)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+NTCNpart (node *arg_node, node *arg_info)
+{
+    ids *idxs;
+    ntype *idx;
+    int num_ids;
+
+    DBUG_ENTER ("NTCNpart");
+
+    /*
+     * First, we check whether we can extract some shape info from the
+     * generator variable, i.e, we check whether we do have scalar indices:
+     */
+    idxs = NPART_IDS (arg_node);
+    if (idxs != NULL) {
+        num_ids = CountIds (idxs);
+        idx = TYMakeAKS (TYMakeSimpleType (T_int), SHCreateShape (1, num_ids));
+    } else {
+        idx = TYMakeAKD (TYMakeSimpleType (T_int), 1, SHCreateShape (0));
+    }
+
+    /*
+     * Then, we infer the best possible type of the generator specification
+     * and from the idx information gained from the Nwithid node:
+     */
+    INFO_NTC_TYPE (arg_info) = idx;
+    NPART_GEN (arg_node) = Trav (NPART_GEN (arg_node), arg_info);
+
+    /*
+     * the best possible generator type is returned, so
+     * we attach the generator type to the generator variable(s).
+     */
+    NPART_WITHID (arg_node) = Trav (NPART_WITHID (arg_node), arg_info);
+
+    /*
+     * AND (!!) we hand the type back to NTCNwith!
+     */
+    DBUG_ASSERT (INFO_NTC_TYPE (arg_info) != NULL,
+                 "inferred generator type corrupted in NTCNwithid");
+
+    DBUG_ASSERT ((NPART_NEXT (arg_node) == NULL),
+                 "with-loop with more than one part found!");
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    node *NTCNgenerator( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   checks compatability of the generator entries, i.e.,
+ *              bounds, step, and width vectors
+ *   if they are potentially conformative the most specific type possible is
+ *   returned.
+ *
+ ******************************************************************************/
+
+node *
+NTCNgenerator (node *arg_node, node *arg_info)
+{
+    ntype *lb, *idx, *ub, *s, *w, *gen, *res;
+    te_info *info;
+
+    DBUG_ENTER ("NTCNgenerator");
+
+    idx = INFO_NTC_TYPE (arg_info); /* generated in NTCNpart !*/
+    INFO_NTC_TYPE (arg_info) = NULL;
+
+    NGEN_BOUND1 (arg_node) = Trav (NGEN_BOUND1 (arg_node), arg_info);
+    lb = INFO_NTC_TYPE (arg_info);
+    INFO_NTC_TYPE (arg_info) = NULL;
+
+    NGEN_BOUND2 (arg_node) = Trav (NGEN_BOUND2 (arg_node), arg_info);
+    ub = INFO_NTC_TYPE (arg_info);
+    INFO_NTC_TYPE (arg_info) = NULL;
+
+    if (NGEN_STEP (arg_node) != NULL) {
+        NGEN_STEP (arg_node) = Trav (NGEN_STEP (arg_node), arg_info);
+        s = INFO_NTC_TYPE (arg_info);
+        INFO_NTC_TYPE (arg_info) = NULL;
+
+        if (NGEN_WIDTH (arg_node) != NULL) {
+            NGEN_WIDTH (arg_node) = Trav (NGEN_WIDTH (arg_node), arg_info);
+            w = INFO_NTC_TYPE (arg_info);
+            INFO_NTC_TYPE (arg_info) = NULL;
+
+            gen = TYMakeProductType (5, lb, idx, ub, s, w);
+        } else {
+            gen = TYMakeProductType (4, lb, idx, ub, s);
+        }
+    } else {
+        gen = TYMakeProductType (3, lb, idx, ub);
+    }
+
+    info = TEMakeInfo (linenum, "wl", "generator", NULL);
+    res = NTCCTComputeType (NTCWL_idx, info, gen);
+    TYFreeType (gen);
+
+    INFO_NTC_TYPE (arg_info) = res;
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    node *NTCNwithid( node *arg_node, node *arg_info)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+NTCNwithid (node *arg_node, node *arg_info)
+{
+    ids *idxs, *vec;
+
+    DBUG_ENTER ("NTCNwithid");
+
+    if (NWITHID_IDS (arg_node) != NULL) {
+        while (idxs) {
+            AVIS_TYPE (IDS_AVIS (idxs))
+              = TYMakeAKS (TYMakeSimpleType (T_int), SHCreateShape (0));
+            idxs = IDS_NEXT (idxs);
+        }
+    }
+    if (NWITHID_VEC (arg_node) != NULL) {
+        vec = NWITHID_VEC (arg_node);
+        /*
+         * we have to leave the generator type intact, therefore, we copy it:
+         */
+        AVIS_TYPE (IDS_AVIS (vec))
+          = TYCopyType (TYGetProductMember (INFO_NTC_TYPE (arg_info), 0));
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    node *NTCNcode( node *arg_node, node *arg_info)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+NTCNcode (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("NTCNcode");
+
+    NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
+    NCODE_CEXPR (arg_node) = Trav (NCODE_CEXPR (arg_node), arg_info);
+
+    DBUG_ASSERT ((NCODE_NEXT (arg_node) == NULL),
+                 "with-loop with more than one code block found!");
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    node *NTCNwithop( node *arg_node, node *arg_info)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+NTCNwithop (node *arg_node, node *arg_info)
+{
+    ntype *gen, *body, *res, *elems, *fold_res;
+    ntype *shp, *args;
+    node *wrapper;
+    te_info *info;
+    bool ok;
+
+    DBUG_ENTER ("NTCNwithop");
+
+    gen = INFO_NTC_GEN_TYPE (arg_info);
+    INFO_NTC_GEN_TYPE (arg_info) = NULL;
+    body = INFO_NTC_TYPE (arg_info);
+    INFO_NTC_TYPE (arg_info) = NULL;
+
+    switch (NWITHOP_TYPE (arg_node)) {
+    case WO_genarray:
+        /*
+         * First, we check the shape expression:
+         */
+        NWITHOP_SHAPE (arg_node) = Trav (NWITHOP_SHAPE (arg_node), arg_info);
+        shp = INFO_NTC_TYPE (arg_info);
+        INFO_NTC_TYPE (arg_info) = NULL;
+
+        args = TYMakeProductType (3, gen, shp, body);
+        info = TEMakeInfo (linenum, "with", "genarray", NULL);
+        res = NTCCTComputeType (NTCWL_gen, info, args);
+
+        break;
+
+    case WO_modarray:
+        /*
+         * First, we check the array expression:
+         */
+        NWITHOP_ARRAY (arg_node) = Trav (NWITHOP_ARRAY (arg_node), arg_info);
+        shp = INFO_NTC_TYPE (arg_info);
+        INFO_NTC_TYPE (arg_info) = NULL;
+
+        args = TYMakeProductType (3, gen, shp, body);
+        info = TEMakeInfo (linenum, "with", "modarray", NULL);
+        res = NTCCTComputeType (NTCWL_mod, info, args);
+
+        break;
+
+    case WO_foldfun:
+        /*
+         * First, we check the neutral expression:
+         */
+        if (NWITHOP_NEUTRAL (arg_node) == NULL) {
+            ABORT (linenum, ("missing neutral element for user-defined fold function"));
+        }
+        NWITHOP_NEUTRAL (arg_node) = Trav (NWITHOP_NEUTRAL (arg_node), arg_info);
+        shp = INFO_NTC_TYPE (arg_info);
+        INFO_NTC_TYPE (arg_info) = NULL;
+
+        /*
+         * Then, we compute the type of the elements to be folded:
+         */
+        args = TYMakeProductType (2, shp, body);
+        info = TEMakeInfo (linenum, "with", "fold", NULL);
+        res = NTCCTComputeType (NTCWL_fold, info, args);
+        elems = TYGetProductMember (res, 0);
+
+        /*
+         * Followed by a computation of the type of the fold fun:
+         */
+        args = TYMakeProductType (2, TYCopyType (elems), TYCopyType (elems));
+        wrapper = NWITHOP_FUNDEF (arg_node);
+        info = TEMakeInfo (linenum, "fold fun", FUNDEF_NAME (wrapper), wrapper);
+        fold_res = NTCCTComputeType (NTCFUN_udf, info, args);
+
+        ok = SSINewTypeRel (TYGetProductMember (fold_res, 0), elems);
+
+        if (!ok) {
+            ABORT (linenum, ("illegal fold function in fold with loop; "));
+        }
+
+        break;
+
+    case WO_foldprf:
+    default:
+        DBUG_ASSERT (FALSE, "fold WL with prf not yet implemented");
+    }
+    INFO_NTC_TYPE (arg_info) = res;
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    node *NTCTriggerTypeCheck( node *fundef)
+ *
+ * description:
+ *   external interface for TypeCheckFunctionBody. It is used from ct_fun,
+ *   where the generation of new specializations and the type inference
+ *   of all potential instances of a function application is triggered.
+ *
+ ******************************************************************************/
+
+node *
+NTCTriggerTypeCheck (node *fundef)
+{
+    node *arg_info;
+
+    DBUG_ENTER ("NTCTriggerTypeCheck");
+
+    if (FUNDEF_TCSTAT (fundef) == NTC_not_checked) {
+        arg_info = MakeInfo ();
+        fundef = TypeCheckFunctionBody (fundef, arg_info);
+        arg_info = FreeNode (arg_info);
+    }
+
+    DBUG_RETURN (fundef);
+}

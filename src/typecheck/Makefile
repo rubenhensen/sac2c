@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.19  2002/08/05 17:00:38  sbs
+# first alpha version of the new type checker !!
+#
 # Revision 3.18  2002/06/06 19:56:03  dkr
 # target clean modified
 #
@@ -58,7 +61,8 @@ INCS=-I../global -I../tree -I../../inc -I../print -I../modules -I../optimize \
 
 all: typecheck.o prim_fun.o typecheck_WL.o gen_pseudo_fun.o \
      new_typecheck.o new_types.o user_types.o create_wrappers.o \
-     ssi.o
+     ssi.o sig_deps.o ct_basic.o ct_fun.o ct_prf.o ct_with.o type_errors.o\
+     specialize.o new2old.o
 
 
 #
