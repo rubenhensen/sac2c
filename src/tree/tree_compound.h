@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.114  2004/11/23 15:24:11  mwe
+ * *** empty log message ***
+ *
  * Revision 3.113  2004/11/23 14:55:11  ktr
  * Added IDS_NAME, VARDEC_NAME
  *
@@ -147,6 +150,7 @@ extern bool TCisNonUniqueHidden (types *type);
 #define IDS_VARDEC_NAME(n) VARDEC_OR_ARG_NAME (IDS_VARDEC (n))
 #define IDS_VARDEC_NEXT(n) VARDEC_OR_ARG_NEXT (IDS_VARDEC (n))
 #define IDS_PADDED(n) VARDEC_OR_ARG_PADDED (IDS_VARDEC (n))
+#define IDS_VARDEC(n) AVIS_VARDEC (IDS_AVIS (n))
 
 extern node *TCappendIds (node *chain, node *item);
 extern int CountIds (node *ids_arg);
