@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2002/08/26 13:46:00  sah
+ * first full implementation of multi-
+ * dimensional select.
+ *
  * Revision 1.8  2002/08/21 13:43:54  sah
  * fixed bug traversing N_ap nodes without arguments.
  *
@@ -48,7 +52,7 @@
  */
 
 typedef struct DOTLIST {
-    int no;               /* number of dot counted from left */
+    int no;               /* number of dots counted from left */
     int position;         /* position of dot within selection */
     int dottype;          /* type of dot; 1:'.' 3: '...' */
     struct DOTLIST *next; /* for building up a list ;) */
@@ -209,10 +213,13 @@ int
 RIsDot (int dot, dotinfo *info)
 {
     int result = 0;
+
     DBUG_ENTER ("RIsDot");
 
     result = LIsDot (info->selcnt - dot + 1, info);
-    result = info->dotcnt - result;
+
+    if (result != 0)
+        result = info->dotcnt - result + 1;
 
     DBUG_RETURN (result);
 }
@@ -249,11 +256,6 @@ MakeTmpId ()
     DBUG_RETURN (result);
 }
 
-/* BuildTakeDrop may work or may not ;))
- * The generated code needs the new typechecker
- * so the development is delayed until then
- */
-
 node *
 BuildTakeDrop (node *from, node *to, node *vector)
 {
@@ -264,24 +266,81 @@ BuildTakeDrop (node *from, node *to, node *vector)
 
     iv = MakeTmpId ();
 
+    result = MakeNWith (MakeNPart (MakeNWithid (DupId_Ids (iv), NULL),
+                                   MakeNGenerator (MakeArray (MakeExprs (from, NULL)),
+                                                   MakeArray (MakeExprs (to, NULL)), F_le,
+                                                   F_le, NULL, NULL),
+                                   NULL),
+                        MakeNCode (MAKE_EMPTY_BLOCK (),
+                                   MAKE_BIN_PRF (F_sel, iv, DupTree (vector))),
+                        MakeNWithOp (WO_genarray,
+                                     MakeArray (
+                                       MakeExprs (MAKE_BIN_PRF (F_add_SxS, MakeNum (1),
+                                                                MAKE_BIN_PRF (F_sub_SxS,
+                                                                              to, from)),
+                                                  NULL))));
+
+    NCODE_USED (NWITH_CODE (result))++;
+    NPART_CODE (NWITH_PART (result)) = NWITH_CODE (result);
+
+    DBUG_RETURN (result);
+}
+
+node *
+BuildConcat (node *a, node *b)
+{
+    node *result;
+    node *iv;
+
+    DBUG_ENTER ("BuildConcat");
+
+    if (a == NULL)
+        DBUG_RETURN (b);
+    if (b == NULL)
+        DBUG_RETURN (a);
+
+    iv = MakeTmpId ();
+
     result = MakeNWith (
       MakeNPart (MakeNWithid (DupId_Ids (iv), NULL),
-                 MakeNGenerator (MakeArray (MakeExprs (from, NULL)),
-                                 MakeArray (MakeExprs (to, NULL)), F_le, F_le, NULL,
-                                 NULL),
+                 MakeNGenerator (
+                   MakeArray (MakeExprs (MakeNum (0), NULL)),
+                   MakeArray (
+                     MakeExprs (MAKE_BIN_PRF (F_add_SxA, MakeNum (-1),
+                                              MAKE_BIN_PRF (F_add_AxA,
+                                                            MakePrf (F_dim,
+                                                                     MakeExprs (DupTree (
+                                                                                  a),
+                                                                                NULL)),
+                                                            MakePrf (F_dim,
+                                                                     MakeExprs (DupTree (
+                                                                                  b),
+                                                                                NULL)))),
+                                NULL)),
+                   F_le, F_le, NULL, NULL),
                  NULL),
       MakeNCode (MAKE_EMPTY_BLOCK (),
-                 MakePrf (F_sel, MakeExprs (iv, MakeExprs (DupTree (vector), NULL)))),
+                 MakeCond (MAKE_BIN_PRF (F_lt, DupTree (iv),
+                                         MakePrf (F_dim, MakeExprs (DupTree (a), NULL))),
+                           MAKE_BIN_PRF (F_sel,
+                                         MakeArray (MakeExprs (DupTree (iv), NULL)),
+                                         DupTree (a)),
+                           MAKE_BIN_PRF (F_sel,
+                                         MakeArray (MakeExprs (
+                                           MAKE_BIN_PRF (F_sub_SxS, iv,
+                                                         MakePrf (F_dim,
+                                                                  MakeExprs (DupTree (a),
+                                                                             NULL))),
+                                           NULL)),
+                                         DupTree (b)))),
       MakeNWithOp (WO_genarray,
-                   MakeArray (MakeExprs (
-                     MakePrf (F_add,
-                              MakeExprs (MakeNum (1),
-                                         MakeExprs (MakePrf (F_sub,
-                                                             MakeExprs (to,
-                                                                        MakeExprs (from,
-                                                                                   NULL))),
-                                                    NULL))),
-                     NULL))));
+                   MakeArray (
+                     MakeExprs (MAKE_BIN_PRF (F_add_SxS,
+                                              MakePrf (F_dim,
+                                                       MakeExprs (DupTree (a), NULL)),
+                                              MakePrf (F_dim,
+                                                       MakeExprs (DupTree (b), NULL))),
+                                NULL))));
 
     NCODE_USED (NWITH_CODE (result))++;
     NPART_CODE (NWITH_PART (result)) = NWITH_CODE (result);
@@ -313,13 +372,10 @@ BuildLeftShape (node *args, node *array, dotinfo *info)
                             result);
     }
 
+    result = MakeArray (result);
+
     DBUG_RETURN (result);
 }
-
-/* BuildMiddleShape may work or may not ;))
- * The generated code needs the new typechecker
- * so the development is delayed until then
- */
 
 node *
 BuildMiddleShape (node *args, node *array, dotinfo *info)
@@ -336,11 +392,11 @@ BuildMiddleShape (node *args, node *array, dotinfo *info)
 
     dim = MakePrf (F_dim, MakeExprs (DupTree (array), NULL));
 
-    from = MakeArray (MakeExprs (MakeNum (info->triplepos), NULL));
+    from = MakeNum (info->triplepos - 1);
 
-    to = MakePrf (F_sub,
-                  MakeExprs (dim,
-                             MakeExprs (MakeNum (info->selcnt - info->triplepos), NULL)));
+    to = MakePrf (F_sub_SxS,
+                  MakeExprs (dim, MakeExprs (MakeNum (info->selcnt - info->triplepos + 1),
+                                             NULL)));
 
     result = BuildTakeDrop (from, to, shape);
 
@@ -348,17 +404,123 @@ BuildMiddleShape (node *args, node *array, dotinfo *info)
 }
 
 node *
-BuildShape (node *args, node *array, dotinfo *info)
+BuildRightShape (node *args, node *array, dotinfo *info)
 {
+    int cnt;
+    int maxdot;
     node *result = NULL;
 
-    DBUG_ENTER ("BuildShape");
+    DBUG_ENTER ("BuildRighthape");
 
-    result = BuildLeftShape (args, array, info);
+    maxdot = info->dotcnt - info->tripledot;
+
+    for (cnt = 1; cnt <= maxdot; cnt++) {
+        result = MakeExprs (
+          MAKE_BIN_PRF (F_sel,
+                        MAKE_BIN_PRF (F_sub_SxS,
+                                      MakePrf (F_dim,
+                                               MakeExprs (MakePrf (F_shape,
+                                                                   MakeExprs (DupTree (
+                                                                                array),
+                                                                              NULL)),
+                                                          NULL)),
+                                      MakeNum (RDot2Pos (cnt, info))),
+                        MakePrf (F_shape, MakeExprs (DupTree (array), NULL))),
+          result);
+    }
 
     result = MakeArray (result);
 
     DBUG_RETURN (result);
+}
+
+node *
+MakeAssignLetNV (char *var_name, node *let_expr)
+{
+    ids *tmp_ids;
+    node *tmp_node;
+
+    DBUG_ENTER ("MakeAssignLet");
+
+    tmp_ids = MakeIds (var_name, NULL, ST_regular);
+    tmp_node = MakeLet (let_expr, tmp_ids);
+    tmp_node = MakeAssign (tmp_node, NULL);
+
+    DBUG_RETURN (tmp_node);
+}
+
+node *
+BuildShape (node *args, node *array, node *block, dotinfo *info)
+{
+    node *leftshape = NULL;
+    node *leftid = NULL;
+    node *middleshape = NULL;
+    node *middleid = NULL;
+    node *rightshape = NULL;
+    node *rightid = NULL;
+
+    DBUG_ENTER ("BuildShape");
+
+    if (info->triplepos != 1) {
+        leftshape = BuildLeftShape (args, array, info);
+        leftid = MakeTmpId ();
+        BLOCK_INSTR (block)
+          = AppendAssign (BLOCK_INSTR (block),
+                          MakeAssignLetNV (StringCopy (ID_NAME (leftid)), leftshape));
+    }
+
+    if (info->triplepos != 0) {
+        middleshape = BuildMiddleShape (args, array, info);
+        middleid = MakeTmpId ();
+        BLOCK_INSTR (block)
+          = AppendAssign (BLOCK_INSTR (block),
+                          MakeAssignLetNV (StringCopy (ID_NAME (middleid)), middleshape));
+    }
+
+    if ((info->triplepos != 0) && (info->triplepos != info->selcnt)) {
+        rightshape = BuildRightShape (args, array, info);
+        rightid = MakeTmpId ();
+        BLOCK_INSTR (block)
+          = AppendAssign (BLOCK_INSTR (block),
+                          MakeAssignLetNV (StringCopy (ID_NAME (rightid)), rightshape));
+    }
+
+    if (rightid != NULL) {
+        node *tmpid = NULL;
+
+        tmpid = MakeTmpId ();
+
+        BLOCK_INSTR (block)
+          = AppendAssign (BLOCK_INSTR (block),
+                          MakeAssignLetNV (StringCopy (ID_NAME (tmpid)),
+                                           BuildConcat (middleid, rightid)));
+
+        middleid = tmpid;
+        rightid = NULL;
+    }
+
+    if (middleid != NULL) {
+        if (leftid == NULL) {
+            leftid = middleid;
+            middleid = NULL;
+        } else {
+            node *tmpid = NULL;
+
+            tmpid = MakeTmpId ();
+
+            BLOCK_INSTR (block)
+              = AppendAssign (BLOCK_INSTR (block),
+                              MakeAssignLetNV (StringCopy (ID_NAME (tmpid)),
+                                               BuildConcat (leftid, middleid)));
+
+            leftid = tmpid;
+            middleid = NULL;
+        }
+    }
+
+    DBUG_ASSERT (leftid != NULL, "error building shape: the shape is empty!");
+
+    DBUG_RETURN (leftid);
 }
 
 node *
@@ -378,7 +540,7 @@ BuildLeftIndex (node *args, node *iv, dotinfo *info)
 
     for (cnt = maxcnt; cnt > 0; cnt--) {
         if (LIsDot (cnt, info)) {
-            /* Make selection iv[ldot-1(cnt)] */
+            /* Make selection iv[ldot(cnt)-1] */
             result
               = MakeExprs (MAKE_BIN_PRF (F_sel,
                                          MakeArray (
@@ -391,17 +553,58 @@ BuildLeftIndex (node *args, node *iv, dotinfo *info)
         }
     }
 
+    result = MakeArray (result);
+
     DBUG_RETURN (result);
 }
 
 node *
-BuildIndex (node *args, node *iv, dotinfo *info)
+BuildMiddleIndex (node *args, node *iv, dotinfo *info)
 {
     node *result = NULL;
+    node *from = NULL;
+    node *to = NULL;
 
-    DBUG_ENTER ("BuildIndex");
+    DBUG_ENTER ("BuildMiddleIndex");
 
-    result = BuildLeftIndex (args, iv, info);
+    from = MakeNum (LDot2Pos (info->triplepos, info) - 1);
+    to = MakeNum (info->selcnt - RDot2Pos (info->triplepos, info));
+
+    result = BuildTakeDrop (from, to, DupTree (iv));
+
+    DBUG_RETURN (result);
+}
+
+node *
+BuildRightIndex (node *args, node *iv, dotinfo *info)
+{
+    int cnt;
+    int maxcnt;
+    node *result = NULL;
+
+    DBUG_ENTER ("BuildRightIndex");
+
+    maxcnt = info->selcnt - info->triplepos;
+
+    for (cnt = 1; cnt <= maxcnt; cnt++) {
+        if (RIsDot (cnt, info)) {
+            /* Make selection iv[selcnt - rdot(cnt)] */
+            result
+              = MakeExprs (MAKE_BIN_PRF (F_sel,
+                                         MakeArray (MakeExprs (
+                                           MAKE_BIN_PRF (F_sub_SxS,
+                                                         MakePrf (F_dim,
+                                                                  MakeExprs (DupTree (iv),
+                                                                             NULL)),
+                                                         MakeNum (RIsDot (cnt, info))),
+                                           NULL)),
+                                         DupTree (iv)),
+                           result);
+        } else {
+            result
+              = MakeExprs (DupTree (GetNthExpr (info->selcnt - cnt + 1, args)), result);
+        }
+    }
 
     result = MakeArray (result);
 
@@ -409,7 +612,81 @@ BuildIndex (node *args, node *iv, dotinfo *info)
 }
 
 node *
-BuildWithLoop (node *shape, node *iv, node *array, node *index)
+BuildIndex (node *args, node *iv, node *block, dotinfo *info)
+{
+    node *leftindex = NULL;
+    node *leftid = NULL;
+    node *middleindex = NULL;
+    node *middleid = NULL;
+    node *rightindex = NULL;
+    node *rightid = NULL;
+
+    DBUG_ENTER ("BuildIndex");
+
+    if (info->triplepos != 1) {
+        leftindex = BuildLeftIndex (args, iv, info);
+        leftid = MakeTmpId ();
+        BLOCK_INSTR (block)
+          = AppendAssign (BLOCK_INSTR (block),
+                          MakeAssignLetNV (StringCopy (ID_NAME (leftid)), leftindex));
+    }
+
+    if (info->triplepos != 0) {
+        middleindex = BuildMiddleIndex (args, iv, info);
+        middleid = MakeTmpId ();
+        BLOCK_INSTR (block)
+          = AppendAssign (BLOCK_INSTR (block),
+                          MakeAssignLetNV (StringCopy (ID_NAME (middleid)), middleindex));
+    }
+
+    if ((info->triplepos != 0) && (info->triplepos != info->selcnt)) {
+        rightindex = BuildRightIndex (args, iv, info);
+        rightid = MakeTmpId ();
+        BLOCK_INSTR (block)
+          = AppendAssign (BLOCK_INSTR (block),
+                          MakeAssignLetNV (StringCopy (ID_NAME (rightid)), rightindex));
+    }
+
+    if (rightid != NULL) {
+        node *tmpid = NULL;
+
+        tmpid = MakeTmpId ();
+
+        BLOCK_INSTR (block)
+          = AppendAssign (BLOCK_INSTR (block),
+                          MakeAssignLetNV (StringCopy (ID_NAME (tmpid)),
+                                           BuildConcat (middleid, rightid)));
+
+        middleid = tmpid;
+        rightid = NULL;
+    }
+
+    if (middleid != NULL) {
+        if (leftid == NULL) {
+            leftid = middleid;
+            middleid = NULL;
+        } else {
+            node *tmpid = NULL;
+
+            tmpid = MakeTmpId ();
+
+            BLOCK_INSTR (block)
+              = AppendAssign (BLOCK_INSTR (block),
+                              MakeAssignLetNV (StringCopy (ID_NAME (tmpid)),
+                                               BuildConcat (leftid, middleid)));
+
+            leftid = tmpid;
+            middleid = NULL;
+        }
+    }
+
+    DBUG_ASSERT (leftid != NULL, "error building index: the index is empty!");
+
+    DBUG_RETURN (leftid);
+}
+
+node *
+BuildWithLoop (node *shape, node *iv, node *array, node *index, node *block)
 {
     node *result;
 
@@ -419,8 +696,8 @@ BuildWithLoop (node *shape, node *iv, node *array, node *index)
                                    MakeNGenerator (MakeDot (1), MakeDot (1), F_le, F_le,
                                                    NULL, NULL),
                                    NULL),
-                        MakeNCode (MAKE_EMPTY_BLOCK (), MakeAp2 (StringCopy ("sel"), NULL,
-                                                                 index, DupTree (array))),
+                        MakeNCode (block, MakeAp2 (StringCopy ("sel"), NULL, index,
+                                                   DupTree (array))),
                         MakeNWithOp (WO_genarray, shape));
 
     NCODE_USED (NWITH_CODE (result))++;
@@ -660,22 +937,26 @@ HDap (node *arg_node, node *arg_info)
         dotinfo *info = MakeDotInfo (ARRAY_AELEMS (AP_ARG1 (arg_node)));
 
         /* for now, ... is not supported anyway, so check for that*/
-
-        if (info->tripledot != 0) {
-            ERROR (linenum, ("'...' is not supported yet."));
+        /*
+        if (info->tripledot != 0)
+        {
+          ERROR(linenum, ("'...' is not supported yet."));
         }
+        */
 
         if (info->dotcnt != 0) {
             node *shape;
             node *iv;
             node *index;
+            node *block;
 
             iv = MakeTmpId ();
-            shape
-              = BuildShape (ARRAY_AELEMS (AP_ARG1 (arg_node)), AP_ARG2 (arg_node), info);
-            index = BuildIndex (ARRAY_AELEMS (AP_ARG1 (arg_node)), iv, info);
+            block = MAKE_EMPTY_BLOCK ();
+            shape = BuildShape (ARRAY_AELEMS (AP_ARG1 (arg_node)), AP_ARG2 (arg_node),
+                                block, info);
+            index = BuildIndex (ARRAY_AELEMS (AP_ARG1 (arg_node)), iv, block, info);
 
-            result = BuildWithLoop (shape, iv, AP_ARG2 (arg_node), index);
+            result = BuildWithLoop (shape, iv, AP_ARG2 (arg_node), index, block);
 
             FreeTree (arg_node);
             FreeNode (iv);
@@ -713,38 +994,49 @@ HDprf (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("HDprf");
 
-    /* only sel statements are of interest here, so just return */
-    /* on anything else                                         */
-    /* besides ARG1 must be an array. because otherwise there   */
-    /* is no possibility to find any dot...                     */
+#if 0
+  
+  /* only sel statements are of interest here, so just return */
+  /* on anything else                                         */
+  /* besides ARG1 must be an array. because otherwise there   */
+  /* is no possibility to find any dot...                     */
+  
+  if ((PRF_PRF(arg_node) == F_sel) && 
+      (NODE_TYPE(PRF_ARG1(arg_node)) == N_array))
+  {
+    dotinfo* info = MakeDotInfo(ARRAY_AELEMS(PRF_ARG1(arg_node)));
 
-    if ((PRF_PRF (arg_node) == F_sel) && (NODE_TYPE (PRF_ARG1 (arg_node)) == N_array)) {
-        dotinfo *info = MakeDotInfo (ARRAY_AELEMS (PRF_ARG1 (arg_node)));
-
-        /* for now, ... is not supported anyway, so check for that*/
-
-        if (info->tripledot != 0) {
-            ERROR (linenum, ("'...' is not supported yet."));
-        }
-
-        if (info->dotcnt != 0) {
-            node *shape;
-            node *iv;
-            node *index;
-
-            iv = MakeTmpId ();
-            shape = BuildShape (ARRAY_AELEMS (PRF_ARG1 (arg_node)), PRF_ARG2 (arg_node),
-                                info);
-            index = BuildIndex (ARRAY_AELEMS (PRF_ARG1 (arg_node)), iv, info);
-
-            result = BuildWithLoop (shape, iv, PRF_ARG2 (arg_node), index);
-
-            FreeTree (arg_node);
-            FreeNode (iv);
-        }
-
-        FreeDotInfo (info);
+    /* for now, ... is not supported anyway, so check for that*/
+    
+    if (info->tripledot != 0)
+    {
+      ERROR(linenum, ("'...' is not supported yet."));
     }
+
+    if (info->dotcnt != 0)
+    {
+      node* shape;
+      node* iv;
+      node* index;
+    
+      iv = MakeTmpId();
+      shape = BuildShape(ARRAY_AELEMS(PRF_ARG1(arg_node)),
+                          PRF_ARG2(arg_node),
+                          info);
+      index = BuildIndex(ARRAY_AELEMS(PRF_ARG1(arg_node)),
+                          iv,
+                          info);
+                          
+      result = BuildWithLoop(shape, iv, PRF_ARG2(arg_node), index);
+      
+      FreeTree(arg_node);
+      FreeNode(iv);
+    } 
+  
+    FreeDotInfo(info);  
+  }
+
+#endif
 
     /* Now we traverse our result in order to handle any */
     /* dots inside.                                      */
