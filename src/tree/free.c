@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.67  2004/09/29 17:27:59  sbs
+ * now, ntypes - if present - are freed as well.
+ *
  * Revision 3.66  2004/09/28 14:11:18  ktr
  * removed old refcount and generatemasks
  *
@@ -808,6 +811,12 @@ FreeZombie (node *fundef)
 #endif
 
         FUNDEF_TYPES (fundef) = FreeOneTypes (FUNDEF_TYPES (fundef));
+        if (FUNDEF_RET_TYPE (fundef) != NULL) {
+            FUNDEF_RET_TYPE (fundef) = TYFreeType (FUNDEF_RET_TYPE (fundef));
+        }
+        if (FUNDEF_TYPE (fundef) != NULL) {
+            FUNDEF_TYPE (fundef) = TYFreeType (FUNDEF_TYPE (fundef));
+        }
 
         tmp = fundef;
         fundef = FUNDEF_NEXT (fundef);
@@ -2572,6 +2581,10 @@ FreeAvis (node *arg_node, info *arg_info)
 
     if (AVIS_SSASTACK (arg_node) != NULL) {
         AVIS_SSASTACK (arg_node) = FREETRAV (AVIS_SSASTACK (arg_node));
+    }
+
+    if (AVIS_TYPE (arg_node) != NULL) {
+        AVIS_TYPE (arg_node) = TYFreeType (AVIS_TYPE (arg_node));
     }
 
     DBUG_PRINT ("FREE", ("Removing N_avis node ..."));
