@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.66  1995/05/30 07:04:37  hw
+ * Revision 1.67  1995/06/02 17:15:21  sbs
+ * PrintVectInfo inserted.
+ *
+ * Revision 1.66  1995/05/30  07:04:37  hw
  * changed PrintFold , because N_foldfun has now two child nodes
  *
  * Revision 1.65  1995/05/29  09:47:42  sbs
@@ -208,9 +211,10 @@
 #include "optimize.h"
 #include "trace.h"
 
-extern show_refcnt;   /* imported from main.c */
-extern show_icm;      /* imported from main.c */
-extern FILE *outfile; /* outputfile for PrintTree defined in main.c*/
+extern int show_refcnt; /* imported from main.c */
+extern int show_icm;    /* imported from main.c */
+extern int show_idx;    /* imported from main.c */
+extern FILE *outfile;   /* outputfile for PrintTree defined in main.c*/
 
 int indent = 0;
 
@@ -252,15 +256,13 @@ PrintIds (ids *ids)
     do {
         DBUG_PRINT ("PRINT", ("%s", ids->id));
 
+        fprintf (outfile, "%s", ids->id);
+        if ((ids->refcnt != -1) && show_refcnt)
+            fprintf (outfile, ":%d", ids->refcnt);
+        if (show_idx && ids->use)
+            Trav (ids->use, NULL);
         if (NULL != ids->next)
-            if ((-1 == ids->refcnt) || (0 == show_refcnt))
-                fprintf (outfile, "%s, ", ids->id);
-            else
-                fprintf (outfile, "%s:%d, ", ids->id, ids->refcnt);
-        else if ((-1 == ids->refcnt) || (0 == show_refcnt))
-            fprintf (outfile, "%s ", ids->id);
-        else
-            fprintf (outfile, "%s:%d ", ids->id, ids->refcnt);
+            fprintf (outfile, ", ");
         ids = ids->next;
     } while (NULL != ids);
 
@@ -896,6 +898,26 @@ PrintPre (node *arg_node, node *arg_info)
     PrintIds (arg_node->info.ids);
     fprintf (outfile, ";");
 
+    DBUG_RETURN (arg_node);
+}
+
+node *
+PrintVectInfo (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintVectInfo");
+    if (show_idx) {
+        if (arg_node->info.use == VECT)
+            fprintf (outfile, ":VECT");
+        else {
+            fprintf (outfile, ":IDX(");
+            fprintf (outfile, ")");
+        }
+        if (arg_node->node[0]) {
+            fprintf (outfile, "/");
+            Trav (arg_node->node[0], arg_info);
+        }
+        fprintf (outfile, " ");
+    }
     DBUG_RETURN (arg_node);
 }
 
