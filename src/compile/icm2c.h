@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.32  1996/01/25 15:03:22  cg
+ * Revision 1.33  1996/02/05 09:21:48  sbs
+ * RuntimError => Runtime_Error
+ *
+ * Revision 1.32  1996/01/25  15:03:22  cg
  * renamed some icm macros
  * fixed bugs in trace output and extended it to hidden values
  *
@@ -708,9 +711,9 @@
 
 #define OUT_OF_BOUND(line, prf, size, idx)                                               \
     {                                                                                    \
-        __SAC__RuntimeError ("%d: access in function %s is out"                          \
-                             " of range (size: %d, index:%d)",                           \
-                             line, prf, size, idx);                                      \
+        __SAC__Runtime_Error ("%d: access in function %s is out"                         \
+                              " of range (size: %d, index:%d)",                          \
+                              line, prf, size, idx);                                     \
     }
 
 #define true 1

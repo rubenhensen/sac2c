@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.4  1996/01/25 15:04:57  cg
+ * Revision 1.5  1996/02/05 09:21:48  sbs
+ * RuntimError => Runtime_Error
+ *
+ * Revision 1.4  1996/01/25  15:04:57  cg
  * added __SAC__Runtime_hidden_memcnt and __SAC__Runtime_array_memcnt
  *
  * Revision 1.3  1996/01/21  18:07:34  cg
@@ -25,7 +28,7 @@
 extern int __SAC__Runtime_hidden_memcnt;
 extern int __SAC__Runtime_array_memcnt;
 
-extern void __SAC__RuntimeError (char *format, ...);
+extern void __SAC__Runtime_Error (char *format, ...);
 extern void __SAC__Runtime_Print (char *format, ...);
 extern void __SAC__Runtime_PrintTraceHeader (char *format, ...);
 extern void __SAC__Runtime_PrintTraceInfo (char *format, ...);
