@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.173  2004/11/26 17:33:05  skt
+ * changed VARDEC_OR_ARG_AVIS
+ *
  * Revision 3.172  2004/11/26 16:59:19  skt
  * some includes removed
  *
@@ -905,16 +908,7 @@ extern node *TCreturnTypes2Ret (types *type);
        : ((NODE_TYPE (n) == N_vardec)                                                    \
             ? VARDEC_STATUS (n)                                                          \
             : DBUG_ASSERT_EXPR (0, "VARDEC_OR_ARG_STATUS on objdef", 0)))
-#define VARDEC_OR_ARG_ATTRIB(n)                                                          \
-    ((NODE_TYPE (n) == N_arg)                                                            \
-       ? ARG_ATTRIB (n)                                                                  \
-       : ((NODE_TYPE (n) == N_vardec)                                                    \
-            ? VARDEC_ATTRIB (n)                                                          \
-            : DBUG_ASSERT_EXPR (0, "VARDEC_OR_ARG_ATTRIB on objdef", 0)))
-#define VARDEC_OR_ARG_AVIS(n)                                                            \
-    ((NODE_TYPE (n) == N_arg)                                                            \
-       ? ARG_AVIS (n)                                                                    \
-       : ((NODE_TYPE (n) == N_vardec) ? VARDEC_AVIS (n) : OBJDEF_AVIS (n)))
+#define VARDEC_OR_ARG_AVIS(n) ((NODE_TYPE (n) == N_arg) ? ARG_AVIS (n) : VARDEC_AVIS (n))
 #define VARDEC_OR_ARG_VARNO(n)                                                           \
     ((NODE_TYPE (n) == N_arg)                                                            \
        ? ARG_VARNO (n)                                                                   \
