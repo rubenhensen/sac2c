@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.36  2000/05/29 17:33:40  dkr
+ * IdxGenerator and IdxWith removed
+ *
  * Revision 1.35  2000/05/29 14:29:25  dkr
  * AIwithid added
  *
@@ -1415,7 +1418,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
   NIF (N_with, "N_with", TravSons, FltnWith, TravSons, TravSons, GNMwith, DCRwith,
        TravSons, FreeWith, CFwith, TravSons, TravSons, LIRloop, TravSons, TravSons,
-       UNRwith, LIRMloop, IdxWith, UNSwith, WLIwith, AEwith,
+       UNRwith, LIRMloop, TravSons, UNSwith, WLIwith, AEwith,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, UNQwith,
        TravSons, TravSons, ACTwith, TravSons, WLTwith, CSEwith, TravSons, TCWLnull,
@@ -1433,7 +1436,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
   NIF (N_generator, "N_generator", TravSons, FltnGen, TravSons, TravSons, TravSons,
        TravSons, TravSons, FreeGenerator, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, IdxGenerator, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
