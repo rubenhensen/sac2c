@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.61  1998/04/25 14:21:05  dkr
+ * removed a bug in PRECNcode: sons are traversed now!!
+ *
  * Revision 1.60  1998/04/25 13:20:33  dkr
  * extended PRECSPMD
  *
@@ -3731,8 +3734,10 @@ PRECNwith (node *arg_node, node *arg_info)
  *   node *PRECNcode( node *arg_node, node *arg_info)
  *
  * description:
- *   precompilation of Ncode-nodes:
- *     CODE_NO is set in the whole Ncode-chain
+ *   precompilation of Ncode-nodes.
+ *
+ * remarks:
+ *   - CODE_NO is set in the whole Ncode-chain
  *
  ******************************************************************************/
 
@@ -3747,6 +3752,14 @@ PRECNcode (node *arg_node, node *arg_info)
     code = arg_node;
     while (code != NULL) {
         NCODE_NO (code) = no;
+
+        if (NCODE_CBLOCK (code) != NULL) {
+            NCODE_CBLOCK (code) = Trav (NCODE_CBLOCK (code), arg_info);
+        }
+        if (NCODE_CEXPR (code) != NULL) {
+            NCODE_CEXPR (code) = Trav (NCODE_CEXPR (code), arg_info);
+        }
+
         no++;
         code = NCODE_NEXT (code);
     }
