@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.22  2004/03/05 12:07:07  sbs
+ * nasty sharing error in NTCCTarray eliminated.
+ *
  * Revision 1.21  2004/02/27 11:49:15  sbs
  * NTCPRF_phi deleted
  *
@@ -177,7 +180,7 @@ NTCPRF_array (te_info *info, ntype *elems)
     }
 
     if (TYIsProdOfAKV (elems)) {
-        val = TYGetValue (TYGetProductMember (elems, 0));
+        val = COCopyConstant (TYGetValue (TYGetProductMember (elems, 0)));
         for (i = 1; i < num_elems; i++) {
             tmp = val;
             val = COCat (tmp, TYGetValue (TYGetProductMember (elems, i)));
