@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.34  2001/06/28 11:28:44  ben
+ * one warning using TS_Even removed
+ *
  * Revision 3.33  2001/06/28 11:15:13  ben
  * one minor optimation added to TS_Even
  *
@@ -919,6 +922,9 @@ typedef union {
         const int iterations_rest = iterations % number_of_tasks;                        \
                                                                                          \
         worktodo = (taskid < number_of_tasks);                                           \
+        SAC_WL_MT_SCHEDULE_START (tasks_on_dim) = 0;                                     \
+        SAC_WL_MT_SCHEDULE_STOP (tasks_on_dim) = 0;                                      \
+                                                                                         \
         if (worktodo) {                                                                  \
             if (iterations_rest && (taskid < iterations_rest)) {                         \
                 SAC_WL_MT_SCHEDULE_START (tasks_on_dim)                                  \
