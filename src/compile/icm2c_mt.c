@@ -1,6 +1,17 @@
 /*
  *
  * $Log$
+ * Revision 3.17  2001/04/03 19:45:12  dkr
+ * MT_ADJUST_SCHEDULER renamed into MT_ADJUST_SCHEDULER__OFFSET.
+ * signature for MT_ADJUST_SCHEDULER_... icms modified.
+ * MT_ADJUST_SCHEDULER icm is not a c- but a h-icm now.
+ *
+ * InitializeBoundaries() and SelectTask() marked as static.
+ *
+ * defines for task selection strategies added.
+ *
+ * obsolete icm MT_SPMD_BLOCK removed.
+ *
  * Revision 3.16  2001/03/28 12:52:03  ben
  *  param added to MT_SCHEDULER_(Cyclic,Self,AFS)_...
  *
@@ -86,7 +97,8 @@
  *
  * Revision 2.5  1999/07/20 16:55:06  jhs
  * Added comments.
- * Changed behaviour of MT_SPMD_SETUP, so shared[_rc] variables are no longer setuped.
+ * Changed behaviour of MT_SPMD_SETUP, so shared[_rc] variables are no
+ * longer setuped.
  * Changed signature of MT_SYNC_FOLD, added barrier_id.
  *
  * Revision 2.4  1999/06/30 16:00:11  jhs
@@ -194,6 +206,11 @@
 #include "compile.h"  /* for GetFoldCode()                        */
 #include "free.h"
 #endif /* BEtest */
+
+/*
+ * task selection strategies
+ */
+#define ST_BLOCK 1
 
 /******************************************************************************
  *
@@ -1076,107 +1093,6 @@ ICMCompileMT_CONTINUE (int nfoldargs, char **vararg, int nsyncargs, char **synca
     DBUG_VOID_RETURN;
 }
 
-#if 0
-This ICM is no longer used. It is replaced by the more modular ICMs
-MT_SPMD_[STATIC|DYNAMIC]_MODE_[BEGIN|ALTSEQ|END]
-MT_SPMD_SETUP
-MT_SPMD_EXECUTE
-  #### can it be deleted then ??? 
-
-/******************************************************************************
- *
- * function:
- *   void ICMCompileMT_SPMD_BLOCK(char *name, int narg, char **vararg)
- *
- * description:
- *   implements the compilation of the following ICM:
- *
- *   MT_SPMD_BLOCK( name, narg [, tag, type, arg]*)
- *   
- *   This ICM implements SPMD blocks within the sequential code, i.e.
- *     - it decides whether to execute the SPMD block in parallel or sequentially.
- *     - it establishes the execution environment of the particular spmd function.
- *     - it starts the worker threads.
- *     - it calls the spmd function on behalf of the master thread.
- *     - finally, it resumes and returns to sequential execution order.
- *
- *   Tags may be from the set in | out | in_rc | out_rc | inout_rc<n> | preset.
- *   'preset' specifies an spmd argument that is preset by using the ICM
- *   MT_SPMD_PRESET().
- *
- ******************************************************************************/
-
-void ICMCompileMT_SPMD_BLOCK(char *name, int narg, char **vararg)
-{
-  int i;
-  static char basetype[32];
-  
-  DBUG_ENTER("ICMCompileMT_SPMD_BLOCK");
-
-#define MT_SPMD_BLOCK
-#include "icm_comment.c"
-#include "icm_trace.c"
-#undef MT_SPMD_BLOCK
-
-  fprintf(outfile, "\n");
-  
-  fprintf(outfile, "#if SAC_DO_MULTITHREAD\n\n");
-
-  INDENT;
-  fprintf(outfile, "if (SAC_MT_not_yet_parallel)\n");
-  
-  INDENT;
-  fprintf(outfile, "{\n");
-  indent++;
-  
-  
-  INDENT;
-  fprintf(outfile, "SAC_MT_not_yet_parallel=0;\n");
-
-  for (i=0; i<3*narg; i+=3)      
-  {
-    if (0==strncmp(vararg[i], "inout_rc", 8)) {
-  
-      strncpy(basetype, vararg[i+1], strchr(vararg[i+1], '*') - vararg[i+1]);
-      
-      INDENT;
-      fprintf( outfile, "SAC_ND_ALLOC_ARRAY(%s, %s, %s);\n",
-                        basetype, vararg[i+2], vararg[i]+8);
-      
-      INDENT;
-      fprintf( outfile, "SAC_MT_SPMD_SETARG_inout_rc(%s, %s);\n",
-               name, vararg[i+2]);
-    }
-    else {
-      INDENT;
-      fprintf( outfile, "SAC_MT_SPMD_SETARG_%s(%s, %s);\n",
-                        vararg[i], name, vararg[i+2]);
-    }
-  }
-  
-  INDENT;
-  fprintf(outfile, "\n");
-
-  INDENT;
-  fprintf(outfile, "SAC_MT_START_SPMD(%s);\n", name);
-
-  INDENT;
-  fprintf(outfile, "SAC_MT_not_yet_parallel=1;\n");
-
-  indent--;
-  INDENT;
-  fprintf(outfile, "}\n");
-  
-  INDENT;
-  fprintf(outfile, "else\n");
-  
-  fprintf(outfile, "\n#endif  /* SAC_DO_MULTITHREAD */\n\n");
-  
-  
-  DBUG_VOID_RETURN;
-}
-#endif /* 0 */
-
 /******************************************************************************
  *
  * function:
@@ -1226,9 +1142,9 @@ ICMCompileMT_SPMD_SETUP (char *name, int narg, char **vararg)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileMT_SPMD_BEGIN(char *name)
- *   void ICMCompileMT_SPMD_ALTSEQ(char *name)
- *   void ICMCompileMT_SPMD_END(char *name)
+ *   void ICMCompileMT_SPMD_BEGIN( char *name)
+ *   void ICMCompileMT_SPMD_ALTSEQ( char *name)
+ *   void ICMCompileMT_SPMD_END( char *name)
  *
  * description:
  *   These functions implement the control flow ICMs around SPMD-blocks.
@@ -1245,7 +1161,8 @@ ICMCompileMT_SPMD_BEGIN (char *name)
 #include "icm_trace.c"
 #undef MT_SPMD_BEGIN
 
-    fprintf (outfile, "\n#if SAC_DO_MULTITHREAD\n");
+    fprintf (outfile, "\n"
+                      "#if SAC_DO_MULTITHREAD\n");
     INDENT;
     fprintf (outfile, "if (SAC_MT_not_yet_parallel)\n");
     INDENT;
@@ -1294,7 +1211,8 @@ ICMCompileMT_SPMD_END (char *name)
 #include "icm_trace.c"
 #undef MT_SPMD_END
 
-    fprintf (outfile, "\n#if SAC_DO_MULTITHREAD\n");
+    fprintf (outfile, "\n"
+                      "#if SAC_DO_MULTITHREAD\n");
     indent--;
     INDENT;
     fprintf (outfile, "}\n");
@@ -1307,7 +1225,7 @@ ICMCompileMT_SPMD_END (char *name)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileMT_SPMD_PRESET(char *name, int narg, char **vararg)
+ *   void ICMCompileMT_SPMD_PRESET( char *name, int narg, char **vararg)
  *
  * description:
  *   implements the compilation of the following ICM:
@@ -1341,7 +1259,10 @@ ICMCompileMT_SPMD_PRESET (char *name, int narg, char **vararg)
 /******************************************************************************
  *
  * function:
- *
+ *   void ICMCompileMT_ADJUST_SCHEDULER__OFFSET( char *array, int array_dim,
+ *                                               int current_dim,
+ *                                               char *lower, char *upper,
+ *                                               char *unrolling)
  *
  * description:
  *
@@ -1349,12 +1270,12 @@ ICMCompileMT_SPMD_PRESET (char *name, int narg, char **vararg)
  ******************************************************************************/
 
 void
-ICMCompileMT_ADJUST_SCHEDULER (int current_dim, int array_dim, char *lower, char *upper,
-                               char *unrolling, char *array, bool adjust_offset)
+ICMCompileMT_ADJUST_SCHEDULER__OFFSET (char *array, int array_dim, int current_dim,
+                                       char *lower, char *upper, char *unrolling)
 {
     int i;
 
-    DBUG_ENTER ("ICMCompileMT_ADJUST_SCHEDULER");
+    DBUG_ENTER ("ICMCompileMT_ADJUST_SCHEDULER__OFFSET");
 
 #define MT_ADJUST_SCHEDULER
 #include "icm_comment.c"
@@ -1362,24 +1283,100 @@ ICMCompileMT_ADJUST_SCHEDULER (int current_dim, int array_dim, char *lower, char
 #undef MT_ADJUST_SCHEDULER
 
     INDENT;
-    fprintf (outfile, "SAC_MT_ADJUST_SCHEDULER");
-    if (adjust_offset) {
-        fprintf (outfile, "__OFFSET");
-    }
-    fprintf (outfile, "(%s, %d, %s, %s, %s, (", array, current_dim, lower, upper,
-             unrolling);
+    fprintf (outfile,
+             "SAC_MT_ADJUST_SCHEDULER__OFFSET( %s, %d, %d, %s, %s, %s"
+             ", (",
+             array, array_dim, current_dim, lower, upper, unrolling);
 
-    if (current_dim == array_dim - 1) {
+    if (current_dim == (array_dim - 1)) {
         fprintf (outfile, "1");
     } else {
-        fprintf (outfile, "SAC_ND_A_SHAPE(%s, %d)", array, current_dim + 1);
+        fprintf (outfile, "SAC_ND_A_SHAPE( %s, %d)", array, current_dim + 1);
 
-        for (i = current_dim + 2; i < array_dim; i++) {
-            fprintf (outfile, " * SAC_ND_A_SHAPE(%s, %d)", array, current_dim + i);
+        for (i = (current_dim + 2); i < array_dim; i++) {
+            fprintf (outfile, " * SAC_ND_A_SHAPE( %s, %d)", array, current_dim + i);
         }
     }
 
     fprintf (outfile, "));\n");
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void InitializeBoundaries( int dim, char **vararg)
+ *
+ * description:
+ *   this funtion sets the boundaries of the withloop
+ *
+ ******************************************************************************/
+
+static void
+InitializeBoundaries (int dim, char **vararg)
+{
+    char **lower_bound = vararg;
+    char **upper_bound = vararg + dim;
+    int i;
+
+    DBUG_ENTER ("InitializeBoundaries");
+
+    for (i = 0; i < dim; i++) {
+        INDENT;
+        fprintf (outfile, "SAC_WL_MT_SCHEDULE_START( %d) = %s;\n", i, lower_bound[i]);
+        INDENT;
+        fprintf (outfile, "SAC_WL_MT_SCHEDULE_STOP( %d) = %s;\n", i, upper_bound[i]);
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void SelectTask( int dim, char **vararg,
+ *                    int strategy, int strategy_param,
+ *                    char *num_tasks, char *next_taskid)
+ *
+ * description:
+ *   this function divides the given withloop (dim,vararg) with the strategy
+ *   (strategy,strategy_param) into tasks for multithreaded computation.
+ *   The number of tasks is num_tasks and next_taskid is the number of the
+ *   next task, which should be computated. Please call InitializeBoundaries()
+ *   before using this function.
+ *
+ *   implemented strategies:  (name / meaning of 'strategy_param')
+ *
+ *     block:    dimension on which the withloop will be divided into
+ *               'num_tasks' blocks
+ *
+ ******************************************************************************/
+
+static void
+SelectTask (int dim, char **vararg, int strategy, int strategy_param, char *num_tasks,
+            char *next_taskid)
+{
+    char **lower_bound = vararg;
+    char **upper_bound = vararg + dim;
+
+    DBUG_ENTER ("SelectTask");
+
+    switch (strategy) {
+    case ST_BLOCK:
+        DBUG_ASSERT ((strategy_param >= 0) && (strategy_param < dim),
+                     "Block distribution dimension schould be between 0 and"
+                     " the dimension of the withloop");
+        INDENT;
+        fprintf (outfile, "SAC_MT_SCHEDULER_Select_Block(%d, %s, %s, %s, %s);\n",
+                 strategy_param, lower_bound[strategy_param], upper_bound[strategy_param],
+                 num_tasks, next_taskid);
+        break;
+
+    default:
+        DBUG_ASSERT ((0), "unknown task selection strategy");
+        break;
+    }
 
     DBUG_VOID_RETURN;
 }
@@ -1398,10 +1395,6 @@ ICMCompileMT_ADJUST_SCHEDULER (int current_dim, int array_dim, char *lower, char
 void
 ICMCompileMT_SCHEDULER_BEGIN (int dim, char **vararg)
 {
-    char **lower_bound = vararg;
-    char **upper_bound = vararg + dim;
-    int i;
-
     DBUG_ENTER ("ICMCompileMT_SCHEDULER_BEGIN");
 
 #define MT_SCHEDULER_BEGIN
@@ -1409,12 +1402,7 @@ ICMCompileMT_SCHEDULER_BEGIN (int dim, char **vararg)
 #include "icm_trace.c"
 #undef MT_SCHEDULER_BEGIN
 
-    for (i = 0; i < dim; i++) {
-        INDENT;
-        fprintf (outfile, "SAC_WL_MT_SCHEDULE_START( %d) = %s;\n", i, lower_bound[i]);
-        INDENT;
-        fprintf (outfile, "SAC_WL_MT_SCHEDULE_STOP( %d) = %s;\n", i, upper_bound[i]);
-    }
+    InitializeBoundaries (dim, vararg);
 
     DBUG_VOID_RETURN;
 }
@@ -1437,83 +1425,8 @@ ICMCompileMT_SCHEDULER_END (int dim, char **vararg)
 /******************************************************************************
  *
  * function:
- *   void InitializeBoundaries(int dim, char **vararg)
- *
- * description:
- *   this funtion sets the boundaries of the withloop
- *
- ******************************************************************************/
-void
-InitializeBoundaries (int dim, char **vararg)
-{
-    char **lower_bound = vararg;
-    char **upper_bound = vararg + dim;
-    /* char **unrolling   = vararg+3*dim;*/
-    int i;
-
-    DBUG_ENTER ("InitializeBoundaries");
-
-    for (i = 0; i < dim; i++) {
-        INDENT;
-        fprintf (outfile, "SAC_WL_MT_SCHEDULE_START( %d) = %s;\n", i, lower_bound[i]);
-        INDENT;
-        fprintf (outfile, "SAC_WL_MT_SCHEDULE_STOP( %d) = %s;\n", i, upper_bound[i]);
-    }
-
-    DBUG_VOID_RETURN;
-}
-
-/******************************************************************************
- *
- * function:
- *   void SelectTask(int dim, char **vararg,int strategy, int strategy_param,
- *                                          char *num_tasks, char *next_taskid)
- *
- * description:
- *   this function divides the given withloop (dim,vararg) with the strategy
- *   (strategy,strategy_param) into tasks for multithreaded computation.
- *   The number of tasks is num_tasks and next_taskid is the number of the
- *    next task, which should be computated. Please call before using this function
- *    InitializeBoundaries.
- *
- *   implemented strategies: (name/value of strategy for functioncall/ meaning of
- *strategy_param)
- *
- *      block    1     dimension on which the withloop will be divided into num_tasks
- *blocks
- *
- ******************************************************************************/
-void
-SelectTask (int dim, char **vararg, int strategy, int strategy_param, char *num_tasks,
-            char *next_taskid)
-{
-#define BLOCK_ST 1
-    char **lower_bound = vararg;
-    char **upper_bound = vararg + dim;
-    /* char **unrolling   = vararg+3*dim;*/
-
-    DBUG_ENTER ("SelectTask");
-
-    switch (strategy) {
-    case BLOCK_ST:
-        DBUG_ASSERT ((strategy_param >= 0) && (strategy_param < dim),
-                     "Blockdistributiondimension schould be between 0 and the dimension "
-                     "of the withloop");
-        INDENT;
-        fprintf (outfile, "SAC_MT_SCHEDULER_Select_Block(%d, %s, %s, %s, %s);\n",
-                 strategy_param, lower_bound[strategy_param], upper_bound[strategy_param],
-                 num_tasks, next_taskid);
-        break;
-    }
-
-    DBUG_VOID_RETURN;
-}
-
-/******************************************************************************
- *
- * function:
- *   void ICMCompileMT_SCHEDULER_Block_BEGIN(int dim, char **vararg)
- *   void ICMCompileMT_SCHEDULER_Block_END(int dim, char **vararg)
+ *   void ICMCompileMT_SCHEDULER_Block_BEGIN( int dim, char **vararg)
+ *   void ICMCompileMT_SCHEDULER_Block_END( int dim, char **vararg)
  *
  * description:
  *   These two ICMs implement the scheduling for constant segments
@@ -1531,7 +1444,7 @@ ICMCompileMT_SCHEDULER_Block_BEGIN (int dim, char **vararg)
 {
     char **lower_bound = vararg;
     char **upper_bound = vararg + dim;
-    char **unrolling = vararg + 3 * dim;
+    char **unrolling = vararg + 2 * dim;
     int i;
 
     DBUG_ENTER ("ICMCompileMT_SCHEDULER_Block_BEGIN");
@@ -1573,8 +1486,8 @@ ICMCompileMT_SCHEDULER_Block_END (int dim, char **vararg)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileMT_SCHEDULER_BlockVar_BEGIN(int dim, char **vararg)
- *   void ICMCompileMT_SCHEDULER_BlockVar_END(int dim, char **vararg)
+ *   void ICMCompileMT_SCHEDULER_BlockVar_BEGIN( int dim, char **vararg)
+ *   void ICMCompileMT_SCHEDULER_BlockVar_END( int dim, char **vararg)
  *
  * description:
  *   These two ICMs implement the scheduling for variable segments
@@ -1592,7 +1505,7 @@ ICMCompileMT_SCHEDULER_BlockVar_BEGIN (int dim, char **vararg)
 {
     char **lower_bound = vararg;
     char **upper_bound = vararg + dim;
-    char **unrolling = vararg + 3 * dim;
+    char **unrolling = vararg + 2 * dim;
     int i;
 
     DBUG_ENTER ("ICMCompileMT_SCHEDULER_BlockVar_BEGIN");
@@ -1644,13 +1557,11 @@ ICMCompileMT_SCHEDULER_BlockVar_END (int dim, char **vararg)
  *   space with the strategy specified for SelectTask (at the moment
  *   Blocks on dimension 0).
  *
- *
  ******************************************************************************/
 
 void
 ICMCompileMT_SCHEDULER_Even_BEGIN (int dim, char **vararg)
 {
-
     DBUG_ENTER ("ICMCompileMT_SCHEDULER_Even_BEGIN");
 
 #define MT_SCHEDULER_Even_BEGIN
@@ -1659,7 +1570,7 @@ ICMCompileMT_SCHEDULER_Even_BEGIN (int dim, char **vararg)
 #undef MT_SCHEDULER_Even_BEGIN
 
     InitializeBoundaries (dim, vararg);
-    SelectTask (dim, vararg, 1, 0, "SAC_MT_THREADS()", "SAC_MT_MYTHREAD()");
+    SelectTask (dim, vararg, ST_BLOCK, 0, "SAC_MT_THREADS()", "SAC_MT_MYTHREAD()");
 
     DBUG_VOID_RETURN;
 }
@@ -1693,13 +1604,13 @@ ICMCompileMT_SCHEDULER_Even_END (int dim, char **vararg)
  *   param*Number of Threads Blocks on dimension 0.
  *   These Blcoks will be computated in cyclic order).
  *
- *
  ******************************************************************************/
 
 void
 ICMCompileMT_SCHEDULER_Cyclic_BEGIN (int param, int dim, char **vararg)
 {
     char *numtasks;
+
     DBUG_ENTER ("ICMCompileMT_SCHEDULER_Cyclic_BEGIN");
 
 #define MT_SCHEDULER_Cyclic_BEGIN
@@ -1707,14 +1618,14 @@ ICMCompileMT_SCHEDULER_Cyclic_BEGIN (int param, int dim, char **vararg)
 #include "icm_trace.c"
 #undef MT_SCHEDULER_Cyclic_BEGIN
 
-    numtasks = (char *)Malloc (200 * sizeof (char));
+    numtasks = (char *)MALLOC (200 * sizeof (char));
     sprintf (numtasks, "SAC_MT_THREADS()*%d", param);
     INDENT;
     fprintf (outfile, "int taskid=SAC_MT_MYTHREAD();\n");
     INDENT;
     fprintf (outfile, " while (taskid<SAC_MT_THREADS()*%d){\n", param);
     InitializeBoundaries (dim, vararg);
-    SelectTask (dim, vararg, 1, 0, numtasks, "taskid");
+    SelectTask (dim, vararg, ST_BLOCK, 0, numtasks, "taskid");
 
     DBUG_VOID_RETURN;
 }
@@ -1753,13 +1664,13 @@ ICMCompileMT_SCHEDULER_Cyclic_END (int param, int dim, char **vararg)
  *   Thread after the computation of one Block one new to computate
  *   (Selfscheduling).
  *
- *
  ******************************************************************************/
 
 void
 ICMCompileMT_SCHEDULER_Self_BEGIN (int param, int dim, char **vararg)
 {
     char *numtasks;
+
     DBUG_ENTER ("ICMCompileMT_SCHEDULER_Self_BEGIN");
 
 #define MT_SCHEDULER_Self_BEGIN
@@ -1767,14 +1678,14 @@ ICMCompileMT_SCHEDULER_Self_BEGIN (int param, int dim, char **vararg)
 #include "icm_trace.c"
 #undef MT_SCHEDULER_Self_BEGIN
 
-    numtasks = (char *)Malloc (200 * sizeof (char));
+    numtasks = (char *)MALLOC (200 * sizeof (char));
     sprintf (numtasks, "SAC_MT_THREADS()*%d", param);
     INDENT;
     fprintf (outfile, "int taskid=SAC_MT_MYTHREAD();\n");
     InitializeBoundaries (dim, vararg);
     INDENT;
     fprintf (outfile, " while (taskid<SAC_MT_THREADS()*%d){\n", param);
-    SelectTask (dim, vararg, 1, 0, numtasks, "taskid");
+    SelectTask (dim, vararg, ST_BLOCK, 0, numtasks, "taskid");
 
     DBUG_VOID_RETURN;
 }
@@ -1821,9 +1732,8 @@ ICMCompileMT_SCHEDULER_Self_END (int param, int dim, char **vararg)
  *
  *   This scheduling is based on adaptive affinity scheduling, which
  *   realizes a form of loadbalancing by stealing tasks from the thread,
- *.  which has computated the smallest number of tasks. Each Thread has
+ *   which has computated the smallest number of tasks. Each Thread has
  *   param own tasks.
- *
  *
  ******************************************************************************/
 
@@ -1831,6 +1741,7 @@ void
 ICMCompileMT_SCHEDULER_Afs_BEGIN (int param, int dim, char **vararg)
 {
     char *numtasks;
+
     DBUG_ENTER ("ICMCompileMT_SCHEDULER_Afs_BEGIN");
 
 #define MT_SCHEDULER_Afs_BEGIN
@@ -1838,7 +1749,7 @@ ICMCompileMT_SCHEDULER_Afs_BEGIN (int param, int dim, char **vararg)
 #include "icm_trace.c"
 #undef MT_SCHEDULER_Afs_BEGIN
 
-    numtasks = (char *)Malloc (200 * sizeof (char));
+    numtasks = (char *)MALLOC (200 * sizeof (char));
     sprintf (numtasks, "SAC_MT_THREADS()*%d", param);
     INDENT;
     fprintf (outfile, "int taskid, maxloadthread, mintask, task, worktodo;\n");
@@ -1847,7 +1758,7 @@ ICMCompileMT_SCHEDULER_Afs_BEGIN (int param, int dim, char **vararg)
     fprintf (outfile, "SAC_MT_SCHEDULER_Afs_next_task(%d);\n", param);
     INDENT;
     fprintf (outfile, " while (worktodo==1){\n");
-    SelectTask (dim, vararg, 1, 0, numtasks, "taskid");
+    SelectTask (dim, vararg, ST_BLOCK, 0, numtasks, "taskid");
 
     DBUG_VOID_RETURN;
 }
