@@ -19,3 +19,4 @@ libmanager.c
 libmanager.h
 modulemanager.c
 modulemanager.h
+symboltable.c
