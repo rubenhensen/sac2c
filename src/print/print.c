@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.153  1998/03/16 15:08:20  dkr
+ * changed the output in PrintCond
+ *
  * Revision 1.152  1998/03/15 13:07:48  srs
  * added DBUG macros to ass MASK information to N_Ncode, N_Npart and
  * N_Nwithop
@@ -1473,30 +1476,25 @@ PrintCond (node *arg_node, node *arg_info)
     DBUG_ENTER ("PrintCond");
 
     fprintf (outfile, "if (");
-    indent++;
 
-    DBUG_EXECUTE ("MASK", char *text; text = PrintMask (arg_node->mask[1], VARNO);
+    DBUG_EXECUTE ("MASK", char *text; text = PrintMask (COND_MASK (arg_node, 1), VARNO);
                   fprintf (outfile, "**Used Variables (Cond) : %s\n", text);
                   FREE (text););
 
-    Trav (arg_node->node[0], arg_info);
+    Trav (COND_COND (arg_node), arg_info);
     fprintf (outfile, ")\n");
 
     DBUG_EXECUTE ("MASK", fprintf (outfile, "\n**MASKS - then\n");
-                  PrintMasks (arg_node->node[1], arg_info););
+                  PrintMasks (COND_THEN (arg_node), arg_info););
 
-    Trav (arg_node->node[1], arg_info);
-    fprintf (outfile, "\n");
-    indent--;
+    Trav (COND_THEN (arg_node), arg_info);
 
     DBUG_EXECUTE ("MASK", fprintf (outfile, "\n**MASKS - else\n");
-                  PrintMasks (arg_node->node[2], arg_info););
+                  PrintMasks (COND_ELSE (arg_node), arg_info););
 
     INDENT;
     fprintf (outfile, "else\n");
-    indent++;
-    Trav (arg_node->node[2], arg_info);
-    indent--;
+    Trav (COND_ELSE (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
