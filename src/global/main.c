@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.51  2004/07/30 17:33:00  sbs
+ * new_typecheck.h included.
+ *
  * Revision 3.50  2004/07/30 17:24:35  sbs
  * switch between old and new tc lifted into main
  *
@@ -197,6 +200,7 @@
 #include "flatten.h"
 #include "print.h"
 #include "typecheck.h"
+#include "new_typecheck.h"
 #include "type_statistics.h"
 #include "optimize.h"
 #include "filemgr.h"
