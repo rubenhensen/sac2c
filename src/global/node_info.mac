@@ -1,9 +1,13 @@
 /*
  *
  * $Log$
- * Revision 1.48  1995/03/10 10:49:57  hw
- * refcnt_tab inserted
+ * Revision 1.49  1995/03/14 18:43:08  hw
+ * deleted RCwhile
+ * added RCloop for N_while and N_do
  *
+;; Revision 1.48  1995/03/10  10:49:57  hw
+;; refcnt_tab inserted
+;;
 ;; Revision 1.47  1995/03/07  11:00:03  hw
 ;; added function FltnGen (flatten N_generator)
 ;;
@@ -194,9 +198,9 @@ NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun,
   NIF (N_return, "N_return", DummyFun, DummyFun, PrintReturn, TCreturn, DummyFun,
        DummyFun, DummyFun, FreeNoInfo, DummyFun, DummyFun, DummyFun, DummyFun),
   NIF (N_do, "N_do", DummyFun, FltnDo, PrintDo, TCdo, OPTloop, DEADloop, DummyFun,
-       FreeNoInfo, CFdo, DummyFun, DummyFun, DummyFun),
+       FreeNoInfo, CFdo, RCloop, DummyFun, DummyFun),
   NIF (N_while, "N_while", DummyFun, FltnWhile, PrintWhile, TCwhile, OPTloop, DEADloop,
-       DummyFun, FreeNoInfo, CFwhile, RCwhile, DummyFun, DummyFun),
+       DummyFun, FreeNoInfo, CFwhile, RCloop, DummyFun, DummyFun),
   NIF (N_cond, "N_cond", DummyFun, FltnCond, PrintCond, TCcond, OPTcond, DEADcond,
        DummyFun, FreeNoInfo, CFcond, RCcond, DummyFun, DummyFun),
   NIF (N_let, "N_let", DummyFun, DummyFun, PrintLet, TClet, OPTlet, DummyFun, DummyFun,
