@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.81  1998/03/03 23:00:59  dkr
+ * added CODE_NO
+ *
  * Revision 1.80  1998/03/03 19:39:27  dkr
  * renamed N_WLindex to N_WLproj
  *
@@ -2151,7 +2154,7 @@ extern node *MakeNGenerator (node *bound1, node *bound2, prf op1, prf op2, node 
  ***  temporary attributes:
  ***    node*  EXPR            (scanparse, stays != NULL afterwards)
  ***    node*  FUNDEF          (N_fundef)  (typecheck -> )
- ***    long*  MASK                    (optimize -> )
+ ***    long*  MASK                        (optimize -> )
  ***
  ***  remarks: WithOpType is WO_genarray, WO_modarray, WO_foldfun, WO_foldprf.
  ***    FUNDEF-node is used if TYPE == WO_foldfun.
@@ -2187,8 +2190,10 @@ extern node *MakeNWithOp (WithOpType WithOp);
  ***    int    USED       (number of times this code is used)
  ***
  ***  temporary attributes:
- ***    long*  MASK                    (optimize -> )
  ***
+ ***    long*  MASK                    (optimize -> )
+ ***    int    NO         (unambiguous number for PrintNwith2())
+ ***                                   (precompile -> )
  ***
  ***  remark:
  ***   The CBLOCK 'plus' the CEXPR is the whole assignment block
@@ -2207,6 +2212,7 @@ extern node *MakeNCode (node *block, node *expr);
 #define NCODE_CEXPR(n) (n->node[1])
 #define NCODE_NEXT(n) (n->node[2])
 #define NCODE_MASK(n, x) (n->mask[x])
+#define NCODE_NO(n) (n->refcnt)
 
 /*--------------------------------------------------------------------------*/
 
