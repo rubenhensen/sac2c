@@ -1,6 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 3.158  2002/10/18 13:44:16  sbs
+ * FLAG system introduced
+ * ID_ATTRIB killed and replaced by FLAGS:
+ *   IS_GLOBAL
+ *   IS_REFERENCE
+ *   IS_READ_ONLY
+ *
  * Revision 3.157  2002/10/16 11:46:13  mwe
  * INFO_AL_CURRENTASSIGN added
  *
@@ -178,54 +185,6 @@
  * Revision 3.100  2001/06/14 12:32:36  dkr
  * some minor changes in definition of WL nodes done
  *
- * Revision 3.99  2001/06/13 13:05:15  ben
- * WLSEGX_TASKSEL added
- *
- * Revision 3.98  2001/05/30 14:04:43  nmw
- * some arg_info macros moved from SSALIR to SSALIL
- *
- * Revision 3.97  2001/05/18 07:57:54  nmw
- * INFO_CSE_macros added
- *
- * Revision 3.96  2001/05/14 10:21:20  cg
- * Removed attribute BLOCK_SCHEDULER_NUM.
- *
- * Revision 3.95  2001/05/10 15:00:17  cg
- * Added arg_info attributes used in compile.c :
- * SCHEDULER_INIT and SCHEDULER_NUM
- * Renamed SEGID into SCHEDULERID.
- *
- * Revision 3.94  2001/05/09 15:23:13  cg
- * Added two new atrributes to info node used in compile.c:
- * INFO_COMP_SEGID(n) and INFO_COMP_SCHEDULERINIT(n).
- *
- * Revision 3.93  2001/05/08 12:29:10  dkr
- * minor changes done
- *
- * Revision 3.92  2001/05/07 09:06:16  nmw
- * macros for shared usage of WLUnroll adjusted
- *
- * Revision 3.91  2001/05/03 17:32:16  dkr
- * WLSEG_MAXHOMDIM replaced by WLSEG_HOMSV
- *
- * Revision 3.90  2001/04/30 12:27:23  nmw
- * INFO_AE_FUNDEF, INFO_GNM_FUDNEF added
- *
- * Revision 3.89  2001/04/27 17:35:28  nmw
- * INFO_COMP_ASSIGN added
- *
- * Revision 3.88  2001/04/26 13:30:00  nmw
- * INFO_SSACF_INLFUNDEF added
- *
- * Revision 3.87  2001/04/26 11:54:40  nmw
- * ICM_FUNDEF attribute added
- *
- * Revision 3.86  2001/04/25 13:55:06  dkr
- * ST_zombiefun added
- *
- * Revision 3.85  2001/04/24 18:36:50  dkr
- * comment about FUNDEF_USED modified
- *
  * [...]
  *
  */
@@ -332,6 +291,79 @@ file can be found in tree_basic.c
 #define NODE_FILE(n) ((n)->src_file)
 
 #define NODE_TEXT(n) (mdb_nodetype[NODE_TYPE (n)])
+
+/*
+ * Macros for handling FLAG-Attributes of nodes:
+ *
+ * Since often bool flags are needed, we provide a global mechanism for
+ * setting and manipulating them.
+ *
+ * Example:
+ *
+ *  Let's assume we want to establish two flags for N_id nodes:
+ *   - IS_UNIQUE  and
+ *   - IS_REFERENCE
+ *
+ *  To do so, we first have to make sure that we have assigned two bit vectors already.
+ *  They are expected to be named <xxx>_FLAGS and <xxx>_DBUG_FLAGS for a given node <xxx>.
+ *  In our example, we might find
+ *
+ *  ID_FLAGS(n)      (long) n->mask[0]
+ *  ID_DBUG_FLAGS(n) (long) n->mask[1]
+ *
+ *  Then, we do need to define the bit masks to be used, e.g.:
+ *
+ *  IS_UNIQUE    1
+ *  IS_REFERENCE 2
+ *
+ *  (It goes without saying that all masks used for one node type have to be mapped
+ *   on disjoint bits AND that these may not exceed the length of the bit vector
+ *   on ANY platform. => avoid using more than 32 bits!!
+ *
+ *  After this has been done, flags may be set by
+ *
+ *  - SET_FLAG( ID, <node>, IS_UNIQUE, <bool> )
+ *
+ *  may be inspected by
+ *
+ *  - GET_FLAG( ID, <node>, IS_UNIQUE )
+ *
+ *  and may be converted into a string by
+ *
+ *  - FLAG2STRING( ID, <node>, IS_UNIQUE )
+ *
+ *  When using DBUG, an application of GET_FLAG to a flag that never has been set
+ * previously, a DBUG_ASSERT is issued!!! The idea behind this design choice is to ensure
+ * that we only inspect values that have been set explicitly, not be standard
+ * initialization during memory allocation.
+ */
+
+#define NOT(flag) ((-1) ^ flag)
+
+#ifndef DBUG_OFF
+
+#define SET_FLAG(s, n, flag, val)                                                        \
+    ((s##_DBUG_FLAGS (n)) = (s##_DBUG_FLAGS (n)) | flag,                                 \
+     (s##_FLAGS (n)) = ((val) ? (s##_FLAGS (n)) | flag : (s##_FLAGS (n)) & NOT (flag)))
+
+#define GET_FLAG(s, n, flag)                                                             \
+    ((s##_DBUG_FLAGS (n) & flag) ? s##_FLAGS (n) & flag                                  \
+                                 : DBUG_ASSERT (0, "trying to inspect flag " #flag       \
+                                                   " of " #s " that is not yet set!"))
+
+#define FLAG2STRING(s, n, flag)                                                          \
+    ((s##_DBUG_FLAGS (n) & flag) ? ((s##_FLAGS (n) & flag) ? #flag : "! " #flag) : "-")
+
+#else
+
+#define SET_FLAG(s, n, flag, val)                                                        \
+    (s##_FLAGS (n) = (val ? s##_FLAGS (n) | flag : s##_FLAGS (n) & NOT (flag)))
+
+#define GET_FLAG(s, n, flag) (s##_FLAGS (n) & flag)
+
+#define FLAG2STRING(s, n, flag) ((s##_FLAGS (n) & flag) ? #flag : "! " #flag)
+
+#endif
 
 /*
  *   Non-node-structures
@@ -1792,7 +1824,6 @@ extern node *MakeVinfo (useflag flag, types *type, node *next, node *dollar);
  ***
  ***    char*       NAME
  ***    char*       MOD     (O)
- ***    statustype  ATTRIB
  ***    statustype  STATUS
  ***    ids*        IDS
  ***
@@ -1816,6 +1847,13 @@ extern node *MakeVinfo (useflag flag, types *type, node *next, node *dollar);
  ***
  ***    char*       NT_TAG                      (compile -> )
  ***
+ ***  temporary FLAGS:
+ ***
+ ***     IS_GLOBAL               (typecheck: insert_vardec -> object resolution)
+ ***     IS_REFERENCE            (typecheck: create_wrappers -> precompile? )
+ ***     IS_READ_ONLY            new TC: (typecheck: create_wrappers -> uniquecheck? )
+ ***                             old TC: (object resolution -> uniquecheck? )
+ ***
  ***
  ***  remarks:
  ***
@@ -1836,6 +1874,25 @@ extern node *MakeVinfo (useflag flag, types *type, node *next, node *dollar);
  ***    costs. However for some other optimizations, namely tile size inference,
  ***    a constant value is an advantage.
  ***
+ ***  flags:
+ ***
+ ***    IS_GLOBAL indicates that the identifyer under consideration refers
+ ***              to a global object (before object resolution) or to a local
+ ***              variable / parameter that was artificially introduced in order
+ ***              to make all data dependencies explicit (after object resolution).
+ ***              However, AFAIK, this flag is not maintained after object resolution !!
+ ***    IS_REFERENCE marks an identifyer in argument position of a function (either
+ ***                 primitive or user defined) as being used in a reference parameter
+ ***                 position. So far, F_type_error is the only primitive function
+ ***                 that has such "reference parameter positions"!
+ ***                 AFAIK, this flag as well is maintained until object resolution only!!
+ ***    IS_READ_ONLY marks those IDs that are tagged as IS_REFERENCE already (!!!) as
+ *being
+ ***                 inspected only rather than being modified. Up to now, this only
+ ***                 happens when an external function is annotated by the TOUCH-PRAGMA
+ ***                 , e.g., eof, etc.pp.
+ ***
+ ***
  ***  caution:
  ***
  ***    Unroll uses ->flag without a macro :(
@@ -1849,24 +1906,10 @@ extern node *MakeVinfo (useflag flag, types *type, node *next, node *dollar);
  *   ST_artificial    : additional argument added by object-handler
  *                        in a function application or return-statement
  *
- * ATTRIB:
- *   ST_regular       : ordinary argument
- *                        in a function application or return-statement
- *   ST_global        : global object
- *   ST_readonly_reference/
- *   ST_reference     : argument in a function application which is passed as
- *                      a reference parameter
- *                      -- or --
- *                      additional argument in a return-statement which belongs
- *                      to a reference parameter
- *   ST_was_reference : argument in a function application which is passed as
- *                      a eliminated reference parameter
- *                      -- or --
- *                      additional argument in a return-statement which belongs
- *                      to a eliminated reference parameter
  *
  * UNQCONV is a flag which is set in those N_id nodes which were
  * arguments to a class conversion (to_class, from_class) function.
+ *
  */
 
 extern node *MakeId (char *name, char *mod, statustype status);
@@ -1885,7 +1928,6 @@ extern node *MakeId_Num (int val);
 #define ID_VARDEC(n) (IDS_VARDEC (ID_IDS (n)))
 #define ID_OBJDEF(n) (IDS_VARDEC (ID_IDS (n)))
 #define ID_MOD(n) (IDS_MOD (ID_IDS (n)))
-#define ID_ATTRIB(n) (IDS_ATTRIB (ID_IDS (n)))
 #define ID_STATUS(n) (IDS_STATUS (ID_IDS (n)))
 #define ID_DEF(n) (IDS_DEF (ID_IDS (n)))
 #define ID_REFCNT(n) (IDS_REFCNT (ID_IDS (n)))
@@ -1899,6 +1941,13 @@ extern node *MakeId_Num (int val);
 #define ID_CONSTVEC(n) (n->info2)
 #define ID_ISCONST(n) (n->varno)
 #define ID_NUM(n) (n->refcnt)
+
+#define ID_FLAGS(n) (long)(n->mask[0])
+#define ID_DBUG_FLAGS(n) (long)(n->mask[1])
+
+#define IS_GLOBAL 1
+#define IS_REFERENCE 2
+#define IS_READ_ONLY 4
 
 /*--------------------------------------------------------------------------*/
 
@@ -1997,6 +2046,7 @@ extern node *MakeStr_Copy (char *str);
  ***  permanent attributes:
  ***
  ***     prf    PRF
+ ***
  ***/
 
 extern node *MakePrf (prf prf, node *args);
