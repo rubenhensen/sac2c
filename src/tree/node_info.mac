@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.118  2003/04/20 20:25:59  dkr
+ * PREC2ap renamed into PREC2apORprf
+ *
  * Revision 3.117  2003/04/20 18:55:27  dkr
  * WLTRAassign added
  *
@@ -1645,9 +1648,9 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, CMPTprf, TravSons, SSACFprf, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
-       TravSons, COMP2Prf, TravSons, TravSons, TravSons, TravSons, TravSons, ALprf, HDprf,
-       TravSons, TravSons, TravSons, DLPrfOrAp, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, 1),
+       TravSons, COMP2Prf, PREC2apORprf, TravSons, TravSons, TravSons, TravSons, ALprf,
+       HDprf, TravSons, TravSons, TravSons, DLPrfOrAp, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, 1),
 
   NIF (N_ap, "N_ap", TravSons, FltnAp, PrintAp, TravSons, GNMap, TravSons, TravSons,
        FreeAp, CFap, TravSons, COMPAp, TravSons, DupAp, TravSons, UNRap, TravSons,
@@ -1669,9 +1672,9 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        SSACSEap, CMPTap, PFap, SSACFap, SSALIRap, TravSons, TravSons, SSALURap, SSAWLTap,
        SSAWLIap, TravSons,
 
-       SSAILIap, COMP2Ap, PREC2ap, TravSons, CRTWRPap, TravSons, PREC4ap, TravSons, HDap,
-       TravSons, CWCap, HMap, DLPrfOrAp, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, 1),
+       SSAILIap, COMP2Ap, PREC2apORprf, TravSons, CRTWRPap, TravSons, PREC4ap, TravSons,
+       HDap, TravSons, CWCap, HMap, DLPrfOrAp, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, 1),
 
   NIF (N_cast, "N_cast", TravSons, TravSons, PrintCast, TravSons, TravSons, TravSons,
        TravSons, FreeCast, CFcast, TravSons, COMPCast, TravSons, DupCast, TravSons,

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.15  2003/04/20 20:28:46  dkr
+ * PREC2ap renamed into PREC2apORprf
+ *
  * Revision 3.14  2002/09/11 23:14:41  dkr
  * PREC4ap added
  *
@@ -93,7 +96,7 @@ extern node *PREC2modul (node *arg_node, node *arg_info);
 extern node *PREC2fundef (node *arg_node, node *arg_info);
 extern node *PREC2assign (node *arg_node, node *arg_info);
 extern node *PREC2let (node *arg_node, node *arg_info);
-extern node *PREC2ap (node *arg_node, node *arg_info);
+extern node *PREC2apORprf (node *arg_node, node *arg_info);
 
 extern node *PREC3fundef (node *arg_node, node *arg_info);
 extern node *PREC3block (node *arg_node, node *arg_info);
