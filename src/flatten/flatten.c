@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.32  1995/05/31 14:19:12  hw
+ * Revision 1.33  1995/06/26 14:37:51  hw
+ * now arrays in the modarray-part of a with-loop will be extracted
+ *
+ * Revision 1.32  1995/05/31  14:19:12  hw
  * bug fixed in FtlnCon (body after N_modarray will be flattened
  *   correctly now)
  *
@@ -151,6 +154,7 @@
 #define RET 2
 #define LOOP 3
 #define COND 4
+#define MOD 5
 
 #define STACK_SIZE 1000
 #define PUSH(old, new, n)                                                                \
@@ -496,6 +500,7 @@ FltnExprs (node *arg_node, node *arg_info)
                     || (tmp_arg->nodetype == N_prf) || (tmp_arg->nodetype == N_with));
         break;
     case AP:
+    case MOD:
         abstract = ((tmp_arg->nodetype == N_array) || (tmp_arg->nodetype == N_prf)
                     || (tmp_arg->nodetype == N_ap) || (tmp_arg->nodetype == N_with));
         break;
@@ -1265,9 +1270,9 @@ FltnArgs (node *arg_node, node *arg_info)
  *  global vars   :
  *  internal funs :
  *  external funs : Trav
- *  macros        : DBUG, NULL, AP
+ *  macros        : DBUG, NULL, AP, MOD
  *
- *  remarks       : if the argument of modarray is a N_prf or N_ap
+ *  remarks       : if the argument of modarray is a N_prf, N_ap or N_array
  *                  node a temporary N_exprs node will be created and
  *                  flattened
  *
@@ -1283,11 +1288,15 @@ FltnCon (node *arg_node, node *arg_info)
     switch (arg_node->nodetype) {
     case N_modarray: {
         if ((N_prf == arg_node->node[0]->nodetype)
-            || (N_ap == arg_node->node[0]->nodetype)) {
+            || (N_ap == arg_node->node[0]->nodetype)
+            || (N_array == arg_node->node[0]->nodetype)) {
+            int old_tag = arg_info->info.cint;
             node *exprs = MakeNode (N_exprs);
             exprs->node[0] = arg_node->node[0];
             exprs->nnode = 1;
+            arg_info->info.cint = MOD;
             exprs = Trav (exprs, arg_info);
+            arg_info->info.cint = old_tag;
             arg_node->node[0] = exprs->node[0];
             FREE (exprs);
         } else
