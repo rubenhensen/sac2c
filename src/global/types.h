@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.32  2000/07/10 14:19:49  cg
+ * Added new field type_status in types struct as a dedicated status field
+ * for the type itself.
+ *
  * Revision 2.31  2000/06/30 13:22:43  nmw
  * conditional define for typedef bool added
  *
@@ -292,18 +296,19 @@ typedef struct IDS {
 
 typedef struct TYPESS {
     simpletype simpletype;
-    char *name;        /* only used for T_user !! */
-    char *name_mod;    /* name of modul belonging to 'name' */
-    struct NODE *tdef; /* typedef of user-defined type */
-    int dim;           /* if (dim == 0) => simpletype */
-    shpseg *shpseg;
-    struct TYPESS *next; /* only needed for fun-results  */
-                         /* and implementation of implicit types */
-    char *id;            /* identifier of function, object, ...  */
-    char *id_mod;        /* SAC module where id is defined */
-    char *id_cmod;       /* C module where id is defined */
-    statustype attrib;   /* uniqueness attribute */
-    statustype status;   /* regular or artificial */
+    char *name;             /* only used for T_user !! */
+    char *name_mod;         /* name of modul belonging to 'name' */
+    struct NODE *tdef;      /* typedef of user-defined type */
+    int dim;                /* if (dim == 0) => simpletype */
+    shpseg *shpseg;         /* pointer to shape specification */
+    statustype type_status; /* regular/artificial/crettype */
+    struct TYPESS *next;    /* only needed for fun-results  */
+                            /* and implementation of implicit types */
+    char *id;               /* identifier of function, object, ...  */
+    char *id_mod;           /* SAC module where id is defined */
+    char *id_cmod;          /* C module where id is defined */
+    statustype attrib;      /* uniqueness attribute */
+    statustype status;      /* regular or artificial */
 } types;
 
 /*

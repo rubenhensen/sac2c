@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.72  2000/07/10 14:22:57  cg
+ * Added new field type_status in types struct as a dedicated status field
+ * for the type itself.
+ *
  * Revision 1.71  2000/07/07 15:48:30  bs
  * The following compound macros moved from tree_basic to tree_compound:
  * INFO_WLAA_ARRAYSHP, INFO_WLAA_INDEXDIM, INFO_WLAA_ARRAYDIM
@@ -320,6 +324,7 @@ extern shpseg *MakeShpseg (nums *num);
  ***    shpseg*            SHPSEG    (O)
  ***    char*              NAME      (O)
  ***    char*              MOD       (O)
+ ***    statustype         STATUS
  ***    types*             NEXT      (O)
  ***
  ***  temporary attributes:
@@ -328,6 +333,12 @@ extern shpseg *MakeShpseg (nums *num);
  ***/
 
 /*
+ *  STATUS is usually ST_regular, but
+ *  ST_artificial marks artificial return types due to the resolution of
+ *  reference parameters and global objects and
+ *  ST_crettype marks that return type of a function that is compiled
+ *  to the actual return type of the resulting C function.
+ *
  *  TDEF is a reference to the defining N_typedef node of a user-defined
  *  type.
  */
@@ -340,6 +351,7 @@ extern types *MakeType (simpletype basetype, int dim, shpseg *shpseg, char *name
 #define TYPES_SHPSEG(t) (t->shpseg)
 #define TYPES_NAME(t) (t->name)
 #define TYPES_MOD(t) (t->name_mod)
+#define TYPES_STATUS(t) (t->type_status)
 #define TYPES_TDEF(t) (t->tdef)
 #define TYPES_NEXT(t) (t->next)
 

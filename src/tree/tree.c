@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2000/07/10 14:22:57  cg
+ * Added new field type_status in types struct as a dedicated status field
+ * for the type itself.
+ *
  * Revision 1.2  2000/02/22 11:56:21  jhs
  * Improved spelling.
  *
@@ -203,6 +207,7 @@ MakeTypes (simpletype simple)
     tmp->name = NULL;
     tmp->name_mod = NULL;
     tmp->dim = 0;
+    tmp->type_status = ST_regular;
     tmp->next = NULL;
     tmp->id = NULL;
     tmp->id_mod = NULL;

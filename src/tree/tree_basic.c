@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.19  2000/07/10 14:22:57  cg
+ * Added new field type_status in types struct as a dedicated status field
+ * for the type itself.
+ *
  * Revision 1.18  2000/07/04 14:35:21  jhs
  * Added CopyDFMfoldmask.
  *
@@ -187,6 +191,7 @@ MakeType (simpletype basetype, int dim, shpseg *shpseg, char *name, char *mod)
     tmp->name_mod = mod;
     tmp->shpseg = shpseg;
     tmp->dim = dim;
+    tmp->type_status = ST_regular;
 
     tmp->next = NULL;
 
