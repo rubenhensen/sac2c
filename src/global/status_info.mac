@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2001/03/26 10:44:51  nmw
+ * ST_inlinefun added for special functions without conditional
+ * that will be inlined during the opt cycle
+ *
  * Revision 3.5  2001/03/15 12:33:32  dkr
  * some comments modified
  *
@@ -174,7 +178,10 @@ SELECT (ST_undef, "ST_undef",
           /* fundef: lifted from N_mt                                        */),
 
   SELECT (ST_ignore, "ST_ignore",
-          /* fundef: unused generic fundef when compiling for c library      */)
+          /* fundef: unused generic fundef when compiling for c library      */),
+
+  SELECT (ST_inlinefun, "ST_inlinefun",
+          /* fundef: special function without conditional - to be inlined */)
 
 #undef SELECT
 
