@@ -1,4 +1,6 @@
 Makefile
+barriers_init.c
+barriers_init.h
 blocks_cons.c
 blocks_cons.h
 blocks_expand.c
