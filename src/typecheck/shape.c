@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.2  1999/10/20 13:03:03  sbs
+ * typo corrected
+ *
  * Revision 1.1  1999/10/11 08:47:34  sbs
  * Initial revision
  *
@@ -229,7 +232,7 @@ SHAppendShapes (shape *a, shape *b)
 /******************************************************************************
  *
  * function:
- *    char * SHSHape2String( int dots, shape *shp)
+ *    char * SHShape2String( int dots, shape *shp)
  *
  * description:
  *    generates a string representation of a shape. The argument "dots" alllows
@@ -239,13 +242,13 @@ SHAppendShapes (shape *a, shape *b)
  ******************************************************************************/
 
 char *
-SHSHape2String (int dots, shape *shp)
+SHShape2String (int dots, shape *shp)
 {
     static char buf[256];
     char *tmp = &buf[0];
     int i, j, n;
 
-    DBUG_ENTER ("SHSHape2String");
+    DBUG_ENTER ("SHShape2String");
     DBUG_ASSERT ((shp != NULL), ("SHSHape2String called with NULL shape!"));
 
     tmp += sprintf (tmp, "[");
