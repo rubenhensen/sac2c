@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.91  1998/03/21 12:35:30  dkr
+ * added comments for WLseg
+ *
  * Revision 1.90  1998/03/20 20:51:33  dkr
  * added attributes to N_WLseg for blocking
  * changed usage of MakeWLseg
@@ -2296,8 +2299,8 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop);
  ***  temporary attributes:
  ***
  ***    int      BLOCKS    (number of blocking levels --- without unrolling-blocking)
- ***    long*    BV
- ***    long*    UBV
+ ***    long*    BV                     (Precompile ! )
+ ***    long*    UBV                    (Precompile ! )
  ***
  ***/
 
