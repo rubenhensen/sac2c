@@ -1,5 +1,9 @@
 #
 # $Log$
+# Revision 1.93  1998/10/26 12:32:59  cg
+# new mechanism implemented that stores sac2c build information
+# which may later be retrieved by the -h or -i option, repsectively.
+#
 # Revision 1.92  1998/10/26 12:28:34  sbs
 # tar / floppy added
 #
@@ -323,7 +327,7 @@ GLOBAL= src/global/main.o src/global/Error.o src/global/usage.o \
         src/global/my_debug.o src/global/traverse.o  src/global/tree.o \
 	src/global/tree_basic.o src/global/tree_compound.o \
         src/global/free.o src/global/internal_lib.o \
-        src/global/globals.o src/global/resource.o
+        src/global/globals.o src/global/resource.o src/global/build.o
 SCANP= src/scanparse/y.tab.o src/scanparse/lex.yy.o \
        src/scanparse/scnprs.o
 PRINT= src/print/print.o src/print/convert.o

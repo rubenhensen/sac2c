@@ -1,5 +1,9 @@
 #
 # $Log$
+# Revision 1.67  1998/10/26 12:32:59  cg
+# new mechanism implemented that stores sac2c build information
+# which may later be retrieved by the -h or -i option, repsectively.
+#
 # Revision 1.66  1998/06/23 11:42:07  cg
 # make deps done
 #
@@ -211,6 +215,7 @@ CC        := gcc
 CCFLAGS   := -ansi -Wall -g
 CFLAGS    := -D__EXTENSIONS__
 
+ECHO      := echo -n
 
 INCS=-I../../inc -I../print -I../flatten -I../scanparse -I../typecheck \
      -I../optimize -I../modules -I../global -I../refcount -I../compile \
@@ -218,7 +223,7 @@ INCS=-I../../inc -I../print -I../flatten -I../scanparse -I../typecheck \
 
 all: main.o Error.o traverse.o usage.o my_debug.o tree.o free.o  \
      internal_lib.o tree_basic.o tree_compound.o globals.o \
-     resource.o types.h
+     resource.o types.h build.o
 
 #
 # the types.h object is to fool makedepend which does not
@@ -264,11 +269,18 @@ globals.o: globals.c
 resource.o: resource.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o resource.o -c resource.c $(INCS)
 
+build.o: build.c
+	$(CC) $(CCFLAGS) $(CFLAGS) -o build.o -c build.c $(INCS)
+	$(RM) build.c
+
+build.c: 
+	echo "char build_date_time[] = \"`date` by "$(USER)" on "$(HOST)"\";"  > build.c
+
 deps:
 	makedepend $(INCS) *.c
 
 clean:
-	$(RM) *.o *.bak
+	$(RM) *.o *.bak *~
 	$(RM) -r .sb
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
