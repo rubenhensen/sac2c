@@ -93,6 +93,16 @@ CACHE3_MSCA      :=  0
  *
  */
 
+target pentium_IV:
+
+CACHE1_SIZE      :=  8
+CACHE1_LINE      :=  64
+CACHE1_ASSOC     :=  4
+
+CACHE2_SIZE      :=  512
+CACHE2_LINE      :=  64
+CACHE2_ASSOC     :=  8
+
 
 target pentium_II_PE:
 
@@ -124,7 +134,9 @@ CACHE2_ASSOC     :=  32
  *
  */
 
-target bunasera::pentium_II_PE:
+target bunasera::pentium_IV:
+
+target bunasera_old::pentium_II_PE:
 
 target thinkpad::pentium_III_mob:
 
