@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.10  2004/11/25 13:53:47  mwe
+ * SSATids added
+ *
  * Revision 1.9  2004/11/24 19:16:24  mwe
  * changing function names according to naming conventions
  *
@@ -104,6 +107,7 @@ extern node *SSATpart (node *arg_node, info *arg_info);
 extern node *SSATwithid (node *arg_node, info *arg_info);
 extern node *SSATfuncond (node *arg_node, info *arg_info);
 extern node *SSATreturn (node *arg_node, info *arg_info);
+extern node *SSATids (node *arg_node, info *arg_info);
 
 extern node *SSATnewVardec (node *old_vardec_or_arg); /* TODO use AVIS instead */
 
