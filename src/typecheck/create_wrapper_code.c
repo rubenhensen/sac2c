@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2002/10/30 13:23:59  sbs
+ * handling of dot args introduced.
+ *
  * Revision 1.9  2002/10/18 14:33:17  sbs
  * some DBUG output added and some FLAG handling of freshly created N_id nodes
  * added.
@@ -241,7 +244,8 @@ SignatureMatches (node *formal, node *actual)
 
     DBUG_ENTER ("SignatureMatches");
 
-    while (formal != NULL) {
+    while ((formal != NULL) && (ARG_TYPE (formal) != NULL)
+           && (TYPES_BASETYPE (ARG_TYPE (formal)) != T_dots)) {
         DBUG_ASSERT ((actual != NULL), "inconsistant application found!");
         DBUG_ASSERT (((NODE_TYPE (formal) == N_arg) && (NODE_TYPE (actual) == N_exprs)),
                      "illegal args found!");

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.36  2002/10/30 13:23:59  sbs
+ * handling of dot args introduced.
+ *
  * Revision 3.35  2002/10/30 12:11:34  sbs
  * TYEliminateUser added.
  *
@@ -4398,7 +4401,7 @@ TYCorrectWrapperArgTypes (node *args, ntype *type)
 {
     DBUG_ENTER ("TYCorrectWrapperArgTypes");
 
-    if (args != NULL) {
+    if ((args != NULL) && (TYPES_BASETYPE (ARG_TYPE (args)) != T_dots)) {
         DBUG_ASSERT ((NODE_TYPE (args) == N_arg), "no N_exprs node found!");
         DBUG_ASSERT ((TYIsFun (type)), "no TC_fun found!");
         DBUG_ASSERT ((NTYPE_ARITY (type) == 1), "multiple FUN_IBASE found!");

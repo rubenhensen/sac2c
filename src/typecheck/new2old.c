@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2002/10/30 13:23:59  sbs
+ * handling of dot args introduced.
+ *
  * Revision 1.12  2002/10/29 19:06:28  dkr
  * bug in NT2OTwithid() fixed: TYFixAndEliminateAlpha() used now
  *
@@ -229,19 +232,25 @@ NT2OTarg (node *arg_node, node *arg_info)
 
     if (type != NULL) {
         type = TYFixAndEliminateAlpha (type);
-    } else {
-        ABORT (linenum, ("could not infer proper type for arg %s", ARG_NAME (arg_node)));
-    }
 
-    if (TYIsArray (type)) {
-        ARG_TYPE (arg_node) = FreeAllTypes (ARG_TYPE (arg_node));
-        ARG_TYPE (arg_node) = TYType2OldType (type);
-    } else {
-        ABORT (linenum, ("could not infer proper type for arg %s", ARG_NAME (arg_node)));
-    }
+        if (TYIsArray (type)) {
+            ARG_TYPE (arg_node) = FreeAllTypes (ARG_TYPE (arg_node));
+            ARG_TYPE (arg_node) = TYType2OldType (type);
+        } else {
+            ABORT (linenum,
+                   ("could not infer proper type for arg %s", ARG_NAME (arg_node)));
+        }
 
-    if (ARG_NEXT (arg_node) != NULL) {
-        ARG_NEXT (arg_node) = Trav (ARG_NEXT (arg_node), arg_info);
+        if (ARG_NEXT (arg_node) != NULL) {
+            ARG_NEXT (arg_node) = Trav (ARG_NEXT (arg_node), arg_info);
+        }
+
+    } else {
+        if ((ARG_TYPE (arg_node) != NULL)
+            && (TYPES_BASETYPE (ARG_TYPE (arg_node)) != T_dots)) {
+            ABORT (linenum,
+                   ("could not infer proper type for arg %s", ARG_NAME (arg_node)));
+        }
     }
 
     DBUG_RETURN (arg_node);
