@@ -1,8 +1,8 @@
 /*
  *
  * $Log$
- * Revision 3.46  2001/04/18 12:33:11  dkr
- * minor changes done
+ * Revision 3.47  2001/04/19 15:16:45  dkr
+ * stuff for DBUG string PRINT_VARS removed
  *
  * Revision 3.45  2001/04/10 09:37:03  dkr
  * macro F_PTR moved to internal_lib.h
@@ -1662,24 +1662,7 @@ PrintDo (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintDo");
 
-    fprintf (outfile, "\n");
-    INDENT;
-
-    DBUG_EXECUTE ("PRINT_MASKS", fprintf (outfile, "**used vars - do loop: ");
-                  PrintDefUseMask (outfile, DO_TERMMASK (arg_node),
-                                   INFO_PRINT_VARNO (arg_info));
-                  INDENT;);
-
     fprintf (outfile, "do \n");
-
-    DBUG_EXECUTE ("PRINT_VARS", INDENT; fprintf (outfile, "**(NAIVE)DEFVARS: ");
-                  PrintIds (DO_DEFVARS (arg_node), arg_info); fprintf (outfile, " | ");
-                  PrintIds (DO_NAIVE_DEFVARS (arg_node), arg_info);
-                  fprintf (outfile, "\n"); INDENT;
-                  fprintf (outfile, "**(NAIVE)USEVARS: ");
-                  PrintIds (DO_USEVARS (arg_node), arg_info); fprintf (outfile, " | ");
-                  PrintIds (DO_NAIVE_USEVARS (arg_node), arg_info);
-                  fprintf (outfile, "\n"););
 
     if (DO_BODY (arg_node) != NULL) {
         DBUG_EXECUTE ("PRINT_MASKS", INDENT; fprintf (outfile, "**MASKS - do body: \n");
@@ -1717,26 +1700,9 @@ PrintWhile (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintWhile");
 
-    fprintf (outfile, "\n");
-    INDENT;
-
-    DBUG_EXECUTE ("PRINT_MASKS", fprintf (outfile, "**used vars - while loop: ");
-                  PrintDefUseMask (outfile, WHILE_TERMMASK (arg_node),
-                                   INFO_PRINT_VARNO (arg_info));
-                  INDENT;);
-
     fprintf (outfile, "while (");
     Trav (WHILE_COND (arg_node), arg_info);
     fprintf (outfile, ") \n");
-
-    DBUG_EXECUTE ("PRINT_VARS", INDENT; fprintf (outfile, "**(NAIVE)DEFVARS: ");
-                  PrintIds (WHILE_DEFVARS (arg_node), arg_info); fprintf (outfile, " | ");
-                  PrintIds (WHILE_NAIVE_DEFVARS (arg_node), arg_info);
-                  fprintf (outfile, "\n"); INDENT;
-                  fprintf (outfile, "**(NAIVE)USEVARS: ");
-                  PrintIds (WHILE_USEVARS (arg_node), arg_info); fprintf (outfile, " | ");
-                  PrintIds (WHILE_NAIVE_USEVARS (arg_node), arg_info);
-                  fprintf (outfile, "\n"););
 
     if (WHILE_BODY (arg_node) != NULL) {
         DBUG_EXECUTE ("PRINT_MASKS", INDENT;
@@ -1769,9 +1735,6 @@ PrintCond (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintCond");
 
-    fprintf (outfile, "\n");
-    INDENT;
-
     fprintf (outfile, "if ");
 
     DBUG_EXECUTE ("PRINT_MASKS", fprintf (outfile, "**used vars - cond: ");
@@ -1783,18 +1746,11 @@ PrintCond (node *arg_node, node *arg_info)
     fprintf (outfile, ") \n");
 
     if (COND_THEN (arg_node) != NULL) {
-
         DBUG_EXECUTE ("PRINT_MASKS", INDENT; fprintf (outfile, "**MASKS - then: \n");
                       INDENT; PrintDefMask (outfile, COND_THENDEFMASK (arg_node),
                                             INFO_PRINT_VARNO (arg_info));
                       INDENT; PrintUseMask (outfile, COND_THENUSEMASK (arg_node),
                                             INFO_PRINT_VARNO (arg_info)););
-
-        DBUG_EXECUTE ("PRINT_VARS", INDENT; fprintf (outfile, "**(NAIVE)VARS - then: ");
-                      PrintIds (COND_THENVARS (arg_node), arg_info);
-                      fprintf (outfile, " | ");
-                      PrintIds (COND_NAIVE_THENVARS (arg_node), arg_info);
-                      fprintf (outfile, "\n"););
 
         Trav (COND_THEN (arg_node), arg_info);
         fprintf (outfile, "\n");
@@ -1804,18 +1760,11 @@ PrintCond (node *arg_node, node *arg_info)
     fprintf (outfile, "else\n");
 
     if (COND_ELSE (arg_node) != NULL) {
-
         DBUG_EXECUTE ("PRINT_MASKS", INDENT; fprintf (outfile, "**MASKS - else: \n");
                       INDENT; PrintDefMask (outfile, COND_ELSEDEFMASK (arg_node),
                                             INFO_PRINT_VARNO (arg_info));
                       INDENT; PrintUseMask (outfile, COND_ELSEUSEMASK (arg_node),
                                             INFO_PRINT_VARNO (arg_info)););
-
-        DBUG_EXECUTE ("PRINT_VARS", INDENT; fprintf (outfile, "**(NAIVE)VARS - else: ");
-                      PrintIds (COND_ELSEVARS (arg_node), arg_info);
-                      fprintf (outfile, " | ");
-                      PrintIds (COND_NAIVE_ELSEVARS (arg_node), arg_info);
-                      fprintf (outfile, "\n"););
 
         Trav (COND_ELSE (arg_node), arg_info);
     }
