@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  1998/04/29 20:09:25  dkr
+ * added a comment
+ *
  * Revision 1.2  1998/04/29 17:26:36  dkr
  * added a comment
  *
@@ -2672,6 +2675,9 @@ WLTRAFundef (node *arg_node, node *arg_info)
  *
  * description:
  *   infers NWITH2_IN/INOUT/OUT/LOCAL if the assignment contains a with-loop.
+ *
+ * remarks:
+ *   'INFO_WL_FUNDEF( arg_info)' points to the current fundef-node.
  *
  ******************************************************************************/
 
