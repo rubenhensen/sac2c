@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.49  2003/04/14 15:06:53  sbs
+ * all int prf's casted into prf's as these may be implemented as unsigned.
+ *
  * Revision 3.48  2002/10/18 14:27:51  sbs
  * ID_ATTRIB accesses replaced with FLAG inspections.
  *
@@ -1406,7 +1409,7 @@ LookupFun (char *fun_name, char *mod_name, node *fun_node)
  */
 
 static prim_fun_tab_elem *
-LookupPrf (int prf, char *mod_name)
+LookupPrf (prf prf, char *mod_name)
 {
     prim_fun_tab_elem *prf_p;
 
@@ -3789,7 +3792,7 @@ FindFun (char *fun_name, char *mod_name, types **arg_type, int count_args, node 
 
     /* now look for fitting function */
     if (IS_PRIMFUN) {
-        prf_p = LookupPrf (*prf_fun, NULL);
+        prf_p = LookupPrf ((prf) (*prf_fun), NULL);
         prf_p_store = prf_p;
     } else {
         fun_p = LookupFun (fun_name, NULL, NULL);
@@ -3806,7 +3809,7 @@ FindFun (char *fun_name, char *mod_name, types **arg_type, int count_args, node 
 
             while ((!IS_PRIMFUN)
                      ? (END_OF_FUN_TAB (fun_p) ? 0 : (!(strcmp (fun_name, fun_p->id))))
-                     : ((NULL != prf_p) ? *prf_fun == prf_p->prf : 0)) {
+                     : ((NULL != prf_p) ? (prf) (*prf_fun) == prf_p->prf : 0)) {
                 DBUG_PRINT ("TYPE",
                             ("current fun '%s'" F_PTR " found:%d",
                              (-1 == *prf_fun) ? ModName (FUNDEF_MOD (fun_p->node),
@@ -5180,7 +5183,7 @@ TI_prf (node *arg_node, node *arg_info)
                      &prf_tag);
     DBUG_ASSERT (NULL != fun_p, "fun_p is NULL");
 
-    if (prf_tag == PRF_PRF (arg_node)) {
+    if ((prf)prf_tag == PRF_PRF (arg_node)) {
         prf_p = (prim_fun_tab_elem *)fun_p;
         type_c_tag = prf_p->node->info.prf_dec.tag;
         PRF_PRF (arg_node) = prf_p->new_prf;
@@ -7397,7 +7400,7 @@ TI_Nfoldprf (node *arg_node, types *body_type, types *neutral_type, node *arg_in
 
     DBUG_ASSERT (fun_p, "fun_p is NULL");
 
-    if (prf_tag == NWITHOP_PRF (arg_node)) {
+    if ((prf)prf_tag == NWITHOP_PRF (arg_node)) {
         /* it is a primitive function */
         prf_p = (prim_fun_tab_elem *)fun_p;
         type_c_tag = prf_p->node->info.prf_dec.tag;
