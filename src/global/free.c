@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.74  1998/08/11 00:03:34  dkr
+ * changed FreeWLsegVar
+ *
  * Revision 1.73  1998/08/07 14:36:39  dkr
  * FreeWLsegVar added
  *
@@ -1909,6 +1912,9 @@ FreeWLseg (node *arg_node, node *arg_info)
     FREETRAV (WLSEG_CONTENTS (arg_node));
     tmp = FREECONT (WLSEG_NEXT (arg_node));
 
+    FREE (WLSEG_IDX_MIN (arg_node));
+    FREE (WLSEG_IDX_MAX (arg_node));
+
     for (b = 0; b < WLSEG_BLOCKS (arg_node); b++) {
         if (WLSEG_BV (arg_node, b) != NULL) {
             FREE (WLSEG_BV (arg_node, b));
@@ -1924,9 +1930,6 @@ FreeWLseg (node *arg_node, node *arg_info)
     if (WLSEG_SCHEDULING (arg_node) != NULL) {
         WLSEG_SCHEDULING (arg_node) = SCHRemoveScheduling (WLSEG_SCHEDULING (arg_node));
     }
-
-    FREE (WLSEG_IDX_MIN (arg_node));
-    FREE (WLSEG_IDX_MAX (arg_node));
 
     FREE (arg_node);
 
@@ -2024,6 +2027,18 @@ FreeWLsegVar (node *arg_node, node *arg_info)
 
     FREETRAV (WLSEGVAR_CONTENTS (arg_node));
     tmp = FREECONT (WLSEGVAR_NEXT (arg_node));
+
+    FREE (WLSEGVAR_IDX_MIN (arg_node));
+    FREE (WLSEGVAR_IDX_MAX (arg_node));
+
+    for (b = 0; b < WLSEGVAR_BLOCKS (arg_node); b++) {
+        if (WLSEGVAR_BV (arg_node, b) != NULL) {
+            FREE (WLSEGVAR_BV (arg_node, b));
+        }
+    }
+    if (WLSEGVAR_UBV (arg_node) != NULL) {
+        FREE (WLSEGVAR_UBV (arg_node));
+    }
 
     if (WLSEGVAR_SCHEDULING (arg_node) != NULL) {
         WLSEGVAR_SCHEDULING (arg_node)
