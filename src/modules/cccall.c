@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.10  2000/06/09 09:23:27  nmw
+ * moving of c library headerfile added
+ *
  * Revision 2.9  2000/01/21 13:20:57  jhs
  * Adapted to new mt ...
  *
@@ -533,6 +536,8 @@ GenLinklist (deps *depends)
  *                  All object files from the temporary directory are put
  *                  into an archive. This archive is tared together with
  *                  the status information file and the SIB file.
+ *                  if specified to generate c interface/library the headerfile
+ *                  is moved to the output dir
  *  global vars   : useranlib, tmp_dirname, modulename,
  *  internal funs : GenLibStat
  *  external funs : SystemCall
@@ -547,21 +552,31 @@ CreateLibrary ()
 {
     DBUG_ENTER ("CreateLibrary");
 
-    NOTE (("Creating SAC library \"%s%s.lib\"", targetdir, modulename));
+    /*generating sac library */
+    if (generatelibrary & GENERATELIBRARY_SAC) {
+        NOTE (("Creating SAC library \"%s%s.lib\"", targetdir, modulename));
 
-    SystemCall ("%s %s/lib%s.a %s/*.o", config.ar_create, tmp_dirname, modulename,
-                tmp_dirname);
+        SystemCall ("%s %s/lib%s.a %s/*.o", config.ar_create, tmp_dirname, modulename,
+                    tmp_dirname);
 
-    if (config.ranlib[0] != '\0') {
-        SystemCall ("%s %s/%s.a", config.ranlib, tmp_dirname, modulename);
+        if (config.ranlib[0] != '\0') {
+            SystemCall ("%s %s/%s.a", config.ranlib, tmp_dirname, modulename);
+        }
+
+        GenLibStat ();
+
+        SystemCall ("%s %s; %s %s.lib lib%s.a %s.sib %s.stt", config.chdir, tmp_dirname,
+                    config.tar_create, modulename, modulename, modulename, modulename);
+
+        SystemCall ("%s %s/%s.lib %s", config.move, tmp_dirname, modulename, targetdir);
     }
 
-    GenLibStat ();
+    /*generating c library */
+    if (generatelibrary & GENERATELIBRARY_C) {
+        NOTE (("Creating c library \"%s%s.a\"", targetdir, modulename));
 
-    SystemCall ("%s %s; %s %s.lib lib%s.a %s.sib %s.stt", config.chdir, tmp_dirname,
-                config.tar_create, modulename, modulename, modulename, modulename);
-
-    SystemCall ("%s %s/%s.lib %s", config.move, tmp_dirname, modulename, targetdir);
+        SystemCall ("%s %s/%s.h %s", config.move, tmp_dirname, modulename, targetdir);
+    }
 
     DBUG_VOID_RETURN;
 }
