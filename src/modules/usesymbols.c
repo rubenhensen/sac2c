@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2004/10/22 14:48:16  sah
+ * fixed some typeos
+ *
  * Revision 1.1  2004/10/22 13:50:44  sah
  * Initial revision
  *
@@ -10,8 +13,11 @@
 
 #define NEW_INFO
 
-#include "usesymbols.c"
+#include "usesymbols.h"
 #include "traverse.h"
+#include "dbug.h"
+#include "internal_lib.h"
+#include "tree_basic.h"
 
 /*
  * INFO structure
@@ -79,7 +85,7 @@ USSModul (node *arg_node, info *arg_info)
 }
 
 void
-DoUseSymbols (arg_node *modul)
+DoUseSymbols (node *modul)
 {
     funtab *store_tab;
     info *info;
