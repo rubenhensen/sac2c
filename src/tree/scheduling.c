@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.42  2004/11/24 22:52:53  ktr
+ * dependency from precompile.h removed.
+ *
  * Revision 3.41  2004/09/30 19:52:05  sah
  * fixed hidden datatypes
  *
@@ -213,25 +216,19 @@
  *
  *****************************************************************************/
 
-#include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
 
-#ifdef NEW_AST
 #include "scheduling.h"
-#endif
 
-#include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "internal_lib.h"
 #include "free.h"
 #include "traverse.h"
 #include "Error.h"
-#include "precompile.h" /* for RenameLocalIdentifier() */
 #include "wl_bounds.h"
 #include "dbug.h"
-#include "LookUpTable.h"
 
 /******************************************************************************
  *
