@@ -1,5 +1,12 @@
 /*
  * $Log$
+ * Revision 2.18  2000/07/28 13:21:20  dkr
+ * signature of CheckOptimizePsi() and CheckOptimizeArray changed
+ *   (no reference parameter **node anymore)
+ * bugs in WLTlet removed:
+ *   illegal pointer access removed
+ *   semantics of code and meaning of comments are consistent now :-)
+ *
  * Revision 2.17  2000/06/23 15:24:22  dkr
  * signature of DupTree changed
  *
@@ -243,7 +250,6 @@ CutSlices (int *ls, int *us, int *l, int *u, int dim, intern_gen *ig, node *code
  * description:
  *   adds new generators which specify the elements left out by a grid.
  *
- *
  ******************************************************************************/
 
 static intern_gen *
@@ -290,9 +296,9 @@ CompleteGrid (int *ls, int *us, int *step, int *width, int dim, intern_gen *ig,
  *
  * function:
  *   int check_genarray_full_part(node *ln)
+ *
  * description:
  *   check whether the generator of this genarray-WL specifies a full partition
- *
  *
  ******************************************************************************/
 
@@ -469,10 +475,10 @@ CreateFullPartition (node *wln, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   void CheckOptimizePsi(node **psi, node *arg_info)
+ *   node *CheckOptimizePsi( node *psi, node *arg_info)
  *
  * description:
- *   checks if **psi is an application with index vector and constant. If
+ *   checks if 'psi' is an application with index vector and constant. If
  *   possible, the prf psi is replaced by A scalar index vector.
  *
  * example:
@@ -480,8 +486,8 @@ CreateFullPartition (node *wln, node *arg_info)
  *
  ******************************************************************************/
 
-static void
-CheckOptimizePsi (node **psi, node *arg_info)
+static node *
+CheckOptimizePsi (node *psi, node *arg_info)
 {
     int index;
     node *ivn, *indexn, *datan;
@@ -491,13 +497,14 @@ CheckOptimizePsi (node **psi, node *arg_info)
 
     /* first check if the array is the index vector and the index is a
        constant in range. */
-    ivn = PRF_ARG2 ((*psi));
-    indexn = PRF_ARG1 ((*psi));
+    ivn = PRF_ARG2 (psi);
+    indexn = PRF_ARG1 (psi);
 
     if (N_id == NODE_TYPE (indexn)) {
         datan = MRD_GETDATA (ID_VARNO (indexn), INFO_VARNO (arg_info));
-    } else
+    } else {
         datan = indexn;
+    }
 
     if (datan && N_array == NODE_TYPE (datan)
         && N_num == NODE_TYPE (EXPRS_EXPR (ARRAY_AELEMS (datan)))
@@ -515,21 +522,21 @@ CheckOptimizePsi (node **psi, node *arg_info)
             INFO_USE[ID_VARNO (ivn)]--;
             if (N_id == NODE_TYPE (indexn))
                 INFO_USE[ID_VARNO (indexn)]--;
-            FreeTree (*psi);
-            *psi = MakeId (StringCopy (IDS_NAME (_ids)), NULL, ST_regular);
-            ID_VARDEC ((*psi)) = IDS_VARDEC (_ids);
+            psi = FreeTree (psi);
+            psi = MakeId (StringCopy (IDS_NAME (_ids)), NULL, ST_regular);
+            ID_VARDEC (psi) = IDS_VARDEC (_ids);
             INFO_USE[IDS_VARNO (_ids)]++;
             wlt_expr++;
         }
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN (psi);
 }
 
 /******************************************************************************
  *
  * function:
- *   void CheckOptimizeArray(node **array, node *arg_info)
+ *   node *CheckOptimizeArray(node *array, node *arg_info)
  *
  * description:
  *   Checks if array is constructed from all scalar index variables
@@ -541,8 +548,8 @@ CheckOptimizePsi (node **psi, node *arg_info)
  *
  ******************************************************************************/
 
-static void
-CheckOptimizeArray (node **array, node *arg_info)
+static node *
+CheckOptimizeArray (node *array, node *arg_info)
 {
     int elts, i;
     ids *_ids;
@@ -550,12 +557,12 @@ CheckOptimizeArray (node **array, node *arg_info)
     char *vec_name;
 
     DBUG_ENTER ("CheckOptimizeArray");
-    DBUG_ASSERT (N_array == NODE_TYPE (*array), ("no N_array node"));
+    DBUG_ASSERT ((N_array == NODE_TYPE (array)), "no N_array node");
 
     /* shape of index vector */
     _ids = NPART_VEC (NWITH_PART (INFO_WLI_WL (arg_info)));
 
-    tmpn = ARRAY_AELEMS ((*array));
+    tmpn = ARRAY_AELEMS (array);
     elts = 0;
     while (tmpn) {
         if (N_id == NODE_TYPE (EXPRS_EXPR (tmpn))
@@ -570,22 +577,22 @@ CheckOptimizeArray (node **array, node *arg_info)
 
     if (elts == IDS_SHAPE (_ids, 0)) { /* change to index vector */
         /* adjust USE mask */
-        tmpn = ARRAY_AELEMS ((*array));
+        tmpn = ARRAY_AELEMS (array);
         for (i = 0; i < elts; i++) {
             INFO_USE[ID_VARNO (EXPRS_EXPR (tmpn))]--;
             tmpn = EXPRS_NEXT (tmpn);
         }
 
         /* free subtree and make new id node. */
-        FreeTree (*array);
+        array = FreeTree (array);
         vec_name = StringCopy (IDS_NAME (_ids));
-        *array = MakeId (vec_name, NULL, ST_regular);
-        ID_VARDEC ((*array)) = IDS_VARDEC (_ids);
+        array = MakeId (vec_name, NULL, ST_regular);
+        ID_VARDEC (array) = IDS_VARDEC (_ids);
         INFO_USE[IDS_VARNO (_ids)]++;
         wlt_expr++;
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN (array);
 }
 
 /******************************************************************************
@@ -645,7 +652,6 @@ WLTassign (node *arg_node, node *arg_info)
  * description:
  *   only needed to apply OPTTrav
  *
- *
  ******************************************************************************/
 
 node *
@@ -668,7 +674,6 @@ WLTcond (node *arg_node, node *arg_info)
  * description:
  *   only needed to apply OPTTrav
  *
- *
  ******************************************************************************/
 
 node *
@@ -690,7 +695,6 @@ WLTdo (node *arg_node, node *arg_info)
  * description:
  *   only needed to apply OPTTrav
  *
- *
  ******************************************************************************/
 
 node *
@@ -710,10 +714,10 @@ WLTwhile (node *arg_node, node *arg_info)
  *   node *WLTlet(node *arg_node, node *arg_info)
  *
  * description:
- *   the follwoing occurences are seached and replaced (iv=[i,j,k])
- *   - constant indexing of index vector
+ *   the following occurences are searched and replaced (iv=[i,j,k]):
+ *   - constant indexing of index vector:
  *     iv[[1]] is replaces by j
- *   - construction of iv with index scalars
+ *   - construction of iv with index scalars:
  *     [i,j,k] is replaced by iv.
  *
  *   These are optimizations for the compiler phase and are not needed for WLF.
@@ -723,33 +727,45 @@ WLTwhile (node *arg_node, node *arg_info)
 node *
 WLTlet (node *arg_node, node *arg_info)
 {
-    node *exprn, *tmpn;
+    node *tmpn;
 
     DBUG_ENTER ("WLTlet");
 
     if (INFO_WLI_WL (arg_info)) {
-        /* if we are inside a WL we have to look for
-         1) ..= prf(a1,a2)  where a1 and a2 may be [i,j,k]
-         2) ..= expr        where expr may be [i,j,k]
-         3) ..= psi(a1,a2)  where a1 may be a const vec and a2 iv.
+        /*
+         * if we are inside a WL we have to look for
+         *   1:  ..= psi(a1,a2)  where a1 may be a const vec and a2 iv.
+         *   2:  ..= prf(a1,a2)  where a1 and a2 may be [i,j,k]
+         *   3:  ..= expr        where expr may be [i,j,k]
          */
 
-        exprn = LET_EXPR (arg_node);
-        if (N_prf == NODE_TYPE (exprn)) {
-            if (F_psi == PRF_PRF (exprn)) /* 3) */
-                CheckOptimizePsi (&LET_EXPR (arg_node), arg_info);
-            else {
-                tmpn = PRF_ARGS (exprn);
-                while (tmpn) {
-                    if (N_array == NODE_TYPE (EXPRS_EXPR (tmpn))) /* 1) */
-                        CheckOptimizeArray (&EXPRS_EXPR (tmpn), arg_info);
-                    tmpn = EXPRS_NEXT (tmpn);
+        if ((N_prf == NODE_TYPE (LET_EXPR (arg_node)))
+            && (F_psi == PRF_PRF (LET_EXPR (arg_node)))) {
+            /*
+             * 1:
+             */
+            LET_EXPR (arg_node) = CheckOptimizePsi (LET_EXPR (arg_node), arg_info);
+        }
+
+        if (N_prf == NODE_TYPE (LET_EXPR (arg_node))) {
+            /*
+             * 2:
+             */
+            tmpn = PRF_ARGS (LET_EXPR (arg_node));
+            while (tmpn != NULL) {
+                if (N_array == NODE_TYPE (EXPRS_EXPR (tmpn))) {
+                    EXPRS_EXPR (tmpn) = CheckOptimizeArray (EXPRS_EXPR (tmpn), arg_info);
                 }
+                tmpn = EXPRS_NEXT (tmpn);
             }
         }
 
-        if (N_array == NODE_TYPE (exprn)) /* 2) */
-            CheckOptimizeArray (&LET_EXPR (arg_node), arg_info);
+        if (N_array == NODE_TYPE (LET_EXPR (arg_node))) {
+            /*
+             * 3:
+             */
+            LET_EXPR (arg_node) = CheckOptimizeArray (LET_EXPR (arg_node), arg_info);
+        }
     }
 
     LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
