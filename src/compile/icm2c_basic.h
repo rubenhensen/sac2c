@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2002/10/30 14:20:30  dkr
+ * some new macros added
+ *
  * Revision 3.11  2002/10/29 19:10:02  dkr
  * some macros for code generation added
  *
@@ -92,6 +95,19 @@ extern int print_comment; /* bool */
     post fprintf (outfile, ") ");                                                        \
     BLOCK__NOINDENT (ass)
 
+#define FOR_LOOP_VARDECS(vardecs, init, cond, post, ass)                                 \
+    BLOCK_VARDECS (vardecs, FOR_LOOP (init, cond, post, ass);)
+
+#define FOR_LOOP_INC(idx, start, stop, ass)                                              \
+    FOR_LOOP (idx fprintf (outfile, " = "); start, idx fprintf (outfile, " < ");         \
+              stop, idx fprintf (outfile, "++");, ass)
+
+#define FOR_LOOP_INC_VARDEC(idx, start, stop, ass)                                       \
+    FOR_LOOP_VARDECS (fprintf (outfile, "int "); idx fprintf (outfile, ";");             \
+                      , idx fprintf (outfile, " = ");                                    \
+                      start, idx fprintf (outfile, " < ");                               \
+                      stop, idx fprintf (outfile, "++");, ass)
+
 #define COND1(cond, ass)                                                                 \
     INDENT;                                                                              \
     fprintf (outfile, "if (");                                                           \
@@ -106,6 +122,46 @@ extern int print_comment; /* bool */
     INDENT;                                                                              \
     fprintf (outfile, "else ");                                                          \
     BLOCK__NOINDENT (else_ass)
+
+#define SET_SIZE(to_nt, set_ass)                                                         \
+    INDENT;                                                                              \
+    fprintf (outfile, "SAC_ND_A_DESC_SIZE( %s) = SAC_ND_A_MIRROR_SIZE( %s) = ", to_nt,   \
+             to_nt);                                                                     \
+    set_ass fprintf (outfile, ";\n")
+
+#define SET_SHAPE_AUD(to_nt, idx_ass, set_ass)                                           \
+    INDENT;                                                                              \
+    fprintf (outfile, "SAC_ND_A_DESC_SHAPE( %s, ", to_nt);                               \
+    idx_ass fprintf (outfile, ") = ");                                                   \
+    set_ass fprintf (outfile, ";\n")
+
+#define SET_SHAPE_AUD__NUM(to_nt, idx_num, set_ass)                                      \
+    INDENT;                                                                              \
+    fprintf (outfile, "SAC_ND_A_DESC_SHAPE( %s, %d) = ", to_nt, idx_num);                \
+    set_ass fprintf (outfile, ";\n")
+
+#define SET_SHAPE_AKD(to_nt, idx_num, set_ass)                                           \
+    INDENT;                                                                              \
+    fprintf (outfile, "SAC_ND_A_MIRROR_SHAPE( %s, %d) = \n", to_nt, idx_num);            \
+    INDENT;                                                                              \
+    fprintf (outfile, "SAC_ND_A_DESC_SHAPE( %s, %d) = ", to_nt, idx_num);                \
+    set_ass fprintf (outfile, ";\n")
+
+#define SET_SHAPES_AUD(to_nt, idx_ass, idx_start_ass, idx_stop_ass, prolog_ass, set_ass) \
+    FOR_LOOP_INC_VARDEC (idx_ass, idx_start_ass, idx_stop_ass,                           \
+                         prolog_ass SET_SHAPE_AUD (to_nt, idx_ass, set_ass);)
+
+#define SET_SHAPES_AUD__NUM(to_nt, idx, idx_start, idx_stop, prolog_ass, set_ass)        \
+    DBUG_ASSERT ((idx_stop >= 0), "illegal dimension found!");                           \
+    for (idx = idx_start; idx < idx_stop; i++) {                                         \
+        prolog_ass SET_SHAPE_AUD__NUM (to_nt, idx, set_ass);                             \
+    }
+
+#define SET_SHAPES_AKD(to_nt, idx, idx_start, idx_stop, prolog_ass, set_ass)             \
+    DBUG_ASSERT ((idx_stop >= 0), "illegal dimension found!");                           \
+    for (idx = idx_start; idx < idx_stop; i++) {                                         \
+        prolog_ass SET_SHAPE_AKD (to_nt, idx, set_ass);                                  \
+    }
 
 #ifdef TAGGED_ARRAYS
 
