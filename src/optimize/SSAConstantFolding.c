@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2001/05/02 08:02:11  nmw
+ * arithmetical constant folding implemented
+ *
  * Revision 1.8  2001/04/30 12:04:57  nmw
  * structual operations implemented
  *
@@ -89,13 +92,14 @@ typedef struct {
 #define SCO_MOD(n) (n->name_mod)
 #define SCO_HIDDENCO(n) (n->hidden_co)
 
-/* traversal like functions for ids structures */
+/* local used helper functions */
 static ids *TravIDS (ids *arg_ids, node *arg_info);
 static ids *SSACFids (ids *arg_ids, node *arg_info);
 static node *SSACFPropagateConstants2Args (node *arg_chain, node *param_chain);
 static struc_constant *SSACFExpr2StructConstant (node *expr);
 static node *SSACFDupStructConstant2Expr (struc_constant *struc_co);
 static struc_constant *SCOFreeStructConstant (struc_constant *struc_co);
+static shape *SSACFGetShapeOfExpr (node *expr);
 
 /*
  * primitive functions for non full-constant expressions like:
@@ -463,11 +467,149 @@ SSACFArithmOpWrapper (prf op, constant *arg1, node *arg1_expr, constant *arg2,
                       node *arg2_expr)
 {
     node *result;
+    node *expr;
+    constant *co;
+    bool swap;
+    constant *tmp_co;
+    shape *target_shp;
 
     DBUG_ENTER ("SSACFArithmOpWrapper");
+
+    /* get constant and expression */
+    if (arg1 != NULL) {
+        swap = FALSE;
+        co = arg1;
+        expr = arg2_expr;
+    } else {
+        swap = TRUE;
+        co = arg2;
+        expr = arg1_expr;
+    }
+    DBUG_ASSERT ((co != NULL), "no constant arg found");
+
     result = NULL;
+    tmp_co = NULL;
+
+    switch (op) {
+    case F_add:
+        if (COIsZero (co)) { /* x+0 -> x  or 0+x -> x */
+            result = DupTree (expr);
+        }
+        break;
+
+    case F_sub:
+        if (swap && COIsZero (co)) { /* x-0 -> x */
+            result = DupTree (expr);
+        }
+        break;
+
+    case F_mul:
+        if (COIsZero (co)) { /* x*0 -> 0 or 0*x -> 0 */
+            target_shp = SSACFGetShapeOfExpr (expr);
+            if (target_shp != NULL) {
+                /* Create ZeroConstant of same type and shape as expression */
+                tmp_co = COMakeZero (COGetType (co), target_shp);
+            }
+        } else if (COIsOne (co)) { /* x*1 -> x or 1*x -> x */
+            result = DupTree (expr);
+        }
+        break;
+
+    case F_div:
+        if (COIsZero (co)) {
+            if (swap) { /* x/0 -> err */
+                WARN (expr->lineno, ("Division by zero expected"));
+            } else { /* 0/x -> 0 */
+                target_shp = SSACFGetShapeOfExpr (expr);
+                if (target_shp != NULL) {
+                    /* Create ZeroConstant of same type and shape as expression */
+                    tmp_co = COMakeZero (COGetType (co), target_shp);
+                }
+            }
+        } else if (swap && COIsOne (co)) { /* x/1 -> x */
+            result = DupTree (expr);
+        }
+        break;
+
+    case F_and:
+        if (COIsTrue (co)) { /* x&&true -> x or true&&x -> x */
+            result = DupTree (expr);
+        } else if (COIsFalse (co)) { /* x&&false->false or false&&x->false */
+            target_shp = SSACFGetShapeOfExpr (expr);
+            if (target_shp != NULL) {
+                /* Create False constant of same shape as expression */
+                tmp_co = COMakeFalse (target_shp);
+            }
+        }
+        break;
+
+    case F_or:
+        if (COIsFalse (co)) { /* x||false->x or false||x -> x */
+            result = DupTree (expr);
+        } else if (COIsFalse (co)) { /* x||true->true or true&&x->true */
+            target_shp = SSACFGetShapeOfExpr (expr);
+            if (target_shp != NULL) {
+                /* Create True constant of same shape as expression */
+                tmp_co = COMakeFalse (target_shp);
+            }
+        }
+        break;
+
+    default:
+        DBUG_ASSERT ((FALSE), "unsupported operation for arithmetical constant folding");
+    }
+
+    /* convert computed constant to exporession */
+    if (tmp_co != NULL) {
+        result = COConstant2AST (tmp_co);
+        tmp_co = COFreeConstant (tmp_co);
+    }
+
+#ifndef DBUG_OFF
+    if (result != NULL) {
+        DBUG_PRINT ("SSACF", ("arithmetic constant folding done."));
+    }
+#endif
 
     DBUG_RETURN (result);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   shape *SSACFGetShapeOfExpr(node *expr)
+ *
+ * description:
+ *   try to calculate the shape of the given expression. this can be a
+ *   identifier or an array node. returns NULL if no shape can be computed.
+ *
+ ******************************************************************************/
+static shape *
+SSACFGetShapeOfExpr (node *expr)
+{
+    shape *shp;
+    DBUG_ENTER ("SSACFGetShapeOfExpr");
+    DBUG_ASSERT ((expr != NULL), "SSACFGetShapeOfExpr called with NULL pointer");
+
+    switch (NODE_TYPE (expr)) {
+    case N_id:
+        /* get shape from type info */
+        shp = SHOldTypes2Shape (VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (expr))));
+        DBUG_ASSERT ((shp != NULL), "identifier with unknown shape");
+        break;
+
+    case N_array:
+        /* get shape from array type attribute */
+        DBUG_ASSERT ((ARRAY_TYPE (expr) != NULL), "array type attribute is missing");
+        shp = SHOldTypes2Shape (ARRAY_TYPE (expr));
+        DBUG_ASSERT ((shp != NULL), "array with unknown shape");
+        break;
+
+    default:
+        shp = NULL;
+    }
+
+    DBUG_RETURN (shp);
 }
 
 /* traversal functions */
