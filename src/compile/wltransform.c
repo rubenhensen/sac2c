@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.72  2003/03/13 00:13:35  dkr
+ * comment in GetWlShape() added
+ *
  * Revision 3.71  2003/03/12 23:34:07  dkr
  * SSA transform removed...
  *
@@ -2463,21 +2466,17 @@ GetWlShape (node *wl, int dims, types *wl_type)
         } else {
             DBUG_ASSERT ((NODE_TYPE (shp_node) == N_id),
                          "NWITH_SHAPE is neither N_array nor N_id");
-            if (valid_ssaform) {
-                constant *co = COAST2Constant (shp_node);
-                int *dv;
-                if (co != NULL) {
-                    DBUG_ASSERT ((dims <= SHGetUnrLen (COGetShape (co))),
-                                 "genarray with-loop:"
-                                 " size of index vector > dimension of WL shape");
-                    shape = MakeShpseg (NULL);
-                    dv = (int *)COGetDataVec (co);
-                    for (i = 0; i < dims; i++) {
-                        SHPSEG_SHAPE (shape, i) = dv[i];
-                    }
-                    co = COFreeConstant (co);
-                }
-            }
+            /*
+             * handling of constant N_id nodes is missing here
+             *
+             * For the time being constant N_id nodes are substituted into
+             * the N_Nwithop node during WLT (SSAWLT.c) ...
+             * Note here, that it is not possible to use the SSA form in this
+             * phase yet:
+             *   - The previous phase RC can not handle SSA.
+             *   - This phase can not handle SSA either since all NCODE_CEXPR
+             *     have to have identical names especially in fold-WLs...
+             */
         }
         break;
 
