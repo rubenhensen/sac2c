@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.40  2003/10/19 21:42:37  dkrHH
+ * no more warnings about unused vars anymore
+ *
  * Revision 3.39  2003/10/15 17:33:03  dkrHH
  * MT_CREATE_LOCAL_DESC is a C-ICM now
  *
@@ -503,8 +506,10 @@ ICMCompileMT_SYNCBLOCK_BEGIN (int barrier_id, int vararg_cnt, char **vararg)
         if (!strcmp (vararg[i], "in")) {
             int dim;
             int cnt = sscanf (vararg[i + 2], "%d", &dim);
-            DBUG_ASSERT ((cnt == 1),
-                         "3rd vararg component of MT_SYNCBLOCK_BEGIN is no integer!");
+            if (cnt != 1) {
+                DBUG_ASSERT ((0), "3rd vararg component of MT_SYNCBLOCK_BEGIN"
+                                  " is no integer!");
+            }
             ICMCompileMT_CREATE_LOCAL_DESC (vararg[i + 1], dim);
         }
 #else  /* TAGGED_ARRAYS */
