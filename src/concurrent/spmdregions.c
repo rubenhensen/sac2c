@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.25  1998/05/17 00:12:21  dkr
+ * fixed some minor bugs
+ *
  * Revision 1.24  1998/05/15 23:05:29  dkr
  * lifting of SPMD-fun deactivated ...
  *
@@ -89,6 +92,11 @@
  * returns 0 for refcounting-objects and -1 otherwise
  */
 #define GET_ZERO_REFCNT(prefix, node) ((prefix##_REFCNT (node) >= 0) ? 0 : -1)
+
+/*
+ * returns 1 for refcounting-objects and -1 otherwise
+ */
+#define GET_STD_REFCNT(prefix, node) ((prefix##_REFCNT (node) >= 0) ? 1 : -1)
 
 /******************************************************************************
  *
@@ -260,9 +268,9 @@ SPMDLiftFundef (node *arg_node, node *arg_info)
  *   lifts a SPMD-region into a function.
  *
  * remarks:
- *   - INFO_SPMD_FUNDEF( arg_info) points to the current fundef-node.
- *   - INFO_SPMD_FIRST( arg_info) shows, weather the next sync-region would be
- *     the first one of the SPMD_region or not.
+ *   - 'INFO_SPMD_FUNDEF( arg_info)' points to the current fundef-node.
+ *   - 'INFO_SPMD_FIRST( arg_info)' shows, weather the next sync-region would
+ *     be the first one of the SPMD_region or not.
  *
  ******************************************************************************/
 
@@ -320,7 +328,7 @@ SPMDLiftSpmd (node *arg_node, node *arg_info)
                                                      VARDEC_NAME (vardec))) {
                                 if (NODE_TYPE (vardec) == N_arg) {
                                     new_farg = DupNode (vardec);
-                                    ARG_REFCNT (new_farg) = GET_ZERO_REFCNT (ARG, vardec);
+                                    ARG_REFCNT (new_farg) = GET_STD_REFCNT (ARG, vardec);
                                 } else {
                                     new_farg
                                       = MakeArg (StringCopy (VARDEC_NAME (vardec)),
@@ -328,7 +336,7 @@ SPMDLiftSpmd (node *arg_node, node *arg_info)
                                                  VARDEC_STATUS (vardec),
                                                  VARDEC_ATTRIB (vardec), NULL);
                                     ARG_REFCNT (new_farg)
-                                      = GET_ZERO_REFCNT (VARDEC, vardec);
+                                      = GET_STD_REFCNT (VARDEC, vardec);
                                 }
                                 if (DFMTestMaskEntry (SPMD_IN (arg_node),
                                                       VARDEC_NAME (vardec))) {
@@ -416,16 +424,13 @@ SPMDLiftSpmd (node *arg_node, node *arg_info)
     FUNDEF_RETURN (new_fundef) = MakeReturn (retexprs);
     AppendAssign (BLOCK_INSTR (body), MakeAssign (FUNDEF_RETURN (new_fundef), NULL));
 
-    /*
-     * traverse body of new fundef-node to correct the vardec-pointers of all id's.
-     */
-    INFO_SPMD_FUNDEF (arg_info) = new_fundef;
-    body = Trav (body, arg_info);
-    INFO_SPMD_FUNDEF (arg_info) = fundef;
-
 #if 00
     /*
      * insert SPMD-function into fundef-chain of modul
+     *
+     * CAUTION: we must insert the SPMD-fundef *behind* the current fundef,
+     *          because it must be traversed to correct the vardec-pointers of
+     *          all id's!!
      */
     if (FUNDEF_NEXT (fundef) != NULL) {
         FUNDEF_NEXT (new_fundef) = FUNDEF_NEXT (fundef);
