@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.32  2005/03/04 21:21:42  cg
+ * Wrapper functions are no longer marked 'inline' since they
+ * are no longer intended to be inlined.
+ *
  * Revision 1.31  2005/01/11 14:20:44  cg
  * Converted output generation from Error.h to ctinfo.c
  *
@@ -245,6 +249,7 @@ CWCmodule (node *arg_node, info *arg_info)
     if (MODULE_FUNS (arg_node) != NULL) {
         MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
     }
+
     MODULE_WRAPPERFUNS (arg_node) = LUTremoveLut (MODULE_WRAPPERFUNS (arg_node));
 
     DBUG_RETURN (arg_node);
@@ -409,8 +414,11 @@ InsertWrapperCode (node *fundef)
 
         /*
          * mark wrapper function as a inline function
+         *
+         * FUNDEF_ISINLINE( fundef) = TRUE;
+         *
+         * Inlining of wrapper functions proved unsatisfactory.
          */
-        FUNDEF_ISINLINE (fundef) = TRUE;
     }
 
     DBUG_RETURN (fundef);
@@ -674,21 +682,11 @@ FundefRemoveGarbage (node *arg_node, info *arg_info)
         FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
     }
 
-    if (FUNDEF_ISZOMBIE (arg_node)) {
-        /*
-         * remove zombie of generic wrapper function
-         */
-        /* sbs: I think that we do not generate zombies anymore as we have
-           to leave the generic wrappers alive until here (used for adjusting
-           N_ap back-links!
-         */
-        DBUG_ASSERT ((1 == 0), "Zombie fungenerated!");
-        arg_node = FREEfreeZombie (arg_node);
-    } else if ((FUNDEF_ISWRAPPERFUN (arg_node)) && (FUNDEF_BODY (arg_node) == NULL)) {
+    if ((FUNDEF_ISWRAPPERFUN (arg_node)) && (FUNDEF_BODY (arg_node) == NULL)) {
         /*
          * remove statically dispatchable wrapper function and all generic wrappers
          */
-        arg_node = FREEfreeZombie (FREEdoFreeNode (arg_node));
+        arg_node = FREEdoFreeNode (arg_node);
     }
 
     DBUG_RETURN (arg_node);
