@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2004/11/25 18:04:36  jhb
+ * SSAdoSSA change d to SSAdoSsa
+ *
  * Revision 1.5  2004/11/23 19:29:35  ktr
  * COMPILES!!!
  *
@@ -66,7 +69,7 @@ ExplicitAllocation (node *syntax_tree)
      * !!! IF THIS BECOMES UNNECESSARY ONE DAY: !!!
      *     CVP and DCR can be removed as well
      */
-    syntax_tree = SSAdoSSA (syntax_tree);
+    syntax_tree = SSAdoSsa (syntax_tree);
     if ((global.break_after == PH_alloc)
         && ((0 == strcmp (global.break_specifier, "l2f"))
             || (0 == strcmp (global.break_specifier, "cha"))
