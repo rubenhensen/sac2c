@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.17  2004/12/09 14:33:05  sah
+ * added dbug message
+ *
  * Revision 1.16  2004/11/27 00:19:26  cg
  * Typo fixed.
  *
@@ -445,6 +448,7 @@ FREEattribNewType (ntype *attr)
     DBUG_ENTER ("FREEattribNewType");
 
     if (attr != NULL) {
+        DBUG_PRINT ("FREE", ("Freeing ntype at " F_PTR, attr));
         attr = TYfreeType (attr);
     }
 
