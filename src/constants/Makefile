@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 1.2  2001/03/02 14:46:05  sbs
+# make deps done
+#
 # Revision 1.1  2001/03/02 14:32:50  sbs
 # Initial revision
 #
@@ -59,14 +62,11 @@ clean:
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
 constants_ari_ops.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
-constants_ari_ops.o: /usr/include/sys/isa_defs.h ../global/globals.h
+constants_ari_ops.o: /usr/include/sys/isa_defs.h ../../inc/dbug.h
 constants_ari_ops.o: /usr/include/stdio.h /usr/include/sys/va_list.h
 constants_ari_ops.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-constants_ari_ops.o: ../global/types.h ../tree/free.h ../../inc/dbug.h
-constants_ari_ops.o: ../global/my_debug.h ../global/internal_lib.h shape.h
-constants_ari_ops.o: cv2scalar.h cv2cv.h cv2str.h ../tree/tree_compound.h
-constants_ari_ops.o: ../tree/tree_basic.h ../global/Error.h
-constants_ari_ops.o: /usr/include/string.h constants.h
+constants_ari_ops.o: constants.h shape.h ../global/types.h
+constants_ari_ops.o: constants_internal.h
 constants_basic.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 constants_basic.o: /usr/include/sys/isa_defs.h ../global/globals.h
 constants_basic.o: /usr/include/stdio.h /usr/include/sys/va_list.h
@@ -77,8 +77,11 @@ constants_basic.o: cv2scalar.h cv2cv.h cv2str.h ../tree/tree_compound.h
 constants_basic.o: ../tree/tree_basic.h ../global/Error.h
 constants_basic.o: /usr/include/string.h constants.h constants_internal.h
 constants_struc_ops.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
-constants_struc_ops.o: /usr/include/sys/isa_defs.h constants.h shape.h
-constants_struc_ops.o: ../global/types.h constants_internal.h
+constants_struc_ops.o: /usr/include/sys/isa_defs.h ../../inc/dbug.h
+constants_struc_ops.o: /usr/include/stdio.h /usr/include/sys/va_list.h
+constants_struc_ops.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
+constants_struc_ops.o: constants.h shape.h ../global/types.h
+constants_struc_ops.o: constants_internal.h
 cv2cv.o: ../../inc/dbug.h /usr/include/stdio.h
 cv2cv.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 cv2cv.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h

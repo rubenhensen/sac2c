@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.5  2001/03/02 14:46:04  sbs
+# make deps done
+#
 # Revision 3.4  2001/03/02 10:35:53  dkr
 # /home/dkr/sac/BASE/sac2c/src/c-interface/RCS/Makefile,v used in touch-rules
 #
@@ -91,7 +94,6 @@ map_cwrapper.o: ../tree/tree_compound.h ../global/Error.h ../global/globals.h
 map_cwrapper.o: ../global/internal_lib.h map_cwrapper.h ../global/my_debug.h
 map_cwrapper.o: ../../inc/dbug.h ../tree/traverse.h ../print/convert.h
 map_cwrapper.o: ../modules/filemgr.h ../tree/free.h ../global/resource.h
-map_cwrapper.o: ../typecheck/shape.h
 print_interface.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 print_interface.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 print_interface.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
