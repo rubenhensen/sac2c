@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.85  2004/08/08 15:48:59  ktr
+ * PREC1prf added in order to remove inc_rc/dec_rc instructions for global
+ * objects.
+ *
  * Revision 3.84  2004/08/06 13:13:49  ktr
  * MakeMergeAssign does not need to care about RC in EMM
  *
@@ -1029,6 +1033,39 @@ PREC1exprs_ap (node *current, node *formal)
 /******************************************************************************
  *
  * Function:
+ *   node *PREC1exprs_prf( node *current, node *formal)
+ *
+ * Description:
+ *   Removes all artificial parameters.
+ *
+ ******************************************************************************/
+
+static node *
+PREC1exprs_prf (node *current)
+{
+    node *expr;
+
+    DBUG_ENTER ("PREC1exprs_ap");
+
+    if (EXPRS_NEXT (current) != NULL) {
+        EXPRS_NEXT (current) = PREC1exprs_prf (EXPRS_NEXT (current));
+    }
+
+    expr = EXPRS_EXPR (current);
+
+    if (NODE_TYPE (expr) == N_id) {
+        if ((ID_STATUS (expr) == ST_artificial)
+            && (VARDEC_OR_ARG_STATUS (ID_VARDEC (expr)) == ST_artificial)) {
+            current = FreeNode (current);
+        }
+    }
+
+    DBUG_RETURN (current);
+}
+
+/******************************************************************************
+ *
+ * Function:
  *   node *PREC1exprs_return( node *ret_exprs, node *ret_node)
  *
  * Description:
@@ -1133,6 +1170,43 @@ PREC1ap (node *arg_node, info *arg_info)
             AP_ARGS (arg_node)
               = PREC1exprs_ap (AP_ARGS (arg_node), FUNDEF_ARGS (AP_FUNDEF (arg_node)));
         }
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *PREC1prf( node *arg_node, info *arg_info)
+ *
+ * Description:
+ *   Traverses the prf arguments using function PREC1exprs_prf iff
+ *   this prf is a inc_rc/dec_rc prf.
+ *
+ ******************************************************************************/
+
+node *
+PREC1prf (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("PREC1prf");
+
+    switch (PRF_PRF (arg_node)) {
+    case F_inc_rc:
+        PRF_ARGS (arg_node) = PREC1exprs_prf (PRF_ARGS (arg_node));
+        if (CountExprs (PRF_ARGS (arg_node)) == 1) {
+            arg_node = FreeTree (arg_node);
+        }
+        break;
+
+    case F_dec_rc:
+        PRF_ARGS (arg_node) = PREC1exprs_prf (PRF_ARGS (arg_node));
+        if (PRF_ARGS (arg_node) == NULL) {
+            arg_node = FreeTree (arg_node);
+        }
+        break;
+
+    default:
     }
 
     DBUG_RETURN (arg_node);

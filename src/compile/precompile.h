@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.20  2004/08/08 15:48:59  ktr
+ * PREC1prf added in order to remove inc_rc/dec_rc instructions for global
+ * objects.
+ *
  * Revision 3.19  2004/07/22 14:13:50  ktr
  * - DO_SKIP is traversed by new traversal function PRECdo
  * - Third traversal now lifts constant args from funp
@@ -110,6 +114,7 @@ extern node *PREC1assign (node *arg_node, info *arg_info);
 extern node *PREC1let (node *arg_node, info *arg_info);
 extern node *PREC1icm (node *arg_node, info *arg_info);
 extern node *PREC1ap (node *arg_node, info *arg_info);
+extern node *PREC1prf (node *arg_node, info *arg_info);
 extern node *PREC1return (node *arg_node, info *arg_info);
 extern node *PREC1id (node *arg_node, info *arg_info);
 
