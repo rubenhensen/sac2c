@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.199  1998/04/24 01:13:09  dkr
+ * added PrintSync
+ *
  * Revision 1.198  1998/04/21 13:31:06  dkr
  * NWITH2_SEG renamed to NWITH2_SEGS
  *
@@ -2097,7 +2100,35 @@ PrintSPMD (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintSPMD");
 
-    fprintf (outfile, "/*** begin of SPMD region ***/\n");
+    fprintf (outfile, "/*** begin of SPMD region ***\n");
+    INDENT;
+    fprintf (outfile, " ***\n");
+    INDENT;
+    fprintf (outfile, " *** in:    ");
+
+    if (SPMD_IN (arg_node) != NULL) {
+        SPMD_IN (arg_node) = Trav (SPMD_IN (arg_node), arg_info);
+    }
+
+    fprintf (outfile, "\n");
+    INDENT;
+    fprintf (outfile, " *** out:   ");
+
+    if (SPMD_OUT (arg_node) != NULL) {
+        SPMD_OUT (arg_node) = Trav (SPMD_OUT (arg_node), arg_info);
+    }
+
+    fprintf (outfile, "\n");
+    INDENT;
+    fprintf (outfile, " *** inout: ");
+
+    if (SPMD_INOUT (arg_node) != NULL) {
+        SPMD_INOUT (arg_node) = Trav (SPMD_INOUT (arg_node), arg_info);
+    }
+
+    fprintf (outfile, "\n");
+    INDENT;
+    fprintf (outfile, " ***/\n");
 
     indent++;
     SPMD_REGION (arg_node) = Trav (SPMD_REGION (arg_node), arg_info);
@@ -2105,6 +2136,37 @@ PrintSPMD (node *arg_node, node *arg_info)
 
     INDENT
     fprintf (outfile, "/*** end of SPMD region ***/");
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************/
+
+node *
+PrintSync (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintSync");
+
+    fprintf (outfile, "/*** begin of sync region ***\n");
+    INDENT;
+    fprintf (outfile, " ***\n");
+    INDENT;
+    fprintf (outfile, " *** inout: ");
+
+    if (SYNC_INOUT (arg_node) != NULL) {
+        SYNC_INOUT (arg_node) = Trav (SYNC_INOUT (arg_node), arg_info);
+    }
+
+    fprintf (outfile, "\n");
+    INDENT;
+    fprintf (outfile, " ***/\n");
+
+    indent++;
+    SYNC_REGION (arg_node) = Trav (SYNC_REGION (arg_node), arg_info);
+    indent--;
+
+    INDENT
+    fprintf (outfile, "/*** end of sync region ***/");
 
     DBUG_RETURN (arg_node);
 }
