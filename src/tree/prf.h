@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2002/09/11 23:23:35  dkr
+ * ..._LEGAL_PRF corrected
+ *
  * Revision 3.2  2002/09/09 17:40:59  dkr
  * categories removed (too error prone!)
  *
@@ -23,9 +26,9 @@
 
 /* the bounds of the prf list */
 
-#define FIRST_LEGAL_PRF F_toi
+#define FIRST_LEGAL_PRF F_toi_S
 
-#define LAST_LEGAL_PRF F_rotate
+#define LAST_LEGAL_PRF F_type_error
 
 /* all legal prfs */
 
