@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.12  2004/08/18 12:55:33  skt
+ * added case MUTH_ANY into CRECEInsertCell
+ * changed int into mtexecmode_t at executionmodes
+ *
  * Revision 1.11  2004/08/17 10:37:31  skt
  * push / pop added at N_block
  *
@@ -75,13 +79,13 @@
  */
 struct INFO {
     int last_cellid;
-    int last_execmode;
+    mtexecmode_t last_execmode;
 };
 
 /*
  * INFO macros
- *    node*    CRECE_LASTCELLID        (the cellid of the last assignment)
- *    node*    CREEC_LASTEXECMODE      (the executiomode of the last cell)
+ *    int           CRECE_LASTCELLID        (the cellid of the last assignment)
+ *    mtexecmode_t  CREEC_LASTEXECMODE      (the executiomode of the last cell)
  */
 #define INFO_CRECE_LASTCELLID(n) (n->last_cellid)
 #define INFO_CRECE_LASTEXECMODE(n) (n->last_execmode)
@@ -238,6 +242,8 @@ CRECEInsertCell (node *act_assign)
     case MUTH_MULTI:
         new_assign = MakeAssign (MakeMT (MakeBlock (act_assign, NULL)), NULL);
         break;
+    case MUTH_ANY:
+        DBUG_ASSERT ((FALSE), "MUTH_ANY is impossible here");
     }
 
     ASSIGN_EXECMODE (new_assign) = ASSIGN_EXECMODE (act_assign);
