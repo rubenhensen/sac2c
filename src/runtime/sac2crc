@@ -143,6 +143,8 @@ CACHE2_LINE    :=  64
 CACHE2_ASSOC   :=  1
 
 
+target epikur::par:
+
 
 
 
@@ -193,3 +195,7 @@ target picard_cc::suncc::picard:
 CCFLAGS        +=  "-xtarget=ultra2 -xcache=16/32/1:1024/64/1"
 
 
+
+target epikur_cc::suncc::epikur:
+
+CCFLAGS        +=  "-xtarget=ultra"
