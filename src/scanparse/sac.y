@@ -3,7 +3,11 @@
 /*
  *
  * $Log$
- * Revision 1.70  1995/07/13 15:24:36  hw
+ * Revision 1.71  1995/07/14 09:48:22  hw
+ * changed rule fundec( now name of a function can be a primitive
+ *  function name)
+ *
+ * Revision 1.70  1995/07/13  15:24:36  hw
  * the neutral element of a primitive function can be spezified
  * in the fold-part of a with-loop now
  *
@@ -546,7 +550,7 @@ fundecs: fundec fundecs { $1->node[1]=$2;
 	| fundec {$$=$1;}
 	;
 
-fundec: returntypes ID BRACKET_L argtypes BRACKET_R SEMIC
+fundec: returntypes fun_name BRACKET_L argtypes BRACKET_R SEMIC
           { $$=MakeNode(N_fundef);
             $$->node[0]=NULL;	/* there is no function body here! */
             $$->node[2]=$4;	/* argument declarations */
@@ -560,7 +564,7 @@ fundec: returntypes ID BRACKET_L argtypes BRACKET_R SEMIC
                         mdb_nodetype[ $$->nodetype ], $$, $$->info.types->id,
                         mdb_nodetype[ $$->node[2]->nodetype ], $$->node[2]));
           }
-	| returntypes ID BRACKET_L BRACKET_R SEMIC
+	| returntypes fun_name BRACKET_L BRACKET_R SEMIC
           { $$=MakeNode(N_fundef);
             $$->node[0]=NULL;   /* there is no function body here! */
             $$->nnode=0;
