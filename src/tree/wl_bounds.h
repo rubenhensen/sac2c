@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2004/11/25 16:55:42  skt
+ * big compiler switch during SACDevCampDK 2k4
+ *
  * Revision 1.12  2004/11/25 16:23:43  skt
  * sone debugging ...
  *
@@ -91,9 +94,11 @@ extern bool WLBnameOrValEq (const char *name1, int val1, const char *name2, int 
 extern bool WLBnodeOrIntEq (nodetype nt1, void *node_or_int1, nodetype nt2,
                             void *node_or_int2, int shape);
 extern bool WLBnodeOrIntIntEq (nodetype nt1, void *node_or_int1, int val2, int shape);
-extern bool WLBnodeOrIntStrEq (nodetype nt1, void *node_or_int1, char *name2, int shape);
+extern bool WLBnodeOrIntStrEq (nodetype nt1, void *node_or_int1, const char *name2,
+                               int shape);
 
-extern bool WLBnameOrValLe (char *name1, int val1, char *name2, int val2, int shape);
+extern bool WLBnameOrValLe (const char *name1, int val1, const char *name2, int val2,
+                            int shape);
 extern bool WLBnodeOrIntLe (nodetype nt1, void *node_or_int1, nodetype nt2,
                             void *node_or_int2, int shape);
 
