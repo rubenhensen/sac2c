@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.231  1998/05/21 14:45:45  dkr
+ * added a \n in PrintModarray, PrintGenarray, PrintFold...
+ *
  * Revision 1.230  1998/05/19 15:40:41  dkr
  * fixed a bug in PrintWLgridVar
  *
@@ -1870,6 +1873,8 @@ PrintGenarray (node *arg_node, node *arg_info)
 
         INDENT;
     } else {
+        fprintf (outfile, "\n");
+        INDENT;
         ret_node = ASSIGN_INSTR (BLOCK_INSTR (GENARRAY_BODY (arg_node)));
     }
 
@@ -1902,6 +1907,8 @@ PrintModarray (node *arg_node, node *arg_info)
 
         INDENT;
     } else {
+        fprintf (outfile, "\n");
+        INDENT;
         ret_node = ASSIGN_INSTR (BLOCK_INSTR (MODARRAY_BODY (arg_node)));
     }
 
@@ -1934,6 +1941,8 @@ PrintFoldfun (node *arg_node, node *arg_info)
 
         INDENT;
     } else {
+        fprintf (outfile, "\n");
+        INDENT;
         ret_node = ASSIGN_INSTR (BLOCK_INSTR (FOLDFUN_BODY (arg_node)));
     }
 
@@ -1972,6 +1981,8 @@ PrintFoldprf (node *arg_node, node *arg_info)
 
         INDENT;
     } else {
+        fprintf (outfile, "\n");
+        INDENT;
         ret_node = ASSIGN_INSTR (BLOCK_INSTR (FOLDPRF_BODY (arg_node)));
     }
 
