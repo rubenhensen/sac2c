@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.15  2004/08/26 17:05:04  skt
+ * handling of MUTH_MULTI_SPECIALIZED added
+ *
  * Revision 1.14  2004/08/19 17:45:53  skt
  * initialization of new_assign added
  *
@@ -207,7 +210,8 @@ CRECEassign (node *arg_node, info *arg_info)
         DBUG_PRINT ("CRECE", ("trav from instruction"));
     }
 
-    if (ASSIGN_EXECMODE (arg_node) != MUTH_ANY) {
+    if ((ASSIGN_EXECMODE (arg_node) != MUTH_ANY)
+        && (ASSIGN_EXECMODE (arg_node) != MUTH_MULTI_SPECIALIZED)) {
         /* the number of initial cells depents on the usage of split-phase synchro-
          * nisation */
         if (MUTH_SPLITPHASE_ENABLED == TRUE) {
@@ -250,6 +254,8 @@ CRECEInsertCell (node *act_assign)
     case MUTH_MULTI:
         new_assign = MakeAssign (MakeMT (MakeBlock (act_assign, NULL)), NULL);
         break;
+    case MUTH_MULTI_SPECIALIZED:
+        DBUG_ASSERT ((FALSE), "MUTH_MULTI_SPECIALIZED is impossible here");
     case MUTH_ANY:
         DBUG_ASSERT ((FALSE), "MUTH_ANY is impossible here");
     }
