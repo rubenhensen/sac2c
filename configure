@@ -3633,11 +3633,11 @@ echo "${ECHO_T}Sun cc settings" >&6
 elif  test "$DECC" = yes ; then
   OPT_O0=""
 
-  OPT_O1=-xO2
+  OPT_O1=-O1
 
-  OPT_O2=-xO4
+  OPT_O2=-O2
 
-  OPT_O3=-x05
+  OPT_O3=-03
 
   OPT_g=-g
 
@@ -3656,17 +3656,23 @@ echo "${ECHO_T}Compaq/DEC cc settings" >&6
 elif  test "$MACC" = yes ; then
   OPT_O0=""
 
-  OPT_O1=-xO2
+  OPT_O1=-O1
 
-  OPT_O2=-xO4
+  OPT_O2=-O2
 
-  OPT_O3=-x05
+  OPT_O3=-O3
 
   OPT_g=-g
 
   RCLDFLAGS="-Wl,-multiply_defined,suppress"
 
   RCCCFLAGS="-Wall -Wno-unused -fno-builtin"
+
+  MKCCFLAGS="-g"
+
+  PDCCFLAGS="-g3"
+
+  DEPSFLAG="-M"
 
   echo "$as_me:$LINENO: result: Apple cc settings" >&5
 echo "${ECHO_T}Apple cc settings" >&6
@@ -3684,6 +3690,12 @@ else
   RCLDFLAGS=""
 
   RCCCFLAGS=""
+
+  MKCCFLAGS=""
+
+  PDCCFLAGS=""
+
+  DEPSFLAG="-M"
 
   echo "$as_me:$LINENO: result: none found" >&5
 echo "${ECHO_T}none found" >&6

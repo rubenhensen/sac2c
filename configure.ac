@@ -1,5 +1,8 @@
 dnl
 dnl $Log$
+dnl Revision 1.13  2003/03/21 17:25:29  sah
+dnl fixed O flags bug on alpha
+dnl
 dnl Revision 1.12  2003/03/21 17:11:52  sah
 dnl now testing on sqrt for libm
 dnl
@@ -298,9 +301,9 @@ elif [ test "$SUNC" = yes ]; then
   AC_MSG_RESULT([Sun cc settings])
 elif [ test "$DECC" = yes ]; then
   AC_SUBST(OPT_O0, [""])
-  AC_SUBST(OPT_O1, [-xO2])
-  AC_SUBST(OPT_O2, [-xO4])
-  AC_SUBST(OPT_O3, [-x05])
+  AC_SUBST(OPT_O1, [-O1])
+  AC_SUBST(OPT_O2, [-O2])
+  AC_SUBST(OPT_O3, [-03])
   AC_SUBST(OPT_g, [-g])
   AC_SUBST(RCLDFLAGS, [""])
   AC_SUBST(RCCCFLAGS, [""])
@@ -310,12 +313,15 @@ elif [ test "$DECC" = yes ]; then
   AC_MSG_RESULT([Compaq/DEC cc settings])
 elif [ test "$MACC" = yes ]; then
   AC_SUBST(OPT_O0, [""])
-  AC_SUBST(OPT_O1, [-xO2])
-  AC_SUBST(OPT_O2, [-xO4])
-  AC_SUBST(OPT_O3, [-x05])
+  AC_SUBST(OPT_O1, [-O1])
+  AC_SUBST(OPT_O2, [-O2])
+  AC_SUBST(OPT_O3, [-O3])
   AC_SUBST(OPT_g, [-g])
   AC_SUBST(RCLDFLAGS, ["-Wl,-multiply_defined,suppress"])
   AC_SUBST(RCCCFLAGS, ["-Wall -Wno-unused -fno-builtin"])
+  AC_SUBST(MKCCFLAGS, ["-g"])
+  AC_SUBST(PDCCFLAGS, ["-g3"])
+  AC_SUBST(DEPSFLAG, ["-M"])
   AC_MSG_RESULT([Apple cc settings])
 else
   AC_SUBST(OPT_O0, [""])
@@ -325,6 +331,9 @@ else
   AC_SUBST(OPT_g, [""])
   AC_SUBST(RCLDFLAGS, [""])
   AC_SUBST(RCCCFLAGS, [""])
+  AC_SUBST(MKCCFLAGS, [""])
+  AC_SUBST(PDCCFLAGS, [""])
+  AC_SUBST(DEPSFLAG, ["-M"])
   AC_MSG_RESULT([none found])
 fi   
 
