@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.15  2000/04/10 15:43:40  jhs
+ * Played with infering ...
+ *
  * Revision 1.14  2000/03/30 15:10:46  jhs
  *  changed ST_call_mt to ST_call_mt_master
  *
@@ -265,10 +268,10 @@ MustExecuteSingleThreaded (node *arg_node, node *arg_info)
 
             result = testfun (AP_FUNDEF (LET_EXPR (instr)));
 
-#if 0
-      /* normal: use this */
-      result = 
-               CheckLHSforHeavyTypes( instr);
+#if 1
+            /* normal: use this */
+            result = 0;
+            /* CheckLHSforHeavyTypes( instr);  */
 #else
             /* if you want to debug use perhabs this */
             result = CheckLHSforHeavyTypes (instr)
