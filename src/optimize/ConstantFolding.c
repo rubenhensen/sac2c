@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.15  2001/12/11 15:54:30  dkr
+ * GetDim() replaced GetShapeDim()
+ *
  * Revision 3.14  2001/07/18 12:57:45  cg
  * Applications of old tree construction function
  * AppendNodeChain eliminated.
@@ -450,7 +453,7 @@ CalculateArrayOffset (types *array, node *index)
     DBUG_ASSERT ((1 == TYPES_DIM (ARRAY_TYPE (index))), "wrong index vector dimension");
 
     n = TYPES_SHAPE (ARRAY_TYPE (index), 0); /* length of index vector */
-    m = GetDim (array);                      /* dimension of array */
+    m = GetShapeDim (array);                 /* dimension of array */
     tmp_shpseg = Type2Shpseg (array, NULL);
 
     index = ARRAY_AELEMS (index);
@@ -1915,10 +1918,10 @@ CalcSel (node *shape, node *array, types *array_type, node *arg_info)
 
     /* Calculate dimension and shape vector of first argument */
     vec_dim = GetShapeVector (shape, vec_shape);
-    array_dim = GetDim (array_type);
+    array_dim = GetShapeDim (array_type);
     array_length = GetTypesLength (array_type);
     array_shape = Type2Shpseg (array_type, NULL);
-    result_dim = GetDim (INFO_CF_TYPE (arg_info));
+    result_dim = GetShapeDim (INFO_CF_TYPE (arg_info));
     length = GetTypesLength (INFO_CF_TYPE (arg_info));
 
     /* Calculate startposition of result array in argument array */
@@ -2319,7 +2322,7 @@ ArrayPrf (node *arg_node, node *arg_info)
              * get result
              */
             NODE_TYPE (arg_node) = N_num;
-            arg_node->info.cint = GetDim (arg[0]->info.ids->node->info.types);
+            arg_node->info.cint = GetShapeDim (arg[0]->info.ids->node->info.types);
 
             DEC_VAR (arg_info->mask[1], arg[0]->info.ids->node->varno);
             /*
@@ -2604,7 +2607,7 @@ ArrayPrf (node *arg_node, node *arg_info)
             first_elem = EXPRS_EXPR (ARRAY_AELEMS (array));
             if (N_id == NODE_TYPE (first_elem)) {
 
-                dim = GetDim (VARDEC_TYPE (ID_VARDEC (first_elem)));
+                dim = GetShapeDim (VARDEC_TYPE (ID_VARDEC (first_elem)));
                 if (0 != dim)
                     break;
                 /* make array flat here !!! */
