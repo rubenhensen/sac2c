@@ -1,5 +1,9 @@
 #
 # $Log$
+# Revision 1.7  1998/06/29 09:16:42  cg
+# The SAC runtime library is now compiled with optimizations and
+# debug options.
+#
 # Revision 1.6  1998/05/12 14:22:27  dkr
 # make deps done
 #
@@ -23,10 +27,10 @@
 
 
 CC        := gcc
-CCFLAGS   := -ansi -Wall -D__EXTENSIONS__
+CCFLAGS   := -ansi -Wall -D__EXTENSIONS__ -g -O3
 
 INCS := -I../global -I../../inc
-OBJS := $(patsubst %.c,%.o,$(wildcard libsac_*.c))
+OBJS := $(patsubst %.c,%.o,$(wildcard libsac_*.c)) libsac_trace_mt.o
 
 .PHONY: all
 
@@ -36,6 +40,9 @@ all:  libsac.a
 libsac.a: $(OBJS)
 	ar rc libsac.a $(OBJS)
 	ranlib libsac.a
+
+libsac_trace_mt.o: libsac_mt.c 
+	$(CC) -DTRACE $(CCFLAGS) $(CFLAGS) $(INCS) -o $@ -c $<
 
 %.o: %.c 
 	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) -o $@ -c $<
