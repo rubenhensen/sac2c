@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.5  2000/06/15 14:38:01  mab
+ * dummies for APC block and let added
+ *
  * Revision 1.4  2000/06/14 10:43:19  mab
  * dummies for APC ap, exprs, id, prf, fundef added
  *
@@ -43,5 +46,7 @@ extern node *APCexprs (node *arg_node, node *arg_info);
 extern node *APCid (node *arg_node, node *arg_info);
 extern node *APCprf (node *arg_node, node *arg_info);
 extern node *APCfundef (node *arg_node, node *arg_info);
+extern node *APCblock (node *arg_node, node *arg_info);
+extern node *APClet (node *arg_node, node *arg_info);
 
 #endif /* sac_pad_collect_h */

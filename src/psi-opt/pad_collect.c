@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.5  2000/06/15 14:38:01  mab
+ * dummies for APC block and let added
+ *
  * Revision 1.4  2000/06/14 10:43:19  mab
  * dummies for APC ap, exprs, id, prf, fundef added
  *
@@ -251,6 +254,46 @@ APCfundef (node *arg_node, node *arg_info)
     DBUG_ENTER ("APCfundef");
 
     DBUG_PRINT ("AP", ("fundef-node detected"));
+
+    DBUG_RETURN (arg_node);
+}
+
+/*****************************************************************************
+ *
+ * function:
+ *   node *APCblock(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   only a dummy for now
+ *
+ *****************************************************************************/
+
+node *
+APCblock (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("APCblock");
+
+    DBUG_PRINT ("AP", ("block-node detected"));
+
+    DBUG_RETURN (arg_node);
+}
+
+/*****************************************************************************
+ *
+ * function:
+ *   node *APClet(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   only a dummy for now
+ *
+ *****************************************************************************/
+
+node *
+APClet (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("APClet");
+
+    DBUG_PRINT ("AP", ("let-node detected"));
 
     DBUG_RETURN (arg_node);
 }
