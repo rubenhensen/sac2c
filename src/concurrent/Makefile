@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.9  1998/04/25 13:17:53  dkr
+# make deps done
+#
 # Revision 1.8  1998/04/23 22:08:51  dkr
 # changed INCS
 #
@@ -57,4 +60,6 @@ spmdregions.o: /usr/include/sys/va_list.h /usr/include/string.h
 spmdregions.o: /usr/include/stdlib.h ../global/globals.h
 spmdregions.o: ../global/internal_lib.h ../global/free.h ../../inc/dbug.h
 spmdregions.o: ../global/my_debug.h /usr/include/malloc.h
-spmdregions.o: ../global/traverse.h ../optimize/optimize.h spmdregions.h
+spmdregions.o: ../global/traverse.h ../optimize/optimize.h
+spmdregions.o: ../optimize/DupTree.h ../refcount/refcount.h
+spmdregions.o: ../typecheck/typecheck.h spmdregions.h
