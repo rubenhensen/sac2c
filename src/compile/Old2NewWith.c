@@ -29,7 +29,7 @@ ReadOneGenPart (FILE *infile, node *id_node)
     for (i = 0; i < SHPSEG_SHAPE (TYPES_SHPSEG (VARDEC_TYPE (ID_VARDEC (id_node))), 0);
          i++) {
         if (error
-            = (feof (infile) || (fscanf (infile, "%i", &val) == EOF) || ferror (infile)))
+            = (feof (infile) || (fscanf (infile, "%d ", &val) == EOF) || ferror (infile)))
             break;
         if (aelems == NULL) {
             aelem1 = aelems = MakeExprs (MakeNum (val), NULL);
@@ -70,7 +70,7 @@ ReadOneGenPart (FILE *infile, node *id_node)
 node *
 BuildNpart (FILE *infile, node *arg_node)
 {
-    node *del_node, *new_node = NULL;
+    node *tmp_node, *new_node = NULL;
     node *a, *b, *s, *w;
 
     DBUG_ENTER ("BuildNpart");
@@ -78,10 +78,10 @@ BuildNpart (FILE *infile, node *arg_node)
     error = 0;
 
     do {
-        del_node = new_node;
+        tmp_node = new_node;
         new_node
           = DupTree (arg_node, NULL); /* arg_node is the base of the new syntaxtree */
-        NPART_NEXT (new_node) = del_node;
+        NPART_NEXT (new_node) = tmp_node;
 
         /* replace now the generator-nodes */
         if (!error)
@@ -100,10 +100,10 @@ BuildNpart (FILE *infile, node *arg_node)
 
     if (error) {
         /* remove uncompleted part of the new Npart-syntaxtree */
-        del_node = new_node;
+        tmp_node = new_node;
         new_node = NPART_NEXT (new_node);
-        NPART_NEXT (del_node) = NULL;
-        FreeTree (del_node);
+        NPART_NEXT (tmp_node) = NULL;
+        FreeTree (tmp_node);
     }
     /* if generation was succesful, only use new Npart-syntaxtree */
     if (new_node != NULL) {
