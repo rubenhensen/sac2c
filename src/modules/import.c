@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.18  2003/03/24 16:38:00  sbs
+ * CreateCppCallString used.
+ *
  * Revision 3.17  2003/03/21 18:02:56  sbs
  * preprocessor flags SAC_FOR_xxx eliminatred again!
  *
@@ -353,16 +356,7 @@ GenMod (char *name, int checkdec)
         SYSABORT (("Unable to open file \"%s\"", buffer));
     }
 
-    strcpy (cccallstr, config.cpp_file);
-
-    for (i = 0; i < num_cpp_vars; i++) {
-        strcat (cccallstr, " ");
-        strcat (cccallstr, config.opt_D);
-        strcat (cccallstr, cppvars[i]);
-    }
-
-    strcat (cccallstr, " ");
-    strcat (cccallstr, pathname);
+    CreateCppCallString (pathname, cccallstr);
 
     if (show_syscall)
         NOTE (("yyin = popen( %s)", cccallstr));
@@ -1812,16 +1806,7 @@ ImportOwnDeclaration (char *name, file_type modtype)
     if (pathname == NULL) {
         mod_tab = Free (mod_tab);
     } else {
-        strcpy (cccallstr, config.cpp_file);
-
-        for (i = 0; i < num_cpp_vars; i++) {
-            strcat (cccallstr, " ");
-            strcat (cccallstr, config.opt_D);
-            strcat (cccallstr, cppvars[i]);
-        }
-
-        strcat (cccallstr, " ");
-        strcat (cccallstr, pathname);
+        CreateCppCallString (pathname, cccallstr);
 
         if (show_syscall)
             NOTE (("yyin = popen( %s)", cccallstr));
