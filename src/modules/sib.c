@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.9  1995/11/10 15:05:04  cg
+ * Revision 1.10  1995/12/01 17:21:06  cg
+ * bug in freeing nodelists fixed
+ * storage of alternative link names converted to new pragma node
+ *
+ * Revision 1.9  1995/11/10  15:05:04  cg
  * converted to new error macros
  *
  * Revision 1.8  1995/11/01  09:34:26  cg
@@ -153,7 +157,6 @@ void
 SibPrintTypes (nodelist *types)
 {
     node *type;
-    nodelist *tmp;
 
     DBUG_ENTER ("SibPrintTypes");
 
@@ -171,9 +174,7 @@ SibPrintTypes (nodelist *types)
         fprintf (sibfile, "%s=%s;\n", TYPEDEF_NAME (type),
                  Type2String (TYPEDEF_TYPE (type), 0));
 
-        tmp = types;
         types = NODELIST_NEXT (types);
-        free (tmp);
     }
 
     DBUG_VOID_RETURN;
@@ -197,7 +198,7 @@ void
 SibPrintFunctions (nodelist *funs)
 {
     node *fun, *obj;
-    nodelist *objs, *tmp;
+    nodelist *objs;
 
     DBUG_ENTER ("SibPrintFunctions");
 
@@ -212,8 +213,8 @@ SibPrintFunctions (nodelist *funs)
 
         fprintf (sibfile, "%s ", FUNDEF_NAME (fun));
 
-        if (FUNDEF_ALIAS (fun) != NULL) {
-            fprintf (sibfile, "{%s} ", FUNDEF_ALIAS (fun));
+        if ((FUNDEF_PRAGMA (fun) != NULL) && (FUNDEF_LINKNAME (fun) != NULL)) {
+            fprintf (sibfile, "{%s} ", FUNDEF_LINKNAME (fun));
         }
 
         fprintf (sibfile, "(");
@@ -253,9 +254,7 @@ SibPrintFunctions (nodelist *funs)
 
         fprintf (sibfile, ";\n");
 
-        tmp = funs;
         funs = NODELIST_NEXT (funs);
-        free (tmp);
     }
 
     DBUG_VOID_RETURN;
@@ -317,7 +316,6 @@ node *
 SIBfundef (node *arg_node, node *arg_info)
 {
     FILE *store_outfile;
-    nodelist *types, *funs, *objs;
     node *fundef;
 
     DBUG_ENTER ("SIBfundef");
@@ -327,11 +325,8 @@ SIBfundef (node *arg_node, node *arg_info)
     mod_name_con = mod_name_con_2;
 
     fundef = FUNDEC_DEF (arg_node);
-    types = FUNDEF_NEEDTYPES (fundef);
-    funs = FUNDEF_NEEDFUNS (fundef);
-    objs = FUNDEF_NEEDOBJS (fundef);
 
-    if (FUNDEF_INLINE (fundef) || (objs != NULL)) {
+    if (FUNDEF_INLINE (fundef) || (FUNDEF_NEEDOBJS (fundef) != NULL)) {
         fprintf (sibfile, "\n");
 
         fprintf (sibfile, "%s(", FUNDEF_NAME (fundef));
@@ -351,21 +346,19 @@ SIBfundef (node *arg_node, node *arg_info)
 
         fprintf (sibfile, "implicit:\n{\n");
 
-        if (types != NULL) {
+        if (FUNDEF_NEEDTYPES (fundef) != NULL) {
             fprintf (sibfile, "types:\n");
-            SibPrintTypes (types);
-            types = NULL;
+            SibPrintTypes (FUNDEF_NEEDTYPES (fundef));
         }
 
-        if (objs != NULL) {
+        if (FUNDEF_NEEDOBJS (fundef) != NULL) {
             fprintf (sibfile, "objects:\n");
-            SibPrintObjects (objs);
+            SibPrintObjects (FUNDEF_NEEDOBJS (fundef));
         }
 
-        if (funs != NULL) {
+        if (FUNDEF_NEEDFUNS (fundef) != NULL) {
             fprintf (sibfile, "functions:\n");
-            SibPrintFunctions (funs);
-            funs = NULL;
+            SibPrintFunctions (FUNDEF_NEEDFUNS (fundef));
         }
 
         fprintf (sibfile, "}\n");
