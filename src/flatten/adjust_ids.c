@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2000/05/08 11:37:53  cg
+ * Comment added.
+ *
  * Revision 1.3  2000/03/02 17:50:11  cg
  * Added support for debug printing functions right after having
  * adjusted the identifiers.
@@ -163,6 +166,15 @@ AIids (ids *arg_ids, node *arg_info)
                                                         IDS_VARDEC(INFO_AI_IDS(arg_info)));
         */
         ID_VARDEC (LET_EXPR (new_let)) = IDS_VARDEC (INFO_AI_IDS (arg_info));
+        /*
+         * This back reference is a dirty trick. Formally we would have to introduce
+         * a new variable declaration within the adjusted function definition. The
+         * problem simply is that once we naively inline this function, there will be
+         * two identical variable declarations in the calling context.
+         * Therefore, we want to keep the sets of local declarations in the calling
+         * function and in the called function disjoint.
+         */
+
         if (IDS_REFCNT (arg_ids) == -1) {
             ID_REFCNT (LET_EXPR (new_let)) = -1;
         } else {
