@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.56  2004/06/03 09:03:31  khf
+ * Added support for prf F_idx_sel
+ *
  * Revision 1.55  2004/03/10 00:10:17  dkrHH
  * old backend removed
  *
@@ -920,6 +923,11 @@ SSACFStructOpWrapper (prf op, constant *idx, node *expr)
                 }
                 result = SCODupStructConstant2Expr (struc_co);
             }
+            break;
+
+        case F_idx_sel:
+            SCO_HIDDENCO (struc_co) = COIdxSel (idx, SCO_HIDDENCO (struc_co));
+            result = SCODupStructConstant2Expr (struc_co);
             break;
 
         case F_reshape:
@@ -2734,6 +2742,21 @@ SSACFFoldPrfExpr (prf op, node **arg_expr)
                sel-sel combinations */
             new_node = SSACFSel (arg_expr[0], arg_expr[1]);
         }
+        break;
+
+    case F_idx_sel:
+        if
+            TWO_CONST_ARG (arg_co)
+            {
+                /* for pure constant args */
+                new_co = COIdxSel (arg_co[0], arg_co[1]);
+            }
+        else if
+            FIRST_CONST_ARG_OF_TWO (arg_co, arg_expr)
+            {
+                /* for some non constant expression and constant index skalar */
+                new_node = SSACFStructOpWrapper (F_idx_sel, arg_co[0], arg_expr[1]);
+            }
         break;
 
     case F_take_SxV:
