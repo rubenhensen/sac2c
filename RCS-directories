@@ -28,3 +28,4 @@ src/c-interface
 
 tools/cache_analysis
 tools/cache_analysis/src
+src/constants
