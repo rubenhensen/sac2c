@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2002/09/09 19:38:31  dkr
+ * print.h included for prf_name_string
+ *
  * Revision 3.6  2002/09/09 19:35:40  dkr
  * prf_name_str renamed into prf_name_string
  *
@@ -66,6 +69,7 @@
 #include "prf.h"
 #include "free.h"
 #include "DupTree.h"
+#include "print.h"
 #include "gen_pseudo_fun.h"
 #include "typecheck.h"
 
