@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.23  2001/03/21 11:05:13  dkr
+ * superfluous include of scnprs.h removed
+ *
  * Revision 3.22  2001/03/19 16:44:07  dkr
  * WLSEG_HOMSV removed (WLSEG_SV used instead)
  *
@@ -87,7 +90,6 @@
 #include "Error.h"
 #include "dbug.h"
 #include "my_debug.h"
-#include "scnprs.h"
 #include "free.h"
 #include "internal_lib.h"
 
