@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.126  1997/04/28 12:00:25  cg
+ * Revision 1.127  1997/05/05 07:46:09  cg
+ * SIB limit removed
+ *
+ * Revision 1.126  1997/04/28  12:00:25  cg
  * SIB syntax slightly changed:
  * key word classtype used instead of Class.
  *
@@ -2826,7 +2829,7 @@ simpletype: TYPE_INT
  */
 
 
-sib: sibheader siblinkwith sibtypes sibobjs sibfuns siblimit
+sib: sibheader siblinkwith sibtypes sibobjs sibfuns
        {
          $$=MakeSib(mod_name, $1, $2, $3, $4, $5);
 

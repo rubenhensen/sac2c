@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.38  1997/04/28 11:57:08  cg
+ * Revision 1.39  1997/05/05 07:46:09  cg
+ * SIB limit removed
+ *
+ * Revision 1.38  1997/04/28  11:57:08  cg
  * Syntactic analysis made stricter: ftoi, dtoi, moduledec Moduldec, extern, etc
  * are no longer allowed. Refer to sac_grammar for complete and correct SAC syntax.
  *
@@ -253,8 +256,6 @@ int start_token;
 "*="				{FILTER( MULON );}
 "/="				{FILTER( DIVON );}
 
-"<###>"                         {FILTER( SIBLIMIT );}
-
 "reshape"			{FILTER7( RESHAPE, prf_name_str[F_reshape] );}
 "shape"				{FILTER7( SHAPE,prf_name_str[F_shape] );}
 "take"				{FILTER7( TAKE,prf_name_str[F_take] );}
@@ -282,10 +283,10 @@ int start_token;
 "fold"				{FILTER( FOLD );}
 "inline"			{FILTER( INLINE );}
 
-ModuleDec			{FILTER( MODDEC );}
-Module				{FILTER( MODIMP );}
-ClassDec			{FILTER( CLASSDEC );}
-Class	                        {FILTER( CLASSIMP );}
+"ModuleDec"			{FILTER( MODDEC );}
+"Module"		       	{FILTER( MODIMP );}
+"ClassDec"			{FILTER( CLASSDEC );}
+"Class"	                        {FILTER( CLASSIMP );}
 
 "import"			{FILTER( IMPORT );}
 "all"				{FILTER( ALL );}
