@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/04/01 13:27:24  cg
+ * new cache write policy resource entry added to resource data type
+ *
  * Revision 2.2  1999/03/31 08:50:49  cg
  * added new resource entries CACHEx_WRITEPOL
  *
@@ -122,17 +125,17 @@ typedef struct {
     int cache1_size;
     int cache1_line;
     int cache1_assoc;
-    int cache1_writepol;
+    char *cache1_writepol;
 
     int cache2_size;
     int cache2_line;
     int cache2_assoc;
-    int cache2_writepol;
+    char *cache2_writepol;
 
     int cache3_size;
     int cache3_line;
     int cache3_assoc;
-    int cache3_writepol;
+    char *cache3_writepol;
 } configuration_t;
 
 /*****************************************************************************
