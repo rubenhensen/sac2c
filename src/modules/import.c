@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.6  1995/01/04 13:44:59  sbs
+ * Revision 1.7  1995/01/04 18:19:36  sbs
+ * bug fixed in GenSyms (multiple implicit types/funs do work as well now!)
+ *
+ * Revision 1.6  1995/01/04  13:44:59  sbs
  * bug in AppendModnameToSymbol fixed:
  * done resetted to 0 after each types-node!
  *
@@ -275,7 +278,7 @@ GenSyms (mod *mod)
                 new->id = (char *)malloc (strlen (ptr->info.types->id));
                 strcpy (new->id, ptr->info.types->id);
                 new->flag = NOT_IMPORTED;
-                new->next = mod->syms[1];
+                new->next = mod->syms[i];
                 mod->syms[i] = new;
 
                 ptr = ptr->node[next]; /* next declaration! */
