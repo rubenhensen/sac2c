@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.30  2000/05/25 23:03:19  dkr
+ * usage(): fold-inline-bug removed from BUGS section :-))
+ *
  * Revision 2.29  2000/05/25 11:57:18  dkr
  * output of compiler phase names corrected
  * typo corrected
@@ -645,9 +648,6 @@ usage ()
     printf ("\n\nBUGS:\n\n"
 
             "\tBugs??  We????\n"
-            "\n"
-            "\tDo not annotate functions \"inline\" which contain fold-with-loops!\n"
-            "\tIt leads to the creation of C-code which does not compile properly!\n"
             "\n"
             "\tUnfortunately, two of our optimizations are quite buggy 8-(\n"
             "\tTherefore, we decided to preset -noLIR and -noDLAW in the current\n"
