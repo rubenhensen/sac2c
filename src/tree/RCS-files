@@ -48,3 +48,4 @@ deserialize.c
 deserialize_info.h
 check.c
 check.h
+check_global.c
