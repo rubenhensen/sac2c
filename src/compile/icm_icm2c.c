@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.17  2002/10/10 23:51:08  dkr
+ * ICM_STR added
+ *
  * Revision 3.16  2002/10/08 16:38:13  dkr
  * some DBUG_ASSERTs added
  *
@@ -84,6 +87,8 @@
 #endif
 
 #define ICM_ID(name) exprs = GetNextId (&name, exprs);
+
+#define ICM_STR(name) exprs = GetNextString (&name, exprs);
 
 #define ICM_INT(name) exprs = GetNextInt (&name, exprs);
 
@@ -578,6 +583,7 @@ GetNextVarInt (int **ret, int cnt, node *exprs)
 #undef ICM_ICM
 #undef ICM_NT
 #undef ICM_ID
+#undef ICM_STR
 #undef ICM_INT
 #undef ICM_VARANY
 #undef ICM_VARNT

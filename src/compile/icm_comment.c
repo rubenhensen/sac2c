@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2002/10/10 23:51:08  dkr
+ * ICM_STR added
+ *
  * Revision 3.7  2002/07/10 19:24:48  dkr
  * several ICM_... types added and renamed
  *
@@ -78,6 +81,8 @@
 
 #define ICM_ID(name) ICM_ANY (name)
 
+#define ICM_STR(name) ICM_ANY (name)
+
 #define ICM_INT(name)                                                                    \
     SEP;                                                                                 \
     fprintf (outfile, "%d", name);                                                       \
@@ -130,6 +135,7 @@
 #undef ICM_ICM
 #undef ICM_NT
 #undef ICM_ID
+#undef ICM_STR
 #undef ICM_INT
 #undef ICM_VARANY
 #undef ICM_VARNT

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2002/10/10 23:51:08  dkr
+ * ICM_STR added
+ *
  * Revision 3.5  2002/07/10 19:25:51  dkr
  * several ICM_... types added and renamed
  *
@@ -55,6 +58,11 @@
 #define ICM_ID(name)                                                                     \
     scanf ("%s", buffer);                                                                \
     DBUG_PRINT ("BEtest", ("id-arg: %s\n", buffer));                                     \
+    STR_DUP (buffer, name);
+
+#define ICM_STR(name)                                                                    \
+    scanf ("%s", buffer);                                                                \
+    DBUG_PRINT ("BEtest", ("str-arg: %s\n", buffer));                                    \
     STR_DUP (buffer, name);
 
 #define ICM_INT(name)                                                                    \
@@ -115,6 +123,7 @@
 #undef ICM_ICM
 #undef ICM_NT
 #undef ICM_ID
+#undef ICM_STR
 #undef ICM_INT
 #undef ICM_VARANY
 #undef ICM_VARNT

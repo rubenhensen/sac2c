@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.124  2002/10/10 23:50:56  dkr
+ * ICM_STR added
+ *
  * Revision 3.123  2002/10/10 11:21:35  sbs
  * Now, sel applied to other than two args will be printed correctly as well.
  *
@@ -268,6 +271,7 @@ static node *last_assignment_icm = NULL;
 #define ICM_ICM(name)
 #define ICM_NT(name)
 #define ICM_ID(name)
+#define ICM_STR(name)
 #define ICM_INT(name)
 #define ICM_VARANY(dim, name)
 #define ICM_VARNT(dim, name)
@@ -280,6 +284,7 @@ static node *last_assignment_icm = NULL;
 #undef ICM_ICM
 #undef ICM_NT
 #undef ICM_ID
+#undef ICM_STR
 #undef ICM_INT
 #undef ICM_VARANY
 #undef ICM_VARNT
@@ -1572,6 +1577,10 @@ PrintFundef (node *arg_node, node *arg_info)
                 } else {
                     fprintf (outfile, "/* wrapper function */\n");
                 }
+            } else if ((FUNDEF_STATUS (arg_node) == ST_condfun)
+                       || (FUNDEF_STATUS (arg_node) == ST_dofun)
+                       || (FUNDEF_STATUS (arg_node) == ST_whilefun)) {
+                fprintf (outfile, "/* LaC function */\n");
             }
 
             if (FUNDEF_BODY (arg_node) != NULL) {
@@ -2759,6 +2768,7 @@ PrintIcm (node *arg_node, node *arg_info)
 #define ICM_ICM(name)
 #define ICM_NT(name)
 #define ICM_ID(name)
+#define ICM_STR(name)
 #define ICM_INT(name)
 #define ICM_VARANY(dim, name)
 #define ICM_VARNT(dim, name)
@@ -2772,6 +2782,7 @@ PrintIcm (node *arg_node, node *arg_info)
 #undef ICM_ICM
 #undef ICM_NT
 #undef ICM_ID
+#undef ICM_STR
 #undef ICM_INT
 #undef ICM_VARANY
 #undef ICM_VARNT
