@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2001/04/26 00:09:25  dkr
+ * fixed a bug in IdxReturn: RETURN_EXPRS may be NULL
+ *
  * Revision 3.7  2001/04/19 07:47:30  dkr
  * macro F_PTR used as format string for pointers
  *
@@ -667,12 +670,6 @@ int ive_expr, ive_op;
  *  description   : checks whether VECT is in the chain and returns
  *                  either a vinfo-node with DOLLAR-flag (= no VECT in chain)
  *                  or the adress of the VECT-node
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : ---
- *  macros        : DBUG...
- *
- *  remarks       : ---
  *
  */
 
@@ -680,8 +677,11 @@ node *
 FindVect (node *chain)
 {
     DBUG_ENTER ("FindVect");
-    while (VINFO_FLAG (chain) == IDX)
+
+    while (VINFO_FLAG (chain) == IDX) {
         chain = VINFO_NEXT (chain);
+    }
+
     DBUG_RETURN (chain);
 }
 
@@ -694,10 +694,6 @@ FindVect (node *chain)
  *                  returnes 1 iff the types are equal, 0 otherwise.
  *                  in case of UDFs the implementation-type is compared!!
  *                  (This is implemented by using Type2Shpseg!)
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : ---
- *  macros        : DBUG...
  *
  *  remarks       : this is a helper function needed from FindIdx only!
  *
@@ -711,6 +707,7 @@ EqTypes (types *type1, types *type2)
     shpseg *shpseg1, *shpseg2;
 
     DBUG_ENTER ("EqTypes");
+
     shpseg1 = Type2Shpseg (type1, &dim1);
     shpseg2 = Type2Shpseg (type2, &dim2);
 
@@ -718,12 +715,15 @@ EqTypes (types *type1, types *type2)
         res = 1;
         DBUG_ASSERT ((shpseg1 != NULL) && (shpseg2 != NULL),
                      "EqTypes used on type without shape");
-        for (i = 0; i < dim2; i++)
-            if (SHPSEG_SHAPE (shpseg1, i) != SHPSEG_SHAPE (shpseg2, i))
+        for (i = 0; i < dim2; i++) {
+            if (SHPSEG_SHAPE (shpseg1, i) != SHPSEG_SHAPE (shpseg2, i)) {
                 res = 0;
+            }
+        }
     } else {
         res = 0;
     }
+
     DBUG_RETURN (res);
 }
 
@@ -735,10 +735,6 @@ EqTypes (types *type1, types *type2)
  *  description   : checks whether IDX(idx-shape) is in the chain and returns
  *                  either NULL (= IDX(idx-shape) not in chain or the adress
  *                  of the IDX-node
- *  global vars   : ---
- *  internal funs : EqTypes
- *  external funs : ---
- *  macros        : DBUG...
  *
  *  remarks       : ---
  *
@@ -748,9 +744,12 @@ node *
 FindIdx (node *chain, types *vshape)
 {
     DBUG_ENTER ("FindIdx");
+
     while ((VINFO_FLAG (chain) != DOLLAR)
-           && ((VINFO_FLAG (chain) != IDX) || !EqTypes (VINFO_TYPE (chain), vshape)))
+           && ((VINFO_FLAG (chain) != IDX) || !EqTypes (VINFO_TYPE (chain), vshape))) {
         chain = VINFO_NEXT (chain);
+    }
+
     DBUG_RETURN (chain);
 }
 
@@ -772,10 +771,12 @@ node *
 SetVect (node *chain)
 {
     DBUG_ENTER ("SetVect");
+
     DBUG_PRINT ("IDX", ("VECT assigned"));
     if (VINFO_FLAG (FindVect (chain)) == DOLLAR) {
         chain = MakeVinfo (VECT, NULL, chain, VINFO_DOLLAR (chain));
     }
+
     DBUG_RETURN (chain);
 }
 
@@ -799,10 +800,12 @@ node *
 SetIdx (node *chain, types *vartype)
 {
     DBUG_ENTER ("SetIdx");
+
     if (VINFO_FLAG (FindIdx (chain, vartype)) == DOLLAR) {
         chain = MakeVinfo (IDX, vartype, chain, VINFO_DOLLAR (chain));
         DBUG_PRINT ("IDX", ("IDX(" F_PTR ") assigned", chain));
     }
+
     DBUG_RETURN (chain);
 }
 
@@ -843,9 +846,11 @@ CutVinfoChn (node *chain)
     node *rest;
 
     DBUG_ENTER ("CutVinfoChn");
+
     DBUG_ASSERT ((VINFO_DOLLAR (chain) != NULL), "Dollar-ref in vinfo-chain missing!");
     rest = VINFO_NEXT (VINFO_DOLLAR (chain));
     VINFO_NEXT (VINFO_DOLLAR (chain)) = NULL;
+
     DBUG_RETURN (rest);
 }
 
@@ -864,11 +869,13 @@ node *
 AppendVinfoChn (node *ca, node *cb)
 {
     DBUG_ENTER ("AppendVinfoChn");
+
     DBUG_ASSERT ((VINFO_DOLLAR (ca) != NULL), "Dollar-ref in vinfo-chain missing!");
     DBUG_ASSERT ((VINFO_NEXT (VINFO_DOLLAR (ca)) == NULL),
                  "AppendVinfoChn called with a first argument"
                  " containing more than one chain!");
     VINFO_NEXT (VINFO_DOLLAR (ca)) = cb;
+
     DBUG_RETURN (ca);
 }
 
@@ -887,6 +894,7 @@ node *
 MergeVinfoChn (node *ca, node *cb)
 {
     DBUG_ENTER ("MergeVinfoChn");
+
     DBUG_ASSERT ((VINFO_DOLLAR (ca) != NULL), "Dollar-ref in vinfo-chain missing!");
     DBUG_ASSERT ((VINFO_NEXT (VINFO_DOLLAR (ca)) == NULL),
                  "AppendVinfoChn called with a first argument"
@@ -947,12 +955,14 @@ DuplicateTop (node *actchn)
     node *copy, *restchn, *res;
 
     DBUG_ENTER ("DuplicateTop");
+
     restchn = CutVinfoChn (actchn);
     copy = DupTree (actchn);
     res = AppendVinfoChn (copy, AppendVinfoChn (actchn, restchn));
 
     DBUG_PRINT ("IVE", ("DuplicateTop yields:"));
     DBUG_EXECUTE ("IVE", Print (res););
+
     DBUG_RETURN (res);
 }
 
@@ -971,6 +981,7 @@ SwitchTop (node *actchn)
     node *scndchn, *restchn, *res;
 
     DBUG_ENTER ("SwitchTop");
+
     DBUG_PRINT ("IVE", ("SwitchTop yields:"));
 
     scndchn = CutVinfoChn (actchn);
@@ -978,6 +989,7 @@ SwitchTop (node *actchn)
     res = AppendVinfoChn (scndchn, AppendVinfoChn (actchn, restchn));
 
     DBUG_EXECUTE ("IVE", Print (res););
+
     DBUG_RETURN (res);
 }
 
@@ -996,6 +1008,7 @@ MergeTop (node *actchn)
     node *restchn, *res;
 
     DBUG_ENTER ("MergeTop");
+
     DBUG_PRINT ("IVE", ("MergeTop yields:"));
 
     restchn = CutVinfoChn (actchn);
@@ -1003,6 +1016,7 @@ MergeTop (node *actchn)
     FreeTree (actchn);
 
     DBUG_EXECUTE ("IVE", Print (res););
+
     DBUG_RETURN (res);
 }
 
@@ -1021,12 +1035,14 @@ FreeTop (node *actchn)
     node *res;
 
     DBUG_ENTER ("FreeTop");
+
     DBUG_PRINT ("IVE", ("FreeTop yields:"));
 
     res = CutVinfoChn (actchn);
     FreeTree (actchn);
 
     DBUG_EXECUTE ("IVE", Print (res););
+
     DBUG_RETURN (res);
 }
 
@@ -1045,6 +1061,7 @@ MergeCopyTop (node *actchn)
     node *restchn, *scndchn, *res;
 
     DBUG_ENTER ("MergeCopyTop");
+
     DBUG_PRINT ("IVE", ("MergeCopyTop yields:"));
 
     scndchn = CutVinfoChn (actchn);
@@ -1059,6 +1076,7 @@ MergeCopyTop (node *actchn)
     res = AppendVinfoChn (scndchn, AppendVinfoChn (actchn, restchn));
 
     DBUG_EXECUTE ("IVE", Print (res););
+
     DBUG_RETURN (res);
 }
 
@@ -1097,6 +1115,7 @@ IdxChangeId (char *varname, types *type)
     int i;
 
     DBUG_ENTER ("IdxChangeId");
+
     sprintf (buffer, "%s", varname);
     tmp_shpseg = Type2Shpseg (type, NULL);
     for (i = 0; i < GetDim (type); i++) {
@@ -1243,8 +1262,11 @@ node *
 IdxModul (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("IdxModul");
-    if (NULL != MODUL_FUNS (arg_node))
+
+    if (NULL != MODUL_FUNS (arg_node)) {
         MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
+    }
+
     DBUG_RETURN (arg_node);
 }
 
@@ -1261,6 +1283,7 @@ node *
 IdxFundef (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("IdxFundef");
+
     /*
      * We have to traverse the args first, since we need backrefs
      * to this fundef-node.
@@ -1290,11 +1313,14 @@ IdxFundef (node *arg_node, node *arg_info)
      * automatically eliminate the freshly inserted assign-nodes.
      * The second pass is indicated to IdxArg by a NULL arg_info!
      */
-    if (NULL != FUNDEF_ARGS (arg_node))
+    if (NULL != FUNDEF_ARGS (arg_node)) {
         FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), NULL);
+    }
 
-    if (NULL != FUNDEF_NEXT (arg_node))
+    if (NULL != FUNDEF_NEXT (arg_node)) {
         FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+    }
+
     DBUG_RETURN (arg_node);
 }
 
@@ -1350,8 +1376,10 @@ IdxArg (node *arg_node, node *arg_info)
             }
         }
     }
-    if (NULL != ARG_NEXT (arg_node))
+    if (NULL != ARG_NEXT (arg_node)) {
         ARG_NEXT (arg_node) = Trav (ARG_NEXT (arg_node), arg_info);
+    }
+
     DBUG_RETURN (arg_node);
 }
 
@@ -1489,6 +1517,7 @@ IdxAssign (node *arg_node, node *arg_info)
     /* store the current N_assign in INFO_IVE_CURRENTASSIGN */
     INFO_IVE_CURRENTASSIGN (arg_info) = arg_node;
     ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+
     DBUG_RETURN (arg_node);
 }
 
@@ -1508,8 +1537,12 @@ node *
 IdxReturn (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("IdxReturn");
+
     INFO_IVE_TRANSFORM_VINFO (arg_info) = NULL;
-    RETURN_EXPRS (arg_node) = Trav (RETURN_EXPRS (arg_node), arg_info);
+    if (RETURN_EXPRS (arg_node) != NULL) {
+        RETURN_EXPRS (arg_node) = Trav (RETURN_EXPRS (arg_node), arg_info);
+    }
+
     DBUG_RETURN (arg_node);
 }
 
@@ -1532,6 +1565,7 @@ IdxLet (node *arg_node, node *arg_info)
     node *current_assign, *next_assign, *chain, *rest_chain;
 
     DBUG_ENTER ("IdxLet");
+
     /*
      * First, we attach the collected uses-attributes( they are in the
      * actual chain of the vardec) to the variables of the LHS of the
@@ -1740,11 +1774,6 @@ IdxLet (node *arg_node, node *arg_info)
  *                    binop : SetVect
  *                    others: SetVect
  *  global vars   : ive_op
- *  internal funs :
- *  external funs :
- *  macros        :
- *
- *  remarks       :
  *
  */
 
@@ -1755,6 +1784,7 @@ IdxPrf (node *arg_node, node *arg_info)
     types *type;
 
     DBUG_ENTER ("IdxPrf");
+
     /*
      * INFO_IVE_TRANSFORM_VINFO( arg_info) indicates whether this is just a
      * normal traverse (NULL), or the transformation of an arithmetic
@@ -1891,6 +1921,7 @@ IdxPrf (node *arg_node, node *arg_info)
         PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
         break;
     }
+
     DBUG_RETURN (arg_node);
 }
 
@@ -1920,6 +1951,7 @@ IdxId (node *arg_node, node *arg_info)
     char *newid;
 
     DBUG_ENTER ("IdxId");
+
     vardec = ID_VARDEC (arg_node);
     DBUG_ASSERT (((NODE_TYPE (vardec) == N_vardec) || (NODE_TYPE (vardec) == N_arg)),
                  "non vardec/arg node as backref in N_id!");
@@ -1969,6 +2001,7 @@ IdxId (node *arg_node, node *arg_info)
             }
         }
     }
+
     DBUG_RETURN (arg_node);
 }
 
