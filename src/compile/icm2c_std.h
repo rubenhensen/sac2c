@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.30  2003/09/29 22:51:38  dkr
+ * some icms removed/renamed/added
+ *
  * Revision 3.29  2003/09/25 13:47:08  dkr
  * ASSIGN__DIMSHP replaced by UPDATE__DESC, UPDATE__MIRROR
  *
@@ -140,7 +143,9 @@ extern void ICMCompileND_DECL__MIRROR_EXTERN (char *var_NT, int sdim);
 extern void ICMCompileND_CHECK_REUSE (char *to_NT, int to_sdim, char *from_NT,
                                       int from_sdim, char *copyfun);
 
-extern void ICMCompileND_SET__SHAPE (char *to_NT, int dim, char **shp_ANY);
+extern void ICMCompileND_SET__SHAPE_id (char *to_NT, int to_sdim, char *shp_NT);
+
+extern void ICMCompileND_SET__SHAPE_arr (char *to_NT, int dim, char **shp_ANY);
 
 extern void ICMCompileND_REFRESH__MIRROR (char *var_NT, int sdim);
 
@@ -151,6 +156,9 @@ extern void ICMCompileND_ASSIGN (char *to_NT, int to_sdim, char *from_NT, int fr
                                  char *copyfun);
 
 extern void ICMCompileND_ASSIGN__DESC (char *to_NT, char *from_NT);
+
+extern void ICMCompileND_ASSIGN__SHAPE (char *to_NT, int to_sdim, char *from_NT,
+                                        int from_sdim);
 
 extern void ICMCompileND_UPDATE__DESC (char *to_NT, int to_sdim, char *from_NT,
                                        int from_sdim);
@@ -166,8 +174,6 @@ extern void ICMCompileND_COPY__SHAPE (char *to_NT, int to_sdim, char *from_NT,
 
 extern void ICMCompileND_MAKE_UNIQUE (char *to_NT, int to_sdim, char *from_NT,
                                       int from_sdim, char *copyfun);
-
-extern void ICMCompileND_CREATE__ARRAY__DIM (int dim, int val_size, char **vals_ANY);
 
 extern void ICMCompileND_CREATE__ARRAY__SHAPE (char *to_NT, int to_sdim, int dim,
                                                int *shp, int val_size, char **vals_ANY,
