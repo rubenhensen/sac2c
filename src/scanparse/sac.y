@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.106  1996/01/21 13:57:30  cg
+ * Revision 1.107  1996/01/22 17:30:38  cg
+ * added new pragma initfun
+ *
+ * Revision 1.106  1996/01/21  13:57:30  cg
  * Macro GEN_NODE not longer used because it fails to initialize
  * the given structure
  *
@@ -442,7 +445,7 @@ static file_type file_kind = F_prog;
        OWN, CONSTANTS, GLOBAL, OBJECTS, CLASSIMP,
        ARRAY,SC, TRUE, FALSE, EXTERN, C_KEYWORD,
        PRAGMA, LINKNAME, LINKSIGN, EFFECT, READONLY, REFCOUNTING,
-       TOUCH, COPYFUN, FREEFUN, SIBLIMIT
+       TOUCH, COPYFUN, FREEFUN, INITFUN, SIBLIMIT
 %token <id> ID, STR,AND, OR, EQ, NEQ, NOT, LE, LT, GE, GT, MUL, DIV, PLUS,
             MINUS, PRIVATEID
             RESHAPE, SHAPE, TAKE, DROP, DIM, ROTATE,CAT,PSI,GENARRAY, MODARRAY
@@ -994,6 +997,13 @@ pragma: PRAGMA LINKNAME STR
           if (PRAGMA_FREEFUN(store_pragma)!=NULL)
             WARN(linenum, ("Conflicting definitions of pragma 'freefun`"))
           PRAGMA_FREEFUN(store_pragma)=$3;
+        }
+      | PRAGMA INITFUN STR
+        {
+          if (store_pragma==NULL) store_pragma=MakePragma();
+          if (PRAGMA_INITFUN(store_pragma)!=NULL)
+            WARN(linenum, ("Conflicting definitions of pragma 'initfun`"))
+          PRAGMA_INITFUN(store_pragma)=$3;
         }
       ;
 

@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.26  1996/01/05 13:13:55  cg
+ * Revision 1.27  1996/01/22 17:30:38  cg
+ * added new pragma initfun
+ *
+ * Revision 1.26  1996/01/05  13:13:55  cg
  * modified storage format of strings which are now stored without '"'.
  *
  * Revision 1.25  1995/12/29  10:37:26  cg
@@ -264,6 +267,7 @@ int start_token;
 "readonly"                      {FILTER( READONLY );}
 "copyfun"                       {FILTER( COPYFUN );}
 "freefun"                       {FILTER( FREEFUN );}
+"initfun"                       {FILTER( INITFUN );}
 
 "int"				{FILTER( TYPE_INT );}
 "float"				{FILTER( TYPE_FLOAT );}
