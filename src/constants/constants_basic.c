@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.34  2004/12/14 17:05:43  ktr
+ * COAST2constant corrected.
+ *
  * Revision 1.33  2004/12/09 14:46:09  sah
  * fixed a not copied shape! this caused
  * lots of unpredicted behaviour!
@@ -773,18 +776,12 @@ COaST2Constant (node *n)
             break;
 
         case N_id:
+            /*
+             * TODO
+             * replace AVIS_SSACONST with AKV types
+             */
             new_co = COcopyConstant (AVIS_SSACONST (ID_AVIS (n)));
-
-            /* update constants shape info according to type info */
-#ifdef MWE_NTYPE_READY
-            DBUG_ASSERT ((TYgetBasetype (AVIS_TYPE (ID_AVIS (n)))
-                          == CONSTANT_TYPE (new_co)),
-                         "different basetype in id and assigned array");
-#else
-            DBUG_ASSERT ((TCgetBasetype (VARDEC_OR_ARG_TYPE ((ID_DECL (n))))
-                          == CONSTANT_TYPE (new_co)),
-                         "different basetype in id and assigned array");
-#endif
+            break;
 
         default:
             DBUG_ASSERT ((FALSE), "missing implementation for given nodetype");
