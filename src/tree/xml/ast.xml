@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.21  2004/10/13 15:17:57  sah
+  fixed some Node/Link values
+
   Revision 1.20  2004/10/12 13:20:28  sah
   made NCode.Use and WLseg.Code WLsegVar.Code
   a Link instead of a Node
@@ -180,6 +183,7 @@
         <node name="Do" />
         <node name="Annotate" />
         <node name="While" />
+        <node name="Icm" />
       </target>
     </nodeset>
   </nodesets>
@@ -1214,7 +1218,7 @@
           </phases>
         </attribute>
         <attribute name="Objdef" mandatory="no">
-          <type name="Node">
+          <type name="Link">
             <target>
               <node name="Objdef" />
             </target>
@@ -3377,7 +3381,7 @@
           </phases>
         </attribute>
 	<attribute name="Mem" mandatory="no">
-	  <type name="Link">
+	  <type name="Node">
 	    <target>
 	      <unknown/>
 	    </target>
