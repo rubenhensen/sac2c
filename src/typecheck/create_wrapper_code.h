@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.5  2004/07/30 17:29:21  sbs
+ * switch to new INFO structure
+ * PHASE I
+ *
  * Revision 1.4  2002/09/05 13:26:17  dkr
  * CWCwithop() added
  *
@@ -19,9 +23,9 @@
 
 node *CreateWrapperCode (node *ast);
 
-node *CWCmodul (node *arg_node, node *arg_info);
-node *CWCfundef (node *arg_node, node *arg_info);
-node *CWCap (node *arg_node, node *arg_info);
-node *CWCwithop (node *arg_node, node *arg_info);
+node *CWCmodul (node *arg_node, info *arg_info);
+node *CWCfundef (node *arg_node, info *arg_info);
+node *CWCap (node *arg_node, info *arg_info);
+node *CWCwithop (node *arg_node, info *arg_info);
 
 #endif /* _create_wrapper_code_h_ */

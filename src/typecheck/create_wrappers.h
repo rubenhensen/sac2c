@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2004/07/30 17:29:21  sbs
+ * switch to new INFO structure
+ * PHASE I
+ *
  * Revision 1.8  2002/10/18 14:31:38  sbs
  * CRTWRPid added
  *
@@ -40,11 +44,11 @@
 extern node *CreateWrappers (node *arg_node);
 extern ntype *CreateFuntype (node *fundef);
 
-extern node *CRTWRPmodul (node *arg_node, node *arg_info);
-extern node *CRTWRPfundef (node *arg_node, node *arg_info);
-extern node *CRTWRPlet (node *arg_node, node *arg_info);
-extern node *CRTWRPap (node *arg_node, node *arg_info);
-extern node *CRTWRPid (node *arg_node, node *arg_info);
-extern node *CRTWRPNwithop (node *arg_node, node *arg_info);
+extern node *CRTWRPmodul (node *arg_node, info *arg_info);
+extern node *CRTWRPfundef (node *arg_node, info *arg_info);
+extern node *CRTWRPlet (node *arg_node, info *arg_info);
+extern node *CRTWRPap (node *arg_node, info *arg_info);
+extern node *CRTWRPid (node *arg_node, info *arg_info);
+extern node *CRTWRPNwithop (node *arg_node, info *arg_info);
 
 #endif /* _create_wrappers_h */

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.18  2004/07/30 17:29:21  sbs
+ * switch to new INFO structure
+ * PHASE I
+ *
  * Revision 1.17  2004/03/05 12:05:15  sbs
  * Now, the wrapper function headers are inserted in to the fundefs immediately
  *
@@ -52,6 +56,8 @@
  *
  */
 
+#define NEW_INFO
+
 #include <stdio.h>
 #include <string.h>
 #include "dbug.h"
@@ -69,8 +75,52 @@
 
 #include "create_wrappers.h"
 
-#define INFO_CRTWRP_WRAPPERFUNS(n) ((LUT_t) ((n)->dfmask[0]))
-#define INFO_CRTWRP_EXPRETS(n) ((n)->flag)
+/*******************************************************************************
+ *
+ */
+
+/**
+ * INFO structure
+ */
+struct INFO {
+    LUT_t wrapperfuns;
+    int exprets;
+};
+
+/**
+ * INFO macros
+ */
+
+#define INFO_CRTWRP_WRAPPERFUNS(n) ((n)->wrapperfuns)
+#define INFO_CRTWRP_EXPRETS(n) ((n)->exprets)
+
+/**
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = Malloc (sizeof (info));
+
+    INFO_CRTWRP_WRAPPERFUNS (result) = NULL;
+    INFO_CRTWRP_EXPRETS (result) = 0;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = Free (info);
+
+    DBUG_RETURN (info);
+}
 
 /******************************************************************************
  *
@@ -99,7 +149,7 @@ node *
 CreateWrappers (node *arg_node)
 {
     funtab *tmp_tab;
-    node *info_node;
+    info *info_node;
 
     DBUG_ENTER ("CreateWrappers");
 
@@ -108,7 +158,7 @@ CreateWrappers (node *arg_node)
 
     info_node = MakeInfo ();
     arg_node = Trav (arg_node, info_node);
-    info_node = FreeNode (info_node);
+    info_node = FreeInfo (info_node);
 
     act_tab = tmp_tab;
 
@@ -390,7 +440,7 @@ TagReferenceArgs (node *act_args, node *args)
 /******************************************************************************
  *
  * function:
- *    node *CRTWRPmodul(node *arg_node, node *arg_info)
+ *    node *CRTWRPmodul(node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -408,7 +458,7 @@ ConsFundefs (node *fundefs, node *fundef)
 }
 
 node *
-CRTWRPmodul (node *arg_node, node *arg_info)
+CRTWRPmodul (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CRTWRPmodul");
 
@@ -444,7 +494,7 @@ CRTWRPmodul (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *    node *CRTWRPfundef(node *arg_node, node *arg_info)
+ *    node *CRTWRPfundef(node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -452,7 +502,7 @@ CRTWRPmodul (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-CRTWRPfundef (node *arg_node, node *arg_info)
+CRTWRPfundef (node *arg_node, info *arg_info)
 {
     node *wrapper;
     int num_args, num_rets;
@@ -534,7 +584,7 @@ CRTWRPfundef (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *    node *CRTWRPlet(node *arg_node, node *arg_info)
+ *    node *CRTWRPlet(node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -542,7 +592,7 @@ CRTWRPfundef (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-CRTWRPlet (node *arg_node, node *arg_info)
+CRTWRPlet (node *arg_node, info *arg_info)
 {
     int old_exprets;
 
@@ -562,7 +612,7 @@ CRTWRPlet (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *    node *CRTWRPap(node *arg_node, node *arg_info)
+ *    node *CRTWRPap(node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -570,7 +620,7 @@ CRTWRPlet (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-CRTWRPap (node *arg_node, node *arg_info)
+CRTWRPap (node *arg_node, info *arg_info)
 {
     int num_args;
     node *wrapper;
@@ -597,7 +647,7 @@ CRTWRPap (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *    node *CRTWRPid(node *arg_node, node *arg_info)
+ *    node *CRTWRPid(node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -605,7 +655,7 @@ CRTWRPap (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-CRTWRPid (node *arg_node, node *arg_info)
+CRTWRPid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CRTWRPid");
 
@@ -617,7 +667,7 @@ CRTWRPid (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *    node *CRTWRPNwithop( node *arg_node, node *arg_info)
+ *    node *CRTWRPNwithop( node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -625,7 +675,7 @@ CRTWRPid (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-CRTWRPNwithop (node *arg_node, node *arg_info)
+CRTWRPNwithop (node *arg_node, info *arg_info)
 {
     int num_args;
     node *wrapper;

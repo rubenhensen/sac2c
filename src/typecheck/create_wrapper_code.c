@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.20  2004/07/30 17:29:21  sbs
+ * switch to new INFO structure
+ * PHASE I
+ *
  * Revision 1.19  2004/03/05 12:04:13  sbs
  * Now, the modified wrappers will be inserted into the fundef chain correctly 8-)
  *
@@ -64,6 +68,8 @@
  *
  */
 
+#define NEW_INFO
+
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -76,9 +82,55 @@
 #include "new_types.h"
 #include "ct_fun.h"
 
-#define INFO_CWC_TRAVNO(n) ((n)->flag)
-#define INFO_CWC_WRAPPERFUNS(n) ((LUT_t) ((n)->dfmask[0]))
-#define INFO_CWC_MODUL(n) ((n)->node[0])
+/*******************************************************************************
+ *
+ *
+ */
+
+/**
+ * INFO structure
+ */
+struct INFO {
+    int travno;
+    LUT_t wrapperfuns;
+    node *modul;
+};
+
+/**
+ * INFO macros
+ */
+#define INFO_CWC_TRAVNO(n) ((n)->travno)
+#define INFO_CWC_WRAPPERFUNS(n) ((n)->wrapperfuns)
+#define INFO_CWC_MODUL(n) ((n)->modul)
+
+/**
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = Malloc (sizeof (info));
+
+    INFO_CWC_TRAVNO (result) = 0;
+    INFO_CWC_WRAPPERFUNS (result) = NULL;
+    INFO_CWC_MODUL (result) = NULL;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = Free (info);
+
+    DBUG_RETURN (info);
+}
 
 /**
  **
@@ -102,7 +154,7 @@
 /******************************************************************************
  *
  * Function:
- *   node *CWCmodul( node *arg_node, node *arg_info);
+ *   node *CWCmodul( node *arg_node, info *arg_info);
  *
  * Description:
  *
@@ -110,7 +162,7 @@
  ******************************************************************************/
 
 node *
-CWCmodul (node *arg_node, node *arg_info)
+CWCmodul (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CWCmodul");
 
@@ -511,7 +563,7 @@ CorrectFundefPointer (node *fundef, char *funname, node *args)
 /******************************************************************************
  *
  * Function:
- *   node *CWCfundef( node *arg_node, node *arg_info);
+ *   node *CWCfundef( node *arg_node, info *arg_info);
  *
  * Description:
  *
@@ -519,7 +571,7 @@ CorrectFundefPointer (node *fundef, char *funname, node *args)
  ******************************************************************************/
 
 static node *
-FundefBuildWrappers (node *arg_node, node *arg_info)
+FundefBuildWrappers (node *arg_node, info *arg_info)
 {
     node *new_fundef;
     node *new_fundefs;
@@ -563,7 +615,7 @@ FundefBuildWrappers (node *arg_node, node *arg_info)
 }
 
 static node *
-FundefAdjustPointers (node *arg_node, node *arg_info)
+FundefAdjustPointers (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("FundefAdjustPointers");
 
@@ -579,7 +631,7 @@ FundefAdjustPointers (node *arg_node, node *arg_info)
 }
 
 static node *
-FundefRemoveGarbage (node *arg_node, node *arg_info)
+FundefRemoveGarbage (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("FundefRemoveGarbage");
 
@@ -604,7 +656,7 @@ FundefRemoveGarbage (node *arg_node, node *arg_info)
 }
 
 node *
-CWCfundef (node *arg_node, node *arg_info)
+CWCfundef (node *arg_node, info *arg_info)
 {
 
     DBUG_ENTER ("CWCfundef");
@@ -637,7 +689,7 @@ CWCfundef (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *CWCap( node *arg_node, node *arg_info);
+ *   node *CWCap( node *arg_node, info *arg_info);
  *
  * Description:
  *
@@ -645,7 +697,7 @@ CWCfundef (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-CWCap (node *arg_node, node *arg_info)
+CWCap (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CWCap");
 
@@ -662,7 +714,7 @@ CWCap (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *CWCwithop( node *arg_node, node *arg_info)
+ *   node *CWCwithop( node *arg_node, info *arg_info)
  *
  * Description:
  *
@@ -670,7 +722,7 @@ CWCap (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-CWCwithop (node *arg_node, node *arg_info)
+CWCwithop (node *arg_node, info *arg_info)
 {
     node *args;
 
@@ -728,7 +780,7 @@ node *
 CreateWrapperCode (node *ast)
 {
     funtab *tmp_tab;
-    node *info_node;
+    info *info_node;
 
     DBUG_ENTER ("CreateWrapperCode");
 
@@ -737,7 +789,7 @@ CreateWrapperCode (node *ast)
 
     info_node = MakeInfo ();
     ast = Trav (ast, info_node);
-    info_node = FreeNode (info_node);
+    info_node = FreeInfo (info_node);
 
     act_tab = tmp_tab;
 

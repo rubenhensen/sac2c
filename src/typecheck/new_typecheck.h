@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2004/07/30 17:29:21  sbs
+ * switch to new INFO structure
+ * PHASE I
+ *
  * Revision 3.10  2004/03/05 19:32:28  sbs
  * NTCfuncond added.
  *
@@ -48,36 +52,36 @@
 extern node *NewTypeCheck (node *arg_node);
 extern ntype *NewTypeCheck_Expr (node *arg_node);
 
-extern node *NTCtypedef (node *arg_node, node *arg_info);
-extern node *NTCobjdef (node *arg_node, node *arg_info);
-extern node *NTCmodul (node *arg_node, node *arg_info);
-extern node *NTCfundef (node *arg_node, node *arg_info);
-extern node *NTCarg (node *arg_node, node *arg_info);
-extern node *NTCblock (node *arg_node, node *arg_info);
-extern node *NTCvardec (node *arg_node, node *arg_info);
-extern node *NTCassign (node *arg_node, node *arg_info);
-extern node *NTCcond (node *arg_node, node *arg_info);
-extern node *NTCfuncond (node *arg_node, node *arg_info);
-extern node *NTClet (node *arg_node, node *arg_info);
-extern node *NTCreturn (node *arg_node, node *arg_info);
-extern node *NTCap (node *arg_node, node *arg_info);
-extern node *NTCprf (node *arg_node, node *arg_info);
-extern node *NTCarray (node *arg_node, node *arg_info);
-extern node *NTCcast (node *arg_node, node *arg_info);
-extern node *NTCexprs (node *arg_node, node *arg_info);
-extern node *NTCid (node *arg_node, node *arg_info);
-extern node *NTCnum (node *arg_node, node *arg_info);
-extern node *NTCbool (node *arg_node, node *arg_info);
-extern node *NTCchar (node *arg_node, node *arg_info);
-extern node *NTCdouble (node *arg_node, node *arg_info);
-extern node *NTCfloat (node *arg_node, node *arg_info);
+extern node *NTCtypedef (node *arg_node, info *arg_info);
+extern node *NTCobjdef (node *arg_node, info *arg_info);
+extern node *NTCmodul (node *arg_node, info *arg_info);
+extern node *NTCfundef (node *arg_node, info *arg_info);
+extern node *NTCarg (node *arg_node, info *arg_info);
+extern node *NTCblock (node *arg_node, info *arg_info);
+extern node *NTCvardec (node *arg_node, info *arg_info);
+extern node *NTCassign (node *arg_node, info *arg_info);
+extern node *NTCcond (node *arg_node, info *arg_info);
+extern node *NTCfuncond (node *arg_node, info *arg_info);
+extern node *NTClet (node *arg_node, info *arg_info);
+extern node *NTCreturn (node *arg_node, info *arg_info);
+extern node *NTCap (node *arg_node, info *arg_info);
+extern node *NTCprf (node *arg_node, info *arg_info);
+extern node *NTCarray (node *arg_node, info *arg_info);
+extern node *NTCcast (node *arg_node, info *arg_info);
+extern node *NTCexprs (node *arg_node, info *arg_info);
+extern node *NTCid (node *arg_node, info *arg_info);
+extern node *NTCnum (node *arg_node, info *arg_info);
+extern node *NTCbool (node *arg_node, info *arg_info);
+extern node *NTCchar (node *arg_node, info *arg_info);
+extern node *NTCdouble (node *arg_node, info *arg_info);
+extern node *NTCfloat (node *arg_node, info *arg_info);
 
-extern node *NTCNwith (node *arg_node, node *arg_info);
-extern node *NTCNpart (node *arg_node, node *arg_info);
-extern node *NTCNgenerator (node *arg_node, node *arg_info);
-extern node *NTCNwithid (node *arg_node, node *arg_info);
-extern node *NTCNcode (node *arg_node, node *arg_info);
-extern node *NTCNwithop (node *arg_node, node *arg_info);
+extern node *NTCNwith (node *arg_node, info *arg_info);
+extern node *NTCNpart (node *arg_node, info *arg_info);
+extern node *NTCNgenerator (node *arg_node, info *arg_info);
+extern node *NTCNwithid (node *arg_node, info *arg_info);
+extern node *NTCNcode (node *arg_node, info *arg_info);
+extern node *NTCNwithop (node *arg_node, info *arg_info);
 
 extern node *NTCTriggerTypeCheck (node *fundef);
 

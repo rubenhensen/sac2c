@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2004/07/30 17:29:21  sbs
+ * switch to new INFO structure
+ * PHASE I
+ *
  * Revision 1.4  2003/09/18 11:14:26  sbs
  * break in default branch of switch added.
  *
@@ -15,6 +19,8 @@
  *
  *
  */
+
+#define NEW_INFO
 
 #include "dbug.h"
 
@@ -36,14 +42,59 @@
  *
  *   INFO_TS_ANY      flag that indicates wether anything had to be reported
  */
-#define INFO_TS_AKS(n) (n->refcnt)
-#define INFO_TS_AKD(n) (n->flag)
-#define INFO_TS_AUD(n) (n->counter)
-#define INFO_TS_ANY(n) (n->varno)
+
+/**
+ * INFO structure
+ */
+struct INFO {
+    int aks;
+    int akd;
+    int aud;
+    bool any;
+};
+
+/**
+ * INFO macros
+ */
+
+#define INFO_TS_AKS(n) (n->aks)
+#define INFO_TS_AKD(n) (n->akd)
+#define INFO_TS_AUD(n) (n->aud)
+#define INFO_TS_ANY(n) (n->any)
+
+/**
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = Malloc (sizeof (info));
+
+    INFO_TS_AKS (result) = 0;
+    INFO_TS_AKD (result) = 0;
+    INFO_TS_AUD (result) = 0;
+    INFO_TS_ANY (result) = FALSE;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = Free (info);
+
+    DBUG_RETURN (info);
+}
 
 /** <!--********************************************************************-->
  *
- * @fn node *ExamineTypes( types *type, node *info)
+ * @fn node *ExamineTypes( types *type, info *info)
  *
  *   @brief       modifies the counters in info according to the type found
  *   @param type  var/arg type to be counted
@@ -52,8 +103,8 @@
  *
  ******************************************************************************/
 
-static node *
-ExamineTypes (types *type, node *info)
+static info *
+ExamineTypes (types *type, info *info)
 {
     int dim;
     DBUG_ENTER ("ExamineTypes");
@@ -70,7 +121,7 @@ ExamineTypes (types *type, node *info)
 
 /** <!--********************************************************************-->
  *
- * @fn void PrintStatistics( node *fundef, node * info)
+ * @fn void PrintStatistics( node *fundef, info * info)
  *
  *   @brief         print the statistics found
  *   @param fundef  N_fundef under investigation
@@ -79,7 +130,7 @@ ExamineTypes (types *type, node *info)
  ******************************************************************************/
 
 static void
-PrintStatistics (node *fundef, node *info)
+PrintStatistics (node *fundef, info *info)
 {
     node *arg;
     str_buf *buf;
@@ -146,7 +197,7 @@ node *
 PrintTypeStatistics (node *arg_node)
 {
     funtab *tmp_tab;
-    node *arg_info;
+    info *arg_info;
 
     DBUG_ENTER ("PrintTypeStatistics");
 
@@ -167,7 +218,7 @@ PrintTypeStatistics (node *arg_node)
         NOTE (
           ("  for all functions %s-info could be inferred.", spec_mode_str[spec_mode]));
     }
-    arg_info = FreeNode (arg_info);
+    arg_info = FreeInfo (arg_info);
 
     act_tab = tmp_tab;
 
@@ -176,7 +227,7 @@ PrintTypeStatistics (node *arg_node)
 
 /** <!--********************************************************************-->
  *
- * @fn node *TSfundef( node *arg_node, node *arg_info)
+ * @fn node *TSfundef( node *arg_node, info *arg_info)
  *
  *   @brief          initiate statistics and print result
  *   @param arg_node N_fundef node
@@ -186,7 +237,7 @@ PrintTypeStatistics (node *arg_node)
  ******************************************************************************/
 
 node *
-TSfundef (node *arg_node, node *arg_info)
+TSfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("TSfundef");
 
@@ -223,7 +274,7 @@ TSfundef (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *TSarg( node *arg_node, node *arg_info)
+ * @fn node *TSarg( node *arg_node, info *arg_info)
  *
  *   @brief          collect argument statistics
  *   @param arg_node N_arg node
@@ -233,7 +284,7 @@ TSfundef (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-TSarg (node *arg_node, node *arg_info)
+TSarg (node *arg_node, info *arg_info)
 {
     types *type;
 
@@ -248,7 +299,7 @@ TSarg (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *TSvardec( node *arg_node, node *arg_info)
+ * @fn node *TSvardec( node *arg_node, info *arg_info)
  *
  *   @brief          collect variable statistics
  *   @param arg_node N_vardec node
@@ -258,7 +309,7 @@ TSarg (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-TSvardec (node *arg_node, node *arg_info)
+TSvardec (node *arg_node, info *arg_info)
 {
     types *type;
 

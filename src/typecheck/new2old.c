@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.18  2004/07/30 17:29:21  sbs
+ * switch to new INFO structure
+ * PHASE I
+ *
  * Revision 1.17  2004/07/05 17:23:43  sbs
  * now, we do not only compute old types from ntypes, but we also
  * fix the ntype type variables for proper use later on.
@@ -62,6 +66,8 @@
  *
  */
 
+#define NEW_INFO
+
 #include <stdio.h>
 #include <string.h>
 #include "dbug.h"
@@ -98,9 +104,50 @@
  *   INFO_NT2OT_VARDECS    -   list of the generated vardecs
  */
 
-#define INFO_NT2OT_FOLDFUNS(n) (n->node[0])
-#define INFO_NT2OT_LAST_LET(n) (n->node[1])
-#define INFO_NT2OT_VARDECS(n) (n->node[2])
+/**
+ * INFO structure
+ */
+struct INFO {
+    node *foldfuns;
+    node *last_let;
+    node *vardecs;
+};
+
+/**
+ * INFO macros
+ */
+#define INFO_NT2OT_FOLDFUNS(n) (n->foldfuns)
+#define INFO_NT2OT_LAST_LET(n) (n->last_let)
+#define INFO_NT2OT_VARDECS(n) (n->vardecs)
+
+/**
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = Malloc (sizeof (info));
+
+    INFO_NT2OT_FOLDFUNS (result) = NULL;
+    INFO_NT2OT_LAST_LET (result) = NULL;
+    INFO_NT2OT_VARDECS (result) = NULL;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = Free (info);
+
+    DBUG_RETURN (info);
+}
 
 /******************************************************************************
  *
@@ -116,7 +163,7 @@ node *
 NT2OTTransform (node *arg_node)
 {
     funtab *tmp_tab;
-    node *info_node;
+    info *info_node;
 
     DBUG_ENTER ("NT2OTTransform");
 
@@ -125,7 +172,7 @@ NT2OTTransform (node *arg_node)
 
     info_node = MakeInfo ();
     arg_node = Trav (arg_node, info_node);
-    info_node = FreeNode (info_node);
+    info_node = FreeInfo (info_node);
 
     act_tab = tmp_tab;
 
@@ -135,7 +182,7 @@ NT2OTTransform (node *arg_node)
 /******************************************************************************
  *
  * function:
- *   node *NT2OTmodul( node *arg_node, node *arg_info)
+ *   node *NT2OTmodul( node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -143,7 +190,7 @@ NT2OTTransform (node *arg_node)
  ******************************************************************************/
 
 node *
-NT2OTmodul (node *arg_node, node *arg_info)
+NT2OTmodul (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("NT2OTmodul");
 
@@ -187,7 +234,7 @@ NT2OTmodul (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *NT2OTfundef( node *arg_node, node *arg_info)
+ *   node *NT2OTfundef( node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -195,7 +242,7 @@ NT2OTmodul (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-NT2OTfundef (node *arg_node, node *arg_info)
+NT2OTfundef (node *arg_node, info *arg_info)
 {
     ntype *type;
     types *old_type;
@@ -255,7 +302,7 @@ NT2OTfundef (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *NT2OTarg( node *arg_node, node *arg_info)
+ *   node *NT2OTarg( node *arg_node, info *arg_info)
  *
  * description:
  *   Fix (!) the ntype and compute the corresponding old type.
@@ -263,7 +310,7 @@ NT2OTfundef (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-NT2OTarg (node *arg_node, node *arg_info)
+NT2OTarg (node *arg_node, info *arg_info)
 {
     ntype *type;
 #ifndef DBUG_OFF
@@ -313,7 +360,7 @@ NT2OTarg (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *NT2OTblock( node *arg_node, node *arg_info)
+ *   node *NT2OTblock( node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -321,7 +368,7 @@ NT2OTarg (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-NT2OTblock (node *arg_node, node *arg_info)
+NT2OTblock (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("NT2OTblock");
 
@@ -342,7 +389,7 @@ NT2OTblock (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *NT2OTvardec( node *arg_node, node *arg_info)
+ *   node *NT2OTvardec( node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -350,7 +397,7 @@ NT2OTblock (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-NT2OTvardec (node *arg_node, node *arg_info)
+NT2OTvardec (node *arg_node, info *arg_info)
 {
     ntype *type;
 #ifndef DBUG_OFF
@@ -397,7 +444,7 @@ NT2OTvardec (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *NT2OTarray( node *arg_node, node *arg_info)
+ *   node *NT2OTarray( node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -405,7 +452,7 @@ NT2OTvardec (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-NT2OTarray (node *arg_node, node *arg_info)
+NT2OTarray (node *arg_node, info *arg_info)
 {
     ntype *type;
 
@@ -423,7 +470,7 @@ NT2OTarray (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *NT2OTcast( node *arg_node, node *arg_info)
+ *   node *NT2OTcast( node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -431,7 +478,7 @@ NT2OTarray (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-NT2OTcast (node *arg_node, node *arg_info)
+NT2OTcast (node *arg_node, info *arg_info)
 {
     node *res;
 
@@ -447,7 +494,7 @@ NT2OTcast (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *NT2OTlet( node *arg_node, node *arg_info)
+ *   node *NT2OTlet( node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -455,7 +502,7 @@ NT2OTcast (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-NT2OTlet (node *arg_node, node *arg_info)
+NT2OTlet (node *arg_node, info *arg_info)
 {
     node *old_last_let;
 
@@ -474,7 +521,7 @@ NT2OTlet (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *NT2OTwithid( node *arg_node, node *arg_info)
+ *   node *NT2OTwithid( node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -482,7 +529,7 @@ NT2OTlet (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-NT2OTwithid (node *arg_node, node *arg_info)
+NT2OTwithid (node *arg_node, info *arg_info)
 {
     ids *new_ids, *tmp_ids;
     node *new_vardecs;
@@ -526,7 +573,7 @@ NT2OTwithid (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *NT2OTwithop( node *arg_node, node *arg_info)
+ *   node *NT2OTwithop( node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -534,7 +581,7 @@ NT2OTwithid (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-NT2OTwithop (node *arg_node, node *arg_info)
+NT2OTwithop (node *arg_node, info *arg_info)
 {
     node *foldfun;
     node *cexpr;
