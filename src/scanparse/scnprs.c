@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.19  2004/11/25 22:14:17  cg
+ * some ismop
+ *
  * Revision 3.18  2004/11/23 21:24:34  sbs
  * some stuff done
  *
@@ -71,83 +74,6 @@
 
 #include "scnprs.h"
 
-/******************************************************************************
- *
- * Function:
- *   void SetFileNames( node *modul)
- *
- * Description:
- *   Sets the global variables
- *     modulename, outfilename, cfilename, targetdir
- *   according to the kind of file and the -o command line option.
- *
- ******************************************************************************/
-
-static void
-SetFileNames (node *modul)
-{
-    char buffer[MAX_FILE_NAME];
-
-    DBUG_ENTER ("SetFileNames");
-
-    filetype = MODULE_FILETYPE (modul);
-
-    if (MODULE_FILETYPE (modul) == F_prog) {
-        /**
-         * Programs are always linked in style 0, i.e. a single
-         * C-file is generated and compiled as a whole.
-         */
-        global.linkstyle = 0;
-
-        global.targetdir[0] = '\0';
-
-        strcpy (global.modulename, MODULE_NAME (modul));
-
-        if (global.outfilename[0] == '\0') {
-            strcpy (global.outfilename, "a.out");
-            strcpy (global.cfilename, "a.out.c");
-        } else {
-            strcpy (global.cfilename, global.outfilename);
-            strcat (global.cfilename, ".c");
-        }
-    } else {
-        if ((global.profileflag != 0) && global.genlib.sac) {
-            SYSWARN (("-p option turned off for module/class compilation"));
-            global.profileflag = 0;
-        }
-
-        if (global.sacfilename[0] != '\0') {
-            strcpy (buffer, MODULE_NAME (modul));
-            strcat (buffer, ".sac");
-
-            if (strcmp (buffer, global.puresacfilename) != 0) {
-                SYSWARN (("Module/class '%s` should be in a file named \"%s\" "
-                          "instead of \"%s\"",
-                          MODULE_NAME (modul), buffer, global.sacfilename));
-            }
-        }
-
-        if (global.outfilename[0] == '\0') {
-            strcpy (global.targetdir, "./");
-        } else {
-            strcpy (global.targetdir, global.outfilename);
-            strcat (global.targetdir, "/");
-        }
-
-        strcpy (global.modulename, MODULE_NAME (modul));
-
-        strcpy (global.cfilename, MODULE_NAME (modul));
-        strcat (global.cfilename, ".c");
-
-        strcpy (global.outfilename, MODULE_NAME (modul));
-        strcat (global.outfilename, ".lib");
-
-        strcpy (global.targetdir, FMabsolutePathname (global.targetdir));
-    }
-
-    DBUG_VOID_RETURN;
-}
-
 /*
  *
  *  functionname  : ScanParse
@@ -167,79 +93,29 @@ SetFileNames (node *modul)
  *
  */
 
-#ifdef NO_CPP /* don't use C-preprocessor */
-
-node *
-SPdoScanParse ()
-{
-    char *pathname;
-
-    DBUG_ENTER ("SPdoScanParse");
-
-    global.filename = global.puresacfilename;
-
-    if (global.sacfilename[0] == '\0') {
-        yyin = stdin;
-        NOTE (("Parsing from stdin ..."));
-    } else {
-        global.pathname = FMfindFile (PATH, global.sacfilename);
-
-        if (global.pathname == NULL) {
-            SYSABORT (("Unable to open file \"%s\"", global.sacfilename));
-        }
-
-        yyin = fopen (global.pathname, "r");
-        NOTE (("Parsing file \"%s\" ...", global.pathname));
-    }
-
-    start_token = PARSE_PRG;
-    linenum = 1;
-
-    SPmyYyparse ();
-
-    fclose (yyin);
-
-    SetFileNames (global.syntax_tree);
-
-    if ((global.break_after == PH_scanparse)
-        && (0 == strcmp (global.break_specifier, "yacc"))) {
-        goto DONE;
-    }
-
-    global.syntax_tree = HDdoEliminateSelDots (global.syntax_tree);
-
-DONE:
-    DBUG_RETURN (global.syntax_tree);
-}
-
-#else /* NO_CPP */
-
 node *
 SPdoScanParse ()
 {
     char *pathname;
     char cccallstr[MAX_PATH_LEN];
-    char cppfile[MAX_PATH_LEN];
+    char *cppfile;
     int err;
 
-    DBUG_ENTER ("ScanParse");
+    DBUG_ENTER ("SPdoScanParse");
 
     global.filename = global.puresacfilename;
 
     /*
      * Create a name for the file containing the CPP's result
      */
-    cppfile[0] = '\0';
-    strcat (cppfile, global.tmp_dirname);
-    strcat (cppfile, "/");
 
-    if (global.sacfilename[0] == '\0') {
-        strcat (cppfile, "stdin");
+    if (global.sacfilename == NULL) {
+        cppfile = ILIBstringConcat (global.tmp_dirname, "/", "stdin");
         ILIBcreateCppCallString (global.sacfilename, cccallstr, cppfile);
         NOTE (("Parsing from stdin ..."));
     } else {
-        strcat (cppfile, global.filename);
-        pathname = FMfindFile (PATH, global.sacfilename);
+        cppfile = ILIBstringConcat (global.tmp_dirname, "/", global.filename);
+        pathname = FMGRfindFile (PK_path, global.sacfilename);
 
         if (pathname == NULL) {
             SYSABORT (("Unable to open file \"%s\"", global.sacfilename));
@@ -290,18 +166,14 @@ SPdoScanParse ()
     if (err) {
         SYSABORT (("Could not delete /tmp-file"));
     }
+    Free (cppfile);
 
-    SetFileNames (global.syntax_tree);
+    FMGRsetFileNames (global.syntax_tree);
 
-    if ((global.break_after == PH_scanparse)
-        && (0 == strcmp (global.break_specifier, "yacc"))) {
-        goto DONE;
+    if (!((global.break_after == PH_scanparse)
+          && (0 == strcmp (global.break_specifier, "yacc")))) {
+        global.syntax_tree = HDdoEliminateSelDots (global.syntax_tree);
     }
 
-    global.syntax_tree = HDdoEliminateSelDots (global.syntax_tree);
-
-DONE:
     DBUG_RETURN (global.syntax_tree);
 }
-
-#endif /* NO_CPP */
