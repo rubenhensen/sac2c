@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.161  2004/11/26 11:18:13  skt
+ * some renaming - exclusive checkin for cg
+ *
  * Revision 3.160  2004/11/25 22:18:43  mwe
  * missing brace paranthesis added
  *
@@ -519,7 +522,7 @@ extern int TCgetArgtabIndexIn (types *type, argtab_t *argtab);
 /*
  *  compound access macros
  */
-
+#if 0 /* no more old type within N_typedef */
 #define TYPEDEF_BASETYPE(n) (TYPES_BASETYPE (TYPEDEF_TYPE (n)))
 #define TYPEDEF_DIM(n) (TYPES_DIM (TYPEDEF_TYPE (n)))
 #define TYPEDEF_SHAPE(n, x) (TYPES_SHAPE (TYPEDEF_TYPE (n), x))
@@ -527,6 +530,7 @@ extern int TCgetArgtabIndexIn (types *type, argtab_t *argtab);
 #define TYPEDEF_TNAME(n) (TYPES_NAME (TYPEDEF_TYPE (n)))
 #define TYPEDEF_TMOD(n) (TYPES_MOD (TYPEDEF_TYPE (n)))
 #define TYPEDEF_TDEF(n) (TYPES_TDEF (TYPEDEF_TYPE (n)))
+#endif
 
 /*
  *  The following compound access macros are useful whenever a typedef
@@ -534,6 +538,7 @@ extern int TCgetArgtabIndexIn (types *type, argtab_t *argtab);
  *  definition.
  */
 
+#if 0
 #define TYPEDEC_TYPE(n) (TYPEDEF_TYPE (TYPEDEC_DEF (n)))
 #define TYPEDEC_BASETYPE(n) (TYPEDEF_BASETYPE (TYPEDEC_DEF (n)))
 #define TYPEDEC_DIM(n) (TYPEDEF_DIM (TYPEDEC_DEF (n)))
@@ -541,6 +546,7 @@ extern int TCgetArgtabIndexIn (types *type, argtab_t *argtab);
 #define TYPEDEC_SHPSEG(n) (TYPEDEF_SHPSEG (TYPEDEC_DEF (n)))
 #define TYPEDEC_TNAME(n) (TYPEDEF_NAME (TYPEDEC_DEF (n)))
 #define TYPEDEC_TMOD(n) (TYPEDEF_MOD (TYPEDEC_DEF (n)))
+#endif
 
 /*
  *
@@ -1984,7 +1990,7 @@ extern int TCcountParts (node *parts);
         WLSEGVAR_TASKSEL (n) = (rhs);                                                    \
     }
 
-extern node *MakeWLsegX (int dims, node *contents, node *next);
+extern node *MakeWlSegX (int dims, node *contents, node *next);
 
 /*--------------------------------------------------------------------------*/
 
@@ -2361,17 +2367,15 @@ extern node *MakeWLsegX (int dims, node *contents, node *next);
  ***  N_str :
  ***/
 
-extern node *TCmakeStr_Copy (const char *str);
-
 /*--------------------------------------------------------------------------*/
 
 /***
  ***  N_linklist
  ***/
 
-extern int AddLinkToLinks (node **links, node *link);
-extern int AddLinksToLinks (node **links, node *add);
-extern bool LinklistContains (node *set, node *link);
-extern bool LinklistIsSubset (node *super, node *sub);
+extern int TCaddLinkToLinks (node **links, node *link);
+extern int TCaddLinksToLinks (node **links, node *add);
+extern bool TClinklistContains (node *set, node *link);
+extern bool TClinklistIsSubset (node *super, node *sub);
 
 #endif /* _SAC_TREE_COMPOUND_H_ */
