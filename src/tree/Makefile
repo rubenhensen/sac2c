@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.36  2004/10/17 17:47:54  sah
+# added serialize_helper.
+#
 # Revision 3.35  2004/10/11 16:49:02  sah
 # added serialize_buildstack.o
 #
@@ -95,7 +98,8 @@ include $(PROJECT_ROOT)/Makefile.Config
 ifeq ($(shell test -f $(PROJECT_ROOT)/_NEW_AST && echo yes),yes)
   NEWASTTARGETS := node_basic.o free_node.o free_attribs.o \
                    serialize_node.o serialize_attribs.o \
-                   deserialize.o serialize_buildstack.o
+                   deserialize.o serialize_buildstack.o \
+                   serialize_helper.o
 else
   NEWASTTARGETS :=
 endif

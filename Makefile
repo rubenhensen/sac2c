@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.120  2004/10/17 17:47:54  sah
+# added serialize_helper.
+#
 # Revision 3.119  2004/10/17 17:02:25  sah
 # added new ccmanager
 #
@@ -287,7 +290,8 @@ ifeq ($(NEWAST),yes)
                src/tree/serialize_attribs.o src/modules/libstat.o \
                src/modules/modulemanager.o src/modules/libmanager.o \
                src/tree/deserialize.o src/tree/serialize_buildstack.o \
-               src/modules/export.o src/modules/ccmanager.o
+               src/modules/export.o src/modules/ccmanager.o \
+               src/modules/libbuilder.o src/tree/serialize_helper.o
   NEWASTFLAGS = -ldl --export-dynamic
 endif
 
