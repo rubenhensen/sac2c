@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.61  2001/03/27 09:09:46  nmw
+ * INFO_SSALIR_ macros added
+ *
  * Revision 3.60  2001/03/26 15:03:44  dkr
  * some comments modified
  *
@@ -2444,6 +2447,13 @@ extern node *MakeAvis (node *vardecOrArg);
  ***    node*      TOPBLOCK          (vardec chain of actual function)
  ***    node*      RESULTS           (exprs chain of return statement)
  ***
+ ***  when used in SSALIR.c
+ ***    node*      FUNDEF            (current working fundef)
+ ***    bool       REMASSIGN         (flag, if assignment can be removed)
+ ***    node*      PREASSIGN         (assignments to add before assignment)
+ ***    node*      POSTASSIGN        (assignments to add behind assignment)
+ ***    node*      ARGCHAIN          (argument chain of recursive call)
+ ***
  ***
  ***  remarks:
  ***
@@ -2872,6 +2882,13 @@ extern node *MakeInfo ();
 #define INFO_SSACF_POSTASSIGN(n) (n->node[1])
 #define INFO_SSACF_TOPBLOCK(n) (n->node[2])
 #define INFO_SSACF_RESULTS(n) (n->node[3])
+
+/* when used in SSALIR.c */
+#define INFO_SSALIR_FUNDEF(n) (n->node[0])
+#define INFO_SSALIR_REMASSIGN(n) ((bool)(n->flag))
+#define INFO_SSALIR_PREASSIGN(n) (n->node[1])
+#define INFO_SSALIR_POSTASSIGN(n) (n->node[2])
+#define INFO_SSALIR_ARGCHAIN(n) (n->node[3])
 
 /*--------------------------------------------------------------------------*/
 
