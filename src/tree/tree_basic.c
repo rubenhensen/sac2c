@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.34  2001/04/25 01:20:24  dkr
+ * definition of flag NAMES_IN_TYPES modified
+ *
  * Revision 3.33  2001/04/24 14:16:21  dkr
  * comment about revision 3.32 corrected :-/
  *
@@ -118,7 +121,7 @@
 #include "free.h"
 #include "internal_lib.h"
 
-#define NAMES_IN_TYPES
+#define NAMES_IN_TYPES 1
 
 /*--------------------------------------------------------------------------*/
 
@@ -627,13 +630,13 @@ MakeTypedef (char *name, char *mod, types *type, statustype attrib, node *next)
     tmp = CreateCleanNode (N_typedef);
 
     TYPEDEF_TYPE (tmp) = type;
-#ifdef NAMES_IN_TYPES
+#if NAMES_IN_TYPES
     if (TYPEDEF_NAME (tmp) != NULL) {
         FREE (TYPEDEF_NAME (tmp));
     }
 #endif
     TYPEDEF_NAME (tmp) = name;
-#ifdef NAMES_IN_TYPES
+#if NAMES_IN_TYPES
     if (TYPEDEF_MOD (tmp) != NULL) {
         FREE (TYPEDEF_MOD (tmp));
     }
@@ -666,13 +669,13 @@ MakeObjdef (char *name, char *mod, types *type, node *expr, node *next)
     tmp = CreateCleanNode (N_objdef);
 
     OBJDEF_TYPE (tmp) = type;
-#ifdef NAMES_IN_TYPES
+#if NAMES_IN_TYPES
     if (OBJDEF_NAME (tmp) != NULL) {
         FREE (OBJDEF_NAME (tmp));
     }
 #endif
     OBJDEF_NAME (tmp) = name;
-#ifdef NAMES_IN_TYPES
+#if NAMES_IN_TYPES
     if (OBJDEF_MOD (tmp) != NULL) {
         FREE (OBJDEF_MOD (tmp));
     }
@@ -706,7 +709,7 @@ MakeFundef (char *name, char *mod, types *types, node *args, node *body, node *n
     FUNDEF_ARGS (tmp) = args;
     FUNDEF_NEXT (tmp) = next;
 
-#ifdef NAMES_IN_TYPES
+#if NAMES_IN_TYPES
     if (FUNDEF_TYPES (tmp) != NULL) {
         FREE (FUNDEF_NAME (tmp));
         FREE (FUNDEF_MOD (tmp));
@@ -715,7 +718,7 @@ MakeFundef (char *name, char *mod, types *types, node *args, node *body, node *n
 
     FUNDEF_TYPES (tmp) = types;
 
-#ifdef NAMES_IN_TYPES
+#if NAMES_IN_TYPES
     if (FUNDEF_TYPES (tmp) != NULL) {
 #endif
         FUNDEF_NAME (tmp) = name;
@@ -723,7 +726,7 @@ MakeFundef (char *name, char *mod, types *types, node *args, node *body, node *n
         FUNDEF_LINKMOD (tmp) = NULL;
         FUNDEF_STATUS (tmp) = ST_regular;
         FUNDEF_ATTRIB (tmp) = ST_regular;
-#ifdef NAMES_IN_TYPES
+#if NAMES_IN_TYPES
     } else {
         DBUG_ASSERT (((name == NULL) && (mod == NULL)),
                      "FUNDEF_TYPES is needed for storing FUNDEF_NAME, FUNDEF_MOD");
@@ -754,7 +757,7 @@ MakeArg (char *name, types *type, statustype status, statustype attrib, node *ne
 
     ARG_NEXT (tmp) = next;
     ARG_TYPE (tmp) = type;
-#ifdef NAMES_IN_TYPES
+#if NAMES_IN_TYPES
     if (ARG_NAME (tmp) != NULL) {
         FREE (ARG_NAME (tmp));
     }
@@ -807,7 +810,7 @@ MakeVardec (char *name, types *type, node *next)
 
     VARDEC_NEXT (tmp) = next;
     VARDEC_TYPE (tmp) = type;
-#ifdef NAMES_IN_TYPES
+#if NAMES_IN_TYPES
     if (VARDEC_NAME (tmp) != NULL) {
         FREE (VARDEC_NAME (tmp));
     }
