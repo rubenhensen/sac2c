@@ -11,6 +11,7 @@ access_macros.h
 free.c
 free.h
 node_info.mac
+prf.h
 prf_node_info.mac
 scheduling.c
 scheduling.h
