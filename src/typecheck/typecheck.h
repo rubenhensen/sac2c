@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.4  2000/05/11 10:37:36  dkr
+ * Macro SHAPE_2_ARRAY replaced by function Types2Array
+ *
  * Revision 2.3  2000/02/17 16:17:53  cg
  * Function DuplicateTypes() moved to DupTree.c.
  *
@@ -37,7 +40,6 @@
  */
 
 #ifndef _typecheck_h
-
 #define _typecheck_h
 
 /* following enum is used as return value of function CmpTypes and
@@ -65,6 +67,9 @@ extern node *TCunaryOp (node *arg_node, node *arg_info);
 extern node *TCobjdef (node *arg_node, node *arg_info);
 extern node *TCNcode (node *arg_node, node *arg_info);
 
+extern types *TI_array (node *arg_node, node *arg_info);
+
+extern node *Types2Array (types *type, types *res_type);
 extern node *LookupType (char *type_name, char *mod_name, int line);
 extern cmp_types CmpTypes (types *type_one, types *type_two);
 
@@ -135,56 +140,6 @@ extern char *module_name; /* name of module to typecheck;
                 length *= type->shpseg->shp[i];                                          \
         else                                                                             \
             length = 0;                                                                  \
-    }
-
-/* creates and computes the basic-shape out of a types struct as N_array
- * computed N_array-node is stored in Shape_array
- * NOTE: if the type is not the type of an array, NULL will be returned
- */
-#define SHAPE_2_ARRAY(Shape_array, Type, res_type)                                       \
-    {                                                                                    \
-        int i;                                                                           \
-        if (T_user == Type->simpletype) {                                                \
-            types *b_type = LookupType (Type->name, Type->name_mod, 042)->info.types;    \
-            if (0 < b_type->dim + Type->dim) {                                           \
-                node *dummy = MakeNode (N_exprs);                                        \
-                Shape_array = MakeNode (N_array);                                        \
-                ARRAY_TYPE (Shape_array) = DuplicateTypes (res_type, 0);                 \
-                Shape_array->node[0] = dummy;                                            \
-                for (i = 0; i < Type->dim - 1; i++) {                                    \
-                    dummy->node[0] = MakeNum (Type->shpseg->shp[i]);                     \
-                    dummy->node[1] = MakeNode (N_exprs);                                 \
-                    dummy = dummy->node[1];                                              \
-                }                                                                        \
-                if (0 < Type->dim) {                                                     \
-                    dummy->node[0] = MakeNum (Type->shpseg->shp[i]);                     \
-                    if (0 < b_type->dim) {                                               \
-                        dummy->node[1] = MakeNode (N_exprs);                             \
-                        dummy = dummy->node[1];                                          \
-                    }                                                                    \
-                }                                                                        \
-                for (i = 0; i < b_type->dim - 1; i++) {                                  \
-                    dummy->node[0] = MakeNum (b_type->shpseg->shp[i]);                   \
-                    dummy->node[1] = MakeNode (N_exprs);                                 \
-                    dummy = dummy->node[1];                                              \
-                }                                                                        \
-                if (0 < b_type->dim) {                                                   \
-                    dummy->node[0] = MakeNum (b_type->shpseg->shp[i]);                   \
-                }                                                                        \
-            }                                                                            \
-        } else if (0 < Type->dim) {                                                      \
-            node *dummy = MakeNode (N_exprs);                                            \
-            Shape_array = MakeNode (N_array);                                            \
-            ARRAY_TYPE (Shape_array) = DuplicateTypes (res_type, 0);                     \
-            Shape_array->node[0] = dummy;                                                \
-            for (i = 0; i < Type->dim - 1; i++) {                                        \
-                dummy->node[0] = MakeNum (Type->shpseg->shp[i]);                         \
-                dummy->node[1] = MakeNode (N_exprs);                                     \
-                dummy = dummy->node[1];                                                  \
-            }                                                                            \
-            dummy->node[0] = MakeNum (Type->shpseg->shp[i]);                             \
-        } else                                                                           \
-            Shape_array = NULL;                                                          \
     }
 
 #define SAC_PRG F_prog

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.34  2000/05/11 10:39:32  dkr
+ * Macro SHAPE_2_ARRAY replaced by function Types2Array
+ *
  * Revision 2.33  2000/04/27 11:34:21  jhs
  * Fixed Bug in CFarray.
  *
@@ -2160,8 +2163,8 @@ ArrayPrf (node *arg_node, node *arg_info)
         case N_id:
             DBUG_PRINT ("CF",
                         ("primitive function %s folded", prf_string[arg_node->info.prf]));
-            SHAPE_2_ARRAY (tmp, arg[0]->info.ids->node->info.types,
-                           INFO_CF_TYPE (arg_info));
+            tmp
+              = Types2Array (arg[0]->info.ids->node->info.types, INFO_CF_TYPE (arg_info));
 
             if (tmp != NULL) {
                 /*
