@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.7  2004/08/16 18:15:26  skt
+ * implementation finished
+ *
  * Revision 1.6  2004/08/16 16:52:35  skt
  * implementation expanded
  *
@@ -41,6 +44,6 @@ extern node *CRECEblock (node *arg_node, info *arg_info);
 
 extern node *CRECEassign (node *arg_node, info *arg_info);
 
-node *CRECEInsertCell (node *act_assign, node *first_anyassign);
+node *CRECEInsertCell (node *act_assign);
 
 #endif /* CREATE_CELLS_H */
