@@ -1,6 +1,15 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/03/15 13:54:23  bs
+ * Renamed:
+ * ID_CONSTARRAY => ID_INTVEC
+ * ID_ARRAYLENGTH => ID_VECLEN
+ * ARRAY_INTARRAY => ARRAY_INTVEC
+ * ARRAY_LENGTH => ARRAY_VECLEN
+ * Added:
+ * ARRAY_FLOATVEC, ARRAY_DOUBLEVEC, ARRAY_VECTYPE
+ *
  * Revision 2.1  1999/02/23 12:39:56  sacbase
  * new release made
  *
@@ -1536,19 +1545,21 @@ extern node *MakeExprs (node *expr, node *next);
  ***
  ***  sons:
  ***
- ***    node*  AELEMS   (N_exprs)
+ ***    node*      AELEMS   (N_exprs)
  ***
  ***  permanent attributes:
  ***
- ***    char*  STRING       (O)
+ ***    char*      STRING       (O)
  ***
  ***  temporary attributes:
  ***
- ***    types* TYPE               (typecheck -> )
+ ***    types*     TYPE               (typecheck -> )
  ***
- ***    int*   INTARRAY     (O)   (flatten -> )
- ***
- ***    int    LENGTH       (O)   (flatten -> )
+ ***    int*       INTVEC       (O)   (flatten -> )
+ ***    float*     FLOATVEC     (O)   (flatten -> )
+ ***    double*    DOUBLEVEC    (O)   (flatten -> )
+ ***    int        VECLEN       (O)   (flatten -> )
+ ***    simpletype VECTYPE      (O)   (flatten -> )
  ***/
 
 /*
@@ -1556,9 +1567,9 @@ extern node *MakeExprs (node *expr, node *next);
  * optional permanent attribute STRING holds the original definition.
  * This may be retrieved for C code generation.
  *
- * In the case of constant integer arrays, the optional permanent
- * attribute INTARRAY holds the original definition. In that case
- * ARRAY_LENGTH holds the number of array elements.
+ * In the case of constant arrays, the optional permanent
+ * attribute CONSTVEC holds the original definition. In that case
+ * VECLEN holds the number of array elements.
  * This may be retrieved for tiling.
  */
 
@@ -1567,8 +1578,11 @@ extern node *MakeArray (node *aelems);
 #define ARRAY_AELEMS(n) (n->node[0])
 #define ARRAY_TYPE(n) (n->info.types)
 #define ARRAY_STRING(n) ((char *)(n->node[1]))
-#define ARRAY_INTARRAY(n) ((int *)(n->node[2]))
-#define ARRAY_LENGTH(n) (n->varno)
+#define ARRAY_INTVEC(n) ((int *)(n->node[2]))
+#define ARRAY_FLOATVEC(n) ((float *)(n->node[3]))
+#define ARRAY_DOUBLEVEC(n) ((double *)(n->node[4]))
+#define ARRAY_VECLEN(n) (n->counter)
+#define ARRAY_VECTYPE(n) ((simpletype)n->varno)
 
 /*--------------------------------------------------------------------------*/
 
@@ -1609,16 +1623,16 @@ extern node *MakeVinfo (useflag flag, types *type, node *next);
  ***
  ***  temporary attributes:
  ***
- ***    node*  VARDEC    (N_vardec/N_arg)  (typecheck -> )
- ***    node*  OBJDEF    (N_objdef)        (typecheck -> )
- ***                                       ( -> analysis -> )
- ***    int    REFCNT                      (refcount -> compile -> )
- ***    int    MAKEUNIQUE                  (precompile -> compile -> )
- ***    node*  DEF                         (Unroll !, Unswitch !)
- ***    node*  WL          (O)             (wli -> wlf !!)
- ***    node*  VAL         (O) (N_array)   (cf -> )
- ***    node*  CONSTARRAY  (O)             (flatten -> )
- ***    int    ARRAYLENGTH (O)             (flatten -> )
+ ***    node*       VARDEC    (N_vardec/N_arg)  (typecheck -> )
+ ***    node*       OBJDEF    (N_objdef)        (typecheck -> )
+ ***                                            ( -> analysis -> )
+ ***    int         REFCNT                      (refcount -> compile -> )
+ ***    int         MAKEUNIQUE                  (precompile -> compile -> )
+ ***    node*       DEF                         (Unroll !, Unswitch !)
+ ***    node*       WL          (O)             (wli -> wlf !!)
+ ***    node*       VAL         (O) (N_array)   (cf -> )
+ ***    node*       INTVEC      (O)             (flatten -> )
+ ***    int         VECLEN      (O)             (flatten -> )
  ***
  ***  remark:
  ***    ID_WL is only used in wli, wlf. But every call of DupTree() initializes
@@ -1643,7 +1657,7 @@ extern node *MakeVinfo (useflag flag, types *type, node *next);
  ***    a constant value is an advantage.
  ***
  ***  remark:
- ***    CONSTARRAY and ARRAYLENGTH now are used for propagation of constant
+ ***    INTVEC, VECTYPE and VECLEN now are used for propagation of constant
  ***    integer arrays.
  ***/
 
@@ -1681,9 +1695,8 @@ extern node *MakeId2 (ids *ids_node);
 #define ID_REFCNT(n) (n->refcnt)
 #define ID_MAKEUNIQUE(n) (n->flag)
 #define ID_WL(n) (n->node[0])
-#define ID_VAL(n) (n->node[1])
-#define ID_CONSTARRAY(n) ((int *)(n->node[2]))
-#define ID_ARRAYLENGTH(n) (n->varno)
+#define ID_INTVEC(n) ((int *)(n->node[1]))
+#define ID_VECLEN(n) (n->counter)
 
 /*--------------------------------------------------------------------------*/
 
@@ -2108,8 +2121,9 @@ extern node *MakeInfo ();
 #define INFO_FLTN_LASTASSIGN(n) (n->node[0])
 #define INFO_FLTN_LASTWLBLOCK(n) (n->node[1])
 #define INFO_FLTN_FINALASSIGN(n) (n->node[2])
-#define INFO_FLTN_ARRAYLENGTH(n) (n->varno)
-#define INFO_FLTN_INTARRAY(n) ((int *)(n->node[3]))
+#define INFO_FLTN_CONSTVEC(n) (n->node[3])
+#define INFO_FLTN_VECLEN(n) (n->counter)
+#define INFO_FLTN_VECTYPE(n) ((simpletype)n->varno)
 
 /* readsib */
 #define INFO_RSIB_FOLDFUNS(n) (n->node[0])
@@ -2221,6 +2235,7 @@ extern node *MakeInfo ();
 #define INFO_TSI_WOTYPE(n) ((WithOpType)n->varno)
 #define INFO_TSI_LASTLETIDS(n) (n->info.ids)
 #define INFO_TSI_BELOWAP(n) (n->flag)
+#define INFO_TSI_WLLEVEL(n) ((shpseg *)n->node[1])
 
 /*--------------------------------------------------------------------------*/
 
