@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.15  2004/09/18 16:03:29  ktr
+# added spmd_emm.o
+#
 # Revision 3.14  2003/06/11 21:53:26  ktr
 # included ../constants
 #
@@ -73,7 +76,8 @@ INCS = -I../global -I../tree -I../../inc -I../optimize -I../typecheck -I../refco
 
 
 all: concurrent.o spmd_init.o spmd_opt.o spmd_lift.o sync_init.o \
-     sync_opt.o schedule.o spmd_trav.o spmd_cons.o concurrent_lib.o
+     sync_opt.o schedule.o spmd_trav.o spmd_cons.o concurrent_lib.o \
+     spmd_emm.o
 
 
 %.o: %.c 
