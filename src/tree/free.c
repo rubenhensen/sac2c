@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2000/03/29 16:09:54  jhs
+ * FreeST and FreeMT added.
+ *
  * Revision 1.3  2000/03/15 12:59:37  dkr
  * WLSEG_HOMSV added
  *
@@ -1695,6 +1698,57 @@ FreeSync (node *arg_node, node *arg_info)
     FREE (arg_node);
 
     DBUG_RETURN (tmp);
+}
+
+/*--------------------------------------------------------------------------*/
+
+node *
+FreeMT (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("FreeMT");
+
+    DBUG_PRINT ("FREE", ("Removing contents of N_mt node ..."));
+
+    FREETRAV (MT_REGION (arg_node));
+
+    if (MT_USEMASK (arg_node) != NULL) {
+        MT_USEMASK (arg_node) = DFMRemoveMask (MT_USEMASK (arg_node));
+    }
+    if (MT_DEFMASK (arg_node) != NULL) {
+        MT_DEFMASK (arg_node) = DFMRemoveMask (MT_DEFMASK (arg_node));
+    }
+    if (MT_NEEDLATER (arg_node) != NULL) {
+        MT_NEEDLATER (arg_node) = DFMRemoveMask (MT_NEEDLATER (arg_node));
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/*--------------------------------------------------------------------------*/
+
+node *
+FreeST (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("FreeMT");
+
+    DBUG_PRINT ("FREE", ("Removing contents of N_mt node ..."));
+
+    FREETRAV (ST_REGION (arg_node));
+
+    if (ST_USEMASK (arg_node) != NULL) {
+        ST_USEMASK (arg_node) = DFMRemoveMask (ST_USEMASK (arg_node));
+    }
+    if (ST_DEFMASK (arg_node) != NULL) {
+        ST_DEFMASK (arg_node) = DFMRemoveMask (ST_DEFMASK (arg_node));
+    }
+    if (ST_NEEDLATER_ST (arg_node) != NULL) {
+        ST_NEEDLATER_ST (arg_node) = DFMRemoveMask (ST_NEEDLATER_ST (arg_node));
+    }
+    if (ST_NEEDLATER_MT (arg_node) != NULL) {
+        ST_NEEDLATER_MT (arg_node) = DFMRemoveMask (ST_NEEDLATER_MT (arg_node));
+    }
+
+    DBUG_RETURN (arg_node);
 }
 
 /*--------------------------------------------------------------------------*/

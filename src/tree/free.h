@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2000/03/29 16:09:54  jhs
+ * FreeST and FreeMT added.
+ *
  * Revision 1.1  2000/01/21 15:38:23  dkr
  * Initial revision
  *
@@ -238,6 +241,8 @@ extern node *FreePragma (node *arg_node, node *arg_info);
 extern node *FreeInfo (node *arg_node, node *arg_info);
 extern node *FreeSpmd (node *arg_node, node *arg_info);
 extern node *FreeSync (node *arg_node, node *arg_info);
+extern node *FreeMT (node *arg_node, node *arg_info);
+extern node *FreeST (node *arg_node, node *arg_info);
 
 /* new with-loops */
 extern node *FreeNWith (node *arg_node, node *arg_info);
