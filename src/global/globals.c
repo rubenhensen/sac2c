@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.29  2000/06/07 11:42:27  nmw
+ * init of generatelibrary changed
+ *
  * Revision 2.28  2000/06/07 11:06:04  nmw
  * added global variable generatelibrary with default GENERATELIBRARY_SAC
  * used for genlib commandline switch
@@ -414,9 +417,10 @@ char break_specifier[MAX_BREAK_SPECIFIER] = "";
 /* Additional break specifier to allow breaking within a particular
    compiler phase at any position. */
 
-unsigned int generatelibrary = GENERATELIBRARY_SAC;
+unsigned int generatelibrary = GENERATELIBRARY_NOTHING;
 /* Specify interfaces to generate from SAC modules
-   default: generate a standard SAC library*/
+   init: nothing, but changed to default standard SAC library
+   if commandline switch is not used */
 
 /*
  *  Definitions of some global variables necessary for the
