@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.22  2004/11/02 14:29:14  ktr
+ * Reuse candidates are traversed as well.
+ *
  * Revision 1.21  2004/10/22 17:10:04  ktr
  * removed unused variables.
  *
@@ -2175,6 +2178,14 @@ EMRCprf (node *arg_node, info *arg_info)
     DBUG_ENTER ("EMRCprf");
 
     switch (PRF_PRF (arg_node)) {
+    case F_noop:
+        /*
+         * noop( iv)
+         *
+         * - iv must not be counted as it is already counted by WITHID traversal
+         */
+        break;
+
     case F_fill:
         /*
          * fill( expr, a);
@@ -2198,13 +2209,35 @@ EMRCprf (node *arg_node, info *arg_info)
 
     case F_alloc:
     case F_alloc_or_reuse:
-    case F_reuse:
         /*
          * alloc( dim, shp)
          *
          * - initialize rc with 1
          */
         PRF_ARGS (arg_node) = MakeExprs (MakeNum (1), PRF_ARGS (arg_node));
+
+        /*
+         * Traverse reuse candidates
+         */
+        if (PRF_EXPRS4 (arg_node) != NULL) {
+            INFO_EMRC_COUNTMODE (arg_info) = rc_prfuse;
+            PRF_EXPRS4 (arg_node) = Trav (PRF_EXPRS4 (arg_node), arg_info);
+        }
+        break;
+
+    case F_reuse:
+        /*
+         * reuse( A)
+         *
+         * - initialize rc with 1
+         */
+        PRF_ARGS (arg_node) = MakeExprs (MakeNum (1), PRF_ARGS (arg_node));
+
+        /*
+         * Traverse reused variable
+         */
+        INFO_EMRC_COUNTMODE (arg_info) = rc_prfuse;
+        PRF_ARG2 (arg_node) = Trav (PRF_ARG2 (arg_node), arg_info);
         break;
 
     case F_suballoc:
