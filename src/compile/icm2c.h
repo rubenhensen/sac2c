@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.14  1995/05/04 11:42:34  sbs
+ * Revision 1.15  1995/05/11 10:27:08  hw
+ * - added ND_GOTO & ND_LABEL for compilation of do-loop
+ * - address of array  will be printed too, if TRACE_REF is defined
+ *
+ * Revision 1.14  1995/05/04  11:42:34  sbs
  * TRACE_REF inserted
  *
  * Revision 1.13  1995/04/27  12:57:05  sbs
@@ -133,7 +137,8 @@
     ND_REUSE (old, new) else
 
 #ifdef TRACE_REF
-#define PRINTREF(name) fprintf (stderr, "refcnt of %s: %d\n", #name, ND_A_RC (name))
+#define PRINTREF(name)                                                                   \
+    fprintf (stderr, "refcnt of %s (%p): %d\n", #name, ND_A_FIELD (name), ND_A_RC (name))
 
 #define ND_ALLOC_ARRAY(type, name, rc)                                                   \
     {                                                                                    \
@@ -159,7 +164,7 @@
 #define ND_DEC_RC_FREE(name, num)                                                        \
     fprintf (stderr, "ND_DEC_RC_FREE(%s, %d)\t\t-> ", #name, num);                       \
     if ((ND_A_RC (name) -= num) == 0) {                                                  \
-        fprintf (stderr, "freeing %s\n", #name);                                         \
+        fprintf (stderr, "freeing %s (%p)\n", #name, ND_A_FIELD (name));                 \
         free (ND_A_FIELD (name));                                                        \
     } else                                                                               \
         PRINTREF (name);
@@ -220,5 +225,14 @@
         for (__i = 0; __i < ND_A_SIZE (res); __i++)                                      \
             ND_A_FIELD (res)[__i] = s op ND_A_FIELD (a2)[__i];                           \
     };
+
+#if 0
+#define ND_GOTO(label) goto label;
+#define ND_LABEL(label)                                                                  \
+    label:
+#endif
+
+#define ND_GOTO(label)
+#define ND_LABEL(label)
 
 #endif /* _sac_icm2c_h */
