@@ -1,18 +1,21 @@
 /*
  *
  * $Log$
- * Revision 1.1  1995/05/26 14:22:26  asi
+ * Revision 1.2  1995/06/02 11:32:51  asi
+ * Added Unroll, and UNRfundef.
+ *
+ * Revision 1.1  1995/05/26  14:22:26  asi
  * Initial revision
  *
  *
  */
 
-#ifndef _Inline_h
+#ifndef _Unroll_h
 
-#define _Inline_h
+#define _Unroll_h
 
-extern node *Inline (node *arg_node, node *arg_info);
+extern node *Unroll (node *arg_node, node *arg_info);
 
-extern node *INLfundef (node *arg_node, node *arg_info);
+extern node *UNRfundef (node *arg_node, node *arg_info);
 
-#endif /* _Inline_h */
+#endif /* _Unroll_h */
