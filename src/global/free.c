@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.40  1998/03/24 12:19:44  srs
+ * NWITHIF_VEC() has not been set free in FreeNWithID
+ *
  * Revision 1.39  1998/03/24 10:17:42  srs
  * changed FreeNPart
  *
@@ -1474,6 +1477,7 @@ FreeNWithID (node *arg_node, node *arg_info)
     DBUG_PRINT ("FREE", ("Removing N_Nwithid node ..."));
 
     FreeAllIds (NWITHID_IDS (arg_node));
+    FreeAllIds (NWITHID_VEC (arg_node));
 
     FREE (arg_node);
 
