@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.140  1998/04/22 13:04:12  dkr
+ * added INFO_COMP_ENDASSIGN
+ *
  * Revision 1.139  1998/04/21 15:40:46  srs
  * added INFO_WLI_LET and INFO_WLI_REPLACE
  *
@@ -2246,6 +2249,7 @@ extern node *MakeInfo ();
 #define INFO_COMP_VARDECS(n) (n->node[3])
 #define INFO_COMP_WITHBEGIN(n) (n->node[4])
 #define INFO_COMP_SPMDFUNS(n) (n->node[5])
+#define INFO_COMP_ENDASSIGN(n) (n->node[1])
 
 #define INFO_COMP_FIRSTASSIGN(n) (n->node[0])
 #define INFO_COMP_CNTPARAM(n) (n->lineno)
