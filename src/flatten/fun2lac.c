@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2002/10/18 14:27:57  dkr
+ * valid_ssa is set to FALSE after fun2lac now
+ *
  * Revision 3.15  2002/04/05 14:37:36  dkr
  * debug output modified
  *
@@ -968,6 +971,7 @@ Fun2Lac (node *syntax_tree)
     info_node = MakeInfo ();
 
     syntax_tree = Trav (syntax_tree, info_node);
+    valid_ssa = FALSE; /* ... no valid SSA form anymore!! */
 
     FreeNode (info_node);
 
