@@ -1,5 +1,10 @@
 /*
  * $Log$
+ * Revision 1.30  1998/02/11 16:35:08  dkr
+ * typedef cmp_types moved to typecheck.h (compile.c needs to import this type)
+ *
+ * function CmpTypes() declared external
+ *
  * Revision 1.29  1998/02/09 15:55:17  srs
  * removed all NEWTREEs
  * added typechecking for new WLs
@@ -95,6 +100,17 @@
 
 #define _typecheck_h
 
+/* following enum is used as return value of function CmpTypes and
+ * Compatible Types
+ */
+#define CMP_T(n, s) n
+
+typedef enum {
+#include "cmp_type.mac"
+} cmp_types;
+
+#undef CMP_T
+
 extern node *Typecheck (node *arg_node);
 extern node *TCfundef (node *arg_node, node *arg_info);
 extern node *TClet (node *arg_node, node *arg_info);
@@ -110,14 +126,16 @@ extern node *TCNcode (node *arg_node, node *arg_info);
 
 extern node *LookupType (char *type_name, char *mod_name, int line);
 extern types *DuplicateTypes (types *source, int share);
+extern cmp_types CmpTypes (types *type_one, types *type_two);
 
 /* some global variables */
 extern file_type kind_of_file; /* to distinguish between compilation of a
                                 * SAC-program or a SAC-module implementation
                                 */
-extern char *module_name;      /* name of module to typecheck;
-                                * is set in function Typecheck
-                                */
+
+extern char *module_name; /* name of module to typecheck;
+                           * is set in function Typecheck
+                           */
 
 /* and now some useful macros to get some information */
 
@@ -194,6 +212,7 @@ extern char *module_name;      /* name of module to typecheck;
         else                                                                             \
             length = 0;                                                                  \
     }
+
 /* creates and computes the basic-shape out of a types struct as N_array
  * computed N_array-node is stored in Shape_array
  * NOTE: if the type is not the type of an array, NULL will be returned
