@@ -1,5 +1,10 @@
 /*
  * $Log$
+ * Revision 1.15  2000/07/24 15:00:37  nmw
+ * refcount check in cwrapper added
+ * generation of separate c-files with object initflags added
+ * code beautifying
+ *
  * Revision 1.14  2000/07/20 12:09:49  nmw
  * debug print generated code removed
  *
@@ -380,8 +385,8 @@ PIHcwrapperPrototype (node *arg_node, node *arg_info)
 
     /* print declaration */
     fprintf (outfile, "int %s%s_%s_%d_%d(", SACPREFIX, CWRAPPER_MOD (arg_node),
-             CWRAPPER_NAME (arg_node), CWRAPPER_ARGCOUNT (arg_node),
-             CWRAPPER_RESCOUNT (arg_node));
+             CWRAPPER_NAME (arg_node), CWRAPPER_RESCOUNT (arg_node),
+             CWRAPPER_ARGCOUNT (arg_node));
 
     /* print return reference parameters */
     for (i = 1; i <= CWRAPPER_RESCOUNT (arg_node); i++) {
@@ -456,6 +461,16 @@ PIWmodul (node *arg_node, node *arg_info)
 
     fprintf (outfile, "/* generated codefile, please do not modify */\n");
     fclose (outfile);
+
+    /* generate init flags for all global objects */
+    if (MODUL_OBJS (arg_node) != NULL) {
+        INFO_PIW_COUNTER (arg_info) = 0;
+        arg_node = Trav (MODUL_OBJS (arg_node), arg_info);
+
+        /* set global var for object counting - needed in cccall.c */
+        object_counter = INFO_PIW_COUNTER (arg_info);
+    }
+
     outfile = old_outfile; /* restore old filehandle */
 
     DBUG_RETURN (arg_node);
@@ -489,10 +504,16 @@ PIWcwrapper (node *arg_node, node *arg_info)
     fprintf (outfile, "SAC_IW_CHECK_MODINIT( SAC_Initflag%s , SAC_Init%s );\n\n",
              modulename, modulename);
 
-    /* print checks for refcounts */
+    /* print checks for refcounts
+     * decrement refcount to check rc if arg is used more than one time
+     */
     fprintf (outfile, "/* refcount checks for arguments */\n");
     for (i = 1; i <= CWRAPPER_ARGCOUNT (arg_node); i++) {
-        fprintf (outfile, "SAC_IW_CHECK_RC( in%d );\n", i);
+        fprintf (outfile, "SAC_IW_CHECKDEC_RC( in%d );\n", i);
+    }
+    /* restore original refcount */
+    for (i = 1; i <= CWRAPPER_ARGCOUNT (arg_node); i++) {
+        fprintf (outfile, "SAC_IW_INC_RC( in%d );\n", i);
     }
 
     /* print case switch for specialized functions */
@@ -503,15 +524,18 @@ PIWcwrapper (node *arg_node, node *arg_info)
     while (funlist != NULL) {
         /* go for all fundefs in nodelist */
         NODELIST_NODE (funlist) = Trav (NODELIST_NODE (funlist), arg_info);
+        fprintf (outfile, "else ");
 
         funlist = NODELIST_NEXT (funlist);
     }
 
-    /* no speacialized function found matching the args -> error */
+    /* no specialized function found matching the args -> error */
     fprintf (outfile,
-             "SAC_RuntimeError(\"ERROR - no matching specialized function!\\n\");\n");
-    fprintf (outfile, "return(1); /* error - no matching specialized function */\n");
-    fprintf (outfile, "\n}\n\n");
+             "{\n"
+             "  SAC_RuntimeError(\"ERROR - no matching specialized function!\\n\");\n"
+             "  return(1); /* error - code */\n"
+             "}\n"
+             "return(0);\n}\n\n");
 
     if (CWRAPPER_NEXT (arg_node) != NULL) {
         CWRAPPER_NEXT (arg_node) = Trav (CWRAPPER_NEXT (arg_node), arg_info);
@@ -558,9 +582,6 @@ PIWfundef (node *arg_node, node *arg_info)
     /* print makros for dec local refcounters and maybe free SAC_arg */
     fprintf (outfile, "\n  /* modify local refcounters */\n");
     arg_node = PIWfundefRefcounting (arg_node, arg_info);
-
-    /* print code  successful return from call */
-    fprintf (outfile, "\n  return(0); /*call successful */\n");
 
     /* print code end of switch */
     fprintf (outfile, "}\n");
@@ -859,6 +880,44 @@ PIWfundefRefcounting (node *arg_node, node *arg_info)
     }
 
     fprintf (outfile, "\n");
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *PIWobjdef(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   generates a c-file with definition of a global init flag for this object
+ *
+ *
+ ******************************************************************************/
+
+node *
+PIWobjdef (node *arg_node, node *arg_info)
+{
+    FILE *old_outfile;
+
+    DBUG_ENTER ("PIWobjdef");
+
+    INFO_PIW_COUNTER (arg_info) = INFO_PIW_COUNTER (arg_info) + 1;
+    old_outfile = outfile; /* save, might be in use */
+
+    /* open obj<i>.c in tmpdir for writing*/
+    outfile = WriteOpen ("%s/objinitflag%d.c", tmp_dirname, INFO_PIW_COUNTER (arg_info));
+    fprintf (outfile,
+             "/* global object init flag for %s */ \n"
+             "#include \"sac_bool.h\" \n",
+             OBJDEF_NAME (arg_node));
+    fprintf (outfile, "bool SAC_INIT_FLAG_%s = false;\n", OBJDEF_NAME (arg_node));
+    fclose (outfile);
+    outfile = old_outfile;
+
+    if (OBJDEF_NEXT (arg_node) != NULL) {
+        arg_node = Trav (OBJDEF_NEXT (arg_node), arg_info);
+    }
+
     DBUG_RETURN (arg_node);
 }
 
