@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.38  1999/01/19 10:24:41  sbs
+ * unused var unroll in InferInnerStep eliminated
+ *
  * Revision 1.37  1998/11/08 14:32:55  dkr
  * WLTRANcode:
  *   NCODE_CBLOCK and NCODE_CEXPR should be never NULL!
@@ -3695,7 +3698,6 @@ node *
 InferInnerStep (node *nodes, int curr_dim, int dims)
 {
     node *grids, *tmp;
-    int unroll;
 
     DBUG_ENTER ("InferInnerStep");
 
