@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.28  2000/10/17 17:06:35  dkr
+ * flattening of applications moved to precompile.c
+ *
  * Revision 2.27  2000/10/10 14:57:23  dkr
  * some comments in FltnLet added
  *
@@ -806,11 +809,13 @@ FltnAssign (node *arg_node, node *arg_info)
  *         then we simply rename it to   __w<with_level>a.
  *     - in all other cases we simply push [a, a, with_level] on the stack
  *
+#if 0
  *   after that, again for each id from the LHS we do:
  *     - if we have   a ... a = fun/prf( ... a ... a ... )
  *       then we rename each RHS   a   into a temp-var   __flat<n>   and insert
  *       an assignment of the form   __flat<n> = a;   in front of the function
  *       application.
+#endif
  *
  ******************************************************************************/
 
@@ -818,9 +823,9 @@ node *
 FltnLet (node *arg_node, node *arg_info)
 {
     ids *ids;
-    char *var_name, *tmp_var;
+    char *ids_name, *tmp_name;
     local_stack *tmp;
-    node *mem_last_assign, *arg, *id, *tmp_id;
+    node *mem_last_assign;
 
     DBUG_ENTER ("FltnLet");
 
@@ -840,124 +845,136 @@ FltnLet (node *arg_node, node *arg_info)
     }
 
     while (ids != NULL) {
-        var_name = IDS_NAME (ids);
-        tmp = FindId (var_name);
+        ids_name = IDS_NAME (ids);
+        tmp = FindId (ids_name);
 
         if (tmp == 0) {
-            PUSH (var_name, var_name, with_level);
+            PUSH (ids_name, ids_name, with_level);
             /*
              * this PUSH operation covers the whole "third case" from the description
-             * above. if var_name is found in the stack and non of the other cases
-             * is given, then (with_level == 0) holds and [var_name, var_name, 0]
+             * above. if 'ids_name' is found in the stack and non of the other cases
+             * is given, then (with_level == 0) holds and [ids_name, ids_name, 0]
              * has been pushed anyway!!
              */
         } else {
             if (NODE_TYPE (LET_EXPR (arg_node)) == N_Nwith) { /* the let expr is a WL */
                 DBUG_PRINT ("RENAME", ("renaming LHS of WL-assignment"));
-                tmp_var = TmpVar ();
+                tmp_name = TmpVar ();
                 /*
-                 * Now, we insert an assignment    var_name = tmp_var;   AFTER
+                 * Now, we insert an assignment    ids_name = tmp_name;   AFTER
                  * the actual assignment! This id done
                  * by using InsertRenaming with a pointer to the actual
                  * assignment-node which can be found in mem_last_assign!!!
                  */
-                mem_last_assign = InsertRenaming (mem_last_assign, var_name, tmp_var);
+                mem_last_assign = InsertRenaming (mem_last_assign, ids_name, tmp_name);
                 /*
                  * and we rename the actual LHS:
                  */
-                FREE (var_name);
-                IDS_NAME (ids) = tmp_var;
+                FREE (ids_name);
+                IDS_NAME (ids) = tmp_name;
             } else {                  /* the let expr is not a WL */
                 if (with_level > 0) { /* we are in the body of a WL */
                     if (tmp->w_level
-                        < with_level) { /* var_name has not yet been renamed */
+                        < with_level) { /* ids_name has not yet been renamed */
                         DBUG_PRINT ("RENAME", ("inserting new renaming - assignment at "
                                                "the beginning of the WL"));
-                        tmp_var = RenameWithVar (var_name, with_level);
-                        PUSH (tmp->id_old, tmp_var, with_level);
+                        tmp_name = RenameWithVar (ids_name, with_level);
+                        PUSH (tmp->id_old, tmp_name, with_level);
                         INFO_FLTN_LASTWLBLOCK (arg_info)
-                          = InsertRenaming (INFO_FLTN_LASTWLBLOCK (arg_info), tmp_var,
+                          = InsertRenaming (INFO_FLTN_LASTWLBLOCK (arg_info), tmp_name,
                                             tmp->id_new);
                     } else {
-                        tmp_var = StringCopy (tmp->id_new);
+                        tmp_name = StringCopy (tmp->id_new);
                     }
-                    FREE (var_name);
-                    IDS_NAME (ids) = tmp_var;
+                    FREE (ids_name);
+                    IDS_NAME (ids) = tmp_name;
                 }
             }
         }
         ids = IDS_NEXT (ids);
     }
 
-    ids = LET_IDS (arg_node);
-    while (ids != NULL) {
-        var_name = IDS_NAME (ids);
+#if 0
+  /*
+   * dkr:
+   * Flattening of applications is carried out during precompilation, now,
+   * because we want to distinguish between primitive vs. user-defined functions
+   * and simple vs. boxed arguments. But this is possible after TC only!
+   * Moreover, we no longer have to worry about the effect this flattening might
+   * have on the optimizations, and --- the other way round --- wether or not
+   * the code is still in the correct form after optimizations are done.
+   */
+  ids = LET_IDS( arg_node);
+  while( ids != NULL) {
+    ids_name = IDS_NAME(ids);
 
-        /*
-         * Note here, that it is strongly recommended to flat applications of BOTH
-         * primitive and user-defined functions!
-         * Flattening one class of functions only, e.g. flattening user-defined
-         * functions but not-flattening prfs, will probably lead to nice errors
-         * after type-checking  =:-<
-         *
-         * Example:
-         *   mytype[] modarray( mytype[] a, int[] iv, mytype val) { ... }
-         *   ...
-         *   mytype[] a;
-         *   ...
-         *   a = modarray( a, iv, val)
-         * Here the modarray is parsed as a prf but in fact it is a user-defined
-         * function!!! That means, the application is a N_prf node after scan/parse
-         * and will therefore be left untouched during the flattening phase.
-         * The type-checker infers that this application has to be a N_ap node
-         * and transform it accordingly.
-         * Now, we have a N_ap node that NOT has been flattened correctly ....
-         *
-         * But fortunately the flattening of prf-applications is made undone by
-         * the optimizations :-))
-         * Note here, that this would not happen, if the temp-assignment is placed
-         * BEHIND the application:
-         *   a=fun(a)  =>  tmp=a; a=fun(tmp);  =>  CF can undo this
-         *   a=fun(a)  =>  tmp=fun(a); a=tmp;  =>  CF can NOT undo this (for now)
-         */
-        if ((NODE_TYPE (LET_EXPR (arg_node)) == N_prf)
-            || (NODE_TYPE (LET_EXPR (arg_node)) == N_ap)) {
-            /*
-             * does 'var_name' occur as an argument of the function application??
-             */
-            arg = AP_OR_PRF_ARGS (LET_EXPR (arg_node));
-            tmp_id = NULL;
-            while (arg != NULL) {
-                id = EXPRS_EXPR (arg);
-                if (NODE_TYPE (id) == N_id) {
-                    if (!strcmp (ID_NAME (id), var_name)) {
-                        if (tmp_id == NULL) {
-                            /*
-                             * first occur of the var of the LHS
-                             */
-                            DBUG_PRINT ("RENAME",
-                                        ("abtracting LHS (%s) of function application",
-                                         var_name));
-                            /*
-                             * Now, we abstract the found argument
-                             */
-                            tmp_id = Abstract (id, arg_info);
-                            EXPRS_EXPR (arg) = tmp_id;
-                        } else {
-                            /*
-                             * temporary var already generated
-                             * -> just replace the current arg by 'tmp_id'
-                             */
-                            FreeTree (EXPRS_EXPR (arg));
-                            EXPRS_EXPR (arg) = DupNode (tmp_id);
-                        }
-                    }
-                }
-                arg = EXPRS_NEXT (arg);
+    /*
+     * Note here, that it is strongly recommended to flat applications of BOTH
+     * primitive and user-defined functions!
+     * Flattening one class of functions only, e.g. flattening user-defined
+     * functions but not-flattening prfs, will probably lead to nice errors
+     * after type-checking  =:-<
+     *
+     * Example:
+     *   mytype[] modarray( mytype[] a, int[] iv, mytype val) { ... }
+     *   ...
+     *   mytype[] a;
+     *   ...
+     *   a = modarray( a, iv, val)
+     * Here the modarray is parsed as a prf but in fact it is a user-defined
+     * function!!! That means, the application is a N_prf node after scan/parse
+     * and will therefore be left untouched during the flattening phase.
+     * The type-checker infers that this application has to be a N_ap node
+     * and transform it accordingly.
+     * Now, we have a N_ap node that NOT has been flattened correctly ....
+     *
+     * But fortunately the flattening of prf-applications is made undone by
+     * the optimizations :-))
+     * Note here, that this would not happen, if the temp-assignment is placed
+     * BEHIND the application:
+     *   a=fun(a)  =>  tmp=a; a=fun(tmp);  =>  CF can undo this
+     *   a=fun(a)  =>  tmp=fun(a); a=tmp;  =>  CF can NOT undo this (for now)
+     */
+    if ((NODE_TYPE( LET_EXPR( arg_node)) == N_prf) ||
+        (NODE_TYPE( LET_EXPR( arg_node)) == N_ap)) {
+      node *arg, *id, *tmp_id;
+      /*
+       * does 'ids_name' occur as an argument of the function application??
+       */
+      arg = AP_OR_PRF_ARGS( LET_EXPR( arg_node));
+      tmp_id = NULL;
+      while (arg != NULL) {
+        id = EXPRS_EXPR( arg);
+        if (NODE_TYPE( id) == N_id) {
+          if (! strcmp( ID_NAME( id), ids_name)) {
+            if (tmp_id == NULL) {
+              /*
+               * first occur of the var of the LHS
+               */
+              DBUG_PRINT( "RENAME", ("abtracting LHS (%s) of function application",
+                                     ids_name));
+              /*
+               * Now, we abstract the found argument
+               */
+              tmp_id = Abstract( id, arg_info);
+              EXPRS_EXPR( arg) = tmp_id;
             }
+            else {
+              /*
+               * temporary var already generated
+               * -> just replace the current arg by 'tmp_id'
+               */
+              FreeTree( EXPRS_EXPR( arg));
+              EXPRS_EXPR( arg) = DupNode( tmp_id);
+            }
+          }
         }
-        ids = IDS_NEXT (ids);
+        arg = EXPRS_NEXT( arg);
+      }
     }
+    ids = IDS_NEXT( ids);
+  }
+#endif
 
     DBUG_RETURN (arg_node);
 }
