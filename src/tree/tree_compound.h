@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.68  2002/10/08 13:03:36  sbs
+ * ID_OR_ARRAY_TYPE added.
+ *
  * Revision 3.67  2002/09/06 10:03:15  sbs
  * Ids2Exprs added.
  *
@@ -1726,6 +1729,7 @@ extern node *MakeVinfoDollar (node *next);
 #define ID_SSAASSIGN(n) (AVIS_SSAASSIGN (ID_AVIS (n)))
 
 #define ID_OR_CAST_TYPE(n) ((NODE_TYPE (n) == N_id) ? ID_TYPE (n) : CAST_TYPE (n))
+#define ID_OR_ARRAY_TYPE(n) ((NODE_TYPE (n) == N_id) ? ID_TYPE (n) : ARRAY_TYPE (n))
 
 /*--------------------------------------------------------------------------*/
 
