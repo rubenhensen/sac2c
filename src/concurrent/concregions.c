@@ -1,14 +1,15 @@
 /*
  *
  * $Log$
+ * Revision 1.2  1998/04/03 11:59:40  dkr
+ * include order is now correct :)
+ *
  * Revision 1.1  1998/04/03 11:37:21  dkr
  * Initial revision
  *
  *
  *
  */
-
-#include "concregions.h"
 
 #include "types.h"
 #include "tree_basic.h"
@@ -20,6 +21,8 @@
 
 #include "DupTree.h"
 #include "dbug.h"
+
+#include "concregions.h"
 
 /******************************************************************************
  *
