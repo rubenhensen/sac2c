@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.139  2003/06/11 21:41:40  ktr
+ * added support for multidimensional arrays
+ *
  * Revision 3.138  2003/06/11 15:07:12  ktr
  * Quick-Fix of the bug by commenting out critical lines.
  *
@@ -678,7 +681,7 @@ TSIprintInfo (node *arg_node, node *arg_info)
         ap_name = Malloc (6 * sizeof (char));
         ap_name = strcpy (ap_name, "BvL0");
         PRAGMA_WLCOMP_APS (pragma)
-          = MakeExprs (MakeAp (ap_name, NULL, MakeExprs (MakeArray (aelems), NULL)),
+          = MakeExprs (MakeAp (ap_name, NULL, MakeExprs (MakeFlatArray (aelems), NULL)),
                        NULL);
     }
 
@@ -2508,26 +2511,29 @@ PrintArray (node *arg_node, node *arg_info)
     DBUG_ENTER ("PrintArray");
 
     if (ARRAY_AELEMS (arg_node) != NULL) {
-        /*
-        INFO_PRINT_DIM(arg_info) = ARRAY_DIM(arg_node) -
-          (NODE_TYPE( EXPRS_EXPR( ARRAY_AELEMS( arg_node))) == N_id ?
-           ID_DIM(EXPRS_EXPR(ARRAY_AELEMS(arg_node))) : 0);
 
-        INFO_PRINT_SHAPE(arg_info) = ARRAY_SHPSEG(arg_node);
-        INFO_PRINT_SHAPE_COUNTER(arg_info) =
-          Array2Shpseg(CreateZeroVector(ARRAY_DIM(arg_node),T_int),NULL);
+        INFO_PRINT_DIM (arg_info) = ARRAY_DIM (arg_node);
+        INFO_PRINT_SHAPE (arg_info) = SHShape2OldShpseg (ARRAY_SHAPE (arg_node));
+        INFO_PRINT_SHAPE_COUNTER (arg_info)
+          = Array2Shpseg (CreateZeroVector (ARRAY_DIM (arg_node), T_int), NULL);
 
-        for (i = 0; i < INFO_PRINT_DIM(arg_info); i++)
-          fprintf( outfile, "[ ");
-        */
+        for (i = 0; i < INFO_PRINT_DIM (arg_info); i++)
+            fprintf (outfile, "[ ");
+
         Trav (ARRAY_AELEMS (arg_node), arg_info);
-        /*
-        for (i = 0; i < INFO_PRINT_DIM(arg_info); i++)
-          fprintf( outfile, " ]");
-        */
+
+        for (i = 0; i < INFO_PRINT_DIM (arg_info); i++)
+            fprintf (outfile, " ]");
+
     } else {
         fprintf (outfile, "[]");
     }
+
+    if (INFO_PRINT_SHAPE (arg_info) != NULL)
+        FreeShpseg (INFO_PRINT_SHAPE (arg_info));
+
+    if (INFO_PRINT_SHAPE_COUNTER (arg_info) != NULL)
+        FreeShpseg (INFO_PRINT_SHAPE_COUNTER (arg_info));
 
     INFO_PRINT_DIM (arg_info) = old_print_dim;
     INFO_PRINT_SHAPE (arg_info) = old_print_shape;
