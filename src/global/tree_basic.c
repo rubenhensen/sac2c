@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.51  1998/03/24 21:09:17  dkr
+ * changed MakeWLproj
+ *
  * Revision 1.50  1998/03/24 10:18:14  srs
  * Changed MakeNPart
  *
@@ -1486,6 +1489,9 @@ MakeWLproj (int level, int dim, int bound1, int bound2, int step, int unrolling,
     WLPROJ_UNROLLING (new_node) = unrolling;
     WLPROJ_CONTENTS (new_node) = contents;
     WLPROJ_NEXT (new_node) = next;
+
+    WLPROJ_PART (new_node) = NULL;
+    WLPROJ_MODIFIED (new_node) = 0;
 
     DBUG_RETURN (new_node);
 }
