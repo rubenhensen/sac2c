@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.5  2004/11/22 21:24:02  skt
+ * code brushing SACDevCampDK 2K4
+ *
  * Revision 1.4  2004/11/01 21:51:43  sah
  * added SerStackDump
  *
@@ -17,21 +20,19 @@
  *
  */
 
-#ifndef _SERIALIZE_STACK_H
-#define _SERIALIZE_STACK_H
+#ifndef _SAC_SERIALIZE_STACK_H_
+#define _SAC_SERIALIZE_STACK_H_
 
 #include "types.h"
 
 #define SERSTACK_NOT_FOUND -1
 
-typedef struct SERSTACK_T serstack_t;
+extern serstack_t *SSinit ();
+extern serstack_t *SSdestroy (serstack_t *stack);
+extern void SSpush (node *val, serstack_t *stack);
+extern node *SSpop (serstack_t *stack);
+extern int SSfindPos (node *val, serstack_t *stack);
+extern node *SSlookup (int pos, serstack_t *stack);
+extern void SSdump (serstack_t *stack);
 
-extern serstack_t *SerStackInit ();
-extern serstack_t *SerStackDestroy (serstack_t *stack);
-extern void SerStackPush (node *val, serstack_t *stack);
-extern node *SerStackPop (serstack_t *stack);
-extern int SerStackFindPos (node *val, serstack_t *stack);
-extern node *SerStackLookup (int pos, serstack_t *stack);
-extern void SerStackDump (serstack_t *stack);
-
-#endif /* _SERIALIZE_STACK_H */
+#endif /* _SAC_SERIALIZE_STACK_H_ */

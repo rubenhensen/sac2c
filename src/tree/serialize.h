@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.8  2004/11/22 21:24:02  skt
+ * code brushing SACDevCampDK 2K4
+ *
  * Revision 1.7  2004/11/02 14:59:01  sah
  * extended serialize traversal
  *
@@ -26,21 +29,22 @@
  *
  */
 
-#ifndef _SERIALIZE_H
-#define _SERIALIZE_H
+#ifndef _SAC_SERIALIZE_H_
+#define _SAC_SERIALIZE_H_
 
 #include "symboltable.h"
 #include "serialize_stack.h"
 #include <stdio.h>
 
-extern void SerializeModule (node *module);
-extern void SerializeFundefLink (node *fundef, FILE *file);
-extern const char *GenerateSerFunName (STentrytype_t type, node *node);
+extern void SERdoSerialize (node *module);
 
-extern serstack_t *SerializeBuildSerStack (node *arg_node);
+extern void SERserializeFundefLink (node *fundef, FILE *file);
+extern const char *SERgenerateSerFunName (STentrytype_t type, node *node);
 
-extern node *SERFundef (node *arg_node, info *arg_info);
-extern node *SERTypedef (node *arg_node, info *arg_info);
-extern node *SERObjdef (node *arg_node, info *arg_info);
+extern serstack_t *SERbuildSerStack (node *arg_node);
 
-#endif /* _SERIALIZE_H */
+extern node *SERfundef (node *arg_node, info *arg_info);
+extern node *SERtypedef (node *arg_node, info *arg_info);
+extern node *SERobjdef (node *arg_node, info *arg_info);
+
+#endif /* _SAC_SERIALIZE_H_ */

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.6  2004/11/22 21:24:02  skt
+ * code brushing SACDevCampDK 2K4
+ *
  * Revision 1.5  2004/10/26 09:34:51  sah
  * added INFO_SER_AST
  *
@@ -20,12 +23,10 @@
  *
  */
 
-#ifndef _SERIALIZE_INFO_H
-#define _SERIALIZE_INFO_H
+#ifndef _SAC_SERIALIZE_INFO_H_
+#define _SAC_SERIALIZE_INFO_H_
 
-#include <stdio.h>
-#include "serialize_stack.h"
-#include "symboltable.h"
+#include "types.h"
 
 /*
  * INFO structure
@@ -46,4 +47,4 @@ struct INFO {
 #define INFO_SER_TABLE(n) (n->table)
 #define INFO_SER_AST(n) (n->ast)
 
-#endif /* _SERIALIZE_INFO_H */
+#endif /* _SAC_SERIALIZE_INFO_H_ */
