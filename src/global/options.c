@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.46  2000/08/01 13:43:58  nmw
+ * default disabling of PHM in case of c libraries removed
+ *
  * Revision 2.45  2000/07/12 13:05:35  mab
  * bug fixed in option consistency check
  *
@@ -404,12 +407,7 @@ AnalyseCommandline (int argc, char *argv[])
     ARGS_OPTION ("genlib", {
         ARG_CHOICE_BEGIN ();
         ARG_CHOICE ("sac", generatelibrary |= GENERATELIBRARY_SAC);
-        ARG_CHOICE ("c", generatelibrary |= GENERATELIBRARY_C;
-                    optimize &= ~OPT_PHM; /* when generating c library, disable private
-                                             heap management*/
-                    optimize &= ~OPT_APS; /* and multi threading by default*/
-                    optimize &= ~OPT_RCAO; optimize &= ~OPT_MSCA;
-                    gen_mt_code = GEN_MT_NONE);
+        ARG_CHOICE ("c", generatelibrary |= GENERATELIBRARY_C);
         ARG_CHOICE_END ();
     });
 
