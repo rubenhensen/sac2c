@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.23  1999/10/29 16:44:23  dkr
+ * fixed a bug in ArrayPrf:
+ *   when introducing a new var, the MRD list must be expanded (MAlloc!)
+ * accordingly
+ *
  * Revision 2.22  1999/10/27 11:37:17  dkr
  * bugs in CompareNumArrayElts() fixed
  *
@@ -2364,9 +2369,17 @@ ArrayPrf (node *arg_node, node *arg_info)
                                          * The above condition may not hold only in very
                                          * rare and dubious circumstance.
                                          */
+
+                                        /*
+                                         * create a new variable
+                                         */
                                         fresh_var = TmpVar ();
                                         new_ids = MakeIds (fresh_var, NULL, ST_regular);
 
+                                        /*
+                                         * create a new vardec for this variable,
+                                         * increment VARNO
+                                         */
                                         vardecs
                                           = IDS_VARDEC (LET_IDS (ASSIGN_INSTR (assign)));
                                         new_vardec
@@ -2378,13 +2391,21 @@ ArrayPrf (node *arg_node, node *arg_info)
                                           = (INFO_CF_VARNO (arg_info))++;
                                         IDS_VARDEC (new_ids) = new_vardec;
 
+                                        /*
+                                         * create the new assignment,
+                                         * build masks for this assignment
+                                         */
                                         new_assign
                                           = MakeAssign (MakeLet (DupTree (val, NULL),
                                                                  new_ids),
                                                         NULL);
                                         ASSIGN_MRDMASK (new_assign)
-                                          = DupMask (ASSIGN_MRDMASK (assign),
-                                                     INFO_CF_VARNO (arg_info));
+                                          = GenMask (INFO_CF_VARNO (arg_info));
+                                        ASSIGN_MRDMASK (new_assign)
+                                          = CopyMask (ASSIGN_MRDMASK (assign),
+                                                      INFO_CF_VARNO (arg_info) - 1,
+                                                      ASSIGN_MRDMASK (new_assign),
+                                                      INFO_CF_VARNO (arg_info));
                                         ASSIGN_DEFMASK (new_assign)
                                           = ReGenMask (ASSIGN_DEFMASK (new_assign),
                                                        INFO_CF_VARNO (arg_info));
@@ -2396,11 +2417,16 @@ ArrayPrf (node *arg_node, node *arg_info)
                                         INC_VAR (ASSIGN_USEMASK (new_assign),
                                                  ID_VARNO (val));
 
+                                        /*
+                                         * store new assignment in ASSIGN_CF,
+                                         * correct current MRD-masks
+                                         */
                                         ASSIGN_CF (assign) = new_assign;
+                                        ExpandMRDL (1);
                                         MRD (IDS_VARNO (new_ids)) = new_assign;
-                                        (ASSIGN_MRDMASK (
-                                          INFO_CF_ASSIGN (arg_info)))[IDS_VARNO (new_ids)]
-                                          = (long)new_assign;
+                                        FREE (ASSIGN_MRDMASK (INFO_CF_ASSIGN (arg_info)));
+                                        ASSIGN_MRDMASK (INFO_CF_ASSIGN (arg_info))
+                                          = DupMask (MRD_LIST, INFO_CF_VARNO (arg_info));
 
                                         res_array = MakeId (StringCopy (fresh_var), NULL,
                                                             ST_regular);
