@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.21  2002/08/09 12:46:19  dkr
+ * INFO_RC_... macros moved from tree_basic.h to refcount.c
+ *
  * Revision 3.20  2002/08/08 09:16:31  dkr
  * some variables initialized to please the cc
  *
@@ -122,6 +125,16 @@
  *    Provide naive-refcounters with the same properties as described above.
  *
  ******************************************************************************/
+
+/*
+ * access macros for 'arg_info'
+ */
+#define INFO_RC_PRF(n) (n->node[1])
+#define INFO_RC_WITH(n) (n->node[2])
+#define INFO_RC_RCDUMP(n) ((int *)(n->node[3]))
+#define INFO_RC_NAIVE_RCDUMP(n) ((int *)(n->node[4]))
+#define INFO_RC_VARNO(n) (n->varno)
+#define INFO_RC_ONLYNAIVE(n) (n->flag)
 
 static int args_no;       /* number of arguments of current function */
 static node *fundef_node; /* pointer to current function declaration */
