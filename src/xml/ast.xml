@@ -767,7 +767,12 @@
 	  <node name="Return" />
 	  <node name="Code" />
 	  <node name="Generator" />
-	  <node name="Part" />
+	  <node name="Part" /> 
+          <node name="Ap" />
+          <node name="Ids" />
+          <node name="Fold" />
+          <node name="Modarray" />
+          <node name="Genarray" />
    	</travuser>
       </traversal>
       <traversal id="UESD" name="UndoElimSubDiv" default="sons" include="UndoElimSubDiv.h" >
