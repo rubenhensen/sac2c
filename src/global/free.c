@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.51  1998/04/20 02:37:53  dkr
+ * changed comments
+ *
  * Revision 1.50  1998/04/17 17:25:19  dkr
  * 'concurrent regions' are now called 'SPMD regions'
  *
@@ -1507,15 +1510,19 @@ FreeIcm (node *arg_node, node *arg_info)
 
     tmp = FREECONT (ICM_NEXT (arg_node));
 
-/* brute force try! */
+    /*
+     * In 'compile' arguments of ICMs are often shared 8-(
+     *
+     * brute force try!
+     */
 #if 0
   FREETRAV(ICM_ARGS(arg_node));
 #endif
 
-/* Since the name in most (all?) cases is static, please no freeing! */
-#if 0
-  FREE(ICM_NAME(arg_node));
-#endif
+    /*
+     * Since the name in most (all?) cases is static,
+     *  please do not free ICM_NAME(arg_node) !!!
+     */
 
     DBUG_PRINT ("FREE", ("Removing N_icm node ..."));
 
