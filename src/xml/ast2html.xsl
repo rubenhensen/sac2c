@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.3  2004/12/03 15:25:09  sah
+  added QuickNav
+
   Revision 1.2  2004/11/23 19:52:12  sah
   adapted to new structure
 
@@ -63,21 +66,98 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
           tr.footnote-heading { background-color: #999999; font-weight:
                        bold; font-size: small }
           tr.footnote { font-size: small }
+          #Nav { position:fixed; top:0px; left:0px; padding:0px; 
+                 margin:0px; font-size: smaller; background-color: #AAAAAA; }
+          #NavPhases{ position:fixed; padding: 0px;
+                      margin:0px; font-size: smaller; 
+                      background-color: #AAAAAA; visibility: hidden; 
+                      width: 200pt; max-height: 90%; overflow: scroll; }
+          #NavSets{ position:fixed; padding: 0px;
+                    margin:0px; font-size: smaller; 
+                    background-color: #AAAAAA; visibility: hidden; 
+                    width: 200pt; max-height: 90%; overflow: scroll; }
+          #NavNodes{ position:fixed; padding: 0px;
+                     margin:0px; font-size: smaller; 
+                     background-color: #AAAAAA; visibility: hidden; 
+                     width: 200pt; max-height: 90%; overflow: scroll; }
+          #Content{ }
+          table.nav { border-width: 1pt; border-style: solid;
+                      border-color: #000000; background-color: #cccccc; 
+                      padding: 0pt; margin: 0pt; width: 100% } 
+          table.sub { border-width: 1pt; border-style: solid;
+                      border-color: #000000; background-color: #cccccc; 
+                      padding: 0pt; margin: 0pt; width: 100%;}
         </style>
+        <script type="text/javascript" language="JavaScript1.2">
+          function toggle( id) {
+            if (document.getElementById(id).style.visibility != "visible") {
+              document.getElementById(id).style.visibility = "visible";
+            } else {
+              document.getElementById(id).style.visibility = "hidden";
+            }
+          }
+        </script>
       </head>
       <body>
-        <a name="toc" />
-        <h1>List Of Tables</h1>
-        <ul>
-          <xsl:apply-templates mode="list-of-tables" />
-        </ul>
-        <h1>Tables</h1>
-        <xsl:apply-templates mode="table" />
-          <p>
-            <a href="http://validator.w3.org/check?uri=referer"><img
-               src="http://www.w3.org/Icons/valid-xhtml10"
-               alt="Valid XHTML 1.0!" height="31" width="88" /></a>
-          </p>
+        <div id="Nav">
+          <table class="nav">
+            <tr>
+              <td>
+                QuickNav
+              </td>
+              <td>
+                <a href="javascript:void (toggle('NavPhases'))" >Phases</a>
+                <div id="NavPhases" >
+                  <table class="sub" onMouseout="(document.getElementById('NavPhases').style.visibility = 'hidden'">
+                    <tr><td>
+                      <ul>
+                        <xsl:apply-templates select="/definition/phases/phase" mode="list-of-tables" />
+                      </ul>
+                    </td></tr>
+                  </table>
+                </div>
+              </td>
+              <td>
+                <a href="javascript:void (toggle('NavSets'))">Nodesets</a>
+                <div id="NavSets" >
+                  <table class="sub" >
+                    <tr><td>
+                      <ul>
+                        <xsl:apply-templates select="/definition/nodesets/nodeset" mode="list-of-tables" />
+                      </ul>
+                    </td></tr>
+                  </table>
+                </div>
+              </td>
+              <td>
+                <a href="javascript:void (toggle('NavNodes'))">Nodes</a>
+                <div id="NavNodes" >
+                  <table class="sub" >
+                    <tr><td>
+                      <ul>
+                        <xsl:apply-templates select="/definition/syntaxtree/node" mode="list-of-tables" >
+                          <xsl:sort select="@name" />
+                        </xsl:apply-templates>
+                      </ul>
+                    </td></tr>
+                  </table>
+                </div>
+              </td>
+              <td>
+                <a href="#toc">top</a>
+              </td>
+            </tr>
+          </table>
+        </div>
+        <div id="Content">
+          <a name="toc" />
+          <h1>List Of Tables</h1>
+          <ul>
+            <xsl:apply-templates mode="list-of-tables" />
+          </ul>
+          <h1>Tables</h1>
+          <xsl:apply-templates mode="table" />
+        </div>
       </body>
     </html>
   </xsl:template>
