@@ -1,11 +1,8 @@
 /*
  *
  * $Log$
- * Revision 3.56  2002/07/15 15:01:58  dkr
- * WARNing about modified blocking size is a NOTE now
- *
- * Revision 3.55  2002/06/13 11:51:15  dkr
- * no changes done
+ * Revision 3.57  2002/07/15 15:04:02  dkr
+ * grrrr... modification of last revision undone
  *
  * Revision 3.54  2001/11/22 08:41:17  sbs
  * CheckWithids is only compiled in the dbug version since
@@ -4268,7 +4265,7 @@ AdjustBlockSize (int old_bv, int unroll, bool warn)
     }
 
     if (warn && (old_bv != new_bv)) {
-        NOTE (line, ("Block size adjusted: %i instead of %i", new_bv, old_bv));
+        WARN (line, ("Block size adjusted: %i instead of %i", new_bv, old_bv));
     }
 
     DBUG_RETURN (new_bv);
