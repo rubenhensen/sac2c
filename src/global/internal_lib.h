@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.6  1996/01/16 16:44:42  cg
+ * Revision 1.7  1996/09/11 06:13:14  cg
+ * Function SystemCall2 added that executes a system call and returns the
+ * exit code rather than terminating with an error message upon failure.
+ *
+ * Revision 1.6  1996/01/16  16:44:42  cg
  * added function TmpVar for generation of variable names
  *
  * Revision 1.5  1996/01/05  12:26:54  cg
@@ -30,6 +34,7 @@ extern void *Malloc (int size);
 extern char *StringCopy (char *source);
 extern char *itoa (long number);
 extern void SystemCall (char *format, ...);
+extern int SystemCall2 (char *format, ...);
 extern int SystemTest (char *format, ...);
 extern char *TmpVar ();
 

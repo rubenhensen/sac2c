@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.13  1996/05/24 16:18:26  sbs
+ * Revision 1.14  1996/09/11 06:13:14  cg
+ * Function SystemCall2 added that executes a system call and returns the
+ * exit code rather than terminating with an error message upon failure.
+ *
+ * Revision 1.13  1996/05/24  16:18:26  sbs
  *   * if -dnocleanup flag is set print all syscalls !
  *    * This allows for easy C-code patches.
  *    *
@@ -214,6 +218,46 @@ SystemCall (char *format, ...)
     }
 
     DBUG_VOID_RETURN;
+}
+
+/*
+ *
+ *  functionname  : SystemCall2
+ *  arguments     : 1) format string like that of printf
+ *                  2) variable argument list for 1)
+ *  description   : evaluates the given string and executes the respective
+ *                  system call. In contrast to SystemCall no error message
+ *                  is printed upon failure but the exit code is returned.
+ *  global vars   : ---
+ *  internal funs : ---
+ *  external funs : system, vsprintf, va_start, va_end
+ *  macros        : vararg macros
+ *
+ *  remarks       :
+ *
+ */
+
+int
+SystemCall2 (char *format, ...)
+{
+    va_list arg_p;
+    static char syscall[MAX_SYSCALL];
+
+    DBUG_ENTER ("SystemCall2");
+
+    va_start (arg_p, format);
+    vsprintf (syscall, format, arg_p);
+    va_end (arg_p);
+
+    DBUG_PRINT ("SYSCALL", ("%s", syscall));
+
+    /* if -dnocleanup flag is set print all syscalls !
+     * This allows for easy C-code patches.
+     */
+    if (!cleanup)
+        NOTE (("%s", syscall));
+
+    DBUG_RETURN (system (syscall));
 }
 
 /*
