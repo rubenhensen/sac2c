@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.2  1995/06/06 15:19:13  sbs
+ * Revision 1.3  1995/10/05 14:55:52  sbs
+ * some bug fixes.
+ *
+ * Revision 1.2  1995/06/06  15:19:13  sbs
  * first usable version ; does not include conditional stuff
  *
  * Revision 1.1  1995/06/02  10:06:56  sbs
@@ -39,7 +42,7 @@ node *
 PsiOpt (node *arg_node)
 {
     DBUG_ENTER ("PsiOpt");
-    if (psi_optimize) {
+    if (psi_optimize && optimize) {
         NOTE (("Optimizing arrays: ...\n"));
         if (psi_opt_ive) {
             act_tab = idx_tab;

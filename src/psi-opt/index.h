@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.4  1995/06/26 09:59:28  sbs
+ * Revision 1.5  1995/10/05 14:55:52  sbs
+ * some bug fixes.
+ *
+ * Revision 1.4  1995/06/26  09:59:28  sbs
  * preliminary version
  *
  * Revision 1.3  1995/06/06  15:18:10  sbs
@@ -21,6 +24,7 @@
 #define sac_index_h
 
 extern node *IdxModul (node *, node *);
+extern node *IdxFundef (node *, node *);
 extern node *IdxAssign (node *, node *);
 extern node *IdxWith (node *, node *);
 extern node *IdxGenerator (node *, node *);
