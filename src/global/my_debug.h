@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  1997/10/29 14:29:11  srs
+ * removed HAVE_MALLOC_O
+ *
  * Revision 1.8  1997/04/24 15:00:54  sbs
  * HAVE_MALLOC_O inserted
  *
@@ -36,11 +39,6 @@ extern char *mdb_nodetype[];
 extern char *mdb_prf[];
 
 extern char *mdb_type[];
-
-#ifdef HAVE_MALLOC_O
-extern int malloc_debug (int);
-extern int malloc_verify ();
-#endif /* HAVE_MALLOC_O */
 
 #define P_FORMAT "(%06x)" /* formatstring for pointer address */
 
