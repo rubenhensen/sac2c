@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2001/05/22 12:31:20  nmw
+ * ; after SAC_HM_DEFINE_INITIAL_THREAD_STATUS( ) eliminated since it either
+ * extends to nothing or to a declaration ended by ; !
+ * .
+ *
  * Revision 3.4  2001/01/25 11:45:58  cg
  * Used long int instead of int for converting pointers into numerical
  * data. This guarantees portability to Alpha.
@@ -439,13 +444,13 @@ extern void *SAC_HM_PlaceArray (void *alloc, void *base, long int offset,
 #if SAC_DO_COMPILE_MODULE
 #define SAC_HM_DEFINE()                                                                  \
     extern SAC_HM_arena_t SAC_HM_arenas[][SAC_HM_NUM_ARENAS + 2];                        \
-    SAC_HM_DEFINE_INITIAL_THREAD_STATUS ();                                              \
+    SAC_HM_DEFINE_INITIAL_THREAD_STATUS ()                                               \
     static const unsigned int SAC_MT_mythread = 0;
 #else
 #define SAC_HM_DEFINE()                                                                  \
     SAC_HM_arena_t SAC_HM_arenas[SAC_SET_THREADS_MAX][SAC_HM_NUM_ARENAS + 2]             \
       = SAC_HM_SETUP_ARENAS ();                                                          \
-    SAC_HM_DEFINE_INITIAL_THREAD_STATUS ();                                              \
+    SAC_HM_DEFINE_INITIAL_THREAD_STATUS ()                                               \
     static const unsigned int SAC_MT_mythread = 0;                                       \
     const SAC_HM_size_byte_t SAC_HM_initial_master_arena_of_arenas_size                  \
       = SAC_SET_INITIAL_MASTER_HEAPSIZE;                                                 \
