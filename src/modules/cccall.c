@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.4  1999/07/08 12:41:19  cg
+ * Implementation of old command line optio -mt_all removed.
+ * Prepared linking with several selected parts of the SAC runtime
+ * library.
+ *
  * Revision 2.3  1999/05/18 11:22:19  cg
  * Unfortunately, if tar fails, it does NOT produce an error condition.
  * So, we have to check whether extracted files actually exist after the
@@ -600,75 +605,41 @@ InvokeCC ()
             }
         }
 
-        if (gen_cccall) {
-            shellscript = WriteOpen (".sac2c");
-            fprintf (shellscript, "#!/bin/sh -v\n\n");
-            fprintf (shellscript, "%s %s %s -L%s %s -o %s %s %s %s %s %s\n\n", config.cc,
-                     config.ccflags, config.ccdir, tmp_dirname, opt_buffer, outfilename,
-                     cfilename, linklist, config.cclink,
-                     (gen_mt_code ? config.ccmtlink : ""),
-                     (use_efence ? lib_efence : ""));
-            fclose (shellscript);
-            SystemCall ("chmod a+x .sac2c");
-        }
-
-        if (all_threads == 0) {
-            SystemCall ("%s %s %s -L%s %s -o %s %s %s %s %s %s", config.cc,
-                        config.ccflags, config.ccdir, tmp_dirname, opt_buffer,
-                        outfilename, cfilename, linklist, config.cclink,
-                        (gen_mt_code ? config.ccmtlink : ""),
-                        (use_efence ? lib_efence : ""));
-
-        } else {
-            SystemCall ("%s %s %s -L%s %s -o %s.1 "
-                        "-DSAC_DO_MULTITHREAD=0 "
-                        "-DSAC_DO_THREADS_STATIC=1 "
-                        "-DSAC_SET_THREADS_MAX=1 "
-                        "-DSAC_SET_THREADS=1 "
-                        "-DSAC_SET_MASTERCLASS=0 "
-                        "%s %s %s %s %s",
-                        config.cc, config.ccflags, config.ccdir, tmp_dirname, opt_buffer,
-                        outfilename, cfilename, linklist, config.cclink,
-                        (gen_mt_code ? config.ccmtlink : ""),
-                        (use_efence ? lib_efence : ""));
-
-            NOTEDOT;
-            SystemCall ("%s %s %s -L%s %s -o %s.d%d "
-                        "-DSAC_DO_MULTITHREAD=1 "
-                        "-DSAC_DO_THREADS_STATIC=0 "
-                        "-DSAC_SET_THREADS_MAX=%d "
-                        "-DSAC_SET_THREADS=0 "
-                        "-DSAC_SET_MASTERCLASS=0 "
-                        "%s %s %s %s %s",
-                        config.cc, config.ccflags, config.ccdir, tmp_dirname, opt_buffer,
-                        outfilename, all_threads, all_threads, cfilename, linklist,
-                        config.cclink, (gen_mt_code ? config.ccmtlink : ""),
-                        (use_efence ? lib_efence : ""));
-
-            for (i = 2; i <= all_threads; i++) {
-                NOTEDOT;
-                SystemCall ("%s %s %s -L%s %s -o %s.%d "
-                            "-DSAC_DO_MULTITHREAD=1 "
-                            "-DSAC_DO_THREADS_STATIC=1 "
-                            "-DSAC_SET_THREADS_MAX=%d "
-                            "-DSAC_SET_THREADS=%d "
-                            "-DSAC_SET_MASTERCLASS=%d "
-                            "%s %s %s %s %s",
-                            config.cc, config.ccflags, config.ccdir, tmp_dirname,
-                            opt_buffer, outfilename, i, i, i, GSCCalcMasterclass (i),
-                            cfilename, linklist, config.cclink,
-                            (gen_mt_code ? config.ccmtlink : ""),
-                            (use_efence ? lib_efence : ""));
+        if (gen_mt_code) {
+            if (gen_cccall) {
+                shellscript = WriteOpen (".sac2c");
+                fprintf (shellscript, "#!/bin/sh -v\n\n");
+                fprintf (shellscript, "%s %s %s -L%s %s -o %s %s %s -lsac_mt %s %s %s",
+                         config.cc, config.ccflags, config.ccdir, tmp_dirname, opt_buffer,
+                         outfilename, cfilename, linklist, "-lsac_noheapmgr_mt",
+                         config.ccmtlink, (use_efence ? lib_efence : ""));
+                fclose (shellscript);
+                SystemCall ("chmod a+x .sac2c");
             }
+
+            SystemCall ("%s %s %s -L%s %s -o %s %s %s -lsac_mt %s %s %s", config.cc,
+                        config.ccflags, config.ccdir, tmp_dirname, opt_buffer,
+                        outfilename, cfilename, linklist, "-lsac_noheapmgr_mt",
+                        config.ccmtlink, (use_efence ? lib_efence : ""));
+        } else {
+            if (gen_cccall) {
+                shellscript = WriteOpen (".sac2c");
+                fprintf (shellscript, "#!/bin/sh -v\n\n");
+                fprintf (shellscript, "%s %s %s -L%s %s -o %s %s %s -lsac %s %s %s",
+                         config.cc, config.ccflags, config.ccdir, tmp_dirname, opt_buffer,
+                         outfilename, cfilename, linklist, "-lsac_noheapmgr",
+                         config.cclink, (use_efence ? lib_efence : ""));
+                fclose (shellscript);
+                SystemCall ("chmod a+x .sac2c");
+            }
+
+            SystemCall ("%s %s %s -L%s %s -o %s %s %s -lsac %s %s %s", config.cc,
+                        config.ccflags, config.ccdir, tmp_dirname, opt_buffer,
+                        outfilename, cfilename, linklist, "-lsac_noheapmgr",
+                        config.cclink, (use_efence ? lib_efence : ""));
         }
 
     } else {
-        if (all_threads > 0) {
-            all_threads = 0;
-            SYSWARN (("Command line option '-mt-all <num>` not allowed for"
-                      " compiling module/class implementations."));
-        }
-
         if (linkstyle == 1) {
             SystemCall ("%s %s %s %s -o %s/%s.o -c %s/%s.c", config.cc, config.ccflags,
                         config.ccdir, opt_buffer, tmp_dirname, modulename, tmp_dirname,
