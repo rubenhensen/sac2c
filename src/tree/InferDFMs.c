@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.33  2004/12/13 18:55:48  ktr
+ * Withids contain N_id/N_exprs of N_id after explicit allocation now.
+ *
  * Revision 1.32  2004/11/25 19:24:22  mwe
  * local functions declared as static
  *
@@ -510,10 +513,9 @@ DefinedIds (info *arg_info, node *arg_ids)
 {
     DBUG_ENTER ("DefinedIds");
 
-    while (arg_ids != NULL) {
-        arg_info = DefinedVar (arg_info, IDS_AVIS (arg_ids));
-        arg_ids = IDS_NEXT (arg_ids);
-    }
+    DBUG_ASSERT ((NODE_TYPE (arg_ids) == N_ids), "no N_ids node found");
+
+    arg_info = DefinedVar (arg_info, IDS_AVIS (arg_ids));
 
     DBUG_RETURN (arg_info);
 }
@@ -1355,7 +1357,9 @@ INFDFMSlet (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("INFDFMSlet");
 
-    arg_info = DefinedIds (arg_info, LET_IDS (arg_node));
+    if (LET_IDS (arg_node) != NULL) {
+        LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
+    }
 
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
@@ -1478,6 +1482,31 @@ INFDFMSid (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
+ *   node *INFDFMSids( node *arg_node, info *arg_info)
+ *
+ * description:
+ *   Every right hand side variable is marked as 'used' in the in-, out-,
+ *   local-masks of the current block.
+ *
+ ******************************************************************************/
+
+node *
+INFDFMSids (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("INFDFMSids");
+
+    arg_info = DefinedIds (arg_info, arg_node);
+
+    if (IDS_NEXT (arg_node) != NULL) {
+        IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   node *INFDFMSwithx( node *arg_node, info *arg_info)
  *
  * description:
@@ -1554,28 +1583,6 @@ INFDFMSwith (node *arg_node, info *arg_info)
 
         DBUG_PRINT ("INFDFMS", ("with-loop with out-vars detected!"));
     }
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *INFDFMSwithid( node *arg_node, info *arg_info)
- *
- * description:
- *   Every index variable is marked as 'defined' in the in-, out-,
- *   local-masks of the current block.
- *
- ******************************************************************************/
-
-node *
-INFDFMSwithid (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("INFDFMSwithid");
-
-    arg_info = DefinedIds (arg_info, WITHID_VEC (arg_node));
-    arg_info = DefinedIds (arg_info, WITHID_IDS (arg_node));
 
     DBUG_RETURN (arg_node);
 }

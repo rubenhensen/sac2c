@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2004/12/13 18:54:49  ktr
+ * Withids contain N_id/N_exprs of N_id after explicit allocation now.
+ *
  * Revision 1.5  2004/11/24 14:04:08  ktr
  * MakeLet permutation.
  *
@@ -234,7 +237,7 @@ EMLRap (node *arg_node, info *arg_info)
                  * Ex: a_mem
                  */
                 memavis = TBmakeAvis (ILIBtmpVarName (ID_NAME (oldarg)),
-                                      TYcopyType (AVIS_TYPE (ID_AVIS (oldavis))));
+                                      TYeliminateAKV (AVIS_TYPE (ID_AVIS (oldavis))));
 
                 FUNDEF_VARDEC (INFO_EMLR_FUNDEF (arg_info))
                   = TBmakeVardec (memavis, FUNDEF_VARDEC (INFO_EMLR_FUNDEF (arg_info)));

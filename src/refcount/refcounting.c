@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.30  2004/12/13 18:54:49  ktr
+ * Withids contain N_id/N_exprs of N_id after explicit allocation now.
+ *
  * Revision 1.29  2004/11/28 18:14:21  ktr
  * changed name of starting function to EMRCdoRefCounting
  *
@@ -220,6 +223,7 @@ struct INFO {
     rc_countmode countmode;
     bool cond;
     bool mustcount;
+    bool vecneeded;
     node *fundef;
     node *lhs;
     node *condargs;
@@ -239,6 +243,7 @@ struct INFO {
 #define INFO_EMRC_COUNTMODE(n) (n->countmode)
 #define INFO_EMRC_COND(n) (n->cond)
 #define INFO_EMRC_MUSTCOUNT(n) (n->mustcount)
+#define INFO_EMRC_VECNEEDED(n) (n->vecneeded)
 #define INFO_EMRC_FUNDEF(n) (n->fundef)
 #define INFO_EMRC_LHS(n) (n->lhs)
 #define INFO_EMRC_CONDARGS(n) (n->condargs)
@@ -265,6 +270,8 @@ MakeInfo (node *fundef)
     INFO_EMRC_COND (result) = FALSE;
     INFO_EMRC_USELIST (result) = NULL;
     INFO_EMRC_DEFLIST (result) = NULL;
+    INFO_EMRC_MUSTCOUNT (result) = FALSE;
+    INFO_EMRC_VECNEEDED (result) = FALSE;
     INFO_EMRC_FUNDEF (result) = fundef;
     INFO_EMRC_LHS (result) = NULL;
     INFO_EMRC_CONDARGS (result) = NULL;
@@ -1979,19 +1986,15 @@ EMRCwith (node *arg_node, info *arg_info)
 
     INFO_EMRC_DEPTH (arg_info) += 1;
 
-    WITH_WITHID (arg_node) = TRAVdo (WITH_WITHID (arg_node), arg_info);
-
-    /*
-     * index vector needs an extra traversal because it is
-     * definitely needed in AUD with-loops
-     */
-    INFO_EMRC_COUNTMODE (arg_info) = rc_prfuse;
-    IDS_AVIS (WITH_VEC (arg_node))
-      = VisitRightAvis (IDS_AVIS (WITH_VEC (arg_node)), arg_info);
-
     if (WITH_CODE (arg_node) != NULL) {
         WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
     }
+
+    /*
+     * In AUD-Withloops, the IV is always needed
+     */
+    INFO_EMRC_VECNEEDED (arg_info) = TRUE;
+    WITH_WITHID (arg_node) = TRAVdo (WITH_WITHID (arg_node), arg_info);
 
     INFO_EMRC_DEPTH (arg_info) -= 1;
 
@@ -2024,21 +2027,15 @@ EMRCwith2 (node *arg_node, info *arg_info)
 
     INFO_EMRC_DEPTH (arg_info) += 1;
 
-    WITH2_WITHID (arg_node) = TRAVdo (WITH2_WITHID (arg_node), arg_info);
-
     if (WITH2_CODE (arg_node) != NULL) {
         WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
     }
 
-    WITHID_VECNEEDED (WITH2_WITHID (arg_node))
-      = GetEnvironment (IDS_AVIS (WITHID_VEC (WITH2_WITHID (arg_node))),
-                        GetDefLevel (IDS_AVIS (WITHID_VEC (WITH2_WITHID (arg_node)))))
-        > 0;
-
-    if (!WITHID_VECNEEDED (WITH2_WITHID (arg_node))) {
-        DBUG_PRINT ("EMRC", ("Index vector %s will not be built!\n",
-                             IDS_NAME (WITHID_VEC (WITH2_WITHID (arg_node)))));
-    }
+    /*
+     * In with2-loops ( <= AKD), the index vector is not alwazs necessary
+     */
+    INFO_EMRC_VECNEEDED (arg_info) = FALSE;
+    WITH2_WITHID (arg_node) = TRAVdo (WITH2_WITHID (arg_node), arg_info);
 
     INFO_EMRC_DEPTH (arg_info) -= 1;
 
@@ -2067,16 +2064,25 @@ EMRCwith2 (node *arg_node, info *arg_info)
 node *
 EMRCwithid (node *arg_node, info *arg_info)
 {
-    node *ids;
-
     DBUG_ENTER ("EMRCwithid");
 
     INFO_EMRC_COUNTMODE (arg_info) = rc_prfuse;
 
-    ids = WITHID_IDS (arg_node);
-    while (ids != NULL) {
-        IDS_AVIS (ids) = VisitRightAvis (IDS_AVIS (ids), arg_info);
-        ids = IDS_NEXT (ids);
+    if (WITHID_IDS (arg_node) != NULL) {
+        WITHID_IDS (arg_node) = TRAVdo (WITHID_IDS (arg_node), arg_info);
+    }
+
+    if (INFO_EMRC_VECNEEDED (arg_info)) {
+        WITHID_VEC (arg_node) = TRAVdo (WITHID_VEC (arg_node), arg_info);
+    }
+
+    WITHID_VECNEEDED (arg_node)
+      = (0 < GetEnvironment (ID_AVIS (WITHID_VEC (arg_node)),
+                             GetDefLevel (ID_AVIS (WITHID_VEC (arg_node)))));
+
+    if (!WITHID_VECNEEDED (arg_node)) {
+        DBUG_PRINT ("EMRC", ("Index vector %s will not be built!\n",
+                             ID_NAME (WITHID_VEC (arg_node))));
     }
 
     DBUG_RETURN (arg_node);

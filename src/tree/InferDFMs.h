@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2004/12/13 18:55:48  ktr
+ * Withids contain N_id/N_exprs of N_id after explicit allocation now.
+ *
  * Revision 1.8  2004/11/25 19:11:33  mwe
  * SacDevCamp Dk: Compiles!!
  *
@@ -80,7 +83,7 @@ extern node *INFDFMSassign (node *arg_node, info *arg_info);
 extern node *INFDFMSlet (node *arg_node, info *arg_info);
 extern node *INFDFMSap (node *arg_node, info *arg_info);
 extern node *INFDFMSid (node *arg_node, info *arg_info);
-extern node *INFDFMSwithid (node *arg_node, info *arg_info);
+extern node *INFDFMSids (node *arg_node, info *arg_info);
 extern node *INFDFMScode (node *arg_node, info *arg_info);
 extern node *INFDFMSwith (node *arg_node, info *arg_info);
 extern node *INFDFMScond (node *arg_node, info *arg_info);

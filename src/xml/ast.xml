@@ -210,11 +210,11 @@
 	  <node name="Code" />
           <node name="Ap" />
           <node name="Id" />
+          <node name="Ids" />
           <node name="With" />
           <node name="With2" />
           <node name="Cond" />
           <node name="Icm" />
-          <node name="Withid" />
           <node name="Cond" />
 	</travuser>
       </traversal>

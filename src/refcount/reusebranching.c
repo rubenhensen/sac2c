@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  2004/12/13 18:54:49  ktr
+ * Withids contain N_id/N_exprs of N_id after explicit allocation now.
+ *
  * Revision 1.13  2004/12/13 13:55:59  ktr
  * added functionality to branch over with-loops (work in progress)
  *
@@ -273,10 +276,9 @@ BuildCondTree (node *ass, node *branches, node *memvars, node *fundef, dfmask_t 
             }
             assids = ASSIGN_LHS (asslast);
             while (assids != NULL) {
-                cfrets
-                  = TCappendRet (cfrets,
-                                 TBmakeRet (TYcopyType (AVIS_TYPE (IDS_AVIS (assids))),
-                                            NULL));
+                cfrets = TCappendRet (cfrets, TBmakeRet (TYeliminateAKV (
+                                                           AVIS_TYPE (IDS_AVIS (assids))),
+                                                         NULL));
 
                 cftypes = TCappendTypes (cftypes,
                                          TYtype2OldType (AVIS_TYPE (IDS_AVIS (assids))));

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.31  2004/12/13 18:54:49  ktr
+ * Withids contain N_id/N_exprs of N_id after explicit allocation now.
+ *
  * Revision 1.30  2004/11/28 18:14:21  ktr
  * added traversal functions for bool, num, float, double, char
  *
@@ -799,7 +802,7 @@ EMALcode (node *arg_node, info *arg_info)
                  * Ex:
                  *   ...
                  *   a_val = wl_assign( a, A, iv);
-                 * }: a;
+                 * }: a_val;
                  */
                 assign
                   = TBmakeAssign (TBmakeLet (TBmakeIds (valavis, NULL),
@@ -826,8 +829,8 @@ EMALcode (node *arg_node, info *arg_info)
                  * Create a new memory variable
                  * Ex: a_mem
                  */
-                memavis
-                  = TBmakeAvis (ILIBtmpVarName ("mem"), TYcopyType (AVIS_TYPE (cexavis)));
+                memavis = TBmakeAvis (ILIBtmpVarName ("mem"),
+                                      TYeliminateAKV (AVIS_TYPE (cexavis)));
 
                 FUNDEF_VARDEC (INFO_EMAL_FUNDEF (arg_info))
                   = TBmakeVardec (memavis, FUNDEF_VARDEC (INFO_EMAL_FUNDEF (arg_info)));
@@ -1206,8 +1209,9 @@ EMALlet (node *arg_node, info *arg_info)
              * a' = alloc(...);
              * a = fill( b + c, a');
              */
-            avis = TBmakeAvis (ILIBtmpVarName (IDS_NAME (LET_IDS (arg_node))),
-                               TYcopyType (AVIS_TYPE (IDS_AVIS (LET_IDS (arg_node)))));
+            avis
+              = TBmakeAvis (ILIBtmpVarName (IDS_NAME (LET_IDS (arg_node))),
+                            TYeliminateAKV (AVIS_TYPE (IDS_AVIS (LET_IDS (arg_node)))));
 
             FUNDEF_VARDEC (INFO_EMAL_FUNDEF (arg_info))
               = TBmakeVardec (avis, FUNDEF_VARDEC (INFO_EMAL_FUNDEF (arg_info)));
@@ -1477,6 +1481,7 @@ EMALprf (node *arg_node, info *arg_info)
 node *
 EMALwith (node *arg_node, info *arg_info)
 {
+    node *expr;
     node *ids;
 
     DBUG_ENTER ("EMALwith");
@@ -1520,23 +1525,36 @@ EMALwith (node *arg_node, info *arg_info)
 
     /*
      * Allocate memory for the index vector
+     * and replace WITH_VEC ids with id
      */
     if (WITH_VEC (arg_node) != NULL) {
         INFO_EMAL_ALLOCLIST (arg_info)
           = MakeALS (INFO_EMAL_ALLOCLIST (arg_info), IDS_AVIS (WITH_VEC (arg_node)),
                      TBmakeNum (1), MakeShapeArg (WITH_BOUND1 (arg_node)));
+
+        expr = TBmakeId (IDS_AVIS (WITH_VEC (arg_node)));
+        WITH_VEC (arg_node) = FREEdoFreeTree (WITH_VEC (arg_node));
+        WITH_VEC (arg_node) = expr;
     }
 
     /*
      * Allocate memory for the index variables
+     * and replace WITH_IDS with exprs chain of id.
      */
+    expr = NULL;
     ids = WITH_IDS (arg_node);
     while (ids != NULL) {
         INFO_EMAL_ALLOCLIST (arg_info)
           = MakeALS (INFO_EMAL_ALLOCLIST (arg_info), IDS_AVIS (ids), TBmakeNum (0),
                      TCcreateZeroVector (0, T_int));
 
+        expr = TCappendExprs (expr, TBmakeExprs (TBmakeId (IDS_AVIS (ids)), NULL));
         ids = IDS_NEXT (ids);
+    }
+
+    if (WITH_IDS (arg_node) != NULL) {
+        WITH_IDS (arg_node) = FREEdoFreeTree (WITH_IDS (arg_node));
+        WITH_IDS (arg_node) = expr;
     }
 
     DBUG_RETURN (arg_node);
@@ -1557,6 +1575,7 @@ EMALwith (node *arg_node, info *arg_info)
 node *
 EMALwith2 (node *arg_node, info *arg_info)
 {
+    node *expr;
     node *ids;
 
     DBUG_ENTER ("EMALwith2");
@@ -1596,6 +1615,7 @@ EMALwith2 (node *arg_node, info *arg_info)
 
     /*
      * Allocate memory for the index vector
+     * and replace WITH2_VEC ids with id
      *
      * In Nwith2, shape of the index vector is always known!
      */
@@ -1605,18 +1625,30 @@ EMALwith2 (node *arg_node, info *arg_info)
                      TBmakeNum (1),
                      SHshape2Array (TYgetShape (
                        AVIS_TYPE (IDS_AVIS (WITHID_VEC (WITH2_WITHID (arg_node)))))));
+
+        expr = TBmakeId (IDS_AVIS (WITH2_VEC (arg_node)));
+        WITH2_VEC (arg_node) = FREEdoFreeTree (WITH2_VEC (arg_node));
+        WITH2_VEC (arg_node) = expr;
     }
 
     /*
      * Allocate memory for the index variables
+     * and replace WITH_IDS with exprs chain of id.
      */
+    expr = NULL;
     ids = WITH2_IDS (arg_node);
     while (ids != NULL) {
         INFO_EMAL_ALLOCLIST (arg_info)
           = MakeALS (INFO_EMAL_ALLOCLIST (arg_info), IDS_AVIS (ids), TBmakeNum (0),
                      TCcreateZeroVector (0, T_int));
 
+        expr = TCappendExprs (expr, TBmakeExprs (TBmakeId (IDS_AVIS (ids)), NULL));
         ids = IDS_NEXT (ids);
+    }
+
+    if (WITH2_IDS (arg_node) != NULL) {
+        WITH2_IDS (arg_node) = FREEdoFreeTree (WITH2_IDS (arg_node));
+        WITH2_IDS (arg_node) = expr;
     }
 
     DBUG_RETURN (arg_node);
@@ -1659,7 +1691,7 @@ EMALgenarray (node *arg_node, info *arg_info)
          * Create new identifier for new memory
          */
         wlavis = TBmakeAvis (ILIBtmpVarName (AVIS_NAME (als->avis)),
-                             TYcopyType (AVIS_TYPE (als->avis)));
+                             TYeliminateAKV (AVIS_TYPE (als->avis)));
 
         FUNDEF_VARDEC (INFO_EMAL_FUNDEF (arg_info))
           = TBmakeVardec (wlavis, FUNDEF_VARDEC (INFO_EMAL_FUNDEF (arg_info)));
@@ -1746,7 +1778,7 @@ EMALmodarray (node *arg_node, info *arg_info)
          * Create new identifier for new memory
          */
         wlavis = TBmakeAvis (ILIBtmpVarName (AVIS_NAME (als->avis)),
-                             TYcopyType (AVIS_TYPE (als->avis)));
+                             TYeliminateAKV (AVIS_TYPE (als->avis)));
 
         FUNDEF_VARDEC (INFO_EMAL_FUNDEF (arg_info))
           = TBmakeVardec (wlavis, FUNDEF_VARDEC (INFO_EMAL_FUNDEF (arg_info)));

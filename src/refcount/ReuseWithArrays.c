@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/12/13 18:54:49  ktr
+ * Withids contain N_id/N_exprs of N_id after explicit allocation now.
+ *
  * Revision 1.3  2004/11/27 05:04:47  ktr
  * IDX
  *
@@ -153,6 +156,7 @@
 #include "free.h"
 #include "internal_lib.h"
 #include "user_types.h"
+#include "new_types.h"
 
 #include <string.h>
 
@@ -210,43 +214,6 @@ FreeInfo (info *info)
 /******************************************************************************
  *
  * function:
- *   bool TypesAreEqual( types *t1, types *t2)
- *
- * description:
- *   returns TRUE iff 't1' and 't2' are equal types (only basetype, dim, shape).
- *
- ******************************************************************************/
-
-bool
-TypesAreEqual (types *t1, types *t2)
-{
-    bool compare;
-    shpseg *shpseg1, *shpseg2;
-    int dim1, dim2;
-    int d;
-
-    DBUG_ENTER ("TypesAreEqual");
-
-    shpseg1 = TCtype2Shpseg (t1, &dim1);
-    shpseg2 = TCtype2Shpseg (t2, &dim2);
-
-    compare
-      = ((dim1 >= 0) && (dim1 == dim2) && (TCgetBasetype (t1) == TCgetBasetype (t2)));
-
-    if (compare) {
-        for (d = 0; d < dim1; d++) {
-            if (SHPSEG_SHAPE (shpseg1, d) != SHPSEG_SHAPE (shpseg2, d)) {
-                compare = FALSE;
-            }
-        }
-    }
-
-    DBUG_RETURN (compare);
-}
-
-/******************************************************************************
- *
- * function:
  *   bool IsFound( char *varname, ids *ids_chain)
  *
  * description:
@@ -270,6 +237,34 @@ IsFound (char *varname, node *ids_chain)
     }
 
     DBUG_RETURN (found);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   bool SameSize( ntype *t1, ntype *t2)
+ *
+ * description:
+ *   returns TRUE iff both types have the same size
+ *
+ *****************************************************************************/
+static bool
+SameSize (ntype *t1, ntype *t2)
+{
+    ntype *aks1, *aks2;
+    bool res;
+
+    DBUG_ENTER ("SameSize");
+
+    aks1 = TYeliminateAKV (t1);
+    aks2 = TYeliminateAKV (t2);
+
+    res = TYisAKS (aks1) && TYeqTypes (aks1, aks2);
+
+    aks1 = TYfreeType (aks1);
+    aks2 = TYfreeType (aks2);
+
+    DBUG_RETURN (res);
 }
 
 /******************************************************************************
@@ -475,14 +470,11 @@ ReuseSel (node *arg1, node *arg2, info *arg_info)
 {
 
     if ((NODE_TYPE (arg1) == N_id)
-        && (!strcmp (ID_NAME (arg1), IDS_NAME (INFO_REUSE_IDX (arg_info))))
-        && (NODE_TYPE (arg2) == N_id) &&
-#ifdef MWE_NTYPE_READY
-        TYeqTypes (IDS_NTYPE (ID_IDS (arg2)), IDS_NTYPE (INFO_REUSE_WL_IDS (arg_info))) &&
-#else
-        TypesAreEqual (ID_TYPE (arg2), IDS_TYPE (INFO_REUSE_WL_IDS (arg_info))) &&
-#endif
-        (DFMtestMaskEntry (INFO_REUSE_NEGMASK (arg_info), ID_NAME (arg2), NULL) == 0)) {
+        && (!strcmp (ID_NAME (arg1), ID_NAME (INFO_REUSE_IDX (arg_info))))
+        && (NODE_TYPE (arg2) == N_id)
+        && SameSize (ID_NTYPE (arg2), IDS_NTYPE (INFO_REUSE_WL_IDS (arg_info)))
+        && (DFMtestMaskEntry (INFO_REUSE_NEGMASK (arg_info), ID_NAME (arg2), NULL)
+            == 0)) {
         /*
          * 'arg2' is used in a normal WL-sel()
          *  -> we can possibly reuse this array
@@ -509,39 +501,21 @@ bool
 ReuseIdxSel (node *arg1, node *arg2, info *arg_info)
 {
     bool traverse;
-    types *type;
     shape *shp;
     char *idx_sel_name;
 
     traverse = TRUE;
 
-    if ((NODE_TYPE (arg1) == N_id) && (NODE_TYPE (arg2) == N_id) &&
-#ifdef MWE_NTYPE_READY
-        TYeqTypes (IDS_TYPE (ID_IDS (arg2)), IDS_TYPE (INFO_REUSE_WL_IDS (arg_info))) &&
-#else
-        TypesAreEqual (ID_TYPE (arg2), IDS_TYPE (INFO_REUSE_WL_IDS (arg_info))) &&
-#endif
-        (DFMtestMaskEntry (INFO_REUSE_NEGMASK (arg_info), ID_NAME (arg2), NULL) == 0)) {
-
-#ifdef MWE_TYPE_READY
-        shp = TYtype2Shape (IDS_TYPE (INFO_REUSE_WL_IDS (arg_info)));
-        idx_sel_name = IVEchangeId (IDS_NAME (INFO_REUSE_IDX (arg_info)), shp);
-        shp = SHfreeShape (shp);
-#else
-        type = IDS_TYPE (INFO_REUSE_WL_IDS (arg_info));
-#if 1
-        shp = TCtype2Shape (type);
-        idx_sel_name = IVEchangeId (IDS_NAME (INFO_REUSE_IDX (arg_info)), shp);
-        shp = SHfreeShape (shp);
-#else
-        /**
-         * In case naming goes wrong this is an option to preserve the old
-         * handling prior to eliminating types from VINFO in index.c.
-         * Eventually, this part should vanish!
+    if ((NODE_TYPE (arg1) == N_id) && (NODE_TYPE (arg2) == N_id)
+        && SameSize (ID_NTYPE (arg2), IDS_NTYPE (INFO_REUSE_WL_IDS (arg_info)))
+        && (DFMtestMaskEntry (INFO_REUSE_NEGMASK (arg_info), ID_NAME (arg2), NULL)
+            == 0)) {
+        /*
+         * IDS_NTYPE is known to be AKS or better because it has passed SameSize
          */
-        idx_sel_name = IVEchangeIdOld (IDS_NAME (INFO_REUSE_IDX (arg_info)), type);
-#endif
-#endif
+        shp = SHcopyShape (TYgetShape (IDS_NTYPE (INFO_REUSE_WL_IDS (arg_info))));
+        idx_sel_name = IVEchangeId (IDS_NAME (INFO_REUSE_IDX (arg_info)), shp);
+        shp = SHfreeShape (shp);
 
         if (strstr (ID_NAME (arg1), idx_sel_name) == ID_NAME (arg1)) {
             /*

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2004/12/13 18:54:49  ktr
+ * Withids contain N_id/N_exprs of N_id after explicit allocation now.
+ *
  * Revision 1.11  2004/12/01 16:36:22  ktr
  * post DK bugfix
  *
@@ -404,7 +407,7 @@ EMDRcode (node *arg_node, info *arg_info)
             /*
              * Create a variable for new cexpr
              */
-            avis = TBmakeAvis (ILIBtmpVar (), TYcopyType (AVIS_TYPE (ID_AVIS (id))));
+            avis = TBmakeAvis (ILIBtmpVar (), TYeliminateAKV (AVIS_TYPE (ID_AVIS (id))));
 
             FUNDEF_VARDEC (INFO_EMDR_FUNDEF (arg_info))
               = TBmakeVardec (avis, FUNDEF_VARDEC (INFO_EMDR_FUNDEF (arg_info)));

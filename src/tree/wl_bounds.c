@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2004/12/13 18:55:48  ktr
+ * Withids contain N_id/N_exprs of N_id after explicit allocation now.
+ *
  * Revision 1.11  2004/12/13 13:54:05  ktr
  * should be more robust against missing old types.
  *
@@ -47,6 +50,7 @@
 #include "DupTree.h"
 #include "NameTuplesUtils.h"
 #include "internal_lib.h"
+#include "new_types.h"
 
 /******************************************************************************
  *
