@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.17  2005/01/30 23:09:03  mwe
+ * ... and one more time: debugging
+ *
  * Revision 1.16  2005/01/28 22:34:23  mwe
  * correct duplication of lac-funs
  * support for CODE_CEXPRS chain added
@@ -86,6 +89,9 @@
 #include "shape.h"
 #include "ct_basic.h"
 #include "tree_compound.h"
+#include "ssi.h"
+
+#include "Error.h"
 
 #include "type_upgrade.h"
 
@@ -105,6 +111,7 @@ struct INFO {
     bool then_terr;
     bool else_terr;
     bool type_error;
+    node *assign;
 };
 
 #define INFO_TUP_FUNDEF(n) (n->fundef)
@@ -119,7 +126,7 @@ struct INFO {
 #define INFO_TUP_THENTYPEERROR(n) (n->then_terr)
 #define INFO_TUP_ELSETYPEERROR(n) (n->else_terr)
 #define INFO_TUP_TYPEERROR(n) (n->type_error)
-
+#define INFO_TUP_ASSIGN(n) (n->assign)
 static info *
 MakeInfo ()
 {
@@ -140,6 +147,7 @@ MakeInfo ()
     INFO_TUP_THENTYPEERROR (result) = FALSE;
     INFO_TUP_ELSETYPEERROR (result) = FALSE;
     INFO_TUP_TYPEERROR (result) = FALSE;
+    INFO_TUP_ASSIGN (result) = NULL;
     DBUG_RETURN (result);
 }
 
@@ -212,6 +220,8 @@ TryToDoTypeUpgrade (node *fundef)
 
     if (fundef != NULL) {
 
+        NOTE (("!!!!TryToDoTypeUpgrade!!! "));
+
         arg_info = MakeInfo ();
         INFO_TUP_CORRECTFUNCTION (arg_info) = TRUE;
         INFO_TUP_CHECKLOOPFUN (arg_info) = TRUE;
@@ -221,7 +231,6 @@ TryToDoTypeUpgrade (node *fundef)
         TRAVpush (TR_tup);
         FUNDEF_BODY (fundef) = TRAVdo (FUNDEF_BODY (fundef), arg_info);
         TRAVpop ();
-        arg_info = FreeInfo (arg_info);
     }
 
     if (!(INFO_TUP_CORRECTFUNCTION (arg_info))) {
@@ -233,8 +242,8 @@ TryToDoTypeUpgrade (node *fundef)
         fundef = FREEdoFreeTree (fundef);
         fundef = NULL;
     }
-    INFO_TUP_CHECKLOOPFUN (arg_info) = FALSE;
-    INFO_TUP_CORRECTFUNCTION (arg_info) = TRUE;
+    arg_info = FreeInfo (arg_info);
+
     DBUG_RETURN (fundef);
 }
 
@@ -423,13 +432,15 @@ static node *
 AdjustSignatureToArgs (node *signature, node *args)
 {
     node *tmp = signature;
+    ntype *old, *new;
     DBUG_ENTER ("AdjustSignatureToArgs");
 
     while (tmp != NULL) {
 
-        AVIS_TYPE (ARG_AVIS (signature)) = TYfreeType (AVIS_TYPE (ARG_AVIS (signature)));
-        AVIS_TYPE (ARG_AVIS (signature))
-          = TYcopyType (AVIS_TYPE (ID_AVIS (EXPRS_EXPR (args))));
+        old = AVIS_TYPE (ARG_AVIS (tmp));
+        new = AVIS_TYPE (ID_AVIS (EXPRS_EXPR (args)));
+        AVIS_TYPE (ARG_AVIS (tmp)) = TYfreeType (AVIS_TYPE (ARG_AVIS (tmp)));
+        AVIS_TYPE (ARG_AVIS (tmp)) = TYcopyType (AVIS_TYPE (ID_AVIS (EXPRS_EXPR (args))));
 
         args = EXPRS_NEXT (args);
         tmp = ARG_NEXT (tmp);
@@ -542,22 +553,28 @@ ArgumentIsSpecializeable (ntype *type)
 
     DBUG_ENTER ("ArgumentIsSpecializeable");
 
-    switch (global.spec_mode) {
+    switch (global.sigspec_mode) {
 
-    case SS_aud:
+    case SSP_aud:
         result = FALSE;
         break;
 
-    case SS_akd:
+    case SSP_akd:
         if (TYisAKD (type)) {
             result = FALSE;
         }
 
-    case SS_aks:
-        /* if ((TYisAKV(type)) || (TYisAKS( type))) {
-           result = FALSE;
-         }*/
+    case SSP_aks:
+        if (TYisAKS (type)) {
+            result = FALSE;
+        }
+
+    case SSP_akv:
+        if (TYisAKV (type)) {
+            result = FALSE;
+        }
         break;
+        ;
     default:
         DBUG_ASSERT ((FALSE),
                      "Unknown enumeration element! Incomplete switch statement!");
@@ -636,13 +653,13 @@ GetBestPossibleType (ntype *type)
     ntype *result = NULL;
     DBUG_ENTER ("GetBestPossibleType");
 
-    switch (global.spec_mode) {
-    case SS_aud:
+    switch (global.sigspec_mode) {
+    case SSP_aud:
         /*
          * nothing to do
          */
         break;
-    case SS_akd:
+    case SSP_akd:
         if ((TYisAUD (type)) || (TYisAUDGZ (type))) {
             DBUG_ASSERT ((FALSE), "current type could not be transformed to akd type");
         } else if (TYisAKD (type)) {
@@ -654,7 +671,7 @@ GetBestPossibleType (ntype *type)
             DBUG_ASSERT ((FALSE), "unexpected type");
         }
         break;
-    case SS_aks:
+    case SSP_aks:
         if ((TYisAUD (type)) || (TYisAUDGZ (type)) || (TYisAKD (type))) {
             DBUG_ASSERT ((FALSE), "current type could not be transformed to aks type");
         } else if (TYisAKS (type)) {
@@ -663,6 +680,16 @@ GetBestPossibleType (ntype *type)
 
             result = TYmakeAKS (TYcopyType (TYgetScalar (type)),
                                 SHcopyShape (TYgetShape (type)));
+        } else {
+            DBUG_ASSERT ((FALSE), "unexpected type");
+        }
+        break;
+    case SSP_akv:
+        if ((TYisAUD (type)) || (TYisAUDGZ (type)) || (TYisAKD (type))
+            || (TYisAKS (type))) {
+            DBUG_ASSERT ((FALSE), "current type could not be transformed to akv type");
+        } else if (TYisAKV (type)) {
+            result = TYcopyType (type);
         } else {
             DBUG_ASSERT ((FALSE), "unexpected type");
         }
@@ -745,6 +772,7 @@ SpecializationOracle (node *fundef, node *args)
     }
 
     if (updated) {
+        NOTE2 (("           *** function specialized via oracle:", FUNDEF_NAME (fundef)));
         if (FUNDEF_ISWRAPPERFUN (fundef)) {
             tup_wdp_expr++;
         } else {
@@ -783,6 +811,8 @@ TryToSpecializeFunction (node *fundef, node *ap_node, info *arg_info)
     bool leave = FALSE;
     bool is_more_special = FALSE;
 
+    ntype *old, *new;
+
     DBUG_ENTER ("TryToSpecializeFunction");
 
     /*
@@ -795,6 +825,9 @@ TryToSpecializeFunction (node *fundef, node *ap_node, info *arg_info)
 
     while ((!leave) && (NULL != fun_args)) {
 
+        old = AVIS_TYPE (ARG_AVIS (fun_args));
+        new = AVIS_TYPE (ID_AVIS (EXPRS_EXPR (given_args)));
+
         switch (TYcmpTypes (AVIS_TYPE (ARG_AVIS (fun_args)),
                             AVIS_TYPE (ID_AVIS (EXPRS_EXPR (given_args))))) {
 
@@ -805,7 +838,7 @@ TryToSpecializeFunction (node *fundef, node *ap_node, info *arg_info)
                        until now ? */
             is_more_special = FALSE;
             leave = TRUE;
-            DBUG_ASSERT ((FALSE), "Argument of function is supertype of signature!");
+            /*DBUG_ASSERT( (FALSE) ,"Argument of function is supertype of signature!");*/
             break;
 
         case TY_hcs:
@@ -842,41 +875,75 @@ TryToSpecializeFunction (node *fundef, node *ap_node, info *arg_info)
                 fun = MODULE_FUNS (module);
                 MODULE_FUNS (module) = NULL;
                 module = FREEdoFreeNode (module);
+            } else {
+                fun = fundef;
+            }
 
-                FUNDEF_ARGS (fun) = AdjustSignatureToArgs (FUNDEF_ARGS (fun), args);
+            if (FUNDEF_ISDOFUN (fundef)) {
+                node *new_fun;
+                /*
+                 * function is a loop function
+                 */
+                new_fun = DUPdoDupTree (fun);
 
-                if (FUNDEF_ISDOFUN (fundef)) {
-                    node *tmp;
+                FUNDEF_ARGS (new_fun)
+                  = AdjustSignatureToArgs (FUNDEF_ARGS (new_fun), args);
+
+                /*
+                 * die selbe Funktionalität wie TUPdoTypeUpgrade, aber:
+                 * prüft bei N_ap auf rekursiven Aufruf und prüft auf passende Typen
+                 * Typen passen: Ergebnis ist 'upgegradete' Funktion
+                 * Typen passen nicht: Ergebnis ist NULL
+                 */
+
+                new_fun = TryToDoTypeUpgrade (new_fun);
+
+                if (new_fun != NULL) {
                     /*
-                     * function is a loop function
+                     * it is possible to specialiaze loop function
                      */
 
-                    /*
-                     * die selbe Funktionalität wie TUPdoTypeUpgrade, aber:
-                     * prüft bei N_ap auf rekursiven Aufruf und prüft auf passende Typen
-                     * Typen passen: Ergebnis ist 'upgegradete' Funktion
-                     * Typen passen nicht: Ergebnis ist NULL
-                     */
-
-                    tmp = TryToDoTypeUpgrade (fun);
-
-                    if (tmp != NULL) {
-                        /*
-                         * it is possible to specialiaze loop function
-                         */
-
-                        AppendFundef (fundef, tmp);
-                        fundef = tmp;
-                        tup_fdp_expr++;
+                    NOTE (("SUCCESS"));
+                    /*	  AppendFundef(fundef, new_fun);
+                              fundef = new_fun;
+                              tup_fdp_expr++;
+                              fun = FREEdoFreeTree( fun);*/
+                    if (fundef != fun) {
+                        AppendFundef (fundef, fun);
+                        FUNDEF_NEXT (fun) = NULL;
+                        fundef = fun;
                     } else {
-                        fun = FREEdoFreeTree (fun);
                     }
-                }
-                if (FUNDEF_ISCONDFUN (fundef)) {
 
-                    AppendFundef (fundef, fun);
+                    FUNDEF_ARGS (fundef)
+                      = AdjustSignatureToArgs (FUNDEF_ARGS (fun), args);
+                    fun = TryToDoTypeUpgrade (fun);
+                    NOTE2 (
+                      ("           *** loop-function specialized:", FUNDEF_NAME (fun)));
+
                     tup_fdp_expr++;
+
+                } else {
+                    /*
+                     * nothing to do
+                     */
+                    NOTE (("NO SUCCESS"));
                 }
+            }
+            if (FUNDEF_ISCONDFUN (fundef)) {
+
+                if (fundef != fun) {
+                    FUNDEF_ARGS (fun) = AdjustSignatureToArgs (FUNDEF_ARGS (fun), args);
+                    AppendFundef (fundef, fun);
+                    fundef = fun;
+                    FUNDEF_NEXT (fun) = NULL;
+                } else {
+                    FUNDEF_ARGS (fundef)
+                      = AdjustSignatureToArgs (FUNDEF_ARGS (fundef), args);
+                }
+                tup_fdp_expr++;
+
+                NOTE2 (("           *** cond-function specialized:", FUNDEF_NAME (fun)));
             }
         } else {
 
@@ -1094,6 +1161,7 @@ TryToFindSpecializedFunction (node *fundef, node *args, info *arg_info)
 {
 
     node *tmp, *result = NULL;
+    node *funs;
 
     DBUG_ENTER ("TryToFindSpecializedFunction");
 
@@ -1116,39 +1184,44 @@ TryToFindSpecializedFunction (node *fundef, node *args, info *arg_info)
         }
     }
 
-    if (result == NULL) {
+    /*  if (result == NULL) {*/
 
-        node *funs;
+    /*
+     * Static dispatch was not successful or no wrapper functions could be found
+     * try to find a more special function in FUNGROUP_FUNLIST
+     */
 
-        /*
-         * Static dispatch was not successful or no wrapper functions could be found
-         * try to find a more special function in FUNGROUP_FUNLIST
-         */
+    if (NULL != FUNDEF_FUNGROUP (fundef)) {
+        funs = FUNGROUP_FUNLIST (FUNDEF_FUNGROUP (fundef));
 
-        if (NULL != FUNDEF_FUNGROUP (fundef)) {
-            funs = FUNGROUP_FUNLIST (FUNDEF_FUNGROUP (fundef));
+        if (NULL == result) {
             INFO_TUP_BESTFITTINGFUN (arg_info) = fundef;
-
-            while (funs != NULL) {
-                INFO_TUP_BESTFITTINGFUN (arg_info)
-                  = GetBestFittingFun (LINKLIST_LINK (funs),
-                                       INFO_TUP_BESTFITTINGFUN (arg_info), args);
-                funs = LINKLIST_NEXT (funs);
-            }
-            result = INFO_TUP_BESTFITTINGFUN (arg_info);
-            if (result != fundef) {
-                if (FUNDEF_ISWRAPPERFUN (fundef)) {
-                    tup_wdp_expr++;
-                } else {
-                    tup_fdp_expr++;
-                }
-            }
         } else {
-            result = fundef;
+            INFO_TUP_BESTFITTINGFUN (arg_info) = result;
+        }
+
+        while (funs != NULL) {
+            INFO_TUP_BESTFITTINGFUN (arg_info)
+              = GetBestFittingFun (LINKLIST_LINK (funs),
+                                   INFO_TUP_BESTFITTINGFUN (arg_info), args);
+            funs = LINKLIST_NEXT (funs);
+        }
+        result = INFO_TUP_BESTFITTINGFUN (arg_info);
+        if (result != fundef) {
+            if (FUNDEF_ISWRAPPERFUN (fundef)) {
+                tup_wdp_expr++;
+            } else {
+                tup_fdp_expr++;
+            }
+            NOTE2 (("           *** specialization found:", FUNDEF_NAME (fundef)));
         }
     } else {
-        tup_fdp_expr++;
+        result = fundef;
     }
+    /*  }
+      else {
+        tup_fdp_expr++;
+      }*/
 
     DBUG_RETURN (result);
 }
@@ -1257,6 +1330,8 @@ TUPassign (node *arg_node, info *arg_info)
 {
 
     DBUG_ENTER ("TUPassign");
+
+    INFO_TUP_ASSIGN (arg_info) = arg_node;
 
     if (ASSIGN_INSTR (arg_node) != NULL) {
 
@@ -1479,25 +1554,36 @@ node *
 TUPgenerator (node *arg_node, info *arg_info)
 {
 
-    ntype *current, *tmp;
+    ntype *current, *tmp, *lb, *ub, *st, *wi;
     node *withid;
 
     DBUG_ENTER ("TUPgenerator");
 
-    current = NTCnewTypeCheck_Expr (GENERATOR_BOUND1 (arg_node));
-    tmp = NTCnewTypeCheck_Expr (GENERATOR_BOUND2 (arg_node));
-    current = GetLowestType (current, tmp);
+    lb = NTCnewTypeCheck_Expr (GENERATOR_BOUND1 (arg_node));
+    ub = NTCnewTypeCheck_Expr (GENERATOR_BOUND2 (arg_node));
+    current = GetLowestType (TYcopyType (lb), TYcopyType (ub));
 
     if (NULL != GENERATOR_STEP (arg_node)) {
 
-        tmp = NTCnewTypeCheck_Expr (GENERATOR_STEP (arg_node));
-        current = GetLowestType (current, tmp);
+        st = NTCnewTypeCheck_Expr (GENERATOR_STEP (arg_node));
+        current = GetLowestType (current, TYcopyType (st));
+    } else {
+        st = NULL;
     }
 
     if (NULL != GENERATOR_WIDTH (arg_node)) {
 
-        tmp = NTCnewTypeCheck_Expr (GENERATOR_WIDTH (arg_node));
-        current = GetLowestType (current, tmp);
+        wi = NTCnewTypeCheck_Expr (GENERATOR_WIDTH (arg_node));
+        current = GetLowestType (current, TYcopyType (wi));
+    } else {
+        wi = NULL;
+    }
+
+    if (TYisAKV (current)) {
+        tmp = TYmakeAKS (TYcopyType (TYgetScalar (current)),
+                         SHcopyShape (TYgetShape (current)));
+        current = TYfreeType (current);
+        current = tmp;
     }
 
     /*
@@ -1507,27 +1593,49 @@ TUPgenerator (node *arg_node, info *arg_info)
      */
 
     if (IsArgumentOfSpecialFunction (GENERATOR_BOUND1 (arg_node)) == FALSE) {
-        GENERATOR_BOUND1 (arg_node)
-          = AssignTypeToExpr (GENERATOR_BOUND1 (arg_node), current);
+        if (TYisAKV (lb)) {
+            GENERATOR_BOUND1 (arg_node)
+              = AssignTypeToExpr (GENERATOR_BOUND1 (arg_node), lb);
+        } else {
+            GENERATOR_BOUND1 (arg_node)
+              = AssignTypeToExpr (GENERATOR_BOUND1 (arg_node), current);
+        }
     }
 
     if (IsArgumentOfSpecialFunction (GENERATOR_BOUND2 (arg_node)) == FALSE) {
-        GENERATOR_BOUND2 (arg_node)
-          = AssignTypeToExpr (GENERATOR_BOUND2 (arg_node), current);
+        if (TYisAKV (ub)) {
+            GENERATOR_BOUND2 (arg_node)
+              = AssignTypeToExpr (GENERATOR_BOUND2 (arg_node), ub);
+        } else {
+            GENERATOR_BOUND2 (arg_node)
+              = AssignTypeToExpr (GENERATOR_BOUND2 (arg_node), current);
+        }
     }
 
     if (NULL != GENERATOR_STEP (arg_node)) {
 
         if (IsArgumentOfSpecialFunction (GENERATOR_STEP (arg_node)) == FALSE) {
-            GENERATOR_STEP (arg_node)
-              = AssignTypeToExpr (GENERATOR_STEP (arg_node), current);
+            if (TYisAKV (st)) {
+                GENERATOR_STEP (arg_node)
+                  = AssignTypeToExpr (GENERATOR_STEP (arg_node), st);
+            } else {
+
+                GENERATOR_STEP (arg_node)
+                  = AssignTypeToExpr (GENERATOR_STEP (arg_node), current);
+            }
         }
     }
 
     if (NULL != GENERATOR_WIDTH (arg_node)) {
         if (IsArgumentOfSpecialFunction (GENERATOR_WIDTH (arg_node)) == FALSE) {
-            GENERATOR_WIDTH (arg_node)
-              = AssignTypeToExpr (GENERATOR_WIDTH (arg_node), current);
+
+            if (TYisAKV (wi)) {
+                GENERATOR_WIDTH (arg_node)
+                  = AssignTypeToExpr (GENERATOR_WIDTH (arg_node), wi);
+            } else {
+                GENERATOR_WIDTH (arg_node)
+                  = AssignTypeToExpr (GENERATOR_WIDTH (arg_node), current);
+            }
         }
     }
 
@@ -1559,25 +1667,17 @@ TUPgenerator (node *arg_node, info *arg_info)
         default:
             DBUG_ASSERT ((FALSE), "unexpected result of type comparison!");
         }
-    } else {
-        if ((TYisAKD (AVIS_TYPE (IDS_AVIS (WITHID_VEC (withid)))))
-            || (TYisAUD (AVIS_TYPE (IDS_AVIS (WITHID_VEC (withid)))))
-            || (TYisAUDGZ (AVIS_TYPE (IDS_AVIS (WITHID_VEC (withid)))))) {
-
-            AVIS_TYPE (IDS_AVIS (WITHID_VEC (withid)))
-              = TYfreeType (AVIS_TYPE (IDS_AVIS (WITHID_VEC (withid))));
-            AVIS_TYPE (IDS_AVIS (WITHID_VEC (withid)))
-              = TYmakeAKS (TYcopyType (TYgetScalar (current)),
-                           SHcopyShape (TYgetShape (current)));
-        } else if (TYisAKS (AVIS_TYPE (IDS_AVIS (WITHID_VEC (withid))))) {
-            /*
-             * nothing to do
-             */
-        } else {
-            DBUG_ASSERT ((FALSE), "AKV-Type note expected!");
-        }
     }
+
     current = TYfreeType (current);
+    lb = TYfreeType (lb);
+    ub = TYfreeType (ub);
+    if (st != NULL) {
+        st = TYfreeType (st);
+    }
+    if (wi != NULL) {
+        wi = TYfreeType (wi);
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -1682,25 +1782,43 @@ TUPap (node *arg_node, info *arg_info)
          */
         result = AP_FUNDEF (arg_node);
 
-        result = TryToFindSpecializedFunction (AP_FUNDEF (arg_node), AP_ARGS (arg_node),
-                                               arg_info);
+        /*    if ((FUNDEF_ISDOFUN( INFO_TUP_FUNDEF(arg_info))) &&
+                (FUNDEF_ISCONDFUN( result)) &&
+                (ASSIGN_NEXT(INFO_TUP_ASSIGN(arg_info)) != NULL) &&
+                (N_return == NODE_TYPE( ASSIGN_INSTR(
+           ASSIGN_NEXT(INFO_TUP_ASSIGN(arg_info))))) ) {
+            }
+            else
 
-        if (result == AP_FUNDEF (arg_node)) {
-            /*
-             * no better fitting specialized functions found
-             * try to specialize current function
-             */
-            result = TryToSpecializeFunction (AP_FUNDEF (arg_node), arg_node, arg_info);
-        }
+              {
+        */
+        if ((!FUNDEF_ISDOFUN (result))
+            || (!ILIBstringCompare (FUNDEF_NAME (INFO_TUP_FUNDEF (arg_info)),
+                                    FUNDEF_NAME (result)))) {
+            NOTE2 (("       -> checking function call %s", FUNDEF_NAME (result)));
 
-        if (result != AP_FUNDEF (arg_node)) {
-            /*
-             * more special function exists
-             * use more special function
-             */
-            AP_FUNDEF (arg_node) = result;
+            result = TryToFindSpecializedFunction (AP_FUNDEF (arg_node),
+                                                   AP_ARGS (arg_node), arg_info);
+
+            if (result == AP_FUNDEF (arg_node)) {
+                /*
+                 * no better fitting specialized functions found
+                 * try to specialize current function
+                 */
+                result
+                  = TryToSpecializeFunction (AP_FUNDEF (arg_node), arg_node, arg_info);
+            }
+
+            if (result != AP_FUNDEF (arg_node)) {
+                /*
+                 * more special function exists
+                 * use more special function
+                 */
+                AP_FUNDEF (arg_node) = result;
+            }
         }
     }
+    /*  }*/
 
     if (INFO_TUP_CORRECTFUNCTION (arg_info)) {
 
@@ -1728,11 +1846,15 @@ TUPids (node *arg_node, info *arg_info)
 
     if (INFO_TUP_TYPE (arg_info) != NULL) {
 
-        if (N_assign != NODE_TYPE (AVIS_SSAASSIGN (IDS_AVIS (arg_node)))) {
+        /*
+         * correct AVIS_SSAASSIGN pointer
+         */
+        /*    AVIS_SSAASSIGN( IDS_AVIS( arg_node)) = INFO_TUP_ASSIGN( arg_info);*/
+        /*    if ( N_assign != NODE_TYPE( AVIS_SSAASSIGN( IDS_AVIS( arg_node)))) {*/
 
-            DBUG_ASSERT ((N_assign == NODE_TYPE (AVIS_SSAASSIGN (IDS_AVIS (arg_node)))),
-                         "wrong backref...");
-        }
+        DBUG_ASSERT ((N_assign == NODE_TYPE (AVIS_SSAASSIGN (IDS_AVIS (arg_node)))),
+                     "wrong backref...");
+        /* }*/
 
         oldtype = AVIS_TYPE (IDS_AVIS (arg_node));
 
@@ -2106,12 +2228,31 @@ node *
 TUPfuncond (node *arg_node, info *arg_info)
 {
     ntype *then_type, *else_type, *tmp;
+
     DBUG_ENTER ("TUPfuncond");
 
     then_type = TYcopyType (AVIS_TYPE (ID_AVIS (FUNCOND_THEN (arg_node))));
     else_type = TYcopyType (AVIS_TYPE (ID_AVIS (FUNCOND_ELSE (arg_node))));
+    tmp = NULL;
 
-    tmp = GetLowestType (then_type, else_type);
+    switch (TYcmpTypes (then_type, else_type)) {
+    case TY_eq:
+    case TY_lt:
+        tmp = TYcopyType (else_type);
+        break;
+    case TY_gt:
+        tmp = TYcopyType (then_type);
+        break;
+    case TY_hcs:
+        /*
+         * TODO: find smallest common supertype
+         */
+        DBUG_ASSERT ((FALSE), "Ooops!! Not implemented now! :-(");
+        break;
+    default:
+        DBUG_ASSERT ((FALSE), "No common supertype could be infered!");
+    }
+
     INFO_TUP_TYPE (arg_info) = TYmakeProductType (1, tmp);
 
     DBUG_RETURN (arg_node);
