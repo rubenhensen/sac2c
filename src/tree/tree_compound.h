@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2000/03/15 15:59:53  dkr
+ * SET_VARDEC_OR_ARG_ACTCHN renamed to L_VARDEC_OR_ARG_ACTCHN, ...
+ *
  * Revision 1.9  2000/03/09 18:35:32  jhs
  * Additional macros.
  *
@@ -936,14 +939,14 @@ extern node *FindVardec_Varno (int varno, node *fundef);
         VARDEC_NAIVE_REFCNT (n) = (rhs);                                                 \
     }
 
-#define SET_VARDEC_OR_ARG_COLCHN(n, rhs)                                                 \
+#define L_VARDEC_OR_ARG_COLCHN(n, rhs)                                                   \
     if (NODE_TYPE (n) == N_arg) {                                                        \
         ARG_COLCHN (n) = (rhs);                                                          \
     } else {                                                                             \
         VARDEC_COLCHN (n) = (rhs);                                                       \
     }
 
-#define SET_VARDEC_OR_ARG_ACTCHN(n, rhs)                                                 \
+#define L_VARDEC_OR_ARG_ACTCHN(n, rhs)                                                   \
     if (NODE_TYPE (n) == N_arg) {                                                        \
         ARG_ACTCHN (n) = (rhs);                                                          \
     } else {                                                                             \
