@@ -107,6 +107,7 @@
           <node name="Linklist" />
           <node name="Ids" />
           <node name="Nums" />
+          <node name="CWrapper" />
           <node name="Globobj" />
         </travsons>
       </traversal>
