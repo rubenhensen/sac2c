@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2004/07/23 15:55:24  ktr
+ * No NULL Assignment chain is appended to an empty block
+ *
  * Revision 1.10  2004/07/23 11:51:58  ktr
  * changed IDX2OFFSET into IDXS2OFFSET
  *
@@ -633,8 +636,10 @@ EMALcode (node *arg_node, info *arg_info)
         cexprs = EXPRS_NEXT (cexprs);
     }
 
-    BLOCK_INSTR (NCODE_CBLOCK (arg_node))
-      = AppendAssign (BLOCK_INSTR (NCODE_CBLOCK (arg_node)), assign);
+    if (assign != NULL) {
+        BLOCK_INSTR (NCODE_CBLOCK (arg_node))
+          = AppendAssign (BLOCK_INSTR (NCODE_CBLOCK (arg_node)), assign);
+    }
 
     if (NCODE_NEXT (arg_node) != NULL) {
         NCODE_NEXT (arg_node) = Trav (NCODE_NEXT (arg_node), arg_info);
