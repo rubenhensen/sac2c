@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2001/03/20 15:33:02  ben
+ * args of wlcomp-pragmas might be applications
+ *
  * Revision 3.7  2001/02/14 14:41:41  dkr
  * some calls of MakeNode() eliminated
  *
@@ -1270,7 +1273,10 @@ wlcomp_expr: DEFAULT
                }
            ;
 
-wlcomp_args: expr_ar COMMA wlcomp_args
+wlcomp_args: expr_ap COMMA wlcomp_args
+               { $$ = MakeExprs( $1, $3);
+               }
+           | expr_ar COMMA wlcomp_args
                { $$ = MakeExprs( $1, $3);
                }
            | expr_num COMMA wlcomp_args
