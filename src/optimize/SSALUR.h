@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.3  2001/05/25 08:42:18  nmw
+ * comments added, code beautyfied
+ *
  * Revision 1.2  2001/05/07 09:03:00  nmw
  * withloop unrolling by WLUnroll integrated in traversal
  *
@@ -32,7 +35,6 @@ extern node *SSALoopUnrolling (node *fundef, node *modul);
 extern node *SSALURfundef (node *arg_node, node *arg_info);
 extern node *SSALURassign (node *arg_node, node *arg_info);
 extern node *SSALURap (node *arg_node, node *arg_info);
-extern node *SSALURlet (node *arg_node, node *arg_info);
 extern node *SSALURNwith (node *arg_node, node *arg_info);
 
 #endif /* SAC_SSALUR_H */

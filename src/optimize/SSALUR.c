@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2001/05/25 08:42:18  nmw
+ * comments added, code beautyfied
+ *
  * Revision 1.8  2001/05/17 12:05:53  nmw
  * MALLOC/FREE changed to Malloc/Free (using Free() result)
  *
@@ -39,13 +42,16 @@
  *   This module implements loop-unrolling for special do-functions in ssa
  *   form. all while loops have been removed and converted to do-loops before
  *   so we have to deal only with the do loops.
+ *   We also do the withloop unrolling by using the existing implementation
+ *   in WLUnroll().
+ *   If we can infere the number of loops and if this number is smaller than
+ *   the specified maximum unrolling (maxlur and maxwlur parameter) we
+ *   duplicate the code for this number of times.
+ *
  *   To have all necessary information about constant data, you should do
  *   a SSAConstantFolding traversal first.
  *
  *****************************************************************************/
-
-/* as long as there is no new implementation of WLUR we use the old one */
-#define SSALUR_USE_OLD_WLURCODE
 
 #include "types.h"
 #include "tree_basic.h"
@@ -63,11 +69,6 @@
 #include "CheckAvis.h"
 #include "WLUnroll.h"
 
-#ifdef SSALUR_USE_OLD_WLURCODE
-#include "Unroll.h"
-#include "generatemasks.h"
-#endif
-
 #define UNR_NONE -1
 
 #ifndef DBUG_OFF
@@ -80,42 +81,25 @@ static char *prf_string[] = {
 /* type to perform loop unrolling operations on */
 typedef long loopc_t;
 
-/* local functions for traversing the ids like nodes */
-static ids *TravIDS (ids *arg_ids, node *arg_info);
-static ids *SSALURids (ids *arg_ids, node *arg_info);
-
 /* helper functions for internal use only */
 static loopc_t SSALURGetDoLoopUnrolling (node *fundef);
-
 static node *FindCondAssign (node *assigns);
-
 static bool SSALURIsLURPredicate (node *expr);
-
 static bool SSALURGetLoopIdentifier (node *predicate, node **id);
-
 static bool SSALURAnalyseLURPredicate (node *expr, prf loop_prf, loopc_t init_counter,
                                        loopc_t loop_increment, prf *pred_prf,
                                        loopc_t *term_counter);
-
 static bool SSALURIsLURModifier (node *modifier);
-
 static bool SSALURAnalyseLURModifier (node *modifier, node **id, prf *loop_prf,
                                       loopc_t *inc);
-
 static bool SSALURGetConstantArg (node *id, node *fundef, loopc_t *init_counter);
-
 static bool SSALURIsEqualParameterPosition (node *arg_chain, node *loop_entrance_arg,
                                             node *param_chain, node *loop_rec_param);
-
 static loopc_t SSALURCalcUnrolling (loopc_t init_counter, loopc_t term_counter,
                                     loopc_t loop_increment, prf loop_prf, prf pred_prf);
-
 static void SSALURGetPredicateData (node *expr, prf *pred, loopc_t *term);
-
 static double CalcMulUnroll (loopc_t init, loopc_t inc, loopc_t term);
-
 static node *SSALURUnrollLoopBody (node *fundef, loopc_t unrolling);
-
 static node *SSALURCreateCopyAssignments (node *arg_chain, node *rec_chain);
 
 /******************************************************************************
@@ -1038,9 +1022,9 @@ SSALURCreateCopyAssignments (node *arg_chain, node *rec_chain)
  *   node *SSALURfundef(node *arg_node, node *arg_info)
  *
  * description:
- *   - traverse fundef and subordinated special fundefs
+ *   - traverse fundef and subordinated special fundefs for LUR and WLUR
  *   - analyse fundef for unrolling
- *   - to the infered unrolling
+ *   - do the infered unrolling
  *
  ******************************************************************************/
 node *
@@ -1057,7 +1041,14 @@ SSALURfundef (node *arg_node, node *arg_info)
     start_wlunr_expr = wlunr_expr;
     start_lunr_expr = lunr_expr;
 
-    /* traverse body to get wlur (and special fundefs unrolled) */
+    /*
+     * traverse body to get wlur (and special fundefs unrolled)
+     * the withloop unrolling itself destroys the ssa form of the AST
+     * but because the withloop are not insteresting for the do-loop
+     * unrolling we need not to restore the ssa form now (we will do it
+     * after the do loop unrolling, because do-loop unrolling destroys
+     * the ssa form, too).
+     */
     if (FUNDEF_BODY (arg_node) != NULL) {
         /* traverse block of fundef */
         FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
@@ -1102,7 +1093,7 @@ SSALURfundef (node *arg_node, node *arg_info)
  *   node *SSALURassign(node *arg_node, node *arg_info)
  *
  * description:
- *   traverses assignment chain and integreate unrolled with-loop code
+ *   traverses assignment chain and integrate unrolled with-loop code
  *
  ******************************************************************************/
 node *
@@ -1201,32 +1192,6 @@ SSALURap (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSALURlet(node *arg_node, node *arg_info)
- *
- * description:
- *
- *
- *
- ******************************************************************************/
-node *
-SSALURlet (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("SSALURlet");
-
-    DBUG_ASSERT ((LET_EXPR (arg_node) != NULL), "let without expression");
-
-    LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
-
-    if (LET_IDS (arg_node) != NULL) {
-        LET_IDS (arg_node) = TravIDS (LET_IDS (arg_node), arg_info);
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
  *   node *SSALURNwith(node *arg_node, node *arg_info)
  *
  * description:
@@ -1308,50 +1273,6 @@ SSALURNwith (node *arg_node, node *arg_info)
     }
 
     DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   ids *SSALURids (ids *arg_ids, node *arg_info)
- *
- * description:
- *
- *
- *
- ******************************************************************************/
-static ids *
-SSALURids (ids *arg_ids, node *arg_info)
-{
-    DBUG_ENTER ("SSALURids");
-
-    /* traverse to next ids in chain */
-    if (IDS_NEXT (arg_ids) != NULL) {
-        IDS_NEXT (arg_ids) = TravIDS (IDS_NEXT (arg_ids), arg_info);
-    }
-
-    DBUG_RETURN (arg_ids);
-}
-
-/******************************************************************************
- *
- * function:
- *   ids *TravIDS(ids *arg_ids, node *arg_info)
- *
- * description:
- *   implements a simple TravIDS function like Trav for nodes to have
- *   an similar implementation.
- *
- ******************************************************************************/
-static ids *
-TravIDS (ids *arg_ids, node *arg_info)
-{
-    DBUG_ENTER ("TravIDS");
-
-    DBUG_ASSERT (arg_ids != NULL, "traversal in NULL ids");
-    arg_ids = SSALURids (arg_ids, arg_info);
-
-    DBUG_RETURN (arg_ids);
 }
 
 /******************************************************************************
