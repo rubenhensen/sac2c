@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.5  1996/01/07 16:57:30  cg
+ * Revision 1.6  1996/01/21 13:59:05  cg
+ * Now, C object files are also looked for in $RCSROOT/src/compile/
+ * where the SAC runtime library resides
+ *
+ * Revision 1.5  1996/01/07  16:57:30  cg
  * InvokeCC and CreateLibrary entirely rewritten
  *
  * Revision 1.4  1996/01/05  12:37:34  cg
@@ -341,12 +345,13 @@ InvokeCC (node *syntax_tree)
             sprintf (afiles, "%s*.a", build_dirname);
         }
 
-        SystemCall ("gcc %s -Wall -Wno-unused -I $RCSROOT/src/compile/ "
-                    "-o %s %s %s %s",
+        SystemCall ("gcc %s -Wall -Wno-unused "
+                    "-I$RCSROOT/src/compile/ -L$RCSROOT/src/compile/ "
+                    "-o %s %s %s %s -lsac",
                     ccflagsstr, outfilename, cfilename, ofiles, afiles);
     } else {
-        SystemCall ("gcc %s -Wall -Wno-unused -I $RCSROOT/src/compile/"
-                    " -o %s%s -c %s%s",
+        SystemCall ("gcc %s -Wall -Wno-unused -I$RCSROOT/src/compile/ "
+                    "-o %s%s -c %s%s",
                     ccflagsstr, build_dirname, outfilename, targetdir, cfilename);
     }
 
