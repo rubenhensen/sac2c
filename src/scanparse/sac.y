@@ -4,6 +4,10 @@
 /*
  *
  * $Log$
+ * Revision 3.32  2001/07/13 13:23:41  cg
+ * DBUG tags renamed:
+ * GENTREE -> PARSE and GENSIB -> PARSE_SIB
+ *
  * Revision 3.31  2001/06/28 13:13:28  cg
  * Type syntax changed: type[] is now equivalent to type.
  *
@@ -370,7 +374,7 @@ moddec: modheader evimport OWN COLON expdesc
           $$->node[0] = $5;
           $$->node[1] = $2;
           if ($$->node[1] != NULL) {
-             DBUG_PRINT("GENTREE",
+             DBUG_PRINT("PARSE",
                        ("%s:"F_PTR" Id: %s , %s"F_PTR" %s," F_PTR,
                         mdb_nodetype[ NODE_TYPE( $$)],
                         $$,
@@ -381,7 +385,7 @@ moddec: modheader evimport OWN COLON expdesc
                         $$->node[1]));
           }
           else {
-             DBUG_PRINT("GENTREE",
+             DBUG_PRINT("PARSE",
                        ("%s:"F_PTR" Id: %s , %s"F_PTR,
                         mdb_nodetype[ NODE_TYPE( $$)],
                         $$,
@@ -396,7 +400,7 @@ moddec: modheader evimport OWN COLON expdesc
           $$->node[0] = MakeExplist( NULL, NULL, NULL, NULL);
           $$->node[1] = $2;
           if ($$->node[1] != NULL) {
-             DBUG_PRINT("GENTREE",
+             DBUG_PRINT("PARSE",
                        ("%s:"F_PTR" Id: %s , %s"F_PTR" %s," F_PTR,
                         mdb_nodetype[ NODE_TYPE( $$)],
                         $$,
@@ -407,7 +411,7 @@ moddec: modheader evimport OWN COLON expdesc
                         $$->node[1]));
           }
           else {
-             DBUG_PRINT("GENTREE",
+             DBUG_PRINT("PARSE",
                        ("%s:"F_PTR" Id: %s , %s"F_PTR,
                         mdb_nodetype[ NODE_TYPE( $$)],
                         $$,
@@ -423,7 +427,7 @@ modspec:  modheader OWN COLON expdesc
           $$ = $1;
           $$->node[0] = $4;
           $$->node[1] = NULL;
-	  DBUG_PRINT("GENTREE",
+	  DBUG_PRINT("PARSE",
 		     ("%s:"F_PTR" Id: %s , %s"F_PTR,
 		      mdb_nodetype[ NODE_TYPE( $$)],
                       $$,
@@ -497,7 +501,7 @@ import: IMPORT id COLON impdesc { $$ = $4; $$->info.id = $2; }
 impdesc: ALL SEMIC
            { $$ = MakeImplist( NULL, NULL, NULL, NULL, NULL, NULL);
 
-             DBUG_PRINT("GENTREE",
+             DBUG_PRINT("PARSE",
                         ("%s:"F_PTR,
                          mdb_nodetype[ NODE_TYPE( $$)],
                          $$));
@@ -535,7 +539,7 @@ impdesc3: GLOBAL OBJECTS COLON ids SEMIC impdesc4
 impdesc4: FUNS COLON funids SEMIC BRACE_R
             { $$ = MakeImplist( NULL, NULL, NULL, NULL, $3, NULL);
 
-              DBUG_PRINT("GENTREE",
+              DBUG_PRINT("PARSE",
                          ("%s:"F_PTR,
                           mdb_nodetype[ NODE_TYPE( $$)],
                           $$));
@@ -543,7 +547,7 @@ impdesc4: FUNS COLON funids SEMIC BRACE_R
         | FUNS COLON SEMIC BRACE_R
             { $$ = MakeImplist( NULL, NULL, NULL, NULL, NULL, NULL);
 
-              DBUG_PRINT("GENTREE",
+              DBUG_PRINT("PARSE",
                          ("%s:"F_PTR,
                           mdb_nodetype[ NODE_TYPE( $$)],
                           $$));
@@ -551,7 +555,7 @@ impdesc4: FUNS COLON funids SEMIC BRACE_R
         | BRACE_R
             { $$ = MakeImplist( NULL, NULL, NULL, NULL, NULL, NULL);
 
-              DBUG_PRINT("GENTREE",
+              DBUG_PRINT("PARSE",
                          ("%s:"F_PTR,
                           mdb_nodetype[ NODE_TYPE( $$)],
                           $$));
@@ -591,7 +595,7 @@ expdesc3: GLOBAL OBJECTS COLON objdecs expdesc4
 expdesc4: FUNS COLON fundecs BRACE_R
             { $$ = MakeExplist( NULL, NULL, NULL, $3);
 
-              DBUG_PRINT("GENTREE",
+              DBUG_PRINT("PARSE",
                          ("%s:"F_PTR,
                           mdb_nodetype[ NODE_TYPE( $$)],
                           $$));
@@ -599,7 +603,7 @@ expdesc4: FUNS COLON fundecs BRACE_R
         | FUNS COLON BRACE_R
             { $$ = MakeExplist( NULL, NULL, NULL, NULL);
 
-              DBUG_PRINT("GENTREE",
+              DBUG_PRINT("PARSE",
                          ("%s:"F_PTR,
                           mdb_nodetype[ NODE_TYPE( $$)],
                           $$));
@@ -607,7 +611,7 @@ expdesc4: FUNS COLON fundecs BRACE_R
         | BRACE_R
             { $$ = MakeExplist( NULL, NULL, NULL, NULL);
          
-              DBUG_PRINT("GENTREE",
+              DBUG_PRINT("PARSE",
                          ("%s:"F_PTR,
                           mdb_nodetype[ NODE_TYPE( $$)],
                           $$));
@@ -627,7 +631,7 @@ imptype: id SEMIC pragmas
                                MakeTypes1( T_hidden),
                                ST_regular, NULL);
 
-             DBUG_PRINT("GENTREE",("type:"F_PTR" %s",
+             DBUG_PRINT("PARSE",("type:"F_PTR" %s",
                                    $$->info.types,
                                    mdb_type[$$->info.types->simpletype]));
 
@@ -636,7 +640,7 @@ imptype: id SEMIC pragmas
                                      ? ST_imported_mod : ST_imported_class;
              TYPEDEF_PRAGMA( $$) = $3;
 
-             DBUG_PRINT("GENTREE",
+             DBUG_PRINT("PARSE",
                       ("%s:"F_PTR","F_PTR", Id: %s",
                        mdb_nodetype[ NODE_TYPE( $$)],
                        $$,
@@ -659,7 +663,7 @@ exptype: id LET type SEMIC pragmas
                                      ? ST_imported_mod : ST_imported_class;
              TYPEDEF_PRAGMA( $$) = $5;
 
-             DBUG_PRINT("GENTREE",
+             DBUG_PRINT("PARSE",
                         ("%s:"F_PTR","F_PTR", Id: %s",
                          mdb_nodetype[ NODE_TYPE( $$)],
                          $$, 
@@ -682,7 +686,7 @@ objdec: type id SEMIC pragmas
                                    ? ST_imported_mod : ST_imported_class;
             OBJDEF_PRAGMA( $$) = $4;
 
-            DBUG_PRINT("GENTREE",
+            DBUG_PRINT("PARSE",
                        ("%s:"F_PTR","F_PTR", Id: %s",
                         mdb_nodetype[ NODE_TYPE( $$)],
                         $$, 
@@ -711,7 +715,7 @@ fundec: varreturntypes id BRACKET_L fundec2
             FUNDEF_STATUS( $$) = (file_kind == F_moddec)
                                    ? ST_imported_mod : ST_imported_class;
 
-            DBUG_PRINT("GENTREE",
+            DBUG_PRINT("PARSE",
                        ("%s:"F_PTR" Id: %s , NULL body,  %s" F_PTR,
                         mdb_nodetype[ NODE_TYPE( $$)],
                         $$,
@@ -732,7 +736,7 @@ fundec: varreturntypes id BRACKET_L fundec2
             FUNDEF_STATUS( $$) = (file_kind == F_moddec)
                                   ? ST_imported_mod : ST_imported_class;
 
-            DBUG_PRINT("GENTREE",
+            DBUG_PRINT("PARSE",
                        ("%s:"F_PTR" Id: %s"F_PTR", NULL body,  %s"
                         F_PTR,
                         mdb_nodetype[ NODE_TYPE( $$)],
@@ -936,7 +940,7 @@ def4: fundefs
           MODUL_NAME( $$) = NULL;
           MODUL_FUNS( $$) = $1;
 
-          DBUG_PRINT("GENTREE",
+          DBUG_PRINT("PARSE",
                      ("%s:"F_PTR"  %s"F_PTR,
                       mdb_nodetype[ NODE_TYPE( $$)],
                       $$, 
@@ -947,7 +951,7 @@ def4: fundefs
           MODUL_NAME( $$) = NULL;
           MODUL_FUNS( $$) = NULL;
 
-          DBUG_PRINT("GENTREE",
+          DBUG_PRINT("PARSE",
                      ("%s:"F_PTR,
                       mdb_nodetype[ NODE_TYPE( $$)],
                       $$));
@@ -1002,7 +1006,7 @@ typedefs: typedef typedefs
 typedef: TYPEDEF type id SEMIC 
            { $$ = MakeTypedef( $3, mod_name, $2, ST_regular, NULL);
 
-             DBUG_PRINT("GENTREE",
+             DBUG_PRINT("PARSE",
                         ("%s:"F_PTR","F_PTR", Id: %s",
                          mdb_nodetype[ NODE_TYPE( $$)],
                          $$, 
@@ -1022,7 +1026,7 @@ objdefs: objdef objdefs
 objdef: OBJDEF type id LET expr SEMIC 
           { $$ = MakeObjdef( $3, mod_name, $2, $5, NULL);
 
-            DBUG_PRINT("GENTREE",
+            DBUG_PRINT("PARSE",
                        ("%s:"F_PTR","F_PTR", Id: %s",
                         mdb_nodetype[ NODE_TYPE( $$)],
                         $$, 
@@ -1054,7 +1058,7 @@ fundef: returntypes fun_name BRACKET_L fundef2
             FUNDEF_STATUS( $$) = ST_regular;
             FUNDEF_INLINE( $$) = FALSE;          /* inline flag    */
 
-            DBUG_PRINT("GENTREE",
+            DBUG_PRINT("PARSE",
                        ("%s: %s:%s "F_PTR,
                         mdb_nodetype[ NODE_TYPE( $$)],
                         $$->info.types->id_mod,
@@ -1072,7 +1076,7 @@ fundef: returntypes fun_name BRACKET_L fundef2
             FUNDEF_STATUS( $$) = ST_regular;
             FUNDEF_INLINE( $$) = TRUE;           /* inline flag    */
 
-            DBUG_PRINT("GENTREE",
+            DBUG_PRINT("PARSE",
                         ("%s: %s:%s "F_PTR,
                         mdb_nodetype[ NODE_TYPE( $$)],
                         $$->info.types->id_mod,
@@ -1089,7 +1093,7 @@ fundef2: args BRACKET_R { $$ = MakeFundef( NULL, NULL, NULL, NULL, NULL, NULL);
              FUNDEF_BODY( $$) = $4;             /* Funktionsrumpf  */
              FUNDEF_ARGS( $$) = $1;             /* Funktionsargumente */
 
-             DBUG_PRINT("GENTREE",
+             DBUG_PRINT("PARSE",
                         ("%s:"F_PTR", Id: %s"F_PTR" %s," F_PTR,
                          mdb_nodetype[ NODE_TYPE( $$)],
                          $$, 
@@ -1105,7 +1109,7 @@ fundef2: args BRACKET_R { $$ = MakeFundef( NULL, NULL, NULL, NULL, NULL, NULL);
              $$ = $<node>2;
              FUNDEF_BODY( $$) = $3;             /* Funktionsrumpf  */
 
-             DBUG_PRINT("GENTREE",
+             DBUG_PRINT("PARSE",
                         ("%s:"F_PTR" %s"F_PTR,
                          mdb_nodetype[ NODE_TYPE( $$)],
                          $$, 
@@ -1141,7 +1145,7 @@ varargs: arg COMMA varargs
                                         ST_regular, ST_regular,
                                         NULL);
 
-               DBUG_PRINT("GENTREE",
+               DBUG_PRINT("PARSE",
                           ("%s: "F_PTR", Id: ..., Attrib: %d  ",
                            mdb_nodetype[ NODE_TYPE( $$)],
                            $$, 
@@ -1157,7 +1161,7 @@ varargs: arg COMMA varargs
 arg: type id
        { $$ = MakeArg( $2, $1, ST_regular, ST_regular, NULL); 
 
-         DBUG_PRINT("GENTREE",
+         DBUG_PRINT("PARSE",
                     ("%s: "F_PTR", Id: %s, Attrib: %d  ",
                      mdb_nodetype[ NODE_TYPE( $$)],
                      $$, 
@@ -1167,7 +1171,7 @@ arg: type id
    | type AMPERS id
        { $$ = MakeArg( $3, $1, ST_regular, ST_reference, NULL); 
 
-         DBUG_PRINT("GENTREE",
+         DBUG_PRINT("PARSE",
                     ("%s: "F_PTR", Id: %s, Attrib: %d ",
                      mdb_nodetype[ NODE_TYPE( $$)],
                      $$, 
@@ -1207,7 +1211,7 @@ varargtypes: argtype COMMA varargtypes
                                             ST_regular, ST_regular,
                                             NULL);
 
-                   DBUG_PRINT("GENTREE",
+                   DBUG_PRINT("PARSE",
                               ("%s: "F_PTR", Attrib: %d  ",
                                mdb_nodetype[ NODE_TYPE( $$)],
                                $$, 
@@ -1222,7 +1226,7 @@ varargtypes: argtype COMMA varargtypes
 argtype: type
            { $$ = MakeArg( NULL, $1, ST_regular, ST_regular, NULL);
 
-             DBUG_PRINT("GENTREE",
+             DBUG_PRINT("PARSE",
                         ("%s: "F_PTR", Attrib: %d  ",
                          mdb_nodetype[ NODE_TYPE( $$)],
                          $$, 
@@ -1231,7 +1235,7 @@ argtype: type
        | type AMPERS
            { $$ = MakeArg( NULL, $1, ST_regular, ST_reference, NULL);
                      
-             DBUG_PRINT("GENTREE",
+             DBUG_PRINT("PARSE",
                         ("%s: "F_PTR", Attrib: %d ",
                          mdb_nodetype[ NODE_TYPE( $$)],
                          $$, 
@@ -1291,7 +1295,7 @@ main: TYPE_INT K_MAIN BRACKET_L BRACKET_R exprblock
           FUNDEF_NAME( $$) = StringCopy( "main");
           FUNDEF_STATUS( $$) = ST_exported;
 
-          DBUG_PRINT("GENTREE",("%s:"F_PTR", main "F_PTR
+          DBUG_PRINT("PARSE",("%s:"F_PTR", main "F_PTR
                                 "  %s (" F_PTR ") ",
                                 mdb_nodetype[ NODE_TYPE( $$)],
                                 $$, 
@@ -2152,7 +2156,7 @@ sib: sibheader siblinkwith sibtypes
          SIB_LINKSTYLE( $$) = $1;
          SIB_LINKWITH( $$) = $2;
 
-         DBUG_PRINT( "GENSIB", ("%s"F_PTR,
+         DBUG_PRINT( "PARSE_SIB", ("%s"F_PTR,
                                mdb_nodetype[ NODE_TYPE( $$)],
                                $$));
        }
@@ -2249,7 +2253,7 @@ sibtype: sibevclass TYPEDEF type id SEMIC sibpragmas
              TYPEDEF_STATUS( $$) = sib_imported_status;
              TYPEDEF_PRAGMA( $$) = $6;
 
-            DBUG_PRINT("GENSIB",
+            DBUG_PRINT("PARSE_SIB",
                        ("%s:"F_PTR","F_PTR", Id: %s",
                         mdb_nodetype[ NODE_TYPE( $$)],
                         $$, TYPEDEF_TYPE( $$), ItemName( $$)));
@@ -2260,7 +2264,7 @@ sibtype: sibevclass TYPEDEF type id SEMIC sibpragmas
              TYPEDEF_STATUS( $$) = sib_imported_status;
              TYPEDEF_PRAGMA( $$) = $8;
 
-            DBUG_PRINT("GENSIB",
+            DBUG_PRINT("PARSE_SIB",
                        ("%s:"F_PTR","F_PTR", Id: class %s",
                         mdb_nodetype[ NODE_TYPE( $$)],
                         $$, TYPEDEF_TYPE( $$), ItemName( $$)));
@@ -2273,7 +2277,7 @@ sibtype: sibevclass TYPEDEF type id SEMIC sibpragmas
              TYPEDEF_STATUS( $$) = sib_imported_status;
              TYPEDEF_PRAGMA( $$) = $6;
 
-            DBUG_PRINT("GENSIB",
+            DBUG_PRINT("PARSE_SIB",
                        ("%s:"F_PTR","F_PTR", Id: %s",
                         mdb_nodetype[ NODE_TYPE( $$)],
                         $$, TYPEDEF_TYPE( $$), ItemName( $$)));
@@ -2286,7 +2290,7 @@ sibtype: sibevclass TYPEDEF type id SEMIC sibpragmas
              TYPEDEF_STATUS( $$) = sib_imported_status;
              TYPEDEF_PRAGMA( $$) = $8;
 
-            DBUG_PRINT("GENSIB",
+            DBUG_PRINT("PARSE_SIB",
                        ("%s:"F_PTR","F_PTR", Id: class %s",
                         mdb_nodetype[ NODE_TYPE( $$)],
                         $$, TYPEDEF_TYPE( $$), ItemName( $$)));
@@ -2315,7 +2319,7 @@ sibobj: OBJDEF type id SEMIC sibpragmas
             OBJDEF_PRAGMA( $$) = $5;
             OBJDEF_STATUS( $$) = sib_imported_status;
             
-            DBUG_PRINT("GENSIB",
+            DBUG_PRINT("PARSE_SIB",
                        ("%s:"F_PTR","F_PTR", Id: class %s",
                         mdb_nodetype[ NODE_TYPE( $$)],
                         $$, OBJDEF_TYPE( $$), ItemName( $$)));
@@ -2326,7 +2330,7 @@ sibobj: OBJDEF type id SEMIC sibpragmas
             OBJDEF_PRAGMA( $$) = $7;
             OBJDEF_STATUS( $$) = sib_imported_status;
             
-            DBUG_PRINT("GENSIB",
+            DBUG_PRINT("PARSE_SIB",
                        ("%s:"F_PTR","F_PTR", Id: class %s",
                         mdb_nodetype[ NODE_TYPE( $$)],
                         $$, OBJDEF_TYPE( $$), ItemName( $$)));
@@ -2365,7 +2369,7 @@ sibfun: sibevmarker varreturntypes fun_name
             }
             FUNDEF_PRAGMA( $$) = $8;
 
-           DBUG_PRINT("GENSIB",("%s"F_PTR"SibFun %s",
+           DBUG_PRINT("PARSE_SIB",("%s"F_PTR"SibFun %s",
                                mdb_nodetype[ NODE_TYPE( $$)],
                                $$, ItemName( $$)));
           }
@@ -2389,7 +2393,7 @@ sibfun: sibevmarker varreturntypes fun_name
             }
             FUNDEF_PRAGMA( $$) = $10;
 
-            DBUG_PRINT("GENSIB",("%s"F_PTR"SibFun %s",
+            DBUG_PRINT("PARSE_SIB",("%s"F_PTR"SibFun %s",
                                 mdb_nodetype[ NODE_TYPE( $$)],
                                 $$, ItemName( $$)));
 
@@ -2422,7 +2426,7 @@ sibarg: type sibreference sibparam
         {
           $$ = MakeArg( $3, $1, ST_regular, $2, NULL);
 
-          DBUG_PRINT("GENSIB",
+          DBUG_PRINT("PARSE_SIB",
                      ("%s: "F_PTR", Id: %s, Attrib: %d, Status: %d  ",
                       mdb_nodetype[ NODE_TYPE( $$)],
                       $$, 
@@ -2434,7 +2438,7 @@ sibarg: type sibreference sibparam
           $$ = MakeArg( NULL, MakeTypes1( T_dots),
                         ST_regular, ST_regular, NULL); 
 
-          DBUG_PRINT( "GENSIB",
+          DBUG_PRINT( "PARSE_SIB",
                       ("%s: "F_PTR", ... , Attrib: %d, Status: %d  ",
                        mdb_nodetype[ NODE_TYPE( $$)],
                        $$, ARG_ATTRIB( $$), ARG_STATUS( $$)));
@@ -2528,7 +2532,7 @@ sibfunlistentry: id BRACKET_L sibarglist BRACKET_R
                                     $3, NULL, NULL);
                    FUNDEF_STATUS( $$) = sib_imported_status;
                    
-                   DBUG_PRINT("GENSIB",("%s"F_PTR"SibNeedFun %s",
+                   DBUG_PRINT("PARSE_SIB",("%s"F_PTR"SibNeedFun %s",
                                        mdb_nodetype[ NODE_TYPE( $$)],
                                        $$, ItemName( $$)));
                 }
@@ -2540,7 +2544,7 @@ sibfunlistentry: id BRACKET_L sibarglist BRACKET_R
 
                    FUNDEF_STATUS( $$) = sib_imported_status;
                    
-                   DBUG_PRINT("GENSIB",("%s"F_PTR"SibNeedFun %s",
+                   DBUG_PRINT("PARSE_SIB",("%s"F_PTR"SibNeedFun %s",
                                        mdb_nodetype[ NODE_TYPE( $$)],
                                        $$, ItemName( $$)));
                  }
@@ -2844,7 +2848,7 @@ types *GenComplexType( types *types, nums *numsp)
   do {
     types->dim++;
     *destptr++=numsp->num;
-    DBUG_PRINT("GENTREE",("shape-element: %d",numsp->num));
+    DBUG_PRINT("PARSE",("shape-element: %d",numsp->num));
     tmp=numsp;
     numsp=numsp->next;
     Free(tmp);
