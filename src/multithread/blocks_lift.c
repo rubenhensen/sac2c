@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2000/07/05 14:21:35  dkr
+ * DupTree.h is included only once now :-)
+ *
  * Revision 1.6  2000/07/04 14:56:17  jhs
  * Changed lifting.
  *
@@ -45,7 +48,6 @@
 #include "generatemasks.h"
 #include "globals.h"
 #include "my_debug.h"
-#include "DupTree.h"
 #include "DataFlowMask.h"
 #include "multithread_lib.h"
 #include "LookUpTable.h"
