@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2000/06/30 15:21:01  mab
+ * *** empty log message ***
+ *
  * Revision 1.3  2000/06/28 10:43:10  mab
  * made some code modifications according to code review
  *
@@ -151,7 +154,7 @@ PIadd (types *old_type, shpseg *new_shape)
 
     DBUG_ENTER ("PIadd");
 
-    tmp = (pad_info_t *)malloc (sizeof (pad_info_t));
+    tmp = (pad_info_t *)MALLOC (sizeof (pad_info_t));
     PI_DIM (tmp) = TYPES_DIM (old_type);
     PI_TYPE (tmp) = TYPES_BASETYPE (old_type);
     PI_OLD_SHAPE (tmp) = TYPES_SHPSEG (old_type);
