@@ -1,8 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.222  1998/05/15 09:56:12  cg
- * go back to revision 220 due to bug
+ * Revision 1.223  1998/05/15 10:08:29  cg
+ * bug in PrintBlock fixed.
+ *
+ * Revision 1.221  1998/05/15 09:20:47  cg
+ * Each spmd-function is now surrounded by a preprocessor IF
  *
  * Revision 1.220  1998/05/14 21:38:15  dkr
  * changed output in PrintWLgrid
@@ -871,13 +874,40 @@ PrintBlock (node *arg_node, node *arg_info)
      * subsequent blocks of perhaps loops or conditionals.
      */
 
+    static int inside_spmd_function = 0;
+    /*
+     * This static variable assures that subsequent blocks within the outer
+     * block of an spmd function will be printed.
+     */
+
+    int print_closing_brace = 0;
+    /*
+     * This variable allows to store the decision whether a closing brace has
+     * to be printed or not through the traversal of the block itself.
+     */
+
     DBUG_ENTER ("PrintBlock");
 
     DBUG_PRINT ("PRINT", ("%s " P_FORMAT, mdb_nodetype[NODE_TYPE (arg_node)], arg_node));
 
-    INDENT;
-    fprintf (outfile, "{ \n");
-    indent++;
+    if ((compiler_phase != PH_genccode)
+        || (FUNDEF_STATUS (INFO_PRINT_FUNDEF (arg_info)) != ST_spmdfun)
+        || inside_spmd_function) {
+        INDENT;
+        fprintf (outfile, "{ \n");
+        indent++;
+        inside_spmd_function = 1;
+        print_closing_brace = 1;
+    }
+    /*
+     * In the case of generating C code for spmd functions, the block braces
+     * have to be omitted because the entire function definition has to be
+     * embraced by a C preprocessor IF-ENDIF construct in order to be compiled
+     * only for multi-threaded versions. These preprocessor statements should
+     * be implemented by existing ICMs, i.e. MT_SPMD_FUN_DEC and MT_SPMD_FUN_RET.
+     * This requires MT_SPMD_FUN_RET not to be followed by the closing brace of
+     * the block.
+     */
 
     if (BLOCK_VARDEC (arg_node) != NULL) {
         Trav (BLOCK_VARDEC (arg_node), arg_info);
@@ -896,9 +926,11 @@ PrintBlock (node *arg_node, node *arg_info)
         Trav (BLOCK_INSTR (arg_node), arg_info);
     }
 
-    indent--;
-    INDENT;
-    fprintf (outfile, "}\n");
+    if (print_closing_brace) {
+        indent--;
+        INDENT;
+        fprintf (outfile, "}\n");
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -1275,7 +1307,7 @@ PrintFundef (node *arg_node, node *arg_info)
             fprintf (outfile, "\n");
 
             if (FUNDEF_ICM (arg_node) && (N_icm == NODE_TYPE (FUNDEF_ICM (arg_node)))) {
-                Trav (FUNDEF_RETURN (arg_node), new_info); /* print N_icm ND_FUN_DEC */
+                Trav (FUNDEF_ICM (arg_node), new_info); /* print N_icm ND_FUN_DEC */
             } else {
                 PrintFunctionHeader (arg_node, new_info);
             }
@@ -1303,9 +1335,9 @@ PrintFundef (node *arg_node, node *arg_info)
                 && (strcmp (FUNDEF_NAME (arg_node), "main") != 0))) {
             fprintf (outfile, "extern ");
 
-            if ((NULL != FUNDEF_RETURN (arg_node))
-                && (N_icm == NODE_TYPE (FUNDEF_RETURN (arg_node)))) {
-                Trav (FUNDEF_RETURN (arg_node), new_info); /* print N_icm ND_FUN_DEC */
+            if ((NULL != FUNDEF_ICM (arg_node))
+                && (N_icm == NODE_TYPE (FUNDEF_ICM (arg_node)))) {
+                Trav (FUNDEF_ICM (arg_node), new_info); /* print N_icm ND_FUN_DEC */
             } else {
                 PrintFunctionHeader (arg_node, new_info);
             }
