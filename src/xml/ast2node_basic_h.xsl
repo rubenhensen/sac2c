@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.2  2004/11/23 13:14:02  ktr
+  removed node_compat.h
+
   Revision 1.1  2004/11/23 11:30:50  sah
   Initial revision
 
@@ -35,24 +38,16 @@ version="1.0">
     </xsl:with-param>
   </xsl:call-template>
   <xsl:text>
-#ifndef _NODE_BASIC_H
-#define _NODE_BASIC_H
+#ifndef _SAC_NODE_BASIC_H_
+#define _SAC_NODE_BASIC_H_
 
-#include "tree_basic.h"
 #include "types.h"
-#include "new_types.h"
-#include "DataFlowMask.h"
-#include "globals.h"
 
-#define AST_NO_COMPAT
-#include "node_compat.h"
   </xsl:text>
   <xsl:apply-templates select="//syntaxtree/node"/>
   <xsl:text>
 
-#undef AST_NO_COMPAT
-#include "node_compat.h"
-#endif
+    #endif /* _SAC_NODE_BASIC_H_ */
   </xsl:text>
 </xsl:template>
 
