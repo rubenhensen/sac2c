@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2004/11/24 20:54:47  ktr
+ * Fuer Steffen
+ *
  * Revision 1.2  2004/11/21 20:42:14  ktr
  * Ismop
  *
@@ -14,6 +17,13 @@
 
 #include "types.h"
 
-extern node *EMrefcounting (node *syntax_tree);
+/******************************************************************************
+ *
+ * Explicit reference counting superphase
+ *
+ * prefix: EMR
+ *
+ *****************************************************************************/
+extern node *EMRdoRefcounting (node *syntax_tree);
 
 #endif /* _SAC_RCPHASE_H_ */

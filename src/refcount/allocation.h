@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2004/11/24 20:54:47  ktr
+ * Fuer Steffen
+ *
  * Revision 1.2  2004/11/21 20:42:14  ktr
  * Ismop
  *
@@ -14,6 +17,13 @@
 
 #include "types.h"
 
-extern node *EMallocation (node *arg_node);
+/******************************************************************************
+ *
+ * Explicit allocation superphase
+ *
+ * prefix: EMA
+ *
+ *****************************************************************************/
+extern node *EMAdoAllocation (node *syntax_tree);
 
 #endif /* _SAC_ALLOCATION_H_ */
