@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.45  2001/04/26 11:56:25  nmw
+ * CreateIcmND_FUN_AP() sets ICM_FUNDEF attribute
+ *
  * Revision 3.44  2001/04/25 13:55:58  dkr
  * COMPFundef: ST_zombiefun added
  *
@@ -1321,6 +1324,9 @@ CreateIcmND_FUN_AP (node *fundef, node **icm_tab, int tab_size)
 
     ret_node = MakeAssignIcm3 ("ND_FUN_AP", MakeId_Copy (FUNDEF_NAME (fundef)), icm_arg2,
                                MakeNum (cnt_icm));
+
+    /* insert pointer to fundef */
+    ICM_FUNDEF (ASSIGN_INSTR (ret_node)) = fundef;
 
     /*
      * The ICM arguments are extracted from the table and inserted into the ICM
@@ -3527,6 +3533,12 @@ COMPAp (node *arg_node, node *arg_info)
     fundef = AP_FUNDEF (arg_node);
 
     DBUG_PRINT ("COMP", ("COMPiling application of function %s", ItemName (fundef)));
+
+    if (FUNDEF_USED (fundef) != USED_INACTIVE) {
+        (FUNDEF_USED (fundef))++;
+        DBUG_PRINT ("COMP",
+                    ("incrementing FUNDEF_USED: new value = %d", FUNDEF_USED (fundef)));
+    }
 
     arg_info = GenerateIcmTypeTables (arg_info, fundef, TRUE, FALSE);
 
