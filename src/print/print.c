@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.203  1998/04/25 16:28:59  sbs
+ * END_ICM macros adjusted for a second argument!
+ *
  * Revision 1.202  1998/04/25 11:45:56  sbs
  * indent moved into globals!
  *
@@ -697,7 +700,7 @@ static int print_separate = 0;
 #define ICM_STR(name)
 #define ICM_INT(name)
 #define ICM_VAR(dim, name)
-#define ICM_END(prf)
+#define ICM_END(prf, args)
 #include "icm.data"
 #undef ICM_DEF
 #undef ICM_STR
@@ -1962,7 +1965,7 @@ PrintIcm (node *arg_node, node *arg_info)
 #define ICM_STR(name)
 #define ICM_INT(name)
 #define ICM_VAR(dim, name)
-#define ICM_END(prf)
+#define ICM_END(prf, args)
 #include "icm.data"
 #undef ICM_ALL
 #undef ICM_DEF
