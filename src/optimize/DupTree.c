@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.22  1997/04/25 09:20:34  sbs
+ * Revision 1.23  1997/04/30 11:50:21  cg
+ * *** empty log message ***
+ *
+ * Revision 1.22  1997/04/25  09:20:34  sbs
  * DBUG_ASSERT in DupIds adjusted (no varargs)
  *
  * Revision 1.21  1997/04/23  12:52:36  cg
@@ -196,13 +199,17 @@ DupIds (ids *old_ids, node *arg_info)
         break;
     }
 
-    new_ids->status = old_ids->status;
-    new_ids->attrib = old_ids->attrib;
+    IDS_STATUS (new_ids) = IDS_STATUS (old_ids);
+    IDS_ATTRIB (new_ids) = IDS_ATTRIB (old_ids);
 
     if (NULL != old_ids->next)
         new_ids->next = DupIds (old_ids->next, arg_info);
     DBUG_RETURN (new_ids);
 }
+
+/*
+ * DupIIds is used for N_id node.
+ */
 
 node *
 DupIIds (node *arg_node, node *arg_info)
@@ -221,6 +228,10 @@ DupIIds (node *arg_node, node *arg_info)
     }
     DBUG_RETURN (new_node);
 }
+
+/*
+ * DupId is used for N_modarray node.
+ */
 
 node *
 DupId (node *arg_node, node *arg_info)
