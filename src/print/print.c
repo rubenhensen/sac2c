@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.250  1998/10/26 18:04:48  dkr
+ * with -> old_with
+ * new_with -> with
+ *
  * Revision 1.249  1998/08/11 14:35:17  dkr
  * PrintWLsegVar changed
  *
@@ -1861,7 +1865,7 @@ PrintWith (node *arg_node, node *arg_info)
 
     DBUG_EXECUTE ("MASK", fprintf (outfile, "\n**MASKS - generator\n");
                   PrintMasks (arg_node->node[0], arg_info););
-    fprintf (outfile, "with (");
+    fprintf (outfile, "old_with (");
     Trav (WITH_GEN (arg_node), arg_info);
     fprintf (outfile, ") ");
 
@@ -2462,14 +2466,14 @@ PrintNwith (node *arg_node, node *arg_info)
     if (NPART_NEXT (NWITH_PART (arg_node)) != NULL) {
         /* output format 1 */
         INFO_PRINT_INT_SYN (arg_info) = NULL;
-        fprintf (outfile, "new_with\n");
+        fprintf (outfile, "with\n");
         indent++;
         NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
         indent--;
     } else {
         /* output format 2 */
         INFO_PRINT_INT_SYN (arg_info) = (node *)!NULL; /* set != NULL */
-        fprintf (outfile, "new_with ");
+        fprintf (outfile, "with ");
         NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
     }
 
@@ -2747,7 +2751,7 @@ PrintNwith2 (node *arg_node, node *arg_info)
     INFO_PRINT_NWITH2 (arg_info) = arg_node;
     indent += 2;
 
-    fprintf (outfile, "new_with2 (");
+    fprintf (outfile, "with2 (");
     NWITH2_WITHID (arg_node) = Trav (NWITH2_WITHID (arg_node), arg_info);
     fprintf (outfile, ")\n");
 
