@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2003/03/24 16:37:42  sbs
+ * CreateCppCallString used .
+ *
  * Revision 3.12  2003/03/21 18:01:46  sbs
  * generic preprocessor flags SAC_FOR_xxx eliminated again 8-)
  *
@@ -270,7 +273,6 @@ DONE:
 node *
 ScanParse ()
 {
-    int i;
     char *pathname;
     char cccallstr[MAX_PATH_LEN];
 
@@ -279,14 +281,7 @@ ScanParse ()
     filename = puresacfilename;
 
     if (sacfilename[0] == '\0') {
-        strcpy (cccallstr, config.cpp_stdin);
-
-        for (i = 0; i < num_cpp_vars; i++) {
-            strcat (cccallstr, " ");
-            strcat (cccallstr, config.opt_D);
-            strcat (cccallstr, cppvars[i]);
-        }
-
+        CreateCppCallString (sacfilename, cccallstr);
         NOTE (("Parsing from stdin ..."));
     } else {
         pathname = FindFile (PATH, sacfilename);
@@ -295,16 +290,8 @@ ScanParse ()
             SYSABORT (("Unable to open file \"%s\"", sacfilename));
         }
 
-        strcpy (cccallstr, config.cpp_file);
+        CreateCppCallString (pathname, cccallstr);
 
-        for (i = 0; i < num_cpp_vars; i++) {
-            strcat (cccallstr, " ");
-            strcat (cccallstr, config.opt_D);
-            strcat (cccallstr, cppvars[i]);
-        }
-
-        strcat (cccallstr, " ");
-        strcat (cccallstr, pathname);
         NOTE (("Parsing file \"%s\" ...", pathname));
     }
 
