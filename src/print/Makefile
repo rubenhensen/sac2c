@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.7  2001/05/08 12:24:18  dkr
+# INCS modified
+#
 # Revision 3.6  2001/04/26 21:09:42  dkr
 # make deps done
 #
@@ -93,8 +96,9 @@ CCFLAGS   := -ansi -Wall -g -DSAC_FOR_$(OS)
 CFLAGS    := -D__EXTENSIONS__
 
 
-INCS=-I../global -I../tree -I../../inc -I../compile -I../modules -I../concurrent \
-     -I../psi-opt -I../optimize -I../typecheck -I../c-interface
+INCS = -I../global -I../tree -I../compile -I../modules -I../refcount \
+       -I../concurrent -I../psi-opt -I../optimize -I../typecheck \
+       -I../c-interface -I../../inc
 
 all: print.o convert.o
 
