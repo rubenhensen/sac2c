@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.36  1999/10/29 21:38:39  sbs
+ * changed ND_DEC_RC into ND_DEC_RC_FREE_ARRAY after loops!
+ * for details see comment in COMPloop!
+ *
  * Revision 2.35  1999/10/28 09:53:22  sbs
  * re-coded compilation of F_reshape!
  * Now, the shape vector will be freed properly!
@@ -5153,7 +5157,20 @@ COMPLoop (node *arg_node, node *arg_info)
 
             if (!found) {
                 if (IDS_REFCNT (usevar) > 1) {
-                    CREATE_2_ARY_ICM (next_assign, "ND_DEC_RC",
+                    CREATE_2_ARY_ICM (next_assign,
+                                      /*
+                                       * sbs: Initially, a ND_DEC_RC icm was built here!
+                                       *      (which actually forced the introduction of
+                                       * the conditional here) Unfortunately, the refcount
+                                       * of usevar in some situations seems to be >1
+                                       * although this dynamically turns out to be the
+                                       * last ref! Therefore, I changed ND_DEC_RC into
+                                       * ND_DEC_RC_FREE_ARRAY! The example, where things
+                                       * went wrong is APLtomcatv; in that program x and y
+                                       * of the main tomcatv loop would not be set free at
+                                       * last!!!
+                                       */
+                                      "ND_DEC_RC_FREE_ARRAY",
                                       MakeId2 (DupOneIds (usevar, NULL)), MakeNum (1));
                     APPEND_ASSIGNS (first_assign, next_assign);
                 } else if (IDS_REFCNT (usevar) > 0) {
