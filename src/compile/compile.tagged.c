@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.62  2003/03/17 14:32:19  dkr
+ * memory allocatation for NWITHID_IDS added
+ *
  * Revision 1.61  2003/03/14 13:22:06  dkr
  * MakeIcmArgs_WL_OP1(): 3rd argument is tagged now
  *
@@ -5236,9 +5239,18 @@ COMP2With2 (node *arg_node, node *arg_info)
     }
 
     /*
-     * allocate memory for index-vector
+     * allocate memory for index-vector and its scalar components
      */
-    vec_ids = NWITH2_VEC (arg_node);
+    vec_ids = NWITH2_IDS (arg_node); /* scalar components of index vector */
+    while (vec_ids != NULL) {
+        alloc_icms
+          = MakeAllocIcm (IDS_NAME (vec_ids), IDS_TYPE (vec_ids), IDS_REFCNT (vec_ids),
+                          MakeNum (0),
+                          MakeIcm2 ("ND_SET__SHAPE", DupIds_Id_NT (vec_ids), MakeNum (0)),
+                          NULL, alloc_icms);
+        vec_ids = IDS_NEXT (vec_ids);
+    }
+    vec_ids = NWITH2_VEC (arg_node); /* index vector */
     alloc_icms = MakeAllocIcm (IDS_NAME (vec_ids), IDS_TYPE (vec_ids),
                                IDS_REFCNT (vec_ids), MakeNum (1),
                                MakeIcm3 ("ND_SET__SHAPE", /* AKD only!! */
