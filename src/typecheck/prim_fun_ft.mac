@@ -1,5 +1,8 @@
 /*
  *  $Log$
+ *  Revision 1.16  1997/10/03 16:05:05  dkr
+ *  added support for % (int x int -> int)
+ *
  *  Revision 1.15  1996/05/23 15:02:37  hw
  *  changed signature of primitive function div
  *
@@ -81,6 +84,7 @@ FT (F_div, SxA_A, F_div_SxA)
 FT (F_div_AxA, AxA_A, F_div_AxA)
 FT (F_div_AxS, AxS_A, F_div_AxS)
 FT (F_div_SxA, SxA_A, F_div_SxA)
+FT (F_mod, ixi_i, F_mod)
 FT (F_eq, BxB_B, F_eq)
 FT (F_eq, SxS_B, F_eq)
 FT (F_eq, CxC_B, F_eq)
