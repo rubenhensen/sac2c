@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.33  2005/01/11 13:05:10  cg
+ * Removed applications of ERRitemName.
+ *
  * Revision 3.32  2005/01/11 11:19:19  cg
  * Converted output from Error.h to ctinfo.c
  *
@@ -814,13 +817,13 @@ F2Lap (node *arg_node, info *arg_info)
         if (FUNDEF_ISCONDFUN (fundef)) {
 
             DBUG_PRINT ("F2L", ("Naive inlining of conditional function %s.",
-                                ERRitemName (fundef)));
+                                FUNDEF_NAME (fundef)));
 
             fundef = TransformIntoCond (fundef);
         } else if (FUNDEF_ISDOFUN (fundef)) {
 
             DBUG_PRINT ("F2L",
-                        ("Naive inlining of do-loop function %s.", ERRitemName (fundef)));
+                        ("Naive inlining of do-loop function %s.", FUNDEF_NAME (fundef)));
 
             fundef = TransformIntoDoLoop (fundef);
         } else {
@@ -836,7 +839,8 @@ F2Lap (node *arg_node, info *arg_info)
 
         INFO_F2L_INLINED (arg_info) = inl_code;
     } else {
-        DBUG_PRINT ("F2L", ("function %s is no LaC-function.", ERRitemName (fundef)));
+        DBUG_PRINT ("F2L", ("function %s:%s is no LaC-function.", FUNDEF_MOD (fundef),
+                            FUNDEF_NAME (fundef)));
     }
 
     DBUG_RETURN (arg_node);
