@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2000/07/12 13:30:24  dkr
+ * DFMDuplicateMask: NOTE replaced by DBUG_PRINT
+ *
  * Revision 1.8  2000/07/04 14:36:43  jhs
  * Added DFMGetMaskBase and used it in DFMDuplicateMask
  *
@@ -503,9 +506,10 @@ DFMDuplicateMask (DFMmask_t mask, DFMmask_base_t base)
             /* copy each name, DFMSetMaskEntrySet will fail if name not found */
             name = DFMGetMaskEntryNameSet (mask);
             while (name != NULL) {
-                NOTE (("%s", name));
-                DFMSetMaskEntrySet (new_mask, name, NULL);
-                name = DFMGetMaskEntryNameSet (NULL);
+        DBUG_PRINT( "DFMU", ("Entry in duplicated mask: %s", name);
+
+        DFMSetMaskEntrySet( new_mask, name, NULL);
+        name = DFMGetMaskEntryNameSet( NULL);
             }
         } else {
             /* copy by native */
