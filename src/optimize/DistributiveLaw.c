@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.13  2004/07/05 10:56:27  mwe
+ * new ntype behind MakeVardec() assigned to avis-node
+ *
  * Revision 1.12  2004/06/10 14:43:06  mwe
  * usage of ntype* instead of type added
  *
@@ -57,6 +60,7 @@
  ********************/
 
 #define INFO_DL_TYPE(n) ((types *)(n->dfmask[0]))
+#define INFO_DL_NEWTYPE(n) ((ntype *)(n->dfmask[3]))
 #define INFO_DL_BLOCKNODE(n) (n->node[0])
 #define INFO_DL_OPTLIST(n) ((nodelist *)(n->info2))
 #define INFO_DL_NONOPTLIST(n) ((nodelist *)(n->info3))
@@ -1282,6 +1286,7 @@ MakeAssignLetNodeFromCurrentNode (node *newnode, node *arg_info, int flag)
 
     node *newvardec;
     types *type;
+    ntype *newtype;
     char *newname1, *newname2;
     shpseg *shp;
     node *shpnode;
@@ -1302,6 +1307,8 @@ MakeAssignLetNodeFromCurrentNode (node *newnode, node *arg_info, int flag)
                           TYPES_DIM ((INFO_DL_TYPE (arg_info))), shp, NULL, NULL);
     }
 
+    newtype = TYCopyType (INFO_DL_NEWTYPE (arg_info));
+
     newname1 = TmpVar ();
 
     newvardec
@@ -1314,6 +1321,7 @@ MakeAssignLetNodeFromCurrentNode (node *newnode, node *arg_info, int flag)
 
     VARDEC_OBJDEF (newvardec) = newnode;
     AVIS_SSAASSIGN (VARDEC_AVIS (newvardec)) = newnode;
+    AVIS_TYPE (VARDEC_AVIS (newvardec)) = newtype;
 
     DBUG_RETURN (newnode);
 }
@@ -2797,9 +2805,11 @@ DLlet (node *arg_node, node *arg_info)
         INFO_DL_LETNODE (arg_info) = arg_node;
         INFO_DL_IEEEFLAG (arg_info) = 0;
 
-        if ((LET_IDS (arg_node) != NULL) && (IDS_AVIS (LET_IDS (arg_node)) != NULL))
+        if ((LET_IDS (arg_node) != NULL) && (IDS_AVIS (LET_IDS (arg_node)) != NULL)) {
             INFO_DL_TYPE (arg_info)
               = VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (IDS_AVIS (LET_IDS (arg_node))));
+            INFO_DL_NEWTYPE (arg_info) = AVIS_TYPE (IDS_AVIS (LET_IDS (arg_node)));
+        }
 
         LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
 
