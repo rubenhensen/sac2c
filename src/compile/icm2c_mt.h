@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.15  2001/05/11 14:36:56  cg
+ * Implementations of ICMs concerned with loop scheduling
+ * are now moved to new specific file icm2c_sched.c
+ *
  * Revision 3.14  2001/05/09 15:13:00  cg
  * All scheduling ICMs get an additional first parameter,
  * i.e. the segment ID. This is required to identify the appropriate
@@ -144,33 +148,5 @@ extern void ICMCompileMT_SPMD_PRESET (char *name, int narg, char **vararg);
 extern void ICMCompileMT_SPMD_BEGIN (char *name);
 extern void ICMCompileMT_SPMD_ALTSEQ (char *name);
 extern void ICMCompileMT_SPMD_END (char *name);
-
-extern void ICMCompileMT_ADJUST_SCHEDULER__OFFSET (char *array, int array_dim,
-                                                   int current_dim, char *lower,
-                                                   char *upper, char *unrolling);
-
-extern void ICMCompileMT_SCHEDULER_BEGIN (int seg_id, int dim, char **vararg);
-extern void ICMCompileMT_SCHEDULER_END (int seg_id, int dim, char **vararg);
-
-extern void ICMCompileMT_SCHEDULER_Block_BEGIN (int seg_id, int dim, char **vararg);
-extern void ICMCompileMT_SCHEDULER_Block_END (int seg_id, int dim, char **vararg);
-
-extern void ICMCompileMT_SCHEDULER_BlockVar_BEGIN (int seg_id, int dim, char **vararg);
-extern void ICMCompileMT_SCHEDULER_BlockVar_END (int seg_id, int dim, char **vararg);
-
-extern void ICMCompileMT_SCHEDULER_Static_BEGIN (int seg_id, int tasks_per_thread,
-                                                 int dim, char **vararg);
-extern void ICMCompileMT_SCHEDULER_Static_END (int seg_id, int tasks_per_thread, int dim,
-                                               char **vararg);
-
-extern void ICMCompileMT_SCHEDULER_Self_BEGIN (int seg_id, int tasks_per_thread, int dim,
-                                               char **vararg);
-extern void ICMCompileMT_SCHEDULER_Self_END (int seg_id, int tasks_per_thread, int dim,
-                                             char **vararg);
-
-extern void ICMCompileMT_SCHEDULER_Affinity_BEGIN (int seg_id, int tasks_per_thread,
-                                                   int dim, char **vararg);
-extern void ICMCompileMT_SCHEDULER_Affinity_END (int seg_id, int tasks_per_thread,
-                                                 int dim, char **vararg);
 
 #endif /* _SAC_ICM2C_MT_H_ */
