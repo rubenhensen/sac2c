@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2001/04/20 11:18:59  nmw
+ * SSALUR traversal added
+ *
  * Revision 3.13  2001/04/18 15:39:35  nmw
  * while2do added
  *
@@ -243,6 +246,7 @@ extern funtab *ssacf_tab;
 extern funtab *ssalir_tab;
 extern funtab *lirmov_tab;
 extern funtab *w2d_tab;
+extern funtab *ssalur_tab;
 
 extern int nnode[];
 

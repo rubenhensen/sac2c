@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.20  2001/04/20 11:18:59  nmw
+ * SSALUR traversal added
+ *
  * Revision 3.19  2001/04/18 15:39:35  nmw
  * while2do added
  *
@@ -168,6 +171,7 @@
 #include "SSAConstantFolding.h"
 #include "SSALIR.h"
 #include "while2do.h"
+#include "SSALUR.h"
 
 #include "traverse.h"
 
@@ -1223,7 +1227,7 @@ static funtab lirmov_tab_rec = {{
 funtab *lirmov_tab = &lirmov_tab_rec;
 
 /*
- *  (95) w2d_tab
+ *  (96) w2d_tab
  */
 static funtab w2d_tab_rec = {{
 #define NIFw2d(it_w2d) it_w2d
@@ -1232,6 +1236,17 @@ static funtab w2d_tab_rec = {{
                              NULL,
                              NULL};
 funtab *w2d_tab = &w2d_tab_rec;
+
+/*
+ *  (97) ssalur_tab
+ */
+static funtab ssalur_tab_rec = {{
+#define NIFssalur(it_ssalur) it_ssalur
+#include "node_info.mac"
+                                },
+                                NULL,
+                                NULL};
+funtab *ssalur_tab = &ssalur_tab_rec;
 
 /*
  *  nnode
