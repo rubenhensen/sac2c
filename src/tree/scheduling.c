@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.44  2004/11/27 00:23:09  cg
+ * PRECrenameLocalIdentifiers renamed to RIDrenameLocalIdentifiers
+ *
  * Revision 3.43  2004/11/26 00:22:56  mwe
  * SacDevCamp Dk: Compiles!
  *
@@ -729,7 +732,7 @@ SCHcopyScheduling (sched_t *sched)
  *   Since identifier names are stored within the abstract scheduling
  *   representations, these are subject to renaming during the precompilation
  *   compiler phase. The actual renaming is done by the help of the function
- *   PRECRenameLocalIdentifier().
+ *   RIDrenameLocalIdentifier().
  *
  ******************************************************************************/
 
@@ -742,7 +745,7 @@ SCHprecompileScheduling (sched_t *sched)
 
     for (i = 0; i < sched->num_args; i++) {
         if (sched->args[i].arg_type == AT_id) {
-            sched->args[i].arg.id = PRECrenameLocalIdentifier (sched->args[i].arg.id);
+            sched->args[i].arg.id = RIDrenameLocalIdentifier (sched->args[i].arg.id);
         }
     }
 
