@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2004/07/26 18:45:53  ktr
+ * - corrected some misused MakePrf instructions.
+ * - changed representation of ND_CREATE__ARRAY__SHAPE
+ *
  * Revision 1.11  2004/07/23 15:55:24  ktr
  * No NULL Assignment chain is appended to an empty block
  *
@@ -74,7 +78,7 @@
  * The following switch controls wheter AKS-Information should be used
  * when possible
  */
-#define USEAKS
+/*#define USEAKS*/
 
 /** <!--******************************************************************-->
  *
@@ -340,7 +344,7 @@ EMALap (node *arg_node, info *arg_info)
  *
  *  Ex. [[ a, b], [ c, d]]
  *  dim = 2 + dim(a)
- *  shape = [2,2]++shape(a)  <---->   shape( genarray( [2,2], a))
+ *  shape = [2,2]++shape(a)
  *
  *  @param arg_node an N_array node
  *  @param arg_info containing ALLOCLIST for this assignment
@@ -364,12 +368,11 @@ EMALarray (node *arg_node, info *arg_info)
          */
         als->dim
           = MakePrf2 (F_add_SxS, MakeNum (SHGetDim (ARRAY_SHAPE (arg_node))),
-                      MakePrf (F_dim, DupNode (EXPRS_EXPR (ARRAY_AELEMS (arg_node)))));
+                      MakePrf1 (F_dim, DupNode (EXPRS_EXPR (ARRAY_AELEMS (arg_node)))));
 
         als->shape
-          = MakePrf (F_shape,
-                     MakePrf2 (F_genarray, SHShape2Array (ARRAY_SHAPE (arg_node)),
-                               DupNode (EXPRS_EXPR (ARRAY_AELEMS (arg_node)))));
+          = MakePrf2 (F_cat_VxV, SHShape2Array (ARRAY_SHAPE (arg_node)),
+                      MakePrf1 (F_shape, DupNode (EXPRS_EXPR (ARRAY_AELEMS (arg_node)))));
     } else {
         /*
          * []: empty array
@@ -517,8 +520,8 @@ EMALcode (node *arg_node, info *arg_info)
                     als->dim
                       = MakePrf2 (F_add_SxS,
                                   MakePrf2 (F_sel, MakeNum (0),
-                                            MakePrf (F_shape,
-                                                     DupNode (NWITHOP_SHAPE (withops)))),
+                                            MakePrf1 (F_shape,
+                                                      DupNode (NWITHOP_SHAPE (withops)))),
                                   MakeNum (TYGetDim (AVIS_TYPE (cexavis))));
                 }
             }
@@ -915,7 +918,7 @@ EMALprf (node *arg_node, info *arg_info)
          * alloc(1, shape( shape( A )))
          */
         als->dim = MakeNum (1);
-        als->shape = MakePrf (F_shape, DupTree (arg_node));
+        als->shape = MakePrf1 (F_shape, DupTree (arg_node));
         break;
 
     case F_reshape:
@@ -924,7 +927,7 @@ EMALprf (node *arg_node, info *arg_info)
          * alloc( shape( sh )[0], sh );
          */
         als->dim = MakePrf2 (F_sel, MakeNum (0),
-                             MakePrf (F_shape, DupNode (PRF_ARG1 (arg_node))));
+                             MakePrf1 (F_shape, DupNode (PRF_ARG1 (arg_node))));
 
         als->shape = DupNode (PRF_ARG1 (arg_node));
         break;
@@ -941,7 +944,7 @@ EMALprf (node *arg_node, info *arg_info)
          * alloc( 1, shape( cat( V1, V2 )));
          */
         als->dim = MakeNum (1);
-        als->shape = MakePrf (F_shape, DupTree (arg_node));
+        als->shape = MakePrf1 (F_shape, DupTree (arg_node));
         break;
 
     case F_sel:
@@ -949,11 +952,12 @@ EMALprf (node *arg_node, info *arg_info)
          * sel( iv, A );
          * alloc( dim(A) - shape(iv)[0], shape( sel( iv, A)))
          */
-        als->dim = MakePrf2 (F_sub_SxS, MakePrf (F_dim, DupNode (PRF_ARG2 (arg_node))),
-                             MakePrf2 (F_sel, MakeNum (0),
-                                       MakePrf (F_shape, DupNode (PRF_ARG1 (arg_node)))));
+        als->dim
+          = MakePrf2 (F_sub_SxS, MakePrf1 (F_dim, DupNode (PRF_ARG2 (arg_node))),
+                      MakePrf2 (F_sel, MakeNum (0),
+                                MakePrf1 (F_shape, DupNode (PRF_ARG1 (arg_node)))));
 
-        als->shape = MakePrf (F_shape, DupNode (arg_node));
+        als->shape = MakePrf1 (F_shape, DupNode (arg_node));
         break;
 
     case F_idx_sel:
@@ -964,7 +968,7 @@ EMALprf (node *arg_node, info *arg_info)
          * alloc( dim( a), shape( idx_sel( idx, A)));
          */
         als->dim = MakeNum (TYGetDim (AVIS_TYPE (als->avis)));
-        als->shape = MakePrf (F_shape, DupNode (arg_node));
+        als->shape = MakePrf1 (F_shape, DupNode (arg_node));
         break;
 
     case F_modarray:
@@ -973,8 +977,8 @@ EMALprf (node *arg_node, info *arg_info)
          * idx_modarray( A, idx, val);
          * alloc( dim( A ), shape ( A ));
          */
-        als->dim = MakePrf (F_dim, DupNode (PRF_ARG1 (arg_node)));
-        als->shape = MakePrf (F_shape, DupNode (PRF_ARG1 (arg_node)));
+        als->dim = MakePrf1 (F_dim, DupNode (PRF_ARG1 (arg_node)));
+        als->shape = MakePrf1 (F_shape, DupNode (PRF_ARG1 (arg_node)));
         break;
 
     case F_add_SxS:
@@ -1024,11 +1028,11 @@ EMALprf (node *arg_node, info *arg_info)
         if ((CountExprs (PRF_ARGS (arg_node)) < 2)
             || (NODE_TYPE (PRF_ARG2 (arg_node)) != N_id)
             || (GetShapeDim (ID_TYPE (PRF_ARG2 (arg_node))) == SCALAR)) {
-            als->dim = MakePrf (F_dim, DupNode (PRF_ARG1 (arg_node)));
-            als->shape = MakePrf (F_shape, DupNode (PRF_ARG1 (arg_node)));
+            als->dim = MakePrf1 (F_dim, DupNode (PRF_ARG1 (arg_node)));
+            als->shape = MakePrf1 (F_shape, DupNode (PRF_ARG1 (arg_node)));
         } else {
-            als->dim = MakePrf (F_dim, DupNode (PRF_ARG2 (arg_node)));
-            als->shape = MakePrf (F_shape, DupNode (PRF_ARG2 (arg_node)));
+            als->dim = MakePrf1 (F_dim, DupNode (PRF_ARG2 (arg_node)));
+            als->shape = MakePrf1 (F_shape, DupNode (PRF_ARG2 (arg_node)));
         }
         break;
 
@@ -1138,7 +1142,7 @@ EMALwith (node *arg_node, info *arg_info)
     if (NWITH_VEC (arg_node) != NULL) {
         INFO_EMAL_ALLOCLIST (arg_info)
           = MakeALS (INFO_EMAL_ALLOCLIST (arg_info), IDS_AVIS (NWITH_VEC (arg_node)),
-                     MakeNum (1), MakePrf (F_shape, DupNode (NWITH_BOUND1 (arg_node))));
+                     MakeNum (1), MakePrf1 (F_shape, DupNode (NWITH_BOUND1 (arg_node))));
     }
 
     /*
@@ -1279,17 +1283,17 @@ EMALwithop (node *arg_node, info *arg_info)
             DBUG_ASSERT (NWITHOP_DEFAULT (arg_node) != NULL, "Default element required!");
             als->dim = MakePrf2 (F_add_SxS,
                                  MakePrf2 (F_sel, MakeNum (0),
-                                           MakePrf (F_shape,
-                                                    DupNode (NWITHOP_SHAPE (arg_node)))),
-                                 MakePrf (F_dim, DupNode (NWITHOP_DEFAULT (arg_node))));
+                                           MakePrf1 (F_shape,
+                                                     DupNode (NWITHOP_SHAPE (arg_node)))),
+                                 MakePrf1 (F_dim, DupNode (NWITHOP_DEFAULT (arg_node))));
         }
 
         if (als->shape == NULL) {
             DBUG_ASSERT (NWITHOP_DEFAULT (arg_node) != NULL, "Default element required!");
             als->shape
-              = MakePrf (F_shape,
-                         MakePrf2 (F_genarray, DupNode (NWITHOP_SHAPE (arg_node)),
-                                   DupNode (NWITHOP_DEFAULT (arg_node))));
+              = MakePrf1 (F_shape,
+                          MakePrf2 (F_genarray, DupNode (NWITHOP_SHAPE (arg_node)),
+                                    DupNode (NWITHOP_DEFAULT (arg_node))));
         }
 
         /*
@@ -1314,8 +1318,8 @@ EMALwithop (node *arg_node, info *arg_info)
          * modarray-wl:
          * dim, shape are the same as in the modified array
          */
-        als->dim = MakePrf (F_dim, DupNode (NWITHOP_ARRAY (arg_node)));
-        als->shape = MakePrf (F_shape, DupNode (NWITHOP_ARRAY (arg_node)));
+        als->dim = MakePrf1 (F_dim, DupNode (NWITHOP_ARRAY (arg_node)));
+        als->shape = MakePrf1 (F_shape, DupNode (NWITHOP_ARRAY (arg_node)));
 
         /*
          * Annotate which memory is to be used
