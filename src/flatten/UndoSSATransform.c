@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.18  2005/01/11 13:05:10  cg
+ * Added notification of SSA transform
+ *
  * Revision 1.17  2005/01/08 09:52:35  ktr
  * Fixed some issues related to loops.
  *
@@ -1049,6 +1052,8 @@ USSATdoUndoSsaTransform (node *module)
     info *arg_info;
 
     DBUG_ENTER ("USSATdoUndoSSATransform");
+
+    CTInote ("Converting from SSA representation");
 
     DBUG_PRINT ("OPT", ("starting UNDO ssa transformation"));
 

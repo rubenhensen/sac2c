@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.29  2005/01/11 13:05:10  cg
+ * Added notification of SSA transform
+ *
  * Revision 1.28  2005/01/07 18:05:21  cg
  * Updated usage of ctinfo
  *
@@ -1741,6 +1744,8 @@ SSATdoTransform (node *syntax_tree)
     info *arg_info;
 
     DBUG_ENTER ("SSATdoTransform");
+
+    CTInote ("Converting to SSA representation");
 
     DBUG_ASSERT ((NODE_TYPE (syntax_tree) == N_module),
                  "SSATransform is used for module nodes only");
