@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.22  1998/03/24 11:48:31  cg
+ * added global variables used to gather compile time information
+ * later used for profiling.
+ *
  * Revision 1.21  1998/03/17 14:21:58  cg
  * file src/compile/trace.h removed.
  * definition of symbolic values of global variable traceflag moved to globals.h
@@ -91,6 +95,10 @@
 
 #define MAX_BREAK_SPECIFIER 32
 
+#define PF_MAXFUN 100
+#define PF_MAXFUNAP 100
+#define PF_MAXFUNNAMELEN 100
+
 extern FILE *outfile;
 
 extern char sacfilename[];
@@ -103,6 +111,8 @@ extern file_type filetype;
 extern char *tmp_dirname;
 
 extern char target_name[];
+
+extern int num_threads;
 
 extern char *cppvars[];
 extern int num_cpp_vars;
@@ -149,6 +159,23 @@ extern int traceflag;
  */
 
 extern int profileflag;
+
+#define NO_PROFILE 0x0000
+#define PROFILE_FUN 0x0001
+#define PROFILE_INL 0x0002
+#define PROFILE_LIB 0x0004
+#define PROFILE_WITH 0x0008
+#define PROFILE_ALL 0xffff
+/*
+ * Allowed values of profileflag
+ */
+
+extern int PFfuncntr;
+extern char *PFfunnme[PF_MAXFUN];
+extern int PFfunapcntr[PF_MAXFUN];
+extern int PFfunapline[PF_MAXFUN][PF_MAXFUNAP];
+extern int PFfunapmax;
+
 extern int check_boundary;
 extern int check_malloc;
 

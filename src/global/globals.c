@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.8  1998/03/24 11:48:31  cg
+ * added global variables used to gather compile time information
+ * later used for profiling.
+ *
  * Revision 1.7  1998/03/13 13:35:00  dkr
  * fixed corrupted header ?!?
  *
@@ -210,6 +214,16 @@ int traceflag = 0;
 int profileflag = 0;
 int check_malloc = 0;
 int check_boundary = 0;
+
+/*
+ * Profiling information storage facilities
+ */
+
+int PFfuncntr = 1;
+char *PFfunnme[PF_MAXFUN] = {"main"};
+int PFfunapcntr[PF_MAXFUN];
+int PFfunapline[PF_MAXFUN][PF_MAXFUNAP];
+int PFfunapmax = 1;
 
 /*
  * Compile time options
