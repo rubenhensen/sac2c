@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.1  1995/10/22 14:23:26  cg
+ * Revision 1.2  1995/10/22 15:56:31  cg
+ * Now, declaration files will be generated automatically if not
+ * present at compile time of module/class implementation.
+ *
+ * Revision 1.1  1995/10/22  14:23:26  cg
  * Initial revision
  *
  *
@@ -18,6 +22,10 @@
 #include "traverse.h"
 
 #include "import.h"
+#include "convert.h"
+#include "filemgr.h"
+
+static FILE *decfile;
 
 /*
  *
@@ -40,47 +48,45 @@
 node *
 LoadDeclaration (char *name, file_type modtype)
 {
-    node *decl;
+    node *decl = NULL;
 
     DBUG_ENTER ("LoadDeclaration");
 
     yyin = fopen (FindFile (MODDEC_PATH, filename), "r");
 
-    if (yyin == NULL) {
-        SYSABORT (("Unable to open file \"%s\"", filename));
-    }
+    if (yyin != NULL) {
+        NOTE (("  Loading declaration file \"%s\" ...", filename));
 
-    NOTE (("  Loading declaration file \"%s\" ...", filename));
+        linenum = 1;
+        start_token = PARSE_DEC;
+        yyparse ();
+        fclose (yyin);
 
-    linenum = 1;
-    start_token = PARSE_DEC;
-    yyparse ();
-    fclose (yyin);
+        decl = decl_tree;
 
-    decl = decl_tree;
+        if ((strcmp (MODDEC_NAME (decl), name) != 0)
+            || ((NODE_TYPE (decl) == N_classdec) && (modtype == F_modimp))
+            || ((NODE_TYPE (decl) == N_moddec) && (modtype == F_classimp))) {
+            SYSERROR (("File \"%s\" provides wrong declaration", filename));
 
-    if ((strcmp (MODDEC_NAME (decl), name) != 0)
-        || ((NODE_TYPE (decl) == N_classdec) && (modtype == F_modimp))
-        || ((NODE_TYPE (decl) == N_moddec) && (modtype == F_classimp))) {
-        SYSERROR (("File \"%s\" provides wrong declaration", filename));
+            if (modtype == F_modimp) {
+                NOTE (("\tRequired: ModuleDec %s", name));
+            } else {
+                NOTE (("\tRequired: ClassDec %s", name));
+            }
 
-        if (modtype == F_modimp) {
-            NOTE (("\tRequired: ModuleDec %s", name));
-        } else {
-            NOTE (("\tRequired: ClassDec %s", name));
+            if (NODE_TYPE (decl) == N_moddec) {
+                NOTE (("\tProvided: ModuleDec %s", MODDEC_NAME (decl)));
+            } else {
+                NOTE (("\tProvided: ClassDec %s", MODDEC_NAME (decl)));
+            }
+
+            ABORT_ON_ERROR;
         }
 
-        if (NODE_TYPE (decl) == N_moddec) {
-            NOTE (("\tProvided: ModuleDec %s", MODDEC_NAME (decl)));
-        } else {
-            NOTE (("\tProvided: ClassDec %s", MODDEC_NAME (decl)));
+        if (NODE_TYPE (decl) == N_classdec) {
+            InsertClassType (decl);
         }
-
-        ABORT_ON_ERROR;
-    }
-
-    if (NODE_TYPE (decl) == N_classdec) {
-        InsertClassType (decl);
     }
 
     DBUG_RETURN (decl);
@@ -143,10 +149,10 @@ CheckExplicitType (node *decl, node *impl)
  *                  References to defines of functions and implicit types
  *                  are stored in the repsective declaration nodes.
  *                  These are used in writesib.
- *  global vars   : act_tab, checkdec_tab
+ *  global vars   : act_tab, checkdec_tab, writedec_tab
  *  internal funs : LoadDeclaration
  *  external funs : strcpy, strcat, Trav
- *  macros        :
+ *  macros        : DBUG, TREE, ERROR
  *
  *  remarks       :
  *
@@ -166,11 +172,26 @@ CheckDec (node *syntax_tree)
     MODUL_DECL (syntax_tree)
       = LoadDeclaration (MODUL_NAME (syntax_tree), MODUL_FILETYPE (syntax_tree));
 
-    act_tab = checkdec_tab;
+    if (MODUL_DECL (syntax_tree) == NULL) {
+        SYSERROR (("Unable to open file \"%s\"", filename));
 
-    MODUL_DECL (syntax_tree) = Trav (MODUL_DECL (syntax_tree), syntax_tree);
+        NOTE (("\n  -> Generating declaration file \"%s\"", filename));
+        NOTE (("ATTENTION: Declaration file must(!) be revised !\n"));
 
-    strcpy (filename, store_filename);
+        act_tab = writedec_tab;
+
+        Trav (syntax_tree, NULL);
+
+        strcpy (filename, store_filename);
+
+        ABORT_ON_ERROR;
+    } else {
+        act_tab = checkdec_tab;
+
+        MODUL_DECL (syntax_tree) = Trav (MODUL_DECL (syntax_tree), syntax_tree);
+
+        strcpy (filename, store_filename);
+    }
 
     DBUG_RETURN (syntax_tree);
 }
@@ -392,6 +413,220 @@ CDECfundef (node *arg_node, node *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+/*
+ *
+ *  functionname  : WDECmodul
+ *  arguments     : 1) N_modul node of module/class implementation
+ *  description   :
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
+
+node *
+WDECmodul (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("WDECmodul");
+
+    decfile = fopen (FindFile (MODDEC_PATH, filename), "w");
+
+    if (decfile == NULL) {
+        SYSABORT (("Unable to open file \"%s\" for writing", filename));
+    }
+
+    if (MODUL_FILETYPE (arg_node) == F_modimp) {
+        fprintf (decfile, "ModuleDec %s :\n\n", MODUL_NAME (arg_node));
+    } else {
+        fprintf (decfile, "ClassDec %s :\n\n", MODUL_NAME (arg_node));
+    }
+
+    fprintf (decfile, "own:\n{\n");
+
+    fprintf (decfile, "implicit types:\n");
+    if (MODUL_TYPES (arg_node) != NULL) {
+        if (MODUL_FILETYPE (arg_node) == F_classimp) {
+            Trav (MODUL_TYPES (arg_node), (node *)MODUL_NAME (arg_node));
+        } else {
+            Trav (MODUL_TYPES (arg_node), NULL);
+        }
+    }
+
+    fprintf (decfile, "\nexplicit types:\n");
+
+    fprintf (decfile, "\nglobal objects:\n");
+    if (MODUL_OBJS (arg_node) != NULL)
+        Trav (MODUL_OBJS (arg_node), NULL);
+
+    fprintf (decfile, "\nfunctions:\n");
+    if (MODUL_FUNS (arg_node) != NULL)
+        Trav (MODUL_FUNS (arg_node), NULL);
+
+    fprintf (decfile, "}\n");
+
+    fclose (decfile);
+
+    DBUG_RETURN (arg_node);
+}
+
+/*
+ *
+ *  functionname  : WDECtypedef
+ *  arguments     :
+ *  description   :
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
+
+node *
+WDECtypedef (node *arg_node, node *arg_info)
+{
+    char *classname;
+
+    DBUG_ENTER ("WDECtypedef");
+
+    classname = (char *)arg_info;
+
+    if (TYPEDEF_STATUS (arg_node) == ST_regular) {
+        if ((classname != NULL)
+            && ((strcmp (TYPEDEF_NAME (arg_node), classname) != 0)
+                || (strcmp (MOD (TYPEDEF_MOD (arg_node)), classname) != 0))) {
+            fprintf (decfile, "  %s;\n", TYPEDEF_NAME (arg_node));
+        }
+    }
+
+    if (TYPEDEF_NEXT (arg_node) != NULL) {
+        Trav (TYPEDEF_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/*
+ *
+ *  functionname  : WDECobjdef
+ *  arguments     :
+ *  description   :
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
+
+node *
+WDECobjdef (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("WDECobjdef");
+
+    fprintf (decfile, "%s %s;\n", Type2String (OBJDEF_TYPE (arg_node), 0),
+             OBJDEF_NAME (arg_node));
+
+    if (OBJDEF_NEXT (arg_node) != NULL) {
+        Trav (OBJDEF_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/*
+ *
+ *  functionname  : WDECfundef
+ *  arguments     :
+ *  description   :
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
+
+node *
+WDECfundef (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("WDECfundef");
+
+    fprintf (decfile, "%s %s(", Type2String (FUNDEF_TYPES (arg_node), 0),
+             FUNDEF_NAME (arg_node));
+
+    if (FUNDEF_ARGS (arg_node) != NULL) {
+        Trav (FUNDEF_ARGS (arg_node), arg_info);
+    }
+
+    fprintf (decfile, ");\n");
+
+    DBUG_RETURN (arg_node);
+}
+
+/*
+ *
+ *  functionname  : WDECarg
+ *  arguments     :
+ *  description   :
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
+
+node *
+WDECarg (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("WDECarg");
+
+    fprintf (decfile, "%s", Type2String (ARG_TYPE (arg_node), 1));
+
+    if (ARG_NEXT (arg_node) != NULL) {
+        fprintf (decfile, ", ");
+        Trav (ARG_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/*
+ *
+ *  functionname  :
+ *  arguments     :
+ *  description   :
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
+
+/*
+ *
+ *  functionname  :
+ *  arguments     :
+ *  description   :
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
 
 /*
  *
