@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.6  1999/05/26 14:32:23  jhs
+ * Added options MTO and SBE for multi-thread optimsation and
+ * synchronisation barrier elimination, both options are by
+ * default disabled.
+ *
  * Revision 2.5  1999/05/20 14:05:14  cg
  * cachesim bit mask macros reorganized.
  *
@@ -106,27 +111,29 @@ extern int Make_Old2NewWith;
 
 extern unsigned int optimize;
 
-#define OPT_NONE 0x00000000 /* all optimizations disabled       */
-#define OPT_ALL 0xFFFFFFFF  /* all optimizations enabled        */
+#define OPT_NONE 0x00000000 /* all optimizations disabled          */
+#define OPT_ALL 0xFFFFFFFF  /* all optimizations enabled           */
 
-#define OPT_DCR 0x00000001  /* dead code removal                */
-#define OPT_CF 0x00000002   /* constant folding                 */
-#define OPT_LIR 0x00000004  /* loop invariant removal           */
-#define OPT_INL 0x00000008  /* function inlining                */
-#define OPT_LUR 0x00000010  /* loop unrolling                   */
-#define OPT_WLUR 0x00000020 /* with-loop unrolling              */
-#define OPT_LUS 0x00000040  /* loop unswitching                 */
-#define OPT_CSE 0x00000080  /* common subexpression elimination */
-#define OPT_DFR 0x00000100  /* dead function removal            */
-#define OPT_WLT 0x00000200  /* with-loop transformation         */
-#define OPT_WLF 0x00000400  /* with-loop folding                */
-#define OPT_IVE 0x00000800  /* index vector elimination         */
-#define OPT_AE 0x00001000   /* array elimination                */
-#define OPT_DLAW 0x00002000 /* distributive law                 */
-#define OPT_RCO 0x00004000  /* reference count optimization     */
-#define OPT_UIP 0x00008000  /* update-in-place analysis         */
-#define OPT_TSI 0x00010000  /* with-loop tile size inference    */
-#define OPT_TSP 0x00020000  /* with-loop tile size pragmas      */
+#define OPT_DCR 0x00000001  /* dead code removal                   */
+#define OPT_CF 0x00000002   /* constant folding                    */
+#define OPT_LIR 0x00000004  /* loop invariant removal              */
+#define OPT_INL 0x00000008  /* function inlining                   */
+#define OPT_LUR 0x00000010  /* loop unrolling                      */
+#define OPT_WLUR 0x00000020 /* with-loop unrolling                 */
+#define OPT_LUS 0x00000040  /* loop unswitching                    */
+#define OPT_CSE 0x00000080  /* common subexpression elimination    */
+#define OPT_DFR 0x00000100  /* dead function removal               */
+#define OPT_WLT 0x00000200  /* with-loop transformation            */
+#define OPT_WLF 0x00000400  /* with-loop folding                   */
+#define OPT_IVE 0x00000800  /* index vector elimination            */
+#define OPT_AE 0x00001000   /* array elimination                   */
+#define OPT_DLAW 0x00002000 /* distributive law                    */
+#define OPT_RCO 0x00004000  /* reference count optimization        */
+#define OPT_UIP 0x00008000  /* update-in-place analysis            */
+#define OPT_TSI 0x00010000  /* with-loop tile size inference       */
+#define OPT_TSP 0x00020000  /* with-loop tile size pragmas         */
+#define OPT_MTO 0x00040000  /* multi-thread optimization           */
+#define OPT_SBE 0x00080000  /* synchronisation barrier elimination */
 
 extern int optvar;
 extern int inlnum;

@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.5  1999/05/26 14:32:23  jhs
+ * Added options MTO and SBE for multi-thread optimsation and
+ * synchronisation barrier elimination, both options are by
+ * default disabled.
+ *
  * Revision 2.4  1999/05/10 10:52:33  bs
  * TSI renamed to WLAA
  *
@@ -325,7 +330,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
        PrintAssign, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        RMVassign, PRECassign, ACTassign, TravSons, WLTassign, CSEassign, TravSons,
-       TravSons, SPMDIassign, TravSons, TravSons, SYNCIassign,
+       TravSons, SPMDIassign, SPMDOassign, TravSons, SYNCIassign,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        WLAAassign, FMTravSons, TravSons, TravSons, 2),
@@ -578,7 +583,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, SPMDLspmd, TravSons,
+       TravSons, SPMDOspmd, SPMDLspmd, TravSons,
 
        TravSons, TravSons, GSCspmd, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 1),

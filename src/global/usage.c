@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.8  1999/05/26 14:32:23  jhs
+ * Added options MTO and SBE for multi-thread optimsation and
+ * synchronisation barrier elimination, both options are by
+ * default disabled.
+ *
  * Revision 2.7  1999/05/20 14:40:10  dkr
  * output adjusted to 80 columns
  *
@@ -347,6 +352,8 @@ usage ()
             "\t\tUIP \t update-in-place \n"
             "\t\tTSI \t tile size inference (blocking) \n"
             "\t\tTSP \t tile size pragmas (blocking) \n"
+            "\t\tMTO \t multi-thread optimization \n"
+            "\t\tSBE \t syncronisation barrier elimination \n"
             "\n"
             "\t\tOPT  \t enables/disables all optimizations at once.\n"
             "\n"

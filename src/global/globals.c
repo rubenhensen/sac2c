@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.6  1999/05/26 14:32:23  jhs
+ * Added options MTO and SBE for multi-thread optimsation and
+ * synchronisation barrier elimination, both options are by
+ * default disabled.
+ *
  * Revision 2.5  1999/05/20 14:05:14  cg
  * bug fixed in intialization of variable cachesim.
  *
@@ -298,9 +303,9 @@ int Make_Old2NewWith = 0;
  */
 
 #ifdef PRODUCTION
-unsigned int optimize = OPT_ALL & (~OPT_LIR);
+unsigned int optimize = OPT_ALL & (~OPT_LIR) & (~OPT_MTO) & (~OPT_SBE);
 #else  /* PRODUCTION */
-unsigned int optimize = OPT_ALL;
+unsigned int optimize = OPT_ALL & (~OPT_MTO) & (~OPT_SBE);
 #endif /* PRODUCTION */
 
 /*

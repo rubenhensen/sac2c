@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/05/26 14:32:23  jhs
+ * Added options MTO and SBE for multi-thread optimsation and
+ * synchronisation barrier elimination, both options are by
+ * default disabled.
+ *
  * Revision 2.1  1999/02/23 12:44:04  sacbase
  * new release made
  *
@@ -159,9 +164,13 @@ CONCfundef (node *arg_node, node *arg_info)
             /*
              * Second, spmd-blocks are optimized, i.e. two or several adjacent spmd-blocks
              * are combined into a single larger one.
+             *
+             * Executed only if optimisation MTO is set.
              */
             act_tab = spmdopt_tab;
-            FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+            if (optimize & OPT_MTO) {
+                FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+            }
 
             if ((break_after == PH_spmdregions)
                 && (0 == strcmp ("spmdopt", break_specifier))) {
@@ -223,9 +232,13 @@ CONCfundef (node *arg_node, node *arg_info)
             /*
              * Fifth, synchronisation blocks are optimized, i.e. two or several adjacent
              * synchronisation blocks are combined into a single larger one.
+             *
+             * Executed only if optimisation SBE is set.
              */
             act_tab = syncopt_tab;
-            FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+            if (optimize & OPT_SBE) {
+                FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+            }
 
             if ((break_after == PH_spmdregions)
                 && (0 == strcmp ("syncopt", break_specifier))) {

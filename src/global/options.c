@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.6  1999/05/26 14:32:23  jhs
+ * Added options MTO and SBE for multi-thread optimsation and
+ * synchronisation barrier elimination, both options are by
+ * default disabled.
+ *
  * Revision 2.5  1999/05/20 14:06:40  cg
  * bug fixed in -check option
  * ccachesim bit mask macros reorganized.
@@ -201,6 +206,12 @@ AnalyseCommandline (int argc, char *argv[])
 
         ARG_CHOICE ("tsp", optimize |= OPT_TSP);
         ARG_CHOICE ("TSP", optimize |= OPT_TSP);
+
+        ARG_CHOICE ("mto", optimize |= OPT_MTO);
+        ARG_CHOICE ("MTO", optimize |= OPT_MTO);
+
+        ARG_CHOICE ("sbe", optimize |= OPT_SBE);
+        ARG_CHOICE ("SBE", optimize |= OPT_SBE);
 
         ARG_CHOICE_END ();
     });
