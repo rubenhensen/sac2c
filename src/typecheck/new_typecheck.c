@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.58  2004/11/25 17:52:55  sbs
+ * compiles
+ *
  * Revision 3.57  2004/11/24 17:42:48  sbs
  * not yet
  *
@@ -539,14 +542,9 @@ NTCmodule (node *arg_node, info *arg_info)
     ABORT_ON_ERROR;
 
     /*
-     * Then we traverse all objdefs in order to attach new types to them.
-     * After that, we insert the topmost objdef into the arg_info node
+     * Then we insert the topmost objdef into the arg_info node
      * for later reference.
      */
-
-    if (MODULE_OBJS (arg_node) != NULL) {
-        MODULE_OBJS (arg_node) = TRAVdo (MODULE_OBJS (arg_node), arg_info);
-    }
 
     INFO_NTC_OBJDEFS (arg_info) = MODULE_OBJS (arg_node);
 
@@ -558,7 +556,7 @@ NTCmodule (node *arg_node, info *arg_info)
      * =====================
      *
      * First, we insert a vardec node for each identifier used.
-     * This has to be done prior to Lac2Fun as Lac2Fun uses datafolowmasks
+     * This has to be done prior to Lac2Fun as Lac2Fun uses dataflowmasks
      * which in turn rely on the existance of Vardecs. Note here, that the
      * vardecs do not contain any type info yet!
      */
@@ -1602,30 +1600,44 @@ node *
 NTCid (node *arg_node, info *arg_info)
 {
     ntype *type;
-    node *objavis;
 
     DBUG_ENTER ("NTCid");
 
     type = AVIS_TYPE (ID_AVIS (arg_node));
 
     if (type == NULL) {
-        /*
-         * There has been no assignment, so we have to check
-         * a) whether this is a global object
-         * b) whether we are dealing with a _phi_ argument here
-         */
-        if (ID_ISGLOBAL (arg_node)) {
-            objavis = ID_AVIS (arg_node);
-            INFO_NTC_TYPE (arg_info) = AVIS_TYPE (objavis);
-            AVIS_TYPE (ID_AVIS (arg_node)) = TYcopyType (INFO_NTC_TYPE (arg_info));
-        } else {
-            ABORT (NODE_LINE (arg_node), ("Cannot infer type for %s as it may be"
-                                          " used without a previous definition",
-                                          ID_NAME (arg_node)));
-        }
+        ABORT (NODE_LINE (arg_node), ("Cannot infer type for %s as it may be"
+                                      " used without a previous definition",
+                                      ID_NAME (arg_node)));
     } else {
         INFO_NTC_TYPE (arg_info) = TYcopyType (type);
     }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *NTCglobobj( node *arg_node, info *arg_info)
+ *
+ *   @brief
+ *   @param
+ *   @return
+ *
+ ******************************************************************************/
+
+node *
+NTCglobobj (node *arg_node, info *arg_info)
+{
+    ntype *type;
+
+    DBUG_ENTER ("NTCglobobj");
+
+    type = OBJDEF_TYPE (GLOBOBJ_OBJDEF (arg_node));
+
+    DBUG_ASSERT (type != NULL, "N_objdef wo type found in NTCglobobj");
+
+    INFO_NTC_TYPE (arg_info) = TYcopyType (type);
 
     DBUG_RETURN (arg_node);
 }

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2004/11/25 17:52:55  sbs
+ * compiles
+ *
  * Revision 1.7  2004/11/23 20:22:31  sbs
  * SacDevCamp 04 done.
  *
@@ -35,6 +38,7 @@
 #include "convert.h"
 #include "internal_lib.h"
 #include "globals.h"
+#include "new_types.h"
 #include "Error.h"
 
 /**

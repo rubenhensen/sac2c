@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.27  2004/11/25 17:52:55  sbs
+ * compiles
+ *
  * Revision 1.26  2004/11/24 17:42:48  sbs
  * not yet
  *
@@ -15,7 +18,7 @@
  *
  * Revision 1.22  2004/09/27 19:08:15  sbs
  * sharing of FUNDEF_RET_TYPEs eliminated when extracting return types
- * from the split wrappers using TYGetWrapperRetType
+ * from the split wrappers using TYgetWrapperRetType
  *
  * Revision 1.21  2004/08/26 18:12:47  sbs
  * INFO_CWC_WITH added, CWCwith added,
@@ -32,7 +35,7 @@
  *
  * Revision 1.18  2004/02/20 08:14:00  mwe
  * now functions with and without body are separated
- * changed tree traversal (added traverse of MODUL_FUNDECS)
+ * changed tree traversal (added traverse of MODULE_FUNDECS)
  *
  * Revision 1.17  2003/11/18 17:45:42  dkr
  * CWCwithop(): all node sons are traversed now
@@ -74,7 +77,7 @@
  * SignatureMatches() added
  *
  * Revision 1.5  2002/08/15 21:27:50  dkr
- * MODUL_WRAPPERFUNS added (not used yet ...)
+ * MODULE_WRAPPERFUNS added (not used yet ...)
  *
  * Revision 1.4  2002/08/13 15:59:09  dkr
  * some more cwc stuff added (not finished yet)
@@ -92,16 +95,19 @@
 
 #define NEW_INFO
 
-#include "types.h"
+#include "create_wrapper_code.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "internal_lib.h"
 #include "dbug.h"
+#include "Error.h"
+#include "LookUpTable.h"
 #include "traverse.h"
 #include "free.h"
 #include "DupTree.h"
 #include "new_typecheck.h"
 #include "new_types.h"
+#include "type_utils.h"
 #include "ct_fun.h"
 
 /*******************************************************************************
@@ -114,7 +120,7 @@
  */
 struct INFO {
     int travno;
-    LUT_t wrapperfuns;
+    lut_t *wrapperfuns;
     node *modul;
     node *nwith;
 };
@@ -137,7 +143,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = Malloc (sizeof (info));
+    result = ILIBmalloc (sizeof (info));
 
     INFO_CWC_TRAVNO (result) = 0;
     INFO_CWC_WRAPPERFUNS (result) = NULL;
@@ -152,7 +158,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = Free (info);
+    info = ILIBfree (info);
 
     DBUG_RETURN (info);
 }
@@ -179,7 +185,7 @@ FreeInfo (info *info)
 /******************************************************************************
  *
  * Function:
- *   node *CWCmodul( node *arg_node, info *arg_info);
+ *   node *CWCmodule( node *arg_node, info *arg_info);
  *
  * Description:
  *
@@ -187,12 +193,13 @@ FreeInfo (info *info)
  ******************************************************************************/
 
 node *
-CWCmodul (node *arg_node, info *arg_info)
+CWCmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CWCmodul");
+    DBUG_ENTER ("CWCmodule");
 
-    DBUG_ASSERT ((MODUL_WRAPPERFUNS (arg_node) != NULL), "MODUL_WRAPPERFUNS not found!");
-    INFO_CWC_WRAPPERFUNS (arg_info) = MODUL_WRAPPERFUNS (arg_node);
+    DBUG_ASSERT ((MODULE_WRAPPERFUNS (arg_node) != NULL),
+                 "MODULE_WRAPPERFUNS not found!");
+    INFO_CWC_WRAPPERFUNS (arg_info) = MODULE_WRAPPERFUNS (arg_node);
 
     /*
      * create separate wrapper function for all base type constellations
@@ -200,8 +207,8 @@ CWCmodul (node *arg_node, info *arg_info)
      */
     INFO_CWC_TRAVNO (arg_info) = 1;
 
-    if (MODUL_FUNS (arg_node) != NULL) {
-        MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
+    if (MODULE_FUNS (arg_node) != NULL) {
+        MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
     }
 
     /*
@@ -209,8 +216,8 @@ CWCmodul (node *arg_node, info *arg_info)
      * As only FUNS may contain N_ap's we have to traverse these only!
      */
     INFO_CWC_TRAVNO (arg_info) = 2;
-    if (MODUL_FUNS (arg_node) != NULL) {
-        MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
+    if (MODULE_FUNS (arg_node) != NULL) {
+        MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
     }
 
     /*
@@ -218,14 +225,14 @@ CWCmodul (node *arg_node, info *arg_info)
      */
     INFO_CWC_TRAVNO (arg_info) = 3;
 
-    if (MODUL_FUNDECS (arg_node) != NULL) {
-        MODUL_FUNDECS (arg_node) = Trav (MODUL_FUNDECS (arg_node), arg_info);
+    if (MODULE_FUNDECS (arg_node) != NULL) {
+        MODULE_FUNDECS (arg_node) = TRAVdo (MODULE_FUNDECS (arg_node), arg_info);
     }
 
-    if (MODUL_FUNS (arg_node) != NULL) {
-        MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
+    if (MODULE_FUNS (arg_node) != NULL) {
+        MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
     }
-    MODUL_WRAPPERFUNS (arg_node) = RemoveLUT (MODUL_WRAPPERFUNS (arg_node));
+    MODULE_WRAPPERFUNS (arg_node) = LUTremoveLut (MODULE_WRAPPERFUNS (arg_node));
 
     DBUG_RETURN (arg_node);
 }
@@ -254,26 +261,28 @@ SplitWrapper (node *fundef)
 
     DBUG_ENTER ("SplitWrapper");
 
-    old_type = FUNDEF_TYPE (fundef);
-    tmp_type = TYCopyType (old_type);
-    FUNDEF_TYPE (fundef) = NULL;
+    old_type = FUNDEF_WRAPPERTYPE (fundef);
+    tmp_type = TYcopyType (old_type);
+    FUNDEF_WRAPPERTYPE (fundef) = NULL;
     DBUG_PRINT ("CWC", ("splitting wrapper of %s", FUNDEF_NAME (fundef)));
     do {
-        new_fundef = DupNode (fundef);
-        new_type = TYSplitWrapperType (tmp_type, &finished);
-        DBUG_EXECUTE ("CWC", tmp_str = TYType2String (new_type, TRUE, 0););
+        new_fundef = DUPdoDupNode (fundef);
+        new_type = TYsplitWrapperType (tmp_type, &finished);
+        DBUG_EXECUTE ("CWC", tmp_str = TYtype2String (new_type, TRUE, 0););
         DBUG_PRINT ("CWC", ("  new wrapper split off: %s", tmp_str));
-        DBUG_EXECUTE ("CWC", tmp_str = Free (tmp_str););
+        DBUG_EXECUTE ("CWC", tmp_str = ILIBfree (tmp_str););
 
-        FUNDEF_TYPE (new_fundef) = new_type;
-        FUNDEF_RET_TYPE (new_fundef) = TYCopyType (TYGetWrapperRetType (new_type));
+        FUNDEF_WRAPPERTYPE (new_fundef) = new_type;
+        FUNDEF_RETS (new_fundef)
+          = TUreplaceRetTypes (FUNDEF_RETS (new_fundef),
+                               TYcopyType (TYgetWrapperRetType (new_type)));
         FUNDEF_ARGS (new_fundef)
-          = TYCorrectWrapperArgTypes (FUNDEF_ARGS (new_fundef), new_type);
+          = TYcorrectWrapperArgTypes (FUNDEF_ARGS (new_fundef), new_type);
         FUNDEF_NEXT (new_fundef) = new_fundefs;
         new_fundefs = new_fundef;
     } while (!finished);
-    FUNDEF_TYPE (fundef) = old_type;
-    tmp_type = TYFreeType (tmp_type);
+    FUNDEF_WRAPPERTYPE (fundef) = old_type;
+    tmp_type = TYfreeType (tmp_type);
 
     DBUG_RETURN (new_fundefs);
 }
@@ -300,17 +309,7 @@ WrapperCodeIsNeeded (node *fundef)
      * for the time being we always create the wrapper code although it
      * might never actually be used!!
      */
-    result = FALSE;
-
-    /*
-     * Well, at least for objinit functions, there is no need at all
-     * to build a wrapper! They aren't even dispatched
-     */
-    if (FUNDEF_IMPL (fundef) != NULL) {
-        if (FUNDEF_STATUS (FUNDEF_IMPL (fundef)) == ST_objinitfun) {
-            result = FALSE;
-        }
-    }
+    result = TRUE;
 
     DBUG_RETURN (result);
 }
@@ -337,8 +336,7 @@ WrapperCodeIsPossible (node *fundef)
      * SAC functions with var-args are not allowed
      *   -> no wrapper functions for C functions with var-args!!
      */
-    result
-      = (!(HasDotTypes (FUNDEF_TYPES (fundef)) || HasDotArgs (FUNDEF_ARGS (fundef))));
+    result = (!(FUNDEF_HASDOTARGS (fundef) || FUNDEF_HASDOTRETS (fundef)));
 
     DBUG_RETURN (result);
 }
@@ -364,8 +362,7 @@ InsertWrapperCode (node *fundef)
 
     DBUG_ENTER ("InsertWrapperCode");
 
-    DBUG_ASSERT (((NODE_TYPE (fundef) == N_fundef)
-                  && (FUNDEF_STATUS (fundef) == ST_wrapperfun)
+    DBUG_ASSERT (((NODE_TYPE (fundef) == N_fundef) && FUNDEF_ISWRAPPERFUN (fundef)
                   && (FUNDEF_BODY (fundef) == NULL)),
                  "inconsistant wrapper function found!");
 
@@ -375,7 +372,7 @@ InsertWrapperCode (node *fundef)
          */
         vardecs1 = TUcreateTmpVardecsFromRets (FUNDEF_RETS (fundef));
         vardecs2 = NULL;
-        assigns = TYCreateWrapperCode (fundef, vardecs1, &vardecs2);
+        assigns = TYcreateWrapperCode (fundef, vardecs1, &vardecs2);
 
         /*
          * vardecs -> return exprs
@@ -383,31 +380,25 @@ InsertWrapperCode (node *fundef)
         ret = NULL;
         vardec = vardecs1;
         while (vardec != NULL) {
-            node *id_node = MakeId_Copy (VARDEC_NAME (vardec));
-            ID_VARDEC (id_node) = vardec;
-            SET_FLAG (ID, id_node, IS_GLOBAL, FALSE);
-            /* ok since GOs may not be returned */
-            SET_FLAG (ID, id_node, IS_REFERENCE, FALSE);
-            ID_AVIS (id_node) = VARDEC_AVIS (vardec);
-            ret = MakeExprs (id_node, ret);
+            ret = TBmakeExprs (TBmakeId (VARDEC_AVIS (vardec)), ret);
             vardec = VARDEC_NEXT (vardec);
         }
-        FUNDEF_RETURN (fundef) = ret = MakeReturn (ret);
+        FUNDEF_RETURN (fundef) = ret = TBmakeReturn (ret);
 
         /*
          * append return statement to assignments
          */
-        assigns = AppendAssign (assigns, MakeAssign (ret, NULL));
+        assigns = TCappendAssign (assigns, TBmakeAssign (ret, NULL));
 
         /*
          * insert function body
          */
-        FUNDEF_BODY (fundef) = MakeBlock (assigns, AppendVardec (vardecs1, vardecs2));
+        FUNDEF_BODY (fundef) = TBmakeBlock (assigns, TCappendVardec (vardecs1, vardecs2));
 
         /*
          * mark wrapper function as a inline function
          */
-        FUNDEF_INLINE (fundef) = TRUE;
+        FUNDEF_ISINLINE (fundef) = TRUE;
     }
 
     DBUG_RETURN (fundef);
@@ -431,16 +422,16 @@ ActualArgs2Ntype (node *actual)
 
     DBUG_ENTER ("ActualArgs2Ntype");
 
-    size = CountExprs (actual);
-    prod_type = TYMakeEmptyProductType (size);
+    size = TCcountExprs (actual);
+    prod_type = TYmakeEmptyProductType (size);
 
     pos = 0;
     while (actual != NULL) {
-        tmp_type = NewTypeCheck_Expr (EXPRS_EXPR (actual));
-        actual_type = TYFixAndEliminateAlpha (tmp_type);
-        tmp_type = TYFreeType (tmp_type);
+        tmp_type = NTCnewTypeCheck_Expr (EXPRS_EXPR (actual));
+        actual_type = TYfixAndEliminateAlpha (tmp_type);
+        tmp_type = TYfreeType (tmp_type);
 
-        TYSetProductMember (prod_type, pos, actual_type);
+        TYsetProductMember (prod_type, pos, actual_type);
         actual = EXPRS_NEXT (actual);
         pos++;
     }
@@ -476,14 +467,15 @@ SignatureMatches (node *formal, ntype *actual_prod_type)
         DBUG_ASSERT ((NODE_TYPE (formal) == N_arg), "illegal args found!");
 
         formal_type = AVIS_TYPE (ARG_AVIS (formal));
-        actual_type = TYGetProductMember (actual_prod_type, pos);
-        DBUG_EXECUTE ("CWC", tmp_str = TYType2String (formal_type, FALSE, 0);
-                      tmp2_str = TYType2String (actual_type, FALSE, 0););
+        actual_type = TYgetProductMember (actual_prod_type, pos);
+        DBUG_EXECUTE ("CWC", tmp_str = TYtype2String (formal_type, FALSE, 0);
+                      tmp2_str = TYtype2String (actual_type, FALSE, 0););
         DBUG_PRINT ("CWC", ("    comparing formal type %s with actual type %s", tmp_str,
                             tmp2_str));
-        DBUG_EXECUTE ("CWC", tmp_str = Free (tmp_str); tmp2_str = Free (tmp2_str););
+        DBUG_EXECUTE ("CWC", tmp_str = ILIBfree (tmp_str);
+                      tmp2_str = ILIBfree (tmp2_str););
 
-        if (!TYLeTypes (actual_type, formal_type)) {
+        if (!TYleTypes (actual_type, formal_type)) {
             match = FALSE;
             break;
         }
@@ -509,12 +501,12 @@ SignatureMatches (node *formal, ntype *actual_prod_type)
 node *
 CorrectFundefPointer (node *fundef, char *funname, ntype *arg_types)
 {
-    DFT_res *dft_res;
+    dft_res *dft_res;
 
     DBUG_ENTER ("CorrectFundefPointer");
 
     DBUG_ASSERT ((fundef != NULL), "fundef not found!");
-    if (FUNDEF_STATUS (fundef) == ST_zombiefun) {
+    if (FUNDEF_ISWRAPPERFUN (fundef)) {
         /*
          * 'fundef' points to an generic wrapper function
          *   -> try to dispatch the function application statically in order to
@@ -526,9 +518,9 @@ CorrectFundefPointer (node *fundef, char *funname, ntype *arg_types)
         /*
          * try to dispatch the function application statically
          */
-        dft_res = NTCFUNDispatchFunType (fundef, arg_types);
+        dft_res = NTCCTdispatchFunType (fundef, arg_types);
         if (dft_res == NULL) {
-            DBUG_ASSERT ((TYGetProductSize (arg_types) == 0),
+            DBUG_ASSERT ((TYgetProductSize (arg_types) == 0),
                          "illegal dispatch result found!");
             /*
              * no args found -> static dispatch possible
@@ -560,9 +552,10 @@ CorrectFundefPointer (node *fundef, char *funname, ntype *arg_types)
                 && (dft_res->def == NULL) && (dft_res->deriveable == NULL)) {
                 fundef = (dft_res->num_partials == 1) ? dft_res->partials[0]
                                                       : dft_res->deriveable_partials[0];
-                WARN (linenum, ("application of var-arg function %s found which may"
-                                " cause a type error",
-                                FUNDEF_NAME (fundef)));
+                WARN (global.linenum,
+                      ("application of var-arg function %s found which may"
+                       " cause a type error",
+                       FUNDEF_NAME (fundef)));
                 DBUG_PRINT ("CWC", ("  dispatched statically although only partial"
                                     " has been found (T_dots)!",
                                     funname));
@@ -579,7 +572,7 @@ CorrectFundefPointer (node *fundef, char *funname, ntype *arg_types)
                 fundef = FUNDEF_NEXT (fundef);
                 DBUG_ASSERT (((fundef != NULL)
                               && (!strcmp (funname, FUNDEF_NAME (fundef)))
-                              && (FUNDEF_STATUS (fundef) == ST_wrapperfun)),
+                              && (FUNDEF_ISWRAPPERFUN (fundef))),
                              "no appropriate wrapper function found!");
             } while (!SignatureMatches (FUNDEF_ARGS (fundef), arg_types));
             DBUG_PRINT ("CWC", ("  correct wrapper found"));
@@ -609,7 +602,7 @@ FundefBuildWrappers (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("FundefBuildWrappers");
 
-    if (FUNDEF_STATUS (arg_node) == ST_wrapperfun) {
+    if (FUNDEF_ISWRAPPERFUN (arg_node)) {
         DBUG_ASSERT ((FUNDEF_BODY (arg_node) == NULL),
                      "wrapper function has already a body!");
 
@@ -629,16 +622,16 @@ FundefBuildWrappers (node *arg_node, info *arg_info)
         } while (new_fundef != NULL);
 
         if (FUNDEF_NEXT (arg_node) != NULL) {
-            FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+            FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
         }
 
         /*
          * insert new wrapper functions at the begining of MODULE_FUNS and
          * free original wrapper function (-> zombie function)
          */
-        new_fundefs = AppendFundef (new_fundefs, FUNDEF_NEXT (arg_node));
-        arg_node = FreeNode (arg_node);
-        DBUG_ASSERT (((arg_node != NULL) && (FUNDEF_STATUS (arg_node) == ST_zombiefun)),
+        new_fundefs = TCappendFundef (new_fundefs, FUNDEF_NEXT (arg_node));
+        arg_node = FREEdoFreeNode (arg_node);
+        DBUG_ASSERT (((arg_node != NULL) && (FUNDEF_ISZOMBIE (arg_node))),
                      "zombie fundef not found!");
         FUNDEF_NEXT (arg_node) = new_fundefs;
     }
@@ -650,12 +643,12 @@ FundefAdjustPointers (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("FundefAdjustPointers");
 
-    if ((FUNDEF_STATUS (arg_node) != ST_wrapperfun) && (FUNDEF_BODY (arg_node) != NULL)) {
-        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+    if ((!FUNDEF_ISWRAPPERFUN (arg_node)) && (FUNDEF_BODY (arg_node) != NULL)) {
+        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
     }
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -667,20 +660,19 @@ FundefRemoveGarbage (node *arg_node, info *arg_info)
     DBUG_ENTER ("FundefRemoveGarbage");
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
     }
 
-    if (FUNDEF_STATUS (arg_node) == ST_zombiefun) {
+    if (FUNDEF_ISZOMBIE (arg_node)) {
         /*
          * remove zombie of generic wrapper function
          */
-        arg_node = FreeZombie (arg_node);
-    } else if ((FUNDEF_STATUS (arg_node) == ST_wrapperfun)
-               && (FUNDEF_BODY (arg_node) == NULL)) {
+        arg_node = FREEfreeZombie (arg_node);
+    } else if ((FUNDEF_ISWRAPPERFUN (arg_node)) && (FUNDEF_BODY (arg_node) == NULL)) {
         /*
          * remove statically dispatchable wrapper function
          */
-        arg_node = FreeZombie (FreeNode (arg_node));
+        arg_node = FREEfreeZombie (FREEdoFreeNode (arg_node));
     }
 
     DBUG_RETURN (arg_node);
@@ -735,7 +727,7 @@ CWCap (node *arg_node, info *arg_info)
     DBUG_ENTER ("CWCap");
 
     if (AP_ARGS (arg_node) != NULL) {
-        AP_ARGS (arg_node) = Trav (AP_ARGS (arg_node), arg_info);
+        AP_ARGS (arg_node) = TRAVdo (AP_ARGS (arg_node), arg_info);
     }
 
     arg_types = ActualArgs2Ntype (AP_ARGS (arg_node));
@@ -744,7 +736,7 @@ CWCap (node *arg_node, info *arg_info)
 
     DBUG_PRINT ("CWC", ("Ap of function %s:%s now points to " F_PTR ".",
                         AP_MOD (arg_node), AP_NAME (arg_node), AP_FUNDEF (arg_node)));
-    arg_types = TYFreeType (arg_types);
+    arg_types = TYfreeType (arg_types);
 
     DBUG_RETURN (arg_node);
 }
@@ -766,9 +758,9 @@ CWCwith (node *arg_node, info *arg_info)
     old_with = INFO_CWC_WITH (arg_info);
     INFO_CWC_WITH (arg_info) = arg_node;
 
-    NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
-    NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
-    NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
+    WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
+    WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
+    WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
 
     INFO_CWC_WITH (arg_info) = old_with;
 
@@ -778,7 +770,7 @@ CWCwith (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *CWCwithop( node *arg_node, info *arg_info)
+ *   node *CWCgenarray( node *arg_node, info *arg_info)
  *
  * Description:
  *
@@ -786,54 +778,46 @@ CWCwith (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 node *
-CWCwithop (node *arg_node, info *arg_info)
+CWCgenarray (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("CWCgenarrray");
+
+    GENARRAY_SHAPE (arg_node) = TRAVdo (GENARRAY_SHAPE (arg_node), arg_info);
+    if (GENARRAY_DEFAULT (arg_node) != NULL) {
+        GENARRAY_DEFAULT (arg_node) = TRAVdo (GENARRAY_DEFAULT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+CWCfold (node *arg_node, info *arg_info)
 {
     ntype *neutr_type, *body_type;
     ntype *arg_type, *arg_types;
 
     DBUG_ENTER ("CWCwithop");
 
-    switch (NWITHOP_TYPE (arg_node)) {
-    case WO_genarray:
-        NWITHOP_SHAPE (arg_node) = Trav (NWITHOP_SHAPE (arg_node), arg_info);
-        if (NWITHOP_DEFAULT (arg_node) != NULL) {
-            NWITHOP_DEFAULT (arg_node) = Trav (NWITHOP_DEFAULT (arg_node), arg_info);
-        }
-        break;
-
-    case WO_modarray:
-        NWITHOP_ARRAY (arg_node) = Trav (NWITHOP_ARRAY (arg_node), arg_info);
-        break;
-
-    case WO_foldfun:
-        NWITHOP_NEUTRAL (arg_node) = Trav (NWITHOP_NEUTRAL (arg_node), arg_info);
+    if (FOLD_FUN (arg_node) == NULL) {
+        FOLD_NEUTRAL (arg_node) = TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
 
         neutr_type
-          = TYFixAndEliminateAlpha (AVIS_TYPE (ID_AVIS (NWITHOP_NEUTRAL (arg_node))));
-        body_type = TYFixAndEliminateAlpha (
-          AVIS_TYPE (ID_AVIS (NWITH_CEXPR (INFO_CWC_WITH (arg_info)))));
+          = TYfixAndEliminateAlpha (AVIS_TYPE (ID_AVIS (FOLD_NEUTRAL (arg_node))));
+        body_type = TYfixAndEliminateAlpha (
+          AVIS_TYPE (ID_AVIS (WITH_CEXPR (INFO_CWC_WITH (arg_info)))));
 
-        arg_type = TYLubOfTypes (neutr_type, body_type);
-        arg_types = TYMakeProductType (2, arg_type, TYCopyType (arg_type));
+        arg_type = TYlubOfTypes (neutr_type, body_type);
+        arg_types = TYmakeProductType (2, arg_type, TYcopyType (arg_type));
 
-        NWITHOP_FUNDEF (arg_node)
-          = CorrectFundefPointer (NWITHOP_FUNDEF (arg_node), NWITHOP_FUN (arg_node),
-                                  arg_types);
-        arg_types = TYFreeType (arg_types);
-        body_type = TYFreeType (body_type);
-        neutr_type = TYFreeType (neutr_type);
-
-        break;
-
-    case WO_foldprf:
-        if (NWITHOP_NEUTRAL (arg_node) != NULL) {
-            NWITHOP_NEUTRAL (arg_node) = Trav (NWITHOP_NEUTRAL (arg_node), arg_info);
+        FOLD_FUNDEF (arg_node)
+          = CorrectFundefPointer (FOLD_FUNDEF (arg_node), FOLD_FUN (arg_node), arg_types);
+        arg_types = TYfreeType (arg_types);
+        body_type = TYfreeType (body_type);
+        neutr_type = TYfreeType (neutr_type);
+    } else {
+        if (FOLD_NEUTRAL (arg_node) != NULL) {
+            FOLD_NEUTRAL (arg_node) = TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
         }
-        break;
-
-    default:
-        DBUG_ASSERT (FALSE, "corrupted WL tag found");
-        break;
     }
 
     DBUG_RETURN (arg_node);
@@ -852,19 +836,17 @@ CWCwithop (node *arg_node, info *arg_info)
 node *
 CreateWrapperCode (node *ast)
 {
-    funtab *tmp_tab;
     info *info_node;
 
     DBUG_ENTER ("CreateWrapperCode");
 
-    tmp_tab = act_tab;
-    act_tab = cwc_tab;
+    TRAVpush (TR_cwc);
 
     info_node = MakeInfo ();
-    ast = Trav (ast, info_node);
+    ast = TRAVdo (ast, info_node);
     info_node = FreeInfo (info_node);
 
-    act_tab = tmp_tab;
+    TRAVpop ();
 
     DBUG_RETURN (ast);
 }

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.22  2004/11/25 17:52:55  sbs
+ * compiles
+ *
  * Revision 1.21  2004/11/25 14:51:22  sbs
  * compiles
  *
@@ -364,48 +367,6 @@ CreateFuntype (node *fundef)
 /******************************************************************************
  *
  * function:
- *    node *TagReferenceArgs( node *act_args, node *args)
- *
- * description:
- *    Assumes act_args to be an N_exprs chain of actual arguments and args to
- *    be an N_args chain of formal parameters of the same or less (...) length.
- *    For each param that is tagged as ST_reference, the according N_id expr
- *      is flagged as ISREFERENCE TRUE and ISREADONLY FALSE;
- *    a ST_readonly_reference param is flagged ISREFERENCE TRUE and
- *      ISREADONLY TRUE;
- *    all others are flagged ISREFERENCE FALSE !
- *
- ******************************************************************************/
-
-static node *
-TagReferenceArgs (node *act_args, node *args)
-{
-    node *exprs;
-
-    DBUG_ENTER ("TagReferenceArgs");
-
-    exprs = act_args;
-    while (args != NULL) {
-        DBUG_ASSERT ((exprs != NULL), "TagReferenceArgs called with act_args and args of "
-                                      "different length");
-        if (NODE_TYPE (EXPRS_EXPR (exprs)) == N_id) {
-            if (ARG_ISREFERENCE (args)) {
-                ID_ISREFERENCE (EXPRS_EXPR (exprs)) = TRUE;
-                if (ARG_ISREADONLY (args)) {
-                    ID_ISREADONLY (EXPRS_EXPR (exprs)) = TRUE;
-                }
-            }
-        }
-        args = ARG_NEXT (args);
-        exprs = EXPRS_NEXT (exprs);
-    }
-
-    DBUG_RETURN (act_args);
-}
-
-/******************************************************************************
- *
- * function:
  *    node *CRTWRPmodul(node *arg_node, info *arg_info)
  *
  * description:
@@ -638,28 +599,7 @@ CRTWRPap (node *arg_node, info *arg_info)
                 AP_NAME (arg_node), num_args, INFO_CRTWRP_EXPRETS (arg_info)));
     } else {
         AP_FUNDEF (arg_node) = wrapper;
-        AP_ARGS (arg_node) = TagReferenceArgs (AP_ARGS (arg_node), FUNDEF_ARGS (wrapper));
     }
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *    node *CRTWRPid(node *arg_node, info *arg_info)
- *
- * description:
- *
- *
- ******************************************************************************/
-
-node *
-CRTWRPid (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("CRTWRPid");
-
-    ID_ISREFERENCE (arg_node) = FALSE;
 
     DBUG_RETURN (arg_node);
 }

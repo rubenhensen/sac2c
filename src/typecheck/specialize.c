@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.15  2004/11/25 17:52:55  sbs
+ * compiles
+ *
  * Revision 1.14  2004/11/23 21:56:54  sbs
  * SacDevCamp04 done
  *
@@ -60,6 +63,7 @@
 #include "DupTree.h"
 #include "deserialize.h"
 #include "new_types.h"
+#include "type_utils.h"
 #include "ssi.h"
 
 /**
@@ -129,7 +133,7 @@ SpecializationOracle (node *wrapper, node *fundef, ntype *args, dft_res *dft)
     DBUG_ENTER ("SpecializationOracle");
     if ((dft->num_deriveable_partials > 1)
         || ((dft->num_deriveable_partials == 1) && (dft->deriveable != NULL))
-        || FUNDEF_ISEXTERN (fundef) || (FUNDEF_SPECS (fundef) >= global.max_overload)
+        || FUNDEF_ISEXTERN (fundef) || (FUNDEF_SPECS (fundef) >= global.maxspec)
         || (global.spec_mode == SS_aud)) {
 
         arg = FUNDEF_ARGS (fundef);
@@ -322,7 +326,7 @@ DoSpecialize (node *wrapper, node *fundef, ntype *args)
     UpdateFixSignature (res, args);
 
     /* convert the return type(s) into AUDs */
-    FUNDEF_RETS (res) = CRWRPgeneralizeFunRettype (FUNDEF_RETS (res));
+    FUNDEF_RETS (res) = TUrettypes2AUD (FUNDEF_RETS (res));
 
     /*
      * Finally, we make the result type variable(s) (a) subtype(s) of the
@@ -467,7 +471,7 @@ SPECHandleLacFun (node *fundef, node *assign, ntype *args)
         UpdateVarSignature (fun, args);
     }
 
-    FUNDEF_RETS (fun) = CRWRPgeneralizeFunRettype (FUNDEF_RETS (fun));
+    FUNDEF_RETS (fun) = TUrettypes2AUD (FUNDEF_RETS (fun));
 
     DBUG_RETURN (fun);
 }

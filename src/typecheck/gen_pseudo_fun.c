@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.17  2004/11/25 17:52:55  sbs
+ * compiles
+ *
  * Revision 3.16  2004/11/23 15:07:12  sbs
  * SacSacDevCamp 04 done
  *
@@ -99,6 +102,7 @@
 #include "DupTree.h"
 #include "print.h"
 #include "gen_pseudo_fun.h"
+#include "new_types.h"
 
 /******************************************************************************
  *
