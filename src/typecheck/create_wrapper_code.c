@@ -1,8 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2002/09/03 18:54:41  dkr
+ * this modul is complete now :-)
+ *
  * Revision 1.6  2002/08/28 11:36:05  dkr
- * SignatureIsMatching() added
+ * SignatureMatches() added
  *
  * Revision 1.5  2002/08/15 21:27:50  dkr
  * MODUL_WRAPPERFUNS added (not used yet ...)
@@ -29,6 +32,7 @@
 #include "traverse.h"
 #include "free.h"
 #include "DupTree.h"
+#include "new_typecheck.h"
 #include "new_types.h"
 
 #define INFO_CWC_TRAVNO(n) ((n)->flag)
@@ -137,21 +141,22 @@ InsertWrapperCode (node *fundef)
     node *ret;
     node *assigns;
     node *vardec;
-    node *vardecs;
+    node *vardecs1, *vardecs2;
 
     DBUG_ENTER ("InsertWrapperCode");
 
     /*
      * generate wrapper code together with the needed vardecs
      */
-    vardecs = TYCreateWrapperVardecs (fundef);
-    assigns = TYCreateWrapperCode (fundef, vardecs);
+    vardecs1 = TYCreateWrapperVardecs (fundef);
+    vardecs2 = NULL;
+    assigns = TYCreateWrapperCode (fundef, vardecs1, &vardecs2);
 
     /*
      * vardecs -> return exprs
      */
     ret = NULL;
-    vardec = vardecs;
+    vardec = vardecs1;
     while (vardec != NULL) {
         node *id_node = MakeId_Copy (VARDEC_NAME (vardec));
         ID_VARDEC (id_node) = vardec;
@@ -169,7 +174,7 @@ InsertWrapperCode (node *fundef)
     /*
      * insert function body
      */
-    FUNDEF_BODY (fundef) = MakeBlock (assigns, vardecs);
+    FUNDEF_BODY (fundef) = MakeBlock (assigns, AppendVardec (vardecs1, vardecs2));
 
     /*
      * mark wrapper function as a inline function
@@ -280,13 +285,31 @@ CWCfundef (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 static bool
-SignatureIsMatching (node *formal, node *actual)
+SignatureMatches (node *formal, node *actual)
 {
+    ntype *formal_type, *actual_type, *tmp_type;
     bool match = TRUE;
 
-    DBUG_ENTER ("SignatureIsMatching");
+    DBUG_ENTER ("SignatureMatches");
 
-    /* !!! not implemented yet !!! */
+    while (formal != NULL) {
+        DBUG_ASSERT ((actual != NULL), "inconsistant application found!");
+        DBUG_ASSERT (((NODE_TYPE (formal) == N_arg) && (NODE_TYPE (actual) == N_exprs)),
+                     "illegal args found!");
+
+        formal_type = AVIS_TYPE (ARG_AVIS (formal));
+        tmp_type = NewTypeCheck_Expr (EXPRS_EXPR (actual));
+        actual_type = TYFixAndEliminateAlpha (tmp_type);
+        tmp_type = TYFreeType (tmp_type);
+
+        if (!TYLeTypes (actual_type, formal_type)) {
+            match = FALSE;
+            break;
+        }
+
+        formal = ARG_NEXT (formal);
+        actual = EXPRS_NEXT (actual);
+    }
 
     DBUG_RETURN (match);
 }
@@ -308,8 +331,9 @@ CWCap (node *arg_node, node *arg_info)
         do {
             fundef = FUNDEF_NEXT (fundef);
             DBUG_ASSERT ((fundef != NULL), "no appropriate wrapper function found!");
-        } while (!SignatureIsMatching (FUNDEF_ARGS (fundef), AP_ARGS (arg_node)));
-        DBUG_ASSERT ((!strcmp (AP_NAME (arg_node), FUNDEF_NAME (fundef))),
+        } while (!SignatureMatches (FUNDEF_ARGS (fundef), AP_ARGS (arg_node)));
+        DBUG_ASSERT (((fundef == NULL)
+                      || (!strcmp (AP_NAME (arg_node), FUNDEF_NAME (fundef)))),
                      "no appropriate wrapper function found!");
         AP_FUNDEF (arg_node) = fundef;
     }
