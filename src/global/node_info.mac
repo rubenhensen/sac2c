@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.130  1997/03/19 13:37:07  cg
- * The entire link_tab is removed
+ * Revision 1.131  1997/04/30 11:48:36  cg
+ * function PRECassign added in precompiler function table
  *
+;; Revision 1.130  1997/03/19  13:37:07  cg
+;; The entire link_tab is removed
+;;
 ;; Revision 1.129  1996/09/11  14:13:08  asi
 ;; DFRmodul added
 ;;
@@ -543,8 +546,8 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        DCRassign, TravSons, FreeAssign, CFassign, RCassign, CompAssign, LIRassign,
        DupAssign, INLassign, UNRassign, LIRMassign, IdxAssign, UNSassign, TravSons,
        AEassign, PrintAssign, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, RMVassign, TravSons, ACTassign, TravSons, TravSons, CSEassign, TravSons,
-       TravSons),
+       TravSons, RMVassign, PRECassign, ACTassign, TravSons, TravSons, CSEassign,
+       TravSons, TravSons),
 
   NIF (N_return, "N_return", TravSons, FltnReturn, PrintReturn, TCreturn, TravSons,
        TravSons, TravSons, FreeReturn, TravSons, TravSons, CompReturn, TravSons, DupChain,
