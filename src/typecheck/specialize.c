@@ -1,8 +1,9 @@
 /*
  *
  * $Log$
- * Revision 1.9  2004/02/20 15:55:49  sbs
- * one argument to MakeModul call added.
+ * Revision 1.10  2004/03/05 12:09:20  sbs
+ * UpdateVarSignature added. Loops are the only functions where the arguments
+ * have to be type vars!!!
  *
  * Revision 1.8  2003/09/11 15:26:44  sbs
  * function specialization now bound by max_overload!
@@ -124,7 +125,7 @@ SpecializationOracle (node *wrapper, node *fundef, ntype *args, DFT_res *dft)
 /******************************************************************************
  *
  * function:
- *    node *UpdateSignature( node *fundef, ntype *args)
+ *    node *UpdateFixSignature( node *fundef, ntype *args)
  *
  * description:
  *    Here, we assume that all argument types are either array types or
@@ -138,17 +139,17 @@ SpecializationOracle (node *wrapper, node *fundef, ntype *args, DFT_res *dft)
  ******************************************************************************/
 
 static node *
-UpdateSignature (node *fundef, ntype *arg_ts)
+UpdateFixSignature (node *fundef, ntype *arg_ts)
 {
     node *args;
     ntype *type, *old_type, *new_type;
     int i = 0;
 
-    DBUG_ENTER ("UpdateSignature");
+    DBUG_ENTER ("UpdateFixSignature");
     DBUG_ASSERT ((CountArgs (FUNDEF_ARGS (fundef)) == TYGetProductSize (arg_ts)),
-                 "UpdateSignature called with incompatible no of arguments!");
+                 "UpdateFixSignature called with incompatible no of arguments!");
     DBUG_ASSERT ((TYIsProdOfArrayOrFixedAlpha (arg_ts)),
-                 "UpdateSignature called with non-fixed args!");
+                 "UpdateFixSignature called with non-fixed args!");
 
     args = FUNDEF_ARGS (fundef);
     while (args) {
@@ -162,12 +163,71 @@ UpdateSignature (node *fundef, ntype *arg_ts)
                 TYFreeType (old_type);
             } else {
                 DBUG_ASSERT (TYLeTypes (old_type, type),
-                             "UpdateSignature called with incompatible args");
+                             "UpdateFixSignature called with incompatible args");
                 new_type = old_type;
             }
         }
         ARG_TYPE (args) = FreeOneTypes (ARG_TYPE (args));
         ARG_TYPE (args) = TYType2OldType (new_type);
+        AVIS_TYPE (ARG_AVIS (args)) = new_type;
+
+        args = ARG_NEXT (args);
+        i++;
+    }
+
+    DBUG_RETURN (fundef);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    node *UpdateVarSignature( node *fundef, ntype *args)
+ *
+ * description:
+ *    Here, we assume that all argument types are either array types or
+ *    type variables with identical Min and Max!
+ *    This function replaces the old type siganture (in the N_arg nodes)
+ *    It returns the modified N_fundef node.
+ *
+ ******************************************************************************/
+
+static node *
+UpdateVarSignature (node *fundef, ntype *arg_ts)
+{
+    node *args;
+    ntype *type, *old_type, *new_type;
+    int i = 0;
+    bool ok;
+
+    DBUG_ENTER ("UpdateVarSignature");
+    DBUG_ASSERT ((CountArgs (FUNDEF_ARGS (fundef)) == TYGetProductSize (arg_ts)),
+                 "UpdateVarSignature called with incompatible no of arguments!");
+    DBUG_ASSERT ((TYIsProdOfArrayOrFixedAlpha (arg_ts)),
+                 "UpdateVarSignature called with non-fixed args!");
+
+    args = FUNDEF_ARGS (fundef);
+    while (args) {
+        type = TYGetProductMember (arg_ts, i);
+        new_type = AVIS_TYPE (ARG_AVIS (args));
+        if ((new_type == NULL) || (!TYIsAlpha (new_type))) {
+            if (new_type != NULL) {
+                new_type = TYFreeType (new_type);
+            }
+            new_type = TYMakeAlphaType (NULL);
+            old_type = TYOldType2Type (ARG_TYPE (args));
+            if (old_type != NULL) {
+                ok = SSINewTypeRel (old_type, new_type);
+            }
+            ok = SSINewTypeRel (type, new_type);
+        } else {
+            DBUG_ASSERT (TYIsAlpha (new_type), "UpdateVarSignature called with "
+                                               "non-var argument type");
+            ok = SSINewTypeRel (type, new_type);
+            DBUG_ASSERT (ok, "UpdateVarSignature called with incompatible args");
+        }
+
+        ARG_TYPE (args) = FreeOneTypes (ARG_TYPE (args));
+        ARG_TYPE (args) = TYType2OldType (SSIGetMin (TYGetAlpha (new_type)));
         AVIS_TYPE (ARG_AVIS (args)) = new_type;
 
         args = ARG_NEXT (args);
@@ -209,7 +269,7 @@ DoSpecialize (node *wrapper, node *fundef, ntype *args)
     specialized_fundefs = res;
 
     /* do actually specialize the copy !! */
-    UpdateSignature (res, args);
+    UpdateFixSignature (res, args);
     FUNDEF_TYPE (res) = CreateFuntype (res);
 
     /*
@@ -331,7 +391,24 @@ SPECHandleLacFun (node *fundef, node *assign, ntype *args)
     } else {
         fun = fundef;
     }
-    UpdateSignature (fun, args);
+    /**
+     * Now, we update the signature of fundef. In case of conditionals, we can
+     * directly specialize the signature, using "UpdateFixSignature".
+     * For loops, however, we usually do have more than one call. Since we
+     * do not want to create more than ONE specialization, we use type vars
+     * for approximating the argument types. On the very first call,
+     * we create these type vars; on ALL calls, we make the actual argument
+     * types minima of these, i.e., we make the overall types potentially
+     * less precise. This is done by "UpdateVarSignature".
+     */
+    if (FUNDEF_STATUS (fun) == ST_condfun) {
+        UpdateFixSignature (fun, args);
+    } else {
+        UpdateVarSignature (fun, args);
+    }
+    if (FUNDEF_TYPE (fun) != NULL) {
+        FUNDEF_TYPE (fun) = TYFreeType (FUNDEF_TYPE (fun));
+    }
     FUNDEF_TYPE (fun) = CreateFuntype (fun);
 
     DBUG_RETURN (fun);
