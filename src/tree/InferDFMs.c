@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.23  2002/07/24 15:06:36  dkr
+ * INFDFMSicm() simplified
+ *
  * Revision 1.22  2002/07/12 17:00:46  dkr
  * INFDFMSicm(): modifications for TAGGED_ARRAYS done
  *
@@ -1667,25 +1670,20 @@ INFDFMSicm (node *arg_node, node *arg_info)
     DBUG_PRINT ("INFDFMS", ("icm %s found", ICM_NAME (arg_node)));
 
     name = ICM_NAME (arg_node);
-#ifdef TAGGED_ARRAYS
-    if (!strcmp (name, "ND_USE_GENVAR_OFFSET")) {
-#else
-    if (!strcmp (name, "ND_KS_USE_GENVAR_OFFSET")) {
-#endif
+    if (strstr (name, "USE_GENVAR_OFFSET") != NULL) {
         /*
-         * ND_KS_USE_GENVAR_OFFSET( offsetvar, res):
-         *   offsetvar = res__destptr;
+         * USE_GENVAR_OFFSET( off_nt, wl_nt):
+         *   off_nt = wl_nt__destptr;
          *
          * def: 1st arg
          * use: ---
          */
         arg_info = DefinedId (arg_info, ICM_ARG1 (arg_node));
-    }
+    } else if (strstr (name, "VECT2OFFSET") != NULL) {
 #ifdef TAGGED_ARRAYS
-    else if (!strcmp (name, "ND_VECT2OFFSET")) {
         /*
-         * ND_VECT2OFFSET( off_name, ., arr_name, ...):
-         *   off_name = ... arr_name ...;
+         * VECT2OFFSET( off_nt, ., from_nt, ...):
+         *   off_nt = ... from_nt ...;
          *
          * def: 1st arg
          * use: 3nd arg
@@ -1693,10 +1691,9 @@ INFDFMSicm (node *arg_node, node *arg_info)
         arg_info = DefinedId (arg_info, ICM_ARG1 (arg_node));
         arg_info = UsedId (arg_info, ICM_ARG3 (arg_node));
 #else
-    else if (!strcmp (name, "ND_KS_VECT2OFFSET")) {
         /*
-         * ND_KS_VECT2OFFSET( off_name, arr_name, ...):
-         *   off_name = ... arr_name ...;
+         * VECT2OFFSET( off_name, from_name, ...):
+         *   off_name = ... from_name ...;
          *
          * def: 1st arg
          * use: 2nd arg
