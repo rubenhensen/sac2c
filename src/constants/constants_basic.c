@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.19  2003/05/22 09:43:46  ktr
+ * Multidimensional N_array nodes are no longer encapsulated by a
+ * reshape-Operation. (COConstant2AST)
+ *
  * Revision 1.18  2003/04/11 17:55:41  sbs
  * COConstant2Shape added.
  *
@@ -752,15 +756,18 @@ COConstant2AST (constant *a)
         ARRAY_CONSTVEC (res) = Array2Vec (CONSTANT_TYPE (a), ARRAY_AELEMS (res), NULL);
 
         /*
+         * Commented out to enable Constant Folding!!!
+         *
          * if (dim > dim_elem) the array must be put into a reshape() prf!
          */
-        if (dim > 1) {
-            res = MakePrf (F_reshape, MakeExprs (SHShape2Array (COGetShape (a)),
-                                                 MakeExprs (res, NULL)));
-        }
+        /*     if (dim > 1) { */
+        /*       res = MakePrf( F_reshape, */
+        /* 		     MakeExprs( SHShape2Array( COGetShape( a)), */
+        /* 				MakeExprs( res, NULL))); */
     }
+}
 
-    DBUG_RETURN (res);
+DBUG_RETURN (res);
 }
 
 /******************************************************************************
