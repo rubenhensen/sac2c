@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.42  2001/04/02 17:06:42  dkr
+ * illegal wlcomp-pragma functions produce a warning now instead of an
+ * error
+ *
  * Revision 3.41  2001/04/02 16:11:06  dkr
  * Support for new with-loop bounds format added:
  * besides '[1,2,3]' and 'A', now also '[a,b,c]' works :-)
@@ -2949,10 +2953,9 @@ SetSegs (node *pragma, node *cubes, int dims)
 #undef WLP
                   ;
 
-                ABORT (line, ("Illegal function name in wlcomp-pragma found."
-                              " Currently supported functions are:"
-                              "%s",
-                              fun_names));
+                WARN (line, ("Illegal function name %s in wlcomp-pragma found."
+                             " Currently supported functions are:%s",
+                             AP_NAME (EXPRS_EXPR (aps)), fun_names));
             }
 
             aps = EXPRS_NEXT (aps);
