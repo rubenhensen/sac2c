@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.37  2004/11/26 21:08:51  sbs
+# SelectionPropagation.o eliminated from OBJS
+#
 # Revision 3.36  2004/11/26 21:05:23  sah
 # *** empty log message ***
 #
@@ -29,7 +32,7 @@ include $(PROJECT_ROOT)/Makefile.Config
 OBJS := optimize.o Inline.o DeadFunctionRemoval.o \
         SSADeadCodeRemoval.o SSACSE.o SSAConstantFolding.o SSALIR.o SSALUR.o \
         SSAWLUnroll.o SSAInferLI.o AssociativeLaw.o rmcasts.o \
-        UndoElimSubDiv.o ElimSubDiv.o SelectionPropagation.o \
+        UndoElimSubDiv.o ElimSubDiv.o \
         ConstVarPropagation.o DistributiveLaw.o 
 
 all: $(OBJS)
