@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.27  1996/01/22 17:30:38  cg
+ * Revision 1.28  1996/01/25 18:40:55  cg
+ * added key word classtype
+ *
+ * Revision 1.27  1996/01/22  17:30:38  cg
  * added new pragma initfun
  *
  * Revision 1.26  1996/01/05  13:13:55  cg
@@ -223,6 +226,7 @@ int start_token;
 "tof"                           {FILTER( TOF );}
 "tod"                           {FILTER( TOD );}
 "typedef"			{FILTER( TYPEDEF );}
+"classtype"			{FILTER( CLASSTYPE );}
 "constdef"		        {FILTER( CONSTDEF );}
 "objdef"		        {FILTER( OBJDEF );}
 "main"				{FILTER( K_MAIN );}
