@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2004/09/30 17:02:22  khf
+ * added intersection of generators with steps and width
+ *
  * Revision 1.11  2004/09/24 15:10:17  khf
  * initialised some pointers to NULL
  * to please the compiler
@@ -108,6 +111,8 @@ struct INFO {
 #define INFO_WLFS_FWL_ARRAY_TYPE(n) (n->fwl_array_type)
 #define INFO_WLFS_FWL_SHAPE(n) (n->fwl_shape)
 #define INFO_WLFS_ASSIGNS2SHIFT(n) (n->assigns2shift)
+
+#define MAX_NEWGENS 20
 
 typedef enum { WOT_gen_mod, WOT_fold, WOT_gen_mod_fold, WOT_unknown } wo_type_t;
 
@@ -663,47 +668,195 @@ FuseWithloops (node *wl, info *arg_info, node *fusionable_assign)
 
 /** <!--********************************************************************-->
  *
- * @fn node *IntersectParts(node *parts1, node parts2)
+ * @fn node CreateEntryFlatArray(int entry, int number)
  *
- *   @brief
+ *   @brief creates an flat array with 'number' elements consisting of
+ *          'entry'
  *
- *   @param  node *arg_node:  N_Nwith
- *           info *arg_info:  N_info
- *   @return node *        :  N_Nwith
+ *   @param  int entry   : entry within the new array
+ *           int number  : number of elements in the new array
+ *   @return node *      : N_array
  ******************************************************************************/
-static nodelist *
-IntersectParts (node *parts1, node *parts2)
+static node *
+CreateEntryFlatArray (int entry, int number)
 {
-    node *new_parts_1 = NULL, *new_parts_2 = NULL, *new_part_1, *new_part_2, *parts2_tmp,
-         *genn, *lb_1, *ub_1, *lb_2, *ub_2, *array_lb, *array_ub, *new_array_lb,
-         *new_array_ub, *lb_new, *ub_new;
-    nodelist *ret = NULL;
-    int dim, d, lb, ub;
+    node *tmp;
+    int i;
+
+    DBUG_ENTER ("CreateOneArray");
+
+    DBUG_ASSERT ((number > 0), "dim is <= 0");
+
+    tmp = NULL;
+    for (i = 0; i < number; i++) {
+        tmp = MakeExprs (MakeNum (entry), tmp);
+    }
+    tmp = MakeFlatArray (tmp);
+
+    ARRAY_TYPE (tmp)
+      = MakeTypes (T_int, 1, MakeShpseg (MakeNums (number, NULL)), NULL, NULL);
+    ARRAY_NTYPE (tmp) = TYMakeAKS (TYMakeSimpleType (T_int), SHMakeShape (number));
+
+    ARRAY_ISCONST (tmp) = TRUE;
+    ARRAY_VECTYPE (tmp) = T_int;
+    ARRAY_VECLEN (tmp) = number;
+    ARRAY_CONSTVEC (tmp) = Array2Vec (T_int, ARRAY_AELEMS (tmp), NULL);
+    DBUG_RETURN (tmp);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *IntersectGrids( node *new_step, node *offset_1, node *offset_2,
+ *                           node *new_lb, node *new_ub, node *part_1,
+ *                           node *part_2, int dim_max, node **nparts_2)
+ *
+ *   @brief intersect two grids
+ *
+ *   @param  node *new_step    : step of new generators
+ *           node *offset_1/2  : offsets of both grids to new_array_lb
+ *           node *new_lb/ub   : lower and upper bounds of new generators
+ *           node *part_1/2    : N_Parts
+ *           int  dim_max      : max. number of dimensions
+ *           node **new_part_2 : new N_Part for WL with parts2
+ *   @return node *            : new N_Part for WL with parts1
+ ******************************************************************************/
+static node *
+IntersectGrids (node *new_step, node *offset_1, node *offset_2, node *new_lb,
+                node *new_ub, node *parts_1, node *parts_2, int dim_max,
+                node **new_part_2)
+{
+    node *npart_1, *npart_2, *new_width, *nstep, *nwidth, *nlb, *nub, *off_1, *off_2,
+      *stp_1, *stp_2, *wth_1, *wth_2, *genn;
+    int counter, first, last, dim;
+
+    DBUG_ENTER ("IntersectGrids");
+
+    npart_1 = npart_2 = NULL;
+    new_width = CreateEntryFlatArray (0, dim);
+
+    nstep = ARRAY_AELEMS (new_step);
+    nwidth = ARRAY_AELEMS (new_width);
+    nlb = ARRAY_AELEMS (new_lb);
+    nub = ARRAY_AELEMS (new_ub);
+    off_1 = ARRAY_AELEMS (offset_1);
+    off_2 = ARRAY_AELEMS (offset_2);
+    stp_1 = ARRAY_AELEMS (NGEN_STEP (NPART_GEN (parts_1)));
+    stp_2 = ARRAY_AELEMS (NGEN_STEP (NPART_GEN (parts_2)));
+    wth_1 = ARRAY_AELEMS (NGEN_WIDTH (NPART_GEN (parts_1)));
+    wth_2 = ARRAY_AELEMS (NGEN_WIDTH (NPART_GEN (parts_2)));
+
+    for (dim = 0; dim < dim_max - 1; dim++) {
+
+        counter = first = last = 0;
+        while (counter < (NUM_VAL (EXPRS_EXPR (nstep)))) {
+
+            if ((((counter + NUM_VAL (EXPRS_EXPR (off_1))) % NUM_VAL (EXPRS_EXPR (stp_1)))
+                 < NUM_VAL (EXPRS_EXPR (wth_1)))
+                && (((counter + NUM_VAL (EXPRS_EXPR (off_2)))
+                     % NUM_VAL (EXPRS_EXPR (stp_2)))
+                    < NUM_VAL (EXPRS_EXPR (wth_2)))) {
+                first = counter;
+                do {
+                    counter++;
+                } while (((((counter + NUM_VAL (EXPRS_EXPR (off_1)))
+                            % NUM_VAL (EXPRS_EXPR (stp_1)))
+                           < NUM_VAL (EXPRS_EXPR (wth_1)))
+                          && (((counter + NUM_VAL (EXPRS_EXPR (off_2)))
+                               % NUM_VAL (EXPRS_EXPR (stp_2)))
+                              < NUM_VAL (EXPRS_EXPR (wth_2))))
+                         || counter == (NUM_VAL (EXPRS_EXPR (nstep))));
+                last = counter;
+                NUM_VAL (EXPRS_EXPR (nwidth)) = last - first;
+
+                if (NUM_VAL (EXPRS_EXPR (nlb)) + first < NUM_VAL (EXPRS_EXPR (nub))) {
+                    NUM_VAL (EXPRS_EXPR (nlb)) = NUM_VAL (EXPRS_EXPR (nlb)) + first;
+                } else
+                    goto DONE;
+            }
+            counter++;
+        }
+
+        nstep = EXPRS_NEXT (nstep);
+        nwidth = EXPRS_NEXT (nwidth);
+        nlb = EXPRS_NEXT (nlb);
+        nub = EXPRS_NEXT (nub);
+        off_1 = EXPRS_NEXT (off_1);
+        off_2 = EXPRS_NEXT (off_2);
+        stp_1 = EXPRS_NEXT (stp_1);
+        stp_2 = EXPRS_NEXT (stp_2);
+        wth_1 = EXPRS_NEXT (wth_1);
+        wth_2 = EXPRS_NEXT (wth_2);
+    }
+
+    /* create new parts*/
+    genn = MakeNGenerator (new_lb, new_ub, F_le, F_lt, new_step, new_width);
+
+    npart_1 = MakeNPart (DupNode (NPART_WITHID (parts_1)), genn, NPART_CODE (parts_1));
+
+    npart_2 = MakeNPart (DupNode (NPART_WITHID (parts_2)), genn, NPART_CODE (parts_2));
+
+DONE:
+    if (npart_1 == NULL) {
+        new_width = FreeNode (new_width);
+        new_step = FreeNode (new_step);
+    }
+
+    (*new_part_2) = npart_2;
+    DBUG_RETURN (npart_1);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *IntersectParts(node *parts_1, node parts_2, node **new_parts_2)
+ *
+ *   @brief intersect the all generators from N_Parts of the current WL
+ *          with the all generators from N_Parts of the fusionable WL and
+ *          creates new N_Parts for both WLs.
+ *
+ *   @param  node *parts_1       :  N_Part chain
+ *           node *parts_2       :  N_Part chain
+ *           node **new_parts_2 :  new N_Parts for WL with parts2
+ *   @return node *             :  new N_Parts for WL with parts1
+ ******************************************************************************/
+static node *
+IntersectParts (node *parts_1, node *parts_2, node **new_parts_2)
+{
+    node *nparts_1, *nparts_2, *npart_1, *npart_2, *parts_2_tmp, *genn, *lb_1, *ub_1,
+      *lb_2, *ub_2, *new_array_lb, *new_array_ub, *lb_new, *ub_new, *new_step, *nstep,
+      *step_1, *step_2, *offset, *offset_1, *offset_2;
+    int dim, d, lb, ub, gen_counter = 0;
+    bool create_step;
 
     DBUG_ENTER ("IntersectParts");
 
-    dim = ARRAY_VECLEN (NGEN_BOUND1 (NPART_GEN (parts1)));
-    new_parts_1 = new_parts_2 = NULL;
+    dim = ARRAY_VECLEN (NGEN_BOUND1 (NPART_GEN (parts_1)));
+    nparts_1 = nparts_2 = NULL;
+    npart_1 = npart_2 = NULL;
 
-    while (parts1 != NULL) {
-        parts2_tmp = parts2;
-        while (parts2_tmp != NULL) {
-            lb_1 = ARRAY_AELEMS (NGEN_BOUND1 (NPART_GEN (parts1)));
-            ub_1 = ARRAY_AELEMS (NGEN_BOUND2 (NPART_GEN (parts1)));
-            array_lb = NGEN_BOUND1 (NPART_GEN (parts2_tmp));
-            array_ub = NGEN_BOUND2 (NPART_GEN (parts2_tmp));
-            lb_2 = ARRAY_AELEMS (array_lb);
-            ub_2 = ARRAY_AELEMS (array_ub);
+    new_step = NULL;
+    offset_1 = NULL;
+    offset_2 = NULL;
 
-            new_array_lb = DupNode (array_lb);
-            new_array_ub = DupNode (array_ub);
+    parts_2_tmp = parts_2;
+    while (parts_1 != NULL) {
+        parts_2 = parts_2_tmp;
+        while (parts_2 != NULL) {
+            create_step = (NPART_STEP (parts_1) || NPART_STEP (parts_2));
+
+            lb_1 = ARRAY_AELEMS (NGEN_BOUND1 (NPART_GEN (parts_1)));
+            ub_1 = ARRAY_AELEMS (NGEN_BOUND2 (NPART_GEN (parts_1)));
+            lb_2 = ARRAY_AELEMS (NGEN_BOUND1 (NPART_GEN (parts_2)));
+            ub_2 = ARRAY_AELEMS (NGEN_BOUND2 (NPART_GEN (parts_2)));
+
+            new_array_lb = CreateEntryFlatArray (0, dim);
+            new_array_ub = CreateEntryFlatArray (0, dim);
             lb_new = ARRAY_AELEMS (new_array_lb);
             ub_new = ARRAY_AELEMS (new_array_ub);
 
             for (d = 0; d < dim; d++) {
                 lb = MAX (NUM_VAL (EXPRS_EXPR (lb_1)), NUM_VAL (EXPRS_EXPR (lb_2)));
                 ub = MIN (NUM_VAL (EXPRS_EXPR (ub_1)), NUM_VAL (EXPRS_EXPR (ub_2)));
-                if (lb > ub)
+                if (lb >= ub)
                     break; /* empty intersection */
                 else {
                     NUM_VAL (EXPRS_EXPR (lb_new)) = lb;
@@ -717,43 +870,161 @@ IntersectParts (node *parts1, node *parts2)
                 ub_new = EXPRS_NEXT (ub_new);
             }
 
-            if (d == dim) {
+            if (d == dim && gen_counter < MAX_NEWGENS) {
                 /* non empty generator */
-                genn
-                  = MakeNGenerator (new_array_lb, new_array_ub, F_le, F_lt, NULL, NULL);
 
-                if (new_parts_1) {
-                    NPART_NEXT (new_part_1) = MakeNPart (DupNode (NPART_WITHID (parts1)),
-                                                         genn, NPART_CODE (parts1));
-                    ;
-                    new_part_1 = NPART_NEXT (new_part_1);
-                    NPART_NEXT (new_part_2)
-                      = MakeNPart (DupNode (NPART_WITHID (parts2)), DupNode (genn),
-                                   NPART_CODE (parts2));
-                    new_part_2 = NPART_NEXT (new_part_2);
+                if (create_step) {
+
+                    /* compute lowest-common-multiplier between both steps */
+                    if (NGEN_STEP (NPART_GEN (parts_1)) == NULL)
+                        new_step
+                          = DupNode (ARRAY_AELEMS (NGEN_STEP (NPART_GEN (parts_2))));
+                    else if (NGEN_STEP (NPART_GEN (parts_2)) == NULL)
+                        new_step
+                          = DupNode (ARRAY_AELEMS (NGEN_STEP (NPART_GEN (parts_1))));
+                    else {
+                        new_step = CreateEntryFlatArray (0, dim);
+                        nstep = ARRAY_AELEMS (new_step);
+                        step_1 = ARRAY_AELEMS (NGEN_STEP (NPART_GEN (parts_1)));
+                        step_2 = ARRAY_AELEMS (NGEN_STEP (NPART_GEN (parts_2)));
+                        for (d = 0; d < dim; d++) {
+                            NUM_VAL (EXPRS_EXPR (nstep))
+                              = lcm (NUM_VAL (EXPRS_EXPR (step_1)),
+                                     NUM_VAL (EXPRS_EXPR (step_2)));
+                            nstep = EXPRS_NEXT (nstep);
+                            step_1 = EXPRS_NEXT (step_1);
+                            step_2 = EXPRS_NEXT (step_2);
+                        }
+                    }
+
+                    /* compute offsets of both grids to new_array_lb */
+                    if (NGEN_STEP (NPART_GEN (parts_1)) != NULL) {
+                        if (offset_1 == NULL)
+                            offset_1 = CreateEntryFlatArray (0, dim);
+                        offset = ARRAY_AELEMS (offset_1);
+                        lb_new = ARRAY_AELEMS (new_array_lb);
+                        lb_1 = ARRAY_AELEMS (NGEN_BOUND1 (NPART_GEN (parts_1)));
+                        step_1 = ARRAY_AELEMS (NGEN_STEP (NPART_GEN (parts_1)));
+                        for (d = 0; d < dim; d++) {
+                            NUM_VAL (EXPRS_EXPR (offset))
+                              = ((NUM_VAL (EXPRS_EXPR (lb_new))
+                                  - NUM_VAL (EXPRS_EXPR (lb_1)))
+                                 % NUM_VAL (EXPRS_EXPR (step_1)));
+                            offset = EXPRS_NEXT (offset);
+                            lb_new = EXPRS_NEXT (lb_new);
+                            lb_1 = EXPRS_NEXT (lb_1);
+                            step_1 = EXPRS_NEXT (step_1);
+                        }
+                    }
+
+                    if (NGEN_STEP (NPART_GEN (parts_2)) != NULL) {
+                        if (offset_2 == NULL)
+                            offset_2 = CreateEntryFlatArray (0, dim);
+                        offset = ARRAY_AELEMS (offset_2);
+                        lb_new = ARRAY_AELEMS (new_array_lb);
+                        lb_2 = ARRAY_AELEMS (NGEN_BOUND1 (NPART_GEN (parts_2)));
+                        step_2 = ARRAY_AELEMS (NGEN_STEP (NPART_GEN (parts_2)));
+                        for (d = 0; d < dim; d++) {
+                            NUM_VAL (EXPRS_EXPR (offset))
+                              = ((NUM_VAL (EXPRS_EXPR (lb_new))
+                                  - NUM_VAL (EXPRS_EXPR (lb_2)))
+                                 % NUM_VAL (EXPRS_EXPR (step_2)));
+                            offset = EXPRS_NEXT (offset);
+                            lb_new = EXPRS_NEXT (lb_new);
+                            lb_2 = EXPRS_NEXT (lb_2);
+                            step_2 = EXPRS_NEXT (step_2);
+                        }
+                    }
+
+                    if (nparts_1) {
+                        NPART_NEXT (npart_1)
+                          = IntersectGrids (new_step, offset_1, offset_2, new_array_lb,
+                                            new_array_ub, parts_1, parts_2, dim,
+                                            &(NPART_NEXT (npart_2)));
+
+                        if (NPART_NEXT (npart_1) != NULL) {
+                            npart_1 = NPART_NEXT (npart_1);
+                            npart_2 = NPART_NEXT (npart_2);
+                            gen_counter++;
+                        } else {
+                            new_array_lb = FreeNode (new_array_lb);
+                            new_array_ub = FreeNode (new_array_ub);
+                        }
+
+                    } else {
+                        npart_1 = IntersectGrids (new_step, offset_1, offset_2,
+                                                  new_array_lb, new_array_ub, parts_1,
+                                                  parts_2, dim, &(npart_2));
+
+                        if (npart_1 != NULL) {
+                            nparts_1 = npart_1;
+                            nparts_2 = npart_2;
+
+                            npart_1 = NPART_NEXT (npart_1);
+                            npart_2 = NPART_NEXT (npart_2);
+                            gen_counter++;
+                        } else {
+                            new_array_lb = FreeNode (new_array_lb);
+                            new_array_ub = FreeNode (new_array_ub);
+                        }
+                    }
+
                 } else {
-                    new_part_1 = MakeNPart (DupNode (NPART_WITHID (parts1)), genn,
-                                            NPART_CODE (parts1));
-                    new_parts_1 = new_part_1;
+                    genn = MakeNGenerator (new_array_lb, new_array_ub, F_le, F_lt, NULL,
+                                           NULL);
 
-                    new_part_2 = MakeNPart (DupNode (NPART_WITHID (parts2)),
-                                            DupNode (genn), NPART_CODE (parts2));
-                    new_parts_2 = new_part_2;
+                    if (nparts_1) {
+                        NPART_NEXT (npart_1)
+                          = MakeNPart (DupNode (NPART_WITHID (parts_1)), genn,
+                                       NPART_CODE (parts_1));
+                        npart_1 = NPART_NEXT (npart_1);
+                        NPART_NEXT (npart_2)
+                          = MakeNPart (DupNode (NPART_WITHID (parts_2)), DupNode (genn),
+                                       NPART_CODE (parts_2));
+                        npart_2 = NPART_NEXT (npart_2);
+                    } else {
+                        npart_1 = MakeNPart (DupNode (NPART_WITHID (parts_1)), genn,
+                                             NPART_CODE (parts_1));
+                        nparts_1 = npart_1;
+
+                        npart_2 = MakeNPart (DupNode (NPART_WITHID (parts_2)),
+                                             DupNode (genn), NPART_CODE (parts_2));
+                        nparts_2 = npart_2;
+                    }
+                    gen_counter++;
                 }
+            } else if (d == dim) {
+                /*
+                 * Max. numbers of new generators is exceeded.
+                 * Remove all new generators.
+                 */
+                DBUG_PRINT ("WLFS",
+                            ("number of new generators is exceeded -> roll back"));
+                nparts_1 = FreeTree (nparts_1);
+                nparts_2 = FreeTree (nparts_2);
+                new_array_lb = FreeNode (new_array_lb);
+                new_array_ub = FreeNode (new_array_ub);
+                goto DONE;
             } else {
-                lb_new = FreeNode (lb_new);
-                ub_new = FreeNode (ub_new);
+                new_array_lb = FreeNode (new_array_lb);
+                new_array_ub = FreeNode (new_array_ub);
             }
 
-            parts2_tmp = NPART_NEXT (parts2_tmp);
+            parts_2 = NPART_NEXT (parts_2);
         }
-        parts1 = NPART_NEXT (parts1);
+        parts_1 = NPART_NEXT (parts_1);
     }
 
-    ret = NodeListAppend (ret, new_parts_2, NULL);
-    ret = NodeListAppend (ret, new_parts_1, NULL);
+DONE:
+    if (offset_1)
+        offset_1 = FreeNode (offset_1);
+    if (offset_2)
+        offset_2 = FreeNode (offset_2);
 
-    DBUG_RETURN (ret);
+    DBUG_ASSERT (((*new_parts_2) == NULL), "new_parts_2 had to be empty");
+    (*new_parts_2) = nparts_2;
+
+    DBUG_RETURN (nparts_1);
 }
 
 /** <!--********************************************************************-->
@@ -769,40 +1040,31 @@ IntersectParts (node *parts1, node *parts2)
 static bool
 BuildNewGens (node *current_wl, node *fusionable_wl)
 {
-    node *tmp;
-    nodelist *ret, *ret_tmp;
+    node *tmp, *new_parts_fwl, *new_parts_cwl = NULL;
     int number_parts = 0;
     bool successfull = FALSE;
 
     DBUG_ENTER ("BuildNewGens");
 
-    ret = IntersectParts (NWITH_PART (fusionable_wl), NWITH_PART (current_wl));
+    new_parts_fwl = IntersectParts (NWITH_PART (fusionable_wl), NWITH_PART (current_wl),
+                                    &(new_parts_cwl));
 
-    if (ret != NULL) {
+    if (new_parts_fwl != NULL) {
         successfull = TRUE;
-        ret_tmp = ret;
 
-        tmp = NODELIST_NODE (ret_tmp);
-
-        DBUG_ASSERT ((tmp != NULL), "Number of Parts is 0!!!");
-
+        tmp = new_parts_fwl;
         while (tmp != NULL) {
             number_parts++;
             tmp = NPART_NEXT (tmp);
         }
 
         NWITH_PART (fusionable_wl) = FreeTree (NWITH_PART (fusionable_wl));
-        NWITH_PART (fusionable_wl) = NODELIST_NODE (ret_tmp);
-        ;
+        NWITH_PART (fusionable_wl) = new_parts_fwl;
         NWITH_PARTS (fusionable_wl) = number_parts;
 
-        ret_tmp = NODELIST_NEXT (ret_tmp);
-
         NWITH_PART (current_wl) = FreeTree (NWITH_PART (current_wl));
-        NWITH_PART (current_wl) = NODELIST_NODE (ret_tmp);
+        NWITH_PART (current_wl) = new_parts_cwl;
         NWITH_PARTS (current_wl) = number_parts;
-
-        ret = NodeListFree (ret, TRUE);
     }
 
     DBUG_RETURN (successfull);
