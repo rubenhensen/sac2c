@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.61  1998/03/25 12:34:48  srs
+ * changed CFNwith
+ *
  * Revision 1.60  1998/03/17 12:21:29  cg
  * Bug fixed in DupPartialArray. Now, the type information is
  * copied as well.
@@ -890,10 +893,14 @@ CFNwith (node *arg_node, node *arg_info)
 {
     node *tmpn;
 
-    DBUG_ENTER ("*CFNwith");
+    DBUG_ENTER ("CFNwith");
 
-    /* traverse the N_Nwithop node */
-    NWITH_WITHOP (arg_node) = OPTTrav (NWITH_WITHOP (arg_node), arg_info, arg_node);
+    /* do NOT traverse withop in case of
+       - genarray : TC assures constant array anyway
+       - modarray : the Id has not to be substituted. This would destroy the
+         work of flatten. */
+    if (WO_foldprf == NWITH_TYPE (arg_node) || WO_foldfun == NWITH_TYPE (arg_node))
+        NWITH_WITHOP (arg_node) = OPTTrav (NWITH_WITHOP (arg_node), arg_info, arg_node);
 
     /* traverse all generators */
     /* in CFwith type information of the index variable is stored in
