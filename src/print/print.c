@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.7  1999/04/08 17:18:05  jhs
+ * Handling for empty arrays added.
+ *
  * Revision 2.6  1999/03/17 22:22:22  bs
  * DbugPrintArray modified. Printing of character- and boolean arrays possible.
  *
@@ -1508,9 +1511,13 @@ PrintArray (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintArray");
 
-    fprintf (outfile, "[ ");
-    Trav (ARRAY_AELEMS (arg_node), arg_info);
-    fprintf (outfile, " ]");
+    if (ARRAY_AELEMS (arg_node) != NULL) {
+        fprintf (outfile, "[ ");
+        Trav (ARRAY_AELEMS (arg_node), arg_info);
+        fprintf (outfile, " ]");
+    } else {
+        fprintf (outfile, "[]");
+    }
 
     if (compiler_phase != PH_genccode) {
         DBUG_EXECUTE ("ARRAY_FLAT", DbugPrintArray (arg_node););

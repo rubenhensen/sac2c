@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/04/08 17:17:45  jhs
+ * Handling for empty arrays added.
+ *
  * Revision 2.2  1999/04/01 13:35:54  cg
  * added lots of '(' and ')' to avoid ambiguity warnings.
  * bug fixed in conversion of float and double constants into
@@ -255,6 +258,8 @@ Type2String (types *type, int flag)
             } else {
                 if (ARRAY_OR_SCALAR == TYPES_DIM (type)) {
                     strcat (tmp_string, "[?]");
+                } else if (TYPES_DIM (type) == EMPTY_ARRAY) {
+                    strcat (tmp_string, "[*]");
                 } else {
                     int i, dim;
                     static char int_string[INT_STRING_LENGTH];
