@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.32  1998/06/05 15:31:27  cg
+ * macro MOD_NAME_CON no longer used in macro definitions.
+ *
  * Revision 1.31  1998/05/12 13:19:59  cg
  * bug fixed: original vardecs are now traversed in advance and
  * module names are given to user-defined types where necessary.
@@ -173,27 +176,11 @@ extern char *module_name; /* name of module to typecheck;
         if (T_user == arg_type->simpletype) {                                            \
             node *t_node = LookupType (arg_type->name, arg_type->name_mod, line);        \
             if (NULL == t_node)                                                          \
-                ERROR2 (3, ("%s, %d: type '%s%s%s' is unknown", filename, line,          \
-                            MOD_NAME (arg_type->name_mod), arg_type->name))              \
+                ABORT (line, ("type '%s' is unknown",                                    \
+                              ModName (TYPES_MOD (arg_type), TYPES_NAME (arg_type))))    \
             else {                                                                       \
                 res_type = DuplicateTypes (t_node->info.types, 0);                       \
-            /* The following lines seemed to be double (here and in DuplicateTypes) */   \
-/*         if(arg_type->dim >0) { \
-            if(res_type->dim >=0) { \
-               int dim, i; \
-               shpseg *shpseg_old; \
-               int old_dim=res_type->dim; \
-               dim=old_dim+arg_type->dim; \
-               DBUG_ASSERT(dim <=SHP_SEG_SIZE, "shape out off range "); \
-               shpseg_old=res_type->shpseg; \
-               res_type->shpseg=(shpseg*)Malloc(sizeof(shpseg)); \
-               res_type->shpseg->next=NULL; \
-               for(i=0;i<arg_type->dim; i++) \
-                  res_type->shpseg->shp[i]=arg_type->shpseg->shp[i]; \
-               for(i=0;i<old_dim; i++) \
-                  res_type->shpseg->shp[i+arg_type->dim]=shpseg_old->shp[i]; \
-               res_type->dim=dim; \
-       }  } */ }                                                                         \
+            }                                                                            \
         } else                                                                           \
             res_type = DuplicateTypes (arg_type, 0);                                     \
     }
