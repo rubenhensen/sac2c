@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.193  1998/07/03 10:16:03  cg
+ * attributes of N_spmd node completely changed.
+ *
  * Revision 1.192  1998/06/23 12:42:13  cg
  * Attribute SPMD_LIFTED_FROM removed
  * Attribute SPMD_FUNNAME replaced by SPMD_FUNDEF
@@ -945,12 +948,14 @@ extern nodelist *MakeNodelist (node *node, statustype status, nodelist *next);
  ***                                                      ( -> write-SIB !!)
  ***    node*      STORE_IMPORTS (O) (N_implist)          (import -> )
  ***                                                      ( -> checkdec !!)
+ ***    node*      FOLDFUNS  (O)  (N_fundef)              (compile -> )
+ ***
  ***/
 
 /*
  *  CLASSTYPE points to the type of a class implementation.
  *
- *  The temporary attributes DECL and STORE_IMPORTS are mapped
+ *  The temporary attributes DECL, FOLDFUN, and STORE_IMPORTS are mapped
  *  to the same real node because they are never used in the same
  *  phase of compilation.
  */
@@ -966,6 +971,7 @@ extern node *MakeModul (char *name, file_type filetype, node *imports, node *typ
 #define MODUL_FUNS(n) (n->node[2])
 #define MODUL_DECL(n) (n->node[4])
 #define MODUL_STORE_IMPORTS(n) (n->node[4])
+#define MODUL_FOLDFUNS(n) (n->node[4])
 #define MODUL_CLASSTYPE(n) ((types *)(n->node[5]))
 
 /*--------------------------------------------------------------------------*/
@@ -1418,7 +1424,16 @@ extern node *MakeArg (char *name, types *type, statustype status, statustype att
  ***                                      ( -> write-SIB -> )
  ***    long*      MASK[x]                (optimize -> )
  ***    int        VARNO                  (optimize -> )
+ ***
+ ***    node*      SPMD_PROLOG_ICMS (O)   (N_fundef)  (compile !!)
  ***/
+
+/*
+ * In spmd-functions SPMD_PROLOG_ICMS points to an assign-chain that
+ * contains the prolog memory management ICMs derived from the first
+ * synchronisation block. These are required for the compilation of
+ * the corresponding spmd-block.
+ */
 
 extern node *MakeBlock (node *instr, node *vardec);
 
@@ -1428,6 +1443,7 @@ extern node *MakeBlock (node *instr, node *vardec);
 #define BLOCK_NEEDFUNS(n) ((nodelist *)(n->node[2]))
 #define BLOCK_NEEDTYPES(n) ((nodelist *)(n->node[3]))
 #define BLOCK_VARNO(n) (n->varno)
+#define BLOCK_SPMD_PROLOG_ICMS(n) (n->node[4])
 
 /*--------------------------------------------------------------------------*/
 
@@ -2402,6 +2418,7 @@ extern node *MakePragma ();
  ***    node*      LASTASSIGN    (O)  (N_assign)
  ***    node*      VARDECS       (O)  (N_vardec)
  ***    node*      WITHBEGIN     (O)  (N_icm)
+ ***    node*      MODUL         (O)  (N_modul)
  ***
  ***    node*      FIRSTASSIGN   (O)  (N_assign)
  ***    node*      FUNDEF        (O)  (N_fundef)
@@ -2502,7 +2519,7 @@ extern node *MakeInfo ();
 #define INFO_COMP_FUNDEF(n) (n->node[2])
 #define INFO_COMP_VARDECS(n) (n->node[3])
 #define INFO_COMP_WITHBEGIN(n) (n->node[4])
-
+#define INFO_COMP_MODUL(n) (n->node[5])
 #define INFO_COMP_FIRSTASSIGN(n) (n->node[0])
 #define INFO_COMP_CNTPARAM(n) (n->lineno)
 #define INFO_COMP_ICMTAB(n) ((node **)(n->node[1]))
@@ -2574,14 +2591,19 @@ extern node *MakeInfo ();
  ***
  ***  temporary attributes:
  ***
- ***    ids*       INOUT_IDS             (spmdinit -> compile -> )
+ ***    node*      ICM_BEGIN       (N_icm)   (compile -> print -> )
+ ***    node*      ICM_PARALLEL    (N_block) (compile -> print -> )
+ ***    node*      ICM_ALTSEQ      (N_icm)   (compile -> print -> )
+ ***    node*      ICM_SEQUENTIAL  (N_block) (compile -> print -> )
+ ***    node*      ICM_END         (N_icm)   (compile -> print -> )
  ***
- ***    node*      ICM         (N_icm)   (compile -> print -> )
+ ***    int        STATIC
  ***
  ***  remarks:
  ***
- ***    INOUT_IDS contains all LET_IDS(...) of the inout-lets found in REGION.
- ***    This is needed by 'compile' to find the right RCs.
+ ***    STATIC is a flag used to distinguish between static spmd-blocks, i.e.
+ ***    the decision whether to execute in parallel or not is done at compile
+ ***    time, and dynamic ones.
  ***
  ***/
 
@@ -2596,8 +2618,13 @@ extern node *MakeSpmd (node *region);
 
 #define SPMD_FUNDEF(n) (n->node[1])
 
-#define SPMD_ICM(n) (n->node[2])
-#define SPMD_INOUT_IDS(n) (n->info.ids)
+#define SPMD_ICM_BEGIN(n) (n->node[2])
+#define SPMD_ICM_ALTSEQ(n) (n->node[3])
+#define SPMD_ICM_END(n) (n->node[4])
+#define SPMD_ICM_PARALLEL(n) (n->node[5])
+#define SPMD_ICM_SEQUENTIAL(n) (n->node[0])
+
+#define SPMD_STATIC(n) (n->varno)
 
 /*--------------------------------------------------------------------------*/
 
