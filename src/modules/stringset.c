@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2004/10/28 22:07:43  sah
+ * added missing include
+ *
  * Revision 1.2  2004/10/28 17:22:37  sah
  * now, internally a copy of the string is used
  *
@@ -14,6 +17,8 @@
 #include "stringset.h"
 #include "dbug.h"
 #include "internal_lib.h"
+
+#include <string.h>
 
 /*
  * stringset routines
