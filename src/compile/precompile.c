@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.9  1996/01/22 18:36:37  cg
+ * Revision 1.10  1996/01/26 15:33:01  cg
+ * applications of class conversion functions are removed
+ * where necessary we mark where to copy
+ *
+ * Revision 1.9  1996/01/22  18:36:37  cg
  * new implementation of object initializations
  *
  * Revision 1.8  1996/01/09  09:19:43  cg
@@ -829,19 +833,52 @@ PRECexprs_return (node *ret_exprs, node *ret_node)
 node *
 PRECap (node *arg_node, node *arg_info)
 {
+    node *ap;
+
     DBUG_ENTER ("PRECap");
 
-    if (AP_ARGS (arg_node) != NULL) {
-        AP_ARGS (arg_node)
-          = PRECexprs_ap (AP_ARGS (arg_node), FUNDEF_ARGS (AP_FUNDEF (arg_node)));
-    }
+    if (FUNDEF_STATUS (AP_FUNDEF (arg_node)) == ST_classfun) {
+        ap = arg_node;
+        arg_node = EXPRS_EXPR (AP_ARGS (arg_node));
 
-    /****************************************************************/
+        if (0 == strncmp (AP_NAME (ap), "to_", 3)) {
+            if (NODE_TYPE (arg_node) == N_id) {
+                if ((ID_REFCNT (arg_node) != -1)
+                    && (!IsUnique (VARDEC_TYPE (ID_VARDEC (arg_node))))) {
+                    /*
+                     *  The base type of the class is refcounted,
+                     *  so we have to make the boxed value unique.
+                     */
+
+                    ID_MAKEUNIQUE (arg_node) = 1;
+                } else {
+                    ID_MAKEUNIQUE (arg_node) = 0;
+                }
+            }
+        } else {
+            /*
+             *  This must be a "from" function. So, the argument is of a class
+             *  type which implies that it is am identifier.
+             */
+
+            ID_MAKEUNIQUE (arg_node) = 0;
+        }
+
+        FREE (AP_NAME (ap));
+        FREE (ap);
+    } else {
+        if (AP_ARGS (arg_node) != NULL) {
+            AP_ARGS (arg_node)
+              = PRECexprs_ap (AP_ARGS (arg_node), FUNDEF_ARGS (AP_FUNDEF (arg_node)));
+        }
+
+        /****************************************************************/
 #ifndef NEWTREE
-    if (AP_ARGS (arg_node) == NULL)
-        arg_node->nnode = 0;
-#endif /* NEWTREE */
-    /****************************************************************/
+        if (AP_ARGS (arg_node) == NULL)
+            arg_node->nnode = 0;
+#endif  /* NEWTREE */
+        /****************************************************************/
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -907,6 +944,8 @@ PRECid (node *arg_node, node *arg_info)
         ID_VARDEC (arg_node) = ARG_OBJDEF (ID_VARDEC (arg_node));
         ID_NAME (arg_node) = OBJDEF_NAME (ID_VARDEC (arg_node));
     }
+
+    ID_MAKEUNIQUE (arg_node) = 0;
 
     DBUG_RETURN (arg_node);
 }
