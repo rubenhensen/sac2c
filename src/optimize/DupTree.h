@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/03/17 16:16:31  bs
+ * Macro DUP(s,d) modified. Now s->counter will also be duplicated.
+ *
  * Revision 2.2  1999/02/25 10:58:18  bs
  * DupArray added
  *
@@ -131,20 +134,12 @@
 
 #define UNS_NODES arg_info->node[0]
 
-#ifndef NEWTREE
 #define DUP(s, d)                                                                        \
     d->refcnt = s->refcnt;                                                               \
     d->flag = s->flag;                                                                   \
-    d->varno = s->varno;                                                                 \
-    d->nnode = s->nnode;                                                                 \
-    d->lineno = s->lineno;
-#else
-#define DUP(s, d)                                                                        \
-    d->refcnt = s->refcnt;                                                               \
-    d->flag = s->flag;                                                                   \
+    d->counter = s->counter;                                                             \
     d->varno = s->varno;                                                                 \
     d->lineno = s->lineno;
-#endif /* NEWTREE */
 
 extern node *DupTree (node *arg_node, node *arg_info);
 extern node *DupNode (node *arg_node);
