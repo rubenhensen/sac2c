@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.29  2004/08/01 15:43:46  sah
+ * switch to new INFO structure
+ * PHASE I
+ *
  * Revision 1.28  2004/03/09 23:57:59  dkrHH
  * old backend removed
  *
@@ -133,6 +137,8 @@
  *
  *****************************************************************************/
 
+#define NEW_INFO
+
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -144,6 +150,66 @@
 #include "DataFlowMask.h"
 #include "DataFlowMaskUtils.h"
 #include "InferDFMs.h"
+
+/*
+ * INFO structure
+ */
+struct INFO {
+    node *fundef;
+    DFMmask_t in;
+    DFMmask_t out;
+    DFMmask_t local;
+    DFMmask_t needed;
+    bool isfix;
+    bool first;
+    int hideloc;
+};
+
+/*
+ * INFO macros
+ */
+#define INFO_INFDFMS_FUNDEF(n) (n->fundef)
+#define INFO_INFDFMS_IN(n) (n->in)
+#define INFO_INFDFMS_OUT(n) (n->out)
+#define INFO_INFDFMS_LOCAL(n) (n->local)
+#define INFO_INFDFMS_NEEDED(n) (n->needed)
+#define INFO_INFDFMS_ISFIX(n) (n->isfix)
+#define INFO_INFDFMS_FIRST(n) (n->first)
+#define INFO_INFDFMS_HIDELOC(n) (n->hideloc)
+
+/*
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = Malloc (sizeof (info));
+
+    INFO_INFDFMS_FUNDEF (result) = NULL;
+    INFO_INFDFMS_IN (result) = NULL;
+    INFO_INFDFMS_OUT (result) = NULL;
+    INFO_INFDFMS_LOCAL (result) = NULL;
+    INFO_INFDFMS_NEEDED (result) = NULL;
+    INFO_INFDFMS_ISFIX (result) = FALSE;
+    INFO_INFDFMS_FIRST (result) = FALSE;
+    INFO_INFDFMS_HIDELOC (result) = 0;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = Free (info);
+
+    DBUG_RETURN (info);
+}
 
 /*
  * The current value of the DFmask 'old' is freed and subsequently the
@@ -238,7 +304,7 @@ DbugPrintSignature (char *node_str, DFMmask_t in, DFMmask_t out, DFMmask_t local
 /******************************************************************************
  *
  * Function:
- *   void DbugPrintMasks( node *arg_info)
+ *   void DbugPrintMasks( info *arg_info)
  *
  * Description:
  *
@@ -246,7 +312,7 @@ DbugPrintSignature (char *node_str, DFMmask_t in, DFMmask_t out, DFMmask_t local
  ******************************************************************************/
 
 static void
-DbugPrintMasks (node *arg_info)
+DbugPrintMasks (info *arg_info)
 {
     DBUG_ENTER ("DbugPrintMasks");
 
@@ -264,7 +330,7 @@ DbugPrintMasks (node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *UsedVar( node *arg_info, node *decl)
+ *   info *UsedVar( info *arg_info, node *decl)
  *
  * description:
  *   Updates the masks of 'arg_info' according to a non-defining occurence of
@@ -272,8 +338,8 @@ DbugPrintMasks (node *arg_info)
  *
  ******************************************************************************/
 
-static node *
-UsedVar (node *arg_info, node *decl)
+static info *
+UsedVar (info *arg_info, node *decl)
 {
     DBUG_ENTER ("UsedVar");
 
@@ -297,15 +363,15 @@ UsedVar (node *arg_info, node *decl)
 /******************************************************************************
  *
  * function:
- *   node *UsedId( node *arg_info, node *arg_id)
+ *   info *UsedId( info *arg_info, node *arg_id)
  *
  * description:
  *   Calls 'UsedVar()' for the given id-node.
  *
  ******************************************************************************/
 
-static node *
-UsedId (node *arg_info, node *arg_id)
+static info *
+UsedId (info *arg_info, node *arg_id)
 {
     DBUG_ENTER ("UsedId");
 
@@ -319,15 +385,15 @@ UsedId (node *arg_info, node *arg_id)
 /******************************************************************************
  *
  * function:
- *   node *UsedMask( node *arg_info, DFMmask_t mask)
+ *   info *UsedMask( info *arg_info, DFMmask_t mask)
  *
  * description:
  *   Calls 'UsedVar()' for each variable set in the given mask.
  *
  ******************************************************************************/
 
-static node *
-UsedMask (node *arg_info, DFMmask_t mask)
+static info *
+UsedMask (info *arg_info, DFMmask_t mask)
 {
     node *decl;
 
@@ -345,7 +411,7 @@ UsedMask (node *arg_info, DFMmask_t mask)
 /******************************************************************************
  *
  * function:
- *   node *DefinedVar( node *arg_info, node *decl)
+ *   info *DefinedVar( info *arg_info, node *decl)
  *
  * description:
  *   Updates the masks of 'arg_info' according to a defining occurence of a
@@ -353,8 +419,8 @@ UsedMask (node *arg_info, DFMmask_t mask)
  *
  ******************************************************************************/
 
-static node *
-DefinedVar (node *arg_info, node *decl)
+static info *
+DefinedVar (info *arg_info, node *decl)
 {
     DBUG_ENTER ("DefinedVar");
 
@@ -392,15 +458,15 @@ DefinedVar (node *arg_info, node *decl)
 /******************************************************************************
  *
  * function:
- *   node *DefinedIds( node *arg_info, ids *arg_ids)
+ *   info *DefinedIds( info *arg_info, ids *arg_ids)
  *
  * description:
  *   Calls 'DefinedVar()' for each ids of the given ids-chain.
  *
  ******************************************************************************/
 
-static node *
-DefinedIds (node *arg_info, ids *arg_ids)
+static info *
+DefinedIds (info *arg_info, ids *arg_ids)
 {
     DBUG_ENTER ("DefinedIds");
 
@@ -415,15 +481,15 @@ DefinedIds (node *arg_info, ids *arg_ids)
 /******************************************************************************
  *
  * function:
- *   node *DefinedId( node *arg_info, node *arg_id)
+ *   info *DefinedId( info *arg_info, node *arg_id)
  *
  * description:
  *   Calls 'DefinedVar()' for the given id-node.
  *
  ******************************************************************************/
 
-static node *
-DefinedId (node *arg_info, node *arg_id)
+static info *
+DefinedId (info *arg_info, node *arg_id)
 {
     DBUG_ENTER ("DefinedId");
 
@@ -437,15 +503,15 @@ DefinedId (node *arg_info, node *arg_id)
 /******************************************************************************
  *
  * function:
- *   node *DefinedMask( node *arg_info, DFMmask_t mask)
+ *   info *DefinedMask( info *arg_info, DFMmask_t mask)
  *
  * description:
  *   Calls 'DefinedVar()' for each variable set in the given mask.
  *
  ******************************************************************************/
 
-static node *
-DefinedMask (node *arg_info, DFMmask_t mask)
+static info *
+DefinedMask (info *arg_info, DFMmask_t mask)
 {
     node *decl;
 
@@ -488,7 +554,7 @@ AdjustNeededMasks (DFMmask_t needed, DFMmask_t in, DFMmask_t out)
 /******************************************************************************
  *
  * Function:
- *   node *GenerateMasks( node *arg_info,
+ *   info *GenerateMasks( info *arg_info,
  *                        DFMmask_t in, DFMmask_t out, DFMmask_t needed)
  *
  * Description:
@@ -501,8 +567,8 @@ AdjustNeededMasks (DFMmask_t needed, DFMmask_t in, DFMmask_t out)
  *
  ******************************************************************************/
 
-static node *
-GenerateMasks (node *arg_info, DFMmask_t in, DFMmask_t out, DFMmask_t needed)
+static info *
+GenerateMasks (info *arg_info, DFMmask_t in, DFMmask_t out, DFMmask_t needed)
 {
     DBUG_ENTER ("GenerateMasks");
 
@@ -520,7 +586,7 @@ GenerateMasks (node *arg_info, DFMmask_t in, DFMmask_t out, DFMmask_t needed)
 /******************************************************************************
  *
  * function:
- *   node *AdjustMasksWith_Pre( node *arg_info, node *arg_node)
+ *   info *AdjustMasksWith_Pre( info *arg_info, node *arg_node)
  *
  * description:
  *   Adjusts the masks for a newly entered with-loop according to the old
@@ -559,8 +625,8 @@ GenerateMasks (node *arg_info, DFMmask_t in, DFMmask_t out, DFMmask_t needed)
  *
  ******************************************************************************/
 
-static node *
-AdjustMasksWith_Pre (node *arg_info, node *arg_node)
+static info *
+AdjustMasksWith_Pre (info *arg_info, node *arg_node)
 {
     node *decl;
 
@@ -588,7 +654,7 @@ AdjustMasksWith_Pre (node *arg_info, node *arg_node)
 /******************************************************************************
  *
  * function:
- *   node *AdjustMasksWith_Post( node *arg_info)
+ *   info *AdjustMasksWith_Post( info *arg_info)
  *
  * description:
  *   Adjusts the masks after traversal of a with-loop:
@@ -597,8 +663,8 @@ AdjustMasksWith_Pre (node *arg_info, node *arg_node)
  *
  ******************************************************************************/
 
-static node *
-AdjustMasksWith_Post (node *arg_info)
+static info *
+AdjustMasksWith_Post (info *arg_info)
 {
     DBUG_ENTER ("AdjustMasksWith_Post");
 
@@ -608,7 +674,7 @@ AdjustMasksWith_Post (node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *AdjustMasksCond_Pre( node *arg_info, node *arg_node)
+ *   info *AdjustMasksCond_Pre( info *arg_info, node *arg_node)
  *
  * Description:
  *   Adjusts the masks for a newly entered conditional according to the old
@@ -618,8 +684,8 @@ AdjustMasksWith_Post (node *arg_info)
  *
  ******************************************************************************/
 
-node *
-AdjustMasksCond_Pre (node *arg_info, node *arg_node)
+info *
+AdjustMasksCond_Pre (info *arg_info, node *arg_node)
 {
     DBUG_ENTER ("AdjustMasksCond_Pre");
 
@@ -631,7 +697,7 @@ AdjustMasksCond_Pre (node *arg_info, node *arg_node)
 /******************************************************************************
  *
  * Function:
- *   node *AdjustMasksCond_Post( node *arg_info,
+ *   info *AdjustMasksCond_Post( info *arg_info,
  *                DFMmask_t in_then, DFMmask_t out_then, DFMmask_t local_then,
  *                DFMmask_t in_else, DFMmask_t out_else, DFMmask_t local_else)
  *
@@ -642,8 +708,8 @@ AdjustMasksCond_Pre (node *arg_info, node *arg_node)
  *
  ******************************************************************************/
 
-node *
-AdjustMasksCond_Post (node *arg_info, DFMmask_t in_then, DFMmask_t out_then,
+info *
+AdjustMasksCond_Post (info *arg_info, DFMmask_t in_then, DFMmask_t out_then,
                       DFMmask_t local_then, DFMmask_t in_else, DFMmask_t out_else,
                       DFMmask_t local_else)
 {
@@ -680,7 +746,7 @@ AdjustMasksCond_Post (node *arg_info, DFMmask_t in_then, DFMmask_t out_then,
 /******************************************************************************
  *
  * Function:
- *   node *AdjustMasksWhile_Pre( node *arg_info, node *arg_node)
+ *   info *AdjustMasksWhile_Pre( info *arg_info, node *arg_node)
  *
  * Description:
  *   Adjusts the masks for a newly entered while-loop according to the old
@@ -698,8 +764,8 @@ AdjustMasksCond_Post (node *arg_info, DFMmask_t in_then, DFMmask_t out_then,
  *
  ******************************************************************************/
 
-node *
-AdjustMasksWhile_Pre (node *arg_info, node *arg_node)
+info *
+AdjustMasksWhile_Pre (info *arg_info, node *arg_node)
 {
     DBUG_ENTER ("AdjustMasksWhile_Pre");
 
@@ -717,7 +783,7 @@ AdjustMasksWhile_Pre (node *arg_info, node *arg_node)
 /******************************************************************************
  *
  * Function:
- *   node *AdjustMasksWhile_Post( node *arg_info)
+ *   info *AdjustMasksWhile_Post( info *arg_info)
  *
  * Description:
  *   Adjusts the masks after traversal of a while-loop:
@@ -731,8 +797,8 @@ AdjustMasksWhile_Pre (node *arg_info, node *arg_node)
  *
  ******************************************************************************/
 
-node *
-AdjustMasksWhile_Post (node *arg_info)
+info *
+AdjustMasksWhile_Post (info *arg_info)
 {
     DBUG_ENTER ("AdjustMasksWhile_Post");
 
@@ -751,7 +817,7 @@ AdjustMasksWhile_Post (node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *AdjustMasksDo_Pre( node *arg_info, node *arg_node)
+ *   info *AdjustMasksDo_Pre( info *arg_info, node *arg_node)
  *
  * Description:
  *   Adjusts the masks for a newly entered do-loop according to the old
@@ -767,8 +833,8 @@ AdjustMasksWhile_Post (node *arg_info)
  *
  ******************************************************************************/
 
-node *
-AdjustMasksDo_Pre (node *arg_info, node *arg_node)
+info *
+AdjustMasksDo_Pre (info *arg_info, node *arg_node)
 {
     DBUG_ENTER ("AdjustMasksDo_Pre");
 
@@ -797,7 +863,7 @@ AdjustMasksDo_Pre (node *arg_info, node *arg_node)
 /******************************************************************************
  *
  * Function:
- *   node *AdjustMasksDo_Post( node *arg_info)
+ *   info *AdjustMasksDo_Post( info *arg_info)
  *
  * Description:
  *   Adjusts the masks after traversal of a do-loop:
@@ -806,8 +872,8 @@ AdjustMasksDo_Pre (node *arg_info, node *arg_node)
  *
  ******************************************************************************/
 
-node *
-AdjustMasksDo_Post (node *arg_info)
+info *
+AdjustMasksDo_Post (info *arg_info)
 {
     DBUG_ENTER ("AdjustMasksDo_Post");
 
@@ -817,7 +883,7 @@ AdjustMasksDo_Post (node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *InferMasksWith( node *arg_node, node *arg_info)
+ *   node *InferMasksWith( node *arg_node, info *arg_info)
  *
  * Description:
  *   In order to infer the withid-ids as local-vars, withop and code must be
@@ -826,7 +892,7 @@ AdjustMasksDo_Post (node *arg_info)
  ******************************************************************************/
 
 node *
-InferMasksWith (node *arg_node, node *arg_info)
+InferMasksWith (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("InferMasksWith");
 
@@ -868,7 +934,7 @@ InferMasksWith (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *InferMasksWith2( node *arg_node, node *arg_info)
+ *   node *InferMasksWith2( node *arg_node, info *arg_info)
  *
  * Description:
  *   In order to infer the withid-ids as local-vars, the withop, segments and
@@ -877,7 +943,7 @@ InferMasksWith (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-InferMasksWith2 (node *arg_node, node *arg_info)
+InferMasksWith2 (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("InferMasksWith2");
 
@@ -924,7 +990,7 @@ InferMasksWith2 (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *InferMasksCond( node *arg_node, node *arg_info)
+ *   node *InferMasksCond( node *arg_node, info *arg_info)
  *
  * Description:
  *
@@ -932,7 +998,7 @@ InferMasksWith2 (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 static node *
-InferMasksCond (node *arg_node, node *arg_info)
+InferMasksCond (node *arg_node, info *arg_info)
 {
     DFMmask_t old_in, old_out, old_needed;
     DFMmask_t in_then, out_then, local_then;
@@ -1015,7 +1081,7 @@ InferMasksCond (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *InferMasksWhile( node *arg_node, node *arg_info)
+ *   node *InferMasksWhile( node *arg_node, info *arg_info)
  *
  * Description:
  *   BODY must be traversed before COND!
@@ -1023,7 +1089,7 @@ InferMasksCond (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-InferMasksWhile (node *arg_node, node *arg_info)
+InferMasksWhile (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("InferMasksWhile");
 
@@ -1064,7 +1130,7 @@ InferMasksWhile (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *InferMasksDo( node *arg_node, node *arg_info)
+ *   node *InferMasksDo( node *arg_node, info *arg_info)
  *
  * Description:
  *   BODY must be traversed after COND!
@@ -1072,7 +1138,7 @@ InferMasksWhile (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-InferMasksDo (node *arg_node, node *arg_info)
+InferMasksDo (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("InferMasksDo");
 
@@ -1114,7 +1180,7 @@ InferMasksDo (node *arg_node, node *arg_info)
  *
  * function:
  *   node *InferMasks( DFMmask_t *in, DFMmask_t *out, DFMmask_t *local,
- *                     node *arg_node, node *arg_info,
+ *                     node *arg_node, info *arg_info,
  *                     node *(InferMasksFun)( node *, node *),
  *                     bool do_fixpoint_iter)
  *
@@ -1125,7 +1191,7 @@ InferMasksDo (node *arg_node, node *arg_info)
 
 static node *
 InferMasks (DFMmask_t *in, DFMmask_t *out, DFMmask_t *local, node *arg_node,
-            node *arg_info, node *(InferMasksFun) (node *, node *), bool do_fixpoint_iter)
+            info *arg_info, node *(InferMasksFun) (node *, info *), bool do_fixpoint_iter)
 {
     DFMmask_t old_needed, old_in, old_out, old_local;
 
@@ -1218,7 +1284,7 @@ InferMasks (DFMmask_t *in, DFMmask_t *out, DFMmask_t *local, node *arg_node,
 /******************************************************************************
  *
  * function:
- *   node *INFDFMSfundef( node *arg_node, node *arg_info)
+ *   node *INFDFMSfundef( node *arg_node, info *arg_info)
  *
  * description:
  *   All DFM-masks needed during traversal of the body are build before
@@ -1246,7 +1312,7 @@ InferMasks (DFMmask_t *in, DFMmask_t *out, DFMmask_t *local, node *arg_node,
  ******************************************************************************/
 
 node *
-INFDFMSfundef (node *arg_node, node *arg_info)
+INFDFMSfundef (node *arg_node, info *arg_info)
 {
     DFMmask_base_t old_dfm_base;
 #ifndef DBUG_OFF
@@ -1321,7 +1387,7 @@ INFDFMSfundef (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *INFDFMSarg( node *arg_node, node *arg_info)
+ *   node *INFDFMSarg( node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -1329,7 +1395,7 @@ INFDFMSfundef (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-INFDFMSarg (node *arg_node, node *arg_info)
+INFDFMSarg (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("INFDFMSarg");
 
@@ -1339,7 +1405,7 @@ INFDFMSarg (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *INFDFMSassign( node *arg_node, node *arg_info)
+ *   node *INFDFMSassign( node *arg_node, info *arg_info)
  *
  * description:
  *   Bottom-up-traversal of the assignments.
@@ -1347,7 +1413,7 @@ INFDFMSarg (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-INFDFMSassign (node *arg_node, node *arg_info)
+INFDFMSassign (node *arg_node, info *arg_info)
 {
     node *assign_next;
 
@@ -1365,7 +1431,7 @@ INFDFMSassign (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *INFDFMSlet( node *arg_node, node *arg_info)
+ *   node *INFDFMSlet( node *arg_node, info *arg_info)
  *
  * description:
  *   Every left hand side variable is marked as 'defined' in the in-, out-,
@@ -1374,7 +1440,7 @@ INFDFMSassign (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-INFDFMSlet (node *arg_node, node *arg_info)
+INFDFMSlet (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("INFDFMSlet");
 
@@ -1407,7 +1473,7 @@ INFDFMSlet (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *INFDFMSap( node *arg_node, node *arg_info)
+ *   node *INFDFMSap( node *arg_node, info *arg_info)
  *
  * description:
  *   Searches for reference parameters and marks them as 'defined vars'.
@@ -1415,7 +1481,7 @@ INFDFMSlet (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-INFDFMSap (node *arg_node, node *arg_info)
+INFDFMSap (node *arg_node, info *arg_info)
 {
     node *fundef_args, *ap_args, *decl;
 
@@ -1496,7 +1562,7 @@ INFDFMSap (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *INFDFMSid( node *arg_node, node *arg_info)
+ *   node *INFDFMSid( node *arg_node, info *arg_info)
  *
  * description:
  *   Every right hand side variable is marked as 'used' in the in-, out-,
@@ -1505,7 +1571,7 @@ INFDFMSap (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-INFDFMSid (node *arg_node, node *arg_info)
+INFDFMSid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("INFDFMSid");
 
@@ -1517,7 +1583,7 @@ INFDFMSid (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *INFDFMSwithx( node *arg_node, node *arg_info)
+ *   node *INFDFMSwithx( node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -1525,7 +1591,7 @@ INFDFMSid (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-INFDFMSwithx (node *arg_node, node *arg_info)
+INFDFMSwithx (node *arg_node, info *arg_info)
 {
     DFMmask_t nwith_in, nwith_out, nwith_local;
     DFMmask_t out;
@@ -1566,7 +1632,7 @@ INFDFMSwithx (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *INFDFMSwithid( node *arg_node, node *arg_info)
+ *   node *INFDFMSwithid( node *arg_node, info *arg_info)
  *
  * description:
  *   Every index variable is marked as 'defined' in the in-, out-,
@@ -1575,7 +1641,7 @@ INFDFMSwithx (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-INFDFMSwithid (node *arg_node, node *arg_info)
+INFDFMSwithid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("INFDFMSwithid");
 
@@ -1588,7 +1654,7 @@ INFDFMSwithid (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *INFDFMScode( node *arg_node, node *arg_info)
+ *   node *INFDFMScode( node *arg_node, info *arg_info)
  *
  * description:
  *   In order to get a correct bottom-up-traversal, the code-expr must be
@@ -1597,7 +1663,7 @@ INFDFMSwithid (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-INFDFMScode (node *arg_node, node *arg_info)
+INFDFMScode (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("INFDFMScode");
 
@@ -1613,7 +1679,7 @@ INFDFMScode (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *INFDFMScond( node *arg_node, node *arg_info)
+ *   node *INFDFMScond( node *arg_node, info *arg_info)
  *
  * description:
  *   Inferes the in-, out-, local-parameters of the conditional.
@@ -1621,7 +1687,7 @@ INFDFMScode (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-INFDFMScond (node *arg_node, node *arg_info)
+INFDFMScond (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("INFDFMScond");
 
@@ -1635,7 +1701,7 @@ INFDFMScond (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *INFDFMSwhile( node *arg_node, node *arg_info)
+ *   node *INFDFMSwhile( node *arg_node, info *arg_info)
  *
  * description:
  *   Inferes the in-, out-, local-parameters of the while-loop.
@@ -1643,7 +1709,7 @@ INFDFMScond (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-INFDFMSwhile (node *arg_node, node *arg_info)
+INFDFMSwhile (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("INFDFMSwhile");
 
@@ -1657,7 +1723,7 @@ INFDFMSwhile (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *INFDFMSdo( node *arg_node, node *arg_info)
+ *   node *INFDFMSdo( node *arg_node, info *arg_info)
  *
  * description:
  *   Inferes the in-, out-, local-parameters of the do-loop.
@@ -1665,7 +1731,7 @@ INFDFMSwhile (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-INFDFMSdo (node *arg_node, node *arg_info)
+INFDFMSdo (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("INFDFMSdo");
 
@@ -1679,7 +1745,7 @@ INFDFMSdo (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *INFDFMSicm( node *arg_node, node *arg_info)
+ *   node *INFDFMSicm( node *arg_node, info *arg_info)
  *
  * Description:
  *   ICMs must be handled indiviually in order to prevent the introduction of
@@ -1688,7 +1754,7 @@ INFDFMSdo (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-INFDFMSicm (node *arg_node, node *arg_info)
+INFDFMSicm (node *arg_node, info *arg_info)
 {
     char *name;
 
@@ -1779,7 +1845,7 @@ INFDFMSicm (node *arg_node, node *arg_info)
 node *
 InferDFMs (node *syntax_tree, int hide_locals)
 {
-    node *info_node;
+    info *info_node;
     funtab *old_funtab;
 
     DBUG_ENTER ("InferDFMs");
@@ -1796,7 +1862,7 @@ InferDFMs (node *syntax_tree, int hide_locals)
     syntax_tree = Trav (syntax_tree, info_node);
     act_tab = old_funtab;
 
-    info_node = FreeNode (info_node);
+    info_node = FreeInfo (info_node);
 
     DBUG_RETURN (syntax_tree);
 }

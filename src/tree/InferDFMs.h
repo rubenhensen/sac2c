@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2004/08/01 15:43:46  sah
+ * switch to new INFO structure
+ * PHASE I
+ *
  * Revision 1.2  2001/04/19 09:51:43  dkr
  * INFDFMSwith, INFDFMSwith2 replaced by INFDFMSwithx
  *
@@ -58,19 +62,19 @@
                            ? TEST_BIT (bf, HIDE_LOCALS_WITH2)                            \
                            : FALSE)))))
 
-extern node *INFDFMSfundef (node *arg_node, node *arg_info);
-extern node *INFDFMSarg (node *arg_node, node *arg_info);
-extern node *INFDFMSassign (node *arg_node, node *arg_info);
-extern node *INFDFMSlet (node *arg_node, node *arg_info);
-extern node *INFDFMSap (node *arg_node, node *arg_info);
-extern node *INFDFMSid (node *arg_node, node *arg_info);
-extern node *INFDFMSwithid (node *arg_node, node *arg_info);
-extern node *INFDFMScode (node *arg_node, node *arg_info);
-extern node *INFDFMSwithx (node *arg_node, node *arg_info);
-extern node *INFDFMScond (node *arg_node, node *arg_info);
-extern node *INFDFMSwhile (node *arg_node, node *arg_info);
-extern node *INFDFMSdo (node *arg_node, node *arg_info);
-extern node *INFDFMSicm (node *arg_node, node *arg_info);
+extern node *INFDFMSfundef (node *arg_node, info *arg_info);
+extern node *INFDFMSarg (node *arg_node, info *arg_info);
+extern node *INFDFMSassign (node *arg_node, info *arg_info);
+extern node *INFDFMSlet (node *arg_node, info *arg_info);
+extern node *INFDFMSap (node *arg_node, info *arg_info);
+extern node *INFDFMSid (node *arg_node, info *arg_info);
+extern node *INFDFMSwithid (node *arg_node, info *arg_info);
+extern node *INFDFMScode (node *arg_node, info *arg_info);
+extern node *INFDFMSwithx (node *arg_node, info *arg_info);
+extern node *INFDFMScond (node *arg_node, info *arg_info);
+extern node *INFDFMSwhile (node *arg_node, info *arg_info);
+extern node *INFDFMSdo (node *arg_node, info *arg_info);
+extern node *INFDFMSicm (node *arg_node, info *arg_info);
 
 extern node *InferDFMs (node *syntax_tree, int hide_locals);
 
