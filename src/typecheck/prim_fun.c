@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 2.9  1999/05/18 12:06:21  jhs
+ * Deleted a warning occuring while compiling -O3 (e.g. Linux),
+ * but there are still some in the code ...
+ *
  * Revision 2.8  1999/05/12 09:15:46  jhs
  * Adjusted macros to access constant vectors.
  *
@@ -1058,6 +1062,10 @@ TakeDropV (types *vec_type, types *array_btype)
             }
             ret_type = NULL;
             DBUG_ASSERT (0, "scalar arrays are not possible here!");
+        } else {
+            ret_type = NULL;
+            DBUG_ASSERT (0, "Wrong TYPES_DIM");
+            /* just filled that in to avoid warnings (jhs) */
         }
     } else if (UNKNOWN_SHAPE == TYPES_DIM (vec_type)) {
         /*  access-vector is not an constant vector.
@@ -1316,7 +1324,7 @@ TakeV (node *vec, types *vec_type, types *array)
                         ret_type = NULL;
                     } /* if ... else ... */
                 }     /* if ... else ... */
-            }         /* if ,,, else ... */
+            }         /* if ... else ... */
         } else {
             ret_type = TakeDropV (vec_type, array_btype);
         } /* if ... else ... */
