@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.36  1995/03/01 16:29:50  hw
+ * Revision 1.37  1995/03/03 17:22:29  asi
+ * debug-output for Generator added
+ *
+ * Revision 1.36  1995/03/01  16:29:50  hw
  * changed PrintGenerator ( name of index-vector is in info->ids)
  *
  * Revision 1.35  1995/03/01  16:04:41  asi
@@ -135,23 +138,6 @@ char *prf_string[] = {
 };
 
 #undef PRF_IF
-
-/*
- *  Prints all masks
- */
-
-void
-PrintMasks (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("PrintMasks");
-    DBUG_EXECUTE ("MASK", char *text; text = PrintMask (arg_node->mask[0], VARNO);
-                  DBUG_PRINT ("MASK", ("Def. Variables : %s", text)); free (text););
-    DBUG_EXECUTE ("MASK", char *text; text = PrintMask (arg_node->mask[1], VARNO);
-                  DBUG_PRINT ("MASK", ("Used Variables : %s", text)); free (text););
-    DBUG_EXECUTE ("MASK", char *text; text = PrintMask (arg_node->mask[2], VARNO);
-                  DBUG_PRINT ("MASK", ("Spz. Variables : %s", text)); free (text););
-    DBUG_VOID_RETURN;
-}
 
 /*
  * prints ids-information to outfile
@@ -543,7 +529,7 @@ PrintDo (node *arg_node, node *arg_info)
     INDENT;
     fprintf (outfile, "while( ");
     Trav (arg_node->node[0], arg_info);
-    fprintf (outfile, " )\n");
+    fprintf (outfile, " );\n");
 
     DBUG_RETURN (arg_node);
 }
@@ -643,6 +629,7 @@ PrintWith (node *arg_node, node *arg_info)
     fprintf (outfile, "with (");
     Trav (arg_node->node[0], arg_info);
     fprintf (outfile, ")\n");
+    DBUG_EXECUTE ("MASK", PrintMasks (arg_node, arg_info););
     Trav (arg_node->node[1], arg_info);
 
     DBUG_RETURN (arg_node);
@@ -674,10 +661,15 @@ PrintConexpr (node *arg_node, node *arg_info)
     DBUG_ENTER ("PrintConexpr");
 
     INDENT;
-    if (N_genarray == arg_node->nodetype)
+    DBUG_EXECUTE ("MASK", char *text; text = PrintMask (arg_node->mask[1], VARNO);
+                  DBUG_PRINT ("MASK", ("Used Variables (gen-mod-fold) : %s", text));
+                  free (text););
+
+    if (N_genarray == arg_node->nodetype) {
         fprintf (outfile, "genarray( ");
-    else
+    } else {
         fprintf (outfile, "modarray( ");
+    }
     Trav (arg_node->node[0], arg_info);
     fprintf (outfile, " )\n");
     Trav (arg_node->node[1], arg_info);
