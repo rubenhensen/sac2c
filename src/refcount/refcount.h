@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.10  1996/01/22 17:34:14  cg
+ * Revision 1.11  1996/05/27 13:26:05  sbs
+ * RCprf inserted.
+ *
+ * Revision 1.10  1996/01/22  17:34:14  cg
  * IsBoxed and IsUnique moved to refcount.c
  *
  * Revision 1.9  1996/01/21  14:17:36  cg
@@ -42,6 +45,7 @@
 
 extern node *RCassign (node *arg_node, node *arg_info);
 extern node *RCloop (node *arg_node, node *arg_info);
+extern node *RCprf (node *arg_node, node *arg_info);
 extern node *RCid (node *arg_node, node *arg_info);
 extern node *RClet (node *arg_node, node *arg_info);
 extern node *RCcond (node *arg_node, node *arg_info);
