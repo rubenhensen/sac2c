@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2002/10/18 14:28:45  sbs
+ * specialization of external functions suppressed 8-))
+ *
  * Revision 1.4  2002/09/04 12:59:46  sbs
  * SpecializationOracle changed so that part deriveables are not specialized anymore 8-((
  *
@@ -64,7 +67,8 @@ SpecializationOracle (node *wrapper, node *fundef, ntype *args, DFT_res *dft)
 
     DBUG_ENTER ("SpecializationOracle");
     if ((dft->num_deriveable_partials > 1)
-        || ((dft->num_deriveable_partials == 1) && (dft->deriveable != NULL))) {
+        || ((dft->num_deriveable_partials == 1) && (dft->deriveable != NULL))
+        || FUNDEF_IS_EXTERNAL (fundef)) {
 
         arg = FUNDEF_ARGS (fundef);
         res = TYMakeEmptyProductType (CountArgs (arg));
