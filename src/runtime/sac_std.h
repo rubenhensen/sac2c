@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2000/11/27 21:10:01  cg
+ * Added implementation of new ICM ND_ALLOC_ARRAY_PLACE.
+ *
  * Revision 3.1  2000/11/20 18:02:20  sacbase
  * new release made
  *
@@ -395,6 +398,24 @@
         SAC_HM_MALLOC_FIXED_SIZE_WITH_RC (SAC_ND_A_FIELD (name), SAC_ND_A_RCP (name),    \
                                           sizeof (basetype) * SAC_ND_A_SIZE (name));     \
         SAC_ND_A_RC (name) = rc;                                                         \
+        SAC_TR_MEM_PRINT (("ND_ALLOC_ARRAY(%s, %s, %d) at addr: %p", #basetype, #name,   \
+                           rc, SAC_ND_A_FIELD (name)));                                  \
+        SAC_TR_INC_ARRAY_MEMCNT (SAC_ND_A_SIZE (name));                                  \
+        SAC_TR_REF_PRINT_RC (name);                                                      \
+        SAC_CS_REGISTER_ARRAY (name);                                                    \
+    }
+
+#define SAC_ND_ALLOC_ARRAY_PLACE(basetype, name, rc, other, offset, cachesize)           \
+    {                                                                                    \
+        SAC_HM_MALLOC_FIXED_SIZE_WITH_RC (SAC_ND_A_FIELD (name), SAC_ND_A_RCP (name),    \
+                                          sizeof (basetype) * SAC_ND_A_SIZE (name)       \
+                                            + cachesize + 32);                           \
+        SAC_ND_A_RC (name) = rc;                                                         \
+                                                                                         \
+        SAC_ND_A_FIELD (name)                                                            \
+          = SAC_HM_PlaceArray (SAC_ND_A_FIELD (name), SAC_ND_A_FIELD (other),            \
+                               offset * sizeof (basetype), cachesize);                   \
+                                                                                         \
         SAC_TR_MEM_PRINT (("ND_ALLOC_ARRAY(%s, %s, %d) at addr: %p", #basetype, #name,   \
                            rc, SAC_ND_A_FIELD (name)));                                  \
         SAC_TR_INC_ARRAY_MEMCNT (SAC_ND_A_SIZE (name));                                  \
