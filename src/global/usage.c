@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.36  2003/02/19 12:48:44  sbs
+ * printing TAGGED_ARRAYS info on sac2c -V now!
+ *
  * Revision 3.35  2002/11/14 13:33:12  dkr
  * minor changes done
  *
@@ -931,22 +934,31 @@ version ()
     printf ("\n          SAC - Single Assignment C\n"
             "    ---------------------------------------------\n\n"
 
-            "NAME:      sac2c\n"
-            "VERSION:   %s\n"
-            "PLATFORM:  %s\n"
+            "NAME:          sac2c\n"
+            "VERSION:       %s\n"
+            "PLATFORM:      %s\n"
             "\n"
 
-            "BUILD:     %s\n"
-            "BY USER:   %s\n"
-            "ON HOST:   %s\n"
-            "FOR OS:    %s\n"
+            "BUILD:         %s\n"
+            "BY USER:       %s\n"
+            "ON HOST:       %s\n"
+            "FOR OS:        %s\n"
+            "\n"
+
+            "TAGGED ARRAYS: %s\n"
             "\n\n",
             (version_id[0] == '\0') ? "???" : version_id,
             (target_platform[0] == '\0') ? "???" : target_platform,
             (build_date[0] == '\0') ? "???" : build_date,
             (build_user[0] == '\0') ? "???" : build_user,
             (build_host[0] == '\0') ? "???" : build_host,
-            (build_os[0] == '\0') ? "???" : build_os);
+            (build_os[0] == '\0') ? "???" : build_os,
+#ifdef TAGGED_ARRAYS
+            "yes"
+#else
+            "no"
+#endif
+    );
 
     printf ("(c) Copyright 1994 - 2002 by\n\n"
 
