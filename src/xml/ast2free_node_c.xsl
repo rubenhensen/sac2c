@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.3  2004/11/28 22:12:49  ktr
+  NEXT is rescued now before removing sons union.
+
   Revision 1.2  2004/11/25 22:00:41  sah
   ...
 
@@ -72,8 +75,6 @@ version="1.0">
   <!-- includes -->
   <xsl:text>
 
-#define NEW_INFO
-
 #include "free_node.h"
 #include "free_attribs.h"
 #include "free_info.h"
@@ -82,7 +83,7 @@ version="1.0">
 #include "internal_lib.h"
 #include "dbug.h"
 
-#define FREETRAV( node, info) (node != NULL) ? FREEdo( node, info) : node
+#define FREETRAV( node, info) (node != NULL) ? TRAVdo( node, info) : node
 #define FREECOND( node, info)                                    \
   (INFO_FREE_FLAG( info) != arg_node)                            \
     ? FREETRAV( node, info)                                      \
@@ -225,12 +226,29 @@ version="1.0">
   <xsl:apply-templates select="attributes/attribute"/>
   <!-- call free for all other sons -->
   <xsl:apply-templates select="sons/son[not( @name= &quot;Next&quot;)]"/>
+  <!-- rescue NEXT element -->
+  <xsl:choose>
+    <xsl:when test="sons/son[@name = &quot;Next&quot;]">
+      <xsl:value-of select="'result = '"/>
+      <xsl:call-template name="node-access">
+        <xsl:with-param name="node">arg_node</xsl:with-param>
+        <xsl:with-param name="nodetype">
+          <xsl:value-of select="@name"/>
+        </xsl:with-param>
+        <xsl:with-param name="field">Next </xsl:with-param>
+      </xsl:call-template>
+      <xsl:value-of select="';'" />
+    </xsl:when>
+    <xsl:otherwise>
+      <xsl:value-of select="'result = NULL;'"/>
+    </xsl:otherwise>
+  </xsl:choose>
   <!-- free sons structure -->
   <xsl:value-of select="'arg_node->sons.'"/>
   <xsl:call-template name="name-to-nodeenum" >
     <xsl:with-param name="name" select="@name"/>
   </xsl:call-template>
-  <xsl:value-of select="' = ILIBfree( arg_node->attribs.'"/>
+  <xsl:value-of select="' = ILIBfree( arg_node->sons.'"/>
   <xsl:call-template name="name-to-nodeenum" >
     <xsl:with-param name="name" select="@name"/>
   </xsl:call-template>
@@ -249,15 +267,7 @@ version="1.0">
   <xsl:value-of select="'DBUG_PRINT( &quot;FREE&quot;, (&quot;Freeing node %s at &quot; F_PTR, NODE_TEXT( arg_node), arg_node));'"/>
   <xsl:choose>
     <xsl:when test="sons/son[@name = &quot;Next&quot;]">
-      <xsl:value-of select="'result = '"/>
-      <xsl:call-template name="node-access">
-        <xsl:with-param name="node">arg_node</xsl:with-param>
-        <xsl:with-param name="nodetype">
-          <xsl:value-of select="@name"/>
-        </xsl:with-param>
-        <xsl:with-param name="field">Next </xsl:with-param>
-      </xsl:call-template>
-      <xsl:value-of select="'; arg_node = ILIBfree( arg_node);'"/>
+      <xsl:value-of select="'arg_node = ILIBfree( arg_node);'"/>
     </xsl:when>
     <xsl:otherwise>
       <xsl:value-of select="'result = ILIBfree( arg_node);'"/>
