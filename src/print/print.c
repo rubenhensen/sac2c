@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.248  1998/08/11 12:09:01  dkr
+ * PrintNodeTree extended
+ *
  * Revision 1.247  1998/08/11 00:04:04  dkr
  * PrintNodeTree extended
  *
@@ -3441,7 +3444,21 @@ PrintNodeTree (node *node)
             fprintf (outfile, "])\n");
             break;
         case N_WLsegVar:
-            fprintf (outfile, "\n");
+            fprintf (outfile, "(sv: [ ");
+            for (d = 0; d < WLSEGVAR_DIMS (node); d++) {
+                fprintf (outfile, "%li ", (WLSEGVAR_SV (node))[d]);
+            }
+            for (i = 0; i < WLSEGVAR_BLOCKS (node); i++) {
+                fprintf (outfile, "], bv%i: [ ", i);
+                for (d = 0; d < WLSEGVAR_DIMS (node); d++) {
+                    fprintf (outfile, "%li ", (WLSEGVAR_BV (node, i))[d]);
+                }
+            }
+            fprintf (outfile, "], ubv: [ ");
+            for (d = 0; d < WLSEGVAR_DIMS (node); d++) {
+                fprintf (outfile, "%li ", (WLSEGVAR_UBV (node))[d]);
+            }
+            fprintf (outfile, "])\n");
             break;
         case N_WLblock:
             fprintf (outfile, "(%d->%d block%d[%d] %d)\n", WLBLOCK_BOUND1 (node),
