@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.82  2001/04/19 16:33:31  nmw
+ * INFO_SSALIR_INSLIST and INFO_SSALIR_MAXDEPTH added
+ *
  * Revision 3.81  2001/04/19 12:14:50  dkr
  * INFO_INFDFMS_DEFINED added
  *
@@ -570,6 +573,7 @@ extern nodelist *MakeNodelistNode (node *node, nodelist *next);
 #define NODELIST_ATTRIB2(n) (n->attrib2)
 #define NODELIST_STATUS(n) (n->status)
 #define NODELIST_NEXT(n) (n->next)
+#define NODELIST_INT(n) ((int)(n->attrib))
 
 /*--------------------------------------------------------------------------*/
 
@@ -2515,6 +2519,9 @@ extern node *MakeAvis (node *vardecOrArg);
  ***    ids*       APRESCHAIN        (result chain of external application)
  ***    node*      EXTFUNDEF         (fundef with ap node to this special fundef)
  ***    node*      RESULTMAP         (nodelist with local avis/external avis map)
+ ***    int        MAXDEPTH          (max. definition with-loop depth of used id)
+ ***    nodelist*  INSLIST           (special nodelist that holds WLIR assigns)
+ ***    int        SETDEPTH          (holds the defintion depth to be set in ids)
  ***
  ***  when used in free.c
  ***    node*      FLAG              (mode flag for FreeTrav/FreeNode)
@@ -2994,6 +3001,9 @@ extern node *MakeInfo ();
 #define INFO_SSALIR_APRESCHAIN(n) ((ids *)(n->dfmask[3]))
 #define INFO_SSALIR_EXTFUNDEF(n) ((node *)(n->dfmask[4]))
 #define INFO_SSALIR_RESULTMAP(n) ((nodelist *)(n->dfmask[5]))
+#define INFO_SSALIR_MAXDEPTH(n) (n->refcnt)
+#define INFO_SSALIR_SETDEPTH(n) (n->lineno)
+#define INFO_SSALIR_INSLIST(n) ((nodelist *)(n->mask[0]))
 
 /* when used in free.c */
 #define INFO_FREE_FLAG(n) (n->node[0])
