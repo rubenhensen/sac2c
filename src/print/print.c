@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.81  1995/07/17 14:21:20  hw
+ * Revision 1.82  1995/08/05 15:45:38  hw
+ * changed output of N_fundef node (real name of function (node[5]) will
+ * be printed too)
+ *
+ * Revision 1.81  1995/07/17  14:21:20  hw
  * inline will be printed in front of the declaration of a function
  *
  * Revision 1.80  1995/07/11  10:02:07  cg
@@ -568,7 +572,11 @@ PrintFundef (node *arg_node, node *arg_info)
         fprintf (outfile, "%s ", Type2String (arg_node->info.types, 0));
         if (arg_node->info.types->id_mod != NULL)
             fprintf (outfile, "%s" MOD_NAME_CON, arg_node->info.types->id_mod);
-        fprintf (outfile, "%s(", arg_node->info.types->id);
+        if (NULL != arg_node->node[5])
+            fprintf (outfile, "%s {%s} (", arg_node->info.types->id,
+                     (char *)(arg_node->node[5]));
+        else
+            fprintf (outfile, "%s(", arg_node->info.types->id);
         if (arg_node->node[2] != NULL)
             Trav (arg_node->node[2], arg_info); /* print args of function */
         fprintf (outfile, ")");
