@@ -1,10 +1,15 @@
 /*
  *
  * $Log$
- * Revision 1.1  1995/05/01 15:32:27  asi
+ * Revision 1.2  1995/05/03 12:41:51  asi
+ * added DupPrf, DupAp and DupIds
+ *
+ * Revision 1.1  1995/05/01  15:32:27  asi
  * Initial revision
  *
  */
+
+#include <string.h>
 
 #include "tree.h"
 #include "dbug.h"
@@ -66,6 +71,23 @@ DupFloat (node *arg_node, node *arg_info)
     DBUG_RETURN (new_node);
 }
 
+ids *
+DupIds (ids *old_ids, node *arg_info)
+{
+    ids *new_ids;
+
+    DBUG_ENTER ("DupIds");
+    new_ids = MakeIds (strdup (old_ids->id));
+    new_ids->node = old_ids->node;
+    if (NULL != arg_info) {
+        INC_VAR (arg_info->mask[0], old_ids->node->varno);
+    }
+    if (NULL != old_ids->next) {
+        old_ids->next = DupIds (old_ids->next, arg_info);
+    }
+    DBUG_RETURN (new_ids);
+}
+
 node *
 DupId (node *arg_node, node *arg_info)
 {
@@ -73,11 +95,8 @@ DupId (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("DupId");
     new_node = MakeNode (N_id);
-    new_node->info.ids = MakeIds (arg_node->info.ids->id);
-    if (NULL != arg_info) {
-        new_node->info.ids->node = arg_node->info.ids->node;
-        INC_VAR (arg_info->mask[0], arg_node->info.ids->node->varno);
-    }
+    new_node->info.ids = DupIds (arg_node->info.ids, arg_info);
+    new_node->node[0] = arg_node->node[0];
     DBUG_RETURN (new_node);
 }
 
@@ -85,11 +104,14 @@ node *
 DupArray (node *arg_node, node *arg_info)
 {
     node *new_node;
+    int i;
 
     DBUG_ENTER ("DupArray");
     new_node = MakeNode (N_array);
-    new_node->nnode = 1;
-    new_node->node[0] = Trav (arg_node->node[0], arg_info);
+    new_node->nnode = arg_node->nnode;
+    for (i = 0; i < arg_node->nnode; i++) {
+        new_node->node[i] = Trav (arg_node->node[i], arg_info);
+    }
     DBUG_RETURN (new_node);
 }
 
@@ -105,5 +127,55 @@ DupExprs (node *arg_node, node *arg_info)
     for (i = 0; i < arg_node->nnode; i++) {
         new_node->node[i] = Trav (arg_node->node[i], arg_info);
     }
+    DBUG_RETURN (new_node);
+}
+
+node *
+DupCast (node *arg_node, node *arg_info)
+{
+    node *new_node;
+    int i;
+
+    DBUG_ENTER ("DupCast");
+    new_node = MakeNode (N_cast);
+    new_node->info.types = DuplicateTypes (arg_node->info.types);
+    new_node->nnode = arg_node->nnode;
+    for (i = 0; i < arg_node->nnode; i++) {
+        new_node->node[i] = Trav (arg_node->node[i], arg_info);
+    }
+    DBUG_RETURN (new_node);
+}
+
+node *
+DupPrf (node *arg_node, node *arg_info)
+{
+    node *new_node;
+    int i;
+
+    DBUG_ENTER ("DupPrf");
+    new_node = MakeNode (N_prf);
+    new_node->info.prf = arg_node->info.prf;
+    new_node->nnode = arg_node->nnode;
+    for (i = 0; i < arg_node->nnode; i++) {
+        new_node->node[i] = Trav (arg_node->node[i], arg_info);
+    }
+    DBUG_RETURN (new_node);
+}
+
+node *
+DupAp (node *arg_node, node *arg_info)
+{
+    node *new_node;
+    int i;
+
+    DBUG_ENTER ("DupAp");
+    new_node = MakeNode (N_ap);
+    new_node->info.fun_name.id = strdup (arg_node->info.fun_name.id);
+    new_node->info.fun_name.id_mod = strdup (arg_node->info.fun_name.id_mod);
+    new_node->nnode = arg_node->nnode;
+    for (i = 0; i < arg_node->nnode; i++) {
+        new_node->node[i] = Trav (arg_node->node[i], arg_info);
+    }
+    new_node->node[2] = arg_node->node[2];
     DBUG_RETURN (new_node);
 }
