@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2004/11/23 20:22:31  sbs
+ * SacDevCamp 04 done.
+ *
  * Revision 1.6  2004/11/22 11:44:14  cg
  * Moved spec_mode_str from globals.c to this file.
  *
@@ -23,17 +26,16 @@
  *
  */
 
-#define NEW_INFO
-
+#include "type_statistics.h"
 #include "dbug.h"
 
-#include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
 #include "convert.h"
 #include "internal_lib.h"
 #include "globals.h"
+#include "Error.h"
 
 /**
  *
@@ -75,7 +77,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = Malloc (sizeof (info));
+    result = ILIBmalloc (sizeof (info));
 
     INFO_TS_AKS (result) = 0;
     INFO_TS_AKD (result) = 0;
@@ -90,7 +92,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = Free (info);
+    info = ILIBfree (info);
 
     DBUG_RETURN (info);
 }
@@ -103,7 +105,7 @@ static char spec_mode_str[][4] = {"aks", "akd", "aud"};
 
 /** <!--********************************************************************-->
  *
- * @fn node *ExamineTypes( types *type, info *info)
+ * @fn node *ExamineTypes( ntype *type, info *info)
  *
  *   @brief       modifies the counters in info according to the type found
  *   @param type  var/arg type to be counted
@@ -113,14 +115,12 @@ static char spec_mode_str[][4] = {"aks", "akd", "aud"};
  ******************************************************************************/
 
 static info *
-ExamineTypes (types *type, info *info)
+ExamineTypes (ntype *type, info *info)
 {
-    int dim;
     DBUG_ENTER ("ExamineTypes");
-    dim = TYPES_DIM (type);
-    if (KNOWN_SHAPE (dim)) {
+    if (TYisAKV (type) || TYisAKS (type)) {
         INFO_TS_AKS (info) += 1;
-    } else if (KNOWN_DIMENSION (dim)) {
+    } else if (TYisAKD (type)) {
         INFO_TS_AKD (info) += 1;
     } else {
         INFO_TS_AUD (info) += 1;
@@ -148,30 +148,32 @@ PrintStatistics (node *fundef, info *info)
 
     DBUG_ENTER ("PrintStatistics");
 
-    buf = StrBufCreate (80);
-    buf = StrBufprintf (buf, "  %s( ", FUNDEF_NAME (fundef));
+    buf = ILIBstrBufCreate (80);
+    buf = ILIBstrBufPrintf (buf, "  %s( ", FUNDEF_NAME (fundef));
 
     arg = FUNDEF_ARGS (fundef);
     while (arg != NULL) {
-        buf = StrBufprintf (buf, "%s", Type2String (ARG_TYPE (arg), 0, 0));
+        buf = ILIBstrBufPrintf (buf, "%s", TYtype2String (ARG_NTYPE (arg), FALSE, 0));
         arg = ARG_NEXT (arg);
         if (arg != NULL) {
-            buf = StrBufprint (buf, ", ");
+            buf = ILIBstrBufPrint (buf, ", ");
         }
     }
-    buf = StrBufprint (buf, "):\n");
+    buf = ILIBstrBufPrint (buf, "):\n");
 
-    switch (spec_mode) {
+    switch (global.spec_mode) {
     case (SS_aks):
         if (INFO_TS_AKD (info) > 0) {
-            buf = StrBufprintf (buf, "    %d akd variables left\n", INFO_TS_AKD (info));
+            buf
+              = ILIBstrBufPrintf (buf, "    %d akd variables left\n", INFO_TS_AKD (info));
             flag = TRUE;
             INFO_TS_ANY (info) = TRUE;
         }
         /* here no break is missing! */
     case (SS_akd):
         if (INFO_TS_AUD (info) > 0) {
-            buf = StrBufprintf (buf, "    %d aud variables left\n", INFO_TS_AUD (info));
+            buf
+              = ILIBstrBufPrintf (buf, "    %d aud variables left\n", INFO_TS_AUD (info));
             flag = TRUE;
             INFO_TS_ANY (info) = TRUE;
         }
@@ -182,18 +184,18 @@ PrintStatistics (node *fundef, info *info)
         break;
     }
     if (flag) {
-        tmp = StrBuf2String (buf);
+        tmp = ILIBstrBuf2String (buf);
         NOTE (("%s", tmp));
-        tmp = Free (tmp);
+        tmp = ILIBfree (tmp);
     }
-    buf = StrBufFree (buf);
+    buf = ILIBstrBufFree (buf);
 
     DBUG_VOID_RETURN;
 }
 
 /** <!--********************************************************************-->
  *
- * @fn node *PrintTypeStatistics( node *arg_node)
+ * @fn node *TSdoPrintTypeStatistics( node *arg_node)
  *
  *   @brief           compares the existing type annotation against the goal
  *                    of the specialization strategy chosen!
@@ -203,33 +205,31 @@ PrintStatistics (node *fundef, info *info)
  ******************************************************************************/
 
 node *
-PrintTypeStatistics (node *arg_node)
+TSdoPrintTypeStatistics (node *arg_node)
 {
-    funtab *tmp_tab;
     info *arg_info;
 
-    DBUG_ENTER ("PrintTypeStatistics");
+    DBUG_ENTER ("TSdoPrintTypeStatistics");
 
-    tmp_tab = act_tab;
-    act_tab = ts_tab;
+    TRAVpush (TR_ts);
 
     NOTE ((""));
     NOTE (("type statistics:"));
 
     arg_info = MakeInfo ();
     INFO_TS_ANY (arg_info) = FALSE;
-    arg_node = Trav (arg_node, arg_info);
+    arg_node = TRAVdo (arg_node, arg_info);
 
     if (INFO_TS_ANY (arg_info)) {
         NOTE (("  ... for all other functions %s-info could be inferred.",
-               spec_mode_str[spec_mode]));
+               spec_mode_str[global.spec_mode]));
     } else {
-        NOTE (
-          ("  for all functions %s-info could be inferred.", spec_mode_str[spec_mode]));
+        NOTE (("  for all functions %s-info could be inferred.",
+               spec_mode_str[global.spec_mode]));
     }
     arg_info = FreeInfo (arg_info);
 
-    act_tab = tmp_tab;
+    TRAVpop ();
 
     DBUG_RETURN (arg_node);
 }
@@ -262,21 +262,21 @@ TSfundef (node *arg_node, info *arg_info)
          * count args:
          */
         if (FUNDEF_ARGS (arg_node) != NULL) {
-            FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), arg_info);
+            FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
         }
 
         /**
          * count vardecs:
          */
         if (FUNDEF_VARDEC (arg_node) != NULL) {
-            FUNDEF_VARDEC (arg_node) = Trav (FUNDEF_VARDEC (arg_node), arg_info);
+            FUNDEF_VARDEC (arg_node) = TRAVdo (FUNDEF_VARDEC (arg_node), arg_info);
         }
 
         PrintStatistics (arg_node, arg_info);
     }
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
     }
     DBUG_RETURN (arg_node);
 }
@@ -295,13 +295,13 @@ TSfundef (node *arg_node, info *arg_info)
 node *
 TSarg (node *arg_node, info *arg_info)
 {
-    types *type;
+    ntype *type;
 
     DBUG_ENTER ("TSarg");
-    type = ARG_TYPE (arg_node);
+    type = ARG_NTYPE (arg_node);
     arg_info = ExamineTypes (type, arg_info);
     if (ARG_NEXT (arg_node) != NULL) {
-        ARG_NEXT (arg_node) = Trav (ARG_NEXT (arg_node), arg_info);
+        ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
     }
     DBUG_RETURN (arg_node);
 }
@@ -320,13 +320,13 @@ TSarg (node *arg_node, info *arg_info)
 node *
 TSvardec (node *arg_node, info *arg_info)
 {
-    types *type;
+    ntype *type;
 
     DBUG_ENTER ("TSvardec");
-    type = VARDEC_TYPE (arg_node);
+    type = VARDEC_NTYPE (arg_node);
     arg_info = ExamineTypes (type, arg_info);
     if (VARDEC_NEXT (arg_node) != NULL) {
-        VARDEC_NEXT (arg_node) = Trav (VARDEC_NEXT (arg_node), arg_info);
+        VARDEC_NEXT (arg_node) = TRAVdo (VARDEC_NEXT (arg_node), arg_info);
     }
     DBUG_RETURN (arg_node);
 }
