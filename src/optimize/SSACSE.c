@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.32  2004/01/05 01:49:38  dkrHH
+ * comment corrected
+ *
  * Revision 1.31  2003/09/25 18:37:57  dkr
  * aggressive type propagation enabled
  *
@@ -1207,15 +1210,18 @@ SSACSElet (node *arg_node, node *arg_info)
        *  Note here, that it is *illegal* to replace 'TB' by 'TA' because
        *  the actual type of 'b' is not necessaryly a subtype of 'TA':
        *
-       *    int[+] a;
-       *    int[2] b;
+       *    int[2] a;
+       *    int[+] b;
        *    int[3] c;
        *
-       *    a = [1,2,3];
+       *    c = [1,2,3];
+       *    b = id( c);              // result has shape [3], but the TC fails
        *    if (shape( b) == [2]) {
-       *      a = b;                  # !!!!!
-       *    } else {
-       *      a = c;
+       *      a = b;                 // dead code!!!
+       *      ...                    // do not update the type of 'b'!!!
+       *    }
+       *    else {
+       *      ...
        *    }
        *
        *  Unfortunately, there is no easy way to get rid of the generic type
