@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2001/03/09 11:15:55  sbs
+ * call to ProfileFunctions added after type checking.
+ *
  * Revision 3.5  2001/02/12 14:22:21  dkr
  * call of  PatchWith() moved
  *
@@ -106,99 +109,6 @@
  * Revision 2.1  1999/02/23 12:39:28  sacbase
  * new release made
  *
- * Revision 1.150  1999/02/19 18:08:30  dkr
- * flag -defence added
- *
- * Revision 1.149  1999/02/15 13:34:09  sbs
- * added -noDLAW opt_dlaw;
- *
- * Revision 1.148  1999/01/26 14:26:44  cg
- * -noopt now includes -noUIP
- *
- * Revision 1.147  1999/01/25 16:26:26  sbs
- * interrupt handler setup inserted.
- *
- * Revision 1.146  1999/01/18 15:31:39  sbs
- * mt for LINUX enabled 8-))
- *
- * Revision 1.145  1999/01/15 15:14:32  cg
- * added option -noTILE, modified option -intrinsic,
- * added ABORT when compiling multi-threaded code on Linux systems.
- *
- * Revision 1.144  1999/01/07 14:01:01  sbs
- * more sophisticated breaking facilities inserted;
- * Now, a break in a specific cycle can be triggered!
- *
- * Revision 1.143  1998/12/03 10:24:25  cg
- * Now, the specification of several source files on the sac2c command
- * line results in an appropriate error message rather than confusion.
- *
- * Revision 1.142  1998/10/26 12:34:14  cg
- * new compiler option:
- * use intrinsic array operations instead of with-loop based implementations
- * in the stdlib. The corresponding information is stored by the new
- * global variable intrinsics.
- *
- * Revision 1.141  1998/10/23 14:29:46  cg
- * added the new command line option -inparsize <no> which allows to
- * specify a minimum generator size for with-loops to be executed in
- * parallel if such execution is enabled.
- * The information stored by the global variable min_parallel_size.
- *
- * Revision 1.140  1998/08/27 12:48:00  sbs
- * -L args added to SYSTEMLIB_PATH as well so that readsib will
- * accept linkwith-pragma args that are not in the standard path
- * from the config!
- *
- * Revision 1.139  1998/08/07 18:11:29  sbs
- * inserted gen_mt_code; it prevents spmd regions from being created per default
- * only if one of the following options is set:
- * -mtstatic <no> / -mtdynamic <no> / -mtall <no>
- * spmd regions will be introduced!
- *
- * Revision 1.138  1998/07/23 10:08:06  cg
- * sac2c option -mt-static -mt-dynamic -mt-all renamed to
- * -mtstatic, -mtdynamic, -mtall resepctively
- *
- * Revision 1.137  1998/07/10 15:20:04  cg
- * included option -i to display copyright/disclaimer
- *
- * Revision 1.136  1998/07/07 13:41:08  cg
- * implemented the command line option -mt-all
- *
- * Revision 1.135  1998/06/29 08:52:19  cg
- * streamlined tracing facilities
- * tracing on new with-loop and multi-threading operations implemented
- *
- * Revision 1.134  1998/06/23 15:05:58  cg
- * added command line options -dcccall and -dshow_syscall
- *
- * Revision 1.133  1998/06/23 13:13:15  sbs
- * de-bugged -b1
- *
- * Revision 1.132  1998/06/19 16:35:09  dkr
- * added -noUIP
- *
- * Revision 1.131  1998/06/19 12:51:31  srs
- * compute_malloc_align_step() => ComputeMallocAlignStep()
- *
- * Revision 1.130  1998/06/18 13:41:09  cg
- * function SpmdRegion renamed to BuildSpmdRegion and now included
- * from concurrent.h instead of spmdregion.h
- *
- * Revision 1.129  1998/06/09 09:46:14  cg
- * added command line options -mt-static, -mt-dynamic, and -maxsyncfold.
- *
- * Revision 1.128  1998/05/27 11:19:44  cg
- * global variable 'filename' which contains the current file name in order
- * to provide better error messages is now handled correctly.
- *
- * Revision 1.127  1998/05/13 14:06:14  srs
- * added -maxwlunroll
- *
- * Revision 1.126  1998/05/13 13:40:33  srs
- * renamed switch -noUNR to -noLUNR.
- * New switch -noWLUNR to deactivate WL unrolling.
  *
  * ... [eliminated]
  *
@@ -240,6 +150,7 @@
 #include "concurrent.h"
 #include "precompile.h"
 #include "compile.h"
+#include "annotate_fun_calls.h"
 #include "cccall.h"
 #include "PatchWith.h"
 #include "internal_lib.h"
@@ -435,6 +346,10 @@ main (int argc, char *argv[])
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
     syntax_tree = Typecheck (syntax_tree); /* type_tab */
+
+    if (profileflag != 0) {
+        syntax_tree = ProfileFunCalls (syntax_tree); /* profile_tab */
+    }
     PHASE_EPILOG;
 
     if (break_after == PH_typecheck)
