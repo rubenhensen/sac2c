@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.17  2004/11/25 11:56:21  jhb
+ * ONE TODO for compile
+ *
  * Revision 3.16  2004/11/16 16:34:12  mwe
  * code for type upgrade added
  * use ntype-structure instead of type-structure
@@ -142,15 +145,20 @@
 #include "DataFlowMask.h"
 #include "DataFlowMaskUtils.h"
 #include "index.h"
+#include "free.h"
+#include "internal_lib.h"
+#include "user_types.h"
+
+#include <string.h>
 
 /*
  * INFO structure
  */
 struct INFO {
-    ids *wl_ids;
+    node *wl_ids;
     node *fundef;
-    ids *idx;
-    ids *dec_rc_ids;
+    node *idx;
+    node *dec_rc_ids;
     void *mask;
     void *negmask;
     int nodec;
@@ -177,7 +185,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = Malloc (sizeof (info));
+    result = ILIBmalloc (sizeof (info));
 
     INFO_REUSE_WL_IDS (result) = NULL;
     INFO_REUSE_FUNDEF (result) = NULL;
@@ -195,7 +203,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = Free (info);
+    info = ILIBfree (info);
 
     DBUG_RETURN (info);
 }
@@ -220,10 +228,11 @@ TypesAreEqual (types *t1, types *t2)
 
     DBUG_ENTER ("TypesAreEqual");
 
-    shpseg1 = Type2Shpseg (t1, &dim1);
-    shpseg2 = Type2Shpseg (t2, &dim2);
+    shpseg1 = TCtype2Shpseg (t1, &dim1);
+    shpseg2 = TCtype2Shpseg (t2, &dim2);
 
-    compare = ((dim1 >= 0) && (dim1 == dim2) && (GetBasetype (t1) == GetBasetype (t2)));
+    compare
+      = ((dim1 >= 0) && (dim1 == dim2) && (TCgetBasetype (t1) == TCgetBasetype (t2)));
 
     if (compare) {
         for (d = 0; d < dim1; d++) {
@@ -247,7 +256,7 @@ TypesAreEqual (types *t1, types *t2)
  ******************************************************************************/
 
 bool
-IsFound (char *varname, ids *ids_chain)
+IsFound (char *varname, node *ids_chain)
 {
     bool found = FALSE;
 
@@ -267,7 +276,7 @@ IsFound (char *varname, ids *ids_chain)
 /******************************************************************************
  *
  * function:
- *   node *ReuseFundef( node *arg_node, info *arg_info)
+ *   node *REUSEfundef( node *arg_node, info *arg_info)
  *
  * description:
  *   stores fundef node in 'INFO_REUSE_FUNDEF( arg_info)'.
@@ -275,17 +284,17 @@ IsFound (char *varname, ids *ids_chain)
  ******************************************************************************/
 
 node *
-ReuseFundef (node *arg_node, info *arg_info)
+REUSEfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ReuseFundef");
+    DBUG_ENTER ("REUSEfundef");
 
     INFO_REUSE_FUNDEF (arg_info) = arg_node;
 
-    FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
-    FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), arg_info);
+    FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+    FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -294,7 +303,7 @@ ReuseFundef (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *ReuseNwith2( node *arg_node, info *arg_info)
+ *   node *REUSEwith2( node *arg_node, info *arg_info)
  *
  * description:
  *   generates a new DFM for reuse-arrays and stores it in
@@ -316,7 +325,7 @@ ReuseFundef (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 node *
-ReuseNwith2 (node *arg_node, info *arg_info)
+REUSEwith2 (node *arg_node, info *arg_info)
 {
     node *withop;
     bool gen_mod_wl = FALSE;
@@ -329,14 +338,14 @@ ReuseNwith2 (node *arg_node, info *arg_info)
          *   -> Create new reuse-mask
          */
 
-        withop = NWITH2_WITHOP (arg_node);
+        withop = WITH2_WITHOP (arg_node);
         while (withop != NULL) {
-            if ((NWITHOP_TYPE (withop) == WO_genarray)
-                || (NWITHOP_TYPE (withop) == WO_modarray)) {
+            if ((NODE_TYPE (withop) == N_genarray)
+                || (NODE_TYPE (withop) == N_modarray)) {
                 gen_mod_wl = TRUE;
                 break;
             }
-            withop = NWITHOP_NEXT (withop);
+            withop = WITHOP_NEXT (withop);
         }
 
         if (gen_mod_wl) {
@@ -344,15 +353,15 @@ ReuseNwith2 (node *arg_node, info *arg_info)
              * Generate new mask for reuse-arrays
              */
             DBUG_ASSERT ((INFO_REUSE_FUNDEF (arg_info) != NULL), "no fundef found");
-            NWITH2_REUSE (arg_node)
-              = DFMGenMaskClear (FUNDEF_DFM_BASE (INFO_REUSE_FUNDEF (arg_info)));
-            INFO_REUSE_MASK (arg_info) = NWITH2_REUSE (arg_node);
+            WITH2_REUSE (arg_node)
+              = DFMgenMaskClear (FUNDEF_DFM_BASE (INFO_REUSE_FUNDEF (arg_info)));
+            INFO_REUSE_MASK (arg_info) = WITH2_REUSE (arg_node);
             INFO_REUSE_NEGMASK (arg_info)
-              = DFMGenMaskClear (FUNDEF_DFM_BASE (INFO_REUSE_FUNDEF (arg_info)));
-            INFO_REUSE_IDX (arg_info) = NWITH2_VEC (arg_node);
+              = DFMgenMaskClear (FUNDEF_DFM_BASE (INFO_REUSE_FUNDEF (arg_info)));
+            INFO_REUSE_IDX (arg_info) = WITH2_VEC (arg_node);
             if (!INFO_REUSE_NODEC (arg_info)) {
-                INFO_REUSE_DEC_RC_IDS (arg_info) = NWITH2_DEC_RC_IDS (arg_node);
-            }
+                INFO_REUSE_DEC_RC_IDS (arg_info) = WITH2_DEC_RC_IDS (arg_node);
+            } /* TODO */
         }
     } else {
         /*
@@ -363,12 +372,12 @@ ReuseNwith2 (node *arg_node, info *arg_info)
          */
     }
 
-    NWITH2_WITHOP (arg_node) = Trav (NWITH2_WITHOP (arg_node), arg_info);
-    NWITH2_WITHID (arg_node) = Trav (NWITH2_WITHID (arg_node), arg_info);
-    NWITH2_SEGS (arg_node) = Trav (NWITH2_SEGS (arg_node), arg_info);
+    WITH2_WITHOP (arg_node) = TRAVdo (WITH2_WITHOP (arg_node), arg_info);
+    WITH2_WITHID (arg_node) = TRAVdo (WITH2_WITHID (arg_node), arg_info);
+    WITH2_SEGS (arg_node) = TRAVdo (WITH2_SEGS (arg_node), arg_info);
 
-    if (NWITH2_CODE (arg_node) != NULL) {
-        NWITH2_CODE (arg_node) = Trav (NWITH2_CODE (arg_node), arg_info);
+    if (WITH2_CODE (arg_node) != NULL) {
+        WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -377,52 +386,88 @@ ReuseNwith2 (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *ReuseNwithop( node *arg_node, info *arg_info)
+ *   node *REUSEgenarray( node *arg_node, info *arg_info)
  *
  * description:
- *   stores 'NWITHOP_ARRAY( arg_node)' in the reuse-mask
+ *   stores 'GENARRAY_ARRAY( arg_node)' in the reuse-mask
  *   ('INFO_REUSE_MASK( arg_info)').
  *
  ******************************************************************************/
 
 node *
-ReuseNwithop (node *arg_node, info *arg_info)
+REUSEgenarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ReuseNwithop");
+    DBUG_ENTER ("REUSEgenarray");
 
-    switch (NWITHOP_TYPE (arg_node)) {
-    case WO_genarray:
-        NWITHOP_SHAPE (arg_node) = Trav (NWITHOP_SHAPE (arg_node), arg_info);
-        if (NWITHOP_DEFAULT (arg_node) != NULL) {
-            NWITHOP_DEFAULT (arg_node) = Trav (NWITHOP_DEFAULT (arg_node), arg_info);
-        }
-        break;
-    case WO_modarray:
-        /*
-         * we can possibly reuse the modarray-array.
-         */
-        if ((NODE_TYPE (NWITHOP_ARRAY (arg_node)) == N_id)
-            && ((INFO_REUSE_NODEC (arg_info))
-                || (IsFound (ID_NAME (NWITHOP_ARRAY (arg_node)),
-                             INFO_REUSE_DEC_RC_IDS (arg_info))))
-            && (DFMTestMaskEntry (INFO_REUSE_NEGMASK (arg_info),
-                                  ID_NAME (NWITHOP_ARRAY (arg_node)), NULL)
-                == 0)) {
-            DFMSetMaskEntrySet (INFO_REUSE_MASK (arg_info),
-                                ID_NAME (NWITHOP_ARRAY (arg_node)), NULL);
-        }
-        break;
-    case WO_foldprf:
-        /* here is no break missing!! */
-    case WO_foldfun:
-        NWITHOP_NEUTRAL (arg_node) = Trav (NWITHOP_NEUTRAL (arg_node), arg_info);
-        break;
-    default:
-        DBUG_ASSERT ((0), "wrong node type found");
+    GENARRAY_SHAPE (arg_node) = TRAVdo (GENARRAY_SHAPE (arg_node), arg_info);
+    if (GENARRAY_DEFAULT (arg_node) != NULL) {
+        GENARRAY_DEFAULT (arg_node) = TRAVdo (GENARRAY_DEFAULT (arg_node), arg_info);
     }
 
-    if (NWITHOP_NEXT (arg_node) != NULL) {
-        NWITHOP_NEXT (arg_node) = Trav (NWITHOP_NEXT (arg_node), arg_info);
+    if (GENARRAY_NEXT (arg_node) != NULL) {
+        GENARRAY_NEXT (arg_node) = TRAVdo (GENARRAY_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *REUSEmodarray( node *arg_node, info *arg_info)
+ *
+ * description:
+ *   stores 'MODARRAY_ARRAY( arg_node)' in the reuse-mask
+ *   ('INFO_REUSE_MASK( arg_info)').
+ *
+ ******************************************************************************/
+
+node *
+REUSEmodarray (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("REUSEmodarray");
+
+    /*
+     * we can possibly reuse the modarray-array.
+     */
+    if ((NODE_TYPE (MODARRAY_ARRAY (arg_node)) == N_id)
+        && ((INFO_REUSE_NODEC (arg_info))
+            || (IsFound (ID_NAME (MODARRAY_ARRAY (arg_node)),
+                         INFO_REUSE_DEC_RC_IDS (arg_info))))
+        && (DFMtestMaskEntry (INFO_REUSE_NEGMASK (arg_info),
+                              ID_NAME (MODARRAY_ARRAY (arg_node)), NULL)
+            == 0)) {
+        DFMsetMaskEntrySet (INFO_REUSE_MASK (arg_info),
+                            ID_NAME (MODARRAY_ARRAY (arg_node)), NULL);
+    }
+
+    if (MODARRAY_NEXT (arg_node) != NULL) {
+        MODARRAY_NEXT (arg_node) = TRAVdo (MODARRAY_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *REUSEfold( node *arg_node, info *arg_info)
+ *
+ * description:
+ *
+ *   ('INFO_REUSE_MASK( arg_info)').
+ *
+ ******************************************************************************/
+
+node *
+REUSEfold (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("REUSEfold");
+
+    FOLD_NEUTRAL (arg_node) = TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
+
+    if (FOLD_NEXT (arg_node) != NULL) {
+        FOLD_NEXT (arg_node) = TRAVdo (FOLD_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -439,23 +484,24 @@ ReuseNwithop (node *arg_node, info *arg_info)
 bool
 ReuseSel (node *arg1, node *arg2, info *arg_info)
 {
+
     if ((NODE_TYPE (arg1) == N_id)
         && (!strcmp (ID_NAME (arg1), IDS_NAME (INFO_REUSE_IDX (arg_info))))
         && (NODE_TYPE (arg2) == N_id) &&
 #ifdef MWE_NTYPE_READY
-        TYEqTypes (IDS_NTYPE (ID_IDS (arg2)), IDS_NTYPE (INFO_REUSE_WL_IDS (arg_info))) &&
+        TYeqTypes (IDS_NTYPE (ID_IDS (arg2)), IDS_NTYPE (INFO_REUSE_WL_IDS (arg_info))) &&
 #else
         TypesAreEqual (ID_TYPE (arg2), IDS_TYPE (INFO_REUSE_WL_IDS (arg_info))) &&
 #endif
         ((INFO_REUSE_NODEC (arg_info))
          || (IsFound (ID_NAME (arg2), INFO_REUSE_DEC_RC_IDS (arg_info))))
-        && (DFMTestMaskEntry (INFO_REUSE_NEGMASK (arg_info), ID_NAME (arg2), NULL)
+        && (DFMtestMaskEntry (INFO_REUSE_NEGMASK (arg_info), ID_NAME (arg2), NULL)
             == 0)) {
         /*
          * 'arg2' is used in a normal WL-sel()
          *  -> we can possibly reuse this array
          */
-        DFMSetMaskEntrySet (INFO_REUSE_MASK (arg_info), ID_NAME (arg2), NULL);
+        DFMsetMaskEntrySet (INFO_REUSE_MASK (arg_info), ID_NAME (arg2), NULL);
         /*
          * we must not traverse the args!
          */
@@ -485,32 +531,32 @@ ReuseIdxSel (node *arg1, node *arg2, info *arg_info)
 
     if ((NODE_TYPE (arg1) == N_id) && (NODE_TYPE (arg2) == N_id) &&
 #ifdef MWE_NTYPE_READY
-        TYEqTypes (IDS_NTYPE (ID_IDS (arg2)), IDS_NTYPE (INFO_REUSE_WL_IDS (arg_info))) &&
+        TYeqTypes (IDS_TYPE (ID_IDS (arg2)), IDS_TYPE (INFO_REUSE_WL_IDS (arg_info))) &&
 #else
         TypesAreEqual (ID_TYPE (arg2), IDS_TYPE (INFO_REUSE_WL_IDS (arg_info))) &&
 #endif
         ((INFO_REUSE_NODEC (arg_info))
          || (IsFound (ID_NAME (arg2), INFO_REUSE_DEC_RC_IDS (arg_info))))
-        && (DFMTestMaskEntry (INFO_REUSE_NEGMASK (arg_info), ID_NAME (arg2), NULL)
+        && (DFMtestMaskEntry (INFO_REUSE_NEGMASK (arg_info), ID_NAME (arg2), NULL)
             == 0)) {
 
-#ifdef MWE_NTYPE_READY
-        shp = TYType2Shape (IDS_NTYPE (INFO_REUSE_WL_IDS (arg_info)));
-        idx_sel_name = IdxChangeId (IDS_NAME (INFO_REUSE_IDX (arg_info)), shp);
-        shp = SHFreeShape (shp);
+#ifdef MWE_TYPE_READY
+        shp = TYtype2Shape (IDS_TYPE (INFO_REUSE_WL_IDS (arg_info)));
+        idx_sel_name = IDXchangeId (IDS_NAME (INFO_REUSE_IDX (arg_info)), shp);
+        shp = SHfreeShape (shp);
 #else
         type = IDS_TYPE (INFO_REUSE_WL_IDS (arg_info));
 #if 1
-        shp = Type2Shape (type);
-        idx_sel_name = IdxChangeId (IDS_NAME (INFO_REUSE_IDX (arg_info)), shp);
-        shp = SHFreeShape (shp);
+        shp = TCtype2Shape (type);
+        idx_sel_name = IDXchangeId (IDS_NAME (INFO_REUSE_IDX (arg_info)), shp);
+        shp = SHfreeShape (shp);
 #else
         /**
          * In case naming goes wrong this is an option to preserve the old
          * handling prior to eliminating types from VINFO in index.c.
          * Eventually, this part should vanish!
          */
-        idx_sel_name = IdxChangeIdOld (IDS_NAME (INFO_REUSE_IDX (arg_info)), type);
+        idx_sel_name = IDXchangeIdOld (IDS_NAME (INFO_REUSE_IDX (arg_info)), type);
 #endif
 #endif
 
@@ -519,13 +565,13 @@ ReuseIdxSel (node *arg1, node *arg2, info *arg_info)
              * 'arg2' is used in a (flattened) normal WL-sel()
              *  -> we can possibly reuse this array
              */
-            DFMSetMaskEntrySet (INFO_REUSE_MASK (arg_info), ID_NAME (arg2), NULL);
+            DFMsetMaskEntrySet (INFO_REUSE_MASK (arg_info), ID_NAME (arg2), NULL);
             /*
              * we must not traverse the args!
              */
             traverse = FALSE;
         }
-        idx_sel_name = Free (idx_sel_name);
+        idx_sel_name = ILIBfree (idx_sel_name);
     }
     return (traverse);
 }
@@ -533,7 +579,7 @@ ReuseIdxSel (node *arg1, node *arg2, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *ReuseLet( node *arg_node, info *arg_info)
+ *   node *REUSElet( node *arg_node, info *arg_info)
  *
  * description:
  *   Removes all left hand side ids from the reuse-mask (and stores them into
@@ -550,21 +596,21 @@ ReuseIdxSel (node *arg1, node *arg2, info *arg_info)
  ******************************************************************************/
 
 node *
-ReuseLet (node *arg_node, info *arg_info)
+REUSElet (node *arg_node, info *arg_info)
 {
     node *arg1, *arg2, *tmpnode;
-    ids *tmp;
+    node *tmp;
     bool traverse;
 
-    DBUG_ENTER ("ReuseLet");
+    DBUG_ENTER ("REUSElet");
 
     /*
      * removes all left hand side ids from the reuse-mask
      */
     tmp = LET_IDS (arg_node);
     while (tmp != NULL) {
-        DFMSetMaskEntryClear (INFO_REUSE_MASK (arg_info), IDS_NAME (tmp), NULL);
-        DFMSetMaskEntrySet (INFO_REUSE_NEGMASK (arg_info), IDS_NAME (tmp), NULL);
+        DFMsetMaskEntryClear (INFO_REUSE_MASK (arg_info), IDS_NAME (tmp), NULL);
+        DFMsetMaskEntrySet (INFO_REUSE_NEGMASK (arg_info), IDS_NAME (tmp), NULL);
 
         tmp = IDS_NEXT (tmp);
     }
@@ -575,7 +621,7 @@ ReuseLet (node *arg_node, info *arg_info)
         switch (PRF_PRF (LET_EXPR (arg_node))) {
         case F_fill:
             PRF_EXPRS2 (LET_EXPR (arg_node))
-              = Trav (PRF_EXPRS2 (LET_EXPR (arg_node)), arg_info);
+              = TRAVdo (PRF_EXPRS2 (LET_EXPR (arg_node)), arg_info);
             tmpnode = PRF_ARGS (LET_EXPR (arg_node));
             if (NODE_TYPE (EXPRS_EXPR (tmpnode)) == N_prf) {
                 switch (PRF_PRF (EXPRS_EXPR (tmpnode))) {
@@ -619,7 +665,7 @@ ReuseLet (node *arg_node, info *arg_info)
     }
 
     if (traverse) {
-        LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
+        LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -628,7 +674,7 @@ ReuseLet (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *ReuseId( node *arg_node, info *arg_info)
+ *   node *REUSEid( node *arg_node, info *arg_info)
  *
  * description:
  *   Removes 'arg_node' from the reuse-mask ('INFO_REUSE_MASK( arg_info)')
@@ -638,12 +684,12 @@ ReuseLet (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 node *
-ReuseId (node *arg_node, info *arg_info)
+REUSEid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ReuseId");
+    DBUG_ENTER ("REUSEid");
 
-    DFMSetMaskEntryClear (INFO_REUSE_MASK (arg_info), ID_NAME (arg_node), NULL);
-    DFMSetMaskEntrySet (INFO_REUSE_NEGMASK (arg_info), ID_NAME (arg_node), NULL);
+    DFMsetMaskEntryClear (INFO_REUSE_MASK (arg_info), ID_NAME (arg_node), NULL);
+    DFMsetMaskEntrySet (INFO_REUSE_NEGMASK (arg_info), ID_NAME (arg_node), NULL);
 
     DBUG_RETURN (arg_node);
 }
@@ -651,7 +697,7 @@ ReuseId (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *GetReuseArrays( node *syntax_tree, node *fundef, ids *wl_ids)
+ *   node *REUSEdoGetReuseArrays( node *syntax_tree, node *fundef, ids *wl_ids)
  *
  * description:
  *   starts the traversal to search for reuseable arrays.
@@ -659,22 +705,20 @@ ReuseId (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 node *
-GetReuseArrays (node *syntax_tree, node *fundef, ids *wl_ids)
+REUSEdoGetReuseArrays (node *syntax_tree, node *fundef, node *wl_ids)
 {
     info *info;
-    funtab *old_tab;
 
-    DBUG_ENTER ("GetReuseArrays");
+    DBUG_ENTER ("REUSEdoGetReuseArrays");
 
     info = MakeInfo ();
     INFO_REUSE_FUNDEF (info) = fundef;
     INFO_REUSE_WL_IDS (info) = wl_ids;
     INFO_REUSE_NODEC (info) = FALSE;
 
-    old_tab = act_tab;
-    act_tab = reuse_tab;
-    syntax_tree = Trav (syntax_tree, info);
-    act_tab = old_tab;
+    TRAVpush (TR_reuse);
+    syntax_tree = TRAVdo (syntax_tree, info);
+    TRAVpop ();
 
     info = FreeInfo (info);
 
@@ -684,7 +728,7 @@ GetReuseArrays (node *syntax_tree, node *fundef, ids *wl_ids)
 /******************************************************************************
  *
  * function:
- *   node *GetReuseCandidates( node *syntax_tree, node *fundef, ids *wl_ids)
+ *   node *REUSEdoGetReuseCandidates( node *syntax_tree, node *fundef, ids *wl_ids)
  *
  * description:
  *   starts the traversal to search for reuseable arrays.
@@ -694,26 +738,24 @@ GetReuseArrays (node *syntax_tree, node *fundef, ids *wl_ids)
  ******************************************************************************/
 
 node *
-GetReuseCandidates (node *syntax_tree, node *fundef, ids *wl_ids)
+REUSEdoGetReuseCandidates (node *syntax_tree, node *fundef, node *wl_ids)
 {
     info *info;
-    funtab *old_tab;
 
-    DBUG_ENTER ("GetReuseArrays");
+    DBUG_ENTER ("REUSEdoGetReuseArrays");
 
-    DBUG_ASSERT (NODE_TYPE (syntax_tree) == N_Nwith2, "Illegal Node Type");
+    DBUG_ASSERT (NODE_TYPE (syntax_tree) == N_with2, "Illegal Node Type");
 
     info = MakeInfo ();
     INFO_REUSE_FUNDEF (info) = fundef;
     INFO_REUSE_WL_IDS (info) = wl_ids;
     INFO_REUSE_NODEC (info) = TRUE;
 
-    old_tab = act_tab;
-    act_tab = reuse_tab;
-    syntax_tree = Trav (syntax_tree, info);
-    act_tab = old_tab;
+    TRAVpush (TR_reuse);
+    syntax_tree = TRAVdo (syntax_tree, info);
+    TRAVpop ();
 
     info = FreeInfo (info);
 
-    DBUG_RETURN (Ids2Exprs (DFM2LetIds (NWITH2_REUSE (syntax_tree), NULL)));
+    DBUG_RETURN (TCids2Exprs (DFMUdfm2LetIds (WITH2_REUSE (syntax_tree), NULL)));
 }
