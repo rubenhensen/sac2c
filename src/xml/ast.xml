@@ -1064,17 +1064,21 @@
       <traversal id="EMRB" name="Reuse branching" default="none" include="reusebranching.h" >
         <travuser>
           <node name="Assign" />
+          <node name="Code" />
           <node name="Fundef" />
+          <node name="Genarray" />
+          <node name="Ids" />
+          <node name="Modarray" />
           <node name="Prf" />
+          <node name="With" />
+          <node name="With2" />
         </travuser>
         <travsons>
           <node name="Module" />
           <node name="Let" />
-          <node name="With" />
-          <node name="With2" />
           <node name="Cond" />
-          <node name="Code" />
           <node name="Block" />
+          <node name="Fold" />
         </travsons>
       </traversal>
       <traversal id="EMRI" name="Reuse inference" default="none" include="reuse.h" >
@@ -4007,13 +4011,18 @@
 	  <target>
 	    <node name="Ids" />
 	    <node name="SPIds" />
+            <node name="Id" />
 	  </target>
+          <description>After explicit allocation (EMAL), Vec points to an N_id node.</description>
 	</son>
         <son name="Ids" mandatory="no">
 	  <target>
 	    <node name="Ids" />
 	    <node name="SPIds" />
+            <node name="Exprs" />
 	  </target>
+          <description>After explicit allocation (EMAL), Ids points to an N_exprs-list of N_id nodes.
+          </description>
 	</son>
       </sons>
       <attributes>
