@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.32  2000/03/17 16:07:18  dkr
+# cleanup_decls.o added
+#
 # Revision 2.31  2000/03/09 18:31:31  jhs
 # Added blkpp and dfa.
 #
@@ -193,8 +196,8 @@ TREE= src/tree/traverse.o src/tree/tree.o src/tree/tree_basic.o src/tree/free.o 
 SCANP= src/scanparse/y.tab.o src/scanparse/lex.yy.o \
        src/scanparse/scnprs.o
 PRINT= src/print/print.o src/print/convert.o
-FLATTEN= src/flatten/flatten.o src/flatten/lac2fun.o src/flatten/fun2lac.o \
-         src/flatten/adjust_ids.o
+FLATTEN= src/flatten/flatten.o src/flatten/lac2fun.o src/flatten/cleanup_decls.o \
+         src/flatten/fun2lac.o src/flatten/adjust_ids.o
 TYPECHECK= src/typecheck/typecheck.o src/typecheck/prim_fun.o \
            src/typecheck/typecheck_WL.o src/typecheck/gen_pseudo_fun.o \
            src/typecheck/new_typecheck.o src/typecheck/new_types.o \
