@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2002/07/16 12:52:06  dkr
+ * ICMs ND_PRF_IDX_... moved from sac_prf.h to sac_idx.h
+ *
  * Revision 3.4  2002/07/15 18:27:18  dkr
  * bug fixed
  *
@@ -151,27 +154,6 @@
             SAC_ND_WRITE (to_nt, SAC_i) = scl op SAC_ND_READ (a2_nt, SAC_i);             \
         }                                                                                \
     }
-
-/******************************************************************************
- *
- * ICMs for primitive functions after IVE
- * ======================================
- *
- * ND_PRF_IDX_SEL__SHAPE( to_nt, to_sdim, from_nt, from_sdim, idx_any)
- * ND_PRF_IDX_SEL__DATA( to_nt, to_sdim, from_nt, from_sdim, idx_any)
- *
- * ND_PRF_IDX_MODARRAY__DATA( to_nt, to_sdim, from_nt, from_sdim, idx, val)
- *
- * ND_USE_GENVAR_OFFSET( offset, wl)
- *
- ******************************************************************************/
-
-/* ND_PRF_IDX_SEL__SHAPE( ...) is a C-ICM */
-/* ND_PRF_IDX_SEL__DATA( ...) is a C-ICM */
-
-/* ND_PRF_IDX_MODARRAY__DATA( ...) is a C-ICM */
-
-#define SAC_ND_USE_GENVAR_OFFSET(offset, wl) offset = SAC_WL_OFFSET (wl);
 
 #else /* TAGGED_ARRAYS */
 
