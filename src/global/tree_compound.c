@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/03/04 10:07:13  bs
+ * Functions IntVec2Array() and Array2IntVec() added.
+ *
  * Revision 2.1  1999/02/23 12:39:57  sacbase
  * new release made
  *
@@ -437,6 +440,7 @@ CountNums (nums *numsp)
 
     while (numsp != NULL) {
         cnt++;
+        numsp = numsp->next;
     }
 
     DBUG_RETURN (cnt);
@@ -975,34 +979,89 @@ NodeListFind (nodelist *nl, node *node)
 int
 IsConstantArray (node *array, nodetype type)
 {
-    int elems = 0, ok = 1;
+    int elems = 1;
 
     DBUG_ENTER ("IsConstantArray");
 
-    if (N_array == NODE_TYPE (array))
-        array = ARRAY_AELEMS (array);
-    else
-        ok = 0;
-
-    while (ok && array) {
-        switch (NODE_TYPE (EXPRS_EXPR (array))) {
-        case N_num:
-        case N_char:
-        case N_float:
-        case N_double:
-        case N_bool:
-            if (N_ok != type && type != NODE_TYPE (EXPRS_EXPR (array)))
-                ok = 0;
-            elems++;
-            array = EXPRS_NEXT (array);
-
-            break;
-        default:
-            ok = 0;
+    if (NODE_TYPE (array) == N_array) {
+        if (ARRAY_INTARRAY (array) != NULL)
+            elems = ARRAY_LENGTH (array);
+        else {
+            array = ARRAY_AELEMS (array);
+            while ((elems > 0) && (array != NULL)) {
+                switch (NODE_TYPE (EXPRS_EXPR (array))) {
+                case N_num:
+                case N_char:
+                case N_float:
+                case N_double:
+                case N_bool:
+                    if ((type != N_ok) && (type != NODE_TYPE (EXPRS_EXPR (array))))
+                        elems = 0;
+                    else
+                        elems++;
+                    array = EXPRS_NEXT (array);
+                    break;
+                default:
+                    elems = 0;
+                }
+            }
         }
+    } else
+        elems = 0;
+
+    DBUG_RETURN (elems);
+}
+
+/***
+ ***  IntVec2Array
+ ***/
+
+node *
+IntVec2Array (int length, int *intvec)
+{
+    int i;
+    node *aelems = NULL;
+
+    DBUG_ENTER ("IntVec2Array");
+
+    for (i = length - 1; i >= 0; i++)
+        aelems = MakeExprs (MakeNum (intvec[i]), aelems);
+
+    DBUG_RETURN (aelems);
+}
+
+/***
+ ***  Array2IntVec
+ ***/
+
+int *
+Array2IntVec (node *aelems, int *length)
+{
+    int *intvec, i = 0, j;
+    node *tmp = aelems;
+
+    DBUG_ENTER ("Array2IntVec");
+
+    while (aelems != NULL) {
+        DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (aelems)) == N_num),
+                     "constant integer array exspected !");
+        aelems = EXPRS_NEXT (aelems);
+        i++;
+    }
+    /*
+     *  if the length of the vector is not of interrest length may be NULL
+     */
+    if (length != NULL)
+        *length = i;
+
+    intvec = Malloc (i * sizeof (int));
+
+    for (j = 0; j < i; j++) {
+        intvec[j] = NUM_VAL (EXPRS_EXPR (tmp));
+        tmp = EXPRS_NEXT (tmp);
     }
 
-    DBUG_RETURN (ok ? elems : 0);
+    DBUG_RETURN (intvec);
 }
 
 /******************************************************************************
