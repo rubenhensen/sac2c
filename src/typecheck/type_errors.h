@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.2  2002/08/07 09:51:07  sbs
+ * TEAssureIntS added.
+ *
  * Revision 1.1  2002/08/05 16:58:40  sbs
  * Initial revision
  *
@@ -21,6 +24,7 @@ extern void TEAssureScalar (char *obj, ntype *type);
 extern void TEAssureBoolS (char *obj, ntype *type);
 extern void TEAssureBoolA (char *obj, ntype *type);
 extern void TEAssureSimpleType (char *obj, ntype *type);
+extern void TEAssureIntS (char *obj, ntype *type);
 extern void TEAssureIntVect (char *obj, ntype *type);
 extern void TEAssureShpMatchesDim (char *obj1, ntype *type1, char *obj2, ntype *type2);
 extern void TEAssureSameSimpleType (char *obj1, ntype *type1, char *obj2, ntype *type2);

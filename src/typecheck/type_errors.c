@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.3  2002/08/07 09:51:07  sbs
+ * TEAssureIntS added.
+ *
  * Revision 1.2  2002/08/06 08:26:49  sbs
  * some vars initialized to please gcc for the product version.
  *
@@ -234,6 +237,28 @@ TEAssureScalar (char *obj, ntype *type)
                          TYType2String (type, FALSE, 0)));
     }
 
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    void TEAssureIntS( char *obj, ntype *type)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+void
+TEAssureIntS (char *obj, ntype *type)
+{
+    DBUG_ENTER ("TEAssureIntS");
+
+    if (!MatchScalar (type) || !MatchIntA (type)) {
+        ABORT (linenum, ("%s should be of type int; type found: %s", obj,
+                         TYType2String (type, FALSE, 0)));
+    }
     DBUG_VOID_RETURN;
 }
 
