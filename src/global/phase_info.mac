@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.17  2005/03/23 14:52:20  jhb
+ * added some subphases of the ast.xml
+ *
  * Revision 3.16  2005/03/10 09:41:09  cg
  * Restructured phase info:
  * Eliminated fun2lac/lac2fun conversion triggers.
@@ -117,6 +120,74 @@ SUBPHASE (opt, "opt", "Analyzing command line options", OPTanalyseCommandline)
 SUBPHASE (rsc, "rsc", "Processing sac2c configuration file", RSCevaluateConfiguration)
 
 SUBPHASE (init, "init", "Initializing data structures", SETUPdoInitializations)
+
+SUBPHASE (createwrappers, "create-wrappsers", "", PHdummy)
+
+SUBPHASE (createwrappercode, "create-wrapper-code", "", PHdummy)
+
+SUBPHASE (annotatenamespace, "annotatenamespace", "", PHdummy)
+
+SUBPHASE (import, "import", "", PHdummy)
+
+SUBPHASE (writesib, "writesib", "", PHdummy)
+
+SUBPHASE (resolvepragma, "resolvepramga", "", PHdummy)
+
+SUBPHASE (respragma, "respragma", "", PHdummy)
+
+SUBPHASE (rs, "rc", "", PHdummy)
+
+SUBPHASE (fun2lac, "fun2lac", "", PHdummy)
+
+SUBPHASE (liftsmpd, "liftsmpd", "", PHdummy)
+
+SUBPHASE (rfin, "rfin", "", PHdummy)
+
+SUBPHASE (mtfin, "mtfin", "", PHdummy)
+
+SUBPHASE (BuildMultithread, "BuildMultithread", "", PHdummy)
+
+SUBPHASE (CreateCells, "CreateCells", "", PHdummy)
+
+SUBPHASE (objhandling, "obj-handling", "", PHdummy)
+
+SUBPHASE (psioptimize, "psi-optimize", "", PHdummy)
+
+SUBPHASE (rsp, "rsp", "", PHdummy)
+
+SUBPHASE (ssaform, "ssaform", "", PHdummy)
+
+SUBPHASE (inline, "inline", "", PHdummy)
+
+SUBPHASE (AssignmentsRearrange, "AssignmentsRearrange", "", PHdummy)
+
+SUBPHASE (WLI, "WLI", "", PHdummy)
+
+SUBPHASE (WLF, "WLF", "", PHdummy)
+
+SUBPHASE (ssalir, "ssalir", "", PHdummy)
+
+SUBPHASE (lirmov, "lirmov", "", PHdummy)
+
+SUBPHASE (infer_dfms, "infer_dfms", "", PHdummy)
+
+SUBPHASE (free, "free", "", PHdummy)
+
+SUBPHASE (readsib, "readsib", "", PHdummy)
+
+SUBPHASE (undossa, "undossa", "", PHdummy)
+
+SUBPHASE (syncinit, "syncinit", "", PHdummy)
+
+SUBPHASE (syncopt, "syncopt", "", PHdummy)
+
+SUBPHASE (wlaa, "wlaa", "", PHdummy)
+
+SUBPHASE (tli, "tli", "", PHdummy)
+
+SUBPHASE (ReuseWithArrays, "ReuseWithArrays", "", PHdummy)
+
+SUBPHASE (IVE, "IVE", "", PHdummy)
 
 /***********************************************************************/
 
