@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.55  2004/11/22 18:48:41  sah
+ * *<8-D
+ *
  * Revision 3.54  2004/11/22 18:08:33  sbs
  * stuff from SSAConstantFolding.h added.
  *
@@ -1080,5 +1083,16 @@ typedef struct {
  * structural constant (SCO) should be integrated in constants.[ch] in future
  */
 typedef struct STRUCT_CONSTANT struct_constant;
+
+/*******************************************************************************
+ * moved from DataFlowMask.h:
+ */
+typedef struct MASK_BASE_T dfmask_base_t;
+typedef struct MASK_T dfmask_t;
+
+/*******************************************************************************
+ * moved from DataFlowMaskUtils.h:
+ */
+typedef struct STACK_T dfmstack_t;
 
 #endif /* _SAC_TYPES_H_ */
