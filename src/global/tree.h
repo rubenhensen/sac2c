@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.28  1995/03/13 15:47:32  hw
+ * Revision 1.29  1995/03/14 14:12:42  asi
+ * added new entry to struct node (int bblock)
+ *
+ * Revision 1.28  1995/03/13  15:47:32  hw
  * MakeIds inserted
  *
  * Revision 1.27  1995/03/13  15:12:34  asi
@@ -200,6 +203,7 @@ typedef struct NODE {
                            */
     } info;               /* fu"r spezielle Informationen */
     int refcnt;           /* is used as referenze count information */
+    int bblock;           /* number of basic block assign node belongs to */
     int varno;            /* number of variables - 1 */
     long *mask[MAX_MASK]; /* special informations about variables */
     int nnode;            /* Anzahl der benutzten Knoten */
