@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.4  1999/03/24 19:56:03  bs
+ * Access macro ID_INDEX added.
+ *
  * Revision 2.3  1999/03/17 21:24:09  bs
  * Access macro ARRAY_CHARVEC added.
  *
@@ -299,6 +302,7 @@ extern char *prf_name_str[];
 extern shpseg *MakeShpseg (nums *num);
 
 #define SHPSEG_SHAPE(s, x) (s->shp[x])
+#define SHPSEG_NEXT(s) (s->next)
 
 /*--------------------------------------------------------------------------*/
 
@@ -1638,9 +1642,9 @@ extern node *MakeVinfo (useflag flag, types *type, node *next);
  ***    int         MAKEUNIQUE                  (precompile -> compile -> )
  ***    node*       DEF                         (Unroll !, Unswitch !)
  ***    node*       WL          (O)             (wli -> wlf !!)
- ***    node*       VAL         (O) (N_array)   (cf -> )
- ***    node*       INTVEC      (O)             (flatten -> )
- ***    int         VECLEN      (O)             (flatten -> )
+ ***    node*       INDEX       (O)             (tile size inference -> )
+ ***    node*       INTVEC      (O) (N_array)   (flatten -> )
+ ***    int         VECLEN      (O) (N_array)   (flatten -> )
  ***
  ***  remark:
  ***    ID_WL is only used in wli, wlf. But every call of DupTree() initializes
@@ -1658,15 +1662,18 @@ extern node *MakeVinfo (useflag flag, types *type, node *next);
  ***    node->info.types->id
  ***
  ***  remark:
- ***    VAL is used for constant propagation in connection with arrays.
- ***    Usually, there is no constant propagation for arrays since this
- ***    normally slows down the code due to memory allocation/de-allocation
- ***    costs. However for some other optimizations, namely tile size inference,
- ***    a constant value is an advantage.
+ ***    INDEX is a flag used for the status of a flattened variable. it is set to 0,
+ ***    if the variable is not touched by the index vector of a with loop. it is set
+ ***    to 1, if it is the index vector and it is set to 2 if it is the index vector
+ ***    added with a constant integer vector.
  ***
  ***  remark:
  ***    INTVEC, VECTYPE and VECLEN now are used for propagation of constant
  ***    integer arrays.
+ ***    Usually, there is no constant propagation for arrays since this
+ ***    normally slows down the code due to memory allocation/de-allocation
+ ***    costs. However for some other optimizations, namely tile size inference,
+ ***    a constant value is an advantage.
  ***/
 
 /*
@@ -1703,6 +1710,7 @@ extern node *MakeId2 (ids *ids_node);
 #define ID_REFCNT(n) (n->refcnt)
 #define ID_MAKEUNIQUE(n) (n->flag)
 #define ID_WL(n) (n->node[0])
+#define ID_INDEX(n) (n->varno)
 #define ID_INTVEC(n) ((int *)(n->node[1]))
 #define ID_VECLEN(n) (n->counter)
 
