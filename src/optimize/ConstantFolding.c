@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.47  1996/08/08 13:51:42  asi
+ * Revision 1.48  1996/09/10 14:31:25  asi
+ * bug fixed in ArrayPrf
+ *
+ * Revision 1.47  1996/08/08  13:51:42  asi
  * Bug Fixed in NoConstSkalarPrf
  *
  * Revision 1.46  1996/07/16  15:24:43  asi
@@ -1635,8 +1638,7 @@ ArrayPrf (node *arg_node, node *arg_info)
 
         if (!IsConst (shape))
             break;
-        DBUG_ASSERT ((N_array == NODE_TYPE (arg[0])),
-                     "Shape-vector for psi not an array");
+        DBUG_ASSERT ((N_array == NODE_TYPE (shape)), "Shape-vector for psi not an array");
 
         /*
          * Substitute array
