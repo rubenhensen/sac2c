@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.5  1999/04/14 09:23:32  cg
+ * Cache simulation may now be triggered by pragmas.
+ * This is implemented by inserting new ICMs in the beginning and
+ * at the end of blocks marked by pragma cachesim.
+ *
  * Revision 2.4  1999/04/12 09:37:48  cg
  * All accesses to C arrays are now performed through the new ICMs
  * ND_WRITE_ARRAY and ND_READ_ARRAY. This allows for an integration
@@ -2634,12 +2639,42 @@ COMPFundef (node *arg_node, node *arg_info)
 node *
 COMPBlock (node *arg_node, node *arg_info)
 {
-    node *old_info;
+    node *old_info, *assign;
+    char *fun_name, *cs_tag;
 
     DBUG_ENTER ("COMPBlock");
 
     /* stacking of old info! (nested blocks) */
     old_info = INFO_COMP_LASTASSIGN (arg_info);
+
+    if (BLOCK_CACHESIM (arg_node) != NULL) {
+        fun_name = FUNDEF_NAME (INFO_COMP_FUNDEF (arg_info));
+        cs_tag
+          = (char *)Malloc (strlen (BLOCK_CACHESIM (arg_node)) + strlen (fun_name) + 14);
+        if (BLOCK_CACHESIM (arg_node)[0] == '\0') {
+            sprintf (cs_tag, "\"%s(...)\"", fun_name);
+        } else {
+            sprintf (cs_tag, "\"%s in %s(...)\"", BLOCK_CACHESIM (arg_node), fun_name);
+        }
+
+        FREE (BLOCK_CACHESIM (arg_node));
+
+        assign = BLOCK_INSTR (arg_node);
+
+        BLOCK_INSTR (arg_node)
+          = MakeAssign (MakeIcm1 ("CS_START_PRAGMA",
+                                  MakeId (StringCopy (cs_tag), NULL, ST_regular)),
+                        BLOCK_INSTR (arg_node));
+
+        while ((ASSIGN_NEXT (assign) != NULL)
+               && (NODE_TYPE (ASSIGN_INSTR (ASSIGN_NEXT (assign))) != N_return)) {
+            assign = ASSIGN_NEXT (assign);
+        }
+
+        ASSIGN_NEXT (assign)
+          = MakeAssign (MakeIcm1 ("CS_STOP_PRAGMA", MakeId (cs_tag, NULL, ST_regular)),
+                        ASSIGN_NEXT (assign));
+    }
 
     INFO_COMP_LASTASSIGN (arg_info) = arg_node;
     BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
@@ -2649,7 +2684,7 @@ COMPBlock (node *arg_node, node *arg_info)
 
     /*
      * we must compile the vardecs last, because we need the uncompiled vardecs
-     *  while traversal of the block.
+     *  during traversal of the block.
      */
     if ((BLOCK_VARDEC (arg_node) != NULL)
         && (NODE_TYPE (BLOCK_VARDEC (arg_node)) == N_vardec)) {
