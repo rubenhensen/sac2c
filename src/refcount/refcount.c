@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.62  1998/12/21 10:50:43  sbs
+ * error in RCloop:
+ * when traversing the loop body "again", the masks are re-generated!
+ * Therefore, the local pointers have to be updated accordingly!
+ *
  * Revision 1.61  1998/06/05 19:52:58  dkr
  * fixed some bugs in RC for new with
  *
@@ -509,6 +514,8 @@ LookupId (char *id, node *id_chain)
  *     If 'dump' is not NULL, the old memory is disposed.
  *     After that new memory is allocated.
  *
+ *   depends on the global variable "varno" !!
+ *
  ******************************************************************************/
 
 int *
@@ -609,12 +616,14 @@ StoreRC ()
  *   Returns an array of int that contains the refcounts stored in the vardecs.
  *   The refcounts in the vardecs are set to 'n' if refcount was >= 1.
  *
+ *   depends on the global vars "fundef_node", "args_no", and "varno" !!
+ *
  ******************************************************************************/
 
 int *
 StoreAndInitRC (int n)
 {
-    node *vardec;
+    node *argvardec;
     int k;
     int *dump = NULL;
 
@@ -622,29 +631,29 @@ StoreAndInitRC (int n)
 
     dump = AllocDump (dump);
 
-    vardec = FUNDEF_ARGS (fundef_node);
-    while (vardec != NULL) {
-        dump[ARG_VARNO (vardec)] = ARG_REFCNT (vardec);
-        if (ARG_REFCNT (vardec) > 0) {
-            ARG_REFCNT (vardec) = n;
+    argvardec = FUNDEF_ARGS (fundef_node);
+    while (argvardec != NULL) {
+        dump[ARG_VARNO (argvardec)] = ARG_REFCNT (argvardec);
+        if (ARG_REFCNT (argvardec) > 0) {
+            ARG_REFCNT (argvardec) = n;
         }
-        vardec = ARG_NEXT (vardec);
+        argvardec = ARG_NEXT (argvardec);
     }
-    vardec = FUNDEF_VARDEC (fundef_node);
+    argvardec = FUNDEF_VARDEC (fundef_node);
     for (k = args_no; k < varno; k++) {
-        if (k == VARDEC_VARNO (vardec)) {
+        if (k == VARDEC_VARNO (argvardec)) {
             /*
-             * 'vardec' is the right node belonging to 'k'.
+             * 'argvardec' is the right node belonging to 'k'.
              *   -> store the refcount.
              */
-            dump[k] = VARDEC_REFCNT (vardec);
-            if (VARDEC_REFCNT (vardec) > 0) {
-                VARDEC_REFCNT (vardec) = n;
+            dump[k] = VARDEC_REFCNT (argvardec);
+            if (VARDEC_REFCNT (argvardec) > 0) {
+                VARDEC_REFCNT (argvardec) = n;
             }
-            vardec = VARDEC_NEXT (vardec);
+            argvardec = VARDEC_NEXT (argvardec);
         } else {
             /*
-             * vardec belonging to 'k' was eliminated while optimisation.
+             * vardec belonging to 'k' was eliminated while optimization.
              *  -> store -1 at this position.
              */
             dump[k] = -1;
@@ -1010,7 +1019,9 @@ RCloop (node *arg_node, node *arg_info)
                                       all ref-cnts from the function's vardec
                                       with 1 */
 
+    DBUG_PRINT ("RC", ("line: %d : entering body:", NODE_LINE (arg_node)));
     WHILE_BODY (arg_node) = Trav (WHILE_BODY (arg_node), arg_info);
+    DBUG_PRINT ("RC", ("line: %d : body finished:", NODE_LINE (arg_node)));
 
     usevars = DO_USEVARS (arg_node);
     defvars = DO_DEFVARS (arg_node);
@@ -1102,6 +1113,14 @@ RCloop (node *arg_node, node *arg_info)
 
             /* refcount body of while loop again */
             DO_BODY (arg_node) = Trav (DO_BODY (arg_node), arg_info);
+            /*
+             * traversing the loop body may change its masks!
+             * Therefore, the local pointers have to be updated accordingly:
+             */
+            defined_mask
+              = BLOCK_MASK (WHILE_BODY (arg_node), 0); /* mask of defined variables */
+            used_mask
+              = BLOCK_MASK (WHILE_BODY (arg_node), 1); /* mask of used variables */
         }
     }
 
