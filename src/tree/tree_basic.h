@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.42  2001/03/06 13:18:19  nmw
+ * INFO_CMPT_ marcros added
+ *
  * Revision 3.41  2001/03/05 16:52:05  dkr
  * comment for N_Ncode added
  *
@@ -2324,8 +2327,12 @@ extern node *MakeAvis (node *vardecOrArg);
  ***  when used in SSACSE.c
  ***    int        DEPTH             (recursion depth of special functions)
  ***    bool       REMASSIGN         (falg, if assignment can be removed)
+ ***    node*      FUNDEF            (current working fundef)
  ***    node*      CSE               (cseinfo chain of available expressions)
  ***
+ ***  when used in compare_tree.c
+ ***    cmptree_t  EQFLAG            (current equal flag for whole tree)
+ ***    node*      TREE              (tree to compare with)
  ***
  ***  remarks:
  ***
@@ -2746,7 +2753,12 @@ extern node *MakeInfo ();
 /* when used in SSACSE.c */
 #define INFO_SSACSE_DEPTH(n) (n->int_data)
 #define INFO_SSACSE_REMASSIGN(n) ((bool)(n->flag))
-#define INFO_SSACSE_CSE(n) (n->node[0])
+#define INFO_SSACSE_FUNDEF(n) (n->node[0])
+#define INFO_SSACSE_CSE(n) (n->node[1])
+
+/* when used in compare_tree.c */
+#define INFO_CMPT_EQFLAG(n) ((cmptree_t) (n->flag))
+#define INFO_CMPT_TREE(n) (n->node[0])
 
 /*--------------------------------------------------------------------------*/
 
