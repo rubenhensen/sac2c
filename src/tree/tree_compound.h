@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.185  2004/12/16 14:39:07  ktr
+ * Cleaned up some WITH_OR_WITH2 macros.
+ *
  * Revision 3.184  2004/12/12 08:00:49  ktr
  * removed sons.any, attribs.any, NODE_ISALIVE because they were incompatible
  * with CLEANMEM.
@@ -1615,6 +1618,9 @@ extern int TCcountParts (node *parts);
  ***  N_with :  *and*  N_with2 :
  ***/
 
+#define WITH_OR_WITH2_WITHOP(n)                                                          \
+    ((NODE_TYPE (n) == N_with) ? WITH_WITHOP (n) : WITH2_WITHOP (n))
+
 #define WITH_OR_WITH2_TYPE(n) ((NODE_TYPE (n) == N_with) ? WITH_TYPE (n) : WITH2_TYPE (n))
 #define WITH_OR_WITH2_IDS(n) ((NODE_TYPE (n) == N_with) ? WITH_IDS (n) : WITH2_IDS (n))
 #define WITH_OR_WITH2_VEC(n) ((NODE_TYPE (n) == N_with) ? WITH_VEC (n) : WITH2_VEC (n))
@@ -1622,22 +1628,12 @@ extern int TCcountParts (node *parts);
 #define WITH_OR_WITH2_CEXPR(n)                                                           \
     ((NODE_TYPE (n) == N_with) ? WITH_CEXPR (n) : WITH2_CEXPR (n))
 
-#define WITH_OR_WITH2_DEC_RC_IDS(n)                                                      \
-    ((NODE_TYPE (n) == N_with) ? WITH_DEC_RC_IDS (n) : WITH2_DEC_RC_IDS (n))
-
 #define WITH_OR_WITH2_IN_MASK(n)                                                         \
     ((NODE_TYPE (n) == N_with) ? WITH_IN_MASK (n) : WITH2_IN_MASK (n))
 #define WITH_OR_WITH2_OUT_MASK(n)                                                        \
     ((NODE_TYPE (n) == N_with) ? WITH_OUT_MASK (n) : WITH2_OUT_MASK (n))
 #define WITH_OR_WITH2_LOCAL_MASK(n)                                                      \
     ((NODE_TYPE (n) == N_with) ? WITH_LOCAL_MASK (n) : WITH2_LOCAL_MASK (n))
-
-#define L_WITH_OR_WITH2_DEC_RC_IDS(n, rhs)                                               \
-    if (NODE_TYPE (n) == N_with) {                                                       \
-        WITH_DEC_RC_IDS (n) = (rhs);                                                     \
-    } else {                                                                             \
-        WITH2_DEC_RC_IDS (n) = (rhs);                                                    \
-    }
 
 #define L_WITH_OR_WITH2_IN_MASK(n, rhs)                                                  \
     if (NODE_TYPE (n) == N_with) {                                                       \
