@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2004/07/16 21:43:00  sah
+ * extended constant folding capabilities of
+ * the old typechecker. Now, +-*/ is supported
+ * on shapevectors in withloop generators even
+ * for SxA and AxS prfs
+ *
  * Revision 3.9  2004/07/14 23:50:35  sah
  * moved variable declarations to beginning of a block
  *
@@ -57,15 +63,9 @@
  * Revision 2.2  1999/05/31 16:56:45  sbs
  * constant-folding for wls extended
  * Now, with(...) genarray( [2+2,3],...);
- * works as well.
- *
- * Revision 2.1  1999/02/23 12:41:00  sacbase
- * new release made
- *
- * Revision 1.1  1998/04/28 15:48:09  srs
- * Initial revision
- *
- */
+*works as well.**Revision 2.1 1999 / 02
+  / 23 12 : 41 : 00 sacbase *new release made **Revision 1.1 1998 / 04
+  / 28 15 : 48 : 09 srs *Initial revision ** /
 
 #include <stdlib.h>
 #include <stddef.h>
@@ -86,26 +86,26 @@
 #include "typecheck.h"
 #include "DupTree.h"
 
-/*
- * This files exports a function ReduceGenarrayShape() which tries to
- * constantfold the expression in the genarray operator.
- * Foldable expressions only contain
- *  - shape(Id)   (not shape(Id*2))
- *  - prf +,-,*,/ with only shape() or constants as arguments.
- * Examples for valid expressions:
- * 1) shape(A)*2+3;
- * 2) (shape(A)+2)*(shape(A)*2)
- *
- * Why is CF restricted that way?
- * CF does not need masks (USE, DEF, MRD) for these expressions except
- * for the Id inside shape(). The shape()-evaluation is patched so it can be
- * called from TC.
- *
- */
+  /*
+   * This files exports a function ReduceGenarrayShape() which tries to
+   * constantfold the expression in the genarray operator.
+   * Foldable expressions only contain
+   *  - shape(Id)   (not shape(Id*2))
+   *  - prf +,-,*,/ with only shape() or constants as arguments.
+   * Examples for valid expressions:
+   * 1) shape(A)*2+3;
+   * 2) (shape(A)+2)*(shape(A)*2)
+   *
+   * Why is CF restricted that way?
+   * CF does not need masks (USE, DEF, MRD) for these expressions except
+   * for the Id inside shape(). The shape()-evaluation is patched so it can be
+   * called from TC.
+   *
+   */
 
-/* To avaoid conflicts with usage of arg_info in CF we better use
-   a global var to store our result*/
-int expr_ok;
+  /* To avaoid conflicts with usage of arg_info in CF we better use
+     a global var to store our result*/
+  int expr_ok;
 
 /******************************************************************************
  *
@@ -188,12 +188,13 @@ TCWLprf (node *arg_node, node *arg_info)
             tmp = Types2Array (ID_TYPE (PRF_ARG1 (arg_node)), INFO_CF_TYPE (arg_info));
             if (tmp != NULL) {
                 /* Types2Array was successful */
+                ((int *)ARRAY_CONSTVEC (tmp))
+                  = Array2IntVec (ARRAY_AELEMS (tmp), &ARRAY_VECLEN (tmp));
                 ARRAY_VECTYPE (tmp) = T_int;
+                ARRAY_ISCONST (tmp) = TRUE;
+
                 FreeTree (arg_node);
                 arg_node = tmp;
-            } else {
-                /* not successful */
-                expr_ok = 0;
             }
         } else {
             PRF_ARG1 (arg_node) = Trav (PRF_ARG1 (arg_node), arg_info);
@@ -242,9 +243,6 @@ TCWLprf (node *arg_node, node *arg_info)
                        shape applied to a num, there has to be a reason
                        for this (isn't it always []?) */
                 }
-
-                if (N_prf == NODE_TYPE (arg_node)) /* not successful */
-                    expr_ok = 0;
             }
         }
     } else {
@@ -261,25 +259,106 @@ TCWLprf (node *arg_node, node *arg_info)
                 || N_num == NODE_TYPE (PRF_ARG1 (arg_node)))
             && (N_array == NODE_TYPE (PRF_ARG2 (arg_node))
                 || N_num == NODE_TYPE (PRF_ARG2 (arg_node)))) {
-            /* CF prf now. */
+            /* CF on array -> array -> array functions */
             if ((PRF_PRF (arg_node) == F_sel) || (PRF_PRF (arg_node) == F_reshape)
                 || (PRF_PRF (arg_node) == F_take) || (PRF_PRF (arg_node) == F_drop)
-                || (PRF_PRF (arg_node) == F_add_AxA)) {
+                || (PRF_PRF (arg_node) == F_add_AxA) || (PRF_PRF (arg_node) == F_sub_AxA)
+                || (PRF_PRF (arg_node) == F_mul_AxA)
+                || (PRF_PRF (arg_node) == F_div_AxA)) {
                 if (IsConstArray (PRF_ARG1 (arg_node))
                     && IsConstArray (PRF_ARG2 (arg_node))) {
+
+                    DBUG_PRINT ("TYPE", ("primitive function %s folded",
+                                         mdb_prf[arg_node->info.prf]));
+
                     arg1 = COMakeConstantFromArray (PRF_ARG1 (arg_node));
                     arg2 = COMakeConstantFromArray (PRF_ARG2 (arg_node));
-                    if (PRF_PRF (arg_node) == F_sel) {
+                    switch (PRF_PRF (arg_node)) {
+                    case F_sel:
                         res = COSel (arg1, arg2);
-                    } else if (PRF_PRF (arg_node) == F_reshape) {
+                        break;
+                    case F_reshape:
                         res = COReshape (arg1, arg2);
-                    } else if (PRF_PRF (arg_node) == F_take) {
+                        break;
+                    case F_take:
                         res = COTake (arg1, arg2);
-                    } else if (PRF_PRF (arg_node) == F_drop) {
+                        break;
+                    case F_drop:
                         res = CODrop (arg1, arg2);
-                    } else {
+                        break;
+                    case F_add_AxA:
                         res = COAdd (arg1, arg2);
+                        break;
+                    case F_sub_AxA:
+                        res = COSub (arg1, arg2);
+                        break;
+                    case F_mul_AxA:
+                        res = COMul (arg1, arg2);
+                        break;
+                    case F_div_AxA:
+                        res = CODiv (arg1, arg2);
+                        break;
+                    default:
+                        /* unreachable code, but few c compiler know;) */
+                        break;
                     }
+                    arg1 = COFreeConstant (arg1);
+                    arg2 = COFreeConstant (arg2);
+                    arg_node = FreeTree (arg_node);
+                    arg_node = COConstant2AST (res);
+                    res = COFreeConstant (res);
+                }
+                /* cf on scalar -> array -> array and
+                         array -> scalar -> array functions */
+            } else if ((PRF_PRF (arg_node) == F_sub_AxS)
+                       || (PRF_PRF (arg_node) == F_sub_SxA)
+                       || (PRF_PRF (arg_node) == F_add_AxS)
+                       || (PRF_PRF (arg_node) == F_add_SxA)
+                       || (PRF_PRF (arg_node) == F_mul_AxS)
+                       || (PRF_PRF (arg_node) == F_mul_SxA)
+                       || (PRF_PRF (arg_node) == F_div_AxS)
+                       || (PRF_PRF (arg_node) == F_div_SxA)) {
+                arg1 = NULL;
+                arg2 = NULL;
+
+                if ((IsConstArray (PRF_ARG1 (arg_node)))
+                    && (NODE_TYPE (PRF_ARG2 (arg_node)) == N_num)) {
+                    arg1 = COMakeConstantFromArray (PRF_ARG1 (arg_node));
+                    arg2 = COMakeConstantFromInt (NUM_VAL (PRF_ARG2 (arg_node)));
+                } else if ((NODE_TYPE (PRF_ARG1 (arg_node)) == N_num)
+                           && (IsConstArray (PRF_ARG2 (arg_node)))) {
+                    arg1 = COMakeConstantFromInt (NUM_VAL (PRF_ARG1 (arg_node)));
+                    arg2 = COMakeConstantFromArray (PRF_ARG2 (arg_node));
+                }
+
+                if ((arg1 != NULL) && (arg2 != NULL)) {
+                    /* we can fold the prf */
+                    DBUG_PRINT ("TYPE", ("primitive function %s folded",
+                                         mdb_prf[arg_node->info.prf]));
+
+                    switch (PRF_PRF (arg_node)) {
+                    case F_sub_AxS:
+                    case F_sub_SxA:
+                        res = COSub (arg1, arg2);
+                        break;
+                    case F_add_AxS:
+                    case F_add_SxA:
+                        res = COAdd (arg1, arg2);
+                        break;
+                    case F_mul_AxS:
+                    case F_mul_SxA:
+                        res = COMul (arg1, arg2);
+                        break;
+                    case F_div_AxS:
+                    case F_div_SxA:
+                        res = CODiv (arg1, arg2);
+                        break;
+                    default:
+                        /* unreachable, but most compiler do not
+                           know this ;) */
+                        break;
+                    }
+
                     arg1 = COFreeConstant (arg1);
                     arg2 = COFreeConstant (arg2);
                     arg_node = FreeTree (arg_node);
@@ -288,19 +367,31 @@ TCWLprf (node *arg_node, node *arg_info)
                 }
             } else {
                 /* This is a direct call to CFprf. This may start a complete
-                   traversal in constant folding mode, without setting the
-                   appropriate cf_tab. I have no idea why this shall work?!?
-                   Thus, i cannot inline the code here */
+                 * traversal in constant folding mode, without setting the
+                 * appropriate cf_tab. I have no idea why this shall work?!?
+                 * Thus, i cannot inline the code here.
+                 * Instead, I have added most prfs to the above built in
+                 * constant folding and removed the direct call. Whenever
+                 * this code is reached, constanfolding has failed.
+                 */
+
                 /*
-                   arg_node = CFprf(arg_node, arg_info);
-                */
-                if (N_prf == NODE_TYPE (arg_node)) /* not successful */
-                    expr_ok = 0;
+                 * arg_node = CFprf(arg_node, arg_info);
+                 */
             }
         }
     }
 
+    if (N_prf == NODE_TYPE (arg_node)) {
+        /* not successful */
+        DBUG_PRINT ("TYPE",
+                    ("unable to fold appearance of %s", mdb_prf[arg_node->info.prf]));
+
+        expr_ok = 0;
+    }
+
     if ((NODE_TYPE (arg_node) == N_array) && (ARRAY_TYPE (arg_node) == NULL)) {
+        /* successful */
         ARRAY_TYPE (arg_node) = TI_array (arg_node, arg_info);
     }
 
