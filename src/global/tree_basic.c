@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.31  1998/02/16 16:34:57  srs
+ * Changed MakeNwith
+ *
  * Revision 1.30  1998/02/11 17:14:37  srs
  * changed NPART_IDX to NPART_WITHID
  *
@@ -1338,6 +1341,7 @@ MakeNWith (node *part, node *code, node *withop)
     NWITH_PART (tmp) = part;
     NWITH_CODE (tmp) = code;
     NWITH_WITHOP (tmp) = withop;
+    NWITH_PARTS (tmp) = -1;
 
     DBUG_RETURN (tmp);
 }

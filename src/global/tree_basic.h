@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.72  1998/02/16 16:33:55  srs
+ * Changed MakeNwith
+ *
  * Revision 1.71  1998/02/12 11:03:07  srs
  * added INFO_.. macros for ConstantColding
  *
@@ -1990,6 +1993,12 @@ extern node *MakeInfo ();
  ***    node*  CODE      (N_Ncode)
  ***    node*  WITHOP    (N_Nwithop)
  ***
+ ***  permanent attributes:
+ ***
+ ***    int    PARTS     (number of N_Npart nodes for this WL.
+ ***                      -1: no complete partition, excatly one N_Npart,
+ ***                      >0: complete partition.
+ ***
  ***  temporary attributes:
  ***
  ***    ???
@@ -2005,6 +2014,7 @@ extern node *MakeNWith (node *part, node *code, node *withop);
 #define NWITH_PART(n) (n->node[0])
 #define NWITH_CODE(n) (n->node[1])
 #define NWITH_WITHOP(n) (n->node[2])
+#define NWITH_PARTS(n) (n->info.cint)
 
 /*--------------------------------------------------------------------------*/
 
