@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2002/08/13 17:22:05  dkr
+ * IntBytes2String: argument is unsigned now
+ *
  * Revision 3.11  2002/08/05 17:03:01  sbs
  * OldTypeSignature2String added
  *
@@ -20,7 +23,8 @@
  * Malloc / Free checked
  *
  * Revision 3.6  2001/03/15 16:53:52  dkr
- * Type2String: types->id and the '&' for reference objects are no longer printed here!
+ * Type2String: types->id and the '&' for reference objects are no longer
+ * printed here!
  * Note, that types->id and types->attrib is *not* part of the virtual
  * TYPES 'types'!!
  *
@@ -370,7 +374,7 @@ Basetype2String (simpletype type)
 /******************************************************************************
  *
  * function:
- *   char *IntBytes2String(int bytes)
+ *   char *IntBytes2String( unsigned int bytes)
  *
  * description:
  *   This function yields a pointer to a static memory area that contains
@@ -380,7 +384,7 @@ Basetype2String (simpletype type)
  ******************************************************************************/
 
 char *
-IntBytes2String (int bytes)
+IntBytes2String (unsigned int bytes)
 {
     static char res[32];
     char *tmp = &res[0];
@@ -388,13 +392,6 @@ IntBytes2String (int bytes)
     int num;
 
     DBUG_ENTER ("IntBytes2String");
-
-    if (bytes < 0) {
-        bytes = -bytes;
-        tmp += sprintf (tmp, "-");
-    } else {
-        tmp += sprintf (tmp, " ");
-    }
 
     while ((bytes / factor == 0) && (factor >= 1000)) {
         factor /= 1000;

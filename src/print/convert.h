@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2002/08/13 17:22:11  dkr
+ * IntBytes2String: argument is unsigned now
+ *
  * Revision 3.4  2002/08/05 17:03:01  sbs
  * OldTypeSignature2String added
  *
@@ -60,7 +63,7 @@ extern char *Double2String (double);
 extern char *Float2String (float);
 extern char *Basetype2String (simpletype type);
 extern char *Shpseg2String (int dim, shpseg *shape);
-extern char *IntBytes2String (int bytes);
+extern char *IntBytes2String (unsigned int bytes);
 
 extern char *OldTypeSignature2String (node *fundef);
 
