@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 1.6  2003/04/10 18:50:17  dkr
+# clean target extended
+#
 # Revision 1.5  2003/04/01 10:53:32  sbs
 # Makefile.Config and Makefile.Deps included properly now.
 #
@@ -36,7 +39,7 @@ $(TOOLS)/bin/%: %.c
 	$(CC) $(CCFLAGS) -o $@ $<
 
 clean:
-	$(RM) *~ *.o
+	$(RM) *.o *.a *.bak *~ .*.d
 	$(RM) $(TOOLS)/bin/echo
 
 #######################################################################################

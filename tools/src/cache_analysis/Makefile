@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 1.10  2003/04/10 18:50:39  dkr
+# clean target extended
+#
 # Revision 1.9  2003/04/01 10:53:32  sbs
 # Makefile.Config and Makefile.Deps included properly now.
 #
@@ -53,7 +56,7 @@ $(LIBS):
 	$(MAKE) -C $(LIBDIR)/src
 
 clean:
-	$(RM) *.o *~
+	$(RM) *.o *.a *.bak *~ .*.d
 	$(RM) $(TOOLS)/bin/ctest
 
 
