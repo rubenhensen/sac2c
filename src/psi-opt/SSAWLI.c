@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2001/05/23 15:55:18  nmw
+ * buggy call to SSACFFoldPrfExpr() fixed
+ *
  * Revision 1.7  2001/05/18 12:42:14  nmw
  * some discriptive comments added
  *
@@ -413,7 +416,7 @@ static void
 CreateIndexInfoA (node *prfn, node *arg_info)
 {
     int id_no = 0, elts, i, index, val = 0;
-    node *idn = NULL, *constn = NULL, *tmpn = NULL, *cf_node, *args[2], *assignn, *wln;
+    node *idn = NULL, *constn = NULL, *tmpn = NULL, *cf_node, *args[3], *assignn, *wln;
     index_info *iinfo, *tmpinfo;
     node *data1, *data2;
 
@@ -511,9 +514,13 @@ CreateIndexInfoA (node *prfn, node *arg_info)
                 if (iinfo->permutation[i]) {
                     iinfo->const_arg[i] = val;
                 } else {
-                    /* constant. Use SSACFFoldPrfExpr() to constantfold. */
+                    /*
+                     * constant. Use SSACFFoldPrfExpr() to constantfold.,
+                     * there MUST always be three args in arg array!!!
+                     */
                     args[0] = MakeNum (val);
                     args[1] = MakeNum (tmpinfo->const_arg[i]);
+                    args[2] = NULL;
                     cf_node = SSACFFoldPrfExpr (PRF_PRF (prfn), args);
                     DBUG_ASSERT ((NODE_TYPE (cf_node) == N_num),
                                  "non integer result from constant folding");
@@ -554,9 +561,13 @@ CreateIndexInfoA (node *prfn, node *arg_info)
                 /* is the element in the other vector a constant, too?
                    Then we have to fold immedeately. */
                 if (!iinfo->permutation[i]) {
-                    /* constant. Use SSACFFoldPrfExpr() to constantfold. */
+                    /*
+                     * constant. Use SSACFFoldPrfExpr() to constantfold.
+                     * there MUST always be 3 args in array!!!
+                     */
                     args[0] = MakeNum (val);
                     args[1] = MakeNum (iinfo->const_arg[i]);
+                    args[2] = NULL;
                     cf_node = SSACFFoldPrfExpr (PRF_PRF (prfn), args);
                     DBUG_ASSERT ((NODE_TYPE (cf_node) == N_num),
                                  "non integer result from constant folding");
