@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.41  1999/01/19 14:40:21  sbs
+ * some "might be used uninitialized" warnings eliminated.
+ *
  * Revision 1.40  1999/01/19 08:52:26  sbs
  * error message for drop corrected.
  *
@@ -774,8 +777,10 @@ Shp (types *array)
         ret_type = MakeType (T_int, 1, MakeShpseg (NULL), NULL, NULL);
         GET_DIM (dim, array);
         TYPES_SHAPE (ret_type, 0) = dim;
-    } else
+    } else {
         DBUG_ASSERT (0, "unknown dimension of type");
+        ret_type = NULL;
+    }
 
     DBUG_RETURN (ret_type);
 }
@@ -924,13 +929,13 @@ TakeDropV (types *vec_type, types *array_btype)
             /* the shape of the array is unknown */
             ret_type
               = MakeType (TYPES_BASETYPE (array_btype), UNKNOWN_SHAPE, NULL, NULL, NULL);
-        else if (KNOWN_DIM_OFFSET > TYPES_DIM (array_btype))
+        else if (KNOWN_DIM_OFFSET > TYPES_DIM (array_btype)) {
             /* only the dimension of the array is known */
-            if (KNOWN_DIM_OFFSET - TYPES_SHAPE (vec_type, 0) >= TYPES_DIM (array_btype))
-            /* number of elements of acess-vector is equal or less than
-             * dimension of array
-             * (create a type with known dimension)
-             */
+            if (KNOWN_DIM_OFFSET - TYPES_SHAPE (vec_type, 0) >= TYPES_DIM (array_btype)) {
+                /* number of elements of acess-vector is equal or less than
+                 * dimension of array
+                 * (create a type with known dimension)
+                 */
 #ifndef KNOWN_DIM
                 ret_type = MakeType (TYPES_BASETYPE (array_btype), UNKNOWN_SHAPE, NULL,
                                      NULL, NULL);
@@ -938,9 +943,13 @@ TakeDropV (types *vec_type, types *array_btype)
                 ret_type = MakeType (TYPES_BASETYPE (array_btype),
                                      TYPES_DIM (array_btype), NULL, NULL, NULL);
 #endif /* KNOWN_DIM */
-            else
-                /* access-vector as to many elements */
+            } else {
+                /* access-vector as too many elements */
                 ret_type = MakeType (T_unknown, 0, NULL, NULL, NULL);
+            }
+            DBUG_ASSERT (0, "scalar arrays are not possible here!");
+            ret_type = NULL;
+        }
     } else if (UNKNOWN_SHAPE == TYPES_DIM (vec_type)) {
         /* access-vector is not an constant vector.
          * the shape of the vector is unknown
@@ -1129,8 +1138,10 @@ TakeV (node *vec, types *vec_type, types *array)
                 ret_type = MakeType (TYPES_BASETYPE (array_btype),
                                      TYPES_DIM (array_btype), NULL, NULL, NULL);
 #endif /* KNOWN_DIM */
-        } else
+        } else {
             DBUG_ASSERT (0, " wrong dimension of array_btype");
+            ret_type = NULL;
+        }
     } else
         ret_type = TakeDropV (vec_type, array_btype);
 
@@ -1248,8 +1259,10 @@ DropV (node *vec, types *vec_type, types *array)
                 ret_type = MakeType (TYPES_BASETYPE (array_btype),
                                      TYPES_DIM (array_btype), NULL, NULL, NULL);
 #endif /* KNOWN_DIM */
-        } else
+        } else {
             DBUG_ASSERT (0, " wrong dimension of array_btype");
+            ret_type = NULL;
+        }
     } else
         ret_type = TakeDropV (vec_type, array_btype);
 
@@ -1453,8 +1466,10 @@ TakeDropS (node *s_node, types *array, int tag)
             else if (UNKNOWN_SHAPE == TYPES_DIM (array))
                 ret_type = MakeType (TYPES_BASETYPE (array), TYPES_DIM (array), NULL,
                                      NULL, NULL);
-            else
+            else {
                 DBUG_ASSERT (0, "wrong dimension of second argument (array)");
+                ret_type = NULL;
+            }
         }
     }
 #if 0
@@ -1684,8 +1699,10 @@ Cat (node *s_node, types *array1, types *array2)
 #endif /* KNOWN_DIM */
         else
             ret_type = MakeType (T_unknown, 0, NULL, NULL, NULL);
-    } else
+    } else {
         DBUG_ASSERT (0, "wrong dimensions");
+        ret_type = NULL;
+    }
 
     DBUG_ASSERT (NULL != ret_type, "no ret_type");
 
