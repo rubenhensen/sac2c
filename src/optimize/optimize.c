@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.17  2001/04/19 11:45:36  nmw
+ * calling while2do when using ssa form opts
+ *
  * Revision 3.16  2001/04/18 12:56:13  nmw
  * call SSATransform/CheckAvis for single function instead of whole ast
  * to have a little speedup ;-)
@@ -247,6 +250,7 @@
 #include "SSACSE.h"
 #include "SSAConstantFolding.h"
 #include "SSALIR.h"
+#include "while2do.h"
 
 /*
  * global variables to keep track of optimization's success
@@ -527,19 +531,26 @@ OPTmodul (node *arg_node, node *arg_info)
     /*
      * Starting intra-functional optimizations
      *
-     * first of all: check for correct Avis nodes and references!
-     *
      * then:
-     *   remove loops and conditional with lac2fun
+     *   transform all while to do-loops
+     *   remove loops and conditionals with lac2fun
+     *   check for correct avis nodes and references
      *   bring AST in SSA form
-     *   do optimizations
-     *   remove optimizations infos from nodes
-     *   convert back to standard form ?
-     *   convert back fun2lac ?
+     *   do function-optimizations
+     *   convert back to standard form
+     *   (convert back with fun2lac)
      */
 
     if (use_ssaform) {
         NOTE (("using ssa-form based optimizations."));
+
+        /* transform all while to do-loops (required for SSALIR) */
+        arg_node = TransformWhile2Do (arg_node);
+        if ((break_after == PH_sacopt) && (break_cycle_specifier == 0)
+            && (0 == strcmp (break_specifier, "w2d"))) {
+            goto DONE;
+        }
+
         arg_node = Lac2Fun (arg_node);
         if ((break_after == PH_sacopt) && (break_cycle_specifier == 0)
             && (0 == strcmp (break_specifier, "l2f"))) {
