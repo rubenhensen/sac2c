@@ -1,4 +1,5 @@
 Makefile
+cmp_type.mac
 prim_fun.c
 prim_fun.h
 prim_fun_ft.mac
