@@ -4,6 +4,9 @@
 /*
  *
  * $Log$
+ * Revision 3.54  2002/08/14 09:24:20  sbs
+ * several missing StringCopy calls inserrted
+ *
  * Revision 3.53  2002/08/14 07:30:55  sbs
  * bloddy error in HMAdjustFundef calls eliminated
  *
@@ -1158,19 +1161,42 @@ expr: fun_id                      { $$ = MakeIdFromIds( $1); }
           MOP_FIX( $$) = TRUE;
         }
       }
-    | expr fun_id expr            { $$ = ConstructMop( $1, $2, $3);} %prec BM_OP
-    | PLUS expr                   { $$ = MakeAp1( "+", NULL, $2);}    %prec MM_OP
-    | MINUS expr                  { $$ = MakeAp1( "-", NULL, $2);}    %prec MM_OP
-    | TILDE expr                  { $$ = MakeAp1( "~", NULL, $2);}    %prec MM_OP
-    | EXCL expr                   { $$ = MakeAp1( "!", NULL, $2);}    %prec MM_OP
+    | expr fun_id expr
+      {
+        $$ = ConstructMop( $1, $2, $3);
+      } %prec BM_OP
+    | PLUS expr
+      {
+        $$ = MakeAp1( StringCopy( "+"), NULL, $2);
+      }    %prec MM_OP
+    | MINUS expr
+      {
+        $$ = MakeAp1( StringCopy( "-"), NULL, $2);
+      }    %prec MM_OP
+    | TILDE expr
+      {
+        $$ = MakeAp1( StringCopy( "~"), NULL, $2);
+      }    %prec MM_OP
+    | EXCL expr
+      {
+        $$ = MakeAp1( StringCopy( "!"), NULL, $2);
+      }    %prec MM_OP
     | PLUS BRACKET_L expr COMMA exprs BRACKET_R
-      { $$ = MakeAp( "+", NULL, MakeExprs( $3, $5));}
+      {
+        $$ = MakeAp( StringCopy( "+"), NULL, MakeExprs( $3, $5));
+      }
     | MINUS BRACKET_L expr COMMA exprs BRACKET_R
-      { $$ = MakeAp( "-", NULL, MakeExprs( $3, $5));}
+      {
+        $$ = MakeAp( StringCopy( "-"), NULL, MakeExprs( $3, $5));
+      }
     | TILDE BRACKET_L expr COMMA exprs BRACKET_R
-      { $$ = MakeAp( "~", NULL, MakeExprs( $3, $5));}
+      {
+        $$ = MakeAp( StringCopy( "~"), NULL, MakeExprs( $3, $5));
+      }
     | EXCL BRACKET_L expr COMMA exprs BRACKET_R
-      { $$ = MakeAp( "!", NULL, MakeExprs( $3, $5));}
+      {
+        $$ = MakeAp( StringCopy( "!"), NULL, MakeExprs( $3, $5));
+      }
     | expr_sel                    { $$ = $1;}  /* bracket notation      */
     | expr_ap                     { $$ = $1;}  /* prefix function calls */
     | expr_ar                     { $$ = $1;}  /* constant arrays       */
@@ -1211,15 +1237,15 @@ expr: fun_id                      { $$ = MakeIdFromIds( $1); }
 
 expr_sel: expr SQBR_L exprs SQBR_R
           { if( CountExprs($3) == 1) {
-              $$ = MakeAp2( "sel", NULL, EXPRS_EXPR( $3), $1 ); 
+              $$ = MakeAp2( StringCopy( "sel"), NULL, EXPRS_EXPR( $3), $1 ); 
               EXPRS_EXPR( $3) = NULL;
               $3 = FreeNode( $3);
             } else {
-              $$ = MakeAp2( "sel", NULL, MakeArray( $3), $1); 
+              $$ = MakeAp2( StringCopy( "sel"), NULL, MakeArray( $3), $1); 
             }
         }
         | expr SQBR_L SQBR_R
-          { $$ = MakeAp2( "sel", NULL, MakeArray( NULL), $1); }
+          { $$ = MakeAp2( StringCopy( "sel"), NULL, MakeArray( NULL), $1); }
         ;
 
 expr_ap: fun_id BRACKET_L { $<cint>$ = linenum; } opt_arguments BRACKET_R
