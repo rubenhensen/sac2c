@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2000/09/25 15:12:16  dkr
+ * typestring for T_hidden changed from void* into _hidden_
+ *
  * Revision 1.2  2000/09/22 13:54:01  dkr
  * header modified
  *
@@ -153,7 +156,7 @@ TYP_IF (T_unknown, "unknown", "_unknown_", "", COCv2ScalarDummy, COCv2CvDummy, d
   TYP_IF (T_char, "char", "char", "c", COCv2ScalarDummy, COCv2CvDummy, dummy,
           sizeof (char)),
 
-  TYP_IF (T_hidden, "hidden", "void *", "v", COCv2ScalarDummy, COCv2CvDummy, dummy,
+  TYP_IF (T_hidden, "hidden", "_hidden_", "h", COCv2ScalarDummy, COCv2CvDummy, dummy,
           sizeof (void *)),
 
   TYP_IF (T_void, "void", "void", "v", COCv2ScalarDummy, COCv2CvDummy, dummy, 0),
