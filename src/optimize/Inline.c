@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.4  2000/06/23 15:19:11  dkr
+ * function DupTree() with argument (arg_info != NULL) is replaced by
+ * function DupTreeInfo()
+ *
  * Revision 2.3  2000/01/26 17:29:49  dkr
  * type of traverse-function-table changed.
  *
@@ -303,7 +307,7 @@ DoInline (node *let_node, node *ap_node, node *arg_info)
     while (var_node && expr_node) {
         new_name = RenameInlinedVar (ARG_NAME (var_node));
         vardec_node = SearchDecl (new_name, INFO_INL_TYPES (arg_info));
-        new_expr = DupTree (EXPRS_EXPR (expr_node), arg_info);
+        new_expr = DupTreeInfo (EXPRS_EXPR (expr_node), arg_info);
         inl_nodes = MakeAssignLet (new_name, vardec_node, new_expr);
         header_nodes = AppendNodeChain (1, inl_nodes, header_nodes);
         var_node = VARDEC_NEXT (var_node);
@@ -320,7 +324,7 @@ DoInline (node *let_node, node *ap_node, node *arg_info)
 
     while (ids_node && expr_node) {
         new_name = StringCopy (IDS_NAME (ids_node));
-        new_expr = DupTree (EXPRS_EXPR (expr_node), arg_info);
+        new_expr = DupTreeInfo (EXPRS_EXPR (expr_node), arg_info);
         inl_nodes = MakeAssignLet (new_name, IDS_VARDEC (ids_node), new_expr);
         bottom_nodes = AppendNodeChain (1, inl_nodes, bottom_nodes);
         ids_node = IDS_NEXT (ids_node);
@@ -331,7 +335,7 @@ DoInline (node *let_node, node *ap_node, node *arg_info)
      * Duplicate function (with variable renameing)
      */
     INFO_DUP_TYPE (arg_info) = DUP_INLINE;
-    inl_nodes = DupTree (BLOCK_INSTR (FUNDEF_BODY (AP_FUNDEF (ap_node))), arg_info);
+    inl_nodes = DupTreeInfo (BLOCK_INSTR (FUNDEF_BODY (AP_FUNDEF (ap_node))), arg_info);
 
     /*
      * Link it together
