@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.42  1996/02/13 15:09:28  asi
+ * Revision 1.43  1996/04/26 14:26:00  asi
+ * Bug fixed for Psi Calculations
+ *
+ * Revision 1.42  1996/02/13  15:09:28  asi
  * bug fixed for calculating psi: now calculating psi for non constant arrays (again)
  *
  * Revision 1.41  1996/02/13  13:52:35  asi
@@ -167,6 +170,7 @@
 
 #define MAXARG 3
 #define INFO_TYPE arg_info->info.types
+#define INFO_ASSIGN arg_info->node[0]
 #define FALSE 0
 #define TRUE 1
 
@@ -313,6 +317,7 @@ CFassign (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("CFassign");
     DBUG_PRINT ("CF", ("Begin folding of line %d", NODE_LINE (arg_node)));
+    NODE_LINE (arg_info) = NODE_LINE (arg_node);
     ntype = NODE_TYPE (ASSIGN_INSTR (arg_node));
     if (N_return != ntype) {
         ASSIGN_INSTR (arg_node) = OPTTrav (ASSIGN_INSTR (arg_node), arg_info, arg_node);
@@ -341,6 +346,7 @@ CFassign (node *arg_node, node *arg_info)
             }
             break;
         default:
+            INFO_ASSIGN = arg_node;
             ASSIGN_NEXT (arg_node) = OPTTrav (ASSIGN_NEXT (arg_node), arg_info, arg_node);
             returnnode = arg_node;
             break;
@@ -804,39 +810,6 @@ ArraySize (node *array)
 
 /*
  *
- *  functionname  : FetchNum
- *  arguments     : 1) position in array
- *                  2) ptr to the array
- *                  R) ptr to fetchted element
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs : DupTree
- *  macros        : DBUG...
- *
- *  remarks       :
- *
- */
-node *
-FetchNum (int start, node *array)
-{
-    int i;
-    node *returnexpr;
-
-    DBUG_ENTER ("FetchNum");
-
-    array = array->node[0];
-
-    for (i = 0; i < start; i++)
-        array = array->node[1];
-
-    returnexpr = DupTree (array->node[0], NULL);
-
-    DBUG_RETURN (returnexpr);
-}
-
-/*
- *
  *  functionname  : DupPartialArray
  *  arguments     : 1) start position in array
  *                  2) lenght of result array
@@ -1130,8 +1103,7 @@ FoldExpr (node *arg_node, int test_arg, int res_arg, int test_pattern, node *arg
  *
  *  functionname  : NoConstSkalarPrf
  *  arguments     : 1) prf-node
- *		    2) result type
- *		    3) arg_info includes used mask to be updated and varno
+ *		    2) arg_info includes used mask to be updated and varno
  *		    R) result-node
  *  description   : Calculates some  prim-functions with one non constant arguments
  *  global vars   : N_float, ... , N_not, ..., prf_string
@@ -1143,7 +1115,7 @@ FoldExpr (node *arg_node, int test_arg, int res_arg, int test_pattern, node *arg
  *
  */
 node *
-NoConstSkalarPrf (node *arg_node, types *res_type, node *arg_info)
+NoConstSkalarPrf (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("NoConstSkalarPrf");
 
@@ -1216,10 +1188,109 @@ NoConstSkalarPrf (node *arg_node, types *res_type, node *arg_info)
 
 /*
  *
+ *  functionname  : FetchNum
+ *  arguments     : 1) position in array
+ *                  2) ptr to the array
+ *                  R) ptr to fetchted element
+ *  description   : picks up and duplicates the element at position pos
+ *  global vars   : --
+ *  internal funs : --
+ *  external funs : DupTree
+ *  macros        : ARRAY_AELEMS, EXPRS_NEXT, EXPRS_EXPR
+ *
+ *  remarks       : --
+ *
+ */
+node *
+FetchNum (int pos, node *array)
+{
+    int i;
+    node *tmp;
+
+    DBUG_ENTER ("FetchNum");
+
+    tmp = ARRAY_AELEMS (array);
+
+    for (i = 0; i < pos; i++)
+        tmp = EXPRS_NEXT (tmp);
+
+    tmp = DupTree (EXPRS_EXPR (tmp), NULL);
+
+    DBUG_RETURN (tmp);
+}
+
+/*
+ *
+ *  functionname  : CalcPsi
+ *  arguments     : 1) first argument of primitive function psi
+ *		    2) second argument of primitive function psi
+ *		    3)
+ *		    4)
+ *		    R)
+ *  description   :
+ *  global vars   :
+ *  internal funs : --
+ *  external funs : --
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
+node *
+CalcPsi (node *shape, node *array, types *array_type, node *arg_info)
+{
+    int length, start, mult, i, j, arg_length;
+    int vec_dim;
+    int vec_shape[SHP_SEG_SIZE];
+    node *res_node = NULL;
+
+    DBUG_ENTER ("CalcPsi");
+    /* Calculate dimension and shape vector of first argument */
+    vec_dim = GetShapeVector (shape, vec_shape);
+
+    /* Calculate length of result array */
+    length = 1;
+    for (i = 0; i < TYPES_DIM (INFO_TYPE); i++)
+        length *= SHPSEG_SHAPE (TYPES_SHPSEG (INFO_TYPE), i);
+
+    /* Calculate startposition of result array in argument array */
+    start = 0;
+    for (i = 0; i < vec_dim; i++) {
+        if (vec_shape[i] >= 0) {
+            mult = 1;
+            for (j = i + 1; j < TYPES_DIM (array_type); j++)
+                mult *= SHPSEG_SHAPE (TYPES_SHPSEG (array_type), i);
+            start += vec_shape[i] * mult;
+        } else {
+            start = -1;
+        }
+    }
+
+    arg_length = 1;
+    for (i = 0; i < TYPES_DIM (array_type); i++)
+        arg_length *= SHPSEG_SHAPE (TYPES_SHPSEG (array_type), i);
+
+    DBUG_PRINT ("CF",
+                ("start = %d, lenght = %d, arg_length = %d", start, length, arg_length));
+    if ((start + length <= arg_length) && (start >= 0)) {
+        if (vec_dim == TYPES_DIM (array_type)) {
+            res_node = FetchNum (start, array);
+        } else {
+            res_node = MakeNode (N_array);
+            res_node->nnode = 1;
+            res_node->node[0] = DupPartialArray (start, length, array, arg_info);
+        }
+    } else {
+        WARN (NODE_LINE (INFO_ASSIGN), ("Illegal vector for primitive function psi"));
+    }
+    DBUG_RETURN (res_node);
+}
+
+/*
+ *
  *  functionname  : ArrayPrf
  *  arguments     : 1) prf-node
- *		    2) result type
- *		    3) arg_info->mask[1] need for eliminating identifier
+ *		    2) arg_info
  *		    R) result-node
  *  description   : Calculates array prim-functions
  *  global vars   : N_float, ... , N_not, ..., prf_string
@@ -1231,7 +1302,7 @@ NoConstSkalarPrf (node *arg_node, types *res_type, node *arg_info)
  *
  */
 node *
-ArrayPrf (node *arg_node, types *res_type, node *arg_info)
+ArrayPrf (node *arg_node, node *arg_info)
 {
     node *arg[MAXARG], *expr[MAXARG], *expr_arg[MAXARG], *tmp;
     int swap, i;
@@ -1365,7 +1436,7 @@ ArrayPrf (node *arg_node, types *res_type, node *arg_info)
                 expr_arg[0] = expr[0]->node[0];
                 expr_arg[1] = expr[1]->node[0];
                 expr[0]->node[0]
-                  = SkalarPrf (expr_arg, arg_node->info.prf, res_type, swap);
+                  = SkalarPrf (expr_arg, arg_node->info.prf, INFO_TYPE, swap);
                 expr[0] = expr[0]->node[1];
                 expr[1] = expr[1]->node[1];
             } while ((NULL != expr[0]) && (NULL != expr[1]));
@@ -1378,7 +1449,7 @@ ArrayPrf (node *arg_node, types *res_type, node *arg_info)
             do {
                 expr_arg[0] = expr[0]->node[0];
                 expr[0]->node[0]
-                  = SkalarPrf (expr_arg, arg_node->info.prf, res_type, swap);
+                  = SkalarPrf (expr_arg, arg_node->info.prf, INFO_TYPE, swap);
                 expr[0] = expr[0]->node[1];
             } while ((NULL != expr[0]));
         }
@@ -1449,7 +1520,7 @@ ArrayPrf (node *arg_node, types *res_type, node *arg_info)
              * Gives Array the correct type
              */
             ARRAY_TYPE (arg[0]) = FreeOneTypes (ARRAY_TYPE (arg[0]));
-            ARRAY_TYPE (arg[0]) = DuplicateTypes (res_type, 0);
+            ARRAY_TYPE (arg[0]) = DuplicateTypes (INFO_TYPE, 0);
 
             /*
              * Store result
@@ -1460,7 +1531,7 @@ ArrayPrf (node *arg_node, types *res_type, node *arg_info)
         case N_id:
             DBUG_PRINT ("CF",
                         ("primitive function %s folded", prf_string[arg_node->info.prf]));
-            SHAPE_2_ARRAY (tmp, arg[0]->info.ids->node->info.types, res_type);
+            SHAPE_2_ARRAY (tmp, arg[0]->info.ids->node->info.types, INFO_TYPE);
             DEC_VAR (arg_info->mask[1], arg[0]->info.ids->node->varno);
             FreeTree (arg_node);
             arg_node = tmp;
@@ -1521,124 +1592,54 @@ ArrayPrf (node *arg_node, types *res_type, node *arg_info)
     /***********************/
     /* Fold psi-function   */
     /***********************/
-    case F_psi:
+    case F_psi: {
+        int dim;
+        node *shape, *array, *res_array = NULL, *first_elem;
+        types *array_type;
 
-        switch (NODE_TYPE (arg[1])) {
-        case N_array: {
-            int start;
-            node *tmp;
+        /*
+         * Substitute shape-vector
+         */
+        if (N_id == NODE_TYPE (arg[0])) {
+            MRD_GETDATA (shape, ID_VARNO (arg[0]), INFO_VARNO);
+        } else
+            shape = arg[0];
 
-            if ((0 <= NUM_VAL (EXPRS_EXPR (ARRAY_AELEMS (arg[0]))))
-                && (NUM_VAL (EXPRS_EXPR (ARRAY_AELEMS (arg[0]))) < ArraySize (arg[1]))) {
-                DBUG_PRINT ("CF", ("primitive function %s folded",
-                                   prf_string[arg_node->info.prf]));
-                cf_expr++;
-
-                start = arg[0]->node[0]->node[0]->info.cint;
-                tmp = DupTree (FetchNum (start, arg[1]), NULL);
-                if (N_id == tmp->nodetype) {
-                    DEC_VAR (arg_info->mask[1], tmp->info.ids->node->varno);
-                }
-
-                FreeTree (arg_node);
-                arg_node = tmp;
-            } else {
-                WARN (arg_node->lineno, ("Illegal vector for primitive function psi"));
-            }
-        } break;
-        case N_id: {
-            int length, start, mult, i, j, arg_length;
-            int vec_dim;
-            int vec_shape[SHP_SEG_SIZE];
-            node *res_node, *old_arg_0, *value, *tmp;
-
-            old_arg_0 = arg[0];
-
-            /*
-             * Substitute shape-vector
-             */
-            if (N_id == arg[0]->nodetype) {
-                MRD_GETDATA (value, arg[0]->info.ids->node->varno, INFO_VARNO);
-                if (IsConst (value)) {
-                    DEC_VAR (arg_info->mask[1], arg[0]->info.ids->node->varno);
-                    arg[0] = DupTree (value, NULL);
-                    used_sofar = arg_info->mask[1];
-                    arg_info->mask[1] = GenMask (INFO_VARNO);
-                    arg[0] = Trav (arg[0], arg_info);
-                    FREE (arg_info->mask[1]);
-                    arg_info->mask[1] = used_sofar;
-                } else
-                    break;
-            } else {
-                arg[0] = Trav (arg[0], arg_info);
-            }
-
-            /*
-             * Substitution of shape-vector successful ?
-             */
-            MRD_GETDATA (tmp, arg[1]->info.ids->node->varno, INFO_VARNO);
-            if ((NULL == tmp) || (N_array != tmp->nodetype)) {
-                if (N_id == old_arg_0->nodetype) {
-                    INC_VAR (arg_info->mask[1], old_arg_0->info.ids->node->varno);
-                    FreeTree (arg[0]);
-                }
-                break;
-            }
-
-            /* Calculate dimension and shape vector of first argument */
-            vec_dim = GetShapeVector (arg[0], vec_shape);
-
-            /* Calculate length of result array */
-            length = 1;
-            for (i = 0; i < arg_info->info.types->dim; i++)
-                length *= arg_info->info.types->shpseg->shp[i];
-
-            /* Calculate startposition of result array in argument array */
-            start = 0;
-            for (i = 0; i < vec_dim; i++) {
-                if (vec_shape[i] >= 0) {
-                    mult = 1;
-                    for (j = i + 1; j < arg[1]->info.ids->node->info.types->dim; j++)
-                        mult *= arg[1]->info.ids->node->info.types->shpseg->shp[j];
-                    start += vec_shape[i] * mult;
-                } else {
-                    start = -1;
-                    i = vec_dim;
-                }
-            }
-
-            arg_length = 1;
-            for (i = 0; i < arg[1]->info.ids->node->info.types->dim; i++)
-                arg_length *= arg[1]->info.ids->node->info.types->shpseg->shp[i];
-
-            if ((start + length <= arg_length) && (start >= 0)) {
-                DEC_VAR (arg_info->mask[1], arg[1]->info.ids->node->varno);
-                if (vec_dim == arg[1]->info.ids->node->info.types->dim) {
-                    MRD_GETDATA (tmp, arg[1]->info.ids->node->varno, INFO_VARNO);
-                    res_node = FetchNum (start, tmp);
-                    if (N_id == res_node->nodetype)
-                        DEC_VAR (arg_info->mask[1], res_node->info.ids->node->varno);
-                } else {
-                    res_node = MakeNode (N_array);
-                    res_node->nnode = 1;
-                    MRD_GETDATA (tmp, arg[1]->info.ids->node->varno, INFO_VARNO);
-                    res_node->node[0] = DupPartialArray (start, length, tmp, arg_info);
-                }
-                DBUG_PRINT ("CF", ("primitive function %s folded in line %d",
-                                   prf_string[arg_node->info.prf], NODE_LINE (arg_info)));
-                FreeTree (arg_node);
-                arg_node = res_node;
-                cf_expr++;
-            } else {
-                if (old_arg_0 != arg[0])
-                    FreeTree (arg[0]);
-                WARN (arg_node->lineno, ("Illegal vector for primitive function psi"));
-            }
-        } break;
-        default:
+        if (!IsConst (shape))
             break;
+
+        /*
+         * Substitute array
+         */
+        if (N_id == NODE_TYPE (arg[1])) {
+            array_type = VARDEC_TYPE (ID_VARDEC (arg[1]));
+            MRD_GETDATA (array, ID_VARNO (arg[1]), INFO_VARNO);
+            if ((NULL == array) || (N_array != NODE_TYPE (array)))
+                break;
+        } else {
+            array_type = ARRAY_TYPE (arg[1]);
+            array = arg[1];
         }
-        break;
+
+        first_elem = EXPRS_EXPR (ARRAY_AELEMS (array));
+        if (N_id == NODE_TYPE (first_elem)) {
+            GET_DIM (dim, VARDEC_TYPE (ID_VARDEC (first_elem)));
+            if (0 != dim)
+                break;
+        }
+
+        if (T_user != array_type->simpletype)
+            res_array = CalcPsi (shape, array, array_type, arg_info);
+
+        if (NULL != res_array) {
+            MinusMask (INFO_USE, ASSIGN_USEMASK (INFO_ASSIGN), INFO_VARNO);
+            FreeTree (arg_node);
+            arg_node = GenerateMasks (res_array, arg_info);
+            DBUG_PRINT ("CF", ("primitive function %s folded in line %d",
+                               prf_string[arg_node->info.prf], NODE_LINE (arg_info)));
+            cf_expr++;
+        }
+    } break;
     case F_take:
     case F_drop:
     case F_cat:
@@ -1718,13 +1719,13 @@ CFprf (node *arg_node, node *arg_info)
         /*
          * Calculate primitive functions with arrays
          */
-        arg_node = ArrayPrf (arg_node, arg_info->info.types, arg_info);
+        arg_node = ArrayPrf (arg_node, arg_info);
     }
 
     /*
      * Do some foldings like 1 * x = x, etc.
      */
-    arg_node = NoConstSkalarPrf (arg_node, arg_info->info.types, arg_info);
+    arg_node = NoConstSkalarPrf (arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
 }
