@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.25  2002/10/30 12:12:51  sbs
+ * NTCvardec added for converting old vardecs in ntype ones.
+ *
  * Revision 3.24  2002/10/28 16:06:32  sbs
  * bug in NTCcast eliminated.
  *
@@ -747,24 +750,26 @@ NTCarg (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("NTCarg");
 
-    new_type = TYOldType2Type (ARG_TYPE (arg_node));
-    AVIS_TYPE (ARG_AVIS (arg_node)) = new_type;
+    if (TYPES_BASETYPE (ARG_TYPE (arg_node)) != T_dots) {
+        new_type = TYOldType2Type (ARG_TYPE (arg_node));
+        AVIS_TYPE (ARG_AVIS (arg_node)) = new_type;
 
-    scalar = TYGetScalar (new_type);
-    if ((TYIsUser (scalar)
-         && (TYPEDEF_ATTRIB (UTGetTdef (TYGetUserType (scalar))) == ST_unique))
-        && (ARG_ATTRIB (arg_node) == ST_regular)) {
+        scalar = TYGetScalar (new_type);
+        if ((TYIsUser (scalar)
+             && (TYPEDEF_ATTRIB (UTGetTdef (TYGetUserType (scalar))) == ST_unique))
+            && (ARG_ATTRIB (arg_node) == ST_regular)) {
 
-        DBUG_EXECUTE ("UNQ", tmp_str = TYType2String (new_type, FALSE, 0););
-        DBUG_PRINT ("UNQ", ("argument \"%s\" of type \"%s\" marked as unique",
-                            ARG_NAME (arg_node), tmp_str));
-        DBUG_EXECUTE ("UNQ", tmp_str = Free (tmp_str););
+            DBUG_EXECUTE ("UNQ", tmp_str = TYType2String (new_type, FALSE, 0););
+            DBUG_PRINT ("UNQ", ("argument \"%s\" of type \"%s\" marked as unique",
+                                ARG_NAME (arg_node), tmp_str));
+            DBUG_EXECUTE ("UNQ", tmp_str = Free (tmp_str););
 
-        ARG_ATTRIB (arg_node) = ST_unique;
-        if (!TYIsScalar (new_type)) {
-            ERROR (NODE_LINE (arg_node),
-                   ("unique type \"%s\" used in non-scalar form",
-                    TYType2String (TYGetScalar (new_type), FALSE, 0)));
+            ARG_ATTRIB (arg_node) = ST_unique;
+            if (!TYIsAKS (new_type) || (TYIsAKS (new_type) && TYGetDim (new_type) != 0)) {
+                ERROR (NODE_LINE (arg_node),
+                       ("unique type \"%s\" used in non-scalar form",
+                        TYType2String (TYGetScalar (new_type), FALSE, 0)));
+            }
         }
     }
 
@@ -789,12 +794,37 @@ NTCblock (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("NTCblock");
 
-    /*
-     * The vardecs are ignored so far.....
-     */
+    if (BLOCK_VARDEC (arg_node) != NULL) {
+        BLOCK_VARDEC (arg_node) = Trav (BLOCK_VARDEC (arg_node), arg_info);
+    }
 
     if (BLOCK_INSTR (arg_node) != NULL) {
         BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *  node * NTCvardec( node *arg_node, node *arg_info )
+ *
+ * description:
+ *
+ ******************************************************************************/
+
+node *
+NTCvardec (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("NTCvardec");
+
+    if (TYPES_BASETYPE (VARDEC_TYPE (arg_node)) != T_unknown) {
+        AVIS_TYPE (VARDEC_AVIS (arg_node)) = TYOldType2Type (VARDEC_TYPE (arg_node));
+    }
+
+    if (VARDEC_NEXT (arg_node) != NULL) {
+        VARDEC_NEXT (arg_node) = Trav (VARDEC_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -895,16 +925,24 @@ NTClet (node *arg_node, node *arg_info)
 
     if ((NODE_TYPE (LET_EXPR (arg_node)) == N_ap)
         || (NODE_TYPE (LET_EXPR (arg_node)) == N_prf)) {
-        DBUG_ASSERT ((CountIds (lhs) == TYGetProductSize (rhs_type)),
-                     "fun ap does not match no of lhs vars!");
+        DBUG_ASSERT ((CountIds (lhs) >= TYGetProductSize (rhs_type)),
+                     "fun ap yields more return values  than lhs vars available!");
         i = 0;
         while (lhs) {
-            AVIS_TYPE (IDS_AVIS (lhs)) = TYGetProductMember (rhs_type, i);
+            if (i < TYGetProductSize (rhs_type)) {
 
-            DBUG_EXECUTE ("NTC", tmp_str
-                                 = TYType2String (AVIS_TYPE (IDS_AVIS (lhs)), FALSE, 0););
-            DBUG_PRINT ("NTC", ("  type of \"%s\" is %s", IDS_NAME (lhs), tmp_str));
-            DBUG_EXECUTE ("NTC", tmp_str = Free (tmp_str););
+                AVIS_TYPE (IDS_AVIS (lhs)) = TYGetProductMember (rhs_type, i);
+
+                DBUG_EXECUTE ("NTC", tmp_str = TYType2String (AVIS_TYPE (IDS_AVIS (lhs)),
+                                                              FALSE, 0););
+                DBUG_PRINT ("NTC", ("  type of \"%s\" is %s", IDS_NAME (lhs), tmp_str));
+                DBUG_EXECUTE ("NTC", tmp_str = Free (tmp_str););
+            } else {
+                WARN (linenum,
+                      ("cannot infer type of \"%s\" as it corresponds to \"...\" "
+                       "return type -- relying on type declaration",
+                       IDS_NAME (lhs)));
+            }
 
             i++;
             lhs = IDS_NEXT (lhs);
