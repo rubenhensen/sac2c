@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.82  1998/03/06 13:23:58  srs
+ * new ASSIGN, INFO, NCODE and NWITH access macros
+ *
  * Revision 1.81  1998/03/03 23:00:59  dkr
  * added CODE_NO
  *
@@ -1148,6 +1151,7 @@ extern node *MakeVardec (char *name, types *type, node *next);
  ***    long*  MASK[x]                    (optimize -> )
  ***    int    STATUS                     (dcr1 -> dcr2 !!)
  ***    node*  CSE                        (CSE (GenerateMasks()) -> ??? )
+ ***    index_info* INDEX                 (WLI -> WLF !!)
  ***
  ***/
 
@@ -1158,6 +1162,7 @@ extern node *MakeAssign (node *instr, node *next);
 #define ASSIGN_CSE(n) (n->node[2])
 #define ASSIGN_MASK(n, x) (n->mask[x])
 #define ASSIGN_STATUS(n) (n->flag)
+#define ASSIGN_INDEX(n) (n->info2)
 
 /*--------------------------------------------------------------------------*/
 
@@ -2014,9 +2019,9 @@ extern node *MakeInfo ();
 #define INFO_TYPETAB(n) ((types **)n->info.types)
 
 /* WLF */
-#define INFO_IS_WL(n) (n->counter)
-#define INFO_NEXT(n) (n->node[0])
-#define INFO_WL(n) (n->node[1])
+#define INFO_WLI_NEXT(n) (n->node[0])
+#define INFO_WLI_WL(n) (n->node[1])
+#define INFO_WLI_ASSIGN(n) (n->node[2])
 
 /* CF */
 #define INFO_ASSIGN(n) (n->node[0])
@@ -2052,8 +2057,13 @@ extern node *MakeNWith (node *part, node *code, node *withop);
 #define NWITH_PART(n) (n->node[0])
 #define NWITH_CODE(n) (n->node[1])
 #define NWITH_WITHOP(n) (n->node[2])
-#define NWITH_PARTS(n) (n->info.cint)
 #define NWITH_MASK(n, x) (n->mask[x])
+
+#define NWITH_PARTS(n) (((wl_info *)n->info2)->parts)
+#define NWITH_REFERENCED(n) (((wl_info *)n->info2)->referenced)
+#define NWITH_REFERENCED_FOLD(n) (((wl_info *)n->info2)->referenced_fold)
+#define NWITH_COMPLEX(n) (((wl_info *)n->info2)->complex)
+#define NWITH_FOLDABLE(n) (((wl_info *)n->info2)->foldable)
 
 /*--------------------------------------------------------------------------*/
 
@@ -2194,6 +2204,7 @@ extern node *MakeNWithOp (WithOpType WithOp);
  ***    long*  MASK                    (optimize -> )
  ***    int    NO         (unambiguous number for PrintNwith2())
  ***                                   (precompile -> )
+ ***    int    FLAG                    (WLI -> WLF)
  ***
  ***  remark:
  ***   The CBLOCK 'plus' the CEXPR is the whole assignment block
@@ -2213,6 +2224,7 @@ extern node *MakeNCode (node *block, node *expr);
 #define NCODE_NEXT(n) (n->node[2])
 #define NCODE_MASK(n, x) (n->mask[x])
 #define NCODE_NO(n) (n->refcnt)
+#define NCODE_FLAG(n) (n->flag)
 
 /*--------------------------------------------------------------------------*/
 
