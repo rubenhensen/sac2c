@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2001/04/30 12:08:54  nmw
+ * remove internal call to Unroll()
+ *
  * Revision 1.3  2001/04/26 13:30:20  nmw
  * loop unrolling for predicate != added
  *
@@ -1051,12 +1054,9 @@ SSALURfundef (node *arg_node, node *arg_info)
             /* start do-loop unrolling - this leads to non ssa form code */
             arg_node = SSALURUnrollLoopBody (arg_node, unrolling);
 
-#ifndef SSALUR_USE_OLD_WLURCODE
             /* restore ssa form in this fundef for further processing */
             arg_node = CheckAvisOneFundef (arg_node);
             arg_node = SSATransformOneFundef (arg_node);
-#endif
-
         } else {
             DBUG_PRINT ("SSALUR",
                         ("no unrolling of %s: should be %d (but set to maxlur %d)",
@@ -1066,24 +1066,6 @@ SSALURfundef (node *arg_node, node *arg_info)
             }
         }
     }
-
-#ifdef SSALUR_USE_OLD_WLURCODE
-    /*
-     * call to old Unroll code to get With-loop-unrolling here, too
-     */
-    arg_node = GenerateMasks (arg_node, NULL);
-    arg_node = Unroll (arg_node, NULL);
-
-    /* restore ssa form in this fundef for further processing */
-    arg_node = CheckAvisOneFundef (arg_node);
-    arg_node = SSATransformOneFundef (arg_node);
-
-    arg_node = GenerateMasks (arg_node, NULL);
-    /*
-     * warning: if this Unroll call is removed in future, the call to
-     * SSATransformOneFundef in the above unrolling part MUST be enabled!!!
-     */
-#endif
 
     DBUG_RETURN (arg_node);
 }
