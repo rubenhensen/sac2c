@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.74  1998/02/17 14:08:53  srs
+ * changed comments for N_info
+ *
  * Revision 1.73  1998/02/16 21:38:24  dkr
  * *** empty log message ***
  *
@@ -1945,6 +1948,10 @@ extern node *MakePragma ();
  ***
  ***  when used in ConstantFolding.c :
  ***    node*      ASSIGN             (N_assign)
+ ***
+ ***
+ *** remarks:
+ ***    N_info is used in many other phases without access macros :((
  ***/
 
 /*
@@ -1957,19 +1964,23 @@ extern node *MakePragma ();
 
 extern node *MakeInfo ();
 
+/* TC */
 #define INFO_NEXTASSIGN(n) (n->node[1])
 #define INFO_LASSIGN(n) (n->node[3])
 
+/* writesib */
 #define INFO_EXPORTTYPES(n) ((nodelist *)n->node[0])
 #define INFO_EXPORTOBJS(n) ((nodelist *)n->node[1])
 #define INFO_EXPORTFUNS(n) ((nodelist *)n->node[2])
 
+/* compile */
 #define INFO_LASTIDS(n) (n->info.ids)
 #define INFO_LASTLET(n) (n->node[1])
 #define INFO_LASTASSIGN(n) (n->node[0])
 #define INFO_VARDECS(n) (n->node[3])
 #define INFO_WITHBEGIN(n) (n->node[2])
 
+/* compile */
 #define INFO_FIRSTASSIGN(n) (n->node[0])
 #define INFO_FUNDEF(n) (n->node[1])
 #define INFO_CNTPARAM(n) (n->lineno)
