@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.36  2001/03/29 01:35:51  dkr
+ * WLSEGVAR_IDX_MIN, WLSEGVAR_IDX_MAX are now node-vectors
+ *
  * Revision 3.35  2001/03/22 19:26:15  dkr
  * include of tree.h eliminated
  *
@@ -1556,9 +1559,10 @@ PrintAssign (node *arg_node, node *arg_info)
                   INDENT; PrintMrdMask (outfile, ASSIGN_MRDMASK (arg_node),
                                         INFO_PRINT_VARNO (arg_info)););
 
-    DBUG_EXECUTE ("WLI", if (N_let == NODE_TYPE (ASSIGN_INSTR (arg_node))
-                             && F_psi == PRF_PRF (LET_EXPR (ASSIGN_INSTR (arg_node))))
-                           DbugIndexInfo (ASSIGN_INDEX (arg_node)););
+    DBUG_EXECUTE ("WLI", if ((N_let == NODE_TYPE (ASSIGN_INSTR (arg_node)))
+                             && (F_psi == PRF_PRF (LET_EXPR (ASSIGN_INSTR (arg_node))))) {
+        DbugIndexInfo (ASSIGN_INDEX (arg_node));
+    });
 
     DBUG_ASSERT ((ASSIGN_INSTR (arg_node) != NULL), "instruction of N_assign is NULL");
 
@@ -2031,8 +2035,6 @@ PrintId (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("PrintId");
 
-    DBUG_ASSERT ((N_id == NODE_TYPE (arg_node)), "wrong node type");
-
     if ((ID_ATTRIB (arg_node) == ST_global) && (ID_MOD (arg_node) != NULL)) {
         fprintf (outfile, "%s:", ID_MOD (arg_node));
     }
@@ -2164,8 +2166,6 @@ node *
 PrintStr (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintStr");
-
-    DBUG_ASSERT ((N_str == NODE_TYPE (arg_node)), "wrong node type");
 
     fprintf (outfile, "\"%s\"", STR_STRING (arg_node));
 
@@ -2937,6 +2937,7 @@ PrintNgenerator (node *arg_node, node *arg_info)
     if (INFO_PRINT_NWITH (arg_info) != NULL) {
         DBUG_ASSERT ((NODE_TYPE (INFO_PRINT_NWITH (arg_info)) == N_Nwith),
                      "INFO_PRINT_NWITH is no N_Nwith node");
+
         Trav (NWITH_WITHID (INFO_PRINT_NWITH (arg_info)), arg_info);
     } else {
         fprintf (outfile, "?");
@@ -3253,11 +3254,19 @@ PrintWLsegx (node *arg_node, node *arg_info)
     seg = arg_node;
     while (seg != NULL) {
         INDENT;
-        fprintf (outfile,
-                 (NODE_TYPE (arg_node) == N_WLseg)
-                   ? "/********** segment %d: **********"
-                   : "/********** (var.) segment %d: **********",
-                 i++);
+        fprintf (outfile, "/**********%s segment %d: **********",
+                 (NODE_TYPE (arg_node) == N_WLseg) ? "" : " (var.)", i++);
+
+        fprintf (outfile, "\n");
+        INDENT;
+        fprintf (outfile, " * index domain: ");
+        WLSEGX_IDX_PRINT (outfile, arg_node, IDX_MIN);
+        fprintf (outfile, " -> ");
+        WLSEGX_IDX_PRINT (outfile, arg_node, IDX_MAX);
+        fprintf (outfile, "\n");
+        INDENT;
+        fprintf (outfile, " *");
+
         if (WLSEGX_SCHEDULING (seg) != NULL) {
             fprintf (outfile, "\n");
             INDENT;
@@ -3321,6 +3330,7 @@ PrintWLboundVar (node *wlnode, int dim)
         PrintWLboundInt (NUM_VAL (wlnode));
     } else {
         DBUG_ASSERT ((NODE_TYPE (wlnode) == N_id), "illegal node type found!");
+
         fprintf (outfile, "%s[%d]", ID_NAME (wlnode), dim);
     }
 
@@ -3382,12 +3392,9 @@ PrintWLxblock (node *arg_node, node *arg_info)
     PrintWLboundInt (WLXBLOCK_BOUND2 (arg_node));
     fprintf (outfile, "), ");
 
-    if (NODE_TYPE (arg_node) == N_WLublock) {
-        fprintf (outfile, "u");
-    }
-
-    fprintf (outfile, "block%d[%d] %d:", WLXBLOCK_LEVEL (arg_node),
-             WLXBLOCK_DIM (arg_node), WLXBLOCK_STEP (arg_node));
+    fprintf (outfile, "%sblock%d[%d] %d:", (NODE_TYPE (arg_node) == N_WLblock) ? "" : "u",
+             WLXBLOCK_LEVEL (arg_node), WLXBLOCK_DIM (arg_node),
+             WLXBLOCK_STEP (arg_node));
 
     if (WLXBLOCK_NOOP (arg_node)) {
         fprintf (outfile, " /* noop */");
@@ -3437,16 +3444,9 @@ PrintWLstridex (node *arg_node, node *arg_info)
     fprintf (outfile, "(");
     PrintWLbound (NODE_TYPE (arg_node), WLSTRIDEX_GET_ADDR (arg_node, BOUND1),
                   WLSTRIDEX_DIM (arg_node));
-    fprintf (outfile, " ");
-    if (NODE_TYPE (arg_node) == N_WLstride) {
-        fprintf (outfile, "-");
-    } else {
-        fprintf (outfile, "=");
-    }
-    fprintf (outfile, "> ");
+    fprintf (outfile, " %s> ", (NODE_TYPE (arg_node) == N_WLstride) ? "-" : "=");
     PrintWLbound (NODE_TYPE (arg_node), WLSTRIDEX_GET_ADDR (arg_node, BOUND2),
                   WLSTRIDEX_DIM (arg_node));
-
     fprintf (outfile, "), step%d[%d] ", WLSTRIDEX_LEVEL (arg_node),
              WLSTRIDEX_DIM (arg_node));
     PrintWLbound (NODE_TYPE (arg_node), WLSTRIDEX_GET_ADDR (arg_node, STEP),
@@ -3546,7 +3546,7 @@ PrintWLcode (node *arg_node, node *arg_info)
 node *
 PrintWLgridx (node *arg_node, node *arg_info)
 {
-    char *str;
+    char *str = (NODE_TYPE (arg_node) == N_WLgrid) ? "-" : "=";
 
     DBUG_ENTER ("PrintWLgridx");
 
@@ -3554,19 +3554,7 @@ PrintWLgridx (node *arg_node, node *arg_info)
     fprintf (outfile, "(");
     PrintWLbound (NODE_TYPE (arg_node), WLGRIDX_GET_ADDR (arg_node, BOUND1),
                   WLGRIDX_DIM (arg_node));
-    fprintf (outfile, " ");
-    if (NODE_TYPE (arg_node) == N_WLgrid) {
-        str = "-";
-    } else {
-        str = "=";
-    }
-    fprintf (outfile, str);
-    if (WLGRIDX_FITTED (arg_node)) {
-        fprintf (outfile, str);
-    } else {
-        fprintf (outfile, ">");
-    }
-    fprintf (outfile, "> ");
+    fprintf (outfile, " %s%s> ", str, WLGRIDX_FITTED (arg_node) ? str : ">");
     PrintWLbound (NODE_TYPE (arg_node), WLGRIDX_GET_ADDR (arg_node, BOUND2),
                   WLGRIDX_DIM (arg_node));
     fprintf (outfile, "):");
@@ -4492,11 +4480,11 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
             fprintf (outfile, "(");
 
             fprintf (outfile, "idx_min: ");
-            PRINT_VECT (outfile, WLSEG_IDX_MIN (arg_node), WLSEG_DIMS (arg_node), "%i");
+            WLSEG_IDX_PRINT (outfile, arg_node, IDX_MIN);
 
             fprintf (outfile, ", ");
             fprintf (outfile, "idx_max: ");
-            PRINT_VECT (outfile, WLSEG_IDX_MAX (arg_node), WLSEG_DIMS (arg_node), "%i");
+            WLSEG_IDX_PRINT (outfile, arg_node, IDX_MAX);
 
             fprintf (outfile, ", ");
             fprintf (outfile, "sv: ");
@@ -4528,13 +4516,11 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
             fprintf (outfile, "(");
 
             fprintf (outfile, "idx_min: ");
-            PRINT_VECT (outfile, WLSEGVAR_IDX_MIN (arg_node), WLSEGVAR_DIMS (arg_node),
-                        "%i");
+            WLSEGVAR_IDX_PRINT (outfile, arg_node, IDX_MIN);
 
             fprintf (outfile, ", ");
             fprintf (outfile, "idx_max: ");
-            PRINT_VECT (outfile, WLSEGVAR_IDX_MAX (arg_node), WLSEGVAR_DIMS (arg_node),
-                        "%i");
+            WLSEGVAR_IDX_PRINT (outfile, arg_node, IDX_MAX);
 
             fprintf (outfile, ", ");
             fprintf (outfile, "scheduler: ");

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.18  2001/03/29 01:36:21  dkr
+ * WLSEGVAR_IDX_MIN, WLSEGVAR_IDX_MAX are now node-vectors
+ *
  * Revision 3.17  2001/03/28 09:23:21  dkr
  * Pffff... typo in WLCOMP_NoBlocking corrected
  *
@@ -81,8 +84,7 @@
 /******************************************************************************
  *
  * Function:
- *   bool ExtractNaivePragmaAp( bool *do_naive_comp,
- *                              node *expr, int line);
+ *   bool ExtractNaivePragmaAp( bool *do_naive_comp, node *expr, int line);
  *
  * Description:
  *
@@ -152,7 +154,7 @@ ExtractNaiveCompPragma (node *pragma, int line)
 /******************************************************************************
  *
  * Function:
- *   node *ExtractAplPragmaAp(node *exprs, node *pragma)
+ *   node *ExtractAplPragmaAp(node *exprs, node *pragma, int line)
  *
  * Description:
  *
@@ -172,11 +174,9 @@ ExtractAplPragmaAp (node *exprs, node *pragma, int line)
         ap = EXPRS_EXPR (exprs);
         DBUG_ASSERT ((NODE_TYPE (ap) == N_ap), "Illegal wlcomp pragma.");
         if (0 == strcmp (AP_NAME (ap), "APL")) {
-            if ((AP_ARGS (ap) == NULL) || (NODE_TYPE (AP_ARG1 (ap)) != N_id)
-                || (EXPRS_NEXT (AP_ARGS (ap)) == NULL)
-                || (NODE_TYPE (AP_ARG2 (ap)) != N_num)
-                || (EXPRS_NEXT (EXPRS_NEXT (AP_ARGS (ap))) == NULL)
-                || (NODE_TYPE (AP_ARG3 (ap)) != N_num)) {
+            if ((AP_EXPRS1 (ap) == NULL) || (NODE_TYPE (AP_ARG1 (ap)) != N_id)
+                || (AP_EXPRS2 (ap) == NULL) || (NODE_TYPE (AP_ARG2 (ap)) != N_num)
+                || (AP_EXPRS3 (ap) == NULL) || (NODE_TYPE (AP_ARG3 (ap)) != N_num)) {
                 ERROR (line, ("Illegal wlcomp-pragma entry APL found"));
             } else {
                 switch (NUM_VAL (AP_ARG3 (ap))) {
@@ -213,7 +213,7 @@ ExtractAplPragmaAp (node *exprs, node *pragma, int line)
 /******************************************************************************
  *
  * Function:
- *   node *ExtractAplPragma(node *pragma, int line)
+ *   node *ExtractAplPragma( node *pragma, int line)
  *
  * Description:
  *
@@ -249,9 +249,10 @@ ExtractAplPragma (node *pragma, int line)
  **
  **  Here the funs for wlcomp-pragmas are defined.
  **
- **  Each wlcomp-pragma-fun has the signature
- **     node *WLCOMP_Fun( node *segs, node *parms, node *cubes, int dims, int line)
- **  and returns a N_WLseg(Var)-chain with annotated temporary attributes
+ **  All wlcomp-pragma-funs have the signature
+ **    node *WLCOMP_Fun( node *segs, node *parms, node *cubes, int dims,
+ **                      int line)
+ **  and return a N_WLseg(Var)-chain with annotated temporary attributes
  **  (BV, UBV, SCHEDULING, ...).
  **
  **  The meaning of the parameters:
@@ -446,7 +447,8 @@ Array2Bv (node *array, int *bv, int dims, int line)
 /******************************************************************************
  *
  * Function:
- *   node *WLCOMP_All( node *segs, node *parms, node *cubes, int dims, int line)
+ *   node *WLCOMP_All( node *segs, node *parms, node *cubes, int dims,
+ *                     int line)
  *
  * Description:
  *   choose the hole array as the only segment;
@@ -480,7 +482,8 @@ WLCOMP_All (node *segs, node *parms, node *cubes, int dims, int line)
 /******************************************************************************
  *
  * Function:
- *   node *WLCOMP_Cubes( node *segs, node *parms, node *cubes, int dims, int line)
+ *   node *WLCOMP_Cubes( node *segs, node *parms, node *cubes, int dims,
+ *                       int line)
  *
  * Description:
  *   choose every cube as a segment;
@@ -534,7 +537,8 @@ WLCOMP_Cubes (node *segs, node *parms, node *cubes, int dims, int line)
 /******************************************************************************
  *
  * Function:
- *   node *WLCOMP_ConstSegs( node *segs, node *parms, node *cubes, int dims, int line)
+ *   node *WLCOMP_ConstSegs( node *segs, node *parms, node *cubes, int dims,
+ *                           int line)
  *
  * Description:
  *   Defines a new set of segments in reliance on the given extra parameters
@@ -569,16 +573,14 @@ WLCOMP_ConstSegs (node *segs, node *parms, node *cubes, int dims, int line)
                 ABORT (line, ("Illegal argument in wlcomp-pragma found; "
                               "ConstSegs(): Upper bound not found"));
             }
-            if ((NODE_TYPE (EXPRS_EXPR (parms)) != N_array)
-                || (NODE_TYPE (EXPRS_EXPR (EXPRS_NEXT (parms))) != N_array)) {
+            if ((NODE_TYPE (EXPRS_EXPR1 (parms)) != N_array)
+                || (NODE_TYPE (EXPRS_EXPR2 (parms)) != N_array)) {
                 ABORT (line, ("Illegal argument in wlcomp-pragma found; "
                               "ConstSegs(): Argument is not an array"));
             }
 
-            new_cubes
-              = IntersectStridesArray (cubes, ARRAY_AELEMS (EXPRS_EXPR (parms)),
-                                       ARRAY_AELEMS (EXPRS_EXPR (EXPRS_NEXT (parms))),
-                                       line);
+            new_cubes = IntersectStridesArray (cubes, ARRAY_AELEMS (EXPRS_EXPR1 (parms)),
+                                               ARRAY_AELEMS (EXPRS_EXPR2 (parms)), line);
 
             if (new_cubes != NULL) {
                 new_seg = MakeWLsegX (dims, new_cubes, NULL);
@@ -591,7 +593,7 @@ WLCOMP_ConstSegs (node *segs, node *parms, node *cubes, int dims, int line)
                 last_seg = new_seg;
             }
 
-            parms = EXPRS_NEXT (EXPRS_NEXT (parms));
+            parms = EXPRS_EXPRS3 (parms);
         } while (parms != NULL);
 
         segs = WLCOMP_NoBlocking (segs, parms, cubes, dims, line);
@@ -606,7 +608,8 @@ WLCOMP_ConstSegs (node *segs, node *parms, node *cubes, int dims, int line)
 /******************************************************************************
  *
  * Function:
- *   node *WLCOMP_NoBlocking( node *segs, node *parms, node *cubes, int dims, int line)
+ *   node *WLCOMP_NoBlocking( node *segs, node *parms, node *cubes, int dims,
+ *                            int line)
  *
  * Description:
  *   sets all blocking vectors and the unrolling-blocking vector to
@@ -632,14 +635,14 @@ WLCOMP_NoBlocking (node *segs, node *parms, node *cubes, int dims, int line)
          * set ubv
          */
         if (NODE_TYPE (seg) == N_WLseg) {
-            MALLOC_INIT_VECT (WLSEG_UBV (segs), WLSEGX_DIMS (segs), int, 1);
+            MALLOC_INIT_VECT (WLSEG_UBV (seg), WLSEGX_DIMS (seg), int, 1);
 
             /*
              * set bv[]
              */
             WLSEG_BLOCKS (seg) = 3; /* three blocking levels */
             for (b = 0; b < WLSEG_BLOCKS (seg); b++) {
-                MALLOC_INIT_VECT (WLSEG_BV (segs, b), WLSEGX_DIMS (segs), int, 1);
+                MALLOC_INIT_VECT (WLSEG_BV (seg, b), WLSEGX_DIMS (seg), int, 1);
             }
         }
 
@@ -652,7 +655,8 @@ WLCOMP_NoBlocking (node *segs, node *parms, node *cubes, int dims, int line)
 /******************************************************************************
  *
  * Function:
- *   node *WLCOMP_Bv( node *segs, node *parms, node *cubes, int dims, int line)
+ *   node *WLCOMP_Bv( node *segs, node *parms, node *cubes, int dims,
+ *                    int line)
  *
  * Description:
  *   Changes the blocking-vector for one blocking level (ubv respectively).
@@ -725,7 +729,8 @@ WLCOMP_Bv (node *segs, node *parms, node *cubes, int dims, int line)
 /******************************************************************************
  *
  * Function:
- *   node *WLCOMP_BvL0( node *segs, node *parms, node *cubes, int dims, int line)
+ *   node *WLCOMP_BvL0( node *segs, node *parms, node *cubes, int dims,
+ *                      int line)
  *
  * Description:
  *   uses 'WLCOMP_Bv' to change the blocking-vectors in level 0.
@@ -747,7 +752,8 @@ WLCOMP_BvL0 (node *segs, node *parms, node *cubes, int dims, int line)
 /******************************************************************************
  *
  * Function:
- *   node *WLCOMP_BvL1( node *segs, node *parms, node *cubes, int dims, int line)
+ *   node *WLCOMP_BvL1( node *segs, node *parms, node *cubes, int dims,
+ *                      int line)
  *
  * Description:
  *   uses 'Bv' to change the blocking-vectors in level 1.
@@ -769,7 +775,8 @@ WLCOMP_BvL1 (node *segs, node *parms, node *cubes, int dims, int line)
 /******************************************************************************
  *
  * Function:
- *   node *WLCOMP_BvL2( node *segs, node *parms, node *cubes, int dims, int line)
+ *   node *WLCOMP_BvL2( node *segs, node *parms, node *cubes, int dims,
+ *                      int line)
  *
  * Description:
  *   uses 'WLCOMP_Bv' to change the blocking-vectors in level 2.
@@ -791,7 +798,8 @@ WLCOMP_BvL2 (node *segs, node *parms, node *cubes, int dims, int line)
 /******************************************************************************
  *
  * Function:
- *   node *WLCOMP_Ubv( node *segs, node *parms, node *cubes, int dims, int line)
+ *   node *WLCOMP_Ubv( node *segs, node *parms, node *cubes, int dims,
+ *                     int line)
  *
  * Description:
  *   uses 'WLCOMP_Bv' to change the unrolling-blocking-vectors.
@@ -815,7 +823,8 @@ WLCOMP_Ubv (node *segs, node *parms, node *cubes, int dims, int line)
 /******************************************************************************
  *
  * Function:
- *   node *WLCOMP_Scheduling( node *segs, node *parms, node *cubes, int dims, int line)
+ *   node *WLCOMP_Scheduling( node *segs, node *parms, node *cubes, int dims,
+ *                            int line)
  *
  * Description:
  *

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.31  2001/03/29 01:36:00  dkr
+ * WLSEGVAR_IDX_MIN, WLSEGVAR_IDX_MAX are now node-vectors
+ *
  * Revision 3.30  2001/03/27 10:53:02  dkr
  * minor changes done
  *
@@ -146,17 +149,16 @@ static int barrier_id = 0;
  *
  ******************************************************************************/
 
-static ids *wl_ids = NULL;
-static node *wl_node = NULL;
-static node *wl_seg = NULL;
-static node *wl_stride = NULL;
+static ids *wlids = NULL;
+static node *wlnode = NULL;
+static node *wlseg = NULL;
+static node *wlstride = NULL;
 
 /* postfix for goto labels */
 #define LABEL_POSTFIX "SAC__label"
 
 /*
  * This macro indicates whether there are multiple segments present or not.
- * It uses the global variable 'wl_seg'.
  */
 #define MULTIPLE_SEGS(seg) ((seg != NULL) && (WLSEGX_NEXT (seg) != NULL))
 
@@ -4984,15 +4986,15 @@ BuildIcmArgs_WL_LOOP1 (node *arg_node)
     args = MakeExprs (
       MakeNum (dim),
       MakeExprs (
-        DupIds_Id (NWITH2_VEC (wl_node)),
-        MakeExprs (DupIds_Id (GetIndexIds (NWITH2_IDS (wl_node), dim)),
+        DupIds_Id (NWITH2_VEC (wlnode)),
+        MakeExprs (DupIds_Id (GetIndexIds (NWITH2_IDS (wlnode), dim)),
                    MakeExprs (NodeOrInt_MakeIndex (NODE_TYPE (arg_node),
                                                    WLNODE_GET_ADDR (arg_node, BOUND1),
-                                                   dim, IDS_NAME (wl_ids), FALSE, FALSE),
+                                                   dim, IDS_NAME (wlids), FALSE, FALSE),
                               MakeExprs (NodeOrInt_MakeIndex (NODE_TYPE (arg_node),
                                                               WLNODE_GET_ADDR (arg_node,
                                                                                BOUND2),
-                                                              dim, IDS_NAME (wl_ids),
+                                                              dim, IDS_NAME (wlids),
                                                               FALSE, FALSE),
                                          NULL)))));
 
@@ -5021,7 +5023,7 @@ BuildIcmArgs_WL_LOOP2 (node *arg_node)
                    MakeExprs (NodeOrInt_MakeIndex (NODE_TYPE (arg_node),
                                                    WLBLOCKSTR_GET_ADDR (arg_node, STEP),
                                                    WLNODE_DIM (arg_node),
-                                                   IDS_NAME (wl_ids), FALSE, FALSE),
+                                                   IDS_NAME (wlids), FALSE, FALSE),
                               NULL));
 
     DBUG_RETURN (args);
@@ -5044,10 +5046,10 @@ BuildIcmArgs_WL_OP1 (node *arg_node)
 
     DBUG_ENTER ("BuildIcmArgs_WL_OP1");
 
-    args = MakeExprs (MakeNum (DIM_NO_OFFSET (GetDim (IDS_TYPE (wl_ids)))),
-                      MakeExprs (DupIds_Id (wl_ids),
-                                 MakeExprs (DupIds_Id (NWITH2_VEC (wl_node)),
-                                            MakeExprs (MakeNum (NWITH2_DIMS (wl_node)),
+    args = MakeExprs (MakeNum (DIM_NO_OFFSET (GetDim (IDS_TYPE (wlids)))),
+                      MakeExprs (DupIds_Id (wlids),
+                                 MakeExprs (DupIds_Id (NWITH2_VEC (wlnode)),
+                                            MakeExprs (MakeNum (NWITH2_DIMS (wlnode)),
                                                        NULL))));
 
     DBUG_RETURN (args);
@@ -5083,7 +5085,7 @@ BuildIcmArgs_WL_OP2 (node *arg_node)
     DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (last_arg)) == N_num), "wrong ICM arg found!");
     num_args = NUM_VAL (EXPRS_EXPR (last_arg));
 
-    withid_ids = NWITH2_IDS (wl_node);
+    withid_ids = NWITH2_IDS (wlnode);
     while (withid_ids != NULL) {
         last_arg = EXPRS_NEXT (last_arg) = MakeExprs (DupIds_Id (withid_ids), NULL);
         num_args--;
@@ -5119,28 +5121,25 @@ InsertIcm_MT_ADJUST_SCHEDULER (node *arg_node, node *assigns)
 
     dim = WLNODE_DIM (arg_node);
 
-    if ((!WLNODE_NOOP (arg_node)) && (WLNODE_LEVEL (arg_node) == 0) && NWITH2_MT (wl_node)
-        && (SCHAdjustmentRequired (dim, wl_seg))) {
+    if ((!WLNODE_NOOP (arg_node)) && (WLNODE_LEVEL (arg_node) == 0) && NWITH2_MT (wlnode)
+        && (SCHAdjustmentRequired (dim, wlseg))) {
         assigns
           = MakeAssign (MakeIcm7 ("MT_ADJUST_SCHEDULER", MakeNum (dim),
-                                  MakeNum (WLSEGX_DIMS (wl_seg)),
+                                  MakeNum (WLSEGX_DIMS (wlseg)),
                                   NodeOrInt_MakeIndex (NODE_TYPE (arg_node),
                                                        WLBLOCKSTR_GET_ADDR (arg_node,
                                                                             BOUND1),
-                                                       dim, IDS_NAME (wl_ids), TRUE,
-                                                       TRUE),
+                                                       dim, IDS_NAME (wlids), TRUE, TRUE),
                                   NodeOrInt_MakeIndex (NODE_TYPE (arg_node),
                                                        WLBLOCKSTR_GET_ADDR (arg_node,
                                                                             BOUND2),
-                                                       dim, IDS_NAME (wl_ids), TRUE,
-                                                       TRUE),
+                                                       dim, IDS_NAME (wlids), TRUE, TRUE),
                                   NodeOrInt_MakeIndex (NODE_TYPE (arg_node),
                                                        WLBLOCKSTR_GET_ADDR (arg_node,
                                                                             STEP),
-                                                       dim, IDS_NAME (wl_ids), TRUE,
-                                                       TRUE),
-                                  DupIds_Id (wl_ids),
-                                  MakeNum (NWITH2_OFFSET_NEEDED (wl_node))),
+                                                       dim, IDS_NAME (wlids), TRUE, TRUE),
+                                  DupIds_Id (wlids),
+                                  MakeNum (NWITH2_OFFSET_NEEDED (wlnode))),
                         assigns);
     }
 
@@ -5162,7 +5161,7 @@ InsertIcm_WL_INIT_OFFSET (node *arg_node, node *assigns)
 {
     DBUG_ENTER ("InsertIcm_WL_INIT_OFFSET");
 
-    if (NWITH2_OFFSET_NEEDED (wl_node)) {
+    if (NWITH2_OFFSET_NEEDED (wlnode)) {
         assigns = MakeAssign (MakeIcm1 ("WL_INIT_OFFSET", BuildIcmArgs_WL_OP1 (arg_node)),
                               assigns);
     }
@@ -5185,7 +5184,7 @@ InsertIcm_WL_ADJUST_OFFSET (node *arg_node, node *assigns)
 {
     DBUG_ENTER ("InsertIcm_WL_ADJUST_OFFSET");
 
-    if (NWITH2_OFFSET_NEEDED (wl_node)) {
+    if (NWITH2_OFFSET_NEEDED (wlnode)) {
         assigns
           = MakeAssign (MakeIcm2 ("WL_ADJUST_OFFSET", MakeNum (WLNODE_DIM (arg_node)),
                                   BuildIcmArgs_WL_OP2 (arg_node)),
@@ -5219,23 +5218,24 @@ InsertIcm_WL_SET_OFFSET (node *arg_node, node *assigns)
 {
     int first_block_dim, first_ublock_dim, last_frac_dim;
     int dims, dim;
+    int idx_min, idx_max;
     int d;
     shpseg *shape;
     int icm_dim = (-1);
 
     DBUG_ENTER ("InsertIcm_WL_SET_OFFSET");
 
-    if (NWITH2_OFFSET_NEEDED (wl_node)) {
+    if (NWITH2_OFFSET_NEEDED (wlnode)) {
         dim = WLNODE_DIM (arg_node);
-        dims = WLSEGX_DIMS (wl_seg);
+        dims = WLSEGX_DIMS (wlseg);
 
-        if (NODE_TYPE (wl_seg) == N_WLseg) {
+        if (NODE_TYPE (wlseg) == N_WLseg) {
             /*
              * infer first unrolling-blocking dimension
              * (== 'dims', if no unrolling-blocking is done)
              */
             d = 0;
-            while ((d < dims) && ((WLSEG_UBV (wl_seg))[d] == 1)) {
+            while ((d < dims) && ((WLSEG_UBV (wlseg))[d] == 1)) {
                 d++;
             }
             first_ublock_dim = d;
@@ -5245,7 +5245,7 @@ InsertIcm_WL_SET_OFFSET (node *arg_node, node *assigns)
              * (== 'dims', if no blocking is done)
              */
             d = 0;
-            while ((d < dims) && ((WLSEG_BV (wl_seg, 0))[d] == 1)) {
+            while ((d < dims) && ((WLSEG_BV (wlseg, 0))[d] == 1)) {
                 d++;
             }
             first_block_dim = d;
@@ -5259,17 +5259,22 @@ InsertIcm_WL_SET_OFFSET (node *arg_node, node *assigns)
          * infer the last dimension for which the segment's domain is not the full
          * range (== -1, if the segment's domain equals the full index vector space)
          */
-        DBUG_ASSERT ((WLSEGX_IDX_MIN (wl_seg) != NULL),
-                     "lower bound of segment not found!");
-        DBUG_ASSERT ((WLSEGX_IDX_MAX (wl_seg) != NULL),
-                     "lower bound of segment not found!");
-        shape = TYPES_SHPSEG (IDS_TYPE (wl_ids));
+        shape = TYPES_SHPSEG (IDS_TYPE (wlids));
         d = dims - 1;
-        while ((d >= 0) && ((WLSEGX_IDX_MIN (wl_seg))[d] == 0)
-               && (((WLSEGX_IDX_MAX (wl_seg))[d] == IDX_SHAPE)
-                   || ((shape != NULL)
-                       && ((WLSEGX_IDX_MAX (wl_seg))[d] == SHPSEG_SHAPE (shape, d))))) {
-            d--;
+
+        while (d >= 0) {
+            NodeOrInt_GetNameOrVal (NULL, &idx_min, NODE_TYPE (wlseg),
+                                    WLSEGX_IDX_GET_ADDR (wlseg, IDX_MIN, d));
+            NodeOrInt_GetNameOrVal (NULL, &idx_max, NODE_TYPE (wlseg),
+                                    WLSEGX_IDX_GET_ADDR (wlseg, IDX_MAX, d));
+
+            if ((idx_min == 0)
+                && ((idx_max == IDX_SHAPE)
+                    || ((shape != NULL) && (idx_max == SHPSEG_SHAPE (shape, d))))) {
+                d--;
+            } else {
+                break;
+            }
         }
         last_frac_dim = d;
 
@@ -5317,8 +5322,8 @@ InsertIcm_WL_SET_OFFSET (node *arg_node, node *assigns)
  *   The old 'arg_node' is removed by COMPLet.
  *
  * Remarks:
- *   - 'wl_ids' points always to LET_IDS of the current with-loop.
- *   - 'wl_node' points always to the N_Nwith2-node.
+ *   - 'wlids' points always to LET_IDS of the current with-loop.
+ *   - 'wlnode' points always to the N_Nwith2-node.
  *
  ******************************************************************************/
 
@@ -5327,11 +5332,11 @@ COMPNwith2 (node *arg_node, node *arg_info)
 {
     node *fundef, *vardec, *icm_args, *fold_vardecs;
     node *let_neutral, *comp_neutral, *tmp, *new;
-    node *old_wl_node;
-    ids *old_wl_ids;
+    node *old_wlnode;
+    ids *old_wlids;
     char *icm_name_begin, *icm_name_end;
     char *profile_name;
-    node *rc_icms_wl_ids = NULL;
+    node *rc_icms_wlids = NULL;
     node *assigns = NULL;
 
     DBUG_ENTER ("COMPNwith2");
@@ -5340,10 +5345,10 @@ COMPNwith2 (node *arg_node, node *arg_info)
      * we must store the with-loop ids *before* compiling the codes
      *  because INFO_COMP_LASTIDS is possibly updated afterwards !!!
      */
-    old_wl_ids = wl_ids; /* stack 'wl_ids' */
-    wl_ids = INFO_COMP_LASTIDS (arg_info);
-    old_wl_node = wl_node; /* stack 'wl_node' */
-    wl_node = arg_node;
+    old_wlids = wlids; /* stack 'wlids' */
+    wlids = INFO_COMP_LASTIDS (arg_info);
+    old_wlnode = wlnode; /* stack 'wlnode' */
+    wlnode = arg_node;
 
     if ((NWITH2_TYPE (arg_node) == WO_genarray)
         || (NWITH2_TYPE (arg_node) == WO_modarray)) {
@@ -5352,14 +5357,14 @@ COMPNwith2 (node *arg_node, node *arg_info)
          *
          * Insert ICMs for memory management (ND_CHECK_REUSE_ARRAY, ND_ALLOC_ARRAY),
          * Note: In case of a fold with-loop, this is done automaticly when
-         * compiling the init-assignment 'wl_ids = neutral' !!!
+         * compiling the init-assignment 'wlids = neutral' !!!
          */
 
         if (optimize & OPT_UIP) {
             /*
              * find all arrays, that possibly can be reused.
              */
-            arg_node = GetReuseArrays (arg_node, INFO_COMP_FUNDEF (arg_info), wl_ids);
+            arg_node = GetReuseArrays (arg_node, INFO_COMP_FUNDEF (arg_info), wlids);
 
             /*
              * 'ND_CHECK_REUSE_ARRAY'
@@ -5368,7 +5373,7 @@ COMPNwith2 (node *arg_node, node *arg_info)
             while (vardec != NULL) {
                 assigns = MakeAssign (MakeIcm2 ("ND_CHECK_REUSE_ARRAY",
                                                 MakeId_Copy (VARDEC_OR_ARG_NAME (vardec)),
-                                                DupIds_Id (wl_ids)),
+                                                DupIds_Id (wlids)),
                                       assigns);
 
                 vardec = DFMGetMaskEntryDeclSet (NULL);
@@ -5380,7 +5385,7 @@ COMPNwith2 (node *arg_node, node *arg_info)
          * 'ND_ALLOC_ARRAY'
          */
         assigns
-          = AppendAssign (assigns, Ids2AllocArrayICMs_reuse (wl_ids, NULL,
+          = AppendAssign (assigns, Ids2AllocArrayICMs_reuse (wlids, NULL,
                                                              NWITH2_PRAGMA (arg_node)));
     } else {
         /*
@@ -5423,11 +5428,11 @@ COMPNwith2 (node *arg_node, node *arg_info)
     /*
      * build arguments for  'WL_..._BEGIN'-ICM and 'WL_..._END'-ICM
      */
-    icm_args = MakeExprs (DupIds_Id (wl_ids),
-                          MakeExprs (DupIds_Id (NWITH2_VEC (wl_node)),
+    icm_args = MakeExprs (DupIds_Id (wlids),
+                          MakeExprs (DupIds_Id (NWITH2_VEC (wlnode)),
                                      MakeExprs (MakeNum (NWITH2_DIMS (arg_node)), NULL)));
 
-    if (NWITH2_OFFSET_NEEDED (wl_node)) {
+    if (NWITH2_OFFSET_NEEDED (wlnode)) {
         icm_name_begin = "WL_BEGIN__OFFSET";
         icm_name_end = "WL_END__OFFSET";
     } else {
@@ -5448,13 +5453,13 @@ COMPNwith2 (node *arg_node, node *arg_info)
         /* here is no break missing! */
     case WO_foldprf:
         /****************************************
-         * compile 'wl_ids = neutral' !!!
+         * compile 'wlids = neutral' !!!
          */
-        let_neutral = MakeLet (DupTree (NWITH2_NEUTRAL (arg_node)), DupOneIds (wl_ids));
+        let_neutral = MakeLet (DupTree (NWITH2_NEUTRAL (arg_node)), DupOneIds (wlids));
         comp_neutral = Compile (let_neutral);
         if (NODE_TYPE (comp_neutral) != N_assign) {
             /*
-             * compiled  'wl_ids = neutral'  is still a N_let node
+             * compiled  'wlids = neutral'  is still a N_let node
              *  -> build a N_assign node
              */
             DBUG_ASSERT ((NODE_TYPE (let_neutral) == N_let),
@@ -5464,8 +5469,8 @@ COMPNwith2 (node *arg_node, node *arg_info)
         }
 
         /*
-         * All RC-ICMs on 'wl_ids' must be moved *behind* the WL-code!!
-         * Therefore we collect them in 'rc_icms_wl_ids' to insert them later.
+         * All RC-ICMs on 'wlids' must be moved *behind* the WL-code!!
+         * Therefore we collect them in 'rc_icms_wlids' to insert them later.
          */
         tmp = comp_neutral;
         while (ASSIGN_NEXT (tmp) != NULL) {
@@ -5478,7 +5483,7 @@ COMPNwith2 (node *arg_node, node *arg_info)
                 new = ASSIGN_NEXT (tmp);
                 ASSIGN_NEXT (tmp) = ASSIGN_NEXT (ASSIGN_NEXT (tmp));
                 ASSIGN_NEXT (new) = NULL;
-                rc_icms_wl_ids = AppendAssign (rc_icms_wl_ids, new);
+                rc_icms_wlids = AppendAssign (rc_icms_wlids, new);
             } else {
                 tmp = ASSIGN_NEXT (tmp);
             }
@@ -5522,9 +5527,9 @@ COMPNwith2 (node *arg_node, node *arg_info)
                                                            MakeId_Copy (profile_name))));
 
     /*
-     * insert RC-ICMs from 'wl_ids = neutral'
+     * insert RC-ICMs from 'wlids = neutral'
      */
-    assigns = AppendAssign (assigns, rc_icms_wl_ids);
+    assigns = AppendAssign (assigns, rc_icms_wlids);
 
     /*
      * insert ICMs for memory management ('DEC_RC_FREE')
@@ -5539,10 +5544,10 @@ COMPNwith2 (node *arg_node, node *arg_info)
     }
 
     /*
-     * pop 'wl_ids', 'wl_node'
+     * pop 'wlids', 'wlnode'
      */
-    wl_ids = old_wl_ids;
-    wl_node = old_wl_node;
+    wlids = old_wlids;
+    wlnode = old_wlnode;
 
     DBUG_RETURN (assigns);
 }
@@ -5558,7 +5563,7 @@ COMPNwith2 (node *arg_node, node *arg_info)
  *   (The whole with-loop-tree should be freed by 'COMPNwith2' only!!)
  *
  * remark:
- *   - 'wl_seg' points to the current with-loop segment.
+ *   - 'wlseg' points to the current with-loop segment.
  *     (N_WLseg- *or* N_WLsegVar-node!)
  *
  ******************************************************************************/
@@ -5566,16 +5571,16 @@ COMPNwith2 (node *arg_node, node *arg_info)
 node *
 COMPWLsegx (node *arg_node, node *arg_info)
 {
-    node *assigns, *old_wl_seg;
+    node *assigns, *old_wlseg;
 
     DBUG_ENTER ("COMPWLsegx");
 
     /*
-     * stack old 'wl_seg'.
-     * store pointer to current segment in 'wl_seg'.
+     * stack old 'wlseg'.
+     * store pointer to current segment in 'wlseg'.
      */
-    old_wl_seg = wl_seg;
-    wl_seg = arg_node;
+    old_wlseg = wlseg;
+    wlseg = arg_node;
 
     /*
      * compile the contents of the segment
@@ -5590,12 +5595,12 @@ COMPWLsegx (node *arg_node, node *arg_info)
      */
     assigns
       = AppendAssign (assigns,
-                      MakeAssign (SCHCompileSchedulingEnd (IDS_NAME (wl_ids),
+                      MakeAssign (SCHCompileSchedulingEnd (IDS_NAME (wlids),
                                                            WLSEGX_SCHEDULING (arg_node),
                                                            arg_node),
                                   NULL));
     assigns
-      = MakeAssign (SCHCompileSchedulingBegin (IDS_NAME (wl_ids),
+      = MakeAssign (SCHCompileSchedulingBegin (IDS_NAME (wlids),
                                                WLSEGX_SCHEDULING (arg_node), arg_node),
                     assigns);
 
@@ -5607,9 +5612,9 @@ COMPWLsegx (node *arg_node, node *arg_info)
     }
 
     /*
-     * pop 'wl_seg'.
+     * pop 'wlseg'.
      */
-    wl_seg = old_wl_seg;
+    wlseg = old_wlseg;
 
     DBUG_RETURN (assigns);
 }
@@ -5625,9 +5630,9 @@ COMPWLsegx (node *arg_node, node *arg_info)
  *     (the whole with-loop-tree should be freed by 'COMPNwith2' only!!)
  *
  * remarks:
- *   - 'wl_ids' points always to LET_IDS of the current with-loop.
- *   - 'wl_node' points always to the N_Nwith2-node.
- *   - 'wl_seg' points to the current with-loop segment.
+ *   - 'wlids' points always to LET_IDS of the current with-loop.
+ *   - 'wlnode' points always to the N_Nwith2-node.
+ *   - 'wlseg' points to the current with-loop segment.
  *     (N_WLseg- *or* N_WLsegVar-node!)
  *
  ******************************************************************************/
@@ -5647,8 +5652,8 @@ COMPWLxblock (node *arg_node, node *arg_info)
     dim = WLXBLOCK_DIM (arg_node);
 
     is_block = (NODE_TYPE (arg_node) == N_WLblock);
-    mt_active = NWITH2_MT (wl_node);
-    offset_needed = NWITH2_OFFSET_NEEDED (wl_node);
+    mt_active = NWITH2_MT (wlnode);
+    offset_needed = NWITH2_OFFSET_NEEDED (wlnode);
 
     /*******************************************
      * create ICMs for next dim / contents     *
@@ -5769,11 +5774,11 @@ COMPWLxblock (node *arg_node, node *arg_info)
  *     (the whole with-loop-tree should be freed by 'COMPNwith2' only!!)
  *
  * remarks:
- *   - 'wl_ids' points always to LET_IDS of the current with-loop.
- *   - 'wl_node' points always to the N_Nwith2-node.
- *   - 'wl_seg' points to the current with-loop segment.
+ *   - 'wlids' points always to LET_IDS of the current with-loop.
+ *   - 'wlnode' points always to the N_Nwith2-node.
+ *   - 'wlseg' points to the current with-loop segment.
  *     (N_WLseg- *or* N_WLsegVar-node!)
- *   - 'wl_stride' points to the current with-loop stride.
+ *   - 'wlstride' points to the current with-loop stride.
  *     (N_WLstride- *or* N_WLstrideVar-node!)
  *
  ******************************************************************************/
@@ -5781,7 +5786,7 @@ COMPWLxblock (node *arg_node, node *arg_info)
 node *
 COMPWLstridex (node *arg_node, node *arg_info)
 {
-    node *old_wl_stride;
+    node *old_wlstride;
     node *new_assigns;
     int level, dim;
     int cnt_unroll, i;
@@ -5793,17 +5798,17 @@ COMPWLstridex (node *arg_node, node *arg_info)
     DBUG_ENTER ("COMPWLstridex");
 
     /*
-     * stack old 'wl_stride'.
-     * store pointer to current segment in 'wl_stride'.
+     * stack old 'wlstride'.
+     * store pointer to current segment in 'wlstride'.
      */
-    old_wl_stride = wl_stride;
-    wl_stride = arg_node;
+    old_wlstride = wlstride;
+    wlstride = arg_node;
 
     level = WLSTRIDEX_LEVEL (arg_node);
     dim = WLSTRIDEX_DIM (arg_node);
 
-    mt_active = NWITH2_MT (wl_node);
-    offset_needed = NWITH2_OFFSET_NEEDED (wl_node);
+    mt_active = NWITH2_MT (wlnode);
+    offset_needed = NWITH2_OFFSET_NEEDED (wlnode);
 
     /*******************************************
      * create ICMs for next dim / contents     *
@@ -5906,9 +5911,9 @@ COMPWLstridex (node *arg_node, node *arg_info)
     }
 
     /*
-     * restore old 'wl_stride'.
+     * restore old 'wlstride'.
      */
-    wl_stride = old_wl_stride;
+    wlstride = old_wlstride;
 
     DBUG_RETURN (assigns);
 }
@@ -5924,11 +5929,11 @@ COMPWLstridex (node *arg_node, node *arg_info)
  *     (the whole with-loop-tree should be freed by 'COMPNwith2' only!!)
  *
  * remarks:
- *   - 'wl_ids' points always to LET_IDS of the current with-loop.
- *   - 'wl_node' points always to the N_with-node.
- *   - 'wl_seg' points to the current with-loop segment.
+ *   - 'wlids' points always to LET_IDS of the current with-loop.
+ *   - 'wlnode' points always to the N_with-node.
+ *   - 'wlseg' points to the current with-loop segment.
  *     (N_WLseg- *or* N_WLsegVar-node!)
- *   - 'wl_stride' points to the current with-loop stride.
+ *   - 'wlstride' points to the current with-loop stride.
  *     (N_WLstride- *or* N_WLstrideVar-node!)
  *
  ******************************************************************************/
@@ -5951,8 +5956,8 @@ COMPWLgridx (node *arg_node, node *arg_info)
 
     dim = WLGRIDX_DIM (arg_node);
 
-    mt_active = NWITH2_MT (wl_node);
-    offset_needed = NWITH2_OFFSET_NEEDED (wl_node);
+    mt_active = NWITH2_MT (wlnode);
+    offset_needed = NWITH2_OFFSET_NEEDED (wlnode);
     is_fitted = WLGRID_FITTED (arg_node);
 
     if (WLGRIDX_NOOP (arg_node)) {
@@ -5984,7 +5989,7 @@ COMPWLgridx (node *arg_node, node *arg_info)
                 /*
                  * choose right ICM
                  */
-                switch (NWITH2_TYPE (wl_node)) {
+                switch (NWITH2_TYPE (wlnode)) {
                 case WO_genarray:
                     DBUG_ASSERT ((offset_needed), "wrong value for OFFSET_NEEDED found!");
                     icm_name = "WL_ASSIGN__INIT";
@@ -5994,7 +5999,7 @@ COMPWLgridx (node *arg_node, node *arg_info)
                 case WO_modarray:
                     DBUG_ASSERT ((offset_needed), "wrong value for OFFSET_NEEDED found!");
                     icm_name = "WL_ASSIGN__COPY";
-                    icm_args = MakeExprs (DupNode (NWITH2_ARRAY (wl_node)),
+                    icm_args = MakeExprs (DupNode (NWITH2_ARRAY (wlnode)),
                                           BuildIcmArgs_WL_OP2 (arg_node));
                     break;
 
@@ -6032,7 +6037,7 @@ COMPWLgridx (node *arg_node, node *arg_info)
                 /*
                  * choose right ICM
                  */
-                switch (NWITH2_TYPE (wl_node)) {
+                switch (NWITH2_TYPE (wlnode)) {
                 case WO_genarray:
                     /* here is no break missing! */
                 case WO_modarray:
@@ -6065,7 +6070,7 @@ COMPWLgridx (node *arg_node, node *arg_info)
                      * insert code of the pseudo fold-fun
                      */
                     assigns
-                      = AppendAssign (assigns, GetFoldCode (NWITH2_FUNDEF (wl_node)));
+                      = AppendAssign (assigns, GetFoldCode (NWITH2_FUNDEF (wlnode)));
                     break;
 
                 default:
@@ -6089,7 +6094,7 @@ COMPWLgridx (node *arg_node, node *arg_info)
      * if the index-vector is needed somewhere in the code-blocks and this is
      * not a dummy grid (init, copy, noop), we must add the ICM 'WL_SET_IDXVEC'.
      */
-    if ((IDS_REFCNT (NWITH2_VEC (wl_node)) > 0) && (!WLGRIDX_NOOP (arg_node))
+    if ((IDS_REFCNT (NWITH2_VEC (wlnode)) > 0) && (!WLGRIDX_NOOP (arg_node))
         && ((WLGRIDX_CODE (arg_node) != NULL) || (WLGRIDX_NEXTDIM (arg_node) != NULL))) {
         assigns
           = MakeAssign (MakeIcm1 ("WL_SET_IDXVEC", BuildIcmArgs_WL_LOOP1 (arg_node)),
