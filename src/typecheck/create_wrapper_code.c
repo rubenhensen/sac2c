@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.30  2004/12/09 00:39:41  sbs
+ * bug in CWCfold
+ *
  * Revision 1.29  2004/12/06 17:29:04  sbs
  * removal of generic wrappers changed. Now there should be no zombie funs no more!
  * TUreplaceRettypes is now non-destructive!
@@ -806,9 +809,9 @@ CWCfold (node *arg_node, info *arg_info)
     ntype *neutr_type, *body_type;
     ntype *arg_type, *arg_types;
 
-    DBUG_ENTER ("CWCwithop");
+    DBUG_ENTER ("CWCfold");
 
-    if (FOLD_FUN (arg_node) == NULL) {
+    if (FOLD_FUN (arg_node) != NULL) {
         FOLD_NEUTRAL (arg_node) = TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
 
         neutr_type
