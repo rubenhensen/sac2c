@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.96  1995/12/18 16:18:48  cg
+ * Revision 1.97  1995/12/18 18:27:48  cg
+ * Bugs fixed in PrintIcm and PrintObjdef. Now the icms for global arrays
+ * will be printed correctly.
+ *
+ * Revision 1.96  1995/12/18  16:18:48  cg
  * Bug fixed in PrintId
  *
  * Revision 1.95  1995/12/04  16:18:25  hw
@@ -618,27 +622,32 @@ PrintObjdef (node *arg_node, node *arg_info)
 
     DBUG_PRINT ("PRINT", ("%s " P_FORMAT, mdb_nodetype[arg_node->nodetype], arg_node));
 
-    if (arg_node->info.types->status == ST_imported) {
-        fprintf (outfile, "extern %s ", Type2String (arg_node->info.types, 0));
-        if (arg_node->info.types->id_mod != NULL)
-            fprintf (outfile, "%s%s", arg_node->info.types->id_mod, mod_name_con);
-        fprintf (outfile, "%s;\n", arg_node->info.types->id);
+    if ((OBJDEF_ICM (arg_node) != NULL) && (NODE_TYPE (OBJDEF_ICM (arg_node)) == N_icm)) {
+        Trav (OBJDEF_ICM (arg_node), arg_info);
     } else {
-        fprintf (outfile, "%s ", Type2String (arg_node->info.types, 0));
-        if (arg_node->info.types->id_mod != NULL)
-            fprintf (outfile, "%s%s", arg_node->info.types->id_mod, mod_name_con);
-        fprintf (outfile, "%s", arg_node->info.types->id);
+        if (arg_node->info.types->status == ST_imported) {
+            fprintf (outfile, "extern %s ", Type2String (arg_node->info.types, 0));
+            if (arg_node->info.types->id_mod != NULL)
+                fprintf (outfile, "%s%s", arg_node->info.types->id_mod, mod_name_con);
+            fprintf (outfile, "%s;\n", arg_node->info.types->id);
+        } else {
+            fprintf (outfile, "%s ", Type2String (arg_node->info.types, 0));
+            if (arg_node->info.types->id_mod != NULL)
+                fprintf (outfile, "%s%s", arg_node->info.types->id_mod, mod_name_con);
+            fprintf (outfile, "%s", arg_node->info.types->id);
 
-        if (arg_node->node[1] != NULL) {
-            fprintf (outfile, " = ");
-            Trav (arg_node->node[1], arg_info);
+            if (arg_node->node[1] != NULL) {
+                fprintf (outfile, " = ");
+                Trav (arg_node->node[1], arg_info);
+            }
+
+            fprintf (outfile, ";\n");
         }
-
-        fprintf (outfile, ";\n");
     }
 
-    if (1 == arg_node->nnode)
-        Trav (arg_node->node[0], arg_info); /* traverse next def */
+    if (OBJDEF_NEXT (arg_node) != NULL) {
+        Trav (arg_node->node[0], arg_info); /* traverse next objdef */
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -1278,13 +1287,13 @@ PrintIcm (node *arg_node, node *arg_info)
 
     if (NULL != arg_node->node[1]) {
         if ((1 == show_icm) || (0 == compiled_icm)) {
-            if ((0 == strcmp (ICM_NAME (arg_node), "ND_TYPEDEF_ARRAY"))
-                || (0 == strcmp (ICM_NAME (arg_node), "ND_KS_DECL_GLOBAL_ARRAY"))
-                || (0 == strcmp (ICM_NAME (arg_node), "ND_KD_DECL_EXTERN_ARRAY"))) {
+            if (0 == strcmp (ICM_NAME (arg_node), "ND_TYPEDEF_ARRAY")) {
                 fprintf (outfile, "\n");
                 INDENT;
-            } else
+            } else {
                 fprintf (outfile, ", ");
+            }
+
             Trav (arg_node->node[1], arg_info);
         }
     }
