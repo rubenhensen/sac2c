@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.2  2000/11/24 14:51:13  nmw
+ * analysis ignores fundefs marked as ST_ignore
+ *
  * Revision 3.1  2000/11/20 18:00:47  sacbase
  * new release made
  *
@@ -126,7 +129,7 @@ FindAllNeededObjects (node *arg_node)
 
     if ((FUNDEF_STATUS (arg_node) != ST_imported_mod)
         && (FUNDEF_STATUS (arg_node) != ST_imported_class)
-        && (FUNDEF_BODY (arg_node) != NULL)) {
+        && (FUNDEF_STATUS (arg_node) != ST_ignore) && (FUNDEF_BODY (arg_node) != NULL)) {
         /*
          *  For each not imported function the list of called functions
          *  is traversed.
@@ -146,6 +149,7 @@ FindAllNeededObjects (node *arg_node)
 
             if ((FUNDEF_STATUS (NODELIST_NODE (tmp)) != ST_imported_mod)
                 && (FUNDEF_STATUS (NODELIST_NODE (tmp)) != ST_imported_class)
+                && (FUNDEF_STATUS (NODELIST_NODE (tmp)) != ST_ignore)
                 && (FUNDEF_BODY (NODELIST_NODE (tmp)) != NULL)) {
                 /*
                  *  If the called function is not imported, its called functions
@@ -225,7 +229,7 @@ ANAfundef (node *arg_node, node *arg_info)
 
     if ((FUNDEF_STATUS (arg_node) != ST_imported_mod)
         && (FUNDEF_STATUS (arg_node) != ST_imported_class)
-        && (FUNDEF_BODY (arg_node) != NULL)) {
+        && (FUNDEF_STATUS (arg_node) != ST_ignore) && (FUNDEF_BODY (arg_node) != NULL)) {
         Trav (FUNDEF_BODY (arg_node), arg_node);
         FUNDEF_NEEDTYPES (arg_node) = TidyUpNodelist (FUNDEF_NEEDTYPES (arg_node));
     }
