@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.54  2001/03/21 13:51:39  dkr
+ * forced check-in
+ *
  * Revision 3.53  2001/03/19 16:43:46  dkr
  * WLSEG_HOMSV removed (WLSEG_SV used instead)
  *
@@ -2433,19 +2436,8 @@ ccess macros :((
 
 extern node *MakeInfo ();
 
-/* DupTree
- *
- * ATTENTION: Usage of DUP and INL macros on arg_info are mixed. Be careful
- *            to avoid overlapping addresses.
- *
- *            INFO_INL_TYPES is used when DupTree is called from Inlining,
- *            so do not override that one here. (jhs)
- *
- * INFO_DUP_DFMBASE carries the information of a new DFMbase for DFMmasks to be
- *                  copied, when the body of a function is duplicated (jhs)
- */
+/* DupTree */
 #define INFO_DUP_CONT(n) (n->node[1])
-/*      INFO_INL_TYPES(n)                      (n->node[2])   See comment! */
 #define INFO_DUP_FUNDEF(n) (n->node[3])
 #define INFO_DUP_TYPE(n) (n->flag)
 #define INFO_DUP_ALL(n) (n->int_data)
@@ -2654,15 +2646,15 @@ extern node *MakeInfo ();
 #define INFO_VARNO(n) (n->varno)
 
 /* inline */
-/*
- * ATTENTION: Usage of DUP and INL macros on arg_info are mixed. Be careful
- *            to avoid overlapping addresses.
- *
- *            INFO_INL_TYPES is used when DupTree is called by Inlining,
- *            so do not override that one there (INFO_DUP_xxx). (jhs)
- */
-#define INFO_INL_FIRST_FUNC(n) (n->node[0])
-#define INFO_INL_TYPES(n) (n->node[2])
+#define INFO_INL_FIRST_FUNC(n) (n->node[0]) /* old */
+#define INFO_INL_TYPES(n) (n->node[2])      /* old */
+
+#define INFO_INL_MODUL(n) (n->node[0])
+#define INFO_INL_VARDECS(n) (n->node[1])
+#define INFO_INL_LUT(n) ((LUT_t) (n->node[2]))
+#define INFO_INL_PROLOG(n) (n->node[3])
+#define INFO_INL_EPILOG(n) (n->node[4])
+#define INFO_INL_ARGS(n) (n->node[5])
 
 /* WLF, all phases of WLF use these macros, not only WLI. */
 #define INFO_WLI_NEXT(n) (n->node[0])
