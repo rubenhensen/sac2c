@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.22  1995/04/05 15:52:38  asi
+ * Revision 1.23  1995/05/15 08:45:25  asi
+ * added variables : optvar, optvar_counter.
+ * added functions : SetMask, OrMask, AndMask.
+ *
+ * Revision 1.22  1995/04/05  15:52:38  asi
  * loop invariant removal added
  *
  * Revision 1.21  1995/03/24  15:51:55  asi
@@ -90,6 +94,7 @@ extern int opt_dcr;
 extern int opt_cf;
 extern int opt_wr;
 extern int opt_lir;
+extern int optvar;
 /* main.c end */
 
 extern int dead_expr;
@@ -97,10 +102,14 @@ extern int dead_var;
 extern int cf_expr;
 extern int wr_expr;
 extern int lir_expr;
+extern int optvar_counter;
 
 #define INC_VAR(mask, var) mask[var] += 1
 #define DEC_VAR(mask, var) mask[var] -= 1
 #define VARNO arg_info->varno
+
+#define DEF arg_node->mask[0]
+#define USE arg_node->mask[1]
 
 #define VAR_LENGTH 10
 
@@ -113,13 +122,15 @@ extern node *Optimize (node *arg_node);
 extern void *MAlloc (int size);
 extern char *PrintMask (long *mask, int varno);
 extern void PrintMasks (node *arg_node, node *arg_info);
-extern void ClearMask (long *mask, int varno);
+extern void SetMask (long *mask, long value, int varno);
 extern long *GenMask (int varno);
 extern void MinusMask (long *mask1, long *mask2, int varno);
 extern long *DupMask (long *oldmask, int varno);
 extern void OrMask (long *mask1, long *mask2, int varno);
+extern void AndMask (long *mask1, long *mask2, int varno);
 extern short CheckMask (long *mask1, long *mask2, int varno);
 extern void PlusMask (long *mask1, long *mask2, int varno);
+extern void PlusChainMasks (int pos, node *chain, node *arg_info);
 extern void If3_2Mask (long *mask1, long *mask2, long *mask3, int varno);
 extern short MaskIsNotZero (long *mask, int varno);
 extern long ReadMask (long *mask, long number);
