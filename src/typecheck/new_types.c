@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.59  2004/09/30 17:09:57  sah
+ * removed TYArgs2FunType
+ * added TYArgs2FunTypeString
+ *
  * Revision 3.58  2004/09/30 15:12:15  sbs
  * NTY_MEM DBUG_PRINTs added.
  *
@@ -4200,6 +4204,43 @@ TYType2DebugString (ntype *type, bool multiline, int offset)
     DBUG_RETURN (tmp_str);
 }
 
+char *
+TYArgs2FunTypeString (node *args, ntype *rettype)
+{
+    str_buf *buf;
+    char *tmp;
+
+    DBUG_ENTER ("TYArgs2FunTypeString");
+
+    buf = StrBufCreate (4096);
+
+    StrBufprintf (buf, "PROJ { ");
+
+    while (args != NULL) {
+        ntype *atype = AVIS_TYPE (ARG_AVIS (args));
+
+        if (atype != NULL) {
+            tmp = TYType2String (atype, 0, 0);
+
+            StrBufprintf (buf, "%s -> ", tmp);
+
+            tmp = Free (tmp);
+        }
+
+        args = ARG_NEXT (args);
+    }
+
+    tmp = TYType2String (rettype, 0, 0);
+
+    StrBufprintf (buf, "%s }", tmp);
+
+    tmp = StrBuf2String (buf);
+
+    buf = StrBufFree (buf);
+
+    DBUG_RETURN (tmp);
+}
+
 /******************************************************************************
  *
  * function:
@@ -4821,50 +4862,6 @@ TYType2OldType (ntype *new)
     DBUG_EXECUTE ("NTY", tmp_str2 = Free (tmp_str2););
 
     DBUG_RETURN (res);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn ntype *TYArgs2FunType( node *args, ntype *rettype, node *fundef)
- *
- * @brief Converts an arg chain and a return type to a function type
- *
- * @param args an NArg node chain already having ntype attributes
- * @param rettype the return type of the function
- * @param fundef pointer to the fundef itself
- *
- ******************************************************************************/
-ntype *
-TYArgs2FunType (node *args, ntype *rettype, node *fundef)
-{
-    ntype *result;
-
-    DBUG_ENTER ("TYArgs2FunType");
-
-    if (args == NULL) {
-        result = rettype;
-    } else if (AVIS_TYPE (ARG_AVIS (args)) != NULL) {
-        result = TYArgs2FunType (ARG_NEXT (args), rettype, fundef);
-
-        if (result != NULL) {
-            /* in case we were not able to build a type so far
-             * we cannot go on, so we do not build a further
-             * function type
-             */
-            result
-              = TYMakeFunType (TYCopyType (AVIS_TYPE (ARG_AVIS (args))), result, fundef);
-        }
-    } else {
-        /* we found a missing N_Arg type, so we stop here.
-         * furthermore we have to free the return type as
-         * it wont be used
-         */
-
-        rettype = TYFreeType (rettype);
-        result = NULL;
-    }
-
-    DBUG_RETURN (result);
 }
 
 /**

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.21  2004/09/30 17:09:57  sah
+ * removed TYArgs2FunType
+ * added TYArgs2FunTypeString
+ *
  * Revision 3.20  2004/09/29 13:47:08  sah
  * added TYArgs2FunType
  *
@@ -380,6 +384,7 @@ extern ntype *TYCopyFixedType (ntype *type);
 extern ntype *TYDeriveSubtype (ntype *type);
 extern char *TYType2String (ntype *new, bool multiline, int offset);
 extern char *TYType2DebugString (ntype *new, bool multiline, int offset);
+extern char *TYArgs2FunTypeString (node *args, ntype *rettype);
 extern ntype *TYNestTypes (ntype *outer, ntype *inner);
 extern ntype *TYDeNestTypes (ntype *nested, ntype *inner);
 
@@ -392,7 +397,6 @@ extern ntype *TYOldType2ScalarType (types *old);
 extern ntype *TYOldType2Type (types *old);
 extern types *TYType2OldType (ntype *new);
 extern ntype *TYOldTypes2ProdType (types *old);
-extern ntype *TYArgs2FunType (node *args, ntype *rettype, node *fundef);
 
 /*
  * Functions for converting types into SAC code for wrapper functions
