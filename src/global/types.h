@@ -1,8 +1,8 @@
 /*
  *
  * $Log$
- * Revision 2.21  2000/01/05 17:28:37  dkr
- * status ST_loopfun added
+ * Revision 2.22  2000/01/21 12:43:18  dkr
+ * new statustypes ST_condfun, ST_dofun and ST_whilefun added
  *
  * Revision 2.20  1999/11/18 12:51:57  bs
  * FEATURE_UNKNOWN added.
@@ -335,37 +335,39 @@ typedef enum {
 } compiler_phase_t;
 
 typedef enum {
-    ST_regular,            /* normal types */
-    ST_unique,             /* unique types */
-    ST_reference,          /* reference parameter (unique)           */
-    ST_was_reference,      /* for eliminated reference parameter     */
-    ST_readonly_reference, /* readonly reference param (unique)  */
-    ST_inout,              /* for compilation of reference params    */
-    ST_spmd_inout,         /* for comp. of spmd-fun inout params     */
-    ST_artificial,         /* unique type inserted during            */
-                           /* signature expansion                    */
-    ST_independent,        /* dimension-independent function         */
-    ST_generic,            /* generic function derived from          */
-                           /* dimension-independent function         */
-    ST_resolved,           /* objects from called function are       */
-                           /* analysed.                              */
-    ST_unresolved,         /* objects from called function are not   */
-                           /* yet analysed.                          */
-    ST_global,             /* identifier is global object            */
-    ST_imported,           /* function, type, or object imported     */
-                           /* from other module                      */
-    ST_Cfun,               /* function implemented in C              */
-    ST_used,               /* var declaration is used in body        */
-    ST_objinitfun,         /* function is automatically generated    */
-                           /* to contain global object init expr     */
-    ST_classfun,           /* generic function for class conversion  */
-    ST_sac,                /* SAC module/class                       */
-    ST_external,           /* external module/class                  */
-    ST_system,             /* external system library                */
-    ST_own,                /* own declaration of module impl.        */
-    ST_foldfun,            /* dummy function containing the fold-op  */
-    ST_spmdfun,            /* function generated from a spmd-region  */
-    ST_loopfun             /* function represents a loop             */
+    ST_regular,            /* normal types                            */
+    ST_unique,             /* unique types                            */
+    ST_reference,          /* reference parameter (unique)            */
+    ST_was_reference,      /* for eliminated reference parameter      */
+    ST_readonly_reference, /* readonly reference param (unique)   */
+    ST_inout,              /* for compilation of reference params     */
+    ST_spmd_inout,         /* for comp. of spmd-fun inout params      */
+    ST_artificial,         /* unique type inserted during             */
+                           /* signature expansion                     */
+    ST_independent,        /* dimension-independent function          */
+    ST_generic,            /* generic function derived from           */
+                           /* dimension-independent function          */
+    ST_resolved,           /* objects from called function are        */
+                           /* analysed.                               */
+    ST_unresolved,         /* objects from called function are not    */
+                           /* yet analysed.                           */
+    ST_global,             /* identifier is global object             */
+    ST_imported,           /* function, type, or object imported      */
+                           /* from other module                       */
+    ST_Cfun,               /* function implemented in C               */
+    ST_used,               /* var declaration is used in body         */
+    ST_objinitfun,         /* function is automatically generated     */
+                           /* to contain global object init expr      */
+    ST_classfun,           /* generic function for class conversion   */
+    ST_sac,                /* SAC module/class                        */
+    ST_external,           /* external module/class                   */
+    ST_system,             /* external system library                 */
+    ST_own,                /* own declaration of module impl.         */
+    ST_foldfun,            /* dummy function containing the fold-op   */
+    ST_spmdfun,            /* function generated from a spmd-region   */
+    ST_condfun,            /* function representing an if-else-clause */
+    ST_dofun,              /* function representing a do-loop         */
+    ST_whilefun            /* function representing a while-loop      */
 } statustype;
 
 typedef enum { DOLLAR, VECT, IDX } useflag;
