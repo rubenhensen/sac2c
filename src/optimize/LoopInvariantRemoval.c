@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.6  1995/06/02 14:37:09  asi
+ * Revision 1.7  1995/06/08 15:07:31  asi
+ * now considering conditional of while loops
+ *
+ * Revision 1.6  1995/06/02  14:37:09  asi
  * Corrected used-variables for conditional in inner loops
  *
  * Revision 1.5  1995/05/25  17:29:32  asi
@@ -1373,7 +1376,8 @@ LIRassign (node *arg_node, node *arg_info)
 
                     if (N_with != LOOP_TYPE) {
                         for (i = 0; i < VARNO; i++) {
-                            if ((0 != COND_USE[i]) && (N_do == LOOP_TYPE))
+                            if ((0 != COND_USE[i])
+                                && ((N_do == LOOP_TYPE) || (N_while == LOOP_TYPE)))
                                 LINVAR[i] = FALSE;
                             if (TRUE == UBD[i])
                                 UBD[i] = UNDEF;
