@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.29  2003/08/05 16:16:18  dkr
+ * fixed a bug in  GSCPrintMain()
+ *
  * Revision 3.28  2003/08/04 18:03:59  dkr
  * GSCPrintMain(): tags for SAC_MT_mythread added
  *
@@ -877,7 +880,7 @@ GSCPrintMain ()
 #else
     fprintf (outfile, "  SAC_res = SACf_main(");
     if (print_thread_id) {
-        fprintf (outfile, "SAC_ND_ARG_in( %s)", mythread_nt);
+        fprintf (outfile, " SAC_ND_ARG_in( SAC_MT_mythread)");
     }
 #endif
     fprintf (outfile, ");\n\n");
