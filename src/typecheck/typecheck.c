@@ -1,8 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.10  1999/05/03 09:36:54  jhs
+ * Changed some loops to cope with empty arrays.
+ *
  * Revision 2.9  1999/04/16 18:47:27  bs
- * Bug fixed in BuildDropWithLoop.
+ * Bug fixed in BuildDropBuiWithLoop.
  *
  * Revision 2.8  1999/04/16 11:47:55  jhs
  * Changes made for emty arrays.
@@ -813,8 +816,9 @@ BuildDropWithLoop (types *new_shape, node *drop_vec, node *array)
     DBUG_ENTER ("BuildDropWithLoop");
 
     DBUG_ASSERT (((NODE_TYPE (drop_vec) == N_array)
-                  || ((NODE_TYPE (drop_vec) == N_id) && (ID_VECLEN (drop_vec) > SCALAR))),
-                 "First arg of drop should be a constant array!");
+                  || ((NODE_TYPE (drop_vec) == N_id) && (ID_CONSTARRAY (drop_vec))
+                      && (VARDEC_BASETYPE (ID_VARDEC (drop_vec)) == T_int))),
+                 "First arg of drop should be a constant integer array!");
 
     wl_body_var_vec = TmpVar ();
     wl_body_var_elem = TmpVar ();
@@ -833,9 +837,11 @@ BuildDropWithLoop (types *new_shape, node *drop_vec, node *array)
 
         if (len_vec < dim_array) {
             aelem = ARRAY_AELEMS (drop_vec);
+            /* overread given elements */
             while (EXPRS_NEXT (aelem) != NULL) {
                 aelem = EXPRS_NEXT (aelem);
             }
+            /* fillup len_vec to dim_array with 0 */
             for (i = len_vec; i < dim_array; i++) {
                 EXPRS_NEXT (aelem) = MakeExprs (MakeNum (0), NULL);
                 aelem = EXPRS_NEXT (aelem);
@@ -847,15 +853,24 @@ BuildDropWithLoop (types *new_shape, node *drop_vec, node *array)
 
         if (len_vec < dim_array) {
             aelem = IntVec2Array (ID_VECLEN (drop_vec), ID_INTVEC (drop_vec));
+
+            if (aelem == NULL) {
+                for (i = len_vec; i < dim_array; i++) {
+                    aelem = MakeExprs (MakeNum (0), aelem);
+                    new_array = MakeArray (aelem);
+                }
+            } else {
+                new_array = MakeArray (aelem);
+                while (EXPRS_NEXT (aelem) != NULL) {
+                    aelem = EXPRS_NEXT (aelem);
+                }
+                for (i = len_vec; i < dim_array; i++) {
+                    EXPRS_NEXT (aelem) = MakeExprs (MakeNum (0), NULL);
+                    aelem = EXPRS_NEXT (aelem);
+                }
+            }
             new_array = MakeArray (aelem);
 
-            while (EXPRS_NEXT (aelem) != NULL) {
-                aelem = EXPRS_NEXT (aelem);
-            }
-            for (i = len_vec; i < dim_array; i++) {
-                EXPRS_NEXT (aelem) = MakeExprs (MakeNum (0), NULL);
-                aelem = EXPRS_NEXT (aelem);
-            }
             tmp_var = MakeLet (new_array, MakeIds (new_drop_vec, NULL, ST_regular));
             ID_NAME (drop_vec) = StringCopy (new_drop_vec);
             ID_VECLEN (drop_vec) = dim_array;
@@ -1079,7 +1094,7 @@ DuplicateTypes (types *source, int share)
         do {
             tmp->dim = source->dim;
             TYPES_BASETYPE (tmp) = TYPES_BASETYPE (source);
-            if (source->dim > 0) {
+            if ((TYPES_DIM (source) > 0) && (TYPES_SHPSEG (source) != NULL)) {
                 DBUG_ASSERT ((source->dim <= SHP_SEG_SIZE), "dimension out of range");
                 tmp->shpseg = (shpseg *)Malloc (sizeof (shpseg));
                 DBUG_ASSERT ((NULL != source->shpseg), "types-structur without shpseg");
@@ -7218,9 +7233,10 @@ TI_Npart (node *arg_node, types *default_bound_type, node *arg_info)
        default_bound_shape. */
 
     if (!NGEN_BOUND1 (gen)) {
-        /* transform lower bound .
-           if the operator is < it is changed to <= and 1 is added to the
-           lower bound. */
+        /*
+         *  transform lower bound .
+         *  if the operator is < it is changed to <= and 1 is added to the lower bound
+         */
         if (!default_bound_type)
             ABORT (NODE_LINE (arg_node), ("bound . not allowed with function fold"));
         if (SCALAR < TYPES_DIM (default_bound_type)) { /* strong TC */
@@ -7234,9 +7250,10 @@ TI_Npart (node *arg_node, types *default_bound_type, node *arg_info)
         }
     }
     if (!NGEN_BOUND2 (gen)) {
-        /* transform upper bound .
-            if the operator is <= it is changed to < and 1 is added to the
-     upper bound. */
+        /*
+         *  transform upper bound .
+         *  if the operator is <= it is changed to < and 1 is added to the upper bound.
+         */
         if (!default_bound_type)
             ABORT (NODE_LINE (arg_node), ("bound . not allowed with function fold"));
         if (SCALAR < TYPES_DIM (default_bound_type)) { /* strong TC */
@@ -7251,8 +7268,10 @@ TI_Npart (node *arg_node, types *default_bound_type, node *arg_info)
         }
     }
 
-    /* Now check whether the bounds, step and width have the same type.
-       First, infere all types. */
+    /*
+     *  Now check whether the bounds, step and width have the same type.
+     *  First, infere all types.
+     */
     step_type = NULL;
     width_type = NULL;
 
@@ -7260,15 +7279,17 @@ TI_Npart (node *arg_node, types *default_bound_type, node *arg_info)
         left_type = TI (NGEN_BOUND1 (gen), arg_info);
         if (!left_type)
             ERROR (NODE_LINE (arg_node), ("lower bound cannot be infered"));
-    } else
+    } else {
         left_type = MakeType (T_int, KNOWN_DIM_OFFSET - 1, NULL, NULL, NULL);
+    }
 
     if (NGEN_BOUND2 (gen)) {
         right_type = TI (NGEN_BOUND2 (gen), arg_info);
         if (!right_type)
             ERROR (NODE_LINE (arg_node), ("upper bound cannot be infered"));
-    } else
+    } else {
         right_type = MakeType (T_int, KNOWN_DIM_OFFSET - 1, NULL, NULL, NULL);
+    }
 
     if (NGEN_STEP (gen)) {
         step_type = TI (NGEN_STEP (gen), arg_info);
@@ -7303,16 +7324,26 @@ TI_Npart (node *arg_node, types *default_bound_type, node *arg_info)
        Index scalars can only be created if we have a concrete_type */
 
     withid = NPART_WITHID (arg_node);
-    /* if we have no index vector, we craete one */
+    /*
+     *  if we have no index vector, we create one
+     */
     if (!NWITHID_VEC (withid))
         NWITHID_VEC (withid) = MakeIds (TmpVar (), NULL, ST_regular);
-    /* if we have no array of scalars, we create gen_type->shpseg[0] ids. */
+    /*
+     *  if we have no array of scalars, we create TYPES_SHAPE(gen_type,0) ids.
+     *  because our index vector has dimension one, so TYPES_SHAPE(gen_type,0)
+     *  is also the number of counter-variables needed.
+     */
     if (!NWITHID_IDS (withid) && gen_type) {
-        _ids = MakeIds (TmpVar (), NULL, ST_regular);
-        NWITHID_IDS (withid) = _ids;
-        for (i = TYPES_SHAPE (gen_type, 0) - 1; i > 0; i--) {
-            IDS_NEXT (_ids) = MakeIds (TmpVar (), NULL, ST_regular);
-            _ids = IDS_NEXT (_ids);
+        if (TYPES_SHAPE (gen_type, 0)) {
+            _ids = MakeIds (TmpVar (), NULL, ST_regular);
+            NWITHID_IDS (withid) = _ids;
+            for (i = TYPES_SHAPE (gen_type, 0) - 1; i > 0; i--) {
+                IDS_NEXT (_ids) = MakeIds (TmpVar (), NULL, ST_regular);
+                _ids = IDS_NEXT (_ids);
+            }
+        } else {
+            NWITHID_IDS (withid) = NULL;
         }
     }
 
@@ -7337,7 +7368,7 @@ TI_Npart (node *arg_node, types *default_bound_type, node *arg_info)
     _ids = NWITHID_IDS (withid);
     tmpt = MakeType (T_int, 0, NULL, NULL, NULL);
     i = 0;
-    while (_ids) {
+    while (_ids != NULL) {
         i++;
         AddIdToStack (_ids, tmpt, arg_info, NODE_LINE (arg_node));
         _ids = IDS_NEXT (_ids);
@@ -7453,7 +7484,8 @@ TI_Ngenarray (node *arg_node, node *arg_info, node **replace)
          * don't free exprs_next because it is assignd to arg_node.
          */
     } else {
-        if ((NODE_TYPE (arg_node) == N_id) && (ID_VECLEN (arg_node) > SCALAR)) {
+        if ((NODE_TYPE (arg_node) == N_id) && (ID_CONSTARRAY (arg_node))
+            && (VARDEC_BASETYPE (ID_VARDEC (arg_node)) == T_int)) {
 
             /*
              * compute return_type
@@ -7468,6 +7500,23 @@ TI_Ngenarray (node *arg_node, node *arg_info, node **replace)
             else
                 ABORT (NODE_LINE (arg_node), ("Shape vector has too many elements"));
             TYPES_DIM (ret_type) = dim;
+        } else if ((NODE_TYPE (arg_node) == N_cast)
+                   && (TYPES_BASETYPE (CAST_TYPE (arg_node)) == T_int)
+                   && (TYPES_DIM (CAST_TYPE (arg_node)) > SCALAR)) {
+
+            ret_type = MakeType (T_int, 0, MakeShpseg (NULL), NULL, NULL);
+
+            tmpi = ID_INTVEC (arg_node);
+            dim = ID_VECLEN (arg_node);
+            if (dim < SHP_SEG_SIZE)
+                for (i = 0; i < dim; i++)
+                    TYPES_SHAPE (ret_type, dim) = tmpi[i];
+            else
+                ABORT (NODE_LINE (arg_node), ("Shape vector has too many elements"));
+            TYPES_DIM (ret_type) = dim;
+
+            /* ABORT (NODE_LINE(arg_node), ("hit new section")); */
+
         } else {
             /* weak TC */
             /* return int[] or float[] ... */
