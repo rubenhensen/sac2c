@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.44  2004/07/14 15:29:54  ktr
+ * Nothing really changed.
+ *
  * Revision 3.43  2004/04/08 08:17:45  khf
  * TmpVar(): wlfs_tab added
  *
@@ -1153,6 +1156,8 @@ PrefixForTmpVar (void)
         s = "wlpg";
     } else if (act_tab == wlfs_tab) {
         s = "wlfs";
+    } else if (act_tab == emalloc_tab) {
+        s = "emal";
     } else {
         s = "unknown";
         DBUG_ASSERT ((0), "PrefixForTmpVar(): unknown trav-tab found!");

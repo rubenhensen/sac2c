@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.21  2004/07/14 15:29:54  ktr
+# Nothing really changed.
+#
 # Revision 3.20  2003/10/19 21:41:07  dkrHH
 # dependency prf_node_info.mac -> globals.c added
 #
@@ -65,10 +68,10 @@ include $(PROJECT_ROOT)/Makefile.Config
 # local settings:
 #
 
-INCS = -I../../inc -I../tree -I../print -I../flatten -I../scanparse -I../typecheck \
-       -I../optimize -I../modules -I../global -I../refcount -I../compile \
-       -I../psi-opt -I../objects -I../concurrent -I../multithread -I../profile \
-       -I../constants
+INCS = -I../../inc -I../tree -I../print -I../flatten -I../scanparse \
+       -I../typecheck -I../optimize -I../modules -I../global -I../refcount \
+       -I../compile -I../psi-opt -I../objects -I../concurrent \
+       -I../multithread -I../profile -I../constants
 
 
 all: types.h \
