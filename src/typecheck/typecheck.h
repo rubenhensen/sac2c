@@ -1,6 +1,9 @@
 /*
  * $Log$
- * Revision 1.23  1996/01/25 16:24:06  hw
+ * Revision 1.24  1996/02/12 16:07:31  asi
+ * DuplicateTypes added to SHAPE_2_ARRAY
+ *
+ * Revision 1.23  1996/01/25  16:24:06  hw
  * added macros  SAC_MOD & SAC_PRG as synonym for F_modimpl & F_prog
  *
  * Revision 1.22  1995/10/17  08:29:12  cg
@@ -178,7 +181,7 @@ extern char *module_name;      /* name of module to typecheck;
  * computed N_array-node is stored in Shape_array
  * NOTE: if the type is not the type of an array, NULL will be returned
  */
-#define SHAPE_2_ARRAY(Shape_array, Type)                                                 \
+#define SHAPE_2_ARRAY(Shape_array, Type, res_type)                                       \
     {                                                                                    \
         int i;                                                                           \
         if (T_user == Type->simpletype) {                                                \
@@ -186,6 +189,7 @@ extern char *module_name;      /* name of module to typecheck;
             if (0 < b_type->dim + Type->dim) {                                           \
                 node *dummy = MakeNode (N_exprs);                                        \
                 Shape_array = MakeNode (N_array);                                        \
+                ARRAY_TYPE (Shape_array) = DuplicateTypes (res_type, 0);                 \
                 Shape_array->node[0] = dummy;                                            \
                 Shape_array->nnode = 1;                                                  \
                 for (i = 0; i < Type->dim - 1; i++) {                                    \
@@ -217,6 +221,7 @@ extern char *module_name;      /* name of module to typecheck;
         } else if (0 < Type->dim) {                                                      \
             node *dummy = MakeNode (N_exprs);                                            \
             Shape_array = MakeNode (N_array);                                            \
+            ARRAY_TYPE (Shape_array) = DuplicateTypes (res_type, 0);                     \
             Shape_array->node[0] = dummy;                                                \
             Shape_array->nnode = 1;                                                      \
             for (i = 0; i < Type->dim - 1; i++) {                                        \
