@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2000/03/17 20:57:25  dkr
+ * IsEmptyDFMstack() added
+ *
  * Revision 1.4  2000/03/17 20:44:11  dkr
  * stuff for DFMstack added
  *
@@ -24,7 +27,8 @@ typedef void *DFMstack_t;
 typedef int (*fun_t) (DFMmask_t mask, char *id, node *decl);
 
 extern DFMstack_t GenerateDFMstack (void);
-extern void RemoveDFMstack (DFMstack_t *stack, int is_empty);
+extern int IsEmptyDFMstack (DFMstack_t stack);
+extern void RemoveDFMstack (DFMstack_t *stack);
 
 extern void PushDFMstack (DFMstack_t *stack, DFMmask_t mask);
 extern DFMmask_t PopDFMstack (DFMstack_t *stack);
