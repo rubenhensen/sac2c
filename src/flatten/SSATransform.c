@@ -1,5 +1,12 @@
 /*
  * $Log$
+ * Revision 1.13  2004/08/05 20:58:08  sbs
+ * some maior code brushing and implementation description added
+ * AND
+ * variable renaming changed into <varname>__SSA<x>_<Y>
+ * (for explaination see comments 8-)
+ * this should be a proper fix for bug 42 (hopefully 8-)
+ *
  * Revision 1.12  2004/08/04 17:13:12  khf
  * quick fix for bug #42
  * new variable name created by TmpVarName()
@@ -43,106 +50,11 @@
  * Initial revision
  *
  *
- *
- *
- *
  ************ Attention! ************
  * File was moved from ../tree
  * following older Revisions can be found there
  *
- *
- * Revision 1.30  2003/09/16 18:19:11  ktr
- * Added support for AVIS_WITHID
- *
- * Revision 1.29  2003/06/17 20:27:47  sbs
- * during or prior to TC SSATransform should not generate any types for vardecs
- * => modified SSAMakeVardec accordingly.
- *
- * Revision 1.28  2003/03/12 21:18:30  dkr
- * SSAicm() added
- *
- * Revision 1.27  2003/03/08 17:45:39  dkr
- * SSAInsertCopyAssignments(): IS_REFERENCE is set correctly now
- *
- * Revision 1.26  2002/10/18 13:50:20  sbs
- * SSATransformAllowGOs implemented
- * FLAGS for freshly made N_id nodes set correctly
- *
- * Revision 1.25  2002/10/09 02:09:55  dkr
- * SSANpart(): transformation of multi-generator WLs corrected
- * (calls of SSArightids() added!)
- *
- * Revision 1.24  2002/08/15 10:12:25  sbs
- * Now, SSArightids produces an error message whenever a non previously
- * defined variable i encountered.
- *
- * Revision 1.23  2002/08/05 09:52:04  sbs
- * eliminated the requirement for Nwithid nodes to always have both,
- * an IDS and a VEC attribute. This change is motivated by the requirement
- * to convert to SSA form prior to type checking. Furthermore, not being
- * restricted to the AKS case anymore, we cannot guarantee the existance
- * of the IDS attribute in all cases anymore !!!!
- *
- * Revision 1.21  2001/05/17 11:38:56  dkr
- * MALLOC FREE aliminated
- *
- * Revision 1.20  2001/05/15 15:50:41  nmw
- * little macro bug fixed
- *
- * Revision 1.19  2001/05/09 12:30:43  nmw
- * when creating ssaform set global valid_ssaform flag
- *
- * Revision 1.18  2001/05/04 11:55:50  nmw
- * added support for correct handling of AVIS_SSAASSIGN for withids
- *
- * Revision 1.17  2001/05/03 16:51:34  nmw
- * set correct SSAASSIGN attributes when updating phi_targets
- *
- * Revision 1.16  2001/04/24 16:09:07  nmw
- * SSATransformSingleFundef renamed to SSATransformOneFunction
- *
- * Revision 1.15  2001/04/19 08:03:22  dkr
- * macro F_PTR used as format string for pointers
- *
- * Revision 1.14  2001/04/18 12:58:47  nmw
- * additional traversal setup function for single fundef traversal added
- *
- * Revision 1.13  2001/03/29 09:10:20  nmw
- * tabs2spaces done
- *
- * Revision 1.12  2001/03/26 13:26:14  nmw
- * SSANewVardec for general usage added
- *
- * Revision 1.11  2001/03/23 09:31:19  nmw
- * SSAwhile/do removed SSADummy added
- *
- * Revision 1.10  2001/03/22 20:01:41  dkr
- * include of tree.h eliminated
- *
- * Revision 1.9  2001/03/20 14:22:08  nmw
- * documentation added
- *
- * Revision 1.8  2001/03/19 14:23:02  nmw
- * handling for AVIS_ASSIGN2 attribute added
- *
- * Revision 1.7  2001/03/16 11:54:46  nmw
- * Storing of two definitions for phi targets implemented
- * AVIS_SSAPHITRAGET type changed
- *
- * Revision 1.6  2001/03/15 10:52:04  nmw
- * SSATransform now sets SSAUNDOFLAG for artificial vardecs
- *
- * Revision 1.5  2001/02/22 12:44:24  nmw
- * tranformation of multigenerator withloops added
- *
- * Revision 1.4  2001/02/20 15:53:29  nmw
- * code transformation in ssa form implemented
- *
- * Revision 1.3  2001/02/15 17:00:20  nmw
- * SSA form for flat assignments implemented
- *
- * Revision 1.2  2001/02/14 14:40:36  nmw
- * function bodies and traversal order implemented
+ *  [eliminated...]
  *
  * Revision 1.1  2001/02/13 15:16:15  nmw
  * Initial revision
@@ -156,51 +68,119 @@
  * prefix: SSA
  *
  * description:
+ *    1) Basics:
+ *    ----------
  *    This module traverses the AST and transformes the code in SSA form.
  *    In ssa-form every identifier has exactly one defining assignment
- *    in the code. So redefinitions are not allowed and lead to a new
- *    identifier (here a renamed version of the original one extended
- *    by the postfix __SSA_<x>. Where x is an integer greater 0.
+ *    in the code. So redefinitions are not allowed and lead to new
+ *    identifiers (here a renamed versions of the original variables extended
+ *    by the postfix __SSA<x>_<y>  where <x> and <y> are integers >= 0.
  *
- *    In performing a top-down traversal for each re-definition of some
- *    identifier there will be created a new, renamed identifier (e.g.
- *    i is renamed to i__SSA_1). The counter for this is stored in a
- *    SSACNT node for each variable name (stored as attribute in AVIS node).
+ *    NB: <x> indicates how many   SSA-UndoSSA  phases have been before.
+ *        <y> is just a re-definition-counter specific to each var name.
+ *
+ *    Example:
+ *      (usual form)   -->   (ssa form)
+ *
+ *      int f( int a)        int f( int a)
+ *      {                    {
+ *        a = a + 6;           a__SSA0_1 = a + 6;
+ *        b = a;               b = a__SSA0_1;
+ *        b = b + 1;           b__SSA0_1 = b + 1;
+ *        a = a + 1;           a__SSA0_2 = a__SSA0_1 + 1;
+ *        a = a + 1;           a__SSA0_3 = a__SSA0_2 + 1;
+ *        return(a + b);       return(a__SSA0_2 + b__SSA0_1);
+ *      }                    }
+ *
+ *    2) Conditionals:
+ *    ----------------
+ *    In principle, conditionals can be transformed in the sam fasion.
+ *    However, it has to be made sure, that
+ *    I)  static binding is preserved in the else branch, e.g., the
+ *        RHS of line ( 9) in fact is a__SSA0_1 rather than a__SSA0_2!
+ *    II) the different renamings in both branches are joined together
+ *        after the conditional by introducing a functional conditional
+ *        (N_funcond) node.
+ *
+ *    NB: the latter in fact constitutes a functionally sound representation
+ *        of the phi-functions that are usually found in SSA.
+ *
+ *    Example:
+ *          (usual form)    -->  (ssa-form)
+ *
+ *    ( 1)   a = 6;                a = 6;
+ *    ( 2)   a = a + 4;            a__SSA0_1 = a + 4;
+ *    ( 3)   b = a + a;            b = a__SSA0_1 + a__SSA0_1;
+ *    ( 4)   p = b < a;            p = b < a__SSA0_1;
+ *    ( 5)   if( p) {              if( p) {
+ *    ( 6)     a = 0;                a__SSA0_2 = 0;
+ *    ( 7)     c = 1;                c = 1;
+ *    ( 8)   } else {              } else {
+ *    ( 9)     c = a;                c__SSA0_1 = a__SSA0_1;
+ *    (10)   }                     }
+ *    (11)                         a__SSA0_3 = cond( p, a__SSA0_2, a__SSA0_1);
+ *    (12)                         c__SSA0_2 = cond( p, c, c__SSA0_1);
+ *    (13)   print(a + b + c);     print(c__SSA0_2 + b)
+ *
+ *
+ *    2) With-Loops:
+ *    --------------
+ *    < to be inserted; any volunteers????? > (SBS Thu Aug  5 21:12:55 MEST 2004)
+ *
+ *
+ * implementation:
+ *    In performing a top-down traversal the "C-style" controlflow
+ *    is mimicked. Renaming takes place (more precisely: MAY take place)
+ *    whenever variables on RHS or LHS of assignments are traversed.
+ *    ( implemented by SSArightids and SSAleftids, repectively )
+ *
+ *    A renaming is initiated whenever a LHS id  is found that has been
+ *    previously defined or has been given as argument. This is observed
+ *    by finding the flag   AVIS_SSADEFINED   true.
+ *    In case of renaming, a new vardec is created (SSANewVardec) and
+ *    properly inserted. The new name is generated by extending it
+ *    with "__SSA<x>_<y>", where <x> is given by a global variable
+ *    and <y> is a name specific counter. This counter is held in
+ *    a SSACNT node which is stored as attribute of the AVIS node.
  *    All SSACNT nodes are chained as attribute of the top block of the
- *    concerning function). The counter is used in sharing for all renamed
+ *    concerning function. The counter is used in sharing for all renamed
  *    instances of one original variable. So every additional renaming of
  *    a renamed identifier gets a fresh, unique name and it is still linked
  *    with the original name (which is also stored in SSACNT as BASID
  *    attribute).
- *    When doing the top-down traversal, the identifier are renamed to the
- *    actual instance that is defined at this point. In conditionals and
- *    with-loops the actual names are stacked in SSASTACK nodes.
+ *    After the creation and insertion of the new vardec, the avis has to be
+ *    made available to all subsequent RHS uasages of the variables!
+ *    This is done by storing the new AVIS (that of the renamed variable)
+ *    in the old AVIS node (using AVIS_SSASTACK_TOP). So the generated
+ *    structure in fact looks like this:
  *
- *    To handle conditionals in ssaform, where the control flow merges and
- *    where are more than one definitions for an identifier, in ssa-form
- *    there are so called PHI-functions. These special functions are simulated
- *    by explicit copy assignments in both parts of the conditional, that
- *    have the same target (*). This leads to code not in (pure) ssa-form, but
- *    is is an compromiss between intruducing special functions that require
- *    a special handling in ALL working steps and preserve the ssa-form and
- *    the copy assignments which are the explicit version of an phi function
- *    that is ease to handle but destroys the pure ssa-form at one point.
+ *     |---------------------|
+ *     | Avis of "a"         | -- AVIS_SSACNT -----> |---------------------|
+ *     |---------------------|                  ^    | Ssacnt: 1   "a"     |
+ *               |                              |    |---------------------|
+ *               |                              |
+ *        AVIS_SSASTACK_TOP                     |
+ *               |                              |
+ *               v                              |
+ *     |---------------------|                  |
+ *     | Avis of "a__SSA0_1" | -- AVIS_SSACNT --/
+ *     |---------------------|
  *
- *  Example: (usual form)       -->  (ssa-form)
- *    a = 6;                       a = 6;
- *    a = a + 4;                   a__SSA_1 = a + 4;
- *    b = a + a;                   b = a__SSA_1 + a__SSA_1;
- *    if (b < a) {                 if (b < a__SSA_1)
- *      a = 0;                       a__SSA_2 = 0;
- *      c = 1;                       c = 1;
- *                                   a__SSA_3 = a__SSA_2;     (*)
- *                                   c__SSA_2 = c;            (*)
- *    } else {                     } else {
- *      c = 2;                       c__SSA_1 = 2;
- *                                   a__SSA_3 = a__SSA_1;     (*)
- *                                   c__SSA_2 = c__SSA_1;     (*)
- *    }                            }
- *    print(c + b);                print(c__SSA_2 + b)
+ *
+ *    The traversal of RHS ids eventually for each id replaces the pointer to the
+ *    original avis (the un-renamed old one), e.g. that to AVIS "a", by that found
+ *    in AVIS_SSASTACK_TOP of it, i.e. the new, re-named one (e.g. AVIS "a__SSA0_1").
+ *
+ *    Unfortunately, it does not suffice to provide a single field AVIS_SSASTACK_TOP.
+ *    The reason for this is the fact that conditionals and (potentially nested)
+ *    with loops require these to be "reset" whenever a block is finished!!!!!
+ *    Therefore, the AVIS nodes do not have an attribute SSASTACK_TOP per se,
+ *    but an entire chain of AVIS nodes implemented vi SSASTACK nodes.
+ *    Hence, AVIS_SSASTACK_TOP in fact constitutes a compound macro.
+ *
+ *    < to be continued; any volunteers????? > (SBS Thu Aug  5 21:12:55 MEST 2004)
+ *
+ *
  *
  * Remarks:
  *    This module requires loops and conditionals in explicit functions.
@@ -209,6 +189,7 @@
  *    of the AST (e.g. after old code that cannot deal with the ssa-form).
  *    After using the ssa-form the code can be cleaned up by UndoSSATransform,
  *    that e.g. removes copy assignments and renamings of global objects.
+ *    Furthermore, all SSACNT nodes and SSASTACK nodes are eliminated as well.
  *
  *****************************************************************************/
 
@@ -232,11 +213,6 @@
 #define SSA_TRAV_SPECIALS 1
 #define SSA_TRAV_NONE 2
 
-/* INFO_SSA_CONDSTATUS */
-#define CONDSTATUS_NOCOND 0
-#define CONDSTATUS_THENPART 1
-#define CONDSTATUS_ELSEPART 2
-
 /* flag SSAstack operations */
 #define STACKFLAG_DUMMY 0
 #define STACKFLAG_THEN 1
@@ -247,12 +223,10 @@
  */
 struct INFO {
     node *fundef;
-    node *block;
     bool retinstr;
     node *withvec;
     node *withids;
     node *condstmt;
-    int condstatus;
     node *assign;
     bool singlefundef;
     node *withid;
@@ -265,12 +239,10 @@ struct INFO {
  * INFO macros
  */
 #define INFO_SSA_FUNDEF(n) (n->fundef)
-#define INFO_SSA_BLOCK(n) (n->block)
 #define INFO_SSA_RETINSTR(n) (n->retinstr)
 #define INFO_SSA_WITHVEC(n) (n->withvec)
 #define INFO_SSA_WITHIDS(n) (n->withids)
 #define INFO_SSA_CONDSTMT(n) (n->condstmt)
-#define INFO_SSA_CONDSTATUS(n) (n->condstatus)
 #define INFO_SSA_ASSIGN(n) (n->assign)
 #define INFO_SSA_SINGLEFUNDEF(n) (n->singlefundef)
 #define INFO_SSA_WITHID(n) (n->withid)
@@ -291,12 +263,10 @@ MakeInfo ()
     result = Malloc (sizeof (info));
 
     INFO_SSA_FUNDEF (result) = NULL;
-    INFO_SSA_BLOCK (result) = NULL;
     INFO_SSA_RETINSTR (result) = FALSE;
     INFO_SSA_WITHVEC (result) = NULL;
     INFO_SSA_WITHIDS (result) = NULL;
     INFO_SSA_CONDSTMT (result) = NULL;
-    INFO_SSA_CONDSTATUS (result) = 0;
     INFO_SSA_ASSIGN (result) = NULL;
     INFO_SSA_SINGLEFUNDEF (result) = FALSE;
     INFO_SSA_WITHID (result) = NULL;
@@ -330,112 +300,119 @@ static ids *SSAleftids (ids *arg_ids, info *arg_info);
 static ids *TravRightIDS (ids *arg_ids, info *arg_info);
 static ids *SSArightids (ids *arg_ids, info *arg_info);
 
-/* special push/pop operations for ONE ssastack */
-static node *PopSSAstack (node *ssastack, node *avis, int flag);
-static node *PushSSAstack (node *ssastack, node *avis, int flag);
-static node *SaveTopSSAstack (node *ssastack, node *avis, int flag);
+/* special ssastack operations for ONE avis-node */
+static node *PopSSAstack (node *avis);
+static node *DupTopSSAstack (node *avis);
+static node *SaveTopSSAstackThen (node *avis);
+static node *SaveTopSSAstackElse (node *avis);
 
-#define FOR_ALL_VARDEC_AND_ARGS(fun, flag, vardecchain, argchain)                        \
+/**
+ * Higher order function for modifying all N_avis nodes of a given fundef:
+ */
+#define FOR_ALL_AVIS(fun, fundef)                                                        \
     {                                                                                    \
         node *vardec;                                                                    \
         node *arg;                                                                       \
                                                                                          \
-        vardec = vardecchain;                                                            \
+        vardec = FUNDEF_VARDEC (fundef);                                                 \
         while (vardec != NULL) {                                                         \
-            AVIS_SSASTACK (VARDEC_AVIS (vardec))                                         \
-              = fun (AVIS_SSASTACK (VARDEC_AVIS (vardec)), VARDEC_AVIS (vardec), flag);  \
+            VARDEC_AVIS (vardec) = fun (VARDEC_AVIS (vardec));                           \
             vardec = VARDEC_NEXT (vardec);                                               \
         }                                                                                \
-        arg = argchain;                                                                  \
+        arg = FUNDEF_ARGS (fundef);                                                      \
         while (arg != NULL) {                                                            \
-            AVIS_SSASTACK (ARG_AVIS (arg))                                               \
-              = fun (AVIS_SSASTACK (ARG_AVIS (arg)), ARG_AVIS (arg), flag);              \
+            ARG_AVIS (arg) = fun (ARG_AVIS (arg));                                       \
             arg = ARG_NEXT (arg);                                                        \
         }                                                                                \
     }
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
  * function:
- *  static node *PopSSAstack(node *ssastack, node *avis, int flag)
+ *  static node *PopSSAstack(node *avis)
  *
  * description:
- *  kills top of SSAstack
+ *  frees top of SSAstack
  *  if stack is not in use to nothing
  *
  ******************************************************************************/
 static node *
-PopSSAstack (node *ssastack, node *avis, int flag)
+PopSSAstack (node *avis)
 {
-    node *rest;
+    node *ssastack;
 
     DBUG_ENTER ("PopSSAstack");
 
-    if (SSASTACK_INUSE (ssastack)) {
-        /* frees top of stack and returns rest */
-        rest = SSASTACK_NEXT (ssastack);
-        FreeNode (ssastack);
-    } else {
-        /* do nothing */
-        rest = ssastack;
+    if (AVIS_SSASTACK_INUSE (avis)) {
+        ssastack = AVIS_SSASTACK (avis);
+        AVIS_SSASTACK (avis) = SSASTACK_NEXT (ssastack);
+        ssastack = FreeNode (ssastack);
     }
 
-    DBUG_RETURN (rest);
+    DBUG_RETURN (avis);
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
  * function:
- *  static  node *PushSSAstack(node *ssastack, node *avis, int flag)
+ *  static  node *DupTopSSAstack(node *avis)
  *
  * description:
  *  Duplicates value on top of stack.
  *
  ******************************************************************************/
 static node *
-PushSSAstack (node *ssastack, node *avis, int flag)
+DupTopSSAstack (node *avis)
 {
-    DBUG_ENTER ("PushSSAstack");
+    node *ssastack;
 
-    if (SSASTACK_INUSE (ssastack)) {
-        ssastack = MakeSSAstack (ssastack, SSASTACK_AVIS (ssastack));
-        SSASTACK_INUSE (ssastack) = TRUE;
+    DBUG_ENTER ("DupTopSSAstack");
+
+    if (AVIS_SSASTACK_INUSE (avis)) {
+        ssastack = AVIS_SSASTACK (avis);
+        AVIS_SSASTACK (avis) = MakeSSAstack (ssastack, SSASTACK_AVIS (ssastack));
+        AVIS_SSASTACK_INUSE (avis) = TRUE;
     }
 
-    DBUG_RETURN (ssastack);
+    DBUG_RETURN (avis);
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
  * function:
- *  static  node *SaveTopSSAstack(node *ssastack, node *avis, int flag)
+ *  static  node *SaveTopSSAstackThen(node *avis)
  *
  * description:
- *  Saves Top-Value of stack to AVIS_SSATHEN  (flag=STACKFLAG_THEN)
- *  or                          AVIS_SSAELSE  (flag=STACLFLAG_ELSE)
+ *  Saves Top-Value of stack to AVIS_SSATHEN
  *
  ******************************************************************************/
 static node *
-SaveTopSSAstack (node *ssastack, node *avis, int flag)
+SaveTopSSAstackThen (node *avis)
 {
-    DBUG_ENTER ("SaveTopSSAstack");
+    DBUG_ENTER ("SaveTopSSAstackThen");
 
-    if (SSASTACK_INUSE (ssastack)) {
-        switch (flag) {
-        case STACKFLAG_THEN:
-            AVIS_SSATHEN (avis) = SSASTACK_AVIS (ssastack);
-            break;
+    AVIS_SSATHEN (avis) = AVIS_SSASTACK_TOP (avis);
 
-        case STACKFLAG_ELSE:
-            AVIS_SSAELSE (avis) = SSASTACK_AVIS (ssastack);
-            break;
+    DBUG_RETURN (avis);
+}
 
-        default:
-            DBUG_ASSERT ((FALSE), "unknown flag in SaveTopSSAstack");
-        }
-    }
+/** <!--********************************************************************-->
+ *
+ * function:
+ *  static  node *SaveTopSSAstackElse(node *avis)
+ *
+ * description:
+ *  Saves Top-Value of stack to AVIS_SSATHEN
+ *
+ ******************************************************************************/
+static node *
+SaveTopSSAstackElse (node *avis)
+{
+    DBUG_ENTER ("SaveTopSSAstackElse");
 
-    DBUG_RETURN (ssastack);
+    AVIS_SSAELSE (avis) = AVIS_SSASTACK_TOP (avis);
+
+    DBUG_RETURN (avis);
 }
 
 /******************************************************************************
@@ -445,7 +422,8 @@ SaveTopSSAstack (node *ssastack, node *avis, int flag)
  *
  * description:
  *   creates a new (renamed) vardec of the given original vardec.
- *   the ssacnt node is shared between all renamed instances of the
+ *   The global ssa rename counter of the baseid is incremented.
+ *   The ssacnt node is shared between all renamed instances of the
  *   original vardec.
  *
  ******************************************************************************/
@@ -454,6 +432,7 @@ SSANewVardec (node *old_vardec_or_arg)
 {
     node *ssacnt;
     node *new_vardec;
+    char tmpstring[TMP_STRING_LEN];
 
     DBUG_ENTER ("SSANewVardec");
 
@@ -474,9 +453,13 @@ SSANewVardec (node *old_vardec_or_arg)
         new_vardec = DupNode (old_vardec_or_arg);
     }
 
+    /* increment ssa renaming counter */
+    SSACNT_COUNT (ssacnt) = SSACNT_COUNT (ssacnt) + 1;
+
     /* create new unique name */
+    sprintf (tmpstring, "__SSA%d_%d", ssaform_phase, SSACNT_COUNT (ssacnt));
     Free (VARDEC_NAME (new_vardec));
-    VARDEC_NAME (new_vardec) = TmpVarName (SSACNT_BASEID (ssacnt));
+    VARDEC_NAME (new_vardec) = StringConcat (SSACNT_BASEID (ssacnt), tmpstring);
     ;
 
     DBUG_RETURN (new_vardec);
@@ -637,7 +620,6 @@ SSAfundef (node *arg_node, info *arg_info)
     if (FUNDEF_BODY (arg_node) != NULL) {
         /* stores access points for later insertions in this fundef */
         INFO_SSA_FUNDEF (arg_info) = arg_node;
-        INFO_SSA_BLOCK (arg_info) = FUNDEF_BODY (arg_node);
 
         if (FUNDEF_ARGS (arg_node) != NULL) {
             /* there are some args */
@@ -677,8 +659,6 @@ SSAblock (node *arg_node, info *arg_info)
 
     if (BLOCK_VARDEC (arg_node) != NULL) {
         /* there are some vardecs */
-        DBUG_ASSERT ((arg_node == INFO_SSA_BLOCK (arg_info)),
-                     "subblock contains vardecs");
         BLOCK_VARDEC (arg_node) = Trav (BLOCK_VARDEC (arg_node), arg_info);
     }
 
@@ -863,7 +843,7 @@ SSAicm (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
  * function:
  *   node *SSAarg(node *arg_node, info *arg_info)
@@ -871,6 +851,10 @@ SSAicm (node *arg_node, info *arg_info)
  * description:
  *   check for missing SSACOUNT attribute in AVIS node. installs and inits
  *   new ssa-counter if necessary (init with 0, means unrenamed argument)
+ *
+ *   Note here, that quite some portion of the code only is required as
+ *   SSATransform may be called several times. Therefore, all attributes
+ *   have to be reset properly and the AVIS_SSACOUNT may actually exist already!
  *
  ******************************************************************************/
 node *
@@ -883,7 +867,8 @@ SSAarg (node *arg_node, info *arg_info)
     if (AVIS_SSACOUNT (ARG_AVIS (arg_node)) == NULL) {
         /* insert ssa-counter to this baseid */
         AVIS_SSACOUNT (ARG_AVIS (arg_node))
-          = SSAGetSSAcount (ARG_NAME (arg_node), 0, INFO_SSA_BLOCK (arg_info));
+          = SSAGetSSAcount (ARG_NAME (arg_node), 0,
+                            FUNDEF_BODY (INFO_SSA_FUNDEF (arg_info)));
     }
 
     /* actual rename-to target on stack*/
@@ -911,7 +896,7 @@ SSAarg (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
  * function:
  *  node *SSAvardec(node *arg_node, info *arg_info)
@@ -919,6 +904,10 @@ SSAarg (node *arg_node, info *arg_info)
  * description:
  *   check for missing SSACOUNT attribute in AVIS node. installs and inits
  *   new ssa-counter if necessary (init with undef)
+ *
+ *   Note here, that quite some portion of the code only is required as
+ *   SSATransform may be called several times. Therefore, all attributes
+ *   have to be reset properly and the AVIS_SSACOUNT may actually exist already!
  *
  ******************************************************************************/
 node *
@@ -929,7 +918,8 @@ SSAvardec (node *arg_node, info *arg_info)
     if (AVIS_SSACOUNT (VARDEC_AVIS (arg_node)) == NULL) {
         /* insert ssa-counter to this baseid */
         AVIS_SSACOUNT (VARDEC_AVIS (arg_node))
-          = SSAGetSSAcount (VARDEC_NAME (arg_node), 0, INFO_SSA_BLOCK (arg_info));
+          = SSAGetSSAcount (VARDEC_NAME (arg_node), 0,
+                            FUNDEF_BODY (INFO_SSA_FUNDEF (arg_info)));
     }
 
     /* jet undefined on stack */
@@ -954,7 +944,7 @@ SSAvardec (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
  * function:
  *  node *SSAid( node *arg_node, info *arg_info)
@@ -1067,18 +1057,14 @@ SSANwith (node *arg_node, info *arg_info)
     NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
 
     /* do stacking of current renaming status */
-    FOR_ALL_VARDEC_AND_ARGS (PushSSAstack, STACKFLAG_DUMMY,
-                             BLOCK_VARDEC (INFO_SSA_BLOCK (arg_info)),
-                             FUNDEF_ARGS (INFO_SSA_FUNDEF (arg_info)));
+    FOR_ALL_AVIS (DupTopSSAstack, INFO_SSA_FUNDEF (arg_info));
 
     /* traverse code */
     DBUG_ASSERT ((NWITH_CODE (arg_node) != NULL), "Nwith without CODE node!");
     NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
 
     /* pop old renaming status from stack */
-    FOR_ALL_VARDEC_AND_ARGS (PopSSAstack, STACKFLAG_DUMMY,
-                             BLOCK_VARDEC (INFO_SSA_BLOCK (arg_info)),
-                             FUNDEF_ARGS (INFO_SSA_FUNDEF (arg_info)));
+    FOR_ALL_AVIS (PopSSAstack, INFO_SSA_FUNDEF (arg_info));
 
     DBUG_RETURN (arg_node);
 }
@@ -1157,9 +1143,7 @@ SSANcode (node *arg_node, info *arg_info)
     DBUG_ENTER ("SSANcode");
 
     /* do stacking of current renaming status */
-    FOR_ALL_VARDEC_AND_ARGS (PushSSAstack, STACKFLAG_DUMMY,
-                             BLOCK_VARDEC (INFO_SSA_BLOCK (arg_info)),
-                             FUNDEF_ARGS (INFO_SSA_FUNDEF (arg_info)));
+    FOR_ALL_AVIS (DupTopSSAstack, INFO_SSA_FUNDEF (arg_info));
 
     /* traverse block */
     if (NCODE_CBLOCK (arg_node) != NULL) {
@@ -1176,9 +1160,7 @@ SSANcode (node *arg_node, info *arg_info)
     }
 
     /* restore old rename stack !!! */
-    FOR_ALL_VARDEC_AND_ARGS (PopSSAstack, STACKFLAG_DUMMY,
-                             BLOCK_VARDEC (INFO_SSA_BLOCK (arg_info)),
-                             FUNDEF_ARGS (INFO_SSA_FUNDEF (arg_info)));
+    FOR_ALL_AVIS (PopSSAstack, INFO_SSA_FUNDEF (arg_info));
 
     if (NCODE_NEXT (arg_node) != NULL) {
         /* traverse next part */
@@ -1268,48 +1250,32 @@ SSAcond (node *arg_node, info *arg_info)
     COND_COND (arg_node) = Trav (COND_COND (arg_node), arg_info);
 
     /* do stacking of current renaming status */
-    FOR_ALL_VARDEC_AND_ARGS (PushSSAstack, STACKFLAG_DUMMY,
-                             BLOCK_VARDEC (INFO_SSA_BLOCK (arg_info)),
-                             FUNDEF_ARGS (INFO_SSA_FUNDEF (arg_info)));
+    FOR_ALL_AVIS (DupTopSSAstack, INFO_SSA_FUNDEF (arg_info));
 
     /* traverse then */
-    INFO_SSA_CONDSTATUS (arg_info) = CONDSTATUS_THENPART;
     if (COND_THEN (arg_node) != NULL) {
         COND_THEN (arg_node) = Trav (COND_THEN (arg_node), arg_info);
     }
 
     /* save to then for later merging */
-    FOR_ALL_VARDEC_AND_ARGS (SaveTopSSAstack, STACKFLAG_THEN,
-                             BLOCK_VARDEC (INFO_SSA_BLOCK (arg_info)),
-                             FUNDEF_ARGS (INFO_SSA_FUNDEF (arg_info)));
+    FOR_ALL_AVIS (SaveTopSSAstackThen, INFO_SSA_FUNDEF (arg_info));
 
     /* so some status restauration */
-    FOR_ALL_VARDEC_AND_ARGS (PopSSAstack, STACKFLAG_DUMMY,
-                             BLOCK_VARDEC (INFO_SSA_BLOCK (arg_info)),
-                             FUNDEF_ARGS (INFO_SSA_FUNDEF (arg_info)));
+    FOR_ALL_AVIS (PopSSAstack, INFO_SSA_FUNDEF (arg_info));
 
     /* do stacking of current renaming status */
-    FOR_ALL_VARDEC_AND_ARGS (PushSSAstack, STACKFLAG_DUMMY,
-                             BLOCK_VARDEC (INFO_SSA_BLOCK (arg_info)),
-                             FUNDEF_ARGS (INFO_SSA_FUNDEF (arg_info)));
+    FOR_ALL_AVIS (DupTopSSAstack, INFO_SSA_FUNDEF (arg_info));
 
     /* traverse else */
-    INFO_SSA_CONDSTATUS (arg_info) = CONDSTATUS_ELSEPART;
     if (COND_ELSE (arg_node) != NULL) {
         COND_ELSE (arg_node) = Trav (COND_ELSE (arg_node), arg_info);
     }
 
     /* save to else for later merging */
-    FOR_ALL_VARDEC_AND_ARGS (SaveTopSSAstack, STACKFLAG_ELSE,
-                             BLOCK_VARDEC (INFO_SSA_BLOCK (arg_info)),
-                             FUNDEF_ARGS (INFO_SSA_FUNDEF (arg_info)));
+    FOR_ALL_AVIS (SaveTopSSAstackElse, INFO_SSA_FUNDEF (arg_info));
 
     /* so some status restauration */
-    FOR_ALL_VARDEC_AND_ARGS (PopSSAstack, STACKFLAG_DUMMY,
-                             BLOCK_VARDEC (INFO_SSA_BLOCK (arg_info)),
-                             FUNDEF_ARGS (INFO_SSA_FUNDEF (arg_info)));
-
-    INFO_SSA_CONDSTATUS (arg_info) = CONDSTATUS_NOCOND;
+    FOR_ALL_AVIS (PopSSAstack, INFO_SSA_FUNDEF (arg_info));
 
     DBUG_RETURN (arg_node);
 }
@@ -1376,8 +1342,8 @@ SSAleftids (ids *arg_ids, info *arg_info)
     } else {
         /* redefinition - create new unique variable/vardec */
         new_vardec = SSANewVardec (AVIS_VARDECORARG (IDS_AVIS (arg_ids)));
-        BLOCK_VARDEC (INFO_SSA_BLOCK (arg_info))
-          = AppendVardec (BLOCK_VARDEC (INFO_SSA_BLOCK (arg_info)), new_vardec);
+        FUNDEF_VARDEC (INFO_SSA_FUNDEF (arg_info))
+          = AppendVardec (FUNDEF_VARDEC (INFO_SSA_FUNDEF (arg_info)), new_vardec);
         DBUG_PRINT ("SSA", ("re-definition, renaming: %s (" F_PTR ") -> %s",
                             VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (IDS_AVIS (arg_ids))),
                             IDS_AVIS (arg_ids), VARDEC_NAME (new_vardec)));
