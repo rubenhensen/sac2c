@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.57  1999/11/15 18:04:03  dkr
+ * INFO_CF_VARNO and INFO_DCR_VARNO replaced by INFO_VARNO
+ *
  * Revision 2.56  1999/11/11 18:27:51  dkr
  * INFO_PRINT_NWITH2 renamed to INFO_PRINT_NWITH
  *
@@ -2590,6 +2593,7 @@ extern node *MakeInfo ();
 
 /* optimize */
 #define INFO_MASK(n, x) (n->mask[x])
+#define INFO_VARNO(n) (n->varno)
 
 /* inline */
 /* ATTENTION: Usage of DUP and INL macros on arg_info are mixed. Be careful
@@ -2613,7 +2617,6 @@ extern node *MakeInfo ();
 /* CF */
 #define INFO_CF_ASSIGN(n) (n->node[0])
 #define INFO_CF_TYPE(n) (n->info.types)
-#define INFO_CF_VARNO(n) (n->varno)
 
 /* IVE */
 #define INFO_IVE_FUNDEF(n) (n->node[0])
@@ -2624,7 +2627,6 @@ extern node *MakeInfo ();
 #define INFO_IVE_NON_SCAL_LEN(n) (n->counter)
 
 /* DCR */
-#define INFO_DCR_VARNO(n) (n->varno)
 #define INFO_DCR_TRAVTYPE(n) (n->flag)
 #define INFO_DCR_NEWACT(n) (n->lineno)
 #define INFO_DCR_ACT(n) (n->mask[2])
