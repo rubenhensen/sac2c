@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.137  2004/11/09 17:42:36  sah
+# added LDDYNFLAG
+#
 # Revision 3.136  2004/11/09 12:58:52  sah
 # added some flags for new module system
 #
@@ -345,7 +348,7 @@ ifeq ($(NEWAST),yes)
                src/tree/serialize.o src/tree/serialize_stack.o  \
                src/modules/prepareinline.o src/modules/dependencies.o \
                src/scanparse/resolvepragma.o
-  NEWASTFLAGS = --export-dynamic
+  NEWASTFLAGS = $(LDDYNFLAG)
 endif
 
 GLOBAL= src/global/main.o src/global/Error.o src/global/usage.o \

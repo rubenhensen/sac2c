@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 1.15  2004/11/09 17:42:36  sah
+# added LDDYNFLAG
+#
 # Revision 1.14  2004/09/30 19:54:31  sah
 # added NEWAST flag
 #
@@ -95,6 +98,7 @@ MAKE_NORM    := $(MAKE) CC="$(CC)" CCFLAGS="$(CCFLAGS)" CFLAGS="$(CFLAGS)"
 MAKE_PROD    := $(MAKE) CC="$(CCPROD)" CCFLAGS="$(CCPROD_FLAGS)" CFLAGS="$(CPROD_FLAGS)"
 MAKE_CLEAN   := $(MAKE) TARGET="clean" clean
 MAKEFLAGS    += --no-print-directory
+LDDYNFLAG    := @LDDYNFLAG@
 
 TAR          :=tar
 LIBS         :=@LIBS@@LEXLIB@

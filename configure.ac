@@ -1,5 +1,8 @@
 dnl
 dnl $Log$
+dnl Revision 1.38  2004/11/09 17:42:36  sah
+dnl added LDDYNFLAG
+dnl
 dnl Revision 1.37  2004/11/09 15:44:10  sah
 dnl added bsd support
 dnl
@@ -494,26 +497,31 @@ case "$target_os" in
   solaris*)     
     OSFLAGS=["-D__EXTENSIONS__ -D__STDC__=0 -DMUST_INIT_YY"]
     LD_DYNAMIC=["ld -dy -G"]
+    LDDYNFLAG=["--export-dynamic"]
     AC_MSG_RESULT([solaris settings])
     ;;
   *linux*)      
     OSFLAGS=["-D_POSIX_SOURCE -D_SVID_SOURCE -D_BSD_SOURCE -Dlint"]
     LD_DYNAMIC=["ld -dy -G"]
+    LDDYNFLAG=["--export-dynamic"]
     AC_MSG_RESULT([linux settings])
     ;;
   *osf*)	
     OSFLAGS=["-D_OSF_SOURCE"]
     LD_DYNAMIC=[""]
+    LDDYNFLAG=["--export-dynamic"]
     AC_MSG_RESULT([OSF settings])
     ;;
   *darwin*)      
     OSFLAGS=["-no-cpp-precomp -Wno-long-double"]
     LD_DYNAMIC=["ld -undefined suppress -flat_namespace -bundle /usr/lib/bundle1.o"]
+    LDDYNFLAG=["--export-dynamic"]
     AC_MSG_RESULT([OS X settings])
     ;;
   *bsd*)
     OSFLAGS=["-fpic"]
     LD_DYNAMIC=["ld -dy -shared -symbolic"]
+    LDDYNFLAG=["-export-dynamic"]
     AC_MSG_RESULT([BSD settings])
     ;;
   *)
@@ -522,6 +530,7 @@ case "$target_os" in
 esac
 AC_SUBST(OSFLAGS)
 AC_SUBST(LD_DYNAMIC)
+AC_SUBST(LDDYNFLAG)
 
 
 
