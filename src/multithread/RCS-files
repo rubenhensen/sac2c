@@ -1,4 +1,6 @@
 Makefile
+blocks_expand.c
+blocks_expand.h
 blocks_init.c
 blocks_init.h
 multithread.c
