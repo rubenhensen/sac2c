@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.35  2004/10/11 16:49:02  sah
+# added serialize_buildstack.o
+#
 # Revision 3.34  2004/10/04 17:18:29  sah
 # a different subset of files is compiled, depending
 # on the compiler version to create
@@ -92,7 +95,7 @@ include $(PROJECT_ROOT)/Makefile.Config
 ifeq ($(shell test -f $(PROJECT_ROOT)/_NEW_AST && echo yes),yes)
   NEWASTTARGETS := node_basic.o free_node.o free_attribs.o \
                    serialize_node.o serialize_attribs.o \
-                   deserialize.o
+                   deserialize.o serialize_buildstack.o
 else
   NEWASTTARGETS :=
 endif
