@@ -1,5 +1,10 @@
 /*
+ *
  * $Log$
+ * Revision 3.9  2001/02/06 01:47:18  dkr
+ * fixed a bug in RCwith():
+ * INFO_RC_ONLYNAIVE( arg_info) added
+ *
  * Revision 3.8  2001/02/02 09:58:23  dkr
  * superfluous include of compile.h removed
  *
@@ -164,6 +169,7 @@
  *
  * Revision 1.1  1995/03/09  16:17:01  hw
  * Initial revision
+ *
  */
 
 #include <stdlib.h>
@@ -1872,26 +1878,28 @@ RCNwith (node *arg_node, node *arg_info)
     }
     vardec = DFMGetMaskEntryDeclSet (NWITH_IN_MASK (arg_node));
     while (vardec != NULL) {
-        if ((MUST_REFCOUNT (VARDEC_OR_ARG_TYPE (vardec))) && (vardec != neutral_vardec)) {
-            if ((VARDEC_OR_ARG_REFCNT (vardec) == 0) || (!(optimize & OPT_RCO))) {
-                /*
-                 * increment RC of non-withop-params
-                 */
-                L_VARDEC_OR_ARG_REFCNT (vardec, VARDEC_OR_ARG_REFCNT (vardec) + 1);
+        if (!INFO_RC_ONLYNAIVE (arg_info)) {
+            if ((MUST_REFCOUNT (VARDEC_OR_ARG_TYPE (vardec)))
+                && (vardec != neutral_vardec)) {
+                if ((VARDEC_OR_ARG_REFCNT (vardec) == 0) || (!(optimize & OPT_RCO))) {
+                    /*
+                     * increment RC of non-withop-params
+                     */
+                    L_VARDEC_OR_ARG_REFCNT (vardec, VARDEC_OR_ARG_REFCNT (vardec) + 1);
 
-                new_ids
-                  = MakeIds (StringCopy (VARDEC_OR_ARG_NAME (vardec)), NULL, ST_regular);
-                IDS_VARDEC (new_ids) = vardec;
-                IDS_REFCNT (new_ids) = VARDEC_OR_ARG_REFCNT (vardec);
-                IDS_NAIVE_REFCNT (new_ids) = VARDEC_OR_ARG_NAIVE_REFCNT (vardec);
-                /* #### */
-                /* onlynaive missing here #### */
-                if (NWITH_DEC_RC_IDS (arg_node) == NULL) {
-                    NWITH_DEC_RC_IDS (arg_node) = new_ids;
-                } else {
-                    IDS_NEXT (last_ids) = new_ids;
+                    new_ids = MakeIds (StringCopy (VARDEC_OR_ARG_NAME (vardec)), NULL,
+                                       ST_regular);
+                    IDS_VARDEC (new_ids) = vardec;
+                    IDS_REFCNT (new_ids) = VARDEC_OR_ARG_REFCNT (vardec);
+                    IDS_NAIVE_REFCNT (new_ids) = VARDEC_OR_ARG_NAIVE_REFCNT (vardec);
+
+                    if (NWITH_DEC_RC_IDS (arg_node) == NULL) {
+                        NWITH_DEC_RC_IDS (arg_node) = new_ids;
+                    } else {
+                        IDS_NEXT (last_ids) = new_ids;
+                    }
+                    last_ids = new_ids;
                 }
-                last_ids = new_ids;
             }
         }
 
@@ -2006,24 +2014,29 @@ RCNcode (node *arg_node, node *arg_info)
      *          (e.g. bodies of while-loops) are traversed twice!!!
      */
 
-    if (NCODE_INC_RC_IDS (arg_node) != NULL) {
-        NCODE_INC_RC_IDS (arg_node) = FreeAllIds (NCODE_INC_RC_IDS (arg_node));
-    }
-    FOREACH_VARDEC_AND_ARG (fundef_node, vardec, if (VARDEC_OR_ARG_REFCNT (vardec) > 1) {
-        new_ids = MakeIds (StringCopy (VARDEC_OR_ARG_NAME (vardec)), NULL, ST_regular);
-        IDS_VARDEC (new_ids) = vardec;
-        IDS_REFCNT (new_ids) = VARDEC_OR_ARG_REFCNT (vardec) - 1;
-        IDS_NAIVE_REFCNT (new_ids) = VARDEC_OR_ARG_NAIVE_REFCNT (vardec) - 1;
-        /* #### ids storeing */
-        /* only naive missing here */
-
-        if (NCODE_INC_RC_IDS (arg_node) == NULL) {
-            NCODE_INC_RC_IDS (arg_node) = new_ids;
-        } else {
-            IDS_NEXT (last_ids) = new_ids;
+    if (!INFO_RC_ONLYNAIVE (arg_info)) {
+        if (NCODE_INC_RC_IDS (arg_node) != NULL) {
+            NCODE_INC_RC_IDS (arg_node) = FreeAllIds (NCODE_INC_RC_IDS (arg_node));
         }
-        last_ids = new_ids;
-    }) /* FOREACH_VARDEC_AND_ARG */
+        FOREACH_VARDEC_AND_ARG (fundef_node, vardec,
+                                if (VARDEC_OR_ARG_REFCNT (vardec) > 1) {
+                                    new_ids
+                                      = MakeIds (StringCopy (VARDEC_OR_ARG_NAME (vardec)),
+                                                 NULL, ST_regular);
+                                    IDS_VARDEC (new_ids) = vardec;
+                                    IDS_REFCNT (new_ids)
+                                      = VARDEC_OR_ARG_REFCNT (vardec) - 1;
+                                    IDS_NAIVE_REFCNT (new_ids)
+                                      = VARDEC_OR_ARG_NAIVE_REFCNT (vardec) - 1;
+
+                                    if (NCODE_INC_RC_IDS (arg_node) == NULL) {
+                                        NCODE_INC_RC_IDS (arg_node) = new_ids;
+                                    } else {
+                                        IDS_NEXT (last_ids) = new_ids;
+                                    }
+                                    last_ids = new_ids;
+                                }) /* FOREACH_VARDEC_AND_ARG */
+    }
 
     /*
      * count the references in next code
@@ -2333,26 +2346,28 @@ RCNwith2 (node *arg_node, node *arg_info)
     }
     vardec = DFMGetMaskEntryDeclSet (NWITH2_IN_MASK (arg_node));
     while (vardec != NULL) {
-        if ((MUST_REFCOUNT (VARDEC_OR_ARG_TYPE (vardec))) && (vardec != neutral_vardec)) {
-            if ((VARDEC_OR_ARG_REFCNT (vardec) == 0) || (!(optimize & OPT_RCO))) {
-                /*
-                 * increment RC of non-withop-params
-                 */
-                L_VARDEC_OR_ARG_REFCNT (vardec, VARDEC_OR_ARG_REFCNT (vardec) + 1);
+        if (!INFO_RC_ONLYNAIVE (arg_info)) {
+            if ((MUST_REFCOUNT (VARDEC_OR_ARG_TYPE (vardec)))
+                && (vardec != neutral_vardec)) {
+                if ((VARDEC_OR_ARG_REFCNT (vardec) == 0) || (!(optimize & OPT_RCO))) {
+                    /*
+                     * increment RC of non-withop-params
+                     */
+                    L_VARDEC_OR_ARG_REFCNT (vardec, VARDEC_OR_ARG_REFCNT (vardec) + 1);
 
-                new_ids
-                  = MakeIds (StringCopy (VARDEC_OR_ARG_NAME (vardec)), NULL, ST_regular);
-                IDS_VARDEC (new_ids) = vardec;
-                IDS_REFCNT (new_ids) = VARDEC_OR_ARG_REFCNT (vardec);
-                IDS_NAIVE_REFCNT (new_ids) = VARDEC_OR_ARG_NAIVE_REFCNT (vardec);
-                /* #### */
-                /* onlynaive missing here #### */
-                if (NWITH2_DEC_RC_IDS (arg_node) == NULL) {
-                    NWITH2_DEC_RC_IDS (arg_node) = new_ids;
-                } else {
-                    IDS_NEXT (last_ids) = new_ids;
+                    new_ids = MakeIds (StringCopy (VARDEC_OR_ARG_NAME (vardec)), NULL,
+                                       ST_regular);
+                    IDS_VARDEC (new_ids) = vardec;
+                    IDS_REFCNT (new_ids) = VARDEC_OR_ARG_REFCNT (vardec);
+                    IDS_NAIVE_REFCNT (new_ids) = VARDEC_OR_ARG_NAIVE_REFCNT (vardec);
+
+                    if (NWITH2_DEC_RC_IDS (arg_node) == NULL) {
+                        NWITH2_DEC_RC_IDS (arg_node) = new_ids;
+                    } else {
+                        IDS_NEXT (last_ids) = new_ids;
+                    }
+                    last_ids = new_ids;
                 }
-                last_ids = new_ids;
             }
         }
 
