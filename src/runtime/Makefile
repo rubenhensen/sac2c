@@ -1,5 +1,10 @@
 #
 # $Log$
+# Revision 2.13  1999/07/05 14:40:26  sbs
+# sac2crc rule corrected.
+# Now, a make after make clean will "automatically" create
+# a link from sac2crc to sac2crc.$OS .
+#
 # Revision 2.12  1999/06/23 10:28:07  rob
 # Insert make target of sac2crc.
 #
@@ -70,6 +75,10 @@ LIBS := -L.
 OBJS := $(patsubst %.c,%.o,$(wildcard libsac_*.c)) libsac_trace_mt.o\
         libsac_cachesim_access_advanced.o ../../lib/main_args.o
 
+#
+# just in case we want to make sac2crc locally!!
+#
+OS        := SOLARIS_SPARC
 
 .PHONY: all tar
 
@@ -98,9 +107,9 @@ deps:
 	makedepend $(INCS) *.c
 
 sac2crc: 
-	if [ ! -f sac2crc ]; \
-	  then ln -s sac2crc.$(OS) sac2crc; \
-	fi
+	@ if [ ! -f sac2crc ]; \
+	    then ln -s sac2crc.$(OS) sac2crc; \
+	  fi
 
 clean:
 	$(RM) *.o libsac.a *.bak *.old *~
