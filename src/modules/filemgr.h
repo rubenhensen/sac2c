@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.3  2000/11/17 16:14:53  sbs
+ * locationtype FindLocationOfFile( char *file)
+ * added;
+ *
  * Revision 2.2  1999/05/18 11:21:46  cg
  * added function CheckExistFile().
  *
@@ -52,6 +56,7 @@
 #define _filemgr_h
 
 #include <stdio.h>
+#include <types.h>
 
 #define MAX_PATH_LEN 1024
 #define MAX_FILE_NAME 256
@@ -65,5 +70,6 @@ extern void RearrangePaths ();
 extern char *AbsolutePathname (char *path);
 extern FILE *WriteOpen (char *format, ...);
 extern int CheckExistFile (char *dir, char *name);
+extern locationtype FindLocationOfFile (char *file);
 
 #endif /* _filemgr_h */

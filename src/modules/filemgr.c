@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.3  2000/11/17 16:14:53  sbs
+ * locationtype FindLocationOfFile( char *file)
+ * added;
+ *
  * Revision 2.2  1999/05/18 11:21:46  cg
  * added function CheckExistFile().
  *
@@ -493,4 +497,36 @@ WriteOpen (char *format, ...)
     }
 
     DBUG_RETURN (file);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   locationtype FindLocationOfFile( char *file)
+ *
+ * description:
+ *   This function checks wether file contains "$SACBASE/stdlib/".
+ *   If so, LOC_stdlib is returned, otherwise LOC_usr.
+ *
+ *
+ ******************************************************************************/
+
+locationtype
+FindLocationOfFile (char *file)
+{
+    static char stdlib_loc[MAX_FILE_NAME];
+    char *sacbase;
+    locationtype loc;
+
+    sacbase = getenv ("SACBASE");
+    strcpy (stdlib_loc, sacbase);
+    strcat (stdlib_loc, "/stdlib/");
+
+    if (strstr (file, stdlib_loc)) {
+        loc = LOC_stdlib;
+    } else {
+        loc = LOC_usr;
+    }
+
+    return (loc);
 }
