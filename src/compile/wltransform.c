@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.54  2001/11/22 08:41:17  sbs
+ * CheckWithids is only compiled in the dbug version since
+ * it is used from DBUG_ASSERT only!
+ *
  * Revision 3.53  2001/11/14 16:02:00  dkr
  * fixed a bug in OptWL()
  *
@@ -2307,6 +2311,12 @@ FillGapSucc (node **new_node, /* a return value!! */
  *
  ******************************************************************************/
 
+#ifndef DBUG_OFF
+
+/*
+ * This function is called from within DBUG_ASSERTS only!
+ */
+
 static bool
 CheckWithids (node *part)
 {
@@ -2359,6 +2369,8 @@ CheckWithids (node *part)
 
     DBUG_RETURN (res);
 }
+
+#endif /* ! DBUG_OFF */
 
 /**
  **
