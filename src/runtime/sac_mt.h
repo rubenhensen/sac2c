@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.37  2001/07/04 10:02:32  ben
+ * code beautiefied
+ *
  * Revision 3.36  2001/06/29 11:10:06  sbs
  * application of CAT1 macro eliminated to prevent from
  * gcc 3.0 warning.
@@ -431,6 +434,10 @@ typedef union {
 
 #define SAC_MT_DEFINE_SPMD_FRAME()                                                       \
     static volatile union SAC_SET_SPMD_FRAME SAC_MT_spmd_frame;
+
+/*
+ * Macros for datastructures of scheduling
+ */
 
 #define SAC_MT_DEFINE_TASKLOCKS()                                                        \
     pthread_mutex_t SAC_MT_Tasklock[SAC_SET_THREADS_MAX * SAC_SET_NUM_SCHEDULERS];
@@ -919,6 +926,11 @@ typedef union {
         SAC_MT_SCHEDULER_Block_DIM0 (lower, upper, unrolling)                            \
     }
 
+/*
+ * TS_Even is the same as Block_DIM0 with two changes
+ * first it gets the dimension for dividing tasks
+ * second it divides in num_tasks*SAC_MT_THREADS() tasks
+ */
 #define SAC_MT_SCHEDULER_TS_Even(sched_id, tasks_on_dim, lower, upper, unrolling,        \
                                  num_tasks, taskid, worktodo)                            \
     {                                                                                    \
@@ -961,11 +973,17 @@ typedef union {
           = ((SAC_MT_REST_ITERATIONS (sched_id)) / (2 * SAC_MT_threads)) + 1;            \
     }
 
+/*
+ * TS_Factoring divides the With Loop in Blocks with decreasing size
+ * every SAC_MT_THREADS taskss have the same size and then a new tasksize will be computed
+ */
+
 #define SAC_MT_SCHEDULER_TS_Factoring(sched_id, tasks_on_dim, lower, upper, unrolling,   \
                                       taskid, worktodo)                                  \
     {                                                                                    \
         int tasksize;                                                                    \
         int restiter;                                                                    \
+                                                                                         \
         SAC_MT_ACQUIRE_LOCK (SAC_MT_TS_TASKLOCK (sched_id));                             \
                                                                                          \
         restiter = SAC_MT_REST_ITERATIONS (sched_id);                                    \
@@ -1001,11 +1019,15 @@ typedef union {
         SAC_MT_RELEASE_LOCK (SAC_MT_TS_TASKLOCK (sched_id));                             \
     }
 
+/*
+ * SET_TASKS initiziale the first max_task taskqueues
+ */
+
 #define SAC_MT_SCHEDULER_SET_TASKS(sched_id, max_task)                                   \
     {                                                                                    \
         int i;                                                                           \
                                                                                          \
-        for (i = 0; i < SAC_MT_THREADS (); i++)                                          \
+        for (i = 0; i < max_task; i++)                                                   \
             SAC_MT_TASK (sched_id, i) = 0;                                               \
         SAC_TR_MT_PRINT (("SAC_MT_TASK set for sched_id %d", sched_id));                 \
     }
@@ -1042,6 +1064,10 @@ typedef union {
         SAC_MT_RELEASE_LOCK (SAC_MT_TASKLOCK (sched_id, 0));                             \
     }
 
+/*
+ * Affinity_INIT initialize the taskqueues for each thread for the
+ * affinity scheduling
+ */
 #define SAC_MT_SCHEDULER_Affinity_INIT(sched_id, tasks_per_thread)                       \
     {                                                                                    \
         int i;                                                                           \
@@ -1067,6 +1093,7 @@ typedef union {
                                                                                          \
         /* first look if MYTHREAD has work to do */                                      \
         SAC_MT_ACQUIRE_LOCK (SAC_MT_TASKLOCK (sched_id, SAC_MT_MYTHREAD ()));            \
+                                                                                         \
         if (SAC_MT_TASK (sched_id, SAC_MT_MYTHREAD ())                                   \
             < SAC_MT_LAST_TASK (sched_id, SAC_MT_MYTHREAD ())) {                         \
             taskid = SAC_MT_TASK (sched_id, SAC_MT_MYTHREAD ());                         \
@@ -1074,8 +1101,8 @@ typedef union {
             SAC_MT_RELEASE_LOCK (SAC_MT_TASKLOCK (sched_id, SAC_MT_MYTHREAD ()));        \
             worktodo = 1;                                                                \
         } else {                                                                         \
-            /* if there was no work to do, find the task, which has done,                \
-               the smallest work till now*/                                              \
+            /* if there was no work to do, find the task, which has done, the smallest   \
+             * work till now*/                                                           \
             SAC_MT_RELEASE_LOCK (SAC_MT_TASKLOCK (sched_id, SAC_MT_MYTHREAD ()));        \
             maxloadthread = 0;                                                           \
             mintask = SAC_MT_TASK (sched_id, 0) - SAC_MT_LAST_TASK (sched_id, 0);        \
@@ -1089,7 +1116,6 @@ typedef union {
                 }                                                                        \
                                                                                          \
             /* if there was a thread with work to do,get his next task */                \
-                                                                                         \
             SAC_MT_ACQUIRE_LOCK (SAC_MT_TASKLOCK (sched_id, maxloadthread));             \
             if (SAC_MT_TASK (sched_id, maxloadthread)                                    \
                 < SAC_MT_LAST_TASK (sched_id, maxloadthread)) {                          \
