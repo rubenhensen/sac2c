@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.86  1996/05/29 14:18:57  sbs
+ * Revision 1.87  1996/07/14 13:02:19  sbs
+ * -opt_rco disabled whith noOPT !
+ *
+ * Revision 1.86  1996/05/29  14:18:57  sbs
  * inserted noRCO opt_rco!
  *
  * Revision 1.85  1996/01/25  18:37:50  cg
@@ -629,6 +632,7 @@ MAIN
             optimize = 0;
             sac_optimize = 0;
             psi_optimize = 0;
+            opt_rco = 0;
         } else if (!strncmp (*argv, "oopt", 4)) {
             optimize = 0;
             sac_optimize = 0;
