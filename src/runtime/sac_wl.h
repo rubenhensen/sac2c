@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.16  1998/06/24 10:35:53  dkr
+ * WL_(NON)FOLD_BEGIN/END are now h-icms
+ *
  * Revision 1.15  1998/06/19 18:50:38  dkr
  * added extra WL-ICMs for MT
  *
@@ -90,6 +93,18 @@
 #define SAC_WL_MIN(x, y) SAC_ND_MIN (x, y)
 
 #define SAC_WL_MAX(x, y) SAC_ND_MAX (x, y)
+
+/*****************************************************************************/
+
+/***
+ *** WL-begin
+ ***/
+
+#define SAC_WL_NONFOLD_BEGIN(target, idx_vec)                                            \
+    {                                                                                    \
+        int target##__destptr = 0;
+
+#define SAC_WL_FOLD_BEGIN(target, idx_vec) {
 
 /*****************************************************************************/
 
@@ -409,6 +424,16 @@
 
 #define SAC_WL_GRID_SET_IDX(dim, idx_vec, idx_scalar, bound1, bound2)                    \
     SAC_ND_A_FIELD (idx_vec)[dim] = idx_scalar;
+
+/*****************************************************************************/
+
+/***
+ *** WL-end
+ ***/
+
+#define SAC_WL_NONFOLD_END(target, idx_vec) }
+
+#define SAC_WL_FOLD_END(target, idx_vec) }
 
 /*****************************************************************************/
 

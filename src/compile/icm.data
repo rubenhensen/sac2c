@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.44  1998/06/24 10:36:59  dkr
+ * WL_(NON)FOLD_BEGIN/END are now h-icms
+ *
  * Revision 1.43  1998/06/23 12:49:48  cg
  * added implementations of scheduling ICMs
  * MT_SCHEDULER_Block_BEGIN and MT_SCHEDULER_Block_END
@@ -513,20 +516,6 @@ ICM_END( ND_KS_VECT2OFFSET, (name, dim, dims, s))
  * ICMs for compilation of new with-loop
  */
 
-#if defined(WL_NONFOLD_BEGIN) || defined(ICM_ALL)
-ICM_DEF( WL_NONFOLD_BEGIN, TRACE_UDF)
-  ICM_STR(target)
-  ICM_STR(idx_vec)
-ICM_END( WL_NONFOLD_BEGIN, (target, idx_vec))
-#endif
-
-#if defined(WL_FOLD_BEGIN) || defined(ICM_ALL)
-ICM_DEF( WL_FOLD_BEGIN, TRACE_UDF)
-  ICM_STR(target)
-  ICM_STR(idx_vec)
-ICM_END( WL_FOLD_BEGIN, (target, idx_vec))
-#endif
-
 #if defined(WL_ASSIGN) || defined(ICM_ALL)
 ICM_DEF( WL_ASSIGN, TRACE_UDF)
   ICM_INT(dims_expr)
@@ -583,20 +572,6 @@ ICM_DEF( WL_ADJUST_OFFSET, TRACE_UDF)
   ICM_INT(dims)
   ICM_VAR(dims, idx_scalars)
 ICM_END( WL_ADJUST_OFFSET, (dim, dims_target, target, idx_vec, dims, idx_scalars))
-#endif
-
-#if defined(WL_NONFOLD_END) || defined(ICM_ALL)
-ICM_DEF( WL_NONFOLD_END, TRACE_UDF)
-  ICM_STR(target)
-  ICM_STR(idx_vec)
-ICM_END( WL_NONFOLD_END, (target, idx_vec))
-#endif
-
-#if defined(WL_FOLD_END) || defined(ICM_ALL)
-ICM_DEF( WL_FOLD_END, TRACE_UDF)
-  ICM_STR(target)
-  ICM_STR(idx_vec)
-ICM_END( WL_FOLD_END, (target, idx_vec))
 #endif
 
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.19  1998/06/24 10:37:07  dkr
+ * WL_(NON)FOLD_BEGIN/END are now h-icms
+ *
  * Revision 1.18  1998/06/19 18:29:46  dkr
  * added WL_NONFOLD_END, WL_FOLD_END
  *
@@ -86,67 +89,6 @@
         }                                                                                \
         fprintf (outfile, ");\n");                                                       \
     }
-
-/******************************************************************************
- *
- * function:
- *   void ICMCompileWL_NONFOLD_BEGIN( char *target, char *idx_vec)
- *
- * description:
- *   implements the compilation of the following ICM:
- *
- *   WL_NONFOLD_BEGIN( target, idx_vec )
- *
- ******************************************************************************/
-
-void
-ICMCompileWL_NONFOLD_BEGIN (char *target, char *idx_vec)
-{
-    DBUG_ENTER ("ICMCompileWL_NONFOLD_BEGIN");
-
-#define WL_NONFOLD_BEGIN
-#include "icm_comment.c"
-#include "icm_trace.c"
-#undef WL_NONFOLD_BEGIN
-
-    INDENT;
-    fprintf (outfile, "{\n");
-    indent++;
-
-    INDENT;
-    fprintf (outfile, "int %s__destptr = 0;\n", target);
-
-    DBUG_VOID_RETURN;
-}
-
-/******************************************************************************
- *
- * function:
- *   void ICMCompileWL_FOLD_BEGIN( char *target, char *idx_vec)
- *
- * description:
- *   implements the compilation of the following ICM:
- *
- *   WL_FOLD_BEGIN( target, idx_vec )
- *
- ******************************************************************************/
-
-void
-ICMCompileWL_FOLD_BEGIN (char *target, char *idx_vec)
-{
-    DBUG_ENTER ("ICMCompileWL_FOLD_BEGIN");
-
-#define WL_FOLD_BEGIN
-#include "icm_comment.c"
-#include "icm_trace.c"
-#undef WL_FOLD_BEGIN
-
-    INDENT;
-    fprintf (outfile, "{\n");
-    indent++;
-
-    DBUG_VOID_RETURN;
-}
 
 /******************************************************************************
  *
@@ -443,64 +385,6 @@ ICMCompileWL_ADJUST_OFFSET (int dim, int dims_target, char *target, char *idx_ve
         fprintf (outfile, " * SAC_ND_KD_A_SHAPE( %s, %d)", target, i);
     }
     fprintf (outfile, ";\n");
-
-    DBUG_VOID_RETURN;
-}
-
-/******************************************************************************
- *
- * function:
- *   void ICMCompileWL_NONFOLD_END( char *target, char *idx_vec)
- *
- * description:
- *   implements the compilation of the following ICM:
- *
- *   WL_NONFOLD_END( target, idx_vec )
- *
- ******************************************************************************/
-
-void
-ICMCompileWL_NONFOLD_END (char *target, char *idx_vec)
-{
-    DBUG_ENTER ("ICMCompileWL_NONFOLD_END");
-
-#define WL_NONFOLD_END
-#include "icm_comment.c"
-#include "icm_trace.c"
-#undef WL_NONFOLD_END
-
-    indent--;
-    INDENT;
-    fprintf (outfile, "}\n");
-
-    DBUG_VOID_RETURN;
-}
-
-/******************************************************************************
- *
- * function:
- *   void ICMCompileWL_FOLD_END( char *target, char *idx_vec)
- *
- * description:
- *   implements the compilation of the following ICM:
- *
- *   WL_FOLD_END( target, idx_vec )
- *
- ******************************************************************************/
-
-void
-ICMCompileWL_FOLD_END (char *target, char *idx_vec)
-{
-    DBUG_ENTER ("ICMCompileWL_FOLD_END");
-
-#define WL_FOLD_END
-#include "icm_comment.c"
-#include "icm_trace.c"
-#undef WL_FOLD_END
-
-    indent--;
-    INDENT;
-    fprintf (outfile, "}\n");
 
     DBUG_VOID_RETURN;
 }

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  1998/06/24 10:37:11  dkr
+ * WL_(NON)FOLD_BEGIN/END are now h-icms
+ *
  * Revision 1.12  1998/06/19 18:29:51  dkr
  * added WL_NONFOLD_END, WL_FOLD_END
  *
@@ -44,10 +47,6 @@
 #ifndef _icm2c_wl_h
 #define _icm2c_wl_h
 
-extern void ICMCompileWL_NONFOLD_BEGIN (char *array, char *idx_vec);
-
-extern void ICMCompileWL_FOLD_BEGIN (char *target, char *idx_vec);
-
 extern void ICMCompileWL_ASSIGN (int dims_expr, char *expr, int dims_target, char *target,
                                  char *idx_vec, int dims, char **idx_scalars);
 
@@ -63,9 +62,5 @@ extern void ICMCompileWL_FOLD_NOOP (int dim, int dims_target, char *target, char
 
 extern void ICMCompileWL_ADJUST_OFFSET (int dim, int dims_target, char *target,
                                         char *idx_vec, int dims, char **idx_scalars);
-
-extern void ICMCompileWL_NONFOLD_END (char *array, char *idx_vec);
-
-extern void ICMCompileWL_FOLD_END (char *target, char *idx_vec);
 
 #endif /* _icm2c_wl_h */
