@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.20  1999/10/27 15:12:41  sbs
+ * MakeAssignIcmX(...) added.
+ *
  * Revision 2.19  1999/09/20 11:33:32  jhs
  * Added (L_)VARDEC_OR_ARG_BNEXT.
  * Brushed MakeIcm(0..6).
@@ -1185,6 +1188,39 @@ extern void ObjList2ArgList (node *objdef);
  ******************************************************************************/
 
 extern node *MakeAssignLet (char *var_name, node *vardec_node, node *let_expr);
+
+/******************************************************************************
+ *
+ * function:
+ *   node *MakeAssignIcm0(char *name)
+ *   node *MakeAssignIcm1(char *name, node *arg1)
+ *   node *MakeAssignIcm3(char *name, node *arg1, node *arg2)
+ *   node *MakeAssignIcm4(char *name, node *arg1, node *arg2, node *arg3,
+ *                                    node *arg4)
+ *   node *MakeAssignIcm5(char *name, node *arg1, node *arg2, node *arg3,
+ *                                    node *arg4, node *arg5)
+ *   node *MakeAssignIcm6(char *name, node *arg1, node *arg2, node *arg3,
+ *                                    node *arg4, node *arg5, node *arg6)
+ *
+ * description:
+ *
+ *   These functions generate an N_assign node with a complete ICM
+ *   representations including arguments as body.
+ *   Each function argument may be an arbitrary list of single ICM arguments.
+ *   These are concatenated correctly.
+ *   The ASSIGN_NEXT will be NULL!
+ *
+ ******************************************************************************/
+
+extern node *MakeAssignIcm0 (char *name);
+extern node *MakeAssignIcm1 (char *name, node *arg1);
+extern node *MakeAssignIcm2 (char *name, node *arg1, node *arg2);
+extern node *MakeAssignIcm3 (char *name, node *arg1, node *arg2, node *arg3);
+extern node *MakeAssignIcm4 (char *name, node *arg1, node *arg2, node *arg3, node *arg4);
+extern node *MakeAssignIcm5 (char *name, node *arg1, node *arg2, node *arg3, node *arg4,
+                             node *arg5);
+extern node *MakeAssignIcm6 (char *name, node *arg1, node *arg2, node *arg3, node *arg4,
+                             node *arg5, node *arg6);
 
 /******************************************************************************
  *

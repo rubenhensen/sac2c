@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.13  1999/10/27 15:12:41  sbs
+ * MakeAssignIcmX(...) added.
+ *
  * Revision 2.12  1999/10/26 15:51:00  dkr
  * Bug in MakeIcm{4,5,6} fixed
  *
@@ -748,6 +751,72 @@ MakeAssignLet (char *var_name, node *vardec_node, node *let_expr)
     tmp_node = MakeLet (let_expr, tmp_ids);
     tmp_node = MakeAssign (tmp_node, NULL);
     DBUG_RETURN (tmp_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *MakeAssignIcm0(char *name)
+ *   node *MakeAssignIcm1(char *name, node *arg1)
+ *   node *MakeAssignIcm3(char *name, node *arg1, node *arg2)
+ *   node *MakeAssignIcm4(char *name, node *arg1, node *arg2, node *arg3,
+ *                                    node *arg4)
+ *   node *MakeAssignIcm5(char *name, node *arg1, node *arg2, node *arg3,
+ *                                    node *arg4, node *arg5)
+ *   node *MakeAssignIcm6(char *name, node *arg1, node *arg2, node *arg3,
+ *                                    node *arg4, node *arg5, node *arg6)
+ *
+ * description:
+ *
+ *   These functions generate an N_assign node with a complete ICM
+ *   representations including arguments as body.
+ *   Each function argument may be an arbitrary list of single ICM arguments.
+ *   These are concatenated correctly.
+ *   The ASSIGN_NEXT will be NULL!
+ *
+ ******************************************************************************/
+
+node *
+MakeAssignIcm0 (char *name)
+{
+    return (MakeAssign (MakeIcm0 (name), NULL));
+}
+
+node *
+MakeAssignIcm1 (char *name, node *arg1)
+{
+    return (MakeAssign (MakeIcm1 (name, arg1), NULL));
+}
+
+node *
+MakeAssignIcm2 (char *name, node *arg1, node *arg2)
+{
+    return (MakeAssign (MakeIcm2 (name, arg1, arg2), NULL));
+}
+
+node *
+MakeAssignIcm3 (char *name, node *arg1, node *arg2, node *arg3)
+{
+    return (MakeAssign (MakeIcm3 (name, arg1, arg2, arg3), NULL));
+}
+
+node *
+MakeAssignIcm4 (char *name, node *arg1, node *arg2, node *arg3, node *arg4)
+{
+    return (MakeAssign (MakeIcm4 (name, arg1, arg2, arg3, arg4), NULL));
+}
+
+node *
+MakeAssignIcm5 (char *name, node *arg1, node *arg2, node *arg3, node *arg4, node *arg5)
+{
+    return (MakeAssign (MakeIcm5 (name, arg1, arg2, arg3, arg4, arg5), NULL));
+}
+
+node *
+MakeAssignIcm6 (char *name, node *arg1, node *arg2, node *arg3, node *arg4, node *arg5,
+                node *arg6)
+{
+    return (MakeAssign (MakeIcm6 (name, arg1, arg2, arg3, arg4, arg5, arg6), NULL));
 }
 
 /***
