@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.120  2002/09/13 23:22:50  dkr
+ * PrintLet(): bug fixed
+ *
  * Revision 3.119  2002/09/13 22:11:01  dkr
  * ->lineno replaced by NODE_LINE
  *
@@ -2162,6 +2165,11 @@ PrintLet (node *arg_node, node *arg_info)
         node *tmp = Argtab2Let (expr);
 
         Trav (tmp, arg_info);
+
+        /*
+         * we have to clean AP_FUNDEF in order to fool FreeAp()!!!
+         */
+        AP_FUNDEF (LET_EXPR (tmp)) = NULL;
         tmp = FreeTree (tmp);
 
         if (!print_argtab) {
@@ -2282,6 +2290,7 @@ PrintAp (node *arg_node, node *arg_info)
         /*
          * fundef has been renamed -> print new name!
          */
+        DBUG_ASSERT ((AP_FUNDEF (arg_node) != NULL), "no AP_FUNDEF found!");
         fprintf (outfile, "%s", FUNDEF_NAME (AP_FUNDEF (arg_node)));
     }
     fprintf (outfile, "(");
