@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.13  1999/05/06 12:08:50  sbs
+ * includes brushed!.
+ *
  * Revision 2.12  1999/04/20 12:58:24  jhs
  * Changes made for emty arrays.
  *
@@ -40,311 +43,7 @@
  * Revision 2.1  1999/02/23 12:39:08  sacbase
  * new release made
  *
- * Revision 1.85  1999/02/15 12:09:17  cg
- * Bug fixed: character constants are now flattened from return-statement.
- *
- * Revision 1.84  1999/02/12 18:47:15  bs
- * fixed a bug in FltnExprs
- *
- * Revision 1.83  1999/02/12 12:36:21  bs
- * Function FltnId modified. -> propagation of constant int arrays.
- *
- * Revision 1.82  1999/02/11 09:20:55  bs
- * Functions FltnArray and FltnExprs modified. Now arrays of const. integers
- * additionally are stored in compact form.
- *
- * Revision 1.81  1999/01/14 13:38:47  sbs
- * flattening of first arg of genarray suppressed.
- *
- * Revision 1.80  1998/11/09 13:58:11  sbs
- * flatten applied to arithmetic funs as well -> needed
- * for defining them in libs!!
- *
- * Revision 1.79  1998/10/27 09:53:01  sbs
- * INFO_FLTN_CONTEXT reset from CT_wl to CT_normal in
- * FltnBlock. This is required since otherwise renamings
- * occur in the innermost block rather than the innermost
- * WL-block!!!
- *
- * Revision 1.78  1998/10/26 20:16:59  dkr
- * fixed a bug in FltnLet:
- *   no DBUG_PRINT on NULL-pointers!
- *
- * Revision 1.77  1998/08/21 12:36:29  sbs
- * some dummy assignments in some default-cases inserted
- * for convincing the C compiler that these vars indeed
- * are initialized in any case!
- *
- * Revision 1.76  1998/06/05 15:01:21  dkr
- * N_id nodes in NCODE_CEXPR are not flattened anymore
- *
- * Revision 1.75  1998/05/28 23:48:38  dkr
- * in old with-loop the neutral element is not flattened anymore
- *
- * Revision 1.74  1998/05/21 09:59:47  dkr
- * added missing 'break' in switch-statement (FltnNWithop)
- *
- * Revision 1.73  1998/05/20 20:17:23  sbs
- * completely revised version of flatten.c!!
- * All functions have been adjusted to the new macros,
- * new functions InsertRenaming, Abstract, FltnArray, and FltnBlock!
- * the pushes made for conds and loops have been changed so that
- * renamings that leed to typing errors are avoided ( references
- * to vars that have been defined in one branch of a cond only!)
- * Furthermore, the renaming of the LHS of WLs has been changed.
- * Instead of renaming the referenced vars on the RHS of the WL,
- * the WL is assigned to a tmp-var and AFTER the WL, the tmp-var
- * is renamed!
- *
- * Revision 1.72  1998/05/05 13:19:07  srs
- * new WL: constant array bounds are not flattened anymore.
- *
- * Revision 1.71  1998/04/29 13:44:40  srs
- * functions which are imported from moduls are not flattened anymore.
- * This has already been done while compiling the module.
- *
- * Revision 1.70  1998/03/17 14:19:32  cg
- * filename is now reset to sacfilename in order to produce correct
- * error messages
- *
- * Revision 1.69  1998/03/17 09:51:25  srs
- * fixed bug in FltnCon.
- * Traverse neutral element only if not NULL.
- *
- * Revision 1.68  1998/03/16 14:44:52  srs
- * fixed bug resulted from changes in 1.65
- *
- * Revision 1.67  1998/03/15 10:59:28  srs
- * fixed bug in FltnGen
- *
- * Revision 1.66  1998/03/13 18:03:50  srs
- * replaced GenTmpVar() by global function TmpVar()
- * and fixed a bug in FltnNCode
- *
- * Revision 1.65  1998/03/12 13:11:41  srs
- * fixed bug in FlatnNpart()
- *
- * Revision 1.64  1998/03/03 23:15:02  dkr
- * *** empty log message ***
- *
- * Revision 1.63  1998/02/25 13:20:16  srs
- * all index variables of new WL are renamed
- *
- * Revision 1.62  1998/02/19 11:45:22  srs
- * fixed bug in FltnNwith
- *
- * Revision 1.61  1998/02/18 11:34:10  srs
- * fixed bug in FltnNgenerator
- *
- * Revision 1.60  1998/02/15 21:15:02  srs
- * fixed bug in flattening of neutral element of WL-fold
- *
- * Revision 1.59  1998/02/11 17:14:14  srs
- * changed NPART_IDX to NPART_WITHID.
- * fixed bug in FltnNwithop.
- *
- * Revision 1.58  1998/02/06 16:45:57  srs
- * *** empty log message ***
- *
- * Revision 1.57  1998/01/31 13:44:53  srs
- * removed bug in FltnNCode
- *
- * Revision 1.56  1998/01/30 17:53:29  srs
- * adjusted flattening of new WL generator to new node structure.
- *
- * Revision 1.55  1998/01/21 12:52:50  srs
- * Fixed bug in function which flattens fold.
- * Neutral element may be optional.
- *
- * Revision 1.54  1998/01/02 10:57:47  srs
- * changes comments
- *
- * Revision 1.53  1997/12/19 16:08:30  srs
- * changed some functions headers to new style
- *
- * Revision 1.52  1997/12/10 18:37:24  srs
- * - fixed bug in foldprf of old WLs
- * - changed flattening of new WLs
- *
- * Revision 1.51  1997/12/05 16:26:44  srs
- * bugfix with flattening of WLs
- *
- * Revision 1.50  1997/12/04 21:19:02  srs
- * flattening of new WLs is working
- *
- * Revision 1.49  1997/12/02 18:56:33  srs
- * temporary checkin (don't try new_with)
- *
- * Revision 1.48  1997/11/25 12:37:24  srs
- * *** empty log message ***
- *
- * Revision 1.47  1997/11/02 13:57:37  dkr
- * with defined NEWTREE, node->nnode is not used anymore
- *
- * Revision 1.46  1997/11/02 13:31:37  dkr
- * with defined NEWTREE, node->nnode is not used anymore
- *
- * Revision 1.45  1997/05/14 08:17:59  sbs
- * error with_0001.sac solved:
- * a = with.... now PUSHES a on stack!
- *
- * Revision 1.44  1997/04/25  12:13:52  sbs
- * malloc replaced by Malloc
- *
- * Revision 1.43  1996/09/11  06:10:04  cg
- * Now, arrays as arguments to psi and modarray are abstracted.
- * This is necessary to overload these functiond with user-defined ones.
- *
- * Revision 1.42  1996/01/26  16:28:54  hw
- * bug fixed in FltnExprs (exprs that contain casts will be flattend in the
- * right way now
- *
- * Revision 1.41  1995/12/12  15:48:19  hw
- * changed DuplicateNode
- *
- * Revision 1.40  1995/10/12  14:15:47  cg
- * module implementations without any functions will now pass flatten
- *
- * Revision 1.39  1995/10/06  16:34:22  cg
- * calls to MakeIds adjusted to new signature (3 parameters)
- *
- * Revision 1.38  1995/09/05  09:50:15  hw
- * changed FltnExprs (constants of type N_double will be considered too)
- *
- * Revision 1.37  1995/08/15  12:36:55  hw
- * changed FltnLet (now the left part of a let can be empty)
- *
- * Revision 1.36  1995/07/13  15:21:56  hw
- * changed comments in FltnCon
- *
- * Revision 1.35  1995/07/13  15:16:33  hw
- * changed FltnCon( if neutral element is an array it will not be
- *                  extracted anymore)
- *
- * Revision 1.34  1995/06/30  11:53:54  hw
- * renamed MOD to MODARRAY
- *
- * Revision 1.33  1995/06/26  14:37:51  hw
- * now arrays in the modarray-part of a with-loop will be extracted
- *
- * Revision 1.32  1995/05/31  14:19:12  hw
- * bug fixed in FtlnCon (body after N_modarray will be flattened
- *   correctly now)
- *
- * Revision 1.31  1995/05/31  13:21:11  hw
- * changed flatten of with-loop and of N_foldfun
- *
- * Revision 1.30  1995/05/30  11:59:06  hw
- * bug fixed in FltnExprs
- *
- * Revision 1.29  1995/05/30  06:45:57  hw
- * - FltnMod deleted
- * - FltnCon inserted (node[1] of N_foldfun will be flattened too)
- *
- * Revision 1.28  1995/05/29  13:50:57  hw
- * calls of functions in condition of if-then-else and in
- *  termination condition of loops will be put out of them
- *
- * Revision 1.27  1995/05/29  12:53:05  hw
- * bug fixed in FltnExprs (leading casts will be ignored )
- *
- * Revision 1.26  1995/05/29  10:31:04  hw
- * - bug fixed in FltnWith
- * - changed renameing of variables in FltnLet
- *
- * Revision 1.25  1995/05/11  16:50:10  hw
- * - bug fixed in FltnWhile ( now traverse first the body of the loop and
- *     than the termination condition, because of renaming of variables
- *     in a with-loop)
- *
- * Revision 1.24  1995/05/11  16:18:48  hw
- * -bug fixed in FltnDo & FltnWhile ( empty loop-bodies will be treated
- *                                    correctly now )
- *
- * Revision 1.23  1995/05/09  13:45:41  hw
- * changed DuplicateNode ( node information (node.info) will be copied )
- *
- * Revision 1.22  1995/04/28  11:37:40  hw
- * - added FltnMod
- * - bug fixed in renameing of variables belonging the assignment of
- *   a with_loop
- *
- * Revision 1.21  1995/04/26  17:23:03  hw
- *  - arrays will be abstacted out of generator part of a with-loop
- *  - index_variable of a with_loop will be renamed, if they are modified
- *    in the body of the with-loop
- *  - the variable that a with-loop assignes to , will be renamed in the
- *    body of a with-loop
- *
- * Revision 1.20  1995/04/25  09:08:02  hw
- * index vector of with-loop will be renamed if necessary
- *
- * Revision 1.19  1995/04/21  12:44:18  hw
- * -added  FltnId, FltnLet & FltnArgs
- * -- removed FltnPrf
- * - now varibales in with_loops will be renamed and initialized
- *   if necessary
- *
- * Revision 1.18  1995/04/18  09:50:04  hw
- * bug fixed in FltnExprs (constant arrays will not be abstracted out of
- *  argumentposition of primitive functions)
- *
- * Revision 1.17  1995/04/07  15:33:34  hw
- * FltnExprs will now flatten its arguments depending on the context
- * (modified FltExprs, FltnWhile, FltnDo)
- * N_ap will be "abstracted" out of the termination condition of a loop
- *  (N_prf won't)
- *
- * Revision 1.16  1995/04/07  13:37:42  hw
- * FltnAp, FltnReturn inserted
- * modified FtnExprs to flatten N_exprs depending on the context
- *
- * Revision 1.15  1995/03/13  17:03:44  hw
- * changover from 'info.id' to 'info.ids' of node N_id,
- * N_post, N_pre done
- *
- * Revision 1.14  1995/03/08  17:01:41  hw
- * changed FltnExprs (if an N_array node is a child of N_exprs node
- *                    then N_array will be flattened too)
- *
- * Revision 1.13  1995/03/07  11:00:03  hw
- * added function FltnGen (flatten N_generator)
- *
- * Revision 1.12  1995/01/12  14:04:53  hw
- * initialized node of structure 'ids' with NULL
- *
- * Revision 1.11  1995/01/06  16:45:15  hw
- * added FltnFundef
- *
- * Revision 1.10  1994/12/15  11:47:06  hw
- * inserted FltnModul
- *
- * Revision 1.9  1994/12/12  16:03:59  asi
- * Error fixed in FltnDo
- *
- * Revision 1.8  1994/11/22  17:27:48  hw
- * added function DuplicateNode
- * call DuplicateNode in function FltnWhile to have only one referenze to
- * each node
- *
- * Revision 1.7  1994/11/22  16:40:08  hw
- * added FltnDo
- *
- * Revision 1.6  1994/11/18  13:13:10  hw
- * changed FltnWhile
- * now the flattened stop condition of the while loop is inserted infront of
- * the while statement and also at the end of the loop body
- *
- * Revision 1.5  1994/11/17  16:51:58  hw
- * added FltnWhile & FltnWith
- *
- * Revision 1.4  1994/11/15  14:49:29  hw
- * deleted FltFor
- * bug fixed in FltnPrf
- *
- * Revision 1.3  1994/11/14  17:49:23  hw
- * added FltnCond FltnFor
- * last one doesn`t work correkt at all
+ * ... [eliminated] ...
  *
  * Revision 1.2  1994/11/10  15:39:42  sbs
  * RCS-header inserted
@@ -353,18 +52,21 @@
  */
 
 #include <stdio.h>
-#include <stdlib.h>
 
-#include "tree.h"
+#include "globals.h"
 #include "Error.h"
 #include "dbug.h"
 #include "my_debug.h"
-#include "traverse.h"
+
+#include "types.h"
 #include "internal_lib.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
+#include "traverse.h"
 #include "free.h"
 #include "DupTree.h"
+
 #include "flatten.h"
-#include "globals.h"
 
 /*
  * OPEN PROBLEMS:
