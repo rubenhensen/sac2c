@@ -1,8 +1,8 @@
 /*
  *
  * $Log$
- * Revision 3.3  2001/01/17 17:39:23  dkr
- * ICMs WL_FOLD_NOOP and WL_ASSIGN_NOOP replaced by WL_NOOP
+ * Revision 3.4  2001/01/19 11:54:01  dkr
+ * some with-loop ICMs renamed
  *
  * Revision 3.2  2001/01/10 18:33:20  dkr
  * icm WL_ADJUST_OFFSET renamed into WL_SET_OFFSET
@@ -74,19 +74,28 @@
 #ifndef _icm2c_wl_h
 #define _icm2c_wl_h
 
-extern void ICMCompileWL_NONFOLD_BEGIN (char *target, char *idx_vec, int dims);
-extern void ICMCompileWL_FOLD_BEGIN (char *target, char *idx_vec, int dims);
-extern void ICMCompileWL_NONFOLD_END (char *target, char *idx_vec, int dims);
-extern void ICMCompileWL_FOLD_END (char *target, char *idx_vec, int dims);
+extern void ICMCompileWL_BEGIN__OFFSET (char *target, char *idx_vec, int dims);
+extern void ICMCompileWL_BEGIN (char *target, char *idx_vec, int dims);
+extern void ICMCompileWL_END__OFFSET (char *target, char *idx_vec, int dims);
+extern void ICMCompileWL_END (char *target, char *idx_vec, int dims);
 
 extern void ICMCompileWL_ASSIGN (int dims_expr, char *expr, int dims_target, char *target,
                                  char *idx_vec, int dims, char **idx_scalars);
 
-extern void ICMCompileWL_ASSIGN_INIT (int dims_target, char *target, char *idx_vec,
-                                      int dims, char **idx_scalars);
+extern void ICMCompileWL_ASSIGN__INIT (int dims_target, char *target, char *idx_vec,
+                                       int dims, char **idx_scalars);
 
-extern void ICMCompileWL_ASSIGN_COPY (char *source, int dims_target, char *target,
-                                      char *idx_vec, int dims, char **idx_scalars);
+extern void ICMCompileWL_ASSIGN__COPY (char *source, int dims_target, char *target,
+                                       char *idx_vec, int dims, char **idx_scalars);
+
+extern void ICMCompileWL_FOLD__OFFSET (int dims_target, char *target, char *idx_vec,
+                                       int dims, char **idx_scalars);
+
+extern void ICMCompileWL_FOLD (int dims_target, char *target, char *idx_vec, int dims,
+                               char **idx_scalars);
+
+extern void ICMCompileWL_NOOP__OFFSET (int dims_target, char *target, char *idx_vec,
+                                       int dims, char **idx_scalars);
 
 extern void ICMCompileWL_NOOP (int dims_target, char *target, char *idx_vec, int dims,
                                char **idx_scalars);

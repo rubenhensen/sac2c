@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2001/01/19 11:54:19  dkr
+ * some with-loop ICMs renamed
+ *
  * Revision 3.6  2001/01/17 17:41:52  dkr
  * some minor changes done
  *
@@ -122,7 +125,6 @@
  *****************************************************************************/
 
 #ifndef _sac_wl_h
-
 #define _sac_wl_h
 
 /*
@@ -141,7 +143,7 @@
  *** current array entry.
  ***/
 
-#define SAC_WL_DEST(var) CAT0 (var, __destptr)
+#define SAC_WL_OFFSET(target) CAT0 (target, __off)
 
 /*****************************************************************************/
 
@@ -154,15 +156,6 @@
 #define SAC_WL_MT_SCHEDULE_START(dim) CAT0 (SAC__schedule_start, dim)
 
 #define SAC_WL_MT_SCHEDULE_STOP(dim) CAT0 (SAC__schedule_stop, dim)
-
-/*****************************************************************************/
-
-/***
- *** naive compilation
- ***/
-
-#define SAC_WL_ADJUST_OFFSET(dim, target, bnd1, bnd2)                                    \
-    SAC_WL_DEST (target) += (bnd2 - bnd1);
 
 /*****************************************************************************/
 

@@ -1,8 +1,8 @@
 /*
  *
  * $Log$
- * Revision 3.10  2001/01/17 17:39:44  dkr
- * ICMs WL_FOLD_NOOP and WL_ASSIGN_NOOP replaced by WL_NOOP
+ * Revision 3.11  2001/01/19 11:58:12  dkr
+ * some with-loop ICMs renamed
  *
  * Revision 3.9  2001/01/10 14:28:04  dkr
  * fixed a bug with multiple segments
@@ -236,7 +236,6 @@ static ids *wl_ids = NULL;
 static node *wl_node = NULL;
 static node *wl_seg = NULL;
 static node *wl_stride = NULL;
-static bool wl_off_needed = FALSE;
 
 #define LABEL_NAME "SAC__Label" /* basic-name for goto label */
 
@@ -1861,7 +1860,7 @@ GetDim_WL_SET_OFFSET (node *grid, node *wl, node *seg)
 
     DBUG_ENTER ("GetDim_WL_SET_OFFSET");
 
-    if (wl_off_needed) {
+    if (NWITH2_OFFSET_NEEDED (wl)) {
         dims = WLSEGX_DIMS (seg);
 
         /*
@@ -5139,7 +5138,6 @@ COMPNwith2 (node *arg_node, node *arg_info)
     node *let_neutral, *comp_neutral, *tmp, *new;
     node *old_wl_node;
     ids *old_wl_ids;
-    bool old_wl_off_needed;
     char *icm_name1, *icm_name2, *profile_name;
     node *rc_icms_wl_ids = NULL;
     node *assigns = NULL;
@@ -5154,9 +5152,6 @@ COMPNwith2 (node *arg_node, node *arg_info)
     wl_ids = INFO_COMP_LASTIDS (arg_info);
     old_wl_node = wl_node; /* stack 'wl_node' */
     wl_node = arg_node;
-    old_wl_off_needed = wl_off_needed; /* stack 'wl_off_needed' */
-    wl_off_needed = ((NWITH2_TYPE (wl_node) == WO_genarray)
-                     || (NWITH2_TYPE (wl_node) == WO_modarray));
 
     /*
      * When update-in-place is active:
@@ -5242,15 +5237,20 @@ COMPNwith2 (node *arg_node, node *arg_info)
                           MakeExprs (DupIds_Id (NWITH2_VEC (wl_node)),
                                      MakeExprs (MakeNum (NWITH2_DIMS (arg_node)), NULL)));
 
+    if (NWITH2_OFFSET_NEEDED (wl_node)) {
+        icm_name1 = "WL_BEGIN__OFFSET";
+        icm_name2 = "WL_END__OFFSET";
+    } else {
+        icm_name1 = "WL_BEGIN";
+        icm_name2 = "WL_END";
+    }
+
     switch (NWITH2_TYPE (arg_node)) {
     case WO_genarray:
-        icm_name1 = "WL_NONFOLD_BEGIN";
-        icm_name2 = "WL_NONFOLD_END";
         profile_name = "genarray";
         break;
+
     case WO_modarray:
-        icm_name1 = "WL_NONFOLD_BEGIN";
-        icm_name2 = "WL_NONFOLD_END";
         profile_name = "modarray";
         break;
 
@@ -5299,8 +5299,6 @@ COMPNwith2 (node *arg_node, node *arg_info)
          */
         assigns = AppendAssign (assigns, comp_neutral);
 
-        icm_name1 = "WL_FOLD_BEGIN";
-        icm_name2 = "WL_FOLD_END";
         profile_name = "fold";
         break;
 
@@ -5350,11 +5348,10 @@ COMPNwith2 (node *arg_node, node *arg_info)
     }
 
     /*
-     * pop 'wl_ids', 'wl_node', 'wl_off_needed'
+     * pop 'wl_ids', 'wl_node'
      */
     wl_ids = old_wl_ids;
     wl_node = old_wl_node;
-    wl_off_needed = old_wl_off_needed;
 
     DBUG_RETURN (assigns);
 }
@@ -5447,7 +5444,7 @@ COMPWLsegx (node *arg_node, node *arg_info)
     /*
      * insert ICM "WL_INIT_OFFSET" if needed
      */
-    if (wl_off_needed) {
+    if (NWITH2_OFFSET_NEEDED (wl_node)) {
         assigns
           = MakeAssign (MakeIcm4 ("WL_INIT_OFFSET", MakeNum (GetDim (IDS_TYPE (wl_ids))),
                                   DupIds_Id (wl_ids), DupIds_Id (NWITH2_VEC (wl_node)),
@@ -5921,7 +5918,7 @@ COMPWLgridx (node *arg_node, node *arg_info)
     ids_scalar = GetIndexIds (NWITHID_IDS (NWITH2_WITHID (wl_node)), dim);
 
     /*
-     * build argument list for 'WL_ASSIGN_...'/'WL_FOLD'/'WL_SET_OFFSET'-ICMs
+     * build argument list for 'WL_ASSIGN__...'/'WL_FOLD'/'WL_SET_OFFSET'-ICMs
      */
     icm_args2 = NULL;
     num_args = 0;
@@ -5973,25 +5970,37 @@ COMPWLgridx (node *arg_node, node *arg_info)
                 /*
                  * dummy code inserted by naive compilation
                  */
-                icm_name = "WL_NOOP";
+                if (NWITH2_OFFSET_NEEDED (wl_node)) {
+                    icm_name = "WL_NOOP__OFFSET";
+                } else {
+                    icm_name = "WL_NOOP";
+                }
             } else {
                 /*
                  * choose right ICM
                  */
                 switch (NWITH2_TYPE (wl_node)) {
                 case WO_genarray:
-                    icm_name = "WL_ASSIGN_INIT";
+                    DBUG_ASSERT ((NWITH2_OFFSET_NEEDED (wl_node)),
+                                 "wrong value for OFFSET_NEEDED found!");
+                    icm_name = "WL_ASSIGN__INIT";
                     break;
 
                 case WO_modarray:
+                    DBUG_ASSERT ((NWITH2_OFFSET_NEEDED (wl_node)),
+                                 "wrong value for OFFSET_NEEDED found!");
                     icm_args2 = MakeExprs (DupNode (NWITH2_ARRAY (wl_node)), icm_args2);
-                    icm_name = "WL_ASSIGN_COPY";
+                    icm_name = "WL_ASSIGN__COPY";
                     break;
 
                 case WO_foldfun:
                     /* here is no break missing! */
                 case WO_foldprf:
-                    icm_name = "WL_NOOP";
+                    if (NWITH2_OFFSET_NEEDED (wl_node)) {
+                        icm_name = "WL_NOOP__OFFSET";
+                    } else {
+                        icm_name = "WL_NOOP";
+                    }
                     break;
 
                 default:
@@ -6006,7 +6015,11 @@ COMPWLgridx (node *arg_node, node *arg_info)
                  * dummy code inserted by array padding
                  */
                 assigns = NULL;
-                icm_name = "WL_NOOP";
+                if (NWITH2_OFFSET_NEEDED (wl_node)) {
+                    icm_name = "WL_NOOP__OFFSET";
+                } else {
+                    icm_name = "WL_NOOP";
+                }
             } else {
                 /*
                  * insert compiled code.
@@ -6046,19 +6059,17 @@ COMPWLgridx (node *arg_node, node *arg_info)
                 case WO_foldfun:
                     /* here is no break missing! */
                 case WO_foldprf:
-                    /*
-                     * here we do not need any ICM-args
-                     * (we do not even need an ICM...)
-                     */
-                    icm_args2 = FreeTree (icm_args2);
+                    if (NWITH2_OFFSET_NEEDED (wl_node)) {
+                        icm_name = "WL_FOLD__OFFSET";
+                    } else {
+                        icm_name = "WL_FOLD";
+                    }
 
                     /*
                      * insert code of the pseudo fold-fun
                      */
                     assigns
                       = AppendAssign (assigns, GetFoldCode (NWITH2_FUNDEF (wl_node)));
-
-                    icm_name = NULL;
                     break;
 
                 default:
@@ -6069,10 +6080,8 @@ COMPWLgridx (node *arg_node, node *arg_info)
             }
         }
 
-        if (icm_name != NULL) {
-            assigns = AppendAssign (assigns, MakeAssign (MakeIcm1 (icm_name, icm_args2),
-                                                         dec_rc_cexpr));
-        }
+        assigns = AppendAssign (assigns, MakeAssign (MakeIcm1 (icm_name, icm_args2),
+                                                     dec_rc_cexpr));
     }
 
     /*******************************************
@@ -6571,8 +6580,8 @@ COMPSync (node *arg_node, node *arg_info)
         if (NODE_TYPE (instr) == N_icm) {
 
             /* var_name = NULL; */
-            if ((!strcmp (ICM_NAME (instr), "WL_FOLD_BEGIN"))
-                || (!strcmp (ICM_NAME (instr), "WL_NONFOLD_BEGIN"))) {
+            if ((!strcmp (ICM_NAME (instr), "WL_BEGIN__OFFSET"))
+                || (!strcmp (ICM_NAME (instr), "WL_BEGIN"))) {
                 /*
                  *  begin of with-loop code found
                  *  -> skip with-loop code
@@ -6580,8 +6589,8 @@ COMPSync (node *arg_node, node *arg_info)
                  */
                 count_nesting++;
                 DBUG_PRINT ("COMP", ("ICM: %s is ++", ICM_NAME (instr)));
-            } else if ((!strcmp (ICM_NAME (instr), "WL_FOLD_END"))
-                       || (!strcmp (ICM_NAME (instr), "WL_NONFOLD_END"))) {
+            } else if ((!strcmp (ICM_NAME (instr), "WL_END__OFFSET"))
+                       || (!strcmp (ICM_NAME (instr), "WL_END"))) {
                 /*
                  *  end of with-loop code found?
                  *  -> end of one (possibly nested) with loop
