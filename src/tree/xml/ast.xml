@@ -1,6 +1,10 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.26  2004/10/19 09:09:45  sah
+  added persist flag
+  fixed syntax error
+
   Revision 1.25  2004/10/18 15:18:00  ktr
   added FUNDEF_RETALIAS
 
@@ -102,7 +106,7 @@
     <type name="Double" ctype="double" init="0.0" copy="literal" />
     <type name="Char" ctype="char" init="'\0'" copy="literal" />
     <type name="OldType" ctype="types*" init="NULL"
-    copy="function" />
+    copy="function" persist="no" />
     <type name="Node" ctype="node*" init="NULL" copy="function" />
     <type name="Link" ctype="node*" init="NULL" copy="hash" />
     <type name="ApLink" ctype="node*" init="NULL" copy="hash" />
@@ -111,7 +115,7 @@
     <type name="Nums" ctype="nums*" init="NULL" copy="function" />
     <type name="FileType" ctype="file_type" init="F_unknown"
     copy="literal" />
-    <type name="LUT" ctype="LUT_t" init="NULL" copy="function" />
+    <type name="LUT" ctype="LUT_t" init="NULL" copy="function" persist="no" />
     <type name="WithOpType" ctype="WithOpType" init="WO_unknown"
     copy="literal" />
     <type name="Prf" ctype="prf" init="0" copy="literal" />
@@ -128,11 +132,11 @@
     <type name="PragmaLink" ctype="node*" init="NULL"
     copy="function" />
     <type name="DFMMask" ctype="DFMmask_t" init="NULL"
-    copy="function" />
+    copy="function" persist="no" />
     <type name="DFMMaskBase" ctype="DFMmask_base_t" init="NULL"
-    copy="function" />
+    copy="function" persist="no" />
     <type name="DFMFoldMask" ctype="DFMfoldmask_t*" init="NULL"
-    copy="function" />
+    copy="function" persist="no" />
     <type name="NewType" ctype="ntype*" init="NULL"
     copy="function" />
     <type name="ArgTab" ctype="argtab_t*" init="NULL"
@@ -148,7 +152,7 @@
     <type name="UseFlag" ctype="useflag" init="DOLLAR"
     copy="literal" />
     <type name="AccessInfo" ctype="access_info_t*" init="NULL"
-    copy="function" />
+    copy="function" persist="no" />
     <type name="ShpSeg" ctype="shpseg*" init="NULL"
     copy="function" />
     <type name="IntegerPointer" ctype="int*" init="NULL"
@@ -156,9 +160,9 @@
     <type name="IntegerPointerArray" ctype="int*" size="7"
     init="NULL" copy="function" />
     <type name="Scheduling" ctype="SCHsched_t" init="NULL"
-    copy="function" />
+    copy="function" persist="no" />
     <type name="TaskSel" ctype="SCHtasksel_t" init="NULL"
-    copy="function" />
+    copy="function" persist="no" />
     <type name="NodePointer" ctype="node**" init="NULL"
     copy="function" />
     <type name="SSAPhi" ctype="ssaphit_t" init="PHIT_NONE"
@@ -169,7 +173,7 @@
     <type name="MTExecMode" ctype="mtexecmode_t" init="MUTH_ANY"
     copy="literal" />
     <type name="RCCounter" ctype="rc_counter*" init="NULL"
-    copy="function" />
+    copy="function" persist="no" />
   </attributetypes>
   <nodesets>
     <nodeset name="Expr">
@@ -691,7 +695,7 @@
         <attribute name="RetAlias" mandatory="no">
           <type name="NodeList">
             <target>
-              <node name="Bool">
+              <node name="Bool" />
             </target>
           </type>
           <phases>
