@@ -21,6 +21,7 @@ Usage ()
 {
     printf ("cse file [file]*\n");
     printf (HEADER "-h              print this help mesage.\n");
+    printf (HEADER "-d delay        set the time of the file <delay> secs earlier!\n");
 }
 
 /*****************************************************************************
@@ -33,23 +34,27 @@ Usage ()
  */
 
 void
-fool (char *file)
+fool (char *file, int delay)
 {
     time_t sti;
     struct utimbuf uti;
 
     sti = time (NULL);
-    uti.actime = sti - 2;
-    uti.modtime = sti - 2;
+    uti.actime = sti - delay;
+    uti.modtime = sti - delay;
     utime (file, &uti);
 }
 
 int
 main (int argc, char *argv[])
 {
+    int delay;
+
     ARGS_BEGIN (argc, argv);
     ARGS_FLAG ("h", Usage (); exit (0));
-    ARGS_ARGUMENT ({ fool (ARG); });
+    ARGS_OPTION ("d", ARG_NUM (delay));
+
+    ARGS_ARGUMENT ({ fool (ARG, delay); });
     ARGS_END ();
 
     return (0);
