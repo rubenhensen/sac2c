@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.47  2002/03/05 14:01:16  dkr
+ * MakeId(): ID_UNQCONV added
+ *
  * Revision 3.46  2002/03/01 02:38:43  dkr
  * MakeArgtab() added
  *
@@ -895,7 +898,9 @@ node *
 While2Do (node *while_node)
 {
     DBUG_ENTER ("While2Do");
+
     NODE_TYPE (while_node) = N_do;
+
     DBUG_RETURN (while_node);
 }
 
@@ -1020,6 +1025,8 @@ MakeId (char *name, char *mod, statustype status)
     tmp = CreateCleanNode (N_id);
 
     ID_IDS (tmp) = MakeIds (name, mod, status);
+
+    ID_UNQCONV (tmp) = NO_UNQCONV;
 
     DBUG_PRINT ("MAKE",
                 ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
