@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.88  2004/09/22 17:38:25  ktr
+ * Specialized fold functions are now built if emm and MT are activated.
+ *
  * Revision 3.87  2004/08/13 13:50:56  khf
  * substituted NCODE_CEXPR by NCODE_CEXPRS
  *
@@ -2408,7 +2411,7 @@ PREC3withop (node *arg_node, info *arg_info)
                   || (NODE_TYPE (let_expr) == N_Nwith2)),
                  "neither N_Nwith nor N_Nwith2 node found!");
 
-    if (!emm && NWITH_OR_NWITH2_IS_FOLD (let_expr)) {
+    if (((!emm) || (mtmode != MT_none)) && NWITH_OR_NWITH2_IS_FOLD (let_expr)) {
         /*
          * We have to make the formal parameters of each pseudo fold-fun identical
          * to the corresponding application in order to allow for simple code
@@ -2435,6 +2438,20 @@ PREC3withop (node *arg_node, info *arg_info)
                                          * CEXPR-ids have the same name!
                                          */
                                         NWITH_OR_NWITH2_CEXPR (let_expr));
+
+        if (emm) {
+            /*
+             * Vardecs from foldfun must be put into current function
+             */
+            FUNDEF_VARDEC (INFO_PREC_FUNDEF (arg_info))
+              = AppendVardec (FUNDEF_VARDEC (INFO_PREC_FUNDEF (arg_info)),
+                              FUNDEF_VARDEC (new_foldfun));
+
+            FUNDEF_DFM_BASE (INFO_PREC_FUNDEF (arg_info))
+              = DFMUpdateMaskBase (FUNDEF_DFM_BASE (INFO_PREC_FUNDEF (arg_info)),
+                                   FUNDEF_ARGS (INFO_PREC_FUNDEF (arg_info)),
+                                   FUNDEF_VARDEC (INFO_PREC_FUNDEF (arg_info)));
+        }
 
         /*
          * insert new dummy function into fundef chain
@@ -3608,7 +3625,11 @@ Precompile (node *syntax_tree)
 
     syntax_tree = MapCWrapper (syntax_tree);
 
+    DBUG_EXECUTE ("PREC", NOTE (("step 0: renaming MemVals\n")));
     syntax_tree = MarkMemVals (syntax_tree);
+    if (!strcmp (break_specifier, "mmv")) {
+        goto DONE;
+    }
 
     DBUG_EXECUTE ("PREC", NOTE (("step 1: remove artificial args\n")));
     act_tab = precomp1_tab;
@@ -3640,6 +3661,7 @@ Precompile (node *syntax_tree)
         }
     }
 
+DONE:
     DBUG_RETURN (syntax_tree);
 }
 
