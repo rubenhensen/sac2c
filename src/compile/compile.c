@@ -1,7 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.77  1996/02/06 18:59:17  cg
+ * Revision 1.78  1996/02/12 16:37:44  cg
+ * bug fixed in usage of pragma refcounting in CompArg,
+ * macro DEC_OR_FREE_RC_ND now used with correct refcount information
+ * in primitive functions shape and dim,
+ *
+ * Revision 1.77  1996/02/06  18:59:17  cg
  * fixed bug in CompId
  *
  * Revision 1.76  1996/01/26  15:34:29  cg
@@ -3247,8 +3252,10 @@ CompPrf (node *arg_node, node *arg_info)
             node *arg2_ref;
             arg1 = arg_node->node[0]->node[0];
             arg2 = arg_node->node[0]->node[1]->node[0];
-            DBUG_ASSERT ((N_id == arg1->nodetype || N_num == arg1->nodetype),
-                         "wrong first arg of idx_psi");
+            /*
+                    DBUG_ASSERT((N_id == arg1->nodetype ||
+                                 N_num == arg1->nodetype),"wrong first arg of idx_psi");
+            */
             DBUG_ASSERT (N_id == arg2->nodetype, "wrong second arg of idx_psi");
 
 #ifdef OLD_IDX_PSI
@@ -3327,6 +3334,7 @@ CompPrf (node *arg_node, node *arg_info)
                 last_assign = NEXT_ASSIGN (arg_info);
                 MAKENODE_NUM (n_node, 1);
                 MAKENODE_ID (id_node, arg1->IDS_ID);
+                ID_REFCNT (id_node) = ID_REFCNT (arg1);
                 DEC_OR_FREE_RC_ND (id_node, n_node);
                 INSERT_ASSIGN;
             }
@@ -3364,6 +3372,8 @@ CompPrf (node *arg_node, node *arg_info)
                 node *id_node;
                 MAKENODE_NUM (n_node, 1);
                 MAKENODE_ID (id_node, arg1->IDS_ID);
+                ID_REFCNT (id_node) = ID_REFCNT (arg1);
+
                 DEC_OR_FREE_RC_ND (id_node, n_node);
             }
             FREE_TREE (old_arg_node);
@@ -4963,8 +4973,10 @@ CompArg (node *arg_node, node *arg_info)
             arg_info->node[0] = new_assign;
         }
     } else {
-        if ((FUNDEF_PRAGMA (arg_node) != NULL) && (FUNDEF_REFCOUNTING (arg_node) != NULL)
-            && (FUNDEF_REFCOUNTING (arg_node)[INFO_CNTPARAM (arg_info)] == 1)) {
+        if ((FUNDEF_PRAGMA (INFO_FUNDEF (arg_info)) != NULL)
+            && (FUNDEF_REFCOUNTING (INFO_FUNDEF (arg_info)) != NULL)
+            && (FUNDEF_REFCOUNTING (INFO_FUNDEF (arg_info))[INFO_CNTPARAM (arg_info)]
+                == 1)) {
             WARN (NODE_LINE (arg_node), ("Pragma 'refcounting` illegal"));
             CONT_WARN (("Function wants to do refcounting on non-refcounted "
                         "parameter no. %d",
