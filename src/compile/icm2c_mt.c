@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2001/03/20 16:11:46  ben
+ * Just implemented Static renamed to Even, because of existing Static scheduling
+ *
  * Revision 3.8  2001/03/20 13:19:33  ben
  * ICMs MT_SCHEDULER_Static_... (first version) implemented
  * SelectTask implemented
@@ -1602,7 +1605,7 @@ ICMCompileMT_SCHEDULER_BlockVar_END (int dim, char **vararg)
  ******************************************************************************/
 
 void
-ICMCompileMT_SCHEDULER_Static_BEGIN (int dim, char **vararg)
+ICMCompileMT_SCHEDULER_Even_BEGIN (int dim, char **vararg)
 {
 
     DBUG_ENTER ("ICMCompileMT_SCHEDULER_Static_BEGIN");
@@ -1618,7 +1621,7 @@ ICMCompileMT_SCHEDULER_Static_BEGIN (int dim, char **vararg)
 }
 
 void
-ICMCompileMT_SCHEDULER_Static_END (int dim, char **vararg)
+ICMCompileMT_SCHEDULER_Even_END (int dim, char **vararg)
 {
     DBUG_ENTER ("ICMCompileMT_SCHEDULER_Static_END");
 
