@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2003/09/25 19:20:16  dkr
+ * bug in SAC_ND_WRITE_READ_COPY fixed
+ *
  * Revision 3.13  2003/09/25 13:45:55  dkr
  * some dummy macros for TAGGED_ARRAYS added
  *
@@ -156,7 +159,7 @@
 #define SAC_ND_WRITE_COPY(to_NT, to_pos, expr, copyfun)                                  \
     SAC_ND_WRITE (to_NT, to_pos) = expr;
 #define SAC_ND_WRITE_READ_COPY(to_NT, to_pos, from_NT, from_pos, copyfun)                \
-    SAC_ND_WRITE (to_NT, to_pos, SAC_ND_READ (from_NT, from_pos), copyfun)
+    SAC_ND_WRITE_COPY (to_NT, to_pos, SAC_ND_READ (from_NT, from_pos), copyfun)
 
 /*
  * ICMs for array access:
