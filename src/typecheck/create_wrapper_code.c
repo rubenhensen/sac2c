@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.23  2004/11/07 18:12:48  sah
+ * added some dbug statements
+ *
  * Revision 1.22  2004/09/27 19:08:15  sbs
  * sharing of FUNDEF_RET_TYPEs eliminated when extracting return types
  * from the split wrappers using TYGetWrapperRetType
@@ -514,7 +517,7 @@ CorrectFundefPointer (node *fundef, char *funname, ntype *arg_types)
              * fundef can be found in FUNDEF_IMPL (dirty hack!)
              */
             fundef = FUNDEF_IMPL (fundef);
-            DBUG_PRINT ("CWC", ("  dispatched statically", funname));
+            DBUG_PRINT ("CWC", ("  dispatched statically %s", funname));
         } else if ((dft_res->num_partials == 0)
                    && (dft_res->num_deriveable_partials == 0)) {
             /*
@@ -526,7 +529,7 @@ CorrectFundefPointer (node *fundef, char *funname, ntype *arg_types)
             } else {
                 fundef = dft_res->deriveable;
             }
-            DBUG_PRINT ("CWC", ("  dispatched statically", funname));
+            DBUG_PRINT ("CWC", ("  dispatched statically %s", funname));
         } else if (!WrapperCodeIsPossible (fundef)) {
             /*
              * static dispatch impossible,
@@ -719,6 +722,9 @@ CWCap (node *arg_node, info *arg_info)
     arg_types = ActualArgs2Ntype (AP_ARGS (arg_node));
     AP_FUNDEF (arg_node)
       = CorrectFundefPointer (AP_FUNDEF (arg_node), AP_NAME (arg_node), arg_types);
+
+    DBUG_PRINT ("CWC", ("Ap of function %s:%s now points to " F_PTR ".",
+                        AP_MOD (arg_node), AP_NAME (arg_node), AP_FUNDEF (arg_node)));
     arg_types = TYFreeType (arg_types);
 
     DBUG_RETURN (arg_node);
