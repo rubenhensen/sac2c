@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2005/02/02 18:14:17  mwe
+ * naming for functions with akv-types changed
+ *
  * Revision 1.10  2004/12/11 14:47:26  ktr
  * some bugfixes
  *
@@ -192,6 +195,7 @@ RenameFunName (node *fundef)
     char *prefix;
     char *tmp_name;
     char *new_name;
+    char *akv_id;
 
     DBUG_ENTER ("RenameFunName");
 
@@ -216,8 +220,15 @@ RenameFunName (node *fundef)
             prefix = "SACf";
         }
 
-        length
-          += (strlen (prefix) + strlen (FUNDEF_MOD (fundef)) + strlen (tmp_name) + 4);
+        if (FUNDEF_AKVID (fundef) > 0) {
+            akv_id = ILIBitoa (FUNDEF_AKVID (fundef));
+            length += (strlen (prefix) + strlen (FUNDEF_MOD (fundef)) + strlen (tmp_name)
+                       + 4 + 6 + strlen (akv_id));
+        } else {
+            length
+              += (strlen (prefix) + strlen (FUNDEF_MOD (fundef)) + strlen (tmp_name) + 4);
+        }
+
         new_name = (char *)ILIBmalloc (length * sizeof (char));
         sprintf (new_name, "%s_%s__%s", prefix, FUNDEF_MOD (fundef), tmp_name);
 
@@ -228,6 +239,12 @@ RenameFunName (node *fundef)
             ARG_TYPESTRING (arg) = ILIBfree (ARG_TYPESTRING (arg));
             arg = ARG_NEXT (arg);
         }
+    }
+
+    if (FUNDEF_AKVID (fundef) > 0) {
+        strcat (new_name, "__akv_");
+        strcat (new_name, akv_id);
+        akv_id = ILIBfree (akv_id);
     }
 
     tmp_name = ILIBfree (tmp_name);
