@@ -1,6 +1,11 @@
 #
 #
 # $Log$
+# Revision 3.9  2001/04/12 15:40:33  sbs
+# force -O0 when compiling prim_fun.c on DEC_ALPHA...
+# Otherwise, the product version yields strange type errors
+# for arrays.sac from the demos.....
+#
 # Revision 3.8  2001/03/02 14:37:41  sbs
 # constants move to ../constants
 #
@@ -75,6 +80,14 @@ new_types.c: type_constructor_info.mac
 
 %.o: %.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o $@ -c $< $(INCS)
+
+ifeq ($(OS),OSF_ALPHA)
+
+prim_fun.o: prim_fun.c
+	$(CC) $(CCFLAGS) $(CFLAGS) -O0 -o $@ -c $< $(INCS)
+
+endif
+
 
 deps:
 	makedepend $(INCS) *.c
