@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.106  2004/12/14 14:37:40  ktr
+ * Calls to TBmakeWlgridX corrected.
+ *
  * Revision 3.105  2004/12/08 18:01:17  ktr
  * removed ARRAY_TYPE/ARRAY_NTYPE
  *
@@ -4647,10 +4650,10 @@ GenerateCompleteDomain (node *stride, int iter_dims, shpseg *iter_shp)
                                 FALSE);
         if (new_stride != NULL) {
             WLSTRIDE_CONTENTS (new_stride)
-              = TBmakeWlgrid (0, WLGRID_DIM (act_grid), 0, 1,
+              = TBmakeWlgrid (0, WLGRID_DIM (act_grid), 0, 1, NULL,
                               GenerateShapeStrides (WLGRID_DIM (act_grid) + 1, iter_dims,
                                                     iter_shp),
-                              NULL, NULL);
+                              NULL);
 
             if (last_compl_grid != NULL) {
                 /*
@@ -4692,10 +4695,10 @@ GenerateCompleteDomain (node *stride, int iter_dims, shpseg *iter_shp)
                                          &(WLSTRIDE_BOUND1 (act_stride)), FALSE);
         if (new_stride != NULL) {
             WLSTRIDE_CONTENTS (new_stride)
-              = TBmakeWlgrid (0, WLGRID_DIM (act_grid), 0, 1,
+              = TBmakeWlgrid (0, WLGRID_DIM (act_grid), 0, 1, NULL,
                               GenerateShapeStrides (WLGRID_DIM (act_grid) + 1, iter_dims,
                                                     iter_shp),
-                              NULL, NULL);
+                              NULL);
 
             if (last_compl_grid != NULL) {
                 /*
@@ -4842,10 +4845,10 @@ GenerateCompleteDomainVar (node *stride, int iter_dims, shpseg *iter_shp)
                               FALSE);
         if (new_node != NULL) {
             WLSTRIDEX_CONTENTS (new_node)
-              = TBmakeWlgrid (0, WLSTRIDEX_DIM (stride), 0, 1,
+              = TBmakeWlgrid (0, WLSTRIDEX_DIM (stride), 0, 1, NULL,
                               GenerateShapeStrides (WLSTRIDEX_DIM (stride) + 1, iter_dims,
                                                     iter_shp),
-                              NULL, NULL);
+                              NULL);
         }
 
         /*
@@ -4856,10 +4859,10 @@ GenerateCompleteDomainVar (node *stride, int iter_dims, shpseg *iter_shp)
                               WLSTRIDEX_GET_ADDR (stride, BOUND1), FALSE);
         if (new_node != NULL) {
             WLSTRIDEX_CONTENTS (new_node)
-              = TBmakeWlgrid (0, WLSTRIDEX_DIM (stride), 0, 1,
+              = TBmakeWlgrid (0, WLSTRIDEX_DIM (stride), 0, 1, NULL,
                               GenerateShapeStrides (WLSTRIDEX_DIM (stride) + 1, iter_dims,
                                                     iter_shp),
-                              NULL, NULL);
+                              NULL);
         }
     }
 
