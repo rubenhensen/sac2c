@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.4  2002/10/18 15:16:03  sbs
+ * bug fixed in ATTRIB -> FLAG translation ;-))
+ *
  * Revision 3.3  2002/10/18 13:43:14  sbs
  * accesses to ID_ATTRIB replaced by FLAG inspections
  *
@@ -760,6 +763,8 @@ CheckApplied (node *var)
                 if (!GET_FLAG (ID, var, IS_READ_ONLY)) {
                     UNQ_STATE (tmp)[number] = 0;
                 }
+            } else {
+                UNQ_STATE (tmp)[number] = 0;
             }
         }
 
