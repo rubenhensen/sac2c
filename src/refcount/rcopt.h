@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2004/12/10 18:41:38  ktr
+ * EMRCOfundef added.
+ *
  * Revision 1.6  2004/12/09 21:09:26  ktr
  * bugfix roundup
  *
@@ -37,6 +40,7 @@ extern node *EMRCOdoRefCountOpt (node *syntax_tree);
 extern node *EMRCOassign (node *arg_node, info *arg_info);
 extern node *EMRCOblock (node *arg_node, info *arg_info);
 extern node *EMRCOfold (node *arg_node, info *arg_info);
+extern node *EMRCOfundef (node *arg_node, info *arg_info);
 extern node *EMRCOgenarray (node *arg_node, info *arg_info);
 extern node *EMRCOlet (node *arg_node, info *arg_info);
 extern node *EMRCOmodarray (node *arg_node, info *arg_info);

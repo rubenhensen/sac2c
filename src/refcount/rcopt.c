@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2004/12/10 18:41:38  ktr
+ * EMRCOfundef added.
+ *
  * Revision 1.11  2004/12/09 21:09:26  ktr
  * bugfix roundup
  *
@@ -64,6 +67,7 @@
 #include "LookUpTable.h"
 #include "free.h"
 #include "internal_lib.h"
+#include "DataFlowMask.h"
 
 /**
  * INFO structure
@@ -76,6 +80,7 @@ struct INFO {
     node *nextexpr;
     node *lhs;
     lut_t *filllut;
+    dfmask_t *nofreemask;
 };
 
 /**
@@ -88,6 +93,7 @@ struct INFO {
 #define INFO_RCO_NEXTEXPR(n) (n->nextexpr)
 #define INFO_RCO_LHS(n) (n->lhs)
 #define INFO_RCO_FILLLUT(n) (n->filllut)
+#define INFO_RCO_NOFREEMASK(n) (n->nofreemask)
 
 /**
  * INFO functions
@@ -108,6 +114,7 @@ MakeInfo ()
     INFO_RCO_NEXTEXPR (result) = NULL;
     INFO_RCO_LHS (result) = NULL;
     INFO_RCO_FILLLUT (result) = NULL;
+    INFO_RCO_NOFREEMASK (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -263,6 +270,43 @@ EMRCOblock (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *EMRCOfundef(node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ * @param arg_node
+ * @param arg_info
+ *
+ * @return arg_node
+ *
+ *****************************************************************************/
+node *
+EMRCOfundef (node *arg_node, info *arg_info)
+{
+    dfmask_base_t *maskbase;
+
+    DBUG_ENTER ("EMRCOfundef");
+
+    if (FUNDEF_BODY (arg_node) != NULL) {
+        maskbase = DFMgenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDEC (arg_node));
+
+        INFO_RCO_NOFREEMASK (arg_info) = DFMgenMaskClear (maskbase);
+
+        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+
+        INFO_RCO_NOFREEMASK (arg_info) = DFMremoveMask (INFO_RCO_NOFREEMASK (arg_info));
+        maskbase = DFMremoveMaskBase (maskbase);
+    }
+
+    if (FUNDEF_NEXT (arg_node) != NULL) {
+        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *EMRCOlet(node *arg_node, info *arg_info)
  *
  * @brief
@@ -315,9 +359,19 @@ EMRCOprf (node *arg_node, info *arg_info)
 
         switch (PRF_PRF (arg_node)) {
 
+        case F_reuse:
+            /*
+             * Mark reused variable in NOFREEMASK such that it will not be
+             * statically freed
+             */
+            DFMsetMaskEntrySet (INFO_RCO_NOFREEMASK (arg_info), NULL,
+                                ID_AVIS (PRF_ARG2 (arg_node)));
+
+            /*
+             * Here is no break missing
+             */
         case F_alloc:
         case F_alloc_or_reuse:
-        case F_reuse:
         case F_alloc_or_reshape:
         case F_reshape:
             /*
@@ -327,7 +381,14 @@ EMRCOprf (node *arg_node, info *arg_info)
             break;
 
         case F_dec_rc:
-            if (!AVIS_ISALIAS (ID_AVIS (PRF_ARG1 (arg_node)))) {
+            /*
+             * Convert dec_rc( b, n) into free( b) iff
+             *  - b is not aliased AND
+             *  - b has not been reused ( marked in NOFREEMASK)
+             */
+            if ((!AVIS_ISALIAS (ID_AVIS (PRF_ARG1 (arg_node))))
+                && (!DFMtestMaskEntry (INFO_RCO_NOFREEMASK (arg_info), NULL,
+                                       ID_AVIS (PRF_ARG1 (arg_node))))) {
                 node *new_node = TCmakePrf1 (F_free, DUPdoDupNode (PRF_ARG1 (arg_node)));
                 arg_node = FREEdoFreeNode (arg_node);
                 arg_node = new_node;

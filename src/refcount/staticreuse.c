@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2004/12/10 18:41:38  ktr
+ * EMRCOfundef added.
+ *
  * Revision 1.6  2004/11/23 22:28:38  ktr
  * renaming done.
  *
@@ -119,27 +122,19 @@ EMSRprf (node *arg_node, info *arg_info)
                  * STATIC REUSE!!!
                  */
                 if (PRF_PRF (arg_node) == F_alloc_or_reuse) {
+                    /*
+                     * a = reuse( b);
+                     */
                     node *new_node = TCmakePrf1 (F_reuse, DUPdoDupNode (rc));
                     arg_node = FREEdoFreeNode (arg_node);
                     arg_node = new_node;
-
-                    /*
-                     * a = reuse( b, 1);
-                     *
-                     * Mark b as ALIASed such that it will not be statically freed
-                     */
-                    AVIS_ISALIAS (ID_AVIS (PRF_ARG1 (arg_node))) = TRUE;
                 }
 
                 if (PRF_PRF (arg_node) == F_alloc_or_reshape) {
-                    PRF_PRF (arg_node) = F_reshape;
-
                     /*
                      * a = reshape( dim, shape, b);
-                     *
-                     * Mark b as ALIASed such that it will not be statically freed
                      */
-                    AVIS_ISALIAS (ID_AVIS (PRF_ARG3 (arg_node))) = TRUE;
+                    PRF_PRF (arg_node) = F_reshape;
                 }
                 break;
             }
