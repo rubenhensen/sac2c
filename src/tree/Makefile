@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.42  2004/11/29 15:02:16  ktr
+# removed xml directory.
+#
 # Revision 3.41  2004/11/23 22:42:12  sah
 # removed serialize*
 #
@@ -128,7 +131,6 @@ all: $(OBJS)
 clean:
 	$(RM) *.o *.a *.bak *~ .*.d
 	$(RM) -r .sb SunWS_cache
-	(cd xml; $(MAKE) clean)
 
 
 #######################################################################################
