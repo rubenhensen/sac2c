@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.22  2004/12/16 17:47:47  ktr
+ * TYisAKV inserted.
+ *
  * Revision 1.21  2004/12/08 18:02:10  ktr
  * removed ARRAY_TYPE/ARRAY_NTYPE
  *
@@ -2185,7 +2188,7 @@ WLFSmodarray (node *arg_node, info *arg_info)
     if (INFO_WLFS_WL_ARRAY_TYPE (arg_info) == ARRAY_unknown) {
 
         type = AVIS_TYPE (IDS_AVIS (INFO_WLFS_LHS_WL (arg_info)));
-        if (TYisAKS (type)) {
+        if (TYisAKS (type) || TYisAKV (type)) {
             shp = TYgetShape (type);
 
             /* get shape of the index vector */

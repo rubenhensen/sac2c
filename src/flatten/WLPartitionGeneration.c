@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.33  2004/12/16 17:47:10  ktr
+ * TYisAKV inserted.
+ *
  * Revision 1.32  2004/12/16 14:10:07  khf
  * added check on AKVs
  *
@@ -2210,7 +2213,7 @@ WLPGgenerator (node *arg_node, info *arg_info)
     let_ids = LET_IDS (INFO_WLPG_LET (arg_info));
     type = AVIS_TYPE (IDS_AVIS (let_ids));
 
-    if (TYisAKS (type)) {
+    if (TYisAKS (type) || TYisAKV (type)) {
         shp = TYgetShape (type);
         if (check_bounds
             && ((NODE_TYPE (WITH_WITHOP (wln)) == N_modarray)
