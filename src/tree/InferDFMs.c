@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.18  2002/02/22 12:32:40  sbs
+ * some comments added
+ *
  * Revision 1.17  2002/02/21 12:56:14  dkr
  * comment corrected
  *
@@ -76,6 +79,10 @@
  *
  *   This compiler module implements the inference of the data flow masks
  *   and is used by LAC2Fun, Refcounting, SPMD, ...
+ *   The data flow masks are bitmasks that are attached to conditionals
+ *   and loop nodes. They signal those variables that are relatively free
+ *   (IN-mask), local to the compound node (LOCAL-mask), or exported from
+ *   the compound node (OUT-mask).
  *
  * usage of arg_info (INFO_INFDFMS_...):
  *
