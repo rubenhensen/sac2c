@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2004/08/11 13:15:10  ktr
+ * QUICKFIX: CVP does not propagate into branches of funcond in order to prevent
+ * problems with UndoSSATransform. (branches with final dec_rc statement)
+ * Probably, UndoSSATransform should be adjusted.
+ *
  * Revision 1.6  2004/07/23 13:58:18  ktr
  * Added CVPNwithop to prevent CVP to propagate the neutral element.
  *
@@ -123,6 +128,7 @@ typedef enum {
     CON_primfun,
     CON_specialfun,
     CON_cond,
+    CON_funcond,
     CON_neutral,
     CON_undef
 } context_t;
@@ -254,14 +260,24 @@ AskPropagationOracle (node *let, info *arg_info)
     DBUG_ENTER ("AskPropagationOracle");
 
     switch (INFO_CVP_CONTEXT (arg_info)) {
+    case CON_funcond:
+        /*
+         * Nothing must be propagates into the branches of FUNCOND
+         */
+        answer = FALSE;
+        break;
+
     case CON_array:
     case CON_primfun:
     case CON_let:
     case CON_withloop:
     case CON_cond:
-        /* TRUE iff behind let node is constant value or an id node */
+        /*
+         * TRUE iff behind let node is constant value or an id node
+         */
         answer = ((IsConstant (LET_EXPR (let))) || (IsVariable (LET_EXPR (let))));
         break;
+
     case CON_return:
     case CON_withloop_cexprs:
     case CON_specialfun:
@@ -270,10 +286,13 @@ AskPropagationOracle (node *let, info *arg_info)
         /* TRUE iff behind let node is an id node */
         answer = IsVariable (LET_EXPR (let));
         break;
+
     case CON_undef:
         /* for compiler */
         answer = FALSE;
         DBUG_ASSERT (FALSE, "found let node in an undefined context");
+        break;
+
     default:
         /* for compiler */
         answer = FALSE;
@@ -337,7 +356,7 @@ CVPreturn (node *arg_node, info *arg_info)
 /********************************************************************
  *
  * function:
- *   node* CVPcondfun(node *arg_node, info *arg_info)
+ *   node* CVPfuncond(node *arg_node, info *arg_info)
  *
  * description:
  *   traverse in the exprs of the condfun node
@@ -348,15 +367,18 @@ node *
 CVPfuncond (node *arg_node, info *arg_info)
 {
 
-    DBUG_ENTER ("CVPcondfun");
+    DBUG_ENTER ("CVPfuncond");
 
     if (FUNCOND_IF (arg_node) != NULL) {
+        INFO_CVP_CONTEXT (arg_info) = CON_let;
         FUNCOND_IF (arg_node) = Trav (FUNCOND_IF (arg_node), arg_info);
     }
     if (FUNCOND_THEN (arg_node) != NULL) {
+        INFO_CVP_CONTEXT (arg_info) = CON_funcond;
         FUNCOND_THEN (arg_node) = Trav (FUNCOND_THEN (arg_node), arg_info);
     }
     if (FUNCOND_ELSE (arg_node) != NULL) {
+        INFO_CVP_CONTEXT (arg_info) = CON_funcond;
         FUNCOND_ELSE (arg_node) = Trav (FUNCOND_ELSE (arg_node), arg_info);
     }
 
