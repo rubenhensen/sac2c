@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.90  2004/07/15 10:25:49  khf
+ * bug #38 already fixed by dkrHH
+ * some code brushing done.
+ * WO_unknown WithOp added.
+ *
  * Revision 3.89  2004/07/04 03:46:11  dkrHH
  * NOTE-output about naive compilation added
  *
@@ -316,8 +321,10 @@
 #define INFO_WL_LHS_TYPE(n) (n->info.types)
 #define INFO_WL_PREASSIGNS(n) (n->node[0])
 #define INFO_WL_ASSIGN(n) (n->node[1])
+/* for EmptyParts2StridesOrExpr() called with a multioperator WL */
+#define INFO_WL_EXTR_OPS(n) ((extr_ops_t *)(n->node[2]))
 
-/* for EmptyParts2StridesOrExpr() called with a multioperator WL*/
+/* for EmptyParts2StridesOrExpr() called with a multioperator WL */
 typedef struct extr_ops {
     node *withop_ext;
     node *cexprs_ext;
@@ -2579,6 +2586,10 @@ GetWlIterShape (node *wl, int iter_dims, types *res_types)
             /* here is no break missing! */
         case WO_foldprf:
             break;
+
+        case WO_unknown:
+            DBUG_ASSERT (FALSE, "non initialised WithOpType found.");
+            break;
         }
 
         if (ret_iter_shp != NULL) {
@@ -3005,30 +3016,44 @@ Parts2Strides (node *parts, int iter_dims, shpseg *iter_shp)
 /******************************************************************************
  *
  * Function:
- *   extr_ops_t *ExtractOtherOperators( node *wl, node *arg_info,
- *                                      types *res_types)
+ *   node *ExtractOtherOperators( node *wl, node *arg_info, types *res_types)
  *
  * Description:
  *   Removes all WL-operators except genarray-operators, it's corresponding
- *   cexprs(of one NCODE is sufficient), types and ids from the current WL
- *   and 'res_types' and returns them.
+ *   cexprs (cexprs of one NCODE are sufficient) and ids from the current WL,
+ *   the corresponding types from 'res_types' and returns them.
  *
  ******************************************************************************/
-static extr_ops_t *
+static node *
 ExtractOtherOperators (node *wl, node *arg_info, types *res_types)
 {
-    node *withop_tmp = NULL, *withop_ext = NULL, *cexprs_ext = NULL, *ncodes_tmp;
+    node *withop, *ncodes;
+    ids *_ids;
     nodelist *ncodes_cexprs = NULL, *nc_cexprs_tmp;
-    extr_ops_t *extracted_operators;
-    types *res_types_ext = NULL;
-    ids *ids_ext = NULL, *ids_tmp;
-    bool first;
+    bool first_ncode;
+
+    node *withop_ext, *cexprs_ext;   /* withops and cexprs which will be returned */
+    types *res_types_ext;            /* types which will be returned */
+    ids *ids_ext;                    /* ids which will returned */
+    extr_ops_t *extracted_operators; /* container for return values */
 
     DBUG_ENTER ("ExtractOtherOperators");
 
-    while (withop_tmp == NULL && NWITH2_WITHOP (wl) != NULL) {
+    /*
+     * First part:
+     * We can extract operators and corresponding information direct
+     * by use of access-macros on current WL until the considered withop
+     * is a genarray operator.
+     */
+
+    /* initialisation */
+    withop = NULL;
+    withop_ext = NULL;
+
+    while (withop == NULL && NWITH2_WITHOP (wl) != NULL) {
 
         if (NWITHOP_TYPE (NWITH2_WITHOP (wl)) != WO_genarray) {
+
             if (withop_ext == NULL) {
                 withop_ext = NWITH2_WITHOP (wl);
                 /*  a cexprs of one (here: first) NCODE is sufficient */
@@ -3051,16 +3076,16 @@ ExtractOtherOperators (node *wl, node *arg_info, types *res_types)
             NWITHOP_NEXT (withop_ext) = NULL;
 
             /* Remove the first cexpr of the first NCODE, delete all other */
-            ncodes_tmp = NWITH2_CODE (wl);
-            first = TRUE;
-            while (ncodes_tmp != NULL) {
-                if (first) {
-                    NCODE_CEXPRS (ncodes_tmp) = EXPRS_NEXT (NCODE_CEXPRS (ncodes_tmp));
-                    first = FALSE;
+            ncodes = NWITH2_CODE (wl);
+            first_ncode = TRUE;
+            while (ncodes != NULL) {
+                if (first_ncode) {
+                    NCODE_CEXPRS (ncodes) = EXPRS_NEXT (NCODE_CEXPRS (ncodes));
+                    first_ncode = FALSE;
                 } else {
-                    NCODE_CEXPRS (ncodes_tmp) = FreeNode (NCODE_CEXPRS (ncodes_tmp));
+                    NCODE_CEXPRS (ncodes) = FreeNode (NCODE_CEXPRS (ncodes));
                 }
-                ncodes_tmp = NCODE_NEXT (ncodes_tmp);
+                ncodes = NCODE_NEXT (ncodes);
             }
             EXPRS_NEXT (cexprs_ext) = NULL;
 
@@ -3069,54 +3094,60 @@ ExtractOtherOperators (node *wl, node *arg_info, types *res_types)
 
             ASSIGN_LHS (INFO_WL_ASSIGN (arg_info))
               = IDS_NEXT (ASSIGN_LHS (INFO_WL_ASSIGN (arg_info)));
-            IDS_NEXT (ids_tmp) = NULL;
-        } else {
-            withop_tmp = NWITH2_WITHOP (wl);
+            IDS_NEXT (ids_ext) = NULL;
+        } else { /* NWITHOP == WO_genarray */
+            withop = NWITH2_WITHOP (wl);
         }
     }
 
-    if (withop_tmp != NULL) {
+    if (withop != NULL) {
+        /*
+         * Second part:
+         * We have at least one genarray operator and consider it`s
+         * successors.
+         */
+
         /* Store pointer to cexprs of different Ncodes for easier removal */
-        ncodes_tmp = NWITH2_CODE (wl);
-        while (ncodes_tmp != NULL) {
-            ncodes_cexprs
-              = NodeListAppend (ncodes_cexprs, NCODE_CEXPRS (ncodes_tmp), NULL);
-            ncodes_tmp = NCODE_NEXT (ncodes_tmp);
+        ncodes = NWITH2_CODE (wl);
+        while (ncodes != NULL) {
+            ncodes_cexprs = NodeListAppend (ncodes_cexprs, NCODE_CEXPRS (ncodes), NULL);
+            ncodes = NCODE_NEXT (ncodes);
         }
 
-        ids_tmp = ASSIGN_LHS (INFO_WL_ASSIGN (arg_info));
+        _ids = ASSIGN_LHS (INFO_WL_ASSIGN (arg_info));
 
-        while (NWITHOP_NEXT (withop_tmp) != NULL) {
+        while (NWITHOP_NEXT (withop) != NULL) {
 
-            if (NWITHOP_TYPE (NWITHOP_NEXT (withop_tmp)) != WO_genarray) {
+            if (NWITHOP_TYPE (NWITHOP_NEXT (withop)) != WO_genarray) {
+
                 if (withop_ext == NULL) {
-                    withop_ext = NWITHOP_NEXT (withop_tmp);
-                    /* for later a cexprs of one NCODE is sufficient */
+                    withop_ext = NWITHOP_NEXT (withop);
+                    /* a cexprs of one NCODE is sufficient */
                     cexprs_ext = EXPRS_NEXT (NODELIST_NODE (ncodes_cexprs));
                     res_types_ext = TYPES_NEXT (res_types);
-                    ids_ext = IDS_NEXT (ids_tmp);
+                    ids_ext = IDS_NEXT (_ids);
                 } else {
-                    NWITHOP_NEXT (withop_ext) = NWITHOP_NEXT (withop_tmp);
+                    NWITHOP_NEXT (withop_ext) = NWITHOP_NEXT (withop);
                     withop_ext = NWITHOP_NEXT (withop_ext);
-                    /* for later a cexprs of one NCODE is sufficient */
+                    /* a cexprs of one NCODE is sufficient */
                     EXPRS_NEXT (cexprs_ext) = EXPRS_NEXT (NODELIST_NODE (ncodes_cexprs));
                     cexprs_ext = EXPRS_NEXT (cexprs_ext);
                     TYPES_NEXT (res_types_ext) = TYPES_NEXT (res_types);
                     res_types_ext = TYPES_NEXT (res_types_ext);
-                    IDS_NEXT (ids_ext) = IDS_NEXT (ids_tmp);
+                    IDS_NEXT (ids_ext) = IDS_NEXT (_ids);
                     ids_ext = IDS_NEXT (ids_ext);
                 }
-                NWITHOP_NEXT (withop_tmp) = NWITHOP_NEXT (NWITHOP_NEXT ((withop_tmp)));
+                NWITHOP_NEXT (withop) = NWITHOP_NEXT (NWITHOP_NEXT ((withop)));
                 NWITHOP_NEXT (withop_ext) = NULL;
 
                 /* Remove the successor cexpr of the first NCODE, delete all other */
                 nc_cexprs_tmp = ncodes_cexprs;
-                first = TRUE;
+                first_ncode = TRUE;
                 while (NODELIST_NODE (nc_cexprs_tmp) != NULL) {
-                    if (first) {
+                    if (first_ncode) {
                         EXPRS_NEXT (NODELIST_NODE (nc_cexprs_tmp))
                           = EXPRS_NEXT (EXPRS_NEXT (NODELIST_NODE (nc_cexprs_tmp)));
-                        first = FALSE;
+                        first_ncode = FALSE;
                     } else {
                         EXPRS_NEXT (NODELIST_NODE (nc_cexprs_tmp))
                           = FreeNode (EXPRS_NEXT (NODELIST_NODE (nc_cexprs_tmp)));
@@ -3128,27 +3159,30 @@ ExtractOtherOperators (node *wl, node *arg_info, types *res_types)
                 TYPES_NEXT (res_types) = TYPES_NEXT (TYPES_NEXT (res_types));
                 TYPES_NEXT (res_types_ext) = NULL;
 
-                IDS_NEXT (ids_tmp) = IDS_NEXT (IDS_NEXT (ids_tmp));
+                IDS_NEXT (_ids) = IDS_NEXT (IDS_NEXT (_ids));
                 IDS_NEXT (ids_ext) = NULL;
             }
 
-            withop_tmp = NWITHOP_NEXT (withop_tmp);
+            withop = NWITHOP_NEXT (withop);
             nc_cexprs_tmp = ncodes_cexprs;
             while (NODELIST_NODE (nc_cexprs_tmp) != NULL) {
                 NODELIST_NODE (nc_cexprs_tmp)
                   = EXPRS_NEXT (NODELIST_NODE (nc_cexprs_tmp));
             }
             res_types = TYPES_NEXT (res_types);
-            ids_tmp = IDS_NEXT (ids_tmp);
+            _ids = IDS_NEXT (_ids);
         }
     }
 
+    extracted_operators = NULL;
     extracted_operators->withop_ext = withop_ext;
     extracted_operators->cexprs_ext = cexprs_ext;
     extracted_operators->res_types_ext = res_types_ext;
     extracted_operators->ids_ext = ids_ext;
 
-    DBUG_RETURN (extracted_operators);
+    INFO_WL_EXTR_OPS (arg_info) = extracted_operators;
+
+    DBUG_RETURN (arg_info);
 }
 
 /******************************************************************************
@@ -3298,6 +3332,10 @@ EmptyParts2StridesOrExpr (node **wl, node *arg_info, int iter_dims, shpseg *iter
             tmp_wl = FreeNode (tmp_wl);
             break;
 
+        case WO_unknown:
+            DBUG_ASSERT (FALSE, "non initialised WithOpType found.");
+            break;
+
         default:
             strides = NULL;
         }
@@ -3318,70 +3356,77 @@ EmptyParts2StridesOrExpr (node **wl, node *arg_info, int iter_dims, shpseg *iter
          *    append them to arg_info.
          */
 
-        node *withop_tmp, *cexprs, *shp_node;
-        extr_ops_t *extracted_operators;
-        shpseg *old_iter_shp;
-        ids *ids_tmp;
-        bool reuse_wl;
+        node *withop, *cexprs, *shp_node;
+        shpseg *current_shpseg, *old_shpseg;
+        ids *_ids;
+        bool reuse_wl, free_res_types;
         int num_genop = 0;
 
-        iter_shp = NULL;
-        withop_tmp = NWITH2_WITHOP ((*wl));
-        while (withop_tmp != NULL) {
+        current_shpseg = NULL;
+        old_shpseg = NULL;
+        withop = NWITH2_WITHOP ((*wl));
 
-            if (NWITHOP_TYPE (withop_tmp) == WO_genarray) {
-                shp_node = NWITHOP_SHAPE (withop_tmp);
+        while (withop != NULL) {
 
-                /* NWITHOP_SHAPE is from type N_array */
-                iter_shp
+            if (NWITHOP_TYPE (withop) == WO_genarray) {
+                shp_node = NWITHOP_SHAPE (withop);
+
+                DBUG_ASSERT ((NODE_TYPE (shp_node) == N_array),
+                             "multioperator with-loop:"
+                             "NWITHOP_SHAPE has to be N_array");
+                current_shpseg
                   = (IsConstArray (shp_node)) ? Array2Shpseg (shp_node, NULL) : NULL;
 
                 if (strides == NULL) {
-                    if ((iter_shp == NULL)
-                        || (GetShpsegLength (iter_dims, iter_shp) > 0)) {
+                    if ((current_shpseg == NULL)
+                        || (GetShpsegLength (iter_dims, current_shpseg) > 0)) {
                         /*
                          * result array of genarray-with-loop is non-empty
                          *  -> generate a single stride over the whole domain
                          */
-                        strides = GenerateShapeStrides (0, iter_dims, iter_shp);
+                        strides = GenerateShapeStrides (0, iter_dims, current_shpseg);
                     }
                 }
 
                 if (num_genop > 0) {
-                    if ((iter_shp != NULL) && (old_iter_shp != NULL)) {
-                        DBUG_ASSERT ((EqualShpseg (iter_dims, iter_shp, old_iter_shp)),
-                                     "multioperator WL:"
+                    if ((current_shpseg != NULL) && (old_shpseg != NULL)) {
+                        DBUG_ASSERT ((EqualShpseg (iter_dims, current_shpseg,
+                                                   old_shpseg)),
+                                     "multioperator with-loop:"
                                      "shape of iteration space differs");
-                    } else if ((iter_shp != NULL) || (old_iter_shp != NULL)) {
-                        DBUG_ASSERT ((0), "multioperator WL:"
+                    } else if ((current_shpseg != NULL) || (old_shpseg != NULL)) {
+                        DBUG_ASSERT ((0), "multioperator with-loop:"
                                           "shape of iteration space differs");
                     }
                 }
 
-                old_iter_shp = iter_shp;
+                old_shpseg = current_shpseg;
                 num_genop++;
             }
-            withop_tmp = NWITHOP_NEXT (withop_tmp);
+            withop = NWITHOP_NEXT (withop);
         }
 
         if (strides != NULL) {
-            extracted_operators = ExtractOtherOperators ((*wl), arg_info, res_types);
+            arg_info = ExtractOtherOperators ((*wl), arg_info, res_types);
 
-            withop_tmp = extracted_operators->withop_ext;
-            cexprs = extracted_operators->cexprs_ext;
-            res_types = extracted_operators->res_types_ext;
-            ids_tmp = extracted_operators->ids_ext;
+            withop = INFO_WL_EXTR_OPS (arg_info)->withop_ext;
+            cexprs = INFO_WL_EXTR_OPS (arg_info)->cexprs_ext;
+            res_types = INFO_WL_EXTR_OPS (arg_info)->res_types_ext;
+            free_res_types = TRUE;
+            _ids = INFO_WL_EXTR_OPS (arg_info)->ids_ext;
             reuse_wl = FALSE;
+
         } else {
-            withop_tmp = NWITH2_WITHOP ((*wl));
+            withop = NWITH2_WITHOP ((*wl));
             cexprs = NCODE_CEXPRS (NWITH2_CODE ((*wl)));
-            ids_tmp = DupAllIds (ASSIGN_LHS (INFO_WL_ASSIGN (arg_info)));
+            _ids = DupAllIds (ASSIGN_LHS (INFO_WL_ASSIGN (arg_info)));
             *wl = FreeNode (*wl);
             reuse_wl = TRUE;
+            free_res_types = FALSE; /* will be freed in WLTRAlet */
         }
 
-        while (withop_tmp != NULL) {
-            switch (NWITHOP_TYPE (withop_tmp)) {
+        while (withop != NULL) {
+            switch (NWITHOP_TYPE (withop)) {
             case WO_genarray:
                 /*
                  * result array of genarray-with-loop is empty
@@ -3406,12 +3451,12 @@ EmptyParts2StridesOrExpr (node **wl, node *arg_info, int iter_dims, shpseg *iter
                         *wl = tmp;
                         ASSIGN_LHS (INFO_WL_ASSIGN (arg_info))
                           = FreeAllIds (ASSIGN_LHS (INFO_WL_ASSIGN (arg_info)));
-                        ASSIGN_LHS (INFO_WL_ASSIGN (arg_info)) = DupOneIds (ids_tmp);
+                        ASSIGN_LHS (INFO_WL_ASSIGN (arg_info)) = DupOneIds (_ids);
                         reuse_wl = FALSE;
                     } else {
                         INFO_WL_PREASSIGNS (arg_info)
                           = AppendAssign (INFO_WL_PREASSIGNS (arg_info),
-                                          MakeAssign (MakeLet (tmp, DupOneIds (ids_tmp)),
+                                          MakeAssign (MakeLet (tmp, DupOneIds (_ids)),
                                                       NULL));
                     }
 
@@ -3436,9 +3481,9 @@ EmptyParts2StridesOrExpr (node **wl, node *arg_info, int iter_dims, shpseg *iter
                          * Hence, we have to use the default expression here:
                          *   lhs = reshape( sv ++ shape( def), []);
                          */
-                        def = NWITHOP_DEFAULT (withop_tmp);
+                        def = NWITHOP_DEFAULT (withop);
                         DBUG_ASSERT (((def != NULL) && (NODE_TYPE (def) == N_id)),
-                                     "NWITH2_DEFAULT not found or no N_id!");
+                                     "NWITHOP_DEFAULT not found or no N_id!");
                         sdim = GetShapeDim (ID_TYPE (def));
                         if (KNOWN_SHAPE (sdim)) {
                             tmp = Shpseg2Array (ID_SHPSEG (def), DIM_NO_OFFSET (sdim));
@@ -3446,12 +3491,12 @@ EmptyParts2StridesOrExpr (node **wl, node *arg_info, int iter_dims, shpseg *iter
                             tmp = MakePrf (F_shape, MakeExprs (DupNode (def), NULL));
                         }
                     }
-                    if ((NODE_TYPE (NWITHOP_SHAPE (withop_tmp)) == N_array)
+                    if ((NODE_TYPE (NWITHOP_SHAPE (withop)) == N_array)
                         && (NODE_TYPE (tmp) == N_array)) {
                         tmp2 = tmp;
-                        tmp = MakeFlatArray (AppendExprs (DupTree (ARRAY_AELEMS (
-                                                            NWITHOP_SHAPE (withop_tmp))),
-                                                          ARRAY_AELEMS (tmp2)));
+                        tmp = MakeFlatArray (
+                          AppendExprs (DupTree (ARRAY_AELEMS (NWITHOP_SHAPE (withop))),
+                                       ARRAY_AELEMS (tmp2)));
                         shp = MakeShpseg (NULL);
                         SHPSEG_SHAPE (shp, 0) = CountExprs (ARRAY_AELEMS (tmp));
                         ARRAY_TYPE (tmp) = MakeTypes (T_int, 1, shp, NULL, NULL);
@@ -3459,7 +3504,7 @@ EmptyParts2StridesOrExpr (node **wl, node *arg_info, int iter_dims, shpseg *iter
                         tmp2 = FreeTree (tmp2);
                     } else {
                         tmp = MakePrf (F_cat_VxV,
-                                       MakeExprs (DupNode (NWITHOP_SHAPE (withop_tmp)),
+                                       MakeExprs (DupNode (NWITHOP_SHAPE (withop)),
                                                   MakeExprs (tmp, NULL)));
                     }
                     tmp
@@ -3477,12 +3522,12 @@ EmptyParts2StridesOrExpr (node **wl, node *arg_info, int iter_dims, shpseg *iter
                         *wl = tmp;
                         ASSIGN_LHS (INFO_WL_ASSIGN (arg_info))
                           = FreeAllIds (ASSIGN_LHS (INFO_WL_ASSIGN (arg_info)));
-                        ASSIGN_LHS (INFO_WL_ASSIGN (arg_info)) = DupOneIds (ids_tmp);
+                        ASSIGN_LHS (INFO_WL_ASSIGN (arg_info)) = DupOneIds (_ids);
                         reuse_wl = FALSE;
                     } else {
                         INFO_WL_PREASSIGNS (arg_info)
                           = AppendAssign (INFO_WL_PREASSIGNS (arg_info),
-                                          MakeAssign (MakeLet (tmp, DupOneIds (ids_tmp)),
+                                          MakeAssign (MakeLet (tmp, DupOneIds (_ids)),
                                                       NULL));
                     }
 #endif
@@ -3490,9 +3535,9 @@ EmptyParts2StridesOrExpr (node **wl, node *arg_info, int iter_dims, shpseg *iter
                 break;
 
             case WO_modarray:
-                tmp = NWITHOP_ARRAY (withop_tmp);
+                tmp = NWITHOP_ARRAY (withop);
 
-                NWITHOP_ARRAY (withop_tmp) = NULL;
+                NWITHOP_ARRAY (withop) = NULL;
                 if (reuse_wl) {
                     /*
                      * replace '*wl'
@@ -3500,13 +3545,12 @@ EmptyParts2StridesOrExpr (node **wl, node *arg_info, int iter_dims, shpseg *iter
                     *wl = tmp;
                     ASSIGN_LHS (INFO_WL_ASSIGN (arg_info))
                       = FreeAllIds (ASSIGN_LHS (INFO_WL_ASSIGN (arg_info)));
-                    ASSIGN_LHS (INFO_WL_ASSIGN (arg_info)) = DupOneIds (ids_tmp);
+                    ASSIGN_LHS (INFO_WL_ASSIGN (arg_info)) = DupOneIds (_ids);
                     reuse_wl = FALSE;
                 } else {
                     INFO_WL_PREASSIGNS (arg_info)
                       = AppendAssign (INFO_WL_PREASSIGNS (arg_info),
-                                      MakeAssign (MakeLet (tmp, DupOneIds (ids_tmp)),
-                                                  NULL));
+                                      MakeAssign (MakeLet (tmp, DupOneIds (_ids)), NULL));
                 }
 
                 break;
@@ -3514,9 +3558,9 @@ EmptyParts2StridesOrExpr (node **wl, node *arg_info, int iter_dims, shpseg *iter
             case WO_foldfun:
                 /* here is no break missing! */
             case WO_foldprf:
-                tmp = NWITHOP_NEUTRAL (withop_tmp);
+                tmp = NWITHOP_NEUTRAL (withop);
 
-                NWITHOP_NEUTRAL (withop_tmp) = NULL;
+                NWITHOP_NEUTRAL (withop) = NULL;
                 if (reuse_wl) {
                     /*
                      * replace '*wl'
@@ -3524,29 +3568,34 @@ EmptyParts2StridesOrExpr (node **wl, node *arg_info, int iter_dims, shpseg *iter
                     *wl = tmp;
                     ASSIGN_LHS (INFO_WL_ASSIGN (arg_info))
                       = FreeAllIds (ASSIGN_LHS (INFO_WL_ASSIGN (arg_info)));
-                    ASSIGN_LHS (INFO_WL_ASSIGN (arg_info)) = DupOneIds (ids_tmp);
+                    ASSIGN_LHS (INFO_WL_ASSIGN (arg_info)) = DupOneIds (_ids);
                     reuse_wl = FALSE;
                 } else {
                     INFO_WL_PREASSIGNS (arg_info)
                       = AppendAssign (INFO_WL_PREASSIGNS (arg_info),
-                                      MakeAssign (MakeLet (tmp, DupOneIds (ids_tmp)),
-                                                  NULL));
+                                      MakeAssign (MakeLet (tmp, DupOneIds (_ids)), NULL));
                 }
                 break;
+
+            case WO_unknown:
+                DBUG_ASSERT (FALSE, "non initialised WithOpType found.");
+                break;
             }
-            withop_tmp = NWITHOP_NEXT (withop_tmp);
+            withop = NWITHOP_NEXT (withop);
             cexprs = EXPRS_NEXT (cexprs);
             res_types = TYPES_NEXT (res_types);
-            ids_tmp = IDS_NEXT (ids_tmp);
+            _ids = IDS_NEXT (_ids);
         }
 
         /*
-         * Delete all extracted information from WL, except res_types
-         *( will be deleted in WLTRAlet)
+         * Delete all extracted information from WL
          */
-        withop_tmp = FreeTree (withop_tmp);
+        withop = FreeTree (withop);
         cexprs = FreeTree (cexprs);
-        ids_tmp = FreeAllIds (ids_tmp);
+        _ids = FreeAllIds (_ids);
+        if (free_res_types) {
+            res_types = FreeAllTypes (res_types);
+        }
     }
 
     DBUG_RETURN (strides);
@@ -7576,7 +7625,7 @@ ConvertWith (node *wl, int iter_dims)
 #if 0
   /*
    * for the time beeing array-placement isn't implemented and further on
-   * in multioperator WLs *one* of the operators can be a fold operator
+   * in multioperator WLs at least one of the operators can be a fold operator
    */
   if ((NWITH2_PRAGMA( new_node) != NULL) && (NWITH_IS_FOLD( wl))) {
     /* no array placement for fold with-loops */
@@ -7674,19 +7723,19 @@ EmptyWl2Expr (node *wl, node *arg_info)
 node *
 CheckWith (node *arg_node, types *res_types)
 {
-    node *cexpr, *tmp_cexprs, *tmp_withop;
+    node *cexpr, *cexprs, *withop;
     int cexpr_sdim, res_sdim;
 
     DBUG_ENTER ("CheckWith");
 
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_Nwith), "no N_Nwith node found!");
 
-    tmp_cexprs = NCODE_CEXPRS (NWITH_CODE (arg_node));
-    tmp_withop = NWITH_WITHOP (arg_node);
+    cexprs = NCODE_CEXPRS (NWITH_CODE (arg_node));
+    withop = NWITH_WITHOP (arg_node);
 
-    while (tmp_withop != NULL) {
+    while (withop != NULL) {
 
-        switch (NWITHOP_TYPE (tmp_withop)) {
+        switch (NWITHOP_TYPE (withop)) {
         case WO_genarray:
             /*
              * A = with( iv)
@@ -7705,7 +7754,7 @@ CheckWith (node *arg_node, types *res_types)
              * index vector) and the WL expression depends on the index vector,
              * it would be impossible to compute the shape of the result at all!
              */
-            cexpr = EXPRS_EXPR (tmp_cexprs);
+            cexpr = EXPRS_EXPR (cexprs);
             DBUG_ASSERT ((cexpr != NULL), "CEXPR is missing");
             DBUG_ASSERT ((NODE_TYPE (cexpr) == N_id), "CEXPR is not a N_id");
             cexpr_sdim = GetShapeDim (ID_TYPE (cexpr));
@@ -7713,7 +7762,7 @@ CheckWith (node *arg_node, types *res_types)
             DBUG_ASSERT ((res_types != NULL), "type is missing");
             res_sdim = GetShapeDim (res_types);
             if ((!KNOWN_SHAPE (res_sdim)) && (!KNOWN_SHAPE (cexpr_sdim))
-                && (NWITHOP_DEFAULT (tmp_withop) == NULL)) {
+                && (NWITHOP_DEFAULT (withop) == NULL)) {
                 ABORT (linenum,
                        ("genarray with-loop with missing default expression found."
                         " Unfortunately, a default expression is necessary here"
@@ -7733,8 +7782,8 @@ CheckWith (node *arg_node, types *res_types)
             DBUG_ASSERT ((0), "illegal NWITHOP_TYPE found");
         }
 
-        tmp_cexprs = EXPRS_NEXT (tmp_cexprs);
-        tmp_withop = NWITHOP_NEXT (tmp_withop);
+        cexprs = EXPRS_NEXT (cexprs);
+        withop = NWITHOP_NEXT (withop);
         res_types = TYPES_NEXT (res_types);
     }
 
@@ -7761,7 +7810,7 @@ WLTRAwith (node *arg_node, node *arg_info)
     types *idx_type;
     int idx_sdim;
     bool has_fold;
-    node *tmp_withop;
+    node *withop;
     node *new_node = NULL;
 
     DBUG_ENTER ("WLTRAwith");
@@ -7774,12 +7823,12 @@ WLTRAwith (node *arg_node, node *arg_info)
     idx_sdim = GetShapeDim (idx_type);
 
     has_fold = FALSE;
-    tmp_withop = NWITH_WITHOP (arg_node);
-    while (tmp_withop != NULL) {
-        if (NWITHOP_IS_FOLD (tmp_withop)) {
+    withop = NWITH_WITHOP (arg_node);
+    while (withop != NULL) {
+        if (NWITHOP_IS_FOLD (withop)) {
             has_fold = TRUE;
         }
-        tmp_withop = NWITHOP_NEXT (tmp_withop);
+        withop = NWITHOP_NEXT (withop);
     }
 
     arg_node = CheckWith (arg_node, INFO_WL_LHS_TYPE (arg_info));
@@ -7818,6 +7867,12 @@ WLTRAwith (node *arg_node, node *arg_info)
         iter_shp = GetWlIterShape (arg_node, iter_dims, INFO_WL_LHS_TYPE (arg_info));
 
         if (iter_dims == 0) {
+            /*
+             * this shouldn`t happen for multioperator with-loops,
+             * because with-loops with empty iteration space are not fused
+             */
+            DBUG_ASSERT ((NWITHOP_NEXT (NWITH_WITHOP (arg_node)) == NULL),
+                         "multioperator with-loop with empty iteration space found!\n");
             new_node = EmptyWl2Expr (arg_node, arg_info);
         } else {
 
