@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.38  2004/08/01 13:17:08  ktr
+ * Added SCHMMVScheduling, SCHMMVTasksel
+ *
  * Revision 3.37  2003/04/14 14:18:34  sbs
  * forgot to remove local parameter ....
  *
@@ -212,6 +215,7 @@
 #include "precompile.h" /* for RenameLocalIdentifier() */
 #include "wl_bounds.h"
 #include "dbug.h"
+#include "LookUpTable.h"
 
 /******************************************************************************
  *
@@ -716,6 +720,39 @@ SCHPrecompileScheduling (sched_t *sched)
     for (i = 0; i < sched->num_args; i++) {
         if (sched->args[i].arg_type == AT_id) {
             sched->args[i].arg.id = RenameLocalIdentifier (sched->args[i].arg.id);
+        }
+    }
+
+    DBUG_RETURN (sched);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   sched_t *SCHMMVScheduling( sched_t *sched, LUT_t lut)
+ *
+ * description:
+ *   Since identifier names are stored within the abstract scheduling
+ *   representations, these are subject to renaming during the markmemvals
+ *   compiler phase.
+ *
+ ******************************************************************************/
+
+sched_t *
+SCHMMVScheduling (sched_t *sched, LUT_t lut)
+{
+    int i;
+    char *new_name;
+
+    DBUG_ENTER ("SCHMMVScheduling");
+
+    for (i = 0; i < sched->num_args; i++) {
+        if (sched->args[i].arg_type == AT_id) {
+            new_name = SearchInLUT_SS (lut, sched->args[i].arg.id);
+            if (new_name != sched->args[i].arg.id) {
+                sched->args[i].arg.id = Free (sched->args[i].arg.id);
+                sched->args[i].arg.id = StringCopy (new_name);
+            }
         }
     }
 
@@ -1382,6 +1419,24 @@ tasksel_t *
 SCHPrecompileTasksel (tasksel_t *tasksel)
 {
     DBUG_ENTER ("SCHPrecompileTasksel");
+
+    DBUG_RETURN (tasksel);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   tasksel_t *SCHMMVTasksel( tasksel_t *tasksel, LUT_t lut)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+tasksel_t *
+SCHMMVTasksel (tasksel_t *tasksel, LUT_t lut)
+{
+    DBUG_ENTER ("SCHMMVTasksel");
 
     DBUG_RETURN (tasksel);
 }
