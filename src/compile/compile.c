@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.16  1999/07/02 14:05:25  rob
+ * Clean up COMPVardec to avoid update-in-place when generating ICM.
+ * Introduce TAGGED_ARRAY support (still incomplete).
+ *
  * Revision 2.15  1999/06/30 16:00:11  jhs
  * Expanded backend, so compilation of fold-with-loops is now possible
  * during SPMD-Blocks containing more than one SYNC-Block.
@@ -2990,7 +2994,15 @@ COMPLet (node *arg_node, node *arg_info)
 node *
 COMPVardec (node *arg_node, node *arg_info)
 {
-    node *assign, *id_node, *n_node, *n_dim, *id_type, *icm_arg;
+    node *assign, *id_node, *n_dim, *id_type, *icm_arg;
+#ifdef TAGGED_ARRAYS
+    node *shape_elems;
+    char *macvalues[] = {"ND_DECL_AKS", "ND_DECL_SCL"};
+    char *mymac;
+
+#else  /* TAGGED_ARRAYS */
+    node *n_node;
+#endif /* TAGGED_ARRAYS */
     int i;
 
     types *full_type;
@@ -2999,6 +3011,42 @@ COMPVardec (node *arg_node, node *arg_info)
 
     GET_BASIC_TYPE (full_type, VARDEC_TYPE (arg_node), 0);
 
+#ifdef TAGGED_ARRAYS
+    if (TYPES_DIM (full_type) >= SCALAR) {
+        /*
+         * variable is an array with known shape or a scalar.
+         */
+
+        MAKENODE_ID (id_type, type_string[TYPES_BASETYPE (full_type)]);
+        /* declared type */
+        MAKENODE_ID (id_node, VARDEC_NAME (arg_node)); /* name of variable */
+        MAKENODE_NUM (n_dim, TYPES_DIM (full_type));
+
+        /* now create N_icm */
+        /*
+         * First, we build-up an N_exprs-list containing the shape-vector.
+         */
+        shape_elems = NULL; /* Handle scalar case */
+        for (i = TYPES_DIM (full_type) - 1; i >= 0; i--) {
+            shape_elems = MakeExprs (MakeNum (TYPES_SHAPE (full_type, i)), shape_elems);
+        }
+        /*
+         * Now, we can build up the ND_DECL_AKS-icm using shape_elems
+         * as last arguments...
+         */
+        if (TYPES_DIM (full_type) == SCALAR)
+            mymac = macvalues[1];
+        else
+            mymac = macvalues[0];
+        assign
+          = MakeAssign (MakeIcm (mymac,
+                                 MakeExprs (id_type,
+                                            MakeExprs (id_node,
+                                                       MakeExprs (n_dim, shape_elems))),
+                                 NULL),
+                        VARDEC_NEXT (arg_node));
+
+#else  /* TAGGED_ARRAYS */
     if (TYPES_DIM (full_type) > SCALAR) {
         /*
          * full_type is an array with known shape.
@@ -3010,12 +3058,8 @@ COMPVardec (node *arg_node, node *arg_info)
         MAKENODE_NUM (n_dim, TYPES_DIM (full_type));
 
         /* now create N_icm */
-#ifdef TAGGED_ARRAYS
-        assign = MakeAssign (MakeIcm ("ND_DECL_AKS", NULL, NULL),
-#else  /* TAGGED_ARRAYS */
-        assign = MakeAssign (MakeIcm ("ND_KS_DECL_ARRAY", NULL, NULL),
-#endif /* TAGGED_ARRAYS */
-                             VARDEC_NEXT (arg_node));
+        assign
+          = MakeAssign (MakeIcm ("ND_KS_DECL_ARRAY", NULL, NULL), VARDEC_NEXT (arg_node));
 
         MAKE_ICM_ARG (ICM_ARGS (ASSIGN_INSTR (assign)), id_type);
         icm_arg = ICM_ARGS (ASSIGN_INSTR (assign));
@@ -3027,6 +3071,7 @@ COMPVardec (node *arg_node, node *arg_info)
             MAKENODE_NUM (n_node, full_type->shpseg->shp[i]);
             MAKE_NEXT_ICM_ARG (icm_arg, n_node);
         }
+#endif /* TAGGED_ARRAYS */
 
         /* now free some nodes */
         if (T_user == TYPES_BASETYPE (VARDEC_TYPE (arg_node))) {
@@ -3051,13 +3096,8 @@ COMPVardec (node *arg_node, node *arg_info)
         MAKENODE_ID (id_node, VARDEC_NAME (arg_node)); /* name of variable */
 
         /* now create N_icm */
-#ifdef TAGGED_ARRAYS
-        assign
-          = MakeAssign (MakeIcm ("ND_DECL_DATA", NULL, NULL), VARDEC_NEXT (arg_node));
-#else  /* TAGGED_ARRAYS */
         assign
           = MakeAssign (MakeIcm ("ND_DECL_ARRAY", NULL, NULL), VARDEC_NEXT (arg_node));
-#endif /* TAGGED_ARRAYS */
 
         MAKE_ICM_ARG (ICM_ARGS (ASSIGN_INSTR (assign)), id_type);
         icm_arg = ICM_ARGS (ASSIGN_INSTR (assign));
@@ -3087,13 +3127,8 @@ COMPVardec (node *arg_node, node *arg_info)
         MAKENODE_NUM (n_dim, KNOWN_DIM_OFFSET - TYPES_DIM (full_type));
 
         /* now create N_icm */
-#ifdef TAGGED_ARRAYS
-        assign
-          = MakeAssign (MakeIcm ("ND_DECL_DATA", NULL, NULL), VARDEC_NEXT (arg_node));
-#else  /* TAGGED_ARRAYS */
         assign
           = MakeAssign (MakeIcm ("ND_KD_DECL_ARRAY", NULL, NULL), VARDEC_NEXT (arg_node));
-#endif /* TAGGED_ARRAYS */
 
         MAKE_ICM_ARG (ICM_ARGS (ASSIGN_INSTR (assign)), id_type);
         icm_arg = ICM_ARGS (ASSIGN_INSTR (assign));
@@ -3554,8 +3589,8 @@ COMPPrf (node *arg_node, node *arg_info)
         int insert_assign = 0;
 
         exprs = PRF_ARGS (arg_node);
-        /* test whether an identifier occures on the right and left side of a
-         * let. In this case rename the one on the rigth side ,assign old and new
+        /* test whether an identifier occurs on the right and left side of a
+         * let. In this case rename the one on the right side ,assign old and new
          * variable and add vardec for the new variable.
          * (e.g: A=A+1 => __A=A; A=__A+1; )
          */
@@ -4395,13 +4430,89 @@ COMPPrf (node *arg_node, node *arg_info)
 node *
 COMPArray (node *arg_node, node *arg_info)
 {
+    int n_elems = 0;
+    simpletype s_type;
+
+#ifndef TAGGED_ARRAYS
+
     node *first_assign, *next_assign, *exprs, *res, *type_id_node, *old_arg_node,
       *icm_arg, *n_node, *res_ref, *last_assign;
-
-    int n_elems = 0;
     int icm_created = 0;
+#endif
 
-    simpletype s_type;
+#ifdef TAGGED_ARRAYS
+
+    int elems_are_non_hidden_scalars;
+    node *exprs, *res, *type_id_node, *res_ref, *n_node, *last_assign;
+    node *icm1, *icm2, *elems, *name_id_node;
+    types *elem_type;
+
+    DBUG_ENTER ("COMPArray");
+
+    /* store next assign */
+    last_assign = NEXT_ASSIGN (arg_info);
+
+    /* compute basic_type of result */
+    GET_BASIC_SIMPLETYPE (s_type,
+                          VARDEC_TYPE (IDS_VARDEC (INFO_COMP_LASTIDS (arg_info))));
+    MAKENODE_ID (name_id_node, VARDEC_NAME (IDS_VARDEC (INFO_COMP_LASTIDS (arg_info))));
+    MAKENODE_ID (type_id_node, type_string[s_type]);
+
+    /* store refcount of res as N_num */
+    res_ref = MakeNum (IDS_REFCNT (INFO_COMP_LASTIDS (arg_info)));
+
+    /* create ND_ALLOC_ARRAY */
+    icm1 = MakeIcm ("ND_ALLOC_ARRAY",
+                    MakeExprs (type_id_node,
+                               MakeExprs (name_id_node, MakeExprs (res_ref, NULL))),
+                    NULL);
+
+    /* Now, we start constructing the CONST_ARRAY icm! */
+    exprs = ARRAY_AELEMS (arg_node);
+    elems = DupTree (exprs, NULL);
+
+    while (NULL != exprs) {
+        n_elems++;
+        exprs = EXPRS_NEXT (exprs);
+    }
+    n_node = MakeNum (n_elems);
+
+    /*
+     * First, we want to find out about the array elems:
+     * [ 1, 3, 2] => elems_are_non_hidden_scalars
+     * [ a, 3, 2] => elems_are_non_hidden_scalars
+     * [ a, b, c] => !elems_are_non_hidden_scalars iff simpletype( a) == T_hidden
+     * [ a, b, c] =>  ERROR                        iff dim( a) != SCALAR
+     */
+    if (NODE_TYPE (EXPRS_EXPR (elems)) == N_id) {
+        elem_type = ID_TYPE (EXPRS_EXPR (elems));
+        if (TYPES_BASETYPE (elem_type) == T_hidden) {
+            elems_are_non_hidden_scalars = 0;
+        } else {
+            if (TYPES_DIM (elem_type) != SCALAR) {
+                DBUG_ASSERT (0, "no nested arrays expected here!");
+            } else {
+                elems_are_non_hidden_scalars = 1;
+            }
+        }
+    } else {
+        elems_are_non_hidden_scalars = 1;
+    }
+
+    if (elems_are_non_hidden_scalars) {
+        icm2 = MakeIcm ("ND_CREATE_CONST_ARRAY_S",
+                        MakeExprs (name_id_node, MakeExprs (n_node, elems)), NULL);
+    } else {
+        icm2 = MakeIcm ("ND_CREATE_CONST_ARRAY_H",
+                        MakeExprs (name_id_node, MakeExprs (n_node, elems)), NULL);
+    }
+
+    res = MakeAssign (icm1, MakeAssign (icm2, NULL));
+
+    DBUG_RETURN (res);
+}
+
+#else  /* TAGGED_ARRAYS */
 
     DBUG_ENTER ("COMPArray");
 
@@ -4417,7 +4528,7 @@ COMPArray (node *arg_node, node *arg_info)
     MAKENODE_ID_REUSE_IDS (res, INFO_COMP_LASTIDS (arg_info));
 
     /* store refcount of res as N_num */
-    MAKENODE_NUM (res_ref, IDS_REFCNT (INFO_COMP_LASTIDS (arg_info)));
+    res_ref = MakeNum (IDS_REFCNT (INFO_COMP_LASTIDS (arg_info)));
 
     /* create ND_ALLOC_ARRAY */
     BIN_ICM_REUSE (INFO_COMP_LASTLET (arg_info), "ND_ALLOC_ARRAY", type_id_node, res);
@@ -4429,33 +4540,6 @@ COMPArray (node *arg_node, node *arg_info)
     /* create ND_CREATE_CONST_ARRAY */
 
     exprs = ARRAY_AELEMS (old_arg_node);
-#if 0
-   if (ARRAY_BASETYPE(old_arg_node)==T_char) {
-     /*
-      * When defining a constant array of char, we try to use a string notation.
-      * This is only possible if the character array really represents a string,
-      * i.e. it does not contain intermediate null-characters and the last character
-      * actually is a null-character. In this cases the ICM ND_CREATE_CONST_ARRAY_C
-      * is used instead of ND_CREATE_CONST_ARRAY_S.
-      */
-
-     use_string_notation = 1;
-     do {
-       if (((CHAR_VAL(EXPRS_EXPR(exprs))=='\0')
-	       && (EXPRS_NEXT(exprs)!=NULL))
-	   || ((CHAR_VAL(EXPRS_EXPR(exprs))!='\0')
-	       && (EXPRS_NEXT(exprs)==NULL))
-	   || ((!isprint(CHAR_VAL(EXPRS_EXPR(exprs))))
-	       &&) {
-	 use_string_notation = 0;
-       }
-       
-       n_elems ++;
-       exprs = EXPRS_NEXT(exprs);
-     }
-     while (NULL != exprs);
-   }
-#endif
 
     while (NULL != exprs) {
         n_elems++;
@@ -4510,6 +4594,7 @@ COMPArray (node *arg_node, node *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+#endif /* TAGGED_ARRAYS */
 
 /*
  *
