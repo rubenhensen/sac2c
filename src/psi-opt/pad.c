@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2000/10/27 13:24:56  cg
+ * Modified function APprintDiag() in order to support new command
+ * line option -apdiaglimit.
+ *
  * Revision 1.11  2000/08/08 11:49:33  dkr
  * DBUG_PRINT added
  *
@@ -62,7 +66,7 @@
 #include "pad_infer.h"
 #include "pad_transform.h"
 
-FILE *apdiag_file;
+static FILE *apdiag_file;
 
 /*****************************************************************************
  *
@@ -70,29 +74,73 @@ FILE *apdiag_file;
  *   void APprintDiag( char *format, ...)
  *
  * description:
+ *
  *   print diagnostic info from array padding to apdiag_file,
- *   if compiler flag -apdiag is enabled
+ *   if compiler flag -apdiag is enabled.
+ *
+ *   A counter prevents diagnostic output files to grow beyond given size.
  *
  *****************************************************************************/
+
+#if 0
+
+/*
+ * Why the dangerous detour via a limited-size static buffer ??
+ */
+
+void APprintDiag( char *format, ...)
+{
+  va_list arg_p;
+  static char buffer[1024];
+  
+  DBUG_ENTER("APprintDiag");
+
+  if (apdiag) {
+    va_start( arg_p, format);
+    vsprintf( buffer, format, arg_p);
+    va_end( arg_p);
+
+    fprintf( apdiag_file, buffer);
+  }
+
+  DBUG_VOID_RETURN;
+}
+
+#else
 
 void
 APprintDiag (char *format, ...)
 {
     va_list arg_p;
-    static char buffer[1024];
+    static int cnt = 1;
 
     DBUG_ENTER ("APprintDiag");
 
-    if (apdiag) {
+    if (apdiag && (cnt <= 3 * apdiag_limit)) {
         va_start (arg_p, format);
-        vsprintf (buffer, format, arg_p);
+        vfprintf (apdiag_file, format, arg_p);
         va_end (arg_p);
-
-        fprintf (apdiag_file, buffer);
+        cnt++;
+        if (cnt > apdiag_limit) {
+            fprintf (apdiag_file,
+                     "\n\n************************************************************\n"
+                     "*\n"
+                     "*  Diagnostic output interupted !\n"
+                     "*\n"
+                     "*    Limit of approximately %d lines reached.\n"
+                     "*\n"
+                     "*      Use option -apdiaglimit\n"
+                     "*      to increase / decrease this limit.\n"
+                     "*\n"
+                     "************************************************************\n\n",
+                     apdiag_limit);
+        }
     }
 
     DBUG_VOID_RETURN;
 }
+
+#endif
 
 /*****************************************************************************
  *
@@ -112,6 +160,9 @@ ArrayPadding (node *arg_node)
 
     DBUG_PRINT ("OPT", ("ARRAY PADDING"));
 
+    NOTE ((""));
+    NOTE (("padding array types:"));
+
     /* init pad_info structure */
     PIinit ();
 
@@ -120,6 +171,13 @@ ArrayPadding (node *arg_node)
     /* open apdiag_file for output */
     if (apdiag) {
         apdiag_file = WriteOpen ("%s.ap", outfilename);
+
+        fprintf (apdiag_file,
+                 "     **************************************************\n"
+                 "     *                                                *\n"
+                 "     *        Array Padding Inference Report          *\n"
+                 "     *                                                *\n"
+                 "     **************************************************\n\n\n");
     }
 
     /* collect information for inference phase */
@@ -135,6 +193,8 @@ ArrayPadding (node *arg_node)
     if (apdiag) {
         fclose (apdiag_file);
     }
+
+    PInoteResults ();
 
     /* free pad_info structure */
     PIfree ();
