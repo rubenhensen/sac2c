@@ -20,3 +20,4 @@ staticreuse.h
 reuseelimination.c
 reuseelimination.h
 interfaceanalysis.c
+interfaceanalysis.h
