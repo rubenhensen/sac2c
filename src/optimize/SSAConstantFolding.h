@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.12  2004/11/23 20:58:19  sbs
+ * include bug elimnated
+ *
  * Revision 1.11  2004/11/22 18:10:19  sbs
  * SacDevCamp04
  *
@@ -53,13 +56,12 @@
 #ifndef _SAC_ConstantFolding_h_
 #define _SAC_ConstantFolding_h_
 
-include "types.h"
+#include "types.h"
 
-  /*
-   * functions to handle SCOs
-   */
-  struct_constant *
-  SCOexpr2StructConstant (node *expr);
+/*
+ * functions to handle SCOs
+ */
+struct_constant *SCOexpr2StructConstant (node *expr);
 struct_constant *SCOarray2StructConstant (node *expr);
 struct_constant *SCOwithidVec2StructConstant (node *expr);
 struct_constant *SCOscalar2StructConstant (node *expr);
