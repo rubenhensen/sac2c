@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.14  1996/07/18 12:22:58  sbs
+# Revision 1.15  1997/05/14 06:51:54  sbs
+# -I../compile included
+#
+# Revision 1.14  1996/07/18  12:22:58  sbs
 # prim_fun.o included in clean-line
 #
 # Revision 1.13  1996/02/16  09:46:49  sbs
@@ -49,7 +52,7 @@
 
 CC=gcc -ansi -g
 RM=rm -f
-INCS=-I../global -I../../inc -I../print -I../modules -I../optimize
+INCS=-I../global -I../../inc -I../print -I../modules -I../optimize -I../compile
 
 all: typecheck.o prim_fun.o
 
