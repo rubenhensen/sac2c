@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2004/08/09 13:14:17  khf
+ * some comments added
+ *
  * Revision 1.2  2004/07/23 13:35:46  khf
  * F_accu contains no longer the neutral elements of fold operators
  *
@@ -8,6 +11,36 @@
  * Initial revision
  *
  *
+ *
+ */
+
+/**
+ *
+ * @file ExplicitAccumulate.c
+ *
+ * In this traversal fold functions of fold withloops
+ * are become explicit and a new function F_accu is inserted
+ * in code.
+ *
+ * Ex.:
+ *    A = with(iv)
+ *          gen:{ val = ...;
+ *              }: val
+ *        fold( op, n);
+ *
+ * is transformed into
+ *
+ *    A = with(iv)
+ *          gen:{ acc   = accu( iv);
+ *                val = ...;
+ *                res = op( acc, val);
+ *              }: res
+ *        fold( op, n);
+ *
+ * The function F_accu is used to get the correct
+ * accumulation value but is only pseudo syntax and is kicked
+ * off the code in compile. The only argument is the index vector
+ * of the surrounding withloop to disable LIR.
  *
  */
 
@@ -76,11 +109,12 @@ FreeInfo (info *info)
  *
  * @fn node *MakeAccuAssign( node *fundef, ids *lhs_ids, ids *idx_vec)
  *
- *   @brief
+ *   @brief creates new assignment containing prf F_accu
  *
- *   @param  node *expr  :  expr
- *           node *f_def :  N_fundef
- *   @return node *      :  a chained list of N_assign nodes
+ *   @param  node *fundef  :  N_fundef of current function
+ *           ids  *lhs_ids :  LHS ids of current withloop
+ *           ids  *idx_vex :  index vector of current withloop
+ *   @return node *        :  new N_assign node
  ******************************************************************************/
 static node *
 MakeAccuAssign (node *fundef, ids *lhs_ids, ids *idx_vec)
@@ -117,11 +151,13 @@ MakeAccuAssign (node *fundef, ids *lhs_ids, ids *idx_vec)
  * @fn node *MakeFoldFunAssign( node *fundef, node *withop, ids *accu_ids,
  *                              node *cexpr);
  *
- *   @brief
+ *   @brief  creates new assignment containing fold function of withloop
  *
- *   @param  node *expr  :  expr
- *           node *f_def :  N_fundef
- *   @return node *      :  a chained list of N_assign nodes
+ *   @param  node *fundef  :  N_fundef of current function
+ *           node *withop  :  N_withop of current withloop
+ *           ids  *accu_ids:  lhs of accu assign
+ *           node *cexpr   :  cexpr of current ncode
+ *   @return node *        :  new N_assign node
  ******************************************************************************/
 static node *
 MakeFoldFunAssign (node *fundef, node *withop, ids *accu_ids, node *cexpr)
@@ -167,6 +203,13 @@ MakeFoldFunAssign (node *fundef, node *withop, ids *accu_ids, node *cexpr)
     DBUG_RETURN (nassign);
 }
 
+/**
+ *
+ *  TRAVERSAL FUNCTIONS
+ *
+ * @{
+ ****************************************************************************/
+
 /** <!--********************************************************************-->
  *
  * @fn node *EAmodul(node *arg_node, info *arg_info)
@@ -174,7 +217,7 @@ MakeFoldFunAssign (node *fundef, node *withop, ids *accu_ids, node *cexpr)
  *   @brief traverses function definitions only!
  *
  *   @param  node *arg_node:  N_modul
- *           info *arg_info:  N_info
+ *           info *arg_info:  info
  *   @return node *        :  N_modul
  ******************************************************************************/
 
@@ -194,10 +237,10 @@ EAmodul (node *arg_node, info *arg_info)
  *
  * @fn node *EAfundef(node *arg_node, info *arg_info)
  *
- *   @brief
+ *   @brief  Traverses FUNDEF body
  *
  *   @param  node *arg_node:  N_fundef
- *           info *arg_info:  N_info
+ *           info *arg_info:  info
  *   @return node *        :  N_fundef
  ******************************************************************************/
 
@@ -223,10 +266,10 @@ EAfundef (node *arg_node, info *arg_info)
  *
  * @fn node *EAlet(node *arg_node, info *arg_info)
  *
- *   @brief
+ *   @brief  Traverses in expression
  *
  *   @param  node *arg_node:  N_let
- *           info *arg_info:  N_info
+ *           info *arg_info:  info
  *   @return node *        :  N_let
  ******************************************************************************/
 
@@ -251,7 +294,7 @@ EAlet (node *arg_node, info *arg_info)
  *
  * @fn node *EANwith(node *arg_node, info *arg_info)
  *
- *   @brief
+ *   @brief  if current WL is a fold WL modify code.
  *
  *   @param  node *arg_node:  N_Nwith
  *           info *arg_info:  N_info
@@ -301,8 +344,11 @@ EANcode (node *arg_node, info *arg_info)
     wl = INFO_EA_WL (arg_info);
     nblock = NCODE_CBLOCK (arg_node);
 
+    /* <acc> = F_accu( <idx-varname>); */
     accuassign = MakeAccuAssign (INFO_EA_FUNDEF (arg_info), INFO_EA_LHS_IDS (arg_info),
                                  NWITH_VEC (wl));
+
+    /*   <res> = <fun>( <acc>, <cexpr>); */
     ffassign = MakeFoldFunAssign (INFO_EA_FUNDEF (arg_info), NWITH_WITHOP (wl),
                                   ASSIGN_LHS (accuassign), NWITH_CEXPR (wl));
 
@@ -321,11 +367,15 @@ EANcode (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/**
+ * @}
+ */
+
 /** <!--********************************************************************-->
  *
  * @fn node *ExplicitAccumulate( node *arg_node)
  *
- *   @brief
+ *   @brief  Starting function of ExplicitAccumulate traversal
  *
  *   @param  node *arg_node:  the whole syntax tree
  *   @return node *        :  the transformed syntax tree

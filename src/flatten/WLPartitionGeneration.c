@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  2004/08/09 13:12:31  khf
+ * some comments added
+ *
  * Revision 1.13  2004/08/06 16:09:31  khf
  * CompleteGrid: determination of steps corrected
  *
@@ -50,6 +53,64 @@
  *
  */
 
+/**
+ *
+ * @file WLPartition Generation.c
+ *
+ * In this traversal AKS and AKD genarray/modarray withloops
+ * with non-full partitions of the considered array are
+ * transformed into withloops with full partitions.
+ *
+ * Ex. of AKS withloop:
+ *    A = with(iv)
+ *         ([3] < iv <= [6])
+ *         {res = ...;
+ *         }: res
+ *        genarray([9]);
+ *
+ * is transformed into
+ *
+ *    A = with(iv)
+ *         ([3] < iv <= [6])
+ *         {res = ...;
+ *         }: res
+ *         ([0] < iv <= [3])
+ *         {res = 0;
+ *         }: res
+ *         ([7] < iv <= [9])
+ *         {res = 0;
+ *         }: res
+ *        genarray([9]);
+ *
+ * The modification of AKS withloops was already enforced by
+ * WLT a subphase of WithloopFolding but is here extended for AKDs.
+ *
+ * Ex. of AKD withloop:
+ *   int[1] a;
+ *   int[1] b;
+ *   int[1] c;
+ *    B = with(iv)
+ *         (a < iv <= b)
+ *         {res = ...;
+ *         }: res
+ *        genarray([c]);
+ *
+ * is transformed into
+ *
+ *    A = with(iv)
+ *         ([a[0]] < iv <= [b[0]])
+ *         {res = ...;
+ *         }: res
+ *         ([0] < iv <= [a[0]])
+ *         {res = 0;
+ *         }: res
+ *         ([b[0]] < iv <= [c[0]])
+ *         {res = 0;
+ *         }: res
+ *        genarray([c[0]]);
+ *
+ */
+
 #define NEW_INFO
 
 #include <stdio.h>
@@ -70,12 +131,6 @@
 #include "SSAConstantFolding.h"
 #include "ssa.h"
 #include "WLPartitionGeneration.h"
-
-/*
- * compiler phase: Withloop Partition Generation (WLPG)
- *
- *
- */
 
 /**
  * INFO structure
@@ -876,6 +931,7 @@ CreateFullPartition (node *wln, info *arg_info)
         array_shape = NULL;
         break;
     }
+
     do_create = (array_shape != NULL);
 
     /*
@@ -1378,7 +1434,8 @@ ComputeGeneratorProperties (node *wl, shape *max_shp)
  *
  * @fn node *WLPGmodul(node *arg_node, info *arg_info)
  *
- *   @brief traverses function definitions only!
+ *   @brief first traversal of function definitions for ConstantFolding
+ *          and WLPartitionGeneration
  *
  *   @param  node *arg_node:  N_modul
  *           info *arg_info:  N_info
@@ -1414,9 +1471,7 @@ DONE:
  *
  * @fn node *WLPGfundef(node *arg_node, info *arg_info)
  *
- *   @brief resets INFO components WL and FUNDEF, apply Constant Folding if
- *          we are in phase PH_wlpartgen and starts the traversal of the given
- *          fundef
+ *   @brief starts the traversal of the given fundef.
  *
  *   @param  node *arg_node:  N_fundef
  *           info *arg_info:  N_info
@@ -1747,9 +1802,8 @@ WLPGNwithop (node *arg_node, info *arg_info)
         }
         break;
 
-    default:
-        DBUG_ASSERT ((0), "illegal NWITHOP_TYPE found!");
-        break;
+    case WO_unknown:
+        DBUG_ASSERT ((0), "Unknown withop type found!");
     }
 
     DBUG_RETURN (arg_node);
