@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.2  2004/10/26 09:37:22  sah
+  first working implementation
+
   Revision 1.1  2004/10/25 09:44:47  sah
   Initial revision
 
@@ -121,8 +124,12 @@ version="1.0">
   <xsl:value-of select="'{'"/>
   <!-- DBUG_ENTER statement -->
   <xsl:value-of select="'DBUG_ENTER( &quot;SET'"/>
-  <xsl:value-of select="@nane" />
+  <xsl:value-of select="@name" />
   <xsl:value-of select="'&quot;);'" />
+  <!-- serialize link attributes -->
+  <xsl:apply-templates select="attributes/attribute[type/@name=&quot;Link&quot;]" />
+  <!-- trav sons -->
+  <xsl:apply-templates select="sons" />
   <!-- DBUG_RETURN call -->
   <xsl:value-of select="'DBUG_RETURN( arg_node);'"/>
   <!-- end of body -->
@@ -150,6 +157,75 @@ version="1.0">
     <xsl:with-param name="prefix">SEL</xsl:with-param>
     <xsl:with-param name="name"><xsl:value-of select="." /></xsl:with-param>
   </xsl:call-template>
+</xsl:template>
+
+<xsl:template match="attributes/attribute" >
+  <!-- only process those attributes not beeing NULL -->
+  <xsl:value-of select="'if ('" />
+  <xsl:call-template name="node-access">
+    <xsl:with-param name="node">
+      <xsl:value-of select="'arg_node'" />
+    </xsl:with-param>
+    <xsl:with-param name="nodetype">
+      <xsl:value-of select="../../@name" />
+    </xsl:with-param>
+    <xsl:with-param name="field">
+      <xsl:value-of select="@name" />
+    </xsl:with-param>
+  </xsl:call-template>
+  <xsl:value-of select="' != NULL) {'" />
+  <xsl:value-of select="'fprintf( INFO_SER_FILE( arg_info), &quot;/* fix link for '" />
+  <xsl:value-of select="@name" />
+  <xsl:value-of select="' attribute */\n&quot;);'" />
+  <xsl:value-of select="'fprintf( INFO_SER_FILE( arg_info), &quot;SHLPFixLink( stack, %d, '" />
+  <xsl:value-of select="position()" />
+  <xsl:value-of select="', %d);\n&quot;, SerStackFindPos( arg_node, INFO_SER_STACK( arg_info)) , SerStackFindPos( '" />
+  <xsl:call-template name="node-access">
+    <xsl:with-param name="node">
+      <xsl:value-of select="'arg_node'" />
+    </xsl:with-param>
+    <xsl:with-param name="nodetype">
+      <xsl:value-of select="../../@name" />
+    </xsl:with-param>
+    <xsl:with-param name="field">
+      <xsl:value-of select="@name" />
+    </xsl:with-param>
+  </xsl:call-template>
+  <xsl:value-of select="', INFO_SER_STACK( arg_info))); }'" />
+</xsl:template>
+
+<xsl:template match="sons[../@name=&quot;Fundef&quot;]" >
+  <xsl:apply-templates select="son[not( @name = &quot;Next&quot;)][not( @name = &quot;Body&quot;)]" />
+</xsl:template>
+
+<xsl:template match="sons" >
+  <xsl:apply-templates select="son" />
+</xsl:template>
+
+<xsl:template match="son" >
+  <!-- check for NULL pointer son -->
+  <xsl:value-of select="'if ( '" />
+  <xsl:call-template name="node-access">
+    <xsl:with-param name="node">arg_node</xsl:with-param>
+    <xsl:with-param name="nodetype">
+      <xsl:value-of select="../../@name"/>
+    </xsl:with-param>
+    <xsl:with-param name="field">
+      <xsl:value-of select="@name"/>
+    </xsl:with-param>
+  </xsl:call-template>
+  <xsl:value-of select="' != NULL) {'" />
+  <xsl:value-of select="'Trav( '" />
+  <xsl:call-template name="node-access">
+    <xsl:with-param name="node">arg_node</xsl:with-param>
+    <xsl:with-param name="nodetype">
+      <xsl:value-of select="../../@name"/>
+    </xsl:with-param>
+    <xsl:with-param name="field">
+      <xsl:value-of select="@name"/>
+    </xsl:with-param>
+  </xsl:call-template>
+  <xsl:value-of select="', arg_info); }'" />
 </xsl:template>
 
 </xsl:stylesheet>
