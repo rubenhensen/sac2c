@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.26  2004/12/01 18:43:28  sah
+ * fixed the nasty bug of mystically freed ntype!
+ *
  * Revision 1.25  2004/12/01 15:49:17  sah
  * bugfixing
  *
@@ -153,7 +156,7 @@ FreeInfo (info *info)
 /******************************************************************************
  *
  * function:
- *   node *CRWRPdoCreateWrappers( node *arg_node)
+ *   node *CRTWRPdoCreateWrappers( node *arg_node)
  *
  * description:
  *   Creates wrapper functions for all functions found. These wrapper functions
@@ -174,11 +177,11 @@ FreeInfo (info *info)
  ******************************************************************************/
 
 node *
-CRWRPdoCreateWrappers (node *arg_node)
+CRTWRPdoCreateWrappers (node *arg_node)
 {
     info *info_node;
 
-    DBUG_ENTER ("CRWRPdoCreateWrappers");
+    DBUG_ENTER ("CRTWRPdoCreateWrappers");
 
     TRAVpush (TR_crtwrp);
 
@@ -334,7 +337,7 @@ CreateWrapperFor (node *fundef, info *info)
 /******************************************************************************
  *
  * function:
- *    ntype *CreateFuntype( node *fundef)
+ *    ntype *CRTWRPcreateFuntype( node *fundef)
  *
  * description:
  *    creates a function type from the given arg/return types. While doing so,
@@ -352,21 +355,21 @@ FuntypeFromArgs (ntype *res, node *args, node *fundef)
 
     if (args != NULL) {
         res = FuntypeFromArgs (res, ARG_NEXT (args), fundef);
-        res = TYmakeFunType (ARG_NTYPE (args), res, fundef);
+        res = TYmakeFunType (TYcopyType (ARG_NTYPE (args)), res, fundef);
     }
 
     DBUG_RETURN (res);
 }
 
-static ntype *
-CreateFuntype (node *fundef)
+ntype *
+CRTWRPcreateFuntype (node *fundef)
 {
     ntype *res;
 
-    DBUG_ENTER ("CreateFuntype");
+    DBUG_ENTER ("CRTWRPcreateFuntype");
 
     DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
-                 "CreateFuntype applied to non-fundef node!");
+                 "CRTWRPcreateFuntype applied to non-fundef node!");
 
     res = FuntypeFromArgs (TUmakeProductTypeFromRets (FUNDEF_RETS (fundef)),
                            FUNDEF_ARGS (fundef), fundef);
@@ -517,7 +520,7 @@ CRTWRPfundef (node *arg_node, info *arg_info)
 
         FUNDEF_RETS (arg_node) = TUrettypes2alphaAUD (FUNDEF_RETS (arg_node));
         FUNDEF_WRAPPERTYPE (wrapper)
-          = TYmakeOverloadedFunType (CreateFuntype (arg_node),
+          = TYmakeOverloadedFunType (CRTWRPcreateFuntype (arg_node),
                                      FUNDEF_WRAPPERTYPE (wrapper));
     }
 
