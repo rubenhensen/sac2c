@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.33  2002/10/30 14:19:42  dkr
+ * -enforceIEEE for with-loops implemented now
+ *
  * Revision 3.32  2002/10/25 16:01:55  mwe
  * option enforce_ieee added
  * rename DLAW to DL
@@ -337,10 +340,10 @@ usage ()
     PRINT_BREAK_SPEC (PH_precompile, "prec3", "stop after third traversal");
 
     printf ("\n\nOPTIMIZATION OPTIONS:\n\n"
-            "\t -enforceIEEE\ttreat floats as defined in IEEE-754 standard\n"
-            "\t\t\tdisable some algebraical optimizations on float numbers\n"
-            "\t\t\tdisable tiling and segmentation on fold-WithLoops with float numbers\n"
-            "\t\t\tcurrently implemented for: \t- AL (associative law)\n"
+            "\t -enforceIEEE\ttreat float numbers as defined in IEEE-754 standard:\n"
+            "\t\t\t  disable some algebraic optimizations,\n"
+            "\t\t\t  disable segmentation and tiling on fold-with-loops.\n"
+            "\t\t\tcurrently implemented for: AL, with-loops.\n"
             "\t -ssa\t\tuse optimizations based on ssa-form.\n"
             "\t -no <opt>\tdisable optimization technique <opt>\n"
             "\t -do <opt>\tenable optimization technique <opt>\n"
