@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2002/07/11 13:58:57  dkr
+ * AddNtTag() added
+ *
  * Revision 1.3  2002/06/04 08:37:17  dkr
  * C_unknownc renamed into C_unknownd
  *
@@ -127,4 +130,26 @@ CreateNtTag (char *name, types *type)
              nt_unq_string[GetUnqClassFromTypes (type)]);
 
     DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *AddNtTag( node *id)
+ *
+ * description:
+ *   Creates the tag of a N_id node.
+ *
+ ******************************************************************************/
+
+node *
+AddNtTag (node *id)
+{
+    DBUG_ENTER ("AddNtTag");
+
+    DBUG_ASSERT ((ID_VARDEC (id) != NULL), "no vardec found!");
+
+    ID_NT_TAG (id) = CreateNtTag (ID_NAME (id), ID_TYPE (id));
+
+    DBUG_RETURN (id);
 }
