@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.1  1995/04/05 15:16:10  asi
+ * Revision 1.2  1995/04/06 08:48:35  asi
+ * loop invariant removal added
+ *
+ * Revision 1.1  1995/04/05  15:16:10  asi
  * Initial revision
  *
  *
@@ -45,7 +48,7 @@ LoopInvariantRemoval (node *arg_node, node *info_node)
     act_tab = lir_tab;
     info_node = MakeNode (N_info);
 
-    arg_node = Trav (arg_node, info_node);
+    /*  arg_node=Trav(arg_node, info_node); */
 
     FREE (info_node);
     DBUG_RETURN (arg_node);
