@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.15  1995/11/03 16:04:48  cg
+ * Revision 1.16  1995/11/16 19:41:43  cg
+ * new compound access macros for masks.
+ * Function FreeNodelist moved to free.c
+ *
+ * Revision 1.15  1995/11/03  16:04:48  cg
  * no changes
  *
  * Revision 1.14  1995/11/02  16:26:28  cg
@@ -357,22 +361,6 @@ extern void StoreUnresolvedNodes (nodelist *inserts, node *fundef, statustype st
 
 /*
  *
- *  functionname  : FreeNodelist
- *  arguments     : 1) beginning of nodelist
- *  description   : frees an entire nodelist
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : free
- *  macros        : DBUG, TREE
- *
- *  remarks       : returns always NULL
- *
- */
-
-extern nodelist *FreeNodelist (nodelist *list);
-
-/*
- *
  *  functionname  : TidyUpNodelist
  *  arguments     : 1) beginning of nodelist
  *  description   : frees all those entries of a node list which have
@@ -673,6 +661,9 @@ extern node *SearchObjdef (char *name, char *mod, node *implementations);
 #define FUNDEF_VARDEC(n) (BLOCK_VARDEC (FUNDEF_BODY (n)))
 #define FUNDEF_INSTR(n) (BLOCK_INSTR (FUNDEF_BODY (n)))
 
+#define FUNDEF_DEFMASK(n) (FUNDEF_MASK (n, 0))
+#define FUNDEF_USEMASK(n) (FUNDEF_MASK (n, 1))
+
 /*
  *  The following compound access macros are useful whenever a fundef
  *  node is used to represent a function declaration rather than a
@@ -812,6 +803,13 @@ extern void ObjList2ArgList (node *objdef);
  ***  N_block :
  ***/
 
+/*
+ *  compound access macros
+ */
+
+#define BLOCK_DEFMASK(n) (BLOCK_MASK (n, 0))
+#define BLOCK_USEMASK(n) (BLOCK_MASK (n, 1))
+
 /*--------------------------------------------------------------------------*/
 
 /***
@@ -834,6 +832,13 @@ extern void ObjList2ArgList (node *objdef);
 /***
  ***  N_assign :
  ***/
+
+/*
+ *  compound access macros
+ */
+
+#define ASSIGN_DEFMASK(n) (ASSIGN_MASK (n, 0))
+#define ASSIGN_USEMASK(n) (ASSIGN_MASK (n, 1))
 
 /*--------------------------------------------------------------------------*/
 
@@ -870,11 +875,28 @@ extern void ObjList2ArgList (node *objdef);
  ***  N_cond :
  ***/
 
+/*
+ *  compound access macros
+ */
+
+#define COND_CONDUSEMASK(n) (COND_MASK (n, 1))
+#define COND_THENDEFMASK(n) (BLOCK_DEFMASK (COND_THEN (n)))
+#define COND_THENUSEMASK(n) (BLOCK_USEMASK (COND_THEN (n)))
+#define COND_ELSEDEFMASK(n) (BLOCK_DEFMASK (COND_ELSE (n)))
+#define COND_ELSEUSEMASK(n) (BLOCK_USEMASK (COND_ELSE (n)))
+
 /*--------------------------------------------------------------------------*/
 
 /***
  ***  N_do :
  ***/
+
+/*
+ *  compound access macros
+ */
+
+#define DO_DEFMASK(n) (DO_MASK (n, 0))
+#define DO_USEMASK(n) (DO_MASK (n, 1))
 
 /*--------------------------------------------------------------------------*/
 
@@ -882,11 +904,31 @@ extern void ObjList2ArgList (node *objdef);
  ***  N_while :
  ***/
 
+/*
+ *  compound access macros
+ */
+
+#define WHILE_DEFMASK(n) (WHILE_MASK (n, 0))
+#define WHILE_USEMASK(n) (WHILE_MASK (n, 1))
+
 /*--------------------------------------------------------------------------*/
 
 /***
  ***  N_ap :
  ***/
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_generator :
+ ***/
+
+/*
+ *  compound access macros
+ */
+
+#define GEN_DEFMASK(n) (GEN_MASK (n, 0))
+#define GEN_USEMASK(n) (GEN_MASK (n, 1))
 
 /*--------------------------------------------------------------------------*/
 
@@ -902,11 +944,11 @@ extern void ObjList2ArgList (node *objdef);
 #define WITH_RIGHT(n) (GEN_RIGHT (WITH_GEN (n)))
 #define WITH_ID(n) (GEN_ID (WITH_GEN (n)))
 
-/*--------------------------------------------------------------------------*/
-
-/***
- ***  N_generator :
- ***/
+#define WITH_ARRAYUSEMASK(n) (BLOCK_USEMASK (WITH_BODY (n)))
+#define WITH_GENDEFMASK(n) (GEN_DEFMASK (WITH_GEN (n)))
+#define WITH_GENUSEMASK(n) (GEN_USEMASK (WITH_GEN (n)))
+#define WITH_BODYDEFMASK(n) (WITH_MASK (n, 0))
+#define WITH_BODYUSEMASK(n) (WITH_MASK (n, 0))
 
 /*--------------------------------------------------------------------------*/
 
