@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.5  2003/04/14 15:24:05  sbs
+ * typo corrected.
+ *
  * Revision 3.4  2003/04/14 15:15:16  sbs
  * casts for safe unsigned - signed comparison added.
  *
@@ -179,7 +182,7 @@ CreateCacheSpec (int size, int line_size, int assoc, int el_size)
         tmp = 1;
         cnt = 0;
 
-        while (tmp < (unsigned_int) (cache->line_size)) {
+        while (tmp < (unsigned int)(cache->line_size)) {
             tmp *= 2;
             cnt++;
         }
@@ -188,7 +191,7 @@ CreateCacheSpec (int size, int line_size, int assoc, int el_size)
 
         tmp = 1;
 
-        while (tmp < (unsigned_int) (cache->set_num)) {
+        while (tmp < (unsigned int)(cache->set_num)) {
             tmp *= 2;
             cnt++;
         }
