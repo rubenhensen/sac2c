@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.31  2000/08/17 10:10:09  dkr
+# NameTupels.[ch] added
+#
 # Revision 2.30  2000/07/28 09:16:19  mab
 # make deps done
 #
@@ -18,15 +21,6 @@
 # Revision 2.25  2000/05/29 14:36:35  dkr
 # make deps done
 #
-# Revision 2.24  2000/05/29 14:35:09  dkr
-# make deps done
-#
-# Revision 2.23  2000/03/31 09:33:40  jhs
-# make deps done
-#
-# Revision 2.22  2000/03/31 09:22:12  cg
-# make deps done
-#
 # Revision 2.21  2000/03/23 14:00:04  jhs
 # Added build_os.
 #
@@ -39,72 +33,8 @@
 # Revision 2.18  2000/03/01 14:52:32  dkr
 # make deps done
 #
-# Revision 2.17  2000/01/23 15:01:10  dkr
-# make deps done
-#
 # Revision 2.16  2000/01/21 16:46:12  dkr
 # tree related stuff moved from directory 'global' into 'tree'
-#
-# Revision 2.15  2000/01/21 14:27:04  jhs
-# Makedeps ...
-#
-# Revision 2.14  2000/01/21 13:19:53  jhs
-# Added new mt ... infrastructure expanded ...
-#
-# Revision 2.13  2000/01/21 12:03:07  dkr
-# directory tree added
-#
-# Revision 2.12  2000/01/17 18:40:52  cg
-# make deps done
-#
-# Revision 2.11  2000/01/17 18:37:49  cg
-# Handling of target platform unified: One of the following
-# is always defined:
-# SAC_FOR_SOLARIS_SPARC, SAC_FOR_LINUX_X86, OR SAC_FOR_OSF_ALPHA.
-#
-# Revision 2.9  1999/10/08 08:34:05  sbs
-# in build.c :
-# changed more into cat since some systems (eg alpha) do request an
-# acknowledge of more!
-#
-# Revision 2.8  1999/08/05 13:32:04  jhs
-# build.c is displayed (more) after creation
-# (I like to see the values ...).
-#
-# Revision 2.7  1999/07/09 11:38:40  cg
-# make deps done
-#
-# Revision 2.6  1999/06/16 14:36:17  dkr
-# make deps done
-#
-# Revision 2.5  1999/05/12 15:13:22  cg
-# make deps done
-#
-# Revision 2.4  1999/05/12 14:29:25  cg
-# added compilation of options.c
-# improved generation of build.c
-#
-# Revision 2.3  1999/03/11 18:18:19  dkr
-# make deps done
-#
-# Revision 2.2  1999/02/26 14:17:37  dkr
-# make deps done
-#
-# Revision 2.1  1999/02/23 12:39:14  sacbase
-# new release made
-#
-# Revision 1.70  1999/02/09 20:04:18  dkr
-# make deps done
-#
-# Revision 1.69  1999/01/25 16:26:58  sbs
-# interrupt.[cho] added
-#
-# Revision 1.68  1998/11/04 18:22:30  dkr
-# make deps done
-#
-# Revision 1.67  1998/10/26 12:32:59  cg
-# new mechanism implemented that stores sac2c build information
-# which may later be retrieved by the -h or -i option, repsectively.
 #
 # [...]
 #
@@ -136,7 +66,7 @@ INCS=-I../../inc -I../tree -I../print -I../flatten -I../scanparse -I../typecheck
      -I../psi-opt -I../objects -I../concurrent -I../multithread
 
 all: main.o Error.o usage.o my_debug.o internal_lib.o globals.o resource.o types.h \
-     build.o interrupt.o options.o
+     build.o interrupt.o options.o NameTuples.o
 
 #
 # the types.h object is to fool makedepend which does not
@@ -168,27 +98,34 @@ clean:
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
-Error.o: /usr/include/stdarg.h /usr/include/sys/va_list.h
-Error.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-Error.o: /usr/include/sys/isa_defs.h /usr/include/stdio_tag.h
-Error.o: /usr/include/stdio_impl.h /usr/include/string.h Error.h
-Error.o: /usr/include/stdlib.h types.h globals.h ../tree/tree_basic.h
-Error.o: ../../inc/dbug.h internal_lib.h ../modules/filemgr.h resource.h
+Error.o: /usr/include/stdarg.h /usr/include/varargs.h
+Error.o: /usr/include/sys/va_list.h /usr/include/stdio.h
+Error.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
+Error.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
+Error.o: /usr/include/string.h Error.h /usr/include/stdlib.h types.h
+Error.o: globals.h ../tree/tree_basic.h ../../inc/dbug.h internal_lib.h
+Error.o: ../modules/filemgr.h resource.h
+NameTuples.o: ../../inc/dbug.h /usr/include/stdio.h
+NameTuples.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
+NameTuples.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
+NameTuples.o: /usr/include/stdio_impl.h types.h ../tree/tree_basic.h
+NameTuples.o: ../tree/tree_compound.h Error.h /usr/include/string.h
+NameTuples.o: /usr/include/stdlib.h globals.h NameTuples.h
 globals.o: ../modules/filemgr.h /usr/include/stdio.h
 globals.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 globals.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
 globals.o: /usr/include/stdio_impl.h types.h globals.h Error.h
-globals.o: /usr/include/string.h /usr/include/stdlib.h ../tree/type_info.mac
+globals.o: /usr/include/string.h /usr/include/stdlib.h internal_lib.h
+globals.o: ../tree/type_info.mac
 internal_lib.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 internal_lib.o: /usr/include/sys/isa_defs.h /usr/include/math.h
 internal_lib.o: /usr/include/string.h /usr/include/stdarg.h
-internal_lib.o: /usr/include/sys/va_list.h /usr/include/ctype.h Error.h
-internal_lib.o: /usr/include/stdio.h /usr/include/stdio_tag.h
-internal_lib.o: /usr/include/stdio_impl.h types.h globals.h ../tree/free.h
-internal_lib.o: ../../inc/dbug.h my_debug.h /usr/include/malloc.h
-internal_lib.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
-internal_lib.o: /usr/include/sys/int_types.h /usr/include/sys/select.h
-internal_lib.o: /usr/include/sys/time.h /usr/include/sys/time.h
+internal_lib.o: /usr/include/varargs.h /usr/include/sys/va_list.h
+internal_lib.o: /usr/include/ctype.h Error.h /usr/include/stdio.h
+internal_lib.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h types.h
+internal_lib.o: globals.h ../tree/free.h ../../inc/dbug.h my_debug.h
+internal_lib.o: /usr/include/malloc.h /usr/include/sys/types.h
+internal_lib.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
 internal_lib.o: internal_lib.h ../tree/traverse.h ../tree/tree_basic.h
 internal_lib.o: ../tree/tree_compound.h
 interrupt.o: /usr/include/signal.h /usr/include/sys/feature_tests.h
@@ -205,15 +142,14 @@ main.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
 main.o: /usr/include/string.h /usr/include/stdlib.h globals.h internal_lib.h
 main.o: ../tree/free.h ../../inc/dbug.h my_debug.h /usr/include/malloc.h
 main.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
-main.o: /usr/include/sys/int_types.h /usr/include/sys/select.h
-main.o: /usr/include/sys/time.h /usr/include/sys/time.h usage.h
-main.o: ../flatten/lac2fun.h ../flatten/fun2lac.h ../flatten/flatten.h
-main.o: ../print/print.h ../typecheck/typecheck.h ../optimize/optimize.h
-main.o: ../modules/filemgr.h ../modules/import.h ../refcount/refcount.h
-main.o: ../scanparse/scnprs.h resource.h ../scanparse/y.tab.h
-main.o: ../modules/writesib.h ../modules/readsib.h ../modules/implicittypes.h
-main.o: ../objects/objinit.h ../modules/analysis.h ../modules/checkdec.h
-main.o: ../objects/objects.h ../objects/uniquecheck.h ../objects/rmvoidfun.h
+main.o: /usr/include/sys/int_types.h usage.h ../flatten/lac2fun.h
+main.o: ../flatten/fun2lac.h ../flatten/flatten.h ../print/print.h
+main.o: ../typecheck/typecheck.h ../optimize/optimize.h ../modules/filemgr.h
+main.o: ../modules/import.h ../refcount/refcount.h ../scanparse/scnprs.h
+main.o: resource.h ../scanparse/y.tab.h ../modules/writesib.h
+main.o: ../modules/readsib.h ../modules/implicittypes.h ../objects/objinit.h
+main.o: ../modules/analysis.h ../modules/checkdec.h ../objects/objects.h
+main.o: ../objects/uniquecheck.h ../objects/rmvoidfun.h
 main.o: ../compile/wltransform.h ../concurrent/concurrent.h
 main.o: ../compile/precompile.h ../compile/compile.h ../modules/cccall.h
 main.o: ../compile/PatchWith.h interrupt.h options.h
@@ -225,9 +161,7 @@ options.o: /usr/include/stdio_impl.h ../../inc/main_args.h
 options.o: /usr/include/string.h usage.h ../modules/filemgr.h globals.h
 options.o: types.h internal_lib.h ../tree/free.h my_debug.h
 options.o: /usr/include/malloc.h /usr/include/sys/types.h
-options.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-options.o: /usr/include/sys/select.h /usr/include/sys/time.h
-options.o: /usr/include/sys/time.h Error.h
+options.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h Error.h
 resource.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 resource.o: /usr/include/sys/isa_defs.h /usr/include/stdio.h
 resource.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
@@ -237,8 +171,7 @@ resource.o: ../scanparse/scnprs.h globals.h ../scanparse/y.tab.h
 resource.o: ../modules/filemgr.h ../tree/free.h my_debug.h
 resource.o: /usr/include/malloc.h /usr/include/sys/types.h
 resource.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-resource.o: /usr/include/sys/select.h /usr/include/sys/time.h
-resource.o: /usr/include/sys/time.h internal_lib.h Error.h
+resource.o: internal_lib.h Error.h
 usage.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 usage.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 usage.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
