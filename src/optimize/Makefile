@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.26  1996/01/18 13:05:41  asi
+# Revision 1.27  1997/04/25 12:04:08  sbs
+# make deps done
+#
+# Revision 1.26  1996/01/18  13:05:41  asi
 # make deps done
 #
 # Revision 1.25  1996/01/17  16:49:21  asi
@@ -157,8 +160,8 @@ DupTree.o: ../global/my_debug.h ../global/traverse.h ../typecheck/typecheck.h
 DupTree.o: ../global/free.h /usr/include/malloc.h DupTree.h optimize.h
 DupTree.o: Inline.h
 Inline.o: /usr/include/stdio.h /usr/include/stdlib.h
-Inline.o: /usr/include/sys/stdtypes.h ../global/globals.h ../global/tree.h
-Inline.o: ../global/types.h ../global/tree_basic.h ../global/tree_compound.h
+Inline.o: /usr/include/sys/stdtypes.h ../global/globals.h ../global/types.h
+Inline.o: ../global/tree.h ../global/tree_basic.h ../global/tree_compound.h
 Inline.o: ../global/Error.h /usr/include/string.h ../global/internal_lib.h
 Inline.o: ../../inc/dbug.h ../global/my_debug.h ../global/traverse.h
 Inline.o: ../global/free.h /usr/include/malloc.h ../typecheck/typecheck.h
@@ -174,19 +177,19 @@ LoopInvariantRemoval.o: /usr/include/malloc.h ../global/traverse.h
 LoopInvariantRemoval.o: ../typecheck/typecheck.h ../global/access_macros.h
 LoopInvariantRemoval.o: optimize.h DupTree.h LoopInvariantRemoval.h
 Unroll.o: /usr/include/stdio.h /usr/include/stdlib.h
-Unroll.o: /usr/include/sys/stdtypes.h ../global/globals.h ../global/tree.h
-Unroll.o: ../global/types.h ../global/tree_basic.h ../global/tree_compound.h
+Unroll.o: /usr/include/sys/stdtypes.h ../global/globals.h ../global/types.h
+Unroll.o: ../global/tree.h ../global/tree_basic.h ../global/tree_compound.h
 Unroll.o: ../global/Error.h /usr/include/string.h ../global/internal_lib.h
 Unroll.o: ../global/free.h ../../inc/dbug.h ../global/my_debug.h
 Unroll.o: /usr/include/malloc.h ../global/traverse.h
 Unroll.o: ../global/access_macros.h optimize.h ConstantFolding.h DupTree.h
 Unroll.o: Unroll.h
 Unswitch.o: /usr/include/stdio.h /usr/include/stdlib.h
-Unswitch.o: /usr/include/sys/stdtypes.h ../global/globals.h ../global/tree.h
-Unswitch.o: ../global/types.h ../global/tree_basic.h
-Unswitch.o: ../global/tree_compound.h ../global/Error.h /usr/include/string.h
-Unswitch.o: ../global/internal_lib.h ../global/free.h ../../inc/dbug.h
-Unswitch.o: ../global/my_debug.h /usr/include/malloc.h ../global/traverse.h
+Unswitch.o: /usr/include/sys/stdtypes.h ../global/globals.h ../global/types.h
+Unswitch.o: ../global/tree.h ../global/tree_basic.h ../global/tree_compound.h
+Unswitch.o: ../global/Error.h /usr/include/string.h ../global/internal_lib.h
+Unswitch.o: ../global/free.h ../../inc/dbug.h ../global/my_debug.h
+Unswitch.o: /usr/include/malloc.h ../global/traverse.h
 Unswitch.o: ../global/access_macros.h optimize.h ConstantFolding.h DupTree.h
 Unswitch.o: Unroll.h Unswitch.h
 WorkReduction.o: /usr/include/stdio.h /usr/include/stdlib.h

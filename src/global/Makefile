@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.36  1996/01/18 13:05:38  asi
+# Revision 1.37  1997/04/25 12:04:05  sbs
+# make deps done
+#
+# Revision 1.36  1996/01/18  13:05:38  asi
 # make deps done
 #
 # Revision 1.35  1996/01/04  18:11:05  cg
@@ -214,6 +217,9 @@ my_debug.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/sys/stdtyp
 my_debug.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdlib.h
 my_debug.o: globals.h internal_lib.h ../print/convert.h node_info.mac
 my_debug.o: prf_node_info.mac type_info.mac
+print.o: ../compile/libsac.h ../compile/icm2c.h
+print.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/malloc.h
+print.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/memory.h
 traverse.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdio.h
 traverse.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdarg.h
 traverse.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdlib.h
@@ -261,12 +267,12 @@ tree_compound.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdar
 tree_compound.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/string.h
 tree_compound.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/sys/stdtypes.h
 tree_compound.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdlib.h
-tree_compound.o: globals.h ../../inc/dbug.h my_debug.h
+tree_compound.o: globals.h ../../inc/dbug.h my_debug.h free.h
 tree_compound.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/malloc.h
 usage.o: usage.h
 usage.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdio.h
 usage.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdarg.h
-usage.o: globals.h ../../inc/dbug.h tree.h types.h tree_basic.h
+usage.o: globals.h types.h ../../inc/dbug.h tree.h tree_basic.h
 usage.o: tree_compound.h Error.h
 usage.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/string.h
 usage.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/sys/stdtypes.h

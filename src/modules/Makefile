@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.18  1996/01/18 13:05:42  asi
+# Revision 1.19  1997/04/25 12:04:09  sbs
+# make deps done
+#
+# Revision 1.18  1996/01/18  13:05:42  asi
 # make deps done
 #
 # Revision 1.17  1996/01/04  18:11:09  cg
@@ -105,13 +108,13 @@ analysis.o: ../global/tree_basic.h ../global/tree_compound.h
 analysis.o: ../global/Error.h /usr/include/string.h
 analysis.o: /usr/include/sys/stdtypes.h /usr/include/stdlib.h
 analysis.o: ../global/globals.h ../global/traverse.h
-cccall.o: /usr/include/stdio.h ../global/types.h ../global/tree_basic.h
-cccall.o: ../global/tree_compound.h ../global/Error.h /usr/include/string.h
-cccall.o: /usr/include/sys/stdtypes.h /usr/include/stdlib.h
-cccall.o: ../global/globals.h ../../inc/dbug.h ../global/internal_lib.h
-cccall.o: ../global/free.h ../global/my_debug.h /usr/include/malloc.h
-cccall.o: ../scanparse/scnprs.h ../scanparse/y.tab.h filemgr.h
-cccall.o: ../global/traverse.h
+cccall.o: /usr/include/stdio.h /usr/include/time.h
+cccall.o: /usr/include/sys/stdtypes.h /usr/include/stdlib.h ../global/types.h
+cccall.o: ../global/tree_basic.h ../global/tree_compound.h ../global/Error.h
+cccall.o: /usr/include/string.h ../global/globals.h ../../inc/dbug.h
+cccall.o: ../global/internal_lib.h ../global/free.h ../global/my_debug.h
+cccall.o: /usr/include/malloc.h ../scanparse/scnprs.h ../scanparse/y.tab.h
+cccall.o: filemgr.h ../global/traverse.h
 checkdec.o: /usr/include/string.h /usr/include/sys/stdtypes.h
 checkdec.o: ../global/types.h ../global/tree_basic.h
 checkdec.o: ../global/tree_compound.h ../global/Error.h /usr/include/stdio.h
@@ -121,9 +124,9 @@ checkdec.o: /usr/include/malloc.h import.h ../print/convert.h filemgr.h
 checkdec.o: ../scanparse/scnprs.h ../scanparse/y.tab.h implicittypes.h
 checkdec.o: ../print/print.h ../global/tree.h ../global/internal_lib.h
 filemgr.o: /usr/include/stdlib.h /usr/include/sys/stdtypes.h
-filemgr.o: /usr/include/string.h ../../inc/dbug.h /usr/include/stdio.h
-filemgr.o: ../global/internal_lib.h ../global/Error.h ../global/types.h
-filemgr.o: ../global/globals.h filemgr.h
+filemgr.o: /usr/include/string.h /usr/include/unistd.h ../../inc/dbug.h
+filemgr.o: /usr/include/stdio.h ../global/internal_lib.h ../global/Error.h
+filemgr.o: ../global/types.h ../global/globals.h filemgr.h
 implicittypes.o: /usr/include/malloc.h ../global/types.h
 implicittypes.o: ../global/tree_basic.h ../global/tree_compound.h
 implicittypes.o: ../global/Error.h /usr/include/stdio.h /usr/include/string.h
@@ -144,7 +147,7 @@ readsib.o: /usr/include/sys/stdtypes.h /usr/include/stdlib.h
 readsib.o: ../global/globals.h ../global/free.h ../../inc/dbug.h
 readsib.o: ../global/my_debug.h /usr/include/malloc.h
 readsib.o: ../global/internal_lib.h ../global/traverse.h import.h
-readsib.o: ../scanparse/scnprs.h ../scanparse/y.tab.h filemgr.h
+readsib.o: ../scanparse/scnprs.h ../scanparse/y.tab.h filemgr.h cccall.h
 sib.o: /usr/include/string.h /usr/include/sys/stdtypes.h
 sib.o: /usr/include/malloc.h ../global/types.h ../global/tree_basic.h
 sib.o: ../global/tree_compound.h ../global/Error.h /usr/include/stdio.h

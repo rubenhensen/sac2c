@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.11  1996/07/18 12:23:42  sbs
+# Revision 1.12  1997/04/25 12:04:11  sbs
+# make deps done
+#
+# Revision 1.11  1996/07/18  12:23:42  sbs
 # ArrayElimination.o included in clean-line
 #
 # Revision 1.10  1996/02/16  09:46:57  sbs
@@ -62,15 +65,15 @@ clean:
 
 ArrayElimination.o: /usr/include/stdio.h /usr/include/stdlib.h
 ArrayElimination.o: /usr/include/sys/stdtypes.h /usr/include/string.h
-ArrayElimination.o: ../global/globals.h ../global/tree.h ../global/types.h
-ArrayElimination.o: ../global/tree_basic.h ../global/tree_compound.h
-ArrayElimination.o: ../global/Error.h ../global/internal_lib.h
+ArrayElimination.o: ../global/globals.h ../global/types.h ../global/Error.h
 ArrayElimination.o: ../../inc/dbug.h ../global/my_debug.h
 ArrayElimination.o: ../global/traverse.h ../typecheck/typecheck.h
 ArrayElimination.o: ../global/free.h /usr/include/malloc.h
-ArrayElimination.o: ../optimize/DupTree.h ../global/access_macros.h
-ArrayElimination.o: ../optimize/optimize.h ../optimize/Inline.h
-ArrayElimination.o: ../optimize/LoopInvariantRemoval.h ArrayElimination.h
+ArrayElimination.o: ../optimize/DupTree.h ../global/tree.h
+ArrayElimination.o: ../global/tree_basic.h ../global/tree_compound.h
+ArrayElimination.o: ../global/internal_lib.h ../optimize/optimize.h
+ArrayElimination.o: ../optimize/Inline.h ../optimize/LoopInvariantRemoval.h
+ArrayElimination.o: ArrayElimination.h
 index.o: /usr/include/stdio.h /usr/include/string.h
 index.o: /usr/include/sys/stdtypes.h ../../inc/dbug.h ../global/tree.h
 index.o: ../global/types.h ../global/tree_basic.h ../global/tree_compound.h

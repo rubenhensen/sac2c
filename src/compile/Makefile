@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.20  1996/02/16 09:46:54  sbs
+# Revision 1.21  1997/04/25 12:04:10  sbs
+# make deps done
+#
+# Revision 1.20  1996/02/16  09:46:54  sbs
 # make deps done
 #
 # Revision 1.19  1996/01/18  13:05:43  asi
@@ -103,6 +106,7 @@ clean:
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
+a.out.o: libsac.h icm2c.h /usr/include/malloc.h /usr/include/memory.h
 compile.o: /usr/include/stdlib.h /usr/include/sys/stdtypes.h
 compile.o: /usr/include/string.h ../global/types.h ../global/tree_basic.h
 compile.o: ../global/tree_compound.h ../global/Error.h /usr/include/stdio.h
@@ -131,3 +135,4 @@ precompile.o: ../global/globals.h ../global/free.h ../../inc/dbug.h
 precompile.o: ../global/my_debug.h /usr/include/malloc.h
 precompile.o: ../global/internal_lib.h ../print/convert.h
 precompile.o: ../global/traverse.h ../refcount/refcount.h
+print.o: libsac.h icm2c.h /usr/include/malloc.h /usr/include/memory.h
