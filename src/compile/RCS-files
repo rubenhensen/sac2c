@@ -37,4 +37,3 @@ wltransform.c
 wltransform.h
 markmemvals.c
 markmemvals.h
-objectprecompile.h
