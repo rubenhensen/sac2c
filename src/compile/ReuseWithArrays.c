@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  1999/02/03 16:27:18  dkr
+ * fixed a bug in ReuseNwith2() concerning nested WLs
+ *
  * Revision 1.5  1998/06/19 19:59:54  dkr
  * fixed a bug:
  *   now a negative mask (INFO_REUSE_NEGMASK) is used, too.
@@ -18,15 +21,14 @@
  * Revision 1.1  1998/06/07 18:43:10  dkr
  * Initial revision
  *
- *
- *
  */
 
 /******************************************************************************
  *
  * This module contains 'GetReuseArray'.
  *
- * 'GetReuseArray' searchs in the given with-loop for reuseable arrays:
+ * 'GetReuseArray' searchs in the given with-loop for possibly reuseable
+ * arrays:
  *
  *     A = with (... <= idx < ...) {       A = with (... <= idx < ...) {
  *           <assigns>                       <assigns>
@@ -41,14 +43,17 @@
  *   +) dim( C) == dim( A)
  *   +) shape( C) == shape( A)
  *
- *   +) "C" does not occur on a left side
- *   +) if "C" occurs on a right side, it looks like
+ *   +) "C" does not occur on a left side.
+ *      [Because such arrays do not exist outside the with-loop]
+ *
+ *   +) If "C" occurs on a right side, it looks like
  *          "psi( idx, C)"  or  "idx_psi( idx_flat, C)"
  *      where "idx_flat" is the flat offset of "idx" (IVE).
+ *      [Otherwise reuse might miss data dependencies.]
  *
  *   +) "C" is found in 'NWITH2_DEC_RC_IDS'!!!!!
- *      (otherwise "C" is not consumed by the with-loop because of RCO
- *       --- it is not the last occur --- therefore must not be reused!!!)
+ *      [Otherwise "C" is not consumed by the with-loop because of RCO
+ *       --- it is not the last occur --- therefore must not be reused!!!]
  *
  ******************************************************************************/
 
@@ -60,14 +65,6 @@
 #include "traverse.h"
 #include "DataFlowMask.h"
 #include "index.h"
-
-/*
- * For the time beeing compile calls 'GetReuseArray' not once for
- * the whole syntax_tree, but for each with-loop.
- * Therefore we better not use the recursive-call-mechanismus.
- */
-#define RECURSIVE
-#undef RECURSIVE
 
 /******************************************************************************
  *
@@ -173,10 +170,12 @@ ReuseFundef (node *arg_node, node *arg_info)
  *   generates a new DFM for no-reuse-arrays and stores it in
  *   'INFO_REUSE_NEGMASK( arg_info)'.
  *
+ *   'INFO_REUSE_FUNDEF( arg_info)' contains a pointer to the current fundef
+ *     node.
  *   'INFO_REUSE_IDX( arg_info)' contains a pointer to the index vector of
- *    the with-loop.
+ *     the current with-loop.
  *   'INFO_REUSE_DEC_RC_IDS( arg_info)' contains a pointer to
- *   'NWITH2_DEC_RC_IDS( arg_node)'.
+ *     'NWITH2_DEC_RC_IDS( arg_node)'.
  *
  ******************************************************************************/
 
@@ -185,11 +184,16 @@ ReuseNwith2 (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("REUSENwith2");
 
-    if (NWITH2_REUSE (arg_node) == NULL) {
+    if (INFO_REUSE_MASK (arg_info) == NULL) {
+        /*
+         * This is the upper-most with-loop
+         *   -> Create new reuse-mask
+         */
+
         if ((NWITH2_TYPE (arg_node) == WO_genarray)
             || (NWITH2_TYPE (arg_node) == WO_modarray)) {
             /*
-             * generate new mask for reuse-arrays
+             * Generate new mask for reuse-arrays
              */
             DBUG_ASSERT ((INFO_REUSE_FUNDEF (arg_info) != NULL), "no fundef found");
             NWITH2_REUSE (arg_node)
@@ -200,6 +204,13 @@ ReuseNwith2 (node *arg_node, node *arg_info)
             INFO_REUSE_IDX (arg_info) = NWITH2_VEC (arg_node);
             INFO_REUSE_DEC_RC_IDS (arg_info) = NWITH2_DEC_RC_IDS (arg_node);
         }
+    } else {
+        /*
+         * This is an inner with-loop
+         *   -> Do not build a new reuse-mask, because the current traversal
+         *        concerns the upper-most with-loop only!!!
+         *      'Compile' will call 'GetReuseArrays()' oncemore for this WL!
+         */
     }
 
     NWITH2_WITHOP (arg_node) = Trav (NWITH2_WITHOP (arg_node), arg_info);
@@ -262,15 +273,16 @@ ReuseNwithop (node *arg_node, node *arg_info)
  *   node *ReuseLet( node *arg_node, node *arg_info)
  *
  * description:
- *   Removes all left hand side ids from the reuse-mask.
+ *   Removes all left hand side ids from the reuse-mask (and stores them into
+ *     the no-reuse-mask).
  *   If on the right hand side a "psi( idx, A)" or "idx_psi( idx_flat, A)"
  *     where ...
  *       ... "idx" is the index-vector of the current with-loop;
  *       ... "idx_flat" is the flat offset of this index-vector (IVE);
  *       ... "A" has the same type as the with-loop result;
- *   is found, "A" is stored in the reuse-mask.
+ *     is found, "A" is stored in the reuse-mask.
  *   Otherwise the right hand side is traversed to remove all found id's
- *   from the reuse-mask.
+ *     from the reuse-mask (and store them into the no-reuse-mask).
  *
  ******************************************************************************/
 
@@ -281,55 +293,12 @@ ReuseLet (node *arg_node, node *arg_info)
     ids *tmp;
     char *idx_psi_name;
     int traverse;
-#ifdef RECURSIVE
-    DFMmask_t old_mask, old_negmask;
-    ids *old_wl_ids;
-    ids *old_idx;
-    ids *old_dec_rc_ids;
-#endif
 
     DBUG_ENTER ("ReuseLet");
 
-#ifdef RECURSIVE
-    /**************************************************************************
-     * recursiv call: first we generate the reuse-mask for the inner with-loop
+    /*
+     * removes all left hand side ids from the reuse-mask
      */
-
-    if (NODE_TYPE (LET_EXPR (arg_node)) == N_Nwith2) {
-        /*
-         * push old arg_info
-         */
-        old_wl_ids = INFO_REUSE_WL_IDS (arg_info);
-        old_idx = INFO_REUSE_IDX (arg_info);
-        old_dec_rc_ids = INFO_REUSE_DEC_RC_IDS (arg_info);
-        old_mask = INFO_REUSE_MASK (arg_info);
-        old_negmask = INFO_REUSE_NEGMASK (arg_info);
-
-        /*
-         * generate reuse-mask for inner with-loop
-         */
-        INFO_REUSE_WL_IDS (arg_info) = LET_IDS (arg_node);
-        INFO_REUSE_IDX (arg_info) = NULL;
-        INFO_REUSE_DEC_RC_IDS (arg_info) = NULL;
-        INFO_REUSE_MASK (arg_info) = NULL;
-        INFO_REUSE_NEGMASK (arg_info) = NULL;
-        LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
-
-        /*
-         * pop old arg_info
-         */
-        INFO_REUSE_WL_IDS (arg_info) = old_wl_ids;
-        INFO_REUSE_IDX (arg_info) = old_idx;
-        INFO_REUSE_DEC_RC_IDS (arg_info) = old_dec_rc_ids;
-        INFO_REUSE_MASK (arg_info) = old_mask;
-        INFO_REUSE_NEGMASK (arg_info) = old_negmask;
-    }
-#endif
-
-    /*********************************************************
-     * now we update the reuse-mask for the current with-loop
-     */
-
     tmp = LET_IDS (arg_node);
     while (tmp != NULL) {
         DFMSetMaskEntryClear (INFO_REUSE_MASK (arg_info), IDS_NAME (tmp), NULL);
