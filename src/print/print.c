@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.88  1995/10/31 08:55:23  cg
+ * Revision 1.89  1995/11/01 09:33:56  cg
+ * Bug fixed in PrintArg.
+ *
+ * Revision 1.88  1995/10/31  08:55:23  cg
  * function PrintArg now is able to print arguments with or without
  * identifier name depending on the second parameter.
  *
@@ -808,7 +811,7 @@ PrintArg (node *arg_node, node *arg_info)
     DBUG_EXECUTE ("MASK", fprintf (outfile, "\n**Number %d -> ", arg_node->varno););
 
     fprintf (outfile, "%s",
-             Type2String (arg_node->info.types, (arg_info == NULL) ? 1 : 0));
+             Type2String (arg_node->info.types, (arg_info == NULL) ? 0 : 1));
 
     if (arg_node->node[2] && show_idx)
         Trav (arg_node->node[2], arg_info);
