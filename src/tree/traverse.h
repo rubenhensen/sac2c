@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2001/02/23 13:39:50  nmw
+ * SSADeadCodeRemoval added
+ *
  * Revision 3.5  2001/02/22 12:42:12  nmw
  * UndoSSATransform traversal added
  *
@@ -211,6 +214,7 @@ extern funtab *tccp_tab;
 extern funtab *ssafrm_tab;
 extern funtab *chkavis_tab;
 extern funtab *undossa_tab;
+extern funtab *ssadcr_tab;
 
 extern int nnode[];
 

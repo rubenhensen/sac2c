@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.6  2001/02/23 13:38:39  nmw
+# SSADeadCodeRemoval added
+#
 # Revision 3.5  2001/02/13 15:54:04  nmw
 # include for lac2fun.h added
 #
@@ -81,7 +84,8 @@ INCS=-I../global -I../../inc -I../typecheck -I../print -I../psi-opt -I../modules
 
 all: optimize.o generatemasks.o ConstantFolding.o DeadCodeRemoval.o \
      LoopInvariantRemoval.o Inline.o Unroll.o Unswitch.o CSE.o \
-     WLUnroll.o DeadFunctionRemoval.o freemasks.o
+     WLUnroll.o DeadFunctionRemoval.o freemasks.o \
+     SSADeadCodeRemoval.o
 
 %.o: %.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o $@ -c $< $(INCS)
@@ -157,6 +161,17 @@ LoopInvariantRemoval.o: ../../inc/dbug.h ../global/my_debug.h
 LoopInvariantRemoval.o: ../tree/traverse.h ../typecheck/typecheck.h
 LoopInvariantRemoval.o: optimize.h generatemasks.h ../tree/DupTree.h
 LoopInvariantRemoval.o: ../tree/LookUpTable.h LoopInvariantRemoval.h
+SSADeadCodeRemoval.o: ../../inc/dbug.h /usr/include/stdio.h
+SSADeadCodeRemoval.o: /usr/include/sys/feature_tests.h
+SSADeadCodeRemoval.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
+SSADeadCodeRemoval.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
+SSADeadCodeRemoval.o: ../global/globals.h ../global/types.h ../tree/tree.h
+SSADeadCodeRemoval.o: ../tree/tree_basic.h ../tree/tree_compound.h
+SSADeadCodeRemoval.o: ../global/Error.h /usr/include/string.h
+SSADeadCodeRemoval.o: /usr/include/stdlib.h ../global/internal_lib.h
+SSADeadCodeRemoval.o: ../tree/traverse.h ../tree/free.h ../global/my_debug.h
+SSADeadCodeRemoval.o: ../tree/DupTree.h ../tree/LookUpTable.h
+SSADeadCodeRemoval.o: SSADeadCodeRemoval.h
 Unroll.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 Unroll.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 Unroll.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
@@ -222,10 +237,11 @@ optimize.o: ../global/types.h ../tree/tree_basic.h ../tree/tree_compound.h
 optimize.o: ../global/Error.h ../global/globals.h ../global/internal_lib.h
 optimize.o: ../tree/free.h ../../inc/dbug.h ../global/my_debug.h
 optimize.o: ../tree/traverse.h ../print/print.h ../print/convert.h
-optimize.o: ../tree/CheckAvis.h ../tree/SSATransform.h ../flatten/lac2fun.h
-optimize.o: optimize.h generatemasks.h freemasks.h ConstantFolding.h
-optimize.o: DeadCodeRemoval.h DeadFunctionRemoval.h LoopInvariantRemoval.h
-optimize.o: Inline.h Unroll.h Unswitch.h ../psi-opt/ArrayElimination.h CSE.h
+optimize.o: ../tree/CheckAvis.h ../tree/SSATransform.h
+optimize.o: ../tree/UndoSSATransform.h ../flatten/lac2fun.h optimize.h
+optimize.o: generatemasks.h freemasks.h ConstantFolding.h DeadCodeRemoval.h
+optimize.o: DeadFunctionRemoval.h LoopInvariantRemoval.h Inline.h Unroll.h
+optimize.o: Unswitch.h ../psi-opt/ArrayElimination.h CSE.h
 optimize.o: ../psi-opt/WithloopFolding.h ../psi-opt/wl_access_analyze.h
 optimize.o: ../psi-opt/tile_size_inference.h ../psi-opt/index.h
-optimize.o: ../psi-opt/pad.h
+optimize.o: ../psi-opt/pad.h SSADeadCodeRemoval.h

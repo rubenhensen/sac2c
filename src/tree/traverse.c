@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2001/02/23 13:39:50  nmw
+ * SSADeadCodeRemoval added
+ *
  * Revision 3.8  2001/02/22 12:42:12  nmw
  * UndoSSATransform traversal added
  *
@@ -299,6 +302,7 @@
 #include "CheckAvis.h"
 #include "SSATransform.h"
 #include "UndoSSATransform.h"
+#include "SSADeadCodeRemoval.h"
 
 #include "traverse.h"
 
@@ -1275,6 +1279,17 @@ static funtab undossa_tab_rec = {{
                                  NULL,
                                  NULL};
 funtab *undossa_tab = &undossa_tab_rec;
+
+/*
+ *  (89) ssadcr_tab
+ */
+static funtab ssadcr_tab_rec = {{
+#define NIFssadcr(it_ssadcr) it_ssadcr
+#include "node_info.mac"
+                                },
+                                NULL,
+                                NULL};
+funtab *ssadcr_tab = &ssadcr_tab_rec;
 
 /*
  *  nnode

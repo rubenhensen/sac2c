@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.15  2001/02/23 13:40:15  nmw
+# SSADeadCodeRemoval added
+#
 # Revision 3.14  2001/02/22 14:46:10  sbs
 # cv2str.o added.
 #
@@ -188,7 +191,8 @@ OPTIMIZE= src/optimize/optimize.o src/optimize/ConstantFolding.o \
           src/optimize/DeadFunctionRemoval.o src/optimize/freemasks.o \
 	  src/optimize/LoopInvariantRemoval.o src/optimize/Inline.o \
           src/optimize/Unroll.o src/optimize/WLUnroll.o src/optimize/Unswitch.o \
-          src/optimize/CSE.o
+          src/optimize/CSE.o \
+          src/optimize/SSADeadCodeRemoval.o
 PSIOPT= src/psi-opt/index.o src/psi-opt/ArrayElimination.o \
 	src/psi-opt/wl_access_analyze.o src/psi-opt/tile_size_inference.o \
 	src/psi-opt/WithloopFolding.o src/psi-opt/WLT.o src/psi-opt/WLI.o \

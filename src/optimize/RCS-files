@@ -11,6 +11,8 @@ Inline.h
 LoopInvariantRemoval.c
 LoopInvariantRemoval.h
 Makefile
+SSADeadCodeRemoval.c
+SSADeadCodeRemoval.h
 Unroll.c
 Unroll.h
 Unswitch.c
