@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.34  2005/03/04 21:21:42  cg
+ * Naming og LaC functions improved and made static to module.
+ * FUNDEF_USED counter etc removed.
+ *
  * Revision 3.33  2004/11/30 21:58:09  ktr
  * Should work with new vardec/arg/avis constellation and ntypes now.
  *
@@ -288,26 +292,28 @@ FreeInfo (info *info)
 /******************************************************************************
  *
  * function:
- *   char *L2FgetLacFunName( char *suffix)
+ *   char *CreateLacFunName( char *suffix)
  *
  * description:
- *   Creates a new name for a LaC function. 'suffix' should be one of the
- *   strings "Cond", "Do" or "While".
+ *   Creates a new name for a LaC function. 'suffix' should be
+ *   "Cond" or "Loop".
  *
  ******************************************************************************/
-char *
-L2FgetLacFunName (char *suffix)
+
+static char *
+CreateLacFunName (char *funname, char *suffix)
 {
     static int number = 0;
-    char *funname;
+    char *name;
 
-    DBUG_ENTER ("L2FgetLacFunName");
+    DBUG_ENTER ("CreateLacFunName");
 
-    funname = (char *)ILIBmalloc ((strlen (suffix) + 20 + 3) * sizeof (char));
-    sprintf (funname, "__%s%i", suffix, number);
+    name = (char *)ILIBmalloc ((strlen (funname) + strlen (suffix) + 20 + 3)
+                               * sizeof (char));
+    sprintf (name, "%s__%s_%i", funname, suffix, number);
     number++;
 
-    DBUG_RETURN (funname);
+    DBUG_RETURN (name);
 }
 
 /******************************************************************************
@@ -433,9 +439,7 @@ MakeL2fFundef (char *funname, char *modname, node *instr, node *funcall_let, dfm
     FUNDEF_TYPES (fundef) = DFMUdfm2ReturnTypes (out);
     FUNDEF_RETURN (fundef) = ASSIGN_INSTR (ret);
     FUNDEF_INT_ASSIGN (fundef) = NULL;
-    FUNDEF_EXT_ASSIGNS (fundef)
-      = TCnodeListAppend (NULL, INFO_L2F_ASSIGN (arg_info), NULL);
-    FUNDEF_USED (fundef) = 1;
+    FUNDEF_EXT_ASSIGN (fundef) = INFO_L2F_ASSIGN (arg_info);
 
     /*
      * construct the new type for the created function
@@ -526,7 +530,7 @@ MakeL2fFunLet (node *fundef, dfmask_t *in, dfmask_t *out)
  ******************************************************************************/
 
 static node *
-DoLifting (char *prefix, dfmask_t *in, dfmask_t *out, dfmask_t *local, node *arg_node,
+DoLifting (char *suffix, dfmask_t *in, dfmask_t *out, dfmask_t *local, node *arg_node,
            info *arg_info)
 {
     char *funname, *modname;
@@ -537,7 +541,7 @@ DoLifting (char *prefix, dfmask_t *in, dfmask_t *out, dfmask_t *local, node *arg
     /*
      * build call of the new LaC function
      */
-    funname = L2FgetLacFunName (prefix);
+    funname = CreateLacFunName (FUNDEF_NAME (INFO_L2F_FUNDEF (arg_info)), suffix);
     modname = ILIBstringCopy (FUNDEF_MOD (INFO_L2F_FUNDEF (arg_info)));
     DBUG_ASSERT ((modname != NULL), "modul name for LAC function is NULL!");
     let = MakeL2fFunLet (NULL, in, out);
@@ -701,7 +705,7 @@ L2Fdo (node *arg_node, info *arg_info)
 
     DO_BODY (arg_node) = TRAVdo (DO_BODY (arg_node), arg_info);
 
-    arg_node = DoLifting ("Do", DO_IN_MASK (arg_node), DO_OUT_MASK (arg_node),
+    arg_node = DoLifting ("Loop", DO_IN_MASK (arg_node), DO_OUT_MASK (arg_node),
                           DO_LOCAL_MASK (arg_node), arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
