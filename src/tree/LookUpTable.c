@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.15  2001/05/17 11:39:01  dkr
+ * MALLOC FREE aliminated
+ *
  * Revision 3.14  2001/05/17 09:41:36  nmw
  * some bugs in UpdateLUT functions fixed
  * wrong hashkeytype, illegal pointer sharing resolved
@@ -445,7 +448,7 @@ InsertIntoLUT (lut_t *lut, void *old_item, void *new_item, hash_key_t k)
             /*
              * the last table entry has been used -> allocate a new one.
              */
-            *lut[k].next = (void **)MALLOC ((2 * (LUT_SIZE) + 1) * sizeof (void *));
+            *lut[k].next = (void **)Malloc ((2 * (LUT_SIZE) + 1) * sizeof (void *));
 
             DBUG_PRINT ("LUT", ("new LUT segment created -> " F_PTR, lut[k].next));
 
@@ -493,9 +496,9 @@ GenerateLUT (void)
 
     DBUG_ENTER ("GenerateLUT");
 
-    lut = (lut_t *)MALLOC ((HASH_KEYS) * sizeof (lut_t));
+    lut = (lut_t *)Malloc ((HASH_KEYS) * sizeof (lut_t));
     for (k = 0; k < (HASH_KEYS); k++) {
-        lut[k].first = (void **)MALLOC ((2 * (LUT_SIZE) + 1) * sizeof (void *));
+        lut[k].first = (void **)Malloc ((2 * (LUT_SIZE) + 1) * sizeof (void *));
         lut[k].next = lut[k].first;
         lut[k].size = 0;
     }
@@ -593,7 +596,7 @@ RemoveContentLUT (lut_t *lut)
             for (i = 1; i <= lut[k].size / (LUT_SIZE); i++) {
                 tmp = lut[k].first;
                 lut[k].first = lut[k].first[2 * (LUT_SIZE)];
-                FREE (tmp);
+                tmp = Free (tmp);
             }
             lut[k].next = lut[k].first;
             lut[k].size = 0;
@@ -605,8 +608,8 @@ RemoveContentLUT (lut_t *lut)
             first = tmp;
             /* remove all strings and all but the first collision table fragments */
             for (i = 0; i < lut[k].size; i++) {
-                FREE (tmp[0]);
-                FREE (tmp[1]);
+                Free (tmp[0]);
+                Free (tmp[1]);
                 tmp += 2;
                 if ((i + 1) % (LUT_SIZE) == 0) {
                     /*
@@ -614,7 +617,7 @@ RemoveContentLUT (lut_t *lut)
                      *  -> enter the next table of the chain
                      */
                     tmp = *tmp;
-                    FREE (first);
+                    Free (first);
                     first = tmp;
                 }
             }
@@ -656,7 +659,7 @@ RemoveLUT (lut_t *lut)
             for (i = 0; i <= lut[k].size / (LUT_SIZE); i++) {
                 tmp = lut[k].first;
                 lut[k].first = lut[k].first[2 * (LUT_SIZE)];
-                FREE (tmp);
+                tmp = Free (tmp);
             }
         }
         /* remove LUT for strings */
@@ -666,8 +669,8 @@ RemoveLUT (lut_t *lut)
             first = tmp;
             for (i = 0; i < lut[k].size; i++) {
                 /* remove the strings */
-                FREE (tmp[0]);
-                FREE (tmp[1]);
+                Free (tmp[0]);
+                Free (tmp[1]);
                 tmp += 2;
                 if ((i + 1) % (LUT_SIZE) == 0) {
                     /*
@@ -675,13 +678,13 @@ RemoveLUT (lut_t *lut)
                      *  -> enter the next table of the chain
                      */
                     tmp = *tmp;
-                    FREE (first);
+                    Free (first);
                     first = tmp;
                 }
             }
-            FREE (first);
+            first = Free (first);
         }
-        FREE (lut);
+        lut = Free (lut);
 
         DBUG_PRINT ("LUT", ("finished"));
     } else {
@@ -951,7 +954,7 @@ UpdateLUT_S (lut_t *lut, char *old_item, char *new_item, char **found_item)
 
         /* free unused old string if not needed anymore */
         if (found_item == NULL) {
-            FREE (*found_item_s);
+            Free (*found_item_s);
         }
 
         /* set copy of new item */

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2001/05/17 11:39:08  dkr
+ * MALLOC FREE aliminated
+ *
  * Revision 3.4  2001/03/22 20:03:14  dkr
  * include of tree.h eliminated
  *
@@ -174,7 +177,7 @@ PopDFMstack (stack_t **stack)
     mask = (*stack)->mask;
     old_stack = *stack;
     (*stack) = (*stack)->next;
-    FREE (old_stack);
+    old_stack = Free (old_stack);
 
     DBUG_RETURN (mask);
 }

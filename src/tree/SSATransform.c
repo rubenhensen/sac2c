@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.21  2001/05/17 11:38:56  dkr
+ * MALLOC FREE aliminated
+ *
  * Revision 1.20  2001/05/15 15:50:41  nmw
  * little macro bug fixed
  *
@@ -310,7 +313,7 @@ SSANewVardec (node *old_vardec_or_arg)
     /* create new unique name */
     sprintf (tmpstring, "__SSA_%d", SSACNT_COUNT (ssacnt));
 
-    FREE (VARDEC_NAME (new_vardec));
+    Free (VARDEC_NAME (new_vardec));
     VARDEC_NAME (new_vardec) = StringConcat (SSACNT_BASEID (ssacnt), tmpstring);
 
     DBUG_RETURN (new_vardec);
@@ -782,8 +785,8 @@ SSAap (node *arg_node, node *arg_info)
 
         DBUG_PRINT ("SSA", ("traversal of special fundef %s finished\n",
                             FUNDEF_NAME (AP_FUNDEF (arg_node))));
-        FREE (new_arg_info);
 
+        new_arg_info = FreeTree (new_arg_info);
     } else {
         DBUG_PRINT ("SSA", ("do not traverse in normal fundef %s",
                             FUNDEF_NAME (AP_FUNDEF (arg_node))));
@@ -1125,7 +1128,7 @@ SSAleftids (ids *arg_ids, node *arg_info)
          * there is no real need for name string in ids structure because
          * you can get it from vardec without redundancy.
          */
-        FREE (IDS_NAME (arg_ids));
+        Free (IDS_NAME (arg_ids));
         IDS_NAME (arg_ids) = StringCopy (VARDEC_NAME (new_vardec));
 #endif
 
@@ -1196,7 +1199,7 @@ SSArightids (ids *arg_ids, node *arg_info)
      * there is no real need for name string in ids structure because
      * you can get it from vardec without redundancy.
      */
-    FREE (IDS_NAME (arg_ids));
+    Free (IDS_NAME (arg_ids));
     IDS_NAME (arg_ids) = StringCopy (VARDEC_OR_ARG_NAME (IDS_VARDEC (arg_ids)));
 #endif
 
@@ -1289,7 +1292,7 @@ SSATransform (node *syntax_tree)
 
     act_tab = old_tab;
 
-    FREE (arg_info);
+    arg_info = FreeTree (arg_info);
 
     valid_ssaform = TRUE;
 
@@ -1330,7 +1333,7 @@ SSATransformOneFunction (node *fundef)
 
         act_tab = old_tab;
 
-        FREE (arg_info);
+        arg_info = FreeTree (arg_info);
     }
 
     DBUG_RETURN (fundef);
@@ -1369,7 +1372,7 @@ SSATransformOneFundef (node *fundef)
 
     act_tab = old_tab;
 
-    FREE (arg_info);
+    arg_info = Free (arg_info);
 
     DBUG_RETURN (fundef);
 }
