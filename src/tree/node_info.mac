@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.99  2002/09/05 11:51:02  sbs
+ * nnode of N_mop corrected! Now, set to 1!
+ *
  * Revision 3.98  2002/09/03 14:41:07  sbs
  * NTCassign added
  *
@@ -2442,7 +2445,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, HMmop, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, 0),
+       TravSons, TravSons, TravSons, TravSons, 1),
 
   /* ATTENTION !!!! N_ok has to be the last node declared here;
    *                otherwise a DBUG_ASSERT in traverse.c: Trav will
