@@ -4,6 +4,9 @@
 /*
  *
  * $Log$
+ * Revision 3.97  2004/08/06 14:38:59  sah
+ * ongoing work to use new AST in sac2c
+ *
  * Revision 3.96  2004/07/31 13:44:44  sah
  * removed function MakeNCodeExprs. Instead, MakeNCode now expects
  * an exprs node as its second argument!
@@ -836,8 +839,8 @@ main: TYPE_INT K_MAIN BRACKET_L mainargs BRACKET_R { $<cint>$ = linenum; } exprb
                      mdb_nodetype[ NODE_TYPE( $$)],
                      $$, 
                      FUNDEF_NAME( $$),
-                     mdb_nodetype[ NODE_TYPE( $$->node[0])], 
-                     $$->node[0]));
+                     mdb_nodetype[ NODE_TYPE( FUNDEF_BODY($$))],
+                     FUNDEF_BODY($$)));
       }
     ;
 

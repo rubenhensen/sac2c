@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.65  2004/08/06 14:38:59  sah
+ * ongoing work to use new AST in sac2c
+ *
  * Revision 3.64  2004/08/02 20:46:54  sah
  * added lots if ifdefs for mini sac compiler
  * using the new ast...
@@ -1126,7 +1129,7 @@ static funtab blkpp_tab_rec = {{
                                NULL,
                                NULL};
 funtab *blkpp_tab = &blkpp_tab_rec;
-
+#endif /* NEW_AST */
 /*
  *  (73) cudecls_tab
  */
@@ -1137,7 +1140,7 @@ static funtab cudecls_tab_rec = {{
                                  NULL,
                                  NULL};
 funtab *cudecls_tab = &cudecls_tab_rec;
-
+#ifndef NEW_AST
 /*
  *  (74) barin_tab
  */

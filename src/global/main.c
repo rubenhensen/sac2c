@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.52  2004/08/06 14:38:59  sah
+ * ongoing work to use new AST in sac2c
+ *
  * Revision 3.51  2004/07/30 17:33:00  sbs
  * new_typecheck.h included.
  *
@@ -337,6 +340,7 @@ main (int argc, char *argv[])
     SystemCall ("%s %s", config.mkdir, tmp_dirname);
 #endif
 
+#ifndef NEW_AST
     /*
      * If sac2c was started with the option -libstat,
      * then the library status is printed to stdout and the
@@ -349,6 +353,8 @@ main (int argc, char *argv[])
 
         exit (0);
     }
+
+#endif /* NEW_AST */
 
     ABORT_ON_ERROR;
 
@@ -369,6 +375,8 @@ main (int argc, char *argv[])
     if (break_after == PH_scanparse)
         goto BREAK;
     compiler_phase++;
+
+#ifndef NEW_AST
 
     PHASE_PROLOG;
     if (MODUL_IMPORTS (syntax_tree) != NULL) {
@@ -433,6 +441,10 @@ main (int argc, char *argv[])
         goto BREAK;
     compiler_phase++;
 
+#else
+    compiler_phase += 3;
+#endif /* NEW_AST */
+
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
     syntax_tree = Flatten (syntax_tree); /* flat_tab */
@@ -446,22 +458,28 @@ main (int argc, char *argv[])
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
 
+#ifndef NEW_AST
     if (sbs == 1) {
+#endif
         syntax_tree = NewTypeCheck (syntax_tree); /* ntc_tab */
+#ifndef NEW_AST
     } else {
         syntax_tree = Typecheck (syntax_tree); /* type_tab */
     }
+#endif /* NEW_AST */
     PHASE_DONE_EPILOG;
-
+#ifndef NEW_AST
     if (profileflag != 0) {
         syntax_tree = ProfileFunCalls (syntax_tree); /* profile_tab */
     }
+#endif /* NEW_AST */
     PHASE_EPILOG;
 
     if (break_after == PH_typecheck)
         goto BREAK;
     compiler_phase++;
 
+#ifndef NEW_AST
     PHASE_PROLOG;
     if (MODUL_FILETYPE (syntax_tree) != F_prog) {
         NOTE_COMPILER_PHASE;
@@ -721,6 +739,8 @@ main (int argc, char *argv[])
         PHASE_DONE_EPILOG;
     }
     PHASE_EPILOG;
+
+#endif /* NEW_AST */
 
     compiler_phase = PH_final;
 
