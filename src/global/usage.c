@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.39  2000/08/04 13:26:10  mab
+ * added description for flag -apdiag
+ *
  * Revision 2.38  2000/08/04 09:54:30  nmw
  * added hint for additional docu of the cinterface
  *
@@ -408,6 +411,10 @@ usage ()
             "\t\t\t\tdefault: -inituheap %d\n\n",
             initial_unified_heapsize);
 
+    printf ("\t -apdiag          \tprint additional information for array padding\n"
+            "\t\t\t\t  to file 'outfile.ap', where 'outfile' is the\n"
+            "\t\t\t\t  name specified with option -o.\n");
+
     printf ("\n\nMULTI-THREAD OPTIONS:\n\n"
 
             "\t -mt \t\t\tcompile program for multi-threaded execution.\n"
@@ -683,7 +690,9 @@ usage ()
             "\tSoeren Schwartz\n"
             "\tBjoern Schierau\n"
             "\tHelge Ernst\n"
-            "\tJan-Hendrik Schoeler\n");
+            "\tJan-Hendrik Schoeler\n"
+            "\tNico Marcussen-Wulff\n"
+            "\tMarkus Bradtke\n");
 
     printf ("\n\nCONTACT:\n\n"
 
