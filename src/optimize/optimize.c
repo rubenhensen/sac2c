@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.15  2000/07/11 15:52:29  dkr
+ * IVE added
+ *
  * Revision 2.14  2000/05/29 14:28:49  dkr
  * include of pad.h added
  *
@@ -113,7 +116,6 @@
  * Revision 1.1  1994/12/09  10:47:40  sbs
  * Initial revision
  *
- *
  */
 
 /*
@@ -150,6 +152,7 @@
 #include "WithloopFolding.h"
 #include "wl_access_analyze.h"
 #include "tile_size_inference.h"
+#include "index.h"
 #include "pad.h"
 
 /*
@@ -347,10 +350,6 @@ Optimize (node *arg_node)
 
     act_tab = tmp_tab;
 
-    NOTE ((""));
-    NOTE (("overall optimization statistics:"));
-    PrintStatistics (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ALL);
-
     DBUG_RETURN (arg_node);
 }
 
@@ -381,6 +380,7 @@ Optimize (node *arg_node)
  *               AP
  *               TSI
  *               DFR
+ *               IVE
  *
  ******************************************************************************/
 
@@ -410,43 +410,57 @@ OPTmodul (node *arg_node, node *arg_info)
          * Now, we apply the intra-procedural optimizations function-wise!
          */
         MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
+    }
 
-        /*
-         * Now, it's indicated to analyze the array accesses within WLs.
-         */
-        if (optimize & (OPT_TSI | OPT_AP)) {
-            arg_node = WLAccessAnalyze (arg_node);
+    /*
+     * Now, it's indicated to analyze the array accesses within WLs.
+     */
+    if (optimize & (OPT_TSI | OPT_AP)) {
+        arg_node = WLAccessAnalyze (arg_node);
 
-            if ((break_after == PH_sacopt) && (0 == strcmp (break_specifier, "wlaa")))
-                goto DONE;
-        }
+        if ((break_after == PH_sacopt) && (0 == strcmp (break_specifier, "wlaa")))
+            goto DONE;
+    }
 
-        /*
-         * Now, we apply array padding
-         */
-        if (optimize & OPT_AP) {
-            arg_node = ArrayPadding (arg_node);
+    /*
+     * Now, we apply array padding
+     */
+    if (optimize & OPT_AP) {
+        arg_node = ArrayPadding (arg_node);
 
-            if ((break_after == PH_sacopt) && (0 == strcmp (break_specifier, "ap")))
-                goto DONE;
-        }
+        if ((break_after == PH_sacopt) && (0 == strcmp (break_specifier, "ap")))
+            goto DONE;
+    }
 
-        /*
-         * At last we have to infere the tilesize.
-         */
-        if (optimize & OPT_TSI) {
-            arg_node = TileSizeInference (arg_node);
+    /*
+     * infere the tilesize
+     */
+    if (optimize & OPT_TSI) {
+        arg_node = TileSizeInference (arg_node);
 
-            if ((break_after == PH_sacopt) && (0 == strcmp (break_specifier, "tsi")))
-                goto DONE;
-        }
+        if ((break_after == PH_sacopt) && (0 == strcmp (break_specifier, "tsi")))
+            goto DONE;
+    }
 
-        /*
-         * After doing so, we apply DFR once again!
-         */
-        if (optimize & OPT_DFR) {
-            arg_node = DeadFunctionRemoval (arg_node, arg_info);
-        }
+    /*
+     * we apply DFR once again!
+     */
+    if (optimize & OPT_DFR) {
+        arg_node = DeadFunctionRemoval (arg_node, arg_info);
+    }
+
+    NOTE ((""));
+    NOTE (("overall optimization statistics:"));
+    PrintStatistics (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ALL);
+
+    /*
+     * index vector elimination
+     */
+    if (optimize & OPT_IVE) {
+        arg_node = IndexVectorElimination (arg_node);
+
+        if ((break_after == PH_sacopt) && (0 == strcmp (break_specifier, "ive")))
+            goto DONE;
     }
 
 DONE:
