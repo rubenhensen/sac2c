@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.9  2004/08/05 17:42:19  skt
+ * moved TagAllocs into multithread_lib
+ *
  * Revision 1.8  2004/08/05 13:50:18  skt
  * welcome to the new INFO structure
  *
@@ -64,6 +67,7 @@
 #include "print.h"
 #include "tag_executionmode.h"
 #include "multithread.h"
+#include "multithread_lib.h"
 
 /*
  * INFO structure
@@ -206,7 +210,7 @@ TEMassign (node *arg_node, info *arg_info)
                          "TEMassign expects a N_let here");
             DBUG_ASSERT ((NODE_TYPE (LET_EXPR (ASSIGN_INSTR (arg_node))) == N_Nwith2),
                          "TEMassign expects a N_Nwith2 here");
-            TagAllocs (NWITH2_WITHOP (LET_EXPR (ASSIGN_INSTR (arg_node))) /*,arg_node*/);
+            TagAllocs (LET_EXPR (ASSIGN_INSTR (arg_node)), MUTH_MULTI);
         } else if (MustExecuteSingle (arg_node, arg_info)) {
             ASSIGN_EXECMODE (arg_node) = MUTH_SINGLE;
         }
@@ -658,100 +662,6 @@ IsSTClever (ids *test_variables)
     }
 
     DBUG_RETURN (is_clever);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn void TagAllocs(node *wlops)
- *
- *   @brief This function tags the executionmode of the allocation-assignments
- *          for the into MUTH_SINGLE, if their
- *          executionmode was not strict enough
- *
- *   @param wlops the operators of a parallel calculated with-loop
- *   @return nothing at all
- *
- *****************************************************************************/
-void
-TagAllocs (node *wlops /*, node arg_node*/)
-{
-    node *assign;
-    DBUG_ENTER ("TagAllocs");
-    DBUG_ASSERT ((NODE_TYPE (wlops) == N_Nwithop),
-                 "TagAllocs expects a N_Nwithop as argument");
-
-#if TEM_DEBUG
-    fprintf (stdout, "********** TagAllocs start **********\n");
-#endif
-    while (wlops != NULL) {
-        if ((NWITHOP_TYPE (wlops) == WO_genarray)
-            || (NWITHOP_TYPE (wlops) == WO_modarray)) {
-            assign = AVIS_SSAASSIGN (ID_AVIS (NWITHOP_MEM (wlops)));
-
-            /*DBUG_ASSERT((assign != arg_node),
-              "assign and arg_node mustn't be the same!");*/
-            DBUG_ASSERT ((ASSIGN_EXECMODE (assign) != MUTH_MULTI),
-                         "The executionmode of this assignment must'n be MUTH_MULTI");
-            /* change executionmode of the assignment, if it's not as strict as
-               MUTH_SINGLE */
-
-#if TEM_DEBUG
-            PrintNode (assign);
-            fprintf (stdout, "Executionmode changed from %s ",
-                     DecodeExecmode (ASSIGN_EXECMODE (assign)));
-#endif
-
-            ASSIGN_EXECMODE (assign)
-              = StrongestRestriction (MUTH_SINGLE, ASSIGN_EXECMODE (assign));
-
-#if TEM_DEBUG
-            PrintNode (assign);
-            fprintf (stdout, "into %s\n", DecodeExecmode (ASSIGN_EXECMODE (assign)));
-#endif
-        }
-        wlops = NWITHOP_NEXT (wlops);
-    }
-#if TEM_DEBUG
-    fprintf (stdout, "********** TagAllocs end **********\n");
-#endif
-
-    DBUG_VOID_RETURN;
-}
-
-/** <!--********************************************************************-->
- *
- * @fn int StrongestRestriction(int execmode1, int execmode2)
- *
- *   @brief gets two executionmodes and returns the most restricted of them
- *
- *   @param execmode1 the first executionmode
- *   @param execmode2 the second executionmode
- *   @return the most restricted executionmode of the two arguments
- *
- *****************************************************************************/
-int
-StrongestRestriction (int execmode1, int execmode2)
-{
-    int result;
-    DBUG_ENTER (StrongestRestriction);
-    DBUG_ASSERT (((execmode1 == MUTH_ANY) || (execmode1 == MUTH_EXCLUSIVE)
-                  || (execmode1 == MUTH_SINGLE) || (execmode1 == MUTH_MULTI)),
-                 "StrongestRestriction expects a valid executionmode in #1 arg.");
-    DBUG_ASSERT (((execmode2 == MUTH_ANY) || (execmode2 == MUTH_EXCLUSIVE)
-                  || (execmode2 == MUTH_SINGLE) || (execmode2 == MUTH_MULTI)),
-                 "StrongestRestriction expects a valid executionmode in #2 arg.");
-
-    if ((execmode1 == MUTH_EXCLUSIVE) || (execmode2 == MUTH_EXCLUSIVE)) {
-        result = MUTH_EXCLUSIVE;
-    } else if ((execmode1 == MUTH_SINGLE) || (execmode2 == MUTH_SINGLE)) {
-        result = MUTH_SINGLE;
-    } else if ((execmode1 == MUTH_MULTI) || (execmode2 == MUTH_MULTI)) {
-        result = MUTH_MULTI;
-    } else {
-        result = MUTH_ANY;
-    }
-
-    DBUG_RETURN (result);
 }
 
 /** <!--********************************************************************-->

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.9  2004/08/05 17:42:19  skt
+ * moved TagAllocs into multithread_lib
+ *
  * Revision 1.8  2004/08/05 13:50:18  skt
  * welcome to the new INFO structure
  *
@@ -67,10 +70,6 @@ int IsGeneratorBigEnough (ids *test_variables);
 int IsMTClever (ids *test_variables);
 
 int IsSTClever (ids *test_variables);
-
-int StrongestRestriction (int execmode1, int execmode2);
-
-void TagAllocs (node *wlops /*, node *arg_info*/);
 
 int MustExecuteExclusive (node *assign, info *arg_info);
 
