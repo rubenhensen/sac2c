@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.46  2003/06/16 15:11:40  sbs
+ * corrected the sequence of break specifyers on b14 grgrgrgrgr!
+ *
  * Revision 3.45  2003/04/14 14:39:45  sbs
  * cast of the result of strlen into int eliminated; constantant
  * casted into size_t instead.
@@ -317,13 +320,12 @@ usage ()
                       "Stop in cycle <n> after with-loop information gathering.");
     PRINT_BREAK_SPEC (PH_sacopt, "cyc<n>:wlf",
                       "Stop in cycle <n> after with-loop folding.");
-    PRINT_BREAK_SPEC (PH_sacopt, "cyc<n>:wls",
-                      "Stop in cycle <n> after with-loop scalarization.");
-    PRINT_BREAK_SPEC (PH_sacopt, "cyc<n>:al", "Stop in cycle <n> after associative law.");
     PRINT_BREAK_SPEC (PH_sacopt, "cyc<n>:cf2",
                       "Stop in cycle <n> after second constant folding.");
     PRINT_BREAK_SPEC (PH_sacopt, "cyc<n>:dcr",
                       "Stop in cycle <n> after dead code removal.");
+    PRINT_BREAK_SPEC (PH_sacopt, "cyc<n>:wls",
+                      "Stop in cycle <n> after with-loop scalarization.");
     PRINT_BREAK_SPEC (PH_sacopt, "cyc<n>:lur",
                       "Stop in cycle <n> after (with-)loop unrolling.");
     PRINT_BREAK_SPEC (PH_sacopt, "cyc<n>:cf3",
@@ -332,6 +334,9 @@ usage ()
                       "Stop in cycle <n> after loop unswitching.");
     PRINT_BREAK_SPEC (PH_sacopt, "cyc<n>:lir",
                       "Stop in cycle <n> after (with-)loop invariant removal.");
+    PRINT_BREAK_SPEC (PH_sacopt, "cyc<n>:al", "Stop in cycle <n> after associative law.");
+    PRINT_BREAK_SPEC (PH_sacopt, "cyc<n>:dl",
+                      "Stop in cycle <n> after distributive law.");
 
     printf ("\n");
 
