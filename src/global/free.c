@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.4  1999/03/15 13:48:21  bs
+ * Some minor modifications in FreeId and FreeArray in the train of renaming of
+ * access macros. For more information take a look at tree_basic.h
+ *
  * Revision 2.3  1999/02/28 21:08:56  srs
  * bugfix in FreeAssign()
  *
@@ -1231,6 +1235,8 @@ node *
 FreeArray (node *arg_node, node *arg_info)
 {
     int *iarray;
+    float *farray;
+    double *darray;
     char *carray;
 
     node *tmp = NULL;
@@ -1247,8 +1253,14 @@ FreeArray (node *arg_node, node *arg_info)
 
     DBUG_PRINT ("FREE", ("Removing N_array node ..."));
 
-    iarray = ARRAY_INTARRAY (arg_node);
+    iarray = ARRAY_INTVEC (arg_node);
     FREE (iarray);
+
+    farray = ARRAY_FLOATVEC (arg_node);
+    FREE (farray);
+
+    darray = ARRAY_DOUBLEVEC (arg_node);
+    FREE (darray);
 
     carray = ARRAY_STRING (arg_node);
     FREE (carray);
@@ -1297,7 +1309,7 @@ FreeId (node *arg_node, node *arg_info)
 
     DBUG_PRINT ("FREE", ("Removing N_id node ..."));
 
-    carray = ID_CONSTARRAY (arg_node);
+    carray = ID_INTVEC (arg_node);
     FREE (carray);
 
     FREE (arg_node);
