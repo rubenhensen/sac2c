@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.10  2005/01/07 17:24:50  cg
+ * Converted compile time output from Error.h to ctinfo.c
+ *
  * Revision 1.9  2004/12/19 23:15:42  ktr
  * removed TCcountFunctionParams
  *
@@ -54,7 +57,7 @@
 
 #include "precompile.h"
 #include "dbug.h"
-#include "Error.h"
+#include "ctinfo.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "new_types.h"
@@ -63,9 +66,12 @@
 #include "types.h"
 #include "globals.h"
 #include "type_utils.h"
+#include "internal_lib.h"
+
 /*
  * INFO structure
  */
+
 struct INFO {
     node *fundef;
     argtab_t *argtab;
@@ -76,6 +82,7 @@ struct INFO {
 /*
  * INFO macros
  */
+
 #define INFO_FPC_FUNDEF(n) ((n)->fundef)
 #define INFO_FPC_ARGTAB(n) ((n)->argtab)
 #define INFO_FPC_PREASSIGNS(n) ((n)->preassigns)
@@ -84,6 +91,7 @@ struct INFO {
 /*
  * INFO functions
  */
+
 static info *
 MakeInfo ()
 {
@@ -225,8 +233,8 @@ InsertIntoOut (argtab_t *argtab, node *fundef, node *ret)
          * the c return expression
          */
         if (idx == 0) {
-            ERROR (line, ("Pragma 'linksign' or 'refcounting' illegal"));
-            CONT_ERROR (("Return value must not use a descriptor"));
+            CTIerror (line, "Pragma 'linksign' or 'refcounting' illegal: "
+                            "return value must not use a descriptor");
         }
     }
 
@@ -293,15 +301,19 @@ InsertIntoOut (argtab_t *argtab, node *fundef, node *ret)
                          " (RET) inserted at position %d with tag %s.",
                          FUNDEF_NAME (fundef), ret, idx, global.argtag_string[argtag]));
         } else if (idx == 0) {
-            ERROR (line, ("Pragma 'linksign' illegal"));
-            CONT_ERROR (("Return value found twice"));
+            CTIerror (line, "Pragma 'linksign' illegal: "
+                            "return value found twice");
         } else {
-            ERROR (line, ("Pragma 'linksign' illegal"));
-            CONT_ERROR (("Out-parameter at position %d found twice", idx));
+            CTIerror (line,
+                      "Pragma 'linksign' illegal: "
+                      "out-parameter at position %d found twice",
+                      idx);
         }
     } else {
-        ERROR (line, ("Pragma 'linksign' illegal"));
-        CONT_ERROR (("Entry contains illegal value %d", idx));
+        CTIerror (line,
+                  "Pragma 'linksign' illegal: "
+                  "entry contains illegal value %d",
+                  idx);
     }
 
     DBUG_RETURN (argtab);
@@ -347,8 +359,8 @@ InsertIntoIn (argtab_t *argtab, node *fundef, node *arg)
     }
 
     if (idx == 0) {
-        ERROR (line, ("Pragma 'linksign' illegal"));
-        CONT_ERROR (("In-parameter cannot be used as return value"));
+        CTIerror (line, "Pragma 'linksign' illegal: "
+                        "in-parameter cannot be used as return value");
     } else {
         if ((idx > 0) && (idx < argtab->size)) {
             /*
@@ -396,23 +408,28 @@ InsertIntoIn (argtab_t *argtab, node *fundef, node *arg)
                                                  ARG_NTYPE (arg), argtab->ptr_out[idx],
                                                  global.argtag_string[argtag]));
                         } else {
-                            ERROR (line, ("Pragma 'linksign' illegal"));
-                            CONT_ERROR (("Mappings allowed exclusively between parameters"
-                                         " with identical types"));
+                            CTIerror (line,
+                                      "Pragma 'linksign' illegal: "
+                                      "mappings allowed exclusively between parameters"
+                                      " with identical types");
                         }
                     } else {
-                        ERROR (line, ("Pragma 'linksign' illegal"));
-                        CONT_ERROR (("Mappings allowed exclusively between parameters"
-                                     " without descriptor"));
+                        CTIerror (line, "Pragma 'linksign' illegal: "
+                                        "mappings allowed exclusively between parameters"
+                                        " without descriptor");
                     }
                 }
             } else {
-                ERROR (line, ("Pragma 'linksign' illegal"));
-                CONT_ERROR (("In-parameter at position %d found twice", idx));
+                CTIerror (line,
+                          "Pragma 'linksign' illegal: "
+                          "in-parameter at position %d found twice",
+                          idx);
             }
         } else {
-            ERROR (line, ("Pragma 'linksign' illegal"));
-            CONT_ERROR (("Entry contains illegal value %d", idx));
+            CTIerror (line,
+                      "Pragma 'linksign' illegal: "
+                      "entry contains illegal value %d",
+                      idx);
         }
     }
 
@@ -447,7 +464,8 @@ FPCfundef (node *arg_node, info *arg_info)
         if (FUNDEF_ARGS (arg_node) != NULL) {
             FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
         }
-        ABORT_ON_ERROR;
+
+        CTIabortOnError ();
 
         /*
          * assign the argtab to the function
@@ -728,10 +746,11 @@ FPClet (node *arg_node, info *arg_info)
             }
         }
 
-        ABORT_ON_ERROR;
+        CTIabortOnError ();
 
         AP_ARGTAB (LET_EXPR (arg_node)) = CompressArgtab (ap_argtab);
     }
+
     DBUG_RETURN (arg_node);
 }
 

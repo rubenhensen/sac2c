@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.32  2005/01/07 17:24:50  cg
+ * Converted compile time output from Error.h to ctinfo.c
+ *
  * Revision 3.31  2004/12/11 14:47:26  ktr
  * some bugfixes
  *
@@ -117,7 +120,7 @@
 #include "wltransform.h"
 #include "scheduling.h"
 #include "wlpragma_funs.h"
-#include "Error.h"
+#include "ctinfo.h"
 
 #include <string.h>
 
@@ -224,7 +227,7 @@ ExtractAplPragmaAp (node *exprs, node *pragma, int line)
             if ((AP_EXPRS1 (ap) == NULL) || (NODE_TYPE (AP_ARG1 (ap)) != N_id)
                 || (AP_EXPRS2 (ap) == NULL) || (NODE_TYPE (AP_ARG2 (ap)) != N_num)
                 || (AP_EXPRS3 (ap) == NULL) || (NODE_TYPE (AP_ARG3 (ap)) != N_num)) {
-                ERROR (line, ("Illegal wlcomp-pragma entry APL found"));
+                CTIerror (line, "Illegal wlcomp-pragma entry APL found");
             } else {
                 switch (NUM_VAL (AP_ARG3 (ap))) {
                 case 1:
