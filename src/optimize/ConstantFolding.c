@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.16  1999/07/13 16:19:30  bs
+ * Bug fixed in ArrayPrf.
+ *
  * Revision 2.15  1999/07/08 14:53:59  sbs
  * Array2BoolVec used instead of Array2IntVec
  *
@@ -2394,6 +2397,10 @@ ArrayPrf (node *arg_node, node *arg_info)
     default:
         break;
     }
+    /*
+     *  After CF constant arrays may have lost their special constant propagation.
+     *  Therefore it's neccessary to rebuild it.
+     */
     if (NODE_TYPE (arg_node) == N_array) {
         switch (ARRAY_VECTYPE (arg_node)) {
         case T_int:
@@ -2401,30 +2408,35 @@ ArrayPrf (node *arg_node, node *arg_info)
             ((int *)ARRAY_CONSTVEC (arg_node))
               = Array2IntVec (ARRAY_AELEMS (arg_node), &tmp_len);
             ARRAY_VECLEN (arg_node) = tmp_len;
+            ARRAY_ISCONST (arg_node) = TRUE;
             break;
         case T_bool:
             FREE (ARRAY_CONSTVEC (arg_node));
             ((int *)ARRAY_CONSTVEC (arg_node))
               = Array2BoolVec (ARRAY_AELEMS (arg_node), &tmp_len);
             ARRAY_VECLEN (arg_node) = tmp_len;
+            ARRAY_ISCONST (arg_node) = TRUE;
             break;
         case T_char:
             FREE (ARRAY_CONSTVEC (arg_node));
             ((char *)ARRAY_CONSTVEC (arg_node))
               = Array2CharVec (ARRAY_AELEMS (arg_node), &tmp_len);
             ARRAY_VECLEN (arg_node) = tmp_len;
+            ARRAY_ISCONST (arg_node) = TRUE;
             break;
         case T_float:
             FREE (ARRAY_CONSTVEC (arg_node));
             ((float *)ARRAY_CONSTVEC (arg_node))
               = Array2FloatVec (ARRAY_AELEMS (arg_node), &tmp_len);
             ARRAY_VECLEN (arg_node) = tmp_len;
+            ARRAY_ISCONST (arg_node) = TRUE;
             break;
         case T_double:
             FREE (ARRAY_CONSTVEC (arg_node));
             ((double *)ARRAY_CONSTVEC (arg_node))
               = Array2DblVec (ARRAY_AELEMS (arg_node), &tmp_len);
             ARRAY_VECLEN (arg_node) = tmp_len;
+            ARRAY_ISCONST (arg_node) = TRUE;
             break;
         default:
             /* Nothing to do ! */
