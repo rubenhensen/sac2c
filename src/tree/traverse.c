@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2000/01/26 23:22:59  dkr
+ * traverse-mechanism enhanced:
+ * to each traverse-function-table a preprocessing- and a postprecesing-function
+ * is added. These functions are called in Trav() just before and after the
+ * traversal of each node.
+ *
  * Revision 1.2  2000/01/24 18:21:51  jhs
  * Added new traversal and functions for schedule_init.[ch].
  *
@@ -168,7 +174,7 @@
 
 #include "traverse.h"
 
-funptr *act_tab;
+funtab *act_tab = NULL;
 
 /*
  * global definitions of all funtabs needed for Trav
@@ -177,498 +183,684 @@ funptr *act_tab;
 /*
  *  (1) imp_tab
  */
+static funtab imp_tab_rec = {{
 #define NIFimp(it_imp) it_imp
-funptr imp_tab[] = {
 #include "node_info.mac"
-};
+                             },
+                             NULL,
+                             NULL};
+funtab *imp_tab = &imp_tab_rec;
 
 /*
  *  (2) flat_tab
  */
+static funtab flat_tab_rec = {{
 #define NIFflat(it_flat) it_flat
-funptr flat_tab[] = {
 #include "node_info.mac"
-};
+                              },
+                              NULL,
+                              NULL};
+funtab *flat_tab = &flat_tab_rec;
 
 /*
  *  (3) print_tab
  */
+static funtab print_tab_rec = {{
 #define NIFprint(it_print) it_print
-funptr print_tab[] = {
 #include "node_info.mac"
-};
+                               },
+                               NULL,
+                               NULL};
+funtab *print_tab = &print_tab_rec;
 
 /*
  *  (4) type_tab
  */
+static funtab type_tab_rec = {{
 #define NIFtype(it_type) it_type
-funptr type_tab[] = {
 #include "node_info.mac"
-};
+                              },
+                              NULL,
+                              NULL};
+funtab *type_tab = &type_tab_rec;
 
 /*
  *  (5) genmask_tab
  */
+static funtab genmask_tab_rec = {{
 #define NIFgenmask(it_genmask) it_genmask
-funptr genmask_tab[] = {
 #include "node_info.mac"
-};
+                                 },
+                                 NULL,
+                                 NULL};
+funtab *genmask_tab = &genmask_tab_rec;
 
 /*
  *  (6) dead_tab
  */
+static funtab dcr_tab_rec = {{
 #define NIFdcr(it_dcr) it_dcr
-funptr dcr_tab[] = {
 #include "node_info.mac"
-};
+                             },
+                             NULL,
+                             NULL};
+funtab *dcr_tab = &dcr_tab_rec;
 
 /*
  *  (7) wlf_tab
  */
+static funtab wlf_tab_rec = {{
 #define NIFwlf(it_wlf) it_wlf
-funptr wlf_tab[] = {
 #include "node_info.mac"
-};
+                             },
+                             NULL,
+                             NULL};
+funtab *wlf_tab = &wlf_tab_rec;
 
 /*
  *  (8) free_tab
  */
+static funtab free_tab_rec = {{
 #define NIFfree(it_free) it_free
-funptr free_tab[] = {
 #include "node_info.mac"
-};
+                              },
+                              NULL,
+                              NULL};
+funtab *free_tab = &free_tab_rec;
 
 /*
  *  (9) cf_tab
  */
+static funtab cf_tab_rec = {{
 #define NIFcf(it_cf) it_cf
-funptr cf_tab[] = {
 #include "node_info.mac"
-};
+                            },
+                            NULL,
+                            NULL};
+funtab *cf_tab = &cf_tab_rec;
 
 /*
  *  (10) refcnt_tab
  */
+static funtab refcnt_tab_rec = {{
 #define NIFrefcnt(it_refcnt) it_refcnt
-funptr refcnt_tab[] = {
 #include "node_info.mac"
-};
+                                },
+                                NULL,
+                                NULL};
+funtab *refcnt_tab = &refcnt_tab_rec;
 
 /*
  *  (11) comp_tab
  */
+static funtab comp_tab_rec = {{
 #define NIFcomp(it_comp) it_comp
-funptr comp_tab[] = {
 #include "node_info.mac"
-};
+                              },
+                              NULL,
+                              NULL};
+funtab *comp_tab = &comp_tab_rec;
 
 /*
  *  (12) lir_tab
  */
+static funtab lir_tab_rec = {{
 #define NIFlir(it_lir) it_lir
-funptr lir_tab[] = {
 #include "node_info.mac"
-};
+                             },
+                             NULL,
+                             NULL};
+funtab *lir_tab = &lir_tab_rec;
 
 /*
  *  (13) dup_tab
  */
+static funtab dup_tab_rec = {{
 #define NIFdup(it_dup) it_dup
-funptr dup_tab[] = {
 #include "node_info.mac"
-};
+                             },
+                             DupTreePre,
+                             DupTreePost};
+funtab *dup_tab = &dup_tab_rec;
 
 /*
  *  (14) inline_tab
  */
+static funtab inline_tab_rec = {{
 #define NIFinline(it_inline) it_inline
-funptr inline_tab[] = {
 #include "node_info.mac"
-};
+                                },
+                                NULL,
+                                NULL};
+funtab *inline_tab = &inline_tab_rec;
 
 /*
  *  (15) unroll_tab
  */
+static funtab unroll_tab_rec = {{
 #define NIFunroll(it_unroll) it_unroll
-funptr unroll_tab[] = {
 #include "node_info.mac"
-};
+                                },
+                                NULL,
+                                NULL};
+funtab *unroll_tab = &unroll_tab_rec;
 
 /*
  *  (16) lir_mov_tab
  */
+static funtab lir_mov_tab_rec = {{
 #define NIFlir_mov(it_lir_mov) it_lir_mov
-funptr lir_mov_tab[] = {
 #include "node_info.mac"
-};
+                                 },
+                                 NULL,
+                                 NULL};
+funtab *lir_mov_tab = &lir_mov_tab_rec;
 
 /*
  *  (17) idx_tab
  */
+static funtab idx_tab_rec = {{
 #define NIFidx(it_idx) it_idx
-funptr idx_tab[] = {
 #include "node_info.mac"
-};
+                             },
+                             NULL,
+                             NULL};
+funtab *idx_tab = &idx_tab_rec;
 
 /*
  *  (18) unswitch_tab
  */
+static funtab unswitch_tab_rec = {{
 #define NIFunswitch(it_unswitch) it_unswitch
-funptr unswitch_tab[] = {
 #include "node_info.mac"
-};
+                                  },
+                                  NULL,
+                                  NULL};
+funtab *unswitch_tab = &unswitch_tab_rec;
 
 /*
  *  (19) wli_tab
  */
+static funtab wli_tab_rec = {{
 #define NIFwli(it_wli) it_wli
-funptr wli_tab[] = {
 #include "node_info.mac"
-};
+                             },
+                             NULL,
+                             NULL};
+funtab *wli_tab = &wli_tab_rec;
 
 /*
  *  (20) ae_tab
  */
+static funtab ae_tab_rec = {{
 #define NIFae(it_ae) it_ae
-funptr ae_tab[] = {
 #include "node_info.mac"
-};
+                            },
+                            NULL,
+                            NULL};
+funtab *ae_tab = &ae_tab_rec;
 
 /*
  *  (21) writesib_tab
  */
+static funtab writesib_tab_rec = {{
 #define NIFwritesib(it_writesib) it_writesib
-funptr writesib_tab[] = {
 #include "node_info.mac"
-};
+                                  },
+                                  NULL,
+                                  NULL};
+funtab *writesib_tab = &writesib_tab_rec;
 
 /*
  *  (22) obj_tab
  */
+static funtab obj_tab_rec = {{
 #define NIFobj(it_obj) it_obj
-funptr obj_tab[] = {
 #include "node_info.mac"
-};
+                             },
+                             NULL,
+                             NULL};
+funtab *obj_tab = &obj_tab_rec;
 
 /*
  *  (23) impltype_tab
  */
+static funtab impltype_tab_rec = {{
 #define NIFimpltype(it_impltype) it_impltype
-funptr impltype_tab[] = {
 #include "node_info.mac"
-};
+                                  },
+                                  NULL,
+                                  NULL};
+funtab *impltype_tab = &impltype_tab_rec;
 
 /*
  *  (24) objinit_tab
  */
+static funtab objinit_tab_rec = {{
 #define NIFobjinit(it_objinit) it_objinit
-funptr objinit_tab[] = {
 #include "node_info.mac"
-};
+                                 },
+                                 NULL,
+                                 NULL};
+funtab *objinit_tab = &objinit_tab_rec;
 
 /*
  *  (25) analy_tab
  */
+static funtab analy_tab_rec = {{
 #define NIFanaly(it_analy) it_analy
-funptr analy_tab[] = {
 #include "node_info.mac"
-};
+                               },
+                               NULL,
+                               NULL};
+funtab *analy_tab = &analy_tab_rec;
 
 /*
  *  (26) checkdec_tab
  */
+static funtab checkdec_tab_rec = {{
 #define NIFcheckdec(it_checkdec) it_checkdec
-funptr checkdec_tab[] = {
 #include "node_info.mac"
-};
+                                  },
+                                  NULL,
+                                  NULL};
+funtab *checkdec_tab = &checkdec_tab_rec;
 
 /*
  *  (27) writedec_tab
  */
+static funtab writedec_tab_rec = {{
 #define NIFwritedec(it_writedec) it_writedec
-funptr writedec_tab[] = {
 #include "node_info.mac"
-};
+                                  },
+                                  NULL,
+                                  NULL};
+funtab *writedec_tab = &writedec_tab_rec;
 
 /*
  *  (28) unique_tab
  */
+static funtab unique_tab_rec = {{
 #define NIFunique(it_unique) it_unique
-funptr unique_tab[] = {
 #include "node_info.mac"
-};
+                                },
+                                NULL,
+                                NULL};
+funtab *unique_tab = &unique_tab_rec;
 
 /*
  *  (29) rmvoid_tab
  */
+static funtab rmvoid_tab_rec = {{
 #define NIFrmvoid(it_rmvoid) it_rmvoid
-funptr rmvoid_tab[] = {
 #include "node_info.mac"
-};
+                                },
+                                NULL,
+                                NULL};
+funtab *rmvoid_tab = &rmvoid_tab_rec;
 
 /*
  *  (30) precomp_tab
  */
+static funtab precomp_tab_rec = {{
 #define NIFprecomp(it_precomp) it_precomp
-funptr precomp_tab[] = {
 #include "node_info.mac"
-};
+                                 },
+                                 NULL,
+                                 NULL};
+funtab *precomp_tab = &precomp_tab_rec;
 
 /*
  *  (31) active_tab
  */
+static funtab active_tab_rec = {{
 #define NIFactive(it_active) it_active
-funptr active_tab[] = {
 #include "node_info.mac"
-};
+                                },
+                                NULL,
+                                NULL};
+funtab *active_tab = &active_tab_rec;
 
 /*
  *  (32) readsib_tab
  */
+static funtab readsib_tab_rec = {{
 #define NIFreadsib(it_readsib) it_readsib
-funptr readsib_tab[] = {
 #include "node_info.mac"
-};
+                                 },
+                                 NULL,
+                                 NULL};
+funtab *readsib_tab = &readsib_tab_rec;
 
 /*
  *  (33) wlt_tab
  */
+static funtab wlt_tab_rec = {{
 #define NIFwlt(it_wlt) it_wlt
-funptr wlt_tab[] = {
 #include "node_info.mac"
-};
+                             },
+                             NULL,
+                             NULL};
+funtab *wlt_tab = &wlt_tab_rec;
 
 /*
  *  (34) cse_tab
  */
+static funtab cse_tab_rec = {{
 #define NIFcse(it_cse) it_cse
-funptr cse_tab[] = {
 #include "node_info.mac"
-};
+                             },
+                             NULL,
+                             NULL};
+funtab *cse_tab = &cse_tab_rec;
 
 /*
  *  (35) dfr_tab
  */
+static funtab dfr_tab_rec = {{
 #define NIFdfr(it_dfr) it_dfr
-funptr dfr_tab[] = {
 #include "node_info.mac"
-};
+                             },
+                             NULL,
+                             NULL};
+funtab *dfr_tab = &dfr_tab_rec;
 
 /*
  *  (36) tcwl_tab
  */
+static funtab tcwl_tab_rec = {{
 #define NIFtcwl(it_cwl) it_cwl
-funptr tcwl_tab[] = {
 #include "node_info.mac"
-};
+                              },
+                              NULL,
+                              NULL};
+funtab *tcwl_tab = &tcwl_tab_rec;
 
 /*
  *  (37) spmdinit_tab
  */
+static funtab spmdinit_tab_rec = {{
 #define NIFspmdinit(it_spmdinit) it_spmdinit
-funptr spmdinit_tab[] = {
 #include "node_info.mac"
-};
+                                  },
+                                  NULL,
+                                  NULL};
+funtab *spmdinit_tab = &spmdinit_tab_rec;
 
 /*
  *  (38) spmdopt_tab
  */
+static funtab spmdopt_tab_rec = {{
 #define NIFspmdopt(it_spmdopt) it_spmdopt
-funptr spmdopt_tab[] = {
 #include "node_info.mac"
-};
+                                 },
+                                 NULL,
+                                 NULL};
+funtab *spmdopt_tab = &spmdopt_tab_rec;
 
 /*
  *  (39) spmdlift_tab
  */
+static funtab spmdlift_tab_rec = {{
 #define NIFspmdlift(it_spmdlift) it_spmdlift
-funptr spmdlift_tab[] = {
 #include "node_info.mac"
-};
+                                  },
+                                  NULL,
+                                  NULL};
+funtab *spmdlift_tab = &spmdlift_tab_rec;
 
 /*
  *  (40) syncinit_tab
  */
+static funtab syncinit_tab_rec = {{
 #define NIFsyncinit(it_syncinit) it_syncinit
-funptr syncinit_tab[] = {
 #include "node_info.mac"
-};
+                                  },
+                                  NULL,
+                                  NULL};
+funtab *syncinit_tab = &syncinit_tab_rec;
 
 /*
  *  (41) syncopt_tab
  */
+static funtab syncopt_tab_rec = {{
 #define NIFsyncopt(it_syncopt) it_syncopt
-funptr syncopt_tab[] = {
 #include "node_info.mac"
-};
+                                 },
+                                 NULL,
+                                 NULL};
+funtab *syncopt_tab = &syncopt_tab_rec;
 
 /*
  *  (42) wltrans_tab
  */
+static funtab wltrans_tab_rec = {{
 #define NIFwltrans(it_wltrans) it_wltrans
-funptr wltrans_tab[] = {
 #include "node_info.mac"
-};
+                                 },
+                                 NULL,
+                                 NULL};
+funtab *wltrans_tab = &wltrans_tab_rec;
 
 /*
  *  (43) gsc_tab
  */
+static funtab gsc_tab_rec = {{
 #define NIFgsc(it_gsc) it_gsc
-funptr gsc_tab[] = {
 #include "node_info.mac"
-};
+                             },
+                             NULL,
+                             NULL};
+funtab *gsc_tab = &gsc_tab_rec;
 
 /*
  *  (44) reuse_tab
  */
+static funtab reuse_tab_rec = {{
 #define NIFreuse(it_reuse) it_reuse
-funptr reuse_tab[] = {
 #include "node_info.mac"
-};
+                               },
+                               NULL,
+                               NULL};
+funtab *reuse_tab = &reuse_tab_rec;
 
 /*
  *  (45) o2nWith_tab
  */
+static funtab o2nWith_tab_rec = {{
 #define NIFo2nWith(it_o2nWith) it_o2nWith
-funptr o2nWith_tab[] = {
 #include "node_info.mac"
-};
+                                 },
+                                 NULL,
+                                 NULL};
+funtab *o2nWith_tab = &o2nWith_tab_rec;
 
 /*
  *  (46) sched_tab
  */
+static funtab sched_tab_rec = {{
 #define NIFsched(it_sched) it_sched
-funptr sched_tab[] = {
 #include "node_info.mac"
-};
+                               },
+                               NULL,
+                               NULL};
+funtab *sched_tab = &sched_tab_rec;
 
 /*
  *  (47) conc_tab
  */
+static funtab conc_tab_rec = {{
 #define NIFconc(it_conc) it_conc
-funptr conc_tab[] = {
 #include "node_info.mac"
-};
+                              },
+                              NULL,
+                              NULL};
+funtab *conc_tab = &conc_tab_rec;
 
 /*
  *  (48) opt_tab
  */
+static funtab opt_tab_rec = {{
 #define NIFopt(it_opt) it_opt
-funptr opt_tab[] = {
 #include "node_info.mac"
-};
+                             },
+                             NULL,
+                             NULL};
+funtab *opt_tab = &opt_tab_rec;
 
 /*
  *  (49) wlaa_tab
  */
+static funtab wlaa_tab_rec = {{
 #define NIFwlaa(it_wlaa) it_wlaa
-funptr wlaa_tab[] = {
 #include "node_info.mac"
-};
+                              },
+                              NULL,
+                              NULL};
+funtab *wlaa_tab = &wlaa_tab_rec;
 
 /*
  *  (50) freemask_tab
  */
+static funtab freemask_tab_rec = {{
 #define NIFfreemask(it_freemask) it_freemask
-funptr freemask_tab[] = {
 #include "node_info.mac"
-};
+                                  },
+                                  NULL,
+                                  NULL};
+funtab *freemask_tab = &freemask_tab_rec;
 
 /*
  *  (51) spmdrmtrav_tab
  */
+static funtab spmdrmtrav_tab_rec = {{
 #define NIFspmdrm(it_spmdrm) it_spmdrm
-funptr spmdrmtrav_tab[] = {
 #include "node_info.mac"
-};
+                                    },
+                                    NULL,
+                                    NULL};
+funtab *spmdrmtrav_tab = &spmdrmtrav_tab_rec;
 
 /*
  *  (52) spmdrotrav_tab
  */
+static funtab spmdrotrav_tab_rec = {{
 #define NIFspmdro(it_spmdro) it_spmdro
-funptr spmdrotrav_tab[] = {
 #include "node_info.mac"
-};
+                                    },
+                                    NULL,
+                                    NULL};
+funtab *spmdrotrav_tab = &spmdrotrav_tab_rec;
 
 /*
  *  (53) spmdcons_tab
  */
+static funtab spmdcons_tab_rec = {{
 #define NIFspmdcons(it_spmdcons) it_spmdcons
-funptr spmdcons_tab[] = {
 #include "node_info.mac"
-};
+                                  },
+                                  NULL,
+                                  NULL};
+funtab *spmdcons_tab = &spmdcons_tab_rec;
 
 /*
  *  (54) tsi_tab
  */
+static funtab tsi_tab_rec = {{
 #define NIFtsi(it_tsi) it_tsi
-funptr tsi_tab[] = {
 #include "node_info.mac"
-};
+                             },
+                             NULL,
+                             NULL};
+funtab *tsi_tab = &tsi_tab_rec;
 
 /*
  *  (55) spmdlc_tab
  */
+static funtab spmdlc_tab_rec = {{
 #define NIFspmdlc(it_spmdlc) it_spmdlc
-funptr spmdlc_tab[] = {
 #include "node_info.mac"
-};
+                                },
+                                NULL,
+                                NULL};
+funtab *spmdlc_tab = &spmdlc_tab_rec;
 
 /*
  *  (56) spmddn_tab
  */
+static funtab spmddn_tab_rec = {{
 #define NIFspmddn(it_spmddn) it_spmddn
-funptr spmddn_tab[] = {
 #include "node_info.mac"
-};
+                                },
+                                NULL,
+                                NULL};
+funtab *spmddn_tab = &spmddn_tab_rec;
 
 /*
  *  (57) spmdpm_tab
  */
+static funtab spmdpm_tab_rec = {{
 #define NIFspmdpm(it_spmdpm) it_spmdpm
-funptr spmdpm_tab[] = {
 #include "node_info.mac"
-};
+                                },
+                                NULL,
+                                NULL};
+funtab *spmdpm_tab = &spmdpm_tab_rec;
 
 /*
  *  (58) spmdco_tab
  */
+static funtab spmdco_tab_rec = {{
 #define NIFspmdco(it_spmdco) it_spmdco
-funptr spmdco_tab[] = {
 #include "node_info.mac"
-};
+                                },
+                                NULL,
+                                NULL};
+funtab *spmdco_tab = &spmdco_tab_rec;
 
 /*
  *  (59) ntc_tab
  */
+static funtab ntc_tab_rec = {{
 #define NIFntc(it_ntc) it_ntc
-funptr ntc_tab[] = {
 #include "node_info.mac"
-};
+                             },
+                             NULL,
+                             NULL};
+funtab *ntc_tab = &ntc_tab_rec;
 
 /*
  *  (60) lac2fun_tab
  */
+static funtab lac2fun_tab_rec = {{
 #define NIFlac2fun(it_lac2fun) it_lac2fun
-funptr lac2fun_tab[] = {
 #include "node_info.mac"
-};
+                                 },
+                                 NULL,
+                                 NULL};
+funtab *lac2fun_tab = &lac2fun_tab_rec;
 
 /*
  *  (61) muth_tab
  */
+static funtab muth_tab_rec = {{
 #define NIFmuth(it_muth) it_muth
-funptr muth_tab[] = {
 #include "node_info.mac"
-};
+                              },
+                              NULL,
+                              NULL};
+funtab *muth_tab = &muth_tab_rec;
 
 /*
  *  (62) schin_tab
  */
+static funtab schin_tab_rec = {{
 #define NIFschin(it_schin) it_schin
-funptr schin_tab[] = {
 #include "node_info.mac"
-};
+                               },
+                               NULL,
+                               NULL};
+funtab *schin_tab = &schin_tab_rec;
 
 /*
  *  nnode
@@ -721,15 +913,24 @@ Trav (node *arg_node, node *arg_info)
         DBUG_ASSERT (0, "Trav: tried to traverse into subtree NULL !");
     }
 
-    if (arg_node->nodetype >= N_ok) {
+    if (NODE_TYPE (arg_node) >= N_ok) {
         DBUG_ASSERT (0, "Trav: illegal node type !");
     }
 
-    DBUG_PRINT ("TRAV", ("case %s: node adress: %06x", mdb_nodetype[arg_node->nodetype],
+    DBUG_PRINT ("TRAV", ("case %s: node adress: %06x", mdb_nodetype[NODE_TYPE (arg_node)],
                          arg_node));
 #endif /* not DBUG_OFF */
 
-    result = (*act_tab[arg_node->nodetype]) (arg_node, arg_info);
+    if (*act_tab->prefun != NULL) {
+        arg_node = (*act_tab->prefun) (arg_node, arg_info);
+    }
+
+    result = (*act_tab->travtab[NODE_TYPE (arg_node)]) (arg_node, arg_info);
+
+    if (act_tab->postfun != NULL) {
+        result = (*act_tab->postfun) (result, arg_info);
+    }
+
     linenum = old_linenum;
     filename = old_filename;
 

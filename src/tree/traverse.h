@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2000/01/26 23:25:06  dkr
+ * traverse-mechanism enhanced:
+ * to each traverse-function-table a preprocessing- and a postprecesing-function
+ * is added. These functions are called in Trav() just before and after the
+ * traversal of each node.
+ *
  * Revision 1.2  2000/01/24 18:21:51  jhs
  * Added new traversal and functions for schedule_init.[ch].
  *
@@ -211,74 +217,80 @@
 
 typedef node *(*funptr) (node *, node *);
 
+typedef struct FUNREC {
+    funptr travtab[N_ok + 1];
+    funptr prefun;
+    funptr postfun;
+} funtab;
+
 extern node *Trav (node *arg_node, node *arg_info);
 extern node *TravSons (node *arg_node, node *arg_info);
 extern node *NoTrav (node *arg_node, node *arg_info);
 
-extern funptr *act_tab;
+extern funtab *act_tab;
 
-extern funptr imp_tab[];
-extern funptr flat_tab[];
-extern funptr print_tab[];
-extern funptr type_tab[];
-extern funptr genmask_tab[];
-extern funptr freemask_tab[];
-extern funptr active_tab[];
-extern funptr dcr_tab[];
-extern funptr wlf_tab[];
-extern funptr free_tab[];
-extern funptr cf_tab[];
-extern funptr refcnt_tab[];
-extern funptr comp_tab[];
-extern funptr lir_tab[];
-extern funptr lir_mov_tab[];
-extern funptr dup_tab[];
-extern funptr inline_tab[];
-extern funptr unroll_tab[];
-extern funptr unswitch_tab[];
-extern funptr idx_tab[];
-extern funptr wli_tab[];
-extern funptr ae_tab[];
-extern funptr writesib_tab[];
-extern funptr obj_tab[];
-extern funptr impltype_tab[];
-extern funptr objinit_tab[];
-extern funptr analy_tab[];
-extern funptr checkdec_tab[];
-extern funptr writedec_tab[];
-extern funptr unique_tab[];
-extern funptr rmvoid_tab[];
-extern funptr precomp_tab[];
-extern funptr readsib_tab[];
-extern funptr wlt_tab[];
-extern funptr cse_tab[];
-extern funptr dfr_tab[];
-extern funptr tcwl_tab[];
-extern funptr wltrans_tab[];
-extern funptr spmdinit_tab[];
-extern funptr spmdopt_tab[];
-extern funptr spmdlift_tab[];
-extern funptr syncinit_tab[];
-extern funptr syncopt_tab[];
-extern funptr gsc_tab[];
-extern funptr reuse_tab[];
-extern funptr o2nWith_tab[];
-extern funptr sched_tab[];
-extern funptr conc_tab[];
-extern funptr opt_tab[];
-extern funptr wlaa_tab[];
-extern funptr spmdrmtrav_tab[];
-extern funptr spmdrotrav_tab[];
-extern funptr spmdcons_tab[];
-extern funptr tsi_tab[];
-extern funptr spmdlc_tab[];
-extern funptr spmddn_tab[];
-extern funptr spmdpm_tab[];
-extern funptr spmdco_tab[];
-extern funptr ntc_tab[];
-extern funptr lac2fun_tab[];
-extern funptr muth_tab[];
-extern funptr schin_tab[];
+extern funtab *imp_tab;
+extern funtab *flat_tab;
+extern funtab *print_tab;
+extern funtab *type_tab;
+extern funtab *genmask_tab;
+extern funtab *freemask_tab;
+extern funtab *active_tab;
+extern funtab *dcr_tab;
+extern funtab *wlf_tab;
+extern funtab *free_tab;
+extern funtab *cf_tab;
+extern funtab *refcnt_tab;
+extern funtab *comp_tab;
+extern funtab *lir_tab;
+extern funtab *lir_mov_tab;
+extern funtab *dup_tab;
+extern funtab *inline_tab;
+extern funtab *unroll_tab;
+extern funtab *unswitch_tab;
+extern funtab *idx_tab;
+extern funtab *wli_tab;
+extern funtab *ae_tab;
+extern funtab *writesib_tab;
+extern funtab *obj_tab;
+extern funtab *impltype_tab;
+extern funtab *objinit_tab;
+extern funtab *analy_tab;
+extern funtab *checkdec_tab;
+extern funtab *writedec_tab;
+extern funtab *unique_tab;
+extern funtab *rmvoid_tab;
+extern funtab *precomp_tab;
+extern funtab *readsib_tab;
+extern funtab *wlt_tab;
+extern funtab *cse_tab;
+extern funtab *dfr_tab;
+extern funtab *tcwl_tab;
+extern funtab *wltrans_tab;
+extern funtab *spmdinit_tab;
+extern funtab *spmdopt_tab;
+extern funtab *spmdlift_tab;
+extern funtab *syncinit_tab;
+extern funtab *syncopt_tab;
+extern funtab *gsc_tab;
+extern funtab *reuse_tab;
+extern funtab *o2nWith_tab;
+extern funtab *sched_tab;
+extern funtab *conc_tab;
+extern funtab *opt_tab;
+extern funtab *wlaa_tab;
+extern funtab *spmdrmtrav_tab;
+extern funtab *spmdrotrav_tab;
+extern funtab *spmdcons_tab;
+extern funtab *tsi_tab;
+extern funtab *spmdlc_tab;
+extern funtab *spmddn_tab;
+extern funtab *spmdpm_tab;
+extern funtab *spmdco_tab;
+extern funtab *ntc_tab;
+extern funtab *lac2fun_tab;
+extern funtab *muth_tab;
+extern funtab *schin_tab;
 
 extern int nnode[];
 
