@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2001/05/22 14:57:03  nmw
+ * comments corrected
+ *
  * Revision 1.7  2001/05/18 12:43:02  nmw
  * all unused code removed, comments modified
  *
@@ -1635,7 +1638,7 @@ SSAWLFlet (node *arg_node, node *arg_info)
             Fold (idn, transformation, targetwln, substwln);
             DBUG_PRINT ("WLF", ("                               ...successful"));
             wlf_expr++;
-            /* the WL substwln is now referenced one times less. ##nmw## ???*/
+            /* the WL substwln is now referenced one times less*/
             (NWITH_REFERENCES_FOLDED (substwln))++;
 
             /* unused here */
