@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.7  1995/11/02 13:13:31  cg
+ * Revision 1.8  1995/11/16 19:40:20  cg
+ * new function MakeStr for generating N_str node
+ *
+ * Revision 1.7  1995/11/02  13:13:31  cg
  * added new macros OBJDEF_ARG(n) and renamed IDS_DECL(i)
  * to IDS_VARDEC(i).
  *
@@ -105,7 +108,7 @@ MakeShpseg (nums *numsp)
 
     while (numsp != NULL) {
         if (i >= SHP_SEG_SIZE) {
-            ERROR2 (1, ("ERROR: Maximum number of dimensions exceeded"));
+            SYSABORT (("Maximum number of dimensions exceeded"));
         }
 
         SHPSEG_SHAPE (tmp, i) = NUMS_NUM (numsp);
@@ -908,6 +911,24 @@ MakeBool (int val)
 }
 
 node *
+MakeStr (char *str)
+{
+    node *tmp;
+    DBUG_ENTER ("MakeStr");
+    INIT_NODE (tmp);
+
+    NODE_TYPE (tmp) = N_str;
+    NODE_NNODE (tmp) = 0;
+
+    STR_STRING (tmp) = str;
+
+    DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
+                             mdb_nodetype[NODE_TYPE (tmp)], tmp));
+
+    DBUG_RETURN (tmp);
+}
+
+node *
 MakePrf (prf prf, node *args)
 {
     node *tmp;
@@ -1026,8 +1047,8 @@ MakeIcm (char *name, node *args, node *next)
     ICM_ARGS (tmp) = args;
     ICM_NEXT (tmp) = next;
 
-    DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
-                             mdb_nodetype[NODE_TYPE (tmp)], tmp));
+    DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, /**/
+                             NODE_LINE (tmp), mdb_nodetype[NODE_TYPE (tmp)], tmp));
 
     DBUG_RETURN (tmp);
 }
