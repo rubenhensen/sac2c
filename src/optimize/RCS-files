@@ -13,7 +13,6 @@ SSALIR.c
 SSALIR.h
 SSALUR.c
 SSALUR.h
-WorkReduction.h
 generatemasks.c
 generatemasks.h
 optimize.c
