@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  1999/05/20 14:16:49  cg
+ * added macro MAX_TAG_LENGTH
+ *
  * Revision 1.3  1999/05/10 10:55:31  her
  * removed SAC_CS_CheckArguments; was already in sac_cachesim.h
  *
@@ -16,7 +19,7 @@
  *
  * file:   libsac_cachesim.h
  *
- * prefix:
+ * prefix: SAC_CS
  *
  * description:
  *
@@ -59,5 +62,9 @@ typedef struct sCacheLevel { /* about simulated cache */
 typedef void (*tFunRWAccess) (void * /*baseaddress*/, void * /*elemaddress*/);
 /* Pointer to a function which gets two void* as argument
  * and returns a void */
+
+extern char SAC_CS_separator[];
+
+#define MAX_TAG_LENGTH 70
 
 #endif /* LIBSAC_CACHESIM_H */
