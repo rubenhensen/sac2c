@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  2000/08/01 13:28:17  nmw
+ * header generation for c library internal PHM init function added
+ *
  * Revision 2.1  1999/02/23 12:42:33  sacbase
  * new release made
  *
@@ -42,6 +45,7 @@
 #include "types.h"
 
 extern void GSCPrintFileHeader (node *);
+extern void GSCPrintInternalInitFileHeader (node *syntax_tree);
 extern void GSCPrintMainBegin ();
 extern void GSCPrintMainEnd ();
 

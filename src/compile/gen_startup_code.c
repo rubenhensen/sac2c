@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.26  2000/08/01 13:27:51  nmw
+ * header generation for c library internal PHM init function added
+ *
  * Revision 2.25  2000/07/31 14:43:43  cg
  * Bug fixed in invocation of cache simulation tool.
  *
@@ -770,10 +773,10 @@ GSCfundef (node *arg_node, node *arg_info)
 
 /******************************************************************************
  *
- * function:
+ * function: void GSCPrintFileHeader(node *syntax_tree)
  *
  *
- * description:
+ * description: generated header part of header.h
  *
  *
  *
@@ -789,6 +792,36 @@ GSCPrintFileHeader (node *syntax_tree)
     PrintTargetPlatform ();
     PrintGlobalSwitches ();
     PrintGlobalSettings (syntax_tree);
+    PrintIncludes ();
+    PrintDefines ();
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function: void GSCPrintInternalInitFileHeader(node *syntax_tree)
+ *
+ *
+ * description: generates header part of internal_runtime_init.c
+ *              used when compiling a c library
+ *              code contains part of the startup code from a "real"
+ *              SAC-executeable
+ *
+ *
+ ******************************************************************************/
+void
+GSCPrintInternalInitFileHeader (node *syntax_tree)
+{
+    DBUG_ENTER ("GSCPrintCWrapperFileHeader");
+
+    PrintTargetPlatform ();
+    PrintGlobalSwitches ();
+    PrintGlobalSettings (syntax_tree);
+
+    fprintf (outfile, "#undef SAC_DO_COMPILE_MODULE\n");
+    fprintf (outfile, "#define SAC_DO_COMPILE_MODULE 0\n");
+
     PrintIncludes ();
     PrintDefines ();
 
@@ -815,11 +848,6 @@ GSCPrintMainBegin ()
     DBUG_ENTER ("GSCPrintMainBegin");
 
     funname = PRECObjInitFunctionName ();
-    fprintf (outfile, "  SAC_MT_SETUP_INITIAL();\n");
-    fprintf (outfile, "  SAC_PF_SETUP();\n");
-    fprintf (outfile, "  SAC_HM_SETUP();\n");
-    fprintf (outfile, "  SAC_MT_SETUP();\n");
-    fprintf (outfile, "  SAC_CS_SETUP();\n");
 
     /* call init function for a c library - no command line available */
     if (generatelibrary & GENERATELIBRARY_C) {
