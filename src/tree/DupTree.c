@@ -1,5 +1,11 @@
 /*
  * $Log$
+ * Revision 1.30  2000/07/14 10:10:49  dkr
+ * CopyNodelist() moved from tree_compound.c to DupTree.c and renamed into
+ *   DupNodelist().
+ * DBUG_ASSERTs for DupIds, DupOneIds, DupNodelist added to assure that
+ *   (arg_info == NULL) is hold if these functions are called top-level.
+ *
  * Revision 1.29  2000/07/13 11:59:29  jhs
  * Splited ICM_INDENT into ICM_INDENT_BEFORE and ICM_INDENT_AFTER.
  *
@@ -457,6 +463,9 @@ DupOneIds (ids *old_ids, node *arg_info)
 
     DBUG_ENTER ("DupOneIds");
 
+    DBUG_ASSERT (((arg_info == NULL) || (act_tab == dup_tab)),
+                 "top-level call of DupOneIds() with (arg_info != NULL)");
+
     DBUG_ASSERT ((old_ids != NULL), "ids is NULL");
 
     if ((arg_info != NULL) && (INFO_DUP_TYPE (arg_info) == DUP_INLINE)) {
@@ -511,6 +520,9 @@ DupIds (ids *old_ids, node *arg_info)
 
     DBUG_ENTER ("DupIds");
 
+    DBUG_ASSERT (((arg_info == NULL) || (act_tab == dup_tab)),
+                 "top-level call of DupIds() with (arg_info != NULL)");
+
     new_ids = DupOneIds (old_ids, arg_info);
 
     if (IDS_NEXT (old_ids) != NULL) {
@@ -518,6 +530,40 @@ DupIds (ids *old_ids, node *arg_info)
     }
 
     DBUG_RETURN (new_ids);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   nodelist *DupNodelist( nodelist *nl, node *arg_info)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+nodelist *
+DupNodelist (nodelist *nl, node *arg_info)
+{
+    nodelist *new_nl;
+
+    DBUG_ENTER ("DupNodelist");
+
+    DBUG_ASSERT (((arg_info == NULL) || (act_tab == dup_tab)),
+                 "top-level call of DupNodelist() with (arg_info != NULL)");
+
+    if (nl == NULL) {
+        new_nl = NULL;
+    } else {
+        new_nl = MakeNodelist (SearchInLUT (INFO_DUP_LUT (arg_info), NODELIST_NODE (nl)),
+                               NODELIST_STATUS (nl),
+                               DupNodelist (NODELIST_NEXT (nl), arg_info));
+
+        DBUG_ASSERT ((NODELIST_ATTRIB (new_nl) == NODELIST_ATTRIB (nl)),
+                     "Inconsistent ATTRIBs in Nodelist found!");
+    }
+
+    DBUG_RETURN (new_nl);
 }
 
 /******************************************************************************
@@ -606,7 +652,8 @@ DupTypes (types *source)
  *   within this function).
  *
  ******************************************************************************/
-DFMmask_t
+
+static DFMmask_t
 DupDFMmask (DFMmask_t mask, node *arg_info)
 {
     DFMmask_t new_mask;
@@ -904,14 +951,9 @@ DupFundef (node *arg_node, node *arg_info)
 
     FUNDEF_RETURN (new_node)
       = SearchInLUT (INFO_DUP_LUT (arg_info), FUNDEF_RETURN (arg_node));
-    FUNDEF_NEEDOBJS (new_node) = CopyNodelist (FUNDEF_NEEDOBJS (arg_node));
+    FUNDEF_NEEDOBJS (new_node) = DupNodelist (FUNDEF_NEEDOBJS (arg_node), arg_info);
     FUNDEF_VARNO (new_node) = FUNDEF_VARNO (arg_node);
     FUNDEF_INLREC (new_node) = FUNDEF_INLREC (arg_node);
-
-    if (FUNDEF_BODY (arg_node) != NULL) {
-        FUNDEF_NEEDFUNS (new_node) = CopyNodelist (FUNDEF_NEEDFUNS (arg_node));
-        FUNDEF_NEEDTYPES (new_node) = CopyNodelist (FUNDEF_NEEDTYPES (arg_node));
-    }
 
 #if 0
   FUNDEF_SIB( new_node) = ???;
@@ -967,9 +1009,9 @@ DupBlock (node *arg_node, node *arg_info)
     BLOCK_CACHESIM (new_node) = StringCopy (BLOCK_CACHESIM (arg_node));
 
     BLOCK_VARNO (new_node) = BLOCK_VARNO (arg_node);
+    BLOCK_NEEDFUNS (new_node) = DupNodelist (BLOCK_NEEDFUNS (arg_node), arg_info);
+    BLOCK_NEEDTYPES (new_node) = DupNodelist (BLOCK_NEEDTYPES (arg_node), arg_info);
 #if 0
-  BLOCK_NEEDFUNS( new_node) = ???;
-  BLOCK_NEEDTYPES( new_node) = ???;
   BLOCK_MASK( new_node, ?) = ???;
   BLOCK_SPMD_PROLOG_ICMS( new_node) = ???;
   BLOCK_SPMD_SETUP_ARGS( new_node) = ???;
@@ -994,6 +1036,9 @@ DupTypedef (node *arg_node, node *arg_info)
                             StringCopy (TYPEDEF_MOD (arg_node)),
                             DupTypes (TYPEDEF_TYPE (arg_node)), TYPEDEF_ATTRIB (arg_node),
                             DUPCONT (TYPEDEF_NEXT (arg_node)));
+
+    INFO_DUP_LUT (arg_info) = InsertIntoLUT (INFO_DUP_LUT (arg_info), arg_node, new_node);
+
     TYPEDEF_STATUS (new_node) = TYPEDEF_STATUS (arg_node);
 
 #if 0
@@ -1023,6 +1068,9 @@ DupObjdef (node *arg_node, node *arg_info)
       = MakeObjdef (StringCopy (OBJDEF_NAME (arg_node)),
                     StringCopy (OBJDEF_MOD (arg_node)), DupTypes (OBJDEF_TYPE (arg_node)),
                     DUPTRAV (OBJDEF_EXPR (arg_node)), DUPCONT (OBJDEF_NEXT (arg_node)));
+
+    INFO_DUP_LUT (arg_info) = InsertIntoLUT (INFO_DUP_LUT (arg_info), arg_node, new_node);
+
     OBJDEF_LINKMOD (new_node) = StringCopy (OBJDEF_LINKMOD (arg_node));
     OBJDEF_ATTRIB (new_node) = OBJDEF_ATTRIB (arg_node);
     OBJDEF_STATUS (new_node) = OBJDEF_STATUS (arg_node);
@@ -1610,6 +1658,7 @@ DupNcode (node *arg_node, node *arg_info)
     NCODE_USED (new_node) = 0;
     NCODE_NO (new_node) = NCODE_NO (arg_node);
     NCODE_FLAG (new_node) = NCODE_FLAG (arg_node);
+
     if (NCODE_INC_RC_IDS (arg_node) != NULL) {
         NCODE_INC_RC_IDS (new_node) = DupIds (NCODE_INC_RC_IDS (arg_node), arg_info);
     }
@@ -1905,6 +1954,7 @@ DupWLgridVar (node *arg_node, node *arg_info)
  *   Duplicates a N_mt, especially the DFMmasks are copied.
  *
  ******************************************************************************/
+
 node *
 DupMt (node *arg_node, node *arg_info)
 {
@@ -1931,6 +1981,7 @@ DupMt (node *arg_node, node *arg_info)
  *   Duplicates a N_st, especially the DFMmasks are copied.
  *
  ******************************************************************************/
+
 node *
 DupSt (node *arg_node, node *arg_info)
 {
@@ -1958,6 +2009,7 @@ DupSt (node *arg_node, node *arg_info)
  *   Duplicates a N_MTsignal, especially the DFMmasks are copied.
  *
  ******************************************************************************/
+
 node *
 DupMTsignal (node *arg_node, node *arg_info)
 {
@@ -1966,6 +2018,7 @@ DupMTsignal (node *arg_node, node *arg_info)
     DBUG_ENTER ("DupMTsignal");
 
     new_node = MakeMTsignal ();
+
     MTSIGNAL_IDSET (new_node) = DupDFMmask (MTSIGNAL_IDSET (arg_node), arg_info);
 
     DBUG_RETURN (new_node);
@@ -1980,6 +2033,7 @@ DupMTsignal (node *arg_node, node *arg_info)
  *   Duplicates a N_MTsync, especially the DFMmasks are copied.
  *
  ******************************************************************************/
+
 node *
 DupMTsync (node *arg_node, node *arg_info)
 {
@@ -2005,6 +2059,7 @@ DupMTsync (node *arg_node, node *arg_info)
  *   Duplicates a N_MTalloc, especially the DFMmasks are copied.
  *
  ******************************************************************************/
+
 node *
 DupMTalloc (node *arg_node, node *arg_info)
 {
@@ -2013,6 +2068,7 @@ DupMTalloc (node *arg_node, node *arg_info)
     DBUG_ENTER ("DupMTalloc");
 
     new_node = MakeMTalloc ();
+
     MTALLOC_IDSET (new_node) = DupDFMmask (MTALLOC_IDSET (arg_node), arg_info);
 
     DBUG_RETURN (new_node);
