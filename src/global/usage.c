@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.19  1995/07/07 14:58:38  asi
+ * Revision 1.20  1995/07/14 13:28:11  sbs
+ * nosacopt inserted.
+ *
+ * Revision 1.19  1995/07/07  14:58:38  asi
  * added loop unswitching - basic version
  *
  * Revision 1.18  1995/06/26  15:10:50  asi
@@ -92,6 +95,7 @@ usage (char *prg_name)
 
     printf ("\nOPTIMIZATION OPTIONS:\n");
     printf ("\t -noopt \t\t\t\t  no optimizations\n");
+    printf ("\n\t -nosacopt \t\t\t\t  no sac optimizations\n");
     printf ("\t -noconstant_folding or -noCF \t\t  no constant folding \n");
     printf ("\t -noinline_functions or -noINL\t\t  no function inlineing \n");
     printf ("\t -nounroll_loops or -noUNR \t\t  no loop unrolling \n");
@@ -100,7 +104,7 @@ usage (char *prg_name)
     printf (
       "\t -nopartial_dead_code_removal or -noPDCR  no partial_dead code removal \n");
     printf ("\t -noloop_invariant_removal or -noLIR \t  no loop invariant removal \n");
-    printf ("\t -nopsi_opt\t\t\t\t  no psi optimisations\n");
+    printf ("\n\t -nopsiopt\t\t\t\t  no psi optimisations\n");
     printf ("\t -noindex_vect_elimination or -noIVE \t  no index vector elimination \n");
 
     printf ("\n\t -maxoptvar <no>\treserve <no> variables for optimization\n"
