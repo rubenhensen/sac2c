@@ -1,10 +1,7 @@
 /*
  *
  * $Log$
- * Revision 1.4  2001/03/15 15:25:59  dkr
- * no changes done
- *
- * Revision 1.3  2001/03/15 15:18:11  dkr
+ * Revision 1.5  2001/03/15 15:48:47  dkr
  * signature of Type2String modified
  *
  * Revision 1.2  2001/03/09 11:12:12  sbs
@@ -126,7 +123,7 @@ Fundef2ProfileString (node *fundef)
     str_spc = MAX (str_spc, 0);
     arg = FUNDEF_ARGS (fundef);
     while (arg != NULL) {
-        tmp_str = Type2String (ARG_TYPE (arg), 0);
+        tmp_str = Type2String (ARG_TYPE (arg), 0, TRUE);
         tmp_str = strcat (tmp_str, " ");
         tmp_str = strcat (tmp_str, ARG_NAME (arg));
         str_buff = strncat (str_buff, tmp_str, str_spc);

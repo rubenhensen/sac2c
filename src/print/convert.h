@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2001/03/15 15:47:56  dkr
+ * signature of Type2String modified
+ *
  * Revision 3.1  2000/11/20 17:59:44  sacbase
  * new release made
  *
@@ -36,21 +39,16 @@
  * Revision 1.3  1994/12/14  16:35:39  sbs
  * userdef types integrated
  *
- * Revision 1.2  1994/12/05  13:26:31  hw
- * *** empty log message ***
- *
- *
  */
 
 #ifndef _convert_h
-
 #define _convert_h
 
 #include "types.h"
 
 extern char *type_string[];
 
-extern char *Type2String (types *, int);
+extern char *Type2String (types *type, int flag, bool all);
 extern char *Double2String (double);
 extern char *Float2String (float);
 extern char *Basetype2String (simpletype type);
