@@ -3,6 +3,10 @@
 /*
  *
  * $Log$
+ * Revision 1.142  1997/11/25 12:22:27  sbs
+ * if then else ala C
+ * and a[1] now is recognized as a[[1]]!
+ *
  * Revision 1.141  1997/11/24 18:06:40  sbs
  * new with loop syntax added AND (!!!!)
  * ALL SHIFT/REDUCE ERRORS ELIMINATED !!!!!!!!
@@ -580,7 +584,7 @@ static file_type file_kind = F_prog;
              typedefs, typedef, defs, def2, def3, def4, fundef2,
              objdefs, objdef, exprblock, exprblock2,
              exprblock3, assign, assigns, assignblock, letassign, retassign,
-             selassign, forassign, optretassign, optassignblock,
+             selassign, forassign, optretassign, optassignblock, optelse,
              exprsNOar, exprNOdot, exprORdot, exprNOar, exprNOnum,
              expr, expr_main, expr_ap, expr_ar, expr_num,
              exprs, monop, binop, triop, 
@@ -606,6 +610,9 @@ static file_type file_kind = F_prog;
 %right NOT
 %nonassoc UMINUS
 %nonassoc GENERATOR
+%nonassoc LOWER_THAN_ELSE
+%nonassoc ELSE
+
 
 %start file
 
@@ -1796,11 +1803,11 @@ letassign: ids LET expr
          ;
 
 selassign: IF {$$=MakeNode(N_cond);} BRACKET_L exprNOar BRACKET_R assignblock 
-           ELSE assignblock
+           optelse
            { $$=$<node>2;
              COND_COND($$) = $4;
              COND_THEN($$) = $6;
-             COND_ELSE($$) = $8;
+             COND_ELSE($$) = $7;
 
             DBUG_PRINT("GENTREE",
                        ("%s"P_FORMAT", %s"P_FORMAT", %s"P_FORMAT", %s"P_FORMAT,
@@ -1810,23 +1817,13 @@ selassign: IF {$$=MakeNode(N_cond);} BRACKET_L exprNOar BRACKET_R assignblock
                         mdb_nodetype[$$->node[2]->nodetype], $$->node[2] ));
 
            }
-/*
-         | IF {$$=MakeNode(N_cond);} BRACKET_L exprNOar BRACKET_R assignblock SEMIC
-           { $$=$<node>2;
-             COND_COND($$) = $4;
-             COND_THEN($$) = $6;
- 
-            DBUG_PRINT("GENTREE",
-                       ("%s"P_FORMAT", %s"P_FORMAT", %s"P_FORMAT", "P_FORMAT,
-                        mdb_nodetype[$$->nodetype], $$,
-                        mdb_nodetype[$$->node[0]->nodetype], $$->node[0],
-                        mdb_nodetype[$$->node[1]->nodetype], $$->node[1],
-                        $$->node[2] ));
- 
-           }
-*/
          ;
 
+optelse: ELSE assignblock
+         { $$ = $2; }
+       | /* empty*/                     %prec LOWER_THAN_ELSE
+         { $$ = MakeEmptyBlock( ); } 
+       ;
 
 forassign: DO {$$=MakeNode(N_do);} assignblock WHILE BRACKET_L exprNOar BRACKET_R 
            SEMIC
@@ -2070,7 +2067,7 @@ expr_main: id
       | BRACKET_L expr BRACKET_R 
          { $$=$2;
          }
-      | expr SQBR_L expr SQBR_R
+      | expr SQBR_L exprNOnum SQBR_R
          { $$ = MakePrf( F_psi,
                   MakeExprs( $3, 
                     MakeExprs( $1,
@@ -2085,6 +2082,22 @@ expr_main: id
                        mdb_nodetype[ $$->node[0]->node[1]->node[0]->nodetype ],
                        $$->node[0]->node[1]->node[0]));
          }
+      | expr SQBR_L expr_num SQBR_R
+         { $$ = MakePrf( F_psi,
+                  MakeExprs( MakeArray( MakeExprs( $3, NULL)),
+                    MakeExprs( $1,
+                      NULL)) );
+           NODE_LINE($$) = NODE_LINE( $1);
+ 
+ 
+           DBUG_PRINT("GENTREE",
+                      ("%s (%s)"P_FORMAT": %s"P_FORMAT", %s"P_FORMAT,
+                       mdb_nodetype[ $$->nodetype], mdb_prf[$$->info.prf],$$,
+                       mdb_nodetype[$$->node[0]->node[0]->nodetype],
+                       $$->node[0]->node[0],
+                       mdb_nodetype[ $$->node[0]->node[1]->node[0]->nodetype ],
+                       $$->node[0]->node[1]->node[0]));
+        }
       | expr SQBR_L expr COMMA exprs SQBR_R
          { $$ = MakePrf( F_psi,
                   MakeExprs( MakeArray( MakeExprs( $3, $5)), 
