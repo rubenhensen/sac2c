@@ -223,6 +223,9 @@ MakeAdjustRC (node *avis, int count, node *next_node)
     node *n;
     ids *ids1, *ids2;
 
+    if (count == 0)
+        return next_node;
+
 #ifndef SSARC_DEVELOP
     if ((count == 0) || (TYPES_DIM (VARDEC_TYPE (AVIS_VARDECORARG (avis))) == 0))
         return next_node;
