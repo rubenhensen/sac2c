@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  1998/04/03 12:22:11  srs
+ * added CSENcode()
+ *
  * Revision 1.3  1998/02/25 15:20:20  srs
  * added support for new WL
  *
@@ -27,5 +30,6 @@ extern node *CSEwith (node *arg_node, node *arg_info);
 extern node *CSEassign (node *arg_node, node *arg_info);
 extern node *CSEid (node *arg_node, node *arg_info);
 extern node *CSENwith (node *arg_node, node *arg_info);
+extern node *CSENcode (node *arg_node, node *arg_info);
 
 #endif /* _CSE_h */
