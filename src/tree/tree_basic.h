@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.56  2000/06/23 16:41:04  nmw
+ * macros for INFO_MCW added
+ *
  * Revision 1.55  2000/06/23 15:31:35  nmw
  * N_cwrapper node added
  *
@@ -2150,17 +2153,10 @@ extern node *MakePragma ();
  ***    int        VARNO
  ***
  ***
- ***  when used in print_interface.c  (sorting of fundefs -> wrapper funs)
- ***    node*      FUNDEF             (N_fundef) - link to fundef
- ***    node*      NEXT_FUNDEF        (N_info)   - link to N_info with next fundef of this
- *wrapper
- ***    node*      NEXT_WRAPPER       (N_info)   - link to next wrapper N_info node
- ***    int        RETPOS                        - position of simple returntype (-1 if
- *void)
- ***    int        ARGCOUNT                      - # of arguments
- ***    int        RETCOUNT                      - # of return types
- ***    char*      WRAPPERNAME                   - string with wrapper name
- ***
+ ***  when used in print_interface.c  and map_wrapper.c
+ ***    node*      MODUL
+ ***    int        FLAG
+ ***    char*      NAME
  ***
  ***
  ***  when used in pad_transform.c
@@ -2532,7 +2528,11 @@ extern node *MakeInfo ();
 #define INFO_AI_PREASSIGN(n) (n->node[3])
 #define INFO_AI_POSTASSIGN(n) (n->node[4])
 
-/* when used in print_interface.c  (sorting of fundefs -> wrapper funs) */
+/* when used in print_interface.c  and map_wrapper.c */
+#define INFO_MCW_NAME(n) (n->src_file)
+#define INFO_MCW_MODUL(n) (n->node[0])
+#define INFO_MCW_FLAG(n) (n->flag)
+/*old macros - can be removed soon */
 #define INFO_PIW_FUNDEF(n) (n->node[0])
 #define INFO_PIW_NEXT_FUNDEF(n) (n->node[1])
 #define INFO_PIW_NEXT_WRAPPER(n) (n->node[2])
