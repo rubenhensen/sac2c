@@ -1,5 +1,10 @@
 /*
  * $Log$
+ * Revision 1.3  2004/02/25 08:22:32  cg
+ * Elimination of while-loops by conversion into do-loops with
+ * leading conditional integrated into flatten.
+ * Separate compiler phase while2do eliminated.
+ *
  * Revision 1.2  2004/02/06 14:19:33  mwe
  * replace usage of PHITARGET with primitive phi function
  *
@@ -1391,26 +1396,6 @@ TravRightIDS (ids *arg_ids, node *arg_info)
     arg_ids = SSArightids (arg_ids, arg_info);
 
     DBUG_RETURN (arg_ids);
-}
-
-/******************************************************************************
- *
- * function:
- *  node *SSADummy(node *arg_node, node *arg_info)
- *
- * description:
- *   after lac2fun no more do/while node are allowed in the ast!
- *   this dummy dunctions is called for do and while nodes in SSA traversals.
- *
- ******************************************************************************/
-node *
-SSADummy (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("SSADummy");
-
-    DBUG_ASSERT ((FALSE), "no do- and while-loops allowed in ssa form!");
-
-    DBUG_RETURN (arg_node);
 }
 
 /******************************************************************************

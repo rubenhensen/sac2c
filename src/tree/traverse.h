@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.36  2004/02/25 08:22:32  cg
+ * Elimination of while-loops by conversion into do-loops with
+ * leading conditional integrated into flatten.
+ * Separate compiler phase while2do eliminated.
+ *
  * Revision 3.35  2003/09/17 12:34:05  sbs
  * ts_tab added
  *
@@ -209,7 +214,8 @@ typedef struct FUNREC {
 
 extern node *Trav (node *arg_node, node *arg_info);
 extern node *TravSons (node *arg_node, node *arg_info);
-extern node *NoTrav (node *arg_node, node *arg_info);
+extern node *TravNone (node *arg_node, node *arg_info);
+extern node *TravError (node *arg_node, node *arg_info);
 
 extern funtab *act_tab;
 

@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.27  2004/02/25 08:22:32  cg
+ * Elimination of while-loops by conversion into do-loops with
+ * leading conditional integrated into flatten.
+ * Separate compiler phase while2do eliminated.
+ *
  * Revision 3.26  2003/11/14 15:40:47  sbs
  * mechanism for flattening MG WLs corrected.
  *
@@ -1613,108 +1618,46 @@ FltnCond (node *arg_node, node *arg_info)
  *  node *FltnWhile(node *arg_node, node *arg_info)
  *
  * description:
- *  - traverse the body
- *  - leave only those new entries on the stack that have been
- *    renamings since the renamings are inserted before the while-loop!!
- *  - if the predicate has to be flattened out, duplicate the condition
- *    and insert the new assignment at the end of the while-loop body and
- *    before the while-loop.
- *  - Anyway, invoke flatten on the condition(s) => renaming!
+ *
+ *   N_while nodes are replaced by N_do nodes contained in an
+ *   conditional.
+ *
+ *   while(cond) {               if(cond) {
+ *     body;                -->    do {
+ *   }                               body;
+ *                                 } while(cond);
+ *                               }
  *
  ******************************************************************************/
 
 node *
 FltnWhile (node *arg_node, node *arg_info)
 {
-    node *mem_last_assign, *pred, *pred2, *new_assign, *final_assign;
-    local_stack *mem_tos, *body_stack_seg;
-    int i, body_stack_sz;
+
+    node *new_cond;
+    node *new_do;
 
     DBUG_ENTER ("FltnWhile");
 
-    mem_tos = tos;
-    mem_last_assign = INFO_FLTN_LASTASSIGN (arg_info);
+    /* create new do-node */
+    new_do = MakeDo (WHILE_COND (arg_node), WHILE_BODY (arg_node));
+    NODE_LINE (new_do) = NODE_LINE (arg_node);
 
-    /*
-     * First, we traverse the body of the while-loop.
-     * This guarantees that INFO_FLTN_FINALASSIGN( arg_info)
-     * will be set to the last N_assign in the body of the loop
-     * which may be required for inserting assignments that
-     * flatten the break condition!
-     */
-    WHILE_BODY (arg_node) = Trav (WHILE_BODY (arg_node), arg_info);
-    final_assign = INFO_FLTN_FINALASSIGN (arg_info);
+    /* create cond-node with do-loop in then-part */
+    new_cond
+      = MakeCond (DupTree (DO_COND (new_do)), MakeBlock (MakeAssign (new_do, NULL), NULL),
+                  MakeBlock (MakeEmpty (), NULL));
+    NODE_LINE (new_cond) = NODE_LINE (arg_node);
 
-    body_stack_sz = tos - mem_tos;
-    body_stack_seg = CopyStackSeg (mem_tos, tos);
-    tos = mem_tos;
+    /* delete links in old while-node */
+    WHILE_COND (arg_node) = NULL;
+    WHILE_BODY (arg_node) = NULL;
 
-    for (i = 0; i < body_stack_sz; i++) {
-        if (body_stack_seg[i].id_new != body_stack_seg[i].id_old) {
-            /*
-             * if those two pointers (!) are different, we do have a
-             * variable renaming here which has happend in this with-level
-             * and thus has been inserted BEFORE the while-loop.
-             * Hence, the renamed variable has to be available after
-             * the loop irrespective of the result of the first evaluation
-             * of the break-condition!
-             */
-            PUSH_ENTRY (body_stack_seg[i]);
-        }
-    }
+    /* free old while-node */
+    arg_node = FreeTree (arg_node);
 
-    body_stack_seg = Free (body_stack_seg);
-    INFO_FLTN_LASTASSIGN (arg_info) = mem_last_assign;
-
-    /*
-     * Now, we take care of the predicate of the loop:
-     *   INFO_FLTN_LASTASSIGN( arg_info) points to the actual N_assign,
-     *   INFO_FLTN_FINALASSIGN( arg_info) points to the last N_assign in
-     *     the while-loop body!
-     */
-
-    pred = WHILE_COND (arg_node);
-    if ((NODE_TYPE (pred) == N_ap) || (NODE_TYPE (pred) == N_prf)
-        || (NODE_TYPE (pred) == N_cast)) {
-        /*
-         * abstract the condition out and insert it before the while-loop:
-         */
-        WHILE_COND (arg_node) = Abstract (pred, arg_info);
-
-        /*
-         * Duplicate the new N_assign node, flatten it, and insert the
-         * chain of assignments after INFO_FLTN_FINALASSIGN( arg_info):
-         */
-        new_assign = DupNode (INFO_FLTN_LASTASSIGN (arg_info));
-        DBUG_PRINT ("FLATTEN", ("duplicated %08x to %08x!",
-                                INFO_FLTN_LASTASSIGN (arg_info), new_assign));
-        ASSIGN_NEXT (new_assign) = NULL;
-
-        mem_last_assign = INFO_FLTN_LASTASSIGN (arg_info);
-        new_assign = Trav (new_assign, arg_info);
-
-        if (final_assign == NULL) {
-            DBUG_ASSERT ((NODE_TYPE (WHILE_INSTR (arg_node)) == N_empty),
-                         "INFO_FLTN_FINALASSIGN is NULL although while-body is "
-                         "non-empty");
-            /*
-             * loop-body ist empty so far!
-             */
-            WHILE_INSTR (arg_node) = FreeTree (WHILE_INSTR (arg_node));
-            WHILE_INSTR (arg_node) = new_assign;
-        } else {
-            ASSIGN_NEXT (final_assign) = new_assign;
-        }
-        DBUG_PRINT ("FLATTEN", ("appending %08x to %08x!", new_assign, final_assign));
-        INFO_FLTN_LASTASSIGN (arg_info) = mem_last_assign;
-    }
-
-    /*
-     * Whether abstracted out or not, do flatten the condition:
-     */
-    pred2 = Trav (pred, arg_info);
-    DBUG_ASSERT ((pred == pred2),
-                 "return-node differs from arg_node while flattening an expr!");
+    /* re-traverse transformed node structure */
+    arg_node = Trav (new_cond, arg_info);
 
     DBUG_RETURN (arg_node);
 }

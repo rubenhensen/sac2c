@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.46  2004/02/25 08:22:32  cg
+ * Elimination of while-loops by conversion into do-loops with
+ * leading conditional integrated into flatten.
+ * Separate compiler phase while2do eliminated.
+ *
  * Revision 3.45  2003/09/17 12:55:27  sbs
  * typo eliminated
  *
@@ -248,7 +253,6 @@
 #include "annotate_fun_calls.h"
 #include "SSAConstantFolding.h"
 #include "SSALIR.h"
-#include "while2do.h"
 #include "SSALUR.h"
 #include "SSAWLT.h"
 #include "SSAWLI.h"
@@ -1322,13 +1326,11 @@ funtab *lirmov_tab = &lirmov_tab_rec;
 /*
  *  (96) w2d_tab
  */
-static funtab w2d_tab_rec = {{
-#define NIFw2d(it_w2d) it_w2d
-#include "node_info.mac"
-                             },
-                             NULL,
-                             NULL};
-funtab *w2d_tab = &w2d_tab_rec;
+
+/* w2d_tab removed
+ *
+ * slot could be reused
+ */
 
 /*
  *  (97) ssalur_tab
@@ -1694,8 +1696,31 @@ TravSons (node *arg_node, node *arg_info)
 */
 
 node *
-NoTrav (node *arg_node, node *arg_info)
+TravNone (node *arg_node, node *arg_info)
 {
-    DBUG_ENTER ("NoTrav");
+    DBUG_ENTER ("TravNone");
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *  node *TravError(node *arg_node, node *arg_info)
+ *
+ * description:
+ *
+ *  This function can be used whenever a certain node type is illegal in
+ *  some compiler traversal phase. It helps to detect consistency failures
+ *  in the abstract syntax tree.
+ *
+ ******************************************************************************/
+
+node *
+TravError (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("TravError");
+
+    DBUG_ASSERT ((FALSE), "Illegal node type found.");
+
     DBUG_RETURN (arg_node);
 }

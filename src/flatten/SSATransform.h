@@ -1,5 +1,10 @@
 /*
  * $Log$
+ * Revision 1.2  2004/02/25 08:22:32  cg
+ * Elimination of while-loops by conversion into do-loops with
+ * leading conditional integrated into flatten.
+ * Separate compiler phase while2do eliminated.
+ *
  * Revision 1.1  2004/01/28 16:53:29  skt
  * Initial revision
  *
@@ -61,12 +66,11 @@ extern node *SSAcond (node *arg_node, node *arg_info);
 extern node *SSAreturn (node *arg_node, node *arg_info);
 extern node *SSAap (node *arg_node, node *arg_info);
 
-extern node *SSADummy (node *arg_node, node *arg_info);
-
 extern node *SSATransform (node *ast);
 extern node *SSATransformAllowGOs (node *ast);
 extern node *SSATransformOneFunction (node *fundef);
 extern node *SSATransformOneFundef (node *fundef);
 
 extern node *SSANewVardec (node *old_vardec_or_arg);
+
 #endif /* _SSAtransform_h */

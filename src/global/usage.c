@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.55  2004/02/25 08:22:32  cg
+ * Elimination of while-loops by conversion into do-loops with
+ * leading conditional integrated into flatten.
+ * Separate compiler phase while2do eliminated.
+ *
  * Revision 3.54  2004/02/05 10:37:14  cg
  * Re-factorized handling of different modes in multithreaded code
  * generation:
@@ -329,8 +334,6 @@ Usage ()
 
     PRINT_BREAK_SPEC (PH_sacopt, "inl", "Stop after function inlining.");
     PRINT_BREAK_SPEC (PH_sacopt, "dfr", "Stop after initial dead function removal.");
-    PRINT_BREAK_SPEC (PH_sacopt, "w2d",
-                      "Stop after transf. of while into do loops (ssa only).");
     PRINT_BREAK_SPEC (PH_sacopt, "l2f",
                       "Stop after converting loops and conditionals into");
     CONT_BREAK_SPEC ("functions (ssa only).");
