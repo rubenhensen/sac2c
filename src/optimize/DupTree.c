@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.37  1998/03/20 20:50:42  dkr
+ * changed usage of MakeWLseg
+ *
  * Revision 1.36  1998/03/20 17:25:16  dkr
  * in N_WL... nodes: INNER is now called CONTENTS
  *
@@ -713,7 +716,7 @@ DupWLseg (node *arg_node, node *arg_info)
     node *new_node;
 
     DBUG_ENTER ("DupWLseg");
-    new_node = MakeWLseg (WLSEG_DIM (arg_node),
+    new_node = MakeWLseg (WLSEG_DIMS (arg_node),
                           Trav (WLSEG_CONTENTS (arg_node), arg_info), NULL);
 
     if (WLSEG_NEXT (arg_node) != NULL) {

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.44  1998/03/20 20:51:07  dkr
+ * changed usage of MakeWLseg
+ *
  * Revision 1.43  1998/03/20 17:24:47  dkr
  * in N_WL... nodes: INNER is now called CONTENTS
  *
@@ -1389,15 +1392,17 @@ MakeNWith2 (node *withid, node *seg, node *code, node *withop)
 /*--------------------------------------------------------------------------*/
 
 node *
-MakeWLseg (int dim, node *contents, node *next)
+MakeWLseg (int dims, node *contents, node *next)
 {
     node *new_node;
+    int b;
 
     DBUG_ENTER ("MakeWLseg");
     INIT_NODE (new_node);
 
     NODE_TYPE (new_node) = N_WLseg;
-    WLSEG_DIM (new_node) = dim;
+    WLSEG_DIMS (new_node) = dims;
+
     WLSEG_CONTENTS (new_node) = contents;
     WLSEG_NEXT (new_node) = next;
 
