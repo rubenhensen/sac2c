@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.56  2002/08/12 10:31:11  dkr
+ * no more cc warnings (hopefully)
+ *
  * Revision 3.55  2002/07/31 15:33:54  dkr
  * new hidden tag added
  *
@@ -183,7 +186,7 @@
          || (PRAGMA_NUMPARAMS (FUNDEF_PRAGMA (n)) <= (idx))                              \
          || (!(FUNDEF_REFCOUNTING (n)[idx]))))
 
-#else
+#else /* TAGGED_ARRAYS */
 
 #define FUNDEF_DOES_REFCOUNT(n, idx)                                                     \
     ((FUNDEF_STATUS (n) != ST_Cfun) || (FUNDEF_WANTS_REFCOUNT (n, idx)))
@@ -193,7 +196,7 @@
      && (FUNDEF_REFCOUNTING (n) != NULL)                                                 \
      && (PRAGMA_NUMPARAMS (FUNDEF_PRAGMA (n)) > (idx)) && (FUNDEF_REFCOUNTING (n)[idx]))
 
-#endif
+#endif /* TAGGED_ARRAYS */
 
 #define FUNDEF_HAS_LINKSIGN(n, idx)                                                      \
     (((FUNDEF_STATUS (n) == ST_Cfun) && (FUNDEF_PRAGMA (n) != NULL)                      \
@@ -208,6 +211,8 @@
       && (PRAGMA_NUMPARAMS (FUNDEF_PRAGMA (n)) > (idx)))                                 \
        ? (FUNDEF_LINKSIGN (fundef))[idx]                                                 \
        : ((dots) ? (idx) : ((idx) + 1)))
+
+#ifdef TAGGED_ARRAYS
 
 /******************************************************************************
  *
@@ -271,6 +276,8 @@ LiftIds (ids *ids_arg, node *fundef, types *new_type, node **new_assigns)
 
     DBUG_VOID_RETURN;
 }
+
+#endif
 
 /******************************************************************************
  *
@@ -1210,7 +1217,7 @@ InsertOut (argtab_t *argtab, node *fundef, int param_id, types *rettype, bool *d
     DBUG_RETURN (argtab);
 }
 
-#else
+#else /* TAGGED_ARRAYS */
 
 static argtab_t *
 InsertOut (argtab_t *argtab, node *fundef, int param_id, types *rettype, bool *dots,
@@ -1320,7 +1327,7 @@ InsertOut (argtab_t *argtab, node *fundef, int param_id, types *rettype, bool *d
     DBUG_RETURN (argtab);
 }
 
-#endif
+#endif /* TAGGED_ARRAYS */
 
 /******************************************************************************
  *
@@ -1429,7 +1436,7 @@ InsertIn (argtab_t *argtab, node *fundef, int param_id, node *arg, bool *dots)
     DBUG_RETURN (argtab);
 }
 
-#else
+#else /* TAGGED_ARRAYS */
 
 static argtab_t *
 InsertIn (argtab_t *argtab, node *fundef, int param_id, node *arg, bool *dots)
@@ -1529,7 +1536,7 @@ InsertIn (argtab_t *argtab, node *fundef, int param_id, node *arg, bool *dots)
     DBUG_RETURN (argtab);
 }
 
-#endif
+#endif /* TAGGED_ARRAYS */
 
 /******************************************************************************
  *
@@ -1754,9 +1761,13 @@ PREC2let (node *arg_node, node *arg_info)
     argtab_t *ap_argtab, *argtab;
     ids *ap_ids;
     types *rettypes;
-    node *ap_exprs, *ap_id, *args;
+    node *ap_exprs;
+    node *args;
     int idx, dots_off;
+#ifdef TAGGED_ARRAYS
+    node *ap_id;
     shape_class_t actual_cls, formal_cls;
+#endif /* TAGGED_ARRAYS */
 
     DBUG_ENTER ("PREC2let");
 
@@ -1806,7 +1817,7 @@ PREC2let (node *arg_node, node *arg_info)
                              &(INFO_PREC2_POST_ASSIGNS (arg_info)));
                 }
             }
-#endif
+#endif /* TAGGED_ARRAYS */
 
             ap_ids = IDS_NEXT (ap_ids);
             if (TYPES_BASETYPE (rettypes) != T_dots) {
@@ -1848,7 +1859,7 @@ PREC2let (node *arg_node, node *arg_info)
                                  TRUE, &(INFO_PREC2_PRE_ASSIGNS (arg_info)));
                 }
             }
-#endif
+#endif /* TAGGED_ARRAYS */
 
             ap_exprs = EXPRS_NEXT (ap_exprs);
             if (ARG_BASETYPE (args) != T_dots) {
@@ -1883,7 +1894,9 @@ PREC2let (node *arg_node, node *arg_info)
 node *
 PREC2ap (node *arg_node, node *arg_info)
 {
+#ifdef TAGGED_ARRAYS
     node *args, *arg;
+#endif /* TAGGED_ARRAYS */
 
     DBUG_ENTER ("PREC2ap");
 
@@ -1926,7 +1939,7 @@ PREC2ap (node *arg_node, node *arg_info)
 
         args = EXPRS_NEXT (args);
     }
-#endif
+#endif /* TAGGED_ARRAYS */
 
     DBUG_RETURN (arg_node);
 }
