@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.8  1995/01/05 12:44:39  sbs
+ * Revision 1.9  1995/06/23 12:30:21  hw
+ * -changed Type2String to use for renameing of functions
+ * - added new "type-string-table" rename_type[]
+ *
+ * Revision 1.8  1995/01/05  12:44:39  sbs
  * TIF macro inserted
  *
  * Revision 1.7  1995/01/05  11:51:25  sbs
@@ -41,12 +45,19 @@
 #define INT_STRING_LENGTH 16 /* dimension of array of char */
 
 /* strings for primitve types */
-#define TYP_IF(n, d, p) p
+#define TYP_IF(n, d, p, f) p
 
 char *type_string[] = {
 #include "type_info.mac"
 };
+#undef TYP_IF
 
+/* strings for primitve types used for renaming of functions*/
+#define TYP_IF(n, d, p, f) f
+
+char *rename_type[] = {
+#include "type_info.mac"
+};
 #undef TYP_IF
 
 /*
@@ -55,8 +66,10 @@ char *type_string[] = {
  *  arguments     :  1) pointer to type-structure
  *                   2) flag
  *  description   : convertes the infomation in type to a string
- *                  if flag ==1 then the identifier type->id is also put into
- *                     the resulting string
+ *                  flag ==1: the identifier type->id is also put into
+ *                            the resulting string
+ *                  flag ==2: used for renaming of functions( lookup type-name
+ *                            in rename_type[] instead of type_string[])
  *  global vars   : ---
  *  internal funs : ---
  *  external funs : strcat, malloc, sprintf
@@ -66,7 +79,7 @@ char *type_string[] = {
  *
  */
 char *
-Type2String (types *type, int print_id)
+Type2String (types *type, int flag)
 {
     char *tmp_string;
 
@@ -80,7 +93,10 @@ Type2String (types *type, int print_id)
             strcat (tmp_string, type->name_mod);
             strcat (tmp_string, MOD_NAME_CON);
         }
-        strcat (tmp_string, SIMPLE2STR (type));
+        if (2 == flag)
+            strcat (tmp_string, SIMPLE4FUN_RENAME (type));
+        else
+            strcat (tmp_string, SIMPLE2STR (type));
 
         if (0 != type->dim)
             if (-1 == type->dim)
@@ -88,20 +104,28 @@ Type2String (types *type, int print_id)
             else {
                 int i;
                 static char int_string[INT_STRING_LENGTH];
-
-                strcat (tmp_string, "[ ");
+                if (2 == flag)
+                    strcat (tmp_string, "_");
+                else
+                    strcat (tmp_string, "[");
                 for (i = 0; i < type->dim; i++)
                     if (i != (type->dim - 1)) {
                         DBUG_PRINT ("PRINT", ("shp[%d]=%d", i, type->shpseg->shp[i]));
-                        sprintf (int_string, "%d, ", type->shpseg->shp[i]);
+                        if (2 == flag)
+                            sprintf (int_string, "%d_", type->shpseg->shp[i]);
+                        else
+                            sprintf (int_string, "%d, ", type->shpseg->shp[i]);
                         strcat (tmp_string, int_string);
                     } else {
                         DBUG_PRINT ("PRINT", ("shp[%d]=%d", i, type->shpseg->shp[i]));
-                        sprintf (int_string, "%d ]", type->shpseg->shp[i]);
+                        if (2 == flag)
+                            sprintf (int_string, "%d_", type->shpseg->shp[i]);
+                        else
+                            sprintf (int_string, "%d]", type->shpseg->shp[i]);
                         strcat (tmp_string, int_string);
                     }
             }
-        if ((NULL != type->id) && print_id) {
+        if ((NULL != type->id) && (1 == flag)) {
             strcat (tmp_string, " ");
             strcat (tmp_string, type->id);
         }
