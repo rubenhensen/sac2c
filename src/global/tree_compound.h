@@ -1,7 +1,14 @@
 /*
  *
  * $Log$
- * Revision 1.10  1995/10/24 13:13:31  cg
+ * Revision 1.11  1995/10/26 16:01:44  cg
+ *  macro MOD_NAME_CON replaced by new global variable mod_name_con
+ *  Now, different strings can be used for combining module name and
+ * item name with respect to the compilation phase.
+ * Macro CMP_TYPE_USER_NONSTRICT removed.
+ * New macro NODE_NEXT(n)
+ *
+ * Revision 1.10  1995/10/24  13:13:31  cg
  * new macro CMP_TYPE_USER_NONSTRICT
  *
  * Revision 1.9  1995/10/22  17:29:59  cg
@@ -88,9 +95,14 @@ specific implementation of a function should remain with the source code.
 /*--------------------------------------------------------------------------*/
 
 #define MOD_NAME_CON "__"
+
 #define MOD(a) (NULL == a) ? "" : a
 #define MOD_CON(a) (NULL == a) ? "" : MOD_NAME_CON
 #define MOD_NAME(a) MOD (a), MOD_CON (a)
+
+extern char *mod_name_con;
+extern char mod_name_con_1[];
+extern char mod_name_con_2[];
 
 /*
  *
@@ -193,29 +205,6 @@ extern shpseg *MergeShpseg (shpseg *first, int dim1, shpseg *second, int dim2);
                                                                                          \
     ((!strcmp (TYPES_NAME (a), TYPES_NAME (b)))                                          \
      && (!strcmp (MOD (TYPES_MOD (a)), MOD (TYPES_MOD (b)))))
-
-/*
- *
- *  macro name    : CMP_TYPE_USER_NONSTRICT
- *  arg types     : 1) types*
- *                  2) types*
- *  result type   : int
- *  description   : compares two user-defined types (name and module)
- *                  Names must be equal. Module names must be equal if
- *                  both are present. If one module name is missing, this
- *                  macro may nevertheless result in "1".
- *  global vars   : ---
- *  funs          : ---
- *
- *  remarks       : result: 1 - equal, 0 - not equal
- *
- */
-
-#define CMP_TYPE_USER_NONSTRICT(a, b)                                                    \
-                                                                                         \
-    ((!strcmp (TYPES_NAME (a), TYPES_NAME (b)))                                          \
-     && (!strcmp (MOD (TYPES_MOD (a)), MOD (TYPES_MOD (b))) || (TYPES_MOD (a) == NULL)   \
-         || (TYPES_MOD (b) == NULL)))
 
 /*--------------------------------------------------------------------------*/
 
@@ -326,6 +315,31 @@ extern void StoreUnresolvedNodes (nodelist *inserts, node *fundef, statustype st
 /*--------------------------------------------------------------------------*/
 /*  macros and functions for node structures                                */
 /*--------------------------------------------------------------------------*/
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  general :
+ ***/
+
+#define NODE_NEXT(n)                                                                     \
+                                                                                         \
+    (NODE_TYPE (n) == N_fundef                                                           \
+       ? FUNDEF_NEXT (n)                                                                 \
+       : (NODE_TYPE (n) == N_objdef                                                      \
+            ? OBJDEF_NEXT (n)                                                            \
+            : (NODE_TYPE (n) == N_typedef                                                \
+                 ? TYPEDEF_NEXT (n)                                                      \
+                 : (NODE_TYPE (n) == N_implist                                           \
+                      ? IMPLIST_NEXT (n)                                                 \
+                      : (NODE_TYPE (n) == N_arg                                          \
+                           ? ARG_NEXT (n)                                                \
+                           : (NODE_TYPE (n) == N_vardec                                  \
+                                ? VARDEC_NEXT (n)                                        \
+                                : (NODE_TYPE (n) == N_assign                             \
+                                     ? ASSIGN_NEXT (n)                                   \
+                                     : (NODE_TYPE (n) == N_exprs ? EXPRS_NEXT (n)        \
+                                                                 : NULL))))))))
+
 /*--------------------------------------------------------------------------*/
 
 /***
