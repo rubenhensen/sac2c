@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.46  2004/11/22 12:37:05  sah
+  some changes
+
   Revision 1.45  2004/11/21 14:22:39  skt
   extend Dataflowgraph and Dataflownode
 
@@ -176,16 +179,12 @@
     <type name="DownLink" ctype="node*" init="NULL" copy="hash" persist="no" />
     <type name="IntegerArray" ctype="int*" init="NULL"
     copy="function" />
-    <type name="Nums" ctype="nums*" init="NULL" copy="function" />
     <type name="FileType" ctype="file_type" init="F_unknown"
     copy="literal" />
-    <type name="LUT" ctype="LUT_t" init="NULL" copy="function" persist="no" />
-    <type name="WithOpType" ctype="WithOpType" init="WO_unknown"
-    copy="literal" />
+    <type name="LUT" ctype="LUT_t*" init="NULL" copy="function" persist="no" />
     <type name="Prf" ctype="prf" init="0" copy="literal" />
     <type name="Mask" ctype="long*" size="7" init="NULL"
     copy="function" />
-    <type name="Deps" ctype="deps*" init="NULL" copy="function" />
     <type name="Ids" ctype="ids*" init="NULL" copy="function" />
     <type name="StatusType" ctype="statustype" init="ST_undef"
     copy="literal" />
@@ -193,11 +192,11 @@
     copy="function" />
     <type name="SharedNodeList" ctype="nodelist*" init="NULL"
     copy="function" />
-    <type name="DFMMask" ctype="DFMmask_t" init="NULL"
+    <type name="DFMask" ctype="dfmask_t*" init="NULL"
     copy="function" persist="no" />
-    <type name="DFMMaskBase" ctype="DFMmask_base_t" init="NULL"
+    <type name="DFMaskBase" ctype="dfmask_base_t*" init="NULL"
     copy="function" persist="no" />
-    <type name="DFMFoldMask" ctype="DFMfoldmask_t*" init="NULL"
+    <type name="DFFoldMask" ctype="dffoldmask_t*" init="NULL"
     copy="function" persist="no" />
     <type name="NewType" ctype="ntype*" init="NULL"
     copy="function" />
@@ -221,9 +220,9 @@
     copy="function" />
     <type name="IntegerPointerArray" ctype="int*" size="7"
     init="NULL" copy="function" />
-    <type name="Scheduling" ctype="SCHsched_t" init="NULL"
+    <type name="Scheduling" ctype="sched_t*" init="NULL"
     copy="function" persist="no" />
-    <type name="TaskSel" ctype="SCHtasksel_t" init="NULL"
+    <type name="TaskSel" ctype="tasksel_t*" init="NULL"
     copy="function" persist="no" />
     <type name="NodePointer" ctype="node**" init="NULL"
     copy="function" />
@@ -236,7 +235,7 @@
     copy="literal" />
     <type name="RCCounter" ctype="rc_counter*" init="NULL"
     copy="function" persist="no" />
-    <type name="StringSet" ctype="stringset_t *" init="NULL"
+    <type name="StringSet" ctype="stringset_t*" init="NULL"
     copy="function" persist="no" />
   </attributetypes>
   <nodesets>
@@ -248,7 +247,7 @@
         <node name="Char" />
         <node name="Bool" />
         <node name="Id" />
-        <node name="NWith" />
+        <node name="With" />
         <node name="Array" />
         <node name="Ap" />
         <node name="Prf" />
@@ -276,9 +275,16 @@
 	<node name="Provide" />
       </target>
     </nodeset>
+    <nodeset name="WithOp">
+      <target>
+        <node name="Genarray" />
+	<node name="Modarray" />
+	<node name="Fold" />
+      </target>
+    </nodeset>
   </nodesets>
   <syntaxtree version="1.0">
-    <node name="Modul">
+    <node name="Module">
       <description>node for a module declaration</description>
       <sons>
         <son name="Imports" mandatory="no">
@@ -334,17 +340,6 @@
             <range from="scanparse" to="objinit"/>
           </phases>
         </attribute>
-        <attribute name="Decl" mandatory="yes">
-          <type name="Link">
-            <target>
-              <node name="Moddec" />
-              <node name="Classdec" />
-            </target>
-          </type>
-          <phases>
-            <range from="check-dec" to="write-sib" />
-          </phases>
-        </attribute>
         <attribute name="WrapperFuns" mandatory="yes">
           <type name="LUT" />
           <phases>
@@ -388,13 +383,7 @@
           </phases>
         </attribute>
         <attribute name="Mod" mandatory="no">
-          <type name="SharedString" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
-        <attribute name="Type" default="NULL" mandatory="no">
-          <type name="OldType" />
+          <type name="String" />
           <phases>
             <all />
           </phases>
@@ -403,25 +392,6 @@
           <type name="NewType" />
           <phases>
             <all />
-          </phases>
-        </attribute>
-        <attribute name="Attrib" mandatory="yes">
-          <type name="StatusType" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
-        <attribute name="Status" default="ST_regular"
-        mandatory="yes">
-          <type name="StatusType" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
-        <attribute name="Impl" mandatory="no">
-          <type name="OldType" />
-          <phases>
-            <range from="import" to="writesib" />
           </phases>
         </attribute>
         <attribute name="Pragma" mandatory="no">
@@ -437,23 +407,13 @@
         <attribute name="CopyFun" mandatory="no">
           <type name="String" />
           <phases>
-            <range from="readsib" to="final" />
+            <range from="resolvepragma" to="final" />
           </phases>
         </attribute>
         <attribute name="FreeFun" mandatory="no">
           <type name="String" />
           <phases>
-            <range from="readsib" to="final" />
-          </phases>
-        </attribute>
-        <attribute name="TypeDec_Def" mandatory="no">
-          <type name="Link">
-            <target>
-              <node name="Typedef" />
-            </target>
-          </type>
-          <phases>
-            <range from="checkdec" to="writesib" />
+            <range from="resolvepragma" to="final" />
           </phases>
         </attribute>
         <attribute name="Icm" mandatory="no">
@@ -474,9 +434,9 @@
 	</attribute>
       </attributes>
       <flags>
-        <flag name="Exported" />
-        <flag name="Provided" />
-	<flag name="Local" default="true"/>
+        <flag name="IsExported" />
+        <flag name="IsProvided" />
+	<flag name="IsLocal" default="true"/>
       </flags>
     </node>
     <node name="Objdef">
@@ -486,6 +446,11 @@
             <set name="Expr" />
           </target>
         </son>
+	<son name="Avis" mandatory="yes">
+	  <target>
+	    <node name="Avis" />
+	  </target>
+	</son>
         <son name="Next" mandatory="no">
           <target>
             <node name="Objdef" />
@@ -493,45 +458,8 @@
         </son>
       </sons>
       <attributes>
-        <attribute name="Name" mandatory="yes">
-          <type name="String" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
         <attribute name="Mod" mandatory="yes">
           <type name="String" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
-        <attribute name="Type" mandatory="yes">
-          <type name="OldType" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
-        <attribute name="Attrib" default="ST_regular"
-        mandatory="yes">
-          <type name="StatusType" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
-        <attribute name="Status" default="ST_regular"
-        mandatory="yes">
-          <type name="StatusType" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
-        <attribute name="Avis" default="MakeAvis(this)"
-        mandatory="yes">
-          <type name="Link">
-            <target>
-              <node name="Avis" />
-            </target>
-          </type>
           <phases>
             <all />
           </phases>
@@ -539,7 +467,7 @@
         <attribute name="VarName" mandatory="yes">
           <type name="String" />
           <phases>
-            <range from="typecheck" to="final" />
+            <phase name="objdects" />
           </phases>
         </attribute>
         <attribute name="Pragma" mandatory="yes">
@@ -549,7 +477,7 @@
             </target>
           </type>
           <phases>
-            <range from="import" to="final" />
+            <range from="scanparse" to="final" />
           </phases>
         </attribute>
         <attribute name="Arg" mandatory="yes">
@@ -580,13 +508,25 @@
 	</attribute>
       </attributes>
       <flags>
-        <flag name="Exported" />
-        <flag name="Provided" />
-	<flag name="Local" default="true"/>
+        <flag name="IsExported" />
+        <flag name="IsProvided" />
+	<flag name="IsLocal" default="true"/>
+        <flag name="IsExtern" />
+        <flag name="IsInline" />
+        <flag name="IsDoFun" />
+        <flag name="IsCondFun" />
+        <flag name="AllowsInfix" />
+        <flag name="HasDotArgs" />
+        <flag name="HasDotRets" />
       </flags>
     </node>
     <node name="Fundef">
       <sons>
+        <son name="Rets" mandatory="no">
+	  <target>
+	    <node name="Ret" />
+	  </target>
+	</son>
         <son name="Args" mandatory="no">
           <target>
             <node name="Arg" />
@@ -624,49 +564,11 @@
         <attribute name="SymbolName" default="NULL" mandatory="no">
           <type name="String" />
           <phases>
-            <all />
+            <range from="export" to="final" />
           </phases>
         </attribute>
-        <attribute name="Types" mandatory="yes">
-          <type name="OldType" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
-        <attribute name="Type" default="NULL" mandatory="yes">
+        <attribute name="WrapperType" default="NULL" mandatory="yes">
           <type name="NewType" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
-        <attribute name="Ret_Type" default="NULL" mandatory="yes">
-          <type name="NewType" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
-        <attribute name="Status" default="ST_regular"
-        mandatory="yes">
-          <type name="StatusType" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
-        <attribute name="Attrib" default="ST_regular"
-        mandatory="yes">
-          <type name="StatusType" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
-        <attribute name="Inline" default="FALSE" mandatory="yes">
-          <type name="Bool" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
-        <attribute name="Infix" default="FALSE" mandatory="yes">
-          <type name="Bool" />
           <phases>
             <all />
           </phases>
@@ -674,7 +576,7 @@
         <attribute name="FunNo" default="0" mandatory="yes">
           <type name="Integer" />
           <phases>
-            <all />
+            <phase name="annotatefuncalls" />
           </phases>
         </attribute>
         <attribute name="Pragma" default="NULL" mandatory="no">
@@ -689,8 +591,6 @@
         </attribute>
         <attribute name="Used" default="USED_INACTIVE"
         mandatory="no">
-          <description>only for ST_condfun, ST_dofun und
-          ST_whilefun</description>
           <type name="Integer" />
           <phases>
             <all />
@@ -721,16 +621,6 @@
             <all />
           </phases>
         </attribute>
-        <attribute name="Sib" mandatory="yes">
-          <type name="Node">
-            <target>
-              <node name="Sib" />
-            </target>
-          </type>
-          <phases>
-            <phase name="readsib" />
-          </phases>
-        </attribute>
         <attribute name="Specs" mandatory="yes">
           <type name="Integer" />
           <phases>
@@ -757,16 +647,6 @@
             <phase name="typecheck" />
           </phases>
         </attribute>
-        <attribute name="RetAlias" mandatory="no">
-          <type name="NodeList">
-            <target>
-              <node name="Bool" />
-            </target>
-          </type>
-          <phases>
-            <range from="emaa" to="final" />
-          </phases>
-        </attribute>
         <attribute name="Icm" mandatory="yes">
           <type name="Node">
             <target>
@@ -789,12 +669,6 @@
             <phase name="inline" />
           </phases>
         </attribute>
-        <attribute name="Export" mandatory="yes">
-          <type name="Bool" />
-          <phases>
-            <phase name="dfr" />
-          </phases>
-        </attribute>
         <attribute name="TCStat" mandatory="yes">
           <type name="Integer" />
           <phases>
@@ -802,7 +676,7 @@
           </phases>
         </attribute>
         <attribute name="DFM_Base" mandatory="yes">
-          <type name="DFMMaskBase" />
+          <type name="DFMaskBase" />
           <phases>
             <range from="rc" to="final" />
             <range from="fun2lac" to="final" />
@@ -856,34 +730,19 @@
 	</attribute>
       </attributes>
       <flags>
-        <flag name="Exported" />
-        <flag name="Provided" />
-	<flag name="Local" default="true" />
+        <flag name="IsExported" />
+        <flag name="IsProvided" />
+	<flag name="IsLocal" default="true" />
+        <flag name="IsNeeded" />
       </flags>
-    </node>
-    <node name="TCFunInfo">
-      <sons>
-        <son name="Def" mandatory="yes">
-          <target>
-            <node name="Fundef" />
-          </target>
-        </son>
-        <son name="Down" mandatory="yes">
-          <target>
-            <node name="Fundef" />
-          </target>
-        </son>
-        <son name="Up" mandatory="yes">
-          <target>
-            <node name="Exprs" />
-          </target>
-        </son>
-      </sons>
-      <attributes></attributes>
-      <flags></flags>
     </node>
     <node name="Arg">
       <sons>
+        <son name="Avis" mandatory="yes">
+	  <target>
+	    <son name="Avis" />
+	  </target>
+	</son>
         <son name="Next" mandatory="no">
           <target>
             <node name="Arg" />
@@ -891,37 +750,8 @@
         </son>
       </sons>
       <attributes>
-        <attribute name="Name" mandatory="yes">
-          <type name="String" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
-        <attribute name="Type" mandatory="yes">
+        <attribute name="Type"  default="NULL" mandatory="yes">
           <type name="OldType" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
-        <attribute name="Status" mandatory="yes">
-          <type name="StatusType" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
-        <attribute name="Attrib" mandatory="yes">
-          <type name="StatusType" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
-        <attribute name="Avis" default="MakeAvis( this)"
-        mandatory="yes">
-          <type name="Node">
-            <target>
-              <node name="Avis" />
-            </target>
-          </type>
           <phases>
             <all />
           </phases>
@@ -930,24 +760,6 @@
           <type name="Integer" />
           <phases>
             <range from="optimize" to="final" />
-          </phases>
-        </attribute>
-        <attribute name="RefCnt" mandatory="yes">
-          <type name="Integer" />
-          <phases>
-            <range from="refcount" to="final" />
-          </phases>
-        </attribute>
-        <attribute name="Naive_RefCnt" mandatory="yes">
-          <type name="Integer" />
-          <phases>
-            <range from="refcount" to="final" />
-          </phases>
-        </attribute>
-        <attribute name="Padded" mandatory="yes">
-          <type name="Bool" />
-          <phases>
-            <range from="ap" to="final" />
           </phases>
         </attribute>
         <attribute name="TypeString" mandatory="yes">
@@ -987,7 +799,7 @@
           </phases>
         </attribute>
         <attribute name="Fundef" mandatory="yes">
-          <type name="Link">
+          <type name="ExtLink">
             <target>
               <node name="Fundef" />
             </target>
@@ -996,14 +808,11 @@
             <range from="psi-optimize" to="final" />
           </phases>
         </attribute>
-	<attribute name="Alias" default="TRUE" mandatory="yes">
-	  <type name="Bool" />
-	  <phases>
-	    <phase name="aliasanalysis" />
-	  </phases>
-	</attribute>
       </attributes>
-      <flags></flags>
+      <flags>
+        <flag name="IsPadded" />
+        <flag name="IsAlias" default="TRUE" />
+      </flags>
     </node>
     <node name="Block">
       <sons>
@@ -1024,26 +833,6 @@
           <type name="String" />
           <phases>
             <all />
-          </phases>
-        </attribute>
-        <attribute name="NeedFuns" mandatory="yes">
-          <type name="NodeList">
-            <target>
-              <node name="Fundef" />
-            </target>
-          </type>
-          <phases>
-            <range from="analysis" to="final" />
-          </phases>
-        </attribute>
-        <attribute name="NeedTypes" mandatory="yes">
-          <type name="NodeList">
-            <target>
-              <node name="Typedef" />
-            </target>
-          </type>
-          <phases>
-            <range from="analysis" to="final" />
           </phases>
         </attribute>
         <attribute name="VarNo" mandatory="yes">
@@ -1099,7 +888,7 @@
             </target>
           </type>
           <phases>
-            <range from="multithread" to="multithread" />
+            <phase name="multithread" />
           </phases>
         </attribute>
       </attributes>
@@ -1107,6 +896,11 @@
     </node>
     <node name="Vardec">
       <sons>
+        <son name="Avis" mandatory="yes">
+	  <target>
+	    <node name="Avis" />
+	  </target>
+	</son>
         <son name="Next" mandatory="no">
           <target>
             <node name="Vardec" />
@@ -1114,32 +908,8 @@
         </son>
       </sons>
       <attributes>
-        <attribute name="Name" mandatory="yes">
-          <type name="String" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
         <attribute name="Type" mandatory="yes">
           <type name="OldType" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
-        <attribute name="Status" default="ST_regular"
-        mandatory="yes">
-          <type name="StatusType" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
-        <attribute name="Avis" default="MakeAvis( this)"
-        mandatory="yes">
-          <type name="Node">
-            <target>
-              <node name="Avis" />
-            </target>
-          </type>
           <phases>
             <all />
           </phases>
@@ -1174,41 +944,10 @@
             <range from="psi-optimize" to="end" />
           </phases>
         </attribute>
-        <attribute name="RefCnt" mandatory="yes">
-          <type name="Integer" />
-          <phases>
-            <range from="refcount" to="final" />
-          </phases>
-        </attribute>
-        <attribute name="Naive_RefCnt" mandatory="yes">
-          <type name="Integer" />
-          <phases>
-            <range from="refcnt" to="final" />
-          </phases>
-        </attribute>
         <attribute name="VarNo" mandatory="yes">
           <type name="Integer" />
           <phases>
             <range from="optimize" to="final" />
-          </phases>
-        </attribute>
-        <attribute name="Attrib" default="ST_regular"
-        mandatory="yes">
-          <type name="StatusType" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
-        <attribute name="Flag" mandatory="yes">
-          <type name="Integer" />
-          <phases>
-            <range from="ael" to="dcr2" />
-          </phases>
-        </attribute>
-        <attribute name="Padded" mandatory="yes">
-          <type name="Bool" />
-          <phases>
-            <range from="ap" to="final" />
           </phases>
         </attribute>
         <attribute name="Icm" mandatory="no">
@@ -1222,7 +961,10 @@
           </phases>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags>
+        <flag name="IsPadded" />
+        <flag name="HasBeenEliminated" />
+      </flags>
     </node>
     <node name="Assign">
       <sons>
@@ -1298,7 +1040,7 @@
         <attribute name="Visited_With" mandatory="no">
           <type name="Link">
             <target>
-              <node name="NWith" />
+              <node name="With" />
             </target>
           </type>
           <phases>
@@ -1308,7 +1050,7 @@
         <attribute name="Tag" mandatory="no">
           <type name="Link">
             <target>
-              <node name="NWith" />
+              <node name="With" />
             </target>
           </type>
           <phases>
@@ -1726,17 +1468,17 @@
       <sons>
         <son name="If" mandatory="yes">
           <target>
-            <node name="Exprs" />
+            <node name="Id" />
           </target>
         </son>
         <son name="Then" mandatory="yes">
           <target>
-            <node name="Exprs" />
+            <node name="Id" />
           </target>
         </son>
         <son name="Else" mandatory="yes">
           <target>
-            <node name="Exprs" />
+            <node name="Id" />
           </target>
         </son>
       </sons>
@@ -2102,7 +1844,18 @@
       <flags></flags>
     </node>
     <node name="Pragma">
-      <sons></sons>
+      <sons>
+        <son name="ReadOnly" mandatory="no">
+	  <target>
+	    <node name="Nums" />
+	  </target>
+	</son>
+	<son name="Refcounting" mandatory="no">
+	  <target name="Nums">
+	    <node name="Nums" />
+	  </target>
+	</son>
+      </sons>
       <attributes>
         <attribute name="LinkName" default="NULL" mandatory="no">
           <type name="String" />
@@ -2123,13 +1876,6 @@
           </phases>
         </attribute>
         <attribute name="LinkSign" default="NULL" mandatory="no">
-          <type name="IntegerArray" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
-        <attribute name="RefCounting" default="NULL"
-        mandatory="no">
           <type name="IntegerArray" />
           <phases>
             <all />
@@ -2159,12 +1905,6 @@
           </type>
           <phases>
             <all />
-          </phases>
-        </attribute>
-        <attribute name="ReadOnly" mandatory="no">
-          <type name="IntegerArray" />
-          <phases>
-            <range from="import" to="readsib" />
           </phases>
         </attribute>
         <attribute name="Effect" mandatory="no">
@@ -2211,24 +1951,6 @@
           <type name="Integer" />
           <phases>
             <range from="import" to="readsib" />
-          </phases>
-        </attribute>
-        <attribute name="LinkSignNums" mandatory="no">
-          <type name="Nums" />
-          <phases>
-            <range from="scanparse" to="import" />
-          </phases>
-        </attribute>
-        <attribute name="RefCountingNums" mandatory="no">
-          <type name="Nums" />
-          <phases>
-            <range from="scanparse" to="import" />
-          </phases>
-        </attribute>
-        <attribute name="ReadOnlyNums" mandatory="no">
-          <type name="Nums" />
-          <phases>
-            <range from="scanparse" to="import" />
           </phases>
         </attribute>
       </attributes>
@@ -2885,7 +2607,7 @@
       </attributes>
       <flags></flags>
     </node>
-    <node name="NWith">
+    <node name="With">
       <sons>
         <son name="Part" mandatory="yes">
           <target>
@@ -2899,7 +2621,7 @@
         </son>
         <son name="WithOp" mandatory="yes">
           <target>
-            <node name="NWithOp" />
+            <set name="WithOp" />
           </target>
         </son>
       </sons>
@@ -2993,12 +2715,12 @@
       <sons>
         <son name="WithId" mandatory="yes">
           <target>
-            <node name="NWithid" />
+            <node name="Withid" />
           </target>
         </son>
         <son name="Generator" mandatory="yes">
           <target>
-            <node name="NGenerator" />
+            <node name="Generator" />
           </target>
         </son>
         <son name="Next" default="NULL" mandatory="no">
@@ -3029,7 +2751,7 @@
       </attributes>
       <flags></flags>
     </node>
-    <node name="NWithid">
+    <node name="Withid">
       <sons></sons>
       <attributes>
         <attribute name="Vec" mandatory="yes">
@@ -3053,7 +2775,7 @@
       </attributes>
       <flags></flags>
     </node>
-    <node name="NGenerator">
+    <node name="Generator">
       <sons>
         <son name="Bound1" mandatory="no">
           <target>
@@ -3191,11 +2913,11 @@
       </attributes>
       <flags></flags>
     </node>
-    <node name="NWith2">
+    <node name="With2">
       <sons>
         <son name="WithId" mandatory="yes">
           <target>
-            <node name="NWithid" />
+            <node name="Withid" />
           </target>
         </son>
         <son name="Segs" mandatory="yes">
@@ -3211,7 +2933,7 @@
         </son>
         <son name="WithOp" mandatory="yes">
           <target>
-            <node name="NWithOp" />
+            <set name="WithOp" />
           </target>
         </son>
       </sons>
@@ -3283,10 +3005,10 @@
       </attributes>
       <flags></flags>
     </node>
-    <node name="NWithOp">
+    <node name="Genarray">
       <description>withloop operation</description>
       <sons>
-        <son name="ShapeArrayNeutral" mandatory="no">
+        <son name="Shape" mandatory="no">
           <target>
             <set name="Expr" />
           </target>
@@ -3307,13 +3029,46 @@
           </target>
         </son>
       </sons>
+      <attributes></attributes>
+      <flags></flags>
+    </node>
+    <node name="Modarray">
+      <description>withloop operation</description>
+      <sons>
+        <son name="Array" mandatory="no">
+          <target>
+            <set name="Expr" />
+          </target>
+        </son>
+	<son name="Mem" default="NULL" mandatory="no">
+	  <target>
+	    <node name="Id" />
+	  </target>
+	</son>
+        <son name="Next" default="NULL" mandatory="no">
+          <target>
+            <node name="Nwithop" />
+          </target>
+        </son>
+      </sons>
+      <attributes></attributes>
+      <flags></flags>
+    </node>
+    <node name="Fold">
+      <description>withloop operation</description>
+      <sons>
+        <son name="Neutral" mandatory="no">
+          <target>
+            <set name="Expr" />
+          </target>
+        </son>
+        <son name="Next" default="NULL" mandatory="no">
+          <target>
+            <node name="Nwithop" />
+          </target>
+        </son>
+      </sons>
       <attributes>
-        <attribute name="Type" mandatory="yes">
-          <type name="WithOpType" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
         <attribute name="Fun" default="NULL" mandatory="yes">
           <type name="String" />
           <phases>
@@ -3332,12 +3087,6 @@
             <all />
           </phases>
         </attribute>
-        <attribute name="Expr" mandatory="yes">
-          <type name="Link" />
-          <phases>
-            <phase name="scanparse" />
-          </phases>
-        </attribute>
         <attribute name="Fundef" mandatory="yes">
           <type name="Link">
             <target>
@@ -3350,12 +3099,6 @@
             <range from="compile" to="final" />
           </phases>
         </attribute>
-	<attribute name="Offset_Needed" mandatory="yes">
-	  <type name="Bool"/>
-	  <phases>
-	    <range from="wltransform" to="final"/>
-	  </phases>
-	</attribute>
       </attributes>
       <flags></flags>
     </node>
