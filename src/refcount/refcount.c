@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.64  1999/02/06 14:46:20  dkr
+ * RC can handle nested WLs now
+ *
  * Revision 1.63  1999/01/07 13:58:55  sbs
  * *** empty log message ***
  *
@@ -1084,7 +1087,7 @@ RCicm (node *arg_node, node *arg_info)
  *   node *RCid( node *arg_node, node *arg_info)
  *
  * description:
- *   Depending on INFO_RC_PRF( arg_info) do one of the following:
+ *   Depending on 'INFO_RC_PRF( arg_info)' do one of the following:
  *     a) Increment refcnt at vardec and set local refcnt of the N_id node
  *        accordingly. (RC op needed)
  *     b) Set local refcnt to -1. (no RC op)
@@ -1094,15 +1097,18 @@ RCicm (node *arg_node, node *arg_info)
  *
  * remarks:
  *   - ('INFO_RC_PRF( arg_info)' != NULL) indicates that this N_id node is
- *      argument of a primitive function (exept F_reshape) or ICM.
+ *       argument of a primitive function (exept F_reshape) or ICM.
  *     'INFO_RC_PRF' then points to this prf/icm.
- *   - 'INFO_RC_WITH( arg_info)' does the same for a with-loop.
+ *   - 'INFO_RC_WITH( arg_info)' contains a N_exprs-chain with all parent
+ *       WL-nodes.
  *
  ******************************************************************************/
 
 node *
 RCid (node *arg_node, node *arg_info)
 {
+    node *wl_node;
+
     DBUG_ENTER ("RCid");
 
     if (MUST_REFCOUNT (ID_TYPE (arg_node))) {
@@ -1136,15 +1142,21 @@ RCid (node *arg_node, node *arg_info)
         ID_REFCNT (arg_node) = -1; /* variable needs no refcount */
     }
 
-    if (INFO_RC_WITH (arg_info) != NULL) {
-        /*
-         * if we have found the index-vector of a with-loop, we set RC of
-         *  'NWITH_VEC' to 1.
-         */
-        if (strcmp (IDS_NAME (NWITH_VEC (INFO_RC_WITH (arg_info))), ID_NAME (arg_node))
+    /*
+     * if we have found the index-vector of a with-loop, we set RC of
+     *  'NWITH_VEC' to 1.
+     */
+    wl_node = INFO_RC_WITH (arg_info);
+    while (wl_node != NULL) {
+        DBUG_ASSERT ((NODE_TYPE (wl_node) == N_exprs),
+                     "N_exprs-chain of WL-nodes not found in arg_info");
+
+        if (strcmp (IDS_NAME (NWITH_VEC (EXPRS_EXPR (wl_node))), ID_NAME (arg_node))
             == 0) {
-            IDS_REFCNT (NWITH_VEC (INFO_RC_WITH (arg_info))) = 1;
+            IDS_REFCNT (NWITH_VEC (EXPRS_EXPR (wl_node))) = 1;
         }
+
+        wl_node = EXPRS_NEXT (wl_node);
     }
 
     DBUG_RETURN (arg_node);
@@ -1482,7 +1494,8 @@ RCgen (node *arg_node, node *arg_info)
  *    with-loop.
  *
  * remarks:
- *   - 'INFO_RC_WITH( arg_info)' points to the current with-loop node.
+ *   - 'INFO_RC_WITH( arg_info)' contains a N_exprs-chain with all parent
+ *     WL-nodes.
  *   - In 'INFO_RC_RCDUMP( arg_info)' we store the initial refcounters for
  *     RCNcode:
  *       rc(var) = 1,  if 'var' is element of 'NWITH_IN'      \ this is done,
@@ -1500,17 +1513,16 @@ RCgen (node *arg_node, node *arg_info)
 node *
 RCNwith (node *arg_node, node *arg_info)
 {
-    node *vardec, *tmp_with, *neutral_vardec;
+    node *vardec, *neutral_vardec;
     ids *new_ids, *last_ids;
     int *ref_dump, *tmp_rcdump;
 
     DBUG_ENTER ("RCNwith");
 
     /*
-     * 'INFO_RC_WITH( arg_info)' points to current with-loop node.
+     * insert current WL into 'INFO_RC_WITH( arg_info)' (at head of chain).
      */
-    tmp_with = INFO_RC_WITH (arg_info);
-    INFO_RC_WITH (arg_info) = arg_node;
+    INFO_RC_WITH (arg_info) = MakeExprs (arg_node, INFO_RC_WITH (arg_info));
 
     NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
 
@@ -1552,9 +1564,9 @@ RCNwith (node *arg_node, node *arg_info)
 
     /*
      * CAUTION: We must traverse the (parts -> withids) before we traverse the code,
-     *          to get the right RC in 'NWITH_VEC'!
+     *            to get the right RC in 'NWITH_VEC'!
      *          'RCNwithid()' initializes the RC, and while traversal of the code
-     *          it is set correctly!
+     *            it is set correctly!
      */
     NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
     NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
@@ -1635,9 +1647,12 @@ RCNwith (node *arg_node, node *arg_info)
     }
 
     /*
-     * we leave the with-loop -> reset 'INFO_RC_...( arg_info)'.
+     * we leave the with-loop
+     *   -> remove current WL from 'INFO_RC_WITH( arg_info)' (head of chain!).
+     *   -> reset 'INFO_RC_RCDUMP( arg_info)'.
      */
-    INFO_RC_WITH (arg_info) = tmp_with;
+    EXPRS_EXPR (INFO_RC_WITH (arg_info)) = NULL;
+    INFO_RC_WITH (arg_info) = FreeNode (INFO_RC_WITH (arg_info));
     INFO_RC_RCDUMP (arg_info) = tmp_rcdump;
 
     DBUG_RETURN (arg_node);
@@ -1692,8 +1707,6 @@ RCNpart (node *arg_node, node *arg_info)
  *       rc(var) = 1,  if 'var' is element of 'NWITH_IN'      \ this is done,
  *                 1,  if 'var' is index-vector of with-loop  / to fool the RCO
  *                 0,  otherwise
- *   - 'INFO_RC_NEED_IDX( arg_info)' indicates whether we need to build the
- *     index-vector or not.
  *   - The RC of 'NWITH_VEC' indicates whether we need to build the
  *     index-vector or not:
  *        1: we have found references to the index-vector in at least one
