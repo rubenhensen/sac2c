@@ -2,6 +2,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2004/09/20 17:48:14  ktr
+ * Removed unused variable.
+ *
  * Revision 1.12  2004/09/18 16:07:23  ktr
  * SPMD blocks and functions are treated as well
  *
@@ -1008,8 +1011,6 @@ MMVcode (node *arg_node, info *arg_info)
 node *
 MarkMemVals (node *syntax_tree)
 {
-    info *info;
-
     DBUG_ENTER ("MarkMemVals");
 
     act_tab = mmv_tab;
