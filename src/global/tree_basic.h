@@ -1,7 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.29  1995/12/21 13:24:16  asi
+ * Revision 1.30  1995/12/29 10:31:18  cg
+ * new macros for N_sib and N_info nodes, added new macros to restore
+ * the new with-loop syntax from the internal representation.
+ * added macros LINKMOD for fundef and objdef nodes
+ *
+ * Revision 1.29  1995/12/21  13:24:16  asi
  * added OPERATOR_MASK for N_genarray, N_modarray, N_foldprf and N_foldfun - nodes
  *
  * Revision 1.28  1995/12/21  10:07:33  cg
@@ -256,7 +261,16 @@ extern shpseg *MakeShpseg (nums *num);
  ***    char*              NAME      (O)
  ***    char*              MOD       (O)
  ***    types*             NEXT      (O)
+ ***
+ ***  temporary attributes:
+ ***
+ ***    node*              TDEF      (O)  (typecheck -> )
  ***/
+
+/*
+ *  TDEF is a reference to the defining N_typedef node of a user-defined
+ *  type (not yet implemented).
+ */
 
 extern types *MakeType (simpletype basetype, int dim, shpseg *shpseg, char *name,
                         char *mod);
@@ -266,6 +280,7 @@ extern types *MakeType (simpletype basetype, int dim, shpseg *shpseg, char *name
 #define TYPES_SHPSEG(t) (t->shpseg)
 #define TYPES_NAME(t) (t->name)
 #define TYPES_MOD(t) (t->name_mod)
+#define TYPES_TDEF(t) (t->tdef)
 #define TYPES_NEXT(t) (t->next)
 
 /*--------------------------------------------------------------------------*/
@@ -355,7 +370,10 @@ extern strings *MakeStrings (char *string, strings *next);
  ***/
 
 /*
- *  Possible values for ATTRIB : ST_resolved | ST_unresolved
+ *  Possible values for ATTRIB :
+ *      in function node lists : ST_resolved | ST_unresolved
+ *      in object node lists   : ST_reference | ST_readonly_reference
+ *      in typedef node lists  : ST_regular
  *  Possible values for STATUS : ST_regular | ST_artificial
  */
 
@@ -470,23 +488,29 @@ extern node *MakeClassdec (char *name, char *prefix, node *imports, node *export
  ***  sons:
  ***
  ***    node*     TYPES    (O)  (N_typedef)
+ ***    node*     OBJS     (O)  (N_objdef)
  ***    node*     FUNS     (O)  (N_fundef)
+ ***    node*     NEXT     (O)  (N_sib)
  ***
  ***  permanent attributes:
  ***
- ***    strings*  LINKLIST (O)
+ ***    char*     NAME
+ ***    int       LINKSTYLE
  ***/
 
 /*
- *  This node structure is used as head structure for SIBs. The LINKLIST
- *  contains all C-modules which must be linked to the importing SAC-file.
+ *  This node structure is used as head structure for SIBs.
+ *  LINKSTYLE corresponds to the global variable linkstyle.
  */
 
-extern node *MakeSib (node *types, node *funs, strings *linklist);
+extern node *MakeSib (char *name, int linkstyle, node *types, node *objs, node *funs);
 
 #define SIB_TYPES(n) (n->node[0])
-#define SIB_FUNS(n) (n->node[1])
-#define SIB_LINKLIST(n) ((strings *)(n->node[2]))
+#define SIB_OBJS(n) (n->node[1])
+#define SIB_FUNS(n) (n->node[2])
+#define SIB_LINKSTYLE(n) (n->varno)
+#define SIB_NAME(n) (n->info.id)
+#define SIB_NEXT(n) (n->node[3])
 
 /*--------------------------------------------------------------------------*/
 
@@ -558,6 +582,8 @@ extern node *MakeExplist (node *itypes, node *etypes, node *objs, node *funs);
  ***
  ***    types*      IMPL         (O)        (import -> )
  ***                                        ( -> writesib !!)
+ ***    char*       COPY         (O)
+ ***    char*       FREE         (O)
  ***    node*       TYPEDEC_DEF  (O)        (checkdec -> writesib !!)
  ***/
 
@@ -568,6 +594,11 @@ extern node *MakeExplist (node *itypes, node *etypes, node *objs, node *funs);
  *  The TYPEDEC_DEF slot is only used when a typedef node is used as a
  *  representation of a type declaration. It then points to the
  *  typedef node which contains the respective definition.
+ *
+ *  For each Non-SAC hidden type the name of a copy and a free function
+ *  is stored in COPY and FREE, respectively. These must be provided
+ *  with the external module/class. The names may be generic or user-defined
+ *  using pragmas.
  */
 
 extern node *MakeTypedef (char *name, char *mod, types *type, statustype attrib,
@@ -581,6 +612,8 @@ extern node *MakeTypedef (char *name, char *mod, types *type, statustype attrib,
 #define TYPEDEF_IMPL(n) (n->info.types->next)
 #define TYPEDEF_NEXT(n) (n->node[0])
 #define TYPEDEF_PRAGMA(n) (n->node[2])
+#define TYPEDEF_COPY(n) ((char *)n->node[3])
+#define TYPEDEF_FREE(n) ((char *)n->node[4])
 
 #define TYPEDEC_DEF(n) (n->node[1])
 
@@ -598,6 +631,7 @@ extern node *MakeTypedef (char *name, char *mod, types *type, statustype attrib,
  ***
  ***    char*       NAME
  ***    char*       MOD     (O)
+ ***    char*       LINKMOD (O)
  ***    types*      TYPE
  ***    statustype  STATUS
  ***    node*       PRAGMA  (O)  (N_pragma)
@@ -633,12 +667,17 @@ extern node *MakeTypedef (char *name, char *mod, types *type, statustype attrib,
  *
  *  ATTENTION: ARG, INIT, and ICM are mapped to the same real node !
  *
+ *  LINKMOD contains the name of the module which has to be linked with
+ *  in order to make the code of this function available. If LINKMOD is
+ *  NULL, then link with the module given by MOD.
+ *
  */
 
 extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *next);
 
 #define OBJDEF_NAME(n) (n->info.types->id)
 #define OBJDEF_MOD(n) (n->info.types->id_mod)
+#define OBJDEF_LINKMOD(n) (n->info.types->id_cmod)
 #define OBJDEF_TYPE(n) (n->info.types)
 #define OBJDEF_EXPR(n) (n->node[1])
 #define OBJDEF_NEXT(n) (n->node[0])
@@ -665,6 +704,7 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  ***
  ***    char*       NAME
  ***    char*       MOD      (O)
+ ***    char*       LINKMOD  (O)
  ***    node*       PRAGMA   (O)  (N_info)
  ***    types*      TYPES
  ***    statustype  STATUS
@@ -674,6 +714,7 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  ***
  ***  temporary attributes:
  ***
+ ***    node*      SIB      (O)  (N_sib)     (readsib !!)
  ***    node*      RETURN        (N_return)  (typecheck -> compile !!)
  ***    nodelist*  NEEDOBJS (O)              (import -> )
  ***                                         (analysis -> )
@@ -683,7 +724,6 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  ***    node*      ICM           (N_icm)     (compile -> )
  ***    int        VARNO                     (optimize -> )
  ***    long*      MASK[x]                   (optimize -> )
- ***    node*      EXTERN        (N_fundef)  (precompile -> compile -> )
  ***    int        INLREC                    (inl !!)
  ***
  ***    node*      FUNDEC_DEF (O) (N_fundef) (checkdec -> writesib !!)
@@ -699,15 +739,14 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  *          ST_generic      generic function derived from dimension-
  *                          independent array function
  *
- *  LINKINFO: pointer to N_info node with additional linker information
- *            derived from pragmas in declaration file.
- *
- *  EXTERN: pointer to the respective extern declaration of a function
- *          definition
  *
  *  The FUNDEC_DEF slot is only used when a fundef node is used as a
  *  representation of a function declaration. It then points to the
  *  fundef node which contains the respective definition.
+ *
+ *  LINKMOD contains the name of the module which has to be linked with
+ *  in order to make the code of this function available. If LINKMOD is
+ *  NULL, then link with the module given by MOD.
  */
 
 extern node *MakeFundef (char *name, char *mod, types *types, node *args, node *body,
@@ -715,12 +754,14 @@ extern node *MakeFundef (char *name, char *mod, types *types, node *args, node *
 
 #define FUNDEF_NAME(n) (n->info.types->id)
 #define FUNDEF_MOD(n) (n->info.types->id_mod)
+#define FUNDEF_LINKMOD(n) (n->info.types->id_cmod)
 #define FUNDEF_PRAGMA(n) (n->node[5])
 #define FUNDEF_TYPES(n) (n->info.types)
 #define FUNDEF_BODY(n) (n->node[0])
 #define FUNDEF_ARGS(n) (n->node[2])
 #define FUNDEF_NEXT(n) (n->node[1])
 #define FUNDEF_RETURN(n) (n->node[3])
+#define FUNDEF_SIB(n) (n->node[3])
 #define FUNDEF_NEEDOBJS(n) ((nodelist *)(n->node[4]))
 #define FUNDEF_ICM(n) (n->node[3])
 #define FUNDEF_VARNO(n) (n->varno)
@@ -729,7 +770,6 @@ extern node *MakeFundef (char *name, char *mod, types *types, node *args, node *
 #define FUNDEF_ATTRIB(n) (n->info.types->attrib)
 #define FUNDEF_INLINE(n) (n->flag)
 #define FUNDEF_INLREC(n) (n->refcnt)
-#define FUNDEF_EXTERN(n) (n->node[3])
 
 #define FUNDEC_DEF(n) (n->node[3])
 
@@ -929,6 +969,11 @@ extern node *MakeCast (node *expr, types *type);
  ***
  ***    node*  EXPRS      (N_exprs)  (O)
  ***
+ ***
+ ***  permanent attributes:
+ ***
+ ***    int    INWITH
+ ***
  ***  temporary attributes:
  ***
  ***    node*  REFERENCE  (N_exprs)  (O)  (precompile -> compile !!)
@@ -938,6 +983,9 @@ extern node *MakeCast (node *expr, types *type);
  *  REFERENCE: List of artificial return values which correspond to
  *             reference parameters.
  *
+ *  INWITH is used to mark those return statements which are used in the
+ *  internal representation of with loops.
+ *
  *  ATTENTION: node[1] of N_return node already used by compile.c
  */
 
@@ -945,6 +993,7 @@ extern node *MakeReturn (node *exprs);
 
 #define RETURN_EXPRS(n) (n->node[0])
 #define RETURN_REFERENCE(n) (n->node[2])
+#define RETURN_INWITH(n) (n->varno)
 
 /*--------------------------------------------------------------------------*/
 
@@ -1107,15 +1156,27 @@ extern node *MakeGenerator (node *left, node *right, char *id);
  ***    node*  ARRAY  (N_array)
  ***    node*  BODY   (N_block)
  ***
+ ***
+ ***  permanent attributes:
+ ***
+ ***    node*  RETURN (N_return)  (O)
+ ***
+ ***
  ***  temporary attributes:
  ***
  ***    long*  MASK[x]                 (optimize -> )
  ***/
 
+/*
+ *  RETURN is a reference to the return statement in the internal
+ *  representation of a with loop.
+ */
+
 extern node *MakeGenarray (node *array, node *body);
 
 #define GENARRAY_ARRAY(n) (n->node[0])
 #define GENARRAY_BODY(n) (n->node[1])
+#define GENARRAY_RETURN(n) (n->node[2])
 #define OPERATOR_MASK(n, x) (n->mask[x])
 
 /*--------------------------------------------------------------------------*/
@@ -1128,15 +1189,29 @@ extern node *MakeGenarray (node *array, node *body);
  ***    node*  ARRAY  (N_array)
  ***    node*  BODY   (N_block)
  ***
+ ***
+ ***  permanent attributes:
+ ***
+ ***    node*  RETURN (N_return)  (O)
+ ***    char*  ID
+ ***
+ ***
  ***  temporary attributes:
  ***
  ***    long*  MASK[x]                 (optimize -> )  (see N_genarray)
  ***/
 
+/*
+ *  RETURN is a reference to the return statement in the internal
+ *  representation of a with loop.
+ */
+
 extern node *MakeModarray (node *array, node *body);
 
 #define MODARRAY_ARRAY(n) (n->node[0])
 #define MODARRAY_BODY(n) (n->node[1])
+#define MODARRAY_RETURN(n) (n->node[2])
+#define MODARRAY_ID(n) (n->info.id)
 
 /*--------------------------------------------------------------------------*/
 
@@ -1151,17 +1226,24 @@ extern node *MakeModarray (node *array, node *body);
  ***  permanent attributes:
  ***
  ***    prf    PRF
+ ***    node*  RETURN (N_return)  (O)
  ***
  ***  temporary attributes:
  ***
  ***    long*  MASK[x]                 (optimize -> )  (see N_genarray)
  ***/
 
+/*
+ *  RETURN is a reference to the return statement in the internal
+ *  representation of a with loop.
+ */
+
 extern node *MakeFoldprf (prf prf, node *body, node *neutral);
 
 #define FOLDPRF_PRF(n) (n->info.prf)
 #define FOLDPRF_BODY(n) (n->node[0])
 #define FOLDPRF_NEUTRAL(n) (n->node[1])
+#define FOLDPRF_RETURN(n) (n->node[2])
 
 /*--------------------------------------------------------------------------*/
 
@@ -1176,13 +1258,19 @@ extern node *MakeFoldprf (prf prf, node *body, node *neutral);
  ***  permanent attributes:
  ***
  ***    char*  NAME
- ***    char*  MOD      (O)
+ ***    char*  MOD                (O)
+ ***    node*  RETURN (N_return)  (O)
  ***
  ***  temporary attributes:
  ***
  ***    node*  FUNDEF        (N_fundef)  (typecheck -> )
  ***    long*  MASK[x]                   (optimize -> )  (see N_genarray)
  ***/
+
+/*
+ *  RETURN is a reference to the return statement in the internal
+ *  representation of a with loop.
+ */
 
 extern node *MakeFoldfun (char *name, char *mod, node *body, node *neutral);
 
@@ -1191,6 +1279,7 @@ extern node *MakeFoldfun (char *name, char *mod, node *body, node *neutral);
 #define FOLDFUN_BODY(n) (n->node[0])
 #define FOLDFUN_NEUTRAL(n) (n->node[1])
 #define FOLDFUN_FUNDEF(n) (n->node[2])
+#define FOLDFUN_RETURN(n) (n->node[3])
 
 /*--------------------------------------------------------------------------*/
 
@@ -1500,6 +1589,7 @@ extern node *MakeIcm (char *name, node *args, node *next);
  ***    char*  FREEFUN      (O)
  ***    ids*   NEEDTYPES    (O)
  ***    node*  NEEDFUNS     (O)
+ ***    char*  LINKMOD      (O)
  ***    int    NUMPARAMS    (O)
  ***
  ***  temporary attributes:
@@ -1515,7 +1605,7 @@ extern node *MakeIcm (char *name, node *args, node *next);
  *  A typedef pragma may contain COPYFUN and FREEFUN.
  *  An objdef pragma may contain LINKNAME only.
  *  And a fundef pragma may contain all pragmas except COPYFUN and FREEFUN,
- *  but TYPES and FUNS are only for internal use in SIBS.
+ *  but LINKMOD, TYPES and FUNS are only for internal use in SIBS.
  *
  *  NUMPARAMS is not a pragma but gives the number of parameters of the
  *  function (return values + arguments). This is the size of the arrays
@@ -1540,9 +1630,38 @@ extern node *MakePragma ();
 #define PRAGMA_TOUCH(n) ((ids *)n->mask[4])
 #define PRAGMA_COPYFUN(n) ((char *)n->mask[5])
 #define PRAGMA_FREEFUN(n) ((char *)n->mask[6])
+#define PRAGMA_LINKMOD(n) ((char *)n->node[2])
 #define PRAGMA_NEEDTYPES(n) ((ids *)n->node[1])
 #define PRAGMA_NEEDFUNS(n) (n->node[0])
 #define PRAGMA_NUMPARAMS(n) (n->flag)
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_info :
+ ***
+ ***  The N_info node is used store additional compile time information
+ ***  outside the syntax tree. So, its concrete look depends on the
+ ***  specific task.
+ ***
+ ***  when used in writesib.c :
+ ***
+ ***    nodelist*  EXPORTTYPES   (O)
+ ***    nodelist*  EXPORTOBJS    (O)
+ ***    nodelist*  EXPORTFUNS    (O)
+ ***
+ ***/
+
+/*
+ *  When used in writesib.c, the N_info node collects lists of nodes which
+ *  have to be printed to the SIB.
+ */
+
+extern node *MakeInfo ();
+
+#define INFO_EXPORTTYPES(n) ((nodelist *)n->node[0])
+#define INFO_EXPORTOBJS(n) ((nodelist *)n->node[1])
+#define INFO_EXPORTFUNS(n) ((nodelist *)n->node[2])
 
 /*--------------------------------------------------------------------------*/
 
