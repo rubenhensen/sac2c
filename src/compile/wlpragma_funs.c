@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.3  2000/03/15 15:05:17  dkr
+ * CalcSV and ComputeMinMaxIndex moved to wltransform.c
+ *
  * Revision 2.2  2000/03/09 12:55:58  dkr
  * some comments added and changed respectively
  *
@@ -51,8 +54,6 @@
  * Revision 1.3  1998/04/13 18:10:59  dkr
  * rcs-header added
  *
- *
- *
  */
 
 #include "dbug.h"
@@ -61,8 +62,6 @@
 #include "DupTree.h"
 #include "wltransform.h"
 #include "wlpragma_funs.h"
-
-#include <limits.h> /* INT_MAX */
 
 /*
  * Here the funs for wlcomp-pragmas are defined.
@@ -225,15 +224,15 @@ IntersectStridesArray (node *strides, node *aelems1, node *aelems2, int line)
 /******************************************************************************
  *
  * function:
- *   node *Array2Bv( node *array, long *bv, int dims, int line)
+ *   node *Array2Bv( node *array, int *bv, int dims, int line)
  *
  * description:
- *   converts an N_array node into a blocking vector (long *).
+ *   converts an N_array node into a blocking vector (int *).
  *
  ******************************************************************************/
 
-long *
-Array2Bv (node *array, long *bv, int dims, int line)
+int *
+Array2Bv (node *array, int *bv, int dims, int line)
 {
     int d;
 
@@ -260,162 +259,6 @@ Array2Bv (node *array, long *bv, int dims, int line)
     DBUG_RETURN (bv);
 }
 
-/******************************************************************************
- *
- * function:
- *   long *CalcSV( node *stride, long *sv)
- *
- * description:
- *   calculates the lcm of all grid-steps in N_WLstride-N_WLgrid-chain
- *    'stride'.
- *   CAUTION: sv must be initialized with (1, ..., 1)
- *
- ******************************************************************************/
-
-long *
-CalcSV (node *stride, long *sv)
-{
-    node *grid;
-
-    DBUG_ENTER ("CalcSV");
-
-    if (stride != NULL) {
-
-        if (NODE_TYPE (stride) == N_WLstride) {
-
-            do {
-                sv[WLSTRIDE_DIM (stride)]
-                  = lcm (sv[WLSTRIDE_DIM (stride)], WLSTRIDE_STEP (stride));
-
-                grid = WLSTRIDE_CONTENTS (stride);
-                DBUG_ASSERT ((grid != NULL), "no grid found");
-                do {
-                    sv = CalcSV (WLGRID_NEXTDIM (grid), sv);
-                    grid = WLGRID_NEXT (grid);
-                } while (grid != NULL);
-
-                stride = WLSTRIDE_NEXT (stride);
-            } while (stride != NULL);
-
-        } else {
-            /* non-constant segment */
-
-            /* not yet implemented :-( */
-        }
-    }
-
-    DBUG_RETURN (sv);
-}
-
-/******************************************************************************
- *
- * function:
- *   void ComputeIndexMinMax( int *idx_min, int *idx_max,
- *                            int dims, node *strides)
- *
- * description:
- *   Computes the minimum and maximum of the index-vector found in 'strides'.
- *
- * remark:
- *   if 'strides' is a N_WLstride-node, this must be a sequence of cubes.
- *   if 'strides' is a N_WLstriVar-node, this must be a fully optimized
- *     nested stride/grid-tree.
- *   (see wltransform.c)
- *
- ******************************************************************************/
-
-void
-ComputeIndexMinMax (int *idx_min, int *idx_max, int dims, node *strides)
-{
-    node *stride;
-    int min, max, d;
-
-    DBUG_ENTER ("ComputeIndexMinMax");
-
-    switch (NODE_TYPE (strides)) {
-
-    case N_WLstride:
-        /*
-         * initialize 'idx_min', 'idx_max'.
-         */
-        for (d = 0; d < dims; d++) {
-            idx_min[d] = INT_MAX;
-            idx_max[d] = 0;
-        }
-
-        /*
-         * we must visit every dim in every stride.
-         */
-        while (strides != NULL) {
-            stride = strides;
-            for (d = 0; d < dims; d++) {
-                DBUG_ASSERT ((stride != NULL), "no stride found");
-
-                min = WLSTRIDE_BOUND1 (stride);
-                max = WLSTRIDE_BOUND2 (stride);
-                stride = WLGRID_NEXTDIM (WLSTRIDE_CONTENTS (stride));
-
-                if (min < idx_min[d]) {
-                    idx_min[d] = min;
-                }
-                if (max > idx_max[d]) {
-                    idx_max[d] = max;
-                }
-            }
-            strides = WLSTRIDE_NEXT (strides);
-        }
-        break;
-
-    case N_WLstriVar:
-        /*
-         * we have not a cube, but a fully optimized stride/grid-tree.
-         *  -> we need to traverse the first stride only.
-         */
-        for (d = 0; d < dims; d++) {
-            DBUG_ASSERT ((strides != NULL), "no stride found");
-
-            if (NODE_TYPE (strides) == N_WLstride) {
-                idx_min[d] = WLSTRIDE_BOUND1 (strides);
-            } else { /* N_WLstriVar */
-                if (NODE_TYPE (WLSTRIVAR_BOUND1 (strides)) == N_num) {
-                    idx_min[d] = NUM_VAL (WLSTRIVAR_BOUND1 (strides));
-                } else {
-                    idx_min[d] = 0; /* *** caution! *** */
-                }
-            }
-
-            /*
-             * we will find the maximum in the last stride of current dim
-             */
-            stride = strides;
-            while (WLSTRIVAR_NEXT (stride) != NULL) {
-                stride = WLSTRIVAR_NEXT (stride);
-            }
-
-            if (NODE_TYPE (stride) == N_WLstride) {
-                idx_max[d] = WLSTRIDE_BOUND2 (stride);
-            } else { /* N_WLstriVar */
-                if (NODE_TYPE (WLSTRIVAR_BOUND2 (stride)) == N_num) {
-                    idx_max[d] = NUM_VAL (WLSTRIVAR_BOUND2 (stride));
-                } else {
-                    idx_max[d] = INT_MAX; /* *** caution!!!! LONG_MAX??? *** */
-                }
-            }
-
-            strides = (NODE_TYPE (WLSTRIVAR_CONTENTS (strides)) == N_WLgridVar)
-                        ? WLGRIDVAR_NEXTDIM (WLSTRIVAR_CONTENTS (strides))
-                        : WLGRID_NEXTDIM (WLSTRIVAR_CONTENTS (strides));
-        }
-        break;
-
-    default:
-
-        DBUG_ASSERT ((0), "wrong node type found");
-    }
-
-    DBUG_VOID_RETURN;
-}
-
 /***************************************
  *
  * extern functions
@@ -438,6 +281,8 @@ ComputeIndexMinMax (int *idx_min, int *idx_max, int dims, node *strides)
 node *
 All (node *segs, node *parms, node *cubes, int dims, int line)
 {
+    int i;
+
     DBUG_ENTER ("All");
 
     if (parms != NULL) {
@@ -451,18 +296,27 @@ All (node *segs, node *parms, node *cubes, int dims, int line)
 
     if (NODE_TYPE (cubes) == N_WLstride) {
         segs = MakeWLseg (dims, DupTree (cubes, NULL), NULL);
+
+        /*
+         * initialize temporary attributes
+         */
+        WLSEG_BLOCKS (segs) = 3; /* three blocking levels */
+        for (i = 0; i < WLSEG_BLOCKS (segs); i++) {
+            WLSEG_BV (segs, i) = (int *)MALLOC (sizeof (int) * dims);
+        }
+        WLSEG_UBV (segs) = (int *)MALLOC (sizeof (int) * dims);
     } else {
         segs = MakeWLsegVar (dims, DupTree (cubes, NULL), NULL);
+
+        /*
+         * initialize temporary attributes
+         */
+        WLSEGVAR_BLOCKS (segs) = 3; /* three blocking levels */
+        for (i = 0; i < WLSEGVAR_BLOCKS (segs); i++) {
+            WLSEGVAR_BV (segs, i) = (int *)MALLOC (sizeof (int) * dims);
+        }
+        WLSEGVAR_UBV (segs) = (int *)MALLOC (sizeof (int) * dims);
     }
-
-    WLSEGX_SV (segs) = CalcSV (WLSEGX_CONTENTS (segs), WLSEGX_SV (segs));
-
-    /*
-     * we compute the infimum and supremum of the index-vector
-     *  for the current segment.
-     */
-    ComputeIndexMinMax (WLSEGX_IDX_MIN (segs), WLSEGX_IDX_MAX (segs), WLSEGX_DIMS (segs),
-                        WLSEGX_CONTENTS (segs));
 
     segs = NoBlocking (segs, parms, cubes, dims, line);
 
@@ -505,15 +359,6 @@ Cubes (node *segs, node *parms, node *cubes, int dims, int line)
         } else {
             new_seg = MakeWLsegVar (dims, DupNode (cubes), NULL);
         }
-
-        WLSEGX_SV (new_seg) = CalcSV (WLSEGX_CONTENTS (new_seg), WLSEGX_SV (new_seg));
-
-        /*
-         * we compute the infimum and supremum of the index-vector
-         *  for the current segment.
-         */
-        ComputeIndexMinMax (WLSEGX_IDX_MIN (new_seg), WLSEGX_IDX_MAX (new_seg),
-                            WLSEGX_DIMS (new_seg), WLSEGX_CONTENTS (new_seg));
 
         /*
          * append 'new_seg' at 'segs'
@@ -576,13 +421,6 @@ ConstSegs (node *segs, node *parms, node *cubes, int dims, int line)
 
             if (new_cubes != NULL) {
                 new_seg = MakeWLseg (dims, new_cubes, NULL);
-
-                /*
-                 * we compute the infimum and supremum of the index-vector
-                 *  for the current segment.
-                 */
-                ComputeIndexMinMax (WLSEG_IDX_MIN (new_seg), WLSEG_IDX_MAX (new_seg),
-                                    WLSEG_DIMS (new_seg), WLSEG_CONTENTS (new_seg));
 
                 if (segs == NULL) {
                     segs = new_seg;
