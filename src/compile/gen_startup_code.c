@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.22  2000/07/14 15:07:19  nmw
+ * missing include added - no more warnings
+ *
  * Revision 2.21  2000/07/14 14:44:38  nmw
  * during startup the initfunction for global objects is called
  *
@@ -169,6 +172,7 @@
 #include "tree_basic.h"
 #include "traverse.h"
 #include "free.h"
+#include "precompile.h"
 
 /******************************************************************************
  *
