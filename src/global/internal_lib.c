@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.71  2004/11/26 23:55:16  sbs
+ * further renamings
+ *
  * Revision 3.70  2004/11/26 23:36:01  sbs
  * *** empty log message ***
  *
@@ -1076,7 +1079,7 @@ ILIBsystemCall (char *format, ...)
 /******************************************************************************
  *
  * Function:
- *   int SystemCall2( char *format, ...)
+ *   int ILIBsystemCall2( char *format, ...)
  *
  * Description:
  *   Evaluates the given string and executes the respective system call.
@@ -1086,12 +1089,12 @@ ILIBsystemCall (char *format, ...)
  ******************************************************************************/
 
 int
-SystemCall2 (char *format, ...)
+ILIBsystemCall2 (char *format, ...)
 {
     va_list arg_p;
     static char syscall[MAX_SYSCALL];
 
-    DBUG_ENTER ("SystemCall2");
+    DBUG_ENTER ("ILIBsystemCall2");
 
     va_start (arg_p, format);
     vsprintf (syscall, format, arg_p);
