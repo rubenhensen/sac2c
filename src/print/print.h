@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.9  2000/06/23 15:34:13  nmw
+ * PrintCWrapper added
+ *
  * Revision 2.8  2000/03/22 17:35:42  jhs
  * Added PrintMT(sync|alloc|signal).
  *
@@ -216,6 +219,8 @@ extern node *PrintWLgrid (node *arg_node, node *arg_info);
 extern node *PrintWLsegVar (node *arg_node, node *arg_info);
 extern node *PrintWLstriVar (node *arg_node, node *arg_info);
 extern node *PrintWLgridVar (node *arg_node, node *arg_info);
+
+extern node *PrintCWrapper (node *arg_node, node *arg_info);
 
 extern void PrintFunctionHeader (node *arg_node, node *arg_info);
 

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.81  2000/06/23 15:34:37  nmw
+ * PrintCWrapper added
+ *
  * Revision 2.80  2000/06/23 14:10:14  dkr
  * NWITH_COMPLEX removed
  *
@@ -3091,6 +3094,25 @@ PrintWLgridVar (node *arg_node, node *arg_info)
     if (WLGRIDVAR_NEXT (arg_node) != NULL) {
         PRINT_CONT (Trav (WLGRIDVAR_NEXT (arg_node), arg_info), );
     }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *PrintCWrapper( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   prints N_cwrapper nodes to
+ *   generates c interface files
+ *
+ ******************************************************************************/
+
+node *
+PrintCWrapper (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintCWrapper");
 
     DBUG_RETURN (arg_node);
 }
