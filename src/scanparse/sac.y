@@ -3,7 +3,12 @@
 /*
  *
  * $Log$
- * Revision 1.38  1994/12/31 15:11:27  sbs
+ * Revision 1.39  1995/01/03 17:57:00  hw
+ * changed constructing of assigns to handle converted for-loops correctly
+ * inserted DBUG_PRINT's in function Append.
+ * bug fixed in DBUG_PRINT of rule 'forassign' part FOR ...
+ *
+ * Revision 1.38  1994/12/31  15:11:27  sbs
  * changed the structure of N_explist nodes:
  * node[0] contains now a typedef chain for implicit types!
  * 2) modul names inserted for export-decls
@@ -691,14 +696,7 @@ assigns: /* empty */
        | assign assigns 
           { $$=$1;
             if (NULL != $2) /* there are more assigns */
-            {
-               $$->node[1]=$2;
-               $$->nnode=2;
-               DBUG_PRINT("GENTREE",
-                          ("%s "P_FORMAT", next: %s "P_FORMAT,
-                           mdb_nodetype[$$->nodetype], $$,
-                           mdb_nodetype[$$->node[1]->nodetype], $$->node[1]));
-            }
+               $$=Append($1,$2);
          }
          ;
 
@@ -723,7 +721,7 @@ assign: letassign SEMIC
                          mdb_nodetype[$$->node[0]->nodetype], $$->node[0]));
            }
       | forassign 
-           { if (N_assign != $$->nodetype)
+           { if (N_assign != $1->nodetype)
              {
                 $$=MakeNode(N_assign);
                 $$->node[0]=$1;
@@ -866,7 +864,8 @@ forassign: DO {$$=MakeNode(N_do);} assignblock WHILE BRACKET_L expr BRACKET_R
                                 
                 DBUG_PRINT("GENTREE",
                          ("%s "P_FORMAT": %s "P_FORMAT", %s "P_FORMAT,
-                          mdb_nodetype[$$->node[1]->node[0]->nodetype], $$,
+                          mdb_nodetype[$$->node[1]->node[0]->nodetype], 
+                          $$->node[1]->node[0],
                           mdb_nodetype[$$->node[1]->node[0]->node[0]->nodetype],
                           $$->node[1]->node[0]->node[0],
                           mdb_nodetype[$$->node[1]->node[0]->node[1]->nodetype],
@@ -1418,25 +1417,36 @@ node *Append(node *target_node, node *append_node)
          tmp->node[1]=append_node;
       
       tmp->nnode=2;     /* previous last N_assign node has a new child */
+         
+      DBUG_PRINT("GENTREE",("%s"P_FORMAT": %s"P_FORMAT" %s"P_FORMAT,
+                            mdb_nodetype[tmp->nodetype],tmp,
+                            mdb_nodetype[tmp->node[0]->nodetype],tmp->node[0],
+                            mdb_nodetype[tmp->node[1]->nodetype],tmp->node[1]));
    }
    else
    {  /* target_node has type N_empty */
 
-         free(tmp);     /* delete node of type N_empty */
+      free(tmp);     /* delete node of type N_empty */
       if (N_assign != append_node->nodetype)
       {
          tmp=MakeNode(N_assign);  
          tmp->node[0]=append_node;
          tmp->nnode=1;
-      }
-      else
-         tmp=append_node;
-   }
          
-   DBUG_PRINT("APPEND",("return node :%s"P_FORMAT,
-                        mdb_nodetype[target_node->nodetype],target_node));
-   
-   
+         DBUG_PRINT("GENTREE",("%s"P_FORMAT": %s"P_FORMAT,
+                               mdb_nodetype[tmp->nodetype],tmp,
+                               mdb_nodetype[tmp->node[0]->nodetype],
+                               tmp->node[0]));
+      } 
+      else
+      {
+         tmp=append_node;
+         
+         DBUG_PRINT("GENTREE",("%s"P_FORMAT,
+                               mdb_nodetype[tmp->nodetype],tmp));
+      }
+   }
+      
    DBUG_RETURN(target_node);
 }
 
