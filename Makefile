@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.66  2003/03/09 17:13:09  ktr
+# blir.o added to COMPILE
+#
 # Revision 3.65  2003/02/12 18:44:20  ktr
 # Added target 'doxygen' to create documentation in $(SAC_PUBLIC_HTML)/sac2cdoc.
 #
@@ -188,7 +191,8 @@ COMPILE= src/compile/wltransform.o src/compile/wlpragma_funs.o \
          src/compile/icm2c_utils.o src/compile/icm2c_std.o \
          src/compile/icm2c_mt.o src/compile/icm2c_sched.o \
          src/compile/icm2c_wl.o src/compile/icm2c_error.o \
-         src/compile/ReuseWithArrays.o src/compile/PatchWith.o
+         src/compile/ReuseWithArrays.o src/compile/PatchWith.o \
+         src/compile/blir.o
 
 CINTERFACE= src/c-interface/map_cwrapper.o src/c-interface/print_interface.o \
             src/c-interface/import_specialization.o \
