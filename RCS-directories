@@ -6,6 +6,3 @@ src/global
 src/print
 src/scanparse
 src/typecheck
-test
-tes
-tesd
