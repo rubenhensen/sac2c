@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.8  2000/08/03 15:32:00  mab
+ * completed collection of access patterns and unsupported shapes
+ *
  * Revision 1.7  2000/07/21 14:43:43  mab
  * added APCcode and APCwithop dummies
  *
@@ -43,16 +46,12 @@
 #define sac_pad_collect_h
 
 extern void APcollect ();
-extern node *APCarg (node *arg_node, node *arg_info);
-extern node *APCvardec (node *arg_node, node *arg_info);
 extern node *APCarray (node *arg_node, node *arg_info);
 extern node *APCwith (node *arg_node, node *arg_info);
 extern node *APCap (node *arg_node, node *arg_info);
-extern node *APCexprs (node *arg_node, node *arg_info);
 extern node *APCid (node *arg_node, node *arg_info);
 extern node *APCprf (node *arg_node, node *arg_info);
 extern node *APCfundef (node *arg_node, node *arg_info);
-extern node *APCblock (node *arg_node, node *arg_info);
 extern node *APClet (node *arg_node, node *arg_info);
 extern node *APCwithop (node *arg_node, node *arg_info);
 extern node *APCcode (node *arg_node, node *arg_info);
