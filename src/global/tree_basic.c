@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.12  2000/01/21 12:42:43  dkr
+ * function MakeIds1 added
+ *
  * Revision 2.11  1999/09/10 14:22:52  jhs
  * Added COND_NAIVE_(THEN|ELSE)VARS.
  * Added MakeId1 und MakeId3 for those ugly macros i killed in tree.[ch].
@@ -248,6 +251,20 @@ MakeIds (char *name, char *mod, statustype status)
     IDS_ATTRIB (tmp) = (mod == NULL) ? ST_regular : ST_global;
 
     DBUG_RETURN (tmp);
+}
+
+/*--------------------------------------------------------------------------*/
+
+ids *
+MakeIds1 (char *name)
+{
+    ids *result;
+
+    DBUG_ENTER ("MakeIds1");
+
+    result = MakeIds (StringCopy (name), NULL, ST_regular);
+
+    DBUG_RETURN (result);
 }
 
 /*--------------------------------------------------------------------------*/
