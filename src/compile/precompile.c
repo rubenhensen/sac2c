@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.105  2004/11/29 14:41:57  sah
+ * added setlinksign traversal
+ *
  * Revision 3.104  2004/11/27 02:39:27  ktr
  * errorcorrection.
  *
@@ -23,6 +26,7 @@
 #include "functionprecompile.h"
 #include "typeconv_precompile.h"
 #include "renameidentifiers.h"
+#include "setlinksign.h"
 
 #include <string.h>
 
@@ -46,9 +50,18 @@ PRECdoPrecompile (node *syntax_tree)
     DBUG_ENTER ("Precompile");
 
     /*
+     * Set Linksign
+     */
+    DBUG_EXECUTE ("PREC", NOTE (("step 0: Set Linksign\n")));
+    syntax_tree = SLSdoSetLinksign (syntax_tree);
+    if (0 == strcmp (global.break_specifier, "sls")) {
+        goto DONE;
+    }
+
+    /*
      * MarkMemVals
      */
-    DBUG_EXECUTE ("PREC", NOTE (("step 0: renaming MemVals\n")));
+    DBUG_EXECUTE ("PREC", NOTE (("step 1: renaming MemVals\n")));
     syntax_tree = MMVdoMarkMemVals (syntax_tree);
     if (0 == strcmp (global.break_specifier, "mmv")) {
         goto DONE;
@@ -57,7 +70,7 @@ PRECdoPrecompile (node *syntax_tree)
     /*
      * Object precompilation
      */
-    DBUG_EXECUTE ("PREC", NOTE (("step 1: Object precompilation\n")));
+    DBUG_EXECUTE ("PREC", NOTE (("step 2: Object precompilation\n")));
     /* FIX ME */
     if (0 == strcmp (global.break_specifier, "opc")) {
         goto DONE;
@@ -66,7 +79,7 @@ PRECdoPrecompile (node *syntax_tree)
     /*
      * Function precompilation
      */
-    DBUG_EXECUTE ("PREC", NOTE (("step 2: function precompilation\n")));
+    DBUG_EXECUTE ("PREC", NOTE (("step 3: function precompilation\n")));
     syntax_tree = FPCdoFunctionPrecompile (syntax_tree);
     if (0 == strcmp (global.break_specifier, "fpc")) {
         goto DONE;
@@ -75,7 +88,7 @@ PRECdoPrecompile (node *syntax_tree)
     /*
      * Type conversions
      */
-    DBUG_EXECUTE ("PREC", NOTE (("step 3: type conversions\n")));
+    DBUG_EXECUTE ("PREC", NOTE (("step 4: type conversions\n")));
     syntax_tree = TCPdoTypeConversions (syntax_tree);
     if (0 == strcmp (global.break_specifier, "tcp")) {
         goto DONE;
@@ -84,7 +97,7 @@ PRECdoPrecompile (node *syntax_tree)
     /*
      * Adjusting fold functions ( MT only )
      */
-    DBUG_EXECUTE ("PREC", NOTE (("step 4: Adjusting fold functions\n")));
+    DBUG_EXECUTE ("PREC", NOTE (("step 5: Adjusting fold functions\n")));
     /* FIX ME */
     if (global.mtmode != MT_none) {
         DBUG_ASSERT ((0), "IMPLEMENT ME!");
@@ -96,7 +109,7 @@ PRECdoPrecompile (node *syntax_tree)
     /*
      * Type conversions
      */
-    DBUG_EXECUTE ("PREC", NOTE (("step 5: renaming identifiers\n")));
+    DBUG_EXECUTE ("PREC", NOTE (("step 6: renaming identifiers\n")));
     syntax_tree = RIDdoRenameIdentifiers (syntax_tree);
     if (0 == strcmp (global.break_specifier, "RID")) {
         goto DONE;
@@ -111,6 +124,9 @@ DONE:
 /*
  *
  * $Log$
+ * Revision 3.105  2004/11/29 14:41:57  sah
+ * added setlinksign traversal
+ *
  * Revision 3.104  2004/11/27 02:39:27  ktr
  * errorcorrection.
  *

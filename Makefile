@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.153  2004/11/29 14:41:57  sah
+# added setlinksign traversal
+#
 # Revision 3.152  2004/11/29 09:35:04  sbs
 # xml dir added
 #
@@ -198,7 +201,7 @@ COMPILE= src/compile/wlpragma_funs.o src/compile/wltransform.o \
          src/compile/icm2c_mt.o src/compile/icm2c_sched.o \
          src/compile/icm2c_wl.o src/compile/icm2c_error.o \
          src/compile/renameidentifiers.o src/compile/functionprecompile.o \
-         src/compile/typeconv_precompile.o 
+         src/compile/typeconv_precompile.o  src/compile/setlinksign.o
 
 CINTERFACE=
 #CINTERFACE= src/c-interface/map_cwrapper.o \

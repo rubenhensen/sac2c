@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.41  2004/11/29 14:41:57  sah
+# added setlinksign traversal
+#
 # Revision 3.40  2004/11/27 02:36:35  sbs
 # *** empty log message ***
 #
@@ -123,7 +126,8 @@ SAC2C_OBJS := wlpragma_funs.o precompile.o compile.o wltransform.o \
               gen_startup_code.o icm2c.o \
               icm2c_std.o icm2c_prf.o icm2c_wl.o icm2c_mt.o icm2c_sched.o \
               icm2c_error.o icm2c_basic.o icm2c_utils.o markmemvals.o \
-              typeconv_precompile.o functionprecompile.o renameidentifiers.o
+              typeconv_precompile.o functionprecompile.o renameidentifiers.o \
+              setlinksign.o
 
 
 all: $(SAC2C_OBJS)
