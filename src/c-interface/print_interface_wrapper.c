@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2002/03/04 13:19:25  dkr
+ * no changes done
+ *
  * Revision 3.7  2001/04/27 08:47:22  nmw
  * PIWarg can handle unique args now
  *
@@ -546,7 +549,7 @@ PIWfundefSwitch (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PIWfundefCall(node *wrapper, node *arg_info)
+ *   node *PIWfundefCall(node *arg_node, node *arg_info)
  *
  * description:
  *   Prints one fundef call in a cwrapper function
