@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.4  1999/05/12 15:13:23  cg
+# make deps done
+#
 # Revision 2.3  1999/03/11 18:18:20  dkr
 # make deps done
 #
@@ -87,11 +90,11 @@ clean:
 
 convert.o: /usr/include/string.h /usr/include/sys/feature_tests.h
 convert.o: /usr/include/sys/isa_defs.h /usr/include/stdlib.h
-convert.o: /usr/include/math.h ../global/internal_lib.h ../../inc/dbug.h
-convert.o: /usr/include/stdio.h /usr/include/sys/va_list.h
+convert.o: /usr/include/math.h ../global/internal_lib.h ../global/types.h
+convert.o: ../../inc/dbug.h /usr/include/stdio.h /usr/include/sys/va_list.h
 convert.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-convert.o: ../global/tree_basic.h ../global/types.h ../global/tree_compound.h
-convert.o: ../global/Error.h ../global/globals.h ../global/type_info.mac
+convert.o: ../global/tree_basic.h ../global/tree_compound.h ../global/Error.h
+convert.o: ../global/globals.h ../global/type_info.mac
 print.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 print.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 print.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
@@ -104,5 +107,6 @@ print.o: ../global/free.h /usr/include/malloc.h /usr/include/sys/types.h
 print.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
 print.o: ../optimize/generatemasks.h ../modules/filemgr.h
 print.o: ../compile/gen_startup_code.h ../psi-opt/WithloopFolding.h
-print.o: ../concurrent/scheduling.h ../compile/icm.data
+print.o: ../concurrent/scheduling.h ../psi-opt/wl_access_analyze.h
+print.o: ../psi-opt/tile_size_inference.h ../compile/icm.data
 print.o: ../global/prf_node_info.mac

@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.4  1999/05/12 15:13:26  cg
+# make deps done
+#
 # Revision 2.3  1999/03/11 18:18:23  dkr
 # make deps done
 #
@@ -204,7 +207,7 @@ filemgr.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
 filemgr.o: /usr/include/sys/int_types.h /usr/include/sys/unistd.h
 filemgr.o: ../../inc/dbug.h /usr/include/stdio.h /usr/include/stdio_tag.h
 filemgr.o: /usr/include/stdio_impl.h ../global/internal_lib.h
-filemgr.o: ../global/Error.h ../global/types.h ../global/globals.h filemgr.h
+filemgr.o: ../global/types.h ../global/Error.h ../global/globals.h filemgr.h
 filemgr.o: ../global/resource.h
 implicittypes.o: ../global/types.h ../global/tree_basic.h
 implicittypes.o: ../global/tree_compound.h ../global/Error.h

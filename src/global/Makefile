@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.5  1999/05/12 15:13:22  cg
+# make deps done
+#
 # Revision 2.4  1999/05/12 14:29:25  cg
 # added compilation of options.c
 # improved generation of build.c
@@ -145,20 +148,20 @@ internal_lib.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h types.h
 internal_lib.o: globals.h free.h ../../inc/dbug.h my_debug.h
 internal_lib.o: /usr/include/malloc.h /usr/include/sys/types.h
 internal_lib.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-internal_lib.o: internal_lib.h traverse.h tree_compound.h tree_basic.h
+internal_lib.o: internal_lib.h traverse.h tree_basic.h tree_compound.h
 interrupt.o: /usr/include/signal.h /usr/include/sys/feature_tests.h
 interrupt.o: /usr/include/sys/isa_defs.h /usr/include/sys/signal.h
 interrupt.o: /usr/include/sys/unistd.h /usr/include/stdio.h
 interrupt.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
 interrupt.o: /usr/include/stdio_impl.h Error.h /usr/include/string.h
 interrupt.o: /usr/include/stdlib.h types.h globals.h interrupt.h
-interrupt.o: internal_lib.h usage.h
-main.o: ../../inc/main.h ../../inc/dbug.h /usr/include/stdio.h
-main.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
-main.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-main.o: /usr/include/stdio_impl.h tree.h types.h tree_basic.h tree_compound.h
-main.o: Error.h /usr/include/string.h /usr/include/stdlib.h globals.h
-main.o: internal_lib.h free.h my_debug.h /usr/include/malloc.h
+interrupt.o: internal_lib.h build.h
+main.o: tree.h types.h tree_basic.h tree_compound.h Error.h
+main.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
+main.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
+main.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
+main.o: /usr/include/string.h /usr/include/stdlib.h globals.h internal_lib.h
+main.o: free.h ../../inc/dbug.h my_debug.h /usr/include/malloc.h
 main.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
 main.o: /usr/include/sys/int_types.h usage.h ../flatten/flatten.h
 main.o: ../print/print.h ../typecheck/typecheck.h ../optimize/optimize.h
@@ -177,7 +180,9 @@ options.o: /usr/include/sys/isa_defs.h ../../inc/dbug.h /usr/include/stdio.h
 options.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
 options.o: /usr/include/stdio_impl.h ../../inc/main_args.h
 options.o: /usr/include/string.h usage.h ../modules/filemgr.h globals.h
-options.o: types.h internal_lib.h Error.h
+options.o: types.h internal_lib.h free.h my_debug.h /usr/include/malloc.h
+options.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
+options.o: /usr/include/sys/int_types.h Error.h
 resource.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 resource.o: /usr/include/sys/isa_defs.h /usr/include/stdio.h
 resource.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
@@ -248,4 +253,4 @@ tree_compound.o: /usr/include/sys/int_types.h internal_lib.h
 usage.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 usage.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 usage.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h usage.h globals.h
-usage.o: types.h ../../inc/dbug.h
+usage.o: types.h build.h ../../inc/dbug.h

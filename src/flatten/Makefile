@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.4  1999/05/12 15:13:21  cg
+# make deps done
+#
 # Revision 2.3  1999/03/11 18:18:18  dkr
 # make deps done
 #
@@ -83,10 +86,10 @@ clean:
 flatten.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 flatten.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 flatten.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-flatten.o: /usr/include/stdlib.h ../global/tree.h ../global/types.h
-flatten.o: ../global/tree_basic.h ../global/tree_compound.h ../global/Error.h
-flatten.o: /usr/include/string.h ../global/globals.h ../global/internal_lib.h
-flatten.o: ../../inc/dbug.h ../global/my_debug.h ../global/traverse.h
-flatten.o: ../global/free.h /usr/include/malloc.h /usr/include/sys/types.h
-flatten.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-flatten.o: ../optimize/DupTree.h flatten.h
+flatten.o: ../global/globals.h ../global/types.h ../global/Error.h
+flatten.o: /usr/include/string.h /usr/include/stdlib.h ../../inc/dbug.h
+flatten.o: ../global/my_debug.h ../global/internal_lib.h
+flatten.o: ../global/tree_basic.h ../global/tree_compound.h
+flatten.o: ../global/traverse.h ../global/free.h /usr/include/malloc.h
+flatten.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
+flatten.o: /usr/include/sys/int_types.h ../optimize/DupTree.h flatten.h

@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.6  1999/05/12 15:13:27  cg
+# make deps done
+#
 # Revision 2.5  1999/05/10 10:48:37  bs
 # added compilation of wl_access_analyze.c
 #
@@ -188,27 +191,28 @@ psi-opt.o: /usr/include/stdlib.h ../global/tree.h ../global/types.h
 psi-opt.o: ../global/tree_basic.h ../global/tree_compound.h ../global/Error.h
 psi-opt.o: /usr/include/string.h ../global/globals.h ../global/internal_lib.h
 psi-opt.o: ../../inc/dbug.h ../global/traverse.h psi-opt.h
-tile_size_inference.o: ../../inc/dbug.h /usr/include/stdio.h
-tile_size_inference.o: /usr/include/sys/feature_tests.h
-tile_size_inference.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
+tile_size_inference.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
+tile_size_inference.o: /usr/include/sys/isa_defs.h ../../inc/dbug.h
+tile_size_inference.o: /usr/include/stdio.h /usr/include/sys/va_list.h
 tile_size_inference.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
 tile_size_inference.o: ../global/types.h ../global/tree_basic.h
 tile_size_inference.o: ../global/tree_compound.h ../global/Error.h
-tile_size_inference.o: /usr/include/string.h /usr/include/stdlib.h
-tile_size_inference.o: ../global/globals.h ../global/traverse.h
-tile_size_inference.o: ../global/free.h ../global/my_debug.h
-tile_size_inference.o: /usr/include/malloc.h /usr/include/sys/types.h
-tile_size_inference.o: /usr/include/sys/machtypes.h
+tile_size_inference.o: /usr/include/string.h ../global/globals.h
+tile_size_inference.o: ../global/traverse.h ../global/free.h
+tile_size_inference.o: ../global/my_debug.h /usr/include/malloc.h
+tile_size_inference.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
 tile_size_inference.o: /usr/include/sys/int_types.h ../global/internal_lib.h
-wl_access_analyze.o: ../../inc/dbug.h /usr/include/stdio.h
-wl_access_analyze.o: /usr/include/sys/feature_tests.h
-wl_access_analyze.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
+tile_size_inference.o: ../print/print.h ../global/tree.h
+tile_size_inference.o: tile_size_inference.h
+wl_access_analyze.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
+wl_access_analyze.o: /usr/include/sys/isa_defs.h ../../inc/dbug.h
+wl_access_analyze.o: /usr/include/stdio.h /usr/include/sys/va_list.h
 wl_access_analyze.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
 wl_access_analyze.o: ../global/types.h ../global/tree_basic.h
 wl_access_analyze.o: ../global/tree_compound.h ../global/Error.h
-wl_access_analyze.o: /usr/include/string.h /usr/include/stdlib.h
-wl_access_analyze.o: ../global/globals.h ../global/traverse.h
-wl_access_analyze.o: ../global/free.h ../global/my_debug.h
-wl_access_analyze.o: /usr/include/malloc.h /usr/include/sys/types.h
-wl_access_analyze.o: /usr/include/sys/machtypes.h
+wl_access_analyze.o: /usr/include/string.h ../global/globals.h
+wl_access_analyze.o: ../global/traverse.h ../global/free.h
+wl_access_analyze.o: ../global/my_debug.h /usr/include/malloc.h
+wl_access_analyze.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
 wl_access_analyze.o: /usr/include/sys/int_types.h ../global/internal_lib.h
+wl_access_analyze.o: wl_access_analyze.h

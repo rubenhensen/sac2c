@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.4  1999/05/12 15:13:26  cg
+# make deps done
+#
 # Revision 2.3  1999/03/11 18:18:24  dkr
 # make deps done
 #
@@ -295,9 +298,8 @@ BEtest.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 BEtest.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
 BEtest.o: /usr/include/malloc.h /usr/include/sys/types.h
 BEtest.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-BEtest.o: ../../inc/dbug.h ../../inc/main.h ../global/globals.h
-BEtest.o: ../global/types.h icm2c_std.h icm2c_wl.h icm2c_mt.h icm_vars.c
-BEtest.o: icm.data icm_betest.c
+BEtest.o: ../../inc/dbug.h ../global/globals.h ../global/types.h icm2c_std.h
+BEtest.o: icm2c_wl.h icm2c_mt.h icm_vars.c icm.data icm_betest.c
 Old2NewWith.o: ../global/tree.h ../global/types.h ../global/tree_basic.h
 Old2NewWith.o: ../global/tree_compound.h ../global/Error.h
 Old2NewWith.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
@@ -368,11 +370,10 @@ icm2c_std.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
 icm2c_std.o: /usr/include/stdio.h /usr/include/sys/va_list.h
 icm2c_std.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
 icm2c_std.o: /usr/include/ctype.h icm2c_basic.h ../../inc/dbug.h
-icm2c_std.o: ../global/my_debug.h ../../inc/main.h ../print/convert.h
-icm2c_std.o: ../global/types.h ../global/globals.h ../print/print.h
-icm2c_std.o: ../global/tree.h ../global/tree_basic.h
-icm2c_std.o: ../global/tree_compound.h ../global/Error.h
-icm2c_std.o: /usr/include/string.h /usr/include/stdlib.h
+icm2c_std.o: ../global/my_debug.h ../print/convert.h ../global/types.h
+icm2c_std.o: ../global/globals.h ../print/print.h ../global/tree.h
+icm2c_std.o: ../global/tree_basic.h ../global/tree_compound.h
+icm2c_std.o: ../global/Error.h /usr/include/string.h /usr/include/stdlib.h
 icm2c_std.o: ../global/internal_lib.h gen_startup_code.h icm_comment.c
 icm2c_std.o: icm.data icm_trace.c
 icm2c_wl.o: /usr/include/malloc.h /usr/include/sys/types.h
@@ -380,12 +381,12 @@ icm2c_wl.o: /usr/include/sys/isa_defs.h /usr/include/sys/feature_tests.h
 icm2c_wl.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
 icm2c_wl.o: /usr/include/stdio.h /usr/include/sys/va_list.h
 icm2c_wl.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h icm2c_basic.h
-icm2c_wl.o: ../../inc/dbug.h ../global/my_debug.h ../../inc/main.h
-icm2c_wl.o: ../print/convert.h ../global/types.h ../global/globals.h
-icm2c_wl.o: ../print/print.h ../global/tree.h ../global/tree_basic.h
-icm2c_wl.o: ../global/tree_compound.h ../global/Error.h /usr/include/string.h
-icm2c_wl.o: /usr/include/stdlib.h ../global/internal_lib.h gen_startup_code.h
-icm2c_wl.o: icm_comment.c icm.data icm_trace.c
+icm2c_wl.o: ../../inc/dbug.h ../global/my_debug.h ../print/convert.h
+icm2c_wl.o: ../global/types.h ../global/globals.h ../print/print.h
+icm2c_wl.o: ../global/tree.h ../global/tree_basic.h ../global/tree_compound.h
+icm2c_wl.o: ../global/Error.h /usr/include/string.h /usr/include/stdlib.h
+icm2c_wl.o: ../global/internal_lib.h gen_startup_code.h icm_comment.c
+icm2c_wl.o: icm.data icm_trace.c
 icm_betest.o: icm.data
 icm_comment.o: icm.data
 icm_icm2c.o: icm.data

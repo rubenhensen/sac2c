@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.7  1999/05/12 15:13:30  cg
+# make deps done
+#
 # Revision 2.6  1999/04/26 11:42:05  her
 # modifications for the piped-cachesimulation
 #
@@ -123,6 +126,10 @@ CacheSimTest: CacheSimTest.o libsac_cachesim_basic.o libsac_message.o\
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
+CacheSimAnalyser.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
+CacheSimAnalyser.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
+CacheSimAnalyser.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
+CacheSimAnalyser.o: sac_cachesim.h libsac_cachesim.h
 CacheSimTest.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 CacheSimTest.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 CacheSimTest.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
@@ -131,48 +138,44 @@ libsac_cachesim_access.o: /usr/include/memory.h /usr/include/sys/types.h
 libsac_cachesim_access.o: /usr/include/sys/isa_defs.h
 libsac_cachesim_access.o: /usr/include/sys/feature_tests.h
 libsac_cachesim_access.o: /usr/include/sys/machtypes.h
-libsac_cachesim_access.o: /usr/include/sys/int_types.h
-libsac_cachesim_access.o: /usr/include/sys/select.h /usr/include/sys/time.h
-libsac_cachesim_access.o: /usr/include/sys/time.h /usr/include/stdlib.h
+libsac_cachesim_access.o: /usr/include/sys/int_types.h /usr/include/stdlib.h
 libsac_cachesim_access.o: /usr/include/stdio.h /usr/include/sys/va_list.h
 libsac_cachesim_access.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-libsac_cachesim_access.o: sac_cachesim.h
+libsac_cachesim_access.o: sac_cachesim.h libsac_cachesim.h
 libsac_cachesim_basic.o: /usr/include/memory.h /usr/include/sys/types.h
 libsac_cachesim_basic.o: /usr/include/sys/isa_defs.h
 libsac_cachesim_basic.o: /usr/include/sys/feature_tests.h
 libsac_cachesim_basic.o: /usr/include/sys/machtypes.h
-libsac_cachesim_basic.o: /usr/include/sys/int_types.h
-libsac_cachesim_basic.o: /usr/include/sys/select.h /usr/include/sys/time.h
-libsac_cachesim_basic.o: /usr/include/sys/time.h /usr/include/stdlib.h
+libsac_cachesim_basic.o: /usr/include/sys/int_types.h /usr/include/stdlib.h
 libsac_cachesim_basic.o: /usr/include/stdio.h /usr/include/sys/va_list.h
 libsac_cachesim_basic.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-libsac_cachesim_basic.o: sac_cachesim.h
+libsac_cachesim_basic.o: /usr/include/string.h /usr/include/math.h
+libsac_cachesim_basic.o: sac_cachesim.h libsac_cachesim.h sac_message.h
 libsac_malloc.o: /usr/include/malloc.h /usr/include/sys/types.h
 libsac_malloc.o: /usr/include/sys/isa_defs.h /usr/include/sys/feature_tests.h
 libsac_malloc.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-libsac_malloc.o: /usr/include/sys/select.h /usr/include/sys/time.h
-libsac_malloc.o: /usr/include/sys/time.h /usr/include/stdio.h
-libsac_malloc.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-libsac_malloc.o: /usr/include/stdio_impl.h sac_message.h
+libsac_malloc.o: /usr/include/stdio.h /usr/include/sys/va_list.h
+libsac_malloc.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
+libsac_malloc.o: sac_message.h
 libsac_message.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 libsac_message.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 libsac_message.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-libsac_message.o: /usr/include/stdarg.h /usr/include/stdlib.h
+libsac_message.o: /usr/include/stdarg.h /usr/include/varargs.h
+libsac_message.o: /usr/include/stdlib.h
 libsac_mt.o: /usr/include/pthread.h /usr/include/sys/types.h
 libsac_mt.o: /usr/include/sys/isa_defs.h /usr/include/sys/feature_tests.h
 libsac_mt.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-libsac_mt.o: /usr/include/sys/select.h /usr/include/sys/time.h
-libsac_mt.o: /usr/include/sys/time.h /usr/include/sched.h
-libsac_mt.o: /usr/include/stdio.h /usr/include/sys/va_list.h
-libsac_mt.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h sac_message.h
+libsac_mt.o: /usr/include/time.h /usr/include/sched.h /usr/include/stdio.h
+libsac_mt.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
+libsac_mt.o: /usr/include/stdio_impl.h sac_message.h
 libsac_profile.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 libsac_profile.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 libsac_profile.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
 libsac_profile.o: /usr/include/sys/time.h /usr/include/sys/types.h
 libsac_profile.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-libsac_profile.o: /usr/include/sys/select.h /usr/include/sys/time.h
 libsac_profile.o: /usr/include/sys/resource.h
 libsac_trace.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 libsac_trace.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 libsac_trace.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-libsac_trace.o: /usr/include/stdarg.h /usr/include/string.h
+libsac_trace.o: /usr/include/stdarg.h /usr/include/varargs.h
+libsac_trace.o: /usr/include/string.h
