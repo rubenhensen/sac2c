@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.15  2004/11/26 22:07:12  sbs
+ * JHs typo
+ *
  * Revision 3.14  2004/11/26 21:04:35  jhb
  * compile .
  *
@@ -113,7 +116,7 @@
 #include "free.h"
 #include "globals.h"
 #include "DupTree.h"
-#include "internal_lib.c"
+#include "internal_lib.h"
 
 #include "pad_info.h"
 #include "pad_collect.h"
