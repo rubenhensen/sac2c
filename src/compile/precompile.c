@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.19  2000/07/14 08:48:40  dkr
+ * minor changes for TAGGED_ARRAYS done
+ *
  * Revision 2.18  2000/07/11 12:08:19  dkr
  * uups .... syntax error without TAGGED_ARRAYS removed.
  *
@@ -215,7 +218,7 @@ GetClassFromTypes (types *type)
 
     DBUG_ENTER ("GetClassFromTypes");
 
-    if (IsNonUniqueHidden (type)) {
+    if (IsHidden (type)) {
         z = C_hid;
     } else if (TYPES_DIM (type) == SCALAR) {
         z = C_scl;
@@ -305,13 +308,18 @@ PRECRenameLocalIdentifier (char *id
     }
 
 #ifdef TAGGED_ARRAYS
-    new_name = (char *)MALLOC (sizeof (char)
-                               * (strlen (id) + strlen (name_prefix) + 1 + NT_OVERHEAD));
-    sprintf (new_name, "(%s%s,(%s,(%s,)))", name_prefix, id, nt_class_str[nt_class],
-             nt_uni_str[nt_uni]);
-#else  /* TAGGED_ARRAYS */
-    new_name = (char *)MALLOC (sizeof (char) * (strlen (id) + strlen (name_prefix) + 1));
-    sprintf (new_name, "%s%s", name_prefix, id);
+    if (nt_class == C_scl) {
+#endif /* TAGGED_ARRAYS */
+        new_name
+          = (char *)MALLOC (sizeof (char) * (strlen (id) + strlen (name_prefix) + 1));
+        sprintf (new_name, "%s%s", name_prefix, id);
+#ifdef TAGGED_ARRAYS
+    } else {
+        new_name = (char *)MALLOC (
+          sizeof (char) * (strlen (id) + strlen (name_prefix) + 1 + NT_OVERHEAD));
+        sprintf (new_name, "(%s%s,(%s,(%s,)))", name_prefix, id, nt_class_str[nt_class],
+                 nt_uni_str[nt_uni]);
+    }
 #endif /* TAGGED_ARRAYS */
 
     FREE (id);
