@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.17  2001/03/09 11:16:39  sbs
+ * profiling hidden behind PROFILE_IN_TC.
+ * Now, profiling is implemented separately!
+ *
  * Revision 3.16  2001/03/02 12:54:53  dkr
  * no changes done
  *
@@ -3257,7 +3261,6 @@ Typecheck (node *arg_node)
 {
     fun_tab_elem *tmp_node;
     node *tmp;
-    int i;
 
     DBUG_ENTER ("Typecheck");
 
@@ -3279,13 +3282,18 @@ Typecheck (node *arg_node)
         arg_node = ImportSpecialization (arg_node);
     }
 
-    /*
-     * initialize profile-tool !
-     */
-    PFfunapcntr[0] = 1; /* main-function */
-    for (i = 1; i < PF_MAXFUN; i++) {
-        PFfunapcntr[i] = 0;
+#ifdef PROFILE_IN_TC
+    {
+        int i;
+        /*
+         * initialize profile-tool !
+         */
+        PFfunapcntr[0] = 1; /* main-function */
+        for (i = 1; i < PF_MAXFUN; i++) {
+            PFfunapcntr[i] = 0;
+        }
     }
+#endif
 
     if (sbs == 1) {
         NewTypeCheck (arg_node);
@@ -5811,10 +5819,12 @@ TI_ap (node *arg_node, node *arg_info)
     node *current_args;
     char *fun_name = arg_node->FUN_NAME;
     char *mod_name = arg_node->FUN_MOD_NAME;
+#ifdef PROFILE_IN_TC
     char *str_buff, *tmp_str;
     int str_spc = PF_MAXFUNNAMELEN - 1;
     int tmp_fun, tmp_funap, funtypemask;
     node *arg;
+#endif
 
     DBUG_ENTER ("TI_ap");
 
@@ -5873,6 +5883,7 @@ TI_ap (node *arg_node, node *arg_info)
      */
     AP_FUNDEF (arg_node) = fun_p->node; /* set pointer to function declaration */
 
+#ifdef PROFILE_IN_TC
     if (profileflag != 0) {
         if (AP_ATFLAG (arg_node) != 1) { /* we did not yet inspect this application! */
 
@@ -6006,6 +6017,7 @@ TI_ap (node *arg_node, node *arg_info)
             }
         }
     }
+#endif /* PROFILE_IN_TC */
 
     /* now free the infered type information */
     for (i = 0; i < count_args; i++) {
