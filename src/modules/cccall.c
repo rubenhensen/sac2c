@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.6  1996/01/21 13:59:05  cg
+ * Revision 1.7  1996/01/25 15:58:19  cg
+ * bug fixed when linking with external archive files
+ *
+ * Revision 1.6  1996/01/21  13:59:05  cg
  * Now, C object files are also looked for in $RCSROOT/src/compile/
  * where the SAC runtime library resides
  *
@@ -417,6 +420,8 @@ SearchLinkFiles ()
                 } else {
                     NOTE (("  Found archive file \"%s\" !", pathname));
                     SystemCall ("cp %s %s", pathname, build_dirname);
+                    SystemCall ("ranlib %s%s", build_dirname, buffer);
+
                     afilelist = MakeStrings (StringCopy (buffer), afilelist);
                 }
             } else {
