@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2000/03/02 16:46:02  jhs
+ * including malloc.h while compiling unter LINUX_X86
+ *
  * Revision 1.2  2000/01/17 16:25:58  cg
  * Added multi-threading capabilities to the heap manager.
  *
@@ -25,6 +28,9 @@
  *****************************************************************************/
 
 #include <unistd.h>
+#ifdef SAC_FOR_LINUX_X86
+#include <malloc.h>
+#endif
 
 #include "heapmgr.h"
 #include "sac_message.h"
