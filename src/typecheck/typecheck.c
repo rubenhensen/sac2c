@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 2.54  2000/10/24 13:22:43  dkr
+ * MakeTypes renamed into MakeTypes1
+ * MakeType renamed into MakeTypes
+ *
  * Revision 2.53  2000/10/24 09:45:59  dkr
  * GetSimpletype renamed into GetBasetype
  *
@@ -371,7 +375,7 @@ static node *pseudo_fold_fundefs;
             SYSABORT (("Overflow of local stack"))                                       \
     }
 
-#define GEN_TYPE_NODE(node, type) node = MakeType (type, 0, NULL, NULL, NULL)
+#define GEN_TYPE_NODE(node, type) node = MakeTypes1 (type)
 
 /*
  *  The following defines are *only* used in functions TI_prf, TI_Nfoldprf.
@@ -5676,7 +5680,7 @@ TCreturn (node *arg_node, node *arg_info)
         }
         DBUG_ASSERT ((NULL != return_type), "return_type is NULL");
     } else {
-        return_type = MakeTypes (T_void);
+        return_type = MakeTypes1 (T_void);
     }
 
     DBUG_PRINT ("STOP", ("arg_info->node[0]: %s", NODE_TEXT (arg_info->node[0])));
@@ -6181,7 +6185,7 @@ TI_array (node *arg_node, node *arg_info)
          * array.
          */
         DBUG_PRINT ("TYPE", ("empty array found"));
-        return_type = MakeType (T_nothing, 0, NULL, NULL, NULL);
+        return_type = MakeTypes1 (T_nothing);
     }
 
     if (NULL != return_type) {
@@ -7074,8 +7078,8 @@ TI_Nwith (node *arg_node, node *arg_info)
         } else if (SCALAR > TYPES_DIM (body_type)
                    || SCALAR > TYPES_DIM (base_array_type)) {
             FreeOneTypes (body_type);
-            body_type = MakeType (TYPES_BASETYPE (base_array_type), UNKNOWN_SHAPE, NULL,
-                                  NULL, NULL);
+            body_type = MakeTypes (TYPES_BASETYPE (base_array_type), UNKNOWN_SHAPE, NULL,
+                                   NULL, NULL);
             FreeOneTypes (base_array_type);
             base_array_type = body_type;
         } else {
@@ -7250,8 +7254,8 @@ TI_Nwith (node *arg_node, node *arg_info)
 
                     tmpass
                       = MakeAssign (MakeLet (MakeCast (MakeArray (NULL),
-                                                       MakeType (T_int, UNKNOWN_SHAPE,
-                                                                 NULL, NULL, NULL)),
+                                                       MakeTypes (T_int, UNKNOWN_SHAPE,
+                                                                  NULL, NULL, NULL)),
                                              DupIds (NWITH_VEC (arg_node), NULL)),
                                     BLOCK_INSTR (
                                       NCODE_CBLOCK (NPART_CODE (NWITH_PART (arg_node)))));
@@ -7453,8 +7457,8 @@ TI_Npart (node *arg_node, types *default_bound_type, node *new_shp, node *arg_in
             ARRAY_CONSTVEC (tmpn) = const_vec;
             if (TYPES_DIM (default_bound_type) == SCALAR) {
                 NGEN_BOUND1 (gen)
-                  = MakeCast (tmpn, MakeType (T_int, 1, MakeShpseg (MakeNums (0, NULL)),
-                                              NULL, NULL));
+                  = MakeCast (tmpn, MakeTypes (T_int, 1, MakeShpseg (MakeNums (0, NULL)),
+                                               NULL, NULL));
             } else {
                 NGEN_BOUND1 (gen) = tmpn;
             }
@@ -7485,8 +7489,8 @@ TI_Npart (node *arg_node, types *default_bound_type, node *new_shp, node *arg_in
             ARRAY_CONSTVEC (tmpn) = const_vec;
             if (TYPES_DIM (default_bound_type) == SCALAR) {
                 NGEN_BOUND2 (gen)
-                  = MakeCast (tmpn, MakeType (T_int, 1, MakeShpseg (MakeNums (0, NULL)),
-                                              NULL, NULL));
+                  = MakeCast (tmpn, MakeTypes (T_int, 1, MakeShpseg (MakeNums (0, NULL)),
+                                               NULL, NULL));
             } else {
                 NGEN_BOUND2 (gen) = tmpn;
             }
@@ -7519,7 +7523,7 @@ TI_Npart (node *arg_node, types *default_bound_type, node *new_shp, node *arg_in
         if (!left_type)
             ERROR (NODE_LINE (arg_node), ("lower bound cannot be infered"));
     } else {
-        left_type = MakeType (T_int, KNOWN_DIM_OFFSET - 1, NULL, NULL, NULL);
+        left_type = MakeTypes (T_int, KNOWN_DIM_OFFSET - 1, NULL, NULL, NULL);
     }
 
     if (NGEN_BOUND2 (gen)) {
@@ -7527,7 +7531,7 @@ TI_Npart (node *arg_node, types *default_bound_type, node *new_shp, node *arg_in
         if (!right_type)
             ERROR (NODE_LINE (arg_node), ("upper bound cannot be infered"));
     } else {
-        right_type = MakeType (T_int, KNOWN_DIM_OFFSET - 1, NULL, NULL, NULL);
+        right_type = MakeTypes (T_int, KNOWN_DIM_OFFSET - 1, NULL, NULL, NULL);
     }
 
     if (NGEN_STEP (gen)) {
@@ -7597,7 +7601,7 @@ TI_Npart (node *arg_node, types *default_bound_type, node *new_shp, node *arg_in
     } else {
         /* weak TC */
         /* declare index vector as one-dimensional type.  */
-        tmpt = MakeType (T_int, KNOWN_DIM_OFFSET - 1, NULL, NULL, NULL);
+        tmpt = MakeTypes (T_int, KNOWN_DIM_OFFSET - 1, NULL, NULL, NULL);
         AddIdToStack (NWITHID_VEC (withid), tmpt, arg_info, NODE_LINE (arg_node));
         FreeOneTypes (tmpt);
     }
@@ -7605,7 +7609,7 @@ TI_Npart (node *arg_node, types *default_bound_type, node *new_shp, node *arg_in
     /* ...and then we check the array of scalars (int). All Id are
      * introduced in flatten (or TC) like the index vector. */
     _ids = NWITHID_IDS (withid);
-    tmpt = MakeType (T_int, 0, NULL, NULL, NULL);
+    tmpt = MakeTypes1 (T_int);
     i = 0;
     while (_ids != NULL) {
         i++;
@@ -7625,7 +7629,7 @@ TI_Npart (node *arg_node, types *default_bound_type, node *new_shp, node *arg_in
     FreeOneTypes (width_type);
 
     if (!gen_type)
-        gen_type = MakeType (T_int, KNOWN_DIM_OFFSET - 1, NULL, NULL, NULL);
+        gen_type = MakeTypes (T_int, KNOWN_DIM_OFFSET - 1, NULL, NULL, NULL);
 
     if ((SAC_PRG == kind_of_file) && (SCALAR >= TYPES_DIM (gen_type))
         && (dynamic_shapes == 0))
@@ -7713,7 +7717,7 @@ TI_Ngenarray (node *arg_node, node *arg_info, node **replace)
         /*
          * compute return_type
          */
-        ret_type = MakeType (T_int, 0, MakeShpseg (NULL), NULL, NULL);
+        ret_type = MakeTypes (T_int, 0, MakeShpseg (NULL), NULL, NULL);
 
         tmpn = ARRAY_AELEMS (arg_node);
         while (tmpn)
@@ -7750,11 +7754,11 @@ TI_Ngenarray (node *arg_node, node *arg_info, node **replace)
              * => we know the dim of the result
              * => return int[ ., ..., .] ...
              */
-            ret_type = MakeType (T_int, KNOWN_DIM_OFFSET - TYPES_SHAPE (expr_type, 0),
-                                 NULL, NULL, NULL);
+            ret_type = MakeTypes (T_int, KNOWN_DIM_OFFSET - TYPES_SHAPE (expr_type, 0),
+                                  NULL, NULL, NULL);
         } else {
             /* return int[] ... */
-            ret_type = MakeType (T_int, UNKNOWN_SHAPE, NULL, NULL, NULL);
+            ret_type = MakeTypes (T_int, UNKNOWN_SHAPE, NULL, NULL, NULL);
         }
         FreeOneTypes (expr_type);
     }
