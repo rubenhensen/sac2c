@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.3  2001/03/09 11:48:54  sbs
+ * types.h now explicitly included.
+ *
  * Revision 1.2  2001/03/07 10:03:40  nmw
  * first implementation
  *
@@ -28,6 +31,8 @@
 #ifndef SAC_COMPARETREE_H
 
 #define SAC_COMPARETREE_H
+
+#include "types.h"
 
 extern cmptree_t CompareTree (node *tree1, node *tree2);
 
