@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.26  2003/03/28 16:53:45  sbs
+ * started doxygenizing...
+ *
  * Revision 3.25  2002/10/30 12:12:51  sbs
  * NTCvardec added for converting old vardecs in ntype ones.
  *
@@ -134,8 +137,26 @@
  *
  */
 
-/*
+/**
+ *
+ * @defgroup ntc Type Inference
+ *
+ * This group contains all those files/ modules that belong to the
+ * (new) type inference system.
+ *
+ * @{
  */
+
+/**
+ *
+ * @file new_typecheck.c
+ *
+ * This file contains the central type inference / type checking mechanism
+ * of the compiler. It relies on support from several other modules.
+ * These are:
+ *   ... to be continued
+ */
+
 /*
  * Thus, we finally find the following usages of the arg_info node:
  *
@@ -152,6 +173,13 @@
 #define INFO_NTC_OBJDEFS(n) (n->node[2])
 
 typedef enum { NTC_not_checked, NTC_checking, NTC_checked } NTC_stat;
+
+/**
+ *
+ * @name Entry functions for calling the type inference:
+ *
+ * @{
+ */
 
 /******************************************************************************
  *
@@ -217,12 +245,14 @@ NewTypeCheck_Expr (node *arg_node)
     DBUG_RETURN (type);
 }
 
-/******************************************************************************
- ***
- ***          local helper functions
- ***          ----------------------
- ***
- ******************************************************************************/
+/* @} */
+
+/**
+ *
+ * @name Local helper functions:
+ *
+ * @{
+ */
 
 /******************************************************************************
  *
@@ -323,12 +353,14 @@ TypeCheckFunctionBody (node *fundef, node *arg_info)
     DBUG_RETURN (fundef);
 }
 
-/******************************************************************************
- ***
- ***          Here, the traversal functions start!
- ***          ------------------------------------
- ***
- ******************************************************************************/
+/* @ */
+
+/**
+ *
+ * @name Traversal functions for the type inference system:
+ *
+ * @{
+ */
 
 /******************************************************************************
  *
@@ -1682,6 +1714,15 @@ NTCNwithop (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/* @} */
+
+/**
+ *
+ * name: Module internal entry function:
+ *
+ * @{
+ */
+
 /******************************************************************************
  *
  * function:
@@ -1709,3 +1750,6 @@ NTCTriggerTypeCheck (node *fundef)
 
     DBUG_RETURN (fundef);
 }
+
+/* @} */
+/* @} */ /* defgroup ntc */
