@@ -269,8 +269,8 @@ IsAssociativeAndCommutative (node *arg_node)
 {
     DBUG_ENTER ("IsAssociativeAndCommutative");
     switch (PRF_PRF (arg_node)) {
-    case F_add:
-    case F_mul:
+    case F_add_AxA:
+    case F_mul_AxA:
     case F_max:
     case F_min:
     case F_and:

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2002/09/11 23:15:31  dkr
+ * prf_node_info.mac modified
+ *
  * Revision 3.5  2002/07/29 12:12:53  sbs
  * PRF_IF macro extended by z.
  *
@@ -61,7 +64,7 @@ char *mdb_nodetype[] = {
 };
 
 char *mdb_prf[] = {
-#define PRF_IF(n, s, x, y, z) s
+#define PRF_IF(a, b, c, d, e, f, g) b
 #include "prf_node_info.mac"
 #undef PRF_IF
 };

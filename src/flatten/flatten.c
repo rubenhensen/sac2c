@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.22  2002/09/11 23:18:45  dkr
+ * prf_node_info.mac modified
+ *
  * Revision 3.21  2002/08/15 12:44:25  sbs
  * minor error in flattening wls eliminated
  *
@@ -2013,15 +2016,15 @@ FltnNgenerator (node *arg_node, node *arg_info)
             /* make <= from < and add 1 to bound */
             NGEN_OP1 (arg_node) = F_le;
             NGEN_BOUND1 (arg_node)
-              = MakePrf (F_add, MakeExprs (NGEN_BOUND1 (arg_node),
-                                           MakeExprs (MakeNum (1), NULL)));
+              = MakePrf (F_add_AxS, MakeExprs (NGEN_BOUND1 (arg_node),
+                                               MakeExprs (MakeNum (1), NULL)));
         }
         if (!(DOT_ISSINGLE (NGEN_BOUND2 (arg_node))) && F_le == NGEN_OP2 (arg_node)) {
             /* make < from <= and add 1 to bound */
             NGEN_OP2 (arg_node) = F_lt;
             NGEN_BOUND2 (arg_node)
-              = MakePrf (F_add, MakeExprs (NGEN_BOUND2 (arg_node),
-                                           MakeExprs (MakeNum (1), NULL)));
+              = MakePrf (F_add_AxS, MakeExprs (NGEN_BOUND2 (arg_node),
+                                               MakeExprs (MakeNum (1), NULL)));
         }
     }
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.19  2002/09/11 23:15:16  dkr
+ * prf_node_info.mac modified
+ *
  * Revision 3.18  2002/09/09 17:42:32  dkr
  * F_{add,sub,mul,div}_SxS added
  *
@@ -324,11 +327,11 @@ GenPrimTabEntries (prf prf_old, int type_c, prf prf_new)
      */
 
     switch (prf_old) {
-    case F_toi:
+    case F_toi_S:
     case F_toi_A:
-    case F_tof:
+    case F_tof_S:
     case F_tof_A:
-    case F_tod:
+    case F_tod_S:
     case F_tod_A:
         wanted = (INTRINSIC_TO & intrinsics);
         intrinsic = (wanted || (type_c == f_i) || (type_c == d_i) || (type_c == i_f)
@@ -338,7 +341,6 @@ GenPrimTabEntries (prf prf_old, int type_c, prf prf_new)
     case F_add_AxS:
     case F_add_SxA:
     case F_add_SxS:
-    case F_add:
         wanted = (INTRINSIC_ADD & intrinsics);
         intrinsic
           = (type_c == SxS_S
@@ -349,7 +351,6 @@ GenPrimTabEntries (prf prf_old, int type_c, prf prf_new)
     case F_sub_AxS:
     case F_sub_SxA:
     case F_sub_SxS:
-    case F_sub:
         wanted = (INTRINSIC_SUB & intrinsics);
         intrinsic
           = (type_c == SxS_S
@@ -360,7 +361,6 @@ GenPrimTabEntries (prf prf_old, int type_c, prf prf_new)
     case F_mul_AxS:
     case F_mul_SxA:
     case F_mul_SxS:
-    case F_mul:
         wanted = (INTRINSIC_MUL & intrinsics);
         intrinsic
           = (type_c == SxS_S
@@ -371,7 +371,6 @@ GenPrimTabEntries (prf prf_old, int type_c, prf prf_new)
     case F_div_AxS:
     case F_div_SxA:
     case F_div_SxS:
-    case F_div:
         wanted = (INTRINSIC_DIV & intrinsics);
         intrinsic
           = (type_c == SxS_S

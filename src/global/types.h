@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.20  2002/09/11 23:16:09  dkr
+ * prf_node_info.mac modified
+ *
  * Revision 3.19  2002/09/06 16:18:45  sbs
  * TYPES_POLY for type vars added.
  *
@@ -175,6 +178,7 @@ typedef /* unsigned */ int feature_t;
 typedef enum {
 #define TYP_IFname(name) name
 #include "type_info.mac"
+#undef TYP_IFname
 } simpletype;
 
 /*
@@ -209,12 +213,14 @@ typedef enum { M_uses_only, M_uses_and_transform } ive_mode;
 typedef enum {
 #define PH_SELelement(it_element) it_element
 #include "phase_info.mac"
+#undef PH_SELelement
 } compiler_phase_t;
 
 /* use mdb_statustype to get corresponding char* to print etc. */
 typedef enum {
 #define SELECTelement(it_element) it_element
 #include "status_info.mac"
+#undef SELECTelement
 } statustype;
 
 typedef enum { DOLLAR, VECT, IDX } useflag;
@@ -252,13 +258,14 @@ typedef enum { PHIT_NONE, PHIT_COND, PHIT_DO, PHIT_WHILE } ssaphit_t;
 typedef enum {
 #define NIFNode_name(Node_name) Node_name
 #include "node_info.mac"
+#undef NIFNode_name
 } nodetype; /* Type of nodes of syntax tree */
 
 typedef enum {
-#define PRF_IF(n, s, x, y, z) n
+#define PRF_IF(a, b, c, d, e, f, g) a
 #include "prf_node_info.mac"
-} prf;
 #undef PRF_IF
+} prf;
 
 /*
  * structs
@@ -355,9 +362,11 @@ typedef struct {
 } GeneratorRel;
 
 /*
- *  And now some constants (macros) for the use with TYPES_DIM (resp. 'types->dim').
+ *  And now some constants (macros) for the use with TYPES_DIM
+ *  (resp. 'types->dim').
  *
- *  They are used to classify, whether the type is an array or (not: xor!) a scalar.
+ *  They are used to classify, whether the type is an array or (not: xor!)
+ *  a scalar.
  *  If we know it's a scalar we know shape == [] and dimension == 0.
  *  If it's an array some cases for shape and dimension are possible.
  *
@@ -427,7 +436,7 @@ typedef union {
 } infotype;
 
 /*
- *   The node structure of the SAC syntax tree
+ *  The node structure of the SAC syntax tree
  */
 
 typedef struct NODE {
@@ -436,16 +445,16 @@ typedef struct NODE {
     void *info2;                 /* any node dependent information */
     void *info3;                 /* any node dependent information */
     int refcnt;                  /* reference count information */
-    int flag;                    /* the flag is used for node-status */
+    int flag;                    /* the flag is used for node-status        */
                                  /* (loop invariant/not loop invariant,...) */
-    int counter;                 /* needed for the enumeration of fundefs!  */
+    int counter;                 /* needed for the enumeration of fundefs! */
     int varno;                   /* number of variables */
     int int_data;                /* additional int-entry */
     long *mask[MAX_MASK];        /* special information about variables */
                                  /* mainly used for optimizations       */
     void *dfmask[MAX_MASK];      /* dataflow masks */
     int lineno;                  /* line number in source code */
-    char *src_file;              /* pointer to the filename or the source code */
+    char *src_file;              /* pointer to filename or source code */
     struct NODE *node[MAX_SONS]; /* pointers to child nodes */
 } node;
 
@@ -487,8 +496,8 @@ typedef struct INDEX_INFO {
     int arg_no;     /* const_arg is the first (1) or second (2)
                        argument of prf. arg_no may be 0 which
                        means that no prf is given. Can only be in:
-                        tmp = [i,j,c];
-                        val = sel(...,tmp);
+                         tmp = [i,j,c];
+                         val = sel(...,tmp);
                        Well, can also happen when CF is deacivated.
                        If arg_no is 0, prf is undefined */
 } index_info;

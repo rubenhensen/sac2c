@@ -1,5 +1,9 @@
 /*
+ *
  * $Log$
+ * Revision 1.4  2002/09/11 23:18:22  dkr
+ * prf_node_info.mac modified
+ *
  * Revision 1.3  2002/09/04 12:59:46  sbs
  * type checking of arrays changed; now sig deps will be created as well.
  *
@@ -9,20 +13,17 @@
  * Revision 1.1  2002/08/05 16:57:50  sbs
  * Initial revision
  *
- *
  */
 
 #include "dbug.h"
 #include "ct_prf.h"
 #include "type_errors.h"
 
-#define PRF_IF(n, s, x, y, z) z
-
 ct_funptr NTCPRF_funtab[] = {
+#define PRF_IF(a, b, c, d, e, f, g) f
 #include "prf_node_info.mac"
-};
-
 #undef PRF_IF
+};
 
 /******************************************************************************
  ***

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2002/09/11 23:15:35  dkr
+ * prf_node_info.mac modified
+ *
  * Revision 3.7  2002/09/09 19:38:31  dkr
  * print.h included for prf_name_string
  *
@@ -119,7 +122,7 @@ CreatePseudoFoldFun (types *elem_type, char *fold_fun, prf fold_prf, char *res_v
     } else {
         DBUG_ASSERT (LEGAL_PRF (fold_prf), "fold_prf is out of range!");
         application = MakePrf (fold_prf, args);
-        pseudo_fold_fun = prf_name_string[fold_prf];
+        pseudo_fold_fun = prf_string[fold_prf];
     }
 
     /*

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2002/09/11 23:15:09  dkr
+ * prf_node_info.mac modified
+ *
  * Revision 3.11  2002/09/09 19:15:20  dkr
  * prf_string removed (mdb_prf used instead)
  *
@@ -1056,9 +1059,9 @@ APTprf (node *arg_node, node *arg_info)
         break;
 
         /* accept PRFs for scalar arguments, but do no padding */
-    case F_toi:
-    case F_tof:
-    case F_tod:
+    case F_toi_S:
+    case F_tof_S:
+    case F_tod_S:
     case F_abs:
     case F_not:
     case F_min:

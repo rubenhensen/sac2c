@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2002/09/11 23:19:42  dkr
+ * prf_node_info.mac modified
+ *
  * Revision 1.12  2002/09/06 12:45:56  sah
  * some minor modifications.
  *
@@ -42,7 +45,6 @@
  *
  * Revision 1.1  2002/07/09 12:54:25  sbs
  * Initial revision
- *
  *
  */
 
@@ -117,6 +119,16 @@ typedef struct IDTABLE {
 #define INFO_HD_IDTABLE(n) ((idtable *)n->info2)
 #define INFO_HD_ASSIGNS(n) n->node[1]
 
+/******************************************************************************
+ *
+ * Function:
+ *   void BuildDotList(node* tree, dotinfo* info)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
 void
 BuildDotList (node *tree, dotinfo *info)
 {
@@ -162,6 +174,16 @@ BuildDotList (node *tree, dotinfo *info)
     DBUG_VOID_RETURN;
 }
 
+/******************************************************************************
+ *
+ * Function:
+ *   dotinfo* MakeDotInfo(node* args)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
 dotinfo *
 MakeDotInfo (node *args)
 {
@@ -183,6 +205,16 @@ MakeDotInfo (node *args)
     DBUG_RETURN (result);
 }
 
+/******************************************************************************
+ *
+ * Function:
+ *   void FreeDotInfo(dotinfo* node)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
 void
 FreeDotInfo (dotinfo *node)
 {
@@ -198,6 +230,16 @@ FreeDotInfo (dotinfo *node)
 
     DBUG_VOID_RETURN;
 }
+
+/******************************************************************************
+ *
+ * Function:
+ *   int LDot2Pos(int dot, dotinfo* info)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
 
 int
 LDot2Pos (int dot, dotinfo *info)
@@ -258,8 +300,9 @@ RIsDot (int dot, dotinfo *info)
 
     result = LIsDot (info->selcnt - dot + 1, info);
 
-    if (result != 0)
+    if (result != 0) {
         result = info->dotcnt - result + 1;
+    }
 
     DBUG_RETURN (result);
 }
@@ -555,7 +598,7 @@ BuildShape (node *args, node *array, node **assigns, dotinfo *info)
         }
     }
 
-    DBUG_ASSERT (leftid != NULL, "error building shape: the shape is empty!");
+    DBUG_ASSERT ((leftid != NULL), "error building shape: the shape is empty!");
 
     DBUG_RETURN (leftid);
 }
@@ -861,7 +904,7 @@ BuildWLShape (idtable *table)
 /******************************************************************************
  *
  * function:
- *    node * EliminateSelDots( node * arg_node);
+ *    node* EliminateSelDots( node *arg_node);
  *
  * description:
  *    ...
@@ -896,7 +939,7 @@ EliminateSelDots (node *arg_node)
 /******************************************************************************
  *
  * function:
- *    node * HDwith( node *arg_node, node *arg_info);
+ *    node *HDwith( node *arg_node, node *arg_info);
  *
  * description:
  *    ...
@@ -925,7 +968,7 @@ HDwith (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *    node * HDwithop( node *arg_node, node *arg_info);
+ *    node *HDwithop( node *arg_node, node *arg_info);
  *
  * description:
  *    ...
@@ -939,7 +982,6 @@ HDwithop (node *arg_node, node *arg_info)
 
     if (INFO_HD_TRAVSTATE (arg_info) == HD_sel) {
         switch (NWITHOP_TYPE (arg_node)) {
-
         case WO_modarray:
             if (sbs == 1) {
                 INFO_HD_DOTSHAPE (arg_info)
@@ -956,18 +998,17 @@ HDwithop (node *arg_node, node *arg_info)
             } else {
                 INFO_HD_DOTSHAPE (arg_info) = NULL;
             }
-
             break;
 
         case WO_foldfun:
             /* here is no break missing! */
         case WO_foldprf:
             INFO_HD_DOTSHAPE (arg_info) = NULL;
-
             break;
 
         default:
-            DBUG_ASSERT (0, "wrong withop tag in N_Nwithop node!");
+            DBUG_ASSERT ((0), "wrong withop tag in N_Nwithop node!");
+            break;
         }
     }
 
@@ -979,7 +1020,7 @@ HDwithop (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *    node * HDgenerator( node *arg_node, node *arg_info);
+ *    node *HDgenerator( node *arg_node, node *arg_info);
  *
  * description:
  *    ...
@@ -1053,7 +1094,7 @@ HDgenerator (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *    node * HDdot( node *arg_node, node *arg_info);
+ *    node *HDdot( node *arg_node, node *arg_info);
  *
  * description:
  *    ...
@@ -1074,7 +1115,7 @@ HDdot (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *    node * HDap( node *arg_node, node *arg_info);
+ *    node *HDap( node *arg_node, node *arg_info);
  *
  * description:
  *    ...
@@ -1154,7 +1195,7 @@ HDap (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *    node * HDprf( node *arg_node, node *arg_info);
+ *    node *HDprf( node *arg_node, node *arg_info);
  *
  * description:
  *    ...
@@ -1182,7 +1223,7 @@ HDprf (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *    node * HDassign( node *arg_node, node *arg_info);
+ *    node *HDassign( node *arg_node, node *arg_info);
  *
  * description:
  *    ...
@@ -1219,7 +1260,7 @@ HDassign (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *    node * HDsetwl( node *arg_node, node *arg_info);
+ *    node *HDsetwl( node *arg_node, node *arg_info);
  *
  * description:
  *    ...
