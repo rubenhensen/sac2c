@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2001/05/17 11:15:59  sbs
+ * return value of Free used now 8-()
+ *
  * Revision 3.10  2001/05/17 10:04:16  nmw
  * missing include of convert.h added
  *
@@ -576,7 +579,7 @@ TmpVarName (char *postfix)
     tmp = TmpVar ();
     result = (char *)Malloc ((strlen (tmp) + strlen (postfix) + 2) * sizeof (char));
     sprintf (result, "%s_%s", tmp, postfix);
-    Free (tmp);
+    tmp = Free (tmp);
 
     DBUG_RETURN (result);
 }

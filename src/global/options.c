@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2001/05/17 11:15:59  sbs
+ * return value of Free used now 8-()
+ *
  * Revision 3.12  2001/05/17 08:35:33  sbs
  * MALLOC/FREE eliminated
  *
@@ -322,7 +325,7 @@ AnalyseCommandline (int argc, char *argv[])
                 }
             }
         }
-        Free (break_arg);
+        break_arg = Free (break_arg);
     });
 
     ARGS_OPTION ("check", {

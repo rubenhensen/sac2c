@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2001/05/17 11:15:59  sbs
+ * return value of Free used now 8-()
+ *
  * Revision 3.2  2001/05/17 08:35:33  sbs
  * MALLOC/FREE eliminated
  *
@@ -360,16 +363,16 @@ FreeTargetList (target_list_t *target)
             tmp = resource;
             resource = resource->next;
 
-            Free (tmp->name);
-            Free (tmp->value_str);
-            Free (tmp);
+            tmp->name = Free (tmp->name);
+            tmp->value_str = Free (tmp->value_str);
+            tmp = Free (tmp);
         }
-        Free (tmp_target->name);
+        tmp_target->name = Free (tmp_target->name);
         if (tmp_target->super_targets != NULL) {
             FreeAllIds (tmp_target->super_targets);
         }
 
-        Free (tmp_target);
+        tmp_target = Free (tmp_target);
     }
 
     DBUG_RETURN ((target_list_t *)NULL);
