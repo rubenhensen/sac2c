@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.32  2003/03/09 21:26:48  dkr
+ * SAC_TR_AA_PRINT added
+ *
  * Revision 3.31  2002/11/26 00:17:43  dkr
  * several superfluous concat-operators removed in macro definitions
  *
@@ -418,12 +421,13 @@ typedef int *SAC_array_descriptor_t;
  */
 
 #define SAC_ND_WRITE__AKS(to_nt, to_pos)                                                 \
-    SAC_BC_WRITE (to_nt, to_pos)                                                         \
-    SAC_CS_WRITE_ARRAY (to_nt, to_pos)                                                   \
-    SAC_ND_A_FIELD (to_nt)[to_pos]
+    SAC_TR_AA_PRINT ("write", to_nt, to_pos),                                            \
+      SAC_BC_WRITE (to_nt, to_pos) SAC_CS_WRITE_ARRAY (to_nt, to_pos)                    \
+        SAC_ND_A_FIELD (to_nt)[to_pos]
 
 #define SAC_ND_READ__AKS(from_nt, from_pos)                                              \
-    (SAC_BC_READ (from_nt, from_pos) SAC_CS_READ_ARRAY (from_nt, from_pos)               \
+    (SAC_TR_AA_PRINT ("read", from_nt, from_pos),                                        \
+     SAC_BC_READ (from_nt, from_pos) SAC_CS_READ_ARRAY (from_nt, from_pos)               \
        SAC_ND_A_FIELD (from_nt)[from_pos])
 
 /*
