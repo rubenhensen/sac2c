@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.7  1995/04/28 17:24:50  hw
+ * Revision 1.8  1995/12/07 17:59:56  cg
+ * added declaration of function IsNonUniqueHidden
+ *
+ * Revision 1.7  1995/04/28  17:24:50  hw
  * added RCgen
  *
  * Revision 1.6  1995/04/11  15:10:55  hw
@@ -40,6 +43,8 @@ extern node *RCwith (node *arg_node, node *arg_info);
 extern node *RCcon (node *arg_node, node *arg_info);
 extern node *Refcount (node *arg_node);
 extern node *RCgen (node *arg_node, node *arg_info);
+
 extern int IsArray (types *type);
+extern int IsNonUniqueHidden (types *type);
 
 #endif /* _refcount_h */
