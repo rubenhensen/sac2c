@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.39  1996/01/15 11:06:07  asi
+ * Revision 1.40  1996/01/16 16:55:15  cg
+ * added some macros for N_info nodes
+ *
+ * Revision 1.39  1996/01/15  11:06:07  asi
  * added ID_DEF
  *
  * Revision 1.38  1996/01/12  15:53:00  asi
@@ -1666,6 +1669,12 @@ extern node *MakePragma ();
  ***    node*      LASTASSIGN    (O)  (N_assign)
  ***    node*      VARDECS       (O)  (N_vardec)
  ***    node*      WITHBEGIN     (O)  (N_icm)
+ ***
+ ***    node*      FIRSTASSIGN   (O)  (N_assign)
+ ***    node*      FUNDEF        (O)  (N_fundef)
+ ***    int        CNTPARAM
+ ***    node**     ICMTAB        (O)
+ ***    types**    TYPETAB       (O)
  ***/
 
 /*
@@ -1680,10 +1689,16 @@ extern node *MakeInfo ();
 #define INFO_EXPORTFUNS(n) ((nodelist *)n->node[2])
 
 #define INFO_LASTIDS(n) (n->info.ids)
-#define INFO_LASTLET(n) (n->node[0])
-#define INFO_LASTASSIGN(n) (n->node[1])
+#define INFO_LASTLET(n) (n->node[1])
+#define INFO_LASTASSIGN(n) (n->node[0])
 #define INFO_VARDECS(n) (n->node[3])
 #define INFO_WITHBEGIN(n) (n->node[2])
+
+#define INFO_FIRSTASSIGN(n) (n->node[0])
+#define INFO_FUNDEF(n) (n->node[1])
+#define INFO_CNTPARAM(n) (n->lineno)
+#define INFO_ICMTAB(n) ((node **)n->node[2])
+#define INFO_TYPETAB(n) ((types **)n->info.types)
 
 /*--------------------------------------------------------------------------*/
 
