@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.46  2003/03/26 14:08:32  sbs
+ * some further modifications
+ *
  * Revision 3.45  2003/03/26 13:54:31  sbs
  * groups slightly restructured.
  *
@@ -215,6 +218,8 @@
  * </pre>
  *
  * @{
+ */
+/**
  *
  * @file index.c
  *
@@ -645,7 +650,13 @@
  * </pre>
  */
 
-int ive_expr, ive_op;
+/**
+ *
+ * @var ive_expr counts the number of index vectors removed during optimization.
+ * @var ive_op   counts the number of operations on index vectors removed.
+ */
+
+static int ive_expr, ive_op;
 
 /**
  *
