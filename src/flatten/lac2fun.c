@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.20  2000/03/24 15:21:25  dkr
+ * fixed a bug in L2F_INFERap: varargs are handle correctly now
+ *
  * Revision 1.19  2000/03/24 00:51:56  dkr
  * handling of reference parameters corrected
  *
@@ -719,9 +722,7 @@ L2F_INFERap (node *arg_node, node *arg_info)
      */
     fundef_args = FUNDEF_ARGS (AP_FUNDEF (arg_node));
     ap_args = AP_ARGS (arg_node);
-    while (fundef_args != NULL) {
-        DBUG_ASSERT ((ap_args != NULL), "Partial function application found!");
-
+    while (ap_args != NULL) {
         if ((ARG_ATTRIB (fundef_args) == ST_reference)
             || (ARG_ATTRIB (fundef_args) == ST_readonly_reference)) {
             DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (ap_args)) == N_id),
@@ -737,8 +738,20 @@ L2F_INFERap (node *arg_node, node *arg_info)
                         INFO_LAC2FUN_LOCAL (arg_info));
         }
 
-        fundef_args = ARG_NEXT (fundef_args);
+        if (ARG_BASETYPE (fundef_args) != T_dots) {
+            /*
+             * This is a function with variable parameter list. Example:
+             *   extern void printf( string FORMAT, ... ) { ... }
+             *   ...
+             *   printf( "%i %i", a_int, b_int)
+             */
+            fundef_args = ARG_NEXT (fundef_args);
+        }
         ap_args = EXPRS_NEXT (ap_args);
+    }
+    if (fundef_args != NULL) {
+        DBUG_ASSERT ((ARG_BASETYPE (fundef_args) == T_dots),
+                     "Partial function application found!");
     }
 
     /*
