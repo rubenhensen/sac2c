@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2001/03/22 17:40:37  ben
+ *  SAC_MT_DEFINE_TASKLOCKS, SAC_MT_TASKLOCK, SAC_MT_DEFINE_TASK, SAC_MT_TASK,
+ * SAC_MT_SCHEDULER_Reset_Tasks added
+ *
  * Revision 3.12  2001/03/22 12:45:32  ben
  * Tracingoutput of  SAC_MT_SCHEDULER_Select_Block modified
  *
@@ -314,13 +318,23 @@ typedef union {
 
 #define SAC_MT_DEFINE()                                                                  \
     SAC_MT_DEFINE_BARRIER ()                                                             \
-    SAC_MT_DEFINE_SPMD_FRAME ()
+    SAC_MT_DEFINE_SPMD_FRAME ()                                                          \
+    SAC_MT_DEFINE_TASKLOCKS ()                                                           \
+    SAC_MT_DEFINE_TASK ()
 
 #define SAC_MT_DEFINE_BARRIER()                                                          \
     volatile SAC_MT_barrier_t SAC_MT_barrier_space[SAC_SET_THREADS_MAX + 1];
 
 #define SAC_MT_DEFINE_SPMD_FRAME()                                                       \
     static volatile union SAC_SET_SPMD_FRAME SAC_MT_spmd_frame;
+
+#define SAC_MT_DEFINE_TASKLOCKS() pthread_mutex_t SAC_MT_Tasklock[SAC_SET_THREADS_MAX];
+
+#define SAC_MT_TASKLOCK(num) SAC_MT_Tasklock[num]
+
+#define SAC_MT_DEFINE_TASK() volatile int SAC_MT_Task[SAC_SET_THREADS_MAX];
+
+#define SAC_MT_TASK(num) SAC_MT_Task[num]
 
 #define SAC_MT_FUN_FRAME(name, blocks) struct blocks name;
 
@@ -768,6 +782,14 @@ typedef union {
         SAC_TR_MT_PRINT (("'Select_Block': dim %d: %d -> %d, Task: %d", sched_dim,       \
                           SAC_WL_MT_SCHEDULE_START (sched_dim),                          \
                           SAC_WL_MT_SCHEDULE_STOP (sched_dim), next_taskid));            \
+    }
+
+#define SAC_MT_SCHEDULER_Reset_Tasks()                                                   \
+    {                                                                                    \
+        int i;                                                                           \
+        for (i = 0; i < SAC_MT_threads; i++)                                             \
+            SAC_MT_TASK (i) = 0;                                                         \
+        SAC_TR_MT_PRINT (("SAC_MT_TASK reseted"));                                       \
     }
 
 #if 0
