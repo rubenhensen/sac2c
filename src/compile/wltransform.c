@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.98  2004/10/26 16:51:23  khf
+ * stacked arg_info before traversal in Ncode
+ * EmptyParts2StridesOrExpr corrected
+ * ExtractOtherOperators reimplemented
+ *
  * Revision 3.97  2004/10/04 17:17:51  sah
  * updated wltransform to use the new L_WLNODE and
  * WLNODE macros
@@ -345,19 +350,23 @@
 /*
  * INFO structure
  */
-/* for EmptyParts2StridesOrExpr() called with a multioperator WL */
-typedef struct extr_ops {
-    node *withop_ext;
-    node *cexprs_ext;
-    types *res_types_ext;
-    ids *ids_ext;
-} extr_ops_t;
 struct INFO {
     types *types;
     node *preassigns;
     node *assign;
-    extr_ops_t *extr_ops;
 };
+
+/* for EmptyParts2StridesOrExpr() called with a multioperator WL */
+typedef struct EXTRACTOPTS {
+    node *withop;
+    nodelist *ncodes_cexprs;
+    types *res_types;
+    ids *lhs_ids;
+    node *withop_ext;
+    node *cexprs_ext;
+    types *res_types_ext;
+    ids *ids_ext;
+} extractopts;
 
 /*
  * INFO macros
@@ -365,8 +374,18 @@ struct INFO {
 #define INFO_WL_LHS_TYPE(n) (n->types)
 #define INFO_WL_PREASSIGNS(n) (n->preassigns)
 #define INFO_WL_ASSIGN(n) (n->assign)
-/* for EmptyParts2StridesOrExpr() called with a multioperator WL */
-#define INFO_WL_EXTR_OPS(n) (n->extr_ops)
+
+/*
+ * ExtractOpts macros
+ */
+#define EXTRACTOPTS_WITHOP(n) (n->withop)
+#define EXTRACTOPTS_NCODES_CEXPRS(n) (n->ncodes_cexprs)
+#define EXTRACTOPTS_RES_TYPES(n) (n->res_types)
+#define EXTRACTOPTS_LHS_IDS(n) (n->lhs_ids)
+#define EXTRACTOPTS_WITHOP_EXT(n) (n->withop_ext)
+#define EXTRACTOPTS_CEXPRS_EXT(n) (n->cexprs_ext)
+#define EXTRACTOPTS_RES_TYPES_EXT(n) (n->res_types_ext)
+#define EXTRACTOPTS_IDS_EXT(n) (n->ids_ext)
 
 /*
  * INFO functions
@@ -383,7 +402,6 @@ MakeInfo ()
     INFO_WL_LHS_TYPE (result) = NULL;
     INFO_WL_PREASSIGNS (result) = NULL;
     INFO_WL_ASSIGN (result) = NULL;
-    INFO_WL_EXTR_OPS (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -396,6 +414,152 @@ FreeInfo (info *info)
     info = Free (info);
 
     DBUG_RETURN (info);
+}
+
+/*
+ * EXTRACTOPTS functions
+ */
+static extractopts *
+MakeExtractOpts ()
+{
+    extractopts *result;
+
+    DBUG_ENTER ("MakeExtractOpts");
+
+    result = Malloc (sizeof (extractopts));
+
+    EXTRACTOPTS_WITHOP (result) = NULL;
+    EXTRACTOPTS_NCODES_CEXPRS (result) = NULL;
+    EXTRACTOPTS_RES_TYPES (result) = NULL;
+    EXTRACTOPTS_LHS_IDS (result) = NULL;
+    EXTRACTOPTS_WITHOP_EXT (result) = NULL;
+    EXTRACTOPTS_CEXPRS_EXT (result) = NULL;
+    EXTRACTOPTS_RES_TYPES_EXT (result) = NULL;
+    EXTRACTOPTS_IDS_EXT (result) = NULL;
+
+    DBUG_RETURN (result);
+}
+
+static extractopts *
+InitExtractOpts (extractopts *arg_extractopts, node *wl, info *arg_info)
+{
+    node *ncodes;
+    nodelist *nl_cexprs;
+
+    DBUG_ENTER ("InitExtractOpts");
+
+    EXTRACTOPTS_WITHOP (arg_extractopts) = NWITH2_WITHOP (wl);
+
+    /* Store pointer to cexprs of different Ncodes for easier removal */
+    ncodes = NWITH2_CODE (wl);
+    while (ncodes != NULL) {
+        nl_cexprs = NodeListAppend (nl_cexprs, NCODE_CEXPRS (ncodes), NULL);
+        ncodes = NCODE_NEXT (ncodes);
+    }
+
+    EXTRACTOPTS_NCODES_CEXPRS (arg_extractopts) = nl_cexprs;
+    EXTRACTOPTS_RES_TYPES (arg_extractopts) = INFO_WL_LHS_TYPE (arg_info);
+    EXTRACTOPTS_LHS_IDS (arg_extractopts) = ASSIGN_LHS (INFO_WL_ASSIGN (arg_info));
+
+    EXTRACTOPTS_WITHOP_EXT (arg_extractopts) = DupTree (NWITH2_WITHOP (wl));
+    /* a cexprs of one NCODE is sufficient */
+    EXTRACTOPTS_CEXPRS_EXT (arg_extractopts) = DupTree (NCODE_CEXPRS (NWITH2_CODE (wl)));
+    EXTRACTOPTS_RES_TYPES (arg_extractopts) = DupAllTypes (INFO_WL_LHS_TYPE (arg_info));
+    EXTRACTOPTS_LHS_IDS (arg_extractopts)
+      = DupAllIds (ASSIGN_LHS (INFO_WL_ASSIGN (arg_info)));
+
+    DBUG_RETURN (arg_extractopts);
+}
+
+static extractopts *
+ExtractOptsStep (extractopts *extractopts_next, extractopts *arg_extractopts)
+{
+    nodelist *nl_tmp;
+
+    DBUG_ENTER ("ExtractOptsStep");
+
+    EXTRACTOPTS_WITHOP (extractopts_next)
+      = NWITHOP_NEXT (EXTRACTOPTS_WITHOP (arg_extractopts));
+
+    nl_tmp = DupNodelist (EXTRACTOPTS_NCODES_CEXPRS (arg_extractopts));
+
+    while (NODELIST_NODE (nl_tmp) != NULL) {
+        NODELIST_NODE (nl_tmp) = EXPRS_NEXT (NODELIST_NODE (nl_tmp));
+        nl_tmp = NODELIST_NEXT (nl_tmp);
+    }
+
+    EXTRACTOPTS_NCODES_CEXPRS (extractopts_next) = nl_tmp;
+
+    EXTRACTOPTS_RES_TYPES (extractopts_next)
+      = TYPES_NEXT (EXTRACTOPTS_RES_TYPES (arg_extractopts));
+    EXTRACTOPTS_LHS_IDS (extractopts_next)
+      = IDS_NEXT (EXTRACTOPTS_LHS_IDS (arg_extractopts));
+
+    EXTRACTOPTS_WITHOP_EXT (extractopts_next)
+      = NWITHOP_NEXT (EXTRACTOPTS_WITHOP_EXT (arg_extractopts));
+    EXTRACTOPTS_CEXPRS_EXT (extractopts_next)
+      = NCODE_NEXT (EXTRACTOPTS_CEXPRS_EXT (arg_extractopts));
+    EXTRACTOPTS_RES_TYPES_EXT (extractopts_next)
+      = TYPES_NEXT (EXTRACTOPTS_RES_TYPES_EXT (arg_extractopts));
+    EXTRACTOPTS_IDS_EXT (extractopts_next)
+      = IDS_NEXT (EXTRACTOPTS_IDS_EXT (arg_extractopts));
+
+    DBUG_RETURN (extractopts_next);
+}
+
+static extractopts *
+ExtractOptsIsGenarray (extractopts *arg_extractopts)
+{
+    DBUG_ENTER ("ExtractOptsIsGenarray");
+
+    EXTRACTOPTS_WITHOP_EXT (arg_extractopts)
+      = FreeNode (EXTRACTOPTS_WITHOP_EXT (arg_extractopts));
+    EXTRACTOPTS_CEXPRS_EXT (arg_extractopts)
+      = FreeNode (EXTRACTOPTS_CEXPRS_EXT (arg_extractopts));
+    EXTRACTOPTS_RES_TYPES_EXT (arg_extractopts)
+      = FreeOneTypes (EXTRACTOPTS_RES_TYPES_EXT (arg_extractopts));
+    EXTRACTOPTS_IDS_EXT (arg_extractopts)
+      = FreeOneIds (EXTRACTOPTS_IDS_EXT (arg_extractopts));
+
+    DBUG_RETURN (arg_extractopts);
+}
+
+static extractopts *
+ExtractOptsIsntGenarray (extractopts *arg_extractopts)
+{
+    nodelist *nl_tmp;
+    DBUG_ENTER ("ExtractOptsIsntGenarray");
+
+    EXTRACTOPTS_WITHOP (arg_extractopts)
+      = FreeNode (EXTRACTOPTS_WITHOP (arg_extractopts));
+
+    nl_tmp = EXTRACTOPTS_NCODES_CEXPRS (arg_extractopts);
+
+    while (NODELIST_NODE (nl_tmp) != NULL) {
+        NODELIST_NODE (nl_tmp) = FreeNode (NODELIST_NODE (nl_tmp));
+        nl_tmp = NODELIST_NEXT (nl_tmp);
+    }
+
+    EXTRACTOPTS_RES_TYPES (arg_extractopts)
+      = FreeOneTypes (EXTRACTOPTS_RES_TYPES (arg_extractopts));
+    EXTRACTOPTS_LHS_IDS (arg_extractopts)
+      = FreeOneIds (EXTRACTOPTS_LHS_IDS (arg_extractopts));
+
+    DBUG_RETURN (arg_extractopts);
+}
+
+static extractopts *
+FreeExtractOpts (extractopts *extractopts)
+{
+    DBUG_ENTER ("FreeExtractOpts");
+
+    if (EXTRACTOPTS_NCODES_CEXPRS (extractopts) != NULL)
+        EXTRACTOPTS_NCODES_CEXPRS (extractopts)
+          = FreeNodelist (EXTRACTOPTS_NCODES_CEXPRS (extractopts));
+
+    extractopts = Free (extractopts);
+
+    DBUG_RETURN (extractopts);
 }
 
 /*****************************************************************************
@@ -3085,177 +3249,45 @@ Parts2Strides (node *parts, int iter_dims, shpseg *iter_shp)
 /******************************************************************************
  *
  * Function:
- *   node *ExtractOtherOperators( node *wl, info *arg_info, types *res_types)
+ *   extractopts *ExtractOtherOperators( extractopts *arg_extractopts)
  *
  * Description:
- *   Removes all WL-operators except genarray-operators, it's corresponding
- *   cexprs (cexprs of one NCODE are sufficient) and ids from the current WL,
- *   the corresponding types from 'res_types' and returns them.
+ *   Removes recursively all WL-operators except genarray-operators,
+ *   it's corresponding cexprs (cexprs of one NCODE are sufficient) and
+ *   ids from the current WL, the corresponding types from 'res_types'
+ *   and stores them seperately in ExtractOpts structure.
  *
  ******************************************************************************/
-static info *
-ExtractOtherOperators (node *wl, info *arg_info, types *res_types)
+static extractopts *
+ExtractOtherOperators (extractopts *arg_extractopts)
 {
-    node *withop, *ncodes;
-    ids *_ids;
-    nodelist *ncodes_cexprs = NULL, *nc_cexprs_tmp;
-    bool first_ncode;
-
-    node *withop_ext, *cexprs_ext;   /* withops and cexprs which will be returned */
-    types *res_types_ext;            /* types which will be returned */
-    ids *ids_ext;                    /* ids which will returned */
-    extr_ops_t *extracted_operators; /* container for return values */
+    extractopts *extractopts_next = NULL;
 
     DBUG_ENTER ("ExtractOtherOperators");
 
-    /*
-     * First part:
-     * We can extract operators and corresponding information direct
-     * by use of access-macros on current WL until the considered withop
-     * is a genarray operator.
-     */
+    if (NWITHOP_NEXT (EXTRACTOPTS_WITHOP (arg_extractopts)) != NULL) {
+        extractopts_next = MakeExtractOpts ();
+        extractopts_next = ExtractOptsStep (extractopts_next, arg_extractopts);
 
-    /* initialisation */
-    withop = NULL;
-    withop_ext = NULL;
-    /* initialisations to please the compiler */
-    cexprs_ext = NULL;
-    res_types_ext = NULL;
-    ids_ext = NULL;
+        extractopts_next = ExtractOtherOperators (extractopts_next);
 
-    while (withop == NULL && NWITH2_WITHOP (wl) != NULL) {
-
-        if (NWITHOP_TYPE (NWITH2_WITHOP (wl)) != WO_genarray) {
-
-            if (withop_ext == NULL) {
-                withop_ext = NWITH2_WITHOP (wl);
-                /*  a cexprs of one (here: first) NCODE is sufficient */
-                cexprs_ext = NCODE_CEXPRS (NWITH2_CODE (wl));
-                res_types_ext = res_types;
-                ids_ext = ASSIGN_LHS (INFO_WL_ASSIGN (arg_info));
-            } else {
-                NWITHOP_NEXT (withop_ext) = NWITH2_WITHOP (wl);
-                withop_ext = NWITHOP_NEXT (withop_ext);
-                /* a cexprs of one NCODE is sufficient */
-                EXPRS_NEXT (cexprs_ext) = NCODE_CEXPRS (NWITH2_CODE (wl));
-                cexprs_ext = EXPRS_NEXT (cexprs_ext);
-                TYPES_NEXT (res_types_ext) = res_types;
-                res_types_ext = TYPES_NEXT (res_types_ext);
-                IDS_NEXT (ids_ext) = ASSIGN_LHS (INFO_WL_ASSIGN (arg_info));
-                ids_ext = IDS_NEXT (ids_ext);
-            }
-
-            NWITH2_WITHOP (wl) = NWITHOP_NEXT (NWITH2_WITHOP (wl));
-            NWITHOP_NEXT (withop_ext) = NULL;
-
-            /* Remove the first cexpr of the first NCODE, delete all other */
-            ncodes = NWITH2_CODE (wl);
-            first_ncode = TRUE;
-            while (ncodes != NULL) {
-                if (first_ncode) {
-                    NCODE_CEXPRS (ncodes) = EXPRS_NEXT (NCODE_CEXPRS (ncodes));
-                    first_ncode = FALSE;
-                } else {
-                    NCODE_CEXPRS (ncodes) = FreeNode (NCODE_CEXPRS (ncodes));
-                }
-                ncodes = NCODE_NEXT (ncodes);
-            }
-            EXPRS_NEXT (cexprs_ext) = NULL;
-
-            res_types = TYPES_NEXT (res_types);
-            TYPES_NEXT (res_types_ext) = NULL;
-
-            ASSIGN_LHS (INFO_WL_ASSIGN (arg_info))
-              = IDS_NEXT (ASSIGN_LHS (INFO_WL_ASSIGN (arg_info)));
-            IDS_NEXT (ids_ext) = NULL;
-        } else { /* NWITHOP == WO_genarray */
-            withop = NWITH2_WITHOP (wl);
-        }
+        extractopts_next = FreeExtractOpts (extractopts_next);
     }
 
-    if (withop != NULL) {
+    if (NWITHOP_TYPE (EXTRACTOPTS_WITHOP (arg_extractopts)) == WO_genarray) {
         /*
-         * Second part:
-         * We have at least one genarray operator and consider it`s
-         * successors.
+         * current withop and corresponding cexprs, type and ids remain unchanged
          */
-
-        /* Store pointer to cexprs of different Ncodes for easier removal */
-        ncodes = NWITH2_CODE (wl);
-        while (ncodes != NULL) {
-            ncodes_cexprs = NodeListAppend (ncodes_cexprs, NCODE_CEXPRS (ncodes), NULL);
-            ncodes = NCODE_NEXT (ncodes);
-        }
-
-        _ids = ASSIGN_LHS (INFO_WL_ASSIGN (arg_info));
-
-        while (NWITHOP_NEXT (withop) != NULL) {
-
-            if (NWITHOP_TYPE (NWITHOP_NEXT (withop)) != WO_genarray) {
-
-                if (withop_ext == NULL) {
-                    withop_ext = NWITHOP_NEXT (withop);
-                    /* a cexprs of one NCODE is sufficient */
-                    cexprs_ext = EXPRS_NEXT (NODELIST_NODE (ncodes_cexprs));
-                    res_types_ext = TYPES_NEXT (res_types);
-                    ids_ext = IDS_NEXT (_ids);
-                } else {
-                    NWITHOP_NEXT (withop_ext) = NWITHOP_NEXT (withop);
-                    withop_ext = NWITHOP_NEXT (withop_ext);
-                    /* a cexprs of one NCODE is sufficient */
-                    EXPRS_NEXT (cexprs_ext) = EXPRS_NEXT (NODELIST_NODE (ncodes_cexprs));
-                    cexprs_ext = EXPRS_NEXT (cexprs_ext);
-                    TYPES_NEXT (res_types_ext) = TYPES_NEXT (res_types);
-                    res_types_ext = TYPES_NEXT (res_types_ext);
-                    IDS_NEXT (ids_ext) = IDS_NEXT (_ids);
-                    ids_ext = IDS_NEXT (ids_ext);
-                }
-                NWITHOP_NEXT (withop) = NWITHOP_NEXT (NWITHOP_NEXT ((withop)));
-                NWITHOP_NEXT (withop_ext) = NULL;
-
-                /* Remove the successor cexpr of the first NCODE, delete all other */
-                nc_cexprs_tmp = ncodes_cexprs;
-                first_ncode = TRUE;
-                while (NODELIST_NODE (nc_cexprs_tmp) != NULL) {
-                    if (first_ncode) {
-                        EXPRS_NEXT (NODELIST_NODE (nc_cexprs_tmp))
-                          = EXPRS_NEXT (EXPRS_NEXT (NODELIST_NODE (nc_cexprs_tmp)));
-                        first_ncode = FALSE;
-                    } else {
-                        EXPRS_NEXT (NODELIST_NODE (nc_cexprs_tmp))
-                          = FreeNode (EXPRS_NEXT (NODELIST_NODE (nc_cexprs_tmp)));
-                    }
-                    nc_cexprs_tmp = NODELIST_NEXT (nc_cexprs_tmp);
-                }
-                EXPRS_NEXT (cexprs_ext) = NULL;
-
-                TYPES_NEXT (res_types) = TYPES_NEXT (TYPES_NEXT (res_types));
-                TYPES_NEXT (res_types_ext) = NULL;
-
-                IDS_NEXT (_ids) = IDS_NEXT (IDS_NEXT (_ids));
-                IDS_NEXT (ids_ext) = NULL;
-            }
-
-            withop = NWITHOP_NEXT (withop);
-            nc_cexprs_tmp = ncodes_cexprs;
-            while (NODELIST_NODE (nc_cexprs_tmp) != NULL) {
-                NODELIST_NODE (nc_cexprs_tmp)
-                  = EXPRS_NEXT (NODELIST_NODE (nc_cexprs_tmp));
-            }
-            res_types = TYPES_NEXT (res_types);
-            _ids = IDS_NEXT (_ids);
-        }
+        arg_extractopts = ExtractOptsIsGenarray (arg_extractopts);
+    } else {
+        /*
+         * current withop and corresponding cexprs, type and ids have to
+         * be extracted
+         */
+        arg_extractopts = ExtractOptsIsntGenarray (arg_extractopts);
     }
 
-    extracted_operators = NULL;
-    extracted_operators->withop_ext = withop_ext;
-    extracted_operators->cexprs_ext = cexprs_ext;
-    extracted_operators->res_types_ext = res_types_ext;
-    extracted_operators->ids_ext = ids_ext;
-
-    INFO_WL_EXTR_OPS (arg_info) = extracted_operators;
-
-    DBUG_RETURN (arg_info);
+    DBUG_RETURN (arg_extractopts);
 }
 
 /******************************************************************************
@@ -3432,6 +3464,7 @@ EmptyParts2StridesOrExpr (node **wl, info *arg_info, int iter_dims, shpseg *iter
         node *withop, *cexprs, *shp_node;
         shpseg *current_shpseg, *old_shpseg;
         ids *_ids;
+        extractopts *arg_extractopts;
         bool reuse_wl, free_res_types;
         int num_genop = 0;
 
@@ -3480,18 +3513,28 @@ EmptyParts2StridesOrExpr (node **wl, info *arg_info, int iter_dims, shpseg *iter
         }
 
         if (strides != NULL) {
-            arg_info = ExtractOtherOperators ((*wl), arg_info, res_types);
+            arg_extractopts = MakeExtractOpts ();
+            arg_extractopts = InitExtractOpts (arg_extractopts, (*wl), arg_info);
 
-            withop = INFO_WL_EXTR_OPS (arg_info)->withop_ext;
-            cexprs = INFO_WL_EXTR_OPS (arg_info)->cexprs_ext;
-            res_types = INFO_WL_EXTR_OPS (arg_info)->res_types_ext;
+            /*
+             * Removes all WL-operators except genarray-operators, it's corresponding
+             * cexprs (cexprs of one NCODE are sufficient) and ids from the current WL,
+             * the corresponding types from 'res_types' and stores them seperately
+             * in ExtractOpts structure.
+             */
+            arg_extractopts = ExtractOtherOperators (arg_extractopts);
+
+            withop = EXTRACTOPTS_WITHOP_EXT (arg_extractopts);
+            cexprs = EXTRACTOPTS_CEXPRS_EXT (arg_extractopts);
+            res_types = EXTRACTOPTS_RES_TYPES_EXT (arg_extractopts);
             free_res_types = TRUE;
-            _ids = INFO_WL_EXTR_OPS (arg_info)->ids_ext;
+            _ids = EXTRACTOPTS_IDS_EXT (arg_extractopts);
             reuse_wl = FALSE;
 
+            arg_extractopts = FreeExtractOpts (arg_extractopts);
         } else {
-            withop = NWITH2_WITHOP ((*wl));
-            cexprs = NCODE_CEXPRS (NWITH2_CODE ((*wl)));
+            withop = DupTree (NWITH2_WITHOP ((*wl)));
+            cexprs = DupTree (NCODE_CEXPRS (NWITH2_CODE ((*wl))));
             _ids = DupAllIds (ASSIGN_LHS (INFO_WL_ASSIGN (arg_info)));
             *wl = FreeNode (*wl);
             reuse_wl = TRUE;
@@ -3654,20 +3697,15 @@ EmptyParts2StridesOrExpr (node **wl, info *arg_info, int iter_dims, shpseg *iter
                 DBUG_ASSERT (FALSE, "non initialised WithOpType found.");
                 break;
             }
-            withop = NWITHOP_NEXT (withop);
-            cexprs = EXPRS_NEXT (cexprs);
-            res_types = TYPES_NEXT (res_types);
-            _ids = IDS_NEXT (_ids);
-        }
 
-        /*
-         * Delete all extracted information from WL
-         */
-        withop = FreeTree (withop);
-        cexprs = FreeTree (cexprs);
-        _ids = FreeAllIds (_ids);
-        if (free_res_types) {
-            res_types = FreeAllTypes (res_types);
+            /* current nodes are no longer needed */
+            withop = FreeNode (withop);
+            cexprs = FreeNode (cexprs);
+            if (free_res_types)
+                res_types = FreeOneTypes (res_types);
+            else
+                res_types = TYPES_NEXT (res_types);
+            _ids = FreeOneIds (_ids);
         }
     }
 
@@ -7931,6 +7969,7 @@ node *
 WLTRAwith (node *arg_node, info *arg_info)
 {
     types *idx_type;
+    info *info_tmp;
     int idx_sdim;
     bool has_fold;
     node *withop;
@@ -7940,7 +7979,14 @@ WLTRAwith (node *arg_node, info *arg_info)
 
     DBUG_EXECUTE ("WLtrans", NOTE ((">>> >>> entering with-loop")););
 
+    /* stack arg_info */
+    info_tmp = arg_info;
+    arg_info = MakeInfo ();
+
     NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
+
+    arg_info = FreeInfo (arg_info);
+    arg_info = info_tmp;
 
     idx_type = IDS_TYPE (NWITH_VEC (arg_node));
     idx_sdim = GetShapeDim (idx_type);
