@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.16  1995/06/26 08:12:35  asi
+ * Revision 1.17  1995/06/26 13:04:02  hw
+ * DBUG_ASSERT in RCwith inserted
+ *
+ * Revision 1.16  1995/06/26  08:12:35  asi
  * parameter for GenerateMasks changed
  *
  * Revision 1.15  1995/06/07  14:26:49  asi
@@ -812,9 +815,11 @@ RCwith (node *arg_node, node *arg_info)
     arg_node->node[1] = Trav (arg_node->node[1], arg_info);
     arg_node->node[0] = Trav (arg_node->node[0], arg_info);
     index_vec_varno = arg_node->node[0]->VAR_DEC->varno;
-    if (N_modarray == arg_node->node[1]->nodetype)
+    if (N_modarray == arg_node->node[1]->nodetype) {
+        DBUG_ASSERT (N_id == arg_node->node[1]->node[0]->nodetype,
+                     "wrong nodetype != N_id");
         mod_array_varno = arg_node->node[1]->node[0]->VAR_DEC->varno;
-    else
+    } else
         mod_array_varno = -1;
 
     with_dump = Store ();
