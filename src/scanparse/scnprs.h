@@ -4,7 +4,10 @@
 /*
  *
  * $Log$
- * Revision 1.3  1994/12/20 11:24:29  sbs
+ * Revision 1.4  1994/12/20 13:49:27  sbs
+ * linenum exported...
+ *
+ * Revision 1.3  1994/12/20  11:24:29  sbs
  * decl_tree inserted
  *
  * Revision 1.2  1994/12/16  14:34:28  sbs
@@ -24,6 +27,7 @@
 
 #include "y.tab.h"
 
+extern int linenum;
 extern int yyparse ();
 extern FILE *yyin;
 extern int start_token;
