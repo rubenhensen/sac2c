@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.30  2004/11/17 09:01:31  ktr
+ * added InferInDFMAssignChain
+ *
  * Revision 1.29  2004/08/01 15:43:46  sah
  * switch to new INFO structure
  * PHASE I
@@ -1865,4 +1868,78 @@ InferDFMs (node *syntax_tree, int hide_locals)
     info_node = FreeInfo (info_node);
 
     DBUG_RETURN (syntax_tree);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   DFMmask_t InferInDFMAssignChain
+ *
+ * description:
+ *   Infers the inmask of a given assignment chain which is located in
+ *   a given function
+ *
+ *****************************************************************************/
+DFMmask_t
+InferInDFMAssignChain (node *assign, node *fundef)
+{
+    info *info;
+    funtab *old_funtab;
+    DFMmask_t res;
+    DFMmask_base_t old_dfm_base;
+
+    DBUG_ENTER ("InferInDFMAssignChain");
+
+    DBUG_ASSERT ((NODE_TYPE (assign) == N_assign),
+                 "argument of InferInDFMAssignChain() must be a N_assign node!");
+    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
+                 "second argument of InferInDFMAssignChain() must be a N_fundef");
+
+    info = MakeInfo ();
+    INFO_INFDFMS_HIDELOC (info) = HIDE_LOCALS_NEVER;
+    INFO_INFDFMS_FUNDEF (info) = fundef;
+
+    old_dfm_base = FUNDEF_DFM_BASE (fundef);
+    if (old_dfm_base == NULL) {
+        FUNDEF_DFM_BASE (fundef)
+          = DFMGenMaskBase (FUNDEF_ARGS (fundef), FUNDEF_VARDEC (fundef));
+
+        DBUG_PRINT ("INFDFMS_ALL", ("no DFM base found -> created (" F_PTR ")",
+                                    FUNDEF_DFM_BASE (fundef)));
+    } else {
+        FUNDEF_DFM_BASE (fundef) = DFMUpdateMaskBase (old_dfm_base, FUNDEF_ARGS (fundef),
+                                                      FUNDEF_VARDEC (fundef));
+
+        DBUG_ASSERT ((FUNDEF_DFM_BASE (fundef) == old_dfm_base),
+                     "address of DFM base has changed during update!");
+
+        DBUG_PRINT ("INFDFMS_ALL",
+                    ("DFM base found -> updated (" F_PTR ")", FUNDEF_DFM_BASE (fundef)));
+    }
+
+    INFO_INFDFMS_IN (info) = DFMGenMaskClear (FUNDEF_DFM_BASE (fundef));
+    INFO_INFDFMS_OUT (info) = DFMGenMaskClear (FUNDEF_DFM_BASE (fundef));
+    INFO_INFDFMS_LOCAL (info) = DFMGenMaskClear (FUNDEF_DFM_BASE (fundef));
+    INFO_INFDFMS_NEEDED (info) = DFMGenMaskClear (FUNDEF_DFM_BASE (fundef));
+
+    INFO_INFDFMS_FIRST (info) = TRUE;
+
+    old_funtab = act_tab;
+    act_tab = infdfms_tab;
+    assign = Trav (assign, info);
+    act_tab = old_funtab;
+
+    res = DFMGenMaskCopy (INFO_INFDFMS_IN (info));
+    DFMSetMaskMinus (res, INFO_INFDFMS_LOCAL (info));
+
+    INFO_INFDFMS_IN (info) = DFMRemoveMask (INFO_INFDFMS_IN (info));
+    INFO_INFDFMS_OUT (info) = DFMRemoveMask (INFO_INFDFMS_OUT (info));
+    INFO_INFDFMS_LOCAL (info) = DFMRemoveMask (INFO_INFDFMS_LOCAL (info));
+    INFO_INFDFMS_NEEDED (info) = DFMRemoveMask (INFO_INFDFMS_NEEDED (info));
+
+    info = FreeInfo (info);
+
+    DBUG_EXECUTE ("INFDFMS_AC", DFMPrintMask (0, " %s ", res););
+
+    DBUG_RETURN (res);
 }

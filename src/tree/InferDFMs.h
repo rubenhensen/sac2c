@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/11/17 09:01:31  ktr
+ * added InferInDFMAssignChain
+ *
  * Revision 1.3  2004/08/01 15:43:46  sah
  * switch to new INFO structure
  * PHASE I
@@ -30,6 +33,8 @@
 
 #ifndef _sac_InferDFMs_h_
 #define _sac_InferDFMs_h_
+
+#include "DataFlowMask.h"
 
 /*
  * bit field to steer hiding of local vars
@@ -77,5 +82,6 @@ extern node *INFDFMSdo (node *arg_node, info *arg_info);
 extern node *INFDFMSicm (node *arg_node, info *arg_info);
 
 extern node *InferDFMs (node *syntax_tree, int hide_locals);
+extern DFMmask_t InferInDFMAssignChain (node *assign, node *fundef);
 
 #endif /* _sac_InferDFMs_h_ */
