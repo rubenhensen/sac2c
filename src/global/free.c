@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.44  1998/04/01 23:55:20  dkr
+ * added FreeWLstriVar, FreeWLgridVar
+ *
  * Revision 1.43  1998/03/27 18:37:36  dkr
  * WLproj renamed in WLstride:
  *   WLPROJ... -> WLSTRIDE...
@@ -1662,6 +1665,49 @@ FreeWLgrid (node *arg_node, node *arg_info)
 
     if (WLGRID_CODE (arg_node) != NULL) {
         NCODE_USED (WLGRID_CODE (arg_node))--;
+    }
+
+    FREE (arg_node);
+
+    DBUG_RETURN (tmp);
+}
+/*--------------------------------------------------------------------------*/
+
+node *
+FreeWLstriVar (node *arg_node, node *arg_info)
+{
+    node *tmp = NULL;
+
+    DBUG_ENTER ("FreeWLstriVar");
+    DBUG_PRINT ("FREE", ("Removing N_WLstriVar node ..."));
+
+    FREETRAV (WLSTRIVAR_BOUND1 (arg_node));
+    FREETRAV (WLSTRIVAR_BOUND2 (arg_node));
+    FREETRAV (WLSTRIVAR_STEP (arg_node));
+    FREETRAV (WLSTRIVAR_CONTENTS (arg_node));
+    tmp = FREECONT (WLSTRIVAR_NEXT (arg_node));
+
+    FREE (arg_node);
+
+    DBUG_RETURN (tmp);
+}
+/*--------------------------------------------------------------------------*/
+
+node *
+FreeWLgridVar (node *arg_node, node *arg_info)
+{
+    node *tmp = NULL;
+
+    DBUG_ENTER ("FreeWLgridVar");
+    DBUG_PRINT ("FREE", ("Removing N_WLgridVar node ..."));
+
+    FREETRAV (WLGRIDVAR_BOUND1 (arg_node));
+    FREETRAV (WLGRIDVAR_BOUND2 (arg_node));
+    FREETRAV (WLGRIDVAR_NEXTDIM (arg_node));
+    tmp = FREECONT (WLGRIDVAR_NEXT (arg_node));
+
+    if (WLGRIDVAR_CODE (arg_node) != NULL) {
+        NCODE_USED (WLGRIDVAR_CODE (arg_node))--;
     }
 
     FREE (arg_node);

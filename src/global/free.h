@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.19  1998/04/01 23:55:39  dkr
+ * added FreeWLstriVar, FreeWLgridVar
+ *
  * Revision 1.18  1998/03/27 18:38:09  dkr
  * WLproj renamed in WLstride:
  *   WLPROJ... -> WLSTRIDE...
@@ -181,6 +184,8 @@ extern node *FreeWLblock (node *arg_node, node *arg_info);
 extern node *FreeWLublock (node *arg_node, node *arg_info);
 extern node *FreeWLstride (node *arg_node, node *arg_info);
 extern node *FreeWLgrid (node *arg_node, node *arg_info);
+extern node *FreeWLstriVar (node *arg_node, node *arg_info);
+extern node *FreeWLgridVar (node *arg_node, node *arg_info);
 
 /* special functions */
 extern void FreePrf2 (node *arg_node, int arg_no); /* CF */
