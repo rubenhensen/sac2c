@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/03/22 19:10:52  bs
+ * bug fixed
+ *
  * Revision 2.2  1999/03/19 09:26:37  bs
  * T_unknown changed to 1st position. This is necessary, since
  * initializing routines are using 0 for unknown values.
@@ -60,8 +63,8 @@
 
 /*   type_name       dbug-string    print-string         fun_rename_string  size  */
 
-TYP_IF (T_unknown, "unknown", "_unknown_", "", 0)
-TYP_IF (T_int, "int", "int", "i", sizeof (int)),
+TYP_IF (T_unknown, "unknown", "_unknown_", "", 0),
+  TYP_IF (T_int, "int", "int", "i", sizeof (int)),
   TYP_IF (T_short, "short", "short", "s", sizeof (short int)),
   TYP_IF (T_long, "long", "long", "l", sizeof (long int)),
   TYP_IF (T_uint, "unsigned int", "unsigned int", "ui", sizeof (int)),
@@ -75,4 +78,4 @@ TYP_IF (T_int, "int", "int", "i", sizeof (int)),
   TYP_IF (T_char, "char", "char", "c", sizeof (char)),
   TYP_IF (T_hidden, "hidden", "void *", "v", sizeof (void *)),
   TYP_IF (T_void, "void", "void", "v", 0), TYP_IF (T_dots, "...", "...", "d", 0),
-  TYP_IF (T_user, "user", "_user_", "", 0),
+  TYP_IF (T_user, "user", "_user_", "", 0)
