@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2002/08/13 13:46:40  dkr
+ * SearchInLUT_PP used instead of SearchInLUT_P
+ *
  * Revision 3.7  2002/02/22 14:30:57  dkr
  * DFM2ReturnTypes: workaround for FUNDEF_NAME as a part of TYPES no
  * longer needed
@@ -447,7 +450,7 @@ DFM2ReturnExprs (DFMmask_t mask, LUT_t lut)
         /*
          * ID_VARDEC and ID_OBJDEF are mapped to the same node!
          */
-        ID_VARDEC (id) = SearchInLUT_P (lut, decl);
+        ID_VARDEC (id) = SearchInLUT_PP (lut, decl);
 
         /*
          * VARDEC_OR_ARG_ATTRIB == 'ST_was_reference'
@@ -501,7 +504,7 @@ DFM2ApArgs (DFMmask_t mask, LUT_t lut)
         /*
          * ID_VARDEC and ID_OBJDEF are mapped to the same node!
          */
-        ID_VARDEC (id) = SearchInLUT_P (lut, decl);
+        ID_VARDEC (id) = SearchInLUT_PP (lut, decl);
 
         ID_ATTRIB (id) = VARDEC_OR_ARG_ATTRIB (decl);
         ID_STATUS (id) = VARDEC_OR_ARG_STATUS (decl);
@@ -543,7 +546,7 @@ DFM2LetIds (DFMmask_t mask, LUT_t lut)
     while (decl != NULL) {
         tmp = _ids;
         _ids = MakeIds_Copy (VARDEC_OR_ARG_NAME (decl));
-        IDS_VARDEC (_ids) = SearchInLUT_P (lut, decl);
+        IDS_VARDEC (_ids) = SearchInLUT_PP (lut, decl);
         IDS_NEXT (_ids) = tmp;
 
         /*

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2002/08/13 13:46:29  dkr
+ * SearchInLUT_PP used instead of SearchInLUT_P
+ *
  * Revision 3.5  2002/02/20 14:58:58  dkr
  * fundef DupTypes() renamed into DupAllTypes()
  *
@@ -264,7 +267,7 @@ SPMDLspmd (node *arg_node, node *arg_info)
             ID_REFCNT (EXPRS_EXPR (new_retexpr)) = GET_ZERO_REFCNT (VARDEC, vardec);
         }
 
-        tmp = SearchInLUT_P (lut, vardec);
+        tmp = SearchInLUT_PP (lut, vardec);
         DBUG_ASSERT ((tmp != NULL), "no decl for return value found in LUT!");
         ID_VARDEC (EXPRS_EXPR (new_retexpr)) = tmp;
 
