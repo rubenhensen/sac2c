@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.62  2004/11/27 05:07:00  ktr
+ * bugfix
+ *
  * Revision 3.61  2004/11/27 02:31:32  cg
  * Function name corrected
  *
@@ -1795,7 +1798,7 @@ NTCwith (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *    node *NTCNpart( node *arg_node, info *arg_info)
+ *    node *NTCpart( node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -1803,13 +1806,13 @@ NTCwith (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 node *
-NTCNpart (node *arg_node, info *arg_info)
+NTCpart (node *arg_node, info *arg_info)
 {
     node *idxs;
     ntype *idx;
     int num_ids;
 
-    DBUG_ENTER ("NTCNpart");
+    DBUG_ENTER ("NTCpart");
 
     /*
      * First, we check whether we can extract some shape info from the
@@ -1851,7 +1854,7 @@ NTCNpart (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *    node *NTCNgenerator( node *arg_node, info *arg_info)
+ *    node *NTCgenerator( node *arg_node, info *arg_info)
  *
  * description:
  *   checks compatability of the generator entries, i.e.,
@@ -1862,12 +1865,12 @@ NTCNpart (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 node *
-NTCNgenerator (node *arg_node, info *arg_info)
+NTCgenerator (node *arg_node, info *arg_info)
 {
     ntype *lb, *idx, *ub, *s, *w, *gen, *res;
     te_info *info;
 
-    DBUG_ENTER ("NTCNgenerator");
+    DBUG_ENTER ("NTCgenerator");
 
     idx = INFO_NTC_TYPE (arg_info); /* generated in NTCNpart !*/
     INFO_NTC_TYPE (arg_info) = NULL;
