@@ -1,6 +1,9 @@
 /*      $Id$
  *
  * $Log$
+ * Revision 2.5  1999/10/22 14:14:40  sbs
+ * now uses take, drop and friends from constants.c
+ *
  * Revision 2.4  1999/10/19 12:55:26  sacbase
  * TCWLprf changed; now psi-applications are computed using constants!
  *
@@ -160,14 +163,26 @@ TCWLprf (node *arg_node, node *arg_info)
             && (N_array == NODE_TYPE (PRF_ARG2 (arg_node))
                 || N_num == NODE_TYPE (PRF_ARG2 (arg_node)))) {
             /* CF prf now. */
-            if (PRF_PRF (arg_node) == F_psi) {
+            if ((PRF_PRF (arg_node) == F_psi) || (PRF_PRF (arg_node) == F_reshape)
+                || (PRF_PRF (arg_node) == F_take) || (PRF_PRF (arg_node) == F_drop)) {
                 if (IsConstantArray (PRF_ARG1 (arg_node), N_num)
                     && IsConstantArray (PRF_ARG2 (arg_node), 0)) {
                     arg1 = COMakeConstantFromArray (PRF_ARG1 (arg_node));
                     arg2 = COMakeConstantFromArray (PRF_ARG2 (arg_node));
-                    res = COPsi (arg1, arg2);
+                    if (PRF_PRF (arg_node) == F_psi) {
+                        res = COPsi (arg1, arg2);
+                    } else if (PRF_PRF (arg_node) == F_reshape) {
+                        res = COReshape (arg1, arg2);
+                    } else if (PRF_PRF (arg_node) == F_take) {
+                        res = COTake (arg1, arg2);
+                    } else {
+                        res = CODrop (arg1, arg2);
+                    }
+                    COFreeConstant (arg1);
+                    COFreeConstant (arg2);
                     FreeTree (arg_node);
                     arg_node = COConstant2AST (res);
+                    COFreeConstant (res);
                 }
             } else {
                 arg_node = CFprf (arg_node, arg_info);
@@ -177,7 +192,7 @@ TCWLprf (node *arg_node, node *arg_info)
         }
     }
 
-    if (NODE_TYPE (arg_node) == N_array) {
+    if ((NODE_TYPE (arg_node) == N_array) && (ARRAY_TYPE (arg_node) == NULL)) {
         ARRAY_TYPE (arg_node) = TI_array (arg_node, arg_info);
     }
 
