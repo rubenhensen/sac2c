@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.3  2000/12/06 20:14:34  dkr
+ * minor changes done
+ *
  * Revision 3.2  2000/12/01 18:19:05  dkr
  * no cc warning '... might be used uninitialized' anymore
  *
@@ -741,12 +744,12 @@ RCvardec (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   void InferWithDFM( node *assign, node *fundef)
+ *   void InferWithDFM( node *arg_nod, node *fundef)
  *
  * description:
  *   Creates DFM-masks for with-loops (N_Nwith and N_Nwith2) from scratch.
- *   assign contains the N_let with a with-loop as instruction
- *   fundef contains the function the assigment is in
+ *   'arg_node' contains the N_let with a with-loop as instruction.
+ *   'fundef' contains the function the assigment is in.
  *
  ******************************************************************************/
 
@@ -760,11 +763,11 @@ InferWithDFM (node *arg_node, node *fundef)
 
     DBUG_ENTER ("InferWithDFM");
 
-    DBUG_ASSERT ((NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_let), "not an N_let");
+    DBUG_ASSERT ((NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_let), "not a N_let node");
 
     DBUG_ASSERT (((NODE_TYPE (LET_EXPR (ASSIGN_INSTR (arg_node))) == N_Nwith)
                   || (NODE_TYPE (LET_EXPR (ASSIGN_INSTR (arg_node))) == N_Nwith2)),
-                 "not a with-loop (N_Nwith or N+NWith2)");
+                 "not a with-loop (N_Nwith or N_NWith2 node)");
 
     /*
      *  if one mask (IN) is NULL we assume the other masks (INOUT, OUT, LOCAL)
@@ -864,7 +867,6 @@ RCassign (node *arg_node, node *arg_info)
     if ((NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_let)
         && ((NODE_TYPE (LET_EXPR (ASSIGN_INSTR (arg_node))) == N_Nwith)
             || (NODE_TYPE (LET_EXPR (ASSIGN_INSTR (arg_node))) == N_Nwith2))) {
-
         InferWithDFM (arg_node, fundef_node);
     }
 
@@ -1959,9 +1961,6 @@ RCNwith (node *arg_node, node *arg_info)
      * RCO: with-loops are handled like prfs:
      *      when RCO is active, we only count the last occur of IN-vars.
      *
-     * CAUTION: we must initialize NCODE_INC_RC_IDS because some subtrees
-     *          (e.g. bodies of while-loops) are traversed twice!!!
-     *
      * There is one *exception*:
      * The neutral element of a fold-with-loop is neither RC-counted here,
      *  nor inserted into 'NWITH_DEC_RC_IDS'.
@@ -1977,8 +1976,8 @@ RCNwith (node *arg_node, node *arg_info)
     case WO_foldfun:
         /* here is no break missing!! */
     case WO_foldprf:
-        if (NODE_TYPE (NWITHOP_NEUTRAL (NWITH_WITHOP (arg_node))) == N_id) {
-            neutral_vardec = ID_VARDEC (NWITHOP_NEUTRAL (NWITH_WITHOP (arg_node)));
+        if (NODE_TYPE (NWITH_NEUTRAL (arg_node)) == N_id) {
+            neutral_vardec = ID_VARDEC (NWITH_NEUTRAL (arg_node));
         }
         break;
     default:
@@ -2116,12 +2115,12 @@ RCNcode (node *arg_node, node *arg_info)
     /*
      * We collect all ids, which RC is >1, in 'NCODE_INC_RC_IDS( arg_node)'.
      * In 'IDS_REFCNT' we store (RC - 1) --- because we started the refcounting
-     *  of these vars with (RC == 1)!!!
+     *   of these vars with (RC == 1)!!!
      * 'compile' generates for each var in 'NCODE_INC_RC_IDS' a 'ND_INC_RC'-ICM
-     *  as first statement of the code-block!
+     *   as first statement of the code-block!
      *
      * CAUTION: we must initialize NCODE_INC_RC_IDS because some subtrees
-     *          (e.g. bodies of while-loops) are traversed two times!!!
+     *          (e.g. bodies of while-loops) are traversed twice!!!
      */
 
     if (NCODE_INC_RC_IDS (arg_node) != NULL) {
@@ -2243,7 +2242,6 @@ RCNwithop (node *arg_node, node *arg_info)
     DBUG_ENTER ("RCNwithop");
 
     switch (NWITHOP_TYPE (arg_node)) {
-
     case WO_genarray:
         /*
          * We count this reference via 'NWITH(2)_IN' ('RCNwith()').
@@ -2380,9 +2378,9 @@ RCNwith2 (node *arg_node, node *arg_info)
 
     /*
      * CAUTION:
-     *   We must traverse the (parts -> withids) before we traverse the code,
+     *   We must traverse the with-id before we traverse the code,
      *   to get the right RC in 'NWITH2_VEC'!
-     *   'RCNwithid()' initializes the RC, and while traversal of the code
+     *   'RCNwithid()' initializes the RC, and during traversal of the code
      *   it is set correctly!
      */
 
@@ -2424,9 +2422,6 @@ RCNwith2 (node *arg_node, node *arg_info)
      * RCO: with-loops are handled like prfs:
      *      when RCO is active, we only count the last occur of IN-vars.
      *
-     * CAUTION: we must initialize NCODE_INC_RC_IDS because some subtrees
-     *          (e.g. bodies of while-loops) are traversed twice!!!
-     *
      * There is one *exception*:
      * The neutral element of a fold-with-loop is neither RC-counted here,
      *  nor inserted into 'NWITH2_DEC_RC_IDS'.
@@ -2442,8 +2437,8 @@ RCNwith2 (node *arg_node, node *arg_info)
     case WO_foldfun:
         /* here is no break missing!! */
     case WO_foldprf:
-        if (NODE_TYPE (NWITHOP_NEUTRAL (NWITH2_WITHOP (arg_node))) == N_id) {
-            neutral_vardec = ID_VARDEC (NWITHOP_NEUTRAL (NWITH2_WITHOP (arg_node)));
+        if (NODE_TYPE (NWITH2_NEUTRAL (arg_node)) == N_id) {
+            neutral_vardec = ID_VARDEC (NWITH2_NEUTRAL (arg_node));
         }
         break;
     default:
