@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.33  2005/03/17 19:37:43  sbs
+ * EMALwith now can handle two parts as well.
+ *
  * Revision 1.32  2005/03/13 15:39:15  ktr
  * Marielyst N_fold bug fixed
  *
@@ -1538,6 +1541,12 @@ EMALwith (node *arg_node, info *arg_info)
         expr = TBmakeId (IDS_AVIS (WITH_VEC (arg_node)));
         WITH_VEC (arg_node) = FREEdoFreeTree (WITH_VEC (arg_node));
         WITH_VEC (arg_node) = expr;
+        if (PART_NEXT (WITH_PART (arg_node)) != NULL) {
+            expr = TBmakeId (IDS_AVIS (PART_VEC (PART_NEXT (WITH_PART (arg_node)))));
+            PART_VEC (PART_NEXT (WITH_PART (arg_node)))
+              = FREEdoFreeTree (PART_VEC (PART_NEXT (WITH_PART (arg_node))));
+            PART_VEC (PART_NEXT (WITH_PART (arg_node))) = expr;
+        }
     }
 
     /*
