@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.11  2000/03/19 11:09:06  dkr
+# make deps done
+#
 # Revision 1.10  2000/03/16 14:32:53  dkr
 # make deps done
 #
@@ -84,9 +87,12 @@ DataFlowMaskUtils.o: /usr/include/sys/feature_tests.h
 DataFlowMaskUtils.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 DataFlowMaskUtils.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
 DataFlowMaskUtils.o: /usr/include/string.h /usr/include/stdlib.h
-DataFlowMaskUtils.o: ../global/globals.h ../global/internal_lib.h
-DataFlowMaskUtils.o: ../../inc/dbug.h DupTree.h LookUpTable.h DataFlowMask.h
-DataFlowMaskUtils.o: ../typecheck/typecheck.h
+DataFlowMaskUtils.o: ../global/globals.h ../global/internal_lib.h free.h
+DataFlowMaskUtils.o: ../../inc/dbug.h ../global/my_debug.h
+DataFlowMaskUtils.o: /usr/include/malloc.h /usr/include/sys/types.h
+DataFlowMaskUtils.o: /usr/include/sys/machtypes.h
+DataFlowMaskUtils.o: /usr/include/sys/int_types.h DupTree.h LookUpTable.h
+DataFlowMaskUtils.o: DataFlowMask.h ../typecheck/typecheck.h
 DupTree.o: /usr/include/string.h /usr/include/sys/feature_tests.h
 DupTree.o: /usr/include/sys/isa_defs.h tree.h ../global/types.h tree_basic.h
 DupTree.o: tree_compound.h ../global/Error.h /usr/include/stdio.h
@@ -104,7 +110,7 @@ LookUpTable.o: tree_basic.h tree_compound.h ../global/Error.h
 LookUpTable.o: /usr/include/stdio.h /usr/include/sys/va_list.h
 LookUpTable.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
 LookUpTable.o: /usr/include/stdlib.h ../global/globals.h
-LookUpTable.o: ../global/internal_lib.h traverse.h free.h ../../inc/dbug.h
+LookUpTable.o: ../global/internal_lib.h free.h ../../inc/dbug.h
 LookUpTable.o: ../global/my_debug.h /usr/include/malloc.h
 LookUpTable.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
 LookUpTable.o: /usr/include/sys/int_types.h
@@ -160,7 +166,8 @@ traverse.o: ../concurrent/spmd_trav.h DataFlowMask.h
 traverse.o: ../concurrent/spmd_cons.h ../concurrent/schedule.h
 traverse.o: ../psi-opt/wl_access_analyze.h ../psi-opt/tile_size_inference.h
 traverse.o: ../typecheck/new_typecheck.h ../multithread/multithread.h
-traverse.o: ../flatten/lac2fun.h ../flatten/fun2lac.h ../flatten/adjust_ids.h
+traverse.o: ../flatten/lac2fun.h ../flatten/cleanup_decls.h
+traverse.o: ../flatten/fun2lac.h ../flatten/adjust_ids.h
 traverse.o: ../multithread/schedule_init.h ../multithread/blocks_init.h
 traverse.o: ../multithread/blocks_expand.h ../multithread/repfuns_init.h
 traverse.o: ../multithread/mtfuns_init.h ../multithread/blocks_cons.h
