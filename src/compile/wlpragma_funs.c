@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2001/01/08 13:40:09  dkr
+ * functions ExtractAplPragma... moved from wltransform.c to
+ * wlpragma_funs.c
+ *
  * Revision 3.4  2001/01/08 12:07:26  dkr
  * no changes done
  *
@@ -81,28 +85,132 @@
 #include "tree.h"
 #include "free.h"
 #include "DupTree.h"
+#include "resource.h"
 #include "wltransform.h"
 #include "wlpragma_funs.h"
 
-/*
- * Here the funs for wlcomp-pragmas are defined.
+/******************************************************************************
+ ******************************************************************************
+ **
+ **  Functions for array-placement pragmas
+ **/
+
+/******************************************************************************
  *
- * Each wlcomp-pragma-fun has the signature
- *    node *WlcompFun( node *segs, node *parms, node *cubes, int dims)
- * and returns a WL_seg-chain with annotated temporary attributes (BV, UBV, ...).
+ * Function:
+ *   node *ExtractAplPragmaAp(node *exprs, node *pragma)
  *
- * The meaning of the parameters:
- *   - In 'segs' the current segmentation is given. This segmentation is the
- *     basis for the return value. It can be freed and build up again (like in
- *     'Cubes') or can be modified (see 'Bv').
- *   - 'parms' contains an N_exprs-chain with additional parameters for the
- *     function. (E.g. concrete blocking-vectors, ...).
- *   - 'cubes' contains the set of cubes of the current with-loop. This can be
- *     used to build up a new segmentation.
- *     (CAUTION: Do not forget to use DupTree/DupNode. Parts of 'cubes' must
- *     not be shared!!)
- *   - 'dims' gives the number of dimensions of the current with-loop.
- */
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+static node *
+ExtractAplPragmaAp (node *exprs, node *pragma, int line)
+{
+    node *ap, *del;
+    int size;
+
+    DBUG_ENTER ("ExtractAplPragmaAp");
+
+    if (exprs != NULL) {
+        ap = EXPRS_EXPR (exprs);
+        DBUG_ASSERT ((NODE_TYPE (ap) == N_ap), ("Illegal wlcomp pragma."));
+        if (0 == strcmp (AP_NAME (ap), "APL")) {
+            if (!((AP_ARGS (ap) != NULL) && (NODE_TYPE (AP_ARG1 (ap)) == N_id)
+                  && (EXPRS_NEXT (AP_ARGS (ap)) != NULL)
+                  && (NODE_TYPE (AP_ARG2 (ap)) == N_num)
+                  && (EXPRS_NEXT (EXPRS_NEXT (AP_ARGS (ap))) != NULL)
+                  && (NODE_TYPE (AP_ARG3 (ap)) == N_num))) {
+                ERROR (line, ("Illegal wlcomp pragma entry APL found"));
+            } else {
+                switch (NUM_VAL (EXPRS_EXPR (EXPRS_NEXT (EXPRS_NEXT (AP_ARGS (ap)))))) {
+                case 1:
+                    size = 1024 * config.cache1_size;
+                    break;
+                case 2:
+                    size = 1024 * config.cache2_size;
+                    break;
+                case 3:
+                    size = 1024 * config.cache3_size;
+                    break;
+                default:
+                    size = 0;
+                }
+                if (size > 0) {
+                    NUM_VAL (AP_ARG3 (ap)) = size;
+                    PRAGMA_APL (pragma) = ap;
+                } else {
+                    FreeTree (ap);
+                }
+            }
+
+            del = exprs;
+            exprs = ExtractAplPragmaAp (EXPRS_NEXT (exprs), pragma, line);
+            FREE (del);
+        } else {
+            EXPRS_NEXT (exprs) = ExtractAplPragmaAp (EXPRS_NEXT (exprs), pragma, line);
+        }
+    }
+
+    DBUG_RETURN (exprs);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *ExtractAplPragma(node *pragma, int line)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+ExtractAplPragma (node *pragma, int line)
+{
+    node *res;
+
+    DBUG_ENTER ("ExtractAplPragma");
+
+    if (pragma != NULL) {
+        PRAGMA_WLCOMP_APS (pragma)
+          = ExtractAplPragmaAp (PRAGMA_WLCOMP_APS (pragma), pragma, line);
+        if (PRAGMA_APL (pragma) != NULL) {
+            res = MakePragma ();
+            PRAGMA_APL (res) = PRAGMA_APL (pragma);
+            PRAGMA_APL (pragma) = NULL;
+        } else {
+            res = NULL;
+        }
+    } else {
+        res = NULL;
+    }
+
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ ******************************************************************************
+ **
+ **  Here the funs for wlcomp-pragmas are defined.
+ **
+ **  Each wlcomp-pragma-fun has the signature
+ **     node *WlcompFun( node *segs, node *parms, node *cubes, int dims)
+ **  and returns a WL_seg-chain with annotated temporary attributes (BV, UBV, ...).
+ **
+ **  The meaning of the parameters:
+ **    - In 'segs' the current segmentation is given. This segmentation is the
+ **      basis for the return value. It can be freed and build up again (like in
+ **      'Cubes') or can be modified (see 'Bv').
+ **    - 'parms' contains an N_exprs-chain with additional parameters for the
+ **      function. (E.g. concrete blocking-vectors, ...).
+ **    - 'cubes' contains the set of cubes of the current with-loop. This can be
+ **      used to build up a new segmentation.
+ **      (CAUTION: Do not forget to use DupTree/DupNode. Parts of 'cubes' must
+ **      not be shared!!)
+ **    - 'dims' gives the number of dimensions of the current with-loop.
+ **/
 
 /******************************************************************************
  *
@@ -118,7 +226,7 @@
  *
  ******************************************************************************/
 
-node *
+static node *
 IntersectStridesArray (node *strides, node *aelems1, node *aelems2, int line)
 {
     node *isect, *nextdim, *code, *new_grids, *grids;
@@ -252,7 +360,7 @@ IntersectStridesArray (node *strides, node *aelems1, node *aelems2, int line)
  *
  ******************************************************************************/
 
-int *
+static int *
 Array2Bv (node *array, int *bv, int dims, int line)
 {
     int d;
@@ -279,11 +387,6 @@ Array2Bv (node *array, int *bv, int dims, int line)
 
     DBUG_RETURN (bv);
 }
-
-/***************************************
- *
- * extern functions
- */
 
 /******************************************************************************
  *

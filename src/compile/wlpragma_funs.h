@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2001/01/08 13:40:25  dkr
+ * functions ExtractAplPragma... moved from wltransform.c to
+ * wlpragma_funs.c
+ *
  * Revision 3.2  2001/01/08 11:41:28  dkr
  * wlpragma_funs.mac used for generation of function prototypes now
  *
@@ -27,6 +31,8 @@
 
 #ifndef _sac_wlpragma_funs_h_
 #define _sac_wlpragma_funs_h_
+
+extern node *ExtractAplPragma (node *pragma, int line);
 
 #define WLP(fun, str)                                                                    \
     extern node *fun (node *segs, node *parms, node *cubes, int dims, int line);

@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 3.7  2001/01/08 13:40:34  dkr
+ * functions ExtractAplPragma... moved from wltransform.c to
+ * wlpragma_funs.c
+ *
  * Revision 3.6  2000/12/12 13:08:37  dkr
  * fixed in bug in WLTRAwith:
  * NWITH_OUT_MASK no longer accidentially removed
@@ -250,11 +254,23 @@
 #include "DupTree.h"
 #include "DataFlowMask.h"
 #include "print.h"
-#include "resource.h"
 
 #include "wlpragma_funs.h"
 
 #include <limits.h> /* INT_MAX */
+
+typedef enum {
+    WL_PH_conv,
+    WL_PH_cubes,
+    WL_PH_segs,
+    WL_PH_split,
+    WL_PH_block,
+    WL_PH_ublock,
+    WL_PH_merge,
+    WL_PH_opt,
+    WL_PH_fit,
+    WL_PH_norm
+} wl_bs_t;
 
 /*
  * here we store the lineno of the current with-loop
@@ -1525,109 +1541,6 @@ static int CompareWLnode (node *node1, node *node2, int outline);
 
 /******************************************************************************
  *
- * function:
- *
- *
- * description:
- *
- *
- *
- *
- *
- ******************************************************************************/
-
-static node *
-ExtractAplPragmaAp (node *exprs, node *pragma)
-{
-    node *ap, *del;
-    int size;
-
-    DBUG_ENTER ("ExtractAplPragmaAp");
-
-    if (exprs != NULL) {
-        ap = EXPRS_EXPR (exprs);
-        DBUG_ASSERT ((NODE_TYPE (ap) == N_ap), ("Illegal wlcomp pragma."));
-        if (0 == strcmp (AP_NAME (ap), "APL")) {
-            if (!((AP_ARGS (ap) != NULL)
-                  && (NODE_TYPE (EXPRS_EXPR (AP_ARGS (ap))) == N_id)
-                  && (EXPRS_NEXT (AP_ARGS (ap)) != NULL)
-                  && (NODE_TYPE (EXPRS_EXPR (EXPRS_NEXT (AP_ARGS (ap)))) == N_num)
-                  && (EXPRS_NEXT (EXPRS_NEXT (AP_ARGS (ap))) != NULL)
-                  && (NODE_TYPE (EXPRS_EXPR (EXPRS_NEXT (EXPRS_NEXT (AP_ARGS (ap)))))
-                      == N_num))) {
-                ERROR (line, ("Illegal wlcomp pragma entry APL found"));
-            } else {
-                switch (NUM_VAL (EXPRS_EXPR (EXPRS_NEXT (EXPRS_NEXT (AP_ARGS (ap)))))) {
-                case 1:
-                    size = 1024 * config.cache1_size;
-                    break;
-                case 2:
-                    size = 1024 * config.cache2_size;
-                    break;
-                case 3:
-                    size = 1024 * config.cache3_size;
-                    break;
-                default:
-                    size = 0;
-                }
-                if (size > 0) {
-                    NUM_VAL (EXPRS_EXPR (EXPRS_NEXT (EXPRS_NEXT (AP_ARGS (ap))))) = size;
-                    PRAGMA_APL (pragma) = ap;
-                } else {
-                    FreeTree (ap);
-                }
-            }
-
-            del = exprs;
-            exprs = ExtractAplPragmaAp (EXPRS_NEXT (exprs), pragma);
-            FREE (del);
-        } else {
-            EXPRS_NEXT (exprs) = ExtractAplPragmaAp (EXPRS_NEXT (exprs), pragma);
-        }
-    }
-
-    DBUG_RETURN (exprs);
-}
-
-/******************************************************************************
- *
- * function:
- *
- *
- * description:
- *
- *
- *
- *
- *
- ******************************************************************************/
-
-static node *
-ExtractAplPragma (node *pragma)
-{
-    node *res;
-
-    DBUG_ENTER ("ExtractAplPragma");
-
-    if (pragma != NULL) {
-        PRAGMA_WLCOMP_APS (pragma)
-          = ExtractAplPragmaAp (PRAGMA_WLCOMP_APS (pragma), pragma);
-        if (PRAGMA_APL (pragma) != NULL) {
-            res = MakePragma ();
-            PRAGMA_APL (res) = PRAGMA_APL (pragma);
-            PRAGMA_APL (pragma) = NULL;
-        } else {
-            res = NULL;
-        }
-    } else {
-        res = NULL;
-    }
-
-    DBUG_RETURN (res);
-}
-
-/******************************************************************************
- *
  * Function:
  *   node *InsertWLnodes( node *nodes, node *insert_nodes)
  *
@@ -2100,6 +2013,40 @@ GetLcmUnroll (node *nodes, int dim)
     DBUG_RETURN (unroll);
 }
 
+/******************************************************************************
+ *
+ * Function:
+ *   node *GenerateShapeStrides( int dim, int dims, shpseg* shape)
+ *
+ * Description:
+ *   Returns strides/grids of the size found in 'shape'.
+ *   If 'is_empty' is != NULL, '*is_empty' notifies whether the generated
+ *   stride is empty or not. Otherwise the stride has to be non-empty!!
+ *
+ *   This function is called by 'GenerateCompleteDomain',
+ *    'GenerateCompleteDomainVar'.
+ *
+ ******************************************************************************/
+
+static node *
+GenerateShapeStrides (int dim, int dims, shpseg *shape)
+{
+    node *new_grid;
+    node *strides = NULL;
+
+    DBUG_ENTER ("GenerateShapeStrides");
+
+    if (dim < dims) {
+        new_grid = MakeWLgrid (0, dim, 0, 1, 0,
+                               GenerateShapeStrides (dim + 1, dims, shape), NULL, NULL);
+
+        strides
+          = MakeWLstride (0, dim, 0, SHPSEG_SHAPE (shape, dim), 1, 0, new_grid, NULL);
+    }
+
+    DBUG_RETURN (strides);
+}
+
 /**
  **
  ** general purpose functions
@@ -2362,6 +2309,68 @@ Parts2Strides (node *parts, int dims, shpseg *shape)
     DBUG_RETURN (parts_stride);
 }
 
+/******************************************************************************
+ *
+ * Function:
+ *   void EmptyParts2StridesOrExpr( node **strides, node **new_node,
+ *                                  node *arg_node, int wl_dims, shpseg *wl_shpseg)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+void
+EmptyParts2StridesOrExpr (node **strides, node **new_node, node *arg_node, int wl_dims,
+                          shpseg *wl_shpseg)
+{
+    DBUG_ENTER ("EmptyParts2StridesOrExpr");
+
+    DBUG_ASSERT (((strides != NULL) && (new_node != NULL)),
+                 "no memory for return values found!");
+
+    DBUG_ASSERT ((((*strides) == NULL) && ((*new_node) == NULL)),
+                 "return values already set!");
+
+    switch (NWITH_TYPE (arg_node)) {
+    case WO_genarray:
+        if (GetShpsegLength (wl_dims, wl_shpseg) > 0) {
+            /*
+             * result array of genarray-with-loop is non-empty
+             *  -> generate a single stride over the whole domain
+             */
+            (*strides) = GenerateShapeStrides (0, wl_dims, wl_shpseg);
+        } else {
+            /*
+             * result array of genarray-with-loop is empty
+             *  -> replace with-loop by empty array
+             */
+            node *cexpr;
+            simpletype btype;
+
+            cexpr = NWITH_CEXPR (arg_node);
+            DBUG_ASSERT ((NODE_TYPE (cexpr) == N_id), "CEXPR must be a N_id node!");
+            btype = TYPES_BASETYPE (ID_TYPE (cexpr));
+            DBUG_ASSERT ((btype != T_user), "Array elements of genarray-with-loop have a "
+                                            "user-defined type!");
+            (*new_node) = CreateZeroVector (0, btype);
+        }
+        break;
+
+    case WO_modarray:
+        (*new_node) = DupNode (NWITH_ARRAY (arg_node));
+        break;
+
+    case WO_foldfun:
+        /* here is no break missing! */
+    case WO_foldprf:
+        (*new_node) = DupNode (NWITH_NEUTRAL (arg_node));
+        break;
+    }
+
+    DBUG_VOID_RETURN;
+}
+
 #ifndef DBUG_OFF
 /******************************************************************************
  ******************************************************************************
@@ -2479,6 +2488,10 @@ StridesDisjoint_AllDims (node *stride1, node *stride2)
 
     DBUG_ENTER ("StridesDisjoint_AllDims");
 
+    DBUG_ASSERT (((NODE_TYPE (stride1) == N_WLstride)
+                  && (NODE_TYPE (stride2) == N_WLstride)),
+                 "disjointness can be checked for constant strides only");
+
     while (stride1 != NULL) {
         DBUG_ASSERT ((stride2 != NULL), "stride1 contains more dimensions than stride2");
         grid1 = WLSTRIDE_CONTENTS (stride1);
@@ -2525,15 +2538,15 @@ CheckDisjointness (node *strides)
     DBUG_ENTER ("CheckDisjointness");
 
     while (strides != NULL) {
-        stride2 = WLSTRIDE_NEXT (strides);
+        stride2 = WLSTRIX_NEXT (strides);
         while (stride2 != NULL) {
             if (!StridesDisjoint_AllDims (strides, stride2)) {
                 disjoint = FALSE;
                 goto ret;
             }
-            stride2 = WLSTRIDE_NEXT (stride2);
+            stride2 = WLSTRIX_NEXT (stride2);
         }
-        strides = WLSTRIDE_NEXT (strides);
+        strides = WLSTRIX_NEXT (strides);
     }
 
 ret:
@@ -4388,39 +4401,6 @@ GenerateCompleteGrid (node *stride)
 /******************************************************************************
  *
  * Function:
- *   node *GenerateShapeStrides( int dim, int dims, shpseg* shape)
- *
- * Description:
- *   Returns strides/grids of the size found in 'shape'.
- *   If 'is_empty' is != NULL, '*is_empty' notifies whether the generated
- *   stride is empty or not. Otherwise the stride has to be non-empty!!
- *
- *   This function is called by 'GenerateCompleteDomain',
- *    'GenerateCompleteDomainVar'.
- *
- ******************************************************************************/
-
-static node *
-GenerateShapeStrides (int dim, int dims, shpseg *shape)
-{
-    node *new_grid, *strides = NULL;
-
-    DBUG_ENTER ("GenerateShapeStrides");
-
-    if (dim < dims) {
-        new_grid = MakeWLgrid (0, dim, 0, 1, 0,
-                               GenerateShapeStrides (dim + 1, dims, shape), NULL, NULL);
-
-        strides
-          = MakeWLstride (0, dim, 0, SHPSEG_SHAPE (shape, dim), 1, 0, new_grid, NULL);
-    }
-
-    DBUG_RETURN (strides);
-}
-
-/******************************************************************************
- *
- * Function:
  *   node *GenerateCompleteDomain( node *strides,
  *                                 int dims, shpseg *shape)
  *
@@ -6089,6 +6069,51 @@ InferSchedulingParams (node *seg)
 /******************************************************************************
  *
  * Function:
+ *   wl_bs_t AnalyzeBreakSpecifier( void)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+wl_bs_t
+AnalyzeBreakSpecifier (void)
+{
+    wl_bs_t bs;
+
+    DBUG_ENTER ("bs");
+
+    bs = WL_PH_norm;
+    if (break_after == PH_wltrans) {
+        if (!strcmp (break_specifier, "conv")) {
+            bs = WL_PH_conv;
+        } else if (!strcmp (break_specifier, "cubes")) {
+            bs = WL_PH_cubes;
+        } else if (!strcmp (break_specifier, "segs")) {
+            bs = WL_PH_segs;
+        } else if (!strcmp (break_specifier, "split")) {
+            bs = WL_PH_split;
+        } else if (!strcmp (break_specifier, "block")) {
+            bs = WL_PH_block;
+        } else if (!strcmp (break_specifier, "ublock")) {
+            bs = WL_PH_ublock;
+        } else if (!strcmp (break_specifier, "merge")) {
+            bs = WL_PH_merge;
+        } else if (!strcmp (break_specifier, "opt")) {
+            bs = WL_PH_opt;
+        } else if (!strcmp (break_specifier, "fit")) {
+            bs = WL_PH_fit;
+        } else if (!strcmp (break_specifier, "norm")) {
+            bs = WL_PH_norm;
+        }
+    }
+
+    DBUG_RETURN (bs);
+}
+
+/******************************************************************************
+ *
+ * Function:
  *   node *WLTRAwith( node *arg_node, node *arg_info)
  *
  * Description:
@@ -6105,18 +6130,7 @@ WLTRAwith (node *arg_node, node *arg_info)
     node *strides, *cubes, *segs, *seg;
     shpseg *wl_shpseg;
     int wl_dims, b;
-    enum {
-        WL_PH_conv,
-        WL_PH_cubes,
-        WL_PH_segs,
-        WL_PH_split,
-        WL_PH_block,
-        WL_PH_ublock,
-        WL_PH_merge,
-        WL_PH_opt,
-        WL_PH_fit,
-        WL_PH_norm
-    } WL_break_after;
+    wl_bs_t WL_break_after;
     node *new_node = NULL;
 
     DBUG_ENTER ("WLTRAwith");
@@ -6128,30 +6142,7 @@ WLTRAwith (node *arg_node, node *arg_info)
     line = NODE_LINE (arg_node);
 
     /* analyse 'break_specifier' */
-    WL_break_after = WL_PH_norm;
-    if (break_after == PH_wltrans) {
-        if (!strcmp (break_specifier, "conv")) {
-            WL_break_after = WL_PH_conv;
-        } else if (!strcmp (break_specifier, "cubes")) {
-            WL_break_after = WL_PH_cubes;
-        } else if (!strcmp (break_specifier, "segs")) {
-            WL_break_after = WL_PH_segs;
-        } else if (!strcmp (break_specifier, "split")) {
-            WL_break_after = WL_PH_split;
-        } else if (!strcmp (break_specifier, "block")) {
-            WL_break_after = WL_PH_block;
-        } else if (!strcmp (break_specifier, "ublock")) {
-            WL_break_after = WL_PH_ublock;
-        } else if (!strcmp (break_specifier, "merge")) {
-            WL_break_after = WL_PH_merge;
-        } else if (!strcmp (break_specifier, "opt")) {
-            WL_break_after = WL_PH_opt;
-        } else if (!strcmp (break_specifier, "fit")) {
-            WL_break_after = WL_PH_fit;
-        } else if (!strcmp (break_specifier, "norm")) {
-            WL_break_after = WL_PH_norm;
-        }
-    }
+    WL_break_after = AnalyzeBreakSpecifier ();
 
     NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
 
@@ -6184,45 +6175,9 @@ WLTRAwith (node *arg_node, node *arg_info)
     if (strides == NULL) {
         /*
          * all parts are empty
+         *  -> set 'strides' or 'new_node'
          */
-
-        switch (NWITH_TYPE (arg_node)) {
-        case WO_genarray:
-            if (GetShpsegLength (wl_dims, wl_shpseg) > 0) {
-                /*
-                 * result array of genarray-with-loop is non-empty
-                 *  -> generate a single stride over the whole domain
-                 */
-                strides = GenerateShapeStrides (0, wl_dims, wl_shpseg);
-                NPART_CODE (NWITH_PART (arg_node)) = NULL;
-                NWITH_CODE (arg_node) = FreeTree (NWITH_CODE (arg_node));
-            } else {
-                /*
-                 * result array of genarray-with-loop is empty
-                 *  -> replace with-loop by empty array
-                 */
-                node *cexpr;
-                simpletype btype;
-
-                cexpr = NWITH_CEXPR (arg_node);
-                DBUG_ASSERT ((NODE_TYPE (cexpr) == N_id), "CEXPR must be a N_id node!");
-                btype = TYPES_BASETYPE (ID_TYPE (cexpr));
-                DBUG_ASSERT ((btype != T_user), "Array elements of genarray-with-loop "
-                                                "have a user-defined type!");
-                new_node = CreateZeroVector (0, btype);
-            }
-            break;
-
-        case WO_modarray:
-            new_node = DupNode (NWITH_ARRAY (arg_node));
-            break;
-
-        case WO_foldfun:
-            /* here is no break missing! */
-        case WO_foldprf:
-            new_node = DupNode (NWITH_NEUTRAL (arg_node));
-            break;
-        }
+        EmptyParts2StridesOrExpr (&strides, &new_node, arg_node, wl_dims, wl_shpseg);
     }
 
     /*
@@ -6295,7 +6250,8 @@ WLTRAwith (node *arg_node, node *arg_info)
             if (WL_break_after >= WL_PH_segs) {
                 DBUG_EXECUTE ("WLprec", NOTE (("step 2: choice of segments\n")));
 
-                NWITH2_PRAGMA (new_node) = ExtractAplPragma (NWITH_PRAGMA (arg_node));
+                NWITH2_PRAGMA (new_node)
+                  = ExtractAplPragma (NWITH_PRAGMA (arg_node), line);
                 if ((NWITH2_PRAGMA (new_node) != NULL)
                     && ((NWITH2_TYPE (new_node) == WO_foldfun)
                         || (NWITH2_TYPE (new_node) == WO_foldprf))) {
