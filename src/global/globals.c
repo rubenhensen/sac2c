@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  1998/04/29 17:11:22  dkr
+ * added new compiler phases
+ *
  * Revision 1.11  1998/04/25 11:53:06  sbs
  * indent inserted.
  *
@@ -306,7 +309,8 @@ char *compiler_phase_name[] = {"",
                                "Running SAC optimizations",
                                "Running PSI optimizations",
                                "Running reference count inference system",
-                               "Generating SPMD regions",
+                               "Transforming with-loop representation",
+                               "Generating SPMD- and sync-regions",
                                "Preparing C code generation",
                                "Generating C code",
                                "Creating C file",
