@@ -34,3 +34,4 @@ resolveall.h
 annotatenamespace.c
 annotatenamespace.h
 usesymbols.c
+usesymbols.h
