@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.4  1995/07/24 15:43:52  asi
+ * Revision 1.5  1995/10/18 12:51:58  cg
+ * converted to new error macros
+ *
+ * Revision 1.4  1995/07/24  15:43:52  asi
  * itoa will now work correctly ;-)
  *
  * Revision 1.3  1995/07/24  09:01:48  asi
@@ -46,7 +49,8 @@ Malloc (int size)
 
     tmp = malloc (size);
     if (NULL == tmp)
-        Error ("out of memory", 1);
+        SYSABORT (("Out of memory"));
+
     DBUG_PRINT ("MEM", ("new mem: " P_FORMAT, tmp));
 
     DBUG_RETURN (tmp);
