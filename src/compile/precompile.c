@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.50  1998/04/16 11:55:56  dkr
+ * removed unused vars
+ *
  * Revision 1.49  1998/04/10 03:13:20  dkr
  * fixed a bug in FitWL
  *
@@ -1809,7 +1812,6 @@ node *
 SetSegs (node *pragma, node *cubes, int dims)
 {
     node *aps;
-    int d;
     node *segs = NULL;
 
     DBUG_ENTER ("SetSegs");
