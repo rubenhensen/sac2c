@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.25  1995/02/28 18:25:26  asi
+ * Revision 1.26  1995/03/08 10:28:57  hw
+ * - added new entry to struct ids (int refcnt)
+ * - added new entry to struct node (int refcnt)
+ *
+ * Revision 1.25  1995/02/28  18:25:26  asi
  * added varno in structure node
  *
  * Revision 1.24  1995/02/02  14:54:36  hw
@@ -115,6 +119,7 @@ typedef char id;
 
 typedef struct IDS {
     id *id;
+    int refcnt;
     struct NODE *node;
     struct IDS *next;
 } ids;
@@ -181,6 +186,7 @@ typedef struct NODE {
                            * and result type of primitive functions
                            */
     } info;               /* fu"r spezielle Informationen */
+    int refcnt;           /* is used as referenze count information */
     int varno;            /* number of vaiables - 1 */
     long *mask[MAX_MASK]; /* special informations about variables */
     int nnode;            /* Anzahl der benutzten Knoten */
