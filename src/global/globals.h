@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.47  2004/08/10 16:13:42  ktr
+ * reuse inference in EMM can now be activated using -reuse.
+ *
  * Revision 3.46  2004/08/06 10:47:56  skt
  * executionmodes_available added
  *
@@ -340,6 +343,9 @@ extern int ssaform_phase;
 
 /* explicit memory management */
 extern bool emm;
+
+/* reuse in EMM */
+extern bool reuse;
 
 /* type inference flags */
 extern int max_overload;

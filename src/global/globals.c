@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.60  2004/08/10 16:13:42  ktr
+ * reuse inference in EMM can now be activated using -reuse.
+ *
  * Revision 3.59  2004/08/10 13:28:43  sah
  * -sbs flag enabled in NEW_AST mode by default, as
  * the new typechecker is as well.
@@ -551,6 +554,11 @@ int ssaform_phase = 0;
  * do not use explicit memory management by default
  */
 bool emm = FALSE;
+
+/*
+ * Do not apply reuse inference in emm by dafault
+ */
+bool reuse = FALSE;
 
 /*
  * per default do not use aggressive WLS

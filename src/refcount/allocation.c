@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2004/08/10 16:14:33  ktr
+ * reuse inference in EMM can now be activated using -reuse.
+ *
  * Revision 1.1  2004/08/09 14:56:52  ktr
  * Initial revision
  *
@@ -15,6 +18,7 @@
 #include "alloc.h"
 #include "ConstVarPropagation.h"
 #include "SSADeadCodeRemoval.h"
+#include "reuse.h"
 
 /** <!--********************************************************************-->
  *
@@ -54,13 +58,15 @@ ExplicitAllocation (node *arg_node)
          *
          * !!! Only needed as long we retransform in SSA form
          */
-        fundef = MODUL_FUNS (arg_node);
-        while (fundef != NULL) {
-            if (!(FUNDEF_IS_LACFUN (fundef))) {
-                fundef = ConstVarPropagation (fundef);
-            }
+        if (optimize & OPT_CVP) {
+            fundef = MODUL_FUNS (arg_node);
+            while (fundef != NULL) {
+                if (!(FUNDEF_IS_LACFUN (fundef))) {
+                    fundef = ConstVarPropagation (fundef);
+                }
 
-            fundef = FUNDEF_NEXT (fundef);
+                fundef = FUNDEF_NEXT (fundef);
+            }
         }
         if ((break_after == PH_alloc) && (0 == strcmp (break_specifier, "cvp"))) {
             goto DONE;
@@ -71,11 +77,13 @@ ExplicitAllocation (node *arg_node)
          *
          * !!! Only needed as long we retransform in SSA form
          */
-        fundef = MODUL_FUNS (arg_node);
-        while (fundef != NULL) {
-            fundef = SSADeadCodeRemoval (fundef, arg_node);
+        if (optimize & OPT_DCR) {
+            fundef = MODUL_FUNS (arg_node);
+            while (fundef != NULL) {
+                fundef = SSADeadCodeRemoval (fundef, arg_node);
 
-            fundef = FUNDEF_NEXT (fundef);
+                fundef = FUNDEF_NEXT (fundef);
+            }
         }
         if ((break_after == PH_alloc) && (0 == strcmp (break_specifier, "dcr"))) {
             goto DONE;
@@ -102,11 +110,13 @@ ExplicitAllocation (node *arg_node)
         /*
          * Dead code removal
          */
-        fundef = MODUL_FUNS (arg_node);
-        while (fundef != NULL) {
-            fundef = SSADeadCodeRemoval (fundef, arg_node);
+        if (optimize & OPT_DCR) {
+            fundef = MODUL_FUNS (arg_node);
+            while (fundef != NULL) {
+                fundef = SSADeadCodeRemoval (fundef, arg_node);
 
-            fundef = FUNDEF_NEXT (fundef);
+                fundef = FUNDEF_NEXT (fundef);
+            }
         }
         if ((break_after == PH_alloc) && (0 == strcmp (break_specifier, "dcr2"))) {
             goto DONE;
@@ -115,9 +125,9 @@ ExplicitAllocation (node *arg_node)
         /*
          * Reuse inference
          */
-        /*
-         * ...to be implemented...
-         */
+        if (reuse) {
+            arg_node = ReuseInference (arg_node);
+        }
         if ((break_after == PH_alloc) && (0 == strcmp (break_specifier, "reuse"))) {
             goto DONE;
         }

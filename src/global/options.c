@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.67  2004/08/10 16:13:42  ktr
+ * reuse inference in EMM can now be activated using -reuse.
+ *
  * Revision 3.66  2004/08/04 12:04:20  ktr
  * substituted eacc by emm
  *
@@ -940,6 +943,8 @@ AnalyseCommandline (int argc, char *argv[])
         ARG_FLAGMASK ('w', profileflag |= PROFILE_WITH);
         ARG_FLAGMASK_END ();
     });
+
+    ARGS_FLAG ("reuse", reuse = TRUE);
 
     ARGS_FLAG ("sbs", sbs = TRUE);
 

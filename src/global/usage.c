@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.60  2004/08/10 16:13:42  ktr
+ * reuse inference in EMM can now be activated using -reuse.
+ *
  * Revision 3.59  2004/08/04 12:04:20  ktr
  * substituted eacc by emm
  *
@@ -475,6 +478,8 @@ Usage ()
       "                      - segmentation and tiling of fold-with-loops.\n"
       "\n"
       "    -emm            Use explicit memory management (experimental).\n"
+      "\n"
+      "    -reuse          Enable reuse inference in emm (experimental).\n"
       "\n"
       "    -no <opt>       Disable optimization technique <opt>.\n"
       "\n"
