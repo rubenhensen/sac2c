@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.11  2000/06/09 13:27:55  nmw
+ * moving of libfile to targetdir added
+ *
  * Revision 2.10  2000/06/09 09:23:27  nmw
  * moving of c library headerfile added
  *
@@ -552,16 +555,20 @@ CreateLibrary ()
 {
     DBUG_ENTER ("CreateLibrary");
 
-    /*generating sac library */
+    /* creating lib-file using ar, for internal usage by sac library
+     * used as is by the c interface
+     */
+
+    SystemCall ("%s %s/lib%s.a %s/*.o", config.ar_create, tmp_dirname, modulename,
+                tmp_dirname);
+
+    if (config.ranlib[0] != '\0') {
+        SystemCall ("%s %s/%s.a", config.ranlib, tmp_dirname, modulename);
+    }
+
+    /* generating sac library file*/
     if (generatelibrary & GENERATELIBRARY_SAC) {
         NOTE (("Creating SAC library \"%s%s.lib\"", targetdir, modulename));
-
-        SystemCall ("%s %s/lib%s.a %s/*.o", config.ar_create, tmp_dirname, modulename,
-                    tmp_dirname);
-
-        if (config.ranlib[0] != '\0') {
-            SystemCall ("%s %s/%s.a", config.ranlib, tmp_dirname, modulename);
-        }
 
         GenLibStat ();
 
@@ -571,11 +578,15 @@ CreateLibrary ()
         SystemCall ("%s %s/%s.lib %s", config.move, tmp_dirname, modulename, targetdir);
     }
 
-    /*generating c library */
+    /* generating c library files
+     * here: only moving generated files to target dir
+     */
     if (generatelibrary & GENERATELIBRARY_C) {
-        NOTE (("Creating c library \"%s%s.a\"", targetdir, modulename));
+        NOTE (("Creating c library \"lib%s.a\" and interface \"%s.h\"", modulename,
+               modulename));
 
         SystemCall ("%s %s/%s.h %s", config.move, tmp_dirname, modulename, targetdir);
+        SystemCall ("%s %s/lib%s.a %s", config.move, tmp_dirname, modulename, targetdir);
     }
 
     DBUG_VOID_RETURN;
