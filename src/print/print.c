@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.28  1995/01/12 13:16:34  asi
+ * Revision 1.29  1995/01/16 11:00:29  asi
+ * decleration of print_tab removed, no longer needed
+ *
+ * Revision 1.28  1995/01/12  13:16:34  asi
  * DBUG_PRINT("MASK",... for optimizing routines degugging inserted
  *
  * Revision 1.27  1995/01/06  14:57:10  asi
@@ -99,7 +102,6 @@
     }
 
 extern FILE *outfile; /* outputfile for PrintTree defined in main.c*/
-extern funptr print_tab[];
 extern char *PrintMask (long *);
 
 static int indent = 0;
