@@ -1,31 +1,105 @@
-/*
- *  $Log$
- *  Revision 1.2  1995/02/03 16:04:56  hw
- *  extended /changed macro
+
+/* $Log$
+ * Revision 1.3  1995/02/09 11:10:11  hw
+ * changed and added TTx`s
  *
+;; Revision 1.2  1995/02/03  16:04:56  hw
+;; extended /changed macro
+;;
 ;; Revision 1.1  1995/02/03  07:46:01  hw
 ;; Initial revision
-;; $
+;;
  */
 
+/* type_class_tag
+        type_class
+                type		type		function to compute
+                                                result type and to do
+                                                some checks
+*/
 TT2 (0, SxS_S, INT, INT, MakeTypes (T_int))
 TT2 (1, SxS_S, INT, FLOAT, MakeTypes (T_float))
 TT2 (2, SxS_S, FLOAT, INT, MakeTypes (T_float))
 TT2 (3, SxS_S, FLOAT, FLOAT, MakeTypes (T_float))
+
 TT2 (4, BxB_B, BOOL, BOOL, MakeTypes (T_bool))
+
 TT2 (5, SxS_B, INT, INT, MakeTypes (T_bool))
 TT2 (6, SxS_B, INT, FLOAT, MakeTypes (T_bool))
 TT2 (7, SxS_B, FLOAT, INT, MakeTypes (T_bool))
 TT2 (8, SxS_B, FLOAT, FLOAT, MakeTypes (T_bool))
-TT2 (9, AxA_A, INT_A, INT_A, AxA (arg_type[0], arg_type[1]))
-TT2 (10, AxA_A, INT_A, FLOAT_A, AxA (arg_type[1], arg_type[0]))
-TT2 (11, AxA_A, FLOAT_A, INT_A, AxA (arg_type[0], arg_type[1]))
-TT2 (12, AxA_A, FLOAT_A, FLOAT_A, AxA (arg_type[0], arg_type[1]))
+
+TT2 (9, AxA_A, INT_A, INT_A, AxA (arg_type[0], arg_type[1], T_int))
+TT2 (10, AxA_A, INT_A, FLOAT_A, AxA (arg_type[1], arg_type[0], T_float))
+TT2 (11, AxA_A, FLOAT_A, INT_A, AxA (arg_type[0], arg_type[1], T_float))
+TT2 (12, AxA_A, FLOAT_A, FLOAT_A, AxA (arg_type[0], arg_type[1], T_float))
+
 TT2 (13, AxS_A, INT_A, INT, DuplicateTypes (arg_type[0]))
 TT2 (14, AxS_A, INT, INT_A, DuplicateTypes (arg_type[1]))
 TT2 (15, AxS_A, INT, FLOAT_A, DuplicateTypes (arg_type[1]))
 TT2 (16, AxS_A, FLOAT_A, INT, DuplicateTypes (arg_type[1]))
-TT2 (17, AxS_A, FLOAT, INT_A, Ixf_F (arg_type[1]))
-TT2 (18, AxS_A, INT_A, FLOAT, Ixf_F (arg_type[0]))
+TT2 (17, AxS_A, FLOAT, INT_A, Axs_F (arg_type[1]))
+TT2 (18, AxS_A, INT_A, FLOAT, Axs_F (arg_type[0]))
 TT2 (19, AxS_A, FLOAT_A, FLOAT, DuplicateTypes (arg_type[0]))
 TT2 (20, AxS_A, FLOAT, FLOAT_A, DuplicateTypes (arg_type[1]))
+
+TT2 (21, SxS_F, INT, INT, MakeTypes (T_float))
+TT2 (22, SxS_F, INT, FLOAT, MakeTypes (T_float))
+TT2 (23, SxS_F, FLOAT, INT, MakeTypes (T_float))
+TT2 (24, SxS_F, FLOAT, FLOAT, MakeTypes (T_float))
+
+TT2 (25, AxA_F, INT_A, INT_A, AxA (arg_type[0], arg_type[1], T_float))
+TT2 (26, AxA_F, INT_A, FLOAT_A, AxA (arg_type[1], arg_type[0], T_float))
+TT2 (27, AxA_F, FLOAT_A, INT_A, AxA (arg_type[0], arg_type[1], T_float))
+TT2 (28, AxA_F, FLOAT_A, FLOAT_A, AxA (arg_type[0], arg_type[1], T_float))
+
+TT2 (29, AxS_F, INT_A, INT, Axs_F (arg_type[0]))
+TT2 (30, AxS_F, INT, INT_A, Axs_F (arg_type[1]))
+TT2 (31, AxS_F, INT, FLOAT_A, DuplicateTypes (arg_type[1]))
+TT2 (32, AxS_F, FLOAT_A, INT, DuplicateTypes (arg_type[1]))
+TT2 (33, AxS_F, FLOAT, INT_A, Axs_F (arg_type[1]))
+TT2 (34, AxS_F, INT_A, FLOAT, Axs_F (arg_type[0]))
+TT2 (35, AxS_F, FLOAT_A, FLOAT, DuplicateTypes (arg_type[0]))
+TT2 (36, AxS_F, FLOAT, FLOAT_A, DuplicateTypes (arg_type[1]))
+
+TT2 (37, VxA_Ar, INT_A, INT_A, Reshp (arg_node->node[0]->node[0], arg_type[1]))
+TT2 (38, VxA_Ar, INT_A, FLOAT_A, Reshp (arg_node->node[0]->node[0], arg_type[1]))
+TT2 (39, VxA_Ar, INT_A, BOOL_A, Reshp (arg_node->node[0]->node[0], arg_type[1]))
+
+TT2 (40, VxA_At, INT_A, INT_A, TakeV (arg_node->node[0]->node[0], arg_type[1]))
+TT2 (41, VxA_At, INT_A, FLOAT_A, TakeV (arg_node->node[0]->node[0], arg_type[1]))
+TT2 (42, VxA_At, INT_A, BOOL_A, TakeV (arg_node->node[0]->node[0], arg_type[1]))
+
+TT2 (43, VxA_Ad, INT_A, INT_A, DropV (arg_node->node[0]->node[0], arg_type[1]))
+TT2 (44, VxA_Ad, INT_A, FLOAT_A, DropV (arg_node->node[0]->node[0], arg_type[1]))
+TT2 (45, VxA_Ad, INT_A, BOOL_A, DropV (arg_node->node[0]->node[0], arg_type[1]))
+
+TT2 (46, VxA_Ap, INT_A, INT_A, Psi (arg_type[0], arg_type[1]))
+TT2 (47, VxA_Ap, INT_A, FLOAT_A, Psi (arg_type[0], arg_type[1]))
+TT2 (48, VxA_Ap, INT_A, BOOL_A, Psi (arg_type[0], arg_type[1]))
+
+TT2 (49, SxA_At, INT, INT_A, TakeDropS (arg_node->node[0]->node[0], arg_type[1], 0))
+TT2 (50, SxA_At, INT, FLOAT_A, TakeDropS (arg_node->node[0]->node[0], arg_type[1], 0))
+TT2 (51, SxA_At, INT, BOOL_A, TakeDropS (arg_node->node[0]->node[0], arg_type[1], 0))
+
+TT2 (52, SxA_Ad, INT, INT_A, TakeDropS (arg_node->node[0]->node[0], arg_type[1], 1))
+TT2 (53, SxA_Ad, INT, FLOAT_A, TakeDropS (arg_node->node[0]->node[0], arg_type[1], 1))
+TT2 (54, SxA_Ad, INT, BOOL_A, TakeDropS (arg_node->node[0]->node[0], arg_type[1], 1))
+
+TT3 (100, SxAxA_A, INT, INT_A, INT_A,
+     Cat (arg_node->node[0]->node[0], arg_type[1], arg_type[2]))
+TT3 (101, SxAxA_A, INT, FLOAT_A, FLOAT_A,
+     Cat (arg_node->node[0]->node[0], arg_type[1], arg_type[2]))
+TT3 (102, SxAxA_A, INT, BOOL_A, BOOL_A,
+     Cat (arg_node->node[0]->node[0], arg_type[1], arg_type[2]))
+
+TT3 (103, SxSxA_A, INT, INT, INT_A, Rot (arg_node->node[0]->node[0], arg_type[2]))
+TT3 (104, SxSxA_A, INT, INT, FLOAT_A, Rot (arg_node->node[0]->node[0], arg_type[2]))
+TT3 (105, SxSxA_A, INT, INT, BOOL_A, Rot (arg_node->node[0]->node[0], arg_type[2]))
+
+TT1 (200, V_As, INT_A, Shp (arg_type[0]))
+TT1 (201, V_As, FLOAT_A, Shp (arg_type[0]))
+TT1 (202, V_As, BOOL_A, Shp (arg_type[0]))
+TT1 (203, A_S, INT_A, MakeTypes (T_int))
+TT1 (204, A_S, FLOAT_A, MakeTypes (T_int))
+TT1 (205, A_S, BOOL_A, MakeTypes (T_int))
