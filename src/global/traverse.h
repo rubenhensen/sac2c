@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.27  1995/11/16 19:38:34  cg
+ * Revision 1.28  1995/12/01 17:08:14  cg
+ * new fun table 'precomp_tab'
+ *
+ * Revision 1.27  1995/11/16  19:38:34  cg
  * added new tab: rmvoid_tab.
  * NIF macro extended by 4 new parameters.
  *
@@ -161,5 +164,7 @@ extern funptr writedec_tab[];
 extern funptr unique_tab[];
 
 extern funptr rmvoid_tab[];
+
+extern funptr precomp_tab[];
 
 #endif /* _sac_traverse_h */

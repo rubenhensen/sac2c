@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.36  1995/11/16 19:38:34  cg
+ * Revision 1.37  1995/12/01 17:08:14  cg
+ * new fun table 'precomp_tab'
+ *
+ * Revision 1.36  1995/11/16  19:38:34  cg
  * added new tab: rmvoid_tab.
  * NIF macro extended by 4 new parameters.
  *
@@ -152,6 +155,7 @@
 #include "objects.h"
 #include "uniquecheck.h"
 #include "rmvoidfun.h"
+#include "precompile.h"
 
 #include "traverse.h"
 
@@ -568,6 +572,20 @@ funptr rmvoid_tab[] = {
 #undef NIF
 
 /*
+ * 30) precomp_tab
+ */
+
+#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
+            ac, ad, ae, af, ag, ah, ai, aj, ak, al)                                      \
+    aj
+
+funptr precomp_tab[] = {
+#include "node_info.mac"
+};
+
+#undef NIF
+
+/*
 **
 **  functionname  : Trav
 **  arguments     : 1) pointer to actual node
@@ -642,6 +660,6 @@ DummyFun2 (node *arg_node, node *arg_info)
 node *
 NoTrav (node *arg_node, node *arg_info)
 {
-    DBUG_ENTER ("DummyNoOp");
+    DBUG_ENTER ("NoTrav");
     DBUG_RETURN (arg_node);
 }
