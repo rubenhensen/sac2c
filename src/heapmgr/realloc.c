@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2000/01/17 16:25:58  cg
+ * Conventional heap management functions now have their
+ * original prototypes using size_t.
+ *
  * Revision 1.1  2000/01/03 17:33:17  cg
  * Initial revision
  *
@@ -40,13 +44,14 @@
  *
  *****************************************************************************/
 
-#include "heapmgr.h"
 #include <string.h>
+
+#include "heapmgr.h"
 
 /******************************************************************************
  *
  * function:
- *   void *realloc(void *ptr, size_byte_t size)
+ *   void *realloc(void *ptr, size_t size)
  *
  * description:
  *
@@ -57,10 +62,10 @@
  ******************************************************************************/
 
 void *
-realloc (void *ptr, size_byte_t size)
+realloc (void *ptr, size_t size)
 {
     void *mem;
-    size_unit_t old_size_units;
+    SAC_HM_size_unit_t old_size_units;
     SAC_HM_arena_t *arena;
 
     DIAG_INC_LOCK (SAC_HM_call_realloc);
@@ -71,14 +76,13 @@ realloc (void *ptr, size_byte_t size)
     }
 
     if (size == 0) {
-        DIAG_DEC_LOCK (SAC_HM_call_free);
         free (ptr);
         return (NULL);
     }
 
     arena = SAC_HM_ADDR_ARENA (ptr);
 
-    if (arena->num < NUM_SMALLCHUNK_ARENAS) {
+    if (arena->num < SAC_HM_NUM_SMALLCHUNK_ARENAS) {
         old_size_units = arena->min_chunk_size;
         if (size <= old_size_units) {
             /*
@@ -95,9 +99,8 @@ realloc (void *ptr, size_byte_t size)
     DIAG_DEC_LOCK (SAC_HM_call_malloc);
     mem = malloc (size);
 
-    mem = memcpy (mem, ptr, SAC_MIN (old_size_units * UNIT_SIZE, size));
+    mem = memcpy (mem, ptr, SAC_MIN (old_size_units * SAC_HM_UNIT_SIZE, size));
 
-    DIAG_DEC_LOCK (SAC_HM_call_free);
     free (ptr);
 
     return (mem);

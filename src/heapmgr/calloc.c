@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2000/01/17 16:25:58  cg
+ * Conventional heap management functions now have their
+ * original prototypes using size_t.
+ *
  * Revision 1.1  2000/01/03 17:33:17  cg
  * Initial revision
  *
@@ -41,13 +45,14 @@
  *
  *****************************************************************************/
 
-#include "heapmgr.h"
 #include <string.h>
+
+#include "heapmgr.h"
 
 /******************************************************************************
  *
  * function:
- *   void *calloc(size_byte_t nelem, size_byte_t elsize)
+ *   void *calloc(size_t nelem, size_t elsize)
  *
  * description:
  *
@@ -58,7 +63,7 @@
  ******************************************************************************/
 
 void *
-calloc (size_byte_t nelem, size_byte_t elsize)
+calloc (size_t nelem, size_t elsize)
 {
     void *res;
 

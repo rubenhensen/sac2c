@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2000/01/17 16:25:58  cg
+ * Conventional heap management functions now have their
+ * original prototypes using size_t.
+ *
  * Revision 1.1  2000/01/03 17:33:17  cg
  * Initial revision
  *
@@ -41,14 +45,14 @@
  *
  *****************************************************************************/
 
-#include "heapmgr.h"
-
 #include <unistd.h>
+
+#include "heapmgr.h"
 
 /******************************************************************************
  *
  * function:
- *   void *memalign(size_byte_t alignment, size_byte_t size)
+ *   void *memalign(size_t alignment, size_t size)
  *
  * description:
  *
@@ -57,42 +61,43 @@
  ******************************************************************************/
 
 void *
-memalign (size_byte_t alignment, size_byte_t size)
+memalign (size_t alignment, size_t size)
 {
     void *mem;
-    size_byte_t misalign, size_needed;
+    size_t misalign, size_needed;
     SAC_HM_header_t *freep, *prefixp;
     SAC_HM_arena_t *arena;
-    size_unit_t offset_units;
+    SAC_HM_size_unit_t offset_units;
 
     DIAG_INC_LOCK (SAC_HM_call_memalign);
 
-    if (alignment <= UNIT_SIZE) {
+    if (alignment <= SAC_HM_UNIT_SIZE) {
         /* automatic alignment */
+        DIAG_DEC_LOCK (SAC_HM_call_malloc);
         return (malloc (size));
     }
 
     /* worst case allocation for a posteriori alignment */
-    size_needed
-      = SAC_MAX (size + alignment + (UNIT_SIZE + UNIT_SIZE), ARENA_5_MINCS * UNIT_SIZE);
+    size_needed = SAC_MAX (size + alignment + (SAC_HM_UNIT_SIZE + SAC_HM_UNIT_SIZE),
+                           SAC_HM_ARENA_5_MINCS * SAC_HM_UNIT_SIZE);
 
     DIAG_DEC_LOCK (SAC_HM_call_malloc);
     mem = malloc (size_needed);
 
-    misalign = ((unsigned long int)mem) % alignment;
+    misalign = ((size_t)mem) % alignment;
 
     if (misalign == 0) {
         /* Memory is already correctly aligned. */
         return (mem);
     }
 
-    offset_units = (alignment - misalign) / UNIT_SIZE;
+    offset_units = (alignment - misalign) / SAC_HM_UNIT_SIZE;
 
     if (offset_units < 2) {
         /*
          * Offset is too small to host administration info for free prefix.
          */
-        offset_units += alignment / UNIT_SIZE;
+        offset_units += alignment / SAC_HM_UNIT_SIZE;
     }
 
     prefixp = ((SAC_HM_header_t *)mem) - 2;
@@ -114,7 +119,6 @@ memalign (size_byte_t alignment, size_byte_t size)
 
     SAC_HM_LARGECHUNK_SIZE (prefixp) = offset_units;
 
-    DIAG_DEC_LOCK (SAC_HM_call_free);
     free (prefixp + 2);
 
     return ((void *)(freep + 2));
@@ -123,7 +127,7 @@ memalign (size_byte_t alignment, size_byte_t size)
 /******************************************************************************
  *
  * function:
- *   void *valloc(size_byte_t size)
+ *   void *valloc(size_t size)
  *
  * description:
  *
@@ -134,7 +138,7 @@ memalign (size_byte_t alignment, size_byte_t size)
  ******************************************************************************/
 
 void *
-valloc (size_byte_t size)
+valloc (size_t size)
 {
     DIAG_INC_LOCK (SAC_HM_call_valloc);
     DIAG_DEC_LOCK (SAC_HM_call_memalign);
