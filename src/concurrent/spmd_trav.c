@@ -1,7 +1,7 @@
 /*
  *
  * $Log$
- * Revision 3.4  2001/05/08 12:34:20  dkr
+ * Revision 3.5  2001/05/08 12:48:33  dkr
  * new RC macros used
  *
  * Revision 3.3  2000/12/12 12:12:45  dkr
@@ -980,7 +980,7 @@ SPMDRMlet (node *arg_node, node *arg_info)
             DBUG_ASSERT ((RC_IS_ACTIVE (IDS_NAIVE_REFCNT (act_ids))),
                          ("NAIVE_REFCNT is not active!"));
 
-            if (IDS_NAIVE_REFCNT (act_ids) == 0) {
+            if (RC_IS_ZERO (IDS_NAIVE_REFCNT (act_ids))) {
                 DBUG_PRINT ("SPMDRM", ("erased %s", IDS_NAME (act_ids)));
                 DFMSetMaskEntryClear (INFO_SPMDRM_RESULT (arg_info), NULL,
                                       IDS_VARDEC (act_ids));
