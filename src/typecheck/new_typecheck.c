@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.24  2002/10/28 16:06:32  sbs
+ * bug in NTCcast eliminated.
+ *
  * Revision 3.23  2002/10/28 14:04:37  sbs
  * NTCcast added.
  *
@@ -1274,6 +1277,18 @@ NTCcast (node *arg_node, node *arg_info)
 
     CAST_EXPR (arg_node) = Trav (CAST_EXPR (arg_node), arg_info);
     expr_t = INFO_NTC_TYPE (arg_info);
+    if (TYIsProd (expr_t)) {
+        /*
+         * The expression we are dealing with here is a function application.
+         * Therefore, only a single return type is legal. This one is to be extracted!
+         */
+        if (TYGetProductSize (expr_t) != 1) {
+            ABORT (linenum, ("cast used for a function application with %d return values",
+                             TYGetProductSize (expr_t)));
+        } else {
+            expr_t = TYGetProductMember (expr_t, 0);
+        }
+    }
     cast_t = TYOldType2Type (CAST_TYPE (arg_node));
 
     info = TEMakeInfo (linenum, "prf", "type-cast", NULL, NULL);
