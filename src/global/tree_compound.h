@@ -1,6 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 2.24  1999/11/11 20:09:13  dkr
+ * function IsConstantArray changed:
+ *   new name (IsConstArray)
+ *   new signature (no type parameter anymore)
+ *   new return value (boolean instead of #elements)
+ *   NOW THIS FUNCTION (hopefully) works correct :)
+ *
  * Revision 2.23  1999/11/11 18:27:15  dkr
  * added NWITH_WITHID
  *
@@ -1627,6 +1634,7 @@ extern node *AppendExprs (node *exprs1, node *exprs2);
  *  compound access macros
  */
 
+#define ARRAY_NODETYPE(n) (NODE_TYPE (EXPRS_EXPR (ARRAY_AELEMS (n))))
 #define ARRAY_BASETYPE(n) (TYPES_BASETYPE (ARRAY_TYPE (n)))
 #define ARRAY_DIM(n) (TYPES_DIM (ARRAY_TYPE (n)))
 #define ARRAY_SHAPE(n, x) (TYPES_SHAPE (ARRAY_TYPE (n), x))
@@ -1641,7 +1649,7 @@ extern node *AppendExprs (node *exprs1, node *exprs2);
 
 extern node *Shape2Array (shapes *shp);
 
-extern int IsConstantArray (node *array, nodetype type);
+extern int IsConstArray (node *array);
 
 /* description:
  *   Returns number of constant elements if argument is an N_array and all

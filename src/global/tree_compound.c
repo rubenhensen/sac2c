@@ -1,6 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 2.15  1999/11/11 20:07:21  dkr
+ * function IsConstantArray changed:
+ *   new name (IsConstArray)
+ *   new signature (no type parameter anymore)
+ *   new return value (boolean instead of #elements)
+ *   NOW THIS FUNCTION (hopefully) works correct :)
+ *
  * Revision 2.14  1999/11/09 21:15:31  dkr
  * Functions MakeIcm7, MakeAssignIcm7 added.
  *
@@ -1099,56 +1106,34 @@ NodeListFind (nodelist *nl, node *node)
 /******************************************************************************
  *
  * function:
- *   int IsConstantArray(node *array)
+ *   int IsConstArray(node *array)
  *
  * description:
- *   returns number of constant elements if argument is an N_array and all
- *   its elements are N_num, N_char, N_float, N_double, N_bool or otherwise
- *   returns 0.
- *
- *   The parameter type specified the necessary type all elements have to
- *   be of (nodetype, e.g. N_num). If N_ok is given, the type is ignored.
+ *   returns 1 if argument is an constant array and 0 otherwise.
  *
  ******************************************************************************/
 
 int
-IsConstantArray (node *array, nodetype type)
+IsConstArray (node *array)
 {
-    int elems = 0;
+    int isconst = 0;
 
-    DBUG_ENTER ("IsConstantArray");
+    DBUG_ENTER ("IsConstArray");
 
-#if 0
-  /*
-   *   This is the function as it should work. But unfortunately some optimizer functions
-   *   are destroying array informations, so it's neccessarry to modify IsConstantArray
-   *   a little bit ...
-   */
-  if (NODE_TYPE(array) == N_array) {
-    switch (ARRAY_VECTYPE(array)) {
-    case T_bool:
-    case T_char:
-    case T_int:
-    case T_float:
-    case T_double:
-      elems = ARRAY_VECLEN(array);
-      break;
-    case T_nothing:
-      elems = 1;
-      break;
-    default:
-      elems = 0;
+#if 1
+    /*
+     *   This is the function as it should work. But unfortunately some optimizer
+     * functions are destroying array informations, so it's neccessarry to modify
+     * IsConstantArray a little bit ...
+     */
+    if (NODE_TYPE (array) == N_array) {
+        isconst = ARRAY_ISCONST (array);
+    } else {
+        if (NODE_TYPE (array) == N_id) {
+            isconst = ID_ISCONST (array);
+        }
     }
-  }
-  else if (NODE_TYPE(array) == N_id) {
-    elems = ID_VECLEN(array);
-    if (elems == 0)
-      elems = ID_CONSTARRAY(array);
-  }
-  else
-    elems = 0;
-#endif
-
+#else
     /*
      *   ... and here the modified version:
      */
@@ -1156,11 +1141,7 @@ IsConstantArray (node *array, nodetype type)
         if (NODE_TYPE (array) == N_array) {
             array = ARRAY_AELEMS (array);
             if (array == NULL) {
-                /*
-                 *  Attention: here we've got an empty array! Since this array is constant
-                 *  elems must be !=0 however the number of elements is 0 !!
-                 */
-                elems = -1;
+                isconst = 1;
             }
             while (array != NULL) {
                 if (NODE_TYPE (EXPRS_EXPR (array)) == N_num) {
@@ -1169,22 +1150,20 @@ IsConstantArray (node *array, nodetype type)
                      * constant.
                      */
                     array = EXPRS_NEXT (array);
-                    elems++;
                 } else {
-                    elems = 0;
+                    isconst = 0;
                     break;
                 }
             }
-        } else if (NODE_TYPE (array) == N_id) {
-            elems = ID_VECLEN (array);
-            if (elems == 0)
-                elems = ID_ISCONST (array);
-        } else
-            elems = 0;
-    } else
-        elems = 0;
+        } else {
+            if (NODE_TYPE (array) == N_id) {
+                isconst = ID_ISCONST (array);
+            }
+        }
+    }
+#endif
 
-    DBUG_RETURN (elems);
+    DBUG_RETURN (isconst);
 }
 
 /***
