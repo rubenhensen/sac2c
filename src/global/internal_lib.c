@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.59  2004/11/02 14:22:22  ktr
+ * Added emlr_tab, emdr_tab.
+ *
  * Revision 3.58  2004/10/28 22:08:39  sah
  * stringbuffers are now initialised properly!
  *
@@ -1188,6 +1191,10 @@ PrefixForTmpVar (void)
         s = "repfun";
     } else if (act_tab == set_tab) {
         s = "set";
+    } else if (act_tab == emlr_tab) {
+        s = "emlr";
+    } else if (act_tab == emdr_tab) {
+        s = "emdr";
     } else
 #else
     if (act_tab == flat_tab) {
@@ -1276,6 +1283,10 @@ PrefixForTmpVar (void)
         s = "ea";
     } else if (act_tab == set_tab) {
         s = "set";
+    } else if (act_tab == emlr_tab) {
+        s = "emlr";
+    } else if (act_tab == emdr_tab) {
+        s = "emdr";
     } else
 #endif /* NEW_AST */
     {
