@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2001/03/15 21:23:53  dkr
+ * signature of NodeOr..._MakeIndex modified:
+ * parameter 'no_icm' added
+ *
  * Revision 3.15  2001/03/15 10:54:49  nmw
  * MakeVardecFromArgs adjusts VARDEC_ATTRIB correctly
  *
@@ -2963,7 +2967,7 @@ NodeOrInt_MakeNode (nodetype nt, void *node_or_int)
  * Function:
  *   node *NameOrVal_MakeIndex( char *name, int val,
  *                              int dim, char *wl_name,
- *                              bool no_num)
+ *                              bool no_num, bool no_icm)
  *
  * Description:
  *   This function is used to convert the parameters of N_WLstride(Var),
@@ -2978,7 +2982,8 @@ NodeOrInt_MakeNode (nodetype nt, void *node_or_int)
  ******************************************************************************/
 
 node *
-NameOrVal_MakeIndex (char *name, int val, int dim, char *wl_name, bool no_num)
+NameOrVal_MakeIndex (char *name, int val, int dim, char *wl_name, bool no_num,
+                     bool no_icm)
 {
     char *str;
     node *index = NULL;
@@ -2987,9 +2992,13 @@ NameOrVal_MakeIndex (char *name, int val, int dim, char *wl_name, bool no_num)
 
     if (name == NULL) {
         if (val == IDX_SHAPE) {
-            str = (char *)MALLOC ((strlen (wl_name) + 40) * sizeof (char));
-            sprintf (str, "SAC_ND_A_SHAPE( %s, %d)", wl_name, dim);
-            index = MakeId (str, NULL, ST_regular);
+            if (no_icm) {
+                str = (char *)MALLOC ((strlen (wl_name) + 40) * sizeof (char));
+                sprintf (str, "SAC_ND_A_SHAPE( %s, %d)", wl_name, dim);
+                index = MakeId (str, NULL, ST_regular);
+            } else {
+                index = MakeIcm2 ("ND_A_SHAPE", MakeId_Copy (wl_name), MakeNum (dim));
+            }
         } else if (val != IDX_OTHER) {
             if (no_num) {
                 index = MakeId_Num (val);
@@ -2998,9 +3007,13 @@ NameOrVal_MakeIndex (char *name, int val, int dim, char *wl_name, bool no_num)
             }
         }
     } else {
-        str = (char *)MALLOC ((strlen (name) + 43) * sizeof (char));
-        sprintf (str, "SAC_ND_READ_ARRAY( %s, %d)", name, dim);
-        index = MakeId (str, NULL, ST_regular);
+        if (no_icm) {
+            str = (char *)MALLOC ((strlen (name) + 43) * sizeof (char));
+            sprintf (str, "SAC_ND_READ_ARRAY( %s, %d)", name, dim);
+            index = MakeId (str, NULL, ST_regular);
+        } else {
+            index = MakeIcm2 ("ND_READ_ARRAY", MakeId_Copy (name), MakeNum (dim));
+        }
     }
 
     DBUG_RETURN (index);
@@ -3011,7 +3024,7 @@ NameOrVal_MakeIndex (char *name, int val, int dim, char *wl_name, bool no_num)
  * Function:
  *   node *NodeOrInt_MakeIndex( nodetype nt, void *node_or_int,
  *                              int dim, char *wl_name,
- *                              bool no_num)
+ *                              bool no_num, bool no_icm)
  *
  * Description:
  *
@@ -3019,7 +3032,8 @@ NameOrVal_MakeIndex (char *name, int val, int dim, char *wl_name, bool no_num)
  ******************************************************************************/
 
 node *
-NodeOrInt_MakeIndex (nodetype nt, void *node_or_int, int dim, char *wl_name, bool no_num)
+NodeOrInt_MakeIndex (nodetype nt, void *node_or_int, int dim, char *wl_name, bool no_num,
+                     bool no_icm)
 {
     node *index;
     char *name;
@@ -3028,7 +3042,7 @@ NodeOrInt_MakeIndex (nodetype nt, void *node_or_int, int dim, char *wl_name, boo
     DBUG_ENTER ("NodeOrInt_MakeIndex");
 
     NodeOrInt_GetNameOrVal (&name, &val, nt, node_or_int);
-    index = NameOrVal_MakeIndex (name, val, dim, wl_name, no_num);
+    index = NameOrVal_MakeIndex (name, val, dim, wl_name, no_num, no_icm);
 
     DBUG_RETURN (index);
 }
