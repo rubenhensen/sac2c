@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.83  1999/01/18 12:53:29  sbs
+ * -b15:cycN:wlt, -b15:cycN:wlf, -b15:cycN:cf2 inserted
+ *
  * Revision 1.82  1999/01/15 15:21:58  cg
  * modified intrinsic option.
  *
@@ -250,7 +253,10 @@ usage ()
             "\t-b15:dcr      \tstop after dead code removal\n"
             "\t-b15:cycN:cse \tstop after common subexpression elimination in cycle N\n"
             "\t-b15:cycN:cf  \tstop after constant folding in cycle N\n"
+            "\t-b15:cycN:wlt \tstop after withloop transformation in cycle N\n"
             "\t-b15:cycN:wli \tstop after withloop information gathering in cycle N\n"
+            "\t-b15:cycN:wlf \tstop after withloop folding in cycle N\n"
+            "\t-b15:cycN:cf2 \tstop after second constant folding in cycle N\n"
             "\t-b15:cycN:dcr \tstop after dead code removal in cycle N\n"
             "\t-b15:cycN:unr \tstop after (with-) loop unrolling in cycle N\n"
             "\t-b15:cycN:uns \tstop after loop unswitching in cycle N\n"
