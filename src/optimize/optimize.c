@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.15  2001/04/04 23:21:52  dkr
+ * warning message about max_optcyc modified
+ *
  * Revision 3.14  2001/04/02 11:09:14  nmw
  * handling for multiple used special functions added
  * the MODUL_FUNS son is not written back after traversal
@@ -1051,7 +1054,7 @@ OPTfundef (node *arg_node, node *arg_info)
                 || (dead_fun + dead_var + dead_expr != old_dcr_expr)
                 || (lunr_expr != old_lunr_expr) || (wlunr_expr != old_wlunr_expr)
                 || (uns_expr != old_uns_expr) || (lir_expr != old_lir_expr))) {
-            SYSWARN (("max_optcycles reached"));
+            SYSWARN (("maximal number of optimization cycles reached"));
         }
         PrintStatistics (mem_inl_fun, mem_dead_expr, mem_dead_var, mem_dead_fun,
                          mem_lir_expr, mem_cf_expr, mem_lunr_expr, mem_wlunr_expr,
