@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.116  2002/09/09 11:52:11  dkr
+ * PrintPrf(): PRF_ARGS may be NULL...
+ *
  * Revision 3.115  2002/09/06 12:20:06  sah
  * handling of N_setwl nodes modified.
  *
@@ -2230,8 +2233,11 @@ PrintPrf (node *arg_node, node *arg_info)
         /* primitive functions that are printed as function application */
         DBUG_EXECUTE ("PRINT_PRF", fprintf (outfile, "PRF:"););
 
-        fprintf (outfile, "%s( ", prf_string[PRF_PRF (arg_node)]);
-        Trav (PRF_ARGS (arg_node), arg_info);
+        fprintf (outfile, "%s(", prf_string[PRF_PRF (arg_node)]);
+        if (PRF_ARGS (arg_node) != NULL) {
+            fprintf (outfile, " ");
+            Trav (PRF_ARGS (arg_node), arg_info);
+        }
         fprintf (outfile, ")");
         break;
 
