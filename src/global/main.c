@@ -1,292 +1,14 @@
 /*
  *
  * $Log$
+ * Revision 3.89  2004/11/30 16:11:40  sah
+ * enabled phase pro/epilogue for object phase
+ *
  * Revision 3.88  2004/11/29 19:10:02  sah
  * removed old phases
  *
  * Revision 3.87  2004/11/28 18:13:40  ktr
  * changed call to EMRdoRefCountPhase
- *
- * Revision 3.86  2004/11/28 12:56:44  ktr
- * Zombie phase PH_readsib added in order to have familiar phase numbering.
- *
- * Revision 3.85  2004/11/27 05:02:55  ktr
- * Some Bugfixes.
- *
- * Revision 3.84  2004/11/26 23:30:41  sbs
- * PrintAST call eliminated
- *
- * Revision 3.83  2004/11/26 23:21:59  mwe
- * OIdoObjinit
- * deactivated
- *
- * Revision 3.82  2004/11/25 17:53:48  cg
- * SacDevCamp 04
- *
- * Revision 3.81  2004/11/24 23:26:44  skt
- * big compiler brushing during SACDevCampDK 2k4
- *
- * Revision 3.80  2004/11/23 22:08:32  skt
- * changed BuildSpmdRegions into CONCdoConcurrent
- *
- * Revision 3.79  2004/11/23 19:41:21  cg
- * changed signature of GLOBinitializeGlobal().
- *
- * Revision 3.78  2004/11/23 16:22:15  cg
- * Added call to GLOBinitializeGlobals().
- *
- * Revision 3.77  2004/11/23 11:36:42  cg
- * Switched mac-file based declaration of global variables.
- *
- * Revision 3.76  2004/11/21 11:22:03  sah
- * removed some old ast infos
- *
- * Revision 3.75  2004/11/19 21:02:25  sah
- * added ObjectAnalysus
- *
- * Revision 3.74  2004/11/14 15:19:10  sah
- * changed the order of exports
- *
- * Revision 3.73  2004/11/07 18:03:18  sah
- * more parts of new module system activated
- *
- * Revision 3.72  2004/11/04 14:53:43  sah
- * implemented dependencies between modules
- *
- * Revision 3.71  2004/11/03 17:23:19  sah
- * the tree is freed again now.
- *
- * Revision 3.70  2004/10/28 17:16:17  sah
- * included some more parts of the new modulesystem
- *
- * Revision 3.69  2004/10/22 15:16:51  sah
- * added DoUseSymbol
- *
- * Revision 3.68  2004/10/22 13:22:59  sah
- * added DoAnnotateNamespace
- *
- * Revision 3.67  2004/10/21 17:53:30  sah
- * added ResolveAll.
- *
- * Revision 3.66  2004/10/21 17:20:01  ktr
- * Added a nasty hack to traverse MODUL_TYPES with the new typechecker even
- * when the old typechecker is used.
- *
- * Revision 3.65  2004/10/17 17:48:16  sah
- * reactivated CreateLibrary in new ast mode
- *
- * Revision 3.64  2004/10/17 14:52:06  sah
- * added export traversal
- *
- * Revision 3.63  2004/10/15 15:01:18  sah
- * Serialize is now called for modules only
- *
- * Revision 3.62  2004/10/11 16:48:10  sah
- * added serialize phase (aka writesib)
- *
- * Revision 3.61  2004/10/11 14:46:39  ktr
- * Replaced EMRefcount with rcphase.
- *
- * Revision 3.60  2004/10/05 14:16:01  sah
- * fixed a include problem :(
- *
- * Revision 3.59  2004/10/05 13:54:25  sah
- * more parts of compiler active in NEW_AST mode
- *
- * Revision 3.58  2004/09/28 14:07:30  ktr
- * removed old refcount and generatemasks
- *
- * Revision 3.57  2004/09/22 17:48:32  sbs
- * now, the setup phase is properly surrounded by PHASE_xxx macros....
- * this allows tracing to be done before scanning-parsing, e.g., for -libstat
- *
- * Revision 3.56  2004/09/22 15:22:03  sah
- * added support for new PrintStat
- *
- * Revision 3.55  2004/09/21 16:34:57  sah
- * added serialize traversal in NEW_AST mode
- *
- * Revision 3.54  2004/09/18 16:10:29  ktr
- * Old MT has been moved into phase 21 to be compatible with EMM
- *
- * Revision 3.53  2004/08/09 14:55:55  ktr
- * Replaced EMAllocateFill with ExplicitAllocation subphase
- *
- * Revision 3.52  2004/08/06 14:38:59  sah
- * ongoing work to use new AST in sac2c
- *
- * Revision 3.51  2004/07/30 17:33:00  sbs
- * new_typecheck.h included.
- *
- * Revision 3.50  2004/07/30 17:24:35  sbs
- * switch between old and new tc lifted into main
- *
- * Revision 3.49  2004/07/23 15:53:50  ktr
- * - removed OPT_BLIR
- * - removed -ktr
- * - added -emm -do/noeacc
- *
- * Revision 3.48  2004/07/21 17:26:35  ktr
- * removed blir.h
- *
- * Revision 3.47  2004/07/21 12:40:38  khf
- * phase WLPartitionGeneration exchanged by phase WLEnhancement
- *
- * Revision 3.46  2004/07/19 12:43:29  ktr
- * Added EM Reference counting.
- *
- * Revision 3.45  2004/07/15 13:40:49  ktr
- * removed show_refcount = FALSE in PH_refcnt
- *
- * Revision 3.44  2004/07/15 13:36:59  ktr
- * reorganized phases after wltransform.
- *
- * Revision 3.43  2004/07/14 23:23:37  sah
- * removed all old ssa optimizations and the use_ssaform flag
- *
- * Revision 3.42  2004/07/14 15:29:54  ktr
- * Replaced call to SSARefCount by call to EMAllocateFill
- *
- * Revision 3.41  2004/06/07 14:00:30  skt
- * Position of SYSABORT for mtmode 3 moved BEHIND the break
- *
- * Revision 3.40  2004/05/12 13:03:05  ktr
- * If break_after == PH_multithread, now UndoSSA is done first.
- *
- * Revision 3.39  2004/05/12 08:17:40  skt
- * added conditional to check out ssa flag before using mtmode 3
- *
- * Revision 3.38  2004/05/11 12:49:47  ktr
- * Order of phases wltransform, refcount and mt streamlined
- *
- * Revision 3.37  2004/04/26 17:18:17  sah
- * added a hack so that new ssarefcnt phase
- * is passed always. solves the problem that
- * print does not behave as wanted during
- * PH_gencode.
- *
- * Revision 3.36  2004/04/21 16:38:56  ktr
- * Added SSA-based refcounting
- *
- * Revision 3.35  2004/04/08 11:24:34  skt
- * Position of SYSABORT for mtmode 3 moved
- *
- * Revision 3.34  2004/03/10 00:10:17  dkrHH
- * old backend removed
- *
- * Revision 3.33  2004/02/26 13:07:46  khf
- * PH_wlpartgen added
- *
- * Revision 3.32  2004/02/23 12:59:21  cg
- * Added include of ssa.h to avoid compiler warnings after usage
- * of DoSSA/UndoSSA functions.
- *
- * Revision 3.31  2004/02/09 19:27:54  skt
- * SSA-Transformation for mtmode 3 added
- *
- * Revision 3.30  2004/02/05 10:39:30  cg
- * Implementation for MT mode 1 (thread create/join) added.
- *
- * Revision 3.29  2003/12/10 16:07:14  skt
- * changed compiler flag from -mtn to -mtmode and expanded mt-versions by one
- *
- * Revision 3.28  2003/09/17 12:56:24  sbs
- * call to PrintTypeStatistics added.
- *
- * Revision 3.27  2003/06/24 21:23:40  dkr
- * revision 3.25 restored:
- * current implementation of RC uses GenerateMasks which is not implemented
- * for Nwith2 nodes. Therefore, RC should be performed before WLtrans!
- *
- * Revision 3.26  2003/06/23 15:15:02  dkr
- * refcounting phase is moved for oldMT only (instead of oldMT and noMT)
- * now
- *
- * Revision 3.25  2003/04/25 15:15:37  sbs
- * mkdtemp requires unistd.h to be included (at least on freeBSD.)
- *
- * Revision 3.24  2003/04/25 15:10:16  sbs
- * missing cast inserted 8-)
- * sah: GRGRGRRRRRRR
- *
- * Revision 3.23  2003/03/26 14:22:11  sah
- * added missing / in tmp_dirname.
- *
- * Revision 3.22  2003/03/26 13:16:02  sah
- * and another silly bug;)
- *
- * Revision 3.21  2003/03/26 13:02:10  sah
- * comments on mkdtemp and
- * silly bug fix;)
- *
- * Revision 3.20  2003/03/26 12:17:50  sah
- * replaced tmpnam by mkdtemp on
- * platforms supporting this
- *
- * Revision 3.19  2003/03/09 17:13:54  ktr
- * added basic support for BLIR.
- *
- * Revision 3.18  2002/04/30 09:02:06  dkr
- * no changes done
- *
- * Revision 3.17  2001/12/10 15:32:44  dkr
- * call of Compile_Tagged() added
- *
- * Revision 3.16  2001/11/19 20:21:16  dkr
- * global vars 'errors' and 'warnings' renamed into
- * 'errors_cnt' and 'warnings_cnt' respectively in order
- * to avoid linker warning
- *
- * Revision 3.15  2001/06/18 14:55:40  cg
- * SYSABORT which breaks compilation with -mtn (new multithreading)
- * moved directly before precompile.
- * This allows for testing mtn-code without running into strange
- * error messages due to missing implementation in the code
- * generation phase.
- *
- * Revision 3.14  2001/05/17 11:39:27  dkr
- * InitDupTree() added
- *
- * Revision 3.13  2001/05/17 08:27:41  sbs
- * PHASE_EPILOG splitted in PHASE_EPILOG and PHASE_DONE_EPILOG
- * the latter is invoked iff the phase was actually done!
- * MALLOC/FREE checked!
- *
- * Revision 3.12  2001/05/07 15:01:34  dkr
- * PrintAST is called even with -noPAB.
- * PAB_YES, PAB_NO replaced by TRUE, FALSE.
- *
- * Revision 3.11  2001/05/07 13:26:18  dkr
- * DBUG string 'AST' added: calls PrintAST(syntax_tree) if flag -b... is
- * given.
- *
- * Revision 3.9  2001/04/26 17:10:42  dkr
- * RemoveVoidFuns removed
- *
- * Revision 3.8  2001/04/24 17:12:44  dkr
- * output of 'current_allocated_mem' added
- *
- * Revision 3.7  2001/03/22 19:26:49  dkr
- * include of tree.h eliminated
- *
- * Revision 3.6  2001/03/09 11:15:55  sbs
- * call to ProfileFunctions added after type checking.
- *
- * Revision 3.5  2001/02/12 14:22:21  dkr
- * call of  PatchWith() moved
- *
- * Revision 3.4  2001/01/25 10:18:25  dkr
- * PH_spmdregions renamed into PH_multithread
- *
- * Revision 3.3  2000/12/12 15:30:47  dkr
- * internal flag 'dkr' added
- *
- * Revision 3.2  2000/12/06 19:19:55  cg
- * Deactivated new version of mt due to resource conflict with precompile.
- *
- * Revision 3.1  2000/11/20 17:59:33  sacbase
- * new release made
- *
  *
  * ... [eliminated]
  *
@@ -520,15 +242,16 @@ main (int argc, char *argv[])
     /*
      * Object init phase
      */
+    PHASE_PROLOG;
+    NOTE_COMPILER_PHASE;
 #if 0
-  PHASE_PROLOG;
-  NOTE_COMPILER_PHASE;
   syntax_tree = OIdoObjInit( syntax_tree);  /* objinit_tab */
-  PHASE_DONE_EPILOG;
-  PHASE_EPILOG;
-
-  if (global.break_after == PH_objinit) goto BREAK;
 #endif
+    PHASE_DONE_EPILOG;
+    PHASE_EPILOG;
+
+    if (global.break_after == PH_objinit)
+        goto BREAK;
     global.compiler_phase++;
 
     /*
