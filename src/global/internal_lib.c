@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.1  1995/03/28 12:01:50  hw
+ * Revision 1.2  1995/05/12 13:14:10  hw
+ * changed tag of DBUG_PRINT in function Malloc to MEM
+ *
+ * Revision 1.1  1995/03/28  12:01:50  hw
  * Initial revision
  *
  *
@@ -36,7 +39,7 @@ Malloc (int size)
     tmp = malloc (size);
     if (NULL == tmp)
         Error ("out of memory", 1);
-    DBUG_PRINT ("TYPE", ("new mem: " P_FORMAT, tmp));
+    DBUG_PRINT ("MEM", ("new mem: " P_FORMAT, tmp));
 
     DBUG_RETURN (tmp);
 }
