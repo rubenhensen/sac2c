@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.16  1999/08/09 15:54:32  dkr
+ * #undef statement corrected
+ *
  * Revision 2.15  1999/08/05 13:30:40  jhs
  * Added OPT_MTI (default now: off), to steer mto-part during spmdinit.
  *
@@ -564,7 +567,7 @@ int indent = 0;
 char *nt_class_str[] = {
 #include "nt_info.mac"
 };
-#undef ATTRIB 1
+#undef ATTRIB
 
 #define ATTRIB 2
 
