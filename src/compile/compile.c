@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.85  2002/07/02 17:52:28  dkr
+ * COMPArray(): ARRAY_STRING is copied now
+ *
  * Revision 3.84  2002/06/27 16:59:18  dkr
  * wrong comment in COMPPrfIdxSel() removed
  *
@@ -3847,8 +3850,9 @@ COMPArray (node *arg_node, node *arg_info)
     } else {
         if (ARRAY_STRING (arg_node) != NULL) {
             /* array is a string */
-            ret_node = MakeAssignIcm2 ("ND_CREATE_CONST_ARRAY_C", DupIds_Id (let_ids),
-                                       MakeStr (ARRAY_STRING (arg_node)), ret_node);
+            ret_node
+              = MakeAssignIcm2 ("ND_CREATE_CONST_ARRAY_C", DupIds_Id (let_ids),
+                                MakeStr (StringCopy (ARRAY_STRING (arg_node))), ret_node);
         } else {
             /* array elements are scalars */
             ret_node = MakeAssignIcm3 ("ND_CREATE_CONST_ARRAY_S", DupIds_Id (let_ids),
