@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.49  2000/09/12 14:37:29  dkr
+ * some errors in combination with (dynamic_shapes == 1) corrected
+ *
  * Revision 2.48  2000/08/07 14:57:43  dkr
  * FindFun: handling of [.] types corrected
  *
@@ -3791,10 +3794,18 @@ CompatibleTypes (types *type_one, types *type_two, int convert_prim_type, int li
         else if ((ARRAY_OR_SCALAR == type_1->dim) && (ARRAY_OR_SCALAR == type_2->dim)
                  && (TYPES_BASETYPE (type_1) == TYPES_BASETYPE (type_2))) {
             compare = CMP_both_unknown_shape;
-        } else if ((ARRAY_OR_SCALAR == type_1->dim) && (SCALAR <= type_2->dim)
+        } else if ((ARRAY_OR_SCALAR == type_1->dim) && KNOWN_DIMENSION (type_2->dim)
+                   && (dynamic_shapes == 1)
+                   && (TYPES_BASETYPE (type_1) == TYPES_BASETYPE (type_2))) {
+            compare = CMP_both_unknown_shape;
+        } else if ((ARRAY_OR_SCALAR == type_2->dim) && KNOWN_DIMENSION (type_1->dim)
+                   && (dynamic_shapes == 1)
+                   && (TYPES_BASETYPE (type_1) == TYPES_BASETYPE (type_2))) {
+            compare = CMP_both_unknown_shape;
+        } else if ((ARRAY_OR_SCALAR == type_1->dim) && KNOWN_SHAPE (type_2->dim)
                    && (TYPES_BASETYPE (type_1) == TYPES_BASETYPE (type_2))) {
             compare = CMP_one_unknown_shape;
-        } else if ((ARRAY_OR_SCALAR == type_2->dim) && (SCALAR <= type_1->dim)
+        } else if ((ARRAY_OR_SCALAR == type_2->dim) && KNOWN_SHAPE (type_1->dim)
                    && (TYPES_BASETYPE (type_1) == TYPES_BASETYPE (type_2))) {
             compare = CMP_one_unknown_shape;
         } else {
@@ -3863,20 +3874,25 @@ UpdateType (types *type_one, types *type_two, int line)
      *  Which one is which? (jhs)
      */
     if ((KNOWN_SHAPE (TYPES_DIM (type_one)) && (!KNOWN_SHAPE (TYPES_DIM (type_two))))
-        || (TYPES_DIM (type_two) == UNKNOWN_SHAPE)) {
+        || ((TYPES_DIM (type_one) < KNOWN_DIM_OFFSET)
+            && (TYPES_DIM (type_two) == UNKNOWN_SHAPE))
+        || (TYPES_DIM (type_two) == ARRAY_OR_SCALAR)) {
         /*
          * note here that (! KNOWN_SHAPE) is not identical to UNKNOWN_SHAPE !!!
          */
         t_unknown = type_two;
         t_known = type_one;
-    } else if (((KNOWN_SHAPE (TYPES_DIM (type_two)))
-                && (!(KNOWN_SHAPE (TYPES_DIM (type_one)))))
-               || (TYPES_DIM (type_one) == UNKNOWN_SHAPE)) {
+    } else if ((KNOWN_SHAPE (TYPES_DIM (type_two))
+                && (!KNOWN_SHAPE (TYPES_DIM (type_one))))
+               || ((TYPES_DIM (type_two) < KNOWN_DIM_OFFSET)
+                   && (TYPES_DIM (type_one) == UNKNOWN_SHAPE))
+               || (TYPES_DIM (type_one) == ARRAY_OR_SCALAR)) {
         t_unknown = type_one;
         t_known = type_two;
     }
 
-    DBUG_ASSERT (((NULL != t_unknown) && (NULL != t_known)), "wrong types");
+    DBUG_ASSERT (((NULL != t_unknown) && (NULL != t_known)),
+                 "UpdateType: wrong types or update not needed");
 
 #ifndef DBUG_OFF
     db_str1 = Type2String (t_unknown, 0);
@@ -4367,14 +4383,24 @@ FindFun (char *fun_name, char *mod_name, types **arg_type, int count_args, node 
                         && (KNOWN_SHAPE (TYPES_DIM (arg_type[i]))
                             || (KNOWN_DIMENSION (TYPES_DIM (arg_type[i]))
                                 && (dynamic_shapes == 1)))) {
-                        update = 1;
+
+                        if ((TYPES_DIM (arg_type[i]) < KNOWN_DIM_OFFSET)
+                            && (ARG_DIM (fun_args) < KNOWN_DIM_OFFSET)) {
+                            /*
+                             * for the argument as well as for the formal parameter the
+                             * dimension is known but the shape is unknown
+                             * -> no update needed
+                             */
+                        } else {
+                            update = 1;
+                        }
                         break;
                     } else if ((SAC_PRG == kind_of_file)
                                && (!KNOWN_SHAPE (TYPES_DIM (arg_type[i])))
                                && (!KNOWN_SHAPE (ARG_DIM (fun_args)))) {
                         ABORT (line,
                                ("Argument %d of function '%s' has"
-                                "unknown shape (%s)",
+                                " unknown shape (%s)",
                                 i + 1,
                                 ModName (mod_name,
                                          (IS_PRIMFUN) ? prf_string[*prf_fun] : fun_name),
@@ -4388,7 +4414,9 @@ FindFun (char *fun_name, char *mod_name, types **arg_type, int count_args, node 
                     for (i = 0; i < count_args; fun_args = ARG_NEXT (fun_args), i++)
                         if (!KNOWN_SHAPE (ARG_DIM (fun_args))) {
                             /* update types only if arg_type has known shape */
-                            if (KNOWN_SHAPE (TYPES_DIM (arg_type[i]))) {
+                            if (KNOWN_SHAPE (TYPES_DIM (arg_type[i]))
+                                || (KNOWN_DIMENSION (TYPES_DIM (arg_type[i]))
+                                    && (dynamic_shapes == 1))) {
                                 UpdateType (arg_type[i], ARG_TYPE (fun_args),
                                             NODE_LINE (fun_p->node));
 #ifdef SHAPE_NOTE
