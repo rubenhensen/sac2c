@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.30  2003/09/15 16:51:04  dkr
+ * typo in ICMCompileMT_SYNC_FOLD corrected
+ *
  * Revision 3.29  2003/09/15 16:45:53  dkr
  * Several modifications for TAGGED_ARRAYS done.
  * This revision is incomplete yet.
@@ -681,7 +684,6 @@ ICMCompileMT_SYNC_FOLD (int barrier_id, int narg, char **vararg)
                      i + 1, vararg[4 * i], vararg[4 * i + 1]);
         } else {
             fprintf (outfile,
-                     "SAC_MT_SET_BARRIER_DESC_RESULT( SAC_MT_MYTHREAD(), %i, %s, %s);\n",
                      "SAC_MT_SET_BARRIER_RC_RESULT( SAC_MT_MYTHREAD(), %i, %s, %s);\n",
                      i + 1, vararg[4 * i], vararg[4 * i + 1]);
         }
