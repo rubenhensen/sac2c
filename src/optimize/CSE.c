@@ -1,7 +1,7 @@
 /*
  *
  * $Log$
- * Revision 1.2  1996/01/22 14:33:48  asi
+ * Revision 1.3  1996/02/13 13:59:53  asi
  * basic algorithm added
  *
  * Revision 1.1  1996/01/17  15:54:09  asi
@@ -224,7 +224,7 @@ node *
 CSEid (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("CSEid");
-    MRD_GETDATA (ID_DEF (arg_node), ID_VARNO (arg_node), INFO_VARNO);
+    MRD_GETCSE (ID_DEF (arg_node), ID_VARNO (arg_node), INFO_VARNO);
     DBUG_RETURN (arg_node);
 }
 
@@ -235,33 +235,44 @@ Equal (node *arg1, node *arg2, node *arg_info)
 
     DBUG_ENTER ("Equal");
     if (N_id == NODE_TYPE (arg1))
-        arg1 = MRD_GETDATA (ID_DEF (arg1), ID_VARNO (arg1), INFO_VARNO);
+        arg1 = MRD_GETCSE (ID_DEF (arg1), ID_VARNO (arg1), INFO_VARNO);
     if (N_id == NODE_TYPE (arg2))
         arg2 = ID_DEF (arg2);
-    if (arg1 == arg2)
+    if (arg1 == arg2) {
         equal = TRUE;
-    else {
+        DBUG_PRINT ("CSE", (">Arguments are equal, same node"));
+    } else {
         if ((NULL != arg1) && (NULL != arg2) && (NODE_TYPE (arg1) == NODE_TYPE (arg2))) {
             switch (NODE_TYPE (arg1)) {
             case N_num:
-                if ((NUM_VAL (arg1) == NUM_VAL (arg2)))
+                if ((NUM_VAL (arg1) == NUM_VAL (arg2))) {
                     equal = TRUE;
+                    DBUG_PRINT ("CSE", (">Arguments are equal, same int value"));
+                }
                 break;
             case N_bool:
-                if ((BOOL_VAL (arg1) == BOOL_VAL (arg2)))
+                if ((BOOL_VAL (arg1) == BOOL_VAL (arg2))) {
                     equal = TRUE;
+                    DBUG_PRINT ("CSE", (">Arguments are equal, same bool value"));
+                }
                 break;
             case N_float:
-                if ((FLOAT_VAL (arg1) == FLOAT_VAL (arg2)))
+                if ((FLOAT_VAL (arg1) == FLOAT_VAL (arg2))) {
                     equal = TRUE;
+                    DBUG_PRINT ("CSE", (">Arguments are equal, same float value"));
+                }
                 break;
             case N_double:
-                if ((DOUBLE_VAL (arg1) == DOUBLE_VAL (arg2)))
+                if ((DOUBLE_VAL (arg1) == DOUBLE_VAL (arg2))) {
                     equal = TRUE;
+                    DBUG_PRINT ("CSE", (">Arguments are equal, same double value"));
+                }
                 break;
             case N_char:
-                if ((CHAR_VAL (arg1) == CHAR_VAL (arg2)))
+                if ((CHAR_VAL (arg1) == CHAR_VAL (arg2))) {
                     equal = TRUE;
+                    DBUG_PRINT ("CSE", (">Arguments are equal, same char value"));
+                }
                 break;
             default:
                 break;
@@ -282,9 +293,10 @@ FindCS (node *arg1, node *arg2, node *arg_info)
     DBUG_ENTER ("FindCS");
 
     if ((NULL != arg1) && (NULL != arg2)) {
-        if (arg1 == arg2)
+        if (arg1 == arg2) {
             cs = arg2;
-        else {
+            DBUG_PRINT ("CSE", (">CSE, because same node"));
+        } else {
             arg1_instr = ASSIGN_INSTR (arg1);
             arg2_instr = ASSIGN_INSTR (arg2);
             if ((N_let == NODE_TYPE (arg1_instr)) && (N_let == NODE_TYPE (arg2_instr))) {
@@ -298,22 +310,46 @@ FindCS (node *arg1, node *arg2, node *arg_info)
                 case N_char:
                     if (Equal (arg1_expr, arg2_expr, arg_info))
                         cs = arg2;
+                    DBUG_PRINT ("CSE", (">CSE, same constant value"));
                     break;
                 case N_prf:
                     if (EQUAL_NTYPE && (PRF_PRF (arg1_expr) == PRF_PRF (arg2_expr))) {
-                        equal = FALSE;
-                        switch (PRF_PRF (arg1_expr)) {
-                        case F_add:
-                            if (Equal (PRF_ARG1 (arg1_expr), PRF_ARG1 (arg2_expr),
-                                       arg_info)
-                                && Equal (PRF_ARG2 (arg1_expr), PRF_ARG2 (arg2_expr),
-                                          arg_info))
-                                cs = arg2;
-                            break;
-                        default:
-                            break;
+                        equal = TRUE;
+                        arg1_expr = PRF_ARGS (arg1_expr);
+                        arg2_expr = PRF_ARGS (arg2_expr);
+                        do {
+                            if (Equal (EXPRS_EXPR (arg1_expr), EXPRS_EXPR (arg2_expr),
+                                       arg_info)) {
+                                arg1_expr = EXPRS_NEXT (arg1_expr);
+                                arg2_expr = EXPRS_NEXT (arg2_expr);
+                            } else
+                                equal = FALSE;
+                        } while (equal && ((NULL != arg1_expr) || (NULL != arg2_expr)));
+                        if (equal) {
+                            DBUG_PRINT ("CSE", (">CSE, same primitive function"));
+                            cs = arg2;
                         }
                     }
+                    break;
+                case N_ap:
+                    if (EQUAL_NTYPE && (AP_FUNDEF (arg1_expr) == AP_FUNDEF (arg2_expr))) {
+                        equal = TRUE;
+                        arg1_expr = AP_ARGS (arg1_expr);
+                        arg2_expr = AP_ARGS (arg2_expr);
+                        do {
+                            if (Equal (EXPRS_EXPR (arg1_expr), EXPRS_EXPR (arg2_expr),
+                                       arg_info)) {
+                                arg1_expr = EXPRS_NEXT (arg1_expr);
+                                arg2_expr = EXPRS_NEXT (arg2_expr);
+                            } else
+                                equal = FALSE;
+                        } while (equal && ((NULL != arg1_expr) || (NULL != arg2_expr)));
+                        if (equal) {
+                            DBUG_PRINT ("CSE", (">CSE, same user defined function"));
+                            cs = arg2;
+                        }
+                    }
+                    break;
                 default:
                     break;
                 }
@@ -327,6 +363,8 @@ node *
 Eliminate (node *arg_node, node *equal_node, node *arg_info)
 {
     node *new_node;
+    ids *ids_node;
+    node *id_node, *let_node;
 
     DBUG_ENTER ("Eliminate");
     switch (NODE_TYPE (ASSIGN_INSTR (LET_EXPR (arg_node)))) {
@@ -334,16 +372,33 @@ Eliminate (node *arg_node, node *equal_node, node *arg_info)
     case N_float:
     case N_double:
     case N_str:
-    case N_bool: {
-        ids *ids_node;
-        node *id_node, *let_node;
-
+    case N_bool:
         ids_node = DupIds (LET_IDS (ASSIGN_INSTR (equal_node)), arg_info);
         id_node = MakeId2 (ids_node);
         ids_node = DupIds (LET_IDS (ASSIGN_INSTR (arg_node)), arg_info);
         let_node = MakeLet (id_node, ids_node);
         new_node = MakeAssign (let_node, NULL);
-    } break;
+        break;
+    case N_prf:
+        if (CheckScope (MRD_LIST, equal_node, INFO_VARNO, TRUE)) {
+            ids_node = DupIds (LET_IDS (ASSIGN_INSTR (equal_node)), arg_info);
+            id_node = MakeId2 (ids_node);
+            ids_node = DupIds (LET_IDS (ASSIGN_INSTR (arg_node)), arg_info);
+            let_node = MakeLet (id_node, ids_node);
+            new_node = MakeAssign (let_node, NULL);
+        } else
+            new_node = NULL;
+        break;
+    case N_ap:
+        if (CheckScope (MRD_LIST, equal_node, INFO_VARNO, TRUE)) {
+            ids_node = DupIds (LET_IDS (ASSIGN_INSTR (equal_node)), arg_info);
+            id_node = MakeId2 (ids_node);
+            ids_node = DupIds (LET_IDS (ASSIGN_INSTR (arg_node)), arg_info);
+            let_node = MakeLet (id_node, ids_node);
+            new_node = MakeAssign (let_node, NULL);
+        } else
+            new_node = NULL;
+        break;
     default:
         new_node = NULL;
         break;
@@ -369,15 +424,19 @@ node *
 CSEassign (node *arg_node, node *arg_info)
 {
     int i;
+    int next = TRUE;
     node *cmp_node, *equal_node, *new_node, *stack_node;
 
     DBUG_ENTER ("CSEassign");
+
+    ASSIGN_CSE (arg_node) = NULL;
 
     if (NULL == (cmp_node = GetCompoundNode (arg_node))) {
         i = 0;
         equal_node = NULL;
         DBUG_PRINT ("CSE",
                     ("Searching common subexpression for line %d", NODE_LINE (arg_node)));
+
         while ((i < INFO_VARNO) && (NULL == equal_node)) {
             stack_node = MRD (i);
             equal_node = FindCS (arg_node, stack_node, arg_info);
@@ -387,9 +446,11 @@ CSEassign (node *arg_node, node *arg_info)
         if (NULL != equal_node) {
             DBUG_PRINT ("CSE", (">Found common subexpression in line %d",
                                 NODE_LINE (equal_node)));
-            cse_expr++;
             new_node = Eliminate (arg_node, equal_node, arg_info);
             if (NULL != new_node) {
+                DBUG_PRINT ("CSE", (">Common subexpression eliminated in line %d",
+                                    NODE_LINE (arg_node)));
+                cse_expr++;
                 MinusMask (INFO_DEF, ASSIGN_DEFMASK (arg_node), INFO_VARNO);
                 MinusMask (INFO_USE, ASSIGN_USEMASK (arg_node), INFO_VARNO);
                 new_node = GenerateMasks (new_node, arg_info);
@@ -410,20 +471,17 @@ CSEassign (node *arg_node, node *arg_info)
                 /*-----------------------------------------------------------------------------------*/
                 FreeTree (arg_node);
                 arg_node = CSEassign (new_node, arg_info);
-            } else {
-                ASSIGN_INSTR (arg_node)
-                  = OPTTrav (ASSIGN_INSTR (arg_node), arg_info, arg_node);
-                ASSIGN_NEXT (arg_node)
-                  = OPTTrav (ASSIGN_NEXT (arg_node), arg_info, arg_node);
+                next = FALSE;
             }
-        } else {
-            ASSIGN_INSTR (arg_node)
-              = OPTTrav (ASSIGN_INSTR (arg_node), arg_info, arg_node);
-            ASSIGN_NEXT (arg_node) = OPTTrav (ASSIGN_NEXT (arg_node), arg_info, arg_node);
         }
-    } else {
+    }
+
+    if (next) {
         ASSIGN_INSTR (arg_node) = OPTTrav (ASSIGN_INSTR (arg_node), arg_info, arg_node);
         ASSIGN_NEXT (arg_node) = OPTTrav (ASSIGN_NEXT (arg_node), arg_info, arg_node);
+        if (NULL != ASSIGN_CSE (arg_node)) {
+        }
     }
+
     DBUG_RETURN (arg_node);
 }
