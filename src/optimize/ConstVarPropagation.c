@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.15  2005/02/14 10:46:43  mwe
+ * CVParg added
+ *
  * Revision 1.14  2004/12/09 18:15:09  ktr
  * IsConstantArray fixed.
  *
@@ -69,6 +72,8 @@
 #include "DataFlowMask.h"
 #include "DupTree.h"
 #include "SSATransform.h"
+#include "new_types.h"
+#include "constants.h"
 
 #include "ConstVarPropagation.h"
 
@@ -974,9 +979,66 @@ CVPfundef (node *arg_node, info *arg_info)
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
     }
 
+    if ((FUNDEF_ARGS (arg_node) != NULL) && (!FUNDEF_ISEXPORTED (arg_node))
+        && (!FUNDEF_ISPROVIDED (arg_node)) && (!FUNDEF_ISLACFUN (arg_node))) {
+        FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
+    }
+
     INFO_CVP_FUNDEF (arg_info) = oldfundef;
 
     DBUG_PRINT ("CVP", ("Completed traversal of function %s", FUNDEF_NAME (arg_node)));
+
+    DBUG_RETURN (arg_node);
+}
+
+/**********************************************************************
+ *
+ * function:
+ *   node *CVParg(node *arg_node, info *arg_info)
+ *
+ * description:
+ *   traverse into arguments
+ *
+ *********************************************************************/
+
+node *
+CVParg (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("CVParg");
+
+    if (ARG_NEXT (arg_node) != NULL) {
+        ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
+    }
+
+    if ((TYisAKV (AVIS_TYPE (ARG_AVIS (arg_node))))
+        && (0 == TYgetDim (AVIS_TYPE (ARG_AVIS (arg_node))))) {
+
+        /*
+         * argument is a known scalar value
+         * change argument to a local identifier
+         */
+        BLOCK_VARDEC (FUNDEF_BODY (INFO_CVP_FUNDEF (arg_info)))
+          = TBmakeVardec (ARG_AVIS (arg_node),
+                          BLOCK_VARDEC (FUNDEF_BODY (INFO_CVP_FUNDEF (arg_info))));
+
+        BLOCK_INSTR (FUNDEF_BODY (INFO_CVP_FUNDEF (arg_info)))
+          = TBmakeAssign (TBmakeLet (TBmakeIds (ARG_AVIS (arg_node), NULL),
+                                     COconstant2AST (
+                                       TYgetValue (AVIS_TYPE (ARG_AVIS (arg_node))))),
+                          BLOCK_INSTR (FUNDEF_BODY (INFO_CVP_FUNDEF (arg_info))));
+
+        AVIS_DECL (ARG_AVIS (arg_node))
+          = BLOCK_VARDEC (FUNDEF_BODY (INFO_CVP_FUNDEF (arg_info)));
+
+        /*
+         * create dummy argument
+         */
+        ARG_AVIS (arg_node)
+          = TBmakeAvis (ILIBtmpVar (), TYcopyType (AVIS_TYPE (ARG_AVIS (arg_node))));
+        AVIS_DECL (ARG_AVIS (arg_node)) = arg_node;
+
+        cvp_expr++;
+    }
 
     DBUG_RETURN (arg_node);
 }
