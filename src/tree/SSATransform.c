@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.17  2001/05/03 16:51:34  nmw
+ * set correct SSAASSIGN attributes when updating phi_targets
+ *
  * Revision 1.16  2001/04/24 16:09:07  nmw
  * SSATransformSingleFundef renamed to SSATransformOneFunction
  *
@@ -1061,6 +1064,12 @@ SSAleftids (ids *arg_ids, node *arg_info)
         DBUG_PRINT ("SSA", ("phi target, no renaming: %s (" F_PTR ")",
                             VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (IDS_AVIS (arg_ids))),
                             IDS_AVIS (arg_ids)));
+        /* set the correct AVIS_SSAASSIGN/2 attributes */
+        if (INFO_SSA_CONDSTATUS (arg_info) == CONDSTATUS_ELSEPART) {
+            AVIS_SSAASSIGN2 (IDS_AVIS (arg_ids)) = INFO_SSA_ASSIGN (arg_info);
+        } else {
+            AVIS_SSAASSIGN (IDS_AVIS (arg_ids)) = INFO_SSA_ASSIGN (arg_info);
+        }
 
     } else if (AVIS_SSADEFINED (IDS_AVIS (arg_ids)) == FALSE) {
         /* first definition of variable (no renaming) */
