@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.16  2000/03/16 14:29:45  dkr
+ * CHECK_DBUG_START replaced by PHASE_PROLOG
+ * CHECK_DBUG_STOP replaced by PHASE_EPILOG
+ * call of Lac2fun, Fun2lac embedded into PHASE_PROLOG, PHASE_EPILOG
+ *
  * Revision 2.15  2000/03/02 18:50:04  cg
  * Added new option -lac2fun that activates lac2fun conversion and
  * vice versa between psi optimizations and precompiling.
@@ -150,7 +155,6 @@
  *
  * Revision 1.2  1994/11/10  15:44:34  sbs
  * RCS-header inserted
- *
  *
  */
 
@@ -308,9 +312,9 @@ main (int argc, char *argv[])
      */
 
     NOTE_COMPILER_PHASE;
-    CHECK_DBUG_START;
+    PHASE_PROLOG;
     syntax_tree = ScanParse ();
-    CHECK_DBUG_STOP;
+    PHASE_EPILOG;
     ABORT_ON_ERROR;
 
     if (break_after == PH_scanparse)
@@ -319,9 +323,9 @@ main (int argc, char *argv[])
 
     if (MODUL_IMPORTS (syntax_tree) != NULL) {
         NOTE_COMPILER_PHASE;
-        CHECK_DBUG_START;
+        PHASE_PROLOG;
         syntax_tree = Import (syntax_tree); /* imp_tab */
-        CHECK_DBUG_STOP;
+        PHASE_EPILOG;
         ABORT_ON_ERROR;
     }
 
@@ -336,9 +340,9 @@ main (int argc, char *argv[])
 
         compiler_phase = PH_writedeps;
         NOTE_COMPILER_PHASE;
-        CHECK_DBUG_START;
+        PHASE_PROLOG;
         PrintDependencies (dependencies, makedeps);
-        CHECK_DBUG_STOP;
+        PHASE_EPILOG;
         ABORT_ON_ERROR;
 
         FreeTree (syntax_tree);
@@ -361,9 +365,9 @@ main (int argc, char *argv[])
 
     if (MODUL_STORE_IMPORTS (syntax_tree) != NULL) {
         NOTE_COMPILER_PHASE;
-        CHECK_DBUG_START;
+        PHASE_PROLOG;
         syntax_tree = ReadSib (syntax_tree); /* readsib_tab */
-        CHECK_DBUG_STOP;
+        PHASE_EPILOG;
         ABORT_ON_ERROR;
     }
 
@@ -372,9 +376,9 @@ main (int argc, char *argv[])
     compiler_phase++;
 
     NOTE_COMPILER_PHASE;
-    CHECK_DBUG_START;
+    PHASE_PROLOG;
     syntax_tree = objinit (syntax_tree); /* objinit_tab */
-    CHECK_DBUG_STOP;
+    PHASE_EPILOG;
     ABORT_ON_ERROR;
 
     if (break_after == PH_objinit)
@@ -382,9 +386,9 @@ main (int argc, char *argv[])
     compiler_phase++;
 
     NOTE_COMPILER_PHASE;
-    CHECK_DBUG_START;
+    PHASE_PROLOG;
     syntax_tree = Flatten (syntax_tree); /* flat_tab */
-    CHECK_DBUG_STOP;
+    PHASE_EPILOG;
     ABORT_ON_ERROR;
 
     if (break_after == PH_flatten)
@@ -392,9 +396,9 @@ main (int argc, char *argv[])
     compiler_phase++;
 
     NOTE_COMPILER_PHASE;
-    CHECK_DBUG_START;
+    PHASE_PROLOG;
     syntax_tree = Typecheck (syntax_tree); /* type_tab */
-    CHECK_DBUG_STOP;
+    PHASE_EPILOG;
     ABORT_ON_ERROR;
 
     if (break_after == PH_typecheck)
@@ -403,9 +407,9 @@ main (int argc, char *argv[])
 
     if (MODUL_FILETYPE (syntax_tree) != F_prog) {
         NOTE_COMPILER_PHASE;
-        CHECK_DBUG_START;
+        PHASE_PROLOG;
         syntax_tree = CheckDec (syntax_tree); /* writedec_tab and checkdec_tab */
-        CHECK_DBUG_STOP;
+        PHASE_EPILOG;
         ABORT_ON_ERROR;
     }
 
@@ -414,9 +418,9 @@ main (int argc, char *argv[])
     compiler_phase++;
 
     NOTE_COMPILER_PHASE;
-    CHECK_DBUG_START;
+    PHASE_PROLOG;
     syntax_tree = RetrieveImplicitTypeInfo (syntax_tree); /* impltype_tab */
-    CHECK_DBUG_STOP;
+    PHASE_EPILOG;
     ABORT_ON_ERROR;
 
     if (break_after == PH_impltype)
@@ -424,9 +428,9 @@ main (int argc, char *argv[])
     compiler_phase++;
 
     NOTE_COMPILER_PHASE;
-    CHECK_DBUG_START;
+    PHASE_PROLOG;
     syntax_tree = Analysis (syntax_tree); /* analy_tab */
-    CHECK_DBUG_STOP;
+    PHASE_EPILOG;
     ABORT_ON_ERROR;
 
     if (break_after == PH_analysis)
@@ -435,9 +439,9 @@ main (int argc, char *argv[])
 
     if (MODUL_FILETYPE (syntax_tree) != F_prog) {
         NOTE_COMPILER_PHASE;
-        CHECK_DBUG_START;
+        PHASE_PROLOG;
         syntax_tree = WriteSib (syntax_tree); /* writesib_tab */
-        CHECK_DBUG_STOP;
+        PHASE_EPILOG;
         ABORT_ON_ERROR;
     }
 
@@ -446,9 +450,9 @@ main (int argc, char *argv[])
     compiler_phase++;
 
     NOTE_COMPILER_PHASE;
-    CHECK_DBUG_START;
+    PHASE_PROLOG;
     syntax_tree = HandleObjects (syntax_tree); /* obj_tab */
-    CHECK_DBUG_STOP;
+    PHASE_EPILOG;
     ABORT_ON_ERROR;
 
     if (break_after == PH_objects)
@@ -456,9 +460,9 @@ main (int argc, char *argv[])
     compiler_phase++;
 
     NOTE_COMPILER_PHASE;
-    CHECK_DBUG_START;
+    PHASE_PROLOG;
     syntax_tree = UniquenessCheck (syntax_tree); /* unique_tab */
-    CHECK_DBUG_STOP;
+    PHASE_EPILOG;
     ABORT_ON_ERROR;
 
     if (break_after == PH_uniquecheck)
@@ -466,9 +470,9 @@ main (int argc, char *argv[])
     compiler_phase++;
 
     NOTE_COMPILER_PHASE;
-    CHECK_DBUG_START;
+    PHASE_PROLOG;
     syntax_tree = RemoveVoidFunctions (syntax_tree); /* rmvoid_tab */
-    CHECK_DBUG_STOP;
+    PHASE_EPILOG;
     ABORT_ON_ERROR;
 
     if (break_after == PH_rmvoidfun)
@@ -477,9 +481,9 @@ main (int argc, char *argv[])
 
     if (optimize) {
         NOTE_COMPILER_PHASE;
-        CHECK_DBUG_START;
+        PHASE_PROLOG;
         syntax_tree = Optimize (syntax_tree); /* see optimize.c, Optimize() */
-        CHECK_DBUG_STOP;
+        PHASE_EPILOG;
         ABORT_ON_ERROR;
     }
 
@@ -489,9 +493,9 @@ main (int argc, char *argv[])
 
     if (optimize) {
         NOTE_COMPILER_PHASE;
-        CHECK_DBUG_START;
+        PHASE_PROLOG;
         syntax_tree = PsiOpt (syntax_tree); /* idx_tab */
-        CHECK_DBUG_STOP;
+        PHASE_EPILOG;
         ABORT_ON_ERROR;
     }
 
@@ -499,17 +503,10 @@ main (int argc, char *argv[])
         goto BREAK;
     compiler_phase++;
 
-    if (do_lac_fun_conversion) {
-        CHECK_DBUG_START;
-        syntax_tree = Lac2Fun (syntax_tree);
-        CHECK_DBUG_STOP;
-        ABORT_ON_ERROR;
-    }
-
     NOTE_COMPILER_PHASE;
-    CHECK_DBUG_START;
+    PHASE_PROLOG;
     syntax_tree = Refcount (syntax_tree); /* refcnt_tab */
-    CHECK_DBUG_STOP;
+    PHASE_EPILOG;
     ABORT_ON_ERROR;
 
     if (break_after == PH_refcnt)
@@ -524,9 +521,9 @@ main (int argc, char *argv[])
     }
 
     NOTE_COMPILER_PHASE;
-    CHECK_DBUG_START;
+    PHASE_PROLOG;
     syntax_tree = WlTransform (syntax_tree); /* wltrans_tab */
-    CHECK_DBUG_STOP;
+    PHASE_EPILOG;
     ABORT_ON_ERROR;
 
     if (break_after == PH_wltrans)
@@ -536,23 +533,16 @@ main (int argc, char *argv[])
     if (gen_mt_code == GEN_MT_OLD) {
         NOTE_COMPILER_PHASE;
         NOTE (("using old version of mt"));
-        CHECK_DBUG_START;
+        PHASE_PROLOG;
         syntax_tree = BuildSpmdRegions (syntax_tree); /* spmd..._tab, sync..._tab */
-        CHECK_DBUG_STOP;
+        PHASE_EPILOG;
         ABORT_ON_ERROR;
     } else if (gen_mt_code == GEN_MT_NEW) {
         NOTE_COMPILER_PHASE;
         NOTE (("using new version of mt"));
-        CHECK_DBUG_START;
+        PHASE_PROLOG;
         syntax_tree = BuildMultiThread (syntax_tree);
-        CHECK_DBUG_STOP;
-        ABORT_ON_ERROR;
-    }
-
-    if (do_lac_fun_conversion) {
-        CHECK_DBUG_START;
-        syntax_tree = Fun2Lac (syntax_tree);
-        CHECK_DBUG_STOP;
+        PHASE_EPILOG;
         ABORT_ON_ERROR;
     }
 
@@ -561,9 +551,9 @@ main (int argc, char *argv[])
     compiler_phase++;
 
     NOTE_COMPILER_PHASE;
-    CHECK_DBUG_START;
+    PHASE_PROLOG;
     syntax_tree = precompile (syntax_tree); /* precomp_tab */
-    CHECK_DBUG_STOP;
+    PHASE_EPILOG;
     ABORT_ON_ERROR;
 
     if (break_after == PH_precompile)
@@ -571,9 +561,9 @@ main (int argc, char *argv[])
     compiler_phase++;
 
     NOTE_COMPILER_PHASE;
-    CHECK_DBUG_START;
+    PHASE_PROLOG;
     syntax_tree = Compile (syntax_tree); /* comp_tab */
-    CHECK_DBUG_STOP;
+    PHASE_EPILOG;
     ABORT_ON_ERROR;
 
     if (break_after == PH_compile)
@@ -581,9 +571,9 @@ main (int argc, char *argv[])
     compiler_phase++;
 
     NOTE_COMPILER_PHASE;
-    CHECK_DBUG_START;
+    PHASE_PROLOG;
     Print (syntax_tree);
-    CHECK_DBUG_STOP;
+    PHASE_EPILOG;
     ABORT_ON_ERROR;
 
     if (break_after == PH_genccode)
@@ -597,17 +587,17 @@ main (int argc, char *argv[])
     FreeTree (syntax_tree);
 
     NOTE_COMPILER_PHASE;
-    CHECK_DBUG_START;
+    PHASE_PROLOG;
     InvokeCC ();
-    CHECK_DBUG_STOP;
+    PHASE_EPILOG;
     ABORT_ON_ERROR;
     compiler_phase++;
 
     if (filetype != F_prog) {
         NOTE_COMPILER_PHASE;
-        CHECK_DBUG_START;
+        PHASE_PROLOG;
         CreateLibrary ();
-        CHECK_DBUG_STOP;
+        PHASE_EPILOG;
         ABORT_ON_ERROR;
     }
 
@@ -632,16 +622,18 @@ main (int argc, char *argv[])
     NOTE2 (("*** 0 error(s), %d warning(s)", warnings));
     NEWLINE (2);
 
-    /*  FreeTree (syntax_tree); */
+#if 0
+  FreeTree( syntax_tree);
+#endif
     return (0);
 
 BREAK:
 
     if (compiler_phase >= PH_scanparse) {
         if ((print_after_break == PAB_YES) && (compiler_phase < PH_genccode)) {
-            CHECK_DBUG_START; /* needed for DBUG-infos during print, i.e. PRINT_xxx */
+            PHASE_PROLOG;
             Print (syntax_tree);
-            CHECK_DBUG_STOP;
+            PHASE_EPILOG;
         }
         FreeTree (syntax_tree);
 
