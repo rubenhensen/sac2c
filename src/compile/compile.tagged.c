@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.61  2003/03/14 13:22:06  dkr
+ * MakeIcmArgs_WL_OP1(): 3rd argument is tagged now
+ *
  * Revision 1.60  2003/03/14 11:41:24  dkr
  * MakeIcmArgs_WL_LOOP1(): 3rd arg is tagged now
  *
@@ -4825,7 +4828,7 @@ MakeIcmArgs_WL_OP2 (node *arg_node)
 
     withid_ids = NWITH2_IDS (wlnode);
     while (withid_ids != NULL) {
-        last_arg = EXPRS_NEXT (last_arg) = MakeExprs (DupIds_Id (withid_ids), NULL);
+        last_arg = EXPRS_NEXT (last_arg) = MakeExprs (DupIds_Id_NT (withid_ids), NULL);
         num_args--;
         withid_ids = IDS_NEXT (withid_ids);
     }
