@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.15  1998/05/11 08:31:05  srs
+ * activated LIR again
+ *
  * Revision 1.14  1998/05/06 11:40:45  cg
  * added globals max_sync_fold and max_threads
  *
@@ -181,7 +184,7 @@ int opt_dcr = 1;
 int opt_cf = 1;
 /* enable/disable constant folding */
 
-int opt_lir = 0;
+int opt_lir = 1;
 /* enable/disable loop invariant removal */
 
 int opt_inl = 1;
