@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.14  1995/05/24 13:58:31  sbs
- * ND_KS_DECL_ARRAY_ARG inserted
+ * Revision 1.15  1995/05/24 15:28:01  sbs
+ * inclusion of trace.h eliminated
  *
+# Revision 1.14  1995/05/24  13:58:31  sbs
+# ND_KS_DECL_ARRAY_ARG inserted
+#
 # Revision 1.13  1995/05/04  11:42:34  sbs
 # trf inserted in ICM-macros
 #
@@ -45,8 +48,6 @@
 #
  *
  */
-
-#include "trace.h"
 
 #if defined(ND_FUN_DEC) || defined(ICM_ALL)
 ICM_DEF( ND_FUN_DEC, NO_TRACE)
