@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2002/09/03 15:27:16  sbs
+ * F_mod supported.
+ *
  * Revision 1.11  2002/08/15 11:46:26  dkr
  * function ApplyToEach_S() renamed into MapLUT_S()
  *
@@ -400,6 +403,8 @@ Name2Prf (char *name, prf *primfun)
         *primfun = F_lt;
     } else if (strcmp (name, "<=") == 0) {
         *primfun = F_le;
+    } else if (strcmp (name, "%") == 0) {
+        *primfun = F_mod;
     } else if (strcmp (name, "&&") == 0) {
         *primfun = F_and;
     } else if (strcmp (name, "||") == 0) {
