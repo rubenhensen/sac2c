@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.42  2004/07/14 15:29:54  ktr
+ * Replaced call to SSARefCount by call to EMAllocateFill
+ *
  * Revision 3.41  2004/06/07 14:00:30  skt
  * Position of SYSABORT for mtmode 3 moved BEHIND the break
  *
@@ -173,7 +176,7 @@
 #include "filemgr.h"
 #include "import.h"
 #include "refcount.h"
-#include "SSARefCount.h"
+#include "alloc.h"
 #include "scnprs.h"
 #include "writesib.h"
 #include "readsib.h"
@@ -549,12 +552,11 @@ main (int argc, char *argv[])
     if (((ktr) || (mtmode == MT_mtstblock)) && (use_ssaform)) {
         PHASE_PROLOG;
         NOTE_COMPILER_PHASE;
+        show_refcnt = FALSE;
         syntax_tree = DoSSA (syntax_tree);
-        syntax_tree = SSARefCount (syntax_tree); /* ssarefcnt_tab */
+        syntax_tree = EMALAllocateFill (syntax_tree); /* emalloc_tab */
         PHASE_DONE_EPILOG;
         PHASE_EPILOG;
-    } else {
-        /* syntax_tree = Refcount( syntax_tree); */ /* refcnt_tab */
     }
 
     if (break_after == PH_refcnt)
