@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.115  1996/04/02 14:26:49  hw
+ * Revision 1.116  1996/04/02 14:40:52  cg
+ * bug fixed in parsing function applications
+ *
+ * Revision 1.115  1996/04/02  14:26:49  hw
  * changed DBUG_PRINT in rule "apl"
  *
  * Revision 1.114  1996/04/02  13:48:02  cg
@@ -1900,7 +1903,7 @@ exprORarray: expr
              {  $$=$1; }
           ;
 
-expr:   apl {$$=$1; $$->info.fun_name.id_mod=NULL; }
+expr:   apl {$$=$1;}
       | WITH {$$=MakeNode(N_with);} BRACKET_L generator  BRACKET_R conexpr 
         { $$=$<node>2;
           $$->node[0]=$4;   /* Generator und Filter */
