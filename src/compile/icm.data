@@ -1,9 +1,13 @@
 /*
  *
  * $Log$
- * Revision 1.16  1995/06/02 08:48:13  hw
- * ND_BEGIN_FOLDPRF, ND_BEGIN_FOLDFUN and ND_END_FOLD inserted
+ * Revision 1.17  1995/06/07 13:36:53  hw
+ * - exchanges N_icm ND_CREATE_CONST_ARRAY with ND_CREATE_CONST_ARRAY_S
+ * - N_icm ND_CREATE_CONST_ARRAY_A (array out of arrays) inserted
  *
+# Revision 1.16  1995/06/02  08:48:13  hw
+# ND_BEGIN_FOLDPRF, ND_BEGIN_FOLDFUN and ND_END_FOLD inserted
+#
 # Revision 1.15  1995/05/24  15:28:01  sbs
 # inclusion of trace.h eliminated
 #
@@ -75,12 +79,21 @@ ICM_DEF( ND_FUN_RET, TRACE_UDF)
 ICM_END( ND_FUN_RET)
 #endif
 
-#if defined(ND_CREATE_CONST_ARRAY) || defined(ICM_ALL)
-ICM_DEF( ND_CREATE_CONST_ARRAY, NO_TRACE)
+#if defined(ND_CREATE_CONST_ARRAY_S) || defined(ICM_ALL)
+ICM_DEF( ND_CREATE_CONST_ARRAY_S, NO_TRACE)
   ICM_STR(name)
   ICM_INT(dim)
   ICM_VAR( dim, s)
-ICM_END( ND_CREATE_CONST_ARRAY)
+ICM_END( ND_CREATE_CONST_ARRAY_S)
+#endif
+
+#if defined(ND_CREATE_CONST_ARRAY_A) || defined(ICM_ALL)
+ICM_DEF( ND_CREATE_CONST_ARRAY_A, NO_TRACE)
+  ICM_STR(name)
+  ICM_INT(length)
+  ICM_INT(dim)
+  ICM_VAR( dim, A)
+ICM_END( ND_CREATE_CONST_ARRAY_A)
 #endif
 
 #if defined(ND_KS_DECL_ARRAY) || defined(ICM_ALL)

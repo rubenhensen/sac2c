@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.22  1995/06/02 11:28:16  hw
+ * Revision 1.23  1995/06/07 13:36:53  hw
+ * - exchanges N_icm ND_CREATE_CONST_ARRAY with ND_CREATE_CONST_ARRAY_S
+ * - N_icm ND_CREATE_CONST_ARRAY_A (array out of arrays) inserted
+ *
+ * Revision 1.22  1995/06/02  11:28:16  hw
  * - added macros BeginFoldWith & EndFoldWith
  * - implementation of N_icm's ND_BEGIN_FOLDPRF, ND_BEGIN_FOLDFUN & ND_END_FOLD
  *   inserted
@@ -434,13 +438,14 @@ MAIN
     char idx[] = "idxvar";
     char a2[] = "arg2";
     char res[] = "result";
+    char *A[] = {"B", "C", "D"};
     int idxlen = 3;
     int i;
     int narg = 5;
     int indent = 1;
     int catdim = 2;
     int rotdim = 1;
-
+    int length = 3;
     int traceflag = 0xffff;
 
     OPT OTHER
@@ -569,14 +574,14 @@ DBUG_VOID_RETURN;
 #endif /* no TEST_BACKEND */
 
 /*
- * ND_CREATE_CONST_ARRAY( name, dim, s0,..., sn)   : generates a constant array
+ * ND_CREATE_CONST_ARRAY_S( name, dim, s0,..., sn)  : generates a constant array
  *
  * char *name;
  * int dim;
  * char **s;
  */
 
-#define ND_CREATE_CONST_ARRAY
+#define ND_CREATE_CONST_ARRAY_S
 
 #ifndef TEST_BACKEND
 #include "icm_decl.c"
@@ -594,7 +599,42 @@ DBUG_VOID_RETURN;
     }
 }
 
-#undef ND_CREATE_CONST_ARRAY
+#undef ND_CREATE_CONST_ARRAY_S
+
+#ifndef TEST_BACKEND
+DBUG_VOID_RETURN;
+}
+#endif /* no TEST_BACKEND */
+
+/*
+ * ND_CREATE_CONST_ARRAY_A( name, length, dim, s0,..., sn)
+ *                        : generates a constant array out of arrays
+ *
+ * char *name;
+ * int length; // number of elements of the argument array (s0)
+ * int dim;
+ * char **s;
+ */
+
+#define ND_CREATE_CONST_ARRAY_A
+
+#ifndef TEST_BACKEND
+#include "icm_decl.c"
+#include "icm_args.c"
+#endif /* no TEST_BACKEND */
+
+#include "icm_comment.c"
+#include "icm_trace.c"
+
+{
+    int i;
+    for (i = 0; i < dim * length; i++) {
+        INDENT;
+        fprintf (outfile, "%s[%d]=%s[%d];\n", name, i, A[i / length], i % length);
+    }
+}
+
+#undef ND_CREATE_CONST_ARRAY_A
 
 #ifndef TEST_BACKEND
 DBUG_VOID_RETURN;
