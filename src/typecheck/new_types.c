@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.28  2002/09/09 11:57:41  dkr
+ * BuildApAssign() modified, BuildErrorAssign() added.
+ * Some DBUG_ASSERTs added.
+ *
  * Revision 3.27  2002/09/06 17:29:31  sbs
  * TC_poly added.
  *
@@ -4541,45 +4545,37 @@ static node *
 BuildApAssign (node *fundef, node *args, node *vardecs, node **new_vardecs)
 {
     node *assigns;
-    node *exprs, *ap;
+    node *ap;
+    node *tmp_id;
     ids *lhs;
+    ids *tmp_ids;
+    ntype *ret_type;
+    int i;
 
     DBUG_ENTER ("BuildApAssign");
 
-    exprs = Args2Exprs (args);
+    DBUG_ASSERT (((fundef != NULL) && (NODE_TYPE (fundef) == N_fundef)),
+                 "no fundef found!");
 
-    if (fundef != NULL) {
-        ntype *ret_type;
-        node *tmp_id;
-        ids *tmp_ids;
-        int i;
+    assigns = NULL;
+    lhs = NULL;
+    ret_type = FUNDEF_RET_TYPE (fundef);
+    i = 0;
+    while (vardecs != NULL) {
+        DBUG_ASSERT ((i < NTYPE_ARITY (ret_type)), "inconsistant application found");
 
-        DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef), "no N_fundef node found!");
+        tmp_id = BuildTmpId (PROD_MEMBER (ret_type, i), new_vardecs);
+        assigns = MakeAssign (MakeLet (tmp_id, Vardec2Ids (vardecs)), assigns);
 
-        assigns = NULL;
-        lhs = NULL;
-        ret_type = FUNDEF_RET_TYPE (fundef);
-        i = 0;
-        while (vardecs != NULL) {
-            DBUG_ASSERT ((i < NTYPE_ARITY (ret_type)), "inconsistant application found");
+        tmp_ids = DupId_Ids (tmp_id);
+        IDS_NEXT (tmp_ids) = lhs;
+        lhs = tmp_ids;
 
-            tmp_id = BuildTmpId (PROD_MEMBER (ret_type, i), new_vardecs);
-            assigns = MakeAssign (MakeLet (tmp_id, Vardec2Ids (vardecs)), assigns);
-
-            tmp_ids = DupId_Ids (tmp_id);
-            IDS_NEXT (tmp_ids) = lhs;
-            lhs = tmp_ids;
-
-            vardecs = VARDEC_NEXT (vardecs);
-        }
-
-        ap = MakeAp (StringCopy (FUNDEF_NAME (fundef)), NULL, exprs);
-        AP_FUNDEF (ap) = fundef;
-    } else {
-        assigns = NULL;
-        ap = MakePrf (F_type_error, exprs);
-        lhs = Vardecs2Ids (vardecs);
+        vardecs = VARDEC_NEXT (vardecs);
     }
+
+    ap = MakeAp (StringCopy (FUNDEF_NAME (fundef)), NULL, Args2Exprs (args));
+    AP_FUNDEF (ap) = fundef;
 
     assigns = MakeAssign (MakeLet (ap, lhs), assigns);
 
@@ -4587,8 +4583,24 @@ BuildApAssign (node *fundef, node *args, node *vardecs, node **new_vardecs)
 }
 
 static node *
-CreateWrapperCode (ntype *type, DFT_state *state, int lower, node *arg, node *args,
-                   node *vardecs, node **new_vardecs)
+BuildErrorAssign (char *funname, node *args, node *vardecs)
+{
+    node *assigns;
+
+    DBUG_ENTER ("BuildErrorAssign");
+
+    assigns
+      = MakeAssign (MakeLet (MakePrf (F_type_error, MakeExprs (MakeStr_Copy (funname),
+                                                               Args2Exprs (args))),
+                             Vardecs2Ids (vardecs)),
+                    NULL);
+
+    DBUG_RETURN (assigns);
+}
+
+static node *
+CreateWrapperCode (ntype *type, DFT_state *state, int lower, char *funname, node *arg,
+                   node *args, node *vardecs, node **new_vardecs)
 {
     node *assigns;
     int i;
@@ -4600,41 +4612,42 @@ CreateWrapperCode (ntype *type, DFT_state *state, int lower, node *arg, node *ar
     switch (TYGetConstr (type)) {
     case TC_fun:
         DBUG_ASSERT ((NTYPE_ARITY (type) == 1), "multipe FUN_IBASE found!");
-        assigns = CreateWrapperCode (FUN_IBASE (type, 0), state, lower, arg, args,
-                                     vardecs, new_vardecs);
+        assigns = CreateWrapperCode (FUN_IBASE (type, 0), state, lower, funname, arg,
+                                     args, vardecs, new_vardecs);
         break;
 
     case TC_ibase:
         if (IBASE_IARR (type) != NULL) {
-            assigns = CreateWrapperCode (IBASE_IARR (type), state, lower, arg, args,
-                                         vardecs, new_vardecs);
+            assigns = CreateWrapperCode (IBASE_IARR (type), state, lower, funname, arg,
+                                         args, vardecs, new_vardecs);
         } else {
             DBUG_ASSERT ((IBASE_GEN (type) != NULL),
                          "neither IBASE_IARR nor IBASE_GEN found!");
-            assigns = CreateWrapperCode (IBASE_GEN (type), state, 3, arg, args, vardecs,
-                                         new_vardecs);
+            assigns = CreateWrapperCode (IBASE_GEN (type), state, 3, funname, arg, args,
+                                         vardecs, new_vardecs);
         }
 
         if (IBASE_SCAL (type) != NULL) {
             assigns
               = BuildCondAssign (F_dim, arg, MakeNum (0),
-                                 CreateWrapperCode (IBASE_SCAL (type), state, 0, arg,
-                                                    args, vardecs, new_vardecs),
+                                 CreateWrapperCode (IBASE_SCAL (type), state, 0, funname,
+                                                    arg, args, vardecs, new_vardecs),
                                  assigns, new_vardecs);
         }
         break;
 
     case TC_iarr:
         DBUG_ASSERT ((IARR_GEN (type) != NULL), "IARR_GEN not found!");
-        assigns = CreateWrapperCode (IARR_GEN (type), state, 2, arg, args, vardecs,
-                                     new_vardecs);
+        assigns = CreateWrapperCode (IARR_GEN (type), state, 2, funname, arg, args,
+                                     vardecs, new_vardecs);
 
         for (i = NTYPE_ARITY (type) - 2; i >= 0; i--) {
             if (IARR_IDIM (type, i) != NULL) {
                 assigns
                   = BuildCondAssign (F_dim, arg, MakeNum (IDIM_DIM (IARR_IDIM (type, i))),
                                      CreateWrapperCode (IARR_IDIM (type, i), state, lower,
-                                                        arg, args, vardecs, new_vardecs),
+                                                        funname, arg, args, vardecs,
+                                                        new_vardecs),
                                      assigns, new_vardecs);
             }
         }
@@ -4642,8 +4655,8 @@ CreateWrapperCode (ntype *type, DFT_state *state, int lower, node *arg, node *ar
 
     case TC_idim:
         DBUG_ASSERT ((IDIM_GEN (type) != NULL), "IDIM_GEN not found!");
-        assigns = CreateWrapperCode (IDIM_GEN (type), state, 1, arg, args, vardecs,
-                                     new_vardecs);
+        assigns = CreateWrapperCode (IDIM_GEN (type), state, 1, funname, arg, args,
+                                     vardecs, new_vardecs);
 
         for (i = NTYPE_ARITY (type) - 2; i >= 0; i--) {
             if (IDIM_ISHAPE (type, i) != NULL) {
@@ -4651,8 +4664,8 @@ CreateWrapperCode (ntype *type, DFT_state *state, int lower, node *arg, node *ar
                   = BuildCondAssign (F_shape, arg,
                                      SHShape2Array (ISHAPE_SHAPE (IDIM_ISHAPE (type, i))),
                                      CreateWrapperCode (IDIM_ISHAPE (type, i), state,
-                                                        lower, arg, args, vardecs,
-                                                        new_vardecs),
+                                                        lower, funname, arg, args,
+                                                        vardecs, new_vardecs),
                                      assigns, new_vardecs);
             }
         }
@@ -4660,8 +4673,8 @@ CreateWrapperCode (ntype *type, DFT_state *state, int lower, node *arg, node *ar
 
     case TC_ishape:
         DBUG_ASSERT ((ISHAPE_GEN (type) != NULL), "ISHAPE_GEN not found!");
-        assigns = CreateWrapperCode (ISHAPE_GEN (type), state, 0, arg, args, vardecs,
-                                     new_vardecs);
+        assigns = CreateWrapperCode (ISHAPE_GEN (type), state, 0, funname, arg, args,
+                                     vardecs, new_vardecs);
         break;
 
     case TC_ires:
@@ -4674,7 +4687,7 @@ CreateWrapperCode (ntype *type, DFT_state *state, int lower, node *arg, node *ar
         }
 
         if (state->cnt_funs <= 0) {
-            assigns = BuildApAssign (NULL, args, vardecs, new_vardecs);
+            assigns = BuildErrorAssign (funname, args, vardecs);
         } else if (TYIsProd (IRES_TYPE (type))) {
             DFT_res *res;
             node *fundef;
@@ -4691,12 +4704,16 @@ CreateWrapperCode (ntype *type, DFT_state *state, int lower, node *arg, node *ar
                 fundef = res->deriveable;
             }
 
-            assigns = BuildApAssign (fundef, args, vardecs, new_vardecs);
+            if (fundef == NULL) {
+                assigns = BuildErrorAssign (funname, args, vardecs);
+            } else {
+                assigns = BuildApAssign (fundef, args, vardecs, new_vardecs);
+            }
 
             res = TYFreeDFT_res (res);
         } else {
-            assigns = CreateWrapperCode (IRES_TYPE (type), state, lower, ARG_NEXT (arg),
-                                         args, vardecs, new_vardecs);
+            assigns = CreateWrapperCode (IRES_TYPE (type), state, lower, funname,
+                                         ARG_NEXT (arg), args, vardecs, new_vardecs);
         }
 
         state = FreeDFT_state (state);
@@ -4727,11 +4744,13 @@ TYCreateWrapperCode (node *fundef, node *vardecs, node **new_vardecs)
              * pure TC_prod type (function with no arguments)!!
              *   -> fundef can be found in FUNDEF_IMPL (dirty hack!)
              */
+            DBUG_ASSERT ((FUNDEF_IMPL (fundef) != NULL), "FUNDEF_IMPL not found!");
             assigns = BuildApAssign (FUNDEF_IMPL (fundef), FUNDEF_ARGS (fundef), vardecs,
                                      new_vardecs);
         } else {
-            assigns = CreateWrapperCode (type, NULL, 0, FUNDEF_ARGS (fundef),
-                                         FUNDEF_ARGS (fundef), vardecs, new_vardecs);
+            assigns = CreateWrapperCode (type, NULL, 0, FUNDEF_NAME (fundef),
+                                         FUNDEF_ARGS (fundef), FUNDEF_ARGS (fundef),
+                                         vardecs, new_vardecs);
         }
     }
 
