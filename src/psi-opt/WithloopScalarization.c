@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.40  2004/07/19 19:06:24  sah
+ * fixed bug in INFO structure
+ *
  * Revision 1.39  2004/07/19 14:19:38  sah
  * switch to new INFO structure
  * PHASE I
@@ -209,20 +212,20 @@
  *
  *  Usage of arg_info:
  *
- *  - flag   : POSSIBLE  : WL nesting is transformable.
- *                         (Detected in phase PROBE)
- *  - linno  : PHASE     : Phase of the WithloopScalarization
- *                         (PROBE | WITHLOOPIFICATION| NORMGEN |
- *                          DISTRIBUTE | SCALARIZE)
- *  - node[3]: FUNDEF    : pointer to current fundef node,
- *                         needed to access vardecs
- *  - counter: PARTS     : Number of parts of the new MG-Withloop
- *                         (calculated in phase DISTRIBUTE)
- *  - node[0]: WITHID    : reference to the outer WL's withid
- *  - node[1]: WITHOP    : reference to the outer WL's withop,
- *                         needed to check if both WL's types match
- *  - varno  : DIMS      : used in PROBE to count the inner wls' indexscalars
- *  - node[2]: BLOCK     : reference to the surrounding block of a wl
+ *   POSSIBLE  : WL nesting is transformable.
+ *               (Detected in phase PROBE)
+ *   PHASE     : Phase of the WithloopScalarization
+ *               (PROBE | WITHLOOPIFICATION| NORMGEN |
+ *                DISTRIBUTE | SCALARIZE)
+ *   FUNDEF    : pointer to current fundef node,
+ *               needed to access vardecs
+ *   PARTS     : Number of parts of the new MG-Withloop
+ *               (calculated in phase DISTRIBUTE)
+ *   WITHID    : reference to the outer WL's withid
+ *   WITHOP    : reference to the outer WL's withop,
+ *               needed to check if both WL's types match
+ *   DIMS      : used in PROBE to count the inner wls' indexscalars
+ *   BLOCK     : reference to the surrounding block of a wl
  *
  *
  */
@@ -281,9 +284,9 @@ typedef struct CODE_T {
  */
 struct INFO {
     int possible;
-    int phase;
+    wls_phase_type phase;
     node *fundef;
-    wls_phase_type parts;
+    int parts;
     node *withid;
     node *withop;
     int dims;
