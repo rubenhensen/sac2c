@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/11/14 18:42:13  sbs
+ * bug when calling runlib eliminated (prefix lib was missing).
+ * Error happened to occur on MACOSX
+ *
  * Revision 3.3  2001/05/17 13:08:53  nmw
  * MALLOC/FREE replaced by Malloc/Free, using result of Free()
  *
@@ -599,7 +603,7 @@ CreateLibrary ()
                     tmp_dirname);
 
         if (config.ranlib[0] != '\0') {
-            SystemCall ("%s %s/%s.a", config.ranlib, tmp_dirname, modulename);
+            SystemCall ("%s %s/lib%s.a", config.ranlib, tmp_dirname, modulename);
         }
 
         GenLibStat ();
