@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2002/07/15 18:27:18  dkr
+ * bug fixed
+ *
  * Revision 3.3  2002/07/15 14:46:57  dkr
  * macros SAC_ND_PRF_... moved from sac_std.tagged.h to sac_prf.h
  *
@@ -41,8 +44,6 @@
 #ifndef _SAC_PRF_H_
 #define _SAC_PRF_H_
 
-#ifdef TAGGED_ARRAYS
-
 /******************************************************************************
  *
  * ICMs for primitive functions on scalars
@@ -57,6 +58,8 @@
 #define SAC_ND_MIN(a1, a2) ((a1) < (a2) ? (a1) : (a2))
 #define SAC_ND_MAX(a1, a2) ((a1) > (a2) ? (a1) : (a2))
 #define SAC_ND_ABS(a) ((a) < 0 ? (-(a)) : (a))
+
+#ifdef TAGGED_ARRAYS
 
 /******************************************************************************
  *
