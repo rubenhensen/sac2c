@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.22  2002/07/02 09:20:21  dkr
+ * DupNode_NT() added
+ *
  * Revision 3.21  2002/06/25 14:01:53  sbs
  * DupDot added.
  *
@@ -111,6 +114,7 @@ extern ids *DupId_Ids (node *arg_id);
  */
 extern node *DupIds_Id_NT (ids *arg_ids);
 extern node *DupId_NT (node *arg_id);
+extern node *DupNode_NT (node *arg_node);
 
 /*
  * Other functions for external use

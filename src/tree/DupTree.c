@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.64  2002/07/02 09:20:29  dkr
+ * DupNode_NT() added
+ *
  * Revision 3.63  2002/06/25 14:01:53  sbs
  * DupDot added.
  *
@@ -2736,6 +2739,33 @@ DupId_NT (node *arg_id)
     ID_NT_TAG (new_id) = CreateNtTag (ID_NAME (arg_id), ID_TYPE (arg_id));
 
     DBUG_RETURN (new_id);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *DupNode_NT( node *arg_node)
+ *
+ * Description:
+ *   Duplicates a node. Sets ID_NT_TAG for N_id nodes.
+ *
+ ******************************************************************************/
+
+node *
+DupNode_NT (node *arg_node)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DupNode_NT");
+
+    new_node = DupNode (arg_node);
+
+    if (NODE_TYPE (arg_node) == N_id) {
+        DBUG_ASSERT ((ID_TYPE (arg_node) != NULL), "NT_TAG: no type found!");
+        ID_NT_TAG (new_node) = CreateNtTag (ID_NAME (arg_node), ID_TYPE (arg_node));
+    }
+
+    DBUG_RETURN (new_node);
 }
 
 /******************************************************************************
