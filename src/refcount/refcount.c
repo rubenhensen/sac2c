@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.10  1999/11/02 14:30:47  sbs
+ * Now, the IVE-created ICM Index2Offset is refcounted the same way as user
+ * defined functions are! This makes sure, that the vector's refcount always
+ * can be decremented (cf. icm2c_std.c!).
+ *
  * Revision 2.9  1999/09/10 14:28:46  jhs
  * Hopefully I fixed all the problems with naive-refcounting disturbing
  * normal-refcounting.
@@ -1098,6 +1103,13 @@ RCloop (node *arg_node, node *arg_info)
                 do_on_ids = FALSE;
             }
 
+            /*
+             * SBS: here we disable naive refcounting!!! The reason for doing
+             * so is that the compilation of jfe's COPYREC wouldn't work!!
+             * DBUG_ASSERT(..., "var not found") would fail 8-(((
+             */
+            do_on_naive = FALSE;
+
             DBUG_PRINT ("RCi", ("rc %i; nrc %i", ref_dump[i], naive_ref_dump[i]));
             if (do_on_ids) {
 
@@ -1486,7 +1498,11 @@ RCicm (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("RCicm");
 
-    INFO_RC_PRF (arg_info) = arg_node;
+    if (strcmp (ICM_NAME (arg_node), "ND_KS_VECT2OFFSET") == 0) {
+        INFO_RC_PRF (arg_info) = NULL;
+    } else {
+        INFO_RC_PRF (arg_info) = arg_node;
+    }
     ICM_ARGS (arg_node) = Trav (ICM_ARGS (arg_node), arg_info);
     INFO_RC_PRF (arg_info) = NULL;
 
