@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.47  2002/10/29 20:45:53  dkr
+ * FreeOneTypes() modified
+ *
  * Revision 3.46  2002/10/16 11:42:10  sbs
  * OBJDEF_AVIS handling inserted.
  *
@@ -306,7 +309,7 @@ FreeOneTypes (types *fr)
         tmp = fr;
         fr = TYPES_NEXT (fr);
 
-        if (TYPES_DIM (tmp) > 0) {
+        if (TYPES_SHPSEG (tmp) != NULL) {
             TYPES_SHPSEG (tmp) = FreeShpseg (TYPES_SHPSEG (tmp));
         }
         TYPES_NAME (tmp) = Free (TYPES_NAME (tmp));
