@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.106  2004/10/19 14:03:25  sah
+ * added CreateIds
+ *
  * Revision 3.105  2004/10/19 11:51:34  ktr
  * Added FUNDEF_RETALIAS
  *
@@ -416,6 +419,24 @@ MakeIds (char *name, char *mod, statustype status)
     IDS_ATTRIB (tmp) = ST_regular;
 
     DBUG_RETURN (tmp);
+}
+
+ids *
+CreateIds (char *name, char *mod, statustype status, statustype attrib, int refcnt,
+           int naiverefcnt, ids *next)
+{
+    ids *result;
+
+    DBUG_ENTER ("CreateIds");
+
+    result = MakeIds (name, mod, status);
+
+    IDS_ATTRIB (result) = attrib;
+    IDS_REFCNT (result) = refcnt;
+    IDS_NAIVE_REFCNT (result) = naiverefcnt;
+    IDS_NEXT (result) = next;
+
+    DBUG_RETURN (result);
 }
 
 /*--------------------------------------------------------------------------*/

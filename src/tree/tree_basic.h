@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.229  2004/10/19 14:03:25  sah
+ * added CreateIds
+ *
  * Revision 3.228  2004/10/19 11:51:34  ktr
  * Added FUNDEF_RETALIAS
  *
@@ -718,6 +721,8 @@ extern types *MakeTypes (simpletype btype, int dim, shpseg *shpseg, char *name,
  */
 
 extern ids *MakeIds (char *name, char *mod, statustype status);
+extern ids *CreateIds (char *name, char *mod, statustype status, statustype attrib,
+                       int refcnt, int naiverefcnt, ids *next);
 
 extern ids *MakeIds_Copy (char *name);
 
