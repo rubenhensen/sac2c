@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.108  2004/11/22 21:10:09  ktr
+ * IMSOP 04
+ *
  * Revision 3.107  2004/11/20 17:25:31  sah
  * added some defines
  *
@@ -344,8 +347,8 @@ specific implementation of a function should remain with the source code.
 
 ============================================================================*/
 
-#ifndef _sac_tree_compound_h
-#define _sac_tree_compound_h
+#ifndef _SAC_TREE_COMPOUND_H_
+#define _SAC_TREE_COMPOUND_H_
 
 #include "types.h"
 #include "shape.h"
@@ -2837,4 +2840,4 @@ extern bool LinklistIsSubset (node *super, node *sub);
 
 #endif
 
-#endif /* _sac_tree_compound_h */
+#endif /* _SAC_TREE_COMPOUND_H_ */
