@@ -1,4 +1,6 @@
 Makefile
+RuntimeError.c
+RuntimeError.h
 compile.c
 compile.h
 icm.data
