@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.8  2005/01/17 08:52:41  mwe
+ * implementation continue...
+ *
  * Revision 1.7  2005/01/11 16:05:37  mwe
  * changes in todo-list :-)
  *
@@ -372,6 +375,35 @@ TryStaticDispatch (node *fundef, node *args, info *arg_info)
     DBUG_RETURN (fundef_res);
 }
 
+#if 0
+static
+bool ArgumentIsSpecializeable(ntype *type)
+{
+  bool result = TRUE;
+
+  DBUG_ENTER("ArgumentIsSpecializeable");
+
+  switch (global.spec_mode) {
+  case SS_aks: 
+    if (TYisAKV(type)) {
+      result = FALSE;
+    }
+    break;
+  case SS_akd:
+    if (TYisAKV(type) || TYisAKS(type)) {
+      result = FALSE;
+    }
+    break;
+  case SS_aud:
+      result = FALSE;
+    break;
+  default:
+    DBUG_ASSERT( (FALSE), "Unknown enumeration element! Incomplete switch statement!");
+  }
+
+  DBUG_RETURN(result);
+}
+#endif
 static bool
 ArgumentIsSpecializeable (ntype *type)
 {
@@ -381,17 +413,19 @@ ArgumentIsSpecializeable (ntype *type)
 
     switch (global.spec_mode) {
     case SS_aks:
-        if (TYisAKV (type)) {
-            result = FALSE;
-        }
+        result = TRUE;
         break;
     case SS_akd:
-        if (TYisAKV (type) || TYisAKS (type)) {
+        if (TYisAKS (type)) {
             result = FALSE;
         }
         break;
     case SS_aud:
-        result = FALSE;
+        if (TYisAKV (type)) {
+            result = TRUE;
+        } else {
+            result = FALSE;
+        }
         break;
     default:
         DBUG_ASSERT ((FALSE),
@@ -400,7 +434,6 @@ ArgumentIsSpecializeable (ntype *type)
 
     DBUG_RETURN (result);
 }
-
 static bool
 IsSpecializeable (node *fundef, node *args)
 {
@@ -718,11 +751,64 @@ GetBestFittingFun (node *fun1, node *fun2, node *args)
     DBUG_RETURN (result);
 }
 
+static bool
+IsFittingSignature (node *fundef, node *wrapper)
+{
+    bool result = TRUE;
+    node *wrapper_args, *fundef_args;
+
+    DBUG_ENTER ("IsFittingSignature");
+
+    wrapper_args = FUNDEF_ARGS (wrapper);
+    fundef_args = FUNDEF_ARGS (fundef);
+
+    while (NULL != wrapper_args) {
+        switch (TYcmpTypes (AVIS_TYPE (ARG_AVIS (fundef_args)),
+                            AVIS_TYPE (ARG_AVIS (wrapper_args)))) {
+
+        case TY_lt:
+        case TY_eq:
+            break;
+        case TY_hcs:
+        case TY_gt:
+            result = FALSE;
+            break;
+        default:
+            DBUG_ASSERT ((FALSE), "Different basetypes on same position");
+        }
+        wrapper_args = ARG_NEXT (wrapper_args);
+        fundef_args = ARG_NEXT (fundef_args);
+    }
+
+    DBUG_RETURN (result);
+}
+
 static node *
 GetWrapperFun (node *fundef)
 {
-    node *wrapper;
+    node *wrapper, *list;
     DBUG_ENTER ("GetWrapperFun");
+#if 0  
+  DBUG_ASSERT( (FUNDEF_FUNGROUP( fundef) != NULL), "No reference to fungroup found!");
+#endif
+    if (FUNDEF_FUNGROUP (fundef) != NULL) {
+        list = FUNGROUP_FUNLIST (FUNDEF_FUNGROUP (fundef));
+    } else {
+        list = NULL;
+    }
+    wrapper = NULL;
+
+    while (list != NULL) {
+
+        if ((FUNDEF_ISWRAPPERFUN (LINKLIST_LINK (list)))
+            && (IsFittingSignature (fundef, LINKLIST_LINK (list)))) {
+            /*
+             * function is wrapper function and signature fits to arguments
+             */
+            wrapper = LINKLIST_LINK (list);
+        }
+        list = LINKLIST_NEXT (list);
+    }
 
     DBUG_RETURN (wrapper);
 }
@@ -731,7 +817,7 @@ static node *
 TryToFindSpecializedFunction (node *fundef, node *args, info *arg_info)
 {
 
-    node *result = NULL;
+    node *tmp, *result = NULL;
 
     DBUG_ENTER ("TryToFindSpecializedFunction");
 
@@ -745,7 +831,13 @@ TryToFindSpecializedFunction (node *fundef, node *args, info *arg_info)
         result = TryStaticDispatch (fundef, args, arg_info);
     } else {
 
-        result = TryStaticDispatch (GetWrapperFun (fundef), args, arg_info);
+        tmp = GetWrapperFun (fundef);
+        if (tmp != NULL) {
+            /*
+             * wrapper function found
+             */
+            result = TryStaticDispatch (tmp, args, arg_info);
+        }
     }
 
     if (result == NULL) {
@@ -757,16 +849,18 @@ TryToFindSpecializedFunction (node *fundef, node *args, info *arg_info)
          * try to find a more special function in FUNDEF_SPECIALIZEDFUNS
          */
 
-        funs = FUNGROUP_FUNLIST (FUNDEF_FUNGROUP (fundef));
-        INFO_TUP_BESTFITTINGFUN (arg_info) = fundef;
+        if (NULL != FUNDEF_FUNGROUP (fundef)) {
+            funs = FUNGROUP_FUNLIST (FUNDEF_FUNGROUP (fundef));
+            INFO_TUP_BESTFITTINGFUN (arg_info) = fundef;
 
-        while (funs != NULL) {
-            INFO_TUP_BESTFITTINGFUN (arg_info)
-              = GetBestFittingFun (LINKLIST_LINK (funs),
-                                   INFO_TUP_BESTFITTINGFUN (arg_info), args);
-            funs = LINKLIST_NEXT (funs);
+            while (funs != NULL) {
+                INFO_TUP_BESTFITTINGFUN (arg_info)
+                  = GetBestFittingFun (LINKLIST_LINK (funs),
+                                       INFO_TUP_BESTFITTINGFUN (arg_info), args);
+                funs = LINKLIST_NEXT (funs);
+            }
+            result = INFO_TUP_BESTFITTINGFUN (arg_info);
         }
-        result = INFO_TUP_BESTFITTINGFUN (arg_info);
     }
 
     DBUG_RETURN (result);
@@ -1269,7 +1363,9 @@ TUPids (node *arg_node, info *arg_info)
 
     INFO_TUP_TYPECOUNTER (arg_info) = INFO_TUP_TYPECOUNTER (arg_info) + 1;
 
-    IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);
+    if (IDS_NEXT (arg_node) != NULL) {
+        IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -1356,6 +1452,10 @@ TUPid (node *arg_node, info *arg_info)
     type = AVIS_TYPE (ID_AVIS (arg_node));
 
     DBUG_ASSERT ((type != NULL), "Missing type information");
+
+    if (!(TYisProd (type))) {
+        type = TYmakeProductType (1, type);
+    }
 
     INFO_TUP_TYPE (arg_info) = TYcopyType (type);
 
@@ -1448,6 +1548,14 @@ TUPprf (node *arg_node, info *arg_info)
 
     TYfreeType (args);
     INFO_TUP_TYPE (arg_info) = res;
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+TUPfuncond (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("TUPfuncond");
 
     DBUG_RETURN (arg_node);
 }

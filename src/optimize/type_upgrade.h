@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2005/01/17 08:52:41  mwe
+ * implementation continue...
+ *
  * Revision 1.3  2005/01/11 15:21:11  mwe
  * ongoing implementation
  *
@@ -34,6 +37,7 @@ extern node *TUPmodarray (node *arg_node, info *arg_info);
 extern node *TUPgenarray (node *arg_node, info *arg_info);
 extern node *TUPnum (node *arg_node, info *arg_info);
 extern node *TUPdouble (node *arg_node, info *arg_info);
+extern node *TUPfloat (node *arg_node, info *arg_info);
 extern node *TUPchar (node *arg_node, info *arg_info);
 extern node *TUPbool (node *arg_node, info *arg_info);
 extern node *TUPprf (node *arg_node, info *arg_info);
