@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.33  1998/05/13 09:24:04  dkr
+ * added new with-loop ICMs
+ *
  * Revision 1.32  1998/05/13 07:15:14  cg
  * added ICMs for multi-threaded execution
  *
@@ -481,49 +484,49 @@ ICM_END( ND_KS_VECT2OFFSET, (name, dim, dims, s))
 
 #if defined(WL_NONFOLD_BEGIN) || defined(ICM_ALL)
 ICM_DEF( WL_NONFOLD_BEGIN, TRACE_UDF)
-  ICM_STR(array)
+  ICM_STR(target)
   ICM_STR(idx_vec)
   ICM_INT(dims)
-  ICM_VAR(dims, idx_scalar)
-ICM_END( WL_NONFOLD_BEGIN, (array, idx_vec, dims, idx_scalar))
+  ICM_VAR( (3*dims), args)
+ICM_END( WL_NONFOLD_BEGIN, (target, idx_vec, dims, args))
 #endif
 
 #if defined(WL_FOLD_BEGIN) || defined(ICM_ALL)
 ICM_DEF( WL_FOLD_BEGIN, TRACE_UDF)
-  ICM_STR(array)
+  ICM_STR(target)
   ICM_STR(idx_vec)
   ICM_INT(dims)
-  ICM_VAR(dims, idx_scalar)
-ICM_END( WL_FOLD_BEGIN, (array, idx_vec, dims, idx_scalar))
+  ICM_VAR( (3*dims), args)
+ICM_END( WL_FOLD_BEGIN, (target, idx_vec, dims, args))
 #endif
 
 #if defined(WL_END) || defined(ICM_ALL)
 ICM_DEF( WL_END, TRACE_UDF)
-  ICM_STR(array)
+  ICM_STR(target)
   ICM_STR(idx_vec)
   ICM_INT(dims)
-  ICM_VAR(dims, idx_scalar)
-ICM_END( WL_END, (array, idx_vec, dims, idx_scalar))
+  ICM_VAR( (3*dims), args)
+ICM_END( WL_END, (target, idx_vec, dims, args))
 #endif
 
 #if defined(WL_ASSIGN) || defined(ICM_ALL)
 ICM_DEF( WL_ASSIGN, TRACE_UDF)
   ICM_STR(expr)
-  ICM_STR(array)
+  ICM_STR(target)
   ICM_STR(idx_vec)
   ICM_INT(dims)
   ICM_VAR(dims, idx_scalar)
-ICM_END( WL_ASSIGN, (expr, array, idx_vec, dims, idx_scalar))
+ICM_END( WL_ASSIGN, (expr, target, idx_vec, dims, idx_scalar))
 #endif
 
 #if defined(WL_FOLD) || defined(ICM_ALL)
 ICM_DEF( WL_FOLD, TRACE_UDF)
   ICM_STR(expr)
-  ICM_STR(array)
+  ICM_STR(target)
   ICM_STR(idx_vec)
   ICM_INT(dims)
   ICM_VAR(dims, idx_scalar)
-ICM_END( WL_FOLD, (expr, array, idx_vec, dims, idx_scalar))
+ICM_END( WL_FOLD, (expr, target, idx_vec, dims, idx_scalar))
 #endif
 
 
@@ -591,4 +594,3 @@ ICM_DEF( MT_SPMD_PRESET, NO_TRACE)
   ICM_VAR((2*narg), vararg)
 ICM_END( MT_SPMD_PRESET, (name, narg, vararg))
 #endif
-
