@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.15  1998/07/16 15:56:27  srs
+ * initialized INFO_UNR_FUNDEF
+ *
  * Revision 1.14  1998/05/15 14:42:45  srs
  * removed NEWTREE
  * added WL unrolling (UNRNwith() UNRassign())
@@ -134,7 +137,10 @@ UNRfundef (node *arg_node, node *arg_info)
     DBUG_PRINT ("UNR", ("Unroll in function: %s", arg_node->info.types->id));
     LEVEL = 1;
 
-    if (NULL != FUNDEF_BODY (arg_node))
+    /* needed to access the vardec in DoUnrollFold() in file  WLUnroll.c */
+    INFO_UNR_FUNDEF (arg_info) = arg_node;
+
+    if (FUNDEF_BODY (arg_node))
         FUNDEF_INSTR (arg_node) = OPTTrav (FUNDEF_INSTR (arg_node), arg_info, arg_node);
 
     FUNDEF_NEXT (arg_node) = OPTTrav (FUNDEF_NEXT (arg_node), arg_info, arg_node);
