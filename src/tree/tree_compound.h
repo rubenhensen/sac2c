@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.46  2001/07/18 12:57:45  cg
+ * Function ExprsConcat renamed to AppendExprs.
+ *
  * Revision 3.45  2001/07/17 15:12:12  cg
  * Some compound macros moved from tree_basic.h to tree_compound.h
  *
@@ -1157,14 +1160,14 @@ extern node *AppendAssignIcm (node *assign, char *name, node *args);
 /******************************************************************************
  *
  * function:
- *   node *ExprsConcat( node *exprs1, node *exprs2)
+ *   node *AppendExprs( node *exprs1, node *exprs2)
  *
  * description:
  *   This function concatenates two N_exprs chains of nodes.
  *
  ******************************************************************************/
 
-extern node *ExprsConcat (node *exprs1, node *exprs2);
+extern node *AppendExprs (node *exprs1, node *exprs2);
 
 /******************************************************************************
  *

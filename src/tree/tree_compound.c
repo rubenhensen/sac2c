@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.42  2001/07/18 12:57:45  cg
+ * Function ExprsConcat renamed to AppendExprs.
+ *
  * Revision 3.41  2001/07/13 13:23:41  cg
  * DBUG tags brushed.
  *
@@ -1538,6 +1541,11 @@ AppendTypedef (node *tdef_chain, node *tdef)
 
     DBUG_ENTER ("AppendTypedef");
 
+    DBUG_ASSERT (((tdef_chain == NULL) || (NODE_TYPE (tdef_chain) == N_typedef)),
+                 ("First argument of AppendTypedef() has wrong node type."));
+    DBUG_ASSERT (((tdef == NULL) || (NODE_TYPE (tdef) == N_typedef)),
+                 ("Second argument of AppendTypedef() has wrong node type."));
+
     APPEND (ret, node *, TYPEDEF, tdef_chain, tdef);
 
     DBUG_RETURN (ret);
@@ -1587,6 +1595,11 @@ AppendObjdef (node *objdef_chain, node *objdef)
     node *ret;
 
     DBUG_ENTER ("AppendObjdef");
+
+    DBUG_ASSERT (((objdef_chain == NULL) || (NODE_TYPE (objdef_chain) == N_objdef)),
+                 ("First argument of AppendObjdef() has wrong node type."));
+    DBUG_ASSERT (((objdef == NULL) || (NODE_TYPE (objdef) == N_objdef)),
+                 ("Second argument of AppendObjdef() has wrong node type."));
 
     APPEND (ret, node *, OBJDEF, objdef_chain, objdef);
 
@@ -1702,6 +1715,11 @@ AppendFundef (node *fundef_chain, node *fundef)
 
     DBUG_ENTER ("AppendFundef");
 
+    DBUG_ASSERT (((fundef_chain == NULL) || (NODE_TYPE (fundef_chain) == N_fundef)),
+                 ("First argument of AppendFundef() has wrong node type."));
+    DBUG_ASSERT (((fundef == NULL) || (NODE_TYPE (fundef) == N_fundef)),
+                 ("Second argument of AppendFundef() has wrong node type."));
+
     APPEND (ret, node *, FUNDEF, fundef_chain, fundef);
 
     DBUG_RETURN (ret);
@@ -1727,36 +1745,23 @@ AppendFundef (node *fundef_chain, node *fundef)
  * description:
  *   Appends 'vardec' to 'vardec_chain' and returns the new chain.
  *
- * remark:
- *   In order to use this function in Compile() it can handle mixed chains
- *   containing N_vardec- *and* N_assign-nodes!
- *
  ******************************************************************************/
 
 node *
 AppendVardec (node *vardec_chain, node *vardec)
 {
-    node *tmp;
+    node *ret;
 
     DBUG_ENTER ("AppendVardec");
 
-    tmp = vardec_chain;
-    if (tmp != NULL) {
-        while (((NODE_TYPE (tmp) == N_assign) ? (ASSIGN_NEXT (tmp)) : (VARDEC_NEXT (tmp)))
-               != NULL) {
-            tmp
-              = (NODE_TYPE (tmp) == N_assign) ? (ASSIGN_NEXT (tmp)) : (VARDEC_NEXT (tmp));
-        }
-        if (NODE_TYPE (tmp) == N_assign) {
-            ASSIGN_NEXT (tmp) = vardec;
-        } else {
-            VARDEC_NEXT (tmp) = vardec;
-        }
-    } else {
-        vardec_chain = vardec;
-    }
+    DBUG_ASSERT (((vardec_chain == NULL) || (NODE_TYPE (vardec_chain) == N_vardec)),
+                 ("First argument of AppendVardec() has wrong node type."));
+    DBUG_ASSERT (((vardec == NULL) || (NODE_TYPE (vardec) == N_vardec)),
+                 ("Second argument of AppendVardec() has wrong node type."));
 
-    DBUG_RETURN (vardec_chain);
+    APPEND (ret, node *, TYPEDEF, vardec_chain, vardec);
+
+    DBUG_RETURN (ret);
 }
 
 /******************************************************************************
@@ -2148,6 +2153,11 @@ AppendAssign (node *assign_chain, node *assign)
 
     DBUG_ENTER ("AppendAssign");
 
+    DBUG_ASSERT (((assign_chain == NULL) || (NODE_TYPE (assign_chain) == N_assign)),
+                 ("First argument of AppendAssign() has wrong node type."));
+    DBUG_ASSERT (((assign == NULL) || (NODE_TYPE (assign) == N_assign)),
+                 ("Second argument of AppendAssign() has wrong node type."));
+
     if ((assign != NULL) && (assign_chain != NULL)) {
         if (NODE_TYPE (assign_chain) == N_empty) {
             /* empty block */
@@ -2340,7 +2350,7 @@ AppendAssignIcm (node *assign, char *name, node *args)
 /******************************************************************************
  *
  * function:
- *   node *ExprsConcat( node *exprs1, node *exprs2)
+ *   node *AppendExprs( node *exprs1, node *exprs2)
  *
  * description:
  *   This function concatenates two N_exprs chains of nodes.
@@ -2348,13 +2358,18 @@ AppendAssignIcm (node *assign, char *name, node *args)
  ******************************************************************************/
 
 node *
-ExprsConcat (node *exprs1, node *exprs2)
+AppendExprs (node *exprs_chain, node *exprs)
 {
     node *ret;
 
-    DBUG_ENTER ("ExprsConcat");
+    DBUG_ENTER ("AppendExprs");
 
-    APPEND (ret, node *, EXPRS, exprs1, exprs2);
+    DBUG_ASSERT (((exprs_chain == NULL) || (NODE_TYPE (exprs_chain) == N_exprs)),
+                 ("First argument of AppendExprs() has wrong node type."));
+    DBUG_ASSERT (((exprs == NULL) || (NODE_TYPE (exprs) == N_exprs)),
+                 ("Second argument of AppendExprs() has wrong node type."));
+
+    APPEND (ret, node *, EXPRS, exprs_chain, exprs);
 
     DBUG_RETURN (ret);
 }
@@ -2966,7 +2981,7 @@ CombineExprs (node *first, node *second)
         if (NODE_TYPE (first) != N_exprs) {
             result = MakeExprs (first, second);
         } else {
-            result = ExprsConcat (first, second);
+            result = AppendExprs (first, second);
         }
     } else if (second != NULL) {
         if (NODE_TYPE (second) != N_exprs) {
