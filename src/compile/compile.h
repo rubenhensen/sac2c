@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.17  2004/11/26 18:14:40  ktr
+ * added some comments.
+ *
  * Revision 3.16  2004/11/26 17:35:58  ktr
  * COMPILES!!!
  *
@@ -93,9 +96,19 @@ extern node *COMPsync (node *arg_node, info *arg_info);
 
 /******************************************************************************
  *
+ * NODES WHICH MUST NOT BE TRAVERSED
+ *
+ * N_icm: Using TRAVsons, COMPid would be applied to ICM_ARG1.
+ *
+ *****************************************************************************/
+
+/******************************************************************************
+ *
  * NODES WHICH RESULT IN A TRAVERROR
  *
- * N_cast
+ * N_cast: Is already eliminated.
+ * N_while: Is already eliminated.
+ * N_funcond: Does only exist in SSA form.
  *
  *****************************************************************************/
 
