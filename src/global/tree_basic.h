@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.29  1999/06/17 16:59:36  jhs
+ * Added INFO_SPMDT_RESULT.
+ *
  * Revision 2.28  1999/06/16 10:35:27  jhs
  * Added INFO_SPMDT_FIRSTOUT.
  *
@@ -2195,6 +2198,7 @@ extern node *MakePragma ();
  ***    int        INFO_SPMD_MT
  ***
  ***    DFMmask_t  INFO_SPMDT_FIRSTOUT
+ ***    DFMmask_t  INFO_SPMDT_RESULT
  ***
  ***  when used in tile_size_inference.c :
  ***
@@ -2314,6 +2318,7 @@ extern node *MakeInfo ();
 #define INFO_SPMD_MT(n) (n->counter)
 
 #define INFO_SPMDT_FIRSTOUT(n) (n->dfmask[0])
+#define INFO_SPMDT_RESULT(n) (n->dfmask[1])
 
 /* precompile */
 #define INFO_PREC_MODUL(n) (n->node[0])
