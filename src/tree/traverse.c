@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2000/02/17 16:21:13  cg
+ * Added new tree traversal function tables fun2lac_tab and ai_tab.
+ *
  * Revision 1.6  2000/02/04 14:46:53  jhs
  * Added rfin_tab and it's functions.
  * Added INFO_RFIN_xxx.
@@ -181,6 +184,8 @@
 #include "new_typecheck.h"
 #include "multithread.h"
 #include "lac2fun.h"
+#include "fun2lac.h"
+#include "adjust_ids.h"
 #include "schedule_init.h"
 #include "blocks_init.h"
 #include "repfuns_init.h"
@@ -896,6 +901,28 @@ static funtab rfin_tab_rec = {{
                               NULL,
                               NULL};
 funtab *rfin_tab = &rfin_tab_rec;
+
+/*
+ *  (65) fun2lac_tab
+ */
+static funtab fun2lac_tab_rec = {{
+#define NIFfun2lac(it_fun2lac) it_fun2lac
+#include "node_info.mac"
+                                 },
+                                 NULL,
+                                 NULL};
+funtab *fun2lac_tab = &fun2lac_tab_rec;
+
+/*
+ *  (66) ai_tab
+ */
+static funtab ai_tab_rec = {{
+#define NIFai(it_ai) it_ai
+#include "node_info.mac"
+                            },
+                            NULL,
+                            NULL};
+funtab *ai_tab = &ai_tab_rec;
 
 /*
  *  nnode

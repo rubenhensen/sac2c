@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2000/02/17 16:21:13  cg
+ * Added new tree traversal function tables fun2lac_tab and ai_tab.
+ *
  * Revision 1.5  2000/02/04 14:46:53  jhs
  * Added rfin_tab and it's functions.
  * Added INFO_RFIN_xxx.
@@ -120,6 +123,8 @@ extern funtab *muth_tab;
 extern funtab *schin_tab;
 extern funtab *blkin_tab;
 extern funtab *rfin_tab;
+extern funtab *fun2lac_tab;
+extern funtab *ai_tab;
 
 extern int nnode[];
 
