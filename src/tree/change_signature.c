@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2004/11/26 16:20:32  cg
+ * code brushed
+ *
  * Revision 1.10  2004/11/07 18:08:26  sah
  * disabled LINKMOD in NEW_AST mode
  *
@@ -51,23 +54,207 @@
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
-#include "internal_lib.h"
 #include "dbug.h"
-#include "globals.h"
 #include "free.h"
 #include "DupTree.h"
-#include "optimize.h"
-
-/* internal helper functions */
-static node *CSFreeApNarg (node *exprs, int actpos, int freepos);
-static node *CSFreeFundefNarg (node *args, int actpos, int freepos);
-static ids *CSFreeApNres (ids *idslist, int actpos, int freepos);
-static types *CSFreeFundefNtype (types *typelist, int actpos, int freepos);
 
 /******************************************************************************
  *
  * function:
- *   node *CSRemoveArg(node *fundef,
+ *   static node *FreeApNarg(node *exprs, int actpos, int freepos)
+ *
+ * description:
+ *   recursive traversal of exprs list of
+ *   args to free the arg in position freepos.
+ *****************************************************************************/
+
+static node *
+FreeApNarg (node *exprs, int actpos, int freepos)
+{
+    node *tmp;
+
+    DBUG_ENTER ("FreeApNarg");
+
+    DBUG_ASSERT ((exprs != NULL), "unexpected end of exprs-list");
+
+    if (actpos == freepos) {
+        tmp = exprs;
+        exprs = EXPRS_NEXT (exprs);
+
+        /* free exprs-node and expression */
+        FREEdoFreeNode (tmp);
+    } else {
+        EXPRS_NEXT (exprs) = FreeApNarg (EXPRS_NEXT (exprs), actpos + 1, freepos);
+    }
+
+    DBUG_RETURN (exprs);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   static node *FreeFundefNarg(node *args, int actpos, int freepos)
+ *
+ * description:
+ *   recursive traversal of args list of
+ *   fundef to free the arg at freepos..
+ *****************************************************************************/
+
+static node *
+FreeFundefNarg (node *args, int actpos, int freepos)
+{
+    node *tmp;
+
+    DBUG_ENTER ("FreeFundefNarg");
+
+    DBUG_ASSERT ((args != NULL), "unexpected end of args-list");
+
+    if (actpos == freepos) {
+        tmp = args;
+        args = ARG_NEXT (args);
+
+        /* free arg-node */
+        FREEdoFreeNode (tmp);
+    } else {
+        ARG_NEXT (args) = FreeFundefNarg (ARG_NEXT (args), actpos + 1, freepos);
+    }
+
+    DBUG_RETURN (args);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   static node *FreeApNres(node *exprs, int actpos, int freepos)
+ *
+ * description:
+ *   recurive traversal of ids list of
+ *   results to free the result in position freepos.
+ *****************************************************************************/
+
+static node *
+FreeApNres (node *ids, int actpos, int freepos)
+{
+    node *tmp;
+
+    DBUG_ENTER ("FreeApNres");
+
+    DBUG_ASSERT ((ids != NULL), "unexpected end of ids-list");
+
+    if (actpos == freepos) {
+        tmp = ids;
+        ids = IDS_NEXT (ids);
+
+        /* free arg-node */
+        FREEdoFreeNode (tmp);
+    } else {
+        IDS_NEXT (ids) = FreeApNres (IDS_NEXT (ids), actpos + 1, freepos);
+    }
+
+    DBUG_RETURN (ids);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   static node *FreeFundefNret(node *ret, int actpos, int freepos)
+ *
+ * description:
+ *   recurive traversal of ret list of
+ *   results to free the result in position freepos.
+ *****************************************************************************/
+
+static node *
+FreeFundefNret (node *ret, int actpos, int freepos)
+{
+    node *tmp;
+
+    DBUG_ENTER ("FreeFundefNret");
+
+    DBUG_ASSERT ((ret != NULL), "unexpected end of ret-list");
+
+    if (actpos == freepos) {
+        tmp = ret;
+        ret = RET_NEXT (ret);
+
+        /* free arg-node */
+        FREEdoFreeNode (tmp);
+    } else {
+        RET_NEXT (ret) = FreeFundefNret (RET_NEXT (ret), actpos + 1, freepos);
+    }
+
+    DBUG_RETURN (ret);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   static node *FreeFundefNretExpr(node *ret, int actpos, int freepos)
+ *
+ * description:
+ *   recurive traversal of return expressions list of
+ *   results to free the result in position freepos.
+ *****************************************************************************/
+
+static node *
+FreeFundefNretExpr (node *exprs, int actpos, int freepos)
+{
+    node *tmp;
+
+    DBUG_ENTER ("FreeFundefNretExpr");
+
+    DBUG_ASSERT ((exprs != NULL), "unexpected end of ret-list");
+
+    if (actpos == freepos) {
+        tmp = exprs;
+        exprs = RET_NEXT (exprs);
+
+        /* free arg-node */
+        FREEdoFreeNode (tmp);
+    } else {
+        EXPRS_NEXT (exprs) = FreeFundefNretExpr (EXPRS_NEXT (exprs), actpos + 1, freepos);
+    }
+
+    DBUG_RETURN (exprs);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   static node *FreeFundefNtype(types *typelist, int actpos, int freepos)
+ *
+ * description:
+ *   recurive traversal of type list of
+ *   results to free the type in position freepos.
+ *****************************************************************************/
+
+static types *
+FreeFundefNtype (types *typelist, int actpos, int freepos)
+{
+    types *tmp;
+
+    DBUG_ENTER ("FreeFundefNtype");
+
+    DBUG_ASSERT ((typelist != NULL), "unexpected end of type-list");
+
+    if (actpos == freepos) {
+        tmp = typelist;
+        typelist = TYPES_NEXT (typelist);
+
+        /* free type */
+        FREEfreeOneTypes (tmp);
+    } else {
+        TYPES_NEXT (typelist)
+          = FreeFundefNtype (TYPES_NEXT (typelist), actpos + 1, freepos);
+    }
+
+    DBUG_RETURN (typelist);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *CSremoveArg(node *fundef,
  *                     node *arg,
  *                     nodelist *letlist,
  *                     bool freearg)
@@ -80,14 +267,15 @@ static types *CSFreeFundefNtype (types *typelist, int actpos, int freepos);
  *   freearg to FALSE and remove the arg on your own.
  *
  ******************************************************************************/
+
 node *
-CSRemoveArg (node *fundef, node *arg, nodelist *letlist, bool freearg)
+CSremoveArg (node *fundef, node *arg, nodelist *letlist, bool freearg)
 {
     node *funap;
     node *tmp;
     int position;
 
-    DBUG_ENTER ("CSRemoveArg");
+    DBUG_ENTER ("CSremoveArg");
 
     /* get position in arg list */
     position = 0;
@@ -103,12 +291,12 @@ CSRemoveArg (node *fundef, node *arg, nodelist *letlist, bool freearg)
 
     DBUG_ASSERT ((position > 0), "given argument not found in fundef");
 
-    if (letlist != NULL) {
+    while (letlist != NULL) {
         DBUG_PRINT ("CS",
                     ("remove parameter %s in position %d", ARG_NAME (arg), position));
 
         /* adjust the first given function application */
-        DBUG_ASSERT ((NODELIST_NODE (letlist) != NULL), "no node in nodlist");
+        DBUG_ASSERT ((NODELIST_NODE (letlist) != NULL), "no node in nodelist");
         DBUG_ASSERT ((NODE_TYPE (NODELIST_NODE (letlist)) == N_let),
                      "non let node in nodelist");
 
@@ -117,17 +305,16 @@ CSRemoveArg (node *fundef, node *arg, nodelist *letlist, bool freearg)
         DBUG_ASSERT ((NODE_TYPE (funap) == N_ap), "no function application in let");
         DBUG_ASSERT ((AP_FUNDEF (funap) == fundef), "application of different fundef");
 
-        AP_ARGS (funap) = CSFreeApNarg (AP_ARGS (funap), 1, position);
+        AP_ARGS (funap) = FreeApNarg (AP_ARGS (funap), 1, position);
 
-        /* traverse to next function application */
-        fundef = CSRemoveArg (fundef, arg, NODELIST_NEXT (letlist), freearg);
+        /* continue with next function application */
+        letlist = NODELIST_NEXT (letlist);
+    }
 
-    } else {
-        /* no more adjustments - remove arg from fundef if flag is set */
-        DBUG_PRINT ("CS", ("remove arg %s in position %d", ARG_NAME (arg), position));
-        if (freearg) {
-            FUNDEF_ARGS (fundef) = CSFreeFundefNarg (FUNDEF_ARGS (fundef), 1, position);
-        }
+    /* no more adjustments - remove arg from fundef if flag is set */
+    DBUG_PRINT ("CS", ("remove arg %s in position %d", ARG_NAME (arg), position));
+    if (freearg) {
+        FUNDEF_ARGS (fundef) = FreeFundefNarg (FUNDEF_ARGS (fundef), 1, position);
     }
 
     DBUG_RETURN (fundef);
@@ -136,7 +323,7 @@ CSRemoveArg (node *fundef, node *arg, nodelist *letlist, bool freearg)
 /******************************************************************************
  *
  * function:
- *   node *CSRemoveResult(node *fundef,
+ *   node *CSremoveResult(node *fundef,
  *                        int position,
  *                        nodelist *letlist)
  *
@@ -149,19 +336,16 @@ CSRemoveArg (node *fundef, node *arg, nodelist *letlist, bool freearg)
  *   ids on your own.
  *
  *****************************************************************************/
+
 node *
-CSRemoveResult (node *fundef, int position, nodelist *letlist)
+CSremoveResult (node *fundef, int position, nodelist *letlist)
 {
-    char *keep_name, *keep_mod;
-#ifndef NEW_AST
-    char *keep_cmod;
-#endif
-    statustype keep_status, keep_attrib;
+    DBUG_ENTER ("CSremoveResult");
 
-    DBUG_ENTER ("CSRemoveResult");
-
-    if (letlist != NULL) {
-        /* adjust the first given function application */
+    while (letlist != NULL) {
+        /*
+         * adjust the first given function application
+         */
         DBUG_ASSERT ((NODELIST_NODE (letlist) != NULL), "no node in nodlist");
         DBUG_ASSERT ((NODE_TYPE (NODELIST_NODE (letlist)) == N_let),
                      "non let node in nodelist");
@@ -172,172 +356,45 @@ CSRemoveResult (node *fundef, int position, nodelist *letlist)
                      "application of different fundef");
 
         LET_IDS (NODELIST_NODE (letlist))
-          = CSFreeApNres (LET_IDS (NODELIST_NODE (letlist)), 1, position);
+          = FreeApNres (LET_IDS (NODELIST_NODE (letlist)), 1, position);
 
-        /* traverse to next function application */
-        fundef = CSRemoveResult (fundef, position, NODELIST_NEXT (letlist));
-    } else {
-        /* no more adjustments - remove result from return statement */
-        DBUG_ASSERT ((FUNDEF_RETURN (fundef) != NULL), "no return statement in fundef");
-        RETURN_EXPRS (FUNDEF_RETURN (fundef))
-          = CSFreeApNarg (RETURN_EXPRS (FUNDEF_RETURN (fundef)), 1, position);
-
-        /* remove corresponding types entry - first save fundef information */
-        keep_name = FUNDEF_NAME (fundef);
-        keep_mod = FUNDEF_MOD (fundef);
-#ifndef NEW_AST
-        keep_cmod = FUNDEF_LINKMOD (fundef);
-#endif
-        keep_status = FUNDEF_STATUS (fundef);
-        keep_attrib = FUNDEF_ATTRIB (fundef);
-
-        FUNDEF_TYPES (fundef) = CSFreeFundefNtype (FUNDEF_TYPES (fundef), 1, position);
-
-        if (FUNDEF_TYPES (fundef) == NULL) {
-            FUNDEF_TYPES (fundef) = MakeTypes1 (T_void);
-        }
-
-        /* restore fundef information */
-        FUNDEF_NAME (fundef) = keep_name;
-        FUNDEF_MOD (fundef) = keep_mod;
-#ifndef NEW_AST
-        FUNDEF_LINKMOD (fundef) = keep_cmod;
-#endif
-        FUNDEF_STATUS (fundef) = keep_status;
-        FUNDEF_ATTRIB (fundef) = keep_attrib;
+        letlist = NODELIST_NEXT (letlist);
     }
+
+    /*
+     * no more adjustments - remove result from return statement
+     */
+    DBUG_ASSERT ((FUNDEF_RETURN (fundef) != NULL), "no return statement in fundef");
+
+    RETURN_EXPRS (FUNDEF_RETURN (fundef))
+      = FreeFundefNretExpr (RETURN_EXPRS (FUNDEF_RETURN (fundef)), 1, position);
+
+    /*
+     * remove result from old list of return types.
+     */
+    if (FUNDEF_TYPES (fundef) != NULL) {
+        FUNDEF_TYPES (fundef) = FreeFundefNtype (FUNDEF_TYPES (fundef), 1, position);
+
+        /*
+         * Maybe, we have eliminated the very last return type.
+         */
+        if (FUNDEF_TYPES (fundef) == NULL) {
+            FUNDEF_TYPES (fundef) = TBmakeTypes1 (T_void);
+        }
+    }
+
+    /*
+     * Remove return list entry.
+     */
+    FUNDEF_RETS (fundef) = FreeFundefNret (FUNDEF_RETS (fundef), 1, position);
+
     DBUG_RETURN (fundef);
 }
 
 /******************************************************************************
  *
  * function:
- *   static node *CSFreeApNarg(node *exprs, int actpos, int freepos)
- *
- * description:
- *   recurive traversal of exprs list of
- *   args to free the arg in position freepos.
- *****************************************************************************/
-static node *
-CSFreeApNarg (node *exprs, int actpos, int freepos)
-{
-    node *tmp;
-
-    DBUG_ENTER ("CSFreeApNarg");
-
-    DBUG_ASSERT ((exprs != NULL), "unexpected end of exprs-list");
-
-    if (actpos == freepos) {
-        tmp = exprs;
-        exprs = EXPRS_NEXT (exprs);
-
-        /* free exprs-node and expression */
-        FreeNode (tmp);
-    } else {
-        EXPRS_NEXT (exprs) = CSFreeApNarg (EXPRS_NEXT (exprs), actpos + 1, freepos);
-    }
-
-    DBUG_RETURN (exprs);
-}
-
-/******************************************************************************
- *
- * function:
- *   static node *CSFreeFundefNarg(node *args, int actpos, int freepos)
- *
- * description:
- *   recursive traversal of args list of
- *   fundef to free the arg at freepos..
- *****************************************************************************/
-static node *
-CSFreeFundefNarg (node *args, int actpos, int freepos)
-{
-    node *tmp;
-
-    DBUG_ENTER ("CSFreeFundefNarg");
-
-    DBUG_ASSERT ((args != NULL), "unexpected end of args-list");
-
-    if (actpos == freepos) {
-        tmp = args;
-        args = ARG_NEXT (args);
-
-        /* free arg-node */
-        FreeNode (tmp);
-    } else {
-        ARG_NEXT (args) = CSFreeFundefNarg (ARG_NEXT (args), actpos + 1, freepos);
-    }
-
-    DBUG_RETURN (args);
-}
-
-/******************************************************************************
- *
- * function:
- *   static node *CSFreeApNres(node *exprs, int actpos, int freepos)
- *
- * description:
- *   recurive traversal of ids list of
- *   results to free the result in position freepos.
- *****************************************************************************/
-static ids *
-CSFreeApNres (ids *idslist, int actpos, int freepos)
-{
-    ids *tmp;
-
-    DBUG_ENTER ("CSFreeApNres");
-
-    DBUG_ASSERT ((idslist != NULL), "unexpected end of ids-list");
-
-    if (actpos == freepos) {
-        tmp = idslist;
-        idslist = IDS_NEXT (idslist);
-
-        /* free ids */
-        FreeOneIds (tmp);
-    } else {
-        IDS_NEXT (idslist) = CSFreeApNres (IDS_NEXT (idslist), actpos + 1, freepos);
-    }
-
-    DBUG_RETURN (idslist);
-}
-
-/******************************************************************************
- *
- * function:
- *   static node *CSFreeFundefNtype(types *typelist, int actpos, int freepos)
- *
- * description:
- *   recurive traversal of type list of
- *   results to free the type in position freepos.
- *****************************************************************************/
-static types *
-CSFreeFundefNtype (types *typelist, int actpos, int freepos)
-{
-    types *tmp;
-
-    DBUG_ENTER ("CSFreeFundefNtype");
-
-    DBUG_ASSERT ((typelist != NULL), "unexpected end of type-list");
-
-    if (actpos == freepos) {
-        tmp = typelist;
-        typelist = TYPES_NEXT (typelist);
-
-        /* free type */
-        FreeOneTypes (tmp);
-    } else {
-        TYPES_NEXT (typelist)
-          = CSFreeFundefNtype (TYPES_NEXT (typelist), actpos + 1, freepos);
-    }
-
-    DBUG_RETURN (typelist);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *CSAddArg(node *fundef,
+ *   node *CSaddArg(node *fundef,
  *                  node *arg,
  *                  nodelist *letlist)
  *
@@ -350,32 +407,37 @@ CSFreeFundefNtype (types *typelist, int actpos, int freepos)
  *   the result is the modified fundef
  *
  *****************************************************************************/
+
 node *
-CSAddArg (node *fundef, node *arg, nodelist *letlist)
+CSaddArg (node *fundef, node *arg, nodelist *letlist)
 {
     node *new_exprs;
 
-    DBUG_ENTER ("CSAddArg");
+    DBUG_ENTER ("CSaddArg");
 
-    if (letlist != NULL) {
+    while (letlist != NULL) {
         DBUG_ASSERT ((NODE_TYPE (LET_EXPR (NODELIST_NODE (letlist))) == N_ap),
                      "no function application");
         DBUG_ASSERT ((AP_FUNDEF (LET_EXPR (NODELIST_NODE (letlist))) == fundef),
                      "call to different fundef");
 
-        /* add given node as additional argument of function application */
-        new_exprs = MakeExprs (NODELIST_ATTRIB2 (letlist),
-                               AP_ARGS (LET_EXPR (NODELIST_NODE (letlist))));
+        /*
+         * add given node as additional argument of function application
+         */
+        new_exprs = TBmakeExprs (NODELIST_ATTRIB2 (letlist),
+                                 AP_ARGS (LET_EXPR (NODELIST_NODE (letlist))));
 
         AP_ARGS (LET_EXPR (NODELIST_NODE (letlist))) = new_exprs;
 
         /* traverse to next application */
-        fundef = CSAddArg (fundef, arg, NODELIST_NEXT (letlist));
-    } else {
-        /* all applictions adjusted, now adjust prototype */
-        ARG_NEXT (arg) = FUNDEF_ARGS (fundef);
-        FUNDEF_ARGS (fundef) = arg;
+        letlist = NODELIST_NEXT (letlist);
     }
+
+    /*
+     * Now adjust prototype
+     */
+    ARG_NEXT (arg) = FUNDEF_ARGS (fundef);
+    FUNDEF_ARGS (fundef) = arg;
 
     DBUG_RETURN (fundef);
 }
@@ -383,6 +445,7 @@ CSAddArg (node *fundef, node *arg, nodelist *letlist)
 /******************************************************************************
  *
  * function:
+ *   node *CSaddResult(node *fundef, node *vardec, nodelist *letlist)
  *
  * description:
  *   adds the given vardec as additional result to the given fundef. all let-ap
@@ -394,20 +457,21 @@ CSAddArg (node *fundef, node *arg, nodelist *letlist)
  *   all new identifiers.
  *
  *****************************************************************************/
+
 node *
-CSAddResult (node *fundef, node *vardec, nodelist *letlist)
+CSaddResult (node *fundef, node *vardec, nodelist *letlist)
 {
-    ids *new_ids;
+    node *new_ids;
     node *new_id;
 
-    DBUG_ENTER ("CSAddResult");
+    DBUG_ENTER ("CSaddResult");
 
-    if (letlist != NULL) {
+    while (letlist != NULL) {
         DBUG_ASSERT ((NODE_TYPE (LET_EXPR (NODELIST_NODE (letlist))) == N_ap),
                      "no function application");
         DBUG_ASSERT ((AP_FUNDEF (LET_EXPR (NODELIST_NODE (letlist))) == fundef),
                      "call to different fundef");
-        DBUG_ASSERT ((NODE_TYPE ((node *)(NODELIST_ATTRIB2 (letlist))) == N_vardec),
+        DBUG_ASSERT ((NODE_TYPE (NODELIST_ATTRIB2 (letlist)) == N_vardec),
                      "no vardec for new result identifier");
 
         /*
@@ -415,41 +479,43 @@ CSAddResult (node *fundef, node *vardec, nodelist *letlist)
          * of the function application.
          */
 
-        new_ids = MakeIds_Copy (
-          StringCopy (VARDEC_NAME (((node *)(NODELIST_ATTRIB2 (letlist))))));
-        IDS_VARDEC (new_ids) = NODELIST_ATTRIB2 (letlist);
-        IDS_AVIS (new_ids) = VARDEC_AVIS (((node *)(NODELIST_ATTRIB2 (letlist))));
+        new_ids = TBmakeIds (VARDEC_AVIS (NODELIST_ATTRIB2 (letlist)), NULL);
 
         LET_IDS (NODELIST_NODE (letlist))
-          = AppendIds (new_ids, LET_IDS (NODELIST_NODE (letlist)));
+          = TCappendIds (new_ids, LET_IDS (NODELIST_NODE (letlist)));
 
-        /* traverse to next application */
-        fundef = CSAddResult (fundef, vardec, NODELIST_NEXT (letlist));
-
-    } else {
         /*
-         * all applictions adjusted, now adjust fundef:
-         * 1. add additional result (given id in exprs chain)
-         * 2. add additional type to types chain
+         * continue with next application
          */
-        DBUG_ASSERT ((FUNDEF_RETURN (fundef) != NULL),
-                     "missing link to return statement");
+        letlist = NODELIST_NEXT (letlist);
+    }
 
-        new_id = MakeId_Copy (StringCopy (VARDEC_OR_ARG_NAME (vardec)));
-        ID_VARDEC (new_id) = vardec;
-        ID_AVIS (new_id) = VARDEC_OR_ARG_AVIS (vardec);
+    /*
+     * all applictions adjusted, now adjust fundef:
+     * 1. add additional result (given id in exprs chain)
+     * 2. add additional type to types chain
+     */
+    DBUG_ASSERT ((FUNDEF_RETURN (fundef) != NULL), "missing link to return statement");
 
-        RETURN_EXPRS (FUNDEF_RETURN (fundef))
-          = MakeExprs (new_id, RETURN_EXPRS (FUNDEF_RETURN (fundef)));
+    new_id = TBmakeId (VARDEC_OR_ARG_AVIS (vardec));
 
+    RETURN_EXPRS (FUNDEF_RETURN (fundef))
+      = TBmakeExprs (new_id, RETURN_EXPRS (FUNDEF_RETURN (fundef)));
+
+    if (FUNDEF_TYPES (fundef) != NULL) {
         if (TYPES_BASETYPE (FUNDEF_TYPES (fundef)) == T_void) {
-            FUNDEF_TYPES (fundef) = FreeAllTypes (FUNDEF_TYPES (fundef));
+            FUNDEF_TYPES (fundef) = FREEfreeAllTypes (FUNDEF_TYPES (fundef));
         }
 
         /* create new type */
         FUNDEF_TYPES (fundef)
-          = AppendTypes (DupAllTypes (VARDEC_TYPE (vardec)), FUNDEF_TYPES (fundef));
+          = TCappendTypes (DUPdupAllTypes (VARDEC_OR_ARG_TYPE (vardec)),
+                           FUNDEF_TYPES (fundef));
     }
+
+    FUNDEF_RETS (fundef)
+      = TCappendRet (TBmakeRet (AVIS_TYPE (VARDEC_OR_ARG_AVIS (vardec)), NULL),
+                     FUNDEF_RETS (fundef));
 
     DBUG_RETURN (fundef);
 }
