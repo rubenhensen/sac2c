@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.19  2004/12/14 16:38:15  sbs
+ * INSVDspids now traverses the NEXT son as well (iff it exists)
+ *
  * Revision 1.18  2004/12/13 11:10:38  sah
  * fixed a bug
  *
@@ -385,7 +388,7 @@ INSVDspid (node *arg_node, info *arg_info)
 node *
 INSVDspids (node *arg_node, info *arg_info)
 {
-    node *vardec, *avis;
+    node *vardec, *avis, *new_ids;
     DBUG_ENTER ("INSVDspids");
 
     vardec
@@ -411,11 +414,16 @@ INSVDspids (node *arg_node, info *arg_info)
                             SPIDS_NAME (arg_node)));
     }
 
+    if (SPIDS_NEXT (arg_node) != NULL) {
+        new_ids = TRAVdo (SPIDS_NEXT (arg_node), arg_info);
+    } else {
+        new_ids = NULL;
+    }
     /*
      * now we can build a real ids node and remove the spids node
      */
     arg_node = FREEdoFreeNode (arg_node);
-    arg_node = TBmakeIds (DECL_AVIS (vardec), arg_node);
+    arg_node = TBmakeIds (DECL_AVIS (vardec), new_ids);
 
     DBUG_RETURN (arg_node);
 }
