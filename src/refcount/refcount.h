@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2000/12/12 12:17:40  dkr
+ * macros MUST_REFCOUNT, FUN_DOES_REFCOUNT added
+ *
  * Revision 3.1  2000/11/20 18:01:36  sacbase
  * new release made
  *
@@ -84,14 +87,26 @@
  * Revision 1.1  1995/03/09  16:17:01  hw
  * Initial revision
  *
- *
  */
 
-#ifndef _refcount_h
+#ifndef _refcount_h_
+#define _refcount_h_
 
-#define _refcount_h
+/*
+ *  Steering which variables to be refcounted.
+ */
+#define MUST_REFCOUNT(type) (IsArray (type) || IsNonUniqueHidden (type))
+#define MUST_NAIVEREFCOUNT(type) (TRUE)
+
+#define FUN_DOES_REFCOUNT(fundef, i)                                                     \
+    ((FUNDEF_STATUS (fundef) != ST_spmdfun)                                              \
+     && ((FUNDEF_STATUS (fundef) != ST_Cfun)                                             \
+         || ((FUNDEF_PRAGMA (fundef) != NULL) && (FUNDEF_REFCOUNTING (fundef) != NULL)   \
+             && (PRAGMA_NUMPARAMS (FUNDEF_PRAGMA (fundef)) > i)                          \
+             && FUNDEF_REFCOUNTING (fundef)[i])))
 
 extern node *Refcount (node *arg_node);
+
 extern node *RCblock (node *arg_node, node *arg_info);
 extern node *RCvardec (node *arg_node, node *arg_info);
 extern node *RCassign (node *arg_node, node *arg_info);
@@ -104,8 +119,6 @@ extern node *RCfundef (node *arg_node, node *arg_info);
 extern node *RCarg (node *arg_node, node *arg_info);
 extern node *RCprepost (node *arg_node, node *arg_info);
 extern node *RCicm (node *arg_node, node *arg_info);
-
-/* new with-loop */
 extern node *RCNwith (node *arg_node, node *arg_info);
 extern node *RCNpart (node *arg_node, node *arg_info);
 extern node *RCNcode (node *arg_node, node *arg_info);
@@ -114,6 +127,4 @@ extern node *RCNwithid (node *arg_node, node *arg_info);
 extern node *RCNwithop (node *arg_node, node *arg_info);
 extern node *RCNwith2 (node *arg_node, node *arg_info);
 
-extern void InferWithDFM (node *arg_node, node *fundef);
-
-#endif /* _refcount_h */
+#endif /* _refcount_h_ */
