@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  2004/11/24 17:30:28  cg
+ * *** empty log message ***
+ *
  * Revision 1.13  2004/11/24 00:57:05  sbs
  * converted struct node into struct NODE
  *
@@ -886,7 +889,12 @@ typedef void *(*strsfoldfun_p) (const char *elem, strstype_t kind, void *rest);
  * moved from filemgr.h
  */
 
-typedef enum { PK_path, PK_moddec_path, PK_modimp_path, PK_systemlib_path } pathkind;
+typedef enum {
+    PK_path = 0,
+    PK_moddec_path = 1,
+    PK_modimp_path = 2,
+    PK_systemlib_path = 3
+} pathkind_t;
 
 /*
  * moved from libmanager.h
@@ -980,7 +988,7 @@ typedef struct ST_SYMBOL_T stsymbol_t;
  */
 
 typedef struct OPTIMIZE_FLAGS_T {
-#define OPTabbr(abbr) unsigned int do##abbr : 1;
+#define OPTIMIZEabbr(abbr) unsigned int do##abbr : 1;
 #include "optimize.mac"
 } optimize_flags_t;
 
