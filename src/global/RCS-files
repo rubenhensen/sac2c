@@ -2,6 +2,7 @@ Error.c
 Error.h
 Makefile
 access_macros.h
+build.h
 free.c
 free.h
 globals.c
@@ -14,6 +15,8 @@ main.c
 my_debug.c
 my_debug.h
 node_info.mac
+options.c
+options.h
 prf_node_info.mac
 resource.c
 resource.h
