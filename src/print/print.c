@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.17  1999/05/11 08:57:43  sbs
+ * PRINT_LINE_PRAGMA_IN_SIB added. It allows for identifying errorneous
+ * code from modules that is imported via the sib!.
+ *
  * Revision 2.16  1999/05/10 15:52:30  bs
  * Bug fixed in WLAAprintAccesses
  *
@@ -86,86 +90,6 @@
  * primtive functions min and max or no longer printed
  * in infix notation.
  *
- * Revision 1.250  1998/10/26 18:04:48  dkr
- * with -> old_with
- * new_with -> with
- *
- * Revision 1.249  1998/08/11 14:35:17  dkr
- * PrintWLsegVar changed
- *
- * Revision 1.248  1998/08/11 12:09:01  dkr
- * PrintNodeTree extended
- *
- * Revision 1.247  1998/08/11 00:04:04  dkr
- * PrintNodeTree extended
- *
- * Revision 1.246  1998/08/07 14:38:20  dkr
- * PrintWLsegVar added
- *
- * Revision 1.245  1998/08/06 15:30:40  dkr
- * fixed a minor bug in PrintNodeTree
- *
- * Revision 1.244  1998/07/24 00:27:42  dkr
- * fixed some minor bugs in PrintNodeTree
- *
- * Revision 1.243  1998/07/20 16:51:28  dkr
- * PrintNodeTree extended
- *
- * Revision 1.242  1998/07/16 20:42:04  dkr
- * extended PrintNodeTree
- *
- * Revision 1.241  1998/07/03 10:17:22  cg
- * printing of N_spmd node completely changed.
- *
- * Revision 1.240  1998/06/25 08:02:45  cg
- * printing of spmd-functions modified
- *
- * Revision 1.239  1998/06/23 12:44:34  cg
- * bug fixed in indentation mechanism for ICMs
- *
- * Revision 1.238  1998/06/18 13:44:04  cg
- * file is now able to deal correctly with data objects of
- * the abstract data type for the representation of schedulings.
- *
- * Revision 1.237  1998/06/05 15:27:49  cg
- * global variable mod_name_con and macros MOD_NAME_CON MOD MOD_NAME MOD_CON removed
- * Now, module name and symbol name are combined correctly by ':'.
- * Only when it really comes to the generation of C code, the ':' is
- * replaced by '__'. This is done by the renaming of all identifiers
- * during the precompilation phase.
- *
- * Revision 1.236  1998/06/03 14:33:13  cg
- * The preprocessor conditional around spmd-functions is now
- * printed directly by PrintFundef()
- *
- * Revision 1.235  1998/05/28 23:47:45  dkr
- * fixed a bug with ICM_INDENT
- * changed output in PrintNwithop
- *
- * Revision 1.234  1998/05/28 16:33:45  dkr
- * changed output for N_Nwith, N_Nwith2, N_spmd, N_sync
- * added an indent-mechanismus for H-ICMs in PrintIcm
- *
- * Revision 1.233  1998/05/27 11:19:44  cg
- * global variable 'filename' which contains the current file name in order
- * to provide better error messages is now handled correctly.
- *
- * Revision 1.232  1998/05/24 00:40:34  dkr
- * removed WLGRID_CODE_TEMPLATE
- *
- * Revision 1.231  1998/05/21 14:45:45  dkr
- * added a \n in PrintModarray, PrintGenarray, PrintFold...
- *
- * Revision 1.230  1998/05/19 15:40:41  dkr
- * fixed a bug in PrintWLgridVar
- *
- * Revision 1.229  1998/05/17 00:09:34  dkr
- * changed PrintWLgrid, PrintWLgridVar:
- *   WLGRID_CEXPR_TEMPLATE is now WLGRID_CODE_TEMPLATE
- *
- * Revision 1.228  1998/05/15 23:53:15  dkr
- * added a comment
- *
  * ... [eliminated] ...
  *
  * Revision 1.6  1994/11/10  15:34:26  sbs
@@ -218,6 +142,11 @@
                                   : ((arg == ACL_const) ? ("ACL_const") : (""))))
 
 #define IV(a) ((a) == 0) ? ("") : ("iv + ")
+
+#define PRINT_LINE_PRAGMA_IN_SIB(file_handle, node)                                      \
+    if (compiler_phase == PH_writesib) {                                                 \
+        fprintf (file_handle, "# %d \"%s\"\n", NODE_LINE (node), NODE_FILE (node));      \
+    }
 
 /******************************************************************************/
 
@@ -481,7 +410,7 @@ WLAAprintAccesses (node *arg_node, node *arg_info)
                             fprintf (outfile, " ], %s)\n",
                                      VARDEC_NAME (ACCESS_ARRAY (access)));
                         else
-                            fprintf (outfile, " ], ??)\n");
+                            fprintf (outfile, " ], ?)\n");
                         offset = SHPSEG_NEXT (offset);
                     }
                 } while (offset != NULL);
@@ -572,6 +501,7 @@ PrintAssign (node *arg_node, node *arg_info)
         if (ASSIGN_NEXT (arg_node))
             Trav (ASSIGN_NEXT (arg_node), arg_info);
     } else {
+        PRINT_LINE_PRAGMA_IN_SIB (outfile, arg_node);
         DBUG_EXECUTE ("LINE", fprintf (outfile, "/*%03d*/", arg_node->lineno););
 
         if ((NODE_TYPE (ASSIGN_INSTR (arg_node)) != N_return)
@@ -965,6 +895,8 @@ void
 PrintFunctionHeader (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintFunctionHeader");
+
+    PRINT_LINE_PRAGMA_IN_SIB (outfile, arg_node);
 
     if (0 != FUNDEF_INLINE (arg_node)) {
         fprintf (outfile, "inline ");
