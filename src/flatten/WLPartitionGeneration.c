@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.15  2004/08/10 16:07:03  khf
+ * CreateStructConstants(): expr can be NULL
+ * CreateEmptyGenWLReplacement(): assign of freed LET_EXPR corrected
+ *
  * Revision 1.14  2004/08/09 13:12:31  khf
  * some comments added
  *
@@ -266,7 +270,9 @@ CreateStructConstant (node *expr, node *nassigns)
     btype = TYPES_BASETYPE (IDS_TYPE (LET_IDS (ASSIGN_INSTR (nassigns))));
     nshpseg = MakeShpseg (MakeNums (dim, NULL));
     ARRAY_TYPE (tmp1) = MakeTypes (btype, 1, nshpseg, NULL, NULL);
-    expr = FreeTree (expr);
+    if (expr != NULL) {
+        expr = FreeTree (expr);
+    }
     expr = tmp1;
 
     DBUG_RETURN (expr);
@@ -1119,7 +1125,8 @@ CreateEmptyGenWLReplacement (node *wl, info *arg_info)
 
                 assignn = DupNode (AVIS_SSAASSIGN (ID_AVIS (cexpr)));
                 BLOCK_INSTR (blockn) = FreeTree (BLOCK_INSTR (blockn));
-                assignn = FreeTree (LET_EXPR (ASSIGN_INSTR (assignn)));
+                LET_EXPR (ASSIGN_INSTR (assignn))
+                  = FreeTree (LET_EXPR (ASSIGN_INSTR (assignn)));
                 BLOCK_INSTR (blockn) = assignn;
                 _ids = LET_IDS (ASSIGN_INSTR (assignn));
                 type = IDS_TYPE (_ids);
