@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.80  1995/07/11 10:02:07  cg
+ * Revision 1.81  1995/07/17 14:21:20  hw
+ * inline will be printed in front of the declaration of a function
+ *
+ * Revision 1.80  1995/07/11  10:02:07  cg
  * Module/Class header now in comments.
  *
  * Revision 1.79  1995/07/11  09:02:37  cg
@@ -560,9 +563,9 @@ PrintFundef (node *arg_node, node *arg_info)
     if (arg_node->node[0] == NULL) /* pure fundec! */
         fprintf (outfile, "extern ");
     if (0 == print_icm) {
-        fprintf (outfile, "%s ", Type2String (arg_node->info.types, 0));
         if (0 != arg_node->flag)
             fprintf (outfile, "inline ");
+        fprintf (outfile, "%s ", Type2String (arg_node->info.types, 0));
         if (arg_node->info.types->id_mod != NULL)
             fprintf (outfile, "%s" MOD_NAME_CON, arg_node->info.types->id_mod);
         fprintf (outfile, "%s(", arg_node->info.types->id);
