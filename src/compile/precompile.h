@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2001/03/05 13:54:59  dkr
+ * PREC1code added
+ *
  * Revision 3.4  2001/03/02 16:10:31  dkr
  * PREC1withop added
  *
@@ -113,6 +116,7 @@ extern node *PREC1assign (node *arg_node, node *arg_info);
 extern node *PREC1let (node *arg_node, node *arg_info);
 extern node *PREC1with2 (node *arg_node, node *arg_info);
 extern node *PREC1withop (node *arg_node, node *arg_info);
+extern node *PREC1code (node *arg_node, node *arg_info);
 
 extern node *PREC2modul (node *arg_node, node *arg_info);
 extern node *PREC2typedef (node *arg_node, node *arg_info);

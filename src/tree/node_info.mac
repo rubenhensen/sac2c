@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.26  2001/03/05 13:54:21  dkr
+ * PREC1code added
+ *
  * Revision 3.25  2001/03/05 12:51:36  dkr
  * trav table for N_Ncode corrected
  *
@@ -1731,7 +1734,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, AIcode, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, APCcode, APTcode,
+       TravSons, PREC1code, APCcode, APTcode,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, SSANcode, TravSons, TravSons,
        SSADCRNcode, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
