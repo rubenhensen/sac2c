@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.149  2004/11/25 18:29:18  khf
+ * + marcros
+ *
  * Revision 3.148  2004/11/25 18:15:18  mwe
  * DECL_AVIS fixed
  *
@@ -1839,6 +1842,8 @@ extern int TCcountParts (node *parts);
 
 #define WITH2_DEFAULT(n) (GENARRAY_DEFAULT (WITH2_WITHOP (n)))
 #define WITH2_SHAPE(n) (GENARRAY_SHAPE (WITH2_WITHOP (n)))
+#define WITH2_ARRAY(n) (MODARRAY_ARRAY (WITH2_WITHOP (n)))
+#define WITH2_NEUTRAL(n) (FOLD_NEUTRAL (WITH2_WITHOP (n)))
 
 /*--------------------------------------------------------------------------*/
 
