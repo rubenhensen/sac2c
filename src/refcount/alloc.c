@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2004/07/15 13:39:23  ktr
+ * renamed EMALAllocateFill into EMAllocateFill
+ *
  * Revision 1.1  2004/07/14 15:26:36  ktr
  * Initial revision
  *
@@ -1045,7 +1048,7 @@ EMALwith (node *arg_node, node *arg_info)
 
 /** <!--******************************************************************-->
  *
- * @fn EMALAllocateFill
+ * @fn EMAllocateFill
  *
  *  @brief Starting function of transformation SAC -> SAC-MemVal.
  *
@@ -1055,7 +1058,7 @@ EMALwith (node *arg_node, node *arg_info)
  *
  ***************************************************************************/
 node *
-EMALAllocateFill (node *syntax_tree)
+EMAllocateFill (node *syntax_tree)
 {
     node *info;
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2004/07/15 13:39:23  ktr
+ * renamed EMALAllocateFill into EMAllocateFill
+ *
  * Revision 1.1  2004/07/14 15:27:00  ktr
  * Initial revision
  *
@@ -10,7 +13,7 @@
 #ifndef _sac_alloc_h
 #define _sac_alloc_h
 
-extern node *EMALAllocateFill (node *syntax_tree);
+extern node *EMAllocateFill (node *syntax_tree);
 
 extern node *EMALap (node *arg_node, node *arg_info);
 extern node *EMALarray (node *arg_node, node *arg_info);
