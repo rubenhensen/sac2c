@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.91  2004/10/04 17:15:12  sah
+ * created new L_WLNODE and WLNODE macros
+ *
  * Revision 3.90  2004/10/01 08:39:32  sah
  * added first idea of new WLNODE_NEXT
  * in a comment
@@ -2550,24 +2553,154 @@ extern node *MakeWLsegX (int dims, node *contents, node *next);
                            ? WLGRID_NOOP (n)                                             \
                            : ((NODE_TYPE (n) == N_WLgridVar) ? WLGRIDVAR_NOOP (n)        \
                                                              : FALSE))))))
-/*
 
-#define WLNODE_NEXT(n)                                               \
-  ( (NODE_TYPE(n) == N_WLblock)                                      \
-      ? WLBLOCK_NEXT(n)                                              \
-      : ( (NODE_TYPE(n) == N_WLublock)                               \
-            ? WLUBLOCK_NEXT(n)                                       \
-            : ( (NODE_TYPE(n) == N_WLstride)                         \
-                  ? WLSTRIDE_NEXT(n)                                 \
-                  : ( (NODE_TYPE(n) == N_WLstrideVar)                \
-                        ? WLSTRIDEVAR_NEXT(n)                        \
-                        : ( (NODE_TYPE(n) == N_WLgrid)               \
-                              ? WLGRID_NEXT(n)                       \
-                              : ( (NODE_TYPE(n) == N_WLgridVar)      \
-                                    ? WLGRIDVAR_NEXT(n)              \
-                                    : NULL ) ) ) ) ) )
+#define WLNODE_NEXT(n)                                                                   \
+    ((NODE_TYPE (n) == N_WLblock)                                                        \
+       ? WLBLOCK_NEXT (n)                                                                \
+       : ((NODE_TYPE (n) == N_WLublock)                                                  \
+            ? WLUBLOCK_NEXT (n)                                                          \
+            : ((NODE_TYPE (n) == N_WLstride)                                             \
+                 ? WLSTRIDE_NEXT (n)                                                     \
+                 : ((NODE_TYPE (n) == N_WLstrideVar)                                     \
+                      ? WLSTRIDEVAR_NEXT (n)                                             \
+                      : ((NODE_TYPE (n) == N_WLgrid)                                     \
+                           ? WLGRID_NEXT (n)                                             \
+                           : ((NODE_TYPE (n) == N_WLgridVar) ? WLGRIDVAR_NEXT (n)        \
+                                                             : NULL))))))
 
-*/
+#define WLNODE_LEVEL(n)                                                                  \
+    ((NODE_TYPE (n) == N_WLblock)                                                        \
+       ? WLBLOCK_LEVEL (n)                                                               \
+       : ((NODE_TYPE (n) == N_WLublock)                                                  \
+            ? WLUBLOCK_LEVEL (n)                                                         \
+            : ((NODE_TYPE (n) == N_WLstride)                                             \
+                 ? WLSTRIDE_LEVEL (n)                                                    \
+                 : ((NODE_TYPE (n) == N_WLstrideVar)                                     \
+                      ? WLSTRIDEVAR_LEVEL (n)                                            \
+                      : ((NODE_TYPE (n) == N_WLgrid)                                     \
+                           ? WLGRID_LEVEL (n)                                            \
+                           : ((NODE_TYPE (n) == N_WLgridVar) ? WLGRIDVAR_LEVEL (n)       \
+                                                             : NULL))))))
+
+#define WLNODE_DIM(n)                                                                    \
+    ((NODE_TYPE (n) == N_WLblock)                                                        \
+       ? WLBLOCK_DIM (n)                                                                 \
+       : ((NODE_TYPE (n) == N_WLublock)                                                  \
+            ? WLUBLOCK_DIM (n)                                                           \
+            : ((NODE_TYPE (n) == N_WLstride)                                             \
+                 ? WLSTRIDE_DIM (n)                                                      \
+                 : ((NODE_TYPE (n) == N_WLstrideVar)                                     \
+                      ? WLSTRIDEVAR_DIM (n)                                              \
+                      : ((NODE_TYPE (n) == N_WLgrid)                                     \
+                           ? WLGRID_DIM (n)                                              \
+                           : ((NODE_TYPE (n) == N_WLgridVar) ? WLGRIDVAR_DIM (n)         \
+                                                             : NULL))))))
+
+#define WLNODE_BOUND1_INT(n)                                                             \
+    ((NODE_TYPE (n) == N_WLblock)                                                        \
+       ? WLBLOCK_BOUND1 (n)                                                              \
+       : ((NODE_TYPE (n) == N_WLublock)                                                  \
+            ? WLUBLOCK_BOUND1 (n)                                                        \
+            : ((NODE_TYPE (n) == N_WLstride)                                             \
+                 ? WLSTRIDE_BOUND1 (n)                                                   \
+                 : ((NODE_TYPE (n) == N_WLgrid) ? WLGRID_BOUND1 (n) : NULL))))
+
+#define WLNODE_BOUND1_NODE(n)                                                            \
+    ((NODE_TYPE (n) == N_WLstrideVar)                                                    \
+       ? WLSTRIDEVAR_BOUND1 (n)                                                          \
+       : ((NODE_TYPE (n) == N_WLgridVar) ? WLGRIDVAR_BOUND1 (n) : NULL))
+
+#define WLNODE_BOUND2_INT(n)                                                             \
+    ((NODE_TYPE (n) == N_WLblock)                                                        \
+       ? WLBLOCK_BOUND2 (n)                                                              \
+       : ((NODE_TYPE (n) == N_WLublock)                                                  \
+            ? WLUBLOCK_BOUND2 (n)                                                        \
+            : ((NODE_TYPE (n) == N_WLstride)                                             \
+                 ? WLSTRIDE_BOUND2 (n)                                                   \
+                 : ((NODE_TYPE (n) == N_WLgrid) ? WLGRID_BOUND2 (n) : NULL))))
+
+#define WLNODE_BOUND2_NODE(n)                                                            \
+    ((NODE_TYPE (n) == N_WLstrideVar)                                                    \
+       ? WLSTRIDEVAR_BOUND2 (n)                                                          \
+       : ((NODE_TYPE (n) == N_WLgridVar) ? WLGRIDVAR_BOUND2 (n) : NULL))
+
+#define WLNODE_STEP_INT(n)                                                               \
+    ((NODE_TYPE (n) == N_WLblock)                                                        \
+       ? WLBLOCK_STEP (n)                                                                \
+       : ((NODE_TYPE (n) == N_WLublock)                                                  \
+            ? WLUBLOCK_STEP (n)                                                          \
+            : ((NODE_TYPE (n) == N_WLstride) ? WLSTRIDE_STEP (n) : NULL)))
+
+#define WLNODE_NEXTDIM(n)                                                                \
+    ((NODE_TYPE (n) == N_WLblock)                                                        \
+       ? WLBLOCK_NEXTDIM (n)                                                             \
+       : ((NODE_TYPE (n) == N_WLublock)                                                  \
+            ? WLUBLOCK_NEXTDIM (n)                                                       \
+            : ((NODE_TYPE (n) == N_WLgrid)                                               \
+                 ? WLGRID_NEXTDIM (n)                                                    \
+                 : ((NODE_TYPE (n) == N_WLgridVar) ? WLGRIDVAR_NEXTDIM (n) : NULL))))
+
+#define L_WLNODE_NEXT(n, rhs)                                                            \
+    if (NODE_TYPE (n) == N_WLblock)                                                      \
+        WLBLOCK_NEXT (n) = rhs;                                                          \
+    else if (NODE_TYPE (n) == N_WLublock)                                                \
+        WLUBLOCK_NEXT (n) = rhs;                                                         \
+    else if (NODE_TYPE (n) == N_WLstride)                                                \
+        WLSTRIDE_NEXT (n) = rhs;                                                         \
+    else if (NODE_TYPE (n) == N_WLstrideVar)                                             \
+        WLSTRIDEVAR_NEXT (n) = rhs;                                                      \
+    else if (NODE_TYPE (n) == N_WLgrid)                                                  \
+        WLGRID_NEXT (n) = rhs;                                                           \
+    else if (NODE_TYPE (n) == N_WLgridVar)                                               \
+        WLGRIDVAR_NEXT (n) = rhs;                                                        \
+    else                                                                                 \
+        DBUG_ASSERT (0, "L_WLNODE_NEXT called on wrong node type");
+
+#define L_WLNODE_BOUND1_INT(n, rhs)                                                      \
+    if (NODE_TYPE (n) == N_WLblock)                                                      \
+        WLBLOCK_BOUND1 (n) = rhs;                                                        \
+    else if (NODE_TYPE (n) == N_WLublock)                                                \
+        WLUBLOCK_BOUND1 (n) = rhs;                                                       \
+    else if (NODE_TYPE (n) == N_WLstride)                                                \
+        WLSTRIDE_BOUND1 (n) = rhs;                                                       \
+    else if (NODE_TYPE (n) == N_WLgrid)                                                  \
+        WLGRID_BOUND1 (n) = rhs;                                                         \
+    else                                                                                 \
+        DBUG_ASSERT (0, "L_WLNODE_BOUND1_INT called on wrong node type");
+
+#define L_WLNODE_BOUND2_INT(n, rhs)                                                      \
+    if (NODE_TYPE (n) == N_WLblock)                                                      \
+        WLBLOCK_BOUND2 (n) = rhs;                                                        \
+    else if (NODE_TYPE (n) == N_WLublock)                                                \
+        WLUBLOCK_BOUND2 (n) = rhs;                                                       \
+    else if (NODE_TYPE (n) == N_WLstride)                                                \
+        WLSTRIDE_BOUND2 (n) = rhs;                                                       \
+    else if (NODE_TYPE (n) == N_WLgrid)                                                  \
+        WLGRID_BOUND2 (n) = rhs;                                                         \
+    else                                                                                 \
+        DBUG_ASSERT (0, "L_WLNODE_BOUND2_INT called on wrong node type");
+
+#define L_WLNODE_STEP_INT(n, rhs)                                                        \
+    if (NODE_TYPE (n) == N_WLblock)                                                      \
+        WLBLOCK_STEP (n) = rhs;                                                          \
+    else if (NODE_TYPE (n) == N_WLublock)                                                \
+        WLUBLOCK_STEP (n) = rhs;                                                         \
+    else if (NODE_TYPE (n) == N_WLstride)                                                \
+        WLSTRIDE_STEP (n) = rhs;                                                         \
+    else                                                                                 \
+        DBUG_ASSERT (0, "L_WLNODE_STEP called on wrong node type");
+
+#define L_WLNODE_NEXTDIM(n, rhs)                                                         \
+    if (NODE_TYPE (n) == N_WLblock)                                                      \
+        WLBLOCK_NEXTDIM (n) = rhs;                                                       \
+    else if (NODE_TYPE (n) == N_WLublock)                                                \
+        WLUBLOCK_NEXTDIM (n) = rhs;                                                      \
+    else if (NODE_TYPE (n) == N_WLgrid)                                                  \
+        WLGRID_NEXTDIM (n) = rhs;                                                        \
+    else if (NODE_TYPE (n) == N_WLgridVar)                                               \
+        WLGRIDVAR_NEXTDIM (n) = rhs;                                                     \
+    else                                                                                 \
+        DBUG_ASSERT (0, "L_WLNODE_NEXTDIM called on wrong node type");
 
 /*--------------------------------------------------------------------------*/
 
