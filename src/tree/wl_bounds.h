@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2002/07/15 14:45:55  dkr
+ * signature of NodeOrInt_MakeIndex() modified
+ *
  * Revision 1.5  2002/07/15 14:28:12  dkr
  * modifications for TAGGED_ARRAYS done
  *
@@ -73,8 +76,7 @@ extern void NodeOrInt_SetNodeOrInt (nodetype ret_nt, void *ret_node_or_int, node
 extern node *NameOrVal_MakeNode (char *name, int val);
 extern node *NodeOrInt_MakeNode (nodetype nt, void *node_or_int);
 
-extern node *NodeOrInt_MakeIndex (nodetype nt, void *node_or_int, int dim, ids *wl_ids,
-                                  bool no_num, bool no_icm);
+extern node *NodeOrInt_MakeIndex (nodetype nt, void *node_or_int, int dim, ids *wl_ids);
 
 extern bool NameOrVal_Eq (char *name1, int val1, char *name2, int val2, int shape);
 extern bool NodeOrInt_Eq (nodetype nt1, void *node_or_int1, nodetype nt2,

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.88  2002/07/15 14:45:43  dkr
+ * signature of NodeOrInt_MakeIndex() modified
+ *
  * Revision 3.87  2002/07/03 17:09:40  dkr
  * ID_UNQCONV added again #$%-(
  *
@@ -4276,12 +4279,11 @@ MakeIcmArgs_WL_LOOP1 (node *arg_node)
         MakeExprs (DupIds_Id (GetIndexIds (NWITH2_IDS (wlnode), dim)),
                    MakeExprs (NodeOrInt_MakeIndex (NODE_TYPE (arg_node),
                                                    WLNODE_GET_ADDR (arg_node, BOUND1),
-                                                   dim, IDS_NAME (wlids), FALSE, FALSE),
+                                                   dim, wlids),
                               MakeExprs (NodeOrInt_MakeIndex (NODE_TYPE (arg_node),
                                                               WLNODE_GET_ADDR (arg_node,
                                                                                BOUND2),
-                                                              dim, IDS_NAME (wlids),
-                                                              FALSE, FALSE),
+                                                              dim, wlids),
                                          NULL)))));
 
     DBUG_RETURN (args);
@@ -4308,8 +4310,7 @@ MakeIcmArgs_WL_LOOP2 (node *arg_node)
       = MakeExprs (MakeIcmArgs_WL_LOOP1 (arg_node),
                    MakeExprs (NodeOrInt_MakeIndex (NODE_TYPE (arg_node),
                                                    WLBLOCKSTR_GET_ADDR (arg_node, STEP),
-                                                   WLNODE_DIM (arg_node),
-                                                   IDS_NAME (wlids), FALSE, FALSE),
+                                                   WLNODE_DIM (arg_node), wlids),
                               NULL));
 
     DBUG_RETURN (args);
@@ -4417,13 +4418,13 @@ MakeIcm_MT_ADJUST_SCHEDULER (node *arg_node, node *assigns)
                             MakeNum (dim),
                             NodeOrInt_MakeIndex (NODE_TYPE (arg_node),
                                                  WLBLOCKSTR_GET_ADDR (arg_node, BOUND1),
-                                                 dim, IDS_NAME (wlids), TRUE, TRUE),
+                                                 dim, wlids),
                             NodeOrInt_MakeIndex (NODE_TYPE (arg_node),
                                                  WLBLOCKSTR_GET_ADDR (arg_node, BOUND2),
-                                                 dim, IDS_NAME (wlids), TRUE, TRUE),
+                                                 dim, wlids),
                             NodeOrInt_MakeIndex (NODE_TYPE (arg_node),
                                                  WLBLOCKSTR_GET_ADDR (arg_node, STEP),
-                                                 dim, IDS_NAME (wlids), TRUE, TRUE),
+                                                 dim, wlids),
                             assigns);
     }
 
@@ -4865,7 +4866,7 @@ COMPWLsegx (node *arg_node, node *arg_info)
         INFO_COMP_SCHEDULERINIT (arg_info)
           = MakeAssign (SCHCompileSchedulingWithTaskselInit (INFO_COMP_SCHEDULERID (
                                                                arg_info),
-                                                             IDS_NAME (wlids),
+                                                             wlids,
                                                              WLSEGX_SCHEDULING (arg_node),
                                                              WLSEGX_TASKSEL (arg_node),
                                                              arg_node),
@@ -4877,7 +4878,7 @@ COMPWLsegx (node *arg_node, node *arg_info)
     ret_node
       = MakeAssigns4 (SCHCompileSchedulingWithTaskselBegin (INFO_COMP_SCHEDULERID (
                                                               arg_info),
-                                                            IDS_NAME (wlids),
+                                                            wlids,
                                                             WLSEGX_SCHEDULING (arg_node),
                                                             WLSEGX_TASKSEL (arg_node),
                                                             arg_node),
@@ -4885,7 +4886,7 @@ COMPWLsegx (node *arg_node, node *arg_info)
                                                               arg_info)),
                       SCHCompileSchedulingWithTaskselEnd (INFO_COMP_SCHEDULERID (
                                                             arg_info),
-                                                          IDS_NAME (wlids),
+                                                          wlids,
                                                           WLSEGX_SCHEDULING (arg_node),
                                                           WLSEGX_TASKSEL (arg_node),
                                                           arg_node),
