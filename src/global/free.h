@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.11  1997/10/29 13:01:00  srs
+ * new macro FREE (show_malloc).
+ * removed HAVE_MALLOC_O
+ *
  * Revision 1.10  1997/04/24 14:05:37  sbs
  * HAVE_MALLOC_O inserted
  *
@@ -52,28 +56,25 @@
 
 #ifndef NOFREE
 
-#ifdef HAVE_MALLOC_O
-
+#ifdef show_malloc
+#define FREE(address)                                                                    \
+    if ((address) != NULL) {                                                             \
+        DBUG_PRINT ("FREEMEM", ("Free memory at adress: " P_FORMAT, (address)));         \
+        address = (void *)((int *)address - 1);                                          \
+        current_allocated_mem -= *(int *)address;                                        \
+        free ((address));                                                                \
+        address = NULL;                                                                  \
+    }
+#else /* not show_malloc */
 #define FREE(address)                                                                    \
     if ((address) != NULL) {                                                             \
         DBUG_PRINT ("FREEMEM", ("Free memory at adress: " P_FORMAT, (address)));         \
         free ((address));                                                                \
-        DBUG_EXECUTE ("MEMVERIFY", malloc_verify (););                                   \
         address = NULL;                                                                  \
     }
+#endif
 
-#else /* HAVE_MALLOC_O */
-
-#define FREE(address)                                                                    \
-    if ((address) != NULL) {                                                             \
-        DBUG_PRINT ("FREEMEM", ("Free memory at adress: " P_FORMAT, (address)));         \
-        free ((address));                                                                \
-        address = NULL;                                                                  \
-    }
-
-#endif /* HAVE_MALLOC_O */
-
-#else
+#else /* NOFREE */
 
 #define FREE(address)
 
