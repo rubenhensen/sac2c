@@ -18,10 +18,12 @@ node *syntax_tree;
 %union {
          id              *id;
          ids             *ids;
-         nums            *nums;
          types           *types;
          node            *node;
-	}
+         int             cint;
+         float           cfloat;
+         nums            *nums;
+       }
 
 %token BRACE_L, BRACE_R, BRACKET_L, BRACKET_R, SQBR_L, SQBR_R, COLON, COMMA,
        INLINE, LET,
@@ -30,10 +32,11 @@ node *syntax_tree;
        RESHAPE, SHAPE, TAKE, DROP, DIM, ROTATE,CAT,PSI,
        MAIN, RETURN, IF, ELSE, DO, WHILE, FOR, WITH, GENARRAY, MODARRAY,
        ARRAY,
-       FLOAT, NUM,
        SC;
 %token <id> ID;
 %token <types> TYPE_INT, TYPE_FLOAT, TYPE_BOOL;
+%token <cint> NUM;
+%token <cfloat> FLOAT;
 
 %type <ids> ids;
 %type <nums> nums;
@@ -222,7 +225,7 @@ retassignblock: BRACE_L assigns retassign COLON BRACE_R
                     tmp->node[1]->nnode=1;             /* set number of children nodes */
 
                     DBUG_PRINT("GENTREE",
-                               ("%s "P_FORMAT, ", %s"P_FORMAT, 
+                               ("%s "P_FORMAT", %s"P_FORMAT, 
                                 mdb_nodetype[$$->nodetype], $$,
                                 mdb_nodetype[$$->node[0]->nodetype], $$->node[0]));
                   } 
@@ -556,19 +559,19 @@ expr:   ID BRACKET_L exprs BRACKET_R
         } 
       | NUM
          {$$=MakeNode(N_num);
-          $$->info.cint=atoi(yytext);
+          $$->info.cint=yylval.cint;
           DBUG_PRINT("GENTREE",("%s" P_FORMAT ": %d",
                                 mdb_nodetype[$$->nodetype],$$,$$->info.cint));
          }
       | MINUS NUM %prec UMINUS
          {$$=MakeNode(N_num);
-          $$->info.cint=-(atoi(yytext));
+          $$->info.cint=-yylval.cint;
           DBUG_PRINT("GENTREE",("%s" P_FORMAT ": %d",
                                 mdb_nodetype[$$->nodetype],$$,$$->info.cint));
          }
       | PLUS  NUM %prec UMINUS
          {$$=MakeNode(N_num);
-          $$->info.cint=atoi(yytext);
+          $$->info.cint=yylval.cint;
           DBUG_PRINT("GENTREE",("%s" P_FORMAT ": %d",
                                 mdb_nodetype[$$->nodetype],$$,$$->info.cint));
          }
@@ -673,13 +676,15 @@ ids:   ID COMMA ids
 
 nums:   NUM COMMA nums 
          { $$=GEN_NODE(nums);
-           $$->num=atoi(yytext);
+           $$->num=$1;
            $$->next=$3;
+           DBUG_PRINT("GENTREE",("nums: %d", $$->num));
          }
       | NUM 
          { $$=GEN_NODE(nums);
-           $$->num=atoi(yytext);
+           $$->num=$1;
            $$->next=NULL;
+           DBUG_PRINT("GENTREE",("nums: %d", $$->num));
          }
        ; 
 
@@ -812,6 +817,7 @@ types *GenComplexType( types *types, nums *numsp)
   do {
     types->dim++;
     *destptr++=numsp->num;
+    DBUG_PRINT("GENTREE",("shape-element: %d",numsp->num));
     tmp=numsp;
     numsp=numsp->next;
     free(tmp);
