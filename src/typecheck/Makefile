@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.26  1998/05/03 14:04:27  dkr
+# make deps done
+#
 # Revision 1.25  1998/04/28 15:21:02  srs
 # made deps
 #
@@ -135,3 +138,4 @@ typecheck_WL.o: /usr/include/stdio.h /usr/include/sys/va_list.h
 typecheck_WL.o: ../global/globals.h ../global/internal_lib.h ../print/print.h
 typecheck_WL.o: ../global/my_debug.h ../../inc/dbug.h ../global/traverse.h
 typecheck_WL.o: ../global/free.h /usr/include/malloc.h
+typecheck_WL.o: ../optimize/ConstantFolding.h

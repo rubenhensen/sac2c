@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.64  1998/05/03 14:04:20  dkr
+# make deps done
+#
 # Revision 1.63  1998/04/28 15:19:44  srs
 # made deps
 #
@@ -264,13 +267,6 @@ clean:
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
-DeadCodeRemoval.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-DeadCodeRemoval.o: /usr/include/sys/va_list.h /usr/include/stdlib.h tree.h
-DeadCodeRemoval.o: types.h tree_basic.h tree_compound.h Error.h
-DeadCodeRemoval.o: /usr/include/string.h globals.h internal_lib.h free.h
-DeadCodeRemoval.o: ../../inc/dbug.h my_debug.h /usr/include/malloc.h
-DeadCodeRemoval.o: traverse.h ../optimize/optimize.h
-DeadCodeRemoval.o: ../optimize/DeadCodeRemoval.h
 Error.o: /usr/include/stdarg.h /usr/include/varargs.h
 Error.o: /usr/include/sys/va_list.h /usr/include/stdio.h
 Error.o: /usr/include/sys/feature_tests.h /usr/include/string.h Error.h
@@ -304,8 +300,9 @@ main.o: resource.h ../scanparse/y.tab.h ../psi-opt/psi-opt.h
 main.o: ../modules/writesib.h ../modules/readsib.h ../modules/implicittypes.h
 main.o: ../objects/objinit.h ../modules/analysis.h ../modules/checkdec.h
 main.o: ../objects/objects.h ../objects/uniquecheck.h ../objects/rmvoidfun.h
-main.o: ../concurrent/spmdregions.h ../compile/precompile.h
-main.o: ../compile/compile.h ../modules/cccall.h ../compile/Old2NewWith.h
+main.o: ../compile/wltransform.h ../concurrent/spmdregions.h
+main.o: ../compile/precompile.h ../compile/compile.h ../modules/cccall.h
+main.o: ../compile/Old2NewWith.h
 my_debug.o: tree.h types.h tree_basic.h tree_compound.h Error.h
 my_debug.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 my_debug.o: /usr/include/sys/va_list.h /usr/include/string.h
@@ -333,10 +330,10 @@ traverse.o: ../modules/implicittypes.h ../objects/objinit.h
 traverse.o: ../modules/analysis.h ../modules/checkdec.h ../objects/objects.h
 traverse.o: ../objects/uniquecheck.h ../objects/rmvoidfun.h
 traverse.o: ../refcount/refcount.h ../concurrent/spmdregions.h
-traverse.o: ../compile/precompile.h ../compile/compile.h ../modules/cccall.h
-traverse.o: ../compile/Old2NewWith.h ../optimize/WithloopFolding.h
-traverse.o: ../optimize/WLT.h ../optimize/WLI.h ../optimize/WLF.h traverse.h
-traverse.o: node_info.mac
+traverse.o: ../compile/wltransform.h ../compile/precompile.h
+traverse.o: ../compile/compile.h ../modules/cccall.h ../compile/Old2NewWith.h
+traverse.o: ../optimize/WithloopFolding.h ../optimize/WLT.h ../optimize/WLI.h
+traverse.o: ../optimize/WLF.h traverse.h node_info.mac
 tree.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h tree.h types.h
 tree.o: tree_basic.h tree_compound.h Error.h /usr/include/stdio.h
 tree.o: /usr/include/sys/va_list.h /usr/include/string.h globals.h
