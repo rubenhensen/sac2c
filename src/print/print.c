@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.154  2004/07/14 14:32:25  sah
+ * print.c now depends on SSAWithloopFolding.h instead of WithloopFolding.h
+ *
  * Revision 3.153  2004/05/12 13:04:23  ktr
  * PrintDo now prints goto statement if DO_SKIP is != NULL.
  *
@@ -284,7 +287,7 @@
 #include "filemgr.h"
 #include "globals.h"
 #include "gen_startup_code.h"
-#include "WithloopFolding.h"
+#include "SSAWithloopFolding.h"
 #include "scheduling.h"
 #include "refcount.h"
 #include "wl_bounds.h"
@@ -2090,7 +2093,7 @@ PrintAssign (node *arg_node, node *arg_info)
 
     DBUG_EXECUTE ("WLI", if ((NODE_TYPE (instr) == N_let)
                              && (PRF_PRF (LET_EXPR (instr)) == F_sel)) {
-        DbugIndexInfo (ASSIGN_INDEX (arg_node));
+        SSADbugIndexInfo (ASSIGN_INDEX (arg_node));
     });
 
     PRINT_LINE_PRAGMA_IN_SIB (outfile, arg_node);
