@@ -232,7 +232,8 @@ CountFunArgs (node *fundef)
     args = FUNDEF_ARGS (fundef);
 
     while (args != NULL) {
-        count++;
+        if (ARG_STATUS (args) == ST_regular)
+            count++;
         args = ARG_NEXT (args);
     }
 
