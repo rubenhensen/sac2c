@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.2  2004/11/23 14:30:10  sah
+  added missing _
+
   Revision 1.1  2004/11/23 11:29:45  sah
   Initial revision
 
@@ -126,7 +129,7 @@
  
   <!-- generate an entry for each node within the union -->
   <xsl:template match="node" mode="generate-attrib-union">
-    <xsl:value-of select="'struct ATTRIBS_N'"/>
+    <xsl:value-of select="'struct ATTRIBS_N_'"/>
     <xsl:call-template name="uppercase" >
       <xsl:with-param name="string">
         <xsl:value-of select="@name" />
