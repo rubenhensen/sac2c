@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.36  1999/10/28 19:58:45  sbs
+ * ARRAY_FLAT changed to PRINT_CAR
+ * PRINT_WLAA added.
+ *
  * Revision 2.35  1999/10/28 17:09:12  dkr
  * output of use/def/mrd masks changed
  *
@@ -1214,7 +1218,7 @@ PrintId (node *arg_node, node *arg_info)
     }
 
     if (compiler_phase != PH_genccode) {
-        DBUG_EXECUTE ("ARRAY_FLAT", DbugPrintArray (arg_node););
+        DBUG_EXECUTE ("PRINT_CAR", DbugPrintArray (arg_node););
     }
 
     DBUG_RETURN (arg_node);
@@ -1802,7 +1806,7 @@ PrintArray (node *arg_node, node *arg_info)
     }
 
     if (compiler_phase != PH_genccode) {
-        DBUG_EXECUTE ("ARRAY_FLAT", DbugPrintArray (arg_node););
+        DBUG_EXECUTE ("PRINT_CAR", DbugPrintArray (arg_node););
     }
 
     DBUG_RETURN (arg_node);
@@ -2407,8 +2411,10 @@ PrintNcode (node *arg_node, node *arg_info)
     /*
      *  NCODE_WLAA_INFO(arg_node) is set to NULL by initializing the N_Ncode node.
      */
-    if ((compiler_phase == PH_sacopt) && (NCODE_WLAA_INFO (arg_node) != NULL))
+    DBUG_EXECUTE ("PRINT_WLAA", if ((compiler_phase == PH_sacopt)
+                                    && (NCODE_WLAA_INFO (arg_node) != NULL)) {
         WLAAprintAccesses (arg_node, arg_info);
+    });
 
     fprintf (outfile, "}");
 
