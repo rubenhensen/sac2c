@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.16  1994/12/15 11:45:22  hw
- * inserted FltnModul
+ * Revision 1.17  1994/12/15 17:13:41  sbs
+ * N_cast inserted
  *
+;; Revision 1.16  1994/12/15  11:45:22  hw
+;; inserted FltnModul
+;;
 ;; Revision 1.15  1994/12/14  11:16:42  hw
 ;; inserted TClet , TCassign, N_stop & N_ok
 ;;
@@ -85,6 +88,7 @@ NIF (N_num, "N_num", DummyFun, PrintNum, DummyFun, DummyFun),
   NIF (N_modarray, "N_modarray", DummyFun, PrintConexpr, DummyFun, DummyFun),
   NIF (N_prf, "N_prf", FltnPrf, PrintPrf, DummyFun, DummyFun),
   NIF (N_ap, "N_ap", DummyFun, PrintAp, DummyFun, DummyFun),
+  NIF (N_cast, "N_cast", DummyFun, PrintCast, DummyFun, DummyFun),
   NIF (N_exprs, "N_exprs", FltnExprs, PrintExprs, DummyFun, DummyFun),
   NIF (N_array, "N_array", DummyFun, PrintArray, DummyFun, DummyFun),
   NIF (N_info, "N_info", DummyFun, DummyFun, DummyFun, DummyFun),
