@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.4  1995/04/03 16:35:29  hw
+ * Revision 1.5  1995/04/04 08:31:30  hw
+ * changed CompFundef
+ *
+ * Revision 1.4  1995/04/03  16:35:29  hw
  * - CompFundef inserted
  * - changed CompArg (ICM for increasing refcounts inserted)
  * - F_psi will work on constant arrays
@@ -993,13 +996,19 @@ node *
 CompFundef (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("CompFundef");
-    arg_node->node[0] = Trav (arg_node->node[0], arg_info);
+    if (NULL != arg_node->node[0])
+        arg_node->node[0] = Trav (arg_node->node[0], arg_info);
     if (NULL != arg_node->node[2]) {
-        arg_info->node[0] = arg_node->node[0]->node[0]; /* first assign of body */
+        if (NULL != arg_node->node[0])
+            /* first assign of body */
+            arg_info->node[0] = arg_node->node[0]->node[0];
+
         arg_node->node[2] = Trav (arg_node->node[2], arg_info);
-        /* new first assign of body */
-        arg_node->node[0]->node[0] = arg_info->node[0];
-        arg_info->node[0] = NULL;
+        if (NULL != arg_node->node[0]) {
+            /* new first assign of body */
+            arg_node->node[0]->node[0] = arg_info->node[0];
+            arg_info->node[0] = NULL;
+        }
     }
     if (NULL != arg_node->node[1])
         arg_node->node[1] = Trav (arg_node->node[1], arg_info);
