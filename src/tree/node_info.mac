@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2000/02/08 16:16:20  dkr
+ * LAC2FUNpart added
+ *
  * Revision 1.10  2000/02/08 14:44:00  dkr
  * LAC2FUNwithid added
  *
@@ -1371,7 +1374,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, O2Nnpart, TravSons, TravSons, TravSons,
        TravSons, FMTravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, LAC2FUNpart,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
 
