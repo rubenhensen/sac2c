@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.3  2001/01/17 17:37:49  dkr
+ * comment added
+ *
  * Revision 3.2  2000/12/06 19:22:16  cg
  * Removed compiler warnings in production mode.
  *
@@ -424,10 +427,17 @@ AddDummyCode (node *with_node)
     block_node = MakeBlock (assign_node, NULL);
     id_node = MakeId (StringCopy (VARDEC_NAME (vardec_node)), NULL, ST_regular);
     ID_VARDEC (id_node) = vardec_node;
+
+    /*
+     * dkr:
+     * Why generating such a complicate dummy code????
+     * It would be sufficient to generate an empty code here:
+     *   MakeNCode( MakeEmpty(), MakeEmpty())
+     */
     code_node = MakeNCode (block_node, id_node);
 
     /* tag dummy code to identify it in further optimizations */
-    NCODE_APT_DUMMY_CODE (code_node) = TRUE;
+    NCODE_AP_DUMMY_CODE (code_node) = TRUE;
 
     /* put dummy code at beginning of code-chain (required by AddDummyPart !!!) */
     NCODE_NEXT (code_node) = NWITH_CODE (with_node);
