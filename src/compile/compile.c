@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.76  1996/01/26 15:34:29  cg
+ * Revision 1.77  1996/02/06 18:59:17  cg
+ * fixed bug in CompId
+ *
+ * Revision 1.76  1996/01/26  15:34:29  cg
  * CompId now inserts the right icms to copy arays and hidden objects
  * where necessary at the positions of former class conversion functions
  *
@@ -3875,7 +3878,7 @@ CompId (node *arg_node, node *arg_info)
                         APPEND_ASSIGNS (first_assign, next_assign);
 
                         SET_RC_ND (res, MakeNum (IDS_REFCNT (INFO_LASTIDS (arg_info))));
-                        DEC_RC_ND (MAKE_IDNODE (StringCopy (ID_NAME (arg_node))),
+                        DEC_RC_ND (MAKE_IDNODE (StringCopy (ID_NAME (old_arg_node))),
                                    MakeNum (1));
 
                         INSERT_ASSIGN;
@@ -3887,7 +3890,7 @@ CompId (node *arg_node, node *arg_info)
 
                         SET_VARS_FOR_MORE_ICMS;
 
-                        DEC_RC_ND (MAKE_IDNODE (StringCopy (ID_NAME (arg_node))),
+                        DEC_RC_ND (MAKE_IDNODE (StringCopy (ID_NAME (old_arg_node))),
                                    MakeNum (1));
 
                         INSERT_ASSIGN;
