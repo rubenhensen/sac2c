@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.83  1996/01/17 16:49:21  asi
+ * Revision 1.84  1996/01/22 17:28:30  cg
+ * Now, paths are initialized with the current directory
+ *
+ * Revision 1.83  1996/01/17  16:49:21  asi
  * added common subexpression elimination
  *
  * Revision 1.82  1996/01/16  16:43:14  cg
@@ -378,6 +381,8 @@ MAIN
         breakcompile = 0;
 
     node *syntax_tree;
+
+    InitPaths ();
 
     /*
      *  First, we evaluate the given command line options...
