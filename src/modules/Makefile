@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.12  1995/10/22 17:40:38  cg
+# Revision 1.13  1995/10/26 14:48:19  cg
+# make deps done
+#
+# Revision 1.12  1995/10/22  17:40:38  cg
 # make deps done and a bloody bug fixed.
 #
 # Revision 1.11  1995/10/20  09:28:12  cg
@@ -83,7 +86,9 @@ checkdec.o: /usr/include/string.h /usr/include/sys/stdtypes.h
 checkdec.o: ../global/types.h ../global/tree_basic.h
 checkdec.o: ../global/tree_compound.h ../global/Error.h /usr/include/stdio.h
 checkdec.o: ../../inc/dbug.h ../global/my_debug.h ../global/traverse.h
-checkdec.o: import.h ../print/convert.h filemgr.h
+checkdec.o: ../global/free.h import.h ../print/convert.h filemgr.h
+checkdec.o: ../scanparse/scnprs.h ../scanparse/y.tab.h implicittypes.h
+checkdec.o: ../print/print.h ../global/tree.h
 filemgr.o: /usr/include/stdlib.h /usr/include/sys/stdtypes.h
 filemgr.o: /usr/include/string.h ../../inc/dbug.h /usr/include/stdio.h
 filemgr.o: filemgr.h
@@ -99,10 +104,8 @@ import.o: ../global/Error.h /usr/include/stdio.h ../global/free.h
 import.o: ../../inc/dbug.h ../global/my_debug.h ../global/internal_lib.h
 import.o: ../scanparse/scnprs.h ../scanparse/y.tab.h ../global/traverse.h
 import.o: ../global/access_macros.h filemgr.h import.h
-sib.o: /usr/include/malloc.h /usr/include/string.h
-sib.o: /usr/include/sys/stdtypes.h ../global/types.h ../global/tree_basic.h
-sib.o: ../global/tree_compound.h ../global/Error.h /usr/include/stdio.h
-sib.o: ../global/free.h ../../inc/dbug.h ../global/my_debug.h
-sib.o: ../scanparse/scnprs.h ../scanparse/y.tab.h ../global/traverse.h
-sib.o: filemgr.h import.h ../print/print.h ../global/tree.h
-sib.o: ../print/convert.h sib.h
+sib.o: /usr/include/string.h /usr/include/sys/stdtypes.h ../global/types.h
+sib.o: ../global/tree_basic.h ../global/tree_compound.h ../global/Error.h
+sib.o: /usr/include/stdio.h ../global/free.h ../../inc/dbug.h
+sib.o: ../global/my_debug.h ../global/traverse.h ../print/convert.h filemgr.h
+sib.o: sib.h
