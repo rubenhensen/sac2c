@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.62  2001/03/27 13:48:34  dkr
+ * some comments modified
+ *
  * Revision 3.61  2001/03/27 09:09:46  nmw
  * INFO_SSALIR_ macros added
  *
@@ -960,7 +963,7 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  ***    node*           ICM            (N_icm)    (compile -> print )
  ***    int             VARNO                     (optimize -> )
  ***    long*           MASK[x]                   (optimize -> )
- ***    int             INLREC                    (inl !!)
+ ***    int             INLREC                    (inline !!)
  ***    bool            EXPORT                    ( -> dfr !!)
  ***
  ***    DFMmask_base_t  DFM_BASE            (lac2fun/rc -> spmd -> compile -> )
@@ -1201,7 +1204,7 @@ extern node *MakeBlock (node *instr, node *vardec);
  ***
  ***  temporary attributes:
  ***
- ***    node*       OBJDEF   (O)  (N_objdef)   (inlining -> precompile !!)
+ ***    node*       OBJDEF   (O)  (N_objdef)   (inline -> precompile !!)
  ***    node*       ACTCHN   (O)  (N_vinfo)    (psi-optimize -> )
  ***    node*       COLCHN   (O)  (N_vinfo)    (psi-optimize -> )
  ***    int         REFCNT                     (refcount -> compile -> )
@@ -2681,13 +2684,13 @@ extern node *MakeInfo ();
 #define INFO_VARNO(n) (n->varno)
 
 /* inline */
-#define INFO_INL_NAIVE(n) ((bool)(n->flag))
+#define INFO_INL_TYPE(n) (n->flag)
+#define INFO_INL_LUT(n) ((LUT_t) (n->dfmask[0]))
 #define INFO_INL_MODUL(n) (n->node[0])
 #define INFO_INL_VARDECS(n) (n->node[1])
-#define INFO_INL_LUT(n) ((LUT_t) (n->node[2]))
-#define INFO_INL_PROLOG(n) (n->node[3])
-#define INFO_INL_EPILOG(n) (n->node[4])
-#define INFO_INL_ARG(n) (n->node[5])
+#define INFO_INL_PROLOG(n) (n->node[2])
+#define INFO_INL_EPILOG(n) (n->node[3])
+#define INFO_INL_ARG(n) (n->node[4])
 #define INFO_INL_IDS(n) (n->info.ids)
 
 /* WLF, all phases of WLF use these macros, not only WLI. */
