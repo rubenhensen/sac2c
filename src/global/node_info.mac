@@ -1,9 +1,13 @@
 /*
  *
  * $Log$
- * Revision 1.56  1995/04/05 15:52:38  asi
- * loop invariant removal added
+ * Revision 1.57  1995/04/07 13:42:12  hw
+ * FltnAp, FltnReturn inserted
+ * NoTrav for N_ap (in cf_tab) inserted
  *
+;; Revision 1.56  1995/04/05  15:52:38  asi
+;; loop invariant removal added
+;;
 ;; Revision 1.55  1995/04/04  12:20:27  asi
 ;; added WRfundef
 ;;
@@ -217,7 +221,7 @@ NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun,
        FreeInfoType, DummyFun, DummyFun, CompArg, DummyFun),
   NIF (N_assign, "N_assign", DummyFun, FltnAssign, PrintAssign, TCassign, OPTassign,
        DEADassign, DummyFun, FreeNoInfo, CFassign, RCassign, CompAssign, DummyFun),
-  NIF (N_return, "N_return", DummyFun, DummyFun, PrintReturn, TCreturn, DummyFun,
+  NIF (N_return, "N_return", DummyFun, FltnReturn, PrintReturn, TCreturn, DummyFun,
        DummyFun, DummyFun, FreeNoInfo, DummyFun, DummyFun, CompReturn, DummyFun),
   NIF (N_do, "N_do", DummyFun, FltnDo, PrintDo, TCdo, OPTloop, DEADloop, DummyFun,
        FreeNoInfo, CFdo, RCloop, DummyFun, DummyFun),
@@ -249,8 +253,8 @@ NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun, FreeNoInfo, DummyFun, RCcon, DummyFun, DummyFun),
   NIF (N_prf, "N_prf", DummyFun, DummyFun, PrintPrf, DummyFun, DummyFun, DummyFun,
        DummyFun, FreeNoInfo, CFprf, DummyFun, CompPrf, DummyFun),
-  NIF (N_ap, "N_ap", DummyFun, DummyFun, PrintAp, DummyFun, DummyFun, DummyFun, DummyFun,
-       FreeInfoId, DummyFun, DummyFun, CompAp, DummyFun),
+  NIF (N_ap, "N_ap", DummyFun, FltnAp, PrintAp, DummyFun, DummyFun, DummyFun, DummyFun,
+       FreeInfoId, NoTrav, DummyFun, CompAp, DummyFun),
   NIF (N_cast, "N_cast", DummyFun, DummyFun, PrintCast, DummyFun, DummyFun, DummyFun,
        DummyFun, FreeInfoType, CFcast, DummyFun, DummyFun, DummyFun),
   NIF (N_exprs, "N_exprs", DummyFun, FltnExprs, PrintExprs, DummyFun, DummyFun, DummyFun,
