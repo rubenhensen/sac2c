@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.23  2002/08/14 09:53:22  dkr
+ * - DBUG_ASSERT for overflow in allocation counter corrected
+ * - Malloc(0) returns NULL on all architectures now
+ *
  * Revision 3.22  2002/08/13 17:19:46  dkr
  * Free(): DBUG_ASSERT for overflow in allocation counter added
  *
@@ -119,26 +123,32 @@ Malloc (int size)
 
     DBUG_ASSERT ((size >= 0), "Malloc called with negative size!");
 
-    tmp = malloc (size + malloc_align_step);
+    if (size > 0) {
+        tmp = malloc (size + malloc_align_step);
 
-    /*
-     * Since some UNIX system (e.g. ALPHA) do return NULL for size 0 as well
-     * we do complain for ((NULL == tmp) && (size > 0)) only!!
-     */
-    if ((NULL == tmp) && (size > 0)) {
-        SYSABORT (("Out of memory: %u Bytes already allocated!", current_allocated_mem));
+        /*
+         * Since some UNIX system (e.g. ALPHA) do return NULL for size 0 as well
+         * we do complain for ((NULL == tmp) && (size > 0)) only!!
+         */
+        if (tmp == NULL) {
+            SYSABORT (
+              ("Out of memory: %u Bytes already allocated!", current_allocated_mem));
+        }
+
+        *(int *)tmp = size;
+        tmp = (char *)tmp + malloc_align_step;
+
+        DBUG_ASSERT ((current_allocated_mem + size >= current_allocated_mem),
+                     "counter for allocated memory: overflow detected");
+        current_allocated_mem += size;
+        if (max_allocated_mem < current_allocated_mem) {
+            max_allocated_mem = current_allocated_mem;
+        }
+    } else {
+        tmp = NULL;
     }
 
-    *(int *)tmp = size;
-    tmp = (char *)tmp + malloc_align_step;
     DBUG_PRINT ("MEM_ALLOC", ("Alloc memory: %d Bytes at adress: " F_PTR, size, tmp));
-
-    DBUG_ASSERT ((current_allocated_mem + size > current_allocated_mem),
-                 "counter for allocated memory: overflow detected");
-    current_allocated_mem += size;
-    if (max_allocated_mem < current_allocated_mem) {
-        max_allocated_mem = current_allocated_mem;
-    }
 
     DBUG_PRINT ("MEM_TOTAL", ("Currently allocated memory: %u", current_allocated_mem));
 
@@ -174,7 +184,7 @@ Free (void *address)
         DBUG_PRINT ("MEM_ALLOC",
                     ("Free memory: %d Bytes at adress: " F_PTR, size, address));
 
-        DBUG_ASSERT ((current_allocated_mem > current_allocated_mem - size),
+        DBUG_ASSERT ((current_allocated_mem >= current_allocated_mem - size),
                      "counter for allocated memory: overflow detected");
         current_allocated_mem -= size;
 
@@ -202,14 +212,18 @@ Malloc (int size)
 
     DBUG_ASSERT ((size >= 0), "Malloc called with negative size!");
 
-    tmp = malloc (size);
+    if (size > 0) {
+        tmp = malloc (size);
 
-    /*
-     * Since some UNIX system (e.g. ALPHA) do return NULL for size 0 as well
-     * we do complain for ((NULL == tmp) && (size > 0)) only!!
-     */
-    if ((NULL == tmp) && (size > 0)) {
-        SYSABORT (("Out of memory"));
+        /*
+         * Since some UNIX system (e.g. ALPHA) do return NULL for size 0 as well
+         * we do complain for ((NULL == tmp) && (size > 0)) only!!
+         */
+        if (tmp == NULL) {
+            SYSABORT (("Out of memory"));
+        }
+    } else {
+        tmp = NULL;
     }
 
     DBUG_PRINT ("MEM_ALLOC", ("Alloc memory: %d Bytes at adress: " F_PTR, size, tmp));
