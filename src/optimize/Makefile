@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.13  2001/03/22 20:19:00  dkr
+# INCS corrected
+#
 # Revision 3.12  2001/03/21 15:51:38  nmw
 # include ../constants added
 #
@@ -98,7 +101,7 @@ CFLAGS    := -D__EXTENSIONS__
 
 
 INCS=-I../global -I../../inc -I../typecheck -I../print -I../psi-opt -I../modules \
-     -I../compile -I../concurrent -I../tree -I../flatten -I ../constants
+     -I../compile -I../concurrent -I../tree -I../flatten -I../constants
 
 all: optimize.o generatemasks.o ConstantFolding.o DeadCodeRemoval.o \
      LoopInvariantRemoval.o Inline.o Unroll.o Unswitch.o CSE.o \
