@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2001/04/24 09:34:00  dkr
+ * CHECK_NULL renamed into STR_OR_EMPTY
+ *
  * Revision 3.2  2001/03/28 14:52:19  dkr
  * CHECK_NULL used
  *
@@ -264,7 +267,7 @@
         do {                                                                             \
             fprintf (stderr, "%s", header);                                              \
             ERROR_INDENT (ind2);                                                         \
-            fprintf (stderr, "%s\n", CHECK_NULL (line));                                 \
+            fprintf (stderr, "%s\n", STR_OR_EMPTY (line));                               \
             line = strtok (NULL, "@");                                                   \
             if (line != NULL)                                                            \
                 ERROR_INDENT (ind1);                                                     \

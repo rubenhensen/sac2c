@@ -4,6 +4,9 @@
 /*
  *
  * $Log$
+ * Revision 3.18  2001/04/24 09:34:07  dkr
+ * CHECK_NULL renamed into STR_OR_EMPTY
+ *
  * Revision 3.17  2001/04/24 09:05:55  dkr
  * P_FORMAT replaced by F_PTR
  *
@@ -2282,8 +2285,8 @@ sibarg: type sibreference sibparam
                      ("%s: "F_PTR", Id: %s, Attrib: %d, Status: %d  ",
                       mdb_nodetype[ NODE_TYPE( $$)],
                       $$, 
-                      CHECK_NULL( ARG_NAME( $$)),
-                                  ARG_ATTRIB( $$), ARG_STATUS( $$)));
+                      STR_OR_EMPTY( ARG_NAME( $$)),
+                                    ARG_ATTRIB( $$), ARG_STATUS( $$)));
         }
       | TYPE_DOTS
         {

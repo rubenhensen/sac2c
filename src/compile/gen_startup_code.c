@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2001/04/24 09:39:58  dkr
+ * CHECK_NULL renamed into STR_OR_EMPTY
+ *
  * Revision 3.6  2001/04/03 12:06:43  dkr
  * GSCPrintDefines added
  *
@@ -567,7 +570,7 @@ PrintGlobalSettings (node *syntax_tree)
              ((float)config.cache3_msca_factor) / 100);
 
     fprintf (outfile, "#define SAC_SET_CACHESIM_HOST        \"%s\"\n",
-             CHECK_NULL (cachesim_host));
+             STR_OR_EMPTY (cachesim_host));
 
     if (cachesim_file[0] == '\0') {
         fprintf (outfile, "#define SAC_SET_CACHESIM_FILE        \"%s.cs\"\n",

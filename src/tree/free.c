@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.19  2001/04/24 09:36:40  dkr
+ * CHECK_NULL renamed into STR_OR_EMPTY
+ *
  * Revision 3.18  2001/04/03 14:25:11  nmw
  * unconditional free in FreeAp when removing syntax_tree
  *
@@ -869,7 +872,7 @@ FreeArg (node *arg_node, node *arg_info)
     DBUG_ENTER ("FreeArg");
 
     DBUG_PRINT ("FREE", ("Removing contents of N_arg node %s ...",
-                         CHECK_NULL (ARG_NAME (arg_node))));
+                         STR_OR_EMPTY (ARG_NAME (arg_node))));
     /* ARG_NAME(arg_node) may be NULL in external decls! */
 
     tmp = FREECONT (ARG_NEXT (arg_node));

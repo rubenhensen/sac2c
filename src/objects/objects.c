@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/04/24 09:39:41  dkr
+ * CHECK_NULL renamed into STR_OR_EMPTY
+ *
  * Revision 3.3  2001/02/14 10:19:30  dkr
  * no changes done
  *
@@ -448,9 +451,9 @@ OBJobjdef (node *arg_node, node *arg_info)
     DBUG_ENTER ("OBJobjdef");
 
     buffer = Malloc (strlen (OBJDEF_NAME (arg_node))
-                     + strlen (CHECK_NULL (OBJDEF_MOD (arg_node))) + 3);
+                     + strlen (STR_OR_EMPTY (OBJDEF_MOD (arg_node))) + 3);
 
-    sprintf (buffer, "%s__%s", CHECK_NULL (OBJDEF_MOD (arg_node)),
+    sprintf (buffer, "%s__%s", STR_OR_EMPTY (OBJDEF_MOD (arg_node)),
              OBJDEF_NAME (arg_node));
 
     DBUG_PRINT ("OBJ", ("Generating varname %s for %s", buffer, ItemName (arg_node)));

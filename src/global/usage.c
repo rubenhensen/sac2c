@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2001/04/24 09:39:35  dkr
+ * CHECK_NULL renamed into STR_OR_EMPTY
+ *
  * Revision 3.9  2001/03/28 14:50:02  dkr
  * CHECK_NULL used
  *
@@ -552,7 +555,7 @@ usage ()
             "\t\t\tprogram.\n"
             "\t\t\tThe general default directory is the tmp directory\n"
             "\t\t\tspecified in your sac2crc file.\n",
-            CHECK_NULL (env),
+            STR_OR_EMPTY (env),
             ((NULL != env) && (env[strlen (env) - 1] != '/')) ? "/" : "", version_id);
 
     printf ("\n\nINTRINSIC ARRAY OPERATIONS OPTIONS:\n\n"

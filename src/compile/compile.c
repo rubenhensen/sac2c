@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.43  2001/04/24 09:39:50  dkr
+ * CHECK_NULL renamed into STR_OR_EMPTY
+ *
  * Revision 3.42  2001/04/06 17:17:15  dkr
  * CheckAp() removed by preprocessor if DBUG_OFF is set
  *
@@ -2604,7 +2607,7 @@ COMPArg (node *arg_node, node *arg_info)
     param_idx = INFO_COMP_CNTPARAM (arg_info);
 
     /* store name of formal parameter */
-    id_name = CHECK_NULL ((ARG_NAME (arg_node)));
+    id_name = STR_OR_EMPTY ((ARG_NAME (arg_node)));
 
     if ((IS_REFCOUNTED (ARG, arg_node)) && (FUNDEF_DOES_REFCOUNT (fundef, param_idx))) {
         if (ARG_ATTRIB (arg_node) == ST_reference) {

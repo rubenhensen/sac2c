@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2001/04/24 09:39:45  dkr
+ * CHECK_NULL renamed into STR_OR_EMPTY
+ *
  * Revision 3.8  2001/04/03 09:47:25  dkr
  * WDECarg: minor changes in output format done
  *
@@ -231,7 +234,7 @@ PrintDecTypes (types *type, char *modname)
         TYPES_NEXT (type) = NULL;
 
         type_string
-          = Type2String (type, strcmp (CHECK_NULL (TYPES_MOD (type)), modname) ? 0 : 3,
+          = Type2String (type, strcmp (STR_OR_EMPTY (TYPES_MOD (type)), modname) ? 0 : 3,
                          FALSE);
         fprintf (outfile, "%s", type_string);
         FREE (type_string);
@@ -732,7 +735,7 @@ WDECtypedef (node *arg_node, node *arg_info)
             fprintf (outfile, "  %s;\n", TYPEDEF_NAME (arg_node));
         } else {
             if ((strcmp (TYPEDEF_NAME (arg_node), classname) != 0)
-                || (strcmp (CHECK_NULL (TYPEDEF_MOD (arg_node)), classname) != 0)) {
+                || (strcmp (STR_OR_EMPTY (TYPEDEF_MOD (arg_node)), classname) != 0)) {
                 fprintf (outfile, "  %s;\n", TYPEDEF_NAME (arg_node));
             }
         }

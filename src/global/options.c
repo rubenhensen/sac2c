@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2001/04/24 09:36:35  dkr
+ * CHECK_NULL renamed into STR_OR_EMPTY
+ *
  * Revision 3.9  2001/03/28 14:51:45  dkr
  * CHECK_NULL used
  *
@@ -228,7 +231,7 @@
 #define ARGS_ERROR(msg)                                                                  \
     {                                                                                    \
         SYSERROR (                                                                       \
-          ("%s: %s %s %s", msg, ARGS_argv[0], CHECK_NULL (OPT), CHECK_NULL (ARG)));      \
+          ("%s: %s %s %s", msg, ARGS_argv[0], STR_OR_EMPTY (OPT), STR_OR_EMPTY (ARG)));  \
     }
 
 #include "main_args.h"

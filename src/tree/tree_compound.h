@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.38  2001/04/24 09:35:06  dkr
+ * CHECK_NULL renamed into STR_OR_EMPTY
+ *
  * Revision 3.37  2001/04/17 15:26:37  nmw
  * AppendTypes added
  *
@@ -188,7 +191,7 @@ extern node *Shpseg2Array (shpseg *shape, int dim);
 
 #define CMP_TYPE_USER(a, b)                                                              \
     ((!strcmp (TYPES_NAME (a), TYPES_NAME (b)))                                          \
-     && (!strcmp (CHECK_NULL (TYPES_MOD (a)), CHECK_NULL (TYPES_MOD (b)))))
+     && (!strcmp (STR_OR_EMPTY (TYPES_MOD (a)), STR_OR_EMPTY (TYPES_MOD (b)))))
 
 extern types *AppendTypes (types *chain, types *item);
 extern int CountTypes (types *type);
@@ -540,7 +543,7 @@ extern nodelist *NodeListFind (nodelist *nl, node *node);
 
 #define CMP_TYPE_TYPEDEF(name, mod, tdef)                                                \
     ((!strcmp (name, TYPEDEF_NAME (tdef)))                                               \
-     && (!strcmp (CHECK_NULL (mod), CHECK_NULL (TYPEDEF_MOD (tdef)))))
+     && (!strcmp (STR_OR_EMPTY (mod), STR_OR_EMPTY (TYPEDEF_MOD (tdef)))))
 
 /*
  *
@@ -727,7 +730,7 @@ extern node *AppendObjdef (node *objdef_chain, node *objdef);
 
 #define CMP_FUN_ID(a, b)                                                                 \
     ((0 == strcmp (FUNDEF_NAME (a), FUNDEF_NAME (b)))                                    \
-     && (0 == strcmp (CHECK_NULL (FUNDEF_MOD (a)), CHECK_NULL (FUNDEF_MOD (b)))))
+     && (0 == strcmp (STR_OR_EMPTY (FUNDEF_MOD (a)), STR_OR_EMPTY (FUNDEF_MOD (b)))))
 
 /*
  *  macro name    : CMP_FUNDEF(a,b)
