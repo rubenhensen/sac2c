@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 1.6  1998/05/12 09:47:08  srs
+ * removed unused lib DupTree.h
+ *
  * Revision 1.5  1998/04/20 08:59:22  srs
  * added comments
  *
@@ -44,7 +47,6 @@
 #include "internal_lib.h"
 #include "free.h"
 #include "print.h"
-#include "DupTree.h"
 #include "globals.h"
 #include "Error.h"
 #include "dbug.h"
