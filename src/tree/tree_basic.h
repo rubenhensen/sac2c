@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.74  2000/07/12 09:23:23  nmw
+ * macros changed PIH_ and MCW_
+ *
  * Revision 1.73  2000/07/11 15:44:14  jhs
  * Added ST_ALLOC and ST_SYNC.
  * DFMfoldmask changed name to vardec.
@@ -2227,13 +2230,12 @@ extern node *MakePragma ();
  ***    int        INFO_PIW_FLAG     (switch between different formats)
  ***    int        INFO_PIW_COMMA
  ***    int        INFO_PIW_COUNTER
- ***    int        INFO_PIW_RETPOS   (returntypeposition for direct return)
  ***
  ***  when used in map_wrapper.c
  ***    node*      MODUL             (access to module node)
  ***    node*      FUNDEF            (fundef parameter)
  ***    int        FLAG
- ***    int        CNT_ARTIFICIAL    (counter for artificial args)
+ ***    int        CNT_STANDARD      (counter for standard args)
  ***
  ***  when used in pad_transform.c
  ***
@@ -2600,7 +2602,7 @@ extern node *MakeInfo ();
 #define INFO_MCW_MODUL(n) (n->node[0])
 #define INFO_MCW_FUNDEF(n) (n->node[1])
 #define INFO_MCW_FLAG(n) (n->flag)
-#define INFO_MCW_CNT_ARTIFICIAL(n) (n->counter)
+#define INFO_MCW_CNT_STANDARD(n) (n->counter)
 
 /* when used in print_interface.c */
 #define INFO_PIH_FLAG(n) (n->flag)
@@ -2609,7 +2611,6 @@ extern node *MakeInfo ();
 #define INFO_PIW_FLAG(n) (n->flag)
 #define INFO_PIW_COMMA(n) (n->varno)
 #define INFO_PIW_COUNTER(n) (n->counter)
-#define INFO_PIW_RETPOS(n) (n->int_data)
 
 /* when used in pad_transform.c */
 #define INFO_APT_EXPRESSION_PADDED(n) ((bool)(n->flag))
