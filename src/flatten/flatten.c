@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.48  1997/11/25 12:37:24  srs
+ * *** empty log message ***
+ *
  * Revision 1.47  1997/11/02 13:57:37  dkr
  * with defined NEWTREE, node->nnode is not used anymore
  *
@@ -285,8 +288,8 @@ DuplicateNode (node *source_node)
             dest_node->node[i] = DuplicateNode (source_node->node[i]);
         dest_node->nnode = i;
 #else
-        for (i = 0; i < MAX_SONS; i++)
-            if (source_node->node[i] != NULL)
+        for (i = 0; i < nnode[NODE_TYPE (source_node)]; i++)
+            if (source_node->node[i])
                 dest_node->node[i] = DuplicateNode (source_node->node[i]);
             else
                 dest_node->node[i] = NULL;
@@ -524,15 +527,15 @@ FltnAssign (node *arg_node, node *arg_info)
 
     arg_info->node[0] = arg_node;
     DBUG_PRINT ("FLATTEN", ("arg_info->node[0] set to %08x!", arg_node));
-    arg_node->node[0] = Trav (arg_node->node[0], arg_info);
+    ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
     return_node = arg_info->node[0];
     DBUG_PRINT ("FLATTEN", ("node %08x inserted before %08x", return_node, arg_node));
 #ifndef NEWTREE
     if (arg_node->nnode == 2) /* there are more assigns that follow */
 #else
-    if (arg_node->node[1] != NULL)
+    if (ASSIGN_NEXT (arg_node))
 #endif
-        arg_node->node[1] = Trav (arg_node->node[1], arg_info);
+        ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
     DBUG_RETURN (return_node);
 }
 
@@ -706,7 +709,7 @@ FltnCond (node *arg_node, node *arg_info)
 #ifndef NEWTREE
     for (i = 1; i < arg_node->nnode; i++)
 #else
-    for (i = 1; i < MAX_SONS; i++)
+    for (i = 1; i < nnode[NODE_TYPE (arg_node)]; i++)
         if (arg_node->node[i] != NULL)
 #endif
     {
@@ -888,10 +891,10 @@ FltnWith (node *arg_node, node *arg_info)
     tmp_tos = tos; /* store tos */
     DBUG_PRINT ("RENAME", ("store tos " P_FORMAT, tos));
 
-    arg_node->node[0] = Trav (arg_node->node[0], arg_info); /* traverse generator */
+    WITH_GEN (arg_node) = Trav (WITH_GEN (arg_node), arg_info); /* traverse generator */
 
     /* traverse  N_genarray, N_modarray, N_foldfun or N_foldprf and body */
-    arg_node->node[1] = Trav (arg_node->node[1], arg_info);
+    WITH_OPERATOR (arg_node) = Trav (WITH_OPERATOR (arg_node), arg_info);
 
     with_level -= 1; /* now decrease it */
 
@@ -1039,10 +1042,10 @@ FltnModul (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("FltnModul");
 
-    if (arg_node->node[2] != NULL) {
-        DBUG_ASSERT ((N_fundef == arg_node->node[2]->nodetype), "blaaa");
+    if (MODUL_FUNS (arg_node)) {
+        DBUG_ASSERT ((N_fundef == NODE_TYPE (MODUL_FUNS (arg_node))), "blaaa");
 
-        arg_node->node[2] = Trav (arg_node->node[2], arg_info);
+        MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -1074,16 +1077,16 @@ FltnFundef (node *arg_node, node *arg_info)
 
     tmp_tos = tos; /* store tos */
 
-    if (NULL != arg_node->node[0]) {
-        if (NULL != arg_node->node[2])
-            arg_node->node[2] = Trav (arg_node->node[2], arg_info);
+    if (FUNDEF_BODY (arg_node)) {
+        if (FUNDEF_ARGS (arg_node))
+            FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), arg_info);
 
-        arg_node->node[0] = Trav (arg_node->node[0], arg_info);
+        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
     }
     tos = tmp_tos; /* restore tos */
 
-    if (NULL != arg_node->node[1])
-        arg_node->node[1] = Trav (arg_node->node[1], arg_info);
+    if (FUNDEF_NEXT (arg_node))
+        FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -1114,7 +1117,7 @@ FltnGen (node *arg_node, node *arg_info)
 #ifndef NEWTREE
     for (i = 0; i < arg_node->nnode; i++)
 #else
-    for (i = 0; i < MAX_SONS; i++)
+    for (i = 0; i < nnode[NODE_TYPE (arg_node)]; i++)
         if (arg_node->node[i] != NULL)
 #endif
         if ((arg_node->node[i]->nodetype == N_ap)
@@ -1134,8 +1137,8 @@ FltnGen (node *arg_node, node *arg_info)
             let_node->info.ids = MakeIds (GenTmpVar (var_counter++), NULL, ST_regular);
 
             assign_node = MakeNode (N_assign);
-            assign_node->node[0] = let_node;
-            assign_node->node[1] = arg_info->node[0];
+            ASSIGN_INSTR (assign_node) = let_node;
+            ASSIGN_NEXT (assign_node) = arg_info->node[0];
             /* a new node is put in front! */
 #ifndef NEWTREE
             if (NULL == assign_node->node[1])
@@ -1377,7 +1380,7 @@ FltnLet (node *arg_node, node *arg_info)
     } else {
         new_assign = MakeNode (N_assign);
         tmp = FindId (ids->id);
-        if (NULL != tmp) {
+        if (tmp) {
             char *new_name, *let_name;
 
             new_name = RenameWithVar (ids->id, -(with_level));
@@ -1394,10 +1397,10 @@ FltnLet (node *arg_node, node *arg_info)
             PUSH (ids->id, ids->id, with_level);
         }
     }
-    arg_node->node[0] = Trav (arg_node->node[0], arg_info);
+    LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
 
-    if (N_with == arg_node->node[0]->nodetype) {
-        if (NULL != new_assign->node[0]) {
+    if (N_with == NODE_TYPE (LET_EXPR (arg_node))) {
+        if (ASSIGN_INSTR (new_assign)) {
             FREE (new_assign->node[1]->node[1]);
             /* a new node is put in front! */
             new_assign->node[1] = arg_info->node[0];
@@ -1552,3 +1555,44 @@ FltnCon (node *arg_node, node *arg_info)
     FREE (info_node);
     DBUG_RETURN (arg_node);
 }
+/* -------------------------------------------------------------- */
+
+/*
+ * functions to flatten the new WLs
+ */
+
+node *
+FltnNwith (node *arg_node, node *arg_info)
+{
+}
+/* -------------------------------------------------------------- */
+
+node *
+FltnNpart (node *arg_node, node *arg_info)
+{
+}
+/* -------------------------------------------------------------- */
+
+node *
+FltnNwithid (node *arg_node, node *arg_info)
+{
+}
+/* -------------------------------------------------------------- */
+
+node *
+FltnNgenerator (node *arg_node, node *arg_info)
+{
+}
+/* -------------------------------------------------------------- */
+
+node *
+FltnNwithop (node *arg_node, node *arg_info)
+{
+}
+/* -------------------------------------------------------------- */
+
+node *
+FltnNcode (node *arg_node, node *arg_info)
+{
+}
+/* -------------------------------------------------------------- */

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.15  1997/11/25 12:37:33  srs
+ * *** empty log message ***
+ *
  * Revision 1.14  1996/09/11 06:10:04  cg
  * Now, arrays as arguments to psi and modarray are abstracted.
  * This is necessary to overload these functiond with user-defined ones.
@@ -67,5 +70,11 @@ extern node *FltnLet (node *arg_node, node *arg_info);
 extern node *FltnArgs (node *arg_node, node *arg_info);
 extern node *FltnCon (node *arg_node, node *arg_info);
 extern node *FltnPrf (node *arg_node, node *arg_info);
+extern node *FltnNwith (node *arg_node, node *arg_info);
+extern node *FltnNpart (node *arg_node, node *arg_info);
+extern node *FltnNwithid (node *arg_node, node *arg_info);
+extern node *FltnNgenerator (node *arg_node, node *arg_info);
+extern node *FltnNwithop (node *arg_node, node *arg_info);
+extern node *FltnNcode (node *arg_node, node *arg_info);
 
 #endif /* _flatten_h  */
