@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.203  2004/09/25 14:35:04  ktr
+ * Added SSACFNwith, SSACFNpart, SSACFNcode
+ *
  * Revision 3.202  2004/09/23 20:45:04  sah
  * added DS traversal
  *
@@ -2369,8 +2372,8 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, PREC3with, APCwith, APTwith,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, SSAwith, TravSons, USSANwith,
-       SSADCRNwith, SSACSENwith, CMPTTravSons, TravSons, TravSons, SSALIRNwith, TravSons,
-       WLPGNwith, SSALURNwith, SSAWLTNwith, SSAWLINwith, SSAWLFNwith,
+       SSADCRNwith, SSACSENwith, CMPTTravSons, TravSons, SSACFNwith, SSALIRNwith,
+       TravSons, WLPGNwith, SSALURNwith, SSAWLTNwith, SSAWLINwith, SSAWLFNwith,
 
        TravSons, COMPWith, TravSons, TravSons, TravSons, WLSNwith, PREC4with, TravSons,
        HDwith, TravSons, CWCwith, TravSons, TravSons, TravSons, TravSons, TravSons,
@@ -2397,7 +2400,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravNone,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, SSApart, TravSons, TravSons,
-       SSADCRNpart, TravSons, CMPTTravSons, TravSons, TravSons, TravSons, TravSons,
+       SSADCRNpart, TravSons, CMPTTravSons, TravSons, SSACFNpart, TravSons, TravSons,
        WLPGNpart, TravSons, SSAWLTNpart, SSAWLINpart, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, WLSNpart, TravSons, TravSons,
@@ -2509,7 +2512,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, PREC3code, APCcode, APTcode,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, SSAcode, TravSons, USSANcode,
-       SSADCRNcode, SSACSENcode, CMPTNcode, TravSons, TravSons, TravSons, TravSons,
+       SSADCRNcode, SSACSENcode, CMPTNcode, TravSons, SSACFNcode, TravSons, TravSons,
        TravSons, TravSons, SSAWLTNcode, SSAWLINcode, SSAWLFNcode,
 
        TravSons, COMPWLcode, TravSons, TravSons, TravSons, TravSons, PREC4code, TravSons,
