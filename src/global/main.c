@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.81  2004/11/24 23:26:44  skt
+ * big compiler brushing during SACDevCampDK 2k4
+ *
  * Revision 3.80  2004/11/23 22:08:32  skt
  * changed BuildSpmdRegions into CONCdoConcurrent
  *
@@ -302,7 +305,6 @@
 #include "precompile.h"
 #include "compile.h"
 #include "annotate_fun_calls.h"
-#ifdef NEW_AST
 #include "libstat.h"
 #include "resolveall.h"
 #include "annotatenamespace.h"
@@ -314,9 +316,6 @@
 #include "dependencies.h"
 #include "resolvepragma.h"
 #include "objanalysis.h"
-#else
-#include "cccall.h"
-#endif /* NEW_AST */
 #include "resource.h"
 #include "interrupt.h"
 #include "options.h"
@@ -324,6 +323,7 @@
 #include "WLEnhancement.h"
 #include "export.h"
 #include "traverse.h"
+#include "UndoSSATransform.h"
 
 #include <stdlib.h>
 #include <unistd.h>
@@ -341,37 +341,37 @@ main (int argc, char *argv[])
     int i;
 
 #ifdef SHOW_MALLOC
-    ComputeMallocAlignStep ();
+    ILIBcomputeMallocAlignStep ();
 #endif
 
     /*
      * Initializations
      */
 
-    GLOBinitializeGlobals ();
-    InitPaths ();
-    SetupInterruptHandlers ();
-    InitDupTree ();
+    GLOBinitializeGlobal ();
+    FMGRinitPaths ();
+    IRQsetupInterruptHandlers ();
+    DUPinitDupTree ();
 
     /*
      *  The command line is written to a single string.
      */
-    strcpy (commandline, argv[0]);
+    strcpy (global.commandline, argv[0]);
     for (i = 1; i < argc; i++) {
-        strcat (commandline, " ");
-        strcat (commandline, argv[i]);
+        strcat (global.commandline, " ");
+        strcat (global.commandline, argv[i]);
     }
 
-    AnalyseCommandline (argc, argv);
-    CheckOptionConsistency ();
+    OPTanalyseCommandline (argc, argv);
+    OPTcheckOptionConsistency ();
 
-    if (sacfilename[0] == '\0') {
-        puresacfilename = "stdin";
+    if (global.sacfilename[0] == '\0') {
+        global.puresacfilename = "stdin";
     }
 
     ABORT_ON_ERROR;
 
-    compiler_phase = PH_setup;
+    global.compiler_phase = PH_setup;
 
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
@@ -380,7 +380,7 @@ main (int argc, char *argv[])
      * Now, we read in the sac2c configuration files.
      */
 
-    RSCEvaluateConfiguration (target_name);
+    RSCevaluateConfiguration (global.target_name);
 
     /*
      * Now, we set our search paths for the source program, module declarations,
@@ -399,14 +399,14 @@ main (int argc, char *argv[])
      * lowest priority.
      */
 
-    RearrangePaths ();
+    FMGRrearrangePaths ();
 
     /*
      * Now, we create tmp directories for files generated during the
      * compilation process.
      *
      * Actually, only one temp directory is created whose name may be
-     * accessed trough the global variable tmp_dirname
+     * accessed trough the global variable global.tmp_dirname
      * which is defined in globals.c.
      */
 
@@ -417,22 +417,22 @@ main (int argc, char *argv[])
     /* malloc is used here as tempnam uses it */
     /* internally as well.                    */
 
-    tmp_dirname = (char *)malloc (strlen (config.mkdir) + 12);
-    tmp_dirname = strcpy (tmp_dirname, config.tmpdir);
-    tmp_dirname = strcat (tmp_dirname, "/SAC_XXXXXX");
+    global.tmp_dirname = (char *)malloc (strlen (global.config.mkdir) + 12);
+    global.tmp_dirname = strcpy (global.tmp_dirname, global.config.tmpdir);
+    global.tmp_dirname = strcat (global.tmp_dirname, "/SAC_XXXXXX");
 
-    tmp_dirname = mkdtemp (tmp_dirname);
+    global.tmp_dirname = mkdtemp (global.tmp_dirname);
 
-    if (tmp_dirname == NULL) {
+    if (global.tmp_dirname == NULL) {
         SYSABORT (("System failed to create temporary directory.\n"));
     }
 #else
     /* the old way for platforms not */
     /* supporting mkdtemp            */
 
-    tmp_dirname = tempnam (config.tmpdir, "SAC_");
+    global.tmp_dirname = tempnam (global.config.tmpdir, "SAC_");
 
-    SystemCall ("%s %s", config.mkdir, tmp_dirname);
+    ILIBsystemCall ("%s %s", global.config.mkdir, global.tmp_dirname);
 #endif
 
     ABORT_ON_ERROR;
@@ -440,9 +440,9 @@ main (int argc, char *argv[])
     PHASE_DONE_EPILOG;
     PHASE_EPILOG;
 
-    if (break_after == PH_setup)
+    if (global.break_after == PH_setup)
         goto BREAK;
-    compiler_phase++;
+    global.compiler_phase++;
 
     /*
      * If sac2c was started with the option -libstat,
@@ -450,12 +450,9 @@ main (int argc, char *argv[])
      * compilation process is terminated immediately.
      */
 
-    if (libstat) {
-#ifndef NEW_AST
-        PrintLibStat ();
-#else
-        PrintLibStat (sacfilename);
-#endif
+    if (global.libstat) {
+        LIBSprintLibStat (global.sacfilename);
+
         CleanUp ();
 
         exit (0);
@@ -467,44 +464,38 @@ main (int argc, char *argv[])
 
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
-    syntax_tree = ScanParse ();
-#ifdef NEW_AST
-    DoResolvePragmas (syntax_tree);
-#endif
+    syntax_tree = SPdoScanParse ();
+
+    RSPdoResolvePragmas (syntax_tree);
+
     PHASE_DONE_EPILOG;
     PHASE_EPILOG;
 
-    if (break_after == PH_scanparse)
+    if (global.break_after == PH_scanparse)
         goto BREAK;
-    compiler_phase++;
+    global.compiler_phase++;
 
     PHASE_PROLOG;
-#ifndef NEW_AST
-    if (MODUL_IMPORTS (syntax_tree) != NULL) {
-        NOTE_COMPILER_PHASE;
-        syntax_tree = Import (syntax_tree); /* imp_tab */
-#else
+
     NOTE_COMPILER_PHASE;
     NOTE (("Processing use and import statements..."));
-    ResolveAll (syntax_tree);
+    RSAdoResolveAll (syntax_tree);
     NOTE (("Resolving namespaces..."));
-    DoAnnotateNamespace (syntax_tree);
+    ANSdoAnnotateNamespace (syntax_tree);
     NOTE (("Getting used symbols..."));
-    DoUseSymbols (syntax_tree);
+    USSdoUseSymbols (syntax_tree);
     NOTE (("Resolving dependencies..."));
-    DoResolveDependencies (syntax_tree);
+    DEPdoResolveDependencies (syntax_tree);
 
     ABORT_ON_ERROR;
-#endif /* NEW_AST */
-        PHASE_DONE_EPILOG;
-#ifndef NEW_AST
-    }
-#endif /* NEW_AST */
+
+    PHASE_DONE_EPILOG;
+
     PHASE_EPILOG;
 
-    if (break_after == PH_import)
+    if (global.break_after == PH_import)
         goto BREAK;
-    compiler_phase++;
+    global.compiler_phase++;
 
 #ifndef NEW_AST
 
@@ -514,7 +505,7 @@ main (int argc, char *argv[])
          * only dependencies are to be detected.
          */
 
-        compiler_phase = PH_writedeps;
+        global.compiler_phase = PH_writedeps;
         PHASE_PROLOG;
         NOTE_COMPILER_PHASE;
         PrintDependencies (dependencies, makedeps);
@@ -545,190 +536,135 @@ main (int argc, char *argv[])
     }
     PHASE_EPILOG;
 
-    if (break_after == PH_readsib)
+    if (global.break_after == PH_readsib)
         goto BREAK;
-    compiler_phase++;
+    global.compiler_phase++;
 
 #else
-    compiler_phase += 1;
+    global.compiler_phase += 1;
 #endif /* NEW_AST */
 
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
-    syntax_tree = objinit (syntax_tree); /* objinit_tab */
+    syntax_tree = OIdoObjInit (syntax_tree); /* objinit_tab */
     PHASE_DONE_EPILOG;
     PHASE_EPILOG;
 
-    if (break_after == PH_objinit)
+    if (global.break_after == PH_objinit)
         goto BREAK;
-    compiler_phase++;
+    global.compiler_phase++;
 
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
-    syntax_tree = Flatten (syntax_tree); /* flat_tab */
+    syntax_tree = FLATdoFlatten (syntax_tree); /* flat_tab */
     PHASE_DONE_EPILOG;
     PHASE_EPILOG;
 
-    if (break_after == PH_flatten)
+    if (global.break_after == PH_flatten)
         goto BREAK;
-    compiler_phase++;
+    global.compiler_phase++;
 
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
 
-#ifndef NEW_AST
-    if (sbs == 1) {
-#endif
-        syntax_tree = NewTypeCheck (syntax_tree); /* ntc_tab */
-#ifndef NEW_AST
-    } else {
-        syntax_tree = Typecheck (syntax_tree); /* type_tab */
-        /*
-         * Traverse typedefs with ntc_tab in order to create user type
-         * repository
-         */
-        act_tab = ntc_tab;
-        if ((NODE_TYPE (syntax_tree) == N_modul) && (MODUL_TYPES (syntax_tree) != NULL)) {
-            MODUL_TYPES (syntax_tree) = Trav (MODUL_TYPES (syntax_tree), NULL);
-        }
-    }
-#endif /* NEW_AST */
+    syntax_tree = NTCdoNewTypeCheck (syntax_tree); /* ntc_tab */
+
     PHASE_DONE_EPILOG;
 #ifndef NEW_AST
     if (profileflag != 0) {
-        syntax_tree = ProfileFunCalls (syntax_tree); /* profile_tab */
+        syntax_tree = PFdoProfileFunCalls (syntax_tree); /* profile_tab */
     }
 #endif /* NEW_AST */
     PHASE_EPILOG;
 
-    if (break_after == PH_typecheck)
+    if (global.break_after == PH_typecheck)
         goto BREAK;
-    compiler_phase++;
-
-    PHASE_PROLOG;
-#ifndef NEW_AST
-    if (MODUL_FILETYPE (syntax_tree) != F_prog) {
-        NOTE_COMPILER_PHASE;
-        syntax_tree = CheckDec (syntax_tree); /* writedec_tab and checkdec_tab */
-        PHASE_DONE_EPILOG;
-    }
-#else
-    NOTE_COMPILER_PHASE;
-    ObjectAnalysis (syntax_tree);
-    DoExport (syntax_tree);
-    PrepareInline (syntax_tree);
-    PHASE_DONE_EPILOG;
-#endif
-    PHASE_EPILOG;
-
-    if (break_after == PH_checkdec)
-        goto BREAK;
-    compiler_phase++;
-
-#ifndef NEW_AST
-    PHASE_PROLOG;
-    NOTE_COMPILER_PHASE;
-    syntax_tree = RetrieveImplicitTypeInfo (syntax_tree); /* impltype_tab */
-    PHASE_DONE_EPILOG;
-    PHASE_EPILOG;
-
-    if (break_after == PH_impltype)
-        goto BREAK;
-    compiler_phase++;
+    global.compiler_phase++;
 
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
-    syntax_tree = Analysis (syntax_tree); /* analy_tab */
+    OANdoObjectAnalysis (syntax_tree);
+    EXPdoExport (syntax_tree);
+    PPIdoPrepareInline (syntax_tree);
     PHASE_DONE_EPILOG;
+
     PHASE_EPILOG;
 
-    if (break_after == PH_analysis)
+    if (global.break_after == PH_checkdec)
         goto BREAK;
-    compiler_phase++;
+    global.compiler_phase++;
 
-    PHASE_PROLOG;
-    if (MODUL_FILETYPE (syntax_tree) != F_prog) {
-        NOTE_COMPILER_PHASE;
-        syntax_tree = WriteSib (syntax_tree); /* writesib_tab */
-        PHASE_DONE_EPILOG;
-    }
-    PHASE_EPILOG;
-
-    if (break_after == PH_writesib)
-        goto BREAK;
-    compiler_phase++;
+    global.compiler_phase += 3;
 
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
-    syntax_tree = HandleObjects (syntax_tree); /* obj_tab */
+    syntax_tree = OBJdoHandleObjects (syntax_tree); /* obj_tab */
     PHASE_DONE_EPILOG;
     PHASE_EPILOG;
 
-    if (break_after == PH_objects)
+    if (global.break_after == PH_objects)
         goto BREAK;
-    compiler_phase++;
+    global.compiler_phase++;
 
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
-    syntax_tree = UniquenessCheck (syntax_tree); /* unique_tab */
+    syntax_tree = UNQdoUniquenessCheck (syntax_tree); /* unique_tab */
     PHASE_DONE_EPILOG;
     PHASE_EPILOG;
 
-    if (break_after == PH_uniquecheck)
+    if (global.break_after == PH_uniquecheck)
         goto BREAK;
-    compiler_phase++;
-#else
-    compiler_phase += 5;
-#endif /* NEW_AST */
+    global.compiler_phase++;
 
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
-    syntax_tree = WLEnhancement (syntax_tree); /* see WLEnhancement.c */
+    syntax_tree = WLEdoWlEnhancement (syntax_tree); /* see WLEnhancement.c */
     PHASE_DONE_EPILOG;
     PHASE_EPILOG;
 
-    if (break_after == PH_wlenhance)
+    if (global.break_after == PH_wlenhance)
         goto BREAK;
-    compiler_phase++;
+    global.compiler_phase++;
 
     PHASE_PROLOG;
-    if (optimize) {
-        NOTE_COMPILER_PHASE;
-        syntax_tree = Optimize (syntax_tree); /* see optimize.c, Optimize() */
-        PHASE_DONE_EPILOG;
-    }
+    /*if (optimize) {*/
+    /* TODO - the new optimize flags disables the old kind of checking for
+     * optimizations */
+    NOTE_COMPILER_PHASE;
+    syntax_tree = OPTdoOptimize (syntax_tree); /* see optimize.c, Optimize() */
+    PHASE_DONE_EPILOG;
+    /*  }*/
     PHASE_EPILOG;
 
-    syntax_tree = PrintTypeStatistics (syntax_tree);
+    syntax_tree = TSdoPrintTypeStatistics (syntax_tree);
 
-    if (break_after == PH_sacopt)
+    if (global.break_after == PH_sacopt)
         goto BREAK;
-    compiler_phase++;
+    global.compiler_phase++;
 
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
-    syntax_tree = WlTransform (syntax_tree); /* wltrans_tab */
+    syntax_tree = WLTRAdoWlTransform (syntax_tree); /* wltrans_tab */
     PHASE_DONE_EPILOG;
     PHASE_EPILOG;
 
-    if (break_after == PH_wltrans)
+    if (global.break_after == PH_wltrans)
         goto BREAK;
-    compiler_phase++;
+    global.compiler_phase++;
 
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
-    syntax_tree = ExplicitAllocation (syntax_tree); /* emalloc_tab */
+    syntax_tree = EMAdoAllocation (syntax_tree); /* emalloc_tab */
     PHASE_DONE_EPILOG;
     PHASE_EPILOG;
 
-    if (break_after == PH_alloc)
+    if (global.break_after == PH_alloc)
         goto BREAK;
-    compiler_phase++;
+    global.compiler_phase++;
 
     PHASE_PROLOG;
 
-#ifndef NEW_AST
-    switch (mtmode) {
+    switch (global.mtmode) {
     case MT_none:
         break;
     case MT_createjoin:
@@ -740,178 +676,154 @@ main (int argc, char *argv[])
         NOTE (("Using mt/st-block version of multithreading (MT3)"));
         /* this version of multithreading is only for code in SSA-form */
 
-        /* After SSA-Refcounting, Code is already in SSA-Form */
-        /* syntax_tree = DoSSA(syntax_tree); */
-        syntax_tree = BuildMultiThread (syntax_tree);
-        /* for compatibility reasons, the code is retransformed from SSA-form */
-        /*syntax_tree = UndoSSA(syntax_tree);*/
+        syntax_tree = MUTHdoMultiThread (syntax_tree);
+
         PHASE_DONE_EPILOG;
         break;
     }
     PHASE_EPILOG;
 
-    if (break_after == PH_multithread)
+    if (global.break_after == PH_multithread)
         goto BREAK;
-    compiler_phase++;
+    global.compiler_phase++;
 
-    if (mtmode == MT_mtstblock) {
+    PHASE_PROLOG;
+    NOTE_COMPILER_PHASE;
+    syntax_tree = EMRdoRefcounting (syntax_tree);
+    PHASE_DONE_EPILOG;
+    PHASE_EPILOG;
+
+    if (global.break_after == PH_refcnt)
+        goto BREAK;
+    global.compiler_phase++;
+
+    PHASE_PROLOG;
+    NOTE_COMPILER_PHASE;
+
+    switch (global.mtmode) {
+    case MT_none:
+        syntax_tree = USSATdoUndoSsaTransform (syntax_tree);
+        break;
+    case MT_createjoin:
+        NOTE (("Using create-join version of multithreading (MT1)"));
+        /* spmd..._tab, sync..._tab */
+        syntax_tree = USSATdoUndoSsaTransform (syntax_tree);
+        syntax_tree = CONCdoConcurrent (syntax_tree);
+        break;
+    case MT_startstop:
+        NOTE (("Using start-stop version of multithreading (MT2)"));
+        /* spmd..._tab, sync..._tab */
+        syntax_tree = USSATdoUndoSsaTransform (syntax_tree);
+        syntax_tree = CONCdoConcurrent (syntax_tree);
+        break;
+    case MT_mtstblock:
         SYSABORT (("Mt/st-block version of multithreading de-activated !!"));
         /* following comment concerning for mt/st-block version:
          * The core problem is that new-mt reuses the FUNDEF ATTRIB attribute
          * and thereby destroys its old contents. Unfortunately, it has turned
          * that this information is vital for precompile.
          */
-    }
-#else
-    compiler_phase++;
-#endif /* NEW_AST */
 
-    PHASE_PROLOG;
-    NOTE_COMPILER_PHASE;
-    syntax_tree = RCphase (syntax_tree);
-    PHASE_DONE_EPILOG;
-    PHASE_EPILOG;
-
-    if (break_after == PH_refcnt)
-        goto BREAK;
-    compiler_phase++;
-
-    PHASE_PROLOG;
-    NOTE_COMPILER_PHASE;
-
-#ifndef NEW_AST
-    switch (mtmode) {
-    case MT_none:
-        syntax_tree = UndoSSA (syntax_tree);
-        break;
-    case MT_createjoin:
-        NOTE (("Using create-join version of multithreading (MT1)"));
-        /* spmd..._tab, sync..._tab */
-        syntax_tree = UndoSSA (syntax_tree);
-        syntax_tree = CONCdoConcurrent (syntax_tree);
-        break;
-    case MT_startstop:
-        NOTE (("Using start-stop version of multithreading (MT2)"));
-        /* spmd..._tab, sync..._tab */
-        syntax_tree = UndoSSA (syntax_tree);
-        syntax_tree = CONCdoConcurrent (syntax_tree);
-        break;
-    case MT_mtstblock:
         /* something's missing... */
-        syntax_tree = UndoSSA (syntax_tree);
+
+        syntax_tree = USSATdoUndoSsaTransform (syntax_tree);
         break;
     }
-#else
-    syntax_tree = UndoSSA (syntax_tree);
-#endif /* NEW_AST */
 
     PHASE_DONE_EPILOG;
     PHASE_EPILOG;
 
-    if (break_after == PH_multithread_finish)
+    if (global.break_after == PH_multithread_finish)
         goto BREAK;
-    compiler_phase++;
+    global.compiler_phase++;
 
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
-    syntax_tree = Precompile (syntax_tree); /* precomp_tab */
+    syntax_tree = PRECdoPrecompile (syntax_tree); /* precomp_tab */
     PHASE_DONE_EPILOG;
     PHASE_EPILOG;
 
-    if (break_after == PH_precompile)
+    if (global.break_after == PH_precompile)
         goto BREAK;
-    compiler_phase++;
+    global.compiler_phase++;
 
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
-    syntax_tree = Compile (syntax_tree); /* comp_tab */
+    syntax_tree = COMPdoCompile (syntax_tree); /* comp_tab */
     PHASE_DONE_EPILOG;
     PHASE_EPILOG;
 
-    if (break_after == PH_compile)
+    if (global.break_after == PH_compile)
         goto BREAK;
-    compiler_phase++;
+    global.compiler_phase++;
 
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
-    Print (syntax_tree);
+    PRTdoPrint (syntax_tree);
     PHASE_DONE_EPILOG;
     PHASE_EPILOG;
 
-    if (break_after == PH_genccode)
+    if (global.break_after == PH_genccode)
         goto BREAK;
-    compiler_phase++;
+    global.compiler_phase++;
 
-#ifdef NEW_AST
     /*
      * prior to freeing the syntax tree, we have to save the dependencies
      * as these are needed for calling the CC
      */
 
-    dependencies = MODUL_DEPENDENCIES (syntax_tree);
-    MODUL_DEPENDENCIES (syntax_tree) = NULL;
-#endif /* NEW_AST */
+    dependencies = MODULE_DEPENDENCIES (syntax_tree);
+    MODULE_DEPENDENCIES (syntax_tree) = NULL;
 
     /*
      *  After the C file has been written, the syntax tree may be released.
      */
 
-    syntax_tree = FreeTree (syntax_tree);
+    syntax_tree = FREEdoFreeTree (syntax_tree);
 
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
-#ifndef NEW_AST
-    InvokeCC ();
-#else
-    InvokeCC (dependencies);
-#endif
+
+    CCMinvokeCC (dependencies);
+
     PHASE_DONE_EPILOG;
     PHASE_EPILOG;
 
-    compiler_phase++;
+    global.compiler_phase++;
 
     PHASE_PROLOG;
-    if (filetype != F_prog) {
+    if (global.filetype != F_prog) {
         NOTE_COMPILER_PHASE;
-#ifndef NEW_AST
-        CreateLibrary ();
-#else
-        CreateLibrary (dependencies);
-#endif
+
+        LIBBcreateLibrary (dependencies);
         PHASE_DONE_EPILOG;
     }
     PHASE_EPILOG;
 
-#ifdef NEW_AST
     /*
      * now we can free the set of dependencies now as well
      */
-    dependencies = SSFree (dependencies);
-#endif
+    dependencies = STRSfree (dependencies);
 
-    compiler_phase = PH_final;
+    global.compiler_phase = PH_final;
 
 BREAK:
 
-    if (compiler_phase < PH_final) {
-        if (compiler_phase < PH_scanparse) {
-            RSCShowResources ();
+    if (global.compiler_phase < PH_final) {
+        if (global.compiler_phase < PH_scanparse) {
+            RSCshowResources ();
         } else {
-            DBUG_EXECUTE ("AST", PrintAST (syntax_tree););
-            if (print_after_break && (compiler_phase <= PH_compile)) {
-                Print (syntax_tree);
+            DBUG_EXECUTE ("AST", PRTdoPrintAST (syntax_tree););
+            if (global.print_after_break && (global.compiler_phase <= PH_compile)) {
+                PRTdoPrint (syntax_tree);
             }
-            syntax_tree = FreeTree (syntax_tree);
+            syntax_tree = FREEdoFreeTree (syntax_tree);
         }
     }
 
     /*
      *  Finally, we do some clean up ...
      */
-
-#ifndef NEW_AST
-    CleanUp ();
-#endif
 
     /*
      *  ... and display a success message.
@@ -920,22 +832,23 @@ BREAK:
     NEWLINE (2);
     NOTE2 (("*** Compilation successful ***"));
 
-    if (compiler_phase < PH_final) {
-        NOTE2 (("*** BREAK after: %s", compiler_phase_name[compiler_phase]));
-        if (break_specifier[0] != '\0') {
-            NOTE2 (("*** BREAK specifier: '%s`", break_specifier));
+    if (global.compiler_phase < PH_final) {
+        NOTE2 (
+          ("*** BREAK after: %s", global.compiler_phase_name[global.compiler_phase]));
+        if (global.break_specifier[0] != '\0') {
+            NOTE2 (("*** BREAK specifier: '%s`", global.break_specifier));
         }
     }
 
 #ifdef SHOW_MALLOC
     NOTE2 (("*** Maximum allocated memory (bytes):   %s",
-            IntBytes2String (max_allocated_mem)));
+            CVintBytes2String (global.max_allocated_mem)));
     NOTE2 (("*** Currently allocated memory (bytes): %s",
-            IntBytes2String (current_allocated_mem)));
+            CVintBytes2String (global.current_allocated_mem)));
 #endif
 
     NOTE2 (("*** Exit code 0"));
-    NOTE2 (("*** 0 error(s), %d warning(s)", warnings_cnt));
+    NOTE2 (("*** 0 error(s), %d warning(s)", global.warnings_cnt));
     NEWLINE (2);
 
     return (0);
