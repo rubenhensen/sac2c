@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.25  2004/11/26 21:26:53  khf
+ * SacDevCamp04: COMPILES!!!
+ *
  * Revision 1.24  2004/10/15 12:43:43  ktr
  * COND nodes with two empty branches are no longer removed as they are still
  * needed in order to annotate reference counting instructions for a
@@ -105,12 +108,11 @@
  *
  *****************************************************************************/
 
-#define NEW_INFO
-
-#include "types.h"
 #include "tree_basic.h"
+#include "node_basic.h"
 #include "tree_compound.h"
 #include "internal_lib.h"
+#include "Error.h"
 #include "dbug.h"
 #include "globals.h"
 #include "traverse.h"
@@ -133,22 +135,24 @@ struct INFO {
     int resneeded;
     node *let;
     node *assign;
-    node *modul;
+    bool travwithid;
+    node *module;
 };
 
 /*
  * INFO macros
  */
-#define INFO_SSADCR_DEPTH(n) (n->depth)
-#define INFO_SSADCR_REMASSIGN(n) (n->remassign)
-#define INFO_SSADCR_FUNDEF(n) (n->fundef)
-#define INFO_SSADCR_REMRESULTS(n) (n->remresults)
-#define INFO_SSADCR_APFUNDEF(n) (n->apfundef)
-#define INFO_SSADCR_RESCOUNT(n) (n->rescount)
-#define INFO_SSADCR_RESNEEDED(n) (n->resneeded)
-#define INFO_SSADCR_LET(n) (n->let)
-#define INFO_SSADCR_ASSIGN(n) (n->assign)
-#define INFO_SSADCR_MODUL(n) (n->modul)
+#define INFO_DCR_DEPTH(n) (n->depth)
+#define INFO_DCR_REMASSIGN(n) (n->remassign)
+#define INFO_DCR_FUNDEF(n) (n->fundef)
+#define INFO_DCR_REMRESULTS(n) (n->remresults)
+#define INFO_DCR_APFUNDEF(n) (n->apfundef)
+#define INFO_DCR_RESCOUNT(n) (n->rescount)
+#define INFO_DCR_RESNEEDED(n) (n->resneeded)
+#define INFO_DCR_LET(n) (n->let)
+#define INFO_DCR_ASSIGN(n) (n->assign)
+#define INFO_DCR_TRAVWITHID(n) (n->travwithid)
+#define INFO_DCR_MODULE(n) (n->module)
 
 /*
  * INFO functions
@@ -160,18 +164,19 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = Malloc (sizeof (info));
+    result = ILIBmalloc (sizeof (info));
 
-    INFO_SSADCR_DEPTH (result) = 0;
-    INFO_SSADCR_REMASSIGN (result) = FALSE;
-    INFO_SSADCR_FUNDEF (result) = NULL;
-    INFO_SSADCR_REMRESULTS (result) = FALSE;
-    INFO_SSADCR_APFUNDEF (result) = NULL;
-    INFO_SSADCR_RESCOUNT (result) = 0;
-    INFO_SSADCR_RESNEEDED (result) = 0;
-    INFO_SSADCR_LET (result) = NULL;
-    INFO_SSADCR_ASSIGN (result) = NULL;
-    INFO_SSADCR_MODUL (result) = NULL;
+    INFO_DCR_DEPTH (result) = 0;
+    INFO_DCR_REMASSIGN (result) = FALSE;
+    INFO_DCR_FUNDEF (result) = NULL;
+    INFO_DCR_REMRESULTS (result) = FALSE;
+    INFO_DCR_APFUNDEF (result) = NULL;
+    INFO_DCR_RESCOUNT (result) = 0;
+    INFO_DCR_RESNEEDED (result) = 0;
+    INFO_DCR_LET (result) = NULL;
+    INFO_DCR_ASSIGN (result) = NULL;
+    INFO_DCR_TRAVWITHID (result) = FALSE;
+    INFO_DCR_MODULE (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -181,44 +186,38 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = Free (info);
+    info = ILIBfree (info);
 
     DBUG_RETURN (info);
 }
 
 /* local constants */
-#define SSADCR_TOPLEVEL 0
-#define SSADCR_NOTNEEDED 0
-
-/* internal functions for traversing ids like nodes */
-static ids *TravLeftIDS (ids *arg_ids, info *arg_info);
-static ids *SSADCRleftids (ids *arg_ids, info *arg_info);
-static ids *TravRightIDS (ids *arg_ids, info *arg_info);
-static ids *SSADCRrightids (ids *arg_ids, info *arg_info);
+#define DCR_TOPLEVEL 0
+#define DCR_NOTNEEDED 0
 
 /* helper functions for local use */
-static void SSADCRInitAvisFlags (node *fundef);
+static void InitAvisFlags (node *fundef);
 
 /******************************************************************************
  *
  * function:
- *   void SSADCRInitAvisFlags(node *fundef)
+ *   void InitAvisFlags(node *fundef)
  *
  * description:
  *   inits flags needed for this module in all vardec and args.
  *
  *****************************************************************************/
 static void
-SSADCRInitAvisFlags (node *fundef)
+InitAvisFlags (node *fundef)
 {
     node *tmp;
 
-    DBUG_ENTER ("SSADCRInitAvisFlags");
+    DBUG_ENTER ("InitAvisFlags");
 
     /* process args */
     tmp = FUNDEF_ARGS (fundef);
     while (tmp != NULL) {
-        AVIS_NEEDCOUNT (ARG_AVIS (tmp)) = SSADCR_NOTNEEDED;
+        AVIS_NEEDCOUNT (ARG_AVIS (tmp)) = DCR_NOTNEEDED;
         tmp = ARG_NEXT (tmp);
     }
 
@@ -226,7 +225,7 @@ SSADCRInitAvisFlags (node *fundef)
     if (FUNDEF_BODY (fundef) != NULL) {
         tmp = BLOCK_VARDEC (FUNDEF_BODY (fundef));
         while (tmp != NULL) {
-            AVIS_NEEDCOUNT (VARDEC_AVIS (tmp)) = SSADCR_NOTNEEDED;
+            AVIS_NEEDCOUNT (VARDEC_AVIS (tmp)) = DCR_NOTNEEDED;
             tmp = VARDEC_NEXT (tmp);
         }
     }
@@ -234,45 +233,44 @@ SSADCRInitAvisFlags (node *fundef)
     DBUG_VOID_RETURN;
 }
 
-/* traversal fundefs for SSADeadCodeRemoval */
+/* traversal fundefs for DeadCodeRemoval */
 /******************************************************************************
  *
  * function:
- *   node *SSADCRfundef(node *arg_node , info *arg_info)
+ *   node *DCRfundef(node *arg_node , info *arg_info)
  *
  * description:
  *   Starts the traversal of a given fundef. Does NOT traverse to
  *   next fundef in chain! The traversal mode (on toplevel, in special
- *   function) is annotated in the stacked INFO_SSADCR_DEPTH attribute.
+ *   function) is annotated in the stacked INFO_DCR_DEPTH attribute.
  *   If not on toplevel, the unused arguments are cleared. For the toplevel
  *   functions changes of the signature are not possible.
  *
  *****************************************************************************/
 node *
-SSADCRfundef (node *arg_node, info *arg_info)
+DCRfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSADCRfundef");
+    DBUG_ENTER ("DCRfundef");
 
-    DBUG_PRINT ("SSADCR",
+    DBUG_PRINT ("DCR",
                 ("\nstarting dead code removal in fundef %s.", FUNDEF_NAME (arg_node)));
 
     /* store current vardec for later access */
-    INFO_SSADCR_FUNDEF (arg_info) = arg_node;
+    INFO_DCR_FUNDEF (arg_info) = arg_node;
 
     /* init of needed-flag for all vardecs/args of this fundef */
-    SSADCRInitAvisFlags (arg_node);
+    InitAvisFlags (arg_node);
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         /* traverse block of fundef */
-        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
     }
 
-    if ((INFO_SSADCR_DEPTH (arg_info) != SSADCR_TOPLEVEL)
-        && (FUNDEF_ARGS (arg_node) != NULL)) {
+    if ((INFO_DCR_DEPTH (arg_info) != DCR_TOPLEVEL) && (FUNDEF_ARGS (arg_node) != NULL)) {
         /*
          * traverse args to remove unused ones from signature (not on toplevel!)
          */
-        FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), arg_info);
+        FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -281,7 +279,7 @@ SSADCRfundef (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSADCRarg(node *arg_node , info *arg_info)
+ *   node *DCRarg(node *arg_node , info *arg_info)
  *
  * description:
  *   removes all args from function signature that have not been used in the
@@ -290,16 +288,16 @@ SSADCRfundef (node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 node *
-SSADCRarg (node *arg_node, info *arg_info)
+DCRarg (node *arg_node, info *arg_info)
 {
     node *tmp;
     nodelist *letlist;
 
-    DBUG_ENTER ("SSADCRarg");
+    DBUG_ENTER ("DCRarg");
 
     /* traverse to next arg */
     if (ARG_NEXT (arg_node) != NULL) {
-        ARG_NEXT (arg_node) = Trav (ARG_NEXT (arg_node), arg_info);
+        ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
     }
 
     /*
@@ -308,43 +306,42 @@ SSADCRarg (node *arg_node, info *arg_info)
      * occurs at least once in the recursive call. If the argument
      * ONLY appears there, it is dead code, too.
      */
-    if ((AVIS_NEEDCOUNT (ARG_AVIS (arg_node)) == SSADCR_NOTNEEDED)
+    if ((AVIS_NEEDCOUNT (ARG_AVIS (arg_node)) == DCR_NOTNEEDED)
         || ((AVIS_NEEDCOUNT (ARG_AVIS (arg_node)) == 1)
             && (AVIS_SSALPINV (ARG_AVIS (arg_node))))) {
-        DBUG_PRINT ("SSADCR", ("remove arg %sa", ARG_NAME (arg_node)));
+        DBUG_PRINT ("DCR", ("remove arg %sa", ARG_NAME (arg_node)));
         /* remove this argument from all applications */
         letlist = NULL;
-        if (FUNDEF_EXT_ASSIGNS (INFO_SSADCR_FUNDEF (arg_info)) != NULL) {
+        if (FUNDEF_EXT_ASSIGNS (INFO_DCR_FUNDEF (arg_info)) != NULL) {
             /*
              * there must be only ONE external reference to modify the
              * functions signature
              */
-            DBUG_ASSERT ((NODELIST_NEXT (
-                            FUNDEF_EXT_ASSIGNS (INFO_SSADCR_FUNDEF (arg_info)))
+            DBUG_ASSERT ((NODELIST_NEXT (FUNDEF_EXT_ASSIGNS (INFO_DCR_FUNDEF (arg_info)))
                           == NULL),
                          "there must be only ONE external reference to a special function"
                          "to modify its signature");
-            letlist = NodeListAppend (letlist,
-                                      ASSIGN_INSTR (NODELIST_NODE (FUNDEF_EXT_ASSIGNS (
-                                        INFO_SSADCR_FUNDEF (arg_info)))),
-                                      NULL);
+            letlist = TCnodeListAppend (letlist,
+                                        ASSIGN_INSTR (NODELIST_NODE (FUNDEF_EXT_ASSIGNS (
+                                          INFO_DCR_FUNDEF (arg_info)))),
+                                        NULL);
         }
-        if (FUNDEF_INT_ASSIGN (INFO_SSADCR_FUNDEF (arg_info)) != NULL) {
-            letlist = NodeListAppend (letlist,
-                                      ASSIGN_INSTR (FUNDEF_INT_ASSIGN (
-                                        INFO_SSADCR_FUNDEF (arg_info))),
-                                      NULL);
+        if (FUNDEF_INT_ASSIGN (INFO_DCR_FUNDEF (arg_info)) != NULL) {
+            letlist = TCnodeListAppend (letlist,
+                                        ASSIGN_INSTR (
+                                          FUNDEF_INT_ASSIGN (INFO_DCR_FUNDEF (arg_info))),
+                                        NULL);
         }
 
-        INFO_SSADCR_FUNDEF (arg_info)
-          = CSRemoveArg (INFO_SSADCR_FUNDEF (arg_info), arg_node, letlist, FALSE);
+        INFO_DCR_FUNDEF (arg_info)
+          = CSremoveArg (INFO_DCR_FUNDEF (arg_info), arg_node, letlist, FALSE);
 
-        FreeNodelist (letlist);
+        FREEfreeNodelist (letlist);
 
         /* remove arg from function signature */
         tmp = arg_node;
         arg_node = ARG_NEXT (arg_node);
-        FreeNode (tmp);
+        FREEdoFreeNode (tmp);
         dead_var++;
     }
 
@@ -354,25 +351,25 @@ SSADCRarg (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSADCRblock(node *arg_node , info *arg_info)
+ *   node *DCRblock(node *arg_node , info *arg_info)
  *
  * description:
  *   traverses instructions and vardecs in this order.
  *
  *****************************************************************************/
 node *
-SSADCRblock (node *arg_node, info *arg_info)
+DCRblock (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSADCRblock");
+    DBUG_ENTER ("DCRblock");
 
     if (BLOCK_INSTR (arg_node) != NULL) {
         /* traverse assignmentchain in block */
-        BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
+        BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
     }
 
     if (BLOCK_INSTR (arg_node) == NULL) {
         /* the complete block is empty -> create N_empty node */
-        BLOCK_INSTR (arg_node) = MakeEmpty ();
+        BLOCK_INSTR (arg_node) = TBmakeEmpty ();
     }
 
     if (BLOCK_VARDEC (arg_node) != NULL) {
@@ -380,7 +377,7 @@ SSADCRblock (node *arg_node, info *arg_info)
          * traverse all vardecs in block (concerns only toplevel block in
          * each function) to remove useless ones
          */
-        BLOCK_VARDEC (arg_node) = Trav (BLOCK_VARDEC (arg_node), arg_info);
+        BLOCK_VARDEC (arg_node) = TRAVdo (BLOCK_VARDEC (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -389,37 +386,37 @@ SSADCRblock (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSADCRvardec(node *arg_node , info *arg_info)
+ *   node *DCRvardec(node *arg_node , info *arg_info)
  *
  * description:
  *  traverses vardecs and removes unused ones.
  *
  *****************************************************************************/
 node *
-SSADCRvardec (node *arg_node, info *arg_info)
+DCRvardec (node *arg_node, info *arg_info)
 {
     node *tmp;
 
-    DBUG_ENTER ("SSADCRvardec");
+    DBUG_ENTER ("DCRvardec");
 
     /* traverse to next vardec */
     if (VARDEC_NEXT (arg_node) != NULL) {
-        VARDEC_NEXT (arg_node) = Trav (VARDEC_NEXT (arg_node), arg_info);
+        VARDEC_NEXT (arg_node) = TRAVdo (VARDEC_NEXT (arg_node), arg_info);
     }
 
     /* process vardec and remove it, if dead code */
-    if (AVIS_NEEDCOUNT (VARDEC_AVIS (arg_node)) == SSADCR_NOTNEEDED) {
+    if (AVIS_NEEDCOUNT (VARDEC_AVIS (arg_node)) == DCR_NOTNEEDED) {
 
         /* count eliminated arrays from ArrayElimination */
-        if (VARDEC_FLAG (arg_node)) {
+        if (VARDEC_HASBEENELIMINATED (arg_node)) {
             elim_arrays++;
         }
         dead_var++;
 
-        DBUG_PRINT ("SSADCR", ("remove unused vardec %s", VARDEC_NAME (arg_node)));
+        DBUG_PRINT ("DCR", ("remove unused vardec %s", VARDEC_NAME (arg_node)));
         tmp = arg_node;
         arg_node = VARDEC_NEXT (arg_node);
-        FreeNode (tmp);
+        FREEdoFreeNode (tmp);
     }
 
     DBUG_RETURN (arg_node);
@@ -428,37 +425,37 @@ SSADCRvardec (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSADCRassign(node *arg_node , info *arg_info)
+ *   node *DCRassign(node *arg_node , info *arg_info)
  *
  * description:
  *  traverses assignment chain bottom-up and removes all assignments not
- *  needed (marked by INFO_SSADCR_REMASSIGN)
+ *  needed (marked by INFO_DCR_REMASSIGN)
  *
  *****************************************************************************/
 node *
-SSADCRassign (node *arg_node, info *arg_info)
+DCRassign (node *arg_node, info *arg_info)
 {
     node *tmp;
 
-    DBUG_ENTER ("SSADCRassign");
+    DBUG_ENTER ("DCRassign");
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
     }
 
     /* traverse instruction */
-    INFO_SSADCR_REMASSIGN (arg_info) = FALSE;
-    INFO_SSADCR_ASSIGN (arg_info) = arg_node;
+    INFO_DCR_REMASSIGN (arg_info) = FALSE;
+    INFO_DCR_ASSIGN (arg_info) = arg_node;
     DBUG_ASSERT ((ASSIGN_INSTR (arg_node) != NULL), "missing instruction in assign");
 
     /* traverse instruction */
-    ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
     /* free this assignment if unused anymore */
-    if (INFO_SSADCR_REMASSIGN (arg_info)) {
+    if (INFO_DCR_REMASSIGN (arg_info)) {
         tmp = arg_node;
         arg_node = ASSIGN_NEXT (arg_node);
-        FreeNode (tmp);
+        FREEdoFreeNode (tmp);
     }
 
     DBUG_RETURN (arg_node);
@@ -467,7 +464,7 @@ SSADCRassign (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSADCRlet(node *arg_node , info *arg_info)
+ *   node *DCRlet(node *arg_node , info *arg_info)
  *
  * description:
  *  checks, if at least one of the left ids vardecs are needed. then this
@@ -481,65 +478,65 @@ SSADCRassign (node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 node *
-SSADCRlet (node *arg_node, info *arg_info)
+DCRlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSADCRlet");
+    DBUG_ENTER ("DCRlet");
 
     DBUG_ASSERT ((LET_EXPR (arg_node) != NULL), "let without expression");
 
     /* default: do not modify return values of a function application */
-    INFO_SSADCR_REMRESULTS (arg_info) = FALSE;
+    INFO_DCR_REMRESULTS (arg_info) = FALSE;
 
     /* check for special function as N_ap expression */
     if (NODE_TYPE (LET_EXPR (arg_node)) == N_ap) {
-        if ((FUNDEF_IS_LACFUN (AP_FUNDEF (LET_EXPR (arg_node))))
-            && (AP_FUNDEF (LET_EXPR (arg_node)) != INFO_SSADCR_FUNDEF (arg_info))) {
+        if ((FUNDEF_ISLACFUN (AP_FUNDEF (LET_EXPR (arg_node))))
+            && (AP_FUNDEF (LET_EXPR (arg_node)) != INFO_DCR_FUNDEF (arg_info))) {
 
             /*
              * here we can modify the return values, because
              * there is only on call to this special function
              */
-            INFO_SSADCR_REMRESULTS (arg_info) = TRUE;
-            INFO_SSADCR_APFUNDEF (arg_info) = AP_FUNDEF (LET_EXPR (arg_node));
+            INFO_DCR_REMRESULTS (arg_info) = TRUE;
+            INFO_DCR_APFUNDEF (arg_info) = AP_FUNDEF (LET_EXPR (arg_node));
 
-            DBUG_PRINT ("SSADCR", ("FUNDEF_USED(%s) = %d",
-                                   FUNDEF_NAME (AP_FUNDEF (LET_EXPR (arg_node))),
-                                   FUNDEF_USED (AP_FUNDEF (LET_EXPR (arg_node)))));
+            DBUG_PRINT ("DCR", ("FUNDEF_USED(%s) = %d",
+                                FUNDEF_NAME (AP_FUNDEF (LET_EXPR (arg_node))),
+                                FUNDEF_USED (AP_FUNDEF (LET_EXPR (arg_node)))));
             DBUG_ASSERT ((FUNDEF_EXT_ASSIGNS (AP_FUNDEF (LET_EXPR (arg_node))) != NULL),
                          "missing external application list");
         }
     }
 
     /* init ids counter for results */
-    INFO_SSADCR_RESCOUNT (arg_info) = 0;
-    INFO_SSADCR_RESNEEDED (arg_info) = 0;
-    INFO_SSADCR_LET (arg_info) = arg_node;
+    INFO_DCR_RESCOUNT (arg_info) = 0;
+    INFO_DCR_RESNEEDED (arg_info) = 0;
+    INFO_DCR_LET (arg_info) = arg_node;
 
     /* traverse left side identifier */
     if (LET_IDS (arg_node) != NULL) {
-        LET_IDS (arg_node) = TravLeftIDS (LET_IDS (arg_node), arg_info);
+        LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
     }
 
     /*
      * FIX TO BUG #43: accu() must never become dead code!
      */
-    if ((INFO_SSADCR_RESNEEDED (arg_info) == 0)
+    if ((INFO_DCR_RESNEEDED (arg_info) == 0)
         && (!((NODE_TYPE (LET_EXPR (arg_node)) == N_prf)
               && (PRF_PRF (LET_EXPR (arg_node)) == F_accu)))) {
         /* let is useless -> can be removed! */
 
-        DBUG_PRINT ("SSADCR", ("removing assignment"));
+        DBUG_PRINT ("DCR", ("removing assignment"));
         dead_expr++;
 
         /* corresponding assign node can be removed */
-        INFO_SSADCR_REMASSIGN (arg_info) = TRUE;
+        INFO_DCR_REMASSIGN (arg_info) = TRUE;
     } else {
         /* traverse right side of let (mark needed variables) */
-        LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
+        LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
         /* do not remove assign node */
-        DBUG_PRINT ("SSADCR", ("preserving assignment"));
-        INFO_SSADCR_REMASSIGN (arg_info) = FALSE;
+        DBUG_PRINT ("DCR", ("preserving assignment"));
+        INFO_DCR_REMASSIGN (arg_info) = FALSE;
     }
 
     DBUG_RETURN (arg_node);
@@ -548,19 +545,16 @@ SSADCRlet (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSADCRid(node *arg_node , info *arg_info)
+ *   node *DCRid(node *arg_node , info *arg_info)
  *
  * description:
  *   "traverses" the contained ids structure.
  *
  *****************************************************************************/
 node *
-SSADCRid (node *arg_node, info *arg_info)
+DCRid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSADCRid");
-
-    DBUG_ASSERT ((ID_IDS (arg_node) != NULL), "id without ids");
-    ID_IDS (arg_node) = TravRightIDS (ID_IDS (arg_node), arg_info);
+    DBUG_ENTER ("DCRid");
 
     DBUG_RETURN (arg_node);
 }
@@ -568,35 +562,35 @@ SSADCRid (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSADCRcond(node *arg_node , info *arg_info)
+ *   node *DCRcond(node *arg_node , info *arg_info)
  *
  * description:
  *  traverses both conditional blocks.
  *
  *****************************************************************************/
 node *
-SSADCRcond (node *arg_node, info *arg_info)
+DCRcond (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSADCRcond");
+    DBUG_ENTER ("DCRcond");
 
     /* traverse else part */
     if (COND_ELSE (arg_node) != NULL) {
-        DBUG_PRINT ("SSADCR", ("processing else part of conditional"));
-        COND_ELSE (arg_node) = Trav (COND_ELSE (arg_node), arg_info);
+        DBUG_PRINT ("DCR", ("processing else part of conditional"));
+        COND_ELSE (arg_node) = TRAVdo (COND_ELSE (arg_node), arg_info);
     }
 
     /* traverse then part */
     if (COND_THEN (arg_node) != NULL) {
-        DBUG_PRINT ("SSADCR", ("processing then part of conditional"));
-        COND_THEN (arg_node) = Trav (COND_THEN (arg_node), arg_info);
+        DBUG_PRINT ("DCR", ("processing then part of conditional"));
+        COND_THEN (arg_node) = TRAVdo (COND_THEN (arg_node), arg_info);
     }
 
     /* traverse condition */
     DBUG_ASSERT ((COND_COND (arg_node) != NULL), "conditional without condition");
 
-    COND_COND (arg_node) = Trav (COND_COND (arg_node), arg_info);
+    COND_COND (arg_node) = TRAVdo (COND_COND (arg_node), arg_info);
 
-    INFO_SSADCR_REMASSIGN (arg_info) = FALSE;
+    INFO_DCR_REMASSIGN (arg_info) = FALSE;
 
     DBUG_RETURN (arg_node);
 }
@@ -604,23 +598,23 @@ SSADCRcond (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSADCRreturn(node *arg_node , info *arg_info)
+ *   node *DCRreturn(node *arg_node , info *arg_info)
  *
  * description:
  *   starts traversal of return expressions to mark them as needed.
  *
  *****************************************************************************/
 node *
-SSADCRreturn (node *arg_node, info *arg_info)
+DCRreturn (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSADCRreturn");
+    DBUG_ENTER ("DCRreturn");
 
     if (RETURN_EXPRS (arg_node) != NULL) {
-        RETURN_EXPRS (arg_node) = Trav (RETURN_EXPRS (arg_node), arg_info);
+        RETURN_EXPRS (arg_node) = TRAVdo (RETURN_EXPRS (arg_node), arg_info);
     }
 
     /* do not remove return instruction */
-    INFO_SSADCR_REMASSIGN (arg_info) = FALSE;
+    INFO_DCR_REMASSIGN (arg_info) = FALSE;
 
     DBUG_RETURN (arg_node);
 }
@@ -628,7 +622,7 @@ SSADCRreturn (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSADCRap(node *arg_node , info *arg_info)
+ *   node *DCRap(node *arg_node , info *arg_info)
  *
  * description:
  *   if application of special function (cond, do, while) traverse into this
@@ -637,25 +631,25 @@ SSADCRreturn (node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 node *
-SSADCRap (node *arg_node, info *arg_info)
+DCRap (node *arg_node, info *arg_info)
 {
     info *new_arg_info;
 
-    DBUG_ENTER ("SSADCRap");
+    DBUG_ENTER ("DCRap");
 
     /* traverse special fundef without recursion */
-    if ((FUNDEF_IS_LACFUN (AP_FUNDEF (arg_node)))
-        && (AP_FUNDEF (arg_node) != INFO_SSADCR_FUNDEF (arg_info))) {
-        DBUG_PRINT ("SSADCR", ("traverse in special fundef %s",
-                               FUNDEF_NAME (AP_FUNDEF (arg_node))));
+    if ((FUNDEF_ISLACFUN (AP_FUNDEF (arg_node)))
+        && (AP_FUNDEF (arg_node) != INFO_DCR_FUNDEF (arg_info))) {
+        DBUG_PRINT ("DCR", ("traverse in special fundef %s",
+                            FUNDEF_NAME (AP_FUNDEF (arg_node))));
 
         /*
          * duplicate the applicated funtion to avoid multiple uses of
          * one special function
          */
-        INFO_SSADCR_MODUL (arg_info)
-          = CheckAndDupSpecialFundef (INFO_SSADCR_MODUL (arg_info), AP_FUNDEF (arg_node),
-                                      INFO_SSADCR_ASSIGN (arg_info));
+        INFO_DCR_MODULE (arg_info)
+          = DUPcheckAndDupSpecialFundef (INFO_DCR_MODULE (arg_info), AP_FUNDEF (arg_node),
+                                         INFO_DCR_ASSIGN (arg_info));
 
         DBUG_ASSERT ((FUNDEF_USED (AP_FUNDEF (arg_node)) == 1),
                      "more than one instance of special function used.");
@@ -663,26 +657,26 @@ SSADCRap (node *arg_node, info *arg_info)
         /* stack arg_info frame for new fundef */
         new_arg_info = MakeInfo ();
 
-        INFO_SSADCR_DEPTH (new_arg_info) = INFO_SSADCR_DEPTH (arg_info) + 1;
-        INFO_SSADCR_MODUL (new_arg_info) = INFO_SSADCR_MODUL (arg_info);
+        INFO_DCR_DEPTH (new_arg_info) = INFO_DCR_DEPTH (arg_info) + 1;
+        INFO_DCR_MODULE (new_arg_info) = INFO_DCR_MODULE (arg_info);
 
         /* start traversal of special fundef (and maybe reduce parameters!) */
-        AP_FUNDEF (arg_node) = Trav (AP_FUNDEF (arg_node), new_arg_info);
+        AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), new_arg_info);
 
-        DBUG_PRINT ("SSADCR", ("traversal of special fundef %s finished"
-                               "continue in fundef %s\n",
-                               FUNDEF_NAME (AP_FUNDEF (arg_node)),
-                               FUNDEF_NAME (INFO_SSADCR_FUNDEF (arg_info))));
+        DBUG_PRINT ("DCR", ("traversal of special fundef %s finished"
+                            "continue in fundef %s\n",
+                            FUNDEF_NAME (AP_FUNDEF (arg_node)),
+                            FUNDEF_NAME (INFO_DCR_FUNDEF (arg_info))));
 
         new_arg_info = FreeInfo (new_arg_info);
     } else {
-        DBUG_PRINT ("SSADCR", ("do not traverse in normal fundef %s",
-                               FUNDEF_NAME (AP_FUNDEF (arg_node))));
+        DBUG_PRINT ("DCR", ("do not traverse in normal fundef %s",
+                            FUNDEF_NAME (AP_FUNDEF (arg_node))));
     }
 
     /* mark all args as needed */
     if (AP_ARGS (arg_node) != NULL) {
-        AP_ARGS (arg_node) = Trav (AP_ARGS (arg_node), arg_info);
+        AP_ARGS (arg_node) = TRAVdo (AP_ARGS (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -691,30 +685,30 @@ SSADCRap (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSADCRNwith(node *arg_node , info *arg_info)
+ *   node *DCRwith(node *arg_node , info *arg_info)
  *
  * description:
  *   traverses withop, code and partitions of withloop
  *
  *****************************************************************************/
 node *
-SSADCRNwith (node *arg_node, info *arg_info)
+DCRwith (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSADCRNwith");
+    DBUG_ENTER ("DCRwith");
 
     /* traverse withop */
-    if (NWITH_WITHOP (arg_node) != NULL) {
-        NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
+    if (WITH_WITHOP (arg_node) != NULL) {
+        WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
     }
 
     /* traverse code */
-    if (NWITH_CODE (arg_node) != NULL) {
-        NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
+    if (WITH_CODE (arg_node) != NULL) {
+        WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
     }
 
     /* traverse withop */
-    if (NWITH_PART (arg_node) != NULL) {
-        NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
+    if (WITH_PART (arg_node) != NULL) {
+        WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -723,29 +717,29 @@ SSADCRNwith (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSADCRNpart(node *arg_node , info *arg_info)
+ *   node *DCRpart(node *arg_node , info *arg_info)
  *
  * description:
  *   traverses generator, withid and next part
  *
  *****************************************************************************/
 node *
-SSADCRNpart (node *arg_node, info *arg_info)
+DCRpart (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSADCRNpart");
+    DBUG_ENTER ("DCRpart");
 
     /* traverse generator */
-    if (NPART_GEN (arg_node) != NULL) {
-        NPART_GEN (arg_node) = Trav (NPART_GEN (arg_node), arg_info);
+    if (PART_GENERATOR (arg_node) != NULL) {
+        PART_GENERATOR (arg_node) = TRAVdo (PART_GENERATOR (arg_node), arg_info);
     }
 
     /* traverse withid */
-    if (NPART_WITHID (arg_node) != NULL) {
-        NPART_WITHID (arg_node) = Trav (NPART_WITHID (arg_node), arg_info);
+    if (PART_WITHID (arg_node) != NULL) {
+        PART_WITHID (arg_node) = TRAVdo (PART_WITHID (arg_node), arg_info);
     }
     /* traverse next part */
-    if (NPART_NEXT (arg_node) != NULL) {
-        NPART_NEXT (arg_node) = Trav (NPART_NEXT (arg_node), arg_info);
+    if (PART_NEXT (arg_node) != NULL) {
+        PART_NEXT (arg_node) = TRAVdo (PART_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -754,30 +748,30 @@ SSADCRNpart (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSADCRNcode(node *arg_node , info *arg_info)
+ *   node *DCRcode(node *arg_node , info *arg_info)
  *
  * description:
  *   traverses exprs, block and next in this order
  *
  *****************************************************************************/
 node *
-SSADCRNcode (node *arg_node, info *arg_info)
+DCRcode (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSADCRNcode");
+    DBUG_ENTER ("DCRcode");
 
     /* traverse expression */
-    if (NCODE_CEXPRS (arg_node) != NULL) {
-        NCODE_CEXPRS (arg_node) = Trav (NCODE_CEXPRS (arg_node), arg_info);
+    if (CODE_CEXPRS (arg_node) != NULL) {
+        CODE_CEXPRS (arg_node) = TRAVdo (CODE_CEXPRS (arg_node), arg_info);
     }
 
     /* traverse code block */
-    if (NCODE_CBLOCK (arg_node) != NULL) {
-        NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
+    if (CODE_CBLOCK (arg_node) != NULL) {
+        CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
     }
 
     /* traverse expression */
-    if (NCODE_NEXT (arg_node) != NULL) {
-        NCODE_NEXT (arg_node) = Trav (NCODE_NEXT (arg_node), arg_info);
+    if (CODE_NEXT (arg_node) != NULL) {
+        CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -786,7 +780,7 @@ SSADCRNcode (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSADCRNwithid(node *arg_node , info *arg_info)
+ *   node *DCRwithid(node *arg_node , info *arg_info)
  *
  * description:
  *   marks index vector and identifier as needed to preserve them
@@ -796,19 +790,23 @@ SSADCRNcode (node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 node *
-SSADCRNwithid (node *arg_node, info *arg_info)
+DCRwithid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSADCRNwithid");
+    DBUG_ENTER ("DCRwithid");
+
+    INFO_DCR_TRAVWITHID (arg_info) = TRUE;
 
     /* traverse ids */
-    if (NWITHID_IDS (arg_node) != NULL) {
-        NWITHID_IDS (arg_node) = TravRightIDS (NWITHID_IDS (arg_node), arg_info);
+    if (WITHID_IDS (arg_node) != NULL) {
+        WITHID_IDS (arg_node) = TRAVdo (WITHID_IDS (arg_node), arg_info);
     }
 
     /* traverse vec */
-    if (NWITHID_VEC (arg_node) != NULL) {
-        NWITHID_VEC (arg_node) = TravRightIDS (NWITHID_VEC (arg_node), arg_info);
+    if (WITHID_VEC (arg_node) != NULL) {
+        WITHID_VEC (arg_node) = TRAVdo (WITHID_VEC (arg_node), arg_info);
     }
+
+    INFO_DCR_TRAVWITHID (arg_info) = FALSE;
 
     DBUG_RETURN (arg_node);
 }
@@ -816,7 +814,7 @@ SSADCRNwithid (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   static ids *SSADCRleftids(ids *arg_ids, info *arg_info)
+ *   static node *DCRids(node *arg_ids, info *arg_info)
  *
  * description:
  *   checks if ids is marked as needed and increments counter.
@@ -824,118 +822,131 @@ SSADCRNwithid (node *arg_node, info *arg_info)
  *   traverses to next ids.
  *
  *****************************************************************************/
-static ids *
-SSADCRleftids (ids *arg_ids, info *arg_info)
+
+node *
+DCRids (node *arg_ids, info *arg_info)
 {
-    ids *next_ids;
+    node *next_ids;
     nodelist *letlist;
 
-    DBUG_ENTER ("SSADCRleftids");
+    DBUG_ENTER ("DCRleftids");
 
-    /* position of result in result-list */
-    INFO_SSADCR_RESCOUNT (arg_info) = INFO_SSADCR_RESCOUNT (arg_info) + 1;
+    if (INFO_DCR_TRAVWITHID (arg_info)) {
+        /* increments the counter for each identifier usage */
+        DBUG_PRINT ("DCR", ("mark ids %s as needed", IDS_NAME (arg_ids)));
 
-    /* check result for usage */
-    if (AVIS_NEEDCOUNT (IDS_AVIS (arg_ids)) == SSADCR_NOTNEEDED) {
-        /*
-         * result is not needed
-         * if result of special function application - remove this result
-         * but first: save next ids in chain
-         */
+        AVIS_NEEDCOUNT (IDS_AVIS (arg_ids)) = AVIS_NEEDCOUNT (IDS_AVIS (arg_ids)) + 1;
 
-        next_ids = IDS_NEXT (arg_ids);
+        /* traverse next ids in ids chain */
+        if (IDS_NEXT (arg_ids) != NULL) {
+            IDS_NEXT (arg_ids) = TRAVdo (IDS_NEXT (arg_ids), arg_info);
+        }
 
-        if (INFO_SSADCR_REMRESULTS (arg_info)) {
-            DBUG_PRINT ("SSADCR",
-                        ("check left side %s  - not needed -> remove from resultlist",
-                         VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (IDS_AVIS (arg_ids)))));
+    } else {
 
-            /* remove result from all function applications - except this one */
-            letlist = NULL;
-            if (NODELIST_NODE (FUNDEF_EXT_ASSIGNS (INFO_SSADCR_APFUNDEF (arg_info)))
-                != NULL) {
-                if (ASSIGN_INSTR (NODELIST_NODE (
-                      FUNDEF_EXT_ASSIGNS (INFO_SSADCR_APFUNDEF (arg_info))))
-                    != INFO_SSADCR_LET (arg_info)) {
+        /* position of result in result-list */
+        INFO_DCR_RESCOUNT (arg_info) = INFO_DCR_RESCOUNT (arg_info) + 1;
 
-                    /*
-                     * there must be only ONE external reference to modify the
-                     * functions signature
-                     */
-                    DBUG_ASSERT ((NODELIST_NEXT (
-                                    FUNDEF_EXT_ASSIGNS (INFO_SSADCR_FUNDEF (arg_info)))
-                                  == NULL),
-                                 "there must be only one external reference to a special "
-                                 "function"
-                                 "to modify its signature");
-
-                    letlist
-                      = NodeListAppend (letlist,
-                                        ASSIGN_INSTR (NODELIST_NODE (FUNDEF_EXT_ASSIGNS (
-                                          INFO_SSADCR_FUNDEF (arg_info)))),
-                                        NULL);
-                }
-            }
-            if (FUNDEF_INT_ASSIGN (INFO_SSADCR_APFUNDEF (arg_info)) != NULL) {
-                if (ASSIGN_INSTR (FUNDEF_INT_ASSIGN (INFO_SSADCR_APFUNDEF (arg_info)))
-                    != INFO_SSADCR_LET (arg_info)) {
-                    letlist = NodeListAppend (letlist,
-                                              ASSIGN_INSTR (FUNDEF_INT_ASSIGN (
-                                                INFO_SSADCR_APFUNDEF (arg_info))),
-                                              NULL);
-                }
-            }
-
-            INFO_SSADCR_APFUNDEF (arg_info)
-              = CSRemoveResult (INFO_SSADCR_APFUNDEF (arg_info),
-                                INFO_SSADCR_RESCOUNT (arg_info), letlist);
-
-            FreeNodelist (letlist);
-            FreeOneIds (arg_ids);
-
-            /* decrement position in resultlist after deleting the result */
-            INFO_SSADCR_RESCOUNT (arg_info) = INFO_SSADCR_RESCOUNT (arg_info) - 1;
-
-            /* traverse rest of result chain */
-            if (next_ids != NULL) {
-                next_ids = TravLeftIDS (next_ids, arg_info);
-            }
-
-            /* set correct return value */
-            arg_ids = next_ids;
-
-        } else {
-            DBUG_PRINT ("SSADCR",
-                        ("check left side %s  - not needed",
-                         VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (IDS_AVIS (arg_ids)))));
-
+        /* check result for usage */
+        if (AVIS_NEEDCOUNT (IDS_AVIS (arg_ids)) == DCR_NOTNEEDED) {
             /*
-             * variable is not needed, but mark variable as needed to preserve
-             * vardec to avoid problems with multiple results in a function
-             * application that is not removed but where are some unused results.
-             * in this case the vardecs of the unused identifiers must not removed,
-             * because the hole application will stay in the programm.
+             * result is not needed
+             * if result of special function application - remove this result
+             * but first: save next ids in chain
              */
 
-            AVIS_NEEDCOUNT (IDS_AVIS (arg_ids)) = AVIS_NEEDCOUNT (IDS_AVIS (arg_ids)) + 1;
+            next_ids = IDS_NEXT (arg_ids);
 
-            /* traverse next ids as usual */
+            if (INFO_DCR_REMRESULTS (arg_info)) {
+                DBUG_PRINT ("DCR",
+                            ("check left side %s  - not needed -> remove from resultlist",
+                             IDS_NAME (arg_ids)));
+
+                /* remove result from all function applications - except this one */
+                letlist = NULL;
+                if (NODELIST_NODE (FUNDEF_EXT_ASSIGNS (INFO_DCR_APFUNDEF (arg_info)))
+                    != NULL) {
+                    if (ASSIGN_INSTR (NODELIST_NODE (
+                          FUNDEF_EXT_ASSIGNS (INFO_DCR_APFUNDEF (arg_info))))
+                        != INFO_DCR_LET (arg_info)) {
+
+                        /*
+                         * there must be only ONE external reference to modify the
+                         * functions signature
+                         */
+                        DBUG_ASSERT ((NODELIST_NEXT (
+                                        FUNDEF_EXT_ASSIGNS (INFO_DCR_FUNDEF (arg_info)))
+                                      == NULL),
+                                     "there must be only one external reference to a "
+                                     "special function"
+                                     "to modify its signature");
+
+                        letlist = TCnodeListAppend (letlist,
+                                                    ASSIGN_INSTR (
+                                                      NODELIST_NODE (FUNDEF_EXT_ASSIGNS (
+                                                        INFO_DCR_FUNDEF (arg_info)))),
+                                                    NULL);
+                    }
+                }
+                if (FUNDEF_INT_ASSIGN (INFO_DCR_APFUNDEF (arg_info)) != NULL) {
+                    if (ASSIGN_INSTR (FUNDEF_INT_ASSIGN (INFO_DCR_APFUNDEF (arg_info)))
+                        != INFO_DCR_LET (arg_info)) {
+                        letlist = TCnodeListAppend (letlist,
+                                                    ASSIGN_INSTR (FUNDEF_INT_ASSIGN (
+                                                      INFO_DCR_APFUNDEF (arg_info))),
+                                                    NULL);
+                    }
+                }
+
+                INFO_DCR_APFUNDEF (arg_info)
+                  = CSremoveResult (INFO_DCR_APFUNDEF (arg_info),
+                                    INFO_DCR_RESCOUNT (arg_info), letlist);
+
+                FREEfreeNodelist (letlist);
+                FREEdoFreeNode (arg_ids);
+
+                /* decrement position in resultlist after deleting the result */
+                INFO_DCR_RESCOUNT (arg_info) = INFO_DCR_RESCOUNT (arg_info) - 1;
+
+                /* traverse rest of result chain */
+                if (next_ids != NULL) {
+                    next_ids = TRAVdo (next_ids, arg_info);
+                }
+
+                /* set correct return value */
+                arg_ids = next_ids;
+
+            } else {
+                DBUG_PRINT ("DCR",
+                            ("check left side %s  - not needed", IDS_NAME (arg_ids)));
+
+                /*
+                 * variable is not needed, but mark variable as needed to preserve
+                 * vardec to avoid problems with multiple results in a function
+                 * application that is not removed but where are some unused results.
+                 * in this case the vardecs of the unused identifiers must not removed,
+                 * because the hole application will stay in the programm.
+                 */
+
+                AVIS_NEEDCOUNT (IDS_AVIS (arg_ids))
+                  = AVIS_NEEDCOUNT (IDS_AVIS (arg_ids)) + 1;
+
+                /* traverse next ids as usual */
+                if (IDS_NEXT (arg_ids) != NULL) {
+                    IDS_NEXT (arg_ids) = TRAVdo (IDS_NEXT (arg_ids), arg_info);
+                }
+            }
+        } else {
+            DBUG_PRINT ("DCR", ("check left side %s  - needed", IDS_NAME (arg_ids)));
+
+            /* result is needed, increment counter */
+            INFO_DCR_RESNEEDED (arg_info) = INFO_DCR_RESNEEDED (arg_info) + 1;
+
+            /* traverse next ids */
             if (IDS_NEXT (arg_ids) != NULL) {
-                IDS_NEXT (arg_ids) = TravLeftIDS (IDS_NEXT (arg_ids), arg_info);
+                IDS_NEXT (arg_ids) = TRAVdo (IDS_NEXT (arg_ids), arg_info);
             }
         }
-    } else {
-        DBUG_PRINT ("SSADCR",
-                    ("check left side %s  - needed",
-                     VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (IDS_AVIS (arg_ids)))));
-
-        /* result is needed, increment counter */
-        INFO_SSADCR_RESNEEDED (arg_info) = INFO_SSADCR_RESNEEDED (arg_info) + 1;
-
-        /* traverse next ids */
-        if (IDS_NEXT (arg_ids) != NULL) {
-            IDS_NEXT (arg_ids) = TravLeftIDS (IDS_NEXT (arg_ids), arg_info);
-        }
     }
 
     DBUG_RETURN (arg_ids);
@@ -944,112 +955,39 @@ SSADCRleftids (ids *arg_ids, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   static ids *SSADCRrightids(ids *arg_ids, info *arg_info)
- *
- * description:
- *  increments the counter for each identifier usage
- *
- *****************************************************************************/
-static ids *
-SSADCRrightids (ids *arg_ids, info *arg_info)
-{
-    DBUG_ENTER ("SSADCRrightids");
-
-    DBUG_PRINT ("SSADCR", ("mark ids %s as needed",
-                           VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (IDS_AVIS (arg_ids)))));
-
-    AVIS_NEEDCOUNT (IDS_AVIS (arg_ids)) = AVIS_NEEDCOUNT (IDS_AVIS (arg_ids)) + 1;
-
-    /* traverse next ids in ids chain */
-    if (IDS_NEXT (arg_ids) != NULL) {
-        IDS_NEXT (arg_ids) = TravRightIDS (IDS_NEXT (arg_ids), arg_info);
-    }
-
-    DBUG_RETURN (arg_ids);
-}
-
-/******************************************************************************
- *
- * function:
- *   static ids *TravLeftIDS(ids *arg_ids, info *arg_info)
- *
- * description:
- *  implements a similar traversal mechanism like Trav() for IDS chains.
- *  Here for LHS identifier.
- *
- *****************************************************************************/
-static ids *
-TravLeftIDS (ids *arg_ids, info *arg_info)
-{
-    DBUG_ENTER ("TravLeftIDS");
-
-    DBUG_ASSERT (arg_ids != NULL, "traversal in NULL ids");
-    arg_ids = SSADCRleftids (arg_ids, arg_info);
-
-    DBUG_RETURN (arg_ids);
-}
-
-/******************************************************************************
- *
- * function:
- *   static ids *TravRightIDS(ids *arg_ids, info *arg_info)
- *
- * description:
- *  implements a similar traversal mechanism like Trav() for IDS chains.
- *  Here for RHS identifier.
- *
- *****************************************************************************/
-static ids *
-TravRightIDS (ids *arg_ids, info *arg_info)
-{
-    DBUG_ENTER ("TravRightIDS");
-
-    DBUG_ASSERT (arg_ids != NULL, "traversal in NULL ids");
-    arg_ids = SSADCRrightids (arg_ids, arg_info);
-
-    DBUG_RETURN (arg_ids);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *SSADeadCodeRemoval(node *fundef, node *modul)
+ *   node *DCRdoDeadCodeRemoval(node *fundef, node *modul)
  *
  * description:
  *   starting point of DeadCodeRemoval for SSA form.
  *   Starting fundef must not be a special fundef (do, while, cond) created by
  *   lac2fun transformation. These "inline" functions will be traversed in
  *   their order of usage. The traversal mode (on toplevel, in special
- *   function) is annotated in the stacked INFO_SSADCR_DEPTH attribute.
+ *   function) is annotated in the stacked INFO_DCR_DEPTH attribute.
  *
  *****************************************************************************/
 node *
-SSADeadCodeRemoval (node *fundef, node *modul)
+DCRdoDeadCodeRemoval (node *fundef, node *module)
 {
     info *arg_info;
-    funtab *old_tab;
 
-    DBUG_ENTER ("SSADeadCodeRemoval");
+    DBUG_ENTER ("DCRdoDeadCodeRemoval");
 
     DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
-                 "SSADeadCodeRemoval called for non-fundef node");
+                 "DCRdoDeadCodeRemoval called for non-fundef node");
 
     DBUG_PRINT ("OPT", ("starting dead code removal (ssa) in function %s",
                         FUNDEF_NAME (fundef)));
 
     /* do not start traversal in special functions */
-    if (!(FUNDEF_IS_LACFUN (fundef))) {
+    if (!(FUNDEF_ISLACFUN (fundef))) {
         arg_info = MakeInfo ();
 
-        INFO_SSADCR_DEPTH (arg_info) = SSADCR_TOPLEVEL; /* start on toplevel */
-        INFO_SSADCR_MODUL (arg_info) = modul;
+        INFO_DCR_DEPTH (arg_info) = DCR_TOPLEVEL; /* start on toplevel */
+        INFO_DCR_MODULE (arg_info) = module;
 
-        old_tab = act_tab;
-        act_tab = ssadcr_tab;
-
-        fundef = Trav (fundef, arg_info);
-
-        act_tab = old_tab;
+        TRAVpush (TR_dcr);
+        fundef = TRAVdo (fundef, arg_info);
+        TRAVpop ();
 
         arg_info = FreeInfo (arg_info);
     }
