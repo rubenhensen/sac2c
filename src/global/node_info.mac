@@ -1,9 +1,13 @@
 /*
  *
  * $Log$
- * Revision 1.69  1995/05/26 14:23:42  asi
- * function inlineing and loop unrolling added
+ * Revision 1.70  1995/05/30 06:44:02  hw
+ * FltnMod deleted
+ * FltnCon inserted
  *
+;; Revision 1.69  1995/05/26  14:23:42  asi
+;; function inlineing and loop unrolling added
+;;
 ;; Revision 1.68  1995/05/22  10:11:39  hw
 ;; added function "CompCast" to comp_tab
 ;;
@@ -307,16 +311,16 @@ NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun,
   NIF (N_generator, "N_generator", DummyFun, FltnGen, PrintGenator, DummyFun, DummyFun,
        DummyFun, DummyFun, FreeInfoId, DummyFun, RCgen, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun),
-  NIF (N_genarray, "N_genarray", DummyFun, DummyFun, PrintConexpr, DummyFun, DummyFun,
+  NIF (N_genarray, "N_genarray", DummyFun, FltnCon, PrintConexpr, DummyFun, DummyFun,
        DummyFun, DummyFun, FreeNoInfo, DummyFun, RCcon, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun),
-  NIF (N_foldprf, "N_foldprf", DummyFun, DummyFun, PrintFold, DummyFun, DummyFun,
-       DummyFun, DummyFun, FreeNoInfo, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
-       DummyFun, DummyFun, DummyFun),
-  NIF (N_foldfun, "N_foldfun", DummyFun, DummyFun, PrintFold, DummyFun, DummyFun,
-       DummyFun, DummyFun, FreeNoInfo, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
-       DummyFun, DummyFun, DummyFun),
-  NIF (N_modarray, "N_modarray", DummyFun, FltnMod, PrintConexpr, DummyFun, DummyFun,
+  NIF (N_foldprf, "N_foldprf", DummyFun, FltnCon, PrintFold, DummyFun, DummyFun, DummyFun,
+       DummyFun, FreeNoInfo, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
+       DummyFun, DummyFun),
+  NIF (N_foldfun, "N_foldfun", DummyFun, FltnCon, PrintFold, DummyFun, DummyFun, DummyFun,
+       DummyFun, FreeNoInfo, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
+       DummyFun, DummyFun),
+  NIF (N_modarray, "N_modarray", DummyFun, FltnCon, PrintConexpr, DummyFun, DummyFun,
        DummyFun, DummyFun, FreeNoInfo, DummyFun, RCcon, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun),
   NIF (N_prf, "N_prf", DummyFun, DummyFun, PrintPrf, DummyFun, DummyFun, DummyFun,
