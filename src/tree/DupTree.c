@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.90  2004/03/05 19:14:27  mwe
+ * support for new node N_funcond added
+ *
  * Revision 3.89  2004/03/04 17:36:11  mwe
  * DupCondfun removed
  *
@@ -1657,21 +1660,21 @@ DupPrf (node *arg_node, node *arg_info)
 
 /******************************************************************************/
 
-/*node *DupCondfun( node *arg_node, node *arg_info)
- {
-  node *new_node;
+node *
+DupFuncond (node *arg_node, node *arg_info)
+{
+    node *new_node;
 
-  DBUG_ENTER( "DupCondfun");
+    DBUG_ENTER ("DupFuncond");
 
-  new_node = MakeCondfun( DUPTRAV( CONDFUN_IF( arg_node)),
-                          DUPTRAV( CONDFUN_THEN( arg_node)),
-                          DUPTRAV( CONDFUN_ELSE( arg_node)));
+    new_node
+      = MakeFuncond (DUPTRAV (FUNCOND_IF (arg_node)), DUPTRAV (FUNCOND_THEN (arg_node)),
+                     DUPTRAV (FUNCOND_ELSE (arg_node)));
 
-  CopyCommonNodeData( new_node, arg_node);
+    CopyCommonNodeData (new_node, arg_node);
 
-
-  DBUG_RETURN( new_node);
-}*/
+    DBUG_RETURN (new_node);
+}
 
 /******************************************************************************/
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.134  2004/03/05 19:14:27  mwe
+ * support for new node N_funcond added
+ *
  * Revision 3.133  2004/03/02 16:43:02  mwe
  * support for CVP traversal added
  *
@@ -2438,6 +2441,30 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        HDsetwl, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 2),
+
+  NIF (N_funcond, "N_funcond", TravSons, TravSons, PrintFuncond, TravSons, TravSons,
+       TravSons, TravSons, FreeFuncond, TravSons, TravSons, TravSons, TravSons,
+       DupFuncond, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+
+       PrintFuncond, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons,
+
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons,
+
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons,
+
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, SSACFfuncond, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons,
+
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, 3),
 
   /* ATTENTION !!!! N_ok has to be the last node declared here;
    *                otherwise a DBUG_ASSERT in traverse.c: Trav will

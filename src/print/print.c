@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.151  2004/03/05 19:14:27  mwe
+ * support for new node N_funcond added
+ *
  * Revision 3.150  2004/03/01 16:53:12  sbs
  * output on fundefs changed again...
  *
@@ -2408,6 +2411,33 @@ PrintPrf (node *arg_node, node *arg_info)
         }
         fprintf (outfile, ")");
     }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *PrintFuncond( node *arg_node, node *arg_info)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+PrintFuncond (node *arg_node, node *arg_info)
+{
+
+    DBUG_ENTER ("PrintFuncond");
+
+    fprintf (outfile, "Funcond( ");
+    Trav (FUNCOND_IF (arg_node), arg_info);
+    fprintf (outfile, ", ");
+    Trav (FUNCOND_THEN (arg_node), arg_info);
+    fprintf (outfile, ", ");
+    Trav (FUNCOND_ELSE (arg_node), arg_info);
+    fprintf (outfile, ")");
 
     DBUG_RETURN (arg_node);
 }

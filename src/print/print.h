@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.23  2004/03/05 19:14:27  mwe
+ * support for new node N_funcond added
+ *
  * Revision 3.22  2003/10/19 21:39:45  dkrHH
  * prf_string moved from print.[ch] to globals.[ch] (for BEtest)
  *
@@ -153,6 +156,7 @@ extern node *PrintCSEinfo (node *arg_node, node *arg_info);
 extern node *PrintAvis (node *arg_node, node *arg_info);
 extern node *PrintInfo (node *arg_node, node *arg_info);
 extern node *PrintCWrapper (node *arg_node, node *arg_info);
+extern node *PrintFuncond (node *arg_node, node *arg_info);
 
 /* with-loop (frontend) */
 extern node *PrintNwith (node *arg_node, node *arg_info);

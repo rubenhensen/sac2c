@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.19  2004/03/05 19:14:27  mwe
+ * support for new node N_funcond added
+ *
  * Revision 3.18  2002/09/06 10:36:25  sah
  * added FreeSetWL
  *
@@ -173,5 +176,6 @@ extern node *FreeCSEinfo (node *arg_node, node *arg_info);
 extern node *FreeSSAcnt (node *arg_node, node *arg_info);
 extern node *FreeAvis (node *arg_node, node *arg_info);
 extern node *FreeSSAstack (node *arg_node, node *arg_info);
+extern node *FreeFuncond (node *arg_node, node *arg_info);
 
 #endif /* _sac_free_h */

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.54  2004/03/05 19:14:27  mwe
+ * support for new node N_funcond added
+ *
  * Revision 3.53  2004/02/13 17:44:14  mwe
  * MODUL_FUNDECS added
  *
@@ -2480,6 +2483,26 @@ FreeAvis (node *arg_node, node *arg_info)
     }
 
     DBUG_PRINT ("FREE", ("Removing N_avis node ..."));
+
+    arg_node = Free (arg_node);
+
+    DBUG_RETURN (arg_node);
+}
+
+/*--------------------------------------------------------------------------*/
+
+node *
+FreeFuncond (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("FreeFuncond");
+
+    DBUG_PRINT ("FREE", ("Removing contents of N_funcond node ..."));
+
+    FUNCOND_IF (arg_node) = FREETRAV (FUNCOND_IF (arg_node));
+    FUNCOND_THEN (arg_node) = FREETRAV (FUNCOND_THEN (arg_node));
+    FUNCOND_ELSE (arg_node) = FREETRAV (FUNCOND_ELSE (arg_node));
+
+    DBUG_PRINT ("FREE", ("Removing N_funcond node ..."));
 
     arg_node = Free (arg_node);
 

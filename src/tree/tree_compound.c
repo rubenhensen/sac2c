@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.79  2004/03/05 19:14:27  mwe
+ * support for new node N_funcond added
+ *
  * Revision 3.78  2004/02/06 14:19:33  mwe
  * isPhiFun added, PHITARGET's removed
  *
@@ -3748,8 +3751,7 @@ isPhiFun (node *id)
     DBUG_ENTER ("isPhiFun");
 
     if ((AVIS_SSAASSIGN (ID_AVIS (id)) != NULL)
-        && (NODE_TYPE (ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (id)))) == N_prf)
-        && (PRF_PRF (ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (id)))) == F_phi))
+        && (NODE_TYPE (ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (id)))) == N_funcond))
         result = TRUE;
     else
         result = FALSE;

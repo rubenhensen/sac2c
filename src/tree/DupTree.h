@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.28  2004/03/05 19:14:27  mwe
+ * support for new node N_funcond added
+ *
  * Revision 3.27  2004/03/04 17:36:11  mwe
  * DupCondfun removed
  *
@@ -185,7 +188,7 @@ extern node *DupMTalloc (node *arg_node, node *arg_info);
 extern node *DupAvis (node *arg_node, node *arg_info);
 extern node *DupSSAstack (node *arg_node, node *arg_info);
 extern node *DupSSAcnt (node *arg_node, node *arg_info);
-/*extern node *DupCondfun(  node *arg_node, node *arg_info);*/
+extern node *DupFuncond (node *arg_node, node *arg_info);
 
 /* frontend with-loop */
 extern node *DupNwith (node *arg_node, node *arg_info);

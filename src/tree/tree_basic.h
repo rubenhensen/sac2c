@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.182  2004/03/05 19:14:27  mwe
+ * support for new node N_funcond added
+ *
  * Revision 3.181  2004/03/02 16:41:27  mwe
  * INFO_CVP macro added
  *
@@ -1825,6 +1828,24 @@ extern node *MakeExprs (node *expr, node *next);
 
 #define EXPRS_EXPR(n) (n->node[0])
 #define EXPRS_NEXT(n) (n->node[1])
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_funcond :
+ ***
+ ***  sons:
+ ***
+ ***    node* IF     (N_exprs)
+ ***    node* THEN   (N_exprs)
+ ***    node* ELSE   (N_exprs)
+ ***/
+
+extern node *MakeFuncond (node *pred, node *then, node *alternative);
+
+#define FUNCOND_IF(n) (n->node[0])
+#define FUNCOND_THEN(n) (n->node[1])
+#define FUNCOND_ELSE(n) (n->node[2])
 
 /*--------------------------------------------------------------------------*/
 
