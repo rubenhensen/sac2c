@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.57  2004/07/14 23:23:37  sah
+ * removed all old ssa optimizations and the use_ssaform flag
+ *
  * Revision 3.56  2004/07/14 15:31:30  ktr
  * compiler phase emalloc added.
  *
@@ -201,17 +204,10 @@
 #include "optimize.h"
 #include "free.h"
 #include "generatemasks.h"
-#include "freemasks.h"
-#include "ConstantFolding.h"
-#include "DeadCodeRemoval.h"
 #include "DeadFunctionRemoval.h"
-#include "LoopInvariantRemoval.h"
-#include "CSE.h"
 #include "import.h"
 #include "DupTree.h"
 #include "Inline.h"
-#include "Unroll.h"
-#include "Unswitch.h"
 #include "ArrayElimination.h"
 #include "index.h"
 #include "writesib.h"
@@ -230,10 +226,6 @@
 #include "ReuseWithArrays.h"
 #include "cccall.h"
 #include "PatchWith.h"
-#include "WithloopFolding.h"
-#include "WLT.h"
-#include "WLI.h"
-#include "WLF.h"
 #include "WithloopScalarization.h"
 #include "AssociativeLaw.h"
 #include "DistributiveLaw.h"
@@ -371,26 +363,26 @@ static funtab genmask_tab_rec = {{
 funtab *genmask_tab = &genmask_tab_rec;
 
 /*
- *  (6) dead_tab
+ *  (6) unused_tab3
  */
-static funtab dcr_tab_rec = {{
-#define NIFdcr(it_dcr) it_dcr
+static funtab unused_tab3_rec = {{
+#define NIFunused_3(it_unused_3) it_unused_3
 #include "node_info.mac"
-                             },
-                             NULL,
-                             NULL};
-funtab *dcr_tab = &dcr_tab_rec;
+                                 },
+                                 NULL,
+                                 NULL};
+funtab *unused_tab3 = &unused_tab3_rec;
 
 /*
- *  (7) wlf_tab
+ *  (7) unused_tab27
  */
-static funtab wlf_tab_rec = {{
-#define NIFwlf(it_wlf) it_wlf
+static funtab unused_tab27_rec = {{
+#define NIFunused_27(it_unused_27) it_unused_27
 #include "node_info.mac"
-                             },
-                             NULL,
-                             NULL};
-funtab *wlf_tab = &wlf_tab_rec;
+                                  },
+                                  NULL,
+                                  NULL};
+funtab *unused_tab27 = &unused_tab27_rec;
 
 /*
  *  (8) free_tab
@@ -404,15 +396,15 @@ static funtab free_tab_rec = {{
 funtab *free_tab = &free_tab_rec;
 
 /*
- *  (9) cf_tab
+ *  (9) unused_tab2
  */
-static funtab cf_tab_rec = {{
-#define NIFcf(it_cf) it_cf
+static funtab unused_tab2_rec = {{
+#define NIFunused_2(it_unused_2) it_unused_2
 #include "node_info.mac"
-                            },
-                            NULL,
-                            NULL};
-funtab *cf_tab = &cf_tab_rec;
+                                 },
+                                 NULL,
+                                 NULL};
+funtab *unused_tab2 = &unused_tab2_rec;
 
 /*
  *  (10) refcnt_tab
@@ -437,15 +429,15 @@ static funtab emrefcnt_tab_rec = {{
 funtab *emrefcnt_tab = &emrefcnt_tab_rec;
 
 /*
- *  (12) lir_tab
+ *  (12) unused_tab4
  */
-static funtab lir_tab_rec = {{
-#define NIFlir(it_lir) it_lir
+static funtab unused_tab4_rec = {{
+#define NIFunused_4(it_unused_4) it_unused_4
 #include "node_info.mac"
-                             },
-                             NULL,
-                             NULL};
-funtab *lir_tab = &lir_tab_rec;
+                                 },
+                                 NULL,
+                                 NULL};
+funtab *unused_tab4 = &unused_tab4_rec;
 
 /*
  *  (13) dup_tab
@@ -470,26 +462,26 @@ static funtab inline_tab_rec = {{
 funtab *inline_tab = &inline_tab_rec;
 
 /*
- *  (15) unroll_tab
+ *  (15) unused_tab23
  */
-static funtab unroll_tab_rec = {{
-#define NIFunroll(it_unroll) it_unroll
+static funtab unused_tab23_rec = {{
+#define NIFunused_23(it_unused_23) it_unused_23
 #include "node_info.mac"
-                                },
-                                NULL,
-                                NULL};
-funtab *unroll_tab = &unroll_tab_rec;
+                                  },
+                                  NULL,
+                                  NULL};
+funtab *unused_tab23 = &unused_tab23_rec;
 
 /*
- *  (16) lir_mov_tab
+ *  (16) unused_tab21
  */
-static funtab lir_mov_tab_rec = {{
-#define NIFlir_mov(it_lir_mov) it_lir_mov
+static funtab unused_tab21_rec = {{
+#define NIFunused_21(it_unused_21) it_unused_21
 #include "node_info.mac"
-                                 },
-                                 NULL,
-                                 NULL};
-funtab *lir_mov_tab = &lir_mov_tab_rec;
+                                  },
+                                  NULL,
+                                  NULL};
+funtab *unused21_tab = &unused_tab21_rec;
 
 /*
  *  (17) idx_tab
@@ -503,26 +495,26 @@ static funtab idx_tab_rec = {{
 funtab *idx_tab = &idx_tab_rec;
 
 /*
- *  (18) unswitch_tab
+ *  (18) unused_tab24
  */
-static funtab unswitch_tab_rec = {{
-#define NIFunswitch(it_unswitch) it_unswitch
+static funtab unused_tab24_rec = {{
+#define NIFunused_24(it_unused_24) it_unused_24
 #include "node_info.mac"
                                   },
                                   NULL,
                                   NULL};
-funtab *unswitch_tab = &unswitch_tab_rec;
+funtab *unused_tab24 = &unused_tab24_rec;
 
 /*
- *  (19) wli_tab
+ *  (19) unused_tab26
  */
-static funtab wli_tab_rec = {{
-#define NIFwli(it_wli) it_wli
+static funtab unused_tab26_rec = {{
+#define NIFunused_26(it_unused_26) it_unused_26
 #include "node_info.mac"
-                             },
-                             NULL,
-                             NULL};
-funtab *wli_tab = &wli_tab_rec;
+                                  },
+                                  NULL,
+                                  NULL};
+funtab *unused_tab26 = &unused_tab26_rec;
 
 /*
  *  (20) ae_tab
@@ -646,15 +638,15 @@ static funtab precomp2_tab_rec = {{
 funtab *precomp2_tab = &precomp2_tab_rec;
 
 /*
- *  (31) active_tab
+ *  (31) unused_TAB22
  */
-static funtab active_tab_rec = {{
-#define NIFactive(it_active) it_active
+static funtab unused_tab22_rec = {{
+#define NIFunused_22(it_unused_22) it_unused_22
 #include "node_info.mac"
-                                },
-                                NULL,
-                                NULL};
-funtab *active_tab = &active_tab_rec;
+                                  },
+                                  NULL,
+                                  NULL};
+funtab *unused_tab22 = &unused_tab22_rec;
 
 /*
  *  (32) readsib_tab
@@ -668,26 +660,26 @@ static funtab readsib_tab_rec = {{
 funtab *readsib_tab = &readsib_tab_rec;
 
 /*
- *  (33) wlt_tab
+ *  (33) unused_tab28
  */
-static funtab wlt_tab_rec = {{
-#define NIFwlt(it_wlt) it_wlt
+static funtab unused_tab28_rec = {{
+#define NIFunused_28(it_unused_28) it_unused_28
 #include "node_info.mac"
-                             },
-                             NULL,
-                             NULL};
-funtab *wlt_tab = &wlt_tab_rec;
+                                  },
+                                  NULL,
+                                  NULL};
+funtab *unused_tab28 = &unused_tab28_rec;
 
 /*
- *  (34) cse_tab
+ *  (34) unused_tab1
  */
-static funtab cse_tab_rec = {{
-#define NIFcse(it_cse) it_cse
+static funtab unused_tab1_rec = {{
+#define NIFunused_1(it_unused_1) it_unused_1
 #include "node_info.mac"
-                             },
-                             NULL,
-                             NULL};
-funtab *cse_tab = &cse_tab_rec;
+                                 },
+                                 NULL,
+                                 NULL};
+funtab *unused_tab1 = &unused_tab1_rec;
 
 /*
  *  (35) dfr_tab
@@ -855,15 +847,15 @@ static funtab wlaa_tab_rec = {{
 funtab *wlaa_tab = &wlaa_tab_rec;
 
 /*
- *  (50) freemask_tab
+ *  (50) unused_tab25
  */
-static funtab freemask_tab_rec = {{
-#define NIFfreemask(it_freemask) it_freemask
+static funtab unused_tab25_rec = {{
+#define NIFunused_25(it_unused_25) it_unused_25
 #include "node_info.mac"
                                   },
                                   NULL,
                                   NULL};
-funtab *freemask_tab = &freemask_tab_rec;
+funtab *unused25_tab = &unused_tab25_rec;
 
 /*
  *  (51) spmdrmtrav_tab

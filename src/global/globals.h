@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.42  2004/07/14 23:23:37  sah
+ * removed all old ssa optimizations and the use_ssaform flag
+ *
  * Revision 3.41  2004/06/09 13:28:34  skt
  * min_parallel_size_per_thread added
  *
@@ -313,9 +316,6 @@ extern unsigned int optimize;
 #define OPT_BLIR 0x20000000 /* backend loop invariant removal              */
 #define OPT_SP 0x40000000   /* selection propagation                       */
 #define OPT_WLFS 0x80000000 /* with-loop fusion                            */
-
-/* use ssa-form based optimizations instead of old opts */
-extern bool use_ssaform;
 
 /* disable some optimizations on floats and fold-WithLoops with floats */
 extern bool enforce_ieee;

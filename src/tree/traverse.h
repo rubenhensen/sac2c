@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.46  2004/07/14 23:23:37  sah
+ * removed all old ssa optimizations and the use_ssaform flag
+ *
  * Revision 3.45  2004/07/14 15:31:30  ktr
  * compiler phase emalloc added.
  *
@@ -252,22 +255,22 @@ extern funtab *flat_tab;
 extern funtab *print_tab;
 extern funtab *type_tab;
 extern funtab *genmask_tab;
-extern funtab *freemask_tab;
-extern funtab *active_tab;
-extern funtab *dcr_tab;
-extern funtab *wlf_tab;
+extern funtab *unused_tab25;
+extern funtab *unused_tab22;
+extern funtab *unused_tab3;
+extern funtab *unused_tab27;
 extern funtab *free_tab;
-extern funtab *cf_tab;
+extern funtab *unused_tab2;
 extern funtab *refcnt_tab;
 extern funtab *emrefcnt_tab;
-extern funtab *lir_tab;
-extern funtab *lir_mov_tab;
+extern funtab *unused_tab4;
+extern funtab *unused_tab21;
 extern funtab *dup_tab;
 extern funtab *inline_tab;
-extern funtab *unroll_tab;
-extern funtab *unswitch_tab;
+extern funtab *unused_tab23;
+extern funtab *unused_tab24;
 extern funtab *idx_tab;
-extern funtab *wli_tab;
+extern funtab *unused_tab26;
 extern funtab *ae_tab;
 extern funtab *writesib_tab;
 extern funtab *obj_tab;
@@ -282,8 +285,7 @@ extern funtab *precomp2_tab;
 extern funtab *precomp3_tab;
 extern funtab *precomp4_tab;
 extern funtab *readsib_tab;
-extern funtab *wlt_tab;
-extern funtab *cse_tab;
+extern funtab *unused_tab1;
 extern funtab *dfr_tab;
 extern funtab *tcwl_tab;
 extern funtab *wltrans_tab;

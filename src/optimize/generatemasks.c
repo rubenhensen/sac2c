@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.20  2004/07/14 23:23:37  sah
+ * removed all old ssa optimizations and the use_ssaform flag
+ *
  * Revision 3.19  2004/03/10 00:10:17  dkrHH
  * old backend removed
  *
@@ -187,15 +190,8 @@
 
 #include "optimize.h"
 #include "generatemasks.h"
-#include "ConstantFolding.h"
-#include "DeadCodeRemoval.h"
-#include "LoopInvariantRemoval.h"
 #include "Inline.h"
-#include "Unroll.h"
-#include "Unswitch.h"
 #include "ArrayElimination.h"
-#include "CSE.h"
-#include "WithloopFolding.h"
 
 /*
  * Stack which implements the 'most recently defined' lists.

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2004/07/14 23:23:37  sah
+ * removed all old ssa optimizations and the use_ssaform flag
+ *
  * Revision 3.5  2001/05/17 13:50:34  nmw
  * MALLOC/FREE replaced by Malloc/Free, using result of Free()
  *
@@ -82,10 +85,7 @@ extern stack *mrdl_stack;
     mrdl_stack = Free (mrdl_stack);
 
 #define MRD_TOS mrdl_stack->stack[mrdl_stack->tos]
-#define MRD_TAB                                                                          \
-    (cf_tab == act_tab || unroll_tab == act_tab || unswitch_tab == act_tab               \
-     || cse_tab == act_tab || ae_tab == act_tab || wli_tab == act_tab                    \
-     || wlt_tab == act_tab)
+#define MRD_TAB (ae_tab == act_tab)
 #define MRD_LIST (long *)MRD_TOS.varlist
 #define MRD_VLEN MRD_TOS.vl_len
 #define MRD(i) MRD_TOS.varlist[i]

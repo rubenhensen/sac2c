@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.43  2004/07/14 23:23:37  sah
+ * removed all old ssa optimizations and the use_ssaform flag
+ *
  * Revision 3.42  2004/07/14 15:29:54  ktr
  * Replaced call to SSARefCount by call to EMAllocateFill
  *
@@ -493,11 +496,9 @@ main (int argc, char *argv[])
 
     PHASE_PROLOG;
     if (khf) {
-        if (use_ssaform) {
-            NOTE_COMPILER_PHASE;
-            syntax_tree = WLPartitionGeneration (syntax_tree); /* wlpg_tab */
-            PHASE_DONE_EPILOG;
-        }
+        NOTE_COMPILER_PHASE;
+        syntax_tree = WLPartitionGeneration (syntax_tree); /* wlpg_tab */
+        PHASE_DONE_EPILOG;
     }
     PHASE_EPILOG;
 
@@ -519,7 +520,7 @@ main (int argc, char *argv[])
         goto BREAK;
     compiler_phase++;
 
-    if (!(((ktr) || (mtmode == MT_mtstblock)) && (use_ssaform))) {
+    if (!((ktr) || (mtmode == MT_mtstblock))) {
         compiler_phase += 1;
         PHASE_PROLOG;
         NOTE_COMPILER_PHASE;
@@ -549,7 +550,7 @@ main (int argc, char *argv[])
         goto BREAK;
     compiler_phase++;
 
-    if (((ktr) || (mtmode == MT_mtstblock)) && (use_ssaform)) {
+    if ((ktr) || (mtmode == MT_mtstblock)) {
         PHASE_PROLOG;
         NOTE_COMPILER_PHASE;
         show_refcnt = FALSE;
@@ -563,7 +564,7 @@ main (int argc, char *argv[])
         goto BREAK;
     compiler_phase++;
 
-    if ((ktr) && (use_ssaform) && (optimize & OPT_BLIR)) {
+    if ((ktr) && (optimize & OPT_BLIR)) {
         /* Perform Backend Withloop Invariant Removal */
         syntax_tree = Blir (syntax_tree);
         goto BREAK;
@@ -590,10 +591,6 @@ main (int argc, char *argv[])
         NOTE_COMPILER_PHASE;
         NOTE (("Using mt/st-block version of multithreading (MT3)"));
         /* this version of multithreading is only for code in SSA-form */
-        if (!use_ssaform) {
-            SYSABORT (("Use of mtmode 3 implied ssa-form!\n Please use the -ssa flag "
-                       "additionally."));
-        }
 
         /* After SSA-Refcounting, Code is already in SSA-Form */
         /* syntax_tree = DoSSA(syntax_tree); */
@@ -605,7 +602,7 @@ main (int argc, char *argv[])
     }
     PHASE_EPILOG;
 
-    if (((ktr) || (mtmode == MT_mtstblock)) && (use_ssaform)) {
+    if (((ktr) || (mtmode == MT_mtstblock))) {
         syntax_tree = UndoSSA (syntax_tree);
     }
 

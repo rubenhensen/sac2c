@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.32  2004/07/14 23:23:37  sah
+# removed all old ssa optimizations and the use_ssaform flag
+#
 # Revision 3.31  2004/03/02 16:39:40  mwe
 # ConstVarPropagation added
 #
@@ -76,9 +79,9 @@ include $(PROJECT_ROOT)/Makefile.Config
 INCS = -I../global -I../../inc -I../typecheck -I../print -I../psi-opt -I../modules \
        -I../compile -I../concurrent -I../tree -I../flatten -I../constants
 
-all: optimize.o generatemasks.o ConstantFolding.o DeadCodeRemoval.o \
-     LoopInvariantRemoval.o Inline.o Unroll.o Unswitch.o CSE.o \
-     WLUnroll.o DeadFunctionRemoval.o freemasks.o \
+all: optimize.o generatemasks.o \
+     Inline.o \
+     DeadFunctionRemoval.o \
      SSADeadCodeRemoval.o SSACSE.o SSAConstantFolding.o SSALIR.o SSALUR.o \
      SSAWLUnroll.o SSAInferLI.o AssociativeLaw.o rmcasts.o DistributiveLaw.o \
      UndoElimSubDiv.o ElimSubDiv.o SelectionPropagation.o ConstVarPropagation.o

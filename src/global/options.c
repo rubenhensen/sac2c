@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.62  2004/07/14 23:23:37  sah
+ * removed all old ssa optimizations and the use_ssaform flag
+ *
  * Revision 3.61  2004/04/30 13:21:03  ktr
  * Nothing really changed.
  *
@@ -902,10 +905,6 @@ AnalyseCommandline (int argc, char *argv[])
 
         ARG_CHOICE ("pab", print_after_break = FALSE);
         ARG_CHOICE ("PAB", print_after_break = FALSE);
-        /* ktr
-        ARG_CHOICE( "ssa", use_ssaform = FALSE);
-        ARG_CHOICE( "SSA", use_ssaform = FALSE);
-        */
 
         ARG_CHOICE_END ();
     });
@@ -951,7 +950,12 @@ AnalyseCommandline (int argc, char *argv[])
         ARG_CHOICE_END ();
     });
 
-    ARGS_FLAG ("ssa", use_ssaform = TRUE);
+    /***
+     * ssa is the default now and there will soon be no non-ssa
+     * optimizations anymore. The flag is still here
+     * for the moment, but will be removed soon
+     ***/
+    ARGS_FLAG ("ssa", SYSWARN (("The ssa flag is deprecated")));
 
     ARGS_OPTION ("target", target_name = ARG);
 
@@ -1088,8 +1092,8 @@ CheckOptionConsistency ()
         }
     }
 
-    if (use_ssaform && (optimize & OPT_CSE) && (!(optimize & OPT_DCR))) {
-        SYSWARN (("Common subexpressions elimination (CSE) in ssaform requires "
+    if ((optimize & OPT_CSE) && (!(optimize & OPT_DCR))) {
+        SYSWARN (("Common subexpressions elimination (CSE) requires "
                   "dead code removal (DCR) enabled.\n"
                   "CSE disabled"));
         optimize &= ~OPT_CSE;

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.45  2004/07/14 23:23:37  sah
+ * removed all old ssa optimizations and the use_ssaform flag
+ *
  * Revision 3.44  2004/07/14 15:29:54  ktr
  * Nothing really changed.
  *
@@ -1036,36 +1039,18 @@ PrefixForTmpVar (void)
         s = "type";
     } else if (act_tab == genmask_tab) {
         s = "gnm";
-    } else if (act_tab == dcr_tab) {
-        s = "dcr";
-    } else if (act_tab == cf_tab) {
-        s = "cf";
     } else if (act_tab == free_tab) {
         s = "free";
     } else if (act_tab == refcnt_tab) {
         s = "rc";
     } else if (act_tab == comp_tab) {
         s = "comp";
-    } else if (act_tab == lir_tab) {
-        s = "lir";
-    } else if (act_tab == lir_mov_tab) {
-        s = "lirm";
     } else if (act_tab == dup_tab) {
         s = "dup";
     } else if (act_tab == inline_tab) {
         s = "inl";
-    } else if (act_tab == unroll_tab) {
-        s = "unr";
-    } else if (act_tab == unswitch_tab) {
-        s = "uns";
     } else if (act_tab == idx_tab) {
         s = "idx";
-    } else if (act_tab == wlt_tab) {
-        s = "wlt";
-    } else if (act_tab == wli_tab) {
-        s = "wli";
-    } else if (act_tab == wlf_tab) {
-        s = "wlf";
     } else if (act_tab == ae_tab) {
         s = "ae";
     } else if (act_tab == writesib_tab) {
@@ -1092,8 +1077,6 @@ PrefixForTmpVar (void)
         s = "pcomp3";
     } else if (act_tab == readsib_tab) {
         s = "rsib";
-    } else if (act_tab == cse_tab) {
-        s = "cse";
     } else if (act_tab == dfr_tab) {
         s = "dfr";
     } else if (act_tab == patchwith_tab) {

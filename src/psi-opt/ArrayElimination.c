@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.20  2004/07/14 23:23:37  sah
+ * removed all old ssa optimizations and the use_ssaform flag
+ *
  * Revision 3.19  2004/07/14 14:22:41  sah
  * moved NodeBehindCast to tree_compund, thus
  * dependency to LoopInvariantRemoval.h removed
@@ -78,13 +81,6 @@
 
 #define AE_PREFIX "__ae_"
 #define AE_PREFIX_LENGTH 5
-
-/*
- * macro to switch between OPTTrav and std. Trav function used in ssa form.
- * in future when only ssa form is used, the OPTTrav part can be removed.
- */
-#define SELTRAV(ssa, subnode, info, node)                                                \
-    (ssa ? Trav (subnode, info) : OPTTrav (subnode, info, node))
 
 /*
  *
@@ -310,17 +306,12 @@ AEprf (node *arg_node, node *arg_info)
     if (F_sel == PRF_PRF (arg_node)) {
         tmpn = NodeBehindCast (PRF_ARG1 (arg_node));
         if (N_id == NODE_TYPE (tmpn)) {
-            if (use_ssaform) {
-                /* look up via ssa assign attribute */
-                if (AVIS_SSAASSIGN (ID_AVIS (tmpn)) != NULL) {
-                    DBUG_PRINT ("AE", ("defining assignment looked up via SSAASSIGN"));
-                    tmpn = ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (tmpn)));
-                } else {
-                    tmpn = NULL;
-                }
+            /* look up via ssa assign attribute */
+            if (AVIS_SSAASSIGN (ID_AVIS (tmpn)) != NULL) {
+                DBUG_PRINT ("AE", ("defining assignment looked up via SSAASSIGN"));
+                tmpn = ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (tmpn)));
             } else {
-                /* old version - use MRD masks - can be removed in future... */
-                tmpn = MRD_GETDATA (ID_VARNO (tmpn), INFO_VARNO (arg_info));
+                tmpn = NULL;
             }
         }
 
@@ -368,8 +359,7 @@ AEfundef (node *arg_node, node *arg_info)
         DBUG_PRINT ("AE", ("*** Trav function %s", FUNDEF_NAME (arg_node)));
 
         INFO_AE_TYPES (arg_info) = NULL;
-        FUNDEF_INSTR (arg_node)
-          = SELTRAV (use_ssaform, FUNDEF_INSTR (arg_node), arg_info, arg_node);
+        FUNDEF_INSTR (arg_node) = Trav (FUNDEF_INSTR (arg_node), arg_info);
         FUNDEF_VARDEC (arg_node)
           = AppendVardec (INFO_AE_TYPES (arg_info), FUNDEF_VARDEC (arg_node));
         INFO_AE_TYPES (arg_info) = NULL;
@@ -410,11 +400,9 @@ AEassign (node *arg_node, node *arg_info)
 
     /* traverse into compound nodes. */
     if (ASSIGN_INSTR (arg_node))
-        ASSIGN_INSTR (arg_node)
-          = SELTRAV (use_ssaform, ASSIGN_INSTR (arg_node), arg_info, arg_node);
+        ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
     if (ASSIGN_NEXT (arg_node))
-        ASSIGN_NEXT (arg_node)
-          = SELTRAV (use_ssaform, ASSIGN_NEXT (arg_node), arg_info, arg_node);
+        ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
 
     if (new_nodes)
         ASSIGN_NEXT (arg_node) = AppendAssign (new_nodes, ASSIGN_NEXT (arg_node));
@@ -438,12 +426,9 @@ AEcond (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("AEcond");
 
-    COND_COND (arg_node)
-      = SELTRAV (use_ssaform, COND_COND (arg_node), arg_info, arg_node);
-    COND_THENINSTR (arg_node)
-      = SELTRAV (use_ssaform, COND_THENINSTR (arg_node), arg_info, arg_node);
-    COND_ELSEINSTR (arg_node)
-      = SELTRAV (use_ssaform, COND_ELSEINSTR (arg_node), arg_info, arg_node);
+    COND_COND (arg_node) = Trav (COND_COND (arg_node), arg_info);
+    COND_THENINSTR (arg_node) = Trav (COND_THENINSTR (arg_node), arg_info);
+    COND_ELSEINSTR (arg_node) = Trav (COND_ELSEINSTR (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -464,8 +449,8 @@ AEdo (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("AEdo");
 
-    DO_INSTR (arg_node) = SELTRAV (use_ssaform, DO_INSTR (arg_node), arg_info, arg_node);
-    DO_COND (arg_node) = SELTRAV (use_ssaform, DO_COND (arg_node), arg_info, arg_node);
+    DO_INSTR (arg_node) = Trav (DO_INSTR (arg_node), arg_info);
+    DO_COND (arg_node) = Trav (DO_COND (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -486,12 +471,9 @@ AENwith (node *arg_node, node *arg_info)
 
     /* The Phase AE is not in the optimization loop and though
        WLT has not been done. Only one N_Npart and one N_Ncode exist. */
-    NWITH_PART (arg_node)
-      = SELTRAV (use_ssaform, NWITH_PART (arg_node), arg_info, arg_node);
-    NWITH_CODE (arg_node)
-      = SELTRAV (use_ssaform, NWITH_CODE (arg_node), arg_info, arg_node);
-    NWITH_WITHOP (arg_node)
-      = SELTRAV (use_ssaform, NWITH_WITHOP (arg_node), arg_info, arg_node);
+    NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
+    NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
+    NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

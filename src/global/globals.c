@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.50  2004/07/14 23:23:37  sah
+ * removed all old ssa optimizations and the use_ssaform flag
+ *
  * Revision 3.49  2004/06/09 13:28:34  skt
  * min_parallel_size_per_thread added
  *
@@ -494,7 +497,6 @@ unsigned int optimize = OPT_ALL & (~OPT_MTO) /*& (~OPT_SBE)*/ & (~OPT_MTI) & (~O
 /*
  * per default do use ssa-form based optimizations
  */
-bool use_ssaform = FALSE;
 bool valid_ssaform = FALSE;
 
 /*

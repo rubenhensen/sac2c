@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.21  2004/07/14 23:23:37  sah
+# removed all old ssa optimizations and the use_ssaform flag
+#
 # Revision 3.20  2004/04/08 08:09:55  khf
 # WithloopFusion.o added
 #
@@ -71,7 +74,6 @@ INCS = -I../global -I../../inc -I../tree -I../compile -I../typecheck -I../module
 
 
 all: index.o ArrayElimination.o wl_access_analyze.o tile_size_inference.o \
-     WithloopFolding.o WLT.o WLI.o WLF.o \
      SSAWithloopFolding.o SSAWLT.o SSAWLI.o SSAWLF.o \
      pad.o pad_info.o pad_collect.o pad_infer.o pad_transform.o \
      WithloopScalarization.o WithloopFusion.o

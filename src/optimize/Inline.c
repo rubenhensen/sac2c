@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.34  2004/07/14 23:23:37  sah
+ * removed all old ssa optimizations and the use_ssaform flag
+ *
  * Revision 3.33  2003/09/11 17:43:17  sbs
  * Inlining of wrappers made optional by INLINE_WRAPPERS.
  * Preset INLINE_WRAPPERS to 0, i.e., wrapper-inlining turned off!!
@@ -169,7 +172,6 @@
 
 #include "InferDFMs.h"
 #include "optimize.h"
-#include "LoopInvariantRemoval.h"
 #include "DupTree.h"
 #include "Inline.h"
 
