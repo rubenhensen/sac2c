@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.20  2001/02/09 13:34:09  dkr
+ * COMPIcm added in order to RC the arguments of ICMs correctly
+ *
  * Revision 3.19  2001/02/06 01:48:45  dkr
  * with-loop: NOOP nodes added
  *
@@ -4845,6 +4848,69 @@ COMPCond (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/******************************************************************************
+ *
+ * Function:
+ *   node *COMPIcm( node *arg_node, node *arg_info)
+ *
+ * Description:
+ *   Insert reference-counting ICMs for some ICM arguments!
+ *   If new ICMs are inserted the return value is a N_assign chain of ICMs.
+ *
+ ******************************************************************************/
+
+node *
+COMPIcm (node *arg_node, node *arg_info)
+{
+    node *args, *arg;
+    node *icm_node, *last_node;
+    char *name;
+
+    DBUG_ENTER ("COMPIcm");
+
+    name = ICM_NAME (arg_node);
+    if (strstr (name, "VECT2OFFSET") != NULL) {
+        /*
+         * VECT2OFFSET( var, iv, ...) needs RC on all but the first argument.
+         * It is expanded to    var = ... iv ...    , where 'var' is a scalar
+         * variable (no reference-counted object).
+         *  -> decrement the RCs of all but the first argument, if needed.
+         */
+        last_node = MakeAssign (arg_node, NULL);
+
+        args = ICM_EXPRS2 (arg_node);
+        while (args != NULL) {
+            arg = EXPRS_EXPR (args);
+            if (NODE_TYPE (arg) == N_id) {
+                icm_node
+                  = MakeAdjustRcIcm (ID_NAME (arg), ID_TYPE (arg), ID_REFCNT (arg), -1);
+                if (icm_node != NULL) {
+                    last_node = ASSIGN_NEXT (last_node) = icm_node;
+                }
+            }
+            args = EXPRS_NEXT (args);
+        }
+
+        if (ASSIGN_NEXT (last_node) != NULL) {
+            arg_node = last_node;
+        } else {
+            ASSIGN_INSTR (last_node) = NULL;
+            last_node = FreeTree (last_node);
+        }
+    } else if (strstr (name, "USE_GENVAR_OFFSET") != NULL) {
+        /*
+         * USE_GENVAR_OFFSET( var, arr) does *not* consume its arguments!
+         * It is expanded to    var = arr__off    , where 'var' is a scalar
+         * and 'arr_off' an internal variable (no reference-counted objects)!
+         *   -> do nothing
+         */
+    } else {
+        DBUG_PRINT ("COMP", ("ICM not traversed: %s", ICM_NAME (arg_node)));
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
 /**************************
  *
  *  with-loop
@@ -5426,55 +5492,6 @@ COMPNwith2 (node *arg_node, node *arg_info)
     wl_node = old_wl_node;
 
     DBUG_RETURN (assigns);
-}
-
-/******************************************************************************
- *
- * Function:
- *   node *COMPNcode( node *arg_node, node *arg_info)
- *
- * Description:
- *   compiles a Ncode node.
- *
- ******************************************************************************/
-
-node *
-COMPNcode (node *arg_node, node *arg_info)
-{
-    node *icm_assigns;
-
-    DBUG_ENTER ("COMPNcode");
-
-    NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
-
-    /*
-     * build a 'ND_INC_RC'-ICM for each ids in 'NCODE_INC_RC_IDS( arg_node)'.
-     */
-    icm_assigns = Ids2IncRcICMs (NCODE_INC_RC_IDS (arg_node), NULL);
-
-    if (icm_assigns != NULL) {
-        /*
-         * insert these ICMs as first statement into the code-block
-         */
-
-        DBUG_ASSERT ((NCODE_CBLOCK (arg_node) != NULL),
-                     "no code block found in N_Ncode node");
-        DBUG_ASSERT ((NCODE_CBLOCK_INSTR (arg_node) != NULL),
-                     "first instruction of block is NULL (should be a N_empty node)");
-
-        if (NODE_TYPE (NCODE_CBLOCK_INSTR (arg_node)) == N_empty) {
-            /* remove a N_empty node */
-            NCODE_CBLOCK_INSTR (arg_node) = FreeTree (NCODE_CBLOCK_INSTR (arg_node));
-        }
-        NCODE_CBLOCK_INSTR (arg_node)
-          = AppendAssign (icm_assigns, NCODE_CBLOCK_INSTR (arg_node));
-    }
-
-    if (NCODE_NEXT (arg_node) != NULL) {
-        NCODE_NEXT (arg_node) = Trav (NCODE_NEXT (arg_node), arg_info);
-    }
-
-    DBUG_RETURN (arg_node);
 }
 
 /******************************************************************************
@@ -6112,6 +6129,55 @@ COMPWLgridx (node *arg_node, node *arg_info)
     }
 
     DBUG_RETURN (assigns);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *COMPNcode( node *arg_node, node *arg_info)
+ *
+ * Description:
+ *   compiles a Ncode node.
+ *
+ ******************************************************************************/
+
+node *
+COMPNcode (node *arg_node, node *arg_info)
+{
+    node *icm_assigns;
+
+    DBUG_ENTER ("COMPNcode");
+
+    NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
+
+    /*
+     * build a 'ND_INC_RC'-ICM for each ids in 'NCODE_INC_RC_IDS( arg_node)'.
+     */
+    icm_assigns = Ids2IncRcICMs (NCODE_INC_RC_IDS (arg_node), NULL);
+
+    if (icm_assigns != NULL) {
+        /*
+         * insert these ICMs as first statement into the code-block
+         */
+
+        DBUG_ASSERT ((NCODE_CBLOCK (arg_node) != NULL),
+                     "no code block found in N_Ncode node");
+        DBUG_ASSERT ((NCODE_CBLOCK_INSTR (arg_node) != NULL),
+                     "first instruction of block is NULL (should be a N_empty node)");
+
+        if (NODE_TYPE (NCODE_CBLOCK_INSTR (arg_node)) == N_empty) {
+            /* remove a N_empty node */
+            NCODE_CBLOCK_INSTR (arg_node) = FreeTree (NCODE_CBLOCK_INSTR (arg_node));
+        }
+        NCODE_CBLOCK_INSTR (arg_node)
+          = AppendAssign (icm_assigns, NCODE_CBLOCK_INSTR (arg_node));
+    }
+
+    if (NCODE_NEXT (arg_node) != NULL) {
+        NCODE_NEXT (arg_node) = Trav (NCODE_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
 }
 
 /**************************
