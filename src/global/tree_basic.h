@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.8  1995/10/19 11:16:00  cg
+ * Revision 1.9  1995/10/20 11:29:43  cg
+ * *** empty log message ***
+ *
+ * Revision 1.8  1995/10/19  11:16:00  cg
  * bug in macro AP_FUNDEF fixed.
  *
  * Revision 1.7  1995/10/19  10:06:42  cg
@@ -97,8 +100,7 @@ The following compilation steps are used:
  - flatten
  - typecheck
  - impl_types
- - fun-analysis
- - obj-analysis
+ - analysis
  - write-SIB
  - obj-handling
  - optimize
@@ -538,8 +540,8 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  ***
  ***    node*      RETURN        (N_return)  (typecheck -> compile !!)
  ***    nodelist*  NEEDOBJS (O)              (import -> )
- ***                                         (fun-analysis -> )
- ***                                         ( -> obj-analysis -> )
+ ***                                         (analysis -> )
+ ***                                         ( -> analysis -> )
  ***                                         ( -> write-SIB -> )
  ***                                         ( -> obj-handling -> )
  ***    node*      ICM           (N_icm)     (compile -> )
@@ -589,7 +591,7 @@ extern node *MakeFundef (char *name, char *mod, char *alias, types *types, node 
  ***
  ***  temporary attributes:
  ***
- ***    int         VARNO                (optimize -> )
+ ***    int         VARNO                     (optimize -> )
  ***/
 
 extern node *MakeArg (char *name, types *type, statustype status, statustype attrib,
@@ -614,10 +616,10 @@ extern node *MakeArg (char *name, types *type, statustype status, statustype att
  ***
  ***  temporary attributes:
  ***
- ***    nodelist*  NEEDFUNS   (O)         (fun-analysis -> )
- ***                                      ( -> obj-analysis -> )
+ ***    nodelist*  NEEDFUNS   (O)         (analysis -> )
+ ***                                      ( -> analysis -> )
  ***                                      ( -> write-SIB -> )
- ***    nodelist*  NEEDTYPES  (O)         (fun-analysis -> )
+ ***    nodelist*  NEEDTYPES  (O)         (analysis -> )
  ***                                      ( -> write-SIB -> )
  ***    long*      DEFMASK                (optimize -> )
  ***    long*      USEMASK                (optimize -> )
@@ -1065,7 +1067,7 @@ extern node *MakeVinfo (useflag flag, shapes *shp, node *next);
  ***
  ***    node*  VARDEC    (N_vardec)  (typecheck -> )
  ***    node*  OBJDEF    (N_objdef)  (typecheck -> )
- ***                                 ( -> fun-analysis -> )
+ ***                                 ( -> analysis -> )
  ***    int    REFCNT                (refcount -> compile -> )
  ***/
 
