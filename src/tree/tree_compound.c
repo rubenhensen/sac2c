@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.64  2002/07/12 09:07:16  dkr
+ * CreateSel: no warning about uninitialized variable anymore :-)
+ *
  * Revision 3.63  2002/07/10 21:32:22  ktr
  * *** empty log message ***
  *
@@ -3947,6 +3950,7 @@ CreateSel (ids *sel_vec, ids *sel_ids, node *sel_array, bool no_wl, node *fundef
 
     if (len_index > dim_array) {
         DBUG_ASSERT ((0), "illegal array selection found!");
+        sel = NULL;
     } else if ((len_index == dim_array) || no_wl) {
         sel = MakePrf (F_sel, MakeExprs (DupIds_Id (sel_vec),
                                          MakeExprs (DupNode (sel_array), NULL)));
