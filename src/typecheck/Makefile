@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.22  2003/09/09 12:58:38  sbs
+# -I. added
+#
 # Revision 3.21  2002/08/09 13:01:37  dkr
 # create_wrapper_code.o added
 #
@@ -63,7 +66,7 @@ include $(PROJECT_ROOT)/Makefile.Config
 
 
 INCS=-I../global -I../tree -I../../inc -I../print -I../modules -I../optimize \
-     -I../compile -I../c-interface -I../constants -I../flatten
+     -I../compile -I../c-interface -I../constants -I../flatten -I.
 
 all: typecheck.o prim_fun.o typecheck_WL.o gen_pseudo_fun.o \
      new_typecheck.o new_types.o user_types.o create_wrappers.o \
