@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.256  1999/02/09 17:26:13  dkr
+ * *** empty log message ***
+ *
  * Revision 1.255  1999/02/04 17:23:37  srs
  * added check if arg_info is not NULL.
  *
@@ -426,11 +429,12 @@ PrintModul (node *arg_node, node *arg_info)
             Trav (MODUL_OBJS (arg_node), arg_info); /* print object definitions */
         }
 
-        fclose (outfile);
-
         if (NULL != MODUL_FUNS (arg_node)) {
             fprintf (outfile, "\n\n");
+            fclose (outfile);
             Trav (MODUL_FUNS (arg_node), NULL); /* print function definitions */
+        } else {
+            fclose (outfile);
         }
     } else {
         switch (MODUL_FILETYPE (arg_node)) {
