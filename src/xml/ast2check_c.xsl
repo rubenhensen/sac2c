@@ -2,6 +2,9 @@
 
 <!--
   $Log$
+  Revision 1.3  2005/01/18 14:08:52  jhb
+  added enums and some fix some bugs
+
   Revision 1.2  2005/01/11 13:32:08  jhb
   changed some little things
 
@@ -69,17 +72,45 @@ static info *FreeInfo(info *info)
 
   DBUG_RETURN(info);
 }
- </xsl:text> 
+</xsl:text>
 
-  <xsl:apply-templates select="//syntaxtree/node">
+  <xsl:apply-templates select="//syntaxtree/node" mode="function">
     <xsl:sort select="@name"/>
   </xsl:apply-templates>
+  <xsl:value-of select="$newline"/>
 
-</xsl:template>
+  <xsl:value-of select="$newline"/>
+  <xsl:value-of select="'enum{ '"/> 
+  <xsl:apply-templates select="//syntaxtree/node" mode="enum">
+    <xsl:sort select="@name"/>
+  </xsl:apply-templates>
+  <xsl:value-of select="'}; '"/>
+  <xsl:value-of select="$newline"/>
+
+  <xsl:value-of select="$newline"/>
+  <xsl:value-of select="'enum{ '"/> 
+  <xsl:apply-templates select="//syntaxtree/node/sons/son" mode="enum">
+    <xsl:sort select="@name"/>
+  </xsl:apply-templates>
+  <xsl:value-of select="'}; '"/>
+  <xsl:value-of select="$newline"/>
+
+  <xsl:value-of select="$newline"/>
+  <xsl:value-of select="'enum{ '"/> 
+  <xsl:apply-templates select="//syntaxtree/node/attributes/attribute" 
+                       mode="enum">
+    <xsl:sort select="@name"/>
+  </xsl:apply-templates>
+  <xsl:value-of select="'}; '"/>
+  <xsl:value-of select="$newline"/>
 
 
-<xsl:template match="node">
+  </xsl:template>
 
+
+<xsl:template match="node" mode="function">
+   
+  <xsl:value-of select="' };'"/>
   <xsl:value-of select="$newline"/>
   <xsl:value-of select="'node *CHK'"/>
   <xsl:apply-templates select="@name" mode="lowercase"/>
@@ -115,11 +146,18 @@ static info *FreeInfo(info *info)
 
 
 
+<xsl:template match="node" mode="enum">
+
+  <xsl:value-of select="@name"/>
+  <xsl:value-of select="', '"/>
+   
+</xsl:template>
 
 
 
 
-<!-- trav to the sons -->
+
+<!-- ckeck the sons -->
 <xsl:template match="son" mode="check">
 
   <xsl:if test="string-length(@mandatory) &gt; 2">
@@ -153,11 +191,7 @@ static info *FreeInfo(info *info)
 </xsl:template>
 
 
-
-
-
-
-
+<!-- trav to the sons -->
 <xsl:template match="son" mode="trav">
 
   <xsl:value-of select="$newline"/>
@@ -174,7 +208,7 @@ static info *FreeInfo(info *info)
   <xsl:apply-templates select="../../@name" mode="uppercase"/>
   <xsl:value-of select="'_'"/>
   <xsl:apply-templates select="@name" mode="uppercase"/>
-  <xsl:value-of select="'( arg_node) = Trav( '"/>
+  <xsl:value-of select="'( arg_node) = doTrav( '"/>
 
   <xsl:apply-templates select="../../@name" mode="uppercase"/>
   <xsl:value-of select="'_'"/>
@@ -185,12 +219,6 @@ static info *FreeInfo(info *info)
   <xsl:value-of select="$newline"/>
 
 </xsl:template>
-
-
-
-
-
-
 
 
 <xsl:template match="attribute">
@@ -254,19 +282,15 @@ static info *FreeInfo(info *info)
 
 </xsl:template>
 
+
 <xsl:template match="@name" mode="uppercase">
   <xsl:value-of select="translate(., 'abcdefghijklmnopqrstuvwxyz',
 'ABCDEFGHIJKLMNOPQRSTUVWXYZ')"/>
 </xsl:template>
 
-
 <xsl:template match="@name" mode="lowercase">
   <xsl:value-of select="translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
 'abcdefghijklmnopqrstuvwxyz')"/>
 </xsl:template>
-
-
-
-
 
 </xsl:stylesheet>
