@@ -1,5 +1,11 @@
 /*
  * $Log$
+ * Revision 2.84  2000/07/13 11:59:42  jhs
+ * Splited ICM_INDENT into ICM_INDENT_BEFORE and ICM_INDENT_AFTER.
+ * So indentation can be done before and after an icm now,
+ * until now negative idents were done before and positive ones after
+ * printing the icm itself.
+ *
  * Revision 2.83  2000/07/11 15:39:22  jhs
  * changed DFMfoldmask.name => DFMfoldmask.vardec
  *
@@ -17,7 +23,6 @@
  *
  * Revision 2.78  2000/06/14 12:05:04  jhs
  * Prints ST_IDENTIFER and MT_IDENTIFER now.
- * ./
  *
  * Revision 2.77  2000/06/08 13:03:26  nmw
  * call to printinterface inserted when generating c library
@@ -125,6 +130,8 @@
 #include "scheduling.h"
 #include "wl_access_analyze.h"
 #include "tile_size_inference.h"
+
+#define WARN_INDENT
 
 /*
  * PrintNode(): INFO_PRINT_CONT(arg_info) contains the root of syntaxtree.
@@ -642,15 +649,14 @@ PrintAssign (node *arg_node, node *arg_info)
     DBUG_ASSERT ((ASSIGN_INSTR (arg_node) != NULL), "instruction of N_assign is NULL");
 
     if (N_icm == NODE_TYPE (ASSIGN_INSTR (arg_node))) {
-        if (ICM_INDENT (ASSIGN_INSTR (arg_node)) < 0) {
-            indent += ICM_INDENT (ASSIGN_INSTR (arg_node));
+        if (strcmp (ICM_NAME (ASSIGN_INSTR (arg_node)), "MT2_IF_I_AM_FIRST") == 0) {
+            DBUG_PRINT ("JHS", ("%i", indent));
         }
+        indent += ICM_INDENT_BEFORE (ASSIGN_INSTR (arg_node));
         INDENT;
         PrintIcm (ASSIGN_INSTR (arg_node), arg_info);
         fprintf (outfile, "\n");
-        if (ICM_INDENT (ASSIGN_INSTR (arg_node)) > 0) {
-            indent += ICM_INDENT (ASSIGN_INSTR (arg_node));
-        }
+        indent += ICM_INDENT_AFTER (ASSIGN_INSTR (arg_node));
         if (ASSIGN_NEXT (arg_node) != NULL) {
             PRINT_CONT (Trav (ASSIGN_NEXT (arg_node), arg_info), );
         }
@@ -723,11 +729,11 @@ PrintBlock (node *arg_node, node *arg_info)
     fprintf (outfile, "}");
 
     if (indent != old_indent) {
-#if 0
-    SYSWARN( ("Indentation unbalanced while printing block of function %s."
-              " Indentation at beginning of block: %i."
-              " Indentation at end of block: %i",
-              FUNDEF_NAME( INFO_PRINT_FUNDEF( arg_info)), old_indent, indent));
+#ifdef WARN_INDENT
+        SYSWARN (("Indentation unbalanced while printing block of function %s."
+                  " Indentation at beginning of block: %i."
+                  " Indentation at end of block: %i",
+                  FUNDEF_NAME (INFO_PRINT_FUNDEF (arg_info)), old_indent, indent));
 #endif
         indent = old_indent;
     }
@@ -1229,11 +1235,11 @@ PrintFundef (node *arg_node, node *arg_info)
     }
 
     if (indent != old_indent) {
-#if 0
-    SYSWARN( ("Indentation unbalanced while printing function %s."
-              " Indentation at beginning of function: %i."
-              " Indentation at end of function: %i",
-              FUNDEF_NAME( arg_node), old_indent, indent));
+#ifdef WARN_INDENT
+        SYSWARN (("Indentation unbalanced while printing function %s."
+                  " Indentation at beginning of function: %i."
+                  " Indentation at end of function: %i",
+                  FUNDEF_NAME (arg_node), old_indent, indent));
 #endif
         indent = old_indent;
     }
