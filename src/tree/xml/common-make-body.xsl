@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.8  2004/10/26 09:36:43  sah
+  flags are initialised now
+
   Revision 1.7  2004/08/29 18:10:05  sah
   general improvements
 
@@ -80,6 +83,33 @@ version="1.0">
   <!-- assign sons and attributes a value -->
   <xsl:apply-templates select="sons/son" mode="make-body"/>
   <xsl:apply-templates select="attributes/attribute" mode="make-body"/>
+  <!-- init flags -->
+  <xsl:if test="flags/flag">
+    <xsl:call-template name="node-access">
+      <xsl:with-param name="node">
+        <xsl:value-of select="'this'" />
+      </xsl:with-param>
+      <xsl:with-param name="nodetype">
+        <xsl:value-of select="@name" />
+      </xsl:with-param>
+      <xsl:with-param name="field">
+        <xsl:value-of select="'Flags'" />
+      </xsl:with-param>
+    </xsl:call-template>
+    <xsl:value-of select="' = 0;'" />
+    <xsl:call-template name="node-access">
+      <xsl:with-param name="node">
+        <xsl:value-of select="'this'" />
+      </xsl:with-param>
+      <xsl:with-param name="nodetype">
+        <xsl:value-of select="@name" />
+      </xsl:with-param>
+      <xsl:with-param name="field">
+        <xsl:value-of select="'DBug_Flags'" />
+      </xsl:with-param>
+    </xsl:call-template>
+    <xsl:value-of select="' = 0;'" />
+  </xsl:if>
   <!-- if DBUG enabled, check for valid arguments -->
   <xsl:call-template name="newline" />
   <xsl:value-of select="'#ifndef DBUG_OFF'" />
