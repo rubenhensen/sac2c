@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.21  1999/06/02 13:51:16  sbs
+ * fixed a nasty bug in TI_Ngenarray
+ * in[] nowalso matches int[.]
+ * (so does int[?].... 8-))
+ *
  * Revision 2.20  1999/05/31 16:55:48  sbs
  * constant-folding for wls extended
  * Now, with(...) genarray( [2+2,3],...);
@@ -7746,7 +7751,9 @@ TI_Ngenarray (node *arg_node, node *arg_info, node **replace)
         ABORT (NODE_LINE (arg_node),
                ("type of shape in genarray with loop cannot be infered!"));
     } else if (((TYPES_DIM (expr_type) != (KNOWN_DIM_OFFSET - 1))
-                && (TYPES_DIM (expr_type) != 1))
+                && (TYPES_DIM (expr_type) != 1)
+                && (TYPES_DIM (expr_type) != UNKNOWN_SHAPE)
+                && (TYPES_DIM (expr_type) != ARRAY_OR_SCALAR))
                || (TYPES_BASETYPE (expr_type) != T_int)) {
         ABORT (NODE_LINE (arg_node),
                ("type of shape in genarray with loop is %s which does not match int[.]!",
