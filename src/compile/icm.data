@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.66  2003/09/30 19:31:44  dkr
+ * ND_CHECK__MIRROR removed
+ *
  * Revision 3.65  2003/09/29 22:51:48  dkr
  * some icms renamed/removed/added
  *
@@ -299,15 +302,6 @@ ICM_DEF( ND_REFRESH__MIRROR, TRACE_NONE)
   ICM_NT( var_NT)
   ICM_INT( sdim)
 ICM_END( ND_REFRESH__MIRROR, (var_NT, sdim))
-#endif
-
-#if defined(ND_CHECK__MIRROR) || defined(ICM_ALL)
-ICM_DEF( ND_CHECK__MIRROR, TRACE_NONE)
-  ICM_NT( to_NT)
-  ICM_INT( to_sdim)
-  ICM_NT( from_NT)
-  ICM_INT( from_sdim)
-ICM_END( ND_CHECK__MIRROR, (to_NT, to_sdim, from_NT, from_sdim))
 #endif
 
 

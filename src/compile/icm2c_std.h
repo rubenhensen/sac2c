@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.31  2003/09/30 19:30:28  dkr
+ * ND_CHECK__MIRROR removed
+ *
  * Revision 3.30  2003/09/29 22:51:38  dkr
  * some icms removed/renamed/added
  *
@@ -148,9 +151,6 @@ extern void ICMCompileND_SET__SHAPE_id (char *to_NT, int to_sdim, char *shp_NT);
 extern void ICMCompileND_SET__SHAPE_arr (char *to_NT, int dim, char **shp_ANY);
 
 extern void ICMCompileND_REFRESH__MIRROR (char *var_NT, int sdim);
-
-extern void ICMCompileND_CHECK__MIRROR (char *to_NT, int to_sdim, char *from_NT,
-                                        int from_sdim);
 
 extern void ICMCompileND_ASSIGN (char *to_NT, int to_sdim, char *from_NT, int from_sdim,
                                  char *copyfun);
