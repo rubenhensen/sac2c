@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.103  2004/10/26 16:14:31  sah
+ * added RemoveFundef
+ *
  * Revision 3.102  2004/10/14 13:38:04  sbs
  * eliminated second parameter ot Type2Shape
  *
@@ -1067,6 +1070,8 @@ extern node *SearchFundef (node *fun, node *allfuns);
  *****************************************************************************/
 
 extern node *AppendFundef (node *fundef_chain, node *fundef);
+
+extern node *RemoveFundef (node *fundef_chain, node *fundef);
 
 /*--------------------------------------------------------------------------*/
 

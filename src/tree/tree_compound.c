@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.94  2004/10/26 16:14:31  sah
+ * added RemoveFundef
+ *
  * Revision 3.93  2004/10/16 17:40:13  sbs
  * bug in Type2Shape eliminated (errorneous DBUG_ASSERT).
  * cAUSE OF BUG 71.
@@ -2230,6 +2233,31 @@ AppendFundef (node *fundef_chain, node *fundef)
     APPEND (ret, node *, FUNDEF, fundef_chain, fundef);
 
     DBUG_RETURN (ret);
+}
+
+node *
+RemoveFundef (node *fundef_chain, node *fundef)
+{
+    node *pos;
+    DBUG_ENTER ("RemoveFundef");
+
+    if (fundef_chain == fundef) {
+        fundef_chain = FUNDEF_NEXT (fundef_chain);
+    } else {
+        pos = fundef_chain;
+
+        while ((FUNDEF_NEXT (pos) != NULL) && (FUNDEF_NEXT (pos) != fundef)) {
+            pos = FUNDEF_NEXT (pos);
+        }
+
+        if (FUNDEF_NEXT (pos) == fundef) {
+            FUNDEF_NEXT (pos) = FUNDEF_NEXT (fundef);
+        }
+    }
+
+    FUNDEF_NEXT (fundef) = NULL;
+
+    DBUG_RETURN (fundef_chain);
 }
 
 /*--------------------------------------------------------------------------*/
