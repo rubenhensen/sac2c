@@ -1,6 +1,9 @@
 
 /*
  * $Log$
+ * Revision 1.25  1998/08/06 21:24:31  dkr
+ * fix a bug in IdxArg
+ *
  * Revision 1.24  1998/08/06 17:18:21  dkr
  * changed signature of ICM ND_KS_VECT2OFFSET
  *
@@ -601,12 +604,13 @@ IdxArg (node *arg_node, node *arg_info)
          * of the form: ND_KS_VECT2OFFSET( <off-name>, <var-name>, <dim>, <dims>, <shape>)
          */
         block = FUNDEF_BODY (ARG_FUNDEF (arg_node));
-        vardec = BLOCK_VARDEC (block);
+        vardec = (block != NULL) ? BLOCK_VARDEC (block) : NULL;
         vinfo = ARG_COLCHN (arg_node);
         while (vinfo != NULL) { /* loop over all "Uses" attributes */
             if (VINFO_FLAG (vinfo) == IDX) {
                 newid = MakeId (IdxChangeId (ARG_NAME (arg_node), VINFO_TYPE (vinfo)),
                                 NULL, ST_regular);
+                DBUG_ASSERT ((vardec != NULL), "missing vardecs");
                 col_vinfo = FindIdx (ARG_COLCHN (vardec), VINFO_TYPE (vinfo));
                 DBUG_ASSERT (((col_vinfo != NULL) && (VINFO_VARDEC (col_vinfo) != NULL)),
                              "missing vardec for index-arg");
