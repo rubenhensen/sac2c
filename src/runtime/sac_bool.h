@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  2000/06/30 13:20:46  nmw
+ * conditional define for typedef bool added
+ *
  * Revision 2.1  1999/02/23 12:43:47  sacbase
  * new release made
  *
@@ -27,7 +30,9 @@
 
 #define SAC_BOOL_H
 
+#ifndef _sac_types_h
 typedef int bool;
+#endif
 
 #define true 1
 #define false 0

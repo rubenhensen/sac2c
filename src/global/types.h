@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.31  2000/06/30 13:22:43  nmw
+ * conditional define for typedef bool added
+ *
  * Revision 2.30  2000/06/23 14:01:56  dkr
  * type of some components of struct WL_INFO changed from 'int' into
  * 'bool'
@@ -127,7 +130,9 @@ typedef /* unsigned */ int feature_t;
  * (a cast to 'unsigned int' is not a l-value !!)
  */
 
+#ifndef SAC_BOOL_H
 typedef int bool;
+#endif
 
 #define FEATURE_NONE 0  /* no special features at all */
 #define FEATURE_WL 1    /* with-loop containing array accesses */
