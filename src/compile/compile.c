@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.49  2000/03/29 16:06:27  jhs
+ * Brushing.
+ *
  * Revision 2.48  2000/03/27 14:53:53  dkr
  * ICMs SAC_WL_..._END and SAC_PF_END_WITH are in correct order now
  *
@@ -76,8 +79,8 @@
  *
  * Revision 2.31  1999/09/10 14:29:46  jhs
  * Removed those ugly MAKENODE_xxx macros.
- * Extremly brushed COMPLoop (now I unterstand at least halt of it, before I had not
- * even an idea waht could happen there).
+ * Extremly brushed COMPLoop (now I unterstand at least half of it, before I had not
+ * even an idea what could happen there).
  * Commented COMPLoop and COMPCond a "little" bit.
  *
  * Revision 2.30  1999/09/01 17:11:53  jhs
@@ -424,13 +427,12 @@ MakeAdjustRcICM (ids *varname, int num)
     if (num > 0) {
         result = MakeAssignIcm2 ("ND_INC_RC", MakeId2 (DupOneIds (varname, NULL)),
                                  MakeNum (num));
+    } else if (num == 0) {
+        result = NULL;
     } else {
-        if (num == 0) {
-            result = NULL;
-        } else { /* num < -1 */
-            result = MakeAssignIcm2 ("ND_DEC_RC_FREE_ARRAY",
-                                     MakeId2 (DupOneIds (varname, NULL)), MakeNum (-num));
-        }
+        /* num < -1 */
+        result = MakeAssignIcm2 ("ND_DEC_RC_FREE_ARRAY",
+                                 MakeId2 (DupOneIds (varname, NULL)), MakeNum (-num));
     }
 
     DBUG_RETURN (result);
@@ -812,17 +814,13 @@ MakeDecRcICMs (ids *mm_ids, node *next)
             if (IDS_REFCNT (mm_ids) > 1) {
                 assign = MakeAssignIcm2 ("ND_DEC_RC", MakeId2 (DupOneIds (mm_ids, NULL)),
                                          MakeNum (1));
+            } else if (IsNonUniqueHidden (IDS_TYPE (mm_ids))) {
+                assign = MakeAssignIcm3 ("ND_DEC_RC_FREE_HIDDEN",
+                                         MakeId2 (DupOneIds (mm_ids, NULL)), MakeNum (1),
+                                         MakeId1 (GenericFun (1, IDS_TYPE (mm_ids))));
             } else {
-                if (IsNonUniqueHidden (IDS_TYPE (mm_ids))) {
-                    assign
-                      = MakeAssignIcm3 ("ND_DEC_RC_FREE_HIDDEN",
-                                        MakeId2 (DupOneIds (mm_ids, NULL)), MakeNum (1),
-                                        MakeId1 (GenericFun (1, IDS_TYPE (mm_ids))));
-                } else {
-                    assign
-                      = MakeAssignIcm2 ("ND_DEC_RC_FREE_ARRAY",
-                                        MakeId2 (DupOneIds (mm_ids, NULL)), MakeNum (1));
-                }
+                assign = MakeAssignIcm2 ("ND_DEC_RC_FREE_ARRAY",
+                                         MakeId2 (DupOneIds (mm_ids, NULL)), MakeNum (1));
             }
 
             if (assigns == NULL) {
@@ -2284,7 +2282,7 @@ COMPAssign (node *arg_node, node *arg_info)
     if (NODE_TYPE (instr) == N_assign) {
         /*
          * an assignment-chain was returned.
-         *  -> insert it at the current position into the tree.
+         *  => insert it at the current position into the tree.
          */
         ASSIGN_INSTR (arg_node) = ASSIGN_INSTR (instr);
         ASSIGN_INSTR (instr) = NULL;
@@ -3189,29 +3187,24 @@ COMPPrf (node *arg_node, node *arg_info)
                     CREATE_3_ARY_ICM (next_assign, "ND_ALLOC_ARRAY", type_id_node, res,
                                       num);
                     APPEND_ASSIGNS (first_assign, next_assign);
+                } else if (1 == arg1->refcnt) {
+                    CHECK_REUSE__ALLOC_ARRAY_ND (res, res_stype, arg1, arg1_stype);
+                } else if (1 == arg2->refcnt) {
+                    CHECK_REUSE__ALLOC_ARRAY_ND (res, res_stype, arg2, arg2_stype);
                 } else {
-                    if (1 == arg1->refcnt) {
-                        CHECK_REUSE__ALLOC_ARRAY_ND (res, res_stype, arg1, arg1_stype);
-                    } else {
-                        if (1 == arg2->refcnt) {
-                            CHECK_REUSE__ALLOC_ARRAY_ND (res, res_stype, arg2,
-                                                         arg2_stype);
-                        } else {
-                            node *num;
+                    node *num;
 
-                            num = MakeNum (0);
-                            TRI_ICM_REUSE (INFO_COMP_LASTLET (arg_info), "ND_ALLOC_ARRAY",
-                                           type_id_node, res, num);
-                            first_assign = CURR_ASSIGN (arg_info);
-                            old_arg_node = arg_node;
-                            last_assign = NEXT_ASSIGN (arg_info);
-                            arg_node = LET_EXPR (INFO_COMP_LASTLET (arg_info));
+                    num = MakeNum (0);
+                    TRI_ICM_REUSE (INFO_COMP_LASTLET (arg_info), "ND_ALLOC_ARRAY",
+                                   type_id_node, res, num);
+                    first_assign = CURR_ASSIGN (arg_info);
+                    old_arg_node = arg_node;
+                    last_assign = NEXT_ASSIGN (arg_info);
+                    arg_node = LET_EXPR (INFO_COMP_LASTLET (arg_info));
 
-                            DBUG_ASSERT ((((-1 == arg1->refcnt) && (-1 == arg2->refcnt))
-                                          || (!(optimize & OPT_RCO))),
-                                         "Refcnt of BINOP_A_A arg neither -1 nor 1 !");
-                        }
-                    }
+                    DBUG_ASSERT ((((-1 == arg1->refcnt) && (-1 == arg2->refcnt))
+                                  || (!(optimize & OPT_RCO))),
+                                 "Refcnt of BINOP_A_A arg neither -1 nor 1 !");
                 }
             } else {
                 /* reuse previous N_let */
@@ -3230,28 +3223,24 @@ COMPPrf (node *arg_node, node *arg_info)
                     /* set arg1 and arg2 for later use as parameters of BIN_OP */
                     arg1 = tmp_array1;
                     arg2 = tmp_array2;
+                } else if (N_array == NODE_TYPE (arg1)) {
+                    array_is_const = 1;
+                    DECL_ARRAY (first_assign, arg1->node[0], "__TMP1", tmp_array1);
+                    arg_node = first_assign;
+                    CREATE_CONST_ARRAY (arg1, tmp_array1, type_id_node, res_ref);
+                    CREATE_2_ARY_ICM (next_assign, "ND_KS_ASSIGN_ARRAY", tmp_array1, res);
+                    APPEND_ASSIGNS (first_assign, next_assign);
+                    /* set arg1 for later use as parameters of BIN_OP */
+                    arg1 = tmp_array1;
                 } else {
-                    if (N_array == NODE_TYPE (arg1)) {
-                        array_is_const = 1;
-                        DECL_ARRAY (first_assign, arg1->node[0], "__TMP1", tmp_array1);
-                        arg_node = first_assign;
-                        CREATE_CONST_ARRAY (arg1, tmp_array1, type_id_node, res_ref);
-                        CREATE_2_ARY_ICM (next_assign, "ND_KS_ASSIGN_ARRAY", tmp_array1,
-                                          res);
-                        APPEND_ASSIGNS (first_assign, next_assign);
-                        /* set arg1 for later use as parameters of BIN_OP */
-                        arg1 = tmp_array1;
-                    } else {
-                        array_is_const = 2;
-                        DECL_ARRAY (first_assign, arg2->node[0], "__TMP2", tmp_array2);
-                        arg_node = first_assign;
-                        CREATE_CONST_ARRAY (arg2, tmp_array2, type_id_node, res_ref);
-                        CREATE_2_ARY_ICM (next_assign, "ND_KS_ASSIGN_ARRAY", tmp_array2,
-                                          res);
-                        APPEND_ASSIGNS (first_assign, next_assign);
-                        /* set arg2 for later use as parameters of BIN_OP */
-                        arg2 = tmp_array2;
-                    }
+                    array_is_const = 2;
+                    DECL_ARRAY (first_assign, arg2->node[0], "__TMP2", tmp_array2);
+                    arg_node = first_assign;
+                    CREATE_CONST_ARRAY (arg2, tmp_array2, type_id_node, res_ref);
+                    CREATE_2_ARY_ICM (next_assign, "ND_KS_ASSIGN_ARRAY", tmp_array2, res);
+                    APPEND_ASSIGNS (first_assign, next_assign);
+                    /* set arg2 for later use as parameters of BIN_OP */
+                    arg2 = tmp_array2;
                 }
             }
             CREATE_4_ARY_ICM (next_assign, "ND_BINOP_AxA_A", prf_id_node, arg1, arg2,
@@ -3351,10 +3340,11 @@ COMPPrf (node *arg_node, node *arg_info)
             if (NODE_TYPE (arg1) == N_array) {
                 n_elems = ARRAY_VECLEN (arg1);
             } else {
-                if (NODE_TYPE (arg1) == N_id)
+                if (NODE_TYPE (arg1) == N_id) {
                     n_elems = ID_VECLEN (arg1);
-                else /* if (NODE_TYPE(arg1) == N_num) */
+                } else /* if (NODE_TYPE(arg1) == N_num) */ {
                     n_elems = 1;
+                }
             }
             if (is_drop == 1) {
                 CREATE_4_ARY_ICM (next_assign, "ND_KD_DROP_CxA_A", dim_node, arg2, res,
@@ -4181,28 +4171,24 @@ COMPAp (node *arg_node, node *arg_info)
                 id_node = MakeId3 (ids);
                 tag_node = MakeId1 ("out_rc");
 
-                if (1 < IDS_REFCNT (ids)) {
+                if (IDS_REFCNT (ids) > 1) {
                     /*
                      * create N_icm to increment refcount of function result.
                      * It will be stored in refs_node->node[1]->.. and will be
                      * inserted later.
                      */
                     INC_RC_ND (id_node, MakeNum (ids->refcnt - 1));
-                } else {
-                    if (0 == IDS_REFCNT (ids)) {
-                        if (IsNonUniqueHidden (IDS_TYPE (ids))) {
-                            CREATE_2_ARY_ICM (next_assign, "ND_FREE_HIDDEN",
-                                              MakeId1 (IDS_NAME (ids)),
-                                              MakeId1 (GenericFun (1, IDS_TYPE (ids))));
-                            APPEND_ASSIGNS (first_assign, next_assign);
-                        } else {
-                            CREATE_1_ARY_ICM (next_assign, "ND_FREE_ARRAY",
-                                              MakeId1 (IDS_NAME (ids)));
-                            APPEND_ASSIGNS (first_assign, next_assign);
-                        }
+                } else if (IDS_REFCNT (ids) == 0) {
+                    if (IsNonUniqueHidden (IDS_TYPE (ids))) {
+                        CREATE_2_ARY_ICM (next_assign, "ND_FREE_HIDDEN",
+                                          MakeId1 (IDS_NAME (ids)),
+                                          MakeId1 (GenericFun (1, IDS_TYPE (ids))));
+                    } else {
+                        CREATE_1_ARY_ICM (next_assign, "ND_FREE_ARRAY",
+                                          MakeId1 (IDS_NAME (ids)));
                     }
+                    APPEND_ASSIGNS (first_assign, next_assign);
                 }
-
             } else {
                 if ((tmp == NULL) || (IsUnique (VARDEC_TYPE (IDS_VARDEC (ids))))) {
                     id_node = MakeId3 (ids);
@@ -4234,17 +4220,15 @@ COMPAp (node *arg_node, node *arg_info)
 
                     CREATE_2_ARY_ICM (next_assign, "ND_SET_RC", MakeId1 (IDS_NAME (ids)),
                                       MakeNum (IDS_REFCNT (ids)));
-                    APPEND_ASSIGNS (first_assign, next_assign);
                 } else if (IsNonUniqueHidden (IDS_TYPE (ids))) {
                     CREATE_2_ARY_ICM (next_assign, "ND_NO_RC_FREE_HIDDEN",
                                       MakeId1 (IDS_NAME (ids)),
                                       MakeId1 (GenericFun (1, IDS_TYPE (ids))));
-                    APPEND_ASSIGNS (first_assign, next_assign);
                 } else {
                     CREATE_1_ARY_ICM (next_assign, "ND_NO_RC_FREE_ARRAY",
                                       MakeId1 (IDS_NAME (ids)));
-                    APPEND_ASSIGNS (first_assign, next_assign);
                 }
+                APPEND_ASSIGNS (first_assign, next_assign);
 
                 tag_node = MakeId1 ("out");
             }
@@ -4633,7 +4617,6 @@ COMPSpmdFunReturn (node *arg_node, node *arg_info)
  *   generates N_icms for N_return of a function (ND or MT).
  *
  ******************************************************************************/
-
 node *
 COMPReturn (node *arg_node, node *arg_info)
 {
@@ -6234,7 +6217,7 @@ COMPWLseg (node *arg_node, node *arg_info)
 
     /*
      * multiple segments found?
-     *  -> modify 'multiple_segs'
+     *  => modify 'multiple_segs'
      */
     if (WLSEG_NEXT (arg_node) != NULL) {
         multiple_segs = 1;
@@ -6242,7 +6225,7 @@ COMPWLseg (node *arg_node, node *arg_info)
 
     /*
      * compile the contents of the segment
-     *  -> we get an assignment-chain
+     *  => we get an assignment-chain
      */
     assigns = Trav (WLSEG_CONTENTS (arg_node), arg_info);
 
@@ -6720,7 +6703,7 @@ COMPWLgrid (node *arg_node, node *arg_info)
             }
             if (d == WLSEG_DIMS (wl_seg)) {
                 /*
-                 * no blocking -> inspect 'ubv'
+                 * no blocking => inspect 'ubv'
                  */
                 d = 0;
                 while ((d < WLSEG_DIMS (wl_seg)) && ((WLSEG_UBV (wl_seg))[d] == 1)) {
@@ -6906,7 +6889,7 @@ COMPWLgrid (node *arg_node, node *arg_info)
 
             /*
              * no code found.
-             *  -> init/copy/noop
+             *  => init/copy/noop
              */
 
             assigns = NULL;
@@ -7050,7 +7033,7 @@ COMPWLsegVar (node *arg_node, node *arg_info)
 
     /*
      * multiple segments found?
-     *  -> modify 'multiple_segs'
+     *  => modify 'multiple_segs'
      */
     if ((multiple_segs == 0) && (WLSEGVAR_NEXT (arg_node) != NULL)) {
         multiple_segs = 1;
@@ -7058,7 +7041,7 @@ COMPWLsegVar (node *arg_node, node *arg_info)
 
     /*
      * compile the contents of the segment
-     *  -> we get an assignment-chain
+     *  => we get an assignment-chain
      */
     assigns = Trav (WLSEGVAR_CONTENTS (arg_node), arg_info);
 
@@ -7298,7 +7281,7 @@ COMPWLgridVar (node *arg_node, node *arg_info)
 
             /*
              * no code found.
-             *  -> init/copy/noop
+             *  => init/copy/noop
              */
 
             assigns = NULL;
