@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.9  1995/12/01 17:09:20  cg
+ * Revision 1.10  1995/12/20 08:16:22  cg
+ * added MakeChar, modified MakePragma.
+ *
+ * Revision 1.9  1995/12/01  17:09:20  cg
  * added new node type N_pragma
  * removed macro FUNDEF_ALIAS
  *
@@ -645,7 +648,7 @@ MakeAp (char *name, char *mod, node *args)
 }
 
 node *
-MakeWith (node *gen, node *body)
+MakeWith (node *gen, node *operator)
 {
     node *tmp;
     DBUG_ENTER ("MakeWith");
@@ -655,7 +658,7 @@ MakeWith (node *gen, node *body)
     NODE_NNODE (tmp) = 2;
 
     WITH_GEN (tmp) = gen;
-    WITH_BODY (tmp) = body;
+    WITH_OPERATOR (tmp) = operator;
 
     INIT_NODE (tmp->node[2]);
 
@@ -852,6 +855,24 @@ MakeNum (int val)
     NODE_NNODE (tmp) = 0;
 
     NUM_VAL (tmp) = val;
+
+    DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
+                             mdb_nodetype[NODE_TYPE (tmp)], tmp));
+
+    DBUG_RETURN (tmp);
+}
+
+node *
+MakeChar (char val)
+{
+    node *tmp;
+    DBUG_ENTER ("MakeChar");
+    INIT_NODE (tmp);
+
+    NODE_TYPE (tmp) = N_char;
+    NODE_NNODE (tmp) = 0;
+
+    CHAR_VAL (tmp) = val;
 
     DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
                              mdb_nodetype[NODE_TYPE (tmp)], tmp));
@@ -1057,14 +1078,40 @@ MakeIcm (char *name, node *args, node *next)
 }
 
 node *
-MakePragma ()
+MakePragma (int size)
 {
     node *tmp;
+    int i;
+
     DBUG_ENTER ("MakePragma");
     INIT_NODE (tmp);
 
     NODE_TYPE (tmp) = N_pragma;
     NODE_NNODE (tmp) = 0;
+
+#if 0
+  if (size>0)
+  {
+    PRAGMA_LINKSIGN(tmp)=(int[])Malloc(size*sizeof(int));
+    PRAGMA_REFCOUNTING(tmp)=(int[])Malloc(size*sizeof(int));
+    PRAGMA_READONLY(tmp)=(int[])Malloc(size*sizeof(int));
+
+    for (i=0;i<size;i++)
+    {
+      PRAGMA_LINKSIGN(tmp)[i]=0;
+      PRAGMA_REFCOUNTING(tmp)[i]=0;
+      PRAGMA_READONLY(tmp)[i]=0;
+    }
+  }
+  else
+  {
+    PRAGMA_LINKSIGN(tmp)=NULL;
+    PRAGMA_REFCOUNTING(tmp)=NULL;
+    PRAGMA_READONLY(tmp)=NULL;
+  }
+#endif
+
+    PRAGMA_NUMPARAMS (tmp) = size;
 
     DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, /**/
                              NODE_LINE (tmp), mdb_nodetype[NODE_TYPE (tmp)], tmp));
