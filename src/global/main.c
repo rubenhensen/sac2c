@@ -1,7 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.2  1994/11/10 15:44:34  sbs
+ * Revision 1.3  1994/11/15 13:26:31  sbs
+ * changed SAC_LIBRARY into SAC_LIBRARY_PATH and
+ * enabled moltiple paths to be specified
+ * seperated by ":"
+ *
+ * Revision 1.2  1994/11/10  15:44:34  sbs
  * RCS-header inserted
  *
  *
@@ -31,7 +36,7 @@ MAIN
     int prettyprint = 0, set_outfile = 0;
     char filename[256];
     char outfilename[128] = "out.txt";
-    char *path;
+    char *paths, *path;
 
     OPT ARG 'h':
     {
@@ -57,15 +62,22 @@ MAIN
     if (1 <= argc) {
         yyin = fopen (*argv, "r");
         if (yyin == NULL) {
-            path = getenv ("SAC_LIBRARY");
-            if (path == NULL)
+            paths = getenv ("SAC_LIBRARY_PATH");
+            if (paths == NULL)
                 Error ("Couldn't open Infile !\n", 1);
-            strcpy (filename, path);
-            strcat (filename, "/");
-            strcat (filename, *argv);
-            yyin = fopen (filename, "r");
-            if (yyin == NULL)
-                Error ("Couldn't open Infile !\n", 1);
+            path = strtok (paths, ":");
+            while ((yyin == NULL) && (path != NULL)) {
+                strcpy (filename, path);
+                strcat (filename, "/");
+                strcat (filename, *argv);
+                DBUG_PRINT ("MAIN", ("trying file %s\n", filename));
+                yyin = fopen (filename, "r");
+                if (yyin == NULL) {
+                    path = strtok (NULL, ":");
+                    if (path == NULL)
+                        Error ("Couldn't open Infile !\n", 1);
+                }
+            }
         }
     }
 
