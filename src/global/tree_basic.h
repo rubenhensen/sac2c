@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.10  1995/10/22 17:33:12  cg
+ * Revision 1.11  1995/10/26 15:58:58  cg
+ * new macro MODUL_STORE_IMPORTS(n)
+ *
+ * Revision 1.10  1995/10/22  17:33:12  cg
  * new macros FUNDEC_DEF and TYPEDEC_DEF
  * new slot DECL of N_modul node to store declaration when compiling
  * a module/class implementation
@@ -316,6 +319,8 @@ extern nodelist *MakeNodelist (node *node, statustype status, nodelist *next);
  ***
  ***    node*      DECL      (O)  (N_moddec, N_classdec)  (check-dec -> )
  ***                                                      ( -> write-SIB !!)
+ ***    node*      STORE_IMPORTS (O) (N_implist)          (import -> )
+ ***                                                      ( -> checkdec !!)
  ***/
 
 extern node *MakeModul (char *name, file_type filetype, node *imports, node *types,
@@ -328,6 +333,7 @@ extern node *MakeModul (char *name, file_type filetype, node *imports, node *typ
 #define MODUL_OBJS(n) (n->node[3])
 #define MODUL_FUNS(n) (n->node[2])
 #define MODUL_DECL(n) (n->node[4])
+#define MODUL_STORE_IMPORTS(n) (n->node[4])
 
 /*--------------------------------------------------------------------------*/
 
