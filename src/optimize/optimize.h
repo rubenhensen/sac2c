@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2004/06/30 12:13:39  khf
+ * wlpg_expr removed
+ *
  * Revision 3.8  2004/04/08 08:09:55  khf
  * support for wlfs and wlpg added but are currently
  * deactivated in global.c
@@ -166,7 +169,6 @@ extern int ap_unsupported;
 extern int dl_expr;
 extern int sp_expr;
 extern int cvp_expr;
-extern int wlpg_expr;
 extern int wlfs_expr;
 
 extern node *Optimize (node *arg_node);
