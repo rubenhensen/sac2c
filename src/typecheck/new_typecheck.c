@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.32  2003/06/23 13:44:40  sbs
+ * type checking for fold wl extended to fix point iteration
+ * fixes bug no 18!
+ *
  * Revision 3.31  2003/06/19 09:06:08  sbs
  * changed NTCBASIC. In case COAST2Constant cannot create a proper
  * constant node (which whas not checked until now(!) ), an
@@ -1677,7 +1681,7 @@ NTCNcode (node *arg_node, node *arg_info)
 node *
 NTCNwithop (node *arg_node, node *arg_info)
 {
-    ntype *gen, *body, *res, *elems, *fold_res;
+    ntype *gen, *body, *res, *elems, *acc;
     ntype *shp, *args;
     node *wrapper;
     te_info *info;
@@ -1737,18 +1741,29 @@ NTCNwithop (node *arg_node, node *arg_info)
         info = TEMakeInfo (linenum, "with", "fold", NULL, NULL, NULL);
         res = NTCCTComputeType (NTCWL_fold, info, args);
         elems = TYGetProductMember (res, 0);
+        res = TYFreeTypeConstructor (res);
 
         /*
          * Followed by a computation of the type of the fold fun:
+         *
+         * Since the entire fold-wl is a recursive function that in each
+         * iteration applies the foldfun, we need to establish a fix-point
+         * iteration here (cf. bug no.18).
+         * To do so, we introduce a type variable for the accumulated parameter
+         * which has to be bigger than a) the element type and b) the result
+         * type.
          */
-        args = TYMakeProductType (2, TYCopyType (elems), TYCopyType (elems));
+        acc = TYMakeAlphaType (NULL);
+        ok = SSINewTypeRel (elems, acc);
+        DBUG_ASSERT (ok, ("initialization of fold-fun in fold-wl went wrong"));
+
+        args = TYMakeProductType (2, acc, elems);
         wrapper = NWITHOP_FUNDEF (arg_node);
         info = TEMakeInfo (linenum, "fold fun", FUNDEF_NAME (wrapper), wrapper,
                            INFO_NTC_LAST_ASSIGN (arg_info), NULL);
-        fold_res = NTCCTComputeType (NTCFUN_udf, info, args);
+        res = NTCCTComputeType (NTCFUN_udf, info, args);
 
-        ok = SSINewTypeRel (TYGetProductMember (fold_res, 0), elems);
-
+        ok = SSINewTypeRel (TYGetProductMember (res, 0), acc);
         if (!ok) {
             ABORT (linenum, ("illegal fold function in fold with loop"));
         }
