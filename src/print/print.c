@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.13  1994/11/22 11:45:48  hw
+ * Revision 1.14  1994/11/22 13:27:27  sbs
+ * Typo in return value (previously void *) of PrintIds corrected
+ *
+ * Revision 1.13  1994/11/22  11:45:48  hw
  * - deleted PrintFor
  * - changed Type2string
  *
@@ -121,7 +124,7 @@ Type2String (types *type, int print_id)
  * prints ids-information to outfile
  *
  */
-void *
+void
 PrintIds (ids *ids)
 {
     DBUG_ENTER ("PrintIds");
