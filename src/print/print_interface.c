@@ -15,7 +15,6 @@
 #include "globals.h"
 #include "free.h"
 #include "resource.h"
-#include "shape.h"
 
 /* interface identifier */
 #define SACARGTYPE "SAC_arg"
@@ -45,9 +44,9 @@ static types *TravTW (types *arg_type, node *arg_info);
 static types *PIHtypes (types *arg_type, node *arg_info);
 static types *PIWtypes (types *arg_type, node *arg_info);
 static node *PIHcwrapperPrototype (node *wrapper, node *arg_info);
-static node *PIHfundefSwitch (node *arg_node, node *arg_info);
-static node *PIHfundefCall (node *arg_node, node *arg_info);
-static node *PIHfundefRefcounting (node *arg_node, node *arg_info);
+static node *PIWfundefSwitch (node *arg_node, node *arg_info);
+static node *PIWfundefCall (node *arg_node, node *arg_info);
+static node *PIWfundefRefcounting (node *arg_node, node *arg_info);
 static int GetReturnPos (node *fundef);
 
 /******************************************************************************
@@ -310,6 +309,7 @@ node *
 PIWmodul (node *arg_node, node *arg_info)
 {
     FILE *old_outfile;
+
     DBUG_ENTER ("PIWmodul");
 
     old_outfile = outfile; /* save, might be in use */
@@ -323,7 +323,10 @@ PIWmodul (node *arg_node, node *arg_info)
     fprintf (outfile, "#include <stdio.h>\n");
     fprintf (outfile, "#include \"SAC_interface.h\"\n");
     fprintf (outfile, "#include \"SAC_arg.h\"\n");
-    fprintf (outfile, "#include \"SAC_interface_makrodefs.h\"\n");
+    fprintf (outfile, "#include \"SAC_wrapper_macrodefs.h\"\n");
+
+    /* declarations for external SAC functions */
+    fprintf (outfile, "#include \"header.h\"\n");
     fprintf (outfile, "\n");
 
     /* general preload for codefile */
@@ -415,7 +418,7 @@ PIWfundef (node *arg_node, node *arg_info)
     fprintf (outfile, "/* function: %s */\n", FUNDEF_NAME (arg_node));
 
     /* print code for functions switch */
-    arg_node = PIHfundefSwitch (arg_node, arg_info);
+    arg_node = PIWfundefSwitch (arg_node, arg_info);
     fprintf (outfile, " {\n");
 
     /* print code creating all return SAC_args */
@@ -428,11 +431,11 @@ PIWfundef (node *arg_node, node *arg_info)
 
     /* print makros creating function call to specialized function */
     fprintf (outfile, "\n  /* call native SAC-function %s */\n", FUNDEF_NAME (arg_node));
-    arg_node = PIHfundefCall (arg_node, arg_info);
+    arg_node = PIWfundefCall (arg_node, arg_info);
 
     /* print makros for dec local refcounters and maybe free SAC_arg */
     fprintf (outfile, "\n  /* modify local refcounters */\n");
-    arg_node = PIHfundefRefcounting (arg_node, arg_info);
+    arg_node = PIWfundefRefcounting (arg_node, arg_info);
 
     /* print code  successful return from call */
     fprintf (outfile, "\n  return(0); /*call successful */\n");
@@ -473,8 +476,9 @@ PIWarg (node *arg_node, node *arg_info)
             SYSERROR (("Unknown shapes cannot be exported!\n"));
         }
 
-        fprintf (outfile, "SAC_CmpSACArgType(in%d, %d, %d", INFO_PIW_COUNTER (arg_info),
-                 TYPES_BASETYPE (argtype), TYPES_DIM (argtype));
+        fprintf (outfile, "SAC_CI_CmpSACArgType(in%d, %d, %d",
+                 INFO_PIW_COUNTER (arg_info), TYPES_BASETYPE (argtype),
+                 TYPES_DIM (argtype));
 
         if (TYPES_DIM (argtype) > 0) {
             /* arraytype with fixed shape */
@@ -550,8 +554,9 @@ PIWtypes (types *arg_type, node *arg_info)
     switch (INFO_PIW_FLAG (arg_info)) {
     case PIW_CREATE_RETTYPES:
         /* create vars for reference parameters */
-        fprintf (outfile, "  *out%d=SAC_CreateSACArg(%d, %d", INFO_PIW_COUNTER (arg_info),
-                 TYPES_BASETYPE (arg_type), TYPES_DIM (arg_type));
+        fprintf (outfile, "  *out%d=SAC_CI_CreateSACArg(%d, %d",
+                 INFO_PIW_COUNTER (arg_info), TYPES_BASETYPE (arg_type),
+                 TYPES_DIM (arg_type));
 
         /* write shape data*/
         for (i = 0; i < TYPES_DIM (arg_type); i++) {
@@ -568,12 +573,12 @@ PIWtypes (types *arg_type, node *arg_info)
         if (INFO_PIW_RETPOS (arg_info) != INFO_PIW_COUNTER (arg_info)) {
             if (TYPES_DIM (arg_type) == 0) {
                 /* macro for simple type without refcounting */
-                fprintf (outfile, "SAC_ARGCALL_SIMPLE");
+                fprintf (outfile, "SAC_RESULT_SIMPLE");
             } else {
                 /* macro for arraytype with refcounting */
-                fprintf (outfile, "SAC_ARGCALL_REFCNT");
+                fprintf (outfile, "SAC_RESULT_REFCNT");
             }
-            fprintf (outfile, "( out%d , %s* )", INFO_PIW_COUNTER (arg_info),
+            fprintf (outfile, "( out%d , %s )", INFO_PIW_COUNTER (arg_info),
                      ctype_string[TYPES_BASETYPE (arg_type)]);
 
             INFO_PIW_COMMA (arg_info) = TRUE;
@@ -620,7 +625,7 @@ PIWtypes (types *arg_type, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PIHfundefSwitch(node *wrapper, node *arg_info)
+ *   node *PIWfundefSwitch(node *wrapper, node *arg_info)
  *
  * description:
  *   Prints one fundef switch in a cwrapper function
@@ -628,9 +633,9 @@ PIWtypes (types *arg_type, node *arg_info)
  ******************************************************************************/
 
 static node *
-PIHfundefSwitch (node *arg_node, node *arg_info)
+PIWfundefSwitch (node *arg_node, node *arg_info)
 {
-    DBUG_ENTER ("PIHfundefSwitch");
+    DBUG_ENTER ("PIWfundefSwitch");
 
     fprintf (outfile, "if(");
 
@@ -652,7 +657,7 @@ PIHfundefSwitch (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PIHfundefCall(node *wrapper, node *arg_info)
+ *   node *PIWfundefCall(node *wrapper, node *arg_info)
  *
  * description:
  *   Prints one fundef call in a cwrapper function
@@ -660,9 +665,9 @@ PIHfundefSwitch (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 static node *
-PIHfundefCall (node *arg_node, node *arg_info)
+PIWfundefCall (node *arg_node, node *arg_info)
 {
-    DBUG_ENTER ("PIHfundefCall");
+    DBUG_ENTER ("PIWfundefCall");
 
     INFO_PIW_RETPOS (arg_info) = GetReturnPos (arg_node);
 
@@ -701,7 +706,7 @@ PIHfundefCall (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PIHfundefRefcounting(node *arg_node, node *arg_info)
+ *   node *PIWfundefRefcounting(node *arg_node, node *arg_info)
  *
  * description:
  *   Prints refcounter modifications in a cwrapper function
@@ -709,9 +714,9 @@ PIHfundefCall (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 static node *
-PIHfundefRefcounting (node *arg_node, node *arg_info)
+PIWfundefRefcounting (node *arg_node, node *arg_info)
 {
-    DBUG_ENTER ("PIHfundefRefcounting");
+    DBUG_ENTER ("PIWfundefRefcounting");
 
     /* print refcount modifications for results */
     if (FUNDEF_TYPES (arg_node) != NULL) {
@@ -858,6 +863,10 @@ TravTW (types *arg_type, node *arg_info)
 
 sac2c -genlib c TestModule.sac
 
-gcc -I ./Interface/ -I ~/sac/sac2c/src/typecheck/ -I ~/sac/sac2c/src/global/ -I
-~/sac/sac2c/src/tree/ -c -o TestModule_wrapper.o TestModule_wrapper.c
+gcc -DSAC_FOR_LINUX_X86 -I ./Interface/ -I ~/sac/sac2c/src/runtime/ -Wall -c -o
+Interface/SAC_sacinterface.o Interface/SAC_interface.c
+
+gcc -DSAC_FOR_LINUX_X86 -I ./Interface/ -I ~/sac/sac2c/src/runtime/ -Wall -c -o
+Interface/SAC_arg.o Interface/SAC_arg.c
+
 */
