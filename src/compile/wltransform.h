@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2001/04/03 17:51:30  dkr
+ * macro PRINT_SV added
+ *
  * Revision 3.7  2001/04/02 16:03:42  dkr
  * some macros moved to wl_bounds.h
  *
@@ -50,6 +53,24 @@
 
 #ifndef _sac_wltransform_h
 #define _sac_wltransform_h
+
+#define PRINT_SV(handle, vect, dims, maxhomdim)                                          \
+    {                                                                                    \
+        int d;                                                                           \
+        if ((vect) != NULL) {                                                            \
+            fprintf (handle, "[ ");                                                      \
+            for (d = 0; d < (dims); d++) {                                               \
+                if (d <= maxhomdim) {                                                    \
+                    fprintf (handle, "%i ", (vect)[d]);                                  \
+                } else {                                                                 \
+                    fprintf (handle, "(%i) ", (vect)[d]);                                \
+                }                                                                        \
+            }                                                                            \
+            fprintf (handle, "]");                                                       \
+        } else {                                                                         \
+            fprintf (handle, "NULL");                                                    \
+        }                                                                                \
+    }
 
 extern node *WlTransform (node *syntax_tree);
 
