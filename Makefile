@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.76  2003/11/07 15:17:35  sbs
+# CLOCK_SKEW_ELIMINATION run on config.h as well now...
+#
 # Revision 3.75  2003/11/07 14:45:50  sbs
 # CLOCK_SKEW_ELIMINATION now applied to Makefile.Config as well.
 #
@@ -254,6 +257,7 @@ tagged:
 tools/bin/cse:
 	$(MAKE) -C tools
 	$(CLOCK_SKEW_ELIMINATION) Makefile.Config
+	$(CLOCK_SKEW_ELIMINATION) src/global/config.h
 
 
 check_os:
