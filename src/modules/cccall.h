@@ -1,7 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.5  1997/03/11 16:29:10  cg
+ * Revision 1.6  1997/03/19 13:46:23  cg
+ * entirely re-implemented
+ * now a global dependency tree is built up by import.c and readsib.c
+ * So, linking should work now.
+ *
+ * Revision 1.5  1997/03/11  16:29:10  cg
  * new list of standard modules
  * old compiler option -deps ((updating makefile) no longer supported
  * use absolute pathnames for libstat
@@ -28,16 +33,8 @@
 
 #define _sac_cccall_h
 
-extern void InvokeCC (node *modul);
-extern void CreateLibrary (node *syntax_tree);
+extern void InvokeCC ();
+extern void CreateLibrary ();
 extern void PrintLibStat ();
-
-extern node *PrepareLinking (node *syntax_tree);
-
-extern node *LINKfundef (node *arg_node, node *arg_info);
-extern node *LINKobjdef (node *arg_node, node *arg_info);
-extern node *LINKmodul (node *arg_node, node *arg_info);
-
-extern strings *imported_decs;
 
 #endif /* _sac_cccall_h */
