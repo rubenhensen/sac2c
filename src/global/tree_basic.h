@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.7  1999/04/12 13:30:18  bs
+ * Access macro INFO_PRINT_ACCESS added.
+ *
  * Revision 2.6  1999/04/12 13:22:02  cg
  * added BLOCK_CACHESIM()
  *
@@ -2107,6 +2110,7 @@ extern node *MakePragma ();
  ***    WithOpType WOTYPE
  ***    ids*       LASTLETIDS
  ***    int        BELOWAP
+ ***    access_t*  TMPACCESS
  ***
  *** remarks:
  ***    N_info is used in many other phases without access macros :((
@@ -2240,6 +2244,7 @@ extern node *MakeInfo ();
 #define INFO_FUNDEF(n) (n->node[0])
 
 /* Print */
+#define INFO_PRINT_ACCESS(n) ((access_t *)(n->info2))
 #define INFO_PRINT_FUNDEF(n) (n->node[0])
 #define INFO_PRINT_INT_SYN(n) (n->node[2])
 #define INFO_PRINT_WITH_RET(n) (n->node[3])
