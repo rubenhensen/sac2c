@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.7  1999/05/12 14:36:07  cg
+# added linking of main_args.o and options.o
+#
 # Revision 2.6  1999/05/10 13:27:18  sbs
 # libs changed for we are using bison now
 # (due to some problems with the linux-version.....)
@@ -185,7 +188,7 @@ RM           :=rm -f
 GZIP         :=gzip -f
 ECHO         :=echo
 
-LIB          :=lib/dbug.o
+LIB          :=lib/dbug.o lib/main_args.o
 # /usr/lib/debug/malloc.o
 
 
@@ -206,7 +209,7 @@ GLOBAL= src/global/main.o src/global/Error.o src/global/usage.o \
 	src/global/tree_basic.o src/global/tree_compound.o \
         src/global/free.o src/global/internal_lib.o \
         src/global/globals.o src/global/resource.o src/global/build.o \
-	src/global/interrupt.o
+	src/global/interrupt.o src/global/options.o
 SCANP= src/scanparse/y.tab.o src/scanparse/lex.yy.o \
        src/scanparse/scnprs.o
 PRINT= src/print/print.o src/print/convert.o
