@@ -4,6 +4,7 @@ Makefile
 access_macros.h
 free.c
 free.h
+globals.c
 globals.h
 internal_lib.c
 internal_lib.h
@@ -12,6 +13,8 @@ my_debug.c
 my_debug.h
 node_info.mac
 prf_node_info.mac
+resource.c
+resource.h
 traverse.c
 traverse.h
 tree.c
