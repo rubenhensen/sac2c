@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.78  2004/09/23 20:45:04  sah
+ * added DS traversal
+ *
  * Revision 3.77  2004/09/21 16:33:08  sah
  * added traversal functions for SER traversal
  *
@@ -376,6 +379,7 @@
 #include "spmd_emm.h"
 #include "serialize_node.h"
 #include "serialize.h"
+#include "deserialize.h"
 
 #include "traverse.h"
 
@@ -547,7 +551,7 @@ static funtab set_tab_rec = {{
 #define NIFset(it_set) it_set
 #include "node_info.mac"
 #else
-#define NIFunused_26(it_unused26) it_unused26
+#define NIFunused_39(it_unused39) it_unused39
 #include "node_info.mac"
 #endif
                              },
@@ -586,7 +590,7 @@ static funtab ser_tab_rec = {{
 #define NIFser(it_ser) it_ser
 #include "node_info.mac"
 #else
-#define NIFunused_26(it_unused26) it_unused26
+#define NIFunused_39(it_unused26) it_unused39
 #include "node_info.mac"
 #endif
                              },
@@ -595,15 +599,20 @@ static funtab ser_tab_rec = {{
 funtab *ser_tab = &ser_tab_rec;
 
 /*
- *  (19) unused_tab26
+ *  (19) ds_tab
  */
-static funtab unused_tab26_rec = {{
-#define NIFunused_26(it_unused_26) it_unused_26
+static funtab ds_tab_rec = {{
+#ifdef NEW_AST
+#define NIFds(it_ds) it_ds
 #include "node_info.mac"
-                                  },
-                                  NULL,
-                                  NULL};
-funtab *unused_tab26 = &unused_tab26_rec;
+#else
+#define NIFunused_39(it_unused26) it_unused39
+#include "node_info.mac"
+#endif
+                            },
+                            NULL,
+                            NULL};
+funtab *ds_tab = &ds_tab_rec;
 #ifndef NEW_AST
 /*
  *  (20) ae_tab

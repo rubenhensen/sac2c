@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.62  2004/09/23 20:45:04  sah
+ * added DS traversal
+ *
  * Revision 3.61  2004/09/21 16:33:08  sah
  * added traversal functions for SER traversal
  *
@@ -308,7 +311,6 @@ extern funtab *spmdemm_tab;
 extern funtab *crece_tab;
 extern funtab *cdfg_tab;
 extern funtab *free_tab;
-extern funtab *unused_tab2;
 extern funtab *refcnt_tab;
 extern funtab *emrefcnt_tab;
 extern funtab *emri_tab;
@@ -318,7 +320,7 @@ extern funtab *inline_tab;
 extern funtab *set_tab;
 extern funtab *ser_tab;
 extern funtab *idx_tab;
-extern funtab *unused_tab26;
+extern funtab *ds_tab;
 extern funtab *ae_tab;
 extern funtab *writesib_tab;
 extern funtab *obj_tab;
