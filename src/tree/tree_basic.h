@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.15  2000/02/16 15:11:54  dkr
+ * removed FUNDEF_LAC_LET
+ *
  * Revision 1.14  2000/02/11 18:31:17  dkr
  * INFO_PRINT_CONT added
  *
@@ -1044,7 +1047,6 @@ extern node *MakeFundef (char *name, char *mod, types *types, node *args, node *
 #define FUNDEC_DEF(n) (n->node[3])
 #define FUNDEF_NEEDOBJS(n) ((nodelist *)(n->node[4]))
 #define FUNDEF_LIFTEDFROM(n) (n->node[4])
-#define FUNDEF_LAC_LET(n) ((node *)(n->info2))
 #define FUNDEF_PRAGMA(n) (n->node[5])
 #define FUNDEF_VARNO(n) (n->varno)
 #define FUNDEF_MASK(n, x) (n->mask[x])
