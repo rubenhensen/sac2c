@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.52  2002/07/15 19:16:23  dkr
+ * PREC3let: modification for TAGGED_ARRAYS done:
+ * F_reshape is also lifted now
+ *
  * Revision 3.51  2002/07/15 17:24:38  dkr
  * LiftArg() moved to tree_compound.c
  *
@@ -1798,8 +1802,6 @@ PREC2let (node *arg_node, node *arg_info)
         dots_off = 0;
         idx = ap_argtab->size; /* to avoid a CC warning */
         while (ap_exprs != NULL) {
-            bool do_lifting;
-
             DBUG_ASSERT ((args != NULL), "application is inconsistant");
 
             if (dots_off == 0) {
@@ -2055,10 +2057,12 @@ PREC3assign (node *arg_node, node *arg_info)
  *     then we rename each RHS   a   into a temp-var   __tmp<n>   and insert
  *     an assignment   __tmp<n> = a;   in front of the function application.
  *
+#ifndef TAGGED_ARRAYS
  * remark:
  *   The 2nd argument of the primitive function reshape() need not to be
  *   flattened! Note, that reshape() is simply compiled into an assignment.
  *
+#endif
  ******************************************************************************/
 
 node *
@@ -2090,9 +2094,11 @@ PREC3let (node *arg_node, node *arg_info)
             while (arg != NULL) {
                 arg_id = EXPRS_EXPR (arg);
                 if ((NODE_TYPE (arg_id) == N_id) && (RC_IS_ACTIVE (ID_REFCNT (arg_id))) &&
+#ifndef TAGGED_ARRAYS
                     /* 2nd argument of F_reshape need not to be flattened! */
-                    ((PRF_PRF (let_expr) != F_reshape) || (arg_idx != 1))
-                    && (!strcmp (ID_NAME (arg_id), IDS_NAME (let_ids)))) {
+                    ((PRF_PRF (let_expr) != F_reshape) || (arg_idx != 1)) &&
+#endif
+                    (!strcmp (ID_NAME (arg_id), IDS_NAME (let_ids)))) {
                     new_id
                       = LiftOrReplaceArg (arg_id, INFO_PREC_FUNDEF (arg_info), new_id,
                                           NULL, &(INFO_PREC3_LASTASSIGN (arg_info)));
