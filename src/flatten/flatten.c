@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.67  1998/03/15 10:59:28  srs
+ * fixed bug in FltnGen
+ *
  * Revision 1.66  1998/03/13 18:03:50  srs
  * replaced GenTmpVar() by global function TmpVar()
  * and fixed a bug in FltnNCode
@@ -303,6 +306,27 @@ static int var_counter = 0;
 static int with_level = 0;
 static local_stack *tos, *stack, *stack_limit;
 
+/******************************************************************************
+ *
+ * function:
+ *   void DbugPrintStack(void)
+ *
+ * description:
+ *   prints stack top-down from tos.
+ *
+ *
+ ******************************************************************************/
+
+void
+DbugPrintStack (void)
+{
+    local_stack *tmp;
+
+    tmp = tos;
+    while (tmp-- > stack)
+        printf ("%s -> %s\n", tmp->id_old, tmp->id_new);
+}
+
 /*
  *
  *  functionname  : DuplicateNode
@@ -346,17 +370,11 @@ DuplicateNode (node *source_node)
         }
     } else {
         dest_node = MakeNode (source_node->nodetype);
-#ifndef NEWTREE
-        for (i = 0; i < source_node->nnode; i++)
-            dest_node->node[i] = DuplicateNode (source_node->node[i]);
-        dest_node->nnode = i;
-#else
         for (i = 0; i < nnode[NODE_TYPE (source_node)]; i++)
             if (source_node->node[i])
                 dest_node->node[i] = DuplicateNode (source_node->node[i]);
             else
                 dest_node->node[i] = NULL;
-#endif
         dest_node->info = source_node->info;
         dest_node->info2 = source_node->info2;
     }
@@ -470,12 +488,12 @@ FindId (char *name)
     else {
         tmp = tos - 1;
 
-        while ((tmp > stack) && (0 == found))
+        while ((tmp > stack) && !found)
             if (0 == strcmp (tmp->id_old, name))
                 found = 1;
             else
                 tmp--;
-        if (0 == found)
+        if (!found)
             if (0 != strcmp (tmp->id_old, name))
                 tmp = NULL;
     }
@@ -635,7 +653,7 @@ FltnExprs (node *arg_node, node *arg_info)
         /* we use tmp_arg , because tmp_node1 may be a N_cast, but tmp_arg
          * cant't be
          */
-        if (NULL != tmp_arg) {
+        if (tmp_arg) {
             /* Now, we have to flatten the child "tmp_arg" recursively! */
             old_tag = arg_info->info.cint;
 
@@ -953,9 +971,6 @@ FltnDo (node *arg_node, node *arg_info)
      */
     tmp_exprs = MakeNode (N_exprs);
     tmp_exprs->node[0] = arg_node->node[0];
-#ifndef NEWTREE
-    tmp_exprs->nnode = 1;
-#endif
 
     /* travers termination condition */
     old_tag = info_node->info.cint;
@@ -982,9 +997,6 @@ FltnDo (node *arg_node, node *arg_info)
                          mdb_nodetype[info_node->node[0]->nodetype], info_node->node[0],
                          mdb_nodetype[info_node->node[0]->node[0]->nodetype],
                          info_node->node[0]->node[0]));
-#ifndef NEWTREE
-            last_assign->nnode = 2;
-#endif
         } else
             arg_node->node[1]->node[0] = info_node->node[0];
 
@@ -1076,55 +1088,48 @@ FltnFundef (node *arg_node, node *arg_info)
 node *
 FltnGen (node *arg_node, node *arg_info)
 {
-    node *tmp_node1, *id_node, *let_node, *assign_node;
+    node *tmp_node1, *id_node, *let_node, *assign_node, *boundn;
     int i;
     local_stack *tmp;
     char *old_name, *tmp_var_name;
 
     DBUG_ENTER ("FltnGen");
-#ifndef NEWTREE
-    for (i = 0; i < arg_node->nnode; i++)
-#else
-    for (i = 0; i < nnode[NODE_TYPE (arg_node)]; i++)
-        if (arg_node->node[i])
-#endif
-        if ((arg_node->node[i]->nodetype == N_ap)
-            || (arg_node->node[i]->nodetype == N_prf)
-            || (arg_node->node[i]->nodetype == N_array)) {
-            /* This argument is a function application and thus has to be abstracted
-             ** out. Therefore a new N_assign, a new N_let, and a new temporary
-             ** variable are generated and inserted.
-             */
-            tmp_node1 = arg_node->node[i];
-            id_node = MakeId (tmp_var_name, NULL, ST_regular);
-            arg_node->node[i] = id_node;
+    for (i = 0; i < 2; i++) {
+        if (i == 0)
+            boundn = GEN_LEFT (arg_node);
+        else
+            boundn = GEN_RIGHT (arg_node);
 
-            let_node = MakeNode (N_let);
-            let_node->info.ids = MakeIds (tmp_var_name, NULL, ST_regular);
+        if (boundn)
+            if (NODE_TYPE (boundn) == N_ap || NODE_TYPE (boundn) == N_prf
+                || NODE_TYPE (boundn) == N_array) {
+                /* This argument is a function application and thus has to be abstracted
+                ** out. Therefore a new N_assign, a new N_let, and a new temporary
+                ** variable are generated and inserted.
+                */
+                tmp_node1 = boundn;
+                tmp_var_name = TmpVar ();
+                id_node = MakeId (tmp_var_name, NULL, ST_regular);
+                boundn = id_node;
 
-            /*         assign_node=MakeNode(N_assign); */
-            /*         ASSIGN_INSTR(assign_node)=let_node; */
-            /*         ASSIGN_NEXT(assign_node)=arg_info->node[0]; */
+                let_node = MakeNode (N_let);
+                let_node->info.ids = MakeIds (tmp_var_name, NULL, ST_regular);
 
-            assign_node = MakeAssign (let_node, arg_info->node[0]);
+                /*         assign_node=MakeNode(N_assign); */
+                /*         ASSIGN_INSTR(assign_node)=let_node; */
+                /*         ASSIGN_NEXT(assign_node)=arg_info->node[0]; */
 
-            /* a new node is put in front! */
-#ifndef NEWTREE
-            if (NULL == assign_node->node[1])
-                assign_node->nnode = 1;
-            else
-                assign_node->nnode = 2;
-#endif
+                assign_node = MakeAssign (let_node, arg_info->node[0]);
 
-            arg_info->node[0] = assign_node;
+                /* a new node is put in front! */
 
-            /* Now, we have to flatten the child "tmp_node1" recursively! */
-#ifndef NEWTREE
-            let_node->nnode = 1;
-#endif
-            LET_EXPR (let_node) = Trav (tmp_node1, arg_info);
-        } else
-            arg_node->node[i] = Trav (arg_node->node[i], arg_info);
+                arg_info->node[0] = assign_node;
+
+                /* Now, we have to flatten the child "tmp_node1" recursively! */
+                LET_EXPR (let_node) = Trav (tmp_node1, arg_info);
+            } else
+                boundn = Trav (boundn, arg_info);
+    }
 
     /* rename index-vector if necessary */
     tmp = FindId (GEN_ID (arg_node));
@@ -1283,6 +1288,8 @@ FltnId (node *arg_node, node *arg_info)
             if (with_level >= tmp->w_level) {
                 old_name = ID_NAME (arg_node);
                 ID_NAME (arg_node) = StringCopy (tmp->id_new);
+                ;
+
                 FREE (old_name);
             }
         } else
@@ -1331,7 +1338,10 @@ FltnLet (node *arg_node, node *arg_info)
             } else {
                 /* if not inside a WL the with_level is exactly 0 so nothing happens */
                 if ((0 < with_level) && (with_level > tmp->w_level)) {
+                    /* srs: We need to store a reference to the memory area of the OLD
+                       (or first) appearence because mey be freed in FltnId. */
                     old_name = ids->id;
+                    /* 	  old_name=tmp->id_old; */
                     ids->id = RenameWithVar (old_name, with_level);
                     PUSH (old_name, ids->id, with_level);
                     /* arg_info->node[1]=AppendIdentity(arg_info->node[1],
