@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.8  2004/03/05 19:14:27  mwe
+ * SSACFfuncond added
+ *
  * Revision 1.7  2003/09/16 18:15:26  ktr
  * Index vectors are now treated as structural constants.
  *
@@ -68,6 +71,7 @@ extern node *SSACFid (node *arg_node, node *arg_info);
 extern node *SSACFarray (node *arg_node, node *arg_info);
 extern node *SSACFprf (node *arg_node, node *arg_info);
 extern node *SSACFNgen (node *arg_node, node *arg_info);
+extern node *SSACFfuncond (node *arg_node, node *arg_info);
 
 extern node *SSACFFoldPrfExpr (prf op, node **arg_expr);
 
