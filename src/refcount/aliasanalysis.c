@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2004/11/02 14:31:11  ktr
+ * Aliasanalysis is now performed seperately for each branch of a
+ * conditional.
+ *
  * Revision 1.4  2004/10/26 11:19:38  ktr
  * Intermediate update for stephan
  *
@@ -46,7 +50,7 @@
 /**
  * CONTEXT enumeration: aa_context_t
  */
-typedef enum { AA_undef, AA_begin, AA_let, AA_ap } aa_context_t;
+typedef enum { AA_undef, AA_begin, AA_end, AA_let, AA_ap } aa_context_t;
 
 /*
  * INFO structure
@@ -124,16 +128,19 @@ FreeInfo (info *info)
 node *
 EMAAAliasAnalysis (node *syntax_tree)
 {
-    int unaliased;
+    funtab *old_tab;
 
     DBUG_ENTER ("EMAAAliasAnalysis");
 
     DBUG_PRINT ("EMAA", ("Starting alias analysis..."));
 
+    old_tab = act_tab;
     act_tab = emaa_tab;
 
     unaliased = 0;
     syntax_tree = Trav (syntax_tree, NULL);
+
+    act_tab = old_tab;
 
     DBUG_PRINT ("EMAA", ("%d variables unaliased.", unaliased));
     DBUG_PRINT ("EMAA", ("Alias analysis complete."));
@@ -151,14 +158,12 @@ SetAvisAlias (node *avis, bool newval)
 {
     DBUG_ENTER ("SetAvisAlias");
 
-    if ((!AVIS_ALIAS (avis)) && newval) {
-        DBUG_ASSERT ((0), "Alias analysis does not converge!");
-    } else {
-        if (AVIS_ALIAS (avis) && (!newval)) {
-            AVIS_ALIAS (avis) = FALSE;
-            unaliased += 1;
-        }
+    if (AVIS_ALIAS (avis) && (!newval)) {
+        unaliased += 1;
     }
+
+    AVIS_ALIAS (avis) = newval;
+
     DBUG_RETURN (avis);
 }
 
@@ -260,7 +265,24 @@ EMAAarg (node *arg_node, info *arg_info)
     switch (INFO_AA_CONTEXT (arg_info)) {
 
     case AA_begin:
-        DFMSetMaskEntrySet (INFO_AA_MASK (arg_info), NULL, arg_node);
+        if (INFO_AA_APARGS (arg_info) != NULL) {
+            node *id = EXPRS_EXPR (INFO_AA_APARGS (arg_info));
+            if (DFMTestMaskEntry (INFO_AA_APMASK (arg_info), NULL, ID_VARDEC (id))) {
+
+                DFMSetMaskEntrySet (INFO_AA_MASK (arg_info), NULL, arg_node);
+            }
+            INFO_AA_APARGS (arg_info) = EXPRS_NEXT (INFO_AA_APARGS (arg_info));
+        } else {
+            if (AVIS_ALIAS (ARG_AVIS (arg_node))) {
+                DFMSetMaskEntrySet (INFO_AA_MASK (arg_info), NULL, arg_node);
+            }
+        }
+        break;
+
+    case AA_end:
+        ARG_AVIS (arg_node)
+          = SetAvisAlias (ARG_AVIS (arg_node),
+                          DFMTestMaskEntry (INFO_AA_MASK (arg_info), NULL, arg_node));
         break;
 
     default:
@@ -448,11 +470,36 @@ EMAAfundef (node *arg_node, info *arg_info)
             }
 
             /*
-             * Traverse function args to mark them AVIS_ALIAS
+             * Traverse function args to mark them as ALIAS in MASK
              */
             INFO_AA_CONTEXT (info) = AA_begin;
             if (FUNDEF_ARGS (arg_node) != NULL) {
                 FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), info);
+            }
+
+            /*
+             * Aliased CONDFUN parameters must be marked as ALIAS
+             */
+            if (arg_info != NULL) {
+                node *funargs = FUNDEF_ARGS (arg_node);
+                node *apargs = INFO_AA_APARGS (arg_info);
+
+                while (funargs != NULL) {
+                    node *apargs2 = INFO_AA_APARGS (arg_info);
+
+                    while (apargs2 != NULL) {
+                        if (apargs != apargs2) {
+                            if (ID_AVIS (EXPRS_EXPR (apargs))
+                                == ID_AVIS (EXPRS_EXPR (apargs2))) {
+                                DFMSetMaskEntrySet (INFO_AA_MASK (info), NULL, funargs);
+                            }
+                        }
+                        apargs2 = EXPRS_NEXT (apargs2);
+                    }
+
+                    funargs = ARG_NEXT (funargs);
+                    apargs = EXPRS_NEXT (apargs);
+                }
             }
 
             INFO_AA_APARGS (info) = NULL;
@@ -463,6 +510,17 @@ EMAAfundef (node *arg_node, info *arg_info)
              */
             FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), info);
 
+            /*
+             * Traverse args to annotate AVIS_ALIAS
+             */
+            INFO_AA_CONTEXT (info) = AA_end;
+            if (FUNDEF_ARGS (arg_node) != NULL) {
+                FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), info);
+            }
+
+            /*
+             * Clean up
+             */
             INFO_AA_MASK (info) = DFMRemoveMask (INFO_AA_MASK (info));
 
             maskbase = DFMRemoveMaskBase (maskbase);

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2004/11/02 14:31:11  ktr
+ * Aliasanalysis is now performed seperately for each branch of a
+ * conditional.
+ *
  * Revision 1.2  2004/10/26 11:19:38  ktr
  * Intermediate update for stephan
  *
@@ -42,6 +46,7 @@ extern node *EMAAvardec (node *arg_node, info *arg_info);
  * - N_icm
  * - N_return
  * - N_array
+ * - N_objdef
  *
  ****************************************************************************/
 
