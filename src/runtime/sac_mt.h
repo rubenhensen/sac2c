@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.31  2001/06/27 14:36:09  ben
+ * modified for cooperation with tasksel-pragma
+ *
  * Revision 3.30  2001/06/20 12:24:14  ben
  * some tracing output added for Selfscheduling
  *
@@ -904,38 +907,27 @@ typedef union {
                                  num_tasks, taskid, worktodo)                            \
     {                                                                                    \
                                                                                          \
-        const int number_of_tasks = num_tasks;                                           \
-        const int total_iterations = upper - lower;                                      \
-        const int iterations = total_iterations / unrolling;                             \
+        const int number_of_tasks = num_tasks * SAC_MT_THREADS ();                       \
+        const int iterations = (upper - lower) / unrolling;                              \
         const int iterations_per_thread = (iterations / number_of_tasks) * unrolling;    \
-        const int iterations_rest                                                        \
-          = total_iterations - iterations_per_thread * number_of_tasks;                  \
-        int rest_iterations = iterations_rest;                                           \
-        int used_rest_iterations = 0;                                                    \
+        const int iterations_rest = iterations % number_of_tasks;                        \
                                                                                          \
-        if (rest_iterations >= unrolling) {                                              \
+        if (iterations_rest && (taskid < iterations_rest)) {                             \
             SAC_WL_MT_SCHEDULE_START (tasks_on_dim)                                      \
               = lower + (iterations_per_thread + unrolling) * (taskid);                  \
-            rest_iterations -= unrolling;                                                \
-            used_rest_iterations += unrolling;                                           \
-                                                                                         \
             SAC_WL_MT_SCHEDULE_STOP (tasks_on_dim)                                       \
               = SAC_WL_MT_SCHEDULE_START (tasks_on_dim) + iterations_per_thread          \
                 + unrolling;                                                             \
         } else {                                                                         \
             SAC_WL_MT_SCHEDULE_START (tasks_on_dim)                                      \
-              = lower + used_rest_iterations + rest_iterations                           \
-                + (iterations_per_thread) * (taskid);                                    \
-            used_rest_iterations += rest_iterations;                                     \
-            rest_iterations = 0;                                                         \
-                                                                                         \
+              = (lower + iterations_rest * unrolling) + taskid * iterations_per_thread;  \
             SAC_WL_MT_SCHEDULE_STOP (tasks_on_dim)                                       \
               = SAC_WL_MT_SCHEDULE_START (tasks_on_dim) + iterations_per_thread;         \
         }                                                                                \
         SAC_TR_MT_PRINT (("'TS_Even': dim %d: %d -> %d, Task: %d", tasks_on_dim,         \
                           SAC_WL_MT_SCHEDULE_START (tasks_on_dim),                       \
                           SAC_WL_MT_SCHEDULE_STOP (tasks_on_dim), taskid));              \
-        worktodo = (taskid < num_tasks);                                                 \
+        worktodo = (taskid < number_of_tasks);                                           \
     }
 
 #define SAC_MT_SCHEDULER_TS_Factoring_INIT(sched_id, lower, upper)                       \
@@ -948,7 +940,7 @@ typedef union {
     }
 
 #define SAC_MT_SCHEDULER_TS_Factoring(sched_id, tasks_on_dim, lower, upper, unrolling,   \
-                                      num_tasks, taskid, worktodo)                       \
+                                      taskid, worktodo)                                  \
     {                                                                                    \
         int tasksize;                                                                    \
         int restiter;                                                                    \
@@ -996,12 +988,12 @@ typedef union {
         SAC_TR_MT_PRINT (("SAC_MT_TASK set for sched_id %d", sched_id));                 \
     }
 
-#define SAC_MT_SCHEDULER_Static_FIRST_TASK(tasks_per_thread, taskid)                     \
+#define SAC_MT_SCHEDULER_Static_FIRST_TASK(taskid)                                       \
     {                                                                                    \
         taskid = SAC_MT_MYTHREAD ();                                                     \
     }
 
-#define SAC_MT_SCHEDULER_Static_NEXT_TASK(tasks_per_thread, taskid)                      \
+#define SAC_MT_SCHEDULER_Static_NEXT_TASK(taskid)                                        \
     {                                                                                    \
         taskid += SAC_MT_THREADS ();                                                     \
     }

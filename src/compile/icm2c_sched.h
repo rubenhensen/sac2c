@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/06/27 14:35:57  ben
+ * modified for cooperation with tasksel-pragma
+ *
  * Revision 3.3  2001/06/20 12:25:43  ben
  * some minor bug in definition of Self rmoved
  *
@@ -45,28 +48,39 @@ extern void ICMCompileMT_SCHEDULER_BlockVar_BEGIN (int sched_id, int dim, char *
 extern void ICMCompileMT_SCHEDULER_BlockVar_END (int sched_id, int dim, char **vararg);
 extern void ICMCompileMT_SCHEDULER_BlockVar_INIT (int sched_id, int dim, char **vararg);
 
-extern void ICMCompileMT_SCHEDULER_Static_BEGIN (int sched_id, int tasks_per_thread,
-                                                 int dim, char **vararg);
-extern void ICMCompileMT_SCHEDULER_Static_END (int sched_id, int tasks_per_thread,
-                                               int dim, char **vararg);
-extern void ICMCompileMT_SCHEDULER_Static_INIT (int sched_id, int tasks_per_thread,
-                                                int dim, char **vararg);
+extern void ICMCompileMT_SCHEDULER_Static_BEGIN (int sched_id, char *ts_name, int ts_dims,
+                                                 int ts_arg_num, char **ts_args, int dim,
+                                                 char **vararg);
+extern void ICMCompileMT_SCHEDULER_Static_END (int sched_id, char *ts_name, int ts_dims,
+                                               int ts_arg_num, char **ts_args, int dim,
+                                               char **vararg);
+extern void ICMCompileMT_SCHEDULER_Static_INIT (int sched_id, char *ts_name, int ts_dims,
+                                                int ts_arg_num, char **ts_args, int dim,
+                                                char **vararg);
 
 extern void ICMCompileMT_SCHEDULER_Self_BEGIN (int sched_id, char *first_task,
-                                               int tasks_per_thread, int dim,
-                                               char **vararg);
+                                               char *ts_name, int ts_dims, int ts_arg_num,
+                                               char **ts_args, int dim, char **vararg);
 extern void ICMCompileMT_SCHEDULER_Self_END (int sched_id, char *first_task,
-                                             int tasks_per_thread, int dim,
-                                             char **vararg);
+                                             char *ts_name, int ts_dims, int ts_arg_num,
+                                             char **ts_args, int dim, char **vararg);
 extern void ICMCompileMT_SCHEDULER_Self_INIT (int sched_id, char *first_task,
-                                              int tasks_per_thread, int dim,
-                                              char **vararg);
+                                              char *ts_name, int ts_dims, int ts_arg_num,
+                                              char **ts_args, int dim, char **vararg);
 
-extern void ICMCompileMT_SCHEDULER_Affinity_BEGIN (int sched_id, int tasks_per_thread,
+extern void ICMCompileMT_SCHEDULER_Affinity_BEGIN (int sched_id, char *ts_name,
+                                                   int ts_dims, int ts_arg_num,
+                                                   char **ts_args,
+
                                                    int dim, char **vararg);
-extern void ICMCompileMT_SCHEDULER_Affinity_END (int sched_id, int tasks_per_thread,
+extern void ICMCompileMT_SCHEDULER_Affinity_END (int sched_id, char *ts_name, int ts_dims,
+                                                 int ts_arg_num, char **ts_args,
+
                                                  int dim, char **vararg);
-extern void ICMCompileMT_SCHEDULER_Affinity_INIT (int sched_id, int tasks_per_thread,
+extern void ICMCompileMT_SCHEDULER_Affinity_INIT (int sched_id, char *ts_name,
+                                                  int ts_dims, int ts_arg_num,
+                                                  char **ts_args,
+
                                                   int dim, char **vararg);
 
 #endif /* _SAC_ICM2C_SCHED_H_ */
