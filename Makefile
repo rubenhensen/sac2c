@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.50  2002/03/13 16:03:20  ktr
+# Added Withloop-Scalarization for linking
+#
 # Revision 3.49  2002/03/10 16:41:19  sbs
 # ssi.o included
 #
@@ -138,7 +141,8 @@ PSIOPT= src/psi-opt/index.o src/psi-opt/ArrayElimination.o \
         src/psi-opt/SSAWithloopFolding.o src/psi-opt/SSAWLT.o \
         src/psi-opt/SSAWLI.o src/psi-opt/SSAWLF.o \
 	src/psi-opt/pad.o src/psi-opt/pad_collect.o src/psi-opt/pad_infer.o \
-	src/psi-opt/pad_transform.o src/psi-opt/pad_info.o
+	src/psi-opt/pad_transform.o src/psi-opt/pad_info.o \
+	src/psi-opt/WithloopScalarization.o
 MODULES= src/modules/filemgr.o src/modules/import.o src/modules/writesib.o  \
          src/modules/implicittypes.o src/modules/analysis.o \
          src/modules/checkdec.o src/modules/readsib.o \
