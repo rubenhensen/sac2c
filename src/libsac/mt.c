@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2003/03/21 13:17:10  sbs
+ * emptied iff DISABLE_MT is set.
+ *
  * Revision 3.9  2001/06/15 12:34:44  ben
  * SAC_MT_TS_Tasklock[] initialaztion added
  *
@@ -101,6 +104,17 @@
  *   the preprocessor flag TRACE.
  *
  *****************************************************************************/
+
+#include "config.h"
+
+/*
+ * In case we do not have mt available, we have to make sure this file
+ * does not cause any problems (e.g. when running implicit dependency
+ * inference system). Therefore, we render this file empty iff MT compilation
+ * is disabled!
+ */
+
+#ifndef DISABLE_MT
 
 #include <pthread.h>
 #include <stdio.h>
@@ -454,3 +468,5 @@ SAC_MT_Setup (int cache_line_max, int barrier_offset, int num_schedulers)
         }
     }
 }
+
+#endif /* DISABLE_MT */
