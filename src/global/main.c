@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.35  2004/04/08 11:24:34  skt
+ * Position of SYSABORT for mtmode 3 moved
+ *
  * Revision 3.34  2004/03/10 00:10:17  dkrHH
  * old backend removed
  *
@@ -552,12 +555,6 @@ main (int argc, char *argv[])
         /* for compatibility reasons, the code is retransformed from SSA-form */
         syntax_tree = UndoSSA (syntax_tree);
         PHASE_DONE_EPILOG;
-        SYSABORT (("Mt/st-block version of multithreading de-activated !!"));
-        /* following comment concerning for mt/st-block version:
-         * The core problem is that new-mt reuses the FUNDEF ATTRIB attribute
-         * and thereby destroys its old contents. Unfortunately, it has turned
-         * that this information is vital for precompile.
-         */
         break;
     }
     PHASE_EPILOG;
@@ -565,6 +562,15 @@ main (int argc, char *argv[])
     if (break_after == PH_multithread)
         goto BREAK;
     compiler_phase++;
+
+    if (mtmode == MT_mtstblock) {
+        SYSABORT (("Mt/st-block version of multithreading de-activated !!"));
+        /* following comment concerning for mt/st-block version:
+         * The core problem is that new-mt reuses the FUNDEF ATTRIB attribute
+         * and thereby destroys its old contents. Unfortunately, it has turned
+         * that this information is vital for precompile.
+         */
+    }
 
     if (mtmode == MT_mtstblock) {
         PHASE_PROLOG;
