@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2001/03/22 12:45:32  ben
+ * Tracingoutput of  SAC_MT_SCHEDULER_Select_Block modified
+ *
  * Revision 3.11  2001/03/21 11:52:07  ben
  * SAC_MT_SCHEDULER_Block_Select renamed to SAC_MT_SCHEDULER_Select_Block
  *
@@ -751,20 +754,20 @@ typedef union {
 
 #define SAC_MT_SCHEDULER_Select_Block(sched_dim, lower, upper, num_tasks, next_taskid)   \
     {                                                                                    \
-        const int iterations_per_thread = (upper - lower) / num_tasks;                   \
+        const int iterations_per_thread = (upper - lower) / (num_tasks);                 \
                                                                                          \
         SAC_WL_MT_SCHEDULE_START (sched_dim)                                             \
-          = lower + iterations_per_thread * next_taskid;                                 \
+          = lower + iterations_per_thread * (next_taskid);                               \
                                                                                          \
-        if ((next_taskid + 1) != num_tasks) {                                            \
+        if (((next_taskid) + 1) != (num_tasks)) {                                        \
             SAC_WL_MT_SCHEDULE_STOP (sched_dim)                                          \
               = SAC_WL_MT_SCHEDULE_START (sched_dim) + iterations_per_thread;            \
         } else {                                                                         \
             SAC_WL_MT_SCHEDULE_STOP (sched_dim) = upper;                                 \
         }                                                                                \
-        SAC_TR_MT_PRINT (("'Select_Block': dim %d: %d -> %d", sched_dim,                 \
+        SAC_TR_MT_PRINT (("'Select_Block': dim %d: %d -> %d, Task: %d", sched_dim,       \
                           SAC_WL_MT_SCHEDULE_START (sched_dim),                          \
-                          SAC_WL_MT_SCHEDULE_STOP (sched_dim)));                         \
+                          SAC_WL_MT_SCHEDULE_STOP (sched_dim), next_taskid));            \
     }
 
 #if 0
