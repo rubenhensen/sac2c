@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.15  2001/12/11 15:17:39  dkr
+ * GetDim() replaced by GetShapeDim()
+ *
  * Revision 3.14  2001/07/18 12:57:45  cg
  * Applications of old tree construction function
  * AppendNodeChain eliminated.
@@ -677,7 +680,7 @@ Shp (types *array)
          * shape( A:int[s0, ..., sn-1]) : int[ n] !
          */
         ret_type = MakeTypes (T_int, 1, MakeShpseg (NULL), NULL, NULL);
-        dim = GetDim (array);
+        dim = GetShapeDim (array);
         TYPES_SHAPE (ret_type, 0) = dim;
     } else {
         DBUG_ASSERT (0, "unknown dimension of type");
