@@ -1,6 +1,9 @@
 /*
  * $Log$
- * Revision 1.5  1994/12/19 13:01:42  hw
+ * Revision 1.6  1994/12/20 14:20:44  hw
+ * added function TCunaryOp to handle typechecking of N_post & N_pre
+ *
+ * Revision 1.5  1994/12/19  13:01:42  hw
  * inserted TCdo & TCwhile
  *
  * Revision 1.4  1994/12/14  08:47:42  hw
@@ -26,5 +29,6 @@ extern node *TCcond (node *arg_node, node *arg_info);
 extern node *TCassign (node *arg_node, node *arg_info);
 extern node *TCdo (node *arg_node, node *arg_info);
 extern node *TCwhile (node *arg_node, node *arg_info);
+extern node *TCunaryOp (node *arg_node, node *arg_info);
 
 #endif /* _typecheck_h */
