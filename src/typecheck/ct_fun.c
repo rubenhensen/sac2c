@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2004/12/07 14:27:13  sbs
+ * minor correction in DBUG output
+ *
  * Revision 1.6  2004/11/24 18:47:53  sbs
  * compiles
  *
@@ -76,7 +79,7 @@ DispatchFunType (node *wrapper, ntype *args)
     DBUG_ENTER ("DispatchFunType");
 
     DBUG_EXECUTE ("NTC", tmp_str = TYtype2String (args, 0, 0););
-    DBUG_PRINT ("NTC", ("dispatching %s for %s:%s", FUNDEF_MOD (wrapper),
+    DBUG_PRINT ("NTC", ("dispatching %s:%s for %s", FUNDEF_MOD (wrapper),
                         FUNDEF_NAME (wrapper), tmp_str));
 
     res = TYdispatchFunType (FUNDEF_WRAPPERTYPE (wrapper), args);
