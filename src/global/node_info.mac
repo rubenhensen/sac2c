@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.163  1998/03/18 08:33:40  srs
+ * added WLIid to N_id node
+ *
  * Revision 1.162  1998/03/17 12:18:09  cg
  * The print table now uses PrintStr instead of PrintId for
  * writing strings.
@@ -541,7 +544,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
   NIF (N_id, "N_id", TravSons, FltnId, PrintId, TravSons, OPTid, TravSons, TravSons,
        FreeId, CFid, RCid, CompId, TravSons, DupIIds, TravSons, UNRid, TravSons, IdxId,
-       UNSid, TravSons, TravSons, PrintId, OBJid, TravSons, TravSons, ANAid, TravSons,
+       UNSid, WLIid, TravSons, PrintId, OBJid, TravSons, TravSons, ANAid, TravSons,
        TravSons, UNQid, TravSons, PRECid, TravSons, TravSons, TravSons, CSEid, TravSons,
        TravSons, 0),
 
