@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.18  1999/07/07 15:52:01  jhs
+ * Removed SYNC_WITH_PTRS.
+ *
  * Revision 2.17  1999/07/06 16:18:45  jhs
  * Changed evaluation of prolog- and epilog-icms, so compilation of
  * sync-blocks with more than one with-loops are possible now
@@ -6433,7 +6436,7 @@ COMPSpmd (node *arg_node, node *arg_info)
 node *
 COMPSync (node *arg_node, node *arg_info)
 {
-    node *icm_args, *icm_args2, *icm_args3, *vardec, *with, *tmp, *instr, *assign,
+    node *icm_args, *icm_args2, *icm_args3, *vardec, *with, *block, *instr, *assign,
       *last_assign, *prolog_icms, *epilog_icms, *new_icm, *assigns = NULL;
     ids *with_ids;
     types *type;
@@ -6552,19 +6555,24 @@ COMPSync (node *arg_node, node *arg_info)
                 DBUG_PRINT ("COMPi", ("last's folds %s", IDS_NAME (with_ids)));
             }
             assign = ASSIGN_NEXT (assign);
-        } /* while (SYNC_WITH_PTRS( last_sync) != NULL) */
+        } /* while (assign != NULL) */
     }
 
     DBUG_PRINT ("COMPi", ("--- end ---"));
 
     /*
-     * build arguments of ICMs (use 'SYNC_WITH_PTRS')
+     * build arguments of ICMs
      */
+
+    block = SYNC_REGION (arg_node);
+    assign = BLOCK_INSTR (block);
+
     num_folds = 0;
     icm_args2 = NULL;
-    while (SYNC_WITH_PTRS (arg_node) != NULL) {
-        with_ids = LET_IDS (EXPRS_EXPR (SYNC_WITH_PTRS (arg_node)));
-        with = LET_EXPR (EXPRS_EXPR (SYNC_WITH_PTRS (arg_node)));
+    while (assign != NULL) {
+        let = ASSIGN_INSTR (assign);
+        with = LET_EXPR (let);
+        with_ids = LET_IDS (let);
 
         if ((NWITH2_TYPE (with) == WO_foldprf) || (NWITH2_TYPE (with) == WO_foldfun)) {
             num_folds++;
@@ -6609,14 +6617,7 @@ COMPSync (node *arg_node, node *arg_info)
                                                    NULL)));
         }
 
-        /*
-         * free the SYNC_WITH_PTRS
-         * CAUTION: We must free the N_exprs-nodes only!
-         *          The contents of EXPRS_EXPR is shared!
-         */
-        tmp = EXPRS_NEXT (SYNC_WITH_PTRS (arg_node));
-        FREE (SYNC_WITH_PTRS (arg_node));
-        SYNC_WITH_PTRS (arg_node) = tmp;
+        assign = ASSIGN_NEXT (assign);
     }
 
     /*

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/07/07 15:52:59  jhs
+ * Removed SYNC_WITH_PTRS.
+ *
  * Revision 2.2  1999/07/01 13:01:41  jhs
  * Added handling of INFO_SPMD_LAST.
  *
@@ -84,11 +87,6 @@ SYNCIassign (node *arg_node, node *arg_info)
         SYNC_INOUT (sync) = DFMGenMaskCopy (NWITH2_INOUT (with));
         SYNC_OUT (sync) = DFMGenMaskCopy (NWITH2_OUT (with));
         SYNC_LOCAL (sync) = DFMGenMaskCopy (NWITH2_LOCAL (with));
-
-        /*
-         * store pointer to with-loop assignment in SYNC_WITH_PTRS
-         */
-        SYNC_WITH_PTRS (sync) = MakeExprs (sync_let, NULL);
 
         /*
          * unset flag: next N_sync node is not the first one in SPMD-region
