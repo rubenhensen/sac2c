@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2002/08/13 12:22:56  sbs
+ * GRRRR ugly error in HDap did kill N_ap nodes.....
+ *
  * Revision 1.5  2002/08/13 09:54:52  sah
  * added support for new scanner/parser and
  * dot elimination in WL boundaries.
@@ -685,7 +688,7 @@ HDap (node *arg_node, node *arg_info)
     /* dots inside.                                      */
 
     if (NODE_TYPE (result) == N_ap)
-        result = Trav (AP_ARGS (result), arg_info);
+        AP_ARGS (result) = Trav (AP_ARGS (result), arg_info);
     else
         result = Trav (result, arg_info);
 
