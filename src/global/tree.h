@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.17  1994/12/30 16:57:48  sbs
+ * Revision 1.18  1995/01/02 10:50:03  asi
+ * *** empty log message ***
+ *
+ * Revision 1.17  1994/12/30  16:57:48  sbs
  * added MakeTypes
  *
  * Revision 1.16  1994/12/30  13:49:08  hw
@@ -146,14 +149,12 @@ typedef struct NODE {
         int cint;          /* Integer-Wert                       */
         float cfloat;      /* Float-Wert                         */
         prf prf;           /* tag for primitive functions        */
-        char *mask[2];     /* Variablen, die in einem Grundblock */
-                           /* 1) "uberschrieben werden           */
-                           /* 2) benutzt werden                  */
         fun_name fun_name; /* used in N_ap nodes                 */
     } info;                /* fu"r spezielle Informationen */
+    char *mask[3];         /* special informations for optimization */
     int nnode;             /* Anzahl der benutzten Knoten */
     int lineno;            /* Zeilennummer in der ein Befehl steht */
-                           /* bzw. Nummer der Varible nach dem Optimieren */
+                           /* later used for variable number while optimizing */
     struct NODE *node[4];  /* Diese Eintra"ge sind knotenspezifisch */
 } node;                    /* Knoten des Syntaxbaums  */
 
