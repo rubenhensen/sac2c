@@ -37,6 +37,7 @@ CPP_STDIN        :=  "@CPP@"
 CPP_FILE         :=  "@CC@ -E -C -x c"
 /*CPP_FILE         :=  "cpp -C"          (mac)*/
 OPT_D            :=  -D
+OPT_I            :=  -I
 TAR_CREATE       :=  "tar cf"
 TAR_EXTRACT      :=  "tar xf"
 AR_CREATE        :=  "ar cr"

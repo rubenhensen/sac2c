@@ -80,6 +80,9 @@
  *                  
  *  OPT_D           OPT_D specifies the C compiler option to define a macro.
  *                  
+ *  OPT_I           OPT_I specifies the C compiler option to specify a path for
+ *                  include files.
+ *                  
  *  CPP_STDIN       CPP_STDIN specifies how to call the C preprocessor if SAC code
  *                  is to be read from stdin. The preprocessed code must be sent
  *                  to stdout.
