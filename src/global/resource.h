@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2005/03/10 09:41:09  cg
+ * Adjusted RSCevaluateConfiguration() to compiler phase driver function
+ * calling conventions.
+ *
  * Revision 3.8  2004/11/25 17:27:28  cg
  * Added inherit_list_t functions.
  *
@@ -116,6 +120,6 @@ extern target_list_t *RSCaddTargetList (target_list_t *list1, target_list_t *lis
 
 extern void RSCshowResources ();
 
-extern void RSCevaluateConfiguration (char *target);
+extern node *RSCevaluateConfiguration (node *syntax_tree);
 
 #endif /* _SAC_RESOURCE_H_ */
