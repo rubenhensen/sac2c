@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.8  1994/11/11 13:55:56  hw
+ * Revision 1.9  1994/11/11 16:43:07  hw
+ * embellish output
+ *
+ * Revision 1.8  1994/11/11  13:55:56  hw
  * added new Print-functions: PrintInc PrintDec PrintPost PrintPre
  * embellish output
  *
@@ -166,7 +169,7 @@ PrintLet (node *arg_node, node *arg_info)
     DBUG_PRINT ("PRINT", ("%s " P_FORMAT, mdb_nodetype[arg_node->nodetype], arg_node));
 
     PrintIds (arg_node->info.ids);
-    fprintf (outfile, " = ");
+    fprintf (outfile, "= ");
     Trav (arg_node->node[0], arg_info);
     fprintf (outfile, "; ");
 
@@ -183,7 +186,7 @@ PrintFundef (node *arg_node, node *arg_info)
 
     DBUG_PRINT ("PRINT", ("%s " P_FORMAT, mdb_nodetype[arg_node->nodetype], arg_node));
 
-    fprintf (outfile, "%s %s", Type2String (arg_node->info.types, 0),
+    fprintf (outfile, "\n%s %s", Type2String (arg_node->info.types, 0),
              arg_node->info.types->id);
     fprintf (outfile, "( ");
     if (2 <= arg_node->nnode)
@@ -302,7 +305,7 @@ PrintReturn (node *arg_node, node *arg_info)
 
     fprintf (outfile, "return( ");
     Trav (arg_node->node[0], arg_info);
-    fprintf (outfile, " );\n");
+    fprintf (outfile, " );");
 
     DBUG_RETURN (arg_node);
 }
@@ -371,17 +374,18 @@ PrintFor (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("PrintFor");
 
-    fprintf (outfile, "for( ");
-    for (i = 0; (arg_node->nnode - 1) > i; i++) {
-        Trav (arg_node->node[i], arg_info);
-        if (2 == i)
-            fprintf (outfile, " )\n");
-        else if (1 == i)
-            fprintf (outfile, "; ");
-    }
-    indent++;
-    Trav (arg_node->node[arg_node->nnode - 1], arg_info);
-    indent--;
+    fprintf (outfile, "for(");
+    i = indent;
+    indent = 0;
+    Trav (arg_node->node[0], arg_info);
+    indent = i;
+    Trav (arg_node->node[1], arg_info);
+    fprintf (outfile, "; ");
+    Trav (arg_node->node[2], arg_info);
+    fprintf (outfile, ")\n");
+    indent++; /* indent for body */
+    Trav (arg_node->node[3], arg_info);
+    indent--; /* indent as last assignment */
 
     DBUG_RETURN (arg_node);
 }
@@ -392,8 +396,12 @@ PrintDo (node *arg_node, node *arg_info)
     DBUG_ENTER ("PrintDo");
 
     fprintf (outfile, "do\n");
-    if (NULL != arg_node->node[1])
+    if (NULL != arg_node->node[1]) {
+        indent++;
         Trav (arg_node->node[1], arg_info); /* traverse body of loop */
+        indent--;
+    }
+
     fprintf (outfile, "while( ");
     Trav (arg_node->node[0], arg_info);
     fprintf (outfile, " )\n");
@@ -406,6 +414,7 @@ PrintEmpty (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintEmpty");
 
+    INDENT;
     fprintf (outfile, "\t;\n");
 
     DBUG_RETURN (arg_node);
