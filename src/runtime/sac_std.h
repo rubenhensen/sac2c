@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.10  2000/07/19 16:38:16  nmw
+ * SAC_INITGLOBALOBJECT macros added
+ *
  * Revision 2.9  2000/07/06 17:01:13  dkr
  * SAC_ND_A_SHAPE renamed into SAC_ND_A_SHAPE_AKD
  * SAC_ND_KD_A_SHAPE renamed into SAC_A_SHAPE
@@ -610,5 +613,27 @@
 #define SAC_ND_DECL_INOUT_PARAM_RC(type, name)                                           \
     type name = *##name##__p;                                                            \
     int *name##__rc = *name##__rc__p;
+
+/*
+ * SAC_INITGLOBALOBJECT( initfun, varname )
+ *
+ * ICM for initializing global objects.
+ * when compiling for program or ususal sac module it only calls
+ * the objinit function (initfun). if used in a c library it has to check
+ * if the global obj has been initialized by another module (uses varname as flag)
+ *
+ */
+#ifdef SAC_GENERATE_CLIBRARY
+/* with check */
+#define SAC_INITGLOBALOBJECT_BEGIN(varname)                                              \
+    if (!varname) {                                                                      \
+        varname = true;
+#define SAC_INITGLOBALOBJECT_END() }
+
+#else
+/* without check -> NOP */
+#define SAC_INITGLOBALOBJECT_BEGIN(varname)
+#define SAC_INITGLOBALOBJECT_END()
+#endif
 
 #endif /* SAC_STD_H */
