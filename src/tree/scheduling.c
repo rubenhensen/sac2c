@@ -1,21 +1,24 @@
 /*
  *
  * $Log$
+ * Revision 3.33  2001/11/21 13:43:57  dkr
+ * print routines modified
+ *
  * Revision 3.32  2001/07/04 10:11:49  ben
  * code beautiefied
  *
  * Revision 3.31  2001/06/27 14:37:00  ben
- *  last routines for tasksel-pragma implemented
+ * last routines for tasksel-pragma implemented
  *
  * Revision 3.30  2001/06/20 12:28:33  ben
- *  most first versions for SchedulingWithTasksel functions implemented
+ * most first versions for SchedulingWithTasksel functions implemented
  * two functions are not yet ready for use
  *
  * Revision 3.29  2001/06/19 12:29:26  ben
  * Entry of Self in SchedulerTable modified
  *
  * Revision 3.28  2001/06/13 13:07:03  ben
- *  SCHMakeTaskselByPragma, SCHRemoveTasksel, SCHCopyTasksel,
+ * SCHMakeTaskselByPragma, SCHRemoveTasksel, SCHCopyTasksel,
  * SCHPrecompileTasksel, SCHPrintTasksel, CheckTaskselArgs
  * taskselector_table[] added
  *
@@ -709,7 +712,7 @@ SCHPrecompileScheduling (sched_t *sched)
 /******************************************************************************
  *
  * function:
- *   void SCHPrintScheduling( FILE *handle, sched_t *sched)
+ *   void SCHPrintScheduling( FILE *outfile, sched_t *sched)
  *
  * description:
  *
@@ -732,7 +735,7 @@ SCHPrintScheduling (FILE *outfile, sched_t *sched)
     }
 
     if (sched != NULL) {
-        fprintf (outfile, "%s(", sched->discipline);
+        fprintf (outfile, "%s( ", sched->discipline);
 
         for (i = 0; i < sched->num_args - 1; i++) {
             switch (sched->args[i].arg_type) {
@@ -1298,7 +1301,6 @@ SCHMakeTaskselByPragma (node *ap_node, int line)
 tasksel_t *
 SCHRemoveTasksel (tasksel_t *tasksel)
 {
-
     DBUG_ENTER ("SCHRemoveTasksel");
 
     /*
@@ -1371,7 +1373,6 @@ SCHCopyTasksel (tasksel_t *tasksel)
 tasksel_t *
 SCHPrecompileTasksel (tasksel_t *tasksel)
 {
-
     DBUG_ENTER ("SCHPrecompileTasksel");
 
     DBUG_RETURN (tasksel);
@@ -1380,7 +1381,7 @@ SCHPrecompileTasksel (tasksel_t *tasksel)
 /******************************************************************************
  *
  * function:
- *   void SCHPrintTasksel( FILE *handle, tasksel_t *tasksel)
+ *   void SCHPrintTasksel( FILE *outfile, tasksel_t *tasksel)
  *
  * description:
  *
@@ -1403,14 +1404,14 @@ SCHPrintTasksel (FILE *outfile, tasksel_t *tasksel)
     }
 
     if (tasksel != NULL) {
-        fprintf (outfile, "%s(", tasksel->discipline);
+        fprintf (outfile, "%s( ", tasksel->discipline);
         if (tasksel->num_args > 0) {
-            for (i = 0; i < tasksel->num_args - 1; i++)
-                fprintf (outfile, "%d,", tasksel->arg[i]);
+            for (i = 0; i < tasksel->num_args - 1; i++) {
+                fprintf (outfile, "%d, ", tasksel->arg[i]);
+            }
             fprintf (outfile, "%d", tasksel->arg[tasksel->num_args - 1]);
         }
         fprintf (outfile, ")");
-
     } else {
         fprintf (outfile, "NULL");
     }
@@ -1594,8 +1595,11 @@ CompileVarSegSchedulingWithTaskselArgs (char *wl_name, node *wlseg, sched_t *sch
     if (sched != NULL) {
 
         if (tasksel != NULL) {
-            /* creating a int vararg-vektor, where for each taskselector dimension
-                1 is set, and for all other 0*/
+            /*
+             * creating a int vararg-vektor,
+             * where for each taskselector dimension 1 is set,
+             * and for all other 0
+             */
             pos = tasksel->dims - 1;
             for (d = WLSEG_DIMS (wlseg) - 1; d >= 0; d--) {
                 if (tasksel->arg[pos] == d) {
