@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.15  2000/07/21 14:17:53  mab
+ * added EqualShpseg
+ *
  * Revision 1.14  2000/07/14 09:37:45  dkr
  * CopyNodelist renamed into DupNodelist and moved to DupTree.[ch]
  *
@@ -1946,6 +1949,38 @@ DiffShpseg (int dim, shpseg *shape1, shpseg *shape2)
     }
 
     DBUG_RETURN (shape_diff);
+}
+
+/*****************************************************************************
+ *
+ * function:
+ *   bool EqualShpseg(int dim, shpseg* shape2, shpseg* shape1)
+ *
+ * description:
+ *   compares two shapes, result is TRUE, if shapes are equal
+ *
+ *****************************************************************************/
+
+bool
+EqualShpseg (int dim, shpseg *shape2, shpseg *shape1)
+{
+
+    bool equal_shapes;
+    int i;
+
+    DBUG_ENTER ("EqualShpseg");
+
+    equal_shapes = TRUE;
+
+    i = 0;
+    while (i < dim && equal_shapes) {
+        if (SHPSEG_SHAPE (shape1, i) != SHPSEG_SHAPE (shape2, i)) {
+            equal_shapes = FALSE;
+        }
+        i++;
+    }
+
+    DBUG_RETURN (equal_shapes);
 }
 
 /*--------------------------------------------------------------------------*/

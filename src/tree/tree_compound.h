@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.30  2000/07/21 14:17:53  mab
+ * added EqualShpseg
+ *
  * Revision 1.29  2000/07/14 09:37:52  dkr
  * CopyNodelist renamed into DupNodelist and moved to DupTree.[ch]
  *
@@ -1312,6 +1315,7 @@ extern double *Array2DblVec (node *aelems, int *length);
 extern shpseg *Array2Shpseg (node *array);
 extern node *Shpseg2Array (shpseg *shape, int dim);
 extern shpseg *DiffShpseg (int dim, shpseg *shape1, shpseg *shape2);
+extern bool EqualShpseg (int dim, shpseg *shape2, shpseg *shape1);
 
 /*--------------------------------------------------------------------------*/
 
