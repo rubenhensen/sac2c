@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.25  2003/03/13 13:59:57  dkr
+ * min_array_rep added
+ *
  * Revision 3.24  2003/03/09 19:15:50  dkr
  * TRACE_AA added
  *
@@ -427,5 +430,12 @@ extern deps *dependencies;
 extern int indent;
 
 extern int basetype_size[];
+
+extern int min_array_rep;
+
+#define MIN_ARRAY_REP_SCL_AKS 0x0001
+#define MIN_ARRAY_REP_SCL_AKD 0x0002
+#define MIN_ARRAY_REP_SCL_AUD 0x0004
+#define MIN_ARRAY_REP_AUD 0x0008
 
 #endif /* _sac_globals_h_ */

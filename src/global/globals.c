@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.31  2003/03/13 13:59:51  dkr
+ * min_array_rep added
+ *
  * Revision 3.30  2003/03/09 17:13:54  ktr
  * added basic support for BLIR.
  *
@@ -732,3 +735,9 @@ int indent = 0;
 int basetype_size[] = {
 #include "type_info.mac"
 };
+
+int min_array_rep = MIN_ARRAY_REP_SCL_AKS;
+/*
+ * This global variable can be used to restrict the set of
+ * array representations used by the backend
+ */
