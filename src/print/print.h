@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.11  1995/06/02 16:53:33  sbs
+ * Revision 1.12  1995/06/06 14:04:15  cg
+ * PrintConstdef and PrintObjdef added.
+ *
+ * Revision 1.11  1995/06/02  16:53:33  sbs
  * PrintVectInfo inser5ed.
  *
  * Revision 1.10  1995/03/29  12:01:34  hw
@@ -55,6 +58,8 @@ extern node *PrintBlock (node *, node *);
 extern node *PrintLet (node *, node *);
 extern node *PrintFundef (node *, node *);
 extern node *PrintTypedef (node *, node *);
+extern node *PrintConstdef (node *, node *);
+extern node *PrintObjdef (node *, node *);
 extern node *PrintModul (node *, node *);
 extern node *PrintImplist (node *, node *);
 extern node *PrintPrf (node *, node *);
