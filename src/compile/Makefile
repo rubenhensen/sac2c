@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.6  1995/04/11 15:02:06  sbs
+# Revision 1.7  1995/04/19 13:15:55  sbs
+# make deps done
+#
+# Revision 1.6  1995/04/11  15:02:06  sbs
 # dbug.o added in BEtest-rule
 #
 # Revision 1.5  1995/04/05  15:55:01  asi
@@ -47,8 +50,9 @@ clean:
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
-compile.o: /usr/include/stdlib.h /usr/include/sys/stdtypes.h ../print/print.h
-compile.o: ../global/tree.h ../global/type_info.mac ../global/node_info.mac
+compile.o: /usr/include/stdlib.h /usr/include/sys/stdtypes.h
+compile.o: /usr/include/string.h ../print/print.h ../global/tree.h
+compile.o: ../global/type_info.mac ../global/node_info.mac
 compile.o: ../global/prf_node_info.mac ../../inc/dbug.h /usr/include/stdio.h
 compile.o: ../global/my_debug.h ../global/internal_lib.h
 compile.o: ../global/access_macros.h ../global/traverse.h compile.h
@@ -57,7 +61,8 @@ compile.o: ../global/free.h
 icm2c.o: /usr/include/malloc.h /usr/include/stdio.h ../print/print.h
 icm2c.o: ../global/tree.h ../global/type_info.mac ../global/node_info.mac
 icm2c.o: ../global/prf_node_info.mac ../../inc/dbug.h ../global/my_debug.h
-icm2c.o: icm_decl.c icm.data icm_args.c icm_comment.c
+icm2c.o: ../../inc/main.h icm_decl.c icm.data icm_args.c icm_comment.c
 icm_args.o: icm.data
 icm_comment.o: icm.data
 icm_decl.o: icm.data
+tutu.o: icm_comment.c icm.data
