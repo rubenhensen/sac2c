@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.8  1997/04/24 10:06:45  cg
+ * Revision 1.9  1997/05/14 08:11:24  sbs
+ * ANALYSE macros added
+ *
+ * Revision 1.8  1997/04/24  10:06:45  cg
  * non-icm macros moved from icm2c.h to libsac.h
  *
  * Revision 1.7  1996/04/02  13:52:47  cg
@@ -129,5 +132,118 @@ extern void *__SAC__Runtime_malloc (int size);
 #define MALLOC(size) malloc (size)
 
 #endif /* CHECK_MALLOC  */
+
+#ifdef ANALYSE_TIME
+
+#define ANALYSE_BEGIN_WITH(str)                                                          \
+    double *__AT_mem_act;                                                                \
+    __AT_clock_stop = __AT_CLOCK ();                                                     \
+    __AT_mem_act = __AT_act_timer;                                                       \
+    *__AT_act_timer += (__AT_clock_stop - __AT_clock_start);                             \
+    __AT_act_timer = &__AT_with_##str##_timer[__AT_act_funno];                           \
+    __AT_clock_start = __AT_CLOCK ()
+
+#define ANALYSE_END_WITH(str)                                                            \
+    __AT_clock_stop = __AT_CLOCK ();                                                     \
+    __AT_with_##str##_timer[__AT_act_funno] += (__AT_clock_stop - __AT_clock_start);     \
+    __AT_act_timer = __AT_mem_act;                                                       \
+    __AT_clock_start = __AT_CLOCK ()
+
+#define ANALYSE_BEGIN_UDF(funno)                                                         \
+    {                                                                                    \
+        double *__AT_mem_act;                                                            \
+        int __AT_mem_funno;                                                              \
+        __AT_clock_stop = __AT_CLOCK ();                                                 \
+        __AT_mem_act = __AT_act_timer;                                                   \
+        __AT_mem_funno = __AT_act_funno;                                                 \
+        *__AT_act_timer += (__AT_clock_stop - __AT_clock_start);                         \
+        __AT_act_funno = funno;                                                          \
+        __AT_act_timer = &__AT_fun_timer[funno];                                         \
+        __AT_clock_start = __AT_CLOCK ()
+
+#define ANALYSE_END_UDF(funno)                                                           \
+    __AT_clock_stop = __AT_CLOCK ();                                                     \
+    __AT_fun_timer[funno] += (__AT_clock_stop - __AT_clock_start);                       \
+    __AT_act_timer = __AT_mem_act;                                                       \
+    __AT_act_funno = __AT_mem_funno;                                                     \
+    __AT_clock_start = __AT_CLOCK ();                                                    \
+    }
+
+#else /* ANALYSE_TIME */
+
+#define ANALYSE_BEGIN_WITH(str)
+#define ANALYSE_END_WITH(str)
+#define ANALYSE_BEGIN_UDF(funno)
+#define ANALYSE_END_UDF(funno)
+
+#endif /* ANALYSE_TIME */
+
+#ifdef ANALYSE_TIME
+
+int __AT_maxfun;
+clock_t __AT_clock_start;
+clock_t __AT_clock_stop;
+double *__AT_act_timer;
+int __AT_act_funno;
+struct tms __AT_rusage;
+double __AT_fun_timer[50];
+double __AT_with_genarray_timer[50];
+double __AT_with_modarray_timer[50];
+double __AT_with_fold_timer[50];
+
+#define __AT_CLOCK() (times (&__AT_rusage), __AT_rusage.tms_utime)
+#define __AT_CLOCK_FACTOR 60
+
+#define ANALYSE_SETUP(maxfun)                                                            \
+    __AT_act_timer = &__AT_fun_timer[0];                                                 \
+    __AT_act_funno = 0;                                                                  \
+    __AT_maxfun = maxfun;                                                                \
+    __AT_clock_start = __AT_CLOCK ()
+
+#define AT_PRINT_HEADER(str, fun)                                                        \
+    __SAC__Runtime_Print ("****************************************\n");                 \
+    __SAC__Runtime_Print ("*** %-28s %-3d ***\n", str ":", fun);                         \
+    __SAC__Runtime_Print ("****************************************\n")
+
+#define AT_PRINT_TIME(text, var) __SAC__Runtime_Print ("%-20s: %10.3f sec\n", text, var)
+
+#define AT_PRINT_PERCENTAGE(text, var)                                                   \
+    __SAC__Runtime_Print ("%-20s:    %7.3f %%\n", text, var)
+
+#define AT_PRINT_SEPERATOR                                                               \
+    __SAC__Runtime_Print ("----------------------------------------\n")
+
+#define ANALYSE_PRINT()                                                                  \
+    {                                                                                    \
+        int i;                                                                           \
+        double with_total, fun_total;                                                    \
+        for (i = 0; i < __AT_maxfun; i++) {                                              \
+            __AT_fun_timer[i] /= __AT_CLOCK_FACTOR;                                      \
+            __AT_with_genarray_timer[i] /= __AT_CLOCK_FACTOR;                            \
+            __AT_with_modarray_timer[i] /= __AT_CLOCK_FACTOR;                            \
+            __AT_with_fold_timer[i] /= __AT_CLOCK_FACTOR;                                \
+            with_total = __AT_with_genarray_timer[i] + __AT_with_modarray_timer[i]       \
+                         + __AT_with_fold_timer[i];                                      \
+            fun_total = with_total + __AT_fun_timer[i];                                  \
+            AT_PRINT_HEADER ("time analysis", i);                                        \
+            AT_PRINT_TIME ("with-loop-genarray", __AT_with_genarray_timer[i]);           \
+            AT_PRINT_TIME ("with-loop-modarray", __AT_with_modarray_timer[i]);           \
+            AT_PRINT_TIME ("with-loop-fold", __AT_with_fold_timer[i]);                   \
+            AT_PRINT_SEPERATOR;                                                          \
+            AT_PRINT_TIME ("with-loop-total", with_total);                               \
+            AT_PRINT_TIME ("non-with-loop", __AT_fun_timer[i]);                          \
+            AT_PRINT_SEPERATOR;                                                          \
+            AT_PRINT_TIME ("runtime-total", fun_total);                                  \
+            AT_PRINT_PERCENTAGE ("percentage non-with",                                  \
+                                 (__AT_fun_timer[i] / fun_total) * 100);                 \
+        }                                                                                \
+    }
+
+#else /* ANALYSE_TIME */
+
+#define ANALYSE_SETUP(maxfun)
+#define ANALYSE_PRINT()
+
+#endif /* ANALYSE_TIME */
 
 #endif /* _sac_libsac_h */
