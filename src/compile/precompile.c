@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.11  1996/03/05 15:32:04  cg
+ * Revision 1.12  1997/04/25 09:37:40  sbs
+ * DBUG_ASSERT in PRECfundef adjusted (no varargs)
+ *
+ * Revision 1.11  1996/03/05  15:32:04  cg
  * bug fixed in handling of functions with variable argument list
  *
  * Revision 1.10  1996/01/26  15:33:01  cg
@@ -469,9 +472,7 @@ PRECfundef (node *arg_node, node *arg_info)
     if (FUNDEF_BODY (arg_node) != NULL) {
         DBUG_ASSERT ((FUNDEF_RETURN (arg_node) != NULL)
                        && (NODE_TYPE (FUNDEF_RETURN (arg_node)) == N_return),
-                     ("N_fundef node has no reference to N_return node "
-                      "(function %s)",
-                      FUNDEF_NAME (arg_node)));
+                     ("N_fundef node has no reference to N_return node "));
 
         /*
          * The reference checked above is actually not needed by the
