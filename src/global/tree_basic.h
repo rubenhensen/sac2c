@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.17  1995/11/16 19:40:45  cg
+ * Revision 1.18  1995/12/01 17:09:20  cg
+ * added new node type N_pragma
+ * removed macro FUNDEF_ALIAS
+ *
+ * Revision 1.17  1995/11/16  19:40:45  cg
  * Macros for accessing Masks modified,
  * old style macros for masks moved to tree_compound.h
  *
@@ -135,8 +139,8 @@ The following compilation steps are used:
  - rm-void-fun
  - optimize
  - psi-optimize
- - tidy-up
  - refcount
+ - precompile
  - compile
 
 In general, the implementation section consists of the declaration of
@@ -241,6 +245,7 @@ extern types *MakeType (simpletype basetype, int dim, shpseg *shpseg, char *name
 /*
  *  ATTRIB: ST_local      :  local variable or function parameter
  *          ST_global     :  reference to global object
+ *
  *  STATUS: ST_regular    :  from original source code
  *          ST_artificial :  added by obj-handling
  */
@@ -345,6 +350,12 @@ extern nodelist *MakeNodelist (node *node, statustype status, nodelist *next);
  ***    node*      STORE_IMPORTS (O) (N_implist)          (import -> )
  ***                                                      ( -> checkdec !!)
  ***/
+
+/*
+ *  The temporary attributes DECL and STORE_IMPORTS are mapped
+ *  to the same real node because they are never used in the same
+ *  phase of compilation.
+ */
 
 extern node *MakeModul (char *name, file_type filetype, node *imports, node *types,
                         node *objs, node *funs);
@@ -490,14 +501,15 @@ extern node *MakeExplist (node *itypes, node *etypes, node *objs, node *funs);
  ***  permanent attributes:
  ***
  ***    char*       NAME
- ***    char*       MOD   (O)
+ ***    char*       MOD     (O)
  ***    types*      TYPE
  ***    statustype  ATTRIB
  ***    statustype  STATUS
+ ***    node*       PRAGMA  (O)
  ***
  ***  temporary attributes:
  ***
- ***    types*      IMPL  (O)               (import -> )
+ ***    types*      IMPL         (O)        (import -> )
  ***                                        ( -> writesib !!)
  ***    node*       TYPEDEC_DEF  (O)        (checkdec -> writesib !!)
  ***/
@@ -521,6 +533,7 @@ extern node *MakeTypedef (char *name, char *mod, types *type, statustype attrib,
 #define TYPEDEF_STATUS(n) (n->info.types->status)
 #define TYPEDEF_IMPL(n) (n->info.types->next)
 #define TYPEDEF_NEXT(n) (n->node[0])
+#define TYPEDEF_PRAGMA(n) (n->node[2])
 
 #define TYPEDEC_DEF(n) (n->node[1])
 
@@ -537,14 +550,18 @@ extern node *MakeTypedef (char *name, char *mod, types *type, statustype attrib,
  ***  permanent attributes:
  ***
  ***    char*       NAME
- ***    char*       MOD   (O)
+ ***    char*       MOD     (O)
  ***    types*      TYPE
  ***    statustype  STATUS
+ ***    node*       PRAGMA  (O)  (N_pragma)
  ***
  ***  temporary attributes:
  ***
- ***    char*       VARNAME    (typecheck -> obj-handling -> )
- ***    node*       ARG   (O)  (obj-handling !!)
+ ***    char*       VARNAME      (typecheck -> obj-handling ->
+ ***                             ( -> precompile -> compile -> )
+ ***    node*       ARG       (O)  (obj-handling !!)
+ ***    node*       INITFUN   (O)  (objinit -> writesib -> precompile -> )
+ ***    node*       INIT      (O)  (precompile !!)
  ***/
 
 /*
@@ -557,6 +574,18 @@ extern node *MakeTypedef (char *name, char *mod, types *type, statustype attrib,
  *  ARG is a pointer to the additional argument which is added to a function's
  *  parameter list for this global object. ARG changes while traversing
  *  the functions !!
+ *
+ *  INITFUN is a pointer to the init function. This is used to infer the
+ *  objects which are implicitly needed by this object.
+ *
+ *  NEEDOBJS is a nodelist of objects needed by this object.
+ *
+ *  INITFUN and NEEDOBJS are mapped to the same real son node, because
+ *  they are used for the same purpose, INITFUN for object definitions
+ *  and NEEDOBJS for imported objects (object declarations).
+ *
+ *  INIT is a pointer to an N_let node containing an application of the
+ *  init function (SAC objects only).
  */
 
 extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *next);
@@ -569,6 +598,10 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
 #define OBJDEF_STATUS(n) (n->info.types->status)
 #define OBJDEF_VARNAME(n) ((char *)(n->node[2]))
 #define OBJDEF_ARG(n) (n->node[3])
+#define OBJDEF_PRAGMA(n) (n->node[4])
+#define OBJDEF_INITFUN(n) (n->node[5])
+#define OBJDEF_NEEDOBJS(n) ((nodelist *)n->node[5])
+#define OBJDEF_INIT(n) (n->node[3])
 
 /*--------------------------------------------------------------------------*/
 
@@ -585,10 +618,12 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  ***
  ***    char*       NAME
  ***    char*       MOD      (O)
- ***    char*       ALIAS    (O)
+ ***    node*       PRAGMA   (O)  (N_info)
  ***    types*      TYPES
  ***    statustype  STATUS
+ ***    statustype  ATTRIB
  ***    int         INLINE
+ ***    node*       PRAGMA   (O)  (N_pragma)
  ***
  ***  temporary attributes:
  ***
@@ -601,25 +636,38 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  ***    node*      ICM           (N_icm)     (compile -> )
  ***    int        VARNO                     (optimize -> )
  ***    long*      MASK[x]                   (optimize -> )
+ ***    node*      EXTERN        (N_fundef)  (precompile -> compile -> )
  ***
  ***    node*      FUNDEC_DEF (O) (N_fundef) (checkdec -> writesib !!)
  ***/
 
 /*
- *  The STATUS indicates whether a function is defined or imported.
- *  Possible values: ST_regular | ST_imported
+ *  STATUS: ST_regular      function defined in this module
+ *          ST_objinitfun   generic function for object initialization
+ *          ST_imported     imported function (maybe declaration only)
+ *
+ *  ATTRIB: ST_regular      dimension-dependent or non-array function
+ *          ST_independent  dimension-independent array function
+ *          ST_generic      generic function derived from dimension-
+ *                          independent array function
+ *
+ *  LINKINFO: pointer to N_info node with additional linker information
+ *            derived from pragmas in declaration file.
+ *
+ *  EXTERN: pointer to the respective extern declaration of a function
+ *          definition
  *
  *  The FUNDEC_DEF slot is only used when a fundef node is used as a
  *  representation of a function declaration. It then points to the
  *  fundef node which contains the respective definition.
  */
 
-extern node *MakeFundef (char *name, char *mod, char *alias, types *types, node *args,
-                         node *body, node *next);
+extern node *MakeFundef (char *name, char *mod, types *types, node *args, node *body,
+                         node *next);
 
 #define FUNDEF_NAME(n) (n->info.types->id)
 #define FUNDEF_MOD(n) (n->info.types->id_mod)
-#define FUNDEF_ALIAS(n) ((char *)n->node[5])
+#define FUNDEF_PRAGMA(n) (n->node[5])
 #define FUNDEF_TYPES(n) (n->info.types)
 #define FUNDEF_BODY(n) (n->node[0])
 #define FUNDEF_ARGS(n) (n->node[2])
@@ -630,7 +678,9 @@ extern node *MakeFundef (char *name, char *mod, char *alias, types *types, node 
 #define FUNDEF_VARNO(n) (n->varno)
 #define FUNDEF_MASK(n, x) (n->mask[x])
 #define FUNDEF_STATUS(n) (n->info.types->status)
+#define FUNDEF_ATTRIB(n) (n->info.types->attrib)
 #define FUNDEF_INLINE(n) (n->flag)
+#define FUNDEF_EXTERN(n) (n->node[3])
 
 #define FUNDEC_DEF(n) (n->node[3])
 
@@ -653,7 +703,24 @@ extern node *MakeFundef (char *name, char *mod, char *alias, types *types, node 
  ***  temporary attributes:
  ***
  ***    int         VARNO                     (optimize -> )
+ ***    char*       TYPESTRING (O)            (precompile -> )
+ ***    node*       OBJDEF     (O)            (obj-handling ->
+ ***                                          ( -> precompile !!)
  ***/
+
+/*
+ *  STATUS: ST_regular     original argument
+ *          ST_artificial  additional argument added by object-handler
+ *
+ *  ATTRIB: ST_regular     non-unique parameter
+ *          ST_unique      unique parameter
+ *          ST_reference   (unique) reference parameter
+ *          ST_readonly_reference (unique) reference parameter which remains
+ *                                         unmodified
+ *
+ *  TYPESTRING contains the argument's type as a string, used for renaming
+ *             of functions.
+ */
 
 extern node *MakeArg (char *name, types *type, statustype status, statustype attrib,
                       node *next);
@@ -664,6 +731,8 @@ extern node *MakeArg (char *name, types *type, statustype status, statustype att
 #define ARG_ATTRIB(n) (n->info.types->attrib)
 #define ARG_NEXT(n) (n->node[0])
 #define ARG_VARNO(n) (n->varno)
+#define ARG_TYPESTRING(n) ((char *)n->node[1])
+#define ARG_OBJDEF(n) (n->node[2])
 
 /*--------------------------------------------------------------------------*/
 
@@ -805,12 +874,22 @@ extern node *MakeCast (node *expr, types *type);
  ***
  ***  sons:
  ***
- ***    node*  EXPRS   (N_exprs)
+ ***    node*  EXPRS      (N_exprs)  (O)
+ ***
+ ***  temporary attributes:
+ ***
+ ***    node*  REFERENCE  (N_exprs)  (O)  (precompile -> compile !!)
  ***/
+
+/*
+ *  REFERENCE: List of artificial return values which correspond to
+ *             reference parameters.
+ */
 
 extern node *MakeReturn (node *exprs);
 
 #define RETURN_EXPRS(n) (n->node[0])
+#define RETURN_REFERENCE(n) (n->node[1])
 
 /*--------------------------------------------------------------------------*/
 
@@ -1121,6 +1200,20 @@ extern node *MakeVinfo (useflag flag, shapes *shp, node *next);
  ***    int    REFCNT                (refcount -> compile -> )
  ***/
 
+/*
+ *  STATUS:  ST_regular     original argument
+ *                          in a function application or return-statement
+ *           ST_artificial  additional argument added by object-handler
+ *                          in a function application or return-statement
+ *
+ *  ATTRIB:  ST_regular     ordinary argument
+ *                          in a function application or return-statement
+ *           ST_reference   argument in a function application which
+ *                          is passed as a reference parameter or
+ *                          additional argument in a return-statement
+ *                          which belongs to a reference parameter
+ */
+
 extern node *MakeId (char *name, char *mod, statustype status);
 
 #define ID_NAME(n) (n->info.ids->id)
@@ -1306,6 +1399,47 @@ extern node *MakeIcm (char *name, node *args, node *next);
 #define ICM_NAME(n) (n->info.id)
 #define ICM_ARGS(n) (n->node[0])
 #define ICM_NEXT(n) (n->node[1])
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_pragma :
+ ***
+ ***  permanent attributes:
+ ***
+ ***    char*  LINKNAME     (O)
+ ***    nums*  LINKSIGN     (O)
+ ***    nums*  REFCOUNTING  (O)
+ ***    nums*  READONLY     (O)
+ ***    ids*   EFFECT       (O)
+ ***    ids*   TOUCH        (O)
+ ***    char*  COPYFUN      (O)
+ ***    char*  FREEFUN      (O)
+ ***    ids*   NEEDTYPES    (O)
+ ***    node*  NEEDFUNS     (O)
+ ***
+ ***/
+
+/*
+ *  Not all pragmas may occur at the same time:
+ *  A typedef pragma may contain COPYFUN and FREEFUN.
+ *  An objdef pragma may contain LINKNAME only.
+ *  And a fundef pragma may contain all pragmas except COPYFUN and FREEFUN,
+ *  but TYPES and FUNS are only for internal use in SIBS.
+ */
+
+extern node *MakePragma ();
+
+#define PRAGMA_LINKNAME(n) (n->info.id)
+#define PRAGMA_LINKSIGN(n) ((nums *)n->mask[0])
+#define PRAGMA_REFCOUNTING(n) ((nums *)n->mask[1])
+#define PRAGMA_READONLY(n) ((nums *)n->mask[2])
+#define PRAGMA_EFFECT(n) ((ids *)n->mask[3])
+#define PRAGMA_TOUCH(n) ((ids *)n->mask[4])
+#define PRAGMA_COPYFUN(n) ((char *)n->mask[5])
+#define PRAGMA_FREEFUN(n) ((char *)n->mask[6])
+#define PRAGMA_NEEDTYPES(n) ((ids *)n->node[1])
+#define PRAGMA_NEEDFUNS(n) (n->node[0])
 
 /*--------------------------------------------------------------------------*/
 

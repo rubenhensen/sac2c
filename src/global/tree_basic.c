@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.8  1995/11/16 19:40:20  cg
+ * Revision 1.9  1995/12/01 17:09:20  cg
+ * added new node type N_pragma
+ * removed macro FUNDEF_ALIAS
+ *
+ * Revision 1.8  1995/11/16  19:40:20  cg
  * new function MakeStr for generating N_str node
  *
  * Revision 1.7  1995/11/02  13:13:31  cg
@@ -74,9 +78,10 @@ char *prf_name_str[] = {
         v->flag = 0;                                                                     \
         v->varno = 0;                                                                    \
         v->lineno = linenum;                                                             \
-        /*  v->mask=NULL; */                                                             \
         for (i = 0; i < MAX_SONS; i++)                                                   \
             v->node[i] = NULL;                                                           \
+        for (i = 0; i < MAX_MASK; i++)                                                   \
+            v->mask[i] = NULL;                                                           \
     }
 
 /*--------------------------------------------------------------------------*/
@@ -393,8 +398,7 @@ MakeObjdef (char *name, char *mod, types *type, node *expr, node *next)
 }
 
 node *
-MakeFundef (char *name, char *mod, char *alias, types *types, node *args, node *body,
-            node *next)
+MakeFundef (char *name, char *mod, types *types, node *args, node *body, node *next)
 {
     node *tmp;
     DBUG_ENTER ("MakeFundef");
@@ -406,7 +410,6 @@ MakeFundef (char *name, char *mod, char *alias, types *types, node *args, node *
     FUNDEF_TYPES (tmp) = types;
     FUNDEF_NAME (tmp) = name;
     FUNDEF_MOD (tmp) = mod;
-    FUNDEF_ALIAS (tmp) = alias;
     FUNDEF_ARGS (tmp) = args;
     FUNDEF_BODY (tmp) = body;
     FUNDEF_NEXT (tmp) = next;
@@ -1046,6 +1049,22 @@ MakeIcm (char *name, node *args, node *next)
     ICM_NAME (tmp) = name;
     ICM_ARGS (tmp) = args;
     ICM_NEXT (tmp) = next;
+
+    DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, /**/
+                             NODE_LINE (tmp), mdb_nodetype[NODE_TYPE (tmp)], tmp));
+
+    DBUG_RETURN (tmp);
+}
+
+node *
+MakePragma ()
+{
+    node *tmp;
+    DBUG_ENTER ("MakePragma");
+    INIT_NODE (tmp);
+
+    NODE_TYPE (tmp) = N_pragma;
+    NODE_NNODE (tmp) = 0;
 
     DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, /**/
                              NODE_LINE (tmp), mdb_nodetype[NODE_TYPE (tmp)], tmp));
