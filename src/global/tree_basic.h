@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.79  1998/03/03 19:16:05  dkr
+ * changed something in N_WLgrid
+ *
  * Revision 1.78  1998/03/03 17:40:49  dkr
  * changed MakeWLgrid(), MakeWLindex()
  *
@@ -2289,8 +2292,7 @@ extern node *MakeWLindex (int bound1, int bound2, int step, node *grid, node *ne
  ***    node*    NEXT     (0)     (N_WLgrid)
  ***
  ***  remark:
- ***    it is impossible (and makes no sense anyway) to use the nodes NEXTDIM and CODE
- *simultaneous !!
+ ***    it makes no sense to use the nodes NEXTDIM and CODE simultaneous !
  ***
  ***  temporary attributes:
  ***
@@ -2303,7 +2305,7 @@ extern node *MakeWLgrid (int offset, int width, node *nextdim, node *code, node 
 #define WLGRID_OFFSET(n) (n->refcnt)
 #define WLGRID_WIDTH(n) (n->flag)
 #define WLGRID_NEXTDIM(n) (n->node[0])
-#define WLGRID_CODE(n) (n->node[0])
-#define WLGRID_NEXT(n) (n->node[1])
+#define WLGRID_CODE(n) (n->node[1])
+#define WLGRID_NEXT(n) (n->node[2])
 
 #endif /* _sac_tree_basic_h */
