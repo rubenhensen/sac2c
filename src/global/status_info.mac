@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2001/03/15 12:33:32  dkr
+ * some comments modified
+ *
  * Revision 3.4  2001/03/15 11:59:01  dkr
  * superfluous ST_spmd_inout removed
  * ST_inout removed: ST_reference can be used instead
@@ -74,7 +77,7 @@ SELECT (ST_undef, "ST_undef",
           /* deps: own declaration of module implementation                  */),
 
   SELECT (ST_regular, "ST_regular",
-          /* typedef, objdef, vardec, type, arg, id, fundef: nothing special */),
+          /* typedef, objdef, fundef, vardec, type, arg, id, ids: default    */),
 
   SELECT (ST_imported_class, "ST_imported_class",
           /* typedef, objdef, fundef: imported from other class              */),
@@ -95,7 +98,7 @@ SELECT (ST_undef, "ST_undef",
           /* objdef: objects from called function are not yet analysed       */),
 
   SELECT (ST_artificial, "ST_artificial",
-          /* vardec, type, arg, id: inserted during signature expansion (unique) */),
+          /* vardec, type, arg, id, ids: inserted during signature expansion (unique) */),
 
   SELECT (ST_used, "ST_used",
           /* vardec: is used in body                                         */),
@@ -113,7 +116,7 @@ SELECT (ST_undef, "ST_undef",
           /* arg, id: eliminated (unique) reference parameter                */),
 
   SELECT (ST_global, "ST_global",
-          /* id: identifier is global object                                 */),
+          /* id, ids: reference of a global object                           */),
 
   SELECT (ST_shp_indep, "ST_shp_indep",
           /* fundef: shape-independent but dimension-dependent               */),
