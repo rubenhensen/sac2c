@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.195  1998/07/16 15:27:02  dkr
+ * WL..._INNERSTEP, WLSEG_MAXHOMDIM, WLSEGVAR_MAXHOMDIM inserted
+ *
  * Revision 1.194  1998/07/14 12:58:47  srs
  * added remarks to N_id, N_vardec and N_arg
  *
@@ -35,9 +38,6 @@
  *  information about refcounted variables in the context of loops,
  * conditionals and the old with-loop are now stored in ids-chains
  *  instead of N_exprs lists.
- *
- * Revision 1.184  1998/06/03 15:39:00  cg
- * *** empty log message ***
  *
  * Revision 1.183  1998/06/03 14:29:04  cg
  * Attribute WITH_USEDVARS renamed to WITH_USEVARS analogously to the
@@ -2997,6 +2997,7 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int 
  ***    int*       IDX_MAX                           (wltransform -> compile )
  ***
  ***    SCHsched_t SCHEDULING  (O)                   (wltransform -> compile )
+ ***    int        MAXHOMDIM (last homog. dimension) (wltransform -> compile )
  ***
  ***/
 
@@ -3016,6 +3017,7 @@ extern node *MakeWLseg (int dims, node *contents, node *next);
 #define WLSEG_IDX_MAX(n) (*((int **)(&(n->node[3]))))
 
 #define WLSEG_SCHEDULING(n) ((SCHsched_t) (n->node[4]))
+#define WLSEG_MAXHOMDIM(n) (n->varno)
 
 /*--------------------------------------------------------------------------*/
 
@@ -3068,8 +3070,7 @@ extern node *MakeWLseg (int dims, node *contents, node *next);
  ***
  ***  temporary attributes:
  ***
- ***    ---
- ***
+ ***    int      INNERSTEP                 (wltransform -> compile )
  ***
  ***  remarks:
  ***
@@ -3088,6 +3089,8 @@ extern node *MakeWLblock (int level, int dim, int bound1, int bound2, int step,
 #define WLBLOCK_NEXTDIM(n) (WLNODE_NEXTDIM (n))
 #define WLBLOCK_CONTENTS(n) (n->node[2])
 #define WLBLOCK_NEXT(n) (WLNODE_NEXT (n))
+
+#define WLBLOCK_INNERSTEP(n) (n->info.prf_dec.tag)
 
 /*--------------------------------------------------------------------------*/
 
@@ -3110,8 +3113,7 @@ extern node *MakeWLblock (int level, int dim, int bound1, int bound2, int step,
  ***
  ***  temporary attributes:
  ***
- ***    ---
- ***
+ ***    int      INNERSTEP                 (wltransform -> compile )
  ***
  ***  remarks:
  ***
@@ -3131,6 +3133,8 @@ extern node *MakeWLublock (int level, int dim, int bound1, int bound2, int step,
 #define WLUBLOCK_CONTENTS(n) (WLBLOCK_CONTENTS (n))
 #define WLUBLOCK_NEXT(n) (WLBLOCK_NEXT (n))
 
+#define WLUBLOCK_INNERSTEP(n) (n->info.prf_dec.tag)
+
 /*--------------------------------------------------------------------------*/
 
 /***
@@ -3148,13 +3152,14 @@ extern node *MakeWLublock (int level, int dim, int bound1, int bound2, int step,
  ***    int      BOUND1
  ***    int      BOUND2
  ***    int      STEP
- ***    int      UNROLLING                        (unrolling wanted?)
+ ***    int      UNROLLING    (unrolling wanted?)
  ***
  ***  temporary attributes:
  ***
- ***    node*    PART            (wltransform ! )  (part this stride is ...
- ***                                                ... generated from)
- ***    int      MODIFIED        (wltransform ! )
+ ***    node*    PART         (part this stride is generated from)
+ ***                                          (wltransform ! )
+ ***    int      MODIFIED                     (wltransform ! )
+ ***    int      INNERSTEP                    (wltransform -> compile )
  ***
  ***/
 
@@ -3172,6 +3177,7 @@ extern node *MakeWLstride (int level, int dim, int bound1, int bound2, int step,
 
 #define WLSTRIDE_PART(n) (n->node[5])
 #define WLSTRIDE_MODIFIED(n) (n->info.prf_dec.tc)
+#define WLSTRIDE_INNERSTEP(n) ((int)(n->node[4]))
 
 /*--------------------------------------------------------------------------*/
 
@@ -3226,14 +3232,16 @@ extern node *MakeWLgrid (int level, int dim, int bound1, int bound2, int unrolli
  ***
  ***  sons:
  ***
+ ***    ???
  ***
  ***  permanent attributes:
  ***
+ ***    ???
  ***
  ***  temporary attributes:
  ***
- ***    SCHsched_t   SCHEDULING    (O)    (wltransform -> compile)
- ***
+ ***    SCHsched_t SCHEDULING    (O)                 (wltransform -> compile )
+ ***    int        MAXHOMDIM (last homog. dimension) (wltransform -> compile )
  ***
  ***  remarks:
  ***
@@ -3241,6 +3249,7 @@ extern node *MakeWLgrid (int level, int dim, int bound1, int bound2, int unrolli
  ***/
 
 #define WLSEGVAR_SCHEDULING(n) ((SCHsched_t)n->node[5])
+#define WLSEG_MAXHOMDIM(n) (n->varno)
 
 /*--------------------------------------------------------------------------*/
 
@@ -3259,6 +3268,10 @@ extern node *MakeWLgrid (int level, int dim, int bound1, int bound2, int unrolli
  ***
  ***    int      DIM
  ***
+ ***  temporary attributes:
+ ***
+ ***    int      INNERSTEP                 (wltransform -> compile )
+ ***
  ***/
 
 extern node *MakeWLstriVar (int dim, node *bound1, node *bound2, node *step,
@@ -3270,6 +3283,8 @@ extern node *MakeWLstriVar (int dim, node *bound1, node *bound2, node *step,
 #define WLSTRIVAR_STEP(n) (n->node[4])
 #define WLSTRIVAR_CONTENTS(n) (n->node[0])
 #define WLSTRIVAR_NEXT(n) (n->node[1])
+
+#define WLSTRIVAR_INNERSTEP(n) (n->flag)
 
 /*--------------------------------------------------------------------------*/
 
@@ -3290,7 +3305,7 @@ extern node *MakeWLstriVar (int dim, node *bound1, node *bound2, node *step,
  ***
  ***  temporary attributes:
  ***
- ***    ---
+ ***    int      INNERSTEP                 (wltransform -> compile )
  ***
  ***  remarks:
  ***
@@ -3310,5 +3325,7 @@ extern node *MakeWLgridVar (int dim, node *bound1, node *bound2, node *nextdim,
 #define WLGRIDVAR_NEXTDIM(n) (n->node[0])
 #define WLGRIDVAR_NEXT(n) (n->node[1])
 #define WLGRIDVAR_CODE(n) (n->node[4])
+
+#define WLGRIDVAR_INNERSTEP(n) (n->flag)
 
 #endif /* _sac_tree_basic_h */
