@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.27  2001/02/06 18:21:39  dkr
+ * fixed a bug in Parts2Strides()
+ *
  * Revision 3.26  2001/02/06 01:48:34  dkr
  * NOOP nodes added
  *
@@ -2257,8 +2260,9 @@ Parts2Strides (node *parts, int dims, shpseg *shape)
                 /*
                  * width is not constant
                  */
-                new_grid = MakeWLgridVar (0, dim, 0, GetCurrentComponent_Node (width),
-                                          NULL, NULL, NULL);
+                new_grid
+                  = MakeWLgridVar (0, dim, MakeNum (0), GetCurrentComponent_Node (width),
+                                   NULL, NULL, NULL);
             }
 
             if ((NODE_TYPE (bound1) == N_exprs) && (NODE_TYPE (bound2) == N_exprs)
