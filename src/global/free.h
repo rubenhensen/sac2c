@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.7  1995/12/20 08:14:25  cg
+ * Revision 1.8  1995/12/29 10:24:18  cg
+ * inserted call to malloc_verify into macro FREE, added FreeInfo
+ *
+ * Revision 1.7  1995/12/20  08:14:25  cg
  * new function FreeChar for new N_char node
  *
  * Revision 1.6  1995/12/18  16:14:08  cg
@@ -39,13 +42,15 @@
 
 #include "dbug.h"
 #include "my_debug.h"
+#include "malloc.h"
 
 #ifndef NOFREE
 
 #define FREE(address)                                                                    \
     if ((address) != NULL) {                                                             \
-        DBUG_PRINT ("MEM", ("Free memory at adress: " P_FORMAT, (address)));             \
+        DBUG_PRINT ("FREEMEM", ("Free memory at adress: " P_FORMAT, (address)));         \
         free ((address));                                                                \
+        DBUG_EXECUTE ("MEMVERIFY", malloc_verify (););                                   \
         address = NULL;                                                                  \
     }
 
@@ -113,6 +118,7 @@ extern node *FreeIcm (node *arg_node, node *arg_info);
 extern node *FreeDec (node *arg_node, node *arg_info);
 extern node *FreeInc (node *arg_node, node *arg_info);
 extern node *FreePragma (node *arg_node, node *arg_info);
+extern node *FreeInfo (node *arg_node, node *arg_info);
 
 extern void FreePrf2 (node *arg_node, int arg_no);
 
