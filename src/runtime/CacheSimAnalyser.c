@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.6  1999/06/11 12:56:58  cg
+ * Analyser made compatible to substantial improvements in
+ * cache simulation library.
+ *
  * Revision 1.5  1999/06/10 09:51:20  cg
  * Added piped cache simulation on remote host machine.
  *
@@ -37,6 +41,8 @@ AnalyserSetup (int argc, char *argv[])
     tProfilingLevel profilinglevel = SAC_CS_none;
     int cs_global = 1;
     char *cshost = "";
+    char *csfile = "";
+    char *csdir = "";
 
     unsigned long int cachesize1 = 0;
     int cachelinesize1 = 1;
@@ -53,10 +59,11 @@ AnalyserSetup (int argc, char *argv[])
     int associativity3 = 1;
     tWritePolicy writepolicy3 = SAC_CS_default;
 
-    SAC_CS_CheckArguments (argc, argv, &profilinglevel, &cs_global, &cshost, &cachesize1,
-                           &cachelinesize1, &associativity1, &writepolicy1, &cachesize2,
-                           &cachelinesize2, &associativity2, &writepolicy2, &cachesize3,
-                           &cachelinesize3, &associativity3, &writepolicy3);
+    SAC_CS_CheckArguments (argc, argv, &profilinglevel, &cs_global, &cshost, &csfile,
+                           &csdir, &cachesize1, &cachelinesize1, &associativity1,
+                           &writepolicy1, &cachesize2, &cachelinesize2, &associativity2,
+                           &writepolicy2, &cachesize3, &cachelinesize3, &associativity3,
+                           &writepolicy3);
 
     /*
      * The CacheSimAnalyser must not get a profiling level
@@ -70,16 +77,23 @@ AnalyserSetup (int argc, char *argv[])
         profilinglevel = SAC_CS_advanced;
         break;
     case SAC_CS_file:
-        profilinglevel = SAC_CS_default;
+        SAC_RuntimeError ("Command line argument -cs f is illegal for external "
+                          "cache simulator");
         break;
     default:
         break;
     }
 
-    SAC_CS_Initialize (1, profilinglevel, cs_global, cshost, cachesize1, cachelinesize1,
-                       associativity1, writepolicy1, cachesize2, cachelinesize2,
-                       associativity2, writepolicy2, cachesize3, cachelinesize3,
-                       associativity3, writepolicy3);
+    fprintf (stderr,
+             "%s"
+             "Running external SAC cache simulation analyser:\n"
+             "  %s\n",
+             SAC_CS_separator, argv[0]);
+
+    SAC_CS_Initialize (1, profilinglevel, cs_global, cshost, csfile, csdir, cachesize1,
+                       cachelinesize1, associativity1, writepolicy1, cachesize2,
+                       cachelinesize2, associativity2, writepolicy2, cachesize3,
+                       cachelinesize3, associativity3, writepolicy3);
 
 } /* AnalyserSetup */
 
@@ -91,12 +105,6 @@ main (int argc, char *argv[])
     char op;
     FILE *in_stream = stdin;
     char tagbuffer[MAX_TAG_LENGTH];
-
-    fprintf (stderr,
-             "%s"
-             "Running external SAC cache simulation analyser:\n"
-             "  %s\n",
-             SAC_CS_separator, argv[0]);
 
     AnalyserSetup (argc, argv);
 
