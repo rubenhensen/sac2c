@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.93  2004/10/20 08:10:29  khf
+ * added rdepend_tab
+ *
  * Revision 3.92  2004/10/17 14:52:06  sah
  * added export traversal
  *
@@ -406,6 +409,7 @@
 #include "WithloopFusion.h"
 #include "detectdependencies.h"
 #include "tagdependencies.h"
+#include "resolvedependencies.h"
 #include "spmd_emm.h"
 #include "serialize_node.h"
 #include "serialize.h"
@@ -1926,7 +1930,7 @@ static funtab exp_tab_rec = {{
 #define NIFexp(it_exp) it_exp
 #include "node_info.mac"
 #else
-#define NIFunused_14(it_unused_14) it_unused_14
+#define NIFunused_15(it_unused_15) it_unused_15
 #include "node_info.mac"
 #endif /* NEW_AST */
                              },
@@ -1935,15 +1939,15 @@ static funtab exp_tab_rec = {{
 funtab *exp_tab = &exp_tab_rec;
 
 /*
- *  (134) unused_tab14
+ *  (134) rdepend_tab
  */
-static funtab unused_tab14_rec = {{
-#define NIFunused_14(it_unused_14) it_unused_14
+static funtab rdepend_tab_rec = {{
+#define NIFrdepend(it_rdepend) it_rdepend
 #include "node_info.mac"
-                                  },
-                                  NULL,
-                                  NULL};
-funtab *unused_tab14 = &unused_tab14_rec;
+                                 },
+                                 NULL,
+                                 NULL};
+funtab *rdepend_tab = &rdepend_tab_rec;
 
 /*
  *  (135) unused_tab15

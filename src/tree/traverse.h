@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.71  2004/10/20 08:10:29  khf
+ * added rdepend_tab
+ *
  * Revision 3.70  2004/10/17 14:52:06  sah
  * added export traversal
  *
@@ -457,7 +460,7 @@ extern funtab *emrco_tab;
 extern funtab *emfrc_tab;
 extern funtab *emaa_tab;
 extern funtab *exp_tab;
-extern funtab *unused_tab14;
+extern funtab *rdepend_tab;
 extern funtab *unused_tab15;
 extern funtab *unused_tab16;
 extern funtab *unused_tab17;
