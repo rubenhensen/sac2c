@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.105  2004/11/02 14:23:11  ktr
+ * Added emlr_tab, emlro_tab, emdr_tab
+ *
  * Revision 3.104  2004/10/28 17:27:06  sah
  * added prepareinline traversal
  *
@@ -460,6 +463,8 @@
 #include "interfaceanalysis.h"
 #include "staticreuse.h"
 #include "reuseelimination.h"
+#include "loopreuseopt.h"
+#include "datareuse.h"
 
 #include "traverse.h"
 
@@ -1086,26 +1091,26 @@ static funtab sel_tab_rec = {{
 funtab *sel_tab = &sel_tab_rec;
 
 /*
- *  (52) unused_tab44
+ *  (52) emlr_tab
  */
-static funtab unused_tab44_rec = {{
-#define NIFunused_44(it_unused_44) it_unused_44
+static funtab emlr_tab_rec = {{
+#define NIFemlr(it_emlr) it_emlr
 #include "node_info.mac"
-                                  },
-                                  NULL,
-                                  NULL};
-funtab *unused_tab44 = &unused_tab44_rec;
+                              },
+                              NULL,
+                              NULL};
+funtab *emlr_tab = &emlr_tab_rec;
 
 /*
- *  (53) unused_tab45
+ *  (53) emlro_tab
  */
-static funtab unused_tab45_rec = {{
-#define NIFunused_45(it_unused_45) it_unused_45
+static funtab emlro_tab_rec = {{
+#define NIFemlro(it_emlro) it_emlro
 #include "node_info.mac"
-                                  },
-                                  NULL,
-                                  NULL};
-funtab *unused_tab45 = &unused_tab45_rec;
+                               },
+                               NULL,
+                               NULL};
+funtab *emlro_tab = &emlro_tab_rec;
 
 /*
  *  (54) tsi_tab
@@ -1119,15 +1124,15 @@ static funtab tsi_tab_rec = {{
 funtab *tsi_tab = &tsi_tab_rec;
 
 /*
- *  (55) unused_tab46
+ *  (55) emdr_tab
  */
-static funtab unused_tab46_rec = {{
-#define NIFunused_46(it_unused_46) it_unused_46
+static funtab emdr_tab_rec = {{
+#define NIFemdr(it_emdr) it_emdr
 #include "node_info.mac"
-                                  },
-                                  NULL,
-                                  NULL};
-funtab *unused_tab46 = &unused_tab46_rec;
+                              },
+                              NULL,
+                              NULL};
+funtab *emdr_tab = &emdr_tab_rec;
 #ifndef NEW_AST
 /*
  *  (56) spmddn_tab

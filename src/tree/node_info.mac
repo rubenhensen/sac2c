@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.230  2004/11/02 14:23:11  ktr
+ * Added emlr_tab, emlro_tab, emdr_tab
+ *
  * Revision 3.229  2004/10/28 17:27:06  sah
  * added prepareinline traversal
  *
@@ -486,8 +489,8 @@
  *
  *   syncopt_tab     wltrans_tab     gsc_tab         reuse_tab
  *   patchwith_tab   sched_tab       conc_tab        opt_tab
- *   wlaa_tab        mmv_tab         sel_tab         unused_tab44
- *   unused_tab45    tsi_tab         unused_tab46    spmddn_tab
+ *   wlaa_tab        mmv_tab         sel_tab         emlr_tab
+ *   emlro_tab       tsi_tab         emdr_tab        spmddn_tab
  *   spmdpm_tab      emia_tab        ntc_tab         infdfms_tab
  *
  *   muth_tab        crwiw_tab       concel_tab      repfun_tab
@@ -727,18 +730,18 @@
 #ifndef NIFsel
 #define NIFsel(it_sel)
 #endif
-#ifndef NIFunused_44
-#define NIFunused_44(it_unused_44)
+#ifndef NIFemlr
+#define NIFemlr(it_emlr)
 #endif
 
-#ifndef NIFunused_45
-#define NIFunused_45(it_unused_45)
+#ifndef NIFemlro
+#define NIFemlro(it_emlro)
 #endif
 #ifndef NIFtsi
 #define NIFtsi(it_tsi)
 #endif
-#ifndef NIFunused_46
-#define NIFunused_46(it_unused_46)
+#ifndef NIFemdr
+#define NIFemdr(it_emdr)
 #endif
 #ifndef NIFspmddn
 #define NIFspmddn(it_spmddn)
@@ -1042,8 +1045,8 @@
   it_tcwl, it_spmdinit, it_ppi, it_spmdlift, it_syncinit,                                              \
                                                                                                        \
   it_syncopt, it_wltrans, it_gsc, it_reuse, it_patchwith, it_sched, it_conc, it_opt,                   \
-  it_wlaa, it_mmv, it_sel, it_unused_44, it_unused_45, it_tsi, it_unused_46, it_spmddn,                \
-  it_spmdpm, it_emia, it_ntc, it_infdfms,                                                              \
+  it_wlaa, it_mmv, it_sel, it_emlr, it_emlro, it_tsi, it_emdr, it_spmddn, it_spmdpm,                   \
+  it_emia, it_ntc, it_infdfms,                                                                         \
                                                                                                        \
   it_muth, it_crwiw, it_concel, it_repfun, it_fun2lac, it_ai, it_uss, it_unused_36,                    \
   it_l2f, it_unused_30, it_unused_35, it_unused_34, it_cudecls, it_unused_29,                          \
@@ -1081,14 +1084,13 @@
                   NIFspmdinit (it_spmdinit) NIFppi (it_ppi) NIFspmdlift (                              \
                     it_spmdlift) NIFsyncinit (it_syncinit)                                             \
                                                                                                        \
-                    NIFsyncopt (it_syncopt) NIFwltrans (it_wltrans) NIFgsc (                           \
-                      it_gsc) NIFreuse (it_reuse) NIFpatchwith (it_patchwith)                          \
-                      NIFsched (it_sched) NIFconc (it_conc) NIFopt (it_opt) NIFwlaa (                  \
-                        it_wlaa) NIFmmv (it_mmv) NIFsel (it_sel)                                       \
-                        NIFunused_44 (it_unused_44) NIFunused_45 (it_unused_45) NIFtsi (               \
-                          it_tsi) NIFunused_46 (it_unused_46) NIFspmddn (it_spmddn)                    \
-                          NIFspmdpm (it_spmdpm) NIFemia (it_emia) NIFntc (                             \
-                            it_ntc) NIFinfdfms (it_infdfms)                                            \
+                    NIFsyncopt (it_syncopt) NIFwltrans (it_wltrans) NIFgsc (it_gsc)                    \
+                      NIFreuse (it_reuse) NIFpatchwith (it_patchwith) NIFsched (                       \
+                        it_sched) NIFconc (it_conc) NIFopt (it_opt) NIFwlaa (it_wlaa)                  \
+                        NIFmmv (it_mmv) NIFsel (it_sel) NIFemlr (it_emlr) NIFemlro (                   \
+                          it_emlro) NIFtsi (it_tsi) NIFemdr (it_emdr)                                  \
+                          NIFspmddn (it_spmddn) NIFspmdpm (it_spmdpm) NIFemia (                        \
+                            it_emia) NIFntc (it_ntc) NIFinfdfms (it_infdfms)                           \
                                                                                                        \
                             NIFmuth (it_muth) NIFcrwiw (it_crwiw) NIFconcel (                          \
                               it_concel) NIFrepfun (it_repfun) NIFfun2lac (it_fun2lac)                 \
@@ -1338,7 +1340,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, SBTNum, TravSons, T
        TravSons, SPMDLid, TravSons,
 
        TravSons, TravSons, TravSons, ReuseId, TravSons, TravSons, TravSons, TravSons,
-       WLAAid, MMVid, SELId, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       WLAAid, MMVid, SELId, TravSons, EMLROid, TravSons, EMDRid, TravSons, TravSons,
        EMIAid, NTCid, INFDFMSid,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, AIid, TravSons, TravSons,
@@ -1478,7 +1480,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, SBTNum, TravSons, T
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, SELObjdef, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, SELObjdef, TravNone, TravNone, TravSons, TravNone, TravSons,
        TravSons, TravNone, NTCobjdef, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
@@ -1563,8 +1565,8 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, SBTNum, TravSons, T
        DFRfundef, TravSons, TravSons, PPIFundef, TravSons, TravSons,
 
        TravSons, TravSons, GSCfundef, ReuseFundef, TravSons, TravSons, CONCfundef,
-       OPTfundef, WLAAfundef, MMVfundef, SELFundef, TravSons, TravSons, TSIfundef,
-       TravSons, TravSons, TravSons, EMIAfundef, NTCfundef, INFDFMSfundef,
+       OPTfundef, WLAAfundef, MMVfundef, SELFundef, EMLRfundef, EMLROfundef, TSIfundef,
+       EMDRfundef, TravSons, TravSons, EMIAfundef, NTCfundef, INFDFMSfundef,
 
        MUTHfundef, CRWIWfundef, CONCELfundef, REPFUNfundef, FUN2LACfundef, AIfundef,
        TravSons, TravSons, L2Ffundef, TravSons, TravSons, TravSons, CUDfundef, TravSons,
@@ -1592,7 +1594,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, SBTNum, TravSons, T
        TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, SELArg, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, SELArg, TravSons, EMLROarg, TravSons, TravSons, TravSons,
        TravSons, EMIAarg, NTCarg, INFDFMSarg,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, AIarg, TravSons, TravSons,
@@ -1665,7 +1667,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, SBTNum, TravSons, T
 
        ASMRAblock, TravSons, TravSons, TravSons, TravSons, TravSons, WLSCblock, TravSons,
        TravSons, EMRCOblock, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       EMREblock, TravSons, TravSons, TravSons, 2),
+       TravSons, TravSons, TravSons, TravSons, 2),
 
   NIF (N_spmd, "N_spmd", TravSons, TravSons, PrintSpmd, TravSons, SBTSpmd, TravSons,
        TravSons, FreeSpmd, SPMDEMMspmd, TravSons, TravSons, TravSons, DupSpmd, TravSons,
@@ -1901,8 +1903,8 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, SBTNum, TravSons, T
        SPMDIassign, TravSons, TravSons, SYNCIassign,
 
        SYNCOassign, WLTRAassign, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, WLAAassign, TravSons, SELAssign, TravSons, TravSons, TravSons, TravSons,
-       TravSons, SPMDPMassign, EMIAassign, NTCassign, INFDFMSassign,
+       TravSons, WLAAassign, TravSons, SELAssign, EMLRassign, TravSons, TravSons,
+       EMDRassign, TravSons, SPMDPMassign, EMIAassign, NTCassign, INFDFMSassign,
 
        MUTHassign, CRWIWassign, TravSons, REPFUNassign, FUN2LACassign, AIassign, TravSons,
        TravSons, L2Fassign, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
@@ -2059,7 +2061,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, SBTNum, TravSons, T
 
        TravSons, TravSons, PEMcond, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, EMFRCcond, EMAAcond, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, 3),
+       EMREcond, TravSons, TravSons, TravSons, 3),
 
   NIF (N_let, "N_let", TravSons, FltnLet, PrintLet, TClet, SBTLet, TravNone, TravSons,
        FreeLet, SPMDEMMlet, TravSons, EMRClet, RIlet, DupLet, TravSons, SETLet, TravSons,
@@ -2070,8 +2072,8 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, SBTNum, TravSons, T
        TravSons, TravSons, SPMDLlet, TravSons,
 
        TravSons, WLTRAlet, TravSons, ReuseLet, TravSons, TravSons, TravSons, TravSons,
-       WLAAlet, MMVlet, SELLet, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, EMIAlet, NTClet, INFDFMSlet,
+       WLAAlet, MMVlet, SELLet, TravSons, TravSons, TravSons, EMDRlet, TravSons, TravSons,
+       EMIAlet, NTClet, INFDFMSlet,
 
        TravSons, TravSons, TravSons, TravSons, FUN2LAClet, AIlet, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, CUDlet, TravSons, TravSons, TravSons,
@@ -2098,8 +2100,8 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, SBTNum, TravSons, T
        TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       WLAAprf, MMVprf, SELPrf, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravNone, NTCprf, TravSons,
+       WLAAprf, MMVprf, SELPrf, TravNone, EMLROprf, TravSons, EMDRprf, TravSons, TravSons,
+       TravNone, NTCprf, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
@@ -2126,8 +2128,8 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, SBTNum, TravSons, T
        TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       WLAAap, TravSons, SELAp, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, EMIAap, NTCap, INFDFMSap,
+       WLAAap, TravSons, SELAp, EMLRap, EMLROap, TravSons, EMDRap, TravSons, TravSons,
+       EMIAap, NTCap, INFDFMSap,
 
        TravSons, CRWIWap, TravSons, REPFUNap, FUN2LACap, AIap, USSAp, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
@@ -2580,7 +2582,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, SBTNum, TravSons, T
        TravSons, TravSons, TravSons, TravSons,
 
        TravSons, WLTRAcode, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       WLAAncode, MMVcode, SELNCode, TravSons, TravSons, TSIncode, TravSons, TravSons,
+       WLAAncode, MMVcode, SELNCode, TravSons, TravSons, TSIncode, EMDRcode, TravSons,
        TravSons, TravSons, NTCNcode, INFDFMScode,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, AIcode, TravSons, TravSons,
@@ -3170,8 +3172,8 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, SBTNum, TravSons, T
        TravSons, TravSons, CVPfuncond, TravSons,
 
        TravSons, TravSons, TravSons, EMALfuncond, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, EMAAfuncond, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, 3),
+       TravSons, TravSons, EMFRCfuncond, EMAAfuncond, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, 3),
 
   NIF (N_dataflownode, "N_dataflownode", TravError, TravError, PrintDataflownode,
        TravError, SBTDataflownode, TravError, TravError, TravError, TravError, TravError,
@@ -3484,11 +3486,11 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, SBTNum, TravSons, T
 #undef NIFwlaa
 #undef NIFmmv
 #undef NIFsel
-#undef NIFunused_44
+#undef NIFemlr
 
-#undef NIFunused_45
+#undef NIFemlro
 #undef NIFtsi
-#undef NIFunused_46
+#undef NIFemdr
 #undef NIFspmddn
 
 #undef NIFspmdpm

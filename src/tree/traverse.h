@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.80  2004/11/02 14:23:11  ktr
+ * Added emlr_tab, emlro_tab, emdr_tab
+ *
  * Revision 3.79  2004/10/28 17:27:06  sah
  * added prepareinline traversal
  *
@@ -404,10 +407,10 @@ extern funtab *conc_tab;
 extern funtab *opt_tab;
 extern funtab *wlaa_tab;
 extern funtab *sel_tab;
-extern funtab *unused_tab44;
-extern funtab *unused_tab45;
+extern funtab *emlr_tab;
+extern funtab *emlro_tab;
 extern funtab *tsi_tab;
-extern funtab *unused_tab46;
+extern funtab *emdr_tab;
 extern funtab *spmddn_tab;
 extern funtab *spmdpm_tab;
 extern funtab *emia_tab;
