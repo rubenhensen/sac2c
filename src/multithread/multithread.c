@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2004/08/24 16:50:24  skt
+ * creation of specialized functions within parallel withloops enabled
+ *
  * Revision 3.15  2004/08/19 10:16:04  skt
  * pushed the position of resetting executionmodes_available downwards
  *
@@ -187,6 +190,7 @@
 
 #include "multithread.h"
 #include "tag_executionmode.h"
+#include "create_withinwith.h"
 #include "propagate_executionmode.h"
 #include "create_dataflowgraph.h"
 #include "assignments_rearrange.h"
@@ -289,6 +293,8 @@ MUTHfundef (node *arg_node, info *arg_info)
 
     /* initialize the executionmode*/
     FUNDEF_EXECMODE (arg_node) = MUTH_ANY;
+    /* initialize the companion */
+    FUNDEF_COMPANION (arg_node) = NULL;
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         DBUG_PRINT ("MUTH", ("trav into function-body"));
@@ -397,6 +403,19 @@ MUTHmodul (node *arg_node, info *arg_info)
     DBUG_PRINT ("MUTH", ("end TagExecutionmode"));
 
     if ((break_after == PH_multithread) && (strcmp ("tem", break_specifier) == 0)) {
+        goto cont;
+    }
+
+    /*
+     *  --- CreateWithinwith (crwiw) ---
+     */
+    DBUG_PRINT ("MUTH", ("begin CreateWithinwith"));
+
+    arg_node = CreateWithinwith (arg_node);
+
+    DBUG_PRINT ("MUTH", ("end CreateWihitinwith"));
+
+    if ((break_after == PH_multithread) && (strcmp ("crwiw", break_specifier) == 0)) {
         goto cont;
     }
 
