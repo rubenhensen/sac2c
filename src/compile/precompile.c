@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.32  2002/03/07 02:22:50  dkr
+ * traversals reordered
+ *
  * Revision 3.31  2002/03/01 17:20:37  dkr
  * fixed a bug in InsertOut():
  * the C return type is marked correctly now (ST_crettype)
@@ -23,7 +26,7 @@
  * Primitive function psi() renamed to sel().
  *
  * Revision 3.24  2001/06/14 12:39:51  dkr
- * PREC2WLseg(): call of SCHPrecompileTasksel() added
+ * PREC1WLseg(): call of SCHPrecompileTasksel() added
  *
  * Revision 3.23  2001/05/17 12:02:28  dkr
  * MALLOC, FREE eliminated
@@ -32,7 +35,7 @@
  * new RC macros used
  *
  * Revision 3.21  2001/04/25 01:19:20  dkr
- * PREC2fundef: FUNDEF_DFM_BASE created if NULL
+ * PREC1fundef: FUNDEF_DFM_BASE created if NULL
  *
  * Revision 3.20  2001/04/06 18:50:35  dkr
  * fixed a bug in PREC1let
@@ -83,6 +86,17 @@
  *
  * It carries out two separate tree traversals.
  *
+ * Things done during second traversal:
+ *   - Artificial arguments and return values are removed.
+ *   - All names and identifiers are renamed in order to avoid name clashes.
+ *
+ * Things done during third traversal:
+ *   - Function signatures are transformed into the final form:
+ *     At most a single return value, remapping because of a linksign pragma,
+ *     parameter tags (in, in_rc, out, out_rc, inout_rc, upd, upd_bx).
+ *     The reorganized layout is stored in FUNDEF_ARGTAB and AP_ARGTAB
+ *     respectively. Note, that the node information of the AST is left as is.
+ *
  * Things done during first traversal:
  *   - Arguments of function applications are abstracted if needed:
  *       a = fun( a)   =>   tmp_a = a; a = fun( tmp_a)
@@ -94,17 +108,6 @@
  *     generated.
  *   - It is checked whether NCODE_CEXPR is identical for all N_Ncode nodes
  *     of a single with-loop.
- *
- * Things done during second traversal:
- *   - Artificial arguments and return values are removed.
- *   - All names and identifiers are renamed in order to avoid name clashes.
- *
- * Things done during third traversal:
- *   - Function signatures are transformed into the final form:
- *     At most a single return value, remapping because of a linksign pragma,
- *     parameter tags (in, in_rc, out, out_rc, inout_rc, upd, upd_bx).
- *     The reorganized layout is stored in FUNDEF_ARGTAB and AP_ARGTAB
- *     respectively. Note, that the node information of the AST is left as is.
  *
  ******************************************************************************/
 
@@ -231,494 +234,6 @@ RenameLocalIdentifier (char *id)
 
 /******************************************************************************
  *
- * Function:
- *   node *AddVardec( node *fundef, types *type, char *name)
- *
- * Description:
- *   Generates a new declaration, inserts it into the AST, updates the DFMbase
- *   and returns the new declaration.
- *
- ******************************************************************************/
-
-static node *
-AddVardec (node *fundef, types *type, char *name)
-{
-    node *new_vardec;
-
-    DBUG_ENTER ("AddVardec");
-
-    /*
-     * generate new vardec node
-     */
-    new_vardec = MakeVardec (StringCopy (name), DupAllTypes (type), NULL);
-
-    /*
-     * insert new vardec into AST
-     */
-    VARDEC_NEXT (new_vardec) = FUNDEF_VARDEC (fundef);
-    FUNDEF_VARDEC (fundef) = new_vardec;
-
-    /*
-     * we must update FUNDEF_DFM_BASE!!
-     */
-    FUNDEF_DFM_BASE (fundef)
-      = DFMUpdateMaskBase (FUNDEF_DFM_BASE (fundef), FUNDEF_ARGS (fundef),
-                           FUNDEF_VARDEC (fundef));
-
-    DBUG_RETURN (new_vardec);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *AdjustFoldFundef( node *fundef,
- *                           ids *acc, node *cexpr)
- *
- * description:
- *   Returns the given fold-fun definition 'fundef' with adjusted var-names.
- *
- * parameters:
- *   'acc' is the accumulator variable.
- *   'cexpr' is the expression in the operation part.
- *
- ******************************************************************************/
-
-static node *
-AdjustFoldFundef (node *fundef, ids *acc, node *cexpr)
-{
-    node *accvar, *funap, *fold_let;
-
-    DBUG_ENTER ("AdjustFoldFundef");
-
-    DBUG_ASSERT ((fundef != NULL), "fundef is NULL!");
-    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef), "no fundef found!");
-
-    /*
-     * first, we create a let-expression of the form
-     *    <acc> = <funname>( <acc>, <cexpr>);
-     */
-
-    accvar = MakeId (StringCopy (IDS_NAME (acc)), StringCopy (IDS_MOD (acc)), ST_regular);
-    ID_VARDEC (accvar) = IDS_VARDEC (acc);
-    DBUG_ASSERT ((ID_VARDEC (accvar) != NULL), "vardec is missing");
-
-    funap = MakeAp (StringCopy (FUNDEF_NAME (fundef)), StringCopy (FUNDEF_MOD (fundef)),
-                    MakeExprs (accvar, MakeExprs (DupTree (cexpr), NULL)));
-    AP_FUNDEF (funap) = fundef;
-
-    fold_let = MakeLet (funap, DupOneIds (acc));
-
-    /*
-     * then we use this dummy let-expression to adjust the fundef
-     */
-    fundef = AdjustIdentifiers (fundef, fold_let);
-
-    /*
-     * let-expression is useless now
-     */
-    fold_let = FreeTree (fold_let);
-
-    DBUG_RETURN (fundef);
-}
-
-/******************************************************************************
- *
- * Function:
- *   node *PREC1fundef( node *arg_node, node *arg_info)
- *
- * Description:
- *   Traverses the function body and the next function.
- *
- ******************************************************************************/
-
-node *
-PREC1fundef (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("PREC1fundef");
-
-    INFO_PREC1_FUNDEF (arg_info) = arg_node;
-
-    if (FUNDEF_BODY (arg_node) != NULL) {
-        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
-    }
-
-    if (FUNDEF_NEXT (arg_node) != NULL) {
-        /*
-         * The result of Trav() is NOT assigned to FUNDEF_NEXT, because this
-         * pointer might be modified by PREC1let() ...
-         */
-        Trav (FUNDEF_NEXT (arg_node), arg_info);
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * Function:
- *   node *PREC1block( node *arg_node, node *arg_info)
- *
- * Description:
- *   Saves and restores INFO_PREC1_LASTASSIGN( arg_info).
- *
- ******************************************************************************/
-
-node *
-PREC1block (node *arg_node, node *arg_info)
-{
-    node *old_lastassign;
-
-    DBUG_ENTER ("PREC1fundef");
-
-    old_lastassign = INFO_PREC1_LASTASSIGN (arg_info);
-
-    if (BLOCK_INSTR (arg_node) != NULL) {
-        BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
-    }
-
-    if (BLOCK_VARDEC (arg_node) != NULL) {
-        BLOCK_VARDEC (arg_node) = Trav (BLOCK_VARDEC (arg_node), arg_info);
-    }
-
-    INFO_PREC1_LASTASSIGN (arg_info) = old_lastassign;
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * Function:
- *   node *PREC1assign( node *arg_node, node *arg_info)
- *
- * Description:
- *
- *
- ******************************************************************************/
-
-node *
-PREC1assign (node *arg_node, node *arg_info)
-{
-    node *return_node;
-
-    DBUG_ENTER ("PREC1assign");
-
-    INFO_PREC1_LASTASSIGN (arg_info) = arg_node;
-
-    ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
-
-    /*
-     * newly inserted abstractions are prepanded in front of
-     * INFO_PREC1_LASTASSIGN( arg_info). To properly insert these nodes,
-     * that pointer has to be returned!
-     */
-    return_node = INFO_PREC1_LASTASSIGN (arg_info);
-
-    if (ASSIGN_NEXT (arg_node)) {
-        ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
-    }
-
-    DBUG_RETURN (return_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *PREC1let( node *arg_node, node *arg_info)
- *
- * description:
- *   For each id from the LHS:
- *     If we have   a ... a = fun( ... a ... a ... )   ,
- *     were   fun   is a user-defined function
- *       and   a   is a regular argument representing a refcounted data object,
- *       and the refcounting is *not* done by the function itself,
- *     or   fun   is a primitive function
- *       and   a   is a regular argument representing a refcounted data object,
- *     then we rename each RHS   a   into a temp-var   __tmp<n>   and insert
- *     an assignment   __tmp<n> = a;   in front of the function application.
- *
- * remark:
- *   The 2nd argument of the primitive function reshape() need not to be
- *   flattened! Note, that reshape() is simply compiled into an assignment.
- *
- ******************************************************************************/
-
-node *
-PREC1let (node *arg_node, node *arg_info)
-{
-    node *old_let;
-    node *let_expr;
-    node *arg, *arg_id;
-    ids *let_ids, *tmp_ids;
-    char *ids_name, *tmp_name;
-    int arg_idx;
-    node *tmp_vardec = NULL;
-
-    DBUG_ENTER ("PREC1let");
-
-    old_let = INFO_PREC1_LET (arg_info);
-    INFO_PREC1_LET (arg_info) = arg_node;
-
-    let_ids = LET_IDS (arg_node);
-    let_expr = LET_EXPR (arg_node);
-
-    /*
-     * flattening of applications
-     */
-    while (let_ids != NULL) {
-        ids_name = IDS_NAME (let_ids);
-
-        if ((NODE_TYPE (let_expr) == N_prf) || (NODE_TYPE (let_expr) == N_ap)) {
-            /*
-             * does 'ids_name' occur as an argument of the function application??
-             */
-            arg = AP_OR_PRF_ARGS (let_expr);
-            arg_idx = (NODE_TYPE (let_expr) == N_prf)
-                        ? 0
-                        : CountTypes (FUNDEF_TYPES (AP_FUNDEF (let_expr)));
-            tmp_name = NULL;
-            while (arg != NULL) {
-                arg_id = EXPRS_EXPR (arg);
-                if ((NODE_TYPE (arg_id) == N_id) && (RC_IS_ACTIVE (ID_REFCNT (arg_id)))
-                    && (ID_ATTRIB (arg_id) == ST_regular) &&
-                    /* 2nd argument of F_reshape need not to be flattened! */
-                    (((NODE_TYPE (let_expr) == N_prf)
-                      && ((PRF_PRF (let_expr) != F_reshape) || (arg_idx != 1)))
-                     || ((NODE_TYPE (let_expr) != N_prf)
-                         && (!FUNDEF_DOES_REFCOUNT (AP_FUNDEF (let_expr), arg_idx))))) {
-                    if (!strcmp (ID_NAME (arg_id), ids_name)) {
-                        if (tmp_name == NULL) {
-                            /*
-                             * first occur of the var of the LHS
-                             */
-                            DBUG_PRINT ("RENAME",
-                                        ("abtracting LHS (%s) of function application",
-                                         ids_name));
-
-                            tmp_name = TmpVarName (ids_name);
-                            /*
-                             * Insert vardec for new var
-                             */
-                            tmp_vardec = AddVardec (INFO_PREC1_FUNDEF (arg_info),
-                                                    IDS_TYPE (let_ids), tmp_name);
-
-                            /*
-                             * Abstract the found argument:
-                             *   A:n = prf( A:1, ...);
-                             *   ... A:n ... A:1 ...    // n references of 'A'
-                             * is transformed into
-                             *   __A:1 = A:1;
-                             *   A:n = prf( __A:1, ...);
-                             *   ... A:n ... A:1 ...
-                             */
-                            tmp_ids = MakeIds (tmp_name, NULL, ST_regular);
-                            IDS_VARDEC (tmp_ids) = tmp_vardec;
-                            INFO_PREC1_LASTASSIGN (arg_info)
-                              = MakeAssign (MakeLet (arg_id, tmp_ids),
-                                            INFO_PREC1_LASTASSIGN (arg_info));
-
-                            EXPRS_EXPR (arg) = MakeId_Copy (tmp_name);
-                            ID_VARDEC (EXPRS_EXPR (arg)) = tmp_vardec;
-
-                            if (RC_IS_ACTIVE (IDS_REFCNT (let_ids))) {
-                                IDS_REFCNT (tmp_ids) = 1;
-                                ID_REFCNT (EXPRS_EXPR (arg)) = 1;
-                            } else if (RC_IS_INACTIVE (IDS_REFCNT (let_ids))) {
-                                IDS_REFCNT (tmp_ids) = RC_INACTIVE;
-                                ID_REFCNT (EXPRS_EXPR (arg)) = RC_INACTIVE;
-                            } else {
-                                DBUG_ASSERT ((0), "illegal RC value found!");
-                            }
-                        } else {
-                            /*
-                             * temporary var already generated
-                             * -> just replace the current arg by 'tmp_name'
-                             */
-                            FreeTree (EXPRS_EXPR (arg));
-                            EXPRS_EXPR (arg) = MakeId_Copy (tmp_name);
-                            ID_VARDEC (EXPRS_EXPR (arg)) = tmp_vardec;
-
-                            if (RC_IS_ACTIVE (IDS_REFCNT (let_ids))) {
-                                ID_REFCNT (EXPRS_EXPR (arg)) = 1;
-                            } else if (RC_IS_INACTIVE (IDS_REFCNT (let_ids))) {
-                                ID_REFCNT (EXPRS_EXPR (arg)) = RC_INACTIVE;
-                            } else {
-                                DBUG_ASSERT ((0), "illegal RC value found!");
-                            }
-                        }
-                    }
-                }
-                arg = EXPRS_NEXT (arg);
-                arg_idx++;
-            }
-        }
-        let_ids = IDS_NEXT (let_ids);
-    }
-
-    LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
-
-    INFO_PREC1_LET (arg_info) = old_let;
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *PREC1with2( node *arg_node, node *arg_info)
- *
- * description:
- *
- *
- ******************************************************************************/
-
-node *
-PREC1with2 (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("PREC1with2");
-
-    INFO_PREC1_CEXPR (arg_info) = NULL;
-
-    NWITH2_WITHID (arg_node) = Trav (NWITH2_WITHID (arg_node), arg_info);
-    NWITH2_SEGS (arg_node) = Trav (NWITH2_SEGS (arg_node), arg_info);
-
-    /*
-     * CODE must be traversed before WITHOP!!
-     */
-
-    if (NWITH2_CODE (arg_node) != NULL) {
-        NWITH2_CODE (arg_node) = Trav (NWITH2_CODE (arg_node), arg_info);
-    }
-
-    NWITH2_WITHOP (arg_node) = Trav (NWITH2_WITHOP (arg_node), arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * Function:
- *   node *PREC1withop( node *arg_node, node *arg_info)
- *
- * Description:
- *   New, unique and adjusted pseudo fold-funs are created.
- *
- ******************************************************************************/
-
-node *
-PREC1withop (node *arg_node, node *arg_info)
-{
-    ids *let_ids;
-    node *let_expr;
-    node *new_foldfun;
-    char *old_name;
-
-    DBUG_ENTER ("PREC1withop");
-
-    let_ids = LET_IDS (INFO_PREC1_LET (arg_info));
-    let_expr = LET_EXPR (INFO_PREC1_LET (arg_info));
-
-    DBUG_ASSERT ((NODE_TYPE (let_expr) == N_Nwith2), "no N_Nwith2 node found!");
-    if (NWITH2_IS_FOLD (let_expr)) {
-        /*
-         * We have to make the formal parameters of each pseudo fold-fun identical
-         * to the corresponding application in order to allow for simple code
-         * inlining during compilation. But after inlining a single fold-fun might
-         * be called multiple times within the code.
-         * Therefore we have to create new unique fold-funs first!
-         */
-        new_foldfun = DupNode (NWITHOP_FUNDEF (arg_node));
-
-        /*
-         * create a unique name for the new fold-fun
-         * (this is needed for SearchFoldImplementation() in icm2c_mt.c !!)
-         */
-        old_name = FUNDEF_NAME (new_foldfun);
-        FUNDEF_NAME (new_foldfun) = TmpVarName (FUNDEF_NAME (new_foldfun));
-        old_name = Free (old_name);
-
-        new_foldfun = AdjustFoldFundef (new_foldfun, let_ids,
-                                        /*
-                                         * It is sufficient to take the CEXPR of the first
-                                         * code-node, because in a fold with-loop all
-                                         * CEXPR-ids have the same name!
-                                         */
-                                        NWITH2_CEXPR (let_expr));
-
-        /*
-         * insert new dummy function into fundef chain
-         */
-        FUNDEF_NEXT (new_foldfun) = FUNDEF_NEXT (NWITHOP_FUNDEF (arg_node));
-        FUNDEF_NEXT (NWITHOP_FUNDEF (arg_node)) = new_foldfun;
-
-        NWITHOP_FUNDEF (arg_node) = new_foldfun;
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * Function:
- *   node *PREC1code( node *arg_node, node *arg_info)
- *
- * Description:
- *   Checks whether all NCODE_CEXPR nodes have identical names.
- *
- ******************************************************************************/
-
-node *
-PREC1code (node *arg_node, node *arg_info)
-{
-    node *let_expr;
-
-    DBUG_ENTER ("PREC1code");
-
-    if (NCODE_CBLOCK (arg_node) != NULL) {
-        NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
-    }
-
-    if (NCODE_CEXPR (arg_node) != NULL) {
-        NCODE_CEXPR (arg_node) = Trav (NCODE_CEXPR (arg_node), arg_info);
-    }
-
-    let_expr = LET_EXPR (INFO_PREC1_LET (arg_info));
-
-    DBUG_ASSERT ((NODE_TYPE (let_expr) == N_Nwith2), "no N_Nwith2 node found!");
-    if (NWITH2_IS_FOLD (let_expr)) {
-        /*
-         * fold with-loop:
-         * check whether all NCODE_CEXPR nodes have identical names
-         */
-        if (INFO_PREC1_CEXPR (arg_info) != NULL) {
-            DBUG_ASSERT (((NODE_TYPE (INFO_PREC1_CEXPR (arg_info)) == N_id)
-                          && (NODE_TYPE (NCODE_CEXPR (arg_node)) == N_id)),
-                         "NCODE_CEXPR must be a N_id node!");
-
-            DBUG_ASSERT ((!strcmp (ID_NAME (INFO_PREC1_CEXPR (arg_info)),
-                                   ID_NAME (NCODE_CEXPR (arg_node)))),
-                         "Not all NCODE_CEXPR nodes of the fold with-loop have"
-                         " identical names!\n"
-                         "This is probably due to an error during undo-SSA.");
-        } else {
-            INFO_PREC1_CEXPR (arg_info) = NCODE_CEXPR (arg_node);
-        }
-    }
-
-    if (NCODE_NEXT (arg_node) != NULL) {
-        NCODE_NEXT (arg_node) = Trav (NCODE_NEXT (arg_node), arg_info);
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/*
- *
- * SECOND TRAVERSAL
- *
- */
-
-/******************************************************************************
- *
  * function:
  *   node *CreateObjInitFundef(node *module, node *arg_info)
  *
@@ -757,7 +272,7 @@ CreateObjInitFundef (node *module, node *arg_info)
 
     MODUL_FUNS (module) = fundef;
 
-    INFO_PREC2_OBJINITFUNDEF (arg_info) = fundef;
+    INFO_PREC1_OBJINITFUNDEF (arg_info) = fundef;
 
     DBUG_RETURN (module);
 }
@@ -1126,7 +641,7 @@ RemoveArtificialIds (ids *arg, node *rhs)
 /******************************************************************************
  *
  * function:
- *   node *PREC2modul( node *arg_node, node *arg_info)
+ *   node *PREC1modul( node *arg_node, node *arg_info)
  *
  * description:
  *   starts traversal mechanism for objdef and fundef nodes.
@@ -1134,9 +649,9 @@ RemoveArtificialIds (ids *arg, node *rhs)
  ******************************************************************************/
 
 node *
-PREC2modul (node *arg_node, node *arg_info)
+PREC1modul (node *arg_node, node *arg_info)
 {
-    DBUG_ENTER ("PREC2modul");
+    DBUG_ENTER ("PREC1modul");
 
     arg_node = CreateObjInitFundef (arg_node, arg_info);
 
@@ -1158,7 +673,7 @@ PREC2modul (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *PREC2typedef( node *arg_node, node *arg_info)
+ *   node *PREC1typedef( node *arg_node, node *arg_info)
  *
  * Description:
  *   Renames types. All types defined in SAC get the prefix "SAC_" to avoid
@@ -1167,11 +682,11 @@ PREC2modul (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PREC2typedef (node *arg_node, node *arg_info)
+PREC1typedef (node *arg_node, node *arg_info)
 {
     char *tmp;
 
-    DBUG_ENTER ("PREC2typedef");
+    DBUG_ENTER ("PREC1typedef");
 
     if (TYPEDEF_MOD (arg_node) != NULL) {
         /*
@@ -1222,7 +737,7 @@ PREC2typedef (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *PREC2objdef( node *arg_node, node *arg_info)
+ *   node *PREC1objdef( node *arg_node, node *arg_info)
  *
  * Description:
  *   Renames global objects.
@@ -1234,11 +749,11 @@ PREC2typedef (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PREC2objdef (node *arg_node, node *arg_info)
+PREC1objdef (node *arg_node, node *arg_info)
 {
     char *new_name;
 
-    DBUG_ENTER ("PREC2objdef");
+    DBUG_ENTER ("PREC1objdef");
 
     DBUG_PRINT ("PREC", ("precompiling object %s", ItemName (arg_node)));
 
@@ -1281,8 +796,8 @@ PREC2objdef (node *arg_node, node *arg_info)
     }
 
     /*insert init code */
-    FUNDEF_BODY (INFO_PREC2_OBJINITFUNDEF (arg_info))
-      = InsertObjInit (FUNDEF_BODY (INFO_PREC2_OBJINITFUNDEF (arg_info)), arg_node);
+    FUNDEF_BODY (INFO_PREC1_OBJINITFUNDEF (arg_info))
+      = InsertObjInit (FUNDEF_BODY (INFO_PREC1_OBJINITFUNDEF (arg_info)), arg_node);
 
     DBUG_RETURN (arg_node);
 }
@@ -1290,7 +805,7 @@ PREC2objdef (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PREC2fundef(node *arg_node, node *arg_info)
+ *   node *PREC1fundef(node *arg_node, node *arg_info)
  *
  * description:
  *   precompilation of an N_fundef node.
@@ -1298,13 +813,13 @@ PREC2objdef (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PREC2fundef (node *arg_node, node *arg_info)
+PREC1fundef (node *arg_node, node *arg_info)
 {
     types *ret_types;
     char *keep_name, *keep_mod;
     statustype keep_status, keep_attrib;
 
-    DBUG_ENTER ("PREC2fundef");
+    DBUG_ENTER ("PREC1fundef");
 
     DBUG_PRINT ("PREC", ("entering %s", FUNDEF_NAME (arg_node)));
 
@@ -1403,7 +918,7 @@ PREC2fundef (node *arg_node, node *arg_info)
     FUNDEF_STATUS (arg_node) = keep_status;
     FUNDEF_ATTRIB (arg_node) = keep_attrib;
 
-    if (arg_node != INFO_PREC2_OBJINITFUNDEF (arg_info)) {
+    if (arg_node != INFO_PREC1_OBJINITFUNDEF (arg_info)) {
         /*
          * Now, the data flow mask base is updated.
          * This is necessary because some local identifiers are removed while all
@@ -1429,7 +944,7 @@ PREC2fundef (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PREC2arg( node *arg_node, node *arg_info)
+ *   node *PREC1arg( node *arg_node, node *arg_info)
  *
  * description:
  *   An artificial argument is removed, the attribs are switched:
@@ -1439,9 +954,9 @@ PREC2fundef (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PREC2arg (node *arg_node, node *arg_info)
+PREC1arg (node *arg_node, node *arg_info)
 {
-    DBUG_ENTER ("PREC2arg");
+    DBUG_ENTER ("PREC1arg");
 
     if (ARG_STATUS (arg_node) == ST_artificial) {
         arg_node = FreeNode (arg_node);
@@ -1484,7 +999,7 @@ PREC2arg (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *PREC2vardec( node *arg_node, node *arg_info)
+ *   node *PREC1vardec( node *arg_node, node *arg_info)
  *
  * Description:
  *   Renames types of declared variables.
@@ -1493,9 +1008,9 @@ PREC2arg (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PREC2vardec (node *arg_node, node *arg_info)
+PREC1vardec (node *arg_node, node *arg_info)
 {
-    DBUG_ENTER ("PREC2vardec");
+    DBUG_ENTER ("PREC1vardec");
 
     if (VARDEC_STATUS (arg_node) == ST_artificial) {
         arg_node = FreeNode (arg_node);
@@ -1518,7 +1033,7 @@ PREC2vardec (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PREC2assign( node *arg_node, node *arg_info)
+ *   node *PREC1assign( node *arg_node, node *arg_info)
  *
  * description:
  *
@@ -1526,9 +1041,9 @@ PREC2vardec (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PREC2assign (node *arg_node, node *arg_info)
+PREC1assign (node *arg_node, node *arg_info)
 {
-    DBUG_ENTER ("PREC2assign");
+    DBUG_ENTER ("PREC1assign");
 
     ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
 
@@ -1549,7 +1064,7 @@ PREC2assign (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PREC2let( node *arg_node, node *arg_info)
+ *   node *PREC1let( node *arg_node, node *arg_info)
  *
  * description:
  *   removes all artificial identifiers on the left hand side of a let.
@@ -1557,9 +1072,9 @@ PREC2assign (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PREC2let (node *arg_node, node *arg_info)
+PREC1let (node *arg_node, node *arg_info)
 {
-    DBUG_ENTER ("PREC2let");
+    DBUG_ENTER ("PREC1let");
 
     LET_IDS (arg_node) = RemoveArtificialIds (LET_IDS (arg_node), LET_EXPR (arg_node));
 
@@ -1577,7 +1092,7 @@ PREC2let (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *PREC2exprs_ap( node *current, node *formal)
+ *   node *PREC1exprs_ap( node *current, node *formal)
  *
  * Description:
  *   Removes all artificial parameters.
@@ -1590,15 +1105,15 @@ PREC2let (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 static node *
-PREC2exprs_ap (node *current, node *formal)
+PREC1exprs_ap (node *current, node *formal)
 {
     node *expr;
 
-    DBUG_ENTER ("PREC2exprs_ap");
+    DBUG_ENTER ("PREC1exprs_ap");
 
     if (EXPRS_NEXT (current) != NULL) {
         EXPRS_NEXT (current)
-          = PREC2exprs_ap (EXPRS_NEXT (current), (ARG_BASETYPE (formal) == T_dots)
+          = PREC1exprs_ap (EXPRS_NEXT (current), (ARG_BASETYPE (formal) == T_dots)
                                                    ? formal
                                                    : ARG_NEXT (formal));
     }
@@ -1627,7 +1142,7 @@ PREC2exprs_ap (node *current, node *formal)
 /******************************************************************************
  *
  * Function:
- *   node *PREC2exprs_return( node *ret_exprs, node *ret_node)
+ *   node *PREC1exprs_return( node *ret_exprs, node *ret_node)
  *
  * Description:
  *   Removes all artificial return values from the chain.
@@ -1638,14 +1153,14 @@ PREC2exprs_ap (node *current, node *formal)
  ******************************************************************************/
 
 static node *
-PREC2exprs_return (node *ret_exprs, node *ret_node)
+PREC1exprs_return (node *ret_exprs, node *ret_node)
 {
     node *tmp;
 
-    DBUG_ENTER ("PREC2exprs_return");
+    DBUG_ENTER ("PREC1exprs_return");
 
     if (EXPRS_NEXT (ret_exprs) != NULL) {
-        EXPRS_NEXT (ret_exprs) = PREC2exprs_return (EXPRS_NEXT (ret_exprs), ret_node);
+        EXPRS_NEXT (ret_exprs) = PREC1exprs_return (EXPRS_NEXT (ret_exprs), ret_node);
     }
 
     if (ID_STATUS (EXPRS_EXPR (ret_exprs)) == ST_artificial) {
@@ -1683,20 +1198,20 @@ PREC2exprs_return (node *ret_exprs, node *ret_node)
 /******************************************************************************
  *
  * Function:
- *   node *PREC2ap( node *arg_node, node *arg_info)
+ *   node *PREC1ap( node *arg_node, node *arg_info)
  *
  * Description:
- *   Traverses the current arguments using function PREC2exprs_ap that is given
+ *   Traverses the current arguments using function PREC1exprs_ap that is given
  *   a pointer to the first formal parameter of the applied function.
  *
  ******************************************************************************/
 
 node *
-PREC2ap (node *arg_node, node *arg_info)
+PREC1ap (node *arg_node, node *arg_info)
 {
     node *ap;
 
-    DBUG_ENTER ("PREC2ap");
+    DBUG_ENTER ("PREC1ap");
 
     if (FUNDEF_STATUS (AP_FUNDEF (arg_node)) == ST_classfun) {
         ap = arg_node;
@@ -1732,7 +1247,7 @@ PREC2ap (node *arg_node, node *arg_info)
     } else {
         if (AP_ARGS (arg_node) != NULL) {
             AP_ARGS (arg_node)
-              = PREC2exprs_ap (AP_ARGS (arg_node), FUNDEF_ARGS (AP_FUNDEF (arg_node)));
+              = PREC1exprs_ap (AP_ARGS (arg_node), FUNDEF_ARGS (AP_FUNDEF (arg_node)));
         }
     }
 
@@ -1742,20 +1257,20 @@ PREC2ap (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *PREC2return( node *arg_node, node *arg_info)
+ *   node *PREC1return( node *arg_node, node *arg_info)
  *
  * Description:
- *   Traverses the return values using function PREC2exprs_return.
+ *   Traverses the return values using function PREC1exprs_return.
  *
  ******************************************************************************/
 
 node *
-PREC2return (node *arg_node, node *arg_info)
+PREC1return (node *arg_node, node *arg_info)
 {
-    DBUG_ENTER ("PREC2return");
+    DBUG_ENTER ("PREC1return");
 
     if (RETURN_EXPRS (arg_node) != NULL) {
-        RETURN_EXPRS (arg_node) = PREC2exprs_return (RETURN_EXPRS (arg_node), arg_node);
+        RETURN_EXPRS (arg_node) = PREC1exprs_return (RETURN_EXPRS (arg_node), arg_node);
     }
 
     DBUG_RETURN (arg_node);
@@ -1764,7 +1279,7 @@ PREC2return (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *PREC2id( node *arg_node, node *arg_info)
+ *   node *PREC1id( node *arg_node, node *arg_info)
  *
  * Description:
  *   Applied occurrences of global objects may be renamed, if the global
@@ -1773,9 +1288,9 @@ PREC2return (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PREC2id (node *arg_node, node *arg_info)
+PREC1id (node *arg_node, node *arg_info)
 {
-    DBUG_ENTER ("PREC2id");
+    DBUG_ENTER ("PREC1id");
 
     if (ID_STATUS (arg_node) == ST_artificial) {
         arg_node = FreeTree (arg_node);
@@ -1798,7 +1313,7 @@ PREC2id (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *PREC2array( node *arg_node, node *arg_info)
+ *   node *PREC1array( node *arg_node, node *arg_info)
  *
  * Description:
  *
@@ -1806,9 +1321,9 @@ PREC2id (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PREC2array (node *arg_node, node *arg_info)
+PREC1array (node *arg_node, node *arg_info)
 {
-    DBUG_ENTER ("PREC2array");
+    DBUG_ENTER ("PREC1array");
 
     if (ARRAY_AELEMS (arg_node) != NULL) {
         ARRAY_AELEMS (arg_node) = Trav (ARRAY_AELEMS (arg_node), arg_info);
@@ -1822,7 +1337,7 @@ PREC2array (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PREC2withid( node *arg_node, node *arg_info)
+ *   node *PREC1withid( node *arg_node, node *arg_info)
  *
  * description:
  *   This function does the renaming of the index vector variable
@@ -1831,9 +1346,9 @@ PREC2array (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PREC2withid (node *arg_node, node *arg_info)
+PREC1withid (node *arg_node, node *arg_info)
 {
-    DBUG_ENTER ("PREC2withid");
+    DBUG_ENTER ("PREC1withid");
 
     NWITHID_VEC (arg_node) = RenameIds (NWITHID_VEC (arg_node));
     NWITHID_IDS (arg_node) = RenameIds (NWITHID_IDS (arg_node));
@@ -1844,7 +1359,7 @@ PREC2withid (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PREC2do( node *arg_node, node *arg_info)
+ *   node *PREC1do( node *arg_node, node *arg_info)
  *
  * description:
  *   The compiler phase refcount unfortunately produces chains of identifiers
@@ -1855,9 +1370,9 @@ PREC2withid (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PREC2do (node *arg_node, node *arg_info)
+PREC1do (node *arg_node, node *arg_info)
 {
-    DBUG_ENTER ("PREC2do");
+    DBUG_ENTER ("PREC1do");
 
     DO_COND (arg_node) = Trav (DO_COND (arg_node), arg_info);
     DO_BODY (arg_node) = Trav (DO_BODY (arg_node), arg_info);
@@ -1871,7 +1386,7 @@ PREC2do (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PREC2while(node *arg_node, node *arg_info)
+ *   node *PREC1while(node *arg_node, node *arg_info)
  *
  * description:
  *   The compiler phase refcount unfortunately produces chains of identifiers
@@ -1882,9 +1397,9 @@ PREC2do (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PREC2while (node *arg_node, node *arg_info)
+PREC1while (node *arg_node, node *arg_info)
 {
-    DBUG_ENTER ("PREC2while");
+    DBUG_ENTER ("PREC1while");
 
     WHILE_COND (arg_node) = Trav (WHILE_COND (arg_node), arg_info);
     WHILE_BODY (arg_node) = Trav (WHILE_BODY (arg_node), arg_info);
@@ -1898,7 +1413,7 @@ PREC2while (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PREC2cond( node *arg_node, node *arg_info)
+ *   node *PREC1cond( node *arg_node, node *arg_info)
  *
  * description:
  *   The compiler phase refcount unfortunately produces chains of identifiers
@@ -1909,9 +1424,9 @@ PREC2while (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PREC2cond (node *arg_node, node *arg_info)
+PREC1cond (node *arg_node, node *arg_info)
 {
-    DBUG_ENTER ("PREC2cond");
+    DBUG_ENTER ("PREC1cond");
 
     COND_COND (arg_node) = Trav (COND_COND (arg_node), arg_info);
     COND_THEN (arg_node) = Trav (COND_THEN (arg_node), arg_info);
@@ -1926,7 +1441,7 @@ PREC2cond (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PREC2with2(node *arg_node, node *arg_info)
+ *   node *PREC1with2(node *arg_node, node *arg_info)
  *
  * description:
  *   The compiler phase refcount unfortunately produces chains of identifiers
@@ -1937,9 +1452,9 @@ PREC2cond (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PREC2with2 (node *arg_node, node *arg_info)
+PREC1with2 (node *arg_node, node *arg_info)
 {
-    DBUG_ENTER ("PREC2with2");
+    DBUG_ENTER ("PREC1with2");
 
     NWITH2_WITHID (arg_node) = Trav (NWITH2_WITHID (arg_node), arg_info);
     NWITH2_SEGS (arg_node) = Trav (NWITH2_SEGS (arg_node), arg_info);
@@ -1958,7 +1473,7 @@ PREC2with2 (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PREC2code( node *arg_node, node *arg_info)
+ *   node *PREC1code( node *arg_node, node *arg_info)
  *
  * description:
  *   The compiler phase refcount unfortunately produces chains of identifiers
@@ -1969,9 +1484,9 @@ PREC2with2 (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PREC2code (node *arg_node, node *arg_info)
+PREC1code (node *arg_node, node *arg_info)
 {
-    DBUG_ENTER ("PREC2code");
+    DBUG_ENTER ("PREC1code");
 
     NCODE_CEXPR (arg_node) = Trav (NCODE_CEXPR (arg_node), arg_info);
     NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
@@ -1988,7 +1503,7 @@ PREC2code (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PREC2sync( node *arg_node, node *arg_info)
+ *   node *PREC1sync( node *arg_node, node *arg_info)
  *
  * description:
  *   Was used for renaming SYNC_SCHEDULE, since this has move to the
@@ -1998,9 +1513,9 @@ PREC2code (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PREC2sync (node *arg_node, node *arg_info)
+PREC1sync (node *arg_node, node *arg_info)
 {
-    DBUG_ENTER ("PREC2sync");
+    DBUG_ENTER ("PREC1sync");
 
     SYNC_REGION (arg_node) = Trav (SYNC_REGION (arg_node), arg_info);
 
@@ -2010,7 +1525,7 @@ PREC2sync (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PREC2WLsegx( node *arg_node, node *arg_info)
+ *   node *PREC1WLsegx( node *arg_node, node *arg_info)
  *
  * description:
  *   Since the scheduling specification and WLSEGVAR_IDX_MIN, WLSEGVAR_IDX_MAX
@@ -2021,11 +1536,11 @@ PREC2sync (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PREC2WLsegx (node *arg_node, node *arg_info)
+PREC1WLsegx (node *arg_node, node *arg_info)
 {
     int d;
 
-    DBUG_ENTER ("PREC2WLsegx");
+    DBUG_ENTER ("PREC1WLsegx");
 
     if (WLSEGX_SCHEDULING (arg_node) != NULL) {
         WLSEGX_SCHEDULING (arg_node)
@@ -2053,7 +1568,7 @@ PREC2WLsegx (node *arg_node, node *arg_info)
 
 /*
  *
- * THIRD TRAVERSAL
+ * SECOND TRAVERSAL
  *
  */
 
@@ -2107,7 +1622,7 @@ CompressArgtab (argtab_t *argtab)
 /******************************************************************************
  *
  * function:
- *   node *PREC3modul( node *arg_node, node *arg_info)
+ *   node *PREC2modul( node *arg_node, node *arg_info)
  *
  * description:
  *
@@ -2115,7 +1630,7 @@ CompressArgtab (argtab_t *argtab)
  ******************************************************************************/
 
 node *
-PREC3modul (node *arg_node, node *arg_info)
+PREC2modul (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PREC2modul");
 
@@ -2198,7 +1713,7 @@ InsertOut (argtab_t *argtab, node *fundef, int param_id, types *rettype, bool *d
                 }
                 DBUG_ASSERT ((ret_exprs != NULL), "not enough return values found!");
 
-                RETURN_CRET (ret) = EXPRS_EXPR (ret_exprs);
+                RETURN_CRET (ret) = ret_exprs;
             }
         }
     } else {
@@ -2228,7 +1743,7 @@ InsertOut (argtab_t *argtab, node *fundef, int param_id, types *rettype, bool *d
             argtab->ptr_out[idx] = rettype;
             argtab->tag[idx] = argtag;
 
-            DBUG_PRINT ("PREC3",
+            DBUG_PRINT ("PREC2",
                         ("%s(): out-arg " F_PTR
                          " (TYPE) inserted at position %d with tag %s.",
                          FUNDEF_NAME (fundef), rettype, idx, mdb_argtag[argtag]));
@@ -2317,7 +1832,7 @@ InsertIn (argtab_t *argtab, node *fundef, int param_id, node *arg, bool *dots)
                 argtab->ptr_in[idx] = arg;
                 argtab->tag[idx] = argtag;
 
-                DBUG_PRINT ("PREC3", ("%s(): in-arg " F_PTR "," F_PTR
+                DBUG_PRINT ("PREC2", ("%s(): in-arg " F_PTR "," F_PTR
                                       " (ARG,TYPE) inserted at position %d with tag %s.",
                                       FUNDEF_NAME (fundef), arg, ARG_TYPE (arg), idx,
                                       mdb_argtag[argtag]));
@@ -2330,7 +1845,7 @@ InsertIn (argtab_t *argtab, node *fundef, int param_id, node *arg, bool *dots)
                     argtab->ptr_in[idx] = arg;
                     argtab->tag[idx] = argtag;
 
-                    DBUG_PRINT ("PREC3", ("%s(): in-arg " F_PTR "," F_PTR
+                    DBUG_PRINT ("PREC2", ("%s(): in-arg " F_PTR "," F_PTR
                                           " (ARG,TYPE) merged with out-arg " F_PTR
                                           " (TYPE) at position %d with tag %s.",
                                           FUNDEF_NAME (fundef), arg, ARG_TYPE (arg),
@@ -2360,7 +1875,7 @@ InsertIn (argtab_t *argtab, node *fundef, int param_id, node *arg, bool *dots)
 /******************************************************************************
  *
  * Function:
- *   node *PREC3fundef( node *arg_node, node *arg_info)
+ *   node *PREC2fundef( node *arg_node, node *arg_info)
  *
  * Description:
  *
@@ -2368,7 +1883,7 @@ InsertIn (argtab_t *argtab, node *fundef, int param_id, node *arg, bool *dots)
  ******************************************************************************/
 
 node *
-PREC3fundef (node *arg_node, node *arg_info)
+PREC2fundef (node *arg_node, node *arg_info)
 {
     types *rettypes;
     node *args;
@@ -2376,14 +1891,14 @@ PREC3fundef (node *arg_node, node *arg_info)
     int param_id;
     bool dots;
 
-    DBUG_ENTER ("PREC3fundef");
+    DBUG_ENTER ("PREC2fundef");
 
     if (FUNDEF_STATUS (arg_node) != ST_zombiefun) {
         rettypes = FUNDEF_TYPES (arg_node);
         args = FUNDEF_ARGS (arg_node);
         param_id = 0;
         dots = FALSE;
-        argtab = MakeArgtab (CountFunctionParams (arg_node));
+        argtab = MakeArgtab (CountFunctionParams (arg_node) + 1);
 
         while (rettypes != NULL) {
             if (TYPES_BASETYPE (rettypes) != T_void) {
@@ -2416,8 +1931,8 @@ PREC3fundef (node *arg_node, node *arg_info)
          * all FUNDEF_ARGTABs are build now
          *  -> traverse body
          */
-        INFO_PREC3_POST_ASSIGNS (arg_info) = NULL;
-        INFO_PREC3_PRE_ASSIGNS (arg_info) = NULL;
+        INFO_PREC2_POST_ASSIGNS (arg_info) = NULL;
+        INFO_PREC2_PRE_ASSIGNS (arg_info) = NULL;
         if (FUNDEF_BODY (arg_node) != NULL) {
             FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
         }
@@ -2436,7 +1951,7 @@ PREC3fundef (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *PREC3assign( node *arg_node, node *arg_info)
+ *   node *PREC2assign( node *arg_node, node *arg_info)
  *
  * Description:
  *
@@ -2444,9 +1959,9 @@ PREC3fundef (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PREC3assign (node *arg_node, node *arg_info)
+PREC2assign (node *arg_node, node *arg_info)
 {
-    DBUG_ENTER ("PREC3assign");
+    DBUG_ENTER ("PREC2assign");
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
         ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
@@ -2454,14 +1969,14 @@ PREC3assign (node *arg_node, node *arg_info)
 
     ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
 
-    if (INFO_PREC3_POST_ASSIGNS (arg_info) != NULL) {
+    if (INFO_PREC2_POST_ASSIGNS (arg_info) != NULL) {
         ASSIGN_NEXT (arg_node)
-          = AppendAssign (INFO_PREC3_POST_ASSIGNS (arg_info), ASSIGN_NEXT (arg_node));
-        INFO_PREC3_POST_ASSIGNS (arg_info) = NULL;
+          = AppendAssign (INFO_PREC2_POST_ASSIGNS (arg_info), ASSIGN_NEXT (arg_node));
+        INFO_PREC2_POST_ASSIGNS (arg_info) = NULL;
     }
-    if (INFO_PREC3_PRE_ASSIGNS (arg_info) != NULL) {
-        arg_node = AppendAssign (INFO_PREC3_PRE_ASSIGNS (arg_info), arg_node);
-        INFO_PREC3_PRE_ASSIGNS (arg_info) = NULL;
+    if (INFO_PREC2_PRE_ASSIGNS (arg_info) != NULL) {
+        arg_node = AppendAssign (INFO_PREC2_PRE_ASSIGNS (arg_info), arg_node);
+        INFO_PREC2_PRE_ASSIGNS (arg_info) = NULL;
     }
 
     DBUG_RETURN (arg_node);
@@ -2487,10 +2002,10 @@ MakeMergeAssigns (argtab_t *argtab, node *arg_info)
 
     DBUG_ENTER ("MakeMergeAssigns");
 
-    DBUG_ASSERT ((INFO_PREC3_PRE_ASSIGNS (arg_info) == NULL),
-                 "INFO_PREC3_PRE_ASSIGNS not NULL");
-    DBUG_ASSERT ((INFO_PREC3_POST_ASSIGNS (arg_info) == NULL),
-                 "INFO_PREC3_POST_ASSIGNS not NULL");
+    DBUG_ASSERT ((INFO_PREC2_PRE_ASSIGNS (arg_info) == NULL),
+                 "INFO_PREC2_PRE_ASSIGNS not NULL");
+    DBUG_ASSERT ((INFO_PREC2_POST_ASSIGNS (arg_info) == NULL),
+                 "INFO_PREC2_POST_ASSIGNS not NULL");
 
     DBUG_ASSERT ((argtab != NULL), "no argtab found!");
 
@@ -2500,65 +2015,68 @@ MakeMergeAssigns (argtab_t *argtab, node *arg_info)
                          "no N_exprs node found in argtab!");
             expr = EXPRS_EXPR (argtab->ptr_in[i]);
 
-            if ((NODE_TYPE (expr) == N_id) && RC_IS_ACTIVE (ID_REFCNT (expr))) {
-                /*
-                 * argument is a refcounted ID node
-                 *  -> must be converted into a unique object
-                 *
-                 ******
-                 *
-                 *  a:4 = fun( b:3);   ->   a':1 = to_unq( b:3);
-                 *                          fun( a':-1);
-                 *                          a:4 = from_unq( a':1);
-                 */
-                ids *out_ids;
+            if ((NODE_TYPE (expr) != N_id)
+                || strcmp (IDS_NAME (((ids *)argtab->ptr_out[i])), ID_NAME (expr))) {
+                if ((NODE_TYPE (expr) == N_id) && RC_IS_ACTIVE (ID_REFCNT (expr))) {
+                    /*
+                     * argument is a refcounted ID node
+                     *  -> must be converted into a unique object
+                     *
+                     ******
+                     *
+                     *  a:4 = fun( b:3);   ->   a':-1 = to_unq( b:3);
+                     *                          fun( a':-1);
+                     *                          a:4 = from_unq( a':-1);
+                     */
+                    ids *out_ids;
 
-                /* a:1 */
-                out_ids = DupOneIds (argtab->ptr_out[i]);
-                IDS_REFCNT (out_ids) = 1;
+                    /* a:-1 */
+                    out_ids = DupOneIds (argtab->ptr_out[i]);
+                    IDS_REFCNT (out_ids) = 1 /* RC_INACTIVE */;
 
-                /* to_unq( b:3) */
-                expr = DupTree (expr);
-                ID_UNQCONV (expr) = TO_UNQ;
+                    /* to_unq( b:3) */
+                    expr = DupTree (expr);
+                    ID_UNQCONV (expr) = TO_UNQ;
 
-                /* a:1 = to_unq( b:3); */
-                pre_assigns = MakeAssign (MakeLet (expr, out_ids), pre_assigns);
+                    /* a:-1 = to_unq( b:3); */
+                    pre_assigns = MakeAssign (MakeLet (expr, out_ids), pre_assigns);
 
-                /* a:4 */
-                out_ids = DupOneIds (argtab->ptr_out[i]);
+                    /* a:4 */
+                    out_ids = DupOneIds (argtab->ptr_out[i]);
 
-                /* from_unq( a:1) */
-                expr = DupIds_Id (argtab->ptr_out[i]);
-                ID_REFCNT (expr) = 1;
-                ID_UNQCONV (expr) = FROM_UNQ;
+                    /* from_unq( a:-1) */
+                    expr = DupIds_Id (argtab->ptr_out[i]);
+                    ID_REFCNT (expr) = RC_INACTIVE;
+                    ID_UNQCONV (expr) = FROM_UNQ;
 
-                post_assigns = MakeAssign (MakeLet (expr, out_ids), post_assigns);
+                    post_assigns = MakeAssign (MakeLet (expr, out_ids), post_assigns);
 
-                DBUG_PRINT ("PREC3", ("Assignments %s = to_unq(...) added",
-                                      IDS_NAME (((ids *)argtab->ptr_out[i]))));
-            } else {
-                /*
-                 * argument is no ID node or not refcounted
-                 *  -> no conversion into a unique object is necessary
-                 *  -> create a plain assignment
-                 *
-                 ******
-                 *
-                 *  a = fun( b);   ->   a = b;
-                 *                      fun( a);
-                 */
-                pre_assigns
-                  = MakeAssign (MakeLet (DupTree (expr), DupOneIds (argtab->ptr_out[i])),
-                                pre_assigns);
+                    DBUG_PRINT ("PREC2", ("Assignments %s = to_unq(...) added",
+                                          IDS_NAME (((ids *)argtab->ptr_out[i]))));
+                } else {
+                    /*
+                     * argument is no ID node or not refcounted
+                     *  -> no conversion into a unique object is necessary
+                     *  -> create a plain assignment
+                     *
+                     ******
+                     *
+                     *  a = fun( b);   ->   a = b;
+                     *                      fun( a);
+                     */
+                    pre_assigns = MakeAssign (MakeLet (DupTree (expr),
+                                                       DupOneIds (argtab->ptr_out[i])),
+                                              pre_assigns);
 
-                DBUG_PRINT ("PREC3", ("Assignment %s = ... added",
-                                      IDS_NAME (((ids *)argtab->ptr_out[i]))));
+                    DBUG_PRINT ("PREC2", ("Assignment %s = ... added",
+                                          IDS_NAME (((ids *)argtab->ptr_out[i]))));
+                }
             }
         }
     }
 
-    INFO_PREC3_PRE_ASSIGNS (arg_info) = pre_assigns;
-    INFO_PREC3_POST_ASSIGNS (arg_info) = post_assigns;
+    INFO_PREC2_PRE_ASSIGNS (arg_info) = pre_assigns;
+    INFO_PREC2_POST_ASSIGNS (arg_info) = post_assigns;
 
     DBUG_RETURN (arg_info);
 }
@@ -2566,7 +2084,7 @@ MakeMergeAssigns (argtab_t *argtab, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *PREC3let( node *arg_node, node *arg_info)
+ *   node *PREC2let( node *arg_node, node *arg_info)
  *
  * Description:
  *
@@ -2574,7 +2092,7 @@ MakeMergeAssigns (argtab_t *argtab, node *arg_info)
  ******************************************************************************/
 
 node *
-PREC3let (node *arg_node, node *arg_info)
+PREC2let (node *arg_node, node *arg_info)
 {
     node *ap, *fundef;
     argtab_t *ap_argtab, *argtab;
@@ -2583,21 +2101,21 @@ PREC3let (node *arg_node, node *arg_info)
     node *ap_exprs, *args;
     int idx, dots_off;
 
-    DBUG_ENTER ("PREC3let");
+    DBUG_ENTER ("PREC2let");
 
     ap = LET_EXPR (arg_node);
     if (NODE_TYPE (ap) == N_ap) {
         fundef = AP_FUNDEF (ap);
         DBUG_ASSERT ((fundef != NULL), "AP_FUNDEF not found!");
 
-        DBUG_PRINT ("PREC3", ("Application of %s().", FUNDEF_NAME (fundef)));
+        DBUG_PRINT ("PREC2", ("Application of %s().", FUNDEF_NAME (fundef)));
 
         ap_ids = LET_IDS (arg_node);
         rettypes = FUNDEF_TYPES (fundef);
         ap_exprs = AP_ARGS (ap);
         args = FUNDEF_ARGS (fundef);
 
-        ap_argtab = MakeArgtab (CountIds (ap_ids) + CountExprs (ap_exprs));
+        ap_argtab = MakeArgtab (CountIds (ap_ids) + CountExprs (ap_exprs) + 1);
         argtab = FUNDEF_ARGTAB (fundef);
         DBUG_ASSERT ((argtab != NULL), "FUNDEF_ARGTAB not found!");
 
@@ -2654,6 +2172,593 @@ PREC3let (node *arg_node, node *arg_info)
 
 /*
  *
+ * THIRD TRAVERSAL
+ *
+ */
+
+/******************************************************************************
+ *
+ * Function:
+ *   char *ToggleTmpName( char *name)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+static char *
+ToggleTmpName (char *name)
+{
+    char *last, *tmp;
+    char *buf;
+    int buf_len;
+
+    DBUG_ENTER ("ToggleTmpName");
+
+    if (strncmp (name, "SAC", 3)) {
+        tmp = strstr (name, "SAC");
+        buf_len = 3;
+        last = tmp + 2;
+        while ((*(last + 1)) != '_') {
+            last++;
+            buf_len++;
+        }
+
+        buf = Malloc (buf_len * sizeof (char));
+        strncpy (buf, tmp, buf_len);
+
+        while ((last - buf_len + 1) != name) {
+            (*last) = (*(last - buf_len));
+            last--;
+        }
+        strncpy (name, buf, buf_len);
+
+        buf = Free (buf);
+    }
+
+    DBUG_RETURN (name);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *AddVardec( node *fundef, types *type, char *name)
+ *
+ * Description:
+ *   Generates a new declaration, inserts it into the AST, updates the DFMbase
+ *   and returns the new declaration.
+ *
+ ******************************************************************************/
+
+static node *
+AddVardec (node *fundef, types *type, char *name)
+{
+    node *new_vardec;
+
+    DBUG_ENTER ("AddVardec");
+
+    /*
+     * generate new vardec node
+     */
+    new_vardec = MakeVardec (StringCopy (name), DupAllTypes (type), NULL);
+
+    /*
+     * insert new vardec into AST
+     */
+    VARDEC_NEXT (new_vardec) = FUNDEF_VARDEC (fundef);
+    FUNDEF_VARDEC (fundef) = new_vardec;
+
+    /*
+     * we must update FUNDEF_DFM_BASE!!
+     */
+    FUNDEF_DFM_BASE (fundef)
+      = DFMUpdateMaskBase (FUNDEF_DFM_BASE (fundef), FUNDEF_ARGS (fundef),
+                           FUNDEF_VARDEC (fundef));
+
+    DBUG_RETURN (new_vardec);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *AdjustFoldFundef( node *fundef,
+ *                           ids *acc, node *cexpr)
+ *
+ * description:
+ *   Returns the given fold-fun definition 'fundef' with adjusted var-names.
+ *
+ * parameters:
+ *   'acc' is the accumulator variable.
+ *   'cexpr' is the expression in the operation part.
+ *
+ ******************************************************************************/
+
+static node *
+AdjustFoldFundef (node *fundef, ids *acc, node *cexpr)
+{
+    node *accvar, *funap, *fold_let;
+
+    DBUG_ENTER ("AdjustFoldFundef");
+
+    DBUG_ASSERT ((fundef != NULL), "fundef is NULL!");
+    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef), "no fundef found!");
+
+    /*
+     * first, we create a let-expression of the form
+     *    <acc> = <funname>( <acc>, <cexpr>);
+     */
+
+    accvar = MakeId (StringCopy (IDS_NAME (acc)), StringCopy (IDS_MOD (acc)), ST_regular);
+    ID_VARDEC (accvar) = IDS_VARDEC (acc);
+    DBUG_ASSERT ((ID_VARDEC (accvar) != NULL), "vardec is missing");
+
+    funap = MakeAp (StringCopy (FUNDEF_NAME (fundef)), StringCopy (FUNDEF_MOD (fundef)),
+                    MakeExprs (accvar, MakeExprs (DupTree (cexpr), NULL)));
+    AP_FUNDEF (funap) = fundef;
+
+    fold_let = MakeLet (funap, DupOneIds (acc));
+
+    /*
+     * then we use this dummy let-expression to adjust the fundef
+     */
+    fundef = AdjustIdentifiers (fundef, fold_let);
+
+    /*
+     * let-expression is useless now
+     */
+    fold_let = FreeTree (fold_let);
+
+    /*
+     * create DFM base
+     */
+    if (FUNDEF_DFM_BASE (fundef) == NULL) {
+        FUNDEF_DFM_BASE (fundef)
+          = DFMGenMaskBase (FUNDEF_ARGS (fundef), FUNDEF_VARDEC (fundef));
+    }
+
+    DBUG_RETURN (fundef);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *PREC3fundef( node *arg_node, node *arg_info)
+ *
+ * Description:
+ *   Traverses the function body and the next function.
+ *
+ ******************************************************************************/
+
+node *
+PREC3fundef (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PREC3fundef");
+
+    INFO_PREC3_FUNDEF (arg_info) = arg_node;
+
+    if (FUNDEF_BODY (arg_node) != NULL) {
+        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+    }
+
+    if (FUNDEF_NEXT (arg_node) != NULL) {
+        /*
+         * The result of Trav() is NOT assigned to FUNDEF_NEXT, because this
+         * pointer might be modified by PREC3let() ...
+         */
+        Trav (FUNDEF_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *PREC3block( node *arg_node, node *arg_info)
+ *
+ * Description:
+ *   Saves and restores INFO_PREC3_LASTASSIGN( arg_info).
+ *
+ ******************************************************************************/
+
+node *
+PREC3block (node *arg_node, node *arg_info)
+{
+    node *old_lastassign;
+
+    DBUG_ENTER ("PREC3fundef");
+
+    old_lastassign = INFO_PREC3_LASTASSIGN (arg_info);
+
+    if (BLOCK_INSTR (arg_node) != NULL) {
+        BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
+    }
+
+    if (BLOCK_VARDEC (arg_node) != NULL) {
+        BLOCK_VARDEC (arg_node) = Trav (BLOCK_VARDEC (arg_node), arg_info);
+    }
+
+    INFO_PREC3_LASTASSIGN (arg_info) = old_lastassign;
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *PREC3assign( node *arg_node, node *arg_info)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+PREC3assign (node *arg_node, node *arg_info)
+{
+    node *return_node;
+
+    DBUG_ENTER ("PREC3assign");
+
+    INFO_PREC3_LASTASSIGN (arg_info) = arg_node;
+
+    ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+
+    /*
+     * newly inserted abstractions are prepanded in front of
+     * INFO_PREC3_LASTASSIGN( arg_info). To properly insert these nodes,
+     * that pointer has to be returned!
+     */
+    return_node = INFO_PREC3_LASTASSIGN (arg_info);
+
+    if (ASSIGN_NEXT (arg_node)) {
+        ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (return_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   char *LiftArg( ids *let_ids, node *arg, char *new_name, node *arg_info)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+static char *
+LiftArg (ids *let_ids, node *arg, char *new_name, node *arg_info)
+{
+    node *new_vardec;
+    ids *new_ids;
+
+    DBUG_ENTER ("LiftArg");
+
+    if (new_name == NULL) {
+        /*
+         * first occur of the var of the LHS
+         */
+        DBUG_PRINT ("PREC3",
+                    ("abtracting LHS (%s) of function application", IDS_NAME (let_ids)));
+
+        new_name = ToggleTmpName (TmpVarName (IDS_NAME (let_ids)));
+        /* Insert vardec for new var */
+        new_vardec
+          = AddVardec (INFO_PREC3_FUNDEF (arg_info), IDS_TYPE (let_ids), new_name);
+
+        /*
+         * Abstract the found argument:
+         *   A:n = prf( A:1, ...);
+         *   ... A:n ... A:1 ...    // n references of 'A'
+         * is transformed into
+         *   __A:1 = A:1;
+         *   A:n = prf( __A:1, ...);
+         *   ... A:n ... A:1 ...
+         */
+        new_ids = MakeIds (new_name, NULL, ST_regular);
+        IDS_VARDEC (new_ids) = new_vardec;
+        INFO_PREC3_LASTASSIGN (arg_info)
+          = MakeAssign (MakeLet (EXPRS_EXPR (arg), new_ids),
+                        INFO_PREC3_LASTASSIGN (arg_info));
+
+        EXPRS_EXPR (arg) = MakeId_Copy (new_name);
+        ID_VARDEC (EXPRS_EXPR (arg)) = new_vardec;
+
+        if (RC_IS_ACTIVE (IDS_REFCNT (let_ids))) {
+            IDS_REFCNT (new_ids) = 1;
+            ID_REFCNT (EXPRS_EXPR (arg)) = 1;
+        } else if (RC_IS_INACTIVE (IDS_REFCNT (let_ids))) {
+            IDS_REFCNT (new_ids) = RC_INACTIVE;
+            ID_REFCNT (EXPRS_EXPR (arg)) = RC_INACTIVE;
+        } else {
+            DBUG_ASSERT ((0), "illegal RC value found!");
+        }
+    } else {
+        /*
+         * temporary var already generated
+         * -> just replace the current arg by 'new_name'
+         */
+        EXPRS_EXPR (arg) = FreeTree (EXPRS_EXPR (arg));
+        EXPRS_EXPR (arg) = MakeId_Copy (new_name);
+        ID_VARDEC (EXPRS_EXPR (arg)) = new_vardec;
+
+        if (RC_IS_ACTIVE (IDS_REFCNT (let_ids))) {
+            ID_REFCNT (EXPRS_EXPR (arg)) = 1;
+        } else if (RC_IS_INACTIVE (IDS_REFCNT (let_ids))) {
+            ID_REFCNT (EXPRS_EXPR (arg)) = RC_INACTIVE;
+        } else {
+            DBUG_ASSERT ((0), "illegal RC value found!");
+        }
+    }
+
+    DBUG_RETURN (new_name);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *PREC3let( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   For each id from the LHS:
+ *     If we have   a ... a = fun( ... a ... a ... )   ,
+ *     were   fun   is a user-defined function
+ *       and   a   is a regular argument representing a refcounted data object,
+ *       and the refcounting is *not* done by the function itself,
+ *     or   fun   is a primitive function
+ *       and   a   is a regular argument representing a refcounted data object,
+ *     then we rename each RHS   a   into a temp-var   __tmp<n>   and insert
+ *     an assignment   __tmp<n> = a;   in front of the function application.
+ *
+ * remark:
+ *   The 2nd argument of the primitive function reshape() need not to be
+ *   flattened! Note, that reshape() is simply compiled into an assignment.
+ *
+ ******************************************************************************/
+
+node *
+PREC3let (node *arg_node, node *arg_info)
+{
+    node *old_let;
+    node *let_expr;
+    node *arg, *arg_id;
+    ids *let_ids;
+    char *new_name;
+    int arg_idx;
+
+    DBUG_ENTER ("PREC3let");
+
+    old_let = INFO_PREC3_LET (arg_info);
+    INFO_PREC3_LET (arg_info) = arg_node;
+
+    let_expr = LET_EXPR (arg_node);
+
+    /*
+     * N_prf
+     */
+    if (NODE_TYPE (let_expr) == N_prf) {
+        let_ids = LET_IDS (arg_node);
+        while (let_ids != NULL) {
+            arg = PRF_ARGS (let_expr);
+            arg_idx = 0;
+            new_name = NULL;
+            while (arg != NULL) {
+                arg_id = EXPRS_EXPR (arg);
+                if ((NODE_TYPE (arg_id) == N_id) && (RC_IS_ACTIVE (ID_REFCNT (arg_id))) &&
+                    /* 2nd argument of F_reshape need not to be flattened! */
+                    ((PRF_PRF (let_expr) != F_reshape) || (arg_idx != 1))
+                    && (!strcmp (ID_NAME (arg_id), IDS_NAME (let_ids)))) {
+                    new_name = LiftArg (let_ids, arg, new_name, arg_info);
+                }
+
+                arg = EXPRS_NEXT (arg);
+                arg_idx++;
+            }
+
+            let_ids = IDS_NEXT (let_ids);
+        }
+    }
+    /*
+     * N_ap
+     */
+    else if (NODE_TYPE (let_expr) == N_ap) {
+        argtab_t *argtab = AP_ARGTAB (let_expr);
+        int ids_idx;
+
+        DBUG_ASSERT ((argtab != NULL), "no argtab found!");
+
+        for (ids_idx = 0; ids_idx < argtab->size; ids_idx++) {
+            let_ids = argtab->ptr_out[ids_idx];
+            if (let_ids != NULL) {
+                DBUG_ASSERT ((argtab->ptr_in[0] == NULL), "argtab inconsistent");
+
+                new_name = NULL;
+                for (arg_idx = 1; arg_idx < argtab->size; arg_idx++) {
+                    arg = argtab->ptr_in[arg_idx];
+                    if ((ids_idx != arg_idx) && (arg != NULL)) {
+                        DBUG_ASSERT ((NODE_TYPE (arg) == N_exprs),
+                                     "no N_exprs node found in argtab!");
+
+                        arg_id = EXPRS_EXPR (arg);
+                        if ((NODE_TYPE (arg_id) == N_id)
+                            && (RC_IS_ACTIVE (ID_REFCNT (arg_id)))
+                            && (!strcmp (ID_NAME (arg_id), IDS_NAME (let_ids)))) {
+                            DBUG_ASSERT ((argtab->tag[arg_idx] == ATG_in)
+                                           || (argtab->tag[arg_idx] == ATG_in_rc),
+                                         "illegal tag found!");
+
+                            if (argtab->tag[arg_idx] == ATG_in) {
+                                new_name = LiftArg (let_ids, arg, new_name, arg_info);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
+
+    INFO_PREC3_LET (arg_info) = old_let;
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *PREC3with2( node *arg_node, node *arg_info)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+PREC3with2 (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PREC3with2");
+
+    INFO_PREC3_CEXPR (arg_info) = NULL;
+
+    NWITH2_WITHID (arg_node) = Trav (NWITH2_WITHID (arg_node), arg_info);
+    NWITH2_SEGS (arg_node) = Trav (NWITH2_SEGS (arg_node), arg_info);
+
+    /*
+     * CODE must be traversed before WITHOP!!
+     */
+
+    if (NWITH2_CODE (arg_node) != NULL) {
+        NWITH2_CODE (arg_node) = Trav (NWITH2_CODE (arg_node), arg_info);
+    }
+
+    NWITH2_WITHOP (arg_node) = Trav (NWITH2_WITHOP (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *PREC3withop( node *arg_node, node *arg_info)
+ *
+ * Description:
+ *   New, unique and adjusted pseudo fold-funs are created.
+ *
+ ******************************************************************************/
+
+node *
+PREC3withop (node *arg_node, node *arg_info)
+{
+    ids *let_ids;
+    node *let_expr;
+    node *new_foldfun;
+    char *old_name;
+
+    DBUG_ENTER ("PREC3withop");
+
+    let_ids = LET_IDS (INFO_PREC3_LET (arg_info));
+    let_expr = LET_EXPR (INFO_PREC3_LET (arg_info));
+
+    DBUG_ASSERT ((NODE_TYPE (let_expr) == N_Nwith2), "no N_Nwith2 node found!");
+    if (NWITH2_IS_FOLD (let_expr)) {
+        /*
+         * We have to make the formal parameters of each pseudo fold-fun identical
+         * to the corresponding application in order to allow for simple code
+         * inlining during compilation. But after inlining a single fold-fun might
+         * be called multiple times within the code.
+         * Therefore we have to create new unique fold-funs first!
+         */
+        new_foldfun = DupNode (NWITHOP_FUNDEF (arg_node));
+
+        /*
+         * create a unique name for the new fold-fun
+         * (this is needed for SearchFoldImplementation() in icm2c_mt.c !!)
+         */
+        old_name = FUNDEF_NAME (new_foldfun);
+        FUNDEF_NAME (new_foldfun)
+          = ToggleTmpName (TmpVarName (FUNDEF_NAME (new_foldfun)));
+        old_name = Free (old_name);
+
+        new_foldfun = AdjustFoldFundef (new_foldfun, let_ids,
+                                        /*
+                                         * It is sufficient to take the CEXPR of the first
+                                         * code-node, because in a fold with-loop all
+                                         * CEXPR-ids have the same name!
+                                         */
+                                        NWITH2_CEXPR (let_expr));
+
+        /*
+         * insert new dummy function into fundef chain
+         */
+        FUNDEF_NEXT (new_foldfun) = FUNDEF_NEXT (NWITHOP_FUNDEF (arg_node));
+        FUNDEF_NEXT (NWITHOP_FUNDEF (arg_node)) = new_foldfun;
+
+        NWITHOP_FUNDEF (arg_node) = new_foldfun;
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *PREC3code( node *arg_node, node *arg_info)
+ *
+ * Description:
+ *   Checks whether all NCODE_CEXPR nodes have identical names.
+ *
+ ******************************************************************************/
+
+node *
+PREC3code (node *arg_node, node *arg_info)
+{
+    node *let_expr;
+
+    DBUG_ENTER ("PREC3code");
+
+    if (NCODE_CBLOCK (arg_node) != NULL) {
+        NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
+    }
+
+    if (NCODE_CEXPR (arg_node) != NULL) {
+        NCODE_CEXPR (arg_node) = Trav (NCODE_CEXPR (arg_node), arg_info);
+    }
+
+    let_expr = LET_EXPR (INFO_PREC3_LET (arg_info));
+
+    DBUG_ASSERT ((NODE_TYPE (let_expr) == N_Nwith2), "no N_Nwith2 node found!");
+    if (NWITH2_IS_FOLD (let_expr)) {
+        /*
+         * fold with-loop:
+         * check whether all NCODE_CEXPR nodes have identical names
+         */
+        if (INFO_PREC3_CEXPR (arg_info) != NULL) {
+            DBUG_ASSERT (((NODE_TYPE (INFO_PREC3_CEXPR (arg_info)) == N_id)
+                          && (NODE_TYPE (NCODE_CEXPR (arg_node)) == N_id)),
+                         "NCODE_CEXPR must be a N_id node!");
+
+            DBUG_ASSERT ((!strcmp (ID_NAME (INFO_PREC3_CEXPR (arg_info)),
+                                   ID_NAME (NCODE_CEXPR (arg_node)))),
+                         "Not all NCODE_CEXPR nodes of the fold with-loop have"
+                         " identical names!\n"
+                         "This is probably due to an error during undo-SSA.");
+        } else {
+            INFO_PREC3_CEXPR (arg_info) = NCODE_CEXPR (arg_node);
+        }
+    }
+
+    if (NCODE_NEXT (arg_node) != NULL) {
+        NCODE_NEXT (arg_node) = Trav (NCODE_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/*
+ *
  * Precompile()
  *
  */
@@ -2665,23 +2770,11 @@ PREC3let (node *arg_node, node *arg_info)
  *
  * description:
  *   Prepares syntax tree for code generation.
+ *   (For more information see the comments at the beginning of this file)
  *
  *   Optional traversal of AST when generating c-library:
  *     - Look for overloaded functions and build up a list of wrappers
  *   (This has to be done before the following steps, because of the renaming.)
- *
- *   First traversal of the AST:
- *     - Renaming of the local identifiers of each dummy fold-function
- *       definition in order to prepare them for naive inlining during
- *       compilation.
- *   Second traversal of the AST:
- *     - Renames functions and global objects
- *     - Removes all casts
- *     - Inserts extern declarations for function definitions
- *     - Removes all artificial parameters and return values
- *     - Marks reference parameters in function applications
- *   Unfortunately it is impossible to merge these traversals in a concise
- *   way ...
  *
  ******************************************************************************/
 
