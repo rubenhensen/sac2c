@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.118  1996/01/05 14:43:51  cg
- * use DupId instead of DupChain to copy modarray
+ * Revision 1.119  1996/01/07 16:53:39  cg
+ * added functions IMfundef, IMtypedef, and IMobjdef in import_tab
  *
+;; Revision 1.118  1996/01/05  14:43:51  cg
+;; use DupId instead of DupChain to copy modarray
+;;
 ;; Revision 1.117  1996/01/05  13:12:22  cg
 ;; added function PrintStr in print_tab
 ;;
@@ -434,14 +437,14 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons),
 
-  NIF (N_typedef, "N_typedef", TravSons, TravSons, PrintTypedef, TravSons, TravSons,
+  NIF (N_typedef, "N_typedef", IMtypedef, TravSons, PrintTypedef, TravSons, TravSons,
        TravSons, TravSons, FreeTypedef, TravSons, TravSons, CompTypedef, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        WSIBtypedef, TravSons, TravSons, TravSons, TravSons, CDECtypedef, WDECtypedef,
        TravSons, TravSons, PRECtypedef, TravSons, RSIBtypedef, TravSons, TravSons,
        TravSons, TravSons),
 
-  NIF (N_objdef, "N_objdef", TravSons, TravSons, PrintObjdef, TCobjdef, TravSons,
+  NIF (N_objdef, "N_objdef", IMobjdef, TravSons, PrintObjdef, TCobjdef, TravSons,
        TravSons, TravSons, FreeObjdef, TravSons, TravSons, CompObjdef, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        OBJobjdef, TravSons, OIobjdef, TravSons, CDECobjdef, WDECobjdef, TravSons,
@@ -478,7 +481,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons),
 
-  NIF (N_fundef, "N_fundef", TravSons, FltnFundef, PrintFundef, TCfundef, OPTfundef,
+  NIF (N_fundef, "N_fundef", IMfundef, FltnFundef, PrintFundef, TCfundef, OPTfundef,
        DCRfundef, WRfundef, FreeFundef, CFfundef, RCfundef, CompFundef, LIRfundef,
        DupFundef, INLfundef, UNRfundef, TravSons, IdxFundef, UNSfundef, TravSons,
        AEfundef, WSIBfundef, OBJfundef, TravSons, TravSons, ANAfundef, CDECfundef,
