@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 3.83  2004/07/31 13:48:11  sah
+ * removed MakeNCodeExprs
+ * moved NCODE_WLAA_* macros to tree_compound, as they
+ * ease the access to NCODE_WLAA_INFO and do not access
+ * attributes of the node
+ *
  * Revision 3.82  2004/07/29 18:02:23  sah
  * some macro cleanup
  *
@@ -2132,9 +2138,14 @@ extern node *CreateSel (ids *sel_vec, ids *sel_ids, node *sel_array, bool no_wl,
 
 #define NCODE_CBLOCK_INSTR(n) (BLOCK_INSTR (NCODE_CBLOCK (n)))
 #define NCODE_CEXPR(n) EXPRS_EXPR (NCODE_CEXPRS (n))
-
 #define NCODE_DEFMASK(n) (NCODE_MASK (n, 0))
 #define NCODE_USEMASK(n) (NCODE_MASK (n, 1))
+
+#define NCODE_WLAA_ACCESS(n) (NCODE_WLAA_INFO (n)->access)
+#define NCODE_WLAA_ACCESSCNT(n) (NCODE_WLAA_INFO (n)->accesscnt)
+#define NCODE_WLAA_FEATURE(n) (NCODE_WLAA_INFO (n)->feature)
+#define NCODE_WLAA_INDEXVAR(n) (NCODE_WLAA_INFO (n)->indexvar)
+#define NCODE_WLAA_WLARRAY(n) (NCODE_WLAA_INFO (n)->wlarray)
 
 #define NCODE_WLAA_ARRAYSHP(n) VARDEC_SHPSEG (NCODE_WLAA_WLARRAY (n))
 #define NCODE_WLAA_INDEXDIM(n) VARDEC_SHAPE (NCODE_WLAA_INDEXVAR (n), 0)

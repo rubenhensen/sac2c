@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 3.202  2004/07/31 13:48:11  sah
+ * removed MakeNCodeExprs
+ * moved NCODE_WLAA_* macros to tree_compound, as they
+ * ease the access to NCODE_WLAA_INFO and do not access
+ * attributes of the node
+ *
  * Revision 3.201  2004/07/29 19:16:30  sah
  * fixed N_ex / N_mt being toggeled
  * in their comments.
@@ -3981,10 +3987,7 @@ extern node *MakeNWithOp (WithOpType WithOp, node *shape_array_neutral);
  ***    ACCESCNT is the number of array accesses stored in ACCESS.
  ***/
 
-extern node *MakeNCode (node *block, node *expr);
-
-/* only if expr is from type N_exprs */
-extern node *MakeNCodeExprs (node *block, node *exprs);
+extern node *MakeNCode (node *block, node *exprs);
 
 #define NCODE_CBLOCK(n) ((n)->node[0])
 #define NCODE_CEXPRS(n) ((n)->node[1])
@@ -3998,11 +4001,6 @@ extern node *MakeNCodeExprs (node *block, node *exprs);
 #define NCODE_FLAG(n) ((bool)((n)->flag))
 
 #define NCODE_WLAA_INFO(n) ((access_info_t *)((n)->info2))
-#define NCODE_WLAA_ACCESS(n) ((access_info_t *)((n)->info2))->access
-#define NCODE_WLAA_ACCESSCNT(n) ((access_info_t *)((n)->info2))->accesscnt
-#define NCODE_WLAA_FEATURE(n) ((access_info_t *)((n)->info2))->feature
-#define NCODE_WLAA_INDEXVAR(n) ((access_info_t *)((n)->info2))->indexvar
-#define NCODE_WLAA_WLARRAY(n) ((access_info_t *)((n)->info2))->wlarray
 
 #define NCODE_TSI_TILESHP(n) ((shpseg *)(((node *)((n)->info2))->node[4]))
 

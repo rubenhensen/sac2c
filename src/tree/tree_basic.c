@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 3.87  2004/07/31 13:48:11  sah
+ * removed MakeNCodeExprs
+ * moved NCODE_WLAA_* macros to tree_compound, as they
+ * ease the access to NCODE_WLAA_INFO and do not access
+ * attributes of the node
+ *
  * Revision 3.86  2004/07/26 16:54:05  skt
  * added support for exclusive cells (mt-mode 3)
  *
@@ -2020,35 +2026,14 @@ MakeNWithOp (WithOpType WithOp, node *shape_array_neutral)
 /*--------------------------------------------------------------------------*/
 
 node *
-MakeNCode (node *block, node *expr)
+MakeNCode (node *block, node *exprs)
 {
     node *tmp;
 
     DBUG_ENTER ("MakeNCODE");
 
-    DBUG_ASSERT ((NODE_TYPE (expr) != N_exprs), "MakeNCode called with N_exprs");
-
-    tmp = CreateCleanNode (N_Ncode);
-
-    NCODE_CBLOCK (tmp) = block;
-    NCODE_CEXPRS (tmp) = MakeExprs (expr, NULL);
-    NCODE_USED (tmp) = 0;
-    NCODE_WLAA_INFO (tmp) = NULL;
-
-    DBUG_RETURN (tmp);
-}
-
-/*--------------------------------------------------------------------------*/
-
-node *
-MakeNCodeExprs (node *block, node *exprs)
-{
-    node *tmp;
-
-    DBUG_ENTER ("MakeNCodeExprs");
-
     DBUG_ASSERT ((NODE_TYPE (exprs) == N_exprs),
-                 "MakeNCodeExprs not called with N_exprs");
+                 "MakeNCode called with node other than N_exprs");
 
     tmp = CreateCleanNode (N_Ncode);
 
