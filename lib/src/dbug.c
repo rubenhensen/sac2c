@@ -52,30 +52,8 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+#include "config.h"
 #include "dbug.h"
-
-/*
- * some platform specific settings:
- */
-
-#if defined(SAC_FOR_SOLARIS_SPARC)
-#define STRTOK_EXISTS
-#define STRRCHR_EXISTS
-
-#else
-#if defined(SAC_FOR_LINUX_X86) || defined(SAC_FOR_OSX_MAC)
-#define C370
-#define STRTOK_EXISTS
-#define STRRCHR_EXISTS
-
-#else
-#if defined(SAC_FOR_OSF_ALPHA)
-#define STRTOK_EXISTS
-#define STRRCHR_EXISTS
-
-#endif
-#endif
-#endif
 
 /*
  *     Manifest constants that should not require any changes.
@@ -149,10 +127,6 @@ typedef int BOOLEAN;
  *     Variables which are available externally but should only
  *     be accessed via the macro package facilities.
  */
-
-#if defined(SAC_FOR_LINUX_X86) || defined(SAC_FOR_OSX_MAC)
-#define C370
-#endif
 
 #ifndef C370
 
