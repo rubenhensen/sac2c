@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.22  2000/03/21 10:39:02  dkr
+ * -lac2fun and -fun2lac added
+ *
  * Revision 2.21  2000/02/04 14:45:50  jhs
  * Added -maxrepsize.
  *
@@ -20,9 +23,6 @@
  * Added new options to control initial heap sizes separately
  * for master's arena of arenas, workers' arena of arenas and the
  * top arena.
- *
- * Revision 2.16  1999/11/09 21:50:23  dkr
- * *** empty log message ***
  *
  * Revision 2.15  1999/09/16 16:01:21  cg
  * Removed small bug in description of -check option.
@@ -131,88 +131,7 @@
  * parallel if such execution is enabled.
  * The information stored by the global variable min_parallel_size.
  *
- * Revision 1.76  1998/07/23 10:08:06  cg
- * sac2c option -mt-static -mt-dynamic -mt-all renamed to
- * -mtstatic, -mtdynamic, -mtall resepctively
- *
- * Revision 1.75  1998/07/10 15:20:04  cg
- * included option -i to display copyright/disclaimer
- *
- * Revision 1.74  1998/07/07 13:41:08  cg
- * implemented the command line option -mt-all
- *
- * Revision 1.73  1998/06/30 12:41:43  cg
- * dynamic command line option -threads replaced by -mt.
- *
- * Revision 1.72  1998/06/29 08:52:19  cg
- * streamlined tracing facilities
- * tracing on new with-loop and multi-threading operations implemented
- *
- * Revision 1.71  1998/06/23 15:05:58  cg
- * added command line options -dcccall and -dshow_syscall
- *
- * Revision 1.70  1998/06/19 16:53:51  dkr
- * added -noUIP
- *
- * Revision 1.69  1998/06/09 09:46:14  cg
- * added command line options -mt-static, -mt-dynamic, and -maxsyncfold.
- *
- * Revision 1.68  1998/05/15 15:44:31  srs
- * added -maxoptcycles
- *
- * Revision 1.67  1998/05/15 13:48:22  dkr
- * added flag -bn:conv
- *
- * Revision 1.66  1998/05/15 11:33:22  srs
- * added -no:wli
- *
- * Revision 1.65  1998/05/13 14:04:36  srs
- * added -noWLUNR and -maxwlunroll
- *
- * Revision 1.64  1998/05/05 12:44:28  srs
- * changed text for -noWLT
- *
- * Revision 1.63  1998/05/05 12:36:04  srs
- * added -noWLT
- *
- * Revision 1.62  1998/04/29 17:09:44  dkr
- * changed phase order
- *
- * Revision 1.61  1998/04/02 16:05:24  dkr
- * new compiler phase:
- *   generating concurrent regions (phase 18)
- *
- * Revision 1.60  1998/04/01 19:07:51  dkr
- * renamed break specifiers for precompile
- *
- * Revision 1.59  1998/03/31 13:56:11  dkr
- * new break specifiers for precompile
- *
- * Revision 1.58  1998/03/02 13:59:02  cg
- * added new option -target
- *
- * Revision 1.57  1998/02/25 09:13:39  cg
- * usage.c streamlined
- * break specifiers added
- *
- * Revision 1.56  1998/02/06 13:32:58  srs
- * new switch -noWLF
- *
- * Revision 1.55  1997/10/02 13:21:50  cg
- * option -Mlib explained again.
- *
- * Revision 1.54  1997/09/13 15:15:24  dkr
- * fixed an error in the desription of the flag -M
- *
- * Revision 1.53  1997/08/07 15:59:36  dkr
- * eleminated spelling mistake
- *
- * Revision 1.52  1997/08/07 15:28:33  dkr
- * eliminated typerror
- *
- * Revision 1.50  1997/08/07 11:13:38  dkr
- * added option -_DBUG<from>/<to>/<string>
- *
+ * [...]
  *
  * Revision 1.2  1994/11/10  15:44:34  sbs
  * RCS-header inserted
@@ -297,7 +216,7 @@ usage ()
             "\n\nGENERAL OPTIONS:\n\n"
 
             "\t -D <cpp-var>[=<value>]?\n"
-            "\t\t\tset <cpp-var> (to <value>) when \n"
+            "\t\t\tset <cpp-var> (to <value>) when\n"
             "\t\t\t  running C preprocessor\n"
             "\t -I <path>\tspecify additional declaration path\n"
             "\t -L <path>\tspecify additional library path\n"
@@ -391,37 +310,38 @@ usage ()
             "\t -do <opt>\tenable optimization technique <opt>\n"
             "\n"
             "\t The following optimization techniques are currently supported:\n\n"
-            "\t\tCF  \t constant folding \n"
-            "\t\tINL \t function inlining \n"
-            "\t\tLUR \t loop unrolling \n"
-            "\t\tWLUR\t with-loop unrolling \n"
-            "\t\tLUS \t loop unswitching \n"
-            "\t\tDCR \t dead code removal \n"
-            "\t\tDFR \t dead function removal \n"
-            "\t\tLIR \t loop invariant removal \n"
-            "\t\tCSE \t common subexpression elimination \n"
-            "\t\tWLT \t with-loop transformation \n"
-            "\t\tWLF \t with-loop folding \n"
+            "\t\tCF  \t constant folding\n"
+            "\t\tINL \t function inlining\n"
+            "\t\tLUR \t loop unrolling\n"
+            "\t\tWLUR\t with-loop unrolling\n"
+            "\t\tLUS \t loop unswitching\n"
+            "\t\tDCR \t dead code removal\n"
+            "\t\tDFR \t dead function removal\n"
+            "\t\tLIR \t loop invariant removal\n"
+            "\t\tCSE \t common subexpression elimination\n"
+            "\t\tWLT \t with-loop transformation\n"
+            "\t\tWLF \t with-loop folding\n"
             "\t\tDLAW\t application of the distributive law\n"
-            "\t\tIVE \t index vector elimination \n"
-            "\t\tAE  \t array elimination \n"
-            "\t\tRCO \t refcount optimization \n"
-            "\t\tUIP \t update-in-place \n"
-            "\t\tTSI \t tile size inference (blocking) \n"
-            "\t\tTSP \t tile size pragmas (blocking) \n"
-            "\t\tMTO \t multi-thread optimization \n"
-            "\t\tSBE \t syncronisation barrier elimination \n"
-            "\t\tPHM \t private heap management \n"
-            "\t\tAPS \t arena preselection (in conjunction with PHM) \n"
-            "\t\tRCAO\t refcount allocation optimization (in conjunction with PHM) \n"
-            "\t\tMSCA\t memory size cache adjustment (in conjunction with PHM) \n"
+            "\t\tIVE \t index vector elimination\n"
+            "\t\tAE  \t array elimination\n"
+            "\t\tRCO \t refcount optimization\n"
+            "\t\tUIP \t update-in-place\n"
+            "\t\tTSI \t tile size inference (blocking)\n"
+            "\t\tTSP \t tile size pragmas (blocking)\n"
+            "\t\tMTO \t multi-thread optimization\n"
+            "\t\tSBE \t syncronisation barrier elimination\n"
+            "\t\tPHM \t private heap management\n"
+            "\t\tAPS \t arena preselection (in conjunction with PHM)\n"
+            "\t\tRCAO\t refcount allocation optimization (in conjunction with\n"
+            "\t\tPHM)\n"
+            "\t\tMSCA\t memory size cache adjustment (in conjunction with PHM)\n"
             "\n"
             "\t\tOPT  \t enables/disables all optimizations at once.\n"
             "\n"
             "\tLower case letters may be used to indicate optimization techniques.\n"
             "\n"
             "\tCommand line arguments are evaluated from left to right, i.e.,\n"
-            "\t\"-no OPT -do INL\" disables all optimizations except for \n"
+            "\t\"-no OPT -do INL\" disables all optimizations except for\n"
             "\tfunction inlining.\n\n");
 
     printf ("\tOptimization side conditions:\n\n");
@@ -460,7 +380,8 @@ usage ()
             "\t\t\t\t  Default: -initwheap %d\n",
             initial_worker_heapsize);
     printf ("\t -inituheap <size>\tat program startup initially request <size> KB\n"
-            "\t\t\t\tof heap memory for usage by all threads (unified heap).\n"
+            "\t\t\t\tof heap memory for usage by all threads (unified\n"
+            "\t\t\t\theap).\n"
             "\t\t\t\t  Default: -inituheap %d\n",
             initial_unified_heapsize);
 
@@ -494,245 +415,252 @@ usage ()
             "\t\t\t\t  Default: -maxrepsize %d.\n",
             max_threads, max_sync_fold, min_parallel_size, max_replication_size);
 
-    printf (
+    printf ("\n\nGENERAL DEBUG OPTIONS:\n\n"
 
-      "\n\nDEBUG OPTIONS:\n\n"
+            "\t -d nocleanup\t\tdon't remove temporary files and directories.\n"
+            "\t -d syscall\t\tshow all system calls during compilation.\n"
+            "\t -d cccall\t\tgenerate shell script '.sac2c' that contains C\n"
+            "\t\t\t\tcompiler call.\n"
+            "\t\t\t\tThis implies option \"-d nocleanup\".\n"
 
-      "\t -d efence\t\tfor compilation of programs:\n"
-      "\t\t\t\t  link executable with ElectricFence\n"
-      "\t\t\t\t  (malloc debugger).\n"
-      "\t -d nocleanup\t\tdon't remove temporary files and directories.\n"
-      "\t -d syscall\t\tshow all system calls during compilation.\n"
-      "\t -d cccall\t\tgenerate shell script '.sac2c' that contains C\n"
-      "\t\t\t\tcompiler call.\n"
-      "\t\t\t\tThis implies option \"-d nocleanup\".\n"
-      "\n\t -# <str>\t\toptions (string) for DBUG information\n"
-      "\t -# <from>/<to>/<str>\tDBUG information only in compiler phases\n"
-      "\t\t\t\t<from>..<to>\n"
-      "\t\t\t\t  Default: <from> = first compiler phase,\n"
-      "\t\t\t\t           <to>   = last compiler phase\n"
+            "\n\nINTERNAL DEBUG OPTIONS:\n\n"
 
-      "\n\nRUNTIME CHECK OPTIONS:\n\n"
+            "\t -d efence\t\tfor compilation of programs:\n"
+            "\t\t\t\t  link executable with ElectricFence\n"
+            "\t\t\t\t  (malloc debugger).\n\n"
+            "\t -# <str>\t\toptions (string) for DBUG information\n"
+            "\t -# <from>/<to>/<str>\tDBUG information only in compiler phases\n"
+            "\t\t\t\t<from>..<to>\n"
+            "\t\t\t\t  Default: <from> = first compiler phase,\n"
+            "\t\t\t\t           <to>   = last compiler phase\n\n"
+            "\t -lac2fun <ph>[:<ph>]*\ttransformation of loops and conditions into\n"
+            "\t\t\t\tfunctions before the compiler phases <ph>.\n"
+            "\t -fun2lac <ph>[:<ph>]*\ttransformation vice versa after the compiler\n"
+            "\t\t\t\tphases <ph>.\n"
+            "\t\t\t\tNote: -b<ph> stops the compiler *after* the\n"
+            "\t\t\t\tlac2fun transformation of phase <ph+1>!\n"
 
-      "\t -check [abmeh]+ \tinclude runtime checks into executable program.\n"
-      "\t\t\t\t  a: include all checks available.\n"
-      "\t\t\t\t  b: check array accesses for boundary\n"
-      "\t\t\t\t     violations.\n"
-      "\t\t\t\t  m: check success of memory allocations.\n"
-      "\t\t\t\t  e: check errno variable upon applications of\n"
-      "\t\t\t\t     external functions.\n"
-      "\t\t\t\t  h: use diagnostic heap manager.\n"
+            "\n\nRUNTIME CHECK OPTIONS:\n\n"
 
-      "\n\nRUNTIME TRACE OPTIONS:\n\n"
+            "\t -check [abmeh]+ \tinclude runtime checks into executable program.\n"
+            "\t\t\t\t  a: include all checks available.\n"
+            "\t\t\t\t  b: check array accesses for boundary\n"
+            "\t\t\t\t     violations.\n"
+            "\t\t\t\t  m: check success of memory allocations.\n"
+            "\t\t\t\t  e: check errno variable upon applications of\n"
+            "\t\t\t\t     external functions.\n"
+            "\t\t\t\t  h: use diagnostic heap manager.\n"
 
-      "\t -trace [amrfpowt]+ \tinclude runtime program tracing.\n"
-      "\t\t\t\t  a: trace all (same as mrfpowt).\n"
-      "\t\t\t\t  m: trace memory operations.\n"
-      "\t\t\t\t  r: trace reference counting operations.\n"
-      "\t\t\t\t  f: trace user-defined function calls.\n"
-      "\t\t\t\t  p: trace primitive function calls.\n"
-      "\t\t\t\t  o: trace old with-loop execution.\n"
-      "\t\t\t\t  w: trace new with-loop execution.\n"
-      "\t\t\t\t  t: trace multi-threading specific operations.\n"
+            "\n\nRUNTIME TRACE OPTIONS:\n\n"
 
-      "\n\nRUNTIME PROFILING OPTIONS:\n\n"
+            "\t -trace [amrfpowt]+ \tinclude runtime program tracing.\n"
+            "\t\t\t\t  a: trace all (same as mrfpowt).\n"
+            "\t\t\t\t  m: trace memory operations.\n"
+            "\t\t\t\t  r: trace reference counting operations.\n"
+            "\t\t\t\t  f: trace user-defined function calls.\n"
+            "\t\t\t\t  p: trace primitive function calls.\n"
+            "\t\t\t\t  o: trace old with-loop execution.\n"
+            "\t\t\t\t  w: trace new with-loop execution.\n"
+            "\t\t\t\t  t: trace multi-threading specific operations.\n"
 
-      "\t -profile [afilw]+ \tinclude runtime profiling analysis.\n"
-      "\t\t\t\t  a: analyse all (same as filw).\n"
-      "\t\t\t\t  f: analyse time spent in non-inline functions.\n"
-      "\t\t\t\t  i: analyse time spent in inline functions.\n"
-      "\t\t\t\t  l: analyse time spent in library functions.\n"
-      "\t\t\t\t  w: analyse time spent in with-loops.\n"
+            "\n\nRUNTIME PROFILING OPTIONS:\n\n"
 
-      "\n\nCACHE SIMULATION OPTIONS:\n\n"
+            "\t -profile [afilw]+ \tinclude runtime profiling analysis.\n"
+            "\t\t\t\t  a: analyse all (same as filw).\n"
+            "\t\t\t\t  f: analyse time spent in non-inline functions.\n"
+            "\t\t\t\t  i: analyse time spent in inline functions.\n"
+            "\t\t\t\t  l: analyse time spent in library functions.\n"
+            "\t\t\t\t  w: analyse time spent in with-loops.\n"
 
-      "\t -cs\t\tenable runtime cache simulation\n"
-      "\n"
-      "\t -csdefaults [sagbifp]+ \n\n"
-      "\t\tThis option sets default parameters for cache simulation.\n"
-      "\t\tThese settings may be overridden when starting the analysis of\n"
-      "\t\tan application program.\n"
-      "\t\t  s: simple cache simulation.\n"
-      "\t\t  a: advanced cache simulation.\n"
-      "\t\t  g: global cache simulation.\n"
-      "\t\t  b: cache simulation on selected blocks.\n"
-      "\t\t  i: immediate analysis of memory accesses.\n"
-      "\t\t  f: storage of memory accesses in file.\n"
-      "\t\t  p: piping of memory accesses to concurrently running analyser.\n"
-      "\n"
-      "\t\tThe default simulation parameters are 'sgp'.\n"
-      "\n"
-      "\tSimple cache simulation only counts cache hits and cache misses while\n"
-      "\tadvanced cache simulation additionally classifies cache misses into\n"
-      "\tcold start, cross interference, self interference, and invalidation\n"
-      "\tmisses.\n"
-      "\n"
-      "\tSimulation results may be presented for the entire program run or more\n"
-      "\tspecifically for any code block marked by the following pragma:\n"
-      "\t\t#pragma cachesim [tag]\n"
-      "\tThe optional tag allows to distinguish between the simulation results\n"
-      "\tfor various code blocks. The tag must be a string.\n"
-      "\n"
-      "\tMemory accesses may be evaluated with respect to their cache behavior\n"
-      "\teither immediately within the application process, stored in a file,\n"
-      "\tor they may be piped to a concurrently running analyser process.\n"
-      "\tWhile immediate analysis usually is the fastest alternative,\n"
-      "\tresults, in particular for advanced analysis, are often inaccurate due\n"
-      "\tto changes in the memory layout caused by the analyser. If you choose\n"
-      "\tto write memory accesses to a file, beware that even for small programs\n"
-      "\tto be analysed the amount of data may be quite large. However, once a\n"
-      "\tmemory trace file exists, it can be used to simulate different cache\n"
-      "\tconfigurations without repeatedly running the application program\n"
-      "\titself. The simulation tool for memory access trace files is called\n"
-      "\t\tCacheSimAnalyser\n"
-      "\tand may be found in the directory\n"
-      "\t\t%s%sruntime\n"
-      "\tas part of your SAC %s installation.\n"
-      "\n"
-      "\tThese default cache simulation parameters may be overridden when\n"
-      "\tinvoking the application program to be analysed by using the generic\n"
-      "\tcommand line option\n"
-      "\t\t-cs [sagbifp]+\n"
-      "\n"
-      "\tCache parameters for up to 3 levels of caches may be provided as target\n"
-      "\tspecification in the sac2crc file. However, these only serve as a\n"
-      "\tdefault cache specification which may well be altered when running the\n"
-      "\tcompiled SAC program with cache simulation enabled. This can be done\n"
-      "\tusing the following command line options:\n"
-      "\t\t-cs[123] <size>[/<line size>[/<assoc>[/<write miss policy>]]].\n"
-      "\tThe cache size must be given in KBytes, the cache line size in\n"
-      "\tBytes. A cache size of 0 KB disables the corresponding cache level\n"
-      "\tcompletely regardless of any other setting.\n"
-      "\tWrite miss policies are specified by a single letter:\n"
-      "\t\td: default (fetch on write)\n"
-      "\t\tf: fetch on write\n"
-      "\t\tv: write validate\n"
-      "\t\ta: write around\n"
-      "\n"
-      "\t-cshost <name> \tallows the specification of a specific host to run the\n"
-      "\t\t\tadditional analyser process on when doing piped cache\n"
-      "\t\t\tsimulation. This is very useful for single processor\n"
-      "\t\t\tmachines because the rather limited buffer size of the\n"
-      "\t\t\tpipe determines the synchronisation distance of the two\n"
-      "\t\t\tprocesses, i.e. the application process and the analysis\n"
-      "\t\t\tprocess. This results in very frequent context switches\n"
-      "\t\t\twhen both processes are run on the same processor, and\n"
-      "\t\t\tconsequently, degrades the performance by orders of\n"
-      "\t\t\tmagnitude. So, when doing piped cache simulation always\n"
-      "\t\t\tbe sure to do so either on a multiprocessor or specify a\n"
-      "\t\t\tdifferent machine to run the analyser process on.\n"
-      "\t\t\tHowever, this only defines a default which may be\n"
-      "\t\t\toverridden by using this option when starting the\n"
-      "\t\t\tcompiled application program.\n"
-      "\n"
-      "\t-csfile <name> \tallows the specification of a default file where to\n"
-      "\t\t\twrite the memory access trace when performing cache\n"
-      "\t\t\tsimulation via a file. This default may be overridden by\n"
-      "\t\t\tusing this option when starting the compiled application\n"
-      "\t\t\tprogram.\n"
-      "\t\t\tThe general default name is <exec file name>.cs.\n"
-      "\n"
-      "\t-csdir <name> \tallows the specification of a default directory where to\n"
-      "\t\t\twrite the memory access trace file when performing cache\n"
-      "\t\t\tsimulation via a file. This default may be overridden by\n"
-      "\t\t\tusing this option when starting the compiled application\n"
-      "\t\t\tprogram.\n"
-      "\t\t\tThe general default directory is the tmp directory\n"
-      "\t\t\tspecified in your sac2crc file.\n"
+            "\n\nCACHE SIMULATION OPTIONS:\n\n"
 
-      "\n\nINTRINSIC ARRAY OPERATIONS OPTIONS:\n\n"
+            "\t -cs\t\tenable runtime cache simulation\n"
+            "\n"
+            "\t -csdefaults [sagbifp]+\n\n"
+            "\t\tThis option sets default parameters for cache simulation.\n"
+            "\t\tThese settings may be overridden when starting the analysis of\n"
+            "\t\tan application program.\n"
+            "\t\t  s: simple cache simulation.\n"
+            "\t\t  a: advanced cache simulation.\n"
+            "\t\t  g: global cache simulation.\n"
+            "\t\t  b: cache simulation on selected blocks.\n"
+            "\t\t  i: immediate analysis of memory accesses.\n"
+            "\t\t  f: storage of memory accesses in file.\n"
+            "\t\t  p: piping of memory accesses to concurrently running analyser.\n"
+            "\n"
+            "\t\tThe default simulation parameters are 'sgp'.\n"
+            "\n"
+            "\tSimple cache simulation only counts cache hits and cache misses while\n"
+            "\tadvanced cache simulation additionally classifies cache misses into\n"
+            "\tcold start, cross interference, self interference, and invalidation\n"
+            "\tmisses.\n"
+            "\n"
+            "\tSimulation results may be presented for the entire program run or more\n"
+            "\tspecifically for any code block marked by the following pragma:\n"
+            "\t\t#pragma cachesim [tag]\n"
+            "\tThe optional tag allows to distinguish between the simulation results\n"
+            "\tfor various code blocks. The tag must be a string.\n"
+            "\n"
+            "\tMemory accesses may be evaluated with respect to their cache behavior\n"
+            "\teither immediately within the application process, stored in a file,\n"
+            "\tor they may be piped to a concurrently running analyser process.\n"
+            "\tWhile immediate analysis usually is the fastest alternative,\n"
+            "\tresults, in particular for advanced analysis, are often inaccurate due\n"
+            "\tto changes in the memory layout caused by the analyser. If you choose\n"
+            "\tto write memory accesses to a file, beware that even for small programs\n"
+            "\tto be analysed the amount of data may be quite large. However, once a\n"
+            "\tmemory trace file exists, it can be used to simulate different cache\n"
+            "\tconfigurations without repeatedly running the application program\n"
+            "\titself. The simulation tool for memory access trace files is called\n"
+            "\t\tCacheSimAnalyser\n"
+            "\tand may be found in the directory\n"
+            "\t\t%s%sruntime\n"
+            "\tas part of your SAC %s installation.\n"
+            "\n"
+            "\tThese default cache simulation parameters may be overridden when\n"
+            "\tinvoking the application program to be analysed by using the generic\n"
+            "\tcommand line option\n"
+            "\t\t-cs [sagbifp]+\n"
+            "\n"
+            "\tCache parameters for up to 3 levels of caches may be provided as target\n"
+            "\tspecification in the sac2crc file. However, these only serve as a\n"
+            "\tdefault cache specification which may well be altered when running the\n"
+            "\tcompiled SAC program with cache simulation enabled. This can be done\n"
+            "\tusing the following command line options:\n"
+            "\t\t-cs[123] <size>[/<line size>[/<assoc>[/<write miss policy>]]].\n"
+            "\tThe cache size must be given in KBytes, the cache line size in\n"
+            "\tBytes. A cache size of 0 KB disables the corresponding cache level\n"
+            "\tcompletely regardless of any other setting.\n"
+            "\tWrite miss policies are specified by a single letter:\n"
+            "\t\td: default (fetch on write)\n"
+            "\t\tf: fetch on write\n"
+            "\t\tv: write validate\n"
+            "\t\ta: write around\n"
+            "\n"
+            "\t-cshost <name> \tallows the specification of a specific host to run the\n"
+            "\t\t\tadditional analyser process on when doing piped cache\n"
+            "\t\t\tsimulation. This is very useful for single processor\n"
+            "\t\t\tmachines because the rather limited buffer size of the\n"
+            "\t\t\tpipe determines the synchronisation distance of the two\n"
+            "\t\t\tprocesses, i.e. the application process and the analysis\n"
+            "\t\t\tprocess. This results in very frequent context switches\n"
+            "\t\t\twhen both processes are run on the same processor, and\n"
+            "\t\t\tconsequently, degrades the performance by orders of\n"
+            "\t\t\tmagnitude. So, when doing piped cache simulation always\n"
+            "\t\t\tbe sure to do so either on a multiprocessor or specify a\n"
+            "\t\t\tdifferent machine to run the analyser process on.\n"
+            "\t\t\tHowever, this only defines a default which may be\n"
+            "\t\t\toverridden by using this option when starting the\n"
+            "\t\t\tcompiled application program.\n"
+            "\n"
+            "\t-csfile <name> \tallows the specification of a default file where to\n"
+            "\t\t\twrite the memory access trace when performing cache\n"
+            "\t\t\tsimulation via a file. This default may be overridden by\n"
+            "\t\t\tusing this option when starting the compiled application\n"
+            "\t\t\tprogram.\n"
+            "\t\t\tThe general default name is <exec file name>.cs.\n"
+            "\n"
+            "\t-csdir <name> \tallows the specification of a default directory where to\n"
+            "\t\t\twrite the memory access trace file when performing cache\n"
+            "\t\t\tsimulation via a file. This default may be overridden by\n"
+            "\t\t\tusing this option when starting the compiled application\n"
+            "\t\t\tprogram.\n"
+            "\t\t\tThe general default directory is the tmp directory\n"
+            "\t\t\tspecified in your sac2crc file.\n"
 
-      "\t -intrinsic [a+-x/tdcrpo]+ \tuse intrinsic array operations.\n"
-      "\t\t\t\t\t  a: use all intrinsic operations\n"
-      "\t\t\t\t\t     available (same as +-x/tdcrpo).\n"
-      "\t\t\t\t\t  +: use intrinsic add.\n"
-      "\t\t\t\t\t  -: use intrinsic sub.\n"
-      "\t\t\t\t\t  x: use intrinsic mul.\n"
-      "\t\t\t\t\t  /: use intrinsic div.\n"
-      "\t\t\t\t\t  t: use intrinsic take.\n"
-      "\t\t\t\t\t  d: use intrinsic drop.\n"
-      "\t\t\t\t\t  c: use intrinsic cat.\n"
-      "\t\t\t\t\t  r: use intrinsic rotate.\n"
-      "\t\t\t\t\t  p: use intrinsic psi.\n"
-      "\t\t\t\t\t  o: use intrinsic type conversion.\n"
+            "\n\nINTRINSIC ARRAY OPERATIONS OPTIONS:\n\n"
 
-      "\n\nLINK OPTIONS:\n\n"
+            "\t -intrinsic [a+-x/tdcrpo]+ \tuse intrinsic array operations.\n"
+            "\t\t\t\t\t  a: use all intrinsic operations\n"
+            "\t\t\t\t\t     available (same as +-x/tdcrpo).\n"
+            "\t\t\t\t\t  +: use intrinsic add.\n"
+            "\t\t\t\t\t  -: use intrinsic sub.\n"
+            "\t\t\t\t\t  x: use intrinsic mul.\n"
+            "\t\t\t\t\t  /: use intrinsic div.\n"
+            "\t\t\t\t\t  t: use intrinsic take.\n"
+            "\t\t\t\t\t  d: use intrinsic drop.\n"
+            "\t\t\t\t\t  c: use intrinsic cat.\n"
+            "\t\t\t\t\t  r: use intrinsic rotate.\n"
+            "\t\t\t\t\t  p: use intrinsic psi.\n"
+            "\t\t\t\t\t  o: use intrinsic type conversion.\n"
 
-      "\t -l <n>\t\tlink level for generating SAC library.\n"
-      "\t\t\t  1: compile to one large object file.\n"
-      "\t\t\t  2: compile to archive of object files.\n"
-      "\t\t\t  Default: -l %d\n"
+            "\n\nLINK OPTIONS:\n\n"
 
-      "\n\nC-COMPILER OPTIONS:\n\n"
+            "\t -l <n>\t\tlink level for generating SAC library.\n"
+            "\t\t\t  1: compile to one large object file.\n"
+            "\t\t\t  2: compile to archive of object files.\n"
+            "\t\t\t  Default: -l %d\n"
 
-      "\t -g     \tinclude debug information into object code.\n"
-      "\n"
-      "\t -O <n> \tC compiler level of optimization.\n"
-      "\t\t\t  0: no C compiler optimizations.\n"
-      "\t\t\t  1: minor C compiler optimizations.\n"
-      "\t\t\t  2: medium C compiler optimizations.\n"
-      "\t\t\t  3: full C compiler optimizations.\n"
-      "\t\t\t  Default: -O %d\n"
-      "\n"
-      "\tThe actual effects of these options are C compiler specific!\n"
+            "\n\nC-COMPILER OPTIONS:\n\n"
 
-      "\n\nCUSTOMIZATION\n\n"
+            "\t -g     \tinclude debug information into object code.\n"
+            "\n"
+            "\t -O <n> \tC compiler level of optimization.\n"
+            "\t\t\t  0: no C compiler optimizations.\n"
+            "\t\t\t  1: minor C compiler optimizations.\n"
+            "\t\t\t  2: medium C compiler optimizations.\n"
+            "\t\t\t  3: full C compiler optimizations.\n"
+            "\t\t\t  Default: -O %d\n"
+            "\n"
+            "\tThe actual effects of these options are C compiler specific!\n"
 
-      "\t-target <name>\tspecify a particular compilation target.\n"
-      "\t\t\tCompilation targets are used to customize sac2c for\n"
-      "\t\t\tvarious target architectures, operating systems, and C\n"
-      "\t\t\tcompilers.\n"
-      "\t\t\tThe target description is either read from the\n"
-      "\t\t\tinstallation specific file $SACBASE/runtime/sac2crc or\n"
-      "\t\t\tfrom a file named .sac2crc within the user's home\n"
-      "\t\t\tdirectory.\n"
+            "\n\nCUSTOMIZATION:\n\n"
 
-      "\n\nENVIRONMENT VARIABLES:\n\n"
+            "\t-target <name>\tspecify a particular compilation target.\n"
+            "\t\t\tCompilation targets are used to customize sac2c for\n"
+            "\t\t\tvarious target architectures, operating systems, and C\n"
+            "\t\t\tcompilers.\n"
+            "\t\t\tThe target description is either read from the\n"
+            "\t\t\tinstallation specific file $SACBASE/runtime/sac2crc or\n"
+            "\t\t\tfrom a file named .sac2crc within the user's home\n"
+            "\t\t\tdirectory.\n"
 
-      "\tSACBASE\t\t\tbase directory of SAC installation\n"
-      "\tSAC_PATH\t\tsearch paths for program source\n"
-      "\tSAC_DEC_PATH\t\tsearch paths for declarations\n"
-      "\tSAC_LIBRARY_PATH\tsearch paths for libraries\n"
-      "\n"
-      "\tThe following environment variables must be set correctly when compiling\n"
-      "\ta SAC module/class implementation in order to enable full usability of\n"
-      "\tsac2c command line option \"-libstat\": PWD, USER, and HOST.\n"
+            "\n\nENVIRONMENT VARIABLES:\n\n"
 
-      "\n\nAUTHORS:\n\n"
+            "\tSACBASE\t\t\tbase directory of SAC installation\n"
+            "\tSAC_PATH\t\tsearch paths for program source\n"
+            "\tSAC_DEC_PATH\t\tsearch paths for declarations\n"
+            "\tSAC_LIBRARY_PATH\tsearch paths for libraries\n"
+            "\n"
+            "\tThe following environment variables must be set correctly when compiling\n"
+            "\ta SAC module/class implementation in order to enable full usability of\n"
+            "\tsac2c command line option \"-libstat\": PWD, USER, and HOST.\n"
 
-      "\tSven-Bodo Scholz\n"
-      "\tHenning Wolf\n"
-      "\tArne Sievers\n"
-      "\tClemens Grelck\n"
-      "\tDietmar Kreye\n"
-      "\tSoeren Schwartz\n"
-      "\tBjoern Schierau\n"
-      "\tHelge Ernst\n"
-      "\tJan-Hendrik Schoeler\n"
+            "\n\nAUTHORS:\n\n"
 
-      "\n\nCONTACT:\n\n"
+            "\tSven-Bodo Scholz\n"
+            "\tHenning Wolf\n"
+            "\tArne Sievers\n"
+            "\tClemens Grelck\n"
+            "\tDietmar Kreye\n"
+            "\tSoeren Schwartz\n"
+            "\tBjoern Schierau\n"
+            "\tHelge Ernst\n"
+            "\tJan-Hendrik Schoeler\n"
 
-      "\tWorld Wide Web: http://www.informatik.uni-kiel.de/~sacbase/\n"
-      "\tE-Mail: sacbase@informatik.uni-kiel.de\n"
+            "\n\nCONTACT:\n\n"
 
-      "\n\nBUGS:\n\n"
+            "\tWorld Wide Web: http://www.informatik.uni-kiel.de/~sacbase/\n"
+            "\tE-Mail: sacbase@informatik.uni-kiel.de\n"
 
-      "\tBugs ??  We ????\n"
-      "\n"
-      "\tDo not annotate functions \"inline\" which contain fold-with-loops!\n"
-      "\tIt leads to the creation of C-code which does not compile properly!\n"
-      "\n"
-      "\tUnfortunately, two of our optimizations are quite buggy 8-(\n"
-      "\tTherefore, we decided to preset -noLIR and -noDLAW in the current\n"
-      "\tcompiler release!\n"
+            "\n\nBUGS:\n\n"
 
-      "\n",
-      NULL == getenv ("SACBASE") ? "" : getenv ("SACBASE"),
-      (NULL != getenv ("SACBASE")
-       && getenv ("SACBASE")[strlen (getenv ("SACBASE")) - 1] != '/')
-        ? "/"
-        : "",
-      version_id, linkstyle, cc_optimize);
+            "\tBugs??  We????\n"
+            "\n"
+            "\tDo not annotate functions \"inline\" which contain fold-with-loops!\n"
+            "\tIt leads to the creation of C-code which does not compile properly!\n"
+            "\n"
+            "\tUnfortunately, two of our optimizations are quite buggy 8-(\n"
+            "\tTherefore, we decided to preset -noLIR and -noDLAW in the current\n"
+            "\tcompiler release!\n"
+
+            "\n",
+            (NULL == getenv ("SACBASE")) ? "" : getenv ("SACBASE"),
+            ((NULL != getenv ("SACBASE")
+              && getenv ("SACBASE")[strlen (getenv ("SACBASE")) - 1] != '/'))
+              ? "/"
+              : "",
+            version_id, linkstyle, cc_optimize);
 
     DBUG_VOID_RETURN;
 }
@@ -754,18 +682,18 @@ version ()
             "\n"
             "\n"
 
-            "(c) Copyright 1994 - 1999 by\n\n"
+            "(c) Copyright 1994 - 2000 by\n\n"
 
             "  Christian-Albrechts-Universitaet zu Kiel\n"
             "  Institut fuer Informatik und Praktische Mathematik\n"
             "  Preusserstrasse 1 - 9\n"
             "  D-24105 Kiel\n"
             "  Germany\n\n",
-            version_id[0] == '\0' ? "???" : version_id,
-            target_platform[0] == '\0' ? "???" : target_platform,
-            build_date[0] == '\0' ? "???" : build_date,
-            build_user[0] == '\0' ? "???" : build_user,
-            build_host[0] == '\0' ? "???" : build_host);
+            (version_id[0] == '\0') ? "???" : version_id,
+            (target_platform[0] == '\0') ? "???" : target_platform,
+            (build_date[0] == '\0') ? "???" : build_date,
+            (build_user[0] == '\0') ? "???" : build_user,
+            (build_host[0] == '\0') ? "???" : build_host);
 
     DBUG_VOID_RETURN;
 }
@@ -780,7 +708,7 @@ copyright ()
             "\n"
 
             "\tSAC COPYRIGHT NOTICE, LICENSE, AND DISCLAIMER\n\n"
-            "(c) Copyright 1994 - 1999 by\n\n"
+            "(c) Copyright 1994 - 2000 by\n\n"
 
             "  Christian-Albrechts-Universitaet zu Kiel\n"
             "  Institut fuer Informatik und Praktische Mathematik\n"
@@ -788,34 +716,34 @@ copyright ()
             "  D-24105 Kiel\n"
             "  Germany\n\n");
 
-    printf ("The SAC compiler, the SAC standard library, and all accompanying\n"
-            "software and documentation (in the following named this software)\n"
-            "is developed by the SAC group as part of the Chair of Computer \n"
-            "Organization within the Department of Computer Science and Applied\n"
-            "Mathematics of the University of Kiel (in the following named CAU Kiel)\n"
-            "which reserves all rights on this software.\n"
-            " \n"
-            "Permission to use this software is hereby granted free of charge\n"
-            "for any non-profit purpose in a non-commercial environment, i.e. for\n"
-            "educational or research purposes in a non-profit institute or for\n"
-            "personal, non-commercial use. For this kind of use it is allowed to\n"
-            "copy or redistribute this software under the condition that the \n"
-            "complete distribution for a certain platform is copied or \n"
-            "redistributed and this copyright notice, license agreement, and \n"
-            "warranty disclaimer appears in each copy. ANY use of this software with \n"
-            "a commercial purpose or in a commercial environment is not granted by \n"
-            "this license. \n"
-            "\n"
-            "CAU Kiel disclaims all warranties with regard to this software, including \n"
-            "all implied warranties of merchantability and fitness.  In no event\n"
-            "shall CAU Kiel be liable for any special, indirect or consequential\n"
-            "damages or any damages whatsoever resulting from loss of use, data, or\n"
-            "profits, whether in an action of contract, negligence, or other\n"
-            "tortuous action, arising out of or in connection with the use or\n"
-            "performance of this software. The entire risk as to the quality and\n"
-            "performance of this software is with you. Should this software prove\n"
-            "defective, you assume the cost of all servicing, repair, or correction.\n"
-            " \n");
+    printf (
+      "The SAC compiler, the SAC standard library, and all accompanying\n"
+      "software and documentation (in the following named this software)\n"
+      "is developed by the SAC group as part of the Chair of Computer\n"
+      "Organization within the Department of Computer Science and Applied\n"
+      "Mathematics of the University of Kiel (in the following named CAU Kiel)\n"
+      "which reserves all rights on this software.\n"
+      "\n"
+      "Permission to use this software is hereby granted free of charge\n"
+      "for any non-profit purpose in a non-commercial environment, i.e. for\n"
+      "educational or research purposes in a non-profit institute or for\n"
+      "personal, non-commercial use. For this kind of use it is allowed to\n"
+      "copy or redistribute this software under the condition that the\n"
+      "complete distribution for a certain platform is copied or\n"
+      "redistributed and this copyright notice, license agreement, and\n"
+      "warranty disclaimer appears in each copy. ANY use of this software with\n"
+      "a commercial purpose or in a commercial environment is not granted by\n"
+      "this license.\n"
+      "\n"
+      "CAU Kiel disclaims all warranties with regard to this software, including\n"
+      "all implied warranties of merchantability and fitness.  In no event\n"
+      "shall CAU Kiel be liable for any special, indirect or consequential\n"
+      "damages or any damages whatsoever resulting from loss of use, data, or\n"
+      "profits, whether in an action of contract, negligence, or other\n"
+      "tortuous action, arising out of or in connection with the use or\n"
+      "performance of this software. The entire risk as to the quality and\n"
+      "performance of this software is with you. Should this software prove\n"
+      "defective, you assume the cost of all servicing, repair, or correction.\n\n");
 
 #if 0
   printf("Permission to use, copy, modify, and distribute this software and its\n"
