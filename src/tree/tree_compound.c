@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2001/02/26 09:43:33  nmw
+ * *** empty log message ***
+ *
  * Revision 3.12  2001/02/22 12:45:16  nmw
  * MakeVardecFromArg added
  *
@@ -1612,7 +1615,7 @@ MakeVardecFromArg (node *arg_node)
     VARDEC_STATUS (new_vardec) = ARG_STATUS (arg_node);
     VARDEC_ATTRIB (new_vardec) = ARG_ATTRIB (arg_node);
     VARDEC_TDEF (new_vardec) = ARG_TDEF (arg_node);
-    /* ##nmw## */
+
     /* duplicate avis node manually */
     FreeNode (VARDEC_AVIS (new_vardec));
     VARDEC_AVIS (new_vardec) = DupNode (VARDEC_AVIS (arg_node));
