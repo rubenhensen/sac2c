@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2004/11/23 15:43:21  jhb
+ * compile
+ *
  * Revision 1.5  2004/11/23 15:00:04  jhb
  * SACDevCamp 04
  *
@@ -46,6 +49,10 @@
 #include "print.h"
 #include "DupTree.h"
 #include "LookUpTable.h"
+#include "internal_lib.h"
+#include "free.h"
+
+#include <string.h>
 
 /*
  * INFO structure
@@ -266,8 +273,8 @@ EMDRcode (node *arg_node, info *arg_info)
                         node *arr = PRF_ARG2 (sel);
 
                         if ((ID_AVIS (iv) == ID_AVIS (vec))
-                            && (SearchInLUT_PP (INFO_EMDR_REUSELUT (arg_info),
-                                                ID_AVIS (mem))
+                            && (LUTsearchInLutPp (INFO_EMDR_REUSELUT (arg_info),
+                                                  ID_AVIS (mem))
                                 == ID_AVIS (arr))) {
                             inplace = TRUE;
                         }
@@ -294,10 +301,10 @@ EMDRcode (node *arg_node, info *arg_info)
                                 node *icm = ASSIGN_INSTR (idxass);
                                 if ((NODE_TYPE (icm) == N_icm)
                                     && (!strcmp (ICM_NAME (icm), "ND_USE_GENVAR_OFFSET"))
-                                    && (ID_VARDEC (idx) == ID_VARDEC (ICM_ARG1 (icm)))
-                                    && (SearchInLUT_PP (INFO_EMDR_REUSELUT (arg_info),
-                                                        ID_VARDEC (mem))
-                                        == ID_VARDEC (arr))) {
+                                    && (ID_AVIS (idx) == ID_AVIS (ICM_ARG1 (icm)))
+                                    && (LUTsearchInLutPp (INFO_EMDR_REUSELUT (arg_info),
+                                                          ID_AVIS (mem))
+                                        == ID_AVIS (arr))) {
                                     DBUG_ASSERT (lastass != NULL,
                                                  "Write a better SSADCR, Man!");
                                     ASSIGN_NEXT (lastass)
@@ -316,7 +323,6 @@ EMDRcode (node *arg_node, info *arg_info)
 
         if (inplace) {
             node *avis;
-            node *lhs;
 
             DBUG_PRINT ("EMDR", ("Inplace copy situation recognized!"));
 
@@ -357,8 +363,8 @@ EMDRcode (node *arg_node, info *arg_info)
     /*
      * Traverse next code
      */
-    if (NCODE_NEXT (arg_node) != NULL) {
-        NCODE_NEXT (arg_node) = TRAVdo (NCODE_NEXT (arg_node), arg_info);
+    if (CODE_NEXT (arg_node) != NULL) {
+        CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -387,7 +393,7 @@ EMDRfundef (node *arg_node, info *arg_info)
     if ((!FUNDEF_ISCONDFUN (arg_node)) || (arg_info != NULL)) {
 
         if (FUNDEF_BODY (arg_node) != NULL) {
-            info *info = TBmakeInfo (arg_node);
+            info *info = MakeInfo (arg_node);
 
             INFO_EMDR_REUSELUT (info) = LUTgenerateLut ();
             INFO_EMDR_RENAMELUT (info) = LUTgenerateLut ();
@@ -505,9 +511,9 @@ EMDRprf (node *arg_node, info *arg_info)
          *
          * Insert (b, a) into REUSELUT
          */
-        InsertIntoLUT_P (INFO_EMDR_REUSELUT (arg_info),
-                         IDS_AVIS (INFO_EMDR_LHS (arg_info)),
-                         ID_AVIS (PRF_ARG3 (arg_node)));
+        LUTinsertIntoLutP (INFO_EMDR_REUSELUT (arg_info),
+                           IDS_AVIS (INFO_EMDR_LHS (arg_info)),
+                           ID_AVIS (PRF_ARG3 (arg_node)));
         break;
 
     case F_fill:
@@ -524,8 +530,8 @@ EMDRprf (node *arg_node, info *arg_info)
                  * If ( b, a) is in REUSELUT:
                  *   Insert ( c, a) into RENAMELUT
                  */
-                if (SearchInLUT_PP (INFO_EMDR_REUSELUT (arg_info),
-                                    ID_AVIS (PRF_ARG2 (arg_node)))
+                if (LUTsearchInLutPp (INFO_EMDR_REUSELUT (arg_info),
+                                      ID_AVIS (PRF_ARG2 (arg_node)))
                     == ID_AVIS (PRF_ARG1 (prf))) {
                     PRF_PRF (prf) = F_noop;
                     /*
