@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.2  2001/03/22 14:27:12  nmw
+ * DebugPrint added
+ *
  * Revision 1.1  2001/03/02 14:32:56  sbs
  * Initial revision
  *
@@ -46,5 +49,6 @@ extern void *PickNElemsFromCV (simpletype type, void *elems, int offset, int len
 extern void CopyElemsFromCVToCV (simpletype type, void *from, int off, int len, void *to,
                                  int to_off);
 extern void DbugPrintBinOp (char *fun, constant *arg1, constant *arg2, constant *res);
+extern void DbugPrintUnaryOp (char *fun, constant *arg1, constant *res);
 
 #endif /* _constants_internal_h */
