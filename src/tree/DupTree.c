@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.74  2002/09/06 12:17:19  sah
+ * handling of N_setwl nodes modified.
+ *
  * Revision 3.73  2002/09/06 10:36:09  sah
  * added DupSetWL
  *
@@ -744,7 +747,7 @@ DupSetWL (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("DupSetWL");
 
-    new_node = MakeSetWL (DupIds_ (SETWL_IDS (arg_node), arg_info),
+    new_node = MakeSetWL (Trav (SETWL_IDS (arg_node), arg_info),
                           Trav (SETWL_EXPR (arg_node), arg_info));
 
     CopyCommonNodeData (new_node, arg_node);

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.41  2002/09/06 12:17:19  sah
+ * handling of N_setwl nodes modified.
+ *
  * Revision 3.40  2002/09/06 10:36:25  sah
  * added FreeSetWL
  *
@@ -1627,7 +1630,7 @@ FreeSetWL (node *arg_node, node *arg_info)
     DBUG_PRINT ("FREE", ("Removing N_setwl node ..."));
 
     SETWL_EXPR (arg_node) = FREETRAV (SETWL_EXPR (arg_node));
-    SETWL_IDS (arg_node) = FreeAllIds (SETWL_IDS (arg_node));
+    SETWL_IDS (arg_node) = FREETRAV (SETWL_IDS (arg_node));
 
     arg_node = Free (arg_node);
 

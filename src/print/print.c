@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.115  2002/09/06 12:20:06  sah
+ * handling of N_setwl nodes modified.
+ *
  * Revision 3.114  2002/09/06 10:35:43  sah
  * added PrintSetWL
  *
@@ -2608,9 +2611,15 @@ PrintSetWL (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintSetWL");
 
-    fprintf (outfile, "{ [");
-    PrintIds (SETWL_IDS (arg_node), arg_info);
-    fprintf (outfile, "] -> ");
+    if (NODE_TYPE (arg_node) == N_exprs) {
+        fprintf (outfile, "{ [");
+        Trav (SETWL_IDS (arg_node), arg_info);
+        fprintf (outfile, "] -> ");
+    } else {
+        Trav (SETWL_IDS (arg_node), arg_info);
+        fprintf (outfile, " -> ");
+    }
+
     Trav (SETWL_EXPR (arg_node), arg_info);
     fprintf (outfile, " }");
 
