@@ -318,18 +318,19 @@ PIWmodul (node *arg_node, node *arg_info)
     old_outfile = outfile; /* save, might be in use */
 
     /* open <module>_wrapper.c in tmpdir for writing*/
-    outfile = WriteOpen ("%s/%s_wrapper.c", tmp_dirname, MODUL_NAME (arg_node));
+    outfile = WriteOpen ("%s/cwrapper.c", tmp_dirname);
     fprintf (outfile, "/* Interface SAC <-> C for %s\n", MODUL_NAME (arg_node));
     fprintf (outfile,
-             " * this file is only used when compiling the c-library lib%s.a */\n",
+             " * this file is only used when compiling"
+             " the c-library lib%s.a */\n\n",
              modulename);
-    fprintf (outfile, "#include <stdio.h>\n");
-    fprintf (outfile, "#include \"sac_cinterface.h\"\n");
-    fprintf (outfile, "#include \"sac_arg.h\"\n");
-    fprintf (outfile, "#include \"sac_cwrapper.h\"\n");
 
+    fprintf (outfile, "#include <stdio.h>\n");
     /* declarations for external SAC functions */
     fprintf (outfile, "#include \"header.h\"\n");
+    fprintf (outfile, "#include \"sac.h\"\n");
+    fprintf (outfile, "#include \"sac_cwrapper.h\"\n");
+    fprintf (outfile, "#include \"sac_cinterface.h\"\n");
     fprintf (outfile, "\n");
 
     /* general preload for codefile */
