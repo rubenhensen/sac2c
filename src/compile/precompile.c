@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.87  2004/08/13 13:50:56  khf
+ * substituted NCODE_CEXPR by NCODE_CEXPRS
+ *
  * Revision 3.86  2004/08/09 12:26:32  khf
  * PREC1prf: break in default case inserted
  *
@@ -2505,8 +2508,8 @@ PREC3code (node *arg_node, info *arg_info)
         NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
     }
 
-    if (NCODE_CEXPR (arg_node) != NULL) {
-        NCODE_CEXPR (arg_node) = Trav (NCODE_CEXPR (arg_node), arg_info);
+    if (NCODE_CEXPRS (arg_node) != NULL) {
+        NCODE_CEXPRS (arg_node) = Trav (NCODE_CEXPRS (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -3515,7 +3518,7 @@ PREC4code (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("PREC4code");
 
-    NCODE_CEXPR (arg_node) = Trav (NCODE_CEXPR (arg_node), arg_info);
+    NCODE_CEXPRS (arg_node) = Trav (NCODE_CEXPRS (arg_node), arg_info);
     NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
 
     NCODE_INC_RC_IDS (arg_node) = RenameIds (NCODE_INC_RC_IDS (arg_node));
