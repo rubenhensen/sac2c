@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.33  2001/04/02 11:10:17  nmw
+ * DupAp increments used counter of special fundefs and adds external
+ * assignment to FUNDEF_EXT_ASSIGNS list
+ *
  * Revision 3.32  2001/03/29 12:53:22  dkr
  * bug in DupWLsegVar fixed
  *
@@ -228,6 +232,8 @@ DupTreeOrNodeLUT_Type (int NodeOnly, node *arg_node, LUT_t lut, int type)
         arg_info = MakeInfo ();
 
         INFO_DUP_TYPE (arg_info) = type;
+        INFO_DUP_ASSIGN (arg_info) = NULL;
+        INFO_DUP_FUNDEF (arg_info) = NULL;
 
         /*
          *  Via this (ugly) macro DUPCONT the decision to copy the whole tree
@@ -824,6 +830,8 @@ DupFundef (node *arg_node, node *arg_info)
     DBUG_ASSERT ((INFO_DUP_TYPE (arg_info) != DUP_INLINE),
                  "N_fundef node can't be duplicated in DUP_INLINE mode!");
 
+    DBUG_PRINT ("DUP", ("start dubbing of fundef %s", FUNDEF_NAME (arg_node)));
+
     /*
      *  We can't copy the FUNDEF_DFM_BASE and DFMmasks belonging to this base
      *  directly!
@@ -873,9 +881,10 @@ DupFundef (node *arg_node, node *arg_info)
     FUNDEF_NEEDOBJS (new_node) = DupNodelist_ (FUNDEF_NEEDOBJS (arg_node), arg_info);
     FUNDEF_VARNO (new_node) = FUNDEF_VARNO (arg_node);
     FUNDEF_INLREC (new_node) = FUNDEF_INLREC (arg_node);
-
-    FUNDEF_EXT_ASSIGN (new_node)
-      = SearchInLUT_P (INFO_DUP_LUT (arg_info), FUNDEF_EXT_ASSIGN (arg_node));
+    /* ##nmw## */
+    /* FUNDEF_EXT_ASSIGNS( new_node) = SearchInLUT_P( INFO_DUP_LUT( arg_info),
+       FUNDEF_EXT_ASSIGNS( arg_node)); */
+    FUNDEF_EXT_ASSIGNS (new_node) = NULL;
 
     /* caution: has the body been already traversed?? */
     FUNDEF_INT_ASSIGN (new_node)
@@ -1026,6 +1035,25 @@ DupBlock (node *arg_node, node *arg_info)
 
     CopyCommonNodeData (new_node, arg_node);
 
+    /*
+     * after all we have to traverse the vardecs again to correct the
+     * SSAASSIGN(2) attributes from the look-up-table (stored by the
+     * DupAssign function in the BLOCK_INSTR traversal.
+     */
+    if (new_vardecs != NULL) {
+        while (new_vardecs != NULL) {
+            if (VARDEC_AVIS (new_vardecs) != NULL) {
+                AVIS_SSAASSIGN (VARDEC_AVIS (new_vardecs))
+                  = SearchInLUT_P (INFO_DUP_LUT (arg_info),
+                                   AVIS_SSAASSIGN (VARDEC_AVIS (new_vardecs)));
+                AVIS_SSAASSIGN2 (VARDEC_AVIS (new_vardecs))
+                  = SearchInLUT_P (INFO_DUP_LUT (arg_info),
+                                   AVIS_SSAASSIGN2 (VARDEC_AVIS (new_vardecs)));
+            }
+            new_vardecs = VARDEC_NEXT (new_vardecs);
+        }
+    }
+
     DBUG_RETURN (new_node);
 }
 
@@ -1123,8 +1151,13 @@ DupAssign (node *arg_node, node *arg_info)
 
     if ((INFO_DUP_TYPE (arg_info) != DUP_INLINE)
         || (NODE_TYPE (ASSIGN_INSTR (arg_node)) != N_return)) {
-        new_node = MakeAssign (DUPTRAV (ASSIGN_INSTR (arg_node)),
-                               DUPCONT (ASSIGN_NEXT (arg_node)));
+        new_node = MakeAssign (NULL, NULL);
+
+        INFO_DUP_ASSIGN (arg_info) = new_node;
+        ASSIGN_INSTR (new_node) = DUPTRAV (ASSIGN_INSTR (arg_node));
+        INFO_DUP_ASSIGN (arg_info) = NULL;
+
+        ASSIGN_NEXT (new_node) = DUPCONT (ASSIGN_NEXT (arg_node));
 
         INFO_DUP_LUT (arg_info)
           = InsertIntoLUT_P (INFO_DUP_LUT (arg_info), arg_node, new_node);
@@ -1270,8 +1303,63 @@ DupAp (node *arg_node, node *arg_info)
                        DUPTRAV (AP_ARGS (arg_node)));
     AP_ATFLAG (new_node) = AP_ATFLAG (arg_node);
 
-    /* Ooops .... has the fundef node been already traversed ?? */
-    AP_FUNDEF (new_node) = SearchInLUT_P (INFO_DUP_LUT (arg_info), AP_FUNDEF (arg_node));
+    /* first check for correct AP_FUNDEF link (lac2fun does
+     * duptree for incomplete tree parts!):
+     * if this is an application of a special function (cond/do/while)
+     * and it is not the recursive call of a do/while function
+     */
+    DBUG_PRINT ("DUP", ("duplicating application..."));
+    if (AP_FUNDEF (arg_node) != NULL) {
+        DBUG_PRINT ("DUP", ("duplicating application of %s",
+                            FUNDEF_NAME (AP_FUNDEF (arg_node))));
+    }
+
+    /*
+     * if function application of cond-fundef or
+     * non-recursive application of do/while fundef
+     */
+    if ((AP_FUNDEF (arg_node) != NULL)
+        && ((FUNDEF_STATUS (AP_FUNDEF (arg_node)) == ST_condfun)
+            || (((FUNDEF_STATUS (AP_FUNDEF (arg_node)) == ST_dofun)
+                 || (FUNDEF_STATUS (AP_FUNDEF (arg_node)) == ST_whilefun))
+                && (arg_node
+                    != LET_EXPR (
+                         ASSIGN_INSTR (FUNDEF_INT_ASSIGN (AP_FUNDEF (arg_node)))))))) {
+
+        /*
+         * because a special function is implicit inlined code and
+         * we cannot simply duplicate all dependend functions (due to
+         * the problem where to store the new created fundefs).
+         * therefore we add this new application as additional
+         * external reference to the calles special function and
+         * increment its used counter. Before we can optimize this
+         * function with multiple references we have to duplicate it
+         * in a place where we can handle the newly created fundefs.
+         * (usually the XYYap traversal functions in the optimizations)
+         */
+
+        AP_FUNDEF (new_node) = AP_FUNDEF (arg_node);
+
+        /* increment reference counter */
+        FUNDEF_USED (AP_FUNDEF (new_node)) = FUNDEF_USED (AP_FUNDEF (new_node)) + 1;
+
+        /* add new application to external assignment chain */
+        DBUG_ASSERT ((FUNDEF_EXT_ASSIGNS (AP_FUNDEF (new_node)) != NULL),
+                     "there is no nodelist to store external assignments anymore");
+        DBUG_ASSERT ((INFO_DUP_ASSIGN (arg_info) != NULL),
+                     "no corresponding assignment node");
+        FUNDEF_EXT_ASSIGNS (AP_FUNDEF (new_node))
+          = NodeListAppend (FUNDEF_EXT_ASSIGNS (AP_FUNDEF (new_node)),
+                            INFO_DUP_ASSIGN (arg_info), NULL);
+
+        DBUG_PRINT ("DUP", ("used counter for %s incremented to %d",
+                            FUNDEF_NAME (AP_FUNDEF (new_node)),
+                            FUNDEF_USED (AP_FUNDEF (new_node))));
+    } else {
+        /* Ooops .... has the fundef node been already traversed ?? */
+        AP_FUNDEF (new_node)
+          = SearchInLUT_P (INFO_DUP_LUT (arg_info), AP_FUNDEF (arg_node));
+    }
 
     CopyCommonNodeData (new_node, arg_node);
 
@@ -1673,9 +1761,6 @@ DupNwith2 (node *arg_node, node *arg_info)
     NWITH2_OUT_MASK (new_node) = DupDFMmask (NWITH2_OUT_MASK (arg_node), arg_info);
     NWITH2_LOCAL_MASK (new_node) = DupDFMmask (NWITH2_LOCAL_MASK (arg_node), arg_info);
 
-    if (NWITH2_SCHEDULING (arg_node) != NULL) {
-        NWITH2_SCHEDULING (new_node) = SCHCopyScheduling (NWITH2_SCHEDULING (arg_node));
-    }
     NWITH2_ISSCHEDULED (new_node) = NWITH2_ISSCHEDULED (arg_node);
 
     CopyCommonNodeData (new_node, arg_node);
@@ -2420,4 +2505,100 @@ DupId_Ids (node *old_id)
 #endif
 
     DBUG_RETURN (new_ids);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *CheckAndDupSpecialFundef( node* fundef, node *assign)
+ *
+ * Returns:
+ *   modified module node
+ *
+ * Description:
+ *   Checks a special fundef for multiple uses. if there are more than one
+ *   external assignment/function application, this given assignment is removed
+ *   from the special function list of external assignments and added to
+ *   the newly duplicated and renamed version of this fundef. the concerning
+ *   assignment/function application is modified to call the new fundef.
+ *   the new fundef is added to the global MODUL_FUNS chain of fundefs.
+ *
+ * remarks:
+ *   because the global fundef chain is modified during the traversal of
+ *   this function chain it is necessary not to overwrite the MODUL_FUNS
+ *   attribute in the bottom-up traversal!!!
+ *
+ *****************************************************************************/
+node *
+CheckAndDupSpecialFundef (node *module, node *fundef, node *assign)
+{
+    node *new_fundef;
+    char *new_name;
+
+    DBUG_ENTER ("CheckAndDupSpecialFundef");
+
+    DBUG_ASSERT ((NODE_TYPE (module) == N_modul), "given module node is not a module");
+    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef), "given fundef node is not a fundef");
+    DBUG_ASSERT ((NODE_TYPE (assign) == N_assign),
+                 "given assign node is not an assignment");
+    DBUG_ASSERT (((FUNDEF_STATUS (fundef) == ST_condfun)
+                  || (FUNDEF_STATUS (fundef) == ST_dofun)
+                  || (FUNDEF_STATUS (fundef) == ST_whilefun)),
+                 "given fundef is not a special fundef");
+    DBUG_ASSERT ((FUNDEF_USED (fundef) > 0), "fundef is not used anymore");
+    DBUG_ASSERT ((FUNDEF_EXT_ASSIGNS (fundef) != NULL),
+                 "fundef has no external assignments");
+    DBUG_ASSERT ((NODE_TYPE (ASSIGN_INSTR (assign)) == N_let),
+                 "assignment contains no let");
+    DBUG_ASSERT ((NODE_TYPE (LET_EXPR (ASSIGN_INSTR (assign))) == N_ap),
+                 "assignment is to application");
+    DBUG_ASSERT ((AP_FUNDEF (LET_EXPR (ASSIGN_INSTR (assign))) == fundef),
+                 "application of different fundef than given fundef");
+    DBUG_ASSERT ((NodeListFind (FUNDEF_EXT_ASSIGNS (fundef), assign) != NULL),
+                 "given assignment is not element of external assignment list");
+
+    if (FUNDEF_USED (fundef) > 1) {
+        /* multiple uses - duplicate special fundef */
+        DBUG_PRINT ("DUP", ("duplicating multiple fundef %s", FUNDEF_NAME (fundef)));
+
+        new_fundef = DupNode (fundef);
+
+        /* rename fundef */
+        new_name = TmpVarName (FUNDEF_NAME (fundef));
+        FREE (FUNDEF_NAME (new_fundef));
+        FUNDEF_NAME (new_fundef) = new_name;
+
+        /* rename recursive funap (only do/while fundefs */
+        if ((FUNDEF_STATUS (new_fundef) == ST_dofun)
+            || (FUNDEF_STATUS (new_fundef) == ST_whilefun)) {
+            DBUG_ASSERT ((FUNDEF_INT_ASSIGN (new_fundef) != NULL),
+                         "missing link to recursive function call");
+
+            FREE (AP_NAME (LET_EXPR (ASSIGN_INSTR (FUNDEF_INT_ASSIGN (new_fundef)))));
+            AP_NAME (LET_EXPR (ASSIGN_INSTR (FUNDEF_INT_ASSIGN (new_fundef))))
+              = StringCopy (FUNDEF_NAME (new_fundef));
+        }
+
+        /* init external assignment list */
+        FUNDEF_EXT_ASSIGNS (new_fundef) = NodeListAppend (NULL, assign, NULL);
+        FUNDEF_USED (new_fundef) = 1;
+
+        /* rename the external assign/funap */
+        FREE (AP_NAME (LET_EXPR (ASSIGN_INSTR (assign))));
+        AP_NAME (LET_EXPR (ASSIGN_INSTR (assign))) = StringCopy (new_name);
+
+        /* add new fundef to global chain of fundefs */
+        FUNDEF_NEXT (new_fundef) = MODUL_FUNS (module);
+        MODUL_FUNS (module) = new_fundef;
+
+        /* remove assignment from old external assignment list */
+        FUNDEF_EXT_ASSIGNS (fundef)
+          = NodeListDelete (FUNDEF_EXT_ASSIGNS (fundef), assign, 0);
+        FUNDEF_USED (fundef) = FUNDEF_USED (fundef) - 1;
+
+    } else {
+        /* only single use - no duplication needed */
+    }
+
+    DBUG_RETURN (module);
 }

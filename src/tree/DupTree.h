@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2001/04/02 11:10:17  nmw
+ * DupAp increments used counter of special fundefs and adds external
+ * assignment to FUNDEF_EXT_ASSIGNS list
+ *
  * Revision 3.11  2001/03/27 21:39:53  dkr
  * macro DUPVECT renamed into DUP_VECT and moved to internal_lib.h
  *
@@ -175,5 +179,8 @@ extern node *DupWLgridVar (node *arg_node, node *arg_info);
 /* pre- and post-processing during traversal */
 extern node *DupTreeTravPre (node *arg_node, node *arg_info);
 extern node *DupTreeTravPost (node *arg_node, node *arg_info);
+
+/* handling for multiple used special functions */
+extern node *CheckAndDupSpecialFundef (node *module, node *fundef, node *assign);
 
 #endif /* _sac_DupTree_h_ */
