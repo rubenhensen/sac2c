@@ -4,6 +4,9 @@
 /*
  *
  * $Log$
+ * Revision 3.52  2002/08/13 17:15:04  sbs
+ * calls to HMAdjustFundef inserted at each MakeFundef call
+ *
  * Revision 3.51  2002/08/13 16:21:43  sbs
  * now, prefix notation of the overloaded unary and binary operators
  * such as +, - , ... works as well
@@ -144,6 +147,7 @@
 #include "Error.h"
 #include "free.h"
 #include "globals.h"
+#include "handle_mops.h"
 
 #include "readsib.h"
 #include "resource.h"
@@ -663,7 +667,7 @@ fundef1: returntypes BRACKET_L fun_id BRACKET_R BRACKET_L fundef2
          }
        ;
 
-fundef2: args BRACKET_R { $$ = MakeFundef( NULL, NULL, NULL, NULL, NULL, NULL); }
+fundef2: args BRACKET_R { $$ = HMAdjustFundef( MakeFundef( NULL, NULL, NULL, NULL, NULL, NULL)); }
          exprblock
          { 
            $$ = $<node>3;
@@ -680,7 +684,7 @@ fundef2: args BRACKET_R { $$ = MakeFundef( NULL, NULL, NULL, NULL, NULL, NULL); 
 		       FUNDEF_ARGS( $$)));
          }
 
-      | BRACKET_R { $$ = MakeFundef( NULL, NULL, NULL, NULL, NULL, NULL); }
+      | BRACKET_R { $$ = HMAdjustFundef( MakeFundef( NULL, NULL, NULL, NULL, NULL, NULL)); }
        exprblock
          { 
            $$ = $<node>2;
@@ -725,9 +729,9 @@ arg: type id
 
 main: TYPE_INT K_MAIN BRACKET_L BRACKET_R { $<cint>$ = linenum; } exprblock
       {
-        $$ = MakeFundef( NULL, NULL,
+        $$ = HMAdjustFundef( MakeFundef( NULL, NULL,
 		         MakeTypes1( T_int),
-		         NULL, $6, NULL);
+		         NULL, $6, NULL));
         NODE_LINE( $$) = $<cint>5;
 
         FUNDEF_NAME( $$) = StringCopy( "main");
@@ -1843,13 +1847,13 @@ fundec: varreturntypes fun_id BRACKET_L fundec2
 
 fundec2: varargtypes BRACKET_R { $<cint>$ = linenum; } SEMIC pragmas
            {
-             $$ = MakeFundef( NULL, NULL, NULL, $1, NULL, NULL);
+             $$ = HMAdjustFundef( MakeFundef( NULL, NULL, NULL, $1, NULL, NULL));
              NODE_LINE( $$) = $<cint>3;
              FUNDEF_PRAGMA( $$) = $5;
            }
        | varargs BRACKET_R { $<cint>$ = linenum; } SEMIC pragmas
            {
-             $$ = MakeFundef( NULL, NULL, NULL, $1, NULL, NULL);
+             $$ = HMAdjustFundef( MakeFundef( NULL, NULL, NULL, $1, NULL, NULL));
              NODE_LINE( $$) = $<cint>3;
              FUNDEF_PRAGMA( $$) = $5;
            }
@@ -1860,19 +1864,19 @@ fundec2: varargtypes BRACKET_R { $<cint>$ = linenum; } SEMIC pragmas
                yyerror( "syntax error");
              }
              else {
-               $$ = MakeFundef( NULL, NULL, NULL,
+               $$ = HMAdjustFundef( MakeFundef( NULL, NULL, NULL,
                                 MakeArg( NULL,
                                          MakeTypes1( T_dots),
                                          ST_regular, ST_regular,
                                          NULL),
-                                NULL, NULL);
+                                NULL, NULL));
                NODE_LINE( $$) = $<cint>5;
                FUNDEF_PRAGMA( $$) = $7;
              }
            }
        | BRACKET_R { $<cint>$ = linenum; } SEMIC pragmas
            {
-             $$ = MakeFundef( NULL, NULL, NULL, NULL, NULL, NULL);
+             $$ = HMAdjustFundef( MakeFundef( NULL, NULL, NULL, NULL, NULL, NULL));
              NODE_LINE( $$) = $<cint>2;
              FUNDEF_PRAGMA( $$) = $4;
            }
@@ -2208,7 +2212,7 @@ sibfuns: sibfun sibfuns
 sibfun: sibevmarker varreturntypes fun_id BRACKET_L sibarglist
         BRACKET_R { $<cint>$ = linenum; } sibfunbody sibpragmas
           {
-            $$ = MakeFundef( StringCopy( IDS_NAME( $3)), IDS_MOD( $3), $2, $5, $8, NULL);
+            $$ = HMAdjustFundef( MakeFundef( StringCopy( IDS_NAME( $3)), IDS_MOD( $3), $2, $5, $8, NULL));
             $3 = FreeOneIds( $3);
             NODE_LINE( $$) = $<cint>7;
             switch ($1) {
@@ -2360,10 +2364,10 @@ sibfunlist: sibfunlistentry COMMA sibfunlist
 
 sibfunlistentry: fun_id BRACKET_L sibarglist BRACKET_R
                  {
-                   $$ = MakeFundef( StringCopy( IDS_NAME( $1)),
+                   $$ = HMAdjustFundef( MakeFundef( StringCopy( IDS_NAME( $1)),
                                     IDS_MOD( $1),
                                     MakeTypes1( T_unknown),
-                                    $3, NULL, NULL);
+                                    $3, NULL, NULL));
                    FUNDEF_STATUS( $$) = sib_imported_status;
 
                    DBUG_PRINT("PARSE_SIB",("%s"F_PTR"SibNeedFun %s",
