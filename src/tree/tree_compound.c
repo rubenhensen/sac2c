@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2001/01/10 14:33:00  dkr
+ * function MakeWLsegX added
+ *
  * Revision 3.2  2000/12/04 10:45:44  dkr
  * bug in Type2Shpseg fixed:
  * return value is now initialized correctly even for scalar types
@@ -226,6 +229,7 @@
 #include "free.h"
 
 #include "typecheck.h"
+#include "wltransform.h"
 
 /*
  * macro template for append functions
@@ -2846,3 +2850,35 @@ MakeIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *arg4, node *arg5
 /***
  ***  N_Nwith :  *and*  N_Nwith2 :
  ***/
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_WLseg :  *and*  N_WLsegVar :
+ ***/
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *MakeWLsegX( int dims, int full_range, node *contents, node *next)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+MakeWLsegX (int dims, int full_range, node *contents, node *next)
+{
+    node *new_node;
+
+    DBUG_ENTER ("MakeWLsegX");
+
+    if (AllStridesAreConstant (contents)) {
+        new_node = MakeWLseg (dims, full_range, contents, next);
+    } else {
+        new_node = MakeWLsegVar (dims, full_range, contents, next);
+    }
+
+    DBUG_RETURN (new_node);
+}
