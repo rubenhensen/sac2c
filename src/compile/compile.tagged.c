@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.50  2002/10/08 16:37:41  dkr
+ * COMP2Objdef() modified
+ *
  * Revision 1.49  2002/09/13 23:23:01  dkr
  * COMPPrfTypeError() corrected
  *
@@ -1931,14 +1934,7 @@ COMP2Objdef (node *arg_node, node *arg_info)
                         MakeTypeArgs (OBJDEF_NAME (arg_node), OBJDEF_TYPE (arg_node),
                                       TRUE, TRUE, TRUE, NULL));
     }
-
     OBJDEF_ICM (arg_node) = icm;
-
-    OBJDEF_EXPR (arg_node) = NULL;
-    /*
-     *  The initialization expression is not freed because it may be used
-     *  in the main function.
-     */
 
     if (OBJDEF_NEXT (arg_node) != NULL) {
         OBJDEF_NEXT (arg_node) = Trav (OBJDEF_NEXT (arg_node), arg_info);
