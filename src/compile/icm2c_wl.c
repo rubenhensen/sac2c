@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.15  2002/07/12 23:10:50  dkr
+ * bug in WL_ASSIGN__INIT fixed
+ *
  * Revision 3.14  2002/07/12 18:52:46  dkr
  * some modifications for TAGGED_ARRAYS done
  *
@@ -395,9 +398,9 @@ ICMCompileWL_ASSIGN__INIT (int to_dim, char *to_nt, char *idx_vec_nt, int dims,
 
     INDENT;
 #ifdef TAGGED_ARRAYS
-    fprintf (outfile, "SAC_ND_WRITE_ARRAY( %s, SAC_WL_OFFSET( %s)) = 0;\n", to_nt, to_nt);
-#else
     fprintf (outfile, "SAC_ND_WRITE( %s, SAC_WL_OFFSET( %s)) = 0;\n", to_nt, to_nt);
+#else
+    fprintf (outfile, "SAC_ND_WRITE_ARRAY( %s, SAC_WL_OFFSET( %s)) = 0;\n", to_nt, to_nt);
 #endif
 
     INDENT;
