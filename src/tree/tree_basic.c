@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.65  2002/09/06 12:16:11  sah
+ * MakeSetWL modified.
+ *
  * Revision 3.64  2002/09/06 10:36:45  sah
  * added basic N_setwl support.
  *
@@ -1401,7 +1404,7 @@ MakeDot (int num)
 /*--------------------------------------------------------------------------*/
 
 node *
-MakeSetWL (ids *index, node *expr)
+MakeSetWL (node *index, node *expr)
 {
     node *tmp;
 
