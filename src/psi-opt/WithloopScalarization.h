@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2002/06/26 20:33:48  ktr
+ * #define _WLS_ removed
+ *
  * Revision 1.6  2002/06/26 20:31:22  ktr
  * WLS now supports all tested MG-genarray WLs.
  *
@@ -24,7 +27,6 @@
 
 #ifndef _WithloopScalarization_h
 #define _WithloopScalarization_h
-#define _WLS
 
 extern node *WithloopScalarization (node *fundef, node *modul);
 
