@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.26  2002/11/21 17:15:28  ktr
+ * Deactiveted WLS for I have no time to fix it at the moment.
+ *
  * Revision 3.25  2002/10/25 15:57:26  mwe
  * disabled enforce_ieee by default
  *
@@ -413,7 +416,8 @@ bool patch_with = FALSE;
 unsigned int optimize
   = OPT_ALL & (~OPT_LIR) & (~OPT_MTO) & (~OPT_SBE) & (~OPT_MTI) & (~OPT_APL) & (~OPT_WLS);
 #else /* PRODUCTION */
-unsigned int optimize = OPT_ALL & (~OPT_MTO) & (~OPT_SBE) & (~OPT_MTI) & (~OPT_APL);
+unsigned int optimize
+  = OPT_ALL & (~OPT_MTO) & (~OPT_SBE) & (~OPT_MTI) & (~OPT_APL) & (~OPT_WLS);
 
 #endif /* PRODUCTION */
 
