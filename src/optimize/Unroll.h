@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.6  1995/07/12 15:25:34  asi
+ * Revision 1.7  1995/07/19 18:54:21  asi
+ * AnalyseLoop, DoUnroll, ReversePrf and structure linfo modified
+ *
+ * Revision 1.6  1995/07/12  15:25:34  asi
  * added AnalyseLoop and InversePrf and some macros moved from .c to .h
  *
  * Revision 1.5  1995/07/07  15:02:22  asi
@@ -27,6 +30,7 @@
 #define _Unroll_h
 
 #define LEVEL arg_info->flag
+#define UNDEF -1
 
 /*
  * Following loop type is allowd:
@@ -43,20 +47,23 @@
  */
 
 typedef struct LINFO {
-    long varno;     /* index variable	 */
-    long start_num; /* initialization        */
-    prf mod_prf;    /* modification function */
-    long mod_num;   /* modification nummber  */
-    prf test_prf;   /* test function         */
-    long test_num;  /* test nummber          */
-    long loop_num;  /* number of loop passes */
+    nodetype ltype;  /* loop type				*/
+    node *decl_node; /* decleration node of index variable	*/
+    long start_num;  /* initialization			*/
+    prf mod_prf;     /* modification function		*/
+    long mod_num;    /* modification nummber			*/
+    long end_num;    /* value of index variable after loop	*/
+    prf test_prf;    /* test function			*/
+    long test_num;   /* test nummber				*/
+    long loop_num;   /* number of loop passes		*/
 } linfo;
 
 extern node *Unroll (node *arg_node, node *arg_info);
 
 extern linfo *LoopIterations (linfo *loop_info);
-extern linfo *AnalyseLoop (node *cond, int level);
-extern prf InversePrf (prf fun);
+extern linfo *AnalyseLoop (linfo *loop_info, node *id_node, int level);
+extern node *DoUnroll (node *arg_node, node *arg_info, linfo *loop_info);
+extern prf ReversePrf (prf fun);
 
 extern node *UNRfundef (node *arg_node, node *arg_info);
 extern node *UNRdo (node *arg_node, node *arg_info);
