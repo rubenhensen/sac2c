@@ -1,13 +1,38 @@
-***$Log$ *Revision 1.4 2004 / 11 / 22 16 : 14 : 46 ktr *SacDevCamp 04 * *Revision 1.3 2004
-  / 11 / 22 16 : 05 : 32 cg *Moved macro definitions to globals.h **Revision 1.2 2004 / 11
-  / 22 15 : 49 : 57 cg *Moved from subdirectory modules to global.**Revision 1.1 2004 / 11
-  / 22 15 : 45 : 56 cg *Initial revision **Moved from subdirectory modules **
-      Revision 3.4 2004
-  / 10 / 11 16 : 55 : 48 sah *removes TempFileName again **Revision 3.3 2004 / 09
-  / 21 16 : 32 : 42 sah *Added TempFileName **Revision 3.2 2003 / 03
-  / 25 14 : 40 : 41 sah *added CheckSystemLibrary **Revision 3.1 2000 / 11
-  / 20 18 : 00 : 52 sacbase *new release made **Revision 2.3 2000 / 11
-  / 17 16 : 14 : 53 sbs *locationtype FindLocationOfFile (char *file) * added;
+/*
+ *
+ * $Log$
+ * Revision 1.5  2004/11/23 23:25:26  ktr
+ * Just 4 u!
+ *
+ * Revision 1.4  2004/11/22 16:14:46  ktr
+ * SacDevCamp 04
+ *
+ * Revision 1.3  2004/11/22 16:05:32  cg
+ * Moved macro definitions to globals.h
+ *
+ * Revision 1.2  2004/11/22 15:49:57  cg
+ * Moved from subdirectory modules to global.
+ *
+ * Revision 1.1  2004/11/22 15:45:56  cg
+ * Initial revision
+ *
+ * Moved from subdirectory modules
+ *
+ * Revision 3.4  2004/10/11 16:55:48  sah
+ * removes TempFileName again
+ *
+ * Revision 3.3  2004/09/21 16:32:42  sah
+ * Added TempFileName
+ *
+ * Revision 3.2  2003/03/25 14:40:41  sah
+ * added CheckSystemLibrary
+ *
+ * Revision 3.1  2000/11/20 18:00:52  sacbase
+ * new release made
+ *
+ * Revision 2.3  2000/11/17 16:14:53  sbs
+ * locationtype FindLocationOfFile( char *file)
+ * added;
  *
  * Revision 2.2  1999/05/18 11:21:46  cg
  * added function CheckExistFile().
@@ -31,7 +56,8 @@
  * added in addition to user-defined paths
  *
  * Revision 1.6  1997/03/19  13:54:30  cg
- * Converted  to single tmp directory tmp_dirname instaed of build_dirnameand store_dirname
+ * Converted  to single tmp directory tmp_dirname instaed of build_dirnameand
+ * store_dirname
  *
  * Revision 1.5  1996/09/11  06:22:51  cg
  * Modified construction of paths.
@@ -67,14 +93,14 @@
  * Prefix: FMGR
  *
  *****************************************************************************/
-extern char *FMGRfindFile( pathkind p, char *name);
- extern void FMGRinitPaths ();
- extern void FMGRappendPath (pathkind p, char *path);
- extern void FMGRrearrangePaths ();
- extern char *FMGRabsolutePathname (char *path);
- extern FILE *FMGRwriteOpen (char *format, ...);
- extern int FMGRcheckExistFile (char *dir, char *name);
- extern locationtype FMGRfindLocationOfFile (char *file);
- extern int FMGRcheckSystemLibrary (char *name);
+extern char *FMGRfindFile (pathkind p, char *name);
+extern void FMGRinitPaths ();
+extern void FMGRappendPath (pathkind p, char *path);
+extern void FMGRrearrangePaths ();
+extern char *FMGRabsolutePathname (char *path);
+extern FILE *FMGRwriteOpen (char *format, ...);
+extern int FMGRcheckExistFile (char *dir, char *name);
+extern locationtype FMGRfindLocationOfFile (char *file);
+extern int FMGRcheckSystemLibrary (char *name);
 
 #endif /* _SAC_FILEMGR_H_ */
