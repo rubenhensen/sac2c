@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2004/11/03 17:22:55  sah
+ * types now get a namespace assigned as well
+ *
  * Revision 1.8  2004/11/02 12:15:37  sah
  * namespaces are annotated correctly now
  *
@@ -143,6 +146,45 @@ CheckLocalNameClash (const char *symbol, STtable_t *table, int lineno)
  * Traversal functions
  */
 
+types *
+ANSTypes (types *arg_types, info *arg_info)
+{
+    DBUG_ENTER ("ANSTypes");
+
+    if (TYPES_MOD (arg_types) == NULL) {
+        /* look up correct type */
+        if (STContains (TYPES_NAME (arg_types), INFO_ANS_SYMBOLS (arg_info))) {
+            /*
+             * There is a namespace annotated to this symbolname, e.g. it was used
+             * -> use that namespace
+             */
+            STentry_t *entry
+              = STGetFirstEntry (TYPES_NAME (arg_types), INFO_ANS_SYMBOLS (arg_info));
+            TYPES_MOD (arg_types) = StringCopy (STEntryName (entry));
+
+            MODUL_DEPENDENCIES (INFO_ANS_MODULE (arg_info))
+              = SSAdd (TYPES_MOD (arg_types),
+                       MODUL_DEPENDENCIES (INFO_ANS_MODULE (arg_info)));
+        } else {
+            /*
+             * must be a local typedef
+             * -> use local namespace
+             */
+            TYPES_MOD (arg_types) = StringCopy (MODUL_NAME (INFO_ANS_MODULE (arg_info)));
+        }
+    } else if (strcmp (MODUL_NAME (INFO_ANS_MODULE (arg_info)), TYPES_MOD (arg_types))) {
+        /*
+         * this typedef comes from another namespace
+         *  -> add the namespace to the dependency list
+         */
+        MODUL_DEPENDENCIES (INFO_ANS_MODULE (arg_info))
+          = SSAdd (TYPES_MOD (arg_types),
+                   MODUL_DEPENDENCIES (INFO_ANS_MODULE (arg_info)));
+    }
+
+    DBUG_RETURN (arg_types);
+}
+
 node *
 ANSSymbol (node *arg_node, info *arg_info)
 {
@@ -240,6 +282,10 @@ ANSFundef (node *arg_node, info *arg_info)
         FUNDEF_MOD (arg_node) = StringCopy (MODUL_NAME (INFO_ANS_MODULE (arg_info)));
     }
 
+    if (FUNDEF_TYPES (arg_node) != NULL) {
+        FUNDEF_TYPES (arg_node) = ANSTypes (FUNDEF_TYPES (arg_node), arg_info);
+    }
+
     arg_node = TravSons (arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
@@ -328,6 +374,10 @@ ANSArg (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ANSArg");
 
+    if (ARG_TYPE (arg_node) != NULL) {
+        ARG_TYPE (arg_node) = ANSTypes (ARG_TYPE (arg_node), arg_info);
+    }
+
     if (ARG_NEXT (arg_node) != NULL) {
         ARG_NEXT (arg_node) = Trav (ARG_NEXT (arg_node), arg_info);
     }
@@ -339,6 +389,10 @@ node *
 ANSVardec (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ANSVardec");
+
+    if (VARDEC_TYPE (arg_node) != NULL) {
+        VARDEC_TYPE (arg_node) = ANSTypes (VARDEC_TYPE (arg_node), arg_info);
+    }
 
     if (VARDEC_NEXT (arg_node) != NULL) {
         VARDEC_NEXT (arg_node) = Trav (VARDEC_NEXT (arg_node), arg_info);
