@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/04/19 12:45:29  jhs
+ * TRUE and FALSE from internal_lib.h used now
+ *
  * Revision 2.2  1999/03/31 15:08:06  bs
  * I did some code cosmetics with the MRD_GET... macros.
  *
@@ -62,9 +65,6 @@
 #include "generatemasks.h"
 #include "DupTree.h"
 #include "CSE.h"
-
-#define FALSE 0
-#define TRUE 1
 
 /*
  *
