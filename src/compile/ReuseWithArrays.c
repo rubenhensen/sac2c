@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  1998/06/19 16:53:02  dkr
+ * fixed a bug in ReuseLet
+ *
  * Revision 1.2  1998/06/08 13:48:27  dkr
  * fixed a bug
  *
@@ -185,6 +188,9 @@ ReuseNwith2 (node *arg_node, node *arg_info)
         }
     }
 
+    /*
+     * traverse sons
+     */
     NWITH2_WITHID (arg_node) = Trav (NWITH2_WITHID (arg_node), arg_info);
     NWITH2_SEGS (arg_node) = Trav (NWITH2_SEGS (arg_node), arg_info);
     NWITH2_CODE (arg_node) = Trav (NWITH2_CODE (arg_node), arg_info);
@@ -214,6 +220,9 @@ ReuseNwithop (node *arg_node, node *arg_info)
         NWITHOP_SHAPE (arg_node) = Trav (NWITHOP_SHAPE (arg_node), arg_info);
         break;
     case WO_modarray:
+        /*
+         * we can possibly reuse the modarray-array.
+         */
         if ((NODE_TYPE (NWITHOP_ARRAY (arg_node)) == N_id)
             && (IsFound (ID_NAME (NWITHOP_ARRAY (arg_node)),
                          INFO_REUSE_DEC_RC_IDS (arg_info)))) {
@@ -239,8 +248,8 @@ ReuseNwithop (node *arg_node, node *arg_info)
  *   node *ReuseLet( node *arg_node, node *arg_info)
  *
  * description:
- *   Removes all right hand side ids from the reuse-mask.
- *   If on the left hand side a "psi( idx, A)" or "idx_psi( idx_flat, A)"
+ *   Removes all left hand side ids from the reuse-mask.
+ *   If on the right hand side a "psi( idx, A)" or "idx_psi( idx_flat, A)"
  *     where ...
  *       ... "idx" is the index-vector of the current with-loop;
  *       ... "idx_flat" is the flat offset of this index-vector (IVE);
@@ -324,9 +333,16 @@ ReuseLet (node *arg_node, node *arg_info)
                 && (CompareTypes (ID_TYPE (arg2), IDS_TYPE (INFO_REUSE_WL_IDS (arg_info)))
                     == 0)
                 && (IsFound (ID_NAME (arg2), INFO_REUSE_DEC_RC_IDS (arg_info)))) {
+                /*
+                 * 'arg2' is used in a normal WL-psi()
+                 *  -> we can possibly reuse this array
+                 */
                 DFMSetMaskEntrySet (INFO_REUSE_MASK (arg_info), ID_NAME (arg2), NULL);
+                /*
+                 * we must not traverse the args!
+                 */
+                traverse = 0;
             }
-            traverse = 0;
             break;
         case F_idx_psi:
             arg1 = EXPRS_EXPR (PRF_ARGS (LET_EXPR (arg_node)));
@@ -338,10 +354,17 @@ ReuseLet (node *arg_node, node *arg_info)
                 && (CompareTypes (ID_TYPE (arg2), IDS_TYPE (INFO_REUSE_WL_IDS (arg_info)))
                     == 0)
                 && (IsFound (ID_NAME (arg2), INFO_REUSE_DEC_RC_IDS (arg_info)))) {
+                /*
+                 * 'arg2' is used in a (flattened) normal WL-psi()
+                 *  -> we can possibly reuse this array
+                 */
                 DFMSetMaskEntrySet (INFO_REUSE_MASK (arg_info), ID_NAME (arg2), NULL);
+                /*
+                 * we must not traverse the args!
+                 */
+                traverse = 0;
             }
             FREE (idx_psi_name);
-            traverse = 0;
             break;
         default:;
         }
