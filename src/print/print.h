@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.3  2000/02/03 15:20:31  jhs
+ * Added PrintMT and PrintSt.
+ *
  * Revision 2.2  1999/11/11 18:26:32  dkr
  * PrintNgenerator is now called by Trav only :))
  *
@@ -166,6 +169,8 @@ extern node *PrintVectInfo (node *arg_node, node *arg_info);
 extern node *PrintPragma (node *arg_node, node *arg_info);
 extern node *PrintSpmd (node *arg_node, node *arg_info);
 extern node *PrintSync (node *arg_node, node *arg_info);
+extern node *PrintMT (node *arg_node, node *arg_info);
+extern node *PrintST (node *arg_node, node *arg_info);
 
 /* new with-loop */
 extern node *PrintNwith (node *arg_node, node *arg_info);

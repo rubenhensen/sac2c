@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.43  2000/02/03 15:20:31  jhs
+ * Added PrintMT and PrintSt.
+ *
  * Revision 2.42  2000/02/02 16:10:10  bs
  * *** empty log message ***
  *
@@ -2282,6 +2285,48 @@ PrintSync (node *arg_node, node *arg_info)
 
     INDENT
     fprintf (outfile, "/*** end of sync region ***/\n");
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************/
+
+node *
+PrintMT (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintMT");
+
+    /* PrintAssign alredy indents*/
+    fprintf (outfile, "/*** begin of mt region ***/\n");
+
+    indent++;
+    MT_REGION (arg_node) = Trav (MT_REGION (arg_node), arg_info);
+    indent--;
+
+    INDENT
+    fprintf (outfile, "/*** end of mt region ***/\n");
+    /* PrintAssign already prints \n */
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************/
+
+node *
+PrintST (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintST");
+
+    /* PrintAssign alredy indents*/
+    fprintf (outfile, "/*** begin of st region ***/\n");
+
+    indent++;
+    ST_REGION (arg_node) = Trav (ST_REGION (arg_node), arg_info);
+    indent--;
+
+    INDENT
+    fprintf (outfile, "/*** end of st region ***/");
+    /* PrintAssign already prints \n */
 
     DBUG_RETURN (arg_node);
 }
