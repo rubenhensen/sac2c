@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.47  2001/04/26 15:28:14  dkr
+ * CFcast, COMPCast added
+ *
  * Revision 3.46  2001/04/20 11:18:59  nmw
  * SSALUR traversal added
  *
@@ -1531,7 +1534,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, 1),
 
   NIF (N_cast, "N_cast", TravSons, TravSons, PrintCast, TravSons, TravSons, TravSons,
-       TravSons, FreeCast, TravSons, TravSons, TravSons, TravSons, DupCast, TravSons,
+       TravSons, FreeCast, CFcast, TravSons, COMPCast, TravSons, DupCast, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
 
        PrintCast, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
