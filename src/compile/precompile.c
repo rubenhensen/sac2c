@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 3.93  2004/09/24 20:18:53  sah
+ * made RenameFunName static again
+ * made ReplaceSpecialCharacters externally available
+ * fixed bug in ReplaceSpecialCharacters: it does not rely
+ * on allocated memory to consist of zeros !
+ *
  * Revision 3.92  2004/09/24 16:13:45  sbs
  * RenameFunName made externally available.
  *
@@ -2737,7 +2743,7 @@ RenameTypes (types *type)
  *
  ******************************************************************************/
 
-static char *
+char *
 ReplaceSpecialCharacters (char *name)
 {
     char *new_name;
@@ -2853,11 +2859,10 @@ ReplaceSpecialCharacters (char *name)
             break;
         default:
             new_name[j] = name[i];
+            new_name[j + 1] = '\0';
             break;
         }
     }
-
-    new_name[j] = '\0';
 
     DBUG_RETURN (new_name);
 }
@@ -2875,7 +2880,7 @@ ReplaceSpecialCharacters (char *name)
  *
  ******************************************************************************/
 
-char *
+static char *
 RenameFunName (char *mod, char *name, statustype status, node *args)
 {
     char *prefix;
