@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  1998/04/25 15:56:55  sbs
+ * tree.h included!
+ *
  * Revision 1.8  1996/02/06 16:10:20  sbs
  * Double2String and Float2String inserted.
  *
@@ -27,12 +30,11 @@
  *
  */
 
-/* NOTE: you must include "tree.h before this !!!
- */
-
 #ifndef _convert_h
 
 #define _convert_h
+
+#include "tree.h"
 
 #define SIMPLE2STR(type)                                                                 \
     ((type->name != NULL) ? type->name : type_string[type->simpletype])
