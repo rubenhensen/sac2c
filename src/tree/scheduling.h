@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2004/08/28 14:31:03  sah
+ * modified definition of SCHsched_t in
+ * NEW_AST mode
+ *
  * Revision 3.11  2004/08/02 14:07:58  sah
  * added lots of ugly defines to remove
  * compiler warning when using the old
@@ -90,7 +94,8 @@
 #include "LookUpTable.h"
 
 #ifdef NEW_AST
-typedef struct SCHED_T *SCHsched_t;
+typedef struct SCHED_T sched_t;
+typedef sched_t *SCHsched_t;
 #else
 typedef void *SCHsched_t;
 #endif
