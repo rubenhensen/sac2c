@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.17  2000/07/13 07:34:24  jhs
+ * No more warnings here ...
+ * Added some comments.
+ *
  * Revision 1.16  2000/04/14 17:43:26  jhs
  * Comments ...
  *
@@ -61,7 +65,9 @@
  * prefix: BLKIN
  *
  * description:
- *   ####
+ *   decides which parts of the programm may be executed multithreded and
+ *   which parts must be executed singlethreaded.
+ *   These parts will be encapsulated withing N_mt- or N_st-blocks.
  *
  ******************************************************************************/
 
@@ -85,7 +91,7 @@
  *   node *BlocksInit(node *arg_node, node *arg_info)
  *
  * description:
- *   ####
+ *   Inits this traversal, see file comment for further information.
  *
  ******************************************************************************/
 node *
@@ -151,7 +157,7 @@ CheckLHSforBigArrays (node *let, int max_small_size)
             result = (result || (sum > max_small_size));
             DBUG_PRINT ("BLKIN", ("array elements %i => result %i", sum, result));
         } else {
-            /* nothing happens #### error? warning?  */
+            /* nothing happens here, this variable does not influence the decision */
         }
         letids = IDS_NEXT (letids);
     }
@@ -169,65 +175,91 @@ CheckLHSforBigArrays (node *let, int max_small_size)
  *   test whether any result on the lhs is an array, with more elements
  *   as max_small_size.
  *
+ * attention:
+ *   DO NOT DELETE THIS FUNCTION ... MAY BE IT IS NEEDED LATER ...
+ *
  ******************************************************************************/
-static int
-CheckLHSforHeavyTypes (node *let)
+#if 0
+static int CheckLHSforHeavyTypes(node *let)
 {
-    int result; /* bool */
-    ids *letids;
-    node *vardec;
-    types *type;
+  int result; /* bool */
+  ids *letids;
+  node *vardec;
+  types *type;
 
-    DBUG_ENTER ("CheckLHSforHeavyTypes");
-    DBUG_PRINT ("BLKIN", ("begin"));
+  DBUG_ENTER( "CheckLHSforHeavyTypes");
+  DBUG_PRINT( "BLKIN", ("begin"));
 
-    result = FALSE;
-    letids = LET_IDS (let);
-    while (letids != NULL) {
-        vardec = IDS_VARDEC (letids);
-        type = VARDEC_TYPE (vardec);
+  result = FALSE;
+  letids = LET_IDS( let);
+  while (letids != NULL) {
+    vardec = IDS_VARDEC( letids);
+    type = VARDEC_TYPE( vardec);
 
-        DBUG_PRINT ("BLKIN", ("type: %s %i %i", mdb_type[TYPES_BASETYPE (type)],
-                              type->attrib, type->status));
+    DBUG_PRINT( "BLKIN", ("type: %s %i %i", 
+                          mdb_type[TYPES_BASETYPE( type)],
+                          type->attrib,
+                          type->status
+    ));
 
-        result = result || IsUnique (type);
+    result = result || IsUnique( type);
 
-        letids = IDS_NEXT (letids);
-    }
+    letids = IDS_NEXT( letids);
+  }
 
-    DBUG_PRINT ("BLKIN", ("end"));
-    DBUG_RETURN (result);
+  DBUG_PRINT( "BLKIN", ("end"));
+  DBUG_RETURN( result);
 }
+#endif
 
-static int
-testfun (node *fun)
+/******************************************************************************
+ *
+ * function:
+ *   static int testfun(node *fun)
+ *
+ * description:
+ *   Not necessary, but prints out several debug-informations.
+ *
+ * attention:
+ *   DO NOT DELETE THIS FUNCTION, IT IS USED FOR DEBUGGING!
+ *
+ ******************************************************************************/
+#if 0
+static int testfun(node *fun)
 {
-    node *arg;
-    types *type;
+  node *arg;
+  types *type;
 
-    DBUG_ENTER ("testfun");
-    DBUG_PRINT ("BLKIN", ("begin"));
+  DBUG_ENTER( "testfun");
+  DBUG_PRINT( "BLKIN", ("begin"));
 
-    arg = FUNDEF_ARGS (fun);
-    while (arg != NULL) {
-        type = ARG_TYPE (arg);
-        DBUG_PRINT ("BLKIN",
-                    ("a %s type: %s %i %i", FUNDEF_NAME (fun),
-                     mdb_type[TYPES_BASETYPE (type)], type->attrib, type->status));
-        arg = ARG_NEXT (arg);
-    }
+  arg = FUNDEF_ARGS( fun);
+  while (arg != NULL) {
+    type = ARG_TYPE( arg);
+    DBUG_PRINT( "BLKIN", ("a %s type: %s %i %i", 
+                          FUNDEF_NAME( fun),
+                          mdb_type[TYPES_BASETYPE( type)],
+                          type->attrib,
+                          type->status
+    ));
+    arg = ARG_NEXT( arg);
+  }
 
-    type = FUNDEF_TYPES (fun);
-    while (type != NULL) {
-        DBUG_PRINT ("BLKIN",
-                    ("r %s type: %s %i %i", FUNDEF_NAME (fun),
-                     mdb_type[TYPES_BASETYPE (type)], type->attrib, type->status));
-        type = TYPES_NEXT (type);
-    }
+  type = FUNDEF_TYPES( fun);
+  while (type != NULL) {
+    DBUG_PRINT( "BLKIN", ("r %s type: %s %i %i", 
+                          FUNDEF_NAME( fun),
+                          mdb_type[TYPES_BASETYPE( type)],
+                          type->attrib,
+                          type->status
+    ));
+    type = TYPES_NEXT( type);
+  }
 
-    DBUG_PRINT ("BLKIN", ("end"));
-    DBUG_RETURN (FALSE);
+  DBUG_PRINT( "BLKIN", ("end"));
+  DBUG_RETURN( FALSE);
 }
+#endif
 
 /******************************************************************************
  *
@@ -267,15 +299,14 @@ MustExecuteSingleThreaded (node *arg_node, node *arg_info)
               CheckLHSforBigArrays( instr, max_replication_size);  */
         } else if ((NODE_TYPE (LET_EXPR (instr)) == N_ap)) {
             DBUG_PRINT ("BLKIN", ("N_ap with known body"));
-
-            /* #### */
-
             /*      result = testfun( AP_FUNDEF( LET_EXPR( instr))); */
 
 #if 1
             /* normal: use this */
             result = 0;
             /* CheckLHSforHeavyTypes( instr);  */
+            /* the decision made by HeavyTypes is not accurate, so
+               it is not used here ... */
 #else
             /* if you want to debug use perhabs this */
             result = CheckLHSforHeavyTypes (instr)
@@ -298,18 +329,15 @@ MustExecuteSingleThreaded (node *arg_node, node *arg_info)
             result = FALSE;
         }
     } else if (NODE_TYPE (instr) == N_while) {
-        /* ??? #### */
         result = FALSE;
         DBUG_ASSERT (0, "N_while not supported");
     } else if (NODE_TYPE (instr) == N_do) {
-        /* ??? #### */
         result = FALSE;
         DBUG_ASSERT (0, "N_do not supported");
     } else if (NODE_TYPE (instr) == N_cond) {
-        /* ??? #### */
+        /* N_cond does not need to be inserted in Blocks */
         result = FALSE;
     } else if (NODE_TYPE (instr) == N_return) {
-        /* ??? #### */
         /* N_return does not need to be inserted in Blocks */
         result = FALSE;
     } else {
