@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.77  1998/12/11 18:13:08  sbs
+ * F_reshape patched again ++
+ * BAD ERROR when swapping args in FoldPrfScalars....
+ *
  * Revision 1.76  1998/12/11 17:41:03  sbs
  * changed N_xxxx into T_xxxx in FoldPrfScalars AND
  * inserted a correct default case....
@@ -1322,6 +1326,12 @@ FoldPrfScalars (prf prf_name, node **arg, types *res_type, int swap)
     cf_expr++;
     DBUG_PRINT ("CF", ("primitive function %s folded", prf_string[prf_name]));
 
+    if (swap) { /* we do not want to make any side-effects 8-(( */
+        tmp = arg[0];
+        arg[0] = arg[1];
+        arg[1] = tmp;
+    }
+
     DBUG_RETURN (res);
 }
 
@@ -1741,16 +1751,16 @@ ArrayPrf (node *arg_node, node *arg_info)
             /*
              * Calculate prim-function with one array
              */
-            expr[0] = arg[0]->node[0];
+            expr[0] = ARRAY_AELEMS (arg[0]);
             expr_arg[1] = arg[1];
             do {
-                expr_arg[0] = expr[0]->node[0];
+                expr_arg[0] = EXPRS_EXPR (expr[0]);
                 tmp = FoldPrfScalars (PRF_PRF (arg_node), expr_arg,
                                       INFO_CF_TYPE (arg_info), swap);
                 if (tmp != NULL) {
-                    expr[0]->node[0] = tmp;
+                    EXPRS_EXPR (expr[0]) = tmp;
                 }
-                expr[0] = expr[0]->node[1];
+                expr[0] = EXPRS_NEXT (expr[0]);
             } while ((NULL != expr[0]));
         }
 
@@ -1868,22 +1878,8 @@ ArrayPrf (node *arg_node, node *arg_info)
          * in many situations, e.g. when accessing constant arrays
          * that are defined by reshape....
          */
+        /* arg_node = arg[1]; */
 
-#if 0
-      if (N_id == NODE_TYPE(arg[1])) {
-        MRD_GETDATA(value, arg[1]->info.ids->node->varno, INFO_CF_VARNO(arg_info));
-      }
-      else {
-        value = arg[1];
-      }
-     
-      if (IsConst(value)) {
-        if (N_id == NODE_TYPE(arg[0])) {
-          DEC_VAR(arg_info->mask[1], arg[0]->info.ids->node->varno);
-        }
-        arg_node = arg[1];
-      }
-#endif
         /*
          * srs: NoNo, we really shouldn't do that. Imagine the following case:
          *   A = WL () genarray([8]);
@@ -1895,12 +1891,30 @@ ArrayPrf (node *arg_node, node *arg_info)
          * But WLF must not become active here because no generators are known
          * for the array B.
          */
-        /* arg_node = arg[1]; */
 
+#if 1
         /*
-         * Now, we should (!!!) free the N_prf-node and its first arg...
-         * Unfortunately, we did not yet implement it 8-(
+         * sbs: could this be a solution???
+         *      iff the second arg is a constant, then we do throw the
+         *      reshape away?!
          */
+        if (N_id == NODE_TYPE (arg[1])) {
+            MRD_GETDATA (value, arg[1]->info.ids->node->varno, INFO_CF_VARNO (arg_info));
+        } else {
+            value = arg[1];
+        }
+
+        if (IsConst (value)) {
+            if (N_id == NODE_TYPE (arg[0])) {
+                DEC_VAR (arg_info->mask[1], arg[0]->info.ids->node->varno);
+            }
+            arg_node = arg[1];
+            /*
+             * Now, we should (!!!) free the N_prf-node and its first arg...
+             * Unfortunately, we did not yet implement it 8-(
+             */
+        }
+#endif
         break;
     }
 
