@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.107  1996/01/22 17:30:38  cg
+ * Revision 1.108  1996/01/23 09:57:03  cg
+ * warnings about too long module names removed
+ *
+ * Revision 1.107  1996/01/22  17:30:38  cg
  * added new pragma initfun
  *
  * Revision 1.106  1996/01/21  13:57:30  cg
@@ -565,15 +568,7 @@ modheader: modclass evextern id COLON
              $$=MakeNode($1);
              link_mod_name=$3;
 
-             if (strlen(link_mod_name)>12)
-             {
-               link_mod_name[12]='\0';
-               
-               WARN(linenum, ("Module/class names limited to 12 characters"));
-               CONT_WARN(("name truncated to '%s` !", link_mod_name));
-             }
-
-             if ($2)
+            if ($2)
              {
                mod_name=NULL;
              }
@@ -1079,14 +1074,6 @@ def4: fundefs { $$=MakeNode(N_modul);
 
 modimp: impclass id {  mod_name=$2; } COLON defs
           { $$=$5;
-
-            if (strlen(mod_name)>12)
-            {
-              mod_name[12]='\0';
-              
-              WARN(linenum, ("Module/class names limited to 12 characters"));
-              CONT_WARN(("name truncated to '%s` !", mod_name));
-            }
 
             MODUL_NAME($$)=mod_name;
             MODUL_FILETYPE($$)=file_kind;
