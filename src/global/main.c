@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.100  1997/10/10 13:41:57  srs
+ * counter for mem allocation
+ *
  * Revision 1.99  1997/10/09 13:53:25  srs
  * counter for memory allocation
  *
@@ -438,7 +441,7 @@ int dbug_to = 0;
 int dbug_active = 0;
 char *dbug_str = "";
 
-unsigned int total_allocated_mem;
+unsigned int total_allocated_mem = 0;
 
 int print_objdef_for_header_file = 0;
 /*
