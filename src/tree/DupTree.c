@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.50  2001/05/17 11:37:24  dkr
+ * InitDupTree() added
+ * FREE/MALLOC eliminated
+ *
  * Revision 3.49  2001/05/16 13:17:37  dkr
  * handling of NULL arguments streamlined:
  * NULL arguments allowed for static ..._() functions but *not* allowed
@@ -266,6 +270,27 @@ static LUT_t dup_lut = NULL;
 
 /******************************************************************************
  *
+ * Function:
+ *   void InitDupTree()
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+void
+InitDupTree ()
+{
+    DBUG_ENTER ("InitDupTree");
+
+    DBUG_ASSERT ((dup_lut == NULL), "InitDupTree() called more than once!");
+    dup_lut = GenerateLUT ();
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
  * function:
  *   static node *DupTreeOrNodeLUT_Type( int NodeOnly,
  *                                       node *arg_node, LUT_t lut, int type)
@@ -331,11 +356,9 @@ DupTreeOrNodeLUT_Type (int NodeOnly, node *arg_node, LUT_t lut, int type)
             /*
              * It would be extremly unefficient to generate a new LUT for each call
              * of DupTree/DupNode.
-             * Therefore, we just generate it *once* :-)
+             * Therefore, we just generate it *once* via InitDupTree() !!
              */
-            if (dup_lut == NULL) {
-                dup_lut = GenerateLUT ();
-            }
+            DBUG_ASSERT ((dup_lut != NULL), "InitDupTree() has not been called!");
             INFO_DUP_LUT (arg_info) = dup_lut;
         } else {
             INFO_DUP_LUT (arg_info) = lut;
@@ -1523,14 +1546,14 @@ DupPragma (node *arg_node, node *arg_info)
     PRAGMA_LINKNAME (new_node) = StringCopy (PRAGMA_LINKNAME (arg_node));
     if (PRAGMA_LINKSIGN (arg_node) != NULL) {
         PRAGMA_LINKSIGN (new_node)
-          = (int *)MALLOC (PRAGMA_NUMPARAMS (new_node) * sizeof (int));
+          = (int *)Malloc (PRAGMA_NUMPARAMS (new_node) * sizeof (int));
         for (i = 0; i < PRAGMA_NUMPARAMS (new_node); i++) {
             PRAGMA_LINKSIGN (new_node)[i] = PRAGMA_LINKSIGN (arg_node)[i];
         }
     }
     if (PRAGMA_REFCOUNTING (arg_node) != NULL) {
         PRAGMA_REFCOUNTING (new_node)
-          = (int *)MALLOC (PRAGMA_NUMPARAMS (new_node) * sizeof (int));
+          = (int *)Malloc (PRAGMA_NUMPARAMS (new_node) * sizeof (int));
         for (i = 0; i < PRAGMA_NUMPARAMS (new_node); i++) {
             PRAGMA_REFCOUNTING (new_node)[i] = PRAGMA_REFCOUNTING (arg_node)[i];
         }
@@ -2597,9 +2620,10 @@ DupTypesOnly (types **target, types *source)
     old_types = (*target);
 
     (*target) = DupTypes (source);
-    FREE ((*target)->id);
-    FREE ((*target)->id_mod);
-    FREE ((*target)->id_cmod);
+
+    Free ((*target)->id);
+    Free ((*target)->id_mod);
+    Free ((*target)->id_cmod);
 
     (*target)->id = old_types->id;
     (*target)->id_mod = old_types->id_mod;
@@ -2748,7 +2772,7 @@ CheckAndDupSpecialFundef (node *module, node *fundef, node *assign)
 
         /* rename fundef */
         new_name = TmpVarName (FUNDEF_NAME (fundef));
-        FREE (FUNDEF_NAME (new_fundef));
+        Free (FUNDEF_NAME (new_fundef));
         FUNDEF_NAME (new_fundef) = new_name;
 
         /* rename recursive funap (only do/while fundefs */
@@ -2757,7 +2781,7 @@ CheckAndDupSpecialFundef (node *module, node *fundef, node *assign)
             DBUG_ASSERT ((FUNDEF_INT_ASSIGN (new_fundef) != NULL),
                          "missing link to recursive function call");
 
-            FREE (AP_NAME (ASSIGN_RHS (FUNDEF_INT_ASSIGN (new_fundef))));
+            Free (AP_NAME (ASSIGN_RHS (FUNDEF_INT_ASSIGN (new_fundef))));
             AP_NAME (ASSIGN_RHS (FUNDEF_INT_ASSIGN (new_fundef)))
               = StringCopy (FUNDEF_NAME (new_fundef));
 
@@ -2769,7 +2793,7 @@ CheckAndDupSpecialFundef (node *module, node *fundef, node *assign)
         FUNDEF_USED (new_fundef) = 1;
 
         /* rename the external assign/funap */
-        FREE (AP_NAME (ASSIGN_RHS (assign)));
+        Free (AP_NAME (ASSIGN_RHS (assign)));
         AP_NAME (ASSIGN_RHS (assign)) = StringCopy (new_name);
         AP_FUNDEF (ASSIGN_RHS (assign)) = new_fundef;
 
