@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.4  1995/04/07 09:30:52  sbs
- * dima's inserted in psi*_A, take & drop
+ * Revision 1.5  1995/04/11 15:03:13  sbs
+ * ND_FUN_[DEC/AP/RET] inserted
  *
+# Revision 1.4  1995/04/07  09:30:52  sbs
+# dima's inserted in psi*_A, take & drop
+#
 # Revision 1.3  1995/04/03  13:58:57  sbs
 # first "complete" version
 #
@@ -15,6 +18,30 @@
 #
  *
  */
+
+#if defined(ND_FUN_DEC) || defined(ICM_ALL)
+ICM_DEF( ND_FUN_DEC)
+  ICM_STR(name)
+  ICM_INT(narg)
+  ICM_VAR((3*narg), tyarg)
+ICM_END( ND_FUN_DEC)
+#endif
+
+#if defined(ND_FUN_AP) || defined(ICM_ALL)
+ICM_DEF( ND_FUN_AP)
+  ICM_STR(name)
+  ICM_INT(narg)
+  ICM_VAR((2*narg), arg)
+ICM_END( ND_FUN_AP)
+#endif
+
+#if defined(ND_FUN_RET) || defined(ICM_ALL)
+ICM_DEF( ND_FUN_RET)
+  ICM_STR(name)
+  ICM_INT(narg)
+  ICM_VAR((2*narg), arg)
+ICM_END( ND_FUN_RET)
+#endif
 
 #if defined(ND_CREATE_CONST_ARRAY) || defined(ICM_ALL)
 ICM_DEF( ND_CREATE_CONST_ARRAY)

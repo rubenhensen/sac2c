@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.8  1995/04/07 12:19:48  sbs
+ * Revision 1.9  1995/04/11 15:03:13  sbs
+ * ND_FUN_[DEC/AP/RET] inserted
+ *
+ * Revision 1.8  1995/04/07  12:19:48  sbs
  * psi, take & drop fixed for args of different dimensionality
  *
  * Revision 1.7  1995/04/06  14:23:25  sbs
@@ -33,7 +36,54 @@
 #include "print.h"
 #include "dbug.h"
 #include "my_debug.h"
+#include "main.h"
 
+#define FirstOut(arg, n, body, step)                                                     \
+    {                                                                                    \
+        int i = 0;                                                                       \
+        int out = 1;                                                                     \
+        while (out && (i < n)) {                                                         \
+            if (strcmp (arg[i++], "out") == 0) {                                         \
+                body;                                                                    \
+                out = 0;                                                                 \
+            }                                                                            \
+            i += step;                                                                   \
+        }                                                                                \
+    }
+#define ScanArglist(arg, n, bin, bfout, bout, binout, barray, sep)                       \
+    {                                                                                    \
+        int i = 0;                                                                       \
+        int out = 0;                                                                     \
+        int sepneeded = 0;                                                               \
+        while (i < n) {                                                                  \
+            if (sepneeded)                                                               \
+                fprintf (outfile, "%s", sep);                                            \
+            DBUG_PRINT ("PRINT", ("arg-index: %d, arg-tag : %s", i, arg[i]));            \
+            if (strcmp (arg[i], "in") == 0) {                                            \
+                i++;                                                                     \
+                bin;                                                                     \
+                sepneeded = 1;                                                           \
+            } else if (strcmp (arg[i], "out") == 0) {                                    \
+                i++;                                                                     \
+                if (out) {                                                               \
+                    bout;                                                                \
+                    sepneeded = 1;                                                       \
+                } else {                                                                 \
+                    out = 1;                                                             \
+                    bfout;                                                               \
+                    sepneeded = 0;                                                       \
+                }                                                                        \
+            } else if (strcmp (arg[i], "inout") == 0) {                                  \
+                i++;                                                                     \
+                binout;                                                                  \
+                sepneeded = 1;                                                           \
+            } else {                                                                     \
+                i++;                                                                     \
+                barray;                                                                  \
+                sepneeded = 1;                                                           \
+            };                                                                           \
+        }                                                                                \
+    }
 #define AccessVect(v, i) fprintf (outfile, "ND_A_FIELD(%s)[%i])", v, i)
 
 #define AccessConst(v, i) fprintf (outfile, "%s", v[i])
@@ -164,8 +214,7 @@
 
 #ifdef TEST_BACKEND
 
-int
-main ()
+MAIN
 {
 
     typedef char *string;
@@ -176,13 +225,22 @@ main ()
     int dim = 3, dima = 4, dimv = 3;
     char *s[] = {"40", "50", "60"};
     char *vi[] = {"10", "20", "30"};
+    char *arg[] = {"in", "i", "in_a", "ia", "out", "o1", "out", "o2", "out_a", "oa"};
+    char *tyarg[] = {"in", "int", "i",   "in_a", "int",   "ia",  "out", "int",
+                     "o1", "out", "int", "o2",   "out_a", "int", "oa"};
     char v[] = "vector";
     char a[] = "arg";
     char a1[] = "arg1";
     char a2[] = "arg2";
     char res[] = "result";
     int i;
+    int narg = 5;
     int indent = 1;
+
+    OPT OTHER
+    {
+    }
+    ENDOPT
 
 #else /* TEST_BACKEND */
 
@@ -191,13 +249,112 @@ extern FILE *outfile; /* outputfile for PrintTree defined in main.c*/
 #endif /* TEST_BACKEND */
 
     /*
-     * ND_CREATE_CONST_ARRAY( basic_type, name, dim, s0,..., sn)   : generates a constant
-     * array
+     * ND_FUN_DEC( name, n, [ {in, in_a, out, out_a, inout, inout_a}, type, arg ] )
      *
-     * char *type, *name;
-     * int dim;
-     * char **s;
+     * char *name;
+     * int narg;
+     * char **tyarg;
      */
+
+#define ND_FUN_DEC
+
+#ifndef TEST_BACKEND
+#include "icm_decl.c"
+#include "icm_args.c"
+#endif /* no TEST_BACKEND */
+
+#include "icm_comment.c"
+
+    INDENT;
+    FirstOut (arg, 3 * narg, fprintf (outfile, "%s ", tyarg[i]), 2);
+    fprintf (outfile, "%s( ", name);
+    ScanArglist (tyarg, 3 * narg, fprintf (outfile, " %s %s", tyarg[i++], tyarg[i++]),
+                 i += 2;
+                 , fprintf (outfile, " %s *%s__p", tyarg[i++], tyarg[i++]),
+                 fprintf (outfile, " %s *%s__p", tyarg[i++], tyarg[i++]),
+                 fprintf (outfile, " ND_KS_ARG_ARRAY(%s, %s)", tyarg[i++], tyarg[i++]),
+                 ",");
+    fprintf (outfile, ")\n");
+
+#undef ND_FUN_DEC
+
+#ifndef TEST_BACKEND
+    DBUG_VOID_RETURN;
+}
+#endif /* no TEST_BACKEND */
+
+/*
+ * ND_FUN_AP( name, n, [ {in, in_a, out, out_a, inout, inout_a}, arg ] )
+ *
+ * char *name;
+ * int narg;
+ * char **arg;
+ */
+
+#define ND_FUN_AP
+
+#ifndef TEST_BACKEND
+#include "icm_decl.c"
+#include "icm_args.c"
+#endif /* no TEST_BACKEND */
+
+#include "icm_comment.c"
+
+INDENT;
+FirstOut (arg, 2 * narg, fprintf (outfile, "%s =", arg[i]), 1);
+fprintf (outfile, "%s( ", name);
+ScanArglist (arg, 2 * narg, fprintf (outfile, " %s", arg[i++]),
+             fprintf (outfile, " %s&", arg[i++]), i++;
+             , fprintf (outfile, " %s&", arg[i++]),
+             fprintf (outfile, " ND_KS_RET_ARRAY(%s)", arg[i++]), ",");
+fprintf (outfile, ");\n");
+
+#undef ND_FUN_AP
+
+#ifndef TEST_BACKEND
+DBUG_VOID_RETURN;
+}
+#endif /* no TEST_BACKEND */
+
+/*
+ * ND_FUN_RET( n, [ { out, out_a, inout, inout_a}, arg ] )
+ *
+ * char *name;
+ * int narg;
+ * char **arg;
+ */
+
+#define ND_FUN_RET
+
+#ifndef TEST_BACKEND
+#include "icm_decl.c"
+#include "icm_args.c"
+#endif /* no TEST_BACKEND */
+
+#include "icm_comment.c"
+
+INDENT;
+ScanArglist (arg, 2 * narg, i++;, i++;
+             , fprintf (outfile, "*%s__p = %s;\n", arg[i], arg[i++]);
+             INDENT, fprintf (outfile, "*%s__p = %s;\n", arg[i], arg[i++]);
+             INDENT, i += 1;, "");
+FirstOut (arg, 2 * narg, fprintf (outfile, "return(%s);\n", arg[i]), 1);
+
+#undef ND_FUN_RET
+
+#ifndef TEST_BACKEND
+DBUG_VOID_RETURN;
+}
+#endif /* no TEST_BACKEND */
+
+/*
+ * ND_CREATE_CONST_ARRAY( basic_type, name, dim, s0,..., sn)   : generates a constant
+ * array
+ *
+ * char *type, *name;
+ * int dim;
+ * char **s;
+ */
 
 #define ND_CREATE_CONST_ARRAY
 
@@ -208,21 +365,21 @@ extern FILE *outfile; /* outputfile for PrintTree defined in main.c*/
 
 #include "icm_comment.c"
 
+INDENT;
+NewBlock (fprintf (outfile, "static %s __dummy[]={", type), {
+    int i;
+    for (i = 0; i < dim - 1; i++)
+        fprintf (outfile, "%s,", s[i]);
+    fprintf (outfile, "%s};\n", s[i]);
     INDENT;
-    NewBlock (fprintf (outfile, "static %s __dummy[]={", type), {
-        int i;
-        for (i = 0; i < dim - 1; i++)
-            fprintf (outfile, "%s,", s[i]);
-        fprintf (outfile, "%s};\n", s[i]);
-        INDENT;
-        fprintf (outfile, "%s=__dummy;\n", name);
-    });
-    fprintf (outfile, "\n");
+    fprintf (outfile, "%s=__dummy;\n", name);
+});
+fprintf (outfile, "\n");
 
 #undef ND_CREATE_CONST_ARRAY
 
 #ifndef TEST_BACKEND
-    DBUG_VOID_RETURN;
+DBUG_VOID_RETURN;
 }
 #endif /* no TEST_BACKEND */
 
