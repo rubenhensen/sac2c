@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.9  2000/08/03 14:16:53  nmw
+ * handling macro for T_hidden added
+ * ,
+ *
  * Revision 1.8  2000/07/28 14:42:59  nmw
  * macros changed to handle T_user types
  *
@@ -64,6 +68,10 @@
  */
 #define SAC_RESULT_REFCNT(var, type)                                                     \
     (type **)(&SAC_ARG_ELEMS ((*var))), (int **)(&SAC_ARG_RC ((*var)))
+
+/* result is T_hidden and refcounted */
+#define SAC_RESULT_HIDDEN_RC(var, type)                                                  \
+    (type *)(&SAC_ARG_ELEMS ((*var))), (int **)(&SAC_ARG_RC ((*var)))
 
 /* alloc data memory for simple results */
 #define SAC_CI_INIT_SIMPLE_RESULT(var, type)                                             \
