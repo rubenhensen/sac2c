@@ -25,3 +25,4 @@ sac_std.tagged.h
 sac_trace.h
 sac_wl.h
 sac_wl.tagged.h
+sac2crc.in
