@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.13  1996/01/02 15:51:33  cg
+ * Revision 1.14  1996/01/05 14:14:10  asi
+ * added While2Do: This function converts a while-loop into a do-loop
+ *
+ * Revision 1.13  1996/01/02  15:51:33  cg
  * function MakeType now initializes new struct entries tdef and id_cmod
  * of struct types
  *
@@ -654,6 +657,14 @@ MakeWhile (node *cond, node *body)
                              mdb_nodetype[NODE_TYPE (tmp)], tmp));
 
     DBUG_RETURN (tmp);
+}
+
+node *
+While2Do (node *while_node)
+{
+    DBUG_ENTER ("While2Do");
+    NODE_TYPE (while_node) = N_do;
+    DBUG_RETURN (while_node);
 }
 
 node *

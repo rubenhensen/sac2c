@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.32  1996/01/02 14:44:35  cg
+ * Revision 1.33  1996/01/05 14:14:10  asi
+ * added While2Do: This function converts a while-loop into a do-loop
+ *
+ * Revision 1.32  1996/01/02  14:44:35  cg
  * macro MODUL_CCCALL removed again
  *
  * Revision 1.31  1995/12/29  14:22:41  cg
@@ -1073,6 +1076,8 @@ extern node *MakeDo (node *cond, node *body);
 
 extern node *MakeWhile (node *cond, node *body);
 
+extern node *While2Do (node *while_node);
+
 #define WHILE_COND(n) (n->node[0])
 #define WHILE_BODY(n) (n->node[1])
 #define WHILE_USEVARS(n) (n->node[2]->node[0])
@@ -1143,6 +1148,7 @@ extern node *MakeWith (node *gen, node *body);
  ***
  ***  temporary attributes:
  ***
+ ***    node*  VARDEC                  (typechecker -> )
  ***    long*  MASK[x]                 (optimize -> )
  ***/
 
@@ -1151,6 +1157,7 @@ extern node *MakeGenerator (node *left, node *right, char *id);
 #define GEN_LEFT(n) (n->node[0])
 #define GEN_RIGHT(n) (n->node[1])
 #define GEN_ID(n) (n->info.ids->id)
+#define GEN_VARDEC(n) (n->info.ids->node)
 #define GEN_MASK(n, x) (n->mask[x])
 
 /*--------------------------------------------------------------------------*/
