@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  1998/03/05 16:41:08  srs
+ * compile error. AppendPath() made none-static
+ *
  * Revision 1.13  1998/03/04 16:23:27  cg
  *  C compiler invocations and file handling converted to new
  * to usage of new  configuration files.
@@ -161,7 +164,7 @@ InitPaths ()
  *
  */
 
-static void
+void
 AppendPath (pathkind p, char *path)
 {
     int len;
