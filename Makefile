@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.37  2001/11/13 21:31:39  dkr
+# OSX_MAC_LIBS corrected
+#
 # Revision 3.36  2001/11/13 20:42:42  dkr
 # OSX_MAC added in 'check_os'
 #
@@ -187,16 +190,16 @@ LINUX_X86_FLAGS     := -D_POSIX_SOURCE -D_SVID_SOURCE -D_BSD_SOURCE
 LINUX_X86_LIBS      := -lfl
 
 #
-# UNIX_ALPHA specific flags and libraries:
+# OSF_ALPHA specific flags and libraries:
 #
 OSF_ALPHA_FLAGS    := -D_OSF_SOURCE 
 OSF_ALPHA_LIBS     := -ll
 
 #
-# UNIX_ALPHA specific flags and libraries:
+# OSX_MAC specific flags and libraries:
 #
 OSX_MAC_FLAGS    := 
-OSX_MAC_LIBS     := -lfl
+OSX_MAC_LIBS     := -ll
 
 ################################################################################
 #
