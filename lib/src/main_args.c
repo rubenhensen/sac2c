@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/05/12 14:23:35  cg
+ * new release made
+ *
  * Revision 1.1  1999/05/12 13:49:44  cg
  * Initial revision
  *
