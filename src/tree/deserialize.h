@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2004/11/17 19:50:04  sah
+ * interface changes
+ *
  * Revision 1.5  2004/11/14 15:25:38  sah
  * implemented support for udts
  * some cleanup
@@ -37,8 +40,8 @@ extern node *AddSymbolById (const char *symbid, const char *module);
 /*
  * hooks for deserialization
  */
-extern ntype *DeserializeLookupUserType (const char *mod, const char *name);
-extern ntype *DeserializeLookupSymbolType (const char *mod, const char *name);
+extern ntype *DeserializeLoadUserType (const char *mod, const char *name);
+extern ntype *DeserializeLoadSymbolType (const char *mod, const char *name);
 extern node *DeserializeLookupFunction (const char *module, const char *symbol);
 
 /*

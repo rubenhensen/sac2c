@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2004/11/17 19:48:50  sah
+ * interface changes
+ *
  * Revision 1.7  2004/11/14 15:23:45  sah
  * some cleanup
  *
@@ -37,6 +40,7 @@
 #include "modulemanager.h"
 #include "deserialize.h"
 #include "new_types.h"
+#include "Error.h"
 
 /*
  * INFO structure
@@ -80,12 +84,39 @@ FreeInfo (info *info)
 /*
  * helper functions
  */
+
+static void
+CheckSymbolVisibility (const char *mod, const char *symb)
+{
+    module_t *module;
+    STtable_t *table;
+    STsymbol_t *symbol;
+
+    DBUG_ENTER ("CheckSymbolVisibility");
+
+    module = LoadModule (mod);
+    table = GetSymbolTable (module);
+    symbol = STGet (symb, table);
+
+    if ((symbol == NULL)
+        || ((!(STSymbolVisibility (symbol) == SVT_exported))
+            && (!(STSymbolVisibility (symbol) == SVT_provided)))) {
+        ERROR (linenum, ("Symbol `%s:%s' not defined", mod, symb));
+    }
+
+    table = STDestroy (table);
+    module = UnLoadModule (module);
+
+    DBUG_VOID_RETURN;
+}
+
 static void
 MakeSymbolAvailable (const char *mod, const char *symb, STentrytype_t type, info *info)
 {
     DBUG_ENTER ("MakeSymbolAvailable");
 
     if (strcmp (mod, MODUL_NAME (INFO_USS_MODULE (info)))) {
+        CheckSymbolVisibility (mod, symb);
 
         AddSymbolByName (symb, type, mod);
     }

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2004/11/17 19:50:13  sah
+ * interface changes
+ *
  * Revision 1.7  2004/11/14 15:25:38  sah
  * implemented support for udts
  * some cleanup
@@ -370,11 +373,11 @@ DeserializeLoadUserType (const char *name, const char *mod)
 }
 
 ntype *
-DeserializeLookupSymbolType (const char *mod, const char *name)
+DeserializeLoadSymbolType (const char *mod, const char *name)
 {
     ntype *result;
 
-    DBUG_ENTER ("DeserializeLookupSymbolType");
+    DBUG_ENTER ("DeserializeLoadSymbolType");
 
     DBUG_RETURN (result);
 }

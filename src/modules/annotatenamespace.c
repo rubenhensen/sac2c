@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2004/11/17 19:48:39  sah
+ * interface changes
+ *
  * Revision 1.12  2004/11/14 15:23:28  sah
  * some cleanup
  *
@@ -115,8 +118,8 @@ CheckUseUnique (STtable_t *table)
     iterator = STSymbolIteratorGet (table);
 
     while (STSymbolIteratorHasMore (iterator)) {
-        const char *symbol = STSymbolIteratorNext (iterator);
-        STentryiterator_t *entries = STEntryIteratorGet (symbol, table);
+        STsymbol_t *symbol = STSymbolIteratorNext (iterator);
+        STentryiterator_t *entries = STEntryIteratorGet (STSymbolName (symbol), table);
 
         if (STEntryIteratorHasMore (entries)) {
             STentry_t *entry = STEntryIteratorNext (entries);
@@ -257,7 +260,7 @@ ANSSymbol (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ANSSymbol");
 
-    STAdd (SYMBOL_ID (arg_node), INFO_ANS_CURRENT (arg_info), SET_namespace,
+    STAdd (SYMBOL_ID (arg_node), SVT_local, INFO_ANS_CURRENT (arg_info), SET_namespace,
            INFO_ANS_SYMBOLS (arg_info));
 
     if (SYMBOL_NEXT (arg_node) != NULL) {

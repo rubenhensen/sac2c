@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2004/11/17 19:49:06  sah
+ * interface changes
+ *
  * Revision 1.8  2004/11/14 15:24:04  sah
  * DeserializeLookupFunction now uses internal state
  *
@@ -45,7 +48,7 @@ extern void *CreateIntegerArray (int s, ...);
 extern void *SerializeBuildSerStack (void *node);
 extern void *DeserializeLookupFunction (const char *s, const char *t);
 extern void *STInit ();
-extern void STAdd (char *s1, char *s2, int i, void *table);
+extern void STAdd (char *s1, int l, char *s2, int i, void *table);
 extern void *SSAdd (char *s1, int i, void *p);
 
 #endif /* _SAC_SERIALIZE_H */

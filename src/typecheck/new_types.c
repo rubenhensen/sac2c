@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.68  2004/11/17 19:46:47  sah
+ * interface changes
+ *
  * Revision 3.67  2004/11/14 15:21:19  sah
  * added support for import of udts
  *
@@ -6237,7 +6240,7 @@ TYDeserializeType (typeconstr con, ...)
         name = va_arg (args, char *);
         mod = va_arg (args, char *);
 
-        result = DeserializeLookupSymbolType (name, mod);
+        result = DeserializeLoadSymbolType (name, mod);
 
         va_end (args);
     } break;

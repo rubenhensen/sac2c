@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2004/11/17 19:48:01  sah
+ * interface changes
+ *
  * Revision 1.8  2004/11/14 15:22:42  sah
  * switched to AddSymbolByName
  *
@@ -72,12 +75,12 @@ PrintLibStatCodeAddBodies (module_t *module, node *modnode, node *fundef)
 }
 
 static void
-PrintLibStatCodeReadSymbols (module_t *module, const char *symbol, STtable_t *table)
+PrintLibStatCodeReadSymbols (module_t *module, STsymbol_t *symbol, STtable_t *table)
 {
     DBUG_ENTER ("PrintLibStatCodeReadSymbols");
 
-    AddSymbolByName (symbol, SET_wrapperhead, GetModuleName (module));
-    AddSymbolByName (symbol, SET_typedef, GetModuleName (module));
+    AddSymbolByName (STSymbolName (symbol), SET_wrapperhead, GetModuleName (module));
+    AddSymbolByName (STSymbolName (symbol), SET_typedef, GetModuleName (module));
 
     DBUG_VOID_RETURN;
 }
