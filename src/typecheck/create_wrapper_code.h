@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.7  2004/11/22 15:36:00  sbs
+ * SacDevCamp04
+ *
  * Revision 1.6  2004/08/26 18:12:21  sbs
  * node *CWCwith( node *arg_node, info *arg_info);
  * added
@@ -22,15 +25,19 @@
  *
  */
 
-#ifndef _create_wrapper_code_h_
-#define _create_wrapper_code_h_
+#ifndef _SAC_CREATE_WRAPPER_CODE_H_
+#define _SAC_CREATE_WRAPPER_CODE_H_
 
-node *CreateWrapperCode (node *ast);
+#include "types.h"
 
-node *CWCmodul (node *arg_node, info *arg_info);
+node *CWCdoCreateWrapperCode (node *ast);
+
+node *CWCmodule (node *arg_node, info *arg_info);
 node *CWCfundef (node *arg_node, info *arg_info);
 node *CWCap (node *arg_node, info *arg_info);
 node *CWCwith (node *arg_node, info *arg_info);
-node *CWCwithop (node *arg_node, info *arg_info);
+node *CWCgenarray (node *arg_node, info *arg_info);
+node *CWCmodarray (node *arg_node, info *arg_info);
+node *CWCfold (node *arg_node, info *arg_info);
 
-#endif /* _create_wrapper_code_h_ */
+#endif /* _SAC_CREATE_WRAPPER_CODE_H_ */

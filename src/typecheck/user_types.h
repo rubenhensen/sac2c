@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.4  2004/11/22 15:36:00  sbs
+ * SacDevCamp04
+ *
  * Revision 3.3  2004/11/17 19:46:19  sah
  * changed arguments from char to const char
  *
@@ -15,8 +18,8 @@
  *
  */
 
-#ifndef _user_types_h
-#define _user_types_h
+#ifndef _SAC_USER_TYPES_H_
+#define _SAC_USER_TYPES_H_
 
 /*
  * The module "user_type" implements a repository for user defined types.
@@ -32,9 +35,7 @@
  */
 
 #include <stdio.h>
-#include "types.h" /* needed for usertype! */
-
-#include "new_types.h"
+#include "types.h"
 
 /*
  * special return value for "UTFindUserType"!
@@ -43,22 +44,22 @@
  */
 #define UT_NOT_DEFINED -1
 
-extern usertype UTAddUserType (char *name, char *mod, ntype *type, ntype *base,
+extern usertype UTaddUserType (char *name, char *mod, ntype *type, ntype *base,
                                int lineno, node *tdef);
-extern usertype UTFindUserType (const char *name, const char *mod);
+extern usertype UTfindUserType (const char *name, const char *mod);
 
-extern int UTGetNumberOfUserTypes ();
+extern int UTgetNumberOfUserTypes ();
 
-extern char *UTGetMod (usertype t1);
-extern char *UTGetName (usertype t1);
-extern ntype *UTGetTypedef (usertype t1);
-extern ntype *UTGetBaseType (usertype t1);
-extern int UTGetLine (usertype t1);
-extern node *UTGetTdef (usertype t1);
+extern char *UTgetMod (usertype t1);
+extern char *UTgetName (usertype t1);
+extern ntype *UTgetTypedef (usertype t1);
+extern ntype *UTgetBaseType (usertype t1);
+extern int UTgetLine (usertype t1);
+extern node *UTgetTdef (usertype t1);
 
-extern void UTSetTypedef (usertype t1, ntype *type);
-extern void UTSetBaseType (usertype t1, ntype *type);
+extern void UTsetTypedef (usertype t1, ntype *type);
+extern void UTsetBaseType (usertype t1, ntype *type);
 
-extern void UTPrintRepository (FILE *outfile);
+extern void UTprintRepository (FILE *outfile);
 
-#endif /* _user_types_h */
+#endif /* _SAC_USER_TYPES_H_ */

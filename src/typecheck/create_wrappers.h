@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2004/11/22 15:36:00  sbs
+ * SacDevCamp04
+ *
  * Revision 1.10  2004/09/30 15:11:18  sbs
  * CreteFuntype splitted into CreateFuntype and CreateFunRettype
  *
@@ -35,24 +38,22 @@
  *
  */
 
-#ifndef _create_wrappers_h
-#define _create_wrappers_h
+#ifndef _SAC_CREATE_WRAPPERS_H_
+#define _SAC_CREATE_WRAPPERS_H_
 
 #include "types.h"
-#include "new_types.h"
-#include "tree_basic.h"
-#include "tree_compound.h"
-#include "internal_lib.h"
 
-extern node *CreateWrappers (node *arg_node);
-extern ntype *CreateFunRettype (types *old_ret);
-extern ntype *CreateFuntype (node *fundef);
+extern node *CRWRPdoCreateWrappers (node *arg_node);
+extern ntype *CRWRPcreateFunRettype (types *old_ret);
+extern ntype *CRWRPcreateFuntype (node *fundef);
 
-extern node *CRTWRPmodul (node *arg_node, info *arg_info);
+extern node *CRTWRPmodule (node *arg_node, info *arg_info);
 extern node *CRTWRPfundef (node *arg_node, info *arg_info);
 extern node *CRTWRPlet (node *arg_node, info *arg_info);
 extern node *CRTWRPap (node *arg_node, info *arg_info);
 extern node *CRTWRPid (node *arg_node, info *arg_info);
-extern node *CRTWRPNwithop (node *arg_node, info *arg_info);
+extern node *CRTWRPgenarray (node *arg_node, info *arg_info);
+extern node *CRTWRPmodarray (node *arg_node, info *arg_info);
+extern node *CRTWRPfold (node *arg_node, info *arg_info);
 
-#endif /* _create_wrappers_h */
+#endif /* _SAC_CREATE_WRAPPERS_H_ */

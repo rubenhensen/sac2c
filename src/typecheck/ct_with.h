@@ -1,19 +1,22 @@
 /*
  * $Log$
+ * Revision 1.2  2004/11/22 15:36:00  sbs
+ * SacDevCamp04
+ *
  * Revision 1.1  2002/08/05 16:57:54  sbs
  * Initial revision
  *
  *
  */
 
-#ifndef _ct_with_h
-#define _ct_with_h
+#ifndef _SAC_CT_WITH_H_
+#define _SAC_CT_WITH_H_
 
 #include "new_types.h"
 
-extern ntype *NTCWL_idx (te_info *info, ntype *args);
-extern ntype *NTCWL_gen (te_info *info, ntype *args);
-extern ntype *NTCWL_mod (te_info *info, ntype *args);
-extern ntype *NTCWL_fold (te_info *info, ntype *args);
+extern ntype *NTCCTwl_idx (te_info *info, ntype *args);
+extern ntype *NTCCTwl_gen (te_info *info, ntype *args);
+extern ntype *NTCCTwl_mod (te_info *info, ntype *args);
+extern ntype *NTCCTwl_fold (te_info *info, ntype *args);
 
-#endif /* _ct_with_h */
+#endif /* _SAC_CT_WITH_H_ */

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2004/11/22 15:36:00  sbs
+ * SacDevCamp04
+ *
  * Revision 1.4  2004/08/08 16:05:08  sah
  * fixed some includes.
  *
@@ -17,33 +20,29 @@
  *
  */
 
-#ifndef _ssi_h
-#define _ssi_h
+#ifndef _SAC_SSI_H_
+#define _SAC_SSI_H_
 
-#include "new_types.h"
-#include "sig_deps.h"
-#include "internal_lib.h"
+#include "types.h"
 
-typedef struct TVAR tvar;
-typedef bool (*tvar_ass_handle_fun) (sig_dep *handle);
+extern tvar *SSImakeVariable ();
 
-extern tvar *SSIMakeVariable ();
+extern bool SSInewMax (tvar *var, ntype *cmax);
+extern bool SSInewMin (tvar *var, ntype *cmin);
+extern bool SSInewRel (tvar *small, tvar *big);
+extern bool SSInewTypeRel (ntype *small, ntype *big);
 
-extern bool SSINewMax (tvar *var, ntype *cmax);
-extern bool SSINewMin (tvar *var, ntype *cmin);
-extern bool SSINewRel (tvar *small, tvar *big);
-extern bool SSINewTypeRel (ntype *small, ntype *big);
-
-extern bool SSIInitAssumptionSystem (tvar_ass_handle_fun HandleContra,
+extern bool SSIinitAssumptionSystem (tvar_ass_handle_fun HandleContra,
                                      tvar_ass_handle_fun HandleFix);
-extern bool SSIAssumeLow (tvar *var, sig_dep *handle);
-extern bool SSIFixLow (tvar *var);
+extern bool SSIassumeLow (tvar *var, sig_dep *handle);
+extern bool SSIfixLow (tvar *var);
 
-extern bool SSIIsFix (tvar *var);
-extern bool SSIIsLe (tvar *var1, tvar *var2);
-extern ntype *SSIGetMax (tvar *var);
-extern ntype *SSIGetMin (tvar *var);
+extern bool SSIisFix (tvar *var);
+extern bool SSIisLe (tvar *var1, tvar *var2);
+extern ntype *SSIgetMax (tvar *var);
+extern ntype *SSIgetMin (tvar *var);
 
-extern char *SSIVariable2String (tvar *var);
-extern char *SSIVariable2DebugString (tvar *var);
-#endif /* _ssi_h */
+extern char *SSIvariable2String (tvar *var);
+extern char *SSIvariable2DebugString (tvar *var);
+
+#endif /* _SAC_SSI_H_ */

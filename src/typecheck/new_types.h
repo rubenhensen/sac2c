@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.24  2004/11/22 15:36:00  sbs
+ * SacDevCamp04
+ *
  * Revision 3.23  2004/11/14 15:21:42  sah
  * added TYSetMod
  *
@@ -81,8 +84,8 @@
  *
  */
 
-#ifndef _new_types_h
-#define _new_types_h
+#ifndef _SAC_NEW_TYPES_H_
+#define _SAC_NEW_TYPES_H_
 
 /*
  * The module "new_types" implements a new abstract datatype for representing
@@ -220,209 +223,162 @@
  * definitions required for the entire interface:
  */
 
-typedef struct NTYPE ntype;
-
 #include "types.h"
-#include "free.h"
 
-#include "constants.h"
-#include "shape.h"
-#include "ssi.h"
-
-/*
- * basic stuff which should only be used if essential from a performance
- * point of view, as it unleashes part of the implementation...
- */
-
-typedef enum {
-#define TCITypeConstr(a) a
-#include "type_constructor_info.mac"
-} typeconstr;
-
-typeconstr TYGetConstr (ntype *type);
+typeconstr TYgetConstr (ntype *type);
 
 /*
  * Scalar Types: Simple / User / Symbol
  */
-extern ntype *TYMakeSimpleType (simpletype base);
-extern ntype *TYMakeUserType (usertype base);
-extern ntype *TYMakeSymbType (char *name, char *mod);
+extern ntype *TYmakeSimpleType (simpletype base);
+extern ntype *TYmakeUserType (usertype base);
+extern ntype *TYmakeSymbType (char *name, char *mod);
 
-extern ntype *TYSetSimpleType (ntype *simple, simpletype base);
+extern ntype *TYsetSimpleType (ntype *simple, simpletype base);
 
-extern simpletype TYGetSimpleType (ntype *simple);
-extern usertype TYGetUserType (ntype *user);
-extern char *TYGetName (ntype *symb);
-extern char *TYGetMod (ntype *symb);
-extern ntype *TYSetMod (ntype *symb, char *mod);
+extern simpletype TYgetSimpleType (ntype *simple);
+extern usertype TYgetUserType (ntype *user);
+extern char *TYgetName (ntype *symb);
+extern char *TYgetMod (ntype *symb);
+extern ntype *TYsetMod (ntype *symb, char *mod);
 
 /*
  * Array Types: AKS / AKD / AUDGZ / AUD
  */
-extern ntype *TYMakeAKV (ntype *scalar, constant *val);
-extern ntype *TYMakeAKS (ntype *scalar, shape *shp);
-extern ntype *TYMakeAKD (ntype *scalar, int dots, shape *shp);
-extern ntype *TYMakeAUDGZ (ntype *scalar);
-extern ntype *TYMakeAUD (ntype *scalar);
+extern ntype *TYmakeAKV (ntype *scalar, constant *val);
+extern ntype *TYmakeAKS (ntype *scalar, shape *shp);
+extern ntype *TYmakeAKD (ntype *scalar, int dots, shape *shp);
+extern ntype *TYmakeAUDGZ (ntype *scalar);
+extern ntype *TYmakeAUD (ntype *scalar);
 
-extern ntype *TYSetScalar (ntype *array, ntype *scalar);
+extern ntype *TYsetScalar (ntype *array, ntype *scalar);
 
-extern int TYGetDim (ntype *array);
-extern shape *TYGetShape (ntype *array);
-extern constant *TYGetValue (ntype *array);
-extern ntype *TYGetScalar (ntype *array);
+extern int TYgetDim (ntype *array);
+extern shape *TYgetShape (ntype *array);
+extern constant *TYgetValue (ntype *array);
+extern ntype *TYgetScalar (ntype *array);
 
 /*
  * Union Types: (not used at the time being!)
  */
-extern ntype *TYMakeUnionType (ntype *t1, ntype *t2);
+extern ntype *TYmakeUnionType (ntype *t1, ntype *t2);
 
 /*
  * Product Types:
  */
-extern ntype *TYMakeProductType (int size, ...);
-extern ntype *TYMakeEmptyProductType (int size);
-extern ntype *TYSetProductMember (ntype *prod, int pos, ntype *member);
+extern ntype *TYmakeProductType (int size, ...);
+extern ntype *TYmakeEmptyProductType (int size);
+extern ntype *TYsetProductMember (ntype *prod, int pos, ntype *member);
 
-extern int TYGetProductSize (ntype *prod);
-extern ntype *TYGetProductMember (ntype *prod, int pos);
+extern int TYgetProductSize (ntype *prod);
+extern ntype *TYgetProductMember (ntype *prod, int pos);
 
 /*
  * Polymorphic Types:
  */
-extern ntype *TYMakePolyType (char *name);
-extern char *TYGetPolyName (ntype *poly);
+extern ntype *TYmakePolyType (char *name);
+extern char *TYgetPolyName (ntype *poly);
 
 /*
  * Function Types:
  */
-extern ntype *TYMakeFunType (ntype *arg, ntype *res, node *fun_info);
-extern ntype *TYMakeOverloadedFunType (ntype *fun1, ntype *fun2);
+extern ntype *TYmakeFunType (ntype *arg, ntype *res, node *fun_info);
+extern ntype *TYmakeOverloadedFunType (ntype *fun1, ntype *fun2);
 
-typedef struct dft {
-    ntype *type;
-    node *def;
-    node *deriveable;
-    int num_partials;
-    node **partials;
-    int num_deriveable_partials;
-    node **deriveable_partials;
-} DFT_res;
+extern dft_res *TYdispatchFunType (ntype *fun, ntype *args);
 
-extern DFT_res *TYDispatchFunType (ntype *fun, ntype *args);
-
-extern DFT_res *TYMakeDFT_res (ntype *type, int max_funs);
-extern DFT_res *TYFreeDFT_res (DFT_res *res);
-extern char *TYDFT_res2DebugString (DFT_res *dft);
+extern dft_res *TYmakeDft_res (ntype *type, int max_funs);
+extern dft_res *TYfreeDft_res (dft_res *res);
+extern char *TYdft_res2DebugString (dft_res *dft);
 
 /*
  * Type Variables:
  */
-extern ntype *TYMakeAlphaType (ntype *maxtype);
-extern tvar *TYGetAlpha (ntype *type);
+extern ntype *TYmakeAlphaType (ntype *maxtype);
+extern tvar *TYgetAlpha (ntype *type);
 
 /*
  * Some predicates for inspecting types:
  */
-extern bool TYIsSimple (ntype *);
-extern bool TYIsUser (ntype *);
-extern bool TYIsSymb (ntype *);
-extern bool TYIsScalar (ntype *);
+extern bool TYisSimple (ntype *);
+extern bool TYisUser (ntype *);
+extern bool TYisSymb (ntype *);
+extern bool TYisScalar (ntype *);
 
-extern bool TYIsAlpha (ntype *);
-extern bool TYIsFixedAlpha (ntype *);
-extern bool TYIsNonFixedAlpha (ntype *);
-extern bool TYIsAKV (ntype *);
-extern bool TYIsAKS (ntype *);
-extern bool TYIsAKD (ntype *);
-extern bool TYIsAUDGZ (ntype *);
-extern bool TYIsAUD (ntype *);
-extern bool TYIsArray (ntype *);
-extern bool TYIsArrayOrAlpha (ntype *);
-extern bool TYIsArrayOrFixedAlpha (ntype *);
+extern bool TYisAlpha (ntype *);
+extern bool TYisFixedAlpha (ntype *);
+extern bool TYisNonFixedAlpha (ntype *);
+extern bool TYisAKV (ntype *);
+extern bool TYisAKS (ntype *);
+extern bool TYisAKD (ntype *);
+extern bool TYisAUDGZ (ntype *);
+extern bool TYisAUD (ntype *);
+extern bool TYisArray (ntype *);
+extern bool TYisArrayOrAlpha (ntype *);
+extern bool TYisArrayOrFixedAlpha (ntype *);
 
-extern bool TYIsUnion (ntype *);
-extern bool TYIsProd (ntype *);
-extern bool TYIsFun (ntype *);
+extern bool TYisUnion (ntype *);
+extern bool TYisProd (ntype *);
+extern bool TYisFun (ntype *);
 
-extern bool TYIsAKSSymb (ntype *);
-extern bool TYIsProdOfArray (ntype *);
-extern bool TYIsProdOfArrayOrFixedAlpha (ntype *);
-extern bool TYIsProdOfAKV (ntype *);
-extern bool TYIsProdContainingAKV (ntype *);
+extern bool TYisAKSSymb (ntype *);
+extern bool TYisProdOfArray (ntype *);
+extern bool TYisProdOfArrayOrFixedAlpha (ntype *);
+extern bool TYisProdOfAKV (ntype *);
+extern bool TYisProdContainingAKV (ntype *);
 
-extern int TYCountNonFixedAlpha (ntype *);
-extern int TYCountNoMinAlpha (ntype *);
+extern int TYcountNonFixedAlpha (ntype *);
+extern int TYcountNoMinAlpha (ntype *);
 
-/*
- * Type-Comparison
- */
-typedef enum {
-    TY_eq,  /* types are identical */
-    TY_lt,  /* first type is subtype of second one */
-    TY_gt,  /* first type is supertype of second one */
-    TY_hcs, /* types are unrelated but do have a common supertype */
-    TY_dis  /* types are disjoint */
-} CT_res;
-
-extern CT_res TYCmpTypes (ntype *t1, ntype *t2);
-extern bool TYLeTypes (ntype *t1, ntype *t2);
-extern bool TYEqTypes (ntype *t1, ntype *t2);
+extern ct_res TYcmpTypes (ntype *t1, ntype *t2);
+extern bool TYleTypes (ntype *t1, ntype *t2);
+extern bool TYeqTypes (ntype *t1, ntype *t2);
 
 /*
  * Computing types from other types
  */
 
-extern ntype *TYLubOfTypes (ntype *t1, ntype *t2);
-extern ntype *TYEliminateAlpha (ntype *t1);
-extern ntype *TYFixAndEliminateAlpha (ntype *t1);
-extern ntype *TYEliminateUser (ntype *t1);
-extern ntype *TYEliminateAKV (ntype *t1);
+extern ntype *TYlubOfTypes (ntype *t1, ntype *t2);
+extern ntype *TYeliminateAlpha (ntype *t1);
+extern ntype *TYfixAndEliminateAlpha (ntype *t1);
+extern ntype *TYeliminateUser (ntype *t1);
+extern ntype *TYeliminateAKV (ntype *t1);
 
 /*
  * General Type handling functions
  */
-extern ntype *TYFreeTypeConstructor (ntype *type);
-extern ntype *TYFreeType (ntype *type);
+extern ntype *TYfreeTypeConstructor (ntype *type);
+extern ntype *TYfreeType (ntype *type);
 
-extern ntype *TYCopyType (ntype *type);
-extern ntype *TYCopyTypeConstructor (ntype *type);
-extern ntype *TYCopyFixedType (ntype *type);
-extern ntype *TYDeriveSubtype (ntype *type);
-extern char *TYType2String (ntype *new, bool multiline, int offset);
-extern char *TYType2DebugString (ntype *new, bool multiline, int offset);
-extern char *TYArgs2FunTypeString (node *args, ntype *rettype);
-extern ntype *TYNestTypes (ntype *outer, ntype *inner);
-extern ntype *TYDeNestTypes (ntype *nested, ntype *inner);
+extern ntype *TYcopyType (ntype *type);
+extern ntype *TYcopyTypeConstructor (ntype *type);
+extern ntype *TYcopyFixedType (ntype *type);
+extern ntype *TYderiveSubtype (ntype *type);
+extern char *TYtype2String (ntype *new, bool multiline, int offset);
+extern char *TYtype2DebugString (ntype *new, bool multiline, int offset);
+extern char *TYargs2FunTypeString (node *args, ntype *rettype);
+extern ntype *TYnestTypes (ntype *outer, ntype *inner);
+extern ntype *TYdeNestTypes (ntype *nested, ntype *inner);
 
-/*
- * Functions for converting from old to new types and back
- */
-typedef enum { TY_symb, TY_user } type_conversion_flag;
-
-extern ntype *TYOldType2ScalarType (types *old);
-extern ntype *TYOldType2Type (types *old);
-extern types *TYType2OldType (ntype *new);
-extern ntype *TYOldTypes2ProdType (types *old);
+extern ntype *TYoldType2ScalarType (types *old);
+extern ntype *TYoldType2Type (types *old);
+extern types *TYtype2OldType (ntype *new);
+extern ntype *TYoldTypes2ProdType (types *old);
 
 /*
  * Functions for converting types into SAC code for wrapper functions
  */
-extern ntype *TYSplitWrapperType (ntype *type, bool *finished);
-extern ntype *TYGetWrapperRetType (ntype *type);
-extern node *TYCorrectWrapperArgTypes (node *args, ntype *type);
-extern node *TYCreateWrapperVardecs (node *fundef);
-extern node *TYCreateWrapperCode (node *fundef, node *vardecs, node **new_vardecs);
+extern ntype *TYsplitWrapperType (ntype *type, bool *finished);
+extern ntype *TYgetWrapperRetType (ntype *type);
+extern node *TYcorrectWrapperArgTypes (node *args, ntype *type);
+extern node *TYcreateWrapperVardecs (node *fundef);
+extern node *TYcreateWrapperCode (node *fundef, node *vardecs, node **new_vardecs);
 
 /*
  * Serialization and Deserialization support
  */
 
-#ifdef NEW_AST
+extern void TYserializeType (FILE *file, ntype *type);
+extern ntype *TYdeserializeType (typeconstr con, ...);
 
-extern void TYSerializeType (FILE *file, ntype *type);
-extern ntype *TYDeserializeType (typeconstr con, ...);
-
-#endif
-
-#endif /* _new_types_h */
+#endif /* _SAC_NEW_TYPES_H_ */

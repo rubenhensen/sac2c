@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.13  2004/11/22 15:36:00  sbs
+ * SacDevCamp04
+ *
  * Revision 1.12  2004/10/26 10:46:59  sbs
  * type_info now holds the module name as well.
  *
@@ -41,47 +44,44 @@
  *
  */
 
-#ifndef _type_errors_h
-#define _type_errors_h
-
-typedef struct TE_INFO te_info;
+#ifndef _SAC_TYPE_ERRORS_H_
+#define _SAC_TYPE_ERRORS_H_
 
 #include "types.h"
-#include "new_types.h"
 
-extern char *TEPrfArg2Obj (char *prf_str, int pos);
-extern char *TEArg2Obj (int pos);
-extern char *TEArrayElem2Obj (int pos);
+extern char *TEprfArg2Obj (char *prf_str, int pos);
+extern char *TEarg2Obj (int pos);
+extern char *TEarrayElem2Obj (int pos);
 
-extern void TEAssureScalar (char *obj, ntype *type);
-extern void TEAssureVect (char *obj, ntype *type);
-extern void TEAssureBoolS (char *obj, ntype *type);
-extern void TEAssureBoolA (char *obj, ntype *type);
-extern void TEAssureNumS (char *obj, ntype *type);
-extern void TEAssureNumA (char *obj, ntype *type);
-extern void TEAssureSimpleType (char *obj, ntype *type);
-extern void TEAssureIntS (char *obj, ntype *type);
-extern void TEAssureIntVect (char *obj, ntype *type);
-extern void TEAssureNonNegativeValues (char *obj, ntype *type);
-extern void TEAssureShpMatchesDim (char *obj1, ntype *type1, char *obj2, ntype *type2);
-extern void TEAssureValMatchesShape (char *obj1, ntype *type1, char *obj2, ntype *type2);
-extern void TEAssureAbsValFitsShape (char *obj1, ntype *type1, char *obj2, ntype *type2);
-extern void TEAssureProdValMatchesProdShape (char *obj1, ntype *type1, char *obj2,
+extern void TEassureScalar (char *obj, ntype *type);
+extern void TEassureVect (char *obj, ntype *type);
+extern void TEassureBoolS (char *obj, ntype *type);
+extern void TEassureBoolA (char *obj, ntype *type);
+extern void TEassureNumS (char *obj, ntype *type);
+extern void TEassureNumA (char *obj, ntype *type);
+extern void TEassureSimpleType (char *obj, ntype *type);
+extern void TEassureIntS (char *obj, ntype *type);
+extern void TEassureIntVect (char *obj, ntype *type);
+extern void TEassureNonNegativeValues (char *obj, ntype *type);
+extern void TEassureShpMatchesDim (char *obj1, ntype *type1, char *obj2, ntype *type2);
+extern void TEassureValMatchesShape (char *obj1, ntype *type1, char *obj2, ntype *type2);
+extern void TEassureAbsValFitsShape (char *obj1, ntype *type1, char *obj2, ntype *type2);
+extern void TEassureProdValMatchesProdShape (char *obj1, ntype *type1, char *obj2,
                                              ntype *type2);
-extern void TEAssureSameSimpleType (char *obj1, ntype *type1, char *obj2, ntype *type2);
-extern void TEAssureSameScalarType (char *obj1, ntype *type1, char *obj2, ntype *type2);
-extern ntype *TEAssureSameShape (char *obj1, ntype *type1, char *obj2, ntype *type2);
+extern void TEassureSameSimpleType (char *obj1, ntype *type1, char *obj2, ntype *type2);
+extern void TEassureSameScalarType (char *obj1, ntype *type1, char *obj2, ntype *type2);
+extern ntype *TEassureSameShape (char *obj1, ntype *type1, char *obj2, ntype *type2);
 
-extern te_info *TEMakeInfo (int linenum, char *kind_str, char *mod_str, char *name_str,
+extern te_info *TEmakeInfo (int linenum, char *kind_str, char *mod_str, char *name_str,
                             node *wrapper, node *assign, void *cffun, te_info *parent);
-extern void TEExtendedAbort ();
-extern int TEGetLine (te_info *info);
-extern char *TEGetKindStr (te_info *info);
-extern char *TEGetModStr (te_info *info);
-extern char *TEGetNameStr (te_info *info);
-extern node *TEGetWrapper (te_info *info);
-extern node *TEGetAssign (te_info *info);
-extern void *TEGetCFFun (te_info *info);
-extern te_info *TEGetParent (te_info *info);
+extern void TEextendedAbort ();
+extern int TEgetLine (te_info *info);
+extern char *TEgetKindStr (te_info *info);
+extern char *TEgetModStr (te_info *info);
+extern char *TEgetNameStr (te_info *info);
+extern node *TEgetWrapper (te_info *info);
+extern node *TEgetAssign (te_info *info);
+extern void *TEgetCFFun (te_info *info);
+extern te_info *TEgetParent (te_info *info);
 
-#endif /* _type_errors_h */
+#endif /* _SAC_TYPE_ERRORS_H_ */

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2004/11/22 15:36:00  sbs
+ * SacDevCamp04
+ *
  * Revision 3.12  2004/11/14 15:20:47  sah
  * made CheckUdtAndSetBaseType visible
  *
@@ -43,23 +46,19 @@
  *
  */
 
-#ifndef _new_typecheck_h
-#define _new_typecheck_h
+#ifndef _SAC_NEW_TYPECHECK_H_
+#define _SAC_NEW_TYPECHECK_H_
 
 #include "types.h"
-#include "new_types.h"
-#include "tree_basic.h"
-#include "tree_compound.h"
-#include "internal_lib.h"
 
-extern node *NewTypeCheck (node *arg_node);
-extern ntype *NewTypeCheck_Expr (node *arg_node);
+extern node *NTCdoNewTypeCheck (node *arg_node);
+extern ntype *NTCnewTypeCheck_Expr (node *arg_node);
 
-extern ntype *CheckUdtAndSetBaseType (usertype udt, int *visited);
+extern ntype *NTCcheckUdtAndSetBaseType (usertype udt, int *visited);
 
 extern node *NTCtypedef (node *arg_node, info *arg_info);
 extern node *NTCobjdef (node *arg_node, info *arg_info);
-extern node *NTCmodul (node *arg_node, info *arg_info);
+extern node *NTCmodule (node *arg_node, info *arg_info);
 extern node *NTCfundef (node *arg_node, info *arg_info);
 extern node *NTCarg (node *arg_node, info *arg_info);
 extern node *NTCblock (node *arg_node, info *arg_info);
@@ -81,13 +80,15 @@ extern node *NTCchar (node *arg_node, info *arg_info);
 extern node *NTCdouble (node *arg_node, info *arg_info);
 extern node *NTCfloat (node *arg_node, info *arg_info);
 
-extern node *NTCNwith (node *arg_node, info *arg_info);
-extern node *NTCNpart (node *arg_node, info *arg_info);
-extern node *NTCNgenerator (node *arg_node, info *arg_info);
-extern node *NTCNwithid (node *arg_node, info *arg_info);
-extern node *NTCNcode (node *arg_node, info *arg_info);
-extern node *NTCNwithop (node *arg_node, info *arg_info);
+extern node *NTCwith (node *arg_node, info *arg_info);
+extern node *NTCpart (node *arg_node, info *arg_info);
+extern node *NTCgenerator (node *arg_node, info *arg_info);
+extern node *NTCwithid (node *arg_node, info *arg_info);
+extern node *NTCcode (node *arg_node, info *arg_info);
+extern node *NTCgenarray (node *arg_node, info *arg_info);
+extern node *NTCmodarray (node *arg_node, info *arg_info);
+extern node *NTCfold (node *arg_node, info *arg_info);
 
-extern node *NTCTriggerTypeCheck (node *fundef);
+extern node *NTCtriggerTypeCheck (node *fundef);
 
-#endif /* _new_typecheck_h */
+#endif /* _SAC_NEW_TYPECHECK_H_ */

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2004/11/22 15:36:00  sbs
+ * SacDevCamp04
+ *
  * Revision 3.2  2002/10/08 10:39:47  dkr
  * function CreateFoldFun() for new type system added
  *
@@ -15,19 +18,15 @@
  *
  */
 
-#ifndef _gen_pseudo_fun_h_
-#define _gen_pseudo_fun_h_
+#ifndef _SAC_GEN_PSEUDO_FUN_H_
+#define _SAC_GEN_PSEUDO_FUN_H_
+
+include "types.h"
 
 #define PSEUDO_MOD_FOLD "_FOLD"
 
-extern /* for old typechecker */
-  node *
-  CreatePseudoFoldFun (types *elem_type, char *fold_fun, prf fold_prf, char *res_var,
-                       char *body_expr);
+  extern node *
+  GPFcreateFoldFun (ntype *elem_type, node *fold_fundef, prf fold_prf, char *res_name,
+                    char *cexpr_name);
 
-extern /* for new typechecker */
-  node *
-  CreateFoldFun (types *elem_type, node *fold_fundef, prf fold_prf, char *res_name,
-                 char *cexpr_name);
-
-#endif /* _gen_pseudo_fun_h_ */
+#endif /* _SAC_GEN_PSEUDO_FUN_H_ */

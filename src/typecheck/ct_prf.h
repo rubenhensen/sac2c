@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.11  2004/11/22 15:36:00  sbs
+ * SacDevCamp04
+ *
  * Revision 1.10  2004/02/27 11:49:15  sbs
  * NTCPRF_phi deleted
  *
@@ -35,41 +38,36 @@
  *
  */
 
-#ifndef _ct_prf_h
-#define _ct_prf_h
+#ifndef _SAC_CT_PRF_H_
+#define _SAC_CT_PRF_H_
 
 #include "types.h"
-#include "new_types.h"
-#include "type_errors.h"
 
-extern ct_funptr NTCPRF_funtab[];
-extern void *NTCPRF_cffuntab[];
+extern ntype *NTCCTprf_dummy (te_info *info, ntype *args);
+extern ntype *NTCCTprf_array (te_info *info, ntype *elems);
+extern ntype *NTCCTprf_cast (te_info *info, ntype *elems);
+extern ntype *NTCCTprf_dim (te_info *info, ntype *args);
+extern ntype *NTCCTprf_shape (te_info *info, ntype *args);
+extern ntype *NTCCTprf_reshape (te_info *info, ntype *args);
+extern ntype *NTCCTprf_selS (te_info *info, ntype *args);
+extern ntype *NTCCTprf_modarrayS (te_info *info, ntype *args);
+extern ntype *NTCCTprf_toiS (te_info *info, ntype *args);
+extern ntype *NTCCTprf_toiA (te_info *info, ntype *args);
+extern ntype *NTCCTprf_tofS (te_info *info, ntype *args);
+extern ntype *NTCCTprf_tofA (te_info *info, ntype *args);
+extern ntype *NTCCTprf_todS (te_info *info, ntype *args);
+extern ntype *NTCCTprf_todA (te_info *info, ntype *args);
+extern ntype *NTCCTprf_ari_op_SxS (te_info *info, ntype *args);
+extern ntype *NTCCTprf_ari_op_SxA (te_info *info, ntype *args);
+extern ntype *NTCCTprf_ari_op_AxS (te_info *info, ntype *args);
+extern ntype *NTCCTprf_ari_op_AxA (te_info *info, ntype *args);
+extern ntype *NTCCTprf_ari_op_A (te_info *info, ntype *args);
+extern ntype *NTCCTprf_rel_op_AxA (te_info *info, ntype *args);
+extern ntype *NTCCTprf_log_op_AxA (te_info *info, ntype *args);
+extern ntype *NTCCTprf_log_op_A (te_info *info, ntype *args);
+extern ntype *NTCCTprf_int_op_SxS (te_info *info, ntype *args);
+extern ntype *NTCCTprf_drop_SxV (te_info *info, ntype *args);
+extern ntype *NTCCTprf_take_SxV (te_info *info, ntype *args);
+extern ntype *NTCCTprf_cat_VxV (te_info *info, ntype *args);
 
-extern ntype *NTCPRF_dummy (te_info *info, ntype *args);
-extern ntype *NTCPRF_array (te_info *info, ntype *elems);
-extern ntype *NTCPRF_cast (te_info *info, ntype *elems);
-extern ntype *NTCPRF_dim (te_info *info, ntype *args);
-extern ntype *NTCPRF_shape (te_info *info, ntype *args);
-extern ntype *NTCPRF_reshape (te_info *info, ntype *args);
-extern ntype *NTCPRF_selS (te_info *info, ntype *args);
-extern ntype *NTCPRF_modarrayS (te_info *info, ntype *args);
-extern ntype *NTCPRF_toiS (te_info *info, ntype *args);
-extern ntype *NTCPRF_toiA (te_info *info, ntype *args);
-extern ntype *NTCPRF_tofS (te_info *info, ntype *args);
-extern ntype *NTCPRF_tofA (te_info *info, ntype *args);
-extern ntype *NTCPRF_todS (te_info *info, ntype *args);
-extern ntype *NTCPRF_todA (te_info *info, ntype *args);
-extern ntype *NTCPRF_ari_op_SxS (te_info *info, ntype *args);
-extern ntype *NTCPRF_ari_op_SxA (te_info *info, ntype *args);
-extern ntype *NTCPRF_ari_op_AxS (te_info *info, ntype *args);
-extern ntype *NTCPRF_ari_op_AxA (te_info *info, ntype *args);
-extern ntype *NTCPRF_ari_op_A (te_info *info, ntype *args);
-extern ntype *NTCPRF_rel_op_AxA (te_info *info, ntype *args);
-extern ntype *NTCPRF_log_op_AxA (te_info *info, ntype *args);
-extern ntype *NTCPRF_log_op_A (te_info *info, ntype *args);
-extern ntype *NTCPRF_int_op_SxS (te_info *info, ntype *args);
-extern ntype *NTCPRF_drop_SxV (te_info *info, ntype *args);
-extern ntype *NTCPRF_take_SxV (te_info *info, ntype *args);
-extern ntype *NTCPRF_cat_VxV (te_info *info, ntype *args);
-
-#endif /* _ct_prf_h */
+#endif /* _SAC_CT_PRF_H_ */
