@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.86  2000/09/12 16:47:09  dkr
+ * COMPArg simplified (MakeAdjustRcICMs() used)
+ *
  * Revision 2.85  2000/08/24 15:51:18  dkr
  * macro MUST_REFCOUNT renamed into IS_REFCOUNTED to prevent mix-up with macro
  * of same name in refcount.[ch]
@@ -5059,31 +5062,17 @@ COMPArray (node *arg_node, node *arg_info)
             }
 
             /*
-             * put "ND_INC_RC" ICMs at beginning of function block
+             * put ICMs for RC-adjustment at beginning of function block
              * if the function is *not* a SPMD-function
              */
 
             if (FUNDEF_STATUS (INFO_COMP_FUNDEF (arg_info)) != ST_spmdfun) {
-                if (1 < ARG_REFCNT (arg_node)) {
-                    CREATE_2_ARY_ICM (new_assign, "ND_INC_RC", MakeId1 (id_name),
-                                      MakeNum (ARG_REFCNT (arg_node) - 1));
-
+                new_assign
+                  = MakeAdjustRcICM (ARG_NAME (arg_node), ARG_TYPE (arg_node),
+                                     ARG_REFCNT (arg_node), ARG_REFCNT (arg_node) - 1);
+                if (new_assign != NULL) {
                     ASSIGN_NEXT (new_assign) = INFO_COMP_FIRSTASSIGN (arg_info);
                     INFO_COMP_FIRSTASSIGN (arg_info) = new_assign;
-                } else {
-                    if (0 == ARG_REFCNT (arg_node)) {
-                        if (IsNonUniqueHidden (ARG_TYPE (arg_node))) {
-                            CREATE_3_ARY_ICM (new_assign, "ND_DEC_RC_FREE_HIDDEN",
-                                              MakeId1 (id_name), MakeNum (1),
-                                              MakeId1 (
-                                                GenericFun (1, ARG_TYPE (arg_node))));
-                        } else {
-                            CREATE_2_ARY_ICM (new_assign, "ND_DEC_RC_FREE_ARRAY",
-                                              MakeId1 (id_name), MakeNum (1));
-                        }
-                        ASSIGN_NEXT (new_assign) = INFO_COMP_FIRSTASSIGN (arg_info);
-                        INFO_COMP_FIRSTASSIGN (arg_info) = new_assign;
-                    }
                 }
             }
         } else {
