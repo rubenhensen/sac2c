@@ -1,5 +1,8 @@
 dnl
 dnl $Log$
+dnl Revision 1.18  2003/04/14 21:24:02  sah
+dnl mac support (testing)
+dnl
 dnl Revision 1.17  2003/03/26 16:34:02  sah
 dnl added mkdtemp test
 dnl
@@ -114,6 +117,19 @@ AC_MSG_RESULT(no)
 DECC=no
 )
 
+dnl check whether its apples cc
+AC_MSG_CHECKING(whether cc is a Apple compiler)
+AC_TRY_COMPILE(,
+[#ifndef __APPLE__
+  choke me
+  #endif],
+  AC_MSG_RESULT(yes)
+  MACC=yes
+  GCC=no,
+  AC_MSG_RESULT(no)
+  MACC=no
+)
+  
 dnl check whether popen is an extension
 AC_MSG_CHECKING([need of _EXTENSIONS_ flag])
 AC_TRY_COMPILE([#include <stdio.h>],[popen("rw","testfile")],
@@ -129,7 +145,7 @@ dnl check for ranlib
 AC_PROG_RANLIB()
 if test "$RANLIB"; then
   case "$target_os" in
-    *macos*) RANLIB="$RANLIB -c"
+    *darwin*) RANLIB="$RANLIB -c"
   esac
 fi
 
@@ -372,7 +388,7 @@ case "$target_os" in
   solaris*)     OSFLAGS=["-D__EXTENSIONS__ -D__STDC__=0 -DMUST_INIT_YY"];;
   *linux*)      OSFLAGS=["-D_POSIX_SOURCE -D_SVID_SOURCE -D_BSD_SOURCE"];;
   *osf*)	OSFLAGS=["-D_OSF_SOURCE"];;
-  *macos*)      OSFLAGS=["-traditional-cpp -Wno-long-double"];;
+  *darwin*)      OSFLAGS=["-traditional-cpp -Wno-long-double"];;
 esac
 AC_SUBST(OSFLAGS)
 

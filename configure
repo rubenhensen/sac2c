@@ -1969,6 +1969,54 @@ DECC=no
 fi
 rm -f conftest.$ac_objext conftest.$ac_ext
 
+echo "$as_me:$LINENO: checking whether cc is a Apple compiler" >&5
+echo $ECHO_N "checking whether cc is a Apple compiler... $ECHO_C" >&6
+cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+#include "confdefs.h"
+
+#ifdef F77_DUMMY_MAIN
+#  ifdef __cplusplus
+     extern "C"
+#  endif
+   int F77_DUMMY_MAIN() { return 1; }
+#endif
+int
+main ()
+{
+#ifndef __APPLE__
+  choke me
+  #endif
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+  MACC=yes
+  GCC=no
+else
+  echo "$as_me: failed program was:" >&5
+cat conftest.$ac_ext >&5
+echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+  MACC=no
+
+fi
+rm -f conftest.$ac_objext conftest.$ac_ext
+
 echo "$as_me:$LINENO: checking need of _EXTENSIONS_ flag" >&5
 echo $ECHO_N "checking need of _EXTENSIONS_ flag... $ECHO_C" >&6
 cat >conftest.$ac_ext <<_ACEOF
@@ -2296,7 +2344,7 @@ fi
 
 if test "$RANLIB"; then
   case "$target_os" in
-    *macos*) RANLIB="$RANLIB -c"
+    *darwin*) RANLIB="$RANLIB -c"
   esac
 fi
 
@@ -3794,7 +3842,7 @@ case "$target_os" in
   solaris*)     OSFLAGS="-D__EXTENSIONS__ -D__STDC__=0 -DMUST_INIT_YY";;
   *linux*)      OSFLAGS="-D_POSIX_SOURCE -D_SVID_SOURCE -D_BSD_SOURCE";;
   *osf*)	OSFLAGS="-D_OSF_SOURCE";;
-  *macos*)      OSFLAGS="-traditional-cpp -Wno-long-double";;
+  *darwin*)      OSFLAGS="-traditional-cpp -Wno-long-double";;
 esac
 
 
