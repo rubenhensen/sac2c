@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.3  2004/07/16 14:41:34  sah
+ * switch to new INFO structure
+ * PHASE I
+ *
  * Revision 1.2  2004/07/05 17:22:22  sbs
  * some DBUG_PRINTs added.
  *
@@ -71,6 +75,7 @@
  *
  *
  *****************************************************************************/
+#define NEW_INFO
 
 #include "dbug.h"
 #include "types.h"
@@ -81,18 +86,67 @@
 #include "free.h"
 #include "CheckAvis.h"
 
+/**
+ * use of INFO structure in this file:
+ *
+ * node*      FUNDEF            (current working fundef)
+ * bool       SINGLEFUNDEF      (traversal mode: all fundefs/single fundef)
+ */
+
+/**
+ * INFO structure
+ */
+struct INFO {
+    node *fundef;
+    bool singlefundef;
+};
+
+/**
+ * INFO macros
+ */
+#define INFO_CAV_FUNDEF(n) (n->fundef)
+#define INFO_CAV_SINGLEFUNDEF(n) (n->singlefundef)
+
+/**
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = Malloc (sizeof (info));
+
+    INFO_CAV_FUNDEF (result) = NULL;
+    INFO_CAV_SINGLEFUNDEF (result) = FALSE;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = Free (info);
+
+    DBUG_RETURN (info);
+}
+
 /* CAV_SINGLEFUNDEF mode */
 #define CAVSF_TRAV_FUNDEFS 0
 #define CAVSF_TRAV_SPECIALS 1
 #define CAVSF_TRAV_NONE 2
 
-static ids *TravIDS (ids *arg_ids, node *arg_info);
-static ids *CAVids (ids *arg_ids, node *arg_info);
+static ids *TravIDS (ids *arg_ids, info *arg_info);
+static ids *CAVids (ids *arg_ids, info *arg_info);
 
 /******************************************************************************
  *
  * function:
- *  node *CAVarg( node *arg_node, node *arg_info)
+ *  node *CAVarg( node *arg_node, info *arg_info)
  *
  * description:
  *   Checks arg node for avis attribute. if missing create an initialize
@@ -100,7 +154,7 @@ static ids *CAVids (ids *arg_ids, node *arg_info);
  *
  ******************************************************************************/
 node *
-CAVarg (node *arg_node, node *arg_info)
+CAVarg (node *arg_node, info *arg_info)
 {
 #ifndef DBUG_OFF
     char *tmp_str;
@@ -145,7 +199,7 @@ CAVarg (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *CAVvardec( node *arg_node, node *arg_info)
+ *   node *CAVvardec( node *arg_node, info *arg_info)
  *
  * description:
  *   Checks vardec node for avis attribute. if missing create an initialize
@@ -153,7 +207,7 @@ CAVarg (node *arg_node, node *arg_info)
  *
  ******************************************************************************/
 node *
-CAVvardec (node *arg_node, node *arg_info)
+CAVvardec (node *arg_node, info *arg_info)
 {
 #ifndef DBUG_OFF
     char *tmp_str;
@@ -196,7 +250,7 @@ CAVvardec (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *CAVobjdef(node *arg_node, node *arg_info)
+ *   node *CAVobjdef(node *arg_node, info *arg_info)
  *
  * description:
  *   Checks objdef node for avis attribute. if missing create an initialize
@@ -204,7 +258,7 @@ CAVvardec (node *arg_node, node *arg_info)
  *
  ******************************************************************************/
 node *
-CAVobjdef (node *arg_node, node *arg_info)
+CAVobjdef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CAVobjdef");
 
@@ -229,7 +283,7 @@ CAVobjdef (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *CAVid(node *arg_node, node *arg_info)
+ *   node *CAVid(node *arg_node, info *arg_info)
  *
  * description:
  *   checks for consistent back reference from N_id node to N_arg or N_vardec
@@ -238,7 +292,7 @@ CAVobjdef (node *arg_node, node *arg_info)
  *
  ******************************************************************************/
 node *
-CAVid (node *arg_node, node *arg_info)
+CAVid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CAVid");
 
@@ -252,14 +306,14 @@ CAVid (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *CAVlet(node *arg_node, node *arg_info)
+ *   node *CAVlet(node *arg_node, info *arg_info)
  *
  * description:
  *   starts traversal in ids chain.
  *
  ******************************************************************************/
 node *
-CAVlet (node *arg_node, node *arg_info)
+CAVlet (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CAVlet");
 
@@ -277,14 +331,14 @@ CAVlet (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *CAVNwithid(node *arg_node, node *arg_info)
+ *   node *CAVNwithid(node *arg_node, info *arg_info)
  *
  * description:
  *   starts traversal for ids chains in Nwithid nodes.
  *
  ******************************************************************************/
 node *
-CAVNwithid (node *arg_node, node *arg_info)
+CAVNwithid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CAVNwithid");
 
@@ -302,14 +356,14 @@ CAVNwithid (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *    node* CAVfundef( node *arg_node, node *arg_info)
+ *    node* CAVfundef( node *arg_node, info *arg_info)
  *
  * description:
  *  traverses arg nodes and block in this order.
  *
  ******************************************************************************/
 node *
-CAVfundef (node *arg_node, node *arg_info)
+CAVfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CAVfundef");
 
@@ -345,14 +399,14 @@ CAVfundef (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *    node* CAVblock(node *arg_node, node *arg_info)
+ *    node* CAVblock(node *arg_node, info *arg_info)
  *
  * description:
  *  traverses vardec nodes and assignments in this order.
  *
  ******************************************************************************/
 node *
-CAVblock (node *arg_node, node *arg_info)
+CAVblock (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CAVblock");
 
@@ -372,7 +426,7 @@ CAVblock (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *  node *CAVap(node *arg_node, node *arg_info)
+ *  node *CAVap(node *arg_node, info *arg_info)
  *
  * description:
  *  traverses args and does a recursive call in case of special function
@@ -380,9 +434,9 @@ CAVblock (node *arg_node, node *arg_info)
  *
  ******************************************************************************/
 node *
-CAVap (node *arg_node, node *arg_info)
+CAVap (node *arg_node, info *arg_info)
 {
-    node *new_arg_info;
+    info *new_arg_info;
 
     DBUG_ENTER ("CAVap");
 
@@ -410,7 +464,7 @@ CAVap (node *arg_node, node *arg_info)
         DBUG_PRINT ("CAV", ("traversal of special fundef %s finished\n",
                             FUNDEF_NAME (AP_FUNDEF (arg_node))));
 
-        new_arg_info = FreeTree (new_arg_info);
+        new_arg_info = FreeInfo (new_arg_info);
     } else {
         DBUG_PRINT ("CAV", ("do not traverse in normal fundef %s",
                             FUNDEF_NAME (AP_FUNDEF (arg_node))));
@@ -422,7 +476,7 @@ CAVap (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *CAVids(node *arg_ids, node *arg_info)
+ *   node *CAVids(node *arg_ids, info *arg_info)
  *
  * description:
  *   checks for consistent back reference from ids node to N_arg or N_vardec
@@ -431,7 +485,7 @@ CAVap (node *arg_node, node *arg_info)
  *
  ******************************************************************************/
 static ids *
-CAVids (ids *arg_ids, node *arg_info)
+CAVids (ids *arg_ids, info *arg_info)
 {
     DBUG_ENTER ("CAVids");
 
@@ -457,7 +511,7 @@ CAVids (ids *arg_ids, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   ids *TravIDS(ids *arg_ids, node *arg_info)
+ *   ids *TravIDS(ids *arg_ids, info *arg_info)
  *
  * description:
  *   similar implementation of trav mechanism as used for nodes
@@ -465,7 +519,7 @@ CAVids (ids *arg_ids, node *arg_info)
  *
  ******************************************************************************/
 static ids *
-TravIDS (ids *arg_ids, node *arg_info)
+TravIDS (ids *arg_ids, info *arg_info)
 {
     DBUG_ENTER ("TravIDS");
 
@@ -491,7 +545,7 @@ TravIDS (ids *arg_ids, node *arg_info)
 node *
 CheckAvis (node *syntax_tree)
 {
-    node *arg_info;
+    info *arg_info;
     funtab *old_tab;
 
     DBUG_ENTER ("CheckAvis");
@@ -508,7 +562,7 @@ CheckAvis (node *syntax_tree)
 
     act_tab = old_tab;
 
-    arg_info = FreeTree (arg_info);
+    arg_info = FreeInfo (arg_info);
 
     DBUG_RETURN (syntax_tree);
 }
@@ -526,7 +580,7 @@ CheckAvis (node *syntax_tree)
 node *
 CheckAvisOneFunction (node *fundef)
 {
-    node *arg_info;
+    info *arg_info;
     funtab *old_tab;
 
     DBUG_ENTER ("CheckAvisOneFunction");
@@ -547,7 +601,7 @@ CheckAvisOneFunction (node *fundef)
 
         act_tab = old_tab;
 
-        arg_info = FreeTree (arg_info);
+        arg_info = FreeInfo (arg_info);
     }
 
     DBUG_RETURN (fundef);
@@ -566,7 +620,7 @@ CheckAvisOneFunction (node *fundef)
 node *
 CheckAvisOneFundef (node *fundef)
 {
-    node *arg_info;
+    info *arg_info;
     funtab *old_tab;
 
     DBUG_ENTER ("CheckAvisOneFundef");
@@ -586,7 +640,7 @@ CheckAvisOneFundef (node *fundef)
 
     act_tab = old_tab;
 
-    arg_info = FreeTree (arg_info);
+    arg_info = FreeInfo (arg_info);
 
     DBUG_RETURN (fundef);
 }

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2004/07/16 14:41:34  sah
+ * switch to new INFO structure
+ * PHASE I
+ *
  * Revision 3.1  2000/11/20 18:00:58  sacbase
  * new release made
  *
@@ -33,12 +37,12 @@
 
 extern node *WriteSib (node *syntax_tree);
 
-extern node *WSIBmodul (node *arg_node, node *arg_info);
-extern node *WSIBtypedef (node *arg_node, node *arg_info);
-extern node *WSIBobjdef (node *arg_node, node *arg_info);
-extern node *WSIBfundef (node *arg_node, node *arg_info);
-extern node *WSIBexplist (node *arg_node, node *arg_info);
-extern node *WSIBfloat (node *arg_node, node *arg_info);
-extern node *WSIBdouble (node *arg_node, node *arg_info);
+extern node *WSIBmodul (node *arg_node, info *arg_info);
+extern node *WSIBtypedef (node *arg_node, info *arg_info);
+extern node *WSIBobjdef (node *arg_node, info *arg_info);
+extern node *WSIBfundef (node *arg_node, info *arg_info);
+extern node *WSIBexplist (node *arg_node, info *arg_info);
+extern node *WSIBfloat (node *arg_node, info *arg_info);
+extern node *WSIBdouble (node *arg_node, info *arg_info);
 
 #endif /* _sac_writesib_h */

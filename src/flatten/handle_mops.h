@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2004/07/16 14:41:34  sah
+ * switch to new INFO structure
+ * PHASE I
+ *
  * Revision 1.6  2002/09/11 23:22:42  dkr
  * HMAdjustFunNames() removed
  *
@@ -32,8 +36,8 @@
 
 extern node *HandleMops (node *arg_node);
 
-extern node *HMmop (node *arg_node, node *arg_info);
-extern node *HMap (node *arg_node, node *arg_info);
-extern node *HMNwithop (node *arg_node, node *arg_info);
+extern node *HMmop (node *arg_node, info *arg_info);
+extern node *HMap (node *arg_node, info *arg_info);
+extern node *HMNwithop (node *arg_node, info *arg_info);
 
 #endif /* _handle_mops_h */

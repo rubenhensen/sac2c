@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.58  2004/07/16 14:41:34  sah
+ * switch to new INFO structure
+ * PHASE I
+ *
  * Revision 3.57  2004/07/14 23:23:37  sah
  * removed all old ssa optimizations and the use_ssaform flag
  *
@@ -1873,7 +1877,7 @@ int nnode[] = {
 */
 
 node *
-Trav (node *arg_node, node *arg_info)
+Trav (node *arg_node, info *arg_info)
 {
     int old_linenum = linenum;
     char *old_filename = filename;
@@ -1937,7 +1941,7 @@ Trav (node *arg_node, node *arg_info)
 */
 
 node *
-TravSons (node *arg_node, node *arg_info)
+TravSons (node *arg_node, info *arg_info)
 {
     int i;
 
@@ -1969,7 +1973,7 @@ TravSons (node *arg_node, node *arg_info)
 */
 
 node *
-TravNone (node *arg_node, node *arg_info)
+TravNone (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("TravNone");
     DBUG_RETURN (arg_node);
@@ -1978,7 +1982,7 @@ TravNone (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *  node *TravError(node *arg_node, node *arg_info)
+ *  node *TravError(node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -1989,7 +1993,7 @@ TravNone (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-TravError (node *arg_node, node *arg_info)
+TravError (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("TravError");
 

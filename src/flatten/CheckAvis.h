@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.2  2004/07/16 14:41:34  sah
+ * switch to new INFO structure
+ * PHASE I
+ *
  * Revision 1.1  2004/01/28 17:00:17  skt
  * Initial revision
  *
@@ -53,13 +57,13 @@ extern node *CheckAvis (node *syntax_tree);
 extern node *CheckAvisOneFunction (node *fundef);
 extern node *CheckAvisOneFundef (node *fundef);
 
-extern node *CAVarg (node *arg_node, node *arg_info);
-extern node *CAVvardec (node *arg_node, node *arg_info);
-extern node *CAVobjdef (node *arg_node, node *arg_info);
-extern node *CAVid (node *arg_node, node *arg_info);
-extern node *CAVlet (node *arg_node, node *arg_info);
-extern node *CAVfundef (node *arg_node, node *arg_info);
-extern node *CAVblock (node *arg_node, node *arg_info);
-extern node *CAVNwithid (node *arg_node, node *arg_info);
-extern node *CAVap (node *arg_node, node *arg_info);
+extern node *CAVarg (node *arg_node, info *arg_info);
+extern node *CAVvardec (node *arg_node, info *arg_info);
+extern node *CAVobjdef (node *arg_node, info *arg_info);
+extern node *CAVid (node *arg_node, info *arg_info);
+extern node *CAVlet (node *arg_node, info *arg_info);
+extern node *CAVfundef (node *arg_node, info *arg_info);
+extern node *CAVblock (node *arg_node, info *arg_info);
+extern node *CAVNwithid (node *arg_node, info *arg_info);
+extern node *CAVap (node *arg_node, info *arg_info);
 #endif /* SAC_CHECKAVIS_H */

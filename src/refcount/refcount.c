@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.31  2004/07/16 14:41:34  sah
+ * switch to new INFO structure
+ * PHASE I
+ *
  * Revision 3.30  2004/06/03 09:13:42  khf
  * Added support for multioperator WLs (makros adjusted
  * and traversal into NWITHOP_NEXT added)
@@ -102,6 +106,8 @@
  *
  */
 
+#define NEW_INFO
+
 #include <stdlib.h>
 
 #include "types.h"
@@ -157,14 +163,74 @@
  ******************************************************************************/
 
 /*
+ * INFO structure
+ */
+struct INFO {
+    node *prf;
+    node *with;
+    int *rcdump;
+    int *nrcdump;
+    int varno;
+    int onlynaive;
+};
+
+/*
  * access macros for 'arg_info'
  */
-#define INFO_RC_PRF(n) (n->node[1])
-#define INFO_RC_WITH(n) (n->node[2])
-#define INFO_RC_RCDUMP(n) ((int *)(n->node[3]))
-#define INFO_RC_NAIVE_RCDUMP(n) ((int *)(n->node[4]))
+#define INFO_RC_PRF(n) (n->prf)
+#define INFO_RC_WITH(n) (n->with)
+#define INFO_RC_RCDUMP(n) (n->rcdump)
+#define INFO_RC_NAIVE_RCDUMP(n) (n->nrcdump)
 #define INFO_RC_VARNO(n) (n->varno)
-#define INFO_RC_ONLYNAIVE(n) (n->flag)
+#define INFO_RC_ONLYNAIVE(n) (n->onlynaive)
+
+/******************************************************************************
+ *
+ * Function:
+ *   static info *MakeInfo()
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = Malloc (sizeof (info));
+
+    /* initialise values */
+    INFO_RC_PRF (result) = NULL;
+    INFO_RC_WITH (result) = NULL;
+    INFO_RC_RCDUMP (result) = NULL;
+    INFO_RC_NAIVE_RCDUMP (result) = NULL;
+    INFO_RC_VARNO (result) = 0;
+    INFO_RC_ONLYNAIVE (result) = 0;
+
+    DBUG_RETURN (result);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   static info *FreeInfo( info *info)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = Free (info);
+
+    DBUG_RETURN (info);
+}
 
 static int args_no;       /* number of arguments of current function */
 static node *fundef_node; /* pointer to current function declaration */
@@ -202,7 +268,7 @@ LookupId (char *id, node *id_chain)
 /******************************************************************************
  *
  * Function:
- *   ids *DefinedIds( ids *arg_ids, node *arg_info)
+ *   ids *DefinedIds( ids *arg_ids, info *arg_info)
  *
  * Description:
  *
@@ -210,7 +276,7 @@ LookupId (char *id, node *id_chain)
  ******************************************************************************/
 
 static ids *
-DefinedIds (ids *arg_ids, node *arg_info)
+DefinedIds (ids *arg_ids, info *arg_info)
 {
     DBUG_ENTER ("DefinedIds");
 
@@ -239,7 +305,7 @@ DefinedIds (ids *arg_ids, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *DefinedId( node *arg_id, node *arg_info)
+ *   node *DefinedId( node *arg_id, info *arg_info)
  *
  * Description:
  *
@@ -247,7 +313,7 @@ DefinedIds (ids *arg_ids, node *arg_info)
  ******************************************************************************/
 
 static node *
-DefinedId (node *arg_id, node *arg_info)
+DefinedId (node *arg_id, info *arg_info)
 {
     DBUG_ENTER ("DefinedId");
 
@@ -343,7 +409,7 @@ FreeDump (int *dump)
 /******************************************************************************
  *
  * function:
- *   void InitRC( int n, node *arg_info)
+ *   void InitRC( int n, info *arg_info)
  *
  * description:
  *   The refcounts in the vardecs are set to 'n' if refcount was active.
@@ -352,7 +418,7 @@ FreeDump (int *dump)
  ******************************************************************************/
 
 static
-void InitRC( int n, node *arg_info)
+void InitRC( int n, info *arg_info)
 {
   node *vardec;
 
@@ -376,7 +442,7 @@ void InitRC( int n, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   int *StoreRC(int which, int varno, node *arg_info)
+ *   int *StoreRC(int which, int varno, info *arg_info)
  *
  * description:
  *   returns an array of int that contains the refcounters specified by
@@ -388,7 +454,7 @@ void InitRC( int n, node *arg_info)
  ******************************************************************************/
 
 static int *
-StoreRC (int which, int varno, node *arg_info)
+StoreRC (int which, int varno, info *arg_info)
 {
     node *vardec;
     int k;
@@ -435,7 +501,7 @@ StoreRC (int which, int varno, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   int *StoreAndInitRC( int which, int varno, int n, node *arg_info)
+ *   int *StoreAndInitRC( int which, int varno, int n, info *arg_info)
  *
  * description:
  *   Returns an array of int that contains the refcounts stored in the vardecs.
@@ -451,7 +517,7 @@ StoreRC (int which, int varno, node *arg_info)
  ******************************************************************************/
 
 static int *
-StoreAndInitRC (int which, int varno, int n, node *arg_info)
+StoreAndInitRC (int which, int varno, int n, info *arg_info)
 {
     node *argvardec;
     int k;
@@ -512,7 +578,7 @@ StoreAndInitRC (int which, int varno, int n, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   void RestoreRC( int which, int *dump, node *arg_info)
+ *   void RestoreRC( int which, int *dump, info *arg_info)
  *
  * description:
  *   copies dump-entries to refcounts of variable declaration
@@ -523,7 +589,7 @@ StoreAndInitRC (int which, int varno, int n, node *arg_info)
  ******************************************************************************/
 
 static void
-RestoreRC (int which, int *dump, node *arg_info)
+RestoreRC (int which, int *dump, info *arg_info)
 {
     node *vardec;
 
@@ -566,7 +632,7 @@ RestoreRC (int which, int *dump, node *arg_info)
 node *
 Refcount (node *arg_node)
 {
-    node *arg_info;
+    info *arg_info;
 
     DBUG_ENTER ("Refcount");
 
@@ -602,7 +668,7 @@ Refcount (node *arg_node)
         arg_node = Trav (arg_node, arg_info);
     }
 
-    arg_info = FreeTree (arg_info);
+    arg_info = FreeInfo (arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -610,7 +676,7 @@ Refcount (node *arg_node)
 /******************************************************************************
  *
  * function:
- *   node *RCarg( node *arg_node, node *arg_info)
+ *   node *RCarg( node *arg_node, info *arg_info)
  *
  * description:
  *   Initializes ARG_REFCNT for refcounted and non-refcounted parameters with
@@ -621,7 +687,7 @@ Refcount (node *arg_node)
  ******************************************************************************/
 
 node *
-RCarg (node *arg_node, node *arg_info)
+RCarg (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("RCarg");
 
@@ -654,7 +720,7 @@ RCarg (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *RCfundef( node *arg_node, node *arg_info)
+ *   node *RCfundef( node *arg_node, info *arg_info)
  *
  * description:
  *   traverses body of function; sets 'varno', 'fundef_node' and 'arg_no'.
@@ -662,7 +728,7 @@ RCarg (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-RCfundef (node *arg_node, node *arg_info)
+RCfundef (node *arg_node, info *arg_info)
 {
     node *arg;
     int old_info_rc_varno;
@@ -729,7 +795,7 @@ RCfundef (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *RCblock( node *arg_node, node *arg_info)
+ *   node *RCblock( node *arg_node, info *arg_info)
  *
  * description:
  *   performs the reference-counting for a N_block node:
@@ -740,7 +806,7 @@ RCfundef (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-RCblock (node *arg_node, node *arg_info)
+RCblock (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("RCblock");
 
@@ -759,7 +825,7 @@ RCblock (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *RCvardec( node *arg_node, node *arg_info)
+ *   node *RCvardec( node *arg_node, info *arg_info)
  *
  * description:
  *   initializes the (naive-)refcounters of a vardec:
@@ -769,7 +835,7 @@ RCblock (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-RCvardec (node *arg_node, node *arg_info)
+RCvardec (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("RCvardec");
 
@@ -796,7 +862,7 @@ RCvardec (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *RCassign( node *arg_node, node *arg_info)
+ *   node *RCassign( node *arg_node, info *arg_info)
  *
  * description:
  *   Performs bottom-up traversal for refcounting.
@@ -805,7 +871,7 @@ RCvardec (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-RCassign (node *arg_node, node *arg_info)
+RCassign (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("RCassign");
 
@@ -824,7 +890,7 @@ RCassign (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *RCloop(node *arg_node, node *arg_info)
+ *   node *RCloop(node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -840,7 +906,7 @@ RCassign (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-RCloop (node *arg_node, node *arg_info)
+RCloop (node *arg_node, info *arg_info)
 {
     node *vardec;
     long *defined_mask, *used_mask;
@@ -1273,7 +1339,7 @@ RCloop (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *RCprf( node *arg_node, node *arg_info)
+ *   node *RCprf( node *arg_node, info *arg_info)
  *
  * description:
  *   Traverse the args with INFO_RC_PRF( arg_info) pointing to the N_prf!
@@ -1285,7 +1351,7 @@ RCloop (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-RCprf (node *arg_node, node *arg_info)
+RCprf (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("RCprf");
 
@@ -1304,7 +1370,7 @@ RCprf (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *RCicm( node *arg_node, node *arg_info)
+ *   node *RCicm( node *arg_node, info *arg_info)
  *
  * Description:
  *   Traverses the args with INFO_RC_PRF( arg_info) pointing to the N_icm!
@@ -1313,7 +1379,7 @@ RCprf (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-RCicm (node *arg_node, node *arg_info)
+RCicm (node *arg_node, info *arg_info)
 {
     char *name;
 
@@ -1373,7 +1439,7 @@ RCicm (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *RCid( node *arg_node, node *arg_info)
+ *   node *RCid( node *arg_node, info *arg_info)
  *
  * description:
  *   Depending on 'INFO_RC_PRF( arg_info)' do one of the following:
@@ -1394,7 +1460,7 @@ RCicm (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-RCid (node *arg_node, node *arg_info)
+RCid (node *arg_node, info *arg_info)
 {
     node *wl_node;
 
@@ -1486,7 +1552,7 @@ RCid (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *RClet( node *arg_node, node *arg_info)
+ *   node *RClet( node *arg_node, info *arg_info)
  *
  * description:
  *   set the refcnts of the defined variables to the actual refcnt-values of
@@ -1495,7 +1561,7 @@ RCid (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-RClet (node *arg_node, node *arg_info)
+RClet (node *arg_node, info *arg_info)
 {
     ids *ids;
 
@@ -1516,7 +1582,7 @@ RClet (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  *  function:
- *    node *RCcond(node *arg_node, node *arg_info);
+ *    node *RCcond(node *arg_node, info *arg_info);
  *
  *  description:
  *    Refcounts then- and else-part of conditional and computes the maximum
@@ -1533,7 +1599,7 @@ RClet (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-RCcond (node *arg_node, node *arg_info)
+RCcond (node *arg_node, info *arg_info)
 {
     node *vardec;
     ids *thenvars, *elsevars, *new_ids, *naive_new_ids;
@@ -1766,7 +1832,7 @@ RCcond (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *RCNwith( node *arg_node, node *arg_info)
+ *   node *RCNwith( node *arg_node, info *arg_info)
  *
  * description:
  *   performs the refcounting for a N_Nwith or N_Nwith2 node.
@@ -1791,7 +1857,7 @@ RCcond (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-RCNwith (node *arg_node, node *arg_info)
+RCNwith (node *arg_node, info *arg_info)
 {
     node *vardec;
     ids *new_ids;
@@ -2016,7 +2082,7 @@ RCNwith (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *RCNpart( node *arg_node, node *arg_info)
+ *   node *RCNpart( node *arg_node, info *arg_info)
  *
  * description:
  *   performs the refcounting for a N_Npart node.
@@ -2024,7 +2090,7 @@ RCNwith (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-RCNpart (node *arg_node, node *arg_info)
+RCNpart (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("RCNpart");
 
@@ -2052,7 +2118,7 @@ RCNpart (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *RCNcode( node *arg_node, node *arg_info)
+ *   node *RCNcode( node *arg_node, info *arg_info)
  *
  * description:
  *   performs reference counting for N_Ncode nodes.
@@ -2072,7 +2138,7 @@ RCNpart (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-RCNcode (node *arg_node, node *arg_info)
+RCNcode (node *arg_node, info *arg_info)
 {
     node *vardec;
     ids *new_ids;
@@ -2141,7 +2207,7 @@ RCNcode (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *RCNgen( node *arg_node, node *arg_info)
+ *   node *RCNgen( node *arg_node, info *arg_info)
  *
  * description:
  *   performs the refcounting for a N_Ngen node.
@@ -2149,7 +2215,7 @@ RCNcode (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-RCNgen (node *arg_node, node *arg_info)
+RCNgen (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("RCNgen");
 
@@ -2168,7 +2234,7 @@ RCNgen (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *RCNwithid( node *arg_node, node *arg_info)
+ *   node *RCNwithid( node *arg_node, info *arg_info)
  *
  * description:
  *   marks the index-vectors as non-RC-objects.
@@ -2176,7 +2242,7 @@ RCNgen (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-RCNwithid (node *arg_node, node *arg_info)
+RCNwithid (node *arg_node, info *arg_info)
 {
     ids *iv_ids;
 
@@ -2214,7 +2280,7 @@ RCNwithid (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *RCNwithop( node *arg_node, node *arg_info)
+ *   node *RCNwithop( node *arg_node, info *arg_info)
  *
  * description:
  *   Performs the refcounting for a N_Nwithop node.
@@ -2222,7 +2288,7 @@ RCNwithid (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-RCNwithop (node *arg_node, node *arg_info)
+RCNwithop (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("RCNwithop");
 

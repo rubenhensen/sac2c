@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2004/07/16 14:41:34  sah
+ * switch to new INFO structure
+ * PHASE I
+ *
  * Revision 1.1  2004/07/14 15:43:50  ktr
  * Initial revision
  *
@@ -27,23 +31,23 @@
 
 extern node *SSARefCount (node *syntax_tree);
 
-extern node *SSARCfundef (node *arg_node, node *arg_info);
-extern node *SSARCassign (node *arg_node, node *arg_info);
-extern node *SSARCreturn (node *arg_node, node *arg_info);
-extern node *SSARCprf (node *arg_node, node *arg_info);
-extern node *SSARCid (node *arg_node, node *arg_info);
-extern node *SSARClet (node *arg_node, node *arg_info);
-extern node *SSARCarg (node *arg_node, node *arg_info);
-extern node *SSARCblock (node *arg_node, node *arg_info);
-extern node *SSARCvardec (node *arg_node, node *arg_info);
-extern node *SSARCap (node *arg_node, node *arg_info);
-extern node *SSARCconst (node *arg_node, node *arg_info);
-extern node *SSARCarray (node *arg_node, node *arg_info);
-extern node *SSARCfuncond (node *arg_node, node *arg_info);
-extern node *SSARCcond (node *arg_node, node *arg_info);
-extern node *SSARCNwith (node *arg_node, node *arg_info);
-extern node *SSARCNwith2 (node *arg_node, node *arg_info);
-extern node *SSARCNcode (node *arg_node, node *arg_info);
-extern node *SSARCNwithid (node *arg_node, node *arg_info);
-extern node *SSARCicm (node *arg_node, node *arg_info);
+extern node *SSARCfundef (node *arg_node, info *arg_info);
+extern node *SSARCassign (node *arg_node, info *arg_info);
+extern node *SSARCreturn (node *arg_node, info *arg_info);
+extern node *SSARCprf (node *arg_node, info *arg_info);
+extern node *SSARCid (node *arg_node, info *arg_info);
+extern node *SSARClet (node *arg_node, info *arg_info);
+extern node *SSARCarg (node *arg_node, info *arg_info);
+extern node *SSARCblock (node *arg_node, info *arg_info);
+extern node *SSARCvardec (node *arg_node, info *arg_info);
+extern node *SSARCap (node *arg_node, info *arg_info);
+extern node *SSARCconst (node *arg_node, info *arg_info);
+extern node *SSARCarray (node *arg_node, info *arg_info);
+extern node *SSARCfuncond (node *arg_node, info *arg_info);
+extern node *SSARCcond (node *arg_node, info *arg_info);
+extern node *SSARCNwith (node *arg_node, info *arg_info);
+extern node *SSARCNwith2 (node *arg_node, info *arg_info);
+extern node *SSARCNcode (node *arg_node, info *arg_info);
+extern node *SSARCNwithid (node *arg_node, info *arg_info);
+extern node *SSARCicm (node *arg_node, info *arg_info);
 #endif /* _sac_ssarefcount_h */

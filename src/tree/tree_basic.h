@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.195  2004/07/16 14:41:34  sah
+ * switch to new INFO structure
+ * PHASE I
+ *
  * Revision 3.194  2004/07/15 12:58:14  khf
  * moved INFO_IVE_* to index.c
  *
@@ -2590,6 +2594,10 @@ extern node *MakeAvis (node *vardecOrArg);
 
 /*--------------------------------------------------------------------------*/
 
+/* THIS IS A TEMPORARY HACK TO ALLOW THE OLD AND NEW INFO SYSTEM TO WORK
+   AT THE SAME TIME. */
+
+#ifndef NEW_INFO
 /***
  ***  N_info :
  ***
@@ -2998,7 +3006,6 @@ extern node *MakeAvis (node *vardecOrArg);
  */
 
 extern node *MakeInfo ();
-
 /*
  * WARNING WARNING WARNING!!!
  *
@@ -3411,10 +3418,6 @@ extern node *MakeInfo ();
 /* when used in optimize.c */
 #define INFO_OPT_MODUL(n) (n->node[0])
 
-/* when used in CheckAvis.c */
-#define INFO_CAV_FUNDEF(n) (n->node[0])
-#define INFO_CAV_SINGLEFUNDEF(n) ((bool)(n->counter))
-
 /*
  * when used in SSALUR.c:
  * INFO_SSALURASSIGN/FUNDEF must be mapped to the same componentes
@@ -3464,6 +3467,7 @@ extern node *MakeInfo ();
 #define INFO_CVP_CONTEXT(n) (n->counter)
 #define INFO_CVP_ATTRIB(n) (*((statustype *)(&(n->mask[0]))))
 
+#endif /* NEW_INFO */
 /*--------------------------------------------------------------------------*/
 
 /***

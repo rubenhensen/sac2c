@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2004/07/16 14:41:34  sah
+ * switch to new INFO structure
+ * PHASE I
+ *
  * Revision 3.6  2004/02/20 08:20:35  mwe
  * now functions with (MODUL_FUNS) and without (MODUL_FUNDECS) body are separated
  * changed tree traversal according to that
@@ -117,6 +121,8 @@
  *
  */
 
+#define NEW_INFO
+
 #include <string.h>
 
 #include "types.h"
@@ -134,6 +140,56 @@
 #include "convert.h"
 #include "filemgr.h"
 #include "print.h"
+
+/*
+ * writesib and print share a common INFO structure, as writesib
+ * uses many functions of the print traversal
+ */
+#include "print_info.h"
+
+/*
+ * functions for creating/freeing INFO structures
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = Malloc (sizeof (info));
+
+    /* initialise print fields */
+    INFO_PRINT_CONT (result) = NULL;
+    INFO_PRINT_FUNDEF (result) = NULL;
+    INFO_PRINT_NPART (result) = NULL;
+    INFO_PRINT_NWITH2 (result) = NULL;
+    INFO_PRINT_SIB (result) = 0;
+    INFO_PRINT_OMIT_FORMAL_PARAMS (result) = 0;
+    INFO_PRINT_VARNO (result) = 0;
+    INFO_PRINT_PROTOTYPE (result) = 0;
+    INFO_PRINT_SEPARATE (result) = 0;
+    INFO_PRINT_DIM (result) = 0;
+    INFO_PRINT_SHAPE (result) = NULL;
+    INFO_PRINT_SHAPE_COUNTER (result) = NULL;
+
+    /* initialise own fields */
+    INFO_WSIB_EXPORTTYPES (result) = NULL;
+    INFO_WSIB_EXPORTOBJS (result) = NULL;
+    INFO_WSIB_EXPORTFUNS (result) = NULL;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = Free (info);
+
+    DBUG_RETURN (info);
+}
 
 #define PRINTMODNAME(mod, name)                                                          \
     if (mod == NULL) {                                                                   \
@@ -240,7 +296,7 @@ SIBPrintDependencies (FILE *sibfile, deps *depends, int level)
  */
 
 static void
-StoreExportNode (node *insert, node *info)
+StoreExportNode (node *insert, info *info)
 {
     nodelist *act, *last, *list;
     node *obj_tdef;
@@ -323,7 +379,7 @@ StoreExportNode (node *insert, node *info)
  */
 
 static void
-StoreExportNodes (nodelist *inserts, node *info)
+StoreExportNodes (nodelist *inserts, info *info)
 {
     DBUG_ENTER ("StoreExportNodes");
 
@@ -350,7 +406,7 @@ StoreExportNodes (nodelist *inserts, node *info)
  */
 
 node *
-WSIBfloat (node *arg_node, node *arg_info)
+WSIBfloat (node *arg_node, info *arg_info)
 {
 
     DBUG_ENTER ("WSIBfloat");
@@ -375,7 +431,7 @@ WSIBfloat (node *arg_node, node *arg_info)
  */
 
 node *
-WSIBdouble (node *arg_node, node *arg_info)
+WSIBdouble (node *arg_node, info *arg_info)
 {
 
     DBUG_ENTER ("WSIBdouble");
@@ -385,8 +441,8 @@ WSIBdouble (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-static node *
-AddImplicitItems (node *info, node *all_types)
+static info *
+AddImplicitItems (info *info, node *all_types)
 {
     nodelist *tmp;
     node *fundef, *tdef, *impl_tdef, *objdef;
@@ -439,7 +495,7 @@ AddImplicitItems (node *info, node *all_types)
 }
 
 static void
-PrintNeededTypes (FILE *sibfile, nodelist *types, node *arg_info)
+PrintNeededTypes (FILE *sibfile, nodelist *types, info *arg_info)
 {
     node *type;
     nodelist *tmp;
@@ -472,7 +528,7 @@ PrintNeededTypes (FILE *sibfile, nodelist *types, node *arg_info)
 }
 
 static void
-PrintNeededFunctions (FILE *sibfile, nodelist *funs, node *arg_info)
+PrintNeededFunctions (FILE *sibfile, nodelist *funs, info *arg_info)
 {
     node *fun;
 
@@ -510,7 +566,7 @@ PrintNeededFunctions (FILE *sibfile, nodelist *funs, node *arg_info)
 }
 
 static void
-PrintNeededObjects (FILE *sibfile, nodelist *objs, node *arg_info)
+PrintNeededObjects (FILE *sibfile, nodelist *objs, info *arg_info)
 {
     node *obj;
     int first;
@@ -584,7 +640,7 @@ PrintNeededObjects (FILE *sibfile, nodelist *objs, node *arg_info)
  */
 
 static void
-PrintNeededObjectsOfObject (FILE *sibfile, nodelist *objs, node *arg_info)
+PrintNeededObjectsOfObject (FILE *sibfile, nodelist *objs, info *arg_info)
 {
     node *obj;
     int first;
@@ -618,7 +674,7 @@ PrintNeededObjectsOfObject (FILE *sibfile, nodelist *objs, node *arg_info)
 }
 
 static void
-PrintSibTypes (FILE *sibfile, nodelist *tdeflist, char *modname, node *arg_info)
+PrintSibTypes (FILE *sibfile, nodelist *tdeflist, char *modname, info *arg_info)
 {
     node *tdef;
     nodelist *tmp;
@@ -664,7 +720,7 @@ PrintSibTypes (FILE *sibfile, nodelist *tdeflist, char *modname, node *arg_info)
 }
 
 static void
-PrintSibObjs (FILE *sibfile, nodelist *objdeflist, char *modname, node *arg_info)
+PrintSibObjs (FILE *sibfile, nodelist *objdeflist, char *modname, info *arg_info)
 {
     node *objdef;
     nodelist *tmp;
@@ -718,7 +774,7 @@ PrintSibObjs (FILE *sibfile, nodelist *objdeflist, char *modname, node *arg_info
 }
 
 static void
-PrintSibFuns (FILE *sibfile, nodelist *fundeflist, char *modname, node *arg_info)
+PrintSibFuns (FILE *sibfile, nodelist *fundeflist, char *modname, info *arg_info)
 {
     node *fundef;
 
@@ -770,7 +826,7 @@ PrintSibFuns (FILE *sibfile, nodelist *fundeflist, char *modname, node *arg_info
 }
 
 node *
-WSIBobjdef (node *arg_node, node *arg_info)
+WSIBobjdef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WSIBobjdef");
 
@@ -779,10 +835,10 @@ WSIBobjdef (node *arg_node, node *arg_info)
     }
 
     if (OBJDEF_NEXT (arg_node) != NULL) {
-        arg_info = Trav (OBJDEF_NEXT (arg_node), arg_info);
+        Trav (OBJDEF_NEXT (arg_node), arg_info);
     }
 
-    DBUG_RETURN (arg_info);
+    DBUG_RETURN (arg_node);
 }
 
 /*
@@ -796,7 +852,7 @@ WSIBobjdef (node *arg_node, node *arg_info)
  */
 
 node *
-WSIBfundef (node *arg_node, node *arg_info)
+WSIBfundef (node *arg_node, info *arg_info)
 {
     node *ret;
 
@@ -811,10 +867,10 @@ WSIBfundef (node *arg_node, node *arg_info)
         }
 
         if (FUNDEF_NEXT (arg_node) != NULL) {
-            ret = Trav (FUNDEF_NEXT (arg_node), arg_info);
-        } else {
-            ret = arg_info;
+            Trav (FUNDEF_NEXT (arg_node), arg_info);
         }
+
+        ret = arg_node;
     } else {
         /*
          * Here follows the definition of a second traversal of the N_fundef
@@ -857,41 +913,41 @@ WSIBfundef (node *arg_node, node *arg_info)
 }
 
 node *
-WSIBtypedef (node *arg_node, node *arg_info)
+WSIBtypedef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WSIBtypedef");
 
     StoreExportNode (TYPEDEC_DEF (arg_node), arg_info);
 
     if (TYPEDEF_NEXT (arg_node) != NULL) {
-        arg_info = Trav (TYPEDEF_NEXT (arg_node), arg_info);
+        Trav (TYPEDEF_NEXT (arg_node), arg_info);
     }
 
-    DBUG_RETURN (arg_info);
+    DBUG_RETURN (arg_node);
 }
 
 node *
-WSIBexplist (node *arg_node, node *arg_info)
+WSIBexplist (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WSIBexplist");
 
     if (EXPLIST_ITYPES (arg_node) != NULL) {
-        arg_info = Trav (EXPLIST_ITYPES (arg_node), arg_info);
+        Trav (EXPLIST_ITYPES (arg_node), arg_info);
     }
 
     if (EXPLIST_FUNS (arg_node) != NULL) {
-        arg_info = Trav (EXPLIST_FUNS (arg_node), arg_info);
+        Trav (EXPLIST_FUNS (arg_node), arg_info);
     }
 
     if (EXPLIST_OBJS (arg_node) != NULL) {
-        arg_info = Trav (EXPLIST_OBJS (arg_node), arg_info);
+        Trav (EXPLIST_OBJS (arg_node), arg_info);
     }
 
-    DBUG_RETURN (arg_info);
+    DBUG_RETURN (arg_node);
 }
 
 node *
-WSIBmodul (node *arg_node, node *arg_info)
+WSIBmodul (node *arg_node, info *arg_info)
 {
     FILE *sibfile, *store_outfile;
 
@@ -916,8 +972,8 @@ WSIBmodul (node *arg_node, node *arg_info)
          *  printed to the SIB are generated.
          */
 
-        arg_info = Trav (MODDEC_OWN (MODUL_DECL (arg_node)), arg_info);
-        arg_info = AddImplicitItems (arg_info, MODUL_TYPES (arg_node));
+        Trav (MODDEC_OWN (MODUL_DECL (arg_node)), arg_info);
+        AddImplicitItems (arg_info, MODUL_TYPES (arg_node));
 
         /*
          *  Second, the infered functions, objects, and types are printed.
@@ -953,7 +1009,7 @@ WSIBmodul (node *arg_node, node *arg_info)
 
     fclose (sibfile);
 
-    FreeNode (arg_info);
+    arg_info = FreeInfo (arg_info);
 
     /*
      *  Finally, the syntax tree can be tidied up:

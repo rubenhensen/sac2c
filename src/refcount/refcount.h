@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2004/07/16 14:41:34  sah
+ * switch to new INFO structure
+ * PHASE I
+ *
  * Revision 3.10  2004/03/10 00:10:17  dkrHH
  * old backend removed
  *
@@ -88,24 +92,24 @@
 
 extern node *Refcount (node *arg_node);
 
-extern node *RCblock (node *arg_node, node *arg_info);
-extern node *RCvardec (node *arg_node, node *arg_info);
-extern node *RCassign (node *arg_node, node *arg_info);
-extern node *RCloop (node *arg_node, node *arg_info);
-extern node *RCprf (node *arg_node, node *arg_info);
-extern node *RCid (node *arg_node, node *arg_info);
-extern node *RClet (node *arg_node, node *arg_info);
-extern node *RCcond (node *arg_node, node *arg_info);
-extern node *RCfundef (node *arg_node, node *arg_info);
-extern node *RCarg (node *arg_node, node *arg_info);
-extern node *RCprepost (node *arg_node, node *arg_info);
-extern node *RCicm (node *arg_node, node *arg_info);
-extern node *RCNwith (node *arg_node, node *arg_info);
-extern node *RCNpart (node *arg_node, node *arg_info);
-extern node *RCNcode (node *arg_node, node *arg_info);
-extern node *RCNgen (node *arg_node, node *arg_info);
-extern node *RCNwithid (node *arg_node, node *arg_info);
-extern node *RCNwithop (node *arg_node, node *arg_info);
-extern node *RCNwith2 (node *arg_node, node *arg_info);
+extern node *RCblock (node *arg_node, info *arg_info);
+extern node *RCvardec (node *arg_node, info *arg_info);
+extern node *RCassign (node *arg_node, info *arg_info);
+extern node *RCloop (node *arg_node, info *arg_info);
+extern node *RCprf (node *arg_node, info *arg_info);
+extern node *RCid (node *arg_node, info *arg_info);
+extern node *RClet (node *arg_node, info *arg_info);
+extern node *RCcond (node *arg_node, info *arg_info);
+extern node *RCfundef (node *arg_node, info *arg_info);
+extern node *RCarg (node *arg_node, info *arg_info);
+extern node *RCprepost (node *arg_node, info *arg_info);
+extern node *RCicm (node *arg_node, info *arg_info);
+extern node *RCNwith (node *arg_node, info *arg_info);
+extern node *RCNpart (node *arg_node, info *arg_info);
+extern node *RCNcode (node *arg_node, info *arg_info);
+extern node *RCNgen (node *arg_node, info *arg_info);
+extern node *RCNwithid (node *arg_node, info *arg_info);
+extern node *RCNwithop (node *arg_node, info *arg_info);
+extern node *RCNwith2 (node *arg_node, info *arg_info);
 
 #endif /* _refcount_h_ */

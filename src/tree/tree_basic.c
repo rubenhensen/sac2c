@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.85  2004/07/16 14:41:34  sah
+ * switch to new INFO structure
+ * PHASE I
+ *
  * Revision 3.84  2004/07/11 18:08:56  sah
  * ongoing new ast implementation
  *
@@ -1685,7 +1689,7 @@ MakeAvis (node *vardecOrArg)
 }
 
 /*--------------------------------------------------------------------------*/
-
+#ifndef NEW_INFO
 node *
 MakeInfo ()
 {
@@ -1700,7 +1704,7 @@ MakeInfo ()
 
     DBUG_RETURN (tmp);
 }
-
+#endif
 /*--------------------------------------------------------------------------*/
 
 node *

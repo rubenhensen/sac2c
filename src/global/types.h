@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.28  2004/07/16 14:41:34  sah
+ * switch to new INFO structure
+ * PHASE I
+ *
  * Revision 3.27  2004/07/11 17:54:01  sah
  * added F_unknown filetype
  *
@@ -501,6 +505,21 @@ typedef struct NODE {
     struct NODE *node[MAX_SONS]; /* pointers to child nodes */
 } node;
 #endif /* NEW_AST */
+
+/*****************************************************************************
+ * The info structure is used during traversal to store some stateful
+ * information. It replaces the old N_info node. The structure is defined
+ * as an abstract type here, so it can be definied by the different
+ * traversals to suit the local needs. To do so, define a structure INFO
+ * within the .c file of your traversal or create a specific .h/.c file
+ * included by all .c files of your traversal. You as well have to create
+ * a static MakeInfo/FreeInfo function.
+ *****************************************************************************/
+#ifndef NEW_INFO
+typedef node info;
+#else
+typedef struct INFO info;
+#endif
 
 /******************************************************************************
  *

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.17  2004/07/16 14:41:34  sah
+ * switch to new INFO structure
+ * PHASE I
+ *
  * Revision 1.16  2002/09/13 14:22:57  dkr
  * Mop2Ap() corrected
  *
@@ -49,6 +53,8 @@
  * Initial revision
  *
  */
+
+#define NEW_INFO
 
 #include "handle_mops.h"
 #include "traverse.h"
@@ -317,7 +323,6 @@ node *
 HandleMops (node *arg_node)
 {
     funtab *tmp_tab;
-    node *info_node;
 
     DBUG_ENTER ("HandleMops");
 
@@ -326,9 +331,7 @@ HandleMops (node *arg_node)
 
     prec_lut = InitPrecLut ();
 
-    info_node = MakeInfo ();
-    arg_node = Trav (arg_node, info_node);
-    info_node = FreeNode (info_node);
+    arg_node = Trav (arg_node, NULL);
 
     prec_lut = MapLUT_S (prec_lut, (void *(*)(void *))FreePrec);
     prec_lut = RemoveLUT (prec_lut);
@@ -341,7 +344,7 @@ HandleMops (node *arg_node)
 /******************************************************************************
  *
  * function:
- *    node *HMmop( node *arg_node, node *arg_info)
+ *    node *HMmop( node *arg_node, info *arg_info)
  *
  * description:
  *    Converts a N_mop node into a nested N_ap node.
@@ -349,7 +352,7 @@ HandleMops (node *arg_node)
  ******************************************************************************/
 
 node *
-HMmop (node *arg_node, node *arg_info)
+HMmop (node *arg_node, info *arg_info)
 {
     node *mop, *res;
 
@@ -459,7 +462,7 @@ Name2Prf (char *name, prf *primfun)
 /******************************************************************************
  *
  * function:
- *    node *HMap(node *arg_node, node *arg_info)
+ *    node *HMap(node *arg_node, info *arg_info)
  *
  * description:
  *   this function is only needed for converting the "new prf notation",
@@ -471,7 +474,7 @@ Name2Prf (char *name, prf *primfun)
  ******************************************************************************/
 
 node *
-HMap (node *arg_node, node *arg_info)
+HMap (node *arg_node, info *arg_info)
 {
     prf primfun;
     bool found;
@@ -524,7 +527,7 @@ HMap (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *    node *HMNwithop(node *arg_node, node *arg_info)
+ *    node *HMNwithop(node *arg_node, info *arg_info)
  *
  * description:
  *   this function is only needed for converting the "new prf notation",
@@ -536,7 +539,7 @@ HMap (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-HMNwithop (node *arg_node, node *arg_info)
+HMNwithop (node *arg_node, info *arg_info)
 {
     prf primfun;
     bool found;

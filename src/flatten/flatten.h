@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2004/07/16 14:41:34  sah
+ * switch to new INFO structure
+ * PHASE I
+ *
  * Revision 3.2  2002/08/07 12:32:39  dkr
  * FltnNwithid added
  *
@@ -57,26 +61,26 @@
 #define _flatten_h
 
 extern node *Flatten (node *);
-extern node *FltnBlock (node *arg_node, node *arg_info);
-extern node *FltnAssign (node *arg_node, node *arg_info);
-extern node *FltnExprs (node *arg_node, node *arg_info);
-extern node *FltnCond (node *arg_node, node *arg_info);
-extern node *FltnWhile (node *arg_node, node *arg_info);
-extern node *FltnDo (node *arg_node, node *arg_info);
-extern node *FltnModul (node *arg_node, node *arg_info);
-extern node *FltnFundef (node *arg_node, node *arg_info);
-extern node *FltnAp (node *arg_node, node *arg_info);
-extern node *FltnArray (node *arg_node, node *arg_info);
-extern node *FltnReturn (node *arg_node, node *arg_info);
-extern node *FltnId (node *arg_node, node *arg_info);
-extern node *FltnLet (node *arg_node, node *arg_info);
-extern node *FltnArgs (node *arg_node, node *arg_info);
-extern node *FltnPrf (node *arg_node, node *arg_info);
-extern node *FltnNwith (node *arg_node, node *arg_info);
-extern node *FltnNwithid (node *arg_node, node *arg_info);
-extern node *FltnNpart (node *arg_node, node *arg_info);
-extern node *FltnNgenerator (node *arg_node, node *arg_info);
-extern node *FltnNwithop (node *arg_node, node *arg_info);
-extern node *FltnNcode (node *arg_node, node *arg_info);
+extern node *FltnBlock (node *arg_node, info *arg_info);
+extern node *FltnAssign (node *arg_node, info *arg_info);
+extern node *FltnExprs (node *arg_node, info *arg_info);
+extern node *FltnCond (node *arg_node, info *arg_info);
+extern node *FltnWhile (node *arg_node, info *arg_info);
+extern node *FltnDo (node *arg_node, info *arg_info);
+extern node *FltnModul (node *arg_node, info *arg_info);
+extern node *FltnFundef (node *arg_node, info *arg_info);
+extern node *FltnAp (node *arg_node, info *arg_info);
+extern node *FltnArray (node *arg_node, info *arg_info);
+extern node *FltnReturn (node *arg_node, info *arg_info);
+extern node *FltnId (node *arg_node, info *arg_info);
+extern node *FltnLet (node *arg_node, info *arg_info);
+extern node *FltnArgs (node *arg_node, info *arg_info);
+extern node *FltnPrf (node *arg_node, info *arg_info);
+extern node *FltnNwith (node *arg_node, info *arg_info);
+extern node *FltnNwithid (node *arg_node, info *arg_info);
+extern node *FltnNpart (node *arg_node, info *arg_info);
+extern node *FltnNgenerator (node *arg_node, info *arg_info);
+extern node *FltnNwithop (node *arg_node, info *arg_info);
+extern node *FltnNcode (node *arg_node, info *arg_info);
 
 #endif /* _flatten_h  */

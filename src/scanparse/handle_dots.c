@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.35  2004/07/16 14:41:34  sah
+ * switch to new INFO structure
+ * PHASE I
+ *
  * Revision 1.34  2003/12/11 11:15:50  sah
  * once upon a time, there was a small
  * withloop sitting in the forrest of dots
@@ -137,6 +141,8 @@
  *
  */
 
+#define NEW_INFO
+
 #include "handle_dots.h"
 #include "traverse.h"
 #include "dbug.h"
@@ -174,7 +180,7 @@
  * set this to defined in order to create explanatory ids. use this only
  * for debugging as it might create very long identifier names.
  */
-#define HD_USE_EXPLANATORY_NAMES
+#undef HD_USE_EXPLANATORY_NAMES
 
 /**
  * set this to use build in take/drop instead of withloops.
@@ -196,7 +202,7 @@
  * NOTE: The implementation is far from complete:
  *       -missing default values in resulting WL
  *       -no support of partial selection on arrays of different
- *        dimenionalitz
+ *        dimenionality
  */
 #undef HD_SETWL_VECTOR
 
@@ -247,25 +253,74 @@ typedef struct IDTABLE {
 /**
  * arg_info in this file:
  * DOTSHAPE:    this field is used in order to transport the generic shape
- * (node[0])    from Nwithid (via Nwith) to Ngenerator, where it may be used
+ *              from Nwithid (via Nwith) to Ngenerator, where it may be used
  *              in order to replace . generator boundaries.
  * TRAVSTATE:   this field is used to determine the current traversalmode
- * (flag)       HD_sel in normal mode (eliminate dots)
+ *              HD_sel in normal mode (eliminate dots)
  *              HD_scan in shape scanning mode
  *              HD_default to build default values for withloops
  * IDTABLE:     used to reference the current idtable.
- * (info2)
+ *
  * ASSIGNS:     stores any assigns that have to be inserted prior to
- * (node[1])    the current one. Used to build shape for WLs.
+ *              the current one. Used to build shape for WLs.
  * SETASSIGNS:  stores any assigns that haveo to be inserted prior to
  *              the current set notation assign. Used to pre-flatten
  *              selections in setnotation.
  */
-#define INFO_HD_DOTSHAPE(n) n->node[0]
-#define INFO_HD_TRAVSTATE(n) ((travstate)n->flag)
-#define INFO_HD_IDTABLE(n) ((idtable *)n->info2)
-#define INFO_HD_ASSIGNS(n) n->node[1]
-#define INFO_HD_SETASSIGNS(n) ((node *)n->info3)
+
+/* INFO structure */
+struct INFO {
+    node *dotshape;
+    travstate state;
+    idtable *idtab;
+    node *assigns;
+    node *setassigns;
+};
+
+/* access macros */
+#define INFO_HD_DOTSHAPE(n) n->dotshape
+#define INFO_HD_TRAVSTATE(n) n->state
+#define INFO_HD_IDTABLE(n) n->idtab
+#define INFO_HD_ASSIGNS(n) n->assigns
+#define INFO_HD_SETASSIGNS(n) n->setassigns
+
+/**
+ * builds an info structure.
+ *
+ * @return new info structure
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    INFO_HD_DOTSHAPE (result) = NULL;
+    INFO_HD_TRAVSTATE (result) = HD_sel;
+    INFO_HD_IDTABLE (result) = NULL;
+    INFO_HD_ASSIGNS (result) = NULL;
+    INFO_HD_SETASSIGNS (result) = NULL;
+
+    result = Malloc (sizeof (info));
+
+    DBUG_RETURN (result);
+}
+
+/**
+ * frees an info structure.
+ *
+ * @param info the info structure to free
+ */
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = Free (info);
+
+    DBUG_RETURN (info);
+}
 
 /**
  * builds an assign-let construct.
@@ -1342,7 +1397,7 @@ FreeIdTable (idtable *table, idtable *until)
  * @param arg_info info node containing ids to scan
  */
 void
-ScanVector (node *vector, node **array, node *arg_info)
+ScanVector (node *vector, node **array, info *arg_info)
 {
     int poscnt = 0;
     int tripledotflag = 0;
@@ -1425,7 +1480,7 @@ ScanVector (node *vector, node **array, node *arg_info)
  * @param ids idtable structure
  */
 void
-ScanId (node *id, node **array, node *arg_info)
+ScanId (node *id, node **array, info *arg_info)
 {
     idtable *ids = INFO_HD_IDTABLE (arg_info);
     DBUG_ENTER ("ScanId");
@@ -1791,19 +1846,19 @@ node *
 EliminateSelDots (node *arg_node)
 {
     funtab *tmp_tab;
-    node *info_node;
+    info *arg_info;
 
     DBUG_ENTER ("EliminateSelDots");
 
     tmp_tab = act_tab;
     act_tab = hd_tab;
 
-    info_node = MakeInfo ();
-    INFO_HD_TRAVSTATE (info_node) = HD_sel;
+    arg_info = MakeInfo ();
+    INFO_HD_TRAVSTATE (arg_info) = HD_sel;
 
-    arg_node = Trav (arg_node, info_node);
+    arg_node = Trav (arg_node, arg_info);
 
-    info_node = FreeNode (info_node);
+    arg_info = FreeInfo (arg_info);
 
     act_tab = tmp_tab;
 
@@ -1824,7 +1879,7 @@ EliminateSelDots (node *arg_node)
  * @result transformed AST
  */
 node *
-HDwith (node *arg_node, node *arg_info)
+HDwith (node *arg_node, info *arg_info)
 {
     /* INFO_HD_DOTSHAPE is used for '.'-substitution in WLgenerators */
     /* in order to handle nested WLs correct, olddotshape stores not */
@@ -1860,7 +1915,7 @@ HDwith (node *arg_node, node *arg_info)
  * @return current node of the AST
  */
 node *
-HDwithop (node *arg_node, node *arg_info)
+HDwithop (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("HDWithop");
 
@@ -1904,7 +1959,7 @@ HDwithop (node *arg_node, node *arg_info)
  * someone (sbs?) wrote this code but left no comment...
  */
 node *
-HDpart (node *arg_node, node *arg_info)
+HDpart (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("HDpart");
 
@@ -1935,7 +1990,7 @@ HDpart (node *arg_node, node *arg_info)
  * @return transformed AST
  */
 node *
-HDgenerator (node *arg_node, node *arg_info)
+HDgenerator (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("HDGenerator");
 
@@ -2004,7 +2059,7 @@ HDgenerator (node *arg_node, node *arg_info)
  * @return current node of the AST
  */
 node *
-HDdot (node *arg_node, node *arg_info)
+HDdot (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("HDdot");
 
@@ -2026,7 +2081,7 @@ HDdot (node *arg_node, node *arg_info)
  * @return transformed AST
  */
 node *
-HDap (node *arg_node, node *arg_info)
+HDap (node *arg_node, info *arg_info)
 {
     node *result = arg_node;
 
@@ -2118,7 +2173,7 @@ HDap (node *arg_node, node *arg_info)
  * @return current node of the AST
  */
 node *
-HDprf (node *arg_node, node *arg_info)
+HDprf (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("HDprf");
 
@@ -2163,7 +2218,7 @@ HDprf (node *arg_node, node *arg_info)
  * @result current node of the AST and inserted assigns
  */
 node *
-HDassign (node *arg_node, node *arg_info)
+HDassign (node *arg_node, info *arg_info)
 {
     node *result = arg_node;
     node *oldassigns = INFO_HD_ASSIGNS (arg_info);
@@ -2243,7 +2298,7 @@ HDassign (node *arg_node, node *arg_info)
  * @return transformed AST
  */
 node *
-HDsetwl (node *arg_node, node *arg_info)
+HDsetwl (node *arg_node, info *arg_info)
 {
     node *result = NULL;
     travstate oldstate = INFO_HD_TRAVSTATE (arg_info);
@@ -2357,7 +2412,7 @@ HDsetwl (node *arg_node, node *arg_info)
 }
 
 node *
-HDid (node *arg_node, node *arg_info)
+HDid (node *arg_node, info *arg_info)
 {
     if (INFO_HD_TRAVSTATE (arg_info) == HD_default) {
         if (IdTableContains (ID_NAME (arg_node), INFO_HD_IDTABLE (arg_info))) {

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2004/07/16 14:41:34  sah
+ * switch to new INFO structure
+ * PHASE I
+ *
  * Revision 1.7  2003/12/10 16:00:15  sah
  * added HDid
  *
@@ -34,15 +38,15 @@
 #include "internal_lib.h"
 
 extern node *EliminateSelDots (node *arg_node);
-extern node *HDwith (node *arg_node, node *arg_info);
-extern node *HDwithop (node *arg_node, node *arg_info);
-extern node *HDpart (node *arg_node, node *arg_info);
-extern node *HDgenerator (node *arg_node, node *arg_info);
-extern node *HDdot (node *arg_node, node *arg_info);
-extern node *HDap (node *arg_node, node *arg_info);
-extern node *HDprf (node *arg_node, node *arg_info);
-extern node *HDassign (node *arg_node, node *arg_info);
-extern node *HDsetwl (node *arg_node, node *arg_info);
-extern node *HDid (node *arg_node, node *arg_info);
+extern node *HDwith (node *arg_node, info *arg_info);
+extern node *HDwithop (node *arg_node, info *arg_info);
+extern node *HDpart (node *arg_node, info *arg_info);
+extern node *HDgenerator (node *arg_node, info *arg_info);
+extern node *HDdot (node *arg_node, info *arg_info);
+extern node *HDap (node *arg_node, info *arg_info);
+extern node *HDprf (node *arg_node, info *arg_info);
+extern node *HDassign (node *arg_node, info *arg_info);
+extern node *HDsetwl (node *arg_node, info *arg_info);
+extern node *HDid (node *arg_node, info *arg_info);
 
 #endif /* _handle_dots_h */

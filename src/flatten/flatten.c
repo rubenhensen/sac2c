@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.29  2004/07/16 14:41:34  sah
+ * switch to new INFO structure
+ * PHASE I
+ *
  * Revision 3.28  2004/03/10 00:10:17  dkrHH
  * old backend removed
  *
@@ -200,6 +204,8 @@
  *
  */
 
+#define NEW_INFO
+
 #include <stdio.h>
 
 #include "globals.h"
@@ -254,15 +260,66 @@
  *
  */
 
-#define INFO_FLTN_CONTEXT(n) (n->flag)
-#define INFO_FLTN_LASTASSIGN(n) (n->node[0])
-#define INFO_FLTN_LASTWLBLOCK(n) (n->node[1])
-#define INFO_FLTN_FINALASSIGN(n) (n->node[2])
+/**
+ * INFO structure
+ */
+struct INFO {
+    int context;
+    node *lastassign;
+    node *lastwlblock;
+    node *finalassign;
+    void *constvec;
+    int veclen;
+    simpletype vectype;
+    int isconst;
+};
 
-#define INFO_FLTN_CONSTVEC(n) (n->info2)
-#define INFO_FLTN_VECLEN(n) (n->counter)
-#define INFO_FLTN_VECTYPE(n) ((simpletype)n->varno)
-#define INFO_FLTN_ISCONST(n) (n->refcnt)
+/**
+ * INFO macros
+ */
+#define INFO_FLTN_CONTEXT(n) (n->context)
+#define INFO_FLTN_LASTASSIGN(n) (n->lastassign)
+#define INFO_FLTN_LASTWLBLOCK(n) (n->lastwlblock)
+#define INFO_FLTN_FINALASSIGN(n) (n->finalassign)
+
+#define INFO_FLTN_CONSTVEC(n) (n->constvec)
+#define INFO_FLTN_VECLEN(n) (n->veclen)
+#define INFO_FLTN_VECTYPE(n) (n->vectype)
+#define INFO_FLTN_ISCONST(n) (n->isconst)
+
+/**
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = Malloc (sizeof (info));
+
+    INFO_FLTN_CONTEXT (result) = 0;
+    INFO_FLTN_LASTASSIGN (result) = NULL;
+    INFO_FLTN_LASTWLBLOCK (result) = NULL;
+    INFO_FLTN_FINALASSIGN (result) = NULL;
+    INFO_FLTN_CONSTVEC (result) = NULL;
+    INFO_FLTN_VECLEN (result) = 0;
+    INFO_FLTN_VECTYPE (result) = T_unknown;
+    INFO_FLTN_ISCONST (result) = 0;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = Free (info);
+
+    DBUG_RETURN (info);
+}
 
 #define WITH_PREFIX "__w" /* name of new variable in with-statement */
 #define WITH_PREFIX_LENGTH 3
@@ -582,7 +639,7 @@ CopyStackSeg (local_stack *first_elem, local_stack *last_elem)
 /******************************************************************************
  *
  * function:
- *  node *Abstract( node *arg_node, *arg_info)
+ *  node *Abstract( node *arg_node, info *arg_info)
  *
  * description:
  *   - gets an expression <expr> to be abstracted out as argument
@@ -594,7 +651,7 @@ CopyStackSeg (local_stack *first_elem, local_stack *last_elem)
  ******************************************************************************/
 
 static node *
-Abstract (node *arg_node, node *arg_info)
+Abstract (node *arg_node, info *arg_info)
 {
     char *tmp;
     node *res;
@@ -731,7 +788,7 @@ FltnMGNwith (node *wloop)
 node *
 Flatten (node *arg_node)
 {
-    node *info_node;
+    info *info_node;
 
     DBUG_ENTER ("Flatten");
 
@@ -765,7 +822,7 @@ Flatten (node *arg_node)
 
     arg_node = Trav (arg_node, info_node);
 
-    FreeInfo (info_node, NULL);
+    info_node = FreeInfo (info_node);
 
     /*
      * de-initialize the static variables :
@@ -779,7 +836,7 @@ DONE:
 /******************************************************************************
  *
  * function:
- *  node *FltnModul(node *arg_node, node *arg_info)
+ *  node *FltnModul(node *arg_node, info *arg_info)
  *
  * description:
  *   this function is needed to limit the traversal to the FUNS-son of
@@ -788,7 +845,7 @@ DONE:
  ******************************************************************************/
 
 node *
-FltnModul (node *arg_node, node *arg_info)
+FltnModul (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("FltnModul");
 
@@ -802,7 +859,7 @@ FltnModul (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *  node *FltnFundef(node *arg_node, node *arg_info)
+ *  node *FltnFundef(node *arg_node, info *arg_info)
  *
  * description:
  *   - calls Trav to flatten the user defined functions if function body is not
@@ -813,7 +870,7 @@ FltnModul (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-FltnFundef (node *arg_node, node *arg_info)
+FltnFundef (node *arg_node, info *arg_info)
 {
     local_stack *tmp_tos;
 
@@ -850,7 +907,7 @@ FltnFundef (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *  node *FltnArgs(node *arg_node, node *arg_info)
+ *  node *FltnArgs(node *arg_node, info *arg_info)
  *
  * description:
  *   - adds names of formal parameters to the stack
@@ -858,7 +915,7 @@ FltnFundef (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-FltnArgs (node *arg_node, node *arg_info)
+FltnArgs (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("FltnArgs");
 
@@ -874,7 +931,7 @@ FltnArgs (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *  node *FltnBlock(node *arg_node, node *arg_info)
+ *  node *FltnBlock(node *arg_node, info *arg_info)
  *
  * description:
  *   - if CONTEXT is CT_wl arg_node is inserted in LASTWLBLOCK and after
@@ -885,7 +942,7 @@ FltnArgs (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-FltnBlock (node *arg_node, node *arg_info)
+FltnBlock (node *arg_node, info *arg_info)
 {
     node *assigns, *mem_last_wlblock;
 
@@ -926,7 +983,7 @@ FltnBlock (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *  node *FltnAssign(node *arg_node, node *arg_info)
+ *  node *FltnAssign(node *arg_node, info *arg_info)
  *
  * description:
  *   - stores arg_node in INFO_FLTN_LASTASSIGN( arg_info)
@@ -939,7 +996,7 @@ FltnBlock (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-FltnAssign (node *arg_node, node *arg_info)
+FltnAssign (node *arg_node, info *arg_info)
 {
     node *return_node;
 
@@ -974,7 +1031,7 @@ FltnAssign (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *  node *FltnLet( node *arg_node, node *arg_info)
+ *  node *FltnLet( node *arg_node, info *arg_info)
  *
  * description:
  *   AFTER the traversal of the RHS (since the vars on the LHS should not be on
@@ -1021,7 +1078,7 @@ FltnAssign (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-FltnLet (node *arg_node, node *arg_info)
+FltnLet (node *arg_node, info *arg_info)
 {
     ids *ids;
     char *ids_name, *tmp_name;
@@ -1183,7 +1240,7 @@ FltnLet (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *  node *FltnArray(node *arg_node, node *arg_info)
+ *  node *FltnArray(node *arg_node, info *arg_info)
  *
  * description:
  *  set the context-flag of arg_info to CT_array, traverse the arguments,
@@ -1193,7 +1250,7 @@ FltnLet (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-FltnArray (node *arg_node, node *arg_info)
+FltnArray (node *arg_node, info *arg_info)
 {
     contextflag old_context;
     int old_isconst;
@@ -1261,7 +1318,7 @@ FltnArray (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *  node *FltnAp(node *arg_node, node *arg_info)
+ *  node *FltnAp(node *arg_node, info *arg_info)
  *
  * description:
  *  if the application has some arguments, set the context-flag of
@@ -1271,7 +1328,7 @@ FltnArray (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-FltnAp (node *arg_node, node *arg_info)
+FltnAp (node *arg_node, info *arg_info)
 {
     contextflag old_ctxt;
 
@@ -1292,7 +1349,7 @@ FltnAp (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *  node *FltnPrf(node *arg_node, node *arg_info)
+ *  node *FltnPrf(node *arg_node, info *arg_info)
  *
  * description:
  *  - If the application has some arguments, set the context-flag of arg_info
@@ -1306,7 +1363,7 @@ FltnAp (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-FltnPrf (node *arg_node, node *arg_info)
+FltnPrf (node *arg_node, info *arg_info)
 {
     contextflag old_ctxt;
 
@@ -1328,7 +1385,7 @@ FltnPrf (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *  node *FltnReturn(node *arg_node, node *arg_info)
+ *  node *FltnReturn(node *arg_node, info *arg_info)
  *
  * description:
  *  if the function returns values, set the context-flag of
@@ -1338,7 +1395,7 @@ FltnPrf (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-FltnReturn (node *arg_node, node *arg_info)
+FltnReturn (node *arg_node, info *arg_info)
 {
     contextflag old_ctxt;
 
@@ -1357,7 +1414,7 @@ FltnReturn (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *  node *FltnExprs( node *arg_node, node *arg_info)
+ *  node *FltnExprs( node *arg_node, info *arg_info)
  *
  * description:
  *  - flattens all the exprs depending on the context INFO_FLTN_CONTEXT
@@ -1366,7 +1423,7 @@ FltnReturn (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-FltnExprs (node *arg_node, node *arg_info)
+FltnExprs (node *arg_node, info *arg_info)
 {
     int info_fltn_array_index, abstract;
     node *expr, *expr2;
@@ -1477,7 +1534,7 @@ FltnExprs (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *  node *FltnId(node *arg_node, node *arg_info)
+ *  node *FltnId(node *arg_node, info *arg_info)
  *
  * description:
  *   - this function is only used for renaming of variables within a WL
@@ -1487,7 +1544,7 @@ FltnExprs (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-FltnId (node *arg_node, node *arg_info)
+FltnId (node *arg_node, info *arg_info)
 {
     char *old_name;
     local_stack *tmp;
@@ -1516,7 +1573,7 @@ FltnId (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *  node *FltnCond(node *arg_node, node *arg_info)
+ *  node *FltnCond(node *arg_node, info *arg_info)
  *
  * description:
  *   - flattens the predicate and both alternatives.
@@ -1537,7 +1594,7 @@ FltnId (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-FltnCond (node *arg_node, node *arg_info)
+FltnCond (node *arg_node, info *arg_info)
 {
     int then_stack_sz, else_stack_sz, i;
     local_stack *mem_tos, *then_stack_seg, *else_stack_seg;
@@ -1610,7 +1667,7 @@ FltnCond (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *  node *FltnWhile(node *arg_node, node *arg_info)
+ *  node *FltnWhile(node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -1626,7 +1683,7 @@ FltnCond (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-FltnWhile (node *arg_node, node *arg_info)
+FltnWhile (node *arg_node, info *arg_info)
 {
 
     node *new_cond;
@@ -1660,7 +1717,7 @@ FltnWhile (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *  node *FltnDo(node *arg_node, node *arg_info)
+ *  node *FltnDo(node *arg_node, info *arg_info)
  *
  * description:
  *  - traverse the body
@@ -1673,7 +1730,7 @@ FltnWhile (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-FltnDo (node *arg_node, node *arg_info)
+FltnDo (node *arg_node, info *arg_info)
 {
     node *mem_last_assign, *final_assign, *pred, *pred2;
 
@@ -1728,7 +1785,7 @@ FltnDo (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *FltnNwith(node *arg_node, node *arg_info)
+ *   node *FltnNwith(node *arg_node, info *arg_info)
  *
  * description:
  *   flattens node N_Nwith
@@ -1737,7 +1794,7 @@ FltnDo (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-FltnNwith (node *arg_node, node *arg_info)
+FltnNwith (node *arg_node, info *arg_info)
 {
     local_stack *tmp_tos;
 
@@ -1771,7 +1828,7 @@ FltnNwith (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *FltnNwithop(node *arg_node, node *arg_info)
+ *   node *FltnNwithop(node *arg_node, info *arg_info)
  *
  * description:
  *   flattens N_Nwithop
@@ -1783,7 +1840,7 @@ FltnNwith (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-FltnNwithop (node *arg_node, node *arg_info)
+FltnNwithop (node *arg_node, info *arg_info)
 {
     node *expr, *expr2;
 
@@ -1866,7 +1923,7 @@ FltnNwithop (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *FltnNpart( node *arg_node, node *arg_info)
+ *   node *FltnNpart( node *arg_node, info *arg_info)
  *
  * description:
  *   flattens all N_Npart nodes
@@ -1883,7 +1940,7 @@ FltnNwithop (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-FltnNpart (node *arg_node, node *arg_info)
+FltnNpart (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("FltnNpart");
 
@@ -1900,7 +1957,7 @@ FltnNpart (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *FltnNwithid( node *arg_node, node *arg_info)
+ *   node *FltnNwithid( node *arg_node, info *arg_info)
  *
  * Description:
  *   Creates NWITHID_VEC if missing.
@@ -1908,7 +1965,7 @@ FltnNpart (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-FltnNwithid (node *arg_node, node *arg_info)
+FltnNwithid (node *arg_node, info *arg_info)
 {
     ids *_ids;
     char *old_name;
@@ -1948,7 +2005,7 @@ FltnNwithid (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *FltnNgenerator(node *arg_node, node *arg_info)
+ *   node *FltnNgenerator(node *arg_node, info *arg_info)
  *
  * description:
  *   flattens N_Ngenerator
@@ -1958,7 +2015,7 @@ FltnNwithid (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-FltnNgenerator (node *arg_node, node *arg_info)
+FltnNgenerator (node *arg_node, info *arg_info)
 {
     node **act_son, *act_son_expr, *act_son_expr2;
     int i;
@@ -2036,7 +2093,7 @@ FltnNgenerator (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *FltnNcode(node *arg_node, node *arg_info)
+ *   node *FltnNcode(node *arg_node, info *arg_info)
  *
  * description:
  *   flattens the Ncode nodes.
@@ -2045,7 +2102,7 @@ FltnNgenerator (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-FltnNcode (node *arg_node, node *arg_info)
+FltnNcode (node *arg_node, info *arg_info)
 {
     node **insert_at, *expr, *expr2, *mem_last_assign, *empty_block;
 

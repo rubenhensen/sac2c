@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2004/07/16 14:41:34  sah
+ * switch to new INFO structure
+ * PHASE I
+ *
  * Revision 1.1  2004/07/14 15:43:42  ktr
  * Initial revision
  *
@@ -68,6 +72,8 @@
  * This file implements explicit reference counting in SSA form
  *
  */
+#define NEW_INFO
+
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -154,16 +160,60 @@ typedef struct RC_COUNTER {
          || (PRAGMA_NUMPARAMS (FUNDEF_PRAGMA (n)) <= (idx))                              \
          || (!(FUNDEF_REFCOUNTING (n)[idx]))))
 
-#define INFO_SSARC_MODE(n) ((rc_mode) (n->counter))
-#define INFO_SSARC_DEPTH(n) (n->varno)
-#define INFO_SSARC_RHS(n) ((rc_rhs_type) (n->flag))
-#define INFO_SSARC_DECLIST(n) ((rc_list_struct *)(n->node[0]))
-#define INFO_SSARC_INCLIST(n) ((rc_list_struct *)(n->node[1]))
-#define INFO_SSARC_ALLOCLIST(n) ((ar_list_struct *)(n->node[2]))
-#define INFO_SSARC_FUNDEF(n) (n->node[3])
-#define INFO_SSARC_LHS(n) (n->info.ids)
-#define INFO_SSARC_FUNAP(n) (n->node[5])
-#define INFO_SSARC_REUSELIST(n) ((node *)(n->dfmask[0]))
+/**
+ * INFO structure
+ */
+struct INFO {
+    rc_mode mode;
+    int depth;
+    rc_rhs_type rhs;
+    rc_list_struct *declist;
+    rc_list_struct *inclist;
+    ar_list_struct *alloclist;
+    node *fundef;
+    ids *lhs;
+    node *funap;
+    node *reuselist;
+};
+
+/**
+ * INFO macros
+ */
+#define INFO_SSARC_MODE(n) (n->mode)
+#define INFO_SSARC_DEPTH(n) (n->depth)
+#define INFO_SSARC_RHS(n) (n->rhs)
+#define INFO_SSARC_DECLIST(n) (n->declist)
+#define INFO_SSARC_INCLIST(n) (n->inclist)
+#define INFO_SSARC_ALLOCLIST(n) (n->alloclist)
+#define INFO_SSARC_FUNDEF(n) (n->fundef)
+#define INFO_SSARC_LHS(n) (n->lhs)
+#define INFO_SSARC_FUNAP(n) (n->funap)
+#define INFO_SSARC_REUSELIST(n) (n->reuselist)
+
+/**
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = Malloc (sizeof (info));
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = Free (info);
+
+    DBUG_RETURN (info);
+}
 
 #define AVIS_SSARC_DEFLEVEL(n) (n->int_data)
 #define AVIS_SSARC_COUNTER(n) ((rc_counter *)(n->dfmask[0]))
@@ -1166,7 +1216,7 @@ MakeAllocOrReuseFromALS (ar_list_struct *als, node *next_node)
  *
  ***************************************************************************/
 static node *
-MakeDecAssignments (node *arg_info, node *next_node)
+MakeDecAssignments (info *arg_info, node *next_node)
 {
     rc_list_struct *rls;
 
@@ -1197,7 +1247,7 @@ MakeDecAssignments (node *arg_info, node *next_node)
  *
  ***************************************************************************/
 static node *
-MakeIncAssignments (node *arg_info, node *next_node)
+MakeIncAssignments (info *arg_info, node *next_node)
 {
     rc_list_struct *rls;
 
@@ -1229,7 +1279,7 @@ MakeIncAssignments (node *arg_info, node *next_node)
  *
  ***************************************************************************/
 static node *
-MakeAllocAssignments (node *arg_info, node *next_node)
+MakeAllocAssignments (info *arg_info, node *next_node)
 {
     ar_list_struct *als;
 
@@ -1278,7 +1328,7 @@ MakeAllocAssignments (node *arg_info, node *next_node)
  *
  ***************************************************************************/
 node *
-SSARCap (node *arg_node, node *arg_info)
+SSARCap (node *arg_node, info *arg_info)
 {
     node *args, *avis;
     int argc;
@@ -1340,7 +1390,7 @@ SSARCap (node *arg_node, node *arg_info)
  *
  ***************************************************************************/
 node *
-SSARCarg (node *arg_node, node *arg_info)
+SSARCarg (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSARCarg");
 
@@ -1367,7 +1417,7 @@ SSARCarg (node *arg_node, node *arg_info)
  *
  ***************************************************************************/
 node *
-SSARCarray (node *arg_node, node *arg_info)
+SSARCarray (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSARCarray");
 
@@ -1377,7 +1427,7 @@ SSARCarray (node *arg_node, node *arg_info)
         /*
          * Make memory allocation
          */
-        if (ARRAY_AELEMS (arg_info) != NULL) {
+        if (ARRAY_AELEMS (arg_node) != NULL) {
             /*
              * [ a, ... ]
              * alloc_or_reuse( 1, outer_dim + dim(a), genarray( outer_shape, a))
@@ -1442,7 +1492,7 @@ SSARCarray (node *arg_node, node *arg_info)
  *
  ***************************************************************************/
 node *
-SSARCassign (node *arg_node, node *arg_info)
+SSARCassign (node *arg_node, info *arg_info)
 {
     node *n;
     ids *i;
@@ -1504,7 +1554,7 @@ SSARCassign (node *arg_node, node *arg_info)
         INFO_SSARC_RHS (arg_info) = rc_undef;
         ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
 
-        INFO_SSARC_MODE (arg_node) = rc_default;
+        INFO_SSARC_MODE (arg_info) = rc_default;
     }
 
     /*
@@ -1541,7 +1591,7 @@ SSARCassign (node *arg_node, node *arg_info)
  *
  ***************************************************************************/
 node *
-SSARCblock (node *arg_node, node *arg_info)
+SSARCblock (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSARCblock");
 
@@ -1575,7 +1625,7 @@ SSARCblock (node *arg_node, node *arg_info)
  *
  ***************************************************************************/
 static node *
-AnnotateBranches (node *avis, node *cond, node *arg_info)
+AnnotateBranches (node *avis, node *cond, info *arg_info)
 {
     int m, t, e;
 
@@ -1625,7 +1675,7 @@ AnnotateBranches (node *avis, node *cond, node *arg_info)
  *
  ***************************************************************************/
 node *
-SSARCcond (node *arg_node, node *arg_info)
+SSARCcond (node *arg_node, info *arg_info)
 {
     node *n;
     node *avis;
@@ -1712,7 +1762,7 @@ SSARCcond (node *arg_node, node *arg_info)
  *
  ***************************************************************************/
 node *
-SSARCconst (node *arg_node, node *arg_info)
+SSARCconst (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSARCconst");
 
@@ -1747,7 +1797,7 @@ SSARCconst (node *arg_node, node *arg_info)
  *
  ***************************************************************************/
 node *
-SSARCfuncond (node *arg_node, node *arg_info)
+SSARCfuncond (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSARCfuncond");
 
@@ -1771,7 +1821,7 @@ SSARCfuncond (node *arg_node, node *arg_info)
  *
  ***************************************************************************/
 node *
-SSARCfundef (node *fundef, node *arg_info)
+SSARCfundef (node *fundef, info *arg_info)
 {
     node *arg;
     node *avis;
@@ -1855,7 +1905,7 @@ SSARCfundef (node *fundef, node *arg_info)
  *
  ***************************************************************************/
 node *
-SSARClet (node *arg_node, node *arg_info)
+SSARClet (node *arg_node, info *arg_info)
 {
     ids *ids;
     node *avis;
@@ -1988,7 +2038,7 @@ SSARClet (node *arg_node, node *arg_info)
  *
  ***************************************************************************/
 node *
-SSARCicm (node *arg_node, node *arg_info)
+SSARCicm (node *arg_node, info *arg_info)
 {
     char *name;
     node *avis;
@@ -2080,7 +2130,7 @@ SSARCicm (node *arg_node, node *arg_info)
  *
  ***************************************************************************/
 node *
-SSARCid (node *arg_node, node *arg_info)
+SSARCid (node *arg_node, info *arg_info)
 {
     node *avis;
 
@@ -2172,7 +2222,7 @@ SSARCid (node *arg_node, node *arg_info)
  *
  ***************************************************************************/
 static node *
-AnnotateCBlock (node *avis, node *cblock, node *arg_info)
+AnnotateCBlock (node *avis, node *cblock, info *arg_info)
 {
     int env;
 
@@ -2203,7 +2253,7 @@ AnnotateCBlock (node *avis, node *cblock, node *arg_info)
  *
  ***************************************************************************/
 node *
-SSARCNcode (node *arg_node, node *arg_info)
+SSARCNcode (node *arg_node, info *arg_info)
 {
     node *n, *epicode;
 
@@ -2271,7 +2321,7 @@ SSARCNcode (node *arg_node, node *arg_info)
  *
  ***************************************************************************/
 static node *
-AllocateWithID (node *withid, node *arg_info, node *iv_shp)
+AllocateWithID (node *withid, info *arg_info, node *iv_shp)
 {
     ids *i;
     node *avis;
@@ -2331,7 +2381,7 @@ AllocateWithID (node *withid, node *arg_info, node *iv_shp)
  *
  ***************************************************************************/
 static ar_list_struct *
-MakeWithAlloc (ar_list_struct *als, ids *ids, node *withop, node *cexpr, node *arg_info)
+MakeWithAlloc (ar_list_struct *als, ids *ids, node *withop, node *cexpr, info *arg_info)
 {
     DBUG_ENTER ("MakeWithAllocation");
 
@@ -2423,7 +2473,7 @@ MakeWithAlloc (ar_list_struct *als, ids *ids, node *withop, node *cexpr, node *a
  *
  ***************************************************************************/
 node *
-SSARCNwith (node *arg_node, node *arg_info)
+SSARCNwith (node *arg_node, info *arg_info)
 {
     ids *ids;
     node *withop;
@@ -2500,7 +2550,7 @@ SSARCNwith (node *arg_node, node *arg_info)
  *
  ***************************************************************************/
 node *
-SSARCNwith2 (node *arg_node, node *arg_info)
+SSARCNwith2 (node *arg_node, info *arg_info)
 {
     ids *ids;
     node *withop;
@@ -2587,7 +2637,7 @@ SSARCNwith2 (node *arg_node, node *arg_info)
  *
  ***************************************************************************/
 node *
-SSARCNwithid (node *arg_node, node *arg_info)
+SSARCNwithid (node *arg_node, info *arg_info)
 {
     ids *iv_ids;
     DBUG_ENTER ("SSARCNwithid");
@@ -2619,7 +2669,7 @@ SSARCNwithid (node *arg_node, node *arg_info)
  *
  ***************************************************************************/
 node *
-SSARCprf (node *arg_node, node *arg_info)
+SSARCprf (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSARCprf");
 
@@ -2820,7 +2870,7 @@ SSARCprf (node *arg_node, node *arg_info)
  *
  ***************************************************************************/
 node *
-SSARCreturn (node *arg_node, node *arg_info)
+SSARCreturn (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSARCreturn");
 
@@ -2845,7 +2895,7 @@ SSARCreturn (node *arg_node, node *arg_info)
  *
  ***************************************************************************/
 node *
-SSARCvardec (node *arg_node, node *arg_info)
+SSARCvardec (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSARCvardec");
 
@@ -2873,7 +2923,7 @@ SSARCvardec (node *arg_node, node *arg_info)
 node *
 SSARefCount (node *syntax_tree)
 {
-    node *info;
+    info *info;
 
     DBUG_ENTER ("SSARefCount");
 
@@ -2891,7 +2941,7 @@ SSARefCount (node *syntax_tree)
     INFO_SSARC_MODE (info) = rc_default;
     syntax_tree = Trav (syntax_tree, info);
 
-    info = FreeTree (info);
+    info = FreeInfo (info);
 
     DBUG_RETURN (syntax_tree);
 }

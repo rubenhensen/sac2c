@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.47  2004/07/16 14:41:34  sah
+ * switch to new INFO structure
+ * PHASE I
+ *
  * Revision 3.46  2004/07/14 23:23:37  sah
  * removed all old ssa optimizations and the use_ssaform flag
  *
@@ -235,7 +239,7 @@
 #ifndef _sac_traverse_h
 #define _sac_traverse_h
 
-typedef node *(*funptr) (node *, node *);
+typedef node *(*funptr) (node *, info *);
 
 typedef struct FUNREC {
     funptr travtab[N_ok + 1];
@@ -243,10 +247,10 @@ typedef struct FUNREC {
     funptr postfun;
 } funtab;
 
-extern node *Trav (node *arg_node, node *arg_info);
-extern node *TravSons (node *arg_node, node *arg_info);
-extern node *TravNone (node *arg_node, node *arg_info);
-extern node *TravError (node *arg_node, node *arg_info);
+extern node *Trav (node *arg_node, info *arg_info);
+extern node *TravSons (node *arg_node, info *arg_info);
+extern node *TravNone (node *arg_node, info *arg_info);
+extern node *TravError (node *arg_node, info *arg_info);
 
 extern funtab *act_tab;
 

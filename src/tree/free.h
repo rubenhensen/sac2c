@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.20  2004/07/16 14:41:34  sah
+ * switch to new INFO structure
+ * PHASE I
+ *
  * Revision 3.19  2004/03/05 19:14:27  mwe
  * support for new node N_funcond added
  *
@@ -146,7 +150,9 @@ extern node *FreePrf (node *arg_node, node *arg_info);
 extern node *FreeEmpty (node *arg_node, node *arg_info);
 extern node *FreeIcm (node *arg_node, node *arg_info);
 extern node *FreePragma (node *arg_node, node *arg_info);
+#ifndef NEW_INFO
 extern node *FreeInfo (node *arg_node, node *arg_info);
+#endif
 extern node *FreeSpmd (node *arg_node, node *arg_info);
 extern node *FreeSync (node *arg_node, node *arg_info);
 extern node *FreeMT (node *arg_node, node *arg_info);
