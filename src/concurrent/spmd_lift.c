@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2004/11/25 15:13:14  khf
+ * SacDevCamp04
+ *
  * Revision 3.11  2004/11/24 19:29:17  skt
  * Compiler Switch during SACDevCampDK 2k4
  *
@@ -356,7 +359,7 @@ SPMDLspmd (node *arg_node, info *arg_info)
     /*
      * update DFMs for the new fundef
      */
-    new_fundef = INFDFMSdoInferDFMs (new_fundef, HIDE_LOCALS_NEVER);
+    new_fundef = INFDFMSdoInferDfms (new_fundef, HIDE_LOCALS_NEVER);
 
     /*
      * insert SPMD-function into fundef-chain of modul
