@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.213  2004/08/11 09:36:56  skt
+ * DATAFLOWNODE marcos added
+ *
  * Revision 3.212  2004/08/09 03:47:34  skt
  * again some adaptions for the dataflowgraph
  *
@@ -4582,7 +4585,9 @@ extern node *MakeModspec (char *name, node *exports);
  ***  temporary attributes:
  ***
  ***    int        REFLEFT      (#refcounts left, initialized with REFCOUNT)
- ***                            (CreateDataflowgraph -> AssignmentsRearrange!!)
+ ***                             (AssignmentsRearrange!!)
+ ***    bool       USED         (flag if node is used for rearranging yet)
+ ***                             (AssignmentsRearrange!!)
  ***/
 
 extern node *MakeDataflownode (node *graph, node *assignment, char *name);
@@ -4596,6 +4601,7 @@ extern node *MakeDataflownode (node *graph, node *assignment, char *name);
 #define DATAFLOWNODE_DFGTHEN(n) (n->node[2])
 #define DATAFLOWNODE_DFGELSE(n) (n->node[3])
 #define DATAFLOWNODE_REFLEFT(n) (n->counter)
+#define DATAFLOWNODE_USED(n) ((bool)(n->varno))
 
 /*--------------------------------------------------------------------------*/
 
