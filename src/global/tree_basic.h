@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.187  1998/06/07 18:38:12  dkr
+ * added INFO_REUSE_... macros
+ *
  * Revision 1.186  1998/06/06 18:30:35  dkr
  * added SYNC_WITH_PTRS
  *
@@ -2480,6 +2483,12 @@ extern node *MakeInfo ();
 #define INFO_COMP_ICMTAB(n) ((node **)(n->node[1]))
 #define INFO_COMP_TYPETAB(n) ((types **)(n->info.types))
 
+/* reuse */
+#define INFO_REUSE_FUNDEF(n) (n->node[0])
+#define INFO_REUSE_WL_IDS(n) (n->info.ids)
+#define INFO_REUSE_IDX(n) ((ids *)(n->node[1]))
+#define INFO_REUSE_MASK(n) ((DFMmask_t)n->dfmask[0])
+
 /* optimize */
 #define INFO_MASK(n, x) (n->mask[x])
 
@@ -2855,6 +2864,13 @@ extern node *MakeNCode (node *block, node *expr);
  ***
  ***    int        DIMS
  ***
+ ***  permanent attributes:
+ ***
+ ***    DFMmask_t  IN
+ ***    DFMmask_t  INOUT
+ ***    DFMmask_t  OUT
+ ***    DFMmask_t  LOCAL
+ ***
  ***  temporary attributes:
  ***
  ***    int*       IDX_MIN            (wltransform -> compile )
@@ -2862,10 +2878,7 @@ extern node *MakeNCode (node *block, node *expr);
  ***
  ***    ids*       DEC_RC_IDS         (wltransform -> compile )
  ***
- ***    DFMmask_t  IN                 (wltransform -> spmd -> )
- ***    DFMmask_t  INOUT              (wltransform -> spmd -> )
- ***    DFMmask_t  OUT                (wltransform -> spmd -> )
- ***    DFMmask_t  LOCAL              (wltransform -> spmd -> )
+ ***    DFMmask_t  REUSE              (compile ! )
  ***
  ***/
 
@@ -2877,15 +2890,17 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int 
 #define NWITH2_WITHOP(n) (n->node[3])
 #define NWITH2_DIMS(n) (n->flag)
 
+#define NWITH2_IN(n) ((DFMmask_t)n->dfmask[0])
+#define NWITH2_INOUT(n) ((DFMmask_t)n->dfmask[1])
+#define NWITH2_OUT(n) ((DFMmask_t)n->dfmask[2])
+#define NWITH2_LOCAL(n) ((DFMmask_t)n->dfmask[3])
+
 #define NWITH2_IDX_MIN(n) (*((int **)(&(n->mask[2]))))
 #define NWITH2_IDX_MAX(n) (*((int **)(&(n->mask[3]))))
 
 #define NWITH2_DEC_RC_IDS(n) ((ids *)(n->node[5]))
 
-#define NWITH2_IN(n) ((DFMmask_t)n->dfmask[0])
-#define NWITH2_INOUT(n) ((DFMmask_t)n->dfmask[1])
-#define NWITH2_OUT(n) ((DFMmask_t)n->dfmask[2])
-#define NWITH2_LOCAL(n) ((DFMmask_t)n->dfmask[3])
+#define NWITH2_REUSE(n) ((DFMmask_t)n->dfmask[4])
 
 /*--------------------------------------------------------------------------*/
 
