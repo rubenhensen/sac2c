@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.8  1994/12/11 17:30:35  sbs
+# Revision 1.9  1994/12/16 14:33:25  sbs
+# import.o inserted
+#
+# Revision 1.8  1994/12/11  17:30:35  sbs
 # modules inserted
 #
 # Revision 1.7  1994/12/09  10:42:25  sbs
@@ -35,7 +38,7 @@ PRINT= src/print/print.o src/print/convert.o
 FLATTEN= src/flatten/flatten.o
 TYPECHECK= src/typecheck/typecheck.o 
 OPTIMIZE= src/optimize/optimize.o
-MODULES= src/modules/filemgr.o
+MODULES= src/modules/filemgr.o src/modules/import.o
 OBJ=$(GLOBAL) $(SCANP) $(PRINT) $(FLATTEN) $(TYPECHECK) $(OPTIMIZE) $(MODULES)
 
 all: dummy sac2c
