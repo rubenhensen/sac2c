@@ -1,20 +1,18 @@
 /*
  *
  * $Log$
+ * Revision 3.15  2002/04/09 15:54:53  dkr
+ * some comments added.
+ * PrintArgtab() added.
+ *
  * Revision 3.14  2002/04/08 19:59:01  dkr
  * PrintInfo() added
- *
- * Revision 3.13  2001/03/27 22:14:21  dkr
- * no changes done
  *
  * Revision 3.12  2001/03/27 21:39:23  dkr
  * macro PRINT_VECT moved to internal_lib.h
  *
  * Revision 3.11  2001/03/22 19:26:25  dkr
  * include of tree.h eliminated
- *
- * Revision 3.10  2001/03/15 17:02:49  dkr
- * no changes done
  *
  * Revision 3.8  2001/02/12 15:57:34  nmw
  * Print functions for N_cseinfo, N_ssacnt and N_avis added
@@ -35,40 +33,6 @@
  *
  * Revision 3.3  2000/12/12 12:16:54  dkr
  * nodes N_pre, N_post, N_inc, N_dec removed
- *
- * Revision 3.2  2000/12/06 11:43:11  dkr
- * PrintTravPre, PrintTravPost added
- *
- * Revision 3.1  2000/11/20 17:59:47  sacbase
- * new release made
- *
- * Revision 2.9  2000/06/23 15:34:13  nmw
- * PrintCWrapper added
- *
- * Revision 2.8  2000/03/22 17:35:42  jhs
- * Added PrintMT(sync|alloc|signal).
- *
- * Revision 2.7  2000/03/21 13:34:30  dkr
- * macro PRINT_VECT added
- *
- * Revision 2.6  2000/03/15 14:54:16  dkr
- * PrintNodeTree renamed to PrintAST
- * PrintNodeAST added
- *
- * Revision 2.5  2000/02/24 15:56:12  dkr
- * Print functions for old with-loop removed
- *
- * Revision 2.4  2000/02/11 18:31:00  dkr
- * PrintNode() added
- *
- * Revision 2.3  2000/02/03 15:20:31  jhs
- * Added PrintMT and PrintSt.
- *
- * Revision 2.2  1999/11/11 18:26:32  dkr
- * PrintNgenerator is now called by Trav only :))
- *
- * Revision 2.1  1999/02/23 12:40:27  sacbase
- * new release made
  *
  * [ eliminated ]
  *
@@ -97,6 +61,29 @@
 
 extern char *prf_string[];
 
+/*
+ * Functions for printing (parts of) the AST
+ */
+extern node *Print (node *syntax_tree);
+extern node *PrintNode (node *node);
+
+/* debug output */
+extern void PrintAST (node *node);
+extern void PrintNodeAST (node *node);
+
+/*
+ * Functions for printing non-node parts of the AST
+ */
+extern void PrintArgtab (argtab_t *argtab, bool is_def);
+
+/*
+ * Other functions for external use
+ */
+extern void PrintFunctionHeader (node *arg_node, node *arg_info);
+
+/*
+ * Functions for internal use during AST traversal only!
+ */
 extern node *PrintModul (node *arg_node, node *arg_info);
 extern node *PrintImplist (node *arg_node, node *arg_info);
 extern node *PrintTypedef (node *arg_node, node *arg_info);
@@ -139,8 +126,9 @@ extern node *PrintSSAcnt (node *arg_node, node *arg_info);
 extern node *PrintCSEinfo (node *arg_node, node *arg_info);
 extern node *PrintAvis (node *arg_node, node *arg_info);
 extern node *PrintInfo (node *arg_node, node *arg_info);
+extern node *PrintCWrapper (node *arg_node, node *arg_info);
 
-/* new with-loop */
+/* with-loop (frontend) */
 extern node *PrintNwith (node *arg_node, node *arg_info);
 extern node *PrintNwithid (node *arg_node, node *arg_info);
 extern node *PrintNcode (node *arg_node, node *arg_info);
@@ -148,22 +136,14 @@ extern node *PrintNpart (node *arg_node, node *arg_info);
 extern node *PrintNgenerator (node *arg_node, node *arg_info);
 extern node *PrintNwithop (node *arg_node, node *arg_info);
 
+/* with-loop (backend) */
 extern node *PrintNwith2 (node *arg_node, node *arg_info);
 extern node *PrintWLsegx (node *arg_node, node *arg_info);
 extern node *PrintWLxblock (node *arg_node, node *arg_info);
 extern node *PrintWLstridex (node *arg_node, node *arg_info);
 extern node *PrintWLgridx (node *arg_node, node *arg_info);
 
-extern node *PrintCWrapper (node *arg_node, node *arg_info);
-
-extern void PrintFunctionHeader (node *arg_node, node *arg_info);
-
-extern node *Print (node *syntax_tree);
-extern node *PrintNode (node *node);
-
-extern void PrintAST (node *node);     /* debug output */
-extern void PrintNodeAST (node *node); /* debug output */
-
+/* pre- and post-processing during traversal */
 extern node *PrintTravPre (node *arg_node, node *arg_info);
 extern node *PrintTravPost (node *arg_node, node *arg_info);
 
