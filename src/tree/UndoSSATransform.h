@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.2  2001/03/12 13:41:53  nmw
+ * UndoSSA creates unique result variables in multigenerator fold-withloops.
+ *
  * Revision 1.1  2001/02/22 13:14:06  nmw
  * Initial revision
  *
@@ -29,4 +32,6 @@ extern node *USSAlet (node *arg_node, node *arg_info);
 extern node *USSAfundef (node *arg_node, node *arg_info);
 extern node *USSAblock (node *arg_node, node *arg_info);
 extern node *USSANwithid (node *arg_node, node *arg_info);
+extern node *USSANcode (node *arg_node, node *arg_info);
+extern node *USSANwith (node *arg_node, node *arg_info);
 #endif /* SAC_UNDOSSATRANSFORM_H */

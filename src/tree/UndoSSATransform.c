@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.2  2001/03/12 13:41:53  nmw
+ * UndoSSA creates unique result variables in multigenerator fold-withloops.
+ *
  * Revision 1.1  2001/02/22 13:14:06  nmw
  * Initial revision
  *
@@ -15,15 +18,18 @@
  *
  * description:
  *
- *   This module renames all artificial identifier to their original
- *   baseid to avoid problems with multiple global object names in the
- *   compiler backend.
+ * 1. This module renames all artificial identifier to their original
+ *    baseid to avoid problems with multiple global object names in the
+ *    compiler backend.
  *
- *   All idetifiers marked as:
- *     ST_aritificial
- *     ST_was_reference
- *     ST_unique
- *  are re-renamed.
+ *    All idetifiers marked as:
+ *      ST_aritificial
+ *      ST_was_reference
+ *      ST_unique
+ *    are re-renamed.
+ *
+ * 2. All result-variables of a multigenerator fold-withloop are made identical
+ *    by inserting an additional variable and corresponding assignments.
  *
  *****************************************************************************/
 
@@ -32,6 +38,7 @@
 #include "traverse.h"
 #include "free.h"
 #include "UndoSSATransform.h"
+#include "DupTree.h"
 
 static ids *TravIDS (ids *arg_ids, node *arg_info);
 static ids *USSAids (ids *arg_ids, node *arg_info);
@@ -98,7 +105,7 @@ USSAvardec (node *arg_node, node *arg_info)
             tmp = ARG_NEXT (tmp);
         }
 
-        tmp = INFO_USSA_VARDECS (arg_info);
+        tmp = BLOCK_VARDEC (INFO_USSA_TOPBLOCK (arg_info));
         while ((tmp != NULL) && (VARDEC_UNDOAVIS (arg_node) == NULL)) {
             if (strcmp (SSACNT_BASEID (AVIS_SSACOUNT (VARDEC_AVIS (arg_node))),
                         VARDEC_NAME (tmp))
@@ -197,6 +204,149 @@ USSANwithid (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
+ *   node *USSANcode(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   traverses code blocks of with loop and inserts unique result name for
+ *   multigenerator fold-withloops.
+ *
+ ******************************************************************************/
+node *
+USSANcode (node *arg_node, node *arg_info)
+{
+    node *src_id;
+
+    DBUG_ENTER ("USSANcode");
+
+    if (NCODE_CBLOCK (arg_node) != NULL) {
+        NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
+    }
+
+    if (INFO_USSA_FOLDTARGET (arg_info) != NULL) {
+        /* create source id node */
+        src_id = MakeId (VARDEC_OR_ARG_NAME (
+                           AVIS_VARDECORARG (ID_AVIS (NCODE_CEXPR (arg_node)))),
+                         NULL, ST_regular);
+        ID_VARDEC (src_id) = AVIS_VARDECORARG (ID_AVIS (NCODE_CEXPR (arg_node)));
+        ID_AVIS (src_id) = ID_AVIS (NCODE_CEXPR (arg_node));
+
+        /*
+         * append copy assignment: <fold-target> = cexprvar;
+         * to block
+         */
+        BLOCK_INSTR (NCODE_CBLOCK (arg_node))
+          = AppendAssign (BLOCK_INSTR (NCODE_CBLOCK (arg_node)),
+                          MakeAssignLet (VARDEC_NAME (AVIS_VARDECORARG (
+                                           INFO_USSA_FOLDTARGET (arg_info))),
+                                         AVIS_VARDECORARG (
+                                           INFO_USSA_FOLDTARGET (arg_info)),
+                                         src_id));
+
+        /* set new fold target as cexpr */
+        DBUG_PRINT ("USSA",
+                    ("set new fold target %s",
+                     VARDEC_NAME (AVIS_VARDECORARG (INFO_USSA_FOLDTARGET (arg_info)))));
+
+        ID_VARDEC (NCODE_CEXPR (arg_node))
+          = AVIS_VARDECORARG (INFO_USSA_FOLDTARGET (arg_info));
+        ID_AVIS (NCODE_CEXPR (arg_node)) = INFO_USSA_FOLDTARGET (arg_info);
+#ifndef NO_ID_NAME
+        /* for compatiblity only
+         * there is no real need for name string in ids structure because
+         * you can get it from vardec without redundancy.
+         */
+        FREE (ID_NAME (NCODE_CEXPR (arg_node)));
+        ID_NAME (NCODE_CEXPR (arg_node))
+          = StringCopy (VARDEC_NAME (AVIS_VARDECORARG (INFO_USSA_FOLDTARGET (arg_info))));
+#endif
+    } else {
+        /* do standard traversal */
+        if (NCODE_CEXPR (arg_node) != NULL) {
+            NCODE_CEXPR (arg_node) = Trav (NCODE_CEXPR (arg_node), arg_info);
+        }
+    }
+
+    if (NCODE_NEXT (arg_node) != NULL) {
+        NCODE_NEXT (arg_node) = Trav (NCODE_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *USSANwith(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   if this is a fold-withloop. we have to create a new unique result valiable
+ *   for all results of a multigenerator withloop. The renaming and inserting
+ *   of the necessary copy assignment is done by USSANcode.
+ *
+ ******************************************************************************/
+node *
+USSANwith (node *arg_node, node *arg_info)
+{
+    node *new_arg_info;
+
+    DBUG_ENTER ("USSANwith");
+    /* stack arg_info node, copy pointer to vardec/args lists */
+    new_arg_info = MakeInfo ();
+    INFO_USSA_TOPBLOCK (new_arg_info) = INFO_USSA_TOPBLOCK (arg_info);
+    INFO_USSA_ARGS (new_arg_info) = INFO_USSA_ARGS (arg_info);
+
+    /*
+     * first check for fold-withloop with at least two code segments
+     * (first code has a next attribute set) that needs a new
+     * unique target variable
+     */
+    if ((NWITH_IS_FOLD (arg_node)) && (NWITH_CODE (arg_node) != NULL)
+        && (NCODE_NEXT (NWITH_CODE (arg_node)) != NULL)) {
+        DBUG_ASSERT ((NCODE_CEXPR (NWITH_CODE (arg_node)) != NULL),
+                     "fold-withloop without target expression");
+        DBUG_ASSERT ((NODE_TYPE (NCODE_CEXPR (NWITH_CODE (arg_node))) == N_id),
+                     "fold-withloop without target variable");
+
+        /* make new unique vardec as fold target and append it to vardec chain */
+        BLOCK_VARDEC (INFO_USSA_TOPBLOCK (new_arg_info))
+          = MakeVardec (TmpVar (),
+                        DupTypes (VARDEC_OR_ARG_TYPE (
+                          ID_VARDEC (NCODE_CEXPR (NWITH_CODE (arg_node))))),
+                        BLOCK_VARDEC (INFO_USSA_TOPBLOCK (arg_info)));
+
+        DBUG_PRINT ("USSA", ("create unique fold target %s",
+                             VARDEC_NAME (BLOCK_VARDEC (INFO_USSA_TOPBLOCK (arg_info)))));
+
+        /* set as new fold-target (will be inserted by USSANcode */
+        INFO_USSA_FOLDTARGET (new_arg_info)
+          = VARDEC_AVIS (BLOCK_VARDEC (INFO_USSA_TOPBLOCK (arg_info)));
+    } else {
+        /* no new target needed */
+        INFO_USSA_FOLDTARGET (new_arg_info) = NULL;
+    }
+
+    /* now traverse all sons */
+    if (NWITH_PART (arg_node) != NULL) {
+        NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), new_arg_info);
+    }
+
+    if (NWITH_WITHOP (arg_node) != NULL) {
+        NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), new_arg_info);
+    }
+
+    if (NWITH_CODE (arg_node) != NULL) {
+        NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), new_arg_info);
+    }
+
+    /* free new_arg_info node */
+    FreeNode (new_arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
  *    node* USSAfundef(node *arg_node, node *arg_info)
  *
  * description:
@@ -217,6 +367,10 @@ USSAfundef (node *arg_node, node *arg_info)
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         /* there is a block */
+
+        /* save begin of vardec chain for later access */
+        INFO_USSA_TOPBLOCK (arg_info) = FUNDEF_BODY (arg_node);
+
         FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
     }
 
@@ -240,9 +394,6 @@ node *
 USSAblock (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("USSAblock");
-
-    /* save begin of vardec chain for later access */
-    INFO_USSA_VARDECS (arg_info) = BLOCK_VARDEC (arg_node);
 
     if (BLOCK_VARDEC (arg_node) != NULL) {
         /*
