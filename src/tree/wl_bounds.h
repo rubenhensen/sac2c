@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2004/11/25 15:25:56  skt
+ * made the function names consistent
+ *
  * Revision 1.10  2004/11/22 21:29:55  ktr
  * Big Switch Header! SacDevCamp 04
  *
@@ -65,40 +68,34 @@
 #define IDX_SHAPE (-1) /* equals the shape */
 #define IDX_OTHER (-2) /* other */
 
-#define IDX_IS_NUM(idx) ((idx) >= 0)
+extern bool WLBnameOrValCheckConsistency (char *name, int val);
 
-#define GET_SHAPE_IDX(shape, dim)                                                        \
-    (((shape) != NULL) ? SHPSEG_SHAPE ((shape), (dim)) : IDX_SHAPE)
+extern bool WLBnameOrValIsInt (char *name, int val);
+extern bool WLBnodeOrIntIsInt (nodetype nt, void *node_or_int);
 
-extern bool WLBnameOrVal_CheckConsistency (char *name, int val);
+extern void WLBnodeOrIntGetNameOrVal (char **ret_name, int *ret_val, nodetype nt,
+                                      void *node_or_int);
 
-extern bool WLBnameOrVal_IsInt (char *name, int val);
-extern bool WLBnodeOrInt_IsInt (nodetype nt, void *node_or_int);
+extern void WLBnameOrValSetNodeOrInt (nodetype ret_nt, void *ret_node_or_int, char *name,
+                                      int val);
+extern void WLBnodeOrIntSetNodeOrInt (nodetype ret_nt, void *ret_node_or_int, nodetype nt,
+                                      void *node_or_int);
 
-extern void WLBnodeOrInt_GetNameOrVal (char **ret_name, int *ret_val, nodetype nt,
-                                       void *node_or_int);
+extern node *WLBnameOrValMakeNode (char *name, int val);
+extern node *WLBnodeOrIntMakeNode (nodetype nt, void *node_or_int);
 
-extern void WLBnameOrVal_SetNodeOrInt (nodetype ret_nt, void *ret_node_or_int, char *name,
-                                       int val);
-extern void WLBnodeOrInt_SetNodeOrInt (nodetype ret_nt, void *ret_node_or_int,
-                                       nodetype nt, void *node_or_int);
+extern node *WLBnodeOrIntMakeIndex (nodetype nt, void *node_or_int, int dim, ids *wl_ids);
 
-extern node *WLBnameOrVal_MakeNode (char *name, int val);
-extern node *WLBnodeOrInt_MakeNode (nodetype nt, void *node_or_int);
+extern bool WLBnameOrValEq (char *name1, int val1, char *name2, int val2, int shape);
+extern bool WLBnodeOrIntEq (nodetype nt1, void *node_or_int1, nodetype nt2,
+                            void *node_or_int2, int shape);
+extern bool WLBnodeOrIntIntEq (nodetype nt1, void *node_or_int1, int val2, int shape);
+extern bool WLBnodeOrIntStrEq (nodetype nt1, void *node_or_int1, char *name2, int shape);
 
-extern node *WLBnodeOrInt_MakeIndex (nodetype nt, void *node_or_int, int dim,
-                                     ids *wl_ids);
+extern bool WLBnameOrValLe (char *name1, int val1, char *name2, int val2, int shape);
+extern bool WLBnodeOrIntLe (nodetype nt1, void *node_or_int1, nodetype nt2,
+                            void *node_or_int2, int shape);
 
-extern bool WLBnameOrVal_Eq (char *name1, int val1, char *name2, int val2, int shape);
-extern bool WLBnodeOrInt_Eq (nodetype nt1, void *node_or_int1, nodetype nt2,
-                             void *node_or_int2, int shape);
-extern bool WLBnodeOrInt_IntEq (nodetype nt1, void *node_or_int1, int val2, int shape);
-extern bool WLBnodeOrInt_StrEq (nodetype nt1, void *node_or_int1, char *name2, int shape);
-
-extern bool WLBnameOrVal_Le (char *name1, int val1, char *name2, int val2, int shape);
-extern bool WLBnodeOrInt_Le (nodetype nt1, void *node_or_int1, nodetype nt2,
-                             void *node_or_int2, int shape);
-
-extern void WLBnodeOrInt_Print (FILE *handle, nodetype nt, void *node_or_int, int dim);
+extern void WLBnodeOrIntPrint (FILE *handle, nodetype nt, void *node_or_int, int dim);
 
 #endif /* _SAC_WL_BOUNDS_H_ */
