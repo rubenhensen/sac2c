@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.89  1997/04/25 09:25:44  sbs
+ * Revision 1.90  1997/05/02 09:30:51  cg
+ * CompVardec: Variable declarations are now produced for arrays with unknown
+ * shape and dimension as well as arrays with known dimension but unknown shape.
+ *
+ * Revision 1.89  1997/04/25  09:25:44  sbs
  * dummy-decls in CompConvert and CompPrf commented out in case
  * of NOFREE.
  *
@@ -2749,12 +2753,16 @@ CompVardec (node *arg_node, node *arg_info)
     node *assign, *id_node, *n_node, *n_dim, *id_type, *icm_arg;
     int i;
 
+    types *full_type;
+
     DBUG_ENTER ("CompVardec");
 
-    if ((1 == IsArray (arg_node->TYPES)) && (arg_node->DIM >= 0)) {
-        types *full_type;
+    GET_BASIC_TYPE (full_type, arg_node->TYPES, 0);
 
-        GET_BASIC_TYPE (full_type, arg_node->TYPES, 0);
+    if (TYPES_DIM (full_type) > SCALAR) {
+        /*
+         * full_type is an array with known shape.
+         */
 
         MAKENODE_ID (id_type, type_string[TYPES_BASETYPE (full_type)]);
         /* declared type */
@@ -2778,6 +2786,78 @@ CompVardec (node *arg_node, node *arg_info)
             MAKENODE_NUM (n_node, full_type->shpseg->shp[i]);
             MAKE_NEXT_ICM_ARG (icm_arg, n_node);
         }
+
+        /* now free some nodes */
+        if (T_user == arg_node->SIMPLETYPE) {
+            FREE_TYPE (full_type);
+        }
+
+        FREE_VARDEC (arg_node);
+        arg_node = assign; /* set arg_node, because this node will be returned */
+
+        if (NULL != arg_node->node[1]) {
+            arg_node->node[1] = Trav (arg_node->node[1], NULL);
+            if (NULL == arg_node->node[1])
+                arg_node->nnode = 1;
+            else
+                arg_node->nnode = 2;
+        }
+    } else if (TYPES_DIM (full_type) == UNKNOWN_SHAPE) {
+        /*
+         *  full_type is an array with unknown shape and dimension.
+         */
+
+        MAKENODE_ID (id_type, type_string[TYPES_BASETYPE (full_type)]);
+        /* declared type */
+        MAKENODE_ID (id_node, arg_node->ID); /* name of variable */
+
+        /* now create N_icm */
+        MAKE_ICM (assign);
+        MAKE_ICM_NAME (assign->node[0], "ND_DECL_ARRAY");
+
+        if (NULL != arg_node->node[0])
+            assign->node[1] = arg_node->node[0];
+
+        MAKE_ICM_ARG (assign->node[0]->node[0], id_type);
+        icm_arg = assign->node[0]->node[0];
+        MAKE_NEXT_ICM_ARG (icm_arg, id_node);
+
+        /* now free some nodes */
+        if (T_user == arg_node->SIMPLETYPE) {
+            FREE_TYPE (full_type);
+        }
+
+        FREE_VARDEC (arg_node);
+        arg_node = assign; /* set arg_node, because this node will be returned */
+
+        if (NULL != arg_node->node[1]) {
+            arg_node->node[1] = Trav (arg_node->node[1], NULL);
+            if (NULL == arg_node->node[1])
+                arg_node->nnode = 1;
+            else
+                arg_node->nnode = 2;
+        }
+    } else if (TYPES_DIM (full_type) < KNOWN_DIM_OFFSET) {
+        /*
+         *  full_type is an array with unknown shape and known dimension.
+         */
+
+        MAKENODE_ID (id_type, type_string[TYPES_BASETYPE (full_type)]);
+        /* declared type */
+        MAKENODE_ID (id_node, arg_node->ID); /* name of variable */
+        MAKENODE_NUM (n_dim, KNOWN_DIM_OFFSET - full_type->dim);
+
+        /* now create N_icm */
+        MAKE_ICM (assign);
+        MAKE_ICM_NAME (assign->node[0], "ND_KD_DECL_ARRAY");
+
+        if (NULL != arg_node->node[0])
+            assign->node[1] = arg_node->node[0];
+
+        MAKE_ICM_ARG (assign->node[0]->node[0], id_type);
+        icm_arg = assign->node[0]->node[0];
+        MAKE_NEXT_ICM_ARG (icm_arg, id_node);
+        MAKE_NEXT_ICM_ARG (icm_arg, n_dim);
 
         /* now free some nodes */
         if (T_user == arg_node->SIMPLETYPE) {
