@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.11  1995/12/29 10:28:16  cg
+ * Revision 1.12  1996/01/02 15:52:26  cg
+ * macro NIF extended
+ *
+ * Revision 1.11  1995/12/29  10:28:16  cg
  * added entries tdef and id_cmod in struct types
  *
  * Revision 1.10  1995/12/20  08:17:37  cg
@@ -182,7 +185,7 @@ typedef struct FUN_NAME {
  */
 
 #define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, aa, ab, ac,   \
-            ad, ae, af, ag, ah, ai, aj, ak, al, am)                                      \
+            ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ap, aq, ar)                      \
     n
 
 typedef enum {
