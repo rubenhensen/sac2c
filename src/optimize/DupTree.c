@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.42  1998/03/24 10:17:54  srs
+ * changed DupNPart
+ *
  * Revision 1.41  1998/03/22 15:47:24  dkr
  * N_WLblock: BLOCKING -> STEP
  *
@@ -694,12 +697,11 @@ DupNpart (node *arg_node, node *arg_info)
     node *new_node;
 
     DBUG_ENTER ("DupNpart");
+    DBUG_ASSERT (NPART_CODE (arg_node), ("N_Npart node has no valid NPART_CODE"));
 
-    new_node
-      = MakeNPart (DUPTRAV (NPART_WITHID (arg_node)), DUPTRAV (NPART_GEN (arg_node)));
+    new_node = MakeNPart (DUPTRAV (NPART_WITHID (arg_node)),
+                          DUPTRAV (NPART_GEN (arg_node)), NPART_CODE (arg_node));
     NPART_NEXT (new_node) = DUPCONT (NPART_NEXT (arg_node));
-    NPART_CODE (new_node) = NPART_CODE (arg_node);
-    NCODE_USED (NPART_CODE (new_node))++;
 
     DBUG_RETURN (new_node);
 }
