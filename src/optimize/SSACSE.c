@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.37  2004/05/04 14:27:30  khf
+ * NCODE_CEXPR in SSACSENcode() replaced by NCODE_CEXPRS
+ *
  * Revision 1.36  2004/03/06 20:06:40  mwe
  * CVPfuncond added
  *
@@ -1470,7 +1473,7 @@ SSACSENwith (node *arg_node, node *arg_info)
  *   node *SSACSENcode(node *arg_node, node *arg_info)
  *
  * description:
- *   traverse codeblock and expression for each Ncode node
+ *   traverse codeblock and expressions for each Ncode node
  *
  *
  *****************************************************************************/
@@ -1485,8 +1488,8 @@ SSACSENcode (node *arg_node, node *arg_info)
     }
 
     /*traverse expression to do variable substitution */
-    if (NCODE_CEXPR (arg_node) != NULL) {
-        NCODE_CEXPR (arg_node) = Trav (NCODE_CEXPR (arg_node), arg_info);
+    if (NCODE_CEXPRS (arg_node) != NULL) {
+        NCODE_CEXPRS (arg_node) = Trav (NCODE_CEXPRS (arg_node), arg_info);
     }
 
     /* traverse to next node */
