@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.57  1998/03/06 13:20:40  srs
+ * added wli_tab (gather information for WLF)
+ *
  * Revision 1.56  1998/02/06 16:51:08  srs
  * included WithloopFolding.h
  *
@@ -310,19 +313,20 @@ funptr imp_tab[] = {
 funptr dcr_tab[] = {
 #include "node_info.mac"
 };
-
 #undef NIF
 
 /*
- * 7) unused2 (was wr_tab)
+ * 7) wlf_tab
  */
 
-/* #define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, \ */
-/*   q, aa, ab, ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, nn) y */
-/* funptr wr_tab[]={ */
-/* #include "node_info.mac" */
-/*                   }; */
-/* #undef NIF */
+#define NIF(n, s, i, f, p, t, o, x, wlf, z, a, b, c, d, e, g, h, j, k, l, wli, q, aa,    \
+            ab, ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, nn)              \
+    wlf
+
+funptr wlf_tab[] = {
+#include "node_info.mac"
+};
+#undef NIF
 
 /*
  * 8) free_tab
@@ -479,14 +483,14 @@ funptr unswitch_tab[] = {
 #undef NIF
 
 /*
- * 19) wlf_tab
+ * 19) wli_tab
  */
 
-#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, wlf, q, aa, ab,  \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, nn)                  \
-    wlf
+#define NIF(n, s, i, f, p, t, o, x, wlf, z, a, b, c, d, e, g, h, j, k, l, wli, q, aa,    \
+            ab, ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, nn)              \
+    wli
 
-funptr wlf_tab[] = {
+funptr wli_tab[] = {
 #include "node_info.mac"
 };
 
