@@ -33,3 +33,4 @@ detectdependencies.c
 detectdependencies.h
 tagdependencies.c
 tagdependencies.h
+wls.c
