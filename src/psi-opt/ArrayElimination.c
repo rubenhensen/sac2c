@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.14  2000/10/23 18:39:47  dkr
+ * AEfundef:
+ * superfluous assignment to arg_node->refcnt removed
+ *
  * Revision 2.13  2000/10/20 15:37:07  dkr
  * macro GET_DIM and GET_LENGTH replaced by functions GetDim and
  * GetTypesLength
@@ -389,10 +393,6 @@ AEfundef (node *arg_node, node *arg_info)
         FUNDEF_VARDEC (arg_node)
           = AppendNodeChain (0, INFO_AE_TYPES (arg_info), FUNDEF_VARDEC (arg_node));
         INFO_AE_TYPES (arg_info) = NULL;
-
-        /* srs: I don't know what this is for. It is not used here in this file
-           and it's no initialisatzion for ref counting :((( */
-        arg_node->refcnt = 0;
     }
 
     DBUG_RETURN (arg_node);
