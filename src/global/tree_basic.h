@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.58  1999/11/24 14:43:45  bs
+ * INFO_TSI_WLCOMP(n) modified, INFO_TSI_BLOCKSHP renamed to INFO_TSI_TILESHP
+ *
  * Revision 2.57  1999/11/15 18:04:03  dkr
  * INFO_CF_VARNO and INFO_DCR_VARNO replaced by INFO_VARNO
  *
@@ -2675,14 +2678,14 @@ extern node *MakeInfo ();
 #define INFO_TSI_MINLINE(n) (n->flag)
 #define INFO_TSI_MAXLINE(n) (n->refcnt)
 #define INFO_TSI_FEATURE(n) (n->lineno)
-#define INFO_TSI_BLOCKSHP(n) ((shpseg *)(n->node[1]))
+#define INFO_TSI_WLCOMP(n) (n->int_data)
+#define INFO_TSI_TILESHP(n) ((shpseg *)(n->node[1]))
 #define INFO_TSI_INDEXVAR(n) (n->node[2])
 #define INFO_TSI_WLARRAY(n) (n->node[3])
 #define INFO_TSI_CACHEPARAM(n) ((int *)(n->node[4]))
 #define INFO_TSI_CACHESIZE(n) ((int *)(n->node[4]))[0]
 #define INFO_TSI_LINESIZE(n) ((int *)(n->node[4]))[1]
 #define INFO_TSI_DATATYPE(n) ((int *)(n->node[4]))[2]
-#define INFO_TSI_WLCOMP(n) (n->node[5])
 
 #define INFO_TSI_ARRAYSHP(n) VARDEC_SHPSEG (INFO_TSI_WLARRAY (n))
 #define INFO_TSI_INDEXDIM(n) VARDEC_SHAPE (INFO_TSI_INDEXVAR (n), 0)
