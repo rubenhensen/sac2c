@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.18  2002/10/20 13:23:59  ktr
+ * Added support for WLS N_assign indentation by adding field ASSIGN_INDENT(n) to N_assign
+ * node which is increased on every indentation performed by WLS.
+ *
  * Revision 1.17  2002/10/18 17:14:11  ktr
  * Fixed a bug which made probePart crash when a part's CEXPR is the index vector.
  *
@@ -655,6 +659,22 @@ IncreaseShpseg (shpseg *shppos, shpseg *shpmax, int dim)
     DBUG_RETURN (res);
 }
 
+/******************************************************************************
+ *
+ * function:
+ *   node *CreateExprsPart(node *exprs,
+ *                         int *partcount,
+ *                         node *withid,
+ *                         shpseg *shppos,
+ *                         shpseg *shpmax,
+ *                         int dim,
+ *                         node *fundef,
+ *                         simpletype btype)
+ *
+ * description:
+ *   CreateArrayWithloop helper function
+ *
+ ******************************************************************************/
 node *
 CreateExprsPart (node *exprs, int *partcount, node *withid, shpseg *shppos,
                  shpseg *shpmax, int dim, node *fundef, simpletype btype)
@@ -707,6 +727,19 @@ CreateExprsPart (node *exprs, int *partcount, node *withid, shpseg *shppos,
     DBUG_RETURN (res);
 }
 
+/******************************************************************************
+ *
+ * function:
+ *   node *CreateArrayWithloop(node *array, node *arg_info)
+ *
+ * description:
+ *   creates a withloop with the same result as the given array.
+ *
+ * parameters:
+ *   node *arg_node:   N_array
+ *   node *arg_info:   N_INFO
+ *
+ ******************************************************************************/
 node *
 CreateArrayWithloop (node *array, node *fundef)
 {
@@ -784,6 +817,20 @@ CreateArrayWithloop (node *array, node *fundef)
     DBUG_RETURN (res);
 }
 
+/******************************************************************************
+ *
+ * function:
+ *   node *Array2Withloop(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   creates an assignment for a withloop with the same result as the given
+ *   array.
+ *
+ * parameters:
+ *   node *arg_node:   N_node
+ *   node *arg_info:   N_INFO
+ *
+ ******************************************************************************/
 node *
 Array2Withloop (node *arg_node, node *arg_info)
 {
@@ -815,16 +862,35 @@ Array2Withloop (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/******************************************************************************
+ *
+ * function:
+ *   node *withloopifyPart(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   if a part's inner nonscalar expression is an array or reshape command
+ *   for an array, it is converted into a withloop.
+ *   Otherwise a copy withloop is inserted.
+ *
+ * parameters:
+ *   node *arg_node:   N_node
+ *   node *arg_info:   N_INFO
+ *
+ ******************************************************************************/
 node *
 withloopifyPart (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("withloopifyPart");
 
+    /* if the part's LETEXPR is a withloop itself, we don't need to
+       perform the withloopification */
     if (!((NODE_TYPE (NPART_LETEXPR (arg_node)) == N_Nwith)
           && (isAssignInsideBlock (NPART_SSAASSIGN (arg_node),
                                    BLOCK_INSTR (NPART_CBLOCK (arg_node))))
           && (compatWLTypes (INFO_WLS_WITHOP (arg_info),
                              NWITH_WITHOP (NPART_LETEXPR (arg_node)))))) {
+        /* if it is an array or a reshape command for an array, the array is converted
+           to a withloop. Otherwise a copy withloop is inserted. */
         if ((NODE_TYPE (NPART_LETEXPR (arg_node)) == N_array)
             || ((NODE_TYPE (NPART_LETEXPR (arg_node)) == N_prf)
                 && (PRF_PRF (NPART_LETEXPR (arg_node)) == F_reshape)
@@ -845,6 +911,20 @@ withloopifyPart (node *arg_node, node *arg_info)
  *
  ****************************************************************************/
 
+/******************************************************************************
+ *
+ * function:
+ *   node *Nid2Narray(node *nid, node *arg_info)
+ *
+ * description:
+ *   converts a generator's N_id node into a N_array node and makes correct
+ *   assignments in the outer codeblock.
+ *
+ * parameters:
+ *   node *arg_node:   N_id
+ *   node *arg_info:   N_INFO
+ *
+ ******************************************************************************/
 node *
 Nid2Narray (node *nid, node *arg_info)
 {
@@ -907,6 +987,19 @@ Nid2Narray (node *nid, node *arg_info)
     DBUG_RETURN (res);
 }
 
+/******************************************************************************
+ *
+ * function:
+ *   node *NormGenerator(node *gen, node *arg_info)
+ *
+ * description:
+ *   ensures all of a generator's children are N_array nodes
+ *
+ * parameters:
+ *   node *arg_node:   N_Ngenerator
+ *   node *arg_info:   N_INFO
+ *
+ ******************************************************************************/
 node *
 NormGenerator (node *gen, node *arg_info)
 {
@@ -939,8 +1032,8 @@ NormGenerator (node *gen, node *arg_info)
  *   node *distributePart(node *arg_node, node *arg_info)
  *
  * description:
- *   distributes an outer part over all n parts of an inner withloop,
- *   creating n outer parts with one inner part each.
+ *   distributes an outer part over all k parts of an inner withloop,
+ *   creating k outer parts with one inner part each.
  *
  * parameters:
  *   node *arg_node:   N_NPART
@@ -1198,8 +1291,9 @@ joinWithids (node *outerwithid, node *innerwithid, node *arg_info)
  *                   node *arg_info)
  *
  * description:
- *   Creates a new block which is nothing but the old INNER codeblock
- *   prepended with definitions of the two old WITHVECs
+ *   Creates a new block which is nothing which consists of the concatenation
+ *   of the old outer codeblock (if any) and the old inner codeblock prepended
+ *   with definitions of the two old WITHVECs
  *
  * parameters:
  *   node *outercode:   N_NCODE
@@ -1226,6 +1320,9 @@ joinCodes (node *outercode, node *innercode, node *outerwithid, node *innerwithi
     newcode = DupTree (innercode);
     tmp_node = BLOCK_INSTR (NCODE_CBLOCK (newcode));
 
+    /* In aggressive mode, we might prepend some outer code.
+       The indentation of code is marked in ASSIGN_INDENT()
+       of the outer code's N_assign nodes */
     BLOCK_INSTR (NCODE_CBLOCK (newcode))
       = DupTree (BLOCK_INSTR (NCODE_CBLOCK (outercode)));
 
@@ -1234,15 +1331,18 @@ joinCodes (node *outercode, node *innercode, node *outerwithid, node *innerwithi
     if (ASSIGN_NEXT (tmp_node2) == NULL)
         BLOCK_INSTR (NCODE_CBLOCK (newcode)) = tmp_node;
     else {
-        while (ASSIGN_NEXT (ASSIGN_NEXT (tmp_node2)) != NULL)
+        while (ASSIGN_NEXT (ASSIGN_NEXT (tmp_node2)) != NULL) {
+            ASSIGN_INDENT (tmp_node2)++;
             tmp_node2 = ASSIGN_NEXT (tmp_node2);
-        if (NODE_TYPE (tmp_node) != N_empty)
+        }
+        if (NODE_TYPE (tmp_node) != N_empty) {
+            ASSIGN_INDENT (tmp_node2)++;
             ASSIGN_NEXT (tmp_node2) = tmp_node;
-        else
+        } else
             ASSIGN_NEXT (tmp_node2) = NULL;
     }
 
-    /* prepended with definitions of the two old WITHVECs */
+    /* Here we prepend definitions of the two old WITHVECs */
     array = MakeArray (MakeExprsIdChain (DupAllIds (NWITHID_IDS (outerwithid))));
 
     ARRAY_TYPE (array)
@@ -1290,7 +1390,7 @@ joinCodes (node *outercode, node *innercode, node *outerwithid, node *innerwithi
  *
  * description:
  *   The heart of the WithloopScalarization.
- *   This function takes a part of MG-withloop that contains exactly one Withloop
+ *   This function takes a part of MG-withloop that contains exactly one withloop
  *   with one part and applies the above join-functions to create a single part
  *   that iterates over both old parts' dimensions.
  *
@@ -1466,7 +1566,6 @@ WLSNwith (node *arg_node, node *arg_info)
      *  PROBING
      *
      *  We have to find out, whether all parts can be scalarized
-     *  Here we can distinguish between conservative and aggressive behaviour
      *
      ***************************************************************************/
 
@@ -1498,6 +1597,10 @@ WLSNwith (node *arg_node, node *arg_info)
          *
          *  WITHLOOPIFICATION
          *
+         *  The applicabilty of the WLS is increased in the part by means of
+         *    - transforming arrays to withloops
+         *    - inserting copy withloops
+         *
          ***************************************************************************/
 
         WLS_PHASE (arg_info) = wls_withloopification;
@@ -1525,8 +1628,9 @@ WLSNwith (node *arg_node, node *arg_info)
          *
          *  DISTRIBUTION
          *
-         *  First, we have to distribute the outer part over all
-         *  parts of the inner with-loop
+         *  The outer withloop's parts are distributed over their inner withloops'
+         *  parts in order to get outer parts containing a single generator
+         *  withloop each.
          *
          ***************************************************************************/
 
@@ -1556,6 +1660,9 @@ WLSNwith (node *arg_node, node *arg_info)
         /***************************************************************************
          *
          *  SCALARIZATION
+         *
+         *  All the outer part are melted with the contained single-generator
+         *  withloops
          *
          ***************************************************************************/
 

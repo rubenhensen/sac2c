@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.159  2002/10/20 13:23:59  ktr
+ * Added support for WLS N_assign indentation by adding field ASSIGN_INDENT(n) to N_assign
+ * node which is increased on every indentation performed by WLS.
+ *
  * Revision 3.158  2002/10/18 13:44:16  sbs
  * FLAG system introduced
  * ID_ATTRIB killed and replaced by FLAGS:
@@ -1410,6 +1414,7 @@ extern node *MakeVardec (char *name, types *type, node *next);
  ***    node*  CF                         (CF !!)
  ***    void*  INDEX    (O)               (wli -> wlf -> )
  ***    int    LEVEL                      (wli !!)
+ ***    int    INDENT                     (wls -> )
  ***
  ***  remarks:
  ***
@@ -1421,6 +1426,10 @@ extern node *MakeVardec (char *name, types *type, node *next);
  ***    CF is used to temporarily store an N_assign node behind another one.
  ***    This additional N_assign node will later be inserted before the original
  ***    one into the assignment chain.
+ ***
+ ***    INDENT is used by WLS zu indicate how many layers a N_assign node has
+ ***    been moved inside a withloop. This happens if two withloops that are about
+ ***    to be merged are not nested perfectly.
  ***/
 
 extern node *MakeAssign (node *instr, node *next);
@@ -1433,6 +1442,7 @@ extern node *MakeAssign (node *instr, node *next);
 #define ASSIGN_STATUS(n) (n->flag)
 #define ASSIGN_INDEX(n) (n->info2)
 #define ASSIGN_LEVEL(n) (n->info.cint)
+#define ASSIGN_INDENT(n) (n->varno)
 
 /*--------------------------------------------------------------------------*/
 
