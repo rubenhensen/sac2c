@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2004/06/03 09:08:05  khf
+ * DFRwithop(): traverse into NWITHOP_NEXT added
+ *
  * Revision 3.7  2004/02/20 08:18:59  mwe
  * now functions with (MODUL_FUNS) and without (MODUL_FUNDECS) body are separated
  * changed tree traversal according to that
@@ -287,6 +290,10 @@ DFRwithop (node *arg_node, node *arg_info)
 
     if (NWITHOP_TYPE (arg_node) == WO_foldfun) {
         NWITHOP_FUNDEF (arg_node) = Trav (NWITHOP_FUNDEF (arg_node), arg_info);
+    }
+
+    if (NWITHOP_NEXT (arg_node) != NULL) {
+        NWITHOP_NEXT (arg_node) = Trav (NWITHOP_NEXT (arg_node), arg_info);
     }
 
 #if 0
