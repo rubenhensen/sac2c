@@ -4,6 +4,9 @@
 /*
  *
  * $Log$
+ * Revision 3.56  2002/08/14 12:55:01  sbs
+ * error in modarray shorthand eliminated.
+ *
  * Revision 3.55  2002/08/14 11:51:37  sbs
  * HMAdjustFundef turned into HMAdjustFunNames
  * just to please imports.....
@@ -1051,11 +1054,13 @@ letassign: ids LET { $<cint>$ = linenum; } expr
                }
                $$ = MakeLet( MakePrf( F_modarray,
                                MakeExprs( MakeId( $1, NULL, ST_regular) ,
-                                 MakeExprs( $3,
+                                 MakeExprs( EXPRS_EXPR( $3),
                                    MakeExprs( $7,
                                      NULL)))),
                              MakeIds( StringCopy( $1), NULL, ST_regular));
                NODE_LINE( $$) = $<cint>5;
+               EXPRS_EXPR( $3) = NULL;
+               $3 = FreeNode( $3);
              }
          | expr_ap { $$ = MakeLet( $1, NULL); }
          | id INC { $$ = MAKE_INCDEC_LET( $1, F_add); }
