@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.18  2001/03/29 14:46:54  dkr
+ * NWITH2_SCHEDULING removed
+ *
  * Revision 3.17  2001/03/29 01:35:25  dkr
  * renaming of WLSEGVAR_IDX_MIN, WLSEGVAR_IDX_MAX added
  *
@@ -1986,16 +1989,6 @@ PREC2with2 (node *arg_node, node *arg_info)
     NWITH2_WITHOP (arg_node) = Trav (NWITH2_WITHOP (arg_node), arg_info);
 
     NWITH2_DEC_RC_IDS (arg_node) = RenameIds (NWITH2_DEC_RC_IDS (arg_node));
-
-    /*
-     * Since the scheduling specification may contain the names of local
-     * identifiers, these have to be renamed according to the general renaming
-     * scheme implemented by this compiler phase.
-     */
-    if (NWITH2_SCHEDULING (arg_node) != NULL) {
-        NWITH2_SCHEDULING (arg_node)
-          = SCHPrecompileScheduling (NWITH2_SCHEDULING (arg_node));
-    }
 
     DBUG_RETURN (arg_node);
 }

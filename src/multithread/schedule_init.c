@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2001/03/29 14:46:14  dkr
+ * NWITH2_SCHEDULING removed
+ *
  * Revision 3.2  2001/03/05 16:41:56  dkr
  * no macros NWITH???_IS_FOLD used
  *
@@ -382,36 +385,45 @@ SCHINnwith2 (node *arg_node, node *arg_info)
     /* The next line is used to test propagation */
     /* NWITH2_SCHEDULING( arg_node) = SCHMakeScheduling("Block"); */
 
-    /*
-     *  if a scheduling is annotated to a with-loop this scheduling will be
-     *  propagated to the segments.
-     *  Schedulings of inner with-loops will be ignored
-     */
-    if (INFO_SCHIN_ALLOWED (arg_info)) {
-        if (!INFO_SCHIN_INNERWLS (arg_info)) {
-            if (NWITH2_SCHEDULING (arg_node) != NULL) {
-                DBUG_PRINT ("SCHIN", ("propagate with-loop scheduling"));
-                INFO_SCHIN_SCHEDULING (arg_info) = NWITH2_SCHEDULING (arg_node);
-            } else {
-                DBUG_PRINT ("SCHIN", ("no pragma scheduling found"));
-                INFO_SCHIN_SCHEDULING (arg_info) = NULL;
-            }
-        } else {
-            if (NWITH2_SCHEDULING (arg_node) != NULL) {
-                WARN (linenum, ("pragma-scheduling of inner-wl ignored"));
-            }
-            INFO_SCHIN_SCHEDULING (arg_info) = NULL;
-        }
-    } else if (NWITH2_SCHEDULING (arg_node) != NULL) {
-        if (!INFO_SCHIN_INNERWLS (arg_info)) {
-            WARN (linenum, ("pragma-scheduling of *mt not allowed* wl ignored"));
-        } else {
-            WARN (linenum, ("pragma-scheduling of *mt not allowed* inner-wl ignored"));
-        }
+#if 0
+  /**
+   ** dkr:
+   ** NWITH2_SCHEDULING does no longer exist because it is superfluous.
+   ** The wlcomp-pragma function Scheduling() distributes the schedulings
+   ** to all segments already :-))
+   **/
+
+  /*
+   *  if a scheduling is annotated to a with-loop this scheduling will be
+   *  propagated to the segments.
+   *  Schedulings of inner with-loops will be ignored
+   */
+  if (INFO_SCHIN_ALLOWED( arg_info)) {
+    if (! INFO_SCHIN_INNERWLS( arg_info)) {
+      if (NWITH2_SCHEDULING( arg_node) != NULL) {
+        DBUG_PRINT( "SCHIN", ("propagate with-loop scheduling"));
+        INFO_SCHIN_SCHEDULING( arg_info) = NWITH2_SCHEDULING( arg_node);
+      } else {
+        DBUG_PRINT( "SCHIN", ("no pragma scheduling found"));
+        INFO_SCHIN_SCHEDULING( arg_info) = NULL;
+      }
+    } else {
+      if (NWITH2_SCHEDULING( arg_node) != NULL) {
+        WARN(linenum, ("pragma-scheduling of inner-wl ignored"));
+      }
+      INFO_SCHIN_SCHEDULING( arg_info) = NULL;
     }
-    if (INFO_SCHIN_ALLOWED (arg_info)) {
-        NWITH2_ISSCHEDULED (arg_node) = TRUE;
+  } else if (NWITH2_SCHEDULING( arg_node) != NULL) {
+    if (! INFO_SCHIN_INNERWLS( arg_info)) {
+      WARN(linenum, ("pragma-scheduling of *mt not allowed* wl ignored"));
+    } else {
+      WARN(linenum, ("pragma-scheduling of *mt not allowed* inner-wl ignored"));
     }
+  }
+  if (INFO_SCHIN_ALLOWED( arg_info)) {
+    NWITH2_ISSCHEDULED( arg_node) = TRUE;
+  }
+#endif
 
     NWITH2_SEGS (arg_node) = Trav (NWITH2_SEGS (arg_node), arg_info);
 
@@ -423,10 +435,6 @@ SCHINnwith2 (node *arg_node, node *arg_info)
     }
 
     INFO_SCHIN_INNERWLS (arg_info) = old_innerwls;
-
-    if (NWITH2_SCHEDULING (arg_node) != NULL) {
-        NWITH2_SCHEDULING (arg_node) = SCHRemoveScheduling (NWITH2_SCHEDULING (arg_node));
-    }
 
     DBUG_RETURN (arg_node);
 }

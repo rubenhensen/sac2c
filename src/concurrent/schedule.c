@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2001/03/29 14:46:06  dkr
+ * NWITH2_SCHEDULING removed
+ *
  * Revision 3.4  2001/03/29 14:03:15  dkr
  * no changes done
  *
@@ -76,10 +79,8 @@
  * function:
  *   SCHsched_t MakeDefaultSchedulingConstSegment()
  *   SCHsched_t MakeDefaultSchedulingVarSegment()
- *   SCHsched_t MakeDefaultSchedulingWithloop()
  *
  * description:
- *
  *   These functions generate default schedulings for the three different
  *   scheduling cases. Their implementation is responsible for defining
  *   which kind of scheduling actually is the default and what the default
@@ -111,29 +112,17 @@ MakeDefaultSchedulingVarSegment ()
     DBUG_RETURN (sched);
 }
 
-static SCHsched_t
-MakeDefaultSchedulingWithloop ()
-{
-    SCHsched_t sched;
-
-    DBUG_ENTER ("MakeDefaultSchedulingWithloop");
-
-    sched = SCHMakeScheduling ("Static");
-
-    DBUG_RETURN (sched);
-}
-
 /******************************************************************************
  *
  * function:
  *   SCHsched_t InferSchedulingConstSegment(node *wlseg, node *arg_info)
  *
  * description:
- *
  *   This function defines the inference strategy for the scheduling of
  *   constant segments.
  *
  ******************************************************************************/
+
 static SCHsched_t
 InferSchedulingConstSegment (node *wlseg, node *arg_info)
 {
@@ -152,11 +141,11 @@ InferSchedulingConstSegment (node *wlseg, node *arg_info)
  *   SCHsched_t InferSchedulingVarSegment(node *wlsegvar, node *arg_info)
  *
  * description:
- *
  *   This function defines the inference strategy for the scheduling of
  *   variable segments.
  *
  ******************************************************************************/
+
 static SCHsched_t
 InferSchedulingVarSegment (node *wlsegvar, node *arg_info)
 {
@@ -172,33 +161,9 @@ InferSchedulingVarSegment (node *wlsegvar, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   SCHsched_t InferSchedulingWithloop(node *sync, node *arg_info)
- *
- * description:
- *
- *   This function defines the inference strategy for the scheduling of
- *   with-loops.
- *
- ******************************************************************************/
-static SCHsched_t
-InferSchedulingWithloop (node *sync, node *arg_info)
-{
-    SCHsched_t sched;
-
-    DBUG_ENTER ("InferSchedulingWithloop");
-
-    sched = MakeDefaultSchedulingWithloop ();
-
-    DBUG_RETURN (sched);
-}
-
-/******************************************************************************
- *
- * function:
  *   node *SCHEDwlseg(node *arg_node, node *arg_info)
  *
  * description:
- *
  *   sched_tab traversal function for N_WLseg nodes.
  *
  *   This function assures that each segment within an spmd-function has
@@ -206,6 +171,7 @@ InferSchedulingWithloop (node *sync, node *arg_info)
  *   do not have scheduling specifications.
  *
  ******************************************************************************/
+
 node *
 SCHEDwlseg (node *arg_node, node *arg_info)
 {
@@ -247,7 +213,6 @@ SCHEDwlseg (node *arg_node, node *arg_info)
  *   node *SCHEDwlsegVar(node *arg_node, node *arg_info)
  *
  * description:
- *
  *   sched_tab traversal function for N_WLsegVar nodes.
  *
  *   This function assures that each segment within an spmd-function has
@@ -255,6 +220,7 @@ SCHEDwlseg (node *arg_node, node *arg_info)
  *   do not have scheduling specifications.
  *
  ******************************************************************************/
+
 node *
 SCHEDwlsegVar (node *arg_node, node *arg_info)
 {
@@ -297,65 +263,13 @@ SCHEDwlsegVar (node *arg_node, node *arg_info)
  *
  * description:
  *
- *   sched_tab traversal function for N_sync nodes.
- *
- *   This function assures that each synchronisation block has a scheduling
- *   specification. The with-loops within a single synchronisation block are
- *   traversed and their scheduling specifications originating from the wlcomp
- *   pragma are examined, checked for compatibility, and combined. The scheduling
- *   specifications tied to the with-loops are removed. If no scheduling
- *   specifications are present, the inference strategy is used.
  *
  ******************************************************************************/
+
 node *
 SCHEDsync (node *arg_node, node *arg_info)
 {
-    node *block;
-    node *assign;
-    node *let;
-    node *with;
-
     DBUG_ENTER ("SCHEDsync");
-
-    block = SYNC_REGION (arg_node);
-    DBUG_ASSERT ((NODE_TYPE (block) == N_block),
-                 "N_block expected, but another kind of node found");
-
-    assign = BLOCK_INSTR (block);
-    DBUG_ASSERT ((NODE_TYPE (assign) == N_assign),
-                 "N_assign expected, but another kind of node found");
-
-    /* traverse N_assigns */
-    if (assign != NULL) {
-        let = ASSIGN_INSTR (assign);
-        DBUG_ASSERT ((NODE_TYPE (let) == N_let),
-                     "N_let expected, but another kind of node found");
-
-        with = LET_EXPR (let);
-
-        if (NODE_TYPE (with) == N_Nwith2) {
-
-            /* this is an old assertion when there was no if ... */
-            DBUG_ASSERT ((NODE_TYPE (with) == N_Nwith2),
-                         "N_Nwith2 expected, but another kind of node found");
-
-            if (NWITH2_SCHEDULING (with) != NULL) {
-                /*
-                 *  Somebody has annotated a pragma,
-                 *  check if this one is suitable for this with-loop.
-                 */
-                SCHCheckSuitabilityWithloop (NWITH2_SCHEDULING (arg_node));
-            } else {
-                NWITH2_SCHEDULING (with) = InferSchedulingWithloop (arg_node, arg_info);
-            }
-        } else {
-            /*
-             *  No schedules for other constructs.
-             */
-        }
-
-        assign = ASSIGN_NEXT (assign);
-    }
 
     SYNC_REGION (arg_node) = Trav (SYNC_REGION (arg_node), arg_info);
 
@@ -368,20 +282,16 @@ SCHEDsync (node *arg_node, node *arg_info)
  *   node *SCHEDnwith2(node *arg_node, node *arg_info)
  *
  * description:
- *
  *   This function is used to remove all scheduling specifications tied to
  *   with-loops originating from wlcomp pragmas. The respective information
  *   has already been moved to N_sync nodes where required.
  *
  ******************************************************************************/
+
 node *
 SCHEDnwith2 (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("SCHEDnwith2");
-
-    if (NWITH2_SCHEDULING (arg_node) != NULL) {
-        NWITH2_SCHEDULING (arg_node) = SCHRemoveScheduling (NWITH2_SCHEDULING (arg_node));
-    }
 
     NWITH2_SEGS (arg_node) = Trav (NWITH2_SEGS (arg_node), arg_info);
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.37  2001/03/29 14:46:29  dkr
+ * NWITH2_SCHEDULING removed
+ *
  * Revision 3.36  2001/03/29 01:35:51  dkr
  * WLSEGVAR_IDX_MIN, WLSEGVAR_IDX_MAX are now node-vectors
  *
@@ -3186,13 +3189,6 @@ PrintNwith2 (node *arg_node, node *arg_info)
     Trav (NWITH2_WITHID (arg_node), arg_info);
     fprintf (outfile, ")\n");
 
-    if (NWITH2_SCHEDULING (arg_node) != NULL) {
-        INDENT;
-        fprintf (outfile, "/* scheduling :");
-        SCHPrintScheduling (outfile, NWITH2_SCHEDULING (arg_node));
-        fprintf (outfile, " */\n");
-    }
-
     INDENT;
     fprintf (outfile, "/********** operators: **********/\n");
     code = NWITH2_CODE (arg_node);
@@ -3265,18 +3261,14 @@ PrintWLsegx (node *arg_node, node *arg_info)
         WLSEGX_IDX_PRINT (outfile, arg_node, IDX_MAX);
         fprintf (outfile, "\n");
         INDENT;
-        fprintf (outfile, " *");
 
         if (WLSEGX_SCHEDULING (seg) != NULL) {
-            fprintf (outfile, "\n");
-            INDENT;
             fprintf (outfile, " * scheduling: ");
             SCHPrintScheduling (outfile, WLSEGX_SCHEDULING (seg));
             fprintf (outfile, "\n");
             INDENT;
-            fprintf (outfile, " *");
         }
-        fprintf (outfile, "/\n");
+        fprintf (outfile, " */\n");
 
         Trav (WLSEGX_CONTENTS (seg), arg_info);
         PRINT_CONT (seg = WLSEGX_NEXT (seg), seg = NULL)
