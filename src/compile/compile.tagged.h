@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2002/06/02 21:39:02  dkr
+ * some more TAGGED_ARRAYS stuff added
+ *
  * Revision 1.4  2002/04/03 14:42:56  dkr
  * COMP2Arg removed
  *
@@ -31,6 +34,7 @@ extern node *COMP2Vardec (node *arg_node, node *arg_info);
 extern node *COMP2Prf (node *arg_node, node *arg_info);
 extern node *COMP2Assign (node *arg_node, node *arg_info);
 extern node *COMP2Let (node *arg_node, node *arg_info);
+extern node *COMP2Scalar (node *arg_node, node *arg_info);
 extern node *COMP2Array (node *arg_node, node *arg_info);
 extern node *COMP2Id (node *arg_node, node *arg_info);
 extern node *COMP2Ap (node *arg_node, node *arg_info);
