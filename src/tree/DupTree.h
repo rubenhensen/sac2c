@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.12  2000/07/12 15:20:38  dkr
+ * DuplicateTypes removed (use DupTypes instead!)
+ *
  * Revision 1.11  2000/07/04 14:38:11  jhs
  * Added Dups for MTalloc, MTsignal, MTsync.
  *
@@ -95,7 +98,6 @@ extern node *DupNode (node *arg_node);
 extern shpseg *DupShpSeg (shpseg *shp_seg);
 extern ids *DupOneIds (ids *ids, node *arg_info);
 extern ids *DupIds (ids *ids, node *arg_info);
-extern types *DuplicateTypes (types *source, int share);
 extern types *DupTypes (types *source);
 
 extern node *DupVinfo (node *arg_node, node *arg_info);
@@ -135,7 +137,7 @@ extern node *DupMTsignal (node *arg_node, node *arg_info);
 extern node *DupMTsync (node *arg_node, node *arg_info);
 extern node *DupMTalloc (node *arg_node, node *arg_info);
 
-/* new with-loop */
+/* frontend with-loop */
 extern node *DupNwith (node *arg_node, node *arg_info);
 extern node *DupNwithop (node *arg_node, node *arg_info);
 extern node *DupNpart (node *arg_node, node *arg_info);
@@ -143,6 +145,7 @@ extern node *DupNcode (node *arg_node, node *arg_info);
 extern node *DupNwithid (node *arg_node, node *arg_info);
 extern node *DupNgen (node *arg_node, node *arg_info);
 
+/* backend with-loop */
 extern node *DupNwith2 (node *arg_node, node *arg_info);
 extern node *DupWLseg (node *arg_node, node *arg_info);
 extern node *DupWLblock (node *arg_node, node *arg_info);
