@@ -761,6 +761,18 @@
 	  <node name="With" />
    	</travuser>
       </traversal>
+      <traversal id="TUP" name="Type Upgrade" default="sons" include="type_upgrade.h" >
+	<travuser>
+	  <node name="Assign" />
+	  <node name="Block" />
+	  <node name="With" />
+	  <node name="Let" />
+	  <node name="Return" />
+	  <node name="Code" />
+	  <node name="Generator" />
+	  <node name="Part" />
+   	</travuser>
+      </traversal>
       <traversal id="UESD" name="UndoElimSubDiv" default="sons" include="UndoElimSubDiv.h" >
         <travuser>
 	  <node name="Block" />

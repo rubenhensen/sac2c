@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.38  2004/12/08 12:16:14  mwe
+# type_upgrade added
+#
 # Revision 3.37  2004/11/26 21:08:51  sbs
 # SelectionPropagation.o eliminated from OBJS
 #
@@ -33,7 +36,7 @@ OBJS := optimize.o Inline.o DeadFunctionRemoval.o \
         SSADeadCodeRemoval.o SSACSE.o SSAConstantFolding.o SSALIR.o SSALUR.o \
         SSAWLUnroll.o SSAInferLI.o AssociativeLaw.o rmcasts.o \
         UndoElimSubDiv.o ElimSubDiv.o \
-        ConstVarPropagation.o DistributiveLaw.o 
+        ConstVarPropagation.o DistributiveLaw.o type_upgrade.o 
 
 all: $(OBJS)
 
