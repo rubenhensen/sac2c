@@ -5,7 +5,7 @@ WL_BEGIN__OFFSET( res iv 3 )
 WL_END__OFFSET( res iv 3 )
 clear-indent !
 
-ND_CREATE__VECT__DATA( (A,(AKS,(NHD,(NUQ,)))) 1 3 7 8 9 copyfun )
+ND_CREATE__ARRAY__DATA( (A,(AKS,(NHD,(NUQ,)))) 1 3 7 8 9 copyfun )
 clear-indent !
 
 MT_SPMD_FUN_DEC( myspmdfun originalfun 5 in float arg1 out double arg2 in_rc int* arg3 out_rc float* arg4 inout_rc double* arg5 )
