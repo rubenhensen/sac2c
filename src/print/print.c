@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.33  1995/02/14 12:22:37  sbs
+ * Revision 1.34  1995/02/28 18:26:12  asi
+ * added argument to functioncall PrintMask
+ * added function PrintMasks
+ *
+ * Revision 1.33  1995/02/14  12:22:37  sbs
  * PrintFold inserted
  *
  * Revision 1.32  1995/02/14  10:12:05  sbs
@@ -105,6 +109,7 @@
 #include "print.h"
 #include "Error.h"
 #include "convert.h"
+#include "optimize.h"
 
 #define INDENT                                                                           \
     {                                                                                    \
@@ -114,7 +119,6 @@
     }
 
 extern FILE *outfile; /* outputfile for PrintTree defined in main.c*/
-extern char *PrintMask (long *);
 
 static int indent = 0;
 
@@ -125,6 +129,23 @@ char *prf_string[] = {
 };
 
 #undef PRF_IF
+
+/*
+ *  Prints all masks
+ */
+
+void
+PrintMasks (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintMasks");
+    DBUG_EXECUTE ("MASK", char *text; text = PrintMask (arg_node->mask[0], VARNO);
+                  DBUG_PRINT ("MASK", ("Def. Variables (then): %s", text)); free (text););
+    DBUG_EXECUTE ("MASK", char *text; text = PrintMask (arg_node->mask[1], VARNO);
+                  DBUG_PRINT ("MASK", ("Used Variables (then): %s", text)); free (text););
+    DBUG_EXECUTE ("MASK", char *text; text = PrintMask (arg_node->mask[2], VARNO);
+                  DBUG_PRINT ("MASK", ("Spz. Variables (then): %s", text)); free (text););
+    DBUG_VOID_RETURN;
+}
 
 /*
  * prints ids-information to outfile
@@ -156,12 +177,9 @@ PrintAssign (node *arg_node, node *arg_info)
     DBUG_ENTER ("PrintAssign");
 
     DBUG_PRINT ("PRINT", ("%s " P_FORMAT, mdb_nodetype[arg_node->nodetype], arg_node));
-    DBUG_EXECUTE ("MASK", char *text; text = PrintMask (arg_node->mask[0]);
-                  DBUG_PRINT ("MASK", ("Def. Variables : %s", text)); free (text););
-    DBUG_EXECUTE ("MASK", char *text; text = PrintMask (arg_node->mask[1]);
-                  DBUG_PRINT ("MASK", ("Used Variables : %s", text)); free (text););
-    DBUG_EXECUTE ("MASK", char *text; text = PrintMask (arg_node->mask[2]);
-                  DBUG_PRINT ("MASK", ("Spz. Variables : %s", text)); free (text););
+
+    DBUG_EXECUTE ("MASK", PrintMasks (arg_node, arg_info););
+
     for (i = 0; i < arg_node->nnode; i++) {
         INDENT;
         if (1 == i)
@@ -240,6 +258,7 @@ PrintImplist (node *arg_node, node *arg_info)
     DBUG_PRINT ("PRINT", ("%s " P_FORMAT, mdb_nodetype[arg_node->nodetype], arg_node));
 
     fprintf (outfile, "import %s: ", arg_node->info.id);
+
     if ((arg_node->node[1] == NULL) && (arg_node->node[1] == NULL)
         && (arg_node->node[1] == NULL))
         fprintf (outfile, "all\n");
@@ -292,10 +311,10 @@ PrintFundef (node *arg_node, node *arg_info)
     DBUG_ENTER ("PrintFundef");
 
     DBUG_PRINT ("PRINT", ("%s " P_FORMAT, mdb_nodetype[arg_node->nodetype], arg_node));
-    DBUG_EXECUTE ("MASK", char *text; text = PrintMask (arg_node->mask[0]);
-                  DBUG_PRINT ("MASK", ("Def. Variables : %s", text)); free (text););
-    DBUG_EXECUTE ("MASK", char *text; text = PrintMask (arg_node->mask[1]);
-                  DBUG_PRINT ("MASK", ("Used Variables : %s", text)); free (text););
+    arg_info = MakeNode (N_info);
+    VARNO = arg_node->varno;
+    DBUG_EXECUTE ("MASK", PrintMasks (arg_node, arg_info););
+
     fprintf (outfile, "\n");
     if (arg_node->node[0] == NULL) /* pure fundec! */
         fprintf (outfile, "extern ");
@@ -313,6 +332,8 @@ PrintFundef (node *arg_node, node *arg_info)
         fprintf (outfile, "\n");
         Trav (arg_node->node[0], arg_info); /* traverse functionbody */
     }
+
+    free (arg_info);
 
     if (arg_node->node[1] != NULL)
         Trav (arg_node->node[1], arg_info); /* traverse next function */
@@ -470,7 +491,7 @@ node *
 PrintArg (node *arg_node, node *info_node)
 {
     DBUG_ENTER ("PrintArg");
-    DBUG_PRINT ("MASK", ("Number= : %d", arg_node->lineno));
+    DBUG_PRINT ("MASK", ("Number= : %d", arg_node->varno));
 
     fprintf (outfile, "%s", Type2String (arg_node->info.types, 1));
 
@@ -488,7 +509,7 @@ PrintVardec (node *arg_node, node *arg_info)
     DBUG_ENTER ("PrintVardec");
 
     INDENT;
-    DBUG_PRINT ("MASK", ("Number= : %d", arg_node->lineno));
+    DBUG_PRINT ("MASK", ("Number= : %d", arg_node->varno));
 
     fprintf (outfile, "%s;\n", Type2String (arg_node->info.types, 1));
     if (1 == arg_node->nnode)
@@ -510,7 +531,7 @@ PrintDo (node *arg_node, node *arg_info)
         Trav (arg_node->node[1], arg_info); /* traverse body of loop */
         indent--;
     }
-    DBUG_EXECUTE ("MASK", char *text; text = PrintMask (arg_node->mask[1]);
+    DBUG_EXECUTE ("MASK", char *text; text = PrintMask (arg_node->mask[1], VARNO);
                   DBUG_PRINT ("MASK", ("Used Variables (do-cnd) : %s", text));
                   free (text););
     INDENT;
@@ -537,7 +558,7 @@ PrintWhile (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintWhile");
 
-    DBUG_EXECUTE ("MASK", char *text; text = PrintMask (arg_node->mask[1]);
+    DBUG_EXECUTE ("MASK", char *text; text = PrintMask (arg_node->mask[1], VARNO);
                   DBUG_PRINT ("MASK", ("Used Variables (while-cnd) : %s", text));
                   free (text););
 
@@ -585,29 +606,19 @@ PrintCond (node *arg_node, node *arg_info)
     fprintf (outfile, "if ");
     indent++;
 
-    DBUG_EXECUTE ("MASK", char *text; text = PrintMask (arg_node->mask[1]);
+    DBUG_EXECUTE ("MASK", char *text; text = PrintMask (arg_node->mask[1], VARNO);
                   DBUG_PRINT ("MASK", ("Used Variables (Cond): %s", text)); free (text););
 
     Trav (arg_node->node[0], arg_info);
     fprintf (outfile, "\n");
 
-    DBUG_EXECUTE ("MASK", char *text; text = PrintMask (arg_node->node[1]->mask[0]);
-                  DBUG_PRINT ("MASK", ("Def. Variables (then): %s", text)); free (text););
-    DBUG_EXECUTE ("MASK", char *text; text = PrintMask (arg_node->node[1]->mask[1]);
-                  DBUG_PRINT ("MASK", ("Used Variables (then): %s", text)); free (text););
-    DBUG_EXECUTE ("MASK", char *text; text = PrintMask (arg_node->node[1]->mask[2]);
-                  DBUG_PRINT ("MASK", ("Spz. Variables (then): %s", text)); free (text););
+    DBUG_EXECUTE ("MASK", PrintMasks (arg_node->node[1], arg_info););
 
     Trav (arg_node->node[1], arg_info);
     fprintf (outfile, "\n");
     indent--;
 
-    DBUG_EXECUTE ("MASK", char *text; text = PrintMask (arg_node->node[2]->mask[0]);
-                  DBUG_PRINT ("MASK", ("Def. Variables (else): %s", text)); free (text););
-    DBUG_EXECUTE ("MASK", char *text; text = PrintMask (arg_node->node[2]->mask[1]);
-                  DBUG_PRINT ("MASK", ("Used Variables (else): %s", text)); free (text););
-    DBUG_EXECUTE ("MASK", char *text; text = PrintMask (arg_node->node[2]->mask[2]);
-                  DBUG_PRINT ("MASK", ("Spz. Variables (else): %s", text)); free (text););
+    DBUG_EXECUTE ("MASK", PrintMasks (arg_node->node[2], arg_info););
 
     INDENT;
     fprintf (outfile, "else\n");
@@ -623,6 +634,7 @@ PrintWith (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintWith");
 
+    DBUG_EXECUTE ("MASK", PrintMasks (arg_node, arg_info););
     fprintf (outfile, "with (");
     Trav (arg_node->node[0], arg_info);
     fprintf (outfile, ")\n");
