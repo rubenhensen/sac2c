@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.21  1999/06/03 08:45:00  cg
+ * Added correct printing of wlcomp pragmas.
+ *
  * Revision 2.20  1999/05/27 08:50:04  cg
  * global variable show_icm made obsolete and removed.
  *
@@ -1245,9 +1248,28 @@ PrintAp (node *arg_node, node *arg_info)
         fprintf (outfile, "%s:", AP_MOD (arg_node));
     }
     fprintf (outfile, "%s(", AP_NAME (arg_node));
-    if (AP_ARGS (arg_node)) {
-        Trav (AP_ARGS (arg_node), arg_info);
+
+    if (INFO_PRINT_PRAGMA_WLCOMP (arg_info)) {
+        /*
+         * Here, we are printing a wlcomp pragma.
+         */
+        DBUG_ASSERT ((AP_ARGS (arg_node) != NULL), "Illegal wlcomp pragma specification");
+        Trav (EXPRS_EXPR (AP_ARGS (arg_node)), arg_info);
+        if (EXPRS_NEXT (AP_ARGS (arg_node)) == NULL) {
+            fprintf (outfile, ", Default");
+        } else {
+            fprintf (outfile, ", ");
+            Trav (EXPRS_EXPR (EXPRS_NEXT (AP_ARGS (arg_node))), arg_info);
+        }
+    } else {
+        /*
+         * Here, we are printing a regular function application.
+         */
+        if (AP_ARGS (arg_node)) {
+            Trav (AP_ARGS (arg_node), arg_info);
+        }
     }
+
     fprintf (outfile, ")");
 
     DBUG_RETURN (arg_node);
@@ -1883,6 +1905,14 @@ PrintPragma (node *arg_node, node *arg_info)
         fprintf (outfile, "#pragma initfun \"%s\"\n", PRAGMA_INITFUN (arg_node));
     }
 
+    if (PRAGMA_WLCOMP_APS (arg_node) != NULL) {
+        fprintf (outfile, "#pragma wlcomp ");
+        DBUG_ASSERT ((arg_info != NULL), "No arg_info node in print traversal");
+        INFO_PRINT_PRAGMA_WLCOMP (arg_info) = 1;
+        Trav (PRAGMA_WLCOMP_APS (arg_node), arg_info);
+        INFO_PRINT_PRAGMA_WLCOMP (arg_info) = 0;
+    }
+
     fprintf (outfile, "\n");
 
     DBUG_RETURN (arg_node);
@@ -2044,6 +2074,11 @@ PrintNwith (node *arg_node, node *arg_info)
     indent += 2;
 
     INFO_PRINT_ACCESS (arg_info) = NWITH_WLAA (arg_node);
+
+    if (NWITH_PRAGMA (arg_node) != NULL) {
+        Trav (NWITH_PRAGMA (arg_node), arg_info);
+        INDENT;
+    }
 
     /*
      * check wether to use output format 1 (multiple NParts)
