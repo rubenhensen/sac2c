@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/05/06 15:35:42  sbs
+ * filename- mechanism added for creating better error-messages
+ * when multiple files are involved!
+ *
  * Revision 2.2  1999/05/06 12:10:12  sbs
  * implicit linenum-setting mechanism added to Trav !!
  * => Makexxx-calls might yield better line-numbers now...
@@ -904,32 +908,11 @@ int nnode[] = {
 **
 */
 
-#if 0
-
-node *Trav(node *arg_node, node *arg_info)
-{
-  DBUG_ENTER("Trav");
-
-  DBUG_ASSERT((NULL != arg_node), "wrong argument: NULL pointer");
-  DBUG_ASSERT((arg_node->nodetype <= N_ok),
-               "wrong argument: Type-tag out of range!");
-  DBUG_PRINT("TRAV",("case %s: node adress: %06x",
-                mdb_nodetype[arg_node->nodetype],arg_node));
-  DBUG_RETURN((*act_tab[arg_node->nodetype]) (arg_node, arg_info));
-}
-
-#else
-
-/*
- * This version of Trav is functionally identical to the above one,
- * but simplifies debugging because it allows to set break points
- * within the assertions.
- */
-
 node *
 Trav (node *arg_node, node *arg_info)
 {
     int old_linenum = linenum;
+    char *old_filename = filename;
     node *result;
 
     DBUG_ENTER ("Trav");
@@ -939,8 +922,14 @@ Trav (node *arg_node, node *arg_info)
      * correctly in case MakeXxx is called.
      */
     linenum = NODE_LINE (arg_node);
+    filename = NODE_FILE (arg_node);
 
 #ifndef DBUG_OFF
+    /*
+     * This ifndef construction is ugly(!) but it simplifies debugging
+     * because it allows to set break points "within" the assertions...
+     */
+
     if (arg_node == NULL) {
         DBUG_ASSERT (0, "Trav: tried to traverse into subtree NULL !");
     }
@@ -955,11 +944,10 @@ Trav (node *arg_node, node *arg_info)
 
     result = (*act_tab[arg_node->nodetype]) (arg_node, arg_info);
     linenum = old_linenum;
+    filename = old_filename;
 
     DBUG_RETURN (result);
 }
-
-#endif
 
 /*
 **
