@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  2002/10/17 17:54:31  ktr
+ * aggressive behaviour now based upon switch -wlsx
+ *
  * Revision 1.13  2002/10/17 14:51:22  ktr
  * Fixed a bug found by sbs. Sample code now runs with 200% of speed.
  *
@@ -130,6 +133,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "globals.h"
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -163,8 +167,6 @@ typedef enum {
 } wls_phase_type;
 
 #define WLS_PHASE(n) ((wls_phase_type)INFO_WLS_PHASE (n))
-
-#define wls_agressive TRUE
 
 /****************************************************************************
  *
@@ -490,7 +492,7 @@ probePart (node *arg_node, node *arg_info)
         INFO_WLS_POSSIBLE (arg_info)
           = (VARDEC_DIM (AVIS_VARDECORARG (ID_AVIS (NPART_CEXPR (arg_node)))) > 0);
 
-    if (wls_agressive) {
+    if (wls_aggressive) {
     } else {
         /* perhaps some of these conditions should be made assertions in the
            distribution phase */
@@ -1451,7 +1453,7 @@ WLSNwith (node *arg_node, node *arg_info)
      *  PROBING
      *
      *  We have to find out, whether all parts can be scalarized
-     *  Here we can distinguish between conservative and agressive behaviour
+     *  Here we can distinguish between conservative and aggressive behaviour
      *
      ***************************************************************************/
 
