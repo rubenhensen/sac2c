@@ -4,10 +4,16 @@ DataFlowMaskUtils.c
 DataFlowMaskUtils.h
 DupTree.c
 DupTree.h
+InferDFMs.c
+InferDFMs.h
 LookUpTable.c
 LookUpTable.h
 Makefile
 access_macros.h
+adjust_ids.c
+adjust_ids.h
+cleanup_decls.c
+cleanup_decls.h
 free.c
 free.h
 node_info.mac
