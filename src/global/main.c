@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.50  1995/06/13 08:31:20  asi
+ * Revision 1.51  1995/06/15 14:57:37  hw
+ * call gcc only if no errors occur before
+ *
+ * Revision 1.50  1995/06/13  08:31:20  asi
  * added parameter -maxunroll and variables unrnum and opt_unr
  *
  * Revision 1.49  1995/06/09  15:27:36  hw
@@ -488,7 +491,7 @@ MAIN
 
     /*  FreeTree(syntax_tree);  */
 
-    if (!Ccodeonly) {
+    if (!Ccodeonly && (0 == errors)) {
         fclose (outfile);
         sprintf (cccallstr,
                  "gcc %s-Wall -Wno-unused -I $RCSROOT/src/compile/ -o %s %s %s",
