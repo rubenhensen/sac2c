@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.10  1995/12/01 17:21:06  cg
+ * Revision 1.11  1995/12/21 15:06:04  cg
+ * bug fixed in printing of arguments.
+ *
+ * Revision 1.10  1995/12/01  17:21:06  cg
  * bug in freeing nodelists fixed
  * storage of alternative link names converted to new pragma node
  *
@@ -332,7 +335,7 @@ SIBfundef (node *arg_node, node *arg_info)
         fprintf (sibfile, "%s(", FUNDEF_NAME (fundef));
 
         if (FUNDEF_ARGS (fundef) != NULL) {
-            Trav (FUNDEF_ARGS (fundef), arg_info);
+            Trav (FUNDEF_ARGS (fundef), fundef);
         }
 
         fprintf (sibfile, ")");
