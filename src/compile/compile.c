@@ -1,7 +1,14 @@
 /*
  *
  * $Log$
- * Revision 1.45  1995/06/13 15:11:08  hw
+ * Revision 1.46  1995/06/14 12:41:55  hw
+ * - N_cast nodes in argument position of primitive functions
+ *   will be deleted
+ * - bug fixed in creation of ND_KD_PSI_VxA_S & ND_KD_PSI_CxA_S
+ * - renamed macro CONST_ARRAY to CREATE_TMP_CONST_ARRAY and
+ *   changed it (removed creation of ND_REUSE)
+ *
+ * Revision 1.45  1995/06/13  15:11:08  hw
  * - changed RenameVar (added new parameter)
  * - added function RenameReturn
  * inserted renameing of varaibles of a return_statement  and things
@@ -350,7 +357,7 @@ extern int malloc_debug (int level);
     CREATE_2_ARY_ICM (next_assign, "ND_INC_RC", array, num_node);                        \
     APPEND_ASSIGNS (first_assign, next_assign)
 
-#define CONST_ARRAY(array, rc)                                                           \
+#define CREATE_TMP_CONST_ARRAY(array, rc)                                                \
     array_is_const = 1;                                                                  \
     old_arg_node = arg_node;                                                             \
     tmp = array->node[0];                                                                \
@@ -367,8 +374,6 @@ extern int malloc_debug (int level);
                       n_node1, n_node);                                                  \
     arg_node = first_assign;                                                             \
     CREATE_CONST_ARRAY (array, tmp_array1, type_id_node, rc);                            \
-    CREATE_2_ARY_ICM (next_assign, "ND_REUSE", tmp_array1, res);                         \
-    APPEND_ASSIGNS (first_assign, next_assign);                                          \
     array = tmp_array1 /* set array to __TMP */
 
 #define CREATE_CONST_ARRAY(array, name, type, rc)                                        \
@@ -927,7 +932,7 @@ CompVardec (node *arg_node, node *arg_info)
  *  global vars   :
  *  internal funs :
  *  external funs :
- *  macros        : DBUG...,
+ *  macros        : DBUG..., ELIMINATE_CAST
  *  remarks       : arg_info->info.ids contains name of assigned variable
  *                  arg_info->node[0] contains pointer to node before
  *                   last assign_node (to get last or next assign node use
@@ -942,7 +947,7 @@ CompPrf (node *arg_node, node *arg_info)
     node *array, *scalar, *tmp, *res, *res_ref, *n_node, *icm_arg, *prf_id_node,
       *type_id_node, *arg1, *arg2, *arg3, *n_node1, *n_elems_node, *first_assign,
       *next_assign, *last_assign, *old_arg_node, *length_node, *tmp_array1, *tmp_array2,
-      *dim_node, *tmp_rc;
+      *dim_node, *tmp_rc, *exprs;
     simpletype s_type;
     int is_SxA = 0, n_elems = 0, is_drop = 0, array_is_const = 0, dim;
 
@@ -950,15 +955,23 @@ CompPrf (node *arg_node, node *arg_info)
 
     DBUG_PRINT ("COMP", ("%s line: %d", mdb_prf[arg_node->info.prf], arg_node->lineno));
 
+    /* first eliminate N_cast node form arguments of primitive function */
+    exprs = arg_node->node[0];
+
+    do {
+        ELIMINATE_CAST (exprs);
+        exprs = exprs->node[1];
+    } while (NULL != exprs);
+
     /* NOTE :  F_neq should be the last "function enumerator" that hasn't
      *         arrays as arguments.
      */
     if (arg_node->info.prf > F_neq) {
-        node *exprs = arg_node->node[0];
         ids *let_ids = arg_info->IDS;
         node *new_name, *vardec_p, *new_assign, *new_vardec, *old_name;
         int insert_vardec = 0, insert_assign = 0;
 
+        exprs = arg_node->node[0];
         while (NULL != exprs) {
             if (N_id == exprs->node[0]->nodetype)
                 if (0 == strcmp (let_ids->id, exprs->node[0]->IDS_ID)) {
@@ -1255,7 +1268,11 @@ CompPrf (node *arg_node, node *arg_info)
                 DBUG_ASSERT ((N_array == arg2->nodetype), "wrong nodetype");
 
                 MAKENODE_NUM (dim_node, 1); /* store dimension of argument-array */
-                CONST_ARRAY (arg2, res_ref);
+                CREATE_TMP_CONST_ARRAY (arg2, res_ref);
+#if 0
+            CREATE_2_ARY_ICM(next_assign, "ND_REUSE", arg2, res);
+            APPEND_ASSIGNS(first_assign, next_assign);
+#endif
             }
 
             if (N_array == arg1->nodetype) {
@@ -1337,7 +1354,7 @@ CompPrf (node *arg_node, node *arg_info)
             /* store arguments and result (res contains refcount and pointer to
              * vardec ( don't free arg_info->IDS !!! )
              */
-            node *line;
+            node *line, *arg1_length;
 
             arg1 = arg_node->node[0]->node[0];
             arg2 = arg_node->node[0]->node[1]->node[0];
@@ -1353,7 +1370,7 @@ CompPrf (node *arg_node, node *arg_info)
             /* compute length of arg1 */
             if (N_id == arg1->nodetype) {
                 GET_LENGTH (n_elems, arg1->IDS_NODE);
-                MAKENODE_NUM (n_node, n_elems);
+                MAKENODE_NUM (arg1_length, n_elems);
             } else {
                 n_elems = 0;
                 tmp = arg1->node[0];
@@ -1361,22 +1378,27 @@ CompPrf (node *arg_node, node *arg_info)
                     n_elems += 1;
                     tmp = tmp->node[1];
                 } while (NULL != tmp);
-                MAKENODE_NUM (n_node, n_elems);
+                MAKENODE_NUM (arg1_length, n_elems);
             }
 
             if (0 == IsArray (res->IDS_NODE->TYPES)) {
                 if (N_id == arg2->nodetype) {
-                    GET_DIM (dim, arg2->IDS_NODE->TYPES);
-                    MAKENODE_NUM (dim_node, dim); /* store dimension of array */
                     if (N_id == arg1->nodetype) {
+#if 0
+                  GET_DIM(dim, arg2->IDS_NODE->TYPES);
+                  MAKENODE_NUM(dim_node, dim); /* store dimension of array */
+#endif
                         BIN_ICM_REUSE (arg_info->node[1], "ND_KD_PSI_VxA_S", line, arg2);
                         MAKE_NEXT_ICM_ARG (icm_arg, res);
-                        MAKE_NEXT_ICM_ARG (icm_arg, n_node);
+#if 0
+                  MAKE_NEXT_ICM_ARG(icm_arg, dim_node);
+#endif
+                        MAKE_NEXT_ICM_ARG (icm_arg, arg1_length);
                         MAKE_NEXT_ICM_ARG (icm_arg, arg1);
                     } else {
                         BIN_ICM_REUSE (arg_info->node[1], "ND_KD_PSI_CxA_S", line, arg2);
                         MAKE_NEXT_ICM_ARG (icm_arg, res);
-                        MAKE_NEXT_ICM_ARG (icm_arg, n_node);
+                        MAKE_NEXT_ICM_ARG (icm_arg, arg1_length);
                         icm_arg->node[1] = arg1->node[0];
                         icm_arg->nnode = 2;
                         FREE (arg1);
@@ -1394,24 +1416,25 @@ CompPrf (node *arg_node, node *arg_info)
 
                     FREE (old_arg_node);
                 } else {
-                    MAKENODE_NUM (dim_node, 1);
+#if 0
+               MAKENODE_NUM(dim_node, 1);
+#endif
                     /* arg2 is a constant array */
                     DBUG_ASSERT ((N_array == arg2->nodetype), "nodetype != N_array");
                     MAKENODE_NUM (tmp_rc, 0);
-                    CONST_ARRAY (arg2, tmp_rc);
+                    CREATE_TMP_CONST_ARRAY (arg2, tmp_rc);
                     if (N_id == arg1->nodetype) {
                         CREATE_5_ARY_ICM (next_assign, "ND_KD_PSI_VxA_S", line, arg2, res,
-                                          n_node, arg1);
+                                          arg1_length, arg1);
                     } else {
                         CREATE_4_ARY_ICM (next_assign, "ND_KD_PSI_CxA_S", line, arg2, res,
-                                          n_node);
+                                          arg1_length);
                         icm_arg->node[1] = arg1->node[0];
                         icm_arg->nnode = 2;
                         FREE (arg1);
                     }
                     APPEND_ASSIGNS (first_assign, next_assign);
                 }
-
             } else {
                 node *num;
 
@@ -1428,10 +1451,10 @@ CompPrf (node *arg_node, node *arg_info)
 
                 if (N_id == arg1->nodetype) {
                     CREATE_6_ARY_ICM (next_assign, "ND_KD_PSI_VxA_A", line, dim_node,
-                                      arg2, res, n_node, arg1);
+                                      arg2, res, arg1_length, arg1);
                 } else {
                     CREATE_5_ARY_ICM (next_assign, "ND_KD_PSI_CxA_A", line, dim_node,
-                                      arg2, res, n_node);
+                                      arg2, res, arg1_length);
                     icm_arg->node[1] = arg1->node[0];
                     icm_arg->nnode = 2;
                     FREE (arg1);
@@ -1660,17 +1683,6 @@ CompPrf (node *arg_node, node *arg_info)
             /*   DBUG_ASSERT(0,"wrong prf"); */
             break;
         }
-    } else {
-        node *exprs = arg_node->node[0];
-        do {
-            if (N_cast == exprs->node[0]->nodetype) {
-                tmp = exprs->node[0]->node[0];
-                FREE_TYPE (exprs->node[0]->TYPES);
-                FREE (exprs->node[0]);
-                exprs->node[0] = tmp;
-            }
-            exprs = exprs->node[1];
-        } while (NULL != exprs);
     }
 
     DBUG_RETURN (arg_node);
