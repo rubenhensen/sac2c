@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2000/03/21 13:06:14  jhs
+ * Brushing, Comments.
+ *
  * Revision 1.3  2000/03/15 15:52:44  dkr
  * fixed a bug:
  *   MT_OR_ST_REGION on left hand side is replaced by L_MT_OR_ST_REGION
@@ -15,7 +18,24 @@
  * constructed by jhs@dArtagnan at home
  */
 
-/* intro comment missing #### */
+/******************************************************************************
+ *
+ * file:   block_cons.c
+ *
+ * prefix: BLKCO
+ *
+ * description:
+ *   (BlocksConsolidation)
+ *   Each function by now must be classified as call_rep, call_mt or call_st.
+ *   I.e. FUNDEFF_ATTRIB in {ST_call_rep, ST_call_mt, ST_call_st}.
+ *   This traversal ignores call_rep-funs.
+ *   By this traversal are
+ *   - N_mt-blocks deleted in call_mt-functions
+ *   - N_st-blocks deleted in call_st-functions
+ *   - N_mt's nested in another N_mt deleted.
+ *   - N_st's nested in another N_st deleted.
+ *
+ ******************************************************************************/
 
 #include "dbug.h"
 
@@ -32,6 +52,24 @@
 #include "internal_lib.h"
 #include "multithread_lib.h"
 
+/******************************************************************************
+ *
+ * function:
+ *   node *BlocksCons(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   Initiate the Consolidation as described above.
+ *
+ *   Traverses *only* the function handed over via arg_node with dfa_tab,
+ *   will not traverse FUNDEF_NEXT( arg_node).
+ *
+ *   This routine ignores (returns without changes):
+ *   - functions f with no body (FUNDEF_BODY( f) == NULL)
+ *   - functions f with FUNDEF_STATUS( f) = ST_foldfun
+ *   - repfuns
+ *     functions f with FUNDEF_ATTRIB( f) = ST_call_rep
+ *
+ ******************************************************************************/
 node *
 BlocksCons (node *arg_node, node *arg_info)
 {
@@ -43,26 +81,48 @@ BlocksCons (node *arg_node, node *arg_info)
 
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_fundef), ("wrong type of arg_node"));
 
-    old_tab = act_tab;
-    act_tab = blkco_tab;
+    if ((FUNDEF_BODY (arg_node) != NULL) && (FUNDEF_STATUS (arg_node) != ST_foldfun)
+        && (FUNDEF_ATTRIB (arg_node) != ST_call_rep)) {
+        old_tab = act_tab;
+        act_tab = blkco_tab;
 
-    old_attrib = INFO_BLKCO_CURRENTATTRIB (arg_info);
-    /*
-     *  ST_call_any has to be overwritten by BLKCOfundef!!!
-     *  This is to initialize only!!!
-     */
-    INFO_BLKCO_CURRENTATTRIB (arg_info) = ST_call_any;
+        old_attrib = INFO_BLKCO_CURRENTATTRIB (arg_info);
+        /*
+         *  ST_call_any has to be overwritten by BLKCOfundef!!!
+         *  This is to initialize only!!!
+         */
+        INFO_BLKCO_CURRENTATTRIB (arg_info) = ST_call_any;
 
-    arg_node = Trav (arg_node, arg_info);
+        arg_node = Trav (arg_node, arg_info);
 
-    INFO_BLKCO_CURRENTATTRIB (arg_info) = old_attrib;
+        INFO_BLKCO_CURRENTATTRIB (arg_info) = old_attrib;
 
-    act_tab = old_tab;
+        act_tab = old_tab;
+    }
 
     DBUG_PRINT ("BLKCO", ("begin"));
     DBUG_RETURN (arg_node);
 }
 
+/******************************************************************************
+ *
+ * function:
+ *   node *BLKCOxt(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   This is the traversal function for N_st and N_mt!!!
+ *   One does not need explicit versions BLKCOst or BLKCOmt here.
+ *
+ *   - If we find a N_mt while traversing ST_call_mt the N_mt is deleted.
+ *   - If we find a N_st while traversing ST_call_st the N_st is deleted.
+ *   - If we find a N_mt while traversing ST_call_st we swap the current
+ *     attribute and traverse the region, deleting all nested blocks of
+ *     same type, restoring current afterwards.
+ *   - If we find a N_st while traversing ST_call_mt we swap the current
+ *     attribute and traverse the region, deleting all nested blocks of
+ *     same type, restoring current afterwards.
+ *
+ ******************************************************************************/
 node *
 BLKCOxt (node *arg_node, node *arg_info)
 {
@@ -122,6 +182,17 @@ BLKCOxt (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/******************************************************************************
+ *
+ * function:
+ *   node *BLKCOfundef (node *arg_node, node *arg_info)
+ *
+ * description:
+ *   Fetches the actual attribut from the function and stores it at the
+ *   arg_node.
+ *   DO NOT TRAVERSE FUNDEF_NEXT!!!
+ *
+ ******************************************************************************/
 node *
 BLKCOfundef (node *arg_node, node *arg_info)
 {
@@ -134,6 +205,7 @@ BLKCOfundef (node *arg_node, node *arg_info)
 
     if ((FUNDEF_ATTRIB (arg_node) == ST_call_mt)
         || (FUNDEF_ATTRIB (arg_node) == ST_call_st)) {
+        /* push current attribute, fetch actual attribute from fundtion */
         old_attrib = INFO_BLKCO_CURRENTATTRIB (arg_info);
         INFO_BLKCO_CURRENTATTRIB (arg_info) = FUNDEF_ATTRIB (arg_node);
 
@@ -143,6 +215,7 @@ BLKCOfundef (node *arg_node, node *arg_info)
         DBUG_PRINT ("BLKCO", ("traverse from body with %s",
                               mdb_statustype[FUNDEF_ATTRIB (arg_node)]));
 
+        /* pop attrib */
         INFO_BLKCO_CURRENTATTRIB (arg_info) = old_attrib;
     } else if (FUNDEF_ATTRIB (arg_node) == ST_call_rep) {
         /* ignore repfuns */
@@ -160,6 +233,16 @@ BLKCOfundef (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/******************************************************************************
+ *
+ * function:
+ *   node *BLKCOassign( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   pops INFO_BLKCO_THISASSIGN, stores new value there, traverses
+ *   ASSIGN_INSTR and ASSIGN_NEXT, pop again
+ *
+ ******************************************************************************/
 node *
 BLKCOassign (node *arg_node, node *arg_info)
 {
