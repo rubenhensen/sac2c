@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.65  2003/02/12 18:44:20  ktr
+# Added target 'doxygen' to create documentation in $(SAC_PUBLIC_HTML)/sac2cdoc.
+#
 # Revision 3.64  2003/02/11 17:33:14  sbs
 # call of make tagged changed to a simple touch operation
 # pattern rule for .tagged eliminated (depreciated due to
@@ -304,6 +307,9 @@ sac2c.twice: $(OBJ) $(LIB)
 	  "cd $(RCSROOT); \
            setenv PATH /opt/gnu/bin\:$$$$PATH; \
            $(CC) $(CCFLAGS) $(CFLAGS) -o sac2c.twice $(OBJ) $(LIB) $(LIBS)"
+
+doxygen:
+	doxygen sac2cdoxy
 
 deps:
 	$(ECHO) "make deps is obsolete"
