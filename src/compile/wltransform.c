@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.33  2001/03/05 15:00:00  dkr
+ * NCODE_NO no longer used here (but in print.c only)
+ *
  * Revision 3.32  2001/02/22 10:47:18  sbs
  * compiler warning in GenerateCompleteDomain eliminated by
  * initializing act_compl_grid to NULL.
@@ -6667,33 +6670,28 @@ WLTRAwith (node *arg_node, node *arg_info)
  *   node *WLTRAcode( node *arg_node, node *arg_info)
  *
  * Description:
- *   Sets NCODE_NO.
+ *   checks NCODE_USED
  *
  ******************************************************************************/
 
 node *
 WLTRAcode (node *arg_node, node *arg_info)
 {
-    node *code;
-    int no = 0;
-
     DBUG_ENTER ("WLTRAcode");
 
-    code = arg_node;
-    do {
-        DBUG_ASSERT ((NCODE_USED (code) >= 0), "illegal NCODE_USED value!");
+    DBUG_ASSERT ((NCODE_USED (arg_node) >= 0), "illegal NCODE_USED value!");
 
-        NCODE_NO (code) = no++;
+    if (NCODE_CBLOCK (arg_node) != NULL) {
+        NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
+    }
 
-        if (NCODE_CBLOCK (code) != NULL) {
-            NCODE_CBLOCK (code) = Trav (NCODE_CBLOCK (code), arg_info);
-        }
-        if (NCODE_CEXPR (code) != NULL) {
-            NCODE_CEXPR (code) = Trav (NCODE_CEXPR (code), arg_info);
-        }
+    if (NCODE_CEXPR (arg_node) != NULL) {
+        NCODE_CEXPR (arg_node) = Trav (NCODE_CEXPR (arg_node), arg_info);
+    }
 
-        code = NCODE_NEXT (code);
-    } while (code != NULL);
+    if (NCODE_NEXT (arg_node) != NULL) {
+        NCODE_NEXT (arg_node) = Trav (NCODE_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
