@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.100  2001/06/14 12:32:36  dkr
+ * some minor changes in definition of WL nodes done
+ *
  * Revision 3.99  2001/06/13 13:05:15  ben
  * WLSEGX_TASKSEL added
  *
@@ -3617,18 +3620,18 @@ extern node *MakeNCode (node *block, node *expr);
  ***
  ***  temporary attributes:
  ***
- ***    DFMmask_t  IN_MASK               (infer_dfms -> lac2fun -> refcount -> )
- ***    DFMmask_t  OUT_MASK              (infer_dfms -> lac2fun -> refcount -> )
- ***    DFMmask_t  LOCAL_MASK            (infer_dfms -> lac2fun -> refcount -> )
+ ***    DFMmask_t  IN_MASK              (infer_dfms -> lac2fun -> refcount -> )
+ ***    DFMmask_t  OUT_MASK             (infer_dfms -> lac2fun -> refcount -> )
+ ***    DFMmask_t  LOCAL_MASK           (infer_dfms -> lac2fun -> refcount -> )
  ***
- ***    DFMmask_t  REUSE                 (ReuseWithArrays -> compile !!)
+ ***    DFMmask_t  REUSE                (ReuseWithArrays -> compile !!)
  ***
- ***    ids*       DEC_RC_IDS            (wltransform -> compile -> )
+ ***    ids*       DEC_RC_IDS           (wltransform -> compile -> )
  ***
- ***    bool       OFFSET_NEEDED         (wltransform -> compile -> )
+ ***    bool       OFFSET_NEEDED        (wltransform -> compile -> )
  ***
- ***    bool       ISSCHEDULED           (new_mt -> ...)
- ***                            [Signals whether any segment is scheduled or not]
+ ***    bool       ISSCHEDULED          (new_mt -> ...)
+ ***                          [is segment scheduled or not?]
  ***/
 
 extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int dims);
@@ -3750,8 +3753,9 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int 
  ***    int*       SV         [step vector]        (wltransform -> )
  ***    int*       HOMSV      [hom. step vector]   (wltransform -> )
  ***
- ***    SCHsched_t SCHEDULING                      (wltransform -> compile -> )
- ***    SCHtasksel TASKSELCETOR                    (wltransform -> compile -> )
+ ***    SCHsched_t   SCHEDULING                    (wltransform -> compile -> )
+ ***    SCHtasksel_t TASKSEL                       (wltransform -> compile -> )
+ ***
  ***  remarks:
  ***
  ***    - BV[ 0 .. (BLOCKS-1) ]
@@ -3794,13 +3798,13 @@ extern node *MakeWLseg (int dims, node *contents, node *next);
  ***
  ***    int        DIMS       [number of dims]
  ***
- ***    node**     IDX_MIN       (N_num, N_id)    (wltransform -> compile -> )
- ***    node**     IDX_MAX       (N_num, N_id)    (wltransform -> compile -> )
+ ***    node**     IDX_MIN       (N_num, N_id)
+ ***    node**     IDX_MAX       (N_num, N_id)
  ***
  ***  temporary attributes:
  ***
- ***    SCHsched_t SCHEDULING                     (wltransform -> compile -> )
- ***    SCHtasksel_t TASKSELECTOR                 (wltransform -> compile -> )
+ ***    SCHsched_t   SCHEDULING                   (wltransform -> compile -> )
+ ***    SCHtasksel_t TASKSEL                      (wltransform -> compile -> )
  ***
  ***  remarks:
  ***
@@ -4004,9 +4008,9 @@ extern node *MakeWLstrideVar (int level, int dim, node *bound1, node *bound2, no
  ***  remarks:
  ***
  ***    - It makes no sense to use the nodes NEXTDIM and CODE simultaneous!
- ***    - (NEXTDIM == NULL) *and* (CODE == NULL) means that this is a dummy grid,
- ***      representing a simple init- (genarray), copy- (modarray), noop- (fold)
- ***      operation.
+ ***    - (NEXTDIM == NULL) *and* (CODE == NULL) means that this is a dummy
+ ***      grid, representing a simple init- (genarray), copy- (modarray),
+ ***      noop- (fold) operation.
  ***      If also (NOOP == TRUE) is hold, this dummy grid represents a noop
  ***      even in genarray/modarray with-loops (-> naive compilation,
  ***      array padding, ...) !!
