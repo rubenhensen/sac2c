@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.181  1998/05/28 07:49:45  cg
+ * added temporary attribute FUNDEF_LIFTEDFROM for spmd functions
+ *
  * Revision 1.180  1998/05/27 13:16:38  sbs
  * INFO_TC_LHSVARS added
  *
@@ -1229,6 +1232,7 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  ***                                              ( -> analysis -> )
  ***                                              ( -> write-SIB -> )
  ***                                              ( -> obj-handling -> )
+ ***                                              ( -> liftspmd !!)
  ***    node*           ICM            (N_icm)    (compile -> print )
  ***    int             VARNO                     (optimize -> )
  ***    long*           MASK[x]                   (optimize -> )
@@ -1238,6 +1242,7 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  ***                                              ( -> compile -> )
  ***
  ***    node*           FUNDEC_DEF (O) (N_fundef) (checkdec -> writesib !!)
+ ***    node*           LIFTEDFROM (O) (N_fundef) (liftspmd -> compile -> )
  ***
  ***/
 
@@ -1261,6 +1266,11 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  *  LINKMOD contains the name of the module which has to be linked with
  *  in order to make the code of this function available. If LINKMOD is
  *  NULL, then link with the module given by MOD.
+ *
+ *  LIFTEDFROM is a link back to the original function definition in the
+ *  case of an SPMD function. Since SPMD functions are generated relatively
+ *  late during the entire compilation process when the NEEDOBJS attribute
+ *  is no longer required, LIFTEDFROM and NEEDOBJS may share the same node entry.
  */
 
 extern node *MakeFundef (char *name, char *mod, types *types, node *args, node *body,
@@ -1286,6 +1296,7 @@ extern node *MakeFundef (char *name, char *mod, types *types, node *args, node *
 #define FUNDEF_INLINE(n) (n->flag)
 #define FUNDEF_INLREC(n) (n->refcnt)
 #define FUNDEF_DFM_BASE(n) (n->dfmask[0])
+#define FUNDEF_LIFTEDFROM(n) (n->node[4])
 
 #define FUNDEC_DEF(n) (n->node[3])
 
