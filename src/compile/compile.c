@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.126  1998/04/16 15:58:40  dkr
+ * compilation of N_modul nodes moved from 'Compile' to 'CompModul'
+ * modified 'CompConc'
+ *
  * Revision 1.125  1998/04/14 22:48:10  dkr
  * some renamed access macros
  *
@@ -2325,20 +2329,9 @@ Compile (node *arg_node)
 
     act_tab = comp_tab; /* set new function-table for traverse */
     info = MakeInfo ();
-    if (NODE_TYPE (arg_node) == N_modul) {
-        if (MODUL_OBJS (arg_node) != NULL) {
-            MODUL_OBJS (arg_node) = Trav (MODUL_OBJS (arg_node), NULL);
-        }
-        if (MODUL_FUNS (arg_node) != NULL) {
-            MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), info);
-        }
-        if (MODUL_TYPES (arg_node) != NULL) {
-            MODUL_TYPES (arg_node) = Trav (MODUL_TYPES (arg_node), info);
-        }
-    } else {
-        DBUG_ASSERT ((N_fundef == arg_node->nodetype), "wrong node");
-        arg_node = Trav (arg_node, info);
-    }
+
+    arg_node = Trav (arg_node, info);
+
     FREE (info);
 
     DBUG_RETURN (arg_node);
@@ -2350,23 +2343,40 @@ Compile (node *arg_node)
  *   node *CompModul(node *arg_node, node *arg_info)
  *
  * description:
- *   compiles an N_modul node:
- *     - sets INFO_COMP_MODUL to arg_node (needed by CompConc).
- *     - traverses sons.
+ *   compiles an N_modul node.
  *
  ******************************************************************************/
 
 node *
 CompModul (node *arg_node, node *arg_info)
 {
+    node *tmp;
+
     DBUG_ENTER ("CompModul");
 
-    INFO_COMP_MODUL (arg_info) = arg_node; /* needed by CompConc */
+    if (MODUL_OBJS (arg_node) != NULL) {
+        MODUL_OBJS (arg_node) = Trav (MODUL_OBJS (arg_node), arg_info);
+    }
+    if (MODUL_FUNS (arg_node) != NULL) {
+        MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
+    }
+    if (MODUL_TYPES (arg_node) != NULL) {
+        MODUL_TYPES (arg_node) = Trav (MODUL_TYPES (arg_node), arg_info);
+    }
 
-    MODUL_IMPORTS (arg_node) = Trav (MODUL_IMPORTS (arg_node), arg_info);
-    MODUL_TYPES (arg_node) = Trav (MODUL_TYPES (arg_node), arg_info);
-    MODUL_OBJS (arg_node) = Trav (MODUL_OBJS (arg_node), arg_info);
-    MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
+    /*
+     * insert concregion-funs (INFO_COMP_CONCFUNS(arg_info)) at top of
+     *  fundef chain.
+     */
+
+    tmp = INFO_COMP_CONCFUNS (arg_info);
+    if (tmp != NULL) {
+        while (FUNDEF_NEXT (tmp) != NULL) {
+            tmp = FUNDEF_NEXT (tmp);
+        }
+        FUNDEF_NEXT (tmp) = MODUL_FUNS (arg_node);
+        MODUL_FUNS (arg_node) = INFO_COMP_CONCFUNS (arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -2537,7 +2547,6 @@ CompFundef (node *arg_node, node *arg_info)
     FREE (type_tab);
 
     /* traverse next function if any */
-
     if (NULL != FUNDEF_NEXT (arg_node)) {
         FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
     }
@@ -2709,8 +2718,9 @@ CompVardec (node *arg_node, node *arg_info)
         MAKE_ICM (assign);
         MAKE_ICM_NAME (ASSIGN_INSTR (assign), "ND_KS_DECL_ARRAY");
 
-        if (NULL != VARDEC_NEXT (arg_node))
+        if (NULL != VARDEC_NEXT (arg_node)) {
             ASSIGN_NEXT (assign) = VARDEC_NEXT (arg_node);
+        }
 
         MAKE_ICM_ARG (ICM_ARGS (ASSIGN_INSTR (assign)), id_type);
         icm_arg = ICM_ARGS (ASSIGN_INSTR (assign));
@@ -2747,8 +2757,9 @@ CompVardec (node *arg_node, node *arg_info)
         MAKE_ICM (assign);
         MAKE_ICM_NAME (ASSIGN_INSTR (assign), "ND_DECL_ARRAY");
 
-        if (NULL != VARDEC_NEXT (arg_node))
+        if (NULL != VARDEC_NEXT (arg_node)) {
             ASSIGN_NEXT (assign) = VARDEC_NEXT (arg_node);
+        }
 
         MAKE_ICM_ARG (ICM_ARGS (ASSIGN_INSTR (assign)), id_type);
         icm_arg = ICM_ARGS (ASSIGN_INSTR (assign));
@@ -2813,10 +2824,11 @@ CompVardec (node *arg_node, node *arg_info)
                 /* current vardec-node has unknown shape and will be removed */
                 node *tmp;
                 tmp = arg_node;
-                if (arg_node->node[0] != NULL)
+                if (arg_node->node[0] != NULL) {
                     arg_node = Trav (arg_node->node[0], NULL);
-                else
+                } else {
                     arg_node = NULL;
+                }
                 FREE_VARDEC (tmp);
             } else {
                 /* traverse next N_vardec node if any */
@@ -2878,8 +2890,7 @@ CompPrfModarray (node *arg_node, node *arg_info)
     /* store line of prf function */
     MAKENODE_NUM (line, arg_node->lineno);
 
-    if (NODE_TYPE (arg2) == N_array) /* index is constant! */
-    {
+    if (NODE_TYPE (arg2) == N_array) {     /* index is constant! */
         if (NODE_TYPE (arg3) == N_array) { /* value is constant! */
             DBUG_ASSERT (0, "sorry compilation of ND_PRF_MODARRAY_AxCxC not yet done");
         } else {
@@ -2961,10 +2972,11 @@ CompPrfModarray (node *arg_node, node *arg_info)
             } else {
                 char *icm_name;
 
-                if (1 == arg1->refcnt)
+                if (1 == arg1->refcnt) {
                     icm_name = "ND_PRF_MODARRAY_AxVxS_CHECK_REUSE";
-                else
+                } else {
                     icm_name = "ND_PRF_MODARRAY_AxVxS";
+                }
 
                 BIN_ICM_REUSE (arg_info->node[1], icm_name, line, type_id_node);
                 MAKE_NEXT_ICM_ARG (icm_arg, dim_res);
@@ -5934,32 +5946,29 @@ CompWith (node *arg_node, node *arg_info)
 node *
 CompConc (node *arg_node, node *arg_info)
 {
-    node *region, *ret, *new_fundef, *fundef;
+    node *tmp, *new_fundef;
 
     DBUG_ENTER ("CompConc");
 
     /* compile the contents of concregion */
-    region = Trav (CONC_REGION (arg_node), arg_info);
-
-    /* replace concregion by CONC_AP_LET */
-    ASSIGN_INSTR (ASSIGN_NEXT (INFO_COMP_LASTASSIGN (arg_info))) = CONC_AP_LET (arg_node);
+    CONC_REGION (arg_node) = Trav (CONC_REGION (arg_node), arg_info);
 
     /* build definition of concregion-fun */
     new_fundef = CONC_FUNDEC (arg_node);
-    ret = CONC_REGION (arg_node);
-    while (ASSIGN_NEXT (ret) != NULL) {
-        ret = ASSIGN_NEXT (ret);
+    tmp = BLOCK_INSTR (CONC_REGION (arg_node));
+    while (ASSIGN_NEXT (tmp) != NULL) {
+        tmp = ASSIGN_NEXT (tmp);
     } /* we have found the position for the return-assignment */
-    ASSIGN_NEXT (ret) = FUNDEF_RETURN (CONC_FUNDEC (arg_node));
+    ASSIGN_NEXT (tmp) = FUNDEF_RETURN (CONC_FUNDEC (arg_node));
     FUNDEF_BODY (new_fundef) = MakeBlock (CONC_REGION (arg_node), CONC_VARDEC (arg_node));
 
-    /* append new fundef at fundef-chain */
-    fundef = MODUL_FUNS (INFO_COMP_MODUL (arg_info));
-    DBUG_ASSERT ((fundef != NULL), "no fundefs found");
-    while (FUNDEF_NEXT (fundef) != NULL) {
-        fundef = FUNDEF_NEXT (fundef);
-    } /* we have found the last fundef */
-    FUNDEF_NEXT (fundef) = new_fundef;
+    /* insert new fundef in INFO_COMP_CONCFUNS */
+    FUNDEF_NEXT (new_fundef) = INFO_COMP_CONCFUNS (arg_info);
+    INFO_COMP_CONCFUNS (arg_info) = new_fundef;
+
+    /* replace concregion by CONC_AP_LET */
+    arg_node = CONC_AP_LET (arg_node);
+    ASSIGN_INSTR (ASSIGN_NEXT (INFO_COMP_LASTASSIGN (arg_info))) = arg_node;
 
     DBUG_RETURN (arg_node);
 }
