@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2004/11/02 14:33:25  ktr
+ * Reuseelimination is now performed seperately for each branch of a cond.
+ *
  * Revision 1.2  2004/10/22 15:38:19  ktr
  * Ongoing implementation.
  *
@@ -45,7 +48,6 @@ struct INFO {
     ids *lhs;
     LUT_t lut;
     DFMmask_t mask;
-    DFMmask_base_t maskbase;
 };
 
 /**
@@ -55,7 +57,6 @@ struct INFO {
 #define INFO_RE_LHS(n) (n->lhs)
 #define INFO_RE_LUT(n) (n->lut)
 #define INFO_RE_MASK(n) (n->mask)
-#define INFO_RE_MASKBASE(n) (n->maskbase)
 
 /**
  * INFO functions
@@ -73,7 +74,6 @@ MakeInfo ()
     INFO_RE_LHS (result) = NULL;
     INFO_RE_LUT (result) = NULL;
     INFO_RE_MASK (result) = NULL;
-    INFO_RE_MASKBASE (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -181,26 +181,71 @@ EMREassign (node *arg_node, info *arg_info)
 node *
 EMREblock (node *arg_node, info *arg_info)
 {
-    LUT_t old_lut;
-    DFMmask_t old_mask;
+    /*  LUT_t old_lut; */
+    /*  DFMmask_t old_mask; */
 
     DBUG_ENTER ("EMREblock");
 
-    old_lut = INFO_RE_LUT (arg_info);
-    old_mask = INFO_RE_MASK (arg_info);
+    /*  old_lut  = INFO_RE_LUT( arg_info);*/
+    /*  old_mask = INFO_RE_MASK( arg_info); */
 
-    INFO_RE_LUT (arg_info) = GenerateLUT ();
-    INFO_RE_MASK (arg_info) = DFMGenMaskClear (INFO_RE_MASKBASE (arg_info));
+    /*  INFO_RE_LUT( arg_info)  = GenerateLUT(); */
+    /*INFO_RE_MASK( arg_info) = DFMGenMaskClear( INFO_RE_MASKBASE( arg_info));*/
 
     if (BLOCK_INSTR (arg_node) != NULL) {
         BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
     }
 
-    INFO_RE_LUT (arg_info) = RemoveLUT (INFO_RE_LUT (arg_info));
-    INFO_RE_MASK (arg_info) = DFMRemoveMask (INFO_RE_MASK (arg_info));
+    /*  INFO_RE_LUT( arg_info)  = RemoveLUT( INFO_RE_LUT( arg_info)); */
+    /*  INFO_RE_MASK( arg_info) = DFMRemoveMask( INFO_RE_MASK( arg_info)); */
 
-    INFO_RE_LUT (arg_info) = old_lut;
-    INFO_RE_MASK (arg_info) = old_mask;
+    /*  INFO_RE_LUT( arg_info)  = old_lut; */
+    /*  INFO_RE_MASK( arg_info) = old_mask; */
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *EMREcond(node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ * @param arg_node
+ * @param arg_info
+ *
+ * @return arg_node
+ *
+ *****************************************************************************/
+node *
+EMREcond (node *arg_node, info *arg_info)
+{
+    DFMmask_t oldmask;
+    LUT_t oldlut;
+
+    DBUG_ENTER ("EMREcond");
+
+    oldmask = INFO_RE_MASK (arg_info);
+    oldlut = INFO_RE_LUT (arg_info);
+
+    INFO_RE_MASK (arg_info) = DFMGenMaskCopy (oldmask);
+    INFO_RE_LUT (arg_info) = DuplicateLUT (oldlut);
+
+    COND_THEN (arg_node) = Trav (COND_THEN (arg_node), arg_info);
+
+    INFO_RE_MASK (arg_info) = DFMRemoveMask (INFO_RE_MASK (arg_info));
+    INFO_RE_LUT (arg_info) = RemoveLUT (INFO_RE_LUT (arg_info));
+
+    INFO_RE_MASK (arg_info) = DFMGenMaskCopy (oldmask);
+    INFO_RE_LUT (arg_info) = DuplicateLUT (oldlut);
+
+    COND_ELSE (arg_node) = Trav (COND_ELSE (arg_node), arg_info);
+
+    INFO_RE_MASK (arg_info) = DFMRemoveMask (INFO_RE_MASK (arg_info));
+    INFO_RE_LUT (arg_info) = RemoveLUT (INFO_RE_LUT (arg_info));
+
+    INFO_RE_MASK (arg_info) = oldmask;
+    INFO_RE_LUT (arg_info) = oldlut;
 
     DBUG_RETURN (arg_node);
 }
@@ -223,12 +268,19 @@ EMREfundef (node *arg_node, info *arg_info)
     DBUG_ENTER ("EMREfundef");
 
     if (FUNDEF_BODY (arg_node) != NULL) {
-        INFO_RE_MASKBASE (arg_info)
-          = DFMGenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDEC (arg_node));
+        DFMmask_base_t maskbase;
+
+        maskbase = DFMGenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDEC (arg_node));
+
+        INFO_RE_MASK (arg_info) = DFMGenMaskClear (maskbase);
+        INFO_RE_LUT (arg_info) = GenerateLUT ();
 
         FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
 
-        INFO_RE_MASKBASE (arg_info) = DFMRemoveMaskBase (INFO_RE_MASKBASE (arg_info));
+        INFO_RE_LUT (arg_info) = RemoveLUT (INFO_RE_LUT (arg_info));
+        INFO_RE_MASK (arg_info) = DFMRemoveMask (INFO_RE_MASK (arg_info));
+
+        maskbase = DFMRemoveMaskBase (maskbase);
     }
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
@@ -319,6 +371,7 @@ EMREprf (node *arg_node, info *arg_info)
         }
         break;
 
+    case F_wl_assign:
     case F_fill:
         /*
          * Replace memory variable with reused variable
@@ -333,6 +386,23 @@ EMREprf (node *arg_node, info *arg_info)
               = MakeId (StringCopy (VARDEC_NAME (vardec)), NULL, ST_regular);
             ID_VARDEC (PRF_ARG2 (arg_node)) = vardec;
             ID_AVIS (PRF_ARG2 (arg_node)) = VARDEC_AVIS (vardec);
+        }
+        break;
+
+    case F_suballoc:
+        /*
+         * Replace memory variable with reused variable
+         */
+        vardec = SearchInLUT_PP (INFO_RE_LUT (arg_info), ID_VARDEC (PRF_ARG1 (arg_node)));
+
+        if (vardec != ID_VARDEC (PRF_ARG1 (arg_node))) {
+
+            PRF_ARG1 (arg_node) = FreeNode (PRF_ARG1 (arg_node));
+
+            PRF_ARG1 (arg_node)
+              = MakeId (StringCopy (VARDEC_NAME (vardec)), NULL, ST_regular);
+            ID_VARDEC (PRF_ARG1 (arg_node)) = vardec;
+            ID_AVIS (PRF_ARG1 (arg_node)) = VARDEC_AVIS (vardec);
         }
         break;
 

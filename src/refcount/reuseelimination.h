@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2004/11/02 14:33:25  ktr
+ * Reuseelimination is now performed seperately for each branch of a cond.
+ *
  * Revision 1.2  2004/10/22 15:38:19  ktr
  * Ongoing implementation.
  *
@@ -18,10 +21,10 @@
  * Prefix: EMRE
  *
  *****************************************************************************/
-extern node *EMSRReuseElimination (node *syntax_tree);
+extern node *EMREReuseElimination (node *syntax_tree);
 
 extern node *EMREassign (node *arg_node, info *arg_info);
-extern node *EMREblock (node *arg_node, info *arg_info);
+extern node *EMREcond (node *arg_node, info *arg_info);
 extern node *EMREfundef (node *arg_node, info *arg_info);
 extern node *EMRElet (node *arg_node, info *arg_info);
 extern node *EMREprf (node *arg_node, info *arg_info);
