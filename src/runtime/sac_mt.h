@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.41  2001/08/01 20:09:53  ben
+ * one minor bug fixed (Affinity_NEXT_TASK)
+ *
  * Revision 3.40  2001/07/24 11:53:21  ben
  * some warnings for factoring removed
  *
@@ -1120,7 +1123,7 @@ typedef union {
             for (queueid = 1; queueid < SAC_MT_THREADS (); queueid++)                    \
                 if (SAC_MT_LAST_TASK (sched_id, queueid)                                 \
                       - SAC_MT_TASK (sched_id, queueid)                                  \
-                    < mintask) {                                                         \
+                    > mintask) {                                                         \
                     mintask = SAC_MT_TASK (sched_id, queueid)                            \
                               - SAC_MT_LAST_TASK (sched_id, queueid);                    \
                     maxloadthread = queueid;                                             \
