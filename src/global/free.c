@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.45  1998/04/02 17:40:48  dkr
+ * added FreeConc
+ *
  * Revision 1.44  1998/04/01 23:55:20  dkr
  * added FreeWLstriVar, FreeWLgridVar
  *
@@ -238,6 +241,8 @@ FreeShpseg (shpseg *fr)
     DBUG_RETURN (fr);
 }
 
+/*--------------------------------------------------------------------------*/
+
 types *
 FreeOneTypes (types *fr)
 {
@@ -262,6 +267,8 @@ FreeOneTypes (types *fr)
     DBUG_RETURN (fr);
 }
 
+/*--------------------------------------------------------------------------*/
+
 types *
 FreeAllTypes (types *fr)
 {
@@ -273,6 +280,8 @@ FreeAllTypes (types *fr)
 
     DBUG_RETURN (fr);
 }
+
+/*--------------------------------------------------------------------------*/
 
 ids *
 FreeOneIds (ids *fr)
@@ -295,6 +304,8 @@ FreeOneIds (ids *fr)
     DBUG_RETURN (fr);
 }
 
+/*--------------------------------------------------------------------------*/
+
 ids *
 FreeAllIds (ids *fr)
 {
@@ -306,6 +317,8 @@ FreeAllIds (ids *fr)
 
     DBUG_RETURN (fr);
 }
+
+/*--------------------------------------------------------------------------*/
 
 nums *
 FreeOneNums (nums *fr)
@@ -325,6 +338,8 @@ FreeOneNums (nums *fr)
     DBUG_RETURN (fr);
 }
 
+/*--------------------------------------------------------------------------*/
+
 nums *
 FreeAllNums (nums *fr)
 {
@@ -336,6 +351,8 @@ FreeAllNums (nums *fr)
 
     DBUG_RETURN (fr);
 }
+
+/*--------------------------------------------------------------------------*/
 
 deps *
 FreeOneDeps (deps *fr)
@@ -361,6 +378,8 @@ FreeOneDeps (deps *fr)
     DBUG_RETURN (fr);
 }
 
+/*--------------------------------------------------------------------------*/
+
 deps *
 FreeAllDeps (deps *fr)
 {
@@ -372,6 +391,8 @@ FreeAllDeps (deps *fr)
 
     DBUG_RETURN (fr);
 }
+
+/*--------------------------------------------------------------------------*/
 
 strings *
 FreeOneStrings (strings *fr)
@@ -394,6 +415,8 @@ FreeOneStrings (strings *fr)
     DBUG_RETURN (fr);
 }
 
+/*--------------------------------------------------------------------------*/
+
 strings *
 FreeAllStrings (strings *fr)
 {
@@ -405,6 +428,8 @@ FreeAllStrings (strings *fr)
 
     DBUG_RETURN (fr);
 }
+
+/*--------------------------------------------------------------------------*/
 
 /*
  *  FreeNodelist always frees entire list.
@@ -460,6 +485,8 @@ FreeNode (node *free_node)
 
     DBUG_RETURN (free_node);
 }
+
+/*--------------------------------------------------------------------------*/
 
 node *
 FreeTree (node *free_node)
@@ -529,6 +556,8 @@ FreeModul (node *arg_node, node *arg_info)
     DBUG_RETURN (tmp);
 }
 
+/*--------------------------------------------------------------------------*/
+
 node *
 FreeModdec (node *arg_node, node *arg_info)
 {
@@ -550,6 +579,8 @@ FreeModdec (node *arg_node, node *arg_info)
 
     DBUG_RETURN (tmp);
 }
+
+/*--------------------------------------------------------------------------*/
 
 node *
 FreeClassdec (node *arg_node, node *arg_info)
@@ -573,6 +604,8 @@ FreeClassdec (node *arg_node, node *arg_info)
     DBUG_RETURN (tmp);
 }
 
+/*--------------------------------------------------------------------------*/
+
 node *
 FreeSib (node *arg_node, node *arg_info)
 {
@@ -595,6 +628,8 @@ FreeSib (node *arg_node, node *arg_info)
 
     DBUG_RETURN (tmp);
 }
+
+/*--------------------------------------------------------------------------*/
 
 node *
 FreeImplist (node *arg_node, node *arg_info)
@@ -621,6 +656,8 @@ FreeImplist (node *arg_node, node *arg_info)
     DBUG_RETURN (tmp);
 }
 
+/*--------------------------------------------------------------------------*/
+
 node *
 FreeExplist (node *arg_node, node *arg_info)
 {
@@ -641,6 +678,8 @@ FreeExplist (node *arg_node, node *arg_info)
 
     DBUG_RETURN (tmp);
 }
+
+/*--------------------------------------------------------------------------*/
 
 node *
 FreeTypedef (node *arg_node, node *arg_info)
@@ -665,6 +704,8 @@ FreeTypedef (node *arg_node, node *arg_info)
 
     DBUG_RETURN (tmp);
 }
+
+/*--------------------------------------------------------------------------*/
 
 node *
 FreeObjdef (node *arg_node, node *arg_info)
@@ -694,6 +735,8 @@ FreeObjdef (node *arg_node, node *arg_info)
 
     DBUG_RETURN (tmp);
 }
+
+/*--------------------------------------------------------------------------*/
 
 node *
 FreeFundef (node *arg_node, node *arg_info)
@@ -733,6 +776,8 @@ FreeFundef (node *arg_node, node *arg_info)
     DBUG_RETURN (tmp);
 }
 
+/*--------------------------------------------------------------------------*/
+
 node *
 FreeArg (node *arg_node, node *arg_info)
 {
@@ -753,6 +798,8 @@ FreeArg (node *arg_node, node *arg_info)
 
     DBUG_RETURN (tmp);
 }
+
+/*--------------------------------------------------------------------------*/
 
 node *
 FreeBlock (node *arg_node, node *arg_info)
@@ -776,6 +823,8 @@ FreeBlock (node *arg_node, node *arg_info)
     DBUG_RETURN (tmp);
 }
 
+/*--------------------------------------------------------------------------*/
+
 node *
 FreeVardec (node *arg_node, node *arg_info)
 {
@@ -798,6 +847,8 @@ FreeVardec (node *arg_node, node *arg_info)
     DBUG_RETURN (tmp);
 }
 
+/*--------------------------------------------------------------------------*/
+
 node *
 FreeAssign (node *arg_node, node *arg_info)
 {
@@ -819,6 +870,8 @@ FreeAssign (node *arg_node, node *arg_info)
     DBUG_RETURN (tmp);
 }
 
+/*--------------------------------------------------------------------------*/
+
 node *
 FreeLet (node *arg_node, node *arg_info)
 {
@@ -837,6 +890,8 @@ FreeLet (node *arg_node, node *arg_info)
 
     DBUG_RETURN (tmp);
 }
+
+/*--------------------------------------------------------------------------*/
 
 node *
 FreeCast (node *arg_node, node *arg_info)
@@ -857,6 +912,8 @@ FreeCast (node *arg_node, node *arg_info)
     DBUG_RETURN (tmp);
 }
 
+/*--------------------------------------------------------------------------*/
+
 node *
 FreeReturn (node *arg_node, node *arg_info)
 {
@@ -874,6 +931,8 @@ FreeReturn (node *arg_node, node *arg_info)
 
     DBUG_RETURN (tmp);
 }
+
+/*--------------------------------------------------------------------------*/
 
 node *
 FreeCond (node *arg_node, node *arg_info)
@@ -904,6 +963,8 @@ FreeCond (node *arg_node, node *arg_info)
 
     DBUG_RETURN (tmp);
 }
+
+/*--------------------------------------------------------------------------*/
 
 node *
 FreeDo (node *arg_node, node *arg_info)
@@ -936,6 +997,8 @@ FreeDo (node *arg_node, node *arg_info)
     DBUG_RETURN (tmp);
 }
 
+/*--------------------------------------------------------------------------*/
+
 node *
 FreeWhile (node *arg_node, node *arg_info)
 {
@@ -967,6 +1030,8 @@ FreeWhile (node *arg_node, node *arg_info)
     DBUG_RETURN (tmp);
 }
 
+/*--------------------------------------------------------------------------*/
+
 node *
 FreeAp (node *arg_node, node *arg_info)
 {
@@ -985,6 +1050,8 @@ FreeAp (node *arg_node, node *arg_info)
 
     DBUG_RETURN (tmp);
 }
+
+/*--------------------------------------------------------------------------*/
 
 node *
 FreeWith (node *arg_node, node *arg_info)
@@ -1005,6 +1072,8 @@ FreeWith (node *arg_node, node *arg_info)
 
     DBUG_RETURN (tmp);
 }
+
+/*--------------------------------------------------------------------------*/
 
 node *
 FreeGenerator (node *arg_node, node *arg_info)
@@ -1027,6 +1096,8 @@ FreeGenerator (node *arg_node, node *arg_info)
     DBUG_RETURN (tmp);
 }
 
+/*--------------------------------------------------------------------------*/
+
 node *
 FreeGenarray (node *arg_node, node *arg_info)
 {
@@ -1045,6 +1116,8 @@ FreeGenarray (node *arg_node, node *arg_info)
 
     DBUG_RETURN (tmp);
 }
+
+/*--------------------------------------------------------------------------*/
 
 node *
 FreeModarray (node *arg_node, node *arg_info)
@@ -1065,6 +1138,8 @@ FreeModarray (node *arg_node, node *arg_info)
     DBUG_RETURN (tmp);
 }
 
+/*--------------------------------------------------------------------------*/
+
 node *
 FreeFoldprf (node *arg_node, node *arg_info)
 {
@@ -1083,6 +1158,8 @@ FreeFoldprf (node *arg_node, node *arg_info)
 
     DBUG_RETURN (tmp);
 }
+
+/*--------------------------------------------------------------------------*/
 
 node *
 FreeFoldfun (node *arg_node, node *arg_info)
@@ -1106,6 +1183,8 @@ FreeFoldfun (node *arg_node, node *arg_info)
     DBUG_RETURN (tmp);
 }
 
+/*--------------------------------------------------------------------------*/
+
 node *
 FreeExprs (node *arg_node, node *arg_info)
 {
@@ -1126,6 +1205,8 @@ FreeExprs (node *arg_node, node *arg_info)
     DBUG_RETURN (tmp);
 }
 
+/*--------------------------------------------------------------------------*/
+
 node *
 FreeArray (node *arg_node, node *arg_info)
 {
@@ -1144,6 +1225,8 @@ FreeArray (node *arg_node, node *arg_info)
 
     DBUG_RETURN (tmp);
 }
+
+/*--------------------------------------------------------------------------*/
 
 node *
 FreeVinfo (node *arg_node, node *arg_info)
@@ -1165,6 +1248,8 @@ FreeVinfo (node *arg_node, node *arg_info)
     DBUG_RETURN (tmp);
 }
 
+/*--------------------------------------------------------------------------*/
+
 node *
 FreeId (node *arg_node, node *arg_info)
 {
@@ -1183,6 +1268,8 @@ FreeId (node *arg_node, node *arg_info)
     DBUG_RETURN (tmp);
 }
 
+/*--------------------------------------------------------------------------*/
+
 node *
 FreeNum (node *arg_node, node *arg_info)
 {
@@ -1196,6 +1283,8 @@ FreeNum (node *arg_node, node *arg_info)
 
     DBUG_RETURN (tmp);
 }
+
+/*--------------------------------------------------------------------------*/
 
 node *
 FreeChar (node *arg_node, node *arg_info)
@@ -1211,6 +1300,8 @@ FreeChar (node *arg_node, node *arg_info)
     DBUG_RETURN (tmp);
 }
 
+/*--------------------------------------------------------------------------*/
+
 node *
 FreeFloat (node *arg_node, node *arg_info)
 {
@@ -1224,6 +1315,8 @@ FreeFloat (node *arg_node, node *arg_info)
 
     DBUG_RETURN (tmp);
 }
+
+/*--------------------------------------------------------------------------*/
 
 node *
 FreeDouble (node *arg_node, node *arg_info)
@@ -1239,6 +1332,8 @@ FreeDouble (node *arg_node, node *arg_info)
     DBUG_RETURN (tmp);
 }
 
+/*--------------------------------------------------------------------------*/
+
 node *
 FreeBool (node *arg_node, node *arg_info)
 {
@@ -1252,6 +1347,8 @@ FreeBool (node *arg_node, node *arg_info)
 
     DBUG_RETURN (tmp);
 }
+
+/*--------------------------------------------------------------------------*/
 
 node *
 FreeStr (node *arg_node, node *arg_info)
@@ -1272,6 +1369,8 @@ FreeStr (node *arg_node, node *arg_info)
     DBUG_RETURN (tmp);
 }
 
+/*--------------------------------------------------------------------------*/
+
 node *
 FreePrf (node *arg_node, node *arg_info)
 {
@@ -1290,6 +1389,8 @@ FreePrf (node *arg_node, node *arg_info)
     DBUG_RETURN (tmp);
 }
 
+/*--------------------------------------------------------------------------*/
+
 node *
 FreeEmpty (node *arg_node, node *arg_info)
 {
@@ -1303,6 +1404,8 @@ FreeEmpty (node *arg_node, node *arg_info)
 
     DBUG_RETURN (tmp);
 }
+
+/*--------------------------------------------------------------------------*/
 
 node *
 FreePost (node *arg_node, node *arg_info)
@@ -1322,6 +1425,8 @@ FreePost (node *arg_node, node *arg_info)
     DBUG_RETURN (tmp);
 }
 
+/*--------------------------------------------------------------------------*/
+
 node *
 FreePre (node *arg_node, node *arg_info)
 {
@@ -1340,6 +1445,8 @@ FreePre (node *arg_node, node *arg_info)
     DBUG_RETURN (tmp);
 }
 
+/*--------------------------------------------------------------------------*/
+
 node *
 FreeInc (node *arg_node, node *arg_info)
 {
@@ -1354,6 +1461,8 @@ FreeInc (node *arg_node, node *arg_info)
     DBUG_RETURN (tmp);
 }
 
+/*--------------------------------------------------------------------------*/
+
 node *
 FreeDec (node *arg_node, node *arg_info)
 {
@@ -1367,6 +1476,8 @@ FreeDec (node *arg_node, node *arg_info)
 
     DBUG_RETURN (tmp);
 }
+
+/*--------------------------------------------------------------------------*/
 
 node *
 FreeIcm (node *arg_node, node *arg_info)
@@ -1395,6 +1506,8 @@ FreeIcm (node *arg_node, node *arg_info)
 
     DBUG_RETURN (tmp);
 }
+
+/*--------------------------------------------------------------------------*/
 
 node *
 FreePragma (node *arg_node, node *arg_info)
@@ -1427,6 +1540,28 @@ FreePragma (node *arg_node, node *arg_info)
     DBUG_RETURN (tmp);
 }
 
+/*--------------------------------------------------------------------------*/
+
+node *
+FreeConc (node *arg_node, node *arg_info)
+{
+    node *tmp = NULL;
+
+    DBUG_ENTER ("FreeConc");
+
+    DBUG_PRINT ("FREE", ("Removing contents of N_conc node ..."));
+
+    FREE (CONC_REGION (arg_node));
+
+    DBUG_PRINT ("FREE", ("Removing N_conc node ..."));
+
+    FREE (arg_node);
+
+    DBUG_RETURN (tmp);
+}
+
+/*--------------------------------------------------------------------------*/
+
 node *
 FreeInfo (node *arg_node, node *arg_info)
 {
@@ -1439,6 +1574,7 @@ FreeInfo (node *arg_node, node *arg_info)
 
     DBUG_RETURN (tmp);
 }
+
 /*--------------------------------------------------------------------------*/
 
 node *
@@ -1458,6 +1594,7 @@ FreeNWith (node *arg_node, node *arg_info)
 
     DBUG_RETURN (tmp);
 }
+
 /*--------------------------------------------------------------------------*/
 
 node *
@@ -1483,6 +1620,7 @@ FreeNPart (node *arg_node, node *arg_info)
 
     DBUG_RETURN (tmp);
 }
+
 /*--------------------------------------------------------------------------*/
 
 node *
@@ -1500,6 +1638,7 @@ FreeNWithID (node *arg_node, node *arg_info)
 
     DBUG_RETURN (tmp);
 }
+
 /*--------------------------------------------------------------------------*/
 
 node *
@@ -1519,6 +1658,7 @@ FreeNGenerator (node *arg_node, node *arg_info)
 
     DBUG_RETURN (tmp);
 }
+
 /*--------------------------------------------------------------------------*/
 
 node *
@@ -1543,6 +1683,7 @@ FreeNWithOp (node *arg_node, node *arg_info)
 
     DBUG_RETURN (tmp);
 }
+
 /*--------------------------------------------------------------------------*/
 
 node *
@@ -1561,6 +1702,7 @@ FreeNCode (node *arg_node, node *arg_info)
 
     DBUG_RETURN (tmp);
 }
+
 /*--------------------------------------------------------------------------*/
 
 node *
@@ -1580,6 +1722,7 @@ FreeNwith2 (node *arg_node, node *arg_info)
 
     DBUG_RETURN (tmp);
 }
+
 /*--------------------------------------------------------------------------*/
 
 node *
@@ -1597,6 +1740,7 @@ FreeWLseg (node *arg_node, node *arg_info)
 
     DBUG_RETURN (tmp);
 }
+
 /*--------------------------------------------------------------------------*/
 
 node *
@@ -1615,6 +1759,7 @@ FreeWLblock (node *arg_node, node *arg_info)
 
     DBUG_RETURN (tmp);
 }
+
 /*--------------------------------------------------------------------------*/
 
 node *
@@ -1633,6 +1778,7 @@ FreeWLublock (node *arg_node, node *arg_info)
 
     DBUG_RETURN (tmp);
 }
+
 /*--------------------------------------------------------------------------*/
 
 node *
@@ -1650,6 +1796,7 @@ FreeWLstride (node *arg_node, node *arg_info)
 
     DBUG_RETURN (tmp);
 }
+
 /*--------------------------------------------------------------------------*/
 
 node *
@@ -1671,6 +1818,7 @@ FreeWLgrid (node *arg_node, node *arg_info)
 
     DBUG_RETURN (tmp);
 }
+
 /*--------------------------------------------------------------------------*/
 
 node *
@@ -1691,6 +1839,7 @@ FreeWLstriVar (node *arg_node, node *arg_info)
 
     DBUG_RETURN (tmp);
 }
+
 /*--------------------------------------------------------------------------*/
 
 node *
@@ -1714,6 +1863,7 @@ FreeWLgridVar (node *arg_node, node *arg_info)
 
     DBUG_RETURN (tmp);
 }
+
 /*--------------------------------------------------------------------------*/
 
 /********************************************************************

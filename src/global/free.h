@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.20  1998/04/02 17:40:54  dkr
+ * added FreeConc
+ *
  * Revision 1.19  1998/04/01 23:55:39  dkr
  * added FreeWLstriVar, FreeWLgridVar
  *
@@ -169,8 +172,9 @@ extern node *FreeDec (node *arg_node, node *arg_info);
 extern node *FreeInc (node *arg_node, node *arg_info);
 extern node *FreePragma (node *arg_node, node *arg_info);
 extern node *FreeInfo (node *arg_node, node *arg_info);
+extern node *FreeConc (node *arg_node, node *arg_info);
 
-/* new withloops */
+/* new with-loops */
 extern node *FreeNWith (node *arg_node, node *arg_info);
 extern node *FreeNPart (node *arg_node, node *arg_info);
 extern node *FreeNWithID (node *arg_node, node *arg_info);
