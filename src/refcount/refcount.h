@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2002/06/03 08:16:37  dkr
+ * TAGGED_ARRAYS: objects of *all* types are refcounted.
+ * (The *backend* decides whether code for RC is generated or not)
+ *
  * Revision 3.7  2002/03/01 15:18:07  dkr
  * macro RC_INIT added
  *
@@ -129,7 +133,11 @@
 /*
  *  Steering which variables to be refcounted.
  */
+#ifdef TAGGED_ARRAYS
+#define MUST_REFCOUNT(type) (TRUE)
+#else /* TAGGED_ARRAYS */
 #define MUST_REFCOUNT(type) (IsArray (type) || IsNonUniqueHidden (type))
+#endif /* TAGGED_ARRAYS */
 #define MUST_NAIVEREFCOUNT(type) (TRUE)
 
 extern node *Refcount (node *arg_node);
