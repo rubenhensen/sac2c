@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.193  2004/07/03 15:09:35  sah
+ * added the new node representation into the source code.
+ * the new ast can be enabled by make newast int the
+ * project root
+ *
  * Revision 3.192  2004/07/01 12:31:05  skt
  * FUNDEF_EXECMODE corrected
  *
@@ -385,6 +390,7 @@ file can be found in tree_basic.c
 #ifndef _sac_tree_basic_h
 #define _sac_tree_basic_h
 
+#include "new_types.h"
 #include "types.h"
 #include "shape.h"
 
@@ -777,6 +783,24 @@ extern DFMfoldmask_t *CopyDFMfoldmask (DFMfoldmask_t *mask);
 #define DFMFM_VARDEC(n) (n->vardec)
 #define DFMFM_FOLDOP(n) (n->foldop)
 #define DFMFM_NEXT(n) (n->next)
+
+#ifdef NEW_AST
+/*
+ * this defines the new node type
+ */
+#include "attribs.h"
+
+struct NODE {
+    nodetype nodetype;           /* type of node */
+    int lineno;                  /* line number in source code */
+    char *src_file;              /* pointer to filename or source code */
+    struct NODE *node[MAX_SONS]; /* pointers to child nodes */
+    union AttribUnion attribs;   /* the nodes attributes */
+};
+
+#include "node_basic.h"
+#include "node_compat.h"
+#else
 
 /*==========================================================================*/
 
@@ -4494,5 +4518,7 @@ extern node *MakeModspec (char *name, node *exports);
 extern node *MakeOk ();
 
 /*--------------------------------------------------------------------------*/
+
+#endif /* NEW_AST */
 
 #endif /* _sac_tree_basic_h */

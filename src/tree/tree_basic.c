@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.83  2004/07/03 15:09:35  sah
+ * added the new node representation into the source code.
+ * the new ast can be enabled by make newast int the
+ * project root
+ *
  * Revision 3.82  2004/03/09 23:57:59  dkrHH
  * old backend removed
  *
@@ -546,6 +551,7 @@ CopyDFMfoldmask (DFMfoldmask_t *mask)
     DBUG_RETURN (tmp);
 }
 
+#ifndef NEW_AST
 /*--------------------------------------------------------------------------*/
 /*  Make-functions for node structures                                      */
 /*--------------------------------------------------------------------------*/
@@ -2296,3 +2302,5 @@ MakeOk ()
 }
 
 /*--------------------------------------------------------------------------*/
+
+#endif /* NEW_AST */

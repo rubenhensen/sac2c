@@ -1,6 +1,11 @@
 #
 #
 # $Log$
+# Revision 3.30  2004/07/03 15:09:35  sah
+# added the new node representation into the source code.
+# the new ast can be enabled by make newast int the
+# project root
+#
 # Revision 3.29  2004/01/29 12:00:41  skt
 # some adaptions (removed CheckAvis.o, SSATransform.o
 # and UndoSSATransform.o) because of moving of
@@ -70,16 +75,21 @@ include $(PROJECT_ROOT)/Makefile.Config
 #
 # local settings:
 #
+ifeq ($(shell test -f $(PROJECT_ROOT)/_NEW_AST && echo yes),yes)
+  NEWASTTARGETS := node_basic.o node_compat.o
+else
+  NEWASTTARGETS :=
+endif
 
-INCS=-I../../inc -I../tree -I../print -I../flatten -I../scanparse -I../typecheck \
+INCS=-I../../inc -I../print -I../flatten -I../scanparse -I../typecheck \
      -I../optimize -I../modules -I../global -I../refcount -I../compile \
      -I../psi-opt -I../objects -I../concurrent -I../multithread \
-     -I../c-interface -I../constants -I../profile
+     -I../c-interface -I../constants -I../profile -I.
 
 all: tree_basic.o tree_compound.o free.o DupTree.o traverse.o \
      DataFlowMask.o DataFlowMaskUtils.o InferDFMs.o \
      LookUpTable.o adjust_ids.o cleanup_decls.o scheduling.o \
-     change_signature.o compare_tree.o wl_bounds.o
+     change_signature.o compare_tree.o wl_bounds.o $(NEWASTTARGETS)
 
 
 #
@@ -90,11 +100,12 @@ traverse.c: node_info.mac
 	touch $@
 	$(CLOCK_SKEW_ELIMINATION) $@
 
-
 %.o: %.c
 	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) -o $@ -c $<
 	$(CLOCK_SKEW_ELIMINATION) $@
 
+%.c: xml/ast2%_c.xsl xml/ast.xml
+	$(MAKE) -C xml ../$@
 
 clean:
 	$(RM) *.o *.a *.bak *~ .*.d

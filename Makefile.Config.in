@@ -1,6 +1,11 @@
 #
 #
 # $Log$
+# Revision 1.11  2004/07/03 15:09:35  sah
+# added the new node representation into the source code.
+# the new ast can be enabled by make newast int the
+# project root
+#
 # Revision 1.10  2004/07/01 14:32:39  sah
 # added NEW_AST flag
 #
@@ -65,6 +70,13 @@ CCPROD_FLAGS := @PDCCFLAGS@ @OSFLAGS@
 CFLAGS       := -DSHOW_MALLOC
 CPROD_FLAGS  := -DDBUG_OFF -DPRODUCTION
 
+ifeq ($(shell test -f $(PROJECT_ROOT)/_NEW_AST && echo yes),yes)
+  CCFLAGS := $(CCFLAGS) -DNEW_AST
+  CCDEPS_FLAGS := $(CCDEPS_FLAGS) -DNEW_AST
+  CCPROD_FLAGS := $(CCPROD_FLAGS) -DNEW_AST
+  XSLTENGINE := sabcmd
+endif
+
 MAKE_NORM    := $(MAKE) CC="$(CC)" CCFLAGS="$(CCFLAGS)" CFLAGS="$(CFLAGS)"
 MAKE_PROD    := $(MAKE) CC="$(CCPROD)" CCFLAGS="$(CCPROD_FLAGS)" CFLAGS="$(CPROD_FLAGS)"
 MAKE_CLEAN   := $(MAKE) TARGET="clean" clean
@@ -83,12 +95,6 @@ ifeq ($(OS),solaris2.8)
   YYFLAGS   := -DYYDEBUG=1
 else
   YYFLAGS   :=
-endif
-
-ifeq ($(shell test -f $(PROJECT_ROOT)/_NEW_AST && echo yes),yes)
-  CCFLAGS := $(CCFLAGS) -DNEW_AST
-  CCDEPS_FLAGS := $(CCDEPS_FLAGS) -DNEW_AST
-  CCPROD_FLAGS := $(CCPROD_FLAGS) -DNEW_AST
 endif
 
 CLOCK_SKEW_ELIMINATION   := $(PROJECT_ROOT)/tools/bin/cse

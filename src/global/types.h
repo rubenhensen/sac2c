@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.25  2004/07/03 15:09:35  sah
+ * added the new node representation into the source code.
+ * the new ast can be enabled by make newast int the
+ * project root
+ *
  * Revision 3.24  2004/03/10 00:10:17  dkrHH
  * old backend removed
  *
@@ -454,6 +459,16 @@ typedef union {
     GeneratorRel genrel; /* used in N_Ngenerator node */
 } infotype;
 
+#ifdef NEW_AST
+/*
+ * The NEW node structure of the SAC syntax tree
+ * The type is abstract, as there is _no_ way to access a node other
+ * than using tree_basic.h. Thus the structure is defined in
+ * tree_basic.h. This as well solves dependency problems.
+ */
+typedef struct NODE node;
+
+#else
 /*
  *  The node structure of the SAC syntax tree
  */
@@ -476,6 +491,7 @@ typedef struct NODE {
     char *src_file;              /* pointer to filename or source code */
     struct NODE *node[MAX_SONS]; /* pointers to child nodes */
 } node;
+#endif /* NEW_AST */
 
 /******************************************************************************
  *

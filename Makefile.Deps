@@ -1,5 +1,10 @@
 #
 # $Log$
+# Revision 1.7  2004/07/03 15:09:35  sah
+# added the new node representation into the source code.
+# the new ast can be enabled by make newast int the
+# project root
+#
 # Revision 1.6  2003/04/01 11:34:17  sbs
 # CLOCK_SKEW_ELIMINATION disabled for .d files as this may lead
 # to a recursion problem!!
@@ -37,12 +42,17 @@ endif
 
 
 YACC_H_FILES   := $(patsubst %.y, y.tab.h, $(wildcard *.y))
+XSL_FILES      := $(wildcard $(PROJECT_ROOT)/src/tree/xml/*_h.xsl)
+XML_FILES      := $(wildcard $(PROJECT_ROOT)/src/tree/xml/*.xml)
+XML_H_FILES    := $(patsubst ast2%_h.xsl, $(PROJECT_ROOT)/src/tree/%.h, \
+                    $(notdir                                          \
+                       $(XSL_FILES)))
 #
 # $(YACC_H_FILES) might be included by any .c files.
 # Therefore, bison has to be run before any dependency
 # is generated!
 #
-.%.d: %.c $(YACC_H_FILES) 
+.%.d: %.c $(YACC_H_FILES) $(XML_H_FILES)
 	@$(ECHO) "$(CC) $(CCDEPS_FLAGS) $(CFLAGS) $(INCS) $<  > $@"
 	@if $(CC) $(CCDEPS_FLAGS) $(CFLAGS) $(INCS) $<  > $@d ; \
 	 then sed 's/\($*\)\.o[ :]*/$*\.o $@\: /'  <$@d >$@; \
@@ -51,3 +61,10 @@ YACC_H_FILES   := $(patsubst %.y, y.tab.h, $(wildcard *.y))
 	      exit 1 ;  \
 	 fi
 
+#
+# similar to YACC_H_FILES, the XML_H_FILES might be included by any .c file.
+# Thus, these have to be generated prior to generating the dependencies.
+#
+$(XML_H_FILES): $(XML_FILES) $(XSL_FILES)
+	@$(MAKE) -C $(PROJECT_ROOT)/src/tree/xml ../$(notdir $@)
+	
