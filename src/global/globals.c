@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.68  2004/10/23 12:00:31  ktr
+ * Added switches for static reuse / static free.
+ *
  * Revision 3.67  2004/10/13 15:18:54  sah
  * disabled SP in NEW_AST mode
  *
@@ -560,17 +563,23 @@ bool patch_with = FALSE;
 unsigned int optimize = OPT_ALL & (~OPT_APL) /* Only rudimentary implementation exists. */
                         & (~OPT_TSI)         /* Bugs to be fixed. */
                         & (~OPT_SP)          /* not working with new ast */
-                        & (~OPT_WLFS);       /* Not yet full operational */
+                        & (~OPT_SRF)         /* not yet fully operational */
+                        & (~OPT_LRO)         /* not yet fully operational */
+                        & (~OPT_WLFS);       /* Not yet fully operational */
 #else                                        /* NEW_AST */
 #ifdef PRODUCTION
 unsigned int optimize = OPT_ALL & (~OPT_APL) /* Only rudimentary implementation exists. */
+                        & (~OPT_SRF)         /* not yet fully operational */
+                        & (~OPT_LRO)         /* not yet fully operational */
                         & (~OPT_TSI)         /* Bugs to be fixed. */
-                        & (~OPT_WLFS);       /* Not yet full operational */
+                        & (~OPT_WLFS);       /* Not yet fully operational */
 
 #else /* PRODUCTION */
 unsigned int optimize = OPT_ALL & (~OPT_APL) /* Only rudimentary implementation exists. */
+                        & (~OPT_SRF)         /* not yet fully operational */
+                        & (~OPT_LRO)         /* not yet fully operational */
                         & (~OPT_TSI)         /* Bugs to be fixed. */
-                        & (~OPT_WLFS);       /* Not yet full operational */
+                        & (~OPT_WLFS);       /* Not yet fully operational */
 
 #endif /* PRODUCTION */
 #endif /* NEW_AST */
@@ -587,12 +596,12 @@ bool valid_ssaform = FALSE;
 int ssaform_phase = 0;
 
 /*
- * do not use explicit memory management by default
+ * explicit memory management is activated by default
  */
 bool emm = TRUE;
 
 /*
- * Do not apply reuse inference in emm by dafault
+ * Reuse inference in emm is default behaviour
  */
 bool reuse = TRUE;
 

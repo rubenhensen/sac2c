@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.49  2004/10/23 12:00:31  ktr
+ * Added switches for static reuse / static free.
+ *
  * Revision 3.48  2004/09/28 16:32:19  ktr
  * cleaned up concurrent (removed everything not working / not working with emm)
  *
@@ -314,6 +317,7 @@ extern unsigned int optimize;
 #define OPT_TSP 0x00020000  /* with-loop tile size pragmas                 */
 #define OPT_WLPG 0x00040000 /* with-loop partition generation              */
 #define OPT_CVP 0x00080000  /* Constant and Value Propagation              */
+#define OPT_SRF 0x00100000  /* Static reuse / Static free optimization     */
 #define OPT_PHM 0x00200000  /* private heap management                     */
 #define OPT_APS 0x00400000  /* arena preselection (for PHM)                */
 #define OPT_DAO 0x00800000  /* descriptor allocation opt. (for PHM)        */
@@ -324,6 +328,7 @@ extern unsigned int optimize;
 #define OPT_AL 0x10000000   /* associative law                             */
 #define OPT_SP 0x20000000   /* selection propagation                       */
 #define OPT_WLFS 0x40000000 /* with-loop fusion                            */
+#define OPT_LRO 0x80000000  /* loop reuse optimization                     */
 
 /* disable some optimizations on floats and fold-WithLoops with floats */
 extern bool enforce_ieee;

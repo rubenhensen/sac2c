@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.64  2004/10/23 12:00:31  ktr
+ * Added switches for static reuse / static free.
+ *
  * Revision 3.63  2004/09/28 14:07:30  ktr
  * removed old refcount and generatemasks
  *
@@ -530,6 +533,8 @@ Usage ()
       "        IVE     index vector elimination\n"
       "        AE      array elimination\n"
       "        RCO     refcount optimization\n"
+      "        SRF     static reuse / static free\n"
+      "        LRO     loop reuse optimization\n"
       "        UIP     update-in-place\n"
       "        AP      array padding\n"
       "        APL     array placement\n"

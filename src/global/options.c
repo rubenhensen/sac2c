@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.76  2004/10/23 12:00:31  ktr
+ * Added switches for static reuse / static free.
+ *
  * Revision 3.75  2004/09/28 16:32:19  ktr
  * cleaned up concurrent (removed everything not working / not working with emm)
  *
@@ -617,6 +620,12 @@ AnalyseCommandline (int argc, char *argv[])
         ARG_CHOICE ("rco", optimize |= OPT_RCO);
         ARG_CHOICE ("RCO", optimize |= OPT_RCO);
 
+        ARG_CHOICE ("srf", optimize |= OPT_SRF);
+        ARG_CHOICE ("SRF", optimize |= OPT_SRF);
+
+        ARG_CHOICE ("lro", optimize |= OPT_LRO);
+        ARG_CHOICE ("LRO", optimize |= OPT_LRO);
+
         ARG_CHOICE ("uip", optimize |= OPT_UIP);
         ARG_CHOICE ("UIP", optimize |= OPT_UIP);
 
@@ -880,6 +889,12 @@ AnalyseCommandline (int argc, char *argv[])
 
         ARG_CHOICE ("rco", optimize &= ~OPT_RCO);
         ARG_CHOICE ("RCO", optimize &= ~OPT_RCO);
+
+        ARG_CHOICE ("srf", optimize &= ~OPT_SRF);
+        ARG_CHOICE ("SRF", optimize &= ~OPT_SRF);
+
+        ARG_CHOICE ("lro", optimize &= ~OPT_LRO);
+        ARG_CHOICE ("LRO", optimize &= ~OPT_LRO);
 
         ARG_CHOICE ("uip", optimize &= ~OPT_UIP);
         ARG_CHOICE ("UIP", optimize &= ~OPT_UIP);
