@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.19  2001/03/16 11:54:16  nmw
+ * DupAvis for new macros modified
+ *
  * Revision 3.18  2001/03/05 14:42:53  dkr
  * NCODE_NO removed
  *
@@ -2064,16 +2067,24 @@ DupAvis (node *arg_node, node *arg_info)
     INFO_DUP_LUT (arg_info) = InsertIntoLUT (INFO_DUP_LUT (arg_info), arg_node, new_node);
 
     AVIS_SSACOUNT (new_node) = AVIS_SSACOUNT (arg_node);
-    AVIS_SSAASSIGN (new_node) = AVIS_SSAASSIGN (arg_node);
+    AVIS_SSAASSIGN (new_node)
+      = SearchInLUT (INFO_DUP_LUT (arg_info), AVIS_SSAASSIGN (arg_node));
+    AVIS_SSAASSIGN2 (new_node)
+      = SearchInLUT (INFO_DUP_LUT (arg_info), AVIS_SSAASSIGN (arg_node));
     if (AVIS_SSACONST (arg_node) != NULL) {
         AVIS_SSACONST (new_node) = COCopyConstant (AVIS_SSACONST (arg_node));
     }
     AVIS_SSAPHITARGET (new_node) = AVIS_SSAPHITARGET (arg_node);
     AVIS_SSALPINV (new_node) = AVIS_SSALPINV (arg_node);
-    AVIS_SSADEFINED (new_node) = AVIS_SSADEFINED (arg_node);
     AVIS_SSASTACK (new_node) = DupTree (AVIS_SSASTACK (arg_node));
+    AVIS_SSAUNDOFLAG (new_node) = AVIS_SSAUNDOFLAG (arg_node);
+
+    AVIS_SSADEFINED (new_node) = AVIS_SSADEFINED (arg_node);
     AVIS_SSATHEN (new_node) = AVIS_SSATHEN (arg_node);
     AVIS_SSAELSE (new_node) = AVIS_SSAELSE (arg_node);
+    AVIS_NEEDCOUNT (new_node) = AVIS_NEEDCOUNT (arg_node);
+    AVIS_SUBST (new_node) = AVIS_SUBST (arg_node);
+    AVIS_SUBSTUSSA (new_node) = AVIS_SUBSTUSSA (arg_node);
 
     CopyCommonNodeData (new_node, arg_node);
 
