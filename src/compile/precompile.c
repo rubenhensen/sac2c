@@ -1,8 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.38  1998/03/30 23:43:05  dkr
+ * PRECnwith is completed!!!
+ *
  * Revision 1.37  1998/03/29 23:28:57  dkr
- * first release with complete support for WL-PREC-phases 1-5
+ * first release with complete support for WL-PREC-phases 1-6
  *
  * Revision 1.36  1998/03/28 20:29:10  dkr
  * removed a bug in splitting phase
@@ -1120,7 +1123,7 @@ CompareWLnode (node *node1, node *node2, int outline)
     if ((node1 != NULL) && (node2 != NULL)) {
 
         DBUG_ASSERT ((NODE_TYPE (node1) == NODE_TYPE (node2)),
-                     "can not compare object of different type");
+                     "can not compare objects of different type");
 
         /* compare the bounds first */
         COMP_BEGIN (WLNODE_BOUND1 (node1), WLNODE_BOUND1 (node2), result, 2)
@@ -1129,17 +1132,12 @@ CompareWLnode (node *node1, node *node2, int outline)
         switch (NODE_TYPE (node1)) {
 
         case N_WLblock:
-
-            /* compare next dim */
-            result
-              = CompareWLnode (WLBLOCK_NEXTDIM (node1), WLBLOCK_NEXTDIM (node2), outline);
-            break;
-
+            /* here is no break missing! */
         case N_WLublock:
 
             /* compare next dim */
-            result = CompareWLnode (WLUBLOCK_NEXTDIM (node1), WLUBLOCK_NEXTDIM (node2),
-                                    outline);
+            result
+              = CompareWLnode (WLNODE_NEXTDIM (node1), WLNODE_NEXTDIM (node2), outline);
             break;
 
         case N_WLstride:
@@ -1154,8 +1152,10 @@ CompareWLnode (node *node1, node *node2, int outline)
                 result = CompareWLnode (WLGRID_NEXTDIM (grid1), WLGRID_NEXTDIM (grid2),
                                         outline);
             } else {
-                /* compare grid, but leave 'result' untouched until later dimensions are
-                 * checked! */
+                /*
+                 * compare grid, but leave 'result' untouched
+                 *   until later dimensions are checked!
+                 */
                 COMP_BEGIN (WLGRID_BOUND1 (grid1), WLGRID_BOUND1 (grid2), grid_result, 1)
                 COMP_BEGIN (WLGRID_BOUND2 (grid1), WLGRID_BOUND2 (grid2), grid_result, 1)
                 grid_result = 0;
@@ -1166,7 +1166,10 @@ CompareWLnode (node *node1, node *node2, int outline)
                 result = CompareWLnode (WLGRID_NEXTDIM (grid1), WLGRID_NEXTDIM (grid2),
                                         outline);
 
-                /* the 'grid_result' value is important only if the outlines are equal */
+                /*
+                 * the 'grid_result' value is important
+                 *   only if the outlines are equal
+                 */
                 if (abs (result) != 2) {
                     result = grid_result;
                 }
@@ -1386,14 +1389,17 @@ Parts2Strides (node *parts)
             DBUG_ASSERT ((width != NULL), "width of generator not complete");
 
             /* build N_WLstride-node of current dimension */
-            new_stride = MakeWLstride (0, dim, NUM_VAL (EXPRS_EXPR (bound1)),
-                                       NUM_VAL (EXPRS_EXPR (bound2)),
-                                       NUM_VAL (EXPRS_EXPR (step)), 0,
-                                       MakeWLgrid (dim, 0, NUM_VAL (EXPRS_EXPR (width)),
-                                                   0, NULL, NULL, NULL),
-                                       NULL);
-            WLSTRIDE_PART (new_stride)
-              = parts; /* this information is needed by 'IntersectOutline' */
+            new_stride
+              = MakeWLstride (0, dim, NUM_VAL (EXPRS_EXPR (bound1)),
+                              NUM_VAL (EXPRS_EXPR (bound2)), NUM_VAL (EXPRS_EXPR (step)),
+                              0,
+                              MakeWLgrid (0, dim, 0, NUM_VAL (EXPRS_EXPR (width)), 0,
+                                          NULL, NULL, NULL),
+                              NULL);
+
+            /* the PART-information is needed by 'IntersectOutline' */
+            WLSTRIDE_PART (new_stride) = parts;
+
             new_stride = NormalizeStride_1 (new_stride);
 
             /* append 'new_stride' to 'strides'-chain */
@@ -1413,6 +1419,7 @@ Parts2Strides (node *parts)
         }
 
         WLGRID_CODE (last_grid) = NPART_CODE (parts);
+        NCODE_USED (NPART_CODE (parts))++;
         parts_stride = InsertWLnodes (parts_stride, strides);
 
         parts = NPART_NEXT (parts);
@@ -1592,22 +1599,25 @@ IntersectOutline (node *stride1, node *stride2, node **i_stride1, node **i_strid
                 /* we should deal with this exception only once !! */
 
                 /*
-                 * example: 0->6  step 3, 0->1: op1
-                 *          0->16 step 3, 1->3: op2
-                 *          4->20 step 3, 2->3: op3
-                 *         ------------------------- after first round with
-                 * IntersectOutline: 0->7  step 3, 1->3: op2  <- intersection of 'op2' and
-                 * outline('op1') 3->16 step 3, 1->3: op2  <- intersection of 'op2' and
-                 * outline('op3')
+                 * example:
                  *
-                 *    these two strides are **not** disjunkt!!! but they are part of the
-                 * same Npart!!
+                 *  0->6  step 3, 0->1: op1
+                 *  0->16 step 3, 1->3: op2
+                 *  4->20 step 3, 2->3: op3
+                 * ------------------------- after first round with IntersectOutline:
+                 *  0->7  step 3, 1->3: op2  <- intersection of 'op2' and outline('op1')
+                 *  3->16 step 3, 1->3: op2  <- intersection of 'op2' and outline('op3')
+                 *
+                 *  these two strides are **not** disjunkt!!!
+                 *  but they are part of the same Npart!!
                  */
 
                 flag = 1; /* skip this exception handling in later dimensions! */
 
-                /* modify the bounds of the first stride, so that the new outlines are
-                 * disjunct */
+                /*
+                 * modify the bounds of the first stride,
+                 * so that the new outlines are disjunct
+                 */
                 if (WLSTRIDE_BOUND2 (stride1) < WLSTRIDE_BOUND2 (stride2)) {
                     if (i_stride1 != NULL) {
                         WLSTRIDE_BOUND2 (new_i_stride1) = i_bound1;
@@ -1686,7 +1696,8 @@ IntersectOutline (node *stride1, node *stride2, node **i_stride1, node **i_strid
  *   long *CalcSV(node *stride, long *sv)
  *
  * description:
- *   calculates the lcm of all grid-steps in N_WLstride-N_WLgrid-chain 'stride'
+ *   calculates the lcm of all grid-steps in N_WLstride-N_WLgrid-chain 'stride'.
+ *   CAUTION: sv must be initialized with 1
  *
  ******************************************************************************/
 
@@ -1698,14 +1709,6 @@ CalcSV (node *stride, long *sv)
     DBUG_ENTER ("CalcSV");
 
     if (stride != NULL) {
-
-        /* initialize sv */
-        if (WLSTRIDE_DIM (stride) == 0) {
-            sv[0] = 1;
-        }
-        if (WLGRID_NEXTDIM (WLSTRIDE_CONTENTS (stride)) != NULL) {
-            sv[WLSTRIDE_DIM (stride) + 1] = 1;
-        }
 
         do {
             sv[WLSTRIDE_DIM (stride)]
@@ -1746,8 +1749,12 @@ SetSegAttribs (node *seg)
 
     DBUG_ENTER ("SetSegAttribs");
 
-    /* calculate sv */
+    /* initialize sv */
     sv = (long *)MALLOC (sizeof (long) * dims);
+    for (d = 0; d < dims; d++) {
+        sv[d] = 1;
+    }
+    /* calculate sv */
     sv = CalcSV (WLSEG_CONTENTS (seg), sv);
 
     /*
@@ -1788,7 +1795,7 @@ SetSegAttribs (node *seg)
 #else
     WLSEG_BLOCKS (seg) = 1;
 
-    (WLSEG_BV (seg, 0))[0] = 1;   /* 180 or 1 */
+    (WLSEG_BV (seg, 0))[0] = 180; /* 180 or 1 */
     (WLSEG_BV (seg, 0))[1] = 156; /* 156 */
 
     (WLSEG_UBV (seg))[0] = 1; /* 1 */
@@ -2124,7 +2131,7 @@ SplitWL (node *strides)
 node *
 BlockStride (node *stride, long *bv)
 {
-    node *curr_stride, *curr_grid;
+    node *curr_stride, *curr_grid, *grids;
 
     DBUG_ENTER ("BlockStride");
 
@@ -2137,6 +2144,11 @@ BlockStride (node *stride, long *bv)
 
             /* correct blocking level */
             WLSTRIDE_LEVEL (curr_stride)++;
+            grids = WLSTRIDE_CONTENTS (curr_stride);
+            do {
+                WLGRID_LEVEL (grids)++;
+                grids = WLGRID_NEXT (grids);
+            } while (grids != NULL);
 
             /* fit bounds of stride to blocking step */
             DBUG_ASSERT ((bv[WLSTRIDE_DIM (curr_stride)] > 1), "wrong bv value found");
@@ -2168,6 +2180,7 @@ BlockStride (node *stride, long *bv)
  *
  * description:
  *   returns with blocking-vector 'bv' blocked 'stride'.
+ *   'dims' is the number of dimensions in 'stride'.
  *
  *   when called multiple times in a row, this function even realizes
  *     hierarchical blocking!! (top-down: coarse blocking first!)
@@ -2622,53 +2635,552 @@ MergeWL (node *nodes)
 /******************************************************************************
  *
  * function:
+ *   int IsEqualWLnodes(node *tree1, node *tree2)
+ *
+ * description:
+ *   returns 1 if the N_WL...-trees 'tree1' and 'tree2' are equal.
+ *   returns 0 otherwise.
+ *
+ *   remark: we can not use 'CompareWlnodes' here, because this function only
+ *           compares the first level of dimensions.
+ *           but here we must compare the *whole* trees --- all block levels,
+ *           and even the code ...
+ *
+ ******************************************************************************/
+
+int
+IsEqualWLnodes (node *tree1, node *tree2)
+{
+    node *tmp1, *tmp2;
+    int equal = 1;
+
+    DBUG_ENTER ("IsEqualWLnodes");
+
+    if ((tree1 != NULL) && (tree2 != NULL)) {
+
+        DBUG_ASSERT ((NODE_TYPE (tree1) == NODE_TYPE (tree2)),
+                     "can not compare objects of different type");
+
+        /*
+         * compare the whole chains
+         */
+        tmp1 = tree1;
+        tmp2 = tree2;
+        do {
+
+            /*
+             * compare type-independent data
+             */
+            if ((WLNODE_BOUND1 (tmp1) == WLNODE_BOUND1 (tmp2))
+                && (WLNODE_BOUND2 (tmp1) == WLNODE_BOUND2 (tmp2))
+                && (WLNODE_STEP (tmp1) == WLNODE_STEP (tmp2))) {
+
+                /*
+                 * compare type-specific data
+                 */
+                switch (NODE_TYPE (tmp1)) {
+
+                case N_WLblock:
+                    /* here is no break missing! */
+                case N_WLublock:
+
+                    /*
+                     * CAUTION: to prevent nice ;-) bugs in this code fragment
+                     *          WLBLOCK_CONTENTS and WLUBLOCK_CONTENTS must be
+                     *          equivalent (as currently realized in tree_basic.h)
+                     */
+                    if (WLNODE_NEXTDIM (tmp1) != NULL) {
+                        /*
+                         * compare NEXTDIM (CONTENTS is NULL)
+                         */
+                        DBUG_ASSERT ((WLBLOCK_CONTENTS (tmp1) == NULL),
+                                     "data in NEXTDIM *and* CONTENTS found");
+                        DBUG_ASSERT ((WLBLOCK_CONTENTS (tmp2) == NULL),
+                                     "data in NEXTDIM *and* CONTENTS found");
+                        equal
+                          = IsEqualWLnodes (WLNODE_NEXTDIM (tmp1), WLNODE_NEXTDIM (tmp2));
+                    } else {
+                        /*
+                         * compare CONTENTS (NEXTDIM is NULL)
+                         */
+                        equal = IsEqualWLnodes (WLBLOCK_CONTENTS (tmp1),
+                                                WLBLOCK_CONTENTS (tmp2));
+                    }
+                    break;
+
+                case N_WLstride:
+
+                    equal = IsEqualWLnodes (WLSTRIDE_CONTENTS (tmp1),
+                                            WLSTRIDE_CONTENTS (tmp2));
+                    break;
+
+                case N_WLgrid:
+
+                    if (WLGRID_NEXTDIM (tmp1) != NULL) {
+                        /*
+                         * compare NEXTDIM (CODE is NULL)
+                         */
+                        DBUG_ASSERT ((WLGRID_CODE (tmp1) == NULL),
+                                     "data in NEXTDIM *and* CODE found");
+                        DBUG_ASSERT ((WLGRID_CODE (tmp2) == NULL),
+                                     "data in NEXTDIM *and* CODE found");
+                        equal
+                          = IsEqualWLnodes (WLGRID_NEXTDIM (tmp1), WLGRID_NEXTDIM (tmp2));
+                    } else {
+                        /*
+                         * compare CODE (NEXTDIM is NULL)
+                         */
+                        equal = (WLGRID_CODE (tmp1) == WLGRID_CODE (tmp2));
+                    }
+                    break;
+
+                default:
+
+                    DBUG_ASSERT ((0), "wrong node type");
+                }
+
+            } else {
+                equal = 0;
+            }
+
+            tmp1 = WLNODE_NEXT (tmp1);
+            tmp2 = WLNODE_NEXT (tmp2);
+        } while (equal && (tmp1 != NULL));
+
+    } else {
+        DBUG_ASSERT (((tree1 == NULL) && (tree2 == NULL)),
+                     "trees differ in their depths");
+        equal = 1;
+    }
+
+    DBUG_RETURN (equal);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   node *OptimizeWL(node *nodes)
  *
  * description:
- *
+ *   returns the optimized N_WL...-tree 'nodes'.
  *
  ******************************************************************************/
 
 node *
 OptimizeWL (node *nodes)
 {
+    node *next, *comp1, *comp2;
+
     DBUG_ENTER ("OptimizeWL");
 
+    if (nodes != NULL) {
+
+        /*
+         * optimize the next node
+         */
+        next = WLNODE_NEXT (nodes) = OptimizeWL (WLNODE_NEXT (nodes));
+
+        /*
+         * optimize the type-specific sons
+         *
+         * save in 'comp1', 'comp2' the son of 'nodes', 'next' respectively.
+         */
+        switch (NODE_TYPE (nodes)) {
+
+        case N_WLblock:
+            /* here is no break missing! */
+        case N_WLublock:
+
+            if (WLBLOCK_NEXTDIM (nodes) != NULL) {
+                /*
+                 * compare NEXTDIM (CONTENTS is NULL)
+                 */
+                DBUG_ASSERT ((WLBLOCK_CONTENTS (nodes) == NULL),
+                             "data in NEXTDIM *and* CONTENTS found");
+                comp1 = WLBLOCK_NEXTDIM (nodes) = OptimizeWL (WLBLOCK_NEXTDIM (nodes));
+                if (next != NULL) {
+                    comp2 = WLBLOCK_NEXTDIM (next);
+                }
+            } else {
+                /*
+                 * compare CONTENTS (NEXTDIM is NULL)
+                 */
+                comp1 = WLBLOCK_CONTENTS (nodes) = OptimizeWL (WLBLOCK_CONTENTS (nodes));
+                if (next != NULL) {
+                    comp2 = WLBLOCK_CONTENTS (next);
+                }
+            }
+            break;
+
+        case N_WLstride:
+
+            comp1 = WLSTRIDE_CONTENTS (nodes) = OptimizeWL (WLSTRIDE_CONTENTS (nodes));
+            if (next != NULL) {
+                comp2 = WLSTRIDE_CONTENTS (next);
+            }
+
+            /*
+             * if there is only one grid remaining in WLSTRIDE_CONTENTS
+             *   set the step and the upper bound of this grid to 1
+             */
+            DBUG_ASSERT ((comp1 != NULL), "no grid found");
+            if (WLGRID_NEXT (comp1) == NULL) {
+                WLGRID_BOUND2 (comp1) = WLSTRIDE_STEP (nodes) = 1;
+            }
+            break;
+
+        case N_WLgrid:
+
+            if (WLGRID_NEXTDIM (nodes) != NULL) {
+                /*
+                 * compare NEXTDIM (CODE is NULL)
+                 */
+                DBUG_ASSERT ((WLGRID_CODE (nodes) == NULL),
+                             "data in NEXTDIM *and* CODE found");
+                comp1 = WLGRID_NEXTDIM (nodes) = OptimizeWL (WLGRID_NEXTDIM (nodes));
+                if (next != NULL) {
+                    comp2 = WLGRID_NEXTDIM (next);
+                }
+            } else {
+                /*
+                 * compare CODE (NEXTDIM is NULL)
+                 */
+                comp1 = WLGRID_CODE (nodes);
+                if (next != NULL) {
+                    comp2 = WLGRID_CODE (next);
+                }
+            }
+            break;
+
+        default:
+
+            DBUG_ASSERT ((0), "wrong node type");
+        }
+
+        /*
+         * if 'comp1' and 'comp2' are equal subtrees
+         *   we can concate 'nodes' and 'next'
+         */
+        if (next != NULL) {
+            if (WLNODE_STEP (nodes) == WLNODE_STEP (next)) {
+                if ((NODE_TYPE (comp1) != N_Ncode) ? IsEqualWLnodes (comp1, comp2)
+                                                   : (comp1 == comp2)) {
+                    /* concate 'nodes' and 'next' */
+                    DBUG_ASSERT ((WLNODE_BOUND2 (nodes) == WLNODE_BOUND1 (next)),
+                                 "wrong bounds found");
+                    WLNODE_BOUND2 (nodes) = WLNODE_BOUND2 (next);
+                    /* free useless data in 'next' */
+                    WLNODE_NEXT (nodes) = FreeNode (WLNODE_NEXT (nodes));
+                }
+            }
+        }
+    }
+
     DBUG_RETURN (nodes);
 }
 
 /******************************************************************************
  *
  * function:
- *   node *NormalizeWL(node *nodes)
+ *   int GetMaxUnroll(node *nodes, int unroll, int dim)
  *
  * description:
+ *   returns the maximally number elements that must be unrolled
+ *     in dimension 'dim' of N_WL...-tree 'nodes'.
+ *   'unroll' is the initial value for the computation (normally 1).
  *
+ *   we must search for the first N_WLublock- or N_WLstride-node in each
+ *     leaf of the 'nodes'-tree and get the step of this node.
+ *
+ ******************************************************************************/
+
+int
+GetMaxUnroll (node *nodes, int unroll, int dim)
+{
+    DBUG_ENTER ("GetMaxUnroll");
+
+    if (nodes != NULL) {
+
+        unroll = GetMaxUnroll (WLNODE_NEXT (nodes), unroll, dim);
+
+        if ((WLNODE_DIM (nodes) == dim)
+            && ((NODE_TYPE (nodes) == N_WLublock) || (NODE_TYPE (nodes) == N_WLstride))) {
+
+            /*
+             * we have found a node with unrolling information
+             */
+            unroll = MAX (unroll, WLNODE_STEP (nodes));
+
+        } else {
+
+            /*
+             * search in whole tree for nodes with unrolling information
+             */
+            switch (NODE_TYPE (nodes)) {
+
+            case N_WLblock:
+                /* here is no break missing! */
+            case N_WLublock:
+
+                unroll = GetMaxUnroll (WLBLOCK_NEXTDIM (nodes), unroll, dim);
+                unroll = GetMaxUnroll (WLBLOCK_CONTENTS (nodes), unroll, dim);
+                break;
+
+            case N_WLstride:
+
+                unroll = GetMaxUnroll (WLSTRIDE_CONTENTS (nodes), unroll, dim);
+                break;
+
+            case N_WLgrid:
+
+                unroll = GetMaxUnroll (WLBLOCK_NEXTDIM (nodes), unroll, dim);
+                break;
+
+            default:
+
+                DBUG_ASSERT ((0), "wrong node type");
+            }
+        }
+    }
+
+    DBUG_RETURN (unroll);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *FitWL(node *nodes, int curr_dim, int dims)
+ *
+ * description:
+ *   returns the fitted N_WL...-tree 'nodes'.
+ *   the tree is fitted in the dimension from 'curr_dim' till ('dims'-1).
  *
  ******************************************************************************/
 
 node *
-NormalizeWL (node *nodes)
+FitWL (node *nodes, int curr_dim, int dims)
 {
+    node *new_node, *grids, *tmp;
+    int unroll, remain;
+
+    DBUG_ENTER ("FitWL");
+
+    if (curr_dim < dims) {
+
+        /*
+         * traverse the whole chain
+         */
+        tmp = nodes;
+        while (tmp != NULL) {
+
+            switch (NODE_TYPE (tmp)) {
+
+            case N_WLblock:
+
+                if (curr_dim < dims - 1) {
+                    /*
+                     * fit in next dimension;
+                     *   compute unrolling information
+                     */
+                    WLBLOCK_NEXTDIM (tmp)
+                      = FitWL (WLBLOCK_NEXTDIM (tmp), curr_dim + 1, dims);
+                    unroll = GetMaxUnroll (WLBLOCK_NEXTDIM (tmp), 1, curr_dim);
+                } else {
+                    unroll = GetMaxUnroll (WLBLOCK_CONTENTS (tmp), 1, curr_dim);
+                }
+                break;
+
+            case N_WLublock:
+
+                if (curr_dim < dims - 1) {
+                    /*
+                     * fit in next dimension;
+                     *   get unrolling information
+                     */
+                    WLBLOCK_NEXTDIM (tmp)
+                      = FitWL (WLBLOCK_NEXTDIM (tmp), curr_dim + 1, dims);
+                }
+                unroll = WLUBLOCK_STEP (tmp);
+                break;
+
+            case N_WLstride:
+
+                grids = WLSTRIDE_CONTENTS (tmp);
+                if (curr_dim < dims - 1) {
+                    /*
+                     * fit for all grids in next dimension;
+                     *   get unrolling information
+                     */
+                    while (grids != NULL) {
+                        WLGRID_NEXTDIM (grids)
+                          = FitWL (WLGRID_NEXTDIM (grids), curr_dim + 1, dims);
+                        grids = WLGRID_NEXT (grids);
+                    }
+                }
+                unroll = WLSTRIDE_STEP (tmp);
+                break;
+
+            default:
+
+                DBUG_ASSERT ((0), "wrong node type");
+            }
+
+            /*
+             * fit current dimension:
+             *   split a uncompleted periode at the end of index range
+             */
+            remain = (WLNODE_BOUND2 (tmp) - WLNODE_BOUND1 (tmp)) % unroll;
+            if (remain > 0) {
+                /*
+                 *  uncompleted periode found -> split
+                 */
+                new_node = DupNode (tmp);
+                WLNODE_BOUND2 (new_node) = WLNODE_BOUND2 (tmp);
+                WLNODE_BOUND2 (tmp) = WLNODE_BOUND1 (new_node)
+                  = WLNODE_BOUND2 (tmp) - remain;
+                WLNODE_NEXT (new_node) = WLNODE_NEXT (tmp);
+                WLNODE_NEXT (tmp) = new_node;
+                tmp = new_node;
+            }
+
+            tmp = WLNODE_NEXT (tmp);
+        }
+    }
+
+    DBUG_RETURN (nodes);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *NormalizeWLnodes(node *nodes, int *width)
+ *
+ * description:
+ *   returns the normalized N_WL...-tree 'nodes'.
+ *   'width' is an array with one component for each dimension;
+ *     here we save the width of the index ranges
+ *
+ ******************************************************************************/
+
+node *
+NormalizeWLnodes (node *nodes, int *width)
+{
+    node *tmp;
+    int curr_width;
+
+    DBUG_ENTER ("NormalizeWLnodes");
+
+    if (nodes != NULL) {
+
+        /*
+         * backup width of current dim
+         */
+        curr_width = width[WLNODE_DIM (nodes)];
+
+        tmp = nodes;
+        do {
+
+            /*
+             * adjust upper bound
+             */
+            DBUG_ASSERT ((WLNODE_BOUND1 (tmp) < curr_width), "wrong bounds found");
+            WLNODE_BOUND2 (tmp) = MIN (WLNODE_BOUND2 (tmp), curr_width);
+
+            /*
+             * remove nodes whose index ranges lies outside the current block
+             */
+            while ((WLNODE_NEXT (tmp) != NULL)
+                   && (WLNODE_BOUND1 (WLNODE_NEXT (tmp)) >= curr_width)) {
+                WLNODE_NEXT (tmp) = FreeNode (WLNODE_NEXT (tmp));
+            }
+
+            /* take next node */
+            tmp = WLNODE_NEXT (tmp);
+        } while (tmp != NULL);
+
+        tmp = nodes;
+        do {
+
+            /*
+             * save width of current index range; adjust step
+             */
+            width[WLNODE_DIM (tmp)] = WLNODE_BOUND2 (tmp) - WLNODE_BOUND1 (tmp);
+            WLNODE_STEP (tmp) = MIN (WLNODE_STEP (tmp), width[WLNODE_DIM (tmp)]);
+
+            /*
+             * normalize the type-specific sons
+             */
+            switch (NODE_TYPE (tmp)) {
+
+            case N_WLblock:
+                /* here is no break missing! */
+            case N_WLublock:
+
+                WLBLOCK_NEXTDIM (tmp) = NormalizeWLnodes (WLBLOCK_NEXTDIM (tmp), width);
+                WLBLOCK_CONTENTS (tmp) = NormalizeWLnodes (WLBLOCK_CONTENTS (tmp), width);
+                break;
+
+            case N_WLstride:
+
+                WLSTRIDE_CONTENTS (tmp)
+                  = NormalizeWLnodes (WLSTRIDE_CONTENTS (tmp), width);
+                break;
+
+            case N_WLgrid:
+
+                WLGRID_NEXTDIM (tmp) = NormalizeWLnodes (WLGRID_NEXTDIM (tmp), width);
+                break;
+
+            default:
+
+                DBUG_ASSERT ((0), "wrong node type");
+            }
+
+            /* take next node */
+            tmp = WLNODE_NEXT (tmp);
+        } while (tmp != NULL);
+
+        /*
+         * restore width of current dim
+         */
+        width[WLNODE_DIM (nodes)] = curr_width;
+    }
+
+    DBUG_RETURN (nodes);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *NormalizeWL(node *nodes, int dims, node *shape_vec)
+ *
+ * description:
+ *   returns the normalized N_WL...-tree 'nodes'.
+ *   'dims' is the number of dimension in 'nodes'.
+ *   'shape_vec' is ARRAY_AELEMS(shape).
+ *
+ ******************************************************************************/
+
+node *
+NormalizeWL (node *nodes, int dims, node *shape_vec)
+{
+    int *width;
+    int d;
+
     DBUG_ENTER ("NormalizeWL");
 
-    DBUG_RETURN (nodes);
-}
+    /*
+     * initialize 'width' with the shape
+     */
+    width = (int *)MALLOC (dims * sizeof (int));
+    for (d = 0; d < dims; d++) {
+        width[d] = NUM_VAL (EXPRS_EXPR (shape_vec));
+        shape_vec = EXPRS_NEXT (shape_vec);
+    }
 
-/******************************************************************************
- *
- * function:
- *   node *FitWL(node *nodes)
- *
- * description:
- *
- *
- ******************************************************************************/
+    nodes = NormalizeWLnodes (nodes, width);
 
-node *
-FitWL (node *nodes)
-{
-    DBUG_ENTER ("FitWL");
+    FREE (width);
 
     DBUG_RETURN (nodes);
 }
@@ -2854,8 +3366,8 @@ PRECnwith (node *arg_node, node *arg_info)
         PREC_PH_ublock,
         PREC_PH_merge,
         PREC_PH_opt,
-        PREC_PH_norm,
-        PREC_PH_fit
+        PREC_PH_fit,
+        PREC_PH_norm
     } PREC_break_after;
 
     DBUG_ENTER ("PRECnwith");
@@ -2884,11 +3396,11 @@ PRECnwith (node *arg_node, node *arg_info)
                                 if (strcmp (break_specifier, "opt") == 0) {
                                     PREC_break_after = PREC_PH_opt;
                                 } else {
-                                    if (strcmp (break_specifier, "norm") == 0) {
-                                        PREC_break_after = PREC_PH_norm;
+                                    if (strcmp (break_specifier, "fit") == 0) {
+                                        PREC_break_after = PREC_PH_fit;
                                     } else {
-                                        if (strcmp (break_specifier, "fit") == 0) {
-                                            PREC_break_after = PREC_PH_fit;
+                                        if (strcmp (break_specifier, "norm") == 0) {
+                                            PREC_break_after = PREC_PH_norm;
                                         }
                                     }
                                 }
@@ -2910,9 +3422,8 @@ PRECnwith (node *arg_node, node *arg_info)
 
     /*
      * withid, code and withop are overtaken to the nwith2-tree without a change.
-     * because of that, these parts are cut off from the old nwith-tree, before freeing
-     * it.
-     *
+     * because of that, these parts are cut off from the old nwith-tree,
+     * before freeing it.
      */
     NPART_WITHID (NWITH_PART (arg_node)) = NULL;
     NWITH_CODE (arg_node) = NULL;
@@ -2966,9 +3477,9 @@ PRECnwith (node *arg_node, node *arg_info)
                 FREE (WLSEG_UBV (seg));
             }
 
-            /* splitting - merging */
+            /* merging */
             if (PREC_break_after >= PREC_PH_merge) {
-                NOTE (("step 6: splitting-merging\n"))
+                NOTE (("step 6: merging\n"))
                 WLSEG_CONTENTS (seg) = MergeWL (WLSEG_CONTENTS (seg));
             }
 
@@ -2978,16 +3489,17 @@ PRECnwith (node *arg_node, node *arg_info)
                 WLSEG_CONTENTS (seg) = OptimizeWL (WLSEG_CONTENTS (seg));
             }
 
-            /* normalization */
-            if (PREC_break_after >= PREC_PH_norm) {
-                NOTE (("step 8: normalization\n"))
-                WLSEG_CONTENTS (seg) = NormalizeWL (WLSEG_CONTENTS (seg));
-            }
-
             /* fitting */
             if (PREC_break_after >= PREC_PH_fit) {
-                NOTE (("step 9: fitting\n"))
-                WLSEG_CONTENTS (seg) = FitWL (WLSEG_CONTENTS (seg));
+                NOTE (("step 8: fitting\n"))
+                WLSEG_CONTENTS (seg) = FitWL (WLSEG_CONTENTS (seg), 0, dims);
+            }
+
+            /* normalization */
+            if (PREC_break_after >= PREC_PH_norm) {
+                NOTE (("step 9: normalization\n"))
+                WLSEG_CONTENTS (seg)
+                  = NormalizeWL (WLSEG_CONTENTS (seg), dims, ARRAY_AELEMS (shape));
             }
 
             seg = WLSEG_NEXT (seg);
