@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.6  2000/11/15 14:32:44  sbs
+ * {}'s added in order to please gcc.
+ *
  * Revision 2.5  2000/10/24 11:48:02  dkr
  * MakeTypes renamed into MakeTypes1
  *
@@ -1559,7 +1562,7 @@ AppendModnameToSymbol (node *symbol, char *modname)
                 mods = FindSymbolInModul (modname, types->name, 0, NULL, 1);
                 mods2 = FindSymbolInModul (modname, types->name, 1, NULL, 1);
 
-                if (mods != NULL)
+                if (mods != NULL) {
                     if (mods2 != NULL) {
                         if ((strcmp (mods->mod->name, types->name) == 0)
                             && (mods->mod->moddec->nodetype == N_classdec)) {
@@ -1576,37 +1579,40 @@ AppendModnameToSymbol (node *symbol, char *modname)
                                     mods->mod->name, types->name, mods2->mod->name,
                                     types->name, modname));
                         }
+                    } else { /* mods2 == NULL */
+                        if (mods->next != NULL) {
+                            if ((strcmp (mods->mod->name, types->name) == 0)
+                                && (mods->mod->moddec->nodetype == N_classdec)) {
+                                ERROR (symbol->lineno,
+                                       ("Implicit type '%s:%s` "
+                                        "conflicts with class '%s` "
+                                        "in module/class '%s`",
+                                        mods->next->mod->name, types->name, types->name,
+                                        modname));
+                            } else {
+                                if ((strcmp (mods->next->mod->name, types->name) == 0)
+                                    && (mods->next->mod->moddec->nodetype
+                                        == N_classdec)) {
+                                    ERROR (symbol->lineno, ("Implicit type '%s:%s` "
+                                                            "conflicts with class '%s` "
+                                                            "in module/class '%s`",
+                                                            mods->mod->name, types->name,
+                                                            types->name, modname));
+                                } else {
+                                    ERROR (
+                                      symbol->lineno,
+                                      ("Implicit types '%s:%s` and '%s:%s` available ",
+                                       "in module/class '%s`", mods->mod->name,
+                                       types->name, mods->next->mod->name, types->name,
+                                       modname));
+                                }
+                            }
+                        } else { /* mods->next == NULL */
+                            types->name_mod = mods->mod->prefix;
+                        }
                     }
 
-                    else /* mods2 == NULL */
-                      if (mods->next != NULL) {
-                        if ((strcmp (mods->mod->name, types->name) == 0)
-                            && (mods->mod->moddec->nodetype == N_classdec)) {
-                            ERROR (symbol->lineno, ("Implicit type '%s:%s` "
-                                                    "conflicts with class '%s` "
-                                                    "in module/class '%s`",
-                                                    mods->next->mod->name, types->name,
-                                                    types->name, modname));
-                        } else {
-                            if ((strcmp (mods->next->mod->name, types->name) == 0)
-                                && (mods->next->mod->moddec->nodetype == N_classdec)) {
-                                ERROR (symbol->lineno, ("Implicit type '%s:%s` "
-                                                        "conflicts with class '%s` "
-                                                        "in module/class '%s`",
-                                                        mods->mod->name, types->name,
-                                                        types->name, modname));
-                            } else {
-                                ERROR (symbol->lineno,
-                                       ("Implicit types '%s:%s` and '%s:%s` available ",
-                                        "in module/class '%s`", mods->mod->name,
-                                        types->name, mods->next->mod->name, types->name,
-                                        modname));
-                            }
-                        }
-                    } else /* mods->next == NULL */
-                        types->name_mod = mods->mod->prefix;
-
-                else /* mods == NULL */
+                } else /* mods == NULL */
                   if (mods2 == NULL) {
                     ERROR (symbol->lineno, ("No type '%s` available "
                                             "in module/class '%s`",
