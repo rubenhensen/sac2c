@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.31  2003/09/15 17:06:05  dkr
+ * bug in ICMCompileMT_MASTER_RECEIVE_FOLDRESULT() fixed
+ *
  * Revision 3.30  2003/09/15 16:51:04  dkr
  * typo in ICMCompileMT_SYNC_FOLD corrected
  *
@@ -997,7 +1000,7 @@ ICMCompileMT_MASTER_RECEIVE_FOLDRESULTS (int nfoldargs, char **foldargs)
         fprintf (outfile, "SAC_MT_GET_BARRIER_RESULT( 0, %d, %s, %s)\n", j, foldargs[i],
                  foldargs[i + 1]);
 #else  /* TAGGED_ARRAYS */
-        fprintf (outfile, "%s = SAC_MT_GET_BARRIER_RESULT( 0, %d, %s, %s);\n",
+        fprintf (outfile, "%s = SAC_MT_GET_BARRIER_RESULT( 0, %d, %s);\n",
                  foldargs[i + 1], j, foldargs[i]);
 #endif /* TAGGED_ARRAYS */
     }
@@ -1144,8 +1147,8 @@ ICMCompileMT_CONTINUE (int nfoldargs, char **vararg, int nsyncargs, char **synca
         fprintf (outfile, "SAC_MT_GET_BARRIER_RESULT( 0, %d, %s, %s)\n", j, vararg[i],
                  vararg[i + 1]);
 #else  /* TAGGED_ARRAYS */
-        fprintf (outfile, "%s = SAC_MT_GET_BARRIER_RESULT( 0, %d, %s, %s);\n",
-                 vararg[i + 1], j, vararg[i]);
+        fprintf (outfile, "%s = SAC_MT_GET_BARRIER_RESULT( 0, %d, %s);\n", vararg[i + 1],
+                 j, vararg[i]);
 #endif /* TAGGED_ARRAYS */
     }
 
