@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2001/02/12 21:50:33  dkr
+ * GSCfundef: comment added
+ *
  * Revision 3.2  2000/12/08 10:11:42  nmw
  * no more warnings on alpha
  *
@@ -9,9 +12,6 @@
  *
  * Revision 2.29  2000/10/31 18:12:18  cg
  * Added support for new function tag ST_exported.
- *
- * Revision 2.28  2000/08/17 10:11:23  dkr
- * *** empty log message ***
  *
  * Revision 2.27  2000/08/07 19:47:29  nmw
  * missing initializing at begin of main() added
@@ -170,7 +170,6 @@
  * Revision 1.1  1998/03/24 14:33:35  cg
  * Initial revision
  *
- *
  */
 
 /*****************************************************************************
@@ -207,7 +206,6 @@
  * global variable: static int spmd_block_counter
  *
  * description:
- *
  *   This variable is used to detect whether a given function definition contains
  *   any SPMD blocks. If not, a dummy entry has to be inserted at the respective
  *   position of the global SPMD frame.
@@ -222,7 +220,6 @@ static int spmd_block_counter;
  *   int GSCCalcMasterclass(int num_threads)
  *
  * description:
- *
  *   For a given number of thread used, this function calculates the worker
  *   class of the master thread, i.e. the number of worker threads the master
  *   thread has to synchronize itslef with.
@@ -250,10 +247,8 @@ GSCCalcMasterclass (int num_threads)
  *   void PrintTargetPlatform()
  *
  * description:
- *
  *   This function prints macro definitions concerning the respective
  *   target platform.
- *
  *
  ******************************************************************************/
 
@@ -275,7 +270,6 @@ PrintTargetPlatform ()
  *   void PrintGlobalSwitches()
  *
  * description:
- *
  *   This function prints macro definitions representing global switches, i.e.
  *   their value always is either 0 (disabled) or 1 (enabled). The value of
  *   any switch triggers the selection of custom code during the inclusion
@@ -373,7 +367,6 @@ PrintGlobalSwitches ()
  *   void PrintSpmdData(node *syntax_tree)
  *
  * description:
- *
  *   This function initializes an additional traversal of the syntax tree
  *   during which the so-called SPMD-frame is infered and printed. This
  *   SPMD-frame is required as temporary storage for arguments in the
@@ -415,10 +408,7 @@ PrintSpmdData (node *syntax_tree)
  *   void PrintProfileData()
  *
  * description:
- *
  *   This function prints macro definitions related to the profiling feature.
- *
- *
  *
  ******************************************************************************/
 
@@ -478,9 +468,6 @@ PrintProfileData ()
  *   void PrintGlobalSettings(node *syntax_tree)
  *
  * description:
- *
- *
- *
  *
  *
  ******************************************************************************/
@@ -591,9 +578,6 @@ PrintGlobalSettings (node *syntax_tree)
  * description:
  *
  *
- *
- *
- *
  ******************************************************************************/
 
 static void
@@ -614,9 +598,6 @@ PrintIncludes ()
  *
  *
  * description:
- *
- *
- *
  *
  *
  ******************************************************************************/
@@ -711,9 +692,6 @@ GSCicm (node *arg_node, node *arg_info)
  * description:
  *
  *
- *
- *
- *
  ******************************************************************************/
 
 node *
@@ -747,9 +725,6 @@ GSCspmd (node *arg_node, node *arg_info)
  * description:
  *
  *
- *
- *
- *
  ******************************************************************************/
 
 node *
@@ -757,9 +732,13 @@ GSCfundef (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("GSCfundef");
 
-    if ((FUNDEF_STATUS (arg_node) == ST_regular)
-        /*      || (FUNDEF_STATUS(arg_node) == ST_foldfun) */
-        || (FUNDEF_STATUS (arg_node) == ST_exported)
+    if ((FUNDEF_STATUS (arg_node) == ST_regular) ||
+#if 0
+      (FUNDEF_STATUS( arg_node) == ST_dofun) ||
+      (FUNDEF_STATUS( arg_node) == ST_whilefun) ||
+      (FUNDEF_STATUS( arg_node) == ST_condfun) ||
+#endif
+        (FUNDEF_STATUS (arg_node) == ST_exported)
         || (((FUNDEF_STATUS (arg_node) == ST_imported_mod)
              || (FUNDEF_STATUS (arg_node) == ST_imported_class))
             && (FUNDEF_BODY (arg_node) != NULL))) {
@@ -790,14 +769,11 @@ GSCfundef (node *arg_node, node *arg_info)
 
 /******************************************************************************
  *
- * function: void GSCPrintFileHeader(node *syntax_tree)
+ * function:
+ *   void GSCPrintFileHeader(node *syntax_tree)
  *
- *
- * description: generated header part of header.h
- *
- *
- *
- *
+ * description:
+ *   generated header part of header.h
  *
  ******************************************************************************/
 
@@ -817,16 +793,16 @@ GSCPrintFileHeader (node *syntax_tree)
 
 /******************************************************************************
  *
- * function: void GSCPrintInternalInitFileHeader(node *syntax_tree)
+ * function:
+ *   void GSCPrintInternalInitFileHeader(node *syntax_tree)
  *
- *
- * description: generates header part of internal_runtime_init.c
- *              used when compiling a c library
- *              code contains part of the startup code from a "real"
- *              SAC-executeable
- *
+ * description:
+ *   generates header part of internal_runtime_init.c
+ *   used when compiling a c library
+ *   code contains part of the startup code from a "real" SAC-executeable
  *
  ******************************************************************************/
+
 void
 GSCPrintInternalInitFileHeader (node *syntax_tree)
 {
@@ -851,9 +827,6 @@ GSCPrintInternalInitFileHeader (node *syntax_tree)
  *
  *
  * description:
- *
- *
- *
  *
  *
  ******************************************************************************/
@@ -892,9 +865,6 @@ GSCPrintMainBegin ()
  *
  *
  * description:
- *
- *
- *
  *
  *
  ******************************************************************************/
