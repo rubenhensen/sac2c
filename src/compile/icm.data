@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.52  2002/09/09 14:24:37  dkr
+ * TYPE_ERROR added
+ *
  * Revision 3.51  2002/09/06 09:52:40  dkr
  * fixed a bug in ND_IDXS2OFFSET
  *
@@ -1232,4 +1235,12 @@ ICM_DEF( MT_SCHEDULER_Affinity_INIT, TRACE_NONE)
   ICM_VARANY( (4*dim), vararg)
 ICM_END( MT_SCHEDULER_Affinity_INIT, (sched_id, ts_name, ts_dims,
                                       ts_arg_num, ts_args, dim, vararg))
+#endif
+
+
+#if defined(TYPE_ERROR) || defined(ICM_ALL)
+ICM_DEF( TYPE_ERROR, TRACE_NONE)
+  ICM_INT( cnt)
+  ICM_VARANY( cnt, args_any)
+ICM_END( TYPE_ERROR, (cnt, args_any))
 #endif
