@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.36  1995/11/06 09:21:09  cg
+# Revision 1.37  1995/11/16 19:32:03  cg
+# added linking of rmvoidfun.o
+#
+# Revision 1.36  1995/11/06  09:21:09  cg
 # added uniquecheck.o
 #
 # Revision 1.35  1995/11/01  08:00:38  cg
@@ -137,7 +140,7 @@ MODULES= src/modules/filemgr.o src/modules/import.o src/modules/sib.o  \
          src/modules/implicittypes.o src/modules/analysis.o \
          src/modules/checkdec.o
 OBJECTS= src/objects/objinit.o src/objects/objects.o \
-         src/objects/uniquecheck.o
+         src/objects/uniquecheck.o src/objects/rmvoidfun.o
 REFCOUNT= src/refcount/refcount.o
 COMPILE= src/compile/compile.o src/compile/icm2c.o
 
