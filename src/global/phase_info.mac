@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2005/03/10 09:41:09  cg
+ * Restructured phase info:
+ * Eliminated fun2lac/lac2fun conversion triggers.
+ * Added specification of phase driver functions.
+ *
  * Revision 3.15  2004/11/29 19:10:02  sah
  * removed old phases
  *
@@ -62,77 +67,158 @@
  * compiler phase, respectively!
  */
 
-#ifndef PH_SELelement
-#define PH_SELelement(it_element)
+#ifndef PHASEelement
+#define PHASEelement(it_element)
 #endif
 
-#ifndef PH_SELtext
-#define PH_SELtext(it_text)
+#ifndef PHASEtext
+#define PHASEtext(it_text)
 #endif
 
-#ifndef PH_SELlac2fun
-#define PH_SELlac2fun(it_lac2fun)
+#ifndef PHASEfun
+#define PHASEfun(it_fun)
 #endif
 
-#ifndef PH_SELfun2lac
-#define PH_SELfun2lac(it_fun2lac)
+#define PHASE(it_element, it_text, it_fun)                                               \
+    PHASEelement (it_element) PHASEtext (it_text) PHASEfun (it_fun)
+
+#ifndef SUBPHASEelement
+#define SUBPHASEelement(it_element)
 #endif
 
-#define PH_SEL(it_element, it_text, it_lac2fun, it_fun2lac)                              \
-    PH_SELelement (it_element) PH_SELtext (it_text) PH_SELlac2fun (it_lac2fun)           \
-      PH_SELfun2lac (it_fun2lac)
+#ifndef SUBPHASEspec
+#define SUBPHASEspec(it_spec)
+#endif
 
-PH_SEL (PH_initial, "", FALSE, FALSE),
+#ifndef SUBPHASEtext
+#define SUBPHASEtext(it_text)
+#endif
 
-  PH_SEL (PH_setup, "Setting up sac2c compiler environment", FALSE, FALSE),
+#ifndef SUBPHASEfun
+#define SUBPHASEfun(it_fun)
+#endif
 
-  PH_SEL (PH_scanparse, "Loading SAC program", FALSE, FALSE),
+#define SUBPHASE(it_element, it_spec, it_text, it_fun)                                   \
+    SUBPHASEelement (it_element) SUBPHASEspec (it_spec) SUBPHASEtext (it_text)           \
+      SUBPHASEfun (it_fun)
 
-  PH_SEL (PH_use, "Resolving used symbols from modules and classes", FALSE, FALSE),
+/***********************************************************************/
 
-  PH_SEL (PH_objinit, "Generating generic types and functions", FALSE, FALSE),
+PHASE (initial, "Irregular compiler phase", PHdummy)
 
-  PH_SEL (PH_flatten, "Simplifying source code", FALSE, FALSE),
+SUBPHASE (initial, "initial", "Irregular compiler subphase", PHdummy)
 
-  PH_SEL (PH_typecheck, "Running type inference system", FALSE, FALSE),
+/***********************************************************************/
 
-  PH_SEL (PH_export, "Processing exports", FALSE, FALSE),
+PHASE (setup, "Setting up sac2c compiler environment", SETUPdriveSetup)
 
-  PH_SEL (PH_objects, "Resolving global objects and reference parameters", FALSE, FALSE),
+SUBPHASE (opt, "opt", "Analyzing command line options", OPTanalyseCommandline)
 
-  PH_SEL (PH_uniquecheck, "Checking uniqueness property of objects", FALSE, FALSE),
+SUBPHASE (rsc, "rsc", "Processing sac2c configuration file", RSCevaluateConfiguration)
 
-  PH_SEL (PH_wlenhance, "Enhancement of with-loops", FALSE, FALSE),
+SUBPHASE (init, "init", "Initializing data structures", SETUPdoInitializations)
 
-  PH_SEL (PH_sacopt, "Running SAC optimizations", FALSE, FALSE),
+/***********************************************************************/
 
-  PH_SEL (PH_wltrans, "Transforming with-loop representation", FALSE, FALSE),
+PHASE (scanparse, "Loading SAC program", PHdummy)
 
-  PH_SEL (PH_alloc, "Introducing explicit allocation instructions", FALSE, FALSE),
+/***********************************************************************/
 
-  PH_SEL (PH_multithread, "Generating annotations for MT", FALSE, FALSE),
+PHASE (use, "Resolving used symbols from modules and classes", PHdummy)
 
-  PH_SEL (PH_refcnt, "Running explicit reference count inference system", FALSE, FALSE),
+/***********************************************************************/
 
-  PH_SEL (PH_multithread_finish, "Finishing MT annotations", FALSE, FALSE),
+PHASE (objinit, "Generating generic types and functions", PHdummy)
 
-  PH_SEL (PH_precompile, "Preparing C code generation", FALSE, FALSE),
+/***********************************************************************/
 
-  PH_SEL (PH_compile, "Generating C code", FALSE, FALSE),
+PHASE (flatten, "Simplifying source code", PHdummy)
 
-  PH_SEL (PH_genccode, "Creating C file", FALSE, FALSE),
+/***********************************************************************/
 
-  PH_SEL (PH_invokecc, "Invoking C compiler", FALSE, FALSE),
+PHASE (typecheck, "Running type inference system", PHdummy)
 
-  PH_SEL (PH_createlib, "Creating library", FALSE, FALSE),
+/***********************************************************************/
 
-  PH_SEL (PH_writedeps, "Writing dependencies to stdout", FALSE, FALSE),
+PHASE (export, "Processing exports", PHdummy)
 
-  PH_SEL (PH_final, "Unknown compiler phase", FALSE, FALSE)
+/***********************************************************************/
 
-#undef PH_SEL
+PHASE (objects, "Resolving global objects and reference parameters", PHdummy)
 
-#undef PH_SELelement
-#undef PH_SELtext
-#undef PH_SELlac2fun
-#undef PH_SELfun2lac
+/***********************************************************************/
+
+PHASE (uniquecheck, "Checking uniqueness property of objects", PHdummy)
+
+/***********************************************************************/
+
+PHASE (wlenhance, "Enhancement of with-loops", PHdummy)
+
+/***********************************************************************/
+
+PHASE (sacopt, "Running SAC optimizations", PHdummy)
+
+/***********************************************************************/
+
+PHASE (wltrans, "Transforming with-loop representation", PHdummy)
+
+/***********************************************************************/
+
+PHASE (alloc, "Introducing explicit allocation instructions", PHdummy)
+
+/***********************************************************************/
+
+PHASE (multithread, "Generating annotations for MT", PHdummy)
+
+/***********************************************************************/
+
+PHASE (refcnt, "Running explicit reference count inference system", PHdummy)
+
+/***********************************************************************/
+
+PHASE (multithread_finish, "Finishing MT annotations", PHdummy)
+
+/***********************************************************************/
+
+PHASE (precompile, "Preparing C code generation", PHdummy)
+
+/***********************************************************************/
+
+PHASE (compile, "Generating C code", PHdummy)
+
+/***********************************************************************/
+
+PHASE (genccode, "Creating C file", PHdummy)
+
+/***********************************************************************/
+
+PHASE (invokecc, "Invoking C compiler", PHdummy)
+
+/***********************************************************************/
+
+PHASE (createlib, "Creating library", PHdummy)
+
+/***********************************************************************/
+
+PHASE (writedeps, "Writing dependencies to stdout", PHdummy)
+
+/***********************************************************************/
+
+PHASE (final, "Irregular compiler phase", PHdummy)
+
+SUBPHASE (final, "final", "Irregular compiler subphase", PHdummy)
+
+/***********************************************************************/
+
+#undef PHASE
+
+#undef PHASEelement
+#undef PHASEtext
+#undef PHASEfun
+
+#undef SUBPHASE
+
+#undef SUBPHASEelement
+#undef SUBPHASEspec
+#undef SUBPHASEtext
+#undef SUBPHASEfun
