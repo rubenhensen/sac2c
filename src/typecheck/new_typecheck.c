@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.55  2004/11/19 21:05:39  sah
+ * removed some unused code
+ *
  * Revision 3.54  2004/11/19 10:16:28  sah
  * removed T_classtype
  *
@@ -848,15 +851,6 @@ NTCtypedef (node *arg_node, info *arg_info)
     nt = TYOldType2Type (TYPEDEF_TYPE (arg_node));
 #else
     nt = TYPEDEF_NTYPE (arg_node);
-#endif
-
-#if 0
-  if( TYPEDEF_ATTRIB( arg_node) == ST_unique) {
-    DBUG_ASSERT( ( TYIsSimple( TYGetScalar( nt))
-                   && ( TYGetSimpleType( TYGetScalar( nt)) == T_hidden)),
-                 "unique typedef is not of hidden base type!!");
-    nt = TYSetScalar( nt, TYMakeSimpleType( T_classtype));
-  }
 #endif
 
 #ifndef NEW_AST
