@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.27  2001/05/22 15:25:41  dkr
+ * fixed a bug in SCHMakeSchedulingByPragma():
+ * if (sched->num_args==0) is hold sched->args is set to NULL.
+ *
  * Revision 3.26  2001/05/17 11:37:38  dkr
  * FREE/MALLOC eliminated
  *
@@ -532,7 +536,11 @@ SCHMakeSchedulingByPragma (node *ap_node, int line)
          */
         sched->class = scheduler_table[i].class;
         sched->num_args = scheduler_table[i].num_args;
-        sched->args = (sched_arg_t *)Malloc (sched->num_args * sizeof (sched_arg_t));
+        if (sched->num_args == 0) {
+            sched->args = NULL;
+        } else {
+            sched->args = (sched_arg_t *)Malloc (sched->num_args * sizeof (sched_arg_t));
+        }
         sched->line = line;
 
         sched = CheckSchedulingArgs (sched, scheduler_table[i].arg_spec,
@@ -644,7 +652,6 @@ SCHCopyScheduling (sched_t *sched)
                 break;
             }
         }
-
     } else {
         new_sched->args = NULL;
     }
