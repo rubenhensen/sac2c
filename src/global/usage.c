@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.36  1996/01/04 16:58:04  asi
+ * Revision 1.37  1996/01/05 12:30:23  cg
+ * new command line option -noclean and -o may specify target
+ * directory for compiling module/class implementations
+ *
+ * Revision 1.36  1996/01/04  16:58:04  asi
  * includes now globals.h instead of optimize.h
  *
  * Revision 1.35  1995/12/21  16:08:56  cg
@@ -119,8 +123,6 @@
 #include "tree.h"
 #include "optimize.h"
 
-extern int max_overload; /* defined in main.c */
-
 void
 usage (char *prg_name)
 {
@@ -131,7 +133,10 @@ usage (char *prg_name)
     printf ("\t -#string\t\toptions (string) for DBUG information\n");
     printf ("\t -I path\t\tspecify additional declaration path\n");
     printf ("\t -L path\t\tspecify additional library path\n");
-    printf ("\t -o outfilename\t\tset output to outfilename\n");
+    printf ("\t -o name\t\tfor compilation of programs:\n");
+    printf ("\t\t\t\t  write executable to specified file\n");
+    printf ("\t\t\t\tfor compilation of module/class implementations:\n");
+    printf ("\t\t\t\t  write library to specified directory\n");
     printf ("\t -c \t\t\tgenerate C-file only\n");
     printf ("\t -v<n> \t\t\tverbose level\n");
     printf ("\t\t\t\t\t0: error messages only\n");
@@ -200,8 +205,8 @@ usage (char *prg_name)
     printf ("\t\t\t\tw with loop execution\n");
 
     printf ("\nCOMPILER OPTIONS:\n");
-    printf ("\t -fcheck_boundary\tcheck boundary of arrays when accessing\n");
-    printf ("\t -flink_module\t\tlink module/class with imported modules and classes\n");
+    printf ("\t -fcheck_boundary\tcheck boundary of arrays upon access\n");
+    printf ("\t -nocleanup\t\tdon't remove temporary files and directories\n");
 
     printf ("\nC-COMPILER OPTIONS:\n");
     printf ("\t  (these options handed to the C-compiler)\n");
