@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2001/05/17 08:35:33  sbs
+ * MALLOC/FREE eliminated
+ *
  * Revision 3.11  2001/05/07 15:01:42  dkr
  * PAB_YES, PAB_NO replaced by TRUE, FALSE.
  *
@@ -319,7 +322,7 @@ AnalyseCommandline (int argc, char *argv[])
                 }
             }
         }
-        FREE (break_arg);
+        Free (break_arg);
     });
 
     ARGS_OPTION ("check", {

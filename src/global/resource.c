@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2001/05/17 08:35:33  sbs
+ * MALLOC/FREE eliminated
+ *
  * Revision 3.1  2000/11/20 17:59:37  sacbase
  * new release made
  *
@@ -357,16 +360,16 @@ FreeTargetList (target_list_t *target)
             tmp = resource;
             resource = resource->next;
 
-            FREE (tmp->name);
-            FREE (tmp->value_str);
-            FREE (tmp);
+            Free (tmp->name);
+            Free (tmp->value_str);
+            Free (tmp);
         }
-        FREE (tmp_target->name);
+        Free (tmp_target->name);
         if (tmp_target->super_targets != NULL) {
             FreeAllIds (tmp_target->super_targets);
         }
 
-        FREE (tmp_target);
+        Free (tmp_target);
     }
 
     DBUG_RETURN ((target_list_t *)NULL);
@@ -636,10 +639,10 @@ EvaluateCustomTarget (char *target, target_list_t *target_list)
                         strcpy (new, *((char **)(resource_table[i].store)));
                         strcat (new, " ");
                         strcat (new, resource->value_str);
-                        FREE (*((char **)(resource_table[i].store)));
+                        Free (*((char **)(resource_table[i].store)));
                         *((char **)(resource_table[i].store)) = new;
                     } else {
-                        FREE (*((char **)(resource_table[i].store)));
+                        Free (*((char **)(resource_table[i].store)));
                         *((char **)(resource_table[i].store))
                           = StringCopy (resource->value_str);
                     }
