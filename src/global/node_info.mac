@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.17  1999/08/09 11:29:20  jhs
+ * Added SPMDPMassign.
+ *
  * Revision 2.16  1999/08/05 13:33:11  jhs
  * Added traversals spmdlc, spmddn and spmdpm.
  *
@@ -682,7 +685,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
        SYNCOassign, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        WLAAassign, FMTravSons, SPMDTRMassign, SPMDTROassign, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, 2),
+       TravSons, SPMDPMassign, TravSons, TravSons, TravSons, 2),
 
   NIF (N_return, "N_return", TravSons, FltnReturn, PrintReturn, TCreturn, TravSons,
        TravSons, TravSons, FreeReturn, TravSons, TravSons, COMPReturn, TravSons, DupChain,
