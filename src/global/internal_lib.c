@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.48  2004/08/13 18:02:34  skt
+ * removed blkli_tab
+ *
  * Revision 3.47  2004/08/06 14:41:32  sah
  * adding support for new ast
  *
@@ -1105,8 +1108,6 @@ PrefixForTmpVar (void)
         s = "apc";
     } else if (act_tab == apt_tab) {
         s = "apt";
-    } else if (act_tab == blkli_tab) {
-        s = "blkli";
     } else if (act_tab == ssafrm_tab) {
         s = "ssa";
     } else if (act_tab == undossa_tab) {
