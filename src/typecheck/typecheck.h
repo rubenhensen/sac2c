@@ -1,6 +1,9 @@
 /*
  * $Log$
- * Revision 1.19  1995/07/24 09:11:48  hw
+ * Revision 1.20  1995/08/08 09:54:12  cg
+ * declaration of function CmpFunParams added for external use in import.c.
+ *
+ * Revision 1.19  1995/07/24  09:11:48  hw
  * variable "module_name" will be exported (set while typecheckng)
  *
  * Revision 1.18  1995/07/14  16:39:26  hw
@@ -75,6 +78,8 @@ extern node *TCunaryOp (node *arg_node, node *arg_info);
 
 extern node *LookupType (char *type_name, char *mod_name, int line);
 extern types *DuplicateTypes (types *source, int share);
+
+extern int CmpFunParams (node *arg1, node *arg2);
 
 /* some gloabel variables */
 extern file_type kind_of_file; /* to distinguish between compilation of a
