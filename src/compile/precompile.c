@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.48  2002/07/12 17:16:03  dkr
+ * RenameId(): ID_NT_TAG is renamed as well
+ *
  * Revision 3.47  2002/07/03 17:11:16  dkr
  * - PREC1ap(): assert added
  * - ID_UNQCONV added again #$%-(
@@ -2453,6 +2456,18 @@ RenameId (node *idnode)
          */
     } else {
         ID_NAME (idnode) = RenameLocalIdentifier (ID_NAME (idnode));
+
+#ifdef TAGGED_ARRAYS
+        if (ID_NT_TAG (idnode) != NULL) {
+            /*
+             * there is already a tag -> it must be recreated
+             */
+            DBUG_ASSERT ((ID_VARDEC (idnode) != NULL), "no vardec found!");
+
+            ID_NT_TAG (idnode) = Free (ID_NT_TAG (idnode));
+            ID_NT_TAG (idnode) = CreateNtTag (ID_NAME (idnode), ID_TYPE (idnode));
+        }
+#endif
     }
 
     DBUG_RETURN (idnode);
