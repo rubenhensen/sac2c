@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.10  2000/01/21 17:02:04  dkr
+# make deps done
+#
 # Revision 2.9  2000/01/21 12:04:23  dkr
 # directory tree added
 #
@@ -164,17 +167,17 @@ clean:
 lex.yy.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 lex.yy.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 lex.yy.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-lex.yy.o: /usr/include/stdlib.h ../global/tree.h ../global/types.h
-lex.yy.o: ../global/tree_basic.h ../global/tree_compound.h ../global/Error.h
+lex.yy.o: /usr/include/stdlib.h ../tree/tree.h ../global/types.h
+lex.yy.o: ../tree/tree_basic.h ../tree/tree_compound.h ../global/Error.h
 lex.yy.o: /usr/include/string.h ../global/globals.h ../global/internal_lib.h
-lex.yy.o: ../global/free.h ../../inc/dbug.h ../global/my_debug.h
+lex.yy.o: ../tree/free.h ../../inc/dbug.h ../global/my_debug.h
 lex.yy.o: /usr/include/malloc.h /usr/include/sys/types.h
 lex.yy.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
 lex.yy.o: ../global/resource.h y.tab.h
 scnprs.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 scnprs.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 scnprs.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-scnprs.o: /usr/include/string.h ../global/types.h ../global/tree_basic.h
+scnprs.o: /usr/include/string.h ../global/types.h ../tree/tree_basic.h
 scnprs.o: ../global/Error.h /usr/include/stdlib.h ../global/globals.h
 scnprs.o: ../../inc/dbug.h ../modules/filemgr.h scnprs.h ../global/resource.h
 scnprs.o: y.tab.h
@@ -183,9 +186,9 @@ y.tab.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 y.tab.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
 y.tab.o: /usr/include/stdlib.h /usr/include/memory.h /usr/include/sys/types.h
 y.tab.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-y.tab.o: ../../inc/dbug.h ../global/tree.h ../global/types.h
-y.tab.o: ../global/tree_basic.h ../global/tree_compound.h ../global/Error.h
+y.tab.o: ../../inc/dbug.h ../tree/tree.h ../global/types.h
+y.tab.o: ../tree/tree_basic.h ../tree/tree_compound.h ../global/Error.h
 y.tab.o: /usr/include/string.h ../global/globals.h ../global/internal_lib.h
 y.tab.o: ../typecheck/typecheck.h ../tree/DupTree.h ../global/my_debug.h
-y.tab.o: ../global/free.h /usr/include/malloc.h ../modules/readsib.h
+y.tab.o: ../tree/free.h /usr/include/malloc.h ../modules/readsib.h
 y.tab.o: ../global/resource.h

@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.3  2000/01/21 17:02:17  dkr
+# make deps done
+#
 # Revision 1.2  2000/01/21 16:45:49  dkr
 # tree related stuff moved from directory 'global' into 'tree'
 #
@@ -76,6 +79,15 @@ DataFlowMask.o: /usr/include/stdlib.h ../global/globals.h
 DataFlowMask.o: ../global/internal_lib.h free.h ../global/my_debug.h
 DataFlowMask.o: /usr/include/malloc.h /usr/include/sys/types.h
 DataFlowMask.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
+DataFlowMaskUtils.o: tree.h ../global/types.h tree_basic.h tree_compound.h
+DataFlowMaskUtils.o: ../global/Error.h /usr/include/stdio.h
+DataFlowMaskUtils.o: /usr/include/sys/feature_tests.h
+DataFlowMaskUtils.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
+DataFlowMaskUtils.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
+DataFlowMaskUtils.o: /usr/include/string.h /usr/include/stdlib.h
+DataFlowMaskUtils.o: ../global/globals.h ../global/internal_lib.h
+DataFlowMaskUtils.o: ../../inc/dbug.h DupTree.h DataFlowMask.h
+DataFlowMaskUtils.o: ../typecheck/typecheck.h
 DupTree.o: /usr/include/string.h /usr/include/sys/feature_tests.h
 DupTree.o: /usr/include/sys/isa_defs.h tree.h ../global/types.h tree_basic.h
 DupTree.o: tree_compound.h ../global/Error.h /usr/include/stdio.h

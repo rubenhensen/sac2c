@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.23  2000/01/21 17:02:01  dkr
+# make deps done
+#
 # Revision 2.22  2000/01/21 16:45:03  dkr
 # tree related stuff moved into directory tree
 #
@@ -378,4 +381,3 @@ fafnir: src.tar.gz
             'chmod 644 $(SOURCE_FILES);' \
             'make deps OS=LINUX_X86;' \
             'make OS=LINUX_X86'
-

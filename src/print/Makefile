@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.8  2000/01/21 17:02:04  dkr
+# make deps done
+#
 # Revision 2.7  2000/01/21 12:04:08  dkr
 # *** empty log message ***
 #
@@ -114,20 +117,20 @@ convert.o: /usr/include/sys/isa_defs.h /usr/include/stdlib.h
 convert.o: /usr/include/math.h ../global/internal_lib.h ../global/types.h
 convert.o: ../../inc/dbug.h /usr/include/stdio.h /usr/include/sys/va_list.h
 convert.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-convert.o: ../global/tree_basic.h ../global/tree_compound.h ../global/Error.h
-convert.o: ../global/globals.h ../global/type_info.mac
+convert.o: ../tree/tree_basic.h ../tree/tree_compound.h ../global/Error.h
+convert.o: ../global/globals.h ../tree/type_info.mac
 print.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 print.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 print.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-print.o: /usr/include/stdlib.h /usr/include/string.h ../global/tree.h
-print.o: ../global/types.h ../global/tree_basic.h ../global/tree_compound.h
+print.o: /usr/include/stdlib.h /usr/include/string.h ../tree/tree.h
+print.o: ../global/types.h ../tree/tree_basic.h ../tree/tree_compound.h
 print.o: ../global/Error.h ../global/globals.h ../global/internal_lib.h
-print.o: print.h ../global/my_debug.h ../../inc/dbug.h ../global/traverse.h
+print.o: print.h ../global/my_debug.h ../../inc/dbug.h ../tree/traverse.h
 print.o: convert.h ../tree/DataFlowMask.h ../optimize/optimize.h
-print.o: ../global/free.h /usr/include/malloc.h /usr/include/sys/types.h
+print.o: ../tree/free.h /usr/include/malloc.h /usr/include/sys/types.h
 print.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
 print.o: ../optimize/generatemasks.h ../modules/filemgr.h
 print.o: ../compile/gen_startup_code.h ../psi-opt/WithloopFolding.h
 print.o: ../concurrent/scheduling.h ../psi-opt/wl_access_analyze.h
 print.o: ../psi-opt/tile_size_inference.h ../compile/icm.data
-print.o: ../global/prf_node_info.mac
+print.o: ../tree/prf_node_info.mac

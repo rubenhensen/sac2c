@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.9  2000/01/21 17:02:02  dkr
+# make deps done
+#
 # Revision 2.8  2000/01/21 12:53:35  dkr
 # target clean changed
 #
@@ -111,18 +114,18 @@ flatten.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 flatten.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
 flatten.o: ../global/globals.h ../global/types.h ../global/Error.h
 flatten.o: /usr/include/string.h /usr/include/stdlib.h ../../inc/dbug.h
-flatten.o: ../global/my_debug.h ../global/internal_lib.h
-flatten.o: ../global/tree_basic.h ../global/tree_compound.h
-flatten.o: ../global/traverse.h ../global/free.h /usr/include/malloc.h
-flatten.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
-flatten.o: /usr/include/sys/int_types.h ../tree/DupTree.h flatten.h
-lac2fun.o: ../global/tree.h ../global/types.h ../global/tree_basic.h
-lac2fun.o: ../global/tree_compound.h ../global/Error.h /usr/include/stdio.h
+flatten.o: ../global/my_debug.h ../global/internal_lib.h ../tree/tree_basic.h
+flatten.o: ../tree/tree_compound.h ../tree/traverse.h ../tree/free.h
+flatten.o: /usr/include/malloc.h /usr/include/sys/types.h
+flatten.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
+flatten.o: ../tree/DupTree.h flatten.h
+lac2fun.o: ../tree/tree.h ../global/types.h ../tree/tree_basic.h
+lac2fun.o: ../tree/tree_compound.h ../global/Error.h /usr/include/stdio.h
 lac2fun.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 lac2fun.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
 lac2fun.o: /usr/include/stdio_impl.h /usr/include/string.h
 lac2fun.o: /usr/include/stdlib.h ../global/globals.h ../global/internal_lib.h
-lac2fun.o: ../global/traverse.h ../global/free.h ../../inc/dbug.h
+lac2fun.o: ../tree/traverse.h ../tree/free.h ../../inc/dbug.h
 lac2fun.o: ../global/my_debug.h /usr/include/malloc.h
 lac2fun.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
 lac2fun.o: /usr/include/sys/int_types.h ../tree/DupTree.h
