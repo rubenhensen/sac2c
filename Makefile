@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.71  1998/04/03 12:10:56  srs
+# added $(CONCURRENT) to OBJ
+#
 # Revision 1.70  1998/04/03 11:39:01  dkr
 # added concregions.o in dir concurrent
 #
@@ -279,7 +282,7 @@ COMPILE= src/compile/compile.o src/compile/icm2c.o src/compile/precompile.o \
          src/compile/Old2NewWith.o
 
 OBJ=$(GLOBAL) $(SCANP) $(PRINT) $(FLATTEN) $(TYPECHECK) $(OPTIMIZE) \
-    $(MODULES) $(OBJECTS) $(REFCOUNT) $(COMPILE) $(PSIOPT)
+    $(MODULES) $(OBJECTS) $(REFCOUNT) $(COMPILE) $(PSIOPT) $(CONCURRENT)
 
 all: dummy sac2c
 
