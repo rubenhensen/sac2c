@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2004/08/17 15:47:39  skt
+ * cell_groth enabled
+ *
  * Revision 3.13  2004/08/11 09:38:03  skt
  * assignments rearrange enabled
  *
@@ -169,22 +172,23 @@
 #include "free.h"
 #include "Error.h"
 
-#include "repfuns_init.h"
-#include "blocks_propagate.h"
-#include "blocks_expand.h"
-#include "mtfuns_init.h"
-#include "blocks_cons.h"
-#include "dataflow_analysis.h"
-#include "barriers_init.h"
-#include "blocks_lift.h"
-#include "adjust_calls.h"
+/*#include "repfuns_init.h"
+  #include "blocks_propagate.h"
+  #include "blocks_expand.h"
+  #include "mtfuns_init.h"
+  #include "blocks_cons.h"
+  #include "dataflow_analysis.h"
+  #include "barriers_init.h"
+  #include "blocks_lift.h"
+  #include "adjust_calls.h" */
 
 #include "multithread.h"
 #include "tag_executionmode.h"
 #include "propagate_executionmode.h"
-#include "create_cells.h"
 #include "create_dataflowgraph.h"
 #include "assignments_rearrange.h"
+#include "create_cells.h"
+#include "cell_growth.h"
 
 /*
  * INFO structure
@@ -445,6 +449,18 @@ MUTHmodul (node *arg_node, info *arg_info)
         goto cont;
     }
 
+    /*
+     *  --- CellGrowth (cegro) ---
+     */
+    DBUG_PRINT ("MUTH", ("begin CellGrowth"));
+
+    arg_node = CellGrowth (arg_node);
+
+    DBUG_PRINT ("MUTH", ("end CellGrowth"));
+    executionmodes_available = FALSE;
+    if ((break_after == PH_multithread) && (strcmp ("cegro", break_specifier) == 0)) {
+        goto cont;
+    }
     /*
      *  --- RepfunsInit (rfin) ---
      *
