@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.18  2001/05/22 14:58:46  nmw
+ * rmcasts traversal added
+ *
  * Revision 3.17  2001/05/15 15:51:29  nmw
  * ssawli and ssawlf traversals added
  *
@@ -258,6 +261,7 @@ extern funtab *ssalur_tab;
 extern funtab *ssawlt_tab;
 extern funtab *ssawli_tab;
 extern funtab *ssawlf_tab;
+extern funtab *rmcasts_tab;
 
 extern int nnode[];
 

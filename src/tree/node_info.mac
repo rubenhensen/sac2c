@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.53  2001/05/22 14:58:27  nmw
+ * rmcasts traversal added
+ *
  * Revision 3.52  2001/05/15 15:51:08  nmw
  * ssawli and ssawlf traversals added
  *
@@ -377,7 +380,7 @@
  *
  *   writesib_tab    obj_tab         impltype_tab    objinit_tab
  *   analy_tab       checkdec_tab    writedec_tab    unique_tab
- *   unused_tab1     precomp2_tab    active_tab      readsib_tab
+ *   rmcasts_tab     precomp2_tab    active_tab      readsib_tab
  *   wlt_tab         cse_tab         dfr_tab         tcwl_tab
  *   spmdinit_tab    spmdopt_tab     spmdlift_tab    syncinit_tab
  *
@@ -540,8 +543,8 @@
 #define NIFunique(it_unique)
 #endif
 
-#ifndef NIFunused0
-#define NIFunused0(it_unused0)
+#ifndef NIFrmcasts
+#define NIFrmcasts(it_rmcasts)
 #endif
 #ifndef NIFprecomp2
 #define NIFprecomp2(it_precomp2)
@@ -817,7 +820,7 @@
   it_lir_mov, it_idx, it_unswitch, it_wli, it_ae,                                        \
                                                                                          \
   it_writesib, it_obj, it_impltype, it_objinit, it_analy, it_checkdec, it_writedec,      \
-  it_unique, it_unused0, it_precomp2, it_active, it_readsib, it_wlt, it_cse, it_dfr,     \
+  it_unique, it_rmcasts, it_precomp2, it_active, it_readsib, it_wlt, it_cse, it_dfr,     \
   it_tcwl, it_spmdinit, it_spmdopt, it_spmdlift, it_syncinit,                            \
                                                                                          \
   it_syncopt, it_wltrans, it_gsc, it_reuse, it_patchwith, it_sched, it_conc, it_opt,     \
@@ -847,7 +850,7 @@
             NIFwritesib (it_writesib) NIFobj (it_obj) NIFimpltype (                      \
               it_impltype) NIFobjinit (it_objinit) NIFanaly (it_analy)                   \
               NIFcheckdec (it_checkdec) NIFwritedec (it_writedec) NIFunique (            \
-                it_unique) NIFunused0 (it_unused0) NIFprecomp2 (it_precomp2)             \
+                it_unique) NIFrmcasts (it_rmcasts) NIFprecomp2 (it_precomp2)             \
                 NIFactive (it_active) NIFreadsib (it_readsib) NIFwlt (it_wlt) NIFcse (   \
                   it_cse) NIFdfr (it_dfr) NIFtcwl (it_tcwl) NIFspmdinit (it_spmdinit)    \
                   NIFspmdopt (it_spmdopt) NIFspmdlift (it_spmdlift) NIFsyncinit (        \
@@ -1658,7 +1661,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
 
        PrintCast, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TCWLnull,
+       RCcast, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TCWLnull,
        TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
@@ -2424,7 +2427,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 #undef NIFwritedec
 #undef NIFunique
 
-#undef NIFunused0
+#undef NIFrmcasts
 #undef NIFprecomp2
 #undef NIFactive
 #undef NIFreadsib

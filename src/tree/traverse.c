@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.24  2001/05/22 14:58:46  nmw
+ * rmcasts traversal added
+ *
  * Revision 3.23  2001/05/15 15:51:29  nmw
  * ssawli and ssawlf traversals added
  *
@@ -183,6 +186,7 @@
 #include "SSAWLT.h"
 #include "SSAWLI.h"
 #include "SSAWLF.h"
+#include "rmcasts.h"
 
 #include "traverse.h"
 
@@ -501,15 +505,15 @@ static funtab unique_tab_rec = {{
 funtab *unique_tab = &unique_tab_rec;
 
 /*
- *  (29) unused0
+ *  (29) rmcasts_tab
  */
-static funtab unused0_tab_rec = {{
-#define NIFunused0(it_unused0) it_unused0
+static funtab rmcasts_tab_rec = {{
+#define NIFrmcasts(it_rmcasts) it_rmcasts
 #include "node_info.mac"
                                  },
                                  NULL,
                                  NULL};
-funtab *unused0_tab = &unused0_tab_rec;
+funtab *rmcasts_tab = &rmcasts_tab_rec;
 
 /*
  *  (30) precomp2_tab
