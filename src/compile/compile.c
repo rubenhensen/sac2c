@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.71  2000/07/12 17:17:44  jhs
+ * Fixed params.
+ *
  * Revision 2.70  2000/07/12 15:15:15  dkr
  * function DuplicateTypes renamed into DupTypes
  *
@@ -5458,8 +5461,8 @@ BuildParamsByDFMfold (DFMfoldmask_t *mask, char *tag, int *num_args, node *icm_a
 
     rc_tag = StringConcat (tag, "_rc");
 
-    vardec = DFMGetMaskEntryDeclSet (mask);
-    while (vardec != NULL) {
+    while (mask != NULL) {
+        vardec = DFMFM_VARDEC (mask);
 
         DBUG_PRINT ("JHS", ("%s", NODE_TEXT (vardec)));
         DBUG_PRINT ("JHS", ("%s", VARDEC_OR_ARG_NAME (vardec)));
@@ -5485,7 +5488,7 @@ BuildParamsByDFMfold (DFMfoldmask_t *mask, char *tag, int *num_args, node *icm_a
             DBUG_PRINT ("SPMD", ("bpbdfm num_args:- %s", VARDEC_OR_ARG_NAME (vardec)));
         }
 
-        vardec = DFMGetMaskEntryDeclSet (NULL);
+        mask = DFMFM_NEXT (mask);
     }
 
     free (rc_tag);
@@ -7608,7 +7611,7 @@ COMPMt (node *arg_node, node *arg_info)
      *  Part 2 - Broadcast
      */
     broadcast
-      = MakeIcm5 ("MT2_MASTER_BROADCAST", MakeId1 ("ALLOC"),
+      = MakeIcm5 ("MT2_MASTER_BROADCAST", MakeId1 ("SYNC"),
                   MakeNum (MT_IDENTIFIER (arg_node)),
                   MakeNum (DFMTestMask (MT_ALLOC (arg_node))
                            + DFMTestMask (MT_USEMASK (arg_node))),
@@ -7736,9 +7739,17 @@ COMPMTsignal (node *arg_node, node *arg_info)
     DBUG_ASSERT (0, ("COMPMTsignal not implemented yet, cannot compile this"));
 #endif
 
-    assigns = MakeAssigns1 (
-      MakeIcm2 ("MT2_SIGNAL_DATA", MakeNum (DFMTestMask (MTSIGNAL_IDSET (arg_node))),
-                BuildParamsByDFM (MTSIGNAL_IDSET (arg_node), "ids", NULL, NULL)));
+    assigns = MakeAssigns1 (MakeIcm0 ("MT2_SIGNAL_DATA"
+#if 0
+,
+                MakeId1( "SYNC"),
+                MakeNum( DFMTestMask( MTSIGNAL_IDSET( arg_node))),
+                BuildParamsByDFM( MTSIGNAL_IDSET( arg_node),
+                                  "ids",
+                                  NULL,
+                                  NULL)
+#endif
+                                      ));
 
     arg_node = FreeTree (arg_node);
 
