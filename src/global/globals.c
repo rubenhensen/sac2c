@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.28  2000/06/07 11:06:04  nmw
+ * added global variable generatelibrary with default GENERATELIBRARY_SAC
+ * used for genlib commandline switch
+ *
  * Revision 2.27  2000/03/23 14:00:51  jhs
  * Brushing around includes of nt_info.mac.
  *
@@ -409,6 +413,10 @@ int break_cycle_specifier = -1;
 char break_specifier[MAX_BREAK_SPECIFIER] = "";
 /* Additional break specifier to allow breaking within a particular
    compiler phase at any position. */
+
+unsigned int generatelibrary = GENERATELIBRARY_SAC;
+/* Specify interfaces to generate from SAC modules
+   default: generate a standard SAC library*/
 
 /*
  *  Definitions of some global variables necessary for the
