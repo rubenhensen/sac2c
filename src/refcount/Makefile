@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.25  2004/10/15 09:05:31  ktr
+# added aliasanalysis.o
+#
 # Revision 3.24  2004/10/12 10:25:41  ktr
 # added filterrc.o
 #
@@ -102,7 +105,7 @@ INCS = -I../global -I../tree -I../../inc -I../flatten -I../typecheck \
 
 
 all: allocation.o alloc.o refcounting.o reuse.o rcopt.o rcphase.o \
-     filterrc.o
+     filterrc.o aliasanalysis.o
 
 
 %.o: %.c
