@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.103  2004/09/02 16:07:19  skt
+# support for consolidate_cells added
+#
 # Revision 3.102  2004/08/31 16:56:35  skt
 # replicate_functions.o added
 #
@@ -301,7 +304,8 @@ MULTITHREAD= src/multithread/multithread.o src/multithread/multithread_lib.o \
              src/multithread/tag_executionmode.o src/multithread/propagate_executionmode.o \
              src/multithread/create_cells.o src/multithread/create_dataflowgraph.o \
              src/multithread/assignments_rearrange.o src/multithread/cell_growth.o \
-             src/multithread/create_withinwith.o src/multithread/replicate_functions.o
+             src/multithread/create_withinwith.o src/multithread/replicate_functions.o \
+             src/multithread/consolidate_cells.o
 
 
 COMPILE= src/compile/wltransform.o src/compile/wlpragma_funs.o \
