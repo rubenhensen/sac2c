@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.108  1998/02/09 15:59:24  srs
+ * changed call of optimization functions
+ *
  * Revision 1.107  1998/02/06 13:32:20  srs
  * inserted var opt_wlf and switch -noWLF
  *
@@ -1184,17 +1187,15 @@ MAIN
                                                     compiler_phase++;
 
                                                     if (!breakrmvoidfun) {
-                                                        if (sac_optimize) {
-                                                            NOTE_COMPILER_PHASE;
-                                                            CHECK_DBUG_START;
-                                                            syntax_tree = Optimize (
-                                                              syntax_tree); /* see
-                                                                               optimize.c,
-                                                                               Optimize()
-                                                                             */
-                                                            CHECK_DBUG_STOP;
-                                                            ABORT_ON_ERROR;
-                                                        }
+                                                        NOTE_COMPILER_PHASE;
+                                                        CHECK_DBUG_START;
+                                                        syntax_tree
+                                                          = Optimize (
+                                                            syntax_tree); /* see
+                                                                             optimize.c,
+                                                                             Optimize() */
+                                                        CHECK_DBUG_STOP;
+                                                        ABORT_ON_ERROR;
                                                         compiler_phase++;
 
                                                         if (!breakopt) {
