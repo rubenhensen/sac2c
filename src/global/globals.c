@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.32  2000/07/24 14:49:58  nmw
+ * added global var object_counter
+ *
  * Revision 2.31  2000/06/13 13:39:31  dkr
  * Make_Old2NewWith renamed into make_patchwith
  *
@@ -514,6 +517,12 @@ int function_counter = 1;
 /*
  *  This global variable is used whenever the functions of a module or
  *  class are written to separate files.
+ */
+
+int object_counter = 0;
+/*
+ *  This global variable is used whenever the objectinitflags of a module
+ *  are written to separate files.
  */
 
 deps *dependencies = NULL;
