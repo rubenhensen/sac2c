@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.52  2003/10/09 16:52:12  dkrHH
+ * DAO for TAGGED_ARRAYS activated
+ *
  * Revision 3.51  2003/09/30 21:56:49  dkrHH
  * no changes done
  *
@@ -1282,13 +1285,13 @@ CheckOptionConsistency ()
                   "Code for sequential execution generated instead"));
     }
 #endif
-#if 1
-    if (optimize & OPT_DAO) {
-        SYSWARN (("Descriptor allocation optimization (DAO/RCAO) of private heap"
-                  " management is not yet available for TAGGED_ARRAYS.\n"
-                  "DAO/RCAO disabled"));
-        optimize &= ~OPT_DAO;
-    }
+#if 0
+  if (optimize & OPT_DAO) {
+    SYSWARN( ("Descriptor allocation optimization (DAO/RCAO) of private heap"
+              " management is not yet available for TAGGED_ARRAYS.\n"
+              "DAO/RCAO disabled"));
+    optimize &= ~OPT_DAO;
+  }
 #endif
 #endif /* TAGGED_ARRAYS */
 
