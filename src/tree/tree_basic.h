@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.144  2002/09/02 12:23:01  dkr
+ * N_vardec: comment corrected
+ *
  * Revision 3.143  2002/08/15 11:47:55  dkr
  * MODUL_WRAPPERFUNS added
  *
@@ -1264,9 +1267,9 @@ extern node *MakeBlock (node *instr, node *vardec);
  ***
  ***  permanent attributes:
  ***
- ***    char*       NAME          (NAME is an element of ...
- ***    types*      TYPE           ... this struct!!)
- ***    statustype  STATUS        (element of TYPE, too!!)
+ ***    char*       NAME
+ ***    types*      TYPE
+ ***    statustype  STATUS
  ***    node*       AVIS          (N_avis)
  ***
  ***  temporary attributes:
@@ -2225,7 +2228,7 @@ extern node *MakeSSAstack (node *next, node *avis);
  ***  permanent attributes:
  ***
  ***    node*       VARDECORARG     (N_vardec/N_arg)
- ***    ntype *     TYPE                             (new typecheck generates these...)
+ ***    ntype*      TYPE                             (new typecheck generates these...)
  ***
  ***  temporary attributes:
  ***
