@@ -1,3 +1,14 @@
+/*
+ *
+ * $RCSfile$
+ * $Revision$
+ * $Log$
+ * Revision 1.3  1994/11/10 14:53:24  sbs
+ * RCS-header inserted
+ *
+ *
+ */
+
 %{
 
 #include <stdlib.h>
