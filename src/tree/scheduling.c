@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2001/03/22 12:41:16  ben
+ * In scheduler_table Cyclic added
+ *
  * Revision 3.13  2001/03/21 11:57:53  ben
  * In scheduler_table Even set to SC_var_seg
  *
@@ -232,13 +235,10 @@ static struct {
     char *arg_spec;
 } scheduler_table[] = {
   /* Name            Class          Adjust Dim  Args  ArgTypes */
-  {"Block", SC_const_seg, 1, 0, 0, ""},
-  {"BlockVar", SC_var_seg, 1, 0, 0, ""},
-  {"Even", SC_var_seg, 1, 0, 0, ""},
-  {"AllByOne", SC_var_seg, 0, 0, 1, "i"},
-  {"BlockBySome", SC_const_seg, 0, 0, 2, "i,i"},
-  {"Static", SC_withloop, 0, 0, 0, ""},
-  {"", SC_const_seg, 0, 0, 0, ""}};
+  {"Block", SC_const_seg, 1, 0, 0, ""},   {"BlockVar", SC_var_seg, 1, 0, 0, ""},
+  {"Even", SC_var_seg, 1, 0, 0, ""},      {"Cyclic", SC_var_seg, 1, 0, 0, ""},
+  {"AllByOne", SC_var_seg, 0, 0, 1, "i"}, {"BlockBySome", SC_const_seg, 0, 0, 2, "i,i"},
+  {"Static", SC_withloop, 0, 0, 0, ""},   {"", SC_const_seg, 0, 0, 0, ""}};
 
 /******************************************************************************
  *
