@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.2  2004/11/24 16:46:06  sah
+  changed node representation
+
   Revision 1.1  2004/11/23 11:34:00  sah
   Initial revision
 
@@ -29,9 +32,15 @@ version="1.0">
       <xsl:value-of select="@name" />
     </xsl:with-param>
   </xsl:call-template>
-  <xsl:value-of select="' (n)->node['"/>
-  <xsl:value-of select="position() - 1"/>
-  <xsl:value-of select="']'"/>
+  <xsl:value-of select="'((n)->sons.'"/> 
+  <xsl:call-template name="name-to-nodeenum">
+    <xsl:with-param name="name">
+      <xsl:value-of select="../../@name"/>
+    </xsl:with-param>
+  </xsl:call-template>
+  <xsl:value-of select="'->'" />
+  <xsl:value-of select="@name" />
+  <xsl:value-of select="')'" />
   <xsl:call-template name="newline"/>
 </xsl:template>
 
@@ -55,7 +64,7 @@ version="1.0">
     </xsl:with-param>
   </xsl:call-template>
   <!-- generate right side of macro -->
-  <xsl:value-of select="'(n)->attribs.'"/> 
+  <xsl:value-of select="'((n)->attribs.'"/> 
   <xsl:call-template name="name-to-nodeenum">
     <xsl:with-param name="name">
       <xsl:value-of select="../../@name"/>
@@ -67,6 +76,7 @@ version="1.0">
   <xsl:if test="key( &quot;arraytypes&quot;, ./type/@name)">
     <xsl:value-of select="'[x]'" />
   </xsl:if>
+  <xsl:value-of select="')'" />
   <xsl:call-template name="newline"/>
 </xsl:template>
 
