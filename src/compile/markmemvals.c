@@ -2,6 +2,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2004/09/07 20:55:45  khf
+ * corrected creation of new assigns for renamed cexprs
+ *
  * Revision 1.10  2004/08/05 16:11:24  ktr
  * Scalar with-loops are now treated as they always were. By using the
  * F_wl_assign abstraction we can now explicitly refcount this case.
@@ -810,7 +813,7 @@ MMVwithop (node *arg_node, info *arg_info)
 node *
 MMVcode (node *arg_node, info *arg_info)
 {
-    node *cexprs, *withop, *cexpr, *nassign;
+    node *cexprs, *withop, *cexpr, *nassign, *tmp;
     ids *_ids;
 
     DBUG_ENTER ("AACCcode");
@@ -841,6 +844,7 @@ MMVcode (node *arg_node, info *arg_info)
         cexprs = NCODE_CEXPRS (arg_node);
         withop = INFO_MMV_WITHOP (arg_info);
         nassign = NULL;
+        tmp = NULL;
 
         while (withop != NULL) {
             if (NWITHOP_IS_FOLD (withop)) {
@@ -850,10 +854,8 @@ MMVcode (node *arg_node, info *arg_info)
                 DBUG_ASSERT ((NODE_TYPE (cexpr) == N_id), "CEXPR is not a N_id");
 
                 if (IDS_VARDEC (_ids) != ID_VARDEC (cexpr)) {
-                    nassign
-                      = MakeAssign (MakeLet (DupNode (cexpr), DupOneIds (_ids)), nassign);
-                    BLOCK_INSTR (NCODE_CBLOCK (arg_node))
-                      = AppendAssign (BLOCK_INSTR (NCODE_CBLOCK (arg_node)), nassign);
+                    tmp = MakeAssign (MakeLet (DupNode (cexpr), DupOneIds (_ids)), NULL);
+                    nassign = AppendAssign (nassign, tmp);
 
                     EXPRS_EXPR (cexprs) = FreeNode (EXPRS_EXPR (cexprs));
                     EXPRS_EXPR (cexprs) = DupIds_Id (_ids);
@@ -863,6 +865,11 @@ MMVcode (node *arg_node, info *arg_info)
             _ids = IDS_NEXT (_ids);
             cexprs = EXPRS_NEXT (cexprs);
             withop = NWITHOP_NEXT (withop);
+        }
+
+        if (nassign != NULL) {
+            BLOCK_INSTR (NCODE_CBLOCK (arg_node))
+              = AppendAssign (BLOCK_INSTR (NCODE_CBLOCK (arg_node)), nassign);
         }
     }
 
