@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.134  1998/06/23 15:05:58  cg
+ * added command line options -dcccall and -dshow_syscall
+ *
  * Revision 1.133  1998/06/23 13:13:15  sbs
  * de-bugged -b1
  *
@@ -967,19 +970,29 @@ MAIN
     NEXTOPT
     ARG 'd' : PARM
     {
-        if (0 == strncmp (*argv, "check_boundary", 14))
+        if (0 == strcmp (*argv, "check_boundary"))
             check_boundary = 1;
-        else if (0 == strncmp (*argv, "CB", 2))
+        else if (0 == strcmp (*argv, "CB"))
             check_boundary = 1;
-        else if (0 == strncmp (*argv, "check_malloc", 12))
+        else if (0 == strcmp (*argv, "check_malloc"))
             check_malloc = 1;
-        else if (0 == strncmp (*argv, "CM", 2))
+        else if (0 == strcmp (*argv, "CM"))
             check_malloc = 1;
-        else if (0 == strncmp (*argv, "nocleanup", 9))
+        else if (0 == strcmp (*argv, "nocleanup"))
             cleanup = 0;
-        else if (0 == strncmp (*argv, "NC", 2))
+        else if (0 == strcmp (*argv, "NC"))
             cleanup = 0;
-        else
+        else if (0 == strcmp (*argv, "show_syscall"))
+            show_syscall = 1;
+        else if (0 == strcmp (*argv, "SC"))
+            show_syscall = 1;
+        else if (0 == strcmp (*argv, "cccall")) {
+            gen_cccall = 1;
+            cleanup = 0;
+        } else if (0 == strcmp (*argv, "CC")) {
+            gen_cccall = 1;
+            cleanup = 0;
+        } else
             SYSWARN (("Unknown debug option '-d%s`", *argv));
     }
     NEXTOPT

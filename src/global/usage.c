@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.71  1998/06/23 15:05:58  cg
+ * added command line options -dcccall and -dshow_syscall
+ *
  * Revision 1.70  1998/06/19 16:53:51  dkr
  * added -noUIP
  *
@@ -293,21 +296,27 @@ usage ()
             "\twithin a particular phase.\n\n"
             "\tCurrently supported:\n\n"
 
-            "\t-bo:inl   \t-b15:inl   \tstop after function inlining\n"
-            "\t-bo:ae    \t-b15:ae    \tstop after array elimination\n"
-            "\t-bo:wli   \t-b15:wli   \tstop after withloop information gathering\n"
-            "\t-bo:cyc   \t-b15:cyc   \tstop after one complete optimization cycle\n\n"
-
-            "\t-bn:conv  \t-b18:conv  \tstop after converting\n"
-            "\t-bn:cubes \t-b18:cubes \tstop after cube-building\n"
-            "\t-bn:segs  \t-b18:segs  \tstop after choice of segments\n"
-            "\t-bn:split \t-b18:split \tstop after splitting\n"
-            "\t-bn:block \t-b18:block \tstop after hierarchical blocking\n"
-            "\t-bn:ublock\t-b18:ublock\tstop after unrolling-blocking\n"
-            "\t-bn:merge \t-b18:merge \tstop after merging\n"
-            "\t-bn:opt   \t-b18:opt   \tstop after optimization\n"
-            "\t-bn:fit   \t-b18:fit   \tstop after fitting\n"
-            "\t-bn:norm  \t-b18:norm  \tstop after normalization\n");
+            "\t-b15:inl      \tstop after function inlining\n"
+            "\t-b15:ae       \tstop after array elimination\n"
+            "\t-b15:wli      \tstop after withloop information gathering\n"
+            "\t-b15:cyc      \tstop after one complete optimization cycle\n"
+            "\n"
+            "\t-b18:conv     \tstop after converting\n"
+            "\t-b18:cubes    \tstop after cube-building\n"
+            "\t-b18:segs     \tstop after choice of segments\n"
+            "\t-b18:split    \tstop after splitting\n"
+            "\t-b18:block    \tstop after hierarchical blocking\n"
+            "\t-b18:ublock   \tstop after unrolling-blocking\n"
+            "\t-b18:merge    \tstop after merging\n"
+            "\t-b18:opt      \tstop after optimization\n"
+            "\t-b18:fit      \tstop after fitting\n"
+            "\t-b18:norm     \tstop after normalization\n"
+            "\n"
+            "\t-b19:spmdinit \tstop after building SPMD blocks\n"
+            "\t-b19:spmdopt  \tstop after optimizing SPMD blocks\n"
+            "\t-b19:spmdlift \tstop after lifting SPMD blocks\n"
+            "\t-b19:syncinit \tstop after building synchronisation blocks\n"
+            "\t-b19:syncopt  \tstop after optimizing synchronisation blocks\n");
 
     printf ("\n\nOPTIMIZATION OPTIONS:\n\n"
 
@@ -377,7 +386,10 @@ usage ()
 
             "\t -dcheck_boundary\tcheck boundary of arrays upon access\n"
             "\t -dnocleanup\t\tdon't remove temporary files and directories\n"
+            "\t -dshow_syscall\t\tshow all system calls during compilation\n"
             "\t -dcheck_malloc\t\tcheck success of memory allocations\n"
+            "\t -dcccall\t\tgenerate shell script '.sac2c' that contains C compiler\n"
+            "\t\t\t\tcall. This implies option -dnocleanup.\n"
 
             "\n\nPROFILING OPTIONS:\n\n"
 
