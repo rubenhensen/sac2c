@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.93  2004/10/16 17:40:13  sbs
+ * bug in Type2Shape eliminated (errorneous DBUG_ASSERT).
+ * cAUSE OF BUG 71.
+ *
  * Revision 3.92  2004/10/14 13:38:04  sbs
  * eliminated second parameter ot Type2Shape
  *
@@ -1044,7 +1048,7 @@ Type2Shape (types *type)
         shp = SHOldShpseg2Shape (dim, new_shpseg);
         new_shpseg = Free (new_shpseg);
     } else {
-        DBUG_ASSERT (dim == 0, "shape inconsistency");
+        DBUG_ASSERT (dim <= 0, "shape inconsistency");
     }
 
     DBUG_RETURN (shp);
