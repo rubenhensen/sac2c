@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.33  2001/05/30 14:00:22  nmw
+# SSAInferLI.o added
+#
 # Revision 3.32  2001/05/22 14:51:57  nmw
 # rmcasts.o added
 #
@@ -249,7 +252,7 @@ OPTIMIZE= src/optimize/optimize.o src/optimize/ConstantFolding.o \
           src/optimize/CSE.o \
           src/optimize/SSADeadCodeRemoval.o src/optimize/SSACSE.o \
           src/optimize/SSAConstantFolding.o src/optimize/SSALIR.o \
-          src/optimize/SSALUR.o src/optimize/rmcasts.o
+          src/optimize/SSALUR.o src/optimize/rmcasts.o src/optimize/SSAInferLI.o
 PROFILE= src/profile/annotate_fun_calls.o
 PSIOPT= src/psi-opt/index.o src/psi-opt/ArrayElimination.o \
 	src/psi-opt/wl_access_analyze.o src/psi-opt/tile_size_inference.o \

@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.20  2001/05/30 14:00:40  nmw
+# SSAInferLI.o added
+#
 # Revision 3.19  2001/05/22 14:52:18  nmw
 # rmcasts.o added
 #
@@ -125,7 +128,7 @@ all: optimize.o generatemasks.o ConstantFolding.o DeadCodeRemoval.o \
      LoopInvariantRemoval.o Inline.o Unroll.o Unswitch.o CSE.o \
      WLUnroll.o DeadFunctionRemoval.o freemasks.o \
      SSADeadCodeRemoval.o SSACSE.o SSAConstantFolding.o SSALIR.o SSALUR.o \
-     rmcasts.o
+     rmcasts.o SSAInferLI.o
 
 %.o: %.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o $@ -c $< $(INCS)
@@ -235,6 +238,13 @@ SSADeadCodeRemoval.o: ../../inc/dbug.h ../tree/traverse.h ../tree/free.h
 SSADeadCodeRemoval.o: ../global/my_debug.h ../tree/DupTree.h
 SSADeadCodeRemoval.o: ../tree/LookUpTable.h SSADeadCodeRemoval.h optimize.h
 SSADeadCodeRemoval.o: ../tree/change_signature.h
+SSAInferLI.o: ../../inc/dbug.h /usr/include/stdio.h
+SSAInferLI.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
+SSAInferLI.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
+SSAInferLI.o: /usr/include/stdio_impl.h ../tree/tree_basic.h
+SSAInferLI.o: ../global/types.h ../tree/tree_compound.h ../global/Error.h
+SSAInferLI.o: /usr/include/string.h /usr/include/stdlib.h ../global/globals.h
+SSAInferLI.o: ../tree/traverse.h SSAInferLI.h
 SSALIR.o: ../../inc/dbug.h /usr/include/stdio.h
 SSALIR.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 SSALIR.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
@@ -254,7 +264,7 @@ SSALUR.o: ../../inc/dbug.h ../tree/traverse.h ../tree/free.h
 SSALUR.o: ../global/my_debug.h ../tree/DupTree.h ../tree/LookUpTable.h
 SSALUR.o: SSALUR.h optimize.h ../constants/constants.h ../constants/shape.h
 SSALUR.o: /usr/include/math.h ../tree/SSATransform.h ../tree/CheckAvis.h
-SSALUR.o: WLUnroll.h Unroll.h generatemasks.h ../tree/prf_node_info.mac
+SSALUR.o: WLUnroll.h ../tree/prf_node_info.mac
 Unroll.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 Unroll.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 Unroll.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
@@ -328,7 +338,7 @@ optimize.o: ../psi-opt/pad.h ../tree/CheckAvis.h ../tree/SSATransform.h
 optimize.o: ../tree/UndoSSATransform.h ../flatten/lac2fun.h
 optimize.o: ../flatten/fun2lac.h SSADeadCodeRemoval.h SSACSE.h
 optimize.o: SSAConstantFolding.h SSALIR.h ../flatten/while2do.h SSALUR.h
-optimize.o: ../psi-opt/SSAWithloopFolding.h rmcasts.h
+optimize.o: ../psi-opt/SSAWithloopFolding.h rmcasts.h SSAInferLI.h
 rmcasts.o: ../../inc/dbug.h /usr/include/stdio.h
 rmcasts.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 rmcasts.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
