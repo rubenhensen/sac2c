@@ -1,8 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.19  2003/12/11 19:05:09  dkrHH
+ * bug in SET_SIZE fixed
+ *
  * Revision 3.18  2003/12/01 18:58:26  dkrHH
- * SET_SHAPE: runtime check added (size>=0 ?)
+ * SET_SIZE: runtime check added (size>=0 ?)
  *
  * Revision 3.17  2003/09/30 19:29:41  dkr
  * Set_Shape() added
@@ -135,7 +138,7 @@ extern int print_comment; /* bool */
     fprintf (outfile, "SAC_ND_A_DESC_SIZE( %s) = SAC_ND_A_MIRROR_SIZE( %s) = ", to_NT,   \
              to_NT);                                                                     \
     set_expr fprintf (outfile, ";\n");                                                   \
-    ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_MIRROR( %s) >= 0", to_NT);              \
+    ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_MIRROR_SIZE( %s) >= 0", to_NT);         \
                      , fprintf (outfile, "Array with size <0 found!"););
 
 #define SET_SHAPE_AUD(to_NT, idx_expr, set_expr)                                         \
