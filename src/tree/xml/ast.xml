@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <!--
   $Log$
-  Revision 1.46  2004/11/22 12:37:05  sah
-  some changes
+  Revision 1.47  2004/11/22 12:54:55  sah
+  more more more
 
   Revision 1.45  2004/11/21 14:22:39  skt
   extend Dataflowgraph and Dataflownode
@@ -980,51 +980,6 @@
         </son>
       </sons>
       <attributes>
-        <attribute name="Status" mandatory="yes">
-          <type name="Integer" />
-          <phases>
-            <range from="dcr1" to="dcr2" />
-          </phases>
-        </attribute>
-        <attribute name="CSE" mandatory="yes">
-          <type name="Link">
-            <target>
-              <unknown />
-            </target>
-          </type>
-          <phases>
-            <range from="CSE" to="unknown" />
-          </phases>
-        </attribute>
-        <attribute name="CF" mandatory="yes">
-          <type name="Link">
-            <target>
-              <unknown />
-            </target>
-          </type>
-          <phases>
-            <phase name="CF" />
-          </phases>
-        </attribute>
-        <attribute name="Index" mandatory="no">
-          <type name="IndexPointer" />
-          <phases>
-            <range from="wli" to="wls" />
-            <range from="wls" to="final" />
-          </phases>
-        </attribute>
-        <attribute name="Level" mandatory="yes">
-          <type name="Integer" />
-          <phases>
-            <phase name="wli" />
-          </phases>
-        </attribute>
-        <attribute name="Indent" mandatory="yes">
-          <type name="Integer" />
-          <phases>
-            <range from="wls" to="final" />
-          </phases>
-        </attribute>
 	<attribute name="ExecMode" mandatory="yes">
 	  <type name="Integer" />
 	  <phases>
@@ -1068,10 +1023,17 @@
           </phases>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags>
+        <flag name="IsUnused" />
+      </flags>
     </node>
     <node name="Let">
       <sons>
+        <son name="Ids" mandatory="yes">
+	  <target>
+	    <node name="Ids" />
+	  </target>
+	</son>
         <son name="Expr" mandatory="yes">
           <target>
             <set name="Expr" />
@@ -1079,20 +1041,14 @@
         </son>
       </sons>
       <attributes>
-        <attribute name="Ids" mandatory="no">
-          <type name="Ids" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
         <attribute name="UseMask" mandatory="yes">
-          <type name="DFMMask" />
+          <type name="DFMask" />
           <phases>
             <range from="multithread" to="final" />
           </phases>
         </attribute>
         <attribute name="DefMask" mandatory="yes">
-          <type name="DFMMask" />
+          <type name="DFMask" />
           <phases>
             <range from="multithread" to="final" />
           </phases>
@@ -1115,13 +1071,7 @@
         </son>
       </sons>
       <attributes>
-        <attribute name="Type" mandatory="yes">
-          <type name="OldType" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
-        <attribute name="NType" default="NULL" mandatory="yes">
+        <attribute name="NType" mandatory="yes">
           <type name="NewType" />
           <phases>
             <all />
@@ -1162,13 +1112,13 @@
           </phases>
         </attribute>
         <attribute name="UseMask" mandatory="yes">
-          <type name="DFMMask" />
+          <type name="DFMask" />
           <phases>
             <range from="multithread" to="final" />
           </phases>
         </attribute>
         <attribute name="DefMask" mandatory="yes">
-          <type name="DFMMask" />
+          <type name="DFMask" />
           <phases>
             <range from="multithread" to="final" />
           </phases>
