@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.65  2002/10/08 15:43:16  dkr
+ * EmptyParts2StridesOrExpr(): default brance in switch contruct added in
+ * order to please the cc.
+ *
  * Revision 3.64  2002/10/07 23:35:29  dkr
  * some bugs fixed
  *
@@ -2934,6 +2938,9 @@ EmptyParts2StridesOrExpr (node **wl, int dims, int *shape)
         NWITH2_NEUTRAL (tmp) = NULL;
         tmp = FreeNode (tmp);
         break;
+
+    default:
+        strides = NULL;
     }
 
     DBUG_RETURN (strides);
