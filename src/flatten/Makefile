@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.20  2002/02/21 14:21:21  sbs
+# insert_vardec.o added as target
+#
 # Revision 3.19  2001/11/15 15:36:48  sacbase
 # CLOCK_SKEW_ELIMINATION and PROJECT_ROOT added.
 #
@@ -84,7 +87,7 @@ include $(PROJECT_ROOT)/Makefile.Config
 
 INCS = -I../global -I../../inc -I../tree -I../print -I../optimize
 
-all: flatten.o lac2fun.o fun2lac.o while2do.o
+all: flatten.o lac2fun.o fun2lac.o while2do.o insert_vardec.o
 
 %.o: %.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o $@ -c $< $(INCS)
