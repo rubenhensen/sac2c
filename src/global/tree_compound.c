@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.33  1997/11/05 16:30:34  dkr
+ * moved nnode[] from tree_compound.[ch] to traverse.[ch]
+ *
  * Revision 1.32  1997/11/05 09:37:22  dkr
  * introduces a new array nnode[]: nodetype -> int
  * this array replaces the node->nnode field
@@ -122,20 +125,6 @@
 #include "dbug.h"
 #include "my_debug.h"
 #include "free.h"
-
-/***
- ***  nnode
- ***/
-
-#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, aa, ab, ac,   \
-            ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ap, aq, ar, nn)                  \
-    nn
-
-int nnode[] = {
-#include "node_info.mac"
-};
-
-#undef NIF
 
 /***
  ***  mod_name_con

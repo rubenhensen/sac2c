@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.36  1997/11/05 16:30:24  dkr
+ * moved nnode[] from tree_compound.[ch] to traverse.[ch]
+ *
  * Revision 1.35  1997/03/19 13:37:55  cg
  * The entire link_tab is removed
  *
@@ -193,5 +196,7 @@ extern funptr readsib_tab[];
 extern funptr cse_tab[];
 
 extern funptr dfr_tab[];
+
+extern int nnode[];
 
 #endif /* _sac_traverse_h */

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.49  1997/11/05 16:29:46  dkr
+ * moved nnode[] from tree_compound.[ch] to traverse.[ch]
+ *
  * Revision 1.48  1997/11/05 09:55:19  dkr
  * fixed a bug with nnode[]
  *
@@ -675,7 +678,6 @@ funptr link_tab[]={
 funptr cse_tab[] = {
 #include "node_info.mac"
 };
-
 #undef NIF
 
 /*
@@ -687,6 +689,19 @@ funptr cse_tab[] = {
     ao
 
 funptr dfr_tab[] = {
+#include "node_info.mac"
+};
+#undef NIF
+
+/***
+ ***  nnode
+ ***/
+
+#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, aa, ab, ac,   \
+            ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ap, aq, ar, nn)                  \
+    nn
+
+int nnode[] = {
 #include "node_info.mac"
 };
 
