@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.16  2000/05/29 14:35:18  dkr
+# make deps done
+#
 # Revision 2.15  2000/05/26 14:23:59  sbs
 # lines for pad*.o added
 # pad.o added as target
@@ -151,129 +154,95 @@ clean:
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
 ArrayElimination.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-ArrayElimination.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
-ArrayElimination.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-ArrayElimination.o: /usr/include/stdlib.h /usr/include/string.h
-ArrayElimination.o: ../global/globals.h ../global/types.h ../global/Error.h
-ArrayElimination.o: ../../inc/dbug.h ../global/my_debug.h ../tree/traverse.h
+ArrayElimination.o: /usr/include/sys/va_list.h /usr/include/stdlib.h
+ArrayElimination.o: /usr/include/string.h ../global/globals.h
+ArrayElimination.o: ../global/types.h ../global/Error.h ../../inc/dbug.h
+ArrayElimination.o: ../global/my_debug.h ../tree/traverse.h
 ArrayElimination.o: ../typecheck/typecheck.h ../tree/free.h
-ArrayElimination.o: /usr/include/malloc.h /usr/include/sys/types.h
-ArrayElimination.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-ArrayElimination.o: /usr/include/sys/select.h /usr/include/sys/time.h
-ArrayElimination.o: /usr/include/sys/time.h ../global/internal_lib.h
+ArrayElimination.o: /usr/include/malloc.h ../global/internal_lib.h
 ArrayElimination.o: ../tree/DupTree.h ../tree/LookUpTable.h ../tree/tree.h
 ArrayElimination.o: ../tree/tree_basic.h ../tree/tree_compound.h
 ArrayElimination.o: ../optimize/optimize.h ../optimize/generatemasks.h
 ArrayElimination.o: ../optimize/Inline.h ../optimize/LoopInvariantRemoval.h
 ArrayElimination.o: ArrayElimination.h
 WLF.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-WLF.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
-WLF.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-WLF.o: /usr/include/stdlib.h /usr/include/limits.h ../tree/tree.h
-WLF.o: ../global/types.h ../tree/tree_basic.h ../tree/tree_compound.h
-WLF.o: ../global/Error.h /usr/include/string.h ../global/globals.h
-WLF.o: ../global/internal_lib.h ../tree/free.h ../../inc/dbug.h
-WLF.o: ../global/my_debug.h /usr/include/malloc.h /usr/include/sys/types.h
-WLF.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-WLF.o: /usr/include/sys/select.h /usr/include/sys/time.h
-WLF.o: /usr/include/sys/time.h ../print/print.h ../tree/DupTree.h
+WLF.o: /usr/include/sys/va_list.h /usr/include/stdlib.h /usr/include/limits.h
+WLF.o: /usr/include/sys/isa_defs.h ../tree/tree.h ../global/types.h
+WLF.o: ../tree/tree_basic.h ../tree/tree_compound.h ../global/Error.h
+WLF.o: /usr/include/string.h ../global/globals.h ../global/internal_lib.h
+WLF.o: ../tree/free.h ../../inc/dbug.h ../global/my_debug.h
+WLF.o: /usr/include/malloc.h ../print/print.h ../tree/DupTree.h
 WLF.o: ../tree/LookUpTable.h ../tree/traverse.h ../optimize/optimize.h
 WLF.o: ../optimize/generatemasks.h ../optimize/ConstantFolding.h
 WLF.o: WithloopFolding.h WLF.h
 WLI.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-WLI.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
-WLI.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-WLI.o: /usr/include/stdlib.h ../tree/tree.h ../global/types.h
-WLI.o: ../tree/tree_basic.h ../tree/tree_compound.h ../global/Error.h
-WLI.o: /usr/include/string.h ../global/globals.h ../global/internal_lib.h
-WLI.o: ../tree/free.h ../../inc/dbug.h ../global/my_debug.h
-WLI.o: /usr/include/malloc.h /usr/include/sys/types.h
-WLI.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-WLI.o: /usr/include/sys/select.h /usr/include/sys/time.h
-WLI.o: /usr/include/sys/time.h ../print/print.h ../tree/traverse.h
-WLI.o: ../optimize/optimize.h ../optimize/generatemasks.h
+WLI.o: /usr/include/sys/va_list.h /usr/include/stdlib.h ../tree/tree.h
+WLI.o: ../global/types.h ../tree/tree_basic.h ../tree/tree_compound.h
+WLI.o: ../global/Error.h /usr/include/string.h ../global/globals.h
+WLI.o: ../global/internal_lib.h ../tree/free.h ../../inc/dbug.h
+WLI.o: ../global/my_debug.h /usr/include/malloc.h ../print/print.h
+WLI.o: ../tree/traverse.h ../optimize/optimize.h ../optimize/generatemasks.h
 WLI.o: ../optimize/ConstantFolding.h WithloopFolding.h WLI.h
 WLT.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-WLT.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
-WLT.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-WLT.o: /usr/include/stdlib.h ../tree/tree.h ../global/types.h
-WLT.o: ../tree/tree_basic.h ../tree/tree_compound.h ../global/Error.h
-WLT.o: /usr/include/string.h ../global/globals.h ../global/internal_lib.h
-WLT.o: ../tree/free.h ../../inc/dbug.h ../global/my_debug.h
-WLT.o: /usr/include/malloc.h /usr/include/sys/types.h
-WLT.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-WLT.o: /usr/include/sys/select.h /usr/include/sys/time.h
-WLT.o: /usr/include/sys/time.h ../print/print.h ../tree/DupTree.h
-WLT.o: ../tree/LookUpTable.h ../tree/traverse.h ../optimize/optimize.h
-WLT.o: ../optimize/generatemasks.h WithloopFolding.h WLT.h
+WLT.o: /usr/include/sys/va_list.h /usr/include/stdlib.h ../tree/tree.h
+WLT.o: ../global/types.h ../tree/tree_basic.h ../tree/tree_compound.h
+WLT.o: ../global/Error.h /usr/include/string.h ../global/globals.h
+WLT.o: ../global/internal_lib.h ../tree/free.h ../../inc/dbug.h
+WLT.o: ../global/my_debug.h /usr/include/malloc.h ../print/print.h
+WLT.o: ../tree/DupTree.h ../tree/LookUpTable.h ../tree/traverse.h
+WLT.o: ../optimize/optimize.h ../optimize/generatemasks.h WithloopFolding.h
+WLT.o: WLT.h
 WithloopFolding.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-WithloopFolding.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
-WithloopFolding.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-WithloopFolding.o: /usr/include/stdlib.h ../tree/tree.h ../global/types.h
-WithloopFolding.o: ../tree/tree_basic.h ../tree/tree_compound.h
-WithloopFolding.o: ../global/Error.h /usr/include/string.h
-WithloopFolding.o: ../global/globals.h ../global/internal_lib.h
-WithloopFolding.o: ../tree/free.h ../../inc/dbug.h ../global/my_debug.h
-WithloopFolding.o: /usr/include/malloc.h /usr/include/sys/types.h
-WithloopFolding.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-WithloopFolding.o: /usr/include/sys/select.h /usr/include/sys/time.h
-WithloopFolding.o: /usr/include/sys/time.h ../print/print.h ../tree/DupTree.h
-WithloopFolding.o: ../tree/LookUpTable.h ../tree/traverse.h
-WithloopFolding.o: ../optimize/optimize.h ../optimize/generatemasks.h
-WithloopFolding.o: ../optimize/Inline.h ../typecheck/typecheck.h
-WithloopFolding.o: ../optimize/ConstantFolding.h WithloopFolding.h WLT.h
-WithloopFolding.o: WLI.h WLF.h
+WithloopFolding.o: /usr/include/sys/va_list.h /usr/include/stdlib.h
+WithloopFolding.o: ../tree/tree.h ../global/types.h ../tree/tree_basic.h
+WithloopFolding.o: ../tree/tree_compound.h ../global/Error.h
+WithloopFolding.o: /usr/include/string.h ../global/globals.h
+WithloopFolding.o: ../global/internal_lib.h ../tree/free.h ../../inc/dbug.h
+WithloopFolding.o: ../global/my_debug.h /usr/include/malloc.h
+WithloopFolding.o: ../print/print.h ../tree/DupTree.h ../tree/LookUpTable.h
+WithloopFolding.o: ../tree/traverse.h ../optimize/optimize.h
+WithloopFolding.o: ../optimize/generatemasks.h ../optimize/Inline.h
+WithloopFolding.o: ../typecheck/typecheck.h ../optimize/ConstantFolding.h
+WithloopFolding.o: WithloopFolding.h WLT.h WLI.h WLF.h
 index.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-index.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
-index.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-index.o: /usr/include/string.h ../../inc/dbug.h ../tree/tree.h
-index.o: ../global/types.h ../tree/tree_basic.h ../tree/tree_compound.h
-index.o: ../global/Error.h /usr/include/stdlib.h ../global/globals.h
-index.o: ../global/internal_lib.h ../print/print.h ../tree/traverse.h
-index.o: ../tree/DupTree.h ../tree/LookUpTable.h index.h psi-opt.h
-index.o: ../tree/free.h ../global/my_debug.h /usr/include/malloc.h
-index.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
-index.o: /usr/include/sys/int_types.h /usr/include/sys/select.h
-index.o: /usr/include/sys/time.h /usr/include/sys/time.h
+index.o: /usr/include/sys/va_list.h /usr/include/string.h ../../inc/dbug.h
+index.o: ../tree/tree.h ../global/types.h ../tree/tree_basic.h
+index.o: ../tree/tree_compound.h ../global/Error.h /usr/include/stdlib.h
+index.o: ../global/globals.h ../global/internal_lib.h ../print/print.h
+index.o: ../tree/traverse.h ../tree/DupTree.h ../tree/LookUpTable.h index.h
+index.o: psi-opt.h ../tree/free.h ../global/my_debug.h /usr/include/malloc.h
 index.o: ../tree/access_macros.h ../compile/compile.h
+pad.o: ../../inc/dbug.h /usr/include/stdio.h /usr/include/sys/feature_tests.h
+pad.o: /usr/include/sys/va_list.h ../tree/tree_basic.h ../global/types.h
+pad.o: pad.h
+pad_collect.o: pad_collect.h
+pad_infer.o: pad_infer.h
+pad_transform.o: pad_transform.h
 psi-opt.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-psi-opt.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
-psi-opt.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-psi-opt.o: /usr/include/stdlib.h ../tree/tree.h ../global/types.h
-psi-opt.o: ../tree/tree_basic.h ../tree/tree_compound.h ../global/Error.h
-psi-opt.o: /usr/include/string.h ../global/globals.h ../global/internal_lib.h
-psi-opt.o: ../tree/free.h ../../inc/dbug.h ../global/my_debug.h
-psi-opt.o: /usr/include/malloc.h /usr/include/sys/types.h
-psi-opt.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-psi-opt.o: /usr/include/sys/select.h /usr/include/sys/time.h
-psi-opt.o: /usr/include/sys/time.h ../tree/traverse.h psi-opt.h
+psi-opt.o: /usr/include/sys/va_list.h /usr/include/stdlib.h ../tree/tree.h
+psi-opt.o: ../global/types.h ../tree/tree_basic.h ../tree/tree_compound.h
+psi-opt.o: ../global/Error.h /usr/include/string.h ../global/globals.h
+psi-opt.o: ../global/internal_lib.h ../tree/free.h ../../inc/dbug.h
+psi-opt.o: ../global/my_debug.h /usr/include/malloc.h ../tree/traverse.h
+psi-opt.o: psi-opt.h
 tile_size_inference.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
-tile_size_inference.o: /usr/include/sys/isa_defs.h /usr/include/limits.h
+tile_size_inference.o: /usr/include/limits.h /usr/include/sys/isa_defs.h
 tile_size_inference.o: /usr/include/string.h ../../inc/dbug.h
 tile_size_inference.o: /usr/include/stdio.h /usr/include/sys/va_list.h
-tile_size_inference.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
 tile_size_inference.o: ../global/types.h ../tree/tree_basic.h
 tile_size_inference.o: ../tree/tree_compound.h ../global/Error.h
 tile_size_inference.o: ../global/globals.h ../tree/traverse.h ../tree/free.h
 tile_size_inference.o: ../global/my_debug.h /usr/include/malloc.h
-tile_size_inference.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
-tile_size_inference.o: /usr/include/sys/int_types.h /usr/include/sys/select.h
-tile_size_inference.o: /usr/include/sys/time.h /usr/include/sys/time.h
 tile_size_inference.o: ../global/internal_lib.h ../global/resource.h
 tile_size_inference.o: ../tree/DupTree.h ../tree/LookUpTable.h
 tile_size_inference.o: ../print/print.h ../tree/tree.h tile_size_inference.h
 tile_size_inference.o: ../tree/type_info.mac
 wl_access_analyze.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
-wl_access_analyze.o: /usr/include/sys/isa_defs.h ../../inc/dbug.h
-wl_access_analyze.o: /usr/include/stdio.h /usr/include/sys/va_list.h
-wl_access_analyze.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-wl_access_analyze.o: ../global/types.h ../tree/tree_basic.h
-wl_access_analyze.o: ../tree/tree_compound.h ../global/Error.h
-wl_access_analyze.o: /usr/include/string.h ../global/globals.h
-wl_access_analyze.o: ../tree/traverse.h ../tree/free.h ../global/my_debug.h
-wl_access_analyze.o: /usr/include/malloc.h /usr/include/sys/types.h
-wl_access_analyze.o: /usr/include/sys/machtypes.h
-wl_access_analyze.o: /usr/include/sys/int_types.h /usr/include/sys/select.h
-wl_access_analyze.o: /usr/include/sys/time.h /usr/include/sys/time.h
+wl_access_analyze.o: ../../inc/dbug.h /usr/include/stdio.h
+wl_access_analyze.o: /usr/include/sys/va_list.h ../global/types.h
+wl_access_analyze.o: ../tree/tree_basic.h ../tree/tree_compound.h
+wl_access_analyze.o: ../global/Error.h /usr/include/string.h
+wl_access_analyze.o: ../global/globals.h ../tree/traverse.h ../tree/free.h
+wl_access_analyze.o: ../global/my_debug.h /usr/include/malloc.h
 wl_access_analyze.o: ../global/internal_lib.h ../print/print.h ../tree/tree.h
 wl_access_analyze.o: wl_access_analyze.h

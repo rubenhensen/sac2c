@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.9  2000/05/29 14:35:19  dkr
+# make deps done
+#
 # Revision 2.8  2000/03/31 09:33:46  jhs
 # make deps done
 #
@@ -121,43 +124,27 @@ clean:
 
 objects.o: ../global/types.h ../tree/tree_basic.h ../tree/tree_compound.h
 objects.o: ../global/Error.h /usr/include/stdio.h
-objects.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
-objects.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-objects.o: /usr/include/stdio_impl.h /usr/include/string.h
-objects.o: /usr/include/stdlib.h ../global/globals.h ../../inc/dbug.h
-objects.o: ../tree/traverse.h ../global/internal_lib.h ../tree/DupTree.h
-objects.o: ../tree/LookUpTable.h
+objects.o: /usr/include/sys/feature_tests.h /usr/include/sys/va_list.h
+objects.o: /usr/include/string.h /usr/include/stdlib.h ../global/globals.h
+objects.o: ../../inc/dbug.h ../tree/traverse.h ../global/internal_lib.h
+objects.o: ../tree/DupTree.h ../tree/LookUpTable.h
 objinit.o: /usr/include/string.h /usr/include/sys/feature_tests.h
-objinit.o: /usr/include/sys/isa_defs.h ../global/types.h ../tree/tree_basic.h
-objinit.o: ../tree/tree_compound.h ../global/Error.h /usr/include/stdio.h
-objinit.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-objinit.o: /usr/include/stdio_impl.h /usr/include/stdlib.h
-objinit.o: ../global/globals.h ../tree/traverse.h ../../inc/dbug.h
-objinit.o: ../global/internal_lib.h ../tree/free.h ../global/my_debug.h
-objinit.o: /usr/include/malloc.h /usr/include/sys/types.h
-objinit.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-objinit.o: /usr/include/sys/select.h /usr/include/sys/time.h
-objinit.o: /usr/include/sys/time.h ../tree/DupTree.h ../tree/LookUpTable.h
-objinit.o: ../modules/filemgr.h
+objinit.o: ../global/types.h ../tree/tree_basic.h ../tree/tree_compound.h
+objinit.o: ../global/Error.h /usr/include/stdio.h /usr/include/sys/va_list.h
+objinit.o: /usr/include/stdlib.h ../global/globals.h ../tree/traverse.h
+objinit.o: ../../inc/dbug.h ../global/internal_lib.h ../tree/free.h
+objinit.o: ../global/my_debug.h /usr/include/malloc.h ../tree/DupTree.h
+objinit.o: ../tree/LookUpTable.h ../modules/filemgr.h
 rmvoidfun.o: ../global/types.h ../tree/tree_basic.h ../tree/tree_compound.h
 rmvoidfun.o: ../global/Error.h /usr/include/stdio.h
-rmvoidfun.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
-rmvoidfun.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-rmvoidfun.o: /usr/include/stdio_impl.h /usr/include/string.h
-rmvoidfun.o: /usr/include/stdlib.h ../global/globals.h ../../inc/dbug.h
-rmvoidfun.o: ../tree/traverse.h ../global/internal_lib.h ../tree/free.h
-rmvoidfun.o: ../global/my_debug.h /usr/include/malloc.h
-rmvoidfun.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
-rmvoidfun.o: /usr/include/sys/int_types.h /usr/include/sys/select.h
-rmvoidfun.o: /usr/include/sys/time.h /usr/include/sys/time.h
+rmvoidfun.o: /usr/include/sys/feature_tests.h /usr/include/sys/va_list.h
+rmvoidfun.o: /usr/include/string.h /usr/include/stdlib.h ../global/globals.h
+rmvoidfun.o: ../../inc/dbug.h ../tree/traverse.h ../global/internal_lib.h
+rmvoidfun.o: ../tree/free.h ../global/my_debug.h /usr/include/malloc.h
 uniquecheck.o: ../global/types.h ../tree/tree_basic.h ../tree/tree_compound.h
 uniquecheck.o: ../global/Error.h /usr/include/stdio.h
-uniquecheck.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
-uniquecheck.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-uniquecheck.o: /usr/include/stdio_impl.h /usr/include/string.h
-uniquecheck.o: /usr/include/stdlib.h ../global/globals.h ../../inc/dbug.h
-uniquecheck.o: ../tree/traverse.h ../global/internal_lib.h ../tree/free.h
-uniquecheck.o: ../global/my_debug.h /usr/include/malloc.h
-uniquecheck.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
-uniquecheck.o: /usr/include/sys/int_types.h /usr/include/sys/select.h
-uniquecheck.o: /usr/include/sys/time.h /usr/include/sys/time.h
+uniquecheck.o: /usr/include/sys/feature_tests.h /usr/include/sys/va_list.h
+uniquecheck.o: /usr/include/string.h /usr/include/stdlib.h
+uniquecheck.o: ../global/globals.h ../../inc/dbug.h ../tree/traverse.h
+uniquecheck.o: ../global/internal_lib.h ../tree/free.h ../global/my_debug.h
+uniquecheck.o: /usr/include/malloc.h

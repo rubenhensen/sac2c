@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.13  2000/05/29 14:35:11  dkr
+# make deps done
+#
 # Revision 2.12  2000/03/31 09:33:42  jhs
 # make deps done
 #
@@ -171,33 +174,22 @@ clean:
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
 lex.yy.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-lex.yy.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
-lex.yy.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-lex.yy.o: /usr/include/stdlib.h ../tree/tree.h ../global/types.h
-lex.yy.o: ../tree/tree_basic.h ../tree/tree_compound.h ../global/Error.h
-lex.yy.o: /usr/include/string.h ../global/globals.h ../global/internal_lib.h
-lex.yy.o: ../tree/free.h ../../inc/dbug.h ../global/my_debug.h
-lex.yy.o: /usr/include/malloc.h /usr/include/sys/types.h
-lex.yy.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-lex.yy.o: /usr/include/sys/select.h /usr/include/sys/time.h
-lex.yy.o: /usr/include/sys/time.h ../global/resource.h y.tab.h
+lex.yy.o: /usr/include/sys/va_list.h /usr/include/stdlib.h ../tree/tree.h
+lex.yy.o: ../global/types.h ../tree/tree_basic.h ../tree/tree_compound.h
+lex.yy.o: ../global/Error.h /usr/include/string.h ../global/globals.h
+lex.yy.o: ../global/internal_lib.h ../tree/free.h ../../inc/dbug.h
+lex.yy.o: ../global/my_debug.h /usr/include/malloc.h ../global/resource.h
+lex.yy.o: y.tab.h
 scnprs.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-scnprs.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
-scnprs.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-scnprs.o: /usr/include/string.h ../global/types.h ../tree/tree_basic.h
-scnprs.o: ../global/Error.h /usr/include/stdlib.h ../global/globals.h
-scnprs.o: ../../inc/dbug.h ../modules/filemgr.h scnprs.h ../global/resource.h
-scnprs.o: y.tab.h
+scnprs.o: /usr/include/sys/va_list.h /usr/include/string.h ../global/types.h
+scnprs.o: ../tree/tree_basic.h ../global/Error.h /usr/include/stdlib.h
+scnprs.o: ../global/globals.h ../../inc/dbug.h ../modules/filemgr.h scnprs.h
+scnprs.o: ../global/resource.h y.tab.h
 y.tab.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-y.tab.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
-y.tab.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-y.tab.o: /usr/include/stdlib.h /usr/include/memory.h /usr/include/sys/types.h
-y.tab.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-y.tab.o: /usr/include/sys/select.h /usr/include/sys/time.h
-y.tab.o: /usr/include/sys/time.h ../../inc/dbug.h ../tree/tree.h
+y.tab.o: /usr/include/sys/va_list.h /usr/include/stdlib.h
+y.tab.o: /usr/include/memory.h ../../inc/dbug.h ../tree/tree.h
 y.tab.o: ../global/types.h ../tree/tree_basic.h ../tree/tree_compound.h
 y.tab.o: ../global/Error.h /usr/include/string.h ../global/globals.h
 y.tab.o: ../global/internal_lib.h ../typecheck/typecheck.h ../tree/DupTree.h
 y.tab.o: ../tree/LookUpTable.h ../global/my_debug.h ../tree/free.h
 y.tab.o: /usr/include/malloc.h ../modules/readsib.h ../global/resource.h
-y.tab.o: /usr/include/alloca.h
