@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2000/12/04 10:50:19  dkr
+ * FreeShpseg: DBUG_ASSERT added
+ *
  * Revision 3.1  2000/11/20 18:03:24  sacbase
  * new release made
  *
@@ -182,6 +185,8 @@ FreeShpseg (shpseg *fr)
     DBUG_ENTER ("FreeShpseg");
 
     DBUG_PRINT ("FREE", ("Removing shpseg"));
+
+    DBUG_ASSERT ((fr != NULL), "cannot free a NULL shpseg!");
 
     if (SHPSEG_NEXT (fr) != NULL) {
         SHPSEG_NEXT (fr) = FreeShpseg (SHPSEG_NEXT (fr));
