@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.77  2002/03/07 20:21:05  dkr
+ * - ND_FUN_RET icm always generated (even for void functions)
+ * - ND_FUN_DEC: function parameters have always names now (if needed, a
+ *   generic name is generated)
+ *
  * Revision 3.76  2002/03/07 02:23:22  dkr
  * COMPArg() replaced by COMPFundefArgs()
  * code brushed
@@ -960,7 +965,7 @@ AddThreadIdIcm_ND_FUN_AP (node *icm_assign)
 /******************************************************************************
  *
  * Function:
- *   node *MakeOutArg( int idx)
+ *   node *MakeArgNode( int idx)
  *
  * Description:
  *
@@ -968,15 +973,15 @@ AddThreadIdIcm_ND_FUN_AP (node *icm_assign)
  ******************************************************************************/
 
 static node *
-MakeOutArg (int idx)
+MakeArgNode (int idx)
 {
     node *id;
     char *name;
 
-    DBUG_ENTER ("MakeOutArg");
+    DBUG_ENTER ("MakeArgNode");
 
     name = Malloc (20 * sizeof (char));
-    sprintf (name, "SAC__outarg_%d", idx);
+    sprintf (name, "SAC__arg_%d", idx);
     id = MakeId (name, NULL, ST_regular);
 
     DBUG_RETURN (id);
@@ -1019,7 +1024,7 @@ MakeIcm_ND_FUN_DEC (node *fundef)
         if (argtab->ptr_out[i] != NULL) {
             tag = argtab->tag[i];
             type = argtab->ptr_out[i];
-            id = MakeOutArg (i);
+            id = MakeArgNode (i);
         } else {
             DBUG_ASSERT ((argtab->ptr_in[i] != NULL), "argtab is uncompressed!");
             DBUG_ASSERT ((NODE_TYPE (argtab->ptr_in[i]) == N_arg),
@@ -1027,7 +1032,11 @@ MakeIcm_ND_FUN_DEC (node *fundef)
             tag = argtab->tag[i];
             type = ARG_TYPE (argtab->ptr_in[i]);
             name = ARG_NAME (argtab->ptr_in[i]);
-            id = MakeId_Copy (STR_OR_EMPTY (name));
+            if (name != NULL) {
+                id = MakeId_Copy (name);
+            } else {
+                id = MakeArgNode (i);
+            }
         }
 
         if (TYPES_BASETYPE (type) == T_dots) {
@@ -1105,7 +1114,7 @@ MakeIcm_MT_SPMD_FUN_DEC (node *fundef)
         types *type;
 
         if (argtab->ptr_out[i] != NULL) {
-            id = MakeOutArg (i);
+            id = MakeArgNode (i);
             type = argtab->ptr_out[i];
         } else {
             DBUG_ASSERT ((argtab->ptr_in[i] != NULL), "argtab is uncompressed!");
@@ -1127,7 +1136,7 @@ MakeIcm_MT_SPMD_FUN_DEC (node *fundef)
     if (argtab->ptr_out[0] != NULL) {
         icm_args = MakeExprs (MakeId_Copy (mdb_argtag[argtab->tag[0]]),
                               MakeExprs (MakeTypeNode (argtab->ptr_out[0]),
-                                         MakeExprs (MakeOutArg (0), icm_args)));
+                                         MakeExprs (MakeArgNode (0), icm_args)));
         size++;
     }
 
@@ -1827,17 +1836,16 @@ COMPFundefArgs (node *fundef, node *arg_info)
                     }
 
                     /*
-                     * put "ND_DECL_INOUT_PARAM" or "ND_DECL_INOUT_PARAM_RC" ICM
-                     *   respectively at beginning of function block
+                     * put "ND_DECL_PARAM_..." ICM at beginning of function block
                      *   AND IN FRONT OF THE DECLARATION ICMs!!!
                      *   -> put ICM at the head of INFO_COMP_FIRSTASSIGN
                      */
                     if (argtab->tag[i] == ATG_inout) {
-                        assigns = MakeAssignIcm2 ("ND_DECL_INOUT_PARAM",
+                        assigns = MakeAssignIcm2 ("ND_DECL_PARAM_inout",
                                                   MakeTypeNode (ARG_TYPE (arg)),
                                                   MakeId_Copy (ARG_NAME (arg)), assigns);
                     } else if (argtab->tag[i] == ATG_inout_rc) {
-                        assigns = MakeAssignIcm2 ("ND_DECL_INOUT_PARAM_RC",
+                        assigns = MakeAssignIcm2 ("ND_DECL_PARAM_inout_rc",
                                                   MakeTypeNode (ARG_TYPE (arg)),
                                                   MakeId_Copy (ARG_NAME (arg)), assigns);
                     }
@@ -2223,7 +2231,7 @@ COMPNormalFunReturn (node *arg_node, node *arg_info)
 
             new_args = MakeExprs (MakeId_Copy (mdb_argtag[argtab->tag[i]]),
                                   MakeExprs (DupTree (EXPRS_EXPR (ret_exprs)),
-                                             MakeExprs (MakeOutArg (i), NULL)));
+                                             MakeExprs (MakeArgNode (i), NULL)));
 
             if (last_arg == NULL) {
                 icm_args = new_args;
@@ -2273,14 +2281,10 @@ COMPNormalFunReturn (node *arg_node, node *arg_info)
                  "FUNDEF_RETURN not found via 'arg_info'!");
 
     arg_node = FreeTree (arg_node);
-    if ((ret_cnt == 0) && (cret_node == NULL)) {
-        arg_node = MakeIcm0 ("NOOP");
-    } else {
-        if (cret_node == NULL) {
-            cret_node = MakeId_Copy ("");
-        }
-        arg_node = MakeIcm3 ("ND_FUN_RET", cret_node, MakeNum (ret_cnt), icm_args);
+    if (cret_node == NULL) {
+        cret_node = MakeId_Copy ("");
     }
+    arg_node = MakeIcm3 ("ND_FUN_RET", cret_node, MakeNum (ret_cnt), icm_args);
 
     FUNDEF_RETURN (fundef) = arg_node;
 
@@ -2330,7 +2334,7 @@ COMPSpmdFunReturn (node *arg_node, node *arg_info)
             new_args = MakeExprs (MakeId_Copy (mdb_argtag[argtab->tag[i]]),
                                   MakeExprs (DupTree (EXPRS_EXPR (ret_exprs)),
                                              /*
-                                                  MakeExprs( MakeOutArg( i),
+                                                  MakeExprs( MakeArgNode( i),
                                               */
                                              NULL));
 
