@@ -1,5 +1,10 @@
 #
 # $Log$
+# Revision 2.19  2000/01/17 18:35:55  cg
+# Handling of target platform unified: One of the following
+# is always defined:
+# SAC_FOR_SOLARIS_SPARC, SAC_FOR_LINUX_X86, OR SAC_FOR_OSF_ALPHA.
+#
 # Revision 2.18  2000/01/04 11:48:52  cg
 # Added recursive make call for new subdirectory src/heapmgr.
 #
@@ -105,11 +110,11 @@ OSF_ALPHA_LIBS     := -ll
 # general setup:
 #
 
-CCFLAGS :=$($(CC)_FLAGS) -g $($(OS)_FLAGS)
+CCFLAGS      := $($(CC)_FLAGS) -g $($(OS)_FLAGS)
 CCPROD_FLAGS := $($(CCPROD)_PROD_FLAGS) $($(OS)_FLAGS) 
 
-CFLAGS := -DSHOW_MALLOC -D$(OS) 
-CPROD_FLAGS  :=-DDBUG_OFF -DPRODUCTION -D$(OS)
+CFLAGS       := -DSHOW_MALLOC -DSAC_FOR_$(OS) 
+CPROD_FLAGS  := -DDBUG_OFF -DPRODUCTION -DSAC_FOR_$(OS)
 
 MAKE_NORM    :=$(MAKE) CC="$(CC)" CCFLAGS="$(CCFLAGS)" CFLAGS="$(CFLAGS)"
 MAKE_PROD    :=$(MAKE) CC="$(CCPROD)" CCFLAGS="$(CCPROD_FLAGS)" CFLAGS="$(CPROD_FLAGS)"

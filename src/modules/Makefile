@@ -1,5 +1,10 @@
 #
 # $Log$
+# Revision 2.8  2000/01/17 18:37:49  cg
+# Handling of target platform unified: One of the following
+# is always defined:
+# SAC_FOR_SOLARIS_SPARC, SAC_FOR_LINUX_X86, OR SAC_FOR_OSF_ALPHA.
+#
 # Revision 2.7  1999/12/13 11:27:29  dkr
 # *** empty log message ***
 #
@@ -134,8 +139,20 @@
 #
 #
 
+
+#
+# OS setup:
+#
+# legal values for OS currently are:
+#    SOLARIS_SPARC
+#    LINUX_X86
+#    OSF_ALPHA
+#
+OS        := SOLARIS_SPARC
+
+
 CC        := gcc
-CCFLAGS   := -ansi -Wall -g
+CCFLAGS   := -ansi -Wall -g -DSAC_FOR_$(OS)
 CFLAGS    := -D__EXTENSIONS__
 
 INCS=-I../global -I../../inc -I../scanparse -I../print -I../typecheck \

@@ -1,5 +1,10 @@
 #
 # $Log$
+# Revision 1.3  2000/01/17 18:37:49  cg
+# Handling of target platform unified: One of the following
+# is always defined:
+# SAC_FOR_SOLARIS_SPARC, SAC_FOR_LINUX_X86, OR SAC_FOR_OSF_ALPHA.
+#
 # Revision 1.2  2000/01/17 16:25:58  cg
 # Reorganzied compilation of heap manager library with respect
 # to the integration of a multi-threaded heap manager
@@ -10,9 +15,21 @@
 #
 
 
+
+#
+# OS setup:
+#
+# legal values for OS currently are:
+#    SOLARIS_SPARC
+#    LINUX_X86
+#    OSF_ALPHA
+#
+OS        := SOLARIS_SPARC
+
+
 CC          := gcc
-CCFLAGS     := -ansi -Wall -D__EXTENSIONS__ -g 
-CCFLAGSPROD := -ansi -Wall -D__EXTENSIONS__ -O3
+CCFLAGS     := -ansi -Wall -D__EXTENSIONS__ -g  -DSAC_FOR_$(OS)
+CCFLAGSPROD := -ansi -Wall -D__EXTENSIONS__ -O3 -DSAC_FOR_$(OS)
 
 INCS := -I../runtime -I../../inc
 LIBS := -L.

@@ -1,5 +1,10 @@
 #
 # $Log$
+# Revision 2.9  2000/01/17 18:37:49  cg
+# Handling of target platform unified: One of the following
+# is always defined:
+# SAC_FOR_SOLARIS_SPARC, SAC_FOR_LINUX_X86, OR SAC_FOR_OSF_ALPHA.
+#
 # Revision 2.8  1999/12/13 11:28:42  dkr
 # *** empty log message ***
 #
@@ -27,201 +32,7 @@
 # Revision 1.65  1998/11/04 18:22:36  dkr
 # make deps done
 #
-# Revision 1.64  1998/06/23 11:42:12  cg
-# make deps done
-#
-# Revision 1.63  1998/06/18 13:45:21  cg
-# added ../concurrent as include directory
-#
-# Revision 1.62  1998/06/07 18:38:53  dkr
-# added ReuseWithArrays.o
-#
-# Revision 1.61  1998/05/21 09:52:01  dkr
-# make deps done
-#
-# Revision 1.60  1998/05/19 09:17:57  cg
-# Now, different object files for icm2c_XX.c are generated when
-# compiling for target BEtest. This allows for slightly different
-# icm implementations which is required by some mt-icms that
-# refer to the syntax tree which is obviously not existing when
-# compiling for target BEtest.
-#
-# Revision 1.59  1998/05/14 15:50:04  cg
-# make now also looks in ../scanparse for files to be included.
-#
-# Revision 1.58  1998/05/13 09:32:40  dkr
-# make deps
-#
-# Revision 1.57  1998/05/13 09:29:16  dkr
-# added icm2c_mt.o to target BEtest
-#
-# Revision 1.56  1998/05/13 09:24:25  dkr
-# BEtest no longer needs gen_startup_code.o
-#
-# Revision 1.55  1998/05/13 07:14:22  cg
-# added compilation of icm2c_mt.c
-#
-# Revision 1.54  1998/05/04 15:41:03  dkr
-# make deps done
-#
-# Revision 1.53  1998/05/03 14:04:32  dkr
-# make deps done
-#
-# Revision 1.52  1998/05/03 13:08:04  dkr
-# added icm2c_wl.o
-#
-# Revision 1.51  1998/04/29 17:12:28  dkr
-# added wltransform.o
-#
-# Revision 1.50  1998/04/25 16:26:30  sbs
-# new icm2c / BEtest mechanism implemented!
-#
-# Revision 1.49  1998/04/20 02:43:46  dkr
-# make deps done
-#
-# Revision 1.48  1998/04/20 01:09:31  dkr
-# make deps done
-#
-# Revision 1.47  1998/04/09 23:47:34  dkr
-# make deps done
-#
-# Revision 1.46  1998/04/09 23:43:30  dkr
-# added wlpragma_funs.o
-#
-# Revision 1.45  1998/04/09 12:03:58  dkr
-# make deps done
-#
-# Revision 1.44  1998/04/03 11:50:59  dkr
-# make deps done
-#
-# Revision 1.43  1998/04/03 11:38:31  dkr
-# concregions now in directory concurrent
-#
-# Revision 1.42  1998/04/02 16:07:31  dkr
-# added concregs.o (temporary ...)
-#
-# Revision 1.41  1998/03/24 15:38:56  dkr
-# make deps done
-#
-# Revision 1.40  1998/03/24 15:31:19  cg
-# libsac.a and profile.o removed as targets
-#
-# Revision 1.39  1998/03/24 15:19:00  cg
-# make deps done
-#
-# Revision 1.38  1998/03/24 15:16:39  cg
-# make deps done
-#
-# Revision 1.37  1998/03/24 14:41:50  dkr
-# make deps done
-#
-# Revision 1.36  1998/03/24 13:44:52  cg
-# libsac as well as profile.[ch] removed
-# gen_startup_code.[ch] added
-#
-# Revision 1.35  1998/03/19 17:08:39  dkr
-# make deps done
-#
-# Revision 1.34  1998/03/04 00:09:36  dkr
-# 'clean' now deletes the subdir .sb, too
-#
-# Revision 1.33  1998/02/16 21:44:01  dkr
-# make deps done
-#
-# Revision 1.32  1998/02/12 16:58:29  dkr
-# added ../optimize in INCS
-#
-# Revision 1.31  1997/11/20 19:19:17  dkr
-# make clean now removes Old2NewWith.o
-#
-# Revision 1.30  1997/11/20 15:02:09  dkr
-# make deps done
-#
-# Revision 1.29  1997/11/12 15:59:49  sbs
-# CC+CCFLAGS handling changed.
-# Now, it suffices to preset CC=cc if the SUN-compiler isdesired
-# Otherwise, gcc is set with -Wall and -ansi
-#
-# Revision 1.28  1997/11/11 16:49:30  sbs
-# make deps done
-#
-# Revision 1.27  1997/11/03 15:13:15  dkr
-# make deps done
-#
-# Revision 1.26  1997/08/05 11:31:00  sbs
-# profile.o added in clean-line
-#
-# Revision 1.25  1997/05/28 12:48:31  sbs
-# make deps done
-#
-# Revision 1.24  1997/05/28  12:35:25  sbs
-# Profiling integrated
-#
-# Revision 1.23  1997/05/14  08:54:07  sbs
-# deps made
-#
-# Revision 1.22  1997/05/14  06:44:41  sbs
-# analyse.o inserted
-#
-# Revision 1.21  1997/04/25  12:04:10  sbs
-# make deps done
-#
-# Revision 1.20  1996/02/16  09:46:54  sbs
-# make deps done
-#
-# Revision 1.19  1996/01/18  13:05:43  asi
-# make deps done
-#
-# Revision 1.18  1996/01/09  09:19:14  cg
-# added compilation of libsac.c
-#
-# Revision 1.17  1996/01/04  18:11:10  cg
-# make deps done
-#
-# Revision 1.16  1995/12/15  10:41:12  cg
-# make deps done
-#
-# Revision 1.15  1995/12/01  17:25:42  cg
-# added compilation of precompile.c
-#
-# Revision 1.14  1995/10/08  11:29:56  sbs
-# make deps done
-#
-# Revision 1.13  1995/07/07  15:47:53  asi
-# make deps done
-#
-# Revision 1.12  1995/05/26  12:12:30  asi
-# make deps done
-#
-# Revision 1.11  1995/05/15  13:38:54  asi
-# make deps done
-#
-# Revision 1.10  1995/05/04  11:46:29  sbs
-# make clean adjusted
-#
-# Revision 1.9  1995/05/04  11:44:35  sbs
-# new deps made
-#
-# Revision 1.8  1995/04/20  10:21:23  asi
-# make deps done
-#
-# Revision 1.7  1995/04/19  13:15:55  sbs
-# make deps done
-#
-# Revision 1.6  1995/04/11  15:02:06  sbs
-# dbug.o added in BEtest-rule
-#
-# Revision 1.5  1995/04/05  15:55:01  asi
-# make deps done
-#
-# Revision 1.4  1995/04/04  11:03:54  sbs
-# make deps done
-#
-# Revision 1.3  1995/04/03  13:59:44  sbs
-# icm2c.o line included
-#
-# Revision 1.2  1995/03/31  14:05:38  sbs
-# BEtest inserted
+# [...]
 #
 # Revision 1.1  1995/03/29  12:12:52  hw
 # Initial revision
@@ -230,8 +41,19 @@
 # 
 
 
+#
+# OS setup:
+#
+# legal values for OS currently are:
+#    SOLARIS_SPARC
+#    LINUX_X86
+#    OSF_ALPHA
+#
+OS        := SOLARIS_SPARC
+
+
 CC        := gcc
-CCFLAGS   := -ansi -Wall -g
+CCFLAGS   := -ansi -Wall -g -DSAC_FOR_$(OS)
 CFLAGS    := -D__EXTENSIONS__
 
 INCS=-I../global -I../../inc -I../print -I../typecheck -I../refcount \
