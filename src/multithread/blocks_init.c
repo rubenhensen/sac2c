@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2000/03/15 15:49:46  dkr
+ * fixed a bug:
+ *   argument of KNOWN_SHAPE is not the type itself but its dimension
+ *
  * Revision 1.10  2000/03/09 18:33:10  jhs
  * Brushing ...
  *
@@ -122,7 +126,7 @@ CheckLHSforBigArrays (node *let, int max_small_size)
         vardec = IDS_VARDEC (letids);
         type = VARDEC_TYPE (vardec);
 
-        if ((KNOWN_SHAPE (type)) && (TYPES_DIM (type) > 0)) {
+        if ((KNOWN_SHAPE (TYPES_DIM (type))) && (TYPES_DIM (type) > 0)) {
             sum = 1;
             for (i = 0; i < TYPES_DIM (type); i++) {
                 sum = sum * TYPES_SHAPE (type, i);
