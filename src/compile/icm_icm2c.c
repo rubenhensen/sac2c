@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2002/07/08 22:06:40  dkr
+ * GetNextVar(): N_icm added
+ *
  * Revision 3.6  2002/07/02 13:02:08  dkr
  * icm2c_basic.h included
  *
@@ -289,6 +292,9 @@ GetNextVar (char ***ret, int *ret_len, int cnt, node *exprs)
     for (i = 0; i < cnt; i++) {
         expr = EXPRS_EXPR (exprs);
         switch (NODE_TYPE (expr)) {
+        case N_icm:
+            exprs = GetNextIcm (&((*ret)[i]), exprs);
+            break;
         case N_id:
             exprs = GetNextId (&((*ret)[i]), exprs);
             break;
