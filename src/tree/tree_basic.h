@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.80  2000/07/21 08:20:42  nmw
+ * Modspec added
+ *
  * Revision 1.79  2000/07/19 15:41:58  nmw
  * flag ICM_END_OF_STATEMENT added, forces printing of ;
  *
@@ -3612,6 +3615,27 @@ extern node *MakeCWrapper (node *next, char *name, char *mod, int argcount, int 
 #define CWRAPPER_ARGCOUNT(n) (n->counter)
 #define CWRAPPER_RESCOUNT(n) (n->varno)
 #define CWRAPPER_FUNS(n) ((nodelist *)(n->info2))
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_modspec :
+ ***
+ ***  sons:
+ ***
+ ***  permanent attributes:
+ ***
+ ***    node*  IMPORTS    (O)  (N_implist)
+ ***    node*  OWN        (O)  (N_explist)
+ ***    char*  NAME
+ ***    deps*  LINKWITH   (O)
+ ***    int    ISEXTERNAL
+ ***/
+
+extern node *MakeModspec (char *name, node *exports);
+
+#define MODSPEC_NAME(n) (n->info.fun_name.id)
+#define MODSPEC_OWN(n) (n->node[0])
 
 /*--------------------------------------------------------------------------*/
 
