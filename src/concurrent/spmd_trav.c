@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/05/08 12:34:20  dkr
+ * new RC macros used
+ *
  * Revision 3.3  2000/12/12 12:12:45  dkr
  * NWITH_INOUT removed
  * interpretation of NWITH_IN changed:
@@ -974,8 +977,8 @@ SPMDRMlet (node *arg_node, node *arg_info)
              *  is needed by this point of this optimization.
              *  So if naive-refcounter not available: fix the refcounting!!!
              */
-            DBUG_ASSERT ((IDS_NAIVE_REFCNT (act_ids) > -1),
-                         ("NAIVE_REFCNT is not positive or null"));
+            DBUG_ASSERT ((RC_IS_ACTIVE (IDS_NAIVE_REFCNT (act_ids))),
+                         ("NAIVE_REFCNT is not active!"));
 
             if (IDS_NAIVE_REFCNT (act_ids) == 0) {
                 DBUG_PRINT ("SPMDRM", ("erased %s", IDS_NAME (act_ids)));
