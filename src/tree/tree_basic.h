@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2000/01/25 16:52:20  jhs
+ * Fixed a semicolon ...
+ *
  * Revision 1.4  2000/01/25 16:11:21  dkr
  * INFO_LAC2FUN_FUNDEF added
  *
@@ -2484,7 +2487,7 @@ extern node *MakeInfo ();
 /* multithread-schedule_init */
 /* DO NOT OVERRIDE ANY INFO_MUTH_XXX HERE!!! */
 #define INFO_SCHIN_SCHEDULING(n) (n->node[1])
-#define INFO_SCHIN_INNERWLS(n) (n->int_data);
+#define INFO_SCHIN_INNERWLS(n) (n->int_data)
 
 /* precompile */
 #define INFO_PREC_MODUL(n) (n->node[0])
