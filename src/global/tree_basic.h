@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.25  1999/06/08 08:11:23  cg
+ * Added various attributes to the N_info node  for the print and
+ * writesib phases.
+ *
  * Revision 2.24  1999/06/03 08:42:20  cg
  * WLCOMP_APS in the pragma node is moved to a private (non shared)
  * location in the underlying data structure in order to simplify
@@ -2191,6 +2195,11 @@ extern node *MakePragma ();
  ***    node*      NWITH2
  ***    node*      ACCESS
  ***    int        PRAGMA_WLCOMP
+ ***    int        SIB
+ ***    int        OMIT_FORMAL_PARAMS
+ ***    int        VARNO
+ ***    int        PROTOTYPE
+ ***    int        SEPARATE
  ***
  ***
  *** remarks:
@@ -2251,9 +2260,10 @@ extern node *MakeInfo ();
 #define INFO_TC_LHSVARS(n) (n->info.ids)
 
 /* writesib */
-#define INFO_EXPORTTYPES(n) ((nodelist *)(n->node[0]))
-#define INFO_EXPORTOBJS(n) ((nodelist *)(n->node[1]))
-#define INFO_EXPORTFUNS(n) ((nodelist *)(n->node[2]))
+#define INFO_WSIB_EXPORTTYPES(n) ((nodelist *)(n->node[0]))
+#define INFO_WSIB_EXPORTOBJS(n) ((nodelist *)(n->node[1]))
+#define INFO_WSIB_EXPORTFUNS(n) ((nodelist *)(n->node[2]))
+/* see also print access macros used in this phase ! */
 
 /* refcount */
 #define INFO_RC_PRF(n) (n->node[0])
@@ -2343,7 +2353,12 @@ extern node *MakeInfo ();
 #define INFO_PRINT_WITH_RET(n) (n->node[3])
 #define INFO_PRINT_NWITH2(n) (n->node[4])
 #define INFO_PRINT_ACCESS(n) (n->node[5])
-#define INFO_PRINT_PRAGMA_WLCOMP(n) (n->varno)
+#define INFO_PRINT_PRAGMA_WLCOMP(n) (n->info.cint)
+#define INFO_PRINT_SIB(n) (n->flag)
+#define INFO_PRINT_OMIT_FORMAL_PARAMS(n) (n->counter)
+#define INFO_PRINT_VARNO(n) (n->varno)
+#define INFO_PRINT_PROTOTYPE(n) (n->refcnt)
+#define INFO_PRINT_SEPARATE(n) (n->int_data)
 
 /* WL access analyze */
 #define INFO_WLAA_LASTLETIDS(n) (n->info.ids)
