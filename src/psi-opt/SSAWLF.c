@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2002/06/20 23:03:15  dkr
+ * no changes done
+ *
  * Revision 1.11  2002/06/20 15:23:13  dkr
  * signature of MakeNWithOp modified
  *
@@ -188,6 +191,7 @@ static intern_gen *intersect_intern_gen; /* resulting igs of IntersectInternGen.
  *   adds entry to the global code_constr list.
  *
  ******************************************************************************/
+
 static void
 AddCC (node *targetn, node *substn, node *resultn)
 {
@@ -215,6 +219,7 @@ AddCC (node *targetn, node *substn, node *resultn)
  *   or NULL if not found
  *
  ******************************************************************************/
+
 static code_constr_type *
 SearchCC (node *targetn, node *substn)
 {
@@ -239,6 +244,7 @@ SearchCC (node *targetn, node *substn)
  *   sets whole cc list free
  *
  ******************************************************************************/
+
 static void
 FreeCC (code_constr_type *cc)
 {
@@ -268,6 +274,7 @@ FreeCC (code_constr_type *cc)
  *    powerful).
  *
  ******************************************************************************/
+
 static intern_gen *
 MergeGenerators (intern_gen *ig)
 {
@@ -288,6 +295,7 @@ MergeGenerators (intern_gen *ig)
  *   generators (original ig and newig). If a newig is created, it is returned.
  *
  ******************************************************************************/
+
 static intern_gen *
 LinearTransformationsHelp (intern_gen *ig, int dim, prf prf, int arg_no, int constval)
 {
@@ -466,6 +474,7 @@ LinearTransformationsHelp (intern_gen *ig, int dim, prf prf, int arg_no, int con
  *
  *
  ******************************************************************************/
+
 static intern_gen *
 LinearTransformationsScalar (intern_gen *ig, index_info *transformations, int dim)
 {
@@ -509,6 +518,7 @@ LinearTransformationsScalar (intern_gen *ig, index_info *transformations, int di
  *
  *
  ******************************************************************************/
+
 static intern_gen *
 LinearTransformationsVector (intern_gen *ig, index_info *transformations)
 {
@@ -567,6 +577,7 @@ LinearTransformationsVector (intern_gen *ig, index_info *transformations)
  *
  *
  ******************************************************************************/
+
 static intern_gen *
 FinalTransformations (intern_gen *substig, index_info *transformations, int target_dim)
 {
@@ -662,6 +673,7 @@ FinalTransformations (intern_gen *substig, index_info *transformations, int targ
  *   wlfm_replace and wlfm_rename).
  *
  ******************************************************************************/
+
 static node *
 CreateCode (node *target, node *subst)
 {
@@ -709,6 +721,7 @@ CreateCode (node *target, node *subst)
  *   in global variables intersect_grids* to speed up recursive function calls.
  *
  ******************************************************************************/
+
 static void
 IntersectGrids (int dim)
 {
@@ -810,6 +823,7 @@ IntersectGrids (int dim)
  *   Returns intern_gen list of new intersections.
  *
  ******************************************************************************/
+
 static intern_gen *
 IntersectInternGen (intern_gen *target_ig, intern_gen *subst_ig)
 {
@@ -948,6 +962,7 @@ IntersectInternGen (intern_gen *target_ig, intern_gen *subst_ig)
  *   This is a transformation to reduce the number of components of the ig.
  *
  ******************************************************************************/
+
 static intern_gen *
 RemoveDoubleIndexVectors (intern_gen *subst_ig, index_info *transformations)
 {
@@ -1024,6 +1039,7 @@ RemoveDoubleIndexVectors (intern_gen *subst_ig, index_info *transformations)
  *
  *
  ******************************************************************************/
+
 static int
 TransformationRangeCheck (index_info *transformations, node *substwln,
                           intern_gen *target_ig)
@@ -1090,6 +1106,7 @@ TransformationRangeCheck (index_info *transformations, node *substwln,
  *   The Id idn in the current (arg_info) WL has to be folded.
  *
  ******************************************************************************/
+
 static void
 Fold (node *idn, index_info *transformations, node *targetwln, node *substwln)
 {
@@ -1181,6 +1198,7 @@ Fold (node *idn, index_info *transformations, node *targetwln, node *substwln)
  *     1 for fold-WL with constant bounds.
  *
  ******************************************************************************/
+
 static int
 FoldDecision (node *target_wl, node *subst_wl)
 {
@@ -1209,6 +1227,7 @@ FoldDecision (node *target_wl, node *subst_wl)
  *
  *
  ******************************************************************************/
+
 static node *
 CheckForSuperfluousCodes (node *wln)
 {
@@ -1243,6 +1262,7 @@ CheckForSuperfluousCodes (node *wln)
  *     where newshape depends on shape and the given index vector of C.
  *
  ******************************************************************************/
+
 static node *
 Modarray2Genarray (node *wln, node *substwln)
 {
