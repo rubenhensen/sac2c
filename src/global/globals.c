@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.35  2000/10/24 10:03:04  dkr
+ * simpletype_size renamed into basetype_size
+ *
  * Revision 2.34  2000/08/17 10:06:18  dkr
  * all the NT stuff is now in a separate modul (NameTuples.[ch])
  *
@@ -558,6 +561,6 @@ int indent = 0;
  * It at least is used in compile.c, tile_size_inference.c, and constants.c!
  */
 #define TYP_IFsize(sz) sz
-int simpletype_size[] = {
+int basetype_size[] = {
 #include "type_info.mac"
 };

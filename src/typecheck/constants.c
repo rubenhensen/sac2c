@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.5  2000/10/24 10:04:49  dkr
+ * simpletype_size renamed into basetype_size
+ *
  * Revision 1.4  2000/05/31 11:40:56  dkr
  * CODrop() and COTake() are able to handle empty index vectors now
  *
@@ -163,7 +166,7 @@ AllocCV (simpletype type, int length)
     void *res;
 
     DBUG_ENTER ("AllocCV");
-    res = (void *)MALLOC (simpletype_size[type] * length);
+    res = (void *)MALLOC (basetype_size[type] * length);
     DBUG_RETURN (res);
 }
 

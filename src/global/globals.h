@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.37  2000/10/24 10:02:51  dkr
+ * simpletype_size renamed into basetype_size
+ *
  * Revision 2.36  2000/10/17 16:51:16  dkr
  * macro MAIN_MOD_NAME added
  *
@@ -311,6 +314,6 @@ extern deps *dependencies;
 
 extern int indent;
 
-extern int simpletype_size[];
+extern int basetype_size[];
 
 #endif /* _sac_globals_h */
