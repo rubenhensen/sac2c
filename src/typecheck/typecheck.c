@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2000/11/24 14:54:41  nmw
+ * for generic templates of specialized fundefs the
+ * status is set to ST_ignore.
+ *
  * Revision 3.3  2000/11/23 16:12:19  nmw
  * implementation checked and beautyfied
  *
@@ -2529,21 +2533,16 @@ CheckRest (node *arg_node, int kind)
                               FUNDEF_STATUS (fun_p->node), FUNDEF_ATTRIB (fun_p->node)));
         switch (fun_p->tag) {
         case NOT_CHECKED: {
-            /* ignore generic functions when compiling for a c library */
-            if (!((generatelibrary & GENERATELIBRARY_C)
-                  && ((FUNDEF_ATTRIB (fun_p->node) == ST_shp_indep)
-                      || (FUNDEF_ATTRIB (fun_p->node) == ST_dim_indep)
-                      || (FUNDEF_ATTRIB (fun_p->node) == ST_generic)))) {
-                if ((fun_p->n_dub == max_overload)
-                    && (FUNDEF_STATUS (fun_p->node) != ST_imported_mod)
-                    && (FUNDEF_STATUS (fun_p->node) != ST_imported_class)
-                    && (FUNDEF_STATUS (fun_p->node) != ST_objinitfun)
-                    && (FUNDEF_STATUS (fun_p->node) != ST_foldfun)) {
-                    WARN (NODE_LINE (fun_p->node),
-                          ("Function '%s` is neither used nor has been specialized",
-                           ModName (fun_p->id_mod, fun_p->id)));
-                }
+            if ((fun_p->n_dub == max_overload)
+                && (FUNDEF_STATUS (fun_p->node) != ST_imported_mod)
+                && (FUNDEF_STATUS (fun_p->node) != ST_imported_class)
+                && (FUNDEF_STATUS (fun_p->node) != ST_objinitfun)
+                && (FUNDEF_STATUS (fun_p->node) != ST_foldfun)) {
+                WARN (NODE_LINE (fun_p->node),
+                      ("Function '%s` is neither used nor has been specialized",
+                       ModName (fun_p->id_mod, fun_p->id)));
             }
+
             if (FUNDEF_STATUS (fun_p->node) != ST_objinitfun) {
                 arg_node = DeleteFun (fun_p->node, arg_node);
             }
@@ -3308,11 +3307,14 @@ Typecheck (node *arg_node)
                         DBUG_PRINT ("CHECK", ("function %s has tag :%s", fun_p->id,
                                               CHECK_NAME (fun_p->tag)));
                     } else {
-                        fun_p->tag = NOT_CHECKED;
+                        fun_p->tag = IS_CHECKED;
+                        FUNDEF_STATUS (fun_p->node) = ST_ignore;
                         /*
                          * generic functions in modules compiled for a c-library must not
                          * be checked. There may be a conflict between specialized and
-                         * generic versions the typchechecker cannot resolve.
+                         * generic versions the typchechecker cannot resolve. So these
+                         * fundefs are tagged as CHECKED and marked to be ignored in the
+                         * further compiling steps
                          */
                     }
                 }
