@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.14  2000/10/31 18:13:27  cg
+ * If no cache specification is available, array padding is now
+ * skipped at a reasonably high level.
+ *
  * Revision 1.13  2000/10/27 13:39:54  cg
  * Added correction factor for -apdiaglimit option.
  *
@@ -62,6 +66,7 @@
 #include "free.h"
 #include "globals.h"
 #include "filemgr.h"
+#include "resource.h"
 
 #include "pad.h"
 #include "pad_info.h"
@@ -163,45 +168,69 @@ ArrayPadding (node *arg_node)
     DBUG_ENTER ("ArrayPadding");
 
     DBUG_PRINT ("OPT", ("ARRAY PADDING"));
-
-    NOTE ((""));
-    NOTE (("padding array types:"));
-
-    /* init pad_info structure */
-    PIinit ();
-
     DBUG_PRINT ("AP", ("Entering Array Padding"));
 
-    /* open apdiag_file for output */
-    if (apdiag) {
-        apdiag_file = WriteOpen ("%s.ap", outfilename);
+    NOTE ((""));
+    NOTE (("optimizing array types:"));
 
-        fprintf (apdiag_file,
-                 "     **************************************************\n"
-                 "     *                                                *\n"
-                 "     *        Array Padding Inference Report          *\n"
-                 "     *                                                *\n"
-                 "     **************************************************\n\n\n");
+    if (config.cache1_size > 0) {
+
+        /* init pad_info structure */
+        PIinit ();
+
+        /* open apdiag_file for output */
+        if (apdiag) {
+            apdiag_file = WriteOpen ("%s.ap", outfilename);
+
+            fprintf (apdiag_file,
+                     "     **************************************************\n"
+                     "     *                                                *\n"
+                     "     *        Array Padding Inference Report          *\n"
+                     "     *                                                *\n"
+                     "     **************************************************\n\n\n");
+        }
+
+        /* collect information for inference phase */
+        APcollect (arg_node);
+
+        /* apply array padding */
+        APinfer ();
+
+        /* apply array padding */
+        APtransform (arg_node);
+
+        /* close apdiag_file */
+        if (apdiag) {
+            fclose (apdiag_file);
+        }
+
+        PInoteResults ();
+
+        /* free pad_info structure */
+        PIfree ();
+    } else {
+        /*
+         * Padding is enabled but no cache specification is given.
+         */
+        if (apdiag) {
+            apdiag_file = WriteOpen ("%s.ap", outfilename);
+
+            fprintf (apdiag_file,
+                     "     **************************************************\n"
+                     "     *                                                *\n"
+                     "     *        Array Padding Inference Report          *\n"
+                     "     *                                                *\n"
+                     "     **************************************************\n\n\n");
+            fprintf (apdiag_file,
+                     "     **************************************************\n"
+                     "     *                                                *\n"
+                     "     *  No cache specification  =>  No array padding  *\n"
+                     "     *                                                *\n"
+                     "     **************************************************\n\n\n");
+
+            fclose (apdiag_file);
+        }
     }
-
-    /* collect information for inference phase */
-    APcollect (arg_node);
-
-    /* apply array padding */
-    APinfer ();
-
-    /* apply array padding */
-    APtransform (arg_node);
-
-    /* close apdiag_file */
-    if (apdiag) {
-        fclose (apdiag_file);
-    }
-
-    PInoteResults ();
-
-    /* free pad_info structure */
-    PIfree ();
 
     DBUG_RETURN (arg_node);
 }
