@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2000/02/08 15:14:32  dkr
+ * LAC2FUNwithid added
+ * some bugs fixed
+ *
  * Revision 1.3  2000/02/08 10:17:02  dkr
  * wrong include instruction removed
  *
@@ -19,6 +23,14 @@
 #include "DupTree.h"
 #include "DataFlowMask.h"
 #include "DataFlowMaskUtils.h"
+
+#define DEFINED_VARS(ids, arg_info)                                                      \
+    while (ids != NULL) {                                                                \
+        DefinedVar (NULL, IDS_VARDEC (ids), INFO_LAC2FUN_NEEDED (arg_info),              \
+                    &(INFO_LAC2FUN_IN (arg_info)), &(INFO_LAC2FUN_OUT (arg_info)),       \
+                    &(INFO_LAC2FUN_LOCAL (arg_info)));                                   \
+        ids = IDS_NEXT (ids);                                                            \
+    }
 
 /******************************************************************************
  *
@@ -41,6 +53,7 @@ MakeDummyFunName (char *suffix)
 
     funname = (char *)MALLOC ((sizeof (char) * (strlen (suffix) + number / 10 + 4)));
     sprintf (funname, "__%s%i", suffix, number);
+    number++;
 
     DBUG_RETURN (funname);
 }
@@ -324,17 +337,12 @@ LAC2FUNassign (node *arg_node, node *arg_info)
 node *
 LAC2FUNlet (node *arg_node, node *arg_info)
 {
-    ids *ids;
+    ids *_ids;
 
     DBUG_ENTER ("LAC2FUNlet");
 
-    ids = LET_IDS (arg_node);
-    while (ids != NULL) {
-        DefinedVar (NULL, IDS_VARDEC (ids), INFO_LAC2FUN_NEEDED (arg_info),
-                    &(INFO_LAC2FUN_IN (arg_info)), &(INFO_LAC2FUN_OUT (arg_info)),
-                    &(INFO_LAC2FUN_LOCAL (arg_info)));
-        ids = IDS_NEXT (ids);
-    }
+    _ids = LET_IDS (arg_node);
+    DEFINED_VARS (_ids, arg_info);
 
     LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
 
@@ -366,10 +374,37 @@ LAC2FUNid (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
+ *   node *LAC2FUNwithid( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   every index variable is marked as 'defined' in the in-, out-,
+ *   local-masks of the current block.
+ *
+ ******************************************************************************/
+
+node *
+LAC2FUNwithid (node *arg_node, node *arg_info)
+{
+    ids *_ids;
+
+    DBUG_ENTER ("LAC2FUNwithid");
+
+    _ids = NWITHID_VEC (arg_node);
+    DEFINED_VARS (_ids, arg_info);
+    _ids = NWITHID_IDS (arg_node);
+    DEFINED_VARS (_ids, arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   node *LAC2FUNcond( node *arg_node, node *arg_info)
  *
  * description:
- *
+ *   inferes the in-, out-, local-parameters of the conditional, lifts the
+ *   conditional and inserts an equivalent function call instead.
  *
  ******************************************************************************/
 
@@ -403,26 +438,28 @@ LAC2FUNcond (node *arg_node, node *arg_info)
     /*
      * setup in-, out-, local-masks for then-block
      */
-    INFO_LAC2FUN_IN (arg_info) = in_then
-      = DFMGenMaskClear (INFO_LAC2FUN_DFMBASE (arg_info));
-    INFO_LAC2FUN_OUT (arg_info) = out_then
-      = DFMGenMaskClear (INFO_LAC2FUN_DFMBASE (arg_info));
-    INFO_LAC2FUN_LOCAL (arg_info) = local_then
-      = DFMGenMaskClear (INFO_LAC2FUN_DFMBASE (arg_info));
+    INFO_LAC2FUN_IN (arg_info) = DFMGenMaskClear (INFO_LAC2FUN_DFMBASE (arg_info));
+    INFO_LAC2FUN_OUT (arg_info) = DFMGenMaskClear (INFO_LAC2FUN_DFMBASE (arg_info));
+    INFO_LAC2FUN_LOCAL (arg_info) = DFMGenMaskClear (INFO_LAC2FUN_DFMBASE (arg_info));
 
     COND_THEN (arg_node) = Trav (COND_THEN (arg_node), arg_info);
+
+    in_then = INFO_LAC2FUN_IN (arg_info);
+    out_then = INFO_LAC2FUN_OUT (arg_info);
+    local_then = INFO_LAC2FUN_LOCAL (arg_info);
 
     /*
      * setup in-, out-, local-masks for else-block
      */
-    INFO_LAC2FUN_IN (arg_info) = in_else
-      = DFMGenMaskClear (INFO_LAC2FUN_DFMBASE (arg_info));
-    INFO_LAC2FUN_OUT (arg_info) = out_else
-      = DFMGenMaskClear (INFO_LAC2FUN_DFMBASE (arg_info));
-    INFO_LAC2FUN_LOCAL (arg_info) = local_else
-      = DFMGenMaskClear (INFO_LAC2FUN_DFMBASE (arg_info));
+    INFO_LAC2FUN_IN (arg_info) = DFMGenMaskClear (INFO_LAC2FUN_DFMBASE (arg_info));
+    INFO_LAC2FUN_OUT (arg_info) = DFMGenMaskClear (INFO_LAC2FUN_DFMBASE (arg_info));
+    INFO_LAC2FUN_LOCAL (arg_info) = DFMGenMaskClear (INFO_LAC2FUN_DFMBASE (arg_info));
 
     COND_ELSE (arg_node) = Trav (COND_ELSE (arg_node), arg_info);
+
+    in_else = INFO_LAC2FUN_IN (arg_info);
+    out_else = INFO_LAC2FUN_OUT (arg_info);
+    local_else = INFO_LAC2FUN_LOCAL (arg_info);
 
     /*
      * restore old needed-mask
@@ -441,8 +478,9 @@ LAC2FUNcond (node *arg_node, node *arg_info)
     DFMSetMaskOr (INFO_LAC2FUN_IN (arg_info), in_else);
     /* out = out_then u out_else */
     INFO_LAC2FUN_OUT (arg_info) = DFMGenMaskOr (out_then, out_else);
-    /* local = local_then n local_else */
-    INFO_LAC2FUN_LOCAL (arg_info) = DFMGenMaskAnd (local_then, local_else);
+    /* local = (local_then u local_else) \ in */
+    INFO_LAC2FUN_LOCAL (arg_info) = DFMGenMaskOr (local_then, local_else);
+    DFMSetMaskMinus (INFO_LAC2FUN_LOCAL (arg_info), INFO_LAC2FUN_IN (arg_info));
 
     COND_COND (arg_node) = Trav (COND_COND (arg_node), arg_info);
 
@@ -467,8 +505,15 @@ LAC2FUNcond (node *arg_node, node *arg_info)
     INFO_LAC2FUN_ISTRANS (arg_info) = 1;
 
     /*
+     * restore old in-, out-, local-masks
      * traverse new let-assignment
      */
+    INFO_LAC2FUN_IN (arg_info) = DFMRemoveMask (INFO_LAC2FUN_IN (arg_info));
+    INFO_LAC2FUN_IN (arg_info) = old_in;
+    INFO_LAC2FUN_OUT (arg_info) = DFMRemoveMask (INFO_LAC2FUN_OUT (arg_info));
+    INFO_LAC2FUN_OUT (arg_info) = old_out;
+    INFO_LAC2FUN_LOCAL (arg_info) = DFMRemoveMask (INFO_LAC2FUN_LOCAL (arg_info));
+    INFO_LAC2FUN_LOCAL (arg_info) = old_local;
     arg_node = Trav (arg_node, arg_info);
 
     /*
