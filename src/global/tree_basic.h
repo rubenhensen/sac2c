@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.12  1999/05/03 19:46:07  sbs
+ * some new INFO_TC_xxx macros inserted.
+ *
  * Revision 2.11  1999/04/29 07:31:42  bs
  * Declaration of MakeAccess modified
  *
@@ -2053,6 +2056,9 @@ extern node *MakePragma ();
  ***
  ***  when used in typecheck.c :
  ***
+ ***    int        STATUS        (O)
+ ***    node *     VARDEC        (O)  (N_vardec)
+ ***    node *     FUNDEF        (O)  (N_fundef)
  ***    node *     NEXTASSIGN    (O)  (N_assign)
  ***    node *     LASSIGN       (O)  (N_assign)
  ***    ids*       LHSVARS       (O)
@@ -2165,6 +2171,17 @@ extern node *MakeInfo ();
 #define INFO_RSIB_MODUL(n) (n->node[1])
 
 /* typecheck */
+/* here, some ugly things happen 8-((
+ * An N_ok-node is used as info-carrier!!!
+ * It carries several values needed for typechecking functions
+ * and is stored under info_node->node[0].
+ * Since I (sbs) consider this a dirty implementational hack,
+ * I define the virtual syntax tree as if the info would be
+ * available directly in the N_info-node.
+ */
+#define INFO_TC_STATUS(n) (n->node[0]->info.cint)
+#define INFO_TC_VARDEC(n) (n->node[0]->node[0])
+#define INFO_TC_FUNDEF(n) (n->node[0]->node[1])
 #define INFO_TC_NEXTASSIGN(n) (n->node[1])
 /* WARN: node[2] already used */
 #define INFO_TC_LASSIGN(n) (n->node[3])
