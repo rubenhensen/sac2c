@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2004/03/02 09:21:43  khf
+ * some corrections and WLPGlet added
+ *
  * Revision 1.2  2004/02/26 13:11:01  khf
  * WLPartitionGeneration implemented in parts (but not tested)
  *
@@ -224,6 +227,8 @@ CreateFullPartition (node *wln, node *arg_info)
     bool do_create;
 
     DBUG_ENTER ("CreateFullPartition");
+
+    do_create = TRUE;
 
     if (do_create) {
         /* get shape of the index vector (generator) */
@@ -495,7 +500,7 @@ CreateEmptyGenWLReplacement (node *wl, node *arg_info)
  *          indicates.
  *
  *   @param  node *expr  :  expr
- *           node *f_def :  N_FUNDEF
+ *           node *f_def :  N_fundef
  *   @return node *      :  a chained list of N_assign nodes
  ******************************************************************************/
 static node *
@@ -530,11 +535,12 @@ CreateNewAssigns (node *expr, node *f_def)
         /* not flat! */
 
         /* index position for selection */
-        tmp1 = MakeFlatArray (MakeExprs (MakeNum (iterator), NULL));
+        /* tmp1  = MakeFlatArray( MakeExprs( MakeNum( iterator), NULL));*/
+        tmp1 = MakeNum (iterator);
         /* the array for selection */
         tmp2 = MakeExprs (DupTree (expr), NULL);
 
-        tmp3 = MakePrf (F_sel, MakeExprs (tmp1, tmp2));
+        tmp3 = MakePrf (F_idx_sel, MakeExprs (tmp1, tmp2));
 
         nassigns = MakeAssign (MakeLet (tmp3, _ids), nassigns);
 
@@ -785,9 +791,9 @@ CheckGeneratorBounds (node *wl, shape *max_shp)
  *
  *   @brief traverses all function definitions
  *
- *   @param  node *arg_node:  N_MODUL
- *           node *arg_info:  N_INFO
- *   @return node *        :  N_MODUL
+ *   @param  node *arg_node:  N_modul
+ *           node *arg_info:  N_info
+ *   @return node *        :  N_modul
  ******************************************************************************/
 
 node *
@@ -808,9 +814,9 @@ WLPGmodul (node *arg_node, node *arg_info)
  *
  *   @brief starts the traversal of the given fundef
  *
- *   @param  node *arg_node:  N_FUNDEF
- *           node *arg_info:  N_INFO
- *   @return node *        :  N_FUNDEF
+ *   @param  node *arg_node:  N_fundef
+ *           node *arg_info:  N_info
+ *   @return node *        :  N_fundef
  ******************************************************************************/
 
 node *
@@ -834,9 +840,9 @@ WLPGfundef (node *arg_node, node *arg_info)
  *
  *   @brief store actual assign node in arg_info and traverse instruction
  *
- *   @param  node *arg_node:  N_ASSIGN
- *           node *arg_info:  N_INFO
- *   @return node *        :  N_ASSIGN
+ *   @param  node *arg_node:  N_assign
+ *           node *arg_info:  N_info
+ *   @return node *        :  N_assign
  ******************************************************************************/
 
 node *
@@ -858,7 +864,11 @@ WLPGassign (node *arg_node, node *arg_info)
             iterator = ASSIGN_NEXT (iterator);
         }
         ASSIGN_NEXT (iterator) = arg_node;
+        /* to traverse not in circle */
+        iterator = ASSIGN_NEXT (iterator);
+
         arg_node = INFO_WLPG_NASSIGNS (arg_info);
+        INFO_WLPG_NASSIGNS (arg_info) = NULL;
 
         if (ASSIGN_NEXT (iterator) != NULL) {
             ASSIGN_NEXT (iterator) = Trav (ASSIGN_NEXT (iterator), arg_info);
@@ -874,6 +884,42 @@ WLPGassign (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *WLPGlet(node *arg_node, node *arg_info)
+ *
+ *   @brief traverses in expression and checks assigned ids for constant
+ *          value and sets corresponding AVIS_SSACONST attribute
+ *
+ *   @param  node *arg_node:  N_let
+ *           node *arg_info:  N_info
+ *   @return node *        :  N_let
+ ******************************************************************************/
+node *
+WLPGlet (node *arg_node, node *arg_info)
+{
+
+    DBUG_ENTER ("WLPGlet");
+
+    DBUG_ASSERT ((LET_EXPR (arg_node) != NULL), "N_let with empty EXPR attribute.");
+
+    /*
+     * Only ids nodes with one entry are considered.
+     * Tuple of constants are not provided/supported in SaC until now.
+     */
+    if ((LET_IDS (arg_node) != NULL) && (IDS_NEXT (LET_IDS (arg_node)) == NULL)) {
+
+        if (AVIS_SSACONST (IDS_AVIS (LET_IDS (arg_node))) == NULL) {
+            AVIS_SSACONST (IDS_AVIS (LET_IDS (arg_node)))
+              = COAST2Constant (LET_EXPR (arg_node));
+        }
+    }
+
+    LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *WLPGNwith(node *arg_node, node *arg_info)
  *
  *   @brief  start traversal of this WL and store information in new arg_info
@@ -883,7 +929,7 @@ WLPGassign (node *arg_node, node *arg_info)
  *           partition.
  *
  *   @param  node *arg_node:  N_Nwith
- *           node *arg_info:  N_INFO
+ *           node *arg_info:  N_info
  *   @return node *        :  N_Nwith
  ******************************************************************************/
 
@@ -893,6 +939,14 @@ WLPGNwith (node *arg_node, node *arg_info)
     bool replace_wl = FALSE;
 
     DBUG_ENTER ("WLPGNwith");
+
+    /*
+     * The CODEs have to be traversed as they may contain further (nested) WLs
+     * and I want to modify bottom up.
+     */
+    if (NWITH_CODE (arg_node) != NULL) {
+        NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
+    }
 
     /*
      * Until this compilerphase no withloop has been checked
@@ -930,6 +984,8 @@ WLPGNwith (node *arg_node, node *arg_info)
     /* only for testing */
     if (INFO_WLPG_GENSHP (arg_info) == GV_constant) {
         NWITH_FOLDABLE (arg_node) = TRUE;
+    } else {
+        NWITH_FOLDABLE (arg_node) = FALSE;
     }
     /* only for testing */
 
@@ -962,16 +1018,6 @@ WLPGNwith (node *arg_node, node *arg_info)
 
     /* only for testing */
 
-    if (!replace_wl) { /* The WL still exists 8-) */
-
-        /*
-         * The CODEs have to be traversed as they may contain further (nested) WLs.
-         */
-        if (NWITH_CODE (arg_node) != NULL) {
-            NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
-        }
-    }
-
     INFO_WLPG_WL (arg_info) = NULL;
     INFO_WLPG_LET (arg_info) = NULL;
 
@@ -985,7 +1031,7 @@ WLPGNwith (node *arg_node, node *arg_info)
  *   @brief Substitutes NWITHOP_SHAPE into the N_Nwithop node.
  *
  *   @param  node *arg_node:  N_Nwithop
- *           node *arg_info:  N_INFO
+ *           node *arg_info:  N_info
  *   @return node *        :  N_Nwithop
  ******************************************************************************/
 
@@ -1012,8 +1058,6 @@ WLPGNwithop (node *arg_node, node *arg_info)
             INFO_WLPG_NASSIGNS (arg_info)
               = AppendAssigns (nassigns, INFO_WLPG_NASSIGNS (arg_info));
         }
-        DBUG_ASSERT ((INFO_WLPG_GENSHP (arg_info) != NULL),
-                     "INFO_WLPG_GENSHP( arg_info) is empty");
         if (INFO_WLPG_GENSHP (arg_info) < current_shape) {
             INFO_WLPG_GENSHP (arg_info) = current_shape;
         }
@@ -1048,7 +1092,7 @@ WLPGNwithop (node *arg_node, node *arg_info)
  *   @brief traverse only generator to propagate arrays
  *
  *   @param  node *arg_node:  N_Npart
- *           node *arg_info:  N_INFO
+ *           node *arg_info:  N_info
  *   @return node *        :  N_Npart
  ******************************************************************************/
 
@@ -1088,7 +1132,7 @@ WLPGNpart (node *arg_node, node *arg_info)
  *           GV_unknown_shape   : we don't know anything !
  *
  *   @param  node *arg_node:  N_Ngenerator
- *           node *arg_info:  N_INFO
+ *           node *arg_info:  N_info
  *   @return node *        :  N_Ngenerator
  ******************************************************************************/
 
