@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.4  1998/08/07 16:09:23  dkr
+ * CompileScheduling, ... can handle (sched == NULL) now.
+ * If no 'sched' is present, the ICMs 'MT_SCHEDULER_BEGIN',
+ * 'MT_SCHEDULER_END' are generated.
+ *
  * Revision 1.3  1998/08/03 10:51:42  cg
  * added function SCHAdjustmentRequired that decides for a particular
  * dimension and a given scheduling whether the scheduling will produce
@@ -661,8 +666,8 @@ SCHMakeCompatibleSyncblockScheduling (sched_t *old_sched, sched_t *new_sched)
  *   the variable parameter list must always be of type 'char*' and provide the
  *   name of the scheduling discipline. The following parameters must be defined
  *   according to the scheduling specification table. For a scheduling argument
- *   of type 'n' a paramater of type 'int' is required, for 'i' a parameter of
- *   type 'char*'. A scheduling argument specification of 'x' requires to 2
+ *   of type 'n' a parameter of type 'int' is required, for 'i' a parameter of
+ *   type 'char*'. A scheduling argument specification of 'x' requires two
  *   parameters to be given to SCHMakeScheduling(). The first must be of type
  *   'char*' and the second og type 'int'. If the first argument given is NULL,
  *   the the intger argument is used, otherwise the identifier specification.
@@ -810,23 +815,25 @@ CompileSchedulingArgs (sched_t *sched, node *args)
 
     DBUG_ENTER ("CompileSchedulingArgs");
 
-    for (i = 0; i < sched->num_args; i++) {
-        switch (sched->args[i].arg_type) {
-        case AT_num:
-            new_arg = MakeNum (sched->args[i].arg.num);
-            break;
-        case AT_id:
-            new_arg = MakeId (StringCopy (sched->args[i].arg.id), NULL, ST_regular);
-            break;
-        case AT_num_for_id:
-            new_arg = MakeId (itoa (sched->args[i].arg.num), NULL, ST_regular);
-            break;
-        default:
-            DBUG_ASSERT (0, "Vector arguments for scheduling disciplines not yet "
-                            "implemented");
-        }
+    if (sched != NULL) {
+        for (i = 0; i < sched->num_args; i++) {
+            switch (sched->args[i].arg_type) {
+            case AT_num:
+                new_arg = MakeNum (sched->args[i].arg.num);
+                break;
+            case AT_id:
+                new_arg = MakeId (StringCopy (sched->args[i].arg.id), NULL, ST_regular);
+                break;
+            case AT_num_for_id:
+                new_arg = MakeId (itoa (sched->args[i].arg.num), NULL, ST_regular);
+                break;
+            default:
+                DBUG_ASSERT (0, "Vector arguments for scheduling disciplines not yet "
+                                "implemented");
+            }
 
-        args = MakeExprs (new_arg, args);
+            args = MakeExprs (new_arg, args);
+        }
     }
 
     DBUG_RETURN (args);
@@ -857,17 +864,21 @@ CompileConstSegSchedulingArgs (node *wlseg, sched_t *sched)
 
     args = NULL;
 
-    for (i = WLSEG_DIMS (wlseg) - 1; i >= 0; i--) {
-        if (SCHAdjustmentRequired (i, wlseg)) {
-            args = MakeExprs (MakeNum (1), args);
-        } else {
-            args = MakeExprs (MakeNum (MAX (WLSEG_UBV (wlseg)[i], WLSEG_SV (wlseg)[i])),
-                              args);
-        }
-    }
+    if (sched != NULL) {
 
-    for (i = WLSEG_DIMS (wlseg) - 1; i >= 0; i--) {
-        args = MakeExprs (MakeNum (WLSEG_BV (wlseg, 0)[i]), args);
+        for (i = WLSEG_DIMS (wlseg) - 1; i >= 0; i--) {
+            if (SCHAdjustmentRequired (i, wlseg)) {
+                args = MakeExprs (MakeNum (1), args);
+            } else {
+                args
+                  = MakeExprs (MakeNum (MAX (WLSEG_UBV (wlseg)[i], WLSEG_SV (wlseg)[i])),
+                               args);
+            }
+        }
+
+        for (i = WLSEG_DIMS (wlseg) - 1; i >= 0; i--) {
+            args = MakeExprs (MakeNum (WLSEG_BV (wlseg, 0)[i]), args);
+        }
     }
 
     for (i = WLSEG_DIMS (wlseg) - 1; i >= 0; i--) {
@@ -955,19 +966,27 @@ CompileScheduling (sched_t *sched, node *arg_node, char *suffix)
 
     DBUG_ENTER ("CompileScheduling");
 
-    name = (char *)Malloc (sizeof (char) * (strlen (sched->discipline) + 20));
-    sprintf (name, "MT_SCHEDULER_%s_%s", sched->discipline, suffix);
+    if (sched != NULL) {
+        name = (char *)Malloc (sizeof (char)
+                               * (strlen (sched->discipline) + strlen (suffix) + 15));
+        sprintf (name, "MT_SCHEDULER_%s_%s", sched->discipline, suffix);
+    } else {
+        name = (char *)Malloc (sizeof (char) * (strlen (suffix) + 15));
+        sprintf (name, "MT_SCHEDULER_%s", suffix);
+    }
 
-    switch (sched->class) {
-    case SC_const_seg:
+    switch (NODE_TYPE (arg_node)) {
+    case N_WLseg:
         general_args = CompileConstSegSchedulingArgs (arg_node, sched);
         break;
-    case SC_var_seg:
+    case N_WLsegVar:
         general_args = CompileVarSegSchedulingArgs (arg_node, sched);
         break;
-    case SC_syncblock:
+    case N_sync:
         general_args = CompileSyncblockSchedulingArgs (arg_node, sched);
         break;
+    default:
+        DBUG_ASSERT ((0), "wrong node type found");
     }
 
     icm = MakeIcm (name, CompileSchedulingArgs (sched, general_args), NULL);
