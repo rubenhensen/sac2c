@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.25  2000/07/11 10:25:26  dkr
+ * macro GEN_NODE replaced by MALLOC
+ *
  * Revision 1.24  2000/07/04 14:38:11  jhs
  * Added Dups for MTalloc, MTsignal, MTsync.
  *
@@ -521,10 +524,7 @@ DuplicateTypes (types *source, int share)
     if (source == NULL) {
         return_types = NULL;
     } else {
-        tmp = GEN_NODE (types);
-        if (tmp == NULL)
-            SYSABORT (("Out of memory"));
-
+        tmp = (types *)MALLOC (sizeof (types));
         return_types = tmp;
 
         do {
@@ -532,13 +532,15 @@ DuplicateTypes (types *source, int share)
             TYPES_BASETYPE (tmp) = TYPES_BASETYPE (source);
             if ((TYPES_DIM (source) > 0) && (TYPES_SHPSEG (source) != NULL)) {
                 DBUG_ASSERT ((source->dim <= SHP_SEG_SIZE), "dimension out of range");
-                tmp->shpseg = (shpseg *)Malloc (sizeof (shpseg));
+                tmp->shpseg = (shpseg *)MALLOC (sizeof (shpseg));
                 DBUG_ASSERT ((NULL != source->shpseg), "types-structur without shpseg");
-                for (i = 0; i < source->dim; i++)
+                for (i = 0; i < source->dim; i++) {
                     tmp->shpseg->shp[i] = source->shpseg->shp[i];
+                }
                 tmp->shpseg->next = NULL;
-            } else
+            } else {
                 tmp->shpseg = NULL;
+            }
 
             tmp->id = StringCopy (source->id);
             tmp->name = StringCopy (source->name);
@@ -561,10 +563,10 @@ DuplicateTypes (types *source, int share)
             tmp->status = source->status;
             TYPES_TDEF (tmp) = TYPES_TDEF (source);
 
-            if (source->next == NULL)
+            if (source->next == NULL) {
                 tmp->next = NULL;
-            else {
-                tmp->next = GEN_NODE (types);
+            } else {
+                tmp->next = (types *)MALLOC (sizeof (types));
                 tmp = tmp->next;
             }
             source = source->next;
@@ -1370,14 +1372,14 @@ DupPragma (node *arg_node, node *arg_info)
     PRAGMA_LINKNAME (new_node) = StringCopy (PRAGMA_LINKNAME (arg_node));
     if (PRAGMA_LINKSIGN (arg_node) != NULL) {
         PRAGMA_LINKSIGN (new_node)
-          = (int *)Malloc (PRAGMA_NUMPARAMS (new_node) * sizeof (int));
+          = (int *)MALLOC (PRAGMA_NUMPARAMS (new_node) * sizeof (int));
         for (i = 0; i < PRAGMA_NUMPARAMS (new_node); i++) {
             PRAGMA_LINKSIGN (new_node)[i] = PRAGMA_LINKSIGN (arg_node)[i];
         }
     }
     if (PRAGMA_REFCOUNTING (arg_node) != NULL) {
         PRAGMA_REFCOUNTING (new_node)
-          = (int *)Malloc (PRAGMA_NUMPARAMS (new_node) * sizeof (int));
+          = (int *)MALLOC (PRAGMA_NUMPARAMS (new_node) * sizeof (int));
         for (i = 0; i < PRAGMA_NUMPARAMS (new_node); i++) {
             PRAGMA_REFCOUNTING (new_node)[i] = PRAGMA_REFCOUNTING (arg_node)[i];
         }
