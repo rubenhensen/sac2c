@@ -1,6 +1,9 @@
 /*         $Id$
  *
  * $Log$
+ * Revision 2.4  1999/05/12 09:56:54  jhs
+ * Adjusted macros to access constant vectors.
+ *
  * Revision 2.3  1999/04/21 15:36:00  jhs
  * DoUnrollGenarray now fit for emty arrays.
  *
@@ -316,7 +319,7 @@ ForEachElementHelp (int *l, int *u, int *s, int *w, int dim, int maxdim, node *a
             ARRAY_TYPE (index) = type;
             ARRAY_VECTYPE (index) = T_int;
             ARRAY_VECLEN (index) = maxdim;
-            ARRAY_INTVEC (index) = Array2IntVec (ARRAY_AELEMS (index), NULL);
+            ((int *)ARRAY_CONSTVEC (index)) = Array2IntVec (ARRAY_AELEMS (index), NULL);
             assignn = opfun (assignn, index);
         } else
             assignn = ForEachElementHelp (l, u, s, w, dim + 1, maxdim, assignn);

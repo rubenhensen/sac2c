@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.13  1999/05/12 09:55:53  jhs
+ * Adjusted macros to access constant vectors.
+ *
  * Revision 2.12  1999/04/28 08:50:09  jhs
  * checkin in emergency comment to be done later
  *
@@ -323,15 +326,18 @@ CompareNumArrayElts (node *array1, node *array2)
         switch (ARRAY_VECTYPE (array1)) {
         case T_int:
             for (i = 0; i < ARRAY_VECLEN (array1); i++)
-                ok = (ARRAY_INTVEC (array1)[i] == ARRAY_INTVEC (array2)[i]);
+                ok = (((int *)ARRAY_CONSTVEC (array1))[i]
+                      == ((int *)ARRAY_CONSTVEC (array2))[i]);
             break;
         case T_float:
             for (i = 0; i < ARRAY_VECLEN (array1); i++)
-                ok = (ARRAY_FLOATVEC (array1)[i] == ARRAY_FLOATVEC (array2)[i]);
+                ok = (((float *)ARRAY_CONSTVEC (array1))[i]
+                      == ((float *)ARRAY_CONSTVEC (array2))[i]);
             break;
         case T_double:
             for (i = 0; i < ARRAY_VECLEN (array1); i++)
-                ok = (ARRAY_DOUBLEVEC (array1)[i] == ARRAY_DOUBLEVEC (array2)[i]);
+                ok = (((double *)ARRAY_CONSTVEC (array1))[i]
+                      == ((double *)ARRAY_CONSTVEC (array2))[i]);
             break;
         default:
             ok = 0;
@@ -726,10 +732,11 @@ CFid (node *arg_node, node *arg_info)
             cf_expr++;
             break;
         case N_array:
-            if ((ARRAY_VECTYPE (mrd) == T_int) && (ID_INTVEC (arg_node) == NULL)) {
+            if ((ARRAY_VECTYPE (mrd) == T_int) && (ID_CONSTVEC (arg_node) == NULL)) {
                 ID_VECLEN (arg_node) = ARRAY_VECLEN (mrd);
-                ID_INTVEC (arg_node)
-                  = CopyIntVector (ARRAY_VECLEN (mrd), ARRAY_INTVEC (mrd));
+                ID_CONSTVEC (arg_node)
+                  = CopyConstVec (ARRAY_VECTYPE (mrd), ARRAY_VECLEN (mrd),
+                                  ARRAY_CONSTVEC (mrd));
             }
             break;
         case N_prf:
@@ -1146,7 +1153,7 @@ GetShapeVector (node *array, int *vec_shape)
 
     DBUG_ENTER ("GetShapeVector");
 
-    if (ARRAY_INTVEC (array) == NULL) {
+    if (ARRAY_CONSTVEC (array) == NULL) {
         expr = ARRAY_AELEMS (array);
         for (i = 0; i < SHP_SEG_SIZE; i++) {
             if (expr != NULL) {
@@ -1162,7 +1169,7 @@ GetShapeVector (node *array, int *vec_shape)
     } else {
         vec_dim = ARRAY_VECLEN (array);
         for (i = 0; i < vec_dim; i++)
-            vec_shape[i] = ARRAY_INTVEC (array)[i];
+            vec_shape[i] = ((int *)ARRAY_CONSTVEC (array))[i];
         for (i = vec_dim; i < SHP_SEG_SIZE; i++)
             vec_shape[i] = 0;
     }
@@ -1277,21 +1284,21 @@ DupPartialArray (int start, int length, node *array, node *arg_info)
 
         switch (ARRAY_VECTYPE (array)) {
         case T_int:
-            FREE (ARRAY_INTVEC (new_node));
+            FREE (ARRAY_CONSTVEC (new_node));
             tmp_ivec = Array2IntVec (ARRAY_AELEMS (new_node), NULL);
-            ARRAY_INTVEC (new_node) = tmp_ivec;
+            ((int *)ARRAY_CONSTVEC (new_node)) = tmp_ivec;
             ARRAY_VECLEN (new_node) = length;
             break;
         case T_float:
-            FREE (ARRAY_FLOATVEC (new_node));
+            FREE (ARRAY_CONSTVEC (new_node));
             tmp_fvec = Array2FloatVec (ARRAY_AELEMS (new_node), NULL);
-            ARRAY_FLOATVEC (new_node) = tmp_fvec;
+            ((float *)ARRAY_CONSTVEC (new_node)) = tmp_fvec;
             ARRAY_VECLEN (new_node) = length;
             break;
         case T_double:
-            FREE (ARRAY_DOUBLEVEC (new_node));
+            FREE (ARRAY_CONSTVEC (new_node));
             tmp_dvec = Array2DblVec (ARRAY_AELEMS (new_node), NULL);
-            ARRAY_DOUBLEVEC (new_node) = tmp_dvec;
+            ((double *)ARRAY_CONSTVEC (new_node)) = tmp_dvec;
             ARRAY_VECLEN (new_node) = length;
             break;
         default:
@@ -1664,7 +1671,7 @@ FetchNum (int pos, node *array)
 
     DBUG_ENTER ("FetchNum");
 
-    if (ARRAY_INTVEC (array) == NULL) {
+    if (ARRAY_CONSTVEC (array) == NULL) {
         tmp = ARRAY_AELEMS (array);
 
         for (i = 0; i < pos; i++)
@@ -1672,7 +1679,7 @@ FetchNum (int pos, node *array)
 
         tmp = DupTree (EXPRS_EXPR (tmp), NULL);
     } else {
-        i = ARRAY_INTVEC (array)[pos];
+        i = ((int *)ARRAY_CONSTVEC (array))[pos];
         tmp = MakeNum (i);
     }
 
@@ -1994,7 +2001,7 @@ ArrayPrf (node *arg_node, node *arg_info)
             ARRAY_TYPE (arg[0]) = FreeOneTypes (ARRAY_TYPE (arg[0]));
             ARRAY_TYPE (arg[0]) = DuplicateTypes (INFO_CF_TYPE (arg_info), 0);
             ARRAY_VECLEN (arg[0]) = 1;
-            ARRAY_INTVEC (arg[0]) = Array2IntVec (ARRAY_AELEMS (arg[0]), NULL);
+            ((int *)ARRAY_CONSTVEC (arg[0])) = Array2IntVec (ARRAY_AELEMS (arg[0]), NULL);
             ARRAY_VECTYPE (arg[0]) = T_int;
             /*
              * Store result
@@ -2023,7 +2030,7 @@ ArrayPrf (node *arg_node, node *arg_info)
                  */
                 if (arg_info->mask[1])
                     DEC_VAR (arg_info->mask[1], arg[0]->info.ids->node->varno);
-                ARRAY_INTVEC (tmp)
+                ((int *)ARRAY_CONSTVEC (tmp))
                   = Array2IntVec (ARRAY_AELEMS (tmp), &ARRAY_VECLEN (tmp));
                 ARRAY_VECTYPE (tmp) = T_int;
 
@@ -2388,24 +2395,27 @@ ArrayPrf (node *arg_node, node *arg_info)
         switch (ARRAY_VECTYPE (arg_node)) {
         case T_int:
         case T_bool:
-            FREE (ARRAY_INTVEC (arg_node));
-            ARRAY_INTVEC (arg_node) = Array2IntVec (ARRAY_AELEMS (arg_node), &tmp_len);
+            FREE (ARRAY_CONSTVEC (arg_node));
+            ((int *)ARRAY_CONSTVEC (arg_node))
+              = Array2IntVec (ARRAY_AELEMS (arg_node), &tmp_len);
             ARRAY_VECLEN (arg_node) = tmp_len;
             break;
         case T_char:
-            FREE (ARRAY_CHARVEC (arg_node));
-            ARRAY_CHARVEC (arg_node) = Array2CharVec (ARRAY_AELEMS (arg_node), &tmp_len);
+            FREE (ARRAY_CONSTVEC (arg_node));
+            ((char *)ARRAY_CONSTVEC (arg_node))
+              = Array2CharVec (ARRAY_AELEMS (arg_node), &tmp_len);
             ARRAY_VECLEN (arg_node) = tmp_len;
             break;
         case T_float:
-            FREE (ARRAY_FLOATVEC (arg_node));
-            ARRAY_FLOATVEC (arg_node)
+            FREE (ARRAY_CONSTVEC (arg_node));
+            ((float *)ARRAY_CONSTVEC (arg_node))
               = Array2FloatVec (ARRAY_AELEMS (arg_node), &tmp_len);
             ARRAY_VECLEN (arg_node) = tmp_len;
             break;
         case T_double:
-            FREE (ARRAY_DOUBLEVEC (arg_node));
-            ARRAY_DOUBLEVEC (arg_node) = Array2DblVec (ARRAY_AELEMS (arg_node), &tmp_len);
+            FREE (ARRAY_CONSTVEC (arg_node));
+            ((double *)ARRAY_CONSTVEC (arg_node))
+              = Array2DblVec (ARRAY_AELEMS (arg_node), &tmp_len);
             ARRAY_VECLEN (arg_node) = tmp_len;
             break;
         default:

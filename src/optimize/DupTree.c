@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.8  1999/05/12 09:56:35  jhs
+ * Adjusted macros to access constant vectors.
+ *
  * Revision 2.7  1999/04/14 13:17:29  jhs
  * DupBlock does not traverse into not existing vardecs or exprs anymore.
  *
@@ -462,7 +465,8 @@ DupId (node *arg_node, node *arg_info)
     }
     DBUG_PRINT ("DUP", ("Traversals finished"));
 
-    ID_INTVEC (new_node) = CopyIntVector (ID_VECLEN (arg_node), ID_INTVEC (arg_node));
+    ID_CONSTVEC (new_node) = CopyConstVec (ID_VECTYPE (arg_node), ID_VECLEN (arg_node),
+                                           ID_CONSTVEC (arg_node));
 
     if (N_id == NODE_TYPE (arg_node) && DUP_WLF == DUPTYPE) {
         DBUG_PRINT ("DUP", ("duplicating N_id ..."));
@@ -502,22 +506,11 @@ DupArray (node *arg_node, node *arg_info)
         }
     }
     ARRAY_STRING (new_node) = StringCopy (ARRAY_STRING (arg_node));
-    switch (ARRAY_VECTYPE (arg_node)) {
-    case T_int:
-        ARRAY_INTVEC (new_node)
-          = CopyIntVector (ARRAY_VECLEN (arg_node), ARRAY_INTVEC (arg_node));
-        break;
-    case T_float:
-        ARRAY_FLOATVEC (new_node)
-          = CopyFloatVector (ARRAY_VECLEN (arg_node), ARRAY_FLOATVEC (arg_node));
-        break;
-    case T_double:
-        ARRAY_DOUBLEVEC (new_node)
-          = CopyDoubleVector (ARRAY_VECLEN (arg_node), ARRAY_DOUBLEVEC (arg_node));
-    default:
-        /* Nothing to do ! */
-        break;
-    }
+
+    ARRAY_CONSTVEC (new_node)
+      = CopyConstVec (ARRAY_VECTYPE (arg_node), ARRAY_VECLEN (arg_node),
+                      ARRAY_CONSTVEC (arg_node));
+
     DBUG_RETURN (new_node);
 }
 
