@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.20  2002/06/07 17:04:03  mwe
+ * help information for AssociativeLaw added.
+ *
  * Revision 3.19  2002/04/09 16:38:30  dkr
  * break specifier for -b18 added
  *
@@ -240,6 +243,7 @@ usage ()
                       "stop after with-loop information gathering ...");
     PRINT_BREAK_SPEC (PH_sacopt, "cyc<N>:wlf", "stop after with-loop folding ...");
     PRINT_BREAK_SPEC (PH_sacopt, "cyc<N>:wls", "stop after with-loop scalarization ...");
+    PRINT_BREAK_SPEC (PH_sacopt, "cyc<N>:al", "stop after associative law ...");
     PRINT_BREAK_SPEC (PH_sacopt, "cyc<N>:cf2", "stop after second constant folding ...");
     PRINT_BREAK_SPEC (PH_sacopt, "cyc<N>:dcr", "stop after dead code removal ...");
     PRINT_BREAK_SPEC (PH_sacopt, "cyc<N>:lur", "stop after (with-)loop unrolling ...");
@@ -332,6 +336,7 @@ usage ()
             "\t\tWLT \twith-loop transformation\n"
             "\t\tWLF \twith-loop folding\n"
             "\t\tWLS \twith-loop scalarization\n"
+            "\t\tAL  \tassociative law\n"
             "\t\tDLAW\tapplication of the distributive law\n"
             "\t\tIVE \tindex vector elimination\n"
             "\t\tAE  \tarray elimination\n"
@@ -700,7 +705,8 @@ usage ()
             "\tNico Marcussen-Wulff\n"
             "\tMarkus Bradtke\n"
             "\tBorg Enders\n"
-            "\tKai Trojahner\n");
+            "\tKai Trojahner\n"
+            "\tMichael Werner\n");
 
     printf ("\n\nCONTACT:\n\n"
 
