@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2001/06/12 11:04:59  ben
+ * one minor bug removed
+ *
  * Revision 3.10  2001/06/12 11:01:18  ben
  *  SAC_MT_SCHEDULER_Self called without tasks_per_thread now
  *
@@ -643,8 +646,7 @@ ICMCompileMT_SCHEDULER_Self_END (int sched_id, int tasks_per_thread, int dim,
 
     sprintf (numtasks, "SAC_MT_THREADS()*%d", tasks_per_thread);
     INDENT;
-    fprintf (outfile, "SAC_MT_SCHEDULER_Self_NEXT_TASK(%d,%d,SAC_MT_taskid);\n", sched_id,
-             tasks_per_thread);
+    fprintf (outfile, "SAC_MT_SCHEDULER_Self_NEXT_TASK(%d,SAC_MT_taskid);\n", sched_id);
     TaskSelector (dim, vararg, TS_FACTORING, 0, numtasks, "SAC_MT_taskid",
                   "SAC_MT_worktodo", sched_id);
 
