@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.3  1999/03/11 18:18:26  dkr
+# make deps done
+#
 # Revision 2.2  1999/02/26 14:17:44  dkr
 # make deps done
 #
@@ -45,4 +48,5 @@ clean:
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
 dbug.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-dbug.o: /usr/include/sys/va_list.h
+dbug.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
+dbug.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h

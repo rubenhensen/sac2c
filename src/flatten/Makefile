@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.3  1999/03/11 18:18:18  dkr
+# make deps done
+#
 # Revision 2.2  1999/02/26 14:17:36  dkr
 # make deps done
 #
@@ -78,9 +81,12 @@ clean:
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
 flatten.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-flatten.o: /usr/include/sys/va_list.h /usr/include/stdlib.h ../global/tree.h
-flatten.o: ../global/types.h ../global/tree_basic.h ../global/tree_compound.h
-flatten.o: ../global/Error.h /usr/include/string.h ../global/globals.h
-flatten.o: ../global/internal_lib.h ../../inc/dbug.h ../global/my_debug.h
-flatten.o: ../global/traverse.h ../global/free.h /usr/include/malloc.h
+flatten.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
+flatten.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
+flatten.o: /usr/include/stdlib.h ../global/tree.h ../global/types.h
+flatten.o: ../global/tree_basic.h ../global/tree_compound.h ../global/Error.h
+flatten.o: /usr/include/string.h ../global/globals.h ../global/internal_lib.h
+flatten.o: ../../inc/dbug.h ../global/my_debug.h ../global/traverse.h
+flatten.o: ../global/free.h /usr/include/malloc.h /usr/include/sys/types.h
+flatten.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
 flatten.o: ../optimize/DupTree.h flatten.h

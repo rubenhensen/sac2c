@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.3  1999/03/11 18:18:24  dkr
+# make deps done
+#
 # Revision 2.2  1999/02/26 14:17:42  dkr
 # make deps done
 #
@@ -78,11 +81,15 @@ clean:
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
 refcount.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
-refcount.o: ../global/tree.h ../global/types.h ../global/tree_basic.h
-refcount.o: ../global/tree_compound.h ../global/Error.h /usr/include/stdio.h
-refcount.o: /usr/include/sys/va_list.h /usr/include/string.h
-refcount.o: ../global/globals.h ../global/internal_lib.h ../global/my_debug.h
-refcount.o: ../../inc/dbug.h ../optimize/DupTree.h ../typecheck/typecheck.h
+refcount.o: /usr/include/sys/isa_defs.h ../global/tree.h ../global/types.h
+refcount.o: ../global/tree_basic.h ../global/tree_compound.h
+refcount.o: ../global/Error.h /usr/include/stdio.h /usr/include/sys/va_list.h
+refcount.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
+refcount.o: /usr/include/string.h ../global/globals.h
+refcount.o: ../global/internal_lib.h ../global/my_debug.h ../../inc/dbug.h
+refcount.o: ../optimize/DupTree.h ../typecheck/typecheck.h
 refcount.o: ../optimize/DataFlowMask.h ../global/traverse.h
 refcount.o: ../optimize/optimize.h ../global/free.h /usr/include/malloc.h
-refcount.o: ../optimize/generatemasks.h refcount.h
+refcount.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
+refcount.o: /usr/include/sys/int_types.h ../optimize/generatemasks.h
+refcount.o: refcount.h

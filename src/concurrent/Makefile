@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.3  1999/03/11 18:18:28  dkr
+# make deps done
+#
 # Revision 2.2  1999/02/26 14:17:45  dkr
 # make deps done
 #
@@ -82,43 +85,58 @@ clean:
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
 concurrent.o: ../../inc/dbug.h /usr/include/stdio.h
-concurrent.o: /usr/include/sys/feature_tests.h /usr/include/sys/va_list.h
-concurrent.o: ../global/types.h ../global/tree_basic.h ../global/traverse.h
-concurrent.o: ../global/globals.h ../global/free.h ../global/my_debug.h
-concurrent.o: /usr/include/malloc.h ../global/internal_lib.h
+concurrent.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
+concurrent.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
+concurrent.o: /usr/include/stdio_impl.h ../global/types.h
+concurrent.o: ../global/tree_basic.h ../global/traverse.h ../global/globals.h
+concurrent.o: ../global/free.h ../global/my_debug.h /usr/include/malloc.h
+concurrent.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
+concurrent.o: /usr/include/sys/int_types.h ../global/internal_lib.h
 schedule.o: ../../inc/dbug.h /usr/include/stdio.h
-schedule.o: /usr/include/sys/feature_tests.h /usr/include/sys/va_list.h
-schedule.o: ../global/types.h ../global/tree_basic.h ../global/traverse.h
-schedule.o: scheduling.h
+schedule.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
+schedule.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
+schedule.o: /usr/include/stdio_impl.h ../global/types.h
+schedule.o: ../global/tree_basic.h ../global/traverse.h scheduling.h
 scheduling.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-scheduling.o: /usr/include/sys/va_list.h /usr/include/string.h
-scheduling.o: /usr/include/varargs.h ../global/types.h ../global/tree_basic.h
-scheduling.o: ../global/internal_lib.h ../global/free.h ../../inc/dbug.h
-scheduling.o: ../global/my_debug.h /usr/include/malloc.h ../global/traverse.h
-scheduling.o: ../global/Error.h /usr/include/stdlib.h ../global/globals.h
-scheduling.o: ../compile/precompile.h
+scheduling.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
+scheduling.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
+scheduling.o: /usr/include/string.h /usr/include/varargs.h ../global/types.h
+scheduling.o: ../global/tree_basic.h ../global/internal_lib.h
+scheduling.o: ../global/free.h ../../inc/dbug.h ../global/my_debug.h
+scheduling.o: /usr/include/malloc.h /usr/include/sys/types.h
+scheduling.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
+scheduling.o: ../global/traverse.h ../global/Error.h /usr/include/stdlib.h
+scheduling.o: ../global/globals.h ../compile/precompile.h
 spmd_init.o: ../../inc/dbug.h /usr/include/stdio.h
-spmd_init.o: /usr/include/sys/feature_tests.h /usr/include/sys/va_list.h
-spmd_init.o: ../global/types.h ../global/tree_basic.h
-spmd_init.o: ../global/tree_compound.h ../global/Error.h
-spmd_init.o: /usr/include/string.h /usr/include/stdlib.h ../global/globals.h
-spmd_init.o: ../global/traverse.h ../optimize/DupTree.h
+spmd_init.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
+spmd_init.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
+spmd_init.o: /usr/include/stdio_impl.h ../global/types.h
+spmd_init.o: ../global/tree_basic.h ../global/tree_compound.h
+spmd_init.o: ../global/Error.h /usr/include/string.h /usr/include/stdlib.h
+spmd_init.o: ../global/globals.h ../global/traverse.h ../optimize/DupTree.h
 spmd_init.o: ../optimize/DataFlowMask.h
 spmd_lift.o: ../../inc/dbug.h /usr/include/stdio.h
-spmd_lift.o: /usr/include/sys/feature_tests.h /usr/include/sys/va_list.h
-spmd_lift.o: ../global/types.h ../global/tree_basic.h
-spmd_lift.o: ../global/tree_compound.h ../global/Error.h
-spmd_lift.o: /usr/include/string.h /usr/include/stdlib.h ../global/globals.h
-spmd_lift.o: ../global/traverse.h ../optimize/DupTree.h
+spmd_lift.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
+spmd_lift.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
+spmd_lift.o: /usr/include/stdio_impl.h ../global/types.h
+spmd_lift.o: ../global/tree_basic.h ../global/tree_compound.h
+spmd_lift.o: ../global/Error.h /usr/include/string.h /usr/include/stdlib.h
+spmd_lift.o: ../global/globals.h ../global/traverse.h ../optimize/DupTree.h
 spmd_lift.o: ../optimize/DataFlowMask.h ../typecheck/typecheck.h
 spmd_lift.o: ../refcount/refcount.h ../global/internal_lib.h
 spmd_opt.o: ../../inc/dbug.h /usr/include/stdio.h
-spmd_opt.o: /usr/include/sys/feature_tests.h /usr/include/sys/va_list.h
-spmd_opt.o: ../global/types.h ../global/tree_basic.h ../global/traverse.h
+spmd_opt.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
+spmd_opt.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
+spmd_opt.o: /usr/include/stdio_impl.h ../global/types.h
+spmd_opt.o: ../global/tree_basic.h ../global/traverse.h
 sync_init.o: ../../inc/dbug.h /usr/include/stdio.h
-sync_init.o: /usr/include/sys/feature_tests.h /usr/include/sys/va_list.h
-sync_init.o: ../global/types.h ../global/tree_basic.h ../global/traverse.h
+sync_init.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
+sync_init.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
+sync_init.o: /usr/include/stdio_impl.h ../global/types.h
+sync_init.o: ../global/tree_basic.h ../global/traverse.h
 sync_init.o: ../optimize/DupTree.h ../optimize/DataFlowMask.h
 sync_opt.o: ../../inc/dbug.h /usr/include/stdio.h
-sync_opt.o: /usr/include/sys/feature_tests.h /usr/include/sys/va_list.h
-sync_opt.o: ../global/types.h ../global/tree_basic.h ../global/traverse.h
+sync_opt.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
+sync_opt.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
+sync_opt.o: /usr/include/stdio_impl.h ../global/types.h
+sync_opt.o: ../global/tree_basic.h ../global/traverse.h

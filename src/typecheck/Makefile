@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.3  1999/03/11 18:18:21  dkr
+# make deps done
+#
 # Revision 2.2  1999/02/26 14:17:39  dkr
 # make deps done
 #
@@ -138,41 +141,51 @@ clean:
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
 gen_pseudo_fun.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
-gen_pseudo_fun.o: ../../inc/dbug.h /usr/include/stdio.h
-gen_pseudo_fun.o: /usr/include/sys/va_list.h ../global/types.h
-gen_pseudo_fun.o: ../global/tree_basic.h ../global/tree.h
+gen_pseudo_fun.o: /usr/include/sys/isa_defs.h ../../inc/dbug.h
+gen_pseudo_fun.o: /usr/include/stdio.h /usr/include/sys/va_list.h
+gen_pseudo_fun.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
+gen_pseudo_fun.o: ../global/types.h ../global/tree_basic.h ../global/tree.h
 gen_pseudo_fun.o: ../global/tree_compound.h ../global/Error.h
 gen_pseudo_fun.o: /usr/include/string.h ../global/globals.h
 gen_pseudo_fun.o: ../global/internal_lib.h ../global/free.h
-gen_pseudo_fun.o: ../global/my_debug.h /usr/include/malloc.h typecheck.h
-gen_pseudo_fun.o: gen_pseudo_fun.h
+gen_pseudo_fun.o: ../global/my_debug.h /usr/include/malloc.h
+gen_pseudo_fun.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
+gen_pseudo_fun.o: /usr/include/sys/int_types.h typecheck.h gen_pseudo_fun.h
 prim_fun.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
-prim_fun.o: ../global/globals.h ../global/types.h /usr/include/stdio.h
-prim_fun.o: /usr/include/sys/va_list.h ../global/tree.h
-prim_fun.o: ../global/tree_basic.h ../global/tree_compound.h
+prim_fun.o: /usr/include/sys/isa_defs.h ../global/globals.h ../global/types.h
+prim_fun.o: /usr/include/stdio.h /usr/include/sys/va_list.h
+prim_fun.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
+prim_fun.o: ../global/tree.h ../global/tree_basic.h ../global/tree_compound.h
 prim_fun.o: ../global/Error.h /usr/include/string.h ../global/internal_lib.h
 prim_fun.o: prim_fun.h ../../inc/dbug.h ../global/my_debug.h typecheck.h
 prim_fun.o: ../global/access_macros.h ../print/convert.h ../global/free.h
-prim_fun.o: /usr/include/malloc.h prim_fun_tt.mac prim_fun_ft.mac
+prim_fun.o: /usr/include/malloc.h /usr/include/sys/types.h
+prim_fun.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
+prim_fun.o: prim_fun_tt.mac prim_fun_ft.mac
 typecheck.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
-typecheck.o: /usr/include/stddef.h /usr/include/string.h
-typecheck.o: /usr/include/limits.h /usr/include/sys/isa_defs.h
+typecheck.o: /usr/include/sys/isa_defs.h /usr/include/stddef.h
+typecheck.o: /usr/include/string.h /usr/include/limits.h
 typecheck.o: /usr/include/values.h ../global/tree.h ../global/types.h
 typecheck.o: ../global/tree_basic.h ../global/tree_compound.h
 typecheck.o: ../global/Error.h /usr/include/stdio.h
-typecheck.o: /usr/include/sys/va_list.h ../global/globals.h
+typecheck.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
+typecheck.o: /usr/include/stdio_impl.h ../global/globals.h
 typecheck.o: ../global/internal_lib.h ../print/print.h ../global/my_debug.h
 typecheck.o: ../../inc/dbug.h ../global/traverse.h typecheck.h
 typecheck.o: ../print/convert.h ../modules/import.h prim_fun.h
-typecheck.o: ../global/free.h /usr/include/malloc.h ../global/access_macros.h
-typecheck.o: ../optimize/DupTree.h typecheck_WL.h gen_pseudo_fun.h
-typecheck.o: prim_fun_tt.mac
+typecheck.o: ../global/free.h /usr/include/malloc.h /usr/include/sys/types.h
+typecheck.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
+typecheck.o: ../global/access_macros.h ../optimize/DupTree.h typecheck_WL.h
+typecheck.o: gen_pseudo_fun.h prim_fun_tt.mac
 typecheck_WL.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
-typecheck_WL.o: /usr/include/stddef.h /usr/include/string.h ../global/tree.h
-typecheck_WL.o: ../global/types.h ../global/tree_basic.h
-typecheck_WL.o: ../global/tree_compound.h ../global/Error.h
-typecheck_WL.o: /usr/include/stdio.h /usr/include/sys/va_list.h
-typecheck_WL.o: ../global/globals.h ../global/internal_lib.h ../print/print.h
+typecheck_WL.o: /usr/include/sys/isa_defs.h /usr/include/stddef.h
+typecheck_WL.o: /usr/include/string.h ../global/tree.h ../global/types.h
+typecheck_WL.o: ../global/tree_basic.h ../global/tree_compound.h
+typecheck_WL.o: ../global/Error.h /usr/include/stdio.h
+typecheck_WL.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
+typecheck_WL.o: /usr/include/stdio_impl.h ../global/globals.h
+typecheck_WL.o: ../global/internal_lib.h ../print/print.h
 typecheck_WL.o: ../global/my_debug.h ../../inc/dbug.h ../global/traverse.h
 typecheck_WL.o: ../global/free.h /usr/include/malloc.h
-typecheck_WL.o: ../optimize/ConstantFolding.h
+typecheck_WL.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
+typecheck_WL.o: /usr/include/sys/int_types.h ../optimize/ConstantFolding.h
