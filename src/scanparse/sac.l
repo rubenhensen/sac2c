@@ -3,6 +3,10 @@
 /*
  *
  * $Log$
+ * Revision 2.12  2000/05/25 14:56:30  dkr
+ * leading 0 for INT is allowed now
+ * leading 00 for DOUBLE or FLOAT is allowed now
+ *
  * Revision 2.11  2000/02/23 14:26:44  cg
  * Identifiers with a single trailing underscore are now supported.
  *
@@ -361,7 +365,7 @@ int start_token;
 '.'                             { yylval.cchar=yytext[1];
                                   FILTER( CHAR );
                                 }
-'\\[0-9]*'                      { yylval.cchar=(char)atoi(yytext+2);
+'\\[0-9]+'                      { yylval.cchar=(char)atoi(yytext+2);
                                   FILTER( CHAR );
                                 }
 '\\n'                           { yylval.cchar='\n';
@@ -371,22 +375,22 @@ int start_token;
                                   FILTER( CHAR );
                                 }
 
-(0?|([1-9][0-9]*))              { yylval.cint=atoi(yytext);
+[0-9]+                          { yylval.cint=atoi(yytext);
                                   FILTER( NUM);
                                 }
 
-(0?|([1-9][0-9]*))[.][0-9]+(e([+]?|[-]?)[0-9]+)? {
+[0-9]*[.][0-9]+(e([+]?|[-]?)[0-9]+)? {
                                   yylval.cdbl=atof(yytext);
                                   FILTER( DOUBLE);
                                 }
 
-(0?|([1-9][0-9]*))([.][0-9]+(e([+]?|[-]?)[0-9]+)?)?[fF] {
+[0-9]*([.][0-9]+(e([+]?|[-]?)[0-9]+)?)?[fF] {
                                   yytext[strlen(yytext)]='\0';
                                   yylval.cfloat=atof(yytext);
                                   FILTER( FLOAT);
                                 }
 
-(0?|([1-9][0-9]*))([.][0-9]+(e([+]?|[-]?)[0-9]+)?)?[Dd] {
+[0-9]*([.][0-9]+(e([+]?|[-]?)[0-9]+)?)?[Dd] {
                                   yytext[strlen(yytext)]='\0';
                                   yylval.cdbl=atof(yytext);
                                   FILTER( DOUBLE);
