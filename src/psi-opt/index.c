@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.32  2002/10/08 14:32:40  dkr
+ * DIM_NO_OFFSET macro used
+ *
  * Revision 3.31  2002/10/08 13:28:15  sbs
  * increments of ive_op moved under conditionals
  * => now, the optimization reports are more likely to be
@@ -8,7 +11,8 @@
  *
  * Revision 3.30  2002/10/08 13:01:31  sbs
  * Now, index vectors of unknown shape are attributed VECT as well
- * and F_mul_AxS and friends only access the ivs shapes when the are in fact transformed
+ * and F_mul_AxS and friends only access the ivs shapes when the are in
+ * fact transformed
  * => dkr's ASSERTS could be moved and transformed!
  *
  * Revision 3.29  2002/10/08 11:46:15  dkr
@@ -673,8 +677,6 @@ EqTypes (types *type1, types *type2)
  *                  either NULL (= IDX(idx-shape) not in chain or the adress
  *                  of the IDX-node
  *
- *  remarks       : ---
- *
  */
 
 node *
@@ -694,13 +696,12 @@ FindIdx (node *chain, types *vshape)
  *
  *  functionname  : SetVect
  *  arguments     : 1) node * chain
- *  description   : inserts a Vect node in the given node-chain if there exists none
+ *  description   : inserts a Vect node in the given node-chain
+ *                  if there exists none
  *  global vars   : ---
  *  internal funs : FindVect, GenVect, InsertInChain
  *  external funs : ---
  *  macros        : DBUG...
- *
- *  remarks       : ---
  *
  */
 
@@ -729,8 +730,6 @@ SetVect (node *chain)
  *  external funs : ---
  *  macros        : DBUG...
  *
- *  remarks       : ---
- *
  */
 
 node *
@@ -755,18 +754,16 @@ SetIdx (node *chain, types *vartype)
  *
  * Some basic functions for handling N_vinfo chains:
  * -------------------------------------------------
- * node * CutVinfoChn( node * chain)          : cuts off the topmost chain
- *                                              and returns the rest
- * node * AppendVinfoChn( node *ca, node *cb) : links the chain cb to the topmost
- *                                              chain of ca. Expects ca to contain
- *                                              one chain only!
- * node * MergeVinfoChn( node *ca, node *cb)  : merges the entries of the
- *                                              topmost chain from ca with
- *                                              the elements of the topmost
- *                                              chain of cb and returns it
- *                                              followed by the "rest" of cb.
- *                                              Expects ca to contain one chain
- *                                              only!
+ * node *CutVinfoChn( node * chain) :
+ *           cuts off the topmost chain and returns the rest
+ * node *AppendVinfoChn( node *ca, node *cb) :
+ *           links the chain cb to the topmost chain of ca.
+ *           Expects ca to contain one chain only!
+ * node *MergeVinfoChn( node *ca, node *cb) :
+ *           merges the entries of the topmost chain from ca with
+ *           the elements of the topmost chain of cb and returns it
+ *           followed by the "rest" of cb.
+ *           Expects ca to contain one chain only!
  *
  ******************************************************************************
  *
@@ -802,8 +799,8 @@ CutVinfoChn (node *chain)
  *  node *AppendVinfoChn( node *ca, node *cb)
  *
  * description:
- *   Expects ca to contain one chain only. If that assumption holds cb is appended
- *   to ca.
+ *   Expects ca to contain one chain only.
+ *   If that assumption holds cb is appended to ca.
  *
  ******************************************************************************/
 
@@ -1026,17 +1023,17 @@ MergeCopyTop (node *actchn)
  * "helper" functions used by the traversal functions:
  * ---------------------------------------------------
  *
- *  char *IdxChangeId( char *varname, types *type)   for creating "shapely" names
- *                                                   for indexing vectors
+ *  char *IdxChangeId( char *varname, types *type) :
+ *            for creating "shapely" names for indexing vectors
  *
- *  node *VardecIdx(node *vardec, types *type)       for finding / creating V_vardecs
- *                                                   for "shapely" iv's.
+ *  node *VardecIdx(node *vardec, types *type) :
+ *            for finding / creating V_vardecs for "shapely" iv's.
  *
- *  node *CreateIdxs2OffsetIcm(node *vardec, types *type)  for creating Idxs2Offset
- *                                                   that initialize "shapely" iv's.
+ *  node *CreateIdxs2OffsetIcm(node *vardec, types *type):
+ *            for creating Idxs2Offset that initialize "shapely" iv's.
  *
- *  node *CreateVect2OffsetIcm(node *vardec, types *type)  for creating Vect2Offset
- *                                                   that initialize "shapely" iv's.
+ *  node *CreateVect2OffsetIcm(node *vardec, types *type) :
+ *            for creating Vect2Offset that initialize "shapely" iv's.
  */
 
 /******************************************************************************
@@ -1350,13 +1347,14 @@ IdxFundef (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *    node *IdxArg(node *arg_node, node *arg_info)
+ *   node *IdxArg( node *arg_node, node *arg_info)
  *
- * description: Depending on the existance of arg_info, 2 different things happen:
- *   Iff( arg_info) != NULL, backrefs to the actual fundef are inserted and
- *      for integer vectors the ACTCHNs and the COLCHNs are initialized.
+ * description:
+ *   Depending on the existance of arg_info, 2 different things happen:
+ *   Iff (arg_info != NULL) , backrefs to the actual fundef are inserted and
+ *     for integer vectors the ACTCHNs and the COLCHNs are initialized.
  *   Otherwise, the existing COLCHNs are traversed and missing Vardecs of
- *      IDX(type) versions are added.
+ *     IDX(type) versions are added.
  *
  ******************************************************************************/
 
@@ -1375,8 +1373,7 @@ IdxArg (node *arg_node, node *arg_info)
          */
         ARG_FUNDEF (arg_node) = INFO_IVE_FUNDEF (arg_info);
         dim = ARG_DIM (arg_node);
-        if ((ARG_BASETYPE (arg_node) == T_int)
-            && ((dim == 1) || (dim == KNOWN_DIM_OFFSET - 1))) {
+        if ((ARG_BASETYPE (arg_node) == T_int) && (DIM_NO_OFFSET (dim) == 1)) {
             ARG_ACTCHN (arg_node) = MakeVinfoDollar (NULL);
             ARG_COLCHN (arg_node) = MakeVinfoDollar (NULL);
         }
@@ -1482,8 +1479,7 @@ IdxVardec (node *arg_node, node *arg_info)
          * vardecs with $!
          */
         dim = VARDEC_DIM (arg_node);
-        if ((VARDEC_BASETYPE (arg_node) == T_int)
-            && ((dim == 1) || (dim == KNOWN_DIM_OFFSET - 1))) {
+        if ((VARDEC_BASETYPE (arg_node) == T_int) && (DIM_NO_OFFSET (dim) == 1)) {
             /* we are dealing with a potential indexing vector ! */
             VARDEC_ACTCHN (arg_node) = MakeVinfoDollar (NULL);
             VARDEC_COLCHN (arg_node) = MakeVinfoDollar (NULL);
@@ -1501,8 +1497,7 @@ IdxVardec (node *arg_node, node *arg_info)
          * is introduced ( see "CreateVect2OffsetIcm").
          */
         dim = VARDEC_DIM (arg_node);
-        if ((VARDEC_BASETYPE (arg_node) == T_int)
-            && ((dim == 1) || (dim == KNOWN_DIM_OFFSET - 1))
+        if ((VARDEC_BASETYPE (arg_node) == T_int) && (DIM_NO_OFFSET (dim) == 1)
             && (VINFO_FLAG (FindVect (VARDEC_COLCHN (arg_node))) == DOLLAR)) {
             /*
              * we are dealing with an indexing vector that is not
@@ -1642,9 +1637,10 @@ IdxLet (node *arg_node, node *arg_info)
      *    AND it is neither F_mul_AxA nor F_div_AxA !!!
      *    AND the LHS variable is NOT used as VECT
      *    AND the LHS variable IS used as IDX(...):
-     *    we traverse the assignment for each IDX(shape) with INFO_IVE_TRANSFORM_VINFO(
-     * arginfo) being set to the N_vinfo that carries IDX(shape)! This/these traversal(s)
-     * will mark the arguments of the index computation IDX(shape) as well!
+     *    we traverse the assignment for each IDX(shape) with
+     *    INFO_IVE_TRANSFORM_VINFO( arginfo) being set to the N_vinfo that
+     *    carries IDX(shape)! This/these traversal(s) will mark the arguments
+     *    of the index computation IDX(shape) as well!
      *
      *    In case ( NFO_IVE_MODE( arg_info) == M_uses_and_transform ), we
      *    duplicate the assignment for each IDX(shape) prior to traversal,
@@ -1653,7 +1649,7 @@ IdxLet (node *arg_node, node *arg_info)
      *    scalar counterparts. Note here, that the last traversal converts the
      *    orginal (VECT-) version by the last IDX(...) version.
      *
-     * - in all other cases:
+     *  - In all other cases:
      *    Iff ( NFO_IVE_MODE( arg_info) == M_uses_and_transform ),
      *    for each variable of the LHS that is needed as IDX(shape) we
      *    generate an assignment of the form:
@@ -1730,7 +1726,7 @@ IdxLet (node *arg_node, node *arg_info)
             }
 
             vinfo = VINFO_NEXT (vinfo);
-            DBUG_ASSERT ((vinfo != NULL), " non $-terminated N_vinfo chain encountered!");
+            DBUG_ASSERT ((vinfo != NULL), "non $-terminated N_vinfo chain encountered!");
 
             if ((VINFO_FLAG (vinfo) != DOLLAR)
                 && (INFO_IVE_MODE (arg_info) == M_uses_and_transform)) {
@@ -1761,7 +1757,6 @@ IdxLet (node *arg_node, node *arg_info)
                      */
                     L_VARDEC_OR_ARG_COLCHN (vardec,
                                             SetVect (VARDEC_OR_ARG_COLCHN (vardec)));
-
                 } else {
                     /* Here, we either have a non-vector LHSvar or a vector which
                      * is used at least once (IDX or VECT!)
@@ -1780,15 +1775,16 @@ IdxLet (node *arg_node, node *arg_info)
                             ASSIGN_NEXT (current_assign) = newassign;
 
                             /*
-                             * It is important here, to leave INFO_IVE_CURRENTASSIGN(
-                             * arg_info) on current_assign; otherwise, a withloop-created
-                             * index vector will find a corrupted INFO_IVE_CURRENTASSIGN(
+                             * It is important here, to leave
+                             * INFO_IVE_CURRENTASSIGN( arg_info)
+                             * on current_assign; otherwise, a withloop-created index
+                             * vector will find a corrupted INFO_IVE_CURRENTASSIGN(
                              * arg_info) which points to an INDEX2VECT-ICM rather than a
                              * let!!
                              *
                              * Hence, I hope that the following line is not essential:
                              *
-                             *  INFO_IVE_CURRENTASSIGN( arg_info) = newassign;
+                             * INFO_IVE_CURRENTASSIGN( arg_info) = newassign;
                              */
                         }
                         vinfo = VINFO_NEXT (vinfo);
@@ -1840,14 +1836,14 @@ IdxPrf (node *arg_node, node *arg_info)
     case F_sel:
         arg1 = PRF_ARG1 (arg_node);
         arg2 = PRF_ARG2 (arg_node);
-        DBUG_ASSERT (((arg2->nodetype == N_id) || (arg2->nodetype == N_array)),
+        DBUG_ASSERT (((NOTE_TYPE (arg2) == N_id) || (NODE_TYPE (arg2) == N_array)),
                      "wrong arg in F_sel application");
 
         type1 = ID_OR_ARRAY_TYPE (arg1);
         type2 = ID_OR_ARRAY_TYPE (arg2);
         /*
          * if the shape of the array or the shape of the index are unknown,
-         * do not(!) replace sel by idx_sel but mark the selecting vector as VECT !
+         * do not(!) replace sel by idx_sel but mark the selecting vector as VECT!
          * this is done by traversal with NULL instead of vinfo!
          */
         if ((TYPES_SHPSEG (type1) != NULL) && (TYPES_SHPSEG (type2) != NULL)) {
@@ -1876,14 +1872,14 @@ IdxPrf (node *arg_node, node *arg_info)
         arg1 = PRF_ARG1 (arg_node);
         arg2 = PRF_ARG2 (arg_node);
         arg3 = PRF_ARG3 (arg_node);
-        DBUG_ASSERT (((arg1->nodetype == N_id) || (arg1->nodetype == N_array)),
+        DBUG_ASSERT (((NODE_TYPE (arg1) == N_id) || (NODE_TYPE (arg1) == N_array)),
                      "wrong arg in F_modarray application");
 
         type1 = ID_OR_ARRAY_TYPE (arg1);
         type2 = ID_OR_ARRAY_TYPE (arg2);
         /*
          * if the shape of the array or the index vector are unknown, do not(!)
-         * replace modarray by idx_modarray but mark the selecting vector as VECT !
+         * replace modarray by idx_modarray but mark the selecting vector as VECT!
          * this is done by traversal with NULL instead of vinfo!
          */
         if ((TYPES_SHPSEG (type1) != NULL) && (TYPES_SHPSEG (type2) != NULL)) {
@@ -2028,14 +2024,9 @@ IdxPrf (node *arg_node, node *arg_info)
  *  description   : examines whether variable is a one-dimensional array;
  *                  if so, examine INFO_IVE_TRANSFORM_VINFO( arg_info):
  *                    if NULL :
- *                        SetVect on "N_vardec" belonging to the "N_id" node.
- *                    otherwise: change varname according to shape from arg_info!
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
- *
- *  remarks       :
+ *                      SetVect on "N_vardec" belonging to the "N_id" node.
+ *                    otherwise:
+ *                      change varname according to shape from arg_info!
  *
  */
 
@@ -2053,8 +2044,7 @@ IdxId (node *arg_node, node *arg_info)
                  "non vardec/arg node as backref in N_id!");
     if (NODE_TYPE (vardec) == N_vardec) {
         if ((VARDEC_BASETYPE (vardec) == T_int)
-            && ((VARDEC_DIM (vardec) == 1)
-                || (VARDEC_DIM (vardec) == KNOWN_DIM_OFFSET - 1))) {
+            && (DIM_NO_OFFSET (VARDEC_DIM (vardec)) == 1)) {
             if (INFO_IVE_TRANSFORM_VINFO (arg_info) == NULL) {
                 DBUG_PRINT ("IDX", ("assigning VECT to %s:", ID_NAME (arg_node)));
                 VARDEC_ACTCHN (vardec) = SetVect (VARDEC_ACTCHN (vardec));
@@ -2077,8 +2067,7 @@ IdxId (node *arg_node, node *arg_info)
             }
         }
     } else {
-        if ((ARG_BASETYPE (vardec) == T_int)
-            && ((ARG_DIM (vardec) == 1) || (ARG_DIM (vardec) == KNOWN_DIM_OFFSET - 1))) {
+        if ((ARG_BASETYPE (vardec) == T_int) && (DIM_NO_OFFSET (ARG_DIM (vardec)) == 1)) {
             if (INFO_IVE_TRANSFORM_VINFO (arg_info) == NULL) {
                 DBUG_PRINT ("IDX", ("assigning VECT to %s:", ID_NAME (arg_node)));
                 ARG_ACTCHN (vardec) = SetVect (ARG_ACTCHN (vardec));
@@ -2114,13 +2103,13 @@ IdxId (node *arg_node, node *arg_info)
  *  description   : if vinfo == NULL all Array-Elements are traversed with
  *                  INFO_IVE_TRANSFORM_VINFO( arg_info) NULL, since there may be
  *                  some array_variables;
- *                  otherwise the index of the vector N_array in
- *                  the unrolling of an array of shape from vinfo is calculated; e.g.
+ *                  otherwise the index of the vector N_array in the unrolling
+ *                  of an array of shape from vinfo is calculated, e.g.
  *                  [ 2, 3, 1] in int[7,7,7] => 2*49 + 3*7 +1 = 120
  *                  [ 2] in int[7, 7, 7] => 2*49 = 98
- *                  Since we may have identifyers as components, this calculation
- *                  is not done, but generated as syntax-tree!!!
- *                  WARNING!  this penetrates the flatten-consistency!!
+ *                  Since we may have identifyers as components, this
+ *                  calculation is not done, but generated as syntax-tree!!!
+ *                  WARNING: this penetrates the flatten-consistency!!
  *  global vars   : ive_expr
  *
  */
@@ -2407,15 +2396,14 @@ IdxNcode (node *arg_node, node *arg_info)
                                   && (VINFO_VARDEC (col_vinfo) != NULL)),
                                  "missing vardec for IDX variable");
                     ID_VARDEC (new_id) = VINFO_VARDEC (col_vinfo);
-                    array_id
-                      = MakeId (StringCopy (LET_NAME (let_node)), NULL, ST_regular);
+                    array_id = MakeId_Copy (LET_NAME (let_node));
 
 #if 0
           /* 
            * The backref of the array-id is set wrongly to the actual
            * integer index-variable. This is done on purpose for
            * fooling the refcount-inference system.
-           * The "correct" backref would be LET_VARDEC( let_node) !
+           * The "correct" backref would be LET_VARDEC( let_node)!
            */
           ID_VARDEC( array_id) = VINFO_VARDEC( col_vinfo);
 #else
@@ -2455,9 +2443,8 @@ IdxNcode (node *arg_node, node *arg_info)
                       = CreateIdxs2OffsetIcm (idx_decl, idxs, VINFO_TYPE (vinfo));
                 }
 
-                ASSIGN_NEXT (new_assign) = BLOCK_INSTR (NCODE_CBLOCK (arg_node));
-                DBUG_ASSERT ((NODE_TYPE (BLOCK_INSTR (NCODE_CBLOCK (arg_node)))
-                              != N_empty),
+                ASSIGN_NEXT (new_assign) = NCODE_CBLOCK_INSTR (arg_node);
+                DBUG_ASSERT ((NODE_TYPE (NCODE_CBLOCK_INSTR (arg_node)) != N_empty),
                              "N_empty node in block found");
                 BLOCK_INSTR (NCODE_CBLOCK (arg_node)) = new_assign;
             }
