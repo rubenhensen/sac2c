@@ -1,5 +1,10 @@
 /*
  * $Log$
+ * Revision 1.4  2004/08/09 03:47:34  skt
+ * some very painful bugfixing
+ * added support for dataflowgraphs within with-loops
+ * (I hope someone'll use it in future)
+ *
  * Revision 1.3  2004/08/06 17:20:24  skt
  * some adaptions for creating the dataflowgraph
  *
@@ -24,18 +29,6 @@
 
 #define CREATE_DATAFLOWGRAPH_H
 
-/* access macros for arg_info
- *
- *   node*      DATAFLOWGRAPH  (the dataflowgraph of the currunt function
- *                              as far as it has been constructed)
- *   int        EXECUTIONMODE  (the current execution mode)
- */
-/*#define INFO_CDFG_DATAFLOWGRAPH(n)  (n->node[0])
-#define INFO_CDFG_OUTERASSIGN(n)    (n->node[1])
-#define INFO_CDFG_ACTNODE(n)        (n->node[2])
-#define INFO_CDFG_EXECUTIONMODE(n)  (n->flag)
-#define INFO_CDFG_WITHDEEP(n)       (n->refcnt)*/
-
 #define CDFG_DEBUG 0
 
 extern node *CreateDataflowgraph (node *arg_node);
@@ -48,20 +41,25 @@ extern node *CDFGcond (node *arg_node, info *arg_info);
 
 extern node *CDFGid (node *arg_node, info *arg_info);
 
-extern node *CDFGwith2 (node *arg_node, info *arg_info);
+/*extern node *CDFGwith2(node *arg_node, info *arg_info);*/
 
 /* Some functions to create, administrate and delete dataflowgraphs */
-
-node *InitiateDataflowgraph (char *name, info *arg_info);
 
 void PrintDataflowgraph (node *dataflowgraph);
 
 void PrintDataflownode (node *datanode);
 
-node *AddDataflownode (node *graph, node *newnode);
+node *CDFGUpdateDependencies (node *dfn_assign, node *current_graph, node *outer_graph,
+                              node *current_node, node *outer_node);
 
-node *UpdateDependencies (node *graph, node *avisnode, node *actnode);
+node *CDFGFindAssignCorrespondingNode (node *graph, node *dfn_assign);
 
-char *SetName (node *assign);
+node *CDFGLowestCommonLevel (node *node_one, node *node_two);
+
+void CDFGUpdateDataflowgraph (node *graph, node *node_one, node *two);
+
+bool CDFGFirstIsWithinSecond (node *node_one, node *node_two);
+
+char *CDFGSetName (node *assign);
 
 #endif /* CREATE_DATAFLOWGRAPH_H */
