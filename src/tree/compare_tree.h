@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.2  2001/03/07 10:03:40  nmw
+ * first implementation
+ *
  * Revision 1.1  2001/03/06 13:16:50  nmw
  * Initial revision
  *
@@ -35,26 +38,16 @@ extern node *CMPTstr (node *arg_node, node *arg_info);
 extern node *CMPTid (node *arg_node, node *arg_info);
 extern node *CMPTfloat (node *arg_node, node *arg_info);
 extern node *CMPTdouble (node *arg_node, node *arg_info);
-extern node *CMPTblock (node *arg_node, node *arg_info);
-extern node *CMPTassign (node *arg_node, node *arg_info);
-extern node *CMPTreturn (node *arg_node, node *arg_info);
-extern node *CMPTdo (node *arg_node, node *arg_info);
-extern node *CMPTwhile (node *arg_node, node *arg_info);
-extern node *CMPTcond (node *arg_node, node *arg_info);
 extern node *CMPTlet (node *arg_node, node *arg_info);
 extern node *CMPTprf (node *arg_node, node *arg_info);
 extern node *CMPTap (node *arg_node, node *arg_info);
-extern node *CMPTempty (node *arg_node, node *arg_info);
-extern node *CMPTexprs (node *arg_node, node *arg_info);
-extern node *CMPTarray (node *arg_node, node *arg_info);
-extern node *CMPTNwith (node *arg_node, node *arg_info);
-extern node *CMPTNpart (node *arg_node, node *arg_info);
 extern node *CMPTNwithid (node *arg_node, node *arg_info);
 extern node *CMPTNgenerator (node *arg_node, node *arg_info);
 extern node *CMPTNwithop (node *arg_node, node *arg_info);
 extern node *CMPTNcode (node *arg_node, node *arg_info);
 extern node *CMPTunknown (node *arg_node, node *arg_info);
-
+extern node *CMPTTravSons (node *arg_node, node *arg_info);
+extern node *CMPTnodeType (node *arg_node, node *arg_info);
 /*
  * compare tree is only implemented for expressions !
  * the following node types are not implemented (now):
