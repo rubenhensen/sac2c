@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.57  2004/09/29 17:28:44  sbs
+ * fixed three DBUG_PRINT memory leaks.
+ *
  * Revision 3.56  2004/09/29 13:47:08  sah
  * added TYArgs2FunType
  *
@@ -1224,6 +1227,7 @@ TYMakeFunType (ntype *arg, ntype *res_type, node *fundef)
 
     DBUG_EXECUTE ("NTY", tmp = TYType2DebugString (fun, TRUE, 0););
     DBUG_PRINT ("NTY", ("fun type built: %s\n", tmp));
+    DBUG_EXECUTE ("NTY", tmp = Free (tmp););
 
     DBUG_RETURN (fun);
 }
@@ -4624,6 +4628,7 @@ TYOldType2ScalarType (types *old)
     DBUG_EXECUTE ("NTY", tmp = Type2String (old, 3, TRUE);
                   tmp2 = TYType2DebugString (res, TRUE, 0););
     DBUG_PRINT ("NTY", ("base type of %s converted into : %s\n", tmp, tmp2));
+    DBUG_EXECUTE ("NTY", tmp = Free (tmp); tmp2 = Free (tmp2););
 
     DBUG_RETURN (res);
 }
@@ -4670,6 +4675,7 @@ TYOldType2Type (types *old)
     DBUG_EXECUTE ("NTY", tmp = Type2String (old, 3, TRUE);
                   tmp2 = TYType2DebugString (res, TRUE, 0););
     DBUG_PRINT ("NTY", ("%s converted into : %s\n", tmp, tmp2));
+    DBUG_EXECUTE ("NTY", tmp = Free (tmp); tmp2 = Free (tmp2););
 
     DBUG_RETURN (res);
 }
