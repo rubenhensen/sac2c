@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.8  1995/04/05 15:54:58  asi
+# Revision 1.9  1995/04/20 10:21:20  asi
+# make deps done
+#
+# Revision 1.8  1995/04/05  15:54:58  asi
 # make deps done
 #
 # Revision 1.7  1995/04/05  15:52:38  asi
@@ -75,8 +78,8 @@ LoopInvariantRemoval.o: /usr/include/sys/stdtypes.h ../global/tree.h
 LoopInvariantRemoval.o: ../global/type_info.mac ../global/node_info.mac
 LoopInvariantRemoval.o: ../global/prf_node_info.mac ../global/Error.h
 LoopInvariantRemoval.o: ../../inc/dbug.h ../global/my_debug.h
-LoopInvariantRemoval.o: ../global/traverse.h optimize.h
-LoopInvariantRemoval.o: LoopInvariantRemoval.h
+LoopInvariantRemoval.o: ../global/traverse.h ../typecheck/typecheck.h
+LoopInvariantRemoval.o: optimize.h LoopInvariantRemoval.h
 WorkReduction.o: /usr/include/stdio.h /usr/include/stdlib.h
 WorkReduction.o: /usr/include/sys/stdtypes.h ../global/tree.h
 WorkReduction.o: ../global/type_info.mac ../global/node_info.mac
