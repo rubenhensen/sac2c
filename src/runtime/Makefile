@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.8  1998/10/28 19:32:10  sbs
+# runtime.tar rule inserted
+#
 # Revision 1.7  1998/06/29 09:16:42  cg
 # The SAC runtime library is now compiled with optimizations and
 # debug options.
@@ -32,6 +35,8 @@ CCFLAGS   := -ansi -Wall -D__EXTENSIONS__ -g -O3
 INCS := -I../global -I../../inc
 OBJS := $(patsubst %.c,%.o,$(wildcard libsac_*.c)) libsac_trace_mt.o
 
+RTINCS := $(wildcard *.h)
+
 .PHONY: all
 
 
@@ -47,6 +52,8 @@ libsac_trace_mt.o: libsac_mt.c
 %.o: %.c 
 	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) -o $@ -c $<
 
+runtime.tar: libsac.a $(RTINCS)
+	tar cvf runtime.tar libsac.a $(RTINCS)
 
 deps:
 	makedepend $(INCS) *.c
