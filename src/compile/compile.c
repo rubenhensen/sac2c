@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.17  1999/07/06 16:18:45  jhs
+ * Changed evaluation of prolog- and epilog-icms, so compilation of
+ * sync-blocks with more than one with-loops are possible now
+ * (all changes were done in COMPsync).
+ *
  * Revision 2.16  1999/07/02 14:05:25  rob
  * Clean up COMPVardec to avoid update-in-place when generating ICM.
  * Introduce TAGGED_ARRAY support (still incomplete).
@@ -6661,79 +6666,53 @@ COMPSync (node *arg_node, node *arg_info)
         var_name = NULL;
         if (NODE_TYPE (instr) == N_icm) {
 
-            /*
-             * begin of with-loop code found?
-             *  -> prolog finished; skip with-loop code
-             */
             if ((strcmp (ICM_NAME (instr), "WL_FOLD_BEGIN") == 0)
                 || (strcmp (ICM_NAME (instr), "WL_NONFOLD_BEGIN") == 0)) {
-
-                DBUG_ASSERT ((epilog == 0), "WL_..._BEGIN-ICM found in epilog");
-                if (prolog == 1) {
-                    /*
-                     * first WL_..._BEGIN-ICM found
-                     *   -> end of prolog found
-                     */
-                    prolog = 0;
-                } else {
-                    /*
-                     * another WL_BEGIN_ICM found
-                     *   -> stack it
-                     */
-                    count_nesting++;
-                }
-            } else {
                 /*
-                 * end of with-loop code found?
-                 *  -> start of epilog
+                 *  begin of with-loop code found
+                 *  -> skip with-loop code
+                 *  -> stack nested with-loops
                  */
-                if ((strcmp (ICM_NAME (instr), "WL_FOLD_END") == 0)
-                    || (strcmp (ICM_NAME (instr), "WL_NONFOLD_END") == 0)) {
+                count_nesting++;
+            } else if ((strcmp (ICM_NAME (instr), "WL_FOLD_END") == 0)
+                       || (strcmp (ICM_NAME (instr), "WL_NONFOLD_END") == 0)) {
+                /*
+                 *  end of with-loop code found?
+                 *  -> end of one (possibly nested) with loop
+                 */
+                DBUG_ASSERT ((count_nesting > 0),
+                             "WL_..._BEGIN/END-ICMs non-balanced (too much ENDs)");
+                count_nesting--;
+            } else if (count_nesting == 0) {
+                /*
+                 *  not within any (possibly nested) with-loop
+                 *  is this an 'prolog-icm' or 'epilog-icm' for memory management?
+                 *
+                 *  prolog == 1: current icm (assignment) is part of prolog
+                 *  epilog == 1: current icm (assignment) is part of epilog
+                 */
 
-                    DBUG_ASSERT ((prolog == 0), "WL_..._END-ICM found in prolog");
-                    DBUG_ASSERT ((epilog == 0), "WL_..._END-ICM found in epilog");
-                    if (count_nesting == 0) {
-                        /*
-                         * last WL_..._END-ICM found
-                         *   -> begin of epilog found
-                         */
-                        epilog = 1;
-                    } else {
-                        /*
-                         * end of an inner WL found
-                         */
-                        DBUG_ASSERT ((count_nesting > 0),
-                                     "WL_..._BEGIN/END-ICMs non-balanced");
-                        count_nesting--;
-                    } /* if (count_nesting ==0) */
-
+                if ((strcmp (ICM_NAME (instr), "ND_ALLOC_ARRAY") == 0)
+                    || (strcmp (ICM_NAME (instr), "ND_CHECK_REUSE_ARRAY") == 0)
+                    || (strcmp (ICM_NAME (instr), "ND_CHECK_REUSE_HIDDEN") == 0)) {
+                    var_name = ID_NAME (EXPRS_EXPR (EXPRS_NEXT (ICM_ARGS (instr))));
+                    prolog = 1;
+                    epilog = 0;
+                } else if ((strcmp (ICM_NAME (instr), "ND_DEC_RC_FREE_ARRAY") == 0)
+                           || (strcmp (ICM_NAME (instr), "ND_DEC_RC") == 0)) {
+                    var_name = ID_NAME (EXPRS_EXPR (ICM_ARGS (instr)));
+                    prolog = 0;
+                    epilog = 1;
+                } else if (strcmp (ICM_NAME (instr), "ND_INC_RC") == 0) {
+                    var_name = ID_NAME (EXPRS_EXPR (ICM_ARGS (instr)));
+                    prolog = 1;
+                    epilog = 0;
                 } else {
-
-                    /*
-                     * 'epilog' or 'prolog' activ and ICM for memory management found?
-                     */
-                    if (prolog || epilog) {
-                        if (strcmp (ICM_NAME (instr), "ND_ALLOC_ARRAY") == 0) {
-                            var_name
-                              = ID_NAME (EXPRS_EXPR (EXPRS_NEXT (ICM_ARGS (instr))));
-                        } else {
-                            if ((strcmp (ICM_NAME (instr), "ND_CHECK_REUSE_ARRAY") == 0)
-                                || (strcmp (ICM_NAME (instr), "ND_CHECK_REUSE_HIDDEN")
-                                    == 0)) {
-                                var_name
-                                  = ID_NAME (EXPRS_EXPR (EXPRS_NEXT (ICM_ARGS (instr))));
-                            } else {
-                                if ((strcmp (ICM_NAME (instr), "ND_DEC_RC_FREE_ARRAY")
-                                     == 0)
-                                    || (strcmp (ICM_NAME (instr), "ND_DEC_RC") == 0)
-                                    || (strcmp (ICM_NAME (instr), "ND_INC_RC") == 0)) {
-                                    var_name = ID_NAME (EXPRS_EXPR (ICM_ARGS (instr)));
-                                }
-                            }
-                        }
-                    }
+                    prolog = 0;
+                    epilog = 0;
                 }
             }
+            /* else var_name == NULL is valid */
 
             if (var_name != NULL) {
                 if (DFMTestMaskEntry (SYNC_IN (arg_node), var_name, NULL)
@@ -6747,6 +6726,8 @@ COMPSync (node *arg_node, node *arg_info)
                         assign = ASSIGN_NEXT (last_assign) = FreeNode (assign);
                     }
 
+                    DBUG_ASSERT ((!((prolog == 1) && (epilog == 1))),
+                                 ("icm cannot be in prolog and epilog at the same time"));
                     if (prolog) {
                         prolog_icms = AppendAssign (prolog_icms, new_icm);
                     }
@@ -6755,8 +6736,8 @@ COMPSync (node *arg_node, node *arg_info)
                     }
                 } else {
                     /*
-                     * we want to test (var_name == NULL) later to decide, whether the
-                     * current assignment was removed or not!
+                     *  one wants to test (var_name == NULL) later to decide,
+                     *  whether the current, assignment was removed or not!
                      */
                     var_name = NULL;
                 }
