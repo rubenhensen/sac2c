@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.6  2000/10/12 15:45:21  dkr
+ * macros in prf.h used
+ *
  * Revision 2.5  2000/07/27 15:21:01  nmw
  * removal of freshly geberated dec files when compiling
  * for a c-library added
@@ -114,6 +117,7 @@
 #include <string.h>
 
 #include "types.h"
+#include "prf.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
 
@@ -793,7 +797,7 @@ WDECfundef (node *arg_node, node *arg_info)
          * when the declaration file is reloaded. So, we have to replace '_add'
          * by '+'.
          */
-        for (tmp_prf = F_toi; tmp_prf <= F_genarray; tmp_prf++) {
+        for (tmp_prf = FIRST_LEGAL_PRF; tmp_prf <= LAST_LEGAL_PRF; tmp_prf++) {
             if (0 == strcmp (FUNDEF_NAME (arg_node), prf_name_str[tmp_prf])) {
                 fprintf (outfile, " %s(", prf_string[tmp_prf]);
                 fun_name_printed = 1;

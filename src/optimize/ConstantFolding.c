@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.40  2000/10/12 15:45:29  dkr
+ * macros in prf.h used
+ *
  * Revision 2.39  2000/09/29 14:51:03  sbs
  * CF for selections into array of T_char enabled!
  *
@@ -261,7 +264,6 @@
  * Revision 1.1  1995/02/13  16:55:00  asi
  * Initial revision
  *
- *
  */
 
 /******************************************************************************
@@ -274,11 +276,13 @@
  * INFO_VARNO(n)     : no of elements used in masks
  *
  ******************************************************************************/
+
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "tree.h"
 #include "free.h"
+#include "prf.h"
 #include "print.h"
 #include "Error.h"
 #include "dbug.h"
@@ -2736,8 +2740,9 @@ CFprf (node *arg_node, node *arg_info)
         }
     }
 
-    if (PRF_PRF (arg_node) <= F_neq) { /* prfs on scalars only !! */
-        if (IsConst (arg[0]) && ((PRF_PRF (arg_node) <= F_not) || IsConst (arg[1]))) {
+    if (SCALAR_ARGS (PRF_PRF (arg_node))) { /* prfs on scalars only !! */
+        if (IsConst (arg[0])
+            && (SINGLE_SCALAR_ARG (PRF_PRF (arg_node)) || IsConst (arg[1]))) {
             /*
              * this is a constants only application!
              */

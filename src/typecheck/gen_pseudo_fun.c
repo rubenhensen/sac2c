@@ -1,5 +1,9 @@
 /*
+ *
  * $Log$
+ * Revision 2.5  2000/10/12 15:45:11  dkr
+ * macros in prf.h used
+ *
  * Revision 2.4  2000/10/09 19:17:52  dkr
  * CreatePseudoFoldFun():
  *   tmp-var used in body of fold-fun
@@ -38,6 +42,7 @@
 
 #include "dbug.h"
 #include "types.h"
+#include "prf.h"
 #include "tree_basic.h"
 #include "tree.h"
 #include "free.h"
@@ -90,8 +95,7 @@ CreatePseudoFoldFun (types *elem_type, char *fold_fun, prf fold_prf, char *res_v
         application = MakeAp (StringCopy (fold_fun), NULL, args);
         pseudo_fold_fun = fold_fun;
     } else {
-        DBUG_ASSERT (((fold_prf >= F_toi) && (fold_prf <= F_genarray)),
-                     "fold_prf is out of range!");
+        DBUG_ASSERT (LEGAL_PRF (fold_prf), "fold_prf is out of range!");
         application = MakePrf (fold_prf, args);
         pseudo_fold_fun = prf_name_str[fold_prf];
     }
