@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 2.42  2000/06/25 01:44:49  dkr
+ * limits of floating-point-numbers: values.h is not portable, therefore
+ * float.h is used now.
+ *
  * Revision 2.41  2000/06/23 15:25:44  dkr
  * signature of DupTree changed
  *
@@ -286,7 +290,7 @@
 #include <stddef.h>
 #include <string.h>
 #include <limits.h> /* for INT_MIN, INT_MAX */
-#include <values.h> /* for MINFLOAT, MINDOUBLE, MAXFLOAT, MAXDOUBLE */
+#include <float.h>  /* for FLT_MIN, DBL_MIN, FLT_MAX, DBL_MAX */
 
 #include "tree.h"
 #include "tree_basic.h"
@@ -1797,10 +1801,10 @@ ComputeNeutralElem (prf prf_fun, types *neutral_type)
             neutral_base = MakeNum (INT_MAX);
             break;
         case T_float:
-            neutral_base = MakeFloat (MAXFLOAT);
+            neutral_base = MakeFloat (FLT_MAX);
             break;
         case T_double:
-            neutral_base = MakeDouble (MAXDOUBLE);
+            neutral_base = MakeDouble (DBL_MAX);
             break;
         default:
             DBUG_ASSERT (0, "Fold operator 'min` incompatible with operand type");
@@ -1814,10 +1818,10 @@ ComputeNeutralElem (prf prf_fun, types *neutral_type)
             neutral_base = MakeNum (1 - INT_MAX);
             break;
         case T_float:
-            neutral_base = MakeFloat (-MAXFLOAT);
+            neutral_base = MakeFloat (-FLT_MAX);
             break;
         case T_double:
-            neutral_base = MakeDouble (-MAXDOUBLE);
+            neutral_base = MakeDouble (-DBL_MAX);
             break;
         default:
             DBUG_ASSERT (0, "Fold operator 'max` incompatible with operand type");
