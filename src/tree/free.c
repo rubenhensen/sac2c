@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.36  2002/07/02 17:52:55  dkr
+ * FreeArray(): ARRAY_STRING is removed now
+ *
  * Revision 3.35  2002/06/25 13:55:51  sbs
  * FreeDot added.
  *
@@ -1418,6 +1421,10 @@ FreeArray (node *arg_node, node *arg_info)
 
     if (ARRAY_ISCONST (arg_node) && (ARRAY_VECLEN (arg_node) > 0)) {
         ARRAY_CONSTVEC (arg_node) = Free (ARRAY_CONSTVEC (arg_node));
+    }
+
+    if (ARRAY_STRING (arg_node) != NULL) {
+        ARRAY_STRING (arg_node) = Free (ARRAY_STRING (arg_node));
     }
 
     DBUG_PRINT ("FREE", ("Removing N_array node ..."));
