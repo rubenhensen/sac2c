@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2000/11/28 11:50:29  sbs
+ * compiler warnings eliminated 8-)
+ *
  * Revision 3.4  2000/11/24 14:54:41  nmw
  * for generic templates of specialized fundefs the
  * status is set to ST_ignore.
@@ -689,6 +692,11 @@ TypeToCount (types *type)
  *         }
  *         genarray( [M,M], _tmp_1);
  *
+ * remarks:
+ *  iv_scalars is initialized only for avoiding a compiler warning
+ *  "...might be used uninitialized". This should not have any bad effect
+ *  since the for-loop where it will be initialized is executed anyways.
+ *
  ******************************************************************************/
 
 static node *
@@ -697,7 +705,7 @@ BuildPsiWithLoop (types *restype, node *idx, node *array)
     int i, num_fresh_vars, var_offset;
     char **tmp_vars;
     node *aelems, *res, *assign;
-    ids *iv_scalars, *last_iv_scalars;
+    ids *iv_scalars = NULL, *last_iv_scalars;
 
     DBUG_ENTER ("BuildPsiWithLoop");
 
@@ -3543,7 +3551,7 @@ CmpTypes (types *type_one, types *type_two)
 static cmp_types
 CompatibleTypes (types *type_one, types *type_two, int convert_prim_type, int line)
 {
-    int old_dim1, old_dim2, i;
+    int old_dim1 = 0, old_dim2 = 0, i;
     cmp_types compare;
     node *t_node;
     types *type_1, *type_2;
@@ -4859,6 +4867,7 @@ TI (node *arg_node, node *arg_info)
         GEN_TYPE_NODE (return_type, T_char);
         break;
     default: {
+        return_type = NULL; /* for avoiding a compiler warning */
         ABORT (0, ("Type inference for %s isn't implemented yet", NODE_TEXT (arg_node)));
         break;
     }
@@ -5409,7 +5418,7 @@ static types *
 TI_prf (node *arg_node, node *arg_info)
 {
     prim_fun_tab_elem *prf_p;
-    types *ret_type, **arg_type;
+    types *ret_type, **arg_type = NULL;
     node *current_args;
     int i, type_c_tag, prf_tag, count_args = 0;
     void *fun_p;
@@ -5458,6 +5467,7 @@ TI_prf (node *arg_node, node *arg_info)
         switch (type_c_tag) {
 #include "prim_fun_tt.mac"
         default: {
+            ret_type = NULL; /* just to please the compiler 8-) */
             DBUG_ASSERT (0, "wrong type_class_tag");
             break;
         }
@@ -5744,7 +5754,7 @@ static types *
 TI_ap (node *arg_node, node *arg_info)
 {
     fun_tab_elem *fun_p;
-    types *return_type, **arg_type;
+    types *return_type, **arg_type = NULL;
     int count_args = 0;
     int tmp, i;
     node *current_args;
@@ -6834,7 +6844,7 @@ TI_Nwith (node *arg_node, node *arg_info)
 {
     stack_elem *old_tos;
     types *generator_type, *base_array_type, *body_type, *neutral_type;
-    node *tmpn, *withop, *new_fundef, *new_expr, *new_shp;
+    node *tmpn, *withop, *new_fundef, *new_expr, *new_shp = NULL;
     node *tmpass;
     ids *mem_lhs;
     int i;
@@ -7722,6 +7732,7 @@ TI_Nfoldprf (node *arg_node, types *body_type, types *neutral_type, node *arg_in
         switch (type_c_tag) {
 #include "prim_fun_tt.mac" /* assigns ret_type */
         default:
+            ret_type = NULL; /* just to please the compiler 8-) */
             DBUG_ASSERT (0, "wrong type_class_tag");
             break;
         }
