@@ -1,6 +1,14 @@
 #
 #
 # $Log$
+# Revision 3.3  2000/11/21 18:37:26  dkr
+# .SECONDARY reactivated and targets libsac.tar.for.% and sac2c.for....
+# splitted:
+# Now, neither the temporary files are removed automatically nor sac2c is
+# build twice for LINUX and ALPHA.
+# I really don't know why the rule splitting is nessesary BUT IT WORKS
+# :-)
+#
 # Revision 3.2  2000/11/21 16:48:13  dkr
 # new rules Makefile.Config.for.%-2_5, Makefile.Config.for.%-2_7 added
 # new rule allclean added
@@ -147,10 +155,10 @@ CHECKFILES    :=  $(INST_PACKAGES) $(foreach system,$(SYSTEMS), \
                   $(addsuffix .for.$(system),$(SPECIFICS)))
 
 
-.PHONY: all linux solaris alpha source clean update new allnew \
-        check_existing_files
+.PHONY: all source linux solaris25 solaris27 alpha check_existing_files \
+  clean allclean locker update new allnew
 
-#.SECONDARY: $(CHECKFILES)
+.SECONDARY: $(CHECKFILES)
 
 
 all:     check_existing_files $(BINDISTRIBS) $(SRCDISTRIBS)
@@ -211,7 +219,12 @@ $(BINTARGETDIR)/SAC-$(VERSION)-%-$(DATE).tar.gz: \
 	rm -rf $(TEMPDIR)/$*
 
 
-sac2c.for.SOLARIS_SPARC-% libsac.tar.for.SOLARIS_SPARC-%: 
+src.tar.gz:
+	( cd $(SAC2CDIR); $(MAKE) tar )
+	ln -s $(SAC2CDIR)/$@
+
+
+sac2c.for.SOLARIS_SPARC-%:
 	@echo "**************************************************************"
 	@echo "*  Creating sac2c for SOLARIS_SPARC-$* on host $(SOLARIS_HOST-$*)"
 	@echo "**************************************************************"
@@ -223,7 +236,7 @@ sac2c.for.SOLARIS_SPARC-% libsac.tar.for.SOLARIS_SPARC-%:
 	mv -f libsac.tar.for.SOLARIS_SPARC libsac.tar.for.SOLARIS_SPARC-$*
 
 
-sac2c.for.SOLARIS_SPARC libsac.tar.for.SOLARIS_SPARC: 
+sac2c.for.SOLARIS_SPARC:
 	( cd $(SAC2CDIR); $(MAKE) tar )
 	rm -rf $(SOLARIS_DIR)
 	mkdir -p $(SOLARIS_DIR)
@@ -243,7 +256,7 @@ sac2c.for.SOLARIS_SPARC libsac.tar.for.SOLARIS_SPARC:
             exit 1;                                                \
           fi
 
-sac2c.for.LINUX_X86 libsac.tar.for.LINUX_X86: 
+sac2c.for.LINUX_X86:
 	@echo "**************************************************************"
 	@echo "*  Creating sac2c for LINUX_X86"
 	@echo "**************************************************************"
@@ -279,7 +292,7 @@ sac2c.for.LINUX_X86 libsac.tar.for.LINUX_X86:
 	    exit 1;                                                \
 	  fi
 
-sac2c.for.OSF_ALPHA libsac.tar.for.OSF_ALPHA: 
+sac2c.for.OSF_ALPHA:
 	@echo "**************************************************************"
 	@echo "*  Creating sac2c for OSF_ALPHA"
 	@echo "**************************************************************"
@@ -317,9 +330,8 @@ sac2c.for.OSF_ALPHA libsac.tar.for.OSF_ALPHA:
 	  fi
 
 
-src.tar.gz:
-	( cd $(SAC2CDIR); $(MAKE) tar )
-	ln -s $(SAC2CDIR)/$@
+libsac.tar.for.%:
+	$(MAKE) sac2c.for.$*
 
 
 sac2crc.for.%-2_5:
@@ -337,7 +349,7 @@ sac2crc.for.%: $(RUNTIMEDIR)/sac2crc.%
 	cp $< $@
 
 
-runtime.tar: 
+runtime.tar:
 	@echo "**************************************************************"
 	@echo "*  Creating package $@"
 	@echo "**************************************************************"
