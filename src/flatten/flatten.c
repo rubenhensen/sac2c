@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.12  1999/04/20 12:58:24  jhs
+ * Changes made for emty arrays.
+ *
  * Revision 2.11  1999/04/08 17:10:21  jhs
  * FltnArray expanded for EmptyArrays.
  *
@@ -1144,7 +1147,7 @@ FltnArray (node *arg_node, node *arg_info)
     if (ARRAY_AELEMS (arg_node) != NULL) {
         ARRAY_AELEMS (arg_node) = Trav (ARRAY_AELEMS (arg_node), arg_info);
     } else {
-        INFO_FLTN_VECTYPE (arg_info) = T_unknown;
+        INFO_FLTN_VECTYPE (arg_info) = T_nothing;
     }
 
     ARRAY_VECLEN (arg_node) = INFO_FLTN_VECLEN (arg_info);
@@ -1168,6 +1171,9 @@ FltnArray (node *arg_node, node *arg_info)
     case T_char:
         ARRAY_CHARVEC (arg_node) = (node *)INFO_FLTN_CONSTVEC (arg_info);
         INFO_FLTN_CONSTVEC (arg_info) = NULL;
+        break;
+    case T_nothing:
+        /* nothing do be done */
         break;
     default:
         FREE (INFO_FLTN_CONSTVEC (arg_info));
@@ -1290,7 +1296,7 @@ FltnExprs (node *arg_node, node *arg_info)
     char *info_fltn_charvec;
     float *info_fltn_floatvec;
     double *info_fltn_doublevec;
-    node *expr, *expr2;
+    node *expr, *expr2, *orig_expr;
 
     DBUG_ENTER ("FltnExprs");
 
@@ -1345,12 +1351,22 @@ FltnExprs (node *arg_node, node *arg_info)
                  abstract, mdb_nodetype[NODE_TYPE (expr)]));
 
     if (abstract) {
-        EXPRS_EXPR (arg_node) = Abstract (EXPRS_EXPR (arg_node), arg_info);
+        orig_expr = EXPRS_EXPR (arg_node);
+
+        EXPRS_EXPR (arg_node) = Abstract (orig_expr, arg_info);
         expr2 = Trav (expr, arg_info);
-        if ((NODE_TYPE (expr2) == N_array) && (ARRAY_VECTYPE (expr2) == T_int)) {
+        if (((NODE_TYPE (expr2) == N_array) && (ARRAY_VECTYPE (expr2) == T_int))
+            || ((NODE_TYPE (orig_expr) == N_cast) && (CAST_BASETYPE (orig_expr) == T_int)
+                && (NODE_TYPE (expr2) == N_array)
+                && (ARRAY_VECTYPE (expr2) == T_nothing))) {
             ID_VECLEN (EXPRS_EXPR (arg_node)) = ARRAY_VECLEN (expr2);
-            ID_INTVEC (EXPRS_EXPR (arg_node))
-              = CopyIntVector (ARRAY_VECLEN (expr2), ARRAY_INTVEC (expr2));
+            if (ID_VECLEN (EXPRS_EXPR (arg_node)) != 0) {
+                ID_INTVEC (EXPRS_EXPR (arg_node))
+                  = CopyIntVector (ARRAY_VECLEN (expr2), ARRAY_INTVEC (expr2));
+            } else {
+                ID_INTVEC (EXPRS_EXPR (arg_node)) = NULL;
+            }
+            ID_CONSTARRAY (EXPRS_EXPR (arg_node)) = TRUE;
         }
     } else {
         expr2 = Trav (expr, arg_info);
