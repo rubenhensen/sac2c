@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2004/10/14 13:40:11  sbs
+ * changed types component within Vinfo into shape and copied these explicihan sharing a
+ * pointer.
+ *
  * Revision 3.3  2004/07/19 14:19:38  sah
  * switch to new INFO structure
  * PHASE I
@@ -67,7 +71,7 @@
 
 extern node *IndexVectorElimination (node *syntax_tree);
 
-extern char *IdxChangeId (char *varname, types *type);
+extern char *IdxChangeId (char *varname, shape *shp);
 
 extern node *IdxModul (node *arg_node, info *arg_info);
 extern node *IdxFundef (node *arg_node, info *arg_info);
