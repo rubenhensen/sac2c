@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.29  1995/09/05 11:36:50  hw
+ * Revision 1.30  1995/10/08 11:22:36  sbs
+ * some bugs fixed
+ *
+ * Revision 1.29  1995/09/05  11:36:50  hw
  * changed condition of boundary check of PRF_MODARRAY...
  * ( ">=" -> ">" )
  *
@@ -359,11 +362,16 @@
 
 #define AccessConst(v, i) fprintf (outfile, "%s", v[i])
 
-#define VectToOffset(dim, v_i_str, dima, a)                                              \
+#define AccessShape(v, i) fprintf (outfile, "ND_KD_A_SHAPE(%s, %d)", v, i)
+
+#define VectToOffset2(dim, v_i_str, dima, a_i_str)                                       \
     {                                                                                    \
         int i;                                                                           \
-        for (i = dim - 1; i > 0; i--)                                                    \
-            fprintf (outfile, "( ND_KD_A_SHAPE(%s, %d)* ", a, i);                        \
+        for (i = dim - 1; i > 0; i--) {                                                  \
+            fprintf (outfile, "( ");                                                     \
+            a_i_str;                                                                     \
+            fprintf (outfile, "* ");                                                     \
+        }                                                                                \
         v_i_str;                                                                         \
         for (i = 1; i < dim; i++) {                                                      \
             fprintf (outfile, "+");                                                      \
@@ -371,10 +379,15 @@
             fprintf (outfile, ") ");                                                     \
         }                                                                                \
         while (i < dima) {                                                               \
-            fprintf (outfile, "*ND_KD_A_SHAPE(%s, %d) ", a, i);                          \
+            fprintf (outfile, "*");                                                      \
+            a_i_str;                                                                     \
+            fprintf (outfile, " ");                                                      \
             i++;                                                                         \
         }                                                                                \
     }
+
+#define VectToOffset(dim, v_i_str, dima, a)                                              \
+    VectToOffset2 (dim, v_i_str, dima, AccessShape (a, i))
 
 #define NewBlock(init, body)                                                             \
     fprintf (outfile, "{\n");                                                            \
@@ -536,7 +549,7 @@ MAIN
     FILE *outfile = stdout;
     char type[] = "double";
     char name[] = "array_name";
-    int dim = 3, dima = 4, dimv = 3, dimres = 4;
+    int dim = 3, dims = 3, dima = 4, dimv = 3, dimres = 4;
     char *s[] = {"40", "50", "60"};
     char *vi[] = {"10", "20", "30"};
     char *ar[] = {"firstarray", "secondarray"};
@@ -1713,6 +1726,46 @@ indent += idxlen + 1;
 EndFoldWith (idxlen);
 
 #undef ND_END_FOLD
+
+#ifndef TEST_BACKEND
+DBUG_VOID_RETURN;
+}
+#endif /* no TEST_BACKEND */
+
+/*
+ * ND_KS_VECT2OFFSET( name, dim, s )
+ *      char * name;
+ *      int    dim;
+ *      int    dims;
+ *      char **s;
+ */
+
+#define ND_KS_VECT2OFFSET
+
+#ifndef TEST_BACKEND
+#include "icm_decl.c"
+#include "icm_args.c"
+#endif /* no TEST_BACKEND */
+
+#include "icm_comment.c"
+#include "icm_trace.c"
+
+#ifdef TEST_BACKEND
+indent += idxlen + 1;
+#endif /* TEST_BACKEND */
+
+fprintf (outfile, "__%s", name);
+{
+    int i;
+    for (i = 0; i < dims; i++) {
+        fprintf (outfile, "_%s", s[i]);
+    }
+    fprintf (outfile, "= ");
+    VectToOffset2 (dim, AccessVect (name, i), dims, AccessConst (s, i));
+    fprintf (outfile, ";\n");
+}
+
+#undef ND_KS_VECT2OFFSET
 
 #ifndef TEST_BACKEND
 DBUG_VOID_RETURN;

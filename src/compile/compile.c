@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.63  1995/09/06 16:13:35  hw
+ * Revision 1.64  1995/10/08 11:22:36  sbs
+ * some bugs fixed
+ *
+ * Revision 1.63  1995/09/06  16:13:35  hw
  * changed compilation of idx_psi
  *
  * Revision 1.62  1995/09/05  15:21:34  hw
@@ -652,7 +655,7 @@ RenameReturn (node *return_node, node *arg_info)
                 assign->node[1] = next_assign;
                 assign->nnode = 2;
                 next_assign = assign;
-                let->IDS = MakeIds (exprs->node[0]->IDS_ID);
+                let->IDS = MakeIds (exprs->node[0]->IDS_ID, NULL, ST_regular);
                 let->IDS_NODE = exprs->node[0]->IDS_NODE;
                 MAKENODE_ID (let->node[0], RenameVar (old_id, i));
                 let->nnode = 1;
@@ -1419,6 +1422,8 @@ CompPrf (node *arg_node, node *arg_info)
             /* here is NO break missing */
 
         case F_take: {
+            node *num;
+
             /* store arguments and result (res contains refcount and pointer to
              * vardec ( don't free arg_info->IDS !!! )
              *
@@ -1439,12 +1444,10 @@ CompPrf (node *arg_node, node *arg_info)
             /* store refcount of res as N_num */
             MAKENODE_NUM (res_ref, arg_info->IDS_REFCNT);
 
+            MAKENODE_NUM (num, 0);
             if (N_id == arg2->nodetype) {
-                node *num;
-
                 GET_DIM (dim, arg2->IDS_NODE->TYPES);
                 MAKENODE_NUM (dim_node, dim); /* store dimension of argument-array */
-                MAKENODE_NUM (num, 0);
                 BIN_ICM_REUSE (arg_info->node[1], "ND_ALLOC_ARRAY", type_id_node, res);
                 MAKE_NEXT_ICM_ARG (icm_arg, num);
                 SET_VARS_FOR_MORE_ICMS;
@@ -1453,6 +1456,8 @@ CompPrf (node *arg_node, node *arg_info)
 
                 MAKENODE_NUM (dim_node, 1); /* store dimension of argument-array */
                 CREATE_TMP_CONST_ARRAY (arg2, res_ref);
+                CREATE_3_ARY_ICM (next_assign, "ND_ALLOC_ARRAY", type_id_node, res, num);
+                APPEND_ASSIGNS (first_assign, next_assign);
             }
 
             if (N_array == arg1->nodetype) {
@@ -1690,7 +1695,7 @@ CompPrf (node *arg_node, node *arg_info)
             FREE (old_arg_node);
             break;
 #endif
-            MAKENODE_NUM (arg2_ref, arg2->IDS_REFCNT);
+            MAKENODE_NUM (arg2_ref, 1);
             MAKENODE_ID_REUSE_IDS (res, arg_info->IDS);
             if (1 == IsArray (arg_info->IDS_NODE->TYPES)) {
                 simpletype s_type;
@@ -2075,8 +2080,10 @@ CompAssign (node *arg_node, node *arg_info)
 
         DBUG_PRINT ("COMP", ("set info->node[0] to :" P_FORMAT " (node[0]:" P_FORMAT,
                              arg_info->node[0], arg_info->node[0]->node[0]));
-        DBUG_ASSERT (N_icm != old_next_assign->node[0]->nodetype, "wrong nodetype"
-                                                                  " N_icm");
+#if 0
+      DBUG_ASSERT(N_icm != old_next_assign->node[0]->nodetype, "wrong nodetype"
+                  " N_icm");
+#endif
         Trav (old_next_assign, arg_info);
     } else
         arg_node->node[0] = Trav (arg_node->node[0], arg_info);
@@ -2521,7 +2528,7 @@ CompWithReturn (node *arg_node, node *arg_info)
          * is stored (as N_prf or as N_ap)
          */
         let->node[0] = arg_info->node[2]->node[2];
-        let->IDS = MakeIds (res->IDS_ID);
+        let->IDS = MakeIds (res->IDS_ID, NULL, ST_regular);
         let->IDS_NODE = res->IDS_NODE;
         let->IDS_REFCNT = 1;
         let->nnode = 1;

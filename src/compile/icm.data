@@ -1,10 +1,13 @@
 /*
  *
  * $Log$
- * Revision 1.21  1995/08/15 14:41:41  hw
- * added ICMs ND_PRF_MODARRAY_AxCxS_CHECK_REUSE, ND_PRF_MODARRAY_AxCxS,
- * ND_PRF_MODARRAY_AxCxA and  ND_PRF_MODARRAY_AxCxA_CHECK_REUSE
+ * Revision 1.22  1995/10/08 11:22:36  sbs
+ * some bugs fixed
  *
+# Revision 1.21  1995/08/15  14:41:41  hw
+# added ICMs ND_PRF_MODARRAY_AxCxS_CHECK_REUSE, ND_PRF_MODARRAY_AxCxS,
+# ND_PRF_MODARRAY_AxCxA and  ND_PRF_MODARRAY_AxCxA_CHECK_REUSE
+#
 # Revision 1.20  1995/07/13  16:35:27  hw
 # - changed N_icm ND_BEGIN_FOLDPRF & ND_BEGIN_FOLDFUN
 #
@@ -359,3 +362,11 @@ ICM_DEF( ND_BEGIN_FOLDFUN, TRACE_WST)
 ICM_END( ND_BEGIN_FOLDFUN )
 #endif
 
+#if defined(ND_KS_VECT2OFFSET) || defined(ICM_ALL)
+ICM_DEF( ND_KS_VECT2OFFSET, TRACE_PRF)
+  ICM_STR( name)
+  ICM_INT( dim)
+  ICM_INT( dims)
+  ICM_VAR( dims, s)
+ICM_END( ND_KS_VECT2OFFSET)
+#endif
