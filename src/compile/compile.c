@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.69  2001/12/17 12:36:51  dkr
+ * code brushed
+ *
  * Revision 3.68  2001/12/13 15:47:56  dkr
  * code brushed
  *
@@ -742,7 +745,7 @@ MakeAdjustRcIcm (char *name, types *type, int rc, int num, node *next)
 /******************************************************************************
  *
  * Function:
- *   node *Ids2IncRcICMs( ids *ids_chain, node *next)
+ *   node *Ids2IncRcIcms( ids *ids_chain, node *next)
  *
  * Description:
  *   Builds a ND_INC_RC( name, rc) icm for each ids in 'ids_chain'.
@@ -751,11 +754,11 @@ MakeAdjustRcIcm (char *name, types *type, int rc, int num, node *next)
  ******************************************************************************/
 
 static node *
-Ids2IncRcICMs (ids *ids_chain, node *next)
+Ids2IncRcIcms (ids *ids_chain, node *next)
 {
     node *assigns = next;
 
-    DBUG_ENTER ("Ids2IncRcICMs");
+    DBUG_ENTER ("Ids2IncRcIcms");
 
     while (ids_chain != NULL) {
         assigns = MakeIncRcIcm (IDS_NAME (ids_chain), IDS_TYPE (ids_chain),
@@ -770,7 +773,7 @@ Ids2IncRcICMs (ids *ids_chain, node *next)
 /******************************************************************************
  *
  * Function:
- *   node *Ids2DecRcICMs( ids *ids_chain, node *next)
+ *   node *Ids2DecRcIcms( ids *ids_chain, node *next)
  *
  * Description:
  *   According to rc and type, builds either
@@ -783,11 +786,11 @@ Ids2IncRcICMs (ids *ids_chain, node *next)
  ******************************************************************************/
 
 static node *
-Ids2DecRcICMs (ids *ids_chain, node *next)
+Ids2DecRcIcms (ids *ids_chain, node *next)
 {
     node *assigns = next;
 
-    DBUG_ENTER ("Ids2DecRcICMs");
+    DBUG_ENTER ("Ids2DecRcIcms");
 
     while (ids_chain != NULL) {
         assigns = MakeDecRcIcm (IDS_NAME (ids_chain), IDS_TYPE (ids_chain),
@@ -802,29 +805,30 @@ Ids2DecRcICMs (ids *ids_chain, node *next)
 /******************************************************************************
  *
  * Function:
- *   node *Ids2AdjustRcICMs( ids *ids_chain, node *next)
+ *   node *MakeAllocArrayIcm( char *name, types *type, int rc, node *next)
  *
  * Description:
- *   According to num, either a ND_INC_RC( varname, num) icm,
- *                       or   no ICM at all,
- *                       or   a ND_DEC_RC_...( varname, -num) icm
- *   is created for each ids in 'ids_chain'.
- *   The given node 'next' is appended to the created assign-chain.
+ *   Builds a ND_ALLOC_ARRAY icm.
+ *   The given node 'next' is appended to the created assignment.
+ *
+ *   CAUTION: Do not use this function in conjunction with a
+ *            'ND_CHECK_REUSE_ARRAY' icm.
+ *            Use 'MakeAllocArrayIcm_reuse()' instead!!
  *
  ******************************************************************************/
 
 static node *
-Ids2AdjustRcICMs (ids *ids_chain, node *next)
+MakeAllocArrayIcm (char *name, types *type, int rc, node *next)
 {
     node *assigns = next;
 
-    DBUG_ENTER ("Ids2AdjustRcICMs");
+    DBUG_ENTER ("MakeAllocArrayIcm");
 
-    while (ids_chain != NULL) {
-        assigns = MakeAdjustRcIcm (IDS_NAME (ids_chain), IDS_TYPE (ids_chain),
-                                   IDS_REFCNT (ids_chain), 1, assigns);
+    DBUG_ASSERT ((RC_IS_LEGAL (rc)), "illegal RC value found!");
 
-        ids_chain = IDS_NEXT (ids_chain);
+    if (RC_IS_ACTIVE (rc)) {
+        assigns = MakeAssignIcm3 ("ND_ALLOC_ARRAY", MakeBasetypeNode (type),
+                                  MakeId_Copy (name), MakeNum (rc), assigns);
     }
 
     DBUG_RETURN (assigns);
@@ -833,7 +837,50 @@ Ids2AdjustRcICMs (ids *ids_chain, node *next)
 /******************************************************************************
  *
  * Function:
- *   node *Ids2AllocArrayICMs( ids *ids_chain, node *next)
+ *   node *MakeAllocArrayIcm_reuse( char *name, types *type, int rc,
+ *                                  node *pragma, node *next)
+ *
+ * Description:
+ *   Builds a ND_ALLOC_ARRAY and a ND_INC_RC icm.
+ *   The extra ND_INC_RC is needed, if there are any ND_CHECK_REUSE_ARRAY
+ *   ICMs above ND_ALLOC_ARRAY !!!
+ *   The given node 'next' is appended to the created assignment.
+ *
+ ******************************************************************************/
+
+static node *
+MakeAllocArrayIcm_reuse (char *name, types *type, int rc, node *pragma, node *next)
+{
+    node *alloc_icm;
+    node *assigns = next;
+
+    DBUG_ENTER ("MakeAllocArrayIcm_reuse");
+
+    DBUG_ASSERT ((RC_IS_LEGAL (rc)), "illegal RC value found!");
+
+    if (RC_IS_ACTIVE (rc)) {
+        if (pragma == NULL) {
+            alloc_icm = MakeIcm3 ("ND_ALLOC_ARRAY", MakeBasetypeNode (type),
+                                  MakeId_Copy (name), MakeNum (0));
+        } else {
+            alloc_icm = MakeIcm6 ("ND_ALLOC_ARRAY_PLACE", MakeBasetypeNode (type),
+                                  MakeId_Copy (name), MakeNum (0),
+                                  DupNode (AP_ARG1 (PRAGMA_APL (pragma))),
+                                  DupNode (AP_ARG2 (PRAGMA_APL (pragma))),
+                                  DupNode (AP_ARG3 (PRAGMA_APL (pragma))));
+        }
+
+        assigns = MakeAssign (alloc_icm, MakeAssignIcm2 ("ND_INC_RC", MakeId_Copy (name),
+                                                         MakeNum (rc), assigns));
+    }
+
+    DBUG_RETURN (assigns);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *Ids2AllocArrayIcms( ids *ids_chain, node *next)
  *
  * Description:
  *   Builds a ND_ALLOC_ARRAY icm for each RC-ids in 'ids_chain'.
@@ -841,26 +888,20 @@ Ids2AdjustRcICMs (ids *ids_chain, node *next)
  *
  *   CAUTION: Do not use this function in conjunction with a
  *            'ND_CHECK_REUSE_ARRAY' icm.
- *            Use 'MakeAllocArrayICMs_reuse()' instead!!
+ *            Use 'Ids2AllocArrayIcms_reuse()' instead!!
  *
  ******************************************************************************/
 
 static node *
-Ids2AllocArrayICMs (ids *ids_chain, node *next)
+Ids2AllocArrayIcms (ids *ids_chain, node *next)
 {
     node *assigns = next;
 
-    DBUG_ENTER ("Ids2AllocArrayICMs");
+    DBUG_ENTER ("Ids2AllocArrayIcms");
 
     while (ids_chain != NULL) {
-        DBUG_ASSERT ((RC_IS_LEGAL (IDS_REFCNT (ids_chain))), "illegal RC value found!");
-
-        if (RC_IS_ACTIVE (IDS_REFCNT (ids_chain))) {
-            assigns
-              = MakeAssignIcm3 ("ND_ALLOC_ARRAY", MakeBasetypeNode (IDS_TYPE (ids_chain)),
-                                DupIds_Id (ids_chain), MakeNum (IDS_REFCNT (ids_chain)),
-                                assigns);
-        }
+        assigns = MakeAllocArrayIcm (IDS_NAME (ids_chain), IDS_TYPE (ids_chain),
+                                     IDS_REFCNT (ids_chain), assigns);
 
         ids_chain = IDS_NEXT (ids_chain);
     }
@@ -871,7 +912,7 @@ Ids2AllocArrayICMs (ids *ids_chain, node *next)
 /******************************************************************************
  *
  * Function:
- *   node *Ids2AllocArrayICMs_reuse( ids *ids_chain, node *pragma, node *next)
+ *   node *Ids2AllocArrayIcms_reuse( ids *ids_chain, node *pragma, node *next)
  *
  * Description:
  *   builds a 'ND_ALLOC_ARRAY, ND_INC_RC' icm for each RC-ids in 'ids_chain':
@@ -885,35 +926,15 @@ Ids2AllocArrayICMs (ids *ids_chain, node *next)
  ******************************************************************************/
 
 static node *
-Ids2AllocArrayICMs_reuse (ids *ids_chain, node *pragma, node *next)
+Ids2AllocArrayIcms_reuse (ids *ids_chain, node *pragma, node *next)
 {
-    node *alloc_icm;
     node *assigns = next;
 
-    DBUG_ENTER ("Ids2AllocArrayICMs_reuse");
+    DBUG_ENTER ("Ids2AllocArrayIcms_reuse");
 
     while (ids_chain != NULL) {
-        DBUG_ASSERT ((RC_IS_LEGAL (IDS_REFCNT (ids_chain))), "illegal RC value found!");
-
-        if (RC_IS_ACTIVE (IDS_REFCNT (ids_chain))) {
-            if (pragma == NULL) {
-                alloc_icm
-                  = MakeIcm3 ("ND_ALLOC_ARRAY", MakeBasetypeNode (IDS_TYPE (ids_chain)),
-                              DupIds_Id (ids_chain), MakeNum (0));
-            } else {
-                alloc_icm = MakeIcm6 ("ND_ALLOC_ARRAY_PLACE",
-                                      MakeBasetypeNode (IDS_TYPE (ids_chain)),
-                                      DupIds_Id (ids_chain), MakeNum (0),
-                                      DupNode (AP_ARG1 (PRAGMA_APL (pragma))),
-                                      DupNode (AP_ARG2 (PRAGMA_APL (pragma))),
-                                      DupNode (AP_ARG3 (PRAGMA_APL (pragma))));
-            }
-
-            assigns
-              = MakeAssign (alloc_icm,
-                            MakeAssignIcm2 ("ND_INC_RC", DupIds_Id (ids_chain),
-                                            MakeNum (IDS_REFCNT (ids_chain)), assigns));
-        }
+        assigns = MakeAllocArrayIcm_reuse (IDS_NAME (ids_chain), IDS_TYPE (ids_chain),
+                                           IDS_REFCNT (ids_chain), pragma, assigns);
 
         ids_chain = IDS_NEXT (ids_chain);
     }
@@ -3800,10 +3821,10 @@ COMPPrfShape (node *arg_node, node *arg_info)
                  "a = shape( a) not allowed!");
 
     ret_node
-      = Ids2AllocArrayICMs (let_ids, MakeAssignIcm3 ("ND_CREATE_CONST_ARRAY_S",
-                                                     DupIds_Id (let_ids),
-                                                     MakeNum (GetDim (ID_TYPE (arg))),
-                                                     Type2Exprs (ID_TYPE (arg)), NULL));
+      = MakeAllocArrayIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids), IDS_REFCNT (let_ids),
+                           MakeAssignIcm3 ("ND_CREATE_CONST_ARRAY_S", DupIds_Id (let_ids),
+                                           MakeNum (GetDim (ID_TYPE (arg))),
+                                           Type2Exprs (ID_TYPE (arg)), NULL));
 
     DBUG_RETURN (ret_node);
 }
@@ -3848,7 +3869,8 @@ COMPPrfReshape (node *arg_node, node *arg_info)
      */
     ret_node = Trav (arg2, arg_info);
 
-    ret_node = Ids2DecRcICMs (ID_IDS (arg1), ret_node);
+    ret_node
+      = MakeDecRcIcm (ID_NAME (arg1), ID_TYPE (arg1), ID_REFCNT (arg1), 1, ret_node);
 
     DBUG_RETURN (ret_node);
 }
@@ -3887,23 +3909,24 @@ COMPPrfArith_SxA (node *arg_node, node *arg_info)
                  "N_id as 2nd arg of F_add/sub/mult/div_SxA expected!");
 
     ret_node
-      = MakeAssignIcm3 ("ND_ALLOC_ARRAY", MakeBasetypeNode (IDS_TYPE (let_ids)),
-                        DupIds_Id (let_ids), MakeNum (0),
-                        MakeAssignIcm4 ("ND_BINOP_SxA_A",
-                                        MakeId_Copy (prf_string[PRF_PRF (arg_node)]),
-                                        DupNode (arg1), DupNode (arg2),
-                                        DupIds_Id (let_ids),
-                                        MakeAdjustRcIcm (IDS_NAME (let_ids),
-                                                         IDS_TYPE (let_ids),
-                                                         IDS_REFCNT (let_ids),
-                                                         IDS_REFCNT (let_ids), NULL)));
+      = MakeAssignIcm4 ("ND_BINOP_SxA_A", MakeId_Copy (prf_string[PRF_PRF (arg_node)]),
+                        DupNode (arg1), DupNode (arg2), DupIds_Id (let_ids),
+                        MakeAdjustRcIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids),
+                                         IDS_REFCNT (let_ids), IDS_REFCNT (let_ids) - 1,
+                                         NULL));
 
     if (ID_REFCNT (arg2) == 1) {
         /*
          * put ND_CHECK_REUSE_ARRAY ICM in front of the ICM chain
          */
-        ret_node = MakeAssignIcm2 ("ND_CHECK_REUSE_ARRAY", DupNode (arg2),
-                                   DupIds_Id (let_ids), ret_node);
+        ret_node
+          = MakeAssignIcm2 ("ND_CHECK_REUSE_ARRAY", DupNode (arg2), DupIds_Id (let_ids),
+                            MakeAllocArrayIcm_reuse (IDS_NAME (let_ids),
+                                                     IDS_TYPE (let_ids), 1, NULL,
+                                                     ret_node));
+    } else {
+        ret_node
+          = MakeAllocArrayIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids), 1, ret_node);
     }
 
     DBUG_RETURN (ret_node);
@@ -3943,23 +3966,24 @@ COMPPrfArith_AxS (node *arg_node, node *arg_info)
                  "No N_array as 2nd arg of F_add/sub/mult/div_AxS expected!");
 
     ret_node
-      = MakeAssignIcm3 ("ND_ALLOC_ARRAY", MakeBasetypeNode (IDS_TYPE (let_ids)),
-                        DupIds_Id (let_ids), MakeNum (0),
-                        MakeAssignIcm4 ("ND_BINOP_AxS_A",
-                                        MakeId_Copy (prf_string[PRF_PRF (arg_node)]),
-                                        DupNode (arg1), DupNode (arg2),
-                                        DupIds_Id (let_ids),
-                                        MakeAdjustRcIcm (IDS_NAME (let_ids),
-                                                         IDS_TYPE (let_ids),
-                                                         IDS_REFCNT (let_ids),
-                                                         IDS_REFCNT (let_ids), NULL)));
+      = MakeAssignIcm4 ("ND_BINOP_AxS_A", MakeId_Copy (prf_string[PRF_PRF (arg_node)]),
+                        DupNode (arg1), DupNode (arg2), DupIds_Id (let_ids),
+                        MakeAdjustRcIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids),
+                                         IDS_REFCNT (let_ids), IDS_REFCNT (let_ids) - 1,
+                                         NULL));
 
     if (ID_REFCNT (arg1) == 1) {
         /*
          * put ND_CHECK_REUSE_ARRAY ICM in front of the ICM chain
          */
-        ret_node = MakeAssignIcm2 ("ND_CHECK_REUSE_ARRAY", DupNode (arg1),
-                                   DupIds_Id (let_ids), ret_node);
+        ret_node
+          = MakeAssignIcm2 ("ND_CHECK_REUSE_ARRAY", DupNode (arg1), DupIds_Id (let_ids),
+                            MakeAllocArrayIcm_reuse (IDS_NAME (let_ids),
+                                                     IDS_TYPE (let_ids), 1, NULL,
+                                                     ret_node));
+    } else {
+        ret_node
+          = MakeAllocArrayIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids), 1, ret_node);
     }
 
     DBUG_RETURN (ret_node);
@@ -3984,6 +4008,7 @@ static node *
 COMPPrfArith_AxA (node *arg_node, node *arg_info)
 {
     node *ret_node;
+    node *tmp_node;
     node *arg1, *arg2;
     ids *let_ids;
 
@@ -3999,31 +4024,34 @@ COMPPrfArith_AxA (node *arg_node, node *arg_info)
                  "N_id as 2st arg of F_add/sub/mult/div_AxA expected.");
 
     ret_node
-      = MakeAssignIcm3 ("ND_ALLOC_ARRAY", MakeBasetypeNode (IDS_TYPE (let_ids)),
-                        DupIds_Id (let_ids), MakeNum (0),
-                        MakeAssignIcm4 ("ND_BINOP_AxA_A",
-                                        MakeId_Copy (prf_string[PRF_PRF (arg_node)]),
-                                        DupNode (arg1), DupNode (arg2),
-                                        DupIds_Id (let_ids),
-                                        MakeAdjustRcIcm (IDS_NAME (let_ids),
-                                                         IDS_TYPE (let_ids),
-                                                         IDS_REFCNT (let_ids),
-                                                         IDS_REFCNT (let_ids), NULL)));
+      = MakeAssignIcm4 ("ND_BINOP_AxA_A", MakeId_Copy (prf_string[PRF_PRF (arg_node)]),
+                        DupNode (arg1), DupNode (arg2), DupIds_Id (let_ids),
+                        MakeAdjustRcIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids),
+                                         IDS_REFCNT (let_ids), IDS_REFCNT (let_ids) - 1,
+                                         NULL));
+    tmp_node = ret_node;
 
-    if (ID_REFCNT (arg2) == 1) {
+    if ((ID_REFCNT (arg2) == 1) || (ID_REFCNT (arg1) == 1)) {
         /*
-         * put ND_CHECK_REUSE_ARRAY ICM in front of the ICM chain
+         * put ND_CHECK_REUSE_ARRAY ICMs in front of the ICM chain
          */
-        ret_node = MakeAssignIcm2 ("ND_CHECK_REUSE_ARRAY", DupNode (arg2),
-                                   DupIds_Id (let_ids), ret_node);
-    }
 
-    if (ID_REFCNT (arg1) == 1) {
-        /*
-         * put ND_CHECK_REUSE_ARRAY ICM in front of the ICM chain
-         */
-        ret_node = MakeAssignIcm2 ("ND_CHECK_REUSE_ARRAY", DupNode (arg1),
-                                   DupIds_Id (let_ids), ret_node);
+        ret_node = MakeAllocArrayIcm_reuse (IDS_NAME (let_ids), IDS_TYPE (let_ids), 1,
+                                            NULL, ret_node);
+
+        if (ID_REFCNT (arg2) == 1) {
+            ret_node = MakeAssignIcm2 ("ND_CHECK_REUSE_ARRAY", DupNode (arg2),
+                                       DupIds_Id (let_ids), ret_node);
+        }
+
+        if (ID_REFCNT (arg1) == 1) {
+            ret_node = MakeAssignIcm2 ("ND_CHECK_REUSE_ARRAY", DupNode (arg1),
+                                       DupIds_Id (let_ids), ret_node);
+        }
+
+    } else {
+        ret_node
+          = MakeAllocArrayIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids), 1, ret_node);
     }
 
     DBUG_RETURN (ret_node);
@@ -4075,10 +4103,11 @@ COMPPrfIdxSel (node *arg_node, node *arg_info)
          * scalar-sel's only.
          */
 
-        ret_node
-          = Ids2AllocArrayICMs (let_ids, MakeAssignIcm3 ("ND_IDX_SEL_A", DupNode (arg1),
-                                                         DupNode (arg2),
-                                                         DupIds_Id (let_ids), NULL));
+        ret_node = MakeAllocArrayIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids),
+                                      IDS_REFCNT (let_ids),
+                                      MakeAssignIcm3 ("ND_IDX_SEL_A", DupNode (arg1),
+                                                      DupNode (arg2), DupIds_Id (let_ids),
+                                                      NULL));
     } else {
         ret_node = MakeAssignIcm3 ("ND_IDX_SEL_S", DupNode (arg1), DupNode (arg2),
                                    DupIds_Id (let_ids), NULL);
@@ -4151,12 +4180,13 @@ COMPPrfIdxModarray (node *arg_node, node *arg_info)
         }
     }
 
-    ret_node = MakeAssignIcm5 (icm_name, MakeBasetypeNode (IDS_TYPE (let_ids)),
-                               DupIds_Id (let_ids), DupNode (arg1), DupNode (arg2),
-                               DupNode (arg3),
-                               MakeAdjustRcIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids),
-                                                IDS_REFCNT (let_ids),
-                                                IDS_REFCNT (let_ids), NULL));
+    ret_node
+      = MakeAssignIcm5 (icm_name, MakeBasetypeNode (IDS_TYPE (let_ids)),
+                        DupIds_Id (let_ids), DupNode (arg1), DupNode (arg2),
+                        DupNode (arg3),
+                        MakeAdjustRcIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids), /* !!! */
+                                         IDS_REFCNT (let_ids), IDS_REFCNT (let_ids),
+                                         NULL));
 
     DBUG_RETURN (ret_node);
 }
@@ -4232,7 +4262,8 @@ COMPPrfSel (node *arg_node, node *arg_info)
                                 DupTree (ARRAY_AELEMS (arg1)), NULL);
         }
 
-        ret_node = Ids2AllocArrayICMs (let_ids, icm_node);
+        ret_node = MakeAllocArrayIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids),
+                                      IDS_REFCNT (let_ids), icm_node);
     }
 
     DBUG_RETURN (ret_node);
@@ -4291,7 +4322,7 @@ COMPPrfModarray (node *arg_node, node *arg_info)
     /* dimension of result */
     res_dim = MakeNum (GetDim (IDS_TYPE (let_ids)));
 
-    icm_node = MakeAdjustRcIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids),
+    icm_node = MakeAdjustRcIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids), /* !!! */
                                 IDS_REFCNT (let_ids), IDS_REFCNT (let_ids), NULL);
 
     if (NODE_TYPE (arg2) == N_array) {
@@ -4470,8 +4501,10 @@ COMPPrfConvertArr (node *arg_node, node *arg_info)
         break;
     }
 
-    ret_node = Ids2AllocArrayICMs (let_ids, MakeAssignIcm2 (icm_name, DupNode (arg),
-                                                            DupIds_Id (let_ids), NULL));
+    ret_node
+      = MakeAllocArrayIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids), IDS_REFCNT (let_ids),
+                           MakeAssignIcm2 (icm_name, DupNode (arg), DupIds_Id (let_ids),
+                                           NULL));
 
     DBUG_RETURN (ret_node);
 }
@@ -4531,12 +4564,12 @@ COMPPrfTakeDrop (node *arg_node, node *arg_info)
     n_elems = ID_VECLEN (arg1);
 
     ret_node
-      = Ids2AllocArrayICMs (let_ids,
-                            MakeAssignIcm5 (icm_name, MakeNum (GetDim (ID_TYPE (arg2))),
-                                            DupNode (arg2), DupIds_Id (let_ids),
-                                            MakeNum (n_elems),
-                                            IntVec2Array (n_elems, ID_CONSTVEC (arg1)),
-                                            NULL));
+      = MakeAllocArrayIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids), IDS_REFCNT (let_ids),
+                           MakeAssignIcm5 (icm_name, MakeNum (GetDim (ID_TYPE (arg2))),
+                                           DupNode (arg2), DupIds_Id (let_ids),
+                                           MakeNum (n_elems),
+                                           IntVec2Array (n_elems, ID_CONSTVEC (arg1)),
+                                           NULL));
 
     DBUG_RETURN (ret_node);
 }
@@ -4581,11 +4614,11 @@ COMPPrfCat (node *arg_node, node *arg_info)
                  "a = cat( ., ., a) not allowed!");
 
     ret_node
-      = Ids2AllocArrayICMs (let_ids,
-                            MakeAssignIcm5 ("ND_KD_CAT_SxAxA_A",
-                                            MakeNum (GetDim (ID_TYPE (arg2))),
-                                            DupNode (arg2), DupNode (arg3),
-                                            DupIds_Id (let_ids), DupNode (arg1), NULL));
+      = MakeAllocArrayIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids), IDS_REFCNT (let_ids),
+                           MakeAssignIcm5 ("ND_KD_CAT_SxAxA_A",
+                                           MakeNum (GetDim (ID_TYPE (arg2))),
+                                           DupNode (arg2), DupNode (arg3),
+                                           DupIds_Id (let_ids), DupNode (arg1), NULL));
 
     DBUG_RETURN (ret_node);
 }
@@ -4629,11 +4662,11 @@ COMPPrfRotate (node *arg_node, node *arg_info)
                  "a = rotate( ., ., a) not allowed!");
 
     ret_node
-      = Ids2AllocArrayICMs (let_ids,
-                            MakeAssignIcm5 ("ND_KD_ROT_CxSxA_A", DupNode (arg1),
-                                            DupNode (arg2),
-                                            MakeNum (GetDim (ID_TYPE (arg3))),
-                                            DupNode (arg3), DupIds_Id (let_ids), NULL));
+      = MakeAllocArrayIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids), IDS_REFCNT (let_ids),
+                           MakeAssignIcm5 ("ND_KD_ROT_CxSxA_A", DupNode (arg1),
+                                           DupNode (arg2),
+                                           MakeNum (GetDim (ID_TYPE (arg3))),
+                                           DupNode (arg3), DupIds_Id (let_ids), NULL));
 
     DBUG_RETURN (ret_node);
 }
@@ -4939,7 +4972,7 @@ COMPIdToClass (node *arg_node, node *arg_info)
 {
     ids *let_ids;
     types *rhs_type;
-    node *ret_node;
+    node *ret_node = NULL;
 
     DBUG_ENTER ("COMPIdToClass");
 
@@ -5111,7 +5144,8 @@ COMPArray (node *arg_node, node *arg_info)
         }
     }
 
-    ret_node = Ids2AllocArrayICMs (let_ids, icm_node);
+    ret_node = MakeAllocArrayIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids),
+                                  IDS_REFCNT (let_ids), icm_node);
 
     DBUG_RETURN (ret_node);
 }
@@ -5388,12 +5422,12 @@ COMPCond (node *arg_node, node *arg_info)
 
     if (COND_THENVARS (arg_node) != NULL) {
         BLOCK_INSTR (COND_THEN (arg_node))
-          = Ids2DecRcICMs (COND_THENVARS (arg_node), BLOCK_INSTR (COND_THEN (arg_node)));
+          = Ids2DecRcIcms (COND_THENVARS (arg_node), BLOCK_INSTR (COND_THEN (arg_node)));
     }
 
     if (COND_ELSEVARS (arg_node) != NULL) {
         BLOCK_INSTR (COND_ELSE (arg_node))
-          = Ids2DecRcICMs (COND_ELSEVARS (arg_node), BLOCK_INSTR (COND_ELSE (arg_node)));
+          = Ids2DecRcIcms (COND_ELSEVARS (arg_node), BLOCK_INSTR (COND_ELSE (arg_node)));
     }
 
     DBUG_RETURN (arg_node);
@@ -5921,7 +5955,7 @@ COMPWith2 (node *arg_node, node *arg_info)
          * 'ND_ALLOC_ARRAY'
          */
         assigns = AppendAssign (assigns,
-                                Ids2AllocArrayICMs_reuse (wlids, NWITH2_PRAGMA (arg_node),
+                                Ids2AllocArrayIcms_reuse (wlids, NWITH2_PRAGMA (arg_node),
                                                           NULL));
     } else {
         /*
@@ -5951,7 +5985,7 @@ COMPWith2 (node *arg_node, node *arg_info)
      */
     if (RC_IS_VITAL (IDS_REFCNT (NWITH2_VEC (arg_node)))) {
         assigns
-          = AppendAssign (assigns, Ids2AllocArrayICMs (NWITH2_VEC (arg_node), NULL));
+          = AppendAssign (assigns, Ids2AllocArrayIcms (NWITH2_VEC (arg_node), NULL));
     }
 
     /*
@@ -6071,14 +6105,12 @@ COMPWith2 (node *arg_node, node *arg_info)
     /*
      * insert ICMs for memory management ('DEC_RC_FREE')
      */
-    assigns = AppendAssign (assigns, Ids2DecRcICMs (NWITH2_DEC_RC_IDS (arg_node), NULL));
+    assigns = AppendAssign (assigns, Ids2DecRcIcms (NWITH2_DEC_RC_IDS (arg_node), NULL));
 
     /*
      * insert 'DEC_RC_FREE'-ICM for index-vector
      */
-    if (RC_IS_VITAL (IDS_REFCNT (NWITH2_VEC (arg_node)))) {
-        assigns = AppendAssign (assigns, Ids2DecRcICMs (NWITH2_VEC (arg_node), NULL));
-    }
+    assigns = AppendAssign (assigns, Ids2DecRcIcms (NWITH2_VEC (arg_node), NULL));
 
     /*
      * pop 'wlids', 'wlnode'
@@ -6770,7 +6802,7 @@ COMPWLcode (node *arg_node, node *arg_info)
     /*
      * build a 'ND_INC_RC'-ICM for each ids in 'NCODE_INC_RC_IDS( arg_node)'.
      */
-    icm_assigns = Ids2IncRcICMs (NCODE_INC_RC_IDS (arg_node), NULL);
+    icm_assigns = Ids2IncRcIcms (NCODE_INC_RC_IDS (arg_node), NULL);
 
     if (icm_assigns != NULL) {
         /*
