@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.6  1994/12/02 12:38:35  sbs
+ * Revision 1.7  1994/12/08 17:55:18  hw
+ * put silent into Error.c
+ * added output for niumber of errors and number of warnings
+ *
+ * Revision 1.6  1994/12/02  12:38:35  sbs
  * Options -pfts revised/ prgname inserted
  *
  * Revision 1.5  1994/12/01  17:36:18  hw
@@ -47,11 +51,11 @@ MAIN
 {
     int set_outfile = 0;
     int breakparse = 0, breakflatten = 0, breaktype = 0;
-    int silent = 0;
     char prgname[256];
     char filename[256];
     char outfilename[128] = "out.txt";
     char *paths, *path;
+    char message[80];
 
     strcpy (prgname, argv[0]);
 
@@ -124,7 +128,8 @@ MAIN
         if (!breakflatten) {
             NOTE ("Typechecking: ...");
             Typecheck (syntax_tree);
-            NOTE ("0 Errors\n");
+            sprintf (message, "%d Warnings, %d Errors \n", warnings, errors);
+            NOTE (message);
             if (!breaktype) {
                 /*  GenCCode(); */
             }
