@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.18  1999/01/07 10:50:49  cg
+ * Fold functions are always written to the SIB including there bodies.
+ *
  * Revision 1.17  1998/06/05 15:27:49  cg
  * global variable mod_name_con and macros MOD_NAME_CON MOD MOD_NAME MOD_CON removed
  * Now, module name and symbol name are combined correctly by ':'.
@@ -328,7 +331,7 @@ StoreExportNodes (nodelist *inserts, node *info)
  *
  *  remarks       : Main difference to PrintFloat from print.c is that the
  *                  constant is always followed by an "F" to mark it as
- *                  a float constant. The is necessary for a later handling
+ *                  a float constant. This is necessary for a later handling
  *                  by the typechecker.
  *
  */
@@ -402,7 +405,8 @@ AddImplicitItems (node *info, node *all_types)
         StoreExportNodes (FUNDEF_NEEDOBJS (fundef), info);
 
         if ((FUNDEF_BODY (fundef) != NULL)
-            && (FUNDEF_INLINE (fundef) || (FUNDEF_ATTRIB (fundef) == ST_independent))) {
+            && (FUNDEF_INLINE (fundef) || (FUNDEF_ATTRIB (fundef) == ST_independent)
+                || (FUNDEF_STATUS (fundef) == ST_foldfun))) {
             StoreExportNodes (FUNDEF_NEEDTYPES (NODELIST_NODE (tmp)), info);
             StoreExportNodes (FUNDEF_NEEDFUNS (NODELIST_NODE (tmp)), info);
         }
@@ -845,7 +849,8 @@ PrintSibFuns (FILE *sibfile, nodelist *fundeflist, char *modname)
 
         PrintFunctionHeader (fundef, fundef);
 
-        if ((FUNDEF_INLINE (fundef)) || (FUNDEF_ATTRIB (fundef) == ST_independent)) {
+        if ((FUNDEF_INLINE (fundef)) || (FUNDEF_ATTRIB (fundef) == ST_independent)
+            || (FUNDEF_STATUS (fundef) == ST_foldfun)) {
             fprintf (sibfile, "\n");
             info = MakeInfo ();
             Trav (FUNDEF_BODY (fundef), info);
