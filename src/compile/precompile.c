@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2001/03/26 15:04:58  dkr
+ * some comments modified
+ *
  * Revision 3.15  2001/03/22 19:44:52  dkr
  * precompile.h now include once
  *
@@ -599,10 +602,7 @@ PREC1let (node *arg_node, node *arg_info)
  *   node *PREC1with2(node *arg_node, node *arg_info)
  *
  * description:
- *   The compiler phase refcount unfortunately produces chains of identifiers
- *   for which refcounting operations must be inserted during code generation.
- *   These must be renamed in addition to those identifiers that are "really"
- *   part of the code.
+ *
  *
  ******************************************************************************/
 
@@ -697,7 +697,7 @@ PREC1withop (node *arg_node, node *arg_info)
  *   node *PREC1code( node *arg_node, node *arg_info)
  *
  * Description:
- *   New, unique and adjusted pseudo fold-funs are created.
+ *   Checks whether all NCODE_CEXPR nodes have identical names.
  *
  ******************************************************************************/
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.60  2001/03/26 15:03:44  dkr
+ * some comments modified
+ *
  * Revision 3.59  2001/03/26 10:46:03  nmw
  * INFO_SSACF_ macros added
  *
@@ -610,12 +613,9 @@ extern DFMfoldmask_t *CopyDFMfoldmask (DFMfoldmask_t *mask);
  ***
  ***  temporary attributes:
  ***
- ***    node*      DECL      (O)  (N_moddec, N_classdec)  (check-dec -> )
- ***                                                      ( -> write-SIB !!)
- ***    node*      STORE_IMPORTS (O) (N_implist)          (import -> )
- ***                                                      ( -> checkdec !!)
- ***    node*      FOLDFUNS  (O)  (N_fundef)              (compile -> )
- ***
+ ***    node*  DECL          (N_moddec, N_classdec)  (check-dec -> write-SIB !!)
+ ***    node*  STORE_IMPORTS (N_implist)             (import -> checkdec !!)
+ ***    node*  FOLDFUNS      (N_fundef)              (compile -> )
  ***/
 
 /*
@@ -3098,18 +3098,18 @@ extern node *MakeMTalloc ();
  ***
  ***  temporary attributes:
  ***
- ***    node*      PRAGMA     (N_pragma)  (scanparse -> wltransform !!)
- ***    int        REFERENCED             (wlt -> wlf !!)
- ***    int        REFERENCED_FOLD        (wlt -> wlf !!)
- ***    int        REFERENCES_FOLDED      (wlt -> wlf !!)
- ***    bool       FOLDABLE               (wlt -> wlf !!)
- ***    bool       NO_CHANCE              (wlt -> wlf !!)
- ***    ids*       DEC_RC_IDS             (refcount -> wltransform !!)
- ***    node*      TSI                    (tile size inference -> )
+ ***    node*      PRAGMA     (N_pragma) (scanparse -> wltransform !!)
+ ***    int        REFERENCED            (wlt -> wlf !!)
+ ***    int        REFERENCED_FOLD       (wlt -> wlf !!)
+ ***    int        REFERENCES_FOLDED     (wlt -> wlf !!)
+ ***    bool       FOLDABLE              (wlt -> wlf !!)
+ ***    bool       NO_CHANCE             (wlt -> wlf !!)
+ ***    ids*       DEC_RC_IDS            (refcount -> wltransform !!)
+ ***    node*      TSI                   (tile size inference -> )
  ***
- ***    DFMmask_t  IN_MASK                (infer_dfms -> lac2fun -> wltransform !!)
- ***    DFMmask_t  OUT_MASK               (infer_dfms -> lac2fun -> wltransform !!)
- ***    DFMmask_t  LOCAL_MASK             (infer_dfms -> lac2fun -> wltransform !!)
+ ***    DFMmask_t  IN_MASK            (infer_dfms -> lac2fun -> wltransform !!)
+ ***    DFMmask_t  OUT_MASK           (infer_dfms -> lac2fun -> wltransform !!)
+ ***    DFMmask_t  LOCAL_MASK         (infer_dfms -> lac2fun -> wltransform !!)
  ***/
 
 extern node *MakeNWith (node *part, node *code, node *withop);
@@ -3230,27 +3230,27 @@ extern node *MakeNGenerator (node *bound1, node *bound2, prf op1, prf op2, node 
  ***  the meaning of the sons/attributes of this node depend on WithOpType.
  ***
  ***  sons:
- ***    node*  SHAPE      ("N_expr": N_array, N_id) (iff WithOpType == WO_genarray)
- ***    node*  ARRAY      ("N_expr": N_array, N_id) (iff WithOpType == WO_modarray)
- ***    node*  NEUTRAL    ("N_expr")                (otherwise )
+ ***    node*  SHAPE     ("N_expr": N_array, N_id)  (iff TYPE == WO_genarray)
+ ***    node*  ARRAY     ("N_expr": N_array, N_id)  (iff TYPE == WO_modarray)
+ ***    node*  NEUTRAL   ("N_expr")                 (otherwise)
  ***
  ***  permanent attributes:
  ***
  ***    WithOpType TYPE
- ***    char*      FUN         (iff WithOpType == WO_foldfun)
- ***    char*      MOD         (iff WithOpType == WO_foldfun)
- ***    prf        PRF         (iff WithOpType == WO_foldprf)
+ ***    char*      FUN                              (iff TYPE == WO_foldfun)
+ ***    char*      MOD                              (iff TYPE == WO_foldfun)
+ ***    prf        PRF                              (iff TYPE == WO_foldprf)
  ***
  ***  temporary attributes:
  ***
- ***    node*  EXPR            (scanparse, NULL afterwards)
- ***    node*  FUNDEF          (N_fundef)  (typecheck -> precompile -> compile )
- ***    long*  MASK                        (optimize -> )
+ ***    node*  EXPR                  (scanparse !!)
+ ***    node*  FUNDEF    (N_fundef)  (typecheck -> precompile -> compile )
+ ***    long*  MASK                  (optimize -> )
  ***
  ***  remarks:
  ***
- ***    - WithOpType is WO_genarray, WO_modarray, WO_foldfun, WO_foldprf.
- ***    - FUNDEF-node is used if (TYPE == WO_foldfun, WO_foldprf).
+ ***    - TYPE is WO_genarray, WO_modarray, WO_foldfun, WO_foldprf.
+ ***    - FUNDEF is used if (TYPE == WO_foldfun, WO_foldprf).
  ***/
 
 extern node *MakeNWithOp (WithOpType WithOp);
@@ -3372,18 +3372,18 @@ extern node *MakeNCode (node *block, node *expr);
  ***
  ***  temporary attributes:
  ***
- ***    DFMmask_t  IN_MASK                  (infer_dfms -> lac2fun -> refcount -> )
- ***    DFMmask_t  OUT_MASK                 (infer_dfms -> lac2fun -> refcount -> )
- ***    DFMmask_t  LOCAL_MASK               (infer_dfms -> lac2fun -> refcount -> )
+ ***    DFMmask_t  IN_MASK               (infer_dfms -> lac2fun -> refcount -> )
+ ***    DFMmask_t  OUT_MASK              (infer_dfms -> lac2fun -> refcount -> )
+ ***    DFMmask_t  LOCAL_MASK            (infer_dfms -> lac2fun -> refcount -> )
  ***
- ***    DFMmask_t  REUSE                    (ReuseWithArrays -> compile !!)
+ ***    DFMmask_t  REUSE                 (ReuseWithArrays -> compile !!)
  ***
- ***    ids*       DEC_RC_IDS               (wltransform -> compile )
+ ***    ids*       DEC_RC_IDS            (wltransform -> compile )
  ***
- ***    bool       OFFSET_NEEDED            (wltransform -> compile )
+ ***    bool       OFFSET_NEEDED         (wltransform -> compile )
  ***
- ***    SCHsched_t SCHEDULING   (O)         (wltransform -> compile )
- ***    bool       ISSCHEDULED              (new_mt -> ...)
+ ***    SCHsched_t SCHEDULING   (O)      (wltransform -> compile )
+ ***    bool       ISSCHEDULED           (new_mt -> ...)
  ***                            [Signals whether any segment is scheduled or not]
  ***/
 
