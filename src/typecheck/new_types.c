@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.76  2004/11/27 01:49:24  khf
+ * adjusted function names
+ *
  * Revision 3.75  2004/11/27 01:19:14  sbs
  * *** empty log message ***
  *
@@ -2396,7 +2399,7 @@ DFT_state2dft_res (dft_state *state)
 /******************************************************************************
  *
  * function:
- *   ntype * TYDispatchFunType( ntype *fun, ntype *args)
+ *   ntype * TYdispatchFunType( ntype *fun, ntype *args)
  *
  * description:
  *
@@ -2560,7 +2563,7 @@ DebugPrintDFT_state (dft_state *state)
 #endif /* DBUG_OFF */
 
 dft_res *
-TYDispatchFunType (ntype *fun, ntype *args)
+TYdispatchFunType (ntype *fun, ntype *args)
 {
     int lower;
     int i, n;
