@@ -1,8 +1,8 @@
 /*
  *
  * $Log$
- * Revision 1.5  1994/12/14 10:15:51  sbs
- * T_user inserted
+ * Revision 1.6  1994/12/14 10:48:25  asi
+ * T_unknown added
  *
  * Revision 1.4  1994/12/01  17:43:43  hw
  * inserted struct NODE *node; to typedef struct IDS
@@ -35,7 +35,7 @@ typedef struct NUMS {
  *  now, the nodes generated from lex/yacc
  */
 
-typedef enum { T_user, T_int, T_float, T_bool } simpletype;
+typedef enum { T_int, T_float, T_bool, T_unknown } simpletype;
 typedef enum { A_let, A_sel, A_for, A_ret } assigntype;
 typedef enum { E_int, E_float, E_bool, E_prf, E_id, E_ap, E_with, E_sel } exprtype;
 typedef enum { L_for, L_do, L_while } looptype;
