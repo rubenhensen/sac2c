@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.19  1999/06/02 09:46:31  jhs
+ * Fixed a bug in FltnArray occuring when a constant array was nested
+ * somehow in a non-constant one (e.g. in a primitive function) and the
+ * values needed for infering were overwritten.
+ *
  * Revision 2.18  1999/05/14 10:36:53  jhs
  * Corrected little Bug in FltnNwithop, Bug was inserted while changeing
  * Annotation to AnnotateIdWithConstVec.
@@ -849,7 +854,11 @@ FltnLet (node *arg_node, node *arg_info)
 node *
 FltnArray (node *arg_node, node *arg_info)
 {
-    contextflag old_ctxt;
+    contextflag old_context;
+    int old_isconst;
+    simpletype old_vectype;
+    int old_veclen;
+    void *old_constvec;
 
     DBUG_ENTER ("FltnArray");
 
@@ -858,8 +867,8 @@ FltnArray (node *arg_node, node *arg_info)
      * to use the info-node mechanism to find out whether it is constant....
      * Instead, we can directly set the attributes correctly.
      * Only ARRAY_VECTYPE is not known here; therefore, it is set to the
-     * dummy value T_nothing. This will be straightened during type checking
-     * ?!? ( I hope...)
+     * dummy value T_nothing. This will be straightened during type checking.
+     * T_nothin on the right hand side has to be casted or an arror will occur.
      */
     if (ARRAY_AELEMS (arg_node) == NULL) {
         ARRAY_ISCONST (arg_node) = TRUE;
@@ -869,12 +878,19 @@ FltnArray (node *arg_node, node *arg_info)
     } else {
 
         /*
-         * the array is not empty; so we have to traverse it and - while
-         * doing so - collect infos whether the array is constant in the info_node.
+         *  The array is not empty; so we have to traverse it and - while
+         *  doing so - collect infos whether the array is constant in the info_node.
+         *
+         *  During the following traversal some values of arg_info will be changed,
+         *  so we need to save the actual values here, so they can be restored later.
          */
-        old_ctxt = INFO_FLTN_CONTEXT (arg_info);
-        INFO_FLTN_CONTEXT (arg_info) = CT_array;
+        old_context = INFO_FLTN_CONTEXT (arg_info);
+        old_isconst = INFO_FLTN_ISCONST (arg_info);
+        old_vectype = INFO_FLTN_VECTYPE (arg_info);
+        old_veclen = INFO_FLTN_VECLEN (arg_info);
+        old_constvec = INFO_FLTN_CONSTVEC (arg_info);
 
+        INFO_FLTN_CONTEXT (arg_info) = CT_array;
         INFO_FLTN_ISCONST (arg_info) = FALSE;
         INFO_FLTN_VECTYPE (arg_info) = T_nothing; /* T_unknown would indicate
                                                    * non-constant components!
@@ -889,8 +905,14 @@ FltnArray (node *arg_node, node *arg_info)
         ARRAY_VECTYPE (arg_node) = INFO_FLTN_VECTYPE (arg_info);
         ARRAY_CONSTVEC (arg_node) = INFO_FLTN_CONSTVEC (arg_info);
 
-        INFO_FLTN_CONSTVEC (arg_info) = NULL;
-        INFO_FLTN_CONTEXT (arg_info) = old_ctxt;
+        /*
+         *  As mentioned above, the values are restored now.
+         */
+        INFO_FLTN_CONTEXT (arg_info) = old_context;
+        INFO_FLTN_ISCONST (arg_info) = old_isconst;
+        INFO_FLTN_VECTYPE (arg_info) = old_vectype;
+        INFO_FLTN_VECLEN (arg_info) = old_veclen;
+        INFO_FLTN_CONSTVEC (arg_info) = old_constvec;
     }
 
     DBUG_RETURN (arg_node);
