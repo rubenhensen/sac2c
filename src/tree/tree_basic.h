@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.220  2004/08/30 14:26:58  skt
+ * changed NWITH2_ISSCHEDULED into NWITH2_CALCPARALLEL
+ *
  * Revision 3.219  2004/08/26 15:02:08  khf
  * new macros ASSIGN_VISITED_WITH, ASSIGN_TAG, NWITH_DEPENDENT,
  * NWITH_FUSIONABLE_WL, NWITH_REFERENCES_FUSIONABLE added
@@ -4135,8 +4138,8 @@ extern node *MakeNCode (node *block, node *exprs);
  ***
  ***    bool       OFFSET_NEEDED        (wltransform -> compile -> )
  ***
- ***    bool       ISSCHEDULED          (new_mt -> ...)
- ***                          [is segment scheduled or not?]
+ ***    bool       CALCPARALLEL         (multithread -> ...)
+ ***                             [is withloop calculated parallel?]
  ***/
 
 extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int dims);
@@ -4151,12 +4154,13 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int 
 
 #define NWITH2_DEC_RC_IDS(n) ((ids *)((n)->node[5]))
 #define NWITH2_OFFSET_NEEDED(n) ((bool)((n)->int_data))
-#define NWITH2_ISSCHEDULED(n) ((n)->info.prf_dec.tag)
+/*#define NWITH2_ISSCHEDULED(n)              ((n)->info.prf_dec.tag)*/
 
 #define NWITH2_IN_MASK(n) ((n)->dfmask[0])
 #define NWITH2_OUT_MASK(n) ((n)->dfmask[1])
 #define NWITH2_LOCAL_MASK(n) ((n)->dfmask[2])
 #define NWITH2_REUSE(n) ((n)->dfmask[3])
+#define NWITH2_CALCPARALLEL(n) ((bool)((n)->lineno))
 
 /*--------------------------------------------------------------------------*/
 

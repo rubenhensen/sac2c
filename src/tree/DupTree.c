@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.100  2004/08/30 14:26:58  skt
+ * changed NWITH2_ISSCHEDULED into NWITH2_CALCPARALLEL
+ *
  * Revision 3.99  2004/08/13 16:26:47  khf
  * added duplication of NWITHOP_OFFSET_NEEDED
  *
@@ -2221,7 +2224,7 @@ DupNwith2 (node *arg_node, info *arg_info)
     NWITH2_OUT_MASK (new_node) = DupDFMask_ (NWITH2_OUT_MASK (arg_node), arg_info);
     NWITH2_LOCAL_MASK (new_node) = DupDFMask_ (NWITH2_LOCAL_MASK (arg_node), arg_info);
 
-    NWITH2_ISSCHEDULED (new_node) = NWITH2_ISSCHEDULED (arg_node);
+    NWITH2_CALCPARALLEL (new_node) = NWITH2_CALCPARALLEL (arg_node);
 
     CopyCommonNodeData (new_node, arg_node);
 

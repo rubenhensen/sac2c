@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.98  2004/08/30 14:26:58  skt
+ * changed NWITH2_ISSCHEDULED into NWITH2_CALCPARALLEL
+ *
  * Revision 3.97  2004/08/18 12:54:21  skt
  * MakeDataflownode improved
  *
@@ -2026,7 +2029,7 @@ MakeNWith2 (node *withid, node *seg, node *code, node *withop, int dims)
     NWITH2_CODE (tmp) = code;
     NWITH2_WITHOP (tmp) = withop;
     NWITH2_DIMS (tmp) = dims;
-    NWITH2_ISSCHEDULED (tmp) = FALSE;
+    NWITH2_CALCPARALLEL (tmp) = FALSE;
 
     DBUG_RETURN (tmp);
 }
