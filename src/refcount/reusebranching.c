@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2004/11/25 18:04:36  jhb
+ * INFDFMSdoInterInDFMAssignChain changed to INFDFMSdoInterInDfmAssignChain
+ *
  * Revision 1.9  2004/11/24 14:06:43  ktr
  * MakeLet permutation.
  *
@@ -543,7 +546,7 @@ EMRBassign (node *arg_node, info *arg_info)
          * Determine in parameters of the assignment
          */
         lut = LUTgenerateLut ();
-        inmask = INFDFMSdoInferInDFMAssignChain (arg_node, INFO_RB_FUNDEF (arg_info));
+        inmask = INFDFMSdoInferInDfmAssignChain (arg_node, INFO_RB_FUNDEF (arg_info));
 
         newass = BuildCondTree (arg_node, INFO_RB_BRANCHES (arg_info),
                                 INFO_RB_MEMVARS (arg_info), INFO_RB_FUNDEF (arg_info),
