@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2001/04/30 12:26:30  nmw
+ * COCv2CvHidden added
+ *
  * Revision 3.5  2001/04/04 09:59:06  nmw
  * missing convert functions for basetype char added
  *
@@ -180,7 +183,7 @@ TYP_IF (T_unknown, "unknown", "_unknown_", "", COCv2ScalarDummy, COCv2CvDummy,
   TYP_IF (T_char, "char", "char", "c", COCv2Char, COCv2CvChar, COCv2StrChar,
           sizeof (char), COZipCvDummy, unused, unused, unused),
 
-  TYP_IF (T_hidden, "hidden", "_hidden_", "h", COCv2ScalarDummy, COCv2CvDummy,
+  TYP_IF (T_hidden, "hidden", "_hidden_", "h", COCv2ScalarDummy, COCv2CvHidden,
           COCv2StrDummy, sizeof (void *), COZipCvDummy, unused, unused, unused),
 
   TYP_IF (T_void, "void", "void", "v", COCv2ScalarDummy, COCv2CvDummy, COCv2StrDummy, 0,
