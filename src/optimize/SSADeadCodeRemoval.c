@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  2001/04/30 12:06:37  nmw
+ * count eliminated arrays for ArrayElimination statistic
+ *
  * Revision 1.13  2001/04/18 12:55:42  nmw
  * debug output for OPT traversal added
  *
@@ -323,11 +326,16 @@ SSADCRvardec (node *arg_node, node *arg_info)
 
     /* process vardec and remove it, if dead code */
     if (AVIS_NEEDCOUNT (VARDEC_AVIS (arg_node)) == SSADCR_NOTNEEDED) {
+
+        /* count eliminated arrays from ArrayElimination */
+        if (VARDEC_FLAG (arg_node))
+            elim_arrays++;
+        dead_var++;
+
         DBUG_PRINT ("SSADCR", ("remove unused vardec %s", VARDEC_NAME (arg_node)));
         tmp = arg_node;
         arg_node = VARDEC_NEXT (arg_node);
         FreeNode (tmp);
-        dead_var++;
     }
 
     DBUG_RETURN (arg_node);
