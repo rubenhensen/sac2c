@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.66  1998/06/02 17:08:03  sbs
+ * CF now eliminates F-reshape-calls
+ * (short & dirty hack in ArrayPrf!)
+ *
  * Revision 1.65  1998/05/13 12:06:52  srs
  * enhanced Elemination of F_psi in ArrayPrf()
  *
@@ -1946,6 +1950,23 @@ ArrayPrf (node *arg_node, node *arg_info)
         }
         break; /* shape */
 
+    /***********************/
+    /* Fold reshape-function */
+    /***********************/
+    case F_reshape:
+        /*
+         * we want to eliminate reshape-calls here since they hinder CF
+         * in many situations, e.g. when accessing constant arrays
+         * that are defined by reshape....
+         */
+        arg_node = arg[1];
+        /*
+         * Now, we should (!!!) free the N_prf-node and its first arg...
+         * Unfortunately, we did not yet implement it 8-(
+         */
+
+        break;
+
         /***********************/
         /* Fold dim-function   */
         /***********************/
@@ -2012,36 +2033,30 @@ ArrayPrf (node *arg_node, node *arg_info)
         DBUG_ASSERT (N_array == NODE_TYPE (shape), "Shape-vector for psi not an array");
 
         /*
+         * Here, we know that the first arg of F_psi indeed is a
+         * constant array and we know that shape points to that
+         * N_array-node.
+         */
+        /*
          * Substitute array
          */
-#if 0
-	if (N_id==NODE_TYPE(arg[1])) {
-          array_type = ID_TYPE(arg[1]);
-          MRD_GETDATA(array, ID_VARNO(arg[1]), INFO_VARNO);
-          if (!array || N_array != NODE_TYPE(array))
-            break;
-        }
-	else {
-          DBUG_ASSERT(N_array == NODE_TYPE(arg[1]), "N_array expected");
-          array_type = ARRAY_TYPE(arg[1]);
-          array = arg[1];
-        }
-     
-	/* Arrays like [a,...] with a = [...] cannot be folded til now */
-	first_elem = EXPRS_EXPR(ARRAY_AELEMS(array));
-	if (N_id == NODE_TYPE(first_elem)) {
-          GET_DIM(dim, VARDEC_TYPE(ID_VARDEC(first_elem)));
-          if (0 != dim) {
-            break;
-            /* make array flat here !!! */
-          }
-        }
-
-	res_array = CalcPsi(shape, array, array_type, arg_info);
-#endif
-        /* srs: new part to enable folding arrays that are modified with
-           prf modarray. Only a special case is implemented here to
-           support WL-unrolling. */
+        /* srs: part to enable folding arrays that are modified with
+         * prf modarray.
+         * NOTE here, that this is NOT identical to CF for F_modarray
+         * itself!!
+         * Example:
+         *   A = unknown;
+         *   A = modarray( A, c1, val);
+         *      .... A[ c1] ....
+         *
+         *   is optimized to:
+         *   A = unknown;
+         *   A = modarray( A, c1, val);    <==  here we can not cf !!
+         *      .... val ....
+         *
+         * Only a special case is implemented here to
+         * support WL-unrolling.
+         */
         res_array = NULL;
 
         if (N_id == NODE_TYPE (arg[1])) {
@@ -2055,7 +2070,6 @@ ArrayPrf (node *arg_node, node *arg_info)
             tmpn = arg[1];
             mrdmask = MRD_TOS.varlist;
             do {
-                /*             MRD_GETDATA(array, ID_VARNO(tmpn), INFO_VARNO); */
                 array = mrdmask[ID_VARNO (tmpn)];
                 ok = 1;
                 if (array && N_assign == NODE_TYPE (array)
@@ -2074,15 +2088,15 @@ ArrayPrf (node *arg_node, node *arg_info)
                     if (N_id == NODE_TYPE (modindex))
                         MRD_GETDATA (modindex, ID_VARNO (modindex), INFO_VARNO);
                     if (IsConstantArray (modindex, N_num)
-                        && CompareNumArrayType (shape, modindex))
+                        && CompareNumArrayType (shape, modindex)) {
                         if (CompareNumArrayElts (shape, modindex))
                             res_array = DupTree (PRF_ARG3 (array), NULL);
                         else {
-                            /* valid modindex, but not equal shape. */
+                            /* valid modindex, but not equal index. */
                             tmpn = PRF_ARG1 (array);
                             ok = 0; /* continue searching */
                         }
-                    else              /* F_modarray, but modindex nut supported */
+                    } else            /* F_modarray, but modindex nut supported */
                         array = NULL; /* not successful */
                 } else                /* no N_array and no F_modarray */
                     array = NULL;     /* not successful */
@@ -2110,8 +2124,6 @@ ArrayPrf (node *arg_node, node *arg_info)
 
             res_array = CalcPsi (shape, array, array_type, arg_info);
         }
-
-        /* srs: end of new part */
 
         if (res_array) {
             DBUG_PRINT ("CF", ("primitive function %s folded in line %d",
@@ -2160,7 +2172,8 @@ CFprf (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("CFprf");
 
-    if (PRF_PRF (arg_node) <= F_neq) {
+    if (PRF_PRF (arg_node) <= F_neq) /* prfs on scalars only !! */
+    {
         /*
          * substitute all arguments
          */
@@ -2191,7 +2204,8 @@ CFprf (node *arg_node, node *arg_info)
                 arg_node = arg[0];
             }
         }
-    } else {
+    } else /* prfs that require at least one array as argument! */
+    {
         /*
          * substitute all arguments
          */
@@ -2200,7 +2214,7 @@ CFprf (node *arg_node, node *arg_info)
         case F_dim:
             break;
         default:
-            arg_node->node[0] = Trav (arg_node->node[0], arg_info);
+            PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
             break;
         }
 
