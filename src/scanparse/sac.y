@@ -4,6 +4,9 @@
 /*
  *
  * $Log$
+ * Revision 3.62  2002/09/06 12:19:27  sah
+ * now N_setwl nodes are generated properly.
+ *
  * Revision 3.61  2002/09/03 15:26:55  sbs
  * _mod_SxS_ added
  *
@@ -1227,10 +1230,10 @@ expr: fun_id                      { $$ = MakeIdFromIds( $1); }
       { $$ = MakeCast( $5, $3);
       }
     | BRACE_L id ARROW expr BRACE_R
-      { $$ = $4;
+      { $$ = MakeSetWL($2, $4);
       }
     | BRACE_L expr_ar ARROW expr BRACE_R
-      { $$ = $4;
+      { $$ = MakeSetWL($2, $4);
       }
     | wlcomp_pragma_local
       NWITH { $<cint>$ = linenum; } BRACKET_L generator BRACKET_R
