@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.60  1995/10/06 17:10:44  cg
+ * Revision 1.61  1995/11/01 16:24:16  cg
+ * moved function AppendIdsChain to tree_compound.[ch]
+ *
+ * Revision 1.60  1995/10/06  17:10:44  cg
  * call to MakeIds adjusted to new signature (3 parameters)
  *
  * Revision 1.59  1995/09/27  15:16:54  cg
@@ -244,6 +247,5 @@ extern char *prf_name_str[];
 extern types *MakeTypes (simpletype simple);
 extern node *MakeNode (nodetype nodetype);
 extern node *AppendNodeChain (int pos, node *first, node *second);
-extern ids *AppendIdsChain (ids *first, ids *second);
 
 #endif /* _sac_tree_h  */

@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.23  1995/09/27 15:16:54  cg
+ * Revision 1.24  1995/11/01 16:24:16  cg
+ * moved function AppendIdsChain to tree_compound.[ch]
+ *
+ * Revision 1.23  1995/09/27  15:16:54  cg
  * ATTENTION:
  * tree.c and tree.h are not part of the new virtual syntax tree.
  * They are kept for compatibility reasons with old code only !
@@ -132,44 +135,8 @@ AppendNodeChain (int pos, node *first, node *second)
 }
 
 /*
- *
- *  functionname  : AppendIdsChain
- *  arguments     : node *first: first ids chain
- *                  node *second: ids chain to be appended
- *  description   : follows first chain to it's end and
- *                  appends second.
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        : DBUG...
- *
- *  remarks       :
- *
- */
-
-ids *
-AppendIdsChain (ids *first, ids *second)
-
-{
-    ids *tmp;
-
-    DBUG_ENTER ("AppendIdsChain");
-
-    if (first == NULL)
-        first = second;
-    else {
-        tmp = first;
-        while (tmp->next != NULL)
-            tmp = tmp->next;
-        tmp->next = second;
-    }
-
-    DBUG_RETURN (first);
-}
-
-/*
- * The functions AppendNodeChain and AppendIdsChain should be replaced
- * by new functions in tree_compound.c
+ * The function AppendNodeChain should be replaced
+ * by a new function in tree_compound.c
  * Unfortunately, this is not directly possible. Different functions are
  * needed for objdef-, fundef-, or typedef-chains.
  */
