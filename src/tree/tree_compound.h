@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.64  2002/07/15 17:25:02  dkr
+ * LiftArg() moved from precompile.c to tree_compound.[ch]
+ *
  * Revision 3.63  2002/06/27 16:56:26  dkr
  * signature of CreateSel() modified
  *
@@ -1777,6 +1780,26 @@ extern node *MakePrf3 (prf prf, node *arg1, node *arg2, node *arg3);
  ***/
 
 #define AP_OR_PRF_ARGS(n) ((NODE_TYPE (n) == N_ap) ? AP_ARGS (n) : PRF_ARGS (n))
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *LiftArg( node *arg, node *fundef, types *new_type, bool do_rc,
+ *                  node **new_assigns)
+ *
+ * Description:
+ *   Lifts the given argument of a function application:
+ *    - Generates a new and fresh varname.
+ *    - Generates a new vardec and inserts it into the vardec chain of 'fundef'.
+ *      If 'new_type' is not NULL, 'new_type' is used as VARDEC_TYPE instead
+ *      of ID_TYPE(arg).
+ *    - Builds a new assignment and inserts it into the assignment chain
+ *      'new_assigns'.
+ *    - Returns the new argument.
+ *
+ ******************************************************************************/
+
+node *LiftArg (node *arg, node *fundef, types *new_type, bool do_rc, node **new_assigns);
 
 /*--------------------------------------------------------------------------*/
 

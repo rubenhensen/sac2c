@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.65  2002/07/15 17:25:07  dkr
+ * LiftArg() moved from precompile.c to tree_compound.[ch]
+ *
  * Revision 3.64  2002/07/12 09:07:16  dkr
  * CreateSel: no warning about uninitialized variable anymore :-)
  *
@@ -260,6 +263,7 @@
 #include "typecheck.h"
 #include "DataFlowMask.h"
 #include "wltransform.h"
+#include "refcount.h"
 
 /*
  * macro template for append functions
@@ -3641,6 +3645,79 @@ MakePrf3 (prf prf, node *arg1, node *arg2, node *arg3)
 /***
  ***  N_prf :  *and*  N_ap :
  ***/
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *LiftArg( node *arg, node *fundef, types *new_type, bool do_rc,
+ *                  node **new_assigns)
+ *
+ * Description:
+ *   Lifts the given argument of a function application:
+ *    - Generates a new and fresh varname.
+ *    - Generates a new vardec and inserts it into the vardec chain of 'fundef'.
+ *      If 'new_type' is not NULL, 'new_type' is used as VARDEC_TYPE instead
+ *      of ID_TYPE(arg).
+ *    - Builds a new assignment and inserts it into the assignment chain
+ *      'new_assigns'.
+ *    - Returns the new argument.
+ *
+ ******************************************************************************/
+
+node *
+LiftArg (node *arg, node *fundef, types *new_type, bool do_rc, node **new_assigns)
+{
+    char *new_name;
+    node *new_vardec;
+    node *new_arg;
+    ids *new_ids;
+
+    DBUG_ENTER ("LiftArg");
+
+    if (NODE_TYPE (arg) == N_id) {
+        new_name = TmpVarName (ID_NAME (arg));
+        /* Insert vardec for new var */
+        if (new_type == NULL) {
+            new_type = ID_TYPE (arg);
+        }
+    } else {
+        new_name = TmpVar ();
+        DBUG_ASSERT ((new_type != NULL), "no type found!");
+    }
+
+    new_vardec = MakeVardec (StringCopy (new_name), DupAllTypes (new_type), NULL);
+    fundef = AddVardecs (fundef, new_vardec);
+
+    /*
+     * Abstract the given argument out:
+     *   ... = fun( A:n, ...);
+     * is transformed into
+     *   __A:1 = A:n;
+     *   ... = fun( __A:1, ...);
+     */
+    new_ids = MakeIds (new_name, NULL, ST_regular);
+    IDS_VARDEC (new_ids) = new_vardec;
+    (*new_assigns) = MakeAssign (MakeLet (arg, new_ids), (*new_assigns));
+
+    new_arg = DupIds_Id (new_ids);
+
+    if (do_rc) {
+        if (NODE_TYPE (arg) == N_id) {
+            if (RC_IS_ACTIVE (ID_REFCNT (arg))) {
+                IDS_REFCNT (new_ids) = ID_REFCNT (new_arg) = 1;
+            } else if (RC_IS_INACTIVE (ID_REFCNT (new_arg))) {
+                IDS_REFCNT (new_ids) = ID_REFCNT (new_arg) = RC_INACTIVE;
+            } else {
+                DBUG_ASSERT ((0), "illegal RC value found!");
+            }
+        } else {
+            IDS_REFCNT (new_ids) = ID_REFCNT (new_arg)
+              = MUST_REFCOUNT (new_type) ? 1 : RC_INACTIVE;
+        }
+    }
+
+    DBUG_RETURN (new_arg);
+}
 
 /*--------------------------------------------------------------------------*/
 
