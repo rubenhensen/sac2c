@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.53  1997/10/09 13:56:59  srs
+ * modified SkalarPrf to fold F_min and F_max
+ *
  * Revision 1.52  1997/10/05 15:25:40  dkr
  * added CF in function SkalarPrf() for % and abs()
  *
@@ -207,7 +210,7 @@
 #define TRUE 1
 
 /*
- *  This macros secects the right element out of the union info
+ *  This macros selects the right element out of the union info
  */
 #define SELARG(n)                                                                        \
     ((n->nodetype == N_num)                                                              \
@@ -1073,6 +1076,30 @@ SkalarPrf (node **arg, prf prf_type, types *res_type, int swap)
         DBUG_PRINT ("CF", ("primitive function %s folded", prf_string[prf_type]));       \
     }
 
+/* srs: new define to handel min/max */
+#define ARI2(op, a1, a2)                                                                 \
+    {                                                                                    \
+        /* swap is nonrelevant for min/max */                                            \
+        switch (res_type->simpletype) {                                                  \
+        case T_float:                                                                    \
+            a1->info.cfloat = SELARG (a1) op SELARG (a2) ? SELARG (a1) : SELARG (a2);    \
+            a1->nodetype = N_float;                                                      \
+            break;                                                                       \
+        case T_double:                                                                   \
+            a1->info.cdbl = SELARG (a1) op SELARG (a2) ? SELARG (a1) : SELARG (a2);      \
+            a1->nodetype = N_double;                                                     \
+            break;                                                                       \
+        case T_int:                                                                      \
+            a1->info.cint = SELARG (a1) op SELARG (a2) ? SELARG (a1) : SELARG (a2);      \
+            break;                                                                       \
+        default:                                                                         \
+            DBUG_ASSERT ((FALSE), "Type not implemented for Constant folding");          \
+            break;                                                                       \
+        }                                                                                \
+        cf_expr++;                                                                       \
+        DBUG_PRINT ("CF", ("primitive function %s folded", prf_string[prf_type]));       \
+    }
+
     DBUG_ENTER ("SkalarPrf");
 
     /*
@@ -1152,6 +1179,15 @@ SkalarPrf (node **arg, prf prf_type, types *res_type, int swap)
     case F_or:
         ARI (||, arg[0], arg[1]);
         break;
+
+    case F_min:
+        ARI2 (<, arg[0], arg[1]);
+        break;
+
+    case F_max:
+        ARI2 (>, arg[0], arg[1]);
+        break;
+
     default:
         break;
     }
