@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.59  1998/04/23 17:33:50  dkr
+ * added OptSync
+ *
  * Revision 1.58  1998/04/17 17:26:43  dkr
  * 'concurrent regions' are now called 'SPMD regions'
  *
@@ -307,5 +310,6 @@ extern node *OPTloop (node *arg_node, node *arg_info);
 extern node *OPTwith (node *arg_node, node *arg_info);
 extern node *OPTNwith (node *arg_node, node *arg_info);
 extern node *OptSPMD (node *arg_node, node *arg_info);
+extern node *OptSync (node *arg_node, node *arg_info);
 
 #endif /* _sac_optimize_h */
