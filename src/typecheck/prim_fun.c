@@ -1,6 +1,10 @@
 /*
  * $Log$
- * Revision 1.1  1995/02/03 07:45:32  hw
+ * Revision 1.2  1995/02/03 16:03:33  hw
+ * added new functions AxA & Ixf_F
+ * changed enum type_class
+ *
+ * Revision 1.1  1995/02/03  07:45:32  hw
  * Initial revision
  *, $
  *
@@ -13,9 +17,10 @@
 #include "Error.h"
 #include "my_debug.h"
 
-extern void *Malloc (int); /*imported from typecheck.c */
+extern void *Malloc (int);                    /*imported from typecheck.c */
+extern types *DuplicateTypes (types *source); /* imported form typecheck.c */
 
-typedef enum { ARI, B, ARI_B } type_class;
+enum type_class { SxS_S, AxA_A, BxB_B, SxS_B, AxS_A };
 
 #define GEN_TYPE_NODE(node, type)                                                        \
     if (NULL != (node = GEN_NODE (types))) {                                             \
@@ -44,6 +49,12 @@ typedef enum { ARI, B, ARI_B } type_class;
 #define INT GEN_TYPE_NODE (type, T_int)
 #define FLOAT GEN_TYPE_NODE (type, T_float)
 #define BOOL GEN_TYPE_NODE (type, T_bool)
+#define INT_A                                                                            \
+    type = MakeTypes (T_int);                                                            \
+    type->dim = -1;
+#define FLOAT_A                                                                          \
+    type = MakeTypes (T_float);                                                          \
+    type->dim = -1;
 
 #define TT2(n, a, t1, t2, res)                                                           \
     tmp_node->node[1] = MakeNode (N_fundef);                                             \
@@ -166,4 +177,75 @@ InitPrimFunTab ()
     free (prim_fun_p);
 
     DBUG_VOID_RETURN;
+}
+
+/*
+ *
+ *  functionname  : AxA
+ *  arguments     : 1) type of array one
+ *                  2) type of array two
+ *  description   : compares the shape of both arrays and returns the type
+ *                  of array one if shapes are equal
+ *                  return type T_unknown if shapes are different
+ *  global vars   :
+ *  internal funs :
+ *  external funs : DuplicateTypes
+ *  macros        : DBUG...
+ *
+ *  remarks       : is part of macro TT2 and is used in typecheck.c
+ *
+ */
+types *
+AxA (types *array1, types *array2)
+{
+    types *ret_type = NULL;
+
+    DBUG_ENTER ("AxA");
+
+    if (array1->dim == array2->dim) {
+        int *shp1, *shp2, i;
+
+        shp1 = array1->shpseg->shp;
+        shp2 = array2->shpseg->shp;
+
+        for (i = 0; i < array1->dim; i++)
+            if (shp1[i] != shp2[i]) {
+                GEN_TYPE_NODE (ret_type, T_unknown);
+                break;
+            }
+
+        if (NULL == ret_type)
+            ret_type = DuplicateTypes (array1);
+    } else {
+        GEN_TYPE_NODE (ret_type, T_unknown);
+    }
+
+    DBUG_RETURN (ret_type);
+}
+
+/*
+ *
+ *  functionname  : Ixf_F
+ *  arguments     : 1) type of an array
+ *  description   : returns the type of an array with shape of 1) and
+ *                  simpletype T_float
+ *  global vars   :
+ *  internal funs :
+ *  external funs : DuplicateTypes
+ *  macros        : DBUG...
+ *
+ *  remarks       : is part of macro TT2 and is used in typecheck.c
+ *
+ */
+types *
+Ixf_F (types *array1)
+{
+    types *ret_type;
+
+    DBUG_ENTER ("Ixf_F");
+
+    ret_type = DuplicateTypes (array1);
+    ret_type->simpletype = T_float;
+
+    DBUG_RETURN (ret_type);
 }
