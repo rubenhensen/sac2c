@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2002/07/31 16:34:25  dkr
+ * parameter 'copyfun' added for several ICMs
+ *
  * Revision 3.9  2002/07/24 15:04:33  dkr
  * SAC_ND_USE_GENVAR_OFFSET modified
  *
@@ -89,10 +92,11 @@
  * ICMs for primitive functions after IVE
  * ======================================
  *
- * ND_PRF_IDX_SEL__SHAPE( to_nt, to_sdim, from_nt, from_sdim, idx_any)
- * ND_PRF_IDX_SEL__DATA( to_nt, to_sdim, from_nt, from_sdim, idx_any)
+ * ND_PRF_IDX_SEL__SHAPE( to_nt, to_sdim, from_nt, from_sdim, idx_any, copyfun)
+ * ND_PRF_IDX_SEL__DATA( to_nt, to_sdim, from_nt, from_sdim, idx_any, copyfun)
  *
- * ND_PRF_IDX_MODARRAY__DATA( to_nt, to_sdim, from_nt, from_sdim, idx, val)
+ * ND_PRF_IDX_MODARRAY__DATA( to_nt, to_sdim, from_nt, from_sdim, idx, val,
+ *                            copyfun)
  *
  * ND_USE_GENVAR_OFFSET( offset, wl)
  *

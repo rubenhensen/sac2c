@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.17  2002/07/31 16:34:12  dkr
+ * parameter 'copyfun' added for several ICMs
+ *
  * Revision 3.16  2002/07/24 15:04:11  dkr
  * ND_VECT2OFFSET modified
  *
@@ -97,16 +100,17 @@ extern void ICMCompileND_DECL__MIRROR_PARAM (char *nt, int sdim, int *shp);
 extern void ICMCompileND_DECL__MIRROR_EXTERN (char *nt, int sdim);
 
 extern void ICMCompileND_CHECK_REUSE (char *to_nt, int to_sdim, char *from_nt,
-                                      int from_sdim);
+                                      int from_sdim, char *copyfun);
 
-extern void ICMCompileND_SET__SHAPE (char *to_nt, int to_sdim, int dim, char **shp_any);
+extern void ICMCompileND_SET__SHAPE (char *to_nt, int dim, char **shp_any);
 
 extern void ICMCompileND_REFRESH_MIRROR (char *nt, int sdim);
 
 extern void ICMCompileND_CHECK_MIRROR (char *to_nt, int to_sdim, char *from_nt,
                                        int from_sdim);
 
-extern void ICMCompileND_ASSIGN (char *to_nt, int to_sdim, char *from_nt, int from_sdim);
+extern void ICMCompileND_ASSIGN (char *to_nt, int to_sdim, char *from_nt, int from_sdim,
+                                 char *copyfun);
 
 extern void ICMCompileND_ASSIGN__DESC (char *to_nt, char *from_nt);
 
@@ -126,7 +130,7 @@ extern void ICMCompileND_CREATE__VECT__SHAPE (char *name, int sdim, int val_size
                                               char **vala_any);
 
 extern void ICMCompileND_CREATE__VECT__DATA (char *name, int sdim, int val_size,
-                                             char **vala_any);
+                                             char **vala_any, char *copyfun);
 
 extern void ICMCompileND_PRF_SHAPE__DATA (char *to_nt, int to_sdim, char *from_nt,
                                           int from_sdim);
@@ -140,32 +144,35 @@ extern void ICMCompileND_PRF_SEL__SHAPE_id (char *to_nt, int to_sdim, char *from
                                             int from_sdim, int idx_size, char *idx_nt);
 
 extern void ICMCompileND_PRF_SEL__DATA_id (char *to_nt, int to_sdim, char *from_nt,
-                                           int from_sdim, int idx_size, char *idx_nt);
+                                           int from_sdim, int idx_size, char *idx_nt,
+                                           char *copyfun);
 
 extern void ICMCompileND_PRF_SEL__SHAPE_arr (char *to_nt, int to_sdim, char *from_nt,
                                              int from_sdim, int idx_size,
                                              char **idxa_any);
 
 extern void ICMCompileND_PRF_SEL__DATA_arr (char *to_nt, int to_sdim, char *from_nt,
-                                            int from_sdim, int idx_size, char **idxa_any);
+                                            int from_sdim, int idx_size, char **idxa_any,
+                                            char *copyfun);
 
 extern void ICMCompileND_PRF_MODARRAY__DATA_id (char *to_nt, int to_sdim, char *from_nt,
                                                 int from_sdim, int idx_size, char *idx_nt,
-                                                char *val_any);
+                                                char *val_any, char *copyfun);
 
 extern void ICMCompileND_PRF_MODARRAY__DATA_arr (char *to_nt, int to_sdim, char *from_nt,
                                                  int from_sdim, int idx_size,
-                                                 char **idxa_any, char *val_any);
+                                                 char **idxa_any, char *val_any,
+                                                 char *copyfun);
 
 extern void ICMCompileND_PRF_IDX_SEL__SHAPE (char *to_nt, int to_sdim, char *from_nt,
                                              int from_sdim, char *idx_any);
 
 extern void ICMCompileND_PRF_IDX_SEL__DATA (char *to_nt, int to_sdim, char *from_nt,
-                                            int from_sdim, char *idx_any);
+                                            int from_sdim, char *idx_any, char *copyfun);
 
 extern void ICMCompileND_PRF_IDX_MODARRAY__DATA (char *to_nt, int to_sdim, char *from_nt,
                                                  int from_sdim, char *idx_any,
-                                                 char *val_any);
+                                                 char *val_any, char *copyfun);
 
 extern void ICMCompileND_VECT2OFFSET (char *off_nt, int from_size, char *from_nt,
                                       int shp_size, char **shp_any);

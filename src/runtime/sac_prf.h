@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2002/07/31 16:34:20  dkr
+ * parameter 'copyfun' added for several ICMs
+ *
  * Revision 3.5  2002/07/16 12:52:06  dkr
  * ICMs ND_PRF_IDX_... moved from sac_prf.h to sac_idx.h
  *
@@ -79,16 +82,16 @@
  * ND_PRF_SEL__SHAPE_id( to_nt, to_sdim, from_nt, from_sdim,
  *                       idx_size, idx_nt)
  * ND_PRF_SEL__DATA_id( to_nt, to_sdim, from_nt, from_sdim,
- *                      idx_size, idx_nt)
+ *                      idx_size, idx_nt, copyfun)
  * ND_PRF_SEL__SHAPE_arr( to_nt, to_sdim, from_nt, from_sdim,
  *                        idx_size, idxa_any)
  * ND_PRF_SEL__DATA_arr( to_nt, to_sdim, from_nt, from_sdim,
- *                       idx_size, idxa_any)
+ *                       idx_size, idxa_any, copyfun)
  *
  * ND_PRF_MODARRAY__DATA_id( to_nt, to_sdim, from_nt, from_sdim,
- *                           idx_size, idx_nt, val_any)
+ *                           idx_size, idx_nt, val_any, copyfun)
  * ND_PRF_MODARRAY__DATA_arr( to_nt, to_sdim, from_nt, from_sdim,
- *                            idx_size, ...idxa_any..., val_any)
+ *                            idx_size, ...idxa_any..., val_any, copyfun)
  *
  * ND_PRF_CONV_A__DATA( to_nt, from_nt)
  *
