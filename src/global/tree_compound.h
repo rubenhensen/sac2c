@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.70  1998/05/16 19:47:07  dkr
+ * added some WLGRID..., WLSTRIDE... macros
+ *
  * Revision 1.69  1998/05/12 12:20:19  dkr
  * added AppendAssign, AppendExpr
  *
@@ -1356,9 +1359,9 @@ extern node *AppendExpr (node *exprs, node *expr);
 
 /*--------------------------------------------------------------------------*/
 
-/*
- *  compound access macros for the new WL.
- */
+/***
+ ***  compound access macros for the new WL.
+ ***/
 
 #define NPART_IDS(n) (NWITHID_IDS (NPART_WITHID (n)))
 #define NPART_VEC(n) (NWITHID_VEC (NPART_WITHID (n)))
@@ -1370,17 +1373,32 @@ extern node *AppendExpr (node *exprs, node *expr);
 #define NWITH_IDS(n) (NPART_IDS (NWITH_PART (n)))
 #define NWITH_VEC(n) (NPART_VEC (NWITH_PART (n)))
 /*
- * Remark: We only need to inspect the withid of the first part,
+ * remark: We only need to inspect the withid of the first part,
  *         because the withid is in *all* parts the same!!
  */
 
 /*--------------------------------------------------------------------------*/
 
 /***
- ***
+ ***  N_Nwith2:
  ***/
 
 #define NWITH2_TYPE(n) (NWITHOP_TYPE (NWITH2_WITHOP (n)))
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_WL...:
+ ***/
+
+#define WLSTRIANY_CONTENTS(n)                                                            \
+    ((NODE_TYPE (n) == N_WLstride) ? (WLSTRIDE_CONTENTS (n)) : (WLSTRIVAR_CONTENTS (n)))
+
+#define WLGRIDANY_NEXTDIM(n)                                                             \
+    ((NODE_TYPE (n) == N_WLgrid) ? (WLGRID_NEXTDIM (n)) : (WLGRIDVAR_NEXTDIM (n)))
+
+#define WLGRIDANY_CODE(n)                                                                \
+    ((NODE_TYPE (n) == N_WLgrid) ? (WLGRID_CODE (n)) : (WLGRIDVAR_CODE (n)))
 
 /*--------------------------------------------------------------------------*/
 
