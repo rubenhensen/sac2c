@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.155  1998/05/17 00:52:36  dkr
+ * fixed a bug in COMPVardec
+ *
  * Revision 1.154  1998/05/17 00:11:51  dkr
  * WLGRID_CEXPR_TEMPLATE is now WLGRID_CODE_TEMPLATE
  *
@@ -2929,8 +2932,8 @@ COMPVardec (node *arg_node, node *arg_info)
         FREE_VARDEC (arg_node);
         arg_node = assign; /* set arg_node, because this node will be returned */
 
-        if (NULL != VARDEC_NEXT (arg_node)) {
-            VARDEC_NEXT (arg_node) = Trav (VARDEC_NEXT (arg_node), NULL);
+        if (NULL != VARDEC_TYPEDEF (arg_node)) {
+            VARDEC_TYPEDEF (arg_node) = Trav (VARDEC_TYPEDEF (arg_node), NULL);
             /* dkr: Trav(...) with (arg_info == NULL) !?!? */
         }
     } else if (TYPES_DIM (full_type) < KNOWN_DIM_OFFSET) {
