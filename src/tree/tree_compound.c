@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2000/12/04 10:45:44  dkr
+ * bug in Type2Shpseg fixed:
+ * return value is now initialized correctly even for scalar types
+ *
  * Revision 3.1  2000/11/20 18:03:35  sacbase
  * new release made
  *
@@ -458,7 +462,7 @@ types *
 GetTypes_Line (types *type, int line)
 {
     node *tdef;
-    types *res_type;
+    types *res_type = NULL;
 
     DBUG_ENTER ("GetTypes_Line");
 
@@ -660,7 +664,7 @@ Type2Shpseg (types *type, int *ret_dim)
 {
     int dim, base_dim, i;
     types *impl_type;
-    shpseg *new_shpseg;
+    shpseg *new_shpseg = NULL;
 
     DBUG_ENTER ("Type2Shpseg");
 
@@ -709,9 +713,10 @@ Type2Shpseg (types *type, int *ret_dim)
 node *
 Type2Exprs (types *type)
 {
-    node *ret_node, *tmp;
+    node *tmp;
     types *impl_type;
     int dim, i;
+    node *ret_node = NULL;
 
     DBUG_ENTER ("Type2Exprs");
 
