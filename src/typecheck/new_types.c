@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.73  2004/11/27 00:35:54  sbs
+ * *** empty log message ***
+ *
  * Revision 3.72  2004/11/27 00:23:44  sbs
  * *** empty log message ***
  *
@@ -4729,7 +4732,7 @@ TYDeNestTypes (ntype *nested, ntype *inner)
 /******************************************************************************
  *
  * function:
- *    ntype * TYOldType2ScalarType( types *old)
+ *    ntype * TYoldType2ScalarType( types *old)
  *
  * description:
  *    converts an old TYPES node into an ntype node for the base type.
@@ -4737,7 +4740,7 @@ TYDeNestTypes (ntype *nested, ntype *inner)
  ******************************************************************************/
 
 ntype *
-TYOldType2ScalarType (types *old)
+TYoldType2ScalarType (types *old)
 {
     ntype *res;
     usertype udt;
@@ -4746,7 +4749,7 @@ TYOldType2ScalarType (types *old)
     char *tmp, *tmp2;
 #endif
 
-    DBUG_ENTER ("TYOldType2ScalarType");
+    DBUG_ENTER ("TYoldType2ScalarType");
 
     switch (TYPES_BASETYPE (old)) {
     case T_user:
@@ -4784,11 +4787,11 @@ TYOldType2ScalarType (types *old)
         break;
     case T_dots:
         res = NULL;
-        DBUG_ASSERT (0, "TYOldType2Type applied to T_dots");
+        DBUG_ASSERT (0, "TYoldType2Type applied to T_dots");
         break;
     default:
         res = NULL;
-        DBUG_ASSERT (0, "TYOldType2Type applied to illegal type");
+        DBUG_ASSERT (0, "TYoldType2Type applied to illegal type");
     }
 
     DBUG_EXECUTE ("NTY", tmp = CVtype2String (old, 3, TRUE);
@@ -4802,7 +4805,7 @@ TYOldType2ScalarType (types *old)
 /******************************************************************************
  *
  * function:
- *    ntype * TYOldType2Type( types *old)
+ *    ntype * TYoldType2Type( types *old)
  *
  * description:
  *    converts an old TYPES node into an ntype node (or - if neccessary -
@@ -4811,7 +4814,7 @@ TYOldType2ScalarType (types *old)
  ******************************************************************************/
 
 ntype *
-TYOldType2Type (types *old)
+TYoldType2Type (types *old)
 {
     ntype *res;
 
@@ -4819,9 +4822,9 @@ TYOldType2Type (types *old)
     char *tmp, *tmp2;
 #endif
 
-    DBUG_ENTER ("TYOldType2Type");
+    DBUG_ENTER ("TYoldType2Type");
 
-    res = TYOldType2ScalarType (old);
+    res = TYoldType2ScalarType (old);
 
     if (res != NULL) {
         if (TYPES_DIM (old) > SCALAR) {
@@ -4849,7 +4852,7 @@ TYOldType2Type (types *old)
 /******************************************************************************
  *
  * function:
- *    ntype * TYOldTypes2ProdType( types *old)
+ *    ntype * TYoldTypes2ProdType( types *old)
  *
  * description:
  *    converts a (linked list of) old TYPES node(s) into a product type of ntypes.
@@ -4857,7 +4860,7 @@ TYOldType2Type (types *old)
  ******************************************************************************/
 
 ntype *
-TYOldTypes2ProdType (types *old)
+TYoldTypes2ProdType (types *old)
 {
     int i, num_types;
     ntype *res;
@@ -4865,7 +4868,7 @@ TYOldTypes2ProdType (types *old)
     num_types = TCcountTypes (old);
     res = TYmakeEmptyProductType (num_types);
     for (i = 0; i < num_types; i++) {
-        res = TYsetProductMember (res, i, TYOldType2Type (old));
+        res = TYsetProductMember (res, i, TYoldType2Type (old));
         old = TYPES_NEXT (old);
     }
     return (res);
