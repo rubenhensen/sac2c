@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.14  1995/04/06 11:35:20  asi
+ * Revision 1.15  1995/04/06 14:51:51  asi
+ * constant folding in return-expessions disabled
+ *
+ * Revision 1.14  1995/04/06  11:35:20  asi
  * GetShapeVector now depends on SHP_SEG_SIZE
  *
  * Revision 1.13  1995/04/03  16:17:42  asi
@@ -468,33 +471,34 @@ CFassign (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("CFassign");
     returnnode = arg_node;
-    arg_info->lineno = arg_node->lineno;
-    ntype = arg_node->node[0]->nodetype;
+    if (N_return != arg_node->node[0]->nodetype) {
+        arg_info->lineno = arg_node->lineno;
+        ntype = arg_node->node[0]->nodetype;
 
-    arg_node = OptTrav (arg_node, arg_info, 0); /* Trav instruction */
+        arg_node = OptTrav (arg_node, arg_info, 0); /* Trav instruction */
 
-    arg_info->node[0] = NULL;
-    switch (arg_node->node[0]->nodetype) {
-    case N_empty:
-        returnnode = arg_node->node[1];
-        arg_node = OptTrav (arg_node, arg_info, 1); /* Trav next assign */
-        arg_node->nnode = 1;
-        FreeTree (arg_node);
-        break;
-    case N_assign:
-        if (N_do == ntype) {
-            arg_node->node[1] = Trav (arg_node->node[1], arg_info);
-            returnnode = AppendNodeChain (1, arg_node->node[0], arg_node->node[1]);
-        } else {
-            returnnode = AppendNodeChain (1, arg_node->node[0], arg_node->node[1]);
-            arg_node->node[0] = Trav (arg_node->node[0], arg_info);
+        arg_info->node[0] = NULL;
+        switch (arg_node->node[0]->nodetype) {
+        case N_empty:
+            returnnode = arg_node->node[1];
+            arg_node = OptTrav (arg_node, arg_info, 1); /* Trav next assign */
+            arg_node->nnode = 1;
+            FreeTree (arg_node);
+            break;
+        case N_assign:
+            if (N_do == ntype) {
+                arg_node->node[1] = Trav (arg_node->node[1], arg_info);
+                returnnode = AppendNodeChain (1, arg_node->node[0], arg_node->node[1]);
+            } else {
+                returnnode = AppendNodeChain (1, arg_node->node[0], arg_node->node[1]);
+                arg_node->node[0] = Trav (arg_node->node[0], arg_info);
+            }
+            break;
+        default:
+            arg_node = OptTrav (arg_node, arg_info, 1); /* Trav next assign */
+            break;
         }
-        break;
-    default:
-        arg_node = OptTrav (arg_node, arg_info, 1); /* Trav next assign */
-        break;
     }
-
     DBUG_RETURN (returnnode);
 }
 
