@@ -37,3 +37,4 @@ wlsbuild.c
 wlscheck.c
 wlswithloopification.c
 resolvedependencies.c
+resolvedependencies.h
