@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.77  2002/06/18 10:18:08  ktr
+ * WLSblock added
+ *
  * Revision 3.76  2002/06/12 17:19:50  ktr
  * Removed some unused WLS-Traversals
  *
@@ -1160,7 +1163,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        SSADCRblock, SSACSEblock, CMPTTravSons, TravSons, SSACFblock, SSALIRblock,
        LIRMOVblock, TravSons, TravSons, TravSons, TravSons, TravSons,
 
-       TravSons, COMP2Block, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, COMP2Block, TravSons, TravSons, TravSons, WLSblock, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 2),
 
