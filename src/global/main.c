@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.19  1995/01/05 09:55:17  asi
+ * Revision 1.20  1995/01/09 13:58:04  hw
+ * call typecheck only if there are no errors before
+ *
+ * Revision 1.19  1995/01/05  09:55:17  asi
  * bug removed
  *
  * Revision 1.18  1995/01/03  15:09:02  asi
@@ -165,7 +168,7 @@ MAIN
         NOTE (("\n"));
         if (!breakimport) {
             syntax_tree = Flatten (syntax_tree);
-            if (!breakflatten) {
+            if ((!breakflatten) && (0 == errors)) {
                 NOTE (("Typechecking: ..."));
                 Typecheck (syntax_tree);
                 NOTE (("\n%d Warnings, %d Errors \n", warnings, errors));
@@ -174,7 +177,8 @@ MAIN
                     syntax_tree = Optimize (syntax_tree);
                     /*  GenCCode(); */
                 }
-            }
+            } else
+                NOTE (("\n%d Warnings, %d Errors \n", warnings, errors));
         }
     }
 
