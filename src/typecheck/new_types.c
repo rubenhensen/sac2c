@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.32  2002/10/18 15:34:29  sbs
+ * Now Type2OldType converts T_classtype thingies into T_hidden ones
+ * (for backend compatibility
+ *
  * Revision 3.31  2002/10/18 14:35:16  sbs
  * several additions made. Primarily, they concern user defined types
  * hidden types objects and friends.
@@ -4175,7 +4179,11 @@ Type2OldType (ntype *new)
         TYPES_DIM (res) = ARRAY_OR_SCALAR;
         break;
     case TC_simple:
-        res = MakeTypes (SIMPLE_TYPE (new), 0, NULL, NULL, NULL);
+        if (SIMPLE_TYPE (new) == T_classtype) {
+            res = MakeTypes (T_hidden, 0, NULL, NULL, NULL);
+        } else {
+            res = MakeTypes (SIMPLE_TYPE (new), 0, NULL, NULL, NULL);
+        }
         break;
     case TC_user:
         res = MakeTypes (T_user, 0, NULL, StringCopy (UTGetName (USER_TYPE (new))),
