@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.41  1995/12/12 15:48:19  hw
+ * Revision 1.42  1996/01/26 16:28:54  hw
+ * bug fixed in FltnExprs (exprs that contain casts will be flattend in the
+ * right way now
+ *
+ * Revision 1.41  1995/12/12  15:48:19  hw
  * changed DuplicateNode
  *
  * Revision 1.40  1995/10/12  14:15:47  cg
@@ -556,6 +560,8 @@ FltnExprs (node *arg_node, node *arg_info)
 
         let_node = MakeNode (N_let);
         let_node->info.ids = MakeIds (GenTmpVar (var_counter++), NULL, ST_regular);
+        let_node->nnode = 1;
+        let_node->node[0] = tmp_node1;
 
         assign_node = MakeNode (N_assign);
         assign_node->node[0] = let_node;
@@ -566,16 +572,19 @@ FltnExprs (node *arg_node, node *arg_info)
             assign_node->nnode = 2;
 
         arg_info->node[0] = assign_node;
-        if (NULL != tmp_node1) {
-            /* Now, we have to flatten the child "tmp_node1" recursively! */
+
+        /* we use tmp_arg , because tmp_node1 may be a N_cast, but tmp_arg
+         * cant't be
+         */
+        if (NULL != tmp_arg) {
+            /* Now, we have to flatten the child "tmp_arg" recursively! */
             old_tag = arg_info->info.cint;
 
-            if (tmp_node1->nodetype == N_ap)
+            if (tmp_arg->nodetype == N_ap)
                 arg_info->info.cint = AP; /* set new tag */
-            else if ((tmp_node1->nodetype == N_array) || (tmp_node1->nodetype == N_prf))
+            else if ((tmp_arg->nodetype == N_array) || (tmp_arg->nodetype == N_prf))
                 arg_info->info.cint = NORMAL; /*set new tag */
-            let_node->nnode = 1;
-            let_node->node[0] = Trav (tmp_node1, arg_info);
+            tmp_arg = Trav (tmp_arg, arg_info);
             arg_info->info.cint = old_tag;
         }
 
