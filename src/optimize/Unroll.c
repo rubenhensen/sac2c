@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2002/09/11 22:55:47  dkr
+ * IsRelPrf() added
+ *
  * Revision 3.10  2002/09/09 17:52:31  dkr
  * F_{add,sub,mul,div} replaced by F_{add,sub,mul,div}_SxS
  *
@@ -140,6 +143,41 @@
 #include "DupTree.h"
 #include "Unroll.h"
 #include "WLUnroll.h"
+
+/******************************************************************************
+ *
+ * Function:
+ *   bool IsRelPrf( prf fun)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+bool
+IsRelPrf (prf fun)
+{
+    bool res;
+
+    DBUG_ENTER ("IsRelPrf");
+
+    switch (fun) {
+    case F_le:
+    case F_lt:
+    case F_ge:
+    case F_gt:
+    case F_eq:
+    case F_neq:
+        res = TRUE;
+        break;
+
+    default:
+        res = FALSE;
+        break;
+    }
+
+    DBUG_RETURN (res);
+}
 
 /******************************************************************************
  *
@@ -293,10 +331,9 @@ AnalyseLoop (linfo *loop_info, node *id_node, int level)
 
     test = ID_DEF (id_node);
 
-    if ((NULL != test) && (N_prf == NODE_TYPE (test))
-        && (F_le <= (test_prf = PRF_PRF (test))) && (F_neq >= test_prf)
+    if ((NULL != test) && (N_prf == NODE_TYPE (test)) && (IsRelPrf (PRF_PRF (test)))
         && (test->flag == level)) {
-
+        test_prf = PRF_PRF (test);
         /* the constant value shall be on the right side of the expression */
         /* i.e. cond = Num op i will be changed to cond = i op Num         */
         if (IsConst (PRF_ARG1 (test))) {
