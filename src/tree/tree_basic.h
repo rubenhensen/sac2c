@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.27  2000/03/17 20:41:18  dkr
+ * INFO_CUD_... macros added
+ *
  * Revision 1.26  2000/03/15 16:07:11  dkr
  * definition of FUNDEF_COMPANION changed
  *
@@ -2594,13 +2597,17 @@ extern node *MakeInfo ();
 
 /* converting loops and conditionals to functions (lac2fun.c) */
 #define INFO_LAC2FUN_FUNDEF(n) (n->node[0])
-#define INFO_LAC2FUN_IN(n) ((DFMmask_t) (n->dfmask[1]))
-#define INFO_LAC2FUN_OUT(n) ((DFMmask_t) (n->dfmask[2]))
-#define INFO_LAC2FUN_LOCAL(n) ((DFMmask_t) (n->dfmask[3]))
-#define INFO_LAC2FUN_NEEDED(n) ((DFMmask_t) (n->dfmask[4]))
+#define INFO_LAC2FUN_IN(n) ((DFMmask_t) (n->dfmask[0]))
+#define INFO_LAC2FUN_OUT(n) ((DFMmask_t) (n->dfmask[1]))
+#define INFO_LAC2FUN_LOCAL(n) ((DFMmask_t) (n->dfmask[2]))
+#define INFO_LAC2FUN_NEEDED(n) ((DFMmask_t) (n->dfmask[3]))
 #define INFO_LAC2FUN_ISFIX(n) (n->counter)
 #define INFO_LAC2FUN_ISTRANS(n) (n->flag)
 #define INFO_LAC2FUN_FUNS(n) (n->node[1])
+
+/* cleaning up declarations (cleanup_decls.c) */
+#define INFO_CUD_FUNDEF(n) (n->node[0])
+#define INFO_CUD_REF(n) ((DFMstack_t) (n->dfmask[0]))
 
 /* reconverting functions to loops and conditionals (fun2lac.c) */
 #define INFO_FUN2LAC_FUNDEF(n) (n->node[0])
