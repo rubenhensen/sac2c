@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.34  1998/02/06 11:13:48  srs
+# make deps done
+#
 # Revision 1.33  1998/02/05 17:08:40  dkr
 # make deps done
 #
@@ -108,7 +111,8 @@ CFLAGS    := -D__EXTENSIONS__
 INCS=-I../global -I../../inc -I../typecheck -I../print -I../psi-opt -I../modules
 
 all: optimize.o ConstantFolding.o DeadCodeRemoval.o \
-     LoopInvariantRemoval.o DupTree.o Inline.o Unroll.o Unswitch.o CSE.o
+     LoopInvariantRemoval.o DupTree.o Inline.o Unroll.o Unswitch.o CSE.o \
+     WithloopFolding.o
 
 optimize.o: optimize.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o optimize.o -c optimize.c $(INCS)
@@ -139,6 +143,9 @@ Unswitch.o: Unswitch.c
 
 CSE.o: CSE.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o CSE.o -c CSE.c $(INCS)
+
+WithloopFolding.o: WithloopFolding.c
+	$(CC) $(CCFLAGS) $(CFLAGS) -o WithloopFolding.o -c WithloopFolding.c $(INCS)
 
 deps:
 	makedepend $(INCS) *.c
