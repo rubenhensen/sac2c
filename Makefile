@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.135  2004/11/08 16:15:31  sah
+# resolvepragma only visible in newast mode now
+#
 # Revision 3.134  2004/11/07 18:03:34  sah
 # more parts of new module system activated
 #
@@ -337,7 +340,8 @@ ifeq ($(NEWAST),yes)
                src/modules/resolveall.o src/modules/annotatenamespace.o \
                src/modules/usesymbols.o src/tree/serialize_link.o \
                src/tree/serialize.o src/tree/serialize_stack.o  \
-               src/modules/prepareinline.o src/modules/dependencies.o
+               src/modules/prepareinline.o src/modules/dependencies.o \
+               src/scanparse/resolvepragma.o
   NEWASTFLAGS = -ldl --export-dynamic
 endif
 
@@ -357,8 +361,7 @@ TREE= src/tree/traverse.o src/tree/tree_basic.o src/tree/free.o \
 TREE_OLD=
 
 SCANP= src/scanparse/y.tab.o src/scanparse/lex.yy.o \
-       src/scanparse/scnprs.o src/scanparse/handle_dots.o \
-       src/scanparse/resolvepragma.o
+       src/scanparse/scnprs.o src/scanparse/handle_dots.o
 SCANP_OLD=
 
 PRINT= src/print/print.o src/print/convert.o

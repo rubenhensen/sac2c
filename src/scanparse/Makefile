@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.18  2004/11/08 16:15:31  sah
+# resolvepragma only visible in newast mode now
+#
 # Revision 3.17  2004/11/07 18:03:59  sah
 # added external functions support
 #
@@ -86,13 +89,15 @@ INCS=-I../global -I../tree -I../../inc -I../modules -I../typecheck -I../flatten 
 ifeq ($(NEWAST),yes)
   SAC_L := nsac.l
   SAC_Y := nsac.y
+  NEWASTOBJS := resolvepragma.o
 else
   SAC_L := sac.l
   SAC_Y := sac.y
+  NEWASTOBJS := 
 endif
 
 
-all: y.tab.o lex.yy.o scnprs.o handle_dots.o resolvepragma.o
+all: y.tab.o lex.yy.o scnprs.o handle_dots.o $(NEWASTOBJS)
 
 
 y.tab.o: y.tab.c
