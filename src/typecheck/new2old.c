@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2002/10/08 16:32:45  dkr
+ * FUNDEF_RETURN is inferned by new_typecheck.c already...
+ *
  * Revision 1.6  2002/10/08 10:35:35  dkr
  * - infers FUNDEF_RETURN now
  * - pseudo fold funs are created
@@ -52,20 +55,18 @@
  *
  *   INFO_NT2OT_FOLDFUNS   -   list of the generated fold funs
  *   INFO_NT2OT_LAST_LET   -   poiner to the last N_let node
- *   INFO_NT2OT_RETURN     -   poiner to the last N_return node
  */
 
 #define INFO_NT2OT_FOLDFUNS(n) (n->node[0])
 #define INFO_NT2OT_LAST_LET(n) (n->node[1])
-#define INFO_NT2OT_RETURN(n) (n->node[2])
 
 /******************************************************************************
  *
  * function:
- *    node *NT2OTTransform( node *arg_node)
+ *   node *NT2OTTransform( node *arg_node)
  *
  * description:
- *    adjusts all old vardec types according to the attached ntypes!
+ *   adjusts all old vardec types according to the attached ntypes!
  *
  ******************************************************************************/
 
@@ -92,9 +93,10 @@ NT2OTTransform (node *arg_node)
 /******************************************************************************
  *
  * function:
- *    node *NT2OTmodul( node *arg_node, node *arg_info)
+ *   node *NT2OTmodul( node *arg_node, node *arg_info)
  *
  * description:
+ *
  *
  ******************************************************************************/
 
@@ -132,9 +134,10 @@ NT2OTmodul (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *    node *NT2OTfundef( node *arg_node, node *arg_info)
+ *   node *NT2OTfundef( node *arg_node, node *arg_info)
  *
  * description:
+ *
  *
  ******************************************************************************/
 
@@ -161,14 +164,9 @@ NT2OTfundef (node *arg_node, node *arg_info)
         FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), arg_info);
     }
 
-    INFO_NT2OT_RETURN (arg_info) = NULL;
-
     if (FUNDEF_BODY (arg_node) != NULL) {
         FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
     }
-
-    FUNDEF_RETURN (arg_node) = INFO_NT2OT_RETURN (arg_info);
-    DBUG_ASSERT ((FUNDEF_RETURN (arg_node) != NULL), "FUNDEF_RETURN not found!");
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
         FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
@@ -180,9 +178,10 @@ NT2OTfundef (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *    node *NT2OTarg( node *arg_node, node *arg_info)
+ *   node *NT2OTarg( node *arg_node, node *arg_info)
  *
  * description:
+ *
  *
  ******************************************************************************/
 
@@ -218,9 +217,10 @@ NT2OTarg (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *    node *NT2OTblock( node *arg_node, node *arg_info)
+ *   node *NT2OTblock( node *arg_node, node *arg_info)
  *
  * description:
+ *
  *
  ******************************************************************************/
 
@@ -246,9 +246,10 @@ NT2OTblock (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *    node *NT2OTvardec( node *arg_node, node *arg_info)
+ *   node *NT2OTvardec( node *arg_node, node *arg_info)
  *
  * description:
+ *
  *
  ******************************************************************************/
 
@@ -286,9 +287,10 @@ NT2OTvardec (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *    node *NT2OTarray( node *arg_node, node *arg_info)
+ *   node *NT2OTarray( node *arg_node, node *arg_info)
  *
  * description:
+ *
  *
  ******************************************************************************/
 
@@ -311,9 +313,10 @@ NT2OTarray (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *    node *NT2OTlet( node *arg_node, node *arg_info)
+ *   node *NT2OTlet( node *arg_node, node *arg_info)
  *
  * description:
+ *
  *
  ******************************************************************************/
 
@@ -337,9 +340,10 @@ NT2OTlet (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *    node *NT2OTreturn( node *arg_node, node *arg_info)
+ *   node *NT2OTreturn( node *arg_node, node *arg_info)
  *
  * description:
+ *
  *
  ******************************************************************************/
 
@@ -347,8 +351,6 @@ node *
 NT2OTreturn (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("NT2OTreturn");
-
-    INFO_NT2OT_RETURN (arg_info) = arg_node;
 
     if (RETURN_EXPRS (arg_node) != NULL) {
         RETURN_EXPRS (arg_node) = Trav (RETURN_EXPRS (arg_node), arg_info);
@@ -360,9 +362,10 @@ NT2OTreturn (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *    node *NT2OTwithop( node *arg_node, node *arg_info)
+ *   node *NT2OTwithop( node *arg_node, node *arg_info)
  *
  * description:
+ *
  *
  ******************************************************************************/
 
