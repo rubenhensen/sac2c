@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.14  2000/07/06 16:37:50  dkr
+ * macro SAC_WL_DEST used to generate var##__dest
+ *
  * Revision 2.13  2000/02/07 09:51:59  cg
  * Changed setting of semicolons in definitions and declarations of
  * mutex locks in order to avoid nasty warnings from cc.
@@ -620,7 +623,7 @@ typedef union {
             if (tmp) {                                                                   \
                 tmp = unrolling - tmp;                                                   \
                 SAC_WL_MT_SCHEDULE_START (dim) += tmp;                                   \
-                array##__destptr += tmp * (offset);                                      \
+                SAC_WL_DEST (array) += tmp * (offset);                                   \
             }                                                                            \
         }                                                                                \
     }
