@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2004/07/21 16:57:09  ktr
+ * blah
+ *
  * Revision 1.8  2004/07/20 13:47:08  ktr
  * Removed need for RedoSSATransform-.
  * Especially this means that only regular identifiers are built that must
@@ -129,8 +132,6 @@ FreeInfo (info *info)
 
     DBUG_RETURN (info);
 }
-
-#define NWITHOP_MEMAVIS(n) (n->node[3])
 
 /**
  *
@@ -1286,7 +1287,11 @@ EMALwithop (node *arg_node, info *arg_info)
         /*
          * Annotate which memory is to be used
          */
-        NWITHOP_MEMAVIS (arg_node) = als->avis;
+        NWITHOP_MEM (arg_node)
+          = MakeId (StringCopy (VARDEC_NAME (AVIS_VARDECORARG (als->avis))), NULL,
+                    ST_regular);
+        ID_AVIS (NWITHOP_MEM (arg_node)) = als->avis;
+        ID_VARDEC (NWITHOP_MEM (arg_node)) = AVIS_VARDECORARG (als->avis);
 
         /*
          * genarray-wl:
@@ -1307,7 +1312,11 @@ EMALwithop (node *arg_node, info *arg_info)
         /*
          * Annotate which memory is to be used
          */
-        NWITHOP_MEMAVIS (arg_node) = als->avis;
+        NWITHOP_MEM (arg_node)
+          = MakeId (StringCopy (VARDEC_NAME (AVIS_VARDECORARG (als->avis))), NULL,
+                    ST_regular);
+        ID_AVIS (NWITHOP_MEM (arg_node)) = als->avis;
+        ID_VARDEC (NWITHOP_MEM (arg_node)) = AVIS_VARDECORARG (als->avis);
 
         /*
          * modarray-wl:
