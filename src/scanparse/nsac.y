@@ -4,6 +4,9 @@
 /*
 *
 * $Log$
+* Revision 1.11  2004/11/17 17:05:29  sah
+* added external typedefs
+*
 * Revision 1.10  2004/11/14 15:20:00  sah
 * fixed a bug
 *
@@ -58,6 +61,7 @@
 #include "free.h"
 #include "globals.h"
 #include "handle_mops.h"
+#include "new_types.h"
 
 #include "resource.h"
 
@@ -459,6 +463,16 @@ typedefs: typedef typedefs
 
 typedef: TYPEDEF ntype id SEMIC 
          { $$ = MakeTypedef( $3, mod_name, $2, ST_regular, NULL);
+
+           DBUG_PRINT( "PARSE",
+                       ("%s:"F_PTR","F_PTR", Id: %s",
+                        mdb_nodetype[ NODE_TYPE( $$)],
+                        $$, 
+                        TYPEDEF_NTYPE( $$),
+                        TYPEDEF_NAME( $$)));
+         }
+       | EXTERN TYPEDEF id SEMIC
+         { $$ = MakeTypedef( $3, mod_name, TYMakeSimple( T_hidden), ST_regular, NULL);
 
            DBUG_PRINT( "PARSE",
                        ("%s:"F_PTR","F_PTR", Id: %s",
