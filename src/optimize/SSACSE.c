@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.2  2001/03/05 17:11:28  nmw
+ * no more warnings
+ *
  * Revision 1.1  2001/03/05 16:02:25  nmw
  * Initial revision
  *
@@ -226,20 +229,33 @@ SSACSEvardec (node *arg_node, node *arg_info)
  *   node *SSACSEassign (node *arg_node, node *arg_info)
  *
  * description:
- *   traverses assignment chain top-down.
+ *   traverses assignment chain top-down and removes unused assignment.
  *
  ******************************************************************************/
 node *
 SSACSEassign (node *arg_node, node *arg_info)
 {
+    bool remassign;
+    node *tmp;
+
     DBUG_ENTER ("SSACSEassign");
 
     DBUG_ASSERT ((ASSIGN_INSTR (arg_node) != NULL), "assign node without instruction");
 
+    INFO_SSACSE_REMASSIGN (arg_info) = FALSE;
     ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+    remassign = INFO_SSACSE_REMASSIGN (arg_info);
 
+    /* traverse to next assignment in chain */
     if (ASSIGN_NEXT (arg_node) != NULL) {
         ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+    }
+
+    /* free this assignment if unused anymore */
+    if (remassign) {
+        tmp = arg_node;
+        arg_node = ASSIGN_NEXT (arg_node);
+        FreeNode (tmp);
     }
 
     DBUG_RETURN (arg_node);
@@ -283,6 +299,8 @@ SSACSEcond (node *arg_node, node *arg_info)
     /* remove top cse frame */
     INFO_SSACSE_CSE (arg_info) = RemoveTopCSElayer (INFO_SSACSE_CSE (arg_info));
 
+    INFO_SSACSE_REMASSIGN (arg_info) = FALSE;
+
     DBUG_RETURN (arg_node);
 }
 
@@ -299,6 +317,12 @@ node *
 SSACSEreturn (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("SSACSEreturn");
+
+    if (RETURN_EXPRS (arg_node) != NULL) {
+        RETURN_EXPRS (arg_node) = Trav (RETURN_EXPRS (arg_node), arg_info);
+    }
+
+    INFO_SSACSE_REMASSIGN (arg_info) = FALSE;
 
     DBUG_RETURN (arg_node);
 }
@@ -329,12 +353,18 @@ SSACSElet (node *arg_node, node *arg_info)
     LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
 
     match = FindCSE (INFO_SSACSE_CSE (arg_info), LET_EXPR (arg_node));
-    if (match) {
+    if (match != NULL) {
         /* found matching common subexpression */
+        /* ##nmw## set SUBST attributes */
 
+        /* remove assignment */
+        INFO_SSACSE_REMASSIGN (arg_info) = TRUE;
     } else {
         /* new expression found */
         INFO_SSACSE_CSE (arg_info) = AddCSEinfo (INFO_SSACSE_CSE (arg_info), arg_node);
+
+        /* do not remove assignment */
+        INFO_SSACSE_REMASSIGN (arg_info) = FALSE;
     }
 
     DBUG_RETURN (arg_node);
@@ -346,7 +376,8 @@ SSACSElet (node *arg_node, node *arg_info)
  *   node *SSACSEap(node *arg_node, node *arg_info)
  *
  * description:
- *
+ *   traverses parameter to do correct variable substitution.
+ *   if special function application, start traversal of this fundef
  *
  ******************************************************************************/
 node *
@@ -363,7 +394,6 @@ SSACSEap (node *arg_node, node *arg_info)
  *   node *SSACSEid(node *arg_node, node *arg_info)
  *
  * description:
- *
  *
  *
  ******************************************************************************/
@@ -419,7 +449,7 @@ SSACSENcode (node *arg_node, node *arg_info)
  *   node *SSACSEwhile(node *arg_node, node *arg_info)
  *
  * description:
- *
+ *   this function must never be called in ssaform.
  *
  *
  ******************************************************************************/
@@ -427,6 +457,8 @@ node *
 SSACSEwhile (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("SSACSEwhile");
+
+    DBUG_ASSERT ((FALSE), "there must not be any while-statement in ssa-form!");
 
     DBUG_RETURN (arg_node);
 }
@@ -437,14 +469,15 @@ SSACSEwhile (node *arg_node, node *arg_info)
  *   node *SSACSEdo(node *arg_node, node *arg_info)
  *
  * description:
- *
- *
+ *   this functions must never be called in ssaform.
  *
  ******************************************************************************/
 node *
 SSACSEdo (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("SSACSEdo");
+
+    DBUG_ASSERT ((FALSE), "there must not be any do-statement in ssa-form!");
 
     DBUG_RETURN (arg_node);
 }
