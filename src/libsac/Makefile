@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.17  2003/03/20 14:41:09  sbs
+# now builds mt version iff DISABLE_MT is not set
+#
 # Revision 3.16  2003/03/20 14:23:56  sbs
 # libsac_mt.a hidden behind $(LIBSAC_MT).
 #
@@ -91,7 +94,10 @@ OBJS_LIBSAC_MT := message_mt.o misc_mt.o trace_mt.o mt.o mt_trace.o \
 .PHONY: all tar clean prod
 
 
-all: libsac.a $(LIBSAC_MT)
+all: libsac.a
+ifneq ($(DISABLE_MT),yes)
+all: libsac_mt.a
+endif
 
 
 #
