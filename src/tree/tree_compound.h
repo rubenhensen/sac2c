@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.74  2003/03/10 09:22:05  sbs
+ * MAKE_OPON_LET and MAKE_INCDEC_LET adjusted to the new
+ * prf convention reqiuired by the TC
+ *
  * Revision 3.73  2002/10/22 12:40:49  sbs
  * DBUG_ASSERTs in expression position replaced by DBUG_ASSERT_EXPR
  *
@@ -1457,11 +1461,12 @@ extern int CountExprs (node *exprs);
 #define LET_USE(n) (IDS_USE (LET_IDS (n)))
 
 #define MAKE_OPON_LET(id, expr, op)                                                      \
-    MakeLet (MAKE_BIN_PRF (op, MakeId (id, NULL, ST_regular), expr),                     \
+    MakeLet (MakeAp2 (StringCopy (op), NULL, MakeId (id, NULL, ST_regular), expr),       \
              MakeIds (StringCopy (id), NULL, ST_regular))
 
 #define MAKE_INCDEC_LET(id, op)                                                          \
-    MakeLet (MAKE_BIN_PRF (op, MakeId (id, NULL, ST_regular), MakeNum (1)),              \
+    MakeLet (MakeAp2 (StringCopy (op), NULL, MakeId (id, NULL, ST_regular),              \
+                      MakeNum (1)),                                                      \
              MakeIds (StringCopy (id), NULL, ST_regular))
 
 /*--------------------------------------------------------------------------*/
