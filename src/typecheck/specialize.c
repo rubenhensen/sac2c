@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2002/09/03 15:02:53  sbs
+ * bug in SPECHandleLacFun eliminated
+ *
  * Revision 1.2  2002/09/03 14:41:45  sbs
  * DupTree machanism for duplicating condi funs established
  *
@@ -254,6 +257,7 @@ SPECHandleLacFun (node *fundef, node *assign, ntype *args)
         module = MakeModul ("dummy", F_prog, NULL, NULL, NULL, NULL);
         module = CheckAndDupSpecialFundef (module, fundef, assign);
         fun = MODUL_FUNS (module);
+        MODUL_FUNS (module) = NULL;
         module = FreeNode (module);
 
         FUNDEF_TCSTAT (fun) = 0; /* NTC_not_checked; */
