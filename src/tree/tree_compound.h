@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.145  2004/11/25 17:20:09  sbs
+ * added AP_NAME and AP_MOD
+ *
  * Revision 3.144  2004/11/25 17:17:24  khf
  * changed MACROS for wltransform
  *
@@ -1563,6 +1566,9 @@ extern node *TCmakePrf3 (prf prf, node *arg1, node *arg2, node *arg3);
 /*
  *  compound access macros
  */
+
+#define AP_NAME(n) FUNDEF_NAME (AP_FUNDEF (n))
+#define AP_MOD(n) FUNDEF_MOD (AP_FUNDEF (n))
 
 #define AP_EXPRS1(n) AP_ARGS (n)
 #define AP_EXPRS2(n) EXPRS_EXPRS2 (AP_ARGS (n))
