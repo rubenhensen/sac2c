@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2004/10/26 09:31:35  sah
+ * uses new PROVIDED/EXPORTED flags in newast mode now
+ *
  * Revision 3.12  2004/09/02 17:48:32  skt
  * added warning for use of DFR with SSA-form
  *
@@ -251,8 +254,12 @@ DFRfundef (node *arg_node, info *arg_info)
         }
 
         /* remark: main is always tagged as ST_exported! */
+#ifndef NEW_AST
         if ((FUNDEF_STATUS (arg_node) == ST_exported)
             || (FUNDEF_STATUS (arg_node) == ST_objinitfun)) {
+#else
+        if (GET_FLAG (FUNDEF, arg_node, IS_PROVIDED)) {
+#endif
             FUNDEF_EXPORT (arg_node) = TRUE;
 
             if (FUNDEF_BODY (arg_node) != NULL) {
