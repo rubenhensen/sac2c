@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.22  2001/04/30 12:15:13  nmw
+ * no separate optimizations of special fundefs anymore
+ * Unroll() added behind SSALoopUnrolling to get WLUR
+ *
  * Revision 3.21  2001/04/25 12:14:02  nmw
  * moved call of WLUR to SSALoopUnrolling
  *
@@ -761,7 +765,8 @@ OPTfundef (node *arg_node, node *arg_info)
     strcpy (argtype_buffer, "");
     buffer_space = 77;
 
-    if (FUNDEF_BODY (arg_node) != NULL) {
+    /* no optimizations of prototypes and special fundefs */
+    if ((FUNDEF_BODY (arg_node) != NULL) && (!(FUNDEF_IS_LACFUN (arg_node)))) {
         /*
          * The global variable 'do_break' is used to report a break to OPTmodul().
          * If no break occurs this variable is unset later on.
@@ -968,11 +973,13 @@ OPTfundef (node *arg_node, node *arg_info)
                     arg_node = CheckAvisOneFunction (arg_node);
                     arg_node = SSATransformOneFunction (arg_node);
                     arg_node = SSALoopUnrolling (arg_node, INFO_OPT_MODUL (arg_info));
+                    arg_node = GenerateMasks (arg_node, NULL);
                     /*
                      * important:
-                     *   SSALoopUnrolling internally calls the old Unroll() function
-                     *   to get the WithLoopUnrolling.
+                     *   SSALoopUnrolling do not implement WLUR so we have to call
+                     *   the old Unroll() function to get the WithLoopUnrolling.
                      */
+                    arg_node = Unroll (arg_node, arg_info); /* unroll_tab */
                 } else {
                     arg_node = Unroll (arg_node, arg_info); /* unroll_tab */
                 }
@@ -983,7 +990,7 @@ OPTfundef (node *arg_node, node *arg_info)
                 goto INFO;
             }
 
-            if (optimize & OPT_LUS) {
+            if ((optimize & OPT_LUS) && (!use_ssaform)) {
                 arg_node = Unswitch (arg_node, arg_info); /* unswitch_tab */
             }
 
