@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2001/04/26 15:16:58  dkr
+ * no changes done
+ *
  * Revision 3.5  2001/02/09 13:33:40  dkr
  * COMPIcm added
  *
@@ -58,9 +61,6 @@
  *
  * [ eliminated ]
  *
- * Revision 1.1  1995/03/29  12:38:10  hw
- * Initial revision
- *
  */
 
 #ifndef _sac_compile_h
@@ -75,6 +75,8 @@ extern node *MakeDecRcIcm (char *name, types *type, int rc, int num);
 extern node *Compile (node *arg_node);
 
 extern node *COMPModul (node *arg_node, node *arg_info);
+extern node *COMPTypedef (node *arg_node, node *arg_info);
+extern node *COMPObjdef (node *arg_node, node *arg_info);
 extern node *COMPVardec (node *arg_node, node *arg_info);
 extern node *COMPPrf (node *arg_node, node *arg_info);
 extern node *COMPAssign (node *arg_node, node *arg_info);
@@ -88,12 +90,10 @@ extern node *COMPFundef (node *arg_node, node *arg_info);
 extern node *COMPLoop (node *arg_node, node *arg_info);
 extern node *COMPCond (node *arg_node, node *arg_info);
 extern node *COMPBlock (node *arg_node, node *arg_info);
+extern node *COMPIcm (node *arg_node, node *arg_info);
 extern node *COMPCast (node *arg_node, node *arg_info);
-extern node *COMPTypedef (node *arg_node, node *arg_info);
-extern node *COMPObjdef (node *arg_node, node *arg_info);
 extern node *COMPSpmd (node *arg_node, node *arg_info);
 extern node *COMPSync (node *arg_node, node *arg_info);
-extern node *COMPIcm (node *arg_node, node *arg_info);
 
 extern node *COMPNwith2 (node *arg_node, node *arg_info);
 extern node *COMPWLsegx (node *arg_node, node *arg_info);
