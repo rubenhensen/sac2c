@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.83  1999/01/15 15:18:55  cg
+ * added function MakeAccess().
+ *
  * Revision 1.82  1998/08/11 14:35:33  dkr
  * MakeWLsegVar, MakeWLstriVar, MakeWLgridVar changed
  *
@@ -489,6 +492,26 @@ MakeNodelist (node *node, statustype status, nodelist *next)
     default:
         DBUG_ASSERT (0, ("Wrong node type in MakeNodelist"));
     }
+
+    DBUG_RETURN (tmp);
+}
+
+/*--------------------------------------------------------------------------*/
+
+access_t *
+MakeAccess (node *array, node *iv, accessclass_t class, shpseg *offset, access_t *next)
+{
+    access_t *tmp;
+
+    DBUG_ENTER ("MakeAccess");
+
+    ALLOCATE (tmp, access_t);
+
+    ACCESS_ARRAY (tmp) = array;
+    ACCESS_IV (tmp) = iv;
+    ACCESS_CLASS (tmp) = class;
+    ACCESS_OFFSET (tmp) = offset;
+    ACCESS_NEXT (tmp) = next;
 
     DBUG_RETURN (tmp);
 }
