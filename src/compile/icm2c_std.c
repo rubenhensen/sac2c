@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.52  2003/09/29 22:54:24  dkr
+ * code brushing done.
+ * several icms renamed/removed/added.
+ *
  * Revision 3.51  2003/09/25 13:43:46  dkr
  * new argument 'copyfun' added to some ICMs.
  * ND_WRITE replaced by ND_WRITE_READ_COPY.
@@ -657,34 +661,25 @@ ICMCompileND_CHECK_REUSE (char *to_NT, int to_sdim, char *from_NT, int from_sdim
 
 /******************************************************************************
  *
- * function:
- *   void ICMCompileND_SET__SHAPE( char *to_NT, int dim, char **shp_ANY)
+ * Function:
+ *   void Set_Shape( char *to_NT, int to_sdim, void *shp,
+ *                   void (*shp_size_fun)( void *),
+ *                   void (*shp_read_fun)( void *, char *, int))
  *
- * description:
- *   implements the compilation of the following ICM:
+ * Description:
  *
- *   ND_SET__SHAPE( to_NT, dim, [ shp_ANY ]* )
  *
  ******************************************************************************/
 
-void
-ICMCompileND_SET__SHAPE (char *to_NT, int dim, char **shp_ANY)
+static void
+Set_Shape (char *to_NT, int to_sdim, void *shp, void (*shp_size_fun) (void *),
+           void (*shp_read_fun) (void *, char *, int))
 {
     int i;
     shape_class_t to_sc = ICUGetShapeClass (to_NT);
+    int to_dim = DIM_NO_OFFSET (to_sdim);
 
-    DBUG_ENTER ("ICMCompileND_SET__SHAPE");
-
-#define ND_SET__SHAPE
-#include "icm_comment.c"
-#include "icm_trace.c"
-#undef ND_SET__SHAPE
-
-    /*
-     * CAUTION:
-     * 'shp_ANY[i]' is either a tagged identifier (representing a scalar)
-     * or a constant scalar!
-     */
+    DBUG_ENTER ("Set_Shape");
 
     /*
      * set descriptor and non-constant part of mirror
@@ -694,22 +689,33 @@ ICMCompileND_SET__SHAPE (char *to_NT, int dim, char **shp_ANY)
         /*
          * ND_A_DESC_DIM, ND_A_MIRROR_DIM have already been set by ND_ALLOC__DESC!
          */
-        ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == %d", to_NT, dim);
+        ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == ", to_NT);
+                         GetAttr (shp, to_dim, shp_size_fun);
                          ,
                          fprintf (outfile, "Assignment with incompatible types found!"););
         BLOCK_VARDECS (fprintf (outfile, "int SAC_size = 1;");
-                       , SET_SHAPES_AUD__NUM (to_NT, i, 0, dim, INDENT;
-                                              fprintf (outfile, "SAC_size *= \n");
-                                              , ReadScalar (shp_ANY[i], NULL, 0););
+                       ,
+                       /*
+                        * although 'to_NT' is AUD, 'to_dim' may indeed be >=0 if the sac2c
+                        * flag -minarrayrep has been used, i.e. 'to_NT' may be implemented
+                        * as AUD although it is AKD!!!
+                        */
+                       SET_SHAPES_AUD__XXX (to_NT, i, fprintf (outfile, "SAC_i");
+                                            , 0, fprintf (outfile, "0");
+                                            , to_dim,
+                                            fprintf (outfile, "SAC_ND_A_DIM( %s)", to_NT);
+                                            , INDENT; fprintf (outfile, "SAC_size *= \n");
+                                            , shp_read_fun (shp, NULL, i);
+                                            , shp_read_fun (shp, "SAC_i", -1););
 
                        SET_SIZE (to_NT, fprintf (outfile, "SAC_size");););
         break;
 
     case C_akd:
         BLOCK_VARDECS (fprintf (outfile, "int SAC_size = 1;");
-                       , SET_SHAPES_AKD (to_NT, i, 0, dim, INDENT;
+                       , SET_SHAPES_AKD (to_NT, i, 0, to_dim, INDENT;
                                          fprintf (outfile, "SAC_size *= \n");
-                                         , ReadScalar (shp_ANY[i], NULL, 0););
+                                         , shp_read_fun (shp, NULL, i););
 
                        SET_SIZE (to_NT, fprintf (outfile, "SAC_size");););
         break;
@@ -730,23 +736,25 @@ ICMCompileND_SET__SHAPE (char *to_NT, int dim, char **shp_ANY)
      */
     switch (to_sc) {
     case C_scl:
-        DBUG_ASSERT ((dim == 0), "illegal dimension found!");
-        INDENT;
-        fprintf (outfile, "SAC_NOOP()\n");
+        ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == ", to_NT);
+                         GetAttr (shp, to_dim, shp_size_fun);
+                         ,
+                         fprintf (outfile, "Assignment with incompatible types found!"););
         break;
 
     case C_aks:
-        DBUG_ASSERT ((dim >= 0), "illegal dimension found!");
-        for (i = 0; i < dim; i++) {
+        DBUG_ASSERT ((to_dim >= 0), "illegal dimension found!");
+        for (i = 0; i < to_dim; i++) {
             ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_SHAPE( %s, %d) == ", to_NT, i);
-                             ReadScalar (shp_ANY[i], NULL, 0);
+                             shp_read_fun (shp, NULL, i);
                              , fprintf (outfile,
                                         "Assignment with incompatible types found!"););
         }
         /* here is no break missing */
 
     case C_akd:
-        ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == %d", to_NT, dim);
+        ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == ", to_NT);
+                         GetAttr (shp, to_dim, shp_size_fun);
                          ,
                          fprintf (outfile, "Assignment with incompatible types found!"););
         break;
@@ -759,6 +767,66 @@ ICMCompileND_SET__SHAPE (char *to_NT, int dim, char **shp_ANY)
         DBUG_ASSERT ((0), "Unknown shape class found!");
         break;
     }
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileND_SET__SHAPE_id( char *to_NT, int to_sdim, char *shp_NT)
+ *
+ * description:
+ *   implements the compilation of the following ICM:
+ *
+ *   ND_SET__SHAPE_id( to_NT, to_sdim, shp_NT )
+ *
+ ******************************************************************************/
+
+void
+ICMCompileND_SET__SHAPE_id (char *to_NT, int to_sdim, char *shp_NT)
+{
+    DBUG_ENTER ("ICMCompileND_SET__SHAPE_id");
+
+#define ND_SET__SHAPE_id
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef ND_SET__SHAPE_id
+
+    Set_Shape (to_NT, to_sdim, shp_NT, SizeId, ReadId);
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileND_SET__SHAPE_arr( char *to_NT, int dim, char **shp_ANY)
+ *
+ * description:
+ *   implements the compilation of the following ICM:
+ *
+ *   ND_SET__SHAPE_arr( to_NT, dim, [ shp_ANY ]* )
+ *
+ ******************************************************************************/
+
+void
+ICMCompileND_SET__SHAPE_arr (char *to_NT, int dim, char **shp_ANY)
+{
+    DBUG_ENTER ("ICMCompileND_SET__SHAPE_arr");
+
+#define ND_SET__SHAPE_arr
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef ND_SET__SHAPE_arr
+
+    /*
+     * CAUTION:
+     * 'shp_ANY[i]' is either a tagged identifier (representing a scalar)
+     * or a constant scalar!
+     */
+
+    Set_Shape (to_NT, dim, shp_ANY, NULL, ReadConstArray);
 
     DBUG_VOID_RETURN;
 }
@@ -934,10 +1002,7 @@ ICMCompileND_ASSIGN (char *to_NT, int to_sdim, char *from_NT, int from_sdim,
 #include "icm_trace.c"
 #undef ND_ASSIGN
 
-    ICMCompileND_CHECK__MIRROR (to_NT, to_sdim, from_NT, from_sdim);
-    ICMCompileND_UPDATE__MIRROR (to_NT, to_sdim, from_NT, from_sdim);
-    ICMCompileND_ASSIGN__DESC (to_NT, from_NT);
-    ICMCompileND_UPDATE__DESC (to_NT, to_sdim, from_NT, from_sdim);
+    ICMCompileND_ASSIGN__SHAPE (to_NT, to_sdim, from_NT, from_sdim);
 
     INDENT;
     fprintf (outfile, "SAC_ND_ASSIGN__DATA( %s, %s, %s)\n", to_NT, from_NT, copyfun);
@@ -953,7 +1018,7 @@ ICMCompileND_ASSIGN (char *to_NT, int to_sdim, char *from_NT, int from_sdim,
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_ASSIGN__DESC( to_NT, to_sdim, from_NT, from_sdim)
+ *   ND_ASSIGN__DESC( to_NT, from_NT)
  *
  ******************************************************************************/
 
@@ -1034,6 +1099,49 @@ ICMCompileND_ASSIGN__DESC (char *to_NT, char *from_NT)
                      from_NT);
         }
     }
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileND_ASSIGN__SHAPE( char *to_NT, int to_sdim,
+ *                                    char *from_NT, int from_sdim)
+ *
+ * description:
+ *   implements the compilation of the following ICM:
+ *
+ *   ND_ASSIGN__SHAPE( to_NT, to_sdim, from_NT, from_sdim)
+ *
+ ******************************************************************************/
+
+void
+ICMCompileND_ASSIGN__SHAPE (char *to_NT, int to_sdim, char *from_NT, int from_sdim)
+{
+    DBUG_ENTER ("ICMCompileND_ASSIGN__SHAPE");
+
+#define ND_ASSIGN__SHAPE
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef ND_ASSIGN__SHAPE
+
+    /*
+     * check constant part of mirror
+     */
+    ICMCompileND_CHECK__MIRROR (to_NT, to_sdim, from_NT, from_sdim);
+
+    ICMCompileND_ASSIGN__DESC (to_NT, from_NT);
+
+    /*
+     * assign non-constant part of mirror
+     */
+    ICMCompileND_UPDATE__MIRROR (to_NT, to_sdim, from_NT, from_sdim);
+
+    /*
+     * assign missing descriptor entries
+     */
+    ICMCompileND_UPDATE__DESC (to_NT, to_sdim, from_NT, from_sdim);
 
     DBUG_VOID_RETURN;
 }
@@ -1222,7 +1330,7 @@ ICMCompileND_UPDATE__MIRROR (char *to_NT, int to_sdim, char *from_NT, int from_s
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_COPY( to_NT, to_sdim, from_NT, copyfun)
+ *   ND_COPY( to_NT, to_sdim, from_NT, from_sdim, copyfun)
  *
  ******************************************************************************/
 
@@ -1240,7 +1348,7 @@ ICMCompileND_COPY (char *to_NT, int to_sdim, char *from_NT, int from_sdim, char 
     INDENT;
     fprintf (outfile, "SAC_ND_ALLOC_BEGIN( %s, 1, SAC_ND_A_DIM( %s))\n", to_NT, from_NT);
 
-    /* copy descriptor entries and mirror */
+    /* copy descriptor entries and non-constant part of mirror */
     ICMCompileND_COPY__SHAPE (to_NT, to_sdim, from_NT, from_sdim);
 
     INDENT;
@@ -1280,10 +1388,13 @@ ICMCompileND_COPY__SHAPE (char *to_NT, int to_sdim, char *from_NT, int from_sdim
 #include "icm_trace.c"
 #undef ND_COPY__SHAPE
 
+    /*
+     * check constant part of mirror
+     */
     ICMCompileND_CHECK__MIRROR (to_NT, to_sdim, from_NT, from_sdim);
 
     /*
-     * copy descriptor entries and mirror
+     * copy descriptor entries and non-constant part of mirror
      */
     switch (to_sc) {
     case C_aud:
@@ -1378,67 +1489,6 @@ ICMCompileND_MAKE_UNIQUE (char *to_NT, int to_sdim, char *from_NT, int from_sdim
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_CREATE__ARRAY__DIM( int dim,
- *                                         int val_size, char **vals_ANY)
- *
- * description:
- *   implements the compilation of the following ICM:
- *
- *   ND_CREATE__ARRAY__DIM( dim, val_size, [ vals_ANY ]* )
- *
- *   dim: top-level dimension
- *           [a,b,c,d]       ->   dim == 1
- *           [[a,b],[c,d]]   ->   dim == 2
- *   val_size: size of data vector
- *   vals_ANY: data vector
- *
- ******************************************************************************/
-
-void
-ICMCompileND_CREATE__ARRAY__DIM (int dim, int val_size, char **vals_ANY)
-{
-    bool entries_are_scalars;
-    int i;
-
-    DBUG_ENTER ("ICMCompileND_CREATE__ARRAY__DIM");
-
-#define ND_CREATE__ARRAY__DIM
-#include "icm_comment.c"
-#include "icm_trace.c"
-#undef ND_CREATE__ARRAY__DIM
-
-    /*
-     * CAUTION:
-     * 'vals_ANY[i]' is either a tagged identifier (scalar or non-scalar)
-     * or a constant scalar!
-     */
-
-    entries_are_scalars = FALSE;
-    for (i = 0; i < val_size; i++) {
-        if ((vals_ANY[i][0] != '(') || /* not a tagged id -> is a const scalar! */
-            (ICUGetShapeClass (vals_ANY[i]) == C_scl)) {
-            entries_are_scalars = TRUE;
-        }
-    }
-
-    if (val_size <= 0) {
-        /*
-         * 'A = []' works only for arrays with known dimension/shape!
-         */
-        fprintf (outfile, "SAC_ICM_UNDEF()");
-    } else if (entries_are_scalars) {
-        fprintf (outfile, "%d", dim);
-    } else {
-        /* 'vals_ANY[i]' is a tagged identifier! */
-        fprintf (outfile, "SAC_ND_A_DIM( %s) + %d", vals_ANY[0], dim);
-    }
-
-    DBUG_VOID_RETURN;
-}
-
-/******************************************************************************
- *
- * function:
  *   void ICMCompileND_CREATE__ARRAY__SHAPE( char *to_NT, int to_sdim,
  *                                           int dim, int *shp,
  *                                           int val_size, char **vals_ANY,
@@ -1502,7 +1552,7 @@ ICMCompileND_CREATE__ARRAY__SHAPE (char *to_NT, int to_sdim, int dim, int *shp,
             shp_str[i] = (char *)Malloc (20 * sizeof (char));
             sprintf (shp_str[i], "%d", shp[i]);
         }
-        ICMCompileND_SET__SHAPE (to_NT, dim, shp_str);
+        ICMCompileND_SET__SHAPE_arr (to_NT, dim, shp_str);
         for (i = 0; i < dim; i++) {
             shp_str[i] = Free (shp_str[i]);
         }
@@ -1511,7 +1561,52 @@ ICMCompileND_CREATE__ARRAY__SHAPE (char *to_NT, int to_sdim, int dim, int *shp,
         /* 'vals_ANY[i]' is a tagged identifier */
 
         /*
-         * set descriptor and non-constant part of mirror
+         * check constant part of mirror
+         */
+        switch (to_sc) {
+        case C_scl:
+            DBUG_ASSERT ((0), "illegal dimension found!");
+            break;
+
+        case C_aks:
+            for (i = 0; i < dim; i++) {
+                ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_SHAPE( %s, %d) == %d", to_NT,
+                                          i, shp[i]);
+                                 ,
+                                 fprintf (outfile,
+                                          "Assignment with incompatible types found!"););
+            }
+            DBUG_ASSERT ((to_dim >= 0), "illegal dimension found!");
+            for (i = dim; i < to_dim; i++) {
+                ASSURE_TYPE_ASS (fprintf (outfile,
+                                          "SAC_ND_A_SHAPE( %s, %d) == SAC_ND_A_SHAPE( "
+                                          "%s, %d)",
+                                          to_NT, i, vals_ANY[0], i - dim);
+                                 ,
+                                 fprintf (outfile,
+                                          "Assignment with incompatible types found!"););
+            }
+            /* here is no break missing */
+
+        case C_akd:
+            ASSURE_TYPE_ASS (fprintf (outfile,
+                                      "SAC_ND_A_DIM( %s) == SAC_ND_A_DIM( %s) + %d",
+                                      to_NT, vals_ANY[0], dim);
+                             , fprintf (outfile,
+                                        "Assignment with incompatible types found!"););
+            break;
+
+        case C_aud:
+            /* noop */
+            break;
+
+        default:
+            DBUG_ASSERT ((0), "Unknown shape class found!");
+            break;
+        }
+
+        /*
+         * set descriptor entries and non-constant part of mirror
          */
         switch (to_sc) {
         case C_aud:
@@ -1599,51 +1694,6 @@ ICMCompileND_CREATE__ARRAY__SHAPE (char *to_NT, int to_sdim, int dim, int *shp,
         case C_aks:
             /* here is no break missing */
         case C_scl:
-            /* noop */
-            break;
-
-        default:
-            DBUG_ASSERT ((0), "Unknown shape class found!");
-            break;
-        }
-
-        /*
-         * check constant parts of mirror
-         */
-        switch (to_sc) {
-        case C_scl:
-            DBUG_ASSERT ((0), "illegal dimension found!");
-            break;
-
-        case C_aks:
-            for (i = 0; i < dim; i++) {
-                ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_SHAPE( %s, %d) == %d", to_NT,
-                                          i, shp[i]);
-                                 ,
-                                 fprintf (outfile,
-                                          "Assignment with incompatible types found!"););
-            }
-            DBUG_ASSERT ((to_dim >= 0), "illegal dimension found!");
-            for (i = dim; i < to_dim; i++) {
-                ASSURE_TYPE_ASS (fprintf (outfile,
-                                          "SAC_ND_A_SHAPE( %s, %d) == SAC_ND_A_SHAPE( "
-                                          "%s, %d)",
-                                          to_NT, i, vals_ANY[0], i - dim);
-                                 ,
-                                 fprintf (outfile,
-                                          "Assignment with incompatible types found!"););
-            }
-            /* here is no break missing */
-
-        case C_akd:
-            ASSURE_TYPE_ASS (fprintf (outfile,
-                                      "SAC_ND_A_DIM( %s) == SAC_ND_A_DIM( %s) + %d",
-                                      to_NT, vals_ANY[0], dim);
-                             , fprintf (outfile,
-                                        "Assignment with incompatible types found!"););
-            break;
-
-        case C_aud:
             /* noop */
             break;
 
