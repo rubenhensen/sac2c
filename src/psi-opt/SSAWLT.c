@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.17  2002/10/09 22:07:40  dkr
+ * fixed a bug in SSAWLTNgenerator()
+ *
  * Revision 1.16  2002/10/09 12:44:44  dkr
  * SSAWLTNgenerator(): *structural* constants used now
  *
@@ -97,6 +100,7 @@
 #include "Error.h"
 #include "dbug.h"
 #include "traverse.h"
+#include "constants.h"
 #include "optimize.h"
 #include "SSAConstantFolding.h"
 #include "SSAWithloopFolding.h"
@@ -980,7 +984,10 @@ SSAWLTNgenerator (node *arg_node, node *arg_info)
                     DBUG_ASSERT ((NODE_TYPE (*bound) == N_array), "illegal node found!");
                     tmp = FreeTree (tmp);
                     bound_const = SCOFreeStructConstant (bound_const);
-                } else {
+                }
+
+                /* value also constant? */
+                if (!COIsConstant (*bound)) {
                     /* non-constant son found */
                     if (i <= 2) {
                         /* non-constant lower or upper bound found */
