@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.7  1999/07/07 06:02:08  sbs
+ * added some IdxXXX funs needed for IVE
+ *
  * Revision 2.6  1999/06/25 14:59:40  jhs
  * Added spmdrmtrav_tab and spmdrotrav_tab.
  *
@@ -109,7 +112,7 @@
  *
  */
 
-/*   Node_name   dbug-string   imp_tab       flat_tab      print_tab     type_tab
+/*   Node_name   mdb_nodetype  imp_tab       flat_tab      print_tab     type_tab
  *                             genmask_tab   dcr_tab       wlf_tab       free_tab
  *                             cf_tab        refcnt_tab    comp_tab      lir_tab
  *                             dup_tab       inline_tab    unroll_tab    lir_mov_tab
@@ -295,7 +298,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
   NIF (N_vardec, "N_vardec", TravSons, TravSons, PrintVardec, TCvardec, GNMvardec,
        DCRvardec, TravSons, FreeVardec, TravSons, RCvardec, COMPVardec, TravSons, DupDec,
-       INLvardec, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       INLvardec, TravSons, TravSons, IdxVardec, TravSons, TravSons, TravSons,
 
        PrintVardec, TravSons, TravSons, TravSons, ANAvardec, TravSons, TravSons,
        UNQvardec, TravSons, PRECvardec, TravSons, TravSons, TravSons, TravSons, TravSons,
@@ -306,7 +309,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
   NIF (N_block, "N_block", TravSons, FltnBlock, PrintBlock, TCblock, GNMblock, TravSons,
        TravSons, FreeBlock, TravSons, RCblock, COMPBlock, TravSons, DupBlock, TravSons,
-       TravSons, LIRMblock, TravSons, TravSons, TravSons, TravSons,
+       TravSons, LIRMblock, IdxBlock, TravSons, TravSons, TravSons,
 
        PrintBlock, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, UNQblock,
        RMVblock, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
@@ -340,7 +343,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
   NIF (N_return, "N_return", TravSons, FltnReturn, PrintReturn, TCreturn, TravSons,
        TravSons, TravSons, FreeReturn, TravSons, TravSons, COMPReturn, TravSons, DupChain,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, IdxReturn, TravSons, TravSons, TravSons,
 
        PrintReturn, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, PRECreturn, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
