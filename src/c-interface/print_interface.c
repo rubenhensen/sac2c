@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.13  2000/07/20 11:40:15  nmw
+ * wrapperfunctions check for initialized module and register themselves
+ * at the free_interface_hanlder to be freed at cleanup
+ *
  * Revision 1.12  2000/07/19 16:44:21  nmw
  * made a variable a bit more static...
  *
@@ -65,8 +69,8 @@
  * modules/cccall.c:  compiles and generates the c-library.
  *
  * known limitations:
- *   no support for global objects at all and no user defined types at
- *   the interface level (but you might use them internally)
+ *   no user defined types at the interface level (but you might use them internally)
+ *
  *
  */
 
@@ -119,8 +123,7 @@ static node *PIWfundefSwitch (node *arg_node, node *arg_info);
 static node *PIWfundefCall (node *arg_node, node *arg_info);
 static node *PIWfundefRefcounting (node *arg_node, node *arg_info);
 static strings *PrintDepEntry (deps *depends, statustype stat, strings *done);
-static void PIHModuleInitFunction (char *modname);
-static void PIHModuleFreeFunction (char *modname);
+static void PIWModuleInitFlag (char *modname);
 static void PIWModuleInitFunction (char *modname);
 static void PIWModuleFreeFunction (char *modname);
 
@@ -159,22 +162,15 @@ PIHmodul (node *arg_node, node *arg_info)
              " *\n"
              " * -I$SACBASE/runtime (for include of 'sac_cinterface.h')\n"
              " *\n"
-             " * when compiling your code add the following files to link with:\n",
-             MODUL_NAME (arg_node));
+             " * when compiling your code add the following files to link with:\n"
+             " * -l%s\n",
+             MODUL_NAME (arg_node), MODUL_NAME (arg_node));
     done = PrintDepEntry (dependencies, ST_external, NULL);
     done = PrintDepEntry (dependencies, ST_system, NULL);
-    fprintf (outfile,
-             " * -l%s\n"
-             " * -lsac\n"
-             " *\n */\n\n",
-             MODUL_NAME (arg_node));
+    fprintf (outfile, " * -lsac\n"
+                      " *\n */\n\n");
 
     fprintf (outfile, "#include \"sac_cinterface.h\"\n");
-
-    /* init and free functions for global objects */
-    PIHModuleInitFunction (MODUL_NAME (arg_node));
-    PIHModuleFreeFunction (MODUL_NAME (arg_node));
-    fprintf (outfile, "\n\n");
 
     if (MODUL_CWRAPPER (arg_node) != NULL) {
         /* traverse list of wrappers */
@@ -433,15 +429,20 @@ PIWmodul (node *arg_node, node *arg_info)
              modulename);
 
     /* declarations for external SAC functions */
-    fprintf (outfile, "#include \"header.h\"\n"
-                      "#include \"sac.h\"\n"
-                      "#include \"sac_cwrapper.h\"\n"
-                      "#include \"sac_cinterface.h\"\n"
-                      "\n");
+    fprintf (outfile,
+             "#include \"header.h\"\n"
+             "#include \"sac.h\"\n"
+             "#include \"sac_cwrapper.h\"\n"
+             "#include \"sac_cinterface.h\"\n"
+             "#include \"sac_free_interface_handler.h\"\n\n"
+             "static void SAC_Free%s();"
+             "\n",
+             MODUL_NAME (arg_node));
 
     /* general preload for codefile */
     fprintf (outfile, "/* startup functions and global code */\n");
     GSCPrintFileHeader (arg_node);
+    PIWModuleInitFlag (MODUL_NAME (arg_node));
     PIWModuleInitFunction (MODUL_NAME (arg_node));
     PIWModuleFreeFunction (MODUL_NAME (arg_node));
 
@@ -479,6 +480,11 @@ PIWcwrapper (node *arg_node, node *arg_info)
     /* print standard function prototype for wrapper */
     arg_node = PIHcwrapperPrototype (arg_node, arg_info);
     fprintf (outfile, "\n{\n");
+
+    /* print check for module initialization */
+    fprintf (outfile, "/* check for proper module initialization */\n");
+    fprintf (outfile, "SAC_IW_CHECK_MODINIT( SAC_Initflag%s , SAC_Init%s );\n\n",
+             modulename, modulename);
 
     /* print checks for refcounts */
     fprintf (outfile, "/* refcount checks for arguments */\n");
@@ -985,45 +991,20 @@ PrintDepEntry (deps *depends, statustype stat, strings *done)
 /******************************************************************************
  *
  * function:
- *    void PIHModuleInitFunction(char *modname)
+ *    void PIHModuleInitFlag(char *modname)
  *
  * description:
- *   prints headefile code with comment for SAC_Init<mod>()
+ *   prints code with comment for SAC_Initflag<mod>
  *
  ******************************************************************************/
 
 static void
-PIHModuleInitFunction (char *modname)
+PIWModuleInitFlag (char *modname)
 {
-    DBUG_ENTER ("PIHModuleInitFunction");
+    DBUG_ENTER ("PIHModuleInitFlag");
     fprintf (outfile,
-             "/* call this function before you use any\n"
-             " * functions of this module\n"
-             " */\n"
-             "extern void SAC_Init%s();\n\n",
-             modname);
-    DBUG_VOID_RETURN;
-}
-
-/******************************************************************************
- *
- * function:
- *    void PIHModuleFreeFunction(char *modname)
- *
- * description:
- *   prints headefile code with comment for SAC_Free<mod>()
- *
- ******************************************************************************/
-
-static void
-PIHModuleFreeFunction (char *modname)
-{
-    DBUG_ENTER ("PIHModuleExitFunction");
-    fprintf (outfile,
-             "/* call this function when you have finished using the\n"
-             " * functions of this module\n"
-             " */\n"
-             "extern void SAC_Free%s();\n\n",
+             "/* initflag */\n"
+             "static bool SAC_Initflag%s=false;\n\n",
              modname);
     DBUG_VOID_RETURN;
 }
@@ -1042,7 +1023,11 @@ static void
 PIWModuleInitFunction (char *modname)
 {
     DBUG_ENTER ("PIWModuleInitFunction");
-    fprintf (outfile, "void SAC_Init%s()\n{\n", modname);
+    fprintf (outfile,
+             "static void SAC_Init%s()\n"
+             "{\n"
+             "  SAC_FIH_AddFreeFunction( &SAC_Free%s );\n",
+             modname, modname);
     GSCPrintMainBegin ();
     fprintf (outfile, "\n}\n\n\n");
     DBUG_VOID_RETURN;
@@ -1062,8 +1047,9 @@ static void
 PIWModuleFreeFunction (char *modname)
 {
     DBUG_ENTER ("PIWModuleExitFunction");
-    fprintf (outfile, "void SAC_Free%s()\n{\n", modname);
+    fprintf (outfile, "static void SAC_Free%s()\n{\n", modname);
     GSCPrintMainEnd ();
+    fprintf (outfile, "printf(\"DEBUG: %s has been freed.\\n\");", modname);
     fprintf (outfile, "\n}\n\n\n");
     DBUG_VOID_RETURN;
 }
