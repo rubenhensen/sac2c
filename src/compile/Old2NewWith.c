@@ -159,7 +159,7 @@ ReadOneGenPart (FILE *infile, types *type)
     }
     if (error) {
         if (aelems != NULL)
-            FreeTree (aelems);
+            aelems = FreeTree (aelems);
         arr_node = NULL;
     } else {
         arr_node = MakeArray (aelems);
@@ -167,6 +167,23 @@ ReadOneGenPart (FILE *infile, types *type)
     }
 
     DBUG_RETURN (arr_node);
+}
+
+node *
+ReadCode (FILE *infile)
+{
+    node *code = NULL;
+    int val;
+
+    DBUG_ENTER ("ReadCode");
+
+    error = (feof (infile) || (fscanf (infile, "%d ", &val) == EOF) || ferror (infile));
+
+    if (!error) {
+        code = MakeNCode (NULL, MakeNum (val));
+    }
+
+    DBUG_RETURN (code);
 }
 
 /******************************************************************************
@@ -189,12 +206,13 @@ ReadOneGenPart (FILE *infile, types *type)
 node *
 BuildNpart (FILE *infile, node *arg_node)
 {
-    node *tmp_node, *new_node = NULL;
+    node *tmp_node, *new_node, *new_code;
     types *type;
 
     DBUG_ENTER ("BuildNpart");
 
     error = 0;
+    new_node = NULL;
 
     do {
         tmp_node = new_node;
@@ -213,19 +231,27 @@ BuildNpart (FILE *infile, node *arg_node)
             NGEN_STEP (NPART_GEN (new_node)) = ReadOneGenPart (infile, type);
         if (!error)
             NGEN_WIDTH (NPART_GEN (new_node)) = ReadOneGenPart (infile, type);
+        if (!error) {
+            /* search last entry in code table */
+            new_code = NPART_CODE (new_node);
+            while (NCODE_NEXT (new_code) != NULL) {
+                new_code = NCODE_NEXT (new_code);
+            }
+            /* append new code at code table */
+            NCODE_NEXT (new_code) = ReadCode (infile);
+            NPART_CODE (new_node) = NCODE_NEXT (new_code);
+        }
     } while (!error);
 
     if (error) {
         /* remove uncompleted part of the new Npart-syntaxtree */
-        tmp_node = new_node;
-        new_node = NPART_NEXT (new_node);
-        NPART_NEXT (tmp_node) = NULL;
-        FreeTree (tmp_node);
+        new_node = FreeNode (new_node);
+        /* 'new_node' points now to his successor!! */
     }
 
     /* if generation was succesful, only use new Npart-syntaxtree */
     if (new_node != NULL) {
-        FreeTree (arg_node);
+        arg_node = FreeTree (arg_node);
         arg_node = new_node;
     }
 
@@ -261,12 +287,25 @@ O2Nnpart (node *arg_node, node *arg_info)
 node *
 O2Nnwith (node *arg_node, node *arg_info)
 {
-    node *tmp_node, *shape, *bound2_el, *shape_el;
+    node *tmp_node, *shape, *bound2_el, *shape_el, *last_code;
 
     DBUG_ENTER ("O2Nnwith");
 
     NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
+
+    /* save last entry in code table */
+    last_code = NWITH_CODE (arg_node);
+    while (NCODE_NEXT (last_code) != NULL) {
+        last_code = NCODE_NEXT (last_code);
+    }
+
     NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
+
+    /* skip old code table */
+    tmp_node = NWITH_CODE (arg_node);
+    NWITH_CODE (arg_node) = NCODE_NEXT (last_code);
+    NCODE_NEXT (last_code) = NULL;
+    tmp_node = FreeTree (tmp_node);
 
     /* modify the genarray-shape */
     if (NWITHOP_TYPE (NWITH_WITHOP (arg_node)) == WO_genarray) {
@@ -291,7 +330,7 @@ O2Nnwith (node *arg_node, node *arg_info)
 
         tmp_node = NWITHOP_SHAPE (NWITH_WITHOP (arg_node));
         NWITHOP_SHAPE (NWITH_WITHOP (arg_node)) = shape;
-        FreeTree (tmp_node);
+        tmp_node = FreeTree (tmp_node);
     }
 
     DBUG_RETURN (arg_node);
