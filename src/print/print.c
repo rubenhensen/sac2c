@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.205  1998/04/28 15:44:46  srs
+ * changed output of Nwithop
+ *
  * Revision 1.204  1998/04/26 21:52:29  dkr
  * PrintSPMD renamed to PrintSpmd
  *
@@ -2258,7 +2261,7 @@ PrintNwith (node *arg_node, node *arg_info)
          * output format 2: now we have in
          * INFO_PRINT_INT_SYN(arg_info) the last expr.
          */
-        fprintf (outfile, ", ");
+        fprintf (outfile, ", dummy, ");
         Trav (INFO_PRINT_INT_SYN (arg_info), arg_info);
     }
     fprintf (outfile, ")");
