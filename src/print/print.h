@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/01/09 17:22:13  dkr
+ * PrintWLstriVar renamed into PrintWLstrideVar
+ *
  * Revision 3.3  2000/12/12 12:16:54  dkr
  * nodes N_pre, N_post, N_inc, N_dec removed
  *
@@ -222,7 +225,7 @@ extern node *PrintWLublock (node *arg_node, node *arg_info);
 extern node *PrintWLstride (node *arg_node, node *arg_info);
 extern node *PrintWLgrid (node *arg_node, node *arg_info);
 extern node *PrintWLsegVar (node *arg_node, node *arg_info);
-extern node *PrintWLstriVar (node *arg_node, node *arg_info);
+extern node *PrintWLstrideVar (node *arg_node, node *arg_info);
 extern node *PrintWLgridVar (node *arg_node, node *arg_info);
 
 extern node *PrintCWrapper (node *arg_node, node *arg_info);
