@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.8  2001/03/19 14:23:02  nmw
+ * handling for AVIS_ASSIGN2 attribute added
+ *
  * Revision 1.7  2001/03/16 11:54:46  nmw
  * Storing of two definitions for phi targets implemented
  * AVIS_SSAPHITRAGET type changed
@@ -266,30 +269,16 @@ SSAInsertCopyAssignments (node *condassign, node *avis, node *arg_info)
       = TravLeftIDS (LET_IDS (ASSIGN_INSTR (assign_let)), arg_info);
     left_ids = LET_IDS (ASSIGN_INSTR (assign_let));
 
-    /* mark vardec as special ssa phi target */
-    switch (FUNDEF_STATUS (INFO_SSA_FUNDEF (arg_info))) {
-    case ST_condfun:
-        AVIS_SSAPHITARGET (IDS_AVIS (left_ids)) = PHIT_COND;
-        break;
-
-    case ST_whilefun:
-        AVIS_SSAPHITARGET (IDS_AVIS (left_ids)) = PHIT_DO;
-        break;
-
-    case ST_dofun:
-        AVIS_SSAPHITARGET (IDS_AVIS (left_ids)) = PHIT_WHILE;
-        break;
-
-    default:
-        DBUG_ASSERT ((FALSE),
-                     "conditional in reglular function! (no cond, do or while function)");
-    }
-
     /* append new copy assignment to then-part block */
     BLOCK_INSTR (COND_THEN (condassign))
       = AppendAssign (BLOCK_INSTR (COND_THEN (condassign)), assign_let);
     /* store 1. definition assignment */
     AVIS_SSAASSIGN (IDS_AVIS (left_ids)) = assign_let;
+    DBUG_PRINT ("SSA", ("insert phi copy assignment in then part: %s = %s",
+                        VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (IDS_AVIS (left_ids))),
+                        VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (ID_AVIS (right_id)))));
+    right_id = NULL;
+    assign_let = NULL;
 
     /* ELSE part */
     /* create right side (id) of copy assignment for else part */
@@ -309,6 +298,28 @@ SSAInsertCopyAssignments (node *condassign, node *avis, node *arg_info)
       = AppendAssign (BLOCK_INSTR (COND_ELSE (condassign)), assign_let);
     /* store 2. definition assignment */
     AVIS_SSAASSIGN2 (IDS_AVIS (left_ids)) = assign_let;
+    DBUG_PRINT ("SSA", ("insert phi copy assignment in else part: %s = %s",
+                        VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (IDS_AVIS (left_ids))),
+                        VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (ID_AVIS (right_id)))));
+
+    /* mark vardec as special ssa phi target */
+    switch (FUNDEF_STATUS (INFO_SSA_FUNDEF (arg_info))) {
+    case ST_condfun:
+        AVIS_SSAPHITARGET (IDS_AVIS (left_ids)) = PHIT_COND;
+        break;
+
+    case ST_whilefun:
+        AVIS_SSAPHITARGET (IDS_AVIS (left_ids)) = PHIT_DO;
+        break;
+
+    case ST_dofun:
+        AVIS_SSAPHITARGET (IDS_AVIS (left_ids)) = PHIT_WHILE;
+        break;
+
+    default:
+        DBUG_ASSERT ((FALSE),
+                     "conditional in reglular function! (no cond, do or while function)");
+    }
 
     DBUG_VOID_RETURN;
 }
@@ -588,21 +599,18 @@ SSAvardec (node *arg_node, node *arg_info)
     }
 
     /* jet undefined on stack */
-    AVIS_SSASTACK_TOP (ARG_AVIS (arg_node)) = NULL;
-    AVIS_SSADEFINED (ARG_AVIS (arg_node)) = FALSE;
+    AVIS_SSASTACK_TOP (VARDEC_AVIS (arg_node)) = NULL;
+    AVIS_SSADEFINED (VARDEC_AVIS (arg_node)) = FALSE;
 
     /*
      * mark stack as activ
      * (later added vardecs and stacks are ignored when stacking)
      */
-    AVIS_SSASTACK_INUSE (ARG_AVIS (arg_node)) = TRUE;
+    AVIS_SSASTACK_INUSE (VARDEC_AVIS (arg_node)) = TRUE;
 
     /* clear all traversal infos in avis node */
     AVIS_SSATHEN (VARDEC_AVIS (arg_node)) = NULL;
     AVIS_SSAELSE (VARDEC_AVIS (arg_node)) = NULL;
-
-    /* no direct assignment available (yet) */
-    AVIS_SSAASSIGN (ARG_AVIS (arg_node)) = NULL;
 
     /* traverse next vardec */
     if (VARDEC_NEXT (arg_node) != NULL) {
@@ -963,6 +971,7 @@ SSAleftids (ids *arg_ids, node *arg_info)
         DBUG_PRINT ("SSA", ("first definition, no renaming: %s (%p)",
                             VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (IDS_AVIS (arg_ids))),
                             IDS_AVIS (arg_ids)));
+        AVIS_SSAASSIGN (IDS_AVIS (arg_ids)) = INFO_SSA_ASSIGN (arg_info);
 
     } else {
         /* redefinition - create new unique variable/vardec */
@@ -1000,8 +1009,8 @@ SSAleftids (ids *arg_ids, node *arg_info)
                 == ST_unique)) {
             AVIS_SSAUNDOFLAG (IDS_AVIS (arg_ids)) = TRUE;
         }
+        AVIS_SSAASSIGN (IDS_AVIS (arg_ids)) = INFO_SSA_ASSIGN (arg_info);
     }
-    AVIS_SSAASSIGN (IDS_AVIS (arg_ids)) = INFO_SSA_ASSIGN (arg_info);
 
     /* traverese next ids */
     if (IDS_NEXT (arg_ids) != NULL) {
@@ -1028,19 +1037,17 @@ SSArightids (ids *arg_ids, node *arg_info)
      * if ids is used in return instruction it has to be checked
      * for needed copy assignments in a conditional
      */
-    if
-        INFO_SSA_RETINSTR (arg_info)
-        {
-            /* check for different assignments in then and else part */
-            if (AVIS_SSATHEN (IDS_AVIS (arg_ids)) != AVIS_SSAELSE (IDS_AVIS (arg_ids))) {
-                DBUG_ASSERT ((AVIS_SSATHEN (IDS_AVIS (arg_ids))),
-                             "undefined variable in then part");
-                DBUG_ASSERT ((AVIS_SSATHEN (IDS_AVIS (arg_ids))),
-                             "undefined variable in then part");
-                SSAInsertCopyAssignments (INFO_SSA_CONDSTMT (arg_info),
-                                          IDS_AVIS (arg_ids), arg_info);
-            }
+    if (INFO_SSA_RETINSTR (arg_info)) {
+        /* check for different assignments in then and else part */
+        if (AVIS_SSATHEN (IDS_AVIS (arg_ids)) != AVIS_SSAELSE (IDS_AVIS (arg_ids))) {
+            DBUG_ASSERT ((AVIS_SSATHEN (IDS_AVIS (arg_ids))),
+                         "undefined variable in then part");
+            DBUG_ASSERT ((AVIS_SSATHEN (IDS_AVIS (arg_ids))),
+                         "undefined variable in then part");
+            SSAInsertCopyAssignments (INFO_SSA_CONDSTMT (arg_info), IDS_AVIS (arg_ids),
+                                      arg_info);
         }
+    }
 
     /*
      * existing phi copy target must not be renamed
@@ -1050,7 +1057,7 @@ SSArightids (ids *arg_ids, node *arg_info)
         IDS_AVIS (arg_ids) = AVIS_SSASTACK_TOP (IDS_AVIS (arg_ids));
     }
 
-    /* restore all depended atributes with correct values */
+    /* restore all depended attributes with correct values */
     IDS_VARDEC (arg_ids) = AVIS_VARDECORARG (IDS_AVIS (arg_ids));
 
 #ifndef NO_ID_NAME
