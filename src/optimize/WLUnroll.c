@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.20  2000/10/27 02:40:24  dkr
+ * some function headers corrected
+ *
  * Revision 2.19  2000/10/26 23:09:06  dkr
  * fixed a bug in DoUnrollGenarray:
  * function GetBasetype() used instead of TYPE_BASETYPE in order to get
@@ -380,7 +383,7 @@ ForEachElementHelp (int *l, int *u, int *s, int *w, int dim, int maxdim, node *a
 /******************************************************************************
  *
  * function:
- *   node *ForEachElement(node *partn, funp opfun)
+ *   node *ForEachElement(node *partn, node *assignn)
  *
  * description:
  *   Calls function opfun for every index of the generator given in partn.
@@ -630,7 +633,7 @@ CheckUnrollModarray (node *wln)
 /******************************************************************************
  *
  * function:
- *   node *DoUnrollModarray(node *wln)
+ *   node *DoUnrollModarray(node *wln, node *arg_info)
  *
  * description:
  *   Unrolls all N_Npart nodes which are marked in NPART_COPY.
@@ -673,7 +676,7 @@ DoUnrollModarray (node *wln, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   int CheckUnrollGenarray(node *wln)
+ *   int CheckUnrollGenarray(node *wln, node *arg_info)
  *
  * description:
  *   Unrolling of arrays is done if number of array elements is smaller
@@ -717,7 +720,7 @@ CheckUnrollGenarray (node *wln, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *DoUnrollGenarray(node *wln)
+ *   node *DoUnrollGenarray(node *wln, node *arg_info)
  *
  * description:
  *   Unrolls all N_Npart nodes which are marked in NPART_COPY.
