@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2004/11/25 11:38:37  ktr
+ * COMPILES!
+ *
  * Revision 1.7  2004/11/21 22:04:36  ktr
  * Ismop SacDevCamp 04
  *
@@ -33,7 +36,7 @@
 
 /******************************************************************************
  *
- * Mark Memory Vals traversal ( mmv_tab)
+ * MarkMemVals traversal ( mmv_tab)
  *
  * Prefix: MMV
  *
@@ -41,7 +44,6 @@
 extern node *MMVdoMarkMemVals (node *syntax_tree);
 
 extern node *MMVcode (node *arg_node, info *arg_info);
-extern node *MMVdo (node *arg_node, info *arg_info);
 extern node *MMVfold (node *arg_node, info *arg_info);
 extern node *MMVfundef (node *arg_node, info *arg_info);
 extern node *MMVgenarray (node *arg_node, info *arg_info);
@@ -50,8 +52,10 @@ extern node *MMVlet (node *arg_node, info *arg_info);
 extern node *MMVmodarray (node *arg_node, info *arg_info);
 extern node *MMVprf (node *arg_node, info *arg_info);
 extern node *MMVspmd (node *arg_node, info *arg_info);
+extern node *MMVvardec (node *arg_node, info *arg_info);
 extern node *MMVwith (node *arg_node, info *arg_info);
 extern node *MMVwith2 (node *arg_node, info *arg_info);
-extern node *MMVwlsegx (node *arg_node, info *arg_info);
+extern node *MMVwlseg (node *arg_node, info *arg_info);
+extern node *MMVwlsegvar (node *arg_node, info *arg_info);
 
 #endif /* _SAC_MARKMEMVALS_H_ */
