@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.244  1998/07/24 00:27:42  dkr
+ * fixed some minor bugs in PrintNodeTree
+ *
  * Revision 1.243  1998/07/20 16:51:28  dkr
  * PrintNodeTree extended
  *
@@ -3216,6 +3219,8 @@ PrintNodeTreeSon (int num, node *node)
 {
     int j;
 
+    DBUG_ENTER ("PrintNodeTreeSon");
+
     for (j = 0; j < indent; j++) {
         if (j % 4) {
             fprintf (outfile, "  ");
@@ -3230,6 +3235,8 @@ PrintNodeTreeSon (int num, node *node)
         fprintf (outfile, "+-");
     }
     PrintNodeTree (node);
+
+    DBUG_VOID_RETURN;
 }
 
 /******************************************************************************
@@ -3246,18 +3253,22 @@ PrintNodeTreeSon (int num, node *node)
 void
 PrintNodeTreeIds (ids *vars)
 {
+    DBUG_ENTER ("PrintNodeTreeIds");
+
     fprintf (outfile, "( ");
     while (vars != NULL) {
         fprintf (outfile, "%s:%d ", IDS_NAME (vars), IDS_REFCNT (vars));
         vars = IDS_NEXT (vars);
     }
     fprintf (outfile, ")");
+
+    DBUG_VOID_RETURN;
 }
 
 /******************************************************************************
  *
  * function:
- *   void PrintNodeTree(node *node)
+ *   void PrintNodeTree( node *node)
  *
  * description:
  *   this function is for debug assistance.
@@ -3358,17 +3369,17 @@ PrintNodeTree (node *node)
         case N_WLseg:
             fprintf (outfile, "(sv: [ ");
             for (d = 0; d < WLSEG_DIMS (node); d++) {
-                fprintf (outfile, "%i ", (WLSEG_SV (node))[d]);
+                fprintf (outfile, "%li ", (WLSEG_SV (node))[d]);
             }
             for (i = 0; i < WLSEG_BLOCKS (node); i++) {
                 fprintf (outfile, "], bv%i: [ ", i);
                 for (d = 0; d < WLSEG_DIMS (node); d++) {
-                    fprintf (outfile, "%i ", (WLSEG_BV (node, i))[d]);
+                    fprintf (outfile, "%li ", (WLSEG_BV (node, i))[d]);
                 }
             }
             fprintf (outfile, "], ubv: [ ");
             for (d = 0; d < WLSEG_DIMS (node); d++) {
-                fprintf (outfile, "%i ", (WLSEG_UBV (node))[d]);
+                fprintf (outfile, "%li ", (WLSEG_UBV (node))[d]);
             }
             fprintf (outfile, "])\n");
             break;
