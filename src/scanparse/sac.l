@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.18  1995/07/06 16:58:44  hw
+ * Revision 1.19  1995/07/06 17:26:00  cg
+ * Modul -> Module, & added
+ *
+ * Revision 1.18  1995/07/06  16:58:44  hw
  * tokens of primitive functions contain in yyval.id there name now
  *
  * Revision 1.17  1995/07/04  11:13:49  hw
@@ -119,6 +122,8 @@ int start_token;
 ";"				{FILTER( SEMIC );}
 ","				{FILTER( COMMA );}
 "="				{FILTER( LET );}
+":="				{FILTER( ASSIGN );}
+"&"				{FILTER( AMPERS );}
 
 "&&"				{FILTER2( AND );}
 "||"				{FILTER2( OR );}
@@ -173,6 +178,8 @@ int start_token;
 "fold"				{FILTER( FOLD );}
 "inline"			{FILTER( INLINE );}
 
+[mM]odule[dD]ec			{FILTER( MODDEC );}
+[mM]odule			{FILTER( MODIMP );}
 [mM]odul[dD]ec			{FILTER( MODDEC );}
 [mM]odul			{FILTER( MODIMP );}
 [cC]lass[dD]ec			{FILTER( CLASSDEC );}
@@ -183,8 +190,10 @@ int start_token;
 "explicit"			{FILTER( EXPLICIT );}
 "types"				{FILTER( TYPES );}
 "funs"				{FILTER( FUNS );}
+"functions"			{FILTER( FUNS );}
 "own"				{FILTER( OWN );}
 "extern"                        {FILTER( EXTERN );}
+"external"			{FILTER( EXTERN );}
 "constants"                     {FILTER( CONSTANTS );}
 "global"                        {FILTER( GLOBAL );}
 "objects"                       {FILTER( OBJECTS );}
