@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.39  2004/11/27 01:02:41  khf
+ * call of other Functions possible
+ *
  * Revision 1.38  2004/11/27 00:51:53  khf
  * call of WLTdoWLT possible
  *
@@ -1654,6 +1657,66 @@ node *SSAWLTNcode( node *arg_node, info *arg_info)
 }
 
 #endif
+
+node *
+WLTfundef (node *arg_info, info *arg_info)
+{
+}
+
+node *
+WLTassign (node *arg_info, info *arg_info)
+{
+}
+
+node *
+WLTcond (node *arg_info, info *arg_info)
+{
+}
+
+node *
+WLTlet (node *arg_info, info *arg_info)
+{
+}
+
+node *
+WLTap (node *arg_info, info *arg_info)
+{
+}
+
+node *
+WLTwith (node *arg_info, info *arg_info)
+{
+}
+
+node *
+WLTgenarray (node *arg_info, info *arg_info)
+{
+}
+
+node *
+WLTmodarray (node *arg_info, info *arg_info)
+{
+}
+
+node *
+WLTfold (node *arg_info, info *arg_info)
+{
+}
+
+node *
+WLTpart (node *arg_info, info *arg_info)
+{
+}
+
+node *
+WLTgenerator (node *arg_info, info *arg_info)
+{
+}
+
+node *
+WLTcode (node *arg_info, info *arg_info)
+{
+}
 
 /** <!-- ****************************************************************** -->
  *
