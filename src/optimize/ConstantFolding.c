@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.68  1998/07/14 12:57:18  srs
+ * deactivated folding of reshape()
+ *
  * Revision 1.67  1998/06/19 13:19:52  srs
  * added new case to ArrayPrf().
  * Prf F_modarray now folds sequently defined arrays:
@@ -2004,12 +2007,23 @@ ArrayPrf (node *arg_node, node *arg_info)
          * in many situations, e.g. when accessing constant arrays
          * that are defined by reshape....
          */
-        arg_node = arg[1];
+
+        /* srs: NoNo, we really shouldn't do that. Imagine the following case:
+             A = WL () genarray([8]);
+             B = reshape([2,2,2],A);
+             C = WL () {...references to B...} modarray(B)
+           If the second line is replaced by B = A then while WLF the second
+           WL operates on an array of the *wrong* shape (if it's possible in
+           this situation.
+           But WLF must not become active here because no generators are known
+           for the array B. */
+
+        /*       arg_node = arg[1]; */
+
         /*
          * Now, we should (!!!) free the N_prf-node and its first arg...
          * Unfortunately, we did not yet implement it 8-(
          */
-
         break;
 
         /***********************/
