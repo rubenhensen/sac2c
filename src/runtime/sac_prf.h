@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2003/09/22 11:59:31  dkr
+ * SAC_ABS used
+ *
  * Revision 3.15  2003/09/22 11:12:41  dkr
  * bug in SAC_ND_PRF_CAT__DATA fixed
  *
@@ -109,7 +112,7 @@
 
 #define SAC_PRF_UNIOP(op, arg) SAC_ND_UNIOP (op, arg)
 #define SAC_PRF_NEG(dummy, arg) (-(arg))
-#define SAC_PRF_ABS(dummy, arg) (((arg) < 0) ? (-(arg)) : (arg))
+#define SAC_PRF_ABS(dummy, arg) SAC_ABS (arg)
 
 #define SAC_PRF_BINOP(op, arg1, arg2) SAC_ND_BINOP (op, arg1, arg2)
 #define SAC_PRF_MIN(dummy, arg1, arg2) SAC_MIN (arg1, arg2)
