@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.94  2001/05/09 15:23:13  cg
+ * Added two new atrributes to info node used in compile.c:
+ * INFO_COMP_SEGID(n) and INFO_COMP_SCHEDULERINIT(n).
+ *
  * Revision 3.93  2001/05/08 12:29:10  dkr
  * minor changes done
  *
@@ -2271,6 +2275,9 @@ extern node *MakeAvis (node *vardecOrArg);
  ***    node**     ICMTAB        (O)
  ***    types**    TYPETAB       (O)
  ***
+ ***    int        SEGID         (O)
+ ***    node*      SCHEDULERINIT (O)  (N_assign)
+ ***
  ***  when used in optimize.c :
  ***    long*      MASK[x]
  ***
@@ -2803,6 +2810,8 @@ extern node *MakeInfo ();
 #define INFO_COMP_ICMTAB(n) ((node **)(n->dfmask[1]))
 #define INFO_COMP_TABSIZE(n) (n->flag)
 #define INFO_COMP_ASSIGN(n) (n->node[5])
+#define INFO_COMP_SEGID(n) (n->counter)
+#define INFO_COMP_SCHEDULERINIT(n) (n->info2)
 
 /* reuse */
 #define INFO_REUSE_WL_IDS(n) (n->info.ids)
