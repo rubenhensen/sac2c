@@ -1,9 +1,13 @@
 /*
  *
  * $Log$
- * Revision 1.32  1995/01/12 13:11:59  asi
- * inserted OPT2fundef OPT2block OPT2assign OPT2while OPT2cond
+ * Revision 1.33  1995/01/16 10:54:50  asi
+ * added opt3_tab for loop independent removal
+ * and free_tree for deletion of a syntax(sub)-tree
  *
+;; Revision 1.32  1995/01/12  13:11:59  asi
+;; inserted OPT2fundef OPT2block OPT2assign OPT2while OPT2cond
+;;
 ;; Revision 1.31  1995/01/06  16:45:15  hw
 ;; added FltnFundef
 ;;
@@ -106,7 +110,7 @@
 */
 
 /*   Node_name   dbug-string   imp_tab       flat_tab      print_tab     type_tab
- *                             opt1_tab      opt2_tab      clear_tab     .......
+ *                             opt1_tab      opt2_tab      opt3_tab      free_tab
  */
 
 NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun, DummyFun,

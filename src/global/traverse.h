@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.6  1995/01/02 16:04:46  asi
+ * Revision 1.7  1995/01/16 10:54:50  asi
+ * added opt3_tab for loop independent removal
+ * and free_tree for deletion of a syntax(sub)-tree
+ *
+ * Revision 1.6  1995/01/02  16:04:46  asi
  * Renamed opt_tab in opt1_tab and all OPT.. in OPT1..
  * Added OPT1while, OPT1do, OPT1cond, OPT1cc
  * Added opt2_tab
@@ -37,12 +41,16 @@ extern funptr imp_tab[];
 
 extern funptr flat_tab[];
 
-extern funptr prnt_tab[];
+extern funptr print_tab[];
 
 extern funptr type_tab[];
 
 extern funptr opt1_tab[];
 
 extern funptr opt2_tab[];
+
+extern funptr opt3_tab[];
+
+extern funptr free_tab[];
 
 #endif /* _sac_traverse_h */
