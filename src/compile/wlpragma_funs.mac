@@ -1,8 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2002/10/30 14:13:26  dkr
+ * flag for ieee compatibility added
+ *
  * Revision 3.6  2001/06/13 13:09:53  ben
- *  WLCOMP_Tasksel added
+ * WLCOMP_Tasksel added
  *
  * Revision 3.5  2001/04/03 09:53:28  dkr
  * Bv() removed
@@ -32,16 +35,16 @@
  */
 
 /*
- * fun_name  fun_string
+ *   fun_name            fun_string     ieee_compatible
  */
 
-WLP (WLCOMP_All, "All")
-WLP (WLCOMP_Cubes, "Cubes")
-WLP (WLCOMP_ConstSegs, "ConstSegs")
-WLP (WLCOMP_NoBlocking, "NoBlocking")
-WLP (WLCOMP_BvL0, "BvL0")
-WLP (WLCOMP_BvL1, "BvL1")
-WLP (WLCOMP_BvL2, "BvL2")
-WLP (WLCOMP_Ubv, "Ubv")
-WLP (WLCOMP_Scheduling, "Scheduling")
-WLP (WLCOMP_Tasksel, "Tasksel")
+WLP (WLCOMP_All, "All", TRUE)
+WLP (WLCOMP_Cubes, "Cubes", FALSE)
+WLP (WLCOMP_ConstSegs, "ConstSegs", FALSE)
+WLP (WLCOMP_NoBlocking, "NoBlocking", TRUE)
+WLP (WLCOMP_BvL0, "BvL0", FALSE)
+WLP (WLCOMP_BvL1, "BvL1", FALSE)
+WLP (WLCOMP_BvL2, "BvL2", FALSE)
+WLP (WLCOMP_Ubv, "Ubv", FALSE)
+WLP (WLCOMP_Scheduling, "Scheduling", TRUE)
+WLP (WLCOMP_Tasksel, "Tasksel", TRUE)
