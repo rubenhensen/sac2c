@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/04/14 16:22:03  jhs
+ * Option for secure malloc(0) added.
+ *
  * Revision 2.2  1999/04/12 09:37:48  cg
  * All accesses to C arrays are now performed through the new ICMs
  * ND_WRITE_ARRAY and ND_READ_ARRAY. This allows for an integration
@@ -172,6 +175,27 @@
       ("ND_NO_RC_FREE_HIDDEN(%s, %s) at addr: %p", #name, #freefun, name));              \
     SAC_TR_DEC_HIDDEN_MEMCNT (1);
 
+/*
+ *  Lock for comment on SECURE_ALLOC_FREE at SAC_ND_ALLOC_ARRAY.
+ */
+#ifdef SECURE_ALLOC_FREE
+#define SAC_ND_FREE_ARRAY(name)                                                          \
+    if (SAC_ND_A_SIZE (name) != 0) {                                                     \
+        SAC_FREE (SAC_ND_A_FIELD (name));                                                \
+    }                                                                                    \
+    SAC_FREE (SAC_ND_A_RCP (name));                                                      \
+    SAC_TR_MEM_PRINT (("ND_FREE_ARRAY(%s) at addr: %p", #name, name));                   \
+    SAC_TR_DEC_ARRAY_MEMCNT (SAC_ND_A_SIZE (name));                                      \
+    SAC_CS_UNREGISTER_ARRAY (name);
+
+#define SAC_ND_NO_RC_FREE_ARRAY(name)                                                    \
+    if (SAC_ND_A_SIZE (name) != 0) {                                                     \
+        SAC_FREE (SAC_ND_A_FIELD (name));                                                \
+    }                                                                                    \
+    SAC_TR_MEM_PRINT (("ND_NO_RC_FREE_ARRAY(%s) at addr: %p", #name, name));             \
+    SAC_TR_DEC_ARRAY_MEMCNT (SAC_ND_A_SIZE (name));                                      \
+    SAC_CS_UNREGISTER_ARRAY (name);
+#else
 #define SAC_ND_FREE_ARRAY(name)                                                          \
     SAC_FREE (SAC_ND_A_FIELD (name));                                                    \
     SAC_FREE (SAC_ND_A_RCP (name));                                                      \
@@ -184,6 +208,7 @@
     SAC_TR_MEM_PRINT (("ND_NO_RC_FREE_ARRAY(%s) at addr: %p", #name, name));             \
     SAC_TR_DEC_ARRAY_MEMCNT (SAC_ND_A_SIZE (name));                                      \
     SAC_CS_UNREGISTER_ARRAY (name);
+#endif
 
 /*
  * ICMs for assigning refcounted data :
@@ -275,6 +300,32 @@
 
 #define SAC_ND_ALLOC_RC(name) SAC_ND_A_RCP (name) = (int *)SAC_MALLOC (sizeof (int));
 
+/*  If SECURE_ALLOC_FREE is defined an extra check wheater the requested size is 0
+ *  is done. In that case no call for malloc(0) is executed, but directly NULL set for
+ *  the array-variable is done.
+ *
+ *  This is an Option for possible Problems with calls for malloc(0).
+ *
+ *  This comment is referenced by: SAC_ND_FREE_ARRAY, SAC_ND_NO_RC_FREE_ARRAY.
+ */
+#ifdef SECURE_ALLOC_FREE
+#define SAC_ND_ALLOC_ARRAY(basetype, name, rc)                                           \
+    {                                                                                    \
+        if (SAC_ND_A_SIZE (name) != 0) {                                                 \
+            SAC_ND_A_FIELD (name)                                                        \
+              = (basetype *)SAC_MALLOC (sizeof (basetype) * SAC_ND_A_SIZE (name));       \
+        } else {                                                                         \
+            SAC_ND_A_FIELD (name) = NULL;                                                \
+        }                                                                                \
+        SAC_ND_A_RCP (name) = (int *)SAC_MALLOC (sizeof (int));                          \
+        SAC_ND_A_RC (name) = rc;                                                         \
+        SAC_TR_MEM_PRINT (("ND_ALLOC_ARRAY(%s, %s, %d) at addr: %p", #basetype, #name,   \
+                           rc, SAC_ND_A_FIELD (name)));                                  \
+        SAC_TR_INC_ARRAY_MEMCNT (SAC_ND_A_SIZE (name));                                  \
+        SAC_TR_REF_PRINT_RC (name);                                                      \
+        SAC_CS_REGISTER_ARRAY (name);                                                    \
+    }
+#else
 #define SAC_ND_ALLOC_ARRAY(basetype, name, rc)                                           \
     {                                                                                    \
         SAC_ND_A_FIELD (name)                                                            \
@@ -287,6 +338,7 @@
         SAC_TR_REF_PRINT_RC (name);                                                      \
         SAC_CS_REGISTER_ARRAY (name);                                                    \
     }
+#endif
 
 #define SAC_ND_SET_SIZE(name, num) SAC_ND_A_SIZE (name) = num;
 
