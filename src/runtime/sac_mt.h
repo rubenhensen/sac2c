@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.40  2001/07/24 11:53:21  ben
+ * some warnings for factoring removed
+ *
  * Revision 3.39  2001/07/10 09:22:13  ben
  * Affinity : SAC_MT_maxloadthread, SAC_MT_mintask are now local variables
  *
@@ -988,6 +991,8 @@ typedef union {
     {                                                                                    \
         int tasksize;                                                                    \
         int restiter;                                                                    \
+        SAC_WL_MT_SCHEDULE_START (tasks_on_dim) = 0;                                     \
+        SAC_WL_MT_SCHEDULE_STOP (tasks_on_dim) = 0;                                      \
                                                                                          \
         SAC_MT_ACQUIRE_LOCK (SAC_MT_TS_TASKLOCK (sched_id));                             \
                                                                                          \
@@ -1111,10 +1116,10 @@ typedef union {
              * work till now*/                                                           \
             SAC_MT_RELEASE_LOCK (SAC_MT_TASKLOCK (sched_id, SAC_MT_MYTHREAD ()));        \
             maxloadthread = 0;                                                           \
-            mintask = SAC_MT_TASK (sched_id, 0) - SAC_MT_LAST_TASK (sched_id, 0);        \
+            mintask = SAC_MT_LAST_TASK (sched_id, 0) - SAC_MT_TASK (sched_id, 0);        \
             for (queueid = 1; queueid < SAC_MT_THREADS (); queueid++)                    \
-                if (SAC_MT_TASK (sched_id, queueid)                                      \
-                      - SAC_MT_LAST_TASK (sched_id, queueid)                             \
+                if (SAC_MT_LAST_TASK (sched_id, queueid)                                 \
+                      - SAC_MT_TASK (sched_id, queueid)                                  \
                     < mintask) {                                                         \
                     mintask = SAC_MT_TASK (sched_id, queueid)                            \
                               - SAC_MT_LAST_TASK (sched_id, queueid);                    \
