@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.232  2004/11/07 15:50:02  sah
+ * added CreateNums and CreateIntegerArray
+ *
  * Revision 3.231  2004/10/26 12:13:38  ktr
  * added avis_aliasmask
  *
@@ -757,6 +760,8 @@ extern ids *MakeIds_Copy (char *name);
  ***/
 
 extern nums *MakeNums (int num, nums *next);
+extern nums *CreateNums (int size, ...);
+extern int *CreateIntegerArray (int size, ...);
 
 #define NUMS_NUM(n) (n->num)
 #define NUMS_NEXT(n) (n->next)

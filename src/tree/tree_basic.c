@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.109  2004/11/07 15:50:02  sah
+ * added CreateNums and CreateIntegerArray
+ *
  * Revision 3.108  2004/11/01 21:50:28  sah
  * ShpSegs are initialised in DBUG mode now
  *
@@ -266,6 +269,7 @@
 #include "free.h"
 #include "internal_lib.h"
 #include "NameTuplesUtils.h"
+#include "stdarg.h"
 
 /*--------------------------------------------------------------------------*/
 /* local macros for heap allocation                                         */
@@ -486,6 +490,48 @@ MakeNums (int num, nums *next)
     NUMS_NEXT (tmp) = next;
 
     DBUG_RETURN (tmp);
+}
+
+nums *
+CreateNums (int size, ...)
+{
+    nums *result = NULL;
+    int cnt;
+    va_list args;
+
+    DBUG_ENTER ("CreateNums");
+
+    va_start (args, size);
+
+    for (cnt = 0; cnt < size; cnt++) {
+        result = MakeNums (va_arg (args, int), result);
+    }
+
+    va_end (args);
+
+    DBUG_RETURN (result);
+}
+
+int *
+CreateIntegerArray (int size, ...)
+{
+    int *result = NULL;
+    int cnt;
+    va_list args;
+
+    DBUG_ENTER ("CreateIntegerArray");
+
+    if (size > 0) {
+        result = Malloc (sizeof (int) * size);
+
+        va_start (args, size);
+        for (cnt = 0; cnt < size; cnt++) {
+            result[cnt] = va_arg (args, int);
+        }
+        va_end (args);
+    }
+
+    DBUG_RETURN (result);
 }
 
 /*--------------------------------------------------------------------------*/
