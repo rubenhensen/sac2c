@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  1998/05/06 14:38:16  dkr
+ * inference of NWITH_IN/INOUT/OUT/LOCAL moved to refcount
+ *
  * Revision 1.4  1998/05/02 17:47:00  dkr
  * added new attributes to N_Nwith2
  *
@@ -2643,8 +2646,7 @@ WLTRANcode (node *arg_node, node *arg_info)
  *   node *WLTRAFundef(node *arg_node, node *arg_info)
  *
  * description:
- *   fills 'INFO_WL_FUNDEF(info_node)' with the current fundef
- *    --- needed for creation of used/defined-masks in 'WLAssign'.
+ *   traverses sons.
  *
  ******************************************************************************/
 
@@ -2652,11 +2654,6 @@ node *
 WLTRAFundef (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("WLTRAFundef");
-
-    /*
-     * save current fundef in INFO_WL_FUNDEF
-     */
-    INFO_WL_FUNDEF (arg_info) = arg_node;
 
     if (FUNDEF_ARGS (arg_node) != NULL) {
         FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), arg_info);
@@ -2677,112 +2674,16 @@ WLTRAFundef (node *arg_node, node *arg_info)
  *   node *WLTRAAssign( node *arg_node, node *arg_info)
  *
  * description:
- *   sets NWITH2_LETIDS, NWITH2_IN/INOUT/OUT/LOCAL if the assignment contains
- *    a with-loop.
- *
- * remarks:
- *   'INFO_WL_FUNDEF( arg_info)' points to the current fundef-node.
+ *   traverses sons.
  *
  ******************************************************************************/
 
 node *
 WLTRAAssign (node *arg_node, node *arg_info)
 {
-    node *with;
-    ids *let_ids;
-    int varno, i;
-    long *ids_mask, *in, *inout, *out, *local;
-
     DBUG_ENTER ("WLTRAAssign");
 
-    /*
-     * if the instruction contains a with-loop, infer NWITH2_IN/INOUT/OUT/LOCAL
-     */
-
-    if ((NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_let)
-        && (NODE_TYPE (LET_EXPR (ASSIGN_INSTR (arg_node))) == N_Nwith)) {
-
-        /*
-         * generate masks.
-         *
-         * we must start at the fundef node to get the right value for VARNO
-         *  in GenerateMasks().
-         */
-        INFO_WL_FUNDEF (arg_info) = GenerateMasks (INFO_WL_FUNDEF (arg_info), NULL);
-
-        varno = FUNDEF_VARNO (INFO_WL_FUNDEF (arg_info));
-        let_ids = LET_IDS (ASSIGN_INSTR (arg_node));
-        with = LET_EXPR (ASSIGN_INSTR (arg_node));
-
-        /*
-         * INOUT (for genarray/modarray with-loops),
-         * OUT (for fold with-loops):
-         *
-         * the only inout/out var is the let-id (N_ids).
-         */
-
-        DBUG_ASSERT ((IDS_NEXT (let_ids) == NULL), "more than one let-ids found");
-
-        ids_mask = GenMask (varno);
-        ids_mask[IDS_VARNO (let_ids)] = 1;
-
-        if ((NWITH_TYPE (with) == WO_genarray) || (NWITH_TYPE (with) == WO_modarray)) {
-            out = GenMask (varno);
-            inout = ids_mask;
-        } else {
-            out = ids_mask;
-            inout = GenMask (varno);
-        }
-
-        /*
-         * LOCAL:
-         *
-         * All vars that are defined in the assignment (ASSIGN_MASK(0)), except
-         *  for the let-var (ids_mask), are local.
-         */
-
-        local = DupMask (ASSIGN_MASK (arg_node, 0), varno);
-        MinusMask (local, ids_mask, varno);
-
-        /*
-         * IN:
-         *
-         * In-arguments of the with-loop are all vars that are used in the with-loop,
-         *  except for local vars.
-         */
-
-        in = DupMask (ASSIGN_MASK (arg_node, 1), varno);
-        for (i = 0; i < varno; i++) {
-            if (local[i] > 0) {
-                in[i] = 0;
-            }
-        }
-
-        /*
-         * transform with-loop
-         */
-
-        ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
-
-        /*
-         * save LETIDS, IN/INOUT/OUT/LOCAL in transformed with-loop node
-         */
-
-        with = LET_EXPR (ASSIGN_INSTR (arg_node));
-        DBUG_ASSERT ((NODE_TYPE (with) == N_Nwith2),
-                     "new with-loop representation not found");
-
-        NWITH2_LETIDS (with) = DupIds (let_ids, NULL);
-
-        NWITH2_VARNO (with) = varno;
-        NWITH2_IN (with) = in;
-        NWITH2_INOUT (with) = inout;
-        NWITH2_OUT (with) = out;
-        NWITH2_LOCAL (with) = local;
-
-    } else {
-        ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
-    }
+    ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
         ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
