@@ -1,5 +1,8 @@
 <!--
   $Log$
+  Revision 1.105  2004/11/26 17:19:48  mwe
+  InferLI added
+
   Revision 1.104  2004/11/26 17:15:09  ktr
   added Compile.
 
@@ -736,6 +739,13 @@
 	  <node name="Assign" />
 	  <node name="Let" />
 	  <node name="Prf" />
+	</travuser>
+      </traversal>
+      <traversal id="ILI" name="InferLoopInvariants" default="sons" include="SSAInferLI.h" >
+	<travuser>
+	  <node name="Fundef" />
+	  <node name="Arg" />
+	  <node name="Ap" />
 	</travuser>
       </traversal>
       <traversal id="INL" name="Inline Traversal" default="sons" include="Inline.h" >
