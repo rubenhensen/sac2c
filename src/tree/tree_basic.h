@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.72  2001/04/04 13:21:53  dkr
+ * INFO_COMP_TABSIZE added
+ *
  * Revision 3.71  2001/04/04 13:10:51  nmw
  * INFO_SSALIR_marcos added
  *
@@ -2727,6 +2730,7 @@ extern node *MakeInfo ();
 #define INFO_COMP_CNTPARAM(n) (n->lineno)
 #define INFO_COMP_TYPETAB(n) ((types **)(n->info.types))
 #define INFO_COMP_ICMTAB(n) ((node **)(n->node[3]))
+#define INFO_COMP_TABSIZE(n) (n->flag)
 #define INFO_COMP_LAST_SYNC(n) (*((node **)(&(n->int_data))))
 
 /* reuse */
