@@ -1,17 +1,11 @@
 /*
- *
  * $Log$
+ * Revision 3.26  2004/11/26 23:10:22  skt
+ * from Denmark with love - thank you all for a wonderful
+ * SACDevCampDK 2k4 - cu in SACDevCampE 2k4
+ *
  * Revision 3.25  2004/11/25 13:41:30  skt
  * switched to new ILIBstringCompare
- *
- * Revision 3.24  2004/11/24 20:55:18  skt
- * some namechanging
- *
- * Revision 3.23  2004/11/24 19:40:47  skt
- * SACDevCampDK 2k4
- *
- * Revision 3.22  2004/11/23 20:52:11  skt
- * big compiler brushing during SACDevCampDK 2k4
  *
  * [...]
  *
