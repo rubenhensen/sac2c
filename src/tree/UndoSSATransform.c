@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.6  2001/03/19 14:23:32  nmw
+ * removal of ssa phi copy assignments added
+ *
  * Revision 1.5  2001/03/16 11:55:59  nmw
  * AVIS_SSAPHITRAGET type changed
  *
@@ -59,6 +62,10 @@
 #include "UndoSSATransform.h"
 #include "DupTree.h"
 
+#define OPASSIGN_NOOP 0
+#define OPASSIGN_REMOVE 1
+#define OPASSIGN_MOVE 2
+
 static ids *TravIDS (ids *arg_ids, node *arg_info);
 static ids *USSAids (ids *arg_ids, node *arg_info);
 
@@ -109,15 +116,38 @@ SSADCRInitAvisFlags (node *fundef)
  *  node *USSAarg(node *arg_node, node *arg_info)
  *
  * description:
- *  not used now.
+ *  check args for AVIS_SUBST entries.
+ *  because its not good idea to rename args (e.g. unique identifiers, global
+ *  objects) the arg node is used as target identifier in this function instead
+ *  of the marked SUBST vardec. This can easily be done by exchanging the
+ *  avis nodes of arg and vardec (that will not be used anymore after USSA).
  *
  ******************************************************************************/
 node *
 USSAarg (node *arg_node, node *arg_info)
 {
+    node *tmp;
+    node *vardec;
+
     DBUG_ENTER ("USSAarg");
 
-    /* nop */
+    if (AVIS_SUBST (ARG_AVIS (arg_node)) != NULL) {
+        DBUG_PRINT ("USSA", ("using arg %s instead of vardec %s", ARG_NAME (arg_node),
+                             VARDEC_OR_ARG_NAME (
+                               AVIS_VARDECORARG (AVIS_SUBST (ARG_AVIS (arg_node))))));
+
+        /* use avis of vardec node as avis of arg node */
+        vardec = AVIS_VARDECORARG (AVIS_SUBST (ARG_AVIS (arg_node)));
+        tmp = ARG_AVIS (arg_node);
+
+        ARG_AVIS (arg_node) = VARDEC_AVIS (vardec);
+        AVIS_VARDECORARG (ARG_AVIS (arg_node)) = arg_node;
+        AVIS_SUBSTUSSA (ARG_AVIS (arg_node)) = ARG_AVIS (arg_node); /* trigger renaming */
+
+        VARDEC_AVIS (vardec) = tmp;
+        AVIS_VARDECORARG (VARDEC_AVIS (vardec)) = vardec;
+        AVIS_SUBSTUSSA (VARDEC_AVIS (vardec)) = NULL; /* no further renaming needed */
+    }
 
     if (ARG_NEXT (arg_node) != NULL) {
         ARG_NEXT (arg_node) = Trav (ARG_NEXT (arg_node), arg_info);
@@ -298,15 +328,29 @@ node *
 USSAlet (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("USSAlet");
-
-    if (LET_IDS (arg_node) != NULL) {
-        /* there are some ids */
-        LET_IDS (arg_node) = TravIDS (LET_IDS (arg_node), arg_info);
-    }
-
     DBUG_ASSERT ((LET_EXPR (arg_node) != NULL), "N_let with empty EXPR attribute.");
-    LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
 
+    /* special handling for removal of phi copy tragets */
+    if ((LET_IDS (arg_node) != NULL)
+        && ((AVIS_SSAPHITARGET (IDS_AVIS (LET_IDS (arg_node))) == PHIT_DO)
+            || (AVIS_SSAPHITARGET (IDS_AVIS (LET_IDS (arg_node))) == PHIT_WHILE))) {
+        if (NODE_TYPE (LET_EXPR (arg_node)) == N_id) {
+            /* simple identifier copy can be removed */
+            INFO_USSA_OPASSIGN (arg_info) = OPASSIGN_REMOVE;
+        } else {
+            /* constants will be moved down behind conditional */
+            INFO_USSA_OPASSIGN (arg_info) = OPASSIGN_MOVE;
+        }
+    } else {
+        INFO_USSA_OPASSIGN (arg_info) = OPASSIGN_NOOP;
+
+        if (LET_IDS (arg_node) != NULL) {
+            /* there are some ids */
+            LET_IDS (arg_node) = TravIDS (LET_IDS (arg_node), arg_info);
+        }
+
+        LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
+    }
     DBUG_RETURN (arg_node);
 }
 
@@ -493,15 +537,10 @@ USSAfundef (node *arg_node, node *arg_info)
 
     SSADCRInitAvisFlags (arg_node);
 
-    /*
-     * there is no need to traverse the args, because the args
-     * are never renamed. Only new vardec as rename target of
-     * an arg might exist.
-     */
-
     DBUG_PRINT ("USSA", ("\nrestoring names in function %s", FUNDEF_NAME (arg_node)));
 
     INFO_USSA_ARGS (arg_info) = FUNDEF_ARGS (arg_node);
+    INFO_USSA_CONSTASSIGNS (arg_info) = NULL;
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         /* there is a block */
@@ -540,9 +579,80 @@ USSAblock (node *arg_node, node *arg_info)
         BLOCK_VARDEC (arg_node) = Trav (BLOCK_VARDEC (arg_node), arg_info);
     }
 
+    if (INFO_USSA_ARGS (arg_info) != NULL) {
+        /* traverse args for renaming args */
+        INFO_USSA_ARGS (arg_info) = Trav (INFO_USSA_ARGS (arg_info), arg_info);
+    }
+
     if (BLOCK_INSTR (arg_node) != NULL) {
         /* there is a block */
         BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
+    }
+
+    if (BLOCK_INSTR (arg_node) == NULL) {
+        /* insert N_empty node in empty block */
+        BLOCK_INSTR (arg_node) = MakeEmpty ();
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    node* USSAassign(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   traverses instruction and removes/moves tagges assignments.
+ *
+ ******************************************************************************/
+node *
+USSAassign (node *arg_node, node *arg_info)
+{
+    int op;
+    node *tmp;
+
+    DBUG_ENTER ("USSAassign");
+    DBUG_ASSERT ((ASSIGN_INSTR (arg_node) != NULL), "missing instruction in assignment");
+
+    INFO_USSA_OPASSIGN (arg_info) = OPASSIGN_NOOP;
+
+    /* traverse instruction */
+    ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+
+    /* save operation to perform on this assignment on bottom-up traveral */
+    op = INFO_USSA_OPASSIGN (arg_info);
+    INFO_USSA_OPASSIGN (arg_info) = OPASSIGN_NOOP;
+
+    if (ASSIGN_NEXT (arg_node) != NULL) {
+        /* traverse next assignment */
+        ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+    }
+
+    /* insert moved constant assignments, if available */
+    if ((NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_return)
+        && (INFO_USSA_CONSTASSIGNS (arg_info) != NULL)) {
+        INFO_USSA_CONSTASSIGNS (arg_info)
+          = AppendAssign (INFO_USSA_CONSTASSIGNS (arg_info), arg_node);
+        arg_node = INFO_USSA_CONSTASSIGNS (arg_info);
+        INFO_USSA_CONSTASSIGNS (arg_info) = NULL;
+    }
+
+    /* in bottom up traversal remove marked assignments from chain */
+    if ((op == OPASSIGN_REMOVE) || (op == OPASSIGN_MOVE)) {
+        /* remove this assignment from assignment chain, return NEXT */
+        tmp = arg_node;
+        arg_node = ASSIGN_NEXT (arg_node);
+
+        if (op == OPASSIGN_REMOVE) {
+            /* remove whole assignment */
+            tmp = FreeNode (tmp);
+        } else {
+            /* move assignment to temp assignment chain */
+            ASSIGN_NEXT (tmp) = NULL;
+            INFO_USSA_CONSTASSIGNS (arg_info)
+              = AppendAssign (INFO_USSA_CONSTASSIGNS (arg_info), tmp);
+        }
     }
 
     DBUG_RETURN (arg_node);
@@ -562,22 +672,19 @@ USSAids (ids *arg_ids, node *arg_info)
 {
     DBUG_ENTER ("USSAids");
 
-    if (NODE_TYPE (AVIS_VARDECORARG (IDS_AVIS (arg_ids))) == N_vardec) {
-
-        if (AVIS_SUBSTUSSA (IDS_AVIS (arg_ids)) != NULL) {
-            /* restore rename back to undo vardec */
-            IDS_AVIS (arg_ids) = AVIS_SUBSTUSSA (IDS_AVIS (arg_ids));
-            IDS_VARDEC (arg_ids) = AVIS_VARDECORARG (IDS_AVIS (arg_ids));
+    if (AVIS_SUBSTUSSA (IDS_AVIS (arg_ids)) != NULL) {
+        /* restore rename back to undo vardec */
+        IDS_AVIS (arg_ids) = AVIS_SUBSTUSSA (IDS_AVIS (arg_ids));
+        IDS_VARDEC (arg_ids) = AVIS_VARDECORARG (IDS_AVIS (arg_ids));
 
 #ifndef NO_ID_NAME
-            /* for compatiblity only
-             * there is no real need for name string in ids structure because
-             * you can get it from vardec without redundancy.
-             */
-            FREE (IDS_NAME (arg_ids));
-            IDS_NAME (arg_ids) = StringCopy (VARDEC_OR_ARG_NAME (IDS_VARDEC (arg_ids)));
+        /* for compatiblity only
+         * there is no real need for name string in ids structure because
+         * you can get it from vardec without redundancy.
+         */
+        FREE (IDS_NAME (arg_ids));
+        IDS_NAME (arg_ids) = StringCopy (VARDEC_OR_ARG_NAME (IDS_VARDEC (arg_ids)));
 #endif
-        }
     }
 
     if (IDS_NEXT (arg_ids) != NULL) {
@@ -611,7 +718,7 @@ TravIDS (ids *arg_ids, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* CheckAvis(node* syntax_tree)
+ *   node* UndoSSATransform(node* syntax_tree)
  *
  * description:
  *   Starts traversal of AST to restore original artificial identifier.
