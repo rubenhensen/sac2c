@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.21  2003/09/15 13:00:51  dkr
+ * SAC_ND_MIN, SAC_ND_MAX replaced by SAC_MIN, SAC_MAX
+ *
  * Revision 3.20  2003/03/14 17:27:45  dkr
  * revision 3.17 fetched back. the TAGGED_ARRAYS code is in sac_wl.tagged.h now
  *
@@ -143,18 +146,18 @@
         for (idx_scl = bnd1; idx_scl < bnd2;) {                                          \
             int SAC_WL_VAR (first, idx_scl) = idx_scl;                                   \
             int SAC_WL_VAR (last, idx_scl)                                               \
-              = SAC_ND_MIN (SAC_WL_VAR (first, idx_scl) + step, bnd2);
+              = SAC_MIN (SAC_WL_VAR (first, idx_scl) + step, bnd2);
 
 #define SAC_WL_MT_BLOCK_LOOP0_BEGIN(dim, idx_vec_nt, idx_scl, bnd1, bnd2, step)          \
     {                                                                                    \
         int SAC_WL_VAR (block_stop, idx_scl)                                             \
-          = SAC_ND_MIN (bnd2, SAC_WL_MT_SCHEDULE_STOP (dim));                            \
-        for (idx_scl = SAC_ND_MAX (bnd1, SAC_WL_MT_SCHEDULE_START (dim));                \
+          = SAC_MIN (bnd2, SAC_WL_MT_SCHEDULE_STOP (dim));                               \
+        for (idx_scl = SAC_MAX (bnd1, SAC_WL_MT_SCHEDULE_START (dim));                   \
              idx_scl < SAC_WL_VAR (block_stop, idx_scl);) {                              \
             int SAC_WL_VAR (first, idx_scl) = idx_scl;                                   \
             int SAC_WL_VAR (last, idx_scl)                                               \
-              = SAC_ND_MIN (SAC_WL_VAR (first, idx_scl) + step,                          \
-                            SAC_WL_VAR (block_stop, idx_scl));
+              = SAC_MIN (SAC_WL_VAR (first, idx_scl) + step,                             \
+                         SAC_WL_VAR (block_stop, idx_scl));
 
 /*
  * BEGIN: (BLOCK_LEVEL > 0)
@@ -167,8 +170,8 @@
              idx_scl < SAC_WL_VAR (block_stop, idx_scl);) {                              \
             int SAC_WL_VAR (first, idx_scl) = idx_scl;                                   \
             int SAC_WL_VAR (last, idx_scl)                                               \
-              = SAC_ND_MIN (SAC_WL_VAR (first, idx_scl) + step,                          \
-                            SAC_WL_VAR (block_stop, idx_scl));
+              = SAC_MIN (SAC_WL_VAR (first, idx_scl) + step,                             \
+                         SAC_WL_VAR (block_stop, idx_scl));
 
 #define SAC_WL_MT_BLOCK_LOOP_BEGIN(dim, idx_vec_nt, idx_scl, bnd1, bnd2, step)           \
     SAC_WL_BLOCK_LOOP_BEGIN (dim, idx_vec_nt, idx_scl, bnd1, bnd2, step)
@@ -246,8 +249,8 @@
 #define SAC_WL_MT_UBLOCK_LOOP0_BEGIN(dim, idx_vec_nt, idx_scl, bnd1, bnd2, step)         \
     {                                                                                    \
         int SAC_WL_VAR (block_stop, idx_scl)                                             \
-          = SAC_ND_MIN (bnd2, SAC_WL_MT_SCHEDULE_STOP (dim));                            \
-        for (idx_scl = SAC_ND_MAX (bnd1, SAC_WL_MT_SCHEDULE_START (dim));                \
+          = SAC_MIN (bnd2, SAC_WL_MT_SCHEDULE_STOP (dim));                               \
+        for (idx_scl = SAC_MAX (bnd1, SAC_WL_MT_SCHEDULE_START (dim));                   \
              idx_scl < SAC_WL_VAR (block_stop, idx_scl);) {                              \
             int SAC_WL_VAR (first, idx_scl) = idx_scl;
 
@@ -328,9 +331,8 @@
 
 #define SAC_WL_MT_STRIDE_LOOP0_BEGIN(dim, idx_vec_nt, idx_scl, bnd1, bnd2, step)         \
     {                                                                                    \
-        int SAC_WL_VAR (stop, idx_scl)                                                   \
-          = SAC_ND_MIN (bnd2, SAC_WL_MT_SCHEDULE_STOP (dim));                            \
-        for (idx_scl = SAC_ND_MAX (bnd1, SAC_WL_MT_SCHEDULE_START (dim));                \
+        int SAC_WL_VAR (stop, idx_scl) = SAC_MIN (bnd2, SAC_WL_MT_SCHEDULE_STOP (dim));  \
+        for (idx_scl = SAC_MAX (bnd1, SAC_WL_MT_SCHEDULE_START (dim));                   \
              idx_scl < SAC_WL_VAR (stop, idx_scl);) {
 
 /*
@@ -343,7 +345,7 @@
 #define SAC_WL_STRIDE_LOOP_BEGIN(dim, idx_vec_nt, idx_scl, bnd1, bnd2, step)             \
     {                                                                                    \
         int SAC_WL_VAR (stop, idx_scl)                                                   \
-          = SAC_ND_MIN (SAC_WL_VAR (first, idx_scl) + bnd2, SAC_WL_VAR (last, idx_scl)); \
+          = SAC_MIN (SAC_WL_VAR (first, idx_scl) + bnd2, SAC_WL_VAR (last, idx_scl));    \
         for (idx_scl = SAC_WL_VAR (first, idx_scl) + bnd1;                               \
              idx_scl < SAC_WL_VAR (stop, idx_scl);) {
 
@@ -507,7 +509,7 @@
 #define SAC_WL_GRID_FIT_LOOP_BEGIN(dim, idx_vec_nt, idx_scl, bnd1, bnd2)                 \
     {                                                                                    \
         int SAC_WL_VAR (grid_stop, idx_scl)                                              \
-          = SAC_ND_MIN (idx_scl + (bnd2 - bnd1), SAC_WL_VAR (stop, idx_scl));            \
+          = SAC_MIN (idx_scl + (bnd2 - bnd1), SAC_WL_VAR (stop, idx_scl));               \
         for (; idx_scl < SAC_WL_VAR (grid_stop, idx_scl); idx_scl++) {
 
 #define SAC_WL_MT_GRID_FIT_LOOP_BEGIN(dim, idx_vec_nt, idx_scl, bnd1, bnd2)              \
@@ -574,7 +576,7 @@
 #define SAC_WL_GRID_FIT_NOOP_BEGIN(dim, idx_vec_nt, idx_scl, bnd1, bnd2)                 \
     {                                                                                    \
         int SAC_WL_VAR (diff, idx_scl)                                                   \
-          = SAC_ND_MIN ((bnd2 - bnd1), SAC_WL_VAR (stop, idx_scl) - idx_scl);            \
+          = SAC_MIN ((bnd2 - bnd1), SAC_WL_VAR (stop, idx_scl) - idx_scl);               \
         idx_scl += SAC_WL_VAR (diff, idx_scl);
 
 #define SAC_WL_MT_GRID_FIT_NOOP_BEGIN(dim, idx_vec_nt, idx_scl, bnd1, bnd2)              \
