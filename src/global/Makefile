@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.12  2000/01/17 18:40:52  cg
+# make deps done
+#
 # Revision 2.11  2000/01/17 18:37:49  cg
 # Handling of target platform unified: One of the following
 # is always defined:
@@ -174,7 +177,8 @@ globals.o: ../modules/filemgr.h /usr/include/stdio.h
 globals.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 globals.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
 globals.o: /usr/include/stdio_impl.h types.h globals.h Error.h
-globals.o: /usr/include/string.h /usr/include/stdlib.h nt_info.mac
+globals.o: /usr/include/string.h /usr/include/stdlib.h type_info.mac
+globals.o: nt_info.mac
 internal_lib.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 internal_lib.o: /usr/include/sys/isa_defs.h /usr/include/math.h
 internal_lib.o: /usr/include/string.h /usr/include/stdarg.h
@@ -224,10 +228,10 @@ resource.o: /usr/include/sys/isa_defs.h /usr/include/stdio.h
 resource.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
 resource.o: /usr/include/stdio_impl.h /usr/include/string.h types.h
 resource.o: tree_basic.h ../../inc/dbug.h resource.h ../scanparse/scnprs.h
-resource.o: ../scanparse/y.tab.h ../modules/filemgr.h free.h my_debug.h
-resource.o: /usr/include/malloc.h /usr/include/sys/types.h
+resource.o: globals.h ../scanparse/y.tab.h ../modules/filemgr.h free.h
+resource.o: my_debug.h /usr/include/malloc.h /usr/include/sys/types.h
 resource.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-resource.o: internal_lib.h globals.h Error.h
+resource.o: internal_lib.h Error.h
 traverse.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 traverse.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 traverse.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
@@ -258,9 +262,9 @@ traverse.o: ../concurrent/concurrent.h ../concurrent/spmd_init.h
 traverse.o: ../concurrent/spmd_opt.h ../concurrent/spmd_lift.h
 traverse.o: ../concurrent/sync_init.h ../concurrent/sync_opt.h
 traverse.o: ../concurrent/spmd_trav.h ../optimize/DataFlowMask.h
-traverse.o: ../concurrent/schedule.h ../psi-opt/wl_access_analyze.h
-traverse.o: ../scanparse/scnprs.h resource.h ../scanparse/y.tab.h traverse.h
-traverse.o: node_info.mac
+traverse.o: ../concurrent/spmd_cons.h ../concurrent/schedule.h
+traverse.o: ../psi-opt/wl_access_analyze.h ../psi-opt/tile_size_inference.h
+traverse.o: ../typecheck/new_typecheck.h traverse.h node_info.mac
 tree.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 tree.o: /usr/include/sys/isa_defs.h tree.h types.h tree_basic.h
 tree.o: tree_compound.h Error.h /usr/include/stdio.h

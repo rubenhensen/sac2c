@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.11  2000/01/17 18:40:59  cg
+# make deps done
+#
 # Revision 2.10  2000/01/17 18:37:49  cg
 # Handling of target platform unified: One of the following
 # is always defined:
@@ -244,6 +247,7 @@ DupTree.o: ../global/my_debug.h /usr/include/malloc.h
 DupTree.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
 DupTree.o: /usr/include/sys/int_types.h ../typecheck/typecheck.h DupTree.h
 DupTree.o: DataFlowMask.h optimize.h Inline.h ../concurrent/scheduling.h
+DupTree.o: generatemasks.h
 Inline.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 Inline.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 Inline.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
@@ -355,3 +359,4 @@ optimize.o: freemasks.h ConstantFolding.h DeadCodeRemoval.h
 optimize.o: DeadFunctionRemoval.h LoopInvariantRemoval.h Inline.h Unroll.h
 optimize.o: Unswitch.h ../psi-opt/ArrayElimination.h CSE.h
 optimize.o: ../psi-opt/WithloopFolding.h ../psi-opt/wl_access_analyze.h
+optimize.o: ../psi-opt/tile_size_inference.h

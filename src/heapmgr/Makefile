@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.4  2000/01/17 18:41:20  cg
+# make deps done
+#
 # Revision 1.3  2000/01/17 18:37:49  cg
 # Handling of target platform unified: One of the following
 # is always defined:
@@ -103,9 +106,9 @@ calloc.o: /usr/include/sys/isa_defs.h heapmgr.h ../runtime/sac_mt.h
 calloc.o: ../runtime/sac_heapmgr.h
 diagnostics.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 diagnostics.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
-diagnostics.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h heapmgr.h
-diagnostics.o: ../runtime/sac_mt.h ../runtime/sac_heapmgr.h
-diagnostics.o: ../runtime/sac_message.h
+diagnostics.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
+diagnostics.o: /usr/include/stdlib.h heapmgr.h ../runtime/sac_mt.h
+diagnostics.o: ../runtime/sac_heapmgr.h ../runtime/sac_message.h
 internal.o: /usr/include/unistd.h /usr/include/sys/feature_tests.h
 internal.o: /usr/include/sys/isa_defs.h /usr/include/sys/types.h
 internal.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
@@ -113,7 +116,7 @@ internal.o: /usr/include/sys/unistd.h heapmgr.h ../runtime/sac_mt.h
 internal.o: ../runtime/sac_heapmgr.h ../runtime/sac_message.h
 large_chunks.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 large_chunks.o: /usr/include/sys/isa_defs.h heapmgr.h ../runtime/sac_mt.h
-large_chunks.o: ../runtime/sac_heapmgr.h
+large_chunks.o: ../runtime/sac_heapmgr.h ../runtime/sac_message.h
 malloc.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 malloc.o: /usr/include/sys/isa_defs.h heapmgr.h ../runtime/sac_mt.h
 malloc.o: ../runtime/sac_heapmgr.h

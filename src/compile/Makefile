@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.10  2000/01/17 18:41:03  cg
+# make deps done
+#
 # Revision 2.9  2000/01/17 18:37:49  cg
 # Handling of target platform unified: One of the following
 # is always defined:
@@ -160,10 +163,10 @@ ReuseWithArrays.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
 ReuseWithArrays.o: ../global/types.h ../global/free.h ../global/my_debug.h
 ReuseWithArrays.o: /usr/include/malloc.h /usr/include/sys/types.h
 ReuseWithArrays.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-ReuseWithArrays.o: ../global/internal_lib.h ../global/tree_basic.h
-ReuseWithArrays.o: ../global/tree_compound.h ../global/Error.h
-ReuseWithArrays.o: /usr/include/string.h /usr/include/stdlib.h
-ReuseWithArrays.o: ../global/globals.h ../global/traverse.h
+ReuseWithArrays.o: ../global/globals.h ../global/internal_lib.h
+ReuseWithArrays.o: ../global/tree_basic.h ../global/tree_compound.h
+ReuseWithArrays.o: ../global/Error.h /usr/include/string.h
+ReuseWithArrays.o: /usr/include/stdlib.h ../global/traverse.h
 ReuseWithArrays.o: ../optimize/DataFlowMask.h ../psi-opt/index.h
 compile.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 compile.o: /usr/include/sys/isa_defs.h /usr/include/string.h ../global/tree.h

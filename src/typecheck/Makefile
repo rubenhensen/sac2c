@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.10  2000/01/17 18:40:57  cg
+# make deps done
+#
 # Revision 2.9  2000/01/17 18:37:49  cg
 # Handling of target platform unified: One of the following
 # is always defined:
@@ -102,24 +105,20 @@ clean:
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
-constants.o: ../global/free.h ../../inc/dbug.h /usr/include/stdio.h
+constants.o: ../global/globals.h ../global/types.h /usr/include/stdio.h
 constants.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 constants.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-constants.o: /usr/include/stdio_impl.h ../global/my_debug.h
-constants.o: /usr/include/malloc.h /usr/include/sys/types.h
-constants.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-constants.o: ../global/globals.h ../global/types.h ../global/internal_lib.h
-constants.o: shape.h cv2scalar.h cv2cv.h ../global/tree_compound.h
+constants.o: /usr/include/stdio_impl.h ../global/free.h ../../inc/dbug.h
+constants.o: ../global/my_debug.h /usr/include/malloc.h
+constants.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
+constants.o: /usr/include/sys/int_types.h ../global/internal_lib.h shape.h
+constants.o: cv2scalar.h cv2cv.h ../global/tree_compound.h
 constants.o: ../global/tree_basic.h ../global/Error.h /usr/include/string.h
 constants.o: /usr/include/stdlib.h constants.h
-cv2cv.o: ../global/tree_basic.h ../global/types.h ../../inc/dbug.h
-cv2cv.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-cv2cv.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
-cv2cv.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h ../global/free.h
-cv2cv.o: ../global/my_debug.h /usr/include/malloc.h /usr/include/sys/types.h
-cv2cv.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-cv2cv.o: ../global/globals.h ../global/internal_lib.h cv2cv.h
-cv2cv.o: ../global/type_info.mac
+cv2cv.o: ../../inc/dbug.h /usr/include/stdio.h
+cv2cv.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
+cv2cv.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
+cv2cv.o: /usr/include/stdio_impl.h cv2cv.h ../global/type_info.mac
 cv2scalar.o: ../global/tree_basic.h ../global/types.h ../../inc/dbug.h
 cv2scalar.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 cv2scalar.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h

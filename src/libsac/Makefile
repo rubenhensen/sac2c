@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.9  2000/01/17 18:41:17  cg
+# make deps done
+#
 # Revision 1.8  2000/01/17 18:37:49  cg
 # Handling of target platform unified: One of the following
 # is always defined:
@@ -127,12 +130,17 @@ message.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 message.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 message.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
 message.o: /usr/include/stdarg.h /usr/include/varargs.h /usr/include/stdlib.h
+message.o: ../runtime/sac_mt.h
 mt.o: /usr/include/pthread.h /usr/include/sys/types.h
 mt.o: /usr/include/sys/isa_defs.h /usr/include/sys/feature_tests.h
 mt.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
 mt.o: /usr/include/time.h /usr/include/sched.h /usr/include/stdio.h
 mt.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
 mt.o: /usr/include/stdio_impl.h ../runtime/sac_message.h
+mt.o: ../runtime/sac_trace.h ../runtime/sac_mt.h
+nophm.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
+nophm.o: /usr/include/sys/isa_defs.h ../runtime/sac_message.h
+nophm.o: ../runtime/sac_mt.h ../runtime/sac_heapmgr.h
 profile.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 profile.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 profile.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
@@ -143,3 +151,4 @@ trace.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 trace.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 trace.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
 trace.o: /usr/include/stdarg.h /usr/include/varargs.h /usr/include/string.h
+trace.o: ../runtime/sac_mt.h

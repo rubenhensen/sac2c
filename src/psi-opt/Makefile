@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.10  2000/01/17 18:41:06  cg
+# make deps done
+#
 # Revision 2.9  2000/01/17 18:37:49  cg
 # Handling of target platform unified: One of the following
 # is always defined:
@@ -202,9 +205,9 @@ index.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
 index.o: /usr/include/string.h ../../inc/dbug.h ../global/tree.h
 index.o: ../global/types.h ../global/tree_basic.h ../global/tree_compound.h
 index.o: ../global/Error.h /usr/include/stdlib.h ../global/globals.h
-index.o: ../global/internal_lib.h ../global/traverse.h ../optimize/DupTree.h
-index.o: index.h psi-opt.h ../global/free.h ../global/my_debug.h
-index.o: /usr/include/malloc.h /usr/include/sys/types.h
+index.o: ../global/internal_lib.h ../print/print.h ../global/traverse.h
+index.o: ../optimize/DupTree.h index.h psi-opt.h ../global/free.h
+index.o: ../global/my_debug.h /usr/include/malloc.h /usr/include/sys/types.h
 index.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
 index.o: ../global/access_macros.h ../compile/compile.h
 psi-opt.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
@@ -213,20 +216,25 @@ psi-opt.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
 psi-opt.o: /usr/include/stdlib.h ../global/tree.h ../global/types.h
 psi-opt.o: ../global/tree_basic.h ../global/tree_compound.h ../global/Error.h
 psi-opt.o: /usr/include/string.h ../global/globals.h ../global/internal_lib.h
-psi-opt.o: ../../inc/dbug.h ../global/traverse.h psi-opt.h
+psi-opt.o: ../global/free.h ../../inc/dbug.h ../global/my_debug.h
+psi-opt.o: /usr/include/malloc.h /usr/include/sys/types.h
+psi-opt.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
+psi-opt.o: ../global/traverse.h psi-opt.h
 tile_size_inference.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
-tile_size_inference.o: /usr/include/sys/isa_defs.h ../../inc/dbug.h
+tile_size_inference.o: /usr/include/sys/isa_defs.h /usr/include/limits.h
+tile_size_inference.o: /usr/include/string.h ../../inc/dbug.h
 tile_size_inference.o: /usr/include/stdio.h /usr/include/sys/va_list.h
 tile_size_inference.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
 tile_size_inference.o: ../global/types.h ../global/tree_basic.h
 tile_size_inference.o: ../global/tree_compound.h ../global/Error.h
-tile_size_inference.o: /usr/include/string.h ../global/globals.h
-tile_size_inference.o: ../global/traverse.h ../global/free.h
-tile_size_inference.o: ../global/my_debug.h /usr/include/malloc.h
-tile_size_inference.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
+tile_size_inference.o: ../global/globals.h ../global/traverse.h
+tile_size_inference.o: ../global/free.h ../global/my_debug.h
+tile_size_inference.o: /usr/include/malloc.h /usr/include/sys/types.h
+tile_size_inference.o: /usr/include/sys/machtypes.h
 tile_size_inference.o: /usr/include/sys/int_types.h ../global/internal_lib.h
+tile_size_inference.o: ../global/resource.h ../optimize/DupTree.h
 tile_size_inference.o: ../print/print.h ../global/tree.h
-tile_size_inference.o: tile_size_inference.h
+tile_size_inference.o: tile_size_inference.h ../global/type_info.mac
 wl_access_analyze.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 wl_access_analyze.o: /usr/include/sys/isa_defs.h ../../inc/dbug.h
 wl_access_analyze.o: /usr/include/stdio.h /usr/include/sys/va_list.h
