@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.122  2004/11/23 22:18:10  ktr
+ * take it!!!
+ *
  * Revision 3.121  2004/11/23 20:14:47  skt
  * WITHOP_MEM added
  *
@@ -732,6 +735,7 @@ extern node *TCadjustAvisData (node *new_vardec, node *fundef);
  *  compound access macros
  */
 
+#define ARG_NAME(n) (AVIS_NAME (ARG_AVIS (n)))
 #define ARG_NTYPE(n) (AVIS_TYPE (ARG_AVIS (n)))
 #define ARG_BASETYPE(n) (TYPES_BASETYPE (ARG_TYPE (n)))
 #define ARG_DIM(n) (TYPES_DIM (ARG_TYPE (n)))
