@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.10  2000/08/03 15:29:49  mab
+ * added apdiag_file, APprintDiag
+ * removed all dummies
+ *
  * Revision 1.9  2000/07/21 14:39:20  mab
  * *** empty log message ***
  *
@@ -44,6 +48,8 @@
  *
  *****************************************************************************/
 
+#include <stdarg.h>
+
 #include "dbug.h"
 
 #include "types.h"
@@ -52,12 +58,46 @@
 #include "traverse.h"
 #include "free.h"
 #include "globals.h"
+#include "filemgr.h"
 
 #include "pad.h"
 #include "pad_info.h"
 #include "pad_collect.h"
 #include "pad_infer.h"
 #include "pad_transform.h"
+
+FILE *apdiag_file;
+
+/*****************************************************************************
+ *
+ * function:
+ *   void APprintDiag(char *format, ...)
+ *
+ * description:
+ *   print diagnostic info from array padding to apdiag_file,
+ *   if compiler flag -apdiag is enabled
+ *
+ *****************************************************************************/
+
+void
+APprintDiag (char *format, ...)
+{
+
+    va_list arg_p;
+    static char buffer[1024];
+
+    DBUG_ENTER ("APprintDiag");
+
+    if (apdiag) {
+        va_start (arg_p, format);
+        vsprintf (buffer, format, arg_p);
+        va_end (arg_p);
+
+        fprintf (apdiag_file, buffer);
+    }
+
+    DBUG_VOID_RETURN;
+}
 
 /*****************************************************************************
  *
@@ -73,8 +113,6 @@
 node *
 ArrayPadding (node *arg_node)
 {
-    shpseg *tmp_old_shape;
-    shpseg *tmp_new_shape;
 
     DBUG_ENTER ("ArrayPadding");
 
@@ -82,81 +120,27 @@ ArrayPadding (node *arg_node)
 
     DBUG_PRINT ("AP", ("Entering Array Padding"));
 
+    /* open apdiag_file for output */
+    if (apdiag) {
+        apdiag_file = WriteOpen ("%s.ap", outfilename);
+    }
+
     /* collect information for inference phase */
 
-    /* APcollect(); */
+    APcollect (arg_node);
 
     /* apply array padding */
 
-    /* APinfer(); */
-
-    /* dummies only !!! */
-
-    tmp_old_shape = MakeShpseg (NULL);
-    SHPSEG_SHAPE (tmp_old_shape, 0) = 2;
-    SHPSEG_SHAPE (tmp_old_shape, 1) = 3;
-    SHPSEG_SHAPE (tmp_old_shape, 2) = 4;
-
-    tmp_new_shape = MakeShpseg (NULL);
-    SHPSEG_SHAPE (tmp_new_shape, 0) = 5;
-    SHPSEG_SHAPE (tmp_new_shape, 1) = 7;
-    SHPSEG_SHAPE (tmp_new_shape, 2) = 4;
-
-    PIaddInferredShape (3, T_int, tmp_old_shape, tmp_new_shape);
-
-    tmp_old_shape = MakeShpseg (NULL);
-    SHPSEG_SHAPE (tmp_old_shape, 0) = 2;
-    SHPSEG_SHAPE (tmp_old_shape, 1) = 3;
-
-    tmp_new_shape = MakeShpseg (NULL);
-    SHPSEG_SHAPE (tmp_new_shape, 0) = 5;
-    SHPSEG_SHAPE (tmp_new_shape, 1) = 7;
-
-    PIaddInferredShape (2, T_int, tmp_old_shape, tmp_new_shape);
-
-    tmp_old_shape = MakeShpseg (NULL);
-    SHPSEG_SHAPE (tmp_old_shape, 0) = 3;
-    SHPSEG_SHAPE (tmp_old_shape, 1) = 4;
-
-    tmp_new_shape = MakeShpseg (NULL);
-    SHPSEG_SHAPE (tmp_new_shape, 0) = 5;
-    SHPSEG_SHAPE (tmp_new_shape, 1) = 6;
-
-    PIaddInferredShape (2, T_int, tmp_old_shape, tmp_new_shape);
-
-    tmp_old_shape = MakeShpseg (NULL);
-    SHPSEG_SHAPE (tmp_old_shape, 0) = 3;
-    SHPSEG_SHAPE (tmp_old_shape, 1) = 4;
-
-    tmp_new_shape = MakeShpseg (NULL);
-    SHPSEG_SHAPE (tmp_new_shape, 0) = 6;
-    SHPSEG_SHAPE (tmp_new_shape, 1) = 7;
-
-    PIaddInferredShape (2, T_float, tmp_old_shape, tmp_new_shape);
-
-    tmp_old_shape = MakeShpseg (NULL);
-    SHPSEG_SHAPE (tmp_old_shape, 0) = 3;
-    SHPSEG_SHAPE (tmp_old_shape, 1) = 4;
-
-    tmp_new_shape = MakeShpseg (NULL);
-    SHPSEG_SHAPE (tmp_new_shape, 0) = 8;
-    SHPSEG_SHAPE (tmp_new_shape, 1) = 9;
-
-    PIaddInferredShape (2, T_double, tmp_old_shape, tmp_new_shape);
-
-    tmp_old_shape = MakeShpseg (NULL);
-    SHPSEG_SHAPE (tmp_old_shape, 0) = 8;
-    SHPSEG_SHAPE (tmp_old_shape, 1) = 9;
-
-    tmp_new_shape = MakeShpseg (NULL);
-    SHPSEG_SHAPE (tmp_new_shape, 0) = 10;
-    SHPSEG_SHAPE (tmp_new_shape, 1) = 11;
-
-    PIaddInferredShape (2, T_int, tmp_old_shape, tmp_new_shape);
+    APinfer ();
 
     /* apply array padding */
 
-    /* APtransform(arg_node); */
+    APtransform (arg_node);
+
+    /* close apdiag_file */
+    if (apdiag) {
+        fclose (apdiag_file);
+    }
 
     /* free pad_info structure */
     PIfree ();
