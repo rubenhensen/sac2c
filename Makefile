@@ -1,7 +1,10 @@
 #
 # $Log$
+# Revision 2.16  1999/10/19 17:11:34  sbs
+# new files in typecheck included and UNIX_ALPHA changed to OSF_ALPHA
+#
 # Revision 2.15  1999/09/15 16:26:35  sbs
-# UNIX_ALPHA as new OS added.
+# OSF_ALPHA as new OS added.
 #
 # Revision 2.14  1999/07/30 13:49:50  jhs
 # Added concurrent_lib.o
@@ -19,108 +22,7 @@
 # Revision 2.10  1999/06/25 14:49:54  jhs
 # Added src/concurrent/spmd_trav.o to includes.
 #
-# Revision 2.9  1999/06/02 16:51:53  dkr
-# src/lib/*.o are now builded first
-#
-# Revision 2.8  1999/05/18 17:08:30  dkr
-# added project clean_sb for removing all .sb directories (cc)
-#
-# Revision 2.7  1999/05/12 14:36:07  cg
-# added linking of main_args.o and options.o
-#
-# Revision 2.6  1999/05/10 13:27:18  sbs
-# libs changed for we are using bison now
-# (due to some problems with the linux-version.....)
-#
-# Revision 2.5  1999/05/10 10:50:58  bs
-# make deps done
-#
-# Revision 2.3  1999/03/15 18:55:01  dkr
-# fixed some bugs with CCPROD
-#
-# Revision 2.2  1999/02/26 14:17:35  dkr
-# make deps done
-#
-# Revision 2.1  1999/02/23 12:38:58  sacbase
-# new release made
-#
-# Revision 1.103  1999/01/25 16:27:20  sbs
-# interrupt.o in global added.
-#
-# Revision 1.102  1999/01/15 16:59:46  sbs
-# freemasks.o added
-#
-# Revision 1.101  1999/01/15 15:28:15  cg
-# added linking of file psi-opt/tile_size_inference.o
-#
-# Revision 1.100  1999/01/14 13:13:21  sacbase
-# in clean: rm src.tar.gz added .
-#
-# Revision 1.99  1999/01/07 13:59:23  sbs
-# NEWTREE turned off + generatemasks.o, DeadFunctionRemoval added
-#
-# Revision 1.98  1998/12/17 09:48:39  cg
-# added new targets tar, distrib, and fafnir.
-# improved targets src.tar.gz and floppy
-#
-# Revision 1.97  1998/12/10 12:36:37  cg
-# added -DPRODUCTION for production compilations of sac2c in order
-# to allow for different code sections in production and developer
-# versions of sac2c.
-#
-# Revision 1.96  1998/12/07 17:28:34  cg
-# Added mechanism to link with different libraries on different
-# platforms; added correct settings to please target LINUX_X86.
-#
-# Revision 1.95  1998/12/07 09:41:28  sbs
-# check_os added. check_os makes sure that OS is set properly!
-#
-# Revision 1.94  1998/12/04 15:02:34  sbs
-# some LOGs killed and OS diversification standardized 8-)
-# i.e., during compilation a flag -DSOLARIS_SPARC or
-# -DLINUX_X86 will be set.
-# If the latter is to be triggered, simply call:
-# gmake OS=LINUX_X86
-#
-# Revision 1.93  1998/10/26 12:32:59  cg
-# new mechanism implemented that stores sac2c build information
-# which may later be retrieved by the -h or -i option, repsectively.
-#
-# Revision 1.92  1998/10/26 12:28:34  sbs
-# tar / floppy added
-#
-# Revision 1.91  1998/09/02 09:26:24  sbs
-# inserted floppy, %.gz, and src.tar - rules!
-#
-# Revision 1.90  1998/08/26 12:57:01  sbs
-# -pedantic for product-line eliminated!
-# reason: illegal cast in lvalue!
-#
-# Revision 1.89  1998/08/14 22:21:15  dkr
-# path to efence changed
-#
-# Revision 1.88  1998/07/16 17:44:06  dkr
-# eleminated MAKEPROD reference in dummy-rule
-#
-# Revision 1.87  1998/06/29 09:16:04  cg
-# The SAC runtime library is now compiled with optimizations.
-#
-# Revision 1.86  1998/06/18 13:24:00  cg
-# added linking of spmd_init.o spmd_opt.o spmd_lift.o sync_init.o
-# sync_opt.o sched.o and scheduling.o
-# removed linking of spmdregions.o
-#
-# Revision 1.85  1998/06/12 14:18:33  cg
-# added linking of concurrent/scheduling.o
-#
-# Revision 1.84  1998/06/07 18:38:33  dkr
-# added src/compile/ReuseWithArrays.o
-#
-# Revision 1.83  1998/05/28 14:57:10  sbs
-# gen_pseudo_fun.o in typecheck added!
-#
-# Revision 1.82  1998/05/13 13:37:38  srs
-# added WLUnroll
+# ... [eliminated] 
 #
 # Revision 1.81  1998/05/13 07:12:25  cg
 # added linking of file icm2c_mt.o
@@ -155,7 +57,7 @@ gcc_PROD_FLAGS := -Wall -O3
 #
 # cc specific flags:
 #
-cc_FLAGS  := -xsb -erroff=E_CAST_DOESNT_YIELD_LVALUE
+cc_FLAGS  := -erroff=E_CAST_DOESNT_YIELD_LVALUE
 cc_PROD_FLAGS  := -erroff=E_CAST_DOESNT_YIELD_LVALUE -xO4
 
 ################################################################################
@@ -165,7 +67,7 @@ cc_PROD_FLAGS  := -erroff=E_CAST_DOESNT_YIELD_LVALUE -xO4
 # legal values for OS currently are:
 #    SOLARIS_SPARC
 #    LINUX_X86
-#    UNIX_ALPHA
+#    OSF_ALPHA
 #
 OS        := SOLARIS_SPARC
 
@@ -189,8 +91,8 @@ LINUX_X86_LIBS      := -lfl
 #
 # UNIX_ALPHA specific flags and libraries:
 #
-UNIX_ALPHA_FLAGS    := 
-UNIX_ALPHA_LIBS     := -ll
+OSF_ALPHA_FLAGS    := 
+OSF_ALPHA_LIBS     := -ll
 
 ################################################################################
 #
@@ -243,7 +145,11 @@ SCANP= src/scanparse/y.tab.o src/scanparse/lex.yy.o \
 PRINT= src/print/print.o src/print/convert.o
 FLATTEN= src/flatten/flatten.o
 TYPECHECK= src/typecheck/typecheck.o src/typecheck/prim_fun.o \
-           src/typecheck/typecheck_WL.o src/typecheck/gen_pseudo_fun.o
+           src/typecheck/typecheck_WL.o src/typecheck/gen_pseudo_fun.o \
+           src/typecheck/new_typecheck.o src/typecheck/new_types.o \
+           src/typecheck/shape.o src/typecheck/user_types.o \
+           src/typecheck/constants.o src/typecheck/cv2cv.o \
+           src/typecheck/cv2scalar.o
 OPTIMIZE= src/optimize/optimize.o src/optimize/ConstantFolding.o \
           src/optimize/generatemasks.o src/optimize/DeadCodeRemoval.o \
           src/optimize/DeadFunctionRemoval.o src/optimize/freemasks.o \
@@ -298,11 +204,11 @@ distrib_product: prod sac2c.prod
 
 check_os:
 	@ if [ "$(OS)" != "SOLARIS_SPARC" -a "$(OS)" != "LINUX_X86" \
-               -a "$(OS)" != "UNIX_ALPHA" ]; \
+               -a "$(OS)" != "OSF_ALPHA" ]; \
 	  then $(ECHO) "*** Unknown OS! Please specify:"; \
                $(ECHO) "SOLARIS_SPARC (default)"; \
                $(ECHO) "LINUX_X86"; \
-               $(ECHO) "UNIX_ALPHA"; \
+               $(ECHO) "OSF_ALPHA"; \
 	       exit 1; \
 	  fi
 
