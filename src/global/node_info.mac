@@ -1,9 +1,13 @@
 /*
  *
  * $Log$
- * Revision 1.74  1995/06/06 08:52:47  sbs
- * IdxAp deleted
+ * Revision 1.75  1995/06/06 14:05:28  cg
+ * N_isclass and N_imported added.
+ * N_constdef and N_objdef will now be printed.
  *
+;; Revision 1.74  1995/06/06  08:52:47  sbs
+;; IdxAp deleted
+;;
 ;; Revision 1.73  1995/06/02  16:41:49  sbs
 ;; idx_tab extended
 ;;
@@ -265,12 +269,12 @@ NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun,
   NIF (N_typedef, "N_typedef", DummyFun, DummyFun, PrintTypedef, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun),
-  NIF (N_constdef, "N_constdef", DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
+  NIF (N_constdef, "N_constdef", DummyFun, DummyFun, PrintConstdef, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun),
-  NIF (N_objdef, "N_objdef", DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
+  NIF (N_objdef, "N_objdef", DummyFun, DummyFun, PrintObjdef, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
-       DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun),
+       DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun),
   NIF (N_modul, "N_modul", IMmodul, FltnModul, PrintModul, DummyFun, OPTmodul, OPTmodul,
        OPTmodul, FreeModul, OPTmodul, DummyFun, DummyFun, OPTmodul, OPTmodul, OPTmodul,
        OPTmodul, DummyFun, IdxModul, DummyFun, DummyFun, DummyFun),
@@ -389,6 +393,12 @@ NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun,
   NIF (N_vinfo, "N_vinfo", DummyFun, DummyFun, PrintVectInfo, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun),
+  NIF (N_imported, "N_imported", DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
+       DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
+       DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun),
+  NIF (N_isclass, "N_isclass", DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
+       DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
+       DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun),
   NIF (N_ok, "N_ok", DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun)
