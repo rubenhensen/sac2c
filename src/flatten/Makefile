@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.22  2002/08/13 10:22:18  sbs
+# handle_mops.o added
+#
 # Revision 3.21  2002/06/06 19:56:03  dkr
 # target clean modified
 #
@@ -64,7 +67,7 @@ include $(PROJECT_ROOT)/Makefile.Config
 INCS = -I../global -I../../inc -I../tree -I../print -I../optimize
 
 
-all: flatten.o lac2fun.o fun2lac.o while2do.o insert_vardec.o
+all: flatten.o lac2fun.o fun2lac.o while2do.o insert_vardec.o handle_mops.o
 
 
 %.o: %.c
