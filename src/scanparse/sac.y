@@ -3,7 +3,11 @@
 /*
  *
  * $Log$
- * Revision 1.51  1995/02/20 09:35:47  hw
+ * Revision 1.52  1995/03/01 16:28:00  hw
+ * changed N_generator ( the name of the index vector is
+ * 	now stored in innfo.ids)
+ *
+ * Revision 1.51  1995/02/20  09:35:47  hw
  * inserted rule expr -> MINUS ID %prec UMINUS
  *
  * Revision 1.50  1995/02/14  12:42:42  sbs
@@ -1235,16 +1239,19 @@ expr:   apl {$$=$1; $$->info.fun_name.id_mod=NULL; }
 
 generator: expr  LE ID LE expr
             { $$=MakeNode(N_generator);
-              $$->node[0]=$1;        /* linke Grenze  */
-              $$->node[1]=$5;        /* rechte Grenze */
-              $$->info.id=$3;     /* Laufvariable  */
+              $$->node[0]=$1;        /* left border  */
+              $$->node[1]=$5;        /* right border */
+              $$->info.ids=GEN_NODE(ids);
+              $$->info.ids->id=$3;     /*index-variable  */
+              $$->info.ids->node=NULL;
+              $$->info.ids->next=NULL;
               $$->nnode=2;
 
               DBUG_PRINT("GENTREE",
                          ("%s "P_FORMAT": %s "P_FORMAT", ID: %s, %s "P_FORMAT ,
                           mdb_nodetype[$$->nodetype], $$,
                           mdb_nodetype[$$->node[0]->nodetype], $$->node[0],
-                          $$->info.id,
+                          $$->info.ids->id,
                           mdb_nodetype[$$->node[1]->nodetype], $$->node[1]));
             }
         ;
