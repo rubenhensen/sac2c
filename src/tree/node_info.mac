@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.124  2003/11/07 10:12:22  ktr
+ * hm_tab comment added.
+ *
  * Revision 3.123  2003/09/17 12:34:05  sbs
  * ts_tab added
  *
@@ -172,7 +175,7 @@
  *
  *   ssaili_tab      comp2_tab       precomp2_tab    insvd_tab
  *   crtwrp_tab      wls_tab         precomp4_tab    al_tab4
- *   hd_tab          nt2ot_tab       cwc_tab         unused_tab9
+ *   hd_tab          nt2ot_tab       cwc_tab         hm_tab
  *   dl_tab          blir_tab        esd_tab11       uesd_tab12
  *   sp_tab          ts_tab          unused_tab15    unused_tab16
  *
