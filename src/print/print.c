@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.44  2001/04/03 17:51:17  dkr
+ * PrintWLsegx modified: output for WLSEG_SV, WLSEG_MAXHOMDIM added
+ *
  * Revision 3.43  2001/04/03 15:27:17  dkr
  * minor changes in DoPrintAST() done
  *
@@ -185,6 +188,7 @@
 #include "wl_access_analyze.h"
 #include "tile_size_inference.h"
 #include "NameTuples.h"
+#include "wltransform.h"
 #include "wl_bounds.h"
 
 #define WARN_INDENT
@@ -3296,6 +3300,14 @@ PrintWLsegx (node *arg_node, node *arg_info)
         WLSEGX_IDX_PRINT (outfile, seg, IDX_MAX);
         fprintf (outfile, "\n");
         INDENT;
+
+        if (NODE_TYPE (arg_node) == N_WLseg) {
+            fprintf (outfile, " * sv: ");
+            PRINT_SV (outfile, WLSEG_SV (arg_node), WLSEG_DIMS (arg_node),
+                      WLSEG_MAXHOMDIM (arg_node));
+            fprintf (outfile, ", maxhomdim: %i\n", WLSEG_MAXHOMDIM (arg_node));
+            INDENT;
+        }
 
         if (WLSEGX_SCHEDULING (seg) != NULL) {
             fprintf (outfile, " * scheduling: ");
