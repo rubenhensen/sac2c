@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.4  1994/12/11 17:28:52  sbs
+ * Revision 1.5  1995/02/13 17:21:03  asi
+ * parmeters noOPT, noCF and noDCR added
+ *
+ * Revision 1.4  1994/12/11  17:28:52  sbs
  * -I, -L + enivironment vars inserted
  *
  * Revision 1.3  1994/12/02  12:37:34  sbs
@@ -32,6 +35,10 @@ usage (char *prg_name)
     printf ("\t -f \t\t\tstop after flatten\n");
     printf ("\t -t \t\t\tstop after typecheck\n");
     printf ("\t -s \t\t\tcompile silently\n");
+
+    printf ("\t -noOPT \t\tno optimizations\n");
+    printf ("\t -noCF  \t\tno constant folding\n");
+    printf ("\t -noDCR \t\tno dead code removal\n");
 
     printf ("\nenvironment variables:\n");
     printf ("\t SAC_PATH\t\tsearch paths for program source\n");

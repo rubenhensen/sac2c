@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.23  1995/01/18 17:31:48  asi
+ * Revision 1.24  1995/02/13 17:21:03  asi
+ * parmeters noOPT, noCF and noDCR added
+ *
+ * Revision 1.23  1995/01/18  17:31:48  asi
  * Added FreeTree ad end of program
  *
  * Revision 1.22  1995/01/16  09:32:06  asi
@@ -89,6 +92,8 @@
 #include "print.h"
 #include "typecheck.h"
 #include "optimize.h"
+#include "ConstantFolding.h"
+#include "DeadCodeRemoval.h"
 #include "filemgr.h"
 #include "import.h"
 
@@ -97,11 +102,13 @@
 #include <string.h>
 
 FILE *outfile;
+char *filename = NULL;
+int opt_dcr = 1, opt_cf = 1;
 
 MAIN
 {
     int set_outfile = 0;
-    int breakparse = 0, breakimport = 0, breakflatten = 0, breaktype = 0;
+    int breakparse = 0, breakimport = 0, breakflatten = 0, breaktype = 0, optimize = 1;
     char prgname[256];
     char outfilename[256] = "out.txt";
 
@@ -132,6 +139,16 @@ MAIN
     {
         silent = 1;
     }
+    ARG 'n':
+    {
+        if (strcmp (*argv, "oDCR"))
+            opt_dcr = 0;
+        if (strcmp (*argv, "oCF"))
+            opt_cf = 0;
+        if (strcmp (*argv, "oOPT"))
+            optimize = 0;
+    }
+    NEXTOPT
     ARG 'o' : PARM
     {
         strcpy (outfilename, *argv);
@@ -157,6 +174,7 @@ MAIN
 
     if (argc == 1) {
         yyin = FindFile (PATH, *argv);
+        filename = *argv;
         if (yyin == NULL) {
             ERROR2 (1, ("Couldn't open file \"%s\"!\n", *argv));
         }
@@ -183,8 +201,10 @@ MAIN
                 Typecheck (syntax_tree);
                 NOTE (("\n%d Warnings, %d Errors \n", warnings, errors));
                 if ((!breaktype) && (errors == 0)) {
-                    NOTE (("Optimizing: ...\n"));
-                    syntax_tree = Optimize (syntax_tree);
+                    if (optimize) {
+                        NOTE (("Optimizing: ...\n"));
+                        syntax_tree = Optimize (syntax_tree);
+                    }
                     /*  GenCCode(); */
                 }
             } else
