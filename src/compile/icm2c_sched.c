@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2001/05/16 10:16:58  ben
+ * SCHEDULER_Self modified, for dynamic or static choosen first task
+ * depending on sched_id
+ * Self_INIT and Affinity_INIT modified with the call of SET_TASKS
+ *
  * Revision 3.1  2001/05/11 14:35:09  cg
  * Initial revision.
  *
@@ -513,9 +518,17 @@ ICMCompileMT_SCHEDULER_Self_BEGIN (int sched_id, int tasks_per_thread, int dim,
     INDENT;
     fprintf (outfile, "int SAC_MT_taskid,SAC_MT_worktodo;\n");
     INDENT;
-    fprintf (outfile,
-             "SAC_MT_SCHEDULER_Self_FIRST_TASK(%d,SAC_MT_taskid,SAC_MT_worktodo);\n",
-             tasks_per_thread);
+    if (sched_id > 0) {
+        fprintf (outfile,
+                 "SAC_MT_SCHEDULER_Self_FIRST_TASK_DYNAMIC(%d,%d,SAC_MT_taskid,SAC_MT_"
+                 "worktodo);\n",
+                 sched_id, tasks_per_thread);
+    } else {
+        fprintf (outfile,
+                 "SAC_MT_SCHEDULER_Self_FIRST_TASK_STATIC(%d,%d,SAC_MT_taskid,SAC_MT_"
+                 "worktodo);\n",
+                 sched_id, tasks_per_thread);
+    }
     InitializeBoundaries (dim, vararg, 0);
     INDENT;
     fprintf (outfile, " while (SAC_MT_worktodo) {\n");
@@ -537,14 +550,19 @@ ICMCompileMT_SCHEDULER_Self_END (int sched_id, int tasks_per_thread, int dim,
 #undef MT_SCHEDULER_Self_END
 
     INDENT;
-    fprintf (outfile,
-             " SAC_MT_SCHEDULER_Self_NEXT_TASK(%d,SAC_MT_taskid,SAC_MT_worktodo);\n",
-             tasks_per_thread);
+    if (sched_id > 0) {
+        fprintf (outfile,
+                 "SAC_MT_SCHEDULER_Self_NEXT_TASK_WITH_DYNAMIC_FIRST_TASK(%d,%d,SAC_MT_"
+                 "taskid,SAC_MT_worktodo);\n",
+                 sched_id, tasks_per_thread);
+    } else {
+        fprintf (outfile,
+                 "SAC_MT_SCHEDULER_Self_NEXT_TASK_WITH_STATIC_FIRST_TASK(%d,%d,SAC_MT_"
+                 "taskid,SAC_MT_worktodo);\n",
+                 sched_id, tasks_per_thread);
+    }
     INDENT;
     fprintf (outfile, "}\n");
-    INDENT;
-    fprintf (outfile, "SAC_MT_SCHEDULER_Reset_Tasks( );\n");
-    fprintf (outfile, "\n");
 
     DBUG_VOID_RETURN;
 }
@@ -559,6 +577,10 @@ ICMCompileMT_SCHEDULER_Self_INIT (int sched_id, int tasks_per_thread, int dim,
 #include "icm_comment.c"
 #include "icm_trace.c"
 #undef MT_SCHEDULER_Self_INIT
+
+    INDENT;
+    fprintf (outfile, "SAC_MT_SCHEDULER_SET_TASKS(%d);\n", sched_id);
+    fprintf (outfile, "\n");
 
     DBUG_VOID_RETURN;
 }
@@ -604,9 +626,9 @@ ICMCompileMT_SCHEDULER_Affinity_BEGIN (int sched_id, int tasks_per_thread, int d
     InitializeBoundaries (dim, vararg, 0);
     INDENT;
     fprintf (outfile,
-             "SAC_MT_SCHEDULER_Affinity_FIRST_TASK(%d, SAC_MT_taskid, "
+             "SAC_MT_SCHEDULER_Affinity_FIRST_TASK(%d,%d, SAC_MT_taskid, "
              "SAC_MT_worktodo, SAC_MT_maxloadthread, SAC_MT_mintask);\n",
-             tasks_per_thread);
+             sched_id, tasks_per_thread);
     INDENT;
     fprintf (outfile, " while (SAC_MT_worktodo){\n");
     TaskSelector (dim, vararg, ST_BLOCK, 0, numtasks, "SAC_MT_taskid");
@@ -628,14 +650,11 @@ ICMCompileMT_SCHEDULER_Affinity_END (int sched_id, int tasks_per_thread, int dim
 
     INDENT;
     fprintf (outfile,
-             "SAC_MT_SCHEDULER_Affinity_NEXT_TASK(%d, SAC_MT_taskid, "
+             "SAC_MT_SCHEDULER_Affinity_NEXT_TASK(%d ,%d, SAC_MT_taskid, "
              "SAC_MT_worktodo, SAC_MT_maxloadthread, SAC_MT_mintask);\n",
-             tasks_per_thread);
+             sched_id, tasks_per_thread);
     INDENT;
     fprintf (outfile, "}\n");
-    INDENT;
-    fprintf (outfile, "SAC_MT_SCHEDULER_Reset_Tasks();\n");
-    fprintf (outfile, "\n");
 
     DBUG_VOID_RETURN;
 }
@@ -650,6 +669,10 @@ ICMCompileMT_SCHEDULER_Affinity_INIT (int sched_id, int tasks_per_thread, int di
 #include "icm_comment.c"
 #include "icm_trace.c"
 #undef MT_SCHEDULER_Affinity_INIT
+
+    INDENT;
+    fprintf (outfile, "SAC_MT_SCHEDULER_SET_TASKS(%d);\n", sched_id);
+    fprintf (outfile, "\n");
 
     DBUG_VOID_RETURN;
 }
