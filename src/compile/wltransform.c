@@ -1,11 +1,8 @@
 /*
  *
  * $Log$
- * Revision 1.29  1998/08/07 16:06:58  dkr
- * some minor bugs fixed
- *
- * Revision 1.28  1998/08/06 17:29:34  dkr
- * fixed a bug in CheckParams
+ * Revision 1.30  1998/08/07 18:03:53  dkr
+ * a bug in CheckParams fixed
  *
  * Revision 1.27  1998/08/06 01:16:12  dkr
  * fixed some minor bugs
@@ -2241,7 +2238,7 @@ CheckParams (node *seg)
     for (j = 0; j < WLSEG_BLOCKS (seg); j++) {
         /* goto first dim with (bv_d > 1) */
         d = 0;
-        while (((WLSEG_BV (seg, j))[d] == 1) && (d < WLSEG_DIMS (seg))) {
+        while ((d < WLSEG_DIMS (seg)) && ((WLSEG_BV (seg, j))[d] == 1)) {
             d++;
         }
 
@@ -2270,7 +2267,7 @@ CheckParams (node *seg)
 
     /* goto first dim with (bv_d > 1) */
     d = 0;
-    while (((WLSEG_UBV (seg))[d] == 1) && (d < WLSEG_DIMS (seg))) {
+    while ((d < WLSEG_DIMS (seg)) && ((WLSEG_UBV (seg))[d] == 1)) {
         d++;
     }
 
