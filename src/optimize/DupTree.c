@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.93  1998/05/21 15:27:16  dkr
+ * fixed a bug in DupNwith, DupNwith2, DupNcode:
+ *   argument of DupIds is always != NULL now
+ *
  * Revision 1.92  1998/05/21 13:31:12  dkr
  * renamed NCODE_DEC_RC_IDS into NCODE_INC_RC_IDS
  *
@@ -1033,7 +1037,9 @@ DupNwith (node *arg_node, node *arg_info)
     NWITH_NO_CHANCE (new_node) = NWITH_NO_CHANCE (arg_node);
 
     NWITH_PRAGMA (new_node) = DUPTRAV (NWITH_PRAGMA (arg_node));
-    NWITH_DEC_RC_IDS (new_node) = DupIds (NWITH_DEC_RC_IDS (arg_node), arg_info);
+    if (NWITH_DEC_RC_IDS (arg_node) != NULL) {
+        NWITH_DEC_RC_IDS (new_node) = DupIds (NWITH_DEC_RC_IDS (arg_node), arg_info);
+    }
 
     if (NWITH_IN (arg_node) != NULL) {
         NWITH_IN (new_node) = DFMGenMaskCopy (NWITH_IN (arg_node));
@@ -1131,7 +1137,9 @@ DupNcode (node *arg_node, node *arg_info)
     NCODE_USED (new_node) = 0;
     NCODE_NO (new_node) = NCODE_NO (arg_node);
     NCODE_FLAG (new_node) = NCODE_FLAG (arg_node);
-    NCODE_INC_RC_IDS (new_node) = DupIds (NCODE_INC_RC_IDS (arg_node), arg_info);
+    if (NCODE_INC_RC_IDS (arg_node) != NULL) {
+        NCODE_INC_RC_IDS (new_node) = DupIds (NCODE_INC_RC_IDS (arg_node), arg_info);
+    }
 
     NCODE_COPY (arg_node) = new_node;
 
@@ -1209,7 +1217,9 @@ DupNwith2 (node *arg_node, node *arg_info)
         }
     }
 
-    NWITH2_DEC_RC_IDS (new_node) = DupIds (NWITH2_DEC_RC_IDS (arg_node), arg_info);
+    if (NWITH2_DEC_RC_IDS (arg_node) != NULL) {
+        NWITH2_DEC_RC_IDS (new_node) = DupIds (NWITH2_DEC_RC_IDS (arg_node), arg_info);
+    }
 
     if (NWITH2_IN (arg_node) != NULL) {
         NWITH2_IN (new_node) = DFMGenMaskCopy (NWITH2_IN (arg_node));
