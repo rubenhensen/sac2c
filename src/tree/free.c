@@ -1,5 +1,9 @@
 /*
+ *
  * $Log$
+ * Revision 1.11  2000/10/27 14:26:06  dkr
+ * no changes done
+ *
  * Revision 1.10  2000/10/26 14:28:57  dkr
  * FreeNCodeWLAA inlined
  * FreeShpseg modified: SHPSEG_NEXT is removed now, too.
@@ -68,7 +72,15 @@
  *
  * Revision 1.1  1994/12/20  15:42:10  sbs
  * Initial revision
+ *
  */
+
+/*
+ * For the time being modulnames are shared in the AST
+ *  -> no free!
+ */
+#define FREE_MODNAMES
+#undef FREE_MODNAMES
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -548,12 +560,7 @@ FreeModul (node *arg_node, node *arg_info)
     FREETRAV (MODUL_FOLDFUNS (arg_node));
     FREETRAV (MODUL_STORE_IMPORTS (arg_node));
 
-/* srs: module_name __MAIN is allocated statically in sac.y
- *      the string of the module name is potentially shared.
- */
-#if 0
-  FREE(MODUL_NAME(arg_node));
-#endif
+    FREE (MODUL_NAME (arg_node));
 
     DBUG_PRINT ("FREE", ("Removing N_modul node ..."));
 
@@ -700,6 +707,9 @@ FreeTypedef (node *arg_node, node *arg_info)
     tmp = FREECONT (TYPEDEF_NEXT (arg_node));
 
     FREE (TYPEDEF_NAME (arg_node));
+#ifdef FREE_MODNAMES
+    FREE (TYPEDEF_MOD (arg_node));
+#endif
     FreeAllTypes (TYPEDEF_TYPE (arg_node));
     FREE (TYPEDEF_COPYFUN (arg_node));
     FREE (TYPEDEF_FREEFUN (arg_node));
@@ -729,6 +739,10 @@ FreeObjdef (node *arg_node, node *arg_info)
     FREETRAV (OBJDEF_PRAGMA (arg_node));
 
     FREE (OBJDEF_NAME (arg_node));
+#ifdef FREE_MODNAMES
+    FREE (OBJDEF_MOD (arg_node));
+    FREE (OBJDEF_LINKMOD (arg_node));
+#endif
     FREE (OBJDEF_VARNAME (arg_node));
     FreeOneTypes (OBJDEF_TYPE (arg_node));
 #if 0
@@ -758,12 +772,11 @@ FreeFundef (node *arg_node, node *arg_info)
 
     if (FUNDEF_ICM (arg_node) != NULL)
         if (NODE_TYPE (FUNDEF_ICM (arg_node)) == N_icm) {
-            FREETRAV (FUNDEF_ICM (arg_node));
-
             /*
              *  FUNDEF_ICM may not be freed without precondition, because it's
              *  stored on the same real son node as FUNDEF_RETURN.
              */
+            FREETRAV (FUNDEF_ICM (arg_node));
         }
 
     FREETRAV (FUNDEF_BODY (arg_node));
@@ -774,6 +787,10 @@ FreeFundef (node *arg_node, node *arg_info)
     }
 
     FREE (FUNDEF_NAME (arg_node));
+#ifdef FREE_MODNAMES
+    FREE (FUNDEF_MOD (arg_node));
+    FREE (FUNDEF_LINKMOD (arg_node));
+#endif
 
     if (FUNDEF_STATUS (arg_node) != ST_spmdfun) {
         FreeNodelist (FUNDEF_NEEDOBJS (arg_node));
@@ -1046,6 +1063,9 @@ FreeAp (node *arg_node, node *arg_info)
 
     FREETRAV (AP_ARGS (arg_node));
     FREE (AP_NAME (arg_node));
+#ifdef FREE_MODNAMES
+    FREE (AP_MOD (arg_node));
+#endif
 
     DBUG_PRINT ("FREE", ("Removing N_ap node ..."));
 
@@ -1135,6 +1155,9 @@ FreeId (node *arg_node, node *arg_info)
     DBUG_PRINT ("FREE", ("Removing contents of N_id node %s ...", ID_NAME (arg_node)));
 
     FREE (ID_NAME (arg_node));
+#ifdef FREE_MODNAMES
+    FREE (ID_MOD (arg_node));
+#endif
 
     DBUG_PRINT ("FREE", ("Removing N_id node ..."));
 
@@ -1682,6 +1705,9 @@ FreeNWithOp (node *arg_node, node *arg_info)
      */
     if (WO_foldfun == NWITHOP_TYPE (arg_node)) {
         FREE (NWITHOP_FUN (arg_node));
+#ifdef FREE_MODNAMES
+        FREE (NWITHOP_MOD (arg_node));
+#endif
     }
 
     /* free mem allocated in MakeNWithOp */
@@ -1969,9 +1995,9 @@ FreeCWrapper (node *arg_node, node *arg_info)
     tmp = FREECONT (CWRAPPER_NEXT (arg_node));
 
     FREE (CWRAPPER_NAME (arg_node));
-
-    /* modulename is usually shared - no free!
-     * FREE( CWRAPPER_MOD(arg_node)); */
+#ifdef FREE_MODNAMES
+    FREE (CWRAPPER_MOD (arg_node));
+#endif
 
     FreeNodelist (CWRAPPER_FUNS (arg_node));
 
@@ -1981,6 +2007,7 @@ FreeCWrapper (node *arg_node, node *arg_info)
 }
 
 /*--------------------------------------------------------------------------*/
+
 node *
 FreeModspec (node *arg_node, node *arg_info)
 {
