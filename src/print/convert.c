@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.10  1995/07/11 09:01:43  cg
+ * Revision 1.11  1995/10/26 16:03:27  cg
+ * Function Type2String now has additional flag to suppress printing
+ * of module names.
+ *
+ * Revision 1.10  1995/07/11  09:01:43  cg
  * reference parameters now considered.
  *
  * Revision 1.9  1995/06/23  12:30:21  hw
@@ -73,6 +77,7 @@ char *rename_type[] = {
  *                            the resulting string
  *                  flag ==2: used for renaming of functions( lookup type-name
  *                            in rename_type[] instead of type_string[])
+ *                  flag ==3: the module name is not included into string
  *  global vars   : ---
  *  internal funs : ---
  *  external funs : strcat, malloc, sprintf
@@ -92,9 +97,9 @@ Type2String (types *type, int flag)
     tmp_string[0] = '\0';
 
     do {
-        if (type->name_mod != NULL) {
+        if ((type->name_mod != NULL) && (flag != 3)) {
             strcat (tmp_string, type->name_mod);
-            strcat (tmp_string, MOD_NAME_CON);
+            strcat (tmp_string, mod_name_con);
         }
         if (2 == flag)
             strcat (tmp_string, SIMPLE4FUN_RENAME (type));
