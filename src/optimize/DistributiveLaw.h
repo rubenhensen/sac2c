@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.2  2003/02/09 22:32:19  mwe
+ * removed bugs
+ *
  * Revision 1.1  2003/02/08 16:08:16  mwe
  * Initial revision
  *
@@ -16,7 +19,7 @@ extern node *DLlet (node *, node *);
 extern node *DLPrfOrAp (node *, node *);
 
 extern node *SearchTravElems (node *, node *);
-
+extern bool CheckOperator (node *, node *);
 extern bool DLIsConstant (node *);
 extern bool DLReachedArgument (node *);
 extern bool DLReachedDefinition (node *);
@@ -37,7 +40,7 @@ extern node *CheckNode (node *, node *);
 extern bool IsIdenticalNode (node *, node *);
 extern node *RemoveMostFrequentNode (node *);
 extern node *ResetFlags (node *);
-extern node *CommitAssignNodes (nodelist *, node *);
+extern nodelist *CommitAssignNodes (nodelist *, node *);
 extern node *IncludeMostFrequentNode (node *);
 extern node *MakeAllNodelistnodesToAssignNodes (nodelist *, node *);
 extern node *IntegrateResults (node *);
