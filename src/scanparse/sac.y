@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.61  1995/05/31 11:38:23  hw
+ * Revision 1.62  1995/05/31 13:03:11  hw
+ * node[1] of N_foldfun is not an N_exprs anymore
+ *
+ * Revision 1.61  1995/05/31  11:38:23  hw
  * changed rule for 'fold' (case N_foldfun) ( exchanged 'expr' with 'exprORarray' )
  *
  * Revision 1.60  1995/05/30  08:22:28  cg
@@ -1408,12 +1411,7 @@ conexpr: GENARRAY {$$=MakeNode(N_genarray);} BRACKET_L exprORarray BRACKET_R
 	   retassignblock
 	   { $$=$3;
         $$->node[0]=$6;          /* body */
-        $$->node[1]=MakeNode(N_exprs);
-        $$->node[1]->node[0]=$4;
-        $$->node[1]->nnode=1;
-        DBUG_PRINT("GENTREE",("%s " P_FORMAT ": %s "P_FORMAT,
-                              mdb_nodetype[$$->node[1]->nodetype], $$->node[1],
-                              mdb_nodetype[$4->nodetype], $4));
+        $$->node[1]=$4;
         $$->nnode=2;
 
         DBUG_PRINT("GENTREE",
