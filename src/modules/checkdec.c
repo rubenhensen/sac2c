@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.5  2000/07/27 15:21:01  nmw
+ * removal of freshly geberated dec files when compiling
+ * for a c-library added
+ *
  * Revision 2.4  2000/06/14 12:18:00  cg
  * Bug fixed in function PrintDecTypes: each return type of a function declaration
  * is now printed exactly once.
@@ -299,6 +303,17 @@ CheckDec (node *syntax_tree)
 
         decl
           = ImportOwnDeclaration (MODUL_NAME (syntax_tree), MODUL_FILETYPE (syntax_tree));
+
+        /* if we are compiling for a c-library
+         * and create a dec-file, we have to remove this freshly
+         * generated file, because it might contain functions
+         * specialized using the spec-file-feature.
+         * these functions cause error when importing this dec-file
+         * in a usual module compiling case.
+         * so we remove the file here */
+        if (generatelibrary & GENERATELIBRARY_C) {
+            SystemCall ("rm %s", filename);
+        }
     }
 
     act_tab = checkdec_tab;
