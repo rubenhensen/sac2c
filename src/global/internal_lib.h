@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.29  2004/11/22 21:16:44  ktr
+ * globals.h
+ *
  * Revision 3.28  2004/11/22 15:42:55  ktr
  * SACDevCamp 04 Ismop
  *
@@ -150,7 +153,7 @@
 #include "config.h"
 #include "types.h"
 #include "dbug.h"
-#include "global.h"
+#include "globals.h"
 
 /*********************************
  *
