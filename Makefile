@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.51  2002/05/31 17:22:23  dkr
+# NameTuplesUtils.o and icm2c_utils.o added
+#
 # Revision 3.50  2002/03/13 16:03:20  ktr
 # Added Withloop-Scalarization for linking
 #
@@ -103,7 +106,7 @@ SOURCE_FILES := $(foreach dir,$(SOURCE_DIRS),$(addprefix $(dir)/,$(filter-out RC
 GLOBAL= src/global/main.o src/global/Error.o src/global/usage.o \
         src/global/my_debug.o src/global/internal_lib.o src/global/globals.o \
         src/global/resource.o src/global/build.o src/global/interrupt.o \
-        src/global/options.o src/global/NameTuples.o
+        src/global/options.o src/global/NameTuples.o src/global/NameTuplesUtils.o
 TREE= src/tree/traverse.o src/tree/tree_basic.o src/tree/free.o \
       src/tree/tree_compound.o src/tree/DupTree.o src/tree/LookUpTable.o \
       src/tree/DataFlowMask.o src/tree/DataFlowMaskUtils.o src/tree/InferDFMs.o \
@@ -166,8 +169,8 @@ MULTITHREAD= src/multithread/multithread.o src/multithread/schedule_init.o \
 COMPILE= src/compile/wltransform.o src/compile/wlpragma_funs.o \
          src/compile/precompile.o \
          src/compile/compile.o src/compile/compile.tagged.o src/compile/gen_startup_code.o \
-         src/compile/icm2c.o src/compile/icm2c_std.o src/compile/icm2c_mt.o \
-         src/compile/icm2c_sched.o src/compile/icm2c_wl.o  \
+         src/compile/icm2c.o src/compile/icm2c_utils.o src/compile/icm2c_std.o \
+         src/compile/icm2c_mt.o src/compile/icm2c_sched.o src/compile/icm2c_wl.o  \
          src/compile/ReuseWithArrays.o src/compile/PatchWith.o
 
 CINTERFACE= src/c-interface/map_cwrapper.o src/c-interface/print_interface.o \
