@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.44  2000/10/24 14:29:23  dkr
+ * some append functions added
+ *
  * Revision 1.43  2000/10/24 10:06:08  dkr
  * GetBasetypeSize() added
  *
@@ -272,15 +275,7 @@ extern bool IsNonUniqueHidden (types *type);
 #define IDS_VARDEC_NEXT(n) VARDEC_OR_ARG_NEXT (IDS_VARDEC (n))
 #define IDS_PADDED(n) VARDEC_OR_ARG_PADDED (IDS_VARDEC (n))
 
-/*
- *  functionname  : AppendIdsChain
- *  arguments     : 1) first ids chain
- *                  2) second ids chain to be appended after first one
- *  description   : follows first chain to it's end and
- *                  appends second.
- */
-
-extern ids *AppendIdsChain (ids *first, ids *second);
+extern ids *AppendIds (ids *chain, ids *item);
 
 /******************************************************************************
  *
@@ -561,7 +556,6 @@ extern nodelist *NodeListFind (nodelist *nl, node *node);
  */
 
 #define CMP_TYPEDEF(a, b)                                                                \
-                                                                                         \
     ((NULL == TYPEDEF_MOD (a))                                                           \
        ? (!strcmp (TYPEDEF_NAME (a), TYPEDEF_NAME (b)) && (NULL == TYPEDEF_MOD (b)))     \
        : ((NULL == TYPEDEF_MOD (b))                                                      \
@@ -597,6 +591,8 @@ extern nodelist *NodeListFind (nodelist *nl, node *node);
  */
 
 extern node *SearchTypedef (char *name, char *mod, node *implementations);
+
+extern node *AppendTypedef (node *tdef_chain, node *tdef);
 
 /*--------------------------------------------------------------------------*/
 
@@ -637,7 +633,6 @@ extern node *SearchTypedef (char *name, char *mod, node *implementations);
  */
 
 #define CMP_OBJDEF(a, b)                                                                 \
-                                                                                         \
     ((NULL == OBJDEF_MOD (a))                                                            \
        ? (!strcmp (OBJDEF_NAME (a), OBJDEF_NAME (b)) && (NULL == OBJDEF_MOD (b)))        \
        : ((NULL == OBJDEF_MOD (b)) ? 0                                                   \
@@ -684,6 +679,8 @@ extern node *SearchObjdef (char *name, char *mod, node *implementations);
  */
 
 extern void ObjList2ArgList (node *objdef);
+
+extern node *AppendObjdef (node *objdef_chain, node *objdef);
 
 /*--------------------------------------------------------------------------*/
 
@@ -803,6 +800,8 @@ extern int CountFunctionParams (node *fundef);
 
 extern node *SearchFundef (node *fun, node *allfuns);
 
+extern node *AppendFundef (node *fundef_chain, node *fundef);
+
 /*--------------------------------------------------------------------------*/
 
 /***
@@ -840,10 +839,10 @@ extern node *SearchFundef (node *fun, node *allfuns);
 /******************************************************************************
  *
  * function:
- *   node *AppendVardecs( node *vardecs, node *append)
+ *   node *AppendVardec( node *vardec_chain, node *vardec)
  *
  * description:
- *   Appends 'append' to 'vardecs' and returns the new chain.
+ *   Appends 'vardec' to 'vardec_chain' and returns the new chain.
  *
  * remark:
  *   In order to use this function in Compile() it can handle mixed chains
@@ -851,7 +850,7 @@ extern node *SearchFundef (node *fun, node *allfuns);
  *
  ******************************************************************************/
 
-extern node *AppendVardecs (node *vardecs, node *append);
+extern node *AppendVardec (node *vardec_chain, node *vardec);
 
 /*--------------------------------------------------------------------------*/
 
@@ -995,18 +994,7 @@ extern node *SearchDecl (char *name, node *decl_node);
 #define ASSIGN_INSTRTYPE(n) (NODE_TYPE (ASSIGN_INSTR (n)))
 #define ASSIGN_NAME(n) (LET_NAME (ASSIGN_INSTR (n)))
 
-/******************************************************************************
- *
- * function:
- *   node *AppendAssign( node *assigns, node *assign)
- *
- * description:
- *   appends 'assign' to the N_assign-chain 'assings' and returns the new
- *    chain.
- *
- ******************************************************************************/
-
-extern node *AppendAssign (node *assigns, node *assign);
+extern node *AppendAssign (node *assign_chain, node *assign);
 
 /******************************************************************************
  *
@@ -1099,14 +1087,14 @@ extern node *AppendAssignIcm (node *assign, char *name, node *args);
 /******************************************************************************
  *
  * function:
- *   node *AppendExprs( node *exprs1, node *exprs2)
+ *   node *ExprsConcat( node *exprs1, node *exprs2)
  *
  * description:
  *   This function concatenates two N_exprs chains of nodes.
  *
  ******************************************************************************/
 
-extern node *AppendExprs (node *exprs1, node *exprs2);
+extern node *ExprsConcat (node *exprs1, node *exprs2);
 
 /******************************************************************************
  *
@@ -1484,20 +1472,15 @@ extern node *MakePrf3 (prf prf, node *arg1, node *arg2, node *arg3);
  *  compound access macros
  */
 
-#define ICM_EXPRS1(n) ICM_ARGS (n)
-#define ICM_EXPRS2(n) EXPRS_NEXT (ICM_ARGS (n))
-#define ICM_EXPRS3(n) EXPRS_NEXT (EXPRS_NEXT (ICM_ARGS (n)))
-#define ICM_EXPRS4(n) EXPRS_NEXT (EXPRS_NEXT (EXPRS_NEXT (ICM_ARGS (n))))
-#define ICM_EXPRS5(n) EXPRS_NEXT (EXPRS_NEXT (EXPRS_NEXT (EXPRS_NEXT (ICM_ARGS (n)))))
-#define ICM_EXPRS6(n)                                                                    \
-    EXPRS_NEXT (EXPRS_NEXT (EXPRS_NEXT (EXPRS_NEXT (EXPRS_NEXT (ICM_ARGS (n))))))
-
-#define ICM_ARG1(n) EXPRS_EXPR (ICM_EXPRS1 (n))
-#define ICM_ARG2(n) EXPRS_EXPR (ICM_EXPRS2 (n))
-#define ICM_ARG3(n) EXPRS_EXPR (ICM_EXPRS3 (n))
-#define ICM_ARG4(n) EXPRS_EXPR (ICM_EXPRS4 (n))
-#define ICM_ARG5(n) EXPRS_EXPR (ICM_EXPRS5 (n))
-#define ICM_ARG6(n) EXPRS_EXPR (ICM_EXPRS6 (n))
+#define ICM_ARG1(n) EXPRS_EXPR (ICM_ARGS (n))
+#define ICM_ARG2(n) EXPRS_EXPR (EXPRS_NEXT (ICM_ARGS (n)))
+#define ICM_ARG3(n) EXPRS_EXPR (EXPRS_NEXT (EXPRS_NEXT (ICM_ARGS (n))))
+#define ICM_ARG4(n) EXPRS_EXPR (EXPRS_NEXT (EXPRS_NEXT (EXPRS_NEXT (ICM_ARGS (n)))))
+#define ICM_ARG5(n)                                                                      \
+    EXPRS_EXPR (EXPRS_NEXT (EXPRS_NEXT (EXPRS_NEXT (EXPRS_NEXT (ICM_ARGS (n))))))
+#define ICM_ARG6(n)                                                                      \
+    EXPRS_EXPR (                                                                         \
+      EXPRS_NEXT (EXPRS_NEXT (EXPRS_NEXT (EXPRS_NEXT (EXPRS_NEXT (ICM_ARGS (n)))))))
 
 /******************************************************************************
  *
