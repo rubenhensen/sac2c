@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2004/07/29 13:25:59  skt
+ * fixed the "doubled withop"-bug
+ *
  * Revision 1.3  2004/07/23 10:05:46  skt
  * complete redesign
  *
@@ -290,18 +293,18 @@ PEMwith2 (node *arg_node, node *arg_info)
 
     if (NWITH2_SEGS (arg_node) != NULL) {
         DBUG_PRINT ("PEM", ("trav into segments"));
-        ASSIGN_NEXT (arg_node) = Trav (NWITH2_SEGS (arg_node), arg_info);
+        NWITH2_SEGS (arg_node) = Trav (NWITH2_SEGS (arg_node), arg_info);
         DBUG_PRINT ("PEM", ("trav from segments"));
     }
     if (NWITH2_CODE (arg_node) != NULL) {
         DBUG_PRINT ("PEM", ("trav into with-loop-code"));
-        ASSIGN_NEXT (arg_node) = Trav (NWITH2_CODE (arg_node), arg_info);
+        NWITH2_CODE (arg_node) = Trav (NWITH2_CODE (arg_node), arg_info);
         DBUG_PRINT ("PEM", ("trav from with-loop-code"));
     }
 
     if (NWITH2_WITHOP (arg_node) != NULL) {
         DBUG_PRINT ("PEM", ("trav into withops"));
-        ASSIGN_NEXT (arg_node) = Trav (NWITH2_WITHOP (arg_node), arg_info);
+        NWITH2_WITHOP (arg_node) = Trav (NWITH2_WITHOP (arg_node), arg_info);
         DBUG_PRINT ("PEM", ("trav from withops"));
     }
 
