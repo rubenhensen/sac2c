@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.31  2001/04/24 13:28:08  dkr
+ * MakeFundef: FUNDEF_USED initialized correctly
+ *
  * Revision 3.30  2001/04/24 09:16:09  dkr
  * P_FORMAT replaced by F_PTR
  *
@@ -710,6 +713,8 @@ MakeFundef (char *name, char *mod, types *types, node *args, node *body, node *n
 
     FUNDEF_FUNNO (tmp) = 0;
     FUNDEF_INLINE (tmp) = FALSE;
+
+    FUNDEF_USED (tmp) = USED_INACTIVE;
 
     DBUG_PRINT ("MAKENODE",
                 ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
