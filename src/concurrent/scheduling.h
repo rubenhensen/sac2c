@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/09/01 17:14:23  jhs
+ * Remove SYNC_SCHEDULING.
+ *
  * Revision 2.1  1999/02/23 12:44:11  sacbase
  * new release made
  *
@@ -54,7 +57,7 @@ extern void SCHPrintScheduling (FILE *outfile, SCHsched_t *sched);
 
 extern void SCHCheckSuitabilityConstSeg (SCHsched_t *sched);
 extern void SCHCheckSuitabilityVarSeg (SCHsched_t *sched);
-extern void SCHCheckSuitabilitySyncblock (SCHsched_t *sched);
+extern void SCHCheckSuitabilityWithloop (SCHsched_t *sched);
 extern int SCHAdjustmentRequired (int dim, node *wlseg);
 
 extern SCHsched_t *SCHMakeCompatibleSyncblockScheduling (SCHsched_t *old_sched,

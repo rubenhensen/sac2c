@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.11  1999/09/01 17:14:23  jhs
+ * Remove SYNC_SCHEDULING.
+ *
  * Revision 2.10  1999/08/03 11:46:49  jhs
  * Added missing end of comment.
  *
@@ -130,6 +133,7 @@ MeltableSYNCs (node *first_sync, node *second_sync)
     result = result & Disjoint (SYNC_OUT (first_sync), SYNC_IN (second_sync));
     result = result & Disjoint (SYNC_OUT (first_sync), SYNC_INOUT (second_sync));
     result = result & Disjoint (SYNC_OUT (first_sync), SYNC_OUT (second_sync));
+    result = result & Disjoint (SYNC_OUTREP (first_sync), SYNC_INOUT (second_sync));
 
     if (result) {
         DBUG_PRINT ("SYNCO", ("disjoint"));

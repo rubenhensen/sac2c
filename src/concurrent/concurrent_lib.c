@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  1999/09/01 17:14:23  jhs
+ * Remove SYNC_SCHEDULING.
+ *
  * Revision 1.4  1999/08/27 11:55:37  jhs
  * Adjusted comments.
  *
@@ -172,11 +175,20 @@ node *
 MeltBlocksOnCopies (node *first_block, node *second_block)
 {
     node *result;
+    node *arg_info;
 
     DBUG_ENTER ("MeltBlocksOnCopies");
 
+    arg_info = MakeInfo ();
+    INFO_DUP_TYPE (arg_info) = DUP_NORMAL;
+    INFO_DUP_ALL (arg_info) = TRUE;
     first_block = DupTree (first_block, NULL);
+    arg_info = FreeTree (arg_info);
+    arg_info = MakeInfo ();
+    INFO_DUP_TYPE (arg_info) = DUP_NORMAL;
+    INFO_DUP_ALL (arg_info) = TRUE;
     second_block = DupTree (second_block, NULL);
+    arg_info = FreeTree (arg_info);
 
     result = MeltBlocks (first_block, second_block);
 

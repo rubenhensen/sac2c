@@ -1,8 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/09/01 17:14:23  jhs
+ * Remove SYNC_SCHEDULING.
+ *
  * Revision 2.2  1999/06/25 14:51:28  rob
- * Introduce definitions and utility infrastructure for tagged array support.
  * Introduce definitions and utility infrastructure for tagged array support.
  *
  * Revision 2.1  1999/02/23 12:44:09  sacbase
@@ -81,7 +83,7 @@
  *   number, and an argument specification.
  *
  *   Currently, three different scheduler classes are supported. Those for
- *   entire synchronisation blocks (SC_syncblock), for segments with constant
+ *   entire synchronisation blocks (SC_withloop), for segments with constant
  *   bounds (SC_const_seg), and for segments with variable bounds (SC_var_seg).
  *
  *   The line number is useful for error messages in those cases where the
@@ -97,7 +99,7 @@
  *
  ******************************************************************************/
 
-typedef enum { SC_const_seg, SC_var_seg, SC_syncblock } sched_class_t;
+typedef enum { SC_const_seg, SC_var_seg, SC_withloop } sched_class_t;
 
 typedef enum {
     AT_num,
@@ -169,7 +171,7 @@ static struct {
   /* Name            Class          Adjust Dim  Args    */
   {"Block", SC_const_seg, 1, 0, 0, ""},   {"BlockVar", SC_var_seg, 0, 0, 0, ""},
   {"AllByOne", SC_var_seg, 0, 0, 1, "i"}, {"BlockBySome", SC_const_seg, 0, 0, 2, "i,i"},
-  {"Static", SC_syncblock, 0, 0, 0, ""},  {"", SC_const_seg, 0, 0, 0, ""}};
+  {"Static", SC_withloop, 0, 0, 0, ""},   {"", SC_const_seg, 0, 0, 0, ""}};
 
 /******************************************************************************
  *
@@ -331,7 +333,7 @@ SCHMakeSchedulingByPragma (node *ap_node, int line)
  * function:
  *   void SCHCheckSuitabilityConstSeg(sched_t *sched)
  *   void SCHCheckSuitabilityVarSeg(sched_t *sched)
- *   void SCHCheckSuitabilitySyncblock(sched_t *sched)
+ *   void SCHCheckSuitabilityWithloop(sched_t *sched)
  *
  * description:
  *
@@ -370,13 +372,13 @@ SCHCheckSuitabilityVarSeg (sched_t *sched)
 }
 
 void
-SCHCheckSuitabilitySyncblock (sched_t *sched)
+SCHCheckSuitabilityWithloop (sched_t *sched)
 {
-    DBUG_ENTER ("SCHCheckSuitabilitySyncblock");
+    DBUG_ENTER ("SCHCheckSuitabilityWithloop");
 
-    if (sched->class != SC_syncblock) {
+    if (sched->class != SC_withloop) {
         ERROR (sched->line, ("Scheduling discipline '%s` is not suitable for "
-                             "synchronisation blocks",
+                             "with-loops",
                              sched->discipline));
     }
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.5  1999/09/01 17:14:23  jhs
+ * Remove SYNC_SCHEDULING.
+ *
  * Revision 2.4  1999/07/23 12:44:08  cg
  * Bug fixed in compilation of multi-threaded nested with-loops.
  * Now, schedulings for inner with-loops in with-loop nestings
@@ -62,7 +65,7 @@
  * function:
  *   SCHsched_t MakeDefaultSchedulingConstSegment()
  *   SCHsched_t MakeDefaultSchedulingVarSegment()
- *   SCHsched_t MakeDefaultSchedulingSyncblock()
+ *   SCHsched_t MakeDefaultSchedulingWithloop()
  *
  * description:
  *
@@ -98,11 +101,11 @@ MakeDefaultSchedulingVarSegment ()
 }
 
 static SCHsched_t
-MakeDefaultSchedulingSyncblock ()
+MakeDefaultSchedulingWithloop ()
 {
     SCHsched_t sched;
 
-    DBUG_ENTER ("MakeDefaultSchedulingSyncblock");
+    DBUG_ENTER ("MakeDefaultSchedulingWithloop");
 
     sched = SCHMakeScheduling ("Static");
 
@@ -119,9 +122,7 @@ MakeDefaultSchedulingSyncblock ()
  *   This function defines the inference strategy for the scheduling of
  *   constant segments.
  *
- *
  ******************************************************************************/
-
 static SCHsched_t
 InferSchedulingConstSegment (node *wlseg, node *arg_info)
 {
@@ -144,10 +145,7 @@ InferSchedulingConstSegment (node *wlseg, node *arg_info)
  *   This function defines the inference strategy for the scheduling of
  *   variable segments.
  *
- *
- *
  ******************************************************************************/
-
 static SCHsched_t
 InferSchedulingVarSegment (node *wlsegvar, node *arg_info)
 {
@@ -163,25 +161,22 @@ InferSchedulingVarSegment (node *wlsegvar, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   SCHsched_t InferSchedulingSyncblock(node *sync, node *arg_info)
+ *   SCHsched_t InferSchedulingWithloop(node *sync, node *arg_info)
  *
  * description:
  *
  *   This function defines the inference strategy for the scheduling of
- *   synchronisation blocks.
- *
- *
+ *   with-loops.
  *
  ******************************************************************************/
-
 static SCHsched_t
-InferSchedulingSyncblock (node *sync, node *arg_info)
+InferSchedulingWithloop (node *sync, node *arg_info)
 {
     SCHsched_t sched;
 
-    DBUG_ENTER ("InferSchedulingSyncblock");
+    DBUG_ENTER ("InferSchedulingWithloop");
 
-    sched = MakeDefaultSchedulingSyncblock ();
+    sched = MakeDefaultSchedulingWithloop ();
 
     DBUG_RETURN (sched);
 }
@@ -200,7 +195,6 @@ InferSchedulingSyncblock (node *sync, node *arg_info)
  *   do not have scheduling specifications.
  *
  ******************************************************************************/
-
 node *
 SCHEDwlseg (node *arg_node, node *arg_info)
 {
@@ -250,7 +244,6 @@ SCHEDwlseg (node *arg_node, node *arg_info)
  *   do not have scheduling specifications.
  *
  ******************************************************************************/
-
 node *
 SCHEDwlsegVar (node *arg_node, node *arg_info)
 {
@@ -303,7 +296,6 @@ SCHEDwlsegVar (node *arg_node, node *arg_info)
  *   specifications are present, the inference strategy is used.
  *
  ******************************************************************************/
-
 node *
 SCHEDsync (node *arg_node, node *arg_info)
 {
@@ -329,29 +321,37 @@ SCHEDsync (node *arg_node, node *arg_info)
                      "N_let expected, but another kind of node found");
 
         with = LET_EXPR (let);
-        DBUG_ASSERT ((NODE_TYPE (with) == N_Nwith2),
-                     "N_Nwith2 expected, but another kind of node found");
 
-        if (NWITH2_SCHEDULING (with) != NULL) {
-            if (SYNC_SCHEDULING (arg_node) == NULL) {
-                SYNC_SCHEDULING (arg_node) = NWITH2_SCHEDULING (with);
+        if (NODE_TYPE (with) == N_Nwith2) {
+
+            /* this is an old assertion when there was no if ... */
+            DBUG_ASSERT ((NODE_TYPE (with) == N_Nwith2),
+                         "N_Nwith2 expected, but another kind of node found");
+
+            if (NWITH2_SCHEDULING (with) != NULL) {
+                /*
+                 *  Somebody has annotated a pragma,
+                 *  check if this one is suitable for this with-loop.
+                 */
+                SCHCheckSuitabilityWithloop (NWITH2_SCHEDULING (arg_node));
             } else {
-                SYNC_SCHEDULING (arg_node)
-                  = SCHMakeCompatibleSyncblockScheduling (SYNC_SCHEDULING (arg_node),
-                                                          NWITH2_SCHEDULING (with));
+                NWITH2_SCHEDULING (with) = InferSchedulingWithloop (arg_node, arg_info);
             }
-
-            NWITH2_SCHEDULING (with) = NULL;
+        } else {
+            /*
+             *  No schedules for other constructs.
+             */
         }
 
         assign = ASSIGN_NEXT (assign);
     }
-
-    if (SYNC_SCHEDULING (arg_node) == NULL) {
-        SYNC_SCHEDULING (arg_node) = InferSchedulingSyncblock (arg_node, arg_info);
-    } else {
-        SCHCheckSuitabilitySyncblock (SYNC_SCHEDULING (arg_node));
-    }
+    /*
+     if (SYNC_SCHEDULING( arg_node) == NULL) {
+       SYNC_SCHEDULING( arg_node) = InferSchedulingSyncblock( arg_node, arg_info);
+     } else {
+       SCHCheckSuitabilitySyncblock( SYNC_SCHEDULING( arg_node));
+     }
+   */
 
     SYNC_REGION (arg_node) = Trav (SYNC_REGION (arg_node), arg_info);
 
@@ -370,7 +370,6 @@ SCHEDsync (node *arg_node, node *arg_info)
  *   has already been moved to N_sync nodes where required.
  *
  ******************************************************************************/
-
 node *
 SCHEDnwith2 (node *arg_node, node *arg_info)
 {
