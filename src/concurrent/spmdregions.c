@@ -1,14 +1,14 @@
 /*
  *
  * $Log$
+ * Revision 1.15  1998/04/30 13:56:47  dkr
+ * fixed a bug in SPMDLift...
+ *
  * Revision 1.14  1998/04/30 13:26:51  dkr
  * fixed a bug in SPMDLift...
  *
  * Revision 1.13  1998/04/30 13:00:15  dkr
  * fixed a bug in SPMDLift
- *
- * Revision 1.12  1998/04/29 20:15:29  dkr
- * *** empty log message ***
  *
  * Revision 1.11  1998/04/26 21:54:21  dkr
  * fixed a bug in SPMDInitAssign
@@ -52,6 +52,7 @@
 
 #include "internal_lib.h"
 #include "traverse.h"
+#include "convert.h"
 
 #include "optimize.h"
 #include "DupTree.h"
@@ -341,7 +342,7 @@ SPMDLiftSpmd (node *arg_node, node *arg_info)
      *          That's why we must build a void-type, when ('rettypes' == NULL).
      */
     if (rettypes == NULL) {
-        rettypes = MakeType (T_void, 0, NULL, "", "");
+        rettypes = MakeType (T_void, 0, NULL, StringCopy (type_string[T_void]), "");
     }
 
     new_fundef = MakeFundef (SpmdFunName (FUNDEF_NAME (fundef)), NULL, rettypes, fargs,
