@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.7  1995/01/05 15:30:02  asi
+ * Revision 1.8  1995/01/06 14:56:09  asi
+ * Dead-Vardec-Removal implemented
+ *
+ * Revision 1.7  1995/01/05  15:30:02  asi
  * Dead-Code-Removal implemented
  *
  * Revision 1.6  1995/01/02  16:04:46  asi
@@ -43,9 +46,11 @@ extern node *OPT1let (node *, node *);
 extern node *OPT1id (node *, node *);
 extern node *OPT1assign (node *, node *);
 extern node *OPT1pp (node *, node *);
-extern node *OPTblock (node *, node *);
+extern node *OPT1block (node *, node *);
 
 extern node *OPT2fundef (node *, node *);
 extern node *OPT2assign (node *, node *);
+extern node *OPT2block (node *, node *);
+extern node *OPT2vardec (node *, node *);
 
 #endif /* _optimize_h */
