@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.17  2005/03/04 21:21:42  cg
+ * Optimization completely streamlined.
+ * Removal of zombie functions automatized.
+ *
  * Revision 3.16  2005/01/11 12:58:15  cg
  * Converted output from Error.h to ctinfo.c
  *
@@ -118,51 +122,42 @@ node *
 DFRmodule (node *arg_node, info *arg_info)
 {
     node *fun;
+
     DBUG_ENTER ("DFRmodul");
 
+    /*
+     * Step 1: Clear dfr flag in fundec and fundef chain.
+     */
     if (MODULE_FUNDECS (arg_node) != NULL) {
-        /* clear dfr flag */
         fun = MODULE_FUNDECS (arg_node);
         while (fun != NULL) {
             FUNDEF_ISNEEDED (fun) = FALSE;
             fun = FUNDEF_NEXT (fun);
         }
-
-        /*
-         * the following code was disabled for a unknown reason.
-         * as we have no idea why it was disabled, we have
-         * reenabled it for now
-         */
-
-        /* check fundefs for applications (only main in programs) */
-        INFO_DFR_SPINE (arg_info) = TRUE;
-        MODULE_FUNDECS (arg_node) = TRAVdo (MODULE_FUNDECS (arg_node), arg_info);
-
-        /* remove all produced zombies */
-        MODULE_FUNDECS (arg_node) = FREEremoveAllZombies (MODULE_FUNDECS (arg_node));
     }
 
     if (MODULE_FUNS (arg_node) != NULL) {
-        /* clear dfr flag */
         fun = MODULE_FUNS (arg_node);
         while (fun != NULL) {
             FUNDEF_ISNEEDED (fun) = FALSE;
             fun = FUNDEF_NEXT (fun);
         }
+    }
 
-        /* check fundefs for applications (only main in programs) */
+    /*
+     * Step 2: Search for needed fundecs and fundefs in fundef bodies.
+     */
+
+    if (MODULE_FUNS (arg_node) != NULL) {
         INFO_DFR_SPINE (arg_info) = TRUE;
         MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
-
-        /* remove all produced zombies */
-        MODULE_FUNS (arg_node) = FREEremoveAllZombies (MODULE_FUNS (arg_node));
     }
 
-    if (MODULE_FUNDECS (arg_node) != NULL) {
-
-        /* remove all produced zombies */
-        MODULE_FUNDECS (arg_node) = FREEremoveAllZombies (MODULE_FUNDECS (arg_node));
-    }
+    /*
+     * Step 3: Remove all zombies from fundec and fundef chain.
+     *
+     *  Done implicitly when leaving N_module node.
+     */
 
     DBUG_RETURN (arg_node);
 }
@@ -185,13 +180,6 @@ DFRfundef (node *arg_node, info *arg_info)
     if (INFO_DFR_SPINE (arg_info)) {
         DBUG_PRINT ("DFR",
                     ("Dead Function Removal in function: %s", FUNDEF_NAME (arg_node)));
-
-        /* a warning for using DFR with SSA */
-        if ((FUNDEF_ISDOFUN (arg_node)) || (FUNDEF_ISCONDFUN (arg_node))) {
-            DBUG_ASSERT (FUNDEF_USED (arg_node) == 1,
-                         "Lac-functions, which are used more than once, aren't "
-                         "handled correctly by DeadFunctionRemoval");
-        }
 
         /*
          * remark: main is always tagged as provided
