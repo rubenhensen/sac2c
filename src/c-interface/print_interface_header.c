@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/03/15 19:56:59  dkr
+ * PIHarg: '&' for reference objects is no longer printed in Type2String
+ *
  * Revision 3.3  2001/03/15 15:28:09  dkr
  * no changes done
  *
@@ -221,8 +224,8 @@ PIHcwrapper (node *arg_node, node *arg_info)
  * description:
  *   Prints Interface Header for Wrapper-function c->SAC
  *   also prints the return types
- * flag PIH_PRINT_COMMENT: prints comment line for specialized fundef
  *
+ * flag PIH_PRINT_COMMENT: prints comment line for specialized fundef
  *
  ******************************************************************************/
 
@@ -262,11 +265,10 @@ PIHfundef (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PIHarg(node *arg_node, node *arg_info)
+ *   node *PIHarg( node *arg_node, node *arg_info)
  *
  * description:
  *   Prints function arguments for Interface Header for Wrapper-function c->SAC
- *
  *
  ******************************************************************************/
 
@@ -275,14 +277,22 @@ PIHarg (node *arg_node, node *arg_info)
 {
     char *typestring;
 
-    DBUG_ENTER ("PIHArg");
+    DBUG_ENTER ("PIHarg");
 
     switch (INFO_PIH_FLAG (arg_info)) {
     case PIH_PRINT_COMMENT:
         /* print internal accepted types of argument */
         typestring = Type2String (ARG_TYPE (arg_node), 0, TRUE);
-        fprintf (outfile, "%s %s", typestring, ARG_NAME (arg_node));
+        fprintf (outfile, "%s", typestring);
         FREE (typestring);
+
+        if (ARG_ATTRIB (arg_node) == ST_reference) {
+            fprintf (outfile, " &");
+        } else if (ARG_ATTRIB (arg_node) == ST_readonly_reference) {
+            fprintf (outfile, " (&)");
+        }
+
+        fprintf (outfile, " %s", ARG_NAME (arg_node));
         break;
 
     default:
@@ -302,7 +312,7 @@ PIHarg (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   types *PIHtypes(types *arg_type, node *arg_info)
+ *   types *PIHtypes( types *arg_type, node *arg_info)
  *
  * description:
  *   Prints results of functions
@@ -395,12 +405,11 @@ PIHcwrapperPrototype (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   types *TravTH(types *arg_type, node *arg_info)
+ *   types *TravTH( types *arg_type, node *arg_info)
  *
  * description:
  *   similar implementation of trav mechanism as used for nodes
  *   here used for PIH
- *
  *
  ******************************************************************************/
 
