@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.15  1999/07/07 06:00:57  sbs
+ * added DOLLAR to useflag which is used for the N_vinfo nodes
+ *
  * Revision 2.14  1999/06/25 14:50:36  rob
  * Introduce definitions and utility infrastructure for tagged array support.
  *
@@ -341,7 +344,7 @@ typedef enum {
     ST_spmdfun             /* function generated from a spmd-region  */
 } statustype;
 
-typedef enum { VECT, IDX } useflag;
+typedef enum { DOLLAR, VECT, IDX } useflag;
 
 typedef enum {
     F_prog,
