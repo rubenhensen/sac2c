@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/03/15 14:09:04  bs
+ * Access macros renamed (take a look at tree_basic.h).
+ * Functions Array2FloatVec and Array2Dblvec added.
+ *
  * Revision 2.2  1999/03/04 10:07:13  bs
  * Functions IntVec2Array() and Array2IntVec() added.
  *
@@ -979,30 +983,40 @@ NodeListFind (nodelist *nl, node *node)
 int
 IsConstantArray (node *array, nodetype type)
 {
-    int elems = 1;
+    int elems = 0;
 
     DBUG_ENTER ("IsConstantArray");
 
     if (NODE_TYPE (array) == N_array) {
-        if (ARRAY_INTARRAY (array) != NULL)
-            elems = ARRAY_LENGTH (array);
-        else {
+        switch (ARRAY_VECTYPE (array)) {
+        case T_int:
+        case T_float:
+        case T_double:
+            elems = ARRAY_VECLEN (array);
+            break;
+        default:
+            /*
+             * only needed before flattening
+             */
             array = ARRAY_AELEMS (array);
-            while ((elems > 0) && (array != NULL)) {
+            while (array != NULL) {
                 switch (NODE_TYPE (EXPRS_EXPR (array))) {
                 case N_num:
                 case N_char:
                 case N_float:
                 case N_double:
                 case N_bool:
-                    if ((type != N_ok) && (type != NODE_TYPE (EXPRS_EXPR (array))))
+                    if ((type != N_ok) && (type != NODE_TYPE (EXPRS_EXPR (array)))) {
                         elems = 0;
-                    else
+                        array = NULL;
+                    } else {
                         elems++;
-                    array = EXPRS_NEXT (array);
+                        array = EXPRS_NEXT (array);
+                    }
                     break;
                 default:
                     elems = 0;
+                    array = NULL;
                 }
             }
         }
@@ -1062,6 +1076,76 @@ Array2IntVec (node *aelems, int *length)
     }
 
     DBUG_RETURN (intvec);
+}
+
+/***
+ ***  Array2FloatVec
+ ***/
+
+float *
+Array2FloatVec (node *aelems, int *length)
+{
+    float *floatvec;
+    int i = 0, j;
+    node *tmp = aelems;
+
+    DBUG_ENTER ("Array2FloatVec");
+
+    while (aelems != NULL) {
+        DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (aelems)) == N_float),
+                     "constant float array exspected !");
+        aelems = EXPRS_NEXT (aelems);
+        i++;
+    }
+    /*
+     *  if the length of the vector is not of interrest length may be NULL
+     */
+    if (length != NULL)
+        *length = i;
+
+    floatvec = Malloc (i * sizeof (float));
+
+    for (j = 0; j < i; j++) {
+        floatvec[j] = FLOAT_VAL (EXPRS_EXPR (tmp));
+        tmp = EXPRS_NEXT (tmp);
+    }
+
+    DBUG_RETURN (floatvec);
+}
+
+/***
+ ***  Array2DblVec
+ ***/
+
+double *
+Array2DblVec (node *aelems, int *length)
+{
+    int i = 0, j;
+    double *dblvec;
+    node *tmp = aelems;
+
+    DBUG_ENTER ("Array2DblVec");
+
+    while (aelems != NULL) {
+        DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (aelems)) == N_double),
+                     "constant double array exspected !");
+        aelems = EXPRS_NEXT (aelems);
+        i++;
+    }
+    /*
+     *  if the length of the vector is not of interrest length may be NULL
+     */
+    if (length != NULL)
+        *length = i;
+
+    dblvec = Malloc (i * sizeof (double));
+
+    for (j = 0; j < i; j++) {
+        dblvec[j] = DOUBLE_VAL (EXPRS_EXPR (tmp));
+        tmp = EXPRS_NEXT (tmp);
+    }
+
+    DBUG_RETURN (dblvec);
 }
 
 /******************************************************************************

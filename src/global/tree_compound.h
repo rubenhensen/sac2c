@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/03/15 14:10:13  bs
+ * Access macros renamed (take a look at tree_basic.h).
+ * Functions Array2FloatVec and Array2Dblvec added.
+ *
  * Revision 2.2  1999/03/04 10:08:02  bs
  * Functions IntVec2Array() and Array2IntVec added.
  *
@@ -1577,6 +1581,9 @@ extern int *Array2IntVec (node *aelems, int *length);
  *   elements in *length if first argument is an N_exprs and all its elements
  *   are N_num otherwise the result is not defined.
  *   If the length of the vector is not of interest, length may be NULL. */
+
+extern float *Array2FloatVec (node *aelems, int *length);
+extern double *Array2DblVec (node *aelems, int *length);
 
 /*--------------------------------------------------------------------------*/
 
