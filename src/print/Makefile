@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.14  1996/01/04 18:11:06  cg
+# Revision 1.15  1996/01/05 12:31:29  cg
+# Now, we look even in ../modules for include files
+#
+# Revision 1.14  1996/01/04  18:11:06  cg
 # make deps done
 #
 # Revision 1.13  1995/12/15  10:41:07  cg
@@ -37,7 +40,7 @@
 
 CC=gcc -ansi -g
 
-INCS=-I../global -I../../inc -I../optimize -I../compile
+INCS=-I../global -I../../inc -I../optimize -I../compile -I../modules
 
 all: print.o convert.o
 
@@ -68,4 +71,4 @@ print.o: ../global/globals.h print.h ../global/tree.h
 print.o: ../global/internal_lib.h ../global/my_debug.h ../../inc/dbug.h
 print.o: ../global/traverse.h convert.h ../optimize/optimize.h
 print.o: ../global/free.h /usr/include/malloc.h ../compile/trace.h
-print.o: ../compile/icm.data ../global/prf_node_info.mac
+print.o: ../modules/filemgr.h ../compile/icm.data ../global/prf_node_info.mac
