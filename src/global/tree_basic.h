@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.170  1998/05/14 21:34:30  dkr
+ * added WLGRID_CEXPR_TEMPLATE
+ *
  * Revision 1.169  1998/05/14 16:06:49  srs
  * renamed INFO_UNR_LET into INFO_UNR_ASSIGN
  *
@@ -2793,9 +2796,9 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int 
  ***
  ***    int      BLOCKS    (number of blocking levels
  ***                         --- without unrolling-blocking)
- ***    long*    SV        (step vector)           (Precompile -> )
- ***    long*    BV        (blocking vector)       (Precompile -> )
- ***    long*    UBV       (unrolling-b. vector)   (Precompile -> )
+ ***    long*    SV        (step vector)           (wltransform -> )
+ ***    long*    BV        (blocking vector)       (wltransform -> )
+ ***    long*    UBV       (unrolling-b. vector)   (wltransform -> )
  ***
  ***/
 
@@ -2946,9 +2949,9 @@ extern node *MakeWLublock (int level, int dim, int bound1, int bound2, int step,
  ***
  ***  temporary attributes:
  ***
- ***    node*    PART            (Precompile ! )  (part this stride is ...
+ ***    node*    PART            (wltransform ! )  (part this stride is ...
  ***                                                ... generated from)
- ***    int      MODIFIED        (Precompile ! )
+ ***    int      MODIFIED        (wltransform ! )
  ***
  ***/
 
@@ -2974,12 +2977,12 @@ extern node *MakeWLstride (int level, int dim, int bound1, int bound2, int step,
  ***
  ***  sons:
  ***
- ***    node*      NEXTDIM       (N_WLblock, N_WLublock, N_WLstride)
- ***    node*      NEXT          (N_WLgrid)
+ ***    node*      NEXTDIM         (N_WLblock, N_WLublock, N_WLstride)
+ ***    node*      NEXT            (N_WLgrid)
  ***
  ***  permanent attributes:
  ***
- ***    node*      CODE          (N_Ncode)
+ ***    node*      CODE            (N_Ncode)
  ***    int        LEVEL
  ***    int        DIM
  ***    int        BOUND1
@@ -2988,12 +2991,25 @@ extern node *MakeWLstride (int level, int dim, int bound1, int bound2, int step,
  ***
  ***  temporary attributes:
  ***
- ***    int        MODIFIED           (Precompile ! )
- ***
+ ***    node*      CEXPR_TEMPLATE  ("N_expr")    (wltransform -> compile )
+ ***    int        MODIFIED                      (wltransform ! )
  ***
  ***  remarks:
  ***
- ***    it makes no sense to use the nodes NEXTDIM and CODE simultaneous!
+ ***    - it makes no sense to use the nodes NEXTDIM and CODE simultaneous!
+ ***    - CEXPR_TEMPLATE is a pointer to a NCODE_CEXPR-node.
+ ***      If this grid-node contains no explicit code, but represents an
+ ***      otherwise-case of a genarray-with-loop ...
+ ***                  op0 = { ... } : e0    // e.g. e0 = [1,2,3]
+ ***                  0 -> 10 step 1
+ ***                          0 -> 1: op0
+ ***                          1 -> 2: init
+ ***      ... (we have CODE, NEXTDIM == NULL), then this attribute points
+ ***      to a nearby NCODE_CEXPR-node.
+ ***      In the example above, CEXPR_TEMPLATE of the 'init'-grid points
+ ***      to 'e0'.
+ ***      This is needed by 'compile' to infer the right data-size
+ ***      for the 'init'-code.
  ***
  ***/
 
@@ -3009,6 +3025,7 @@ extern node *MakeWLgrid (int level, int dim, int bound1, int bound2, int unrolli
 #define WLGRID_NEXT(n) (WLNODE_NEXT (n))
 #define WLGRID_CODE(n) (n->node[2])
 
+#define WLGRID_CEXPR_TEMPLATE(n) (n->node[3])
 #define WLGRID_MODIFIED(n) (n->info.prf_dec.tc)
 
 /*--------------------------------------------------------------------------*/
