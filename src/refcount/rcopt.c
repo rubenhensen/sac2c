@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2004/11/19 15:42:41  ktr
+ * Support for F_alloc_or_reshape added.
+ *
  * Revision 1.5  2004/11/02 14:29:58  ktr
  * Support for F_free added.
  *
@@ -298,6 +301,8 @@ EMRCOprf (node *arg_node, info *arg_info)
         case F_alloc:
         case F_alloc_or_reuse:
         case F_reuse:
+        case F_alloc_or_reshape:
+        case F_reshape:
             /*
              * This node must be revisited in bottom-up traversal
              */
@@ -349,6 +354,8 @@ EMRCOprf (node *arg_node, info *arg_info)
             case F_alloc:
             case F_alloc_or_reuse:
             case F_reuse:
+            case F_alloc_or_reshape:
+            case F_reshape:
                 if ((PRF_PRF (prf) == F_dec_rc)
                     && (ID_AVIS (PRF_ARG1 (prf)) == IDS_AVIS (INFO_RCO_LHS (arg_info)))
                     && (NUM_VAL (PRF_ARG1 (arg_node)) == NUM_VAL (PRF_ARG2 (prf)))) {

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/11/19 15:42:41  ktr
+ * Support for F_alloc_or_reshape added.
+ *
  * Revision 1.3  2004/11/15 12:28:16  ktr
  * insignificant change
  *
@@ -490,6 +493,17 @@ EMDRprf (node *arg_node, info *arg_info)
                          ID_VARDEC (PRF_ARG1 (arg_node)));
         break;
 
+    case F_reshape:
+        /*
+         * b = reshape( dim, shp, a);
+         *
+         * Insert (b, a) into REUSELUT
+         */
+        InsertIntoLUT_P (INFO_EMDR_REUSELUT (arg_info),
+                         IDS_VARDEC (INFO_EMDR_LHS (arg_info)),
+                         ID_VARDEC (PRF_ARG3 (arg_node)));
+        break;
+
     case F_fill:
         if (NODE_TYPE (PRF_ARG1 (arg_node)) == N_prf) {
             /*
@@ -507,10 +521,12 @@ EMDRprf (node *arg_node, info *arg_info)
                 if (SearchInLUT_PP (INFO_EMDR_REUSELUT (arg_info),
                                     ID_VARDEC (PRF_ARG2 (arg_node)))
                     == ID_VARDEC (PRF_ARG1 (prf))) {
-
-                    InsertIntoLUT_P (INFO_EMDR_RENAMELUT (arg_info),
-                                     IDS_VARDEC (INFO_EMDR_LHS (arg_info)),
-                                     ID_VARDEC (PRF_ARG1 (prf)));
+                    PRF_PRF (prf) = F_noop;
+                    /*
+                    InsertIntoLUT_P( INFO_EMDR_RENAMELUT( arg_info),
+                                     IDS_VARDEC( INFO_EMDR_LHS( arg_info)),
+                                     ID_VARDEC( PRF_ARG1( prf)));
+                    */
                 }
                 break;
 

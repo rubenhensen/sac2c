@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2004/11/19 15:42:41  ktr
+ * Support for F_alloc_or_reshape added.
+ *
  * Revision 1.1  2004/11/09 22:15:04  ktr
  * Initial revision
  *
@@ -268,20 +271,6 @@ EMECprf (node *arg_node, info *arg_info)
          * a  = modarray( b', iv, val);
          */
         PRF_ARG1 (arg_node) = CreateCopyId (PRF_ARG1 (arg_node), arg_info);
-        break;
-
-    case F_reshape:
-        /*
-         * Example:
-         *
-         * a = reshape( shp, b);
-         *
-         * is transformed info
-         *
-         * b' = copy( b);
-         * a  = reshape( shp, b');
-         */
-        PRF_ARG2 (arg_node) = CreateCopyId (PRF_ARG2 (arg_node), arg_info);
         break;
 
     default:

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2004/11/19 15:42:41  ktr
+ * Support for F_alloc_or_reshape added.
+ *
  * Revision 1.5  2004/11/18 17:04:58  ktr
  * Added some DBUG_PRINTs
  *
@@ -342,6 +345,16 @@ EMREprf (node *arg_node, info *arg_info)
                                           MakeNum (NUM_VAL (PRF_ARG1 (arg_node)) - 1)),
                                 NULL);
         }
+        break;
+
+    case F_reshape:
+        /*
+         * a = reshape( rc, dim, shape, b);
+         *
+         * Mark b in MASK
+         */
+        DFMSetMaskEntrySet (INFO_RE_MASK (arg_info), NULL,
+                            ID_VARDEC (PRF_ARG4 (arg_node)));
         break;
 
     case F_wl_assign:

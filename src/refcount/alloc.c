@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.26  2004/11/19 15:42:41  ktr
+ * Support for F_alloc_or_reshape added.
+ *
  * Revision 1.25  2004/11/09 22:16:06  ktr
  * Support for F_copy added.
  *
@@ -138,6 +141,7 @@ typedef struct ALLOCLIST_STRUCT {
     node *avis;
     node *dim;
     node *shape;
+    node *reshape;
     struct ALLOCLIST_STRUCT *next;
 } alloclist_struct;
 
@@ -227,6 +231,7 @@ MakeALS (alloclist_struct *als, node *avis, node *dim, node *shape)
     res->avis = avis;
     res->dim = dim;
     res->shape = shape;
+    res->reshape = NULL;
     res->next = als;
 
     DBUG_RETURN (res);
@@ -368,8 +373,12 @@ MakeAllocAssignment (alloclist_struct *als, node *next_node)
     }
 #endif
 
-    alloc = MakePrf2 (F_alloc, als->dim, als->shape);
-
+    if (als->reshape != NULL) {
+        alloc = MakePrf3 (F_alloc_or_reshape, als->dim, als->shape, als->reshape);
+        als->reshape = NULL;
+    } else {
+        alloc = MakePrf2 (F_alloc, als->dim, als->shape);
+    }
     als->dim = NULL;
     als->shape = NULL;
 
@@ -1157,6 +1166,7 @@ EMALlet (node *arg_node, info *arg_info)
 node *
 EMALprf (node *arg_node, info *arg_info)
 {
+    node *new_node;
     alloclist_struct *als;
 
     DBUG_ENTER ("EMALprf");
@@ -1190,10 +1200,16 @@ EMALprf (node *arg_node, info *arg_info)
     case F_reshape:
         /*
          * reshape( sh, A );
-         * alloc( shape( sh )[0], sh );
+         * alloc_or_reshape( shape( sh )[0], sh, A );
+         * copy( A);
          */
         als->dim = MakeSizeArg (PRF_ARG1 (arg_node));
         als->shape = MakePrf1 (F_shape, DupTree (arg_node));
+        als->reshape = DupNode (PRF_ARG2 (arg_node));
+
+        new_node = MakePrf1 (F_copy, DupNode (PRF_ARG2 (arg_node)));
+        arg_node = FreeNode (arg_node);
+        arg_node = new_node;
         break;
 
     case F_drop_SxV:

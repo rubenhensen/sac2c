@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2004/11/19 15:42:41  ktr
+ * Support for F_alloc_or_reshape added.
+ *
  * Revision 1.6  2004/11/12 10:18:49  ktr
  * Alias property of inner identifiers is no longer ignored.
  *
@@ -714,14 +717,14 @@ EMAAprf (node *arg_node, info *arg_info)
         }
         break;
 
+    case F_reshape:
+        DFMSetMaskEntrySet (INFO_AA_MASK (arg_info), NULL,
+                            ID_VARDEC (PRF_ARG3 (arg_node)));
+        break;
+
     case F_reuse:
-        if (NODE_TYPE (PRF_ARG1 (arg_node)) == N_id) {
-            DFMSetMaskEntrySet (INFO_AA_MASK (arg_info), NULL,
-                                ID_VARDEC (PRF_ARG1 (arg_node)));
-        } else {
-            DFMSetMaskEntrySet (INFO_AA_MASK (arg_info), NULL,
-                                ID_VARDEC (PRF_ARG2 (arg_node)));
-        }
+        DFMSetMaskEntrySet (INFO_AA_MASK (arg_info), NULL,
+                            ID_VARDEC (PRF_ARG1 (arg_node)));
         break;
 
     default:

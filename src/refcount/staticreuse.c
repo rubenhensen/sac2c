@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2004/11/19 15:42:41  ktr
+ * Support for F_alloc_or_reshape added.
+ *
  * Revision 1.2  2004/10/22 15:38:19  ktr
  * Ongoing implementation.
  *
@@ -92,7 +95,8 @@ EMSRprf (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("EMSRprf");
 
-    if (PRF_PRF (arg_node) == F_alloc_or_reuse) {
+    if ((PRF_PRF (arg_node) == F_alloc_or_reuse)
+        || (PRF_PRF (arg_node) == F_alloc_or_reshape)) {
         node *rcexprs = PRF_EXPRS3 (arg_node);
 
         while (rcexprs != NULL) {
@@ -102,16 +106,29 @@ EMSRprf (node *arg_node, info *arg_info)
                 /*
                  * STATIC REUSE!!!
                  */
-                node *new_node = MakePrf1 (F_reuse, DupNode (rc));
-                arg_node = FreeNode (arg_node);
-                arg_node = new_node;
+                if (PRF_PRF (arg_node) == F_alloc_or_reuse) {
+                    node *new_node = MakePrf1 (F_reuse, DupNode (rc));
+                    arg_node = FreeNode (arg_node);
+                    arg_node = new_node;
 
-                /*
-                 * a = reuse( b, 1);
-                 *
-                 * Mark b as ALIASed such that it will not be statically freed
-                 */
-                AVIS_ALIAS (ID_AVIS (PRF_ARG1 (arg_node))) = TRUE;
+                    /*
+                     * a = reuse( b, 1);
+                     *
+                     * Mark b as ALIASed such that it will not be statically freed
+                     */
+                    AVIS_ALIAS (ID_AVIS (PRF_ARG1 (arg_node))) = TRUE;
+                }
+
+                if (PRF_PRF (arg_node) == F_alloc_or_reshape) {
+                    PRF_PRF (arg_node) = F_reshape;
+
+                    /*
+                     * a = reshape( dim, shape, b);
+                     *
+                     * Mark b as ALIASed such that it will not be statically freed
+                     */
+                    AVIS_ALIAS (ID_AVIS (PRF_ARG3 (arg_node))) = TRUE;
+                }
                 break;
             }
             rcexprs = EXPRS_NEXT (rcexprs);

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2004/11/19 15:42:41  ktr
+ * Support for F_alloc_or_reshape added.
+ *
  * Revision 1.4  2004/11/04 18:45:38  ktr
  * All withops are traversed now.
  *
@@ -195,6 +198,7 @@ FilterRCs (node *arg_node, info *arg_info)
     DBUG_ASSERT ((NODE_TYPE (alloc) == N_prf)
                    && ((PRF_PRF (alloc) == F_alloc)
                        || (PRF_PRF (alloc) == F_alloc_or_reuse)
+                       || (PRF_PRF (alloc) == F_alloc_or_reshape)
                        || (PRF_PRF (alloc) == F_suballoc)),
                  "Illegal node type!");
 

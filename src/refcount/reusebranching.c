@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2004/11/19 15:42:41  ktr
+ * Support for F_alloc_or_reshape added.
+ *
  * Revision 1.5  2004/11/18 17:05:18  ktr
  * ongoing work
  *
@@ -179,7 +182,8 @@ GetReuseBranches (node *drcs, node *memop)
 
     DBUG_ENTER ("GetReuseBranches");
 
-    if (PRF_PRF (memop) == F_alloc_or_reuse) {
+    if ((PRF_PRF (memop) == F_alloc_or_reuse)
+        || (PRF_PRF (memop) == F_alloc_or_reshape)) {
         node *rcs = PRF_EXPRS3 (memop);
 
         while (rcs != NULL) {
@@ -650,7 +654,6 @@ EMRBprf (node *arg_node, info *arg_info)
 
             switch (PRF_PRF (prf)) {
             case F_copy:
-            case F_add_AxA:
                 /*
                  * a = fill( copy( b), a');
                  *

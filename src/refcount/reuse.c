@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2004/11/19 15:42:41  ktr
+ * Support for F_alloc_or_reshape added.
+ *
  * Revision 1.6  2004/11/15 12:30:36  ktr
  * Reuse inference now works with dataflowmasks
  *
@@ -478,6 +481,17 @@ RIprf (node *arg_node, info *arg_info)
         }
         break;
 
+    case F_reshape:
+        DBUG_ASSERT ((0), "Illegal prf!");
+        break;
+
+    case F_alloc_or_reshape:
+        if (INFO_RI_TRAVMODE (arg_info) == ri_annotate) {
+            INFO_RI_RHSCAND (arg_info) = FreeTree (INFO_RI_RHSCAND (arg_info));
+        }
+        INFO_RI_ADDLHS (arg_info) = FALSE;
+        break;
+
     case F_alloc:
     case F_alloc_or_reuse:
         if (INFO_RI_TRAVMODE (arg_info) == ri_annotate) {
@@ -499,16 +513,6 @@ RIprf (node *arg_node, info *arg_info)
             INFO_RI_TRAVMODE (arg_info) = ri_default;
         }
         INFO_RI_ADDLHS (arg_info) = TRUE;
-        break;
-
-    case F_reshape:
-        /*
-         * reshape( shp, A)
-         *
-         * A is a reuse candidate for the reshape Operation as it has
-         * the same number of elements as the resulting array.
-         */
-        INFO_RI_RHSCAND (arg_info) = MakeExprs (DupNode (PRF_ARG2 (arg_node)), NULL);
         break;
 
     default:

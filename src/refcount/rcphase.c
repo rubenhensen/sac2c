@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2004/11/19 15:42:41  ktr
+ * Support for F_alloc_or_reshape added.
+ *
  * Revision 1.2  2004/10/12 10:24:55  ktr
  * added Filter reuse candidates traversal.
  *
@@ -32,7 +35,7 @@
 #include "print.h"
 #include "refcounting.h"
 #include "rcopt.h"
-#include "filterrc.h"
+#include "reuseelimination.h"
 
 /** <!--*******************************************************************-->
  *
@@ -54,14 +57,6 @@ RCphase (node *syntax_tree)
                  "RCphase not started with N_modul node");
 
     /*
-     * Filter reuse candidates
-     */
-    syntax_tree = EMFRCFilterReuseCandidates (syntax_tree);
-    if ((break_after == PH_refcnt) && (0 == strcmp (break_specifier, "frc"))) {
-        goto DONE;
-    }
-
-    /*
      * Reference counting
      */
     syntax_tree = EMRefCount (syntax_tree);
@@ -72,8 +67,18 @@ RCphase (node *syntax_tree)
     /*
      * Reference counting optimizations
      */
-    syntax_tree = EMRCORefCountOpt (syntax_tree);
+    if (optimize & OPT_RCO) {
+        syntax_tree = EMRCORefCountOpt (syntax_tree);
+    }
     if ((break_after == PH_refcnt) && (0 == strcmp (break_specifier, "rco"))) {
+        goto DONE;
+    }
+
+    /*
+     * Reuse elimination
+     */
+    syntax_tree = EMREReuseElimination (syntax_tree);
+    if ((break_after == PH_refcnt) && (0 == strcmp (break_specifier, "re"))) {
         goto DONE;
     }
 

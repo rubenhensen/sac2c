@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.23  2004/11/19 15:42:41  ktr
+ * Support for F_alloc_or_reshape added.
+ *
  * Revision 1.22  2004/11/02 14:29:14  ktr
  * Reuse candidates are traversed as well.
  *
@@ -2209,6 +2212,8 @@ EMRCprf (node *arg_node, info *arg_info)
 
     case F_alloc:
     case F_alloc_or_reuse:
+    case F_reshape:
+    case F_alloc_or_reshape:
         /*
          * alloc( dim, shp)
          *
