@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2001/03/22 13:29:32  dkr
+ * DUP_INVARIANT removed
+ *
  * Revision 3.9  2001/03/21 18:16:47  dkr
  * functions Dup..._Type added
  * function DupTreeInfo removed
@@ -66,16 +69,15 @@
  *
  */
 
-#ifndef _sac_DupTree_h
-#define _sac_DupTree_h
+#ifndef _sac_DupTree_h_
+#define _sac_DupTree_h_
 
 #include "LookUpTable.h"
 #include "types.h"
 
 #define DUP_NORMAL 0
 #define DUP_INLINE 1
-#define DUP_INVARIANT 2
-#define DUP_WLF 3
+#define DUP_WLF 2
 
 #define DUPVECT(new_vect, old_vect, dims, type)                                          \
     {                                                                                    \
@@ -182,4 +184,4 @@ extern node *DupWLgridVar (node *arg_node, node *arg_info);
 extern node *DupTreeTravPre (node *arg_node, node *arg_info);
 extern node *DupTreeTravPost (node *arg_node, node *arg_info);
 
-#endif /* _sac_DupTree_h */
+#endif /* _sac_DupTree_h_ */
