@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.143  1998/01/26 09:47:15  dkr
+ * in new with-loop-nodes: replaced NoTrav by TravSons
+ *
  * Revision 1.142  1998/01/12 10:04:54  srs
  * *** empty log message ***
  *
@@ -770,46 +773,51 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
   /*
    *
-   * here comes the node information for the NEW withloops. All identifyers
+   * here comes the node information for the NEW withloops. All identifiers
    * use an additional N (for NEW) at the beginning to destinguish them from the
    * old withloops.
-   * E.g. N_Nwith for the main node or RCNwith for a RC-function.
+   * e.g. N_Nwith for the main node or RCNwith for a RC-function.
    *
    * remarks:
    *
    */
 
-  NIF (N_Nwith, "N_Nwith", NoTrav, FltnNwith, PrintNWith, NoTrav, NoTrav, NoTrav, NoTrav,
-       FreeNWith, NoTrav, NoTrav, CompNWith, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav,
-       NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav,
-       NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, 3),
+  NIF (N_Nwith, "N_Nwith", TravSons, FltnNwith, PrintNWith, TravSons, TravSons, TravSons,
+       TravSons, FreeNWith, TravSons, TravSons, CompNWith, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 3),
 
-  NIF (N_Npart, "N_Npart", NoTrav, FltnNpart, PrintNPart, NoTrav, NoTrav, NoTrav, NoTrav,
-       FreeNPart, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav,
-       NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav,
-       NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, 3),
+  NIF (N_Npart, "N_Npart", TravSons, FltnNpart, PrintNPart, TravSons, TravSons, TravSons,
+       TravSons, FreeNPart, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 3),
 
-  NIF (N_Nwithid, "N_Nwithid", NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav,
-       FreeNWithID, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav,
-       NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav,
-       NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, 0),
+  NIF (N_Nwithid, "N_Nwithid", TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, FreeNWithID, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 0),
 
-  NIF (N_Ngenerator, "N_Ngenerator", NoTrav, FltnNgenerator, NoTrav, NoTrav, NoTrav,
-       NoTrav, NoTrav, FreeNGenerator, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav,
-       NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav,
-       NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav,
-       NoTrav, NoTrav, 6),
+  NIF (N_Ngenerator, "N_Ngenerator", TravSons, FltnNgenerator, TravSons, TravSons,
+       TravSons, TravSons, TravSons, FreeNGenerator, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, 6),
 
-  NIF (N_Nwithop, "N_Nwithop", NoTrav, FltnNwithop, NoTrav, NoTrav, NoTrav, NoTrav,
-       NoTrav, FreeNWithOp, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav,
-       NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav,
-       NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav,
-       NoTrav, 1),
+  NIF (N_Nwithop, "N_Nwithop", TravSons, FltnNwithop, TravSons, TravSons, TravSons,
+       TravSons, TravSons, FreeNWithOp, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 1),
 
-  NIF (N_Ncode, "N_Ncode", NoTrav, FltnNcode, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav,
-       FreeNCode, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav,
-       NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav,
-       NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, 3),
+  NIF (N_Ncode, "N_Ncode", TravSons, FltnNcode, TravSons, TravSons, TravSons, TravSons,
+       TravSons, FreeNCode, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 3),
 
   /* ATTENTION !!!! N_ok has to be the last node declared here;
    *                otherwise a DBUG_ASSERT in traverse.c: Trav will
