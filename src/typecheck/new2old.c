@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2002/10/24 14:09:35  sbs
+ * bug in vardec handling fixed
+ *
  * Revision 1.9  2002/10/23 06:35:39  sbs
  * NT2OTwithid added. It inserts scalar index variables whenever possible now.
  *
@@ -386,7 +389,7 @@ NT2OTwithid (node *arg_node, node *arg_info)
     if ((NWITHID_IDS (arg_node) == NULL) && TYIsAKS (vec_type)) {
         num_vars = SHGetExtent (TYGetShape (vec_type), 0);
         new_ids = NULL;
-        new_vardecs = NULL;
+        new_vardecs = INFO_NT2OT_VARDECS (arg_info);
         for (i = 0; i < num_vars; i++) {
             tmp_ids = MakeIds (TmpVar (), NULL, ST_regular);
             new_vardecs = MakeVardec (StringCopy (IDS_NAME (tmp_ids)),
