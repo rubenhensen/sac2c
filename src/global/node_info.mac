@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.10  1999/07/21 10:22:20  jhs
+ * Added SYNCOsync and SYNCOassign (from my former patched version).
+ *
  * Revision 2.9  1999/07/15 20:39:39  sbs
  * CFarray added.
  *
@@ -344,7 +347,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        RMVassign, PRECassign, ACTassign, TravSons, WLTassign, CSEassign, TravSons,
        TravSons, SPMDIassign, SPMDOassign, TravSons, SYNCIassign,
 
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       SYNCOassign, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        WLAAassign, FMTravSons, SPMDTRMassign, SPMDTROassign, 2),
 
   NIF (N_return, "N_return", TravSons, FltnReturn, PrintReturn, TCreturn, TravSons,
@@ -608,7 +611,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, PRECsync, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
-       TravSons, TravSons, TravSons, TravSons, TravSons, SCHEDsync, TravSons, TravSons,
+       SYNCOsync, TravSons, TravSons, TravSons, TravSons, SCHEDsync, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 1),
 
   /*
