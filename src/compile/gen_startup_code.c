@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.24  2000/07/25 10:04:54  nmw
+ * calling SAC_ObjectInit fucntion with arg, argv from main
+ *
  * Revision 2.23  2000/07/19 16:40:16  nmw
  * flag SAC_GENERATE_CLIBRARY added
  *
@@ -817,7 +820,13 @@ GSCPrintMainBegin ()
     fprintf (outfile, "  SAC_HM_SETUP();\n");
     fprintf (outfile, "  SAC_MT_SETUP();\n");
     fprintf (outfile, "  SAC_CS_SETUP();\n");
-    fprintf (outfile, "  %s();\n\n;", funname);
+
+    /* call init function for a c library - no command line available */
+    if (generatelibrary & GENERATELIBRARY_C) {
+        fprintf (outfile, "  %s( 0 , NULL);\n\n", funname);
+    } else {
+        fprintf (outfile, "  %s( __argc, __argv);\n\n", funname);
+    }
     FREE (funname);
 
     DBUG_VOID_RETURN;
