@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.17  1995/07/07 15:47:50  asi
+# Revision 1.18  1995/07/24 11:53:12  asi
+# added -I../psi-opt to INCS
+#
+# Revision 1.17  1995/07/07  15:47:50  asi
 # make deps done
 #
 # Revision 1.16  1995/07/07  14:58:38  asi
@@ -56,7 +59,7 @@
 MAKE=make
 CC=gcc -ansi -g
 
-INCS=-I../global -I../../inc -I../typecheck -I../print
+INCS=-I../global -I../../inc -I../typecheck -I../print -I../psi-opt
 
 all: optimize.o ConstantFolding.o DeadCodeRemoval.o WorkReduction.o \
      LoopInvariantRemoval.o DupTree.o Inline.o Unroll.o Unswitch.o
