@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.10  2004/08/19 15:01:03  skt
+ * rearranging algorithm improved
+ *
  * Revision 1.9  2004/08/17 10:29:06  skt
  * changed two return into DBUG_RETURN
  *
@@ -421,7 +424,7 @@ ASMRADissolveAllCluster (struct asmra_list_s *list)
         fprintf (stdout, "\n\n");
 #endif
 
-        act_node = ASMRAGetNodeWithLowestDistance (act_cluster);
+        act_node = ASMRAGetNodeWithLowestDistance (act_cluster, list_of_dfn);
 
         /* appends the current node with the lowest distance to the list as long
          * as the cluster is empty (equals act_node == NULL */
@@ -429,7 +432,7 @@ ASMRADissolveAllCluster (struct asmra_list_s *list)
             DATAFLOWNODE_USED (act_node) = FALSE;
             list_of_dfn = ASMRAListAppend (list_of_dfn, act_node);
 
-            act_node = ASMRAGetNodeWithLowestDistance (act_cluster);
+            act_node = ASMRAGetNodeWithLowestDistance (act_cluster, list_of_dfn);
         }
 
         ASMRAFreeCluster (ASMRA_LIST_ELEMENT (iterator));
@@ -556,33 +559,61 @@ ASMRAIsInCluster (node *dfn, struct asmra_cluster_s *search_area)
 
 /** <!--********************************************************************-->
  *
- * @fn node *ASMRAGetNodeWithLowestDistance(struct asmra_cluster_s *cluster)
+ * @fn node *ASMRAGetNodeWithLowestDistance(struct asmra_cluster_s *cluster,
+ *                                          struct asmra_list_s *list)
  *
  * @brief finds the dataflownode in the cluster, which has the lowest attribute
- *        ASMRA_CLUSTER_DISTANCE, tags it as !USED and returns it
+ *        ASMRA_CLUSTER_DISTANCE, tags it as !USED and returns it;
+ *        if more than one node with this properties exists, it searchs in the
+ *        current list of nodes for father-nodes, they (the 2 or more nodes)
+ *        depend. the one which fathers are farer away will be returned
  *
  * @param cluster the search area
+ * @param list the current list of nodes, still in the correct order, to
+ *        decide which node to take if 2 (or more) have identical distances
  * @return the dataflownode out of the cluster with the lowest distance, could
  *         be NULL
  *
  ****************************************************************************/
 node *
-ASMRAGetNodeWithLowestDistance (struct asmra_cluster_s *cluster)
+ASMRAGetNodeWithLowestDistance (struct asmra_cluster_s *cluster,
+                                struct asmra_list_s *list)
 {
     node *result;
     int lowest_distance;
+    int father_distance;
+    int father_distance_tmp;
     struct asmra_cluster_s *iterator;
     DBUG_ENTER ("ASMRAGetNodeWithLowestDistance");
 
     result = NULL;
     iterator = cluster;
     lowest_distance = INT_MAX;
+    father_distance = -1;
 
     while (iterator != NULL) {
+        /* is the current node unused and is its cluster-distance no the next
+         * depending node equal or lower than the actual result? */
         if ((DATAFLOWNODE_USED (ASMRA_CLUSTER_DFN (iterator)) == TRUE)
-            && (ASMRA_CLUSTER_DISTANCE (iterator) < lowest_distance)) {
-            result = ASMRA_CLUSTER_DFN (iterator);
-            lowest_distance = ASMRA_CLUSTER_DISTANCE (iterator);
+            && (ASMRA_CLUSTER_DISTANCE (iterator) <= lowest_distance)) {
+
+            father_distance_tmp
+              = ASMRAGetMinDistanceToFather (ASMRA_CLUSTER_DFN (iterator), list);
+
+#if ASMRA_DEBUG
+            fprintf (stdout, "Node: %s, distance: %i, fatherdistance: %i\n",
+                     DATAFLOWNODE_NAME (ASMRA_CLUSTER_DFN (iterator)),
+                     ASMRA_CLUSTER_DISTANCE (iterator), father_distance_tmp);
+#endif
+
+            /* yes - and is it's distance to the father(s) greater than the
+             * father-distance of the actual result? */
+            if (father_distance_tmp > father_distance) {
+                /* yes again - well done, we've found a new result candidate */
+                result = ASMRA_CLUSTER_DFN (iterator);
+                lowest_distance = ASMRA_CLUSTER_DISTANCE (iterator);
+                father_distance = father_distance_tmp;
+            }
         }
         iterator = ASMRA_CLUSTER_NEXT (iterator);
     }
@@ -593,6 +624,53 @@ ASMRAGetNodeWithLowestDistance (struct asmra_cluster_s *cluster)
     }
 
     DBUG_RETURN (result);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn int ASMRAGetMinDistanceToFather(node *dfn, struct asmra_list_s *list )
+ *
+ * @brief calculates the distance from dfn to its nearest father in list, if
+ *        G would be appended to list, e.g.
+ *        list: A->B->C->D->E->F (->G)
+ *        dfn: G
+ *        let A & C be fathers of G
+ *            so the nearest father would be C and the distance to G is 3.
+ *
+ * @param list_of_dfn list of dataflownodes, will be killed afterwards
+ * @param arg_node a N_block
+ * @return arg_node with a new assignment-chain in BLOCK_INSTR
+ *
+ ****************************************************************************/
+int
+ASMRAGetMinDistanceToFather (node *dfn, struct asmra_list_s *list)
+{
+    int distance;
+    node *list_dfn;
+    DBUG_ENTER ("ASMRAGetMinDistanceToFather");
+
+    distance = 0;
+
+    /* find the list elements who has dfn as dependent node */
+    while (list != NULL) {
+        list_dfn = ASMRA_LIST_ELEMENT (list);
+
+        /* search in the dependent nodes of the actual list_dfn for dfn */
+        if (NodeListFind (DATAFLOWNODE_DEPENDENT (list_dfn), dfn) != NULL) {
+            /* if you found some, list_dfn must be a father of dfn, so you've got
+             * to reset the distance counter */
+            distance = 0;
+            /*fprintf(stdout,"Found %s in %s\n",DATAFLOWNODE_NAME(dfn),
+                    DATAFLOWNODE_NAME(list_dfn));
+                    PrintNode(list_dfn);*/
+        } else {
+            /* otherwise list_dfn is no father => the distance increases */
+            distance++;
+        }
+        list = ASMRA_LIST_NEXT (list);
+    }
+
+    DBUG_RETURN (distance);
 }
 
 /** <!--********************************************************************-->

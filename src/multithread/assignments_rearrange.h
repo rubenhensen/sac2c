@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.7  2004/08/19 15:01:03  skt
+ * rearranging algorithm improved
+ *
  * Revision 1.6  2004/08/12 12:52:19  skt
  * some debugging...
  *
@@ -90,7 +93,10 @@ bool ASMRAFoundDependent (nodelist *dependent_nodes, struct asmra_cluster_s *sea
 
 bool ASMRAIsInCluster (node *dfn, struct asmra_cluster_s *search_area);
 
-node *ASMRAGetNodeWithLowestDistance (struct asmra_cluster_s *act_cluster);
+node *ASMRAGetNodeWithLowestDistance (struct asmra_cluster_s *cluster,
+                                      struct asmra_list_s *list);
+
+int ASMRAGetMinDistanceToFather (node *dfn, struct asmra_list_s *list);
 
 node *ASMRABuildNewAssignmentChain (struct asmra_list_s *list_of_dfn, node *arg_node);
 
