@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.34  2001/07/13 13:23:41  cg
+ * Unused function GenOptVar eliminated.
+ *
  * Revision 3.33  2001/05/31 10:51:26  sbs
  * Generate Mask required prior to CF3 in case of non-ssa!!!
  * otherwise wrong results in NASmg are produced ...
@@ -340,27 +343,6 @@ int ap_unsupported;
  */
 
 bool do_break = FALSE;
-
-/*
- *  functionname  : GenOptVar
- *  arguments     : 1) counter number
- *  description   : allocate string for variable needed for optimization
- */
-
-char *
-GenOptVar (int count, char *var_name)
-{
-    char *string;
-
-    DBUG_ENTER ("GenOptVar");
-
-    string = (char *)Malloc (sizeof (char) * VAR_LENGTH);
-    sprintf (string, "%s%d", var_name, count);
-
-    DBUG_PRINT ("TMP", ("new variable: %s", string));
-
-    DBUG_RETURN (string);
-}
 
 /******************************************************************************
  *
