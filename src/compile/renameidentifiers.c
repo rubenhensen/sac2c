@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2004/11/27 01:40:13  ktr
+ * typo
+ *
  * Revision 1.1  2004/11/27 01:19:20  sah
  * Initial revision
  *
@@ -686,7 +689,7 @@ RIDavis (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("RIDavis");
 
-    newname = RIDrenameLocalIdentifier (AVIS_NAME (arg_node));
+    newname = ILIBrenameLocalIdentifier (AVIS_NAME (arg_node));
 
     AVIS_NAME (arg_node) = ILIBfree (AVIS_NAME (arg_node));
     AVIS_NAME (arg_node) = newname;
@@ -697,7 +700,7 @@ RIDavis (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   char *RenameLocalIdentifier( char *id)
+ *   char *RIDrenameLocalIdentifier( char *id)
  *
  * description:
  *   This function renames a given local identifier name for precompiling
