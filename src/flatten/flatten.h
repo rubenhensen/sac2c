@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.17  1998/05/20 20:16:54  sbs
+ * new funs FltnArray and FltnBlock added
+ *
  * Revision 1.16  1997/12/02 19:08:38  srs
  * *** empty log message ***
  *
@@ -57,6 +60,7 @@
 #define _flatten_h
 
 extern node *Flatten (node *);
+extern node *FltnBlock (node *arg_node, node *arg_info);
 extern node *FltnAssign (node *arg_node, node *arg_info);
 extern node *FltnExprs (node *arg_node, node *arg_info);
 extern node *FltnCond (node *arg_node, node *arg_info);
@@ -67,6 +71,7 @@ extern node *FltnModul (node *arg_node, node *arg_info);
 extern node *FltnFundef (node *arg_node, node *arg_info);
 extern node *FltnGen (node *arg_node, node *arg_info);
 extern node *FltnAp (node *arg_node, node *arg_info);
+extern node *FltnArray (node *arg_node, node *arg_info);
 extern node *FltnReturn (node *arg_node, node *arg_info);
 extern node *FltnId (node *arg_node, node *arg_info);
 extern node *FltnLet (node *arg_node, node *arg_info);
