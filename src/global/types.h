@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.7  1995/11/16 19:42:54  cg
+ * Revision 1.8  1995/12/01 17:11:45  cg
+ * removed statustype entries ST_ref and ST_deref
+ * added statustype entry ST_inout
+ *
+ * Revision 1.7  1995/11/16  19:42:54  cg
  * NIF macro extended by 4 additional parameters
  *
  * Revision 1.6  1995/11/01  09:39:36  cg
@@ -66,14 +70,12 @@ typedef enum {
     ST_reference,          /* reference parameter (unique)           */
     ST_was_reference,      /* for eliminated reference parameter     */
     ST_readonly_reference, /* readonly reference param (unique)  */
-    ST_ref,                /* Id must be referenced                  */
-    ST_deref,              /* Id must be dereferenced                */
-                           /* typechecking                           */
+    ST_inout,              /* for compilation of reference params    */
     ST_artificial,         /* unique type inserted during            */
                            /* signature expansion                    */
-    ST_prototype,          /* function on array that is not type-    */
-                           /* checked so far.                        */
-    ST_duplicate,          /* duplicate derived from prototype       */
+    ST_independent,        /* dimension-independent function         */
+    ST_generic,            /* generic function derived from          */
+                           /* dimension-independent function         */
     ST_resolved,           /* objects from called function are       */
                            /* analysed.                              */
     ST_unresolved,         /* objects from called function are not   */
@@ -97,7 +99,8 @@ typedef enum {
     F_moddec,
     F_extmoddec,
     F_classdec,
-    F_extclassdec
+    F_extclassdec,
+    F_sib
 } file_type;
 
 typedef struct STRINGS {
@@ -214,7 +217,7 @@ typedef struct NODE {
     infotype info;               /* node dependent information */
     int refcnt;                  /* reference count information */
     int flag;                    /* the flag is used for node-status */
-                                 /* (loop invariant/not loop invariant, ...) */
+                                 /* (loop invariant/not loop invariant,...) */
     int varno;                   /* number of variables - 1 */
     long *mask[MAX_MASK];        /* special information about variables */
                                  /* mainly used for optimizations       */
