@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 3.60  2001/05/31 09:16:52  sbs
+ * corrected error in COMPIcm; DECRCFree's were always
+ * created and subsequently eliminated again...
+ * Inserted new var new_assign in order to achieve
+ * correct condition for elimination 8-)
+ *
  * Revision 3.59  2001/05/22 14:56:21  nmw
  * duplicated Free() in COMPCast() and COMPLet removed
  *
@@ -5431,7 +5437,7 @@ node *
 COMPIcm (node *arg_node, node *arg_info)
 {
     node *args, *arg;
-    node *icm_node, *last_node;
+    node *icm_node, *last_node, *new_assign;
     char *name;
 
     DBUG_ENTER ("COMPIcm");
@@ -5444,7 +5450,8 @@ COMPIcm (node *arg_node, node *arg_info)
          * variable (no reference-counted object).
          *  -> decrement the RCs of all but the first argument, if needed.
          */
-        last_node = MakeAssign (arg_node, NULL);
+        new_assign = MakeAssign (arg_node, NULL);
+        last_node = new_assign;
 
         args = ICM_EXPRS2 (arg_node);
         while (args != NULL) {
@@ -5459,11 +5466,11 @@ COMPIcm (node *arg_node, node *arg_info)
             args = EXPRS_NEXT (args);
         }
 
-        if (ASSIGN_NEXT (last_node) != NULL) {
-            arg_node = last_node;
+        if (ASSIGN_NEXT (new_assign) != NULL) {
+            arg_node = new_assign;
         } else {
-            ASSIGN_INSTR (last_node) = NULL;
-            last_node = FreeTree (last_node);
+            ASSIGN_INSTR (new_assign) = NULL;
+            new_assign = FreeTree (new_assign);
         }
     } else if (strstr (name, "USE_GENVAR_OFFSET") != NULL) {
         /*
