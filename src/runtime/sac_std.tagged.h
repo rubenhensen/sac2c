@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.35  2003/04/15 14:39:49  dkr
+ * workaround for (dim < 0) in ND_ALLOC__DESC__AUD removed
+ *
  * Revision 3.34  2003/04/14 15:15:33  dkr
  * IS_LASTREF__THEN, IS_LASTREF__ELSE removed
  * IS_REUSED__BLOCK_... added
@@ -994,6 +997,8 @@ typedef int *SAC_array_descriptor_t;
 
 #define SAC_ND_ALLOC__DESC__AKS(nt, dim)                                                 \
     {                                                                                    \
+        SAC_ASSURE_TYPE ((dim == SAC_ND_A_MIRROR_DIM (nt)),                              \
+                         ("Inconsistant dimension for array %s found!", NT_NAME (nt)));  \
         SAC_HM_MALLOC_FIXED_SIZE (SAC_ND_A_DESC (nt),                                    \
                                   SIZE_OF_DESC (SAC_ND_A_MIRROR_DIM (nt))                \
                                     * sizeof (*SAC_ND_A_DESC (nt)))                      \
@@ -1031,8 +1036,6 @@ typedef int *SAC_array_descriptor_t;
 #define SAC_ND_FREE__DATA__AUD_NHD(nt, freefun) SAC_ND_FREE__DATA__AKS_NHD (nt, freefun)
 #define SAC_ND_FREE__DATA__AUD_HID(nt, freefun) SAC_ND_FREE__DATA__AKS_HID (nt, freefun)
 
-/* CAUTION: for the time being the compiler tolerates (dim < 0)!! */
-#if 0
 #define SAC_ND_ALLOC__DESC__AUD(nt, dim)                                                 \
     {                                                                                    \
         SAC_ASSURE_TYPE ((dim >= 0),                                                     \
@@ -1043,27 +1046,8 @@ typedef int *SAC_array_descriptor_t;
           ("ND_ALLOC__DESC( %s, %d) at addr: %p", #nt, #dim, SAC_ND_A_DESC (nt)))        \
         SAC_ND_A_DESC_DIM (nt) = SAC_ND_A_MIRROR_DIM (nt) = dim;                         \
     }
-#else
-#define SAC_ND_ALLOC__DESC__AUD(nt, dim)                                                 \
-    {                                                                                    \
-        SAC_HM_MALLOC_FIXED_SIZE (SAC_ND_A_DESC (nt), SIZE_OF_DESC (MAX_DIM_OF_DESC)     \
-                                                        * sizeof (*SAC_ND_A_DESC (nt)))  \
-        SAC_TR_MEM_PRINT (                                                               \
-          ("ND_ALLOC__DESC( %s, %d) at addr: %p", #nt, #dim, SAC_ND_A_DESC (nt)))        \
-        SAC_ND_A_DESC_DIM (nt) = SAC_ND_A_MIRROR_DIM (nt) = dim;                         \
-    }
-#endif
 
-#if 0
 #define SAC_ND_FREE__DESC__AUD(nt) SAC_ND_FREE__DESC__AKS (nt)
-#else
-#define SAC_ND_FREE__DESC__AUD(nt)                                                       \
-    {                                                                                    \
-        SAC_TR_MEM_PRINT (("ND_FREE__DESC( %s) at addr: %p", #nt, SAC_ND_A_DESC (nt)))   \
-        SAC_HM_FREE_FIXED_SIZE (SAC_ND_A_DESC (nt), SIZE_OF_DESC (MAX_DIM_OF_DESC)       \
-                                                      * sizeof (*SAC_ND_A_DESC (nt)))    \
-    }
-#endif
 
 /************************
  ************************
