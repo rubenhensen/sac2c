@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.18  2002/04/09 08:22:17  dkr
+ * TmpVar(): some trav-tables added, DBUG_ASSERT added.
+ *
  * Revision 3.17  2002/04/09 08:03:43  ktr
  * Support for WithloopScalarization added at TmpVar()
  *
@@ -579,12 +582,13 @@ SystemTest (char *format, ...)
 
 /******************************************************************************
  *
- *  functionname  : TmpVar
- *  arguments     : ---
- *  description   : generates string to be used as artificial variable
- *  remarks       : The variable name is different in each call of TmpVar.
- *                  The string has the form "__tmp_" plus compiler phase
- *                  plus consecutive number.
+ * Function:
+ *   char *TmpVar()
+ *
+ * Description:
+ *   Generates string to be used as artificial variable.
+ *   The variable name is different in each call of TmpVar().
+ *   The string has the form "__tmp_" ++ compiler phase ++ consecutive number.
  *
  ******************************************************************************/
 
@@ -693,22 +697,27 @@ TmpVar ()
         s = "apt";
     } else if (act_tab == blkli_tab) {
         s = "blkli";
+    } else if (act_tab == ssafrm_tab) {
+        s = "ssa";
     } else if (act_tab == undossa_tab) {
         s = "ussa";
+    } else if (act_tab == ssacf_tab) {
+        s = "cf";
     } else if (act_tab == ssalir_tab) {
         s = "lir";
     } else if (act_tab == lirmov_tab) {
         s = "lir";
     } else if (act_tab == ssawlt_tab) {
-        s = "swlt";
+        s = "wlt";
     } else if (act_tab == ssawli_tab) {
-        s = "swli";
+        s = "wli";
     } else if (act_tab == ssawlf_tab) {
-        s = "swlf";
+        s = "wlf";
     } else if (act_tab == wls_tab) {
-        s = "swls";
+        s = "wls";
     } else {
         s = "unknown";
+        DBUG_ASSERT ((0), "TmpVar(): unknown trav-tab found!");
     }
 
     sprintf (result, "_%s_%d", s, counter);
