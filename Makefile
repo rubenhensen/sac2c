@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.7  2000/12/13 16:37:01  dkr
+# -g flag added to gcc_PROD_FLAGS
+#
 # Revision 3.6  2000/12/13 15:10:27  sbs
 # -D_BSD_SOURCE added .
 #
@@ -53,7 +56,7 @@ CCPROD       := gcc
 # gcc specific flags:
 #
 gcc_FLAGS      := -ansi -Wall -g
-gcc_PROD_FLAGS := -ansi -Wall -O3
+gcc_PROD_FLAGS := -ansi -Wall -g -O3
 
 #
 # cc specific flags:
