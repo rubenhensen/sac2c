@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2002/06/07 16:09:59  dkr
+ * - some new ICMs added
+ * - some bugs fixed
+ *
  * Revision 3.5  2002/06/06 18:13:55  dkr
  * some more bugs fixed
  *
@@ -109,6 +113,13 @@ typedef int SAC_hidden_descriptor; /* reference count */
  *
  * ND_A_DESC( nt) :
  *   accesses the descriptor of the data object
+ * ND_A_DESC_DIM( nt) :
+ *   accesses the dimension of the data object via descriptor(!)
+ * ND_A_DESC_SIZE( nt) :
+ *   accesses the size of the data object via descriptor(!)
+ * ND_A_DESC_SHAPE( nt, dim) :
+ *   accesses a shape component of the data object via descriptor(!)
+ *
  * ND_A_FIELD( nt) :
  *   accesses the pointer to the data object (array)
  *   or the data object (scalar) respectively
@@ -120,11 +131,18 @@ typedef int SAC_hidden_descriptor; /* reference count */
  * ND_A_SIZE( nt) :
  *   accesses the size of the unrolling (in elements)
  * ND_A_SHAPE( nt, dim) :
- *   accesses one shape component
+ *   accesses a shape component
  *
  ******************************************************************************/
 
-#define SAC_ND_A_DESC(nt) CAT0 (SAC_ND_A_DESC__, CAT0 (NT_DATA (nt), (nt)))
+#define SAC_ND_A_DESC(nt)                                                                \
+    CAT0 (SAC_ND_A_DESC__, CAT0 (NT_DATA (nt), CAT0 (_, CAT0 (NT_UNQ (nt), (nt)))))
+
+#define SAC_ND_A_DESC_DIM(nt) CAT2 (SAC_ND_A_DESC (nt), ->dim)
+
+#define SAC_ND_A_DESC_SIZE(nt) CAT2 (SAC_ND_A_DESC (nt), ->sz)
+
+#define SAC_ND_A_DESC_SHAPE(nt, dim) CAT2 (SAC_ND_A_DESC (nt), ->shp[dim])
 
 #define SAC_ND_A_FIELD(nt) CAT1 (SAC_ND_A_FIELD__, CAT1 (NT_DATA (nt), (nt)))
 
@@ -142,7 +160,8 @@ typedef int SAC_hidden_descriptor; /* reference count */
  * SCL
  */
 
-#define SAC_ND_A_DESC__SCL(nt) ICM_UNDEF
+#define SAC_ND_A_DESC__SCL_NUQ(nt) ICM_UNDEF
+#define SAC_ND_A_DESC__SCL_UNQ(nt) SAC_ND_A_DESC__SCL_NUQ (nt)
 
 #define SAC_ND_A_FIELD__SCL(nt) NT_NAME (nt)
 
@@ -159,7 +178,8 @@ typedef int SAC_hidden_descriptor; /* reference count */
  * AKS
  */
 
-#define SAC_ND_A_DESC__AKS(nt) CAT2 (NT_NAME (nt), __desc)
+#define SAC_ND_A_DESC__AKS_NUQ(nt) CAT2 (NT_NAME (nt), __desc)
+#define SAC_ND_A_DESC__AKS_UNQ(nt) SAC_ND_A_DESC__AKS_NUQ (nt)
 
 #define SAC_ND_A_FIELD__AKS(nt) NT_NAME (nt)
 
@@ -176,7 +196,8 @@ typedef int SAC_hidden_descriptor; /* reference count */
  * AKD
  */
 
-#define SAC_ND_A_DESC__AKD(nt) SAC_ND_A_DESC__AKS (nt)
+#define SAC_ND_A_DESC__AKD_NUQ(nt) SAC_ND_A_DESC__AKS_NUQ (nt)
+#define SAC_ND_A_DESC__AKD_UNQ(nt) SAC_ND_A_DESC__AKD_NUQ (nt)
 
 #define SAC_ND_A_FIELD__AKD(nt) SAC_ND_A_FIELD__AKS (nt)
 
@@ -193,7 +214,8 @@ typedef int SAC_hidden_descriptor; /* reference count */
  * AUD
  */
 
-#define SAC_ND_A_DESC__AUD(nt) SAC_ND_A_DESC__AKS (nt)
+#define SAC_ND_A_DESC__AUD_NUQ(nt) SAC_ND_A_DESC__AKS_NUQ (nt)
+#define SAC_ND_A_DESC__AUD_UNQ(nt) SAC_ND_A_DESC__AUD_NUQ (nt)
 
 #define SAC_ND_A_FIELD__AUD(nt) SAC_ND_A_FIELD__AKS (nt)
 
@@ -204,13 +226,14 @@ typedef int SAC_hidden_descriptor; /* reference count */
 
 #define SAC_ND_A_SIZE__AUD(nt) SAC_ND_A_SIZE__AKS (nt)
 
-#define SAC_ND_A_SHAPE__AUD(nt, dim) CAT2 (SAC_ND_A_DESC (nt), ->shp[dim])
+#define SAC_ND_A_SHAPE__AUD(nt, dim) SAC_ND_A_DESC_SHAPE (nt, dim)
 
 /*
  * HID
  */
 
-#define SAC_ND_A_DESC__HID(nt) CAT2 (NT_NAME (nt), __rc)
+#define SAC_ND_A_DESC__HID_NUQ(nt) CAT2 (NT_NAME (nt), __rc)
+#define SAC_ND_A_DESC__HID_UNQ(nt) ICM_UNDEF
 
 #define SAC_ND_A_FIELD__HID(nt) NT_NAME (nt)
 
@@ -416,7 +439,7 @@ SAC_ND_ALLOC_DESC__AKS_UNQ (nt)
  *
  ******************************************************************************/
 
-#define SAC_ND_TYPEDEF(nt, basetype) typedef SAC_ND_TYPE (basetype, nt) NT_NAME (nt)
+#define SAC_ND_TYPEDEF(nt, basetype) typedef SAC_ND_TYPE (basetype, nt) NT_NAME (nt);
 
 /******************************************************************************
  *
@@ -436,11 +459,91 @@ SAC_ND_ALLOC_DESC__AKS_UNQ (nt)
 
 /******************************************************************************
  *
- * ICMs for declaration and allocation of data objects
- * ===================================================
+ * ICMs for declaration of data objects
+ * ====================================
  *
  * ND_DECL( nt, basetype, dim, ...shp...) :
  *   declares a data object
+ * ND_DECL_EXTERN( nt, basetype, dim) :
+ *   declares an external data object
+ *
+ * ND_DECL_DATA( nt, basetype, decoration) :
+ *   declares a data object (without mirror)
+ *
+ * ND_DECL_MIRROR( nt, dim, ...shp...) :
+ *   declares mirror of a data object
+ * ND_DECL_MIRROR_PARAM( nt, dim, ...shp...) :
+ *   declares mirror of a function parameter
+ * ND_DECL_MIRROR_EXTERN( nt, dim) :
+ *   declares mirror of an external data object
+ *
+ ******************************************************************************/
+
+/* ND_DECL( ...)  is a C-ICM */
+
+/* ND_DECL_EXTERN( ...)  is a C-ICM */
+
+#define SAC_ND_DECL_DATA(nt, basetype, decoration)                                       \
+    CAT3 (SAC_ND_DECL_DATA__,                                                            \
+          CAT3 (NT_DATA (nt),                                                            \
+                CAT3 (_, CAT3 (NT_UNQ (nt), BuildArgs3 (nt, basetype, decoration)))))
+
+/* ND_DECL_MIRROR( ...)  is a C-ICM */
+
+/* ND_DECL_MIRROR_PARAM( ...)  is a C-ICM */
+
+/* ND_DECL_MIRROR_EXTERN( ...)  is a C-ICM */
+
+/*
+ * SCL
+ */
+
+#define SAC_ND_DECL_DATA__SCL_NUQ(nt, basetype, decoration)                              \
+    decoration SAC_ND_TYPE (basetype, nt) SAC_ND_A_FIELD (nt)
+#define SAC_ND_DECL_DATA__SCL_UNQ(nt, basetype, decoration)                              \
+    SAC_ND_DECL_DATA__SCL_NUQ (nt, basetype, decoration)
+
+/*
+ * AKS
+ */
+
+#define SAC_ND_DECL_DATA__AKS_NUQ(nt, basetype, decoration)                              \
+    SAC_ND_DECL_DATA__SCL_NUQ (nt, basetype, decoration);                                \
+    decoration SAC_ND_DESC_TYPE (nt) SAC_ND_A_DESC (nt)
+#define SAC_ND_DECL_DATA__AKS_UNQ(nt, basetype, decoration)                              \
+    SAC_ND_DECL_DATA__AKS_NUQ (nt, basetype, decoration)
+
+/*
+ * AKD
+ */
+
+#define SAC_ND_DECL_DATA__AKD_NUQ(nt, basetype, decoration)                              \
+    SAC_ND_DECL_DATA__AKS_NUQ (nt, basetype, decoration)
+#define SAC_ND_DECL_DATA__AKD_UNQ(nt, basetype, decoration)                              \
+    SAC_ND_DECL_DATA__AKS_UNQ (nt, basetype, decoration)
+
+/*
+ * AUD
+ */
+
+#define SAC_ND_DECL_DATA__AUD_NUQ(nt, basetype, decoration)                              \
+    SAC_ND_DECL_DATA__AKS_NUQ (nt, basetype, decoration)
+#define SAC_ND_DECL_DATA__AUD_UNQ(nt, basetype, decoration)                              \
+    SAC_ND_DECL_DATA__AKS_UNQ (nt, basetype, decoration)
+
+/*
+ * HID
+ */
+
+#define SAC_ND_DECL_DATA__HID_NUQ(nt, basetype, decoration)                              \
+    SAC_ND_DECL_DATA__AKS_NUQ (nt, basetype, decoration)
+#define SAC_ND_DECL_DATA__HID_UNQ(nt, basetype, decoration)                              \
+    SAC_ND_DECL_DATA__SCL_UNQ (nt, basetype, decoration)
+
+/******************************************************************************
+ *
+ * ICMs for allocation of data objects
+ * ===================================
  *
  * ND_ALLOC( nt, basetype, dim, ...shp..., rc) :
  *   allocates a data object (no initialization!)
@@ -458,8 +561,6 @@ SAC_ND_ALLOC_DESC__AKS_UNQ (nt)
  * but the variable is directly set to NULL.
  *
  ******************************************************************************/
-
-/* ND_DECL( ...)  is a C-ICM */
 
 /* ND_ALLOC( ...)  is a C-ICM */
 
@@ -771,8 +872,13 @@ SAC_ND_ALLOC_DESC__AKS_UNQ (nt)
  * ICMs for assigning data objects
  * ===============================
  *
- * ND_ASSIGN( to_nt, from_nt) :
+ * ND_ASSIGN( to_nt, to_sdim, from_nt) :
  *   assigns a data object to another one
+ * ND_ASSIGN_DATA( to_nt, to_sdim, from_nt) :
+ *   assigns a data object to another one (without mirror)
+ * ND_ASSIGN_MIRROR( to_nt, to_sdim, from_nt) :
+ *   assigns a mirror to another one
+ *
  * ND_COPY( to_nt, from_nt, copyfun/basetype) :
  *   copies a data object to another one
  *
@@ -786,6 +892,10 @@ SAC_ND_ALLOC_DESC__AKS_UNQ (nt)
  ******************************************************************************/
 
 /* ND_ASSIGN( ...)  is a C-ICM */
+
+/* ND_ASSIGN_DATA( ...)  is a C-ICM */
+
+/* ND_ASSIGN_MIRROR( ...)  is a C-ICM */
 
 /* ND_COPY( ...)  is a C-ICM */
 
