@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.8  1999/05/06 15:01:06  sbs
+ * src_file added to node-struct.
+ *
  * Revision 2.7  1999/05/05 13:03:21  jhs
  * Modified type GeneratorRel to store the original operators of
  * the withloop, these will not be changed during compilation.
@@ -539,6 +542,7 @@ typedef struct NODE {
                                  /* mainly used for optimizations       */
     void *dfmask[MAX_MASK];      /* dataflow masks */
     int lineno;                  /* line number in source code */
+    char *src_file;              /* pointer to the filename or the source code */
     struct NODE *node[MAX_SONS]; /* pointers to child nodes */
 } node;
 
