@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2000/02/21 17:55:39  jhs
+ * Added blkex_tab.
+ * Added LOST OF UNUSED TRAVERSALS, THEY ARE ALL MINE >:[
+ *
  * Revision 1.6  2000/02/17 16:21:13  cg
  * Added new tree traversal function tables fun2lac_tab and ai_tab.
  *
@@ -125,6 +129,8 @@ extern funtab *blkin_tab;
 extern funtab *rfin_tab;
 extern funtab *fun2lac_tab;
 extern funtab *ai_tab;
+extern funtab *blkex_tab;
+extern funtab *mtfin_tab;
 
 extern int nnode[];
 

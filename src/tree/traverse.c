@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2000/02/21 17:55:39  jhs
+ * Added blkex_tab.
+ * Added LOST OF UNUSED TRAVERSALS, THEY ARE ALL MINE >:[
+ *
  * Revision 1.7  2000/02/17 16:21:13  cg
  * Added new tree traversal function tables fun2lac_tab and ai_tab.
  *
@@ -188,6 +192,7 @@
 #include "adjust_ids.h"
 #include "schedule_init.h"
 #include "blocks_init.h"
+#include "blocks_expand.h"
 #include "repfuns_init.h"
 
 #include "traverse.h"
@@ -923,6 +928,28 @@ static funtab ai_tab_rec = {{
                             NULL,
                             NULL};
 funtab *ai_tab = &ai_tab_rec;
+
+/*
+ *  (67) blkex_tab
+ */
+static funtab blkex_tab_rec = {{
+#define NIFblkex(it_blkex) it_blkex
+#include "node_info.mac"
+                               },
+                               NULL,
+                               NULL};
+funtab *blkex_tab = &blkex_tab_rec;
+
+/*
+ *  (68) mtfin_tab
+ */
+static funtab mtfin_tab_rec = {{
+#define NIFmtfin(it_mtfin) it_mtfin
+#include "node_info.mac"
+                               },
+                               NULL,
+                               NULL};
+funtab *mtfin_tab = &mtfin_tab_rec;
 
 /*
  *  nnode
