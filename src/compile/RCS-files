@@ -1,7 +1,6 @@
 BEtest.c
 BEtest.inp
 Makefile
-PatchWith.h
 ReuseWithArrays.c
 ReuseWithArrays.h
 compile.c
