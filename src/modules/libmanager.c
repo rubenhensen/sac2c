@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2004/11/08 19:43:37  sah
+ * should work using dlcompat for Mac OS X now as well
+ *
  * Revision 1.4  2004/11/04 14:56:27  sah
  * removed link.h as it seems not to be needed
  * and creates problems on some platforms.
@@ -27,7 +30,7 @@
 static const char *
 LibManagerError ()
 {
-    char *error;
+    const char *error;
 
     DBUG_ENTER ("LibManagerError");
 
@@ -48,7 +51,11 @@ LoadLibrary (const char *name)
 
     DBUG_PRINT ("LIB", ("Loading library `%s'", name));
 
+#ifdef RTLD_WORLD
     result = dlopen (name, RTLD_WORLD | RTLD_LAZY);
+#else
+    result = dlopen (name, RTLD_GLOBAL | RTLD_LAZY);
+#endif
 
     if (result == NULL) {
         SYSABORT (("Cannot open library `%s': %s", name, LibManagerError ()));
