@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.39  1998/06/04 16:59:20  cg
+ * added function LookupIds that looks for a given identifier
+ * within an ids-chain.
+ *
  * Revision 1.38  1998/05/12 12:19:48  dkr
  * added AppendAssign, AppendExpr
  *
@@ -647,6 +651,22 @@ AppendIdsChain (ids *first, ids *second)
     }
 
     DBUG_RETURN (first);
+}
+
+/***
+ *** LookupIds
+ ***/
+
+ids *
+LookupIds (char *name, ids *ids_chain)
+{
+    DBUG_ENTER ("LookupIds");
+
+    while ((ids_chain != NULL) && (0 != strcmp (name, IDS_NAME (ids_chain)))) {
+        ids_chain = IDS_NEXT (ids_chain);
+    }
+
+    DBUG_RETURN (ids_chain);
 }
 
 /***

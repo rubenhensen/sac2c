@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.72  1998/06/04 16:59:20  cg
+ * added function LookupIds that looks for a given identifier
+ * within an ids-chain.
+ *
  * Revision 1.71  1998/05/27 13:17:03  sbs
  * Nwith-loop MACROS BRUSHED
  *
@@ -443,6 +447,21 @@ extern shpseg *MergeShpseg (shpseg *first, int dim1, shpseg *second, int dim2);
 
 extern ids *AppendIdsChain (ids *first, ids *second);
 
+/******************************************************************************
+ *
+ * function:
+ *   ids *LookupIds(char *name, ids *ids_chain)
+ *
+ * description:
+ *
+ *   This function searches for a given identifier name within an ids-chain
+ *   of identifiers and returns the ids-structure if found or NULL otherwise.
+ *
+ *
+ ******************************************************************************/
+
+extern ids *LookupIds (char *name, ids *ids_chain);
+
 /*--------------------------------------------------------------------------*/
 
 /***
@@ -667,6 +686,9 @@ extern nodelist *CopyNodelist (nodelist *nl);
 
 #define VARDEC_OR_ARG_REFCNT(n)                                                          \
     ((NODE_TYPE (n) == N_arg) ? ARG_REFCNT (n) : VARDEC_REFCNT (n))
+
+#define VARDEC_OR_ARG_VARNO(n)                                                           \
+    ((NODE_TYPE (n) == N_arg) ? ARG_VARNO (n) : VARDEC_VARNO (n))
 
 /*--------------------------------------------------------------------------*/
 
