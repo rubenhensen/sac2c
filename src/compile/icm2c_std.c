@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.33  2002/09/06 09:37:11  dkr
+ * ND_IDXS2OFFSET
+ *
  * Revision 3.32  2002/08/05 20:50:12  dkr
  * DBUG_ASSERT messages modified
  *
@@ -3141,6 +3144,43 @@ ICMCompileND_VECT2OFFSET (char *off_nt, int from_size, char *from_nt, int shp_si
     DBUG_VOID_RETURN;
 }
 
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileND_IDXS2OFFSET( char *off_nt, int idxs_size, char **idxs_nt,
+ *                                  int shp_size, char **shpa_any)
+ *
+ * description:
+ *   implements the compilation of the following ICM:
+ *
+ *   ND_IDXS2OFFSET( off_nt, idxs_size, idxs_nt, shp_size, shpa_any)
+ *
+ ******************************************************************************/
+
+void
+ICMCompileND_IDXS2OFFSET (char *off_nt, int idxs_size, char **idxs_nt, int shp_size,
+                          char **shpa_any)
+{
+    DBUG_ENTER ("ICMCompileND_IDXS2OFFSET");
+
+#define ND_IDXS2OFFSET
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef ND_IDXS2OFFSET
+
+    /*
+     * CAUTION:
+     * 'shpa_any[i]' is either a tagged identifier or a constant scalar!!
+     */
+
+    DBUG_ASSERT ((idxs_size >= 0), "Illegal size found!");
+
+    VectToOffset2 (off_nt, idxs_nt, idxs_size, NULL, ReadConstArray, shpa_any, shp_size,
+                   NULL, ReadConstArray);
+
+    DBUG_VOID_RETURN;
+}
+
 #else /* TAGGED_ARRAYS */
 
 /******************************************************************************
@@ -4070,6 +4110,38 @@ ICMCompileND_KS_VECT2OFFSET (char *off_name, char *arr_name, int dim, int dims,
     INDENT;
     fprintf (outfile, "%s = ", off_name);
     VectToOffset2 (dim, AccessVect (arr_name, i), dims, AccessConst (shp_any, i));
+    fprintf (outfile, ";\n");
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileND_KS_IDXS2OFFSET( char *off, int idxs_size, char **idxs,
+ *                                     int shp_size, char **shpa_any)
+ *
+ * description:
+ *   implements the compilation of the following ICM:
+ *
+ *   ND_KS_IDXS2OFFSET( off, idxs_size, idxs, shp_size, shpa_any )
+ *
+ ******************************************************************************/
+
+void
+ICMCompileND_KS_IDXS2OFFSET (char *off, int idxs_size, char **idxs, int shp_size,
+                             char **shpa_any)
+{
+    DBUG_ENTER ("ICMCompileND_KS_IDXS2OFFSET");
+
+#define ND_KS_IDXS2OFFSET
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef ND_KS_IDXS2OFFSET
+
+    INDENT;
+    fprintf (outfile, "%s = ", off);
+    VectToOffset2 (idxs_size, AccessConst (idxs, i), shp_size, AccessConst (shpa_any, i));
     fprintf (outfile, ";\n");
 
     DBUG_VOID_RETURN;
