@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2004/11/24 14:00:58  ktr
+ * MakeLet permuted
+ *
  * Revision 1.8  2004/11/23 22:14:15  ktr
  * some renaming done.
  *
@@ -341,8 +344,8 @@ EMDRcode (node *arg_node, info *arg_info)
              * a = noop( iv);
              */
             CODE_CBLOCK_INSTR (arg_node)
-              = TBmakeAssign (TBmakeLet (TCmakePrf1 (F_noop, DUPdoDupNode (iv)),
-                                         TBmakeIds (avis, NULL)),
+              = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL),
+                                         TCmakePrf1 (F_noop, DUPdoDupNode (iv))),
                               CODE_CBLOCK_INSTR (arg_node));
 
             AVIS_SSAASSIGN (avis) = CODE_CBLOCK_INSTR (arg_node);

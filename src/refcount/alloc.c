@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.29  2004/11/24 13:59:04  ktr
+ * MakeLet permuted
+ *
  * Revision 1.28  2004/11/23 22:12:35  ktr
  * renaming done.
  *
@@ -389,7 +392,7 @@ MakeAllocAssignment (alloclist_struct *als, node *next_node)
     als->dim = NULL;
     als->shape = NULL;
 
-    alloc = TBmakeAssign (TBmakeLet (alloc, ids), next_node);
+    alloc = TBmakeAssign (TBmakeLet (ids, alloc), next_node);
     AVIS_SSAASSIGN (IDS_AVIS (ids)) = alloc;
 
     DBUG_RETURN (alloc);
@@ -796,12 +799,12 @@ EMALcode (node *arg_node, info *arg_info)
                  * }: a;
                  */
                 assign
-                  = TBmakeAssign (TBmakeLet (TCmakePrf3 (F_wl_assign, TBmakeId (cexavis),
+                  = TBmakeAssign (TBmakeLet (TBmakeIds (valavis, NULL),
+                                             TCmakePrf3 (F_wl_assign, TBmakeId (cexavis),
                                                          TBmakeId (als->avis),
                                                          DUPdoDupNode (
                                                            INFO_EMAL_INDEXVECTOR (
-                                                             arg_info))),
-                                             TBmakeIds (valavis, NULL)),
+                                                             arg_info)))),
                                   assign);
                 AVIS_SSAASSIGN (valavis) = assign;
 
@@ -845,11 +848,11 @@ EMALcode (node *arg_node, info *arg_info)
                  * }: a;
                  */
                 assign
-                  = TBmakeAssign (TBmakeLet (TCmakePrf2 (F_fill,
+                  = TBmakeAssign (TBmakeLet (TBmakeIds (valavis, NULL),
+                                             TCmakePrf2 (F_fill,
                                                          TCmakePrf1 (F_copy,
                                                                      TBmakeId (cexavis)),
-                                                         TBmakeId (memavis)),
-                                             TBmakeIds (valavis, NULL)),
+                                                         TBmakeId (memavis))),
                                   assign);
                 AVIS_SSAASSIGN (valavis) = assign;
 
@@ -874,11 +877,11 @@ EMALcode (node *arg_node, info *arg_info)
                  * }: a_val;
                  */
                 assign
-                  = TBmakeAssign (TBmakeLet (TCmakePrf2 (F_suballoc, TBmakeId (als->avis),
+                  = TBmakeAssign (TBmakeLet (TBmakeIds (memavis, NULL),
+                                             TCmakePrf2 (F_suballoc, TBmakeId (als->avis),
                                                          DUPdoDupNode (
                                                            INFO_EMAL_INDEXVECTOR (
-                                                             arg_info))),
-                                             TBmakeIds (memavis, NULL)),
+                                                             arg_info)))),
                                   assign);
                 AVIS_SSAASSIGN (memavis) = assign;
             }
