@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.17  1998/03/21 17:35:19  dkr
+ * new function DupNode added
+ *
  * Revision 1.16  1998/03/16 00:23:05  dkr
  * added DupWLseg, DupWLblock, DupWLublock, DupWLproj, DupWLgrid
  *
@@ -84,6 +87,7 @@
 #endif /* NEWTREE */
 
 extern node *DupTree (node *arg_node, node *arg_info);
+extern node *DupNode (node *arg_node);
 
 extern node *DupInt (node *arg_node, node *arg_info);
 extern node *DupChar (node *arg_node, node *arg_info);
