@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.152  1998/05/14 21:40:51  dkr
+ * added support for CODE_CEXPR with (dim > 0)
+ *
  * Revision 1.151  1998/05/12 22:39:08  dkr
  * changed COMPSync:
  *   ICMs for memory management are moved into the barrier
@@ -6117,16 +6120,23 @@ COMPSync (node *arg_node, node *arg_info)
                                             NULL, ST_regular),
                                     NULL));
 
+          /*
+           * build args for MT_CONTINUE
+           */
           icm_args1 = AppendExpr (icm_args1, icm_args);
+
+          /*
+           * build args for MT_SYNC_...
+           */
           icm_args2
             = AppendExpr (icm_args2,
-                          MakeExprs (DupTree (icm_args, NULL),
-                                     MakeExprs (MakeId (StringCopy ("?tmp_var?"), NULL,
-                                                        ST_regular),
-                                                MakeExprs (MakeId (StringCopy (
-                                                                     "?fold_op?"),
-                                                                   NULL, ST_regular),
-                                                           NULL))));
+                          AppendExpr (DupTree (icm_args, NULL),
+                                      MakeExprs (MakeId (StringCopy ("?tmp_var?"), NULL,
+                                                         ST_regular),
+                                                 MakeExprs (MakeId (StringCopy (
+                                                                      "?fold_op?"),
+                                                                    NULL, ST_regular),
+                                                            NULL))));
 
           num_folds++;
       }) /* FOREACH_VARDEC_AND_ARG */
@@ -6318,7 +6328,7 @@ COMPNwith2 (node *arg_node, node *arg_info)
     NWITH2_CODE (arg_node) = Trav (NWITH2_CODE (arg_node), arg_info);
 
     /*
-     * insert 'WL_???_BEGIN'-ICM
+     * insert 'WL_..._BEGIN'-ICM
      */
 
     icm_args = NULL;
@@ -6495,6 +6505,20 @@ COMPWLblock (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("COMPWLblock");
 
+    /* compile contents */
+    if (WLBLOCK_CONTENTS (arg_node) != NULL) {
+        DBUG_ASSERT ((WLBLOCK_NEXTDIM (arg_node) == NULL),
+                     "contents and nextdim used simultaneous");
+        assigns = Trav (WLBLOCK_CONTENTS (arg_node), arg_info);
+    }
+
+    /* compile nextdim */
+    if (WLBLOCK_NEXTDIM (arg_node) != NULL) {
+        DBUG_ASSERT ((WLBLOCK_CONTENTS (arg_node) == NULL),
+                     "contents and nextdim used simultaneous");
+        assigns = Trav (WLBLOCK_NEXTDIM (arg_node), arg_info);
+    }
+
     /* build argument list for ICMs */
     ids_vector = NWITHID_VEC (NWITH2_WITHID (wl_node));
     ids_scalar
@@ -6513,20 +6537,6 @@ COMPWLblock (node *arg_node, node *arg_info)
                                                                             WLBLOCK_STEP (
                                                                               arg_node)),
                                                                           NULL))))))));
-
-    /* compile contents */
-    if (WLBLOCK_CONTENTS (arg_node) != NULL) {
-        DBUG_ASSERT ((WLBLOCK_NEXTDIM (arg_node) == NULL),
-                     "contents and nextdim used simultaneous");
-        assigns = Trav (WLBLOCK_CONTENTS (arg_node), arg_info);
-    }
-
-    /* compile nextdim */
-    if (WLBLOCK_NEXTDIM (arg_node) != NULL) {
-        DBUG_ASSERT ((WLBLOCK_CONTENTS (arg_node) == NULL),
-                     "contents and nextdim used simultaneous");
-        assigns = Trav (WLBLOCK_NEXTDIM (arg_node), arg_info);
-    }
 
     /* insert ICMs for current node */
     DBUG_ASSERT ((assigns != NULL), "contents and nextdim are empty");
@@ -6573,6 +6583,20 @@ COMPWLublock (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("COMPWLublock");
 
+    /* compile contents */
+    if (WLUBLOCK_CONTENTS (arg_node) != NULL) {
+        DBUG_ASSERT ((WLUBLOCK_NEXTDIM (arg_node) == NULL),
+                     "contents and nextdim used simultaneous");
+        assigns = Trav (WLUBLOCK_CONTENTS (arg_node), arg_info);
+    }
+
+    /* compile nextdim */
+    if (WLUBLOCK_NEXTDIM (arg_node) != NULL) {
+        DBUG_ASSERT ((WLUBLOCK_CONTENTS (arg_node) == NULL),
+                     "contents and nextdim used simultaneous");
+        assigns = Trav (WLUBLOCK_NEXTDIM (arg_node), arg_info);
+    }
+
     /* build argument list for ICMs */
     ids_vector = NWITHID_VEC (NWITH2_WITHID (wl_node));
     ids_scalar
@@ -6591,20 +6615,6 @@ COMPWLublock (node *arg_node, node *arg_info)
                                                                             WLUBLOCK_STEP (
                                                                               arg_node)),
                                                                           NULL))))))));
-
-    /* compile contents */
-    if (WLUBLOCK_CONTENTS (arg_node) != NULL) {
-        DBUG_ASSERT ((WLUBLOCK_NEXTDIM (arg_node) == NULL),
-                     "contents and nextdim used simultaneous");
-        assigns = Trav (WLUBLOCK_CONTENTS (arg_node), arg_info);
-    }
-
-    /* compile nextdim */
-    if (WLUBLOCK_NEXTDIM (arg_node) != NULL) {
-        DBUG_ASSERT ((WLUBLOCK_CONTENTS (arg_node) == NULL),
-                     "contents and nextdim used simultaneous");
-        assigns = Trav (WLUBLOCK_NEXTDIM (arg_node), arg_info);
-    }
 
     /* insert ICMs for current node */
     DBUG_ASSERT ((assigns != NULL), "contents and nextdim are empty");
@@ -6651,6 +6661,9 @@ COMPWLstride (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("COMPWLstride");
 
+    /* compile contents */
+    assigns = Trav (WLSTRIDE_CONTENTS (arg_node), arg_info);
+
     /* build argument list for ICMs */
     ids_vector = NWITHID_VEC (NWITH2_WITHID (wl_node));
     ids_scalar
@@ -6669,9 +6682,6 @@ COMPWLstride (node *arg_node, node *arg_info)
                                                                             WLSTRIDE_STEP (
                                                                               arg_node)),
                                                                           NULL))))))));
-
-    /* compile contents */
-    assigns = Trav (WLSTRIDE_CONTENTS (arg_node), arg_info);
 
     /* insert ICMs for current node */
     if (WLSTRIDE_LEVEL (arg_node) == 0) {
@@ -6711,68 +6721,68 @@ COMPWLstride (node *arg_node, node *arg_info)
 node *
 COMPWLgrid (node *arg_node, node *arg_info)
 {
-    node *icm_args1, *icm_args2, *assigns = NULL;
+    node *icm_args, *icm_args2, *cexpr, *assigns = NULL;
     ids *ids_vector, *ids_scalar, *withid_ids;
     char *icm_name;
     int num_args;
 
     DBUG_ENTER ("COMPWLgrid");
 
-    /* build argument list for ICMs */
-    ids_vector = NWITHID_VEC (NWITH2_WITHID (wl_node));
-    ids_scalar
-      = GetIndexIds (NWITHID_IDS (NWITH2_WITHID (wl_node)), WLGRID_DIM (arg_node));
-    icm_args1 = MakeExprs (
-      MakeNum (WLGRID_LEVEL (arg_node)),
-      MakeExprs (MakeNum (WLGRID_LEVEL (arg_node) + 1),
-                 MakeExprs (MakeNum (WLGRID_DIM (arg_node)),
-                            MakeExprs (MakeId2 (DupOneIds (ids_vector, NULL)),
-                                       MakeExprs (MakeId2 (DupOneIds (ids_scalar, NULL)),
-                                                  MakeExprs (MakeNum (
-                                                               WLGRID_BOUND1 (arg_node)),
-                                                             MakeExprs (MakeNum (
-                                                                          WLGRID_BOUND2 (
-                                                                            arg_node)),
-                                                                        NULL)))))));
-
-    /* compile nextdim */
     if (WLGRID_NEXTDIM (arg_node) != NULL) {
+
+        /*
+         * compile nextdim
+         */
+
         DBUG_ASSERT ((WLGRID_CODE (arg_node) == NULL),
                      "code and nextdim used simultaneous");
         assigns = Trav (WLGRID_NEXTDIM (arg_node), arg_info);
+
     } else {
 
-        /* compile code */
+        /*
+         * compile code
+         */
+
+        /*
+         * build argument list for 'WL_ASSIGN_...'/'WL_FOLD'-ICM
+         */
+
+        icm_args2 = NULL;
+        num_args = 0;
+        withid_ids = NWITHID_IDS (NWITH2_WITHID (wl_node));
+        while (withid_ids != NULL) {
+            icm_args2
+              = AppendExpr (icm_args2,
+                            MakeExprs (MakeId2 (DupOneIds (withid_ids, NULL)), NULL));
+            num_args++;
+            withid_ids = IDS_NEXT (withid_ids);
+        }
+
+        icm_args2
+          = MakeExprs (MakeId2 (DupOneIds (wl_ids, NULL)),
+                       MakeExprs (MakeId2 (
+                                    DupOneIds (NWITHID_VEC (NWITH2_WITHID (wl_node)),
+                                               NULL)),
+                                  MakeExprs (MakeNum (num_args), icm_args2)));
+
+        /*
+         * insert compiled code
+         */
+
         if (WLGRID_CODE (arg_node) != NULL) {
+
+            cexpr = NCODE_CEXPR (WLGRID_CODE (arg_node));
+            DBUG_ASSERT ((cexpr != NULL), "no code expr found");
+
+            icm_args2
+              = AppendExpr (icm_args2, MakeExprs (MakeNum (TYPES_DIM (ID_TYPE (cexpr))),
+                                                  MakeExprs (DupNode (cexpr), NULL)));
 
             if (NCODE_CBLOCK (WLGRID_CODE (arg_node)) != NULL) {
                 assigns
                   = DupTree (BLOCK_INSTR (NCODE_CBLOCK (WLGRID_CODE (arg_node))), NULL);
             }
-
-            /*
-             * build argument list for 'WL_ASSIGN'/'WL_FOLD'-ICM
-             */
-            num_args = 0;
-            icm_args2 = NULL;
-            withid_ids = NWITHID_IDS (NWITH2_WITHID (wl_node));
-            while (withid_ids != NULL) {
-                icm_args2
-                  = AppendExpr (icm_args2,
-                                MakeExprs (MakeId2 (DupOneIds (withid_ids, NULL)), NULL));
-                num_args++;
-                withid_ids = IDS_NEXT (withid_ids);
-            }
-            icm_args2 = MakeExprs (MakeNum (num_args), icm_args2);
-            icm_args2
-              = MakeExprs (MakeId2 (
-                             DupOneIds (NWITHID_VEC (NWITH2_WITHID (wl_node)), NULL)),
-                           icm_args2);
-            icm_args2 = MakeExprs (MakeId2 (DupOneIds (wl_ids, NULL)), icm_args2);
-            DBUG_ASSERT ((NCODE_CEXPR (WLGRID_CODE (arg_node)) != NULL),
-                         "no code expr found");
-            icm_args2 = MakeExprs (DupTree (NCODE_CEXPR (WLGRID_CODE (arg_node)), NULL),
-                                   icm_args2);
 
             /*
              * choose right ICM ('WL_ASSIGN' for non-fold, 'WL_FOLD' for fold)
@@ -6798,24 +6808,72 @@ COMPWLgrid (node *arg_node, node *arg_info)
               = AppendAssign (assigns,
                               MakeAssign (MakeIcm (icm_name, icm_args2, NULL), NULL));
         } else {
-            assigns = MakeAssign (MakeIcm ("WL_NOOP", NULL, NULL), NULL);
+
+            DBUG_ASSERT ((WLGRID_CEXPR_TEMPLATE (arg_node) != NULL),
+                         "no code template found");
+            icm_args2
+              = AppendExpr (icm_args2,
+                            MakeExprs (DupNode (WLGRID_CEXPR_TEMPLATE (arg_node)), NULL));
+
+            /*
+             * choose right ICM
+             */
+
+            switch (NWITH2_TYPE (wl_node)) {
+            case WO_genarray:
+                icm_name = "WL_ASSIGN_GEN";
+                break;
+
+            case WO_modarray:
+                icm_args2 = MakeExprs (DupNode (NWITHOP_ARRAY (NWITH2_WITHOP (wl_node))),
+                                       icm_args2);
+
+                icm_name = "WL_ASSIGN_MOD";
+                break;
+
+            case WO_foldfun:
+                /* here is no break missing! */
+            case WO_foldprf:
+                icm_name = "WL_NOOP";
+                break;
+
+            default:
+                DBUG_ASSERT ((0), "wrong withop type found");
+            }
+
+            assigns = MakeAssign (MakeIcm (icm_name, icm_args2, NULL), NULL);
         }
     }
 
+    /* build argument list for 'WL_GRID_...'-ICMs */
+    ids_vector = NWITHID_VEC (NWITH2_WITHID (wl_node));
+    ids_scalar
+      = GetIndexIds (NWITHID_IDS (NWITH2_WITHID (wl_node)), WLGRID_DIM (arg_node));
+    icm_args = MakeExprs (
+      MakeNum (WLGRID_LEVEL (arg_node)),
+      MakeExprs (MakeNum (WLGRID_LEVEL (arg_node) + 1),
+                 MakeExprs (MakeNum (WLGRID_DIM (arg_node)),
+                            MakeExprs (MakeId2 (DupOneIds (ids_vector, NULL)),
+                                       MakeExprs (MakeId2 (DupOneIds (ids_scalar, NULL)),
+                                                  MakeExprs (MakeNum (
+                                                               WLGRID_BOUND1 (arg_node)),
+                                                             MakeExprs (MakeNum (
+                                                                          WLGRID_BOUND2 (
+                                                                            arg_node)),
+                                                                        NULL)))))));
+
     /* insert ICMs for current node */
-    DBUG_ASSERT ((assigns != NULL), "code and nextdim are empty");
     if (IDS_REFCNT (NWITHID_VEC (NWITH2_WITHID (wl_node))) >= 0) {
         /*
          * if the index-vector is needed somewhere in the code-blocks,
          *  we must add the ICM 'WL_GRID_SET_IDX'.
          */
-        assigns = MakeAssign (MakeIcm ("WL_GRID_SET_IDX", icm_args1, NULL), assigns);
+        assigns = MakeAssign (MakeIcm ("WL_GRID_SET_IDX", icm_args, NULL), assigns);
     }
-    assigns = MakeAssign (MakeIcm ("WL_GRID_LOOP_BEGIN", icm_args1, NULL), assigns);
-    assigns
-      = AppendAssign (assigns, MakeAssign (MakeIcm ("WL_GRID_LOOP_END",
-                                                    DupTree (icm_args1, NULL), NULL),
-                                           NULL));
+    assigns = MakeAssign (MakeIcm ("WL_GRID_LOOP_BEGIN", icm_args, NULL), assigns);
+    assigns = AppendAssign (assigns, MakeAssign (MakeIcm ("WL_GRID_LOOP_END",
+                                                          DupTree (icm_args, NULL), NULL),
+                                                 NULL));
 
     /* compile successor */
     if (WLGRID_NEXT (arg_node) != NULL) {
