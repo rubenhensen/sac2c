@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2000/01/28 12:39:47  dkr
+ * DupNcode, DupNpart, DupWLgrid changed
+ * use of LUT added
+ *
  * Revision 1.3  2000/01/26 23:25:33  dkr
  * DupTreePre() and DupTreePost() added.
  * Some code brushing done.
@@ -119,6 +123,7 @@
 
 #include "DupTree.h"
 #include "DataFlowMask.h"
+#include "LookUpTable.h"
 #include "Inline.h"
 #include "typecheck.h"
 #include "scheduling.h"
@@ -148,101 +153,7 @@
 
 /******************************************************************************/
 
-#define PTAB_MAX 2 * 100
-
-static void **first_ptab = NULL;
-static void **last_ptab;
-static int next_ptab_pos;
-
-void
-InitPtab (void)
-{
-    DBUG_ENTER ("InitPtab");
-
-    last_ptab = first_ptab = (void **)MALLOC (sizeof (void *));
-    next_ptab_pos = 0;
-    last_ptab[next_ptab_pos] = NULL;
-    DBUG_PRINT ("DUP", ("InitPtab() finished"));
-
-    DBUG_VOID_RETURN;
-}
-
-void
-CleanPtab (void)
-{
-    void **tmp;
-
-    DBUG_ENTER ("CleanPtab");
-
-    if (first_ptab != NULL) {
-        while (first_ptab != last_ptab) {
-            tmp = first_ptab;
-            first_ptab = first_ptab[PTAB_MAX];
-            FREE (tmp);
-        }
-        FREE (first_ptab);
-        last_ptab = first_ptab = NULL;
-        DBUG_PRINT ("DUP", ("CleanPtab() finished"));
-    } else {
-        DBUG_PRINT ("DUP", ("CleanPtab() failed"));
-    }
-
-    DBUG_VOID_RETURN;
-}
-
-void
-InsertIntoPtab (void *old_entry, void *new_entry)
-{
-    DBUG_ENTER ("InsertIntoPtab");
-
-    if (first_ptab != NULL) {
-        last_ptab[next_ptab_pos] = old_entry;
-        last_ptab[next_ptab_pos + 1] = new_entry;
-        next_ptab_pos += 2;
-        if (next_ptab_pos == PTAB_MAX) {
-            last_ptab[next_ptab_pos] = (void **)MALLOC (sizeof (void *));
-            last_ptab = last_ptab[next_ptab_pos];
-            next_ptab_pos = 0;
-            DBUG_PRINT ("DUP", ("InsertIntoPtab(): new ptab created"));
-        }
-        last_ptab[next_ptab_pos] = NULL;
-        DBUG_PRINT ("DUP", ("InsertIntoPtab() finished"));
-    } else {
-        DBUG_PRINT ("DUP", ("InsertIntoPtab() failed"));
-    }
-
-    DBUG_VOID_RETURN;
-}
-
-void *
-SearchInPtab (void *old_entry)
-{
-    void **tmp;
-    void *new_entry;
-
-    DBUG_ENTER ("SearchInPtab");
-
-    new_entry = old_entry;
-    if (first_ptab != NULL) {
-        tmp = first_ptab;
-        while ((*tmp != NULL) && (new_entry == old_entry)) {
-            if (tmp == old_entry) {
-                new_entry = *(tmp + 1);
-            } else {
-                tmp += 2;
-            }
-        }
-        if (new_entry == old_entry) {
-            DBUG_PRINT ("DUP", ("SearchInPtab() finished: node not found :-("));
-        } else {
-            DBUG_PRINT ("DUP", ("SearchInPtab() finished: node found :-)"));
-        }
-    } else {
-        DBUG_PRINT ("DUP", ("SearchInPtab() failed"));
-    }
-
-    DBUG_RETURN (new_entry);
-}
+static lut_t *lut;
 
 /******************************************************************************/
 
@@ -281,9 +192,9 @@ DupTree (node *arg_node, node *arg_info)
          * we want to duplicate all sons
          */
         INFO_DUP_CONT (arg_info) = NULL;
-        InitPtab ();
+        lut = GenLUT ();
         new_node = Trav (arg_node, arg_info);
-        CleanPtab ();
+        lut = RemoveLUT (lut);
 
         if (new_arg_info) {
             arg_info = FreeNode (arg_info);
@@ -558,7 +469,7 @@ DupOneIds (ids *old_ids, node *arg_info)
     } else {
         new_ids = MakeIds (StringCopy (IDS_NAME (old_ids)),
                            StringCopy (IDS_MOD (old_ids)), IDS_STATUS (old_ids));
-        IDS_VARDEC (new_ids) = SearchInPtab (IDS_VARDEC (old_ids));
+        IDS_VARDEC (new_ids) = SearchInLUT (lut, IDS_VARDEC (old_ids));
         IDS_USE (new_ids) = IDS_USE (old_ids);
     }
 
@@ -605,9 +516,9 @@ DupId (node *arg_node, node *arg_info)
         new_node = MakeId (StringCopy (ID_NAME (arg_node)),
                            StringCopy (ID_MOD (arg_node)), ID_STATUS (arg_node));
         /* ID_OBJDEF and ID_VARDEC are mapped to the same data object */
-        ID_VARDEC (new_node) = SearchInPtab (ID_VARDEC (arg_node));
+        ID_VARDEC (new_node) = SearchInLUT (lut, ID_VARDEC (arg_node));
     }
-    ID_DEF (new_node) = SearchInPtab (ID_DEF (arg_node));
+    ID_DEF (new_node) = SearchInLUT (lut, ID_DEF (arg_node));
 
     ID_ATTRIB (new_node) = ID_ATTRIB (arg_node);
     ID_REFCNT (new_node) = ID_REFCNT (arg_node);
@@ -984,9 +895,7 @@ DupDec (node *arg_node, node *arg_info)
         VARDEC_NEXT (new_node) = DUPCONT (VARDEC_NEXT (arg_node));
     }
 
-#if 0
-  InsertIntoPtab( arg_node, new_node);
-#endif
+    InsertIntoLUT (lut, arg_node, new_node);
 
     DBUG_RETURN (new_node);
 }
@@ -1116,25 +1025,14 @@ DupNwith (node *arg_node, node *arg_info)
     DBUG_ENTER ("DupNwith");
 
     /*
-     * very important: duplicate codes before parts because NCODE_COPY has to
-     *  be set before the parts are traversed.
+     * very important: duplicate codes before parts! Otherwise the code
+     * references of the parts can not set correctly!
      */
     coden = DUPTRAV (NWITH_CODE (arg_node));
     partn = DUPTRAV (NWITH_PART (arg_node));
     withopn = DUPTRAV (NWITH_WITHOP (arg_node));
 
     new_node = MakeNWith (partn, coden, withopn);
-
-    /*
-     * Now we must erase NCODE_COPY for every code node in 'arg_node'.
-     * Otherwise we get nice ;-> errors when duplicating N_Npart- or
-     * N_Ngrid-nodes from 'arg_node' without the parent N_Nwith-node !!!
-     */
-    coden = NWITH_CODE (arg_node);
-    while (coden != NULL) {
-        NCODE_COPY (coden) = NULL;
-        coden = NCODE_NEXT (coden);
-    }
 
     /* copy attributes */
     DUP (arg_node, new_node);
@@ -1207,20 +1105,15 @@ DupNwithop (node *arg_node, node *arg_info)
 node *
 DupNpart (node *arg_node, node *arg_info)
 {
-    node *new_node, *code;
+    node *new_node;
 
     DBUG_ENTER ("DupNpart");
     DBUG_ASSERT (NPART_CODE (arg_node), "N_Npart node has no valid NPART_CODE");
 
-    /* get pointer to duplicated code!!! */
-    code = NCODE_COPY (NPART_CODE (arg_node));
-    if (code == NULL) {
-        /* code has not been duplicated, so we take the original one!! */
-        code = NPART_CODE (arg_node);
-    }
+    new_node
+      = MakeNPart (DUPTRAV (NPART_WITHID (arg_node)), DUPTRAV (NPART_GEN (arg_node)),
+                   SearchInLUT (lut, NPART_CODE (arg_node)));
 
-    new_node = MakeNPart (DUPTRAV (NPART_WITHID (arg_node)),
-                          DUPTRAV (NPART_GEN (arg_node)), code);
     NPART_NEXT (new_node) = DUPCONT (NPART_NEXT (arg_node));
 
     DBUG_RETURN (new_node);
@@ -1250,7 +1143,7 @@ DupNcode (node *arg_node, node *arg_info)
         NCODE_INC_RC_IDS (new_node) = DupIds (NCODE_INC_RC_IDS (arg_node), arg_info);
     }
 
-    NCODE_COPY (arg_node) = new_node;
+    InsertIntoLUT (lut, arg_node, new_node);
 
     DBUG_RETURN (new_node);
 }
@@ -1302,8 +1195,8 @@ DupNwith2 (node *arg_node, node *arg_info)
     DBUG_ENTER ("DupNwith2");
 
     /*
-     * very important: copy codes before segs because NCODE_COPY has to
-     *  be set before the segs (containing N_WLgrid nodes) are traversed.
+     * very important: duplicate codes before parts! Otherwise the code
+     * references of the parts can not set correctly!
      */
     code = DUPTRAV (NWITH2_CODE (arg_node));
     id = DUPTRAV (NWITH2_WITHID (arg_node));
@@ -1331,17 +1224,6 @@ DupNwith2 (node *arg_node, node *arg_info)
 
     if (NWITH2_SCHEDULING (arg_node) != NULL) {
         NWITH2_SCHEDULING (new_node) = SCHCopyScheduling (NWITH2_SCHEDULING (arg_node));
-    }
-
-    /*
-     * Now we must erase NCODE_COPY for every code node in 'arg_node'.
-     * Otherwise we get nice ;-> errors when duplicating N_Npart- or
-     * N_Ngrid-nodes from 'arg_node' without the parent N_Nwith2-node !!!
-     */
-    code = NWITH2_CODE (arg_node);
-    while (code != NULL) {
-        NCODE_COPY (code) = NULL;
-        code = NCODE_NEXT (code);
     }
 
     DBUG_RETURN (new_node);
@@ -1470,27 +1352,16 @@ DupWLstride (node *arg_node, node *arg_info)
 node *
 DupWLgrid (node *arg_node, node *arg_info)
 {
-    node *new_node, *new_code = NULL;
+    node *new_node;
 
     DBUG_ENTER ("DupWLgrid");
-
-    /*
-     * set new code
-     */
-    if (WLGRID_CODE (arg_node) != NULL) {
-        /* get pointer to duplicated code!!! */
-        new_code = NCODE_COPY (WLGRID_CODE (arg_node));
-        if (new_code == NULL) {
-            /* code has not been duplicated, so we take the original one!! */
-            new_code = WLGRID_CODE (arg_node);
-        }
-    }
 
     new_node
       = MakeWLgrid (WLGRID_LEVEL (arg_node), WLGRID_DIM (arg_node),
                     WLGRID_BOUND1 (arg_node), WLGRID_BOUND2 (arg_node),
                     WLGRID_UNROLLING (arg_node), DUPTRAV (WLGRID_NEXTDIM (arg_node)),
-                    DUPCONT (WLGRID_NEXT (arg_node)), new_code);
+                    DUPCONT (WLGRID_NEXT (arg_node)),
+                    SearchInLUT (lut, WLGRID_CODE (arg_node)));
 
     /*
      * duplicated grids are not modified yet ;)
@@ -1589,27 +1460,16 @@ DupWLstriVar (node *arg_node, node *arg_info)
 node *
 DupWLgridVar (node *arg_node, node *arg_info)
 {
-    node *new_node, *new_code = NULL;
+    node *new_node;
 
     DBUG_ENTER ("DupWLgridVar");
-
-    /*
-     * set new code
-     */
-    if (WLGRIDVAR_CODE (arg_node) != NULL) {
-        /* get pointer to duplicated code!!! */
-        new_code = NCODE_COPY (WLGRIDVAR_CODE (arg_node));
-        if (new_code == NULL) {
-            /* code has not been duplicated, so we take the original one!! */
-            new_code = WLGRIDVAR_CODE (arg_node);
-        }
-    }
 
     new_node = MakeWLgridVar (WLGRIDVAR_LEVEL (arg_node), WLGRIDVAR_DIM (arg_node),
                               DUPTRAV (WLGRIDVAR_BOUND1 (arg_node)),
                               DUPTRAV (WLGRIDVAR_BOUND2 (arg_node)),
                               DUPTRAV (WLGRIDVAR_NEXTDIM (arg_node)),
-                              DUPCONT (WLGRIDVAR_NEXT (arg_node)), new_code);
+                              DUPCONT (WLGRIDVAR_NEXT (arg_node)),
+                              SearchInLUT (lut, WLGRIDVAR_CODE (arg_node)));
 
     DBUG_RETURN (new_node);
 }
