@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2001/05/18 12:43:02  nmw
+ * all unused code removed, comments modified
+ *
  * Revision 1.6  2001/05/17 14:09:32  nmw
  * MALLOC/FREE replaced by Malloc/Free, using result of Free()
  *
@@ -27,7 +30,10 @@
 
 /*******************************************************************************
 
- This file realizes the withlop folding.
+ This file realizes the withlop folding for a code in ssa form. it uses no
+ masks anymore. Most code is unchanged from the original implementation in
+ WLF.c . Due to the ssaform we can simplify some task in WLF concerning
+ renaming operations.
 
  *******************************************************************************
 
@@ -92,8 +98,6 @@
 #include "my_debug.h"
 #include "traverse.h"
 #include "optimize.h"
-/* #include "generatemasks.h"
-   #include "ConstantFolding.h" */
 #include "SSAWithloopFolding.h"
 #include "SSAWLF.h"
 #include "shape.h"
@@ -130,20 +134,12 @@ typedef struct CODE_CONSTRUCTION {
     struct CODE_CONSTRUCTION *next;
 } code_constr_type;
 
-typedef struct RENAMING {
-    char *old;
-    char *new;
-    node *vardec; /* vardec for new */
-    struct RENAMING *next;
-} renaming_type;
-
 /******************************************************************************
  *
  *   global variables
  *
  ******************************************************************************/
 
-renaming_type *renaming; /* stores information for wlfm_rename. */
 wlf_mode_type wlf_mode;
 code_constr_type *code_constr; /* list of combinded code blocks */
 node *new_codes;               /* list of created N_Ncode nodes */
@@ -161,147 +157,7 @@ intern_gen *all_new_ig; /* new generators derived from all Ncode
 int *intersect_grids_ot; /* grid offsets used by IntersectGrids() */
 int *intersect_grids_os;
 intern_gen *intersect_grids_tig, *intersect_grids_sig, *intersect_grids_baseig;
-intern_gen *intersect_intern_gen; /* resulting igs of IntersectInternGen. Global
-                                     var to speed up function call.*/
-
-long *target_mask; /* here we store the mrd of the psi function
-                      which shall be replaced */
-long *subst_mask;  /* mrd mask of subst WL. */
-
-/******************************************************************************
- *
- * function:
- *   renaming_type *AddRen( node *old_name, char *new_name,
- *                          types *type, node *arg_info, int insert)
- *
- * description:
- *   Add new entry to renaiming list. No own mem for strings (old and new) is
- *   allocated. So the char pointers should point to string which will not be
- *   deleted soon.
- *
- *   Additionally, if var insert is != 0, this function inserts the assignment
- *   'new_name = old_name' after! the subst-WL. The N_assign node of the subst
- *   WL has to be untouched because cross pointers to this node exist and
- *   the wlf-traversal expects a WL there.
- *
- *  If new_name does not exist, a vardec is installed (therefor type and
- *   arg_info are necessary).
- *
- *  Attention:
- *    old_name is a vardec node. VARDEC_NAME(old_name) is the real name.
- *
- ******************************************************************************/
-
-static renaming_type *
-AddRen (node *old_name, char *new_name, types *type, node *arg_info, int insert)
-{
-    renaming_type *ren;
-    node *assignn, *letn, *idn;
-    ids *_ids;
-
-    DBUG_ENTER ("AddRen");
-
-    /* alloc new mem, search (or create) vardec for new_name and insert
-       new element into renaming list. */
-    ren = Malloc (sizeof (renaming_type));
-    ren->old = VARDEC_NAME (old_name);
-    ren->new = new_name;
-    ren->vardec
-      = SSACreateVardec (new_name, type, &FUNDEF_VARDEC (INFO_WLI_FUNDEF (arg_info)));
-
-    ren->next = renaming;
-    renaming = ren;
-
-    /* assign old value to new variable */
-    if (insert) {
-        idn = MakeId (StringCopy (VARDEC_NAME (old_name)), NULL, ST_regular);
-        ID_VARDEC (idn) = old_name; /* the vardec node */
-        _ids = MakeIds (StringCopy (new_name), NULL, ST_regular);
-        IDS_VARDEC (_ids) = ren->vardec;
-        letn = MakeLet (idn, _ids);
-        assignn = MakeAssign (letn, ASSIGN_NEXT (INFO_WLI_NCA (arg_info)));
-        ASSIGN_NEXT (INFO_WLI_NCA (arg_info)) = assignn;
-    }
-
-    DBUG_RETURN (ren);
-}
-
-/******************************************************************************
- *
- * function:
- *   renaming_type *FreeRen(void)
- *
- * description:
- *   Free whole renaming list
- *
- ******************************************************************************/
-
-static renaming_type *
-FreeRen (void)
-{
-    renaming_type *ren;
-
-    DBUG_ENTER ("FreeRen");
-
-    while (renaming) {
-        ren = renaming;
-        renaming = renaming->next;
-        ren = Free (ren);
-    }
-
-    DBUG_RETURN (renaming);
-}
-
-/******************************************************************************
- *
- * function:
- *   renaming_type *SearchRen(char *old_name)
- *
- * description:
- *   Search for the given old_name in the renaming list and return pointer
- *   to entry if found.
- *
- ******************************************************************************/
-
-static renaming_type *
-SearchRen (char *old_name)
-{
-    renaming_type *ren;
-
-    DBUG_ENTER ("SearchRen");
-
-    ren = renaming;
-    while (ren && strcmp (old_name, ren->old)) {
-        ren = ren->next;
-    }
-
-    DBUG_RETURN (ren);
-}
-
-/******************************************************************************
- *
- * function:
- *   void DbugRen( void)
- *
- * description:
- *   prints whole renaming list
- *
- ******************************************************************************/
-static void
-DbugRen (void)
-{
-    renaming_type *ren;
-
-    DBUG_ENTER ("DbugRen");
-
-    ren = renaming;
-    while (ren) {
-        printf ("%s -> %s,    Vardec: " F_PTR "\n", ren->old, ren->new, ren->vardec);
-        ren = ren->next;
-    }
-
-    DBUG_VOID_RETURN;
-}
+intern_gen *intersect_intern_gen; /* resulting igs of IntersectInternGen. */
 
 /******************************************************************************
  *
@@ -312,7 +168,6 @@ DbugRen (void)
  *   adds entry to the global code_constr list.
  *
  ******************************************************************************/
-
 static void
 AddCC (node *targetn, node *substn, node *resultn)
 {
@@ -340,7 +195,6 @@ AddCC (node *targetn, node *substn, node *resultn)
  *   or NULL if not found
  *
  ******************************************************************************/
-
 static code_constr_type *
 SearchCC (node *targetn, node *substn)
 {
@@ -365,7 +219,6 @@ SearchCC (node *targetn, node *substn)
  *   sets whole cc list free
  *
  ******************************************************************************/
-
 static void
 FreeCC (code_constr_type *cc)
 {
@@ -395,7 +248,6 @@ FreeCC (code_constr_type *cc)
  *    powerful).
  *
  ******************************************************************************/
-
 static intern_gen *
 MergeGenerators (intern_gen *ig)
 {
@@ -416,7 +268,6 @@ MergeGenerators (intern_gen *ig)
  *   generators (original ig and newig). If a newig is created, it is returned.
  *
  ******************************************************************************/
-
 static intern_gen *
 LinearTransformationsHelp (intern_gen *ig, int dim, prf prf, int arg_no, int constval)
 {
@@ -595,7 +446,6 @@ LinearTransformationsHelp (intern_gen *ig, int dim, prf prf, int arg_no, int con
  *
  *
  ******************************************************************************/
-
 static intern_gen *
 LinearTransformationsScalar (intern_gen *ig, index_info *transformations, int dim)
 {
@@ -639,7 +489,6 @@ LinearTransformationsScalar (intern_gen *ig, index_info *transformations, int di
  *
  *
  ******************************************************************************/
-
 static intern_gen *
 LinearTransformationsVector (intern_gen *ig, index_info *transformations)
 {
@@ -698,7 +547,6 @@ LinearTransformationsVector (intern_gen *ig, index_info *transformations)
  *
  *
  ******************************************************************************/
-
 static intern_gen *
 FinalTransformations (intern_gen *substig, index_info *transformations, int target_dim)
 {
@@ -794,7 +642,6 @@ FinalTransformations (intern_gen *substig, index_info *transformations, int targ
  *   wlfm_replace and wlfm_rename).
  *
  ******************************************************************************/
-
 static node *
 CreateCode (node *target, node *subst)
 {
@@ -842,7 +689,6 @@ CreateCode (node *target, node *subst)
  *   in global variables intersect_grids* to speed up recursive function calls.
  *
  ******************************************************************************/
-
 static void
 IntersectGrids (int dim)
 {
@@ -944,7 +790,6 @@ IntersectGrids (int dim)
  *   Returns intern_gen list of new intersections.
  *
  ******************************************************************************/
-
 static intern_gen *
 IntersectInternGen (intern_gen *target_ig, intern_gen *subst_ig)
 {
@@ -1083,7 +928,6 @@ IntersectInternGen (intern_gen *target_ig, intern_gen *subst_ig)
  *   This is a transformation to reduce the number of components of the ig.
  *
  ******************************************************************************/
-
 static intern_gen *
 RemoveDoubleIndexVectors (intern_gen *subst_ig, index_info *transformations)
 {
@@ -1160,7 +1004,6 @@ RemoveDoubleIndexVectors (intern_gen *subst_ig, index_info *transformations)
  *
  *
  ******************************************************************************/
-
 static int
 TransformationRangeCheck (index_info *transformations, node *substwln,
                           intern_gen *target_ig)
@@ -1227,7 +1070,6 @@ TransformationRangeCheck (index_info *transformations, node *substwln,
  *   The Id idn in the current (arg_info) WL has to be folded.
  *
  ******************************************************************************/
-
 static void
 Fold (node *idn, index_info *transformations, node *targetwln, node *substwln)
 {
@@ -1319,7 +1161,6 @@ Fold (node *idn, index_info *transformations, node *targetwln, node *substwln)
  *     1 for fold-WL with constant bounds.
  *
  ******************************************************************************/
-
 static int
 FoldDecision (node *target_wl, node *subst_wl)
 {
@@ -1348,7 +1189,6 @@ FoldDecision (node *target_wl, node *subst_wl)
  *
  *
  ******************************************************************************/
-
 static node *
 CheckForSuperfluousCodes (node *wln)
 {
@@ -1383,7 +1223,6 @@ CheckForSuperfluousCodes (node *wln)
  *     where newshape depends on shape and the given index vector of C.
  *
  ******************************************************************************/
-
 static node *
 Modarray2Genarray (node *wln, node *substwln)
 {
@@ -1439,7 +1278,7 @@ Modarray2Genarray (node *wln, node *substwln)
  *   node *SSAWLFfundef(node *arg_node, node *arg_info)
  *
  * description:
- *   initializations to arg_info.
+ *   initializations to arg_info and traversal of the fundef body.
  *
  ******************************************************************************/
 node *
@@ -1450,10 +1289,6 @@ SSAWLFfundef (node *arg_node, node *arg_info)
     DBUG_PRINT ("WLF", ("entering %s for WLF", FUNDEF_NAME (arg_node)));
     INFO_WLI_WL (arg_info) = NULL;
     INFO_WLI_FUNDEF (arg_info) = arg_node;
-
-    /* copy number of vardec explicitely in this phase because the OPTTrav()
-       mechanism is not used. */
-    INFO_VARNO (arg_info) = FUNDEF_VARNO (arg_node);
 
     wlf_mode = wlfm_search_WL;
     if (FUNDEF_BODY (arg_node)) {
@@ -1475,7 +1310,6 @@ SSAWLFfundef (node *arg_node, node *arg_info)
  *   set arg_info to remember this N_assign node.
  *
  ******************************************************************************/
-
 node *
 SSAWLFassign (node *arg_node, node *arg_info)
 {
@@ -1613,9 +1447,7 @@ SSAWLFid (node *arg_node, node *arg_info)
     node *substn, *coden, *vectorn, *argsn, *letn, *subst_wl_partn, *subst_header;
     node *old_arg_info_assign, *arrayn;
     ids *subst_wl_ids, *_ids;
-    int count, varno;
-    char *new_name;
-    renaming_type *ren;
+    int count;
     shpseg *shpseg;
 
     DBUG_ENTER ("SSAWLFid");
@@ -1649,28 +1481,11 @@ SSAWLFid (node *arg_node, node *arg_info)
             /* First store the C_EXPR in INFO_WLI_NEW_ID. Usage: see WLFassign.
                It might happen that this C_EXPR in the substn will be renamed when
                loops surround the WL. Then we have to rename the C_EXPR, too. */
-            renaming = NULL; /* Used by AddRen(), SearchRen() */
             coden = INFO_WLI_SUBST (arg_info);
-            varno = ID_VARNO (NCODE_CEXPR (coden));
-#if 0
-      if (target_mask[varno]) { /* target_mask was initialized before Fold() */
 
-        /* build new variable */
-        new_name = TmpVarName( ID_NAME( NCODE_CEXPR( coden)));
-        ren = AddRen( ID_VARDEC( NCODE_CEXPR( coden)), new_name,
-                      ID_TYPE( NCODE_CEXPR( coden)), arg_info, 1);
-        INFO_WLI_NEW_ID( arg_info) = MakeId( new_name, NULL, ST_regular);
-        ID_VARDEC(INFO_WLI_NEW_ID(arg_info)) = ren->vardec;
-
-      }
-      else {
-#endif
             /* keep original name */
             INFO_WLI_NEW_ID (arg_info) = DupTree (NCODE_CEXPR (coden));
 
-#if 0
-      }
-#endif
             /* Create substitution code. */
             if (N_empty == NODE_TYPE (NCODE_CBLOCK_INSTR (coden))) {
                 substn = NULL;
@@ -1704,10 +1519,6 @@ SSAWLFid (node *arg_node, node *arg_info)
                      but I guess that would cost more time than speculatively inserting
                      (and DC-removing) some new variables. */
 
-#if 0
-        if (!NCODE_USEMASK(coden) /* mask does not exist */ ||
-            NCODE_USEMASK(coden)[IDS_VARNO(subst_wl_ids)]) {
-#endif
                 arrayn = MakeArray (MakeExprs (MakeNum (count), NULL));
                 ARRAY_ISCONST (arrayn) = TRUE;
                 ARRAY_VECTYPE (arrayn) = T_int;
@@ -1719,28 +1530,12 @@ SSAWLFid (node *arg_node, node *arg_info)
                 ARRAY_TYPE (arrayn) = MakeTypes (T_int, 1, shpseg, NULL, NULL);
                 argsn = MakeExprs (arrayn, MakeExprs (DupTree (vectorn), NULL));
 
-                /* maybe the index scalar variable of the subst wl has to be renamed */
-#if 0
-          if (target_mask[IDS_VARNO(subst_wl_ids)]) { 
-            new_name = TmpVarName(IDS_NAME(subst_wl_ids));
-            ren = AddRen(IDS_VARDEC(subst_wl_ids), new_name,
-                         IDS_TYPE(subst_wl_ids), arg_info, 0);
-            _ids = MakeIds(new_name, NULL, ST_regular);
-            IDS_VARDEC(_ids) = ren->vardec;
-          }
-          else {
-            /* keep original name */
-#endif
+                /* keep original name */
                 _ids = DupOneIds (subst_wl_ids);
-#if 0
-          }
-#endif
+
                 letn = MakeLet (MakePrf (F_psi, argsn), _ids);
                 subst_header = MakeAssign (letn, subst_header);
 
-#if 0
-        }
-#endif
                 count++;
                 subst_wl_ids = IDS_NEXT (subst_wl_ids);
             }
@@ -1748,30 +1543,10 @@ SSAWLFid (node *arg_node, node *arg_info)
             /* now add "iv = sel" (see example above) */
             subst_wl_ids = NPART_VEC (subst_wl_partn);
 
-#if 0
-      if (!NCODE_USEMASK(coden) /* mask does not exist */ ||
-          NCODE_USEMASK(coden)[IDS_VARNO(subst_wl_ids)]) {
-        /* maybe the index vector variable of the subst wl has to be renamed */
-        if (target_mask[IDS_VARNO(subst_wl_ids)]) { 
-          new_name = TmpVarName(IDS_NAME(subst_wl_ids));
-          ren = AddRen(IDS_VARDEC(subst_wl_ids), new_name,
-                       IDS_TYPE(subst_wl_ids), arg_info, 0);
-          _ids = MakeIds(new_name, NULL, ST_regular);
-          IDS_VARDEC(_ids) = ren->vardec;
-        }
-        else {
-          /* keep original name */
-#endif
             _ids = DupOneIds (subst_wl_ids);
 
-#if 0
-        }
-#endif
             letn = MakeLet (DupTree (vectorn), _ids);
             subst_header = MakeAssign (letn, subst_header);
-#if 0
-      }
-#endif
 
             /* trav subst code with wlfm_rename to solve name clashes. */
             if (substn) {
@@ -1779,7 +1554,6 @@ SSAWLFid (node *arg_node, node *arg_info)
                 old_arg_info_assign = INFO_WLI_ASSIGN (arg_info); /* save arg_info */
                 substn = Trav (substn, arg_info);
                 INFO_WLI_ASSIGN (arg_info) = old_arg_info_assign;
-                FreeRen (); /* set list free (created in wlfm_rename) */
                 wlf_mode = wlfm_replace;
             }
 
@@ -1800,27 +1574,6 @@ SSAWLFid (node *arg_node, node *arg_info)
         break;
 
     case wlfm_rename:
-#if 0
-    varno = ID_VARNO(arg_node);
-    ren = SearchRen(ID_NAME(arg_node));
-    if (ren ||
-        (varno != -1 && target_mask[varno] != subst_mask[varno])) {
-      /* we have to solve a name clash. */
-      if (ren) {
-        new_name = StringCopy(ren->new);
-      }
-      else {
-        new_name = TmpVarName(ID_NAME(arg_node));
-        /* Get vardec's name because ID_NAME will be deleted soon. */
-        ren = AddRen(ID_VARDEC(arg_node), new_name,
-                     ID_TYPE(arg_node), arg_info, 1);
-      }
-      /* replace old name now. */
-      ID_NAME(arg_node) = Free(ID_NAME(arg_node));
-      ID_NAME(arg_node) = new_name;
-      ID_VARDEC(arg_node) = ren->vardec;
-    }
-#endif
         break;
 
     default:
@@ -1844,14 +1597,12 @@ node *
 SSAWLFlet (node *arg_node, node *arg_info)
 {
     node *prfn, *idn, *targetwln, *substwln;
-    char *new_name;
-    renaming_type *ren;
-    int varno;
     index_info *transformation;
 
     DBUG_ENTER ("SSAWLFlet");
 
     switch (wlf_mode) {
+    case wlfm_rename:
     case wlfm_search_WL:
     case wlfm_replace:
         LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
@@ -1875,11 +1626,6 @@ SSAWLFlet (node *arg_node, node *arg_info)
             substwln = LET_EXPR (ASSIGN_INSTR (ID_WL (idn)));
             targetwln = INFO_WLI_WL (arg_info);
 
-#if 0
-      target_mask = ASSIGN_MRDMASK(INFO_WLI_ASSIGN(arg_info));
-      subst_mask  = ASSIGN_MRDMASK(ID_WL(idn));
-#endif
-
             /* We just traversed the original code in the wlfm_search_ref phase, so
                ASSIGN_INDEX provides the correct index_info.*/
             transformation = SSAINDEX (INFO_WLI_ASSIGN (arg_info));
@@ -1897,29 +1643,6 @@ SSAWLFlet (node *arg_node, node *arg_info)
             INFO_WLI_NCA (arg_info) = NULL;
         }
 
-        break;
-
-    case wlfm_rename:
-        LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
-        varno = IDS_VARNO (LET_IDS (arg_node));
-#if 0
-    if (varno != -1 && target_mask[varno]) {
-      /* we have to solve a name clash. */
-      ren = SearchRen(IDS_NAME(LET_IDS(arg_node)));
-      if (ren) {
-        new_name = StringCopy(ren->new);
-      }
-      else {
-        new_name = TmpVarName(IDS_NAME(LET_IDS(arg_node)));
-        ren = AddRen(IDS_VARDEC(LET_IDS(arg_node)), new_name,
-                     IDS_TYPE(LET_IDS(arg_node)), arg_info, 0);
-      }
-      /* replace old name now. */
-      FreeAllIds(LET_IDS(arg_node));
-      LET_IDS(arg_node) = MakeIds(new_name, NULL, ST_regular);
-      IDS_VARDEC(LET_IDS(arg_node)) = ren->vardec;
-    }
-#endif
         break;
 
     default:
