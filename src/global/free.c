@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.76  1998/11/10 10:32:09  sbs
+ * CHECK_NULL inserted in DBUG_PRINT("FREE"..) in FreeArg.
+ *
  * Revision 1.75  1998/08/11 12:08:27  dkr
  * FreeWLsegVar changed
  *
@@ -880,7 +883,9 @@ FreeArg (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("FreeArg");
 
-    DBUG_PRINT ("FREE", ("Removing contents of N_arg node %s ...", ARG_NAME (arg_node)));
+    DBUG_PRINT ("FREE", ("Removing contents of N_arg node %s ...",
+                         CHECK_NULL (ARG_NAME (arg_node))));
+    /* ARG_NAME(arg_node) may be NULL in external decls! */
 
     tmp = FREECONT (ARG_NEXT (arg_node));
 
