@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.17  1995/03/07 10:04:45  asi
+ * Revision 1.18  1995/03/13 17:11:38  asi
+ * added extern var optimize
+ *
+ * Revision 1.17  1995/03/07  10:04:45  asi
  * added OPTwith and PrintMasks
  *
  * Revision 1.16  1995/02/28  18:28:51  asi
@@ -72,6 +75,7 @@
  */
 extern int opt_dcr;
 extern int opt_cf;
+extern int optimize;
 /* main.c end */
 
 extern int dead_expr;
