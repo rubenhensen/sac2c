@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2002/09/09 19:08:33  dkr
+ * prf_name_str modified
+ *
  * Revision 3.8  2002/09/09 17:30:59  dkr
  * comment about prf categories removed
  *
@@ -42,31 +45,31 @@
 
 /*  node_name           mdb_prf[]         prf_string[]    prf_name_str[]  */
 
-PRF_IF (F_toi, "F_foi", "toi", "toi", NTCPRF_dummy),
-  PRF_IF (F_toi_A, "F_toi_A", "toi", "toi", NTCPRF_dummy),
-  PRF_IF (F_tof, "F_fof", "tof", "tof", NTCPRF_dummy),
-  PRF_IF (F_tof_A, "F_tof_A", "tof", "tof", NTCPRF_dummy),
-  PRF_IF (F_tod, "F_fod", "tod", "tod", NTCPRF_dummy),
-  PRF_IF (F_tod_A, "F_tod_A", "tod", "tod", NTCPRF_dummy),
+PRF_IF (F_toi, "F_foi", "toi", "_toi_", NTCPRF_dummy),
+  PRF_IF (F_toi_A, "F_toi_A", "toi", "_toi_A_", NTCPRF_dummy),
+  PRF_IF (F_tof, "F_fof", "tof", "_tof_", NTCPRF_dummy),
+  PRF_IF (F_tof_A, "F_tof_A", "tof", "_tof_A_", NTCPRF_dummy),
+  PRF_IF (F_tod, "F_fod", "tod", "_tod_", NTCPRF_dummy),
+  PRF_IF (F_tod_A, "F_tod_A", "tod", "_tod_A_", NTCPRF_dummy),
 
-  PRF_IF (F_abs, "F_abs", "abs", "abs", NTCPRF_dummy),
-  PRF_IF (F_not, "F_not", "!", "_not", NTCPRF_dummy),
+  PRF_IF (F_abs, "F_abs", "abs", "_abs_", NTCPRF_dummy),
+  PRF_IF (F_not, "F_not", "!", "_not_", NTCPRF_dummy),
 
-  PRF_IF (F_min, "F_min", "min", "min", NTCPRF_ari_op_AxA),
-  PRF_IF (F_max, "F_max", "max", "max", NTCPRF_ari_op_AxA),
-  PRF_IF (F_mod, "F_mod", "%", "_mod", NTCPRF_int_op_SxS),
-  PRF_IF (F_and, "F_and", "&&", "_and", NTCPRF_log_op_AxA),
-  PRF_IF (F_or, "F_or", "||", "_or", NTCPRF_log_op_AxA),
-  PRF_IF (F_le, "F_le", "<=", "_le", NTCPRF_rel_op_AxA),
-  PRF_IF (F_lt, "F_lt", "<", "_lt", NTCPRF_rel_op_AxA),
-  PRF_IF (F_eq, "F_eq", "==", "_eq", NTCPRF_rel_op_AxA),
-  PRF_IF (F_ge, "F_ge", ">=", "_ge", NTCPRF_rel_op_AxA),
-  PRF_IF (F_gt, "F_gt", ">", "_gt", NTCPRF_rel_op_AxA),
-  PRF_IF (F_neq, "F_neq", "!=", "_neq", NTCPRF_rel_op_AxA),
+  PRF_IF (F_min, "F_min", "min", "_min_", NTCPRF_ari_op_AxA),
+  PRF_IF (F_max, "F_max", "max", "_max_", NTCPRF_ari_op_AxA),
+  PRF_IF (F_mod, "F_mod", "%", "_mod_", NTCPRF_int_op_SxS),
+  PRF_IF (F_and, "F_and", "&&", "_and_", NTCPRF_log_op_AxA),
+  PRF_IF (F_or, "F_or", "||", "_or_", NTCPRF_log_op_AxA),
+  PRF_IF (F_le, "F_le", "<=", "_le_", NTCPRF_rel_op_AxA),
+  PRF_IF (F_lt, "F_lt", "<", "_lt_", NTCPRF_rel_op_AxA),
+  PRF_IF (F_eq, "F_eq", "==", "_eq_", NTCPRF_rel_op_AxA),
+  PRF_IF (F_ge, "F_ge", ">=", "_ge_", NTCPRF_rel_op_AxA),
+  PRF_IF (F_gt, "F_gt", ">", "_gt_", NTCPRF_rel_op_AxA),
+  PRF_IF (F_neq, "F_neq", "!=", "_neq_", NTCPRF_rel_op_AxA),
 
-  PRF_IF (F_dim, "F_dim", "dim", "dim", NTCPRF_dim),
-  PRF_IF (F_shape, "F_shape", "shape", "shape", NTCPRF_shape),
-  PRF_IF (F_reshape, "F_reshape", "reshape", "reshape", NTCPRF_reshape),
+  PRF_IF (F_dim, "F_dim", "dim", "_dim_", NTCPRF_dim),
+  PRF_IF (F_shape, "F_shape", "shape", "_shape_", NTCPRF_shape),
+  PRF_IF (F_reshape, "F_reshape", "reshape", "_reshape_", NTCPRF_reshape),
   PRF_IF (F_add_SxS, "F_add_SxS", "+", "_add_SxS_", NTCPRF_ari_op_SxS),
   PRF_IF (F_add_SxA, "F_add_SxA", "+", "_add_SxA_", NTCPRF_ari_op_SxA),
   PRF_IF (F_add_AxS, "F_add_AxS", "+", "_add_AxS_", NTCPRF_ari_op_AxS),
@@ -83,20 +86,21 @@ PRF_IF (F_toi, "F_foi", "toi", "toi", NTCPRF_dummy),
   PRF_IF (F_div_SxA, "F_div_SxA", "/", "_div_SxA_", NTCPRF_ari_op_SxA),
   PRF_IF (F_div_AxS, "F_div_AxS", "/", "_div_AxS_", NTCPRF_ari_op_AxS),
   PRF_IF (F_div_AxA, "F_div_AxA", "/", "_div_AxA_", NTCPRF_ari_op_AxA),
-  PRF_IF (F_idx_sel, "F_idx_sel", "idx_sel", "idx_sel", NTCPRF_dummy),
-  PRF_IF (F_idx_modarray, "F_idx_modarray", "idx_modarray", "idx_modarray", NTCPRF_dummy),
-  PRF_IF (F_sel, "F_sel", "sel", "sel", NTCPRF_selS),
-  PRF_IF (F_modarray, "F_modarray", "modarray", "modarray", NTCPRF_modarrayS),
-  PRF_IF (F_genarray, "F_genarray", "genarray", "genarray", NTCPRF_dummy),
+  PRF_IF (F_idx_sel, "F_idx_sel", "idx_sel", "_idx_sel_", NTCPRF_dummy),
+  PRF_IF (F_idx_modarray, "F_idx_modarray", "idx_modarray", "_idx_modarray_",
+          NTCPRF_dummy),
+  PRF_IF (F_sel, "F_sel", "sel", "_sel_", NTCPRF_selS),
+  PRF_IF (F_modarray, "F_modarray", "modarray", "_modarray_", NTCPRF_modarrayS),
+  PRF_IF (F_genarray, "F_genarray", "genarray", "_genarray_", NTCPRF_dummy),
 
-  PRF_IF (F_add, "F_add", "+", "_add", NTCPRF_dummy),
-  PRF_IF (F_sub, "F_sub", "-", "_sub", NTCPRF_dummy),
-  PRF_IF (F_mul, "F_mul", "*", "_mul", NTCPRF_dummy),
-  PRF_IF (F_div, "F_div", "/", "_div", NTCPRF_dummy),
+  PRF_IF (F_add, "F_add", "+", "_add_", NTCPRF_dummy),
+  PRF_IF (F_sub, "F_sub", "-", "_sub_", NTCPRF_dummy),
+  PRF_IF (F_mul, "F_mul", "*", "_mul_", NTCPRF_dummy),
+  PRF_IF (F_div, "F_div", "/", "_div_", NTCPRF_dummy),
 
-  PRF_IF (F_take, "F_take", "take", "take", NTCPRF_dummy),
-  PRF_IF (F_drop, "F_drop", "drop", "drop", NTCPRF_dummy),
-  PRF_IF (F_cat, "F_cat", "cat", "cat", NTCPRF_dummy),
-  PRF_IF (F_rotate, "F_rotate", "rotate", "rotate", NTCPRF_dummy),
+  PRF_IF (F_take, "F_take", "take", "_take_", NTCPRF_dummy),
+  PRF_IF (F_drop, "F_drop", "drop", "_drop_", NTCPRF_dummy),
+  PRF_IF (F_cat, "F_cat", "cat", "_cat_", NTCPRF_dummy),
+  PRF_IF (F_rotate, "F_rotate", "rotate", "_rotate_", NTCPRF_dummy),
 
-  PRF_IF (F_type_error, "F_type_error", "_type_error", "_type_error", NTCPRF_dummy)
+  PRF_IF (F_type_error, "F_type_error", "type_error", "_type_error_", NTCPRF_dummy)
