@@ -124,7 +124,6 @@ MakeAssignNode (node *newnode, node *arg_info)
 
     VARDEC_OBJDEF (newvardec) = newnode;
     AVIS_SSAASSIGN (VARDEC_AVIS (newvardec)) = newnode;
-    AVIS_SSAASSIGN2 (VARDEC_AVIS (newvardec)) = newnode;
 
     DBUG_RETURN (newnode);
 }

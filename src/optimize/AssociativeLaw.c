@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.22  2004/02/06 14:19:33  mwe
+ * remove ASSIGN2
+ *
  * Revision 1.21  2003/07/31 16:36:39  mwe
  * some changes regarding to array support
  *
@@ -653,7 +656,6 @@ MakeAssignNodeFromCurrentNode (node *newnode, node *arg_info, int dim)
 
     VARDEC_OBJDEF (newvardec) = newnode;
     AVIS_SSAASSIGN (VARDEC_AVIS (newvardec)) = newnode;
-    AVIS_SSAASSIGN2 (VARDEC_AVIS (newvardec)) = newnode;
 
     DBUG_RETURN (newnode);
 }
