@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2001/04/04 19:41:13  dkr
+ * uups, typo corrected :-/
+ *
  * Revision 1.6  2001/04/04 19:40:16  dkr
  * warning about out-vars in with-loop replaced by a DBUG_PRINT
  *
@@ -1022,7 +1025,7 @@ INFDFMSwith (node *arg_node, node *arg_info)
 #if 0
     WARN( NODE_LINE( arg_node), ("with-loop with out-vars detected"));
 #else
-        DBUG_PRINT ("INFDFMS", "with-loop with out-vars detected!");
+        DBUG_PRINT ("INFDFMS", ("with-loop with out-vars detected!"));
 #endif
     }
 
