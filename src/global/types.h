@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.14  1999/06/25 14:50:36  rob
+ * Introduce definitions and utility infrastructure for tagged array support.
+ *
  * Revision 2.13  1999/06/09 13:56:43  jhs
  * Added new variable naive_refcnt in ids.
  *
@@ -621,5 +624,47 @@ typedef struct INTERN_GEN {
     node *code;
     struct INTERN_GEN *next;
 } intern_gen;
+
+/*
+ * This section defines types for tagged array support
+ */
+
+/*
+ * Enumerated types for DATA class and uniqueness class
+ */
+
+#define ATTRIB 1
+#define NTIF(type, str) type
+
+typedef enum {
+#include "nt_info.mac"
+} data_class_t;
+
+#undef ATTRIB
+#define ATTRIB 2
+
+typedef enum {
+#include "nt_info.mac"
+} uniqueness_class_t;
+
+#undef NTIF
+#undef ATTRIB
+
+/*
+ * The following defines indicate the position of tags
+ * within name tuples. They should be kept in synch with the
+ * NAME_NAME, NAME_CLASS and NAME_UNI macros in sac_std.h
+ */
+
+#define NT_NAME_INDEX 0
+#define NT_CLASS_INDEX 1
+#define NT_UNI_INDEX 2
+
+/*
+ * Number of extra characters needed to turn MyName into a Name Tuple:
+ *  (MyName,(AKS,(NUQ,NIL)))
+ *
+ */
+#define NT_OVERHEAD 18
 
 #endif /* _sac_types_h */

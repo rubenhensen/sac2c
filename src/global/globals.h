@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.11  1999/06/25 14:50:36  rob
+ * Introduce definitions and utility infrastructure for tagged array support.
+ *
  * Revision 2.10  1999/06/11 12:54:04  cg
  * Added global variables csfile and csdir to implement the corresponding
  * sac2c command line arguments.
@@ -272,5 +275,8 @@ extern int function_counter;
 extern deps *dependencies;
 
 extern int indent;
+
+extern char *nt_class_str[];
+extern char *nt_uni_str[];
 
 #endif /* _sac_globals_h */

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/06/25 14:52:25  rob
+ * Introduce definitions and utility infrastructure for tagged array support.
+ *
  * Revision 2.2  1999/06/16 17:11:23  rob
  * Add code for C macros for TAGGED ARRAY support.
  * These are intended to eventually supplant the extant
@@ -37,12 +40,10 @@ extern void ICMCompileND_CREATE_CONST_ARRAY_H (char *name, char *copyfun, int di
                                                char **A);
 extern void ICMCompileND_CREATE_CONST_ARRAY_A (char *name, int length, int dim, char **s);
 #ifdef TAGGED_ARRAYS
-extern void ICMCompileND_DECL_DATA (char *type, char *nt, int dim, char **s);
-extern void ICMCompileND_DECL_DATA_AKS_NUQ (char *type, char *nt, int dim, char **s);
-extern void ICMCompileND_DECL_DATA_AKS_UNQ (char *type, char *nt, int dim, char **s);
-#else
+extern void ICMCompileND_DECL_AKS (char *type, char *nt, int dim, char **s);
+#else  /* TAGGED_ARRAYS */
 extern void ICMCompileND_KS_DECL_ARRAY (char *type, char *name, int dim, char **s);
-#endif
+#endif /* TAGGED_ARRAYS */
 extern void ICMCompileND_KS_DECL_GLOBAL_ARRAY (char *type, char *name, int dim, char **s);
 extern void ICMCompileND_KD_DECL_EXTERN_ARRAY (char *basetype, char *name, int dim);
 extern void ICMCompileND_KS_DECL_ARRAY_ARG (char *name, int dim, char **s);

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.11  1999/06/25 14:50:36  rob
+ * Introduce definitions and utility infrastructure for tagged array support.
+ *
  * Revision 2.10  1999/06/11 12:54:04  cg
  * Added global variables csfile and csdir to implement the corresponding
  * sac2c command line arguments.
@@ -528,3 +531,25 @@ int indent = 0;
  *  It has to be made global since printing is not only done in the printing-
  *  directory but from within icm2c_xxx.c as well!
  */
+
+/*
+ * These character arrays are the macro-name-parts used to select
+ * array class and array uniqueness properties.
+ * See NT_NAME_CLASS_INDEX and NT_UNI_CLASS_INDEX in types.h
+ */
+#define NTIF(type, str) str
+#define ATTRIB 1
+
+char *nt_class_str[] = {
+#include "nt_info.mac"
+};
+#undef ATTRIB 1
+
+#define ATTRIB 2
+
+char *nt_uni_str[] = {
+#include "nt_info.mac"
+};
+
+#undef ATTRIB
+#undef NTIF

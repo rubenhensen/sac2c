@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/06/25 14:52:25  rob
+ * Introduce definitions and utility infrastructure for tagged array support.
+ *
  * Revision 2.1  1999/02/23 12:42:54  sacbase
  * new release made
  *
@@ -117,6 +120,18 @@ extern node *PRECsync (node *arg_node, node *arg_info);
 extern node *PRECWLseg (node *arg_node, node *arg_info);
 extern node *PRECWLsegVar (node *arg_node, node *arg_info);
 
+#ifdef TAGGED_ARRAYS
+
+extern char *PRECRenameLocalIdentifier (char *id, data_class_t d_class,
+                                        uniqueness_class_t u_class);
+
+extern uniqueness_class_t GetUniFromTypes (types *typ);
+extern data_class_t GetClassFromTypes (types *typ);
+
+#else /* TAGGED_ARRAYS */
+
 extern char *PRECRenameLocalIdentifier (char *id);
+
+#endif /* TAGGED_ARRAYS */
 
 #endif /* _sac_precompile_h */

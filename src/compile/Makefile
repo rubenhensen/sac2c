@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.7  1999/06/25 14:54:35  rob
+# Introduce definitions and utility infrastructure for tagged array support.
+#
 # Revision 2.6  1999/06/16 17:21:37  rob
 # Add support for TAGGED_ARRAYS.
 #
@@ -383,18 +386,18 @@ icm2c_std.o: /usr/include/sys/isa_defs.h /usr/include/sys/feature_tests.h
 icm2c_std.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
 icm2c_std.o: /usr/include/stdio.h /usr/include/sys/va_list.h
 icm2c_std.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-icm2c_std.o: /usr/include/ctype.h icm2c_basic.h icm2c_utils.h
+icm2c_std.o: /usr/include/ctype.h icm2c_basic.h icm2c_std.h ../global/types.h
 icm2c_std.o: ../../inc/dbug.h ../global/my_debug.h ../print/convert.h
-icm2c_std.o: ../global/types.h ../global/globals.h ../print/print.h
-icm2c_std.o: ../global/tree.h ../global/tree_basic.h
-icm2c_std.o: ../global/tree_compound.h ../global/Error.h
-icm2c_std.o: /usr/include/string.h /usr/include/stdlib.h
+icm2c_std.o: ../global/globals.h ../print/print.h ../global/tree.h
+icm2c_std.o: ../global/tree_basic.h ../global/tree_compound.h
+icm2c_std.o: ../global/Error.h /usr/include/string.h /usr/include/stdlib.h
 icm2c_std.o: ../global/internal_lib.h gen_startup_code.h icm_comment.c
 icm2c_std.o: icm.data icm_trace.c
-icm2c_utils.o: icm2c_utils.h ../../inc/dbug.h /usr/include/stdio.h
-icm2c_utils.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
+icm2c_utils.o: /usr/include/string.h /usr/include/sys/feature_tests.h
+icm2c_utils.o: /usr/include/sys/isa_defs.h ../global/globals.h
+icm2c_utils.o: ../global/types.h /usr/include/stdio.h
 icm2c_utils.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-icm2c_utils.o: /usr/include/stdio_impl.h /usr/include/string.h
+icm2c_utils.o: /usr/include/stdio_impl.h icm2c_utils.h ../../inc/dbug.h
 icm2c_wl.o: /usr/include/malloc.h /usr/include/sys/types.h
 icm2c_wl.o: /usr/include/sys/isa_defs.h /usr/include/sys/feature_tests.h
 icm2c_wl.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
@@ -411,7 +414,7 @@ icm_comment.o: icm.data
 icm_icm2c.o: icm.data
 icm_trace.o: icm.data
 icm_vars.o: icm.data
-precompile.o: ../global/tree.h ../global/types.h ../global/tree_basic.h
+precompile.o: ../global/types.h ../global/tree.h ../global/tree_basic.h
 precompile.o: ../global/tree_compound.h ../global/Error.h
 precompile.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 precompile.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
@@ -420,7 +423,7 @@ precompile.o: /usr/include/string.h /usr/include/stdlib.h ../global/globals.h
 precompile.o: ../global/internal_lib.h ../global/free.h ../../inc/dbug.h
 precompile.o: ../global/my_debug.h /usr/include/malloc.h
 precompile.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
-precompile.o: /usr/include/sys/int_types.h ../print/convert.h
+precompile.o: /usr/include/sys/int_types.h precompile.h ../print/convert.h
 precompile.o: ../global/traverse.h ../refcount/refcount.h
 precompile.o: ../optimize/DataFlowMask.h ../concurrent/scheduling.h
 precompile.o: ../optimize/DupTree.h ../typecheck/typecheck.h

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.5  1999/06/25 14:52:25  rob
+ * Introduce definitions and utility infrastructure for tagged array support.
+ *
  * Revision 2.4  1999/06/16 17:10:15  rob
  * add new C macros for TAGGED_ARRAYS.
  *
@@ -138,32 +141,15 @@ ICM_END( ND_CREATE_CONST_ARRAY_A, (name, length, dim, A))
 #endif
 
 #ifdef TAGGED_ARRAYS 
-#if defined(ND_DECL_DATA) || defined(ICM_ALL)
-ICM_DEF( ND_DECL_DATA, TRACE_NONE)
+#if defined(ND_DECL_AKS) || defined(ICM_ALL)
+ICM_DEF( ND_DECL_AKS, TRACE_NONE)
   ICM_STR(type)
   ICM_STR(nt)
   ICM_INT(dim)
   ICM_VAR( dim, s)
-ICM_END( ND_DECL_DATA, (type, nt, dim, s) )
+ICM_END( ND_DECL_AKS, (type, nt, dim, s) )
 #endif
 
-#if defined(ND_DECL_DATA_AKS_NUQ) || defined(ICM_ALL)
-ICM_DEF( ND_DECL_DATA_AKS_NUQ, TRACE_NONE)
-  ICM_STR(type)
-  ICM_STR(nt)
-  ICM_INT(dim)
-  ICM_VAR( dim, s)
-ICM_END( ND_DECL_DATA_AKS_NUQ, (type, nt, dim, s) )
-#endif
-
-#if defined(ND_DECL_DATA_AKS_UNQ) || defined(ICM_ALL)
-ICM_DEF( ND_DECL_DATA_AKS_UNQ, TRACE_NONE)
-  ICM_STR(type)
-  ICM_STR(nt)
-  ICM_INT(dim)
-  ICM_VAR( dim, s)
-ICM_END( ND_DECL_DATA_AKS_UNQ, (type, nt, dim, s) )
-#endif
 
 #else  /* TAGGED_ARRAYS */
 
