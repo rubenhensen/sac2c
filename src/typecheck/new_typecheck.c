@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.21  2002/09/11 23:16:48  dkr
+ * prf_name_string replaced by prf_string
+ *
  * Revision 3.20  2002/09/09 19:39:15  dkr
  * prf_name_str renamed into prf_name_string
  *
@@ -967,7 +970,7 @@ NTCprf (node *arg_node, node *arg_info)
     INFO_NTC_TYPE (arg_info) = NULL;
 
     prf = PRF_PRF (arg_node);
-    info = TEMakeInfo (linenum, "prf", prf_name_string[prf], NULL, NULL);
+    info = TEMakeInfo (linenum, "prf", prf_string[prf], NULL, NULL);
     res = NTCCTComputeType (NTCPRF_funtab[prf], info, args);
 
     TYFreeType (args);
