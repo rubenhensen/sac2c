@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.8  1995/06/26 11:49:48  asi
+ * Revision 1.9  1995/06/26 16:23:39  asi
+ * some macros moved from .c file to .h file
+ *
+ * Revision 1.8  1995/06/26  11:49:48  asi
  * functions for stack-handling added
  *
  * Revision 1.7  1995/06/20  15:50:30  asi
@@ -33,9 +36,6 @@
 
 #define _ConstantFolding_h
 
-#define TOS cf_stack->stack[cf_stack->tos]
-#define VAR(i) TOS.varlist[i]
-
 typedef struct STELM {
     int vl_len;
     node **varlist;
@@ -47,7 +47,13 @@ typedef struct STACK {
     stelm *stack;
 } stack;
 
-extern stack *cf_stack;
+#define MIN_STACK_SIZE 50
+
+stack *def_stack;
+
+#define TOS def_stack->stack[def_stack->tos]
+#define VAR(i) TOS.varlist[i]
+
 extern void PushVL (long NumVar);
 extern void PushDupVL ();
 extern void PopVL ();

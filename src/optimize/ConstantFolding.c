@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.27  1995/06/26 15:39:16  asi
+ * Revision 1.28  1995/06/26 16:23:39  asi
+ * some macros moved from .c file to .h file
+ *
+ * Revision 1.27  1995/06/26  15:39:16  asi
  * Unrolling handeled as independent optimization now
  *
  * Revision 1.26  1995/06/26  11:49:48  asi
@@ -118,13 +121,6 @@ extern char filename[]; /* is set temporary; will be set later on in main.c */
 #define TRUE 1
 #define MAXARG 3
 
-#define MIN_STACK_SIZE 50
-
-stack *cf_stack;
-
-#define TOS cf_stack->stack[cf_stack->tos]
-#define VAR(i) TOS.varlist[i]
-
 /*
  *  This macros secects the right element out of the union info
  */
@@ -147,12 +143,12 @@ void
 CheckStack (stack *my_stack)
 {
     DBUG_ENTER ("CheckStack");
-    if (cf_stack->tos == ((cf_stack->st_len) - 1)) {
-        cf_stack->stack
-          = realloc (cf_stack->stack, (sizeof (stelm) * (2 * cf_stack->st_len)));
-        if (NULL == cf_stack->stack)
+    if (def_stack->tos == ((def_stack->st_len) - 1)) {
+        def_stack->stack
+          = realloc (def_stack->stack, (sizeof (stelm) * (2 * def_stack->st_len)));
+        if (NULL == def_stack->stack)
             Error ("out of memory", 1);
-        cf_stack->st_len *= 2;
+        def_stack->st_len *= 2;
     }
     DBUG_VOID_RETURN;
 }
@@ -161,11 +157,11 @@ CheckStack (stack *my_stack)
  *
  *  functionname  : PushVL
  *  arguments     : 1) number of variables in new list
- *  description   : a new entry will be pushed on the cf_stack. The entry is a pointer
+ *  description   : a new entry will be pushed on the def_stack. The entry is a pointer
  *		    to an array with size NumVar. The elements of the array are pointers
  *		    to the last expression the variable is set to in control-flow
  *		    direction.
- *  global vars   : cf_stack
+ *  global vars   : def_stack
  *  internal funs : --
  *  external funs : Error, MAlloc
  *  macros        : DBUG...
@@ -180,13 +176,13 @@ PushVL (long NumVar)
 
     DBUG_ENTER ("PushVL");
     DBUG_PRINT ("STACK",
-                ("Push Stack TOS = %d -> %d", cf_stack->tos, (cf_stack->tos) + 1));
-    cf_stack->stack[++cf_stack->tos].varlist
+                ("Push Stack TOS = %d -> %d", def_stack->tos, (def_stack->tos) + 1));
+    def_stack->stack[++def_stack->tos].varlist
       = (node **)MAlloc (sizeof (node *) * (NumVar + 1));
-    cf_stack->stack[cf_stack->tos].vl_len = NumVar;
+    def_stack->stack[def_stack->tos].vl_len = NumVar;
     for (i = 0; i < NumVar; i++)
-        cf_stack->stack[cf_stack->tos].varlist[i] = NULL;
-    CheckStack (cf_stack);
+        def_stack->stack[def_stack->tos].varlist[i] = NULL;
+    CheckStack (def_stack);
     DBUG_VOID_RETURN;
 }
 
@@ -194,8 +190,8 @@ PushVL (long NumVar)
  *
  *  functionname  : PushDupVL
  *  arguments     : --
- *  description   : Duplicates the top entry of the cf_stack
- *  global vars   : cf_stack
+ *  description   : Duplicates the top entry of the def_stack
+ *  global vars   : def_stack
  *  internal funs : --
  *  external funs : MAlloc
  *  macros        : DBUG...
@@ -210,15 +206,15 @@ PushDupVL ()
 
     DBUG_ENTER ("PushDupVL");
     DBUG_PRINT ("STACK",
-                ("Dup Stack TOS = %d -> %d", cf_stack->tos, (cf_stack->tos) + 1));
-    NumVar = cf_stack->stack[cf_stack->tos].vl_len;
-    cf_stack->stack[++cf_stack->tos].varlist
+                ("Dup Stack TOS = %d -> %d", def_stack->tos, (def_stack->tos) + 1));
+    NumVar = def_stack->stack[def_stack->tos].vl_len;
+    def_stack->stack[++def_stack->tos].varlist
       = (node **)MAlloc (sizeof (node *) * (NumVar + 1));
     for (i = 0; i < NumVar; i++)
-        cf_stack->stack[cf_stack->tos].varlist[i]
-          = cf_stack->stack[cf_stack->tos - 1].varlist[i];
-    cf_stack->stack[cf_stack->tos].vl_len = cf_stack->stack[cf_stack->tos - 1].vl_len;
-    CheckStack (cf_stack);
+        def_stack->stack[def_stack->tos].varlist[i]
+          = def_stack->stack[def_stack->tos - 1].varlist[i];
+    def_stack->stack[def_stack->tos].vl_len = def_stack->stack[def_stack->tos - 1].vl_len;
+    CheckStack (def_stack);
     DBUG_VOID_RETURN;
 }
 
@@ -226,8 +222,8 @@ PushDupVL ()
  *
  *  functionname  : PopVL
  *  arguments     : --
- *  description   : The top entry of the cf_stack will be removed
- *  global vars   : cf_stack
+ *  description   : The top entry of the def_stack will be removed
+ *  global vars   : def_stack
  *  internal funs : --
  *  external funs : --
  *  macros        : DBUG...
@@ -239,9 +235,9 @@ void
 PopVL ()
 {
     DBUG_ENTER ("PopVL");
-    DBUG_PRINT ("STACK", ("Pop TOS = %d -> %d", cf_stack->tos, (cf_stack->tos) - 1));
-    FREE (cf_stack->stack[cf_stack->tos].varlist);
-    cf_stack->tos--;
+    DBUG_PRINT ("STACK", ("Pop TOS = %d -> %d", def_stack->tos, (def_stack->tos) - 1));
+    FREE (def_stack->stack[def_stack->tos].varlist);
+    def_stack->tos--;
     DBUG_VOID_RETURN;
 }
 
@@ -250,10 +246,11 @@ PopVL2 ()
 {
     DBUG_ENTER ("PopVL2");
     DBUG_PRINT ("STACK",
-                ("Pop second TOS = %d -> %d", cf_stack->tos, (cf_stack->tos) - 1));
-    FREE (cf_stack->stack[(cf_stack->tos) - 1].varlist);
-    cf_stack->stack[(cf_stack->tos) - 1].varlist = cf_stack->stack[cf_stack->tos].varlist;
-    cf_stack->tos--;
+                ("Pop second TOS = %d -> %d", def_stack->tos, (def_stack->tos) - 1));
+    FREE (def_stack->stack[(def_stack->tos) - 1].varlist);
+    def_stack->stack[(def_stack->tos) - 1].varlist
+      = def_stack->stack[def_stack->tos].varlist;
+    def_stack->tos--;
     DBUG_VOID_RETURN;
 }
 
@@ -264,9 +261,9 @@ PopVL2 ()
  *		    2) NULL
  *                  R) ptr to root of the optimized syntax-tree
  *  description   : initiates constant folding for the intermediate sac-code:
- *		    - the constant-folding stack (cf_stack) will be initialize
+ *		    - the constant-folding stack (def_stack) will be initialize
  *		    - call Trav to start constant-folding
- *  global vars   : syntax_tree, cf_tab, act_tab, cf_stack
+ *  global vars   : syntax_tree, cf_tab, act_tab, def_stack
  *  internal funs : ---
  *  external funs : Trav, MakeNode, MAlloc
  *  macros        : DBUG..., MIN_STACK_SIZE
@@ -281,16 +278,16 @@ ConstantFolding (node *arg_node, node *info_node)
     DBUG_ENTER ("ConstantFolding");
     act_tab = cf_tab;
     info_node = MakeNode (N_info);
-    cf_stack = MAlloc (sizeof (stack));
-    cf_stack->tos = -1;
-    cf_stack->st_len = MIN_STACK_SIZE;
-    cf_stack->stack = (stelm *)MAlloc (sizeof (stelm) * MIN_STACK_SIZE);
+    def_stack = MAlloc (sizeof (stack));
+    def_stack->tos = -1;
+    def_stack->st_len = MIN_STACK_SIZE;
+    def_stack->stack = (stelm *)MAlloc (sizeof (stelm) * MIN_STACK_SIZE);
 
     arg_node = Trav (arg_node, info_node);
 
     FREE (info_node);
-    FREE (cf_stack->stack);
-    FREE (cf_stack);
+    FREE (def_stack->stack);
+    FREE (def_stack);
     DBUG_RETURN (arg_node);
 }
 
@@ -303,14 +300,14 @@ ConstantFolding (node *arg_node, node *info_node)
  *  description   : - generates info_node
  *		    - varno of the info_node will be set to the number of local variables
  *			and arguments in this functions
- *		    - new entry will be pushed on the cf_stack
+ *		    - new entry will be pushed on the def_stack
  *		    - generates two masks and links them to the info_node
  * 			[0] - variables not further defined in function and
  *			[1] - variables not further used in function after c.- f.
  *		    - calls Trav to fold constants in current function
- *		    - last entry will be poped from cf_stack
+ *		    - last entry will be poped from def_stack
  *		    - updates masks in fundef node.
- *  global vars   : syntax_tree, cf_stack
+ *  global vars   : syntax_tree, def_stack
  *  internal funs : PushVL, PopVL
  *  external funs : GenMask, MinusMask, OptTrav
  *  macros        : DBUG...
@@ -323,13 +320,13 @@ CFfundef (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("CFfundef");
 
-    DBUG_PRINT ("OPT", ("Constant folding function: %s", arg_node->info.types->id));
+    DBUG_PRINT ("CF", ("Constant folding function: %s", arg_node->info.types->id));
     VARNO = arg_node->varno;
     PushVL (arg_info->varno);
 
     arg_node = OptTrav (arg_node, arg_info, 0); /* functionbody */
 
-    PopVL (cf_stack);
+    PopVL (def_stack);
 
     arg_node = OptTrav (arg_node, arg_info, 1); /* next function */
     DBUG_RETURN (arg_node);
@@ -395,7 +392,7 @@ IsConst (node *arg_node)
  *		       num-, float-, bool- or array-node.
  *  description   : the id-node will be replaced with a new node reppresenting the
  *                  constant value of the identifikator in this context
- *  global vars   : syntax_tree, info_node, cf_stack
+ *  global vars   : syntax_tree, info_node, def_stack
  *  internal funs :
  *  external funs : DupTree
  *  macros        : DBUG..., TOS
@@ -484,7 +481,7 @@ CFcast (node *arg_node, node *arg_info)
  *                  R) assign-node
  *  description   : - constant folding of the instructions
  *		    - construction of a new assign-list if nessessary
- *  global vars   : syntax_tree, cf_stack, info_node
+ *  global vars   : syntax_tree, def_stack, info_node
  *  internal funs : --
  *  external funs : GenMask, AppendNodeChain, PlusMask, OptTrav, MinusMask
  *  macros        : DBUG..., TOS
@@ -569,7 +566,7 @@ GetType (types *type)
  *		      of the let in the info_node
  *		    - initiates constant folding for the right hand side
  *                  - stack-entry modified for left hand expression
- *  global vars   : syntax_tree, cf_stack, info_node
+ *  global vars   : syntax_tree, def_stack, info_node
  *  internal funs : --
  *  external funs : OptTrav
  *  macros        : DBUG..., VAR
@@ -612,7 +609,7 @@ CFlet (node *arg_node, node *arg_info)
  *                  R) while-node or empty-node
  *  description   : returns empty-node if condition is false otherwise
  *                  constant folding inside while loop with new stack entry
- *  global vars   : syntax_tree, cf_stack, info_node
+ *  global vars   : syntax_tree, def_stack, info_node
  *  internal funs : PushDupVL, PopVL
  *  external funs : MinusMask, PlusMask, FreeTree, ReadMask, OptTrav
  *  macros        : DBUG...,  WARNO, VAR
@@ -679,7 +676,7 @@ CFwhile (node *arg_node, node *arg_info)
  *		    2) info_node
  *		    R) do-node
  *  description   : initiates constant folding inside do-loop with new stack
- *  global vars   : syntax_tree, cf_stack, info_node
+ *  global vars   : syntax_tree, def_stack, info_node
  *  internal funs : PushDupVL, PopVL
  *  external funs : ReadMask, OptTrav, FreeTree
  *  macros        : DBUG..., VAR
@@ -735,7 +732,7 @@ CFdo (node *arg_node, node *arg_info)
  *  description   : initiates constant folding for the conditional, if conditional
  *		    is true or false, return then or else part, otherwise constant
  *		    folding inside the conditional.
- *  global vars   : syntax_tree, info_node, cf_stack
+ *  global vars   : syntax_tree, info_node, def_stack
  *  internal funs : PushDupVL, PopVL
  *  external funs : GenMask, OptTrav, MinusMask, PlusMask, ClearMask, FreeTree
  *  macros        : DBUG...
@@ -1780,7 +1777,7 @@ ArrayPrf (node *arg_node, types *res_type, node *arg_info)
  *		    R) prf-node or calculated constant value
  *  description   : first replace constant values for variables in expression
  *		    then calculate primitive function.
- *  global vars   : syntax_tree, info_node, cf_stack
+ *  global vars   : syntax_tree, info_node, def_stack
  *  internal funs : SkalarPrf, ArrayPrf
  *  external funs : Trav
  *  macros        : DBUG...
