@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2004/06/23 15:44:03  skt
+ * changed MUTH_SINGLE into MUTH_EXCLUSIVE
+ * and MUTH_ONCE into MUTH_SINGLE
+ *
  * Revision 3.2  2004/06/08 14:40:56  skt
  * definition of execution modes added
  *
@@ -34,8 +38,8 @@
 
 /* definition of the execution modes */
 #define MUTH_ANY 0
-#define MUTH_SINGLE 1
-#define MUTH_ONCE 2
+#define MUTH_EXCLUSIVE 1
+#define MUTH_SINGLE 2
 #define MUTH_MULTI 3
 
 extern node *BuildMultiThread (node *syntax_tree);
