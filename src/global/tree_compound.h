@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.25  1999/12/01 15:20:55  dkr
+ * macro VARDEC_OR_ARG_SHPSEG added
+ *
  * Revision 2.24  1999/11/11 20:09:13  dkr
  * function IsConstantArray changed:
  *   new name (IsConstArray)
@@ -651,6 +654,8 @@ extern nodelist *NodeListFind (nodelist *nl, node *node);
 #define VARDEC_OR_ARG_DIM(n) ((NODE_TYPE (n) == N_arg) ? ARG_DIM (n) : VARDEC_DIM (n))
 #define VARDEC_OR_ARG_SHAPE(n, x)                                                        \
     ((NODE_TYPE (n) == N_arg) ? ARG_SHAPE (n, x) : VARDEC_SHAPE (n, x))
+#define VARDEC_OR_ARG_SHPSEG(n)                                                          \
+    ((NODE_TYPE (n) == N_arg) ? ARG_SHPSEG (n) : VARDEC_SHPSEG (n))
 #define VARDEC_OR_ARG_VARNO(n)                                                           \
     ((NODE_TYPE (n) == N_arg) ? ARG_VARNO (n) : VARDEC_VARNO (n))
 #define VARDEC_OR_ARG_REFCNT(n)                                                          \
