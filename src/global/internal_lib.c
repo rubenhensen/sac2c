@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.10  1999/07/20 11:48:29  cg
+ * Definition (!) of global variable malloc_align_step removed;
+ * malloc_align_step is now defined in globals.c.
+ *
  * Revision 2.9  1999/07/05 14:28:00  sbs
  * warnings concerning uninitialized usages of res in AnnotateIdWithConstVec and
  * CopyConstVec eliminated .
@@ -184,6 +188,7 @@ typedef struct {
     int size;
     malloc_align_type align;
 } malloc_header_type;
+
 #endif
 
 /******************************************************************************
@@ -885,6 +890,7 @@ OptCmp (char *first, char *second)
  *
  * remarks: the c-compiler alignment of structs is exploited.
  * -------------------------------------------------------------------------- */
+
 void
 ComputeMallocAlignStep (void)
 {
@@ -895,5 +901,7 @@ ComputeMallocAlignStep (void)
 
     DBUG_VOID_RETURN;
 }
+
 /* ========================================================================== */
+
 #endif
