@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.4  1995/10/20 16:55:01  cg
+ * Revision 1.5  1995/10/31 09:00:31  cg
+ * Information about needed types and function is only stored
+ * for inline functions.
+ *
+ * Revision 1.4  1995/10/20  16:55:01  cg
  * Now, indirectly needed global objects are concerned as well.
  * These are those global objects which do not occur in a function's
  * body but are needed by another function which is applied in the
@@ -164,7 +168,7 @@ ANAmodul (node *arg_node, node *arg_info)
  *  description   : If the function is not imported, its body is traversed.
  *  global vars   : ---
  *  internal funs : ---
- *  external funs : Trav
+ *  external funs : Trav, TidyUpNodelist
  *  macros        : ---
  *
  *  remarks       :
@@ -178,6 +182,7 @@ ANAfundef (node *arg_node, node *arg_info)
 
     if (FUNDEF_STATUS (arg_node) == ST_regular) {
         Trav (FUNDEF_BODY (arg_node), arg_node);
+        FUNDEF_NEEDTYPES (arg_node) = TidyUpNodelist (FUNDEF_NEEDTYPES (arg_node));
     }
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
@@ -209,12 +214,14 @@ ANAvardec (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("ANAvardec");
 
-    if (VARDEC_TYPEDEF (arg_node) != NULL) {
-        StoreNeededNode (VARDEC_TYPEDEF (arg_node), arg_info, ST_regular);
-    }
+    if (FUNDEF_INLINE (arg_info)) {
+        if (VARDEC_TYPEDEF (arg_node) != NULL) {
+            StoreNeededNode (VARDEC_TYPEDEF (arg_node), arg_info, ST_regular);
+        }
 
-    if (VARDEC_NEXT (arg_node) != NULL) {
-        VARDEC_NEXT (arg_node) = Trav (VARDEC_NEXT (arg_node), arg_info);
+        if (VARDEC_NEXT (arg_node) != NULL) {
+            VARDEC_NEXT (arg_node) = Trav (VARDEC_NEXT (arg_node), arg_info);
+        }
     }
 
     DBUG_RETURN (arg_node);
@@ -270,7 +277,9 @@ ANAap (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("ANAap");
 
-    StoreNeededNode (AP_FUNDEF (arg_node), arg_info, ST_regular);
+    if (FUNDEF_INLINE (arg_info)) {
+        StoreNeededNode (AP_FUNDEF (arg_node), arg_info, ST_regular);
+    }
 
     if (AP_ARGS (arg_node) != NULL) {
         AP_ARGS (arg_node) = Trav (AP_ARGS (arg_node), arg_info);
