@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.184  1998/04/07 17:31:47  dkr
+ * PrintNcode:
+ *    CODE_CEXPR could be NULL (compile)
+ *
  * Revision 1.183  1998/04/07 13:08:27  dkr
  * PrintNodeTree:
  *   added NCODE_USED info for N_part nodes
@@ -2241,12 +2245,13 @@ PrintNcode (node *arg_node, node *arg_info)
 
     /* print the expression if internal syntax should be used.
        else return expr in arg_info->node[2] */
-    DBUG_ASSERT (NCODE_CEXPR (arg_node), "no expression at N_Ncode");
-    if (arg_info->node[2] != NULL) {
-        arg_info->node[2] = NCODE_CEXPR (arg_node);
-    } else {
-        fprintf (outfile, " : ");
-        NCODE_CEXPR (arg_node) = Trav (NCODE_CEXPR (arg_node), arg_info);
+    if (NCODE_CEXPR (arg_node) != NULL) {
+        if (arg_info->node[2] != NULL) {
+            arg_info->node[2] = NCODE_CEXPR (arg_node);
+        } else {
+            fprintf (outfile, " : ");
+            NCODE_CEXPR (arg_node) = Trav (NCODE_CEXPR (arg_node), arg_info);
+        }
     }
 
     DBUG_RETURN (arg_node);
