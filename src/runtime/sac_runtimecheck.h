@@ -1,8 +1,15 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2002/07/03 14:01:10  dkr
+ * header modified
+ *
  * Revision 1.1  2002/07/03 13:58:29  dkr
  * Initial revision
+ *
+ *
+ * [ file renamed: sac_boundcheck.h -> sac_runtimecheck.h ]
+ *
  *
  * Revision 3.1  2000/11/20 18:02:11  sacbase
  * new release made
@@ -65,7 +72,7 @@
 
 #else /* SAC_DO_CHECK_TYPE */
 
-#define SAC_ASSURE(cond)
+#define SAC_ASSURE_TYPE(cond)
 
 #endif /* SAC_DO_CHECK_TYPE */
 
