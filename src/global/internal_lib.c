@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.32  1998/06/19 12:51:44  srs
+ * compute_malloc_align_step() => ComputeMallocAlignStep()
+ *
  * Revision 1.31  1998/06/19 09:10:37  sbs
  * added some DBUG_PRINTs
  *
@@ -122,6 +125,8 @@
 #include "internal_lib.h"
 #include "globals.h"
 #include "traverse.h"
+#include "types.h"
+#include "tree_compound.h"
 
 #define MAX_SYSCALL 1000
 
@@ -638,9 +643,9 @@ OptCmp (char *first, char *second)
  * remarks: the c-compiler alignment of structs is exploited.
  * -------------------------------------------------------------------------- */
 void
-compute_malloc_align_step (void)
+ComputeMallocAlignStep (void)
 {
-    DBUG_ENTER ("compute_malloc_align_step");
+    DBUG_ENTER ("ComputeMallocAlignStep");
 
     /* calculate memory alignment steps for this machine */
     malloc_align_step = sizeof (malloc_header_type) - sizeof (malloc_align_type);

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.16  1998/06/19 12:51:53  srs
+ * compute_malloc_align_step() => ComputeMallocAlignStep()
+ *
  * Revision 1.15  1998/03/17 11:54:43  dkr
  * added fun lcm()
  *
@@ -68,7 +71,7 @@ extern char *TmpVarName (char *postfix);
 extern int OptCmp (char *first, char *second);
 
 #ifdef SHOW_MALLOC
-extern void compute_malloc_align_step (void);
+extern void ComputeMallocAlignStep (void);
 int malloc_align_step;
 #endif
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.131  1998/06/19 12:51:31  srs
+ * compute_malloc_align_step() => ComputeMallocAlignStep()
+ *
  * Revision 1.130  1998/06/18 13:41:09  cg
  * function SpmdRegion renamed to BuildSpmdRegion and now included
  * from concurrent.h instead of spmdregion.h
@@ -478,7 +481,7 @@ MAIN
     int tmp_break = 1;
 
 #ifdef SHOW_MALLOC
-    compute_malloc_align_step ();
+    ComputeMallocAlignStep ();
 #endif
 
     /* initializations */
