@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.20  2004/11/26 15:51:50  jhb
+ * WLFwithloopFoldingWLT changed WLFwithloopFoldingWlt
+ *
  * Revision 1.19  2004/11/25 23:11:10  jhb
  * on the road again
  *
@@ -893,34 +896,34 @@ WLFcreateVardec (char *name, ntype *type, node **vardecs)
  *
  ******************************************************************************/
 node *
-WLFcreateVardec (char *name, types *type, node **vardecs)
+WLFcreateVardec (node *avis, node **vardecs)
 {
     node *vardecn;
-    char *c;
+    /*char *c;*/ /* TODO must be change to new type */
 
     DBUG_ENTER ("WLFcreateVardec");
 
     /* search for already existing vardec for this name. */
-    vardecn = TCsearchDecl (name, *vardecs);
+    vardecn = TCsearchDecl (AVIS_NAME (avis), *vardecs);
 
     /* if not found, create vardec. */
-    if (!vardecn) {
-        if (!type) {
-            c = ILIBmalloc (50);
-            c[0] = 0;
-            c = strcat (c, "parameter type is NULL for variable ");
-            c = strcat (c, name);
-            DBUG_ASSERT (0, (c));
-        }
+    /*if (!vardecn) {
+     *if (!AVIS_TYPE( avis));
+     *  c = ILIBmalloc(50);
+     *  c[0] = 0;
+     *  c = strcat(c,"parameter type is NULL for variable ");
+     *  c = strcat(c,name);
+     *  DBUG_ASSERT(0,(c));
+     *}
+     *
+     *type = DUPdupAllTypes(type); */
+    vardecn = TBmakeVardec (avis, *vardecs);
+    VARDEC_VARNO (vardecn) = -1;
 
-        type = DUPdupAllTypes (type);
-        vardecn = TBmakeVardec (ILIBstringCopy (name), type, *vardecs);
-        VARDEC_VARNO (vardecn) = -1;
+    /* create ssacnt node: to be implemented */
 
-        /* create ssacnt node: to be implemented */
-
-        *vardecs = vardecn;
-    }
+    *vardecs = vardecn;
+    /*}*/
 
     DBUG_RETURN (vardecn);
 }
@@ -983,7 +986,7 @@ WLFwithloopFolding (node *arg_node, int loop)
  *
  ******************************************************************************/
 node *
-WLFwithloopFoldingWLT (node *arg_node)
+WLFwithloopFoldingWlt (node *arg_node)
 {
     DBUG_ENTER ("WLIwithloopFoldingWLT");
 

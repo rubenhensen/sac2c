@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.8  2004/11/26 15:51:50  jhb
+ * WLFwithloopFoldingWLT changed WLFwithloopFoldingWlt
+ *
  * Revision 1.7  2004/11/22 17:29:51  sbs
  * SacDevCamp04
  *
@@ -43,13 +46,13 @@
 
 /* general functions */
 extern node *WLFdoWithloopFolding (node *arg_node, int loop);
-extern node *WLFdoWithloopFoldingWLT (node *arg_node);
+extern node *WLFdoWithloopFoldingWlt (node *arg_node);
 extern int WLFlocateIndexVar (node *idn, node *wln);
 
 #ifdef MWE_NTYPE_READY
-extern node *WLFcreateVardec (char *name, ntype *type, node **vardecs);
+extern node *WLFcreateVardec (node *avis, node **vardecs);
 #else
-extern node *WLFcreateVardec (char *name, types *type, node **vardecs);
+extern node *WLFcreateVardec (node *avis, node **vardecs);
 #endif
 
 extern void WLFarrayST2ArrayInt (node *arrayn, int **iarray, int shape);
