@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.48  1995/07/07 14:28:53  hw
+ * Revision 1.49  1995/07/07 16:21:19  hw
+ * added 'char *prf_name_str[]'( moved from typecheck.c)
+ *
+ * Revision 1.48  1995/07/07  14:28:53  hw
  * enlarged macro PRF_IF( there are 4 args now)
  *
  * Revision 1.47  1995/07/06  17:29:12  cg
@@ -320,6 +323,8 @@ typedef struct NODE {
 #define MOD(a) (NULL == a) ? "" : a
 #define MOD_CON(a) (NULL == a) ? "" : MOD_NAME_CON
 #define MOD_NAME(a) MOD (a), MOD_CON (a)
+
+extern char *prf_name_str[];
 
 extern types *MakeTypes (simpletype simple);
 extern node *MakeNode (nodetype nodetype);

@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.18  1995/07/06 17:28:34  cg
+ * Revision 1.19  1995/07/07 16:21:19  hw
+ * added 'char *prf_name_str[]'( moved from typecheck.c)
+ *
+ * Revision 1.18  1995/07/06  17:28:34  cg
  * MakeIds and MakeTypes adjusted for new statustype
  *
  * Revision 1.17  1995/06/01  15:08:38  cg
@@ -65,6 +68,14 @@
 #include "my_debug.h"
 #include "scnprs.h"
 #include "optimize.h"
+
+#define PRF_IF(n, s, x, y) y
+
+char *prf_name_str[] = {
+#include "prf_node_info.mac"
+};
+
+#undef PRF_IF
 
 /*
  *
