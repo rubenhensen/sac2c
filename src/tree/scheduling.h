@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2001/03/14 14:11:13  ben
+ * return value of SCHAdjustmentRequired is bool
+ *
  * Revision 3.2  2001/01/24 23:40:58  dkr
  * some signatures modified
  *
@@ -68,7 +71,7 @@ extern void SCHPrintScheduling (FILE *outfile, SCHsched_t *sched);
 extern void SCHCheckSuitabilityConstSeg (SCHsched_t *sched);
 extern void SCHCheckSuitabilityVarSeg (SCHsched_t *sched);
 extern void SCHCheckSuitabilityWithloop (SCHsched_t *sched);
-extern int SCHAdjustmentRequired (int dim, node *wlseg);
+extern bool SCHAdjustmentRequired (int dim, node *wlseg);
 
 extern SCHsched_t *SCHMakeCompatibleSyncblockScheduling (SCHsched_t *old_sched,
                                                          SCHsched_t *new_sched);
