@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2000/03/19 17:11:55  dkr
+ * fixed a bug in CUDids(): INFO_CUD_REF may be NULL
+ *
  * Revision 1.3  2000/03/19 15:46:44  dkr
  * DFMstack removed (ups, SAC allows no nested/local vardecs ...)
  * comments added
@@ -58,19 +61,21 @@ CUDids (ids *id, node *arg_info)
 
     DBUG_ENTER ("CUDids");
 
-    tmp = id;
-    while (tmp != NULL) {
-        decl = IDS_VARDEC (tmp);
+    if (INFO_CUD_REF (arg_info) != NULL) {
+        tmp = id;
+        while (tmp != NULL) {
+            decl = IDS_VARDEC (tmp);
 
-        if ((NODE_TYPE (decl) != N_vardec) && (NODE_TYPE (decl) != N_arg)) {
-            DBUG_ASSERT ((NODE_TYPE (decl) == N_objdef), "declaration is neither a "
-                                                         "N_arg/N_vardec-node nor a "
-                                                         "N_objdef-node");
-        } else {
-            DFMSetMaskEntryClear (INFO_CUD_REF (arg_info), NULL, decl);
+            if ((NODE_TYPE (decl) != N_vardec) && (NODE_TYPE (decl) != N_arg)) {
+                DBUG_ASSERT ((NODE_TYPE (decl) == N_objdef), "declaration is neither a "
+                                                             "N_arg/N_vardec-node nor a "
+                                                             "N_objdef-node");
+            } else {
+                DFMSetMaskEntryClear (INFO_CUD_REF (arg_info), NULL, decl);
+            }
+
+            tmp = IDS_NEXT (tmp);
         }
-
-        tmp = IDS_NEXT (tmp);
     }
 
     DBUG_RETURN (id);
