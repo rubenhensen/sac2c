@@ -1,5 +1,9 @@
 /*
+ *
  * $Log$
+ * Revision 2.56  2000/10/26 14:30:29  dkr
+ * MakeShpseg used instead of MALLOC
+ *
  * Revision 2.55  2000/10/26 12:47:58  dkr
  * DupIds renamed into DupAllIds
  *
@@ -145,188 +149,8 @@
  * Revision 2.18  1999/05/17 11:22:58  jhs
  * with-loops with empty bounds will be rebuild to direct let's.
  *
- * Revision 2.17  1999/05/14 09:25:13  jhs
- * Dbugged constvec annotations and their housekeeping in various compilation stages.
- *
- * Revision 2.16  1999/05/12 09:15:04  jhs
- * Adjusted macros to access constant vectors.
- *
- * Revision 2.15  1999/05/11 16:12:52  jhs
- * Done some cosmetics to learn about the code.
- *
- * Revision 2.13  1999/05/07 15:19:36  jhs
- * Fixed Bugs in BuildDropWithLoop and is_empty_array.
- *
- * Revision 2.12  1999/05/07 10:10:19  jhs
- * withloops on empty array will be rebuild to direct operations.
- * This happens in TI_Nwith.
- *
- * Revision 2.11  1999/05/03 18:48:48  sbs
- * fixed an error in TCN_genarray where TI was called without passing
- * arg_info. This caused a SEGFAULT whenever a udf-fun-ap was used
- * for the shape-expression of the genarray-wl.
- * see typesys_0007.sac in errors for example...
- *
- * Revision 2.10  1999/05/03 09:36:54  jhs
- * Changed some loops to cope with empty arrays.
- *
- * Revision 2.9  1999/04/16 18:47:27  bs
- * Bug fixed in BuildDropBuiWithLoop.
- *
- * Revision 2.8  1999/04/16 11:47:55  jhs
- * Changes made for emty arrays.
- *
- * Revision 2.7  1999/03/30 14:59:27  cg
- * Bug fixed: the number of return values is now checked against
- * the function declaration.
- *
- * Revision 2.6  1999/03/17 21:31:55  sbs
- * fixed a problem when profiling functions with many arguments
- * (strncat does not work properly with negative n's !)
- *
- * Revision 2.5  1999/03/17 16:09:05  bs
- * Braces in if-clauses added!
- *
- * Revision 2.4  1999/03/15 14:03:19  bs
- * Access macros renamed (take a look at tree_basic.h).
- *
- * Revision 2.3  1999/02/26 10:49:59  bs
- * BuildGenarrayWithLoop(), BuildTakeWithLoop() and BuildDropWithLoop() prepared
- * for the work with compact int. vectors.
- *
- * Revision 2.2  1999/02/25 11:07:23  bs
- * TI_Ngenarray modified. Now this function is able to work with
- * compact integer arrays.
- *
- * Revision 2.1  1999/02/23 12:40:56  sacbase
- * new release made
- *
- * Revision 1.190  1999/02/19 18:36:34  sbs
- * check on non-infereable shape-types in genarray withloop
- * in TI_Ngenarray inserted.
- *
- * Revision 1.189  1999/02/19 18:12:44  bs
- * access macros added
- *
- * Revision 1.188  1999/02/11 14:11:49  sbs
- * changed implementation of non-intrinsic cat.
- * now, you may use non-intrinsic with -noopt as well ....
- * The problem was that the generated sac-code was
- * non-flatten-compliant..
- *
- * Revision 1.187  1999/02/10 13:45:27  cg
- * Bug fixed in BuildCatWithloop1(): Now the upper border of
- * the generator is written as [...] instead of shape(...).
- * Otherwise problems arise if constant folding is switched off
- * because the backend relies on having either a variable or
- * a constant in this position.
- *
- * Revision 1.186  1999/02/09 13:41:29  sbs
- * dared to switch prim-funflag when calling CompatibleTypes
- * in several situations. Marked these clearly by sbs and
- * explained why I did so.
- *
- * Revision 1.185  1999/02/09 13:08:41  sbs
- * fixed some type-errors in TCreturn.
- *
- * Revision 1.184  1999/02/06 14:44:03  dkr
- * Bug fixed:
- *   Minimum for double/float is *not* MINDOUBLE/MINFLOAT
- *   but -MAXDOUBLE/-MAXFLOAT !!!
- *
- * Revision 1.183  1999/02/03 17:44:51  sbs
- * Due to a bug in limits.h (!!!), we had to replace INT_MIN by 1-INT_MAX!!
- *
- * Revision 1.182  1999/01/26 14:28:08  cg
- * Added implicit expansion of array-valued psi() operations
- * to equivalent with-loops.
- * All implicit expansions are now performed iff the result shape
- * has been infered completely.
- *
- * Revision 1.181  1999/01/25 11:10:53  sbs
- * MAX and MIN interchanged for default value on max-fold / min-fold!
- *
- * Revision 1.180  1999/01/21 17:02:22  sbs
- * typo "exspected" eliminated.
- *
- * Revision 1.179  1999/01/20 10:43:58  sbs
- * space inserted.
- *
- * Revision 1.178  1999/01/20 09:06:22  cg
- * Programs without any functions are now rejected.
- *
- * Revision 1.177  1999/01/19 16:18:35  cg
- * Added rudimentary support for [?] types;
- * de-activated some warnings about unknown shapes when compiling
- * a module/class implementation.
- *
- * Revision 1.176  1999/01/19 09:19:12  sbs
- * extension of drop_vec in BuildDropWithLoop added
- *
- * Revision 1.175  1999/01/15 15:22:48  cg
- * primitive function genarray is now expanded to an equivalent
- * with-loop. If not the intrinsic versions are requested, the
- * primitive functions take, drop, and cat are also expanded
- * to equivalent with-loops.
- *
- * Revision 1.174  1999/01/08 11:30:42  sbs
- * Bug in FindFun eliminated prf's where LookupPrf returns NULL
- * (like rotate when intrinsics is off!) will be searched as
- * user defined functions now as well...
- *
- * Revision 1.173  1999/01/07 15:19:32  cg
- * Some bugs fixed in typechecking og module/class implementations.
- * Warnings in the context of functions with result types of unspecified
- * shape are completely revised.
- *
- * Revision 1.172  1999/01/07 10:50:49  cg
- * Various bugs removed in the context of fold with-loops.
- *
- * Revision 1.171  1998/12/10 12:39:52  cg
- * bug fixed: if a user-defined type is used but not defined,
- * an appropriate error message is displayed and the compilation
- * process terminated.
- *
- * Revision 1.170  1998/12/03 14:19:57  sbs
- * errors typesys_0004.sac and typesys_0005.sac fixed.
- * both in TI_Nwith!
- *
- * Revision 1.169  1998/12/03 10:23:12  cg
- * Using header file values.h instead of limits.h in order to derive
- * maximum values for floating point numbers.
- * This is required for compatibility with Linux.
- *
- * Revision 1.168  1998/12/02 16:28:40  cg
- * Now, typecheck also removes superfluous function declarations in
- * addition to full function definitions.
- *
- * Revision 1.167  1998/11/18 15:09:37  srs
- * TCNcode expects N_empty node now.
- *
- * Revision 1.166  1998/11/09 20:17:07  sbs
- * DeleteFun adjusted to tree_basic.h
- * -> errors in DBUG_PRINTs in DeleteFun removed...
- *
- * Revision 1.165  1998/11/08 14:40:08  dkr
- * TCNcode: remarks added --- this part might be buggy!!
- *
- * Revision 1.164  1998/10/30 09:55:16  cg
- * Bugs fixed in generation of neutral element for fold operators.
- *
- * Revision 1.163  1998/08/07 12:00:20  srs
- * changed ABORT-message
- *
- * Revision 1.162  1998/08/06 18:33:09  srs
- * adepted TC to new semantics of flattening N_Nwith
- *
- * Revision 1.161  1998/06/08 12:38:32  cg
- * Function DuplicateTypes can now deal with type NULL
- *
  * ... [eliminated] ...
  *
- * Revision 1.100  1995/12/05  11:05:33  hw
- * changed AddIdToStack ( when generating a  new vardec the name of the variable
- *  will not be shared anymore )
  */
 
 #include <stdlib.h>
@@ -484,7 +308,7 @@ static node *pseudo_fold_fundefs;
 
 #define NEXT_FUN_TAB_ELEM(elem) elem->next
 
-#define NEW_FUN_TAB_ELEM (fun_tab_elem *)Malloc (sizeof (fun_tab_elem))
+#define NEW_FUN_TAB_ELEM (fun_tab_elem *)MALLOC (sizeof (fun_tab_elem))
 
 #define OLD_INSERT_FUN(fun_p, name, mod_name, new_node, status, overload)                \
     {                                                                                    \
@@ -864,7 +688,7 @@ BuildPsiWithLoop (types *restype, node *idx, node *array)
 
     num_fresh_vars = 2 * ID_DIM (array) - TYPES_DIM (restype) + 2;
 
-    tmp_vars = (char **)Malloc (num_fresh_vars * sizeof (char *));
+    tmp_vars = (char **)MALLOC (num_fresh_vars * sizeof (char *));
 
     for (i = 0; i < num_fresh_vars; i++) {
         tmp_vars[i] = TmpVar ();
@@ -2806,9 +2630,6 @@ IsNameInMods (char *name, mods *mods)
  *  arguments     : 1) N_modul node
  *  description   : generates a table for userdefined types
  *  global vars   : type_tab_size, filename
- *  internal funs : Malloc
- *  external funs : Type2String, strcmp,sizeof
- *  macros        : DBUG...,T_TYPES, TYPES, ERROR, ABORT, NULL
  *
  *  remarks       : a new N_typedef chain is made too (new order)
  *
@@ -2831,7 +2652,7 @@ InitTypeTab (node *modul_node)
     for (type_tab_size = 0; NULL != tmp; type_tab_size++)
         tmp = TYPEDEF_NEXT (tmp);
 
-    tab = (type_tab_elem *)Malloc (sizeof (type_tab_elem) * type_tab_size);
+    tab = (type_tab_elem *)MALLOC (sizeof (type_tab_elem) * type_tab_size);
 
     last_node = modul_node;
     tmp = MODUL_TYPES (modul_node); /* first N_typedef node */
@@ -3008,9 +2829,7 @@ InitTypeTab (node *modul_node)
                                 T_TYPES (i)->name = NULL;
                                 T_TYPES (i)->name_mod = NULL;
                                 if ((0 < T_TYPES (j)->dim) && (0 == T_TYPES (i)->dim)) {
-                                    T_TYPES (i)->shpseg
-                                      = (shpseg *)Malloc (sizeof (shpseg));
-                                    T_TYPES (i)->shpseg->next = NULL;
+                                    T_TYPES (i)->shpseg = MakeShpseg (NULL);
                                 }
 
                                 for (k = 0; k < T_TYPES (j)->dim; k++) {
@@ -3140,7 +2959,7 @@ InitTypeTab (node *modul_node)
  *                  - set global variable fun_table
  *
  *  global vars   : fun_table, filename
- *  internal funs : Malloc, CheckFunctionDeclaration, LookupFun, CmpFunParam
+ *  internal funs : MALLOC, CheckFunctionDeclaration, LookupFun, CmpFunParam
  *  external funs : sizeof
  *  macros        : DBUG..., ERROR, TYPES, ID, ID_MOD, IS_CHECKED, NOT_CHECKED,
  *                  MOD_NAME_CON, INSERT_FUN ,CMP_FUN_NAME, NULL
@@ -3259,7 +3078,7 @@ InitFunTable (node *arg_node)
 
 #if 0   
    /* allocate memory for table */
-   fun_table=(fun_tab_elem*)Malloc(sizeof(fun_tab_elem)*size);
+   fun_table=(fun_tab_elem*)MALLOC(sizeof(fun_tab_elem)*size);
    
    DBUG_PRINT("TYPE",("fun table from "P_FORMAT" to "P_FORMAT,
                       fun_table, fun_table+size));
@@ -3386,7 +3205,7 @@ Typecheck (node *arg_node)
 
     act_tab = type_tab;
 
-    stack = (stack_elem *)Malloc (sizeof (stack_elem) * LOCAL_STACK_SIZE);
+    stack = (stack_elem *)MALLOC (sizeof (stack_elem) * LOCAL_STACK_SIZE);
     stack_limit = LOCAL_STACK_SIZE + stack;
     DBUG_PRINT ("TYPE",
                 ("local stack from " P_FORMAT "to " P_FORMAT, stack, stack_limit));
@@ -3721,8 +3540,7 @@ CompatibleTypes (types *type_one, types *type_two, int convert_prim_type, int li
                     dim = old_dim1 + type_one->dim;
                     DBUG_ASSERT (dim <= SHP_SEG_SIZE, "shape out off range ");
                     shpseg_1 = type_1->shpseg;
-                    type_1->shpseg = (shpseg *)Malloc (sizeof (shpseg));
-                    type_1->shpseg->next = NULL;
+                    type_1->shpseg = MakeShpseg (NULL);
                     for (i = 0; i < type_one->dim; i++)
                         type_1->shpseg->shp[i] = type_one->shpseg->shp[i];
                     for (i = 0; i < old_dim1; i++)
@@ -3754,8 +3572,7 @@ CompatibleTypes (types *type_one, types *type_two, int convert_prim_type, int li
 
                     DBUG_ASSERT (dim <= SHP_SEG_SIZE, "shape out off range ");
                     shpseg_2 = type_2->shpseg;
-                    type_2->shpseg = (shpseg *)Malloc (sizeof (shpseg));
-                    type_2->shpseg->next = NULL;
+                    type_2->shpseg = MakeShpseg (NULL);
                     for (i = 0; i < type_two->dim; i++)
                         type_2->shpseg->shp[i] = type_two->shpseg->shp[i];
                     for (i = 0; i < old_dim2; i++)
@@ -3873,7 +3690,7 @@ CompatibleTypes (types *type_one, types *type_two, int convert_prim_type, int li
  *  description   : if one of the types is an arrays with unknown shape
  *                  the shapes are copied.
  *  global vars   : filename
- *  internal funs : Malloc, Type2String
+ *  internal funs : MALLOC, Type2String
  *  external funs : sizeof
  *  macros        : DBUG..., NULL, FREE, MOD_NAME, DIM, ABORT
  *
@@ -3948,8 +3765,7 @@ UpdateType (types *type_one, types *type_two, int line)
         DBUG_ASSERT ((t_unknown->dim <= SHP_SEG_SIZE), "dimension to large");
 
         if (KNOWN_SHAPE (t_unknown->dim)) {
-            t_unknown->shpseg = (shpseg *)Malloc (sizeof (shpseg));
-            t_unknown->shpseg->next = NULL;
+            t_unknown->shpseg = MakeShpseg (NULL);
             for (i = 0; i < t_known->dim; i++) {
                 t_unknown->shpseg->shp[i] = t_known->shpseg->shp[i];
             }
@@ -3971,8 +3787,7 @@ UpdateType (types *type_one, types *type_two, int line)
         DBUG_ASSERT ((NULL != t_node), "t_node is NULL");
         t_unknown->dim = t_known->dim - t_node->DIM;
         if (KNOWN_SHAPE (t_unknown->dim)) {
-            t_unknown->shpseg = (shpseg *)Malloc (sizeof (shpseg));
-            t_unknown->shpseg->next = NULL;
+            t_unknown->shpseg = MakeShpseg (NULL);
             for (i = 0; i < t_unknown->dim; i++) {
                 t_unknown->shpseg->shp[i] = t_known->shpseg->shp[i];
             }
@@ -4000,8 +3815,7 @@ UpdateType (types *type_one, types *type_two, int line)
                      "wrong simpletypes ");
 
         t_unknown->dim = t_known->dim;
-        t_unknown->shpseg = (shpseg *)Malloc (sizeof (shpseg));
-        t_unknown->shpseg->next = NULL;
+        t_unknown->shpseg = MakeShpseg (NULL);
 
         for (i = 0; i < t_known->dim; i++) {
             t_unknown->shpseg->shp[i] = t_known->shpseg->shp[i];
@@ -4095,7 +3909,7 @@ DuplicateFun (fun_tab_elem *fun_p)
  *  description   : looks for matching functions (matching to name and argument
  *                  type)
  *  global vars   : filename, prf_string[]
- *  internal funs : Malloc, IsNameInMods,  LookupFun, LookupPrf, CmpTypes,
+ *  internal funs : MALLOC, IsNameInMods,  LookupFun, LookupPrf, CmpTypes,
  *                  CompatibleTypes, UpdateType
  *  external funs : sizeof, FindSymbolInModul
  *  macros        : DBUG..., NULL, P_FORMAT, NOTE, ID, TYPES, ERROR, ABORT,
@@ -5090,7 +4904,7 @@ TClet (node *arg_node, node *arg_info)
 
                     if (TYPES_SHPSEG (VARDEC_TYPE (vardec_node)))
                         TYPES_SHPSEG (type)
-                          = CopyShpseg (TYPES_SHPSEG (VARDEC_TYPE (vardec_node)));
+                          = DupShpseg (TYPES_SHPSEG (VARDEC_TYPE (vardec_node)));
 
                     /*
                      * sbs: switched the prim_fun_flag from -1 to 0 since we
@@ -5505,7 +5319,7 @@ TClet (node *arg_node, node *arg_info)
             /* in str3 the type of the left side of a let-statement will be
              * stored
              */
-            str3 = (char *)Malloc (sizeof (char) * (str3_len + 1));
+            str3 = (char *)MALLOC (sizeof (char) * (str3_len + 1));
             for (i = 0; i < str3_len; i++)
                 str3[i] = str2[i];
             str3[str3_len] = '\0';
@@ -5537,7 +5351,7 @@ TClet (node *arg_node, node *arg_info)
  *  description   : returns the type of the expression behind 1) if one
  *                  can derive it, NULL otherwise
  *  global vars   : filename
- *  internal funs : TI , Malloc, FindFun
+ *  internal funs : TI , MALLOC, FindFun
  *  external funs : Type2String
  *  macros        : DBUG...,, ABORT, NULL, FREE
  *
@@ -5573,7 +5387,7 @@ TI_prf (node *arg_node, node *arg_info)
         }
         if ((EXPRS_NEXT (current_args) == NULL) && (EXPRS_EXPR (current_args) != NULL))
             count_args++;
-        arg_type = (types **)Malloc (sizeof (types) * count_args);
+        arg_type = (types **)MALLOC (sizeof (types) * count_args);
     }
 
     /* store type of the arguments in arg_type[] */
@@ -5876,7 +5690,7 @@ TCreturn (node *arg_node, node *arg_info)
  *                  of the function
  *  global vars   : filename
  *  internal funs : TI, FindFun,  TI_fun
- *  external funs : Malloc, sizeof
+ *  external funs : MALLOC, sizeof
  *  macros        : DBUG..., FREE, ABORT,  NULL
  *  remarks       : return type can be T_unknown (in this case
  *                   arg_info->node[0]->nodtype should be N_stop)
@@ -5910,7 +5724,7 @@ TI_ap (node *arg_node, node *arg_info)
         if ((EXPRS_NEXT (current_args) == NULL) && (EXPRS_EXPR (current_args)) != NULL) {
             count_args++;
         }
-        arg_type = (types **)Malloc (sizeof (types) * count_args);
+        arg_type = (types **)MALLOC (sizeof (types) * count_args);
     }
 
     /* store type of the arguments in arg_type[] */
@@ -5955,7 +5769,7 @@ TI_ap (node *arg_node, node *arg_info)
              * prepare a string holding the fun-signature
              */
 
-            str_buff = (char *)Malloc (sizeof (char) * PF_MAXFUNNAMELEN);
+            str_buff = (char *)MALLOC (sizeof (char) * PF_MAXFUNNAMELEN);
             str_buff[0] = '\0';
             str_buff = strncpy (str_buff, FUNDEF_NAME (fun_p->node), str_spc);
             str_spc -= strlen (FUNDEF_NAME (fun_p->node));
@@ -6100,7 +5914,7 @@ TI_ap (node *arg_node, node *arg_info)
  *  description   : computes the type of an array (N_array).
  *
  *  global vars   : filename
- *  internal funs : Malloc, CompatibleTypes
+ *  internal funs : MALLOC, CompatibleTypes
  *  external funs : Type2String
  *  macros        : DBUG..., NULL, ERROR, ABORT, FREE
  *
@@ -6194,8 +6008,7 @@ TI_array (node *arg_node, node *arg_info)
     if (NULL != return_type) {
         if (0 == TYPES_DIM (return_type)) {
             TYPES_DIM (return_type) = 1;
-            TYPES_SHPSEG (return_type) = (shpseg *)Malloc (sizeof (shpseg));
-            SHPSEG_NEXT (TYPES_SHPSEG (return_type)) = NULL;
+            TYPES_SHPSEG (return_type) = MakeShpseg (NULL);
             SHPSEG_SHAPE (TYPES_SHPSEG (return_type), 0) = n_elem;
         } else if (-1 != TYPES_DIM (return_type)) {
             DBUG_ASSERT ((TYPES_DIM (return_type) + 1 <= SHP_SEG_SIZE), " dimension"
@@ -7845,7 +7658,7 @@ TI_Nfoldprf (node *arg_node, types *body_type, types *neutral_type, node *arg_in
     DBUG_ENTER ("TI_Nfoldprf");
     DBUG_ASSERT (NWITHOP_TYPE (arg_node) == WO_foldprf, "Wrong withop type");
 
-    arg_type = (types **)Malloc (sizeof (types) * 2);
+    arg_type = (types **)MALLOC (sizeof (types) * 2);
     arg_type[0] = body_type;
     arg_type[1] = body_type;
     old_prf = NWITHOP_PRF (arg_node);
@@ -7935,7 +7748,7 @@ TI_Nfoldfun (node *arg_node, types *body_type, types *neutral_type, node *arg_in
 
     /* infere return type of function NWITHOP_FUN() if applied to two
        arguments of type body_type. */
-    arg_type = (types **)Malloc (sizeof (types) * 2);
+    arg_type = (types **)MALLOC (sizeof (types) * 2);
     arg_type[0] = body_type;
     arg_type[1] = body_type;
 

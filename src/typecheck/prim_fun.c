@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.20  2000/10/26 14:30:23  dkr
+ * MakeShpseg used instead of MALLOC
+ *
  * Revision 2.19  2000/10/24 11:46:55  dkr
  * MakeTypes renamed into MakeTypes1
  * MakeType renamed into MakeTypes
@@ -152,7 +155,7 @@ enum type_class {
     types = MakeTypes (simpletype, SCALAR, NULL, NULL, NULL)
 
 #define GEN_PRIM_FUN_TAB_ELEM(p_old, mod, node_p, t_tag, u_tag, p_new)                   \
-    tmp = (prim_fun_tab_elem *)Malloc (sizeof (prim_fun_tab_elem));                      \
+    tmp = (prim_fun_tab_elem *)MALLOC (sizeof (prim_fun_tab_elem));                      \
     tmp->prf = p_old;                                                                    \
     tmp->id_mod = mod;                                                                   \
     tmp->node = node_p;                                                                  \
@@ -358,7 +361,7 @@ InitPrimFunDeclarations ()
     types *type;
 
     DBUG_ENTER ("InitPrimFunDeclarations");
-    prim_fun_dec = (node *)Malloc (sizeof (node));
+    prim_fun_dec = (node *)MALLOC (sizeof (node));
     tmp_node = prim_fun_dec;
 
 #define TT1(n, a, t1, res)                                                               \
@@ -427,7 +430,7 @@ InitPrimFunDeclarations ()
  *
  *  global vars   : prim_fun_tab, prim_fun_p
  *  internal funs : InitPrimFunDeclaration
- *  external funs : Malloc, free, FT
+ *  external funs : MALLOC, free, FT
  *  macros        : DBUG...
  *
  *  remarks       : the macro FT is used to generate the entries in this
@@ -444,7 +447,7 @@ InitPrimFunTab ()
 
     InitPrimFunDeclarations ();
 
-    prim_fun_tab = (prim_fun_tab_elem *)Malloc (sizeof (prim_fun_tab_elem));
+    prim_fun_tab = (prim_fun_tab_elem *)MALLOC (sizeof (prim_fun_tab_elem));
     prim_fun_p = prim_fun_tab;
 
 #define FT(pf, tc, new_pf) GenPrimTabEntries (pf, tc, new_pf);
@@ -1364,8 +1367,9 @@ Psi (types *vec, types *array)
             ret_type->dim = dim;
             if (dim > 0) {
                 new_shpseg = MakeShpseg (NULL);
-                for (i = 0; i < dim; i++)
+                for (i = 0; i < dim; i++) {
                     SHPSEG_SHAPE (new_shpseg, i) = TYPES_SHAPE (array_btype, to_drop + i);
+                }
                 ret_type
                   = MakeTypes (TYPES_BASETYPE (array_btype), dim, new_shpseg, NULL, NULL);
             } else
@@ -1461,7 +1465,7 @@ TakeDropS (node *s_node, types *array, int tag)
                 && (0 <= s_node->info.cint)) {
                 GEN_TYPE_NODE (ret_type, array->simpletype);
                 ret_type->dim = 1;
-                ret_type->shpseg = (shpseg *)Malloc (sizeof (shpseg));
+                ret_type->shpseg = MakeShpseg (NULL);
                 if (1 == tag) {
                     /* drop */
                     ret_type->shpseg->shp[0] = array->shpseg->shp[0] - s_node->info.cint;
@@ -1491,7 +1495,7 @@ TakeDropS (node *s_node, types *array, int tag)
                     && (0 <= s_node->info.cint)) {
                     GEN_TYPE_NODE (ret_type, array->simpletype);
                     ret_type->dim = 1;
-                    ret_type->shpseg = (shpseg *)Malloc (sizeof (shpseg));
+                    ret_type->shpseg = MakeShpseg (NULL);
                     if (1 == tag) {
                         /* drop */
                         ret_type->shpseg->shp[0]
@@ -1553,7 +1557,7 @@ TakeDropS (node *s_node, types *array, int tag)
          {
             GEN_TYPE_NODE(ret_type, array->simpletype);
             ret_type->dim=array->dim;
-            ret_type->shpseg=(shpseg*)Malloc(sizeof(shpseg));
+            ret_type->shpseg=MakeShpseg(NULL);
             if(1==tag)
                /* drop */
                ret_type->shpseg->shp[0]=array->shpseg->shp[0]-s_node->info.cint;
@@ -2060,8 +2064,9 @@ Genarray_S (node *v_node, types *vec, types *scalar)
                 shpseg_p = MakeShpseg (NULL);
                 tmp2 = (int *)ID_CONSTVEC (v_node);
                 dim = ID_VECLEN (v_node);
-                for (i = 0; i < dim; i++)
+                for (i = 0; i < dim; i++) {
                     SHPSEG_SHAPE (shpseg_p, i) = tmp2[i];
+                }
 
                 /*
                  * create resulting types

@@ -1,5 +1,9 @@
 /*
+ *
  * $Log$
+ * Revision 1.7  2000/10/26 14:30:17  dkr
+ * MakeShpseg used instead of MALLOC
+ *
  * Revision 1.6  2000/06/23 09:52:08  nmw
  * Compare and Create functions with varargs added
  *
@@ -17,6 +21,7 @@
  *
  * Revision 1.1  1999/10/11 08:47:34  sbs
  * Initial revision
+ *
  */
 
 /*
@@ -405,13 +410,13 @@ SHShape2OldShpseg (shape *shp)
     dim = SHAPE_DIM (shp);
     if (dim > 0) {
         i = 0;
-        res = (shpseg *)MALLOC (sizeof (shpseg));
+        res = MakeShpseg (NULL);
         curr_seg = res;
         while (dim > SHP_SEG_SIZE) {
             for (j = 0; j < SHP_SEG_SIZE; j++, i++) {
                 SHPSEG_SHAPE (curr_seg, j) = SHAPE_EXT (shp, i);
             }
-            SHPSEG_NEXT (curr_seg) = (shpseg *)MALLOC (sizeof (shpseg));
+            SHPSEG_NEXT (curr_seg) = MakeShpseg (NULL);
             curr_seg = SHPSEG_NEXT (curr_seg);
             dim -= SHP_SEG_SIZE;
         }
