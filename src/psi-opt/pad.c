@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.7  2000/07/07 12:07:51  mab
+ * *** empty log message ***
+ *
  * Revision 1.6  2000/07/05 09:12:34  mab
  * fixed memory problem
  *
@@ -94,6 +97,36 @@ ArrayPadding (node *arg_node)
     PIadd (MakeType (T_int, 2, tmp_old_shape, NULL, NULL), tmp_new_shape);
 
     tmp_old_shape = MakeShpseg (NULL);
+    SHPSEG_SHAPE (tmp_old_shape, 0) = 3;
+    SHPSEG_SHAPE (tmp_old_shape, 1) = 4;
+
+    tmp_new_shape = MakeShpseg (NULL);
+    SHPSEG_SHAPE (tmp_new_shape, 0) = 5;
+    SHPSEG_SHAPE (tmp_new_shape, 1) = 6;
+
+    PIadd (MakeType (T_int, 2, tmp_old_shape, NULL, NULL), tmp_new_shape);
+
+    tmp_old_shape = MakeShpseg (NULL);
+    SHPSEG_SHAPE (tmp_old_shape, 0) = 3;
+    SHPSEG_SHAPE (tmp_old_shape, 1) = 4;
+
+    tmp_new_shape = MakeShpseg (NULL);
+    SHPSEG_SHAPE (tmp_new_shape, 0) = 6;
+    SHPSEG_SHAPE (tmp_new_shape, 1) = 7;
+
+    PIadd (MakeType (T_float, 2, tmp_old_shape, NULL, NULL), tmp_new_shape);
+
+    tmp_old_shape = MakeShpseg (NULL);
+    SHPSEG_SHAPE (tmp_old_shape, 0) = 3;
+    SHPSEG_SHAPE (tmp_old_shape, 1) = 4;
+
+    tmp_new_shape = MakeShpseg (NULL);
+    SHPSEG_SHAPE (tmp_new_shape, 0) = 8;
+    SHPSEG_SHAPE (tmp_new_shape, 1) = 9;
+
+    PIadd (MakeType (T_double, 2, tmp_old_shape, NULL, NULL), tmp_new_shape);
+
+    tmp_old_shape = MakeShpseg (NULL);
     SHPSEG_SHAPE (tmp_old_shape, 0) = 8;
     SHPSEG_SHAPE (tmp_old_shape, 1) = 9;
 
@@ -106,8 +139,8 @@ ArrayPadding (node *arg_node)
     /* apply array padding */
 
     /* transformation phase is not completed yet
-     * APtransform(arg_node);
-     */
+     * @@@ enable pad_transform.c here !
+     * APtransform(arg_node);*/
 
     /* free pad_info structure */
     PIfree ();
