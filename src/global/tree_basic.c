@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.1  1995/09/27 15:13:12  cg
+ * Revision 1.2  1995/09/29 17:50:51  cg
+ * new access structures for strings, nums, shpseg.
+ * shape handling modified.
+ *
+ * Revision 1.1  1995/09/27  15:13:12  cg
  * Initial revision
  *
  *
@@ -31,20 +35,8 @@ char *prf_name_str[] = {
 /* local macros for heap allocation                                         */
 /*--------------------------------------------------------------------------*/
 
-#define ALLOCATE_TYPES(v)                                                                \
-    if ((v = (types *)malloc (sizeof (types))) == NULL)                                  \
-    ERROR2 (1, ("ERROR: Out of memory"))
-
-#define ALLOCATE_IDS(v)                                                                  \
-    if ((v = (ids *)malloc (sizeof (ids))) == NULL)                                      \
-    ERROR2 (1, ("ERROR: Out of memory"))
-
-#define ALLOCATE_NODE(v)                                                                 \
-    if ((v = (node *)malloc (sizeof (node))) == NULL)                                    \
-    ERROR2 (1, ("ERROR: Out of memory"))
-
-#define ALLOCATE_SHPSEG(v)                                                               \
-    if ((v = (shpseg *)malloc (sizeof (shpseg))) == NULL)                                \
+#define ALLOCATE(var, type)                                                              \
+    if ((var = (type *)malloc (sizeof (type))) == NULL)                                  \
     ERROR2 (1, ("ERROR: Out of memory"))
 
 /*--------------------------------------------------------------------------*/
@@ -54,7 +46,7 @@ char *prf_name_str[] = {
 #define INIT_NODE(v)                                                                     \
     {                                                                                    \
         int i;                                                                           \
-        ALLOCATE_NODE (v);                                                               \
+        ALLOCATE (v, node);                                                              \
         v->info.id = NULL;                                                               \
         v->refcnt = 0;                                                                   \
         v->flag = 0;                                                                     \
@@ -75,54 +67,66 @@ char *prf_name_str[] = {
 /*  Make-functions for non-node structures                                  */
 /*--------------------------------------------------------------------------*/
 
-/*
-types *MakeType(simpletype basetype,
-                nums*      nums,
-                char*      name,
-                char*      mod) */
+shpseg *
+MakeShpseg (nums *numsp)
+{
+    shpseg *tmp;
+    int i = 0;
+    nums *oldnumsp;
+
+    DBUG_ENTER ("MakeShpseg");
+
+    ALLOCATE (tmp, shpseg);
+
+    tmp->next = NULL;
+
+    for (i = 0; i < SHP_SEG_SIZE; i++) {
+        SHPSEG_SHAPE (tmp, i) = -1;
+    }
+
+    while (numsp != NULL) {
+        if (i >= SHP_SEG_SIZE) {
+            ERROR2 (1, ("ERROR: Maximum number of dimensions exceeded"));
+        }
+
+        SHPSEG_SHAPE (tmp, i) = NUMS_NUM (numsp);
+
+        DBUG_PRINT ("GENTREE", ("shape-element: %d", numsp->num));
+
+        i++;
+        oldnumsp = numsp;
+        numsp = NUMS_NEXT (numsp);
+        free (oldnumsp);
+    }
+
+    DBUG_RETURN (tmp);
+}
 
 types *
-MakeType (simpletype basetype, nums *numsp, char *name, char *mod)
+MakeType (simpletype basetype, int dim, shpseg *shpseg, char *name, char *mod)
 {
-    nums *oldnums;
     types *tmp;
     int *shp;
 
     DBUG_ENTER ("MakeType");
 
-    ALLOCATE_TYPES (tmp);
+    ALLOCATE (tmp, types);
 
     tmp->simpletype = basetype;
     tmp->name = name;
     tmp->name_mod = mod;
-    tmp->dim = 0;
-
-    if (numsp != NULL) {
-        ALLOCATE_SHPSEG (tmp->shpseg);
-
-        shp = tmp->shpseg->shp;
-
-        do {
-            tmp->dim++;
-            *shp++ = numsp->num;
-            DBUG_PRINT ("GENTREE", ("shape-element: %d", numsp->num));
-            oldnums = numsp;
-            numsp = numsp->next;
-            free (oldnums);
-        } while (numsp != NULL);
-    } else {
-        tmp->shpseg = NULL;
-    }
+    tmp->shpseg = shpseg;
+    tmp->dim = dim;
 
     tmp->next = NULL;
 
     tmp->id = NULL;
     tmp->id_mod = NULL;
-    tmp->attrib = ST_regular;
-    tmp->status = ST_regular;
 
-    /*  DBUG_RETURN(tmp); */
-    return (tmp);
+    tmp->status = ST_regular;
+    tmp->attrib = ST_regular;
+
+    DBUG_RETURN (tmp);
 }
 
 /*
@@ -137,7 +141,7 @@ MakeIds (char *name)
     ids *tmp;
     DBUG_ENTER ("MakeIds");
 
-    ALLOCATE_IDS (tmp);
+    ALLOCATE (tmp, ids);
     IDS_NAME (tmp) = name;
     IDS_REFCNT (tmp) = 0;
     IDS_NEXT (tmp) = NULL;
@@ -147,6 +151,32 @@ MakeIds (char *name)
     IDS_STATUS (tmp) = ST_regular;
 
     tmp->attrib = ST_regular;
+
+    DBUG_RETURN (tmp);
+}
+
+nums *
+MakeNums (int num, nums *next)
+{
+    nums *tmp;
+    DBUG_ENTER ("MakeNums");
+
+    ALLOCATE (tmp, nums);
+    NUMS_NUM (tmp) = num;
+    NUMS_NEXT (tmp) = next;
+
+    DBUG_RETURN (tmp);
+}
+
+strings *
+MakeStrings (char *string, strings *next)
+{
+    strings *tmp;
+    DBUG_ENTER ("MakeStrings");
+
+    ALLOCATE (tmp, strings);
+    STRINGS_STRING (tmp) = string;
+    STRINGS_NEXT (tmp) = next;
 
     DBUG_RETURN (tmp);
 }
@@ -286,7 +316,7 @@ MakeExplist (node *itypes, node *etypes, node *objs, node *funs)
 }
 
 node *
-MakeTypedef (char *name, char *mod, types *type, node *next)
+MakeTypedef (char *name, char *mod, types *type, statustype attrib, node *next)
 {
     node *tmp;
     DBUG_ENTER ("MakeTypedef");
@@ -298,6 +328,7 @@ MakeTypedef (char *name, char *mod, types *type, node *next)
     TYPEDEF_TYPE (tmp) = type;
     TYPEDEF_NAME (tmp) = name;
     TYPEDEF_MOD (tmp) = mod;
+    TYPEDEF_ATTRIB (tmp) = attrib;
     TYPEDEF_NEXT (tmp) = next;
 
     DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),

@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.1  1995/09/27 15:13:12  cg
+ * Revision 1.2  1995/09/29 17:50:51  cg
+ * new access structures for strings, nums, shpseg.
+ * shape handling modified.
+ *
+ * Revision 1.1  1995/09/27  15:13:12  cg
  * Initial revision
  *
  *
@@ -89,8 +93,12 @@ file can be found in tree_basic.c
  */
 
 /***
- ***  SHAPES : int                DIM
- ***           int[SHP_SEG_SIZE]  SELEMS
+ ***  SHAPES :
+ ***
+ ***  permanent attributes:
+ ***
+ ***    int                DIM
+ ***    int[SHP_SEG_SIZE]  SELEMS  (O)
  ***
  ***/
 
@@ -100,19 +108,39 @@ file can be found in tree_basic.c
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  TYPES : simpletype         BASETYPE
- ***          int                DIM
- ***          int[SHP_SEG_SIZE]  SHAPE     (O)
- ***          char*              NAME      (O)
- ***          char*              MOD       (O)
- ***          types*             NEXT      (O)
+ ***  SHPSEG :
+ ***
+ ***  permanent attributes:
+ ***
+ ***    int[SHP_SEG_SIZE]  SHAPE
+ ***
  ***/
 
-extern types *MakeType (simpletype basetype, nums *nums, char *name, char *mod);
+extern shpseg *MakeShpseg (nums *num);
+
+#define SHPSEG_SHAPE(s, x) (s->shp[x])
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  TYPES :
+ ***
+ ***  permanent attributes:
+ ***
+ ***    simpletype         BASETYPE
+ ***    int                DIM
+ ***    shpseg*            SHPSEG    (O)
+ ***    char*              NAME      (O)
+ ***    char*              MOD       (O)
+ ***    types*             NEXT      (O)
+ ***/
+
+extern types *MakeType (simpletype basetype, int dim, shpseg *shpseg, char *name,
+                        char *mod);
 
 #define TYPES_BASETYPE(t) (t->simpletype)
 #define TYPES_DIM(t) (t->dim)
-#define TYPES_SHAPE(t, x) (t->shpseg->shp[x])
+#define TYPES_SHPSEG(t) (t->shpseg)
 #define TYPES_NAME(t) (t->name)
 #define TYPES_MOD(t) (t->name_mod)
 #define TYPES_NEXT(t) (t->next)
@@ -145,6 +173,38 @@ extern ids *MakeIds (char *name);
 #define IDS_DEF(i) (i->def)
 #define IDS_USE(i) (i->use)
 #define IDS_STATUS(i) (i->status)
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  NUMS :
+ ***
+ ***  permanent attributes:
+ ***
+ ***    int    NUM
+ ***    nums*  NEXT  (O)
+ ***/
+
+extern nums *MakeNums (int num, nums *next);
+
+#define NUMS_NUM(n) (n->num)
+#define NUMS_NEXT(n) (n->next)
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  STRINGS :
+ ***
+ ***  permanent attributes:
+ ***
+ ***    char*  STRING
+ ***    nums*  NEXT    (O)
+ ***/
+
+extern strings *MakeStrings (char *string, strings *next);
+
+#define STRINGS_STRING(s) (s->name)
+#define STRINGS_NEXT(s) (s->next)
 
 /*==========================================================================*/
 
@@ -308,25 +368,28 @@ extern node *MakeExplist (node *itypes, node *etypes, node *objs, node *funs);
  ***
  ***  sons:
  ***
- ***    node*   NEXT  (O)  (N_typedef)
+ ***    node*       NEXT  (O)  (N_typedef)
  ***
  ***  permanent attributes:
  ***
- ***    char*   NAME
- ***    char*   MOD   (O)
- ***    types*  TYPE
+ ***    char*       NAME
+ ***    char*       MOD   (O)
+ ***    types*      TYPE
+ ***    statustype  ATTRIB
  ***
  ***  temporary attributes:
  ***
- ***    types*  IMPL  (O)               (import -> )
- ***                                    ( -> writesib !!)
+ ***    types*      IMPL  (O)               (import -> )
+ ***                                        ( -> writesib !!)
  ***/
 
-extern node *MakeTypedef (char *name, char *mod, types *type, node *next);
+extern node *MakeTypedef (char *name, char *mod, types *type, statustype attrib,
+                          node *next);
 
 #define TYPEDEF_NAME(n) (n->info.types->id)
 #define TYPEDEF_MOD(n) (n->info.types->id_mod)
 #define TYPEDEF_TYPE(n) (n->info.types)
+#define TYPEDEF_ATTRIB(n) (n->info.types->attrib)
 #define TYPEDEF_IMPL(n) (n->info.types->next)
 #define TYPEDEF_NEXT(n) (n->node[0])
 
