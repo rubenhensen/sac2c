@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2002/04/05 10:27:18  dkr
+ * TmpVar(): precomp3_tab added
+ *
  * Revision 3.15  2001/07/13 13:23:41  cg
  * Some useless DBUG_PRINTs eliminated, memory management DBUG_PRINTs
  * converted to some standardized form.
@@ -654,9 +657,11 @@ TmpVar ()
     } else if (act_tab == unique_tab) {
         s = "uniq";
     } else if (act_tab == precomp1_tab) {
-        s = "pcomp";
+        s = "pcomp1";
     } else if (act_tab == precomp2_tab) {
-        s = "pcomp";
+        s = "pcomp2";
+    } else if (act_tab == precomp3_tab) {
+        s = "pcomp3";
     } else if (act_tab == readsib_tab) {
         s = "rsib";
     } else if (act_tab == cse_tab) {
