@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.143  2004/10/28 17:54:20  khf
+ * splitted building of offset_icms into offset_icms
+ * and offset_shp_icms to avoid mixed declarations and code
+ *
  * Revision 3.142  2004/10/22 15:41:06  ktr
  * Added support for F_reuse.
  *
@@ -6710,6 +6714,7 @@ COMPWith2 (node *arg_node, info *arg_info)
     node *fold_icms = NULL;
     node *fold_rc_icms = NULL;
     node *offset_icms = NULL;
+    node *offset_shp_icms = NULL;
 
     DBUG_ENTER ("COMPWith2");
 
@@ -6985,9 +6990,18 @@ COMPWith2 (node *arg_node, info *arg_info)
                                                          MakeExprs (MakeNum (NWITH2_DIMS (
                                                                       arg_node)),
                                                                     NULL))),
-                                NULL);
-        } else {
-            offset_icms = NULL;
+                                offset_icms);
+
+            offset_shp_icms
+              = MakeAssignIcm1 ("WL_OFFSET_SHAPE_FACTOR",
+                                MakeTypeArgs (IDS_NAME (wlids), IDS_TYPE (wlids), FALSE,
+                                              TRUE, FALSE,
+                                              MakeExprs (DupIds_Id_NT (
+                                                           NWITH2_VEC (wlnode)),
+                                                         MakeExprs (MakeNum (NWITH2_DIMS (
+                                                                      arg_node)),
+                                                                    NULL))),
+                                offset_shp_icms);
         }
 
         switch (NWITH2_TYPE (arg_node)) {
@@ -7057,10 +7071,11 @@ COMPWith2 (node *arg_node, info *arg_info)
          *******************************************/
 
         ret_node
-          = MakeAssigns7 (alloc_icms, fold_icms,
+          = MakeAssigns9 (alloc_icms, fold_icms,
                           MakeAssignIcm1 ("PF_BEGIN_WITH", MakeId_Copy (profile_name),
                                           MakeAssignIcm1 ("WL_SCHEDULE__BEGIN", icm_args,
-                                                          offset_icms)),
+                                                          NULL)),
+                          offset_icms, offset_shp_icms,
                           Trav (NWITH2_SEGS (arg_node), arg_info),
                           MakeAssignIcm1 ("WL_SCHEDULE__END", DupTree (icm_args),
                                           MakeAssignIcm1 ("PF_END_WITH",
@@ -7110,6 +7125,18 @@ COMPWith2 (node *arg_node, info *arg_info)
                                                                             arg_node)),
                                                                         NULL))),
                                     offset_icms);
+
+                offset_shp_icms
+                  = MakeAssignIcm1 ("WL_OFFSET_SHAPE_FACTOR",
+                                    MakeTypeArgs (IDS_NAME (tmp_ids), IDS_TYPE (tmp_ids),
+                                                  FALSE, TRUE, FALSE,
+                                                  MakeExprs (DupIds_Id_NT (
+                                                               NWITH2_VEC (wlnode)),
+                                                             MakeExprs (MakeNum (
+                                                                          NWITH2_DIMS (
+                                                                            arg_node)),
+                                                                        NULL))),
+                                    offset_shp_icms);
             }
 
             /*
@@ -7229,10 +7256,11 @@ COMPWith2 (node *arg_node, info *arg_info)
          *******************************************/
 
         ret_node
-          = MakeAssigns7 (alloc_icms, fold_icms,
+          = MakeAssigns9 (alloc_icms, fold_icms,
                           MakeAssignIcm1 ("PF_BEGIN_WITH", MakeId_Copy (profile_name),
                                           MakeAssignIcm1 ("WL_SCHEDULE__BEGIN", icm_args,
-                                                          offset_icms)),
+                                                          NULL)),
+                          offset_icms, offset_shp_icms,
                           Trav (NWITH2_SEGS (arg_node), arg_info),
                           MakeAssignIcm1 ("WL_SCHEDULE__END", DupTree (icm_args),
                                           MakeAssignIcm1 ("PF_END_WITH",
