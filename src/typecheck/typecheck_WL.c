@@ -1,6 +1,10 @@
 /*      $Id$
  *
  * $Log$
+ * Revision 2.10  2000/05/11 10:38:28  dkr
+ * Signature of ReduceGenarrayShape modified.
+ * Bug in ReduceGenarrayShape fixed: arg_info is no longer dumped.
+ *
  * Revision 2.9  2000/05/03 16:49:36  dkr
  * COFreeConstant returns NULL now
  *
@@ -47,8 +51,7 @@
 #include "globals.h"
 #include "ConstantFolding.h"
 #include "constants.h"
-
-extern types *TI_array (node *arg_node, node *arg_info); /* from typecheck.c */
+#include "typecheck.h"
 
 /*
  * This files exports a function ReduceGenarrayShape() which tries to
@@ -207,7 +210,7 @@ TCWLprf (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *ReduceGenarrayShape(node *arg_node)
+ *   node *ReduceGenarrayShape(node *arg_node, types *expr_type)
  *
  * description:
  *   CFs the given expression (see file description) and returns the
@@ -217,7 +220,10 @@ TCWLprf (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-ReduceGenarrayShape (node *arg_node, types *expr_type)
+ReduceGenarrayShape (node *arg_node, node *arg_info, types *expr_type)
+/*
+ * dkr: parameter 'arg_info' added (see remark below)
+ */
 {
     funtab *old_tab;
     node *infon;
@@ -227,7 +233,23 @@ ReduceGenarrayShape (node *arg_node, types *expr_type)
     old_tab = act_tab;
     act_tab = tcwl_tab;
 
+    /*
+     * remark (dkr):
+     *
+     * It is not a good idea to create a new (empty) arg_info-node here,
+     * I'm afraid. All the arg_info-data is lost now although it is
+     * obviously needed during the rest of the traversal!!
+     * Why don't we hand over ReduceGenarrayShape() the current arg_info???
+     * Possibly this will overwrite some arg_info-data still needed
+     * after finishing the call of ReduceGenarrayShape() :-((
+     * Therefore it is better just to copy the arg_info-data here ...
+     */
+
     infon = MakeInfo ();
+    infon->node[0] = MakeNode (N_ok); /* needed for INFO_TC_... macros */
+    INFO_TC_STATUS (infon) = INFO_TC_STATUS (arg_info);
+    INFO_TC_VARDEC (infon) = INFO_TC_VARDEC (arg_info);
+    INFO_TC_FUNDEF (infon) = INFO_TC_FUNDEF (arg_info);
     INFO_CF_TYPE (infon) = expr_type;
 
     expr_ok = 1;
@@ -247,7 +269,6 @@ ReduceGenarrayShape (node *arg_node, types *expr_type)
     }
 
     act_tab = old_tab;
-
     infon = FreeTree (infon);
 
     DBUG_RETURN (arg_node);
