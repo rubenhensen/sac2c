@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.14  1995/12/15 10:41:11  cg
+# Revision 1.15  1995/12/29 10:38:56  cg
+# added compilation of readsib.c
+#
+# Revision 1.14  1995/12/15  10:41:11  cg
 # make deps done
 #
 # Revision 1.13  1995/10/26  14:48:19  cg
@@ -50,7 +53,7 @@ CC=gcc -ansi -g
 
 INCS=-I../global -I../../inc -I../scanparse -I../print
 
-all: filemgr.o import.o sib.o implicittypes.o analysis.o checkdec.o
+all: filemgr.o import.o readsib.o writesib.o implicittypes.o analysis.o checkdec.o
 
 filemgr.o: filemgr.c
 	$(CC) -o filemgr.o -c filemgr.c $(INCS)
@@ -58,8 +61,11 @@ filemgr.o: filemgr.c
 import.o: import.c
 	$(CC) -o import.o -c import.c $(INCS)
 
-sib.o: sib.c
-	$(CC) -o sib.o -c sib.c $(INCS)
+writesib.o: writesib.c
+	$(CC) -o writesib.o -c writesib.c $(INCS)
+
+readsib.o: readsib.c
+	$(CC) -o readsib.o -c readsib.c $(INCS)
 
 implicittypes.o: implicittypes.c
 	$(CC) -o implicittypes.o -c implicittypes.c $(INCS)
@@ -75,8 +81,8 @@ deps:
 	makedepend $(INCS) *.c
 
 clean:
-	$(RM) filemgr.o import.o sib.o implicittypes.o analysis.o  \
-              checkdec.o *.bak
+	$(RM) filemgr.o import.o writesib.o implicittypes.o analysis.o  \
+              checkdec.o readsib.o *.bak *.sac *.sib *.dec
 
 
 
@@ -111,9 +117,22 @@ import.o: ../global/Error.h /usr/include/stdio.h /usr/include/stdlib.h
 import.o: ../global/internal_lib.h ../global/free.h ../../inc/dbug.h
 import.o: ../global/my_debug.h ../scanparse/scnprs.h ../scanparse/y.tab.h
 import.o: ../global/traverse.h ../global/access_macros.h filemgr.h import.h
+readsib.o: ../global/types.h ../global/tree_basic.h ../global/tree_compound.h
+readsib.o: ../global/Error.h /usr/include/stdio.h /usr/include/string.h
+readsib.o: /usr/include/sys/stdtypes.h /usr/include/stdlib.h ../global/free.h
+readsib.o: ../../inc/dbug.h ../global/my_debug.h ../global/internal_lib.h
+readsib.o: ../global/traverse.h import.h ../scanparse/scnprs.h
+readsib.o: ../scanparse/y.tab.h filemgr.h
 sib.o: /usr/include/string.h /usr/include/sys/stdtypes.h
 sib.o: /usr/include/malloc.h ../global/types.h ../global/tree_basic.h
 sib.o: ../global/tree_compound.h ../global/Error.h /usr/include/stdio.h
 sib.o: /usr/include/stdlib.h ../global/free.h ../../inc/dbug.h
 sib.o: ../global/my_debug.h ../global/traverse.h ../print/convert.h filemgr.h
 sib.o: sib.h
+writesib.o: /usr/include/string.h /usr/include/sys/stdtypes.h
+writesib.o: /usr/include/malloc.h ../global/types.h ../global/tree_basic.h
+writesib.o: ../global/tree_compound.h ../global/Error.h /usr/include/stdio.h
+writesib.o: /usr/include/stdlib.h ../global/free.h ../../inc/dbug.h
+writesib.o: ../global/my_debug.h ../global/traverse.h ../print/convert.h
+writesib.o: filemgr.h ../print/print.h ../global/tree.h
+writesib.o: ../global/internal_lib.h
