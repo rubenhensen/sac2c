@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2001/04/02 16:01:56  dkr
+ * NodeOrInt_MakeIndex modified
+ * NameOrVal_MakeIndex removed
+ * NodeOrInt_Print added
+ *
  * Revision 1.2  2001/04/02 11:41:14  dkr
  * includes added
  *
@@ -61,7 +66,11 @@ NameOrVal_CheckConsistency (char *name, int val)
  *   bool NameOrVal_IsInt( char *name, int val)
  *
  * Description:
- *   Returns TRUE iff  [name, val]  has the type 'int'.
+ *   Returns TRUE iff  (val != IDX_OTHER).
+ *
+ * Note:
+ *   (NodeOrInt_IsInt => NameOrVal_IsInt)  is hold
+ *   (NameOrVal_IsInt <= NodeOrInt_IsInt)  is *not* hold!!
  *
  ******************************************************************************/
 
@@ -295,30 +304,34 @@ NodeOrInt_MakeNode (nodetype nt, void *node_or_int)
 /******************************************************************************
  *
  * Function:
- *   node *NameOrVal_MakeIndex( char *name, int val,
+ *   node *NodeOrInt_MakeIndex( nodetype nt, void *node_or_int,
  *                              int dim, char *wl_name,
  *                              bool no_num, bool no_icm)
  *
  * Description:
  *   Converts the parameter of a N_WLstride(Var) or N_WLgrid(Var) node into
  *   an index.
- *   If ('name' != NULL) the function returns a new N_id node containing the
- *   correct index selection (node_or_int[dim]).
+ *   If ('name' != NULL) the function returns a new N_id/N_icm node containing
+ *   the correct index selection ('name' if scalar, 'name[dim]' otherwise).
  *   If ('name' == NULL) and ('val' == IDX_SHAPE) the functions returns a new
- *   N_id node containing the shape of the current with-loop.
+ *   N_id/N_icm node containing the shape of the current with-loop.
  *   If ('name' == NULL) and ('val' != IDX_OTHER) the function returns a new
- *   N_num node containing the value of 'val'.
+ *   N_num/N_id node containing the value of 'val'.
  *
  ******************************************************************************/
 
 node *
-NameOrVal_MakeIndex (char *name, int val, int dim, char *wl_name, bool no_num,
+NodeOrInt_MakeIndex (nodetype nt, void *node_or_int, int dim, char *wl_name, bool no_num,
                      bool no_icm)
 {
-    char *str;
     node *index;
+    char *str;
+    char *name;
+    int val;
 
-    DBUG_ENTER ("NodeOrVal_MakeIndex");
+    DBUG_ENTER ("NodeOrInt_MakeIndex");
+
+    NodeOrInt_GetNameOrVal (&name, &val, nt, node_or_int);
 
     if (NameOrVal_IsInt (name, val)) {
         if (val == IDX_SHAPE) {
@@ -337,43 +350,20 @@ NameOrVal_MakeIndex (char *name, int val, int dim, char *wl_name, bool no_num,
             }
         }
     } else {
-        if (no_icm) {
-            str = (char *)MALLOC ((strlen (name) + 43) * sizeof (char));
-            sprintf (str, "SAC_ND_READ_ARRAY( %s, %d)", name, dim);
-            index = MakeId (str, NULL, ST_regular);
+        DBUG_ASSERT ((ID_VARDEC ((*((node **)node_or_int))) != NULL), "no vardec found!");
+
+        if (ID_DIM ((*((node **)node_or_int))) == SCALAR) {
+            index = DupNode (*((node **)node_or_int));
         } else {
-            index = MakeIcm2 ("ND_READ_ARRAY", MakeId_Copy (name), MakeNum (dim));
+            if (no_icm) {
+                str = (char *)MALLOC ((strlen (name) + 43) * sizeof (char));
+                sprintf (str, "SAC_ND_READ_ARRAY( %s, %d)", name, dim);
+                index = MakeId (str, NULL, ST_regular);
+            } else {
+                index = MakeIcm2 ("ND_READ_ARRAY", MakeId_Copy (name), MakeNum (dim));
+            }
         }
     }
-
-    DBUG_RETURN (index);
-}
-
-/******************************************************************************
- *
- * Function:
- *   node *NodeOrInt_MakeIndex( nodetype nt, void *node_or_int,
- *                              int dim, char *wl_name,
- *                              bool no_num, bool no_icm)
- *
- * Description:
- *   Converts the parameter of a N_WLstride(Var) or N_WLgrid(Var) node into
- *   an index.
- *
- ******************************************************************************/
-
-node *
-NodeOrInt_MakeIndex (nodetype nt, void *node_or_int, int dim, char *wl_name, bool no_num,
-                     bool no_icm)
-{
-    node *index;
-    char *name;
-    int val;
-
-    DBUG_ENTER ("NodeOrInt_MakeIndex");
-
-    NodeOrInt_GetNameOrVal (&name, &val, nt, node_or_int);
-    index = NameOrVal_MakeIndex (name, val, dim, wl_name, no_num, no_icm);
 
     DBUG_RETURN (index);
 }
@@ -589,4 +579,47 @@ NodeOrInt_Le (nodetype nt1, void *node_or_int1, nodetype nt2, void *node_or_int2
     ret = NameOrVal_Le (name1, val1, name2, val2, shape);
 
     DBUG_RETURN (ret);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   void NodeOrInt_Print( FILE *handle,
+ *                         nodetype nt, void *node_or_int,
+ *                         int dim)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+void
+NodeOrInt_Print (FILE *handle, nodetype nt, void *node_or_int, int dim)
+{
+    char *name;
+    int val;
+
+    DBUG_ENTER ("NodeOrInt_Print");
+
+    NodeOrInt_GetNameOrVal (&name, &val, nt, node_or_int);
+
+    if (NameOrVal_IsInt (name, val)) {
+        if (val == IDX_OTHER) {
+            fprintf (outfile, "?");
+        } else if (val == IDX_SHAPE) {
+            fprintf (outfile, ".");
+        } else {
+            fprintf (handle, "%i", val);
+        }
+    } else {
+        DBUG_ASSERT ((ID_VARDEC ((*((node **)node_or_int))) != NULL), "no vardec found!");
+
+        if (ID_DIM ((*((node **)node_or_int))) == SCALAR) {
+            fprintf (handle, "%s", name);
+        } else {
+            fprintf (handle, "%s[%i]", name, dim);
+        }
+    }
+
+    DBUG_VOID_RETURN;
 }
