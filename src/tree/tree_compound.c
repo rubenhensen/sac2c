@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.115  2004/11/26 16:59:19  skt
+ * some includes removed
+ *
  * Revision 3.114  2004/11/26 16:53:42  skt
  * killed TCgetArgtabIndexOut/In during SDC2k4
  *
@@ -61,7 +64,6 @@
 #include "DupTree.h"
 #include "shape.h"
 #include "dbug.h"
-#include "my_debug.h"
 #include "free.h"
 #include "new_types.h"
 #include "Error.h"

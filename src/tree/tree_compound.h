@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.172  2004/11/26 16:59:19  skt
+ * some includes removed
+ *
  * Revision 3.171  2004/11/26 16:53:42  skt
  * killed TCgetArgtabIndexOut/In during SDC2k4
  *
@@ -223,11 +226,6 @@ specific implementation of a function should remain with the source code.
 #define _SAC_TREE_COMPOUND_H_
 
 #include "types.h"
-/*#include "shape.h"
-#include "tree_basic.h"
-#include "Error.h"
-#include "free.h"
-*/
 
 /*--------------------------------------------------------------------------*/
 /*--------------------------------------------------------------------------*/
