@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.37  2000/08/02 11:13:44  nmw
+ * genlib c comment for profiling and MT changed
+ *
  * Revision 2.36  2000/08/01 13:44:40  nmw
  * comment to -genlib c switch adjusted
  *
@@ -619,8 +622,9 @@ usage ()
             "\t -genlib <lang>\tlanguage interface to generate from module.\n"
             "\t\t\tsac: generate SAC library.\n"
             "\t\t\t  c: generate C library and headerfile. Be careful to\n"
-            "\t\t\t     use same switches for PHM and MT in all modules you\n"
-            "\t\t\t     link to one c executeable!"
+            "\t\t\t     use same switches for PHM and profiling in all\n"
+            "\t\t\t     modules you link to one c executeable!\n"
+            "\t\t\t     Multithreading is not yet available for c libraries!\n"
             "\t\t\tdefault: -genlib sac\n"
 
             "\n\t -l <n>\t\tlink level for generating SAC library.\n"
