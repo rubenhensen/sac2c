@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.20  2004/11/26 14:50:40  sbs
+ * some ismop
+ *
  * Revision 1.19  2004/11/26 14:27:02  sbs
  * change run
  *
@@ -94,9 +97,11 @@
  *
  */
 #include <stdarg.h>
+#include "shape.h"
 #include "dbug.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
+#include "internal_lib.h"
 #include "free.h"
 
 /*
