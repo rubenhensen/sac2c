@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.33  1998/05/12 15:00:52  srs
+ * added constant DUP_WLF
+ *
  * Revision 1.32  1998/05/06 18:56:49  dkr
  * added DupExprs
  *
@@ -111,6 +114,7 @@
 #define DUP_NORMAL 0
 #define DUP_INLINE 1
 #define DUP_INVARIANT 2
+#define DUP_WLF 3
 
 #ifndef NEWTREE
 #define UNS_NO arg_info->nnode
