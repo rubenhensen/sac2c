@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.128  2004/12/17 18:58:58  ktr
+ * TCgetNthExpr reverted to old counting (n=1 yields the first expression).
+ *
  * Revision 3.127  2004/12/17 09:27:20  khf
  * TCgetNthExpr corrected
  *
@@ -2391,7 +2394,7 @@ TCgetNthExpr (int n, node *exprs)
 
     DBUG_ENTER ("TCgetNthExpr");
 
-    for (cnt = 0; cnt < n; cnt++) {
+    for (cnt = 1; cnt < n; cnt++) {
         if (exprs == NULL) {
             break;
         }
