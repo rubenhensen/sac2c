@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.10  1999/11/11 10:30:36  jhs
+ * Added some DBUG_PRINTs to check which phases fail (if they do).
+ *
  * Revision 2.9  1999/08/27 11:55:09  jhs
  * Added DBUG_PRINTS.
  *
@@ -191,9 +194,11 @@ CONCfundef (node *arg_node, node *arg_info)
                 INFO_SPMDI_EXPANDCONTEXT (arg_info) = TRUE;
                 INFO_SPMDI_EXPANDSTEP (arg_info) = FALSE;
             }
-            DBUG_PRINT ("SPMDI", ("begin a spmdi trav"));
+            DBUG_PRINT ("CONC", ("--- begin a SPMDI traversal ---"));
+            DBUG_PRINT ("SPMDI", ("--- begin a SPMDI traversal ---"));
             FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
-            DBUG_PRINT ("SPMDI", ("end a spmdi trav"));
+            DBUG_PRINT ("SPMDI", ("--- end a SPMDI traversal ---"));
+            DBUG_PRINT ("CONC", ("--- end a SPMDI traversal ---"));
 
             if ((break_after == PH_spmdregions)
                 && (0 == strcmp ("spmdinit", break_specifier))) {
@@ -208,11 +213,14 @@ CONCfundef (node *arg_node, node *arg_info)
              */
             act_tab = spmdopt_tab;
             if (optimize & OPT_MTO) {
-                DBUG_PRINT ("SPMDO", ("begin a spmdo trav"));
+                DBUG_PRINT ("CONC", ("--- begin a SPMDO traversal ---"));
+                DBUG_PRINT ("SPMDO", ("--- begin a SPMDO traversal ---"));
                 FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
-                DBUG_PRINT ("SPMDO", ("end a spmdo trav"));
+                DBUG_PRINT ("SPMDO", ("--- end a SPMDO traversal ---"));
+                DBUG_PRINT ("CONC", ("--- end a SPMDO traversal ---"));
             } else {
-                DBUG_PRINT ("SPMDO", ("no spmdo"));
+                DBUG_PRINT ("CONC", ("--- no SPMDO traversal ---"));
+                DBUG_PRINT ("SPMDO", ("--- no SPMDO traversal ---"));
             }
 
             if ((break_after == PH_spmdregions)
@@ -226,7 +234,11 @@ CONCfundef (node *arg_node, node *arg_info)
              */
             act_tab = spmdlift_tab;
             INFO_SPMDL_MT (arg_info) = 0;
+            DBUG_PRINT ("CONC", ("--- begin a SPMDL (mt = 0) traversal ---"));
+            DBUG_PRINT ("SPMDL", ("--- begin a SPMDL (mt = 0) traversal ---"));
             FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+            DBUG_PRINT ("SPMDL", ("--- end a SPMDL (mt = 0) traversal ---"));
+            DBUG_PRINT ("CONC", ("--- end a SPMDL (mt = 0) traversal ---"));
 
             if ((break_after == PH_spmdregions)
                 && (0 == strcmp ("spmdlift", break_specifier))) {
@@ -237,7 +249,11 @@ CONCfundef (node *arg_node, node *arg_info)
              * Sixth, scheduling specifications outside from spmd-functions are removed.
              */
             act_tab = sched_tab;
+            DBUG_PRINT ("CONC", ("--- begin a SCHED traversal ---"));
+            DBUG_PRINT ("SCHED", ("--- begin a SCHED traversal ---"));
             FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), NULL);
+            DBUG_PRINT ("SCHED", ("--- end a SCHED traversal ---"));
+            DBUG_PRINT ("CONC", ("--- end a SCHED traversal ---"));
         } else {
 
             if ((break_after == PH_spmdregions)
@@ -253,7 +269,11 @@ CONCfundef (node *arg_node, node *arg_info)
 
             act_tab = spmdlift_tab;
             INFO_SPMDL_MT (arg_info) = 1;
+            DBUG_PRINT ("CONC", ("--- begin a SPMDL (mt = 1) traversal ---"));
+            DBUG_PRINT ("SPMDL", ("--- begin a SPMDL (mt = 1) traversal ---"));
             FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+            DBUG_PRINT ("SPMDL", ("--- end a SPMDL (mt = 1) traversal ---"));
+            DBUG_PRINT ("CONC", ("--- end a SPMDL (mt = 1) traversal ---"));
 
             if ((break_after == PH_spmdregions)
                 && (0 == strcmp ("spmdlift", break_specifier))) {
@@ -267,7 +287,11 @@ CONCfundef (node *arg_node, node *arg_info)
             act_tab = syncinit_tab;
             INFO_SYNCI_FIRST (arg_info) = 1;
             INFO_SYNCI_LAST (arg_info) = 1;
+            DBUG_PRINT ("CONC", ("--- begin a SYNCI traversal ---"));
+            DBUG_PRINT ("SYNCI", ("--- begin a SYNCI traversal ---"));
             FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+            DBUG_PRINT ("SYNCI", ("--- end a SYNCI traversal ---"));
+            DBUG_PRINT ("CONC", ("--- end a SYNCI traversal ---"));
 
             if ((break_after == PH_spmdregions)
                 && (0 == strcmp ("syncinit", break_specifier))) {
@@ -282,7 +306,14 @@ CONCfundef (node *arg_node, node *arg_info)
              */
             act_tab = syncopt_tab;
             if (optimize & OPT_SBE) {
+                DBUG_PRINT ("CONC", ("--- begin a SYNCO traversal ---"));
+                DBUG_PRINT ("SYNCO", ("--- begin a SYNCO traversal ---"));
                 FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+                DBUG_PRINT ("SYNCO", ("--- end a SYNCO traversal ---"));
+                DBUG_PRINT ("CONC", ("--- end a SYNCO traversal ---"));
+            } else {
+                DBUG_PRINT ("CONC", ("--- no SYNCO traversal ---"));
+                DBUG_PRINT ("SYNCO", ("--- no SYNCO traversal ---"));
             }
 
             if ((break_after == PH_spmdregions)
@@ -297,7 +328,11 @@ CONCfundef (node *arg_node, node *arg_info)
              * outside of the context of a synchronisation block are removed.
              */
             act_tab = sched_tab;
+            DBUG_PRINT ("CONC", ("--- begin a SCHED traversal ---"));
+            DBUG_PRINT ("SCHED", ("--- begin a SCHED traversal ---"));
             FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+            DBUG_PRINT ("SCHED", ("--- end a SCHED traversal ---"));
+            DBUG_PRINT ("CONC", ("--- end a SCHED traversal ---"));
         }
 
     cont:
@@ -332,11 +367,15 @@ CONCfundef (node *arg_node, node *arg_info)
             /*
              *  Seventh, each spmd-block and the belonging spmd-function get
              *  additional in-parameters, to be able to pass values from extracted
-             *  prolog icms to thespmd-function.
+             *  prolog icms to the spmd-function.
              */
             act_tab = spmdcons_tab;
-            FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
 
+            DBUG_PRINT ("CONC", ("--- begin a SPMDC traversal ---"));
+            DBUG_PRINT ("SPMDC", ("--- begin a SPMDC traversal ---"));
+            FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+            DBUG_PRINT ("SPMDC", ("--- end a SPMDC traversal ---"));
+            DBUG_PRINT ("CONC", ("--- end a SPMDC traversal ---"));
             if ((break_after == PH_spmdregions)
                 && (0 == strcmp ("spmdcons", break_specifier))) {
                 goto cont2;
