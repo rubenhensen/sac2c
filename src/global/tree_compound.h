@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.46  1997/04/25 09:35:40  sbs
+ * Revision 1.47  1997/04/25 13:21:59  sbs
+ * CHECK_NULL inserted.
+ *
+ * Revision 1.46  1997/04/25  09:35:40  sbs
  * () inserted in OBJDEF_LINKNAME & friends
  *
  * Revision 1.45  1997/03/11  16:33:57  cg
@@ -195,9 +198,11 @@ specific implementation of a function should remain with the source code.
 
 /*--------------------------------------------------------------------------*/
 /*--------------------------------------------------------------------------*/
-/* general function declarations                                            */
+/* general function declarations / Macros                                   */
 /*--------------------------------------------------------------------------*/
 /*--------------------------------------------------------------------------*/
+
+#define CHECK_NULL(a) ((NULL == a) ? "" : a)
 
 /*--------------------------------------------------------------------------*/
 /*--------------------------------------------------------------------------*/
@@ -207,8 +212,8 @@ specific implementation of a function should remain with the source code.
 
 #define MOD_NAME_CON "__"
 
-#define MOD(a) (NULL == a) ? "" : a
-#define MOD_CON(a) (NULL == a) ? "" : MOD_NAME_CON
+#define MOD(a) ((NULL == a) ? "" : a)
+#define MOD_CON(a) ((NULL == a) ? "" : MOD_NAME_CON)
 #define MOD_NAME(a) MOD (a), MOD_CON (a)
 
 extern char *mod_name_con;
