@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.6  1999/08/27 12:46:43  jhs
+ * Added Traversal for CountOccurences.
+ * Commented and rearranged functions.
+ *
  * Revision 2.5  1999/08/09 11:32:20  jhs
  * Cleaned up info-macros for concurrent-phase.
  *
@@ -26,51 +30,53 @@
 
 #include "DataFlowMask.h"
 
-extern void DestroyCM (int *mask);
+extern int *CreateCM (int varno);
+extern int *DestroyCM (int *mask);
 
 extern int *CountOccurences (node *block, DFMmask_t which, node *fundef);
+extern node *SPMDCOassign (node *arg_node, node *arg_info);
 
 extern int LetWithFunction (node *let);
-extern node *SPMDTLCap (node *arg_node, node *arg_info);
+extern node *SPMDLCap (node *arg_node, node *arg_info);
 
 extern node *DeleteNested (node *arg_node);
 extern node *SPMDDNspmd (node *arg_node, node *arg_info);
 
 extern void ProduceMasks (node *arg_node, node *spmd, node *fundef);
-extern node *SPMDPMlet (node *arg_node, node *arg_info);
 extern node *SPMDPMassign (node *arg_node, node *arg_info);
 
 /******************************************************************************
  ******************************************************************************
  **
  ** section:
- **   SPMDTRO - SPMD - Traversal to Reduce Occurences
+ **   SPMDRO - SPMD - Traversal to Reduce Occurences
  **
  ******************************************************************************
  ******************************************************************************/
 
 extern void ReduceOccurences (node *block, int *counters, DFMmask_t mask);
 
-extern node *SPMDTROblock (node *arg_node, node *arg_info);
-extern node *SPMDTROlet (node *arg_node, node *arg_info);
-extern node *SPMDTROassign (node *arg_node, node *arg_info);
+extern node *SPMDROblock (node *arg_node, node *arg_info);
+extern node *SPMDROlet (node *arg_node, node *arg_info);
+extern node *SPMDROassign (node *arg_node, node *arg_info);
 
 /******************************************************************************
  ******************************************************************************
  **
  ** section:
- **   SPMDTRM - SPMD - Traversal to Reduce Masks
+ **   SPMDRM - SPMD - Traversal to Reduce Masks
  **
  ******************************************************************************
  ******************************************************************************/
 
 extern DFMmask_t ReduceMasks (node *block, DFMmask_t first_out);
 
-extern node *SPMDTRMblock (node *arg_node, node *arg_info);
-extern node *SPMDTRMloop (node *arg_node, node *arg_info);
-extern node *SPMDTRMcond (node *arg_node, node *arg_info);
-extern node *SPMDTRMid (node *arg_node, node *arg_info);
-extern node *SPMDTRMlet (node *arg_node, node *arg_info);
-extern node *SPMDTRMassign (node *arg_node, node *arg_info);
+extern node *SPMDRMblock (node *arg_node, node *arg_info);
+extern node *SPMDRMwhile (node *arg_node, node *arg_info);
+extern node *SPMDRMloop (node *arg_node, node *arg_info);
+extern node *SPMDRMcond (node *arg_node, node *arg_info);
+extern node *SPMDRMid (node *arg_node, node *arg_info);
+extern node *SPMDRMlet (node *arg_node, node *arg_info);
+extern node *SPMDRMassign (node *arg_node, node *arg_info);
 
 #endif /* _spmd_trav_h */
