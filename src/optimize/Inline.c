@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.42  2005/02/14 12:43:41  cg
+ * Removed traversal functions. They are replace by inlining.c
+ *
  * Revision 3.41  2005/01/11 12:58:15  cg
  * Converted output from Error.h to ctinfo.c
  *
@@ -302,6 +305,7 @@ ResetInlineNo (node *module)
 }
 
 #if 0
+
 /******************************************************************************
  *
  * Function:
@@ -696,6 +700,8 @@ DoInline (node *let_node, info *arg_info)
     DBUG_RETURN (inl_nodes);
 }
 
+#if 0
+
 /******************************************************************************
  *
  * Function:
@@ -706,18 +712,19 @@ DoInline (node *let_node, info *arg_info)
  *
  ******************************************************************************/
 
-node *
-INLmodule (node *arg_node, info *arg_info)
+node *INLmodule( node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("INLmodule");
+  DBUG_ENTER( "INLmodule");
 
-    if (MODULE_FUNS (arg_node)) {
-        INFO_INL_MODUL (arg_info) = arg_node;
-        MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
-    }
+  if (MODULE_FUNS( arg_node)) {
+    INFO_INL_MODUL( arg_info) = arg_node;
+    MODULE_FUNS( arg_node) = TRAVdo( MODULE_FUNS( arg_node), arg_info);
+  }
 
-    DBUG_RETURN (arg_node);
+  DBUG_RETURN( arg_node);
 }
+
+
 
 /******************************************************************************
  *
@@ -729,126 +736,129 @@ INLmodule (node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 
-node *
-INLfundef (node *arg_node, info *arg_info)
+node *INLfundef( node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("INLfundef");
+  DBUG_ENTER("INLfundef");
 
-    /*
-     * CAUTION: inlining on LaC functions does not work correctly yet!!
-     *
-     * Example:
-     * ========
-     *
-     *   before lac2fun           after lac2fun            after inlining
-     *   --------------           -------------            --------------
-     *
-     *                            inline
-     *                            int rec( x)
-     *                            {
-     *                              x = cond( x);
-     *                              return( x);
-     *                            }
-     *   inline
-     *   int rec( x)              int cond( int x)         int cond( int x)
-     *   {                        {                        {
-     *     if (x > 0) {             if (x > 0) {             if (x > 0) {
-     *       x = rec( x-1);           x = rec( x-1);           x = cond( x-1);
-     *     } else {                 } else {                 } else {
-     *       x = 1;                   x = 1;                   x = 1;
-     *     }                        }                        }
-     *     return( x);              return( x);              return( x);
-     *   }                        }                        }
-     *
-     *   int main()               int main()               int main()
-     *   {                        {                        {
-     *     x = rec( 10);            x = rec( 10);            x = cond( 10);
-     *     return( x);              return( x);              return( x);
-     *   }                        }                        }
-     *
-     * Now, the LaC function 'cond' is recursive and is used in more than a
-     * single application :-((
-     *
-     * Instead, inlining must detect the recursive nature of the function
-     * 'rec' and generate 'maxinl' new conditionals in 'main':
-     *
-     *   (maxinl == 1)            (maxinl == 2)
-     *   -------------            -------------
-     *
-     *   inline                   inline
-     *   int rec( x)              int rec( x)
-     *   {                        {
-     *     x = cond( x);            x = cond( x);
-     *     return( x);              return( x);
-     *   }                        }
-     *
-     *   int cond( int x)         int cond( int x)
-     *   {                        {
-     *     if (x > 0) {             if (x > 0) {
-     *       x = rec( x-1);           x = rec( x-1);
-     *     } else {                 } else {
-     *       x = 1;                   x = 1;
-     *     }                        }
-     *     return( x);              return( x);
-     *   }                        }
-     *
-     *                            int cond3( int x)
-     *                            {
-     *                              if (x > 0) {
-     *                                x = rec( x-1);
-     *                              } else {
-     *                                x = 1;
-     *                              }
-     *                              return( x);
-     *                            }
-     *
-     *   int cond2( int x)        int cond2( int x)
-     *   {                        {
-     *     if (x > 0) {             if (x > 0) {
-     *       x = rec( x-1);           x = cond3( x-1);
-     *     } else {                 } else {
-     *       x = 1;                   x = 1;
-     *     }                        }
-     *     return( x);              return( x);
-     *   }                        }
-     *
-     *   int main()               int main()
-     *   {                        {
-     *     x = cond2( 10);          x = cond2( 10);
-     *     return( x);              return( x);
-     *   }                        }
-     */
+  /*
+   * CAUTION: inlining on LaC functions does not work correctly yet!!
+   *
+   * Example:
+   * ========
+   *
+   *   before lac2fun           after lac2fun            after inlining
+   *   --------------           -------------            --------------
+   *
+   *                            inline
+   *                            int rec( x)
+   *                            {
+   *                              x = cond( x);
+   *                              return( x);
+   *                            }
+   *   inline
+   *   int rec( x)              int cond( int x)         int cond( int x)
+   *   {                        {                        {
+   *     if (x > 0) {             if (x > 0) {             if (x > 0) {
+   *       x = rec( x-1);           x = rec( x-1);           x = cond( x-1);
+   *     } else {                 } else {                 } else {
+   *       x = 1;                   x = 1;                   x = 1;
+   *     }                        }                        }
+   *     return( x);              return( x);              return( x);
+   *   }                        }                        }
+   *
+   *   int main()               int main()               int main()
+   *   {                        {                        {
+   *     x = rec( 10);            x = rec( 10);            x = cond( 10);
+   *     return( x);              return( x);              return( x);
+   *   }                        }                        }
+   *
+   * Now, the LaC function 'cond' is recursive and is used in more than a
+   * single application :-((
+   *
+   * Instead, inlining must detect the recursive nature of the function
+   * 'rec' and generate 'maxinl' new conditionals in 'main':
+   *
+   *   (maxinl == 1)            (maxinl == 2)
+   *   -------------            -------------
+   *
+   *   inline                   inline
+   *   int rec( x)              int rec( x)
+   *   {                        {
+   *     x = cond( x);            x = cond( x);
+   *     return( x);              return( x);
+   *   }                        }
+   *
+   *   int cond( int x)         int cond( int x)
+   *   {                        {
+   *     if (x > 0) {             if (x > 0) {
+   *       x = rec( x-1);           x = rec( x-1);
+   *     } else {                 } else {
+   *       x = 1;                   x = 1;
+   *     }                        }
+   *     return( x);              return( x);
+   *   }                        }
+   *
+   *                            int cond3( int x)
+   *                            {
+   *                              if (x > 0) {
+   *                                x = rec( x-1);
+   *                              } else {
+   *                                x = 1;
+   *                              }
+   *                              return( x);
+   *                            }
+   *
+   *   int cond2( int x)        int cond2( int x)
+   *   {                        {
+   *     if (x > 0) {             if (x > 0) {
+   *       x = rec( x-1);           x = cond3( x-1);
+   *     } else {                 } else {
+   *       x = 1;                   x = 1;
+   *     }                        }
+   *     return( x);              return( x);
+   *   }                        }
+   *
+   *   int main()               int main()
+   *   {                        {
+   *     x = cond2( 10);          x = cond2( 10);
+   *     return( x);              return( x);
+   *   }                        }
+   */
 
-    DBUG_ASSERT ((!FUNDEF_ISLACFUN (arg_node)),
-                 "inlining on LaC functions does not work correctly yet!");
+  DBUG_ASSERT( (! FUNDEF_ISLACFUN( arg_node)),
+               "inlining on LaC functions does not work correctly yet!");
 
-    /*
-     * We do not do inlining in used functions, as the bodies of those
-     * functions will be thrown away anyways later on (they already
-     * exist in a compiled version within the module), this inlining
-     * would be of no use at all!
-     */
-    if ((FUNDEF_SYMBOLNAME (arg_node) == NULL) && (FUNDEF_BODY (arg_node) != NULL)
-        && (!FUNDEF_ISINLINE (arg_node))) {
+  /*
+   * We do not do inlining in used functions, as the bodies of those
+   * functions will be thrown away anyways later on (they already
+   * exist in a compiled version within the module), this inlining
+   * would be of no use at all!
+   */
+  if (  (FUNDEF_SYMBOLNAME( arg_node) == NULL)
+	&& (FUNDEF_BODY( arg_node) != NULL)
+	&& (! FUNDEF_ISINLINE( arg_node) )
+     ) {
 
-        DBUG_PRINT ("INL", ("*** Trav function %s", FUNDEF_NAME (arg_node)));
+    DBUG_PRINT( "INL", ("*** Trav function %s", FUNDEF_NAME( arg_node)));
 
-        ResetInlineNo (INFO_INL_MODUL (arg_info));
-        INFO_INL_VARDECS (arg_info) = NULL;
-        INFO_INL_FUNDEF (arg_info) = arg_node;
+    ResetInlineNo( INFO_INL_MODUL( arg_info));
+    INFO_INL_VARDECS( arg_info) = NULL;
+    INFO_INL_FUNDEF( arg_info) = arg_node;
 
-        FUNDEF_INSTR (arg_node) = TRAVdo (FUNDEF_INSTR (arg_node), arg_info);
+    FUNDEF_INSTR( arg_node) = TRAVdo( FUNDEF_INSTR( arg_node), arg_info);
 
-        FUNDEF_VARDEC (arg_node)
-          = TCappendVardec (FUNDEF_VARDEC (arg_node), INFO_INL_VARDECS (arg_info));
-    }
+    FUNDEF_VARDEC( arg_node) = TCappendVardec( FUNDEF_VARDEC( arg_node),
+                                             INFO_INL_VARDECS( arg_info));
+  }
 
-    if (FUNDEF_NEXT (arg_node)) {
-        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-    }
-
-    DBUG_RETURN (arg_node);
+  if (FUNDEF_NEXT( arg_node)) {
+    FUNDEF_NEXT( arg_node) = TRAVdo( FUNDEF_NEXT( arg_node), arg_info);
+  }
+    
+  DBUG_RETURN( arg_node);
 }
+
+
 
 /******************************************************************************
  *
@@ -861,78 +871,83 @@ INLfundef (node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 
-node *
-INLassign (node *arg_node, info *arg_info)
+node *INLassign( node *arg_node, info *arg_info)
 {
-    node *instr;
-    node *inl_fundef = NULL;
-    node *inlined_nodes = NULL;
+  node *instr;
+  node *inl_fundef = NULL;
+  node *inlined_nodes = NULL;
 
-    DBUG_ENTER ("INLassign");
+  DBUG_ENTER( "INLassign");
 
-    instr = ASSIGN_INSTR (arg_node);
-    if ((NODE_TYPE (instr) == N_let) && (NODE_TYPE (LET_EXPR (instr)) == N_ap)) {
-        /*
-         * application -> try to inline
-         */
-        inl_fundef = AP_FUNDEF (LET_EXPR (instr));
+  instr = ASSIGN_INSTR( arg_node);
+  if ((NODE_TYPE( instr) == N_let) && (NODE_TYPE( LET_EXPR( instr)) == N_ap)) {
+    /*
+     * application -> try to inline
+     */
+    inl_fundef = AP_FUNDEF( LET_EXPR( instr));
 
-        DBUG_PRINT ("INL",
-                    ("Ap of fun %s in line %d."
-                     " Fundef status:"
-                     " wrapper %d inline %d max-rec-inl left %d",
-                     AP_NAME (LET_EXPR (instr)), NODE_LINE (arg_node),
-                     (FUNDEF_ISWRAPPERFUN (inl_fundef)), FUNDEF_ISINLINE (inl_fundef),
-                     FUNDEF_INLREC (inl_fundef) != 0));
+    DBUG_PRINT( "INL", ("Ap of fun %s in line %d."
+                        " Fundef status:"
+                        " wrapper %d inline %d max-rec-inl left %d",
+                        AP_NAME( LET_EXPR( instr)),
+                        NODE_LINE( arg_node),
+                        (FUNDEF_ISWRAPPERFUN( inl_fundef)),
+                        FUNDEF_ISINLINE( inl_fundef),
+                        FUNDEF_INLREC( inl_fundef) != 0));
 
-        if (FUNDEF_ISINLINE (inl_fundef)) {
+    if (FUNDEF_ISINLINE( inl_fundef)) {
 #if INLINE_WRAPPERS
-            if ((FUNDEF_INLREC (inl_fundef) > 0) || (FUNDEF_ISWRAPPERFUN (inl_fundef))) {
+      if ((FUNDEF_INLREC( inl_fundef) > 0) ||
+          (FUNDEF_ISWRAPPERFUN( inl_fundef))) {
 #else
-            if ((FUNDEF_INLREC (inl_fundef) > 0) && (!FUNDEF_ISWRAPPERFUN (inl_fundef))) {
+      if ((FUNDEF_INLREC( inl_fundef) > 0) &&
+          (!FUNDEF_ISWRAPPERFUN( inl_fundef))) {
 #endif
-                inlined_nodes = DoInline (instr, arg_info);
-            }
-        }
+        inlined_nodes = DoInline( instr, arg_info);
+      }
+    }
+  }
+
+  if (inlined_nodes != NULL) {
+    /*
+     * inlining done
+     *  -> traverse inline code
+     *  -> insert inline code into assignment chain
+     */
+
+    /* 'inl_fundef' definitly is set, since (inlined_nodes != NULL) */
+    if( !FUNDEF_ISWRAPPERFUN( inl_fundef)) {
+      FUNDEF_INLREC( inl_fundef)--;
+    }
+    inlined_nodes = TRAVdo( inlined_nodes, arg_info);
+    if( !FUNDEF_ISWRAPPERFUN( inl_fundef)) {
+      FUNDEF_INLREC( inl_fundef)++;
     }
 
-    if (inlined_nodes != NULL) {
-        /*
-         * inlining done
-         *  -> traverse inline code
-         *  -> insert inline code into assignment chain
-         */
-
-        /* 'inl_fundef' definitly is set, since (inlined_nodes != NULL) */
-        if (!FUNDEF_ISWRAPPERFUN (inl_fundef)) {
-            FUNDEF_INLREC (inl_fundef)--;
-        }
-        inlined_nodes = TRAVdo (inlined_nodes, arg_info);
-        if (!FUNDEF_ISWRAPPERFUN (inl_fundef)) {
-            FUNDEF_INLREC (inl_fundef)++;
-        }
-
-        if (ASSIGN_NEXT (arg_node)) {
-            ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-        }
-
-        arg_node = TCappendAssign (inlined_nodes, FREEdoFreeNode (arg_node));
-    } else {
-        /*
-         * no inlining done -> traverse sons
-         */
-
-        if (ASSIGN_INSTR (arg_node)) {
-            ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
-        }
-
-        if (ASSIGN_NEXT (arg_node)) {
-            ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-        }
+    if (ASSIGN_NEXT( arg_node)) {
+      ASSIGN_NEXT( arg_node) = TRAVdo( ASSIGN_NEXT( arg_node), arg_info);
     }
 
-    DBUG_RETURN (arg_node);
+    arg_node = TCappendAssign( inlined_nodes, FREEdoFreeNode( arg_node));
+  }
+  else {
+    /*
+     * no inlining done -> traverse sons
+     */
+
+    if (ASSIGN_INSTR( arg_node)) {
+      ASSIGN_INSTR( arg_node) = TRAVdo( ASSIGN_INSTR( arg_node), arg_info);
+    }
+
+    if (ASSIGN_NEXT( arg_node)) {
+      ASSIGN_NEXT( arg_node) = TRAVdo( ASSIGN_NEXT( arg_node), arg_info);
+    }
+  }
+
+  DBUG_RETURN( arg_node);
 }
+
+#endif
 
 /******************************************************************************
  *
