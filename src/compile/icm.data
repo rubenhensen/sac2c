@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.34  2002/06/07 16:10:21  dkr
+ * - some new ICMs for TAGGED_ARRAYS added
+ *
  * Revision 3.33  2002/06/06 18:22:15  dkr
  * some signatures modified
  *
@@ -157,12 +160,35 @@ ICM_DEF( ND_DECL, TRACE_NONE)
 ICM_END( ND_DECL, (nt, basetype, sdim, shp))
 #endif
 
-#if defined(ND_DECL_ARG) || defined(ICM_ALL)
-ICM_DEF( ND_DECL_ARG, TRACE_NONE)
+#if defined(ND_DECL_EXTERN) || defined(ICM_ALL)
+ICM_DEF( ND_DECL_EXTERN, TRACE_NONE)
+  ICM_STR( basetype)
+  ICM_STR( nt)
+  ICM_INT( sdim)
+ICM_END( ND_DECL_EXTERN, (basetype, nt, sdim))
+#endif
+
+#if defined(ND_DECL_MIRROR) || defined(ICM_ALL)
+ICM_DEF( ND_DECL_MIRROR, TRACE_NONE)
   ICM_STR( nt)
   ICM_INT( sdim)
   ICM_VARINT( sdim, shp)
-ICM_END( ND_DECL_ARG, (nt, sdim, shp))
+ICM_END( ND_DECL_MIRROR, (nt, sdim, shp))
+#endif
+
+#if defined(ND_DECL_MIRROR_PARAM) || defined(ICM_ALL)
+ICM_DEF( ND_DECL_MIRROR_PARAM, TRACE_NONE)
+  ICM_STR( nt)
+  ICM_INT( sdim)
+  ICM_VARINT( sdim, shp)
+ICM_END( ND_DECL_MIRROR_PARAM, (nt, sdim, shp))
+#endif
+
+#if defined(ND_DECL_MIRROR_EXTERN) || defined(ICM_ALL)
+ICM_DEF( ND_DECL_MIRROR_EXTERN, TRACE_NONE)
+  ICM_STR( nt)
+  ICM_INT( sdim)
+ICM_END( ND_DECL_MIRROR_EXTERN, (nt, sdim))
 #endif
 
 
@@ -217,6 +243,23 @@ ICM_DEF( ND_ASSIGN, TRACE_NONE)
   ICM_STR( from_nt)
 ICM_END( ND_ASSIGN, (to_nt, to_sdim, from_nt))
 #endif
+
+#if defined(ND_ASSIGN_DATA) || defined(ICM_ALL)
+ICM_DEF( ND_ASSIGN_DATA, TRACE_NONE)
+  ICM_STR( to_nt)
+  ICM_INT( to_sdim)
+  ICM_STR( from_nt)
+ICM_END( ND_ASSIGN_DATA, (to_nt, to_sdim, from_nt))
+#endif
+
+#if defined(ND_ASSIGN_MIRROR) || defined(ICM_ALL)
+ICM_DEF( ND_ASSIGN_MIRROR, TRACE_NONE)
+  ICM_STR( to_nt)
+  ICM_INT( to_sdim)
+  ICM_STR( from_nt)
+ICM_END( ND_ASSIGN_MIRROR, (to_nt, to_sdim, from_nt))
+#endif
+
 
 #if defined(ND_COPY) || defined(ICM_ALL)
 ICM_DEF( ND_COPY, TRACE_NONE)
