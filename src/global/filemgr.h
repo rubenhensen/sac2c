@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2004/11/22 16:05:32  cg
+ * Moved macro definitions to globals.h
+ *
  * Revision 1.2  2004/11/22 15:49:57  cg
  * Moved from subdirectory modules to global.
  *
@@ -77,9 +80,6 @@
 
 #include <stdio.h>
 #include <types.h>
-
-#define MAX_PATH_LEN 1024
-#define MAX_FILE_NAME 256
 
 typedef enum { PATH, MODDEC_PATH, MODIMP_PATH, SYSTEMLIB_PATH } pathkind;
 
