@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.72  1995/07/14 11:58:30  sbs
+ * Revision 1.73  1995/07/14 14:51:34  sbs
+ * module_name inserted in fundec:
+ *
+ * Revision 1.72  1995/07/14  11:58:30  sbs
  * keyword inline moved to the beginning of function declaration
  *
  * Revision 1.71  1995/07/14  09:48:22  hw
@@ -673,8 +676,9 @@ fundefs: fundef fundefs { $$=$1;
 
 fundef: returntypes fun_name BRACKET_L fundef2 
         {  $$=$4;
-           $$->info.types=$1;          /*  result type(s) */
-           $$->info.types->id=$2;      /*  function name */
+           $$->info.types=$1;          		/*  result type(s) */
+           $$->info.types->id=$2;      		/*  function name */
+           $$->info.types->id_mod=mod_name;     /*  module name */
         }
 	| INLINE returntypes fun_name BRACKET_L fundef2
             {id *function_name;
@@ -682,6 +686,7 @@ fundef: returntypes fun_name BRACKET_L fundef2
              $$=$5;
              $$->info.types=$2;          /* result type(s) */
              $$->info.types->id=$3;      /*  function name */
+             $$->info.types->id_mod=mod_name;      /*  module name */
              $$->flag=1;                 /* flag to sign, that this function
                                           * should be inlined
                                           */             
