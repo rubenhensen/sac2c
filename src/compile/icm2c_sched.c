@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2001/05/21 12:44:57  ben
+ * SAC_MT_SCHEDULER_Self_INIT modified for discriminate between
+ * FIRST_TASK_STATIC and FIRST_TASK_DYNAMIC
+ *
  * Revision 3.5  2001/05/18 09:58:03  cg
  * #include <malloc.h> removed.
  *
@@ -555,17 +559,9 @@ ICMCompileMT_SCHEDULER_Self_END (int sched_id, int tasks_per_thread, int dim,
 #undef MT_SCHEDULER_Self_END
 
     INDENT;
-    if (sched_id > 0) {
-        fprintf (outfile,
-                 "SAC_MT_SCHEDULER_Self_NEXT_TASK_WITH_DYNAMIC_FIRST_TASK(%d,%d,SAC_MT_"
-                 "taskid,SAC_MT_worktodo);\n",
-                 sched_id, tasks_per_thread);
-    } else {
-        fprintf (outfile,
-                 "SAC_MT_SCHEDULER_Self_NEXT_TASK_WITH_STATIC_FIRST_TASK(%d,%d,SAC_MT_"
-                 "taskid,SAC_MT_worktodo);\n",
-                 sched_id, tasks_per_thread);
-    }
+    fprintf (outfile,
+             "SAC_MT_SCHEDULER_Self_NEXT_TASK(%d,%d,SAC_MT_taskid,SAC_MT_worktodo);\n",
+             sched_id, tasks_per_thread);
     INDENT;
     fprintf (outfile, "}\n");
 
@@ -585,6 +581,14 @@ ICMCompileMT_SCHEDULER_Self_INIT (int sched_id, int tasks_per_thread, int dim,
 
     INDENT;
     fprintf (outfile, "SAC_MT_SCHEDULER_SET_TASKS(%d);\n", sched_id);
+
+    if (sched_id == 0) {
+        INDENT;
+        fprintf (outfile,
+                 "SAC_MT_TASK(sched_id,0,SAC_MT_SET_NUM_SCHEDULERS)=SAC_MT_THREADS();\n");
+    }
+
+    INDENT;
     fprintf (outfile, "\n");
 
     DBUG_VOID_RETURN;
