@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2004/10/28 16:11:21  sah
+ * added support for used functions
+ * and deserialisation
+ *
  * Revision 1.12  2004/10/26 17:18:50  sbs
  * added rudementary support for spec_mode:
  * in case of SS_aud, specialization will be suppressed.
@@ -47,6 +51,9 @@
 #include "ct_fun.h"
 #include "create_wrappers.h"
 #include "DupTree.h"
+#ifdef NEW_AST
+#include "deserialize.h"
+#endif
 
 /**
  *
@@ -282,8 +289,27 @@ DoSpecialize (node *wrapper, node *fundef, ntype *args)
     DBUG_PRINT ("NTC", ("specializing %s for %s", FUNDEF_NAME (fundef), tmp_str));
     DBUG_EXECUTE ("NTC", tmp_str = Free (tmp_str););
 
+#ifdef NEW_AST
+    /*
+     * in case of a function of a module, the body is missing, so
+     * fetch it
+     */
+    if ((FUNDEF_SYMBOLNAME (fundef) != NULL) && (FUNDEF_BODY (fundef) == NULL)) {
+        fundef = AddFunctionBodyToHead (fundef);
+    }
+#endif
+
     /* copy the fundef to be specialized */
     res = DupNode (fundef);
+
+#ifdef NEW_AST
+    /* reset the SYMBOLNAME attribute, as the function is _not_
+     * the one referenced by the SYMBOLNAME anymore
+     */
+    if (FUNDEF_SYMBOLNAME (res) != NULL) {
+        FUNDEF_SYMBOLNAME (res) = Free (FUNDEF_SYMBOLNAME (res));
+    }
+#endif
 
     /* insert the new fundef into the specialiazed chain */
     FUNDEF_NEXT (res) = specialized_fundefs;
@@ -297,13 +323,22 @@ DoSpecialize (node *wrapper, node *fundef, ntype *args)
 
     /*
      * Finally, we make the result type variable(s) (a) subtype(s) of the
-     * the original one(s)!
+     * original one(s)!
      */
     n = TYGetProductSize (FUNDEF_RET_TYPE (res));
     for (i = 0; i < n; i++) {
-        SSINewRel (TYGetAlpha (TYGetProductMember (FUNDEF_RET_TYPE (res), i)),
-                   TYGetAlpha (TYGetProductMember (FUNDEF_RET_TYPE (fundef), i)));
+        SSINewTypeRel (TYGetProductMember (FUNDEF_RET_TYPE (res), i),
+                       TYGetProductMember (FUNDEF_RET_TYPE (fundef), i));
     }
+
+#ifdef NEW_AST
+    /*
+     * This does not work yet, as TYMakeOverloadedFunType
+     * expcets alphas as return type. So we have to exit here
+     */
+    DBUG_ASSERT (0, "Specialisation is not yet supported in newast mode");
+
+#endif
 
     /* insert the new type signature into the wrapper */
     FUNDEF_TYPE (wrapper)
