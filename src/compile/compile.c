@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.57  1995/07/13 16:26:13  hw
+ * Revision 1.58  1995/07/14 12:05:37  hw
+ * - changed macro CHECK_REUSE__ALLOC_ARRAY_ND( reuse only if ol and new array
+ *   have equal basic-simpletypes)
+ *
+ * Revision 1.57  1995/07/13  16:26:13  hw
  * - changed compilation of N_foldprf & N_foldfun
  * - changed secound argument of GET_LENGTH
  * - moved compilation of a with-loop-N_return to new function
@@ -289,6 +293,8 @@ extern char filename[]; /* imported from main.c */
 
 /* the following macros are while generation of N_icms */
 
+#define EQUAL_SIMPLETYPES(stype1, stype2) (stype1 == stype2)
+
 #define SET_VARS_FOR_MORE_ICMS                                                           \
     first_assign = LAST_ASSIGN (arg_info);                                               \
     old_arg_node = arg_node;                                                             \
@@ -310,22 +316,23 @@ extern char filename[]; /* imported from main.c */
     BIN_ICM_REUSE (arg_info->node[1], "ND_CHECK_REUSE", test, res);                      \
     SET_VARS_FOR_MORE_ICMS
 
-#define CHECK_REUSE__ALLOC_ARRAY_ND(test, rc)                                            \
-    if (1 >= test->refcnt) { /* create ND_CHECK_REUSE  */                                \
+#define CHECK_REUSE__ALLOC_ARRAY_ND(new, stype_new, old, stype_old)                      \
+    if ((1 >= old->refcnt)                                                               \
+        && (EQUAL_SIMPLETYPES (stype_new, stype_old))) { /* create ND_CHECK_REUSE  */    \
         node *num;                                                                       \
-        BIN_ICM_REUSE (arg_info->node[1], "ND_CHECK_REUSE", test, res);                  \
+        BIN_ICM_REUSE (arg_info->node[1], "ND_CHECK_REUSE", old, new);                   \
         first_assign = LAST_ASSIGN (arg_info);                                           \
         DBUG_PRINT ("COMP", ("first:" P_FORMAT, first_assign));                          \
         old_arg_node = arg_node;                                                         \
         arg_node = arg_info->node[1]->node[0];                                           \
         /* create ND_ALLOC_ARRAY */                                                      \
         MAKENODE_NUM (num, 0);                                                           \
-        CREATE_3_ARY_ICM (next_assign, "ND_ALLOC_ARRAY", type_id_node, res, num);        \
+        CREATE_3_ARY_ICM (next_assign, "ND_ALLOC_ARRAY", type_id_node, new, num);        \
         APPEND_ASSIGNS (first_assign, next_assign);                                      \
     } else { /* create ND_ALLOC_ARRAY */                                                 \
         node *num;                                                                       \
         MAKENODE_NUM (num, 0);                                                           \
-        BIN_ICM_REUSE (arg_info->node[1], "ND_ALLOC_ARRAY", type_id_node, res);          \
+        BIN_ICM_REUSE (arg_info->node[1], "ND_ALLOC_ARRAY", type_id_node, new);          \
         MAKE_NEXT_ICM_ARG (icm_arg, num);                                                \
         first_assign = LAST_ASSIGN (arg_info);                                           \
         DBUG_PRINT ("COMP", ("first:" P_FORMAT, first_assign));                          \
@@ -986,7 +993,7 @@ CompPrf (node *arg_node, node *arg_info)
       *type_id_node, *arg1, *arg2, *arg3, *n_node1, *n_elems_node, *first_assign,
       *next_assign, *last_assign, *old_arg_node, *length_node, *tmp_array1, *tmp_array2,
       *dim_node, *tmp_rc, *exprs;
-    simpletype s_type;
+    simpletype res_stype;
     int dim, is_SxA = 0, n_elems = 0, is_drop = 0, array_is_const = 0, convert = 0;
 
     DBUG_ENTER ("CompPrf");
@@ -1064,12 +1071,16 @@ CompPrf (node *arg_node, node *arg_info)
         case F_div_AxS:
         case F_sub_AxS:
         case F_mul_AxS: {
+            simpletype array_stype;
+
             /* store arguments and result (as N_id)  */
             if (0 == is_SxA) {
                 array = arg_node->node[0]->node[0];
+                GET_BASIC_SIMPLETYPE_OF_NODE (array_stype, array);
                 scalar = arg_node->node[0]->node[1]->node[0];
             } else {
                 array = arg_node->node[0]->node[1]->node[0];
+                GET_BASIC_SIMPLETYPE_OF_NODE (array_stype, array);
                 scalar = arg_node->node[0]->node[0];
             }
             MAKENODE_ID_REUSE_IDS (res, arg_info->IDS);
@@ -1078,8 +1089,8 @@ CompPrf (node *arg_node, node *arg_info)
             MAKENODE_ID (prf_id_node, prf_string[arg_node->info.prf]);
 
             /* compute basic_type of result */
-            GET_BASIC_SIMPLETYPE (s_type, arg_info->IDS_NODE->TYPES);
-            MAKENODE_ID (type_id_node, type_string[s_type]);
+            GET_BASIC_SIMPLETYPE (res_stype, arg_info->IDS_NODE->TYPES);
+            MAKENODE_ID (type_id_node, type_string[res_stype]);
 
             /* store refcount of res as N_num */
             MAKENODE_NUM (res_ref, arg_info->IDS_REFCNT);
@@ -1087,7 +1098,7 @@ CompPrf (node *arg_node, node *arg_info)
             if (N_id == array->nodetype) {
                 last_assign = NEXT_ASSIGN (arg_info);
 
-                CHECK_REUSE__ALLOC_ARRAY_ND (array, res_ref);
+                CHECK_REUSE__ALLOC_ARRAY_ND (res, res_stype, array, array_stype);
             } else {
                 /* array is constant, so make a block , declare a temporary
                  * variable __TMP and create a constant array
@@ -1160,6 +1171,8 @@ CompPrf (node *arg_node, node *arg_info)
         case F_sub_AxA:
         case F_mul_AxA:
         case F_div_AxA: {
+            simpletype arg1_stype, arg2_stype;
+
             arg1 = arg_node->node[0]->node[0];
             arg2 = arg_node->node[0]->node[1]->node[0];
             MAKENODE_ID_REUSE_IDS (res, arg_info->IDS);
@@ -1168,8 +1181,12 @@ CompPrf (node *arg_node, node *arg_info)
             MAKENODE_ID (prf_id_node, prf_string[arg_node->info.prf]);
 
             /* compute basic_type of result */
-            GET_BASIC_SIMPLETYPE (s_type, arg_info->IDS_NODE->TYPES);
-            MAKENODE_ID (type_id_node, type_string[s_type]);
+            GET_BASIC_SIMPLETYPE (res_stype, arg_info->IDS_NODE->TYPES);
+            MAKENODE_ID (type_id_node, type_string[res_stype]);
+
+            /* compute basic_type of arg1 and arg2 */
+            GET_BASIC_SIMPLETYPE_OF_NODE (arg1_stype, arg1);
+            GET_BASIC_SIMPLETYPE_OF_NODE (arg2_stype, arg2);
 
             /* store refcount of res as N_num */
             MAKENODE_NUM (res_ref, arg_info->IDS_REFCNT);
@@ -1187,9 +1204,9 @@ CompPrf (node *arg_node, node *arg_info)
                                       num);
                     APPEND_ASSIGNS (first_assign, next_assign);
                 } else if (1 >= arg1->refcnt) {
-                    CHECK_REUSE__ALLOC_ARRAY_ND (arg1, res_ref);
+                    CHECK_REUSE__ALLOC_ARRAY_ND (res, res_stype, arg1, arg1_stype);
                 } else {
-                    CHECK_REUSE__ALLOC_ARRAY_ND (arg2, res_ref);
+                    CHECK_REUSE__ALLOC_ARRAY_ND (res, res_stype, arg2, arg2_stype);
                 }
             } else {
                 arg_info->node[1]->nodetype = N_block; /*  reuse previous N_let*/
@@ -1283,8 +1300,8 @@ CompPrf (node *arg_node, node *arg_info)
             MAKENODE_ID_REUSE_IDS (res, arg_info->IDS);
 
             /* compute basic_type of result */
-            GET_BASIC_SIMPLETYPE (s_type, arg_info->IDS_NODE->TYPES);
-            MAKENODE_ID (type_id_node, type_string[s_type]);
+            GET_BASIC_SIMPLETYPE (res_stype, arg_info->IDS_NODE->TYPES);
+            MAKENODE_ID (type_id_node, type_string[res_stype]);
 
             /* store refcount of res as N_num */
             MAKENODE_NUM (res_ref, arg_info->IDS_REFCNT);
@@ -1394,8 +1411,8 @@ CompPrf (node *arg_node, node *arg_info)
             last_assign = NEXT_ASSIGN (arg_info);
 
             /* compute basic type */
-            GET_BASIC_SIMPLETYPE (s_type, arg_info->IDS_NODE->TYPES);
-            MAKENODE_ID (type_id_node, type_string[s_type]);
+            GET_BASIC_SIMPLETYPE (res_stype, arg_info->IDS_NODE->TYPES);
+            MAKENODE_ID (type_id_node, type_string[res_stype]);
 
             /* compute length of arg1 */
             if (N_id == arg1->nodetype) {
@@ -1572,8 +1589,8 @@ CompPrf (node *arg_node, node *arg_info)
             arg3 = arg_node->node[0]->node[1]->node[1]->node[0];
             MAKENODE_ID_REUSE_IDS (res, arg_info->IDS);
             /* compute basic_type of result */
-            GET_BASIC_SIMPLETYPE (s_type, arg_info->IDS_NODE->TYPES);
-            MAKENODE_ID (type_id_node, type_string[s_type]);
+            GET_BASIC_SIMPLETYPE (res_stype, arg_info->IDS_NODE->TYPES);
+            MAKENODE_ID (type_id_node, type_string[res_stype]);
             /* store refcount of res as N_num */
             MAKENODE_NUM (res_ref, arg_info->IDS_REFCNT);
 
@@ -1680,8 +1697,8 @@ CompPrf (node *arg_node, node *arg_info)
             arg3 = arg_node->node[0]->node[1]->node[1]->node[0];
             MAKENODE_ID_REUSE_IDS (res, arg_info->IDS);
             /* compute basic_type of result */
-            GET_BASIC_SIMPLETYPE (s_type, arg_info->IDS_NODE->TYPES);
-            MAKENODE_ID (type_id_node, type_string[s_type]);
+            GET_BASIC_SIMPLETYPE (res_stype, arg_info->IDS_NODE->TYPES);
+            MAKENODE_ID (type_id_node, type_string[res_stype]);
             /* store refcount of res as N_num */
             MAKENODE_NUM (res_ref, arg_info->IDS_REFCNT);
             MAKENODE_NUM (n_node, 1);
@@ -1742,8 +1759,8 @@ CompPrf (node *arg_node, node *arg_info)
             arg1 = arg_node->node[0]->node[0];
             MAKENODE_ID_REUSE_IDS (res, arg_info->IDS);
             /* compute basic type */
-            GET_BASIC_SIMPLETYPE (s_type, arg_info->IDS_NODE->TYPES);
-            MAKENODE_ID (type_id_node, type_string[s_type]);
+            GET_BASIC_SIMPLETYPE (res_stype, arg_info->IDS_NODE->TYPES);
+            MAKENODE_ID (type_id_node, type_string[res_stype]);
             MAKENODE_NUM (res_rc, arg_info->IDS_REFCNT);
             BIN_ICM_REUSE (arg_info->node[1], "ND_ALLOC_ARRAY", type_id_node, res);
             MAKE_NEXT_ICM_ARG (icm_arg, res_rc);
