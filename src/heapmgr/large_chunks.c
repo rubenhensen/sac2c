@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2000/12/13 14:54:12  sbs
+ * eliminated true_arena in SAC_HM_FreeLargeChunk since it simply was
+ * not used!
+ *
  * Revision 3.2  2000/12/06 18:11:01  cg
  * Added initial version of array placement.
  *
@@ -373,7 +377,7 @@ void
 SAC_HM_FreeLargeChunk (SAC_HM_header_t *addr, SAC_HM_arena_t *arena)
 {
     SAC_HM_header_t *freep;
-    SAC_HM_arena_t *true_arena, *arena_ptr;
+    SAC_HM_arena_t *arena_ptr;
 
     arena_ptr = SAC_HM_ADDR_ARENA (addr);
 
