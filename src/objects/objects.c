@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2004/11/20 17:32:46  sah
+ * removed some garbage
+ *
  * Revision 3.13  2004/11/19 21:02:52  sah
  * adapted travwersal to new linkist structure
  *
@@ -250,15 +253,14 @@ HandleObjects (node *syntax_tree)
 
 #ifndef NEW_AST
 
-5A
-  /*
-   *
-   *  functionname  : InsertIntoInitlist
-   *
-   */
+/*
+ *
+ *  functionname  : InsertIntoInitlist
+ *
+ */
 
-  int
-  InsertIntoInitlist (node *objdef, nodelist **already_done)
+int
+InsertIntoInitlist (node *objdef, nodelist **already_done)
 {
     nodelist *needed, *tmp;
     int success = 1;
