@@ -1,8 +1,13 @@
 %{
 
+
 /*
  *
  * $Log$
+ * Revision 3.10  2001/03/21 13:57:58  dkr
+ * parsing of wlcomp-pragmas re-roganized in order to avoid shift/reduce
+ * conflicts without defacing the syntax
+ *
  * Revision 3.9  2001/03/20 22:19:42  dkr
  * syntax for wlcomp-pragmas corrected. all shift/reduce conflicts
  * eliminated
@@ -72,13 +77,11 @@ node *decl_tree;
 node *sib_tree;
 node *spec_tree;
 
+
 static char *mod_name = MAIN_MOD_NAME;
 static char *link_mod_name = NULL;
 static node *store_pragma = NULL;
 static node *store_wlcomp_pragma_global = NULL;
-
-static int yyerror(char *errname);
-int yyparse();
 
 /*
  * used to distinguish the different kinds of files
@@ -92,10 +95,12 @@ static file_type file_kind = F_prog;
  */
 static statustype sib_imported_status;
 
+static int yyerror( char *errname);
+static int yyparse();
 
-node *Append(node *target_node, node *append_node);
-node *string2array(char *str);
-types *GenComplexType( types *types, nums *numsp);
+static node *string2array( char *str);
+static types *GenComplexType( types *types, nums *numsp);
+static node *CheckWlcompConf( node *ap);
 
 
 %}
@@ -176,8 +181,7 @@ types *GenComplexType( types *types, nums *numsp);
              sib, sibtypes, sibtype, sibfuns, sibfun, sibfunbody,
              sibobjs, sibobj, sibpragmas, sibarglist,
              sibargs, sibarg, sibfunlist, sibfunlistentry,
-             wlcomp_arg, wlcomp_args, wlcomp_conf,
-             wlcomp_pragma_local, wlcomp_pragma_global
+             wlcomp_pragma_global, wlcomp_pragma_local, wlcomp_conf
 %type <target_list_t> targets
 %type <resource_list_t> resources
 
@@ -259,7 +263,6 @@ id: ID
  *
  *********************************************************************
  */
-
 
 
 moddec: modheader evimport OWN COLON expdesc
@@ -386,7 +389,6 @@ evimport: imports { $$ = $1; }
 imports: import imports { $$ = $1;
                           $$->node[0] = $2;
                         }
-
        | import { $$ = $1; }
        ;
 
@@ -590,6 +592,7 @@ objdec: type id SEMIC pragmas
           }
       ;
 
+
 fundecs: fundec fundecs 
            {
              $$ = $1;
@@ -597,7 +600,6 @@ fundecs: fundec fundecs
            }
        | fundec { $$ = $1; }
        ;
-
 
 fundec: varreturntypes id BRACKET_L fundec2
           {
@@ -698,6 +700,7 @@ fundec3: argtypes BRACKET_R SEMIC pragmas
            }
        ;
 
+
 pragmas: pragmalist
            {
              $$ = store_pragma;
@@ -778,6 +781,7 @@ pragma: PRAGMA LINKNAME string
           }
       ;
 
+
 modnames: modname COMMA modnames
             {
               $$ = $1;
@@ -798,8 +802,6 @@ modname: id
              $$ = MakeIds( $3, $1, ST_regular);
            }
        ;
-
-
 
 
 /*
@@ -856,6 +858,7 @@ def4: fundefs
         }
     ;
 
+
 modimp: module
           {
             $$ = $1;
@@ -866,7 +869,7 @@ modimp: module
           }
       ;
 
-module: MODIMP { file_kind=F_modimp; } id { mod_name = $3; } COLON defs
+module: MODIMP { file_kind = F_modimp; } id { mod_name = $3; } COLON defs
           {
             $$ = $6;
             MODUL_NAME( $$) = mod_name;
@@ -874,7 +877,7 @@ module: MODIMP { file_kind=F_modimp; } id { mod_name = $3; } COLON defs
           }
         ;
 
-class: CLASSIMP { file_kind=F_classimp; } id { mod_name = $3; } COLON 
+class: CLASSIMP { file_kind = F_classimp; } id { mod_name = $3; } COLON 
        CLASSTYPE type SEMIC defs
          { 
            $$ = $9;
@@ -891,6 +894,7 @@ prg: defs
        }
    ;
 
+
 typedefs: typedef typedefs
             { $$ = $1;
               $1->node[0] = $2;
@@ -900,15 +904,16 @@ typedefs: typedef typedefs
         ;
 
 typedef: TYPEDEF type id SEMIC 
-          { $$ = MakeTypedef( $3, mod_name, $2, ST_regular, NULL);
+           { $$ = MakeTypedef( $3, mod_name, $2, ST_regular, NULL);
 
-            DBUG_PRINT("GENTREE",
-                       ("%s:"P_FORMAT","P_FORMAT", Id: %s",
-                        mdb_nodetype[ NODE_TYPE( $$)],
-                        $$, 
-                        $$->info.types,
-                        $$->info.types->id));
-          }
+             DBUG_PRINT("GENTREE",
+                        ("%s:"P_FORMAT","P_FORMAT", Id: %s",
+                         mdb_nodetype[ NODE_TYPE( $$)],
+                         $$, 
+                         $$->info.types,
+                         $$->info.types->id));
+           }
+
 
 objdefs: objdef objdefs
            { $$ = $1;
@@ -920,7 +925,7 @@ objdefs: objdef objdefs
 
 objdef: OBJDEF type id LET expr SEMIC 
           { $$ = MakeObjdef( $3, mod_name, $2, $5, NULL);
-            
+
             DBUG_PRINT("GENTREE",
                        ("%s:"P_FORMAT","P_FORMAT", Id: %s",
                         mdb_nodetype[ NODE_TYPE( $$)],
@@ -929,7 +934,6 @@ objdef: OBJDEF type id LET expr SEMIC
                         $$->info.types->id));
           }
       ;
-
 
 
 fundefs: wlcomp_pragma_global fundef fundefs
@@ -987,7 +991,7 @@ fundef2: args BRACKET_R { $$ = MakeNode( N_fundef); } exprblock
              $$ = $<node>3;
              FUNDEF_BODY( $$) = $4;             /* Funktionsrumpf  */
              FUNDEF_ARGS( $$) = $1;             /* Funktionsargumente */
-         
+
              DBUG_PRINT("GENTREE",
                         ("%s:"P_FORMAT", Id: %s"P_FORMAT" %s," P_FORMAT,
                          mdb_nodetype[ NODE_TYPE( $$)],
@@ -1002,7 +1006,7 @@ fundef2: args BRACKET_R { $$ = MakeNode( N_fundef); } exprblock
            { 
              $$ = $<node>2;
              FUNDEF_BODY( $$) = $3;             /* Funktionsrumpf  */
-         
+
              DBUG_PRINT("GENTREE",
                         ("%s:"P_FORMAT" %s"P_FORMAT,
                          mdb_nodetype[ NODE_TYPE( $$)],
@@ -1029,8 +1033,8 @@ varargs: arg COMMA varargs
        | arg COMMA TYPE_DOTS
            {
              if ((F_extmoddec != file_kind) && (F_extclassdec != file_kind)) {
-               strcpy(yytext,"...");
-               yyerror("syntax error");
+               strcpy( yytext, "...");
+               yyerror( "syntax error");
              }
              else {
                $$ = $1;
@@ -1137,6 +1141,7 @@ argtype: type
            }
        ;
 
+
 fun_name : id
              { $$ = $1; }
          | prf_name
@@ -1178,6 +1183,7 @@ prf_name : AND        { $$ = StringCopy(prf_name_str[F_and]); }
               with key word. */}
         ;
 
+
 main: TYPE_INT K_MAIN BRACKET_L BRACKET_R exprblock
         {
           $$ = MakeFundef( NULL, NULL,
@@ -1210,9 +1216,6 @@ wlcomp_pragma_global: PRAGMA WLCOMP wlcomp_conf
                             store_wlcomp_pragma_global = MakePragma();
                             PRAGMA_WLCOMP_APS( store_wlcomp_pragma_global) = $3;
                           }
-                          else {
-                            store_wlcomp_pragma_global = NULL;
-                          }
                         }
                     | /* empty */
                         {
@@ -1221,6 +1224,7 @@ wlcomp_pragma_global: PRAGMA WLCOMP wlcomp_conf
 
 wlcomp_pragma_local: PRAGMA WLCOMP wlcomp_conf
                        {
+                         $3 = CheckWlcompConf( $3);
                          if ($3 != NULL) {
                            $$ = MakePragma();
                            PRAGMA_WLCOMP_APS( $$) = $3;
@@ -1241,58 +1245,9 @@ wlcomp_pragma_local: PRAGMA WLCOMP wlcomp_conf
                        }
                    ;
 
-wlcomp_conf: DEFAULT
-               {
-                 $$ = NULL;
-               }
-           | ID BRACKET_L wlcomp_args wlcomp_conf BRACKET_R
-               {
-                 if ((! (optimize & OPT_TSP)) &&
-                     (! strncmp( $1, "Bv", 2))) {
-                   $$ = $4;
-                 }
-                 else {
-                   if ((! (optimize & OPT_APL)) &&
-                       (! strcmp( $1, "APL"))) {
-                     $$ = $4;
-                   }
-                   else {
-                     $$ = ExprsConcat( $4,
-                                       MakeExprs( MakeAp( $1, NULL, $3), NULL));
-                   }
-                 }
-               }
+wlcomp_conf: id      { $$ = MakeId( $1, NULL, ST_regular); }
+           | expr_ap { $$ = $1; }
            ;
-
-wlcomp_args: wlcomp_arg COMMA wlcomp_args
-               {
-                 $$ = MakeExprs( $1, $3);
-               }
-           | /* empty */
-               {
-                 $$ = NULL;
-               }
-           ;
-
-wlcomp_arg:
-  /*
-   * The first token of this rule must *not* equal ID in order to avoid an
-   * unsolvable shift/reduce conflict:
-   *   wlcomp_args  ->  wlcomp_arg COMMA . wlcomp_args
-   *     ID       shift
-   *     default  reduce (wlcomp_args)
-   * Is the look-ahead 'ID' the first token of the next wlcomp_arg (shift) or
-   * the first token of 'wlcomp_conf' (reduce) ???
-   *
-   * Therefore, the intended rule
-   *    expr_ap { $$ = $1; }
-   * is not possible here :-(
-   */
-            BRACE_L expr_ap BRACE_R { $$ = $2; }
-          | expr_ar                 { $$ = $1; }
-          | expr_num                { $$ = $1; }
-          | string                  { $$ = MakeId( $1, NULL, ST_regular); }
-          ;
 
 
 /* BRUSH BEGIN */
@@ -1401,6 +1356,7 @@ assignblock: SEMIC
              { $$ = MakeBlock( MakeAssign( $1, NULL), NULL);
              } 
            ;
+
 
 pragmacachesim: PRAGMA CACHESIM string 
                 {
@@ -1559,10 +1515,14 @@ forassign: DO { $<cint>$ = linenum; } assignblock
               * x=e1;
               * while( e2) { AssBlock; y=e3; }
               */
-             $$ = MakeAssign( $4, MakeAssign( MakeWhile( $5, Append( $9, $7)), NULL)); 
+             $$ = MakeAssign( $4,
+                              MakeAssign( MakeWhile( $5,
+                                                     AppendAssign( $9, $7)),
+                                          NULL));
              NODE_LINE( ASSIGN_INSTR( ASSIGN_NEXT( $$))) = $<cint>2;
            } 
          ;
+
 
 exprs: expr COMMA exprs { $$ = MakeExprs( $1, $3);   }
      | expr             { $$ = MakeExprs( $1, NULL); }
@@ -1811,6 +1771,7 @@ Nwithop: GENARRAY BRACKET_L expr COMMA expr BRACKET_R
          }
        ;
 
+
 foldop: PLUS    { $$ = F_add; }
       | MUL     { $$ = F_mul; }
       | PRF_MIN { $$ = F_min; }
@@ -1849,11 +1810,11 @@ binop: PSI      { $$ = F_psi;      }
      | OR       { $$ = F_or;       }
      ;
 
-
 triop: ROTATE   { $$ = F_rotate;   }
      | CAT      { $$ = F_cat;      }
      | MODARRAY { $$ = F_modarray; }
      ;
+
 
 ids: id COMMA ids 
      { $$ = MakeIds( $1, NULL, ST_regular);
@@ -1873,6 +1834,7 @@ funids: fun_name COMMA funids
         }
       ;
 
+
 nums: NUM COMMA nums { $$ = MakeNums( $1, $3);   }
     | NUM            { $$ = MakeNums( $1, NULL); }
     ; 
@@ -1880,6 +1842,7 @@ nums: NUM COMMA nums { $$ = MakeNums( $1, $3);   }
 dots: DOT COMMA dots { $$ = $3 - 1;               }
     | DOT            { $$ = KNOWN_DIM_OFFSET - 1; }
     ;
+
 
 returntypes: TYPE_VOID { $$ = MakeTypes1( T_void); }
            | types     { $$ = $1;                  }
@@ -1902,9 +1865,9 @@ vartypes: type COMMA vartypes
           }
         | type { $$ = $1; }
         | TYPE_DOTS
-          { if ((F_extmoddec != file_kind) 
-                   && (F_extclassdec != file_kind)
-                     && (F_sib != file_kind)) {
+          { if ((F_extmoddec != file_kind) &&
+                (F_extclassdec != file_kind) &&
+                (F_sib != file_kind)) {
               strcpy( yytext, "...");
               yyerror( "syntax error");
             }
@@ -2381,6 +2344,7 @@ sibpragma: pragma
            }
          ;
 
+
 sibfunlist: sibfunlistentry COMMA sibfunlist
             {
               $$ = $1;
@@ -2507,64 +2471,101 @@ resources: ID COLON LET string resources
  *********************************************************************
  */
 
+
+
+/******************************************************************************
+ *
+ * Function:
+ *   int My_yyparse()
+ *
+ * Description:
+ *   
+ *
+ ******************************************************************************/
+
 int My_yyparse()
 {
   char *tmp;
+
+  DBUG_ENTER( "My_yyparse");
 
   /* 
    * make a copy of the actual filename, which will be used for
    * all subsequent nodes...
    */
-  tmp = (char *)MALLOC( (strlen(filename)+1) * sizeof( char));
+  tmp = (char *) MALLOC( (strlen(filename)+1) * sizeof( char));
   strcpy( tmp, filename);
   filename = tmp;
 
-  return(yyparse());
+  DBUG_RETURN( yyparse());
 }
 
 
-static int yyerror(char *errname)
+
+/******************************************************************************
+ *
+ * Function:
+ *   int yyerror( char *errname)
+ *
+ * Description:
+ *   
+ *
+ ******************************************************************************/
+
+static
+int yyerror( char *errname)
 {
-  int offset=0;
+  int offset = 0;
   int size_of_output;
   
-  charpos -= (strlen(yytext)-1);
+  DBUG_ENTER( "yyerror");
+
+  charpos -= (strlen( yytext) - 1);
   ERROR( linenum, ("%s at pos %d: '%s`", errname, charpos, yytext));
   size_of_output = MAX_LINE_LENGTH -
-                   (((verbose_level>1)?2:0) + strlen(filename)
-                    + NumberOfDigits(linenum) + 9);
+                   (((verbose_level > 1) ? 2 : 0) +
+                    strlen( filename) +
+                    NumberOfDigits( linenum) + 9);
   if (strlen( linebuf_ptr) > size_of_output) {
-    if (charpos >= size_of_output-15) {
-      offset = charpos-size_of_output+15;
-      strncpy( linebuf_ptr +offset, "... ", 4);
+    if (charpos >= size_of_output - 15) {
+      offset = charpos - size_of_output + 15;
+      strncpy( linebuf_ptr + offset, "... ", 4);
     }
-    strcpy( linebuf_ptr +offset+ size_of_output-4, " ...");
+    strcpy( linebuf_ptr + offset + size_of_output - 4, " ...");
   }
 
   CONT_ERROR(( "%s", linebuf_ptr + offset));
-  CONT_ERROR(( "%*s", charpos-offset, "^"));
+  CONT_ERROR(( "%*s", charpos - offset, "^"));
 
   ABORT_ON_ERROR;
 
-  return( 0);
+  DBUG_RETURN( 0);
 }
 
 
 
-/***
- ***  string2array
- ***/
+/******************************************************************************
+ *
+ * Function:
+ *   node *string2array(char *str)
+ *
+ * Description:
+ *   
+ *
+ ******************************************************************************/
 
+static
 node *string2array(char *str)
 {
   node *new_exprs;
   int i, cnt;
   node *array;
   node *len_exprs;
-  
+  node *res;
+
   DBUG_ENTER("string2array");
-  
-  new_exprs=MakeExprs(MakeChar('\0'), NULL);
+
+  new_exprs = MakeExprs( MakeChar( '\0'), NULL);
 
   cnt=0;
   
@@ -2622,22 +2623,32 @@ node *string2array(char *str)
   ARRAY_STRING(array)=str;
 #endif  /* CHAR_ARRAY_AS_STRING */
 
-  DBUG_RETURN(MakeAp(StringCopy("to_string"), NULL, MakeExprs(array, len_exprs))); 
+  res = MakeAp( StringCopy( "to_string"),
+                NULL,
+                MakeExprs( array, len_exprs));
+
+  DBUG_RETURN( res); 
 }
 
 
 
-/*
- *   Altes aus sac.21
+/******************************************************************************
  *
- */
+ * Function:
+ *   types *GenComplexType( types *types, nums *numsp)
+ *
+ * Description:
+ *   
+ *
+ ******************************************************************************/
 
+static
 types *GenComplexType( types *types, nums *numsp)
 {
   int *destptr;
   nums *tmp;
 
-  DBUG_ENTER("GenComplexType");
+  DBUG_ENTER( "GenComplexType");
 
   types->shpseg=MakeShpseg(NULL);
   destptr=types->shpseg->shp;
@@ -2656,65 +2667,94 @@ types *GenComplexType( types *types, nums *numsp)
 
 
 
-/*
+/******************************************************************************
  *
- *  functionname  : Append
- *  arguments     : 1) node to append to; nodetype: N_assign or N_block
- *                  2) node to append
- *  description   : appends node 2) to node 1) and creates a new N_assign node
- *                  if necessary
- */
+ * Function:
+ *   node *CheckWlcompConf( node *conf)
+ *
+ * Description:
+ *   Checks and converts the given wlcomp-pragma expression.
+ *   Syntax of wlcomp-pragmas:
+ *      pragma  ->  PRAGMA WLCOMP conf
+ *      conf    ->  DEFAULT
+ *               |  id BRACKET_L args conf BRACKET_R
+ *      args    ->  $empty$
+ *               |  arg COMMA args
+ *      arg     ->  expr
+ *      id      ->  ... identificator ...
+ *      expr    ->  ... expression ...
+ *   Examples:
+ *      #pragma wlcomp Scheduling( Block(), Dynamic(),
+ *                     BvL0( [3,3], [7,7],
+ *                     Cubes(
+ *                     Default)))
+ *      #pragma wlcomp Conf3( ..., Conf2( ..., Conf1( ..., Default)))
+ *   This nesting of applications is transformed into a N_exprs chain of
+ *   wlcomp-pragma functions:
+ *      Cubes()  ,  BvL0( [3,3], [7,7])  ,  Scheduling( Block(), Dynamic())
+ *      Conf1(...)  ,  Conf2(...)  ,  Conf3(...)
+ *
+ *   Unfortunately, it is not possible to parse the wlcomp-pragma expression
+ *   directly with yacc. 'conf' as well as 'arg' might start with an ID
+ *   [ In the first example: Scheduling( Block(), ..., BvL0( ...)) ]
+ *                                       ^^^^^         ^^^^
+ *   This leads to an unsolvable shift/reduce conflict :-((
+ *   Therefore 'conf' is simply parsed as an application/id and all the other
+ *   stuff is done here.
+ *
+ ******************************************************************************/
 
-node *Append( node *target_node, node *append_node)
+static
+node *CheckWlcompConf( node *conf)
 {
-  node *tmp;
-   
-  DBUG_ENTER("Append");
-  if (N_block == NODE_TYPE( target_node)) {
-     tmp = target_node->node[0];
-  }
-  else {
-    tmp = target_node;
-  }
-  if (N_assign == NODE_TYPE( tmp)) {
-    while (tmp->node[1]) {      /* look for last N_assign node */
-      tmp = tmp->node[1];
-    }
+  node *arg, *next_conf;
+  node *exprs = NULL;
 
-    if (N_assign != NODE_TYPE( append_node)) {
-      tmp->node[1] = MakeAssign( append_node, NULL);
+  DBUG_ENTER( "CheckWlcompConf");
+
+  DBUG_ASSERT( (conf != NULL), "wlcomp-pragma is empty!");
+
+  if (NODE_TYPE( conf) == N_id) {
+    if (strcmp( ID_NAME( conf), "Default")) {
+      strcpy( yytext, ID_NAME( conf));
+      yyerror( "trivial configuration is not 'Default'");
+    }
+  }
+  else if (NODE_TYPE( conf) == N_ap) {
+    arg = AP_ARGS( conf);
+
+    /*
+     * look for last argument -> next 'conf'
+     */
+    if (arg == NULL) {
+      strcpy( yytext, AP_NAME( conf));
+      yyerror( "wlcomp-function with missing configuration found");
     }
     else {
-      tmp->node[1]=append_node;
+      if (EXPRS_NEXT( arg) == NULL) {
+        next_conf = EXPRS_EXPR( arg);
+        AP_ARGS( conf) = NULL;
+      }
+      else {
+        while (EXPRS_NEXT( EXPRS_NEXT( arg)) != NULL) {
+          arg = EXPRS_NEXT( arg);
+        }
+        next_conf = EXPRS_EXPR( EXPRS_NEXT( arg));
+        EXPRS_NEXT( arg) = NULL;
+      }
     }
-      
-    DBUG_PRINT( "GENTREE", ("%s"P_FORMAT": %s"P_FORMAT" %s"P_FORMAT,
-                            mdb_nodetype[ NODE_TYPE( tmp)],
-                            tmp,
-                            mdb_nodetype[ NODE_TYPE( tmp->node[0])],
-                            tmp->node[0],
-                            mdb_nodetype[ NODE_TYPE( tmp->node[1])],
-                            tmp->node[1]));
+
+    if ((NODE_TYPE( next_conf) != N_id) && (NODE_TYPE( next_conf) != N_ap)) {
+      strcpy( yytext, AP_NAME( conf));
+      yyerror( "wlcomp-function with illegal configuration found");
+    }
+    else {
+      exprs = MakeExprs( conf, CheckWlcompConf( next_conf));
+    }
   }
   else {
-    /* target_node has type N_empty */
-    FREE( tmp);     /* delete node of type N_empty */
-    if (N_assign != NODE_TYPE( append_node)) {
-      tmp = MakeAssign( append_node, NULL);
-      DBUG_PRINT( "GENTREE", ("%s"P_FORMAT": %s"P_FORMAT,
-                              mdb_nodetype[ NODE_TYPE( tmp)],
-                              tmp,
-                              mdb_nodetype[ NODE_TYPE( tmp->node[0])],
-                              tmp->node[0]));
-    } 
-    else {
-      tmp = append_node;
-         
-      DBUG_PRINT( "GENTREE", ("%s"P_FORMAT,
-                              mdb_nodetype[ NODE_TYPE( tmp)],
-                              tmp));
-    }
+    DBUG_ASSERT( (0), "wlcomp-pragma with illegal configuration found!");
   }
 
-  DBUG_RETURN( target_node);
+  DBUG_RETURN( exprs);
 }
