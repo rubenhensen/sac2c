@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 3.25  2002/09/05 16:51:57  sbs
+ * 2 bugs eliminated:
+ * 1) TYLUB now computes correctly if scalars are involved
+ *    (false sharing before....)
+ * 2) Type2String now prints scal type instead of generic type GRGRGRGRG
+ *
  * Revision 3.24  2002/09/05 11:56:48  dkr
  * fixed a bug in BuildCondAssign()
  *
@@ -2854,7 +2860,7 @@ TYLubOfTypes (ntype *t1, ntype *t2)
         switch (NTYPE_CON (t1)) {
         case TC_aks:
             if (SHGetDim (AKS_SHP (t1)) == 0) {
-                new_t1 = TYMakeAUD (AKS_BASE (t1));
+                new_t1 = TYMakeAUD (TYCopyType (AKS_BASE (t1)));
             } else {
                 new_t1 = TYMakeAKD (TYCopyType (AKS_BASE (t1)), SHGetDim (AKS_SHP (t1)),
                                     SHCreateShape (0));
@@ -3391,8 +3397,8 @@ FunType2String (ntype *type, char *scal_str, bool multiline, int offset)
          * print "<scal_str>[]" instance:
          */
         if (IBASE_SCAL (type)) {
-            tmp_str
-              = FunType2String (IBASE_GEN (type), scal_str, multiline, offset + scal_len);
+            tmp_str = FunType2String (IBASE_SCAL (type), scal_str, multiline,
+                                      offset + scal_len);
             buf = PrintFunSep (buf, multiline, offset);
             buf = StrBufprint (buf, scal_str);
             buf = StrBufprint (buf, tmp_str);
