@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2001/04/24 13:19:49  dkr
+ * FALSE, TRUE moved to types.h
+ *
  * Revision 3.10  2001/04/24 09:59:30  dkr
  * macro STR_OR_UNKNOWN added
  *
@@ -126,14 +129,12 @@ extern void ComputeMallocAlignStep (void);
 #define F_PTR "%p"
 #endif
 
+/* handling of strings */
 #define STR_OR_NULL(str, null_str) (((str) != NULL) ? (str) : (null_str))
 #define STR_OR_EMPTY(str) STR_OR_NULL (str, "")
 #define STR_OR_UNKNOWN(str) STR_OR_NULL (str, "?")
 
-/*
- * swapping two pointers
- */
-
+/* swapping two pointers */
 #define SWAP(ptr1, ptr2)                                                                 \
     {                                                                                    \
         void *tmp;                                                                       \
@@ -142,19 +143,9 @@ extern void ComputeMallocAlignStep (void);
         ptr2 = (void *)tmp;                                                              \
     }
 
-/*
- * min, max
- */
-
+/* min, max */
 #define MAX(a, b) ((a < b) ? b : a)
 #define MIN(a, b) ((a < b) ? a : b)
-
-/*
- * bool values
- */
-
-#define TRUE 1
-#define FALSE 0
 
 /*
  * macros for handling bit fields
@@ -219,10 +210,7 @@ extern void ComputeMallocAlignStep (void);
         }                                                                                \
     }
 
-/*
- * malloc
- */
-
+/* malloc */
 #define MALLOC(size) Malloc (size)
 
 /*
