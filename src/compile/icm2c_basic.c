@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2002/10/07 23:36:39  dkr
+ * GetAttr() added
+ *
  * Revision 1.10  2002/08/05 18:08:15  dkr
  * comment corrected
  *
@@ -261,6 +264,30 @@ SizeId (void *nt)
     DBUG_ENTER ("SizeId");
 
     fprintf (outfile, "SAC_ND_A_SIZE( %s)", (char *)nt);
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   char *PrintAttr( void *v, int v_attr, void (*v_attr_fun)( void *))
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+void
+GetAttr (void *v, int v_attr, void (*v_attr_fun) (void *))
+{
+    DBUG_ENTER ("GetAttr");
+
+    if (v_attr < 0) {
+        v_attr_fun (v);
+    } else {
+        fprintf (outfile, "%d", v_attr);
+    }
 
     DBUG_VOID_RETURN;
 }

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2002/10/07 23:36:39  dkr
+ * GetAttr() added
+ *
  * Revision 3.9  2002/07/24 14:34:48  dkr
  * signature of VectToOffset?() modified
  *
@@ -65,6 +68,8 @@ extern void DimId (void *nt);
 extern void ShapeId (void *nt, char *idx_str, int idx);
 
 extern void SizeId (void *nt);
+
+extern void GetAttr (void *v, int v_attr, void (*v_attr_fun) (void *));
 
 extern void VectToOffset2 (char *off_any, void *v_any, int v_dim,
                            void (*v_size_fun) (void *),
