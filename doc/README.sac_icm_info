@@ -1,8 +1,11 @@
 /*
  * $Log$
- * Revision 1.2  1995/03/07 18:03:37  sbs
- * PSI-macros done.
+ * Revision 1.3  1995/03/31 13:26:08  sbs
+ * includes take drop psi binop & const
  *
+# Revision 1.2  1995/03/07  18:03:37  sbs
+# PSI-macros done.
+#
 # Revision 1.1  1995/03/03  14:40:13  sbs
 # Initial revision
 #
@@ -13,9 +16,7 @@ This file contains information about the SAC Intermediate-Code_Macros.
 
 SAC-ICM is used as an intermediate level of code generation. It explicitly
 integrates informations about type and memory usage into the code.
-E.g. primitive arithmetic operations like + on arrays can be exppressed
-via 6 different "macros" (ND_BINOP_*) each of which uses a different 
-"strategy" to get the memory needed for the result.
+It does NOT require a specific C-representation of SAC-arrays!
 
 ND stands for Non-Distributed
 KD stands for Known-Dimension
@@ -25,7 +26,7 @@ KS stands for Known-Shape
 + indicates: included as macro in icm2c.h!
 
 >>>> IMPORTANT NOTE !! >>>>
-The representations of "normal", "KD", and "KS" arrays may be different!
+The C-representations of "normal", "KD", and "KS" arrays may be different!
 Therefore, the sac2icm compiler NEVER should access an array with a macro
 of the wrong extension, IF a macro with the correct extension is present!
 If such a macro does not exsist, one of the next "smaller" category may be
@@ -48,11 +49,16 @@ Macros for array access:
 +ND_A_DIM( name)		: accesses the dimension of the array
 +ND_KD_A_SHAPE( name, dim)	: accesses one shape component of an array
 +ND_A_SHAPE( name, dim)		: accesses one shape component of an array
++ND_KS_ARG_ARRAY( type, name)   : macro for argument(s) in primitive functions
++ND_KS_RET_ARRAY( name)         : macro for return statement
 
 Macros for initializing an array:
 =================================
 
 +ND_ALLOC_ARRAY( type, name)	: allocates memory needed
+
++ND_REUSE( old, new)		: reuses old for new
++ND_CHECK_REUSE( old, new)	: tries to reuse old for new
 
 +ND_SET_RC( name, num)		: sets the refcnt
 +ND_INC_RC( name, num)		: increments the refcnt
@@ -65,29 +71,22 @@ Macros for initializing an array:
 
  ND_KD_SET_SHAPE( name, dim, s0,..., sn)	: sets all shape components of an array
 +ND_SET_SHAPE( name, dim, s)			: sets one shape component of an array
++ND_CREATE_CONST_ARRAY( basic_type, name, dim, s0,..., sn)   : generates a constant array
+
 
 Macros for primitve arithmetic operations:
 ==========================================
 
-+ND_BINOP_NEW( op, type, a1, a2, res)		: allocates new array for the result
-+ND_BINOP_CHECK_BOTH( op, type, a1, a2, res)	: tries to reuse (refcnt==1) one of
-						  the arg's arrays
-+ND_BINOP_CHECK_LEFT( op, type, a1, a2, res)	: tries to reuse (refcnt==1) the
-						  "left" argument
-+ND_BINOP_CHECK_RIGHT( op, type, a1, a2, res)	: tries to reuse (refcnt==1) the
-						  "right" argument
-+ND_BINOP_LEFT( op, type, a1, a2, res)		: uses "left" argument for the result
-+ND_BINOP_RIGHT( op, type, a1, a2, res)		: uses "right" argument for the result
++ND_BINOP_SxA_A( op, s, a2, res)	: realizes res=(s op a2)
++ND_BINOP_AxA_A( op, a1, a2, res)	: realizes res=(a1 op a2)
 
 Macros for PSI-primitves:
 =========================
 
  ND_KD_PSI_CxA_S( type, a, res, dim, v0,..., vn): selects a single element of the array
  ND_KD_PSI_VxA_S( type, a, res, dim, v )	: selects a single element of the array
- ND_KD_PSI_CxA_A_NEW( type, a, res, dim, v0,..., vn): selects a sub-array
- ND_KD_PSI_CxA_A_OLD( type, a, res, dim, v0,..., vn): selects a sub-array
- ND_KD_PSI_VxA_A_NEW( type, a, res, dim, v )	: selects a sub-array
- ND_KD_PSI_VxA_A_OLD( type, a, res, dim, v )	: selects a sub-array
+ ND_KD_PSI_CxA_A( type, a, res, dim, v0,..., vn): selects a sub-array
+ ND_KD_PSI_VxA_A( type, a, res, dim, v )	: selects a sub-array
 
- ND_KD_TAKE_CxA_A_NEW( type, a, res, dim, v0,..., vn):
- ND_KD_TAKE_CxA_A_OLD( type, a, res, dim, v0,..., vn):
+ ND_KD_TAKE_CxA_A( type, a, res, dim, v0,..., vn):
+ ND_KD_DROP_CxA_A( type, a, res, dim, v0,..., vn):
