@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2001/03/22 14:02:27  sbs
+ * S_S added for F_abs
+ *
  * Revision 3.2  2001/02/06 17:01:05  dkr
  * tabs removed
  *
@@ -305,3 +308,7 @@ TT1 (553, D_I, DOUBLE_A, ConvertType (arg_type[0], T_int))
 
 TT2 (600, ixi_i, INT, INT, MakeTypes1 (T_int))
 TT1 (601, i_i, INT, MakeTypes1 (T_int))
+
+TT1 (610, S_S, INT, MakeTypes1 (T_int))
+TT1 (611, S_S, FLOAT, MakeTypes1 (T_float))
+TT1 (612, S_S, DOUBLE, MakeTypes1 (T_double))

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2001/03/22 14:02:27  sbs
+ * S_S added for F_abs
+ *
  * Revision 3.5  2001/03/15 15:17:51  dkr
  * signature of Type2String modified
  *
@@ -147,6 +150,7 @@ enum type_class {
     B_B,
     SxA_A,
     SxA_F,
+    S_S,
     F_I,
     f_i,
     F_D,

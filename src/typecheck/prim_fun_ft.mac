@@ -1,6 +1,9 @@
 /*
  *
  *  $Log$
+ *  Revision 3.2  2001/03/22 14:02:27  sbs
+ *  S_S added for F_abs
+ *
  *  Revision 3.1  2000/11/20 18:00:13  sacbase
  *  new release made
  *
@@ -135,7 +138,7 @@ FT (F_div_SxA, SxA_A, F_div_SxA)
 FT (F_min, SxS_S, F_min)
 FT (F_max, SxS_S, F_max)
 FT (F_mod, ixi_i, F_mod)
-FT (F_abs, i_i, F_abs)
+FT (F_abs, S_S, F_abs)
 FT (F_eq, BxB_B, F_eq)
 FT (F_eq, SxS_B, F_eq)
 FT (F_eq, CxC_B, F_eq)
