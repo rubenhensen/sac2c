@@ -3,6 +3,10 @@
 /*
  *
  * $Log$
+ * Revision 2.32  2000/11/15 13:47:21  dkr
+ * yyerror: dummy return value added
+ * string2array: unused local var removed
+ *
  * Revision 2.31  2000/11/03 14:04:16  dkr
  * unterminated comments are detected now
  *
@@ -2839,9 +2843,13 @@ int yyerror(char *errname)
     }
     strcpy( linebuf_ptr +offset+ size_of_output-4, " ...");
   }
+
   CONT_ERROR(( "%s", linebuf_ptr + offset));
   CONT_ERROR(( "%*s", charpos-offset, "^"));
+
   ABORT_ON_ERROR;
+
+  return( 0);
 }
 
 
@@ -2854,7 +2862,6 @@ node *string2array(char *str)
 {
   node *new_exprs;
   int i, cnt;
-  char *funname;
   node *array;
   node *len_exprs;
   
