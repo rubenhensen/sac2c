@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2002/08/13 17:17:24  sbs
+ * bug eliminated
+ *
  * Revision 1.5  2002/08/13 17:14:17  sbs
  * HMfundef changed into HMAdjustFundef
  *
@@ -501,13 +504,13 @@ HMAdjustFundef (node *fundef)
 
     if (sbs != 1) {
 
-        found = Name2Prf (FUNDEF_NAME (arg_node), &primfun);
+        found = Name2Prf (FUNDEF_NAME (fundef), &primfun);
 
         if (found) {
-            FUNDEF_NAME (arg_node) = Free (FUNDEF_NAME (arg_node));
-            FUNDEF_NAME (arg_node) = StringCopy (prf_name_str[primfun]);
+            FUNDEF_NAME (fundef) = Free (FUNDEF_NAME (fundef));
+            FUNDEF_NAME (fundef) = StringCopy (prf_name_str[primfun]);
         }
     }
 
-    DBUG_RETURN (arg_node);
+    DBUG_RETURN (fundef);
 }
