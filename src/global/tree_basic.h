@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.122  1998/04/14 15:03:50  srs
+ * added INFO_* macros
+ *
  * Revision 1.121  1998/04/11 15:09:45  srs
  * addec comments
  *
@@ -2121,10 +2124,15 @@ extern node *MakePragma ();
  ***
  ***    long*      MASK[x]
  ***
- ***  when used in WithloopFolding.c :
- ***    int        IS_WL              (0/1)
+ ***  when used while withloop folding:
  ***    node*      NEXT               (N_info)
+ ***    node*      SUBST              (N_Ncode)
  ***    node*      WL                 (N_Nwith)
+ ***    node*      NEW_ID             (N_id)
+ ***    node*      ASSIGN             (N_assign)
+ ***    node*      FUNDEF             (N_fundef)
+ ***    int        FLAG               (0/1)
+ ***    node*      ID                 (N_id)
  ***
  ***  when used in ConstantFolding.c :
  ***    node*      ASSIGN             (N_assign)
@@ -2180,10 +2188,13 @@ extern node *MakeInfo ();
 
 /* WLF, all phases of WLF use these macros, not only WLI. */
 #define INFO_WLI_NEXT(n) (n->node[0])
+#define INFO_WLI_SUBST(n) (n->node[0])
 #define INFO_WLI_WL(n) (n->node[1])
+#define INFO_WLI_NEW_ID(n) (n->node[1])
 #define INFO_WLI_ASSIGN(n) (n->node[2])
 #define INFO_WLI_FUNDEF(n) (n->node[3])
 #define INFO_WLI_FLAG(n) (n->flag)
+#define INFO_WLI_ID(n) (n->node[4])
 
 /* CF */
 #define INFO_CF_ASSIGN(n) (n->node[0])
