@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.3  2004/11/27 01:52:55  ktr
+ * fixed
+ *
  * Revision 1.2  2004/11/23 23:21:51  sah
  * COMPILES!
  *
@@ -17,7 +20,7 @@
 #include "serialize_stack.h"
 #include <stdio.h>
 
-extern void SERdoSerialize (node *module);
+extern node *SERdoSerialize (node *module);
 
 extern void SERserializeFundefLink (node *fundef, FILE *file);
 extern const char *SERgenerateSerFunName (stentrytype_t type, node *node);

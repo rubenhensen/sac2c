@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.6  2004/11/27 01:52:55  ktr
+ * fixed
+ *
  * Revision 1.5  2004/11/27 01:36:44  cg
  * Functions renamed.
  *
@@ -70,12 +73,12 @@ FreeInfo (info *info)
 }
 
 serstack_t *
-SerializeBuildSerStack (node *arg_node)
+SERbuildSerStack (node *arg_node)
 {
     info *info;
     serstack_t *stack;
 
-    DBUG_ENTER ("SerializeBuildSerStack");
+    DBUG_ENTER ("SERbuildSerStack");
 
     info = MakeInfo ();
     stack = SSinit ();
@@ -389,7 +392,7 @@ GenerateSerFunMiddle (node *elem, stentrytype_t type, info *info)
 {
     DBUG_ENTER ("GenerateSerFunMiddle");
 
-    fprintf (INFO_SER_FILE (info), ");\nstack = SerializeBuildSerStack( result);\n");
+    fprintf (INFO_SER_FILE (info), ");\nstack = SERbuildSerStack( result);\n");
 
     DBUG_VOID_RETURN;
 }
@@ -410,7 +413,7 @@ SerializeFundefBody (node *fundef, info *info)
     stvisibility_t vis;
     DBUG_ENTER ("SerializeFundefBody");
 
-    INFO_SER_STACK (info) = SerializeBuildSerStack (FUNDEF_BODY (fundef));
+    INFO_SER_STACK (info) = SERbuildSerStack (FUNDEF_BODY (fundef));
 
     if (FUNDEF_ISEXPORTED (fundef)) {
         vis = SVT_exported;
@@ -446,7 +449,7 @@ SerializeFundefHead (node *fundef, info *info)
 
     DBUG_ENTER ("SerializeFundefHead");
 
-    INFO_SER_STACK (info) = SerializeBuildSerStack (fundef);
+    INFO_SER_STACK (info) = SERbuildSerStack (fundef);
 
     if (FUNDEF_ISEXPORTED (fundef)) {
         vis = SVT_exported;
@@ -485,7 +488,7 @@ SerializeTypedef (node *tdef, info *info)
 
     DBUG_ENTER ("SerializeTypedef");
 
-    INFO_SER_STACK (info) = SerializeBuildSerStack (tdef);
+    INFO_SER_STACK (info) = SERbuildSerStack (tdef);
 
     TYPEDEF_SYMBOLNAME (tdef)
       = ILIBstringCopy (SERgenerateSerFunName (SET_typedef, tdef));
@@ -523,7 +526,7 @@ SerializeObjdef (node *objdef, info *info)
 
     DBUG_ENTER ("SerializeObjdef");
 
-    INFO_SER_STACK (info) = SerializeBuildSerStack (objdef);
+    INFO_SER_STACK (info) = SERbuildSerStack (objdef);
 
     OBJDEF_SYMBOLNAME (objdef)
       = ILIBstringCopy (SERgenerateSerFunName (SET_objdef, objdef));
@@ -555,11 +558,11 @@ SerializeObjdef (node *objdef, info *info)
 }
 
 node *
-SerializeModule (node *module)
+SERdoSerialize (node *module)
 {
     info *info;
 
-    DBUG_ENTER ("SerializeModule");
+    DBUG_ENTER ("SERdoSerialize");
 
     DBUG_PRINT ("SER", ("Starting serialization run"));
 
@@ -587,9 +590,9 @@ SerializeModule (node *module)
 }
 
 void
-SerializeFundefLink (node *fundef, FILE *file)
+SERserializeFundefLink (node *fundef, FILE *file)
 {
-    DBUG_ENTER ("SerializeFundefLink");
+    DBUG_ENTER ("SERserializeFundefLink");
 
     if (fundef == NULL) {
         fprintf (file, "NULL");
@@ -602,9 +605,9 @@ SerializeFundefLink (node *fundef, FILE *file)
 }
 
 node *
-SERFundef (node *arg_node, info *arg_info)
+SERfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SERFundef");
+    DBUG_ENTER ("SERfundef");
 
     DBUG_PRINT ("SER", ("Serializing function %s", FUNDEF_NAME (arg_node)));
 
@@ -631,9 +634,9 @@ SERFundef (node *arg_node, info *arg_info)
 }
 
 node *
-SERTypedef (node *arg_node, info *arg_info)
+SERtypedef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SERTypedef");
+    DBUG_ENTER ("SERtypedef");
 
     DBUG_PRINT ("SER", ("Serializing typedef %s", TYPEDEF_NAME (arg_node)));
 
@@ -653,9 +656,9 @@ SERTypedef (node *arg_node, info *arg_info)
 }
 
 node *
-SERObjdef (node *arg_node, info *arg_info)
+SERobjdef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SERObjdef");
+    DBUG_ENTER ("SERobjdef");
 
     DBUG_PRINT ("SER", ("Serializing objdef %s", OBJDEF_NAME (arg_node)));
 
