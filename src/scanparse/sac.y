@@ -4,6 +4,11 @@
 /*
  *
  * $Log$
+ * Revision 3.92  2004/02/23 10:28:11  cg
+ * The for-loop in SAC now behaves more like its C counterpart:
+ * initialization and increment assignments are now optional
+ * or can occur multiply in a comma-separated list.
+ *
  * Revision 3.91  2004/02/20 08:17:09  mwe
  * now finctions with (MODUL_FUNS) and without (MODUL_FUNDECS) body are separated
  * changed tree traversal according to that
@@ -313,6 +318,7 @@ static int prf_arity[] = {
 /*******************************************************************************
  * SAC programs
  */
+
 %type <node> prg  defs  def2  def3  def4
 
 %type <node> imports  import  impdesc  impdesc2  impdesc3  impdesc4
@@ -324,7 +330,8 @@ static int prf_arity[] = {
 %type <node> fundefs  fundef  fundef1  fundef2  main
 %type <node> mainargs  fundefargs  args  arg 
 %type <node> exprblock  exprblock2  assignsOPTret  assigns  assign 
-             letassign  selassign  optelse  forassign  assignblock
+             let cond optelse  doloop whileloop forloop  assignblock
+             lets
 %type <node> exprs  expr  expr_ap  opt_arguments  expr_ar  expr_sel  with 
              generator  steps  width  nwithop  withop  wlassignblock  genidx 
              part  parts
@@ -1080,67 +1087,38 @@ assignsOPTret: /*
                  NODE_LINE( $$) = $<cint>3;
                }
              | assign { $<cint>$ = linenum; } assignsOPTret
-               { if (NODE_TYPE( $1) == N_assign) {
-                   /*
-                    * The only situation where "assign" returns an N_assign
-                    * node is when a while-loop had to be parsed.
-                    * In this case we get a tree of the form:
-                    *
-                    * N_assign -> N_let
-                    *    \
-                    *   N_assign -> N_while
-                    *      \
-                    *     NULL
-                    */
-                   DBUG_ASSERT(
-                     (NODE_TYPE( ASSIGN_INSTR( ASSIGN_NEXT( $1))) == N_while)
-                       && (ASSIGN_NEXT( ASSIGN_NEXT( $1)) == NULL),
-                     "corrupted node returned for \"assign\"!");
-                   $$ = $1;
-                   ASSIGN_NEXT( ASSIGN_NEXT( $$)) = $3;
-                 }
-                 else {
-                   $$ = MakeAssign( $1, $3);
-                   NODE_LINE( $$) = $<cint>2;
-                 }
-               }
+               {
+                 $$ = AppendAssign( $1, $3);
+                 NODE_LINE($$) = $<cint>2;
+                 /*
+                  * $1 may be a former for-loop in which case it may point
+                  * to an entire chain of assignments.
+                  */
+                     }
              ;
 
 assigns: /* empty */
          { $$ = NULL;
          }
-       | assign assigns
-         { if (NODE_TYPE( $1) == N_assign){
-             /*
-              * The only situation where "assign" returns an N_assign
-              * node is when a for-loop had to be parsed.
-              * In this case we get a tree of the form:
-              *
-              * N_assign -> N_let
-              *    \
-              *   N_assign -> N_while
-              *      \
-              *     NULL
-              */
-             DBUG_ASSERT(
-               (NODE_TYPE( ASSIGN_INSTR( ASSIGN_NEXT( $1))) == N_while)
-                 && (ASSIGN_NEXT( ASSIGN_NEXT( $1)) == NULL),
-               "corrupted node returned for \"assign\"!");
-             $$ = $1;
-             ASSIGN_NEXT( ASSIGN_NEXT( $$)) = $2;
-           }
-           else {
-             $$ = MakeAssign( $1, $2);
-           }
+       | assign { $<cint>$ = linenum; } assigns
+         { 
+           $$ = AppendAssign( $1, $3);
+           NODE_LINE($$) = $<cint>2;
+           /*
+            * $1 may be a former for-loop in which case it may point
+            * to an entire chain of assignments.
+            */
          }
        ;
 
-assign: letassign SEMIC   { $$ = $1; }
-      | selassign         { $$ = $1; }
-      | forassign         { $$ = $1; }
+assign: let SEMIC       { $$ = MakeAssign( $1, NULL); }
+      | cond            { $$ = MakeAssign( $1, NULL); }
+      | doloop SEMIC    { $$ = MakeAssign( $1, NULL); }
+      | whileloop       { $$ = MakeAssign( $1, NULL); }
+      | forloop         { $$ = $1; /* forloop already produces assign node. */}
       ;
 
-letassign: ids LET { $<cint>$ = linenum; } expr
+let:       ids LET { $<cint>$ = linenum; } expr
            { $$ = MakeLet( $4, $1);
              NODE_LINE( $$) = $<cint>3;
            }
@@ -1176,44 +1154,75 @@ letassign: ids LET { $<cint>$ = linenum; } expr
          | id MODON expr { $$ = MAKE_OPON_LET( $1, $3, "%"); }
          ;
 
-selassign: IF { $<cint>$ = linenum; }
-           BRACKET_L expr BRACKET_R assignblock optelse
-           { $$ = MakeCond( $4, $6, $7);
-             NODE_LINE( $$) = $<cint>2;
-           }
-         ;
+cond: IF { $<cint>$ = linenum; } BRACKET_L expr BRACKET_R assignblock optelse
+      {
+        $$ = MakeCond( $4, $6, $7);
+        NODE_LINE( $$) = $<cint>2;
+      }
+      ;
 
 optelse: ELSE assignblock           { $$ = $2;                 }
        | /* empty */   %prec ELSE   { $$ = MAKE_EMPTY_BLOCK(); }
        ;
 
-forassign: DO { $<cint>$ = linenum; } assignblock
-           WHILE BRACKET_L expr BRACKET_R SEMIC
-           { $$ = MakeDo( $6, $3);
-             NODE_LINE( $$) = $<cint>2;
-           }
-         | WHILE { $<cint>$ = linenum; } BRACKET_L expr BRACKET_R
+doloop: DO { $<cint>$ = linenum; } assignblock
+        WHILE BRACKET_L expr BRACKET_R 
+        {
+          $$ = MakeDo( $6, $3);
+          NODE_LINE( $$) = $<cint>2;
+        }
+      ;
+
+whileloop: WHILE { $<cint>$ = linenum; } BRACKET_L expr BRACKET_R
            assignblock
-           { $$ = MakeWhile( $4, $6);
+           {
+             $$ = MakeWhile( $4, $6);
              NODE_LINE( $$) = $<cint>2;
-           }
-         | FOR { $<cint>$ = linenum; }
-           BRACKET_L assign expr SEMIC letassign BRACKET_R assignblock
-           { /*
-              * for( x=e1; e2; y=e3) AssBlock
-              * is transformed into
-              * x=e1;
-              * while( e2) { AssBlock; y=e3; }
-              */
-             BLOCK_INSTR( $9) = AppendAssign( BLOCK_INSTR( $9),
-                                              MakeAssign( $7, NULL));
-             $$ = MakeAssign( $4,
-                              MakeAssign( MakeWhile( $5, $9),
-                                          NULL));
-             NODE_LINE( ASSIGN_INSTR( ASSIGN_NEXT( $$))) = $<cint>2;
            }
          ;
 
+forloop:   FOR { $<cint>$ = linenum; }
+           BRACKET_L lets SEMIC expr SEMIC lets BRACKET_R assignblock
+           { /*
+              *    for (e1; e2; e3) {assigns}
+              *    
+              *    is transformed into
+              *    
+              *     e1;
+              *     while (e2) {
+              *       assigns
+              *       e3;
+              *     }
+              *
+              *    Note that e1 and e3 are potentially empty comma-separated lists of 
+              *    assignments while e2 is an expression which must evaluate to a 
+              *    boolean value.
+              */
+
+             node *while_assign;
+             
+             BLOCK_INSTR( $10) = AppendAssign( BLOCK_INSTR( $10), $8);
+             while_assign = MakeAssign( MakeWhile( $6, $10), NULL);
+             NODE_LINE( while_assign) = $<cint>2;
+             NODE_LINE( ASSIGN_INSTR( while_assign)) = $<cint>2;
+             $$ = AppendAssign( $4, while_assign);
+           }
+         ;
+
+
+lets: let COMMA lets
+      {
+        $$ = MakeAssign( $1, $3);
+      }
+      | let
+      {
+        $$ = MakeAssign( $1, NULL);
+      }
+      |
+      {
+        $$ = NULL;
+      }
+    ; 
 
 assignblock: SEMIC
              { $$ = MAKE_EMPTY_BLOCK();
