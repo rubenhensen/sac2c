@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.31  1995/12/29 10:27:33  cg
+ * Revision 1.32  1996/01/02 15:49:35  cg
+ * added link_tab, macro NIF extended.
+ *
+ * Revision 1.31  1995/12/29  10:27:33  cg
  * added readsib_tab
  *
  * Revision 1.30  1995/12/21  13:23:18  asi
@@ -177,5 +180,7 @@ extern funptr rmvoid_tab[];
 extern funptr precomp_tab[];
 
 extern funptr readsib_tab[];
+
+extern funptr link_tab[];
 
 #endif /* _sac_traverse_h */
