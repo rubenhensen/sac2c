@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  1997/11/04 13:25:20  dkr
+ * with defined NEWTREE, node->nnode is not used anymore
+ *
  * Revision 1.5  1997/04/25 12:13:00  sbs
  * MAlloc replaced by Malloc from internal.lib
  *
@@ -234,9 +237,13 @@ GenPsi (ids *ids_node, node *arg_info)
     for (i = 0; i < length; i++) {
         arg[0] = MakeNode (N_array);
         expr = MakeNode (N_exprs);
+#ifndef NEWTREE
         arg[0]->nnode = 1;
+#endif
         arg[0]->node[0] = expr;
+#ifndef NEWTREE
         expr->nnode = 1;
+#endif
         MAKENODE_NUM (expr->node[0], i);
         arg[1] = MakeNode (N_id);
         arg[1]->info.ids = DupIds (ids_node, arg_info);
@@ -255,18 +262,28 @@ GenPsi (ids *ids_node, node *arg_info)
             AE_TYPES = AppendNodeChain (0, new_vardec, AE_TYPES);
             new_let->info.ids->node = new_vardec;
         }
+#ifndef NEWTREE
         new_let->nnode = 1;
+#endif
         new_let->node[0] = MakeNode (N_prf);
         new_let->node[0]->info.prf = F_psi;
+#ifndef NEWTREE
         new_let->node[0]->nnode = 1;
+#endif
         new_let->node[0]->node[0] = MakeNode (N_exprs);
         new_let->node[0]->node[0]->node[0] = arg[0];
+#ifndef NEWTREE
         new_let->node[0]->node[0]->nnode = 2;
+#endif
         new_let->node[0]->node[0]->node[1] = MakeNode (N_exprs);
         new_let->node[0]->node[0]->node[1]->node[0] = arg[1];
+#ifndef NEWTREE
         new_let->node[0]->node[0]->node[1]->nnode = 1;
+#endif
         new_assign = MakeNode (N_assign);
+#ifndef NEWTREE
         new_assign->nnode = 1;
+#endif
         new_assign->node[0] = new_let;
         new_nodes = AppendNodeChain (1, new_nodes, new_assign);
     }
@@ -316,11 +333,9 @@ AEassign (node *arg_node, node *arg_info)
         if (NULL != ASSIGN_NEXT (arg_node))
             ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
         new_nodes = AppendNodeChain (1, new_nodes, ASSIGN_NEXT (arg_node));
-/*-----------------------------------------------------------------------------------*/
 #ifndef NEWTREE
         arg_node->nnode = 2;
 #endif
-        /*-----------------------------------------------------------------------------------*/
         ASSIGN_NEXT (arg_node) = new_nodes;
     }
 

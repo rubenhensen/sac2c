@@ -1,5 +1,9 @@
+
 /*
  * $Log$
+ * Revision 1.14  1997/11/04 13:22:46  dkr
+ * with defined NEWTREE, node->nnode is not used anymore
+ *
  * Revision 1.13  1997/05/29 13:41:08  sbs
  * IVE for modarray integrated
  *
@@ -384,7 +388,7 @@ ChgId (char *varname, types *type)
  *                  3) char *: varname
  *                  R) node*: (new) N_vardec node
  *  description   : looks up, whether the given variable exists already
- *                  ( as variable declaration); if it does so, the pointer
+ *                  (as variable declaration); if it does so, the pointer
  *                  to the declaration is given, if not a new declaration
  *                  is created.
  *  global vars   :
@@ -415,8 +419,10 @@ VardecIdx (node *vardec, types *type, char *varname)
                      (VARDEC_NEXT (newvardec) ? VARDEC_NAME (VARDEC_NEXT (newvardec))
                                               : "NULL")));
 
+#ifndef NEWTREE
         newvardec->nnode = vardec->nnode;
         vardec->nnode = 1;
+#endif
     }
     DBUG_PRINT ("IDX", ("vinfo %p points to vardec %s", vinfo, varname));
 
@@ -462,8 +468,10 @@ ArgIdx (node *arg, types *type, char *varname)
                      (VARDEC_NEXT (newvardec) ? VARDEC_NAME (VARDEC_NEXT (newvardec))
                                               : "NULL")));
 
-        /*    newvardec->nnode = vardec->nnode; */
-        /*    vardec->nnode = 1; */
+#ifndef NEWTREE
+/*    newvardec->nnode = vardec->nnode; */
+/*    vardec->nnode = 1; */
+#endif
     }
     DBUG_PRINT ("IDX", ("vinfo %p points to vardec %s", vinfo, varname));
 
@@ -560,7 +568,7 @@ IdxArg (node *arg_node, node *arg_info)
     DBUG_ENTER ("IdxArg");
     if (arg_info != NULL) {
         /* This is the first pass; insert backref to fundef
-         * and make shure that all ARG_COLCHN-nodes are NULL
+         * and make sure that all ARG_COLCHN-nodes are NULL
          * before traverswing the body!
          */
         ARG_FUNDEF (arg_node) = arg_info;
@@ -586,7 +594,9 @@ IdxArg (node *arg_node, node *arg_info)
                     MAKE_NEXT_ICM_ARG (icm_arg, MakeNum (VINFO_SELEMS (vinfo)[i]));
 
                 ASSIGN_NEXT (newassign) = BLOCK_INSTR (block);
+#ifndef NEWTREE
                 newassign->nnode = 2;
+#endif
                 BLOCK_INSTR (block) = newassign;
             }
             vinfo = VINFO_NEXT (vinfo);
@@ -644,7 +654,12 @@ IdxLet (node *arg_node, node *arg_info)
 {
     ids *vars;
     node *vardec, *vinfo, *act_let, *newassign, *icm_arg;
-    int nnode, i;
+#ifndef NEWTREE
+    int nnode;
+#else
+    node tmp;
+#endif
+    int i;
 
     DBUG_ENTER ("IdxLet");
     /* First, we attach the collected uses-attributes( they are in the
@@ -729,14 +744,24 @@ IdxLet (node *arg_node, node *arg_info)
                  * More precisely, we have to copy the Assign node, who is the father
                  * of the let node and whose adress is given by arg_info!
                  */
+#ifndef NEWTREE
                 nnode = arg_info->nnode;
                 arg_info->nnode = 1; /* only one assignment is to be copied! */
                 newassign = DupTree (arg_info, NULL);
                 arg_info->nnode = 2;
+#else  /* NEWTREE */
+                tmp = *arg_info;
+                tmp.node[1] = NULL;
+                newassign = DupTree (&tmp, NULL);
+#endif /* NEWTREE */
                 ASSIGN_NEXT (newassign) = ASSIGN_NEXT (arg_info);
+#ifndef NEWTREE
                 newassign->nnode = nnode;
+#endif /* NEWTREE */
                 ASSIGN_NEXT (arg_info) = newassign;
+#ifndef NEWTREE
                 arg_info->nnode = 2;
+#endif /* NEWTREE */
             }
             LET_EXPR (act_let) = Trav (LET_EXPR (act_let), vinfo);
             LET_NAME (act_let) = ChgId (LET_NAME (act_let), VINFO_TYPE (vinfo));
@@ -759,7 +784,9 @@ IdxLet (node *arg_node, node *arg_info)
                 if (VINFO_FLAG (vinfo) == IDX) {
                     node *name_node, *dim_node, *dim_node2;
 
+#ifndef NEWTREE
                     nnode = arg_info->nnode;
+#endif
                     name_node = MakeNode (N_id);
                     name_node->info.ids = MakeIds (vars->id, NULL, ST_regular);
                     name_node->info.ids->node = vars->node;
@@ -775,9 +802,13 @@ IdxLet (node *arg_node, node *arg_info)
                         MAKE_NEXT_ICM_ARG (icm_arg, MakeNum (VINFO_SELEMS (vinfo)[i]));
 
                     newassign->node[1] = arg_info->node[1];
+#ifndef NEWTREE
                     newassign->nnode = nnode;
+#endif
                     arg_info->node[1] = newassign;
+#ifndef NEWTREE
                     arg_info->nnode = 2;
+#endif
                     arg_info = newassign;
                 }
                 vinfo = VINFO_NEXT (vinfo);
@@ -1242,7 +1273,9 @@ IdxGenerator (node *arg_node, node *arg_info)
                     MAKE_NEXT_ICM_ARG (icm_arg, MakeNum (VINFO_SELEMS (vinfo)[i]));
             }
             ASSIGN_NEXT (newassign) = BLOCK_INSTR (block);
+#ifndef NEWTREE
             newassign->nnode = 2;
+#endif
             BLOCK_INSTR (block) = newassign;
         }
         vinfo = VINFO_NEXT (vinfo);
