@@ -1,5 +1,10 @@
 /*
  * $Log$
+ * Revision 1.34  1998/12/07 10:27:02  sbs
+ * +,-,*,/ on int[.] x int[.], int[.] x int , and int x int[.]
+ * now are intrinsic iff intrinsic is turned off (default)!!!
+ * This enables IVE in all cases ...
+ *
  * Revision 1.33  1998/11/02 17:00:36  sbs
  * intrinsic-mechanism added, i.e., only those versions of
  * primitive functions will be used that are either marked
@@ -129,6 +134,7 @@
  */
 
 #include <stdlib.h>
+#include "globals.h"
 #include "tree.h"
 #include "prim_fun.h"
 #include "dbug.h"
@@ -187,6 +193,9 @@ enum type_class {
     d_i,
     D_F,
     d_f,
+    VxV_V,
+    VxS_V,
+    SxV_V,
     AxAxS_A,
     AxAxA_A
 };
@@ -249,6 +258,11 @@ enum type_class {
     type = MakeTypes (T_double);                                                         \
     type->dim = -1;                                                                      \
     DBUG_PRINT ("PRIM_FUN", ("param: double[]" P_FORMAT, type))
+
+#define INT_V                                                                            \
+    type = MakeTypes (T_int);                                                            \
+    type->dim = KNOWN_DIM_OFFSET - 1;                                                    \
+    DBUG_PRINT ("PRIM_FUN", ("param: int[.]" P_FORMAT, type))
 
 #ifndef NEWTREE
 #define TT2(n, a, t1, t2, res)                                                           \
@@ -393,7 +407,7 @@ GenPrimTabEntries (prf prf_old, int type_c, prf prf_new)
 {
     node *fun_dec = prim_fun_dec;
     prim_fun_tab_elem *tmp;
-    int intrinsic = 0;
+    int intrinsic = 0, wanted;
 
     DBUG_ENTER ("GenPrimTabEntries");
 
@@ -407,25 +421,41 @@ GenPrimTabEntries (prf prf_old, int type_c, prf prf_new)
     case F_add_AxS:
     case F_add_SxA:
     case F_add:
-        intrinsic = (type_c == SxS_S || (INTRINSIC_ADD & intrinsics));
+        wanted = (INTRINSIC_ADD & intrinsics);
+        intrinsic
+          = (type_c == SxS_S
+             || (wanted && (type_c == AxA_A || type_c == SxA_A || type_c == AxS_A))
+             || (!wanted && (type_c == VxV_V || type_c == VxS_V || type_c == SxV_V)));
         break;
     case F_sub_AxA:
     case F_sub_AxS:
     case F_sub_SxA:
     case F_sub:
-        intrinsic = (type_c == SxS_S || (INTRINSIC_SUB & intrinsics));
+        wanted = (INTRINSIC_SUB & intrinsics);
+        intrinsic
+          = (type_c == SxS_S
+             || (wanted && (type_c == AxA_A || type_c == SxA_A || type_c == AxS_A))
+             || (!wanted && (type_c == VxV_V || type_c == VxS_V || type_c == SxV_V)));
         break;
     case F_mul_AxA:
     case F_mul_AxS:
     case F_mul_SxA:
     case F_mul:
-        intrinsic = (type_c == SxS_S || (INTRINSIC_MUL & intrinsics));
+        wanted = (INTRINSIC_MUL & intrinsics);
+        intrinsic
+          = (type_c == SxS_S
+             || (wanted && (type_c == AxA_A || type_c == SxA_A || type_c == AxS_A))
+             || (!wanted && (type_c == VxV_V || type_c == VxS_V || type_c == SxV_V)));
         break;
     case F_div_AxA:
     case F_div_AxS:
     case F_div_SxA:
     case F_div:
-        intrinsic = (type_c == SxS_S || (INTRINSIC_DIV & intrinsics));
+        wanted = (INTRINSIC_DIV & intrinsics);
+        intrinsic
+          = (type_c == SxS_S
+             || (wanted && (type_c == AxA_A || type_c == SxA_A || type_c == AxS_A))
+             || (!wanted && (type_c == VxV_V || type_c == VxS_V || type_c == SxV_V)));
         break;
     case F_psi:
         intrinsic = (INTRINSIC_PSI & intrinsics);
@@ -442,6 +472,7 @@ GenPrimTabEntries (prf prf_old, int type_c, prf prf_new)
     }
 
     if (intrinsic) {
+        DBUG_PRINT ("PRIM_FUN", ("intrinsic %s added!", mdb_prf[prf_old]));
         while (NULL != fun_dec) {
             if (type_c == fun_dec->info.prf_dec.tc) {
                 GEN_PRIM_FUN_TAB_ELEM (prf_old, NULL, fun_dec, 1, 0, prf_new);
@@ -450,6 +481,8 @@ GenPrimTabEntries (prf prf_old, int type_c, prf prf_new)
             }
             fun_dec = fun_dec->node[1];
         }
+    } else {
+        DBUG_PRINT ("PRIM_FUN", ("intrinsic %s ommitted!", mdb_prf[prf_old]));
     }
 
     DBUG_VOID_RETURN;

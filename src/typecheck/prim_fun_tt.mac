@@ -1,5 +1,11 @@
 
-/* $Log$
+/*
+ * $Log$
+ * Revision 1.15  1998/12/07 10:27:02  sbs
+ * +,-,*,/ on int[.] x int[.], int[.] x int , and int x int[.]
+ * now are intrinsic iff intrinsic is turned off (default)!!!
+ * This enables IVE in all cases ...
+ *
  * Revision 1.14  1997/10/03 16:05:40  dkr
  * added new type-class ixi_i for prf %
  * added new type-class i_i for prf abs
@@ -90,6 +96,7 @@ TT2 (45, AxA_A, INT_A, DOUBLE_A, AxA (arg_type[0], arg_type[1], T_double))
 TT2 (46, AxA_A, DOUBLE_A, FLOAT_A, AxA (arg_type[1], arg_type[0], T_double))
 TT2 (47, AxA_A, FLOAT_A, DOUBLE_A, AxA (arg_type[0], arg_type[1], T_double))
 TT2 (48, AxA_A, DOUBLE_A, DOUBLE_A, AxA (arg_type[0], arg_type[1], T_double))
+TT2 (49, VxV_V, INT_V, INT_V, AxA (arg_type[0], arg_type[1], T_int))
 
 TT2 (60, AxS_A, INT_A, INT, DuplicateTypes (arg_type[0], 0))
 TT2 (61, AxS_A, INT_A, FLOAT, ConvertType (arg_type[0], T_float))
@@ -100,6 +107,7 @@ TT2 (65, AxS_A, FLOAT_A, DOUBLE, ConvertType (arg_type[0], T_double))
 TT2 (66, AxS_A, DOUBLE_A, INT, DuplicateTypes (arg_type[0], 0))
 TT2 (67, AxS_A, DOUBLE_A, FLOAT, DuplicateTypes (arg_type[0], 0))
 TT2 (68, AxS_A, DOUBLE_A, DOUBLE, DuplicateTypes (arg_type[0], 0))
+TT2 (69, VxS_V, INT_V, INT, DuplicateTypes (arg_type[0], 0))
 
 TT2 (80, SxA_A, INT, INT_A, DuplicateTypes (arg_type[1], 0))
 TT2 (81, SxA_A, INT, FLOAT_A, DuplicateTypes (arg_type[1], 0))
@@ -110,6 +118,7 @@ TT2 (85, SxA_A, FLOAT, FLOAT_A, DuplicateTypes (arg_type[1], 0))
 TT2 (86, SxA_A, DOUBLE, INT_A, ConvertType (arg_type[1], T_double))
 TT2 (87, SxA_A, DOUBLE, FLOAT_A, ConvertType (arg_type[1], T_double))
 TT2 (88, SxA_A, DOUBLE, DOUBLE_A, DuplicateTypes (arg_type[1], 0))
+TT2 (89, SxV_V, INT, INT_V, DuplicateTypes (arg_type[1], 0))
 
 TT2 (100, SxS_F, INT, INT, MakeTypes (T_float))
 TT2 (101, SxS_F, INT, FLOAT, MakeTypes (T_float))
