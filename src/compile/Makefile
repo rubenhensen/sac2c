@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.7  2001/03/02 10:36:30  dkr
+# /home/dkr/sac/BASE/sac2c/src/compile/RCS/Makefile,v used in touch-rules
+#
 # Revision 3.6  2001/02/02 10:39:03  dkr
 # make deps done
 #
@@ -94,7 +97,7 @@ all: wltransform.o wlpragma_funs.o precompile.o compile.o ReuseWithArrays.o \
 # recognize the dependency between wltransform.c and the .mac files!
 #
 wltransform.c: wlpragma_funs.mac
-	touch wltransform.c
+	touch $@
 
 %.o: %.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o $@ -c $< $(INCS)
