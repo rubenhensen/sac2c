@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.161  1998/05/12 13:56:29  dkr
+ * renamed ???_RC_IDS into ???_DEC_RC_IDS
+ *
  * Revision 1.160  1998/05/12 13:46:18  srs
  * added INFO_AE_TYPES and ID_IDS
  *
@@ -2413,7 +2416,7 @@ extern node *MakeSpmd (node *region);
 #define SPMD_OUT(n) ((DFMmask_t)n->dfmask[2])
 #define SPMD_LOCAL(n) ((DFMmask_t)n->dfmask[3])
 
-#define SPMD_LIFTED_FROM ((char *)(n->node[3]))
+#define SPMD_LIFTED_FROM(n) ((char *)(n->node[3]))
 #define SPMD_FUNNAME(n) (n->info.id)
 #define SPMD_ICM(n) (n->node[2])
 
@@ -2434,7 +2437,7 @@ extern node *MakeSpmd (node *region);
  ***  temporary attributes:
  ***
  ***    ids*       INOUT_IDS             (spmdinit -> compile -> )
- ***    ids*       RC_IDS                (spmdinit -> compile -> )
+ ***    ids*       DEC_RC_IDS            (spmdinit -> compile -> )
  ***
  ***    DFMmask_t  IN                    (spmdinit -> spmd... -> compile -> )
  ***    DFMmask_t  OUT                   (spmdinit -> spmd... -> compile -> )
@@ -2454,6 +2457,7 @@ extern node *MakeSync (node *region, int first);
 #define SYNC_FIRST(n) (n->flag)
 
 #define SYNC_INOUT_IDS(n) ((ids *)(n->node[1]))
+#define SYNC_DEC_RC_IDS(n) ((ids *)(n->node[2]))
 
 #define SYNC_IN(n) ((DFMmask_t)n->dfmask[0])
 #define SYNC_INOUT(n) ((DFMmask_t)n->dfmask[1])
@@ -2485,7 +2489,7 @@ extern node *MakeSync (node *region, int first);
  ***    int        COMPLEX                (wli -> wlf !!)
  ***    int        FOLDABLE               (wli -> wlf !!)
  ***    int        NO_CHANCE              (wli -> wlf !!)
- ***    ids*       RC_IDS                 (refcount -> wltransform )
+ ***    ids*       DEC_RC_IDS             (refcount -> wltransform )
  ***
  ***    DFMmask_t  IN                     (refcount -> wltransform )
  ***    DFMmask_t  INOUT                  (refcount -> wltransform )
@@ -2506,7 +2510,7 @@ extern node *MakeNWith (node *part, node *code, node *withop);
 #define NWITH_COMPLEX(n) (((wl_info *)(n->info2))->complex)
 #define NWITH_FOLDABLE(n) (((wl_info *)(n->info2))->foldable)
 #define NWITH_NO_CHANCE(n) (((wl_info *)(n->info2))->no_chance)
-#define NWITH_RC_IDS(n) ((ids *)(n->node[4]))
+#define NWITH_DEC_RC_IDS(n) ((ids *)(n->node[4]))
 
 #define NWITH_IN(n) ((DFMmask_t)n->dfmask[0])
 #define NWITH_INOUT(n) ((DFMmask_t)n->dfmask[1])
@@ -2658,7 +2662,7 @@ extern node *MakeNWithOp (WithOpType WithOp);
  ***    long*  MASK                    (optimize -> )
  ***    int    FLAG                    (WLI -> WLF)
  ***    node*  COPY                    ( -> DupTree )
- ***    ids*   RC_IDS                  (refcount -> compile )
+ ***    ids*   DEC_RC_IDS              (refcount -> compile )
  ***
  ***  remarks:
  ***   1)
@@ -2688,7 +2692,7 @@ extern node *MakeNCode (node *block, node *expr);
 #define NCODE_MASK(n, x) (n->mask[x])
 #define NCODE_NO(n) (n->refcnt)
 #define NCODE_FLAG(n) (n->flag)
-#define NCODE_RC_IDS(n) ((ids *)(n->node[3]))
+#define NCODE_DEC_RC_IDS(n) ((ids *)(n->node[3]))
 
 #define NCODE_COPY(n) (n->node[4])
 
@@ -2706,7 +2710,7 @@ extern node *MakeNCode (node *block, node *expr);
  ***
  ***  temporary attributes:
  ***
- ***    ids*       RC_IDS             (wltransform -> compile )
+ ***    ids*       DEC_RC_IDS         (wltransform -> compile )
  ***
  ***    DFMmask_t  IN                 (wltransform -> spmd -> )
  ***    DFMmask_t  INOUT              (wltransform -> spmd -> )
@@ -2722,7 +2726,7 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop);
 #define NWITH2_CODE(n) (n->node[2])
 #define NWITH2_WITHOP(n) (n->node[3])
 
-#define NWITH2_RC_IDS(n) ((ids *)(n->node[4]))
+#define NWITH2_DEC_RC_IDS(n) ((ids *)(n->node[4]))
 
 #define NWITH2_IN(n) ((DFMmask_t)n->dfmask[0])
 #define NWITH2_INOUT(n) ((DFMmask_t)n->dfmask[1])
