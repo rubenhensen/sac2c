@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.36  2004/11/24 10:51:07  mwe
+  DistributiveLaw added
+
   Revision 1.35  2004/11/24 10:47:09  ktr
   ARG_ISREFCOUNTED, RET_ISREFCOUNTED added.
 
@@ -251,6 +254,21 @@
 	  <node name="Assign" />
 	  <node name="Let" />
 	  <node name="Prf" />
+	</travuser>
+	<travsons>
+        </travsons>
+        <travnone>
+        </travnone>
+        <traverror>
+        </traverror>
+      </traversal>
+      <traversal id="DL" name="DistributiveLaw" defaults="sons" include="DistributiveLaw.h" >
+	<travuser>
+	  <node name="Block" />
+	  <node name="Assign" />
+	  <node name="Let" />
+	  <node name="Prf" />
+	  <node name="Ap" />
 	</travuser>
 	<travsons>
         </travsons>
