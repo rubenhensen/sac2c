@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2003/04/11 17:55:59  sbs
+ * COConstant2Shape used in Idx2Outer.
+ *
  * Revision 1.3  2003/04/07 14:33:41  sbs
  * genarray variant and Idx2Outer extended for AKV types.
  *
@@ -28,22 +31,13 @@ Idx2Outer (ntype *idx)
 {
     ntype *scalar;
     ntype *res;
-    int dim, i;
-    shape *shp;
-    int *dv;
 
     DBUG_ENTER ("Idx2Outer");
 
     scalar = TYGetScalar (idx);
     switch (TYGetConstr (idx)) {
     case TC_akv:
-        dim = SHGetExtent (TYGetShape (idx), 0);
-        shp = SHMakeShape (dim);
-        dv = (int *)COGetDataVec (TYGetValue (idx));
-        for (i = 0; i < dim; i++) {
-            shp = SHSetExtent (shp, i, dv[i]);
-        }
-        res = TYMakeAKS (TYCopyType (scalar), shp);
+        res = TYMakeAKS (TYCopyType (scalar), COConstant2Shape (TYGetValue (idx)));
         break;
     case TC_aks:
         res = TYMakeAKD (TYCopyType (scalar), SHGetExtent (TYGetShape (idx), 0),
