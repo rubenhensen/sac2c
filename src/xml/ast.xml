@@ -768,7 +768,6 @@
           <node name="Genarray" />
           <node name="Num" />
           <node name="Double" />
-          <node name="Float" />
           <node name="Char" />
           <node name="Bool" />
           <node name="Prf" />
