@@ -1,5 +1,8 @@
 <!--
   $Log$
+  Revision 1.73  2004/11/25 15:32:19  ktr
+  From denmark with love!
+
   Revision 1.72  2004/11/25 15:21:58  khf
   modified INSVD
 
@@ -4761,7 +4764,7 @@
 	    <all />
 	  </phases>
 	</attribute>
-        <attribute name="CorrespondingArg" mandatory="no">
+        <attribute name="CorrespondingArg" mandatory="no" default="NULL">
 	  <type name="Link" >
             <target>
               <node name="Arg" />
