@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.228  1998/05/15 23:53:15  dkr
+ * added a comment
+ *
  * Revision 1.227  1998/05/15 23:51:59  dkr
  * extended PrintNodeTree:
  *   WLGRID.._CEXPR_TEMPLATE warning added.
@@ -2810,7 +2813,7 @@ PrintWLublock (node *arg_node, node *arg_info)
  *
  * remark:
  *   N_WLstride, N_WLstriVar differs in output.
- *   The former prints '->' the latter '=>' !!!
+ *   The former prints '->', the latter '=>' !!!
  *
  ******************************************************************************/
 
@@ -2845,7 +2848,7 @@ PrintWLstride (node *arg_node, node *arg_info)
  *
  * remark:
  *   N_WLgrid, N_WLgridVar differs in output.
- *   The first prints '->' the latter '=>' !!!
+ *   The former prints '->', the latter '=>' !!!
  *
  ******************************************************************************/
 
@@ -2940,7 +2943,7 @@ PrintWLvar (node *arg_node, int dim)
  *
  * remark:
  *   N_WLstride, N_WLstriVar differs in output.
- *   The first prints '->' the latter '=>' !!!
+ *   The former prints '->', the latter '=>' !!!
  *
  ******************************************************************************/
 
@@ -2979,7 +2982,7 @@ PrintWLstriVar (node *arg_node, node *arg_info)
  *
  * remark:
  *   N_WLgrid, N_WLgridVar differs in output.
- *   The first prints '->' the latter '=>' !!!
+ *   The former prints '->', the latter '=>' !!!
  *
  ******************************************************************************/
 
