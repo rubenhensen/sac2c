@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2000/02/02 17:22:07  jhs
+ * Added blkin_tab.
+ *
  * Revision 1.3  2000/01/26 23:22:59  dkr
  * traverse-mechanism enhanced:
  * to each traverse-function-table a preprocessing- and a postprecesing-function
@@ -171,6 +174,7 @@
 #include "multithread.h"
 #include "lac2fun.h"
 #include "schedule_init.h"
+#include "blocks_init.h"
 
 #include "traverse.h"
 
@@ -861,6 +865,17 @@ static funtab schin_tab_rec = {{
                                NULL,
                                NULL};
 funtab *schin_tab = &schin_tab_rec;
+
+/*
+ *  (63) blkin_tab
+ */
+static funtab blkin_tab_rec = {{
+#define NIFblkin(it_blkin) it_blkin
+#include "node_info.mac"
+                               },
+                               NULL,
+                               NULL};
+funtab *blkin_tab = &blkin_tab_rec;
 
 /*
  *  nnode

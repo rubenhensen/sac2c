@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2000/02/02 17:22:07  jhs
+ * Added blkin_tab.
+ *
  * Revision 1.3  2000/01/26 23:25:06  dkr
  * traverse-mechanism enhanced:
  * to each traverse-function-table a preprocessing- and a postprecesing-function
@@ -291,6 +294,7 @@ extern funtab *ntc_tab;
 extern funtab *lac2fun_tab;
 extern funtab *muth_tab;
 extern funtab *schin_tab;
+extern funtab *blkin_tab;
 
 extern int nnode[];
 

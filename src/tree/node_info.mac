@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2000/02/02 17:22:07  jhs
+ * Added blkin_tab.
+ *
  * Revision 1.6  2000/02/02 12:29:09  jhs
  * Added INFO_MUTH_FUNDEF.
  * Added N_mt and N_st.
@@ -167,8 +170,8 @@
  *   spmdcons_tab    tsi_tab         spmdlc_tab      spmddn_tab
  *   spmdpm_tab      spmdco_tab      ntc_tab         lac2fun_tab
  *
- *   muth_tab        schin_tab        unused_tab1     unused_tab2
- *   unused_tab3     unused_tab4     unused_tab5     unused_tab6
+ *   muth_tab        schin_tab       blkin_tab       unused_tab1
+ *   unused_tab2     unused_tab3     unused_tab4     unused_tab5
  *
  *   nnode
  *
@@ -176,7 +179,7 @@
  ***  unused_tabX, whers X is 1 to 8.
  ***  The unused_tabX are accesed by the not to be deleted NIFunusedX macros.
  ***  You also have to add TravSons for this tables in the usages
- ***  of the NIF macro.
+ ***  of the NIF-macro.
  *
  * usage (in this file):
  *   To define a table one needs an identifier for this table (e.g. item),
@@ -422,6 +425,10 @@
 #define NIFschin(it_schin)
 #endif
 
+#ifndef NIFblkin
+#define NIFblkin(it_blkin)
+#endif
+
 /***
  ***  DO NOT DELETE ANY NIFunusedX MACROS
  ***
@@ -489,8 +496,8 @@
                                                                                          \
   it_syncopt, it_wltrans, it_gsc, it_reuse, it_o2nWith, it_sched, it_conc, it_opt,       \
   it_wlaa, it_freemask, it_spmdrm, it_spmdro, it_spmdcons, it_tsi, it_spmdlc, it_spmddn, \
-  it_spmdpm, it_spmdco, it_ntc, it_lac2fun, it_muth, it_schin, it_unused1, it_unused2,   \
-  it_unused3, it_unused4, it_unused5, it_unused6,                                        \
+  it_spmdpm, it_spmdco, it_ntc, it_lac2fun, it_muth, it_schin, it_blkin, it_unused1,     \
+  it_unused2, it_unused3, it_unused4, it_unused5,                                        \
                                                                                          \
   nnode)                                                                                 \
                                                                                          \
@@ -522,14 +529,14 @@
                                             NIFntc (it_ntc) NIFlac2fun (it_lac2fun)      \
                                                                                          \
                                               NIFmuth (it_muth) NIFschin (it_schin)      \
-                                                NIFunused1 (it_unused1)                  \
-                                                  NIFunused1 (it_unused2)                \
-                                                    NIFunused1 (it_unused3)              \
-                                                      NIFunused1 (it_unused4)            \
-                                                        NIFunused1 (it_unused5)          \
-                                                          NIFunused1 (it_unused6)        \
-                                                            NIFunused1 (it_unused7)      \
-                                                              NIFunused1 (it_unused8)    \
+                                                NIFblkin (it_blkin)                      \
+                                                  NIFunused1 (it_unused1)                \
+                                                    NIFunused1 (it_unused2)              \
+                                                      NIFunused1 (it_unused3)            \
+                                                        NIFunused1 (it_unused4)          \
+                                                          NIFunused1 (it_unused5)        \
+                                                            NIFunused1 (it_unused6)      \
+                                                              NIFunused1 (it_unused7)    \
                                                                                          \
                                                                 NIFnnode (nnode)
 
@@ -880,7 +887,8 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        WLAAassign, FMTravSons, SPMDRMassign, SPMDROassign, TravSons, TravSons, TravSons,
        TravSons, SPMDPMassign, SPMDCOassign, TravSons, LAC2FUNassign,
 
-       TravSons, SCHINassign, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, SCHINassign, BLKINassign, TravSons, TravSons, TravSons, TravSons,
+       TravSons,
 
        2),
 
@@ -1737,6 +1745,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
 #undef NIFmuth
 #undef NIFschin
+#undef NIFblkin
 
 /***
  ***  DO NOT DELETE ANY NIFunusedX MACROS
