@@ -1,6 +1,9 @@
 /*
- *
  * $Log$
+ * Revision 1.23  2000/06/23 15:33:52  dkr
+ * function DupTreeInfo added
+ * signature of DupTree changed
+ *
  * Revision 1.22  2000/06/23 14:04:01  dkr
  * NWITH_COMPLEX removed
  *
@@ -94,7 +97,6 @@
  *
  * Revision 1.1  1995/05/01  15:32:27  asi
  * Initial revision
- *
  */
 
 /******************************************************************************
@@ -279,8 +281,9 @@ DupTreeOrNodeLUT (int NodeOnly, node *arg_node, node *arg_info, LUT_t lut)
 /******************************************************************************
  *
  * functions:
- *   node *DupTreeLUT( node *arg_node, node *arg_info, LUT_t lut)
- *   node *DupTree( node *arg_node, node *arg_info)
+ *   node *DupTreeLUT( node *arg_node, LUT_t lut)
+ *   node *DupTree( node *arg_node)
+ *   node *DupTreeInfo( node *arg_node, node *arg_info)
  *   node *DupNodeLUT( node *arg_node, LUT_t lut)
  *   node *DupNode( node *arg_node)
  *
@@ -297,33 +300,44 @@ DupTreeOrNodeLUT (int NodeOnly, node *arg_node, node *arg_info, LUT_t lut)
  *     (If you dont't know what a LUT is good for use DupXxx).
  *
  * attention:
- *   The arg_info DupTree and DupTreeLUT can be used to bring information
- *   into the duplication-traversal. This is NOT RECOMMENDED!!
- *   Hand over NULL for arg_info instead.
- *   Some (propably not all) of this special arg_info hack is documented
- *   at DupTreeOrNodeLUT.
+ *   DupTreeInfo can be used to bring information into the duplication-traversal
+ *   (via the argument 'arg_info').
+ *   The use of this function is NOT RECOMMENDED!!
  *
  ******************************************************************************/
 
 node *
-DupTreeLUT (node *arg_node, node *arg_info, LUT_t lut)
+DupTreeLUT (node *arg_node, LUT_t lut)
 {
     node *new_node;
 
     DBUG_ENTER ("DupTreeLUT");
 
-    new_node = DupTreeOrNodeLUT (FALSE, arg_node, arg_info, lut);
+    new_node = DupTreeOrNodeLUT (FALSE, arg_node, NULL, lut);
 
     DBUG_RETURN (new_node);
 }
 
 /* see comment above */
 node *
-DupTree (node *arg_node, node *arg_info)
+DupTree (node *arg_node)
 {
     node *new_node;
 
     DBUG_ENTER ("DupTree");
+
+    new_node = DupTreeOrNodeLUT (FALSE, arg_node, NULL, NULL);
+
+    DBUG_RETURN (new_node);
+}
+
+/* see comment above */
+node *
+DupTreeInfo (node *arg_node, node *arg_info)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DupTreeInfo");
 
     new_node = DupTreeOrNodeLUT (FALSE, arg_node, arg_info, NULL);
 
