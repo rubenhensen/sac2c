@@ -4,6 +4,9 @@
 /*
 *
 * $Log$
+* Revision 1.25  2004/11/27 02:49:06  cg
+* include of my_debug.h removed.
+*
 * Revision 1.24  2004/11/26 23:57:50  sbs
 * *** empty log message ***
 *
@@ -91,7 +94,6 @@
 #include "internal_lib.h"
 #include "dbug.h"
 #include "DupTree.h"        /* for use of DUPdoDupTree() */
-#include "my_debug.h"
 #include "Error.h"
 #include "free.h"
 #include "globals.h"
