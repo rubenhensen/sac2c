@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.56  2001/05/14 11:27:19  cg
+ * Bug fixed in storing SCHEDULER_INIT ICMs.
+ *
  * Revision 3.55  2001/05/14 10:21:20  cg
  * Added facilities to collect maximum number of schedulers in single
  * SPMD functions.
@@ -2557,21 +2560,22 @@ COMPFundef (node *arg_node, node *arg_info)
          */
         INFO_COMP_SCHEDULERINIT (arg_info) = NULL;
 
-        /*
-         * traverse body
-         */
         if (FUNDEF_BODY (arg_node) != NULL) {
+
+            /*
+             * Traverse body
+             */
             FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
-        }
 
-        /*
-         * Store collected scheduler information.
-         */
-        BLOCK_SCHEDULER_INIT (FUNDEF_BODY (arg_node))
-          = INFO_COMP_SCHEDULERINIT (arg_info);
+            /*
+             * Store collected scheduler information.
+             */
+            BLOCK_SCHEDULER_INIT (FUNDEF_BODY (arg_node))
+              = INFO_COMP_SCHEDULERINIT (arg_info);
 
-        if (INFO_COMP_SCHEDULERID (arg_info) > max_schedulers) {
-            max_schedulers = INFO_COMP_SCHEDULERID (arg_info);
+            if (INFO_COMP_SCHEDULERID (arg_info) > max_schedulers) {
+                max_schedulers = INFO_COMP_SCHEDULERID (arg_info);
+            }
         }
 
         /*
