@@ -1,6 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 3.83  2002/04/16 21:19:35  dkr
+ * Handling of main() function modified:
+ * The main() function defined by the programmer is renamed in the same
+ * way as a normal user-defined function.
+ * GSCPrintMain() prints a new main() function which contains all the initialization
+ * stuff.
+ *
  * Revision 3.82  2002/04/16 11:05:42  dkr
  * PrintArgtab() and PrintAssign() modified
  *
@@ -1410,8 +1417,7 @@ PrintFundef (node *arg_node, node *arg_info)
             && (FUNDEF_STATUS (arg_node) != ST_spmdfun)) {
             if ((FUNDEF_BODY (arg_node) == NULL)
                 || ((FUNDEF_RETURN (arg_node) != NULL)
-                    && (NODE_TYPE (FUNDEF_RETURN (arg_node)) == N_icm)
-                    && (strcmp (FUNDEF_NAME (arg_node), "main") != 0))) {
+                    && (NODE_TYPE (FUNDEF_RETURN (arg_node)) == N_icm))) {
                 fprintf (outfile, "extern ");
 
                 if ((FUNDEF_ICM (arg_node) == NULL)
@@ -1710,13 +1716,6 @@ PrintVardec (node *arg_node, node *arg_info)
 node *
 PrintBlock (node *arg_node, node *arg_info)
 {
-    /*
-     * This static variable assures that only once for the outer block of
-     * the main() function initialization code is generated, but not for
-     * subsequent blocks of perhaps loops or conditionals.
-     */
-    static int not_yet_done_print_main_begin = TRUE;
-
     int old_indent = indent;
 
     DBUG_ENTER ("PrintBlock");
@@ -1744,13 +1743,6 @@ PrintBlock (node *arg_node, node *arg_info)
         INDENT;
         fprintf (outfile, " */\n");
     });
-
-    if (not_yet_done_print_main_begin && (INFO_PRINT_FUNDEF (arg_info) != NULL)
-        && (!strcmp (FUNDEF_NAME (INFO_PRINT_FUNDEF (arg_info)), "main"))
-        && (compiler_phase == PH_genccode)) {
-        GSCPrintMainBegin ();
-        not_yet_done_print_main_begin = FALSE;
-    }
 
     if (BLOCK_INSTR (arg_node)) {
         Trav (BLOCK_INSTR (arg_node), arg_info);
@@ -1792,13 +1784,6 @@ node *
 PrintReturn (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintReturn");
-
-    if ((INFO_PRINT_FUNDEF (arg_info) != NULL)
-        && (!strcmp (FUNDEF_NAME (INFO_PRINT_FUNDEF (arg_info)), "main"))
-        && (compiler_phase == PH_genccode)) {
-        GSCPrintMainEnd ();
-        INDENT;
-    }
 
     if (RETURN_USEMASK (arg_node) != NULL) {
         fprintf (outfile, "/* use:");
@@ -4008,6 +3993,7 @@ PrintTrav (node *syntax_tree, node *arg_info)
             NOTE (("Writing file \"%s%s\"", targetdir, cfilename));
             GSCPrintFileHeader (syntax_tree);
             Trav (syntax_tree, arg_info);
+            GSCPrintMain ();
             fclose (outfile);
             break;
 
@@ -4128,7 +4114,7 @@ Print (node *syntax_tree)
 /******************************************************************************
  *
  * function:
- *   node *PrintNode(node *syntax_tree)
+ *   node *PrintNode( node *syntax_tree)
  *
  * description:
  *   Prints the given node without next node.
