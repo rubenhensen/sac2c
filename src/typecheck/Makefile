@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.5  1999/09/28 14:44:55  sbs
+# line for user_types.o added.
+#
 # Revision 2.4  1999/05/12 08:57:55  jhs
 # -DNEWTREE eliminated from CFLAGS.
 #
@@ -121,6 +124,9 @@ RM=rm -f
 INCS=-I../global -I../../inc -I../print -I../modules -I../optimize -I../compile
 
 all: typecheck.o prim_fun.o typecheck_WL.o gen_pseudo_fun.o
+
+user_types.o: user_types.c
+	$(CC) $(CCFLAGS) $(CFLAGS) -o user_types.o -c user_types.c $(INCS)
 
 typecheck.o: typecheck.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o typecheck.o -c typecheck.c $(INCS)
