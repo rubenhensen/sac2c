@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.148  1998/02/09 16:08:05  srs
+ * *** empty log message ***
+ *
  * Revision 1.147  1998/02/08 10:56:10  dkr
  * added RCNwithid
  *
@@ -644,7 +647,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
   NIF (N_let, "N_let", TravSons, FltnLet, PrintLet, TClet, OPTlet, TravSons, TravSons,
        FreeLet, CFlet, RClet, CompLet, TravSons, DupIIds, TravSons, UNRlet, TravSons,
-       IdxLet, UNSlet, TravSons, TravSons, PrintLet, OBJlet, TravSons, TravSons, TravSons,
+       IdxLet, UNSlet, WLFlet, TravSons, PrintLet, OBJlet, TravSons, TravSons, TravSons,
        TravSons, TravSons, UNQlet, TravSons, PREClet, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, 1),
 
@@ -801,7 +804,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
   NIF (N_Nwith, "N_Nwith", TravSons, FltnNwith, PrintNWith, TravSons, TravSons, TravSons,
        TravSons, FreeNWith, TravSons, RCNwith, CompNWith, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, PrintNWith, TravSons,
+       TravSons, TravSons, TravSons, TravSons, WLFNwith, TravSons, PrintNWith, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, UNQNwith, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 3),
 
