@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.96  2004/08/09 14:55:27  ktr
+# added refcount/allocation.o
+#
 # Revision 3.95  2004/07/29 00:40:54  skt
 # added support for creation of dataflowgraph (mtmode 3)
 #
@@ -267,7 +270,7 @@ MODULES= src/modules/filemgr.o src/modules/import.o src/modules/writesib.o \
          src/modules/implicittypes.o src/modules/analysis.o \
          src/modules/checkdec.o src/modules/readsib.o src/modules/cccall.o
 OBJECTS= src/objects/objinit.o src/objects/objects.o src/objects/uniquecheck.o
-REFCOUNT= src/refcount/refcount.o \
+REFCOUNT= src/refcount/refcount.o src/refcount/allocation.o \
           src/refcount/alloc.o src/refcount/refcounting.o
 CONCURRENT= src/concurrent/concurrent.o \
             src/concurrent/spmd_init.o src/concurrent/spmd_opt.o \
