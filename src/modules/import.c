@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/05/06 15:38:46  sbs
+ * call of yyparse changed to My_yyparse.
+ *
  * Revision 2.1  1999/02/23 12:42:10  sacbase
  * new release made
  *
@@ -1199,7 +1202,7 @@ GenMod (char *name, int checkdec)
 
         linenum = 1;
         start_token = PARSE_DEC;
-        yyparse ();
+        My_yyparse ();
 
         tmp->moddec = decl_tree;
 
@@ -2091,7 +2094,7 @@ ImportOwnDeclaration (char *name, file_type modtype)
         old_filename = filename; /* required for restauration */
         filename = buffer;
         start_token = PARSE_DEC;
-        yyparse ();
+        My_yyparse ();
         fclose (yyin);
 
         if ((strcmp (MODDEC_NAME (decl_tree), name) != 0)

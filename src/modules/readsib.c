@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/05/06 15:38:46  sbs
+ * call of yyparse changed to My_yyparse.
+ *
  * Revision 2.1  1999/02/23 12:42:13  sacbase
  * new release made
  *
@@ -397,7 +400,7 @@ CheckLibraries (deps *depends, strings *done, char *required_by, int level)
                             filename = puresibname;
                             start_token = PARSE_SIB;
 
-                            yyparse ();
+                            My_yyparse ();
 
                             fclose (yyin);
 

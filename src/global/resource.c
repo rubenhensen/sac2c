@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/05/06 15:38:46  sbs
+ * call of yyparse changed to My_yyparse.
+ *
  * Revision 2.2  1999/03/31 08:50:49  cg
  * added new resource entries CACHEx_WRITEPOL
  *
@@ -439,7 +442,7 @@ ParseResourceFiles ()
     filename = "sac2crc"; /* set for better error messages only */
     start_token = PARSE_RC;
 
-    yyparse ();
+    My_yyparse ();
 
     fclose (yyin);
 
@@ -464,7 +467,7 @@ ParseResourceFiles ()
             linenum = 1;
             filename = ".sac2crc"; /* set for better error messages only */
             start_token = PARSE_RC;
-            yyparse ();
+            My_yyparse ();
 
             fclose (yyin);
         }

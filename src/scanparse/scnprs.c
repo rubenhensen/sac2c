@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/05/06 15:38:46  sbs
+ * call of yyparse changed to My_yyparse.
+ *
  * Revision 2.1  1999/02/23 12:40:36  sacbase
  * new release made
  *
@@ -208,7 +211,7 @@ ScanParse ()
     start_token = PARSE_PRG;
     linenum = 1;
 
-    yyparse ();
+    My_yyparse ();
 
     fclose (yyin);
 
@@ -267,7 +270,7 @@ ScanParse ()
     }
 
     start_token = PARSE_PRG;
-    yyparse ();
+    My_yyparse ();
 
     pclose (yyin);
 
