@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.11  1999/04/29 07:31:42  bs
+ * Declaration of MakeAccess modified
+ *
  * Revision 2.10  1999/04/20 12:35:01  jhs
  * Corrected corrupted comment.
  *
@@ -511,12 +514,13 @@ extern nodelist *MakeNodelistNode (node *node, nodelist *next);
  ***/
 
 extern access_t *MakeAccess (node *array, node *iv, accessclass_t class, shpseg *offset,
-                             access_t *next);
+                             accessdir_t direction, access_t *next);
 
 #define ACCESS_ARRAY(a) (a->array_vardec)
 #define ACCESS_IV(a) (a->iv_vardec)
 #define ACCESS_CLASS(a) (a->accessclass)
 #define ACCESS_OFFSET(a) (a->offset)
+#define ACCESS_DIR(a) (a->direction)
 #define ACCESS_NEXT(a) (a->next)
 
 /*==========================================================================*/
@@ -1612,8 +1616,8 @@ extern node *MakeArray (node *aelems);
 #define ARRAY_FLOATVEC(n) ((float *)(n->node[3]))
 #define ARRAY_DOUBLEVEC(n) ((double *)(n->node[4]))
 #define ARRAY_CHARVEC(n) ((char *)(n->node[5]))
-#define ARRAY_VECLEN(n) (n->counter)
-#define ARRAY_VECTYPE(n) ((simpletype) (n->varno))
+#define ARRAY_VECLEN(n) (n->refcnt)
+#define ARRAY_VECTYPE(n) ((simpletype) (n->info2))
 
 /*--------------------------------------------------------------------------*/
 
@@ -1724,7 +1728,7 @@ extern node *MakeId2 (ids *ids_node);
 #define ID_MAKEUNIQUE(n) (n->flag)
 #define ID_VECLEN(n) (n->counter)
 #define ID_WL(n) (n->node[0])
-#define ID_INTVEC(n) ((int *)n->node[1])
+#define ID_INTVEC(n) ((int *)(n->node[1]))
 #define ID_CONSTARRAY(n) (n->varno)
 
 /*--------------------------------------------------------------------------*/
@@ -2271,6 +2275,7 @@ extern node *MakeInfo ();
 #define INFO_TSI_INDEXVAR(n) (n->node[0])
 #define INFO_TSI_ACCESSVEC(n) ((shpseg *)(n->node[1]))
 #define INFO_TSI_TMPACCESS(n) ((access_t *)(n->node[2]))
+#define INFO_TSI_WLARRAY(n) (n->node[3])
 
 /*--------------------------------------------------------------------------*/
 
