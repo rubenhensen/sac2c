@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.83  1995/07/04 08:34:12  hw
- * N_double inserted
+ * Revision 1.84  1995/07/06 17:28:06  cg
+ * constdef- node removed
  *
+;; Revision 1.83  1995/07/04  08:34:12  hw
+;; N_double inserted
+;;
 ;; Revision 1.82  1995/06/26  16:22:49  asi
 ;; added UNRfundef
 ;;
@@ -295,9 +298,6 @@ NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun),
   NIF (N_typedef, "N_typedef", DummyFun, DummyFun, PrintTypedef, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, CompTypedef, DummyFun, DummyFun,
-       DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun),
-  NIF (N_constdef, "N_constdef", DummyFun, DummyFun, PrintConstdef, DummyFun, DummyFun,
-       DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun),
   NIF (N_objdef, "N_objdef", DummyFun, DummyFun, PrintObjdef, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
