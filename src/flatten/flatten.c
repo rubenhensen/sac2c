@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/02/24 20:24:09  bs
+ * Function CopyIntArray moved to internal_lib.c .
+ *
  * Revision 2.1  1999/02/23 12:39:08  sacbase
  * new release made
  *
@@ -437,33 +440,6 @@ IntArray (int len, int *array)
         return (NULL);
     else
         return (array);
-}
-
-/******************************************************************************
- *
- * function:
- *  int *CopyIntArray(int len, int* array)
- *
- * description:
- *   - this function is only used for copying of the first len integers
- *     of a large integer array.
- *   - it is only used in FltnExprs.
- *
- ******************************************************************************/
-
-int *
-CopyIntArray (int len, int *array)
-{
-    int i, *res;
-
-    if ((array == NULL) || (len <= 0))
-        return (NULL);
-    else {
-        res = MALLOC (len * sizeof (int));
-        for (i = 0; i < len; i++)
-            res[i] = array[i];
-        return (res);
-    }
 }
 
 /******************************************************************************
