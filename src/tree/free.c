@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.57  2004/05/14 13:32:26  mwe
+ * ARRAY_NTYPE added
+ *
  * Revision 3.56  2004/05/12 12:58:27  ktr
  * DO_LABEL and DO_SKIP inserted.
  *
@@ -1510,6 +1513,10 @@ FreeArray (node *arg_node, node *arg_info)
 
     if (ARRAY_TYPE (arg_node) != NULL) {
         ARRAY_TYPE (arg_node) = FreeOneTypes (ARRAY_TYPE (arg_node));
+    }
+
+    if (ARRAY_NTYPE (arg_node) != NULL) {
+        ARRAY_NTYPE (arg_node) = TYFreeType (arg_node);
     }
 
     if (ARRAY_ISCONST (arg_node) && (ARRAY_VECLEN (arg_node) > 0)) {

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.188  2004/05/14 13:32:26  mwe
+ * ARRAY_NTYPE added
+ *
  * Revision 3.187  2004/05/12 12:58:27  ktr
  * DO_LABEL and DO_SKIP inserted.
  *
@@ -1883,6 +1886,7 @@ extern node *MakeFuncond (node *pred, node *then, node *alternative);
  ***  temporary attributes:
  ***
  ***    types*     TYPE               (typecheck -> )
+ ***    ntype*     NTYPE              (typecheck -> )
  ***
  ***    int        ISCONST      (O)   (flatten -> )
  ***    simpletype VECTYPE      (O)   (flatten -> )
@@ -1916,6 +1920,7 @@ extern node *MakeFlatArray (node *aelems);
 #define ARRAY_AELEMS(n) (n->node[0])
 #define ARRAY_STRING(n) ((char *)(n->node[1]))
 #define ARRAY_SHAPE(n) ((shape *)(n->node[2]))
+#define ARRAY_NTYPE(n) ((ntype *)(n->node[3]))
 
 #define ARRAY_ISCONST(n) (n->refcnt)
 #define ARRAY_VECTYPE(n) ((simpletype) (n->varno))
