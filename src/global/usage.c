@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.86  1999/02/06 16:38:04  dkr
+ * output of 'sac2c -h' fitted to terminal size of 80 cols
+ *
  * Revision 1.85  1999/02/01 19:46:19  srs
  * fixed typo
  *
@@ -126,10 +129,8 @@
  * added option -_DBUG<from>/<to>/<string>
  *
  *
- *
  * Revision 1.2  1994/11/10  15:44:34  sbs
  * RCS-header inserted
- *
  *
  */
 
@@ -165,64 +166,64 @@ usage ()
             "SYNOPSIS: \tsac2c [options] [filename]\n",
             build_date_time, version_id, target_platform);
 
-    printf (
-      "\n\nDESCRIPTION:\n\n"
+    printf ("\n\nDESCRIPTION:\n\n"
 
-      "\tThe sac2c compiler transforms SAC source code into executable programs\n"
-      "\t(SAC programs) or into a SAC specific library format (SAC module and\n"
-      "\tclass implementations), respectively.\n"
-      "\t\n"
-      "\tThe compilation process is performed in 4 separate stages:\n"
-      "\t1. sac2c uses any C preprocessor to preprocess the given SAC source;\n"
-      "\t2. sac2c itself transforms preprocessed SAC source code into C code;\n"
-      "\t3. sac2c uses any C compiler to generate target machine code;\n"
-      "\t4. sac2c uses any C linker to create an executable program\n"
-      "\t   or sac2c itself creates a SAC library file.\n"
-      "\t\n"
-      "\tWhen compiling a SAC program, sac2c stores the corresponding intermediate\n"
-      "\tC code either in the file a.out.c in the current directory (default) \n"
-      "\tor in the file <file>.c if <file> is specified using the -o option. \n"
-      "\tHere, any absolute or relative path name may be used.\n"
-      "\tThe executable program is either written to the file a.out or to any\n"
-      "\tfile specified using the -o option.\n"
-      "\t\n"
-      "\tHowever, when compiling a SAC module/class implementation, the resulting\n"
-      "\tSAC library is stored in the file <mod/class name>.lib in the current\n"
-      "\tdirectory. In this case, the -o option may be used to specify a different\n"
-      "\tdirectory but not a different file name.\n"
+            "\tThe sac2c compiler transforms SAC source code into executable programs\n"
+            "\t(SAC programs) or into a SAC specific library format (SAC module and\n"
+            "\tclass implementations), respectively.\n"
+            "\t\n"
+            "\tThe compilation process is performed in 4 separate stages:\n"
+            "\t1. sac2c uses any C preprocessor to preprocess the given SAC source;\n"
+            "\t2. sac2c itself transforms preprocessed SAC source code into C code;\n"
+            "\t3. sac2c uses any C compiler to generate target machine code;\n"
+            "\t4. sac2c uses any C linker to create an executable program\n"
+            "\t   or sac2c itself creates a SAC library file.\n"
+            "\t\n"
+            "\tWhen compiling a SAC program, sac2c stores the corresponding\n"
+            "\tintermediate C code either in the file a.out.c in the current directory\n"
+            "\t(default) or in the file <file>.c if <file> is specified using the -o\n"
+            "\toption. Here, any absolute or relative path name may be used.\n"
+            "\tThe executable program is either written to the file a.out or to any\n"
+            "\tfile specified using the -o option.\n"
+            "\t\n"
+            "\tHowever, when compiling a SAC module/class implementation, the\n"
+            "\tresulting SAC library is stored in the file <mod/class name>.lib in the\n"
+            "\tcurrent directory. In this case, the -o option may be used to specify a\n"
+            "\tdifferent directory but not a different file name.\n"
 
-      "\n\nSPECIAL OPTIONS:\n\n"
+            "\n\nSPECIAL OPTIONS:\n\n"
 
-      "\t -h\t\t\tdisplay this helptext\n"
-      "\t -i\t\t\tdisplay copyright/disclaimer\n\n"
-      "\t -libstat\t\tprint status information about a SAC library file\n"
-      "\t -M\t\t\tonly detect dependencies from imported\n"
-      "\t\t\t\t  modules/classes and write them to stdout\n"
-      "\t\t\t\t  in a way suitable for the make utility.\n"
-      "\t\t\t\t  Dependences from declaration files are\n"
-      "\t\t\t\t  considered exclusively.\n"
-      "\t -Mlib\t\t\tonly detect dependencies from imported\n"
-      "\t\t\t\t  modules/classes and write them to stdout\n"
-      "\t\t\t\t  in a way suitable for the make utility.\n"
-      "\t\t\t\t  Dependences from declaration files as well as\n"
-      "\t\t\t\t  library files are (recursively) considered.\n"
+            "\t -h\t\tdisplay this helptext\n"
+            "\t -i\t\tdisplay copyright/disclaimer\n\n"
+            "\t -libstat\tprint status information about a SAC library file\n"
+            "\t -M\t\tonly detect dependencies from imported\n"
+            "\t\t\t  modules/classes and write them to stdout\n"
+            "\t\t\t  in a way suitable for the make utility.\n"
+            "\t\t\t  Dependences from declaration files are\n"
+            "\t\t\t  considered exclusively.\n"
+            "\t -Mlib\t\tonly detect dependencies from imported\n"
+            "\t\t\t  modules/classes and write them to stdout\n"
+            "\t\t\t  in a way suitable for the make utility.\n"
+            "\t\t\t  Dependences from declaration files as well as\n"
+            "\t\t\t  library files are (recursively) considered.\n"
 
-      "\n\nGENERAL OPTIONS:\n\n"
+            "\n\nGENERAL OPTIONS:\n\n"
 
-      "\t -D <cpp-var>[=<value>]?\tset <cpp-var> (to <value>) when \n"
-      "\t\t\t\t\t running C preprocessor\n"
-      "\t -I <path>\t\t\tspecify additional declaration path\n"
-      "\t -L <path>\t\t\tspecify additional library path\n"
-      "\t -o <name>\t\t\tfor compilation of programs:\n"
-      "\t\t\t\t\t  write executable to specified file\n"
-      "\t\t\t\t\tfor compilation of module/class implementations:\n"
-      "\t\t\t\t\t  write library to specified directory\n"
-      "\t -c \t\t\t\tgenerate C-file only\n"
-      "\t -v <n> \t\t\tverbose level\n"
-      "\t\t\t\t\t  0: error messages only\n"
-      "\t\t\t\t\t  1: error messages and warnings\n"
-      "\t\t\t\t\t  2: basic compile time information\n"
-      "\t\t\t\t\t  3: full compile time information (default)\n");
+            "\t -D <cpp-var>[=<value>]?\n"
+            "\t\t\tset <cpp-var> (to <value>) when \n"
+            "\t\t\t  running C preprocessor\n"
+            "\t -I <path>\tspecify additional declaration path\n"
+            "\t -L <path>\tspecify additional library path\n"
+            "\t -o <name>\tfor compilation of programs:\n"
+            "\t\t\t  write executable to specified file\n"
+            "\t\t\tfor compilation of module/class implementations:\n"
+            "\t\t\t  write library to specified directory\n"
+            "\t -c \t\tgenerate C-file only\n"
+            "\t -v <n> \tverbose level\n"
+            "\t\t\t  0: error messages only\n"
+            "\t\t\t  1: error messages and warnings\n"
+            "\t\t\t  2: basic compile time information\n"
+            "\t\t\t  3: full compile time information (default)\n");
 
     printf ("\n\nBREAK OPTIONS:\n\n");
 
@@ -315,41 +316,44 @@ usage ()
     printf ("\t -maxinline <no>\tinline recursive functions <no> times\n"
             "\t\t\t\t  Default: -maxinline %d\n",
             inlnum);
-    printf ("\t -maxunroll <no>\tunroll loops having no more than <no> iterations\n"
+    printf ("\t -maxunroll <no>\tunroll loops having no more than <no>\n"
+            "\t\t\t\titerations\n"
             "\t\t\t\t  Default: -maxunroll %d\n",
             unrnum);
-    printf ("\t -maxwlunroll <no>\tunroll withloops having no more than <no> elements\n"
+    printf ("\t -maxwlunroll <no>\tunroll withloops having no more than <no>\n"
+            "\t\t\t\telements\n"
             "\t\t\t\t  Default: -maxwlunroll %d\n",
             wlunrnum);
-    printf ("\t -minarray <no>\t\ttry array elimination for arrays with length <= <no>\n"
+    printf ("\t -minarray <no>\t\ttry array elimination for arrays with length\n"
+            "\t\t\t\t<= <no>\n"
             "\t\t\t\t  Default: -minarray %d\n",
             minarray);
-    printf (
-      "\t -maxoverload <no>\tfunctions with unknown shape will <no> times overloaded\n"
-      "\t\t\t\t  Default: -maxoverload %d\n",
-      max_overload);
+    printf ("\t -maxoverload <no>\tfunctions with unknown shape will <no> times\n"
+            "\t\t\t\toverloaded\n"
+            "\t\t\t\t  Default: -maxoverload %d\n",
+            max_overload);
 
     printf ("\n\nMULTI-THREAD OPTIONS:\n\n"
 
-            "\t -mtstatic <no>\t\tcompile program for multi-threaded execution with "
-            "exact\n"
-            "\t\t\t\tnumber of threads specified.\n"
-            "\t -mtdynamic <no>\tcompile program for multi-threaded execution with "
-            "upper\n"
-            "\t\t\t\tbound for the number of threads specified. The exact\n"
-            "\t\t\t\tnumber of threads must be given upon application startup\n"
-            "\t\t\t\tusing the generic command line option '-mt <no>`.\n"
-            "\t -mtall <no>\t\tcompile program for multi-threaded execution and derive\n"
-            "\t\t\t\t<no>+1 executables, one that is compiled for the dynamic\n"
-            "\t\t\t\tspecification of the number of threads with <no> as upper\n"
-            "\t\t\t\tlimit and <no> ones using the respective number of threads\n"
-            "\t\t\t\tstatically.\n"
+            "\t -mtstatic <no>\t\tcompile program for multi-threaded execution\n"
+            "\t\t\t\twith exact number of threads specified.\n"
+            "\t -mtdynamic <no>\tcompile program for multi-threaded execution\n"
+            "\t\t\t\twith upper bound for the number of threads\n"
+            "\t\t\t\tspecified. The exact number of threads must be\n"
+            "\t\t\t\tgiven upon application startup using the\n"
+            "\t\t\t\tgeneric command line option '-mt <no>`.\n"
+            "\t -mtall <no>\t\tcompile program for multi-threaded execution\n"
+            "\t\t\t\tand derive <no>+1 executables, one that is\n"
+            "\t\t\t\tcompiled for the dynamic specification of the\n"
+            "\t\t\t\tnumber of threads with <no> as upper limit\n"
+            "\t\t\t\tand <no> ones using the respective number of\n"
+            "\t\t\t\tthreads statically.\n"
             "\t -maxsyncfold <no>\tmaximum number of fold with-loops in a single\n"
             "\t\t\t\tsynchronisation block.\n"
-            "\t\t\t\t Default: -maxsyncfold %d.\n"
+            "\t\t\t\t  Default: -maxsyncfold %d.\n"
             "\t -minparsize <no>\tminimum generator size for parallel execution\n"
             "\t\t\t\tof with-loops.\n"
-            "\t\t\t\t Default: -minparsize %d.\n",
+            "\t\t\t\t  Default: -minparsize %d.\n",
             max_sync_fold, min_parallel_size);
 
     printf ("\n\nDEBUG OPTIONS:\n\n"
@@ -358,13 +362,15 @@ usage ()
             "\t -dnocleanup\t\tdon't remove temporary files and directories\n"
             "\t -dshow_syscall\t\tshow all system calls during compilation\n"
             "\t -dcheck_malloc\t\tcheck success of memory allocations\n"
-            "\t -dcccall\t\tgenerate shell script '.sac2c' that contains C compiler\n"
-            "\t\t\t\tcall. This implies option -dnocleanup.\n"
-            "\t -# <string>\t\t\toptions (string) for DBUG information\n"
-            "\t\t\t\t\t  (\"-#<string>\" is equivalent to \"-_DBUG//<string>\")\n"
-            "\t -_DBUG<from>/<to>/<string>\tDBUG information only in compiler phases\n"
-            "\t\t\t\t\t <from>..<to>\n"
-            "\t\t\t\t\t  Default: <from> = 1, <to> = last compiler phase\n"
+            "\t -dcccall\t\tgenerate shell script '.sac2c' that contains C\n"
+            "\t\t\t\tcompiler call. This implies option -dnocleanup.\n"
+            "\t -# <str>\t\toptions (string) for DBUG information\n"
+            "\t\t\t\t(\"-#<str>\" is equivalent to \"-_DBUG//<str>\")\n"
+            "\t -_DBUG<from>/<to>/<str>\n"
+            "\t\t\t\tDBUG information only in compiler phases\n"
+            "\t\t\t\t<from>..<to>\n"
+            "\t\t\t\t  Default: <from> = 1,\n"
+            "\t\t\t\t           <to> = last compiler phase\n"
 
             "\n\nTRACE OPTIONS:\n\n"
 
@@ -390,8 +396,8 @@ usage ()
             "\n\nINTRINSIC ARRAY OPERATIONS OPTIONS:\n\n"
 
             "\t -intrinsic [a+-x/tdcrpo]+ \tuse intrinsic array operations\n"
-            "\t\t\t\t\t  a: use all intrinsic operations available\n"
-            "\t\t\t\t\t     (same as +-x/tdcrpo)\n"
+            "\t\t\t\t\t  a: use all intrinsic operations\n"
+            "\t\t\t\t\t     available (same as +-x/tdcrpo)\n"
             "\t\t\t\t\t  +: use intrinsic add\n"
             "\t\t\t\t\t  -: use intrinsic sub\n"
             "\t\t\t\t\t  x: use intrinsic mul\n"
@@ -407,23 +413,26 @@ usage ()
 
             "\t -l <n>\t\t\tlink level for generating SAC library\n"
             "\t\t\t\t  1: compile to one large object file\n"
-            "\t\t\t\t  2: compile to archive of object files (default)\n"
+            "\t\t\t\t  2: compile to archive of object files\n"
+            "\t\t\t\t     (default)\n"
 
             "\n\nC-COMPILER OPTIONS:\n\n"
 
             "\t -g \t\t\tinclude debug information into object code\n"
             "\t -O [0123] \t\tC compiler level of optimization\n"
-            "\t\t\t\tdefault: 0\n"
+            "\t\t\t\t  default: 0\n"
             "\n\tThe actual effects of the above options are C compiler specific!\n"
 
             "\n\nCUSTOMIZATION\n\n"
 
             "\t-target <name>\tspecify a particular compilation target.\n"
-            "\t\t\tCompilation targets are used to customize sac2c for various\n"
-            "\t\t\ttarget architectures, operating systems, and C compilers.\n"
-            "\t\t\tThe target description is read either from the installation\n"
-            "\t\t\tspecific file $SACBASE/runtime/sac2crc or from a file named\n"
-            "\t\t\t.sac2crc within the user's home directory.\n"
+            "\t\t\tCompilation targets are used to customize sac2c for\n"
+            "\t\t\tvarious target architectures, operating systems, and C\n"
+            "\t\t\tcompilers.\n"
+            "\t\t\tThe target description is read either from the\n"
+            "\t\t\tinstallation specific file $SACBASE/runtime/sac2crc or\n"
+            "\t\t\tfrom a file named .sac2crc within the user's home\n"
+            "\t\t\tdirectory.\n"
 
             "\n\nENVIRONMENT VARIABLES:\n\n"
 
