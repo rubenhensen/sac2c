@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.197  1998/05/05 11:25:02  dkr
+ * added RCNwithop
+ *
  * Revision 1.196  1998/04/29 20:15:13  dkr
  * added new phases, tabs, funs, ...
  *
@@ -1014,7 +1017,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, 4),
 
   NIF (N_Nwithop, "N_Nwithop", TravSons, FltnNwithop, PrintNwithop, TravSons, TravSons,
-       TravSons, TravSons, FreeNWithOp, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, FreeNWithOp, TravSons, RCNwithop, TravSons, TravSons,
        DupNwithop, TravSons, TravSons, TravSons, TravSons, TravSons, WLINwithop, TravSons,
        PrintNwithop, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,

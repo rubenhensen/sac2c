@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.17  1998/05/05 11:24:24  dkr
+ * added RCNwithop
+ *
  * Revision 1.16  1998/04/28 13:22:24  dkr
  * added RCblock, RCvardec
  *
@@ -83,6 +86,7 @@ extern node *RCNpart (node *arg_node, node *arg_info);
 extern node *RCNcode (node *arg_node, node *arg_info);
 extern node *RCNgen (node *arg_node, node *arg_info);
 extern node *RCNwithid (node *arg_node, node *arg_info);
+extern node *RCNwithop (node *arg_node, node *arg_info);
 
 extern int IsArray (types *type);
 extern int IsNonUniqueHidden (types *type);
