@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.18  2004/11/30 16:14:39  sah
+ * converted DFMUdfm2ReturnExprs to avis nodes
+ * made DFMUdfm2ReturnTypes robust
+ *
  * Revision 3.17  2004/11/25 22:33:12  mwe
  * SacDevCamp Dk: Compiles!
  *
@@ -248,20 +252,27 @@ DFMUdfm2ReturnTypes (dfmask_t *mask)
      */
     decl = DFMgetMaskEntryDeclSet (mask);
     while (decl != NULL) {
-        tmp = rettypes;
-        rettypes = DUPdupAllTypes (VARDEC_OR_ARG_TYPE (decl));
-
         /*
-         * VARDEC_OR_ARG_ATTRIB == 'ST_was_reference'
-         *   -> TYPES_STATUS = 'ST_artificial'
+         * there might be no old types, in which case
+         * we cannot generate a return type.
          */
+        if (VARDEC_OR_ARG_TYPE (decl) != NULL) {
+            tmp = rettypes;
+            rettypes = DUPdupAllTypes (VARDEC_OR_ARG_TYPE (decl));
 
-        if ((N_arg == NODE_TYPE (decl))
-            && ((ARG_WASREFERENCE (decl)) || (ARG_ISARTIFICIAL (decl)))) {
-            TYPES_STATUS (rettypes) = ST_artificial;
+            /*
+             * VARDEC_OR_ARG_ATTRIB == 'ST_was_reference'
+             *   -> TYPES_STATUS = 'ST_artificial'
+             */
+
+            if ((N_arg == NODE_TYPE (decl))
+                && ((ARG_WASREFERENCE (decl)) || (ARG_ISARTIFICIAL (decl)))) {
+                TYPES_STATUS (rettypes) = ST_artificial;
+            }
+
+            TYPES_NEXT (rettypes) = tmp;
         }
 
-        TYPES_NEXT (rettypes) = tmp;
         decl = DFMgetMaskEntryDeclSet (NULL);
     }
 
@@ -520,26 +531,26 @@ DFMUdfm2Args (dfmask_t *mask, lut_t *lut)
 node *
 DFMUdfm2ReturnExprs (dfmask_t *mask, lut_t *lut)
 {
-    node *decl, *id, *newavis;
+    node *newavis, *id;
     node *exprs = NULL;
-    node *vardec_or_arg;
+    node *avis;
 
     DBUG_ENTER ("DFMUdfm2ReturnExprs");
 
-    decl = DFMgetMaskEntryAvisSet (mask);
-    while (decl != NULL) {
+    avis = DFMgetMaskEntryAvisSet (mask);
+    while (avis != NULL) {
+        DBUG_ASSERT ((NODE_TYPE (avis) == N_avis), "found a non N_avis node in the DFM!");
 
-        /*
-         * ID_VARDEC and ID_OBJDEF are mapped to the same node!
-         */
+        newavis = LUTsearchInLutPp (lut, avis);
 
-        vardec_or_arg = LUTsearchInLutPp (lut, decl);
-        newavis = DECL_AVIS (vardec_or_arg);
+        DBUG_ASSERT ((NODE_TYPE (newavis) == N_avis),
+                     "found a non N_avis node in the LUT!");
+
         id = TBmakeId (newavis);
 
         exprs = TBmakeExprs (id, exprs);
 
-        decl = DFMgetMaskEntryDeclSet (NULL);
+        avis = DFMgetMaskEntryAvisSet (NULL);
     }
 
     DBUG_RETURN (exprs);
