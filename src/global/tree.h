@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.10  1994/12/16 14:20:59  sbs
+ * Revision 1.11  1994/12/20 11:23:48  sbs
+ * extern decl of syntax_tree moved to scnpars.h
+ *
+ * Revision 1.10  1994/12/16  14:20:59  sbs
  * imp_tab inserted and NIF macro enlarged
  *
  * Revision 1.9  1994/12/15  14:19:11  asi
@@ -116,7 +119,6 @@ typedef struct NODE {
     struct NODE *node[4]; /* Diese Eintra"ge sind knotenspezifisch */
 } node;                   /* Knoten des Syntaxbaums  */
 
-extern node *syntax_tree;
 /*
  *  macro for the generation of nodes
  */
