@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2004/11/21 21:28:36  ktr
+ * moved some typedefs from NameTuples.h to types.h
+ *
  * Revision 3.4  2002/07/31 15:34:49  dkr
  * new hidden tag added
  *
@@ -21,40 +24,8 @@
  *
  */
 
-#ifndef _NameTuples_h_
-#define _NameTuples_h_
-
-/*
- * The following defines indicate the position of tags within name tuples.
- * They should be kept in synch with the NT_NAME, NT_SHP, NT_HID and NT_UNQ
- * macros in sac_std.h
- */
-#define NT_NAME_INDEX 0
-#define NT_SHAPE_INDEX 1
-#define NT_HIDDEN_INDEX 2
-#define NT_UNIQUE_INDEX 3
-
-/*
- * Enumerated types for data class and uniqueness class
- */
-
-typedef enum {
-#define ATTRIB NT_SHAPE_INDEX
-#define NTIFtype(it_type) it_type
-#include "nt_info.mac"
-} shape_class_t;
-
-typedef enum {
-#define ATTRIB NT_HIDDEN_INDEX
-#define NTIFtype(it_type) it_type
-#include "nt_info.mac"
-} hidden_class_t;
-
-typedef enum {
-#define ATTRIB NT_UNIQUE_INDEX
-#define NTIFtype(it_type) it_type
-#include "nt_info.mac"
-} unique_class_t;
+#ifndef _SAC_NAMETUPLES_H_
+#define _SAC_NAMETUPLES_H_
 
 /*
  * These character arrays are the macro-name-parts used to select
@@ -64,4 +35,4 @@ extern char *nt_shape_string[];
 extern char *nt_hidden_string[];
 extern char *nt_unique_string[];
 
-#endif /* _NameTuples_h_ */
+#endif /* _SAC_NAMETUPLES_H_ */
