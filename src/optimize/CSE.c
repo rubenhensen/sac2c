@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.2  2000/12/01 14:53:08  sbs
+ * warnings eliminated.
+ *
  * Revision 3.1  2000/11/20 18:00:24  sacbase
  * new release made
  *
@@ -319,7 +322,7 @@ int
 Equal (node *arg1, node *arg2, node *arg_info)
 {
     int equal = FALSE;
-    int varno1, varno2;
+    int varno1 = -1, varno2 = -1;
 
     DBUG_ENTER ("Equal");
 
