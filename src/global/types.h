@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.10  1999/05/12 07:43:58  sbs
+ * *** empty log message ***
+ *
  * Revision 2.9  1999/05/10 13:28:57  sbs
  * changed struct TYPES into struct TYPESS
  * due to collisions with the TYPES-token of sac.l
