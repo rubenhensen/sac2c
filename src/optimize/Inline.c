@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.33  2003/09/11 17:43:17  sbs
+ * Inlining of wrappers made optional by INLINE_WRAPPERS.
+ * Preset INLINE_WRAPPERS to 0, i.e., wrapper-inlining turned off!!
+ *
  * Revision 3.32  2003/06/16 15:57:55  sbs
  * some DBUG reporting improved.
  *
@@ -173,6 +177,11 @@
  * bit field (INFO_INL_TYPE)
  */
 #define INL_COUNT 1
+
+/*
+ * Switch for turning inlining of wrapper functions on (1) or off (0):
+ */
+#define INLINE_WRAPPERS 0
 
 /******************************************************************************
  *
@@ -787,8 +796,13 @@ INLassign (node *arg_node, node *arg_info)
                             FUNDEF_INLINE (inl_fundef), FUNDEF_INLREC (inl_fundef)));
 
         if (FUNDEF_INLINE (inl_fundef)) {
+#if INLINE_WRAPPERS
             if ((FUNDEF_INLREC (inl_fundef) > 0)
                 || (FUNDEF_STATUS (inl_fundef) == ST_wrapperfun)) {
+#else
+            if ((FUNDEF_INLREC (inl_fundef) > 0)
+                && (FUNDEF_STATUS (inl_fundef) != ST_wrapperfun)) {
+#endif
                 inlined_nodes = DoInline (instr, arg_info);
             }
         }
