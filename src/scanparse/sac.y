@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.71  1995/07/14 09:48:22  hw
+ * Revision 1.72  1995/07/14 11:58:30  sbs
+ * keyword inline moved to the beginning of function declaration
+ *
+ * Revision 1.71  1995/07/14  09:48:22  hw
  * changed rule fundec( now name of a function can be a primitive
  *  function name)
  *
@@ -673,11 +676,11 @@ fundef: returntypes fun_name BRACKET_L fundef2
            $$->info.types=$1;          /*  result type(s) */
            $$->info.types->id=$2;      /*  function name */
         }
-	| returntypes INLINE fun_name BRACKET_L fundef2
+	| INLINE returntypes fun_name BRACKET_L fundef2
             {id *function_name;
 
              $$=$5;
-             $$->info.types=$1;          /* result type(s) */
+             $$->info.types=$2;          /* result type(s) */
              $$->info.types->id=$3;      /*  function name */
              $$->flag=1;                 /* flag to sign, that this function
                                           * should be inlined
