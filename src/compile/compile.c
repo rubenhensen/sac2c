@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.83  2002/06/21 12:25:46  dkr
+ * COMPPrfReshape() modified
+ *
  * Revision 3.82  2002/06/07 15:51:32  dkr
  * mdb_argtag renamed into ATG_string
  *
@@ -2692,20 +2695,19 @@ COMPPrfReshape (node *arg_node, node *arg_info)
     arg1 = PRF_ARG1 (arg_node);
     arg2 = PRF_ARG2 (arg_node);
 
-    DBUG_ASSERT ((NODE_TYPE (arg1) == N_id), "N_id as 1st arg of F_reshape expected!");
-    DBUG_ASSERT ((NODE_TYPE (arg2) == N_id), "N_id as 2nd arg of F_reshape expected!");
-
-    DBUG_ASSERT ((strcmp (IDS_NAME (let_ids), ID_NAME (arg1))),
-                 "a = reshape( a, .) not allowed!");
-
     /*
      * compile assignment
      * (v = reshape( shp, w)   =>   v = w)
      */
     ret_node = Trav (arg2, arg_info);
 
-    ret_node = AppendAssign (ret_node, MakeDecRcIcm (ID_NAME (arg1), ID_TYPE (arg1),
-                                                     ID_REFCNT (arg1), 1, NULL));
+    if (NODE_TYPE (arg1) == N_id) {
+        DBUG_ASSERT ((strcmp (IDS_NAME (let_ids), ID_NAME (arg1))),
+                     "a = reshape( a, .) not allowed!");
+
+        ret_node = AppendAssign (ret_node, MakeDecRcIcm (ID_NAME (arg1), ID_TYPE (arg1),
+                                                         ID_REFCNT (arg1), 1, NULL));
+    }
 
     DBUG_RETURN (ret_node);
 }
