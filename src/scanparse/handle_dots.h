@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2002/09/06 11:45:32  sah
+ * added support for N_selwl.
+ *
  * Revision 1.4  2002/09/05 12:48:21  sah
  * added HDassign
  *
@@ -32,5 +35,6 @@ extern node *HDdot (node *arg_node, node *arg_info);
 extern node *HDap (node *arg_node, node *arg_info);
 extern node *HDprf (node *arg_node, node *arg_info);
 extern node *HDassign (node *arg_node, node *arg_info);
+extern node *HDsetwl (node *arg_node, node *arg_info);
 
 #endif /* _handle_dots_h */

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2002/09/06 11:45:32  sah
+ * added support for N_selwl.
+ *
  * Revision 1.10  2002/09/05 13:25:50  sah
  * added first support for WL shortcut and fixed
  * some minor bugs
@@ -1224,4 +1227,22 @@ HDassign (node *arg_node, node *arg_info)
     INFO_HD_ASSIGNS (arg_info) = oldassigns;
 
     DBUG_RETURN (result);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    node * HDsetwl( node *arg_node, node *arg_info);
+ *
+ * description:
+ *    ...
+ *
+ ******************************************************************************/
+
+node *
+HDsetwl (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("HDsetwl");
+
+    DBUG_RETURN (arg_node);
 }
