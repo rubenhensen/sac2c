@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.36  2003/10/14 08:51:32  cg
+ * some code for TAGGED_ARRAYS removed
+ *
  * Revision 3.35  2003/09/17 17:48:29  dkr
  * *** empty log message ***
  *
@@ -473,11 +476,13 @@ ICMCompileMT_START_SYNCBLOCK (int barrier_id, int vararg_cnt, char **vararg)
     indent++;
 
 #ifdef TAGGED_ARRAYS
-    for (i = 0; i < 3 * vararg_cnt; i += 3) {
-        INDENT;
-        fprintf (outfile, "SAC_MT_DECL_LOCAL_DESC( %s)\n", vararg[i + 2]);
-    }
-    fprintf (outfile, "\n");
+#if 0
+  for (i = 0; i < 3 * vararg_cnt; i += 3) {
+    INDENT;
+    fprintf( outfile, "SAC_MT_DECL_LOCAL_DESC( %s)\n", vararg[i+2]);
+  }
+  fprintf( outfile, "\n");
+#endif
 #endif /* TAGGED_ARRAYS */
 
     INDENT;
@@ -485,8 +490,10 @@ ICMCompileMT_START_SYNCBLOCK (int barrier_id, int vararg_cnt, char **vararg)
 
     for (i = 0; i < 3 * vararg_cnt; i += 3) {
 #ifdef TAGGED_ARRAYS
-        INDENT;
-        fprintf (outfile, "SAC_MT_INIT_DESC( %s)\n", vararg[i + 2]);
+#if 0
+    INDENT;
+    fprintf( outfile, "SAC_MT_INIT_DESC( %s)\n", vararg[i+2]);
+#endif
 #else  /* TAGGED_ARRAYS */
         if (0 == strcmp (vararg[i], "in_rc")) {
             INDENT;
