@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.36  1998/03/28 20:29:10  dkr
+ * removed a bug in splitting phase
+ * added merging phase (for blocks only)
+ *
  * Revision 1.35  1998/03/27 18:39:56  dkr
  * added split phase
  * N_WLproj renamed in N_WLstride
@@ -1165,6 +1169,12 @@ CompareWLnode (node *node1, node *node2, int outline)
 
             break;
 
+        case N_WLgrid:
+
+            result
+              = CompareWLnode (WLGRID_NEXTDIM (node1), WLGRID_NEXTDIM (node2), outline);
+            break;
+
         default:
 
             DBUG_ASSERT ((0), "wrong node type");
@@ -1466,7 +1476,9 @@ IndexRear (int bound1, int bound2, int step, int grid_b1, int grid_b2)
  *     upper bound for the related stride?
  *     the new bounds of the grid are:
  *       grid_b1 - offset, grid_b2 - offset
- *   CAUTION: if (offset > grid_b1) the grid must be devided in two parts!!
+ *   CAUTION: if (offset > grid_b1) the grid must be devided in two parts:
+ *              "(grid_b1 - offset + step) -> step" and
+ *              "0 -> (grid_b2 - offset)" !!
  *
  ******************************************************************************/
 
@@ -1627,51 +1639,57 @@ IntersectOutline (node *stride1, node *stride2, node **i_stride1, node **i_strid
 /******************************************************************************
  *
  * function:
- *   node *MergeCube(node *stride1, node *stride2)
+ *   node *MergeCube(node *cube, node *stride)
  *
  * description:
- *   merges 'stride2' into 'stride1'
- *     (copies needed parts of 'stride2' into 'stride1').
- *   eventually present next nodes in 'stride1' or 'stride2' are ignored.
+ *   merges 'stride' into 'cube'
+ *     (copies needed parts of 'stride' into 'cube').
+ *   eventually present next nodes in 'cube' or 'stride' are ignored.
+ *
+ *   cube:   N_WLstride node containing multiple grids
+ *   stride: N_WLstride node containing only one grid
  *
  ******************************************************************************/
 
 node *
-MergeCube (node *stride1, node *stride2)
+MergeCube (node *cube, node *stride)
 {
-    node *grid1, *grid2, *new_grid, *tmp;
-    int bound11, bound12, offset;
+    node *cube_grid, *stride_grid, *new_grid, *tmp;
+    int cube_bound1, stride_bound1, offset;
 
     DBUG_ENTER ("MergeCube");
 
-    if (stride1 != NULL) {
+    if (cube != NULL) {
 
-        grid1 = WLSTRIDE_CONTENTS (stride1);
-        grid2 = WLSTRIDE_CONTENTS (stride2);
+        cube_grid = WLSTRIDE_CONTENTS (cube);
+        stride_grid = WLSTRIDE_CONTENTS (stride);
+        DBUG_ASSERT ((WLGRID_NEXT (stride_grid) == NULL), "more than one grid found");
 
-        bound11 = WLSTRIDE_BOUND1 (stride1);
-        bound12 = WLSTRIDE_BOUND1 (stride2);
+        cube_bound1 = WLSTRIDE_BOUND1 (cube);
+        stride_bound1 = WLSTRIDE_BOUND1 (stride);
 
-        WLSTRIDE_BOUND1 (stride1) = MAX (bound11, bound12);
-        WLSTRIDE_BOUND2 (stride1)
-          = MIN (WLSTRIDE_BOUND2 (stride1), WLSTRIDE_BOUND2 (stride2));
-
-        /*
-         * compute new offset for 'grid2'
-         */
-        offset = GridOffset (WLSTRIDE_BOUND1 (stride1), bound12, WLSTRIDE_STEP (stride2),
-                             WLGRID_BOUND2 (grid2));
-
-        WLSTRIDE_BOUND1 (stride1) -= offset;
-        WLSTRIDE_BOUND2 (stride1) -= offset;
+        WLSTRIDE_BOUND1 (cube) = MAX (cube_bound1, stride_bound1);
+        WLSTRIDE_BOUND2 (cube) = MIN (WLSTRIDE_BOUND2 (cube), WLSTRIDE_BOUND2 (stride));
 
         /*
-         * compute new offsets for all grids in 'stride1'
+         * correct offset of 'stride_grid'
          */
-        tmp = grid1;
+        offset = GridOffset (WLSTRIDE_BOUND1 (cube), stride_bound1,
+                             WLSTRIDE_STEP (stride), WLGRID_BOUND2 (stride_grid));
+
+        DBUG_ASSERT ((offset <= WLSTRIDE_BOUND1 (stride_grid)),
+                     "grid splitted in two parts");
+        WLSTRIDE_BOUND1 (stride_grid) -= offset;
+        WLSTRIDE_BOUND2 (stride_grid) -= offset;
+
+        /*
+         * correct offsets of all grids in 'cube'
+         */
+        tmp = cube_grid;
         do {
-            offset = GridOffset (WLSTRIDE_BOUND1 (stride1), bound11,
-                                 WLSTRIDE_STEP (stride1), WLGRID_BOUND2 (tmp));
+            offset = GridOffset (WLSTRIDE_BOUND1 (cube), cube_bound1,
+                                 WLSTRIDE_STEP (cube), WLGRID_BOUND2 (tmp));
+            DBUG_ASSERT ((offset <= WLGRID_BOUND1 (tmp)), "grid splitted in two parts");
             WLGRID_BOUND1 (tmp) -= offset;
             WLGRID_BOUND2 (tmp) -= offset;
 
@@ -1679,43 +1697,47 @@ MergeCube (node *stride1, node *stride2)
         } while (tmp != NULL);
 
         /*
-         * insert 'grid2'
+         * insert 'stride_grid' into 'cube'
          */
-        if (WLGRID_BOUND1 (grid1) > WLGRID_BOUND1 (grid2)) {
-            /* insert 'grid2' at head of grid list */
-            DBUG_ASSERT ((WLGRID_BOUND1 (grid1) >= WLGRID_BOUND2 (grid2)),
+        if (WLGRID_BOUND1 (cube_grid) > WLGRID_BOUND1 (stride_grid)) {
+            /* insert 'stride_grid' at head of grid list */
+            DBUG_ASSERT ((WLGRID_BOUND1 (cube_grid) >= WLGRID_BOUND2 (stride_grid)),
                          "wrong offset");
-            new_grid = DupTree (grid2, NULL);
-            WLGRID_NEXT (new_grid) = grid1;
-            WLSTRIDE_CONTENTS (stride1) = new_grid;
+            new_grid = DupTree (stride_grid, NULL);
+            WLGRID_NEXT (new_grid) = cube_grid;
+            WLSTRIDE_CONTENTS (cube) = new_grid;
         } else {
             /* search for correct position for insertion */
-            tmp = grid1;
-            while ((WLGRID_NEXT (tmp) != NULL)
-                   && (WLGRID_BOUND1 (tmp) != WLGRID_BOUND1 (grid2))
-                   && (WLGRID_BOUND1 (WLGRID_NEXT (tmp)) <= WLGRID_BOUND1 (grid2))) {
+            tmp = cube_grid;
+            while (
+              (WLGRID_NEXT (tmp) != NULL)
+              && (WLGRID_BOUND1 (tmp) != WLGRID_BOUND1 (stride_grid))
+              && (WLGRID_BOUND1 (WLGRID_NEXT (tmp)) <= WLGRID_BOUND1 (stride_grid))) {
                 tmp = WLGRID_NEXT (tmp);
             }
 
-            if (WLGRID_BOUND1 (tmp) == WLGRID_BOUND1 (grid2)) {
-                /* range of 'grid2' is already in grid list -> merge next dim */
+            if (WLGRID_BOUND1 (tmp) == WLGRID_BOUND1 (stride_grid)) {
+                /*
+                 * range of 'stride_grid' is already in grid list
+                 *  -> merge next dim
+                 */
                 WLGRID_NEXTDIM (tmp)
-                  = MergeCube (WLGRID_NEXTDIM (tmp), WLGRID_NEXTDIM (grid2));
+                  = MergeCube (WLGRID_NEXTDIM (tmp), WLGRID_NEXTDIM (stride_grid));
             } else {
-                /* insert 'grid2' after 'tmp' */
+                /* insert 'stride_grid' after 'tmp' */
                 if (WLGRID_NEXT (tmp) != NULL) {
                     DBUG_ASSERT ((WLGRID_BOUND1 (WLGRID_NEXT (tmp))
-                                  >= WLGRID_BOUND2 (grid2)),
+                                  >= WLGRID_BOUND2 (stride_grid)),
                                  "wrong offset");
                 }
-                new_grid = DupTree (grid2, NULL);
+                new_grid = DupTree (stride_grid, NULL);
                 WLGRID_NEXT (new_grid) = WLGRID_NEXT (tmp);
                 WLGRID_NEXT (tmp) = new_grid;
             }
         }
     }
 
-    DBUG_RETURN (stride1);
+    DBUG_RETURN (cube);
 }
 
 #if 0 
@@ -1739,43 +1761,6 @@ MergeCube (node *stride1, node *stride2)
       tmp = INDEX_NEXT(tmp);
     }
 
-
-        /* must 'grid1' be split into two parts? */
-        if (i_offset1 > grid1_b1) {
-          new_i_stride1 = MakeWLstride(WLSTRIDE_LEVEL(stride1),
-                                  WLSTRIDE_DIM(stride1),
-                                  i_bound1,
-                                  i_bound2,
-                                  step1,
-                                  WLSTRIDE_UNROLLING(stride1),
-                                  MakeWLgrid(WLGRID_DIM(grid1),
-                                             0,
-                                             grid1_b2 - i_offset1,
-                                             WLGRID_UNROLLING(grid1),
-                                             NULL,
-                                             NULL,
-                                             NULL),
-                                  NULL);
-          WLSTRIDE_PART(new_i_stride1) = WLSTRIDE_PART(stride1);
-          new_i_stride1 = NormalizeStride_1(new_i_stride1);
-
-          new_i_stride1 = MakeWLstride(WLSTRIDE_LEVEL(stride1),
-                                  WLSTRIDE_DIM(stride1),
-                                  i_bound1,
-                                  i_bound2,
-                                  step1,
-                                  WLSTRIDE_UNROLLING(stride1),
-                                  MakeWLgrid(WLGRID_DIM(grid1),
-                                             grid1_b1 - (i_offset1 - step1),
-                                             step1,
-                                             WLGRID_UNROLLING(grid1),
-                                             NULL,
-                                             NULL,
-                                             NULL),
-                                  new_i_stride1);
-          WLSTRIDE_PART(new_i_stride1) = WLSTRIDE_PART(stride1);
-          new_i_stride1 = NormalizeStride_1(new_i_stride1);
-        }
 #endif
 
 /******************************************************************************
@@ -1845,7 +1830,7 @@ ComputeCubes (node *strides)
             } else {
                 /* 'stride1' is no longer needed */
                 stride1 = FreeNode (stride1);
-                /* 'stride1' points now to his successor!! */
+                /* 'stride1' points to his successor now! */
             }
         }
 
@@ -1853,7 +1838,8 @@ ComputeCubes (node *strides)
     } while (!fixpoint);
 
     /*
-     * step 2: merge all strides that lie in the same cube -> set of cubes
+     * step 2: merge all strides that lie in the same cube
+     *          -> set of cubes
      */
     new_strides = NULL;
 
@@ -1905,12 +1891,13 @@ ComputeCubes (node *strides)
 
                 /* remove 'stride2' from chain */
                 WLSTRIDE_NEXT (last_stride2) = WLSTRIDE_NEXT (stride2);
+
                 /* merge 'stride2' with 'stride1' */
                 new_stride1 = MergeCube (new_stride1, stride2);
 
                 /* data of 'stride2' is no longer needed */
                 stride2 = FreeNode (stride2);
-                /* 'stride2' points now to his successor!! */
+                /* 'stride2' points to his successor now! */
             } else {
                 last_stride2 = stride2;            /* save last stride */
                 stride2 = WLSTRIDE_NEXT (stride2); /* go to next stride */
@@ -1921,7 +1908,7 @@ ComputeCubes (node *strides)
 
         /* data of 'stride1' no longer needed */
         stride1 = FreeNode (stride1);
-        /* 'stride1' points now to his successor!! */
+        /* 'stride1' points to his successor now! */
     }
     strides = new_strides;
 
@@ -2022,19 +2009,17 @@ SetSegAttribs (node *seg)
     }
 
 #if 0
-  WLSEG_BLOCKS(seg) = 0;
+  WLSEG_BLOCKS(seg) = 1;
 
-  (WLSEG_BV(seg, 0))[0] = 200;
+  (WLSEG_BV(seg, 0))[0] = 100;
   (WLSEG_BV(seg, 0))[1] = 100;
-  (WLSEG_BV(seg, 0))[2] = 50;
-
-  (WLSEG_BV(seg, 1))[0] = 300;
-  (WLSEG_BV(seg, 1))[1] = 150;
-  (WLSEG_BV(seg, 1))[2] = 75;
+  (WLSEG_BV(seg, 0))[2] = 100;
+  (WLSEG_BV(seg, 0))[3] = 100;
 
   (WLSEG_UBV(seg))[0] = 1;
   (WLSEG_UBV(seg))[1] = 1;
   (WLSEG_UBV(seg))[2] = 1;
+  (WLSEG_UBV(seg))[3] = 1;
 #else
     WLSEG_BLOCKS (seg) = 1;
 
@@ -2117,7 +2102,8 @@ SetSegs (node *cubes, int dims)
 /******************************************************************************
  *
  * function:
- *   node *NewBoundsStride(node *stride, int dim, int bound1, int bound2)
+ *   node *NewBoundsStride(node *stride, int dim,
+ *                         int new_bound1, int new_bound2)
  *
  * description:
  *   returns modified 'stride':
@@ -2127,20 +2113,77 @@ SetSegs (node *cubes, int dims)
  ******************************************************************************/
 
 node *
-NewBoundsStride (node *stride, int dim, int bound1, int bound2)
+NewBoundsStride (node *stride, int dim, int new_bound1, int new_bound2)
 {
-    node *grid;
+    node *grids, *new_grids, *tmp, *tmp2;
+    int bound1, step, grid_b1, grid_b2, offset;
 
     DBUG_ENTER ("NewBoundsStride");
+
+    grids = WLSTRIDE_CONTENTS (stride);
 
     if (dim == 0) {
 
         /*
-         * arrivied at the correct dimension
+         * arrived at the correct dimension
          *  -> set new bounds
+         *  -> correct the grids if necessary
          */
-        WLSTRIDE_BOUND1 (stride) = bound1;
-        WLSTRIDE_BOUND2 (stride) = bound2;
+
+        bound1 = WLSTRIDE_BOUND1 (stride);
+        if (bound1 != new_bound1) {
+
+            /*
+             * correct the grids
+             */
+            step = WLSTRIDE_STEP (stride);
+            new_grids = NULL;
+            do {
+                grid_b1 = WLGRID_BOUND1 (grids);
+                grid_b2 = WLGRID_BOUND2 (grids);
+
+                offset = GridOffset (new_bound1, bound1, step, grid_b2);
+
+                /* extract current grid from chain -> single grid in 'tmp' */
+                tmp = grids;
+                grids = WLGRID_NEXT (grids);
+                WLGRID_NEXT (tmp) = NULL;
+
+                if (offset <= grid_b1) {
+                    /*
+                     * grid is still in one pice :)
+                     */
+
+                    WLGRID_BOUND1 (tmp) = grid_b1 - offset;
+                    WLGRID_BOUND2 (tmp) = grid_b2 - offset;
+
+                    /* insert changed grid into 'new_grids' */
+                    new_grids = InsertWLnodes (new_grids, tmp);
+                } else {
+                    /*
+                     * the grid is split into two parts :(
+                     */
+
+                    /* first part: recycle old grid */
+                    WLGRID_BOUND1 (tmp) = grid_b1 - offset + step;
+                    WLGRID_BOUND2 (tmp) = step;
+                    /* second part: duplicate old grid first */
+                    tmp2 = DupNode (tmp);
+                    WLGRID_BOUND1 (tmp2) = 0;
+                    WLGRID_BOUND2 (tmp2) = grid_b2 - offset;
+                    /* concate the two grids */
+                    WLGRID_NEXT (tmp2) = tmp;
+
+                    /* insert them into 'new_grids' */
+                    new_grids = InsertWLnodes (new_grids, tmp2);
+                }
+            } while (grids != NULL);
+
+            WLSTRIDE_CONTENTS (stride) = new_grids;
+            WLSTRIDE_BOUND1 (stride) = new_bound1;
+        }
+
+        WLSTRIDE_BOUND2 (stride) = new_bound2;
 
     } else {
 
@@ -2148,12 +2191,11 @@ NewBoundsStride (node *stride, int dim, int bound1, int bound2)
          * involve all grids of current dimension
          */
 
-        grid = WLSTRIDE_CONTENTS (stride);
         do {
-            WLGRID_NEXTDIM (grid)
-              = NewBoundsStride (WLGRID_NEXTDIM (grid), dim - 1, bound1, bound2);
-            grid = WLGRID_NEXT (grid);
-        } while (grid != NULL);
+            WLGRID_NEXTDIM (grids)
+              = NewBoundsStride (WLGRID_NEXTDIM (grids), dim - 1, new_bound1, new_bound2);
+            grids = WLGRID_NEXT (grids);
+        } while (grids != NULL);
     }
 
     DBUG_RETURN (stride);
@@ -2288,7 +2330,7 @@ SplitWL (node *strides)
             } else {
                 /* 'stride1' is no longer needed */
                 stride1 = FreeNode (stride1);
-                /* 'stride1' points now to his successor!! */
+                /* 'stride1' points to his successor now! */
             }
         }
 
@@ -2404,7 +2446,7 @@ BlockWL (node *stride, int dims, long *bv, int unroll)
 
         case N_WLublock:
             /*
-             * ublock found ?!?!
+             * ublock found ?!?! -> error
              */
 
             /*
@@ -2504,6 +2546,78 @@ BlockWL (node *stride, int dims, long *bv, int unroll)
     DBUG_RETURN (stride);
 }
 
+#if 0
+node *ProjIntersect(node *proj1, node *proj2, int shape_int)
+{
+  node *isection = NULL;
+  int k, bound1, bound2, offset, step,
+      bound1_1, bound2_1, offset_1, step_1, width_1,
+      bound1_2, bound2_2, offset_2, step_2, width_2;
+
+  DBUG_ENTER("ProjIntersect");
+
+  bound1_1 = NUM_VAL(INDEX_BOUND1(proj1));
+  bound2_1 = NUM_VAL(INDEX_BOUND2(proj1));
+  offset_1 = NUM_VAL(INDEX_OFFSET(proj1));
+  step_1 = NUM_VAL(INDEX_STEP(proj1));
+  width_1 = NUM_VAL(INDEX_WIDTH(proj1));
+
+  bound1_2 = NUM_VAL(INDEX_BOUND1(proj2));
+  bound2_2 = NUM_VAL(INDEX_BOUND2(proj2));
+  offset_2 = NUM_VAL(INDEX_OFFSET(proj2));
+  step_2 = NUM_VAL(INDEX_STEP(proj2));
+  width_2 = NUM_VAL(INDEX_WIDTH(proj2));
+
+  if ((bound2_1 > bound1_2 + offset_2) && (bound2_2 > bound1_1 + offset_1)) {
+    bound1 = MAX(bound1_1 + offset_1, bound1_2 + offset_2);
+    bound2 = MIN(bound2_1, bound2_2);
+
+    step = lcm(step_1, step_2);
+    step = MIN(step, (bound2 - bound1));
+
+    offset = -1;
+    for (k = 0; k < step; k++) {
+      if (((k + bound1 - (bound1_1 + offset_1)) % step_1 < width_1) &&
+          ((k + bound1 - (bound1_2 + offset_2)) % step_2 < width_2)) {
+        /* offset k matches both grids */
+        if (offset == -1)
+          /* at the beginning of a new intersection-grid */
+          offset = k;
+      }
+      else {
+        if (offset >= 0) {
+          /* a completed intersection-grid is found */
+          if (! IsEmpty(bound1, bound2, offset)) {
+            isection = MakeExprs(MakeIndex(MakeNum(bound1), MakeNum(bound2),
+                                           MakeNum(offset),
+                                           MakeNum(step), MakeNum(k - offset), NULL),
+                                 isection);
+            /* normalize new intersection-grid and insert it in 'isection' */
+            EXPRS_EXPR(isection) = ProjNormalize(EXPRS_EXPR(isection), shape_int);
+          }
+
+          offset = -1;
+	}
+      }
+    }
+
+    if (offset >= 0) {
+      /* a completed intersection-grid is found */
+      if (! IsEmpty(bound1, bound2, offset)) {
+        isection = MakeExprs(MakeIndex(MakeNum(bound1), MakeNum(bound2),
+                                       MakeNum(offset),
+                                       MakeNum(step), MakeNum(k - offset), NULL),
+                             isection);
+        /* normalize new intersection-grid and insert it in 'isection' */
+        EXPRS_EXPR(isection) = ProjNormalize(EXPRS_EXPR(isection), shape_int);
+      }
+    }
+  }
+
+  DBUG_RETURN(isection);
+}
+#endif
+
 /******************************************************************************
  *
  * function:
@@ -2517,100 +2631,87 @@ BlockWL (node *stride, int dims, long *bv, int unroll)
 node *
 MergeWL (node *nodes)
 {
+    node *node1, *node2, *merge_nodes, *curr_dim, *next_dim;
+    int new_step;
+
     DBUG_ENTER ("MergeWL");
 
-#if 0
-  /*
-   * collect all projs with the same bounds
-   */
-  proj1 = projs;
-  while (proj1 != NULL) {
- 
-    proj2 = proj1;
-    while ((WLSTRIDE_NEXT(proj2) != NULL) && 
-           (WLSTRIDE_BOUND1(proj1) == WLSTRIDE_BOUND1(WLSTRIDE_NEXT(proj2)))) {
-      DBUG_ASSERT((WLSTRIDE_BOUND2(proj1) == WLSTRIDE_BOUND2(WLSTRIDE_NEXT(proj2))),
-                  "wrong bounds found");
-      proj2 = WLSTRIDE_NEXT(proj2);
+    node1 = nodes;
+    while (node1 != NULL) {
+
+        /*
+         * get all nodes with same bounds as 'node1'
+         *
+         * (because of the sort order these nodes are
+         * located directly after 'node1' in the chain)
+         */
+        new_step = WLNODE_STEP (node1);
+        node2 = node1;
+        while ((WLNODE_NEXT (node2) != NULL)
+               && (WLNODE_BOUND1 (node1) == WLNODE_BOUND1 (WLNODE_NEXT (node2)))) {
+            new_step = lcm (new_step, WLNODE_STEP (WLNODE_NEXT (node2)));
+            DBUG_ASSERT ((WLNODE_BOUND2 (node1) == WLNODE_BOUND2 (WLNODE_NEXT (node2))),
+                         "wrong bounds found");
+            node2 = WLNODE_NEXT (node2);
+        }
+
+        /*
+         * save the found subchain in 'merge_nodes'
+         */
+        merge_nodes = node1;
+        node1 = WLNODE_NEXT (node2);
+        WLNODE_NEXT (node2) = NULL;
+
+        /*
+         * merge the found nodes
+         */
+        switch (NODE_TYPE (merge_nodes)) {
+
+        case N_WLblock:
+            /* here is no break missing! */
+
+            /*
+             * CAUTION: to prevent nice ;-) errors in the following code fragment
+             *          WLBLOCK_NEXTDIM and WLUBLOCK_NEXTDIM must be equivalent
+             *          (as currently realized in tree_basic.h).
+             */
+        case N_WLublock:
+
+            curr_dim = WLNODE_NEXT (merge_nodes);
+            while (curr_dim != NULL) {
+                DBUG_ASSERT ((WLNODE_STEP (curr_dim) == new_step), "wrong step found");
+                next_dim = WLBLOCK_NEXTDIM (merge_nodes);
+                DBUG_ASSERT ((next_dim != NULL), "dim not found");
+                DBUG_ASSERT ((WLBLOCK_NEXTDIM (curr_dim) != NULL), "dim not found");
+
+                next_dim = InsertWLnodes (next_dim, WLBLOCK_NEXTDIM (curr_dim));
+
+                /* the remaining block node is now useless */
+                WLBLOCK_NEXTDIM (curr_dim) = NULL;
+                curr_dim = FreeNode (curr_dim);
+                /* 'curr_dim' points to his successor now */
+            }
+            /* merge next dimension */
+            WLBLOCK_NEXTDIM (merge_nodes) = MergeWL (next_dim);
+            break;
+
+        case N_WLstride:
+
+            DBUG_ASSERT ((0), "not implemented yet");
+
+            WLBLOCK_STEP (merge_nodes) = new_step;
+            break;
+
+        default:
+
+            DBUG_ASSERT ((0), "wrong node type");
+        }
+
+        /*
+         * insert merged nodes into the chain again
+         */
+        WLNODE_NEXT (merge_nodes) = node1;
     }
-
-    tmp = proj1;
-    proj1 = WLSTRIDE_NEXT(proj2);
-    WLSTRIDE_NEXT(proj2) = NULL;
-
-
-  }
-
-#endif
-
-#if 0
-  if (node1 != NULL) {
-
-    grid1 = WLSTRIDE_CONTENTS(proj1);
-    grid2 = WLSTRIDE_CONTENTS(proj2);
-
-    bound11 = WLSTRIDE_BOUND1(proj1);
-    bound12 = WLSTRIDE_BOUND1(proj2);
-
-    WLSTRIDE_BOUND1(proj1) = MAX(bound11, bound12);
-    WLSTRIDE_BOUND2(proj1) = MIN(WLSTRIDE_BOUND2(proj1), WLSTRIDE_BOUND2(proj2));
-
-    /*
-     * compute new offset for 'grid2'
-     */
-    WLGRID_BOUND1(grid2) -= GridBound1(WLSTRIDE_BOUND1(proj1),
-                                       bound12, WLSTRIDE_STEP(proj2),
-                                       WLGRID_BOUND1(grid2), WLGRID_BOUND2(grid2));
-
-    /*
-     * compute new offsets for all grids in 'proj1'
-     */
-    tmp = grid1;
-    do {
-      WLGRID_BOUND1(tmp) -= GridBound1(WLSTRIDE_BOUND1(proj1),
-                                       bound11, WLSTRIDE_STEP(proj1),
-                                       WLGRID_BOUND1(tmp), WLGRID_BOUND2(tmp));
-      tmp = WLGRID_NEXT(tmp);
-    }
-    while (tmp != NULL);
-
-    /*
-     * insert 'grid2'
-     */
-    if (WLGRID_BOUND1(grid1) > WLGRID_BOUND1(grid2)) {
-      /* insert 'grid2' at head of grid list */
-      DBUG_ASSERT((WLGRID_BOUND1(grid1) >= WLGRID_BOUND2(grid2)),
-                  "wrong offset");
-      new_grid = DupTree(grid2, NULL);
-      WLGRID_NEXT(new_grid) = grid1;
-      WLSTRIDE_CONTENTS(proj1) = new_grid;
-    }
-    else {
-      /* search for correct position for insertion */
-      tmp = grid1;
-      while ((WLGRID_NEXT(tmp) != NULL) &&
-             (WLGRID_BOUND1(tmp) != WLGRID_BOUND1(grid2)) &&
-             (WLGRID_BOUND1(WLGRID_NEXT(tmp)) <= WLGRID_BOUND1(grid2))) {
-        tmp = WLGRID_NEXT(tmp);
-      }
-
-      if (WLGRID_BOUND1(tmp) == WLGRID_BOUND1(grid2)) {
-        /* range of 'grid2' is already in grid list -> merge next dim */
-        WLGRID_NEXTDIM(tmp) = MergeCube(WLGRID_NEXTDIM(tmp), WLGRID_NEXTDIM(grid2));
-      }
-      else {
-        /* insert 'grid2' after 'tmp' */
-        if (WLGRID_NEXT(tmp) != NULL) {
-          DBUG_ASSERT((WLGRID_BOUND1(WLGRID_NEXT(tmp)) >= WLGRID_BOUND2(grid2)),
-                      "wrong offset");
-	}
-        new_grid = DupTree(grid2, NULL);
-        WLGRID_NEXT(new_grid) = WLGRID_NEXT(tmp);
-        WLGRID_NEXT(tmp) = new_grid;
-      }
-    }
-  }
-#endif
 
     DBUG_RETURN (nodes);
 }
