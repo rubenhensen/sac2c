@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.15  1997/11/02 13:58:03  dkr
+ * with defined NEWTREE, node->nnode is not used anymorewith defined NEWTREE, node->nnode
+ * is not used anymore
+ *
  * Revision 1.14  1997/10/31 11:04:11  dkr
  * with defined NEWTREE, node->nnode is not used anymore
  *
@@ -111,9 +115,9 @@ extern node *CompObjdef (node *arg_node, node *arg_info);
     {                                                                                    \
         node *tmp;                                                                       \
         MAKE_ICM_ARG (tmp, new_node);                                                    \
-        prev->node[1] = tmp;
-prev = tmp;
-}
+        prev->node[1] = tmp;                                                             \
+        prev = tmp;                                                                      \
+    }
 #endif /* NEWTREE */
 
 #ifndef NEWTREE
