@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2001/03/22 19:40:46  dkr
+ * include of tree.h eliminated
+ *
  * Revision 3.4  2001/02/02 09:55:09  dkr
  * superfluous include of compile.h removed
  *
@@ -190,8 +193,11 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "types.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
+#include "internal_lib.h"
 #include "dbug.h"
-#include "tree.h"
 #include "print.h"
 #include "traverse.h"
 #include "DupTree.h"

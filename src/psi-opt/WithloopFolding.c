@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/03/22 19:41:33  dkr
+ * include of tree.h eliminated
+ *
  * Revision 3.3  2000/12/15 15:23:50  nmw
  * missing ")" added
  *
@@ -164,8 +167,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "tree.h"
 #include "types.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
 #include "internal_lib.h"
 #include "free.h"
 #include "print.h"

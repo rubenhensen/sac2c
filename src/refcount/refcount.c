@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2001/03/22 19:42:16  dkr
+ * include of tree.h eliminated
+ *
  * Revision 3.11  2001/02/09 13:35:59  dkr
  * RCicm modified: arguments of VECT2OFFSET are refcounted correctly now
  *
@@ -177,12 +180,12 @@
 
 #include <stdlib.h>
 
-#include "my_debug.h"
-#include "dbug.h"
-#include "internal_lib.h"
-#include "tree.h"
+#include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
+#include "internal_lib.h"
+#include "my_debug.h"
+#include "dbug.h"
 #include "traverse.h"
 #include "free.h"
 #include "DupTree.h"

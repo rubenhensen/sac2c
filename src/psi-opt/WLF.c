@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2001/03/22 19:41:16  dkr
+ * include of tree.h eliminated
+ *
  * Revision 3.4  2001/03/21 18:16:17  dkr
  * DupTreeInfo replaced by DupTree_Type
  *
@@ -215,8 +218,9 @@
 #include <stdlib.h>
 #include <limits.h>
 
-#include "tree.h"
 #include "types.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
 #include "internal_lib.h"
 #include "free.h"
 #include "DupTree.h"
@@ -228,7 +232,6 @@
 #include "optimize.h"
 #include "generatemasks.h"
 #include "ConstantFolding.h"
-#include "tree_compound.h"
 #include "WithloopFolding.h"
 #include "WLF.h"
 
