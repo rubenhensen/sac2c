@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.18  1999/01/20 09:06:53  cg
+ * Added check whether piping of input through preprocessor
+ * is successful.
+ *
  * Revision 1.17  1998/05/27 11:19:44  cg
  * global variable 'filename' which contains the current file name in order
  * to provide better error messages is now handled correctly.
@@ -254,6 +258,10 @@ ScanParse ()
     }
 
     yyin = popen (cccallstr, "r");
+
+    if (yyin == NULL) {
+        SYSABORT (("Unable to start C preprocessor"));
+    }
 
     start_token = PARSE_PRG;
     yyparse ();
