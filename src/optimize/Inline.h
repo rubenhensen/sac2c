@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  2000/07/12 15:14:52  dkr
+ * function SearchDecl moved to tree_compound.h
+ *
  * Revision 2.1  1999/02/23 12:41:21  sacbase
  * new release made
  *
@@ -44,7 +47,6 @@ extern node *INLassign (node *arg_node, node *arg_info);
 extern node *INLarg (node *arg_node, node *arg_info);
 extern node *INLvardec (node *arg_node, node *arg_info);
 
-extern node *SearchDecl (char *name, node *decl_node);
 extern char *RenameInlinedVar (char *old_name);
 
 #endif /* _Inline_h */
