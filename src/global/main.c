@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.103  1997/11/20 18:37:17  dkr
+ * moved call of Old2NewWith().
+ * the call is now after compiler-phase 18 (RefCount()) --- use: sac2c -b18 -2 ...
+ *
  * Revision 1.102  1997/11/20 14:45:48  dkr
  * added a converter "OldWithLoop -> NewWithLoop" (function Old2NewWith())
  * the new sac2c flag -2 activates the converter
@@ -1184,6 +1188,11 @@ MAIN
                                                                 ABORT_ON_ERROR;
                                                                 compiler_phase++;
 
+                                                                if (Make_Old2NewWith)
+                                                                    syntax_tree
+                                                                      = Old2NewWith (
+                                                                        syntax_tree);
+
                                                                 if (!breakref) {
                                                                     NOTE_COMPILER_PHASE;
                                                                     CHECK_DBUG_START;
@@ -1198,11 +1207,6 @@ MAIN
                                                                       !breakprecompile) {
                                                                         NOTE_COMPILER_PHASE;
                                                                         CHECK_DBUG_START;
-                                                                        if (
-                                                                          Make_Old2NewWith)
-                                                                            syntax_tree
-                                                                              = Old2NewWith (
-                                                                                syntax_tree);
                                                                         syntax_tree
                                                                           = Compile (
                                                                             syntax_tree);
