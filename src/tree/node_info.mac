@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.100  2002/09/05 13:25:24  sah
+ * added HDassign to N_assign node
+ *
  * Revision 3.99  2002/09/05 11:51:02  sbs
  * nnode of N_mop corrected! Now, set to 1!
  *
@@ -1423,7 +1426,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        SSAWLFassign,
 
        TravSons, COMP2Assign, PREC2assign, TravSons, TravSons, TravSons, TravSons,
-       ALassign, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       ALassign, HDassign, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, 2),
 
   NIF (N_annotate, "N_annotate", TravSons, TravSons, PrintAnnotate, TravSons, TravSons,
