@@ -3,8 +3,11 @@
 /*
  *
  * $Log$
+ * Revision 2.28  2000/10/24 12:46:04  dkr
+ * CountArguments replaced by GetExprsLength
+ *
  * Revision 2.27  2000/10/24 11:29:08  dkr
- * function MakeTypes() used
+ * function MakeTypes() renamed into MakeTypes1()
  *
  * Revision 2.26  2000/10/17 16:51:02  dkr
  * _MAIN replaced by macro MAIN_MOD_NAME
@@ -782,7 +785,7 @@ imptypes: imptype imptypes
 imptype: id SEMIC pragmas
            {
              $$=MakeNode(N_typedef);
-             $$->info.types=MakeTypes(T_hidden);
+             $$->info.types=MakeTypes1(T_hidden);
 
              DBUG_PRINT("GENTREE",("type:"P_FORMAT" %s",
                                    $$->info.types,
@@ -931,7 +934,7 @@ fundec2: varargtypes BRACKET_R SEMIC pragmas
              {
                $$=MakeNode(N_fundef);
                $$->node[2]=MakeNode(N_arg);
-               $$->node[2]->info.types=MakeTypes(T_dots);
+               $$->node[2]->info.types=MakeTypes1(T_dots);
                FUNDEF_PRAGMA($$)=$4;
              }
            }
@@ -1294,7 +1297,7 @@ varargs: arg COMMA varargs
              {
                $$=$1;
                $$->node[0]=MakeNode(N_arg);
-               $$->node[0]->info.types=MakeTypes(T_dots);
+               $$->node[0]->info.types=MakeTypes1(T_dots);
                
                DBUG_PRINT("GENTREE",
                           ("%s: "P_FORMAT", Id: ..., Attrib: %d  ",
@@ -1360,7 +1363,7 @@ varargtypes: argtype COMMA varargtypes
                  {
                    $$=$1;
                    $$->node[0]=MakeNode(N_arg);
-                   $$->node[0]->info.types=MakeTypes(T_dots);
+                   $$->node[0]->info.types=MakeTypes1(T_dots);
 
                    DBUG_PRINT("GENTREE",
                               ("%s: "P_FORMAT", Attrib: %d  ",
@@ -1442,7 +1445,7 @@ main: TYPE_INT K_MAIN BRACKET_L BRACKET_R { $$=MakeNode(N_fundef); } exprblock
           $$=$<node>5;     /* $$=$5 */
           $$->node[0]=$6;                 /* Funktionsrumpf */
 
-          $$->info.types=MakeTypes(T_int);  /* Knoten fu"r Typinformation */ 
+          $$->info.types=MakeTypes1(T_int);  /* Knoten fu"r Typinformation */ 
           $$->info.types->id=(char *)MALLOC(sizeof(char)*5); 
           strcpy($$->info.types->id, "main");   /* Funktionsnamen eintragen */
 
@@ -1883,7 +1886,7 @@ expr_ap: id BRACKET_L {$<cint>$=linenum;} opt_arguments BRACKET_R
           }
        | monop BRACKET_L {$<cint>$=linenum;} opt_arguments BRACKET_R
          { 
-           if (CountArguments($4)==1) {
+           if (GetExprsLength($4)==1) {
              $$=MakePrf($1, $4);
            }
            else {
@@ -1898,7 +1901,7 @@ expr_ap: id BRACKET_L {$<cint>$=linenum;} opt_arguments BRACKET_R
          }
        | binop BRACKET_L {$<cint>$=linenum;} opt_arguments BRACKET_R
          { 
-           if (CountArguments($4)==2) {
+           if (GetExprsLength($4)==2) {
              $$=MakePrf($1, $4);
            }
            else {
@@ -1913,7 +1916,7 @@ expr_ap: id BRACKET_L {$<cint>$=linenum;} opt_arguments BRACKET_R
          }
        | triop BRACKET_L {$<cint>$=linenum;} opt_arguments BRACKET_R
          { 
-           if (CountArguments($4)==3) {
+           if (GetExprsLength($4)==3) {
              $$=MakePrf($1, $4);
            }
            else {
@@ -2167,8 +2170,8 @@ dots: DOT COMMA dots { $$=$3-1;                }
     | DOT            { $$=KNOWN_DIM_OFFSET -1; }
     ;
 
-returntypes: TYPE_VOID { $$=MakeTypes(T_void); }
-           | types     { $$=$1;                }
+returntypes: TYPE_VOID { $$=MakeTypes1(T_void); }
+           | types     { $$=$1;                 }
            ;
 
 types: type COMMA types
@@ -2178,8 +2181,8 @@ types: type COMMA types
      | type { $$=$1; }
      ;
 
-varreturntypes: TYPE_VOID { $$=MakeTypes(T_void); }
-              | vartypes  { $$=$1;                }
+varreturntypes: TYPE_VOID { $$=MakeTypes1(T_void); }
+              | vartypes  { $$=$1;                 }
               ;
 
 vartypes: type COMMA vartypes 
@@ -2195,7 +2198,7 @@ vartypes: type COMMA vartypes
               yyerror("syntax error");
             }
             else {
-              $$=MakeTypes(T_dots);
+              $$=MakeTypes1(T_dots);
             }
           }
         ;
@@ -2234,24 +2237,24 @@ localtype_main: simpletype {$$ = $1; }
                   TYPES_DIM($$) = $3;
                 }
               | id SQBR_L SQBR_R
-                { $$=MakeTypes(T_user);
+                { $$=MakeTypes1(T_user);
                   TYPES_NAME($$) = $1;
                   TYPES_DIM($$)  = UNKNOWN_SHAPE;
                 }
               | id SQBR_L QUESTION SQBR_R
-                { $$=MakeTypes(T_user);
+                { $$=MakeTypes1(T_user);
                   TYPES_NAME($$) = $1;
                   TYPES_DIM($$)  = ARRAY_OR_SCALAR;
                 }
               | id SQBR_L dots SQBR_R
-                { $$=MakeTypes(T_user);
+                { $$=MakeTypes1(T_user);
                   TYPES_NAME($$) = $1;
                   TYPES_DIM($$)  = $3;
                 }
               ;
 
 local_type_udt_arr: id SQBR_L nums SQBR_R
-                    { $$=MakeTypes(T_user);
+                    { $$=MakeTypes1(T_user);
                       TYPES_NAME($$) = $1;
                       $$ = GenComplexType( $$, $3);
                     }
@@ -2259,16 +2262,16 @@ local_type_udt_arr: id SQBR_L nums SQBR_R
 
 simpletype: simpletype_main { $$ = $1; }
           | id 
-            { $$=MakeTypes(T_user);
+            { $$=MakeTypes1(T_user);
               TYPES_NAME($$) = $1;
             }
           ;
 
-simpletype_main: TYPE_INT   { $$=MakeTypes(T_int);    }
-               | TYPE_FLOAT { $$=MakeTypes(T_float);  }
-               | TYPE_BOOL  { $$=MakeTypes(T_bool);   }
-               | TYPE_CHAR  { $$=MakeTypes(T_char);   }
-               | TYPE_DBL   { $$=MakeTypes(T_double); }
+simpletype_main: TYPE_INT   { $$=MakeTypes1(T_int);    }
+               | TYPE_FLOAT { $$=MakeTypes1(T_float);  }
+               | TYPE_BOOL  { $$=MakeTypes1(T_bool);   }
+               | TYPE_CHAR  { $$=MakeTypes1(T_char);   }
+               | TYPE_DBL   { $$=MakeTypes1(T_double); }
                ;
 
 
@@ -2420,7 +2423,7 @@ sibtype: sibevclass TYPEDEF type id SEMIC sibpragmas
        | sibevclass TYPEDEF IMPLICIT id SEMIC sibpragmas
            {
              $$=MakeTypedef($4, NULL,
-                            MakeTypes(T_hidden),
+                            MakeTypes1(T_hidden),
                             $1, NULL);
              TYPEDEF_STATUS($$)=sib_imported_status;
              TYPEDEF_PRAGMA($$)=$6;
@@ -2433,7 +2436,7 @@ sibtype: sibevclass TYPEDEF type id SEMIC sibpragmas
        | sibevclass TYPEDEF IMPLICIT id COLON id SEMIC sibpragmas
            {
              $$=MakeTypedef($6, $4,
-                            MakeTypes(T_hidden),
+                            MakeTypes1(T_hidden),
                             $1, NULL);
              TYPEDEF_STATUS($$)=sib_imported_status;
              TYPEDEF_PRAGMA($$)=$8;
@@ -2583,7 +2586,7 @@ sibarg: type sibreference sibparam
         }
       | TYPE_DOTS
         {
-          $$=MakeArg(NULL, MakeTypes(T_dots), ST_regular, ST_regular, NULL); 
+          $$=MakeArg(NULL, MakeTypes1(T_dots), ST_regular, ST_regular, NULL); 
 
           DBUG_PRINT("GENSIB",
                      ("%s: "P_FORMAT", ... , Attrib: %d, Status: %d  ",
@@ -2674,7 +2677,7 @@ sibfunlist: sibfunlistentry COMMA sibfunlist
 sibfunlistentry: id BRACKET_L sibarglist BRACKET_R
                  {
                    $$=MakeFundef($1, NULL,
-                                 MakeTypes(T_unknown),
+                                 MakeTypes1(T_unknown),
                                  $3, NULL, NULL);
                    FUNDEF_STATUS($$)=sib_imported_status;
                    
@@ -2685,7 +2688,7 @@ sibfunlistentry: id BRACKET_L sibarglist BRACKET_R
                | id COLON fun_name BRACKET_L sibarglist BRACKET_R
                  {
                    $$=MakeFundef($3, $1,
-                                 MakeTypes(T_unknown),
+                                 MakeTypes1(T_unknown),
                                  $5, NULL, NULL);
 
                    FUNDEF_STATUS($$)=sib_imported_status;
@@ -2826,19 +2829,6 @@ int yyerror(char *errname)
 }
 
 
-int CountArguments(node *args)
-{
-  int res=0;
-  
-  while (args!=NULL) {
-    res++;
-    args=EXPRS_NEXT(args);
-  }
-  
-  return(res);
-}
-
-
 
 /***
  ***  string2array
@@ -2944,33 +2934,6 @@ types *GenComplexType( types *types, nums *numsp)
 }
 
 
-node *GenVardec( types *type, ids *ids_p)
-{
-  node *tmp, *vardec_p;
-  ids *tmp2;
-  types *type_p;
-
-  DBUG_ENTER("GenVardec");
-
-  vardec_p=NULL;
-  do {
-    tmp=MakeNode(N_vardec);
-    tmp->node[0]=vardec_p;
-    vardec_p=tmp;
-    type_p=MakeTypes(T_int);
-    type_p=(types*) memcpy((void*)type_p, (void*)type, sizeof(types)) ;
-    vardec_p->info.types=type_p;
-    vardec_p->info.types->id=ids_p->id;
-    tmp2=ids_p;
-    ids_p=ids_p->next;
-    FREE(tmp2);
-  }
-  while (ids_p != NULL);
-
-  DBUG_RETURN(vardec_p);
-}
-
-
 /*
  *
  *  functionname  : Append
@@ -2978,12 +2941,6 @@ node *GenVardec( types *type, ids *ids_p)
  *                  2) node to append
  *  description   : appends node 2) to node 1) and creates a new N_assign node
  *                  if necessary
- *  global vars   : ---
- *  internal funs : MakeNode
- *  external funs : ---
- *  macros        : DBUG..., P_FORMAT
- *
- *  remarks       :
  *
  */
 node *Append(node *target_node, node *append_node)
