@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.2  2000/12/06 19:50:39  dkr
+# infer_dfms.o added
+#
 # Revision 3.1  2000/11/20 17:59:15  sacbase
 # new release made
 #
@@ -69,7 +72,7 @@ CFLAGS    := -D__EXTENSIONS__
 
 INCS=-I../global -I../../inc -I../tree -I../print
 
-all: flatten.o lac2fun.o cleanup_decls.o fun2lac.o adjust_ids.o
+all: flatten.o lac2fun.o infer_dfms.o cleanup_decls.o fun2lac.o adjust_ids.o
 
 %.o: %.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o $@ -c $< $(INCS)
