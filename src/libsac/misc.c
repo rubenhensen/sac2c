@@ -1,16 +1,14 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2002/07/31 17:24:14  dkr
+ * SAC_String2Array(): terminating \0 added 8-))
+ *
  * Revision 3.1  2000/11/20 18:02:44  sacbase
  * new release made
  *
  * Revision 2.2  1999/07/08 12:29:43  cg
  * File moved to new directory src/libsac.
- *
- *
- */
-
-/*
  *
  * Revision 2.1  1999/02/23 12:43:39  sacbase
  * new release made
@@ -23,7 +21,6 @@
  *
  * Revision 1.1  1998/03/19 16:35:59  cg
  * Initial revision
- *
  *
  */
 
@@ -41,17 +38,17 @@
  *
  *****************************************************************************/
 
-/******************************************************************************
+/*****************************************************************************
  *
  * function:
- *   void SAC_String2Array(char *array, const char *string)
+ *   void SAC_String2Array( char *array, const char *string)
  *
  * description:
  *   This function converts string representations of character arrays
  *   into real character arrays. It's used in conjunction with the ICM
- *   ND_CREATE_CONST_ARRAY.
+ *   ND_CREATE__STRING__DATA.
  *
- ******************************************************************************/
+ *****************************************************************************/
 
 void
 SAC_String2Array (char *array, const char *string)
@@ -101,4 +98,6 @@ SAC_String2Array (char *array, const char *string)
             array[i++] = string[j++];
         }
     }
+
+    array[i] = '\0';
 }
