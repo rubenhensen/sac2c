@@ -3,3 +3,17 @@ DataFlowMask.h
 DupTree.c
 DupTree.h
 Makefile
+access_macros.h
+free.c
+free.h
+node_info.mac
+prf_node_info.mac
+traverse.c
+traverse.h
+tree.c
+tree.h
+tree_basic.c
+tree_basic.h
+tree_compound.c
+tree_compound.h
+type_info.mac
