@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.12  2003/09/10 09:42:13  sbs
+ * TEAssureAbsValFitsShape added.
+ *
  * Revision 1.11  2003/09/09 14:56:11  sbs
  * extended type error reporting added
  *
@@ -588,6 +591,8 @@ TEAssureShpMatchesDim (char *obj1, ntype *type1, char *obj2, ntype *type2)
  *
  *   @brief  makes shure, that if type1 is AKV and type2 is AKS, type1
  *           constitutes a legal index into type2.
+ *           It is assumed, that the shape of type1 matches the dim of type2!!
+ *           NB: if type1 is scalar and type2 is a vector, that's ok too!!
  *
  ******************************************************************************/
 
@@ -606,6 +611,44 @@ TEAssureValMatchesShape (char *obj1, ntype *type1, char *obj2, ntype *type2)
         for (i = 0; i < dim; i++) {
             if ((dv[i] < 0) || (dv[i] >= SHGetExtent (TYGetShape (type2), i))) {
                 ERROR (linenum, ("%s should be legal index into %s;"
+                                 " types found: %s  and  %s",
+                                 obj1, obj2, TYType2String (type1, FALSE, 0),
+                                 TYType2String (type2, FALSE, 0)));
+                TEExtendedAbort ();
+            }
+        }
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn void TEAssureAbsValFitsShape( char *obj1, ntype *type1,
+ *                                   char *obj2, ntype *type2)
+ *
+ *   @brief  makes shure, that if type1 is AKV and type2 is AKS, type1
+ *           constitutes a legal take/drop size into type2.
+ *           It is assumed, that the shape of type1 matches the dim of type2!!
+ *           NB: if type1 is scalar and type2 is a vector, that's ok too!!
+ *
+ ******************************************************************************/
+
+void
+TEAssureAbsValFitsShape (char *obj1, ntype *type1, char *obj2, ntype *type2)
+{
+    int i, dim;
+    int *dv;
+
+    DBUG_ENTER ("TEAssureAbsValFitsShape");
+
+    if ((TYGetConstr (type1) == TC_akv)
+        && ((TYGetConstr (type2) == TC_aks) || (TYGetConstr (type2) == TC_akv))) {
+        dim = TYGetDim (type2);
+        dv = (int *)COGetDataVec (TYGetValue (type1));
+        for (i = 0; i < dim; i++) {
+            if (abs (dv[i]) > SHGetExtent (TYGetShape (type2), i)) {
+                ERROR (linenum, ("%s should not exceed the shape of %s;"
                                  " types found: %s  and  %s",
                                  obj1, obj2, TYType2String (type1, FALSE, 0),
                                  TYType2String (type2, FALSE, 0)));

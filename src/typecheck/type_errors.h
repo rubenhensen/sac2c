@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.10  2003/09/10 09:42:13  sbs
+ * TEAssureAbsValFitsShape added.
+ *
  * Revision 1.9  2003/09/09 14:56:11  sbs
  * extended type error reporting added
  *
@@ -55,6 +58,7 @@ extern void TEAssureIntS (char *obj, ntype *type);
 extern void TEAssureIntVect (char *obj, ntype *type);
 extern void TEAssureShpMatchesDim (char *obj1, ntype *type1, char *obj2, ntype *type2);
 extern void TEAssureValMatchesShape (char *obj1, ntype *type1, char *obj2, ntype *type2);
+extern void TEAssureAbsValFitsShape (char *obj1, ntype *type1, char *obj2, ntype *type2);
 extern void TEAssureProdValMatchesProdShape (char *obj1, ntype *type1, char *obj2,
                                              ntype *type2);
 extern void TEAssureSameSimpleType (char *obj1, ntype *type1, char *obj2, ntype *type2);
