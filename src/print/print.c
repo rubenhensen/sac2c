@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.217  1998/05/08 09:04:34  cg
+ * The syntax tree is now given as an argument to function GSCPrintFileHeader()
+ *
  * Revision 1.216  1998/05/08 00:46:46  dkr
  * added N_Nwithid in PrintNodeTree()
  *
@@ -959,7 +962,7 @@ PrintModul (node *arg_node, node *arg_info)
 
     if (print_separate) {
         outfile = WriteOpen ("%s/header.h", tmp_dirname);
-        GSCPrintFileHeader ();
+        GSCPrintFileHeader (arg_node);
 
         if (NULL != MODUL_TYPES (arg_node)) {
             fprintf (outfile, "\n\n");
@@ -2925,7 +2928,7 @@ Print (node *syntax_tree)
 
             outfile = WriteOpen ("%s%s", targetdir, cfilename);
             NOTE (("Writing file \"%s%s\"", targetdir, cfilename));
-            GSCPrintFileHeader ();
+            GSCPrintFileHeader (syntax_tree);
             syntax_tree = Trav (syntax_tree, NULL);
             fclose (outfile);
             break;
@@ -2939,7 +2942,7 @@ Print (node *syntax_tree)
 
             outfile = WriteOpen ("%s/%s", tmp_dirname, cfilename);
             NOTE (("Writing file \"%s%s\"", targetdir, cfilename));
-            GSCPrintFileHeader ();
+            GSCPrintFileHeader (syntax_tree);
             syntax_tree = Trav (syntax_tree, NULL);
             fclose (outfile);
             break;

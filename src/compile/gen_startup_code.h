@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  1998/05/08 09:04:34  cg
+ * The syntax tree is now given as an argument to function GSCPrintFileHeader()
+ *
  * Revision 1.1  1998/03/24 14:33:35  cg
  * Initial revision
  *
@@ -24,7 +27,9 @@
 
 #define GEN_STARTUP_CODE_H
 
-extern void GSCPrintFileHeader ();
+#include "types.h"
+
+extern void GSCPrintFileHeader (node *);
 
 extern void GSCPrintMainBegin ();
 

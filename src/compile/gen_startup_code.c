@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  1998/05/08 09:04:34  cg
+ * The syntax tree is now given as an argument to function GSCPrintFileHeader()
+ *
  * Revision 1.2  1998/05/07 08:08:26  cg
  * revised version
  *
@@ -32,6 +35,8 @@
 #include "dbug.h"
 #include "globals.h"
 #include "resource.h"
+#include "types.h"
+#include "tree_basic.h"
 
 /******************************************************************************
  *
@@ -257,108 +262,10 @@ PrintDefines ()
  *
  ******************************************************************************/
 
-#if 0
-static
-void PrintProfileInit()
-{
-  int i,j;
-
-  DBUG_ENTER("PrintProfileInit");
-
-  fprintf(outfile, "\n\n/*\n *  Application Specific Profiling Runtime System\n */\n\n");
-  
-  fprintf(outfile, "\n#if PROFILE\n\n");
-
-  fprintf(outfile,
-	  "__PF_TIMER  __PF_fw_fun_timer[__PROFILE_MAXFUN][__PROFILE_MAXFUNAP];\n");
-
-  fprintf(outfile,
-	  "__PF_TIMER  __PF_fw_with_genarray_timer[__PROFILE_MAXFUN][__PROFILE_MAXFUNAP];\n");
-
-  fprintf(outfile,
-	  "__PF_TIMER  __PF_fw_with_modarray_timer[__PROFILE_MAXFUN][__PROFILE_MAXFUNAP];\n");
-
-  fprintf(outfile,
-	  "__PF_TIMER  __PF_fw_with_fold_timer[__PROFILE_MAXFUN][__PROFILE_MAXFUNAP];\n");
-  
-  fprintf(outfile,
-	  "__PF_TIMER  __PF_fun_timer[__PROFILE_MAXFUN][__PROFILE_MAXFUNAP];\n");
-
-  fprintf(outfile,
-	  "__PF_TIMER  __PF_with_genarray_timer[__PROFILE_MAXFUN][__PROFILE_MAXFUNAP];\n");
-
-  fprintf(outfile,
-	  "__PF_TIMER  __PF_with_modarray_timer[__PROFILE_MAXFUN][__PROFILE_MAXFUNAP];\n");
-
-  fprintf(outfile,
-	  "__PF_TIMER  __PF_with_fold_timer[__PROFILE_MAXFUN][__PROFILE_MAXFUNAP];\n");
-  
-
-  fprintf(outfile, "\n");
-  
-  fprintf(outfile, "__PF_TIMER    *__PF_act_timer=&__PF_fun_timer[0][0];\n");
-  fprintf(outfile, "int            __PF_act_funno=0;\n");
-  fprintf(outfile, "int            __PF_act_funapno=0;\n");
-  fprintf(outfile, "int            __PF_with_level=0;\n");
-  fprintf(outfile, "struct rusage  __PF_start_timer;\n");
-  fprintf(outfile, "struct rusage  __PF_stop_timer;\n");
-
-  fprintf(outfile, "\n");
-
-  fprintf(outfile, "char  *__PF_fun_name[]={ \"%s\"", PFfunnme[0]);
-  for( i=1; i<PFfuncntr; i++) {
-    fprintf(outfile, ",\n                         \"%s\"", PFfunnme[i]);
-  };
-  fprintf(outfile, " };\n");
-
-
-  fprintf(outfile, "int    __PF_maxfunap[]={ %d", PFfunapcntr[0]);
-  for( i=1; i<PFfuncntr; i++) {
-    fprintf(outfile, ",\n                         %d", PFfunapcntr[i]);
-  }
-  fprintf(outfile, " };\n");
-
-
-  fprintf(outfile, "int    __PF_funapline[__PROFILE_MAXFUN][__PROFILE_MAXFUNAP]\n"
-	  "         = { { %d",
-	  PFfunapline[0][0]);
-  for( j=1; j<PFfunapcntr[0]; j++) {
-    fprintf(outfile,", %d", PFfunapline[0][j]);
-  }
-  fprintf(outfile, " }");
-  for( i=1; i<PFfuncntr; i++) {
-    fprintf(outfile, ",\n             { %d",
-                PFfunapline[i][0]);
-    for( j=1; j<PFfunapcntr[i]; j++) {
-      fprintf(outfile,", %d", PFfunapline[i][j]);
-    }
-    fprintf(outfile, " }");
-  }
-  fprintf(outfile, " };\n\n");
-
-  fprintf(outfile, "#endif /* PROFILE */\n");
-
-  DBUG_VOID_RETURN;
-}
-#endif
-
-/******************************************************************************
- *
- * function:
- *
- *
- * description:
- *
- *
- *
- *
- *
- ******************************************************************************/
-
 void
-GSCPrintFileHeader ()
+GSCPrintFileHeader (node *syntax_tree)
 {
-    DBUG_ENTER ("GSCPrintDeclarations");
+    DBUG_ENTER ("GSCPrintFileHeader");
 
     PrintGlobalSwitches ();
     PrintGlobalSettings ();
