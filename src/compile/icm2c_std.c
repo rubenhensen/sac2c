@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.43  2003/04/14 15:16:50  dkr
+ * IS_REUSED__BLOCK_... icms used
+ *
  * Revision 3.42  2003/03/14 13:23:37  dkr
  * ND_PRF_SEL__SHAPE, ND_PRF_IDX_SEL__SHAPE modified
  *
@@ -817,17 +820,21 @@ ICMCompileND_CHECK_REUSE (char *to_nt, int to_sdim, char *from_nt, int from_sdim
         fprintf (outfile, "SAC_NOOP()\n");
     } else {
         INDENT;
-        fprintf (outfile, "SAC_IS_LASTREF__THEN( %s) ", from_nt);
-        BLOCK__NOINDENT (
-          ICMCompileND_ASSIGN (to_nt, to_sdim, from_nt, from_sdim, copyfun);
+        fprintf (outfile, "SAC_IS_LASTREF__BLOCK_BEGIN( %s) ", from_nt);
+        indent++;
+        ICMCompileND_ASSIGN (to_nt, to_sdim, from_nt, from_sdim, copyfun);
 
-          INDENT; fprintf (outfile,
-                           "SAC_TR_MEM_PRINT("
-                           " (\"reuse memory of %s at %%p for %s\","
-                           " ND_A_FIELD( %s)))\n",
-                           from_nt, to_nt, from_nt););
         INDENT;
-        fprintf (outfile, "SAC_IS_LASTREF__ELSE( %s)\n", from_nt);
+        fprintf (outfile,
+                 "SAC_TR_MEM_PRINT("
+                 " (\"reuse memory of %s at %%p for %s\","
+                 " SAC_ND_A_FIELD( %s)))\n",
+                 from_nt, to_nt, from_nt);
+        indent--;
+        INDENT;
+        fprintf (outfile, "SAC_IS_LASTREF__BLOCK_END( %s)\n", from_nt);
+        INDENT;
+        fprintf (outfile, "else\n");
     }
 
     DBUG_VOID_RETURN;
@@ -2528,20 +2535,29 @@ PrfModarray_Data (char *to_nt, int to_sdim, char *from_nt, int from_sdim,
     if ((val_any[0] != '(') || /* not a tagged id -> is a const scalar! */
         (ICUGetShapeClass (val_any) == C_scl)) {
         /* 'val_any' is scalar */
-        COND2 (fprintf (outfile, "SAC_ND_A_FIELD( %s) != SAC_ND_A_FIELD( %s)", to_nt,
-                        from_nt);
-               , INDENT; fprintf (outfile, "int SAC_i;\n");
-               FOR_LOOP_INC (fprintf (outfile, "SAC_i");, fprintf (outfile, "0");
-                             , fprintf (outfile, "SAC_ND_A_SIZE( %s)", to_nt);, INDENT;
-                             fprintf (outfile,
-                                      "SAC_ND_WRITE_READ_COPY( %s, SAC_i, %s, SAC_i, "
-                                      "%s)\n",
-                                      to_nt, from_nt, copyfun););
-               , INDENT; fprintf (outfile,
-                                  "SAC_TR_MEM_PRINT("
-                                  " (\"reuse memory of %s at %%p for %s\","
-                                  " ND_A_FIELD( %s)))\n",
-                                  from_nt, to_nt, from_nt););
+        INDENT;
+        fprintf (outfile, "SAC_IS_REUSED__BLOCK_BEGIN( %s, %s)\n", to_nt, from_nt);
+        indent++;
+        INDENT;
+        fprintf (outfile,
+                 "SAC_TR_MEM_PRINT("
+                 " (\"reuse memory of %s at %%p for %s\","
+                 " SAC_ND_A_FIELD( %s)))\n",
+                 from_nt, to_nt, from_nt);
+        indent--;
+        INDENT;
+        fprintf (outfile, "SAC_IS_REUSED__BLOCK_ELSE( %s, %s)\n", to_nt, from_nt);
+        indent++;
+        INDENT;
+        fprintf (outfile, "int SAC_i;\n");
+        FOR_LOOP_INC (fprintf (outfile, "SAC_i");, fprintf (outfile, "0");
+                      , fprintf (outfile, "SAC_ND_A_SIZE( %s)", to_nt);, INDENT;
+                      fprintf (outfile,
+                               "SAC_ND_WRITE_READ_COPY( %s, SAC_i, %s, SAC_i, %s)\n",
+                               to_nt, from_nt, copyfun););
+        indent--;
+        INDENT;
+        fprintf (outfile, "SAC_IS_REUSED__BLOCK_END( %s, %s)\n", to_nt, from_nt);
 
         BLOCK_VARDECS (fprintf (outfile, "int SAC_idx;");
                        ,
@@ -2569,50 +2585,50 @@ PrfModarray_Data (char *to_nt, int to_sdim, char *from_nt, int from_sdim,
                        } else {
                            Vect2Offset ("SAC_idx", idx, idx_size, idx_size_fun,
                                         idx_read_fun, to_nt, to_dim);
-                       } COND2 (fprintf (outfile,
-                                         "SAC_ND_A_FIELD( %s) != SAC_ND_A_FIELD( %s)",
-                                         to_nt, from_nt);
-                                , FOR_LOOP_INC (fprintf (outfile, "SAC_i");
-                                                , fprintf (outfile, "0");
-                                                , fprintf (outfile, "SAC_idx");, INDENT;
-                                                fprintf (outfile,
-                                                         "SAC_ND_WRITE_READ_COPY("
-                                                         " %s, SAC_i, %s, SAC_i, %s)\n",
-                                                         to_nt, from_nt, copyfun););
-                                FOR_LOOP_INC (fprintf (outfile, "SAC_j");
-                                              , fprintf (outfile, "0");
-                                              , fprintf (outfile, "SAC_ND_A_SIZE( %s)",
-                                                         val_any);
-                                              , INDENT;
-                                              fprintf (outfile,
-                                                       "SAC_ND_WRITE_READ_COPY("
-                                                       " %s, SAC_i, %s, SAC_j, %s)\n",
-                                                       to_nt, val_any, copyfun);
-                                              INDENT; fprintf (outfile, "SAC_i++;\n"););
-                                FOR_LOOP (fprintf (outfile, " ");
-                                          , fprintf (outfile,
-                                                     "SAC_i < SAC_ND_A_SIZE( %s)", to_nt);
-                                          , fprintf (outfile, "SAC_i++");, INDENT;
-                                          fprintf (outfile,
-                                                   "SAC_ND_WRITE_READ_COPY("
-                                                   " %s, SAC_i, %s, SAC_i, %s)\n",
-                                                   to_nt, from_nt, copyfun););
-                                , INDENT;
-                                fprintf (outfile,
-                                         "SAC_TR_MEM_PRINT("
-                                         " (\"reuse memory of %s at %%p for %s\","
-                                         " ND_A_FIELD( %s)))\n",
-                                         from_nt, to_nt, from_nt);
-                                FOR_LOOP (fprintf (outfile, "SAC_i = SAC_idx, SAC_j = 0");
-                                          ,
-                                          fprintf (outfile, "SAC_j < SAC_ND_A_SIZE( %s)",
-                                                   val_any);
-                                          , fprintf (outfile, "SAC_i++, SAC_j++");
-                                          , INDENT;
-                                          fprintf (outfile,
-                                                   "SAC_ND_WRITE_READ_COPY("
-                                                   " %s, SAC_i, %s, SAC_j, %s)\n",
-                                                   to_nt, val_any, copyfun););););
+                       } INDENT;
+                       fprintf (outfile, "SAC_IS_REUSED__BLOCK_BEGIN( %s, %s)\n", to_nt,
+                                from_nt);
+                       indent++; INDENT;
+                       fprintf (outfile,
+                                "SAC_TR_MEM_PRINT("
+                                " (\"reuse memory of %s at %%p for %s\","
+                                " SAC_ND_A_FIELD( %s)))\n",
+                                from_nt, to_nt, from_nt);
+                       FOR_LOOP (fprintf (outfile, "SAC_i = SAC_idx, SAC_j = 0");
+                                 ,
+                                 fprintf (outfile, "SAC_j < SAC_ND_A_SIZE( %s)", val_any);
+                                 , fprintf (outfile, "SAC_i++, SAC_j++");, INDENT;
+                                 fprintf (outfile,
+                                          "SAC_ND_WRITE_READ_COPY("
+                                          " %s, SAC_i, %s, SAC_j, %s)\n",
+                                          to_nt, val_any, copyfun););
+                       indent--; INDENT;
+                       fprintf (outfile, "SAC_IS_REUSED__BLOCK_ELSE( %s, %s)\n", to_nt,
+                                from_nt);
+                       indent++;
+                       FOR_LOOP_INC (fprintf (outfile, "SAC_i");, fprintf (outfile, "0");
+                                     , fprintf (outfile, "SAC_idx");, INDENT;
+                                     fprintf (outfile,
+                                              "SAC_ND_WRITE_READ_COPY("
+                                              " %s, SAC_i, %s, SAC_i, %s)\n",
+                                              to_nt, from_nt, copyfun););
+                       FOR_LOOP_INC (fprintf (outfile, "SAC_j");, fprintf (outfile, "0");
+                                     , fprintf (outfile, "SAC_ND_A_SIZE( %s)", val_any);
+                                     , INDENT; fprintf (outfile,
+                                                        "SAC_ND_WRITE_READ_COPY("
+                                                        " %s, SAC_i, %s, SAC_j, %s)\n",
+                                                        to_nt, val_any, copyfun);
+                                     INDENT; fprintf (outfile, "SAC_i++;\n"););
+                       FOR_LOOP (fprintf (outfile, " ");
+                                 , fprintf (outfile, "SAC_i < SAC_ND_A_SIZE( %s)", to_nt);
+                                 , fprintf (outfile, "SAC_i++");, INDENT;
+                                 fprintf (outfile,
+                                          "SAC_ND_WRITE_READ_COPY("
+                                          " %s, SAC_i, %s, SAC_i, %s)\n",
+                                          to_nt, from_nt, copyfun););
+                       indent--; INDENT;
+                       fprintf (outfile, "SAC_IS_REUSED__BLOCK_END( %s, %s)\n", to_nt,
+                                from_nt););
     }
 
     DBUG_VOID_RETURN;
