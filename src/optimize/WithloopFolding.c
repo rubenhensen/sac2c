@@ -1,6 +1,9 @@
 /*      $Id$
  *
  * $Log$
+ * Revision 1.17  1998/05/05 13:00:44  srs
+ * splitted WLT and WLI/WLF
+ *
  * Revision 1.16  1998/05/05 11:20:44  srs
  * changed SearchWL()
  *
@@ -1124,18 +1127,6 @@ WithloopFolding (node *arg_node, node *arg_info)
 
     arg_info = MakeInfo ();
 
-    /* WLT traversal: transform WLs */
-    DBUG_PRINT ("OPT", ("  WLT"));
-    act_tab = wlt_tab;
-    arg_node = Trav (arg_node, arg_info);
-    expr = (wlt_expr - old_wlt_expr);
-    if (expr)
-        DBUG_PRINT ("OPT", ("                        result: %d", expr));
-
-    /* rebuild mask which is necessary because of the transformations in WLT. */
-    DBUG_PRINT ("OPT", ("  GENERATEMASKS"));
-    arg_node = GenerateMasks (arg_node, NULL);
-
     /* WLI traversal: create MRD
        This phase does NOTHING important but to create MRD lists which are needed
        for SearchWL in phase 2. SearchWLHelp does not work properly when
@@ -1157,13 +1148,13 @@ WithloopFolding (node *arg_node, node *arg_info)
 
     /* WLF traversal: fold WLs */
     DBUG_PRINT ("OPT", ("  WLF"));
-    DBUG_PRINT ("WLI", ("currently allocated mem : %d", current_allocated_mem));
+    DBUG_PRINT ("WLF", ("allocated mem before folding: %d", current_allocated_mem));
     act_tab = wlf_tab;
     arg_node = Trav (arg_node, arg_info);
     expr = (wlf_expr - old_wlf_expr);
     if (expr)
         DBUG_PRINT ("OPT", ("                        result: %d", expr));
-    DBUG_PRINT ("WLI", ("currently allocated mem : %d", current_allocated_mem));
+    DBUG_PRINT ("WLF", ("allocated mem after folding : %d", current_allocated_mem));
 
     /* rebuild mask which is necessary because of WL-body-substitutions and
        inserted new variables to prevent wrong variable bindings. */
