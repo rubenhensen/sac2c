@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.58  2004/07/23 15:53:50  ktr
+ * - removed OPT_BLIR
+ * - removed -ktr
+ * - added -emm -do/noeacc
+ *
  * Revision 3.57  2004/04/21 16:38:56  ktr
  * Added SSA-based refcounting
  *
@@ -466,12 +471,7 @@ Usage ()
       "                      - associative law optimization,\n"
       "                      - segmentation and tiling of fold-with-loops.\n"
       "\n"
-      "    -nossa          Apply old optimizations not based on ssa-form, instead of\n"
-      "                    using the new ssa based implementations.\n"
-      "                    NOTE:\n"
-      "                    Some optimizations are exclusively implemented in ssa style.\n"
-      "                    Support for non-ssa based implementations will be removed in\n"
-      "                    future releases.\n"
+      "    -emm            Use explicit memory management (experimental).\n"
       "\n"
       "    -no <opt>       Disable optimization technique <opt>.\n"
       "\n"
@@ -490,7 +490,9 @@ Usage ()
       "        LIR     loop invariant removal\n"
       "        CSE     common subexpression elimination\n"
       "        WLT     with-loop transformation\n"
+      "        WLPG    with-loop partition generation\n"
       "        WLF     with-loop folding\n"
+      "        WLFS    with-loop fusion\n"
       "        WLS     with-loop scalarization\n"
       "        AL      application of associative law\n"
       "        DL      application of distributive law\n"
@@ -508,6 +510,8 @@ Usage ()
       "        APS     arena preselection           (in conjunction with PHM)\n"
       "        DAO     descriptor allocation opt.   (in conjunction with PHM)\n"
       "        MSCA    memory size cache adjustment (in conjunction with PHM)\n"
+      "\n"
+      "        EACC    Explicit accumulation\n"
       "\n"
       "        OPT     enables/disables all optimizations at once.\n"
       "\n"

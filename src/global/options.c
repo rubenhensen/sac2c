@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.65  2004/07/23 15:53:50  ktr
+ * - removed OPT_BLIR
+ * - removed -ktr
+ * - added -emm -do/noeacc
+ *
  * Revision 3.64  2004/07/19 13:08:04  ktr
  * adjusted break specifiers arg range to 1..25
  *
@@ -621,9 +626,6 @@ AnalyseCommandline (int argc, char *argv[])
         ARG_CHOICE ("msca", optimize |= OPT_MSCA);
         ARG_CHOICE ("MSCA", optimize |= OPT_MSCA);
 
-        ARG_CHOICE ("blir", optimize |= OPT_BLIR);
-        ARG_CHOICE ("BLIR", optimize |= OPT_BLIR);
-
         ARG_CHOICE ("sp", optimize |= OPT_SP);
         ARG_CHOICE ("SP", optimize |= OPT_SP);
 
@@ -635,6 +637,9 @@ AnalyseCommandline (int argc, char *argv[])
 
         ARG_CHOICE ("pab", print_after_break = TRUE);
         ARG_CHOICE ("PAB", print_after_break = TRUE);
+
+        ARG_CHOICE ("eacc", eacc = emm);
+        ARG_CHOICE ("EACC", eacc = emm);
 
         ARG_CHOICE_END ();
     });
@@ -649,6 +654,8 @@ AnalyseCommandline (int argc, char *argv[])
     });
 
     ARGS_OPTION ("D", cppvars[num_cpp_vars++] = ARG);
+
+    ARGS_FLAG ("emm", emm = TRUE);
 
     ARGS_FLAG ("enforceIEEE", enforce_ieee = TRUE);
 
@@ -683,8 +690,6 @@ AnalyseCommandline (int argc, char *argv[])
     ARGS_OPTION ("I", AppendPath (MODDEC_PATH, AbsolutePathname (ARG)));
 
     ARGS_FLAG ("khf", khf = TRUE);
-
-    ARGS_FLAG ("ktr", ktr = TRUE);
 
     ARGS_FLAG ("libstat", libstat = TRUE);
 
@@ -897,9 +902,6 @@ AnalyseCommandline (int argc, char *argv[])
         ARG_CHOICE ("msca", optimize &= ~OPT_MSCA);
         ARG_CHOICE ("MSCA", optimize &= ~OPT_MSCA);
 
-        ARG_CHOICE ("blir", optimize &= ~OPT_BLIR);
-        ARG_CHOICE ("BLIR", optimize &= ~OPT_BLIR);
-
         ARG_CHOICE ("sp", optimize &= ~OPT_SP);
         ARG_CHOICE ("SP", optimize &= ~OPT_SP);
 
@@ -911,6 +913,9 @@ AnalyseCommandline (int argc, char *argv[])
 
         ARG_CHOICE ("pab", print_after_break = FALSE);
         ARG_CHOICE ("PAB", print_after_break = FALSE);
+
+        ARG_CHOICE ("eacc", eacc = FALSE);
+        ARG_CHOICE ("EACC", eacc = FALSE);
 
         ARG_CHOICE_END ();
     });

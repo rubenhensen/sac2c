@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.49  2004/07/23 15:53:50  ktr
+ * - removed OPT_BLIR
+ * - removed -ktr
+ * - added -emm -do/noeacc
+ *
  * Revision 3.48  2004/07/21 17:26:35  ktr
  * removed blir.h
  *
@@ -533,7 +538,7 @@ main (int argc, char *argv[])
         goto BREAK;
     compiler_phase++;
 
-    if (!ktr) {
+    if (!emm) {
         PHASE_PROLOG;
         NOTE_COMPILER_PHASE;
         syntax_tree = Refcount (syntax_tree); /* refcnt_tab */
@@ -562,11 +567,11 @@ main (int argc, char *argv[])
         goto BREAK;
     compiler_phase++;
 
-    if (ktr) {
+    if (emm) {
         syntax_tree = DoSSA (syntax_tree);
     }
 
-    if (ktr) {
+    if (emm) {
         PHASE_PROLOG;
         NOTE_COMPILER_PHASE;
         syntax_tree = EMAllocateFill (syntax_tree); /* emalloc_tab */
@@ -625,7 +630,7 @@ main (int argc, char *argv[])
          */
     }
 
-    if (ktr) {
+    if (emm) {
         PHASE_PROLOG;
         NOTE_COMPILER_PHASE;
         syntax_tree = EMRefCount (syntax_tree); /* emrefcnt_tab */
@@ -649,7 +654,7 @@ main (int argc, char *argv[])
         goto BREAK;
     compiler_phase++;
 
-    if (ktr) {
+    if (emm) {
         syntax_tree = UndoSSA (syntax_tree);
     }
 

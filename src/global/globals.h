@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.43  2004/07/23 15:53:50  ktr
+ * - removed OPT_BLIR
+ * - removed -ktr
+ * - added -emm -do/noeacc
+ *
  * Revision 3.42  2004/07/14 23:23:37  sah
  * removed all old ssa optimizations and the use_ssaform flag
  *
@@ -222,7 +227,6 @@
 #define EXTERN_MOD_NAME "_EXT"
 
 extern bool sbs;
-extern bool ktr;
 extern bool khf;
 
 extern char version_id[];
@@ -313,15 +317,20 @@ extern unsigned int optimize;
 #define OPT_APL 0x04000000  /* array placement                             */
 #define OPT_WLS 0x08000000  /* with-loop scalarization                     */
 #define OPT_AL 0x10000000   /* associative law                             */
-#define OPT_BLIR 0x20000000 /* backend loop invariant removal              */
-#define OPT_SP 0x40000000   /* selection propagation                       */
-#define OPT_WLFS 0x80000000 /* with-loop fusion                            */
+#define OPT_SP 0x20000000   /* selection propagation                       */
+#define OPT_WLFS 0x40000000 /* with-loop fusion                            */
 
 /* disable some optimizations on floats and fold-WithLoops with floats */
 extern bool enforce_ieee;
 
 /* ast is in ssa form */
 extern bool valid_ssaform;
+
+/* explicit memory management */
+extern bool emm;
+
+/* explicit accumulation */
+extern bool eacc;
 
 /* type inference flags */
 extern int max_overload;

@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.53  2004/07/23 15:53:50  ktr
+ * - removed OPT_BLIR
+ * - removed -ktr
+ * - added -emm -do/noeacc
+ *
  * Revision 3.52  2004/07/20 17:43:44  sah
  * disbaled array padding (OPT_AP) by default
  *
@@ -320,8 +325,6 @@
  */
 bool sbs = FALSE;
 
-bool ktr = FALSE;
-
 bool khf = FALSE;
 
 /*
@@ -489,14 +492,14 @@ bool patch_with = FALSE;
 
 #ifdef PRODUCTION
 unsigned int optimize = OPT_ALL & (~OPT_LIR) & (~OPT_MTO) & (~OPT_SBE) & (~OPT_MTI)
-                        & (~OPT_APL) & (~OPT_DL) & (~OPT_BLIR) & (~OPT_SP) & (~OPT_WLFS)
+                        & (~OPT_APL) & (~OPT_DL) & (~OPT_SP) & (~OPT_TSI) & (~OPT_WLFS)
                         & (~OPT_CVP) & (~OPT_WLPG) & (~OPT_AP);
 #else /* PRODUCTION */
 /* as long as OPT_SBE is shared with OPT_CVP OPT_SBE should be not used here
  * to allow to work with OPT_CVP
  */
 unsigned int optimize = OPT_ALL & (~OPT_MTO) /*& (~OPT_SBE)*/ & (~OPT_MTI) & (~OPT_APL)
-                        & (~OPT_BLIR) & (~OPT_WLFS) & (~OPT_WLPG) & (~OPT_AP);
+                        & (~OPT_WLFS) & (~OPT_TSI) & (~OPT_WLPG) & (~OPT_AP);
 
 #endif /* PRODUCTION */
 
@@ -504,6 +507,16 @@ unsigned int optimize = OPT_ALL & (~OPT_MTO) /*& (~OPT_SBE)*/ & (~OPT_MTI) & (~O
  * flag indicating whether ast has in valid ssa form
  */
 bool valid_ssaform = FALSE;
+
+/*
+ * do not use explicit memory management by default
+ */
+bool emm = FALSE;
+
+/*
+ * do not use explicit accumulate by default
+ */
+bool eacc = FALSE;
 
 /*
  * per default do not use aggressive WLS
