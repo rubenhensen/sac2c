@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2004/10/26 17:18:50  sbs
+ * added rudementary support for spec_mode:
+ * in case of SS_aud, specialization will be suppressed.
+ *
  * Revision 1.11  2004/09/30 15:12:35  sbs
  * eliminated FunTypes from ALL but wrapper functions
  * (memory concerns!)
@@ -81,13 +85,23 @@ static node *specialized_fundefs = NULL;
 /******************************************************************************
  *
  * function:
- *    ntype * SpecializationOracle( node *wrapper, node *fundef, ntype *args, DFT_res *
- *dft)
+ *    ntype * SpecializationOracle( node *wrapper, node *fundef, ntype *args,
+ *                                  DFT_res * dft)
  *
  * description:
- *    for a given argument type and a given fundef the oracle computes a new
- *    type which indicates the version to be actually built (specialized).
- *    Contra-intuitively, NULL is returned iff a FULL specialization is desired!
+ *    The oracle recieves an argument type, a function that could be specialized
+ *    its wrapper, and the full result of a function dispatch.
+ *    From these data, it decides whether a full specialization can be made
+ *    ( NULL is returned in this case !!!!!!) or - at best - a less precise
+ *    approximation can be done only. In that case the best possible approximation
+ *    is returned. As a consequence, returning the arg types of the fundef
+ *    will prevent from any specialization!
+ *    NB: The spec_mode flag is not handled appropriately right now. Due to
+ *    the lack of an implementation for the static analysis, we cannot decide
+ *    how far we should specialize in order to achieve a certain level of
+ *    shape information. Nevertheless, a rude approximation is realized:
+ *    In case of  SS_aud, no specialization at all will be done which definitively
+ *    is correct. In all other cases we just do the best we can so far...
  *
  ******************************************************************************/
 
@@ -101,7 +115,8 @@ SpecializationOracle (node *wrapper, node *fundef, ntype *args, DFT_res *dft)
     DBUG_ENTER ("SpecializationOracle");
     if ((dft->num_deriveable_partials > 1)
         || ((dft->num_deriveable_partials == 1) && (dft->deriveable != NULL))
-        || FUNDEF_IS_EXTERNAL (fundef) || (FUNDEF_SPECS (fundef) >= max_overload)) {
+        || FUNDEF_IS_EXTERNAL (fundef) || (FUNDEF_SPECS (fundef) >= max_overload)
+        || (spec_mode == SS_aud)) {
 
         arg = FUNDEF_ARGS (fundef);
         res = TYMakeEmptyProductType (CountArgs (arg));
