@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.93  2004/07/21 16:56:10  ktr
+# added src/compile/markmemval.o
+#
 # Revision 3.92  2004/07/21 12:40:38  khf
 # added WLEnhancement.o and ExplicitAccumulate.o to FLATTEN
 #
@@ -282,7 +285,7 @@ COMPILE= src/compile/wltransform.o src/compile/wlpragma_funs.o \
          src/compile/icm2c_mt.o src/compile/icm2c_sched.o \
          src/compile/icm2c_wl.o src/compile/icm2c_error.o \
          src/compile/ReuseWithArrays.o src/compile/PatchWith.o \
-         src/compile/blir.o
+         src/compile/markmemvals.o
 
 CINTERFACE= src/c-interface/map_cwrapper.o src/c-interface/print_interface.o \
             src/c-interface/import_specialization.o \
