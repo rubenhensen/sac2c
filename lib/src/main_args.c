@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2001/05/15 13:50:19  cg
+ * Bug fixed in handling of option copy buffer.
+ *
  * Revision 3.1  2000/11/20 18:02:05  sacbase
  * new release made
  *
@@ -110,7 +113,15 @@ ARGS_CheckOption (char *pattern, char *argv1, char *argv2, char **option, char *
             }
         }
     } else {
-        strncpy (buffer, argv1, MIN (i + 1, MAX_OPT_LEN - 1));
+        int len = MIN (i + 1, MAX_OPT_LEN - 1);
+
+        strncpy (buffer, argv1, len);
+        buffer[len] = '\0';
+        /*
+         * The library function strncpy() itself does NOT append
+         * a terminating 0 character.
+         */
+
         *option = buffer;
         *argument = argv1 + i + 1;
     }
