@@ -1,11 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2002/06/09 19:59:49  ktr
+ * works even better, still some known bugs
+ *
  * Revision 1.3  2002/05/16 09:40:07  ktr
  * an early version of a working WithLoop-Scalarization
- *
- * Revision 1.1  2002/05/17 06:48:41  trojahne
- * Initial revision
  *
  * Revision 1.2  2002/04/09 08:13:02  ktr
  * Some functionality added, but still bugs
