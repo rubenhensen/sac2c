@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.57  2002/11/13 07:18:09  dkr
+ * no cc warnings anymore
+ *
  * Revision 1.56  2002/10/29 20:42:35  dkr
  * bug in COMP2Array() fixed
  *
@@ -487,6 +490,7 @@ MakeSizeArg (node *arg, bool int_only)
         ret = MakeNum (1);
     } else {
         DBUG_ASSERT ((0), "not yet implemented");
+        ret = NULL;
     }
 
     DBUG_RETURN (ret);
