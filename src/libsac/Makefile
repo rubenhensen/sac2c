@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.8  2001/11/13 20:00:58  dkr
+# parameters for cc: no space between -D and the definition!!
+#
 # Revision 3.7  2001/07/18 13:08:20  cg
 # make deps done
 #
@@ -123,7 +126,7 @@ cachesim_access_simple.o: cachesim_access.c
 	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) -o $@ -c $<
 
 cachesim_access_advanced.o: cachesim_access.c 
-	$(CC) -D TYPE=D -D DETAILED $(CCFLAGS) $(CFLAGS) $(INCS) -o $@ -c $<
+	$(CC) -DTYPE=D -DDETAILED $(CCFLAGS) $(CFLAGS) $(INCS) -o $@ -c $<
 
 
 %_mt.o: %.c
