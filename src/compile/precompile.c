@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.109  2004/12/19 20:05:38  sbs
+ * TOT call eliminated
+ *
  * Revision 3.108  2004/12/19 14:32:42  sbs
  * TOT header included
  *
@@ -58,12 +61,6 @@ node *
 PRECdoPrecompile (node *syntax_tree)
 {
     DBUG_ENTER ("Precompile");
-
-    /*
-     * Fix Oldtypes in ast
-     */
-    DBUG_EXECUTE ("PREC", NOTE (("step -1: fix oldtypes\n")));
-    syntax_tree = TOTdoToOldTypes (syntax_tree);
 
     /*
      * Set Linksign
@@ -140,6 +137,9 @@ DONE:
 /*
  *
  * $Log$
+ * Revision 3.109  2004/12/19 20:05:38  sbs
+ * TOT call eliminated
+ *
  * Revision 3.108  2004/12/19 14:32:42  sbs
  * TOT header included
  *
