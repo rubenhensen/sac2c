@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 3.5  2000/12/06 20:13:13  dkr
+ * INFO_LAC2FUN_... renamed into INFO_L2F_... or
+ * INFO_INFDFMS_... respectively
+ *
  * Revision 3.4  2000/12/06 18:26:04  cg
  * Added some new macros for typecheck constant propagation.
  *
@@ -2717,14 +2721,17 @@ extern node *MakeInfo ();
 #define INFO_TSI_DATATYPE(n) ((int *)(n->node[4]))[2]
 
 /* converting loops and conditionals to functions (lac2fun.c) */
-#define INFO_LAC2FUN_FUNDEF(n) (n->node[0])
-#define INFO_LAC2FUN_IN(n) ((DFMmask_t) (n->dfmask[0]))
-#define INFO_LAC2FUN_OUT(n) ((DFMmask_t) (n->dfmask[1]))
-#define INFO_LAC2FUN_LOCAL(n) ((DFMmask_t) (n->dfmask[2]))
-#define INFO_LAC2FUN_NEEDED(n) ((DFMmask_t) (n->dfmask[3]))
-#define INFO_LAC2FUN_ISFIX(n) (n->counter)
-#define INFO_LAC2FUN_ISTRANS(n) (n->flag)
-#define INFO_LAC2FUN_FUNS(n) (n->node[1])
+#define INFO_L2F_FUNDEF(n) (n->node[0])
+#define INFO_L2F_ISTRANS(n) (n->flag)
+#define INFO_L2F_FUNS(n) (n->node[1])
+
+/* inference of DF masks (infer_dfms.c) */
+#define INFO_INFDFMS_FUNDEF(n) (n->node[0])
+#define INFO_INFDFMS_IN(n) ((DFMmask_t) (n->dfmask[0]))
+#define INFO_INFDFMS_OUT(n) ((DFMmask_t) (n->dfmask[1]))
+#define INFO_INFDFMS_LOCAL(n) ((DFMmask_t) (n->dfmask[2]))
+#define INFO_INFDFMS_NEEDED(n) ((DFMmask_t) (n->dfmask[3]))
+#define INFO_INFDFMS_ISFIX(n) (n->counter)
 
 /* cleaning up declarations (cleanup_decls.c) */
 #define INFO_CUD_FUNDEF(n) (n->node[0])
