@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 1.141  1998/10/23 14:29:46  cg
+ * added the new command line option -inparsize <no> which allows to
+ * specify a minimum generator size for with-loops to be executed in
+ * parallel if such execution is enabled.
+ * The information stored by the global variable min_parallel_size.
+ *
  * Revision 1.140  1998/08/27 12:48:00  sbs
  * -L args added to SYSTEMLIB_PATH as well so that readsib will
  * accept linkwith-pragma args that are not in the standard path
@@ -996,6 +1002,10 @@ MAIN
             ++argv;
             --argc;
             max_sync_fold = atoi (*argv);
+        } else if (0 == strncmp (*argv, "inparsize", 9)) {
+            ++argv;
+            --argc;
+            min_parallel_size = atoi (*argv);
         } else {
             SYSWARN (("Unknown command line option '-m%s`", *argv));
         }

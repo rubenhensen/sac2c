@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 1.77  1998/10/23 14:29:46  cg
+ * added the new command line option -inparsize <no> which allows to
+ * specify a minimum generator size for with-loops to be executed in
+ * parallel if such execution is enabled.
+ * The information stored by the global variable min_parallel_size.
+ *
  * Revision 1.76  1998/07/23 10:08:06  cg
  * sac2c option -mt-static -mt-dynamic -mt-all renamed to
  * -mtstatic, -mtdynamic, -mtall resepctively
@@ -380,23 +386,28 @@ usage ()
       "\t\t\t\t  Default: -maxoverload %d\n",
       max_overload);
 
-    printf (
-      "\n\nMULTI-THREAD OPTIONS:\n\n"
+    printf ("\n\nMULTI-THREAD OPTIONS:\n\n"
 
-      "\t -mtstatic <no>\t\tcompile program for multi-threaded execution with exact\n"
-      "\t\t\t\tnumber of threads specified.\n"
-      "\t -mtdynamic <no>\tcompile program for multi-threaded execution with upper\n"
-      "\t\t\t\tbound for the number of threads specified. The exact\n"
-      "\t\t\t\tnumber of threads must be given upon application startup\n"
-      "\t\t\t\tusing the generic command line option '-mt <no>`.\n"
-      "\t -mtall <no>\t\tcompile program for multi-threaded execution and derive\n"
-      "\t\t\t\t<no>+1 executables, one that is compiled for the dynamic\n"
-      "\t\t\t\tspecification of the number of threads with <no> as upper\n"
-      "\t\t\t\tlimit and <no> ones using the respective number of threads\n"
-      "\t\t\t\tstatically.\n"
-      "\t -maxsyncfold <no>\tmaximum number of fold with-loops in a single\n"
-      "\t\t\t\tsynchronisation block.\n");
-    printf ("\t\t\t\t Default: -maxsyncfold %d.\n", max_sync_fold);
+            "\t -mtstatic <no>\t\tcompile program for multi-threaded execution with "
+            "exact\n"
+            "\t\t\t\tnumber of threads specified.\n"
+            "\t -mtdynamic <no>\tcompile program for multi-threaded execution with "
+            "upper\n"
+            "\t\t\t\tbound for the number of threads specified. The exact\n"
+            "\t\t\t\tnumber of threads must be given upon application startup\n"
+            "\t\t\t\tusing the generic command line option '-mt <no>`.\n"
+            "\t -mtall <no>\t\tcompile program for multi-threaded execution and derive\n"
+            "\t\t\t\t<no>+1 executables, one that is compiled for the dynamic\n"
+            "\t\t\t\tspecification of the number of threads with <no> as upper\n"
+            "\t\t\t\tlimit and <no> ones using the respective number of threads\n"
+            "\t\t\t\tstatically.\n"
+            "\t -maxsyncfold <no>\tmaximum number of fold with-loops in a single\n"
+            "\t\t\t\tsynchronisation block.\n"
+            "\t\t\t\t Default: -maxsyncfold %d.\n"
+            "\t -minparsize <no>\tminimum generator size for parallel execution\n"
+            "\t\t\t\tof with-loops.\n"
+            "\t\t\t\t Default: -minparsize %d.\n",
+            max_sync_fold, min_parallel_size);
 
     printf ("\n\nDEBUG OPTIONS:\n\n"
 

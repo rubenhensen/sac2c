@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 1.35  1998/10/23 14:29:46  cg
+ * added the new command line option -inparsize <no> which allows to
+ * specify a minimum generator size for with-loops to be executed in
+ * parallel if such execution is enabled.
+ * The information stored by the global variable min_parallel_size.
+ *
  * Revision 1.34  1998/08/07 18:11:29  sbs
  * inserted gen_mt_code; it prevents spmd regions from being created per default
  * only if one of the following options is set:
@@ -159,6 +165,7 @@ extern int num_threads;
 extern int max_sync_fold;
 extern int max_threads;
 extern int all_threads;
+extern int min_parallel_size;
 
 extern char *cppvars[];
 extern int num_cpp_vars;
