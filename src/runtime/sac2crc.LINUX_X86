@@ -88,10 +88,43 @@ CACHE3_MSCA      :=  0
  
 /*******************************************************************************
  *
- * target 
+ * Targets for the specification of different cache architectures
  *
  */
 
 
+target pentium_II_PE:
+
+CACHE1_SIZE      :=  16
+CACHE1_LINE      :=  32
+CACHE1_ASSOC     :=  4
+
+CACHE2_SIZE      :=  256
+CACHE2_LINE      :=  32
+CACHE2_ASSOC     :=  4
+
+
+target pentium_III_mob:
+
+CACHE1_SIZE      :=  16
+CACHE1_LINE      :=  32
+CACHE1_ASSOC     :=  4
+
+CACHE2_SIZE      :=  128
+CACHE2_LINE      :=  32
+CACHE2_ASSOC     :=  32
+
+
+
+/*******************************************************************************
+ *
+ * Specific machine targets using gcc
+ *
+ *
+ */
+
+target bunasera::pentium_II_PE:
+
+target thinkpad::pentium_III_mob:
 
 
