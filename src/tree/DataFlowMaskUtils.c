@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2000/10/23 10:27:19  dkr
+ * MakeId1 replaced by MakeId_Copy
+ *
  * Revision 1.12  2000/07/12 15:15:49  dkr
  * function DuplicateTypes renamed into DupTypes
  *
@@ -409,7 +412,7 @@ DFM2Exprs (DFMmask_t mask, LUT_t lut)
 
     decl = DFMGetMaskEntryDeclSet (mask);
     while (decl != NULL) {
-        id = MakeId1 (VARDEC_OR_ARG_NAME (decl));
+        id = MakeId_Copy (VARDEC_OR_ARG_NAME (decl));
         /*
          * ID_VARDEC and ID_OBJDEF are mapped to the same node!
          */

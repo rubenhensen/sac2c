@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.29  2000/10/23 10:28:17  dkr
+ * MakeId1 replaced by MakeId_Copy
+ *
  * Revision 2.28  2000/10/18 09:44:53  dkr
  * PREC1let modified: 2nd argument of F_reshape is never flattened now
  *
@@ -510,7 +513,7 @@ PREC1let (node *arg_node, node *arg_info)
                               = MakeAssign (MakeLet (arg_id, tmp_ids),
                                             INFO_PREC_LASTASSIGN (arg_info));
 
-                            EXPRS_EXPR (arg) = MakeId1 (tmp_name);
+                            EXPRS_EXPR (arg) = MakeId_Copy (tmp_name);
                             ID_VARDEC (EXPRS_EXPR (arg)) = tmp_vardec;
 
                             if (IS_REFCOUNTED (IDS, let_ids)) {
@@ -526,7 +529,7 @@ PREC1let (node *arg_node, node *arg_info)
                              * -> just replace the current arg by 'tmp_name'
                              */
                             FreeTree (EXPRS_EXPR (arg));
-                            EXPRS_EXPR (arg) = MakeId1 (tmp_name);
+                            EXPRS_EXPR (arg) = MakeId_Copy (tmp_name);
                             ID_VARDEC (EXPRS_EXPR (arg)) = tmp_vardec;
 
                             if (IS_REFCOUNTED (IDS, let_ids)) {
@@ -785,9 +788,9 @@ InsertObjInit (node *block, node *objdef)
     ICM_END_OF_STATEMENT (ASSIGN_INSTR (assign_end)) = TRUE;
 
     assign_ap = MakeAssign (MakeLet (OBJDEF_EXPR (objdef), new_ids), BLOCK_INSTR (block));
-    assign_begin
-      = MakeAssignIcm1 ("INITGLOBALOBJECT_BEGIN",
-                        MakeId1 (StringConcat ("SAC_INIT_FLAG_", OBJDEF_NAME (objdef))));
+    assign_begin = MakeAssignIcm1 ("INITGLOBALOBJECT_BEGIN",
+                                   MakeId_Copy (StringConcat ("SAC_INIT_FLAG_",
+                                                              OBJDEF_NAME (objdef))));
 
     ASSIGN_NEXT (assign_end) = BLOCK_INSTR (block);
     ASSIGN_NEXT (assign_ap) = assign_end;
