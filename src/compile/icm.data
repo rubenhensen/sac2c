@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2001/02/06 01:44:03  dkr
+ * WL_NOOP_... replaced by WL_ADJUST_OFFSET
+ *
  * Revision 3.7  2001/01/30 12:22:22  dkr
  * signature of ICMs WL_NOOP, WL_NOOP__OFFSET modified
  *
@@ -54,16 +57,6 @@
  *
  * Revision 2.3  1999/06/03 13:19:00  jhs
  * Changed parameters for MT_CONTINUE.
- *
- * ... [eliminated] ...
- *
- * Revision 2.1  1999/02/23 12:42:34  sacbase
- * new release made
- *
- * Revision 1.53  1999/01/22 14:32:25  sbs
- * ND_PRF_MODARRAY_AxVxA_CHECK_REUSE and
- * ND_PRF_MODARRAY_AxVxA
- * added.
  *
  * ... [eliminated] ...
  *
@@ -421,8 +414,8 @@ ICM_DEF( WL_INIT_OFFSET, TRACE_NONE)
   ICM_INT(dims_target)
   ICM_STR(target)
   ICM_STR(idx_vec)
-  ICM_INT(dims_wl)
-ICM_END( WL_INIT_OFFSET, (dims_target, target, idx_vec, dims_wl))
+  ICM_INT(dims)
+ICM_END( WL_INIT_OFFSET, (dims_target, target, idx_vec, dims))
 #endif
 
 #if defined(WL_ASSIGN) || defined(ICM_ALL)
@@ -478,26 +471,15 @@ ICM_DEF( WL_FOLD, TRACE_NONE)
 ICM_END( WL_FOLD, (dims_target, target, idx_vec, dims, idx_scalars))
 #endif
 
-#if defined(WL_NOOP__OFFSET) || defined(ICM_ALL)
-ICM_DEF( WL_NOOP__OFFSET, TRACE_NONE)
+#if defined(WL_ADJUST_OFFSET) || defined(ICM_ALL)
+ICM_DEF( WL_ADJUST_OFFSET, TRACE_NONE)
   ICM_INT(dim)
   ICM_INT(dims_target)
   ICM_STR(target)
   ICM_STR(idx_vec)
   ICM_INT(dims)
   ICM_VAR(dims, idx_scalars)
-ICM_END( WL_NOOP__OFFSET, (dim, dims_target, target, idx_vec, dims, idx_scalars))
-#endif
-
-#if defined(WL_NOOP) || defined(ICM_ALL)
-ICM_DEF( WL_NOOP, TRACE_NONE)
-  ICM_INT(dim)
-  ICM_INT(dims_target)
-  ICM_STR(target)
-  ICM_STR(idx_vec)
-  ICM_INT(dims)
-  ICM_VAR(dims, idx_scalars)
-ICM_END( WL_NOOP, (dim, dims_target, target, idx_vec, dims, idx_scalars))
+ICM_END( WL_ADJUST_OFFSET, (dim, dims_target, target, idx_vec, dims, idx_scalars))
 #endif
 
 #if defined(WL_SET_OFFSET) || defined(ICM_ALL)

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2001/02/06 01:43:55  dkr
+ * WL_NOOP_... replaced by WL_ADJUST_OFFSET
+ *
  * Revision 3.10  2001/01/30 12:21:58  dkr
  * PrintTraceICM() modified
  * implementation of ICMs WL_NOOP, WL_NOOP__OFFSET modified
@@ -29,116 +32,7 @@
  * Revision 3.1  2000/11/20 18:01:21  sacbase
  * new release made
  *
- * Revision 2.10  2000/07/28 11:43:37  cg
- * Added new ICM WL_ASSIGN_NOOP for efficient handling of dummy
- * iteration space segments introduced through array padding.
- *
- * Revision 2.9  2000/07/06 16:41:38  dkr
- * macro SAC_WL_DEST used
- *
- * Revision 2.8  2000/07/06 13:11:58  dkr
- * minor changes in comments done
- *
- * Revision 2.7  2000/03/20 19:29:26  dkr
- * some comments added
- *
- * Revision 2.6  2000/03/10 10:33:41  dkr
- * output format of ICM WL_INIT_OFFSET changed
- *
- * Revision 2.5  1999/11/16 15:23:05  dkr
- * comments added
- *
- * Revision 2.4  1999/07/21 12:28:17  jhs
- * Improved indenting.
- *
- * Revision 2.3  1999/05/12 16:38:22  cg
- * include main.h removed
- *
- * Revision 2.2  1999/04/12 09:37:48  cg
- * All accesses to C arrays are now performed through the new ICMs
- * ND_WRITE_ARRAY and ND_READ_ARRAY. This allows for an integration
- * of cache simulation as well as boundary checking.
- *
- * Revision 2.1  1999/02/23 12:42:43  sacbase
- * new release made
- *
- * Revision 1.26  1998/10/29 20:38:26  dkr
- * - signature of ICM WL_FOLD_NOOP changed
- * - WL_FOLD_NOOP is empty now
- *
- * Revision 1.25  1998/08/07 19:47:30  dkr
- * WL_ADJUST_OFFSET changed
- *
- * Revision 1.24  1998/08/07 16:01:58  dkr
- * WL_MT_...FOLD_BEGIN, WL_MT_...FOLD_END removed
- * WL_MT_SCHEDULER_SET_OFFSET renamed to WL_INIT_OFFSET
- * WL_ADJUST_OFFSET changed
- *
- * Revision 1.23  1998/08/07 12:38:08  dkr
- * WL_ADJUST_OFFSET changed
- *
- * Revision 1.22  1998/08/06 01:15:40  dkr
- * Fixed a bug in WL_ADJUST_OFFSET
- *
- * Revision 1.21  1998/07/02 09:26:16  cg
- * tracing capabilities improved
- *
- * Revision 1.20  1998/06/29 08:55:51  cg
- * added new multi-threaded versions of new with-loop begin/end ICMs
- * added compilation of ICM WL_MT_SCHEDULER_SET_OFFSET
- *
- * Revision 1.19  1998/06/24 10:37:07  dkr
- * WL_(NON)FOLD_BEGIN/END are now h-icms
- *
- * Revision 1.18  1998/06/19 18:29:46  dkr
- * added WL_NONFOLD_END, WL_FOLD_END
- *
- * Revision 1.17  1998/06/19 10:26:12  dkr
- * removed unused vars
- *
- * Revision 1.16  1998/06/09 16:46:36  dkr
- * changed signature of WL_NONFOLD_BEGIN, WL_FOLD_BEGIN
- *
- * Revision 1.15  1998/06/06 15:59:22  dkr
- * renamed some local vars in ICMs
- *
- * Revision 1.14  1998/05/24 12:17:14  dkr
- * optimized macros for non-MT (if SAC_DO_MULTITHREAD not defined)
- *
- * Revision 1.12  1998/05/19 15:42:18  dkr
- * ICM for fold changed
- *
- * Revision 1.11  1998/05/16 16:38:26  dkr
- * WL_END is now a h-icm
- *
- * Revision 1.10  1998/05/16 00:09:24  dkr
- * changed some macros
- * added PRINT_INDEX_CODE, PRINT_INDEX macros, to log the values of the
- * index-vector
- *
- * Revision 1.9  1998/05/14 21:37:55  dkr
- * changed some ICMs
- *
- * Revision 1.8  1998/05/12 22:29:57  dkr
- * added new macros for fold
- *
- * Revision 1.7  1998/05/12 18:49:56  dkr
- * changed some ICMs
- *
- * Revision 1.6  1998/05/07 16:20:43  dkr
- * changed signature of ICMs
- *
- * Revision 1.5  1998/05/07 08:10:02  cg
- * C implemented ICMs converted to new naming conventions.
- *
- * Revision 1.4  1998/05/06 14:49:08  dkr
- * changed WL_ASSIGN
- *
- * Revision 1.3  1998/05/04 15:35:29  dkr
- * added WL_ASSIGN
- *
- * Revision 1.2  1998/05/04 09:36:19  dkr
- * changed WL_BEGIN
+ * [ eliminated ]
  *
  * Revision 1.1  1998/05/03 14:06:09  dkr
  * Initial revision
@@ -269,8 +163,6 @@ ICMCompileWL_BEGIN__OFFSET (char *target, char *idx_vec, int dims)
         fprintf (outfile, "int SAC_WL_MT_SCHEDULE_STOP( %d);\n", i);
     }
 
-    fprintf (outfile, "\n");
-
     DBUG_VOID_RETURN;
 }
 
@@ -308,8 +200,6 @@ ICMCompileWL_BEGIN (char *target, char *idx_vec, int dims)
         INDENT;
         fprintf (outfile, "int SAC_WL_MT_SCHEDULE_STOP( %d);\n", i);
     }
-
-    fprintf (outfile, "\n");
 
     DBUG_VOID_RETURN;
 }
@@ -579,7 +469,7 @@ ICMCompileWL_ASSIGN__COPY (char *source, int dims_target, char *target, char *id
  * description:
  *   Implements the compilation of the following ICM:
  *
- *   WL_FOLD( source, dims_target, target, idx_vec, dims, [ idx_scalars ]* )
+ *   WL_FOLD( dims_target, target, idx_vec, dims, [ idx_scalars ]* )
  *
  ******************************************************************************/
 
@@ -612,8 +502,7 @@ ICMCompileWL_FOLD (int dims_target, char *target, char *idx_vec, int dims,
  * description:
  *   Implements the compilation of the following ICM:
  *
- *   WL_FOLD__OFFSET( source,
- *                    dims_target, target, idx_vec, dims, [ idx_scalars ]* )
+ *   WL_FOLD__OFFSET( dims_target, target, idx_vec, dims, [ idx_scalars ]* )
  *
  ******************************************************************************/
 
@@ -641,81 +530,13 @@ ICMCompileWL_FOLD__OFFSET (int dims_target, char *target, char *idx_vec, int dim
 /******************************************************************************
  *
  * function:
- *   void ICMCompileWL_NOOP__OFFSET( int dim,
- *                                   int dims_target, char *target,
- *                                   char *idx_vec,
- *                                   int dims, char **idx_scalars)
- *
- * description:
- *   Implements the compilation of the following ICM:
- *
- *   WL_NOOP__OFFSET( dims_target, target, idx_vec, dims, [ idx_scalars ]* )
- *
- ******************************************************************************/
-
-void
-ICMCompileWL_NOOP__OFFSET (int dim, int dims_target, char *target, char *idx_vec,
-                           int dims, char **idx_scalars)
-{
-    DBUG_ENTER ("ICMCompileWL_NOOP__OFFSET");
-
-#define WL_NOOP__OFFSET
-#include "icm_comment.c"
-#include "icm_trace.c"
-#undef WL_NOOP__OFFSET
-
-    INDENT;
-    fprintf (outfile, "/* noop */\n");
-    INDENT;
-    fprintf (outfile, "SAC_WL_OFFSET( %s) += 1", target);
-    PrintShapeFactor (dim, dims_target, target);
-    fprintf (outfile, ";\n");
-
-    DBUG_VOID_RETURN;
-}
-
-/******************************************************************************
- *
- * function:
- *   void ICMCompileWL_NOOP( int dim,
- *                           int dims_target, char *target,
- *                           char *idx_vec,
- *                           int dims, char **idx_scalars)
- *
- * description:
- *   Implements the compilation of the following ICM:
- *
- *   WL_NOOP( dims_target, target, idx_vec, dims, [ idx_scalars ]* )
- *
- ******************************************************************************/
-
-void
-ICMCompileWL_NOOP (int dim, int dims_target, char *target, char *idx_vec, int dims,
-                   char **idx_scalars)
-{
-    DBUG_ENTER ("ICMCompileWL_NOOP");
-
-#define WL_NOOP
-#include "icm_comment.c"
-#include "icm_trace.c"
-#undef WL_NOOP
-
-    INDENT;
-    fprintf (outfile, "/* noop */\n");
-
-    DBUG_VOID_RETURN;
-}
-
-/******************************************************************************
- *
- * function:
  *   void ICMCompileWL_INIT_OFFSET( int dims_target, char *target,
- *                                  char *idx_vec, int dims_wl)
+ *                                  char *idx_vec, int dims)
  *
  * description:
  *   Implements the compilation of the following ICM:
  *
- *     WL_INIT_OFFSET( dims_target, target, idx_vec, dims_wl)
+ *     WL_INIT_OFFSET( dims_target, target, idx_vec, dims)
  *
  *   The SAC_WL_OFFSET() of the WL-array is initialized, i.e. set to the index
  *   of the first WL element.
@@ -730,7 +551,7 @@ ICMCompileWL_NOOP (int dim, int dims_target, char *target, char *idx_vec, int di
  ******************************************************************************/
 
 void
-ICMCompileWL_INIT_OFFSET (int dims_target, char *target, char *idx_vec, int dims_wl)
+ICMCompileWL_INIT_OFFSET (int dims_target, char *target, char *idx_vec, int dims)
 {
     int i;
 
@@ -749,7 +570,7 @@ ICMCompileWL_INIT_OFFSET (int dims_target, char *target, char *idx_vec, int dims
     fprintf (outfile, "= SAC_WL_MT_SCHEDULE_START( 0)");
     PrintShapeFactor (0, dims_target, target);
 
-    for (i = 1; i < dims_wl; i++) {
+    for (i = 1; i < dims; i++) {
         fprintf (outfile, "\n");
         INDENT;
         fprintf (outfile, "+ SAC_WL_MT_SCHEDULE_START( %d)", i);
@@ -758,6 +579,47 @@ ICMCompileWL_INIT_OFFSET (int dims_target, char *target, char *idx_vec, int dims
 
     fprintf (outfile, ";\n");
     indent--;
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileWL_ADJUST_OFFSET( int dim,
+ *                                    int dims_target, char *target,
+ *                                    char *idx_vec,
+ *                                    int dims, char **idx_scalars)
+ *
+ * description:
+ *   implements the compilation of the following ICM:
+ *
+ *   WL_ADJUST_OFFSET( dim, dims_target, target, idx_vec,
+ *                     dims, [ idx_scalars ]* )
+ *
+ * remark:
+ *   This ICM is needed (and usefull) in combination with NOOP N_WL..-nodes
+ *   only! It uses the variable 'SAC__diff...' defined by the ICMs
+ *   WL_..._NOOP_BEGIN.
+ *
+ ******************************************************************************/
+
+void
+ICMCompileWL_ADJUST_OFFSET (int dim, int dims_target, char *target, char *idx_vec,
+                            int dims, char **idx_scalars)
+{
+    DBUG_ENTER ("ICMCompileWL_ADJUST_OFFSET");
+
+#define WL_ADJUST_OFFSET
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef WL_ADJUST_OFFSET
+
+    INDENT;
+    fprintf (outfile, "SAC_WL_OFFSET( %s) += SAC_WL_VAR( diff, %s)", target,
+             idx_scalars[dim]);
+    PrintShapeFactor (dim, dims_target, target);
+    fprintf (outfile, ";\n");
 
     DBUG_VOID_RETURN;
 }
