@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2002/06/25 23:58:04  ktr
+ * CreateFullPartition now creates a full partition if OPT_WLS is activated.
+ *
  * Revision 1.7  2002/06/21 14:03:32  dkr
  * Zero-Arrays are build correctly now (by CreateZero...())
  *
@@ -333,13 +336,11 @@ CreateFullPartition (node *wln, node *arg_info)
             NWITH_PARTS (wln) = 1;
         } else {
             dim = GetShapeDim (type);
-            do_create =
-#if _WLS_
-              (dim >= 0)
-#else
-              (dim == 0)
-#endif
-              ;
+
+            if (optimize & OPT_WLS)
+                do_create = (dim >= 0);
+            else
+                do_create = (dim == 0);
         }
     }
 
