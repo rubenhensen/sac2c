@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.138  1998/07/23 10:08:06  cg
+ * sac2c option -mt-static -mt-dynamic -mt-all renamed to
+ * -mtstatic, -mtdynamic, -mtall resepctively
+ *
  * Revision 1.137  1998/07/10 15:20:04  cg
  * included option -i to display copyright/disclaimer
  *
@@ -957,17 +961,17 @@ MAIN
             ++argv;
             --argc;
             minarray = atoi (*argv);
-        } else if (0 == strncmp (*argv, "t-static", 8)) {
+        } else if (0 == strncmp (*argv, "tstatic", 7)) {
             ++argv;
             --argc;
             num_threads = atoi (*argv);
             max_threads = num_threads;
-        } else if (0 == strncmp (*argv, "t-dynamic", 9)) {
+        } else if (0 == strncmp (*argv, "tdynamic", 8)) {
             ++argv;
             --argc;
             max_threads = atoi (*argv);
             num_threads = 0;
-        } else if (0 == strncmp (*argv, "t-all", 5)) {
+        } else if (0 == strncmp (*argv, "tall", 4)) {
             ++argv;
             --argc;
             max_threads = atoi (*argv);

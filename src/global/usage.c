@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.76  1998/07/23 10:08:06  cg
+ * sac2c option -mt-static -mt-dynamic -mt-all renamed to
+ * -mtstatic, -mtdynamic, -mtall resepctively
+ *
  * Revision 1.75  1998/07/10 15:20:04  cg
  * included option -i to display copyright/disclaimer
  *
@@ -379,13 +383,13 @@ usage ()
     printf (
       "\n\nMULTI-THREAD OPTIONS:\n\n"
 
-      "\t -mt-static <no>\tcompile program for multi-threaded execution with exact\n"
+      "\t -mtstatic <no>\t\tcompile program for multi-threaded execution with exact\n"
       "\t\t\t\tnumber of threads specified.\n"
-      "\t -mt-dynamic <no>\tcompile program for multi-threaded execution with upper\n"
+      "\t -mtdynamic <no>\tcompile program for multi-threaded execution with upper\n"
       "\t\t\t\tbound for the number of threads specified. The exact\n"
       "\t\t\t\tnumber of threads must be given upon application startup\n"
       "\t\t\t\tusing the generic command line option '-mt <no>`.\n"
-      "\t -mt-all <no>\t\tcompile program for multi-threaded execution and derive\n"
+      "\t -mtall <no>\t\tcompile program for multi-threaded execution and derive\n"
       "\t\t\t\t<no>+1 executables, one that is compiled for the dynamic\n"
       "\t\t\t\tspecification of the number of threads with <no> as upper\n"
       "\t\t\t\tlimit and <no> ones using the respective number of threads\n"
