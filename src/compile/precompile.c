@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.5  1995/12/04 17:00:04  cg
+ * Revision 1.6  1995/12/18 16:30:55  cg
+ * many bugs fixed, function PRECexprs replaced by PRECexprs_ap and
+ * PRECexprs_return
+ *
+ * Revision 1.5  1995/12/04  17:00:04  cg
  * added function PRECcast
  * All casts are now eliminated by the precompiler
  *
@@ -356,20 +360,6 @@ PRECobjdef (node *arg_node, node *arg_info)
     } else {
         OBJDEF_TYPE (arg_node) = RenameTypes (OBJDEF_TYPE (arg_node));
 
-        if (OBJDEF_EXPR (arg_node) != NULL) {
-            /*
-             *  Here, we know that OBJDEF_EXPR contains an application of a
-             *  generic object init fun. After objinit.c this is the case for
-             *  all imported objdefs in a SAC program.
-             */
-
-            new_ids = MakeIds (StringCopy (OBJDEF_VARNAME (arg_node)), NULL, ST_regular);
-
-            OBJDEF_INIT (arg_node) = MakeLet (OBJDEF_EXPR (arg_node), new_ids);
-
-            OBJDEF_EXPR (arg_node) = NULL;
-        }
-
         FREE (OBJDEF_NAME (arg_node));
         OBJDEF_NAME (arg_node) = (char *)Malloc (
           sizeof (char)
@@ -381,6 +371,22 @@ PRECobjdef (node *arg_node, node *arg_info)
         FREE (OBJDEF_VARNAME (arg_node));
 
         OBJDEF_MOD (arg_node) = NULL;
+
+        if (OBJDEF_EXPR (arg_node) != NULL) {
+            /*
+             *  Here, we know that OBJDEF_EXPR contains an application of a
+             *  generic object init fun. After objinit.c this is the case for
+             *  all imported objdefs in a SAC program.
+             */
+
+            new_ids = MakeIds (StringCopy (OBJDEF_NAME (arg_node)), NULL, ST_regular);
+            IDS_VARDEC (new_ids) = arg_node;
+            IDS_ATTRIB (new_ids) = ST_global;
+
+            OBJDEF_INIT (arg_node) = MakeLet (OBJDEF_EXPR (arg_node), new_ids);
+
+            OBJDEF_EXPR (arg_node) = NULL;
+        }
     }
 
     if (OBJDEF_NEXT (arg_node) != NULL) {
@@ -421,6 +427,7 @@ PRECfundef (node *arg_node, node *arg_info)
     if ((FUNDEF_STATUS (arg_node) == ST_imported)
         && (FUNDEF_ATTRIB (arg_node) != ST_generic) && (FUNDEF_BODY (arg_node) != NULL)) {
         FUNDEF_BODY (arg_node) = FreeTree (FUNDEF_BODY (arg_node));
+        FUNDEF_RETURN (arg_node) = NULL;
     }
 
     /*
@@ -435,7 +442,29 @@ PRECfundef (node *arg_node, node *arg_info)
      */
 
     if (FUNDEF_BODY (arg_node) != NULL) {
+        DBUG_ASSERT ((FUNDEF_RETURN (arg_node) != NULL)
+                       && (NODE_TYPE (FUNDEF_RETURN (arg_node)) == N_return),
+                     ("N_fundef node has no reference to N_return node "
+                      "(function %s)",
+                      FUNDEF_NAME (arg_node)));
+
+        /*
+         * The reference checked above is actually not needed by the
+         * precompiler. This is done to check consistency of the syntax
+         * tree for further compilation steps.
+         */
+
         FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+    }
+
+    /*
+     *  Now, traverse the following functions.
+     *  All function bodies must be traversed before arguments and
+     *  return values of functions are modified.
+     */
+
+    if (FUNDEF_NEXT (arg_node) != NULL) {
+        FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
     }
 
     /*
@@ -496,16 +525,12 @@ PRECfundef (node *arg_node, node *arg_info)
     if (strcmp (FUNDEF_NAME (arg_node), "main") == 0) {
         arg_node = InsertObjInits (arg_node, MODUL_OBJS (arg_info));
     } else {
+        if (FUNDEF_MOD (arg_node) == NULL) {
+            FUNDEF_STATUS (arg_node) = ST_Cfun;
+        }
+
         arg_node = RenameFun (arg_node);
         FUNDEF_TYPES (arg_node) = RenameTypes (FUNDEF_TYPES (arg_node));
-    }
-
-    /*
-     *  Now, traverse the following functions.
-     */
-
-    if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -548,6 +573,10 @@ PRECarg (node *arg_node, node *arg_info)
     } else {
         ARG_TYPESTRING (arg_node) = Type2String (ARG_TYPE (arg_node), 2);
         ARG_TYPE (arg_node) = RenameTypes (ARG_TYPE (arg_node));
+        /*
+         *  ARG_TYPESTRING is only used for renaming functions, so the
+         *  type's actual name may be changed afterwards.
+         */
 
         if (ARG_ATTRIB (arg_node) == ST_readonly_reference) {
             ARG_ATTRIB (arg_node) = ST_regular;
@@ -561,9 +590,11 @@ PRECarg (node *arg_node, node *arg_info)
             ARG_NEXT (arg_node) = Trav (ARG_NEXT (arg_node), arg_info);
 
             /**************************************************************/
+#ifndef NEWTREE
             if (ARG_NEXT (arg_node) == NULL) {
                 arg_node->nnode = 0;
             }
+#endif      /* NEWTREE */
             /**************************************************************/
         }
     }
@@ -638,14 +669,138 @@ PREClet (node *arg_node, node *arg_info)
 
 /*
  *
+ *  functionname  : PRECexprs_ap
+ *  arguments     : 1) N_exprs chain of current parameters of a
+ *                     function application
+ *                  2) N_arg chain of formal parameters of the
+ *                     respective function definition
+ *  description   : removes all artificial parameters.
+ *                  The status of those current parameters which belong
+ *                  to formal reference parameters is modified to ST_inout.
+ *                  Global objects given as parameters to the applied
+ *                  function get a reference to the object definition
+ *                  and are renamed with the new name of the global object.
+ *  global vars   : ---
+ *  internal funs : PRECexprs_ap
+ *  external funs : ---
+ *  macros        : TREE, DBUG
+ *
+ *  remarks       :
+ *
+ */
+
+node *
+PRECexprs_ap (node *current, node *formal)
+{
+    node *expr;
+
+    DBUG_ENTER ("PRECexprs_ap");
+
+    if (EXPRS_NEXT (current) != NULL) {
+        EXPRS_NEXT (current) = PRECexprs_ap (EXPRS_NEXT (current), ARG_NEXT (formal));
+    }
+
+    /****************************************************************/
+#ifndef NEWTREE
+    if (EXPRS_NEXT (current) == NULL)
+        current->nnode = 1;
+#endif /* NEWTREE */
+    /****************************************************************/
+
+    expr = EXPRS_EXPR (current);
+
+    if (NODE_TYPE (expr) == N_id) {
+        if (ID_STATUS (expr) == ST_artificial) {
+            current = FreeNode (current);
+        } else {
+            if (ARG_ATTRIB (formal) == ST_was_reference) {
+                ID_ATTRIB (expr) = ST_inout;
+            }
+
+            if ((NODE_TYPE (ID_VARDEC (expr)) == N_arg)
+                && (ARG_STATUS (ID_VARDEC (expr)) == ST_artificial)) {
+                ID_VARDEC (expr) = ARG_OBJDEF (ID_VARDEC (expr));
+                ID_NAME (expr) = OBJDEF_NAME (ID_VARDEC (expr));
+            }
+        }
+    }
+
+    DBUG_RETURN (current);
+}
+
+/*
+ *
+ *  functionname  : PRECexprs_return
+ *  arguments     : 1) N_exprs chain of an N_return node
+ *                  2) respective N_return node
+ *  description   : removes all artificial return values from the chain.
+ *                  A new chain is built up for all those return values
+ *                  which belong to original reference parameters.
+ *                  These are stored in RETURN_REFERENCE for later use
+ *                  in compile.c
+ *  global vars   : ---
+ *  internal funs : PRECexprs_return
+ *  external funs : ---
+ *  macros        : DBUG, TREE
+ *
+ *  remarks       :
+ *
+ */
+
+node *
+PRECexprs_return (node *ret_exprs, node *ret_node)
+{
+    node *tmp;
+
+    DBUG_ENTER ("PRECexprs_return");
+
+    if (EXPRS_NEXT (ret_exprs) != NULL) {
+        EXPRS_NEXT (ret_exprs) = PRECexprs_return (EXPRS_NEXT (ret_exprs), ret_node);
+    }
+
+    /****************************************************************/
+#ifndef NEWTREE
+    if (EXPRS_NEXT (ret_exprs) == NULL)
+        ret_exprs->nnode = 1;
+#endif /* NEWTREE */
+    /****************************************************************/
+
+    if (ID_STATUS (EXPRS_EXPR (ret_exprs)) == ST_artificial) {
+        if (ARG_STATUS (ID_VARDEC (EXPRS_EXPR (ret_exprs))) == ST_artificial) {
+            /*
+             *  This artificial return value belongs to a global object,
+             *  so it can be removed.
+             */
+
+            ret_exprs = FreeNode (ret_exprs);
+        } else {
+            /*
+             *  This artificial return value belongs to an original reference
+             *  parameter, so it is stored in RETURN_REFERENCE to be compiled
+             *  to an "inout" parameter.
+             */
+
+            tmp = ret_exprs;
+            ret_exprs = EXPRS_NEXT (ret_exprs);
+            EXPRS_NEXT (tmp) = RETURN_REFERENCE (ret_node);
+            RETURN_REFERENCE (ret_node) = tmp;
+        }
+    }
+
+    DBUG_RETURN (ret_exprs);
+}
+
+/*
+ *
  *  functionname  : PRECap
  *  arguments     : 1) N_ap node
  *                  2) arg_info unused
- *  description   : traverses the current arguments and sets arg_info
+ *  description   : traverses the current arguments using function
+ *                  PRECexprs_ap that is given a pointer
  *                  to the first formal parameter of the applied function.
  *  global vars   : ---
- *  internal funs : ---
- *  external funs : Trav
+ *  internal funs : PRECexprs_ap
+ *  external funs : ---
  *  macros        : DBUG, TREE
  *
  *  remarks       :
@@ -659,8 +814,15 @@ PRECap (node *arg_node, node *arg_info)
 
     if (AP_ARGS (arg_node) != NULL) {
         AP_ARGS (arg_node)
-          = Trav (AP_ARGS (arg_node), FUNDEF_ARGS (AP_FUNDEF (arg_node)));
+          = PRECexprs_ap (AP_ARGS (arg_node), FUNDEF_ARGS (AP_FUNDEF (arg_node)));
     }
+
+    /****************************************************************/
+#ifndef NEWTREE
+    if (AP_ARGS (arg_node) == NULL)
+        arg_node->nnode = 0;
+#endif /* NEWTREE */
+    /****************************************************************/
 
     DBUG_RETURN (arg_node);
 }
@@ -670,11 +832,11 @@ PRECap (node *arg_node, node *arg_info)
  *  functionname  : PRECreturn
  *  arguments     : 1) N_return node
  *                  2) arg_info unused
- *  description   : traverses the return values and sets arg_info to
- *                  this N_return node.
+ *  description   : traverses the return values using function
+ *                  PRECexprs_return.
  *  global vars   : ---
- *  internal funs : ---
- *  external funs : Trav
+ *  internal funs : PRECexprs_return
+ *  external funs : ---
  *  macros        : DBUG, TREE
  *
  *  remarks       :
@@ -687,157 +849,15 @@ PRECreturn (node *arg_node, node *arg_info)
     DBUG_ENTER ("PRECreturn");
 
     if (RETURN_EXPRS (arg_node) != NULL) {
-        RETURN_EXPRS (arg_node) = Trav (RETURN_EXPRS (arg_node), arg_node);
+        RETURN_EXPRS (arg_node) = PRECexprs_return (RETURN_EXPRS (arg_node), arg_node);
     }
 
-    if (RETURN_EXPRS (arg_node) == NULL) {
+    /****************************************************************/
+#ifndef NEWTREE
+    if (RETURN_EXPRS (arg_node) == NULL)
         arg_node->nnode = 0;
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/*
- *
- *  functionname  : PRECexprs
- *  arguments     : 1) N_exprs node
- *                  2) If below an N_return node:
- *                       pointer to this N_return node
- *                     If below an N_ap node:
- *                       pointer to corresponding formal parameter of
- *                       applied function
- *                     Otherwise:
- *                       unused (NULL)
- *  description   : removes artificial expressions.
- *                  The exact behaviour relies on the second parameter.
- *
- *                  N_return:
- *                  If the return value corresponds to an original reference
- *                  parameter and not a global object, it is stored within
- *                  the return-node to be used for compilation. Otherwise
- *                  it is freed.
- *
- *                  N_arg:
- *                  Additionally to removing artificial expressions, an
- *                  identifier that corresponds to a reference parameter
- *                  of the applied function is marked as attrib ST_inout
- *                  for later usage by compile.
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : FreeNode, Trav
- *  macros        : DBUG, TREE
- *
- *  remarks       :
- *
- */
-
-node *
-PRECexprs (node *arg_node, node *arg_info)
-{
-    node *next;
-
-    DBUG_ENTER ("PRECexprs");
-
-    if (arg_info == NULL) {
-        /*
-         *  This N_exprs node is neither below an N_ap nor below an N_return.
-         *  So, traverse it as usual.
-         */
-
-        EXPRS_EXPR (arg_node) = Trav (EXPRS_EXPR (arg_node), arg_info);
-
-        if (EXPRS_NEXT (arg_node) != NULL) {
-            EXPRS_NEXT (arg_node) = Trav (EXPRS_NEXT (arg_node), arg_info);
-        }
-    } else {
-        if (NODE_TYPE (arg_info) == N_arg) {
-            if (NODE_TYPE (EXPRS_EXPR (arg_node)) == N_id) {
-                /*
-                 *  This N_exprs node contains an idenitifier and is situated
-                 *  below an N_ap node.
-                 */
-
-                if (ID_STATUS (EXPRS_EXPR (arg_node)) == ST_artificial) {
-                    arg_node = FreeNode (arg_node);
-
-                    if (arg_node != NULL) {
-                        arg_node = Trav (arg_node, ARG_NEXT (arg_info));
-                    }
-                } else {
-                    EXPRS_EXPR (arg_node) = Trav (EXPRS_EXPR (arg_node), arg_info);
-
-                    if (EXPRS_NEXT (arg_node) != NULL) {
-                        EXPRS_NEXT (arg_node)
-                          = Trav (EXPRS_NEXT (arg_node), ARG_NEXT (arg_info));
-                    }
-
-                    /****************************************************************/
-                    if (EXPRS_NEXT (arg_node) == NULL) {
-                        arg_node->nnode = 1;
-                    }
-                    /****************************************************************/
-                }
-            } else {
-                EXPRS_EXPR (arg_node) = Trav (EXPRS_EXPR (arg_node), arg_info);
-
-                if (EXPRS_NEXT (arg_node) != NULL) {
-                    EXPRS_NEXT (arg_node)
-                      = Trav (EXPRS_NEXT (arg_node), ARG_NEXT (arg_info));
-                }
-
-                /****************************************************************/
-                if (EXPRS_NEXT (arg_node) == NULL) {
-                    arg_node->nnode = 1;
-                }
-                /****************************************************************/
-            }
-        } else {
-            if ((NODE_TYPE (EXPRS_EXPR (arg_node)) == N_id)
-                && (ID_STATUS (EXPRS_EXPR (arg_node)) == ST_artificial)) {
-                /*
-                 *  This N_exprs node contains an idenitifier, is situated
-                 *  below an N_return node, and is artificially inserted.
-                 */
-
-                if ((NODE_TYPE (ID_VARDEC (EXPRS_EXPR (arg_node))) == N_arg)
-                    && (ARG_STATUS (ID_VARDEC (EXPRS_EXPR (arg_node))) == ST_regular)) {
-                    /*
-                     *  The current return value corresponds to an original
-                     *  call-by-reference parameter. So, it is stored within
-                     *  the N_return node for compilation.
-                     */
-
-                    next = EXPRS_NEXT (arg_node);
-                    EXPRS_NEXT (arg_node) = RETURN_REFERENCE (arg_info);
-                    RETURN_REFERENCE (arg_info) = arg_node;
-
-                    if (next != NULL) {
-                        arg_node = Trav (next, arg_info);
-                    } else {
-                        arg_node = NULL;
-                    }
-                } else {
-                    arg_node = FreeNode (arg_node);
-
-                    if (arg_node != NULL) {
-                        arg_node = Trav (arg_node, arg_info);
-                    }
-                }
-            } else {
-                EXPRS_EXPR (arg_node) = Trav (EXPRS_EXPR (arg_node), arg_info);
-
-                if (EXPRS_NEXT (arg_node) != NULL) {
-                    EXPRS_NEXT (arg_node) = Trav (EXPRS_NEXT (arg_node), arg_info);
-                }
-
-                /****************************************************************/
-                if (EXPRS_NEXT (arg_node) == NULL) {
-                    arg_node->nnode = 1;
-                }
-                /****************************************************************/
-            }
-        }
-    }
+#endif /* NEWTREE */
+    /****************************************************************/
 
     DBUG_RETURN (arg_node);
 }
@@ -846,13 +866,9 @@ PRECexprs (node *arg_node, node *arg_info)
  *
  *  functionname  : PRECid
  *  arguments     : 1) N_id node;
- *                  2) same as in PRECexprs
- *  description   : 1) Applied occurrences of global objects may be renamed,
- *                     if the global object was renamed.
- *                  2) Identifiers in function applications are marked as
- *                     attrib 'ST_inout', if the corresponding formal
- *                     parameter of the applied function is a reference
- *                     parameter.
+ *                  2) arg_info unused
+ *  description   : Applied occurrences of global objects may be renamed,
+ *                  if the global object was renamed.
  *  global vars   : ---
  *  internal funs : ---
  *  external funs : ---
@@ -871,11 +887,6 @@ PRECid (node *arg_node, node *arg_info)
         && (ARG_STATUS (ID_VARDEC (arg_node)) == ST_artificial)) {
         ID_VARDEC (arg_node) = ARG_OBJDEF (ID_VARDEC (arg_node));
         ID_NAME (arg_node) = OBJDEF_NAME (ID_VARDEC (arg_node));
-    }
-
-    if ((arg_info != NULL) && (NODE_TYPE (arg_info) == N_arg)
-        && (ARG_ATTRIB (arg_info) == ST_was_reference)) {
-        ID_ATTRIB (EXPRS_EXPR (arg_node)) = ST_inout;
     }
 
     DBUG_RETURN (arg_node);
