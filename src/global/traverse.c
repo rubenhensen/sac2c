@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.68  1998/10/29 16:56:31  cg
+ * Implementation of Trav() slightly modified in order to
+ * simplify debugging.
+ *
  * Revision 1.67  1998/06/18 13:42:11  cg
  * added traversal function tables conc_tab and sched_tab
  *
@@ -1013,16 +1017,50 @@ int nnode[] = {
 **
 */
 
+#if 0
+
+node *Trav(node *arg_node, node *arg_info)
+{
+  DBUG_ENTER("Trav");
+
+  DBUG_ASSERT((NULL != arg_node), "wrong argument: NULL pointer");
+  DBUG_ASSERT((arg_node->nodetype <= N_ok),
+               "wrong argument: Type-tag out of range!");
+  DBUG_PRINT("TRAV",("case %s: node adress: %06x",
+                mdb_nodetype[arg_node->nodetype],arg_node));
+  DBUG_RETURN((*act_tab[arg_node->nodetype]) (arg_node, arg_info));
+}
+
+#else
+
+/*
+ * This version of Trav is functionally identical to the above one,
+ * but simplifies debugging because it allows to set break points
+ * within the assertions.
+ */
+
 node *
 Trav (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("Trav");
-    DBUG_ASSERT ((NULL != arg_node), "wrong argument: NULL pointer");
-    DBUG_ASSERT ((arg_node->nodetype <= N_ok), "wrong argument: Type-tag out of range!");
+
+#ifndef DBUG_OFF
+    if (arg_node == NULL) {
+        DBUG_ASSERT (0, "Trav: tried to traverse into subtree NULL !");
+    }
+
+    if (arg_node->nodetype >= N_ok) {
+        DBUG_ASSERT (0, "Trav: illegal node type !");
+    }
+
     DBUG_PRINT ("TRAV", ("case %s: node adress: %06x", mdb_nodetype[arg_node->nodetype],
                          arg_node));
+#endif /* not DBUG_OFF */
+
     DBUG_RETURN ((*act_tab[arg_node->nodetype]) (arg_node, arg_info));
 }
+
+#endif
 
 /*
 **
