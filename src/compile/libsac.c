@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.1  1996/01/09 08:31:41  cg
+ * Revision 1.2  1996/01/09 08:52:32  cg
+ * first compilable revision
+ *
+ * Revision 1.1  1996/01/09  08:31:41  cg
  * Initial revision
  *
  *
@@ -114,7 +117,7 @@ __SAC__Runtime_PrintTraceHeader (char *format, ...)
 
     fprintf (stderr, "%-40s -> ", buffer);
 
-    __SAC__Runtime_trace_layout_flag = 0;
+    trace_layout_flag = 0;
 
     DBUG_VOID_RETURN;
 }
@@ -169,7 +172,7 @@ __SAC__Runtime_PrintTraceInfo (char *format, ...)
  *
  */
 
-void
+void *
 __SAC__Runtime_malloc (int size)
 {
     void *tmp;
