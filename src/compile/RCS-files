@@ -14,6 +14,8 @@ icm2c.c
 icm2c_basic.h
 icm2c_mt.c
 icm2c_mt.h
+icm2c_sched.c
+icm2c_sched.h
 icm2c_std.c
 icm2c_std.h
 icm2c_utils.c
