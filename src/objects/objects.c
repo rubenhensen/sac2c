@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:43:21  sacbase
+ * new release made
+ *
  * Revision 1.19  1998/06/05 15:27:49  cg
  * global variable mod_name_con and macros MOD_NAME_CON MOD MOD_NAME MOD_CON removed
  * Now, module name and symbol name are combined correctly by ':'.

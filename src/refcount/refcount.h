@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:43:07  sacbase
+ * new release made
+ *
  * Revision 1.19  1998/05/11 13:43:42  dkr
  * added RCicm
  *

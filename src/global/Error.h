@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:39:13  sacbase
+ * new release made
+ *
  * Revision 1.22  1998/06/05 15:23:25  cg
  * functions ModName() and ItemName() now use an internal static buffer
  * in order to avoid memory leaks.

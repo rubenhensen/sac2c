@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:42:01  sacbase
+ * new release made
+ *
  * Revision 1.6  1997/03/19 13:46:23  cg
  * entirely re-implemented
  * now a global dependency tree is built up by import.c and readsib.c

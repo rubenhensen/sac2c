@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:41:44  sacbase
+ * new release made
+ *
  * Revision 1.3  1995/12/30 17:00:48  cg
  * removed external declaration of 'filename'
  *

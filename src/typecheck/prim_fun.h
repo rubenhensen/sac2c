@@ -1,5 +1,8 @@
 /*
  *  $Log$
+ *  Revision 2.1  1999/02/23 12:40:50  sacbase
+ *  new release made
+ *
  *  Revision 1.8  1996/01/25 16:19:07  hw
  *  added typechecking of primitive functions in modules
  *  (in modules the resultung type can be also one with known dimension only

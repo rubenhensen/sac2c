@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:41:32  sacbase
+ * new release made
+ *
  * Revision 1.26  1999/02/16 14:50:35  srs
  * fixed bug in RemoveDoubleIndexVectors()
  *

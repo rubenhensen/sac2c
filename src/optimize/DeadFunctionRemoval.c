@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:41:13  sacbase
+ * new release made
+ *
  * Revision 1.3  1999/01/20 09:07:46  cg
  * Dead function removal may now handle programs without any functions.
  *

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:42:31  sacbase
+ * new release made
+ *
  * Revision 1.33  1998/08/07 14:39:22  dkr
  * COMPWLsegVar added
  *

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:41:02  sacbase
+ * new release made
+ *
  * Revision 1.11  1999/01/19 09:58:28  sbs
  * dbug-vars put into #if-construct
  *

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:43:16  sacbase
+ * new release made
+ *
  * Revision 1.3  1998/02/25 09:22:16  cg
  * adjusted to new set of global variable in globals.[ch]
  *

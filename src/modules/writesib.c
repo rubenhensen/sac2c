@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:42:15  sacbase
+ * new release made
+ *
  * Revision 1.19  1999/02/05 16:45:13  dkr
  * Added FreeTree(MODUL_DECL) in WSIBmodul().
  * This node will later be used by MODUL_FOLDFUN !!

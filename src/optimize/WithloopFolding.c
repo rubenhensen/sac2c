@@ -1,6 +1,9 @@
 /*      $Id$
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:41:42  sacbase
+ * new release made
+ *
  * Revision 1.26  1999/02/15 11:15:00  srs
  * MakeNullVec() can create scalars of all simpletypes now
  *

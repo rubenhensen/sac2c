@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:41:26  sacbase
+ * new release made
+ *
  * Revision 1.17  1999/01/18 15:46:02  sbs
  * DBUG_PRINT( "OPTMEM",...) inserted for mem-info during optimization
  *

@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.1  1999/02/23 12:39:14  sacbase
+# new release made
+#
 # Revision 1.70  1999/02/09 20:04:18  dkr
 # make deps done
 #
@@ -393,3 +396,4 @@ tree_compound.o: /usr/include/stdlib.h globals.h ../../inc/dbug.h my_debug.h
 tree_compound.o: free.h /usr/include/malloc.h internal_lib.h
 usage.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 usage.o: /usr/include/sys/va_list.h globals.h types.h ../../inc/dbug.h
+

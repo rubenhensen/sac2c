@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:43:51  sacbase
+ * new release made
+ *
  * Revision 1.6  1998/06/29 08:52:19  cg
  * streamlined tracing facilities
  * tracing on new with-loop and multi-threading operations implemented

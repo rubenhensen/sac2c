@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:39:10  sacbase
+ * new release made
+ *
  * Revision 1.17  1998/05/20 20:16:54  sbs
  * new funs FltnArray and FltnBlock added
  *

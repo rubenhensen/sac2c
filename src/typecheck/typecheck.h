@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.1  1999/02/23 12:40:58  sacbase
+ * new release made
+ *
  * Revision 1.32  1998/06/05 15:31:27  cg
  * macro MOD_NAME_CON no longer used in macro definitions.
  *

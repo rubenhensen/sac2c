@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:39:16  sacbase
+ * new release made
+ *
  * Revision 1.11  1997/11/28 13:14:04  srs
  * removed unused IDS* macros
  *

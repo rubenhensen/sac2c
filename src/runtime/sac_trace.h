@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:44:01  sacbase
+ * new release made
+ *
  * Revision 1.6  1998/07/10 08:10:49  cg
  *  some bugs fixed, appropriate renaming of macros
  *

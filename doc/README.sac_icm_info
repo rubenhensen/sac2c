@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.1  1999/02/23 12:39:02  sacbase
+ * new release made
+ *
  * Revision 1.12  1995/06/08 18:07:11  hw
  * - exchanged ND_CREATE_CONST_ARRAY with ND_CREATE_CONST_ARRAY_S
  * - ND_CREATE_CONST_ARRAY_A, ND_BEGIN_FOLDPRF, ND_BEGIN_FOLDFUN
@@ -163,4 +166,5 @@ other Macros :
  ND_GOTO(label)                : used for compilation of do-loop (goto label)
 
  ND_TYPEDEF_ARRAY(type, newtype) : typedef of an array
+
 

@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.1  1999/02/23 12:42:20  sacbase
+# new release made
+#
 # Revision 1.65  1998/11/04 18:22:36  dkr
 # make deps done
 #
@@ -389,3 +392,4 @@ wltransform.o: ../global/internal_lib.h ../global/free.h ../../inc/dbug.h
 wltransform.o: ../global/my_debug.h /usr/include/malloc.h
 wltransform.o: ../global/traverse.h ../optimize/DataFlowMask.h
 wltransform.o: ../optimize/optimize.h wlpragma_funs.h ../optimize/DupTree.h
+

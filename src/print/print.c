@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:40:24  sacbase
+ * new release made
+ *
  * Revision 1.261  1999/02/15 15:11:50  cg
  * Defines with function name before each function definition
  * moved into ND_FUNDEC ICM.

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:43:42  sacbase
+ * new release made
+ *
  * Revision 1.5  1998/07/10 15:21:50  cg
  * bug fixed in vararg macro usage
  *

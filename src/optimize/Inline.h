@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:41:21  sacbase
+ * new release made
+ *
  * Revision 1.8  1998/07/16 17:19:17  sbs
  * DoInline made privat and InlineSingleApplication exported!
  *

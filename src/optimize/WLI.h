@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:41:35  sacbase
+ * new release made
+ *
  * Revision 1.4  1998/05/05 11:18:59  srs
  * moved definition of TRANSF_TRUE_PERMUTATIONS to WithloopFolding.h
  *

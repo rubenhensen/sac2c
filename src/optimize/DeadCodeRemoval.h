@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:41:12  sacbase
+ * new release made
+ *
  * Revision 1.7  1999/01/07 13:56:58  sbs
  * optimization process restructured for a function-wise optimization!
  *

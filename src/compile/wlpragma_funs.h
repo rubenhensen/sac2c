@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:42:57  sacbase
+ * new release made
+ *
  * Revision 1.4  1998/05/25 13:15:42  dkr
  * signature of wlpragma-funs changed:
  *   lineno added for error-messages

@@ -1,6 +1,9 @@
 
 /*
  * $Log$
+ * Revision 2.1  1999/02/23 12:43:12  sacbase
+ * new release made
+ *
  * Revision 1.28  1998/12/07 13:45:23  sbs
  * IdxArg patched due to a problem when compiling:
  * int f(int[] v, int[]a)

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:43:23  sacbase
+ * new release made
+ *
  * Revision 1.11  1998/12/02 16:30:37  cg
  * Now, generic object creation functions for imported global objects
  * have status ST_objinitfun rather than ST_imported. This forces the

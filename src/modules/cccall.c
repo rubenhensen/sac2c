@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:41:59  sacbase
+ * new release made
+ *
  * Revision 1.21  1999/02/22 13:02:16  cg
  * usage of efence: final version.
  *

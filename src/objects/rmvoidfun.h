@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:43:26  sacbase
+ * new release made
+ *
  * Revision 1.2  1997/09/05 13:46:04  cg
  * All cast expressions are now removed by rmvoidfun.c. Therefore,
  * the respective attempts in precompile.c and ConstantFolding.c

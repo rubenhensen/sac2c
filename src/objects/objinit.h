@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:43:24  sacbase
+ * new release made
+ *
  * Revision 1.2  1995/10/31 17:19:07  cg
  * Now, multiple includes of this header file are avoided.
  *

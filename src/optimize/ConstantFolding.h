@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:41:07  sacbase
+ * new release made
+ *
  * Revision 1.15  1998/12/10 17:27:34  sbs
  * ScalarPrf => FoldPrfScalars
  *

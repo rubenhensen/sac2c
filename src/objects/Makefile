@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.1  1999/02/23 12:43:19  sacbase
+# new release made
+#
 # Revision 1.14  1998/03/04 00:11:13  dkr
 # 'clean' now deletes the subdir .sb, too
 #
@@ -106,3 +109,4 @@ uniquecheck.o: /usr/include/sys/va_list.h /usr/include/string.h
 uniquecheck.o: /usr/include/stdlib.h ../global/globals.h ../../inc/dbug.h
 uniquecheck.o: ../global/traverse.h ../global/internal_lib.h ../global/free.h
 uniquecheck.o: ../global/my_debug.h /usr/include/malloc.h
+

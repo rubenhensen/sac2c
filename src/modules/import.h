@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:42:11  sacbase
+ * new release made
+ *
  * Revision 1.24  1997/04/24 10:02:15  cg
  * improved PrintDependencies for -Mlib option
  * bug fixed concerning class types upon selective import when checking

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:42:24  sacbase
+ * new release made
+ *
  * Revision 1.6  1999/02/03 16:27:18  dkr
  * fixed a bug in ReuseNwith2() concerning nested WLs
  *

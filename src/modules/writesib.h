@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:42:17  sacbase
+ * new release made
+ *
  * Revision 1.5  1996/02/06 18:58:19  cg
  * added special print functions WSIBfloat and WSIBdouble for printing
  * constants followed by F or D to mark their types

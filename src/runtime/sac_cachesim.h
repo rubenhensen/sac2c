@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.1  1999/02/23 12:43:50  sacbase
+ * new release made
+ *
  * Revision 1.3  1999/02/17 17:14:22  her
  * new parameter for Initialize: profilelevel
  * english comments

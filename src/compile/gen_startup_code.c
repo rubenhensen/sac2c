@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:42:32  sacbase
+ * new release made
+ *
  * Revision 1.17  1999/02/22 12:54:34  cg
  * SPMD frame is now printed iff multi-threaded code is desired.
  *

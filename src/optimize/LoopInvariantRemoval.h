@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:41:24  sacbase
+ * new release made
+ *
  * Revision 1.3  1995/06/02 12:11:50  asi
  * Added NodeBehindCast
  *

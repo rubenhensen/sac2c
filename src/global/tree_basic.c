@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:39:53  sacbase
+ * new release made
+ *
  * Revision 1.84  1999/02/06 12:53:01  srs
  * added MakeNodelistNode()
  *

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:42:46  sacbase
+ * new release made
+ *
  * Revision 1.2  1998/06/29 08:47:50  cg
  * implemented new icm-argument type VARINT
  *

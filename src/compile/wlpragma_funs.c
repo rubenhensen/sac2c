@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:42:55  sacbase
+ * new release made
+ *
  * Revision 1.16  1998/08/11 14:45:27  dkr
  * support for N_WLsegVar added (not yet completed)
  *

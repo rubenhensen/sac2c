@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:41:11  sacbase
+ * new release made
+ *
  * Revision 1.25  1999/01/19 13:20:27  sbs
  * #ifndef DBUG_OFF inserted
  *

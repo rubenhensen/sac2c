@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:40:16  sacbase
+ * new release made
+ *
  * Revision 1.90  1999/02/19 17:26:03  dkr
  * changed -efence to -defence
  *

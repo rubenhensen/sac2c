@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:42:08  sacbase
+ * new release made
+ *
  * Revision 1.2  1995/10/26 16:09:59  cg
  * function SearchImplementation is now exported
  * (used by checkdec.c).

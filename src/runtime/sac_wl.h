@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:44:02  sacbase
+ * new release made
+ *
  * Revision 1.18  1998/08/07 16:05:23  dkr
  * WL_...FOLD_BEGIN, WL_...FOLD_END are now C-ICMs
  *

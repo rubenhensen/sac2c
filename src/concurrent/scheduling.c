@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:44:09  sacbase
+ * new release made
+ *
  * Revision 1.6  1999/02/15 10:24:52  cg
  * Bug fixed in scheduling for segments of variable borders.
  *

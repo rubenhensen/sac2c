@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:42:18  sacbase
+ * new release made
+ *
  * Revision 1.5  1998/05/19 10:05:21  cg
  * added 'clear-indent !' feature
  *

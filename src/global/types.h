@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:40:15  sacbase
+ * new release made
+ *
  * Revision 1.46  1999/02/11 09:18:45  bs
  * contextflag CT_array added.
  *

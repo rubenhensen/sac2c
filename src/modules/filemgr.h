@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:42:06  sacbase
+ * new release made
+ *
  * Revision 1.9  1998/03/17 12:14:24  cg
  * added resource SYSTEM_LIBPATH.
  * This makes the gcc special feature '--print-file-name' obsolete.

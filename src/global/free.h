@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:39:19  sacbase
+ * new release made
+ *
  * Revision 1.27  1999/02/11 13:37:23  cg
  * Improved debugging opportunities by hiding calls to free() behind
  * wrapper function Free().

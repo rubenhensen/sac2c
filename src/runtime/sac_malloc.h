@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:43:52  sacbase
+ * new release made
+ *
  * Revision 1.2  1998/05/07 08:17:51  cg
  * SAC header files converted to new naming conventions.
  *

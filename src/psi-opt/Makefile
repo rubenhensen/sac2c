@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.1  1999/02/23 12:43:10  sacbase
+# new release made
+#
 # Revision 1.21  1999/02/09 20:04:24  dkr
 # make deps done
 #
@@ -133,3 +136,4 @@ tile_size_inference.o: /usr/include/stdlib.h ../global/globals.h
 tile_size_inference.o: ../global/traverse.h ../global/free.h
 tile_size_inference.o: ../global/my_debug.h /usr/include/malloc.h
 tile_size_inference.o: ../global/internal_lib.h
+

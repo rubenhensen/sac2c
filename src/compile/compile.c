@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:42:28  sacbase
+ * new release made
+ *
  * Revision 1.195  1999/02/09 20:23:27  dkr
  * fixed a bug in COMPSync:
  *   MM-ICMs are now correctly extracted --- even in case of nested WLs

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:41:30  sacbase
+ * new release made
+ *
  * Revision 1.4  1998/03/04 09:47:31  srs
  * added support for new WL
  *

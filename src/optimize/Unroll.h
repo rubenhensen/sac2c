@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:41:28  sacbase
+ * new release made
+ *
  * Revision 1.8  1998/02/26 12:35:22  srs
  * traversal through new WLs possible
  *

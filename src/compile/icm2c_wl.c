@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:42:43  sacbase
+ * new release made
+ *
  * Revision 1.26  1998/10/29 20:38:26  dkr
  * - signature of ICM WL_FOLD_NOOP changed
  * - WL_FOLD_NOOP is empty now

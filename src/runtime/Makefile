@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.1  1999/02/23 12:43:33  sacbase
+# new release made
+#
 # Revision 1.15  1999/02/09 20:04:26  dkr
 # make deps done
 #
@@ -114,3 +117,4 @@ libsac_profile.o: /usr/include/sys/machtypes.h /usr/include/sys/resource.h
 libsac_trace.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 libsac_trace.o: /usr/include/sys/va_list.h /usr/include/stdarg.h
 libsac_trace.o: /usr/include/varargs.h /usr/include/string.h
+

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:43:14  sacbase
+ * new release made
+ *
  * Revision 1.8  1998/06/07 18:38:00  dkr
  * ChgId renamed in IdxChangeId and exported (for ReuseWithArrays.[ch])
  *

@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.1  1999/02/23 12:44:24  sacbase
+# new release made
+#
 # Revision 1.3  1999/01/18 16:08:22  sbs
 # version changed from 0.7 to 0.8!
 #
@@ -215,3 +218,4 @@ new:
 allnew:
 	$(MAKE) clean
 	$(MAKE)
+

@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.1  1999/02/23 12:38:58  sacbase
+# new release made
+#
 # Revision 1.103  1999/01/25 16:27:20  sbs
 # interrupt.o in global added.
 #
@@ -361,6 +364,7 @@ fafnir: src.tar.gz
             'chmod 644 $(SOURCE_FILES);' \
             'make deps OS=LINUX_X86;' \
             'make OS=LINUX_X86'
+
 
 
 

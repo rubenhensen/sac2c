@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:42:42  sacbase
+ * new release made
+ *
  * Revision 1.3  1999/01/22 14:32:25  sbs
  * ND_PRF_MODARRAY_AxVxA_CHECK_REUSE and
  * ND_PRF_MODARRAY_AxVxA

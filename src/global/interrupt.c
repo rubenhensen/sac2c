@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:39:25  sacbase
+ * new release made
+ *
  * Revision 1.2  1999/02/15 13:34:51  sbs
  * added generation of SACbugreport
  *

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.1  1999/02/23 12:40:46  sacbase
+ * new release made
+ *
  * Revision 1.1  1998/05/28 14:55:40  sbs
  * Initial revision
  *

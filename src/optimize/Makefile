@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.1  1999/02/23 12:41:25  sacbase
+# new release made
+#
 # Revision 1.57  1999/02/09 20:04:21  dkr
 # make deps done
 #
@@ -305,3 +308,4 @@ optimize.o: ../print/convert.h optimize.h generatemasks.h freemasks.h
 optimize.o: ConstantFolding.h DeadCodeRemoval.h DeadFunctionRemoval.h
 optimize.o: LoopInvariantRemoval.h Inline.h Unroll.h Unswitch.h
 optimize.o: ../psi-opt/ArrayElimination.h CSE.h WithloopFolding.h
+

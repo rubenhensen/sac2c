@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:39:56  sacbase
+ * new release made
+ *
  * Revision 1.216  1999/02/12 17:44:51  cg
  * WLSEGX mechanism now also used for WLSEG_SCHEDULING and WLSEGVAR_SCHEDULING
  *

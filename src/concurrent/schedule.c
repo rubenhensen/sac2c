@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:44:07  sacbase
+ * new release made
+ *
  * Revision 1.3  1998/08/07 15:28:27  dkr
  * SCHEDwlsegVar added
  *

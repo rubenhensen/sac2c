@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.1  1999/02/23 12:40:19  sacbase
+# new release made
+#
 # Revision 1.31  1999/02/09 20:04:19  dkr
 # make deps done
 #
@@ -128,3 +131,4 @@ print.o: /usr/include/malloc.h ../optimize/generatemasks.h
 print.o: ../modules/filemgr.h ../compile/gen_startup_code.h
 print.o: ../optimize/WithloopFolding.h ../concurrent/scheduling.h
 print.o: ../compile/icm.data ../global/prf_node_info.mac
+

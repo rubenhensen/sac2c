@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:39:11  sacbase
+ * new release made
+ *
  * Revision 1.27  1999/01/19 10:46:06  sbs
  * ret=NULL; inserted in default-case of ItemName
  *

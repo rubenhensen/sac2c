@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:41:03  sacbase
+ * new release made
+ *
  * Revision 1.4  1998/04/03 12:22:11  srs
  * added CSENcode()
  *

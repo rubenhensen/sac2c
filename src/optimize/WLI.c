@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:41:34  sacbase
+ * new release made
+ *
  * Revision 1.11  1999/01/20 09:09:19  srs
  * NWITH_REFERENCES_FOLDED is initializes in WLINwith.
  *

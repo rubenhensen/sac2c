@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:39:21  sacbase
+ * new release made
+ *
  * Revision 1.44  1999/02/19 17:21:41  dkr
  * *** empty log message ***
  *

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:42:13  sacbase
+ * new release made
+ *
  * Revision 1.22  1999/01/18 10:06:02  cg
  * The chain of function definitions is now re-organized after the
  * evaluation of SIBs in order to ensure that any fold operation

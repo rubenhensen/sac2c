@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:40:36  sacbase
+ * new release made
+ *
  * Revision 1.18  1999/01/20 09:06:53  cg
  * Added check whether piping of input through preprocessor
  * is successful.

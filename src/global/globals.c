@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:39:20  sacbase
+ * new release made
+ *
  * Revision 1.30  1999/02/19 18:08:04  dkr
  * added use_efence
  *

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:41:49  sacbase
+ * new release made
+ *
  * Revision 1.5  1999/02/16 21:55:42  sbs
  * made PrintMRD more robust..
  *

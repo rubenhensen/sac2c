@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:44:11  sacbase
+ * new release made
+ *
  * Revision 1.3  1998/08/03 10:51:42  cg
  * added function SCHAdjustmentRequired that decides for a particular
  * dimension and a given scheduling whether the scheduling will produce

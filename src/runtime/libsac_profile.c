@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:43:41  sacbase
+ * new release made
+ *
  * Revision 1.4  1998/06/29 08:50:14  cg
  * added '#define _POSIX_C_SOURCE 199506L' for multi-threaded execution.
  *

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:40:13  sacbase
+ * new release made
+ *
  * Revision 1.11  1998/06/03 14:31:26  cg
  * names of types used for the renaming of functions shortened:
  * int -> i, double -> d

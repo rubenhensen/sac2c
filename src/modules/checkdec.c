@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:42:02  sacbase
+ * new release made
+ *
  * Revision 1.15  1999/01/19 16:20:47  cg
  * removed bug in handling of file names;
  * correct names of overloaded primitive functions including

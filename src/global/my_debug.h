@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:39:32  sacbase
+ * new release made
+ *
  * Revision 1.9  1997/10/29 14:29:11  srs
  * removed HAVE_MALLOC_O
  *

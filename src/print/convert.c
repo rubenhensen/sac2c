@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:40:20  sacbase
+ * new release made
+ *
  * Revision 1.24  1999/01/25 10:21:17  cg
  * Bug fixed in Double2String and Float2String: .0 not added after
  * number in exponential representation.

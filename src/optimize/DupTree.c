@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:41:17  sacbase
+ * new release made
+ *
  * Revision 1.107  1998/08/11 14:36:00  dkr
  * DupWLstriVar, DupWLgridVar changed
  *

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:44:14  sacbase
+ * new release made
+ *
  * Revision 1.2  1998/06/23 12:56:32  cg
  * added handling of new attribute NWITH2_MT
  *

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:43:43  sacbase
+ * new release made
+ *
  * Revision 1.6  1998/06/29 08:48:59  cg
  * sequence of including header files modified
  *

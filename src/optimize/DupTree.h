@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:41:18  sacbase
+ * new release made
+ *
  * Revision 1.34  1998/08/07 14:37:06  dkr
  * DupWLsegVar added
  *

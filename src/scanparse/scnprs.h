@@ -4,6 +4,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:40:38  sacbase
+ * new release made
+ *
  * Revision 1.8  1998/02/27 10:49:01  cg
  * added  #include "types.h" before #include "y.tab.h"
  *

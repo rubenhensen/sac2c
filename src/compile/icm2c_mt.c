@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:42:38  sacbase
+ * new release made
+ *
  * Revision 1.18  1998/08/27 14:48:45  cg
  * ICM ADJUST_SCHEDULER now gets also upper bound of respective block.
  *

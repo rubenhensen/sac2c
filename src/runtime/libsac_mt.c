@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:43:40  sacbase
+ * new release made
+ *
  * Revision 1.12  1999/02/19 09:28:44  cg
  * bug fixed in creation of worker threads: a dummy threadid variable is
  * provided when calling pthread_create. This is not required under Solaris

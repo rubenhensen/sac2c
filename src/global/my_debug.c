@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:39:30  sacbase
+ * new release made
+ *
  * Revision 1.25  1999/01/15 15:17:30  cg
  * added new entries to NIF macro.
  *

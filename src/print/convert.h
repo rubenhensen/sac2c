@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:40:22  sacbase
+ * new release made
+ *
  * Revision 1.10  1998/06/03 14:32:41  cg
  * implementation streamlined
  *

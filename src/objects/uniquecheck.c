@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:43:28  sacbase
+ * new release made
+ *
  * Revision 1.12  1998/02/05 17:17:21  srs
  * new function UNQNwith
  *

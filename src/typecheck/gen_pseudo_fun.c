@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.1  1999/02/23 12:40:44  sacbase
+ * new release made
+ *
  * Revision 1.5  1999/01/07 10:50:49  cg
  * The module name is now encoded in the name of a fold-function.
  * This is necessary to avoid name clashes with fold-functions from

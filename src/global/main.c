@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:39:28  sacbase
+ * new release made
+ *
  * Revision 1.150  1999/02/19 18:08:30  dkr
  * flag -defence added
  *

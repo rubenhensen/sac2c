@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:41:57  sacbase
+ * new release made
+ *
  * Revision 1.10  1999/01/07 10:50:49  cg
  * Added function ANAnwithop() and ANAfoldfun() which infer the dependence
  * of a function on its fold operations both for the old and for the new

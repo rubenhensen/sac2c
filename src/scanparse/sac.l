@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:40:30  sacbase
+ * new release made
+ *
  * Revision 1.57  1999/01/19 16:16:03  cg
  * added the '?' for types that match both scalars and arrays.
  *
@@ -375,4 +378,5 @@ int start_token;
 .	{FILTER( SC ); }
 
 %%
+
 

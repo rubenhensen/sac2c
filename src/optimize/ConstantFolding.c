@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:41:05  sacbase
+ * new release made
+ *
  * Revision 1.81  1999/02/09 20:30:38  sbs
  * once again sweet love does now invite....
  * F_reshape left in ALL cases now!

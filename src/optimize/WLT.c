@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:41:37  sacbase
+ * new release made
+ *
  * Revision 1.15  1999/02/02 18:51:34  srs
  * Generation of full partition in special case enabled. See comment
  * 'genarray check' in function CreateFullPartition().

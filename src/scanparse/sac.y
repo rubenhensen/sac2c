@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:40:33  sacbase
+ * new release made
+ *
  * Revision 1.169  1999/01/19 17:25:51  cg
  * The scanner/parser does now allow to selectively import
  * overloaded primitive functions including operators.
@@ -2885,3 +2888,4 @@ node *Append(node *target_node, node *append_node)
       
    DBUG_RETURN(target_node);
 }
+

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:43:25  sacbase
+ * new release made
+ *
  * Revision 1.4  1997/09/05 17:44:38  dkr
  * fixed a bug in function RMVassign with nnode
  *

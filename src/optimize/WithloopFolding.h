@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:41:43  sacbase
+ * new release made
+ *
  * Revision 1.16  1998/05/15 14:41:21  srs
  * changed MakeNullVec()
  *

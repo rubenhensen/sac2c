@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:39:47  sacbase
+ * new release made
+ *
  * Revision 1.52  1999/01/15 17:00:19  sbs
  * freemask_tab added
  *

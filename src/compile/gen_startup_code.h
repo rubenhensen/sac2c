@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:42:33  sacbase
+ * new release made
+ *
  * Revision 1.4  1998/07/07 13:43:12  cg
  * Global flags SAC_DO_MULTITHREAD, SAC_DO_THREADS_STATC and
  * settings for multithreaded execution may now be set by the C

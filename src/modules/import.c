@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:42:10  sacbase
+ * new release made
+ *
  * Revision 1.57  1999/01/20 09:26:24  cg
  * bug fixed in function ImportSymbol()
  *

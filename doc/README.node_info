@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.1  1999/02/23 12:39:01  sacbase
+ * new release made
+ *
  * Revision 1.25  1995/08/30 09:43:14  cg
  * difference between name and prefix in moduldec updated
  *
@@ -455,3 +458,4 @@ N_class:
 /* this node indicates that a module/class implementation is in fact a class
    implementation.
 */
+

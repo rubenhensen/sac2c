@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:39:24  sacbase
+ * new release made
+ *
  * Revision 1.16  1998/06/19 12:51:53  srs
  * compute_malloc_align_step() => ComputeMallocAlignStep()
  *

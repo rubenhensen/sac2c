@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:39:39  sacbase
+ * new release made
+ *
  * Revision 1.6  1998/11/19 16:12:36  cg
  * new configuration entry: CCMTLINK
  * specifies libraries to link with for multi-threaded programs only.

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:42:52  sacbase
+ * new release made
+ *
  * Revision 1.76  1998/11/08 14:31:15  dkr
  * PRECNcode:
  *   NCODE_CBLOCK should be never NULL

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/02/23 12:43:59  sacbase
+ * new release made
+ *
  * Revision 1.6  1998/12/08 10:58:21  cg
  * bug fixed: SAC_TR_MEM_PRINT_TRACEHEADER_ALL still used but no
  * longer defined.
