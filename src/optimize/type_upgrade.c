@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.6  2005/01/11 15:21:11  mwe
+ * ongoing implementation
+ *
  * Revision 1.5  2004/12/13 14:08:21  mwe
  * new traversals added
  *
@@ -14,6 +17,14 @@
  *
  * Revision 1.1  2004/12/08 12:17:59  mwe
  * Initial revision
+ *
+ */
+
+/* TODO:
+ *   ast.xml, DupTree, print: implement FUNGROUP (DONE)
+ *   DeadFunctionRemoval: remove function from FUNGROUP_FUNLIST and decrease REFCOUNTER
+ *   DupTree: check if all necessary attributes of FUNDEF are copied (DONE)
+ *   ast.xml: add missing arguments to FUNDEF (DONE)
  *
  */
 
@@ -37,14 +48,14 @@
 #include "type_utils.h"
 #include "ct_with.h"
 #include "type_errors.h"
+#include "ct_prf.h"
+#include "ct_with.h"
+#include "ct_fun.h"
+#include "constants.h"
+#include "shape.h"
+#include "ct_basic.h"
 
 #include "type_upgrade.h"
-
-/************************************************************************
- *
- * LOCAL HELPER FUNCTIONS:
- *
- ***********************************************************************/
 
 /*
  * INFO structure
@@ -57,15 +68,17 @@ struct INFO {
     int counter;
     ntype *type;
     ntype *wlexpr;
+    node *bestfit;
 };
 
 #define INFO_TUP_FUNDEF(n) (n->fundef)
 #define INFO_TUP_WITHID(n) (n->withid)
 #define INFO_TUP_CORRECTFUNCTION(n) (n->corrlf)
 #define INFO_TUP_CHECKLOOPFUN(n) (n->chklf)
-#define INFO_TUP_NEWTYPE(n) (n->type)
+#define INFO_TUP_TYPE(n) (n->type)
 #define INFO_TUP_TYPECOUNTER(n) (n->counter)
 #define INFO_TUP_WLEXPR(n) (n->wlexpr)
+#define INFO_TUP_BESTFITTINGFUN(n) (n->bestfit)
 
 static info *
 MakeInfo ()
@@ -79,9 +92,10 @@ MakeInfo ()
     INFO_TUP_WITHID (result) = NULL;
     INFO_TUP_CORRECTFUNCTION (result) = TRUE;
     INFO_TUP_CHECKLOOPFUN (result) = FALSE;
-    INFO_TUP_NEWTYPE (result) = NULL;
+    INFO_TUP_TYPE (result) = NULL;
     INFO_TUP_TYPECOUNTER (result) = 0;
     INFO_TUP_WLEXPR (result) = NULL;
+    INFO_TUP_BESTFITTINGFUN (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -95,6 +109,12 @@ FreeInfo (info *info)
 
     DBUG_RETURN (info);
 }
+
+/************************************************************************
+ *
+ * LOCAL HELPER FUNCTIONS:
+ *
+ ***********************************************************************/
 
 /*****************************************************************************
  *
@@ -299,6 +319,181 @@ AdjustSignatureToArgs (node *signature, node *args)
     DBUG_RETURN (signature);
 }
 
+static node *
+TryStaticDispatch (node *fundef, node *args, info *arg_info)
+{
+    ntype *prodarg;
+    dft_res *dft_res;
+    node *fundef_res = NULL;
+    char *funname;
+    DBUG_ENTER ("TryStaticDispatch");
+
+    if (FUNDEF_ISWRAPPERFUN (fundef)) {
+
+        /*
+         * current fundef belongs to wrapper function
+         */
+        prodarg = NTCnewTypeCheck_Expr (args);
+
+        dft_res = NTCCTdispatchFunType (fundef, prodarg);
+
+        funname = FUNDEF_NAME (fundef);
+        if (dft_res == NULL) {
+            DBUG_ASSERT ((TYgetProductSize (prodarg) == 0),
+                         "illegal dispatch result found!");
+            /*
+             * no args found -> static dispatch possible
+             *
+             * fundef can be found in FUNDEF_IMPL (dirty hack!)
+             */
+#if 0
+      fundef = FUNDEF_IMPL( fundef);
+      DBUG_PRINT( "TUP", ("  dispatched statically %s", funname));
+#endif
+            DBUG_ASSERT ((FALSE), "This should not happen!");
+        } else if ((dft_res->num_partials == 0)
+                   && (dft_res->num_deriveable_partials == 0)) {
+            /*
+             * static dispatch possible
+             */
+            if (dft_res->def != NULL) {
+                DBUG_ASSERT ((dft_res->deriveable == NULL), "def and deriveable found!");
+                fundef_res = dft_res->def;
+            } else {
+                fundef_res = dft_res->deriveable;
+            }
+            DBUG_PRINT ("TUP", ("  dispatched statically %s", funname));
+        }
+    }
+
+    DBUG_RETURN (fundef_res);
+}
+
+static bool
+ArgumentIsSpecializeable (ntype *type)
+{
+    bool result = TRUE;
+
+    DBUG_ENTER ("ArgumentIsSpecializeable");
+
+    switch (global.spec_mode) {
+    case SS_aks:
+        if (TYisAKV (type)) {
+            result = FALSE;
+        }
+        break;
+    case SS_akd:
+        if (TYisAKV (type) || TYisAKS (type)) {
+            result = FALSE;
+        }
+        break;
+    case SS_aud:
+        result = FALSE;
+        break;
+    default:
+        DBUG_ASSERT ((FALSE),
+                     "Unknown enumeration element! Incomplete switch statement!");
+    }
+
+    DBUG_RETURN (result);
+}
+
+static bool
+IsSpecializeable (node *fundef, node *args)
+{
+    bool result = FALSE;
+    node *fun_args;
+
+    DBUG_ENTER ("IsSpecializeable");
+
+    /*
+     * check specialization counter
+     * check arguments, whether the are already special enough or not
+     */
+    if (FUNGROUP_SPECCOUNTER (FUNDEF_FUNGROUP (fundef)) < global.maxspec) {
+
+        /*
+         * limit of function specialization is still not reached
+         */
+        fun_args = FUNDEF_ARGS (fundef);
+        while (fun_args != NULL) {
+
+            if ((ArgumentIsSpecializeable (AVIS_TYPE (ID_AVIS (EXPRS_EXPR (args)))))
+                && (TY_lt
+                    == TYcmpTypes (AVIS_TYPE (ID_AVIS (EXPRS_EXPR (args))),
+                                   AVIS_TYPE (ARG_AVIS (fun_args))))) {
+                /*
+                 * at least one argument could be specialized
+                 */
+                result = TRUE;
+                break;
+            }
+            fun_args = ARG_NEXT (fun_args);
+            args = EXPRS_NEXT (args);
+        }
+    }
+
+    DBUG_RETURN (result);
+}
+
+static node *
+SpecializationOracle (node *fundef, node *args)
+{
+    node *result = fundef;
+    node *signature;
+    DBUG_ENTER ("SpecializationOracle");
+
+    if (IsSpecializeable (fundef, args)) {
+
+        /*
+         * duplicate function
+         */
+        result = DUPdoDupNode (fundef);
+
+        /*
+         * increse reference and specialization counter in fungroup
+         */
+        FUNGROUP_REFCOUNTER (FUNDEF_FUNGROUP (result)) += 1;
+        FUNGROUP_SPECCOUNTER (FUNDEF_FUNGROUP (result)) += 1;
+
+        /*
+         * append function to AST and add pointer in fungroup
+         */
+        FUNDEF_NEXT (result) = FUNDEF_NEXT (fundef);
+        FUNDEF_NEXT (fundef) = result;
+        FUNGROUP_FUNLIST (FUNDEF_FUNGROUP (result))
+          = TBmakeLinklist (result, FUNGROUP_FUNLIST (FUNDEF_FUNGROUP (result)));
+
+        /*
+         * change signature
+         */
+        signature = FUNDEF_ARGS (result);
+        while (signature != NULL) {
+
+            if (ArgumentIsSpecializeable (AVIS_TYPE (ARG_AVIS (signature)))) {
+                /* TODO: if argument is too special, try to find less special but better
+                 * fitting argument*/
+                /*
+                 * type is not to special
+                 */
+                AVIS_TYPE (ARG_AVIS (signature))
+                  = TYfreeType (AVIS_TYPE (ARG_AVIS (signature)));
+                AVIS_TYPE (ARG_AVIS (signature))
+                  = TYcopyType (AVIS_TYPE (ID_AVIS (EXPRS_EXPR (args))));
+            }
+            signature = ARG_NEXT (signature);
+            args = EXPRS_NEXT (args);
+        }
+
+        /*
+         * upgrade types in new function
+         */
+        result = TUPdoTypeUpgrade (result);
+    }
+
+    DBUG_RETURN (result);
+}
+
 /****************************************************************************
  *
  * function:
@@ -330,7 +525,7 @@ TryToSpecializeFunction (node *fundef, node *args, info *arg_info)
     DBUG_ENTER ("TryToSpecializeFunction");
 
     /*
-     * check if args are more special the signature of function
+     * check if args are more special than signature of function
      */
 
     given_args = args;
@@ -432,8 +627,18 @@ TryToSpecializeFunction (node *fundef, node *args, info *arg_info)
 
             /*
              * function is no special function
-             * TODO
              */
+
+            /*
+             * check specialization counter (ask oracle for specialization)
+             * copy fundef
+             * go to wrapper fundef
+             * change signature of copied fundef according to given args
+             * upgrade types in new function
+             * change pointer to used function, append new function to linklist
+             */
+
+            fundef = SpecializationOracle (fundef, args);
         }
     }
 
@@ -441,19 +646,127 @@ TryToSpecializeFunction (node *fundef, node *args, info *arg_info)
 }
 
 static node *
-TryStaticDispatch (node *fundef, info *arg_info)
+GetBestFittingFun (node *fun1, node *fun2, node *args)
 {
-    DBUG_ENTER ("TryStaticDispatch");
+    node *result = fun2;
+    node *arg1, *arg2, *args_tmp;
+    ntype *t1, *t2;
+    bool fits = TRUE;
+    ct_res cmp;
+    DBUG_ENTER ("GetBestFittingFun");
+
+    arg1 = FUNDEF_ARGS (fun1);
+    arg2 = FUNDEF_ARGS (fun2);
+    args_tmp = args;
+
+    while (arg1 != NULL) {
+        t1 = AVIS_TYPE (ARG_AVIS (arg1));
+        t2 = AVIS_TYPE (ID_AVIS (EXPRS_EXPR (args_tmp)));
+        cmp = TYcmpTypes (t1, t2);
+        if ((cmp == TY_lt) || (cmp == TY_dis) || (cmp == TY_hcs)) {
+            /*
+             * function signature is to special or does not fit
+             */
+            fits = FALSE;
+            break;
+        }
+        arg1 = ARG_NEXT (arg1);
+        args_tmp = EXPRS_NEXT (args_tmp);
+    }
+
+    if (fits) {
+        int t1_counter, t2_counter;
+
+        /*
+         * fun1 could be used as function call for args
+         * fun2 would also fit (precondition)
+         * now find best fitting function
+         */
+        t1_counter = t2_counter = 0;
+        arg1 = FUNDEF_ARGS (fun1);
+        while (arg1 != NULL) {
+            t1 = AVIS_TYPE (ARG_AVIS (arg1));
+            t2 = AVIS_TYPE (ARG_AVIS (arg2));
+
+            switch (TYcmpTypes (t1, t2)) {
+            case TY_eq:
+                break;
+            case TY_lt:
+                t1_counter++;
+                break;
+            case TY_gt:
+                t2_counter++;
+                break;
+            case TY_dis:
+            case TY_hcs:
+            default:
+                DBUG_ASSERT ((FALSE), "This should not happen!");
+            }
+
+            arg1 = ARG_NEXT (arg1);
+            arg2 = ARG_NEXT (arg2);
+        }
+        if (t1_counter > t2_counter) {
+
+            result = fun1;
+        }
+    }
+
+    DBUG_RETURN (result);
+}
+
+static node *
+GetWrapperFun (node *fundef)
+{
+    node *wrapper;
+    DBUG_ENTER ("GetWrapperFun");
+
+    DBUG_RETURN (wrapper);
+}
+
+static node *
+TryToFindSpecializedFunction (node *fundef, node *args, info *arg_info)
+{
+
+    node *result = NULL;
+
+    DBUG_ENTER ("TryToFindSpecializedFunction");
 
     if (FUNDEF_ISWRAPPERFUN (fundef)) {
 
         /*
-         * current fundef belongs to wrapper function
-         * TODO
+         * fundef belongs to a wrapper function
+         * try a static dispatch
          */
+
+        result = TryStaticDispatch (fundef, args, arg_info);
+    } else {
+
+        result = TryStaticDispatch (GetWrapperFun (fundef), args, arg_info);
     }
 
-    DBUG_RETURN (fundef);
+    if (result == NULL) {
+
+        node *funs;
+
+        /*
+         * Static dispatch was not successful or function is a non-wrapper function
+         * try to find a more special function in FUNDEF_SPECIALIZEDFUNS
+         */
+
+        funs = FUNGROUP_FUNLIST (FUNDEF_FUNGROUP (fundef));
+        INFO_TUP_BESTFITTINGFUN (arg_info) = fundef;
+
+        while (funs != NULL) {
+            INFO_TUP_BESTFITTINGFUN (arg_info)
+              = GetBestFittingFun (LINKLIST_LINK (funs),
+                                   INFO_TUP_BESTFITTINGFUN (arg_info), args);
+            funs = LINKLIST_NEXT (funs);
+        }
+        result = INFO_TUP_BESTFITTINGFUN (arg_info);
+    }
+
+    DBUG_RETURN (result);
 }
 
 /************************************************************************
@@ -625,7 +938,7 @@ TUPlet (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("TUPlet");
 
-    INFO_TUP_NEWTYPE (arg_info) = NULL;
+    INFO_TUP_TYPE (arg_info) = NULL;
 
     /*
      * traverse in ap or with node
@@ -634,9 +947,8 @@ TUPlet (node *arg_node, info *arg_info)
 
     if (INFO_TUP_CORRECTFUNCTION (arg_info)) {
 
-        if (INFO_TUP_NEWTYPE (arg_info) == NULL) {
-            INFO_TUP_NEWTYPE (arg_info) = NTCnewTypeCheck_Expr (LET_EXPR (arg_node));
-        }
+        DBUG_ASSERT ((INFO_TUP_TYPE (arg_info) != NULL),
+                     "Missing type in info structure");
 
         INFO_TUP_TYPECOUNTER (arg_info) = 0;
         LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
@@ -835,7 +1147,7 @@ TUPcode (node *arg_node, info *arg_info)
         CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
     }
 
-    INFO_TUP_WLEXPR (arg_info) = NULL;
+    INFO_TUP_WLEXPR (arg_info) = NTCnewTypeCheck_Expr (CODE_CEXPRS (arg_node));
 
     DBUG_RETURN (arg_node);
 }
@@ -882,17 +1194,35 @@ TUPap (node *arg_node, info *arg_info)
         }
     } else {
 
-        /* first of all, try to specialize function */
-        AP_FUNDEF (arg_node)
-          = TryToSpecializeFunction (AP_FUNDEF (arg_node), AP_ARGS (arg_node), arg_info);
+        node *result = NULL;
+        /*
+         * first of all, try to find an already existing
+         * specialized function
+         */
+        result = TryToFindSpecializedFunction (AP_FUNDEF (arg_node), AP_ARGS (arg_node),
+                                               arg_info);
 
-        /* now we have the possibility to do an static dispatch */
-        AP_FUNDEF (arg_node) = TryStaticDispatch (AP_FUNDEF (arg_node), arg_info);
+        if (result == AP_FUNDEF (arg_node)) {
+            /*
+             * no better fitting specialized functions found
+             * try to specialize current function
+             */
+            result = TryToSpecializeFunction (AP_FUNDEF (arg_node), AP_ARGS (arg_node),
+                                              arg_info);
+        }
+
+        if (result != NULL) {
+            /*
+             * more special function exists
+             * use more special function
+             */
+            AP_FUNDEF (arg_node) = result;
+        }
     }
 
     if (INFO_TUP_CORRECTFUNCTION (arg_info)) {
 
-        INFO_TUP_NEWTYPE (arg_info)
+        INFO_TUP_TYPE (arg_info)
           = TUmakeProductTypeFromRets (FUNDEF_RETS (AP_FUNDEF (arg_node)));
     }
 
@@ -907,8 +1237,7 @@ TUPids (node *arg_node, info *arg_info)
     DBUG_ENTER ("TUPids");
 
     oldtype = AVIS_TYPE (IDS_AVIS (arg_node));
-    type
-      = TYgetProductMember (INFO_TUP_NEWTYPE (arg_info), INFO_TUP_TYPECOUNTER (arg_info));
+    type = TYgetProductMember (INFO_TUP_TYPE (arg_info), INFO_TUP_TYPECOUNTER (arg_info));
 
     switch (TYcmpTypes (type, oldtype)) {
 
@@ -956,7 +1285,7 @@ TUPmodarray (node *arg_node, info *arg_info)
     info = TEmakeInfo (global.linenum, "with", "", "modarray", NULL, NULL, NULL, NULL);
     prod = TYmakeProductType (3, idx, array, expr);
 
-    INFO_TUP_NEWTYPE (arg_info) = NTCCTwl_mod (info, prod);
+    INFO_TUP_TYPE (arg_info) = NTCCTwl_mod (info, prod);
 
     prod = TYfreeType (prod);
 
@@ -978,7 +1307,7 @@ TUPgenarray (node *arg_node, info *arg_info)
     prod = TYmakeProductType (4, idx, shp, expr, dexpr);
     info = TEmakeInfo (global.linenum, "with", "", "genarray", NULL, NULL, NULL, NULL);
 
-    INFO_TUP_NEWTYPE (arg_info) = NTCCTwl_gen (info, prod);
+    INFO_TUP_TYPE (arg_info) = NTCCTwl_gen (info, prod);
 
     prod = TYfreeType (prod);
 
@@ -998,9 +1327,147 @@ TUPfold (node *arg_node, info *arg_info)
     prod = TYmakeProductType (2, neutr, expr);
     info = TEmakeInfo (global.linenum, "with", "", "fold", NULL, NULL, NULL, NULL);
 
-    INFO_TUP_NEWTYPE (arg_info) = NTCCTwl_fold (info, prod);
+    INFO_TUP_TYPE (arg_info) = NTCCTwl_fold (info, prod);
 
     prod = TYfreeType (prod);
 
     DBUG_RETURN (arg_node);
 }
+
+node *
+TUPexprs (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("TUPexprs");
+
+    INFO_TUP_TYPE (arg_info) = NTCnewTypeCheck_Expr (arg_node);
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+TUPid (node *arg_node, info *arg_info)
+{
+    ntype *type;
+    DBUG_ENTER ("TUPid");
+
+    type = AVIS_TYPE (ID_AVIS (arg_node));
+
+    DBUG_ASSERT ((type != NULL), "Missing type information");
+
+    INFO_TUP_TYPE (arg_info) = TYcopyType (type);
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+TUParray (node *arg_node, info *arg_info)
+{
+    ntype *elems, *type;
+    int num_elems;
+    te_info *info;
+    DBUG_ENTER ("TUParray");
+
+    if (NULL != ARRAY_AELEMS (arg_node)) {
+        ARRAY_AELEMS (arg_node) = TRAVdo (ARRAY_AELEMS (arg_node), arg_info);
+    } else {
+        INFO_TUP_TYPE (arg_info) = TYmakeProductType (0);
+    }
+
+    DBUG_ASSERT (TYisProd (INFO_TUP_TYPE (arg_info)),
+                 "NTCexprs did not create a product type");
+
+    elems = INFO_TUP_TYPE (arg_info);
+    INFO_TUP_TYPE (arg_info) = NULL;
+
+    /*
+     * Now, we built the resulting (AKS-)type type from the product type found:
+     */
+    num_elems = TYgetProductSize (elems);
+    if (num_elems > 0) {
+
+        info = TEmakeInfo (global.linenum, "prf", "", "array-constructor", NULL, NULL,
+                           NULL, NULL);
+        type = NTCCTprf_array (info, elems);
+
+        TYfreeType (elems);
+
+    } else {
+        /**
+         * we are dealing with an empty array here!
+         * To get started, we assume all empty arrays to be of type int[0].
+         * If an other type is desired, it has to be casted to that type
+         * (which - at the time being - is not yet supported 8-)
+         */
+        type
+          = TYmakeProductType (1, TYmakeAKV (TYmakeSimpleType (T_int),
+                                             COmakeConstant (T_int, SHcreateShape (1, 0),
+                                                             NULL)));
+    }
+
+    INFO_TUP_TYPE (arg_info) = TYgetProductMember (type, 0);
+    TYfreeTypeConstructor (type);
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+TUPprf (node *arg_node, info *arg_info)
+{
+    ntype *args, *res;
+    prf prf;
+    te_info *info;
+
+    DBUG_ENTER ("TUPprf");
+
+    prf = PRF_PRF (arg_node);
+
+    /*
+     * First we collect the argument types. NTCexprs puts them into a product type
+     * which is expected in INFO_NTC_TYPE( arg_info) afterwards!
+     * INFO_NTC_NUM_EXPRS_SOFAR is used to count the number of exprs "on the fly"!
+     */
+
+    if (NULL != PRF_ARGS (arg_node)) {
+        PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
+    } else {
+        INFO_TUP_TYPE (arg_info) = TYmakeProductType (0);
+    }
+
+    DBUG_ASSERT (TYisProd (INFO_TUP_TYPE (arg_info)),
+                 "TUPexprs did not create a product type");
+
+    args = INFO_TUP_TYPE (arg_info);
+    INFO_TUP_TYPE (arg_info) = NULL;
+
+    info = TEmakeInfo (global.linenum, "prf", "", global.prf_string[prf], NULL, NULL,
+                       global.ntc_cffuntab[prf], NULL);
+    res = NTCCTcomputeType (global.ntc_funtab[prf], info, args);
+
+    TYfreeType (args);
+    INFO_TUP_TYPE (arg_info) = res;
+
+    DBUG_RETURN (arg_node);
+}
+
+#define TUPBASIC(name, base)                                                             \
+    node *TUP##name (node *arg_node, info *arg_info)                                     \
+    {                                                                                    \
+        constant *cv;                                                                    \
+        DBUG_ENTER ("TUP" #name);                                                        \
+                                                                                         \
+        cv = COaST2Constant (arg_node);                                                  \
+        if (cv == NULL) {                                                                \
+            INFO_TUP_TYPE (arg_info)                                                     \
+              = TYmakeAKS (TYmakeSimpleType (base), SHcreateShape (0));                  \
+        } else {                                                                         \
+            INFO_TUP_TYPE (arg_info) = TYmakeAKV (TYmakeSimpleType (base), cv);          \
+        }                                                                                \
+        INFO_TUP_TYPE (arg_info) = TYmakeProductType (1, INFO_TUP_TYPE (arg_info));      \
+        DBUG_RETURN (arg_node);                                                          \
+    }
+
+TUPBASIC (num, T_int)
+TUPBASIC (double, T_double)
+TUPBASIC (float, T_float)
+TUPBASIC (char, T_char)
+TUPBASIC (bool, T_bool)
