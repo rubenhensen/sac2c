@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.146  2004/11/25 18:08:38  khf
+ * inserted new(old) macros
+ *
  * Revision 3.145  2004/11/25 17:20:09  sbs
  * added AP_NAME and AP_MOD
  *
@@ -1479,8 +1482,6 @@ extern node *TCmakeVinfoDollar (node *next);
 #define ID_NAME(n) AVIS_NAME (ID_AVIS (n))
 #define ID_NTYPE(n) AVIS_TYPE (ID_AVIS (n))
 #define ID_DIM(n) VARDEC_OR_ARG_DIM (ID_DECL (n))
-#define ID_SHPSEG(n) TYPES_SHPSEG (VARDEC_OR_ARG_TYPE (ID_DECL (n)))
-#define ID_SHAPE(n, x) SHPSEG_SHAPE (ID_SHPSEG (n), x)
 #define ID_DECL_NAME(n) VARDEC_OR_ARG_NAME (ID_DECL (n))
 #define ID_DECL_NEXT(n) VARDEC_OR_ARG_NEXT (ID_DECL (n))
 #define ID_PADDED(n) VARDEC_OR_ARG_PADDED (ID_DECL (n))
@@ -1491,6 +1492,9 @@ extern node *TCmakeVinfoDollar (node *next);
        : ((NODE_TYPE (AVIS_DECL (ID_AVIS (n))) == N_arg)                                 \
             ? ARG_TYPE (AVIS_DECL (ID_AVIS (n)))                                         \
             : NULL))
+
+#define ID_SHPSEG(n) TYPES_SHPSEG (ID_TYPE (n))
+#define ID_SHAPE(n, x) SHPSEG_SHAPE (ID_SHPSEG (n), x)
 
 #define ID_SSAASSIGN(n) (AVIS_SSAASSIGN (ID_AVIS (n)))
 
@@ -1817,7 +1821,7 @@ extern int TCcountParts (node *parts);
  ***  N_with2 :
  ***/
 
-#define WITH2_TYPE(n) (WITHOP_TYPE (WITH2_WITHOP (n)))
+#define WITH2_TYPE(n) (NODE_TYPE (WITH2_WITHOP (n)))
 
 #define WITH2_IDS(n) (WITHID_IDS (WITH2_WITHID (n)))
 #define WITH2_VEC(n) (WITHID_VEC (WITH2_WITHID (n)))
@@ -1829,6 +1833,9 @@ extern int TCcountParts (node *parts);
  */
 #define WITH2_CBLOCK(n) (CODE_CBLOCK (WITH2_CODE (n)))
 #define WITH2_CEXPRS(n) (CODE_CEXPRS (WITH2_CODE (n)))
+
+#define WITH2_DEFAULT(n) (GENARRAY_DEFAULT (WITH2_WITHOP (n)))
+#define WITH2_SHAPE(n) (GENARRAY_SHAPE (WITH2_WITHOP (n)))
 
 /*--------------------------------------------------------------------------*/
 
