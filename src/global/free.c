@@ -1,7 +1,15 @@
 /*
  *
  * $Log$
- * Revision 1.10  1995/08/24 14:01:56  cg
+ * Revision 1.11  1995/11/16 19:33:24  cg
+ * The free module was entirely rewritten.
+ * Each node type now has its own free function.
+ * Functions FreeTree and FreeNode for deleting single nodes and
+ * whole sub trees.
+ * Various free functions for non-node structures.
+ * FreeNodelist moved from tree_compound.c
+ *
+ * Revision 1.10  1995/08/24  14:01:56  cg
  * minor changes concerning objects etc.
  *
  * Revision 1.9  1995/06/16  13:10:46  asi
@@ -38,218 +46,1180 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+
 #include "dbug.h"
-#include "tree.h"
+#include "my_debug.h"
+
+#include "types.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
+
 #include "traverse.h"
-#include "optimize.h"
 
 /*
+ *  Important Remark:
  *
- *  functionname  :
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
+ *  All removals of parts of or the entire syntax tree should be done
+ *  by using the functions in this file.
  *
- *  remarks       :
+ *  Module names are never be freed, because it is difficult if not
+ *  impossible to decide whether it is a private heap location or
+ *  a heap location shared with other nodes.
+ *
+ *
  *
  */
 
-void
-FreeIds (ids *ids)
+/*--------------------------------------------------------------------------*/
+/*  Basic Free-Macros    (internal use only)                                */
+/*--------------------------------------------------------------------------*/
 
-{
-    DBUG_ENTER ("FreeIds");
-    if (ids->next != NULL)
-        FreeIds (ids->next);
-    DBUG_ASSERT ((ids->id != NULL), "Ids without name of identificator");
-    FREE (ids->id);
-    FREE (ids);
-    DBUG_VOID_RETURN;
-}
-
-void
-FreeIdsOnly (ids *ids)
-
-{
-    DBUG_ENTER ("FreeIdsOnly");
-    if (ids->next != NULL)
-        FreeIdsOnly (ids->next);
-    FREE (ids);
-    DBUG_VOID_RETURN;
-}
-
-void
-FreeImplist (node *implist)
-
-{
-    int i;
-
-    DBUG_ENTER ("FreeImplist");
-    if (implist->node[0] != NULL)
-        FreeImplist (implist->node[0]);
-    for (i = 1; i < MAX_SONS; i++)
-        if (implist->node[i] != NULL)
-            FreeIds ((ids *)implist->node[i]);
-    FREE (implist);
-    DBUG_VOID_RETURN;
-}
-
-void
-FreeMask (node *arg_node)
-{
-    int i;
-    DBUG_ENTER ("FreeMask");
-    for (i = 0; i < MAX_MASK; i++) {
-        if (arg_node->mask[i] != NULL)
-            FREE (arg_node->mask[i]);
+#define FREE(address)                                                                    \
+    if (address != NULL) {                                                               \
+        DBUG_PRINT ("MEM", ("Free memory at adress: %08x", address));                    \
+        free (address);                                                                  \
+        address = NULL;                                                                  \
     }
-    DBUG_VOID_RETURN;
+
+#define FREEMASK(mac)                                                                    \
+    {                                                                                    \
+        int i;                                                                           \
+                                                                                         \
+        for (i = 0; i < MAX_MASK; i++) {                                                 \
+            FREE (mac (arg_node, i));                                                    \
+        }                                                                                \
+    }
+
+#define FREETRAV(node)                                                                   \
+    {                                                                                    \
+        if (node != NULL) {                                                              \
+            node = Trav (node, arg_info);                                                \
+        }                                                                                \
+    }
+
+#define FREECONT(node)                                                                   \
+    ((arg_info != NULL) && (node != NULL)) ? Trav (node, arg_info) : node
+
+/*--------------------------------------------------------------------------*/
+/*  Free-functions for non-node structures                                  */
+/*--------------------------------------------------------------------------*/
+
+/*
+ *  Basically, there are two different free-functions for each non-node
+ *  structure:
+ *             Free<struct> and FreeAll<struct>
+ *
+ *  Both get a pointer to the respective structure as argument.
+ *
+ *  Free<struct> removes only the structure referenced by the argument
+ *  and returns a pointer to the next structure in the chain of structures.
+ *  These functions are useful to eliminate a single structure from a list.
+ *
+ *  FreeAll<struct> removes the whole sub tree which is referenced.
+ *  All elements of list are freed in this case.
+ *
+ */
+
+shpseg *
+FreeShpseg (shpseg *fr)
+{
+    DBUG_ENTER ("FreeShpseg");
+
+    DBUG_PRINT ("FREE", ("Removing shpseg"));
+
+    FREE (fr);
+    fr = NULL;
+
+    DBUG_RETURN (fr);
 }
 
-void
-FreeShpseg (shpseg *shpseg)
+types *
+FreeTypes (types *fr)
 {
+    types *tmp;
+
     DBUG_ENTER ("FreeTypes");
-    if (shpseg->next != NULL)
-        FreeShpseg (shpseg->next);
-    FREE (shpseg);
-    DBUG_VOID_RETURN;
+
+    DBUG_PRINT ("FREE", ("Removing types: %s", mdb_type[TYPES_BASETYPE (fr)]));
+
+    tmp = fr;
+    fr = TYPES_NEXT (fr);
+
+    if (TYPES_DIM (tmp) > 0) {
+        FreeShpseg (TYPES_SHPSEG (tmp));
+    }
+
+    FREE (TYPES_NAME (tmp));
+
+    FREE (tmp->id);
+
+    /*
+     *  Last FREE is necessary due to the real data structure behind the
+     *  virtual syntax tree.
+     */
+
+    FREE (tmp);
+
+    DBUG_RETURN (fr);
 }
 
-void
-FreeTypes (types *type)
+types *
+FreeAllTypes (types *fr)
 {
-    DBUG_ENTER ("FreeTypes");
-    if (type->next != NULL)
-        FreeTypes (type->next);
-    if (type->shpseg != NULL)
-        FreeShpseg (type->shpseg);
-    if (type->name != NULL)
-        FREE (type->name);
-    if (type->id != NULL)
-        FREE (type->id);
-    if (type->name_mod != NULL)
-        FREE (type->name_mod);
-    if (type->id_mod != NULL)
-        FREE (type->id_mod);
-    DBUG_VOID_RETURN;
+    DBUG_ENTER ("FreeAllTypes");
+
+    while (fr != NULL) {
+        fr = FreeTypes (fr);
+    }
+
+    DBUG_RETURN (fr);
 }
 
-void
-FreeVarArg (node *var)
+ids *
+FreeIds (ids *fr)
 {
-    DBUG_ENTER ("FreeVarArg");
-    if (var->node[0] != NULL)
-        FreeVarArg (var->node[0]);
-    if (var->info.types != NULL)
-        FreeTypes (var->info.types);
-    FREE (var);
-    DBUG_VOID_RETURN;
+    ids *tmp;
+
+    DBUG_ENTER ("FreeIds");
+
+    DBUG_PRINT ("FREE", ("Removing ids: %s", IDS_NAME (fr)));
+
+    tmp = fr;
+    fr = IDS_NEXT (fr);
+
+    FREE (IDS_NAME (tmp));
+
+    FREE (tmp);
+
+    DBUG_RETURN (fr);
 }
+
+ids *
+FreeAllIds (ids *fr)
+{
+    DBUG_ENTER ("FreeAllIds");
+
+    while (fr != NULL) {
+        fr = FreeIds (fr);
+    }
+
+    DBUG_RETURN (fr);
+}
+
+nums *
+FreeNums (nums *fr)
+{
+    nums *tmp;
+
+    DBUG_ENTER ("FreeNums");
+
+    DBUG_PRINT ("FREE", ("Removing Nums: %d", NUMS_NUM (fr)));
+
+    tmp = fr;
+    fr = NUMS_NEXT (fr);
+    FREE (tmp);
+
+    DBUG_RETURN (fr);
+}
+
+nums *
+FreeAllNums (nums *fr)
+{
+    DBUG_ENTER ("FreeAllNums");
+
+    while (fr != NULL) {
+        fr = FreeNums (fr);
+    }
+
+    DBUG_RETURN (fr);
+}
+
+strings *
+FreeStrings (strings *fr)
+{
+    strings *tmp;
+
+    DBUG_ENTER ("FreeStrings");
+
+    DBUG_PRINT ("FREE", ("Removing strings: %s", STRINGS_STRING (fr)));
+
+    tmp = fr;
+    fr = STRINGS_NEXT (fr);
+
+    FREE (STRINGS_STRING (tmp));
+
+    FREE (tmp);
+
+    DBUG_RETURN (fr);
+}
+
+strings *
+FreeAllStrings (strings *fr)
+{
+    DBUG_ENTER ("FreeAllStrings");
+
+    while (fr != NULL) {
+        fr = FreeStrings (fr);
+    }
+
+    DBUG_RETURN (fr);
+}
+
+/*
+ *  FreeNodelist always frees entire list.
+ */
+
+nodelist *
+FreeNodelist (nodelist *list)
+{
+    nodelist *tmp;
+
+    DBUG_ENTER ("FreeNodelist");
+
+    while (list != NULL) {
+        tmp = list;
+        list = NODELIST_NEXT (list);
+        free (tmp);
+    }
+
+    tmp = NULL;
+
+    DBUG_RETURN (tmp);
+}
+
+/*--------------------------------------------------------------------------*/
+/*  General free-functions for node structures                              */
+/*--------------------------------------------------------------------------*/
+
+/*
+ *  There are two general free functions for node structures:
+ *
+ *  FreeNode removes the given node and returns a pointer to the next
+ *  node structure in a list of node structures.
+ *  This function is suitable for all node types which form chained lists,
+ *  e.g. fundef, objdef, typedef. For other node types a NULL is returned.
+ *
+ *  FreeTree removes the whole sub tree behind the given pointer.
+ *
+ */
+
+node *
+FreeNode (node *free_node)
+{
+    funptr *store_tab;
+
+    DBUG_ENTER ("FreeNode");
+
+    store_tab = act_tab;
+    act_tab = free_tab;
+
+    free_node = Trav (free_node, NULL);
+
+    act_tab = store_tab;
+
+    DBUG_RETURN (free_node);
+}
+
+node *
+FreeTree (node *free_node)
+{
+    funptr *store_tab;
+
+    DBUG_ENTER ("FreeTree");
+
+    store_tab = act_tab;
+    act_tab = free_tab;
+
+    Trav (free_node, free_node);
+
+    act_tab = store_tab;
+
+    DBUG_RETURN ((node *)NULL);
+}
+
+/*--------------------------------------------------------------------------*/
+/*  Specific free-functions for node structures                             */
+/*--------------------------------------------------------------------------*/
+
+/*
+ *  There is one specific free function for each node type.
+ *  They all fit the signature of the univeral traversal mechanism.
+ *  The first argument points to the node to be freed, while the second
+ *  argument is used as a flag whether removing the given node alone (==NULL)
+ *  or removing the whole sub tree behind it (!=NULL).
+ *
+ *  Normally, it is easier to use the general free functions described above.
+ *
+ */
 
 node *
 FreeModul (node *arg_node, node *arg_info)
 {
+    node *tmp = NULL;
+
     DBUG_ENTER ("FreeModul");
-    if (arg_node->node[0] != NULL)
-        arg_node->node[0] = Trav (arg_node->node[0], arg_info);
-    if (arg_node->node[1] != NULL)
-        arg_node->node[1] = Trav (arg_node->node[1], arg_info);
-    if (arg_node->node[2] != NULL)
-        arg_node->node[2] = Trav (arg_node->node[2], arg_info);
-    if (arg_node->node[3] != NULL)
-        arg_node->node[3] = Trav (arg_node->node[3], arg_info);
-    if (arg_node->node[4] != NULL)
-        arg_node->node[4] = Trav (arg_node->node[4], arg_info);
+
+    DBUG_PRINT ("FREE", ("Removing contents of N_modul node ..."));
+
+    FREETRAV (MODUL_IMPORTS (arg_node));
+    FREETRAV (MODUL_TYPES (arg_node));
+    FREETRAV (MODUL_OBJS (arg_node));
+    FREETRAV (MODUL_FUNS (arg_node));
+    FREETRAV (MODUL_DECL (arg_node));
+    FREETRAV (MODUL_STORE_IMPORTS (arg_node));
+
+    FREE (MODUL_NAME (arg_node));
+
+    DBUG_PRINT ("FREE", ("Removing N_modul node ..."));
+
     FREE (arg_node);
-    DBUG_RETURN ((node *)NULL);
+
+    DBUG_RETURN (tmp);
 }
 
 node *
-FreeNoInfo (node *arg_node, node *arg_info)
+FreeModdec (node *arg_node, node *arg_info)
 {
-    int i;
+    node *tmp = NULL;
 
-    DBUG_ENTER ("FreeNoInfo");
-    for (i = 0; i < arg_node->nnode; i++)
-        arg_node->node[i] = Trav (arg_node->node[i], arg_info);
-    FreeMask (arg_node);
+    DBUG_ENTER ("FreeModdec");
+
+    DBUG_PRINT ("FREE", ("Removing contents of N_moddec node ..."));
+
+    FREETRAV (MODDEC_IMPORTS (arg_node));
+    FREETRAV (MODDEC_OWN (arg_node));
+
+    FREE (MODDEC_NAME (arg_node));
+    FREE (MODDEC_PREFIX (arg_node));
+
+    DBUG_PRINT ("FREE", ("Removing N_moddec node ..."));
+
     FREE (arg_node);
-    DBUG_RETURN ((node *)NULL);
+
+    DBUG_RETURN (tmp);
 }
 
 node *
-FreeInfoIds (node *arg_node, node *arg_info)
+FreeClassdec (node *arg_node, node *arg_info)
 {
-    int i;
+    node *tmp = NULL;
 
-    DBUG_ENTER ("FreeInfoIds");
-    for (i = 0; i < arg_node->nnode; i++)
-        arg_node->node[i] = Trav (arg_node->node[i], arg_info);
-    FreeMask (arg_node);
-    /*  FreeIds(arg_node->info.ids);*/
+    DBUG_ENTER ("FreeClassdec");
+
+    DBUG_PRINT ("FREE", ("Removing contents of N_classdec node ..."));
+
+    FREETRAV (CLASSDEC_IMPORTS (arg_node));
+    FREETRAV (CLASSDEC_OWN (arg_node));
+
+    FREE (CLASSDEC_NAME (arg_node));
+
+    FREE (CLASSDEC_PREFIX (arg_node));
+
+    DBUG_PRINT ("FREE", ("Removing N_classdec node ..."));
+
     FREE (arg_node);
-    DBUG_RETURN ((node *)NULL);
+
+    DBUG_RETURN (tmp);
 }
 
 node *
-FreeInfoId (node *arg_node, node *arg_info)
+FreeSib (node *arg_node, node *arg_info)
 {
-    int i;
+    node *tmp = NULL;
 
-    DBUG_ENTER ("FreeInfoId");
-    for (i = 0; i < arg_node->nnode; i++)
-        arg_node->node[i] = Trav (arg_node->node[i], arg_info);
-    FreeMask (arg_node);
-    FREE (arg_node->info.id);
+    DBUG_ENTER ("FreeSib");
+
+    DBUG_PRINT ("FREE", ("Removing contents of N_sib node ..."));
+
+    FREETRAV (SIB_TYPES (arg_node));
+    FREETRAV (SIB_FUNS (arg_node));
+
+    FreeAllStrings (SIB_LINKLIST (arg_node));
+
+    DBUG_PRINT ("FREE", ("Removing N_sib node ..."));
+
     FREE (arg_node);
-    DBUG_RETURN ((node *)NULL);
+
+    DBUG_RETURN (tmp);
 }
 
 node *
-FreeInfoType (node *arg_node, node *arg_info)
+FreeImplist (node *arg_node, node *arg_info)
 {
-    int i;
+    node *tmp = NULL;
 
-    DBUG_ENTER ("FreeInfoType");
-    for (i = 0; i < arg_node->nnode; i++)
-        if (NULL != arg_node->node[i]) {
-            arg_node->node[i] = Trav (arg_node->node[i], arg_info);
-        }
-    FreeMask (arg_node);
-    FreeTypes (arg_node->info.types);
+    DBUG_ENTER ("FreeImplist");
+
+    DBUG_PRINT ("FREE",
+                ("Removing contents of N_implist node %s ...", IMPLIST_NAME (arg_node)));
+
+    tmp = FREECONT (IMPLIST_NEXT (arg_node));
+
+    FREE (IMPLIST_NAME (arg_node));
+    FreeAllIds (IMPLIST_ITYPES (arg_node));
+    FreeAllIds (IMPLIST_ETYPES (arg_node));
+    FreeAllIds (IMPLIST_OBJS (arg_node));
+    FreeAllIds (IMPLIST_FUNS (arg_node));
+
+    DBUG_PRINT ("FREE", ("Removing N_implist node ..."));
+
     FREE (arg_node);
-    DBUG_RETURN ((node *)NULL);
+
+    DBUG_RETURN (tmp);
 }
 
-/*
+node *
+FreeExplist (node *arg_node, node *arg_info)
+{
+    node *tmp = NULL;
+
+    DBUG_ENTER ("FreeExplist");
+
+    DBUG_PRINT ("FREE", ("Removing contents of N_explist node ..."));
+
+    FREETRAV (EXPLIST_ITYPES (arg_node))
+    FREETRAV (EXPLIST_ETYPES (arg_node));
+    FREETRAV (EXPLIST_OBJS (arg_node));
+    FREETRAV (EXPLIST_FUNS (arg_node));
+
+    DBUG_PRINT ("FREE", ("Removing N_explist node ..."));
+
+    FREE (arg_node);
+
+    DBUG_RETURN (tmp);
+}
+
+node *
+FreeTypedef (node *arg_node, node *arg_info)
+{
+    node *tmp = NULL;
+
+    DBUG_ENTER ("FreeTypedef");
+
+    DBUG_PRINT ("FREE",
+                ("Removing contents of N_typedef node %s ...", ItemName (arg_node)));
+
+    tmp = FREECONT (TYPEDEF_NEXT (arg_node));
+
+    FREE (TYPEDEF_NAME (arg_node));
+    FreeAllTypes (TYPEDEF_TYPE (arg_node));
+
+    DBUG_PRINT ("FREE", ("Removing N_typedef node ..."));
+
+    FREE (arg_node);
+
+    DBUG_RETURN (tmp);
+}
+
+node *
+FreeObjdef (node *arg_node, node *arg_info)
+{
+    node *tmp = NULL;
+
+    DBUG_ENTER ("FreeObjdef");
+
+    DBUG_PRINT ("FREE",
+                ("Removing contents of N_objdef node %s ...", ItemName (arg_node)));
+
+    tmp = FREECONT (OBJDEF_NEXT (arg_node));
+
+    FREETRAV (OBJDEF_EXPR (arg_node));
+
+    FREE (OBJDEF_NAME (arg_node));
+    FREE (OBJDEF_VARNAME (arg_node));
+    FreeTypes (OBJDEF_TYPE (arg_node));
+
+    DBUG_PRINT ("FREE", ("Removing N_objdef node ..."));
+
+    FREE (arg_node);
+
+    DBUG_RETURN (tmp);
+}
+
+node *
+FreeFundef (node *arg_node, node *arg_info)
+{
+    node *tmp = NULL;
+
+    DBUG_ENTER ("FreeFundef");
+
+    DBUG_PRINT ("FREE",
+                ("Removing contents of N_fundef node %s ...", ItemName (arg_node)));
+
+    tmp = FREECONT (FUNDEF_NEXT (arg_node));
+
+    FREETRAV (FUNDEF_BODY (arg_node));
+    FREETRAV (FUNDEF_ARGS (arg_node));
+
+    if ((FUNDEF_ICM (arg_node) != NULL) && (NODE_TYPE (FUNDEF_ICM (arg_node)) == N_icm)) {
+        FREETRAV (FUNDEF_ICM (arg_node));
+
+        /*
+         *  FUNDEF_ICM may not be freed without precondition, because it's
+         *  stored on the same real son node as FUNDEF_RETURN.
+         */
+    }
+
+    FREE (FUNDEF_NAME (arg_node));
+    FREE (FUNDEF_ALIAS (arg_node));
+
+    FreeNodelist (FUNDEF_NEEDOBJS (arg_node));
+
+    FREEMASK (FUNDEF_MASK);
+
+    DBUG_PRINT ("FREE", ("Removing N_fundef node ..."));
+
+    FREE (arg_node);
+
+    DBUG_RETURN (tmp);
+}
+
+node *
+FreeArg (node *arg_node, node *arg_info)
+{
+    node *tmp = NULL;
+
+    DBUG_ENTER ("FreeArg");
+
+    DBUG_PRINT ("FREE", ("Removing contents of N_arg node %s ...", ARG_NAME (arg_node)));
+
+    tmp = FREECONT (ARG_NEXT (arg_node));
+
+    FREE (ARG_NAME (arg_node));
+    FreeTypes (ARG_TYPE (arg_node));
+
+    DBUG_PRINT ("FREE", ("Removing N_arg node ..."));
+
+    FREE (arg_node);
+
+    DBUG_RETURN (tmp);
+}
+
+node *
+FreeBlock (node *arg_node, node *arg_info)
+{
+    node *tmp = NULL;
+
+    DBUG_ENTER ("FreeBlock");
+
+    DBUG_PRINT ("FREE", ("Removing contents of N_block node ..."));
+
+    FREETRAV (BLOCK_INSTR (arg_node));
+    FREETRAV (BLOCK_VARDEC (arg_node));
+    FreeNodelist (BLOCK_NEEDFUNS (arg_node));
+    FreeNodelist (BLOCK_NEEDTYPES (arg_node));
+    FREEMASK (BLOCK_MASK);
+
+    DBUG_PRINT ("FREE", ("Removing N_block node ..."));
+
+    FREE (arg_node);
+
+    DBUG_RETURN (tmp);
+}
+
+node *
+FreeVardec (node *arg_node, node *arg_info)
+{
+    node *tmp = NULL;
+
+    DBUG_ENTER ("FreeVardec");
+
+    DBUG_PRINT ("FREE",
+                ("Removing contents of N_vardec node %s ...", VARDEC_NAME (arg_node)));
+
+    tmp = FREECONT (VARDEC_NEXT (arg_node));
+
+    FREE (VARDEC_NAME (arg_node));
+    FreeTypes (VARDEC_TYPE (arg_node));
+
+    DBUG_PRINT ("FREE", ("Removing N_vardec node ..."));
+
+    FREE (arg_node);
+
+    DBUG_RETURN (tmp);
+}
+
+node *
+FreeAssign (node *arg_node, node *arg_info)
+{
+    node *tmp = NULL;
+
+    DBUG_ENTER ("FreeAssign");
+
+    DBUG_PRINT ("FREE", ("Removing contents of N_assign node ..."));
+
+    tmp = FREECONT (ASSIGN_NEXT (arg_node));
+
+    FREETRAV (ASSIGN_INSTR (arg_node));
+    FREEMASK (ASSIGN_MASK);
+
+    DBUG_PRINT ("FREE", ("Removing N_assign node ..."));
+
+    FREE (arg_node);
+
+    DBUG_RETURN (tmp);
+}
+
+node *
+FreeLet (node *arg_node, node *arg_info)
+{
+    node *tmp = NULL;
+
+    DBUG_ENTER ("FreeLet");
+
+    DBUG_PRINT ("FREE", ("Removing contents of N_let node ..."));
+
+    FREETRAV (LET_EXPR (arg_node));
+    FreeAllIds (LET_IDS (arg_node));
+
+    DBUG_PRINT ("FREE", ("Removing N_let node ..."));
+
+    FREE (arg_node);
+
+    DBUG_RETURN (tmp);
+}
+
+node *
+FreeCast (node *arg_node, node *arg_info)
+{
+    node *tmp = NULL;
+
+    DBUG_ENTER ("FreeCast");
+
+    DBUG_PRINT ("FREE", ("Removing contents of N_cast node ..."));
+
+    FREETRAV (CAST_EXPR (arg_node));
+    FreeTypes (CAST_TYPE (arg_node));
+
+    DBUG_PRINT ("FREE", ("Removing N_cast node ..."));
+
+    FREE (arg_node);
+
+    DBUG_RETURN (tmp);
+}
+
+node *
+FreeReturn (node *arg_node, node *arg_info)
+{
+    node *tmp = NULL;
+
+    DBUG_ENTER ("FreeReturn");
+
+    DBUG_PRINT ("FREE", ("Removing contents of N_return node ..."));
+
+    FREETRAV (RETURN_EXPRS (arg_node));
+
+    DBUG_PRINT ("FREE", ("Removing N_return node ..."));
+
+    FREE (arg_node);
+
+    DBUG_RETURN (tmp);
+}
+
+node *
+FreeCond (node *arg_node, node *arg_info)
+{
+    node *tmp = NULL;
+
+    DBUG_ENTER ("FreeCond");
+
+    DBUG_PRINT ("FREE", ("Removing contents of N_cond node ..."));
+
+    FREETRAV (COND_COND (arg_node));
+    FREETRAV (COND_THEN (arg_node));
+    FREETRAV (COND_ELSE (arg_node));
+
+    /*
+     * N_info does not fit into virtual syntax tree.
+     */
+
+    if (arg_node->node[3] != NULL) {
+        FREETRAV (COND_THENVARS (arg_node));
+        FREETRAV (COND_ELSEVARS (arg_node));
+        FREE (arg_node->node[3]);
+    }
+
+    DBUG_PRINT ("FREE", ("Removing N_cond node ..."));
+
+    FREE (arg_node);
+
+    DBUG_RETURN (tmp);
+}
+
+node *
+FreeDo (node *arg_node, node *arg_info)
+{
+    node *tmp = NULL;
+
+    DBUG_ENTER ("FreeDo");
+
+    DBUG_PRINT ("FREE", ("Removing contents of N_do node ..."));
+
+    FREETRAV (DO_BODY (arg_node));
+    FREETRAV (DO_COND (arg_node));
+
+    /*
+     * N_info does not fit into virtual syntax tree.
+     */
+
+    if (arg_node->node[2] != NULL) {
+        FREETRAV (DO_USEVARS (arg_node));
+        FREETRAV (DO_DEFVARS (arg_node));
+        FREE (arg_node->node[2]);
+    }
+
+    FREEMASK (DO_MASK);
+
+    DBUG_PRINT ("FREE", ("Removing N_do node ..."));
+
+    FREE (arg_node);
+
+    DBUG_RETURN (tmp);
+}
+
+node *
+FreeWhile (node *arg_node, node *arg_info)
+{
+    node *tmp = NULL;
+
+    DBUG_ENTER ("FreeWhile");
+
+    DBUG_PRINT ("FREE", ("Removing contents of N_while node ..."));
+
+    FREETRAV (WHILE_BODY (arg_node));
+    FREETRAV (WHILE_COND (arg_node));
+
+    /*
+     * N_info does not fit into virtual syntax tree.
+     */
+
+    if (arg_node->node[2] != NULL) {
+        FREETRAV (WHILE_USEVARS (arg_node));
+        FREETRAV (WHILE_DEFVARS (arg_node));
+        FREE (arg_node->node[2]);
+    }
+
+    FREEMASK (WHILE_MASK);
+
+    DBUG_PRINT ("FREE", ("Removing N_while node ..."));
+
+    FREE (arg_node);
+
+    DBUG_RETURN (tmp);
+}
+
+node *
+FreeAp (node *arg_node, node *arg_info)
+{
+    node *tmp = NULL;
+
+    DBUG_ENTER ("FreeAp");
+
+    DBUG_PRINT ("FREE", ("Removing contents of N_ap node %s ...", AP_NAME (arg_node)));
+
+    FREETRAV (AP_ARGS (arg_node));
+    FREE (AP_NAME (arg_node));
+
+    DBUG_PRINT ("FREE", ("Removing N_ap node ..."));
+
+    FREE (arg_node);
+
+    DBUG_RETURN (tmp);
+}
+
+node *
+FreeWith (node *arg_node, node *arg_info)
+{
+    node *tmp = NULL;
+
+    DBUG_ENTER ("FreeWith");
+
+    DBUG_PRINT ("FREE", ("Removing contents of N_with node ..."));
+
+    FREETRAV (WITH_GEN (arg_node));
+    FREETRAV (WITH_BODY (arg_node));
+    FREEMASK (WITH_MASK);
+
+    DBUG_PRINT ("FREE", ("Removing N_with node ..."));
+
+    FREE (arg_node);
+
+    DBUG_RETURN (tmp);
+}
+
+node *
+FreeGenerator (node *arg_node, node *arg_info)
+{
+    node *tmp = NULL;
+
+    DBUG_ENTER ("FreeGenerator");
+
+    DBUG_PRINT ("FREE", ("Removing contents of N_generator node ..."));
+
+    FREETRAV (GEN_LEFT (arg_node));
+    FREETRAV (GEN_RIGHT (arg_node));
+    FREE (GEN_ID (arg_node));
+    FREEMASK (GEN_MASK);
+
+    DBUG_PRINT ("FREE", ("Removing N_generator node ..."));
+
+    FREE (arg_node);
+
+    DBUG_RETURN (tmp);
+}
+
+node *
+FreeGenarray (node *arg_node, node *arg_info)
+{
+    node *tmp = NULL;
+
+    DBUG_ENTER ("FreeGenarray");
+
+    DBUG_PRINT ("FREE", ("Removing contents of N_genarray node ..."));
+
+    FREETRAV (GENARRAY_ARRAY (arg_node));
+    FREETRAV (GENARRAY_BODY (arg_node));
+
+    DBUG_PRINT ("FREE", ("Removing N_genarray node ..."));
+
+    FREE (arg_node);
+
+    DBUG_RETURN (tmp);
+}
+
+node *
+FreeModarray (node *arg_node, node *arg_info)
+{
+    node *tmp = NULL;
+
+    DBUG_ENTER ("FreeModarray");
+
+    DBUG_PRINT ("FREE", ("Removing contents of N_modarray node ..."));
+
+    FREETRAV (MODARRAY_ARRAY (arg_node));
+    FREETRAV (MODARRAY_BODY (arg_node));
+
+    DBUG_PRINT ("FREE", ("Removing N_modarray node ..."));
+
+    FREE (arg_node);
+
+    DBUG_RETURN (tmp);
+}
+
+node *
+FreeFoldprf (node *arg_node, node *arg_info)
+{
+    node *tmp = NULL;
+
+    DBUG_ENTER ("FreeFoldprf");
+
+    DBUG_PRINT ("FREE", ("Removing contents of N_folfprf node ..."));
+
+    FREETRAV (FOLDPRF_BODY (arg_node));
+    FREETRAV (FOLDPRF_NEUTRAL (arg_node));
+
+    DBUG_PRINT ("FREE", ("Removing N_foldprf node ..."));
+
+    FREE (arg_node);
+
+    DBUG_RETURN (tmp);
+}
+
+node *
+FreeFoldfun (node *arg_node, node *arg_info)
+{
+    node *tmp = NULL;
+
+    DBUG_ENTER ("FreeFoldfun");
+
+    DBUG_PRINT ("FREE",
+                ("Removing contents of N_foldfun node %s ...", FOLDFUN_NAME (arg_node)));
+
+    FREETRAV (FOLDFUN_BODY (arg_node));
+    FREETRAV (FOLDFUN_NEUTRAL (arg_node));
+    FREE (FOLDFUN_NAME (arg_node));
+
+    DBUG_PRINT ("FREE", ("Removing N_foldfun node ..."));
+
+    FREE (arg_node);
+
+    DBUG_RETURN (tmp);
+}
+
+node *
+FreeExprs (node *arg_node, node *arg_info)
+{
+    node *tmp = NULL;
+
+    DBUG_ENTER ("FreeExprs");
+
+    DBUG_PRINT ("FREE", ("Removing contents of N_exprs node ..."));
+
+    tmp = FREECONT (EXPRS_NEXT (arg_node));
+
+    FREETRAV (EXPRS_EXPR (arg_node));
+
+    DBUG_PRINT ("FREE", ("Removing N_exprs node ..."));
+
+    FREE (arg_node);
+
+    DBUG_RETURN (tmp);
+}
+
+node *
+FreeArray (node *arg_node, node *arg_info)
+{
+    node *tmp = NULL;
+
+    DBUG_ENTER ("FreeArray");
+
+    DBUG_PRINT ("FREE", ("Removing contents of N_array node ..."));
+
+    FREETRAV (ARRAY_AELEMS (arg_node));
+    FreeTypes (ARRAY_TYPE (arg_node));
+
+    DBUG_PRINT ("FREE", ("Removing N_array node ..."));
+
+    FREE (arg_node);
+
+    DBUG_RETURN (tmp);
+}
+
+node *
+FreeVinfo (node *arg_node, node *arg_info)
+{
+    node *tmp = NULL;
+
+    DBUG_ENTER ("FreeVinfo");
+
+    DBUG_PRINT ("FREE", ("Removing contents of N_vinfo node ..."));
+
+    tmp = FREECONT (VINFO_NEXT (arg_node));
+
+    FREE (VINFO_SHP (arg_node));
+
+    DBUG_PRINT ("FREE", ("Removing N_vinfo node ..."));
+
+    FREE (arg_node);
+
+    DBUG_RETURN (tmp);
+}
+
+node *
+FreeId (node *arg_node, node *arg_info)
+{
+    node *tmp = NULL;
+
+    DBUG_ENTER ("FreeId");
+
+    DBUG_PRINT ("FREE", ("Removing contents of N_id node %s ...", ID_NAME (arg_node)));
+
+    FREE (ID_NAME (arg_node));
+
+    DBUG_PRINT ("FREE", ("Removing N_id node ..."));
+
+    FREE (arg_node);
+
+    DBUG_RETURN (tmp);
+}
+
+node *
+FreeNum (node *arg_node, node *arg_info)
+{
+    node *tmp = NULL;
+
+    DBUG_ENTER ("FreeNum");
+
+    DBUG_PRINT ("FREE", ("Removing N_num node ..."));
+
+    FREE (arg_node);
+
+    DBUG_RETURN (tmp);
+}
+
+node *
+FreeFloat (node *arg_node, node *arg_info)
+{
+    node *tmp = NULL;
+
+    DBUG_ENTER ("FreeFloat");
+
+    DBUG_PRINT ("FREE", ("Removing N_float node ..."));
+
+    FREE (arg_node);
+
+    DBUG_RETURN (tmp);
+}
+
+node *
+FreeDouble (node *arg_node, node *arg_info)
+{
+    node *tmp = NULL;
+
+    DBUG_ENTER ("FreeDouble");
+
+    DBUG_PRINT ("FREE", ("Removing N_double node ..."));
+
+    FREE (arg_node);
+
+    DBUG_RETURN (tmp);
+}
+
+node *
+FreeBool (node *arg_node, node *arg_info)
+{
+    node *tmp = NULL;
+
+    DBUG_ENTER ("FreeBool");
+
+    DBUG_PRINT ("FREE", ("Removing N_bool node ..."));
+
+    FREE (arg_node);
+
+    DBUG_RETURN (tmp);
+}
+
+node *
+FreeStr (node *arg_node, node *arg_info)
+{
+    node *tmp = NULL;
+
+    DBUG_ENTER ("FreeStr");
+
+    DBUG_PRINT ("FREE",
+                ("Removing contents of N_str node %s ...", STR_STRING (arg_node)));
+
+    FREE (STR_STRING (arg_node));
+
+    DBUG_PRINT ("FREE", ("Removing N_str node ..."));
+
+    FREE (arg_node);
+
+    DBUG_RETURN (tmp);
+}
+
+node *
+FreePrf (node *arg_node, node *arg_info)
+{
+    node *tmp = NULL;
+
+    DBUG_ENTER ("FreePrf");
+
+    DBUG_PRINT ("FREE", ("Removing contents of N_prf node ..."));
+
+    FREETRAV (PRF_ARGS (arg_node));
+
+    DBUG_PRINT ("FREE", ("Removing N_prf node ..."));
+
+    FREE (arg_node);
+
+    DBUG_RETURN (tmp);
+}
+
+node *
+FreeEmpty (node *arg_node, node *arg_info)
+{
+    node *tmp = NULL;
+
+    DBUG_ENTER ("FreeEmpty");
+
+    DBUG_PRINT ("FREE", ("Removing N_empty node ..."));
+
+    FREE (arg_node);
+
+    DBUG_RETURN (tmp);
+}
+
+node *
+FreePost (node *arg_node, node *arg_info)
+{
+    node *tmp = NULL;
+
+    DBUG_ENTER ("FreePost");
+
+    DBUG_PRINT ("FREE", ("Removing contents of N_post node %s ...", POST_ID (arg_node)));
+
+    FREE (POST_ID (arg_node));
+
+    DBUG_PRINT ("FREE", ("Removing N_post node ..."));
+
+    FREE (arg_node);
+
+    DBUG_RETURN (tmp);
+}
+
+node *
+FreePre (node *arg_node, node *arg_info)
+{
+    node *tmp = NULL;
+
+    DBUG_ENTER ("FreePre");
+
+    DBUG_PRINT ("FREE", ("Removing contents of N_pre node %s ...", PRE_ID (arg_node)));
+
+    FREE (PRE_ID (arg_node));
+
+    DBUG_PRINT ("FREE", ("Removing N_pre node ..."));
+
+    FREE (arg_node);
+
+    DBUG_RETURN (tmp);
+}
+
+node *
+FreeInc (node *arg_node, node *arg_info)
+{
+    node *tmp = NULL;
+
+    DBUG_ENTER ("FreeInc");
+
+    DBUG_PRINT ("FREE", ("Removing N_inc node ..."));
+
+    FREE (arg_node);
+
+    DBUG_RETURN (tmp);
+}
+
+node *
+FreeDec (node *arg_node, node *arg_info)
+{
+    node *tmp = NULL;
+
+    DBUG_ENTER ("FreeDec");
+
+    DBUG_PRINT ("FREE", ("Removing N_dec node ..."));
+
+    FREE (arg_node);
+
+    DBUG_RETURN (tmp);
+}
+
+node *
+FreeIcm (node *arg_node, node *arg_info)
+{
+    node *tmp = NULL;
+
+    DBUG_ENTER ("FreeIcm");
+
+    DBUG_PRINT ("FREE", ("Removing contents of N_icm node %s ...", ICM_NAME (arg_node)));
+
+    tmp = FREECONT (ICM_NEXT (arg_node));
+
+    FREETRAV (ICM_ARGS (arg_node));
+    FREE (ICM_NAME (arg_node));
+
+    DBUG_PRINT ("FREE", ("Removing N_icm node ..."));
+
+    FREE (arg_node);
+
+    DBUG_RETURN (tmp);
+}
+
+/********************************************************************
  *
- *  functionname  : FreeTree
- *  arguments     : 1) ptr to root of the (sub)tree
- *  description   : changes to functionlist free_tab, which frees the (sub)tree
- *  global vars   : syntax_tree, act_tab, free_tab
- *  internal funs : ---
- *  external funs : Trav
- *  macros        : DBUG...
- *
- *  remarks       :
+ *  behind this line for compatibility only
  *
  */
-void
-FreeTree (node *arg_node)
-{
-    funptr *tmp_tab;
-
-    DBUG_ENTER ("FreeTree");
-    tmp_tab = act_tab;
-    act_tab = free_tab;
-    arg_node = Trav (arg_node, NULL);
-    act_tab = tmp_tab;
-    DBUG_VOID_RETURN;
-}
 
 /*
  *
@@ -262,9 +1232,10 @@ FreeTree (node *arg_node)
  *  external funs : --
  *  macros        : DBUG..., NULL, FREE
  *
- *  remarks       :
+ *  remarks       : needed by ConstantFolding.c
  *
  */
+
 void
 FreePrf2 (node *arg_node, int arg_no)
 {
@@ -285,3 +1256,193 @@ FreePrf2 (node *arg_node, int arg_no)
     FREE (arg_node);
     DBUG_VOID_RETURN;
 }
+
+/********************************************************************/
+
+#if 0
+
+
+
+void FreeIds(ids * ids)
+
+{
+  DBUG_ENTER("FreeIds");
+  if(ids->next != NULL)
+    FreeIds(ids->next);
+  DBUG_ASSERT((ids->id!=NULL),"Ids without name of identificator");
+  FREE(ids->id);
+  FREE(ids);
+  DBUG_VOID_RETURN;
+}
+
+void FreeIdsOnly(ids * ids)
+
+{
+  DBUG_ENTER("FreeIdsOnly");
+  if(ids->next != NULL)
+    FreeIdsOnly(ids->next);
+  FREE(ids);
+  DBUG_VOID_RETURN;
+}
+
+void FreeImplist(node * implist)
+
+{
+  int i;
+
+  DBUG_ENTER("FreeImplist");
+  if(implist->node[0] != NULL)
+    FreeImplist(implist->node[0]);
+  for(i=1; i<MAX_SONS; i++)
+    if(implist->node[i] != NULL)
+      FreeIds((ids *)implist->node[i]);
+  FREE(implist);
+  DBUG_VOID_RETURN;
+}
+
+void FreeMask(node *arg_node)
+{
+  int i;
+  DBUG_ENTER("FreeMask");
+  for(i=0;i<MAX_MASK;i++)
+    {
+    if (arg_node->mask[i]!=NULL)
+      FREE(arg_node->mask[i]);
+    }
+  DBUG_VOID_RETURN;
+}
+
+void FreeShpseg(shpseg *shpseg)
+{
+  DBUG_ENTER("FreeTypes");
+  if (shpseg->next!=NULL)
+    FreeShpseg(shpseg->next);
+  FREE(shpseg);
+  DBUG_VOID_RETURN;
+}
+
+void FreeTypes(types *type)
+{
+  DBUG_ENTER("FreeTypes");
+  if (type->next!=NULL)
+    FreeTypes(type->next);
+  if (type->shpseg!=NULL)
+    FreeShpseg(type->shpseg);
+  if (type->name!=NULL)
+    FREE(type->name);
+  if (type->id!=NULL)
+    FREE(type->id);
+  if (type->name_mod!=NULL)
+    FREE(type->name_mod);
+  if (type->id_mod!=NULL)
+    FREE(type->id_mod);
+  DBUG_VOID_RETURN;
+}
+
+void FreeVarArg(node *var)
+{
+  DBUG_ENTER("FreeVarArg");
+  if (var->node[0]!=NULL)
+    FreeVarArg(var->node[0]);
+  if (var->info.types!=NULL) 
+    FreeTypes(var->info.types);
+  FREE(var);
+  DBUG_VOID_RETURN;
+}
+
+node *FreeModul(node *arg_node, node *arg_info)
+{
+  DBUG_ENTER("FreeModul");
+  if (arg_node->node[0]!=NULL)
+    arg_node->node[0]=Trav(arg_node->node[0],arg_info);
+  if (arg_node->node[1]!=NULL)
+    arg_node->node[1]=Trav(arg_node->node[1],arg_info);
+  if (arg_node->node[2]!=NULL)
+    arg_node->node[2]=Trav(arg_node->node[2],arg_info);
+  if (arg_node->node[3]!=NULL)
+    arg_node->node[3]=Trav(arg_node->node[3],arg_info);
+  if (arg_node->node[4]!=NULL)
+    arg_node->node[4]=Trav(arg_node->node[4],arg_info);
+  FREE(arg_node);
+  DBUG_RETURN((node *)NULL);
+}
+
+node *FreeNoInfo(node *arg_node, node *arg_info)
+{
+  int i;
+  
+  DBUG_ENTER("FreeNoInfo");
+  for(i=0;i<arg_node->nnode;i++)
+    arg_node->node[i]=Trav(arg_node->node[i],arg_info);
+  FreeMask(arg_node);
+  FREE(arg_node);
+  DBUG_RETURN((node *)NULL);
+}
+
+node *FreeInfoIds(node *arg_node, node *arg_info)
+{
+  int i;
+  
+  DBUG_ENTER("FreeInfoIds");
+  for(i=0;i<arg_node->nnode;i++)
+    arg_node->node[i]=Trav(arg_node->node[i],arg_info);
+  FreeMask(arg_node);
+  FREE(arg_node);
+  DBUG_RETURN((node *)NULL);
+}
+
+node *FreeInfoId(node *arg_node, node *arg_info)
+{
+  int i;
+  
+  DBUG_ENTER("FreeInfoId");
+  for(i=0;i<arg_node->nnode;i++)
+    arg_node->node[i]=Trav(arg_node->node[i],arg_info);
+  FreeMask(arg_node);
+  FREE(arg_node->info.id);
+  FREE(arg_node);
+  DBUG_RETURN((node *)NULL);
+}
+
+node *FreeInfoType(node *arg_node, node *arg_info)
+{
+  int i;
+
+  DBUG_ENTER("FreeInfoType");
+  for(i=0;i<arg_node->nnode;i++)
+    if(NULL != arg_node->node[i])
+    {
+      arg_node->node[i]=Trav(arg_node->node[i],arg_info);
+    }
+  FreeMask(arg_node);
+  FreeTypes(arg_node->info.types);
+  FREE(arg_node);
+  DBUG_RETURN((node *)NULL);
+}
+
+/*
+ *
+ *  functionname  : FreeTree
+ *  arguments     : 1) ptr to root of the (sub)tree
+ *  description   : changes to functionlist free_tab, which frees the (sub)tree
+ *  global vars   : syntax_tree, act_tab, free_tab
+ *  internal funs : ---
+ *  external funs : Trav
+ *  macros        : DBUG...
+ *
+ *  remarks       :
+ *
+ */
+void FreeTree(node *arg_node)
+{
+  funptr *tmp_tab;
+  
+  DBUG_ENTER("FreeTree");
+  tmp_tab=act_tab;
+  act_tab=free_tab;
+  arg_node=Trav(arg_node, NULL);
+  act_tab=tmp_tab;
+  DBUG_VOID_RETURN;
+}
+
+#endif /* 0 */
