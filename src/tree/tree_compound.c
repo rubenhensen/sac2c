@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.29  2000/10/31 23:31:53  dkr
+ * signature of Type2Shpseg, Array2Shpseg modified
+ *
  * Revision 1.28  2000/10/27 02:29:25  dkr
  * bug in GetTypes_Line fixed: condition for ABORT is no longer missing
  *
@@ -242,6 +245,35 @@
  ***  Shpseg :
  ***/
 
+/******************************************************************************
+ *
+ * Function:
+ *   int GetShpsegLength( int dims, shpseg *shape)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+int
+GetShpsegLength (int dims, shpseg *shape)
+{
+    int length, i;
+
+    DBUG_ENTER ("GetShpsegLength");
+
+    if (dims > 0) {
+        length = 1;
+        for (i = 0; i < dims; i++) {
+            length *= SHPSEG_SHAPE (shape, i);
+        }
+    } else {
+        length = 0;
+    }
+
+    DBUG_RETURN (length);
+}
+
 /*****************************************************************************
  *
  * function:
@@ -327,31 +359,37 @@ MergeShpseg (shpseg *first, int dim1, shpseg *second, int dim2)
 /*****************************************************************************
  *
  * function:
- *   shpseg *Array2Shpseg(node* array)
+ *   shpseg *Array2Shpseg( node* array, int *ret_dim)
  *
  * description:
- *   convert array into shpseg (requires int-array!!!)
+ *   Convert 'array' into a shpseg (requires int-array!!!).
+ *   If 'dim' is != NULL the dimensionality is stored there.
  *
  *****************************************************************************/
 
 shpseg *
-Array2Shpseg (node *array)
+Array2Shpseg (node *array, int *ret_dim)
 {
 
     node *tmp;
     shpseg *shape;
-    int i = 0;
+    int i;
 
     DBUG_ENTER ("Array2Shpseg");
 
     shape = MakeShpseg (NULL);
 
     tmp = ARRAY_AELEMS (array);
+    i = 0;
     while (tmp != NULL) {
         DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (tmp)) == N_num), "integer array expected!");
         SHPSEG_SHAPE (shape, i) = NUM_VAL (EXPRS_EXPR (tmp));
         i++;
         tmp = EXPRS_NEXT (tmp);
+    }
+
+    if (ret_dim != NULL) {
+        (*ret_dim) = i;
     }
 
     DBUG_RETURN (shape);
@@ -576,39 +614,25 @@ GetBasetypeSize (types *type)
  *   int GetTypesLength( types *type)
  *
  * Description:
- *
+ *   If 'type' is an array type the number of array elements is returned.
+ *   Otherwise the return value is 0.
  *
  ******************************************************************************/
 
 int
 GetTypesLength (types *type)
 {
-    types *impl_type;
-    int dim, i;
-    int length;
+    shpseg *shape;
+    int dim, length;
 
     DBUG_ENTER ("GetTypesLength");
 
-    dim = GetDim (type);
+    shape = Type2Shpseg (type, &dim);
 
-    if (dim > SCALAR) {
-        length = 1;
-        impl_type = GetTypes (type);
+    length = GetShpsegLength (dim, shape);
 
-        for (i = 0; i < TYPES_DIM (type); i++) {
-            length *= TYPES_SHAPE (type, i);
-        }
-
-        if (impl_type != type) {
-            /*
-             * user-defined type
-             */
-            for (i = 0; i < TYPES_DIM (impl_type); i++) {
-                length *= TYPES_SHAPE (impl_type, i);
-            }
-        }
-    } else {
-        length = 0;
+    if (shape != NULL) {
+        shape = FreeShpseg (shape);
     }
 
     DBUG_RETURN (length);
@@ -617,7 +641,7 @@ GetTypesLength (types *type)
 /******************************************************************************
  *
  * Function:
- *   shpseg *Type2Shpseg( types *type)
+ *   shpseg *Type2Shpseg( types *type, int *ret_dim)
  *
  * Description:
  *
@@ -625,7 +649,7 @@ GetTypesLength (types *type)
  ******************************************************************************/
 
 shpseg *
-Type2Shpseg (types *type)
+Type2Shpseg (types *type, int *ret_dim)
 {
     int dim, base_dim, i;
     types *impl_type;
@@ -656,6 +680,10 @@ Type2Shpseg (types *type)
         }
     } else {
         new_shpseg = NULL;
+    }
+
+    if (ret_dim != NULL) {
+        (*ret_dim) = dim;
     }
 
     DBUG_RETURN (new_shpseg);
@@ -2124,99 +2152,103 @@ GetExprsLength (node *exprs)
 /******************************************************************************
  *
  * function:
- *   node *CreateZeroVector( int dim, simpletype type)
+ *   node *CreateZeroScalar( simpletype btype)
  *
  * description:
- *   Returns an N_array node with 'dim' components, each 0.
- *   If dim == 0, a scalar 0 is returned.
+ *   Returns a scalar 0.
  *
  ******************************************************************************/
 
 node *
-CreateZeroVector (int dim, simpletype type)
+CreateZeroScalar (simpletype btype)
 {
-    node *resultn, *tmpn;
+    node *ret_node;
+
+    DBUG_ENTER ("CreateZeroScalar");
+
+    DBUG_ASSERT ((btype != T_user), "unresolved user-type found");
+    DBUG_ASSERT ((btype != T_hidden), "hidden-type found");
+
+    switch (btype) {
+    case T_int:
+        ret_node = MakeNum (0);
+        break;
+    case T_float:
+        ret_node = MakeFloat (0);
+        break;
+    case T_double:
+        ret_node = MakeDouble (0);
+        break;
+    case T_bool:
+        ret_node = MakeBool (0);
+        break;
+    case T_char:
+        ret_node = MakeChar ('\0');
+        break;
+    default:
+        DBUG_ASSERT (0, ("unkown basetype found"));
+    }
+
+    DBUG_RETURN (ret_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *CreateZeroVector( int length, simpletype btype)
+ *
+ * description:
+ *   Returns an N_array node with 'length' components, each 0.
+ *
+ ******************************************************************************/
+
+node *
+CreateZeroVector (int length, simpletype btype)
+{
+    node *ret_node, *exprs_node;
     int i;
     shpseg *shpseg;
 
     DBUG_ENTER ("CreateZeroVector");
 
-    DBUG_ASSERT ((type != T_user), "unresolved user-type found");
-    DBUG_ASSERT ((type != T_hidden), "hidden-type found");
+    DBUG_ASSERT ((btype != T_user), "unresolved user-type found");
+    DBUG_ASSERT ((btype != T_hidden), "hidden-type found");
 
-    if (dim == 0) {
-        switch (type) {
-        case T_int:
-            resultn = MakeNum (0);
-            break;
-        case T_float:
-            resultn = MakeFloat (0);
-            break;
-        case T_double:
-            resultn = MakeDouble (0);
-            break;
-        case T_bool:
-            resultn = MakeBool (0);
-            break;
-        case T_char:
-            resultn = MakeChar ('\0');
-            break;
-        default:
-            DBUG_ASSERT (0, ("unkown type found"));
-        }
-    } else {
-        tmpn = NULL;
-        for (i = 0; i < dim; i++) {
-            switch (type) {
-            case T_int:
-                tmpn = MakeExprs (MakeNum (0), tmpn);
-                break;
-            case T_float:
-                tmpn = MakeExprs (MakeFloat (0), tmpn);
-                break;
-            case T_double:
-                tmpn = MakeExprs (MakeDouble (0), tmpn);
-                break;
-            case T_bool:
-                tmpn = MakeExprs (MakeBool (0), tmpn);
-                break;
-            case T_char:
-                tmpn = MakeExprs (MakeChar ('\0'), tmpn);
-                break;
-            default:
-                DBUG_ASSERT (0, ("unkown type found"));
-            }
-        }
-
-        resultn = MakeArray (tmpn);
-        ARRAY_ISCONST (resultn) = TRUE;
-        ARRAY_VECTYPE (resultn) = type;
-        ARRAY_VECLEN (resultn) = dim;
-        switch (type) {
-        case T_int:
-            ((int *)ARRAY_CONSTVEC (resultn)) = Array2IntVec (tmpn, NULL);
-            break;
-        case T_float:
-            ((float *)ARRAY_CONSTVEC (resultn)) = Array2FloatVec (tmpn, NULL);
-            break;
-        case T_double:
-            ((double *)ARRAY_CONSTVEC (resultn)) = Array2DblVec (tmpn, NULL);
-            break;
-        case T_bool:
-            ((int *)ARRAY_CONSTVEC (resultn)) = Array2BoolVec (tmpn, NULL);
-            break;
-        case T_char:
-            ((char *)ARRAY_CONSTVEC (resultn)) = Array2CharVec (tmpn, NULL);
-            break;
-        default:
-            DBUG_ASSERT (0, ("unkown type found"));
-        }
-        shpseg = MakeShpseg (
-          MakeNums (dim, NULL)); /* nums struct is freed inside MakeShpseg. */
-        ARRAY_TYPE (resultn) = MakeTypes (type, 1, shpseg, NULL, NULL);
+    exprs_node = NULL;
+    for (i = 0; i < length; i++) {
+        exprs_node = MakeExprs (CreateZeroScalar (btype), exprs_node);
     }
 
-    DBUG_RETURN (resultn);
+    ret_node = MakeArray (exprs_node);
+    ARRAY_ISCONST (ret_node) = TRUE;
+    ARRAY_VECTYPE (ret_node) = btype;
+    ARRAY_VECLEN (ret_node) = length;
+
+    switch (btype) {
+    case T_int:
+        ((int *)ARRAY_CONSTVEC (ret_node)) = Array2IntVec (exprs_node, NULL);
+        break;
+    case T_float:
+        ((float *)ARRAY_CONSTVEC (ret_node)) = Array2FloatVec (exprs_node, NULL);
+        break;
+    case T_double:
+        ((double *)ARRAY_CONSTVEC (ret_node)) = Array2DblVec (exprs_node, NULL);
+        break;
+    case T_bool:
+        ((int *)ARRAY_CONSTVEC (ret_node)) = Array2BoolVec (exprs_node, NULL);
+        break;
+    case T_char:
+        ((char *)ARRAY_CONSTVEC (ret_node)) = Array2CharVec (exprs_node, NULL);
+        break;
+    default:
+        DBUG_ASSERT (0, ("unkown basetype found"));
+    }
+
+    /* nums struct is freed inside of MakeShpseg() */
+    shpseg = MakeShpseg (MakeNums (length, NULL));
+    ARRAY_TYPE (ret_node) = MakeTypes (btype, 1, shpseg, NULL, NULL);
+
+    DBUG_RETURN (ret_node);
 }
 
 /******************************************************************************

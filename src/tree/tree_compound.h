@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.47  2000/10/31 23:31:47  dkr
+ * signature of Type2Shpseg, Array2Shpseg modified
+ *
  * Revision 1.46  2000/10/27 00:06:00  dkr
  * Type2Shpseg and Type2Exprs added,
  * some code brushing done.
@@ -190,11 +193,12 @@ specific implementation of a function should remain with the source code.
  ***  Shpseg :
  ***/
 
+extern int GetShpsegLength (int dims, shpseg *shape);
 extern shpseg *DiffShpseg (int dim, shpseg *shape1, shpseg *shape2);
 extern bool EqualShpseg (int dim, shpseg *shape2, shpseg *shape1);
 extern shpseg *MergeShpseg (shpseg *first, int dim1, shpseg *second, int dim2);
 
-extern shpseg *Array2Shpseg (node *array);
+extern shpseg *Array2Shpseg (node *array, int *ret_dim);
 extern node *Shpseg2Array (shpseg *shape, int dim);
 
 /*--------------------------------------------------------------------------*/
@@ -229,7 +233,7 @@ extern int GetDim (types *type);
 extern simpletype GetBasetype (types *type);
 extern int GetBasetypeSize (types *type);
 extern int GetTypesLength (types *type);
-extern shpseg *Type2Shpseg (types *type);
+extern shpseg *Type2Shpseg (types *type, int *ret_dim);
 extern node *Type2Exprs (types *type);
 
 /******************************************************************************
@@ -1127,8 +1131,8 @@ extern int GetExprsLength (node *exprs);
 #define LET_VARDEC(n) (IDS_VARDEC (LET_IDS (n)))
 #define LET_MOD(n) (IDS_MOD (LET_IDS (n)))
 #define LET_STATUS(n) (IDS_STATUS (LET_IDS (n)))
-#define LET_VARNO(n) (VARDEC_VARNO (LET_VARDEC (n)))
-#define LET_TYPE(n) (VARDEC_TYPE (LET_VARDEC (n)))
+#define LET_VARNO(n) (VARDEC_OR_ARG_VARNO (LET_VARDEC (n)))
+#define LET_TYPE(n) (VARDEC_OR_ARG_TYPE (LET_VARDEC (n)))
 #define LET_BASETYPE(n) (TYPES_BASETYPE (LET_TYPE (n)))
 #define LET_USE(n) (IDS_USE (LET_IDS (n)))
 
@@ -1322,7 +1326,8 @@ extern int GetExprsLength (node *exprs);
  *  function declarations
  */
 
-extern node *CreateZeroVector (int dim, simpletype type);
+extern node *CreateZeroScalar (simpletype btype);
+extern node *CreateZeroVector (int length, simpletype btype);
 
 /******************************************************************************
  *
