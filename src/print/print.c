@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.95  2002/07/01 12:54:09  dkr
+ * ICM_ICM added
+ *
  * Revision 3.94  2002/06/28 13:23:53  dkr
  * now, NOOP is no c-icm but a h-icm
  *
@@ -175,6 +178,7 @@
 
 #define ICM_ALL
 #define ICM_DEF(prf, trf) extern void Print##prf (node *ex, node *arg_info);
+#define ICM_ICM(name)
 #define ICM_STR(name)
 #define ICM_INT(name)
 #define ICM_VAR(dim, name)
@@ -182,6 +186,7 @@
 #define ICM_END(prf, args)
 #include "icm.data"
 #undef ICM_DEF
+#undef ICM_ICM
 #undef ICM_STR
 #undef ICM_INT
 #undef ICM_VAR
@@ -2555,6 +2560,7 @@ PrintIcm (node *arg_node, node *arg_info)
         indent -= ICM_INDENT_AFTER (arg_node);                                           \
         compiled_icm = TRUE;                                                             \
     } else
+#define ICM_ICM(name)
 #define ICM_STR(name)
 #define ICM_INT(name)
 #define ICM_VAR(dim, name)
@@ -2563,6 +2569,7 @@ PrintIcm (node *arg_node, node *arg_info)
 #include "icm.data"
 #undef ICM_ALL
 #undef ICM_DEF
+#undef ICM_ICM
 #undef ICM_STR
 #undef ICM_INT
 #undef ICM_VAR
