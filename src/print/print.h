@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.15  1995/12/01 17:14:59  cg
+ * Revision 1.16  1995/12/20 08:18:38  cg
+ * added PrintChar
+ *
+ * Revision 1.15  1995/12/01  17:14:59  cg
  * added function PrintPragma.
  *
  * Revision 1.14  1995/07/11  09:02:10  cg
@@ -73,6 +76,7 @@ extern node *PrintImplist (node *, node *);
 extern node *PrintPrf (node *, node *);
 extern node *PrintId (node *, node *);
 extern node *PrintNum (node *, node *);
+extern node *PrintChar (node *, node *);
 extern node *PrintFloat (node *, node *);
 extern node *PrintDouble (node *, node *);
 extern node *PrintBool (node *, node *);
