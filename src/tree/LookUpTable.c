@@ -1,12 +1,14 @@
 /*
  *
  * $Log$
- * Revision 3.18  2002/08/13 13:21:15  dkr
- * !!!! string support modified !!!!
- * Now, only the compare-data is a string, the associated-data is always
- * a (void*) pointer!
+ * Revision 3.19  2002/08/13 17:29:31  dkr
+ * comment corrected
  *
- * functions ApplyToEach_?() added
+ * Revision 3.18  2002/08/13 13:21:15  dkr
+ * - !!!! string support modified !!!!
+ *   Now, only the compare-data is a string, the associated-data is always
+ *   a (void*) pointer!
+ * - functions ApplyToEach_?() added
  *
  * Revision 3.17  2001/11/22 08:48:56  sbs
  * ComputeHashDiff compiled only if DBUG is active
