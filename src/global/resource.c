@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.6  1998/11/19 16:12:36  cg
+ * new configuration entry: CCMTLINK
+ * specifies libraries to link with for multi-threaded programs only.
+ * This makes the target 'par' obsolete.
+ *
  * Revision 1.5  1998/07/07 13:41:49  cg
  * improved the resource management by implementing multiple inheritence
  * between targets
@@ -143,6 +148,7 @@ static struct {
   {"CCFLAGS", str, &config.ccflags},
   {"CCDIR", str, &config.ccdir},
   {"CCLINK", str, &config.cclink},
+  {"CCMTLINK", str, &config.ccmtlink},
   {"OPT_O0", str, &config.opt_O0},
   {"OPT_O1", str, &config.opt_O1},
   {"OPT_O2", str, &config.opt_O2},

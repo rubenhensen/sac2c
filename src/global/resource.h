@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.5  1998/11/19 16:12:36  cg
+ * new configuration entry: CCMTLINK
+ * specifies libraries to link with for multi-threaded programs only.
+ * This makes the target 'par' obsolete.
+ *
  * Revision 1.4  1998/07/07 13:41:49  cg
  * improved the resource management by implementing multiple inheritence
  * between targets
@@ -27,6 +32,7 @@
  * file: resource.h
  *
  * description:
+ *
  *  This file contains type definitions, global variable declarations,
  *  as well as function prototypes which are used for dealing with
  *  sac2crc resource definition files. These allow for customization
@@ -45,6 +51,7 @@
  * type: target_list_t
  *
  * description:
+ *
  *  These types are used to build up a tree-like structure for temporaily
  *  storing all information read in from sac2crc files.
  *
@@ -70,6 +77,7 @@ typedef struct target_list_t {
  * type: resource_t
  *
  * description:
+ *
  *  This structure is used to permanently store all relevant resource
  *  information for the selected target.
  *
@@ -80,6 +88,7 @@ typedef struct {
     char *ccflags;
     char *ccdir;
     char *cclink;
+    char *ccmtlink;
     char *opt_O0;
     char *opt_O1;
     char *opt_O2;

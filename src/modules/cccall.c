@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.19  1998/11/19 16:12:36  cg
+ * new configuration entry: CCMTLINK
+ * specifies libraries to link with for multi-threaded programs only.
+ * This makes the target 'par' obsolete.
+ *
  * Revision 1.18  1998/07/10 15:20:37  cg
  * corrected superfluous warning
  *
@@ -544,17 +549,18 @@ InvokeCC ()
         if (gen_cccall) {
             shellscript = WriteOpen (".sac2c");
             fprintf (shellscript, "#!/bin/sh -v\n\n");
-            fprintf (shellscript, "%s %s %s -L%s %s -o %s %s %s %s\n\n", config.cc,
+            fprintf (shellscript, "%s %s %s -L%s %s -o %s %s %s %s %s\n\n", config.cc,
                      config.ccflags, config.ccdir, tmp_dirname, opt_buffer, outfilename,
-                     cfilename, linklist, config.cclink);
+                     cfilename, linklist, config.cclink,
+                     (gen_mt_code ? config.ccmtlink : ""));
             fclose (shellscript);
             SystemCall ("chmod a+x .sac2c");
         }
 
         if (all_threads == 0) {
-            SystemCall ("%s %s %s -L%s %s -o %s %s %s %s", config.cc, config.ccflags,
+            SystemCall ("%s %s %s -L%s %s -o %s %s %s %s %s", config.cc, config.ccflags,
                         config.ccdir, tmp_dirname, opt_buffer, outfilename, cfilename,
-                        linklist, config.cclink);
+                        linklist, config.cclink, (gen_mt_code ? config.ccmtlink : ""));
 
         } else {
             SystemCall ("%s %s %s -L%s %s -o %s.1 "
@@ -563,9 +569,10 @@ InvokeCC ()
                         "-DSAC_SET_THREADS_MAX=1 "
                         "-DSAC_SET_THREADS=1 "
                         "-DSAC_SET_MASTERCLASS=0 "
-                        "%s %s %s",
+                        "%s %s %s %s",
                         config.cc, config.ccflags, config.ccdir, tmp_dirname, opt_buffer,
-                        outfilename, cfilename, linklist, config.cclink);
+                        outfilename, cfilename, linklist, config.cclink,
+                        (gen_mt_code ? config.ccmtlink : ""));
 
             NOTEDOT;
             SystemCall ("%s %s %s -L%s %s -o %s.d%d "
@@ -574,10 +581,10 @@ InvokeCC ()
                         "-DSAC_SET_THREADS_MAX=%d "
                         "-DSAC_SET_THREADS=0 "
                         "-DSAC_SET_MASTERCLASS=0 "
-                        "%s %s %s",
+                        "%s %s %s %s",
                         config.cc, config.ccflags, config.ccdir, tmp_dirname, opt_buffer,
                         outfilename, all_threads, all_threads, cfilename, linklist,
-                        config.cclink);
+                        config.cclink, (gen_mt_code ? config.ccmtlink : ""));
 
             for (i = 2; i <= all_threads; i++) {
                 NOTEDOT;
@@ -587,10 +594,11 @@ InvokeCC ()
                             "-DSAC_SET_THREADS_MAX=%d "
                             "-DSAC_SET_THREADS=%d "
                             "-DSAC_SET_MASTERCLASS=%d "
-                            "%s %s %s",
+                            "%s %s %s %s",
                             config.cc, config.ccflags, config.ccdir, tmp_dirname,
                             opt_buffer, outfilename, i, i, i, GSCCalcMasterclass (i),
-                            cfilename, linklist, config.cclink);
+                            cfilename, linklist, config.cclink,
+                            (gen_mt_code ? config.ccmtlink : ""));
             }
         }
 
