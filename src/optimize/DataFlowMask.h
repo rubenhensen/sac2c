@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.3  2000/01/19 15:40:15  dkr
+ * typo in comment corrected
+ *
  * Revision 2.2  1999/07/20 16:50:42  jhs
  * Changed behaviour of DFMTest[|2|3]Mask[s].
  * They do not only test, but count hits.
@@ -58,9 +61,9 @@
  *   declarations, thereby storing the required data in an internal format
  *   suitable for further processing. An existing mask data base may be
  *   updated when additional parameters or local variables have been newly
- *   introduced or removed by applying the function DFMUpdateMaskBase() to the perhaps
- *   modified representations of parameters and local variables as well as
- *   the existing mask data base. Each data flow mask that belongs to the
+ *   introduced or removed by applying the function DFMUpdateMaskBase() to the
+ *   perhaps modified representations of parameters and local variables as well
+ *   as the existing mask data base. Each data flow mask that belongs to the
  *   updated mask data base will be updated automatically.
  *
  *   Special update functions are provided for two particular situations.
@@ -114,7 +117,7 @@
  *   strtok(). When calling one of these functions for the first time, a data
  *   flow mask has to be specified. The first local identifier whose bit is
  *   set or cleared respectively is returned by DFMGetMaskEntryNameSet() or
- *   DFMGetMaskEntryNameSet(). A pointer to the respective declaration node
+ *   DFMGetMaskEntryNameClear(). A pointer to the respective declaration node
  *   is returned by DFMGetMaskEntryDeclSet() or DFMGetMaskEntryDeclClear().
  *   On subsequent calls the value
  *   NULL can be given as an argument to extract further identifiers from
