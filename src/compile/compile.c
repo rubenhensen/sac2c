@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.39  1995/06/06 15:54:30  hw
+ * Revision 1.40  1995/06/07 13:33:32  hw
+ * exchanges N_icm ND_CREATE_CONST_ARRAY with ND_CREATE_CONST_ARRAY_S
+ * N_icm ND_CREATE_CONST_ARRAY_A (array out of arrays) inserted
+ *
+ * Revision 1.39  1995/06/06  15:54:30  hw
  * changed CompVardec ( a declaration of an array with unknown shape
  *   will be removed )
  *
@@ -353,7 +357,7 @@ extern int malloc_debug (int level);
     APPEND_ASSIGNS (first_assign, next_assign);                                          \
     COUNT_ELEMS (n_elems, array->node[0]);                                               \
     MAKENODE_NUM (n_node, n_elems);                                                      \
-    CREATE_2_ARY_ICM (next_assign, "ND_CREATE_CONST_ARRAY", name, n_node);               \
+    CREATE_2_ARY_ICM (next_assign, "ND_CREATE_CONST_ARRAY_S", name, n_node);             \
     icm_arg->node[1] = array->node[0];                                                   \
     icm_arg->nnode = 2;                                                                  \
     APPEND_ASSIGNS (first_assign, next_assign)
@@ -380,10 +384,16 @@ extern int malloc_debug (int level);
         res = type->simpletype
 
 #define GET_LENGTH(length, vardec_node)                                                  \
-    if (T_user == vardec_node->SIMPLETYPE)                                               \
-        length = LookupType (vardec_node->NAME, vardec_node->NAME_MOD, 042)->SHP[0];     \
-    else                                                                                 \
-        length = vardec_node->SHP[0]
+    {                                                                                    \
+        types *type;                                                                     \
+        int i;                                                                           \
+        if (T_user == vardec_node->SIMPLETYPE)                                           \
+            type = LookupType (vardec_node->NAME, vardec_node->NAME_MOD, 042)->TYPES;    \
+        else                                                                             \
+            type = vardec_node->TYPES;                                                   \
+        for (i = 0, length = 1; i < type->dim; i++)                                      \
+            length *= type->shpseg->shp[i];                                              \
+    }
 
 #define COUNT_ELEMS(n, exprs)                                                            \
     n = 0;                                                                               \
@@ -1327,7 +1337,7 @@ CompPrf (node *arg_node, node *arg_info)
                 dim = 1;
             }
             MAKENODE_NUM (length_node, dim); /* store length of shape_vector */
-            CREATE_2_ARY_ICM (next_assign, "ND_CREATE_CONST_ARRAY", res, length_node);
+            CREATE_2_ARY_ICM (next_assign, "ND_CREATE_CONST_ARRAY_S", res, length_node);
             icm_arg->node[1] = tmp_array1; /* append shape_vector */
             icm_arg->nnode = 2;
             APPEND_ASSIGNS (first_assign, next_assign);
@@ -1609,7 +1619,7 @@ CompArray (node *arg_node, node *arg_info)
     node *tmp, *first_assign, *next_assign, *exprs, *res, *type_id_node, *old_arg_node,
       *icm_arg, *n_node, *res_ref, *last_assign;
     simpletype s_type;
-    int n_elems = 0;
+    int n_elems = 0, icm_created = 0;
 
     DBUG_ENTER ("CompArray");
 
@@ -1640,7 +1650,22 @@ CompArray (node *arg_node, node *arg_info)
         exprs = exprs->node[1];
     } while (NULL != exprs);
     MAKENODE_NUM (n_node, n_elems);
-    CREATE_2_ARY_ICM (next_assign, "ND_CREATE_CONST_ARRAY", res, n_node);
+    DBUG_ASSERT (NULL != old_arg_node->node[0], " NULL pointer ");
+    if (N_id == old_arg_node->node[0]->node[0]->nodetype)
+        if (1 == IsArray (old_arg_node->node[0]->node[0]->IDS_NODE->TYPES)) {
+            node *length;
+            int len;
+            GET_LENGTH (len, old_arg_node->node[0]->node[0]->IDS_NODE);
+            MAKENODE_NUM (length, len);
+            CREATE_3_ARY_ICM (next_assign, "ND_CREATE_CONST_ARRAY_A", res, length,
+                              n_node);
+            icm_created = 1;
+        }
+
+    if (0 == icm_created) {
+        CREATE_2_ARY_ICM (next_assign, "ND_CREATE_CONST_ARRAY_S", res, n_node);
+    }
+    /* now append the elements of the array to the last N_icm */
     icm_arg->node[1] = old_arg_node->node[0];
     icm_arg->nnode = 2;
     APPEND_ASSIGNS (first_assign, next_assign);
