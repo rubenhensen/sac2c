@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.30  1999/10/19 17:08:02  sbs
+ * new secret -sbs switch integrated 8-)
+ *
  * Revision 2.29  1999/10/17 13:32:23  sbs
  * sbs-mechanism included - but still commented out...
  *
@@ -258,9 +261,7 @@
 #include "typecheck_WL.h"
 #include "gen_pseudo_fun.h"
 
-#if 0 /* only sbs uses this right now... */
 #include "new_typecheck.h"
-#endif
 
 static node *top_fundef;
 
@@ -3187,12 +3188,10 @@ Typecheck (node *arg_node)
     for (i = 1; i < PF_MAXFUN; i++)
         PFfunapcntr[i] = 0;
 
-#if 0 /* only sbs uses this right now... */
-   if( sbs == 1) {
-     NewTypeCheck( arg_node);
-     exit(0);
-   }
-#endif
+    if (sbs == 1) {
+        NewTypeCheck (arg_node);
+        exit (0);
+    }
     /*
      * generate a table of primitive functions to look up their
      * types later on
