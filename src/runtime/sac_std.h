@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.2  1998/06/03 14:59:05  cg
+ * generation of new identifier names as extensions of old ones
+ * by macros made compatible with new renaming scheme
+ *
  * Revision 1.1  1998/05/07 08:38:05  cg
  * Initial revision
  *
@@ -54,10 +58,10 @@
  */
 
 #define SAC_ND_A_FIELD(name) name
-#define SAC_ND_A_SIZE(name) __##name##_sz
-#define SAC_ND_A_DIM(name) __##name##_d
-#define SAC_ND_KD_A_SHAPE(name, dim) __##name##_s##dim
-#define SAC_ND_A_SHAPE(name, dim) __##name##_s[dim]
+#define SAC_ND_A_SIZE(name) name##__sz
+#define SAC_ND_A_DIM(name) name##__d
+#define SAC_ND_KD_A_SHAPE(name, dim) name##__s##dim
+#define SAC_ND_A_SHAPE(name, dim) name##__s[dim]
 
 /*
  * ICMs for refcount access:
@@ -68,8 +72,8 @@
  *
  */
 
-#define SAC_ND_A_RC(name) *__##name##_rc
-#define SAC_ND_A_RCP(name) __##name##_rc
+#define SAC_ND_A_RC(name) *name##__rc
+#define SAC_ND_A_RCP(name) name##__rc
 
 /*
  * ICMs for declaring refcounted data:
@@ -92,15 +96,15 @@
 
 #define SAC_ND_KD_DECL_ARRAY(basetype, name, dim)                                        \
     SAC_ND_DECL_RC (basetype *, name)                                                    \
-    int __##name##_sz;                                                                   \
-    int __##name##_d = dim;                                                              \
-    int *__##name##_s;
+    int name##__sz;                                                                      \
+    int name##__d = dim;                                                                 \
+    int *name##__s;
 
 #define SAC_ND_DECL_ARRAY(basetype, name)                                                \
     SAC_ND_DECL_RC (basetype *, name)                                                    \
-    int __##name##_sz;                                                                   \
-    int __##name##_d;                                                                    \
-    int *__##name##_s;
+    int name##__sz;                                                                      \
+    int name##__d;                                                                       \
+    int *name##__s;
 
 /*
  * ICMs for removing refcounted data :
@@ -429,11 +433,11 @@
  *
  */
 
-#define SAC_ND_KS_DEC_IN_RC(type, name) type name, int *__##name##_rc
+#define SAC_ND_KS_DEC_IN_RC(type, name) type name, int *name##__rc
 
-#define SAC_ND_KS_DEC_OUT_RC(type, name) type *##name##__p, int **__##name##_rc__p
+#define SAC_ND_KS_DEC_OUT_RC(type, name) type *name##__p, int **name##__rc__p
 
-#define SAC_ND_KS_DEC_INOUT_RC(type, name) type *##name##__p, int **__##name##_rc__p
+#define SAC_ND_KS_DEC_INOUT_RC(type, name) type *name##__p, int **name##__rc__p
 
 #define SAC_ND_KS_DEC_IMPORT_IN_RC(type) type, int *
 
@@ -441,24 +445,24 @@
 
 #define SAC_ND_KS_DEC_IMPORT_INOUT_RC(type) type *, int **
 
-#define SAC_ND_KS_AP_IN_RC(name) name, __##name##_rc
+#define SAC_ND_KS_AP_IN_RC(name) name, name##__rc
 
-#define SAC_ND_KS_AP_OUT_RC(name) &name, &__##name##_rc
+#define SAC_ND_KS_AP_OUT_RC(name) &name, &name##__rc
 
-#define SAC_ND_KS_AP_INOUT_RC(name) &name, &__##name##_rc
+#define SAC_ND_KS_AP_INOUT_RC(name) &name, &name##__rc
 
 #define SAC_ND_KS_RET_OUT_RC(name)                                                       \
     *##name##__p = name;                                                                 \
-    *__##name##_rc__p = __##name##_rc
+    *name##__rc__p = name##__rc
 
 #define SAC_ND_KS_RET_INOUT_RC(name)                                                     \
     *##name##__p = name;                                                                 \
-    *__##name##_rc__p = __##name##_rc
+    *name##__rc__p = name##__rc
 
 #define SAC_ND_DECL_INOUT_PARAM(type, name) type name = *##name##__p;
 
 #define SAC_ND_DECL_INOUT_PARAM_RC(type, name)                                           \
     type name = *##name##__p;                                                            \
-    int *__##name##_rc = *__##name##_rc__p;
+    int *name##__rc = *name##__rc__p;
 
 #endif /* SAC_STD_H */
