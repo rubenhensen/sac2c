@@ -21,3 +21,4 @@ ast2free_attribs_h.xsl
 ast2check_node_c.xsl
 ast2check_node_h.xsl
 ast2serialize_node_c.xsl
+ast2serialize_node_h.xsl
