@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.9  2004/07/16 18:36:55  sah
+ * forgotten to allocate space for info structure;)
+ *
  * Revision 1.8  2004/07/16 17:36:23  sah
  * switch to new INFO structure
  * PHASE I
@@ -216,6 +219,8 @@ MakeInfo ()
     info *result;
 
     DBUG_ENTER ("MakeInfo");
+
+    result = Malloc (sizeof (info));
 
     INFO_USSA_ARGS (result) = NULL;
     INFO_USSA_TOPBLOCK (result) = NULL;
