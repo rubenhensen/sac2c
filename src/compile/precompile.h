@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2002/02/21 14:50:02  dkr
+ * some functions added
+ *
  * Revision 3.6  2001/03/26 15:05:25  dkr
  * header abbrevated
  *
@@ -87,6 +90,10 @@ extern node *PREC2withid (node *arg_node, node *arg_info);
 extern node *PREC2WLsegx (node *arg_node, node *arg_info);
 extern node *PREC2code (node *arg_node, node *arg_info);
 extern node *PREC2sync (node *arg_node, node *arg_info);
+
+extern node *PREC3fundef (node *arg_node, node *arg_info);
+extern node *PREC3return (node *arg_node, node *arg_info);
+extern node *PREC3let (node *arg_node, node *arg_info);
 
 extern char *ObjInitFunctionName ();
 
