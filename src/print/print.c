@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.83  2000/07/11 15:39:22  jhs
+ * changed DFMfoldmask.name => DFMfoldmask.vardec
+ *
  * Revision 2.82  2000/06/28 15:14:05  nmw
  * PrintCWrapper added
  *
@@ -2246,7 +2249,7 @@ PrintMTsync (node *arg_node, node *arg_info)
         foldmask = MTSYNC_FOLD (arg_node);
         while (foldmask != NULL) {
 
-            fprintf (outfile, " %s:%s", DFMFM_NAME (foldmask),
+            fprintf (outfile, " %s:%s", VARDEC_OR_ARG_NAME (DFMFM_VARDEC (foldmask)),
                      FUNDEF_NAME (NWITHOP_FUNDEF (DFMFM_FOLDOP (foldmask))));
 
             foldmask = DFMFM_NEXT (foldmask);

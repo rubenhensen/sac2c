@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.33  2000/07/11 15:38:51  jhs
+ * changed DFMfoldmask.name => DFMfoldmask.vardec
+ *
  * Revision 2.32  2000/07/10 14:19:49  cg
  * Added new field type_status in types struct as a dedicated status field
  * for the type itself.
@@ -481,7 +484,7 @@ typedef struct INTERN_GEN {
  */
 
 typedef struct FM {
-    char *name;
+    node *vardec;
     node *foldop;
     struct FM *next;
 } DFMfoldmask_t;
