@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2001/05/17 07:35:11  sbs
+ * IntBytes2String added
+ * Malloc / Free checked
+ *
  * Revision 3.2  2001/03/15 15:47:56  dkr
  * signature of Type2String modified
  *
@@ -53,5 +57,6 @@ extern char *Double2String (double);
 extern char *Float2String (float);
 extern char *Basetype2String (simpletype type);
 extern char *Shpseg2String (int dim, shpseg *shape);
+extern char *IntBytes2String (int bytes);
 
 #endif /* _convert_h */

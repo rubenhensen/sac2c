@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2001/05/17 07:35:11  sbs
+ * IntBytes2String added
+ * Malloc / Free checked
+ *
  * Revision 3.6  2001/03/15 16:53:52  dkr
  * Type2String: types->id and the '&' for reference objects are no longer printed here!
  * Note, that types->id and types->attrib is *not* part of the virtual
@@ -170,7 +174,7 @@ Type2String (types *type, int flag, bool all)
 
     DBUG_ENTER ("Type2String");
 
-    tmp_string = (char *)MALLOC (sizeof (char) * TYPE_LENGTH);
+    tmp_string = (char *)Malloc (sizeof (char) * TYPE_LENGTH);
     tmp_string[0] = '\0';
 
     do {
@@ -337,6 +341,56 @@ Basetype2String (simpletype type)
     DBUG_ENTER ("Basetype2String");
 
     res = ctype_string[type];
+
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   char *IntBytes2String(int bytes)
+ *
+ * description:
+ *   This function yields a pointer to a static memory area that contains
+ *   a "dotted" version of the integer number given. It is primarily used
+ *   for printing memory usages.
+ *
+ ******************************************************************************/
+
+char *
+IntBytes2String (int bytes)
+{
+    static char res[32];
+    char *tmp = &res;
+    int factor = 1000000000;
+    int num;
+
+    DBUG_ENTER ("IntBytes2String");
+
+    if (bytes < 0) {
+        bytes = -bytes;
+        tmp += sprintf (tmp, "-");
+    } else {
+        tmp += sprintf (tmp, " ");
+    }
+
+    while ((bytes / factor == 0) && (factor >= 1000)) {
+        factor /= 1000;
+        tmp += sprintf (tmp, "    ");
+    }
+    tmp += sprintf (tmp, "%3u", (bytes / factor));
+    while (factor >= 1000) {
+        bytes = bytes % factor;
+        factor /= 1000;
+        num = bytes / factor;
+        if (num < 10) {
+            tmp += sprintf (tmp, ".00%1u", num);
+        } else if (num < 100) {
+            tmp += sprintf (tmp, ".0%2u", num);
+        } else {
+            tmp += sprintf (tmp, ".%3u", num);
+        }
+    }
 
     DBUG_RETURN (res);
 }
