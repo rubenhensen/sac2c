@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.20  1995/09/29 12:21:30  cg
+ * Revision 1.21  1995/10/06 17:12:17  cg
+ * calls to MakeIds adjusted to new signature (3 parameters)
+ *
+ * Revision 1.20  1995/09/29  12:21:30  cg
  * charlist renamed to strings.
  *
  * Revision 1.19  1995/08/30  14:05:12  cg
@@ -824,7 +827,7 @@ DoImport (node *modul, node *implist, char *mastermod)
         } else /* selective import! */
         {
             if (mod->moddec->nodetype == N_classdec) {
-                tmp = MakeIds (implist->info.id);
+                tmp = MakeIds (implist->info.id, NULL, ST_regular);
                 tmp->next = (ids *)implist->node[1];
                 implist->node[1] = (node *)tmp;
             }
@@ -1332,7 +1335,6 @@ IMfundef (node *arg_node, node *arg_info)
                 arg_node->node[2] = sib_entry->node[2];
                 arg_node->node[4] = sib_entry->node[4];
 
-                arg_node->STATUS = ST_inline_import;
                 arg_node->flag = 1; /* inline flag */
 
                 DBUG_PRINT ("READSIB", ("Adding inline information to function %s:%s",

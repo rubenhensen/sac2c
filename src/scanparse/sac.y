@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.85  1995/10/01 17:00:26  cg
+ * Revision 1.86  1995/10/06 17:13:36  cg
+ * calls to MakeIds adjusted to new signature (3 parameters)
+ *
+ * Revision 1.85  1995/10/01  17:00:26  cg
  * Function MakeLet renamed to MakeLetNode to avoid name clash with tree_basic.c
  * Minor changes in parsing SIBs.
  *
@@ -329,7 +332,7 @@ static file_type file_kind = F_prog;
 %}
 
 %union {
-	 nodetype	 nodetype;
+         nodetype        nodetype;
          id              *id;
          ids             *ids;
          types           *types;
@@ -1306,18 +1309,9 @@ letassign: ids LET exprORarray
                          ("%s "P_FORMAT":",
                           mdb_nodetype[$$->nodetype], $$));
            }
-         | ID ASSIGN expr
-           {
-             $$=MakeNode(N_let);
-             $$->node[0]=$3;
-             $$->nnode=1;
-             $$->info.ids=MakeIds($1);
-             $$->info.ids->attrib=ST_deref;
-          }
-
          | ID unaryop 
             { $$=MakeNode(N_post);
-              $$->info.ids=MakeIds($1);
+              $$->info.ids=MakeIds($1, NULL, ST_regular);
               $$->node[0]=$2;
               $$->nnode=1;
               
@@ -1328,7 +1322,7 @@ letassign: ids LET exprORarray
            }
          | unaryop ID
             {  $$=MakeNode(N_pre);
-               $$->info.ids=MakeIds($2);    
+               $$->info.ids=MakeIds($2, NULL, ST_regular);    
                $$->node[0]=$1;
                $$->nnode=1;
 
@@ -1339,6 +1333,7 @@ letassign: ids LET exprORarray
             }
         | ID ADDON exprORarray
            {
+              
               $$=MakeLetNode($1,$3,F_add);
            }
         | ID SUBON exprORarray
@@ -1534,7 +1529,7 @@ expr:   apl {$$=$1; $$->info.fun_name.id_mod=NULL; }
         }
       | ID 
          { $$=MakeNode(N_id);
-           $$->info.ids=MakeIds($1);  /* name of variable*/
+           $$->info.ids=MakeIds($1, NULL, ST_regular);  /* name of variable*/
 
            DBUG_PRINT("GENTREE",("%s " P_FORMAT ": %s ",
                             mdb_nodetype[$$->nodetype],$$,$$->info.ids->id));  
@@ -1543,7 +1538,7 @@ expr:   apl {$$=$1; $$->info.fun_name.id_mod=NULL; }
         {   node *exprs1, *exprs2;
             exprs2=MakeNode(N_exprs);
             exprs2->node[0]=MakeNode(N_id);
-            exprs2->node[0]->info.ids=MakeIds($2);
+            exprs2->node[0]->info.ids=MakeIds($2, NULL, ST_regular);
             exprs2->nnode=1;
             exprs1=MakeNode(N_exprs);
             exprs1->node[0]=MakeNode(N_num);
@@ -1852,7 +1847,7 @@ generator: exprORarray  LE ID LE exprORarray
             { $$=MakeNode(N_generator);
               $$->node[0]=$1;        /* left border  */
               $$->node[1]=$5;        /* right border */
-              $$->info.ids=MakeIds($3);/*index-variable  */
+              $$->info.ids=MakeIds($3, NULL, ST_regular); /*index-variable  */
               $$->nnode=2;
 
               DBUG_PRINT("GENTREE",
@@ -2920,9 +2915,9 @@ node *MakeLetNode(id *name, node *expr, prf fun)
    DBUG_ENTER("MakeLetNode");
    
    return_node=MakeNode(N_let);
-   return_node->info.ids=MakeIds(name);
+   return_node->info.ids=MakeIds(name, NULL, ST_regular);
    id_node=MakeNode(N_id);
-   id_node->info.ids=MakeIds(name);
+   id_node->info.ids=MakeIds(name, NULL, ST_regular);
    id_node->info.ids->id=StringCopy(name);
    
    DBUG_PRINT("GENTREE",("%s"P_FORMAT": %s",
