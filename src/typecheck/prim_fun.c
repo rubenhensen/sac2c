@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2001/05/17 09:20:42  sbs
+ * MALLOC FREE aliminated
+ *
  * Revision 3.8  2001/04/24 09:16:15  dkr
  * P_FORMAT replaced by F_PTR
  *
@@ -186,7 +189,7 @@ enum type_class {
     types = MakeTypes (simpletype, SCALAR, NULL, NULL, NULL)
 
 #define GEN_PRIM_FUN_TAB_ELEM(p_old, mod, node_p, t_tag, u_tag, p_new)                   \
-    tmp = (prim_fun_tab_elem *)MALLOC (sizeof (prim_fun_tab_elem));                      \
+    tmp = (prim_fun_tab_elem *)Malloc (sizeof (prim_fun_tab_elem));                      \
     tmp->prf = p_old;                                                                    \
     tmp->id_mod = mod;                                                                   \
     tmp->node = node_p;                                                                  \
@@ -392,7 +395,7 @@ InitPrimFunDeclarations ()
     types *type;
 
     DBUG_ENTER ("InitPrimFunDeclarations");
-    prim_fun_dec = (node *)MALLOC (sizeof (node));
+    prim_fun_dec = (node *)Malloc (sizeof (node));
     tmp_node = prim_fun_dec;
 
 #define TT1(n, a, t1, res)                                                               \
@@ -447,7 +450,7 @@ InitPrimFunDeclarations ()
 #undef TT3
     tmp_node = prim_fun_dec;
     prim_fun_dec = prim_fun_dec->node[1];
-    FREE (tmp_node);
+    Free (tmp_node);
 
     DBUG_VOID_RETURN;
 }
@@ -461,7 +464,7 @@ InitPrimFunDeclarations ()
  *
  *  global vars   : prim_fun_tab, prim_fun_p
  *  internal funs : InitPrimFunDeclaration
- *  external funs : MALLOC, free, FT
+ *  external funs : Malloc, free, FT
  *  macros        : DBUG...
  *
  *  remarks       : the macro FT is used to generate the entries in this
@@ -478,7 +481,7 @@ InitPrimFunTab ()
 
     InitPrimFunDeclarations ();
 
-    prim_fun_tab = (prim_fun_tab_elem *)MALLOC (sizeof (prim_fun_tab_elem));
+    prim_fun_tab = (prim_fun_tab_elem *)Malloc (sizeof (prim_fun_tab_elem));
     prim_fun_p = prim_fun_tab;
 
 #define FT(pf, tc, new_pf) GenPrimTabEntries (pf, tc, new_pf);
@@ -487,7 +490,7 @@ InitPrimFunTab ()
 
     prim_fun_p = prim_fun_tab;
     prim_fun_tab = prim_fun_tab->next;
-    FREE (prim_fun_p);
+    Free (prim_fun_p);
 
     DBUG_VOID_RETURN;
 }
@@ -1991,8 +1994,8 @@ Modarray (types *array, types *vec, types *value, int line)
                     filename, line, Type2String (array, 0, TRUE),
                     Type2String (vec, 0, TRUE), Type2String (value, 0, TRUE)));
     } else {
-        FREE (b_vec);
-        FREE (b_value);
+        Free (b_vec);
+        Free (b_value);
         ret_type = b_array;
     }
 

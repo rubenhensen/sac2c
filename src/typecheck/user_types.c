@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.2  2001/05/17 09:20:42  sbs
+ * MALLOC FREE aliminated
+ *
  * Revision 3.1  2000/11/20 18:00:23  sacbase
  * new release made
  *
@@ -103,7 +106,7 @@ UTAddUserType (char *name, char *mod, ntype *type, ntype *base, int lineno)
     /*
      * First, we generate the desired entry:
      */
-    entry = (udt_entry *)MALLOC (sizeof (udt_entry));
+    entry = (udt_entry *)Malloc (sizeof (udt_entry));
     ENTRY_NAME (entry) = name;
     ENTRY_MOD (entry) = mod;
     ENTRY_DEF (entry) = type;
@@ -115,12 +118,12 @@ UTAddUserType (char *name, char *mod, ntype *type, ntype *base, int lineno)
      * the repository is big enough!!
      */
     if (udt_no % CHUNKSIZE == 0) {
-        new_rep = (udt_entry **)MALLOC ((udt_no + CHUNKSIZE) * sizeof (udt_entry *));
+        new_rep = (udt_entry **)Malloc ((udt_no + CHUNKSIZE) * sizeof (udt_entry *));
         for (i = 0; i < udt_no; i++) {
             new_rep[i] = udt_rep[i];
         }
         if (udt_rep != NULL) { /* to cope with the initial allocation */
-            FREE (udt_rep);
+            Free (udt_rep);
         }
         udt_rep = new_rep;
     }

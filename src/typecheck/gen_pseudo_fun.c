@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2001/05/17 09:20:42  sbs
+ * MALLOC FREE aliminated
+ *
  * Revision 3.2  2001/03/22 20:39:28  dkr
  * include of tree.h eliminated
  *
@@ -117,7 +120,7 @@ CreatePseudoFoldFun (types *elem_type, char *fold_fun, prf fold_prf, char *res_v
     strcat (buffer, "__");
     strcat (buffer, pseudo_fold_fun);
     pseudo_fold_fun = TmpVarName (buffer);
-    FREE (buffer);
+    Free (buffer);
     tmp_res_var = TmpVarName (res_var);
 
     new_fundef = MakeFundef (

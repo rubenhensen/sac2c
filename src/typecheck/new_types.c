@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/05/17 09:20:42  sbs
+ * MALLOC FREE aliminated
+ *
  * Revision 3.3  2001/03/22 20:38:52  dkr
  * include of tre.h eliminated
  *
@@ -212,11 +215,11 @@ MakeNtype (typeconstr con, int arity)
 
     DBUG_ENTER ("MakeNtype");
 
-    res = (ntype *)MALLOC (sizeof (ntype));
+    res = (ntype *)Malloc (sizeof (ntype));
     NTYPE_CON (res) = con;
     NTYPE_ARITY (res) = arity;
     if (NTYPE_ARITY (res) > 0) {
-        NTYPE_SONS (res) = (ntype **)MALLOC (sizeof (ntype *) * NTYPE_ARITY (res));
+        NTYPE_SONS (res) = (ntype **)Malloc (sizeof (ntype *) * NTYPE_ARITY (res));
     } else {
         NTYPE_SONS (res) = NULL;
     }
@@ -651,8 +654,8 @@ TYFreeTypeConstructor (ntype *type)
 
     switch (NTYPE_CON (type)) {
     case TC_symbol:
-        FREE (SYMBOL_MOD (type));
-        FREE (SYMBOL_NAME (type));
+        Free (SYMBOL_MOD (type));
+        Free (SYMBOL_NAME (type));
         break;
     case TC_aks:
         SHFreeShape (AKS_SHP (type));
@@ -670,7 +673,7 @@ TYFreeTypeConstructor (ntype *type)
     default:
         DBUG_ASSERT ((0 == 1), "illegal type constructor!");
     }
-    FREE (type);
+    Free (type);
 
     DBUG_VOID_RETURN;
 }
@@ -794,12 +797,12 @@ TYType2DebugString (ntype *type)
     case TC_aks:
         tmp_str = SHShape2String (0, AKS_SHP (type));
         tmp += sprintf (tmp, "%s,", tmp_str);
-        FREE (tmp_str);
+        Free (tmp_str);
         break;
     case TC_akd:
         tmp_str = SHShape2String (AKD_DOTS (type), AKD_SHP (type));
         tmp += sprintf (tmp, "%s,", tmp_str);
-        FREE (tmp_str);
+        Free (tmp_str);
         break;
     case TC_aud:
         break;
@@ -828,7 +831,7 @@ TYType2DebugString (ntype *type)
         } else {
             tmp += sprintf (tmp, ", %s", tmp_str);
         }
-        FREE (tmp_str);
+        Free (tmp_str);
     }
     tmp += sprintf (tmp, "}");
 
