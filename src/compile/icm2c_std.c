@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.53  2003/09/29 23:45:48  dkr
+ * ND_CHECK_REUSE: unique objects are reused as well now
+ *
  * Revision 3.52  2003/09/29 22:54:24  dkr
  * code brushing done.
  * several icms renamed/removed/added.
@@ -625,7 +628,6 @@ ICMCompileND_CHECK_REUSE (char *to_NT, int to_sdim, char *from_NT, int from_sdim
                           char *copyfun)
 {
     shape_class_t to_sc = ICUGetShapeClass (to_NT);
-    unique_class_t to_uc = ICUGetUniqueClass (to_NT);
 
     DBUG_ENTER ("ICMCompileND_CHECK_REUSE");
 
@@ -634,7 +636,7 @@ ICMCompileND_CHECK_REUSE (char *to_NT, int to_sdim, char *from_NT, int from_sdim
 #include "icm_trace.c"
 #undef ND_CHECK_REUSE
 
-    if ((to_uc == C_unq) || (to_sc == C_scl)) {
+    if (to_sc == C_scl) {
         INDENT;
         fprintf (outfile, "SAC_NOOP()\n");
     } else {
