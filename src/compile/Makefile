@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.32  1998/02/12 16:58:29  dkr
+# added ../optimize in INCS
+#
 # Revision 1.31  1997/11/20 19:19:17  dkr
 # make clean now removes Old2NewWith.o
 #
@@ -103,7 +106,7 @@ CC        := gcc
 CCFLAGS   := -ansi -Wall -g
 CFLAGS    := -D__EXTENSIONS__
 
-INCS=-I../global -I../../inc -I../print -I../typecheck -I../refcount
+INCS=-I../global -I../../inc -I../print -I../typecheck -I../refcount -I../optimize
 MACS=icm.data icm_decl.c icm_args.c icm_comment.c icm_trace.c
 
 all: compile.o icm2c.o precompile.o libsac.a profile.o Old2NewWith.o
