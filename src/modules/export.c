@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2004/11/14 15:23:04  sah
+ * extended traversal to typedefs
+ *
  * Revision 1.4  2004/11/08 14:20:10  sah
  * added dbug prints and FUNDEC traversal
  *
@@ -258,6 +261,49 @@ EXPFundef (node *arg_node, info *arg_info)
 }
 
 node *
+EXPTypedef (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("EXPTypedef");
+
+    INFO_EXP_SYMBOL (arg_info) = TYPEDEF_NAME (arg_node);
+    INFO_EXP_EXPORTED (arg_info) = FALSE;
+    INFO_EXP_PROVIDED (arg_info) = FALSE;
+
+    if (INFO_EXP_INTERFACE (arg_info) != NULL) {
+        INFO_EXP_INTERFACE (arg_info) = Trav (INFO_EXP_INTERFACE (arg_info), arg_info);
+    }
+
+    if (INFO_EXP_EXPORTED (arg_info)) {
+        SET_FLAG (TYPEDEF, arg_node, IS_EXPORTED, TRUE);
+        SET_FLAG (TYPEDEF, arg_node, IS_PROVIDED, TRUE);
+    } else if (INFO_EXP_PROVIDED (arg_info)) {
+        SET_FLAG (TYPEDEF, arg_node, IS_EXPORTED, FALSE);
+        SET_FLAG (TYPEDEF, arg_node, IS_PROVIDED, TRUE);
+    } else {
+        SET_FLAG (TYPEDEF, arg_node, IS_EXPORTED, FALSE);
+        SET_FLAG (TYPEDEF, arg_node, IS_PROVIDED, FALSE);
+    }
+
+    if (TYPEDEF_NEXT (arg_node) != NULL) {
+        TYPEDEF_NEXT (arg_node) = Trav (TYPEDEF_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+EXPObjdef (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("EXPObjdef");
+
+    if (OBJDEF_NEXT (arg_node) != NULL) {
+        OBJDEF_NEXT (arg_node) = Trav (OBJDEF_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
 EXPModul (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("EXPModul");
@@ -272,6 +318,14 @@ EXPModul (node *arg_node, info *arg_info)
 
     if (MODUL_FUNDECS (arg_node) != NULL) {
         MODUL_FUNDECS (arg_node) = Trav (MODUL_FUNDECS (arg_node), arg_info);
+    }
+
+    if (MODUL_TYPES (arg_node) != NULL) {
+        MODUL_TYPES (arg_node) = Trav (MODUL_TYPES (arg_node), arg_info);
+    }
+
+    if (MODUL_OBJS (arg_node) != NULL) {
+        MODUL_OBJS (arg_node) = Trav (MODUL_OBJS (arg_node), arg_info);
     }
 
     MODUL_IMPORTS (arg_node) = INFO_EXP_INTERFACE (arg_info);
