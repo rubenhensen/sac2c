@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2002/06/07 17:14:09  mwe
+ * OPT_AL added for AssociativeLaw
+ *
  * Revision 3.13  2002/03/13 16:03:20  ktr
  * OPT_WLS added for Withloop-Scalarization
  *
@@ -205,6 +208,7 @@ extern unsigned int optimize;
 #define OPT_AP 0x02000000   /* array padding                               */
 #define OPT_APL 0x04000000  /* array placement                             */
 #define OPT_WLS 0x08000000  /* with-loop scalarization                     */
+#define OPT_AL 0x10000000   /* associative law                             */
 
 /* use ssa-form based optimizations instead of old opts */
 extern bool use_ssaform;

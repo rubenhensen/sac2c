@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.21  2002/06/07 17:11:23  mwe
+ * OPT_AL added for AssociativeLaw
+ *
  * Revision 3.20  2002/03/13 16:03:20  ktr
  * OPT_WLS added for Withloop-Scalarization
  *
@@ -430,6 +433,9 @@ AnalyseCommandline (int argc, char *argv[])
         ARG_CHOICE ("wls", optimize |= OPT_WLS);
         ARG_CHOICE ("WLS", optimize |= OPT_WLS);
 
+        ARG_CHOICE ("al", optimize |= OPT_AL);
+        ARG_CHOICE ("AL", optimize |= OPT_AL);
+
         ARG_CHOICE ("ive", optimize |= OPT_IVE);
         ARG_CHOICE ("IVE", optimize |= OPT_IVE);
 
@@ -677,6 +683,9 @@ AnalyseCommandline (int argc, char *argv[])
 
         ARG_CHOICE ("wls", optimize &= ~OPT_WLS);
         ARG_CHOICE ("WLS", optimize &= ~OPT_WLS);
+
+        ARG_CHOICE ("al", optimize &= ~OPT_AL);
+        ARG_CHOICE ("AL", optimize &= ~OPT_AL);
 
         ARG_CHOICE ("ive", optimize &= ~OPT_IVE);
         ARG_CHOICE ("IVE", optimize &= ~OPT_IVE);
