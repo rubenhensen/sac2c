@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.37  2003/03/13 17:18:26  dkr
+ * -minarrayrep activated for TAGGED_ARRAYS only
+ *
  * Revision 3.36  2003/03/13 17:02:21  dkr
  * flags ordered correctly now
  *
@@ -703,6 +706,7 @@ AnalyseCommandline (int argc, char *argv[])
 
     ARGS_OPTION ("maxrepsize", ARG_NUM (max_replication_size));
 
+#ifdef TAGGED_ARRAYS
     ARGS_OPTION ("minarrayrep", {
         ARG_CHOICE_BEGIN ();
         ARG_CHOICE ("s", min_array_rep = MIN_ARRAY_REP_SCL_AKS);
@@ -711,6 +715,7 @@ AnalyseCommandline (int argc, char *argv[])
         ARG_CHOICE ("*", min_array_rep = MIN_ARRAY_REP_AUD);
         ARG_CHOICE_END ();
     });
+#endif
 
     ARGS_FLAG ("MMlib", makedeps = 4);
     ARGS_FLAG ("MM", makedeps = 3);

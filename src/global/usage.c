@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.42  2003/03/13 17:18:30  dkr
+ * -minarrayrep activated for TAGGED_ARRAYS only
+ *
  * Revision 3.41  2003/03/13 15:49:19  dkr
  * -minarrayrep added
  *
@@ -578,6 +581,7 @@ usage ()
             "only.\n",
             max_threads, max_sync_fold, min_parallel_size, max_replication_size);
 
+#ifdef TAGGED_ARRAYS
     printf ("\n\nBACKEND OPTIONS:\n\n"
 
             "    -minarrayrep <class>\n"
@@ -587,6 +591,7 @@ usage ()
             "                      +: use SCL, AUD representations only,\n"
             "                      *: use AUD representation only.\n"
             "                    (default: s)\n");
+#endif
 
     printf (
       "\n\nGENERAL DEBUG OPTIONS:\n\n"
