@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.14  1999/05/06 15:39:57  sbs
+ * access-macro NODE_FILE added!
+ *
  * Revision 2.13  1999/05/05 13:06:05  jhs
  * Macros added to access the original operators.
  *
@@ -296,6 +299,8 @@ extern char *prf_name_str[];
 #define NODE_TYPE(n) ((n)->nodetype)
 
 #define NODE_LINE(n) ((n)->lineno)
+
+#define NODE_FILE(n) ((n)->src_file)
 
 /*
  *   Non-node-structures
