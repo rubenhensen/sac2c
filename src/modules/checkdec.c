@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2001/04/03 09:47:25  dkr
+ * WDECarg: minor changes in output format done
+ *
  * Revision 3.7  2001/03/29 15:49:18  dkr
  * call of Type2String: 3rd argument changed from NULL to FALSE
  *
@@ -708,7 +711,7 @@ WDECmodul (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *WDECtypedef(node *arg_node, node *arg_info)
+ *   node *WDECtypedef( node *arg_node, node *arg_info)
  *
  * Description:
  *
@@ -745,7 +748,7 @@ WDECtypedef (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *WDECobjdef(node *arg_node, node *arg_info)
+ *   node *WDECobjdef( node *arg_node, node *arg_info)
  *
  * Description:
  *
@@ -775,7 +778,7 @@ WDECobjdef (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *WDECfundef(node *arg_node, node *arg_info)
+ *   node *WDECfundef( node *arg_node, node *arg_info)
  *
  * Description:
  *
@@ -830,7 +833,7 @@ WDECfundef (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *WDECarg(node *arg_node, node *arg_info)
+ *   node *WDECarg( node *arg_node, node *arg_info)
  *
  * Description:
  *
@@ -842,13 +845,13 @@ WDECarg (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("WDECarg");
 
+    fprintf (outfile, " ");
+
     PrintDecTypes (ARG_TYPE (arg_node), (char *)arg_info);
 
     if ((ARG_ATTRIB (arg_node) == ST_reference)
         || (ARG_ATTRIB (arg_node) == ST_readonly_reference)) {
-        fprintf (outfile, " & ");
-    } else {
-        fprintf (outfile, " ");
+        fprintf (outfile, " &");
     }
 
     fprintf (outfile, " %s", ARG_NAME (arg_node));
