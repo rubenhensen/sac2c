@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.7  1999/03/15 14:13:37  bs
+ * Access macros renamed (take a look at tree_basic.h).
+ * FltnArray and FltnExprs modified: Now compact propagation of float and double
+ * vectors were stored additionally.
+ *
  * Revision 2.6  1999/03/09 10:44:07  bs
  * DbugPrintArray removed. This debugging-information will be printed from print.c .
  *
@@ -404,30 +409,6 @@ static local_stack *tos, *stack, *stack_limit;
 /******************************************************************************
  *
  * function:
- *  int *IntArray(int len, int* array)
- *
- * description:
- *   - input:  an array of int and its length
- *
- *   - output: the array       if its length is greater or equal 2
- *             NULL            otherwise
- *
- *   - It is only used in FltnArray.
- *
- ******************************************************************************/
-
-static int *
-IntArray (int len, int *array)
-{
-    if ((array == NULL) || (len <= 0))
-        return (NULL);
-    else
-        return (array);
-}
-
-/******************************************************************************
- *
- * function:
  *   void DbugPrintStack(void)
  *
  * description:
@@ -445,6 +426,68 @@ DbugPrintStack (void)
     while (tmp-- > stack)
         printf ("%p : %s -> %s on level %d\n", tmp, tmp->id_old, tmp->id_new,
                 tmp->w_level);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   simpletype PreTypecheck(nodetype type1, simpletype type2)
+ *
+ * description:
+ *   Compares two types and results the simpletype in which will be casted.
+ *   If a cast is not possible, T_unknown will be returned.
+ *
+ ******************************************************************************/
+
+static simpletype
+PreTypecheck (nodetype type1, simpletype type2)
+{
+    DBUG_ENTER ("PreTypecheck");
+
+    switch (type1) {
+    case N_double:
+        if (type2 == T_unknown)
+            type2 = T_unknown;
+        else
+            type2 = T_double;
+        break;
+    case N_float:
+        if (type2 == T_unknown)
+            type2 = T_unknown;
+        else if (type2 == T_double)
+            type2 = T_double;
+        else
+            type2 = T_float;
+        break;
+    case N_num:
+        if (type2 == T_unknown)
+            type2 = T_unknown;
+        else if (type2 == T_double)
+            type2 = T_double;
+        else if (type2 == T_float)
+            type2 = T_float;
+        else
+            type2 = T_int;
+        break;
+#ifdef 0
+    case N_bool:
+        if (type2 == T_unknown)
+            type2 = T_unknown;
+        else if (type2 == T_double)
+            type2 = T_double;
+        else if (type2 == T_float)
+            type2 = T_float;
+        else if (type2 == T_int)
+            type2 = T_int;
+        else
+            type2 = T_bool;
+        break;
+#endif
+    default:
+        type2 = T_unknown;
+    }
+
+    DBUG_RETURN (type2);
 }
 
 /******************************************************************************
@@ -911,11 +954,10 @@ FltnAssign (node *arg_node, node *arg_info)
      */
     return_node = INFO_FLTN_LASTASSIGN (arg_info);
 
-    DBUG_EXECUTE ("FLATTEN", {
-        if (return_node != arg_node)
-            DBUG_PRINT ("FLATTEN", ("node %08x will be inserted instead of %08x",
-                                    return_node, arg_node));
-    });
+    if (return_node != arg_node) {
+        DBUG_PRINT ("FLATTEN", ("node %08x will be inserted instead of %08x", return_node,
+                                arg_node));
+    }
 
     if (ASSIGN_NEXT (arg_node))
         ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
@@ -1072,16 +1114,31 @@ FltnArray (node *arg_node, node *arg_info)
     DBUG_ASSERT ((ARRAY_AELEMS (arg_node) != NULL), "N_array node where AELEMS is NULL!");
 
     old_ctxt = INFO_FLTN_CONTEXT (arg_info);
-    INFO_FLTN_ARRAYLENGTH (arg_info) = 0;
-    INFO_FLTN_INTARRAY (arg_info) = NULL;
+    INFO_FLTN_VECLEN (arg_info) = 0;
+    INFO_FLTN_CONSTVEC (arg_info) = NULL;
+    INFO_FLTN_VECTYPE (arg_info) = T_int;
     INFO_FLTN_CONTEXT (arg_info) = CT_array;
 
     ARRAY_AELEMS (arg_node) = Trav (ARRAY_AELEMS (arg_node), arg_info);
 
-    ARRAY_LENGTH (arg_node) = MAX (0, INFO_FLTN_ARRAYLENGTH (arg_info));
-    ARRAY_INTARRAY (arg_node)
-      = IntArray (INFO_FLTN_ARRAYLENGTH (arg_info), INFO_FLTN_INTARRAY (arg_info));
-    INFO_FLTN_INTARRAY (arg_info) = NULL;
+    ARRAY_VECLEN (arg_node) = INFO_FLTN_VECLEN (arg_info);
+
+    switch (INFO_FLTN_VECTYPE (arg_info)) {
+    case T_int:
+        ARRAY_INTVEC (arg_node) = (int *)INFO_FLTN_CONSTVEC (arg_info);
+        INFO_FLTN_CONSTVEC (arg_info) = NULL;
+        break;
+    case T_float:
+        ARRAY_FLOATVEC (arg_node) = (float *)INFO_FLTN_CONSTVEC (arg_info);
+        INFO_FLTN_CONSTVEC (arg_info) = NULL;
+        break;
+    case T_double:
+        ARRAY_DOUBLEVEC (arg_node) = (double *)INFO_FLTN_CONSTVEC (arg_info);
+        INFO_FLTN_CONSTVEC (arg_info) = NULL;
+        break;
+    default:
+        FREE (INFO_FLTN_CONSTVEC (arg_info));
+    }
     INFO_FLTN_CONTEXT (arg_info) = old_ctxt;
 
     DBUG_RETURN (arg_node);
@@ -1196,12 +1253,14 @@ FltnReturn (node *arg_node, node *arg_info)
 node *
 FltnExprs (node *arg_node, node *arg_info)
 {
-    int abstract, info_fltn_array_index, *info_fltn_intarray;
+    int *info_fltn_intvec, info_fltn_array_index, abstract;
+    float *info_fltn_floatvec;
+    double *info_fltn_doublevec;
     node *expr, *expr2;
 
     DBUG_ENTER ("FltnExprs");
 
-    info_fltn_array_index = INFO_FLTN_ARRAYLENGTH (arg_info);
+    info_fltn_array_index = INFO_FLTN_VECLEN (arg_info);
     expr = EXPRS_EXPR (arg_node);
 
     /* skip leading casts */
@@ -1233,18 +1292,9 @@ FltnExprs (node *arg_node, node *arg_info)
     case CT_array:
         abstract = ((NODE_TYPE (expr) == N_ap) || (NODE_TYPE (expr) == N_prf)
                     || (NODE_TYPE (expr) == N_Nwith) || (NODE_TYPE (expr) == N_with));
-        if ((info_fltn_array_index >= 0) && (NODE_TYPE (expr) == N_num)) {
-            /*
-             * count the array element if it's a constant integer
-             */
-            INFO_FLTN_ARRAYLENGTH (arg_info) = info_fltn_array_index + 1;
-        } else {
-            /*
-             * notice: the element isn't a constant integer
-             */
-            info_fltn_array_index = -1;
-            INFO_FLTN_ARRAYLENGTH (arg_info) = -1;
-        }
+        INFO_FLTN_VECTYPE (arg_info)
+          = PreTypecheck (NODE_TYPE (expr), INFO_FLTN_VECTYPE (arg_info));
+        INFO_FLTN_VECLEN (arg_info) = info_fltn_array_index + 1;
         break;
     default:
         DBUG_ASSERT (0, "illegal context !");
@@ -1262,10 +1312,10 @@ FltnExprs (node *arg_node, node *arg_info)
     if (abstract) {
         EXPRS_EXPR (arg_node) = Abstract (EXPRS_EXPR (arg_node), arg_info);
         expr2 = Trav (expr, arg_info);
-        if (NODE_TYPE (expr2) == N_array) {
-            ID_ARRAYLENGTH (EXPRS_EXPR (arg_node)) = ARRAY_LENGTH (expr2);
-            ID_CONSTARRAY (EXPRS_EXPR (arg_node))
-              = CopyIntArray (ARRAY_LENGTH (expr2), ARRAY_INTARRAY (expr2));
+        if ((NODE_TYPE (expr2) == N_array) && (ARRAY_VECTYPE (expr2) == T_int)) {
+            ID_VECLEN (EXPRS_EXPR (arg_node)) = ARRAY_VECLEN (expr2);
+            ID_INTVEC (EXPRS_EXPR (arg_node))
+              = CopyIntVector (ARRAY_VECLEN (expr2), ARRAY_INTVEC (expr2));
         }
     } else {
         expr2 = Trav (expr, arg_info);
@@ -1278,24 +1328,52 @@ FltnExprs (node *arg_node, node *arg_info)
      * Last but not least remaining exprs have to be done:
      */
     if (EXPRS_NEXT (arg_node) == NULL) {
-        if ((INFO_FLTN_CONTEXT (arg_info) == CT_array)
-            && (INFO_FLTN_ARRAYLENGTH (arg_info) > 0)) {
-            info_fltn_intarray = MALLOC (INFO_FLTN_ARRAYLENGTH (arg_info) * sizeof (int));
+        if (INFO_FLTN_CONTEXT (arg_info) == CT_array) {
             /*
-             * collect the array element if it's a constant integer
+             * collect the array element if it's a constant vector
              */
-            INFO_FLTN_INTARRAY (arg_info) = info_fltn_intarray;
-            info_fltn_intarray[info_fltn_array_index] = NUM_VAL (expr);
+            switch (INFO_FLTN_VECTYPE (arg_info)) {
+            case T_int:
+                info_fltn_intvec = MALLOC (INFO_FLTN_VECLEN (arg_info) * sizeof (int));
+                INFO_FLTN_CONSTVEC (arg_info) = info_fltn_intvec;
+                info_fltn_intvec[info_fltn_array_index] = NUM_VAL (expr);
+                break;
+            case T_float:
+                info_fltn_floatvec
+                  = MALLOC (INFO_FLTN_VECLEN (arg_info) * sizeof (float));
+                INFO_FLTN_CONSTVEC (arg_info) = info_fltn_floatvec;
+                info_fltn_floatvec[info_fltn_array_index] = FLOAT_VAL (expr);
+                break;
+            case T_double:
+                info_fltn_doublevec
+                  = MALLOC (INFO_FLTN_VECLEN (arg_info) * sizeof (double));
+                INFO_FLTN_CONSTVEC (arg_info) = info_fltn_doublevec;
+                info_fltn_doublevec[info_fltn_array_index] = DOUBLE_VAL (expr);
+            default:
+                /* Nothing to do */
+            }
         }
     } else {
         EXPRS_NEXT (arg_node) = Trav (EXPRS_NEXT (arg_node), arg_info);
-        if ((INFO_FLTN_CONTEXT (arg_info) == CT_array)
-            && (INFO_FLTN_ARRAYLENGTH (arg_info) > 0)) {
+        if (INFO_FLTN_CONTEXT (arg_info) == CT_array) {
             /*
-             * collect the array element if it's a constant integer
+             * collect the array element if it's a constant vector
              */
-            info_fltn_intarray = INFO_FLTN_INTARRAY (arg_info);
-            info_fltn_intarray[info_fltn_array_index] = NUM_VAL (expr);
+            switch (INFO_FLTN_VECTYPE (arg_info)) {
+            case T_int:
+                info_fltn_intvec = (int *)INFO_FLTN_CONSTVEC (arg_info);
+                info_fltn_intvec[info_fltn_array_index] = NUM_VAL (expr);
+                break;
+            case T_float:
+                info_fltn_floatvec = (float *)INFO_FLTN_CONSTVEC (arg_info);
+                info_fltn_floatvec[info_fltn_array_index] = FLOAT_VAL (expr);
+                break;
+            case T_double:
+                info_fltn_doublevec = (double *)INFO_FLTN_CONSTVEC (arg_info);
+                info_fltn_doublevec[info_fltn_array_index] = DOUBLE_VAL (expr);
+            default:
+                /* Nothing to do */
+            }
         }
     }
 
