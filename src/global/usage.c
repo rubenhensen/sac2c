@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.6  1999/05/20 14:09:34  cg
+ * typos fixed.
+ *
  * Revision 2.5  1999/05/18 12:54:13  cg
  * Option -minae renamed to -maxae.
  * No default value printed for option -numthreads
@@ -476,7 +479,7 @@ usage ()
       "\n"
       "\tMemory accesses may be evaluated with respect to their cache behavior either\n"
       "\timmediately withing the application process, stored in a file named <file>.cs\n"
-      "\twhere <file> means the name of the application ptogram analysed, or they may\n"
+      "\twhere <file> means the name of the application program analysed, or they may\n"
       "\tbe piped to a concurrently running analyser process. While immediate analysis\n"
       "\tusually is the fastest alternative, results, inparticular for advanced "
       "analysis,\n"
