@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2001/04/03 14:24:49  nmw
+ * debug messages added
+ *
  * Revision 1.9  2001/03/29 09:09:29  nmw
  * tabs2spaces done
  *
@@ -224,9 +227,10 @@ USSAvardec (node *arg_node, node *arg_info)
     node *expr;
 
     DBUG_ENTER ("USSAvardec");
-    DBUG_PRINT ("USSA", ("name %s: STATUS %s, ATTRIB %s\n", VARDEC_NAME (arg_node),
-                         mdb_statustype[VARDEC_STATUS (arg_node)],
-                         mdb_statustype[VARDEC_ATTRIB (arg_node)]));
+    DBUG_PRINT ("USSA",
+                ("name %s: STATUS %s, ATTRIB %s, AVIS %p\n", VARDEC_NAME (arg_node),
+                 mdb_statustype[VARDEC_STATUS (arg_node)],
+                 mdb_statustype[VARDEC_ATTRIB (arg_node)], VARDEC_AVIS (arg_node)));
 
     /* 1. handle SSAPHITARGET */
     if ((AVIS_SSAPHITARGET (VARDEC_AVIS (arg_node)) == PHIT_DO)
@@ -713,6 +717,13 @@ USSAids (ids *arg_ids, node *arg_info)
     DBUG_ENTER ("USSAids");
 
     if (AVIS_SUBSTUSSA (IDS_AVIS (arg_ids)) != NULL) {
+        DBUG_PRINT ("USSA", ("rename ids %s(%p) in %s(%p)",
+                             VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (IDS_AVIS (arg_ids))),
+                             IDS_AVIS (arg_ids),
+                             VARDEC_OR_ARG_NAME (
+                               AVIS_VARDECORARG (AVIS_SUBSTUSSA (IDS_AVIS (arg_ids)))),
+                             AVIS_SUBSTUSSA (IDS_AVIS (arg_ids))));
+
         /* restore rename back to undo vardec */
         IDS_AVIS (arg_ids) = AVIS_SUBSTUSSA (IDS_AVIS (arg_ids));
         IDS_VARDEC (arg_ids) = AVIS_VARDECORARG (IDS_AVIS (arg_ids));
@@ -758,14 +769,14 @@ TravIDS (ids *arg_ids, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* UndoSSATransform(node* syntax_tree)
+ *   node* UndoSSATransform(node* modul)
  *
  * description:
  *   Starts traversal of AST to restore original artificial identifier.
  *
  ******************************************************************************/
 node *
-UndoSSATransform (node *syntax_tree)
+UndoSSATransform (node *modul)
 {
     node *arg_info;
     funtab *old_tab;
@@ -774,14 +785,16 @@ UndoSSATransform (node *syntax_tree)
 
     arg_info = MakeInfo ();
 
+    INFO_USSA_MODUL (arg_info) = modul;
+
     old_tab = act_tab;
     act_tab = undossa_tab;
 
-    syntax_tree = Trav (syntax_tree, arg_info);
+    modul = Trav (modul, arg_info);
 
     act_tab = old_tab;
 
     FREE (arg_info);
 
-    DBUG_RETURN (syntax_tree);
+    DBUG_RETURN (modul);
 }
