@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 2.11  2000/11/20 14:32:58  sacbase
+# locker and update targets extended by DEMOBASE and rmobsfiles
+#
 # Revision 2.10  2000/11/16 12:58:24  dkr
 # libsac.tar is merged into runtime.tar
 # Makefile.Config is merged into stdlib.tar
@@ -77,6 +80,7 @@ TEMPDIR    =  /tmp
 SAC2CDIR   =  ../..
 RUNTIMEDIR =  $(SAC2CDIR)/src/runtime
 STDLIBDIR  =  $(SACBASE)/stdlib
+DEMOBASE   =  $(HOME)/sac
 DEMODIR    =  $(SACBASE)/demo
 
 
@@ -342,13 +346,16 @@ clean:
 
 locker:
 	locker $(SAC2CDIR)
-	locker $(DEMODIR)
+	locker $(DEMOBASE)
 	locker $(STDLIBDIR)
 
 update: clean
 	update $(SAC2CDIR)
-	update $(DEMODIR)
+	rmobsfiles $(SAC2CDIR)
+	update $(DEMOBASE)
+	rmobsfiles $(DEMOBASE)
 	update $(STDLIBDIR)
+	rmobsfiles $(STDLIBDIR)
 
 new:
 	rm -f $(BINDISTRIBS) $(SRCDISTRIBS) $(addsuffix .for.*,$(SPECIFICS))
