@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.126  2004/11/24 10:56:11  sah
+ * *** empty log message ***
+ *
  * Revision 3.125  2004/11/24 10:50:14  sbs
  * TCmakeIdsFromVardecs added
  *
@@ -202,7 +205,8 @@ extern node *TCmakeIdsFromVardecs (node *vardecs);
 
 extern node *TClookupIds (const char *name, node *ids_chain);
 
-extern int TCcountNums (node *numsp);
+extern int TCcountNums (node *nums);
+extern bool TCnumsContains (int val, node *nums);
 
 /*--------------------------------------------------------------------------*/
 

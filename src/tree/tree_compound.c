@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.103  2004/11/24 10:56:11  sah
+ * *** empty log message ***
+ *
  * Revision 3.102  2004/11/24 10:50:14  sbs
  * TCmakeIdsFromVardecs added
  *
@@ -1080,18 +1083,33 @@ TCmakeIdsFromVardecs (node *vardecs)
  ***/
 
 int
-CountNums (nums *numsp)
+TCcountNums (node *nums)
 {
     int cnt = 0;
 
     DBUG_ENTER ("CountNums");
 
-    while (numsp != NULL) {
+    while (nums != NULL) {
         cnt++;
-        numsp = numsp->next;
+        nums = NUMS_NEXT (nums->next);
     }
 
     DBUG_RETURN (cnt);
+}
+
+bool
+TCnumsContains (int val, node *nums)
+{
+    bool result = FALSE;
+
+    DBUG_ENTER ("TCnumsContains");
+
+    while ((nums != NULL) && (!result)) {
+        result = (NUMS_VAL (nums) == val);
+        nums = NUMS_NEXT (nums);
+    }
+
+    DBUG_RETURN (result);
 }
 
 /*--------------------------------------------------------------------------*/
