@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.31  1998/02/09 17:41:31  dkr
+ * declaration of function GenerateMasks is now taken from optimize.h
+ *
  * Revision 1.30  1998/02/08 12:02:49  dkr
  * *** empty log message ***
  *
@@ -134,6 +137,7 @@
 #include "dbug.h"
 #include "typecheck.h" /* to use LookupType */
 #include "traverse.h"
+#include "optimize.h"
 #include "internal_lib.h"
 #include "free.h"
 #include "refcount.h"
@@ -150,9 +154,6 @@
     ID_REFCNT (a) = b->refcnt;
 
 #define MUST_REFCOUNT(type) (IsArray (type) || IsNonUniqueHidden (type))
-
-extern node *GenerateMasks (node *arg_node, node *arg_info);
-/* from optimize.c */
 
 static int varno;         /* used to store the number of known variables in a
                            * sac-function (used for mask[])
@@ -1292,7 +1293,7 @@ RCNpart (node *arg_node, node *arg_info)
 
 #if 0
   indexvec_varno=IDS_VARNO(NWITHID_VEC(PART_IDX(arg_node)));
-  if(N_modarray == WITH_OPERATOR(arg_node)->nodetype) {
+  if (N_modarray == WITH_OPERATOR(arg_node)->nodetype) {
     DBUG_ASSERT(N_id == MODARRAY_ARRAY(WITH_OPERATOR(arg_node))->nodetype,
                 "wrong nodetype != N_id");
     modarray_varno=VARDEC_VARNO(ID_VARDEC(MODARRAY_ARRAY(WITH_OPERATOR(arg_node))));
