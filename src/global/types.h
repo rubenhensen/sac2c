@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.52  2004/11/22 16:44:40  ktr
+ * typedefs moved from symboltable SacDevCamp 04
+ *
  * Revision 3.51  2004/11/22 16:31:12  ktr
  * typedefss moved from modulemanager SacDevCamp04
  *
@@ -1005,5 +1008,27 @@ typedef struct PAD_INFO_T {
 
 typedef struct MODULE_T module_t;
 typedef node *(*serfun_p) ();
+
+/*
+ * moved from symboltable.h
+ */
+
+typedef enum {
+    SET_funbody,
+    SET_funhead,
+    SET_typedef,
+    SET_objdef,
+    SET_wrapperbody,
+    SET_wrapperhead,
+    SET_namespace
+} STentrytype_t;
+
+typedef enum { SVT_local, SVT_provided, SVT_exported } STvisibility_t;
+
+typedef struct ST_ENTRY_T STentry_t;
+typedef struct ST_SYMBOLITERATOR_T STsymboliterator_t;
+typedef struct ST_ENTRYITERATOR_T STentryiterator_t;
+typedef struct ST_SYMBOLTABLE_T STtable_t;
+typedef struct ST_SYMBOL_T STsymbol_t;
 
 #endif /* _SAC_TYPES_H_ */
