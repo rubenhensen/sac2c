@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2000/12/01 18:34:51  dkr
+ * no cc warnings '... might be used uninitialized' anymore
+ * global comment added
+ *
  * Revision 3.1  2000/11/20 18:01:26  sacbase
  * new release made
  *
@@ -138,6 +142,26 @@
  * Initial revision
  *
  */
+
+/******************************************************************************
+ *
+ * This module does some precompilation.
+ *
+ * It carries out two separate tree traversals.
+ * Things done during first traversal:
+ *   - Arguments of function applications are abstracted if needed:
+ *       a = fun( a)   =>   tmp_a = a; a = fun( tmp_a)
+ *     This can only be done *after* type-checking, because types are needed
+ *     to decide if abstraction is needed or not, and *after* code optimizations
+ *     are finished, because some optimizations (especially CF) might undo these
+ *     abstractions.
+ *   - For each with-loop a unique and adjusted dummy fold-function is
+ *     generated.
+ * Things done during second traversal:
+ *   - Artificial arguments and return values are removed.
+ *   - All names and identifiers are renamed in order to avoid name clashes.
+ *
+ ******************************************************************************/
 
 #include <string.h>
 
@@ -460,12 +484,13 @@ PREC1assign (node *arg_node, node *arg_info)
 node *
 PREC1let (node *arg_node, node *arg_info)
 {
-    node *expr, *new_foldfun, *arg, *arg_id, *tmp_vardec;
+    node *expr, *new_foldfun, *arg, *arg_id;
     ids *let_ids, *tmp_ids;
     char *ids_name, *tmp_name, *old_name;
-    prf prf;
     int arg_idx;
     bool flatten, is_prf;
+    node *tmp_vardec = NULL;
+    prf prf = 0;
 
     DBUG_ENTER ("PREC1let");
 
