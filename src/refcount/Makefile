@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.3  2000/12/07 13:45:36  dkr
+# include path extended
+#
 # Revision 3.2  2000/12/06 20:09:05  dkr
 # make deps done
 #
@@ -55,7 +58,7 @@ CCFLAGS   := -ansi -Wall -g -DSAC_FOR_$(OS)
 CFLAGS    := -D__EXTENSIONS__
 
 
-INCS=-I../global -I../tree -I../../inc -I../typecheck -I../optimize
+INCS = -I../global -I../tree -I../../inc -I ../flatten -I../typecheck -I../optimize
 
 all: refcount.o
 
