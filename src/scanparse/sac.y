@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 1.159  1998/06/03 14:34:20  cg
+ * special purpose module name "__MAIN" renamed to "_MAIN"
+ *
  * Revision 1.158  1998/04/30 12:22:45  srs
  * set temporary son NWITHOP_EXPR to NULL after usage
  *
@@ -575,7 +578,7 @@ node *decl_tree;
 node *sib_tree;
 
 
-static char *mod_name="__MAIN";
+static char *mod_name="_MAIN";
 static char *link_mod_name=NULL;
 static node *store_pragma=NULL;
 static node *store_wlcomp_pragma_global=NULL;
