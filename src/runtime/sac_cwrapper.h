@@ -1,10 +1,10 @@
-#ifndef _sac_interface_makrodefs_h
-#define _sac_interface_makrodefs_h
-
 /*
  *  makros for the SAC <-> Interface wrapper functions
  *
  */
+
+#ifndef _sac_interface_makrodefs_h
+#define _sac_interface_makrodefs_h
 
 /* check for refcount >=1 */
 #define SAC_IW_CHECK_RC(a)                                                               \
@@ -36,12 +36,15 @@
 /* set local refcount of var to value */
 #define SAC_SETLOCALRC(var, value) SAC_ARG_LRC ((*var)) = value;
 
-/* */
-#define SAC_DECANDFREERC(var)                                                            \
-    {                                                                                    \
-        if (SAC_ARG_LRC (var) == 0) {                                                    \
-            SAC_CI_FreeSACArg (var);                                                     \
-        }                                                                                \
+/*
+ * decrement local refcounter
+ * if refcount reaches 0, data and refcounter has been freed by SAC-function
+ */
+#define SAC_DECLOCALRC(var)                                                              \
+    SAC_ARG_LRC (var) = SAC_ARG_LRC (var) - 1;                                           \
+    if (SAC_ARG_LRC (var) == 0) {                                                        \
+        SAC_ARG_ELEMS (var) = NULL;                                                      \
+        SAC_ARG_RC (var) = NULL;                                                         \
     }
 
 #endif
