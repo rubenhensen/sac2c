@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.62  2002/06/27 16:57:00  dkr
+ * signature of CreateSel() modified
+ *
  * Revision 3.61  2002/06/27 13:32:04  dkr
  * - Ids2Array() added
  * - CreateSel() modified
@@ -3871,7 +3874,7 @@ CreateScalarWith (int dim, shpseg *shape, simpletype btype, node *expr, node *fu
 /******************************************************************************
  *
  * Function:
- *   node *CreateZero( int dim, shpseg *shape, simpletype btype, bool unroll,
+ *   node *CreateZero( int dim, shpseg *shape, simpletype btype, bool no_wl,
  *                     node *fundef)
  *
  * Description:
@@ -3880,7 +3883,7 @@ CreateScalarWith (int dim, shpseg *shape, simpletype btype, node *expr, node *fu
  ******************************************************************************/
 
 node *
-CreateZero (int dim, shpseg *shape, simpletype btype, bool unroll, node *fundef)
+CreateZero (int dim, shpseg *shape, simpletype btype, bool no_wl, node *fundef)
 {
     node *zero;
     int length = GetShpsegLength (dim, shape);
@@ -3891,10 +3894,12 @@ CreateZero (int dim, shpseg *shape, simpletype btype, bool unroll, node *fundef)
 
     if (dim == 0) {
         zero = CreateZeroScalar (btype);
-    } else if (unroll && (dim == 1)) {
+    } else if (no_wl && (dim == 1)) {
         zero = CreateZeroVector (length, btype);
     } else {
-        if (unroll) {
+        if (no_wl) {
+            DBUG_ASSERT ((length <= wlunrnum), "CreateZero(): Vector is too long!");
+
             zero
               = MakePrf (F_reshape,
                          MakeExprs (Shpseg2Array (shape, dim),
@@ -3910,7 +3915,7 @@ CreateZero (int dim, shpseg *shape, simpletype btype, bool unroll, node *fundef)
 /******************************************************************************
  *
  * Function:
- *   node *CreateSel( ids *sel_vec, ids *sel_ids, node *sel_array,
+ *   node *CreateSel( ids *sel_vec, ids *sel_ids, node *sel_array, bool no_wl,
  *                    node *fundef)
  *
  * Description:
@@ -3919,7 +3924,7 @@ CreateZero (int dim, shpseg *shape, simpletype btype, bool unroll, node *fundef)
  ******************************************************************************/
 
 node *
-CreateSel (ids *sel_vec, ids *sel_ids, node *sel_array, node *fundef)
+CreateSel (ids *sel_vec, ids *sel_ids, node *sel_array, bool no_wl, node *fundef)
 {
     node *sel;
     int len_index, dim_array;
@@ -3936,7 +3941,7 @@ CreateSel (ids *sel_vec, ids *sel_ids, node *sel_array, node *fundef)
 
     if (len_index > dim_array) {
         DBUG_ASSERT ((0), "illegal array selection found!");
-    } else if (len_index == dim_array) {
+    } else if ((len_index == dim_array) || no_wl) {
         sel = MakePrf (F_sel, MakeExprs (DupIds_Id (sel_vec),
                                          MakeExprs (DupNode (sel_array), NULL)));
     } else { /* (len_index < dim_array) */

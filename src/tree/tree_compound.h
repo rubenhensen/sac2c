@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.63  2002/06/27 16:56:26  dkr
+ * signature of CreateSel() modified
+ *
  * Revision 3.62  2002/06/27 13:31:47  dkr
  * Ids2Array() added
  *
@@ -1932,7 +1935,8 @@ extern node *CreateScalarWith (int dim, shpseg *shape, simpletype btype, node *e
 extern node *CreateZero (int dim, shpseg *shape, simpletype btype, bool unroll,
                          node *fundef);
 
-extern node *CreateSel (ids *sel_vec, ids *sel_ids, node *sel_array, node *fundef);
+extern node *CreateSel (ids *sel_vec, ids *sel_ids, node *sel_array, bool no_wl,
+                        node *fundef);
 
 /*--------------------------------------------------------------------------*/
 
