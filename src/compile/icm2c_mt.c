@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.7  1999/07/30 13:52:12  jhs
+ * Deleted unused parts.
+ *
  * Revision 2.6  1999/07/21 12:13:29  jhs
  * Adjusted indenting.
  *
@@ -273,7 +276,7 @@ ICMCompileMT_SPMD_FUN_RET (int barrier_id, int narg, char **vararg)
     indent--;
     INDENT;
     fprintf (outfile, "}\n");
-    /* ####jhs */
+
     fprintf (outfile, "\n");
 
     DBUG_VOID_RETURN;
@@ -535,21 +538,6 @@ ICMCompileMT_SYNC_ONEFOLD (int barrier_id, char *foldtype, char *accu_var, char 
 
     fprintf (outfile, "\n");
 
-    /*
-     * This is now done by the compilation of N_sync.
-     * ####jhs no longer needed
-     */
-
-    /*
-    INDENT;
-    fprintf(outfile, "{\n");
-
-    indent++;
-
-    INDENT;
-    fprintf(outfile, "label_master_continue_%d:\n", barrier_id);
-    */
-
 #ifndef BEtest
     FreeTree (fold_code);
 #endif /* BEtest */
@@ -591,20 +579,6 @@ ICMCompileMT_SYNC_NONFOLD (int barrier_id)
     fprintf (outfile, "}\n");
 
     fprintf (outfile, "\n");
-
-    /*
-     * This is now done by the compilation of N_sync.
-     * ####jhs no longer needed
-     */
-    /*
-    INDENT;
-    fprintf(outfile, "{\n");
-
-    indent++;
-
-    INDENT;
-    fprintf(outfile, "label_master_continue_%d:\n", barrier_id);
-    */
 
     DBUG_VOID_RETURN;
 }
