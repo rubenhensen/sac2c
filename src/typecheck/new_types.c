@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.33  2002/10/28 10:31:28  sbs
+ * some DBUG_ASSERTS added in TYOldType2Type
+ *
  * Revision 3.32  2002/10/18 15:34:29  sbs
  * Now Type2OldType converts T_classtype thingies into T_hidden ones
  * (for backend compatibility
@@ -4070,11 +4073,24 @@ TYOldType2Type (types *old)
         res = TYMakeSimpleType (TYPES_BASETYPE (old));
         break;
     case T_void:
+        res = NULL;
+        DBUG_ASSERT (0, "TYOldType2Type applied to T_void");
+        break;
     case T_dots:
+        res = NULL;
+        DBUG_ASSERT (0, "TYOldType2Type applied to T_dots");
+        break;
     case T_nothing:
+        res = NULL;
+        DBUG_ASSERT (0, "TYOldType2Type applied to T_nothing");
+        break;
     case T_unknown:
+        res = NULL;
+        DBUG_ASSERT (0, "TYOldType2Type applied to T_unknown");
+        break;
     default:
         res = NULL;
+        DBUG_ASSERT (0, "TYOldType2Type applied to illegal type");
     }
 
     if (res != NULL) {
