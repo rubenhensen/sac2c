@@ -1,44 +1,47 @@
 /*
  *
- *  $Log$
- *  Revision 3.3  2001/06/28 07:46:51  cg
- *  Primitive function psi() renamed to sel().
+ * $Log$
+ * Revision 3.4  2002/09/09 17:40:13  dkr
+ * result of TC: F_add replaced by F_add_SxS
  *
- *  Revision 3.2  2001/03/22 14:02:27  sbs
- *  S_S added for F_abs
+ * Revision 3.3  2001/06/28 07:46:51  cg
+ * Primitive function psi() renamed to sel().
  *
- *  Revision 3.1  2000/11/20 18:00:13  sacbase
- *  new release made
+ * Revision 3.2  2001/03/22 14:02:27  sbs
+ * S_S added for F_abs
  *
- *  Revision 2.2  2000/11/02 12:39:36  dkr
- *  header modified
+ * Revision 3.1  2000/11/20 18:00:13  sacbase
+ * new release made
  *
- *  Revision 2.1  1999/02/23 12:40:51  sacbase
- *  new release made
+ * Revision 2.2  2000/11/02 12:39:36  dkr
+ * header modified
  *
- *  Revision 1.20  1998/12/07 10:27:02  sbs
- *  +,-,*,/ on int[.] x int[.], int[.] x int , and int x int[.]
- *  now are intrinsic iff intrinsic is turned off (default)!!!
- *  This enables IVE in all cases ...
+ * Revision 2.1  1999/02/23 12:40:51  sacbase
+ * new release made
  *
- *  Revision 1.19  1998/12/03 09:24:39  sbs
- *  ftod and friends eliminated
+ * Revision 1.20  1998/12/07 10:27:02  sbs
+ * +,-,*,/ on int[.] x int[.], int[.] x int , and int x int[.]
+ * now are intrinsic iff intrinsic is turned off (default)!!!
+ * This enables IVE in all cases ...
  *
- *  Revision 1.18  1997/10/09 13:55:38  srs
- *  TC: inserted F_min and F_max as SxS_S
+ * Revision 1.19  1998/12/03 09:24:39  sbs
+ * ftod and friends eliminated
  *
- *  Revision 1.17  1997/10/03 18:01:52  dkr
- *  added prf abs: int -> int
+ * Revision 1.18  1997/10/09 13:55:38  srs
+ * TC: inserted F_min and F_max as SxS_S
  *
- *  Revision 1.16  1997/10/03 16:05:05  dkr
- *  added support for % (int x int -> int)
+ * Revision 1.17  1997/10/03 18:01:52  dkr
+ * added prf abs: int -> int
  *
- *  Revision 1.15  1996/05/23 15:02:37  hw
- *  changed signature of primitive function div
+ * Revision 1.16  1997/10/03 16:05:05  dkr
+ * added support for % (int x int -> int)
+ *
+ * Revision 1.15  1996/05/23 15:02:37  hw
+ * changed signature of primitive function div
  *
  * Revision 1.14  1996/02/06  16:15:26  hw
- * - added overloading of primitive functions  eq, neq, gt,.. with 'chars'
- *   (CxC_B)
+ * added overloading of primitive functions  eq, neq, gt,.. with 'chars'
+ * (CxC_B)
  *
  * Revision 1.13  1996/02/06  13:45:04  hw
  * added entries for F_toi_A, F_tod_A, F_tof_A, F_ftoi_A, etc
@@ -60,8 +63,8 @@
  *
  * Revision 1.7  1995/03/08  16:09:00  hw
  * added FT's for F_..._..x.. (some parts of the syntaxtree are traversed
- *  more than once while typechecking. So one has to know the declaration
- *  of them)
+ * more than once while typechecking. So one has to know the declaration
+ * of them)
  *
  * Revision 1.6  1995/03/08  14:14:13  hw
  * - changed some AxS-... to SxA_... to distinguish the argumenttypes
@@ -86,7 +89,7 @@
  *
  */
 
-FT (F_add, SxS_S, F_add)
+FT (F_add, SxS_S, F_add_SxS)
 FT (F_add, AxA_A, F_add_AxA)
 FT (F_add, AxS_A, F_add_AxS)
 FT (F_add, SxA_A, F_add_SxA)
@@ -99,45 +102,49 @@ FT (F_add_AxS, AxS_A, F_add_AxS)
 FT (F_add_AxS, VxS_V, F_add_AxS)
 FT (F_add_SxA, SxA_A, F_add_SxA)
 FT (F_add_SxA, SxV_V, F_add_SxA)
-FT (F_sub, SxS_S, F_sub)
+FT (F_add_SxS, SxS_S, F_add_SxS)
+FT (F_sub, SxS_S, F_sub_SxS)
 FT (F_sub, AxA_A, F_sub_AxA)
 FT (F_sub, AxS_A, F_sub_AxS)
 FT (F_sub, SxA_A, F_sub_SxA)
 FT (F_sub, VxV_V, F_sub_AxA)
 FT (F_sub, VxS_V, F_sub_AxS)
 FT (F_sub, SxV_V, F_sub_SxA)
-FT (F_sub_AxA, VxV_V, F_sub_AxA)
-FT (F_sub_AxS, VxS_V, F_sub_AxS)
-FT (F_sub_SxA, SxV_V, F_sub_SxA)
 FT (F_sub_AxA, AxA_A, F_sub_AxA)
+FT (F_sub_AxA, VxV_V, F_sub_AxA)
 FT (F_sub_AxS, AxS_A, F_sub_AxS)
+FT (F_sub_AxS, VxS_V, F_sub_AxS)
 FT (F_sub_SxA, SxA_A, F_sub_SxA)
-FT (F_mul, SxS_S, F_mul)
+FT (F_sub_SxA, SxV_V, F_sub_SxA)
+FT (F_sub_SxS, SxS_S, F_sub_SxS)
+FT (F_mul, SxS_S, F_mul_SxS)
 FT (F_mul, AxA_A, F_mul_AxA)
 FT (F_mul, AxS_A, F_mul_AxS)
 FT (F_mul, SxA_A, F_mul_SxA)
 FT (F_mul, VxV_V, F_mul_AxA)
 FT (F_mul, VxS_V, F_mul_AxS)
 FT (F_mul, SxV_V, F_mul_SxA)
-FT (F_mul_AxA, VxV_V, F_mul_AxA)
-FT (F_mul_AxS, VxS_V, F_mul_AxS)
-FT (F_mul_SxA, SxV_V, F_mul_SxA)
 FT (F_mul_AxA, AxA_A, F_mul_AxA)
+FT (F_mul_AxA, VxV_V, F_mul_AxA)
 FT (F_mul_AxS, AxS_A, F_mul_AxS)
+FT (F_mul_AxS, VxS_V, F_mul_AxS)
 FT (F_mul_SxA, SxA_A, F_mul_SxA)
-FT (F_div, SxS_S, F_div)
+FT (F_mul_SxA, SxV_V, F_mul_SxA)
+FT (F_mul_SxS, SxS_S, F_mul_SxS)
+FT (F_div, SxS_S, F_div_SxS)
 FT (F_div, AxA_A, F_div_AxA)
 FT (F_div, AxS_A, F_div_AxS)
 FT (F_div, SxA_A, F_div_SxA)
 FT (F_div, VxV_V, F_div_AxA)
 FT (F_div, VxS_V, F_div_AxS)
 FT (F_div, SxV_V, F_div_SxA)
-FT (F_div_AxA, VxV_V, F_div_AxA)
-FT (F_div_AxS, VxS_V, F_div_AxS)
-FT (F_div_SxA, SxV_V, F_div_SxA)
 FT (F_div_AxA, AxA_A, F_div_AxA)
+FT (F_div_AxA, VxV_V, F_div_AxA)
 FT (F_div_AxS, AxS_A, F_div_AxS)
+FT (F_div_AxS, VxS_V, F_div_AxS)
 FT (F_div_SxA, SxA_A, F_div_SxA)
+FT (F_div_SxA, SxV_V, F_div_SxA)
+FT (F_div_SxS, SxS_S, F_div_SxS)
 FT (F_min, SxS_S, F_min)
 FT (F_max, SxS_S, F_max)
 FT (F_mod, ixi_i, F_mod)
