@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.56  1998/04/01 23:58:04  dkr
+ * added MakeWLstriVar, MakeWLgridVar
+ *
  * Revision 1.55  1998/03/30 23:42:15  dkr
  * added attribute LEVEL for N_WLgrid
  *
@@ -1530,6 +1533,50 @@ MakeWLgrid (int level, int dim, int bound1, int bound2, int unrolling, node *nex
 
     WLGRID_CODE (new_node) = code;
     WLGRID_MODIFIED (new_node) = 0;
+
+    DBUG_RETURN (new_node);
+}
+/*--------------------------------------------------------------------------*/
+
+node *
+MakeWLstriVar (int dim, node *bound1, node *bound2, node *step, node *contents,
+               node *next)
+{
+    node *new_node;
+
+    DBUG_ENTER ("MakeWLstriVar");
+    INIT_NODE (new_node);
+
+    NODE_TYPE (new_node) = N_WLstriVar;
+
+    WLSTRIVAR_DIM (new_node) = dim;
+    WLSTRIVAR_BOUND1 (new_node) = bound1;
+    WLSTRIVAR_BOUND2 (new_node) = bound2;
+    WLSTRIVAR_STEP (new_node) = step;
+    WLSTRIVAR_CONTENTS (new_node) = contents;
+    WLSTRIVAR_NEXT (new_node) = next;
+
+    DBUG_RETURN (new_node);
+}
+/*--------------------------------------------------------------------------*/
+
+node *
+MakeWLgridVar (int dim, node *bound1, node *bound2, node *nextdim, node *next, node *code)
+{
+    node *new_node;
+
+    DBUG_ENTER ("MakeWLgridVar");
+    INIT_NODE (new_node);
+
+    NODE_TYPE (new_node) = N_WLgridVar;
+
+    WLGRIDVAR_DIM (new_node) = dim;
+    WLGRIDVAR_BOUND1 (new_node) = bound1;
+    WLGRIDVAR_BOUND2 (new_node) = bound2;
+    WLGRIDVAR_NEXTDIM (new_node) = nextdim;
+    WLGRIDVAR_NEXT (new_node) = next;
+
+    WLGRIDVAR_CODE (new_node) = code;
 
     DBUG_RETURN (new_node);
 }
