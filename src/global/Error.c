@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.13  1995/12/01 20:23:23  cg
+ * Revision 1.14  1995/12/15 13:38:52  cg
+ * ItemName and ModName no longer use Malloc for memory allocation.
+ * Now, they can be used in DBUG_PRINTs AND DBUG_PRINT can be used in Malloc !!
+ *
+ * Revision 1.13  1995/12/01  20:23:23  cg
  * changed compilation sequence: objinit.c now after import.c
  *
  * Revision 1.12  1995/12/01  16:09:58  cg
@@ -228,10 +232,13 @@ NumberOfDigits (int number)
  *                  ModName is designed to simplify error messages.
  *  global vars   : ---
  *  internal funs : ---
- *  external funs : Malloc, strcpy, strcat, strlen
+ *  external funs : malloc, strcpy, strcat, strlen
  *  macros        :
  *
- *  remarks       :
+ *  remarks       : malloc is used instead of Malloc because ModName
+ *                  and ItemName should be used in DBUG_PRINTs as well.
+ *                  Unfortunately, the usage of DBUG_PRINT in Malloc
+ *                  conflicts with other DBUG_PRINTs in nested expressions.
  *
  */
 
@@ -245,7 +252,7 @@ ModName (char *mod, char *name)
     if (mod == NULL) {
         tmp = name;
     } else {
-        tmp = Malloc (strlen (mod) + strlen (name) + 2);
+        tmp = malloc (strlen (mod) + strlen (name) + 2);
         tmp = strcpy (tmp, mod);
         tmp = strcat (tmp, ":");
         tmp = strcat (tmp, name);
