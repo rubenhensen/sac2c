@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.12  1998/08/07 18:10:00  sbs
+ * changed PROFILE_BEGIN_WITH -> SAC_PF_BEGIN_WITH
+ * and     PROFILE_END_WITH   -> SAC_PF_END_WITH
+ *
  * Revision 1.11  1998/08/06 17:20:05  dkr
  * changed ICM ND_KS_VECT2OFFSET
  *
@@ -100,7 +104,7 @@
         }                                                                                \
         fprintf (outfile, "\n");                                                         \
         INDENT;                                                                          \
-        fprintf (outfile, "PROFILE_BEGIN_WITH( " withkind " );\n");                      \
+        fprintf (outfile, "SAC_PF_BEGIN_WITH( " withkind " )\n");                        \
         {                                                                                \
             int i;                                                                       \
             for (i = 0; i < idxlen; i++) {                                               \
@@ -133,7 +137,7 @@
 
 #define BeginFoldWith(res, sizeres, form, to, idx, idixlen, n_neutral, neutral)          \
     INDENT;                                                                              \
-    fprintf (outfile, "{ PROFILE_BEGIN_WITH( fold );\n");                                \
+    fprintf (outfile, "{ SAC_PF_BEGIN_WITH( fold )\n");                                  \
     indent++;                                                                            \
     INDENT;                                                                              \
     if (0 < sizeres) {                                                                   \
@@ -196,7 +200,7 @@
         }                                                                                \
     }                                                                                    \
     INDENT;                                                                              \
-    fprintf (outfile, "PROFILE_END_WITH( " withkind " );\n");                            \
+    fprintf (outfile, "SAC_PF_END_WITH( " withkind " )\n");                              \
     indent--;                                                                            \
     INDENT;                                                                              \
     fprintf (outfile, "}\n\n")
@@ -211,7 +215,7 @@
         }                                                                                \
     }                                                                                    \
     INDENT;                                                                              \
-    fprintf (outfile, "PROFILE_END_WITH( fold );\n");                                    \
+    fprintf (outfile, "SAC_PF_END_WITH( fold )\n");                                      \
     indent--;                                                                            \
     INDENT;                                                                              \
     fprintf (outfile, "}\n\n")

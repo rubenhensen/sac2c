@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.4  1998/08/07 18:08:45  sbs
+ * changed PROFILE_BEGIN_WITH -> SAC_PF_BEGIN_WITH
+ * and     PROFILE_END_WITH   -> SAC_PF_END_WITH
+ *
  * Revision 1.3  1998/05/07 08:17:51  cg
  * SAC header files converted to new naming conventions.
  *
@@ -284,31 +288,33 @@ extern struct rusage SAC_PF_stop_timer;
 
 #if (SAC_DO_PROFILE_WITH && SAC_DO_PROFILE)
 
-#define PROFILE_BEGIN_WITH(str)                                                          \
-    SAC_PF_TIMER *SAC_PF_mem_act;                                                        \
-    SAC_PF_STOP_CLOCK ();                                                                \
-    SAC_PF_mem_act = SAC_PF_act_timer;                                                   \
-    SAC_PF_ADD_TO_TIMER (*SAC_PF_act_timer);                                             \
-    SAC_PF_act_timer                                                                     \
-      = (SAC_PF_with_level == 0                                                          \
-           ? &SAC_PF_with_##str##_timer[SAC_PF_act_funno][SAC_PF_act_funapno]            \
-           : &SAC_PF_fw_with_##str##_timer[SAC_PF_act_funno][SAC_PF_act_funapno]);       \
-    SAC_PF_with_level++;                                                                 \
-    SAC_PF_START_CLOCK ();
+#define SAC_PF_BEGIN_WITH(str)                                                           \
+    {                                                                                    \
+        SAC_PF_TIMER *SAC_PF_mem_act;                                                    \
+        SAC_PF_STOP_CLOCK ();                                                            \
+        SAC_PF_mem_act = SAC_PF_act_timer;                                               \
+        SAC_PF_ADD_TO_TIMER (*SAC_PF_act_timer);                                         \
+        SAC_PF_act_timer                                                                 \
+          = (SAC_PF_with_level == 0                                                      \
+               ? &SAC_PF_with_##str##_timer[SAC_PF_act_funno][SAC_PF_act_funapno]        \
+               : &SAC_PF_fw_with_##str##_timer[SAC_PF_act_funno][SAC_PF_act_funapno]);   \
+        SAC_PF_with_level++;                                                             \
+        SAC_PF_START_CLOCK ();
 
-#define PROFILE_END_WITH(str)                                                            \
+#define SAC_PF_END_WITH(str)                                                             \
     SAC_PF_STOP_CLOCK ();                                                                \
     SAC_PF_with_level--;                                                                 \
     SAC_PF_ADD_TO_TIMER (*SAC_PF_act_timer);                                             \
     SAC_PF_act_timer = SAC_PF_mem_act;                                                   \
-    SAC_PF_START_CLOCK ();
+    SAC_PF_START_CLOCK ();                                                               \
+    }
 
 #define SAC_PF_DISPLAY_WITH 1
 
 #else /* SAC_DO_PROFILE_WITH */
 
-#define PROFILE_BEGIN_WITH(str)
-#define PROFILE_END_WITH(str)
+#define SAC_PF_BEGIN_WITH(str)
+#define SAC_PF_END_WITH(str)
 #define SAC_PF_DISPLAY_WITH 0
 
 #endif /* SAC_DO_PROFILE_WITH */
