@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2001/04/18 10:06:50  dkr
+ * signature of InlineSingleApplication modified
+ *
  * Revision 3.6  2001/04/03 14:13:02  dkr
  * INL_NAIVE removed
  *
@@ -55,14 +58,8 @@
 #ifndef _sac_Inline_h_
 #define _sac_Inline_h_
 
-/*
- * bit field
- * (parameter 'type' of InlineSingleApplication())
- */
-#define INL_COUNT 1
-
 extern node *Inline (node *arg_node);
-extern node *InlineSingleApplication (node *let, node *fundef, int type);
+extern node *InlineSingleApplication (node *let, node *fundef);
 
 extern node *INLmodul (node *arg_node, node *arg_info);
 extern node *INLfundef (node *arg_node, node *arg_info);

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.15  2001/04/18 10:06:45  dkr
+ * signature of InlineSingleApplication modified
+ *
  * Revision 3.14  2001/04/06 15:25:41  dkr
  * minor changes done
  *
@@ -117,6 +120,11 @@
 #include "LoopInvariantRemoval.h"
 #include "DupTree.h"
 #include "Inline.h"
+
+/*
+ * bit field (INFO_INL_TYPE)
+ */
+#define INL_COUNT 1
 
 #define INLINE_PREFIX "__inl"
 
@@ -668,7 +676,7 @@ INLassign (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *  node *InlineSingleApplication( node *let, node *fundef, int type)
+ *  node *InlineSingleApplication( node *let, node *fundef)
  *
  * description:
  *   This function allows a single function application to be inlined.
@@ -713,7 +721,7 @@ INLassign (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-InlineSingleApplication (node *let, node *fundef, int type)
+InlineSingleApplication (node *let, node *fundef)
 {
     node *arg_info;
     node *assigns;
@@ -729,7 +737,7 @@ InlineSingleApplication (node *let, node *fundef, int type)
     mem_tab = act_tab;
     act_tab = inline_tab;
     arg_info = MakeInfo ();
-    INFO_INL_TYPE (arg_info) = type;
+    INFO_INL_TYPE (arg_info) = 0;
     INFO_INL_VARDECS (arg_info) = FUNDEF_VARDEC (fundef);
     INFO_INL_FUNDEF (arg_info) = fundef;
 
