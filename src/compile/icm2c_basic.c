@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.21  2003/09/30 21:49:18  dkrHH
+ * comments for Set_Shape() and Check_Mirror() updated.
+ *
  * Revision 1.20  2003/09/30 19:29:08  dkr
  * Set_Shape() added
  *
@@ -86,16 +89,21 @@ int print_comment = 1; /* bool */
  *   Assures that the constant part of the mirror of 'to_NT' contains correct
  *   values with respect to the shape 'shp1 ++ shp2'.
  *
- *   'shp?'           is an integer array (int *) of shape components or
- *                    a tagged identifier (char *) which represents the shape.
+ *   'shp?'           a data structure representing a shape.
+ *                    This may be an integer array (int *) of shape components,
+ *                    or a string array (char **) of shape components, or a
+ *                    tagged identifier (char *) from which shape information
+ *                    can be obtained somehow, e.g. from its data vector or its
+ *                    shape vector.
  *   'shp?_size'      >=0: number of shape components (if statically known).
- *                    < 0: number of shape components not statically known.
+ *                    < 0: number of shape components not statically known ---
+ *                         'shp?_size_fun' must be used.
  *   'shp?_size_fun'  ==NULL: number of shape components is statically known
  *                            (see 'shp?_size').
  *                    !=NULL: points to a function which prints the number of
  *                            shape components to 'outfile'.
  *   'shp?_read_fun'  points to a function which prints a read access to a
- *                    shape component to 'outfile'.
+ *                    shape component (using 'shp?' as argument) to 'outfile'.
  *
  ******************************************************************************/
 
@@ -220,19 +228,25 @@ Check_Mirror (char *to_NT, int to_sdim, void *shp1, int shp1_size,
  *   Sets the non-constant part of the mirror and the relevant descriptor
  *   entries with respect to the shape 'shp1 ++ shp2'.
  *
- *   'shp?'           is an integer array (int *) of shape components or
- *                    a tagged identifier (char *) which represents the shape.
+ *   'shp?'           a data structure representing a shape.
+ *                    This may be an integer array (int *) of shape components,
+ *                    or a string array (char **) of shape components, or a
+ *                    tagged identifier (char *) from which shape information
+ *                    can be obtained somehow, e.g. from its data vector or its
+ *                    shape vector.
  *   'shp?_size'      >=0: number of shape components (if statically known).
- *                    < 0: number of shape components not statically known.
+ *                    < 0: number of shape components not statically known ---
+ *                         'shp?_size_fun' must be used.
  *   'shp?_size_fun'  ==NULL: number of shape components is statically known
  *                            (see 'shp?_size').
  *                    !=NULL: points to a function which prints the number of
  *                            shape components to 'outfile'.
  *   'shp?_prod_fun'  ==NULL: product of shape components must be computed.
  *                    !=NULL: points to a function which prints the product of
- *                            the shape components to 'outfile'.
+ *                            all shape components (using 'shp?' as argument)
+ *                            to 'outfile'.
  *   'shp?_read_fun'  points to a function which prints a read access to a
- *                    shape component to 'outfile'.
+ *                    shape component (using 'shp?' as argument) to 'outfile'.
  *
  ******************************************************************************/
 
