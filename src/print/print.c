@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.50  2001/04/24 10:12:08  dkr
+ * macros PRINT_STRING, PRINT_POINTER_... added
+ * PrintAST: FUNDEF_USED added
+ *
  * Revision 3.49  2001/04/23 13:40:01  dkr
  * DoPrintAST: FUNDEF_DFM_BASE added
  *
@@ -227,10 +231,6 @@
            : ((arg == ACL_offset) ? ("ACL_offset:")                                      \
                                   : ((arg == ACL_const) ? ("ACL_const :") : (""))))
 
-#define PRINT_LINE_PRAGMA_IN_SIB(file_handle, node)                                      \
-    if (compiler_phase == PH_writesib) {                                                 \
-        fprintf (file_handle, "# %d \"%s\"\n", NODE_LINE (node), NODE_FILE (node));      \
-    }
 /*
  * The selection of when to write a line pragma is actually not correctly
  * implemented because pragmas are now printed not only to the SIB but also
@@ -238,6 +238,28 @@
  * However, for the time being we keep this implementation for debugging
  * purposes.
  */
+#define PRINT_LINE_PRAGMA_IN_SIB(file_handle, node)                                      \
+    if (compiler_phase == PH_writesib) {                                                 \
+        fprintf (file_handle, "# %d \"%s\"\n", NODE_LINE (node), NODE_FILE (node));      \
+    }
+
+/*
+ * macros for printing debug information
+ */
+
+#define PRINTF_POINTER(file, format, p)                                                  \
+    if ((p) != NULL) {                                                                   \
+        fprintf (file, format, p);                                                       \
+    } else {                                                                             \
+        fprintf (file, "NULL");                                                          \
+    }
+
+#define PRINT_POINTER(file, p) PRINTF_POINTER (file, F_PTR, p);
+
+#define PRINT_POINTER_BRACKETS(file, p) PRINTF_POINTER (file, "<" F_PTR ">", p);
+
+#define PRINT_STRING(file, str)                                                          \
+    fprintf (file, "%s<" F_PTR ">", STR_OR_UNKNOWN (str), str);
 
 /******************************************************************************/
 
@@ -504,7 +526,7 @@ WLAAprintAccesses (node *arg_node, node *arg_info)
                         for (i = 1; i < dim; i++)
                             fprintf (outfile, ",%d", SHPSEG_SHAPE (offset, i));
                         fprintf (outfile, " ], %s)\n",
-                                 STR_OR_NULL (VARDEC_NAME (ACCESS_ARRAY (access)), "?"));
+                                 STR_OR_UNKNOWN (VARDEC_NAME (ACCESS_ARRAY (access))));
                         offset = SHPSEG_NEXT (offset);
                     } while (offset != NULL);
                 }
@@ -525,7 +547,7 @@ WLAAprintAccesses (node *arg_node, node *arg_info)
                             fprintf (outfile, ",%d", SHPSEG_SHAPE (offset, i));
                         }
                         fprintf (outfile, " ], %s)\n",
-                                 STR_OR_NULL (VARDEC_NAME (ACCESS_ARRAY (access)), "?"));
+                                 STR_OR_UNKNOWN (VARDEC_NAME (ACCESS_ARRAY (access))));
                         offset = SHPSEG_NEXT (offset);
                     } while (offset != NULL);
                 }
@@ -741,7 +763,7 @@ PrintModul (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("PrintModul");
 
-    DBUG_PRINT ("PRINT", ("%s " P_FORMAT, mdb_nodetype[NODE_TYPE (arg_node)], arg_node));
+    DBUG_PRINT ("PRINT", ("%s " F_PTR, mdb_nodetype[NODE_TYPE (arg_node)], arg_node));
 
     if (INFO_PRINT_SEPARATE (arg_info)) {
         /*
@@ -907,7 +929,7 @@ PrintModul (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *PrintImplist(node *arg_node, node *arg_info)
+ *   node *PrintImplist( node *arg_node, node *arg_info)
  *
  * Description:
  *
@@ -919,7 +941,7 @@ PrintImplist (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintImplist");
 
-    DBUG_PRINT ("PRINT", ("%s " P_FORMAT, mdb_nodetype[NODE_TYPE (arg_node)], arg_node));
+    DBUG_PRINT ("PRINT", ("%s " F_PTR, mdb_nodetype[NODE_TYPE (arg_node)], arg_node));
 
     fprintf (outfile, "import %s: ", IMPLIST_NAME (arg_node));
 
@@ -962,7 +984,7 @@ PrintImplist (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *PrintTypedef(node *arg_node, node *arg_info)
+ *   node *PrintTypedef( node *arg_node, node *arg_info)
  *
  * Description:
  *
@@ -976,7 +998,7 @@ PrintTypedef (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("PrintTypedef");
 
-    DBUG_PRINT ("PRINT", ("%s " P_FORMAT, mdb_nodetype[NODE_TYPE (arg_node)], arg_node));
+    DBUG_PRINT ("PRINT", ("%s " F_PTR, mdb_nodetype[NODE_TYPE (arg_node)], arg_node));
 
     if ((TYPEDEF_ICM (arg_node) == NULL)
         || (NODE_TYPE (TYPEDEF_ICM (arg_node)) != N_icm)) {
@@ -1017,7 +1039,7 @@ PrintTypedef (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *PrintObjdef(node *arg_node, node *arg_info)
+ *   node *PrintObjdef( node *arg_node, node *arg_info)
  *
  * Description:
  *
@@ -1031,7 +1053,7 @@ PrintObjdef (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("PrintObjdef");
 
-    DBUG_PRINT ("PRINT", ("%s " P_FORMAT, mdb_nodetype[NODE_TYPE (arg_node)], arg_node));
+    DBUG_PRINT ("PRINT", ("%s " F_PTR, mdb_nodetype[NODE_TYPE (arg_node)], arg_node));
 
     /* print objinit flag declaration in header.file
      * this has to placed before the if switch, because the ICM_Trav seems
@@ -1169,7 +1191,7 @@ PrintFundef (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("PrintFundef");
 
-    DBUG_PRINT ("PRINT", ("%s " P_FORMAT, mdb_nodetype[NODE_TYPE (arg_node)], arg_node));
+    DBUG_PRINT ("PRINT", ("%s " F_PTR, mdb_nodetype[NODE_TYPE (arg_node)], arg_node));
 
     INFO_PRINT_VARNO (arg_info) = FUNDEF_VARNO (arg_node);
 
@@ -1293,7 +1315,7 @@ PrintFundef (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *PrintAnnotate(node *arg_node, node *arg_info)
+ *   node *PrintAnnotate( node *arg_node, node *arg_info)
  *
  * Description:
  *
@@ -1308,7 +1330,7 @@ PrintAnnotate (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("PrintAnnotate");
 
-    DBUG_PRINT ("PRINT", ("%s " P_FORMAT, mdb_nodetype[NODE_TYPE (arg_node)], arg_node));
+    DBUG_PRINT ("PRINT", ("%s " F_PTR, mdb_nodetype[NODE_TYPE (arg_node)], arg_node));
 
     if (ANNOTATE_TAG (arg_node) & CALL_FUN) {
         sprintf (strbuffer1, "PROFILE_BEGIN_UDF( %d, %d)", ANNOTATE_FUNNUMBER (arg_node),
@@ -1465,18 +1487,18 @@ PrintVardec (node *arg_node, node *arg_info)
 node *
 PrintBlock (node *arg_node, node *arg_info)
 {
-    static int not_yet_done_print_main_begin = 1;
     /*
      * This static variable assures that only once for the outer block of
      * the main() function initialization code is generated, but not for
      * subsequent blocks of perhaps loops or conditionals.
      */
+    static int not_yet_done_print_main_begin = 1;
 
     int old_indent = indent;
 
     DBUG_ENTER ("PrintBlock");
 
-    DBUG_PRINT ("PRINT", ("%s " P_FORMAT, mdb_nodetype[NODE_TYPE (arg_node)], arg_node));
+    DBUG_PRINT ("PRINT", ("%s " F_PTR, mdb_nodetype[NODE_TYPE (arg_node)], arg_node));
 
     INDENT;
     fprintf (outfile, "{ \n");
@@ -1588,7 +1610,7 @@ PrintAssign (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("PrintAssign");
 
-    DBUG_PRINT ("PRINT", ("%s " P_FORMAT, mdb_nodetype[NODE_TYPE (arg_node)], arg_node));
+    DBUG_PRINT ("PRINT", ("%s " F_PTR, mdb_nodetype[NODE_TYPE (arg_node)], arg_node));
 
     DBUG_EXECUTE ("PRINT_MASKS", fprintf (outfile, "\n"); INDENT;
                   fprintf (outfile, "**MASKS - assign: \n"); INDENT;
@@ -1797,7 +1819,7 @@ PrintCast (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *PrintLet(node *arg_node, node *arg_info)
+ *   node *PrintLet( node *arg_node, node *arg_info)
  *
  * Description:
  *
@@ -1809,7 +1831,7 @@ PrintLet (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintLet");
 
-    DBUG_PRINT ("PRINT", ("%s " P_FORMAT, mdb_nodetype[NODE_TYPE (arg_node)], arg_node));
+    DBUG_PRINT ("PRINT", ("%s " F_PTR, mdb_nodetype[NODE_TYPE (arg_node)], arg_node));
 
     if (LET_USEMASK (arg_node) != NULL) {
         fprintf (outfile, "/* use:");
@@ -1837,7 +1859,7 @@ PrintLet (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *PrintPrf(node *arg_node, node *arg_info)
+ *   node *PrintPrf( node *arg_node, node *arg_info)
  *
  * Description:
  *
@@ -1849,7 +1871,7 @@ PrintPrf (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintPrf");
 
-    DBUG_PRINT ("PRINT", ("%s (%s)" P_FORMAT, mdb_nodetype[NODE_TYPE (arg_node)],
+    DBUG_PRINT ("PRINT", ("%s (%s)" F_PTR, mdb_nodetype[NODE_TYPE (arg_node)],
                           mdb_prf[PRF_PRF (arg_node)], arg_node));
 
     switch (PRF_PRF (arg_node)) {
@@ -3903,30 +3925,18 @@ DoPrintBasicTypeAST (types *type)
 static void
 DoPrintAllTypeAST (types *type, bool print_status)
 {
-    node *tdef;
-
     DBUG_ENTER ("DoPrintAllTypeAST");
 
     if (TYPES_BASETYPE (type) == T_user) {
-        if (TYPES_NAME (type) != NULL) {
-            fprintf (outfile, "%s", TYPES_NAME (type));
-        } else {
-            fprintf (outfile, "?");
-        }
+        PRINT_STRING (outfile, TYPES_NAME (type));
         DoPrintShapeAST (TYPES_DIM (type), TYPES_SHPSEG (type));
-        if (TYPES_NAME (type) != NULL) {
-            fprintf (outfile, "<" F_PTR ">", TYPES_NAME (type));
-        }
 
         fprintf (outfile, "/");
 
-        tdef = TYPES_TDEF (type);
-        if (tdef != NULL) {
+        if (TYPES_TDEF (type) != NULL) {
             DoPrintBasicTypeAST (type);
-            fprintf (outfile, "<" F_PTR ">", tdef);
-        } else {
-            fprintf (outfile, "NULL");
         }
+        PRINT_POINTER_BRACKETS (outfile, TYPES_TDEF (type));
     } else {
         DoPrintBasicTypeAST (type);
     }
@@ -3993,12 +4003,12 @@ DoPrintIdsAST (ids *vars, bool print_status)
     while (vars != NULL) {
         if (IDS_VARDEC (vars) != NULL) {
             DoPrintTypesAST (IDS_TYPE (vars), TRUE);
-            fprintf (outfile, "<" F_PTR ">", IDS_VARDEC (vars));
+            PRINT_POINTER_BRACKETS (outfile, IDS_VARDEC (vars));
 
             fprintf (outfile, " ");
         }
 
-        fprintf (outfile, "%s<" F_PTR ">", IDS_NAME (vars), IDS_NAME (vars));
+        PRINT_STRING (outfile, IDS_NAME (vars));
 
         if (print_status) {
             PrintStatus (IDS_ATTRIB (vars), TRUE);
@@ -4042,11 +4052,8 @@ DoPrintAttrAST (int num, node *arg_node)
         fprintf (outfile, "+-");
     }
 
-    if (arg_node != NULL) {
-        fprintf (outfile, F_PTR "\n", arg_node);
-    } else {
-        fprintf (outfile, "NULL\n");
-    }
+    PRINT_POINTER (outfile, arg_node);
+    fprintf (outfile, "\n");
 
     DBUG_VOID_RETURN;
 }
@@ -4129,8 +4136,7 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
             DoPrintTypesAST (TYPEDEF_TYPE (arg_node), TRUE);
             fprintf (outfile, " ");
 
-            fprintf (outfile, "%s<" F_PTR ">", STR_OR_NULL (TYPEDEF_NAME (arg_node), "?"),
-                     TYPEDEF_NAME (arg_node));
+            PRINT_STRING (outfile, TYPEDEF_NAME (arg_node));
 
             PrintStatus (TYPEDEF_ATTRIB (arg_node), TRUE);
             PrintStatus (TYPEDEF_STATUS (arg_node), TRUE);
@@ -4146,8 +4152,7 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
             DoPrintTypesAST (OBJDEF_TYPE (arg_node), TRUE);
             fprintf (outfile, " ");
 
-            fprintf (outfile, "%s<" F_PTR ">", STR_OR_NULL (OBJDEF_NAME (arg_node), "?"),
-                     OBJDEF_NAME (arg_node));
+            PRINT_STRING (outfile, OBJDEF_NAME (arg_node));
 
             PrintStatus (OBJDEF_ATTRIB (arg_node), TRUE);
             PrintStatus (OBJDEF_STATUS (arg_node), TRUE);
@@ -4163,14 +4168,17 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
             DoPrintTypesAST (FUNDEF_TYPES (arg_node), TRUE);
             fprintf (outfile, " ");
 
-            fprintf (outfile, "%s<" F_PTR ">", FUNDEF_NAME (arg_node),
-                     FUNDEF_NAME (arg_node));
+            PRINT_STRING (outfile, FUNDEF_NAME (arg_node));
 
             PrintStatus (OBJDEF_ATTRIB (arg_node), TRUE);
             PrintStatus (OBJDEF_STATUS (arg_node), TRUE);
 
             fprintf (outfile, ", ");
-            fprintf (outfile, "mask-base: <" F_PTR ">", FUNDEF_DFM_BASE (arg_node));
+            fprintf (outfile, "used: %d", FUNDEF_USED (arg_node));
+
+            fprintf (outfile, ", ");
+            fprintf (outfile, "mask base: ");
+            PRINT_POINTER_BRACKETS (outfile, FUNDEF_DFM_BASE (arg_node));
 
             fprintf (outfile, ")");
 
@@ -4193,8 +4201,7 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
             DoPrintTypesAST (ARG_TYPE (arg_node), TRUE);
             fprintf (outfile, " ");
 
-            fprintf (outfile, "%s<" F_PTR ">", STR_OR_NULL (ARG_NAME (arg_node), "?"),
-                     ARG_NAME (arg_node));
+            PRINT_STRING (outfile, ARG_NAME (arg_node));
 
             PrintStatus (ARG_ATTRIB (arg_node), TRUE);
             PrintStatus (ARG_STATUS (arg_node), TRUE);
@@ -4219,8 +4226,7 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
             DoPrintTypesAST (VARDEC_TYPE (arg_node), TRUE);
             fprintf (outfile, " ");
 
-            fprintf (outfile, "%s<" F_PTR ">", STR_OR_NULL (VARDEC_NAME (arg_node), "?"),
-                     VARDEC_NAME (arg_node));
+            PRINT_STRING (outfile, VARDEC_NAME (arg_node));
 
             PrintStatus (VARDEC_ATTRIB (arg_node), TRUE);
             PrintStatus (VARDEC_STATUS (arg_node), TRUE);
@@ -4246,13 +4252,16 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
         case N_cond:
             fprintf (outfile, "(");
 
-            fprintf (outfile, "in-mask: <" F_PTR ">", COND_IN_MASK (arg_node));
+            fprintf (outfile, "in-mask: ");
+            PRINT_POINTER_BRACKETS (outfile, COND_IN_MASK (arg_node));
 
             fprintf (outfile, ", ");
-            fprintf (outfile, "out-mask: <" F_PTR ">", COND_OUT_MASK (arg_node));
+            fprintf (outfile, "out-mask: ");
+            PRINT_POINTER_BRACKETS (outfile, COND_OUT_MASK (arg_node));
 
             fprintf (outfile, ", ");
-            fprintf (outfile, "local-mask: <" F_PTR ">", COND_LOCAL_MASK (arg_node));
+            fprintf (outfile, "local-mask: ");
+            PRINT_POINTER_BRACKETS (outfile, COND_LOCAL_MASK (arg_node));
 
             fprintf (outfile, ")");
             break;
@@ -4260,13 +4269,16 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
         case N_do:
             fprintf (outfile, "(");
 
-            fprintf (outfile, "in-mask: <" F_PTR ">", DO_IN_MASK (arg_node));
+            fprintf (outfile, "in-mask: ");
+            PRINT_POINTER_BRACKETS (outfile, DO_IN_MASK (arg_node));
 
             fprintf (outfile, ", ");
-            fprintf (outfile, "out-mask: <" F_PTR ">", DO_OUT_MASK (arg_node));
+            fprintf (outfile, "out-mask: ");
+            PRINT_POINTER_BRACKETS (outfile, DO_OUT_MASK (arg_node));
 
             fprintf (outfile, ", ");
-            fprintf (outfile, "local-mask: <" F_PTR ">", DO_LOCAL_MASK (arg_node));
+            fprintf (outfile, "local-mask: ");
+            PRINT_POINTER_BRACKETS (outfile, DO_LOCAL_MASK (arg_node));
 
             fprintf (outfile, ")");
             break;
@@ -4274,13 +4286,16 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
         case N_while:
             fprintf (outfile, "(");
 
-            fprintf (outfile, "in-mask: <" F_PTR ">", WHILE_IN_MASK (arg_node));
+            fprintf (outfile, "in-mask: ");
+            PRINT_POINTER_BRACKETS (outfile, WHILE_IN_MASK (arg_node));
 
             fprintf (outfile, ", ");
-            fprintf (outfile, "out-mask: <" F_PTR ">", WHILE_OUT_MASK (arg_node));
+            fprintf (outfile, "out-mask: ");
+            PRINT_POINTER_BRACKETS (outfile, WHILE_OUT_MASK (arg_node));
 
             fprintf (outfile, ", ");
-            fprintf (outfile, "local-mask: <" F_PTR ">", WHILE_LOCAL_MASK (arg_node));
+            fprintf (outfile, "local-mask: ");
+            PRINT_POINTER_BRACKETS (outfile, WHILE_LOCAL_MASK (arg_node));
 
             fprintf (outfile, ")");
             break;
@@ -4292,7 +4307,11 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
         case N_ap:
             fprintf (outfile, "(");
 
-            fprintf (outfile, "%s<" F_PTR ">", AP_NAME (arg_node), AP_NAME (arg_node));
+            PRINT_STRING (outfile, AP_NAME (arg_node));
+
+            fprintf (outfile, ", ");
+            fprintf (outfile, "fundef: ");
+            PRINT_POINTER_BRACKETS (outfile, AP_FUNDEF (arg_node));
 
             fprintf (outfile, ")");
             break;
@@ -4310,12 +4329,12 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
 
             if (ID_VARDEC (arg_node) != NULL) {
                 DoPrintTypesAST (ID_TYPE (arg_node), TRUE);
-                fprintf (outfile, "<" F_PTR ">", ID_VARDEC (arg_node));
+                PRINT_POINTER_BRACKETS (outfile, ID_VARDEC (arg_node));
 
                 fprintf (outfile, " ");
             }
 
-            fprintf (outfile, "%s<" F_PTR ">", ID_NAME (arg_node), ID_NAME (arg_node));
+            PRINT_STRING (outfile, ID_NAME (arg_node));
 
             PrintStatus (ID_ATTRIB (arg_node), TRUE);
             PrintStatus (ID_STATUS (arg_node), TRUE);
@@ -4352,13 +4371,16 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
         case N_Nwith:
             fprintf (outfile, "(");
 
-            fprintf (outfile, "in-mask: <" F_PTR ">", NWITH_IN_MASK (arg_node));
+            fprintf (outfile, "in-mask: ");
+            PRINT_POINTER_BRACKETS (outfile, NWITH_IN_MASK (arg_node));
 
             fprintf (outfile, ", ");
-            fprintf (outfile, "out-mask: <" F_PTR ">", NWITH_OUT_MASK (arg_node));
+            fprintf (outfile, "out-mask: ");
+            PRINT_POINTER_BRACKETS (outfile, NWITH_OUT_MASK (arg_node));
 
             fprintf (outfile, ", ");
-            fprintf (outfile, "local-mask: <" F_PTR ">", NWITH_LOCAL_MASK (arg_node));
+            fprintf (outfile, "local-mask: ");
+            PRINT_POINTER_BRACKETS (outfile, NWITH_LOCAL_MASK (arg_node));
 
             fprintf (outfile, ")");
 
@@ -4378,7 +4400,7 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
             if (NWITHID_VEC (arg_node) != NULL) {
                 char *withid = IDS_NAME (NWITHID_VEC (arg_node));
 
-                fprintf (outfile, "%s<" F_PTR ">", withid, withid);
+                PRINT_STRING (outfile, withid);
 
                 PrintRC (IDS_REFCNT (NWITHID_VEC (arg_node)),
                          IDS_NAIVE_REFCNT (NWITHID_VEC (arg_node)), TRUE);
@@ -4408,11 +4430,8 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
         case N_Npart:
             fprintf (outfile, "(");
 
-            if (NPART_CODE (arg_node) != NULL) {
-                fprintf (outfile, "code used: " F_PTR, NPART_CODE (arg_node));
-            } else {
-                fprintf (outfile, "no code");
-            }
+            fprintf (outfile, "code: ");
+            PRINT_POINTER_BRACKETS (outfile, NPART_CODE (arg_node));
 
             fprintf (outfile, ")");
 
@@ -4422,7 +4441,10 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
         case N_Ncode:
             fprintf (outfile, "(");
 
-            fprintf (outfile, "<" F_PTR ">, used: %d", arg_node, NCODE_USED (arg_node));
+            PRINT_POINTER_BRACKETS (outfile, arg_node);
+
+            fprintf (outfile, ", ");
+            fprintf (outfile, "used: %d", NCODE_USED (arg_node));
 
             fprintf (outfile, ")");
 
@@ -4432,16 +4454,19 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
         case N_Nwith2:
             fprintf (outfile, "(");
 
-            fprintf (outfile, "in-mask: <" F_PTR ">", NWITH2_IN_MASK (arg_node));
+            fprintf (outfile, "in-mask: ");
+            PRINT_POINTER_BRACKETS (outfile, NWITH2_IN_MASK (arg_node));
 
             fprintf (outfile, ", ");
-            fprintf (outfile, "out-mask: <" F_PTR ">", NWITH2_OUT_MASK (arg_node));
+            fprintf (outfile, "out-mask: ");
+            PRINT_POINTER_BRACKETS (outfile, NWITH2_OUT_MASK (arg_node));
 
             fprintf (outfile, ", ");
-            fprintf (outfile, "local-mask: <" F_PTR ">", NWITH2_LOCAL_MASK (arg_node));
+            fprintf (outfile, "local-mask: ");
+            PRINT_POINTER_BRACKETS (outfile, NWITH2_LOCAL_MASK (arg_node));
 
             fprintf (outfile, ", ");
-            fprintf (outfile, "offset_needed: %i", NWITH2_OFFSET_NEEDED (arg_node));
+            fprintf (outfile, "offset needed: %i", NWITH2_OFFSET_NEEDED (arg_node));
 
             fprintf (outfile, ", ");
             fprintf (outfile, "mt: %i", NWITH2_MT (arg_node));
@@ -4462,11 +4487,11 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
             PRINT_VECT (outfile, WLSEG_UBV (arg_node), WLSEG_DIMS (arg_node), "%i");
 
             fprintf (outfile, ", ");
-            fprintf (outfile, "idx_min: ");
+            fprintf (outfile, "idx min: ");
             WLSEG_IDX_PRINT (outfile, arg_node, IDX_MIN);
 
             fprintf (outfile, ", ");
-            fprintf (outfile, "idx_max: ");
+            fprintf (outfile, "idx max: ");
             WLSEG_IDX_PRINT (outfile, arg_node, IDX_MAX);
 
             fprintf (outfile, ", ");
@@ -4488,11 +4513,11 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
         case N_WLsegVar:
             fprintf (outfile, "(");
 
-            fprintf (outfile, "idx_min: ");
+            fprintf (outfile, "idx min: ");
             WLSEGVAR_IDX_PRINT (outfile, arg_node, IDX_MIN);
 
             fprintf (outfile, ", ");
-            fprintf (outfile, "idx_max: ");
+            fprintf (outfile, "idx max: ");
             WLSEGVAR_IDX_PRINT (outfile, arg_node, IDX_MAX);
 
             fprintf (outfile, ", ");
