@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.7  1995/12/15 10:41:13  cg
+# Revision 1.8  1996/01/17 14:19:52  asi
+# added ../modules to INCS
+#
+# Revision 1.7  1995/12/15  10:41:13  cg
 # make deps done
 #
 # Revision 1.6  1995/10/08  11:30:00  sbs
@@ -27,7 +30,7 @@
 MAKE=make
 CC=gcc -ansi -g
 
-INCS=-I../global -I../../inc -I../optimize -I../compile -I../typecheck
+INCS=-I../global -I../../inc -I../optimize -I../compile -I../typecheck -I../modules
 
 all: index.o psi-opt.o ArrayElimination.o
 
