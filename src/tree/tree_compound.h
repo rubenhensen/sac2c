@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.90  2004/10/01 08:39:32  sah
+ * added first idea of new WLNODE_NEXT
+ * in a comment
+ *
  * Revision 3.89  2004/09/28 14:11:18  ktr
  * removed old refcount and generatemasks
  *
@@ -2546,6 +2550,24 @@ extern node *MakeWLsegX (int dims, node *contents, node *next);
                            ? WLGRID_NOOP (n)                                             \
                            : ((NODE_TYPE (n) == N_WLgridVar) ? WLGRIDVAR_NOOP (n)        \
                                                              : FALSE))))))
+/*
+
+#define WLNODE_NEXT(n)                                               \
+  ( (NODE_TYPE(n) == N_WLblock)                                      \
+      ? WLBLOCK_NEXT(n)                                              \
+      : ( (NODE_TYPE(n) == N_WLublock)                               \
+            ? WLUBLOCK_NEXT(n)                                       \
+            : ( (NODE_TYPE(n) == N_WLstride)                         \
+                  ? WLSTRIDE_NEXT(n)                                 \
+                  : ( (NODE_TYPE(n) == N_WLstrideVar)                \
+                        ? WLSTRIDEVAR_NEXT(n)                        \
+                        : ( (NODE_TYPE(n) == N_WLgrid)               \
+                              ? WLGRID_NEXT(n)                       \
+                              : ( (NODE_TYPE(n) == N_WLgridVar)      \
+                                    ? WLGRIDVAR_NEXT(n)              \
+                                    : NULL ) ) ) ) ) )
+
+*/
 
 /*--------------------------------------------------------------------------*/
 
