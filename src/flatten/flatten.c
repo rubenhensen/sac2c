@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.17  1995/04/07 15:33:34  hw
+ * Revision 1.18  1995/04/18 09:50:04  hw
+ * bug fixed in FltnExprs (constant arrays will not be abstracted out of
+ *  argumentposition of primitive functions)
+ *
+ * Revision 1.17  1995/04/07  15:33:34  hw
  * FltnExprs will now flatten its arguments depending on the context
  * (modified FltExprs, FltnWhile, FltnDo)
  * N_ap will be "abstracted" out of the termination condition of a loop
@@ -334,6 +338,9 @@ FltnExprs (node *arg_node, node *arg_info)
         DBUG_ASSERT (0, "wrong tag ");
     }
 
+    DBUG_PRINT ("FLATTEN", ("tag: %d, abstract: %d, node[0]: %s", arg_info->info.cint,
+                            abstract, mdb_nodetype[arg_node->node[0]->nodetype]));
+
     if (1 == abstract) {
         tmp_node1 = arg_node->node[0];
 
@@ -359,7 +366,7 @@ FltnExprs (node *arg_node, node *arg_info)
 
             if (tmp_node1->nodetype == N_ap)
                 arg_info->info.cint = AP; /* set new tag */
-            else if (tmp_node1->nodetype == N_array)
+            else if ((tmp_node1->nodetype == N_array) || (tmp_node1->nodetype == N_prf))
                 arg_info->info.cint = NORMAL; /*set new tag */
             let_node->nnode = 1;
             let_node->node[0] = Trav (tmp_node1, arg_info);
