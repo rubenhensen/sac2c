@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.261  1999/02/15 15:11:50  cg
+ * Defines with function name before each function definition
+ * moved into ND_FUNDEC ICM.
+ *
  * Revision 1.260  1999/02/10 10:00:20  srs
  * bugfix in PrintAssign()
  *
@@ -725,9 +729,6 @@ PrintFundef (node *arg_node, node *arg_info)
 
             if ((FUNDEF_ICM (arg_node) != NULL)
                 && (N_icm == NODE_TYPE (FUNDEF_ICM (arg_node)))) {
-                fprintf (outfile, "#undef SAC_MT_CURRENT_FUN\n");
-                fprintf (outfile, "#define SAC_MT_CURRENT_FUN() %s\n",
-                         FUNDEF_NAME (arg_node));
                 Trav (FUNDEF_ICM (arg_node), new_info); /* print N_icm ND_FUN_DEC */
             } else {
                 PrintFunctionHeader (arg_node, new_info);
