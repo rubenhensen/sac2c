@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.21  1995/08/03 14:55:20  cg
+ * Revision 1.22  1995/10/05 16:03:28  cg
+ * new traversal tab: impltype_tab
+ *
+ * Revision 1.21  1995/08/03  14:55:20  cg
  * sib_tab and obj_tab added.
  *
  * Revision 1.20  1995/07/24  11:47:35  asi
@@ -127,5 +130,7 @@ extern funptr ae_tab[];
 extern funptr sib_tab[];
 
 extern funptr obj_tab[];
+
+extern funptr impltype_tab[];
 
 #endif /* _sac_traverse_h */

@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.29  1995/09/01 07:48:13  cg
+ * Revision 1.30  1995/10/05 16:03:28  cg
+ * new traversal tab: impltype_tab
+ *
+ * Revision 1.29  1995/09/01  07:48:13  cg
  * now sib.h is included for call of function SIBmodul
  *
  * Revision 1.28  1995/08/03  14:52:45  cg
@@ -121,7 +124,7 @@
 #include "ArrayElimination.h"
 #include "index.h"
 #include "sib.h"
-
+#include "implicittypes.h"
 #include "traverse.h"
 
 funptr *act_tab;
@@ -433,6 +436,20 @@ funptr sib_tab[] = {
     ab
 
 funptr obj_tab[] = {
+#include "node_info.mac"
+};
+
+#undef NIF
+
+/*
+ * 22) impltyp_tab
+ */
+
+#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
+            ac, ad)                                                                      \
+    ac
+
+funptr impltype_tab[] = {
 #include "node_info.mac"
 };
 
