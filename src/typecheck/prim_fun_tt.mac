@@ -1,8 +1,11 @@
 
 /* $Log$
- * Revision 1.4  1995/02/13 17:55:29  hw
- * added TT1 for type_class B_B
+ * Revision 1.5  1995/03/08 14:05:03  hw
+ * changed some AxS-... to SxA_... to distinguish the argumenttypes
  *
+;; Revision 1.4  1995/02/13  17:55:29  hw
+;; added TT1 for type_class B_B
+;;
 ;; Revision 1.3  1995/02/09  11:10:11  hw
 ;; changed and added TTx`s
 ;;
@@ -38,13 +41,13 @@ TT2 (11, AxA_A, FLOAT_A, INT_A, AxA (arg_type[0], arg_type[1], T_float))
 TT2 (12, AxA_A, FLOAT_A, FLOAT_A, AxA (arg_type[0], arg_type[1], T_float))
 
 TT2 (13, AxS_A, INT_A, INT, DuplicateTypes (arg_type[0]))
-TT2 (14, AxS_A, INT, INT_A, DuplicateTypes (arg_type[1]))
-TT2 (15, AxS_A, INT, FLOAT_A, DuplicateTypes (arg_type[1]))
+TT2 (14, SxA_A, INT, INT_A, DuplicateTypes (arg_type[1]))
+TT2 (15, SxA_A, INT, FLOAT_A, DuplicateTypes (arg_type[1]))
 TT2 (16, AxS_A, FLOAT_A, INT, DuplicateTypes (arg_type[1]))
-TT2 (17, AxS_A, FLOAT, INT_A, Axs_F (arg_type[1]))
+TT2 (17, SxA_A, FLOAT, INT_A, Axs_F (arg_type[1]))
 TT2 (18, AxS_A, INT_A, FLOAT, Axs_F (arg_type[0]))
 TT2 (19, AxS_A, FLOAT_A, FLOAT, DuplicateTypes (arg_type[0]))
-TT2 (20, AxS_A, FLOAT, FLOAT_A, DuplicateTypes (arg_type[1]))
+TT2 (20, SxA_A, FLOAT, FLOAT_A, DuplicateTypes (arg_type[1]))
 
 TT2 (21, SxS_F, INT, INT, MakeTypes (T_float))
 TT2 (22, SxS_F, INT, FLOAT, MakeTypes (T_float))
@@ -57,13 +60,13 @@ TT2 (27, AxA_F, FLOAT_A, INT_A, AxA (arg_type[0], arg_type[1], T_float))
 TT2 (28, AxA_F, FLOAT_A, FLOAT_A, AxA (arg_type[0], arg_type[1], T_float))
 
 TT2 (29, AxS_F, INT_A, INT, Axs_F (arg_type[0]))
-TT2 (30, AxS_F, INT, INT_A, Axs_F (arg_type[1]))
-TT2 (31, AxS_F, INT, FLOAT_A, DuplicateTypes (arg_type[1]))
+TT2 (30, SxA_F, INT, INT_A, Axs_F (arg_type[1]))
+TT2 (31, SxA_F, INT, FLOAT_A, DuplicateTypes (arg_type[1]))
 TT2 (32, AxS_F, FLOAT_A, INT, DuplicateTypes (arg_type[1]))
-TT2 (33, AxS_F, FLOAT, INT_A, Axs_F (arg_type[1]))
+TT2 (33, SxA_F, FLOAT, INT_A, Axs_F (arg_type[1]))
 TT2 (34, AxS_F, INT_A, FLOAT, Axs_F (arg_type[0]))
 TT2 (35, AxS_F, FLOAT_A, FLOAT, DuplicateTypes (arg_type[0]))
-TT2 (36, AxS_F, FLOAT, FLOAT_A, DuplicateTypes (arg_type[1]))
+TT2 (36, SxA_F, FLOAT, FLOAT_A, DuplicateTypes (arg_type[1]))
 
 TT2 (37, VxA_Ar, INT_A, INT_A, Reshp (arg_node->node[0]->node[0], arg_type[1]))
 TT2 (38, VxA_Ar, INT_A, FLOAT_A, Reshp (arg_node->node[0]->node[0], arg_type[1]))
