@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.48  1995/03/16 17:46:20  asi
+ * Revision 1.49  1995/03/29 12:01:34  hw
+ * PrintIcm added
+ * changed PrintAssign (to use it with N_icm)
+ *
+ * Revision 1.48  1995/03/16  17:46:20  asi
  * output for arguments and variable numbers changed
  *
  * Revision 1.47  1995/03/16  17:22:19  asi
@@ -207,12 +211,17 @@ PrintAssign (node *arg_node, node *arg_info)
                                    mdb_nodetype[arg_node->node[0]->nodetype]);
                   PrintMasks (arg_node, arg_info););
 
-    for (i = 0; i < arg_node->nnode; i++) {
+    if (N_icm == arg_node->node[0]->nodetype) {
+        PrintIcm (arg_node->node[0], arg_info);
+        if (2 == arg_node->nnode)
+            Trav (arg_node->node[1], arg_info);
+    } else {
         INDENT;
-        if (1 == i)
+        Trav (arg_node->node[0], arg_info);
+        if (2 == arg_node->nnode) {
             fprintf (outfile, "\n");
-
-        Trav (arg_node->node[i], arg_info);
+            Trav (arg_node->node[1], arg_info);
+        }
     }
 
     DBUG_RETURN (arg_node);
@@ -788,6 +797,20 @@ PrintPre (node *arg_node, node *arg_info)
     Trav (arg_node->node[0], arg_info);
     PrintIds (arg_node->info.ids);
     fprintf (outfile, ";");
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+PrintIcm (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintIcm");
+
+    INDENT;
+    fprintf (outfile, "%s(", arg_node->info.fun_name.id);
+    if (NULL != arg_node->node[0])
+        Trav (arg_node->node[0], arg_info);
+    fprintf (outfile, ");\n");
 
     DBUG_RETURN (arg_node);
 }
