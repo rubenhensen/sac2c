@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.16  2002/03/13 16:00:18  ktr
+# WithloopScalarization.c added for compilation
+#
 # Revision 3.15  2001/11/15 15:36:48  sacbase
 # CLOCK_SKEW_ELIMINATION and PROJECT_ROOT added.
 #
@@ -76,7 +79,8 @@ INCS=-I../global -I../../inc -I../tree -I../compile -I../typecheck -I../modules 
 all: index.o ArrayElimination.o wl_access_analyze.o tile_size_inference.o \
      WithloopFolding.o WLT.o WLI.o WLF.o \
      SSAWithloopFolding.o SSAWLT.o SSAWLI.o SSAWLF.o \
-     pad.o pad_info.o pad_collect.o pad_infer.o pad_transform.o
+     pad.o pad_info.o pad_collect.o pad_infer.o pad_transform.o \
+     WithloopScalarization.o
 
 
 #
