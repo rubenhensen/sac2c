@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.25  1998/04/09 21:27:01  dkr
+# make deps done
+#
 # Revision 1.24  1998/04/09 21:25:47  dkr
 # added 'optimize' to INCS
 #
@@ -133,5 +136,6 @@ y.tab.o: /usr/include/memory.h ../../inc/dbug.h ../global/tree.h
 y.tab.o: ../global/types.h ../global/tree_basic.h ../global/tree_compound.h
 y.tab.o: ../global/Error.h /usr/include/string.h ../global/globals.h
 y.tab.o: ../global/internal_lib.h ../typecheck/typecheck.h
-y.tab.o: ../global/my_debug.h ../global/free.h /usr/include/malloc.h
-y.tab.o: ../modules/readsib.h ../global/resource.h /usr/include/values.h
+y.tab.o: ../optimize/DupTree.h ../global/my_debug.h ../global/free.h
+y.tab.o: /usr/include/malloc.h ../modules/readsib.h ../global/resource.h
+y.tab.o: /usr/include/values.h
