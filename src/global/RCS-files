@@ -11,6 +11,7 @@ interrupt.h
 main.c
 my_debug.c
 my_debug.h
+nt_info.mac
 options.c
 options.h
 resource.c
