@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2001/04/26 21:08:22  dkr
+ * ups, include of rmcasts.h removed
+ *
  * Revision 3.9  2001/04/26 17:10:42  dkr
  * RemoveVoidFuns removed
  *
@@ -153,7 +156,6 @@
 #include "checkdec.h"
 #include "objects.h"
 #include "uniquecheck.h"
-#include "rmcasts.h"
 #include "wltransform.h"
 #include "concurrent.h"
 #include "precompile.h"
