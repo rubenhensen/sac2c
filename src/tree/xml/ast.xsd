@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
   $Log$
+  Revision 1.7  2004/11/14 15:18:21  sah
+  added support for default values for flags
+
   Revision 1.6  2004/10/19 09:09:57  sah
   added persist flag
 
@@ -252,6 +255,14 @@
     <xsd:complexType>
       <xsd:attribute name="name" type="xsd:NMTOKEN"
       use="required" />
+      <xsd:attribute name="default">
+        <xsd:simpleType>
+          <xsd:restriction base="xsd:NMTOKEN">
+            <xsd:enumeration value="true" />
+            <xsd:enumeration value="false" />
+          </xsd:restriction>
+        </xsd:simpleType>
+      </xsd:attribute>  
     </xsd:complexType>
   </xsd:element>
 </xsd:schema>
