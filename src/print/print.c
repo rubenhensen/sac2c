@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.84  2002/05/31 14:53:15  sbs
+ * Now the wrapper functions are printed as well
+ *
  * Revision 3.83  2002/04/16 21:19:35  dkr
  * Handling of main() function modified:
  * The main() function defined by the programmer is renamed in the same
@@ -116,6 +119,7 @@
 #include <string.h>
 
 #include "types.h"
+#include "new_types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "internal_lib.h"
@@ -1277,7 +1281,7 @@ PrintObjdef (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   void PrintFunctionHeader( node *arg_node, node *arg_info)
+ *   void PrintFunctionHeader( node *arg_node, node *arg_info )
  *
  * Description:
  *
@@ -1292,6 +1296,7 @@ PrintFunctionHeader (node *arg_node, node *arg_info)
     bool print_old = TRUE;
     bool print_new = FALSE;
     bool print_argtab = FALSE;
+    bool in_comment = FALSE;
 
     DBUG_ENTER ("PrintFunctionHeader");
 
@@ -1371,6 +1376,31 @@ PrintFunctionHeader (node *arg_node, node *arg_info)
             INDENT;
             fprintf (outfile, " */ ");
         }
+    }
+
+    /* Now, we print the new type signature, iff present */
+    fprintf (outfile, "\n");
+    INDENT;
+    in_comment = (FUNDEF_STATUS (arg_node) == ST_wrapperfun);
+    if (in_comment) {
+        fprintf (outfile, " *\n");
+    } else {
+        fprintf (outfile, "/*\n");
+    }
+    fprintf (outfile, " *  ");
+    if (FUNDEF_NAME (arg_node) != NULL) {
+        fprintf (outfile, "%s :: ", FUNDEF_NAME (arg_node));
+        if (FUNDEF_TYPE (arg_node) != NULL) {
+            fprintf (outfile, "%s\n",
+                     TYType2String (FUNDEF_TYPE (arg_node), TRUE,
+                                    indent + strlen (FUNDEF_NAME (arg_node)) + 8));
+        }
+    }
+    INDENT;
+    if (in_comment) {
+        fprintf (outfile, " *");
+    } else {
+        fprintf (outfile, " */");
     }
 
     DBUG_VOID_RETURN;
@@ -3920,6 +3950,8 @@ PrintAvis (node *arg_node, node *arg_info)
     if (do_it) {
         fprintf (outfile, " /* AVIS:");
 
+        fprintf (outfile, " TYPE   = %s,",
+                 TYType2String (AVIS_TYPE (arg_node), FALSE, 0));
         fprintf (outfile, " SSACNT = ");
         PRINT_POINTER_BRACKETS (outfile, AVIS_SSACOUNT (arg_node));
 #if 1
