@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2004/11/26 17:20:43  mwe
+ * SacDevCamp: Compiles!
+ *
  * Revision 1.2  2004/07/18 19:54:54  sah
  * switch to new INFO structure
  * PHASE I
@@ -24,10 +27,11 @@
  *
  *****************************************************************************/
 
-#define NEW_INFO
-
 #include "dbug.h"
 #include "tree_basic.h"
+#include "node_basic.h"
+#include "internal_lib.h"
+#include "globals.h"
 #include "tree_compound.h"
 #include "traverse.h"
 #include "free.h"
@@ -57,7 +61,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = Malloc (sizeof (info));
+    result = ILIBmalloc (sizeof (info));
 
     INFO_SSAILI_FUNDEF (result) = NULL;
     INFO_SSAILI_ARGCHAIN (result) = NULL;
@@ -70,7 +74,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = Free (info);
+    info = ILIBfree (info);
 
     DBUG_RETURN (info);
 }
@@ -78,7 +82,7 @@ FreeInfo (info *info)
 /******************************************************************************
  *
  * function:
- *  node *SSAILIarg(node *arg_node, info *arg_info)
+ *  node *ILIarg(node *arg_node, info *arg_info)
  *
  * description:
  *   in do/while special functions: set the SSALIR attribute for the args by
@@ -88,9 +92,9 @@ FreeInfo (info *info)
  *
  ******************************************************************************/
 node *
-SSAILIarg (node *arg_node, info *arg_info)
+ILIarg (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSAILIarg");
+    DBUG_ENTER ("ILIarg");
 
     /* infere loop invarinat args */
     if (INFO_SSAILI_ARGCHAIN (arg_info) != NULL) {
@@ -117,7 +121,7 @@ SSAILIarg (node *arg_node, info *arg_info)
         }
 
         /* traverse to next arg */
-        ARG_NEXT (arg_node) = Trav (ARG_NEXT (arg_node), arg_info);
+        ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -126,21 +130,21 @@ SSAILIarg (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *    node* SSAILIfundef(node *arg_node, info *arg_info)
+ *    node* ILIfundef(node *arg_node, info *arg_info)
  *
  * description:
  *  traverses arg nodes and block in this order.
  *
  ******************************************************************************/
 node *
-SSAILIfundef (node *arg_node, info *arg_info)
+ILIfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSAILIfundef");
+    DBUG_ENTER ("ILIfundef");
 
     INFO_SSAILI_FUNDEF (arg_info) = arg_node;
 
     /* traverse args of special (loop) functions to infere loop invariant args */
-    if ((FUNDEF_ARGS (arg_node) != NULL) && (FUNDEF_IS_LOOPFUN (arg_node))) {
+    if ((FUNDEF_ARGS (arg_node) != NULL) && (FUNDEF_ISDOFUN (arg_node))) {
 
         DBUG_ASSERT ((FUNDEF_INT_ASSIGN (arg_node) != NULL),
                      "missing assignment link to internal recursive call");
@@ -161,12 +165,12 @@ SSAILIfundef (node *arg_node, info *arg_info)
 
     /* traverse args */
     if (FUNDEF_ARGS (arg_node) != NULL) {
-        FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), arg_info);
+        FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
     }
 
     /* traverse function body */
     if (FUNDEF_BODY (arg_node) != NULL) {
-        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -175,27 +179,27 @@ SSAILIfundef (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *  node *SSAILIap(node *arg_node, info *arg_info)
+ *  node *ILIap(node *arg_node, info *arg_info)
  *
  * description:
  *  traverse into special fundef if non-recursive call
  *
  ******************************************************************************/
 node *
-SSAILIap (node *arg_node, info *arg_info)
+ILIap (node *arg_node, info *arg_info)
 {
     info *new_arg_info;
 
-    DBUG_ENTER ("SSAILIap");
+    DBUG_ENTER ("ILIap");
 
     DBUG_ASSERT ((AP_FUNDEF (arg_node) != NULL), "missing fundef in ap-node");
 
     if (AP_ARGS (arg_node) != NULL) {
-        AP_ARGS (arg_node) = Trav (AP_ARGS (arg_node), arg_info);
+        AP_ARGS (arg_node) = TRAVdo (AP_ARGS (arg_node), arg_info);
     }
 
     /* traverse special fundef without recursion (only in single fundef mode) */
-    if ((FUNDEF_IS_LACFUN (AP_FUNDEF (arg_node)))
+    if ((FUNDEF_ISLACFUN (AP_FUNDEF (arg_node)))
         && (AP_FUNDEF (arg_node) != INFO_SSAILI_FUNDEF (arg_info))) {
         DBUG_PRINT ("SSAILI", ("traverse in special fundef %s",
                                FUNDEF_NAME (AP_FUNDEF (arg_node))));
@@ -204,7 +208,7 @@ SSAILIap (node *arg_node, info *arg_info)
         new_arg_info = MakeInfo ();
 
         /* start traversal of special fundef */
-        AP_FUNDEF (arg_node) = Trav (AP_FUNDEF (arg_node), new_arg_info);
+        AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), new_arg_info);
 
         DBUG_PRINT ("SSAILI", ("traversal of special fundef %s finished\n",
                                FUNDEF_NAME (AP_FUNDEF (arg_node))));
@@ -221,33 +225,29 @@ SSAILIap (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSAInferLoopInvariants(node *fundef)
+ *   node *ILIdoInferLoopInvariants(node *fundef)
  *
  * description:
  *  starts the loop invariant inference for the given normal fundef.
  *
  ******************************************************************************/
 node *
-SSAInferLoopInvariants (node *fundef)
+ILIdoInferLoopInvariants (node *fundef)
 {
     info *arg_info;
-    funtab *old_tab;
 
-    DBUG_ENTER ("SSAInferLoopInvariants");
+    DBUG_ENTER ("ILIdoInferLoopInvariants");
 
     DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
-                 "SSAInferLoopInvariants() is used for fundef nodes only");
+                 "ILIdoInferLoopInvariants() is used for fundef nodes only");
 
-    if (!(FUNDEF_IS_LACFUN (fundef))) {
+    if (!(FUNDEF_ISLACFUN (fundef))) {
 
         arg_info = MakeInfo ();
 
-        old_tab = act_tab;
-        act_tab = ssaili_tab;
-
-        fundef = Trav (fundef, arg_info);
-
-        act_tab = old_tab;
+        TRAVpush (TR_ili);
+        fundef = TRAVdo (fundef, arg_info);
+        TRAVpop ();
 
         arg_info = FreeInfo (arg_info);
     }
