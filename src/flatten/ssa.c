@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.9  2004/12/19 19:49:29  sbs
+ * calls to TNTdoToNewTypesXXX ( previously CheckAvis)
+ * eliminated
+ *
  * Revision 1.8  2004/11/24 19:15:29  mwe
  * SacDevCamp: compiles!!\
  *
@@ -53,7 +57,6 @@
 
 #include "globals.h"
 #include "lac2fun.h"
-#include "ToNewTypes.h"
 #include "SSATransform.h"
 #include "fun2lac.h"
 #include "node_basic.h"
@@ -95,13 +98,6 @@ SSAdoSsa (node *syntax_tree)
     syntax_tree = L2FdoLac2Fun (syntax_tree);
     if ((global.break_after == global.compiler_phase)
         && (0 == strcmp (global.break_specifier, "l2f"))) {
-        goto DONE;
-    }
-
-    DBUG_PRINT ("SSA", ("call ToNewTypes"));
-    syntax_tree = TNTdoToNewTypes (syntax_tree);
-    if ((global.break_after == global.compiler_phase)
-        && (0 == strcmp (global.break_specifier, "cha"))) {
         goto DONE;
     }
 
@@ -188,8 +184,6 @@ SSArestoreSsaOneFunction (node *fundef)
     DBUG_ASSERT (NODE_TYPE (fundef) == N_fundef,
                  "SSArestoreSsaOneFunction called without N_fundef node.");
 
-    fundef = TNTdoToNewTypesOneFunction (fundef);
-
     fundef = SSATdoTransformOneFunction (fundef);
 
     DBUG_RETURN (fundef);
@@ -226,8 +220,6 @@ SSArestoreSsaOneFundef (node *fundef)
 
     DBUG_ASSERT (NODE_TYPE (fundef) == N_fundef,
                  "SSArestoreSsaOneFundef called without N_fundef node.");
-
-    fundef = TNTdoToNewTypesOneFundef (fundef);
 
     fundef = SSATdoTransformOneFundef (fundef);
 
@@ -266,8 +258,6 @@ SSArestoreSsaExplicitAllocs (node *syntax_tree)
 
     DBUG_ASSERT (NODE_TYPE (syntax_tree) == N_module,
                  "SSArestoreSsaExplicitAllocs called without N_module node.");
-
-    syntax_tree = TNTdoToNewTypes (syntax_tree);
 
     syntax_tree = SSATdoTransformExplicitAllocs (syntax_tree);
 
