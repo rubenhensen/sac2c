@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.37  2003/06/12 17:21:54  dkr
+ * ICMs CREATE__VECT__... renamed into CREATE__ARRAY__...
+ *
  * Revision 3.36  2003/04/15 17:57:10  dkr
  * implementation of ALLOC/FREE-ICMs modified: test for SIZE==0 removed
  *
@@ -1248,12 +1251,12 @@ typedef int *SAC_array_descriptor_t;
  * ND_CREATE__STRING__DATA( nt, str) :
  *   creates data of a constant character array (string)
  *
- * ND_CREATE__VECT__DIM( val_size, ...val...) :
- *   computes dim of a constant vector
- * ND_CREATE__VECT__SHAPE( nt, sdim, val_size, ...val...) :
- *   computes shape of a constant vector
- * ND_CREATE__VECT__DATA( nt, sdim, val_size, ...val..., copyfun) :
- *   creates data of a constant vector
+ * ND_CREATE__ARRAY__DIM( val_size, ...val...) :
+ *   computes dim of a constant non-scalar array
+ * ND_CREATE__ARRAY__SHAPE( nt, sdim, val_size, ...val...) :
+ *   computes shape of a constant non-scalar array
+ * ND_CREATE__ARRAY__DATA( nt, sdim, val_size, ...val..., copyfun) :
+ *   creates data of a constant non-scalar array
  *
  ******************************************************************************/
 
@@ -1267,9 +1270,9 @@ typedef int *SAC_array_descriptor_t;
         SAC_String2Array (SAC_ND_A_FIELD (nt), str);                                     \
     }
 
-/* ND_CREATE__VECT__DIM( ...) is a C-ICM */
-/* ND_CREATE__VECT__SHAPE( ...) is a C-ICM */
-/* ND_CREATE__VECT__DATA( ...) is a C-ICM */
+/* ND_CREATE__ARRAY__DIM( ...) is a C-ICM */
+/* ND_CREATE__ARRAY__SHAPE( ...) is a C-ICM */
+/* ND_CREATE__ARRAY__DATA( ...) is a C-ICM */
 
 /************************
  ************************

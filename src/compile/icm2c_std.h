@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.24  2003/06/12 17:22:00  dkr
+ * ICMs CREATE__VECT__... renamed into CREATE__ARRAY__...
+ *
  * Revision 3.23  2002/10/29 19:10:28  dkr
  * signature of some ICMs modified
  *
@@ -144,13 +147,14 @@ extern void ICMCompileND_COPY__SHAPE (char *to_nt, int to_sdim, char *from_nt,
 extern void ICMCompileND_MAKE_UNIQUE (char *to_nt, int to_sdim, char *from_nt,
                                       int from_sdim, char *copyfun);
 
-extern void ICMCompileND_CREATE__VECT__DIM (int val_size, char **vala_any);
+extern void ICMCompileND_CREATE__ARRAY__DIM (int dim, int val_size, char **vala_any);
 
-extern void ICMCompileND_CREATE__VECT__SHAPE (char *to_nt, int to_sdim, int val_size,
-                                              char **vala_any, int val0_sdim);
+extern void ICMCompileND_CREATE__ARRAY__SHAPE (char *to_nt, int to_sdim, int dim,
+                                               int *shp, int val_size, char **vala_any,
+                                               int val0_sdim);
 
-extern void ICMCompileND_CREATE__VECT__DATA (char *to_nt, int to_sdim, int val_size,
-                                             char **vala_any, char *copyfun);
+extern void ICMCompileND_CREATE__ARRAY__DATA (char *to_nt, int to_sdim, int val_size,
+                                              char **vala_any, char *copyfun);
 
 extern void ICMCompileND_PRF_SHAPE__DATA (char *to_nt, int to_sdim, char *from_nt,
                                           int from_sdim);
