@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.3  2001/03/19 14:22:29  nmw
+ * debug print added
+ *
  * Revision 3.2  2000/12/08 13:51:45  dkr
  * some DBUG_ENTER strings corrected
  *
@@ -1155,6 +1158,15 @@ DFMSetMaskEntrySet (mask_t *mask, char *id, node *decl)
 
     DBUG_ASSERT (((id != NULL) || (decl != NULL)),
                  "Neither name nor declaration provided to call to DFMSetMaskEntrySet");
+    DBUG_EXECUTE ("DFM",
+                  if (id != NULL) {
+                      fprintf (stderr, "DFMSetMaskEntrySet called for identifier %s\n",
+                               id);
+                  } else {
+                      fprintf (stderr,
+                               "DFMSetMaskEntrySet called for declaration of %s\n",
+                               VARDEC_NAME (decl));
+                  });
 
     CHECK_MASK (mask);
 
