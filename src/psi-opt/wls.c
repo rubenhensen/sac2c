@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/11/24 15:22:31  ktr
+ * renaming
+ *
  * Revision 1.3  2004/11/24 15:21:03  ktr
  * COMPILES!
  *
@@ -136,7 +139,7 @@ FreeInfo (info *info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *WLSWithloopScalarization( node *fundef)
+ * @fn node *WLSdoWithloopScalarization( node *fundef)
  *
  * @brief starting point of WithloopScalarization.
  *
@@ -147,12 +150,12 @@ FreeInfo (info *info)
  *
  *****************************************************************************/
 node *
-WLSWithloopScalarization (node *fundef)
+WLSdoWithloopScalarization (node *fundef)
 {
-    DBUG_ENTER ("WLSWithloopScalarization");
+    DBUG_ENTER ("WLSdoWithloopScalarization");
 
     DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
-                 "WLSWithloopScalarization called for non-fundef node");
+                 "WLSdoWithloopScalarization called for non-fundef node");
 
     if (!FUNDEF_ISLACFUN (fundef)) {
         TRAVpush (TR_wls);
