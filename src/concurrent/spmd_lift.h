@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2004/11/23 21:27:36  skt
+ * kill the n of nwith and nwithop
+ *
  * Revision 3.3  2004/11/21 23:01:01  ktr
  * ISMOP 2004!!!!!!!
  *
@@ -34,8 +37,8 @@
 extern node *SPMDLspmd (node *arg_node, info *arg_info);
 extern node *SPMDLid (node *arg_node, info *arg_info);
 extern node *SPMDLlet (node *arg_node, info *arg_info);
-extern node *SPMDLnwith2 (node *arg_node, info *arg_info);
-extern node *SPMDLnwithid (node *arg_node, info *arg_info);
+extern node *SPMDLwith2 (node *arg_node, info *arg_info);
+extern node *SPMDLwithid (node *arg_node, info *arg_info);
 extern node *SPMDLids (node *arg_node, info *arg_info);
 
 #endif /* _SAC_SPMD_LIFT_H_ */
