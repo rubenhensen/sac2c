@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.36  2004/11/26 21:21:39  sbs
+# BEtest temporarily disabled
+#
 # Revision 3.35  2004/11/26 21:16:09  sah
 # pour Bodo *<8-)
 #
@@ -111,7 +114,9 @@ SAC2C_OBJS := wlpragma_funs.o precompile.o compile.o wltransform.o \
               objectprecompile.o functionprecompile.o
 
 
-all: $(SAC2C_OBJS) BEtest
+all: $(SAC2C_OBJS)
+
+# BEtest
 
 
 #
