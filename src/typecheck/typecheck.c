@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.16  1999/05/12 09:15:04  jhs
+ * Adjusted macros to access constant vectors.
+ *
  * Revision 2.15  1999/05/11 16:12:52  jhs
  * Done some cosmetics to learn about the code.
  *
@@ -743,10 +746,11 @@ BuildGenarrayWithLoop (node *shp, node *val)
          */
         tmp_node = NULL;
         for (i = ID_VECLEN (shp) - 1; i >= 0; i--)
-            tmp_node = MakeExprs (MakeNum (ID_INTVEC (shp)[i]), tmp_node);
+            tmp_node = MakeExprs (MakeNum (((int *)ID_CONSTVEC (shp))[i]), tmp_node);
         tmp_node = MakeArray (tmp_node);
         ARRAY_VECLEN (tmp_node) = ID_VECLEN (shp);
-        ARRAY_INTVEC (tmp_node) = CopyIntVector (ID_VECLEN (shp), ID_INTVEC (shp));
+        ARRAY_CONSTVEC (tmp_node)
+          = CopyConstVec (ID_VECTYPE (shp), ID_VECLEN (shp), ID_CONSTVEC (shp));
         ARRAY_TYPE (tmp_node) = VARDEC_TYPE (ID_VARDEC (shp));
         NWITHOP_SHAPE (NWITH_WITHOP (res)) = tmp_node;
     }
@@ -829,11 +833,12 @@ BuildTakeWithLoop (node *take_shp, node *array)
         int i;
         node *tmp_node = NULL;
         for (i = ID_VECLEN (take_shp) - 1; i >= 0; i--)
-            tmp_node = MakeExprs (MakeNum (ID_INTVEC (take_shp)[i]), tmp_node);
+            tmp_node = MakeExprs (MakeNum (((int *)ID_CONSTVEC (take_shp))[i]), tmp_node);
         tmp_node = MakeArray (tmp_node);
         ARRAY_VECLEN (tmp_node) = ID_VECLEN (take_shp);
-        ARRAY_INTVEC (tmp_node)
-          = CopyIntVector (ID_VECLEN (take_shp), ID_INTVEC (take_shp));
+        ARRAY_CONSTVEC (tmp_node)
+          = CopyConstVec (ID_VECTYPE (take_shp), ID_VECLEN (take_shp),
+                          ID_CONSTVEC (take_shp));
         ARRAY_TYPE (tmp_node) = VARDEC_TYPE (ID_VARDEC (take_shp));
         NWITHOP_SHAPE (NWITH_WITHOP (res)) = tmp_node;
     }
@@ -874,7 +879,7 @@ BuildDropWithLoop (types *new_shape, node *drop_vec, node *array)
     DBUG_ENTER ("BuildDropWithLoop");
 
     DBUG_ASSERT (((NODE_TYPE (drop_vec) == N_array)
-                  || ((NODE_TYPE (drop_vec) == N_id) && (ID_CONSTARRAY (drop_vec))
+                  || ((NODE_TYPE (drop_vec) == N_id) && (ID_ISCONST (drop_vec))
                       && (VARDEC_BASETYPE (ID_VARDEC (drop_vec)) == T_int))),
                  "First arg of drop should be a constant integer array!");
 
@@ -910,7 +915,7 @@ BuildDropWithLoop (types *new_shape, node *drop_vec, node *array)
         dim_array = TYPES_DIM (new_shape); /* shape(result) == shape(array) !! */
 
         if (len_vec < dim_array) {
-            aelem = IntVec2Array (ID_VECLEN (drop_vec), ID_INTVEC (drop_vec));
+            aelem = IntVec2Array (ID_VECLEN (drop_vec), ((int *)ID_CONSTVEC (drop_vec)));
 
             if (aelem == NULL) {
                 for (i = len_vec; i < dim_array; i++) {
@@ -931,8 +936,9 @@ BuildDropWithLoop (types *new_shape, node *drop_vec, node *array)
             tmp_var = MakeLet (new_array, MakeIds (new_drop_vec, NULL, ST_regular));
             ID_NAME (drop_vec) = StringCopy (new_drop_vec);
             ID_VECLEN (drop_vec) = dim_array;
-            FREE (ID_INTVEC (drop_vec));
-            ID_INTVEC (drop_vec) = Array2IntVec (ARRAY_AELEMS (new_array), NULL);
+            FREE (ID_CONSTVEC (drop_vec));
+            ((int *)ID_CONSTVEC (drop_vec))
+              = Array2IntVec (ARRAY_AELEMS (new_array), NULL);
         }
     }
 
@@ -7012,7 +7018,7 @@ isBoundEmpty (node *arg_node, node *bound_node)
 {
     if (NODE_TYPE (bound_node) == N_id) {
         /* N_id node => elements are annotated */
-        if (ID_CONSTARRAY (bound_node) && (ID_VECLEN (bound_node) == 0)) {
+        if (ID_ISCONST (bound_node) && (ID_VECLEN (bound_node) == 0)) {
             return (TRUE);
         } else {
             return (FALSE);
@@ -7723,7 +7729,7 @@ TI_Ngenarray (node *arg_node, node *arg_info, node **replace)
          * don't free exprs_next because it is assignd to arg_node.
          */
     } else {
-        if ((NODE_TYPE (arg_node) == N_id) && (ID_CONSTARRAY (arg_node))
+        if ((NODE_TYPE (arg_node) == N_id) && (ID_ISCONST (arg_node))
             && (VARDEC_BASETYPE (ID_VARDEC (arg_node)) == T_int)) {
 
             /*
@@ -7731,7 +7737,7 @@ TI_Ngenarray (node *arg_node, node *arg_info, node **replace)
              */
             ret_type = MakeType (T_int, 0, MakeShpseg (NULL), NULL, NULL);
 
-            tmpi = ID_INTVEC (arg_node);
+            tmpi = ((int *)ID_CONSTVEC (arg_node));
             dim = ID_VECLEN (arg_node);
             if (dim < SHP_SEG_SIZE)
                 for (i = 0; i < dim; i++)
@@ -7745,7 +7751,7 @@ TI_Ngenarray (node *arg_node, node *arg_info, node **replace)
 
             ret_type = MakeType (T_int, 0, MakeShpseg (NULL), NULL, NULL);
 
-            tmpi = ID_INTVEC (arg_node);
+            tmpi = ((int *)ID_CONSTVEC (arg_node));
             dim = ID_VECLEN (arg_node);
             if (dim < SHP_SEG_SIZE)
                 for (i = 0; i < dim; i++)

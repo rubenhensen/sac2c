@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.8  1999/05/12 09:15:46  jhs
+ * Adjusted macros to access constant vectors.
+ *
  * Revision 2.7  1999/05/12 08:37:54  jhs
  * Deleted some warnigs occuring while compiling under Linux
  * (there are still some left).
@@ -913,7 +916,7 @@ Reshp (node *vec, types *array, types *shp_vec)
              * count number of elements of the new array
              */
             count1 = 1;
-            tmp1 = ID_INTVEC (vec);
+            tmp1 = (int *)ID_CONSTVEC (vec);
             dim1 = ID_VECLEN (vec);
             for (i = 0; i < dim1; i++)
                 count1 = count1 * tmp1[i];
@@ -1159,7 +1162,7 @@ TakeV (node *vec, types *vec_type, types *array)
                  "neither an N_id nor an N_array node");
     if (SAC_PRG == kind_of_file) {
         if (((NODE_TYPE (vec) != N_id) || (TYPES_BASETYPE (vec_type) != T_int)
-             || (!(ID_CONSTARRAY (vec))))
+             || (!(ID_ISCONST (vec))))
             && (NODE_TYPE (vec) != N_array))
             ERROR2 (3, ("%s, %d: 1.argument of function `take` "
                         " should be a constant vector",
@@ -1245,10 +1248,10 @@ TakeV (node *vec, types *vec_type, types *array)
             } /* if ... else ... */
         }     /* if ... else ... */
     } else {
-        if ((NODE_TYPE (vec) == N_id) && (ID_CONSTARRAY (vec))
+        if ((NODE_TYPE (vec) == N_id) && (ID_ISCONST (vec))
             && (TYPES_BASETYPE (vec_type) == T_int)) {
             dim2 = ID_VECLEN (vec);
-            tmp2 = ID_INTVEC (vec);
+            tmp2 = (int *)ID_CONSTVEC (vec);
 
             if (SCALAR < TYPES_DIM (array_btype)) {
                 /* array has got a known shape */
@@ -1357,7 +1360,7 @@ DropV (node *vec, types *vec_type, types *array)
 
     if (kind_of_file == SAC_PRG) {
         if (((NODE_TYPE (vec) != N_id) || (TYPES_BASETYPE (vec_type) != T_int)
-             || (!(ID_CONSTARRAY (vec))))
+             || (!(ID_ISCONST (vec))))
             && (NODE_TYPE (vec) != N_array))
             ERROR2 (3, ("%s, %d: 1.argument of function `drop` "
                         " should be a constant integer vector",
@@ -1446,10 +1449,10 @@ DropV (node *vec, types *vec_type, types *array)
             }
         }
     } else {
-        if ((NODE_TYPE (vec) == N_id) && (ID_CONSTARRAY (vec))
+        if ((NODE_TYPE (vec) == N_id) && (ID_ISCONST (vec))
             && (TYPES_BASETYPE (vec_type) == T_int)) {
             dim2 = ID_VECLEN (vec);
-            tmp2 = ID_INTVEC (vec);
+            tmp2 = (int *)ID_CONSTVEC (vec);
 
             if (SCALAR < TYPES_DIM (array_btype)) {
                 /* array has got a known shape */
@@ -2237,7 +2240,7 @@ Genarray_S (node *v_node, types *vec, types *scalar)
              * create shpseg of resulting type
              */
             shpseg_p = MakeShpseg (NULL);
-            tmp2 = ID_INTVEC (v_node);
+            tmp2 = (int *)ID_CONSTVEC (v_node);
             dim = ID_VECLEN (v_node);
             for (i = 0; i < dim; i++)
                 SHPSEG_SHAPE (shpseg_p, i) = tmp2[i];
@@ -2280,7 +2283,7 @@ Genarray_S (node *v_node, types *vec, types *scalar)
                  * create shpseg of resulting type
                  */
                 shpseg_p = MakeShpseg (NULL);
-                tmp2 = ID_INTVEC (v_node);
+                tmp2 = (int *)ID_CONSTVEC (v_node);
                 dim = ID_VECLEN (v_node);
                 for (i = 0; i < dim; i++)
                     SHPSEG_SHAPE (shpseg_p, i) = tmp2[i];
