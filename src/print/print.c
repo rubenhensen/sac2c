@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.254  1999/01/07 14:00:18  sbs
+ * MRD list printing inserted.
+ *
  * Revision 1.253  1998/12/21 10:52:25  sbs
  * MRD lists now can be printed by using #d,MRD,MASK !
  *
@@ -125,6 +128,7 @@
 #include "convert.h"
 #include "DataFlowMask.h"
 #include "optimize.h"
+#include "generatemasks.h"
 #include "filemgr.h"
 #include "globals.h"
 #include "gen_startup_code.h"
