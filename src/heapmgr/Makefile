@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.3  2000/12/06 18:11:01  cg
+# Added initial version of array placement.
+#
 # Revision 3.2  2000/12/06 17:42:15  cg
 # Added new gcc option "-w" in order to disable nasty compiler warnings
 # with respect to missing braces in the static initialization of mutex
@@ -47,7 +50,7 @@ INCS := -I../runtime -I../../inc
 LIBS := -L.
 
 FILES_HEAPMGR := calloc.c diagnostics.c internal.c large_chunks.c malloc.c memalign.c  \
-                 realloc.c setup.c small_chunks.c wrapper.c
+                 realloc.c setup.c small_chunks.c wrapper.c placement.c
 
 OBJS_HEAPMGR := $(patsubst %.c, %.o, $(FILES_HEAPMGR))
 

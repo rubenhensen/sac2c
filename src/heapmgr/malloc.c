@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2000/12/06 18:11:01  cg
+ * Added initial version of array placement.
+ *
  * Revision 3.1  2000/11/20 18:02:54  sacbase
  * new release made
  *
@@ -201,15 +204,24 @@ malloc (size_t sz)
  *
  ******************************************************************************/
 
+#define ARRAY_PLACEMENT
+
 void
 free (void *addr)
 {
     SAC_HM_arena_t *arena;
 
     if (addr != NULL) {
+
         arena = SAC_HM_ADDR_ARENA (addr);
 
         if (arena != NULL) {
+#ifdef ARRAY_PLACEMENT
+            if ((long int)arena & (long int)1) {
+                addr = (SAC_HM_header_t *)((long int)arena & (~(long int)1));
+                arena = SAC_HM_ADDR_ARENA (addr);
+            }
+#endif
             DIAG_CHECK_ALLOCPATTERN_ANYCHUNK ((SAC_HM_header_t *)addr);
             DIAG_INC (arena->cnt_free_var_size);
 
