@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2004/08/01 16:00:43  sah
+ * switch to new INFO structure
+ * PHASE I
+ *
  * Revision 1.4  2001/05/17 11:37:55  dkr
  * FREE/MALLOC eliminated
  *
@@ -72,6 +76,8 @@
  *
  *****************************************************************************/
 
+#define NEW_INFO
+
 #include "dbug.h"
 
 #include "types.h"
@@ -83,6 +89,63 @@
 #include "DupTree.h"
 #include "refcount.h"
 #include "print.h"
+
+/*
+ * INFO structure
+ */
+struct INFO {
+    ids *ids;
+    void *ids_chain;
+    node *args;
+    node *args_chain;
+    node *fundef;
+    node *preassign;
+    node *postassign;
+};
+
+/*
+ * INFO macros
+ */
+#define INFO_AI_IDS(n) (n->ids)
+#define INFO_AI_IDS_CHAIN(n) (n->ids_chain)
+#define INFO_AI_ARGS(n) (n->args)
+#define INFO_AI_ARGS_CHAIN(n) (n->args_chain)
+#define INFO_AI_FUNDEF(n) (n->fundef)
+#define INFO_AI_PREASSIGN(n) (n->preassign)
+#define INFO_AI_POSTASSIGN(n) (n->postassign)
+
+/*
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = Malloc (sizeof (info));
+
+    INFO_AI_IDS (result) = NULL;
+    INFO_AI_IDS_CHAIN (result) = NULL;
+    INFO_AI_ARGS (result) = NULL;
+    INFO_AI_ARGS_CHAIN (result) = NULL;
+    INFO_AI_FUNDEF (result) = NULL;
+    INFO_AI_PREASSIGN (result) = NULL;
+    INFO_AI_POSTASSIGN (result) = NULL;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = Free (info);
+
+    DBUG_RETURN (info);
+}
 
 /******************************************************************************
  *
@@ -189,7 +252,7 @@ node *FindOrMakeVardec(char *var_name, node *fundef, node *vardec_or_arg)
 /******************************************************************************
  *
  * function:
- *   ids *AIids(ids *arg_ids, node *arg_info)
+ *   ids *AIids(ids *arg_ids, info *arg_info)
  *
  * description:
  *
@@ -197,7 +260,7 @@ node *FindOrMakeVardec(char *var_name, node *fundef, node *vardec_or_arg)
  ******************************************************************************/
 
 ids *
-AIids (ids *arg_ids, node *arg_info)
+AIids (ids *arg_ids, info *arg_info)
 {
     node *new_let;
 
@@ -254,7 +317,7 @@ AIids (ids *arg_ids, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *AIassign(node *arg_node, node *arg_info)
+ *   node *AIassign(node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -262,7 +325,7 @@ AIids (ids *arg_ids, node *arg_info)
  ******************************************************************************/
 
 node *
-AIassign (node *arg_node, node *arg_info)
+AIassign (node *arg_node, info *arg_info)
 {
     node *preassign, *postassign, *tmp;
 
@@ -304,7 +367,7 @@ AIassign (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *AIexprs(node *arg_node, node *arg_info)
+ *   node *AIexprs(node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -312,7 +375,7 @@ AIassign (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-AIexprs (node *arg_node, node *arg_info)
+AIexprs (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("AIexprs");
 
@@ -336,7 +399,7 @@ AIexprs (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *AIreturn(node *arg_node, node *arg_info)
+ *   node *AIreturn(node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -344,7 +407,7 @@ AIexprs (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-AIreturn (node *arg_node, node *arg_info)
+AIreturn (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("AIreturn");
 
@@ -362,7 +425,7 @@ AIreturn (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *AIap(node *arg_node, node *arg_info)
+ *   node *AIap(node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -370,7 +433,7 @@ AIreturn (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-AIap (node *arg_node, node *arg_info)
+AIap (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("AIap");
 
@@ -396,7 +459,7 @@ AIap (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *AIid( node *arg_node, node *arg_info)
+ *   node *AIid( node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -404,7 +467,7 @@ AIap (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-AIid (node *arg_node, node *arg_info)
+AIid (node *arg_node, info *arg_info)
 {
     node *new_let;
     ids *new_ids;
@@ -503,7 +566,7 @@ AIid (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *AIlet(node *arg_node, node *arg_info)
+ *   node *AIlet(node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -511,7 +574,7 @@ AIid (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-AIlet (node *arg_node, node *arg_info)
+AIlet (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("AIlet");
 
@@ -530,7 +593,7 @@ AIlet (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *AIvardec(node *arg_node, node *arg_info)
+ *   node *AIvardec(node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -538,7 +601,7 @@ AIlet (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-AIvardec (node *arg_node, node *arg_info)
+AIvardec (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("AIvardec");
 
@@ -555,7 +618,7 @@ AIvardec (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *AIarg( node *arg_node, node *arg_info)
+ *   node *AIarg( node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -563,7 +626,7 @@ AIvardec (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-AIarg (node *arg_node, node *arg_info)
+AIarg (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("AIarg");
 
@@ -585,7 +648,7 @@ AIarg (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *AIblock(node *arg_node, node *arg_info)
+ *   node *AIblock(node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -593,7 +656,7 @@ AIarg (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-AIblock (node *arg_node, node *arg_info)
+AIblock (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("AIblock");
 
@@ -609,7 +672,7 @@ AIblock (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *AIfundef(node *arg_node, node *arg_info)
+ *   node *AIfundef(node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -617,7 +680,7 @@ AIblock (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-AIfundef (node *arg_node, node *arg_info)
+AIfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("AIfundef");
 
@@ -643,7 +706,7 @@ AIfundef (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *AIwith( node *arg_node, node *arg_info)
+ *   node *AIwith( node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -651,7 +714,7 @@ AIfundef (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-AIwith (node *arg_node, node *arg_info)
+AIwith (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("AIwith");
 
@@ -667,7 +730,7 @@ AIwith (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *AIwith2( node *arg_node, node *arg_info)
+ *   node *AIwith2( node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -675,7 +738,7 @@ AIwith (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-AIwith2 (node *arg_node, node *arg_info)
+AIwith2 (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("AIwith2");
 
@@ -696,7 +759,7 @@ AIwith2 (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *AIwithid( node *arg_node, node *arg_info)
+ *   node *AIwithid( node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -704,7 +767,7 @@ AIwith2 (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-AIwithid (node *arg_node, node *arg_info)
+AIwithid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("AIwithid");
 
@@ -717,7 +780,7 @@ AIwithid (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *AIcode( node *arg_node, node *arg_info)
+ *   node *AIcode( node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -725,7 +788,7 @@ AIwithid (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-AIcode (node *arg_node, node *arg_info)
+AIcode (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("AIcode");
 
@@ -754,7 +817,7 @@ AIcode (node *arg_node, node *arg_info)
 node *
 AdjustIdentifiers (node *fundef, node *let)
 {
-    node *info_node;
+    info *info;
     funtab *old_tab;
 
     DBUG_ENTER ("AdjustIdentifiers");
@@ -769,16 +832,16 @@ AdjustIdentifiers (node *fundef, node *let)
     old_tab = act_tab;
     act_tab = ai_tab;
 
-    info_node = MakeInfo ();
+    info = MakeInfo ();
 
-    INFO_AI_IDS_CHAIN (info_node) = LET_IDS (let);
-    INFO_AI_ARGS_CHAIN (info_node) = AP_ARGS (LET_EXPR (let));
+    INFO_AI_IDS_CHAIN (info) = LET_IDS (let);
+    INFO_AI_ARGS_CHAIN (info) = AP_ARGS (LET_EXPR (let));
 
-    fundef = Trav (fundef, info_node);
+    fundef = Trav (fundef, info);
 
     DBUG_EXECUTE ("PRINT_AI", PrintNode (fundef););
 
-    info_node = FreeNode (info_node);
+    info = FreeInfo (info);
 
     act_tab = old_tab;
 
