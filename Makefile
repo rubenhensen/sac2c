@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.122  2004/10/21 16:21:15  ktr
+# added src/refcount/staticreuse.o
+#
 # Revision 3.121  2004/10/20 08:10:29  khf
 # added resolvedependencies.o
 #
@@ -388,7 +391,8 @@ OBJECTS_OLD=
 REFCOUNT= src/refcount/allocation.o src/refcount/rcopt.o \
           src/refcount/rcphase.o src/refcount/filterrc.o \
           src/refcount/alloc.o src/refcount/refcounting.o \
-          src/refcount/reuse.o src/refcount/aliasanalysis.o
+          src/refcount/reuse.o src/refcount/aliasanalysis.o \
+          src/refcount/staticreuse.o
 REFCOUNT_OLD=
 
 CONCURRENT=
