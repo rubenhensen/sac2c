@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  1998/08/27 14:48:45  cg
+ * ICM ADJUST_SCHEDULER now gets also upper bound of respective block.
+ *
  * Revision 1.7  1998/08/07 16:04:25  dkr
  * MT_SCHEDULER_BEGIN, MT_SCHEDULER_END added
  *
@@ -69,7 +72,7 @@ extern void ICMCompileMT_SPMD_DYNAMIC_MODE_ALTSEQ (char *name);
 extern void ICMCompileMT_SPMD_DYNAMIC_MODE_END (char *name);
 
 extern void ICMCompileMT_ADJUST_SCHEDULER (int current_dim, int array_dim, int lower,
-                                           int unrolling, char *array);
+                                           int upper, int unrolling, char *array);
 
 extern void ICMCompileMT_SCHEDULER_BEGIN (int dim, int *vararg);
 extern void ICMCompileMT_SCHEDULER_END (int dim, int *vararg);

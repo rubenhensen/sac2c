@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.51  1998/08/27 14:48:45  cg
+ * ICM ADJUST_SCHEDULER now gets also upper bound of respective block.
+ *
  * Revision 1.50  1998/08/07 16:07:33  dkr
  * some WL-ICMs changed
  *
@@ -770,9 +773,10 @@ ICM_DEF( MT_ADJUST_SCHEDULER, NO_TRACE)
   ICM_INT(current_dim)
   ICM_INT(array_dim)
   ICM_INT(lower)
+  ICM_INT(upper)
   ICM_INT(unrolling)
   ICM_STR(array)
-ICM_END( MT_ADJUST_SCHEDULER, (current_dim, array_dim, lower, unrolling, array))
+ICM_END( MT_ADJUST_SCHEDULER, (current_dim, array_dim, lower, upper, unrolling, array))
 #endif
 
 

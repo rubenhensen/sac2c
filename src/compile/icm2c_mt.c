@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.18  1998/08/27 14:48:45  cg
+ * ICM ADJUST_SCHEDULER now gets also upper bound of respective block.
+ *
  * Revision 1.17  1998/08/07 18:11:35  cg
  * bug fixed in ICMCompileMT_ADJUST_SCHEDULER
  *
@@ -939,8 +942,8 @@ ICMCompileMT_SPMD_PRESET (char *name, int narg, char **vararg)
  ******************************************************************************/
 
 void
-ICMCompileMT_ADJUST_SCHEDULER (int current_dim, int array_dim, int lower, int unrolling,
-                               char *array)
+ICMCompileMT_ADJUST_SCHEDULER (int current_dim, int array_dim, int lower, int upper,
+                               int unrolling, char *array)
 {
     int i;
 
@@ -952,16 +955,16 @@ ICMCompileMT_ADJUST_SCHEDULER (int current_dim, int array_dim, int lower, int un
 #undef MT_ADJUST_SCHEDULER
 
     INDENT;
-    fprintf (outfile, "SAC_MT_ADJUST_SCHEDULER(%s, %d, %d, %d, (", array, current_dim,
-             lower, unrolling);
+    fprintf (outfile, "SAC_MT_ADJUST_SCHEDULER(%s, %d, %d, %d, %d, (", array, current_dim,
+             lower, upper, unrolling);
 
     if (current_dim == array_dim - 1) {
         fprintf (outfile, "1");
     } else {
-        fprintf (outfile, "SAC_ND_A_SHAPE(%s, %d)", array, current_dim + 1);
+        fprintf (outfile, "SAC_ND_KD_A_SHAPE(%s, %d)", array, current_dim + 1);
 
         for (i = current_dim + 2; i < array_dim; i++) {
-            fprintf (outfile, " * SAC_ND_A_SHAPE(%s, %d)", array, current_dim + i);
+            fprintf (outfile, " * SAC_ND_KD_A_SHAPE(%s, %d)", array, current_dim + i);
         }
     }
 
