@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.5  1994/12/01 17:36:18  hw
+ * Revision 1.6  1994/12/02 12:38:35  sbs
+ * Options -pfts revised/ prgname inserted
+ *
+ * Revision 1.5  1994/12/01  17:36:18  hw
  * added function Typecheck
  * new parameter -f for printing after flatten
  *
@@ -42,23 +45,36 @@ FILE *outfile;
 
 MAIN
 {
-    int prettyprint = 0, set_outfile = 0, flatten = 0;
+    int set_outfile = 0;
+    int breakparse = 0, breakflatten = 0, breaktype = 0;
+    int silent = 0;
+    char prgname[256];
     char filename[256];
     char outfilename[128] = "out.txt";
     char *paths, *path;
 
+    strcpy (prgname, argv[0]);
+
     OPT ARG 'h':
     {
-        usage (filename);
+        usage (prgname);
         exit (0);
     }
     ARG 'p':
     {
-        prettyprint = 1;
+        breakparse = 1;
     }
     ARG 'f':
     {
-        flatten = 1;
+        breakflatten = 1;
+    }
+    ARG 't':
+    {
+        breaktype = 1;
+    }
+    ARG 's':
+    {
+        silent = 1;
     }
     ARG 'o' : PARM
     {
@@ -103,13 +119,17 @@ MAIN
 
     yyparse ();
 
-    if (!prettyprint)
-        if (!flatten) {
-            syntax_tree = Flatten (syntax_tree);
+    if (!breakparse) {
+        syntax_tree = Flatten (syntax_tree);
+        if (!breakflatten) {
+            NOTE ("Typechecking: ...");
             Typecheck (syntax_tree);
-            fprintf (stdout, " types are ok");
-        } else
-            syntax_tree = Flatten (syntax_tree);
+            NOTE ("0 Errors\n");
+            if (!breaktype) {
+                /*  GenCCode(); */
+            }
+        }
+    }
 
     Print (syntax_tree);
 
