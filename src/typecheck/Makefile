@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.24  2000/10/12 15:48:18  dkr
+# make deps done
+#
 # Revision 2.23  2000/08/17 10:17:30  dkr
 # make deps done
 #
@@ -142,8 +145,8 @@ gen_pseudo_fun.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 gen_pseudo_fun.o: /usr/include/sys/isa_defs.h ../../inc/dbug.h
 gen_pseudo_fun.o: /usr/include/stdio.h /usr/include/sys/va_list.h
 gen_pseudo_fun.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-gen_pseudo_fun.o: ../global/types.h ../tree/tree_basic.h ../tree/tree.h
-gen_pseudo_fun.o: ../tree/tree_compound.h ../global/Error.h
+gen_pseudo_fun.o: ../global/types.h ../tree/prf.h ../tree/tree_basic.h
+gen_pseudo_fun.o: ../tree/tree.h ../tree/tree_compound.h ../global/Error.h
 gen_pseudo_fun.o: /usr/include/string.h ../global/globals.h
 gen_pseudo_fun.o: ../global/internal_lib.h ../tree/free.h
 gen_pseudo_fun.o: ../global/my_debug.h /usr/include/malloc.h

@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.18  2000/10/12 15:48:20  dkr
+# make deps done
+#
 # Revision 2.17  2000/08/17 10:17:32  dkr
 # make deps done
 #
@@ -218,7 +221,7 @@ cccall.o: ../tree/free.h ../global/my_debug.h /usr/include/malloc.h
 cccall.o: ../scanparse/scnprs.h ../global/resource.h ../scanparse/y.tab.h
 cccall.o: filemgr.h ../tree/traverse.h ../compile/gen_startup_code.h
 checkdec.o: /usr/include/string.h /usr/include/sys/feature_tests.h
-checkdec.o: /usr/include/sys/isa_defs.h ../global/types.h
+checkdec.o: /usr/include/sys/isa_defs.h ../global/types.h ../tree/prf.h
 checkdec.o: ../tree/tree_basic.h ../tree/tree_compound.h ../global/Error.h
 checkdec.o: /usr/include/stdio.h /usr/include/sys/va_list.h
 checkdec.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h

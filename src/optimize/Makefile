@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.24  2000/10/12 15:48:19  dkr
+# make deps done
+#
 # Revision 2.23  2000/08/17 10:17:31  dkr
 # make deps done
 #
@@ -185,7 +188,7 @@ ConstantFolding.o: ../global/globals.h ../global/internal_lib.h
 ConstantFolding.o: ../tree/free.h ../../inc/dbug.h ../global/my_debug.h
 ConstantFolding.o: /usr/include/malloc.h /usr/include/sys/types.h
 ConstantFolding.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-ConstantFolding.o: ../print/print.h ../tree/traverse.h
+ConstantFolding.o: ../tree/prf.h ../print/print.h ../tree/traverse.h
 ConstantFolding.o: ../tree/access_macros.h ../typecheck/typecheck.h
 ConstantFolding.o: optimize.h generatemasks.h ../tree/DupTree.h
 ConstantFolding.o: ../tree/LookUpTable.h LoopInvariantRemoval.h
