@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.63  2004/11/25 10:40:26  khf
+  added FLAT, HM and INSVD
+
   Revision 1.62  2004/11/25 00:11:37  mwe
   fun2lac added
 
@@ -331,7 +334,46 @@
 	  <node name="Block" />
 	</user>
       </traversal>
-
+      <traversal id="FLAT" name="Flatten" default="sons" include="flatten.h" >
+	<user>
+	  <node name="Assign" />
+	  <node name="Module" />
+	  <node name="Fundef" />
+	  <node name="Let" />
+   	  <node name="Exprs" />
+	  <node name="Ap" />
+	  <node name="Block" />
+	  <node name="Cond" />
+	  <node name="While" />
+	  <node name="Do" />
+	  <node name="Array" />
+	  <node name="Return" />
+	  <node name="Id" />
+	  <node name="Args" />
+	  <node name="Prf" />
+	  <node name="With" />
+	  <node name="Withid" />
+	  <node name="Part" />
+	  <node name="Generator" />
+	  <node name="Genarray" />
+	  <node name="Modarray" />
+	  <node name="Fold" />
+	  <node name="Code" />
+	</user>
+      </traversal>
+     <traversal id="HM" name="Handle Mops" default="sons" include="handle_mops.h" >
+	<user>
+	  <node name="Mop" />
+	</user>
+      </traversal>
+    <traversal id="INSVD" name="Insert Vardecs" default="sons" include="insert_vardecs.h" >
+	<user>
+	  <node name="Fundef" />
+	  <node name="Id" />
+	  <node name="Withid" />
+	  <node name="Let" />
+	</user>
+      </traversal>
     </general>
     <phase id="scanparse" name="Parsing input file">
       <traversal id="HD" name="Handle Dots" default="sons" include="handle_dots.h">
