@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.18  2002/09/09 19:18:47  dkr
+# dependencies for prf_node_info.mac removed
+#
 # Revision 3.17  2002/06/06 19:56:03  dkr
 # target clean modified
 #
@@ -71,15 +74,7 @@ all: index.o ArrayElimination.o wl_access_analyze.o tile_size_inference.o \
 # the *.[ch] objects are to fool makedepend which does not
 # recognize the dependency between *.[ch] and the .mac files!
 #
-pad_collect.c: ../tree/prf_node_info.mac
-	touch $@
-	$(CLOCK_SKEW_ELIMINATION) $@
-
 pad_infer.c: ../tree/type_info.mac
-	touch $@
-	$(CLOCK_SKEW_ELIMINATION) $@
-
-pad_transform.c: ../tree/prf_node_info.mac
 	touch $@
 	$(CLOCK_SKEW_ELIMINATION) $@
 
