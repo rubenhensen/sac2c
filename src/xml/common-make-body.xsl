@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.3  2004/11/29 09:36:32  sbs
+  dbug-printing enhanced
+
   Revision 1.2  2004/11/24 19:37:53  sah
   COMPILES
 
@@ -46,6 +49,7 @@ version="1.0">
   <!-- allocate new node this -->
   <xsl:value-of select="'DBUG_PRINT( &quot;MAKE&quot;, (&quot;allocating node structure&quot;));'"/>
   <xsl:value-of select="'this = MakeEmptyNode();'" />
+  <xsl:value-of select="'DBUG_PRINT( &quot;MAKE&quot;, (&quot;address: &quot;F_PTR, this));'"/>
   <!-- allocate the sons structure -->
   <xsl:value-of select="'DBUG_PRINT( &quot;MAKE&quot;, (&quot;allocating sons structure&quot;));'"/>
   <xsl:value-of select="'this->sons.'"/>
@@ -78,10 +82,10 @@ version="1.0">
   </xsl:call-template>
   <xsl:value-of select="';'" />
   <!-- set lineno -->
-  <xsl:value-of select="'DBUG_PRINT( &quot;MAKE&quot;, (&quot;setting lineno&quot;));'"/>
+  <xsl:value-of select="'DBUG_PRINT( &quot;MAKE&quot;, (&quot;setting lineno to %d&quot;, global.linenum));'"/>
   <xsl:value-of select="'this->lineno = global.linenum;'" />
   <!-- set filename -->
-  <xsl:value-of select="'DBUG_PRINT( &quot;MAKE&quot;, (&quot;setting filename&quot;));'"/>
+  <xsl:value-of select="'DBUG_PRINT( &quot;MAKE&quot;, (&quot;setting filename to %s&quot;, global.filename));'"/>
   <xsl:value-of select="'this->src_file = global.filename;'" />
   <!-- assign sons and attributes a value -->
   <xsl:apply-templates select="sons/son" mode="make-body"/>
@@ -109,7 +113,16 @@ version="1.0">
 <xsl:template match="sons/son" mode="make-body">
   <xsl:value-of select="'DBUG_PRINT( &quot;MAKE&quot;, (&quot;assigning son '"/>
   <xsl:value-of select="@name"/>
-  <xsl:value-of select="' initial value&quot;));'"/>
+  <xsl:value-of select="' initial value: &quot;F_PTR, '"/>
+  <xsl:choose>
+    <xsl:when test="@default">
+      <xsl:value-of select="@default" />
+    </xsl:when>
+    <xsl:otherwise>
+      <xsl:value-of select="@name" />
+    </xsl:otherwise>
+  </xsl:choose>
+  <xsl:value-of select="'));'"/>
   <xsl:call-template name="node-access">
     <xsl:with-param name="node">
       <xsl:value-of select="'this'" />
