@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.41  1996/02/13 13:52:35  asi
+ * Revision 1.42  1996/02/13 15:09:28  asi
+ * bug fixed for calculating psi: now calculating psi for non constant arrays (again)
+ *
+ * Revision 1.41  1996/02/13  13:52:35  asi
  * bug fixed for calculating shape([...])
  *
  * Revision 1.40  1996/02/12  16:08:56  asi
@@ -1574,7 +1577,7 @@ ArrayPrf (node *arg_node, types *res_type, node *arg_info)
              * Substitution of shape-vector successful ?
              */
             MRD_GETDATA (tmp, arg[1]->info.ids->node->varno, INFO_VARNO);
-            if ((!IsConst (arg[0])) || (!IsConst (tmp))) {
+            if ((NULL == tmp) || (N_array != tmp->nodetype)) {
                 if (N_id == old_arg_0->nodetype) {
                     INC_VAR (arg_info->mask[1], old_arg_0->info.ids->node->varno);
                     FreeTree (arg[0]);
