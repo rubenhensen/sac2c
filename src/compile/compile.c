@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.36  2001/04/03 22:43:19  dkr
+ * GetFoldCode: DBUG_ASSERT condition corrected
+ *
  * Revision 3.35  2001/04/03 22:30:21  dkr
  * signature for MT_ADJUST_SCHEDULER modified
  *
@@ -342,9 +345,6 @@ GetFoldCode (node *fundef)
      * get code of the pseudo fold-fun
      */
     fold_code = DupTree (FUNDEF_INSTR (fundef));
-    /*
-    fold_code = DupTree_Type( FUNDEF_INSTR( fundef), DUP_INLINE);
-    */
 
     /*
      * remove declaration-ICMs ('ND_KS_DECL_ARRAY_ARG') from code.
@@ -363,7 +363,9 @@ GetFoldCode (node *fundef)
     while (ASSIGN_NEXT (ASSIGN_NEXT (tmp)) != NULL) {
         tmp = ASSIGN_NEXT (tmp);
     }
-    DBUG_ASSERT ((!strcmp (ICM_NAME (ASSIGN_INSTR (ASSIGN_NEXT (tmp))), "ND_FUN_RET")),
+    DBUG_ASSERT (((NODE_TYPE (ASSIGN_INSTR (ASSIGN_NEXT (tmp))) == N_icm)
+                  && (!strcmp (ICM_NAME (ASSIGN_INSTR (ASSIGN_NEXT (tmp))),
+                               "ND_FUN_RET"))),
                  "no ND_FUN_RET icm found in fold code!");
     ASSIGN_NEXT (tmp) = FreeNode (ASSIGN_NEXT (tmp));
 
@@ -1878,14 +1880,14 @@ COMPObjdef (node *arg_node, node *arg_info)
 node *
 COMPFundef (node *arg_node, node *arg_info)
 {
-    node *return_node, *return_icm, *icm_args;
+    node *return_node, *return_icm;
+    node *icm_args;
     node *old_fundef, *vardec, *assigns, *assign;
     node **icm_tab;
     types *rettypes;
     types **type_tab;
-    int cnt_param, tab_size, i;
-    node *front;
-    node *back;
+    int cnt_param;
+    int tab_size, i;
 
     DBUG_ENTER ("COMPFundef");
 
@@ -1896,12 +1898,15 @@ COMPFundef (node *arg_node, node *arg_info)
                             mdb_statustype[FUNDEF_STATUS (arg_node)]));
 
     /*
-     *  building icms for mt2,
-     *  vardecs are needed for this operation, but vardecs
-     *  will be rebuiled into icms, while compiling the body, so
-     *  we do it now.
+     * building icms for mt2
+     *
+     * vardecs are needed for this operation, but vardecs
+     * will be rebuiled into icms, while compiling the body, so
+     * we do it now
      */
     if (FUNDEF_ATTRIB (arg_node) == ST_call_mtlift) {
+        node *front, *back;
+
         front
           = MakeIcm4 ("MT2_WORKER_RECEIVE", MakeId_Copy ("SYNC"),
                       MakeNum (FUNDEF_IDENTIFIER (arg_node)),
@@ -1960,8 +1965,7 @@ COMPFundef (node *arg_node, node *arg_info)
     } /* ST_call_mtlift */
 
     /*
-     * "push arg_info":
-     * informations changed at arg_info are saved before,
+     * push 'arg_info'
      */
     old_fundef = INFO_COMP_FUNDEF (arg_info);
     INFO_COMP_FUNDEF (arg_info) = arg_node;
@@ -1986,8 +1990,8 @@ COMPFundef (node *arg_node, node *arg_info)
     }
 
     /*
-     *  Destruction of last known N_sync is done here, all others have been killed
-     *  while traversing.
+     * Destruction of last known N_sync is done here, all others have been killed
+     * while traversing.
      */
     if (INFO_COMP_LAST_SYNC (arg_info) != NULL) {
         INFO_COMP_LAST_SYNC (arg_info) = FreeTree (INFO_COMP_LAST_SYNC (arg_info));
@@ -2218,7 +2222,7 @@ COMPFundef (node *arg_node, node *arg_info)
     }
 
     /*
-     * pop arg_info
+     * pop 'arg_info'
      */
     INFO_COMP_FUNDEF (arg_info) = old_fundef;
 
