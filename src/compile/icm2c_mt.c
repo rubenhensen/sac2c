@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.42  2003/10/20 15:35:04  dkr
+ * MT_SYNCBLOCK_CLEANUP added
+ *
  * Revision 3.41  2003/10/20 14:28:52  dkr
  * no warnings about unsed variables anymore
  *
@@ -534,6 +537,56 @@ ICMCompileMT_SYNCBLOCK_BEGIN (int barrier_id, int vararg_cnt, char **vararg)
 /******************************************************************************
  *
  * function:
+ *   void ICMCompileMT_SYNCBLOCK_CLEANUP( int barrier_id,
+ *                                        int vararg_cnt, char **vararg)
+ *
+ * description:
+ *   implements the compilation of the following ICM:
+ *
+ *   MT_SYNCBLOCK_CLEANUP( barrier_id, vararg_cnt, [ tag, param_NT, dim ]* )
+ *
+ *   This ICM implements the begin of a synchronisation block.
+ *   Essentially, the reference counters of the arguments are shadowed by
+ *   thread-specific dummy reference counters. Dummies can be used safely
+ *   since memory may exclusively been released in between synchronisation
+ *   blocks. Nevertheless, they must be provided because arbitrary code in
+ *   the with-loop body may want to increment/decrement reference counters.
+ *
+ *   However, this ICM also complements the various ICMs that implement
+ *   different kinds of barrier synchronisations.
+ *
+ ******************************************************************************/
+
+void
+ICMCompileMT_SYNCBLOCK_CLEANUP (int barrier_id, int vararg_cnt, char **vararg)
+{
+#ifdef TAGGED_ARRAYS
+    int i;
+#endif
+
+    DBUG_ENTER ("ICMCompileMT_SYNCBLOCK_CLEANUP");
+
+#define MT_SYNCBLOCK_CLEANUP
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef MT_SYNCBLOCK_CLEANUP
+
+#ifdef TAGGED_ARRAYS
+    for (i = 0; i < 3 * vararg_cnt; i += 3) {
+        if (!strcmp (vararg[i], "in")) {
+            INDENT;
+            fprintf (outfile, "SAC_MT_FREE_LOCAL_DESC( %s, %s)\n", vararg[i + 1],
+                     vararg[i + 2]);
+        }
+    }
+#endif /* TAGGED_ARRAYS */
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
  *   void ICMCompileMT_SYNCBLOCK_END( int barrier_id,
  *                                    int vararg_cnt, char **vararg)
  *
@@ -558,26 +611,12 @@ void
 ICMCompileMT_SYNCBLOCK_END
 (int barrier_id, int vararg_cnt, char **vararg)
 {
-#ifdef TAGGED_ARRAYS
-    int i;
-#endif
-
     DBUG_ENTER ("ICMCompileMT_SYNCBLOCK_END");
 
 #define MT_SYNCBLOCK_END
 #include "icm_comment.c"
 #include "icm_trace.c"
 #undef MT_SYNCBLOCK_END
-
-#ifdef TAGGED_ARRAYS
-    for (i = 0; i < 3 * vararg_cnt; i += 3) {
-        if (!strcmp (vararg[i], "in")) {
-            INDENT;
-            fprintf (outfile, "SAC_MT_FREE_LOCAL_DESC( %s, %s)\n", vararg[i + 1],
-                     vararg[i + 2]);
-        }
-    }
-#endif /* TAGGED_ARRAYS */
 
     indent--;
     INDENT;
@@ -1391,8 +1430,9 @@ ICMCompileMT_CREATE_LOCAL_DESC (char *var_NT, int dim)
         break;
 
     case C_aud:
+        /* 'dim' is unknown! */
         INDENT;
-        fprintf (outfile, "SAC_ND_ALLOC__DESC( %s, %d)\n", var_NT, dim);
+        fprintf (outfile, "SAC_ND_ALLOC__DESC( %s, SAC_ND_A_DIM( %s))\n", var_NT, var_NT);
         INDENT;
         fprintf (outfile,
                  "SAC_ND_A_DESC_DIM( %s)"
@@ -1403,13 +1443,13 @@ ICMCompileMT_CREATE_LOCAL_DESC (char *var_NT, int dim)
                  "SAC_ND_A_DESC_SIZE( %s)"
                  " = DESC_SIZE( CAT0( orig_, SAC_ND_A_DESC( %s)));\n",
                  var_NT, var_NT);
-        for (i = 0; i < dim; i++) {
-            INDENT;
-            fprintf (outfile,
-                     "SAC_ND_A_DESC_SHAPE( %s, %d)"
-                     " = DESC_SHAPE( CAT0( orig_, SAC_ND_A_DESC( %s)), %d);\n",
-                     var_NT, i, var_NT, i);
-        }
+        FOR_LOOP_INC_VARDEC (fprintf (outfile, "SAC_i");, fprintf (outfile, "0");
+                             , fprintf (outfile, "SAC_ND_A_DIM( %s)", var_NT);, INDENT;
+                             fprintf (outfile,
+                                      "SAC_ND_A_DESC_SHAPE( %s, SAC_i)"
+                                      " = DESC_SHAPE( CAT0( orig_, SAC_ND_A_DESC( %s)),"
+                                      " SAC_i);\n",
+                                      var_NT, var_NT););
         break;
 
     default:
@@ -1422,7 +1462,7 @@ ICMCompileMT_CREATE_LOCAL_DESC (char *var_NT, int dim)
      * object is neither reused nor deleted.
      */
     INDENT;
-    fprintf (outfile, "SAC_ND_SET__RC( %s, 2)\n", var_NT);
+    fprintf (outfile, "SAC_ND_SET__RC( %s, 10)\n", var_NT);
 
     DBUG_VOID_RETURN;
 }

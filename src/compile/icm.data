@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.70  2003/10/20 15:34:39  dkr
+ * MT_SYNCBLOCK_CLEANUP added
+ *
  * Revision 3.69  2003/10/15 17:28:31  dkrHH
  * MT_CREATE_LOCAL_DESC added
  *
@@ -1034,6 +1037,14 @@ ICM_DEF( MT_SYNCBLOCK_BEGIN, TRACE_NONE)
   ICM_INT( vararg_cnt)
   ICM_VARANY( (3*vararg_cnt), vararg)
 ICM_END( MT_SYNCBLOCK_BEGIN, (barrier_id, vararg_cnt, vararg))
+#endif
+
+#if defined(MT_SYNCBLOCK_CLEANUP) || defined(ICM_ALL)
+ICM_DEF( MT_SYNCBLOCK_CLEANUP, TRACE_NONE)
+  ICM_INT( barrier_id)
+  ICM_INT( vararg_cnt)
+  ICM_VARANY( (3*vararg_cnt), vararg)
+ICM_END( MT_SYNCBLOCK_CLEANUP, (barrier_id, vararg_cnt, vararg))
 #endif
 
 #if defined(MT_SYNCBLOCK_END) || defined(ICM_ALL)
