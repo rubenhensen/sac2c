@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.21  1998/12/07 08:39:46  sbs
+ * dbug-string (in comment) changed to mdb_prf !!
+ *
  * Revision 1.20  1998/12/03 14:22:03  sbs
  * ftoi and friends eliminated
  * some comments inserted.
@@ -88,7 +91,7 @@
  *
  */
 
-/*   Node_name         dbug-string[]  prf_string[]        prf_name_str[]*/
+/*   Node_name          mdb_prf[]    prf_string[]          prf_name_str[]*/
 
 PRF_IF (F_toi, "F_foi", "toi", "_toi"), PRF_IF (F_tof, "F_fof", "tof", "_tof"),
   PRF_IF (F_tod, "F_fod", "tod", "_tod"), PRF_IF (F_abs, "F_abs", "abs", "_abs"),
