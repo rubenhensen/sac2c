@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.82  2004/07/29 18:02:23  sah
+ * some macro cleanup
+ *
  * Revision 3.81  2004/07/14 14:21:37  sah
  * moved NodeBehindCast from LoopInvariantRemoval here
  *
@@ -2446,6 +2449,14 @@ extern node *MakeWLsegX (int dims, node *contents, node *next);
                            ? WLGRID_NOOP (n)                                             \
                            : ((NODE_TYPE (n) == N_WLgridVar) ? WLGRIDVAR_NOOP (n)        \
                                                              : FALSE))))))
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_dot :
+ ***/
+
+#define DOT_ISSINGLE(n) ((NODE_TYPE (n) == N_dot) && (DOT_NUM (n) == 1))
 
 /*--------------------------------------------------------------------------*/
 

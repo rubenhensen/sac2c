@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.200  2004/07/29 18:02:23  sah
+ * some macro cleanup
+ *
  * Revision 3.199  2004/07/29 15:05:03  sah
  * added access_info_t structure to annotate acces information
  * to the syntax tree (instead of using a N_info node). This
@@ -2273,7 +2276,6 @@ extern node *MakePrf (prf prf, node *args);
 extern node *MakeDot (int num);
 
 #define DOT_NUM(n) (n->counter)
-#define DOT_ISSINGLE(n) ((NODE_TYPE (n) == N_dot) && (DOT_NUM (n) == 1))
 
 /*--------------------------------------------------------------------------*/
 
@@ -4534,6 +4536,7 @@ extern node *MakeModspec (char *name, node *exports);
 
 #define MODSPEC_NAME(n) (n->info.fun_name.id)
 #define MODSPEC_OWN(n) (n->node[0])
+#define MODSPEC_IMPORTS(n) (n->node[1])
 
 /*--------------------------------------------------------------------------*/
 
