@@ -23,3 +23,4 @@ interfaceanalysis.c
 interfaceanalysis.h
 loopreuseopt.c
 loopreuseopt.h
+datareuse.c
