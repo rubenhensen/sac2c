@@ -1,6 +1,9 @@
 
 /*
  * $Log$
+ * Revision 2.2  1999/04/14 16:23:05  jhs
+ * Traversal into NULL with empty arrays removed.
+ *
  * Revision 2.1  1999/02/23 12:43:12  sacbase
  * new release made
  *
@@ -1097,7 +1100,9 @@ IdxArray (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("IdxArray");
     if (arg_info == NULL) {
-        ARRAY_AELEMS (arg_node) = Trav (ARRAY_AELEMS (arg_node), arg_info);
+        if (ARRAY_AELEMS (arg_node) != NULL) {
+            ARRAY_AELEMS (arg_node) = Trav (ARRAY_AELEMS (arg_node), arg_info);
+        }
     } else {
         expr = ARRAY_AELEMS (arg_node);
         shp = VINFO_SELEMS (arg_info);

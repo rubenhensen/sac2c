@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.6  1999/04/14 16:24:42  jhs
+ * Traversal into NULL with empty arrays removed.
+ *
  * Revision 2.5  1999/04/14 09:23:32  cg
  * Cache simulation may now be triggered by pragmas.
  * This is implemented by inserting new ICMs in the beginning and
@@ -4290,36 +4293,38 @@ COMPArray (node *arg_node, node *arg_info)
    }
 #endif
 
-    do {
+    while (NULL != exprs) {
         n_elems++;
         exprs = EXPRS_NEXT (exprs);
-    } while (NULL != exprs);
+    }
 
     MAKENODE_NUM (n_node, n_elems);
-    DBUG_ASSERT ((NULL != old_arg_node->node[0]), " NULL pointer ");
 
-    if (N_id == old_arg_node->node[0]->node[0]->nodetype) {
-        if (1 == IsArray (VARDEC_TYPE (ID_VARDEC (old_arg_node->node[0]->node[0])))) {
-            node *length;
-            int len;
-            GET_LENGTH (len, VARDEC_TYPE (ID_VARDEC (old_arg_node->node[0]->node[0])));
-            MAKENODE_NUM (length, len);
-            CREATE_3_ARY_ICM (next_assign, "ND_CREATE_CONST_ARRAY_A", res, length,
-                              n_node);
-            icm_created = 1;
-        } else {
-            if (IsNonUniqueHidden (
-                  VARDEC_TYPE (ID_VARDEC (old_arg_node->node[0]->node[0])))) {
-                CREATE_3_ARY_ICM (next_assign, "ND_CREATE_CONST_ARRAY_H", res,
-                                  MAKE_IDNODE (StringCopy (
-                                    GenericFun (0, VARDEC_TYPE (ID_VARDEC (
-                                                     old_arg_node->node[0]->node[0]))))),
+    if (old_arg_node->node[0] != NULL) {
+        if (N_id == old_arg_node->node[0]->node[0]->nodetype) {
+            if (1 == IsArray (VARDEC_TYPE (ID_VARDEC (old_arg_node->node[0]->node[0])))) {
+                node *length;
+                int len;
+                GET_LENGTH (len,
+                            VARDEC_TYPE (ID_VARDEC (old_arg_node->node[0]->node[0])));
+                MAKENODE_NUM (length, len);
+                CREATE_3_ARY_ICM (next_assign, "ND_CREATE_CONST_ARRAY_A", res, length,
                                   n_node);
                 icm_created = 1;
+            } else {
+                if (IsNonUniqueHidden (
+                      VARDEC_TYPE (ID_VARDEC (old_arg_node->node[0]->node[0])))) {
+                    CREATE_3_ARY_ICM (next_assign, "ND_CREATE_CONST_ARRAY_H", res,
+                                      MAKE_IDNODE (StringCopy (
+                                        GenericFun (0,
+                                                    VARDEC_TYPE (ID_VARDEC (
+                                                      old_arg_node->node[0]->node[0]))))),
+                                      n_node);
+                    icm_created = 1;
+                }
             }
         }
     }
-
     if (0 == icm_created) {
         if (ARRAY_STRING (old_arg_node) != NULL) {
 
