@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.40  1996/02/12 16:08:56  asi
+ * Revision 1.41  1996/02/13 13:52:35  asi
+ * bug fixed for calculating shape([...])
+ *
+ * Revision 1.40  1996/02/12  16:08:56  asi
  * argument res_type added to macro SHAPE_2_ARRAY
  *
  * Revision 1.39  1996/02/09  17:34:07  asi
@@ -1105,7 +1108,8 @@ FoldExpr (node *arg_node, int test_arg, int res_arg, int test_pattern, node *arg
     arg[1] = arg_node->node[0]->node[1]->node[0];
     tmp = arg_node;
     node_t = arg[test_arg]->nodetype;
-    if (((N_num == node_t) || (N_bool == node_t) || (N_float == node_t))
+    if (((N_num == node_t) || (N_bool == node_t) || (N_float == node_t)
+         || (N_double == node_t))
         && (test_pattern == SELARG (arg[test_arg]))) {
         arg_node = arg[res_arg];
         if ((N_id == arg[!res_arg]->nodetype) && (NULL != arg_info)) {
@@ -1439,6 +1443,12 @@ ArrayPrf (node *arg_node, types *res_type, node *arg_info)
             FREE (arg_node);
 
             /*
+             * Gives Array the correct type
+             */
+            ARRAY_TYPE (arg[0]) = FreeOneTypes (ARRAY_TYPE (arg[0]));
+            ARRAY_TYPE (arg[0]) = DuplicateTypes (res_type, 0);
+
+            /*
              * Store result
              */
             arg_node = arg[0];
@@ -1453,42 +1463,6 @@ ArrayPrf (node *arg_node, types *res_type, node *arg_info)
             arg_node = tmp;
             cf_expr++;
             break;
-#if 0
-	  DBUG_PRINT("CF",("primitive function %s folded",prf_string[arg_node->info.prf]));
-	  /*
-	   * free prf_node
-	   */
-	  FREE(arg_node);
-	  
-	  /*
-	   * Generate shape vector
-	   */
-	  arg_node=MakeNode(N_array);
-	  arg_node->nnode=1;
-	  
-	  shape=arg[0]->info.ids->node->info.types->shpseg;
-	  
-	  arg_node->node[0]			= MakeNode(N_exprs);
-	  arg_node->node[0]->node[0]		= MakeNode(N_num);
-	  arg_node->node[0]->nnode		= 1;
-	  arg_node->node[0]->node[0]->info.cint	= shape->shp[0];
-	  
-	  tmp = arg_node->node[0];
-	  for (i=1; i < res_type->shpseg->shp[0]; i++)
-	    {
-	    tmp->nnode++;
-	    tmp->node[1]		= MakeNode(N_exprs);
-	    tmp				= tmp->node[1];
-	    tmp->nnode			= 1;
-	    tmp->node[0]		= MakeNode(N_num);
-	    tmp->node[0]->info.cint	= shape->shp[i];
-	    }
-	  
-	  DEC_VAR(arg_info->mask[1], arg[0]->info.ids->node->varno);
-	  FreeTree(arg[0]);
-	  cf_expr++;
-	  break;
-#endif
         default:
             break;
         }
