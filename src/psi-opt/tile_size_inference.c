@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.16  2000/07/04 17:47:31  bs
+ * Bug fixed in RecreateEnhAccesslist.
+ * Bug fixed in InSortByCLine.
+ * TSIfundef modified (WLAA and TSI lifted on module level).
+ *
  * Revision 2.15  2000/02/02 16:28:24  bs
  * unused variable declaration erased
  *
@@ -114,7 +119,7 @@ typedef struct SIMPLE_LIST {
 /*****************************************************************************
  *
  * function:
- *   list_t* InSort(void* element, list_t* list)
+ *   list_t* InSortByCLine(void* element, list_t* list)
  *
  * description:
  *
@@ -138,6 +143,9 @@ InsortByCLine (void *element, list_t *list)
             result = (list_t *)Malloc (sizeof (list_t));
             result->element = element;
             result->next = list;
+        } else if ((elem->cline == next->cline) && (elem->aline == next->aline)
+                   && (elem->cinst == next->cinst) && (elem->vaddr == next->vaddr)) {
+            free (elem);
         } else {
             result->next = InsortByCLine (element, list->next);
         }
@@ -209,8 +217,9 @@ static list_t *
 RecreateEnhAccesslist (list_t *acc_list, node *arg_info)
 {
     int dim, cSize, lSize, dType, *cacheparam;
-    int vaddr, abscl, cline, cinst, aline;
+    int vaddr, abscl, cline, cinst, aline, counter;
     list_t *new_list = NULL;
+    list_t *help_list = NULL;
     shpseg *shape;
     enh_access_t *eaccess, *element;
 
@@ -222,10 +231,20 @@ RecreateEnhAccesslist (list_t *acc_list, node *arg_info)
     cSize = cacheparam[CSIZE_INDEX];
     lSize = cacheparam[LSIZE_INDEX];
     dType = cacheparam[DTYPE_INDEX];
+    counter = 0;
 
-    if (acc_list != NULL) {
+    while (acc_list != NULL) {
+        counter++;
+
+        help_list = acc_list;
         element = (enh_access_t *)acc_list->element;
+        /*
+         *  computing virtual address [byte]:
+         */
         vaddr = element->vaddr + (dType * SHPSEG_SHAPE (shape, (dim - 1)));
+        /*
+         *  computing absolute cache line and cache line:
+         */
         if (vaddr < 0) {
             if (lSize > dType) {
                 abscl = (vaddr - lSize + dType) / lSize;
@@ -237,20 +256,26 @@ RecreateEnhAccesslist (list_t *acc_list, node *arg_info)
             abscl = vaddr / lSize;
             cline = abscl % (cSize / lSize);
         }
+        /*
+         *  computing cache instance and array line:
+         */
         cinst = abscl / (cSize / lSize);
-        aline = element->aline;
+        aline = (element->aline);
+
         eaccess = (enh_access_t *)Malloc (sizeof (enh_access_t));
         eaccess->vaddr = vaddr;
         eaccess->cline = cline;
         eaccess->cinst = cinst;
         eaccess->aline = aline + 1;
-        new_list = RecreateEnhAccesslist (acc_list->next, arg_info);
-
         new_list = InsortByCLine (eaccess, new_list);
+
         if (aline > INFO_TSI_MINLINE (arg_info)) {
             new_list = InsortByCLine (element, new_list);
+        } else {
+            free (element);
         }
-        free (acc_list);
+        acc_list = acc_list->next;
+        free (help_list);
     }
 
     DBUG_RETURN (new_list);
@@ -271,7 +296,7 @@ CreateEnhAccesslist (access_t *accesses, node *arg_info)
 {
     int dim, cSize, lSize, dType, *cacheparam;
     int vaddr, abscl, cline, cinst, aline;
-    int minline, maxline, j;
+    int minline, maxline, j, counter;
     shpseg *shape;
     list_t *acc_list = NULL;
     enh_access_t *eaccess;
@@ -286,21 +311,31 @@ CreateEnhAccesslist (access_t *accesses, node *arg_info)
     dType = cacheparam[DTYPE_INDEX];
     minline = INT_MAX;
     maxline = INT_MIN;
+    counter = 0;
 
     DBUG_ASSERT ((ACCESS_CLASS (accesses) == ACL_offset),
                  "Access without ACL_offset found !!");
 
     while (accesses != NULL) {
-        vaddr = SHPSEG_SHAPE (ACCESS_OFFSET (accesses), (dim - 1));
 
         DBUG_ASSERT ((ACCESS_OFFSET (accesses) != NULL),
                      "Access with ACL_offset found, but no offset !!");
-
+        counter++;
+        /*
+         *  computing virtual address [elements]:
+         */
+        vaddr = SHPSEG_SHAPE (ACCESS_OFFSET (accesses), (dim - 1));
         for (j = dim - 2; j >= 0; j--) {
             vaddr += SHPSEG_SHAPE (shape, (SHPSEG_SHAPE (ACCESS_OFFSET (accesses), j)
                                            * (j + 1)));
         }
+        /*
+         *  computing virtual address [byte]:
+         */
         vaddr *= dType;
+        /*
+         *  computing absolute cache line and cache line:
+         */
         if ((vaddr < 0) && (lSize > dType)) {
             abscl = (vaddr - lSize + dType) / lSize;
             cline = (cSize / lSize) + (abscl % (cSize / lSize));
@@ -309,8 +344,12 @@ CreateEnhAccesslist (access_t *accesses, node *arg_info)
             abscl = vaddr / lSize;
             cline = abscl % (cSize / lSize);
         }
+        /*
+         *  computing cache instance and array line:
+         */
         cinst = abscl / (cSize / lSize);
         aline = SHPSEG_SHAPE (ACCESS_OFFSET (accesses), (dim - 2));
+
         minline = MIN (aline, minline);
         maxline = MAX (aline, maxline);
         eaccess = (enh_access_t *)Malloc (sizeof (enh_access_t));
@@ -535,10 +574,11 @@ node *
 TileSizeInference (node *arg_node)
 {
     node *arg_info;
-    int *cacheparam;
     funtab *tmp_tab;
 
     DBUG_ENTER ("TileSizeInference");
+
+    DBUG_PRINT ("TSI", ("TileSizeInference"));
 
     tmp_tab = act_tab;
     act_tab = tsi_tab;
@@ -546,24 +586,16 @@ TileSizeInference (node *arg_node)
     arg_info = MakeInfo ();
 
     if ((config.cache1_size > 0) && (config.cache1_line > 0)) {
-
-        cacheparam = (int *)Malloc (NUM_OF_CACHEPARAM * sizeof (int));
-        cacheparam[CSIZE_INDEX] = 1024 * config.cache1_size;
-        cacheparam[LSIZE_INDEX] = config.cache1_line;
-        INFO_TSI_CACHEPARAM (arg_info) = cacheparam;
-
         arg_node = Trav (arg_node, arg_info);
-
-        FREE (cacheparam);
     } else {
         /*
          *   If there's no target specified, it's not possibile to infere a tilesize,
          *   because the TSI have to know the cache parameters.
          */
-        SYSWARN (("No target specified. No TSI possible!"));
+        (("No target specified. No TSI possible!"));
     }
 
-    FREE (arg_info);
+    arg_info = FreeInfo (arg_info, NULL);
     act_tab = tmp_tab;
 
     DBUG_RETURN (arg_node);
@@ -588,12 +620,19 @@ TSIfundef (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("TSIfundef");
 
+    DBUG_PRINT ("TSI", ("TSIfundef"));
+
     if (FUNDEF_BODY (arg_node) != NULL) {
         FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
         /*
          * Nodetype of FUNDEF_BODY(arg_node) is N_block.
          */
     }
+#if 1
+    if (FUNDEF_NEXT (arg_node) != NULL) {
+        FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+    }
+#endif
 
     DBUG_RETURN (arg_node);
 }
@@ -617,6 +656,8 @@ node *
 TSIblock (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("TSIblock");
+
+    DBUG_PRINT ("TSI", ("TSIblock"));
 
     if (BLOCK_INSTR (arg_node) != NULL) {
         BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
@@ -644,11 +685,19 @@ node *
 TSInwith (node *arg_node, node *arg_info)
 {
     node *pragma;
+    int *cacheparam;
 
     DBUG_ENTER ("TSInwith");
 
+    DBUG_PRINT ("TSI", ("TSInwith"));
+
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_Nwith),
                  "Tile size selection not initiated on N_Nwith level");
+
+    cacheparam = (int *)Malloc (NUM_OF_CACHEPARAM * sizeof (int));
+    cacheparam[CSIZE_INDEX] = 1024 * config.cache1_size;
+    cacheparam[LSIZE_INDEX] = config.cache1_line;
+    INFO_TSI_CACHEPARAM (arg_info) = (void *)cacheparam;
 
     /* DBUG_EXECUTE("TSI_INFO",PrintNodeTree(arg_node);); */
     if ((NWITHOP_TYPE (NWITH_WITHOP (arg_node)) == WO_genarray)
@@ -669,7 +718,7 @@ TSInwith (node *arg_node, node *arg_info)
                 FreePragma (pragma, NULL);
             } else {
                 DBUG_EXECUTE ("PRINT_TSI",
-                              printf ("\n*** #pragma wlcomp already existing.\n\n"););
+                              printf ("\n*** #pragma wlcomp already exists.\n\n"););
             }
         } else {
             NWITH_PRAGMA (arg_node) = pragma;
@@ -682,6 +731,7 @@ TSInwith (node *arg_node, node *arg_info)
             }
         }
     }
+    FREE (cacheparam);
 
     DBUG_RETURN (arg_node);
 }
@@ -705,10 +755,12 @@ TSIncode (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("TSIncode");
 
+    DBUG_PRINT ("TSI", ("TSIncode"));
+
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_Ncode),
                  "Tile size selection not initiated on N_Ncode level");
 
-    cacheparam = INFO_TSI_CACHEPARAM (arg_info);
+    cacheparam = (int *)INFO_TSI_CACHEPARAM (arg_info);
     cacheparam[DTYPE_INDEX]
       = dtype_size[TYPES_BASETYPE (VARDEC_TYPE (NCODE_WLAA_WLARRAY (arg_node)))];
     INFO_TSI_WLARRAY (arg_info) = NCODE_WLAA_WLARRAY (arg_node);
