@@ -11,10 +11,16 @@ WithloopFolding.c
 WithloopFolding.h
 index.c
 index.h
+pad.c
+pad.h
+pad_collect.c
+pad_collect.h
 pad_infer.c
 pad_infer.h
 pad_info.c
 pad_info.h
+pad_transform.c
+pad_transform.h
 psi-opt.c
 psi-opt.h
 tile_size_inference.c
