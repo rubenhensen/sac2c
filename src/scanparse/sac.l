@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 3.26  2004/10/08 17:38:46  cg
+ * Removed various bugs in scanning and printing of character constants.
+ *
  * Revision 3.25  2004/09/21 12:28:31  sbs
  * new try on line annotations...
  *
@@ -385,7 +388,10 @@ int charpos = 0;
 '.'                        { yylval.cchar=yytext[1];
                              FILTER( CHAR);
                            }
-'\\[0-9]+'                 { yylval.cchar=(char)strtol(yytext+2, NULL, 8);
+'\\[0-7][0-7]?[0-7]?'        { yylval.cchar=(char)strtol(yytext+2, NULL, 8);
+                             FILTER( CHAR);
+                           }
+'\\x[0-9a-f][0-9a-f]?'      { yylval.cchar=(char)strtol(yytext+3, NULL, 16);
                              FILTER( CHAR);
                            }
 '\\n'                      { yylval.cchar='\n';
@@ -412,6 +418,18 @@ int charpos = 0;
                            }
 
 '\\a'                      { yylval.cchar='\a';
+                             FILTER( CHAR);
+                           }
+
+'\\e'                      { yylval.cchar='\33';
+                             FILTER( CHAR);
+                           }
+
+'\\\''                      { yylval.cchar='\47';
+                             FILTER( CHAR);
+                           }
+
+'\\\\'                     { yylval.cchar='\\';
                              FILTER( CHAR);
                            }
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.169  2004/10/08 17:38:46  cg
+ * Removed various bugs in scanning and printing of character constants.
+ *
  * Revision 3.168  2004/10/05 13:53:44  sah
  * added some NEW_AST defines
  *
@@ -3014,7 +3017,7 @@ PrintChar (node *arg_node, info *arg_info)
     DBUG_ENTER ("PrintChar");
 
     if ((CHAR_VAL (arg_node) >= ' ') && (CHAR_VAL (arg_node) <= '~')
-        && (CHAR_VAL (arg_node) != '\'')) {
+        && (CHAR_VAL (arg_node) != '\'') && (CHAR_VAL (arg_node) != '\\')) {
         fprintf (outfile, "'%c'", CHAR_VAL (arg_node));
     } else {
         switch (CHAR_VAL (arg_node)) {
@@ -3038,6 +3041,9 @@ PrintChar (node *arg_node, info *arg_info)
             break;
         case '\a':
             fprintf (outfile, "'\\a'");
+            break;
+        case '\\':
+            fprintf (outfile, "'\\\\'");
             break;
         default:
             fprintf (outfile, "'\\%o'", CHAR_VAL (arg_node));
