@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/04/04 17:09:02  dkr
+ * include of typecheck.h removed
+ *
  * Revision 3.3  2001/03/22 19:16:33  dkr
  * include of tree.h eliminated
  *
@@ -75,10 +78,9 @@
 #include "tree_compound.h"
 #include "internal_lib.h"
 #include "traverse.h"
-#include "typecheck.h"
 #include "free.h"
-#include "dbug.h"
 #include "DupTree.h"
+#include "dbug.h"
 
 #define CODETAB_MAX 10
 
