@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2004/11/09 19:33:27  ktr
+ * ongoing implementation
+ *
  * Revision 1.1  2004/11/02 14:26:48  ktr
  * Initial revision
  *
@@ -214,7 +217,7 @@ EMLRap (node *arg_node, info *arg_info)
                  * b      = do( a_val);
                  */
                 node *memavis, *valavis, *oldarg, *oldavis;
-                ids *lhs, *arg1, *arg2;
+                ids *lhs, *memarg;
 
                 oldarg = EXPRS_EXPR (apargs);
                 oldavis = ID_AVIS (oldarg);
@@ -255,15 +258,15 @@ EMLRap (node *arg_node, info *arg_info)
                 IDS_AVIS (lhs) = valavis;
                 IDS_VARDEC (lhs) = AVIS_VARDECORARG (valavis);
 
-                arg2 = MakeIds (StringCopy (VARDEC_NAME (AVIS_VARDECORARG (memavis))),
-                                NULL, ST_regular);
-                IDS_AVIS (arg2) = memavis;
-                IDS_VARDEC (arg2) = AVIS_VARDECORARG (memavis);
+                memarg = MakeIds (StringCopy (VARDEC_NAME (AVIS_VARDECORARG (memavis))),
+                                  NULL, ST_regular);
+                IDS_AVIS (memarg) = memavis;
+                IDS_VARDEC (memarg) = AVIS_VARDECORARG (memavis);
 
                 INFO_EMLR_PREASSIGN (arg_info)
                   = MakeAssign (MakeLet (MakePrf2 (F_fill,
                                                    MakePrf1 (F_copy, DupNode (oldarg)),
-                                                   MakeIdFromIds (arg2)),
+                                                   MakeIdFromIds (memarg)),
                                          lhs),
                                 INFO_EMLR_PREASSIGN (arg_info));
                 AVIS_SSAASSIGN (IDS_AVIS (lhs)) = INFO_EMLR_PREASSIGN (arg_info);
@@ -286,7 +289,7 @@ EMLRap (node *arg_node, info *arg_info)
                  *   a_val = fill( copy( a), a_mem);
                  *   b     = do( a_val);
                  */
-                lhs = DupOneIds (arg2);
+                lhs = DupOneIds (memarg);
 
                 INFO_EMLR_PREASSIGN (arg_info)
                   = MakeAssign (MakeLet (MakePrf3 (F_alloc_or_reuse,
