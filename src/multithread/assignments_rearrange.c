@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2004/08/05 10:52:22  skt
+ * initialization of border & new_borderelem added
+ *
  * Revision 1.3  2004/07/29 00:41:50  skt
  * build compilable intermediate version
  * work in progress
@@ -291,6 +294,7 @@ Rearrange (node *arg_node, node *dataflowgraph)
     current_subgraph = NULL;
     all_subgraphs = NULL;
     border_increases = 1;
+    border = NULL;
 
     /* the spring of the dataflowgraph is first element of the border */
     border = NodeListAppend (border, dataflowgraph, NULL);
@@ -356,6 +360,7 @@ IncreaseBorder (nodelist *border, node *dataflowgraph)
     int border_increases;
     DBUG_ENTER ("IncreaseBorder");
 
+    new_borderelems = NULL;
     list_iterator = DATA_ASMRA_DEPENDENT (dataflowgraph);
     /* walk through the dataflowgraph and add all nodes to the border, which
        refcouter equals 0
