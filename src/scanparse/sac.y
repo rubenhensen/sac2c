@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 1.138  1997/11/04 11:25:18  srs
+ * fixed little bug with NEWTREE
+ *
  * Revision 1.137  1997/11/04 09:58:16  srs
  * NEWTREE: nnode is ignored
  *
@@ -1634,22 +1637,24 @@ exprblock2: type ids SEMIC exprblock2
              tmp = GenVardec($1,$2);
 #ifndef NEWTREE
 	     if($$->nnode == 2)	{	 /* we have already vardecs here */
-#else
-             if ($$->node[1] != NULL) {
-#endif
                tmp2=tmp;
                while(tmp2->node[0]!=NULL)
                  tmp2=tmp2->node[0];
                tmp2->node[0]=$$->node[1];
-#ifndef NEWTREE
                tmp2->nnode=1;
-#endif
              }
-#ifndef NEWTREE
              else {			 /* this is the first vardec! */
                $$->nnode=2;              /* set number of child nodes */
              }
+#else
+             if ($$->node[1] != NULL) {
+               tmp2=tmp;
+               while(tmp2->node[0]!=NULL)
+                 tmp2=tmp2->node[0];
+               tmp2->node[0]=$$->node[1];
+             }
 #endif
+
              $$->node[1]=tmp;		 /* insert new decs */
             }
            | 
@@ -1691,7 +1696,7 @@ exprblock3: assigns optretassign BRACE_R
                  
 
 assignblock: SEMIC     
-              {  $$=MakeEmptyBlock();
+              {  $$=MakeEmptyBlock( );
               }
 
              | BRACE_L { $$=MakeNode(N_block); } assigns BRACE_R 
@@ -1700,9 +1705,7 @@ assignblock: SEMIC
                    {
                       $$=$<node>2;
                       $$->node[0]=$3;
-#ifndef NEWTREE
                       $$->nnode=1;
-#endif
                       
                       DBUG_PRINT("GENTREE",
                                  ("%s"P_FORMAT", %s"P_FORMAT,
@@ -2327,13 +2330,16 @@ expr:   apl {$$=$1;}
 #ifndef NEWTREE
            exprs2->nnode=1;
 #endif
+
 #ifndef NEWTREE
            if((1 == $3->nnode) && ( (N_id == $3->node[0]->nodetype) ||
-#else
-           if((!$3->node[0]) && ( (N_id == $3->node[0]->nodetype) ||
-#endif
                                     (N_prf == $3->node[0]->nodetype) ||
                                     (N_ap == $3->node[0]->nodetype) ) )
+#else
+           if((!$3->node[0]) && ( (N_id == $3->node[0]->nodetype) ||
+                                    (N_prf == $3->node[0]->nodetype) ||
+                                    (N_ap == $3->node[0]->nodetype) ) )
+#endif
               exprs1=$3;         /*  expression (shape)  */
            else
            {
