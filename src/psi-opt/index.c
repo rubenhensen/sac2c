@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.38  2003/03/25 15:33:45  sbs
+ * doxygen again
+ *
  * Revision 3.37  2003/03/25 15:12:05  sbs
  * doxygenic again
  *
@@ -617,8 +620,9 @@ int ive_expr, ive_op;
 
 /**
  *
- * @defgroup Some functions for handling N_vinfo nodes
+ * @name Some functions for handling N_vinfo nodes
  *
+ * <pre>
  *
  * node * FindVect( node *N_vinfo_chain)	: checks whether VECT is in
  *                                                  the chain of N_vinfo nodes
@@ -628,18 +632,19 @@ int ive_expr, ive_op;
  *                                                  not already present
  * node * SetIdx( node *chain, types *shape)    : inserts IDX-node if not
  *                                                  already present
+ * </pre>
  */
 /*@{*/
 
-/******************************************************************************
+/*!****************************************************************************
  *
  * @fn: node *FindVect( node *chain)
  *
  * description:
- *   @brief checks whether VECT is in the chain and returns either DOLLAR or it.
  *   @param chain  chain of vinfo-nodes to be searched
  *   @return the address of the VECT-node or the address of a vinfo-node with
  *           DOLLAR-flag (= no VECT in chain)
+ *   @brief checks whether VECT is in the chain.
  *
  ******************************************************************************/
 
@@ -655,7 +660,7 @@ FindVect (node *chain)
     DBUG_RETURN (chain);
 }
 
-/** *
+/** ****************************************************************************
  *
  * @fn  bool EqTypes( types *type1, types *type2)
  *
@@ -699,16 +704,18 @@ EqTypes (types *type1, types *type2)
     DBUG_RETURN (res);
 }
 
-/*
+/** ****************************************************************************
  *
- *  functionname  : FindIdx
- *  arguments     : 1) node * chain
- *                  2) types * idx-shape
- *  description   : checks whether IDX(idx-shape) is in the chain and returns
- *                  either NULL (= IDX(idx-shape) not in chain or the adress
- *                  of the IDX-node
+ * function:
+ *   @fn  node *FindIdx( node *chain, types *vshape)
  *
- */
+ * description:
+ *   @param  chain
+ *   @param  vshape
+ *   @return NULL (= IDX(idx-shape) not in chain) or the adress of the IDX-node
+ *   @brief  checks whether IDX(vshape) is in the chain.
+ *
+ ******************************************************************************/
 
 node *
 FindIdx (node *chain, types *vshape)
