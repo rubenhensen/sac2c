@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2003/02/11 16:42:47  dkr
+ * CCFLAGS patched for TAGGED_ARRAYS
+ *
  * Revision 3.4  2001/11/29 13:24:05  sbs
  * LDFLAGS added
  *
@@ -554,6 +557,16 @@ EvaluateDefaultTarget (target_list_t *target)
                     SYSABORT (("Default target specification of resource '%s` illegal",
                                resource_table[i].name));
                 }
+#ifdef TAGGED_ARRAYS
+                if (!strcmp (resource_table[i].name, "CCFLAGS")) {
+                    char *tmp
+                      = Malloc ((strlen (resource->value_str) + 20) * sizeof (char));
+                    tmp = strcpy (tmp, resource->value_str);
+                    tmp = strcat (tmp, " -DTAGGED_ARRAYS");
+                    resource->value_str = Free (resource->value_str);
+                    resource->value_str = tmp;
+                }
+#endif
                 *((char **)(resource_table[i].store)) = resource->value_str;
                 resource->value_str = NULL;
                 break;
