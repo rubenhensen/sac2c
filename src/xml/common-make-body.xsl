@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.4  2004/11/29 10:43:09  sah
+  added handling of AVIS backlink to DECL
+
   Revision 1.3  2004/11/29 09:36:32  sbs
   dbug-printing enhanced
 
@@ -145,6 +148,44 @@ version="1.0">
     </xsl:otherwise>
   </xsl:choose>
   <xsl:value-of select="';'"/>
+  <!-- if the current son is an avis, add the backref -->
+  <xsl:if test="&quot;Avis&quot; = @name">
+    <xsl:value-of select="'if ( '" />
+    <xsl:call-template name="node-access">
+      <xsl:with-param name="node">
+        <xsl:value-of select="'this'" />
+      </xsl:with-param>
+      <xsl:with-param name="nodetype">
+        <xsl:value-of select="../../@name" />
+      </xsl:with-param>
+      <xsl:with-param name="field">
+        <xsl:value-of select="'Avis'" />
+      </xsl:with-param>
+    </xsl:call-template>
+    <xsl:value-of select="' != NULL) {'" />
+    <xsl:call-template name="node-access">
+      <xsl:with-param name="node">
+        <xsl:call-template name="node-access">
+          <xsl:with-param name="node">
+            <xsl:value-of select="'this'" />
+          </xsl:with-param>
+          <xsl:with-param name="nodetype">
+            <xsl:value-of select="../../@name" />
+          </xsl:with-param>
+          <xsl:with-param name="field">
+            <xsl:value-of select="'Avis'" />
+          </xsl:with-param>
+        </xsl:call-template>
+      </xsl:with-param>
+      <xsl:with-param name="nodetype">
+        <xsl:value-of select="'Avis'" />
+      </xsl:with-param>
+      <xsl:with-param name="field">
+        <xsl:value-of select="'Decl'" />
+      </xsl:with-param>
+    </xsl:call-template>
+    <xsl:value-of select="'= this; }'"/>
+  </xsl:if>
 </xsl:template>
  
 <!-- generate the assignmnent for an attribute -->
