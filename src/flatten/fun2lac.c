@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2001/05/15 12:22:03  dkr
+ * BuildRenamingAssigns: DBUG_ASSERT corrected
+ *
  * Revision 3.11  2001/05/11 18:08:37  dkr
  * BuildRenamingAssigns revisited:
  * instead of conditionals some more assignments are generated.
@@ -270,8 +273,8 @@ BuildRenamingAssigns (node **vardecs, node **ass1, node **ass2, node **ass3,
 
     DBUG_ENTER ("BuildRenamingAssigns");
 
-    DBUG_ASSERT (((vardecs != NULL) && ((*vardecs) != NULL)
-                  && (NODE_TYPE ((*vardecs)) == N_vardec)),
+    DBUG_ASSERT (((vardecs != NULL)
+                  && (((*vardecs) == NULL) || (NODE_TYPE ((*vardecs)) == N_vardec))),
                  "no vardecs found!");
     DBUG_ASSERT (((ass1 != NULL)
                   && (((*ass1) == NULL) || (NODE_TYPE ((*ass1)) == N_assign))),
