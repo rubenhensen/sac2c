@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.17  1998/04/16 14:26:50  srs
+ * removed NEWTREE
+ *
  * Revision 1.16  1998/04/09 21:24:31  dkr
  * renamed macros:
  *   INLINE -> DUP_INLINE
@@ -248,10 +251,10 @@ DoInline (node *let_node, node *ap_node, node *arg_info)
     /*
      * Generate new variables
      */
-    if (NULL != BLOCK_VARDEC (FUNDEF_BODY (AP_FUNDEF (ap_node))))
+    if (BLOCK_VARDEC (FUNDEF_BODY (AP_FUNDEF (ap_node))))
         BLOCK_VARDEC (FUNDEF_BODY (AP_FUNDEF (ap_node)))
           = Trav (BLOCK_VARDEC (FUNDEF_BODY (AP_FUNDEF (ap_node))), arg_info);
-    if (NULL != FUNDEF_ARGS (AP_FUNDEF (ap_node)))
+    if (FUNDEF_ARGS (AP_FUNDEF (ap_node)))
         FUNDEF_ARGS (AP_FUNDEF (ap_node))
           = Trav (FUNDEF_ARGS (AP_FUNDEF (ap_node)), arg_info);
 
@@ -268,11 +271,6 @@ DoInline (node *let_node, node *ap_node, node *arg_info)
         vardec_node = SearchDecl (new_name, INL_TYPES);
         new_expr = DupTree (EXPRS_EXPR (expr_node), arg_info);
         inl_nodes = MakeAssignLet (new_name, vardec_node, new_expr);
-/*-----------------------------------------------------------------------------------*/
-#ifndef NEWTREE
-        inl_nodes->nnode = 1;
-#endif
-        /*-----------------------------------------------------------------------------------*/
         header_nodes = AppendNodeChain (1, inl_nodes, header_nodes);
         var_node = VARDEC_NEXT (var_node);
         expr_node = EXPRS_NEXT (expr_node);
@@ -290,11 +288,6 @@ DoInline (node *let_node, node *ap_node, node *arg_info)
         new_name = StringCopy (IDS_NAME (ids_node));
         new_expr = DupTree (EXPRS_EXPR (expr_node), arg_info);
         inl_nodes = MakeAssignLet (new_name, IDS_VARDEC (ids_node), new_expr);
-/*-----------------------------------------------------------------------------------*/
-#ifndef NEWTREE
-        inl_nodes->nnode = 1;
-#endif
-        /*-----------------------------------------------------------------------------------*/
         bottom_nodes = AppendNodeChain (1, inl_nodes, bottom_nodes);
         ids_node = IDS_NEXT (ids_node);
         expr_node = EXPRS_NEXT (expr_node);
@@ -486,12 +479,6 @@ INLvar (node *arg_node, node *arg_info)
              * artificial variable declaration.
              */
 
-/*-----------------------------------------------------------------------------------*/
-#ifndef NEWTREE
-            if (NULL == VARDEC_NEXT (INL_TYPES))
-                INL_TYPES->nnode = 0;
-#endif
-            /*-----------------------------------------------------------------------------------*/
         } else {
             FREE (new_name);
         }
@@ -516,12 +503,6 @@ INLvar (node *arg_node, node *arg_info)
              * artificial variable declaration.
              */
 
-/*-----------------------------------------------------------------------------------*/
-#ifndef NEWTREE
-            if (NULL == ARG_NEXT (INL_TYPES))
-                INL_TYPES->nnode = 0;
-#endif
-            /*-----------------------------------------------------------------------------------*/
         } else {
             FREE (new_name);
         }
