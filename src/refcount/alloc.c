@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/07/16 12:52:05  ktr
+ * support for F_accu added.
+ *
  * Revision 1.3  2004/07/16 12:07:14  ktr
  * EMAL now traverses into N_ap and N_funcond, too.
  *
@@ -731,6 +734,11 @@ EMALprf (node *arg_node, node *arg_info)
 
     als = INFO_EMAL_ALLOCLIST (arg_info);
 
+    /*
+     * Signal EMALlet to wrap this prf in a fill-operation
+     */
+    INFO_EMAL_MUSTFILL (arg_info) = TRUE;
+
     switch (PRF_PRF (arg_node)) {
     case F_dim:
         /*
@@ -864,6 +872,17 @@ EMALprf (node *arg_node, node *arg_info)
         }
         break;
 
+    case F_accu:
+        /*
+         * a,... = accu( iv, n, ...)
+         * accu requires a special treatment as none of its return
+         * value must be allocated
+         */
+        INFO_EMAL_ALLOCLIST (arg_info) = FreeALS (INFO_EMAL_ALLOCLIST (arg_info));
+
+        INFO_EMAL_MUSTFILL (arg_info) = FALSE;
+        break;
+
     case F_alloc:
     case F_suballoc:
     case F_fill:
@@ -891,17 +910,13 @@ EMALprf (node *arg_node, node *arg_info)
     case F_type_error:
     case F_to_unq:
     case F_from_unq:
+        INFO_EMAL_MUSTFILL (arg_info) = FALSE;
         break;
 
     default:
         DBUG_ASSERT ((0), "unknown prf found!");
         break;
     }
-
-    /*
-     * Signal EMALlet to wrap this prf in a fill-operation
-     */
-    INFO_EMAL_MUSTFILL (arg_info) = TRUE;
 
     DBUG_RETURN (arg_node);
 }
