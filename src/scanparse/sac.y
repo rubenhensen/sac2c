@@ -4,6 +4,10 @@
 /*
  *
  * $Log$
+ * Revision 3.28  2001/06/22 12:18:53  dkr
+ * fixed a bug in rule for 'expr_sign':
+ * negation of float/double works correctly now
+ *
  * Revision 3.27  2001/06/21 15:57:41  dkr
  * some superfluous tokens removed
  *
@@ -1746,11 +1750,11 @@ expr_sign: MINUS exprNObr  %prec SIGN
                  break;
                case N_float:
                  $$ = $2;
-                 NUM_VAL( $$) = (0 - FLOAT_VAL( $$));
+                 FLOAT_VAL( $$) = (0 - FLOAT_VAL( $$));
                  break;
                case N_double:
                  $$ = $2;
-                 NUM_VAL( $$) = (0 - DOUBLE_VAL( $$));
+                 DOUBLE_VAL( $$) = (0 - DOUBLE_VAL( $$));
                  break;
                default:
                  /*
