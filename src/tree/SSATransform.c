@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.5  2001/02/22 12:44:24  nmw
+ * tranformation of multigenerator withloops added
+ *
  * Revision 1.4  2001/02/20 15:53:29  nmw
  * code transformation in ssa form implemented
  *
@@ -35,9 +38,6 @@
 #include "SSATransform.h"
 
 #define TMP_STRING_LEN 16
-
-/* SSACOUNT_COUNT */
-#define UNDEF_VARDEC 0 /* -1 */
 
 /* INFO_SSA_CONDSTATUS */
 #define CONDSTATUS_NOCOND 0
@@ -205,12 +205,6 @@ SSANewVardec (node *old_vardec_or_arg)
     FREE (VARDEC_NAME (new_vardec));
     VARDEC_NAME (new_vardec) = StringConcat (SSACNT_BASEID (ssacnt), tmpstring);
 
-    /* set no SSA-counter for this new vardec:
-     * For the current traversal the new renamed vardec cannot be reanamed
-     * again, because there cannot be any redefinitions of it
-     * big mistake, leads to double definitions!!! */
-    /* AVIS_SSACOUNT(VARDEC_AVIS(new_vardec)) = NULL; */
-
     DBUG_RETURN (new_vardec);
 }
 
@@ -338,7 +332,7 @@ SSAGetSSAcount (char *baseid, int initvalue, node *block)
  *  node *SSAfundef(node *arg_node, node *arg_info)
  *
  * description:
- *   traverses args and block in this order
+ *   traverses args and block of fundef in this order
  *
  ******************************************************************************/
 node *
@@ -346,7 +340,9 @@ SSAfundef (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("SSAfundef");
 
-    /* process only fundefs with body */
+    /*
+     * process only fundefs with body
+     */
     if (FUNDEF_BODY (arg_node) != NULL) {
         /* stores access points for later insertions in this fundef */
         INFO_SSA_FUNDEF (arg_info) = arg_node;
@@ -492,6 +488,8 @@ SSAarg (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("SSAarg");
 
+    DBUG_PRINT ("SSA", ("working on arg %s", ARG_NAME (arg_node)));
+
     if (AVIS_SSACOUNT (ARG_AVIS (arg_node)) == NULL) {
         /* insert ssa-counter to this baseid */
         AVIS_SSACOUNT (ARG_AVIS (arg_node))
@@ -541,8 +539,7 @@ SSAvardec (node *arg_node, node *arg_info)
     if (AVIS_SSACOUNT (VARDEC_AVIS (arg_node)) == NULL) {
         /* insert ssa-counter to this baseid */
         AVIS_SSACOUNT (VARDEC_AVIS (arg_node))
-          = SSAGetSSAcount (VARDEC_NAME (arg_node), UNDEF_VARDEC,
-                            INFO_SSA_BLOCK (arg_info));
+          = SSAGetSSAcount (VARDEC_NAME (arg_node), 0, INFO_SSA_BLOCK (arg_info));
     }
 
     /* jet undefined on stack */
