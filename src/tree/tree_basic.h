@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.63  2001/03/27 20:51:49  dkr
+ * macros INFO_F2L_... added
+ *
  * Revision 3.62  2001/03/27 13:48:34  dkr
  * some comments modified
  *
@@ -1811,12 +1814,12 @@ extern node *MakeDouble (double val);
  ***
  ***  permanent attributes:
  ***
- ***    int  VAL
+ ***    bool VAL
  ***/
 
-extern node *MakeBool (int val);
+extern node *MakeBool (bool val);
 
-#define BOOL_VAL(n) (n->info.cint)
+#define BOOL_VAL(n) ((bool)((n)->info.cint))
 
 /*--------------------------------------------------------------------------*/
 
@@ -2772,11 +2775,6 @@ extern node *MakeInfo ();
 #define INFO_TSI_LINESIZE(n) ((int *)(n->node[4]))[1]
 #define INFO_TSI_DATATYPE(n) ((int *)(n->node[4]))[2]
 
-/* converting loops and conditionals to functions (lac2fun.c) */
-#define INFO_L2F_FUNDEF(n) (n->node[0])
-#define INFO_L2F_FUNS(n) (n->node[1])
-#define INFO_L2F_ASSIGN(n) (n->node[2])
-
 /* inference of DF masks (infer_dfms.c) */
 #define INFO_INFDFMS_FUNDEF(n) (n->node[0])
 #define INFO_INFDFMS_IN(n) (n->dfmask[0])
@@ -2791,10 +2789,18 @@ extern node *MakeInfo ();
 #define INFO_CUD_FUNDEF(n) (n->node[0])
 #define INFO_CUD_REF(n) (n->dfmask[0])
 
+/* converting loops and conditionals to functions (lac2fun.c) */
+#define INFO_L2F_FUNDEF(n) (n->node[0])
+#define INFO_L2F_FUNS(n) (n->node[1])
+#define INFO_L2F_ASSIGN(n) (n->node[2])
+
 /* reconverting functions to loops and conditionals (fun2lac.c) */
-#define INFO_FUN2LAC_FUNDEF(n) (n->node[0])
-#define INFO_FUN2LAC_FUNBLOCK(n) (n->node[1])
-#define INFO_FUN2LAC_LET(n) (n->node[2])
+#define INFO_F2L_FUNDEF(n) (n->node[0])       /* new */
+#define INFO_F2L_INLINED(n) (n->node[1])      /* new */
+#define INFO_F2L_LET(n) (n->node[2])          /* new */
+#define INFO_FUN2LAC_FUNDEF(n) (n->node[0])   /* old */
+#define INFO_FUN2LAC_FUNBLOCK(n) (n->node[1]) /* old */
+#define INFO_FUN2LAC_LET(n) (n->node[2])      /* old */
 
 /* adjusting identifiers (adjust_ids.c) */
 #define INFO_AI_IDS(i) (i->info.ids)
