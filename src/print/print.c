@@ -1,14 +1,14 @@
 /*
  *
  * $Log$
+ * Revision 2.45  2000/02/09 12:00:46  dkr
+ * function declarations are separated by a n now
+ *
  * Revision 2.44  2000/02/09 11:47:57  dkr
  * superfluous \n after the last vardec removed from output
  *
  * Revision 2.43  2000/02/03 15:20:31  jhs
  * Added PrintMT and PrintSt.
- *
- * Revision 2.42  2000/02/02 16:10:10  bs
- * *** empty log message ***
  *
  * Revision 2.41  2000/01/31 19:15:29  bs
  * Function WLAAprintAccesse modified.
@@ -1160,7 +1160,7 @@ PrintFundef (node *arg_node, node *arg_info)
                     PrintFunctionHeader (arg_node, arg_info);
                 }
 
-                fprintf (outfile, ";\n");
+                fprintf (outfile, ";\n\n");
 
                 if (FUNDEF_PRAGMA (arg_node) != NULL) {
                     Trav (FUNDEF_PRAGMA (arg_node), arg_info);
