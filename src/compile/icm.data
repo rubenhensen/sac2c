@@ -1,6 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 3.72  2004/08/02 16:17:49  ktr
+ * renamed ND_WL_GENARRAY__SHAPE_id into ND_WL_GENARRAY__SHAPE_id_id
+ * renamed ND_WL_GENARRAY__SHAPE_arr into ND_WL_GENARRAY__SHAPE_arr_id
+ * added ND_WL_GENARRAY__SHAPE_id_arr
+ * added ND_WL_SUBALLOC
+ * added ND_WL_EMM_ASSIGN
+ *
  * Revision 3.71  2004/03/10 00:19:34  dkrHH
  * old backend removed
  *
@@ -640,26 +647,37 @@ ICM_END( ND_IDXS2OFFSET, (off_NT, idxs_size, idxs_NT, shp_size, shp_ANY))
  * ICMs for compilation of new with-loop
  */
 
-#if defined(ND_WL_GENARRAY__SHAPE_id) || defined(ICM_ALL)
-ICM_DEF( ND_WL_GENARRAY__SHAPE_id, TRACE_NONE)
+#if defined(ND_WL_GENARRAY__SHAPE_id_arr) || defined(ICM_ALL)
+ICM_DEF( ND_WL_GENARRAY__SHAPE_id_arr, TRACE_NONE)
+  ICM_NT( to_NT)
+  ICM_INT( to_sdim)
+  ICM_NT( shp_NT)
+  ICM_INT( val_size)
+  ICM_VARANY( val_size, vals_ANY)
+ICM_END( ND_WL_GENARRAY__SHAPE_id_arr, (to_NT, to_sdim, shp_NT, 
+                                        val_size, vals_ANY))
+#endif
+
+#if defined(ND_WL_GENARRAY__SHAPE_id_id) || defined(ICM_ALL)
+ICM_DEF( ND_WL_GENARRAY__SHAPE_id_id, TRACE_NONE)
   ICM_NT( to_NT)
   ICM_INT( to_sdim)
   ICM_NT( shp_NT)
   ICM_NT( val_NT)
   ICM_INT( val_sdim)
-ICM_END( ND_WL_GENARRAY__SHAPE_id, (to_NT, to_sdim, shp_NT, val_NT, val_sdim))
+ICM_END( ND_WL_GENARRAY__SHAPE_id_id, (to_NT, to_sdim, shp_NT, val_NT, val_sdim))
 #endif
 
-#if defined(ND_WL_GENARRAY__SHAPE_arr) || defined(ICM_ALL)
-ICM_DEF( ND_WL_GENARRAY__SHAPE_arr, TRACE_NONE)
+#if defined(ND_WL_GENARRAY__SHAPE_arr_id) || defined(ICM_ALL)
+ICM_DEF( ND_WL_GENARRAY__SHAPE_arr_id, TRACE_NONE)
   ICM_NT( to_NT)
   ICM_INT( to_sdim)
   ICM_INT( shp_size)
   ICM_VARANY( shp_size, shp_ANY)
   ICM_NT( val_NT)
   ICM_INT( val_sdim)
-ICM_END( ND_WL_GENARRAY__SHAPE_arr, (to_NT, to_sdim, shp_size, shp_ANY,
-                                     val_NT, val_sdim))
+ICM_END( ND_WL_GENARRAY__SHAPE_arr_id, (to_NT, to_sdim, shp_size, shp_ANY,
+                                        val_NT, val_sdim))
 #endif
 
 #if defined(WL_BEGIN__OFFSET) || defined(ICM_ALL)
@@ -705,6 +723,29 @@ ICM_DEF( WL_INIT_OFFSET, TRACE_NONE)
   ICM_NT( idx_vec_NT)
   ICM_INT( dims)
 ICM_END( WL_INIT_OFFSET, (to_NT, to_sdim, idx_vec_NT, dims))
+#endif
+
+
+#if defined(WL_SUBALLOC) || defined(ICM_ALL)
+ICM_DEF( WL_SUBALLOC, TRACE_NONE)
+  ICM_NT( sub_NT)
+  ICM_NT( to_NT)
+ICM_END( WL_SUBALLOC, (sub_NT, to_NT))
+#endif
+
+#if defined(WL_EMM_ASSIGN) || defined(ICM_ALL)
+ICM_DEF( WL_EMM_ASSIGN, TRACE_NONE)
+  ICM_NT( val_NT)
+  ICM_INT( val_sdim)
+  ICM_NT( to_NT)
+  ICM_INT( to_sdim)
+  ICM_NT( idx_vec_NT)
+  ICM_INT( dims)
+  ICM_VARNT( dims, idxs_scl_NT)
+  ICM_ID( copyfun)
+  ICM_ID( freefun)
+ICM_END( WL_EMM_ASSIGN, (val_NT, val_sdim, to_NT, to_sdim,
+                         idx_vec_NT, dims, idxs_scl_NT, copyfun, freefun))
 #endif
 
 #if defined(WL_ASSIGN) || defined(ICM_ALL)

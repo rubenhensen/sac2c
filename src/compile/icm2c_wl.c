@@ -1,6 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 3.37  2004/08/02 16:17:49  ktr
+ * renamed ND_WL_GENARRAY__SHAPE_id into ND_WL_GENARRAY__SHAPE_id_id
+ * renamed ND_WL_GENARRAY__SHAPE_arr into ND_WL_GENARRAY__SHAPE_arr_id
+ * added ND_WL_GENARRAY__SHAPE_id_arr
+ * added ND_WL_SUBALLOC
+ * added ND_WL_EMM_ASSIGN
+ *
  * Revision 3.36  2004/03/10 00:10:17  dkrHH
  * old backend removed
  *
@@ -93,6 +100,7 @@
 
 #include "icm2c_basic.h"
 #include "icm2c_utils.h"
+#include "icm2c_wl.h"
 
 #include "dbug.h"
 #include "my_debug.h"
@@ -193,29 +201,84 @@ DefineShapeFactor (char *to_NT, int to_sdim, int current_dim)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_WL_GENARRAY__SHAPE_id( char *to_NT, int to_sdim,
- *                                            char *shp_NT,
- *                                            char *val_NT, int val_sdim)
+ *   void ICMCompileND_WL_GENARRAY__SHAPE_id_arr( char *to_NT, int to_sdim,
+ *                                                char *shp_NT,
+ *                                                int val_size, char **val_ANY)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_WL_GENARRAY__SHAPE_id( to_NT, to_sdim, shp_NT, val_NT, val_sdim)
+ *   ND_WL_GENARRAY__SHAPE_id_arr( to_NT, to_sdim, shp_NT, val_size, val_ANY)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_WL_GENARRAY__SHAPE_id (char *to_NT, int to_sdim, char *shp_NT, char *val_NT,
-                                    int val_sdim)
+ICMCompileND_WL_GENARRAY__SHAPE_id_arr (char *to_NT, int to_sdim, char *shp_NT,
+                                        int val_size, char **vals_ANY)
+{
+    int i;
+
+    DBUG_ENTER ("ICMCompileND_WL_GENARRAY__SHAPE_id_arr");
+
+#define ND_WL_GENARRAY__SHAPE_id_arr
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef ND_WL_GENARRAY__SHAPE_id_arr
+
+    INDENT;
+    fprintf (outfile,
+             "SAC_TR_PRF_PRINT("
+             " (\"ND_WL_GENARRAY__SHAPE( %s, %d, %s, ...)\"))\n",
+             to_NT, to_sdim, shp_NT);
+
+    ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == 1", shp_NT);
+                     , fprintf (outfile, "Shape of genarray with-loop has (dim != 1)!"););
+
+    /*
+     * CAUTION:
+     * 'val_ANY[i]' is either a tagged identifier (representing a scalar)
+     * or a constant scalar!!
+     */
+    for (i = 0; i < val_size; i++) {
+        if (vals_ANY[i][0] == '(') {
+            ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == 0", vals_ANY[i]);
+                             , fprintf (outfile,
+                                        "Shape of genarray with-loop has (dim != 1)!"););
+        }
+    }
+
+    Set_Shape (to_NT, to_sdim, shp_NT, -1, SizeId, NULL, ReadId, vals_ANY, val_size, NULL,
+               NULL, ReadConstArray_Str);
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileND_WL_GENARRAY__SHAPE_id_id( char *to_NT, int to_sdim,
+ *                                               char *shp_NT,
+ *                                               char *val_NT, int val_sdim)
+ *
+ * description:
+ *   implements the compilation of the following ICM:
+ *
+ *   ND_WL_GENARRAY__SHAPE_id_id( to_NT, to_sdim, shp_NT, val_NT, val_sdim)
+ *
+ ******************************************************************************/
+
+void
+ICMCompileND_WL_GENARRAY__SHAPE_id_id (char *to_NT, int to_sdim, char *shp_NT,
+                                       char *val_NT, int val_sdim)
 {
     int val_dim = DIM_NO_OFFSET (val_sdim);
 
-    DBUG_ENTER ("ICMCompileND_WL_GENARRAY__SHAPE_id");
+    DBUG_ENTER ("ICMCompileND_WL_GENARRAY__SHAPE_id_id");
 
-#define ND_WL_GENARRAY__SHAPE_id
+#define ND_WL_GENARRAY__SHAPE_id_id
 #include "icm_comment.c"
 #include "icm_trace.c"
-#undef ND_WL_GENARRAY__SHAPE_id
+#undef ND_WL_GENARRAY__SHAPE_id_id
 
     INDENT;
     fprintf (outfile,
@@ -235,31 +298,31 @@ ICMCompileND_WL_GENARRAY__SHAPE_id (char *to_NT, int to_sdim, char *shp_NT, char
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_WL_GENARRAY__SHAPE_arr( char *to_NT, int to_sdim,
- *                                             int shp_size, char **shp_ANY,
- *                                             char *val_NT, int val_sdim)
+ *   void ICMCompileND_WL_GENARRAY__SHAPE_arr_id( char *to_NT, int to_sdim,
+ *                                                int shp_size, char **shp_ANY,
+ *                                                char *val_NT, int val_sdim)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_WL_GENARRAY__SHAPE_arr( to_NT, to_sdim, shp_size, shp_ANY,
- *                              val_NT, val_sdim)
+ *   ND_WL_GENARRAY__SHAPE_arr_id( to_NT, to_sdim, shp_size, shp_ANY,
+ *                                 val_NT, val_sdim)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_WL_GENARRAY__SHAPE_arr (char *to_NT, int to_sdim, int shp_size,
-                                     char **shp_ANY, char *val_NT, int val_sdim)
+ICMCompileND_WL_GENARRAY__SHAPE_arr_id (char *to_NT, int to_sdim, int shp_size,
+                                        char **shp_ANY, char *val_NT, int val_sdim)
 {
     int val_dim = DIM_NO_OFFSET (val_sdim);
     int i;
 
-    DBUG_ENTER ("ICMCompileND_WL_GENARRAY__SHAPE_arr");
+    DBUG_ENTER ("ICMCompileND_WL_GENARRAY__SHAPE_arr_id");
 
-#define ND_WL_GENARRAY__SHAPE_arr
+#define ND_WL_GENARRAY__SHAPE_arr_id
 #include "icm_comment.c"
 #include "icm_trace.c"
-#undef ND_WL_GENARRAY__SHAPE_arr
+#undef ND_WL_GENARRAY__SHAPE_arr_id
 
     /*
      * CAUTION:
@@ -427,6 +490,87 @@ ICMCompileWL_END (char *to_NT, int to_sdim, char *idx_vec_NT, int dims)
     indent--;
     INDENT;
     fprintf (outfile, "}\n");
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileWL_SUBALLOC( char *sub_NT, char *to_NT)
+ *
+ * description:
+ *   Implements the compilation of the following ICM:
+ *
+ *   WL_SUBALLOC( sub_NT, to_NT)
+ *
+ ******************************************************************************/
+
+void
+ICMCompileWL_SUBALLOC (char *sub_NT, char *to_NT)
+{
+    shape_class_t sub_sc = ICUGetShapeClass (sub_NT);
+
+    DBUG_ENTER ("ICMCompileWL_SUBALLOC");
+
+#define WL_SUBALLOC
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef WL_SUBALLOC
+
+    if (sub_sc == C_scl) {
+        DBUG_ASSERT ((0), "Scalar suballoc must be handled in compile.c");
+    } else {
+        INDENT;
+        fprintf (outfile,
+                 "SAC_ND_A_FIELD( %s) = SAC_ND_A_FIELD( %s)+SAC_WL_OFFSET( %s);\n",
+                 sub_NT, to_NT, to_NT);
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileWL_EMM_ASSIGN( char *val_NT, int val_sdim,
+ *                                 char *to_NT, int to_sdim
+ *                                 char *idx_vec_NT,
+ *                                 int dims, char **idxs_scl_NT,
+ *                                 char *copyfun, char *freefun)
+ *
+ * description:
+ *   Implements the compilation of the following ICM:
+ *
+ *   WL_EMM_ASSIGN( val_NT, val_sdim, to_NT, to_sdim,
+ *                  idx_vec_NT, dims, [ idxs_scl_NT ]* , copyfun, freefun )
+ *
+ ******************************************************************************/
+
+void
+ICMCompileWL_EMM_ASSIGN (char *val_NT, int val_sdim, char *to_NT, int to_sdim,
+                         char *idx_vec_NT, int dims, char **idxs_scl_NT, char *copyfun,
+                         char *freefun)
+{
+    shape_class_t val_sc = ICUGetShapeClass (val_NT);
+
+    DBUG_ENTER ("ICMCompileWL_EMM_ASSIGN");
+
+#define WL_EMM_ASSIGN
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef WL_EMM_ASSIGN
+
+    if (val_sc == C_scl) {
+        ICMCompileWL_ASSIGN (val_NT, val_sdim, to_NT, to_sdim, idx_vec_NT, dims,
+                             idxs_scl_NT, copyfun);
+        INDENT;
+        fprintf (outfile, "SAC_ND_DEC_RC_FREE( %s, 1, %s)\n", val_NT, freefun);
+    } else {
+        INDENT;
+        fprintf (outfile, "SAC_WL_OFFSET( %s) += SAC_WL_SHAPE_FACTOR( %s, %d);\n", to_NT,
+                 to_NT, dims - 1);
+    }
 
     DBUG_VOID_RETURN;
 }

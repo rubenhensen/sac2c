@@ -1,6 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 3.20  2004/08/02 16:17:49  ktr
+ * renamed ND_WL_GENARRAY__SHAPE_id into ND_WL_GENARRAY__SHAPE_id_id
+ * renamed ND_WL_GENARRAY__SHAPE_arr into ND_WL_GENARRAY__SHAPE_arr_id
+ * added ND_WL_GENARRAY__SHAPE_id_arr
+ * added ND_WL_SUBALLOC
+ * added ND_WL_EMM_ASSIGN
+ *
  * Revision 3.19  2004/03/10 00:10:17  dkrHH
  * old backend removed
  *
@@ -62,11 +69,14 @@
 #ifndef _icm2c_wl_h_
 #define _icm2c_wl_h_
 
-extern void ICMCompileND_WL_GENARRAY__SHAPE_id (char *to_NT, int to_sdim, char *shp_NT,
-                                                char *val_NT, int val_sdim);
-extern void ICMCompileND_WL_GENARRAY__SHAPE_arr (char *to_NT, int to_sdim, int shp_size,
-                                                 char **shp_ANY, char *val_NT,
-                                                 int val_sdim);
+extern void ICMCompileND_WL_GENARRAY__SHAPE_id_arr (char *to_NT, int to_sdim,
+                                                    char *shp_NT, int val_size,
+                                                    char **vals_ANY);
+extern void ICMCompileND_WL_GENARRAY__SHAPE_id_id (char *to_NT, int to_sdim, char *shp_NT,
+                                                   char *val_NT, int val_sdim);
+extern void ICMCompileND_WL_GENARRAY__SHAPE_arr_id (char *to_NT, int to_sdim,
+                                                    int shp_size, char **shp_ANY,
+                                                    char *val_NT, int val_sdim);
 
 extern void ICMCompileWL_BEGIN__OFFSET (char *to_NT, int to_sdim, char *idx_vec_NT,
                                         int dims);
@@ -74,6 +84,12 @@ extern void ICMCompileWL_BEGIN (char *to_NT, int to_sdim, char *idx_vec_NT, int 
 extern void ICMCompileWL_END__OFFSET (char *to_NT, int to_sdim, char *idx_vec_NT,
                                       int dims);
 extern void ICMCompileWL_END (char *to_NT, int to_sdim, char *idx_vec_NT, int dims);
+
+extern void ICMCompileWL_SUBALLOC (char *sub_NT, char *to_NT);
+
+extern void ICMCompileWL_EMM_ASSIGN (char *val_NT, int val_sdim, char *to_NT, int to_dim,
+                                     char *idx_vec_NT, int dims, char **idxa_scl_NT,
+                                     char *copyfun, char *freefun);
 
 extern void ICMCompileWL_ASSIGN (char *val_NT, int val_sdim, char *to_NT, int to_dim,
                                  char *idx_vec_NT, int dims, char **idxa_scl_NT,
