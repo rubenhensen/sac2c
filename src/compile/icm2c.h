@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.44  1997/11/02 14:30:05  dkr
+ * does not include memory.h anymore (redundant)
+ *
  * Revision 1.43  1997/10/28 12:35:09  srs
  * renamed macro MALLOC to RT_MALLOC (runtime malloc)
  *
@@ -152,7 +155,9 @@
 #define _sac_icm2c_h
 
 #include <malloc.h>
+/*
 #include <memory.h>
+*/
 
 #include "libsac.h"
 
