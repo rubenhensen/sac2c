@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.47  1995/06/14 14:24:48  hw
+ * Revision 1.48  1995/06/14 15:32:25  hw
+ * changed Compile( "extern"-declaration for each not imported function inserted)
+ *
+ * Revision 1.47  1995/06/14  14:24:48  hw
  * bug fixed in CompPrf ( new variable declaration will be inserted
  *  now in all cases )
  *
@@ -793,7 +796,7 @@ ShapeToArray (node *vardec_node)
 node *
 Compile (node *arg_node)
 {
-    node *info;
+    node *info, *fundef, *tmp_fundef, *new_fundef;
     DBUG_ENTER ("Compile");
 
 #ifdef MALLOC_TOOL
@@ -813,6 +816,34 @@ Compile (node *arg_node)
         DBUG_ASSERT ((N_fundef == arg_node->nodetype), "wrong node");
         arg_node = Trav (arg_node, info);
     }
+    /* now create a extern declaration for each non imported function, except for
+     * main
+     */
+    if (N_modul == arg_node->nodetype)
+        fundef = arg_node->node[2];
+    else
+        fundef = arg_node->node[1];
+    tmp_fundef = fundef;
+    /* first skip imported functions */
+    while (NULL == tmp_fundef->node[0])
+        tmp_fundef = tmp_fundef->node[1];
+    /* now add "extern" declarations */
+    while (NULL != tmp_fundef)
+        if (NULL != tmp_fundef->node[1]) {
+            /* this isn't the main function */
+            new_fundef = MakeNode (N_fundef);
+            new_fundef->node[3] = tmp_fundef->node[3]; /* share N_icm ND_FUN_DEC */
+            new_fundef->node[1] = fundef; /* put it in front of N_fundef nodes */
+            fundef = new_fundef;
+            tmp_fundef = tmp_fundef->node[1];
+        } else
+            tmp_fundef = tmp_fundef->node[1];
+
+    /* insert expanded tree */
+    if (N_modul == arg_node->nodetype)
+        arg_node->node[2] = fundef;
+    else
+        arg_node->node[1] = fundef;
 
 #ifdef MALLOC_TOOL
     malloc_verify ();
