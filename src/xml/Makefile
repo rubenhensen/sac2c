@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 1.9  2005/02/16 11:28:47  jhb
+# kill freespace
+#
 # Revision 1.8  2005/02/10 12:58:44  jhb
 # added ast2check_c.xsl and ast2check_h.xsl
 #
@@ -83,7 +86,7 @@ ast.html: ast.xml ast2html.xsl
                  common-make-head.xsl common-accessor-macros.xsl
 	$(XSLTENGINE) ast2node_basic_h.xsl ast.xml \
 	| $(CODE_BEAUTIFIER) >$@
-                                                                                
+
 ../tree/node_basic.c: ast.xml ast2node_basic_c.xsl common-c-code.xsl \
                  common-make-head.xsl common-make-body.xsl \
                  common-make-assertion.xsl
