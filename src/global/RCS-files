@@ -1,6 +1,8 @@
 Error.c
 Error.h
 Makefile
+NameTuples.c
+NameTuples.h
 build.h
 globals.c
 globals.h
