@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.16  2000/02/17 16:22:03  cg
+ * Added several new access macros for usage of N_info node
+ * in fun2lac.c and adjust_ids.c.
+ *
  * Revision 1.15  2000/02/16 15:11:54  dkr
  * removed FUNDEF_LAC_LET
  *
@@ -2683,7 +2687,7 @@ extern node *MakeInfo ();
 #define INFO_TSI_INDEXDIM(n) VARDEC_SHAPE (INFO_TSI_INDEXVAR (n), 0)
 #define INFO_TSI_ARRAYDIM(n) VARDEC_DIM (INFO_TSI_WLARRAY (n))
 
-/* converting loops and conditions to functions */
+/* converting loops and conditionals to functions (lac2fun.c) */
 #define INFO_LAC2FUN_DFMBASE(n) (n->dfmask[0])
 #define INFO_LAC2FUN_IN(n) ((DFMmask_t) (n->dfmask[1]))
 #define INFO_LAC2FUN_OUT(n) ((DFMmask_t) (n->dfmask[2]))
@@ -2692,6 +2696,20 @@ extern node *MakeInfo ();
 #define INFO_LAC2FUN_ISTRANS(n) (n->flag)
 #define INFO_LAC2FUN_FUNDEF(n) (n->node[0])
 #define INFO_LAC2FUN_FUNS(n) (n->node[1])
+
+/* reconverting functions to loops and conditionals (fun2lac.c) */
+#define INFO_FUN2LAC_FUNDEF(n) (n->node[0])
+#define INFO_FUN2LAC_FUNBLOCK(n) (n->node[1])
+#define INFO_FUN2LAC_LET(n) (n->node[2])
+
+/* adjusting identifiers (adjust_ids.c) */
+#define INFO_AI_IDS(i) (i->info.ids)
+#define INFO_AI_IDS_CHAIN(i) (i->info2)
+#define INFO_AI_ARGS(n) (n->node[0])
+#define INFO_AI_ARGS_CHAIN(n) (n->node[1])
+#define INFO_AI_FUNDEF(n) (n->node[2])
+#define INFO_AI_PREASSIGN(n) (n->node[3])
+#define INFO_AI_POSTASSIGN(n) (n->node[4])
 
 /*--------------------------------------------------------------------------*/
 
