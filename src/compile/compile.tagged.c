@@ -1,8 +1,8 @@
 /*
  *
  * $Log$
- * Revision 1.77  2003/09/18 14:57:58  dkr
- * *** empty log message ***
+ * Revision 1.78  2003/09/19 15:37:58  dkr
+ * some missing PRFs added
  *
  * Revision 1.75  2003/09/18 14:57:02  dkr
  * support for F_neg added
@@ -3818,6 +3818,7 @@ COMPPrfTake (node *arg_node, node *arg_info, node **check_reuse1, node **check_r
 {
     node *arg1, *arg2;
     ids *let_ids;
+    node *icm_args;
     node *ret_node;
 
     DBUG_ENTER ("COMPPrfTake");
@@ -3826,17 +3827,22 @@ COMPPrfTake (node *arg_node, node *arg_info, node **check_reuse1, node **check_r
     arg1 = PRF_ARG1 (arg_node);
     arg2 = PRF_ARG2 (arg_node);
 
-    DBUG_ASSERT ((0), "prf F_take_SxV not implemented yet!");
+    DBUG_ASSERT (((NODE_TYPE (arg1) == N_id) || (NODE_TYPE (arg1) == N_num)),
+                 "1st arg of F_take_SxV is neither N_id nor N_num!");
+    DBUG_ASSERT ((NODE_TYPE (arg2) == N_id), "2nd arg of F_take_SxV is no N_id!");
 
     (*check_reuse1) = NULL;
     (*check_reuse2) = NULL;
 
     (*get_dim) = MakeNum (1);
 
-    (*set_shape_icm) = MakeIcm3 ("ND_SET__SHAPE", DupIds_Id_NT (let_ids), MakeNum (1),
-                                 DupNode (arg1)); /* NT missing!!! */
+    icm_args
+      = MakeExprs (DupIds_Id_NT (let_ids),
+                   MakeExprs (DupId_NT (arg2), MakeExprs (DupNode_NT (arg1), NULL)));
 
-    ret_node = NULL;
+    (*set_shape_icm) = MakeIcm1 ("ND_PRF_TAKE__SHAPE", icm_args);
+
+    ret_node = MakeAssignIcm1 ("ND_PRF_TAKE__DATA", DupTree (icm_args), NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -3862,6 +3868,7 @@ COMPPrfDrop (node *arg_node, node *arg_info, node **check_reuse1, node **check_r
 {
     node *arg1, *arg2;
     ids *let_ids;
+    node *icm_args;
     node *ret_node;
 
     DBUG_ENTER ("COMPPrfDrop");
@@ -3870,16 +3877,22 @@ COMPPrfDrop (node *arg_node, node *arg_info, node **check_reuse1, node **check_r
     arg1 = PRF_ARG1 (arg_node);
     arg2 = PRF_ARG2 (arg_node);
 
-    DBUG_ASSERT ((0), "prf F_drop_SxV not implemented yet!");
+    DBUG_ASSERT (((NODE_TYPE (arg1) == N_id) || (NODE_TYPE (arg1) == N_num)),
+                 "1st arg of F_drop_SxV is neither N_id nor N_num!");
+    DBUG_ASSERT ((NODE_TYPE (arg2) == N_id), "2nd arg of F_drop_SxV is no N_id!");
 
     (*check_reuse1) = NULL;
     (*check_reuse2) = NULL;
 
     (*get_dim) = MakeNum (1);
 
-    (*set_shape_icm) = NULL;
+    icm_args
+      = MakeExprs (DupIds_Id_NT (let_ids),
+                   MakeExprs (DupId_NT (arg2), MakeExprs (DupNode_NT (arg1), NULL)));
 
-    ret_node = NULL;
+    (*set_shape_icm) = MakeIcm1 ("ND_PRF_DROP__SHAPE", icm_args);
+
+    ret_node = MakeAssignIcm1 ("ND_PRF_DROP__DATA", DupTree (icm_args), NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -3905,6 +3918,7 @@ COMPPrfCat (node *arg_node, node *arg_info, node **check_reuse1, node **check_re
 {
     node *arg1, *arg2;
     ids *let_ids;
+    node *icm_args;
     node *ret_node;
 
     DBUG_ENTER ("COMPPrfCat");
@@ -3913,16 +3927,20 @@ COMPPrfCat (node *arg_node, node *arg_info, node **check_reuse1, node **check_re
     arg1 = PRF_ARG1 (arg_node);
     arg2 = PRF_ARG2 (arg_node);
 
-    DBUG_ASSERT ((0), "prf F_cat_VxV not implemented yet!");
+    DBUG_ASSERT ((NODE_TYPE (arg1) == N_id), "1st arg of F_cat_SxV is no N_id!");
+    DBUG_ASSERT ((NODE_TYPE (arg2) == N_id), "2nd arg of F_cat_SxV is no N_id!");
 
     (*check_reuse1) = NULL;
     (*check_reuse2) = NULL;
 
     (*get_dim) = MakeNum (1);
 
-    (*set_shape_icm) = NULL;
+    icm_args = MakeExprs (DupIds_Id_NT (let_ids),
+                          MakeExprs (DupId_NT (arg1), MakeExprs (DupId_NT (arg2), NULL)));
 
-    ret_node = NULL;
+    (*set_shape_icm) = MakeIcm1 ("ND_PRF_CAT__SHAPE", icm_args);
+
+    ret_node = MakeAssignIcm1 ("ND_PRF_CAT__DATA", DupTree (icm_args), NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -4704,10 +4722,10 @@ COMP2Icm (node *arg_node, node *arg_info)
     name = ICM_NAME (arg_node);
     if (strstr (name, "USE_GENVAR_OFFSET") != NULL) {
         /*
-         * USE_GENVAR_OFFSET( off_nt, wl_nt)
+         * USE_GENVAR_OFFSET( off_NT, wl_NT)
          * does *not* consume its arguments! It is expanded to
-         *      off_nt = wl_nt__off    ,
-         * where 'off_nt' is a scalar and 'wl_nt__off' an internal variable!
+         *      off_NT = wl_NT__off    ,
+         * where 'off_NT' is a scalar and 'wl_NT__off' an internal variable!
          *   -> alloc memory for the first argument, if needed.
          *   -> ignore second argument.
          */
@@ -4724,10 +4742,10 @@ COMP2Icm (node *arg_node, node *arg_info)
                           MakeAssign (arg_node, NULL));
     } else if (strstr (name, "VECT2OFFSET") != NULL) {
         /*
-         * VECT2OFFSET( off_nt, ., from_nt, ...)
+         * VECT2OFFSET( off_NT, ., from_NT, ...)
          * needs RC on all but the first argument. It is expanded to
-         *      off_nt = ... from_nt ...    ,
-         * where 'off_nt' is a scalar variable.
+         *      off_NT = ... from_NT ...    ,
+         * where 'off_NT' is a scalar variable.
          *   -> alloc memory for the first argument, if needed.
          *   -> decrement the RCs of all but the first argument, if needed.
          */
@@ -4754,10 +4772,10 @@ COMP2Icm (node *arg_node, node *arg_info)
                           MakeAssign (arg_node, new_assigns));
     } else if (strstr (name, "IDXS2OFFSET") != NULL) {
         /*
-         * IDXS2OFFSET( off_nt, ., idxs_nt, ...)
+         * IDXS2OFFSET( off_NT, ., idxs_NT, ...)
          * needs RC on all but the first argument. It is expanded to
-         *      off_nt = ... idxs_nt[0] ...    ,
-         * where 'off_nt' is a scalar variable.
+         *      off_NT = ... idxs_NT[0] ...    ,
+         * where 'off_NT' is a scalar variable.
          *   -> alloc memory for the first argument, if needed.
          *   -> decrement the RCs of all but the first argument, if needed.
          */
@@ -6418,7 +6436,7 @@ COMP2Sync (node *arg_node, node *arg_info)
                     fold_type = GetFoldTypeTag (with_ids);
 
                     /*
-                     * <fold_type>, <accu_nt>
+                     * <fold_type>, <accu_NT>
                      */
                     fold_args
                       = MakeExprs (MakeId_Copy (fold_type),
