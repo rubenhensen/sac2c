@@ -1,5 +1,7 @@
 Makefile
 cmp_type.mac
+gen_pseudo_fun.c
+gen_pseudo_fun.h
 prim_fun.c
 prim_fun.h
 prim_fun_ft.mac
