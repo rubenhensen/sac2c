@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.6  1999/04/15 15:00:56  cg
+ * Now, enough memory is allocated for string representation
+ * of floating point numbers.
+ *
  * Revision 2.5  1999/04/14 16:25:41  jhs
  * int[*] removed for second try with empty arrays.
  *
@@ -157,7 +161,7 @@ Float2String (float val)
 
     DBUG_ENTER ("Float2String");
 
-    tmp_string = (char *)Malloc (sizeof (char) * 267);
+    tmp_string = (char *)Malloc (sizeof (char) * 270);
     /*
      * 256 chars + "." + "e+1000" + ".0f" + "\0" = 267
      */
@@ -195,7 +199,7 @@ Double2String (double val)
 
     DBUG_ENTER ("Double2String");
 
-    tmp_string = (char *)Malloc (sizeof (char) * 266);
+    tmp_string = (char *)Malloc (sizeof (char) * 270);
     /*
      * 256 chars + "." + "e+1000" + ".0" + "\0" = 266
      */
