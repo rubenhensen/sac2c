@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.26  1995/06/26 11:49:48  asi
+ * Revision 1.27  1995/06/26 15:39:16  asi
+ * Unrolling handeled as independent optimization now
+ *
+ * Revision 1.26  1995/06/26  11:49:48  asi
  * logical prim-functions will generate boolean results now
  *
  * Revision 1.25  1995/06/21  13:23:58  asi
@@ -106,7 +109,6 @@
 
 #include "optimize.h"
 #include "DupTree.h"
-#include "Unroll.h"
 #include "LoopInvariantRemoval.h"
 #include "ConstantFolding.h"
 
@@ -658,9 +660,6 @@ CFwhile (node *arg_node, node *arg_info)
             }
         }
         arg_node = OptTrav (arg_node, arg_info, 1); /* Trav while-body */
-        if (opt_unr) {
-            arg_node = Unroll (arg_node, arg_info);
-        }
         PopVL ();
         for (i = 0; i < TOS.vl_len; i++) {
             if (ReadMask (used_while, i) != 0) {
@@ -722,9 +721,6 @@ CFdo (node *arg_node, node *arg_info)
         tmp->node[1]->nnode = 0;
         FreeTree (tmp);
     } else {
-        if (opt_unr) {
-            arg_node = Unroll (arg_node, arg_info);
-        }
         PopVL2 ();
     }
     DBUG_RETURN (arg_node);
