@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2004/07/18 19:54:54  sah
+ * switch to new INFO structure
+ * PHASE I
+ * (as well some code cleanup)
+ *
  * Revision 1.7  2004/07/07 15:43:36  mwe
  * last changes undone (all changes connected to new type representation with ntype*)
  *
@@ -35,6 +40,8 @@
 
  *******************************************************************************/
 
+#define NEW_INFO
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -53,6 +60,13 @@
 #include "Inline.h"
 #include "DupTree.h"
 #include "SSAWithloopFolding.h"
+#include "SSAWLUnroll.h"
+
+/*
+ * INFO structure and macros
+ */
+
+#include "SSALUR_info.h"
 
 /* opfun is a higher oder function called from within ForEachElementHelp()
  * to create explicit code for one single array element. opfun have the
@@ -535,7 +549,7 @@ SSACheckUnrollModarray (node *wln)
 /******************************************************************************
  *
  * function:
- *   node *SSADoUnrollModarray(node *wln, node *arg_info)
+ *   node *SSADoUnrollModarray(node *wln, info *arg_info)
  *
  * description:
  *   Unrolls all N_Npart nodes which are marked in NPART_COPY.
@@ -543,7 +557,7 @@ SSACheckUnrollModarray (node *wln)
  ******************************************************************************/
 
 node *
-SSADoUnrollModarray (node *wln, node *arg_info)
+SSADoUnrollModarray (node *wln, info *arg_info)
 {
     node *partn, *res;
     void *arg[2];
@@ -558,8 +572,8 @@ SSADoUnrollModarray (node *wln, node *arg_info)
         if (!NPART_COPY (partn)) {
             /* unroll this part */
             opfun = CreateModGenarray;
-            arg[0] = partn;                                               /* (node*) */
-            arg[1] = LET_IDS (ASSIGN_INSTR (INFO_UNR_ASSIGN (arg_info))); /* (ids*) */
+            arg[0] = partn;                                                  /* (node*) */
+            arg[1] = LET_IDS (ASSIGN_INSTR (INFO_SSALUR_ASSIGN (arg_info))); /* (ids*) */
             opfunarg = arg;
             res = ForEachElement (partn, res);
         }
@@ -569,7 +583,7 @@ SSADoUnrollModarray (node *wln, node *arg_info)
 
     /* finally add Dupilcation of new array name */
     letn = MakeLet (DupTree (NWITH_ARRAY (wln)),
-                    DupOneIds (LET_IDS (ASSIGN_INSTR (INFO_UNR_ASSIGN (arg_info)))));
+                    DupOneIds (LET_IDS (ASSIGN_INSTR (INFO_SSALUR_ASSIGN (arg_info)))));
     res = MakeAssign (letn, res);
 
     DBUG_RETURN (res);
@@ -578,7 +592,7 @@ SSADoUnrollModarray (node *wln, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   int SSACheckUnrollGenarray( node *wln, node *arg_info)
+ *   int SSACheckUnrollGenarray( node *wln, info *arg_info)
  *
  * description:
  *   Unrolling of arrays is done if number of array elements is smaller
@@ -587,7 +601,7 @@ SSADoUnrollModarray (node *wln, node *arg_info)
  ******************************************************************************/
 
 int
-SSACheckUnrollGenarray (node *wln, node *arg_info)
+SSACheckUnrollGenarray (node *wln, info *arg_info)
 {
     int ok, length;
     node *genn;
@@ -595,7 +609,7 @@ SSACheckUnrollGenarray (node *wln, node *arg_info)
 
     DBUG_ENTER ("SSACheckUnrollGenarray");
 
-    type = IDS_TYPE (LET_IDS (ASSIGN_INSTR (INFO_UNR_ASSIGN (arg_info))));
+    type = IDS_TYPE (LET_IDS (ASSIGN_INSTR (INFO_SSALUR_ASSIGN (arg_info))));
     length = GetTypesLength (type);
 
     /*
@@ -625,7 +639,7 @@ SSACheckUnrollGenarray (node *wln, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSADoUnrollGenarray(node *wln, node *arg_info)
+ *   node *SSADoUnrollGenarray(node *wln, info *arg_info)
  *
  * description:
  *   Unrolls all N_Npart nodes which are marked in NPART_COPY.
@@ -633,7 +647,7 @@ SSACheckUnrollGenarray (node *wln, node *arg_info)
  ******************************************************************************/
 
 node *
-SSADoUnrollGenarray (node *wln, node *arg_info)
+SSADoUnrollGenarray (node *wln, info *arg_info)
 {
     node *partn, *res;
     node *letn, *let_expr;
@@ -644,7 +658,7 @@ SSADoUnrollGenarray (node *wln, node *arg_info)
     DBUG_ENTER ("SSADoUnrollGenarray");
 
     partn = NWITH_PART (wln);
-    arrayname = LET_IDS (ASSIGN_INSTR (INFO_UNR_ASSIGN (arg_info)));
+    arrayname = LET_IDS (ASSIGN_INSTR (INFO_SSALUR_ASSIGN (arg_info)));
 
     res = NULL;
     while (partn) {
@@ -660,8 +674,8 @@ SSADoUnrollGenarray (node *wln, node *arg_info)
     /*
      * finally add   arrayname = reshape( ..., [0,...,0])
      */
-    type = LET_TYPE (ASSIGN_INSTR (INFO_UNR_ASSIGN (arg_info)));
-    let_expr = CreateZeroFromType (type, TRUE, INFO_UNR_FUNDEF (arg_info));
+    type = LET_TYPE (ASSIGN_INSTR (INFO_SSALUR_ASSIGN (arg_info)));
+    let_expr = CreateZeroFromType (type, TRUE, INFO_SSALUR_FUNDEF (arg_info));
     letn = MakeLet (let_expr, DupOneIds (arrayname));
     res = MakeAssign (letn, res);
 
@@ -722,10 +736,10 @@ SSACheckUnrollFold (node *wln)
 /******************************************************************************
  *
  * function:
- *   node *SSADoUnrollFold(node *wln, node *arg_info)
+ *   node *SSADoUnrollFold(node *wln, info *arg_info)
  *
  * description:
- *   INFO_UNR_FUNDEF( arg_info) contains the pointer to the N_fundef node
+ *   INFO_SSALUR_FUNDEF( arg_info) contains the pointer to the N_fundef node
  *     where this WL is situated in.
  *
  *   Unroll fold WL:
@@ -736,7 +750,7 @@ SSACheckUnrollFold (node *wln)
  ******************************************************************************/
 
 node *
-SSADoUnrollFold (node *wln, node *arg_info)
+SSADoUnrollFold (node *wln, info *arg_info)
 {
     node *partn, *res;
     void *arg[5];
@@ -750,11 +764,11 @@ SSADoUnrollFold (node *wln, node *arg_info)
     while (partn != NULL) {
         /* unroll this part */
         opfun = CreateFold;
-        arg[0] = partn;                                               /* N_Npart node */
-        arg[1] = LET_IDS (ASSIGN_INSTR (INFO_UNR_ASSIGN (arg_info))); /* (ids*)  */
-        arg[2] = NCODE_CEXPR (NPART_CODE (partn));                    /* (node*) */
-        arg[3] = NWITH_WITHOP (wln);                                  /* N_Nwithop node */
-        arg[4] = INFO_UNR_FUNDEF (arg_info);                          /* N_fundef node */
+        arg[0] = partn; /* N_Npart node */
+        arg[1] = LET_IDS (ASSIGN_INSTR (INFO_SSALUR_ASSIGN (arg_info))); /* (ids*)  */
+        arg[2] = NCODE_CEXPR (NPART_CODE (partn));                       /* (node*) */
+        arg[3] = NWITH_WITHOP (wln);            /* N_Nwithop node */
+        arg[4] = INFO_SSALUR_FUNDEF (arg_info); /* N_fundef node */
         opfunarg = arg;
         res = ForEachElement (partn, res);
 
@@ -763,7 +777,7 @@ SSADoUnrollFold (node *wln, node *arg_info)
 
     /* finally add initialisation of accumulator with neutral element. */
     letn = MakeLet (DupTree (NWITH_NEUTRAL (wln)),
-                    DupOneIds (LET_IDS (ASSIGN_INSTR (INFO_UNR_ASSIGN (arg_info)))));
+                    DupOneIds (LET_IDS (ASSIGN_INSTR (INFO_SSALUR_ASSIGN (arg_info)))));
 
     res = MakeAssign (letn, res);
 

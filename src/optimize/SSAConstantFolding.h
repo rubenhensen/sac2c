@@ -1,5 +1,10 @@
 /*
  * $Log$
+ * Revision 1.9  2004/07/18 19:54:54  sah
+ * switch to new INFO structure
+ * PHASE I
+ * (as well some code cleanup)
+ *
  * Revision 1.8  2004/03/05 19:14:27  mwe
  * SSACFfuncond added
  *
@@ -59,19 +64,19 @@ struct_constant *SCOFreeStructConstant (struct_constant *struc_co);
 extern node *SSAConstantFolding (node *fundef, node *modul);
 
 /* traversal functions */
-extern node *SSACFfundef (node *arg_node, node *arg_info);
-extern node *SSACFblock (node *arg_node, node *arg_info);
-extern node *SSACFarg (node *arg_node, node *arg_info);
-extern node *SSACFassign (node *arg_node, node *arg_info);
-extern node *SSACFcond (node *arg_node, node *arg_info);
-extern node *SSACFreturn (node *arg_node, node *arg_info);
-extern node *SSACFlet (node *arg_node, node *arg_info);
-extern node *SSACFap (node *arg_node, node *arg_info);
-extern node *SSACFid (node *arg_node, node *arg_info);
-extern node *SSACFarray (node *arg_node, node *arg_info);
-extern node *SSACFprf (node *arg_node, node *arg_info);
-extern node *SSACFNgen (node *arg_node, node *arg_info);
-extern node *SSACFfuncond (node *arg_node, node *arg_info);
+extern node *SSACFfundef (node *arg_node, info *arg_info);
+extern node *SSACFblock (node *arg_node, info *arg_info);
+extern node *SSACFarg (node *arg_node, info *arg_info);
+extern node *SSACFassign (node *arg_node, info *arg_info);
+extern node *SSACFcond (node *arg_node, info *arg_info);
+extern node *SSACFreturn (node *arg_node, info *arg_info);
+extern node *SSACFlet (node *arg_node, info *arg_info);
+extern node *SSACFap (node *arg_node, info *arg_info);
+extern node *SSACFid (node *arg_node, info *arg_info);
+extern node *SSACFarray (node *arg_node, info *arg_info);
+extern node *SSACFprf (node *arg_node, info *arg_info);
+extern node *SSACFNgen (node *arg_node, info *arg_info);
+extern node *SSACFfuncond (node *arg_node, info *arg_info);
 
 extern node *SSACFFoldPrfExpr (prf op, node **arg_expr);
 

@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2004/07/18 19:54:54  sah
+ * switch to new INFO structure
+ * PHASE I
+ * (as well some code cleanup)
+ *
  * Revision 1.7  2004/07/07 15:43:36  mwe
  * last changes undone (all changes connected to new type representation with ntype*)
  *
@@ -57,6 +62,8 @@
  *   In the future this should be extended to with-loops.
  */
 
+#define NEW_INFO
+
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -82,12 +89,59 @@ typedef struct REPLACELIST {
     struct REPLACELIST *next;
 } replacelist;
 
-#define INFO_SP_DIRECTION(n) (n->flag)
-#define INFO_SP_POSSIBLE(n) ((bool)(n->counter))
-#define INFO_SP_FUNDEF(n) (n->node[0])
-#define INFO_SP_MODUL(n) (n->node[1])
-#define INFO_SP_WITHIDLIST(n) ((withidlist *)(n->node[2]))
-#define INFO_SP_REPLACELIST(n) ((replacelist *)(n->node[3]))
+/*
+ * INFO structure
+ */
+struct INFO {
+    int direction;
+    bool possible;
+    node *fundef;
+    node *modul;
+    withidlist *withidlist;
+    replacelist *replacelist;
+};
+
+/*
+ * INFO macros
+ */
+#define INFO_SP_DIRECTION(n) (n->direction)
+#define INFO_SP_POSSIBLE(n) (n->possible)
+#define INFO_SP_FUNDEF(n) (n->fundef)
+#define INFO_SP_MODUL(n) (n->modul)
+#define INFO_SP_WITHIDLIST(n) (n->withidlist)
+#define INFO_SP_REPLACELIST(n) (n->replacelist)
+
+/*
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = Malloc (sizeof (info));
+
+    INFO_SP_DIRECTION (result) = 0;
+    INFO_SP_POSSIBLE (result) = FALSE;
+    INFO_SP_FUNDEF (result) = NULL;
+    INFO_SP_MODUL (result) = NULL;
+    INFO_SP_WITHIDLIST (result) = NULL;
+    INFO_SP_REPLACELIST (result) = NULL;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = Free (info);
+
+    DBUG_RETURN (info);
+}
 
 #define SP_DIRDOWN TRUE
 #define SP_DIRUP FALSE
@@ -96,13 +150,13 @@ typedef struct REPLACELIST {
 #define SP_POSSIBLE TRUE
 
 /* internal functions for traversing ids like nodes */
-static ids *TravLeftIDS (ids *arg_ids, node *arg_info);
-static ids *SPleftids (ids *arg_ids, node *arg_info);
-static ids *TravRightIDS (ids *arg_ids, node *arg_info);
-static ids *SPrightids (ids *arg_ids, node *arg_info);
+static ids *TravLeftIDS (ids *arg_ids, info *arg_info);
+static ids *SPleftids (ids *arg_ids, info *arg_info);
+static ids *TravRightIDS (ids *arg_ids, info *arg_info);
+static ids *SPrightids (ids *arg_ids, info *arg_info);
 
 void
-PushWithid (node *withid, node *arg_info)
+PushWithid (node *withid, info *arg_info)
 {
     withidlist *widl;
 
@@ -114,7 +168,7 @@ PushWithid (node *withid, node *arg_info)
 }
 
 void
-PopWithid (node *arg_info)
+PopWithid (info *arg_info)
 {
     withidlist *tmp;
     replacelist *rtmp, *rtmp2;
@@ -150,7 +204,7 @@ PopWithid (node *arg_info)
 }
 
 void
-CheckAddToReplaceList (node *assign, node *arg_info)
+CheckAddToReplaceList (node *assign, info *arg_info)
 {
     node *array;
     withidlist *widl;
@@ -204,7 +258,7 @@ CheckAddToReplaceList (node *assign, node *arg_info)
 }
 
 node *
-TryReplaceSelection (node *assign, node *arg_info)
+TryReplaceSelection (node *assign, info *arg_info)
 {
     node *sel;
     node *tmpnode;
@@ -267,7 +321,7 @@ TryReplaceSelection (node *assign, node *arg_info)
 }
 
 node *
-ReplaceSelection (node *arg_node, node *arg_info)
+ReplaceSelection (node *arg_node, info *arg_info)
 {
 
     if (NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_let) {
@@ -340,7 +394,7 @@ getScalarPrf (prf Prf)
 }
 
 node *
-selectOrIdentity (node *arg, node *index, bool isArray, types *t, node *arg_info)
+selectOrIdentity (node *arg, node *index, bool isArray, types *t, info *arg_info)
 {
     node *vardec = NULL;
     node *tmp;
@@ -359,7 +413,7 @@ selectOrIdentity (node *arg, node *index, bool isArray, types *t, node *arg_info
 }
 
 node *
-propagateSelection (node *arg_node, node *arg_info)
+propagateSelection (node *arg_node, info *arg_info)
 {
 
     node *origop;
@@ -418,14 +472,14 @@ propagateSelection (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SPwith(node *arg_node , node *arg_info)
+ *   node *SPwith(node *arg_node , info *arg_info)
  *
  * description:
  *   traverses withop, code and partitions of withloop
  *
  *****************************************************************************/
 node *
-SPwith (node *arg_node, node *arg_info)
+SPwith (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SPwith");
 
@@ -458,14 +512,14 @@ SPwith (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SPpart(node *arg_node , node *arg_info)
+ *   node *SPpart(node *arg_node , info *arg_info)
  *
  * description:
  *   traverses generator, withid and next part
  *
  *****************************************************************************/
 node *
-SPpart (node *arg_node, node *arg_info)
+SPpart (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SPpart");
 
@@ -492,7 +546,7 @@ SPpart (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SPwithid(node *arg_node , node *arg_info)
+ *   node *SPwithid(node *arg_node , info *arg_info)
  *
  * description:
  *   traverses vector and scalars in order to prevent selection propagation
@@ -500,7 +554,7 @@ SPpart (node *arg_node, node *arg_info)
  *
  *****************************************************************************/
 node *
-SPwithid (node *arg_node, node *arg_info)
+SPwithid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SPwithid");
 
@@ -522,14 +576,14 @@ SPwithid (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SPcode(node *arg_node , node *arg_info)
+ *   node *SPcode(node *arg_node , info *arg_info)
  *
  * description:
  *   traverses expr, block and next in this order
  *
  *****************************************************************************/
 node *
-SPcode (node *arg_node, node *arg_info)
+SPcode (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SPcode");
 
@@ -556,7 +610,7 @@ SPcode (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SParg(node *arg_node , node *arg_info)
+ *   node *SParg(node *arg_node , info *arg_info)
  *
  * description:
  *   removes all args from function signature that have not been used in the
@@ -565,7 +619,7 @@ SPcode (node *arg_node, node *arg_info)
  *
  *****************************************************************************/
 node *
-SParg (node *arg_node, node *arg_info)
+SParg (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SParg");
 
@@ -582,15 +636,15 @@ SParg (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SPap(node *arg_node , node *arg_info)
+ *   node *SPap(node *arg_node , info *arg_info)
  *
  * description:
  *
  *****************************************************************************/
 node *
-SPap (node *arg_node, node *arg_info)
+SPap (node *arg_node, info *arg_info)
 {
-    node *new_arg_info;
+    info *new_arg_info;
 
     DBUG_ENTER ("SPap");
 
@@ -613,7 +667,7 @@ SPap (node *arg_node, node *arg_info)
                            FUNDEF_NAME (AP_FUNDEF (arg_node)),
                            FUNDEF_NAME (INFO_SP_FUNDEF (arg_info))));
 
-        new_arg_info = FreeTree (new_arg_info);
+        new_arg_info = FreeInfo (new_arg_info);
     } else {
         DBUG_PRINT ("SP", ("do not traverse in normal fundef %s",
                            FUNDEF_NAME (AP_FUNDEF (arg_node))));
@@ -633,13 +687,13 @@ SPap (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SPprf(node *arg_node , node *arg_info)
+ *   node *SPprf(node *arg_node , info *arg_info)
  *
  * description:
  *
  *****************************************************************************/
 node *
-SPprf (node *arg_node, node *arg_info)
+SPprf (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SPprf");
 
@@ -653,13 +707,13 @@ SPprf (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SPlet(node *arg_node , node *arg_info)
+ *   node *SPlet(node *arg_node , info *arg_info)
  *
  * description:
  *
  *****************************************************************************/
 node *
-SPlet (node *arg_node, node *arg_info)
+SPlet (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SPlet");
 
@@ -703,13 +757,13 @@ SPlet (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SPassign(node *arg_node , node *arg_info)
+ *   node *SPassign(node *arg_node , info *arg_info)
  *
  * description:
  *
  *****************************************************************************/
 node *
-SPassign (node *arg_node, node *arg_info)
+SPassign (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SPassign");
 
@@ -741,14 +795,14 @@ SPassign (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SPreturn(node *arg_node , node *arg_info)
+ *   node *SPreturn(node *arg_node , info *arg_info)
  *
  * description:
  *   starts traversal of return expressions to mark them as needed.
  *
  *****************************************************************************/
 node *
-SPreturn (node *arg_node, node *arg_info)
+SPreturn (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SPreturn");
 
@@ -764,14 +818,14 @@ SPreturn (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SPid(node *arg_node , node *arg_info)
+ *   node *SPid(node *arg_node , info *arg_info)
  *
  * description:
  *   "traverses" the contained ids structure.
  *
  *****************************************************************************/
 node *
-SPid (node *arg_node, node *arg_info)
+SPid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SPid");
 
@@ -784,13 +838,13 @@ SPid (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   static ids *SPleftids(ids *arg_ids, node *arg_info)
+ *   static ids *SPleftids(ids *arg_ids, info *arg_info)
  *
  * description:
  *
  *****************************************************************************/
 static ids *
-SPleftids (ids *arg_ids, node *arg_info)
+SPleftids (ids *arg_ids, info *arg_info)
 {
     DBUG_ENTER ("SPleftids");
 
@@ -809,13 +863,13 @@ SPleftids (ids *arg_ids, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   static ids *SPrightids(ids *arg_ids, node *arg_info)
+ *   static ids *SPrightids(ids *arg_ids, info *arg_info)
  *
  * description:
  *
  *****************************************************************************/
 static ids *
-SPrightids (ids *arg_ids, node *arg_info)
+SPrightids (ids *arg_ids, info *arg_info)
 {
     DBUG_ENTER ("SPrightids");
 
@@ -835,7 +889,7 @@ SPrightids (ids *arg_ids, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   static ids *TravLeftIDS(ids *arg_ids, node *arg_info)
+ *   static ids *TravLeftIDS(ids *arg_ids, info *arg_info)
  *
  * description:
  *  implements a similar traversal mechanism like Trav() for IDS chains.
@@ -843,7 +897,7 @@ SPrightids (ids *arg_ids, node *arg_info)
  *
  *****************************************************************************/
 static ids *
-TravLeftIDS (ids *arg_ids, node *arg_info)
+TravLeftIDS (ids *arg_ids, info *arg_info)
 {
     DBUG_ENTER ("TravLeftIDS");
 
@@ -856,7 +910,7 @@ TravLeftIDS (ids *arg_ids, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   static ids *TravRightIDS(ids *arg_ids, node *arg_info)
+ *   static ids *TravRightIDS(ids *arg_ids, info *arg_info)
  *
  * description:
  *  implements a similar traversal mechanism like Trav() for IDS chains.
@@ -864,7 +918,7 @@ TravLeftIDS (ids *arg_ids, node *arg_info)
  *
  *****************************************************************************/
 static ids *
-TravRightIDS (ids *arg_ids, node *arg_info)
+TravRightIDS (ids *arg_ids, info *arg_info)
 {
     DBUG_ENTER ("TravRightIDS");
 
@@ -877,7 +931,7 @@ TravRightIDS (ids *arg_ids, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SPfundef(node *arg_node , node *arg_info)
+ *   node *SPfundef(node *arg_node , info *arg_info)
  *
  * description:
  *   Starts the traversal of a given fundef. Does NOT traverse to
@@ -885,7 +939,7 @@ TravRightIDS (ids *arg_ids, node *arg_info)
  *
  *****************************************************************************/
 node *
-SPfundef (node *arg_node, node *arg_info)
+SPfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SPfundef");
 
@@ -923,7 +977,7 @@ SPfundef (node *arg_node, node *arg_info)
 node *
 SelectionPropagation (node *fundef, node *modul)
 {
-    node *arg_info;
+    info *arg_info;
     funtab *old_tab;
 
     DBUG_ENTER ("SelectionPropagation");
@@ -945,7 +999,7 @@ SelectionPropagation (node *fundef, node *modul)
 
         act_tab = old_tab;
 
-        arg_info = FreeTree (arg_info);
+        arg_info = FreeInfo (arg_info);
     }
     DBUG_RETURN (fundef);
 }

@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.40  2004/07/18 19:54:54  sah
+ * switch to new INFO structure
+ * PHASE I
+ * (as well some code cleanup)
+ *
  * Revision 1.39  2004/07/07 15:43:36  mwe
  * last changes undone (all changes connected to new type representation with ntype*)
  *
@@ -182,6 +187,8 @@
  *
  *****************************************************************************/
 
+#define NEW_INFO
+
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -195,10 +202,67 @@
 #include "compare_tree.h"
 #include "optimize.h"
 
+/*
+ * INFO structure
+ */
+struct INFO {
+    bool remassign;
+    node *fundef;
+    node *cse;
+    node *modul;
+    node *assign;
+    bool recfunap;
+    nodelist *resultarg;
+};
+
+/*
+ * INFO macros
+ */
+#define INFO_SSACSE_REMASSIGN(n) (n->remassign)
+#define INFO_SSACSE_FUNDEF(n) (n->fundef)
+#define INFO_SSACSE_CSE(n) (n->cse)
+#define INFO_SSACSE_MODUL(n) (n->modul)
+#define INFO_SSACSE_ASSIGN(n) (n->assign)
+#define INFO_SSACSE_RECFUNAP(n) (n->recfunap)
+#define INFO_SSACSE_RESULTARG(n) (n->resultarg)
+
+/*
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = Malloc (sizeof (info));
+
+    INFO_SSACSE_REMASSIGN (result) = FALSE;
+    INFO_SSACSE_FUNDEF (result) = NULL;
+    INFO_SSACSE_CSE (result) = NULL;
+    INFO_SSACSE_MODUL (result) = NULL;
+    INFO_SSACSE_ASSIGN (result) = NULL;
+    INFO_SSACSE_RECFUNAP (result) = FALSE;
+    INFO_SSACSE_RESULTARG (result) = NULL;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = Free (info);
+
+    DBUG_RETURN (info);
+}
+
 typedef enum { THENPART, ELSEPART } condpart;
 
-static ids *TravIDS (ids *arg_ids, node *arg_info);
-static ids *SSACSEids (ids *arg_ids, node *arg_info);
+static ids *TravIDS (ids *arg_ids, info *arg_info);
+static ids *SSACSEids (ids *arg_ids, info *arg_info);
 
 /* functions to handle cseinfo chains */
 static node *AddCSEinfo (node *cseinfo, node *let);
@@ -873,7 +937,7 @@ GetApAvisOfArgAvis (node *arg_avis, node *fundef)
 /******************************************************************************
  *
  * function:
- *   node *SSACSEfundef(node *arg_node, node *arg_info)
+ *   node *SSACSEfundef(node *arg_node, info *arg_info)
  *
  * description:
  *   traverses args for initialization.
@@ -883,7 +947,7 @@ GetApAvisOfArgAvis (node *arg_avis, node *fundef)
  *
  *****************************************************************************/
 node *
-SSACSEfundef (node *arg_node, node *arg_info)
+SSACSEfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSACSEfundef");
 
@@ -912,14 +976,14 @@ SSACSEfundef (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSACSEarg( node *arg_node, node *arg_info)
+ *   node *SSACSEarg( node *arg_node, info *arg_info)
  *
  * description:
  *   traverses chain of args to init SUBST attribute with NULL.
  *
  *****************************************************************************/
 node *
-SSACSEarg (node *arg_node, node *arg_info)
+SSACSEarg (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSACSEarg");
 
@@ -934,7 +998,7 @@ SSACSEarg (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSACSEblock( node *arg_node, node *arg_info)
+ *   node *SSACSEblock( node *arg_node, info *arg_info)
  *
  * description:
  *   traverses chain of vardecs for initialization.
@@ -945,7 +1009,7 @@ SSACSEarg (node *arg_node, node *arg_info)
  *
  *****************************************************************************/
 node *
-SSACSEblock (node *arg_node, node *arg_info)
+SSACSEblock (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSACSEblock");
 
@@ -976,7 +1040,7 @@ SSACSEblock (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSACSEvardec(node *arg_node, node *arg_info)
+ *   node *SSACSEvardec(node *arg_node, info *arg_info)
  *
  * description:
  *   traverse chain of vardecs to init avis subst attribute.
@@ -984,7 +1048,7 @@ SSACSEblock (node *arg_node, node *arg_info)
  *
  *****************************************************************************/
 node *
-SSACSEvardec (node *arg_node, node *arg_info)
+SSACSEvardec (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSACSEvardec");
 
@@ -1000,14 +1064,14 @@ SSACSEvardec (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSACSEassign (node *arg_node, node *arg_info)
+ *   node *SSACSEassign (node *arg_node, info *arg_info)
  *
  * description:
  *   traverses assignment chain top-down and removes unused assignment.
  *
  *****************************************************************************/
 node *
-SSACSEassign (node *arg_node, node *arg_info)
+SSACSEassign (node *arg_node, info *arg_info)
 {
     node *old_assign;
     bool remassign;
@@ -1042,7 +1106,7 @@ SSACSEassign (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSACSEcond(node *arg_node, node *arg_info)
+ *   node *SSACSEcond(node *arg_node, info *arg_info)
  *
  * description:
  *   the stacking of available cse-expressions for both parts of the
@@ -1051,7 +1115,7 @@ SSACSEassign (node *arg_node, node *arg_info)
  *
  *****************************************************************************/
 node *
-SSACSEcond (node *arg_node, node *arg_info)
+SSACSEcond (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSACSEcond");
 
@@ -1074,7 +1138,7 @@ SSACSEcond (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSACSEreturn(node *arg_node, node *arg_info)
+ *   node *SSACSEreturn(node *arg_node, info *arg_info)
  *
  * description:
  *  traverses the result expressions and starts analysis of return values
@@ -1082,7 +1146,7 @@ SSACSEcond (node *arg_node, node *arg_info)
  *
  *****************************************************************************/
 node *
-SSACSEreturn (node *arg_node, node *arg_info)
+SSACSEreturn (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSACSEreturn");
 
@@ -1110,7 +1174,7 @@ SSACSEreturn (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSACSElet( node *arg_node, node *arg_info)
+ *   node *SSACSElet( node *arg_node, info *arg_info)
  *
  * description:
  *   first do a variable substitution on the right side expression (but
@@ -1128,7 +1192,7 @@ SSACSEreturn (node *arg_node, node *arg_info)
  *
  *****************************************************************************/
 node *
-SSACSElet (node *arg_node, node *arg_info)
+SSACSElet (node *arg_node, info *arg_info)
 {
     node *match;
     nodetype nt_expr;
@@ -1337,7 +1401,7 @@ SSACSElet (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSACSEap(node *arg_node, node *arg_info)
+ *   node *SSACSEap(node *arg_node, info *arg_info)
  *
  * description:
  *   traverses parameter to do correct variable substitution.
@@ -1345,9 +1409,9 @@ SSACSElet (node *arg_node, node *arg_info)
  *
  *****************************************************************************/
 node *
-SSACSEap (node *arg_node, node *arg_info)
+SSACSEap (node *arg_node, info *arg_info)
 {
-    node *new_arg_info;
+    info *new_arg_info;
     DBUG_ENTER ("SSACSEap");
 
     DBUG_ASSERT ((AP_FUNDEF (arg_node) != NULL), "missing fundef in ap-node");
@@ -1408,7 +1472,7 @@ SSACSEap (node *arg_node, node *arg_info)
          */
         INFO_SSACSE_RESULTARG (arg_info) = INFO_SSACSE_RESULTARG (new_arg_info);
 
-        new_arg_info = FreeTree (new_arg_info);
+        new_arg_info = FreeInfo (new_arg_info);
 
     } else {
         DBUG_PRINT ("SSACSE", ("do not traverse in normal fundef %s",
@@ -1421,14 +1485,14 @@ SSACSEap (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSACSEid( node *arg_node, node *arg_info)
+ *   node *SSACSEid( node *arg_node, info *arg_info)
  *
  * description:
  *   traverse ids data to do substitution.
  *
  *****************************************************************************/
 node *
-SSACSEid (node *arg_node, node *arg_info)
+SSACSEid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSACSEid");
 
@@ -1440,7 +1504,7 @@ SSACSEid (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSACSENwith(node *arg_node, node *arg_info)
+ *   node *SSACSENwith(node *arg_node, info *arg_info)
  *
  * description:
  *   traverse NPart, Nwithop and NCode in this order
@@ -1448,7 +1512,7 @@ SSACSEid (node *arg_node, node *arg_info)
  *
  *****************************************************************************/
 node *
-SSACSENwith (node *arg_node, node *arg_info)
+SSACSENwith (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSACSENwith");
 
@@ -1473,7 +1537,7 @@ SSACSENwith (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSACSENcode(node *arg_node, node *arg_info)
+ *   node *SSACSENcode(node *arg_node, info *arg_info)
  *
  * description:
  *   traverse codeblock and expressions for each Ncode node
@@ -1481,7 +1545,7 @@ SSACSENwith (node *arg_node, node *arg_info)
  *
  *****************************************************************************/
 node *
-SSACSENcode (node *arg_node, node *arg_info)
+SSACSENcode (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSACSENcode");
 
@@ -1506,7 +1570,7 @@ SSACSENcode (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   ids *SSACSEids( ids *arg_ids, node *arg_info)
+ *   ids *SSACSEids( ids *arg_ids, info *arg_info)
  *
  * description:
  *   Traverses chain of ids to do variable substitution as annotated in
@@ -1519,7 +1583,7 @@ SSACSENcode (node *arg_node, node *arg_info)
  *
  *****************************************************************************/
 static ids *
-SSACSEids (ids *arg_ids, node *arg_info)
+SSACSEids (ids *arg_ids, info *arg_info)
 {
     DBUG_ENTER ("SSACSEids");
 
@@ -1584,7 +1648,7 @@ SSACSEids (ids *arg_ids, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   ids *TravIDS(ids *arg_ids, node *arg_info)
+ *   ids *TravIDS(ids *arg_ids, info *arg_info)
  *
  * description:
  *   implements a simple TravIDS function like Trav for nodes to have
@@ -1592,7 +1656,7 @@ SSACSEids (ids *arg_ids, node *arg_info)
  *
  *****************************************************************************/
 static ids *
-TravIDS (ids *arg_ids, node *arg_info)
+TravIDS (ids *arg_ids, info *arg_info)
 {
     DBUG_ENTER ("TravIDS");
 
@@ -1617,7 +1681,7 @@ TravIDS (ids *arg_ids, node *arg_info)
 node *
 SSACSE (node *fundef, node *modul)
 {
-    node *arg_info;
+    info *arg_info;
     funtab *old_tab;
 
     DBUG_ENTER ("SSACSE");
@@ -1643,7 +1707,7 @@ SSACSE (node *fundef, node *modul)
 
         act_tab = old_tab;
 
-        arg_info = FreeTree (arg_info);
+        arg_info = FreeInfo (arg_info);
     }
 
     DBUG_RETURN (fundef);

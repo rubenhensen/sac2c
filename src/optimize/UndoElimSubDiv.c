@@ -1,5 +1,10 @@
 /* *
  * $Log$
+ * Revision 1.5  2004/07/18 19:54:54  sah
+ * switch to new INFO structure
+ * PHASE I
+ * (as well some code cleanup)
+ *
  * Revision 1.4  2004/07/07 15:57:05  mwe
  * former log-messages added
  *
@@ -17,6 +22,8 @@
  * date: 2003/04/26 20:58:44;  author: mwe;  state: Exp;
  * Initial revision
  */
+
+#define NEW_INFO
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -180,24 +187,22 @@ IsUndoCase (prf primf, node *tmp, node *tmp2)
 }
 
 node *
-UndoElimSubDiv (node *arg_node, node *a)
+UndoElimSubDiv (node *arg_node)
 {
-    node *arg_info;
     funtab *old_tab;
 
     DBUG_ENTER ("UndoEleminateSD");
 
     if (arg_node != NULL) {
-        arg_info = MakeInfo ();
+        DBUG_PRINT ("OPT", ("starting undo elim sub div on function %s",
+                            FUNDEF_NAME (arg_node)));
 
         old_tab = act_tab;
         act_tab = uesd_tab;
 
-        arg_node = Trav (arg_node, arg_info);
+        arg_node = Trav (arg_node, NULL);
 
         act_tab = old_tab;
-
-        arg_info = FreeTree (arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -206,7 +211,7 @@ UndoElimSubDiv (node *arg_node, node *a)
 /*****************************************************************************
  *
  * function:
- *   ALblock(node *arg_node, node *arg_info)
+ *   ALblock(node *arg_node, info *arg_info)
  *
  * description:
  *   store block-node for access to vardec-nodes
@@ -216,7 +221,7 @@ UndoElimSubDiv (node *arg_node, node *a)
  ****************************************************************************/
 
 node *
-UESDblock (node *arg_node, node *arg_info)
+UESDblock (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ESDblock");
 
@@ -234,7 +239,7 @@ UESDblock (node *arg_node, node *arg_info)
 /*****************************************************************************
  *
  * function:
- *   ALassign(node *arg_node, node *arg_info)
+ *   ALassign(node *arg_node, info *arg_info)
  *
  * description:
  *   Set flag ASSIGN_STATUS to mark unused nodes in optimization-process
@@ -248,7 +253,7 @@ UESDblock (node *arg_node, node *arg_info)
  ****************************************************************************/
 
 node *
-UESDassign (node *arg_node, node *arg_info)
+UESDassign (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ESDassign");
 
@@ -273,7 +278,7 @@ UESDassign (node *arg_node, node *arg_info)
 /*****************************************************************************
  *
  * function:
- *   ALlet(node *arg_node, node *arg_info)
+ *   ALlet(node *arg_node, info *arg_info)
  *
  * description:
  *   store current let-node to include last created new primitive-node
@@ -282,7 +287,7 @@ UESDassign (node *arg_node, node *arg_info)
  ****************************************************************************/
 
 node *
-UESDlet (node *arg_node, node *arg_info)
+UESDlet (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("UESDlet");
     if (LET_EXPR (arg_node) != NULL) {
@@ -304,7 +309,7 @@ UESDlet (node *arg_node, node *arg_info)
 /*****************************************************************************
  *
  * function:
- *   ALprf(node *arg_node, node *arg_info)
+ *   ALprf(node *arg_node, info *arg_info)
  *
  * description:
  *   If primitive is associative and commutative start optimization-routines:
@@ -319,7 +324,7 @@ UESDlet (node *arg_node, node *arg_info)
  ****************************************************************************/
 
 node *
-UESDprf (node *arg_node, node *arg_info)
+UESDprf (node *arg_node, info *arg_info)
 {
 
     node *newnode, *tmp;

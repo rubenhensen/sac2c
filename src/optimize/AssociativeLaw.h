@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2004/07/18 19:54:54  sah
+ * switch to new INFO structure
+ * PHASE I
+ * (as well some code cleanup)
+ *
  * Revision 1.8  2003/02/24 17:40:36  mwe
  * removed some functions
  *
@@ -40,10 +45,10 @@
 #ifndef _AssociativeLaw_h_
 #define _AssociativeLaw_h_
 
-extern node *AssociativeLaw (node *arg_node, node *);
-extern node *ALblock (node *, node *);
-extern node *ALassign (node *, node *);
-extern node *ALlet (node *, node *);
-extern node *ALprf (node *, node *);
+extern node *AssociativeLaw (node *arg_node);
+extern node *ALblock (node *, info *);
+extern node *ALassign (node *, info *);
+extern node *ALlet (node *, info *);
+extern node *ALprf (node *, info *);
 
 #endif

@@ -1,5 +1,10 @@
 /*
  * $Log$
+ * Revision 1.5  2004/07/18 19:54:54  sah
+ * switch to new INFO structure
+ * PHASE I
+ * (as well some code cleanup)
+ *
  * Revision 1.4  2001/04/02 11:08:20  nmw
  * handling for multiple used special functions added
  *
@@ -35,17 +40,17 @@
 
 extern node *SSACSE (node *fundef, node *modul);
 
-extern node *SSACSEfundef (node *arg_node, node *arg_info);
-extern node *SSACSEarg (node *arg_node, node *arg_info);
-extern node *SSACSEblock (node *arg_node, node *arg_info);
-extern node *SSACSEvardec (node *arg_node, node *arg_info);
-extern node *SSACSEassign (node *arg_node, node *arg_info);
-extern node *SSACSEcond (node *arg_node, node *arg_info);
-extern node *SSACSEreturn (node *arg_node, node *arg_info);
-extern node *SSACSElet (node *arg_node, node *arg_info);
-extern node *SSACSEap (node *arg_node, node *arg_info);
-extern node *SSACSEid (node *arg_node, node *arg_info);
-extern node *SSACSENwith (node *arg_node, node *arg_info);
-extern node *SSACSENcode (node *arg_node, node *arg_info);
+extern node *SSACSEfundef (node *arg_node, info *arg_info);
+extern node *SSACSEarg (node *arg_node, info *arg_info);
+extern node *SSACSEblock (node *arg_node, info *arg_info);
+extern node *SSACSEvardec (node *arg_node, info *arg_info);
+extern node *SSACSEassign (node *arg_node, info *arg_info);
+extern node *SSACSEcond (node *arg_node, info *arg_info);
+extern node *SSACSEreturn (node *arg_node, info *arg_info);
+extern node *SSACSElet (node *arg_node, info *arg_info);
+extern node *SSACSEap (node *arg_node, info *arg_info);
+extern node *SSACSEid (node *arg_node, info *arg_info);
+extern node *SSACSENwith (node *arg_node, info *arg_info);
+extern node *SSACSENcode (node *arg_node, info *arg_info);
 
 #endif /* SAC_SSACSE_H */

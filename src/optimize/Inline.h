@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2004/07/18 19:54:54  sah
+ * switch to new INFO structure
+ * PHASE I
+ * (as well some code cleanup)
+ *
  * Revision 3.7  2001/04/18 10:06:50  dkr
  * signature of InlineSingleApplication modified
  *
@@ -61,8 +66,8 @@
 extern node *Inline (node *arg_node);
 extern node *InlineSingleApplication (node *let, node *fundef);
 
-extern node *INLmodul (node *arg_node, node *arg_info);
-extern node *INLfundef (node *arg_node, node *arg_info);
-extern node *INLassign (node *arg_node, node *arg_info);
+extern node *INLmodul (node *arg_node, info *arg_info);
+extern node *INLfundef (node *arg_node, info *arg_info);
+extern node *INLassign (node *arg_node, info *arg_info);
 
 #endif /* _sac_Inline_h_ */

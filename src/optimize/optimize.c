@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.63  2004/07/18 19:54:54  sah
+ * switch to new INFO structure
+ * PHASE I
+ * (as well some code cleanup)
+ *
  * Revision 3.62  2004/07/14 23:23:37  sah
  * removed all old ssa optimizations and the use_ssaform flag
  *
@@ -290,6 +295,8 @@
  *
  */
 
+#define NEW_INFO
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -334,6 +341,45 @@
 #include "ConstVarPropagation.h"
 #include "WLPartitionGeneration.h"
 #include "WithloopFusion.h"
+
+/*
+ * INFO structure
+ */
+struct INFO {
+    node *modul;
+};
+
+/*
+ * INFO macros
+ */
+#define INFO_OPT_MODUL(n) (n->modul)
+
+/*
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = Malloc (sizeof (info));
+
+    INFO_OPT_MODUL (result) = NULL;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = Free (info);
+
+    DBUG_RETURN (info);
+}
 
 /**
  *
@@ -578,7 +624,7 @@ node *
 Optimize (node *arg_node)
 {
     funtab *tmp_tab;
-    node *arg_info;
+    info *arg_info;
 
     DBUG_ENTER ("Optimize");
 
@@ -593,7 +639,7 @@ Optimize (node *arg_node)
 
     Trav (arg_node, arg_info);
 
-    arg_info = FreeTree (arg_info);
+    arg_info = FreeInfo (arg_info);
 
     act_tab = tmp_tab;
 
@@ -617,7 +663,7 @@ Optimize (node *arg_node)
 
 /** <!--*********************************************************************-->
  *
- * @fn node *OPTmodul( node *arg_node, node *arg_info)
+ * @fn node *OPTmodul( node *arg_node, info *arg_info)
  *
  *   @brief this functions applies all those optimizations that are inter-procedural,
  *          i.e., Inlining (INL) and DeadFunctionRemoval (DFR).
@@ -654,7 +700,7 @@ Optimize (node *arg_node)
  ******************************************************************************/
 
 node *
-OPTmodul (node *arg_node, node *arg_info)
+OPTmodul (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("OPTmodul");
 
@@ -673,7 +719,7 @@ OPTmodul (node *arg_node, node *arg_info)
     }
 
     if (optimize & OPT_DFR) {
-        arg_node = DeadFunctionRemoval (arg_node, arg_info);
+        arg_node = DeadFunctionRemoval (arg_node);
     }
 
     if ((break_after == PH_sacopt) && (break_cycle_specifier == 0)
@@ -776,7 +822,7 @@ OPTmodul (node *arg_node, node *arg_info)
      * we apply DFR once again!
      */
     if (optimize & OPT_DFR) {
-        arg_node = DeadFunctionRemoval (arg_node, arg_info);
+        arg_node = DeadFunctionRemoval (arg_node);
     }
 
     if ((break_after == PH_sacopt) && (0 == strcmp (break_specifier, "dfr2"))) {
@@ -805,7 +851,7 @@ DONE:
 
 /** <!--*********************************************************************-->
  *
- * @fn node *OPTfundef( node *arg_node, node *arg_info)
+ * @fn node *OPTfundef( node *arg_node, info *arg_info)
  *
  *   @brief this function steers the intr-procedural optimization process.
  *
@@ -858,7 +904,7 @@ DONE:
  ******************************************************************************/
 
 node *
-OPTfundef (node *arg_node, node *arg_info)
+OPTfundef (node *arg_node, info *arg_info)
 {
     int mem_inl_fun = inl_fun;
     int mem_dead_expr = dead_expr;
@@ -1151,11 +1197,11 @@ OPTfundef (node *arg_node, node *arg_info)
             }
 
             if ((optimize & OPT_AL) || (optimize & OPT_DL)) {
-                arg_node = ElimSubDiv (arg_node, arg_info);
+                arg_node = ElimSubDiv (arg_node);
             }
 
             if (optimize & OPT_AL) {
-                arg_node = AssociativeLaw (arg_node, arg_info);
+                arg_node = AssociativeLaw (arg_node);
             }
 
             if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
@@ -1164,7 +1210,7 @@ OPTfundef (node *arg_node, node *arg_info)
             }
 
             if (optimize & OPT_DL) {
-                arg_node = DistributiveLaw (arg_node, arg_info);
+                arg_node = DistributiveLaw (arg_node);
             }
 
             if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
@@ -1189,7 +1235,7 @@ OPTfundef (node *arg_node, node *arg_info)
          */
 
         if (((optimize & OPT_AL) || (optimize & OPT_DL))) {
-            arg_node = UndoElimSubDiv (arg_node, arg_info);
+            arg_node = UndoElimSubDiv (arg_node);
         }
 
         /*

@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.57  2004/07/18 19:54:54  sah
+ * switch to new INFO structure
+ * PHASE I
+ * (as well some code cleanup)
+ *
  * Revision 1.56  2004/06/03 09:03:31  khf
  * Added support for prf F_idx_sel
  *
@@ -173,6 +178,8 @@
  *
  *****************************************************************************/
 
+#define NEW_INFO
+
 #include "dbug.h"
 #include "types.h"
 #include "tree_basic.h"
@@ -187,6 +194,72 @@
 #include "Inline.h"
 #include "compare_tree.h"
 #include "SSAConstantFolding.h"
+
+/*
+ * INFO struct
+ */
+struct INFO {
+    bool remassign;
+    node *fundef;
+    bool isconst;
+    node *postassign;
+    node *topblock;
+    node *results;
+    bool inlineap;
+    node *modul;
+    node *assign;
+    bool inlfundef;
+};
+
+/*
+ * INFO macros
+ */
+#define INFO_SSACF_REMASSIGN(n) (n->remassign)
+#define INFO_SSACF_FUNDEF(n) (n->fundef)
+#define INFO_SSACF_INSCONST(n) (n->isconst)
+#define INFO_SSACF_POSTASSIGN(n) (n->postassign)
+#define INFO_SSACF_TOPBLOCK(n) (n->topblock)
+#define INFO_SSACF_RESULTS(n) (n->results)
+#define INFO_SSACF_INLINEAP(n) (n->inlineap)
+#define INFO_SSACF_MODUL(n) (n->modul)
+#define INFO_SSACF_ASSIGN(n) (n->assign)
+#define INFO_SSACF_INLFUNDEF(n) (n->inlfundef)
+
+/*
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = Malloc (sizeof (info));
+
+    INFO_SSACF_REMASSIGN (result) = FALSE;
+    INFO_SSACF_FUNDEF (result) = NULL;
+    INFO_SSACF_INSCONST (result) = FALSE;
+    INFO_SSACF_POSTASSIGN (result) = NULL;
+    INFO_SSACF_TOPBLOCK (result) = NULL;
+    INFO_SSACF_RESULTS (result) = NULL;
+    INFO_SSACF_INLINEAP (result) = FALSE;
+    INFO_SSACF_MODUL (result) = NULL;
+    INFO_SSACF_ASSIGN (result) = NULL;
+    INFO_SSACF_INLFUNDEF (result) = FALSE;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = Free (info);
+
+    DBUG_RETURN (info);
+}
 
 /*
  * constant identifiers should be substituted by its constant value
@@ -244,14 +317,14 @@ struct STRUCT_CONSTANT {
 #define SCO_ELEMDIM(n) (SHGetDim (SCO_SHAPE (n)) - COGetDim (SCO_HIDDENCO (n)))
 
 /* local used helper functions */
-static ids *TravIDS (ids *arg_ids, node *arg_info);
-static ids *SSACFids (ids *arg_ids, node *arg_info);
+static ids *TravIDS (ids *arg_ids, info *arg_info);
+static ids *SSACFids (ids *arg_ids, info *arg_info);
 static node *SSACFPropagateConstants2Args (node *arg_chain, node *param_chain);
 static ids *SSACFSetSSAASSIGN (ids *chain, node *assign);
 static node **SSACFGetPrfArgs (node **array, node *prf_arg_chain, int max_args);
 static constant **SSACFArgs2Const (constant **co_array, node **arg_expr, int max_args);
 static shape *SSACFGetShapeOfExpr (node *expr);
-static node *RemovePhiCopyTargetAttributes (bool thenpart, node *arg_info);
+static void RemovePhiCopyTargetAttributes (bool thenpart, info *arg_info);
 
 /*
  * primitive functions for non full-constant expressions like:
@@ -1497,7 +1570,7 @@ SSACFSel (node *idx_expr, node *array_expr)
 /******************************************************************************
  *
  * function:
- *   node *RemovePhiCopyTargetAttributes(bool thenpart, node *arg_info)
+ *   node *RemovePhiCopyTargetAttributes(bool thenpart, info *arg_info)
  *
  * description:
  *   update all phi functions to the correct assign in thenpart (== TRUE)
@@ -1505,8 +1578,8 @@ SSACFSel (node *idx_expr, node *array_expr)
  *
  *****************************************************************************/
 
-static node *
-RemovePhiCopyTargetAttributes (bool thenpart, node *arg_info)
+static void
+RemovePhiCopyTargetAttributes (bool thenpart, info *arg_info)
 {
     node *phifun, *tmp, *del;
 
@@ -1549,7 +1622,7 @@ RemovePhiCopyTargetAttributes (bool thenpart, node *arg_info)
         }
     }
 
-    DBUG_RETURN (arg_info);
+    DBUG_VOID_RETURN;
 }
 
 /*
@@ -1559,7 +1632,7 @@ RemovePhiCopyTargetAttributes (bool thenpart, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* SSACFfundef(node *arg_node, node *arg_info)
+ *   node* SSACFfundef(node *arg_node, info *arg_info)
  *
  * description:
  *   traverses args and block in this order.
@@ -1569,7 +1642,7 @@ RemovePhiCopyTargetAttributes (bool thenpart, node *arg_info)
  *****************************************************************************/
 
 node *
-SSACFfundef (node *arg_node, node *arg_info)
+SSACFfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSACFfundef");
 
@@ -1594,7 +1667,7 @@ SSACFfundef (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* SSACFblock(node *arg_node, node *arg_info)
+ *   node* SSACFblock(node *arg_node, info *arg_info)
  *
  * description:
  *   traverses instructions only
@@ -1602,7 +1675,7 @@ SSACFfundef (node *arg_node, node *arg_info)
  *****************************************************************************/
 
 node *
-SSACFblock (node *arg_node, node *arg_info)
+SSACFblock (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSACFblock");
 
@@ -1621,7 +1694,7 @@ SSACFblock (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* SSACFarg(node *arg_node, node *arg_info)
+ *   node* SSACFarg(node *arg_node, info *arg_info)
  *
  * description:
  *   checks if only loop invariant arguments are constant
@@ -1630,7 +1703,7 @@ SSACFblock (node *arg_node, node *arg_info)
  *****************************************************************************/
 
 node *
-SSACFarg (node *arg_node, node *arg_info)
+SSACFarg (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSACFarg");
 
@@ -1652,7 +1725,7 @@ SSACFarg (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* SSACFassign(node *arg_node, node *arg_info)
+ *   node* SSACFassign(node *arg_node, info *arg_info)
  *
  * description:
  *   top-down traversal of assignments. in bottom-up return traversal remove
@@ -1662,7 +1735,7 @@ SSACFarg (node *arg_node, node *arg_info)
  *****************************************************************************/
 
 node *
-SSACFassign (node *arg_node, node *arg_info)
+SSACFassign (node *arg_node, info *arg_info)
 {
     bool remove_assignment;
     node *tmp;
@@ -1722,7 +1795,7 @@ SSACFassign (node *arg_node, node *arg_info)
  **********************************************************************/
 
 node *
-SSACFfuncond (node *arg_node, node *arg_info)
+SSACFfuncond (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSACFfuncond");
 
@@ -1747,8 +1820,7 @@ SSACFfuncond (node *arg_node, node *arg_info)
         /* ex special function can be simply inlined in calling context */
         INFO_SSACF_INLFUNDEF (arg_info) = TRUE;
         /*FUNDEF_VARDEC(INFO_SSACF_FUNDEF(arg_info))*/
-        arg_info
-          = RemovePhiCopyTargetAttributes (BOOL_VAL (COND_COND (arg_node)), arg_info);
+        RemovePhiCopyTargetAttributes (BOOL_VAL (COND_COND (arg_node)), arg_info);
     }
     DBUG_RETURN (arg_node);
 }
@@ -1756,7 +1828,7 @@ SSACFfuncond (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* SSACFcond(node *arg_node, node *arg_info)
+ *   node* SSACFcond(node *arg_node, info *arg_info)
  *
  * description:
  *   checks for constant conditional - removes corresponding counterpart
@@ -1767,7 +1839,7 @@ SSACFfuncond (node *arg_node, node *arg_info)
  *****************************************************************************/
 
 node *
-SSACFcond (node *arg_node, node *arg_info)
+SSACFcond (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSACFcond");
 
@@ -1846,13 +1918,12 @@ SSACFcond (node *arg_node, node *arg_info)
             FUNDEF_STATUS (INFO_SSACF_FUNDEF (arg_info)) = ST_regular;
             FUNDEF_USED (INFO_SSACF_FUNDEF (arg_info)) = USED_INACTIVE;
             /*FUNDEF_VARDEC(INFO_SSACF_FUNDEF(arg_info))*/
-            arg_info = RemovePhiCopyTargetAttributes (TRUE, arg_info);
+            RemovePhiCopyTargetAttributes (TRUE, arg_info);
         } else {
             /* ex special function can be simply inlined in calling context */
             INFO_SSACF_INLFUNDEF (arg_info) = TRUE;
             /*FUNDEF_VARDEC(INFO_SSACF_FUNDEF(arg_info))*/
-            arg_info
-              = RemovePhiCopyTargetAttributes (BOOL_VAL (COND_COND (arg_node)), arg_info);
+            RemovePhiCopyTargetAttributes (BOOL_VAL (COND_COND (arg_node)), arg_info);
         }
 
     } else {
@@ -1876,7 +1947,7 @@ SSACFcond (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* SSACFreturn(node *arg_node, node *arg_info)
+ *   node* SSACFreturn(node *arg_node, info *arg_info)
  *
  * description:
  *   do NOT substitute identifiers in return statement with their value!
@@ -1884,7 +1955,7 @@ SSACFcond (node *arg_node, node *arg_info)
  *****************************************************************************/
 
 node *
-SSACFreturn (node *arg_node, node *arg_info)
+SSACFreturn (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSACFreturn");
 
@@ -1900,7 +1971,7 @@ SSACFreturn (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* SSACFlet(node *arg_node, node *arg_info)
+ *   node* SSACFlet(node *arg_node, info *arg_info)
  *
  * description:
  *   checks expression for constant value and sets corresponding AVIS_SSACONST
@@ -1911,7 +1982,7 @@ SSACFreturn (node *arg_node, node *arg_info)
  *****************************************************************************/
 
 node *
-SSACFlet (node *arg_node, node *arg_info)
+SSACFlet (node *arg_node, info *arg_info)
 {
     ntype *computed_type, *inferred_type;
     constant *new_co;
@@ -2027,7 +2098,7 @@ SSACFlet (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* SSACFap(node *arg_node, node *arg_info)
+ *   node* SSACFap(node *arg_node, info *arg_info)
  *
  * description:
  *   propagate constants and traverse in special function
@@ -2035,9 +2106,9 @@ SSACFlet (node *arg_node, node *arg_info)
  *****************************************************************************/
 
 node *
-SSACFap (node *arg_node, node *arg_info)
+SSACFap (node *arg_node, info *arg_info)
 {
-    node *new_arg_info;
+    info *new_arg_info;
 
     DBUG_ENTER ("SSACFap");
 
@@ -2097,7 +2168,7 @@ SSACFap (node *arg_node, node *arg_info)
 
         DBUG_PRINT ("SSACF", ("traversal of special fundef %s finished\n",
                               FUNDEF_NAME (AP_FUNDEF (arg_node))));
-        new_arg_info = FreeTree (new_arg_info);
+        new_arg_info = FreeInfo (new_arg_info);
 
     } else {
         /* no traversal into a normal fundef */
@@ -2112,7 +2183,7 @@ SSACFap (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* SSACFid(node *arg_node, node *arg_info)
+ *   node* SSACFid(node *arg_node, info *arg_info)
  *
  * description:
  *   substitute identifers with their computed constant
@@ -2124,7 +2195,7 @@ SSACFap (node *arg_node, node *arg_info)
  *****************************************************************************/
 
 node *
-SSACFid (node *arg_node, node *arg_info)
+SSACFid (node *arg_node, info *arg_info)
 {
     node *new_node;
     int dim;
@@ -2155,7 +2226,7 @@ SSACFid (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* SSACFarray(node *arg_node, node *arg_info)
+ *   node* SSACFarray(node *arg_node, info *arg_info)
  *
  * description:
  *   traverses array elements to propagate constant identifiers
@@ -2163,7 +2234,7 @@ SSACFid (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-SSACFarray (node *arg_node, node *arg_info)
+SSACFarray (node *arg_node, info *arg_info)
 {
     node *newelems = NULL;
     node *oldelems, *tmp;
@@ -2225,7 +2296,7 @@ SSACFarray (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* SSACFprf(node *arg_node, node *arg_info)
+ *   node* SSACFprf(node *arg_node, info *arg_info)
  *
  * description:
  *   evaluates primitive function with constant paramters and substitutes
@@ -2234,7 +2305,7 @@ SSACFarray (node *arg_node, node *arg_info)
  *****************************************************************************/
 
 node *
-SSACFprf (node *arg_node, node *arg_info)
+SSACFprf (node *arg_node, info *arg_info)
 {
     node *new_node;
     node *arg_expr_mem[PRF_MAX_ARGS];
@@ -2272,7 +2343,7 @@ SSACFprf (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSACFids(node *arg_ids, node *arg_info)
+ *   node *SSACFids(info *arg_ids, node *arg_info)
  *
  * description:
  *   traverse ids chain and return exprs chain (stored in INFO_SSACF_RESULT)
@@ -2284,7 +2355,7 @@ SSACFprf (node *arg_node, node *arg_info)
  *****************************************************************************/
 
 static ids *
-SSACFids (ids *arg_ids, node *arg_info)
+SSACFids (ids *arg_ids, info *arg_info)
 {
     constant *new_co;
     node *assign_let;
@@ -2352,7 +2423,7 @@ SSACFids (ids *arg_ids, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   ids *TravIDS(ids *arg_ids, node *arg_info)
+ *   ids *TravIDS(ids *arg_ids, info *arg_info)
  *
  * description:
  *   similar implementation of trav mechanism as used for nodes
@@ -2361,7 +2432,7 @@ SSACFids (ids *arg_ids, node *arg_info)
  *****************************************************************************/
 
 static ids *
-TravIDS (ids *arg_ids, node *arg_info)
+TravIDS (ids *arg_ids, info *arg_info)
 {
     DBUG_ENTER ("TravIDS");
 
@@ -2374,7 +2445,7 @@ TravIDS (ids *arg_ids, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* SSACFNgen(node *arg_node, node *arg_info)
+ *   node* SSACFNgen(node *arg_node, info *arg_info)
  *
  * description:
  *   traverses parameter of generator to substitute constant arrays
@@ -2384,7 +2455,7 @@ TravIDS (ids *arg_ids, node *arg_info)
  *****************************************************************************/
 
 node *
-SSACFNgen (node *arg_node, node *arg_info)
+SSACFNgen (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSACFNgen");
 
@@ -2866,7 +2937,7 @@ SSACFFoldPrfExpr (prf op, node **arg_expr)
 node *
 SSAConstantFolding (node *fundef, node *modul)
 {
-    node *arg_info;
+    info *arg_info;
     funtab *old_tab;
 
     DBUG_ENTER ("SSAConstantFolding");
@@ -2890,7 +2961,7 @@ SSAConstantFolding (node *fundef, node *modul)
 
         act_tab = old_tab;
 
-        arg_info = FreeTree (arg_info);
+        arg_info = FreeInfo (arg_info);
     }
 
     DBUG_RETURN (fundef);

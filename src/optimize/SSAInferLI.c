@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2004/07/18 19:54:54  sah
+ * switch to new INFO structure
+ * PHASE I
+ * (as well some code cleanup)
+ *
  * Revision 1.1  2001/05/30 13:48:36  nmw
  * Initial revision
  *
@@ -19,6 +24,8 @@
  *
  *****************************************************************************/
 
+#define NEW_INFO
+
 #include "dbug.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -26,10 +33,52 @@
 #include "free.h"
 #include "SSAInferLI.h"
 
+/*
+ * INFO structure
+ */
+struct INFO {
+    node *fundef;
+    node *argchain;
+};
+
+/*
+ * INFO macros
+ */
+#define INFO_SSAILI_FUNDEF(n) (n->fundef)
+#define INFO_SSAILI_ARGCHAIN(n) (n->argchain)
+
+/*
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = Malloc (sizeof (info));
+
+    INFO_SSAILI_FUNDEF (result) = NULL;
+    INFO_SSAILI_ARGCHAIN (result) = NULL;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = Free (info);
+
+    DBUG_RETURN (info);
+}
+
 /******************************************************************************
  *
  * function:
- *  node *SSAILIarg(node *arg_node, node *arg_info)
+ *  node *SSAILIarg(node *arg_node, info *arg_info)
  *
  * description:
  *   in do/while special functions: set the SSALIR attribute for the args by
@@ -39,7 +88,7 @@
  *
  ******************************************************************************/
 node *
-SSAILIarg (node *arg_node, node *arg_info)
+SSAILIarg (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSAILIarg");
 
@@ -77,14 +126,14 @@ SSAILIarg (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *    node* SSAILIfundef(node *arg_node, node *arg_info)
+ *    node* SSAILIfundef(node *arg_node, info *arg_info)
  *
  * description:
  *  traverses arg nodes and block in this order.
  *
  ******************************************************************************/
 node *
-SSAILIfundef (node *arg_node, node *arg_info)
+SSAILIfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSAILIfundef");
 
@@ -126,16 +175,16 @@ SSAILIfundef (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *  node *SSAILIap(node *arg_node, node *arg_info)
+ *  node *SSAILIap(node *arg_node, info *arg_info)
  *
  * description:
  *  traverse into special fundef if non-recursive call
  *
  ******************************************************************************/
 node *
-SSAILIap (node *arg_node, node *arg_info)
+SSAILIap (node *arg_node, info *arg_info)
 {
-    node *new_arg_info;
+    info *new_arg_info;
 
     DBUG_ENTER ("SSAILIap");
 
@@ -160,7 +209,7 @@ SSAILIap (node *arg_node, node *arg_info)
         DBUG_PRINT ("SSAILI", ("traversal of special fundef %s finished\n",
                                FUNDEF_NAME (AP_FUNDEF (arg_node))));
 
-        new_arg_info = FreeTree (new_arg_info);
+        new_arg_info = FreeInfo (new_arg_info);
     } else {
         DBUG_PRINT ("SSAILI", ("do not traverse in normal fundef %s",
                                FUNDEF_NAME (AP_FUNDEF (arg_node))));
@@ -181,7 +230,7 @@ SSAILIap (node *arg_node, node *arg_info)
 node *
 SSAInferLoopInvariants (node *fundef)
 {
-    node *arg_info;
+    info *arg_info;
     funtab *old_tab;
 
     DBUG_ENTER ("SSAInferLoopInvariants");
@@ -200,7 +249,7 @@ SSAInferLoopInvariants (node *fundef)
 
         act_tab = old_tab;
 
-        arg_info = FreeTree (arg_info);
+        arg_info = FreeInfo (arg_info);
     }
 
     DBUG_RETURN (fundef);

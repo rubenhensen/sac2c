@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.32  2004/07/18 19:54:54  sah
+ * switch to new INFO structure
+ * PHASE I
+ * (as well some code cleanup)
+ *
  * Revision 1.31  2004/03/05 19:14:27  mwe
  * representation of conditional changed
  * using N_funcond node instead of phi
@@ -231,6 +236,8 @@
  *
  ******************************************************************************/
 
+#define NEW_INFO
+
 #include "dbug.h"
 #include "tree_basic.h"
 #include "internal_lib.h"
@@ -243,6 +250,105 @@
 #include "LookUpTable.h"
 #include "change_signature.h"
 #include "SSATransform.h"
+
+/*
+ * INFO structure
+ */
+struct INFO {
+    node *fundef;
+    bool remassign;
+    node *preassign;
+    node *postassign;
+    node *modul;
+    node *assign;
+    int nonliruse;
+    int condstatus;
+    int withdepth;
+    bool topblock;
+    int flag;
+    node *extpreassign;
+    node *extpostassign;
+    LUT_t movelut;
+    node *apargchain;
+    ids *apreschain;
+    node *extfundef;
+    nodelist *resultmap;
+    int maxdepth;
+    int setdepth;
+    nodelist *inslist;
+};
+
+/*
+ * INFO macros
+ */
+#define INFO_SSALIR_FUNDEF(n) (n->fundef)
+#define INFO_SSALIR_REMASSIGN(n) (n->remassign)
+#define INFO_SSALIR_PREASSIGN(n) (n->preassign)
+#define INFO_SSALIR_POSTASSIGN(n) (n->postassign)
+#define INFO_SSALIR_MODUL(n) (n->modul)
+#define INFO_SSALIR_ASSIGN(n) (n->assign)
+#define INFO_SSALIR_NONLIRUSE(n) (n->nonliruse)
+#define INFO_SSALIR_CONDSTATUS(n) (n->condstatus)
+#define INFO_SSALIR_WITHDEPTH(n) (n->withdepth)
+#define INFO_SSALIR_TOPBLOCK(n) (n->topblock)
+#define INFO_SSALIR_FLAG(n) (n->flag)
+#define INFO_SSALIR_EXTPREASSIGN(n) (n->extpreassign)
+#define INFO_SSALIR_EXTPOSTASSIGN(n) (n->extpostassign)
+#define INFO_SSALIR_MOVELUT(n) (n->movelut)
+#define INFO_SSALIR_APARGCHAIN(n) (n->apargchain)
+#define INFO_SSALIR_APRESCHAIN(n) (n->apreschain)
+#define INFO_SSALIR_EXTFUNDEF(n) (n->extfundef)
+#define INFO_SSALIR_RESULTMAP(n) (n->resultmap)
+#define INFO_SSALIR_MAXDEPTH(n) (n->maxdepth)
+#define INFO_SSALIR_SETDEPTH(n) (n->setdepth)
+#define INFO_SSALIR_INSLIST(n) (n->inslist)
+
+/*
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = Malloc (sizeof (info));
+
+    INFO_SSALIR_FUNDEF (result) = NULL;
+    INFO_SSALIR_REMASSIGN (result) = FALSE;
+    INFO_SSALIR_PREASSIGN (result) = NULL;
+    INFO_SSALIR_POSTASSIGN (result) = NULL;
+    INFO_SSALIR_MODUL (result) = NULL;
+    INFO_SSALIR_ASSIGN (result) = NULL;
+    INFO_SSALIR_NONLIRUSE (result) = 0;
+    INFO_SSALIR_CONDSTATUS (result) = 0;
+    INFO_SSALIR_WITHDEPTH (result) = 0;
+    INFO_SSALIR_TOPBLOCK (result) = FALSE;
+    INFO_SSALIR_FLAG (result) = 0;
+    INFO_SSALIR_EXTPREASSIGN (result) = NULL;
+    INFO_SSALIR_EXTPOSTASSIGN (result) = NULL;
+    INFO_SSALIR_MOVELUT (result) = NULL;
+    INFO_SSALIR_APARGCHAIN (result) = NULL;
+    INFO_SSALIR_APRESCHAIN (result) = NULL;
+    INFO_SSALIR_EXTFUNDEF (result) = NULL;
+    INFO_SSALIR_RESULTMAP (result) = NULL;
+    INFO_SSALIR_MAXDEPTH (result) = 0;
+    INFO_SSALIR_SETDEPTH (result) = 0;
+    INFO_SSALIR_INSLIST (result) = NULL;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = Free (info);
+
+    DBUG_RETURN (info);
+}
 
 /* INFO_SSALIR_CONDSTATUS */
 #define CONDSTATUS_NOCOND 0
@@ -267,13 +373,13 @@
 #define DD_UNDEFINED -1
 
 /* functions for local usage only */
-static ids *SSALIRleftids (ids *arg_ids, node *arg_info);
-static ids *LIRMOVleftids (ids *arg_ids, node *arg_info);
+static ids *SSALIRleftids (ids *arg_ids, info *arg_info);
+static ids *LIRMOVleftids (ids *arg_ids, info *arg_info);
 #ifndef CREATE_UNIQUE_BY_HEAP
 static bool ForbiddenMovement (ids *chain);
 #endif
-static node *CheckMoveDownFlag (node *instr, node *arg_info);
-static node *CreateNewResult (node *avis, node *arg_info);
+static node *CheckMoveDownFlag (node *instr, info *arg_info);
+static void CreateNewResult (node *avis, info *arg_info);
 static LUT_t InsertMappingsIntoLUT (LUT_t move_table, nodelist *mappings);
 static node *AdjustExternalResult (node *new_assigns, node *ext_assign, node *ext_fundef);
 static nodelist *InsListPushFrame (nodelist *il);
@@ -323,7 +429,7 @@ ForbiddenMovement (ids *chain)
  *
  ******************************************************************************/
 static node *
-CheckMoveDownFlag (node *instr, node *arg_info)
+CheckMoveDownFlag (node *instr, info *arg_info)
 {
     ids *result;
     int non_move_down;
@@ -362,7 +468,7 @@ CheckMoveDownFlag (node *instr, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *CreateNewResult(node *avis, node *arg_info)
+ *   node *CreateNewResult(node *avis, info *arg_info)
  *
  * description:
  *   creates a new result in this fundef (returning given avis/vardec):
@@ -374,8 +480,8 @@ CheckMoveDownFlag (node *instr, node *arg_info)
  *     6. insert phi-copy-assignments in then and else part of conditional
  *
  ******************************************************************************/
-node *
-CreateNewResult (node *avis, node *arg_info)
+void
+CreateNewResult (node *avis, info *arg_info)
 {
     node *new_ext_vardec;
     node *new_ext_avis;
@@ -495,7 +601,7 @@ CreateNewResult (node *avis, node *arg_info)
     ASSIGN_NEXT (assign_let) = ASSIGN_NEXT (tmp);
     ASSIGN_NEXT (tmp) = assign_let;
 
-    DBUG_RETURN (arg_info);
+    DBUG_VOID_RETURN;
 }
 
 /******************************************************************************
@@ -781,7 +887,7 @@ InsListGetFrame (nodelist *il, int depth)
 /******************************************************************************
  *
  * function:
- *   node* SSALIRfundef(node *arg_node, node *arg_info)
+ *   node* SSALIRfundef(node *arg_node, info *arg_info)
  *
  * description:
  *   traverses fundef two times:
@@ -790,7 +896,7 @@ InsListGetFrame (nodelist *il, int depth)
  *
  ******************************************************************************/
 node *
-SSALIRfundef (node *arg_node, node *arg_info)
+SSALIRfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSALIRfundef");
 
@@ -880,7 +986,7 @@ SSALIRfundef (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* SSALIRarg(node *arg_node, node *arg_info)
+ *   node* SSALIRarg(node *arg_node, info *arg_info)
  *
  * description:
  *   insert mappings between args and external vardecs for all loop
@@ -888,7 +994,7 @@ SSALIRfundef (node *arg_node, node *arg_info)
  *
  *****************************************************************************/
 node *
-SSALIRarg (node *arg_node, node *arg_info)
+SSALIRarg (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSALIRarg");
 
@@ -952,14 +1058,14 @@ SSALIRarg (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* SSALIRvardec(node *arg_node, node *arg_info)
+ *   node* SSALIRvardec(node *arg_node, info *arg_info)
  *
  * description:
  *   init avis data of vardecs for SSALIR traversal
  *
  ******************************************************************************/
 node *
-SSALIRvardec (node *arg_node, node *arg_info)
+SSALIRvardec (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSALIRvardec");
 
@@ -980,7 +1086,7 @@ SSALIRvardec (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* SSALIRblock(node *arg_node, node *arg_info)
+ *   node* SSALIRblock(node *arg_node, info *arg_info)
  *
  * description:
  *   traverse vardecs and block in this order
@@ -988,7 +1094,7 @@ SSALIRvardec (node *arg_node, node *arg_info)
  *
  ******************************************************************************/
 node *
-SSALIRblock (node *arg_node, node *arg_info)
+SSALIRblock (node *arg_node, info *arg_info)
 {
     int old_flag;
 
@@ -1027,7 +1133,7 @@ SSALIRblock (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* SSALIRassign(node *arg_node, node *arg_info)
+ *   node* SSALIRassign(node *arg_node, info *arg_info)
  *
  * description:
  *   traverse assign instructions in top-down order to infere do LI-assignments,
@@ -1036,7 +1142,7 @@ SSALIRblock (node *arg_node, node *arg_info)
  *
  ******************************************************************************/
 node *
-SSALIRassign (node *arg_node, node *arg_info)
+SSALIRassign (node *arg_node, info *arg_info)
 {
     bool remove_assign;
     node *pre_assign;
@@ -1181,7 +1287,7 @@ SSALIRassign (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* SSALIRlet(node *arg_node, node *arg_info)
+ *   node* SSALIRlet(node *arg_node, info *arg_info)
  *
  * description:
  *   traverse let expression and result identifiers
@@ -1192,7 +1298,7 @@ SSALIRassign (node *arg_node, node *arg_info)
  *
  ******************************************************************************/
 node *
-SSALIRlet (node *arg_node, node *arg_info)
+SSALIRlet (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSALIRlet");
 
@@ -1274,7 +1380,7 @@ SSALIRlet (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* SSALIRid(node *arg_node, node *arg_info)
+ *   node* SSALIRid(node *arg_node, info *arg_info)
  *
  * description:
  *   normal mode:
@@ -1291,7 +1397,7 @@ SSALIRlet (node *arg_node, node *arg_info)
  *
  ******************************************************************************/
 node *
-SSALIRid (node *arg_node, node *arg_info)
+SSALIRid (node *arg_node, info *arg_info)
 {
     node *id;
 
@@ -1399,7 +1505,7 @@ SSALIRid (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* SSALIRap(node *arg_node, node *arg_info)
+ *   node* SSALIRap(node *arg_node, info *arg_info)
  *
  * description:
  *   traverses in dependend special function and integrates pre/post-assignment
@@ -1407,9 +1513,9 @@ SSALIRid (node *arg_node, node *arg_info)
  *
  ******************************************************************************/
 node *
-SSALIRap (node *arg_node, node *arg_info)
+SSALIRap (node *arg_node, info *arg_info)
 {
-    node *new_arg_info;
+    info *new_arg_info;
 
     DBUG_ENTER ("SSALIRap");
 
@@ -1445,7 +1551,7 @@ SSALIRap (node *arg_node, node *arg_info)
         INFO_SSALIR_PREASSIGN (arg_info) = INFO_SSALIR_EXTPREASSIGN (new_arg_info);
         INFO_SSALIR_POSTASSIGN (arg_info) = INFO_SSALIR_EXTPOSTASSIGN (new_arg_info);
 
-        new_arg_info = FreeTree (new_arg_info);
+        new_arg_info = FreeInfo (new_arg_info);
     } else {
         /* no traversal into a normal fundef */
         DBUG_PRINT ("SSALIR", ("do not traverse in normal fundef %s",
@@ -1463,7 +1569,7 @@ SSALIRap (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* SSALIRcond(node *arg_node, node *arg_info)
+ *   node* SSALIRcond(node *arg_node, info *arg_info)
  *
  * description:
  *   set the correct conditional status flag and traverse the condition and
@@ -1475,7 +1581,7 @@ SSALIRap (node *arg_node, node *arg_info)
  *
  ******************************************************************************/
 node *
-SSALIRcond (node *arg_node, node *arg_info)
+SSALIRcond (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSALIRcond");
 
@@ -1500,14 +1606,14 @@ SSALIRcond (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* SSALIRreturn(node *arg_node, node *arg_info)
+ *   node* SSALIRreturn(node *arg_node, info *arg_info)
  *
  * description:
  *   in loops: look for possibled move-down assignments and mark them
  *
  ******************************************************************************/
 node *
-SSALIRreturn (node *arg_node, node *arg_info)
+SSALIRreturn (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSALIRreturn");
 
@@ -1542,7 +1648,7 @@ SSALIRreturn (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* SSALIRNwith(node *arg_node, node *arg_info)
+ *   node* SSALIRNwith(node *arg_node, info *arg_info)
  *
  * description:
  *   traverses with-loop, increments withdepth counter during traversal,
@@ -1553,7 +1659,7 @@ SSALIRreturn (node *arg_node, node *arg_info)
  *
  ******************************************************************************/
 node *
-SSALIRNwith (node *arg_node, node *arg_info)
+SSALIRNwith (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSALIRNwith");
 
@@ -1599,14 +1705,14 @@ SSALIRNwith (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* SSALIRNwithid(node *arg_node, node *arg_info)
+ *   node* SSALIRNwithid(node *arg_node, info *arg_info)
  *
  * description:
  *   mark index vetor as local variable to allow a code moving
  *
  ******************************************************************************/
 node *
-SSALIRNwithid (node *arg_node, node *arg_info)
+SSALIRNwithid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSALIRNwithid");
 
@@ -1629,7 +1735,7 @@ SSALIRNwithid (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* SSALIRexprs(node *arg_node, node *arg_info)
+ *   node* SSALIRexprs(node *arg_node, info *arg_info)
  *
  * description:
  *   traverses all exprs nodes.
@@ -1638,7 +1744,7 @@ SSALIRNwithid (node *arg_node, node *arg_info)
  *
  ******************************************************************************/
 node *
-SSALIRexprs (node *arg_node, node *arg_info)
+SSALIRexprs (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSALIRexprs");
 
@@ -1665,7 +1771,7 @@ SSALIRexprs (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   static ids *SSALIRleftids (ids *arg_ids, node *arg_info)
+ *   static ids *SSALIRleftids (ids *arg_ids, info *arg_info)
  *
  * description:
  *   set current withloop depth as ids definition depth
@@ -1673,7 +1779,7 @@ SSALIRexprs (node *arg_node, node *arg_info)
  *
  *****************************************************************************/
 static ids *
-SSALIRleftids (ids *arg_ids, node *arg_info)
+SSALIRleftids (ids *arg_ids, info *arg_info)
 {
     DBUG_ENTER ("SSALIRleftids");
 
@@ -1720,7 +1826,7 @@ SSALIRleftids (ids *arg_ids, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* LIRMOVblock(node *arg_node, node *arg_info)
+ *   node* LIRMOVblock(node *arg_node, info *arg_info)
  *
  * description:
  *   traverses only body (not the vardecs)
@@ -1728,7 +1834,7 @@ SSALIRleftids (ids *arg_ids, node *arg_info)
  ******************************************************************************/
 
 node *
-LIRMOVblock (node *arg_node, node *arg_info)
+LIRMOVblock (node *arg_node, info *arg_info)
 {
     int old_flag;
 
@@ -1758,7 +1864,7 @@ LIRMOVblock (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* LIRMOVassign(node *arg_node, node *arg_info)
+ *   node* LIRMOVassign(node *arg_node, info *arg_info)
  *
  * description:
  *   traverses the top-level assignment chain and moves marked assignments
@@ -1768,7 +1874,7 @@ LIRMOVblock (node *arg_node, node *arg_info)
  *
  *****************************************************************************/
 node *
-LIRMOVassign (node *arg_node, node *arg_info)
+LIRMOVassign (node *arg_node, info *arg_info)
 {
     bool remove_assignment;
     node *tmp;
@@ -1891,14 +1997,14 @@ LIRMOVassign (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* LIRMOVlet(node *arg_node, node *arg_info)
+ *   node* LIRMOVlet(node *arg_node, info *arg_info)
  *
  * description:
  *   traverses right side and left side in this order
  *
  ******************************************************************************/
 node *
-LIRMOVlet (node *arg_node, node *arg_info)
+LIRMOVlet (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("LIRMOVlet");
 
@@ -1914,14 +2020,14 @@ LIRMOVlet (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* LIRMOVid(node *arg_node, node *arg_info)
+ *   node* LIRMOVid(node *arg_node, info *arg_info)
  *
  * description:
  *   does the renaming according to the AVIS_SUBST setting
  *
  ******************************************************************************/
 node *
-LIRMOVid (node *arg_node, node *arg_info)
+LIRMOVid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("LIRMOVid");
 
@@ -1968,7 +2074,8 @@ LIRMOVid (node *arg_node, node *arg_info)
                     ("create new result in %s for %s",
                      FUNDEF_NAME (INFO_SSALIR_FUNDEF (arg_info)),
                      VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (ID_AVIS (arg_node)))));
-        arg_info = CreateNewResult (ID_AVIS (arg_node), arg_info);
+        /* this call modifies avis and arg_info */
+        CreateNewResult (ID_AVIS (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -1977,7 +2084,7 @@ LIRMOVid (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* LIRMOVNwithid(node *arg_node, node *arg_info)
+ *   node* LIRMOVNwithid(node *arg_node, info *arg_info)
  *
  * description:
  *   the withid identifiers are local variables. if we move a with-loop
@@ -1989,7 +2096,7 @@ LIRMOVid (node *arg_node, node *arg_info)
  *
  ******************************************************************************/
 node *
-LIRMOVNwithid (node *arg_node, node *arg_info)
+LIRMOVNwithid (node *arg_node, info *arg_info)
 {
     int old_flag;
 
@@ -2018,14 +2125,14 @@ LIRMOVNwithid (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* LIRMOVreturn(node *arg_node, node *arg_info)
+ *   node* LIRMOVreturn(node *arg_node, info *arg_info)
  *
  * description:
  *   traverses the return expression
  *
  ******************************************************************************/
 node *
-LIRMOVreturn (node *arg_node, node *arg_info)
+LIRMOVreturn (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("LIRMOVreturn");
 
@@ -2039,7 +2146,7 @@ LIRMOVreturn (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   ids* LIRMOVleftids(ids *arg_ids, node *arg_info)
+ *   ids* LIRMOVleftids(ids *arg_ids, info *arg_info)
  *
  * description:
  *   creates external references for moved identifiers and modifies the
@@ -2047,7 +2154,7 @@ LIRMOVreturn (node *arg_node, node *arg_info)
  *
  ******************************************************************************/
 static ids *
-LIRMOVleftids (ids *arg_ids, node *arg_info)
+LIRMOVleftids (ids *arg_ids, info *arg_info)
 {
     node *new_vardec;
     node *new_vardec_id;
@@ -2176,7 +2283,7 @@ LIRMOVleftids (ids *arg_ids, node *arg_info)
 node *
 SSALoopInvariantRemoval (node *fundef, node *modul)
 {
-    node *arg_info;
+    info *arg_info;
     funtab *old_tab;
 
     DBUG_ENTER ("SSALoopInvariantRemoval");
@@ -2199,7 +2306,7 @@ SSALoopInvariantRemoval (node *fundef, node *modul)
 
         act_tab = old_tab;
 
-        arg_info = FreeTree (arg_info);
+        arg_info = FreeInfo (arg_info);
     }
 
     DBUG_RETURN (fundef);

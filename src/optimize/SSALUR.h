@@ -1,5 +1,10 @@
 /*
  * $Log$
+ * Revision 1.4  2004/07/18 19:54:54  sah
+ * switch to new INFO structure
+ * PHASE I
+ * (as well some code cleanup)
+ *
  * Revision 1.3  2001/05/25 08:42:18  nmw
  * comments added, code beautyfied
  *
@@ -32,9 +37,9 @@
 
 extern node *SSALoopUnrolling (node *fundef, node *modul);
 
-extern node *SSALURfundef (node *arg_node, node *arg_info);
-extern node *SSALURassign (node *arg_node, node *arg_info);
-extern node *SSALURap (node *arg_node, node *arg_info);
-extern node *SSALURNwith (node *arg_node, node *arg_info);
+extern node *SSALURfundef (node *arg_node, info *arg_info);
+extern node *SSALURassign (node *arg_node, info *arg_info);
+extern node *SSALURap (node *arg_node, info *arg_info);
+extern node *SSALURNwith (node *arg_node, info *arg_info);
 
 #endif /* SAC_SSALUR_H */

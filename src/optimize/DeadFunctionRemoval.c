@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2004/07/18 19:54:54  sah
+ * switch to new INFO structure
+ * PHASE I
+ * (as well some code cleanup)
+ *
  * Revision 3.8  2004/06/03 09:08:05  khf
  * DFRwithop(): traverse into NWITHOP_NEXT added
  *
@@ -54,6 +59,8 @@
  *
  */
 
+#define NEW_INFO
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -70,10 +77,49 @@
 
 #include "optimize.h"
 
+/*
+ * INFO structure
+ */
+struct INFO {
+    int flag;
+};
+
+/*
+ * INFO macros
+ */
+#define INFO_DFR_SPINE(n) (n->flag)
+
+/*
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = Malloc (sizeof (info));
+
+    INFO_DFR_SPINE (result) = 0;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = Free (info);
+
+    DBUG_RETURN (info);
+}
+
 /******************************************************************************
  *
  * Function:
- *   node *DeadFunctionRemoval( node *arg_node, node *arg_info)
+ *   node *DeadFunctionRemoval( node *arg_node, info *arg_info)
  *
  * Description:
  *
@@ -81,9 +127,10 @@
  ******************************************************************************/
 
 node *
-DeadFunctionRemoval (node *arg_node, node *arg_info)
+DeadFunctionRemoval (node *arg_node)
 {
     funtab *tmp_tab;
+    info *arg_info;
 #ifndef DBUG_OFF
     int mem_dead_fun = dead_fun;
 #endif
@@ -97,7 +144,7 @@ DeadFunctionRemoval (node *arg_node, node *arg_info)
 
     arg_info = MakeInfo ();
     arg_node = Trav (arg_node, arg_info);
-    arg_info = FreeTree (arg_info);
+    arg_info = FreeInfo (arg_info);
 
     DBUG_PRINT ("OPT", ("                        result: %d", dead_fun - mem_dead_fun));
     DBUG_PRINT ("OPTMEM", ("mem currently allocated: %d bytes", current_allocated_mem));
@@ -110,7 +157,7 @@ DeadFunctionRemoval (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *DFRmodul(node *arg_node,node *arg_info)
+ *   node *DFRmodul(node *arg_node,info *arg_info)
  *
  * Description:
  *   Prevents DFR in modules
@@ -119,7 +166,7 @@ DeadFunctionRemoval (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-DFRmodul (node *arg_node, node *arg_info)
+DFRmodul (node *arg_node, info *arg_info)
 {
     node *fun;
     DBUG_ENTER ("DFRmodul");
@@ -168,7 +215,7 @@ DFRmodul (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *DFRfundef( node *arg_node, node *arg_info)
+ *   node *DFRfundef( node *arg_node, info *arg_info)
  *
  * Description:
  *   Traverses instruction- and function-chain in this order.
@@ -176,7 +223,7 @@ DFRmodul (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-DFRfundef (node *arg_node, node *arg_info)
+DFRfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("DFRfundef");
 
@@ -222,7 +269,7 @@ DFRfundef (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *DFRblock( node *arg_node, node *arg_info)
+ *   node *DFRblock( node *arg_node, info *arg_info)
  *
  * Description:
  *   Removes BLOCK_NEEDFUNS!
@@ -230,7 +277,7 @@ DFRfundef (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-DFRblock (node *arg_node, node *arg_info)
+DFRblock (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("DFRblock");
 
@@ -252,7 +299,7 @@ DFRblock (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *DFRap( node *arg_node, node *arg_info)
+ *   node *DFRap( node *arg_node, info *arg_info)
  *
  * Description:
  *
@@ -260,7 +307,7 @@ DFRblock (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-DFRap (node *arg_node, node *arg_info)
+DFRap (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("DFRap");
 
@@ -276,7 +323,7 @@ DFRap (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *DFRwithop( node *arg_node, node *arg_info)
+ *   node *DFRwithop( node *arg_node, info *arg_info)
  *
  * Description:
  *
@@ -284,7 +331,7 @@ DFRap (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-DFRwithop (node *arg_node, node *arg_info)
+DFRwithop (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("DFRwithop");
 

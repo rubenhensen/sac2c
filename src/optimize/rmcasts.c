@@ -1,5 +1,10 @@
 /*
  * $Log$
+ * Revision 1.2  2004/07/18 19:54:54  sah
+ * switch to new INFO structure
+ * PHASE I
+ * (as well some code cleanup)
+ *
  * Revision 1.1  2001/05/22 09:09:45  nmw
  * Initial revision
  *
@@ -28,14 +33,14 @@
 /******************************************************************************
  *
  * function:
- *   node* RCcast(node *arg_node, node *arg_info)
+ *   node* RCcast(node *arg_node, info *arg_info)
  *
  * description:
  *   removes this cast node and returns the cast expression.
  *
  ******************************************************************************/
 node *
-RCcast (node *arg_node, node *arg_info)
+RCcast (node *arg_node, info *arg_info)
 {
     node *expr;
 
@@ -62,21 +67,18 @@ RCcast (node *arg_node, node *arg_info)
 node *
 RemoveCasts (node *syntax_tree)
 {
-    node *arg_info;
     funtab *old_tab;
 
     DBUG_ENTER ("RemoveCasts");
 
-    arg_info = MakeInfo ();
+    DBUG_PRINT ("OPT", ("starting remove casts traversal"));
 
     old_tab = act_tab;
     act_tab = rmcasts_tab;
 
-    syntax_tree = Trav (syntax_tree, arg_info);
+    syntax_tree = Trav (syntax_tree, NULL);
 
     act_tab = old_tab;
-
-    arg_info = FreeTree (arg_info);
 
     DBUG_RETURN (syntax_tree);
 }

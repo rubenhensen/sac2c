@@ -1,5 +1,10 @@
 /* *
  * $Log$
+ * Revision 1.5  2004/07/18 19:54:54  sah
+ * switch to new INFO structure
+ * PHASE I
+ * (as well some code cleanup)
+ *
  * Revision 1.4  2003/02/24 17:40:36  mwe
  * removed some functions
  *
@@ -18,10 +23,10 @@
 #ifndef _DistributiveLaw_h_
 #define _DistributiveLaw_h_
 
-extern node *DistributiveLaw (node *, node *);
-extern node *DLblock (node *, node *);
-extern node *DLassign (node *, node *);
-extern node *DLlet (node *, node *);
-extern node *DLPrfOrAp (node *, node *);
+extern node *DistributiveLaw (node *);
+extern node *DLblock (node *, info *);
+extern node *DLassign (node *, info *);
+extern node *DLlet (node *, info *);
+extern node *DLPrfOrAp (node *, info *);
 
 #endif

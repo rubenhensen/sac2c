@@ -1,5 +1,10 @@
 /* *
  * $Log$
+ * Revision 1.15  2004/07/18 19:54:54  sah
+ * switch to new INFO structure
+ * PHASE I
+ * (as well some code cleanup)
+ *
  * Revision 1.14  2004/07/07 15:43:36  mwe
  * last changes undone (all changes connected to new type representation with ntype*)
  *
@@ -41,35 +46,6 @@
  *
  *
  */
-
-/**************************
- *
- *  Zugriffmakros:
- *
- * INFO_DL_TYPE          :  Quelle für weitere type-nodes
- * INFO_DL_BLOCKNODE     :  Zugriff auf Blocknode (AVIS)
- * INFO_DL_OPTLIST       :  sammeln der Knoten mit Opt-Fälle
- * INFO_DL_NONOPTLIST    :  sammeln von Knoten ohne Opt-Fälle
- * INFO_DL_CURRENTASSIGN :  Startknoten der aktuellen Optimierung
- * INFO_DL_LETNODE       :  let-node zum Einfügen der optim. Knoten
- * INFO_DL_MAINOPERATOR  :  äussere Operation
- *
- ********************/
-
-#define INFO_DL_TYPE(n) ((types *)(n->dfmask[0]))
-#define INFO_DL_BLOCKNODE(n) (n->node[0])
-#define INFO_DL_OPTLIST(n) ((nodelist *)(n->info2))
-#define INFO_DL_NONOPTLIST(n) ((nodelist *)(n->info3))
-#define INFO_DL_OPTIMIZEDNODES(n) ((nodelist *)(n->dfmask[1]))
-#define INFO_DL_LETNODE(n) (n->node[1])
-#define INFO_DL_MOSTFREQUENTNODE(n) (n->node[3])
-#define INFO_DL_OCCURENCEOFMOSTFREQUENTNODE(n) (n->refcnt)
-#define INFO_DL_MAINOPERATOR(n) (n->node[4])
-#define INFO_DL_STATUSSECONDOPERATOR(n) (n->flag)
-#define INFO_DL_SECONDOPERATOR(n) (n->node[5])
-#define INFO_DL_COUNTLIST(n) ((nodelist *)(n->info2))
-#define INFO_DL_TMPLIST(n) ((nodelist *)(n->dfmask[2]))
-#define INFO_DL_IEEEFLAG(n) (n->varno)
 
 #define DL_NODELIST_OPERATOR(n) ((node *)NODELIST_ATTRIB2 (n))
 #define DL_NODELIST_PARENTNODES(n) ((nodelist *)NODELIST_ATTRIB2 (n))
@@ -336,6 +312,8 @@
  *                        was found in the current subtree
  *****************************************************************************/
 
+#define NEW_INFO
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -353,10 +331,88 @@
 
 #include "DistributiveLaw.h"
 
+/*
+ * INFO structure
+ */
+struct INFO {
+    types *type;
+    node *blocknode;
+    nodelist *optlist;
+    nodelist *nonoptlist;
+    nodelist *optimizednodes;
+    node *letnode;
+    node *mostfreqnode;
+    int occmostfreqnode;
+    node *mainoperator;
+    node *secoperator;
+    int statussecoperator;
+    nodelist *countlist;
+    nodelist *tmplist;
+    int ieeeflag;
+};
+
+/*
+ * INFO macros
+ */
+#define INFO_DL_TYPE(n) (n->type)
+#define INFO_DL_BLOCKNODE(n) (n->blocknode)
+#define INFO_DL_OPTLIST(n) (n->optlist)
+#define INFO_DL_NONOPTLIST(n) (n->nonoptlist)
+#define INFO_DL_OPTIMIZEDNODES(n) (n->optimizednodes)
+#define INFO_DL_LETNODE(n) (n->letnode)
+#define INFO_DL_MOSTFREQUENTNODE(n) (n->mostfreqnode)
+#define INFO_DL_OCCURENCEOFMOSTFREQUENTNODE(n) (n->occmostfreqnode)
+#define INFO_DL_MAINOPERATOR(n) (n->mainoperator)
+#define INFO_DL_STATUSSECONDOPERATOR(n) (n->statussecoperator)
+#define INFO_DL_SECONDOPERATOR(n) (n->secoperator)
+#define INFO_DL_COUNTLIST(n) (n->countlist)
+#define INFO_DL_TMPLIST(n) (n->tmplist)
+#define INFO_DL_IEEEFLAG(n) (n->ieeeflag)
+
+/*
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = Malloc (sizeof (info));
+
+    INFO_DL_TYPE (result) = NULL;
+    INFO_DL_BLOCKNODE (result) = NULL;
+    INFO_DL_OPTLIST (result) = NULL;
+    INFO_DL_NONOPTLIST (result) = NULL;
+    INFO_DL_OPTIMIZEDNODES (result) = NULL;
+    INFO_DL_LETNODE (result) = NULL;
+    INFO_DL_MOSTFREQUENTNODE (result) = NULL;
+    INFO_DL_OCCURENCEOFMOSTFREQUENTNODE (result) = 0;
+    INFO_DL_MAINOPERATOR (result) = NULL;
+    INFO_DL_STATUSSECONDOPERATOR (result) = 0;
+    INFO_DL_SECONDOPERATOR (result) = NULL;
+    INFO_DL_COUNTLIST (result) = NULL;
+    INFO_DL_TMPLIST (result) = NULL;
+    INFO_DL_IEEEFLAG (result) = 0;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = Free (info);
+
+    DBUG_RETURN (info);
+}
+
 /*****************************************************************************
  *
  * function:
- *   node* GetNeutralElement(node *op, node *arg_info)
+ *   node *GetNeutralElement(node *op, info *arg_info)
  *
  * description:
  *   returns new exprs-node, with neutral element of the primitive
@@ -365,7 +421,7 @@
  ****************************************************************************/
 
 static node *
-GetNeutralElement (node *op, node *arg_info)
+GetNeutralElement (node *op, info *arg_info)
 {
 
     node *neutral_elem;
@@ -495,7 +551,7 @@ ExistKnownNeutralElement (node *op)
 /*****************************************************************************
  *
  * function:
- *   bool IsConstant(node *arg_node, node* arg_info)
+ *   bool IsConstant(node *arg_node, info *arg_info)
  *
  * description:
  *   returns TRUE, if arg_node is a constant node, otherwise FALSE.
@@ -505,7 +561,7 @@ ExistKnownNeutralElement (node *op)
  ****************************************************************************/
 
 static bool
-IsConstant (node *arg_node, node *arg_info)
+IsConstant (node *arg_node, info *arg_info)
 {
     bool is_constant;
 
@@ -532,7 +588,7 @@ IsConstant (node *arg_node, node *arg_info)
 /*****************************************************************************
  *
  * function:
- *   bool CheckOperator(node *arg_node, node* arg_info)
+ *   bool CheckOperator(node *arg_node, info *arg_info)
  *
  * description:
  *   Returns TRUE if 'operator' is supported. This means, 'operator' has to
@@ -547,7 +603,7 @@ IsConstant (node *arg_node, node *arg_info)
  ****************************************************************************/
 
 static bool
-CheckOperator (node *operator, node *arg_info )
+CheckOperator (node *operator, info *arg_info )
 {
 
     bool support;
@@ -586,7 +642,7 @@ CheckOperator (node *operator, node *arg_info )
 }
 
 static node *
-GetUsedOperator (node *arg_node, node *arg_info)
+GetUsedOperator (node *arg_node, info *arg_info)
 {
 
     node *operator;
@@ -601,7 +657,7 @@ GetUsedOperator (node *arg_node, node *arg_info)
 /*****************************************************************************
  *
  * function:
- *   bool IsSupportedOperator(node *arg_node, node* arg_info)
+ *   bool IsSupportedOperator(node *arg_node, info *arg_info)
  *
  * description:
  *   returns TRUE, if the used operator in the definition of arg_node
@@ -610,7 +666,7 @@ GetUsedOperator (node *arg_node, node *arg_info)
  ****************************************************************************/
 
 static bool
-IsSupportedOperator (node *arg_node, node *arg_info)
+IsSupportedOperator (node *arg_node, info *arg_info)
 {
 
     bool support;
@@ -698,7 +754,7 @@ GetPriority (node *operator)
 /*****************************************************************************
  *
  * function:
- *   bool IsIdenticalNode(node *node1, node* node2)
+ *   bool IsIdenticalNode(node *node1, node *node2)
  *
  * description:
  *   returns TRUE, if both arguments refer to the same source-node or if
@@ -744,7 +800,7 @@ IsIdenticalNode (node *node1, node *node2)
 /*****************************************************************************
  *
  * function:
- *   bool IsValidSecondOperator(node *arg_node, node* arg_info)
+ *   bool IsValidSecondOperator(node *arg_node, info *arg_info)
  *
  * description:
  *   returns TRUE, if the the used operator in the definition of arg_node
@@ -754,7 +810,7 @@ IsIdenticalNode (node *node1, node *node2)
  ****************************************************************************/
 
 static bool
-IsValidSecondOperator (node *arg_node, node *arg_info)
+IsValidSecondOperator (node *arg_node, info *arg_info)
 {
 
     bool valid;
@@ -784,7 +840,7 @@ IsValidSecondOperator (node *arg_node, node *arg_info)
 /*****************************************************************************
  *
  * function:
- *   bool IsSameOperator(node *firstop, node* secondop)
+ *   bool IsSameOperator(node *firstop, node *secondop)
  *
  * description:
  *   returns TRUE, both operators are equal.
@@ -857,7 +913,7 @@ IsSameOperator (node *firstop, node *secondop)
 /*****************************************************************************
  *
  * function:
- *   bool IsThirdOperatorReached(node *arg_node, node *arg_info)
+ *   bool IsThirdOperatorReached(node *arg_node, info *arg_info)
  *
  * description:
  *   returns TRUE if the operator used in the definition of arg_node is not
@@ -866,7 +922,7 @@ IsSameOperator (node *firstop, node *secondop)
  ****************************************************************************/
 
 static bool
-IsThirdOperatorReached (node *arg_node, node *arg_info)
+IsThirdOperatorReached (node *arg_node, info *arg_info)
 {
 
     bool is_thirdop;
@@ -949,15 +1005,15 @@ ReachedDefinition (node *arg_node)
 /*****************************************************************************
  *
  * function:
- *   node* ResetFlags(node *arg_info)
+ *   node *ResetFlags(info *arg_info)
  *
  * description:
  *   All NODELIST_FLAGS in COUNTLIST are set to 0.
  *
  ****************************************************************************/
 
-static node *
-ResetFlags (node *arg_info)
+static void
+ResetFlags (info *arg_info)
 {
 
     nodelist *list;
@@ -971,13 +1027,13 @@ ResetFlags (node *arg_info)
         DL_NODELIST_FLAGS (list) = 0;
         list = NODELIST_NEXT (list);
     }
-    DBUG_RETURN (arg_info);
+    DBUG_VOID_RETURN;
 }
 
 /*****************************************************************************
  *
  * function:
- *   node* RegisterMultipleUsableNodes(node *arg_info)
+ *   node *RegisterMultipleUsableNodes(info *arg_info)
  *
  * description:
  *   If a collected node x in the COUNTLIST is directly connected with the
@@ -1007,8 +1063,8 @@ ResetFlags (node *arg_info)
  *
  ****************************************************************************/
 
-static node *
-RegisterMultipleUsableNodes (node *arg_info)
+static void
+RegisterMultipleUsableNodes (info *arg_info)
 {
 
     nodelist *currentlist, *tmplist;
@@ -1061,13 +1117,13 @@ RegisterMultipleUsableNodes (node *arg_info)
         currentlist = NODELIST_NEXT (currentlist);
     }
 
-    DBUG_RETURN (arg_info);
+    DBUG_VOID_RETURN;
 }
 
 /*****************************************************************************
  *
  * function:
- *   node* AddNodeToOptimizedNodes(node* arg, node* arg_info)
+ *   node *AddNodeToOptimizedNodes(node *arg, info *arg_info)
  *
  * description:
  *   The function create a new NodelistNode with 'arg' as NODELIST_NODE
@@ -1075,10 +1131,9 @@ RegisterMultipleUsableNodes (node *arg_info)
  *
  ****************************************************************************/
 
-static node *
-AddNodeToOptimizedNodes (node *arg, node *arg_info)
+static void
+AddNodeToOptimizedNodes (node *arg, info *arg_info)
 {
-
     nodelist *newlist;
 
     DBUG_ENTER ("AddNodeToOptimizedNodes");
@@ -1095,11 +1150,11 @@ AddNodeToOptimizedNodes (node *arg, node *arg_info)
         INFO_DL_OPTIMIZEDNODES (arg_info) = newlist;
     }
 
-    DBUG_RETURN (arg_info);
+    DBUG_VOID_RETURN;
 }
 
 static bool
-IsAnArray (node *expr, node *arg_info)
+IsAnArray (node *expr, info *arg_info)
 {
 
     bool result;
@@ -1125,7 +1180,7 @@ IsAnArray (node *expr, node *arg_info)
 /*****************************************************************************
  *
  * function:
- *   node* MakeOperatorNode(node* exprs, node* op)
+ *   node *MakeOperatorNode(node *exprs, node *op)
  *
  * description:
  *   This function creates and returns a new prf or ap node with the operator
@@ -1263,7 +1318,7 @@ MakeExprsNodeFromAssignNode (node *elem1)
 /*****************************************************************************
  *
  * function:
- *   node *MakeAssignLetNodeFromCurrentNode( node *newnode , node *arg_info)
+ *   node *MakeAssignLetNodeFromCurrentNode( node *newnode , info *arg_info)
  *
  * description:
  *   This function create a new assign-node with the newnode as an
@@ -1275,7 +1330,7 @@ MakeExprsNodeFromAssignNode (node *elem1)
  ****************************************************************************/
 
 static node *
-MakeAssignLetNodeFromCurrentNode (node *newnode, node *arg_info, int flag)
+MakeAssignLetNodeFromCurrentNode (node *newnode, info *arg_info, int flag)
 {
 
     node *newvardec;
@@ -1319,7 +1374,7 @@ MakeAssignLetNodeFromCurrentNode (node *newnode, node *arg_info, int flag)
 /*****************************************************************************
  *
  * function:
- *   node *MakeAllNodelistnodesToAssignNodes( nodelist* list, node *arg_info)
+ *   node *MakeAllNodelistnodesToAssignNodes( nodelist* list, info *arg_info)
  *
  * description:
  *   All NODELIST_NODES in list are replaced by an assign-node, with the
@@ -1328,8 +1383,8 @@ MakeAssignLetNodeFromCurrentNode (node *newnode, node *arg_info, int flag)
  *
  ****************************************************************************/
 
-static node *
-MakeAllNodelistnodesToAssignNodes (nodelist *list, node *arg_info)
+static void
+MakeAllNodelistnodesToAssignNodes (nodelist *list, info *arg_info)
 {
 
     node *node1, *newnode;
@@ -1358,7 +1413,7 @@ MakeAllNodelistnodesToAssignNodes (nodelist *list, node *arg_info)
         list = NODELIST_NEXT (list);
     }
 
-    DBUG_RETURN (arg_info);
+    DBUG_VOID_RETURN;
 }
 
 /*****************************************************************************
@@ -1395,15 +1450,15 @@ DeleteNodelist (nodelist *list)
 /*****************************************************************************
  *
  * function:
- *   node* CreateAssignNodes(node* arg_info)
+ *   node *CreateAssignNodes(info *arg_info)
  *
  * description:
  *   All NODELIST_NODE's of NONOPTLIST are expanded to assign-nodes
  *
  ****************************************************************************/
 
-static node *
-CreateAssignNodes (node *arg_info)
+static void
+CreateAssignNodes (info *arg_info)
 {
 
     nodelist *list;
@@ -1413,17 +1468,16 @@ CreateAssignNodes (node *arg_info)
 
     if (list != NULL) {
 
-        arg_info
-          = MakeAllNodelistnodesToAssignNodes (INFO_DL_NONOPTLIST (arg_info), arg_info);
+        MakeAllNodelistnodesToAssignNodes (INFO_DL_NONOPTLIST (arg_info), arg_info);
     }
 
-    DBUG_RETURN (arg_info);
+    DBUG_VOID_RETURN;
 }
 
 /*****************************************************************************
  *
  * function:
- *   nodelist* CommitAssignNodes(nodelist *list, node* arg_info)
+ *   nodelist* CommitAssignNodes(nodelist *list, info *arg_info)
  *
  * description:
  *   all NODELIST_NODE's in list are assign-nodes. Every two assign nodes
@@ -1440,7 +1494,7 @@ CreateAssignNodes (node *arg_info)
  ****************************************************************************/
 
 static nodelist *
-CommitAssignNodes (nodelist *list, node *arg_info)
+CommitAssignNodes (nodelist *list, info *arg_info)
 {
 
     nodelist *lastnodelistnode, *tmplist, *startlist;
@@ -1514,8 +1568,8 @@ CommitAssignNodes (nodelist *list, node *arg_info)
             /*
              * add used arguments to OPTIMIZEDNODES
              */
-            arg_info = AddNodeToOptimizedNodes (node1, arg_info);
-            arg_info = AddNodeToOptimizedNodes (node2, arg_info);
+            AddNodeToOptimizedNodes (node1, arg_info);
+            AddNodeToOptimizedNodes (node2, arg_info);
 
             /*
              * append new node on list
@@ -1547,7 +1601,7 @@ CommitAssignNodes (nodelist *list, node *arg_info)
 /*****************************************************************************
  *
  * function:
- *   node* IncludeMostFrequentNode(node* arg_info)
+ *   node *IncludeMostFrequentNode(info *arg_info)
  *
  * description:
  *   connect MOSTFREQUENNODE with the remaining node in OPTLIST with operator
@@ -1557,8 +1611,8 @@ CommitAssignNodes (nodelist *list, node *arg_info)
  *
  ****************************************************************************/
 
-static node *
-IncludeMostFrequentNode (node *arg_info)
+static void
+IncludeMostFrequentNode (info *arg_info)
 {
 
     node *node1, *node2, *newnode, *tmpnode;
@@ -1595,17 +1649,17 @@ IncludeMostFrequentNode (node *arg_info)
         newnode = MakeOperatorNode (node2, INFO_DL_SECONDOPERATOR (arg_info), 0);
         newnode = MakeAssignLetNodeFromCurrentNode (newnode, arg_info, 0);
     }
-    arg_info = AddNodeToOptimizedNodes (tmpnode, arg_info);
+    AddNodeToOptimizedNodes (tmpnode, arg_info);
 
     NODELIST_NODE (INFO_DL_OPTLIST (arg_info)) = newnode;
 
-    DBUG_RETURN (arg_info);
+    DBUG_VOID_RETURN;
 }
 
 /*****************************************************************************
  *
  * function:
- *   node* IntegrateResults(node* arg_info)
+ *   node *IntegrateResults(info *arg_info)
  *
  * description:
  *   First the remaining assign-node in OPTLIST is the source for a new
@@ -1619,10 +1673,9 @@ IncludeMostFrequentNode (node *arg_info)
  *
  ****************************************************************************/
 
-static node *
-IntegrateResults (node *arg_info)
+static void
+IntegrateResults (info *arg_info)
 {
-
     node *original, *old_nonoptnode, *old_optnode, *new_optnode, *new_nonoptnode,
       *oldargs;
 
@@ -1634,7 +1687,7 @@ IntegrateResults (node *arg_info)
     original = INFO_DL_LETNODE (arg_info);
     old_optnode = NODELIST_NODE (INFO_DL_OPTLIST (arg_info));
     new_optnode = MakeExprsNodeFromAssignNode (old_optnode);
-    arg_info = AddNodeToOptimizedNodes (old_optnode, arg_info);
+    AddNodeToOptimizedNodes (old_optnode, arg_info);
 
     new_nonoptnode = NULL;
 
@@ -1648,7 +1701,7 @@ IntegrateResults (node *arg_info)
          */
         old_nonoptnode = NODELIST_NODE (INFO_DL_NONOPTLIST (arg_info));
         new_nonoptnode = MakeExprsNodeFromAssignNode (old_nonoptnode);
-        arg_info = AddNodeToOptimizedNodes (old_nonoptnode, arg_info);
+        AddNodeToOptimizedNodes (old_nonoptnode, arg_info);
 
         oldargs = AP_OR_PRF_ARGS (LET_EXPR (original));
 
@@ -1709,13 +1762,13 @@ IntegrateResults (node *arg_info)
     }
     FreeTree (oldargs);
 
-    DBUG_RETURN (arg_info);
+    DBUG_VOID_RETURN;
 }
 
 /*****************************************************************************
  *
  * function:
- *   node* CheckNode(node* arg_node, node* arg_info)
+ *   node *CheckNode(node *arg_node, info *arg_info)
  *
  * description:
  *   This function check if arg_node is equal to MOSTFREQUENTNODE.
@@ -1727,8 +1780,8 @@ IntegrateResults (node *arg_info)
  *
  ****************************************************************************/
 
-static node *
-CheckNode (node *arg_node, node *arg_info)
+static void
+CheckNode (node *arg_node, info *arg_info)
 {
 
     nodelist *head;
@@ -1767,13 +1820,13 @@ CheckNode (node *arg_node, node *arg_info)
         INFO_DL_STATUSSECONDOPERATOR (arg_info) = 2;
     }
 
-    DBUG_RETURN (arg_info);
+    DBUG_VOID_RETURN;
 }
 
 /*****************************************************************************
  *
  * function:
- *   node* RemoveMostFrequentNode(node* arg_info)
+ *   node *RemoveMostFrequentNode(info *arg_info)
  *
  * description:
  *   All NODELIST_NODE's in OPTLIST contain the MOSTFREQUENTNODE.
@@ -1788,8 +1841,8 @@ CheckNode (node *arg_node, node *arg_info)
  *
  ****************************************************************************/
 
-static node *
-RemoveMostFrequentNode (node *arg_info)
+static void
+RemoveMostFrequentNode (info *arg_info)
 {
 
     nodelist *list, *parent_list, *tmp_list;
@@ -1961,7 +2014,7 @@ RemoveMostFrequentNode (node *arg_info)
                  * save new_son in correct list (OPTLIST)
                  */
 
-                arg_info = AddNodeToOptimizedNodes (new_son, arg_info);
+                AddNodeToOptimizedNodes (new_son, arg_info);
 
                 /*
                  * create prf/ap-node and then assign-node
@@ -2018,11 +2071,11 @@ RemoveMostFrequentNode (node *arg_info)
         list = NODELIST_NEXT (list);
     }
 
-    DBUG_RETURN (arg_info);
+    DBUG_VOID_RETURN;
 }
 
 static bool
-IsMainOrSecondOperator (node *id, node *arg_info)
+IsMainOrSecondOperator (node *id, info *arg_info)
 {
 
     bool result = FALSE;
@@ -2042,7 +2095,7 @@ IsMainOrSecondOperator (node *id, node *arg_info)
 /*****************************************************************************
  *
  * function:
- *   OptTravElems(node *arg_node, node *arg_info)
+ *   OptTravElems(node *arg_node, info *arg_info)
  *
  * description:
  *   The arg_node is an exprs-node
@@ -2066,8 +2119,8 @@ IsMainOrSecondOperator (node *id, node *arg_info)
  *
  ****************************************************************************/
 
-static node *
-OptTravElems (node *arg_node, node *arg_info)
+static info *
+OptTravElems (node *arg_node, info *arg_info)
 {
 
     nodelist *list;
@@ -2086,7 +2139,7 @@ OptTravElems (node *arg_node, node *arg_info)
          * check if MOSTFREQUENTNODE is not found till now but SECONDOPERATOR reached
          */
         if (INFO_DL_STATUSSECONDOPERATOR (arg_info) == 1)
-            arg_info = CheckNode (EXPRS_EXPR (arg_node), arg_info);
+            CheckNode (EXPRS_EXPR (arg_node), arg_info);
 
         /*
          * if node is a single node connected with MAINOPERATOR
@@ -2284,7 +2337,7 @@ OptTravElems (node *arg_node, node *arg_info)
 /*****************************************************************************
  *
  * function:
- *   node *CreateOptLists(node* arg_node, node* arg_info)
+ *   node *CreateOptLists(node *arg_node, info *arg_info)
  *
  * description:
  *   Starting function for investigate the OPTLIST and NONOPTLIST
@@ -2292,8 +2345,8 @@ OptTravElems (node *arg_node, node *arg_info)
  *
  *****************************************************************************/
 
-static node *
-CreateOptLists (node *arg_node, node *arg_info)
+static void
+CreateOptLists (node *arg_node, info *arg_info)
 {
 
     DBUG_ENTER ("CreateOptLists");
@@ -2304,13 +2357,13 @@ CreateOptLists (node *arg_node, node *arg_info)
     arg_info = OptTravElems (PRF_ARGS (arg_node), arg_info);
     arg_info = OptTravElems (EXPRS_NEXT (PRF_ARGS (arg_node)), arg_info);
 
-    DBUG_RETURN (arg_info);
+    DBUG_VOID_RETURN;
 }
 
 /*****************************************************************************
  *
  * function:
- *   nodelist* FindNodeInList(nodelist* list, node* arg_node, node* operator)
+ *   nodelist* FindNodeInList(nodelist* list, node *arg_node, node *operator)
  *
  * description:
  *   Returns the position in nodelist where NODELIST_NODE is equal to arg_node
@@ -2387,7 +2440,7 @@ FindNodeInList (nodelist *list, node *arg_node, node *operator)
 /*****************************************************************************
  *
  * function:
- *   node* FindAndSetMostFrequentNode(node* arg_info)
+ *   node *FindAndSetMostFrequentNode(info *arg_info)
  *
  * description:
  *   Add memorized nodes connected with MAINOOERATOR in COUNTLIST to nodes
@@ -2397,8 +2450,8 @@ FindNodeInList (nodelist *list, node *arg_node, node *operator)
  *
  *****************************************************************************/
 
-static node *
-FindAndSetMostFrequentNode (node *arg_info)
+static void
+FindAndSetMostFrequentNode (info *arg_info)
 {
 
     int maxOccurence;
@@ -2406,7 +2459,7 @@ FindAndSetMostFrequentNode (node *arg_info)
 
     DBUG_ENTER ("FindAndSetMostFrequentNode");
 
-    arg_info = RegisterMultipleUsableNodes (arg_info);
+    RegisterMultipleUsableNodes (arg_info);
 
     maxOccurence = 0;
     list = INFO_DL_COUNTLIST (arg_info);
@@ -2427,13 +2480,13 @@ FindAndSetMostFrequentNode (node *arg_info)
         list = NODELIST_NEXT (list);
     }
 
-    DBUG_RETURN (arg_info);
+    DBUG_VOID_RETURN;
 }
 
 /*****************************************************************************
  *
  * function:
- *   node *RegisterNode(node *arg_node, node *arg_info)
+ *   node *RegisterNode(node *arg_node, info *arg_info)
  *
  * description:
  *   If arg_node with the correct operator exists in COUNTLIST,
@@ -2442,8 +2495,8 @@ FindAndSetMostFrequentNode (node *arg_info)
  *
  *****************************************************************************/
 
-static node *
-RegisterNode (node *arg_node, node *arg_info)
+static void
+RegisterNode (node *arg_node, info *arg_info)
 {
 
     node *lastOperator;
@@ -2490,13 +2543,13 @@ RegisterNode (node *arg_node, node *arg_info)
         DL_NODELIST_FLAGS (node_in_list) = 1;
     }
 
-    DBUG_RETURN (arg_info);
+    DBUG_VOID_RETURN;
 }
 
 /*****************************************************************************
  *
  * function:
- *   SearchTravElems(node *arg_node, node *arg_info)
+ *   SearchTravElems(node *arg_node, info *arg_info)
  *
  * description:
  *   The arg_node is an exprs-node
@@ -2514,8 +2567,8 @@ RegisterNode (node *arg_node, node *arg_info)
  *
  ****************************************************************************/
 
-static node *
-SearchTravElems (node *arg_node, node *arg_info)
+static void
+SearchTravElems (node *arg_node, info *arg_info)
 {
 
     DBUG_ENTER ("SearchTravElems");
@@ -2525,7 +2578,7 @@ SearchTravElems (node *arg_node, node *arg_info)
         /*
          * constant argument reached
          */
-        arg_info = RegisterNode (EXPRS_EXPR (arg_node), arg_info);
+        RegisterNode (EXPRS_EXPR (arg_node), arg_info);
 
     } else if (ReachedArgument (EXPRS_EXPR (arg_node))
                || ReachedDefinition (EXPRS_EXPR (arg_node))
@@ -2540,7 +2593,7 @@ SearchTravElems (node *arg_node, node *arg_info)
         /*
          * other termination-condition reached
          */
-        arg_info = RegisterNode (EXPRS_EXPR (arg_node), arg_info);
+        RegisterNode (EXPRS_EXPR (arg_node), arg_info);
 
     } else if ((IsSupportedOperator (EXPRS_EXPR (arg_node), arg_info))
                && (INFO_DL_STATUSSECONDOPERATOR (arg_info) == 0)
@@ -2550,45 +2603,43 @@ SearchTravElems (node *arg_node, node *arg_info)
          * second operator reached - save second operator and traverse
          */
 
-        arg_info = ResetFlags (arg_info);
+        ResetFlags (arg_info);
 
         INFO_DL_SECONDOPERATOR (arg_info)
           = GetUsedOperator (EXPRS_EXPR (arg_node), arg_info);
         INFO_DL_STATUSSECONDOPERATOR (arg_info) = 1;
 
-        arg_info = SearchTravElems (PRF_ARGS (LET_EXPR (ASSIGN_INSTR (
-                                      AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (arg_node)))))),
-                                    arg_info);
-        arg_info
-          = SearchTravElems (EXPRS_NEXT (PRF_ARGS (LET_EXPR (ASSIGN_INSTR (
-                               AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (arg_node))))))),
-                             arg_info);
+        SearchTravElems (PRF_ARGS (LET_EXPR (ASSIGN_INSTR (
+                           AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (arg_node)))))),
+                         arg_info);
+        SearchTravElems (EXPRS_NEXT (PRF_ARGS (LET_EXPR (ASSIGN_INSTR (
+                           AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (arg_node))))))),
+                         arg_info);
 
         INFO_DL_SECONDOPERATOR (arg_info) = NULL;
         INFO_DL_STATUSSECONDOPERATOR (arg_info) = 0;
 
-        arg_info = ResetFlags (arg_info);
+        ResetFlags (arg_info);
     } else {
 
         /*
          * still main operator or second operator: traverse
          */
-        arg_info = SearchTravElems (PRF_ARGS (LET_EXPR (ASSIGN_INSTR (
-                                      AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (arg_node)))))),
-                                    arg_info);
-        arg_info
-          = SearchTravElems (EXPRS_NEXT (PRF_ARGS (LET_EXPR (ASSIGN_INSTR (
-                               AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (arg_node))))))),
-                             arg_info);
+        SearchTravElems (PRF_ARGS (LET_EXPR (ASSIGN_INSTR (
+                           AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (arg_node)))))),
+                         arg_info);
+        SearchTravElems (EXPRS_NEXT (PRF_ARGS (LET_EXPR (ASSIGN_INSTR (
+                           AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (arg_node))))))),
+                         arg_info);
     }
 
-    DBUG_RETURN (arg_info);
+    DBUG_VOID_RETURN;
 }
 
 /*****************************************************************************
  *
  * function:
- *   node *SearchMostFrequentNode(node* arg_node, node* arg_info)
+ *   node *SearchMostFrequentNode(node *arg_node, info *arg_info)
  *
  * description:
  *   Starting function for investigate the MOSTFREQUENTNODE.
@@ -2599,8 +2650,8 @@ SearchTravElems (node *arg_node, node *arg_info)
  *
  *****************************************************************************/
 
-static node *
-SearchMostFrequentNode (node *arg_node, node *arg_info)
+static void
+SearchMostFrequentNode (node *arg_node, info *arg_info)
 {
 
     DBUG_ENTER ("SearchMostFrequentNode");
@@ -2613,8 +2664,8 @@ SearchMostFrequentNode (node *arg_node, node *arg_info)
 
     INFO_DL_MAINOPERATOR (arg_info) = arg_node;
 
-    arg_info = SearchTravElems (PRF_ARGS (arg_node), arg_info);
-    arg_info = SearchTravElems (EXPRS_NEXT (PRF_ARGS (arg_node)), arg_info);
+    SearchTravElems (PRF_ARGS (arg_node), arg_info);
+    SearchTravElems (EXPRS_NEXT (PRF_ARGS (arg_node)), arg_info);
 
     /*
      * Now, all untraversable nodes are added to COUNTLIST.
@@ -2622,12 +2673,12 @@ SearchMostFrequentNode (node *arg_node, node *arg_info)
      * and modify SECONDOPERATOR in arg_info with the operation of the 'winner-node'
      */
 
-    arg_info = FindAndSetMostFrequentNode (arg_info);
+    FindAndSetMostFrequentNode (arg_info);
 
     DeleteNodelist (INFO_DL_COUNTLIST (arg_info));
     INFO_DL_COUNTLIST (arg_info) = NULL;
 
-    DBUG_RETURN (arg_info);
+    DBUG_VOID_RETURN;
 }
 
 /*****************************************************************************
@@ -2641,14 +2692,17 @@ SearchMostFrequentNode (node *arg_node, node *arg_info)
  *****************************************************************************/
 
 node *
-DistributiveLaw (node *arg_node, node *a)
+DistributiveLaw (node *arg_node)
 {
-    node *arg_info;
+    info *arg_info;
     funtab *old_tab;
 
     DBUG_ENTER ("DistributiveLaw");
 
     if (arg_node != NULL) {
+        DBUG_PRINT ("OPT",
+                    ("starting distributive law in function %s", FUNDEF_NAME (arg_node)));
+
         arg_info = MakeInfo ();
 
         old_tab = act_tab;
@@ -2658,7 +2712,7 @@ DistributiveLaw (node *arg_node, node *a)
 
         act_tab = old_tab;
 
-        arg_info = FreeTree (arg_info);
+        arg_info = FreeInfo (arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -2667,7 +2721,7 @@ DistributiveLaw (node *arg_node, node *a)
 /*****************************************************************************
  *
  * function:
- *   DLblock(node *arg_node, node *arg_info)
+ *   DLblock(node *arg_node, info *arg_info)
  *
  * description:
  *   store block-node for access to vardec-nodes
@@ -2677,7 +2731,7 @@ DistributiveLaw (node *arg_node, node *a)
  ****************************************************************************/
 
 node *
-DLblock (node *arg_node, node *arg_info)
+DLblock (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("DLblock");
 
@@ -2701,7 +2755,7 @@ DLblock (node *arg_node, node *arg_info)
 /*****************************************************************************
  *
  * function:
- *   DLassign(node *arg_node, node *arg_info)
+ *   DLassign(node *arg_node, info *arg_info)
  *
  * description:
  *   Set flag ASSIGN_STATUS to mark unused nodes in optimization-process
@@ -2715,7 +2769,7 @@ DLblock (node *arg_node, node *arg_info)
  ****************************************************************************/
 
 node *
-DLassign (node *arg_node, node *arg_info)
+DLassign (node *arg_node, info *arg_info)
 {
 
     DBUG_ENTER ("DLassign");
@@ -2777,7 +2831,7 @@ DLassign (node *arg_node, node *arg_info)
 /*****************************************************************************
  *
  * function:
- *   DLlet(node *arg_node, node *arg_info)
+ *   DLlet(node *arg_node, info *arg_info)
  *
  * description:
  *   store current let-node to include last created new primitive-node
@@ -2786,7 +2840,7 @@ DLassign (node *arg_node, node *arg_info)
  ****************************************************************************/
 
 node *
-DLlet (node *arg_node, node *arg_info)
+DLlet (node *arg_node, info *arg_info)
 {
 
     DBUG_ENTER ("DLlet");
@@ -2807,7 +2861,7 @@ DLlet (node *arg_node, node *arg_info)
          */
         if ((INFO_DL_OCCURENCEOFMOSTFREQUENTNODE (arg_info) > 1)
             && ((!enforce_ieee) || (INFO_DL_IEEEFLAG (arg_info) == 0)))
-            arg_info = IntegrateResults (arg_info);
+            IntegrateResults (arg_info);
 
         INFO_DL_OCCURENCEOFMOSTFREQUENTNODE (arg_info) = 0;
     }
@@ -2817,7 +2871,7 @@ DLlet (node *arg_node, node *arg_info)
 /*****************************************************************************
  *
  * function:
- *   node *DLPrfOrAp(node* arg_node, node* arg_info)
+ *   node *DLPrfOrAp(node *arg_node, info *arg_info)
  *
  * description:
  *   Starting point of one optimization-cycle.
@@ -2828,7 +2882,7 @@ DLlet (node *arg_node, node *arg_info)
  ****************************************************************************/
 
 node *
-DLPrfOrAp (node *arg_node, node *arg_info)
+DLPrfOrAp (node *arg_node, info *arg_info)
 {
 
     DBUG_ENTER ("DLprfOrap");
@@ -2853,7 +2907,7 @@ DLPrfOrAp (node *arg_node, node *arg_info)
             /*
              * investigate the most frequent node
              */
-            arg_info = SearchMostFrequentNode (arg_node, arg_info);
+            SearchMostFrequentNode (arg_node, arg_info);
 
             /*
              * Exist an optimization case?
@@ -2873,20 +2927,20 @@ DLPrfOrAp (node *arg_node, node *arg_info)
                  * MOSTFREQENTNODE all other nodes are collected in NONOPTLIST
                  */
 
-                arg_info = CreateOptLists (arg_node, arg_info);
+                CreateOptLists (arg_node, arg_info);
 
                 /*
                  * OPTIMIZATION
                  *
                  * duplicate MFN and remove then all MFN from OPTLIST
                  */
-                arg_info = RemoveMostFrequentNode (arg_info);
+                RemoveMostFrequentNode (arg_info);
 
                 /*
                  * remove all original nodes from NONOPTLIST by creating
                  * new assign nodes with original nodes as arguments
                  */
-                arg_info = CreateAssignNodes (arg_info);
+                CreateAssignNodes (arg_info);
 
                 /*
                  * connect node in OPTLIST / NONOPTLIST till only one assign-node remain
@@ -2899,7 +2953,7 @@ DLPrfOrAp (node *arg_node, node *arg_info)
                 /*
                  * connect MFN with remaining node in OPTLIST
                  */
-                arg_info = IncludeMostFrequentNode (arg_info);
+                IncludeMostFrequentNode (arg_info);
             }
         }
 

@@ -1,5 +1,10 @@
 /* *
  * $Log$
+ * Revision 1.26  2004/07/18 19:54:54  sah
+ * switch to new INFO structure
+ * PHASE I
+ * (as well some code cleanup)
+ *
  * Revision 1.25  2004/07/07 15:43:36  mwe
  * last changes undone (all changes connected to new type representation with ntype*)
  *
@@ -228,47 +233,43 @@
  * usage of arg_info and accessmacros:
  * ***********************************
  *
- *  -info2:      CONSTANTLIST
- *                  nodelist* used to store unused constant nodes
- *  -info3:      VARIABLELIST
- *                  nodelist* used to store unused variable nodes
- *  -dfmask[3]:  ARRAYLIST
- *                  nodelist* used to store unused array nodes
- *  -dfmask[4]:  OPTARRAYLIST
- *                  nodelist* used to store edited nodes from ARRAYLIST
- *  -dfmask[2]:  OPTCONSTANTLIST
- *                  nodelist* used to store edited nodes from CONSTANTLIST
- *  -dfmask[1]:  OPTVARIABLELIST
- *                  nodelist* used to store edited nodes from VARIABLELIST
- *  -dfmask[0]:  TYPE
- *                  stored types-node at beginnig of optimization process.
- *                  Is used to create new types-nodes
- *  -counter:    NUMBEROFCONSTANTS
- *                  counter for the number of elements in CONSTANTLIST
- *  -varno:      NUMBEROFVARIABLES
- *                  counter for the number of elements in VARIABLELIST
- *  -node[0]:    BLOCKNODE
- *                  pointer on the current outer block node.
- *                  Is used to insert new vardec nodes
- *  -info.prf:   CURRENTPRF
- *                  store the primitive operation used in current node
- *                  the optimization is running for.
- *  -node[1]:    LETNODE
- *                  pointer on the let node of the current assign-node
- *                  the optimization is running for.
- *  -node[2]:    CURRENTASSIGN
- *                  used while traversal through definitions of the
- *                  arguments of exprs-nodes. Store pointer to the
- *                  current assign node. If current exprs nodes
- *                  could be used in optimization process,
- *                  the assign node is marked as used.
- *
- *
- *****************************************************************************/
+ *  CONSTANTLIST
+ *     nodelist* used to store unused constant nodes
+ *  VARIABLELIST
+ *     nodelist* used to store unused variable nodes
+ *  ARRAYLIST
+ *     nodelist* used to store unused array nodes
+ *  OPTARRAYLIST
+ *     nodelist* used to store edited nodes from ARRAYLIST
+ *  OPTCONSTANTLIST
+ *     nodelist* used to store edited nodes from CONSTANTLIST
+ *  OPTVARIABLELIST
+ *     nodelist* used to store edited nodes from VARIABLELIST
+ *  TYPE
+ *     stored types-node at beginnig of optimization process.
+ *     Is used to create new types-nodes
+ *  NUMBEROFCONSTANTS
+ *     counter for the number of elements in CONSTANTLIST
+ *  NUMBEROFVARIABLES
+ *     counter for the number of elements in VARIABLELIST
+ *  BLOCKNODE
+ *     pointer on the current outer block node.
+ *     Is used to insert new vardec nodes
+ *  CURRENTPRF
+ *     store the primitive operation used in current node
+ *     the optimization is running for.
+ *  LETNODE
+ *     pointer on the let node of the current assign-node
+ *     the optimization is running for.
+ *  CURRENTASSIGN
+ *     used while traversal through definitions of the
+ *     arguments of exprs-nodes. Store pointer to the
+ *     current assign node. If current exprs nodes
+ *     could be used in optimization process,
+ *     the assign node is marked as used.
+ ***********************************************************************/
 
-#define INFO_AL_OPTLIST(n) (nodelist *)(n->dfmask[4])
-#define INFO_AL_ARRAYLIST(n) (nodelist *)(n->dfmask[3])
-#define INFO_AL_CONSTARRAYLIST(n) (nodelist *)(n->dfmask[5])
+#define NEW_INFO
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -286,6 +287,85 @@
 #include "SSATransform.h"
 
 #include "AssociativeLaw.h"
+
+/*
+ * INFO structure
+ */
+struct INFO {
+    nodelist *constantlist;
+    nodelist *variablelist;
+    nodelist *optconstantlist;
+    nodelist *optvariablelist;
+    types *type;
+    int numberofconstants;
+    int numberofvariables;
+    node *blocknode;
+    prf currentprf;
+    node *letnode;
+    node *currentassign;
+    nodelist *optlist;
+    nodelist *arraylist;
+    nodelist *constarraylist;
+};
+
+/*
+ * INFO macros
+ */
+
+#define INFO_AL_CONSTANTLIST(n) (n->constantlist)
+#define INFO_AL_VARIABLELIST(n) (n->variablelist)
+#define INFO_AL_OPTCONSTANTLIST(n) (n->optconstantlist)
+#define INFO_AL_OPTVARIABLELIST(n) (n->optvariablelist)
+#define INFO_AL_TYPE(n) (n->type)
+#define INFO_AL_NUMBEROFCONSTANTS(n) (n->numberofconstants)
+#define INFO_AL_NUMBEROFVARIABLES(n) (n->numberofvariables)
+#define INFO_AL_BLOCKNODE(n) (n->blocknode)
+#define INFO_AL_CURRENTPRF(n) (n->currentprf)
+#define INFO_AL_LETNODE(n) (n->letnode)
+#define INFO_AL_CURRENTASSIGN(n) (n->currentassign)
+#define INFO_AL_OPTLIST(n) (n->optlist)
+#define INFO_AL_ARRAYLIST(n) (n->arraylist)
+#define INFO_AL_CONSTARRAYLIST(n) (n->constarraylist)
+
+/*
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = Malloc (sizeof (info));
+
+    INFO_AL_CONSTANTLIST (result) = NULL;
+    INFO_AL_VARIABLELIST (result) = NULL;
+    INFO_AL_OPTCONSTANTLIST (result) = NULL;
+    INFO_AL_OPTVARIABLELIST (result) = NULL;
+    INFO_AL_TYPE (result) = NULL;
+    INFO_AL_NUMBEROFCONSTANTS (result) = 0;
+    INFO_AL_NUMBEROFVARIABLES (result) = 0;
+    INFO_AL_BLOCKNODE (result) = NULL;
+    INFO_AL_CURRENTPRF (result) = 0;
+    INFO_AL_LETNODE (result) = NULL;
+    INFO_AL_CURRENTASSIGN (result) = NULL;
+    INFO_AL_OPTLIST (result) = NULL;
+    INFO_AL_ARRAYLIST (result) = NULL;
+    INFO_AL_CONSTARRAYLIST (result) = NULL;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = Free (info);
+
+    DBUG_RETURN (info);
+}
 
 /*****************************************************************************
  *
@@ -444,7 +524,7 @@ IsConstantArray (node *arg_node)
 /*****************************************************************************
  *
  * function:
- *   node *AddNode(node *arg_node, node *arg_info, int nodetype)
+ *   node *AddNode(node *arg_node, info *arg_info, int nodetype)
  *
  * description:
  *   Add the arg_node to the node-list in arg_info
@@ -458,8 +538,8 @@ IsConstantArray (node *arg_node)
  *
  ****************************************************************************/
 
-static node *
-AddNode (node *arg_node, node *arg_info, int nodetype)
+static info *
+AddNode (node *arg_node, info *arg_info, int nodetype)
 {
     nodelist *newnodelistnode = MakeNodelistNode (EXPRS_EXPR (arg_node), NULL);
 
@@ -503,7 +583,7 @@ AddNode (node *arg_node, node *arg_info, int nodetype)
 /*****************************************************************************
  *
  * function:
- *   int OtherPrfOp(node *arg_node, node *arg_info)
+ *   int OtherPrfOp(node *arg_node, info *arg_info)
  *
  * description:
  *   Thje arg_node is an exprs-node
@@ -514,7 +594,7 @@ AddNode (node *arg_node, node *arg_info, int nodetype)
  ****************************************************************************/
 
 static int
-OtherPrfOp (node *arg_node, node *arg_info)
+OtherPrfOp (node *arg_node, info *arg_info)
 {
     int otherOp;
     prf otherPrf;
@@ -599,7 +679,7 @@ RemoveNodelistNodes (nodelist *current_list)
 /*****************************************************************************
  *
  * function:
- *   node *MakeAssignNodeFromExprsNode( node *newnode , node *arg_info)
+ *   node *MakeAssignNodeFromExprsNode( node *newnode , info *arg_info)
  *
  * description:
  *   This function create a new assign-node with the current node as an
@@ -609,7 +689,7 @@ RemoveNodelistNodes (nodelist *current_list)
  ****************************************************************************/
 
 static node *
-MakeAssignNodeFromCurrentNode (node *newnode, node *arg_info, int dim)
+MakeAssignNodeFromCurrentNode (node *newnode, info *arg_info, int dim)
 {
 
     node *newvardec;
@@ -666,7 +746,7 @@ MakeAssignNodeFromCurrentNode (node *newnode, node *arg_info, int dim)
 /*****************************************************************************
  *
  * function:
- *   node *MakeAssignNodeFromExprsNode( node *newnode , node *arg_info)
+ *   node *MakeAssignNodeFromExprsNode( node *newnode , info *arg_info)
  *
  * description:
  *   This function create a new assign-node with the exprs-node as an
@@ -676,7 +756,7 @@ MakeAssignNodeFromCurrentNode (node *newnode, node *arg_info, int dim)
  ****************************************************************************/
 
 static node *
-MakeAssignNodeFromExprsNode (node *newnode, node *arg_info, int dim)
+MakeAssignNodeFromExprsNode (node *newnode, info *arg_info, int dim)
 {
     DBUG_ENTER ("MakeAssignNodeFromExprsNode");
     newnode = MakePrf (INFO_AL_CURRENTPRF (arg_info), newnode);
@@ -799,7 +879,7 @@ MakeExprsNodeFromExprsAndAssignNode (nodelist *assignnode, nodelist *exprsnode)
 /*****************************************************************************
  *
  * function:
- *   CommitNAssignNodes(node *arg_info)
+ *   CommitNAssignNodes(info *arg_info)
  *
  * description:
  *   When this function is called, all nodes in the VARIABLELIST and
@@ -818,8 +898,8 @@ MakeExprsNodeFromExprsAndAssignNode (nodelist *assignnode, nodelist *exprsnode)
  *
  ****************************************************************************/
 
-static node *
-CommitAssignNodes (nodelist *currentList, node *arg_info, int dim)
+static info *
+CommitAssignNodes (nodelist *currentList, info *arg_info, int dim)
 {
     node *newnode, *elem1, *elem2;
     nodelist *lastListElem;
@@ -854,7 +934,7 @@ CommitAssignNodes (nodelist *currentList, node *arg_info, int dim)
 /*****************************************************************************
  *
  * function:
- *   CreateNAssignNodes(node *arg_info)
+ *   CreateNAssignNodes(info *arg_info)
  *
  * description:
  *   Replace all nodes in CONSTANTLIST by copies and imbed them in exprs-nodes
@@ -878,8 +958,8 @@ CommitAssignNodes (nodelist *currentList, node *arg_info, int dim)
  *
  ****************************************************************************/
 
-static node *
-CreateAssignNodes (nodelist *currentList, node *arg_info, int dim)
+static info *
+CreateAssignNodes (nodelist *currentList, info *arg_info, int dim)
 {
 
     node *listElem;
@@ -901,8 +981,8 @@ CreateAssignNodes (nodelist *currentList, node *arg_info, int dim)
     DBUG_RETURN (arg_info);
 }
 
-static node *
-CreateOptlist (node *arg_info)
+static info *
+CreateOptlist (info *arg_info)
 {
 
     nodelist *currentList, *next;
@@ -985,7 +1065,7 @@ ContainsAnArray (node *expr)
 /*****************************************************************************
  *
  * function:
- *   TravElems(node *arg_node, node *arg_info)
+ *   TravElems(node *arg_node, info *arg_info)
  *
  * description:
  *   The arg_node is an exprs-node
@@ -1001,8 +1081,8 @@ ContainsAnArray (node *expr)
  *
  ****************************************************************************/
 
-static node *
-TravElems (node *arg_node, node *arg_info)
+static void
+TravElems (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("TravElems");
 
@@ -1055,18 +1135,17 @@ TravElems (node *arg_node, node *arg_info)
                 INFO_AL_CURRENTASSIGN (arg_info)
                   = AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (arg_node)));
 
-                arg_info = TravElems (PRF_ARGS (LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (
-                                        ID_AVIS (EXPRS_EXPR (arg_node)))))),
-                                      arg_info);
-                arg_info
-                  = TravElems (EXPRS_NEXT (PRF_ARGS (LET_EXPR (ASSIGN_INSTR (
-                                 AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (arg_node))))))),
-                               arg_info);
+                TravElems (PRF_ARGS (LET_EXPR (ASSIGN_INSTR (
+                             AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (arg_node)))))),
+                           arg_info);
+                TravElems (EXPRS_NEXT (PRF_ARGS (LET_EXPR (ASSIGN_INSTR (
+                             AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (arg_node))))))),
+                           arg_info);
             }
         }
     }
 
-    DBUG_RETURN (arg_info);
+    DBUG_VOID_RETURN;
 }
 
 static prf
@@ -1118,7 +1197,7 @@ GetOperator (prf op, int flag)
 }
 
 static node *
-JoinResults (nodelist *nodelist1, nodelist *nodelist2, node *arg_info, int flag)
+JoinResults (nodelist *nodelist1, nodelist *nodelist2, info *arg_info, int flag)
 {
 
     node *tmp;
@@ -1163,14 +1242,17 @@ JoinResults (nodelist *nodelist1, nodelist *nodelist2, node *arg_info, int flag)
  *****************************************************************************/
 
 node *
-AssociativeLaw (node *arg_node, node *a)
+AssociativeLaw (node *arg_node)
 {
-    node *arg_info;
+    info *arg_info;
     funtab *old_tab;
 
     DBUG_ENTER ("AssociativeLaw");
 
     if (arg_node != NULL) {
+        DBUG_PRINT ("OPT",
+                    ("starting associative law in function %s", FUNDEF_NAME (arg_node)));
+
         arg_info = MakeInfo ();
 
         old_tab = act_tab;
@@ -1180,7 +1262,7 @@ AssociativeLaw (node *arg_node, node *a)
 
         act_tab = old_tab;
 
-        arg_info = FreeTree (arg_info);
+        arg_info = FreeInfo (arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -1189,7 +1271,7 @@ AssociativeLaw (node *arg_node, node *a)
 /*****************************************************************************
  *
  * function:
- *   ALblock(node *arg_node, node *arg_info)
+ *   ALblock(node *arg_node, info *arg_info)
  *
  * description:
  *   store block-node for access to vardec-nodes
@@ -1199,7 +1281,7 @@ AssociativeLaw (node *arg_node, node *a)
  ****************************************************************************/
 
 node *
-ALblock (node *arg_node, node *arg_info)
+ALblock (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ALblock");
 
@@ -1224,7 +1306,7 @@ ALblock (node *arg_node, node *arg_info)
 /*****************************************************************************
  *
  * function:
- *   ALassign(node *arg_node, node *arg_info)
+ *   ALassign(node *arg_node, info *arg_info)
  *
  * description:
  *   Set flag ASSIGN_STATUS to mark unused nodes in optimization-process
@@ -1238,7 +1320,7 @@ ALblock (node *arg_node, node *arg_info)
  ****************************************************************************/
 
 node *
-ALassign (node *arg_node, node *arg_info)
+ALassign (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ALassign");
 
@@ -1318,7 +1400,7 @@ ALassign (node *arg_node, node *arg_info)
 /*****************************************************************************
  *
  * function:
- *   ALlet(node *arg_node, node *arg_info)
+ *   ALlet(node *arg_node, info *arg_info)
  *
  * description:
  *   store current let-node to include last created new primitive-node
@@ -1327,7 +1409,7 @@ ALassign (node *arg_node, node *arg_info)
  ****************************************************************************/
 
 node *
-ALlet (node *arg_node, node *arg_info)
+ALlet (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ALlet");
     if (LET_EXPR (arg_node) != NULL) {
@@ -1345,7 +1427,7 @@ ALlet (node *arg_node, node *arg_info)
 /*****************************************************************************
  *
  * function:
- *   ALprf(node *arg_node, node *arg_info)
+ *   ALprf(node *arg_node, info *arg_info)
  *
  * description:
  *   If primitive is associative and commutative start optimization-routines:
@@ -1360,7 +1442,7 @@ ALlet (node *arg_node, node *arg_info)
  ****************************************************************************/
 
 node *
-ALprf (node *arg_node, node *arg_info)
+ALprf (node *arg_node, info *arg_info)
 {
     int anz_const;
     int anz_all;
@@ -1387,8 +1469,8 @@ ALprf (node *arg_node, node *arg_info)
              * Traverse through the definitions of arg_node and collect nodes
              */
 
-            arg_info = TravElems (PRF_ARGS (arg_node), arg_info);
-            arg_info = TravElems (EXPRS_NEXT (PRF_ARGS (arg_node)), arg_info);
+            TravElems (PRF_ARGS (arg_node), arg_info);
+            TravElems (EXPRS_NEXT (PRF_ARGS (arg_node)), arg_info);
 
             anz_const = INFO_AL_NUMBEROFCONSTANTS (arg_info);
             anz_all = INFO_AL_NUMBEROFVARIABLES (arg_info) + anz_const;

@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.35  2004/07/18 19:54:54  sah
+ * switch to new INFO structure
+ * PHASE I
+ * (as well some code cleanup)
+ *
  * Revision 3.34  2004/07/14 23:23:37  sah
  * removed all old ssa optimizations and the use_ssaform flag
  *
@@ -155,6 +160,8 @@
  *
  */
 
+#define NEW_INFO
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -174,6 +181,69 @@
 #include "optimize.h"
 #include "DupTree.h"
 #include "Inline.h"
+
+/*
+ * INFO structure
+ */
+struct INFO {
+    int type;
+    LUT_t lut;
+    node *modul;
+    node *vardecs;
+    node *prolog;
+    node *epilog;
+    node *arg;
+    ids *ids;
+    node *fundef;
+};
+
+/*
+ * INFO macros
+ */
+#define INFO_INL_TYPE(n) (n->type)
+#define INFO_INL_LUT(n) (n->lut)
+#define INFO_INL_MODUL(n) (n->modul)
+#define INFO_INL_VARDECS(n) (n->vardecs)
+#define INFO_INL_PROLOG(n) (n->prolog)
+#define INFO_INL_EPILOG(n) (n->epilog)
+#define INFO_INL_ARG(n) (n->arg)
+#define INFO_INL_IDS(n) (n->ids)
+#define INFO_INL_FUNDEF(n) (n->fundef)
+
+/*
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = Malloc (sizeof (info));
+
+    INFO_INL_TYPE (result) = 0;
+    INFO_INL_LUT (result) = NULL;
+    INFO_INL_MODUL (result) = NULL;
+    INFO_INL_VARDECS (result) = NULL;
+    INFO_INL_PROLOG (result) = NULL;
+    INFO_INL_EPILOG (result) = NULL;
+    INFO_INL_ARG (result) = NULL;
+    INFO_INL_IDS (result) = NULL;
+    INFO_INL_FUNDEF (result) = NULL;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = Free (info);
+
+    DBUG_RETURN (info);
+}
 
 /*
  * bit field (INFO_INL_TYPE)
@@ -301,7 +371,7 @@ node *AdjustIntAssign( node *int_assign, node *ext_let)
 /******************************************************************************
  *
  * Function:
- *   node *InlineArg( node *arg_node, node *arg_info)
+ *   node *InlineArg( node *arg_node, info *arg_info)
  *
  * Description:
  *
@@ -309,7 +379,7 @@ node *AdjustIntAssign( node *int_assign, node *ext_let)
  ******************************************************************************/
 
 static node *
-InlineArg (node *arg_node, node *arg_info)
+InlineArg (node *arg_node, info *arg_info)
 {
     node *arg;
     node *new_ass;
@@ -414,7 +484,7 @@ InlineArg (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *InlineVardec( node *arg_node, node *arg_info)
+ *   node *InlineVardec( node *arg_node, info *arg_info)
  *
  * Description:
  *
@@ -422,7 +492,7 @@ InlineArg (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 static node *
-InlineVardec (node *arg_node, node *arg_info)
+InlineVardec (node *arg_node, info *arg_info)
 {
     node *new_vardec;
     char *new_name;
@@ -477,7 +547,7 @@ InlineVardec (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *InlineRetExprs( node *arg_node, node *arg_info)
+ *   node *InlineRetExprs( node *arg_node, info *arg_info)
  *
  * Description:
  *
@@ -485,7 +555,7 @@ InlineVardec (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 static node *
-InlineRetExprs (node *arg_node, node *arg_info)
+InlineRetExprs (node *arg_node, info *arg_info)
 {
     node *new_expr, *avis;
 
@@ -528,7 +598,7 @@ InlineRetExprs (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *DoInline( node *let_node, node *arg_info)
+ *   node *DoInline( node *let_node, info *arg_info)
  *
  * Description:
  *   Do function inlining. Returns a N_assign chain.
@@ -536,7 +606,7 @@ InlineRetExprs (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 static node *
-DoInline (node *let_node, node *arg_info)
+DoInline (node *let_node, info *arg_info)
 {
     node *ap_node;
     node *inl_fundef;
@@ -620,7 +690,7 @@ DoInline (node *let_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *INLmodul( node *arg_node, node *arg_info)
+ *   node *INLmodul( node *arg_node, info *arg_info)
  *
  * Description:
  *   Stores pointer to module in info-node and traverses function-chain.
@@ -628,7 +698,7 @@ DoInline (node *let_node, node *arg_info)
  ******************************************************************************/
 
 node *
-INLmodul (node *arg_node, node *arg_info)
+INLmodul (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("INLmodul");
 
@@ -643,7 +713,7 @@ INLmodul (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *INLfundef( node *arg_node, node *arg_info)
+ *   node *INLfundef( node *arg_node, info *arg_info)
  *
  * Description:
  *   Traverses instructons if function not inlined marked
@@ -651,7 +721,7 @@ INLmodul (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-INLfundef (node *arg_node, node *arg_info)
+INLfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("INLfundef");
 
@@ -766,7 +836,7 @@ INLfundef (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *INLassign( node *arg_node, node *arg_info)
+ *   node *INLassign( node *arg_node, info *arg_info)
  *
  * Description:
  *   Initiates function inlining if substitution-counter not 0 or the given
@@ -775,7 +845,7 @@ INLfundef (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-INLassign (node *arg_node, node *arg_info)
+INLassign (node *arg_node, info *arg_info)
 {
     node *instr;
     node *inl_fundef = NULL;
@@ -898,7 +968,7 @@ INLassign (node *arg_node, node *arg_info)
 node *
 InlineSingleApplication (node *let, node *fundef)
 {
-    node *arg_info;
+    info *arg_info;
     node *assigns;
     funtab *mem_tab;
 
@@ -919,7 +989,7 @@ InlineSingleApplication (node *let, node *fundef)
     assigns = DoInline (let, arg_info);
 
     FUNDEF_VARDEC (fundef) = INFO_INL_VARDECS (arg_info);
-    FreeTree (arg_info);
+    FreeInfo (arg_info);
     act_tab = mem_tab;
 
     DBUG_RETURN (assigns);
@@ -938,7 +1008,7 @@ InlineSingleApplication (node *let, node *fundef)
 node *
 Inline (node *arg_node)
 {
-    node *arg_info;
+    info *arg_info;
     funtab *mem_tab;
 #ifndef DBUG_OFF
     int mem_inl_fun = inl_fun;
@@ -964,7 +1034,7 @@ Inline (node *arg_node)
 
     DBUG_PRINT ("OPTMEM", ("mem currently allocated: %d bytes", current_allocated_mem));
 
-    FreeTree (arg_info);
+    FreeInfo (arg_info);
     act_tab = mem_tab;
 
     DBUG_RETURN (arg_node);

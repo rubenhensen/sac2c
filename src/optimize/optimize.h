@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2004/07/18 19:54:54  sah
+ * switch to new INFO structure
+ * PHASE I
+ * (as well some code cleanup)
+ *
  * Revision 3.9  2004/06/30 12:13:39  khf
  * wlpg_expr removed
  *
@@ -172,7 +177,7 @@ extern int cvp_expr;
 extern int wlfs_expr;
 
 extern node *Optimize (node *arg_node);
-extern node *OPTmodul (node *arg_node, node *arg_info);
-extern node *OPTfundef (node *arg_node, node *arg_info);
+extern node *OPTmodul (node *arg_node, info *arg_info);
+extern node *OPTfundef (node *arg_node, info *arg_info);
 
 #endif /* _sac_optimize_h */

@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.22  2004/07/18 19:54:54  sah
+ * switch to new INFO structure
+ * PHASE I
+ * (as well some code cleanup)
+ *
  * Revision 1.21  2004/05/04 14:26:19  khf
  * NCODE_CEXPR in SSADCRNcode() replaced by NCODE_CEXPRS
  *
@@ -90,6 +95,8 @@
  *
  *****************************************************************************/
 
+#define NEW_INFO
+
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -103,15 +110,81 @@
 #include "optimize.h"
 #include "change_signature.h"
 
+/*
+ * INFO structure
+ */
+struct INFO {
+    int depth;
+    bool remassign;
+    node *fundef;
+    bool remresults;
+    node *apfundef;
+    int rescount;
+    int resneeded;
+    node *let;
+    node *assign;
+    node *modul;
+};
+
+/*
+ * INFO macros
+ */
+#define INFO_SSADCR_DEPTH(n) (n->depth)
+#define INFO_SSADCR_REMASSIGN(n) (n->remassign)
+#define INFO_SSADCR_FUNDEF(n) (n->fundef)
+#define INFO_SSADCR_REMRESULTS(n) (n->remresults)
+#define INFO_SSADCR_APFUNDEF(n) (n->apfundef)
+#define INFO_SSADCR_RESCOUNT(n) (n->rescount)
+#define INFO_SSADCR_RESNEEDED(n) (n->resneeded)
+#define INFO_SSADCR_LET(n) (n->let)
+#define INFO_SSADCR_ASSIGN(n) (n->assign)
+#define INFO_SSADCR_MODUL(n) (n->modul)
+
+/*
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = Malloc (sizeof (info));
+
+    INFO_SSADCR_DEPTH (result) = 0;
+    INFO_SSADCR_REMASSIGN (result) = FALSE;
+    INFO_SSADCR_FUNDEF (result) = NULL;
+    INFO_SSADCR_REMRESULTS (result) = FALSE;
+    INFO_SSADCR_APFUNDEF (result) = NULL;
+    INFO_SSADCR_RESCOUNT (result) = 0;
+    INFO_SSADCR_RESNEEDED (result) = 0;
+    INFO_SSADCR_LET (result) = NULL;
+    INFO_SSADCR_ASSIGN (result) = NULL;
+    INFO_SSADCR_MODUL (result) = NULL;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = Free (info);
+
+    DBUG_RETURN (info);
+}
+
 /* local constants */
 #define SSADCR_TOPLEVEL 0
 #define SSADCR_NOTNEEDED 0
 
 /* internal functions for traversing ids like nodes */
-static ids *TravLeftIDS (ids *arg_ids, node *arg_info);
-static ids *SSADCRleftids (ids *arg_ids, node *arg_info);
-static ids *TravRightIDS (ids *arg_ids, node *arg_info);
-static ids *SSADCRrightids (ids *arg_ids, node *arg_info);
+static ids *TravLeftIDS (ids *arg_ids, info *arg_info);
+static ids *SSADCRleftids (ids *arg_ids, info *arg_info);
+static ids *TravRightIDS (ids *arg_ids, info *arg_info);
+static ids *SSADCRrightids (ids *arg_ids, info *arg_info);
 
 /* helper functions for local use */
 static void SSADCRInitAvisFlags (node *fundef);
@@ -196,7 +269,7 @@ SSADCRCondIsEmpty (node *cond)
 /******************************************************************************
  *
  * function:
- *   node *SSADCRfundef(node *arg_node , node *arg_info)
+ *   node *SSADCRfundef(node *arg_node , info *arg_info)
  *
  * description:
  *   Starts the traversal of a given fundef. Does NOT traverse to
@@ -207,7 +280,7 @@ SSADCRCondIsEmpty (node *cond)
  *
  *****************************************************************************/
 node *
-SSADCRfundef (node *arg_node, node *arg_info)
+SSADCRfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSADCRfundef");
 
@@ -239,7 +312,7 @@ SSADCRfundef (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSADCRarg(node *arg_node , node *arg_info)
+ *   node *SSADCRarg(node *arg_node , info *arg_info)
  *
  * description:
  *   removes all args from function signature that have not been used in the
@@ -248,7 +321,7 @@ SSADCRfundef (node *arg_node, node *arg_info)
  *
  *****************************************************************************/
 node *
-SSADCRarg (node *arg_node, node *arg_info)
+SSADCRarg (node *arg_node, info *arg_info)
 {
     node *tmp;
     nodelist *letlist;
@@ -312,14 +385,14 @@ SSADCRarg (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSADCRblock(node *arg_node , node *arg_info)
+ *   node *SSADCRblock(node *arg_node , info *arg_info)
  *
  * description:
  *   traverses instructions and vardecs in this order.
  *
  *****************************************************************************/
 node *
-SSADCRblock (node *arg_node, node *arg_info)
+SSADCRblock (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSADCRblock");
 
@@ -347,14 +420,14 @@ SSADCRblock (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSADCRvardec(node *arg_node , node *arg_info)
+ *   node *SSADCRvardec(node *arg_node , info *arg_info)
  *
  * description:
  *  traverses vardecs and removes unused ones.
  *
  *****************************************************************************/
 node *
-SSADCRvardec (node *arg_node, node *arg_info)
+SSADCRvardec (node *arg_node, info *arg_info)
 {
     node *tmp;
 
@@ -386,7 +459,7 @@ SSADCRvardec (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSADCRassign(node *arg_node , node *arg_info)
+ *   node *SSADCRassign(node *arg_node , info *arg_info)
  *
  * description:
  *  traverses assignment chain bottom-up and removes all assignments not
@@ -394,7 +467,7 @@ SSADCRvardec (node *arg_node, node *arg_info)
  *
  *****************************************************************************/
 node *
-SSADCRassign (node *arg_node, node *arg_info)
+SSADCRassign (node *arg_node, info *arg_info)
 {
     node *tmp;
 
@@ -425,7 +498,7 @@ SSADCRassign (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSADCRlet(node *arg_node , node *arg_info)
+ *   node *SSADCRlet(node *arg_node , info *arg_info)
  *
  * description:
  *  checks, if at least one of the left ids vardecs are needed. then this
@@ -436,7 +509,7 @@ SSADCRassign (node *arg_node, node *arg_info)
  *
  *****************************************************************************/
 node *
-SSADCRlet (node *arg_node, node *arg_info)
+SSADCRlet (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSADCRlet");
 
@@ -498,14 +571,14 @@ SSADCRlet (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSADCRid(node *arg_node , node *arg_info)
+ *   node *SSADCRid(node *arg_node , info *arg_info)
  *
  * description:
  *   "traverses" the contained ids structure.
  *
  *****************************************************************************/
 node *
-SSADCRid (node *arg_node, node *arg_info)
+SSADCRid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSADCRid");
 
@@ -518,7 +591,7 @@ SSADCRid (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSADCRcond(node *arg_node , node *arg_info)
+ *   node *SSADCRcond(node *arg_node , info *arg_info)
  *
  * description:
  *  traverses both conditional blocks. removes whole conditional if both
@@ -527,7 +600,7 @@ SSADCRid (node *arg_node, node *arg_info)
  *
  *****************************************************************************/
 node *
-SSADCRcond (node *arg_node, node *arg_info)
+SSADCRcond (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSADCRcond");
 
@@ -562,14 +635,14 @@ SSADCRcond (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSADCRreturn(node *arg_node , node *arg_info)
+ *   node *SSADCRreturn(node *arg_node , info *arg_info)
  *
  * description:
  *   starts traversal of return expressions to mark them as needed.
  *
  *****************************************************************************/
 node *
-SSADCRreturn (node *arg_node, node *arg_info)
+SSADCRreturn (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSADCRreturn");
 
@@ -586,7 +659,7 @@ SSADCRreturn (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSADCRap(node *arg_node , node *arg_info)
+ *   node *SSADCRap(node *arg_node , info *arg_info)
  *
  * description:
  *   if application of special function (cond, do, while) traverse into this
@@ -595,9 +668,9 @@ SSADCRreturn (node *arg_node, node *arg_info)
  *
  *****************************************************************************/
 node *
-SSADCRap (node *arg_node, node *arg_info)
+SSADCRap (node *arg_node, info *arg_info)
 {
-    node *new_arg_info;
+    info *new_arg_info;
 
     DBUG_ENTER ("SSADCRap");
 
@@ -632,7 +705,7 @@ SSADCRap (node *arg_node, node *arg_info)
                                FUNDEF_NAME (AP_FUNDEF (arg_node)),
                                FUNDEF_NAME (INFO_SSADCR_FUNDEF (arg_info))));
 
-        new_arg_info = FreeTree (new_arg_info);
+        new_arg_info = FreeInfo (new_arg_info);
     } else {
         DBUG_PRINT ("SSADCR", ("do not traverse in normal fundef %s",
                                FUNDEF_NAME (AP_FUNDEF (arg_node))));
@@ -649,14 +722,14 @@ SSADCRap (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSADCRNwith(node *arg_node , node *arg_info)
+ *   node *SSADCRNwith(node *arg_node , info *arg_info)
  *
  * description:
  *   traverses withop, code and partitions of withloop
  *
  *****************************************************************************/
 node *
-SSADCRNwith (node *arg_node, node *arg_info)
+SSADCRNwith (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSADCRNwith");
 
@@ -681,14 +754,14 @@ SSADCRNwith (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSADCRNpart(node *arg_node , node *arg_info)
+ *   node *SSADCRNpart(node *arg_node , info *arg_info)
  *
  * description:
  *   traverses generator, withid and next part
  *
  *****************************************************************************/
 node *
-SSADCRNpart (node *arg_node, node *arg_info)
+SSADCRNpart (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSADCRNpart");
 
@@ -712,14 +785,14 @@ SSADCRNpart (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSADCRNcode(node *arg_node , node *arg_info)
+ *   node *SSADCRNcode(node *arg_node , info *arg_info)
  *
  * description:
  *   traverses exprs, block and next in this order
  *
  *****************************************************************************/
 node *
-SSADCRNcode (node *arg_node, node *arg_info)
+SSADCRNcode (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSADCRNcode");
 
@@ -744,7 +817,7 @@ SSADCRNcode (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSADCRNwithid(node *arg_node , node *arg_info)
+ *   node *SSADCRNwithid(node *arg_node , info *arg_info)
  *
  * description:
  *   marks index vector and identifier as needed to preserve them
@@ -754,7 +827,7 @@ SSADCRNcode (node *arg_node, node *arg_info)
  *
  *****************************************************************************/
 node *
-SSADCRNwithid (node *arg_node, node *arg_info)
+SSADCRNwithid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSADCRNwithid");
 
@@ -774,7 +847,7 @@ SSADCRNwithid (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   static ids *SSADCRleftids(ids *arg_ids, node *arg_info)
+ *   static ids *SSADCRleftids(ids *arg_ids, info *arg_info)
  *
  * description:
  *   checks if ids is marked as needed and increments counter.
@@ -783,7 +856,7 @@ SSADCRNwithid (node *arg_node, node *arg_info)
  *
  *****************************************************************************/
 static ids *
-SSADCRleftids (ids *arg_ids, node *arg_info)
+SSADCRleftids (ids *arg_ids, info *arg_info)
 {
     ids *next_ids;
     nodelist *letlist;
@@ -902,14 +975,14 @@ SSADCRleftids (ids *arg_ids, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   static ids *SSADCRrightids(ids *arg_ids, node *arg_info)
+ *   static ids *SSADCRrightids(ids *arg_ids, info *arg_info)
  *
  * description:
  *  increments the counter for each identifier usage
  *
  *****************************************************************************/
 static ids *
-SSADCRrightids (ids *arg_ids, node *arg_info)
+SSADCRrightids (ids *arg_ids, info *arg_info)
 {
     DBUG_ENTER ("SSADCRrightids");
 
@@ -929,7 +1002,7 @@ SSADCRrightids (ids *arg_ids, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   static ids *TravLeftIDS(ids *arg_ids, node *arg_info)
+ *   static ids *TravLeftIDS(ids *arg_ids, info *arg_info)
  *
  * description:
  *  implements a similar traversal mechanism like Trav() for IDS chains.
@@ -937,7 +1010,7 @@ SSADCRrightids (ids *arg_ids, node *arg_info)
  *
  *****************************************************************************/
 static ids *
-TravLeftIDS (ids *arg_ids, node *arg_info)
+TravLeftIDS (ids *arg_ids, info *arg_info)
 {
     DBUG_ENTER ("TravLeftIDS");
 
@@ -950,7 +1023,7 @@ TravLeftIDS (ids *arg_ids, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   static ids *TravRightIDS(ids *arg_ids, node *arg_info)
+ *   static ids *TravRightIDS(ids *arg_ids, info *arg_info)
  *
  * description:
  *  implements a similar traversal mechanism like Trav() for IDS chains.
@@ -958,7 +1031,7 @@ TravLeftIDS (ids *arg_ids, node *arg_info)
  *
  *****************************************************************************/
 static ids *
-TravRightIDS (ids *arg_ids, node *arg_info)
+TravRightIDS (ids *arg_ids, info *arg_info)
 {
     DBUG_ENTER ("TravRightIDS");
 
@@ -984,7 +1057,7 @@ TravRightIDS (ids *arg_ids, node *arg_info)
 node *
 SSADeadCodeRemoval (node *fundef, node *modul)
 {
-    node *arg_info;
+    info *arg_info;
     funtab *old_tab;
 
     DBUG_ENTER ("SSADeadCodeRemoval");
@@ -1009,7 +1082,7 @@ SSADeadCodeRemoval (node *fundef, node *modul)
 
         act_tab = old_tab;
 
-        arg_info = FreeTree (arg_info);
+        arg_info = FreeInfo (arg_info);
     }
 
     DBUG_RETURN (fundef);

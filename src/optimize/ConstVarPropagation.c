@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/07/18 19:54:54  sah
+ * switch to new INFO structure
+ * PHASE I
+ * (as well some code cleanup)
+ *
  * Revision 1.3  2004/03/06 21:17:49  mwe
  * CON_cond added
  *
@@ -12,6 +17,8 @@
  *
  *
  */
+
+#define NEW_INFO
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -111,6 +118,48 @@ typedef enum {
     CON_undef
 } context_t;
 
+/*
+ * INFO structure
+ */
+struct INFO {
+    context_t context;
+    statustype attrib;
+};
+
+/*
+ * INFO macros
+ */
+#define INFO_CVP_CONTEXT(n) (n->context)
+#define INFO_CVP_ATTRIB(n) (n->attrib)
+
+/*
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = Malloc (sizeof (info));
+
+    INFO_CVP_CONTEXT (result) = CON_undef;
+    INFO_CVP_ATTRIB (result) = ST_undef;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = Free (info);
+
+    DBUG_RETURN (info);
+}
+
 /****************************************************************************
  *
  * function:
@@ -173,7 +222,7 @@ IsVariable (node *arg_node)
 /****************************************************************************
  *
  * function:
- *   bool AskPropagationOracle(node *let, node* arg_info)
+ *   bool AskPropagationOracle(node *let, info *arg_info)
  *
  * description:
  *   This function decides if a propagation of values should take place.
@@ -185,7 +234,7 @@ IsVariable (node *arg_node)
  *
  *****************************************************************************/
 static bool
-AskPropagationOracle (node *let, node *arg_info)
+AskPropagationOracle (node *let, info *arg_info)
 {
 
     bool answer;
@@ -227,7 +276,7 @@ AskPropagationOracle (node *let, node *arg_info)
 /********************************************************************
  *
  * function:
- *   node* CVParray(node* arg_node, node* arg_info)
+ *   node* CVParray(node *arg_node, info *arg_info)
  *
  * description:
  *   traverse in the elements of an array node
@@ -235,7 +284,7 @@ AskPropagationOracle (node *let, node *arg_info)
  ********************************************************************/
 
 node *
-CVParray (node *arg_node, node *arg_info)
+CVParray (node *arg_node, info *arg_info)
 {
 
     DBUG_ENTER ("CVParray");
@@ -251,7 +300,7 @@ CVParray (node *arg_node, node *arg_info)
 /********************************************************************
  *
  * function:
- *   node* CVPreturn(node* arg_node, node* arg_info)
+ *   node* CVPreturn(node *arg_node, info *arg_info)
  *
  * description:
  *   traverse in the exprs of the return node
@@ -259,7 +308,7 @@ CVParray (node *arg_node, node *arg_info)
  ********************************************************************/
 
 node *
-CVPreturn (node *arg_node, node *arg_info)
+CVPreturn (node *arg_node, info *arg_info)
 {
 
     DBUG_ENTER ("CVPreturn");
@@ -275,7 +324,7 @@ CVPreturn (node *arg_node, node *arg_info)
 /********************************************************************
  *
  * function:
- *   node* CVPcondfun(node* arg_node, node* arg_info)
+ *   node* CVPcondfun(node *arg_node, info *arg_info)
  *
  * description:
  *   traverse in the exprs of the condfun node
@@ -283,7 +332,7 @@ CVPreturn (node *arg_node, node *arg_info)
  ********************************************************************/
 
 node *
-CVPfuncond (node *arg_node, node *arg_info)
+CVPfuncond (node *arg_node, info *arg_info)
 {
 
     DBUG_ENTER ("CVPcondfun");
@@ -304,7 +353,7 @@ CVPfuncond (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSACSEid( node *arg_node, node *arg_info)
+ *   node *SSACSEid( node *arg_node, info *arg_info)
  *
  * description:
  *   First we try to look inside the definition of the id node
@@ -319,7 +368,7 @@ CVPfuncond (node *arg_node, node *arg_info)
  *
  *****************************************************************************/
 node *
-CVPid (node *arg_node, node *arg_info)
+CVPid (node *arg_node, info *arg_info)
 {
     node *avis, *let;
 
@@ -346,7 +395,7 @@ CVPid (node *arg_node, node *arg_info)
 /********************************************************************
  *
  * function:
- *   node* CVPexprs(node* arg_node, node* arg_info)
+ *   node* CVPexprs(node *arg_node, info *arg_info)
  *
  * description:
  *   first traverse in the expr-node and then
@@ -355,7 +404,7 @@ CVPid (node *arg_node, node *arg_info)
  ********************************************************************/
 
 node *
-CVPexprs (node *arg_node, node *arg_info)
+CVPexprs (node *arg_node, info *arg_info)
 {
 
     DBUG_ENTER ("CVPexprs");
@@ -373,7 +422,7 @@ CVPexprs (node *arg_node, node *arg_info)
 /********************************************************************
  *
  * function:
- *   node* CVPprf(node* arg_node, node* arg_info)
+ *   node* CVPprf(node *arg_node, info *arg_info)
  *
  * description:
  *   traverse in the arguments of the prf node
@@ -381,7 +430,7 @@ CVPexprs (node *arg_node, node *arg_info)
  ********************************************************************/
 
 node *
-CVPprf (node *arg_node, node *arg_info)
+CVPprf (node *arg_node, info *arg_info)
 {
 
     DBUG_ENTER ("CVPprf");
@@ -398,7 +447,7 @@ CVPprf (node *arg_node, node *arg_info)
 /********************************************************************
  *
  * function:
- *   node* CVPap(node* arg_node, node* arg_info)
+ *   node* CVPap(node *arg_node, info *arg_info)
  *
  * description:
  *   traverse in the arguments of the prf node
@@ -406,7 +455,7 @@ CVPprf (node *arg_node, node *arg_info)
  ********************************************************************/
 
 node *
-CVPap (node *arg_node, node *arg_info)
+CVPap (node *arg_node, info *arg_info)
 {
 
     DBUG_ENTER ("CVPap");
@@ -427,7 +476,7 @@ CVPap (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *CVPcond(node *arg_node, node *arg_info)
+ *   node *CVPcond(node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -436,7 +485,7 @@ CVPap (node *arg_node, node *arg_info)
  *****************************************************************************/
 
 node *
-CVPcond (node *arg_node, node *arg_info)
+CVPcond (node *arg_node, info *arg_info)
 {
 
     context_t old;
@@ -462,7 +511,7 @@ CVPcond (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *CVPNwith(node *arg_node, node *arg_info)
+ *   node *CVPNwith(node *arg_node, info *arg_info)
  *
  * description:
  *   traverse NPart, Nwithop and NCode in this order
@@ -470,7 +519,7 @@ CVPcond (node *arg_node, node *arg_info)
  *
  *****************************************************************************/
 node *
-CVPNwith (node *arg_node, node *arg_info)
+CVPNwith (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CVPNwith");
 
@@ -497,7 +546,7 @@ CVPNwith (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *CVPNcode(node *arg_node, node *arg_info)
+ *   node *CVPNcode(node *arg_node, info *arg_info)
  *
  * description:
  *   traverse codeblock and expression for each Ncode node
@@ -505,7 +554,7 @@ CVPNwith (node *arg_node, node *arg_info)
  *
  *****************************************************************************/
 node *
-CVPNcode (node *arg_node, node *arg_info)
+CVPNcode (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CVPNcode");
 
@@ -531,7 +580,7 @@ CVPNcode (node *arg_node, node *arg_info)
 /********************************************************************
  *
  * function:
- *   node* CVPlet(node* arg_node, node* arg_info)
+ *   node* CVPlet(node *arg_node, info *arg_info)
  *
  * description:
  *   traverse in the expr of the let node
@@ -539,7 +588,7 @@ CVPNcode (node *arg_node, node *arg_info)
  ********************************************************************/
 
 node *
-CVPlet (node *arg_node, node *arg_info)
+CVPlet (node *arg_node, info *arg_info)
 {
 
     DBUG_ENTER ("CVPlet");
@@ -556,7 +605,7 @@ CVPlet (node *arg_node, node *arg_info)
 /********************************************************************
  *
  * function:
- *   node* CVPassign(node* arg_node, node* arg_info)
+ *   node* CVPassign(node *arg_node, info *arg_info)
  *
  * description:
  *   traverse in the instr of the assign node
@@ -564,7 +613,7 @@ CVPlet (node *arg_node, node *arg_info)
  ********************************************************************/
 
 node *
-CVPassign (node *arg_node, node *arg_info)
+CVPassign (node *arg_node, info *arg_info)
 {
 
     DBUG_ENTER ("CVPassign");
@@ -585,7 +634,7 @@ CVPassign (node *arg_node, node *arg_info)
 /********************************************************************
  *
  * function:
- *   node* CVPblock(node* arg_node, node* arg_info)
+ *   node* CVPblock(node *arg_node, info *arg_info)
  *
  * description:
  *   traverse in the instructions of the block node
@@ -593,7 +642,7 @@ CVPassign (node *arg_node, node *arg_info)
  ********************************************************************/
 
 node *
-CVPblock (node *arg_node, node *arg_info)
+CVPblock (node *arg_node, info *arg_info)
 {
 
     DBUG_ENTER ("CVPblock");
@@ -608,7 +657,7 @@ CVPblock (node *arg_node, node *arg_info)
 /********************************************************************
  *
  * function:
- *   node* CVPfundef(node* arg_node, node* arg_info)
+ *   node* CVPfundef(node *arg_node, info *arg_info)
  *
  * description:
  *   traverse in the body of the fundef node
@@ -616,7 +665,7 @@ CVPblock (node *arg_node, node *arg_info)
  ********************************************************************/
 
 node *
-CVPfundef (node *arg_node, node *arg_info)
+CVPfundef (node *arg_node, info *arg_info)
 {
 
     DBUG_ENTER ("CVPfundef");
@@ -631,7 +680,7 @@ CVPfundef (node *arg_node, node *arg_info)
 /********************************************************************
  *
  * function:
- *   node* ConstVarPropagation(node* arg_node)
+ *   node* ConstVarPropagation(node *arg_node)
  *
  * description:
  *   This function is called to start this optimization.
@@ -643,7 +692,7 @@ node *
 ConstVarPropagation (node *arg_node)
 {
 
-    node *arg_info;
+    info *arg_info;
     funtab *old_tab;
 
     DBUG_ENTER ("ConstVarPropagation");
@@ -652,13 +701,16 @@ ConstVarPropagation (node *arg_node)
     old_tab = act_tab;
     act_tab = cvp_tab;
 
+    DBUG_PRINT ("OPT", ("starting constant var propagation in function %s",
+                        FUNDEF_NAME (arg_node)));
+
     DBUG_PRINT ("CVP", ("start with function %s", FUNDEF_NAME (arg_node)));
 
     arg_node = Trav (arg_node, arg_info);
 
     act_tab = old_tab;
 
-    arg_info = FreeTree (arg_info);
+    arg_info = FreeInfo (arg_info);
 
     DBUG_RETURN (arg_node);
 }

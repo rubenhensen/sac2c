@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.16  2004/07/18 19:54:54  sah
+ * switch to new INFO structure
+ * PHASE I
+ * (as well some code cleanup)
+ *
  * Revision 1.15  2004/02/25 15:53:06  cg
  * New functions RestoreSSAOneFunction and RestoreSSAOneFundef
  * now provide access to SSA transformations on a per function
@@ -74,6 +79,8 @@
  *
  *****************************************************************************/
 
+#define NEW_INFO
+
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -88,6 +95,43 @@
 #include "math.h"
 #include "ssa.h"
 #include "SSAWLUnroll.h"
+
+/*
+ * INFO structure and macros
+ */
+
+#include "SSALUR_info.h"
+
+/*
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = Malloc (sizeof (info));
+
+    INFO_SSALUR_ASSIGN (result) = NULL;
+    INFO_SSALUR_FUNDEF (result) = NULL;
+    INFO_SSALUR_MODUL (result) = NULL;
+    INFO_SSALUR_REMASSIGN (result) = FALSE;
+    INFO_SSALUR_PREASSIGN (result) = NULL;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = Free (info);
+
+    DBUG_RETURN (info);
+}
 
 #define UNR_NONE -1
 
@@ -1032,7 +1076,7 @@ SSALURCreateCopyAssignments (node *arg_chain, node *rec_chain)
 /******************************************************************************
  *
  * function:
- *   node *SSALURfundef(node *arg_node, node *arg_info)
+ *   node *SSALURfundef(node *arg_node, info *arg_info)
  *
  * description:
  *   - traverse fundef and subordinated special fundefs for LUR and WLUR
@@ -1041,7 +1085,7 @@ SSALURCreateCopyAssignments (node *arg_chain, node *rec_chain)
  *
  ******************************************************************************/
 node *
-SSALURfundef (node *arg_node, node *arg_info)
+SSALURfundef (node *arg_node, info *arg_info)
 {
     loopc_t unrolling;
     int start_wlunr_expr;
@@ -1102,14 +1146,14 @@ SSALURfundef (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSALURassign(node *arg_node, node *arg_info)
+ *   node *SSALURassign(node *arg_node, info *arg_info)
  *
  * description:
  *   traverses assignment chain and integrate unrolled with-loop code
  *
  ******************************************************************************/
 node *
-SSALURassign (node *arg_node, node *arg_info)
+SSALURassign (node *arg_node, info *arg_info)
 {
     node *pre_assigns;
     node *tmp;
@@ -1149,7 +1193,7 @@ SSALURassign (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSALURap(node *arg_node, node *arg_info)
+ *   node *SSALURap(node *arg_node, info *arg_info)
  *
  * description:
  *   traverses the args and starts the traversal in the called fundef if it is
@@ -1157,9 +1201,9 @@ SSALURassign (node *arg_node, node *arg_info)
  *
  ******************************************************************************/
 node *
-SSALURap (node *arg_node, node *arg_info)
+SSALURap (node *arg_node, info *arg_info)
 {
-    node *new_arg_info;
+    info *new_arg_info;
     DBUG_ENTER ("SSALURap");
 
     DBUG_ASSERT ((AP_FUNDEF (arg_node) != NULL), "missing fundef in ap-node");
@@ -1191,7 +1235,7 @@ SSALURap (node *arg_node, node *arg_info)
 
         DBUG_PRINT ("SSALUR", ("traversal of special fundef %s finished\n",
                                FUNDEF_NAME (AP_FUNDEF (arg_node))));
-        new_arg_info = FreeTree (new_arg_info);
+        new_arg_info = FreeInfo (new_arg_info);
 
     } else {
         DBUG_PRINT ("SSALUR", ("do not traverse in normal fundef %s",
@@ -1204,7 +1248,7 @@ SSALURap (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSALURNwith(node *arg_node, node *arg_info)
+ *   node *SSALURNwith(node *arg_node, info *arg_info)
  *
  * description:
  *   triggers the withloop-unrolling. for now it uses the old wlur
@@ -1213,7 +1257,7 @@ SSALURap (node *arg_node, node *arg_info)
  *
  ******************************************************************************/
 node *
-SSALURNwith (node *arg_node, node *arg_info)
+SSALURNwith (node *arg_node, info *arg_info)
 {
     node *tmpn;
     node *save;
@@ -1300,7 +1344,7 @@ SSALURNwith (node *arg_node, node *arg_info)
 node *
 SSALoopUnrolling (node *fundef, node *modul)
 {
-    node *arg_info;
+    info *arg_info;
     funtab *old_tab;
 
     DBUG_ENTER ("SSALoopUnrolling");
@@ -1322,7 +1366,7 @@ SSALoopUnrolling (node *fundef, node *modul)
 
         act_tab = old_tab;
 
-        arg_info = FreeTree (arg_info);
+        arg_info = FreeInfo (arg_info);
     }
 
     DBUG_RETURN (fundef);

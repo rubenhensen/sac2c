@@ -1,5 +1,10 @@
 /*
  * $Log$
+ * Revision 1.5  2004/07/18 19:54:54  sah
+ * switch to new INFO structure
+ * PHASE I
+ * (as well some code cleanup)
+ *
  * Revision 1.4  2001/04/02 11:08:20  nmw
  * handling for multiple used special functions added
  *
@@ -21,19 +26,19 @@
 
 extern node *SSADeadCodeRemoval (node *fundef, node *modul);
 
-extern node *SSADCRfundef (node *arg_node, node *arg_info);
-extern node *SSADCRarg (node *arg_node, node *arg_info);
-extern node *SSADCRblock (node *arg_node, node *arg_info);
-extern node *SSADCRvardec (node *arg_node, node *arg_info);
-extern node *SSADCRassign (node *arg_node, node *arg_info);
-extern node *SSADCRlet (node *arg_node, node *arg_info);
-extern node *SSADCRid (node *arg_node, node *arg_info);
-extern node *SSADCRcond (node *arg_node, node *arg_info);
-extern node *SSADCRreturn (node *arg_node, node *arg_info);
-extern node *SSADCRap (node *arg_node, node *arg_info);
-extern node *SSADCRNwith (node *arg_node, node *arg_info);
-extern node *SSADCRNpart (node *arg_node, node *arg_info);
-extern node *SSADCRNcode (node *arg_node, node *arg_info);
-extern node *SSADCRNwithid (node *arg_node, node *arg_info);
+extern node *SSADCRfundef (node *arg_node, info *arg_info);
+extern node *SSADCRarg (node *arg_node, info *arg_info);
+extern node *SSADCRblock (node *arg_node, info *arg_info);
+extern node *SSADCRvardec (node *arg_node, info *arg_info);
+extern node *SSADCRassign (node *arg_node, info *arg_info);
+extern node *SSADCRlet (node *arg_node, info *arg_info);
+extern node *SSADCRid (node *arg_node, info *arg_info);
+extern node *SSADCRcond (node *arg_node, info *arg_info);
+extern node *SSADCRreturn (node *arg_node, info *arg_info);
+extern node *SSADCRap (node *arg_node, info *arg_info);
+extern node *SSADCRNwith (node *arg_node, info *arg_info);
+extern node *SSADCRNpart (node *arg_node, info *arg_info);
+extern node *SSADCRNcode (node *arg_node, info *arg_info);
+extern node *SSADCRNwithid (node *arg_node, info *arg_info);
 
 #endif /* SAC_SSADEADCODEREMOVAL_H */

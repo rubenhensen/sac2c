@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/07/18 19:54:54  sah
+ * switch to new INFO structure
+ * PHASE I
+ * (as well some code cleanup)
+ *
  * Revision 1.3  2003/09/16 18:15:26  ktr
  * Index vectors are now treated as structural constants.
  *
@@ -13,17 +18,17 @@
 
 extern node *SelectionPropagation (node *fundef, node *modul);
 
-extern node *SPfundef (node *arg_node, node *arg_info);
-extern node *SPreturn (node *arg_node, node *arg_info);
-extern node *SPid (node *arg_node, node *arg_info);
-extern node *SPwith (node *arg_node, node *arg_info);
-extern node *SPwithid (node *arg_node, node *arg_info);
-extern node *SPpart (node *arg_node, node *arg_info);
-extern node *SPcode (node *arg_node, node *arg_info);
-extern node *SParg (node *arg_node, node *arg_info);
-extern node *SPap (node *arg_node, node *arg_info);
-extern node *SPprf (node *arg_node, node *arg_info);
-extern node *SPlet (node *arg_node, node *arg_info);
-extern node *SPassign (node *arg_node, node *arg_info);
+extern node *SPfundef (node *arg_node, info *arg_info);
+extern node *SPreturn (node *arg_node, info *arg_info);
+extern node *SPid (node *arg_node, info *arg_info);
+extern node *SPwith (node *arg_node, info *arg_info);
+extern node *SPwithid (node *arg_node, info *arg_info);
+extern node *SPpart (node *arg_node, info *arg_info);
+extern node *SPcode (node *arg_node, info *arg_info);
+extern node *SParg (node *arg_node, info *arg_info);
+extern node *SPap (node *arg_node, info *arg_info);
+extern node *SPprf (node *arg_node, info *arg_info);
+extern node *SPlet (node *arg_node, info *arg_info);
+extern node *SPassign (node *arg_node, info *arg_info);
 
 #endif /* SAC_SELECTIONPROPAGATION_H */

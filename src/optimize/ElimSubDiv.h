@@ -1,5 +1,10 @@
 /* *
  * $Log$
+ * Revision 1.3  2004/07/18 19:54:54  sah
+ * switch to new INFO structure
+ * PHASE I
+ * (as well some code cleanup)
+ *
  * Revision 1.2  2004/07/07 15:57:05  mwe
  * former log-messages added
  *
@@ -13,10 +18,10 @@
 #ifndef _ElimSubDiv_h_
 #define _ElimSubDiv_h_
 
-extern node *ElimSubDiv (node *, node *);
-extern node *ESDblock (node *, node *);
-extern node *ESDassign (node *, node *);
-extern node *ESDlet (node *, node *);
-extern node *ESDprf (node *, node *);
+extern node *ElimSubDiv (node *);
+extern node *ESDblock (node *, info *);
+extern node *ESDassign (node *, info *);
+extern node *ESDlet (node *, info *);
+extern node *ESDprf (node *, info *);
 
 #endif

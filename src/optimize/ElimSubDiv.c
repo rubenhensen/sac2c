@@ -1,5 +1,10 @@
 /* *
  * $Log$
+ * Revision 1.7  2004/07/18 19:54:54  sah
+ * switch to new INFO structure
+ * PHASE I
+ * (as well some code cleanup)
+ *
  * Revision 1.6  2004/07/07 15:57:05  mwe
  * former log-messages added
  *
@@ -27,6 +32,8 @@
  *Initial revision
  */
 
+#define NEW_INFO
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -44,11 +51,56 @@
 
 #include "ElimSubDiv.h"
 
-#define INFO_ESD_TYPE(n) ((types *)(n->dfmask[0]))
-#define INFO_ESD_BLOCKNODE(n) (n->node[0])
-#define INFO_ESD_LETNODE(n) (n->node[1])
-#define INFO_ESD_NEWNODE(n) (n->node[2])
+/*
+ * INFO structure
+ */
+struct INFO {
+    types *type;
+    node *blocknode;
+    node *letnode;
+    node *newnode;
+    int counter;
+};
+
+/*
+ * INFO macros
+ */
+#define INFO_ESD_TYPE(n) (n->type)
+#define INFO_ESD_BLOCKNODE(n) (n->blocknode)
+#define INFO_ESD_LETNODE(n) (n->letnode)
+#define INFO_ESD_NEWNODE(n) (n->newnode)
 #define INFO_ESD_COUNTER(n) (n->counter)
+
+/*
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = Malloc (sizeof (info));
+
+    INFO_ESD_TYPE (result) = NULL;
+    INFO_ESD_BLOCKNODE (result) = NULL;
+    INFO_ESD_LETNODE (result) = NULL;
+    INFO_ESD_NEWNODE (result) = NULL;
+    INFO_ESD_COUNTER (result) = 0;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = Free (info);
+
+    DBUG_RETURN (info);
+}
 
 /*****************************************************************************
  *
@@ -96,7 +148,7 @@ MakeExprsNodeFromAssignNode (node *elem1)
 /*****************************************************************************
  *
  * function:
- *   node *MakeAssignLetNodeFromCurrentNode( node *newnode , node *arg_info)
+ *   node *MakeAssignLetNodeFromCurrentNode( node *newnode , info *arg_info)
  *
  * description:
  *   This function create a new assign-node with the exprs-node as an
@@ -106,7 +158,7 @@ MakeExprsNodeFromAssignNode (node *elem1)
  ****************************************************************************/
 
 static node *
-MakeAssignNode (node *newnode, node *arg_info)
+MakeAssignNode (node *newnode, info *arg_info)
 {
 
     node *newvardec, *newshpseg;
@@ -158,7 +210,7 @@ MakeAssignNode (node *newnode, node *arg_info)
 }
 
 static node *
-CreateNegOne (node *arg_info)
+CreateNegOne (info *arg_info)
 {
 
     node *newnode;
@@ -188,8 +240,8 @@ CreateNegOne (node *arg_info)
     DBUG_RETURN (newnode);
 }
 
-static node *
-CreateNegative (node *arg, node *arg_info, int flag)
+static void
+CreateNegative (node *arg, info *arg_info, int flag)
 {
 
     node *node1, *newnode;
@@ -210,11 +262,11 @@ CreateNegative (node *arg, node *arg_info, int flag)
 
     INFO_ESD_NEWNODE (arg_info) = newnode;
 
-    DBUG_RETURN (arg_info);
+    DBUG_VOID_RETURN;
 }
 
 static node *
-CreateOne (node *arg_info)
+CreateOne (info *arg_info)
 {
 
     node *newnode;
@@ -244,8 +296,8 @@ CreateOne (node *arg_info)
     DBUG_RETURN (newnode);
 }
 
-static node *
-CreateInverse (node *arg, node *arg_info, int flag)
+static void
+CreateInverse (node *arg, info *arg_info, int flag)
 {
 
     node *node1, *newnode;
@@ -266,28 +318,31 @@ CreateInverse (node *arg, node *arg_info, int flag)
 
     INFO_ESD_NEWNODE (arg_info) = newnode;
 
-    DBUG_RETURN (arg_info);
+    DBUG_VOID_RETURN;
 }
 
 node *
-ElimSubDiv (node *arg_node, node *a)
+ElimSubDiv (node *arg_node)
 {
-    node *arg_info;
+    info *info;
     funtab *old_tab;
 
     DBUG_ENTER ("ElimSubDiv");
 
     if (arg_node != NULL) {
-        arg_info = MakeInfo ();
+        DBUG_PRINT ("OPT",
+                    ("starting elim sub div in function %s", FUNDEF_NAME (arg_node)));
+
+        info = MakeInfo ();
 
         old_tab = act_tab;
         act_tab = esd_tab;
 
-        arg_node = Trav (arg_node, arg_info);
+        arg_node = Trav (arg_node, info);
 
         act_tab = old_tab;
 
-        arg_info = FreeTree (arg_info);
+        info = FreeInfo (info);
     }
 
     DBUG_RETURN (arg_node);
@@ -296,7 +351,7 @@ ElimSubDiv (node *arg_node, node *a)
 /*****************************************************************************
  *
  * function:
- *   ALblock(node *arg_node, node *arg_info)
+ *   ALblock(node *arg_node, info *arg_info)
  *
  * description:
  *   store block-node for access to vardec-nodes
@@ -306,7 +361,7 @@ ElimSubDiv (node *arg_node, node *a)
  ****************************************************************************/
 
 node *
-ESDblock (node *arg_node, node *arg_info)
+ESDblock (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ESDblock");
 
@@ -337,7 +392,7 @@ ESDblock (node *arg_node, node *arg_info)
 /*****************************************************************************
  *
  * function:
- *   ALassign(node *arg_node, node *arg_info)
+ *   ALassign(node *arg_node, info *arg_info)
  *
  * description:
  *   Set flag ASSIGN_STATUS to mark unused nodes in optimization-process
@@ -351,7 +406,7 @@ ESDblock (node *arg_node, node *arg_info)
  ****************************************************************************/
 
 node *
-ESDassign (node *arg_node, node *arg_info)
+ESDassign (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ESDassign");
 
@@ -384,7 +439,7 @@ ESDassign (node *arg_node, node *arg_info)
 /*****************************************************************************
  *
  * function:
- *   ALlet(node *arg_node, node *arg_info)
+ *   ALlet(node *arg_node, info *arg_info)
  *
  * description:
  *   store current let-node to include last created new primitive-node
@@ -393,7 +448,7 @@ ESDassign (node *arg_node, node *arg_info)
  ****************************************************************************/
 
 node *
-ESDlet (node *arg_node, node *arg_info)
+ESDlet (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ESDlet");
     if (LET_EXPR (arg_node) != NULL) {
@@ -417,7 +472,7 @@ ESDlet (node *arg_node, node *arg_info)
 /*****************************************************************************
  *
  * function:
- *   ALprf(node *arg_node, node *arg_info)
+ *   ALprf(node *arg_node, info *arg_info)
  *
  * description:
  *   If primitive is associative and commutative start optimization-routines:
@@ -432,7 +487,7 @@ ESDlet (node *arg_node, node *arg_info)
  ****************************************************************************/
 
 node *
-ESDprf (node *arg_node, node *arg_info)
+ESDprf (node *arg_node, info *arg_info)
 {
 
     node *newnode;
@@ -445,8 +500,7 @@ ESDprf (node *arg_node, node *arg_info)
         if (PRF_PRF (arg_node) == F_sub_SxS) {
 
             PRF_PRF (arg_node) = F_add_SxS;
-            arg_info = CreateNegative (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node))),
-                                       arg_info, 0);
+            CreateNegative (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node))), arg_info, 0);
 
             newnode = MakeExprsNodeFromAssignNode (INFO_ESD_NEWNODE (arg_info));
 
@@ -460,8 +514,7 @@ ESDprf (node *arg_node, node *arg_info)
             && (TYPES_BASETYPE (INFO_ESD_TYPE (arg_info)) != T_int)) {
 
             PRF_PRF (arg_node) = F_mul_SxS;
-            arg_info = CreateInverse (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node))),
-                                      arg_info, 0);
+            CreateInverse (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node))), arg_info, 0);
 
             newnode = MakeExprsNodeFromAssignNode (INFO_ESD_NEWNODE (arg_info));
 
@@ -472,8 +525,7 @@ ESDprf (node *arg_node, node *arg_info)
 
         if (PRF_PRF (arg_node) == F_sub_AxS) {
             PRF_PRF (arg_node) = F_add_AxS;
-            arg_info = CreateNegative (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node))),
-                                       arg_info, 0);
+            CreateNegative (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node))), arg_info, 0);
 
             newnode = MakeExprsNodeFromAssignNode (INFO_ESD_NEWNODE (arg_info));
 
@@ -484,8 +536,7 @@ ESDprf (node *arg_node, node *arg_info)
             && (TYPES_BASETYPE (INFO_ESD_TYPE (arg_info)) != T_int)) {
 
             PRF_PRF (arg_node) = F_mul_AxS;
-            arg_info = CreateInverse (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node))),
-                                      arg_info, 0);
+            CreateInverse (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node))), arg_info, 0);
 
             newnode = MakeExprsNodeFromAssignNode (INFO_ESD_NEWNODE (arg_info));
 
@@ -497,8 +548,7 @@ ESDprf (node *arg_node, node *arg_info)
             && (TYPES_BASETYPE (INFO_ESD_TYPE (arg_info)) != T_int)) {
 
             PRF_PRF (arg_node) = F_mul_SxA;
-            arg_info = CreateInverse (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node))),
-                                      arg_info, 1);
+            CreateInverse (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node))), arg_info, 1);
 
             newnode = MakeExprsNodeFromAssignNode (INFO_ESD_NEWNODE (arg_info));
 
@@ -509,8 +559,7 @@ ESDprf (node *arg_node, node *arg_info)
             && (TYPES_BASETYPE (INFO_ESD_TYPE (arg_info)) != T_int)) {
 
             PRF_PRF (arg_node) = F_mul_AxA;
-            arg_info = CreateInverse (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node))),
-                                      arg_info, 1);
+            CreateInverse (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node))), arg_info, 1);
 
             newnode = MakeExprsNodeFromAssignNode (INFO_ESD_NEWNODE (arg_info));
 
@@ -520,8 +569,7 @@ ESDprf (node *arg_node, node *arg_info)
         if (PRF_PRF (arg_node) == F_sub_AxA) {
 
             PRF_PRF (arg_node) = F_add_AxA;
-            arg_info = CreateNegative (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node))),
-                                       arg_info, 1);
+            CreateNegative (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node))), arg_info, 1);
 
             newnode = MakeExprsNodeFromAssignNode (INFO_ESD_NEWNODE (arg_info));
 
@@ -531,8 +579,7 @@ ESDprf (node *arg_node, node *arg_info)
         if (PRF_PRF (arg_node) == F_sub_SxA) {
 
             PRF_PRF (arg_node) = F_add_SxA;
-            arg_info = CreateNegative (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node))),
-                                       arg_info, 1);
+            CreateNegative (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node))), arg_info, 1);
 
             newnode = MakeExprsNodeFromAssignNode (INFO_ESD_NEWNODE (arg_info));
 
