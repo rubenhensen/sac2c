@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.21  2001/03/16 11:56:29  nmw
+ * AVIS_SSAPHITRAGET type changed
+ *
  * Revision 3.20  2001/03/15 10:57:22  nmw
  * missing init added
  *
@@ -1387,7 +1390,7 @@ MakeAvis (node *vardecOrArg)
 
     tmp = CreateCleanNode (N_avis);
     AVIS_VARDECORARG (tmp) = vardecOrArg;
-    AVIS_SSAPHITARGET (tmp) = FALSE;
+    AVIS_SSAPHITARGET (tmp) = PHIT_NONE;
     AVIS_SSALPINV (tmp) = FALSE;
     AVIS_SSADEFINED (tmp) = FALSE;
     AVIS_SSAUNDOFLAG (tmp) = FALSE;

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.6  2001/03/16 11:57:51  nmw
+ * AVIS_SSAPHITRAGET type changed
+ *
  * Revision 1.5  2001/03/15 14:23:24  nmw
  * SSACSE does not longer modify unique vardecs
  *
@@ -492,7 +495,8 @@ SSACSElet (node *arg_node, node *arg_info)
      * and let is NO assignment to some UNIQUE variable
      * do the necessary substitution.
      */
-    if ((match != NULL) && (AVIS_SSAPHITARGET (IDS_AVIS (LET_IDS (arg_node))) == FALSE)
+    if ((match != NULL)
+        && (AVIS_SSAPHITARGET (IDS_AVIS (LET_IDS (arg_node))) == PHIT_NONE)
         && (ForbiddenSubstitution (LET_IDS (arg_node)) == FALSE)) {
         /* set subst attributes for results */
         LET_IDS (arg_node) = SetSubstAttributes (LET_IDS (arg_node), LET_IDS (match));

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.17  2001/03/16 11:57:07  nmw
+ * AVIS_SSAPHITRAGET type changed
+ *
  * Revision 3.16  2001/03/15 21:23:53  dkr
  * signature of NodeOr..._MakeIndex modified:
  * parameter 'no_icm' added
@@ -1639,7 +1642,7 @@ MakeVardecFromArg (node *arg_node)
 
     /* delete wrong data in copied AVIS node */
     AVIS_SSAASSIGN (VARDEC_AVIS (new_vardec)) = NULL;
-    AVIS_SSAPHITARGET (VARDEC_AVIS (new_vardec)) = FALSE;
+    AVIS_SSAPHITARGET (VARDEC_AVIS (new_vardec)) = PHIT_NONE;
     AVIS_SSALPINV (VARDEC_AVIS (new_vardec)) = FALSE;
     AVIS_SSASTACK_TOP (VARDEC_AVIS (new_vardec)) = NULL;
 

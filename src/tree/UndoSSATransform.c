@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.5  2001/03/16 11:55:59  nmw
+ * AVIS_SSAPHITRAGET type changed
+ *
  * Revision 1.4  2001/03/15 10:53:31  nmw
  * Undo SSA for all vardecs marked with SSAUNDOFLAG
  *
@@ -59,6 +62,47 @@
 static ids *TravIDS (ids *arg_ids, node *arg_info);
 static ids *USSAids (ids *arg_ids, node *arg_info);
 
+/* helper functions for local use */
+static void SSADCRInitAvisFlags (node *fundef);
+
+/******************************************************************************
+ *
+ * function:
+ *   void SSADCRInitAvisFlags(node *fundef)
+ *
+ * description:
+ *   inits flags AVIS_SUBST, AVIS_SUBSTUSSA needed for this module
+ *   in all vardec and args.
+ *
+ ******************************************************************************/
+static void
+SSADCRInitAvisFlags (node *fundef)
+{
+    node *tmp;
+
+    DBUG_ENTER ("SSADCRInitAvisFlags");
+
+    /* process args */
+    tmp = FUNDEF_ARGS (fundef);
+    while (tmp != NULL) {
+        AVIS_SUBST (ARG_AVIS (tmp)) = NULL;
+        AVIS_SUBSTUSSA (ARG_AVIS (tmp)) = NULL;
+        tmp = ARG_NEXT (tmp);
+    }
+
+    /* process vardecs */
+    if (FUNDEF_BODY (fundef) != NULL) {
+        tmp = BLOCK_VARDEC (FUNDEF_BODY (fundef));
+        while (tmp != NULL) {
+            AVIS_SUBST (VARDEC_AVIS (tmp)) = NULL;
+            AVIS_SUBSTUSSA (VARDEC_AVIS (tmp)) = NULL;
+            tmp = VARDEC_NEXT (tmp);
+        }
+    }
+
+    DBUG_VOID_RETURN;
+}
+
 /******************************************************************************
  *
  * function:
@@ -88,19 +132,74 @@ USSAarg (node *arg_node, node *arg_info)
  *   node *USSAvardec(node *arg_node, node *arg_info)
  *
  * description:
- *   checks all vardec
+ * 1. if a vardec is marked as SSAPHITRAGET, the complete copy assignment must
+ *    be removed to enable the fun2lac transformation. therfore the right-side
+ *    identifier has to be renamed to the SSAPHITRAGET identifier.
+ *
+ * 2. if a vardec is marked with SSAUNDOFALG the corresponsing original vardec
+ *    or arg is searched. if the original node has been deleted by optimizations
+ *    the actual node is renamed to this orginal name (stored in SSACNT_BASEID).
+ *    in the follwing tree traversal all corresponding identifiers are renamed
+ *    back to their original name.
+ *
+ * 3. after traversing all vardecs, check on back traversal for different
+ *    renamings in AVIS_SUBST and AVIS_SUBSTUSSA. set the correct AVIS_SUBSTUSSA
+ *    entry for each vardec (AVIS_SUBSTUSSA overrides AVIS_SUBST entry).
  *
  ******************************************************************************/
 node *
 USSAvardec (node *arg_node, node *arg_info)
 {
     node *tmp;
+    node *expr;
 
     DBUG_ENTER ("USSAvardec");
     DBUG_PRINT ("USSA", ("name %s: STATUS %s, ATTRIB %s\n", VARDEC_NAME (arg_node),
                          mdb_statustype[VARDEC_STATUS (arg_node)],
                          mdb_statustype[VARDEC_ATTRIB (arg_node)]));
 
+    /* 1. handle SSAPHITARGET */
+    if ((AVIS_SSAPHITARGET (VARDEC_AVIS (arg_node)) == PHIT_DO)
+        || (AVIS_SSAPHITARGET (VARDEC_AVIS (arg_node)) == PHIT_WHILE)) {
+
+        DBUG_ASSERT ((AVIS_SSAASSIGN (VARDEC_AVIS (arg_node)) != NULL),
+                     "missing first assignment for phitarget");
+        DBUG_ASSERT ((LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (VARDEC_AVIS (arg_node))))),
+                     "missing let expr in first assignment");
+
+        expr = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (VARDEC_AVIS (arg_node))));
+
+        if (NODE_TYPE (expr) == N_id) {
+            /*
+             * ssa phi target copy assignment:
+             * mark right side identifier for renming to left side identifer
+             */
+            DBUG_PRINT ("USSA", ("PHITARGET: rename %s -> %s (1)",
+                                 VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (ID_AVIS (expr))),
+                                 VARDEC_NAME (arg_node)));
+            AVIS_SUBST (ID_AVIS (expr)) = VARDEC_AVIS (arg_node);
+        }
+
+        DBUG_ASSERT ((AVIS_SSAASSIGN2 (VARDEC_AVIS (arg_node)) != NULL),
+                     "missing second assignment for phitarget");
+        DBUG_ASSERT ((LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN2 (VARDEC_AVIS (arg_node))))),
+                     "missing let expr in second assignment");
+
+        expr = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN2 (VARDEC_AVIS (arg_node))));
+
+        if (NODE_TYPE (expr) == N_id) {
+            /*
+             * ssa phi target copy assignment:
+             * mark right side identifier for renming to left side identifer
+             */
+            DBUG_PRINT ("USSA", ("PHITARGET: rename %s -> %s (2)",
+                                 VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (ID_AVIS (expr))),
+                                 VARDEC_NAME (arg_node)));
+            AVIS_SUBST (ID_AVIS (expr)) = VARDEC_AVIS (arg_node);
+        }
+    }
+
+    /* 2. SSAUNDOFLAG */
     if ((AVIS_SSAUNDOFLAG (VARDEC_AVIS (arg_node)))
         && (strcmp (SSACNT_BASEID (AVIS_SSACOUNT (VARDEC_AVIS (arg_node))),
                     VARDEC_NAME (arg_node))
@@ -108,24 +207,23 @@ USSAvardec (node *arg_node, node *arg_info)
         /* artificial vardec with renamed ids -> search for original vardec/arg */
 
         /* first search in arg chain */
-        AVIS_UNDOAVIS (VARDEC_AVIS (arg_node)) = NULL;
         tmp = INFO_USSA_ARGS (arg_info);
-        while ((tmp != NULL) && (AVIS_UNDOAVIS (VARDEC_AVIS (arg_node)) == NULL)) {
+        while ((tmp != NULL) && (AVIS_SUBSTUSSA (VARDEC_AVIS (arg_node)) == NULL)) {
             if (strcmp (SSACNT_BASEID (AVIS_SSACOUNT (VARDEC_AVIS (arg_node))),
                         ARG_NAME (tmp))
                 == 0) {
-                AVIS_UNDOAVIS (VARDEC_AVIS (arg_node)) = ARG_AVIS (tmp);
+                AVIS_SUBSTUSSA (VARDEC_AVIS (arg_node)) = ARG_AVIS (tmp);
             }
             tmp = ARG_NEXT (tmp);
         }
 
         /* then search in vardec chain */
         tmp = BLOCK_VARDEC (INFO_USSA_TOPBLOCK (arg_info));
-        while ((tmp != NULL) && (AVIS_UNDOAVIS (VARDEC_AVIS (arg_node)) == NULL)) {
+        while ((tmp != NULL) && (AVIS_SUBSTUSSA (VARDEC_AVIS (arg_node)) == NULL)) {
             if (strcmp (SSACNT_BASEID (AVIS_SSACOUNT (VARDEC_AVIS (arg_node))),
                         VARDEC_NAME (tmp))
                 == 0) {
-                AVIS_UNDOAVIS (VARDEC_AVIS (arg_node)) = VARDEC_AVIS (tmp);
+                AVIS_SUBSTUSSA (VARDEC_AVIS (arg_node)) = VARDEC_AVIS (tmp);
             }
             tmp = VARDEC_NEXT (tmp);
         }
@@ -134,27 +232,31 @@ USSAvardec (node *arg_node, node *arg_info)
          * no original vardec found (maybe removed by optimizations)!
          * so rename this vardec to original name.
          */
-        if (AVIS_UNDOAVIS (VARDEC_AVIS (arg_node)) == NULL) {
+        if (AVIS_SUBSTUSSA (VARDEC_AVIS (arg_node)) == NULL) {
             FREE (VARDEC_NAME (arg_node));
             VARDEC_NAME (arg_node)
               = StringCopy (SSACNT_BASEID (AVIS_SSACOUNT (VARDEC_AVIS (arg_node))));
 
             /* force renaming of identifier of this vardec */
-            AVIS_UNDOAVIS (VARDEC_AVIS (arg_node)) = VARDEC_AVIS (arg_node);
+            AVIS_SUBSTUSSA (VARDEC_AVIS (arg_node)) = VARDEC_AVIS (arg_node);
 
             DBUG_PRINT ("USSA", ("set %s as new baseid", VARDEC_NAME (arg_node)));
         }
         DBUG_PRINT ("USSA", ("-> rename %s to %s", VARDEC_NAME (arg_node),
                              SSACNT_BASEID (AVIS_SSACOUNT (VARDEC_AVIS (arg_node)))));
 
-        DBUG_ASSERT ((AVIS_UNDOAVIS (VARDEC_AVIS (arg_node)) != NULL),
+        DBUG_ASSERT ((AVIS_SUBSTUSSA (VARDEC_AVIS (arg_node)) != NULL),
                      "no matching baseid found - no re-renaming possible.");
-    } else {
-        AVIS_UNDOAVIS (VARDEC_AVIS (arg_node)) = NULL;
     }
 
     if (VARDEC_NEXT (arg_node) != NULL) {
         VARDEC_NEXT (arg_node) = Trav (VARDEC_NEXT (arg_node), arg_info);
+    }
+
+    /* 3. check for different renamings */
+    if (AVIS_SUBSTUSSA (VARDEC_AVIS (arg_node)) == NULL) {
+        /* no first level renaming -> second level renaming will be done */
+        AVIS_SUBSTUSSA (VARDEC_AVIS (arg_node)) = AVIS_SUBST (VARDEC_AVIS (arg_node));
     }
 
     DBUG_RETURN (arg_node);
@@ -389,6 +491,8 @@ USSAfundef (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("USSAfundef");
 
+    SSADCRInitAvisFlags (arg_node);
+
     /*
      * there is no need to traverse the args, because the args
      * are never renamed. Only new vardec as rename target of
@@ -460,9 +564,9 @@ USSAids (ids *arg_ids, node *arg_info)
 
     if (NODE_TYPE (AVIS_VARDECORARG (IDS_AVIS (arg_ids))) == N_vardec) {
 
-        if (AVIS_UNDOAVIS (IDS_AVIS (arg_ids)) != NULL) {
+        if (AVIS_SUBSTUSSA (IDS_AVIS (arg_ids)) != NULL) {
             /* restore rename back to undo vardec */
-            IDS_AVIS (arg_ids) = AVIS_UNDOAVIS (IDS_AVIS (arg_ids));
+            IDS_AVIS (arg_ids) = AVIS_SUBSTUSSA (IDS_AVIS (arg_ids));
             IDS_VARDEC (arg_ids) = AVIS_VARDECORARG (IDS_AVIS (arg_ids));
 
 #ifndef NO_ID_NAME
