@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.42  2000/02/02 16:10:10  bs
+ * *** empty log message ***
+ *
  * Revision 2.41  2000/01/31 19:15:29  bs
  * Function WLAAprintAccesse modified.
  * Function TSIprintInfo added.
@@ -3133,9 +3136,7 @@ Print (node *syntax_tree)
     /* save act_tab to restore it afterwards. This could be useful if
        Print() is called from inside a debugger. */
     old_tab = act_tab;
-
     act_tab = print_tab;
-
     indent = 0;
 
     arg_info = MakeInfo ();
