@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2003/06/19 08:15:25  sbs
+ * checks success of cpp run now and aborts in case of failure!
+ *
  * Revision 3.13  2003/03/24 16:37:42  sbs
  * CreateCppCallString used .
  *
@@ -275,6 +278,7 @@ ScanParse ()
 {
     char *pathname;
     char cccallstr[MAX_PATH_LEN];
+    int err;
 
     DBUG_ENTER ("ScanParse");
 
@@ -308,7 +312,10 @@ ScanParse ()
 
     My_yyparse ();
 
-    pclose (yyin);
+    err = pclose (yyin);
+    if (err) {
+        SYSABORT (("C preprocessor error"));
+    }
 
     SetFileNames (syntax_tree);
 
