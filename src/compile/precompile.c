@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.45  1998/04/04 21:07:29  dkr
+ * changed PRECconc
+ *
  * Revision 1.44  1998/04/03 21:07:54  dkr
  * changed usage of arg_info
  * changed PRECconc
@@ -162,6 +165,7 @@
 
 #include "optimize.h"
 #include "DupTree.h"
+#include "typecheck.h"
 #include "dbug.h"
 
 #include <string.h>
@@ -271,6 +275,50 @@ ConcFunName (char *name)
     sprintf (funname, "CONC_%s_%d", name, no);
 
     DBUG_RETURN (funname);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *FindVardec(int varno, node *fundef)
+ *
+ * description:
+ *   returns the vardec of var number 'varno'
+ *
+ ******************************************************************************/
+
+node *
+FindVardec (int varno, node *fundef)
+{
+    node *tmp, *result = NULL;
+
+    DBUG_ENTER ("FindVardec");
+
+    if (result == NULL) {
+        tmp = FUNDEF_ARGS (fundef);
+        while (tmp != NULL) {
+            if (ARG_VARNO (tmp) == varno) {
+                result = tmp;
+                break;
+            } else {
+                tmp = ARG_NEXT (tmp);
+            }
+        }
+    }
+
+    if (result == NULL) {
+        tmp = BLOCK_VARDEC (FUNDEF_BODY (fundef));
+        while (tmp != NULL) {
+            if (VARDEC_VARNO (tmp) == varno) {
+                result = tmp;
+                break;
+            } else {
+                tmp = VARDEC_NEXT (tmp);
+            }
+        }
+    }
+
+    DBUG_RETURN (result);
 }
 
 /*
@@ -1162,28 +1210,165 @@ PRECid (node *arg_node, node *arg_info)
 node *
 PRECconc (node *arg_node, node *arg_info)
 {
-    node *arglist, *body, *ret, *fundef, *args;
-    types *types;
+    node *fundefs, *old_vardec;
+    node *args, *arg, *last_arg;
+    ids *lets, *let, *last_let;
+    node *fargs, *farg, *last_farg;
+    node *retexprs, *retexpr, *last_retexpr;
+    types *rettypes, *rettype, *last_rettype;
+    node *ret, *fundef, *ap;
     char *name;
+    int varno, i;
 
     DBUG_ENTER ("PRECconc");
 
     CONC_REGION (arg_node) = Trav (CONC_REGION (arg_node), arg_info);
 
+    fundefs = MODUL_FUNS (INFO_MODUL (arg_info));
+    varno = FUNDEF_VARNO (fundefs);
+
     /*
      * generate fundef for this concurrent region
      */
-
     name = ConcFunName (INFO_NAME (arg_info));
-    types = MakeType (T_int, 0, NULL, NULL, NULL);
-    arglist = NULL /* MakeArg() */;
-    body = NULL /* MakeBlock() */;
 
-    ret = NULL /* MakeReturn();
-    RETURN_INWITH(ret) = 0 */
-      ;
+    args = NULL;
+    lets = NULL;
+    fargs = NULL;
+    retexprs = NULL;
+    rettypes = NULL;
+    for (i = 0; i < varno; i++) {
+        if ((CONC_MASK (arg_node, 0))[i] > 0) {
 
-    fundef = MakeFundef (name, NULL, types, arglist, body, NULL);
+            old_vardec = FindVardec (i, fundefs);
+
+            if (NODE_TYPE (old_vardec) == N_vardec) {
+                arg = MakeId (StringCopy (VARDEC_NAME (old_vardec)), NULL,
+                              VARDEC_STATUS (old_vardec));
+                ID_ATTRIB (arg) = VARDEC_ATTRIB (old_vardec);
+
+                let = MakeIds (StringCopy (VARDEC_NAME (old_vardec)), NULL,
+                               VARDEC_STATUS (old_vardec));
+                IDS_ATTRIB (let) = VARDEC_ATTRIB (old_vardec);
+
+                farg = MakeArg (StringCopy (VARDEC_NAME (old_vardec)),
+                                DuplicateTypes (VARDEC_TYPE (old_vardec), 1),
+                                VARDEC_STATUS (old_vardec), VARDEC_ATTRIB (old_vardec),
+                                NULL);
+
+                retexpr = MakeId (StringCopy (VARDEC_NAME (old_vardec)), NULL,
+                                  VARDEC_STATUS (old_vardec));
+                ID_ATTRIB (retexpr) = VARDEC_ATTRIB (old_vardec);
+
+                rettype = DuplicateTypes (VARDEC_TYPE (old_vardec), 1);
+            } else {
+                arg = MakeId (StringCopy (ARG_NAME (old_vardec)), NULL,
+                              ARG_STATUS (old_vardec));
+                ID_ATTRIB (arg) = ARG_ATTRIB (old_vardec);
+
+                let = MakeIds (StringCopy (ARG_NAME (old_vardec)), NULL,
+                               ARG_STATUS (old_vardec));
+                IDS_ATTRIB (let) = ARG_ATTRIB (old_vardec);
+
+                farg = MakeArg (StringCopy (ARG_NAME (old_vardec)),
+                                DuplicateTypes (ARG_TYPE (old_vardec), 1),
+                                ARG_STATUS (old_vardec), ARG_ATTRIB (old_vardec), NULL);
+
+                retexpr = MakeId (StringCopy (ARG_NAME (old_vardec)), NULL,
+                                  ARG_STATUS (old_vardec));
+                ID_ATTRIB (retexpr) = ARG_ATTRIB (old_vardec);
+
+                rettype = DuplicateTypes (ARG_TYPE (old_vardec), 1);
+            }
+
+            ID_VARDEC (arg) = old_vardec;
+            ID_MAKEUNIQUE (arg) = 0;
+            ID_REFCNT (arg) = -1; /* not needed anymore !?! */
+            arg = MakeExprs (arg, NULL);
+
+            IDS_VARDEC (let) = old_vardec;
+            IDS_REFCNT (let) = -1; /* not needed anymore !?! */
+
+            /* the function body is statically refcounted! */
+            ARG_REFCNT (farg) = 0;
+            ARG_VARNO (farg) = -1; /* not needed anymore !?! */
+
+            ID_VARDEC (retexpr) = farg;
+            ID_MAKEUNIQUE (retexpr) = 0;
+            ID_REFCNT (retexpr) = -1; /* not needed anymore !?! */
+            retexpr = MakeExprs (retexpr, NULL);
+
+            if (args == NULL) {
+                args = arg;
+                lets = let;
+                fargs = farg;
+                retexprs = retexpr;
+                rettypes = rettype;
+            } else {
+                EXPRS_NEXT (last_arg) = arg;
+                IDS_NEXT (last_let) = let;
+                ARG_NEXT (last_farg) = farg;
+                EXPRS_NEXT (last_retexpr) = retexpr;
+                TYPES_NEXT (last_rettype) = rettype;
+            }
+            last_arg = arg;
+            last_let = let;
+            last_farg = farg;
+            last_retexpr = retexpr;
+            last_rettype = rettype;
+        }
+    }
+
+    for (i = 0; i < varno; i++) {
+        if ((CONC_MASK (arg_node, 1))[i] > 0) {
+
+            old_vardec = FindVardec (i, fundefs);
+
+            if (NODE_TYPE (old_vardec) == N_vardec) {
+                arg = MakeId (StringCopy (VARDEC_NAME (old_vardec)), NULL,
+                              VARDEC_STATUS (old_vardec));
+                ID_ATTRIB (arg) = VARDEC_ATTRIB (old_vardec);
+
+                farg = MakeArg (StringCopy (VARDEC_NAME (old_vardec)),
+                                DuplicateTypes (VARDEC_TYPE (old_vardec), 1),
+                                VARDEC_STATUS (old_vardec), VARDEC_ATTRIB (old_vardec),
+                                NULL);
+            } else {
+                arg = MakeId (StringCopy (ARG_NAME (old_vardec)), NULL,
+                              ARG_STATUS (old_vardec));
+                ID_ATTRIB (arg) = ARG_ATTRIB (old_vardec);
+
+                farg = MakeArg (StringCopy (ARG_NAME (old_vardec)),
+                                DuplicateTypes (ARG_TYPE (old_vardec), 1),
+                                ARG_STATUS (old_vardec), ARG_ATTRIB (old_vardec), NULL);
+            }
+
+            ID_VARDEC (arg) = old_vardec;
+            ID_MAKEUNIQUE (arg) = 0;
+            ID_REFCNT (arg) = -1; /* not needed anymore !?! */
+            arg = MakeExprs (arg, NULL);
+
+            /* the function body is statically refcounted! */
+            ARG_REFCNT (farg) = 0;
+            ARG_VARNO (farg) = -1; /* not needed anymore !?! */
+
+            if (args == NULL) {
+                args = arg;
+                fargs = farg;
+            } else {
+                EXPRS_NEXT (last_arg) = arg;
+                ARG_NEXT (last_farg) = farg;
+            }
+            last_arg = arg;
+            last_farg = farg;
+        }
+    }
+
+    ret = MakeReturn (retexprs);
+    RETURN_INWITH (ret) = 0;
+
+    fundef = MakeFundef (name, NULL, rettypes, fargs,
+                         MakeBlock (CONC_REGION (arg_node), NULL), NULL);
     FUNDEF_STATUS (fundef) = ST_concfun;
     FUNDEF_ATTRIB (fundef) = ST_regular;
     FUNDEF_INLINE (fundef) = 0;
@@ -1195,13 +1380,13 @@ PRECconc (node *arg_node, node *arg_info)
     INFO_CONCFUNS (arg_info) = fundef;
 
     /*
-     * generate CONC_AP
+     * generate CONC_AP_LET
      */
 
-    args = NULL /* MakeExprs() */;
+    ap = MakeAp (name, NULL, args);
+    AP_ATFLAG (ap) = 1;
 
-    CONC_AP (arg_node) = MakeAp (name, NULL, args);
-    AP_ATFLAG (CONC_AP (arg_node)) = 1;
+    CONC_AP_LET (arg_node) = MakeLet (ap, lets);
 
     DBUG_RETURN (arg_node);
 }
