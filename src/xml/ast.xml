@@ -1,5 +1,8 @@
 <!--
   $Log$
+  Revision 1.95  2004/11/26 12:46:23  sbs
+  PRT phase added.
+
   Revision 1.94  2004/11/26 12:28:33  mwe
   Inline traversal added
 
@@ -191,6 +194,7 @@
           <node name="Icm" />
         </travuser>
       </traversal>
+      <traversal id="PRT" name="Print Syntax Tree" default="user" include="print.h" prefun="PRTtravPre" postfun="PRTtravPost" />
       <traversal id="DUP" name="Tree duplication" default="user" include="DupTree.h" />
       <traversal id="FREE" name="Free Tree" default="sons" include="free_node.h" />
       <traversal id="SBT" name="Serialize Build Stack" default="user" include="serialize_buildstack.h" />
@@ -336,6 +340,7 @@
 	</travuser>
       </traversal>
     </general>
+
     <phase id="scanparse" name="Parsing input file">
      <traversal id="HM" name="Handle Mops" default="sons" include="handle_mops.h" >
 	<travuser>
