@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.9  1999/03/17 21:44:22  bs
+ * Flattening of costant boolean arrays and constant character arrays!
+ *
  * Revision 2.8  1999/03/17 15:35:04  bs
  * Bug fixed in FltnArray and FltnExprs. Macro EXPR_VAL added.
  *
@@ -403,7 +406,12 @@
 #define EXPR_VAL(node)                                                                   \
     (NODE_TYPE (node) == N_double)                                                       \
       ? (DOUBLE_VAL (node))                                                              \
-      : ((NODE_TYPE (node) == N_float) ? (FLOAT_VAL (node)) : (NUM_VAL (node)))
+      : ((NODE_TYPE (node) == N_float)                                                   \
+           ? (FLOAT_VAL (node))                                                          \
+           : ((NODE_TYPE (node) == N_num)                                                \
+                ? (NUM_VAL (node))                                                       \
+                : ((NODE_TYPE (node) == N_bool) ? (BOOL_VAL (node))                      \
+                                                : (CHAR_VAL (node)))))
 
 typedef struct LOCAL_STACK {
     char *id_old;
@@ -454,40 +462,40 @@ PreTypecheck (nodetype type1, simpletype type2)
 
     switch (type1) {
     case N_double:
-        if (type2 == T_unknown)
-            type2 = T_unknown;
-        else
+        if ((type2 == T_double) || (type2 == T_float) || (type2 == T_int))
             type2 = T_double;
+        else
+            type2 = T_unknown;
         break;
     case N_float:
-        if (type2 == T_unknown)
-            type2 = T_unknown;
-        else if (type2 == T_double)
+        if (type2 == T_double)
             type2 = T_double;
-        else
+        else if ((type2 == T_float) || (type2 == T_int))
             type2 = T_float;
+        else
+            type2 = T_unknown;
         break;
     case N_num:
-        if (type2 == T_unknown)
-            type2 = T_unknown;
-        else if (type2 == T_double)
-            type2 = T_double;
-        else if (type2 == T_float)
-            type2 = T_float;
-        else
-            type2 = T_int;
-        break;
-    case N_bool:
-        if (type2 == T_unknown)
-            type2 = T_unknown;
-        else if (type2 == T_double)
+        if (type2 == T_double)
             type2 = T_double;
         else if (type2 == T_float)
             type2 = T_float;
         else if (type2 == T_int)
             type2 = T_int;
         else
+            type2 = T_unknown;
+        break;
+    case N_bool:
+        if (type2 == T_bool)
             type2 = T_bool;
+        else
+            type2 = T_unknown;
+        break;
+    case N_char:
+        if (type2 == T_char)
+            type2 = T_char;
+        else
+            type2 = T_unknown;
         break;
     default:
         type2 = T_unknown;
@@ -1133,6 +1141,7 @@ FltnArray (node *arg_node, node *arg_info)
     ARRAY_VECTYPE (arg_node) = INFO_FLTN_VECTYPE (arg_info);
 
     switch (INFO_FLTN_VECTYPE (arg_info)) {
+    case T_bool:
     case T_int:
         ARRAY_INTVEC (arg_node) = (node *)INFO_FLTN_CONSTVEC (arg_info);
         INFO_FLTN_CONSTVEC (arg_info) = NULL;
@@ -1143,6 +1152,10 @@ FltnArray (node *arg_node, node *arg_info)
         break;
     case T_double:
         ARRAY_DOUBLEVEC (arg_node) = (node *)INFO_FLTN_CONSTVEC (arg_info);
+        INFO_FLTN_CONSTVEC (arg_info) = NULL;
+        break;
+    case T_char:
+        ARRAY_CHARVEC (arg_node) = (node *)INFO_FLTN_CONSTVEC (arg_info);
         INFO_FLTN_CONSTVEC (arg_info) = NULL;
         break;
     default:
@@ -1263,6 +1276,7 @@ node *
 FltnExprs (node *arg_node, node *arg_info)
 {
     int *info_fltn_intvec, info_fltn_array_index, abstract;
+    char *info_fltn_charvec;
     float *info_fltn_floatvec;
     double *info_fltn_doublevec;
     node *expr, *expr2;
@@ -1342,6 +1356,7 @@ FltnExprs (node *arg_node, node *arg_info)
              * collect the array element if it's a constant vector
              */
             switch (INFO_FLTN_VECTYPE (arg_info)) {
+            case T_bool:
             case T_int:
                 info_fltn_intvec = MALLOC (INFO_FLTN_VECLEN (arg_info) * sizeof (int));
                 INFO_FLTN_CONSTVEC (arg_info) = (node *)info_fltn_intvec;
@@ -1358,6 +1373,12 @@ FltnExprs (node *arg_node, node *arg_info)
                   = MALLOC (INFO_FLTN_VECLEN (arg_info) * sizeof (double));
                 INFO_FLTN_CONSTVEC (arg_info) = (node *)info_fltn_doublevec;
                 info_fltn_doublevec[info_fltn_array_index] = (double)EXPR_VAL (expr);
+                break;
+            case T_char:
+                info_fltn_charvec = MALLOC (INFO_FLTN_VECLEN (arg_info) * sizeof (char));
+                INFO_FLTN_CONSTVEC (arg_info) = (node *)info_fltn_charvec;
+                info_fltn_charvec[info_fltn_array_index] = (char)EXPR_VAL (expr);
+                break;
             default:
                 /* Nothing to do */
                 break;
@@ -1370,6 +1391,7 @@ FltnExprs (node *arg_node, node *arg_info)
              * collect the array element if it's a constant vector
              */
             switch (INFO_FLTN_VECTYPE (arg_info)) {
+            case T_bool:
             case T_int:
                 info_fltn_intvec = (int *)INFO_FLTN_CONSTVEC (arg_info);
                 info_fltn_intvec[info_fltn_array_index] = (int)EXPR_VAL (expr);
@@ -1381,6 +1403,11 @@ FltnExprs (node *arg_node, node *arg_info)
             case T_double:
                 info_fltn_doublevec = (double *)INFO_FLTN_CONSTVEC (arg_info);
                 info_fltn_doublevec[info_fltn_array_index] = (double)EXPR_VAL (expr);
+                break;
+            case T_char:
+                info_fltn_charvec = (char *)INFO_FLTN_CONSTVEC (arg_info);
+                info_fltn_charvec[info_fltn_array_index] = (char)EXPR_VAL (expr);
+                break;
             default:
                 /* Nothing to do */
                 break;
