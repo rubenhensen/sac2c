@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2001/04/26 15:39:17  dkr
+ * preprocessor flags REMOVE_VOID_FUNS and REMOVE_CASTS added
+ *
  * Revision 3.1  2000/11/20 18:02:01  sacbase
  * new release made
  *
@@ -28,17 +31,26 @@
  *
  */
 
+#define REMOVE_VOID_FUNS 1
+#define REMOVE_CASTS 1
+
 /*
  *  sac2c compiler module: rmvoidfun
  *
  *  The purpose of this compiler phase is to generate purely functional
- *  code. What actually is done is removing all function declarations
+ *  code.
+ *
+#if REMOVE_VOID_FUNS
+ *  What actually is done is removing all function declarations
  *  as well as definitions with return type "void". Although, this seems
  *  to be a task for dead code removal, this is done separately because
  *  the implementation of the SAC optimizations assumes all functions
  *  to have at least one return value.
+#endif
  *
+#if REMOVE_CASTS
  *  Additionally, all cast expressions are removed by this compiler phase.
+#endif
  *
  */
 
@@ -52,19 +64,15 @@
 #include "Error.h"
 #include "free.h"
 
-/*
+/******************************************************************************
  *
- *  functionname  : RemoveVoidFunctions
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
+ * Function:
+ *   node *RemoveVoidFunctions(node *syntax_tree)
  *
- *  remarks       :
+ * Description:
  *
- */
+ *
+ ******************************************************************************/
 
 node *
 RemoveVoidFunctions (node *syntax_tree)
@@ -76,33 +84,15 @@ RemoveVoidFunctions (node *syntax_tree)
     DBUG_RETURN (Trav (syntax_tree, NULL));
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  :
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
+ * Function:
+ *   node *RMVblock(node *arg_node, node *arg_info)
  *
- *  remarks       :
+ * Description:
  *
- */
-
-/*
  *
- *  functionname  : RMVblock
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
- *
- *  remarks       :
- *
- */
+ ******************************************************************************/
 
 node *
 RMVblock (node *arg_node, node *arg_info)
@@ -120,30 +110,28 @@ RMVblock (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : RMVassign
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
+ * Function:
+ *   node *RMVassign(node *arg_node, node *arg_info)
  *
- *  remarks       :
+ * Description:
  *
- */
+ *
+ ******************************************************************************/
 
 node *
 RMVassign (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("RMVassign");
 
+#if REMOVE_VOID_FUNS
     while ((arg_node != NULL) && (NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_let)
            && (LET_IDS (ASSIGN_INSTR (arg_node)) == NULL)) {
         /* remove all void-functions */
         arg_node = FreeNode (arg_node);
     }
+#endif
 
     if (arg_node != NULL) {
         if (ASSIGN_INSTR (arg_node) != NULL) {
@@ -160,22 +148,28 @@ RMVassign (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : RMVfundef
+ * Function:
+ *   node *RMVfundef(node *arg_node, node *arg_info)
  *
- */
+ * Description:
+ *
+ *
+ ******************************************************************************/
 
 node *
 RMVfundef (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("RMVfundef");
 
+#if REMOVE_VOID_FUNS
     while ((arg_node != NULL) && (FUNDEF_BASETYPE (arg_node) == T_void)) {
         DBUG_PRINT ("RMVOID", ("Removed void function %s", ItemName (arg_node)));
 
         arg_node = FreeNode (arg_node);
     }
+#endif
 
     if (arg_node != NULL) {
         if (FUNDEF_BODY (arg_node) != NULL) {
@@ -190,19 +184,15 @@ RMVfundef (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : RMVmodul
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
+ * Function:
+ *   node *RMVmodul(node *arg_node, node *arg_info)
  *
- *  remarks       :
+ * Description:
  *
- */
+ *
+ ******************************************************************************/
 
 node *
 RMVmodul (node *arg_node, node *arg_info)
@@ -216,20 +206,15 @@ RMVmodul (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : RMVcast
- *  arguments     : 1) N_cast node
- *                  2) arg_info unused
- *  description   : deletes all casts
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : Trav, FreeOneTypes
- *  macros        : DBUG, TREE, FREE
+ * Function:
+ *   node *RMVcast(node *arg_node, node *arg_info)
  *
- *  remarks       :
+ * Description:
+ *   deletes all casts
  *
- */
+ ******************************************************************************/
 
 node *
 RMVcast (node *arg_node, node *arg_info)
@@ -238,25 +223,13 @@ RMVcast (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("RMVcast");
 
+#if REMOVE_CASTS
     tmp = arg_node;
     arg_node = Trav (CAST_EXPR (arg_node), arg_info);
 
     FreeOneTypes (CAST_TYPE (tmp));
     FREE (tmp);
+#endif
 
     DBUG_RETURN (arg_node);
 }
-
-/*
- *
- *  functionname  :
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
- *
- *  remarks       :
- *
- */
