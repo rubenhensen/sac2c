@@ -7,3 +7,4 @@ uniquecheck.c
 uniquecheck.h
 objanalysis.c
 objanalysis.h
+restore.c
