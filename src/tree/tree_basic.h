@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.201  2004/07/29 19:16:30  sah
+ * fixed N_ex / N_mt being toggeled
+ * in their comments.
+ *
  * Revision 3.200  2004/07/29 18:02:23  sah
  * some macro cleanup
  *
@@ -3582,7 +3586,7 @@ extern node *MakeSync (node *region);
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  N_ex :
+ ***  N_mt :
  ***
  ***  sons:
  ***
@@ -3618,7 +3622,7 @@ extern node *MakeMT (node *region);
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  N_mt :
+ ***  N_ex :
  ***
  ***  sons:
  ***
