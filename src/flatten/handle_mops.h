@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2004/11/26 23:45:18  khf
+ * corrected
+ *
  * Revision 1.8  2004/11/22 12:37:33  ktr
  * Ismop SacDevCamp 04
  * ,.
@@ -44,8 +47,6 @@
  *****************************************************************************/
 extern node *HMdoHandleMops (node *arg_node);
 
-extern node *HMap (node *arg_node, info *arg_info);
-extern node *HMfold (node *arg_node, info *arg_info);
 extern node *HMmop (node *arg_node, info *arg_info);
 
 #endif /* _SAC_HANDLE_MOPS_H_ */
