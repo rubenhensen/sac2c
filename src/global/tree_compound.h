@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.55  1998/02/12 11:06:39  srs
+ * added FUNDEF_BODY_VARNO and two compound macros for the new WL
+ *
  * Revision 1.54  1998/02/09 15:41:40  sbs
  * forced check in 8-(((
  *  not yet cleaned up!
@@ -871,9 +874,9 @@ extern node *SearchObjdef (char *name, char *mod, node *implementations);
 
 #define FUNDEF_NEEDFUNS(n) (BLOCK_NEEDFUNS (FUNDEF_BODY (n)))
 #define FUNDEF_NEEDTYPES(n) (BLOCK_NEEDTYPES (FUNDEF_BODY (n)))
-
 #define FUNDEF_VARDEC(n) (BLOCK_VARDEC (FUNDEF_BODY (n)))
 #define FUNDEF_INSTR(n) (BLOCK_INSTR (FUNDEF_BODY (n)))
+#define FUNDEF_BODY_VARNO(n) (BLOCK_VARNO (FUNDEF_BODY (n)))
 
 #define FUNDEF_DEFMASK(n) (FUNDEF_MASK (n, 0))
 #define FUNDEF_USEMASK(n) (FUNDEF_MASK (n, 1))
@@ -1268,6 +1271,15 @@ extern node *GetCompoundNode (node *arg_node);
 
 #define WITH_BODYDEFMASK(n) (WITH_MASK (n, 0))
 #define WITH_BODYUSEMASK(n) (WITH_MASK (n, 0))
+
+/*--------------------------------------------------------------------------*/
+
+/*
+ *  compound access macros for the new WL.
+ */
+
+#define NPART_IDS(n) (NWITHID_IDS (NPART_WITHID (n)))
+#define NPART_VEC(n) (NWITHID_VEC (NPART_WITHID (n)))
 
 /*--------------------------------------------------------------------------*/
 
