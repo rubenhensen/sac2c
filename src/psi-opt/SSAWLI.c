@@ -1,8 +1,8 @@
 /*
  *
  * $Log$
- * Revision 1.10  2002/09/09 17:56:55  dkr
- * *** empty log message ***
+ * Revision 1.11  2002/09/16 14:27:38  dkr
+ * no changes done
  *
  * Revision 1.9  2001/06/28 07:46:51  cg
  * Primitive function psi() renamed to sel().
@@ -174,13 +174,13 @@ CheckArrayFoldable (node *indexn, node *idn, node *arg_info)
 
 #if 0
     /* ID_WL has been set in SSAWLIid called by SSAWLIlet before */
-    if (!substn) {
-      substn = SSAStartSearchWL(idn,INFO_WLI_ASSIGN(arg_info),1);
+    if (substn == NULL) {
+      substn = SSAStartSearchWL( idn, INFO_WLI_ASSIGN( arg_info), 1);
       ID_WL(idn) = substn;
     }
 #endif
 
-        if (substn) {
+        if (substn != NULL) {
             /* the idn references a WL which can be used for folding. */
             substn = ASSIGN_RHS (substn);
 
@@ -309,7 +309,7 @@ CreateIndexInfoId (node *idn, node *arg_info)
     /* index var? */
     index_var = SSALocateIndexVar (idn, wln);
     if (index_var) {
-        iinfo = SSACreateIndex (index_var > 0 ? 0 : ID_SHAPE (idn, 0));
+        iinfo = SSACreateIndex ((index_var > 0) ? 0 : ID_SHAPE (idn, 0));
         SSAINDEX (assignn) = iinfo; /* make this N_assign valid */
 
         if (-1 == index_var) { /* index vector */
@@ -478,13 +478,15 @@ CreateIndexInfoA (node *prfn, node *arg_info)
         /* The Id is the index vector itself or, else it has to
            be an Id which is a valid vector. It must not be based
            on an index scalar (we do want "i prfop [c,c,c]"). */
-        if (-1 == index ||                                 /* index vector itself */
-            (tmpinfo && 1 == TYPES_DIM (ID_TYPE (idn)))) { /* valid local Id (vector) */
+        if ((-1 == index) ||
+            /* ^^^ index vector itself */
+            (tmpinfo && (1 == TYPES_DIM (ID_TYPE (idn))))) {
+            /* ^^^ valid local id (vector) */
             elts = ID_SHAPE (idn, 0);
             iinfo = SSACreateIndex (elts);
             SSAINDEX (assignn) = iinfo; /* make this N_assign valid */
 
-            iinfo->arg_no = (1 == id_no) ? (2) : (1);
+            iinfo->arg_no = (1 == id_no) ? 2 : 1;
             iinfo->prf = SimplifyFun (PRF_PRF (prfn));
 
             if (NODE_TYPE (constn) == N_array) {
@@ -497,7 +499,7 @@ CreateIndexInfoA (node *prfn, node *arg_info)
                     val = NUM_VAL (constn);
                     break;
                 case N_array:
-                    DBUG_ASSERT (tmpn, ("Too few elements in array"));
+                    DBUG_ASSERT (tmpn, "Too few elements in array");
                     val = NUM_VAL (EXPRS_EXPR (tmpn));
                     tmpn = EXPRS_NEXT (tmpn);
                     break;

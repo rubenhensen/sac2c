@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2002/09/16 14:27:57  dkr
+ * no changes done
+ *
  * Revision 3.15  2002/09/13 20:16:35  dkr
  * genarray-wls with empty index sets allow again... #@%&
  *
@@ -53,120 +56,7 @@
  * When normalizing generator bounds not only the EXPRS-representation
  * but also the CONSTVEC-representation must be modified.
  *
- * Revision 2.19  2000/08/07 14:58:44  dkr
- * some asserts for GEN_BOUND1, GEN_BOUND2 accesses added
- * compound macros used now
- *
- * Revision 2.18  2000/07/28 13:21:20  dkr
- * signature of CheckOptimizePsi() and CheckOptimizeArray changed
- *   (no reference parameter **node anymore)
- * bugs in WLTlet removed:
- *   illegal pointer access removed
- *   semantics of code and meaning of comments are consistent now :-)
- *
- * Revision 2.17  2000/06/23 15:24:22  dkr
- * signature of DupTree changed
- *
- * Revision 2.16  2000/06/23 14:17:43  dkr
- * NWITH_COMPLEX removed
- *
- * Revision 2.15  2000/05/30 12:35:08  dkr
- * functions for old with-loop removed
- *
- * Revision 2.14  2000/05/25 14:58:56  dkr
- * WLTNcode(): NCODE_CEXPR is traversed now
- *
- * Revision 2.13  2000/05/11 11:15:21  dkr
- * Function MakeNullVec renamed into CreateZeroVector.
- * Bug in function CreateFullPartition fixed:
- *   New parts created have always the correct type now :-)
- *
- * Revision 2.12  1999/11/15 18:05:41  dkr
- * VARNO replaced, INFO_VARNO with changed signature
- *
- * Revision 2.11  1999/11/11 20:05:05  dkr
- * signature and name of function IsConstantArray changed
- *
- * Revision 2.10  1999/07/14 12:16:31  bs
- * The function CheckGeneratorBounds won't be used any longer:
- * 'CheckGeneratorBounds' removed.
- * The ConstantFolding is doing this job now (and better).
- *
- * Revision 2.9  1999/05/17 11:20:41  jhs
- * CopyConstVec will be called only is ID/ARRAY_ISCONST.
- *
- * Revision 2.8  1999/05/12 11:39:24  jhs
- * Adjusted macros to new access on constant vectors.
- *
- * Revision 2.7  1999/05/07 14:54:30  jhs
- * bug fixed in CheckGeneratorBounds.
- *
- * Revision 2.6  1999/04/29 07:34:36  bs
- * New function 'CheckGeneratorBounds' added. It is used to check whether
- * the boundaries of WL-generators have got the compact vector propagation.
- *
- * Revision 2.5  1999/04/26 10:56:14  bs
- * Some code cosmetics only.
- *
- * Revision 2.4  1999/03/31 15:41:24  bs
- * braces added.
- *
- * Revision 2.3  1999/03/31 15:09:29  bs
- * I did some code cosmetics with the MRD_GET... macros.
- *
- * Revision 2.2  1999/02/26 14:49:06  dkr
- * file moved from folder /optimize
- *
- * Revision 2.1  1999/02/23 12:41:37  sacbase
- * new release made
- *
- * Revision 1.15  1999/02/02 18:51:34  srs
- * Generation of full partition in special case enabled. See comment
- * 'genarray check' in function CreateFullPartition().
- * New function check_genarray_full_part().
- *
- * Revision 1.14  1999/01/07 13:56:58  sbs
- * optimization process restructured for a function-wise optimization!
- *
- * Revision 1.13  1998/11/18 15:07:01  srs
- * N_empty nodes are supported now
- *
- * Revision 1.12  1998/08/20 12:22:57  srs
- * added comments
- * freed pointers in CutSlices() and CompleteGrid()
- *
- * Revision 1.11  1998/05/15 14:46:40  srs
- * fixed bug in WLTlet()
- * adjusted MakeNullVec()
- * added warning for empty generator sets
- *
- * Revision 1.10  1998/04/29 12:49:06  srs
- * changed macro name
- *
- * Revision 1.9  1998/04/24 17:30:20  srs
- * invalid bounds are transformed now
- *
- * Revision 1.8  1998/04/20 08:58:56  srs
- * fixed bug in CheckOptimizePsi()
- *
- * Revision 1.7  1998/04/08 20:23:36  srs
- * adjusted parameters of Tree2InternGen,
- * intern_gen chain is now set free in CreateFullPartition.
- *
- * Revision 1.6  1998/04/08 07:46:05  srs
- * fixed bug in CreateFullPartition
- *
- * Revision 1.5  1998/04/07 15:49:16  srs
- * removed unused variable base_wl
- *
- * Revision 1.4  1998/04/07 08:18:41  srs
- * CreateFullPartition() does not use StartSearchWL() anymore.
- *
- * Revision 1.2  1998/04/01 07:44:22  srs
- * added functions to create full partition
- *
- * Revision 1.1  1998/03/22 18:21:40  srs
- * Initial revision
+ * [...]
  *
  */
 
@@ -272,8 +162,9 @@ CutSlices (int *ls, int *us, int *l, int *u, int dim, intern_gen *ig, node *code
             }
             ig->u[d] = l[d];
 
-            if (!root_ig)
+            if (!root_ig) {
                 root_ig = ig;
+            }
         }
 
         if (u[d] < usc[d]) {
@@ -284,8 +175,9 @@ CutSlices (int *ls, int *us, int *l, int *u, int dim, intern_gen *ig, node *code
             }
             ig->l[d] = u[d];
 
-            if (!root_ig)
+            if (!root_ig) {
                 root_ig = ig;
+            }
         }
 
         /* and modify array bounds to  continue with next dimension */
@@ -339,8 +231,9 @@ CompleteGrid (int *ls, int *us, int *step, int *width, int dim, intern_gen *ig,
             i = NormalizeInternGen (ig);
             DBUG_ASSERT (!i, ("internal normalization failure"));
 
-            if (!root_ig)
+            if (!root_ig) {
                 root_ig = ig;
+            }
         }
 
         nw[d] = width[d];
@@ -538,7 +431,7 @@ CreateFullPartition (node *wln, node *arg_info)
 
         /* now, copy the only part to ig */
         ig = Tree2InternGen (wln, NULL);
-        DBUG_ASSERT (!ig->next, ("more than one part exist"));
+        DBUG_ASSERT ((!ig->next), "more than one part exist");
         /* create surrounding cuboids */
         ig = CutSlices (array_null, array_shape, ig->l, ig->u, ig->shape, ig, coden);
         /* the original part can still be found at *ig. Now create grids. */
@@ -716,8 +609,9 @@ WLTfundef (node *arg_node, node *arg_info)
     INFO_WLI_WL (arg_info) = NULL;
     INFO_WLI_FUNDEF (arg_info) = arg_node;
 
-    if (FUNDEF_BODY (arg_node))
+    if (FUNDEF_BODY (arg_node)) {
         FUNDEF_INSTR (arg_node) = OPTTrav (FUNDEF_INSTR (arg_node), arg_info, arg_node);
+    }
 
     DBUG_RETURN (arg_node);
 }

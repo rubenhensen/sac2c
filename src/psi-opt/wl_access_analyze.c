@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2002/09/16 14:26:02  dkr
+ * no changes done
+ *
  * Revision 3.7  2001/11/19 15:30:53  sbs
  * fixed a bug in WLAAncode where wrong info concerning WLARRAY and
  * INDEXVAR were inserted whenever nested WLs were used...
@@ -111,7 +114,6 @@
  * prefix: WLAA
  *
  * description:
- *
  *   This compiler module analyzes array accesses within withloops.
  *   It is used by the tilesize inference (and maybe later by WL fusion).
  *
@@ -148,7 +150,6 @@
  *   node *WLAccessAnalyze(node *arg_node)
  *
  * description:
- *
  *   This function initiates the WL access analyze scheme, i.e.
  *   act_tab is set to WLAA_tab and the traversal mechanism is started.
  *   Just as the other optimization schemes, WL access analyzing is performed
@@ -345,7 +346,6 @@ AddIntVec2Shpseg (int coeff, int length, int *intvec, shpseg *next)
  *   bool IsIndexVect(types *type)
  *
  * description:
- *
  *   This function classifies certain types as "index vectors", i.e. small
  *   integer vectors on which primitive arithmetic operations shall not harm
  *   tile size inference.
@@ -373,7 +373,6 @@ IsIndexVect (types *type)
  *   int AccessInAccesslist(access_t* access, access_t* access_list)
  *
  * description:
- *
  *   AccessInAccesslist( a, al ) = 1  if al contains a,
  *                                 0  otherwise.
  *
@@ -415,10 +414,8 @@ AccessInAccesslist (access_t *access, access_t *access_list)
  *   access_t* KillDoubleAccesses(access_t* access_list)
  *
  * description:
- *
  *   This function results the access_list containing not the same
  *   entrie twice.
- *
  *
  *****************************************************************************/
 #if 0
@@ -447,9 +444,7 @@ static access_t* KillDoubleAccesses(access_t* access_list)
  *   access_t* CatAccesslists(access_t* a_list_1, access_t* a_list_2)
  *
  * description:
- *
  *   This function results the concatenation of a_list_1 and a_list_2.
- *
  *
  *****************************************************************************/
 
@@ -478,7 +473,6 @@ CatAccesslists (access_t *a_list_1, access_t *a_list_2)
  *   access_t *SearchAccess(node *arg_info)
  *
  * description:
- *
  *   This function traverses all accesses stored in the given arg_info node.
  *   It returns the first one whose index vector is exactly the same variable
  *   that is instantiated in the last let-expression. Additionally, the access
@@ -511,7 +505,6 @@ SearchAccess (access_t *access, node *arg_info)
  *   node *WLAAfundef(node *arg_node, node *arg_info)
  *
  * description:
- *
  *   Syntax tree traversal function for N_fundef node.
  *
  *   The traversal is limited to the function body, arguments and remaining
@@ -547,12 +540,10 @@ WLAAfundef (node *arg_node, node *arg_info)
  *   node *WLAAblock(node *arg_node, node *arg_info)
  *
  * description:
- *
  *   Syntax tree traversal function for N_block node.
  *
  *   The traversal is limited to the assignments chain, variable declarations
  *   are not traversed.
- *
  *
  *****************************************************************************/
 
@@ -579,7 +570,6 @@ WLAAblock (node *arg_node, node *arg_info)
  *   node *WLAAassign(node *arg_node, node *arg_info)
  *
  * description:
- *
  *   Syntax tree traversal function for N_assign node.
  *
  *   This function just realizes a post-order traversal of the code.
@@ -610,7 +600,6 @@ WLAAassign (node *arg_node, node *arg_info)
  *   node *WLAAnwith(node *arg_node, node *arg_info)
  *
  * description:
- *
  *   Syntax tree traversal function for N_Nwith node.
  *
  *   Here, the arg_info node is created and initialized. Everywhere beyond
@@ -648,7 +637,6 @@ WLAAnwith (node *arg_node, node *arg_info)
  *   node *WLAAncode(node *arg_node, node *arg_info)
  *
  * description:
- *
  *   Syntax tree traversal function for N_Ncode node.
  *
  *   The code block of the first operator is traversed, the information
@@ -724,7 +712,6 @@ WLAAncode (node *arg_node, node *arg_info)
  *   node *WLAAwhile(node *arg_node, node *arg_info)
  *
  * description:
- *
  *   Syntax tree traversal function for N_while node.
  *
  *   If a with-loop operator contains a sequential loop (for/do/while), then
@@ -781,7 +768,6 @@ WLAAwhile (node *arg_node, node *arg_info)
  *   node *WLAAdo(node *arg_node, node *arg_info)
  *
  * description:
- *
  *   Syntax tree traversal function for N_do node.
  *
  *   This function is equivalent to WLAAwhile for while loops. The kind of loop
@@ -836,9 +822,6 @@ WLAAdo (node *arg_node, node *arg_info)
  *   node *WLAAcond(node *arg_node, node *arg_info)
  *
  * description:
- *
- *
- *
  *
  *
  *****************************************************************************/
@@ -933,7 +916,6 @@ WLAAcond (node *arg_node, node *arg_info)
  *   node *WLAAlet(node *arg_node, node *arg_info)
  *
  * description:
- *
  *   Syntax tree traversal function for N_let node.
  *
  *   This function mainly sets the LASTLETIDS entry of the arg_info node
@@ -999,7 +981,6 @@ WLAAlet (node *arg_node, node *arg_info)
  *   node *WLAAprf(node *arg_node, node *arg_info)
  *
  * description:
- *
  *   Syntax tree traversal function for N_prf node.
  *
  *   This function does most of the code analysis. See specific functions
@@ -1544,7 +1525,6 @@ WLAAprf (node *arg_node, node *arg_info)
  *   node *WLAAap(node *arg_node, node *arg_info)
  *
  * description:
- *
  *   Syntax tree traversal function for N_ap node.
  *
  *   This function detects function applications within with-loop operators
@@ -1600,13 +1580,11 @@ WLAAap (node *arg_node, node *arg_info)
  *   node *WLAAid(node *arg_node, node *arg_info)
  *
  * description:
- *
  *   Syntax tree traversal function for N_id node.
  *
  *   This function applies only beyond an N_ap node within a with-loop
  *   operator. If the function argument is not of scalar type the AP bit
  *   of the features bit mask is set.
- *
  *
  *****************************************************************************/
 

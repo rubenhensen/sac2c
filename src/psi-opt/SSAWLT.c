@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2002/09/16 14:27:54  dkr
+ * no changes done
+ *
  * Revision 1.11  2002/09/13 20:16:41  dkr
  * genarray-wls with empty index sets allow again... #@%&
  *
@@ -143,8 +146,9 @@ CutSlices (int *ls, int *us, int *l, int *u, int dim, intern_gen *ig, node *code
             }
             ig->u[d] = l[d];
 
-            if (!root_ig)
+            if (!root_ig) {
                 root_ig = ig;
+            }
         }
 
         if (u[d] < usc[d]) {
@@ -155,8 +159,9 @@ CutSlices (int *ls, int *us, int *l, int *u, int dim, intern_gen *ig, node *code
             }
             ig->l[d] = u[d];
 
-            if (!root_ig)
+            if (!root_ig) {
                 root_ig = ig;
+            }
         }
 
         /* and modify array bounds to  continue with next dimension */
@@ -210,8 +215,9 @@ CompleteGrid (int *ls, int *us, int *step, int *width, int dim, intern_gen *ig,
             i = SSANormalizeInternGen (ig);
             DBUG_ASSERT (!i, ("internal normalization failure"));
 
-            if (!root_ig)
+            if (!root_ig) {
                 root_ig = ig;
+            }
         }
 
         nw[d] = width[d];
