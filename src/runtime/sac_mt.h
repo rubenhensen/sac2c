@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.24  2001/05/30 12:24:11  ben
+ * SAC_MT_SCHEDULER_TS_Factoring_INIT and
+ *  SAC_MT_SCHEDULER_TS_Factoring implemented
+ *
  * Revision 3.23  2001/05/23 09:44:24  ben
  * some minor bugs in .._NEXT_TASK fixed
  *
@@ -376,7 +380,10 @@ typedef union {
     SAC_MT_DEFINE_BARRIER ()                                                             \
     SAC_MT_DEFINE_SPMD_FRAME ()                                                          \
     SAC_MT_DEFINE_TASKLOCKS ()                                                           \
-    SAC_MT_DEFINE_TASKS ()
+    SAC_MT_DEFINE_TASKS ()                                                               \
+    SAC_MT_DEFINE_REST_ITERATIONS ()                                                     \
+    SAC_MT_DEFINE_ACT_TASKSIZE ()                                                        \
+    SAC_MT_DEFINE_LAST_TASKEND ()
 
 #define SAC_MT_DEFINE_BARRIER()                                                          \
     volatile SAC_MT_barrier_t SAC_MT_barrier_space[SAC_SET_THREADS_MAX + 1];
@@ -394,6 +401,21 @@ typedef union {
     volatile int SAC_MT_Task[SAC_SET_THREADS_MAX * SAC_SET_NUM_SCHEDULERS];
 
 #define SAC_MT_TASK(sched_id, num, num_sched) SAC_MT_Task[num + num_sched * sched_id]
+
+#define SAC_MT_DEFINE_REST_ITERATIONS()                                                  \
+    volatile int SAC_MT_rest_iterations[SAC_SET_NUM_SCHEDULERS];
+
+#define SAC_MT_REST_ITERATIONS(sched_id) SAC_MT_rest_iterations[sched_id]
+
+#define SAC_MT_DEFINE_ACT_TASKSIZE()                                                     \
+    volatile int SAC_MT_act_tasksize[SAC_SET_NUM_SCHEDULERS];
+
+#define SAC_MT_ACT_TASKSIZE(sched_id) SAC_MT_act_tasksize[sched_id]
+
+#define SAC_MT_DEFINE_LAST_TASKEND()                                                     \
+    volatile int SAC_MT_last_taskend[SAC_SET_NUM_SCHEDULERS];
+
+#define SAC_MT_LAST_TASKEND(sched_id) SAC_MT_last_taskend[sched_id]
 
 #define SAC_MT_FUN_FRAME(name, blocks) struct blocks name;
 
@@ -838,7 +860,8 @@ typedef union {
         SAC_MT_SCHEDULER_Block_DIM0 (lower, upper, unrolling)                            \
     }
 
-#define SAC_MT_SCHEDULER_TS_Even(tasks_on_dim, lower, upper, num_tasks, taskid)          \
+#define SAC_MT_SCHEDULER_TS_Even(tasks_on_dim, lower, upper, num_tasks, taskid,          \
+                                 worktodo)                                               \
     {                                                                                    \
         const int number_of_tasks = num_tasks;                                           \
         const int iterations = upper - lower;                                            \
@@ -859,9 +882,49 @@ typedef union {
             SAC_WL_MT_SCHEDULE_STOP (tasks_on_dim)                                       \
               = SAC_WL_MT_SCHEDULE_START (tasks_on_dim) + iterations_per_thread;         \
         }                                                                                \
-        SAC_TR_MT_PRINT (("'Select_Block': dim %d: %d -> %d, Task: %d", tasks_on_dim,    \
+        SAC_TR_MT_PRINT (("'TS_Even': dim %d: %d -> %d, Task: %d", tasks_on_dim,         \
                           SAC_WL_MT_SCHEDULE_START (tasks_on_dim),                       \
                           SAC_WL_MT_SCHEDULE_STOP (tasks_on_dim), taskid));              \
+        worktodo = (taskid < num_tasks);                                                 \
+    }
+
+#define SAC_MT_SCHEDULER_TS_Factoring_INIT(sched_id, lower, upper)                       \
+    {                                                                                    \
+        SAC_MT_REST_ITERATIONS (sched_id) = (upper - lower);                             \
+        SAC_MT_LAST_TASKEND (sched_id) = 0;                                              \
+    }
+
+#define SAC_MT_SCHEDULER_TS_Factoring(sched_id, tasks_on_dim, lower, upper, num_tasks,   \
+                                      taskid, worktodo)                                  \
+    {                                                                                    \
+        SAC_MT_ACQUIRE_LOCK (SAC_MT_TASKLOCK (sched_id, 1, SAC_SET_NUM_SCHEDULERS));     \
+                                                                                         \
+        worktodo = (SAC_MT_REST_ITERATIONS (sched_id) > 0);                              \
+                                                                                         \
+        if (taskid % SAC_MT_threads == 0) {                                              \
+            SAC_MT_ACT_TASKSIZE (sched_id)                                               \
+              = ((SAC_MT_REST_ITERATIONS (sched_id)) / (2 * SAC_MT_threads)) + 1;        \
+        }                                                                                \
+                                                                                         \
+        (SAC_WL_MT_SCHEDULE_START (tasks_on_dim)) = SAC_MT_LAST_TASKEND (sched_id);      \
+                                                                                         \
+        (SAC_MT_REST_ITERATIONS (sched_id)) -= SAC_MT_ACT_TASKSIZE (sched_id);           \
+                                                                                         \
+        if (SAC_MT_REST_ITERATIONS (sched_id) < 0)                                       \
+            SAC_MT_REST_ITERATIONS (sched_id) = 0;                                       \
+                                                                                         \
+        SAC_WL_MT_SCHEDULE_STOP (tasks_on_dim)                                           \
+          = SAC_WL_MT_SCHEDULE_START (tasks_on_dim) + SAC_MT_ACT_TASKSIZE (sched_id);    \
+                                                                                         \
+        if (SAC_WL_MT_SCHEDULE_STOP (tasks_on_dim) > upper)                              \
+            SAC_WL_MT_SCHEDULE_STOP (tasks_on_dim) = upper;                              \
+        SAC_MT_LAST_TASKEND (sched_id) = SAC_WL_MT_SCHEDULE_STOP (tasks_on_dim);         \
+                                                                                         \
+        SAC_TR_MT_PRINT (("'TS_Factoring': dim %d: %d -> %d, Task: %d, Size: %d",        \
+                          tasks_on_dim, SAC_WL_MT_SCHEDULE_START (tasks_on_dim),         \
+                          SAC_WL_MT_SCHEDULE_STOP (tasks_on_dim), taskid,                \
+                          SAC_MT_ACT_TASKSIZE (sched_id)));                              \
+        SAC_MT_RELEASE_LOCK (SAC_MT_TASKLOCK (sched_id, 1, SAC_SET_NUM_SCHEDULERS));     \
     }
 
 #define SAC_MT_SCHEDULER_SET_TASKS(sched_id)                                             \
@@ -873,32 +936,27 @@ typedef union {
         SAC_TR_MT_PRINT (("SAC_MT_TASK set for sched_id %d", sched_id));                 \
     }
 
-#define SAC_MT_SCHEDULER_Static_FIRST_TASK(tasks_per_thread, taskid, worktodo)           \
+#define SAC_MT_SCHEDULER_Static_FIRST_TASK(tasks_per_thread, taskid)                     \
     {                                                                                    \
         taskid = SAC_MT_MYTHREAD ();                                                     \
-        worktodo = (taskid < SAC_MT_THREADS () * tasks_per_thread);                      \
     }
 
-#define SAC_MT_SCHEDULER_Static_NEXT_TASK(tasks_per_thread, taskid, worktodo)            \
+#define SAC_MT_SCHEDULER_Static_NEXT_TASK(tasks_per_thread, taskid)                      \
     {                                                                                    \
         taskid += SAC_MT_THREADS ();                                                     \
-        worktodo = (taskid < SAC_MT_THREADS () * tasks_per_thread);                      \
     }
 
-#define SAC_MT_SCHEDULER_Self_FIRST_TASK_STATIC(sched_id, tasks_per_thread, taskid,      \
-                                                worktodo)                                \
+#define SAC_MT_SCHEDULER_Self_FIRST_TASK_STATIC(sched_id, tasks_per_thread, taskid)      \
     {                                                                                    \
         taskid = SAC_MT_MYTHREAD ();                                                     \
-        worktodo = (taskid < SAC_MT_THREADS () * tasks_per_thread);                      \
     }
 
-#define SAC_MT_SCHEDULER_Self_FIRST_TASK_DYNAMIC(sched_id, tasks_per_thread, taskid,     \
-                                                 worktodo)                               \
+#define SAC_MT_SCHEDULER_Self_FIRST_TASK_DYNAMIC(sched_id, tasks_per_thread, taskid)     \
     {                                                                                    \
-        SAC_MT_SCHEDULER_Self_NEXT_TASK (sched_id, tasks_per_thread, taskid, worktodo);  \
+        SAC_MT_SCHEDULER_Self_NEXT_TASK (sched_id, tasks_per_thread, taskid);            \
     }
 
-#define SAC_MT_SCHEDULER_Self_NEXT_TASK(sched_id, tasks_per_thread, taskid, worktodo)    \
+#define SAC_MT_SCHEDULER_Self_NEXT_TASK(sched_id, tasks_per_thread, taskid)              \
     {                                                                                    \
         SAC_MT_ACQUIRE_LOCK (SAC_MT_TASKLOCK (sched_id, 0, SAC_SET_NUM_SCHEDULERS));     \
                                                                                          \
@@ -906,7 +964,6 @@ typedef union {
         (SAC_MT_TASK (sched_id, 0, SAC_SET_NUM_SCHEDULERS))++;                           \
                                                                                          \
         SAC_MT_RELEASE_LOCK (SAC_MT_TASKLOCK (sched_id, 0, SAC_SET_NUM_SCHEDULERS));     \
-        worktodo = (taskid < SAC_MT_THREADS () * tasks_per_thread);                      \
     }
 
 #define SAC_MT_SCHEDULER_Affinity_FIRST_TASK(sched_id, tasks_per_thread, taskid,         \
