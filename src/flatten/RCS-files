@@ -23,3 +23,4 @@ ExplicitAccumulate.c
 ExplicitAccumulate.h
 WLEnhancement.c
 WLEnhancement.h
+ToNewTypes.c
