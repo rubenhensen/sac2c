@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.7  2000/01/17 16:25:58  cg
+ * Added new handling of various version of the heap manager
+ * library.
+ *
  * Revision 2.6  1999/07/16 09:34:12  cg
  * Added facilities for heap management diagnostics.
  *
@@ -620,7 +624,11 @@ InvokeCC ()
                 fprintf (shellscript, "#!/bin/sh -v\n\n");
                 fprintf (shellscript, "%s %s %s -L%s %s -o %s %s %s %s -lsac_mt %s %s",
                          config.cc, config.ccflags, config.ccdir, tmp_dirname, opt_buffer,
-                         outfilename, cfilename, linklist, "-lsac_noheapmgr_mt",
+                         outfilename, cfilename, linklist,
+                         (optimize & OPT_PHM
+                            ? (runtimecheck & RUNTIMECHECK_HEAP ? "-lsac_heapmgr_mt_diag"
+                                                                : "-lsac_heapmgr_mt")
+                            : "-lsac_heapmgr_nophm"),
                          config.ccmtlink, (use_efence ? lib_efence : ""));
                 fclose (shellscript);
                 SystemCall ("chmod a+x .sac2c");
@@ -628,7 +636,11 @@ InvokeCC ()
 
             SystemCall ("%s %s %s -L%s %s -o %s %s %s %s -lsac_mt %s %s", config.cc,
                         config.ccflags, config.ccdir, tmp_dirname, opt_buffer,
-                        outfilename, cfilename, linklist, "-lsac_noheapmgr_mt",
+                        outfilename, cfilename, linklist,
+                        (optimize & OPT_PHM
+                           ? (runtimecheck & RUNTIMECHECK_HEAP ? "-lsac_heapmgr_mt_diag"
+                                                               : "-lsac_heapmgr_mt")
+                           : "-lsac_heapmgr_nophm"),
                         config.ccmtlink, (use_efence ? lib_efence : ""));
         } else {
             if (gen_cccall) {
@@ -640,7 +652,7 @@ InvokeCC ()
                          (optimize & OPT_PHM
                             ? (runtimecheck & RUNTIMECHECK_HEAP ? "-lsac_heapmgr_diag"
                                                                 : "-lsac_heapmgr")
-                            : "-lsac_noheapmgr"),
+                            : "-lsac_heapmgr_nophm"),
                          config.cclink, (use_efence ? lib_efence : ""));
                 fclose (shellscript);
                 SystemCall ("chmod a+x .sac2c");
@@ -652,7 +664,7 @@ InvokeCC ()
                         (optimize & OPT_PHM
                            ? (runtimecheck & RUNTIMECHECK_HEAP ? "-lsac_heapmgr_diag"
                                                                : "-lsac_heapmgr")
-                           : "-lsac_noheapmgr"),
+                           : "-lsac_heapmgr_nophm"),
                         config.cclink, (use_efence ? lib_efence : ""));
         }
 
