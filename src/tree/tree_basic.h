@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.139  2002/08/09 12:21:05  sbs
+ * MakeIdFromIds added .
+ *
  * Revision 3.138  2002/08/05 17:03:45  sbs
  * several extensions required for the alpha version of the new type checker
  *
@@ -948,6 +951,7 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  ***    statustype      STATUS
  ***    statustype      ATTRIB
  ***    bool            INLINE
+ ***    bool            INFIX
  ***    int             FUNNO
  ***    node*           PRAGMA      (N_pragma)
  ***
@@ -1060,6 +1064,7 @@ extern node *MakeFundef (char *name, char *mod, types *types, node *args, node *
 #define FUNDEF_STATUS(n) (*((statustype *)(&(n->info2))))   /* for cc */
 #define FUNDEF_ATTRIB(n) (*((statustype *)(&(n->mask[3])))) /* for cc */
 #define FUNDEF_INLINE(n) (n->flag)
+#define FUNDEF_INFIX(n) (n->flag)
 #define FUNDEF_FUNNO(n) (n->counter)
 #define FUNDEF_PRAGMA(n) (n->node[4])
 
@@ -1782,6 +1787,8 @@ extern node *MakeVinfo (useflag flag, types *type, node *next, node *dollar);
  */
 
 extern node *MakeId (char *name, char *mod, statustype status);
+
+extern node *MakeIdFromIds (ids *idss);
 
 extern node *MakeId_Copy (char *str);
 

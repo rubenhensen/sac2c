@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.61  2002/08/09 12:21:05  sbs
+ * MakeIdFromIds added .
+ *
  * Revision 3.60  2002/07/29 12:12:53  sbs
  * PRF_IF macro extended by z.
  *
@@ -1094,6 +1097,29 @@ MakeId (char *name, char *mod, statustype status)
     tmp = CreateCleanNode (N_id);
 
     ID_IDS (tmp) = MakeIds (name, mod, status);
+
+#ifndef TAGGED_ARRAYS
+    ID_UNQCONV (tmp) = NO_UNQCONV;
+#endif
+
+    DBUG_PRINT ("MAKE",
+                ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
+
+    DBUG_RETURN (tmp);
+}
+
+/*--------------------------------------------------------------------------*/
+
+node *
+MakeIdFromIds (ids *idss)
+{
+    node *tmp;
+
+    DBUG_ENTER ("MakeIdFromIds");
+
+    tmp = CreateCleanNode (N_id);
+
+    ID_IDS (tmp) = idss;
 
 #ifndef TAGGED_ARRAYS
     ID_UNQCONV (tmp) = NO_UNQCONV;
