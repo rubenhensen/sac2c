@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.38  2000/05/29 17:22:14  dkr
+ * 'show_refcnt' set (to 1) in phase PH_refcnt only
+ *
  * Revision 2.37  2000/05/26 14:22:29  sbs
  * noAP doAP added
  *
@@ -195,9 +198,6 @@ AnalyseCommandline (int argc, char *argv[])
             show_idx = 1;
             break;
         case PH_refcnt:
-        case PH_wltrans:
-        case PH_spmdregions:
-        case PH_precompile:
             show_refcnt = 1;
             break;
         default:
