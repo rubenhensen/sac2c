@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2002/03/07 20:22:47  dkr
+ * - ND_FUN_DEC, ND_FUN_RET, ND_FUN_AP modified
+ * - code brushed
+ *
  * Revision 3.8  2001/12/21 13:31:19  dkr
  * ALLOC_ARRAY, CHECK_REUSE ICMs seperated
  * (they no longer occur in other ICMs)
@@ -78,75 +82,15 @@
 #include "print.h"
 #include "gen_startup_code.h"
 
-#ifdef TAGGED_ARRAYS
-
-int
-FindArg (char *str)
-{
-    int i = 0;
-    char *bnames[]
-      = {"in", "out", "inout", "upd", "upd_bx", "in_rc", "out_rc", "binoutrc"};
-
-    while ((i < 8) && (strcmp (str, bnames[i]) != 0)) {
-        i++;
-    }
-    DBUG_ASSERT ((i < 8), "FindArg was passed illegal str argument");
-    return (i);
-}
-
-#define ScanArglist2(arg, n, baction, sepstr)                                            \
+#define ScanArglist(cnt, inc, sep_str, sep_code, code)                                   \
     {                                                                                    \
-        int i = 0;                                                                       \
-        int loc;                                                                         \
-        int sep = 0;                                                                     \
-        while (i < n) {                                                                  \
-            if (sep) {                                                                   \
-                fprintf (outfile, "%s", sepstr);                                         \
+        int i;                                                                           \
+        for (i = 0; i < cnt * inc; i += inc) {                                           \
+            if (i > 0) {                                                                 \
+                fprintf (outfile, "%s", sep_str);                                        \
+                sep_code;                                                                \
             }                                                                            \
-            DBUG_PRINT ("PRINT", ("arg-index: %d, arg-tag : %s", i, arg[i]));            \
-            loc = FindArg (arg[i]);                                                      \
-            i++;                                                                         \
-            baction (loc);                                                               \
-        }                                                                                \
-    }
-
-#endif /* TAGGED_ARRAYS */
-
-#define ScanArglist(arg, n, bin, bout, binout, bupd, bupdbox, binrc, boutrc, binoutrc,   \
-                    sepstr)                                                              \
-    {                                                                                    \
-        int i = 0;                                                                       \
-        int sep = 0;                                                                     \
-        while (i < n) {                                                                  \
-            if (sep) {                                                                   \
-                fprintf (outfile, "%s", sepstr);                                         \
-            }                                                                            \
-            DBUG_PRINT ("PRINT", ("arg-index: %d, arg-tag : %s", i, arg[i]));            \
-            if (strcmp (arg[i], "in") == 0) {                                            \
-                i++;                                                                     \
-                bin;                                                                     \
-            } else if (strcmp (arg[i], "out") == 0) {                                    \
-                i++;                                                                     \
-                bout;                                                                    \
-            } else if (strcmp (arg[i], "inout") == 0) {                                  \
-                i++;                                                                     \
-                binout;                                                                  \
-            } else if (strcmp (arg[i], "upd") == 0) {                                    \
-                i++;                                                                     \
-                bupd;                                                                    \
-            } else if (strcmp (arg[i], "upd_bx") == 0) {                                 \
-                i++;                                                                     \
-                bupdbox;                                                                 \
-            } else if (strcmp (arg[i], "in_rc") == 0) {                                  \
-                i++;                                                                     \
-                binrc;                                                                   \
-            } else if (strcmp (arg[i], "out_rc") == 0) {                                 \
-                i++;                                                                     \
-                boutrc;                                                                  \
-            } else {                                                                     \
-                i++;                                                                     \
-                binoutrc;                                                                \
-            }                                                                            \
+            code;                                                                        \
         }                                                                                \
     }
 
@@ -265,8 +209,7 @@ FindArg (char *str)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_FUN_DEC( char *name, char *rettype, int narg,
- *                              char **tyarg)
+ *   void ICMCompileND_FUN_DEC( char *name, char *rettype, int narg, char **arg)
  *
  * description:
  *   implements the compilation of the following ICM:
@@ -278,34 +221,8 @@ FindArg (char *str)
  ******************************************************************************/
 
 void
-ICMCompileND_FUN_DEC (char *name, char *rettype, int narg, char **tyarg)
+ICMCompileND_FUN_DEC (char *name, char *rettype, int narg, char **arg)
 {
-#ifdef TAGGED_ARRAYS
-    char *macvalues[] = {
-      "%s",
-      "%s", /* no string */
-      "%s %s",
-      "%s %s", /* bin */
-      "%s *%s",
-      "%s *SAC_NAMEP( %s)", /* bout */
-      "%s *%s",
-      "%s *SAC_NAMEP( %s)", /* binout */
-      "%s *%s",
-      "%s *%s", /* bupd */
-      "%s SAC_ND_A_FIELD( %s)",
-      "%s SAC_ND_A_FIELD( %s)", /* bupdbox */
-      "SAC_ND_DEC_IMPORT_IN_RC( %s)",
-      "SAC_ND_DEC_IN_RC( %s, %s)", /* binrc */
-      "SAC_ND_DEC_IMPORT_OUT_RC( %s)",
-      "SAC_ND_DEC_OUT_RC( %s, %s)", /* boutrc */
-      "SAC_ND_DEC_IMPORT_INOUT_RC( %s)",
-      "SAC_ND_DEC_INOUT_RC( %s, %s)", /* binoutrc */
-      ",",
-      "," /* sepstr */
-    };
-    char *mymac;
-#endif /* TAGGED_ARRAYS */
-
     DBUG_ENTER ("ICMCompileND_FUN_DEC");
 
 #define ND_FUN_DEC
@@ -318,99 +235,16 @@ ICMCompileND_FUN_DEC (char *name, char *rettype, int narg, char **tyarg)
     if (strcmp (name, "main") == 0) {
         fprintf (outfile, "%s( int __argc, char *__argv[])", name);
     } else if (strcmp (name, "create_TheCommandLine") == 0) {
-        fprintf (outfile, "%s( int __argc, char **__argv)", name);
+        fprintf (outfile, "%s( int __argc, char *__argv[])", name);
     } else if (strncmp (name, "SACf_GlobalObjInit_for_",
                         strlen ("SACf_GlobalObjInit_for_"))
                == 0) {
         fprintf (outfile, "%s( int __argc, char *__argv[])", name);
     } else {
         fprintf (outfile, "%s(", name);
-#ifdef TAGGED_ARRAYS
-        /*
-         * Arguments to ScanArglist are: arg, n, bin, bout, binout, bupd, bupdbox,
-         *                               binrc, boutrc, binoutrc, sepstr
-         *
-         * ScanArglist2 is intended as a more readable replacement for ScanArglist.
-         * In baction, we pick first table row if character string is empty.
-         * Otherwise, we chose a table row based on tag value.
-         * The first element in the table is used when the tyarg[i+1] is zero;
-         * otherwise, we use the second element.
-         */
-
-#define baction(loc)                                                                     \
-    if (0 == strlen (tyarg[i + 1])) {                                                    \
-        loc = 0;                                                                         \
-    } else {                                                                             \
-        loc++;                                                                           \
-    }                                                                                    \
-    mymac = macvalues[2 * loc];                                                          \
-    fprintf (outfile, mymac, tyarg[i], tyarg[i + 1]);                                    \
-    i += 2;                                                                              \
-    sep = 1;
-
-        ScanArglist2 (tyarg, 3 * narg, baction, ",");
-
-#else  /* TAGGED_ARRAYS */
-        ScanArglist (tyarg, 3 * narg, fprintf (outfile, " %s %s", tyarg[i], tyarg[i + 1]);
-                     i += 2;
-                     sep = 1,
-
-                     if (0 != (tyarg[i + 1])[0]) {
-                         fprintf (outfile, " %s *SAC_NAMEP( %s)", tyarg[i], tyarg[i + 1]);
-                         i += 2;
-                         sep = 1;
-                     } else {
-                         fprintf (outfile, " %s *%s", tyarg[i], tyarg[i + 1]);
-                         i += 2;
-                         sep = 1;
-                     },
-
-                     if (0 != (tyarg[i + 1])[0]) {
-                         fprintf (outfile, " %s *SAC_NAMEP( %s)", tyarg[i], tyarg[i + 1]);
-                         i += 2;
-                         sep = 1;
-                     } else {
-                         fprintf (outfile, " %s *%s", tyarg[i], tyarg[i + 1]);
-                         i += 2;
-                         sep = 1;
-                     },
-
-                     fprintf (outfile, " %s *%s", tyarg[i], tyarg[i + 1]);
-                     i += 2; sep = 1,
-
-                             fprintf (outfile, " %s %s", tyarg[i], tyarg[i + 1]);
-                     i += 2;
-                     sep = 1,
-
-                     if (0 != (tyarg[i + 1])[0]) {
-                         fprintf (outfile, " SAC_ND_KS_DEC_IN_RC( %s, %s)", tyarg[i],
-                                  tyarg[i + 1]);
-                     } else {
-                         fprintf (outfile, "SAC_ND_KS_DEC_IMPORT_IN_RC( %s)", tyarg[i]);
-                     } i
-                     += 2;
-                     sep = 1,
-
-                     if (0 != (tyarg[i + 1])[0]) {
-                         fprintf (outfile, " SAC_ND_KS_DEC_OUT_RC(%s, %s)", tyarg[i],
-                                  tyarg[i + 1]);
-                     } else {
-                         fprintf (outfile, "SAC_ND_KS_DEC_IMPORT_OUT_RC(%s)", tyarg[i]);
-                     } i
-                     += 2;
-                     sep = 1,
-
-                     if (0 != (tyarg[i + 1])[0]) {
-                         fprintf (outfile, " SAC_ND_KS_DEC_INOUT_RC(%s, %s)", tyarg[i],
-                                  tyarg[i + 1]);
-                     } else {
-                         fprintf (outfile, "SAC_ND_KS_DEC_IMPORT_INOUT_RC(%s)", tyarg[i]);
-                     } i
-                     += 2;
-                     sep = 1,
-
-                     ",");
-#endif /* TAGGED_ARRAYS */
+        ScanArglist (narg, 3, ",", ,
+                     fprintf (outfile, " SAC_ND_PARAM_%s(%s,%s)", arg[i], arg[i + 1],
+                              arg[i + 2]));
         fprintf (outfile, ")");
     }
 
@@ -449,31 +283,8 @@ ICMCompileND_FUN_AP (char *name, char *retname, int narg, char **arg)
         fprintf (outfile, "%s( __argc, __argv);", name);
     } else {
         fprintf (outfile, "%s(", name);
-#ifdef TAGGED_ARRAYS
-        /*
-         * Arguments to ScanArglist are: arg, n, bin, bout, binout, bupd, bupdbox,
-         *                               binrc, boutrc, binoutrc, sepstr
-         */
-        ScanArglist (arg, 2 * narg, fprintf (outfile, " SAC_ND_A_FIELD(%s)", arg[i]); i++;
-                     sep = 1, fprintf (outfile, " &%s", arg[i]); i++;
-                     sep = 1, fprintf (outfile, " &%s", arg[i]); i++;
-                     sep = 1, fprintf (outfile, " &%s", arg[i]); i++;
-                     sep = 1, fprintf (outfile, " %s", arg[i]); i++;
-                     sep = 1, fprintf (outfile, " SAC_ND_AP_IN_RC(%s)", arg[i]); i++;
-                     sep = 1, fprintf (outfile, " SAC_ND_AP_OUT_RC(%s)", arg[i]); i++;
-                     sep = 1, fprintf (outfile, " SAC_ND_AP_INOUT_RC(%s)", arg[i]); i++;
-                     sep = 1, ",");
-#else  /* TAGGED_ARRAYS */
-        ScanArglist (arg, 2 * narg, fprintf (outfile, " %s", arg[i]); i++;
-                     sep = 1, fprintf (outfile, " &%s", arg[i]); i++;
-                     sep = 1, fprintf (outfile, " &%s", arg[i]); i++;
-                     sep = 1, fprintf (outfile, " &%s", arg[i]); i++;
-                     sep = 1, fprintf (outfile, " %s", arg[i]); i++;
-                     sep = 1, fprintf (outfile, " SAC_ND_KS_AP_IN_RC(%s)", arg[i]); i++;
-                     sep = 1, fprintf (outfile, " SAC_ND_KS_AP_OUT_RC(%s)", arg[i]); i++;
-                     sep = 1, fprintf (outfile, " SAC_ND_KS_AP_INOUT_RC(%s)", arg[i]);
-                     i++; sep = 1, ",");
-#endif /* TAGGED_ARRAYS */
+        ScanArglist (narg, 2, ",", ,
+                     fprintf (outfile, " SAC_ND_ARG_%s(%s)", arg[i], arg[i + 1]));
         fprintf (outfile, ");");
     }
     fprintf (outfile, "\n");
@@ -484,8 +295,7 @@ ICMCompileND_FUN_AP (char *name, char *retname, int narg, char **arg)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_FUN_RET( char *retname, int narg, char **arg,
- *                              node *arg_info)
+ *   void ICMCompileND_FUN_RET( char *retname, int narg, char **arg)
  *
  * description:
  *   implements the compilation of the following ICM:
@@ -494,16 +304,10 @@ ICMCompileND_FUN_AP (char *name, char *retname, int narg, char **arg)
  *
  *   where TAG is element in { out, out_rc, inout, inout_rc}.
  *
- * remark:
- *   IMPORTANT: This function gets an extra parameter "arg_info".
- *   In case of a usage from within PrintND_FUN_RET() this argument contains
- *     a pointer to the fundef-node from which it was originally created, but
- *   in case of a usage from BEtest.c this argument will be NULL!!
- *
  ******************************************************************************/
 
 void
-ICMCompileND_FUN_RET (char *retname, int narg, char **arg, node *arg_info)
+ICMCompileND_FUN_RET (char *retname, int narg, char **arg)
 {
     DBUG_ENTER ("ICMCompileND_FUN_RET");
 
@@ -513,27 +317,18 @@ ICMCompileND_FUN_RET (char *retname, int narg, char **arg, node *arg_info)
 #undef ND_FUN_RET
 
     INDENT;
-    ScanArglist (arg, 3 * narg, i += 2;
-                 sep = 0,
-                 fprintf (outfile, "*SAC_NAMEP( %s) = %s;\n", arg[i + 1], arg[i]);
-                 i += 2; INDENT; sep = 1, fprintf (outfile, "*SAC_NAMEP( %s) = %s;\n",
-                                                   arg[i + 1], arg[i]);
-                 i += 2; INDENT; sep = 1, i += 2; sep = 0, i += 2; sep = 0, i += 2;
-                 sep = 0, fprintf (outfile, "SAC_ND_KS_RET_OUT_RC( %s, %s);\n", arg[i],
-                                   arg[i + 1]);
-                 i += 2; INDENT;
-                 sep = 1, fprintf (outfile, "SAC_ND_KS_RET_INOUT_RC( %s, %s);\n", arg[i],
-                                   arg[i + 1]);
-                 i += 2; INDENT; sep = 1, "");
-
-    if (arg_info != NULL) {
-        if (strcmp (FUNDEF_NAME (INFO_FUNDEF (arg_info)), "main") == 0) {
-            GSCPrintMainEnd ();
-            INDENT;
-        }
+    ScanArglist (narg, 3, "\n", INDENT,
+                 fprintf (outfile, "SAC_ND_RET_%s( %s, %s)", arg[i], arg[i + 1],
+                          arg[i + 2]));
+    if (narg > 0) {
+        fprintf (outfile, "\n");
+        INDENT;
     }
-    if (0 != strcmp (retname, "")) {
+
+    if (strcmp (retname, "")) {
         fprintf (outfile, "return( %s);", retname);
+    } else {
+        fprintf (outfile, "return;");
     }
     fprintf (outfile, "\n");
 
