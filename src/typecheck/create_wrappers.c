@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.23  2004/11/27 03:04:59  sbs
+ * *** empty log message ***
+ *
  * Revision 1.22  2004/11/25 17:52:55  sbs
  * compiles
  *
@@ -367,7 +370,7 @@ CreateFuntype (node *fundef)
 /******************************************************************************
  *
  * function:
- *    node *CRTWRPmodul(node *arg_node, info *arg_info)
+ *    node *CRTWRPmodule(node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -385,9 +388,9 @@ ConsFundefs (node *fundefs, node *fundef)
 }
 
 node *
-CRTWRPmodul (node *arg_node, info *arg_info)
+CRTWRPmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CRTWRPmodul");
+    DBUG_ENTER ("CRTWRPmodule");
 
     DBUG_ASSERT ((MODULE_WRAPPERFUNS (arg_node) == NULL),
                  "MODULE_WRAPPERFUNS is not NULL!");

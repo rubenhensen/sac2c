@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.35  2004/11/27 03:02:59  sbs
+ * *** empty log message ***
+ *
  * Revision 3.34  2004/11/26 13:04:14  ktr
  * Comment of FLATprf enhanced.
  *
@@ -858,7 +861,7 @@ DONE:
 /******************************************************************************
  *
  * function:
- *  node *FLATModule(node *arg_node, info *arg_info)
+ *  node *FLATmodule(node *arg_node, info *arg_info)
  *
  * description:
  *   this function is needed to limit the traversal to the FUNS-son of
@@ -867,9 +870,9 @@ DONE:
  ******************************************************************************/
 
 node *
-FLATModule (node *arg_node, info *arg_info)
+FLATmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("FLATModul");
+    DBUG_ENTER ("FLATmodul");
 
     if (MODULE_FUNS (arg_node)) {
         MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
