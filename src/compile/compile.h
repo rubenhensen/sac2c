@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.12  2000/10/16 11:11:13  dkr
+ * IS_REFCOUNTED moved from compile.c to compile.h
+ *
  * Revision 2.11  2000/10/09 19:20:05  dkr
  * GetUnadjustedFoldCode() renamed into GetFoldCode()
  * GetAdjustedFoldCode() removed
@@ -77,6 +80,8 @@ extern node *COMPMTsync (node *arg_node, node *arg_info);
 
 extern node *GetFoldCode (node *fundef);
 extern node *GetFoldVardecs (node *fundef);
+
+#define IS_REFCOUNTED(item, arg) (item##_REFCNT (arg) >= 0)
 
 /*
  * some macros for creation of N_icms
