@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.60  1995/05/30 08:22:28  cg
+ * Revision 1.61  1995/05/31 11:38:23  hw
+ * changed rule for 'fold' (case N_foldfun) ( exchanged 'expr' with 'exprORarray' )
+ *
+ * Revision 1.60  1995/05/30  08:22:28  cg
  * sac_grammar version 0.5 tokens inserted.
  *
  * Revision 1.59  1995/05/30  07:17:18  hw
@@ -1401,7 +1404,7 @@ conexpr: GENARRAY {$$=MakeNode(N_genarray);} BRACKET_L exprORarray BRACKET_R
                          mdb_prf[$$->info.prf], 
 			 mdb_nodetype[$$->node[0]->nodetype], $$->node[0] ));
            }
-	 | FOLD BRACKET_L foldfun expr BRACKET_R 
+	 | FOLD BRACKET_L foldfun exprORarray BRACKET_R 
 	   retassignblock
 	   { $$=$3;
         $$->node[0]=$6;          /* body */
