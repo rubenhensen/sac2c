@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.15  2000/08/04 14:32:52  mab
+ * added some comments
+ *
  * Revision 1.14  2000/08/04 11:41:31  mab
  * fixed bug in APCwith and APTwith (case nested with-loops)
  *
@@ -347,8 +350,13 @@ AddDummyCode (node *with_node)
     /* find last vardec */
 
     /* BUG, if CODE is empty and result is specified by ARG instead if VARDEC !!!
-       vardec_node=ID_VARDEC(NCODE_CEXPR(NWITH_CODE(with_node)));
-    */
+     * vardec_node=ID_VARDEC(NCODE_CEXPR(NWITH_CODE(with_node)));
+     *
+     * Now we search the end of the vardec-list by looking at the vardec of the
+     * with-loop index vector. Even, if the index vector is passed into a function
+     * as an argument, the flatten phase will generate a separate vardec for the
+     * index vector.
+     */
 
     vardec_node = ID_VARDEC (NPART_WITHID (NWITH_PART (with_node)));
 

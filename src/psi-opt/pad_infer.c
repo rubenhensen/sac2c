@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.6  2000/08/04 14:31:16  mab
+ * added some comments
+ *
  * Revision 1.5  2000/08/03 15:33:42  mab
  * completed implementation of inference algorithm
  * (conversion functions not yet supported)
@@ -322,6 +325,9 @@ InitCacheUtil (cache_util_t **cache_util, pattern_t *pattern, array_type_t *arra
     pt_ptr = pattern;
     for (i = 0; i < rows; i++) {
         PIprintPatternElement (array, pt_ptr);
+        /* attention: PIgetPatternShape stores only the pointer to shape in .access
+         *            it espacially does not make a copy!
+         */
         (*cache_util)[i].access = PIgetPatternShape (pt_ptr);
         (*cache_util)[i].offset = 0;
         (*cache_util)[i].shifted_offset = 0;
@@ -1188,7 +1194,7 @@ APinfer ()
                                           pv_tr_L1, pv_tr_L2, pv_tr_L3,
                                           overhead_threshold);
 
-            APprintDiag ("Original shape                       :  ");
+            APprintDiag ("\nOriginal shape                       :  ");
             PIprintShpSeg (dim, shape);
             APprintDiag ("\n");
 
