@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.64  2002/03/01 02:31:57  dkr
+ * PREC3return() removed
+ *
  * Revision 3.63  2002/02/27 14:48:42  dkr
  * PREC3assign added
  *
@@ -1253,8 +1256,8 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        SSADCRreturn, SSACSEreturn, CMPTTravSons, TravSons, SSACFreturn, SSALIRreturn,
        LIRMOVreturn, TravSons, TravSons, TravSons, TravSons, TravSons,
 
-       TravSons, COMP2Return, PREC3return, TravSons, TravSons, TravSons, TravSons,
-       TravSons, 1),
+       TravSons, COMP2Return, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       1),
 
   NIF (N_do, "N_do", TravSons, FltnDo, PrintDo, TCdo, GNMloop, DCRdo, TravSons, FreeDo,
        CFdo, RCloop, COMPLoop, LIRloop, DupDo, TravSons, UNRdo, LIRMloop, IdxDo, UNSdo,
