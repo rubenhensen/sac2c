@@ -1581,6 +1581,7 @@
         <node name="Funcond" />
 	<node name="Cast" />
 	<node name="Mop" />
+	<node name="SetWL" />
       </target>
     </nodeset>
     <nodeset name="Instr">
@@ -5395,6 +5396,30 @@
       </attributes>
       <flags>
       </flags>
+    </node>
+    <node name="Ops">
+      <sons>
+        <son name="Next" mandatory="no">
+	  <target>
+	    <node name="Ops" />
+	  </target>
+	</son>
+      </sons>
+      <attributes>
+        <attribute name="Mod" mandatory="no">
+	  <type name="String" />
+	  <phases>
+	    <all />
+	  </phases>
+	</attribute>
+        <attribute name="Name" mandatory="yes">
+	  <type name="String" />
+	  <phases>
+	    <all />
+	  </phases>
+	</attribute>
+      </attributes>
+      <flags></flags>
     </node>
   </syntaxtree>
 </definition>
