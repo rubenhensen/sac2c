@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.46  1998/04/07 17:33:19  dkr
+ * removed a bug in PRECnwith
+ *
  * Revision 1.45  1998/04/04 21:07:29  dkr
  * changed PRECconc
  *
@@ -1216,7 +1219,7 @@ PRECconc (node *arg_node, node *arg_info)
     node *fargs, *farg, *last_farg;
     node *retexprs, *retexpr, *last_retexpr;
     types *rettypes, *rettype, *last_rettype;
-    node *ret, *fundef, *ap;
+    node *ret, *fundef, *ap, *conc, *tmp;
     char *name;
     int varno, i;
 
@@ -1367,8 +1370,15 @@ PRECconc (node *arg_node, node *arg_info)
     ret = MakeReturn (retexprs);
     RETURN_INWITH (ret) = 0;
 
-    fundef = MakeFundef (name, NULL, rettypes, fargs,
-                         MakeBlock (CONC_REGION (arg_node), NULL), NULL);
+    /* append 'ret' to concregion block */
+    conc = DupTree (CONC_REGION (arg_node), NULL);
+    tmp = conc;
+    while (ASSIGN_NEXT (tmp) != NULL) {
+        tmp = ASSIGN_NEXT (tmp);
+    }
+    ASSIGN_NEXT (tmp) = MakeAssign (ret, NULL);
+
+    fundef = MakeFundef (name, NULL, rettypes, fargs, MakeBlock (conc, NULL), NULL);
     FUNDEF_STATUS (fundef) = ST_concfun;
     FUNDEF_ATTRIB (fundef) = ST_regular;
     FUNDEF_INLINE (fundef) = 0;
