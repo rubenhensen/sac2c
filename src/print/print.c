@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.166  1998/03/21 14:07:13  dkr
+ * changed output of PrintWLublock
+ *
  * Revision 1.165  1998/03/21 13:23:07  dkr
  * changed output in PrintWLproj:
  *   show WLPROJ_LEVEL
@@ -79,9 +82,6 @@
  *
  * Revision 1.144  1998/01/30 17:49:15  srs
  * modified printing of new WL generator
- *
- * Revision 1.143  1998/01/22 12:04:31  srs
- * *** empty log message ***
  *
  * Revision 1.142  1997/12/20 15:49:40  srs
  * enhanced PrintNodeTree and
