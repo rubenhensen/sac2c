@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.22  2004/02/26 18:03:11  cg
+ * Added new internal primitive function F_shape_sel.
+ *
  * Revision 3.21  2004/02/03 11:26:41  sbs
  * NTCPRF_phi activated.
  *
@@ -134,6 +137,8 @@ PRF_IF (F_toi_S, "F_toi_S", "_toi_S_", "toi", FALSE, 1, NTCPRF_toiS, COToi),
   PRF_IF (F_shape, "F_shape", "_shape_", "shape", FALSE, 1, NTCPRF_shape, COShape),
   PRF_IF (F_reshape, "F_reshape", "_reshape_", "reshape", FALSE, 2, NTCPRF_reshape,
           COReshape),
+  PRF_IF (F_shape_sel, "F_shape_sel", "_shape_sel_", "shape_sel", FALSE, 2, NTCPRF_dummy,
+          NULL),
   PRF_IF (F_idx_sel, "F_idx_sel", "_idx_sel_", "idx_sel", FALSE, 2, NTCPRF_dummy, NULL),
   PRF_IF (F_idx_modarray, "F_idx_modarray", "_idx_modarray_", "idx_modarray", FALSE, 3,
           NTCPRF_dummy, NULL),
