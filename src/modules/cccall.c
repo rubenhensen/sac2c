@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.17  2000/11/13 16:16:34  sbs
+ * changed type of var "current" in GenLibStat to time_t
+ * (required on ALPHA...) doesn't harm SUN
+ *
  * Revision 2.16  2000/08/02 11:53:09  nmw
  * phase comments changed, collecting library moved to create library
  *
@@ -256,7 +260,7 @@ GenLibStat ()
 {
     FILE *statusfile;
     deps *tmp;
-    long int current;
+    time_t current;
     char *env_entry;
     char unknown[4] = "???";
 
