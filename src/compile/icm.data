@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.18  1995/06/08 18:32:08  hw
- * - changed args-name of ND_BEGIN_FOLDPRF & ND_BEGIN_FOLDFUN
+ * Revision 1.19  1995/06/09 15:29:19  hw
+ * changed PSI N_icm's (linenumber inserted)
  *
+# Revision 1.18  1995/06/08  18:32:08  hw
+# - changed args-name of ND_BEGIN_FOLDPRF & ND_BEGIN_FOLDFUN
+#
 # Revision 1.17  1995/06/07  13:36:53  hw
 # - exchanges N_icm ND_CREATE_CONST_ARRAY with ND_CREATE_CONST_ARRAY_S
 # - N_icm ND_CREATE_CONST_ARRAY_A (array out of arrays) inserted
@@ -126,6 +129,7 @@ ICM_END( ND_KD_SET_SHAPE )
 
 #if defined(ND_KD_PSI_CxA_S) || defined(ICM_ALL)
 ICM_DEF( ND_KD_PSI_CxA_S, TRACE_PRF)
+  ICM_INT(line)
   ICM_STR(a)
   ICM_STR(res)
   ICM_INT(dim)
@@ -135,6 +139,7 @@ ICM_END( ND_KD_PSI_CxA_S )
 
 #if defined(ND_KD_PSI_VxA_S) || defined(ICM_ALL)
 ICM_DEF( ND_KD_PSI_VxA_S, TRACE_PRF)
+  ICM_INT(line)
   ICM_STR(a)
   ICM_STR(res)
   ICM_INT(dim)
@@ -144,6 +149,7 @@ ICM_END( ND_KD_PSI_VxA_S )
 
 #if defined(ND_KD_PSI_CxA_A) || defined(ICM_ALL)
 ICM_DEF( ND_KD_PSI_CxA_A, TRACE_PRF)
+  ICM_INT(line)
   ICM_INT(dima)
   ICM_STR(a)
   ICM_STR(res)
@@ -154,6 +160,7 @@ ICM_END( ND_KD_PSI_CxA_A )
 
 #if defined(ND_KD_PSI_VxA_A) || defined(ICM_ALL)
 ICM_DEF( ND_KD_PSI_VxA_A, TRACE_PRF)
+  ICM_INT(line)
   ICM_INT(dima)
   ICM_STR(a)
   ICM_STR(res)
