@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.11  1995/01/06 19:05:51  sbs
+ * Revision 1.12  1995/02/14 10:11:10  hw
+ * NOT inserted
+ *
+ * Revision 1.11  1995/01/06  19:05:51  sbs
  * no_mod_ext pragma deleted & extern declaration inserted
  *
  * Revision 1.10  1995/01/06  17:51:45  sbs
@@ -89,6 +92,7 @@ int start_token;
 "||"				{FILTER( OR );}
 "=="				{FILTER( EQ );}
 "!="				{FILTER( NEQ );}
+"!"                             {FILTER( NOT );}
 "<="				{FILTER( LE );}
 "<"				{FILTER( LT );}
 ">="				{FILTER( GE );}
