@@ -1,9 +1,12 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.6  2004/11/02 10:40:51  sah
+  fixed typoe
+
   Revision 1.5  2004/11/01 21:53:56  sah
-  added support fo r DownLink attributes and tweaked
-  the entire serialization proeccess a bit
+  added support for DownLink attributes and tweaked
+  the entire serialization process a bit
 
   Revision 1.4  2004/09/24 20:20:08  sah
   now the new types are not
@@ -135,7 +138,8 @@ version="1.0">
      Fundef nodes are never freed. Instead, they are zombiealised, thus
      their status is set to zombie and all attributes and sons are
      freed, except for NAME, MOD, LINKMOD, TYPE and TYPES. Furthermore,
-     the node structure itself is not freed.
+     the node structure itself is not freed. This has to be done by a
+     cal of FreeAllZombies.
      
 -->
 <xsl:template match="node[@name = &quot;Fundef&quot;]">

@@ -1,9 +1,12 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.5  2004/11/02 10:44:39  sah
+  fixed typoe
+
   Revision 1.4  2004/11/01 21:53:56  sah
-  added support fo r DownLink attributes and tweaked
-  the entire serialization proeccess a bit
+  added support for DownLink attributes and tweaked
+  the entire serialization process a bit
 
   Revision 1.3  2004/10/26 16:14:56  sah
   now node attributes are properly processed
@@ -124,6 +127,7 @@ version="1.0">
      remarks:
 
 -->
+
 <xsl:template match="node">
   <!-- generate head and comment -->
   <xsl:apply-templates select="@name"/>

@@ -1,9 +1,12 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.8  2004/11/02 10:42:24  sah
+  fixed typoe
+
   Revision 1.7  2004/11/01 21:53:56  sah
-  added support fo r DownLink attributes and tweaked
-  the entire serialization proeccess a bit
+  added support for DownLink attributes and tweaked
+  the entire serialization process a bit
 
   Revision 1.6  2004/10/19 14:07:27  sah
   added support for persist attribute
@@ -220,7 +223,7 @@ version="1.0">
 
      generates the value of an attribute, if it has persist = yes (default).
      All other attributes are ignored, as they will be set to their
-     default values lateron.
+     default values lateron. see ast2serialize_helper_c.xsl for details.
 -->
 
 <xsl:template match="attributes/attribute[not( key(&quot;types&quot;, ./type/@name)/@persist = &quot;no&quot;)]" mode="gen-values">
