@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.31  1995/02/02 14:56:39  hw
+ * Revision 1.32  1995/02/14 10:12:05  sbs
+ * superfluous "i"-declaration in PrintPrf removed
+ *
+ * Revision 1.31  1995/02/02  14:56:39  hw
  * changed PrintPrf, because N_prf has been changed
  *
  * Revision 1.30  1995/01/16  17:26:38  asi
@@ -351,18 +354,8 @@ PrintPrf (node *arg_node, node *arg_info)
     case F_dim:
     case F_rotate:
     case F_not: {
-        int i = 0;
-
         fprintf (outfile, "%s( ", prf_string[arg_node->info.prf]);
         Trav (arg_node->node[0], arg_info);
-#if 0      
-      for(i=0; i<arg_node->nnode; i++)
-      {
-         Trav(arg_node->node[i], arg_info);
-         if ( (arg_node->nnode-1) != i)
-            fprintf(outfile,", ");
-       }
-#endif
         fprintf (outfile, " )");
         break;
     }
