@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.186  1998/04/09 20:38:10  dkr
+ * changed output in PrintNodeTree
+ *
  * Revision 1.185  1998/04/09 09:41:55  dkr
  * changed output in PrintConc
  *
@@ -2794,7 +2797,7 @@ PrintNodeTree (node *node)
             _ids = LET_IDS (node);
             fprintf (outfile, "(");
             while (_ids) {
-                fprintf (outfile, "%s ", IDS_NAME (_ids));
+                fprintf (outfile, "%s", IDS_NAME (_ids));
                 _ids = IDS_NEXT (_ids);
             }
             fprintf (outfile, ")\n");
