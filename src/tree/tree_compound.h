@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.141  2004/11/25 01:00:21  skt
+ * bitmasks for profiling added
+ *
  * Revision 3.140  2004/11/24 20:41:23  mwe
  * TCreturnTypes2Ret added
  *
@@ -149,6 +152,13 @@ specific implementation of a function should remain with the source code.
 #define RC_UNDEF (-2)
 /* value, representing an inactive reference counter */
 #define RC_INACTIVE (-1)
+
+/*--------------------------------------------------------------------------*/
+
+/* bitmasks for profiling, former defined in tree_basic.h */
+#define CALL_FUN 0x0001
+#define RETURN_FROM_FUN 0x0002
+#define INL_FUN 0x0004
 
 /*--------------------------------------------------------------------------*/
 
