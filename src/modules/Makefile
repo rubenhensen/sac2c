@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.8  1995/10/05 16:04:54  cg
+# Revision 1.9  1995/10/05 16:14:11  cg
+# now implicittypes.o will be removed by make clean
+#
+# Revision 1.8  1995/10/05  16:04:54  cg
 # implicittypes.c added
 #
 # Revision 1.7  1995/08/31  08:40:13  cg
@@ -50,7 +53,7 @@ deps:
 	makedepend $(INCS) *.c
 
 clean:
-	$(RM) filemgr.o import.o sib.o *.bak
+	$(RM) filemgr.o import.o sib.o implicittypes.o *.bak
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
