@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.16  2000/03/16 14:22:54  dkr
+# target wltransform.c added
+#
 # Revision 2.15  2000/03/01 14:52:36  dkr
 # make deps done
 #
@@ -76,6 +79,13 @@ MACS=icm.data icm_comment.c icm_trace.c
 all: wltransform.o wlpragma_funs.o precompile.o compile.o ReuseWithArrays.o \
      icm2c.o icm2c_std.o icm2c_wl.o icm2c_mt.o gen_startup_code.o Old2NewWith.o \
      icm2c_utils.o
+
+#
+# the wltransform.c object is to fool makedepend which does not
+# recognize the dependency between wltransform.c and the .mac files!
+#
+wltransform.c: wlpragma_funs.mac
+	touch wltransform.c
 
 wltransform.o: wltransform.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o wltransform.o -c wltransform.c $(INCS)
@@ -275,7 +285,7 @@ wlpragma_funs.o: ../global/internal_lib.h ../tree/free.h ../global/my_debug.h
 wlpragma_funs.o: /usr/include/malloc.h /usr/include/sys/types.h
 wlpragma_funs.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
 wlpragma_funs.o: ../tree/DupTree.h ../tree/LookUpTable.h wltransform.h
-wlpragma_funs.o: wlpragma_funs.h /usr/include/limits.h
+wlpragma_funs.o: wlpragma_funs.h
 wltransform.o: ../tree/tree.h ../global/types.h ../tree/tree_basic.h
 wltransform.o: ../tree/tree_compound.h ../global/Error.h /usr/include/stdio.h
 wltransform.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
@@ -287,4 +297,4 @@ wltransform.o: ../global/my_debug.h /usr/include/malloc.h
 wltransform.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
 wltransform.o: /usr/include/sys/int_types.h ../tree/traverse.h
 wltransform.o: ../tree/DataFlowMask.h wlpragma_funs.h ../tree/DupTree.h
-wltransform.o: ../tree/LookUpTable.h
+wltransform.o: ../tree/LookUpTable.h /usr/include/limits.h
