@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.185  1998/08/10 15:01:07  dkr
+ * *** empty log message ***
+ *
  * Revision 1.184  1998/08/07 19:46:47  dkr
  * fixed a bug with generation of WL_ADJUST_OFFSET
  *
@@ -10,9 +13,6 @@
  * Revision 1.182  1998/08/07 16:04:00  dkr
  * COMPWLsegVar added
  * some names of WL-ICMs changed
- *
- * Revision 1.181  1998/08/06 01:16:43  dkr
- * fixed some minor bugs
  *
  * Revision 1.180  1998/08/03 10:53:11  cg
  * Now, MT_ADJUST_SCHEDULER ICMs are generated where necessary.
@@ -36,9 +36,6 @@
  * Now, those with-loops marked to be in top-level position within
  * an spmd-block and hence have to be executed in multi-threaded mode,
  * are compiled to special versions of the respective loop ICMs.
- *
- * Revision 1.174  1998/06/19 19:17:16  dkr
- * fixed a minor bug
  *
  * Revision 1.173  1998/06/19 18:28:24  dkr
  * added -noUIP
@@ -608,12 +605,11 @@
 #include "traverse.h"
 #include "DataFlowMask.h"
 #include "optimize.h"
-#include "Inline.h"
 #include "compile.h"
 #include "convert.h"
 #include "DupTree.h"
 #include "refcount.h"
-#include "typecheck.h" /* to use LookupType() */
+#include "typecheck.h" /* to use 'LookupType()' */
 #include "ReuseWithArrays.h"
 #include "free.h"
 #include "scheduling.h"
@@ -1001,6 +997,90 @@ GetIndexIds (ids *index_ids, int dim)
     }
 
     DBUG_RETURN (index_ids);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *InlineFoldCode(node *let_node, node *ap_node)
+ *
+ * description:
+ *   not yet implemented
+ *
+ ******************************************************************************/
+
+node *
+InlineFoldCode (node *let_node, node *ap_node)
+{
+    node *inl_nodes;
+
+    DBUG_ENTER ("InlineFoldCode");
+
+#if 0
+  /*
+   * Generate new variables
+   */
+  args = FUNDEF_ARGS( AP_FUNDEF(ap_node));
+  while (args != NULL) {
+    new_name = RenameInlinedVar( ARG_NAME( args));
+
+    new_type = DuplicateTypes(ARG_TYPE(arg_node), 1);
+    INFO_INL_TYPES(arg_info) = MakeVardec(new_name, new_type, INFO_INL_TYPES(arg_info));
+
+    args = ARG_NEXT( args);
+  }
+
+  /*
+   * Make header for inlined function
+   */
+  var_node = FUNDEF_ARGS( AP_FUNDEF( ap_node));
+  expr_node = AP_ARGS( ap_node);
+
+  DUPTYPE = DUP_NORMAL;
+
+  while (var_node && expr_node) {
+    new_name = RenameInlinedVar(ARG_NAME(var_node));
+    vardec_node = SearchDecl(new_name, INFO_INL_TYPES(arg_info));
+    new_expr = DupTree(EXPRS_EXPR(expr_node), arg_info);
+    inl_nodes = MakeAssignLet(new_name, vardec_node, new_expr);      
+    header_nodes = AppendNodeChain(1, inl_nodes, header_nodes);
+    var_node = VARDEC_NEXT(var_node);
+    expr_node = EXPRS_NEXT(expr_node);
+  }
+
+  /*
+   * Make bottom for inlined function
+   */
+  ids_node = LET_IDS(let_node);
+  expr_node = RETURN_EXPRS(FUNDEF_RETURN(AP_FUNDEF(ap_node)));
+
+  DUPTYPE = DUP_INLINE;
+
+  while (ids_node && expr_node) {
+    new_name = StringCopy(IDS_NAME(ids_node));
+    new_expr = DupTree(EXPRS_EXPR(expr_node), arg_info);
+    inl_nodes = MakeAssignLet(new_name, IDS_VARDEC(ids_node), new_expr);
+    bottom_nodes = AppendNodeChain(1, inl_nodes, bottom_nodes);
+    ids_node = IDS_NEXT(ids_node);
+    expr_node = EXPRS_NEXT(expr_node);
+  }
+
+  /*
+   * Duplicate function (with variable renameing)
+   */
+  DUPTYPE = DUP_INLINE;
+  inl_nodes=DupTree(BLOCK_INSTR(FUNDEF_BODY(AP_FUNDEF(ap_node))), arg_info);
+
+  /*
+   * Link it together
+   */
+  inl_nodes=AppendNodeChain(1, inl_nodes, bottom_nodes);
+  inl_nodes=AppendNodeChain(1, header_nodes, inl_nodes);
+
+#endif
+    inl_nodes = NULL;
+
+    DBUG_RETURN (inl_nodes);
 }
 
 /******************************************************************************
@@ -5044,16 +5124,6 @@ COMPWithReturn (node *arg_node, node *arg_info)
         DEC_RC_FREE_ND (mod_array, n_node);
     }
 
-#if 0
-   while(NULL != dec_rc) {
-      if ((0 != strcmp(ID_NAME(index_node), ID_NAME(dec_rc))) && 
-          ((NULL == mod_array) ||
-           (0 != strcmp(ID_NAME(mod_array), ID_NAME(dec_rc))))) {
-         DEC_RC_FREE_ND(dec_rc, n_node);
-      }
-      dec_rc=dec_rc->node[0];
-   }
-#else
     while (NULL != dec_rc) {
         if ((0 != strcmp (ID_NAME (index_node), IDS_NAME (dec_rc)))
             && ((NULL == mod_array)
@@ -5062,7 +5132,6 @@ COMPWithReturn (node *arg_node, node *arg_info)
         }
         dec_rc = IDS_NEXT (dec_rc);
     }
-#endif
 
     if (FOLD == con_type) {
         /* return contains to N_foldfun or N_foldprf, so the refcount of the
@@ -5989,21 +6058,12 @@ COMPWith (node *arg_node, node *arg_info)
     }
 
     /* now add some INC_RC's */
-#if 0
-  inc_rc=WITH_USEDVARS(old_arg_node)->node[0];
-  while (NULL != inc_rc) {
-    MAKENODE_NUM(n_node, ID_REFCNT(inc_rc));
-    INC_RC_ND(inc_rc, n_node);
-    inc_rc=inc_rc->node[0];
-  }
-#else
     inc_rc = WITH_USEVARS (old_arg_node);
     while (inc_rc != NULL) {
         MAKENODE_NUM (n_node, IDS_REFCNT (inc_rc));
         INC_RC_ND_IDS (inc_rc, n_node);
         inc_rc = IDS_NEXT (inc_rc);
     }
-#endif
 
     /* update arg_info, after inserting new N_assign nodes */
     if ((N_foldprf == old_arg_node->node[1]->nodetype)
@@ -7533,9 +7593,8 @@ COMPWLgrid (node *arg_node, node *arg_info)
                 /*
                  * Inlining of the fold-pseudo-fun.
                  */
-                inl_fun--; /* Do not count this inlining! */
-                fold_code = InlineSingleApplication (ASSIGN_INSTR (fold_code),
-                                                     INFO_COMP_FUNDEF (arg_info));
+                fold_code = InlineFoldCode (ASSIGN_INSTR (fold_code),
+                                            INFO_COMP_FUNDEF (arg_info));
 #endif
 
                 /*
