@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.63  1995/12/28 10:31:18  cg
+ * Revision 1.64  1996/02/12 16:32:47  cg
+ * macro MAKENODE_ID_REUSE_IDS corrected: refcount will be copied
+ * from ids-structure to node-structure now
+ *
+ * Revision 1.63  1995/12/28  10:31:18  cg
  * Malloc is used instead of malloc in GEN_NODE
  *
  * Revision 1.62  1995/12/04  13:08:02  hw
@@ -245,7 +249,8 @@
 
 #define MAKENODE_ID_REUSE_IDS(no, Ids)                                                   \
     no = MakeNode (N_id);                                                                \
-    no->IDS = Ids
+    no->IDS = Ids;                                                                       \
+    no->refcnt = Ids->refcnt
 
 extern char *prf_name_str[];
 
