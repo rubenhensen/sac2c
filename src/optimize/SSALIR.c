@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.28  2002/09/05 20:50:45  dkr
+ * SSALIRNwithid(), LIRMOVNwithid(): NWITHID_IDS might be NULL!
+ *
  * Revision 1.27  2002/08/13 13:43:08  dkr
  * return value of RemoveLUT() no longer ignored
  *
@@ -1599,8 +1602,12 @@ SSALIRNwithid (node *arg_node, node *arg_info)
     INFO_SSALIR_FLAG (arg_info) = SSALIR_MOVELOCAL;
     INFO_SSALIR_SETDEPTH (arg_info) = INFO_SSALIR_WITHDEPTH (arg_info);
 
-    NWITHID_IDS (arg_node) = SSALIRleftids (NWITHID_IDS (arg_node), arg_info);
-    NWITHID_VEC (arg_node) = SSALIRleftids (NWITHID_VEC (arg_node), arg_info);
+    if (NWITHID_IDS (arg_node) != NULL) {
+        NWITHID_IDS (arg_node) = SSALIRleftids (NWITHID_IDS (arg_node), arg_info);
+    }
+    if (NWITHID_VEC (arg_node) != NULL) {
+        NWITHID_VEC (arg_node) = SSALIRleftids (NWITHID_VEC (arg_node), arg_info);
+    }
 
     INFO_SSALIR_FLAG (arg_info) = SSALIR_NORMAL;
 
@@ -1657,6 +1664,9 @@ static ids *
 SSALIRleftids (ids *arg_ids, node *arg_info)
 {
     DBUG_ENTER ("SSALIRleftids");
+
+    DBUG_ASSERT ((arg_ids != NULL), "no ids found!");
+    DBUG_ASSERT ((IDS_AVIS (arg_ids) != NULL), "IDS_AVIS not found!");
 
     /* set current withloop depth as definition depth */
     AVIS_DEFDEPTH (IDS_AVIS (arg_ids)) = INFO_SSALIR_SETDEPTH (arg_info);
@@ -1983,7 +1993,9 @@ LIRMOVNwithid (node *arg_node, node *arg_info)
 
             INFO_SSALIR_FLAG (arg_info) = SSALIR_MOVELOCAL;
             NWITHID_VEC (arg_node) = LIRMOVleftids (NWITHID_VEC (arg_node), arg_info);
-            NWITHID_IDS (arg_node) = LIRMOVleftids (NWITHID_IDS (arg_node), arg_info);
+            if (NWITHID_IDS (arg_node) != NULL) {
+                NWITHID_IDS (arg_node) = LIRMOVleftids (NWITHID_IDS (arg_node), arg_info);
+            }
 
             /* switch back to previous mode */
             INFO_SSALIR_FLAG (arg_info) = old_flag;
