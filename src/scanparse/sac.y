@@ -3,7 +3,11 @@
 /*
  *
  * $Log$
- * Revision 1.83  1995/08/21 13:24:25  cg
+ * Revision 1.84  1995/09/27 15:21:51  cg
+ * type charlist renamed to strings
+ * new representation of file type in the syntax tree added.
+ *
+ * Revision 1.83  1995/08/21  13:24:25  cg
  * now external funs, objects and types can be imported implicitly
  *
  * Revision 1.82  1995/08/15  13:53:10  hw
@@ -292,8 +296,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-
 #include <memory.h>
+
 #include "dbug.h"
 #include "tree.h"
 #include "my_debug.h"
@@ -303,6 +307,7 @@ extern int linenum;
 extern char yytext[];
 
 int indent, i;
+
 node *syntax_tree;
 node *decl_tree;
 node *sib_tree;
@@ -310,8 +315,10 @@ node *sib_tree;
 
 static char *mod_name=NULL;
 
+
 /* used to distinguish the different kinds of files  */
 /* which are parsed with this single parser          */
+
 static file_type file_kind = F_prog;
 
 
@@ -329,7 +336,7 @@ static file_type file_kind = F_prog;
          nums            *nums;
          prf             prf;
          statustype      statustype;
-         charlist        *charlist;
+         strings         *strings;
        }
 
 %token PARSE_PRG, PARSE_DEC, PARSE_SIB
@@ -350,7 +357,7 @@ static file_type file_kind = F_prog;
 %token <cfloat> FLOAT
 %token <cdbl> DOUBLE
 
-%type <charlist> siblinklist
+%type <strings> siblinklist
 %type <prf> foldop
 %type <nodetype> modclass
 %type <cint> evextern
@@ -788,7 +795,10 @@ def4: fundefs { $$=MakeNode(N_modul);
 
 modimp: impclass ID {  mod_name=$2; } COLON defs
           { $$=$5;
-            $$->info.id=$2;
+            MODUL_NAME($$)=mod_name;
+            MODUL_FILETYPE($$)=file_kind;
+                /* above: new representation of filetype */
+                /* below: old representation of filetype */
             if (file_kind==F_classimp)
                $$->node[4]=MakeNode(N_isclass);
           }
@@ -798,7 +808,9 @@ impclass : MODIMP   { file_kind=F_modimp;}
          | CLASSIMP { file_kind=F_classimp;}
          ;
 
-prg: defs { $$=$1; }
+prg: defs { $$=$1;
+            MODUL_FILETYPE($$)=F_prog;
+          }
         ;
 
 typedefs: typedef typedefs {$$=$1;
@@ -1323,19 +1335,19 @@ letassign: ids LET exprORarray
             }
         | ID ADDON exprORarray
            {
-              $$=MakeLet($1,$3,F_add);
+              $$=MakeLetNode($1,$3,F_add);
            }
         | ID SUBON exprORarray
            {
-              $$=MakeLet($1,$3,F_sub);
+              $$=MakeLetNode($1,$3,F_sub);
            }
         | ID MULON exprORarray
            {
-              $$=MakeLet($1,$3,F_mul);
+              $$=MakeLetNode($1,$3,F_mul);
            }
         | ID DIVON exprORarray
            {
-              $$=MakeLet($1,$3,F_div);
+              $$=MakeLetNode($1,$3,F_div);
            }
          ;
 
@@ -2660,14 +2672,14 @@ sibfunbody: exprblock
       
 siblinklist: ID
                {
-                 $$=(charlist*)malloc(sizeof(charlist));
+                 $$=(strings*)malloc(sizeof(strings));
                  $$->name=$1;
                  $$->next=NULL;
                }
            |
              ID COMMA siblinklist
                {
-                 $$=(charlist*)malloc(sizeof(charlist));
+                 $$=(strings*)malloc(sizeof(strings));
                  $$->name=$1;
                  $$->next=$3;
                }
@@ -2881,7 +2893,7 @@ node *MakeEmptyBlock()
 
 /*
  *
- *  functionname  : MakeLet
+ *  functionname  : MakeLetNode
  *  arguments     : 1) identifier 
  *                  2) expr node
  *                  3) primitive function
@@ -2896,12 +2908,12 @@ node *MakeEmptyBlock()
  *  remarks       : this function is used to convert addon, etc to N_let
  *
  */
-node *MakeLet(id *name, node *expr, prf fun)
+node *MakeLetNode(id *name, node *expr, prf fun)
 {
    node *return_node,
         *id_node;
       
-   DBUG_ENTER("MakeLet");
+   DBUG_ENTER("MakeLetNode");
    
    return_node=MakeNode(N_let);
    return_node->info.ids=MakeIds(name);
