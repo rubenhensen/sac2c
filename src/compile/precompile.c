@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.100  2004/11/24 14:24:46  skt
+ * some comments during SACDevCampDK 2k4
+ *
  * Revision 3.99  2004/11/12 10:13:03  ktr
  * PREC2apORprf does not traverse into args of alloc_or_reuse any longer.
  *
@@ -690,6 +693,7 @@ InsertObjInit (node *block, node *objdef)
     new_ids = MakeIds (StringCopy (OBJDEF_NAME (objdef)), NULL, ST_regular);
     IDS_VARDEC (new_ids) = objdef;
     IDS_ATTRIB (new_ids) = ST_global;
+    /* TODO - the REF-macros has been deleted in tree_compound - kill them here*/
     if (TYPE_MUST_REFCOUNT (OBJDEF_TYPE (objdef))) {
         IDS_REFCNT (new_ids) = 1;
     } else {
