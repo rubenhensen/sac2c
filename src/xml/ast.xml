@@ -2581,7 +2581,8 @@
       <sons>
         <son name="Cond" mandatory="yes">
           <target>
-            <set name="Expr" />
+            <node name="Id" />
+            <node name="Bool" />
           </target>
         </son>
         <son name="Then" mandatory="yes">
@@ -2840,6 +2841,7 @@
         <son name="If" mandatory="yes">
           <target>
             <node name="Id" />
+            <node name="Bool" />
           </target>
         </son>
         <son name="Then" mandatory="yes">
