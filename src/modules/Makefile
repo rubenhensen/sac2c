@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.23  2004/10/28 17:17:49  sah
+# added some files
+#
 # Revision 3.22  2004/10/22 14:47:40  sah
 # added usesymbols traversal
 #
@@ -95,7 +98,7 @@ include $(PROJECT_ROOT)/Makefile.Config
 
 INCS = -I../global -I../tree -I../../inc -I../scanparse -I../print  \
        -I../typecheck -I../compile -I../constants -I../optimize -I.
-OBJS := filemgr.o symboltable.o implicittypes.o
+OBJS := filemgr.o symboltable.o implicittypes.o stringset.o
 
 ifeq ($(NEWAST),no)
   OBJS := import.o readsib.o writesib.o analysis.o \
@@ -103,7 +106,7 @@ ifeq ($(NEWAST),no)
 else
   OBJS := libmanager.o modulemanager.o libstat.o export.o \
           ccmanager.o libbuilder.o resolveall.o annotatenamespace.o \
-          usesymbols.o $(OBJS)
+          usesymbols.o prepareinline.o $(OBJS)
 endif
 
 all: $(OBJS)
