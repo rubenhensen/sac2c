@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.13  2000/07/12 15:53:36  nmw
+ * add generation of one big library file, including all neccessary object files
+ *
  * Revision 2.12  2000/07/05 15:34:11  nmw
  * compilation and generation of c-library added
  *
@@ -436,9 +439,7 @@ ProcessDependencies (deps *depends)
         } else {
             if (DEPS_STATUS (depends) == ST_sac) {
                 cnt += strlen (DEPS_NAME (depends)) + 3;
-            }
-
-            else {
+            } else if (DEPS_STATUS (depends) != ST_own) {
                 cnt += strlen (DEPS_LIBNAME (depends)) + 1;
             }
         }
@@ -590,8 +591,14 @@ CreateLibrary ()
         NOTE (("Creating c library \"lib%s.a\" and interface \"%s.h\"", modulename,
                modulename));
 
+        /*add object files to preproduced archive of included object files */
+        SystemCall ("%s %s/SAC_full.archive %s/*.o", config.ar_create, tmp_dirname,
+                    tmp_dirname);
+
         SystemCall ("%s %s/%s.h %s", config.move, tmp_dirname, modulename, targetdir);
-        SystemCall ("%s %s/lib%s.a %s", config.move, tmp_dirname, modulename, targetdir);
+
+        SystemCall ("%s %s/SAC_full.archive %s/lib%s.a", config.move, tmp_dirname,
+                    targetdir, modulename);
     }
 
     DBUG_VOID_RETURN;
@@ -708,6 +715,36 @@ InvokeCC ()
         }
 
     } else {
+        /* compiling for a library */
+
+        if (generatelibrary & GENERATELIBRARY_C) {
+            /* build up library file of all object files included in the several
+             * xxx.lib files.
+             * these files are extracted and archived again into SAC_full.archive
+             * this shell script has to be done before compiling to object files
+             * because it removes all extracted objectfiles from the archives
+             * in the tempdir!
+             */
+            NOTE (("collecting used sac-libraries...\n"))
+            SystemCall ("%s %s ;"
+                        "for archive in *.a ;"
+                        "  do ar -x $archive ;"
+                        "  for file in *.o ;"
+                        "    do %s $file \"$archive.$file\" ;"
+                        "  done ;"
+                        "  %s SAC_full.archive *.o ;"
+                        "  %s *.o ;"
+                        "done",
+                        config.chdir, tmp_dirname, config.move, config.ar_create,
+                        config.rmdir);
+
+            /* compile wrapper-file */
+            SystemCall ("%s %s %s %s -o %s/cwrapper.o -c %s/cwrapper.c", config.cc,
+                        config.ccflags, config.ccdir, opt_buffer, tmp_dirname,
+                        tmp_dirname);
+            NOTEDOT;
+        }
+
         if (linkstyle == 1) {
             SystemCall ("%s %s %s %s -o %s/%s.o -c %s/%s.c", config.cc, config.ccflags,
                         config.ccdir, opt_buffer, tmp_dirname, modulename, tmp_dirname,
@@ -725,14 +762,6 @@ InvokeCC ()
                 NOTEDOT;
             }
             NOTE (("\n"));
-        }
-
-        if (generatelibrary & GENERATELIBRARY_C) {
-            /* compile wrapper-file */
-            SystemCall ("%s %s %s %s -o %s/cwrapper.o -c %s/cwrapper.c", config.cc,
-                        config.ccflags, config.ccdir, opt_buffer, tmp_dirname,
-                        tmp_dirname);
-            NOTEDOT;
         }
     }
 
