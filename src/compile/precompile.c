@@ -1,5 +1,10 @@
 /*
  * $Log$
+ * Revision 2.12  2000/05/29 11:56:00  dkr
+ * fixed a bug in PREClet:
+ * AdjustFoldFundef() is called now *before* the traversal of the
+ * let-node is started.
+ *
  * Revision 2.11  2000/05/26 19:26:53  dkr
  * signature of AdjustFoldFundef modified
  *
@@ -447,7 +452,7 @@ RenameFun (node *fun)
 
     if (FUNDEF_MOD (fun) != NULL) {
         /*
-         *  These are SAC-functions which may be overloaded.
+         * These are SAC-functions which may be overloaded.
          */
 
         if (FUNDEF_STATUS (fun) == ST_spmdfun) {
@@ -496,7 +501,7 @@ RenameFun (node *fun)
     } else {
         if ((FUNDEF_PRAGMA (fun) != NULL) && (FUNDEF_LINKNAME (fun) != NULL)) {
             /*
-             *  These are C-functions with additional pragma 'linkname'.
+             * These are C-functions with additional pragma 'linkname'.
              */
 
             DBUG_PRINT ("PREC", ("renaming function %s to %s", FUNDEF_NAME (fun),
@@ -735,35 +740,39 @@ PRECfundef (node *arg_node, node *arg_info)
     int i;
 
     DBUG_ENTER ("PRECfundef");
+
     DBUG_PRINT ("PRECjhs", ("entering %s", FUNDEF_NAME (arg_node)));
 
     /*
-     *  The body of an imported inline function is removed.
+     * The body of an imported inline function is removed.
      */
-    /*  FUNDEF_ATTRIB is reused by multithread ... this here seems to be superfluous (?)
-        if problems occur we need another way to store ST_call_[rep|any|mt|st] (jhs)
-      if (((FUNDEF_STATUS(arg_node) == ST_imported_mod)
-           || (FUNDEF_STATUS(arg_node) == ST_imported_class))&&
-          (FUNDEF_ATTRIB(arg_node) != ST_generic) &&
-          (FUNDEF_BODY(arg_node) != NULL)) {
-        FUNDEF_BODY(arg_node) = FreeTree(FUNDEF_BODY(arg_node));
-        FUNDEF_RETURN(arg_node) = NULL;
-      }
-    */
+#if 0
+  /*
+   * FUNDEF_ATTRIB is reused by multithread ... this here seems to be superfluous (?)
+   * if problems occur we need another way to store ST_call_[rep|any|mt|st] (jhs)
+   */
+  if (((FUNDEF_STATUS(arg_node) == ST_imported_mod)
+       || (FUNDEF_STATUS(arg_node) == ST_imported_class)) &&
+      (FUNDEF_ATTRIB(arg_node) != ST_generic) &&
+      (FUNDEF_BODY(arg_node) != NULL)) {
+    FUNDEF_BODY(arg_node) = FreeTree(FUNDEF_BODY(arg_node));
+    FUNDEF_RETURN(arg_node) = NULL;
+  }
+#endif
 
     /*
-     *  The inline flag is set to 0
+     * unset inline flag
      */
     FUNDEF_INLINE (arg_node) = 0;
 
     /*
-     *  The function body is traversed in order to remove artificial return
-     *  values and parameters of function applications.
+     * The function body is traversed in order to remove artificial return
+     * values and parameters of function applications.
      */
     if (FUNDEF_BODY (arg_node) != NULL) {
-        DBUG_ASSERT ((FUNDEF_RETURN (arg_node) != NULL)
-                       && (NODE_TYPE (FUNDEF_RETURN (arg_node)) == N_return),
-                     ("N_fundef node has no reference to N_return node "));
+        DBUG_ASSERT (((FUNDEF_RETURN (arg_node) != NULL)
+                      && (NODE_TYPE (FUNDEF_RETURN (arg_node)) == N_return)),
+                     "N_fundef node has no reference to N_return node");
 
         /*
          * The reference checked above is actually not needed by the
@@ -774,18 +783,18 @@ PRECfundef (node *arg_node, node *arg_info)
     }
 
     /*
-     *  Now, traverse the following functions.
-     *  All function bodies must be traversed before arguments and
-     *  return values of functions are modified.
+     * Now, traverse the following functions.
+     * All function bodies must be traversed before arguments and
+     * return values of functions are modified.
      */
     if (FUNDEF_NEXT (arg_node) != NULL) {
         FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
     }
 
     /*
-     *  The function arguments are traversed, artificial arguments are removed
-     *  and the number of reference parameters (including global objects)
-     *  is counted and stored in 'cnt_artificial'
+     * The function arguments are traversed, artificial arguments are removed
+     * and the number of reference parameters (including global objects)
+     * is counted and stored in 'cnt_artificial'
      */
     INFO_PREC_CNT_ARTIFICIAL (arg_info) = 0;
     if (FUNDEF_ARGS (arg_node) != NULL) {
@@ -793,11 +802,11 @@ PRECfundef (node *arg_node, node *arg_info)
     }
 
     /*
-     *  All artificial return types are removed.
-     *  It is necessary to keep name, module name, status, and attrib
-     *  because in the real syntax tree these are stored within the types
-     *  structure and not as part of the fundef node as in the virtual
-     *  syntax tree.
+     * All artificial return types are removed.
+     * It is necessary to keep name, module name, status, and attrib
+     * because in the real syntax tree these are stored within the types
+     * structure and not as part of the fundef node as in the virtual
+     * syntax tree.
      */
     if (INFO_PREC_CNT_ARTIFICIAL (arg_info) > 0) {
         keep_name = FUNDEF_NAME (arg_node);
@@ -829,7 +838,6 @@ PRECfundef (node *arg_node, node *arg_info)
      * This is necessary because some local identifiers are removed while all
      * others are renamed.
      */
-
     if (FUNDEF_BODY (arg_node) != NULL) {
         FUNDEF_DFM_BASE (arg_node)
           = DFMUpdateMaskBaseAfterRenaming (FUNDEF_DFM_BASE (arg_node),
@@ -838,10 +846,10 @@ PRECfundef (node *arg_node, node *arg_info)
     }
 
     /*
-     *  The main function is extended by applications of the init functions
-     *  of all global objects.
-     *  All other functions are renamed in order to have separate name
-     *  spaces for different modules.
+     * The main function is extended by applications of the init functions
+     * of all global objects.
+     * All other functions are renamed in order to have separate name
+     * spaces for different modules.
      */
     if (strcmp (FUNDEF_NAME (arg_node), "main") == 0) {
         FUNDEF_BODY (arg_node) = InsertObjInits (FUNDEF_BODY (arg_node),
@@ -892,8 +900,8 @@ PRECarg (node *arg_node, node *arg_info)
         ARG_TYPESTRING (arg_node) = Type2String (ARG_TYPE (arg_node), 2);
         ARG_TYPE (arg_node) = RenameTypes (ARG_TYPE (arg_node));
         /*
-         *  ARG_TYPESTRING is only used for renaming functions, so the
-         *  type's actual name may be changed afterwards.
+         * ARG_TYPESTRING is only used for renaming functions, so the
+         * type's actual name may be changed afterwards.
          */
 
         if (ARG_ATTRIB (arg_node) == ST_readonly_reference) {
@@ -1022,28 +1030,26 @@ PREClet (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("PREClet");
 
-    LET_IDS (arg_node) = PrecompileIds (LET_IDS (arg_node));
+    /*
+     * Adjust definition of the pseudo fold-fun.
+     *
+     * Note: It is sufficient to take the CEXPR of the first code-node, because
+     *       in a fold with-loop all CEXPR-ids have the same name!
+     */
+    wl_ids = LET_IDS (arg_node);
+    wl_node = LET_EXPR (arg_node);
+    if ((NODE_TYPE (wl_node) == N_Nwith2)
+        && ((NWITH2_TYPE (wl_node) == WO_foldfun)
+            || (NWITH2_TYPE (wl_node) == WO_foldprf))) {
+        NWITH2_FUNDEF (wl_node) = AdjustFoldFundef (NWITH2_FUNDEF (wl_node), wl_ids,
+                                                    NCODE_CEXPR (NWITH2_CODE (wl_node)));
+    }
 
+    LET_IDS (arg_node) = PrecompileIds (LET_IDS (arg_node));
     LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
 
     if (LET_EXPR (arg_node) == NULL) {
         arg_node = FreeTree (arg_node);
-    } else {
-        wl_ids = LET_IDS (arg_node);
-        wl_node = LET_EXPR (arg_node);
-        if ((NODE_TYPE (wl_node) == N_Nwith2)
-            && ((NWITH2_TYPE (wl_node) == WO_foldfun)
-                || (NWITH2_TYPE (wl_node) == WO_foldprf))) {
-            /*
-             * Adjust definition of the pseudo fold-fun.
-             *
-             * Note: It is sufficient to take the CEXPR of the first code-node, because
-             *       in a fold with-loop all CEXPR-ids have the same name!
-             */
-            NWITH2_FUNDEF (wl_node)
-              = AdjustFoldFundef (NWITH2_FUNDEF (wl_node), wl_ids,
-                                  NCODE_CEXPR (NWITH2_CODE (wl_node)));
-        }
     }
 
     DBUG_RETURN (arg_node);
@@ -1134,16 +1140,16 @@ PRECexprs_return (node *ret_exprs, node *ret_node)
     if (ID_STATUS (EXPRS_EXPR (ret_exprs)) == ST_artificial) {
         if (ARG_STATUS (ID_VARDEC (EXPRS_EXPR (ret_exprs))) == ST_artificial) {
             /*
-             *  This artificial return value belongs to a global object,
-             *  so it can be removed.
+             * This artificial return value belongs to a global object,
+             * so it can be removed.
              */
 
             ret_exprs = FreeNode (ret_exprs);
         } else {
             /*
-             *  This artificial return value belongs to an original reference
-             *  parameter, so it is stored in RETURN_REFERENCE to be compiled
-             *  to an "inout" parameter.
+             * This artificial return value belongs to an original reference
+             * parameter, so it is stored in RETURN_REFERENCE to be compiled
+             * to an "inout" parameter.
              */
 
             tmp = ret_exprs;
@@ -1192,8 +1198,8 @@ PRECap (node *arg_node, node *arg_info)
                 if ((ID_REFCNT (arg_node) != -1)
                     && (!IsUnique (VARDEC_TYPE (ID_VARDEC (arg_node))))) {
                     /*
-                     *  The base type of the class is refcounted,
-                     *  so we have to make the boxed value unique.
+                     * The base type of the class is refcounted,
+                     * so we have to make the boxed value unique.
                      */
 
                     ID_MAKEUNIQUE (arg_node) = 1;
@@ -1203,8 +1209,8 @@ PRECap (node *arg_node, node *arg_info)
             }
         } else {
             /*
-             *  This must be a "from" function. So, the argument is of a class
-             *  type which implies that it is an identifier.
+             * This must be a "from" function. So, the argument is of a class
+             * type which implies that it is an identifier.
              */
 
             arg_node = RenameId (arg_node);
@@ -1421,7 +1427,7 @@ PRECcond (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PRECwith(node *arg_node, node *arg_info)
+ *   node *PRECwith( node *arg_node, node *arg_info)
  *
  * description:
  *   The compiler phase refcount unfortunately produces chains of identifiers
@@ -1464,19 +1470,16 @@ PRECNwith2 (node *arg_node, node *arg_info)
     DBUG_ENTER ("PRECNwith2");
 
     NWITH2_WITHID (arg_node) = Trav (NWITH2_WITHID (arg_node), arg_info);
-
     NWITH2_SEGS (arg_node) = Trav (NWITH2_SEGS (arg_node), arg_info);
-
     NWITH2_CODE (arg_node) = Trav (NWITH2_CODE (arg_node), arg_info);
-
     NWITH2_WITHOP (arg_node) = Trav (NWITH2_WITHOP (arg_node), arg_info);
 
     NWITH2_DEC_RC_IDS (arg_node) = PrecompileIds (NWITH2_DEC_RC_IDS (arg_node));
 
     /*
-     *  Since the scheduling specification may contain the names of local
-     *  identifiers, these have to be renamed according to the general renaming
-     *  scheme implemented by this compiler phase.
+     * Since the scheduling specification may contain the names of local
+     * identifiers, these have to be renamed according to the general renaming
+     * scheme implemented by this compiler phase.
      */
     if (NWITH2_SCHEDULING (arg_node) != NULL) {
         NWITH2_SCHEDULING (arg_node)
@@ -1489,7 +1492,7 @@ PRECNwith2 (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PRECNcode(node *arg_node, node *arg_info)
+ *   node *PRECNcode( node *arg_node, node *arg_info)
  *
  * description:
  *   The compiler phase refcount unfortunately produces chains of identifiers
@@ -1505,7 +1508,6 @@ PRECNcode (node *arg_node, node *arg_info)
     DBUG_ENTER ("PRECNcode");
 
     NCODE_CEXPR (arg_node) = Trav (NCODE_CEXPR (arg_node), arg_info);
-
     NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
 
     NCODE_INC_RC_IDS (arg_node) = PrecompileIds (NCODE_INC_RC_IDS (arg_node));
@@ -1520,7 +1522,7 @@ PRECNcode (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PRECsync(node *arg_node, node *arg_info)
+ *   node *PRECsync( node *arg_node, node *arg_info)
  *
  * description:
  *   Was used for renaming SYNC_SCHEDULE, since this has move to the
@@ -1604,7 +1606,7 @@ PRECWLsegVar (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *precompile(node *syntax_tree)
+ *   node *precompile( node *syntax_tree)
  *
  * description:
  *   prepares syntax tree for code generation.
