@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.8  1999/12/01 15:20:29  dkr
+ * oops, the DBUG_ASSERT in WLTRALet was too restrictiv ...
+ *
  * Revision 2.7  1999/12/01 14:14:09  dkr
  * DBUG_ASSERTs in function WLTRALet() added
  *
@@ -5691,9 +5694,10 @@ WLTRALet (node *arg_node, node *arg_info)
     tmp = INFO_WL_SHPSEG (arg_info);
 
     DBUG_ASSERT ((LET_VARDEC (arg_node) != NULL), "vardec of let-variable not found!");
-    DBUG_ASSERT ((NODE_TYPE (LET_VARDEC (arg_node)) == N_vardec),
+    DBUG_ASSERT (((NODE_TYPE (LET_VARDEC (arg_node)) == N_vardec)
+                  || (NODE_TYPE (LET_VARDEC (arg_node)) == N_arg)),
                  "vardec-node of let-variable has wrong type!");
-    INFO_WL_SHPSEG (arg_info) = VARDEC_SHPSEG (LET_VARDEC (arg_node));
+    INFO_WL_SHPSEG (arg_info) = VARDEC_OR_ARG_SHPSEG (LET_VARDEC (arg_node));
 
     LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
 
