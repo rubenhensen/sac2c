@@ -1,0 +1,94 @@
+/*
+ *
+ * $Log$
+ * Revision 1.1  2000/03/16 14:25:28  dkr
+ * Initial revision
+ *
+ *
+ */
+
+/*
+ * PH_initial and PH_final are required to be the first and last compiler phase,
+ * respectively!
+ */
+
+#ifndef PH_SELelement
+#define PH_SELelement(it_element)
+#endif
+
+#ifndef PH_SELtext
+#define PH_SELtext(it_text)
+#endif
+
+#ifndef PH_SELlac2fun
+#define PH_SELlac2fun(it_lac2fun)
+#endif
+
+#ifndef PH_SELfun2lac
+#define PH_SELfun2lac(it_fun2lac)
+#endif
+
+#define PH_SEL(it_element, it_text, it_lac2fun, it_fun2lac)                              \
+    PH_SELelement (it_element) PH_SELtext (it_text) PH_SELlac2fun (it_lac2fun)           \
+      PH_SELfun2lac (it_fun2lac)
+
+PH_SEL (PH_initial, "", 0, 0),
+
+  PH_SEL (PH_setup, "Setting up sac2c compiler environment", 0, 0),
+
+  PH_SEL (PH_scanparse, "Loading SAC program", 0, 0),
+
+  PH_SEL (PH_import, "Resolving imports from modules and classes", 0, 0),
+
+  PH_SEL (PH_readsib, "Checking required libraries", 0, 0),
+
+  PH_SEL (PH_objinit, "Generating generic types and functions", 0, 0),
+
+  PH_SEL (PH_flatten, "Simplifying source code", 0, 0),
+
+  PH_SEL (PH_typecheck, "Running type inference system", 0, 0),
+
+  PH_SEL (PH_checkdec, "Checking module/class declaration file", 0, 0),
+
+  PH_SEL (PH_impltype, "Resolving implicit types", 0, 0),
+
+  PH_SEL (PH_analysis, "Analysing functions and global objects", 0, 0),
+
+  PH_SEL (PH_writesib, "Generating SAC-Information-Block", 0, 0),
+
+  PH_SEL (PH_objects, "Resolving global objects and reference parameters", 0, 0),
+
+  PH_SEL (PH_uniquecheck, "Checking uniqueness property of objects", 0, 0),
+
+  PH_SEL (PH_rmvoidfun, "Generating purely functional code", 0, 0),
+
+  PH_SEL (PH_sacopt, "Running SAC optimizations", 0, 0),
+
+  PH_SEL (PH_psiopt, "Running PSI optimizations", 0, 0),
+
+  PH_SEL (PH_refcnt, "Running reference count inference system", 0, 0),
+
+  PH_SEL (PH_wltrans, "Transforming with-loop representation", 0, 0),
+
+  PH_SEL (PH_spmdregions, "Generating SPMD- and SYNC-regions", 0, 0),
+
+  PH_SEL (PH_precompile, "Preparing C code generation", 0, 0),
+
+  PH_SEL (PH_compile, "Generating C code", 0, 0),
+
+  PH_SEL (PH_genccode, "Creating C file", 0, 0),
+
+  PH_SEL (PH_invokecc, "Invoking C compiler", 0, 0),
+
+  PH_SEL (PH_createlib, "Creating SAC library", 0, 0),
+
+  PH_SEL (PH_writedeps, "Writing dependencies to stdout", 0, 0),
+
+  PH_SEL (PH_final, "Unknown compiler phase", 0, 0)
+
+#undef PH_SEL
+
+#undef PH_SELelement
+#undef PH_SELtext
+#undef PH_SELlac2fun
+#undef PH_SELfun2lac
