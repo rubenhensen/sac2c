@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.3  1999/10/20 13:28:31  sbs
+ * some minor brushing done.
+ *
  * Revision 1.2  1999/10/20 13:03:03  sbs
  * typo corrected
  *
@@ -21,11 +24,12 @@
  *
  * For avoiding un-intended pointer sharing and for avoiding memory leaks
  * we establish the following rules:
- * - whenever a shape is given as argument, neither the pointer to it nor
- *   any potential sub structure will be copied in any data structure
- *   that serves as a result!
+ * - whenever a shape is given as argument, it will be inspected only!
+ *   Neither the pointer to it nor any pointer to a sub structure will be
+ *   returned or used within a data structure that serves as a result!
  * - The only function for freeing a shape structure is SHFreeShape!
- * - If the result is a shape structure, it has been dynamically allocated!
+ * - If the result is a shape structure, it has been freshly allocated!
+ *
  */
 
 #include "dbug.h"
@@ -203,6 +207,8 @@ SHSetExtend (shape *shp, int dim, int val)
  *
  * description:
  *    appends two given shapes a and b into a new shape!
+ *    Note here that both argument shapes are read only! They are neither
+ *    used as part of the result, nor they are free'd.
  *
  ******************************************************************************/
 
@@ -235,9 +241,9 @@ SHAppendShapes (shape *a, shape *b)
  *    char * SHShape2String( int dots, shape *shp)
  *
  * description:
- *    generates a string representation of a shape. The argument "dots" alllows
+ *    generates a string representation of a shape. The argument "dots" allows
  *    some dots to be inserted into the vector representsation. e.g.
- *    SHSHape2String( 2, <2,3,4>)  =>  "[.,.,2,3,4]"
+ *    SHShape2String( 2, <2,3,4>)  =>  "[.,.,2,3,4]"
  *
  ******************************************************************************/
 

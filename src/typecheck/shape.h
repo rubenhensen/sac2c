@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.2  1999/10/20 13:29:22  sbs
+ * some minor brushing done.
+ *
  * Revision 1.1  1999/10/11 08:47:34  sbs
  * Initial revision
  *
@@ -15,11 +18,11 @@
  * module.
  * For avoiding un-intended pointer sharing and for avoiding memory leaks
  * we establish the following rules:
- * - whenever a shape is given as argument, neither the pointer to it nor
- *   any potential sub structure will be copied in any data structure
- *   that serves as a result!
+ * - whenever a shape is given as argument, it will be inspected only!
+ *   Neither the pointer to it nor any pointer to a sub structure will be
+ *   returned or used within a data structure that serves as a result!
  * - The only function for freeing a shape structure is SHFreeShape!
- * - If the result is a shape structure, it has been dynamically allocated!
+ * - If the result is a shape structure, it has been freshly allocated!
  *
  */
 
