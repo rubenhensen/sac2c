@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  1998/03/04 09:47:18  srs
+ * added support for new WL
+ *
  * Revision 1.10  1997/11/26 14:21:31  srs
  * removed use of old macros from acssass_macros.h
  *
@@ -990,6 +993,48 @@ UNSwith (node *arg_node, node *arg_info)
         DBUG_ASSERT ((FALSE), "Operator not implemented for with_node");
         break;
     }
+    LEVEL--;
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *UNSNwith(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   Unswitching for WLs is not don eyet. Just traverse into the bodies
+ *   of the WLs.
+ *
+ ******************************************************************************/
+
+node *
+UNSNwith (node *arg_node, node *arg_info)
+{
+    node *tmpn;
+
+    DBUG_ENTER ("UNSNwith");
+
+    LEVEL++;
+
+    /* traverse the N_Nwithop node */
+    NWITH_WITHOP (arg_node) = OPTTrav (NWITH_WITHOP (arg_node), arg_info, arg_node);
+
+    /* traverse all generators */
+    tmpn = NWITH_PART (arg_node);
+    while (tmpn) {
+        tmpn = OPTTrav (tmpn, arg_info, arg_node);
+        tmpn = NPART_NEXT (tmpn);
+    }
+
+    /* traverse bodies */
+    tmpn = NWITH_CODE (arg_node);
+    while (tmpn) {
+        tmpn = OPTTrav (tmpn, arg_info, arg_node);
+        tmpn = NCODE_NEXT (tmpn);
+    }
+
     LEVEL--;
 
     DBUG_RETURN (arg_node);

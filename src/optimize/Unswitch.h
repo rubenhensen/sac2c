@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  1998/03/04 09:47:31  srs
+ * added support for new WL
+ *
  * Revision 1.3  1995/07/12 15:23:01  asi
  * added UNSid and WhereUnswitch
  * pointers to varables definitions added
@@ -27,5 +30,6 @@ extern node *UNScond (node *arg_node, node *arg_info);
 extern node *UNSid (node *arg_node, node *arg_info);
 extern node *UNSlet (node *arg_node, node *arg_info);
 extern node *UNSassign (node *arg_node, node *arg_info);
+extern node *UNSNwith (node *arg_node, node *arg_info);
 
 #endif /* _Unswitch_h */
