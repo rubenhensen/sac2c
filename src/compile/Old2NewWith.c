@@ -114,9 +114,7 @@ O2Nwith (node *arg_node, node *arg_info)
         break;
     case N_modarray:
         new_withop = MakeNWithOp (WO_modarray);
-        NWITHOP_ARRAY (new_withop)
-          = MakeId (MODARRAY_ID (old_operator), NULL, ST_regular);
-        FreeArray (MODARRAY_ARRAY (old_operator), MODARRAY_ARRAY (old_operator));
+        NWITHOP_ARRAY (new_withop) = MODARRAY_ARRAY (old_operator);
         new_block = MODARRAY_BODY (old_operator);
 
         MODARRAY_ARRAY (old_operator) = NULL;
