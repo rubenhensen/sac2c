@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.19  1995/12/12 15:49:08  hw
+ * Revision 1.20  1995/12/13 17:32:37  asi
+ * added ASSIGN_INSTRTYPE
+ *
+ * Revision 1.19  1995/12/12  15:49:08  hw
  * added macros LET_NAME, LET_MOD, LET_STATUS
  *
  * Revision 1.18  1995/12/07  16:24:46  asi
@@ -865,6 +868,7 @@ extern void ObjList2ArgList (node *objdef);
 
 #define ASSIGN_DEFMASK(n) (ASSIGN_MASK (n, 0))
 #define ASSIGN_USEMASK(n) (ASSIGN_MASK (n, 1))
+#define ASSIGN_INSTRTYPE(n) (NODE_TYPE (ASSIGN_INSTR (n)))
 
 /*
  *
