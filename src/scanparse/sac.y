@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.87  1995/10/12 13:47:41  cg
+ * Revision 1.88  1995/10/12 14:21:02  cg
+ * module implementations with no functions will now be parsed
+ *
+ * Revision 1.87  1995/10/12  13:47:41  cg
  * bug in SIB-part fixed
  * now different name spaces for external and SAC-main-program items. The latter ones
  * are now prefixed "__SAC".
@@ -813,7 +816,7 @@ def4: fundefs { $$=MakeNode(N_modul);
                             mdb_nodetype[ $$->node[2]->nodetype ],
                             $$->node[2]));
               }
-    |         { $$=MakeNode(N_modul);
+    |         { $$=MakeNode(N_modul);  /* module impl with no functions */
                 $$->info.id=NULL;
                 $$->node[2]=NULL;
 
