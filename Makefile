@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.14  2001/02/22 14:46:10  sbs
+# cv2str.o added.
+#
 # Revision 3.13  2001/02/22 12:52:22  nmw
 # UndoSSATransform added
 #
@@ -179,7 +182,7 @@ TYPECHECK= src/typecheck/typecheck.o src/typecheck/prim_fun.o \
            src/typecheck/new_typecheck.o src/typecheck/new_types.o \
            src/typecheck/shape.o src/typecheck/user_types.o \
            src/typecheck/constants.o src/typecheck/cv2cv.o \
-           src/typecheck/cv2scalar.o
+           src/typecheck/cv2scalar.o src/typecheck/cv2str.o
 OPTIMIZE= src/optimize/optimize.o src/optimize/ConstantFolding.o \
           src/optimize/generatemasks.o src/optimize/DeadCodeRemoval.o \
           src/optimize/DeadFunctionRemoval.o src/optimize/freemasks.o \
