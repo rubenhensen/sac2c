@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.60  2000/03/20 18:43:32  dkr
+ * SYSWARN added for unbalanced indentation
+ *
  * Revision 2.59  2000/03/20 10:33:17  dkr
  * indentation of ICMs reactivated
  * WHY THE HELL IS THE OUTPUT OF THE PRINT MODUL CORRUPTED AFTER EACH
@@ -616,6 +619,8 @@ PrintBlock (node *arg_node, node *arg_info)
      * subsequent blocks of perhaps loops or conditionals.
      */
 
+    int old_indent = indent;
+
     DBUG_ENTER ("PrintBlock");
 
     DBUG_PRINT ("PRINT", ("%s " P_FORMAT, mdb_nodetype[NODE_TYPE (arg_node)], arg_node));
@@ -649,6 +654,14 @@ PrintBlock (node *arg_node, node *arg_info)
     indent--;
     INDENT;
     fprintf (outfile, "}");
+
+    if (indent != old_indent) {
+        SYSWARN (("Indentation unbalanced while printing a block in function %s."
+                  " Indentation at beginning of block: %i."
+                  " Indentation at end of block: %i",
+                  FUNDEF_NAME (INFO_PRINT_FUNDEF (arg_info)), old_indent, indent));
+        indent = old_indent;
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -1070,6 +1083,7 @@ PrintFundef (node *arg_node, node *arg_info)
                 DBUG_EXECUTE ("PRINT_FUNATR",
                               fprintf (outfile, "/* ATTRIB = %s */\n",
                                        mdb_statustype[FUNDEF_ATTRIB (arg_node)]););
+
                 if (FUNDEF_PRAGMA (arg_node) != NULL) {
                     Trav (FUNDEF_PRAGMA (arg_node), arg_info);
                 }
@@ -1113,6 +1127,7 @@ PrintFundef (node *arg_node, node *arg_info)
             DBUG_EXECUTE ("PRINT_FUNATR",
                           fprintf (outfile, "/* ATTRIB = %s */\n",
                                    mdb_statustype[FUNDEF_ATTRIB (arg_node)]););
+
             Trav (FUNDEF_BODY (arg_node), arg_info); /* traverse function body */
 
             if (FUNDEF_PRAGMA (arg_node) != NULL) {
@@ -1328,7 +1343,7 @@ PrintReturn (node *arg_node, node *arg_info)
     DBUG_ENTER ("PrintReturn");
 
     if (RETURN_EXPRS (arg_node) != NULL) {
-        if ((NODE_TYPE (arg_info) = N_info) && (compiler_phase == PH_genccode)
+        if ((NODE_TYPE (arg_info) == N_info) && (compiler_phase == PH_genccode)
             && (INFO_PRINT_FUNDEF (arg_info) != NULL)
             && (strcmp (FUNDEF_NAME (INFO_PRINT_FUNDEF (arg_info)), "main") == 0)) {
             GSCPrintMainEnd ();
