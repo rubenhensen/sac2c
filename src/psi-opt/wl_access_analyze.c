@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.15  2000/07/04 17:50:58  bs
+ * WLAAfundef modified (WLAA and TSI lifted on module level).
+ *
  * Revision 2.14  2000/05/26 14:24:54  sbs
  * restriction on N_fundef as sole entry point alleviated
  * Now, N_module is allowed as well.
@@ -136,7 +139,7 @@ WLAccessAnalyze (node *arg_node)
 
     arg_node = Trav (arg_node, arg_info);
 
-    FREE (arg_info);
+    arg_info = FreeInfo (arg_info, NULL);
     act_tab = tmp_tab;
 
     DBUG_RETURN (arg_node);
@@ -482,6 +485,11 @@ WLAAfundef (node *arg_node, node *arg_info)
          * Nodetype of FUNDEF_BODY(arg_node) is N_block.
          */
     }
+#if 1
+    if (FUNDEF_NEXT (arg_node) != NULL) {
+        FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+    }
+#endif
 
     DBUG_RETURN (arg_node);
 }
