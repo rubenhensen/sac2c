@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.23  1998/04/02 18:46:56  dkr
+ * added CompConc
+ *
  * Revision 1.22  1998/03/02 22:25:57  dkr
  * macros for new with-loop moved to tree_basic
  *
@@ -70,9 +73,9 @@
  *
  */
 
-#ifndef _compile_h
+#ifndef _sac_compile_h
 
-#define _compile_h
+#define _sac_compile_h
 
 extern node *Compile (node *arg_node);
 extern node *CompVardec (node *arg_node, node *arg_info);
@@ -83,8 +86,6 @@ extern node *CompArray (node *arg_node, node *arg_info);
 extern node *CompId (node *arg_node, node *arg_info);
 extern node *CompAp (node *arg_node, node *arg_info);
 extern node *CompReturn (node *arg_node, node *arg_info);
-extern node *CompWith (node *arg_node, node *arg_info);
-extern node *CompNwith2 (node *arg_node, node *arg_info);
 extern node *CompArg (node *arg_node, node *arg_info);
 extern node *CompFundef (node *arg_node, node *arg_info);
 extern node *CompLoop (node *arg_node, node *arg_info);
@@ -93,6 +94,9 @@ extern node *CompBlock (node *arg_node, node *arg_info);
 extern node *CompCast (node *arg_node, node *arg_info);
 extern node *CompTypedef (node *arg_node, node *arg_info);
 extern node *CompObjdef (node *arg_node, node *arg_info);
+extern node *CompWith (node *arg_node, node *arg_info);
+extern node *CompConc (node *arg_node, node *arg_info);
+extern node *CompNwith2 (node *arg_node, node *arg_info);
 
 /* and now some macros for creation of N_icms */
 
@@ -187,4 +191,4 @@ extern node *CompObjdef (node *arg_node, node *arg_info);
         } while (NULL != tmp);                                                           \
     }
 
-#endif /* _compile_h */
+#endif /* _sac_compile_h */
