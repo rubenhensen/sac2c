@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2001/01/29 16:08:51  dkr
+ * NameOrVal_Le() and NodeOrInt_Le() added
+ *
  * Revision 3.7  2001/01/24 23:34:42  dkr
  * NameOrVal_MakeIndex, NodeOrInt_MakeIndex added
  *
@@ -2754,7 +2757,8 @@ MakeWLsegX (int dims, node *contents, node *next)
 
 /***
  ***  N_WLstride :  *and*  N_WLstrideVar :  *and*
- ***  N_WLgrid :    *and*  N_WLgridVar :
+ ***  N_WLgrid :    *and*  N_WLgridVar :    *and*
+ ***  N_WLblock :   *and*  N_WLublock :
  ***/
 
 /******************************************************************************
@@ -2772,6 +2776,8 @@ void
 NodeOrInt_GetNameOrVal (char **ret_name, int *ret_val, nodetype nt, void *node_or_int)
 {
     DBUG_ENTER ("NodeOrInt_GetNameOrVal");
+
+    DBUG_ASSERT ((node_or_int != NULL), "no address found!");
 
     if (ret_name != NULL) {
         (*ret_name) = NULL;
@@ -2794,6 +2800,8 @@ NodeOrInt_GetNameOrVal (char **ret_name, int *ret_val, nodetype nt, void *node_o
         }
         break;
 
+    case N_WLblock:
+    case N_WLublock:
     case N_WLstride:
     case N_WLgrid:
         if (ret_val != NULL) {
@@ -3048,6 +3056,61 @@ NodeOrInt_StrEq (nodetype nt1, void *node_or_int1, char *name2)
 
     NodeOrInt_GetNameOrVal (&name1, &val1, nt1, node_or_int1);
     ret = NameOrVal_Eq (name1, val1, name2, IDX_OTHER);
+
+    DBUG_RETURN (ret);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   bool NameOrVal_Le( char *name1, int val1, char *name2, int val2)
+ *
+ * Description:
+ *   This function is used to compare two parameters of N_WLstride(Var)
+ *   or N_WLgrid(Var) nodes.
+ *
+ ******************************************************************************/
+
+bool
+NameOrVal_Le (char *name1, int val1, char *name2, int val2)
+{
+    bool ret;
+
+    DBUG_ENTER ("NameOrVal_Le");
+
+    ret = NameOrVal_Eq (name1, val1, name2, val2);
+    if ((val1 == 0) || (val2 == IDX_SHAPE)
+        || ((val2 > 0) && (val1 > 0) && (val1 < val2))) {
+        ret = TRUE;
+    }
+
+    DBUG_RETURN (ret);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   bool NodeOrInt_Le( nodetype nt1, void *node_or_int1,
+ *                      nodetype nt2, void *node_or_int2)
+ *
+ * Description:
+ *   This function is used to compare two parameters of N_WLstride(Var)
+ *   or N_WLgrid(Var) nodes.
+ *
+ ******************************************************************************/
+
+bool
+NodeOrInt_Le (nodetype nt1, void *node_or_int1, nodetype nt2, void *node_or_int2)
+{
+    char *name1, *name2;
+    int val1, val2;
+    bool ret;
+
+    DBUG_ENTER ("NodeOrInt_Le");
+
+    NodeOrInt_GetNameOrVal (&name1, &val1, nt1, node_or_int1);
+    NodeOrInt_GetNameOrVal (&name2, &val2, nt2, node_or_int2);
+    ret = NameOrVal_Le (name1, val1, name2, val2);
 
     DBUG_RETURN (ret);
 }
