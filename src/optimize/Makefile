@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.26  2002/06/07 17:16:42  mwe
+# AssociativeLaw.o added
+#
 # Revision 3.25  2002/06/06 19:56:03  dkr
 # target clean modified
 #
@@ -62,7 +65,7 @@ all: optimize.o generatemasks.o ConstantFolding.o DeadCodeRemoval.o \
      LoopInvariantRemoval.o Inline.o Unroll.o Unswitch.o CSE.o \
      WLUnroll.o DeadFunctionRemoval.o freemasks.o \
      SSADeadCodeRemoval.o SSACSE.o SSAConstantFolding.o SSALIR.o SSALUR.o \
-     rmcasts.o SSAInferLI.o
+     rmcasts.o SSAInferLI.o AssociativeLaw.o
 
 
 %.o: %.c
