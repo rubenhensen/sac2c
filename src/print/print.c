@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/03/15 14:19:19  bs
+ * Access macros renamed (take a look at tree_basic.h).
+ *
  * Revision 2.2  1999/03/09 11:21:23  bs
  * Debugging-information in PrintArray and PrintId added. Using the debug flag
  * "ARRAY_FLAT" the compact form of integer vectors will be printed.
@@ -216,11 +219,11 @@ DbugPrintArray (node *arg_node)
     int i, length, *intptr;
 
     if (NODE_TYPE (arg_node) == N_array) {
-        intptr = ARRAY_INTARRAY (arg_node);
-        length = ARRAY_LENGTH (arg_node);
+        intptr = ARRAY_INTVEC (arg_node);
+        length = ARRAY_VECLEN (arg_node);
     } else /* (NODE_TYPE(arg_node) == N_id) */ {
-        intptr = ID_CONSTARRAY (arg_node);
-        length = ID_ARRAYLENGTH (arg_node);
+        intptr = ID_INTVEC (arg_node);
+        length = ID_VECLEN (arg_node);
     }
 
     if ((intptr == NULL) || (length <= 1))
