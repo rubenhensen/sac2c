@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2005/01/07 19:54:13  cg
+ * Some streamlining done.
+ *
  * Revision 1.1  2005/01/07 16:48:21  cg
  * Initial revision
  *
@@ -324,7 +327,36 @@ CTIinstallInterruptHandlers ()
 
 /** <!--********************************************************************-->
  *
- * @fn void CTIerror( int line, const char *format, ...)
+ * @fn void CTIerror( const char *format, ...)
+ *
+ *   @brief  produces an error message without file name and line number.
+ *
+ *   @param format  format string like in printf
+ *
+ ******************************************************************************/
+
+void
+CTIerror (const char *format, ...)
+{
+    va_list arg_p;
+
+    DBUG_ENTER ("CTIerror");
+
+    va_start (arg_p, format);
+
+    fprintf (stderr, "\n");
+    PrintMessage ("ERROR: ", format, arg_p);
+
+    va_end (arg_p);
+
+    errors++;
+
+    DBUG_VOID_RETURN;
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn void CTIerrorLine( int line, const char *format, ...)
  *
  *   @brief  produces an error message preceded by file name and line number.
  *
@@ -335,14 +367,15 @@ CTIinstallInterruptHandlers ()
  ******************************************************************************/
 
 void
-CTIerror (int line, const char *format, ...)
+CTIerrorLine (int line, const char *format, ...)
 {
     va_list arg_p;
 
-    DBUG_ENTER ("CTIerror");
+    DBUG_ENTER ("CTIerrorLine");
 
     va_start (arg_p, format);
 
+    fprintf (stderr, "\n");
     fprintf (stderr, "ERROR: line %d  file: %s", line, global.filename);
     PrintMessage ("ERROR: ", format, arg_p);
 
@@ -355,20 +388,20 @@ CTIerror (int line, const char *format, ...)
 
 /** <!--********************************************************************-->
  *
- * @fn void CTIsyserror( const char *format, ...)
+ * @fn void CTIerrorContinued( const char *format, ...)
  *
- *   @brief  produces an error message without file name and line number.
+ *   @brief  continues an error message without file name and line number.
  *
  *   @param format  format string like in printf
  *
  ******************************************************************************/
 
 void
-CTIsyserror (const char *format, ...)
+CTIerrorContinued (const char *format, ...)
 {
     va_list arg_p;
 
-    DBUG_ENTER ("CTIsyserror");
+    DBUG_ENTER ("CTIerrorContinued");
 
     va_start (arg_p, format);
 
@@ -376,44 +409,12 @@ CTIsyserror (const char *format, ...)
 
     va_end (arg_p);
 
-    errors++;
-
     DBUG_VOID_RETURN;
 }
 
 /** <!--********************************************************************-->
  *
- * @fn void CTIabort( int line, const char *format, ...)
- *
- *   @brief   produces an error message preceded by file name and line number
- *            and terminates the compilation process.
- *
- *   @param line  line number
- *   @param format  format string like in printf
- *
- ******************************************************************************/
-
-void
-CTIabort (int line, const char *format, ...)
-{
-    va_list arg_p;
-
-    DBUG_ENTER ("CTIabort");
-
-    va_start (arg_p, format);
-
-    CTIerror (line, format, arg_p);
-
-    va_end (arg_p);
-
-    AbortCompilation ();
-
-    DBUG_VOID_RETURN;
-}
-
-/** <!--********************************************************************-->
- *
- * @fn void CTIsysabort( const char *format, ...)
+ * @fn void CTIabort( const char *format, ...)
  *
  *   @brief   produces an error message without file name and line number
  *            and terminates the compilation process.
@@ -424,15 +425,45 @@ CTIabort (int line, const char *format, ...)
  ******************************************************************************/
 
 void
-CTIsysabort (const char *format, ...)
+CTIabort (const char *format, ...)
 {
     va_list arg_p;
 
-    DBUG_ENTER ("CTIsysabort");
+    DBUG_ENTER ("CTIabort");
 
     va_start (arg_p, format);
 
-    CTIsyserror (format, arg_p);
+    CTIerror (format, arg_p);
+
+    va_end (arg_p);
+
+    AbortCompilation ();
+
+    DBUG_VOID_RETURN;
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn void CTIabortLine( int line, const char *format, ...)
+ *
+ *   @brief   produces an error message preceded by file name and line number
+ *            and terminates the compilation process.
+ *
+ *   @param line  line number
+ *   @param format  format string like in printf
+ *
+ ******************************************************************************/
+
+void
+CTIabortLine (int line, const char *format, ...)
+{
+    va_list arg_p;
+
+    DBUG_ENTER ("CTIabortLine");
+
+    va_start (arg_p, format);
+
+    CTIerrorLine (line, format, arg_p);
 
     va_end (arg_p);
 
@@ -463,7 +494,7 @@ CTIabortOnError ()
 
 /** <!--********************************************************************-->
  *
- * @fn void CTIwarning( int line, const char *format, ...)
+ * @fn void CTIwarnLine( int line, const char *format, ...)
  *
  *   @brief   produces a warning message preceded by file name and line number.
  *
@@ -473,13 +504,13 @@ CTIabortOnError ()
  ******************************************************************************/
 
 void
-CTIwarning (int line, const char *format, ...)
+CTIwarnLine (int line, const char *format, ...)
 {
     va_list arg_p;
 
-    DBUG_ENTER ("CTIwarning");
+    DBUG_ENTER ("CTIwarnLine");
 
-    if (global.verbose_level > 0) {
+    if (global.verbose_level >= 1) {
         va_start (arg_p, format);
 
         fprintf (stderr, "WARNING: line %d  file: %s", line, global.filename);
@@ -495,7 +526,7 @@ CTIwarning (int line, const char *format, ...)
 
 /** <!--********************************************************************-->
  *
- * @fn void CTIsyswarning( const char *format, ...)
+ * @fn void CTIwarn( const char *format, ...)
  *
  *   @brief   produces a warning message without file name and line number.
  *
@@ -504,13 +535,13 @@ CTIwarning (int line, const char *format, ...)
  ******************************************************************************/
 
 void
-CTIsyswarning (const char *format, ...)
+CTIwarn (const char *format, ...)
 {
     va_list arg_p;
 
-    DBUG_ENTER ("CTIsyswarning");
+    DBUG_ENTER ("CTIwarn");
 
-    if (global.verbose_level > 0) {
+    if (global.verbose_level >= 1) {
         va_start (arg_p, format);
 
         PrintMessage ("WARNING: ", format, arg_p);
@@ -518,6 +549,34 @@ CTIsyswarning (const char *format, ...)
         va_end (arg_p);
 
         warnings++;
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn void CTIstate( const char *format, ...)
+ *
+ *   @brief  produces full compile time information output (verbose level 3)
+ *
+ *   @param format  format string like in printf
+ *
+ ******************************************************************************/
+
+void
+CTIstate (const char *format, ...)
+{
+    va_list arg_p;
+
+    DBUG_ENTER ("CTIstate");
+
+    if (global.verbose_level >= 2) {
+        va_start (arg_p, format);
+
+        PrintMessage ("  ", format, arg_p);
+
+        va_end (arg_p);
     }
 
     DBUG_VOID_RETURN;
@@ -540,38 +599,10 @@ CTInote (const char *format, ...)
 
     DBUG_ENTER ("CTInote");
 
-    if (global.verbose_level > 1) {
+    if (global.verbose_level >= 3) {
         va_start (arg_p, format);
 
         PrintMessage ("", format, arg_p);
-
-        va_end (arg_p);
-    }
-
-    DBUG_VOID_RETURN;
-}
-
-/** <!--********************************************************************-->
- *
- * @fn void CTItell( const char *format, ...)
- *
- *   @brief  produces full compile time information output (verbose level 3)
- *
- *   @param format  format string like in printf
- *
- ******************************************************************************/
-
-void
-CTItell (const char *format, ...)
-{
-    va_list arg_p;
-
-    DBUG_ENTER ("CTItell");
-
-    if (global.verbose_level > 2) {
-        va_start (arg_p, format);
-
-        PrintMessage ("  ", format, arg_p);
 
         va_end (arg_p);
     }

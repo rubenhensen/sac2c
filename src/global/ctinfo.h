@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2005/01/07 19:54:13  cg
+ * Some streamlining done.
+ *
  * Revision 1.1  2005/01/07 16:48:36  cg
  * Initial revision
  *
@@ -11,7 +14,7 @@
  *
  * @file
  *
- * header file
+ * header file for ctinfo.c
  *
  */
 
@@ -19,14 +22,15 @@
 #define _SAC_CTINFO_H_
 
 extern void CTIinstallInterruptHandlers ();
-extern void CTIerror (int line, const char *format, ...);
-extern void CTIsyserror (const char *format, ...);
-extern void CTIabort (int line, const char *format, ...);
-extern void CTIsysabort (const char *format, ...);
+extern void CTIerror (const char *format, ...);
+extern void CTIerrorLine (int line, const char *format, ...);
+extern void CTIerrorContinued (const char *format, ...);
+extern void CTIabort (const char *format, ...);
+extern void CTIabortLine (int line, const char *format, ...);
 extern void CTIabortOnError ();
-extern void CTIwarning (int line, const char *format, ...);
-extern void CTIsyswarning (const char *format, ...);
+extern void CTIwarn (const char *format, ...);
+extern void CTIwarnLine (int line, const char *format, ...);
+extern void CTIstate (const char *format, ...);
 extern void CTInote (const char *format, ...);
-extern void CTItell (const char *format, ...);
 
 #endif /* _SAC_CTINFO_H_ */
