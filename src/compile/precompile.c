@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.76  1998/11/08 14:31:15  dkr
+ * PRECNcode:
+ *   NCODE_CBLOCK should be never NULL
+ *   (if so, we will get an assert now :-)
+ *
  * Revision 1.75  1998/08/07 16:06:13  dkr
  * PRECWLsegVar added
  *
@@ -1528,9 +1533,6 @@ PRECNwith2 (node *arg_node, node *arg_info)
  *   These must be renamed in addition to those identifiers that are "really"
  *   part of the code.
  *
- *
- *
- *
  ******************************************************************************/
 
 node *
@@ -1540,9 +1542,7 @@ PRECNcode (node *arg_node, node *arg_info)
 
     NCODE_CEXPR (arg_node) = Trav (NCODE_CEXPR (arg_node), arg_info);
 
-    if (NCODE_CBLOCK (arg_node) != NULL) {
-        NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
-    }
+    NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
 
     NCODE_INC_RC_IDS (arg_node) = PrecompileIds (NCODE_INC_RC_IDS (arg_node));
 
