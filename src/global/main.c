@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.32  2004/02/23 12:59:21  cg
+ * Added include of ssa.h to avoid compiler warnings after usage
+ * of DoSSA/UndoSSA functions.
+ *
  * Revision 3.31  2004/02/09 19:27:54  skt
  * SSA-Transformation for mtmode 3 added
  *
@@ -122,6 +126,7 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "internal_lib.h"
+#include "ssa.h"
 #include "free.h"
 #include "my_debug.h"
 #include "DupTree.h"
