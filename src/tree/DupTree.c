@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.31  2000/07/14 13:44:04  dkr
+ * DupModul and DupImplist added
+ * fixed a bug in DupFundef
+ *
  * Revision 1.30  2000/07/14 10:10:49  dkr
  * CopyNodelist() moved from tree_compound.c to DupTree.c and renamed into
  *   DupNodelist().
@@ -595,8 +599,11 @@ DupTypes (types *source)
             TYPES_BASETYPE (tmp) = TYPES_BASETYPE (source);
             if ((TYPES_DIM (source) > 0) && (TYPES_SHPSEG (source) != NULL)) {
                 DBUG_ASSERT ((source->dim <= SHP_SEG_SIZE), "dimension out of range");
+
                 tmp->shpseg = (shpseg *)MALLOC (sizeof (shpseg));
-                DBUG_ASSERT ((NULL != source->shpseg), "types-structur without shpseg");
+
+                DBUG_ASSERT ((source->shpseg != NULL), "types-structur without shpseg");
+
                 for (i = 0; i < source->dim; i++) {
                     tmp->shpseg->shp[i] = source->shpseg->shp[i];
                 }
@@ -615,13 +622,13 @@ DupTypes (types *source)
                                  source->name));
 
             /*
-             *  Sharing of module names is common throughout sac2c,
-             *  so we can do it here as well.
+             * Sharing of module names is common throughout sac2c,
+             * so we can do it here as well.
              */
-
             tmp->id_mod = source->id_mod;
             tmp->name_mod = source->name_mod;
             tmp->id_cmod = source->id_cmod;
+
             tmp->attrib = source->attrib;
             tmp->status = source->status;
             TYPES_TDEF (tmp) = TYPES_TDEF (source);
@@ -900,6 +907,34 @@ DupReturn (node *arg_node, node *arg_info)
 /******************************************************************************/
 
 node *
+DupModul (node *arg_node, node *arg_info)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DupModul");
+
+    new_node
+      = MakeModul (StringCopy (MODUL_NAME (arg_node)), MODUL_FILETYPE (arg_node),
+                   DUPTRAV (MODUL_IMPORTS (arg_node)), DUPTRAV (MODUL_TYPES (arg_node)),
+                   DUPTRAV (MODUL_OBJS (arg_node)), DUPTRAV (MODUL_FUNS (arg_node)));
+
+    MODUL_CLASSTYPE (new_node) = DupTypes (MODUL_CLASSTYPE (arg_node));
+
+#if 0
+  MODUL_DECL( new_node) = ???
+  MODUL_STORE_IMPORTS( new_node) = ???
+  MODUL_FOLDFUNS( new_node) = ???
+#endif
+
+    NODE_LINE (new_node) = NODE_LINE (arg_node);
+    NODE_FILE (new_node) = NODE_FILE (arg_node);
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************/
+
+node *
 DupFundef (node *arg_node, node *arg_info)
 {
     node *new_node, *old_fundef;
@@ -939,7 +974,7 @@ DupFundef (node *arg_node, node *arg_info)
 
     /* store new DFMbase */
     FUNDEF_DFM_BASE (new_node)
-      = SearchInLUT (INFO_DUP_LUT (arg_info), FUNDEF_DFM_BASE (arg_info));
+      = SearchInLUT (INFO_DUP_LUT (arg_info), FUNDEF_DFM_BASE (arg_node));
 
     /* now we copy all the other things ... */
     FUNDEF_LINKMOD (new_node) = StringCopy (FUNDEF_LINKMOD (arg_node));
@@ -1084,6 +1119,28 @@ DupObjdef (node *arg_node, node *arg_info)
   OBJDEF_NEEDOBJS( new_node) = ???;
   OBJDEC_DEF( new_node) = ???;
 #endif
+
+    NODE_LINE (new_node) = NODE_LINE (arg_node);
+    NODE_FILE (new_node) = NODE_FILE (arg_node);
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************/
+
+node *
+DupImplist (node *arg_node, node *arg_info)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DupImplist");
+
+    new_node = MakeImplist (StringCopy (IMPLIST_NAME (arg_node)),
+                            DupIds (IMPLIST_ITYPES (arg_node), arg_info),
+                            DupIds (IMPLIST_ETYPES (arg_node), arg_info),
+                            DupIds (IMPLIST_OBJS (arg_node), arg_info),
+                            DupIds (IMPLIST_FUNS (arg_node), arg_info),
+                            DUPCONT (IMPLIST_NEXT (arg_node)));
 
     NODE_LINE (new_node) = NODE_LINE (arg_node);
     NODE_FILE (new_node) = NODE_FILE (arg_node);
