@@ -1,5 +1,4 @@
 Makefile
-blocks_init.h
 multithread.c
 multithread.h
 multithread_lib.c
