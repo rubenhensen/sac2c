@@ -1,6 +1,9 @@
 /*
  * $Log$
- * Revision 1.7  1995/03/28 12:17:27  hw
+ * Revision 1.8  1995/04/13 10:00:22  hw
+ * changed typecheck of primitive function cat ( types *Cat(..) )
+ *
+ * Revision 1.7  1995/03/28  12:17:27  hw
  * internal_lib.h included
  *
  * Revision 1.6  1995/03/08  14:03:54  hw
@@ -728,7 +731,7 @@ Cat (node *s_node, types *array1, types *array2)
         dim2 = array2->dim;
         axis = s_node->info.cint;
 
-        if ((0 < axis) && (axis <= dim1) && (dim1 == dim2)) {
+        if ((0 <= axis) && (axis < dim1) && (dim1 == dim2)) {
             for (i = 0; i < dim1; i++)
                 if (i != axis)
                     if (array1->shpseg->shp[i] != array2->shpseg->shp[i]) {
