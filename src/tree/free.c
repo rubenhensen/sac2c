@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.58  2004/05/17 09:37:55  mwe
+ * ARRAY_NTYPE adjusted
+ *
  * Revision 3.57  2004/05/14 13:32:26  mwe
  * ARRAY_NTYPE added
  *
@@ -1516,7 +1519,7 @@ FreeArray (node *arg_node, node *arg_info)
     }
 
     if (ARRAY_NTYPE (arg_node) != NULL) {
-        ARRAY_NTYPE (arg_node) = TYFreeType (arg_node);
+        ARRAY_NTYPE (arg_node) = TYFreeType (ARRAY_NTYPE (arg_node));
     }
 
     if (ARRAY_ISCONST (arg_node) && (ARRAY_VECLEN (arg_node) > 0)) {
