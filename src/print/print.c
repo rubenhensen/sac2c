@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.216  1998/05/08 00:46:46  dkr
+ * added N_Nwithid in PrintNodeTree()
+ *
  * Revision 1.215  1998/05/07 20:46:43  dkr
  * added output for RCs in PrintNodeTree
  *
@@ -3023,6 +3026,10 @@ PrintNodeTree (node *node)
             break;
         case N_fundef:
             fprintf (outfile, "(%s)\n", FUNDEF_NAME (node));
+            break;
+        case N_Nwithid:
+            fprintf (outfile, "(%s:%d)\n", IDS_NAME (NWITHID_VEC (node)),
+                     IDS_REFCNT (NWITHID_VEC (node)));
             break;
         case N_Npart:
             if (NPART_CODE (node) != NULL) {
