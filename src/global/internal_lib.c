@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.33  2003/03/24 16:36:16  sbs
+ * CreateCppCallString added.
+ *
  * Revision 3.32  2003/03/20 20:48:18  sah
  * DbugMemoryLeakCheck only works
  * if SHOW_MALLOC is set, as it
@@ -754,6 +757,48 @@ SystemTest (char *format, ...)
     DBUG_PRINT ("SYSCALL", ("test returns %d", exit_code));
 
     DBUG_RETURN (exit_code);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   void CreateCppCallString( char *file, char *cccallstr)
+ *
+ * Description:
+ *   Checks whether the given filename is empty, i.e., we are reading from
+ *   stdin, and generates a system call string in the buffer provided by
+ *   cccallstr.
+ *
+ ******************************************************************************/
+
+void
+CreateCppCallString (char *file, char *cccallstr)
+{
+    int i;
+
+    DBUG_ENTER ("CppCallString");
+
+    if (file[0] == '\0') { /*we are reading from stdin! */
+        strcpy (cccallstr, config.cpp_stdin);
+    } else {
+        strcpy (cccallstr, config.cpp_file);
+    }
+    for (i = 0; i < num_cpp_vars; i++) {
+        strcat (cccallstr, " ");
+        strcat (cccallstr, config.opt_D);
+        strcat (cccallstr, cppvars[i]);
+    }
+    for (i = 0; i < num_cpp_incs; i++) {
+        strcat (cccallstr, " ");
+        strcat (cccallstr, config.opt_I);
+        strcat (cccallstr, cppincs[i]);
+    }
+    if (file[0] != '\0') {
+        strcat (cccallstr, " ");
+        strcat (cccallstr, file);
+    }
+
+    DBUG_VOID_RETURN;
 }
 
 /******************************************************************************

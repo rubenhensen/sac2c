@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.23  2003/03/24 16:36:16  sbs
+ * CreateCppCallString added.
+ *
  * Revision 3.22  2003/03/20 23:24:50  sah
  * NEED_0X_PREFIX renamed to NEED_PTR_PREFIX
  *
@@ -156,6 +159,8 @@ extern char *itoa (long number);
 extern void SystemCall (char *format, ...);
 extern int SystemCall2 (char *format, ...);
 extern int SystemTest (char *format, ...);
+
+extern void CreateCppCallString (char *file, char *cccallstr);
 
 extern char *PrefixForTmpVar (void);
 extern char *TmpVar (void);
