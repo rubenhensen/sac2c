@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2001/11/19 15:32:13  sbs
+ * fixed some wrong comments concerning access macros 8-((
+ *
  * Revision 3.4  2001/05/17 13:41:26  nmw
  * MALLOC/FREE replaced by Malloc/Free, using result of Free()
  *
@@ -101,12 +104,12 @@
  *
  *   The following access macros are defined for the info-node:
  *
- *      INFO_TSI_ACCESSCNT(n)             (n->counter)
- *      INFO_TSI_ARRAYDIM(n)              (n->varno)
- *      INFO_TSI_ARRAYSHP(n)    ((shpseg*)(n->node[0]))
- *      INFO_TSI_TILESHP(n)     ((shpseg*)(n->node[1]))
- *      INFO_TSI_CACHEPAR(n)       ((int*)(n->node[2]))
- *      INFO_TSI_WLARRAY(n)               (n->node[3])
+ *      INFO_TSI_ACCESSCNT(n)
+ *      INFO_TSI_ARRAYDIM(n)                 (see tree_compound.h)
+ *      INFO_TSI_ARRAYSHP(n)                 (see tree_compound.h)
+ *      INFO_TSI_TILESHP(n)
+ *      INFO_TSI_CACHEPAR(n)
+ *      INFO_TSI_WLARRAY(n)
  *
  *****************************************************************************/
 
