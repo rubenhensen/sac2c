@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.31  1996/02/21 18:01:33  cg
+ * Revision 1.32  1996/04/02 13:47:24  cg
+ * scanparse converted to new strings: key word string removed
+ *
+ * Revision 1.31  1996/02/21  18:01:33  cg
  * now, special characters such as '\n' or '\0' are accepted
  *
  * Revision 1.30  1996/02/08  18:05:21  hw
@@ -299,7 +302,6 @@ int start_token;
 "int"				{FILTER( TYPE_INT );}
 "float"				{FILTER( TYPE_FLOAT );}
 "bool"				{FILTER( TYPE_BOOL );}
-"string"			{FILTER( TYPE_STR );}
 "unsigned" 		        {FILTER( TYPE_UNS );}
 "short"             		{FILTER( TYPE_SHORT );}
 "long"    		        {FILTER( TYPE_LONG );}
