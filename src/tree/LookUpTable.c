@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2001/04/04 14:55:09  sbs
+ * pointer casted into long rather than int
+ * (for generating hash-keys). This pleases
+ * SUN LINUX and ALPHA as well 8-)
+ *
  * Revision 3.7  2001/03/23 17:59:48  dkr
  * functions UpdateLUT_? added
  * DBUG-string LUT_CHECK added
@@ -190,7 +195,7 @@ GetHashKey_Pointer (void *data)
      * hash key: bits 11 .. 4
      *  ->  0 <= key < 2^8
      */
-    hash_key = (((int)data) & 0xff0) >> 4;
+    hash_key = (((long)data) & 0xff0) >> 4;
 
     DBUG_ASSERT (((hash_key >= 0) && (hash_key < (HASH_KEYS_POINTER))),
                  "hash key for pointers out of bounds!");
