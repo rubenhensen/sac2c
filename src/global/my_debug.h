@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.6  1994/12/30 16:57:01  sbs
+ * Revision 1.7  1995/12/28 10:32:52  cg
+ * added declarations for malloc_debug and malloc_verify
+ *
+ * Revision 1.6  1994/12/30  16:57:01  sbs
  * commented out #ifndef DBUG_OFF
  *
  * Revision 1.5  1994/12/21  11:33:29  hw
@@ -30,6 +33,9 @@ extern char *mdb_nodetype[];
 extern char *mdb_prf[];
 
 extern char *mdb_type[];
+
+extern int malloc_debug (int);
+extern int malloc_verify ();
 
 #define P_FORMAT "(%06x)" /* formatstring for pointer address */
 
