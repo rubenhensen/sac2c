@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  1997/11/07 14:44:48  dkr
+ * eliminated another nnode
+ *
  * Revision 1.9  1997/04/25 14:23:48  sbs
  * OIobjdef: pragma is deleted (FreeNode) iff it is != NULL !
  *
@@ -189,9 +192,9 @@ OIobjdef (node *arg_node, node *arg_info)
         new_node = MakeExprs (OBJDEF_EXPR (arg_node), NULL);
         NODE_LINE (new_node) = NODE_LINE (OBJDEF_EXPR (arg_node));
 
-        /*------------------------------------------------------------------*/
+#ifndef NEWTREE
         new_node->nnode = 1;
-        /*------------------------------------------------------------------*/
+#endif
 
         new_node = MakeReturn (new_node);
         NODE_LINE (new_node) = NODE_LINE (OBJDEF_EXPR (arg_node));
@@ -199,24 +202,24 @@ OIobjdef (node *arg_node, node *arg_info)
         new_node = MakeAssign (new_node, NULL);
         NODE_LINE (new_node) = NODE_LINE (OBJDEF_EXPR (arg_node));
 
-        /*------------------------------------------------------------------*/
+#ifndef NEWTREE
         new_node->nnode = 1;
-        /*------------------------------------------------------------------*/
+#endif
 
         new_node = MakeBlock (new_node, NULL);
         NODE_LINE (new_node) = NODE_LINE (OBJDEF_EXPR (arg_node));
 
-        /*------------------------------------------------------------------*/
+#ifndef NEWTREE
         new_node->nnode = 1;
-        /*------------------------------------------------------------------*/
+#endif
 
         new_node = MakeFundef (new_fun_name, OBJDEF_MOD (arg_node), new_fun_type, NULL,
                                new_node, MODUL_FUNS (arg_info));
         NODE_LINE (new_node) = NODE_LINE (OBJDEF_EXPR (arg_node));
 
-        /*------------------------------------------------------------------*/
+#ifndef NEWTREE
         new_node->nnode = (MODUL_FUNS (arg_info) == NULL) ? 1 : 2;
-        /*------------------------------------------------------------------*/
+#endif
 
         FUNDEF_STATUS (new_node) = ST_objinitfun;
 
@@ -258,11 +261,9 @@ OIobjdef (node *arg_node, node *arg_info)
         new_node = MakeFundef (new_fun_name, OBJDEF_MOD (arg_node), new_fun_type, NULL,
                                NULL, MODUL_FUNS (arg_info));
 
-        /*------------------------------------------------------------------*/
 #ifndef NEWTREE
         new_node->nnode = (MODUL_FUNS (arg_info) == NULL) ? 1 : 2;
 #endif
-        /*------------------------------------------------------------------*/
 
         FUNDEF_STATUS (new_node) = ST_imported;
 

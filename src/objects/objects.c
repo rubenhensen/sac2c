@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.16  1997/11/07 14:46:17  dkr
+ * eliminated another nnode
+ *
  * Revision 1.15  1997/03/18 14:43:08  cg
  * The attribute of N_id nodes is now set correctly:
  * ST_regular, ST_global, ST_reference, ST_readonly_reference
@@ -366,12 +369,14 @@ OBJfundef (node *arg_node, node *arg_info)
         NODE_LINE (new_arg) = NODE_LINE (arg_node);
         ARG_OBJDEF (new_arg) = obj;
 
+#ifndef NEWTREE
         /*-------------------------------------------------------------*/
         if (FUNDEF_ARGS (arg_node) == NULL) {
             arg_node->nnode += 1;
             new_arg->nnode = 0;
         }
         /*-------------------------------------------------------------*/
+#endif
 
         FUNDEF_ARGS (arg_node) = new_arg;
         OBJDEF_ARG (obj) = new_arg;
@@ -519,12 +524,14 @@ OBJarg (node *arg_node, node *arg_info)
             new_return_expr = MakeExprs (new_return_expr, RETURN_EXPRS (ret));
             NODE_LINE (new_return_expr) = NODE_LINE (ret);
 
+#ifndef NEWTREE
             /*-------------------------------------------------------------*/
             if (RETURN_EXPRS (ret) == NULL) {
                 ret->nnode += 1;
                 new_return_expr->nnode = 1;
             }
             /*-------------------------------------------------------------*/
+#endif
 
             RETURN_EXPRS (ret) = new_return_expr;
         }
@@ -600,12 +607,14 @@ OBJap (node *arg_node, node *arg_info)
 
         new_arg = MakeExprs (new_arg, AP_ARGS (arg_node));
 
+#ifndef NEWTREE
         /*-------------------------------------------------------------*/
         if (AP_ARGS (arg_node) == NULL) {
             arg_node->nnode += 1;
             new_arg->nnode = 1;
         }
         /*-------------------------------------------------------------*/
+#endif
 
         AP_ARGS (arg_node) = new_arg;
 

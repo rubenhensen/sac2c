@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.50  1997/11/07 14:41:54  dkr
+ * eliminated another nnode
+ *
  * Revision 1.49  1997/11/07 12:28:12  srs
  * NEWTREE: nnode is ignored
  *
@@ -1723,8 +1726,10 @@ ImportSymbol (int symbtype, char *name, mod *mod, node *modul)
         tmpdef = tmp2def->node[next]; /* neu neu, war node[0] */
         tmp2def->node[next] = tmpdef->node[next];
 
+#ifndef NEWTREE
         if (tmp2def->node[next] == NULL)
             tmp2def->nnode--;
+#endif
     }
 
     /* tmpdef points on the def which is to be inserted */
