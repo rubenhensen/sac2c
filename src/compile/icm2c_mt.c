@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2001/03/15 10:24:38  dkr
+ * icm SAC_MT_ADJUST_SCHEDULER_OFFSET renamed into
+ * SAC_MT_ADJUST_SCHEDULER__OFFSET
+ *
  * Revision 3.5  2001/03/14 16:25:09  dkr
  * signature (parameter types) of icm MT_ADJUST_SCHEDULER modified
  *
@@ -1328,7 +1332,7 @@ ICMCompileMT_ADJUST_SCHEDULER (int current_dim, int array_dim, char *lower, char
     INDENT;
     fprintf (outfile, "SAC_MT_ADJUST_SCHEDULER");
     if (adjust_offset) {
-        fprintf (outfile, "_OFFSET");
+        fprintf (outfile, "__OFFSET");
     }
     fprintf (outfile, "(%s, %d, %d, %d, %d, (", array, current_dim, lower, upper,
              unrolling);
