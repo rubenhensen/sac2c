@@ -32,3 +32,4 @@ config
 tools/src/code_beautifier
 tools/src/icm_tester
 src/tree/xml
+src/xml
