@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.79  1998/05/05 12:17:52  dkr
+# added cc-flag -erroff=E_CAST_DOESNT_YIELD_LVALUE
+#
 # Revision 1.78  1998/05/03 14:02:57  dkr
 # added icm2c_wl.o (compile)
 #
@@ -236,7 +239,7 @@
 # CC=gcc -ansi -Wall -pedantic -g 
 #
 # -pedantic switched off to avoid those disgusting warnings about
-# casts in lvalues.
+# casts in lvalues (-erroff=E_CAST_DOESNT_YIELD_LVALUE for cc)
 #
 # The switch __EXTENSIONS__ must be set under Solaris in order to avoid warnings
 # when using non-ANSI-compliant functions.
@@ -246,7 +249,7 @@
 CC        := gcc
 
 gcc_FLAGS := -ansi -Wall 
-cc_FLAGS  := -xsb
+cc_FLAGS  := -xsb -erroff=E_CAST_DOESNT_YIELD_LVALUE
 
 CCFLAGS :=$($(CC)_FLAGS) -g
 
