@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2001/05/17 11:39:27  dkr
+ * InitDupTree() added
+ *
  * Revision 3.13  2001/05/17 08:27:41  sbs
  * PHASE_EPILOG splitted in PHASE_EPILOG and PHASE_DONE_EPILOG
  * the latter is invoked iff the phase was actually done!
@@ -57,6 +60,7 @@
 #include "internal_lib.h"
 #include "free.h"
 #include "my_debug.h"
+#include "DupTree.h"
 #include "globals.h"
 #include "Error.h"
 #include "usage.h"
@@ -113,6 +117,7 @@ main (int argc, char *argv[])
 
     InitPaths ();
     SetupInterruptHandlers ();
+    InitDupTree ();
 
     compiler_phase = PH_setup;
 

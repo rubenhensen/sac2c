@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.15  2001/05/17 11:39:20  dkr
+ * InitDupTree() added
+ *
  * Revision 3.14  2001/04/26 21:06:30  dkr
  * DupTypesOnly() added
  *
@@ -92,6 +95,9 @@
 #define DUP_INLINE 1
 #define DUP_WLF 2
 
+/* initializing */
+extern void InitDupTree ();
+
 /*
  * Functions for duplicating (parts of) the AST
  */
@@ -165,7 +171,7 @@ extern node *DupAvis (node *arg_node, node *arg_info);
 extern node *DupSSAstack (node *arg_node, node *arg_info);
 extern node *DupSSAcnt (node *arg_node, node *arg_info);
 
-/* frontend with-loop: */
+/* frontend with-loop */
 extern node *DupNwith (node *arg_node, node *arg_info);
 extern node *DupNwithop (node *arg_node, node *arg_info);
 extern node *DupNpart (node *arg_node, node *arg_info);
@@ -173,7 +179,7 @@ extern node *DupNcode (node *arg_node, node *arg_info);
 extern node *DupNwithid (node *arg_node, node *arg_info);
 extern node *DupNgen (node *arg_node, node *arg_info);
 
-/* backend with-loop: */
+/* backend with-loop */
 extern node *DupNwith2 (node *arg_node, node *arg_info);
 extern node *DupWLseg (node *arg_node, node *arg_info);
 extern node *DupWLsegVar (node *arg_node, node *arg_info);
