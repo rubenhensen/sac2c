@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.3  1999/03/15 18:55:01  dkr
+# fixed some bugs with CCPROD
+#
 # Revision 2.2  1999/02/26 14:17:35  dkr
 # make deps done
 #
@@ -111,14 +114,14 @@ CCPROD       := gcc
 #
 # gcc specific flags:
 #
-gcc_FLAGS := -ansi -Wall 
+gcc_FLAGS := -ansi -Wall
 gcc_PROD_FLAGS := -Wall -O3
 
 #
 # cc specific flags:
 #
 cc_FLAGS  := -xsb -erroff=E_CAST_DOESNT_YIELD_LVALUE
-cc_PROD_FLAGS  := 
+cc_PROD_FLAGS  := -erroff=E_CAST_DOESNT_YIELD_LVALUE
 
 ################################################################################
 #
@@ -154,7 +157,7 @@ LINUX_X86_LIBS      := -lfl
 #
 
 CCFLAGS :=$($(CC)_FLAGS) -g $($(OS)_FLAGS)
-CCPROD_FLAGS := $($(CC)_PROD_FLAGS) $($(OS)_FLAGS) 
+CCPROD_FLAGS := $($(CCPROD)_PROD_FLAGS) $($(OS)_FLAGS) 
 
 CFLAGS := -DSHOW_MALLOC -D$(OS) 
 CPROD_FLAGS  :=-DDBUG_OFF -DPRODUCTION -D$(OS)
@@ -243,9 +246,9 @@ all: check_os dummy sac2c
 
 efence: check_os dummy sac2c.efence
 
-product: check_os clean prod sac2c
+product: check_os clean prod sac2c.prod
 
-distrib_product: prod sac2c
+distrib_product: prod sac2c.prod
 
 
 
@@ -294,6 +297,9 @@ sac2c: $(OBJ) $(LIB)
 
 sac2c.efence: $(OBJ) $(LIB)
 	$(CC) $(CCFLAGS) $(CFLAGS) -o sac2c.efence $(OBJ) $(LIB) $(LIBS) $(EFLIBS)
+
+sac2c.prod:  $(OBJ) $(LIB)
+	$(CCPROD) $(CCPROD_FLAGS) $(CPROD_FLAGS) -o sac2c $(OBJ) $(LIB) $(LIBS)
 
 deps:
 	(cd src/scanparse; $(MAKE) deps)
@@ -366,8 +372,4 @@ fafnir: src.tar.gz
             'chmod 644 $(SOURCE_FILES);' \
             'make deps OS=LINUX_X86;' \
             'make OS=LINUX_X86'
-
-
-
-
 
