@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.6  2000/10/26 14:20:19  dkr
+ * CopyShpseg replaced by DupShpseg (DupTree.[ch])
+ *
  * Revision 2.5  2000/10/24 11:50:55  dkr
  * MakeType renamed into MakeTypes
  *
@@ -181,7 +184,7 @@ OIobjdef (node *arg_node, node *arg_info)
     if (OBJDEF_EXPR (arg_node) != NULL) {
         new_fun_type
           = MakeTypes (OBJDEF_BASETYPE (arg_node), OBJDEF_DIM (arg_node),
-                       CopyShpseg (OBJDEF_SHPSEG (arg_node)),
+                       DupShpseg (OBJDEF_SHPSEG (arg_node)),
                        StringCopy (OBJDEF_TNAME (arg_node)), OBJDEF_TMOD (arg_node));
 
         new_fun_name = (char *)Malloc (strlen (OBJDEF_NAME (arg_node)) + 10);
@@ -224,7 +227,7 @@ OIobjdef (node *arg_node, node *arg_info)
     } else {
         new_fun_type
           = MakeTypes (OBJDEF_BASETYPE (arg_node), OBJDEF_DIM (arg_node),
-                       CopyShpseg (OBJDEF_SHPSEG (arg_node)),
+                       DupShpseg (OBJDEF_SHPSEG (arg_node)),
                        StringCopy (OBJDEF_TNAME (arg_node)), OBJDEF_TMOD (arg_node));
 
         if (OBJDEF_INITFUN (arg_node) != NULL) {
