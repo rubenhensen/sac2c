@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2004/11/01 21:49:31  sah
+ * asdded adding of dependencies for directly referenced namespaces
+ *
  * Revision 1.6  2004/10/28 17:19:32  sah
  * now when annotating namespaces, the used namespaces
  * are added to the list of dependencies
@@ -280,15 +283,35 @@ ANSAp (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ANSAp");
 
-    if (STContains (AP_NAME (arg_node), INFO_ANS_SYMBOLS (arg_info))) {
-        STentry_t *entry
-          = STGetFirstEntry (AP_NAME (arg_node), INFO_ANS_SYMBOLS (arg_info));
-        AP_MOD (arg_node) = StringCopy (STEntryName (entry));
+    if (AP_MOD (arg_node) == NULL) {
+        /*
+         * look up the correct namespace
+         */
+        if (STContains (AP_NAME (arg_node), INFO_ANS_SYMBOLS (arg_info))) {
+            /*
+             * There is a namespace annotated to this symbolname, e.g. it was used
+             * -> use that namespace
+             */
+            STentry_t *entry
+              = STGetFirstEntry (AP_NAME (arg_node), INFO_ANS_SYMBOLS (arg_info));
+            AP_MOD (arg_node) = StringCopy (STEntryName (entry));
 
-        MODUL_DEPENDENCIES (INFO_ANS_MODULE (arg_info))
-          = SSAdd (AP_MOD (arg_node), MODUL_DEPENDENCIES (INFO_ANS_MODULE (arg_info)));
-    } else {
-        AP_MOD (arg_node) = StringCopy (MODUL_NAME (INFO_ANS_MODULE (arg_info)));
+            MODUL_DEPENDENCIES (INFO_ANS_MODULE (arg_info))
+              = SSAdd (AP_MOD (arg_node),
+                       MODUL_DEPENDENCIES (INFO_ANS_MODULE (arg_info)));
+        } else {
+            /*
+             * must be a local function
+             * -> use local namespace
+             */
+            AP_MOD (arg_node) = StringCopy (MODUL_NAME (INFO_ANS_MODULE (arg_info)));
+        }
+    } else if (strcmp (MODUL_NAME (INFO_ANS_MODULE (arg_info)), AP_MOD (arg_node))) {
+        /*
+         * this function comes from another namespace
+         *  -> add the namespace to the dependency list
+         */
+        SSAdd (AP_MOD (arg_node), MODUL_DEPENDENCIES (INFO_ANS_MODULE (arg_info)));
     }
 
     arg_node = TravSons (arg_node, arg_info);
