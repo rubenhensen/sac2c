@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.192  1998/04/26 21:50:47  dkr
+ * ...SPMD renamed to ...Spmd
+ *
  * Revision 1.191  1998/04/25 13:19:32  dkr
  * added DupIcm
  *
@@ -884,14 +887,14 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 0),
 
-  NIF (N_spmd, "N_spmd", TravSons, TravSons, PrintSPMD, TravSons, OptSPMD, TravSons,
-       TravSons, FreeSPMD, TravSons, TravSons, COMPSPMD, TravSons, DupSPMD, TravSons,
+  NIF (N_spmd, "N_spmd", TravSons, TravSons, PrintSpmd, TravSons, OPTSpmd, TravSons,
+       TravSons, FreeSpmd, TravSons, TravSons, COMPSpmd, TravSons, DupSpmd, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, PRECSPMD,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, PRECSpmd,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, 1),
 
-  NIF (N_sync, "N_sync", TravSons, TravSons, PrintSync, TravSons, OptSync, TravSons,
+  NIF (N_sync, "N_sync", TravSons, TravSons, PrintSync, TravSons, TravSons, TravSons,
        TravSons, FreeSync, TravSons, TravSons, COMPSync, TravSons, DupSync, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, PRECSync,
