@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2001/01/17 17:42:15  dkr
+ * naive compilation finished
+ *
  * Revision 3.13  2001/01/17 14:16:46  dkr
  * some bugs fixed
  * code brushed
@@ -13,14 +16,14 @@
  *
  * Revision 3.10  2001/01/09 20:00:10  dkr
  * code brushed
- * support for naive compilation added
+ * support for naive compilation extended
  * support for AKDs added (not finished yet)
  *
  * Revision 3.9  2001/01/09 17:28:36  dkr
  * N_WLstriVar renamed into N_WLstrideVar
  *
  * Revision 3.8  2001/01/08 16:11:57  dkr
- * support for naive compilation of with-loops added
+ * support for naive compilation of with-loops added (not finished yet)
  *
  * Revision 3.7  2001/01/08 13:40:34  dkr
  * functions ExtractAplPragma... moved from wltransform.c to
@@ -6440,9 +6443,7 @@ WLTRAwith (node *arg_node, node *arg_info)
                 cubes = ComputeCubes (strides);
             }
 
-            if (is_fold) {
-                cubes = GenerateCompleteGrids (cubes);
-            }
+            cubes = GenerateCompleteGrids (cubes);
 
             if (WL_break_after < WL_PH_segs) {
                 /*
