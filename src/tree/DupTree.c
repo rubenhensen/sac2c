@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.34  2001/04/02 11:59:18  nmw
+ * set AP_FUNDEF link according to AP_NAME attribute
+ *
  * Revision 3.33  2001/04/02 11:10:17  nmw
  * DupAp increments used counter of special fundefs and adds external
  * assignment to FUNDEF_EXT_ASSIGNS list
@@ -2577,6 +2580,9 @@ CheckAndDupSpecialFundef (node *module, node *fundef, node *assign)
             FREE (AP_NAME (LET_EXPR (ASSIGN_INSTR (FUNDEF_INT_ASSIGN (new_fundef)))));
             AP_NAME (LET_EXPR (ASSIGN_INSTR (FUNDEF_INT_ASSIGN (new_fundef))))
               = StringCopy (FUNDEF_NAME (new_fundef));
+
+            AP_FUNDEF (LET_EXPR (ASSIGN_INSTR (FUNDEF_INT_ASSIGN (new_fundef))))
+              = new_fundef;
         }
 
         /* init external assignment list */
@@ -2586,6 +2592,7 @@ CheckAndDupSpecialFundef (node *module, node *fundef, node *assign)
         /* rename the external assign/funap */
         FREE (AP_NAME (LET_EXPR (ASSIGN_INSTR (assign))));
         AP_NAME (LET_EXPR (ASSIGN_INSTR (assign))) = StringCopy (new_name);
+        AP_FUNDEF (LET_EXPR (ASSIGN_INSTR (assign))) = new_fundef;
 
         /* add new fundef to global chain of fundefs */
         FUNDEF_NEXT (new_fundef) = MODUL_FUNS (module);
