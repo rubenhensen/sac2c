@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.19  2000/10/24 10:18:06  dkr
+ * dtype_size[] removed and replaced by global basetype_size[]
+ *
  * Revision 2.18  2000/08/23 16:49:13  bs
  * Some really big bugs fixed. Two new functions added: ComputeEnhAccess and
  * ComputeVaddr. CreateEnhAccesslist and RecreateEnhAccesslist modified.
@@ -103,11 +106,6 @@
 #include "DupTree.h"
 #include "print.h"
 #include "tile_size_inference.h"
-
-#define TYP_IFsize(sz) sz
-static int dtype_size[] = {
-#include "type_info.mac"
-};
 
 #define MINTILE 20
 
@@ -813,7 +811,7 @@ TSIncode (node *arg_node, node *arg_info)
 
     cacheparam = (int *)INFO_TSI_CACHEPARAM (arg_info);
     cacheparam[DTYPE_INDEX]
-      = dtype_size[TYPES_BASETYPE (VARDEC_TYPE (NCODE_WLAA_WLARRAY (arg_node)))];
+      = basetype_size[TYPES_BASETYPE (VARDEC_TYPE (NCODE_WLAA_WLARRAY (arg_node)))];
     INFO_TSI_WLARRAY (arg_info) = NCODE_WLAA_WLARRAY (arg_node);
     INFO_TSI_INDEXVAR (arg_info) = NCODE_WLAA_INDEXVAR (arg_node);
     INFO_TSI_ACCESS (arg_info) = NCODE_WLAA_ACCESS (arg_node);
