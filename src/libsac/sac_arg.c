@@ -1,8 +1,25 @@
 /*
  * $Log$
+ * Revision 1.7  2000/07/13 09:53:36  nmw
+ * comments added
+ *
  * Revision 1.6  2000/07/12 10:12:23  nmw
  * RCS-header added
  *
+ * Revision 1.5  2000/07/07 15:33:54  nmw
+ * InUseDirectory added
+ *
+ * Revision 1.4  2000/07/06 15:55:12  nmw
+ * SAC_CI_InitRefcounter added
+ *
+ * Revision 1.3  2000/07/05 19:47:36  nmw
+ * stdlib.h added for linux compatibility
+ *
+ * Revision 1.2  2000/07/05 15:35:30  nmw
+ * minor debugging, filenames adapted
+ *
+ * Revision 1.1  2000/07/05 12:47:08  nmw
+ * Initial revision
  *
  *
  * implementation of abstract datatype SAC_arg
@@ -231,12 +248,11 @@ SAC_CI_ExitOnInvalidArg (SAC_arg sa, SAC_ARG_simpletype basetype, int flag)
 /******************************************************************************
  *
  * function:
- *   void SAC_CI_ExitOnInvalidArg(SAC_arg sa,
- *                                SAC_ARG_simpletype basetype, int arg_mode)
+ *   void SAC_CI_InitSACArgDirectory()
  *
  * description:
- *   checks SAC_arg for valid content
- *   calls SAC_RuntimeError on error
+ *   inits the directory of SAC_args used in the c programm
+ *   sets up global variable
  *
  *****************************************************************************/
 
@@ -245,6 +261,17 @@ SAC_CI_InitSACArgDirectory ()
 {
     in_use_directory = GetNewInUseDirectory (NULL);
 }
+
+/******************************************************************************
+ *
+ * function:
+ *   in_use_directory_T *GetNewInUseDirectory(in_use_directory_T *old)
+ *
+ * description:
+ *   inits datastructure and append it to existing directory
+ *   return new directory
+ *
+ *****************************************************************************/
 
 static in_use_directory_T *
 GetNewInUseDirectory (in_use_directory_T *old)
@@ -255,6 +282,16 @@ GetNewInUseDirectory (in_use_directory_T *old)
     result->next = old;
     return (result);
 }
+
+/******************************************************************************
+ *
+ * function:
+ *   static void AddToInUseDirectory(SAC_arg sa)
+ *
+ * description:
+ *   adds SAC_arg to directory; if no free slot available -> alloc new directory
+ *
+ *****************************************************************************/
 
 static void
 AddToInUseDirectory (SAC_arg sa)
@@ -271,27 +308,26 @@ AddToInUseDirectory (SAC_arg sa)
 /******************************************************************************
  *
  * function:
- *   void SAC_CI_ExitOnInvalidArg(SAC_arg sa,
- *                                SAC_ARG_simpletype basetype, int arg_mode)
+ *   void SAC_CI_FreeSACArgDirectory()
  *
  * description:
- *   checks SAC_arg for valid content
- *   calls SAC_RuntimeError on error
+ *   Frees all SAC_args in the directory
+ *   to be done before exit to clean up datastructures
  *
  *****************************************************************************/
 
 void
 SAC_CI_FreeSACArgDirectory ()
 {
-    int counter;
     int i;
+    in_use_directory_T *act_dir;
 
-    counter = 0;
     do {
-        for (i = 0; i < in_use_directory->act_slot; i++) {
-            counter++;
-            SAC_CI_FreeSACArg ((in_use_directory->vars)[i]);
+        act_dir = in_use_directory;
+        for (i = 0; i < act_dir->act_slot; i++) {
+            SAC_CI_FreeSACArg ((act_dir->vars)[i]);
         }
         in_use_directory = in_use_directory->next;
+        SAC_FREE (act_dir);
     } while (in_use_directory != NULL);
 }
