@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.15  1994/12/02 11:11:55  hw
+ * Revision 1.16  1994/12/05 11:17:43  hw
+ * moved function Type2String to convert.c
+ *
+ * Revision 1.15  1994/12/02  11:11:55  hw
  * deleted declaration of char *type_string[], because it is defined in
  * my_debug.c now.
  *
@@ -47,10 +50,7 @@
 #include "traverse.h"
 #include "print.h"
 #include "Error.h"
-
-#define TYPE_LENGTH 80      /* dimension of array of char */
-#define FUN_HEAD_LENGTH 120 /* dimension of array of char */
-#define INT_STRING_LENGTH 5 /* dimension of array of char */
+#include "convert.h"
 
 #define INDENT                                                                           \
     {                                                                                    \
@@ -71,56 +71,6 @@ char *prf_string[] = {
 };
 
 #undef PRF_IF
-
-/*
- *  Umwandlung der Information eines Typ-Deskriptors
- *  in einen String
- */
-char *
-Type2String (types *type, int print_id)
-{
-    char *tmp_string;
-
-    DBUG_ENTER ("Type2String");
-
-    tmp_string = (char *)malloc (sizeof (char) * TYPE_LENGTH);
-    tmp_string[0] = '\0';
-
-    do {
-        if (0 == type->dim)
-            strcat (tmp_string, type_string[type->simpletype]);
-        else if (-1 == type->dim) {
-            strcat (tmp_string, type_string[type->simpletype]);
-            strcat (tmp_string, "[]");
-        } else {
-            int i;
-            static char int_string[INT_STRING_LENGTH];
-
-            strcat (tmp_string, type_string[type->simpletype]);
-            strcat (tmp_string, "[ ");
-            for (i = 0; i < type->dim; i++)
-                if (i != (type->dim - 1)) {
-                    DBUG_PRINT ("PRINT", ("shp[%d]=%d", i, type->shpseg->shp[i]));
-                    sprintf (int_string, "%d, ", type->shpseg->shp[i]);
-                    strcat (tmp_string, int_string);
-                } else {
-                    DBUG_PRINT ("PRINT", ("shp[%d]=%d", i, type->shpseg->shp[i]));
-                    sprintf (int_string, "%d ]", type->shpseg->shp[i]);
-                    strcat (tmp_string, int_string);
-                }
-        }
-        if ((NULL != type->id) && print_id) {
-            strcat (tmp_string, " ");
-            strcat (tmp_string, type->id);
-        }
-
-        type = type->next;
-        if (NULL != type)
-            strcat (tmp_string, ", ");
-    } while (NULL != type);
-
-    DBUG_RETURN (tmp_string);
-}
 
 /*
  * prints ids-information to outfile
