@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.120  2002/05/31 14:55:45  sbs
+ * several attributes for fundef nodes added.
+ *
  * Revision 3.119  2002/04/12 13:57:06  sbs
  * FUNDEF_TYPE added
  *
@@ -893,6 +896,7 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  ***    char*           LINKMOD
  ***    types*          TYPES
  ***    ntype*          TYPE
+ ***    ntype*          RET_TYPE   (will replace TYPES some day 8-))
  ***    statustype      STATUS
  ***    statustype      ATTRIB
  ***    bool            INLINE
@@ -919,6 +923,7 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  ***    long*           MASK[x]                   (optimize -> )
  ***    int             INLREC                    (inline !!)
  ***    bool            EXPORT                    (dfr !!)
+ ***    bool            TCSTAT                    (new_typecheck !!)
  ***
  ***    DFMmask_base_t  DFM_BASE             (lac2fun/rc -> spmd -> compile -> )
  ***
@@ -1001,7 +1006,9 @@ extern node *MakeFundef (char *name, char *mod, types *types, node *args, node *
 #define FUNDEF_MOD(n) (*((char **)(&(n->mask[5]))))     /* for cc */
 #define FUNDEF_LINKMOD(n) (*((char **)(&(n->mask[6])))) /* for cc */
 #define FUNDEF_TYPES(n) (n->info.types)
-#define FUNDEF_TYPE(n) (ntype *)(n->info3)
+#define FUNDEF_RET_TYPE(n) ((ntype *)(n->dfmask[5])) /* will replace TYPES only new-TC!  \
+                                                      */
+#define FUNDEF_TYPE(n) ((ntype *)(n->info3))
 #define FUNDEF_STATUS(n) (*((statustype *)(&(n->info2))))   /* for cc */
 #define FUNDEF_ATTRIB(n) (*((statustype *)(&(n->mask[3])))) /* for cc */
 #define FUNDEF_INLINE(n) (n->flag)
@@ -1015,6 +1022,7 @@ extern node *MakeFundef (char *name, char *mod, types *types, node *args, node *
 #define FUNDEF_VARNO(n) (n->varno)
 #define FUNDEF_INLREC(n) (n->refcnt)
 #define FUNDEF_EXPORT(n) (n->refcnt)
+#define FUNDEF_TCSTAT(n) (n->refcnt)
 #define FUNDEF_MASK(n, x) (n->mask[x])
 #define FUNDEF_DFM_BASE(n) ((DFMmask_base_t) (n->dfmask[0]))
 #define FUNDEF_ARGTAB(n) ((argtab_t *)(n->dfmask[4]))
@@ -2079,6 +2087,7 @@ extern node *MakeSSAstack (node *next, node *avis);
  ***  permanent attributes:
  ***
  ***    node*       VARDECORARG     (N_vardec/N_arg)
+ ***    ntype *     TYPE                             (new typecheck generates these...)
  ***
  ***  temporary attributes:
  ***
@@ -2121,6 +2130,7 @@ extern node *MakeSSAstack (node *next, node *avis);
 extern node *MakeAvis (node *vardecOrArg);
 
 #define AVIS_VARDECORARG(n) (n->node[0])
+#define AVIS_TYPE(n) ((ntype *)(n->dfmask[3]))
 #define AVIS_SSACOUNT(n) (n->node[1])
 #define AVIS_SSAASSIGN(n) (n->node[2])
 #define AVIS_SSAASSIGN2(n) (n->node[3])
