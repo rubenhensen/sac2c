@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.23  2001/01/30 12:23:46  dkr
+ * RCS header compressed
+ *
  * Revision 3.22  2001/01/29 19:21:21  dkr
  * fixed a bug in FitWL
  *
@@ -82,83 +85,6 @@
  *
  * Revision 3.1  2000/11/20 18:01:31  sacbase
  * new release made
- *
- * Revision 2.23  2000/11/14 13:39:12  dkr
- * some '... might be used uninitialized in this function' warnings
- * removed
- *
- * Revision 2.22  2000/10/31 23:40:24  dkr
- * GenerateShapeStrides: wrong DBUG_ASSERT removed
- *
- * Revision 2.21  2000/10/31 23:31:13  dkr
- * empty arrays can be handled now
- *
- * Revision 2.20  2000/10/31 16:27:13  dkr
- * Parts2Strides: empty parts are detected now.
- * If all parts are empty a single stride over the whole domain is
- * generated.
- *
- * Revision 2.19  2000/07/05 14:28:05  dkr
- * CheckWithids() added
- *
- * Revision 2.18  2000/06/25 01:54:32  dkr
- * WLTRAfundef removed
- *
- * Revision 2.17  2000/06/23 15:30:39  dkr
- * local functions are static now
- * WLTRANcode redesigned
- *
- * Revision 2.16  2000/05/31 14:08:45  dkr
- * fixed a bug in CheckParams()
- *
- * Revision 2.15  2000/03/21 17:18:44  dkr
- * inference of WLSEG_HOMSV and WLSEG_MAXHOMDIM added
- *
- * Revision 2.14  2000/03/15 18:16:34  dkr
- * CalcSV replaced by GetLcmUnroll
- * ComputeIndexMinMax moved to here from wlpragma_funs.c
- * code brushed
- *
- * Revision 2.13  2000/03/10 12:06:08  dkr
- * FitWL brushed and corrected
- *
- * Revision 2.12  2000/03/10 10:36:50  dkr
- * Bug in FitWL fixed
- * NormWL corrected: After normalization ublock/stride-nodes are fitted
- * Some comments modified
- *
- * Revision 2.11  2000/03/01 19:02:37  dkr
- * macros for WL...-nodes reorganized
- *
- * Revision 2.10  2000/01/25 13:41:46  dkr
- * #include statements changed
- *
- * Revision 2.9  2000/01/24 19:35:43  dkr
- * disjointness check added
- *
- * Revision 2.8  1999/12/01 15:20:29  dkr
- * oops, the DBUG_ASSERT in WLTRALet was too restrictiv ...
- *
- * Revision 2.7  1999/12/01 14:14:09  dkr
- * DBUG_ASSERTs in function WLTRALet() added
- *
- * Revision 2.6  1999/11/30 20:30:22  dkr
- * finally I have done it 8-)))
- * The "must-resign" problem is fixed now!
- * Therefore the cube calculation should work in general now!
- * Moreover, some bugs have been fixed, e.g. in NormalizeStride_1() ...
- *
- * Revision 2.4  1999/11/30 10:07:35  dkr
- * fixed a bug in AdjustBounds()
- * code brushed
- * some comments added
- * some functions renamed
- *
- * Revision 2.3  1999/11/16 15:23:19  dkr
- * fixed a bug:
- *   blocking for var.segs. not yet implemented
- *   therefore WLSEG_BV and WLSEG_UBV are set to (1,1,1,...) in this case
- *   to prevent the building of an ADJUST_OFFSET-ICM.
  *
  * [...]
  *
