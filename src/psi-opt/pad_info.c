@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.2  2001/05/17 13:41:26  nmw
+ * MALLOC/FREE replaced by Malloc/Free, using result of Free()
+ *
  * Revision 3.1  2000/11/20 18:01:52  sacbase
  * new release made
  *
@@ -293,7 +296,7 @@ RemovePadInfoElement (pad_info_t *element)
     FreeShpseg (PI_OLD_SHAPE (element));
     FreeShpseg (PI_NEW_SHAPE (element));
     pi_next_ptr = PI_NEXT (element);
-    FREE (element);
+    element = Free (element);
 
     DBUG_RETURN (pi_next_ptr);
 }
@@ -319,7 +322,7 @@ RemoveUnsupportedShapeElement (unsupported_shape_t *element)
 
     FreeShpseg (US_SHAPE (element));
     us_next_ptr = US_NEXT (element);
-    FREE (element);
+    element = Free (element);
 
     DBUG_RETURN (us_next_ptr);
 }
@@ -344,7 +347,7 @@ RemoveArrayTypeElement (array_type_t *element)
 
     FreeShpseg (AT_SHAPE (element));
     at_next_ptr = AT_NEXT (element);
-    FREE (element);
+    element = Free (element);
 
     DBUG_RETURN (at_next_ptr);
 }
@@ -369,7 +372,7 @@ RemoveConflictGroupElement (conflict_group_t *element)
 
     FreeShpseg (CG_GROUP (element));
     cg_next_ptr = CG_NEXT (element);
-    FREE (element);
+    element = Free (element);
 
     DBUG_RETURN (cg_next_ptr);
 }
@@ -394,7 +397,7 @@ RemovePatternElement (pattern_t *element)
 
     FreeShpseg (PT_PATTERN (element));
     pt_next_ptr = PT_NEXT (element);
-    FREE (element);
+    element = Free (element);
 
     DBUG_RETURN (pt_next_ptr);
 }
@@ -921,7 +924,7 @@ PIconcatPatterns (pattern_t *pattern, shpseg *shape)
 
     DBUG_ENTER ("PIconcatPatterns");
 
-    result = (pattern_t *)MALLOC (sizeof (pattern_t));
+    result = (pattern_t *)Malloc (sizeof (pattern_t));
     PT_PATTERN (result) = shape;
     PT_NEXT (result) = pattern;
 
@@ -961,7 +964,7 @@ PIaddAccessPattern (simpletype type, int dim, shpseg *shape, shpseg *group,
     /* add new type */
     if (at_ptr == NULL) {
         at_next_ptr = array_type;
-        array_type = (array_type_t *)MALLOC (sizeof (array_type_t));
+        array_type = (array_type_t *)Malloc (sizeof (array_type_t));
         AT_DIM (array_type) = dim;
         AT_TYPE (array_type) = type;
         AT_SHAPE (array_type) = shape;
@@ -974,7 +977,7 @@ PIaddAccessPattern (simpletype type, int dim, shpseg *shape, shpseg *group,
 
     /* add new conflict group with patterns to type */
     cg_next_ptr = AT_GROUPS (at_ptr);
-    AT_GROUPS (at_ptr) = (conflict_group_t *)MALLOC (sizeof (conflict_group_t));
+    AT_GROUPS (at_ptr) = (conflict_group_t *)Malloc (sizeof (conflict_group_t));
     cg_ptr = AT_GROUPS (at_ptr);
     CG_GROUP (cg_ptr) = group;
     CG_DIR (cg_ptr) = direction;
@@ -1062,7 +1065,7 @@ PIaddUnsupportedShape (types *array_type)
     if (unsupported_shape_ptr == NULL) {
         /* create new entry */
         us_next_ptr = unsupported_shape;
-        unsupported_shape = (unsupported_shape_t *)MALLOC (sizeof (unsupported_shape_t));
+        unsupported_shape = (unsupported_shape_t *)Malloc (sizeof (unsupported_shape_t));
         US_DIM (unsupported_shape) = TYPES_DIM (array_type);
         US_TYPE (unsupported_shape) = TYPES_BASETYPE (array_type);
         US_SHAPE (unsupported_shape) = TYPES_SHPSEG (array_type);
@@ -1528,7 +1531,7 @@ PIaddInferredShape (simpletype type, int dim, shpseg *old_shape, shpseg *new_sha
 
     DBUG_ENTER ("PIaddInferredShape");
 
-    tmp = (pad_info_t *)MALLOC (sizeof (pad_info_t));
+    tmp = (pad_info_t *)Malloc (sizeof (pad_info_t));
     PI_DIM (tmp) = dim;
     PI_TYPE (tmp) = type;
     PI_OLD_SHAPE (tmp) = old_shape;
@@ -1623,9 +1626,9 @@ PInoteResults ()
         NOTE (("  %s%s  by  %s", basetype, old, pad));
         NOTE (("     ->  %s%s    <= %d%% overhead", basetype, new, overhead));
 
-        FREE (old);
-        FREE (new);
-        FREE (pad);
+        old = Free (old);
+        new = Free (new);
+        pad = Free (pad);
 
         pi_ptr = PI_NEXT (pi_ptr);
     }

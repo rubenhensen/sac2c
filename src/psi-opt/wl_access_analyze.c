@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2001/05/17 13:41:26  nmw
+ * MALLOC/FREE replaced by Malloc/Free, using result of Free()
+ *
  * Revision 3.4  2001/02/06 01:18:58  dkr
  * include of print.h removed
  *
@@ -895,8 +898,8 @@ WLAAcond (node *arg_node, node *arg_info)
                                        | INFO_WLAA_FEATURE (then_arg_info)
                                        | INFO_WLAA_FEATURE (else_arg_info);
 
-        FREE (else_arg_info); /* Attention !!! */
-        FREE (then_arg_info); /* Attention !!! */
+        else_arg_info = FreeTree (else_arg_info); /* Attention !!! */
+        then_arg_info = FreeTree (then_arg_info); /* Attention !!! */
     }
 
     else {
@@ -1134,7 +1137,7 @@ WLAAprf (node *arg_node, node *arg_info)
                     if (NODE_TYPE (arg_node_arg1) == N_num) {
                         if (ID_VARDEC (arg_node_arg2) == INFO_WLAA_INDEXVAR (arg_info)) {
                             ACCESS_CLASS (access) = ACL_offset;
-                            offset = MALLOC (VARDEC_OR_ARG_DIM (ACCESS_ARRAY (access))
+                            offset = Malloc (VARDEC_OR_ARG_DIM (ACCESS_ARRAY (access))
                                              * sizeof (int));
                             for (i = 0; i < VARDEC_OR_ARG_DIM (ACCESS_ARRAY (access));
                                  i++) {
@@ -1146,7 +1149,7 @@ WLAAprf (node *arg_node, node *arg_info)
                                                offset,
                                                ACCESS_OFFSET (
                                                  INFO_WLAA_ACCESS (arg_info)));
-                            FREE (offset);
+                            offset = Free (offset);
                             ACCESS_IV (INFO_WLAA_ACCESS (arg_info))
                               = INFO_WLAA_INDEXVAR (arg_info);
                         } else if (ID_CONSTVEC (arg_node_arg2) != NULL) {
@@ -1180,7 +1183,7 @@ WLAAprf (node *arg_node, node *arg_info)
                     if (NODE_TYPE (arg_node_arg2) == N_num) {
                         if (ID_VARDEC (arg_node_arg1) == INFO_WLAA_INDEXVAR (arg_info)) {
                             ACCESS_CLASS (access) = ACL_offset;
-                            offset = MALLOC (VARDEC_OR_ARG_DIM (ACCESS_ARRAY (access))
+                            offset = Malloc (VARDEC_OR_ARG_DIM (ACCESS_ARRAY (access))
                                              * sizeof (int));
                             for (i = 0; i < VARDEC_OR_ARG_DIM (ACCESS_ARRAY (access));
                                  i++) {
@@ -1194,7 +1197,7 @@ WLAAprf (node *arg_node, node *arg_info)
                                                  INFO_WLAA_ACCESS (arg_info)));
                             ACCESS_IV (INFO_WLAA_ACCESS (arg_info))
                               = INFO_WLAA_INDEXVAR (arg_info);
-                            FREE (offset);
+                            offset = Free (offset);
                         } else if (ID_CONSTVEC (arg_node_arg1) != NULL) {
                             ACCESS_CLASS (access) = ACL_const;
                             ACCESS_OFFSET (INFO_WLAA_ACCESS (arg_info))
@@ -1342,7 +1345,7 @@ WLAAprf (node *arg_node, node *arg_info)
                     if (ID_VARDEC (arg_node_arg1) == INFO_WLAA_INDEXVAR (arg_info)) {
                         if (NODE_TYPE (arg_node_arg2) == N_num) {
                             ACCESS_CLASS (access) = ACL_offset;
-                            offset = MALLOC (VARDEC_OR_ARG_DIM (ACCESS_ARRAY (access))
+                            offset = Malloc (VARDEC_OR_ARG_DIM (ACCESS_ARRAY (access))
                                              * sizeof (int));
                             for (i = 0; i < VARDEC_OR_ARG_DIM (ACCESS_ARRAY (access));
                                  i++) {

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.5  2001/05/17 13:41:26  nmw
+ * MALLOC/FREE replaced by Malloc/Free, using result of Free()
+ *
  * Revision 3.4  2001/05/16 19:52:47  nmw
  * reverted Free() to FREE() due to segfaults when used with linux :-(
  *
@@ -139,7 +142,7 @@ APtransform (node *arg_node)
 
     arg_node = Trav (arg_node, arg_info);
 
-    FREE (arg_info);
+    arg_info = FreeTree (arg_info);
 
     act_tab = tmp_tab;
 
@@ -167,11 +170,11 @@ PadName (char *unpadded_name)
 
     DBUG_ENTER ("PadName");
 
-    padded_name = (char *)MALLOC (strlen (unpadded_name) + 6 * sizeof (char));
+    padded_name = (char *)Malloc (strlen (unpadded_name) + 6 * sizeof (char));
     strcpy (padded_name, unpadded_name);
     strcat (padded_name, "__PAD");
 
-    FREE (unpadded_name);
+    unpadded_name = Free (unpadded_name);
 
     DBUG_RETURN (padded_name);
 }
@@ -1023,7 +1026,7 @@ APTprf (node *arg_node, node *arg_info)
             old_type
               = PIgetOldType (DupTypes (VARDEC_TYPE (ID_VARDEC (PRF_ARG1 (arg_node)))));
             arg_node = Shpseg2Array (TYPES_SHPSEG (old_type), TYPES_DIM (old_type));
-            FREE (old_type);
+            old_type = Free (old_type);
         }
         /* even if PRF_ARG1 is padded, the result of PRF will have an
          * unpadded shape => return FALSE */

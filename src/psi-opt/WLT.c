@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2001/05/17 13:40:26  nmw
+ * MALLOC/FREE replaced by Malloc/Free, using result of Free()
+ *
  * Revision 3.9  2001/04/30 12:20:29  nmw
  * integrate traversal of special fundefs in WLT traversal
  *
@@ -278,8 +281,8 @@ CutSlices (int *ls, int *us, int *l, int *u, int dim, intern_gen *ig, node *code
         usc[d] = u[d];
     }
 
-    FREE (lsc);
-    FREE (usc);
+    lsc = Free (lsc);
+    usc = Free (usc);
 
     DBUG_RETURN (root_ig);
 }
@@ -329,7 +332,7 @@ CompleteGrid (int *ls, int *us, int *step, int *width, int dim, intern_gen *ig,
         nw[d] = width[d];
     }
 
-    FREE (nw);
+    nw = Free (nw);
 
     DBUG_RETURN (root_ig);
 }
@@ -516,9 +519,9 @@ CreateFullPartition (node *wln, node *arg_info)
 
         /* free the above made arrays */
         ig = FreeInternGenChain (ig);
-        FREE (array_null);
+        array_null = Free (array_null);
         if (WO_genarray == NWITH_TYPE (wln))
-            FREE (array_shape); /* no mem allocated in case of modarray. */
+            array_shape = Free (array_shape); /* no mem allocated in case of modarray. */
     }
 
     DBUG_RETURN (wln);
@@ -792,7 +795,7 @@ WLTap (node *arg_node, node *arg_info)
         /* start traversal of special fundef */
         AP_FUNDEF (arg_node) = Trav (AP_FUNDEF (arg_node), new_arg_info);
 
-        FREE (new_arg_info);
+        new_arg_info = FreeTree (new_arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -969,7 +972,7 @@ WLTNwith (node *arg_node, node *arg_info)
     INFO_DEF = tmpn->mask[0];
     INFO_USE = tmpn->mask[1];
     INFO_VARNO (arg_info) = tmpn->varno;
-    FREE (tmpn);
+    tmpn = Free (tmpn);
 
     DBUG_RETURN (arg_node);
 }

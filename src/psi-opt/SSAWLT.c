@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.5  2001/05/17 13:40:26  nmw
+ * MALLOC/FREE replaced by Malloc/Free, using result of Free()
+ *
  * Revision 1.4  2001/05/16 19:52:47  nmw
  * reverted Free() to FREE() due to segfaults when used with linux :-(
  *
@@ -138,8 +141,8 @@ CutSlices (int *ls, int *us, int *l, int *u, int dim, intern_gen *ig, node *code
         usc[d] = u[d];
     }
 
-    FREE (lsc);
-    FREE (usc);
+    lsc = Free (lsc);
+    usc = Free (usc);
 
     DBUG_RETURN (root_ig);
 }
@@ -188,7 +191,7 @@ CompleteGrid (int *ls, int *us, int *step, int *width, int dim, intern_gen *ig,
         nw[d] = width[d];
     }
 
-    FREE (nw);
+    nw = Free (nw);
 
     DBUG_RETURN (root_ig);
 }
@@ -369,9 +372,9 @@ CreateFullPartition (node *wln, node *arg_info)
 
         /* free the above made arrays */
         ig = SSAFreeInternGenChain (ig);
-        FREE (array_null);
+        array_null = Free (array_null);
         if (WO_genarray == NWITH_TYPE (wln))
-            FREE (array_shape); /* no mem allocated in case of modarray. */
+            array_shape = Free (array_shape); /* no mem allocated in case of modarray. */
     }
 
     DBUG_RETURN (wln);
@@ -596,7 +599,7 @@ SSAWLTap (node *arg_node, node *arg_info)
         /* start traversal of special fundef */
         AP_FUNDEF (arg_node) = Trav (AP_FUNDEF (arg_node), new_arg_info);
 
-        FREE (new_arg_info);
+        new_arg_info = FreeTree (new_arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -754,7 +757,7 @@ SSAWLTNwith (node *arg_node, node *arg_info)
      */
     tmpn = arg_info;
     arg_info = INFO_WLI_NEXT (arg_info);
-    FREE (tmpn);
+    tmpn = Free (tmpn);
 
     DBUG_RETURN (arg_node);
 }

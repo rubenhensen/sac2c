@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.3  2001/05/17 13:40:26  nmw
+ * MALLOC/FREE replaced by Malloc/Free, using result of Free()
+ *
  * Revision 3.2  2000/12/06 19:22:16  cg
  * Removed compiler warnings in production mode.
  *
@@ -129,7 +132,7 @@ APcollect (node *arg_node)
 
     arg_node = Trav (arg_node, arg_info);
 
-    FREE (arg_info);
+    arg_info = FreeTree (arg_info);
     act_tab = tmp_tab;
 
     DBUG_EXECUTE ("APC", PIprintAccessPatterns (); PIprintUnsupportedShapes (););
@@ -256,7 +259,7 @@ CollectAccessPatterns (node *arg_node)
             if (pt_ptr == NULL) {
 
                 col_next_ptr = collection;
-                collection = (collection_t *)MALLOC (sizeof (collection_t));
+                collection = (collection_t *)Malloc (sizeof (collection_t));
                 COL_ARRAY (collection) = ACCESS_ARRAY (access_ptr);
                 COL_CLASS (collection) = ACCESS_CLASS (access_ptr);
                 COL_DIR (collection) = ACCESS_DIR (access_ptr);
@@ -297,7 +300,7 @@ CollectAccessPatterns (node *arg_node)
 
     while (collection != NULL) {
         col_ptr = collection->next;
-        FREE (collection);
+        collection = Free (collection);
         collection = col_ptr;
     }
 

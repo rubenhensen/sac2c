@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2001/05/17 13:40:26  nmw
+ * MALLOC/FREE replaced by Malloc/Free, using result of Free()
+ *
  * Revision 3.9  2001/05/15 08:03:59  nmw
  * remove call to OPTTrav when using ssa form
  *
@@ -191,7 +194,7 @@ ArrayElimination (node *arg_node, node *info_node)
 
         arg_node = Trav (arg_node, info_node);
 
-        FREE (info_node);
+        info_node = FreeTree (info_node);
         act_tab = tmp_tab;
         DBUG_PRINT ("OPT", ("                        result: %d",
                             elim_arrays - mem_elim_arrays));
@@ -631,7 +634,7 @@ AEap (node *arg_node, node *arg_info)
         /* start traversal of special fundef */
         AP_FUNDEF (arg_node) = Trav (AP_FUNDEF (arg_node), new_arg_info);
 
-        FREE (new_arg_info);
+        new_arg_info = FreeTree (new_arg_info);
     }
     DBUG_RETURN (arg_node);
 }

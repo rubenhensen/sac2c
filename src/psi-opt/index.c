@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2001/05/17 13:40:26  nmw
+ * MALLOC/FREE replaced by Malloc/Free, using result of Free()
+ *
  * Revision 3.12  2001/05/17 09:28:36  sbs
  * older log messages eliminated
  *
@@ -1855,7 +1858,7 @@ IdxId (node *arg_node, node *arg_info)
                     newid = IdxChangeId (ID_NAME (arg_node), type);
                     DBUG_PRINT ("IDX",
                                 ("renaming id %s into %s", ID_NAME (arg_node), newid));
-                    FREE (ID_NAME (arg_node));
+                    ID_NAME (arg_node) = Free (ID_NAME (arg_node));
                     ID_NAME (arg_node) = newid;
                     /* Now, we have to insert the respective declaration */
                     /* If the declaration does not yet exist, it has to be created! */
@@ -1879,7 +1882,7 @@ IdxId (node *arg_node, node *arg_info)
                     newid = IdxChangeId (ID_NAME (arg_node), type);
                     DBUG_PRINT ("IDX",
                                 ("renaming id %s into %s", ID_NAME (arg_node), newid));
-                    FREE (ID_NAME (arg_node));
+                    ID_NAME (arg_node) = Free (ID_NAME (arg_node));
                     ID_NAME (arg_node) = newid;
                     /* Now, we have to insert the respective declaration */
                     /* If the declaration does not yet exist, it has to be created! */
@@ -2061,7 +2064,7 @@ IdxNpart (node *arg_node, node *arg_info)
              * The index vector variable is used as IDX(...) only!
              * => we can eliminate the vector completely!
              */
-            FREE (NPART_VEC (arg_node));
+            NPART_VEC (arg_node) = Free (NPART_VEC (arg_node));
         }
     }
 #else
@@ -2401,7 +2404,7 @@ IndexVectorElimination (node *syntax_tree)
     info_node = MakeInfo ();
     syntax_tree = Trav (syntax_tree, info_node);
 
-    info_node = FreeNode (info_node);
+    info_node = FreeTree (info_node);
     act_tab = tmp_tab;
 
     NOTE (("  %d index-vector(s) eliminated", ive_expr));

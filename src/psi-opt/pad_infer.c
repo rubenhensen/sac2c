@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.3  2001/05/17 13:40:26  nmw
+ * MALLOC/FREE replaced by Malloc/Free, using result of Free()
+ *
  * Revision 3.2  2000/12/06 19:22:16  cg
  * Removed compiler warnings in production mode.
  *
@@ -379,7 +382,7 @@ InitCacheUtil (cache_util_t **cache_util, pattern_t *pattern, array_type_t *arra
         rows++;
         pt_ptr = PIgetNextPattern (pt_ptr);
     }
-    (*cache_util) = (cache_util_t *)MALLOC (rows * sizeof (cache_util_t));
+    (*cache_util) = (cache_util_t *)Malloc (rows * sizeof (cache_util_t));
 
     pt_ptr = pattern;
     for (i = 0; i < rows; i++) {
@@ -1849,9 +1852,9 @@ ComputePadding (cache_t *cache_L1, cache_t *cache_L2, cache_t *cache_L3, int dim
     /*
      * Free local resources.
      */
-    FREE (cache_util);
-    FREE (padding_keep);
-    FREE (padding_store);
+    cache_util = Free (cache_util);
+    padding_keep = Free (padding_keep);
+    padding_store = Free (padding_store);
 
     DBUG_RETURN (padding);
 }
@@ -2032,15 +2035,15 @@ APinfer ()
          * Remove array type specific internal cache specifications.
          */
         if (cache_L1 != NULL) {
-            FREE (cache_L1);
+            cache_L1 = Free (cache_L1);
         }
 
         if (cache_L2 != NULL) {
-            FREE (cache_L2);
+            cache_L2 = Free (cache_L2);
         }
 
         if (cache_L3 != NULL) {
-            FREE (cache_L3);
+            cache_L3 = Free (cache_L3);
         }
 
         /*
