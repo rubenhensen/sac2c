@@ -1,7 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.13  1996/01/16 16:45:45  cg
+ * Revision 1.14  1996/01/25 16:35:06  hw
+ * added macros to use with types->dim to examine whether
+ * it is a scalar, an array with known dimension and unknown shape,
+ * an array with known shape or an array with unknown shape
+ *
+ * Revision 1.13  1996/01/16  16:45:45  cg
  * extended macro TYP_IF to 5 positions
  *
  * Revision 1.12  1996/01/02  15:52:26  cg
@@ -171,6 +176,19 @@ typedef struct TYPES {
     statustype attrib;  /* uniqueness attribute */
     statustype status;  /* regular or artificial */
 } types;
+
+/* an now some macros for the use with 'types->dim'
+ * They are used to classify :
+ * -shape of type is known:             dim > SCALAR
+ * -dimension is only known:            dim < KNOWN_DIM_OFFSET
+ * -shape and dimension are not known:  dim == UNKNOWN_SHAPE
+ * - type of on array or a scalar:      dim == ARRAY_OR_SCALAR
+ * - type of an scalar:                 dim == SCALAR
+ */
+#define SCALAR 0
+#define UNKNOWN_SHAPE -1
+#define KNOWN_DIM_OFFSET -2
+#define ARRAY_OR_SCALAR -2
 
 typedef types shapes; /* this definition is primarily needed for
                        * the vinfo nodes; there we need the shape
