@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.181  2004/11/26 22:31:13  sbs
+ * construction site reopened 8-)
+ *
  * Revision 3.180  2004/11/26 19:47:32  sbs
  * compiles but has some TODO left
  *
@@ -674,66 +677,57 @@ PrintArgtab (argtab_t *argtab, bool is_def)
     DBUG_VOID_RETURN;
 }
 
-#if 0
-/***** TODO   *****/
-
 /******************************************************************************
  *
  * Function:
  *   node *Argtab2Fundef( node *fundef)
  *
  * Description:
- *   
+ *
  *
  ******************************************************************************/
 
-static
-node *Argtab2Fundef( node *fundef)
+static node *
+Argtab2Fundef (node *fundef)
 {
-  node *new_fundef;
-  argtab_t *argtab;
-  int i;
-  types *rettypes = NULL;
-  node *args = NULL;
+    node *new_fundef;
+    argtab_t *argtab;
+    int i;
+    types *rettypes = NULL;
+    node *args = NULL;
 
-  DBUG_ENTER( "Argtab2Fundef");
+    DBUG_ENTER ("Argtab2Fundef");
 
-  argtab = FUNDEF_ARGTAB( fundef);
-  DBUG_ASSERT( (argtab != NULL), "no argtab found!");
+    argtab = FUNDEF_ARGTAB (fundef);
+    DBUG_ASSERT ((argtab != NULL), "no argtab found!");
 
-  DBUG_ASSERT( (argtab->ptr_in[0] == NULL), "argtab inconsistent");
+    DBUG_ASSERT ((argtab->ptr_in[0] == NULL), "argtab inconsistent");
 
-  if (argtab->ptr_out[0] == NULL) {
-    rettypes = TBmakeTypes1( T_void);
-  }
-  else {
-    rettypes = DUPdupOneTypes( argtab->ptr_out[0]);
-  }
-
-  for (i = argtab->size - 1; i >= 1; i--) {
-    if (argtab->ptr_in[i] != NULL) {
-      node *arg = DUPdoDupNode( argtab->ptr_in[i]);
-      ARG_NEXT( arg) = args;
-      args = arg;
+    if (argtab->ptr_out[0] == NULL) {
+        rettypes = TBmakeTypes1 (T_void);
+    } else {
+        rettypes = DUPdupOneTypes (argtab->ptr_out[0]);
     }
-    else if (argtab->ptr_out[i] != NULL) {
-      types *type;
-      type = DUPdupOneTypes( argtab->ptr_out[i]);
-      args = MakeArg( NULL,
-                      DUPdupOneTypes( argtab->ptr_out[i]),
-                      ST_regular, ST_regular,
-                      args);
+
+    for (i = argtab->size - 1; i >= 1; i--) {
+        if (argtab->ptr_in[i] != NULL) {
+            node *arg = DUPdoDupNode (argtab->ptr_in[i]);
+            ARG_NEXT (arg) = args;
+            args = arg;
+        } else if (argtab->ptr_out[i] != NULL) {
+            types *type;
+            type = DUPdupOneTypes (argtab->ptr_out[i]);
+            args = MakeArg (NULL, DUPdupOneTypes (argtab->ptr_out[i]), ST_regular,
+                            ST_regular, args);
+        }
     }
-  }
 
-  new_fundef = TBmakeFundef( ILIBstringCopy( FUNDEF_NAME( fundef)),
-                             ILIBstringCopy(FUNDEF_MOD( fundef)),
-                           rettypes, args, NULL, NULL);
+    new_fundef
+      = TBmakeFundef (ILIBstringCopy (FUNDEF_NAME (fundef)),
+                      ILIBstringCopy (FUNDEF_MOD (fundef)), rettypes, args, NULL, NULL);
 
-  DBUG_RETURN( new_fundef);
+    DBUG_RETURN (new_fundef);
 }
-
-
 
 /******************************************************************************
  *
@@ -741,52 +735,47 @@ node *Argtab2Fundef( node *fundef)
  *   node *ArgtabLet( node *ap)
  *
  * Description:
- *   
+ *
  *
  ******************************************************************************/
 
-static
-node *Argtab2Let( node *ap)
+static node *
+Argtab2Let (node *ap)
 {
-  node *new_let, *new_ap;
-  argtab_t *argtab;
-  int i;
-  ids *_ids = NULL;
-  node *exprs = NULL;
+    node *new_let, *new_ap;
+    argtab_t *argtab;
+    int i;
+    ids *_ids = NULL;
+    node *exprs = NULL;
 
-  DBUG_ENTER( "Argtab2Let");
+    DBUG_ENTER ("Argtab2Let");
 
-  argtab = AP_ARGTAB( ap);
-  DBUG_ASSERT( (argtab != NULL), "no argtab found!");
+    argtab = AP_ARGTAB (ap);
+    DBUG_ASSERT ((argtab != NULL), "no argtab found!");
 
-  DBUG_ASSERT( (argtab->ptr_in[0] == NULL), "argtab inconsistent");
+    DBUG_ASSERT ((argtab->ptr_in[0] == NULL), "argtab inconsistent");
 
-  if (argtab->ptr_out[0] != NULL) {
-    _ids = DUPdupOneIds( argtab->ptr_out[0]);
-  }
-
-  for (i = argtab->size - 1; i >= 1; i--) {
-    if (argtab->ptr_out[i] != NULL) {
-      exprs = TBmakeExprs( DupIds_Id( argtab->ptr_out[i]), exprs);
+    if (argtab->ptr_out[0] != NULL) {
+        _ids = DUPdupOneIds (argtab->ptr_out[0]);
     }
-    else if (argtab->ptr_in[i] != NULL) {
-      node *expr = DUPdoDupNode( argtab->ptr_in[i]);
-      EXPRS_NEXT( expr) = exprs;
-      exprs = expr;
+
+    for (i = argtab->size - 1; i >= 1; i--) {
+        if (argtab->ptr_out[i] != NULL) {
+            exprs = TBmakeExprs (DupIds_Id (argtab->ptr_out[i]), exprs);
+        } else if (argtab->ptr_in[i] != NULL) {
+            node *expr = DUPdoDupNode (argtab->ptr_in[i]);
+            EXPRS_NEXT (expr) = exprs;
+            exprs = expr;
+        }
     }
-  }
 
-  new_ap = MakeAp( ILIBstringCopy( AP_NAME( ap)),
-                   AP_MOD( ap),
-                   exprs);
-  AP_FUNDEF( new_ap) = AP_FUNDEF( ap);
+    new_ap = MakeAp (ILIBstringCopy (AP_NAME (ap)), AP_MOD (ap), exprs);
+    AP_FUNDEF (new_ap) = AP_FUNDEF (ap);
 
-  new_let = MakeLet( new_ap, _ids);
+    new_let = MakeLet (new_ap, _ids);
 
-  DBUG_RETURN( new_let);
+    DBUG_RETURN (new_let);
 }
-
-#endif
 
 /******************************************************************************
  *
@@ -1225,9 +1214,7 @@ PrintFunctionHeader (node *arg_node, info *arg_info, bool in_comment)
     if (print_c) {
         node *tmp;
 
-#if 0 /* TODO */
-    node *tmp = Argtab2Fundef( arg_node);
-#endif
+        node *tmp = Argtab2Fundef (arg_node);
 
         PrintFunctionHeader (tmp, arg_info, in_comment);
         tmp = FREEfreeZombie (FREEdoFreeTree (tmp));
@@ -1971,9 +1958,7 @@ PRTlet (node *arg_node, info *arg_info)
     if (print_c) {
         node *tmp;
 
-#if 0 /**** TODO ****/
-    tmp = Argtab2Let( expr);
-#endif
+        tmp = Argtab2Let (expr);
 
         TRAVdo (tmp, arg_info);
 
