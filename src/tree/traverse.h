@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.26  2002/06/07 17:18:24  mwe
+ * Support for AssociativeLaw added
+ *
  * Revision 3.25  2002/04/15 13:52:32  dkr
  * precomp4_tab added
  *
@@ -290,6 +293,7 @@ extern funtab *comp2_tab;
 extern funtab *insvd_tab;
 extern funtab *crtwrp_tab;
 extern funtab *wls_tab;
+extern funtab *al_tab;
 
 extern int nnode[];
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.33  2002/06/07 17:17:48  mwe
+ * Support for AssociativeLaw added
+ *
  * Revision 3.32  2002/04/15 13:53:03  dkr
  * precomp4_tab added
  *
@@ -1401,6 +1404,17 @@ static funtab precomp4_tab_rec = {{
                                   NULL,
                                   NULL};
 funtab *precomp4_tab = &precomp4_tab_rec;
+
+/*
+ *  (108) al_tab
+ */
+static funtab al_tab_rec = {{
+#define NIFal(it_al) it_al
+#include "node_info.mac"
+                            },
+                            NULL,
+                            NULL};
+funtab *al_tab = &al_tab_rec;
 
 /*
  *  nnode
