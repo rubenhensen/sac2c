@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.9  1995/12/11 14:01:09  cg
+ * Revision 1.10  1995/12/20 08:17:37  cg
+ * added new entry cchar in info union to store char values.
+ *
+ * Revision 1.9  1995/12/11  14:01:09  cg
  * added statustype entry ST_Cfun
  *
  * Revision 1.8  1995/12/01  17:11:45  cg
@@ -203,6 +206,7 @@ typedef union {
     int cint;          /* integer value                      */
     float cfloat;      /* float value                        */
     double cdbl;       /* double value                       */
+    char cchar;        /* char value                         */
     prf prf;           /* tag for primitive functions        */
     fun_name fun_name; /* used in N_ap nodes                 */
     useflag use;       /* used in N_vect_info nodes          */
