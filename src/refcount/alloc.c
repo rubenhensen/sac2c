@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.21  2004/09/15 17:14:13  ktr
+ * Ids2ALS is now static
+ *
  * Revision 1.20  2004/09/15 17:07:14  ktr
  * code brushing after code audit with Karsten
  *
@@ -250,6 +253,31 @@ FreeALS (alloclist_struct *als)
     }
 
     DBUG_RETURN (als);
+}
+
+/** <!--******************************************************************-->
+ *
+ * @fn Ids2ALS
+ *
+ *  @brief
+ *
+ *  @param ids
+ *
+ *  @return alloclist_struct
+ *
+ ***************************************************************************/
+static alloclist_struct *
+Ids2ALS (ids *i)
+{
+    alloclist_struct *res;
+
+    if (i == NULL) {
+        res = NULL;
+    } else {
+        res = MakeALS (Ids2ALS (IDS_NEXT (i)), IDS_AVIS (i), NULL, NULL);
+    }
+
+    return (res);
 }
 
 /** <!--******************************************************************-->
@@ -1018,31 +1046,6 @@ EMALid (node *arg_node, info *arg_info)
     INFO_EMAL_ALLOCLIST (arg_info) = FreeALS (INFO_EMAL_ALLOCLIST (arg_info));
 
     DBUG_RETURN (arg_node);
-}
-
-/** <!--******************************************************************-->
- *
- * @fn Ids2ALS
- *
- *  @brief
- *
- *  @param ids
- *
- *  @return alloclist_struct
- *
- ***************************************************************************/
-alloclist_struct *
-Ids2ALS (ids *i)
-{
-    alloclist_struct *res;
-
-    if (i == NULL) {
-        res = NULL;
-    } else {
-        res = MakeALS (Ids2ALS (IDS_NEXT (i)), IDS_AVIS (i), NULL, NULL);
-    }
-
-    return (res);
 }
 
 /** <!--******************************************************************-->
