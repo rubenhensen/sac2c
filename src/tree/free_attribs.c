@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.19  2004/12/09 16:39:41  sbs
+ * FUNDEF_USED in loops constitutes a problem in the newAST!!!
+ * FREEattribExtLink lacks the context in which it is called
+ * see comment in that function!
+ *
  * Revision 1.18  2004/12/09 16:29:20  sbs
  * now, the used counter is decremented for all those do-loops which do not
  * constitute the immediate recursive call.
@@ -226,6 +231,12 @@ FREEattribExtLink (node *attr)
                 if ((FUNDEF_USED (attr) != USED_INACTIVE)
                     && ((!FUNDEF_ISDOFUN (attr))
                         || (attr != ASSIGN_RHS (FUNDEF_INT_ASSIGN (attr))))) {
+                    /** TODO:  ^^^^ this is wrong! it should be the N_ap node
+                     *  that has attr as AP_FUNDEF!!!! However this is not available
+                     *  .... This way, we will face problemswhen freeing loops!
+                     * Most likely, the "FUNDEF_USED dropped below 0" a few lines
+                     * down below will strike....
+                     */
                     (FUNDEF_USED (attr))--;
 
                     DBUG_ASSERT ((FUNDEF_USED (attr) >= 0),
