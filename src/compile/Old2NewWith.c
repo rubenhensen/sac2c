@@ -28,8 +28,8 @@ ReadOneGenPart (FILE *infile, node *id_node)
 
     for (i = 0; i < SHPSEG_SHAPE (TYPES_SHPSEG (VARDEC_TYPE (ID_VARDEC (id_node))), 0);
          i++) {
-        if (error
-            = (feof (infile) || (fscanf (infile, "%d ", &val) == EOF) || ferror (infile)))
+        if ((error = (feof (infile) || (fscanf (infile, "%d ", &val) == EOF)
+                      || ferror (infile))))
             break;
         if (aelems == NULL) {
             aelem1 = aelems = MakeExprs (MakeNum (val), NULL);
@@ -71,7 +71,6 @@ node *
 BuildNpart (FILE *infile, node *arg_node)
 {
     node *tmp_node, *new_node = NULL;
-    node *a, *b, *s, *w;
 
     DBUG_ENTER ("BuildNpart");
 
