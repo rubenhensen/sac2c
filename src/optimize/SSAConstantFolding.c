@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.69  2004/09/26 12:08:43  ktr
+ * Constant index scalars are now known inside the with-loop body as well.
+ *
  * Revision 1.68  2004/09/25 14:35:52  ktr
  * Whenever a generator is known to cover just one index, the withid is assumed
  * to be constant inside thate corresponding code.
@@ -2936,6 +2939,9 @@ SSACFNpart (node *arg_node, info *arg_info)
  *   traverses parameter of generator to substitute constant arrays
  *   with their array representation to allow constant folding on known
  *   shape information.
+ *   Furthermore, index elements which are known to be constant in this
+ *   generator (e.g. [0,0] <= iv = [i,j] < [1000,1] => j == 0) are
+ *   augmented with a constant.
  *
  *****************************************************************************/
 
@@ -2961,9 +2967,13 @@ SSACFNgen (node *arg_node, info *arg_info)
     }
 
     if (INFO_SSACF_WITHID (arg_info) != NULL) {
+        /*
+         * If the upper and lower bounds vectors are known and the index space
+         * covers just one element, the index vector is constant
+         */
         if ((NGEN_BOUND1 (arg_node) != NULL) && (NGEN_BOUND2 (arg_node) != NULL)) {
             constant *lower, *upper, *diff, *idx;
-            shape *shp;
+            shape *diffshp;
             ids *_ids;
             int i;
 
@@ -2972,24 +2982,34 @@ SSACFNgen (node *arg_node, info *arg_info)
 
             if ((lower != NULL) && (upper != NULL)) {
                 diff = COSub (upper, lower);
-                shp = COConstant2Shape (diff);
-                if (SHGetUnrLen (shp) == 1) {
+                diffshp = COConstant2Shape (diff);
+                diff = COFreeConstant (diff);
+
+                /*
+                 * Check whether the whole index vector is constant
+                 */
+                if (SHGetUnrLen (diffshp) == 1) {
                     _ids = NWITHID_VEC (INFO_SSACF_WITHID (arg_info));
                     if (_ids != NULL) {
                         AVIS_SSACONST (IDS_AVIS (_ids)) = COCopyConstant (lower);
                     }
-                    i = 0;
-                    _ids = NWITHID_IDS (INFO_SSACF_WITHID (arg_info));
-                    while (_ids != NULL) {
+                }
+
+                /*
+                 * Check whether the index scalars are constant
+                 */
+                i = 0;
+                _ids = NWITHID_IDS (INFO_SSACF_WITHID (arg_info));
+                while (_ids != NULL) {
+                    if (SHGetExtent (diffshp, i) == 1) {
                         idx = COMakeConstantFromInt (i);
                         AVIS_SSACONST (IDS_AVIS (_ids)) = COIdxSel (idx, lower);
                         idx = COFreeConstant (idx);
-                        _ids = IDS_NEXT (_ids);
-                        i += 1;
                     }
+                    _ids = IDS_NEXT (_ids);
+                    i += 1;
                 }
-                diff = COFreeConstant (diff);
-                shp = SHFreeShape (shp);
+                diffshp = SHFreeShape (diffshp);
             }
             lower = COFreeConstant (lower);
             upper = COFreeConstant (upper);
