@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.168  2004/10/05 13:53:44  sah
+ * added some NEW_AST defines
+ *
  * Revision 3.167  2004/10/05 09:47:21  sah
  * changed some NEW_AST defines
  *
@@ -2198,10 +2201,12 @@ PrintAssign (node *arg_node, info *arg_info)
 
     PRINT_LINE_PRAGMA_IN_SIB (outfile, arg_node);
 
+#ifndef NEW_AST
     /* print some extra information during a section of mtmode 3 */
     if (executionmodes_available == TRUE) {
         fprintf (outfile, "%s:", MUTHDecodeExecmode (ASSIGN_EXECMODE (arg_node)));
     }
+#endif /* NEW_AST */
 
     DBUG_EXECUTE ("LINE", fprintf (outfile, "/*%03d*/", NODE_LINE (arg_node)););
 
@@ -4691,10 +4696,12 @@ Print (node *syntax_tree)
 
     arg_info = FreeInfo (arg_info);
 
+#ifndef NEW_AST
     /* if generating c library, invoke the headerfile generator */
     if ((generatelibrary & GENERATELIBRARY_C) && (compiler_phase == PH_genccode)) {
         PrintInterface (syntax_tree);
     }
+#endif /* NEW_AST */
 
     DBUG_RETURN (syntax_tree);
 }
@@ -5833,6 +5840,7 @@ PrintDataflowgraph (node *arg_node, info *arg_info)
 node *
 PrintDataflownode (node *arg_node, info *arg_info)
 {
+#ifndef NEW_AST
     nodelist *dependent_iterator;
     DBUG_ENTER ("PrintDataflownode");
 
@@ -5868,4 +5876,7 @@ PrintDataflownode (node *arg_node, info *arg_info)
         }
     }
     DBUG_RETURN (arg_node);
+#else  /* NEW_AST */
+    return (arg_node);
+#endif /* NEW_AST */
 }

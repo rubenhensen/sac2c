@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2004/10/05 13:52:59  sah
+ * added some NEW_AST defines
+ *
  * Revision 3.13  2004/03/10 00:10:17  dkrHH
  * old backend removed
  *
@@ -221,6 +224,8 @@
 #include "traverse.h"
 #include "resource.h"
 #include "gen_startup_code.h"
+
+#ifndef NEW_AST
 
 /*
  *
@@ -715,6 +720,8 @@ CreateLibrary ()
     DBUG_VOID_RETURN;
 }
 
+#endif /* NEW_AST */
+
 /*
  *
  *  functionname  : InvokeCC
@@ -761,7 +768,11 @@ InvokeCC ()
     }
 
     if (filetype == F_prog) {
+#ifndef NEW_AST
         char *linklist = GenLinklist (dependencies);
+#else
+        char *linklist = "";
+#endif /* NEW_AST */
         FILE *shellscript;
 
         if (use_efence) {
@@ -831,7 +842,7 @@ InvokeCC ()
 
     } else {
         /* compiling for a library */
-
+#ifndef NEW_AST
         if (generatelibrary & GENERATELIBRARY_C) {
             /* compile wrapper-file */
             SystemCall ("%s %s %s %s -o %s/cwrapper.o -c %s/cwrapper.c", config.cc,
@@ -874,6 +885,7 @@ InvokeCC ()
             }
             NOTE (("\n"));
         }
+#endif /* NEW_AST */
     }
 
     DBUG_VOID_RETURN;
