@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2004/07/29 12:12:41  ktr
+ * Refcounting of external functions now even works with global objects.
+ *
  * Revision 1.8  2004/07/28 08:53:04  ktr
  * unneeded variable removed from EMRCicm.
  *
@@ -1056,12 +1059,48 @@ TravRightIds (ids *arg_ids, info *arg_info)
 node *
 EMRCap (node *arg_node, info *arg_info)
 {
+    node *args;
+    ids *let_ids;
+    int argc;
+
     DBUG_ENTER ("EMRCap");
 
-    INFO_EMRC_COUNTMODE (arg_info) = rc_apuse;
+    args = AP_ARGS (arg_node);
+    argc = 0;
+    let_ids = INFO_EMRC_LHS (arg_info);
 
-    if (AP_ARGS (arg_node) != NULL) {
-        AP_ARGS (arg_node) = Trav (AP_ARGS (arg_node), arg_info);
+    /*
+     * Find out the number of NON-ARTIFICIAL argumuments in the LHS
+     */
+    while (let_ids != NULL) {
+        if (IDS_STATUS (let_ids) == ST_regular) {
+            argc += 1;
+        }
+        let_ids = IDS_NEXT (let_ids);
+    }
+
+    while (args != NULL) {
+
+        DBUG_ASSERT (EXPRS_EXPR (args) != NULL, "Missing argument!");
+        DBUG_ASSERT (NODE_TYPE (EXPRS_EXPR (args)) == N_id,
+                     "Function arguments must be N_id nodes");
+
+        if ((ID_STATUS (EXPRS_EXPR (args)) == ST_regular)
+            && (FUNDEF_EXT_NOT_REFCOUNTED (AP_FUNDEF (arg_node), argc))) {
+            INFO_EMRC_COUNTMODE (arg_info) = rc_prfuse;
+        } else {
+            INFO_EMRC_COUNTMODE (arg_info) = rc_apuse;
+        }
+
+        if (EXPRS_EXPR (args) != NULL) {
+            EXPRS_EXPR (args) = Trav (EXPRS_EXPR (args), arg_info);
+        }
+
+        if (ID_STATUS (EXPRS_EXPR (args)) == ST_regular) {
+            argc += 1;
+        }
+
+        args = EXPRS_NEXT (args);
     }
 
     DBUG_RETURN (arg_node);
