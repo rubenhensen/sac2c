@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.142  2005/01/19 14:18:12  jhb
+ * chande chk in error
+ *
  * Revision 3.141  2005/01/11 15:19:49  mwe
  * support for N_fungroup added
  *
@@ -2864,18 +2867,18 @@ DUPssacnt (node *arg_node, info *arg_info)
  *   node *Dupchk( node *arg_node, info *arg_info)
  *
  * description:
- *   Duplicates a N_ssacnt node.
+ *   Duplicates a Error node.
  *
  ******************************************************************************/
 
 node *
-DUPchk (node *arg_node, info *arg_info)
+DUPerror (node *arg_node, info *arg_info)
 {
     node *new_node;
 
-    DBUG_ENTER ("DUPchk");
+    DBUG_ENTER ("DUPerror");
 
-    new_node = TBmakeChk ();
+    new_node = TBmakeError ();
 
     DBUG_RETURN (new_node);
 }
