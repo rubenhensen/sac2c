@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2001/03/22 17:40:06  ben
+ * ICMs MT_SCHEDULER_Self_... added
+ *
  * Revision 3.8  2001/03/22 12:45:02  ben
  * ICMs MT_SCHEDULER_Cyclic_... added
  *
@@ -137,5 +140,8 @@ extern void ICMCompileMT_SCHEDULER_Even_END (int dim, char **vararg);
 
 extern void ICMCompileMT_SCHEDULER_Cyclic_BEGIN (int dim, char **vararg);
 extern void ICMCompileMT_SCHEDULER_Cyclic_END (int dim, char **vararg);
+
+extern void ICMCompileMT_SCHEDULER_Self_BEGIN (int dim, char **vararg);
+extern void ICMCompileMT_SCHEDULER_Self_END (int dim, char **vararg);
 
 #endif /* _ICM2C_MT_H_ */
