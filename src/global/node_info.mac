@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.187  1998/04/23 22:02:23  dkr
+ * removed SpmdOpt...
+ *
  * Revision 1.186  1998/04/23 18:56:36  dkr
  * added new tabs
  *
@@ -873,14 +876,14 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, FreeSPMD, TravSons, TravSons, CompSPMD, TravSons, DupSPMD, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, PrecSPMD,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, SpmdOptSPMD,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, 1),
 
   NIF (N_sync, "N_sync", TravSons, TravSons, PrintSync, TravSons, OptSync, TravSons,
        TravSons, FreeSync, TravSons, TravSons, CompSync, TravSons, DupSync, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, PrecSync,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, SpmdOptSync,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, 1),
 
   /*
