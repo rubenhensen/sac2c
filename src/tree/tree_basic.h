@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.15  2001/01/17 17:38:11  dkr
+ * NPART_PADDED removed (superfluous)
+ *
  * Revision 3.14  2001/01/10 14:27:09  dkr
  * new atttribute FULL_RANGE for N_WLseg- and N_WLsegVar-nodes added
  *
@@ -186,10 +189,6 @@
  * additional macros for INFO_PIW_ added
  *
  * Revision 1.59  2000/06/29 10:33:09  mab
- * added NPART_PADDED
- * changed type of *_PADDED from int to bool
- *
- * Revision 1.58  2000/06/29 10:25:02  mab
  * added NPART_PADDED
  * changed type of *_PADDED from int to bool
  *
@@ -2988,7 +2987,6 @@ extern node *MakeNWith (node *part, node *code, node *withop);
  ***
  ***    long*  MASK          (optimize -> )
  ***    bool   COPY          (Unroll !!)
- ***    bool   PADDED        (ap-> )
  ***/
 
 extern node *MakeNPart (node *withid, node *generator, node *code);
@@ -2999,7 +2997,6 @@ extern node *MakeNPart (node *withid, node *generator, node *code);
 #define NPART_CODE(n) ((n)->node[3])
 #define NPART_COPY(n) ((bool)((n)->flag))
 #define NPART_MASK(n, x) ((n)->mask[x])
-#define NPART_PADDED(n) ((bool)((n)->flag))
 
 /*--------------------------------------------------------------------------*/
 
@@ -3130,7 +3127,8 @@ extern node *MakeNWithOp (WithOpType WithOp);
  ***    shpseg*    WLAA_ARRAYSHP(n)        (wlaa -> )
  ***    node*      WLAA_WLARRAY(n)         (wlaa -> )
  ***    shpseg*    TSI_TILESHP(n)          (tsi  -> )
- ***    int        AP_DUMMY_CODE(n)        (ap   -> )
+ ***
+ ***    bool       AP_DUMMY_CODE           (ap -> compile )
  ***
  ***  remarks:
  ***
@@ -3179,7 +3177,7 @@ extern node *MakeNCode (node *block, node *expr);
 
 #define NCODE_TSI_TILESHP(n) ((shpseg *)(((node *)(n)->info2)->node[4]))
 
-#define NCODE_APT_DUMMY_CODE(n) ((n)->int_data)
+#define NCODE_AP_DUMMY_CODE(n) ((n)->int_data)
 
 /*--------------------------------------------------------------------------*/
 
