@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 2.9  2000/11/15 19:39:24  dkr
+# no line contains more than 80 chars now
+#
 # Revision 2.8  2000/11/15 17:32:07  dkr
 # dependency for Makefile.Config.for.% added
 #
@@ -105,24 +108,30 @@ ALPHA_MAKE  =  gmake
 #
 
 DATE          :=  $(shell date +%d_%b_%y)
-BINDISTRIBS   :=  $(addprefix $(BINTARGETDIR)/SAC-$(VERSION)-,$(addsuffix -$(DATE).tar.gz,$(SYSTEMS))) 
+BINDISTRIBS   :=  $(addprefix $(BINTARGETDIR)/SAC-$(VERSION)-, \
+                  $(addsuffix -$(DATE).tar.gz,$(SYSTEMS))) 
 SRCDISTRIBS   :=  $(SRCTARGETDIR)/SAC-$(VERSION)-$(DATE).tar.gz
-CHECKFILES    :=  $(PACKAGES) $(foreach system,$(SYSTEMS), $(addsuffix .for.$(system),$(SPECIFICS)))
+CHECKFILES    :=  $(PACKAGES) $(foreach system,$(SYSTEMS), \
+                  $(addsuffix .for.$(system),$(SPECIFICS)))
 
 
-.PHONY: all linux solaris alpha source clean update new allnew check_existing_files
+.PHONY: all linux solaris alpha source clean update new allnew
+.PHONY: check_existing_files
 .SECONDARY: $(CHECKFILES)
 
 
-all: check_existing_files $(BINDISTRIBS) $(SRCDISTRIBS)
+all:     check_existing_files $(BINDISTRIBS) $(SRCDISTRIBS)
 
-linux: check_existing_files $(BINTARGETDIR)/SAC-$(VERSION)-LINUX_X86-$(DATE).tar.gz
+source:  check_existing_files $(SRCDISTRIBS)
 
-solaris: check_existing_files $(BINTARGETDIR)/SAC-$(VERSION)-SOLARIS_SPARC-$(DATE).tar.gz
+linux:   check_existing_files \
+         $(BINTARGETDIR)/SAC-$(VERSION)-LINUX_X86-$(DATE).tar.gz
 
-alpha: check_existing_files $(BINTARGETDIR)/SAC-$(VERSION)-OSF_ALPHA-$(DATE).tar.gz
+solaris: check_existing_files \
+         $(BINTARGETDIR)/SAC-$(VERSION)-SOLARIS_SPARC-$(DATE).tar.gz
 
-source: check_existing_files $(SRCDISTRIBS)
+alpha:   check_existing_files \
+         $(BINTARGETDIR)/SAC-$(VERSION)-OSF_ALPHA-$(DATE).tar.gz
 
 
 $(SRCTARGETDIR)/SAC-$(VERSION)-$(DATE).tar.gz: $(PACKAGES) $(FILES) src.tar.gz
@@ -141,7 +150,8 @@ $(BINTARGETDIR)/SAC-$(VERSION)-%-$(DATE).tar.gz: \
 	@echo "**************************************************************"
 	rm -f $(SPECIFICS)
 	for file in $(SPECIFICS); do ln -s $${file}.for.$* $${file}; done
-	tar cvfh $(BINTARGETDIR)/SAC-$(VERSION)-$*-$(DATE).tar $(SPECIFICS) $(PACKAGES) $(FILES)
+	tar cvfh $(BINTARGETDIR)/SAC-$(VERSION)-$*-$(DATE).tar \
+	    $(SPECIFICS) $(PACKAGES) $(FILES)
 	gzip -f $(BINTARGETDIR)/SAC-$(VERSION)-$*-$(DATE).tar
 	rm -f $(SPECIFICS)
 
@@ -174,13 +184,14 @@ sac2c.for.LINUX_X86 libsac.tar.for.LINUX_X86:
 	@echo "*  Creating sac2c for LINUX_X86"
 	@echo "**************************************************************"
 	@ ping $(LX86_HOST) >/dev/null; \
-          if [ $${?} -ne 0 ]; then \
+          if [ $${?} -ne 0 ]; then      \
             echo "Host $(LX86_HOST) is down !"; \
             echo "Unable to create LINUX_X86 distribution !"; \
             exit 1; \
           fi
 	( cd $(SAC2CDIR); $(MAKE) tar )
-	rsh -l $(LX86_USER) $(LX86_HOST) 'rm -rf $(LX86_DIR); mkdir -p $(LX86_DIR)' 
+	rsh -l $(LX86_USER) $(LX86_HOST) \
+	    'rm -rf $(LX86_DIR); mkdir -p $(LX86_DIR)'
 	rcp $(SAC2CDIR)/src.tar.gz $(LX86_USER)@$(LX86_HOST):$(LX86_DIR)
 	rsh -l $(LX86_USER) $(LX86_HOST) \
 	    'cd $(LX86_DIR);'        \
@@ -190,11 +201,13 @@ sac2c.for.LINUX_X86 libsac.tar.for.LINUX_X86:
 	    'touch src/*/*;'         \
 	    '$(LX86_MAKE) deps OS=LINUX_X86;'     \
 	    '$(LX86_MAKE) distrib_product OS=LINUX_X86'
-	rcp $(LX86_USER)@$(LX86_HOST):$(LX86_DIR)/sac2c ./sac2c.for.LINUX_X86
+	rcp $(LX86_USER)@$(LX86_HOST):$(LX86_DIR)/sac2c \
+	    ./sac2c.for.LINUX_X86
 	rsh -l $(LX86_USER) $(LX86_HOST)   \
 	    'cd $(LX86_DIR)/src/runtime;'  \
 	    'tar cvfh libsac.tar libsac*.a'
-	rcp $(LX86_USER)@$(LX86_HOST):$(LX86_DIR)/src/runtime/libsac.tar ./libsac.tar.for.LINUX_X86
+	rcp $(LX86_USER)@$(LX86_HOST):$(LX86_DIR)/src/runtime/libsac.tar \
+	    ./libsac.tar.for.LINUX_X86
 	@ if [ $${?} -eq 0 ]; then  \
 	    rsh -l $(LX86_USER) $(LX86_HOST) 'rm -rf $(LX86_DIR)'; \
 	  else \
@@ -214,7 +227,8 @@ sac2c.for.OSF_ALPHA libsac.tar.for.OSF_ALPHA:
             exit 1; \
           fi
 	( cd $(SAC2CDIR); $(MAKE) tar )
-	rsh -l $(ALPHA_USER) $(ALPHA_HOST) 'rm -rf $(ALPHA_DIR); mkdir -p $(ALPHA_DIR)' 
+	rsh -l $(ALPHA_USER) $(ALPHA_HOST) \
+	    'rm -rf $(ALPHA_DIR); mkdir -p $(ALPHA_DIR)' 
 	rcp $(SAC2CDIR)/src.tar.gz $(ALPHA_USER)@$(ALPHA_HOST):$(ALPHA_DIR)
 	rsh -l $(ALPHA_USER) $(ALPHA_HOST) \
 	    'export PATH=$$HOME/bin:$$PATH:/usr/local/bin:/usr/bin/X11;' \
@@ -225,16 +239,18 @@ sac2c.for.OSF_ALPHA libsac.tar.for.OSF_ALPHA:
 	    'touch src/*/*;'         \
 	    '$(ALPHA_MAKE) deps OS=OSF_ALPHA;'    \
 	    '$(ALPHA_MAKE) distrib_product OS=OSF_ALPHA'
-	rcp $(ALPHA_USER)@$(ALPHA_HOST):$(ALPHA_DIR)/sac2c ./sac2c.for.OSF_ALPHA
-	rsh -l $(ALPHA_USER) $(ALPHA_HOST)   \
+	rcp $(ALPHA_USER)@$(ALPHA_HOST):$(ALPHA_DIR)/sac2c \
+	     ./sac2c.for.OSF_ALPHA
+	rsh -l $(ALPHA_USER) $(ALPHA_HOST)  \
 	    'cd $(ALPHA_DIR)/src/runtime;'  \
 	    'tar cvfh libsac.tar libsac*.a'
-	rcp $(ALPHA_USER)@$(ALPHA_HOST):$(ALPHA_DIR)/src/runtime/libsac.tar ./libsac.tar.for.OSF_ALPHA
+	rcp $(ALPHA_USER)@$(ALPHA_HOST):$(ALPHA_DIR)/src/runtime/libsac.tar \
+	    ./libsac.tar.for.OSF_ALPHA
 	@ if [ $${?} -eq 0 ]; then  \
 	    rsh -l $(ALPHA_USER) $(ALPHA_HOST) 'rm -rf $(ALPHA_DIR)'; \
 	  else \
 	    echo "Compilation of sac2c for OSF_ALPHA failed!"; \
-	    echo "Unable to create OSF_ALPHA distribution !"; \
+	    echo "Unable to create OSF_ALPHA distribution !";  \
 	    exit 1; \
 	  fi
 
@@ -284,12 +300,14 @@ demo.tar:
 
 check_existing_files:
 	@ for file in $(CHECKFILES); do  \
-            if [ -f $${file} ]; then echo 'WARNING: '$${file}' is being reused!'; fi ;\
+            if [ -f $${file} ]; then     \
+	      echo 'WARNING: '$${file}' is being reused!'; fi; \
           done
 
 
 clean:
-	rm -f $(BINDISTRIBS) $(SRCDISTRIBS) $(addsuffix .for.*,$(SPECIFICS)) $(PACKAGES)
+	rm -f $(BINDISTRIBS) $(SRCDISTRIBS) \
+	    $(addsuffix .for.*,$(SPECIFICS)) $(PACKAGES)
 	rm -f $(SPECIFICS)
 	rm -f *~ *.bak *.old
 
