@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2000/12/07 11:00:35  dkr
+ * DBUG-string LAC2FUN renamed into L2F
+ *
  * Revision 3.4  2000/12/06 20:09:34  dkr
  * InferDFMs used
  *
@@ -198,9 +201,9 @@ MakeL2fFundef (char *funname, char *modname, statustype status, node *instr,
             || (ARG_ATTRIB (tmp) == ST_readonly_reference)) {
             ARG_ATTRIB (tmp) = ST_unique;
 
-            DBUG_PRINT ("LAC2FUN", ("ATTRIB[ .. %s( .. %s .. ) { .. } ]: "
-                                    " ST_..reference -> ST_unique",
-                                    funname, ARG_NAME (tmp)));
+            DBUG_PRINT ("L2F", ("ATTRIB[ .. %s( .. %s .. ) { .. } ]: "
+                                " ST_..reference -> ST_unique",
+                                funname, ARG_NAME (tmp)));
         }
         tmp = ARG_NEXT (tmp);
     }
@@ -217,9 +220,9 @@ MakeL2fFundef (char *funname, char *modname, statustype status, node *instr,
             ID_ATTRIB (EXPRS_EXPR (tmp)) = ST_unique;
             ID_STATUS (EXPRS_EXPR (tmp)) = ST_artificial;
 
-            DBUG_PRINT ("LAC2FUN", ("%s():  ATTRIB/STATUS[ return( %s) ] "
-                                    " .. -> ST_unique/ST_artificial",
-                                    funname, ID_NAME (EXPRS_EXPR (tmp))));
+            DBUG_PRINT ("L2F", ("%s():  ATTRIB/STATUS[ return( %s) ] "
+                                " .. -> ST_unique/ST_artificial",
+                                funname, ID_NAME (EXPRS_EXPR (tmp))));
         }
         tmp = EXPRS_NEXT (tmp);
     }
@@ -289,9 +292,9 @@ MakeL2fFundef (char *funname, char *modname, statustype status, node *instr,
                 ARG_ATTRIB (tmp) = ST_unique;
             }
 
-            DBUG_PRINT ("LAC2FUN", ("ATTRIB[ .. %s( .. %s ..) { .. } ]: "
-                                    " ST_was_reference -> ST_unique",
-                                    funname, ARG_NAME (tmp)));
+            DBUG_PRINT ("L2F", ("ATTRIB[ .. %s( .. %s ..) { .. } ]: "
+                                " ST_was_reference -> ST_unique",
+                                funname, ARG_NAME (tmp)));
         }
         tmp = ARG_NEXT (tmp);
     }
@@ -399,9 +402,9 @@ MakeL2fFunLet (char *funname, char *modname, DFMmask_t in, DFMmask_t out)
             IDS_ATTRIB (tmp) = ST_unique;
             IDS_STATUS (tmp) = ST_artificial;
 
-            DBUG_PRINT ("LAC2FUN", ("ATTRIB/STATUS[ %s = %s( .. ) ] "
-                                    " .. -> ST_unique/ST_artificial",
-                                    IDS_NAME (tmp), funname));
+            DBUG_PRINT ("L2F", ("ATTRIB/STATUS[ %s = %s( .. ) ] "
+                                " .. -> ST_unique/ST_artificial",
+                                IDS_NAME (tmp), funname));
         }
         tmp = IDS_NEXT (tmp);
     }
