@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.3  2001/02/15 16:56:36  nmw
+ * some DBUG_ASSERTS added
+ *
  * Revision 1.2  2001/02/13 15:16:34  nmw
  * CheckAvis traversal implemented
  *
@@ -250,6 +253,8 @@ CAVids (ids *arg_ids, node *arg_info)
                             IDS_VARDEC_NAME (arg_ids)));
         IDS_AVIS (arg_ids) = VARDEC_OR_ARG_AVIS (IDS_VARDEC (arg_ids));
     }
+
+    DBUG_ASSERT ((IDS_AVIS (arg_ids) != NULL), "AVIS reference still unset.");
 
     if (IDS_NEXT (arg_ids) != NULL) {
         IDS_NEXT (arg_ids) = TravIDS (IDS_NEXT (arg_ids), arg_info);
