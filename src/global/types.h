@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.57  2004/11/22 19:09:54  ktr
+ * SACDECCAMP 04
+ *
  * Revision 3.56  2004/11/22 18:50:07  ktr
  * typedefs moved from LookUpTables.h SACDevCamp 04
  *
@@ -1035,15 +1038,15 @@ typedef enum {
     SET_wrapperbody,
     SET_wrapperhead,
     SET_namespace
-} STentrytype_t;
+} stentrytype_t;
 
-typedef enum { SVT_local, SVT_provided, SVT_exported } STvisibility_t;
+typedef enum { SVT_local, SVT_provided, SVT_exported } stvisibility_t;
 
-typedef struct ST_ENTRY_T STentry_t;
-typedef struct ST_SYMBOLITERATOR_T STsymboliterator_t;
-typedef struct ST_ENTRYITERATOR_T STentryiterator_t;
-typedef struct ST_SYMBOLTABLE_T STtable_t;
-typedef struct ST_SYMBOL_T STsymbol_t;
+typedef struct ST_ENTRY_T stentry_t;
+typedef struct ST_SYMBOLITERATOR_T stsymboliterator_t;
+typedef struct ST_ENTRYITERATOR_T stentryiterator_t;
+typedef struct ST_SYMBOLTABLE_T sttable_t;
+typedef struct ST_SYMBOL_T stsymbol_t;
 
 /*
  * New types for global
@@ -1102,6 +1105,6 @@ typedef struct STACK_T dfmstack_t;
  * moved from LookUpTable.h
  */
 
-typedef struct LUT_T *LUT_t;
+typedef struct LUT_T lut_t;
 
 #endif /* _SAC_TYPES_H_ */
