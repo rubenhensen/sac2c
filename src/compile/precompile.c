@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2001/01/19 11:55:44  dkr
+ * PREC2WLseg() and PREC2WLsegVar() replaced by PREC2WLsegx()
+ *
  * Revision 3.5  2000/12/12 12:24:06  dkr
  * PREC1fundef: marking of c-functions is done during RC now
  *
@@ -1882,7 +1885,7 @@ PREC2sync (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PREC2WLseg(node *arg_node, node *arg_info)
+ *   node *PREC2WLsegx(node *arg_node, node *arg_info)
  *
  * description:
  *   Since the scheduling specification may contain the names of local
@@ -1892,50 +1895,19 @@ PREC2sync (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PREC2WLseg (node *arg_node, node *arg_info)
+PREC2WLsegx (node *arg_node, node *arg_info)
 {
-    DBUG_ENTER ("PREC2WLseg");
+    DBUG_ENTER ("PREC2WLsegx");
 
-    if (WLSEG_SCHEDULING (arg_node) != NULL) {
-        WLSEG_SCHEDULING (arg_node)
-          = SCHPrecompileScheduling (WLSEG_SCHEDULING (arg_node));
+    if (WLSEGX_SCHEDULING (arg_node) != NULL) {
+        WLSEGX_SCHEDULING (arg_node)
+          = SCHPrecompileScheduling (WLSEGX_SCHEDULING (arg_node));
     }
 
-    WLSEG_CONTENTS (arg_node) = Trav (WLSEG_CONTENTS (arg_node), arg_info);
+    WLSEGX_CONTENTS (arg_node) = Trav (WLSEGX_CONTENTS (arg_node), arg_info);
 
-    if (WLSEG_NEXT (arg_node) != NULL) {
-        WLSEG_NEXT (arg_node) = Trav (WLSEG_NEXT (arg_node), arg_info);
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *PREC2WLsegVar(node *arg_node, node *arg_info)
- *
- * description:
- *   Since the scheduling specification may contain the names of local
- *   identifiers, these have to be renamed according to the general renaming
- *   scheme implemented by this compiler phase.
- *
- ******************************************************************************/
-
-node *
-PREC2WLsegVar (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("PREC2WLsegVar");
-
-    if (WLSEGVAR_SCHEDULING (arg_node) != NULL) {
-        WLSEGVAR_SCHEDULING (arg_node)
-          = SCHPrecompileScheduling (WLSEGVAR_SCHEDULING (arg_node));
-    }
-
-    WLSEGVAR_CONTENTS (arg_node) = Trav (WLSEGVAR_CONTENTS (arg_node), arg_info);
-
-    if (WLSEGVAR_NEXT (arg_node) != NULL) {
-        WLSEGVAR_NEXT (arg_node) = Trav (WLSEGVAR_NEXT (arg_node), arg_info);
+    if (WLSEGX_NEXT (arg_node) != NULL) {
+        WLSEGX_NEXT (arg_node) = Trav (WLSEGX_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);

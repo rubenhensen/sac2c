@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2001/01/19 11:55:32  dkr
+ * PREC2WLseg() and PREC2WLsegVar() replaced by PREC2WLsegx()
+ *
  * Revision 3.2  2000/12/04 12:31:48  dkr
  * PREC2array added
  *
@@ -125,8 +128,7 @@ extern node *PREC2generator (node *arg_node, node *arg_info);
 extern node *PREC2Nwithid (node *arg_node, node *arg_info);
 extern node *PREC2Nwith2 (node *arg_node, node *arg_info);
 extern node *PREC2Ncode (node *arg_node, node *arg_info);
-extern node *PREC2WLseg (node *arg_node, node *arg_info);
-extern node *PREC2WLsegVar (node *arg_node, node *arg_info);
+extern node *PREC2WLsegx (node *arg_node, node *arg_info);
 extern node *PREC2sync (node *arg_node, node *arg_info);
 
 extern char *ObjInitFunctionName ();
