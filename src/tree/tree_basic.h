@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.116  2002/03/07 17:51:13  sbs
+ * ST_wrapperfun as possible fundef status added
+ *
  * Revision 3.115  2002/03/07 02:21:30  dkr
  * INFO_COMP_FIRSTASSIGN removed
  * INFO_PREC... macros renamed
@@ -936,6 +939,7 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  *   ST_dofun          : function representing a do-loop (LaC function)
  *   ST_whilefun       : function representing a while-loop (LaC function)
  *   ST_zombiefun      : zombie function
+ *   ST_wrapperfun     : wrapper function
  *
  * before multithreading:
  * ATTRIB:
