@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.57  2000/06/28 15:12:46  nmw
+ * added macros for INFO_PIW and INFO_PIH
+ *
  * Revision 1.56  2000/06/23 16:41:04  nmw
  * macros for INFO_MCW added
  *
@@ -2153,10 +2156,16 @@ extern node *MakePragma ();
  ***    int        VARNO
  ***
  ***
- ***  when used in print_interface.c  and map_wrapper.c
- ***    node*      MODUL
+ ***  when used in print_interface.c
+ ***    int        INFO_PIH_FLAG     (switch between comment and prototype)
+ ***    int        INFO_PIH_COMMA    )
+ ***    int        INFO_PIW_FLAG
+ ***    int        INFO_PIW_COMMA
+ ***
+ ***  when used in map_wrapper.c
+ ***    node*      MODUL             (access to module node)
+ ***    node*      FUNDEF            (fundef parameter)
  ***    int        FLAG
- ***    char*      NAME
  ***
  ***
  ***  when used in pad_transform.c
@@ -2528,18 +2537,18 @@ extern node *MakeInfo ();
 #define INFO_AI_PREASSIGN(n) (n->node[3])
 #define INFO_AI_POSTASSIGN(n) (n->node[4])
 
-/* when used in print_interface.c  and map_wrapper.c */
-#define INFO_MCW_NAME(n) (n->src_file)
+/* when map_wrapper.c */
 #define INFO_MCW_MODUL(n) (n->node[0])
+#define INFO_MCW_FUNDEF(n) (n->node[1])
 #define INFO_MCW_FLAG(n) (n->flag)
-/*old macros - can be removed soon */
-#define INFO_PIW_FUNDEF(n) (n->node[0])
-#define INFO_PIW_NEXT_FUNDEF(n) (n->node[1])
-#define INFO_PIW_NEXT_WRAPPER(n) (n->node[2])
-#define INFO_PIW_RETPOS(n) (n->int_data)
-#define INFO_PIW_ARGCOUNT(n) (n->counter)
-#define INFO_PIW_WRAPPERNAME(n) (n->src_file)
-#define INFO_PIW_RETCOUNT(n) (n->flag)
+
+/* when used in print_interface.c */
+#define INFO_PIH_FLAG(n) (n->flag)
+#define INFO_PIH_COMMA(n) (n->varno)
+#define INFO_PIH_COUNTER(n) (n->counter)
+#define INFO_PIW_FLAG(n) (n->flag)
+#define INFO_PIW_COMMA(n) (n->varno)
+#define INFO_PIW_COUNTER(n) (n->counter)
 
 /* when used in pad_transform.c */
 #define INFO_APT_EXPRESSION_PADDED(n) (n->flag)
