@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2001/04/12 12:40:14  nmw
+ * SSALIRexprs added
+ *
  * Revision 1.3  2001/04/09 15:57:08  nmw
  * first implementation of code move up (not tested yet)
  *
@@ -44,6 +47,7 @@ extern node *SSALIRcond (node *arg_node, node *arg_info);
 extern node *SSALIRreturn (node *arg_node, node *arg_info);
 extern node *SSALIRNwith (node *arg_node, node *arg_info);
 extern node *SSALIRNwithid (node *arg_node, node *arg_info);
+extern node *SSALIRexprs (node *arg_node, node *arg_info);
 
 /* traversal functions to move loop invariant expressions */
 extern node *LIRMOVid (node *arg_node, node *arg_info);
