@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.34  2003/05/21 16:38:02  ktr
+ * added option -ktr
+ *
  * Revision 3.33  2003/03/24 16:35:56  sbs
  * cpp_incs added.
  *
@@ -257,6 +260,8 @@
  * special hidden options!
  */
 bool sbs = FALSE;
+
+bool ktr = FALSE;
 
 /*
  *  Version control

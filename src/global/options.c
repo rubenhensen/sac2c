@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.42  2003/05/21 16:38:02  ktr
+ * added option -ktr
+ *
  * Revision 3.41  2003/04/15 21:16:15  dkr
  * -DTAGGED_ARRAYS created only once
  *
@@ -871,6 +874,8 @@ AnalyseCommandline (int argc, char *argv[])
     });
 
     ARGS_FLAG ("sbs", sbs = TRUE);
+
+    ARGS_FLAG ("ktr", ktr = TRUE);
 
     ARGS_FLAG ("ssa", use_ssaform = TRUE);
 

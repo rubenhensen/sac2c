@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.27  2003/05/21 16:38:02  ktr
+ * added option -ktr
+ *
  * Revision 3.26  2003/03/24 16:35:56  sbs
  * cpp_incs added.
  *
@@ -170,6 +173,7 @@
 #define EXTERN_MOD_NAME "_EXT"
 
 extern bool sbs;
+extern bool ktr;
 
 extern char version_id[];
 extern char target_platform[];
