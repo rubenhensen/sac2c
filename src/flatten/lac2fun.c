@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2000/02/17 11:36:07  dkr
+ * FUNDEF_LAC_LET removed
+ *
  * Revision 1.8  2000/02/09 16:38:00  dkr
  * Workaround for main function: For the time being the main function
  * has an empty module name. Therefore the module name for LAC functions
@@ -82,7 +85,7 @@ GetDummyFunName (char *suffix)
  *
  * function:
  *   node *MakeDummyFundef( char *funname, char *modname, status status,
- *                          node *instr,
+ *                          node *instr, node *funcall_let,
  *                          DFMmask_t in, DFMmask_t out, DFMmask_t local)
  *
  * description:
@@ -92,12 +95,11 @@ GetDummyFunName (char *suffix)
 
 static node *
 MakeDummyFundef (char *funname, char *modname, statustype status, node *instr,
-                 DFMmask_t in, DFMmask_t out, DFMmask_t local)
+                 node *funcall_let, DFMmask_t in, DFMmask_t out, DFMmask_t local)
 {
     lut_t *lut;
     DFMmask_t tmp_mask;
-    node *ret, *args, *vardecs, *fundef;
-    node *assigns = NULL;
+    node *ret, *args, *vardecs, *fundef, *assigns, *new_body, *let, *tmp;
 
     DBUG_ENTER ("MakeDummyFundef");
 
@@ -114,23 +116,51 @@ MakeDummyFundef (char *funname, char *modname, statustype status, node *instr,
 
     ret = MakeAssign (MakeReturn (DFM2Exprs (out, lut)), NULL);
 
+    fundef = MakeFundef (StringCopy (funname), StringCopy (modname), DFM2Types (out),
+                         args, NULL, /* the block is not complete yet */
+                         NULL);
+    FUNDEF_STATUS (fundef) = status;
+    FUNDEF_RETURN (fundef) = ASSIGN_INSTR (ret);
+
     switch (status) {
     case ST_condfun:
         assigns = MakeAssign (DupTreeLUT (instr, NULL, lut), ret);
         break;
+
+    case ST_whilefun:
+        new_body = DupTreeLUT (WHILE_BODY (instr), NULL, lut);
+
+        /*
+         * append call of loop-dummy-function to body.
+         */
+        tmp = BLOCK_INSTR (new_body);
+        if (tmp != NULL) {
+            while (ASSIGN_NEXT (tmp) != NULL) {
+                tmp = ASSIGN_NEXT (tmp);
+            }
+            let = DupTreeLUT (funcall_let, NULL, lut);
+            AP_FUNDEF (LET_EXPR (let)) = fundef;
+            ASSIGN_NEXT (tmp) = MakeAssign (let, NULL);
+        }
+
+        assigns = MakeAssign (MakeCond (DupTreeLUT (WHILE_COND (instr), NULL, lut),
+                                        new_body, MakeBlock (MakeEmpty (), NULL)),
+                              ret);
+        break;
+
     case ST_dofun:
         break;
-    case ST_whilefun:
-        break;
+
     default:
+        assigns = NULL;
         break;
     }
     DBUG_ASSERT ((assigns != NULL), "wrong status -> no assigns created");
 
-    fundef = MakeFundef (StringCopy (funname), StringCopy (modname), DFM2Types (out),
-                         args, MakeBlock (assigns, vardecs), NULL);
-    FUNDEF_STATUS (fundef) = status;
-    FUNDEF_RETURN (fundef) = ASSIGN_INSTR (ret);
+    /*
+     * now we can add the body to the fundef
+     */
+    FUNDEF_BODY (fundef) = MakeBlock (assigns, vardecs);
 
     DBUG_RETURN (fundef);
 }
@@ -138,7 +168,7 @@ MakeDummyFundef (char *funname, char *modname, statustype status, node *instr,
 /******************************************************************************
  *
  * function:
- *   node *MakeDummyFunLet( char *funname, node *fundef,
+ *   node *MakeDummyFunLet( char *funname,
  *                          DFMmask_t in, DFMmask_t out)
  *
  * description:
@@ -147,7 +177,7 @@ MakeDummyFundef (char *funname, char *modname, statustype status, node *instr,
  ******************************************************************************/
 
 static node *
-MakeDummyFunLet (char *funname, char *modname, node *fundef, DFMmask_t in, DFMmask_t out)
+MakeDummyFunLet (char *funname, char *modname, DFMmask_t in, DFMmask_t out)
 {
     node *let;
 
@@ -156,7 +186,6 @@ MakeDummyFunLet (char *funname, char *modname, node *fundef, DFMmask_t in, DFMma
     let = MakeLet (MakeAp (StringCopy (funname), StringCopy (modname),
                            DFM2Exprs (in, NULL)),
                    DFM2Ids (out, NULL));
-    AP_FUNDEF (LET_EXPR (let)) = fundef;
 
     DBUG_RETURN (let);
 }
@@ -185,9 +214,8 @@ DefinedVar (char *id, node *decl, DFMmask_t needed, DFMmask_t *in, DFMmask_t *ou
         DFMSetMaskEntryClear (*in, id, decl);
         if (DFMTestMaskEntry (needed, id, decl)) {
             DFMSetMaskEntrySet (*out, id, decl);
-        } else {
-            DFMSetMaskEntrySet (*local, id, decl);
         }
+        DFMSetMaskEntrySet (*local, id, decl);
     } else {
         DBUG_ASSERT ((NODE_TYPE (decl) == N_objdef),
                      "declaration is neither a N_arg/N_vardec-node nor a N_objdef-node");
@@ -249,6 +277,278 @@ AdjustNeeded (DFMmask_t *needed, DFMmask_t in, DFMmask_t out)
     DFMSetMaskOr (needed, in);
 
     DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *DoLifting( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   This function carries out the lifting of a conditional or loop
+ *   (N_cond, N_while, or N_do).
+ *
+ ******************************************************************************/
+
+static node *
+DoLifting (node *arg_node, node *arg_info)
+{
+    DFMmask_t old_needed, old_in, old_out, old_local;
+    DFMmask_t in_then, out_then, local_then;
+    DFMmask_t in_else, out_else, local_else;
+    DFMmask_t tmp;
+    char *funname, *modname;
+    node *fundef, *let;
+    statustype status;
+    nodetype type = NODE_TYPE (arg_node);
+
+    DBUG_ENTER ("DoLifting");
+
+    /*
+     * save old masks
+     */
+    old_needed = INFO_LAC2FUN_NEEDED (arg_info);
+    old_in = INFO_LAC2FUN_IN (arg_info);
+    old_out = INFO_LAC2FUN_OUT (arg_info);
+    old_local = INFO_LAC2FUN_LOCAL (arg_info);
+
+    /*
+     * setup needed-masks for then/else-block and loop-block respectively
+     */
+    INFO_LAC2FUN_NEEDED (arg_info) = DFMGenMaskCopy (old_needed);
+    AdjustNeeded (INFO_LAC2FUN_NEEDED (arg_info), old_in, old_out);
+
+    /*
+     * setup in-, out-, local-masks for then-block and loop-block respectively
+     */
+    INFO_LAC2FUN_IN (arg_info) = DFMGenMaskClear (INFO_LAC2FUN_DFMBASE (arg_info));
+    INFO_LAC2FUN_OUT (arg_info) = DFMGenMaskClear (INFO_LAC2FUN_DFMBASE (arg_info));
+    INFO_LAC2FUN_LOCAL (arg_info) = DFMGenMaskClear (INFO_LAC2FUN_DFMBASE (arg_info));
+
+    /*
+     * traverse then/else-block and loop-block respectively
+     */
+    switch (type) {
+    case N_cond:
+        COND_THEN (arg_node) = Trav (COND_THEN (arg_node), arg_info);
+
+        in_then = INFO_LAC2FUN_IN (arg_info);
+        out_then = INFO_LAC2FUN_OUT (arg_info);
+        local_then = INFO_LAC2FUN_LOCAL (arg_info);
+
+        /*
+         * setup in-, out-, local-masks for else-block
+         */
+        INFO_LAC2FUN_IN (arg_info) = DFMGenMaskClear (INFO_LAC2FUN_DFMBASE (arg_info));
+        INFO_LAC2FUN_OUT (arg_info) = DFMGenMaskClear (INFO_LAC2FUN_DFMBASE (arg_info));
+        INFO_LAC2FUN_LOCAL (arg_info) = DFMGenMaskClear (INFO_LAC2FUN_DFMBASE (arg_info));
+
+        COND_ELSE (arg_node) = Trav (COND_ELSE (arg_node), arg_info);
+
+        in_else = INFO_LAC2FUN_IN (arg_info);
+        out_else = INFO_LAC2FUN_OUT (arg_info);
+        local_else = INFO_LAC2FUN_LOCAL (arg_info);
+        break;
+
+    case N_while:
+        WHILE_BODY (arg_node) = Trav (WHILE_BODY (arg_node), arg_info);
+        break;
+
+    case N_do:
+        DO_BODY (arg_node) = Trav (DO_BODY (arg_node), arg_info);
+        break;
+
+    default:
+        DBUG_ASSERT ((0), "Only conditionals or loops can be lifted!");
+        break;
+    }
+
+    /*
+     * restore old needed-mask
+     */
+    INFO_LAC2FUN_NEEDED (arg_info) = DFMRemoveMask (INFO_LAC2FUN_NEEDED (arg_info));
+    INFO_LAC2FUN_NEEDED (arg_info) = old_needed;
+
+    /*
+     * calculate new in-, out-, local-masks and traverse condition
+     */
+    switch (type) {
+    case N_cond:
+        /* in = in_then u in_else u (out_then \ out_else) u (out_else \ out_then) */
+        INFO_LAC2FUN_IN (arg_info) = DFMGenMaskMinus (out_then, out_else);
+        tmp = DFMGenMaskMinus (out_else, out_then);
+        DFMSetMaskOr (INFO_LAC2FUN_IN (arg_info), tmp);
+        DFMSetMaskOr (INFO_LAC2FUN_IN (arg_info), in_then);
+        DFMSetMaskOr (INFO_LAC2FUN_IN (arg_info), in_else);
+        /* out = out_then u out_else */
+        INFO_LAC2FUN_OUT (arg_info) = DFMGenMaskOr (out_then, out_else);
+        /* local = (local_then u local_else) \ in */
+        INFO_LAC2FUN_LOCAL (arg_info) = DFMGenMaskOr (local_then, local_else);
+        DFMSetMaskMinus (INFO_LAC2FUN_LOCAL (arg_info), INFO_LAC2FUN_IN (arg_info));
+
+        /*
+         * traverse condition
+         */
+        COND_COND (arg_node) = Trav (COND_COND (arg_node), arg_info);
+        break;
+
+    case N_while:
+        /*
+         * >> CAUTION <<
+         * In case of nested loops some vars might be out-vars although they are
+         * infered as local-vars of the loop body only:
+         *
+         *   a = 1;
+         *   while (...) {
+         *     ... a ...
+         *     a = 2;
+         *     while (...) {  <--- 'a' is infered as local- but *not* as out-var :-(
+         *       a = 3;
+         *     }
+         *     <--- here is in fact an implicit 'return( a)' for the outer loop.
+         *   }
+         *
+         * The easy solution for this problem: All local-vars are assumed to be
+         * out-vars as well. In a following step we shall remove all superfluous
+         * parameters of the loop-dummy-function later on.
+         *
+         * out' = out u local */
+        DFMSetMaskOr (INFO_LAC2FUN_OUT (arg_info), INFO_LAC2FUN_LOCAL (arg_info));
+        /*
+         * a = 1;
+         * b = 1;
+         * c = 1;
+         * while (...) {  <--- 'a' is in- and out-var, 'b' is local- and out-var,
+         *   ... a ...         'c' is in-var,          'd' is local-var.
+         *   a = 2;
+         *   b = 2;
+         *   ... c ...
+         *   c = 2;
+         *   d = 1;
+         * }
+         * ... a ... b ...
+         *
+         * All vars that are out-vars of the loop body have to be arguments of the
+         * loop-dummy-function as well. (Even if they are local-vars!) This is
+         * important in the case that the loop body is not executed at all.
+         *
+         * in' = in u out' */
+        DFMSetMaskOr (INFO_LAC2FUN_IN (arg_info), INFO_LAC2FUN_OUT (arg_info));
+        /* local' = local \ in' */
+        DFMSetMaskMinus (INFO_LAC2FUN_LOCAL (arg_info), INFO_LAC2FUN_IN (arg_info));
+
+        /*
+         * traverse condition
+         */
+        WHILE_COND (arg_node) = Trav (WHILE_COND (arg_node), arg_info);
+        break;
+
+    case N_do:;
+
+        /*
+         * traverse condition
+         */
+        DO_COND (arg_node) = Trav (DO_COND (arg_node), arg_info);
+        break;
+
+    default:
+        DBUG_ASSERT ((0), "Only conditionals or loops can be lifted!");
+        break;
+    }
+
+    /*
+     * build call of the new dummy function
+     */
+    switch (type) {
+    case N_cond:
+        funname = GetDummyFunName ("Cond");
+        break;
+    case N_while:
+        funname = GetDummyFunName ("While");
+        break;
+    case N_do:
+        funname = GetDummyFunName ("Do");
+        break;
+    default:
+        DBUG_ASSERT ((0), "Only conditionals or loops can be lifted!");
+        break;
+    }
+    modname = FUNDEF_MOD (INFO_LAC2FUN_FUNDEF (arg_info));
+#ifdef MAIN_HAS_NO_MODNAME
+    if (modname == NULL) {
+        /* okay, we are in the main() function ... */
+        modname = "_MAIN";
+    }
+#endif
+    DBUG_ASSERT ((modname != NULL), "modul name for LAC function is NULL!");
+    let = MakeDummyFunLet (funname, modname, INFO_LAC2FUN_IN (arg_info),
+                           INFO_LAC2FUN_OUT (arg_info));
+
+    /*
+     * build new dummy function
+     */
+    switch (type) {
+    case N_cond:
+        status = ST_condfun;
+        break;
+    case N_while:
+        status = ST_whilefun;
+        break;
+    case N_do:
+        status = ST_dofun;
+        break;
+    default:
+        DBUG_ASSERT ((0), "Only conditionals or loops can be lifted!");
+        break;
+    }
+    fundef = MakeDummyFundef (funname, modname, status, arg_node, let,
+                              INFO_LAC2FUN_IN (arg_info), INFO_LAC2FUN_OUT (arg_info),
+                              INFO_LAC2FUN_LOCAL (arg_info));
+
+    /*
+     * set back-references let <-> fundef
+     */
+    AP_FUNDEF (LET_EXPR (let)) = fundef;
+
+    /*
+     * insert new dummy function into INFO_LAC2FUN_FUNS
+     */
+    FUNDEF_NEXT (fundef) = INFO_LAC2FUN_FUNS (arg_info);
+    INFO_LAC2FUN_FUNS (arg_info) = fundef;
+
+    /*
+     * replace the instruction by a call of the new dummy function
+     */
+    arg_node = FreeTree (arg_node);
+    arg_node = let;
+    INFO_LAC2FUN_ISTRANS (arg_info) = 1;
+
+    /*
+     * restore old in-, out-, local-masks
+     * traverse new let-assignment
+     */
+    INFO_LAC2FUN_IN (arg_info) = DFMRemoveMask (INFO_LAC2FUN_IN (arg_info));
+    INFO_LAC2FUN_IN (arg_info) = old_in;
+    INFO_LAC2FUN_OUT (arg_info) = DFMRemoveMask (INFO_LAC2FUN_OUT (arg_info));
+    INFO_LAC2FUN_OUT (arg_info) = old_out;
+    INFO_LAC2FUN_LOCAL (arg_info) = DFMRemoveMask (INFO_LAC2FUN_LOCAL (arg_info));
+    INFO_LAC2FUN_LOCAL (arg_info) = old_local;
+    arg_node = Trav (arg_node, arg_info);
+
+    /*
+     * remove all the temporarily needed masks
+     */
+    if (type == N_cond) {
+        tmp = DFMRemoveMask (tmp);
+        in_then = DFMRemoveMask (in_then);
+        out_then = DFMRemoveMask (out_then);
+        local_then = DFMRemoveMask (local_then);
+        in_else = DFMRemoveMask (in_else);
+        out_else = DFMRemoveMask (out_else);
+        local_else = DFMRemoveMask (local_else);
+    }
+
+    DBUG_RETURN (arg_node);
 }
 
 /******************************************************************************
@@ -327,7 +627,7 @@ LAC2FUNfundef (node *arg_node, node *arg_info)
  *   node *LAC2FUNassign( node *arg_node, node *arg_info)
  *
  * description:
- *   bottom-up-traversal of the assignments.
+ *   Bottom-up-traversal of the assignments.
  *   INFO_LAC2FUN_ISTRANS indicates whether an assignment has been transformed
  *   into a function call or not.
  *   If (INFO_LAC2FUN_ISTRANS > 0) is hold, the assign-node has been modificated
@@ -362,7 +662,7 @@ LAC2FUNassign (node *arg_node, node *arg_info)
  *   node *LAC2FUNlet( node *arg_node, node *arg_info)
  *
  * description:
- *   every left hand side variable is marked as 'defined' in the in-, out-,
+ *   Every left hand side variable is marked as 'defined' in the in-, out-,
  *   local-masks of the current block.
  *
  ******************************************************************************/
@@ -388,7 +688,7 @@ LAC2FUNlet (node *arg_node, node *arg_info)
  *   node *LAC2FUNid( node *arg_node, node *arg_info)
  *
  * description:
- *   every right hand side variable is marked as 'used' in the in-, out-,
+ *   Every right hand side variable is marked as 'used' in the in-, out-,
  *   local-masks of the current block.
  *
  ******************************************************************************/
@@ -410,7 +710,7 @@ LAC2FUNid (node *arg_node, node *arg_info)
  *   node *LAC2FUNwithid( node *arg_node, node *arg_info)
  *
  * description:
- *   every index variable is marked as 'defined' in the in-, out-,
+ *   Every index variable is marked as 'defined' in the in-, out-,
  *   local-masks of the current block.
  *
  ******************************************************************************/
@@ -508,7 +808,7 @@ LAC2FUNwith2 (node *arg_node, node *arg_info)
  *   node *LAC2FUNcond( node *arg_node, node *arg_info)
  *
  * description:
- *   inferes the in-, out-, local-parameters of the conditional, lifts the
+ *   Inferes the in-, out-, local-parameters of the conditional, lifts the
  *   conditional and inserts an equivalent function call instead.
  *
  ******************************************************************************/
@@ -516,131 +816,30 @@ LAC2FUNwith2 (node *arg_node, node *arg_info)
 node *
 LAC2FUNcond (node *arg_node, node *arg_info)
 {
-    DFMmask_t old_needed, old_in, old_out, old_local;
-    DFMmask_t in_then, out_then, local_then;
-    DFMmask_t in_else, out_else, local_else;
-    DFMmask_t tmp;
-    char *funname, *modname;
-    node *fundef;
-
     DBUG_ENTER ("LAC2FUNcond");
 
-    /*
-     * save old masks
-     */
-    old_needed = INFO_LAC2FUN_NEEDED (arg_info);
-    old_in = INFO_LAC2FUN_IN (arg_info);
-    old_out = INFO_LAC2FUN_OUT (arg_info);
-    old_local = INFO_LAC2FUN_LOCAL (arg_info);
+    arg_node = DoLifting (arg_node, arg_info);
 
-    /*
-     * setup needed-masks for then- and else-block
-     */
-    INFO_LAC2FUN_NEEDED (arg_info) = DFMGenMaskCopy (INFO_LAC2FUN_NEEDED (arg_info));
-    AdjustNeeded (INFO_LAC2FUN_NEEDED (arg_info), INFO_LAC2FUN_IN (arg_info),
-                  INFO_LAC2FUN_OUT (arg_info));
+    DBUG_RETURN (arg_node);
+}
 
-    /*
-     * setup in-, out-, local-masks for then-block
-     */
-    INFO_LAC2FUN_IN (arg_info) = DFMGenMaskClear (INFO_LAC2FUN_DFMBASE (arg_info));
-    INFO_LAC2FUN_OUT (arg_info) = DFMGenMaskClear (INFO_LAC2FUN_DFMBASE (arg_info));
-    INFO_LAC2FUN_LOCAL (arg_info) = DFMGenMaskClear (INFO_LAC2FUN_DFMBASE (arg_info));
+/******************************************************************************
+ *
+ * function:
+ *   node *LAC2FUNwhile( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   Inferes the in-, out-, local-parameters of the while-loop, lifts the loop
+ *   and inserts an equivalent function call instead.
+ *
+ ******************************************************************************/
 
-    COND_THEN (arg_node) = Trav (COND_THEN (arg_node), arg_info);
+node *
+LAC2FUNwhile (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("LAC2FUNwhile");
 
-    in_then = INFO_LAC2FUN_IN (arg_info);
-    out_then = INFO_LAC2FUN_OUT (arg_info);
-    local_then = INFO_LAC2FUN_LOCAL (arg_info);
-
-    /*
-     * setup in-, out-, local-masks for else-block
-     */
-    INFO_LAC2FUN_IN (arg_info) = DFMGenMaskClear (INFO_LAC2FUN_DFMBASE (arg_info));
-    INFO_LAC2FUN_OUT (arg_info) = DFMGenMaskClear (INFO_LAC2FUN_DFMBASE (arg_info));
-    INFO_LAC2FUN_LOCAL (arg_info) = DFMGenMaskClear (INFO_LAC2FUN_DFMBASE (arg_info));
-
-    COND_ELSE (arg_node) = Trav (COND_ELSE (arg_node), arg_info);
-
-    in_else = INFO_LAC2FUN_IN (arg_info);
-    out_else = INFO_LAC2FUN_OUT (arg_info);
-    local_else = INFO_LAC2FUN_LOCAL (arg_info);
-
-    /*
-     * restore old needed-mask
-     */
-    INFO_LAC2FUN_NEEDED (arg_info) = DFMRemoveMask (INFO_LAC2FUN_NEEDED (arg_info));
-    INFO_LAC2FUN_NEEDED (arg_info) = old_needed;
-
-    /*
-     * calculate new in-, out-, local-masks
-     */
-    /* in = in_then u in_else u (out_then \ out_else) u (out_else \ out_then) */
-    INFO_LAC2FUN_IN (arg_info) = DFMGenMaskMinus (out_then, out_else);
-    tmp = DFMGenMaskMinus (out_else, out_then);
-    DFMSetMaskOr (INFO_LAC2FUN_IN (arg_info), tmp);
-    DFMSetMaskOr (INFO_LAC2FUN_IN (arg_info), in_then);
-    DFMSetMaskOr (INFO_LAC2FUN_IN (arg_info), in_else);
-    /* out = out_then u out_else */
-    INFO_LAC2FUN_OUT (arg_info) = DFMGenMaskOr (out_then, out_else);
-    /* local = (local_then u local_else) \ in */
-    INFO_LAC2FUN_LOCAL (arg_info) = DFMGenMaskOr (local_then, local_else);
-    DFMSetMaskMinus (INFO_LAC2FUN_LOCAL (arg_info), INFO_LAC2FUN_IN (arg_info));
-
-    COND_COND (arg_node) = Trav (COND_COND (arg_node), arg_info);
-
-    /*
-     * build new dummy function
-     */
-    funname = GetDummyFunName ("Cond");
-    modname = FUNDEF_MOD (INFO_LAC2FUN_FUNDEF (arg_info));
-#ifdef MAIN_HAS_NO_MODNAME
-    if (modname == NULL) {
-        /* okay, we are in the main() function ... */
-        modname = "_MAIN";
-    }
-#endif
-    DBUG_ASSERT ((modname != NULL), "modul name for LAC function is NULL!");
-    fundef = MakeDummyFundef (funname, modname, ST_condfun, arg_node,
-                              INFO_LAC2FUN_IN (arg_info), INFO_LAC2FUN_OUT (arg_info),
-                              INFO_LAC2FUN_LOCAL (arg_info));
-    /*
-     * insert new dummy function into INFO_LAC2FUN_FUNS
-     */
-    FUNDEF_NEXT (fundef) = INFO_LAC2FUN_FUNS (arg_info);
-    INFO_LAC2FUN_FUNS (arg_info) = fundef;
-
-    /*
-     * replace the conditional by a call of the new dummy function
-     */
-    arg_node = FreeTree (arg_node);
-    arg_node = MakeDummyFunLet (funname, modname, fundef, INFO_LAC2FUN_IN (arg_info),
-                                INFO_LAC2FUN_OUT (arg_info));
-    FUNDEF_LAC_LET (fundef) = arg_node;
-    INFO_LAC2FUN_ISTRANS (arg_info) = 1;
-
-    /*
-     * restore old in-, out-, local-masks
-     * traverse new let-assignment
-     */
-    INFO_LAC2FUN_IN (arg_info) = DFMRemoveMask (INFO_LAC2FUN_IN (arg_info));
-    INFO_LAC2FUN_IN (arg_info) = old_in;
-    INFO_LAC2FUN_OUT (arg_info) = DFMRemoveMask (INFO_LAC2FUN_OUT (arg_info));
-    INFO_LAC2FUN_OUT (arg_info) = old_out;
-    INFO_LAC2FUN_LOCAL (arg_info) = DFMRemoveMask (INFO_LAC2FUN_LOCAL (arg_info));
-    INFO_LAC2FUN_LOCAL (arg_info) = old_local;
-    arg_node = Trav (arg_node, arg_info);
-
-    /*
-     * remove all the temporarily needed masks
-     */
-    tmp = DFMRemoveMask (tmp);
-    in_then = DFMRemoveMask (in_then);
-    out_then = DFMRemoveMask (out_then);
-    local_then = DFMRemoveMask (local_then);
-    in_else = DFMRemoveMask (in_else);
-    out_else = DFMRemoveMask (out_else);
-    local_else = DFMRemoveMask (local_else);
+    arg_node = DoLifting (arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -651,7 +850,8 @@ LAC2FUNcond (node *arg_node, node *arg_info)
  *   node *LAC2FUNdo( node *arg_node, node *arg_info)
  *
  * description:
- *
+ *   Inferes the in-, out-, local-parameters of the do-loop, lifts the loop and
+ *   inserts an equivalent function call instead.
  *
  ******************************************************************************/
 
@@ -666,28 +866,10 @@ LAC2FUNdo (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *LAC2FUNwhile( node *arg_node, node *arg_info)
- *
- * description:
- *
- *
- ******************************************************************************/
-
-node *
-LAC2FUNwhile (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("LAC2FUNwhile");
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
  *   node *LaC2Fun( node *syntax_tree)
  *
  * description:
- *   converts all loops and conditions into (annotated) functions.
+ *   Converts all loops and conditions into (annotated) functions.
  *
  ******************************************************************************/
 
