@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.19  2002/07/11 17:28:35  dkr
+ * code for TAGGED_ARRAYS corrected ...
+ *
  * Revision 3.18  2002/07/11 14:00:15  dkr
  * NameTuplesUtils.h included
  *
@@ -1128,8 +1131,8 @@ CreateVect2OffsetIcm (node *vardec, types *type)
 #ifdef TAGGED_ARRAYS
     iv_vect_id = AddNtTag (iv_vect_id);
 
-    icm = MakeIcm5 ("ND_VECT2OFFSET", iv_off_id, iv_vect_id,
-                    MakeNum (GetShapeDim (ID_TYPE (iv_vect_id))),
+    icm = MakeIcm5 ("ND_VECT2OFFSET", iv_off_id,
+                    MakeNum (GetTypesLength (ID_TYPE (iv_vect_id))), iv_vect_id,
                     MakeNum (GetShapeDim (type)), exprs);
 #else
     icm = MakeIcm5 ("ND_KS_VECT2OFFSET", iv_off_id, iv_vect_id,
