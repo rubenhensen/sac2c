@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2004/11/26 14:47:03  sbs
+ * compiles
+ *
  * Revision 1.7  2004/11/26 14:41:17  sbs
  * compiles
  *
@@ -44,15 +47,14 @@
 
 #include <strings.h>
 #include <stdlib.h>
+#include "cv2str.h"
 #include "dbug.h"
 #include "internal_lib.h"
-
-#include "cv2str.h"
 
 /******************************************************************************
  *
  * function:
- *    char *COCv2StrXXX( void *src, int off, int len)
+ *    char *COcv2StrXXX( void *src, int off, int len)
  *
  * description:
  *    Functions for printing elements from cv's into a given string buffer.
@@ -61,15 +63,15 @@
  *
  ******************************************************************************/
 
-#define COCv2StrTEMPLATE(type, ext, form)                                                \
-    char *COCv2Str##ext (void *src, int off, int len, int max_char)                      \
+#define COcv2StrTEMPLATE(type, ext, form)                                                \
+    char *COcv2Str##ext (void *src, int off, int len, int max_char)                      \
     {                                                                                    \
         int i;                                                                           \
         char format[10];                                                                 \
         char *buffer;                                                                    \
         char *buffer_act;                                                                \
                                                                                          \
-        DBUG_ENTER ("COCv2Str##ext");                                                    \
+        DBUG_ENTER ("COcv2Str##ext");                                                    \
         sprintf (format, ",%s", form);                                                   \
         buffer = (char *)ILIBmalloc ((100 + max_char) * sizeof (char));                  \
         buffer_act = buffer;                                                             \
@@ -90,15 +92,15 @@
  * The actual function definitions are defined by the following macro usages:
  */
 
-COCv2StrTEMPLATE (unsigned short, UShort, "%hud")
-  COCv2StrTEMPLATE (unsigned int, UInt, "%ud")
-    COCv2StrTEMPLATE (unsigned long, ULong, "%lud") COCv2StrTEMPLATE (short, Short, "%hd")
-      COCv2StrTEMPLATE (int, Int, "%d") COCv2StrTEMPLATE (long, Long, "%ld")
+COcv2StrTEMPLATE (unsigned short, UShort, "%hud")
+  COcv2StrTEMPLATE (unsigned int, UInt, "%ud")
+    COcv2StrTEMPLATE (unsigned long, ULong, "%lud") COcv2StrTEMPLATE (short, Short, "%hd")
+      COcv2StrTEMPLATE (int, Int, "%d") COcv2StrTEMPLATE (long, Long, "%ld")
 
-        COCv2StrTEMPLATE (float, Float, "%f") COCv2StrTEMPLATE (double, Double, "%f")
-          COCv2StrTEMPLATE (long double, LongDouble, "%Lf")
+        COcv2StrTEMPLATE (float, Float, "%f") COcv2StrTEMPLATE (double, Double, "%f")
+          COcv2StrTEMPLATE (long double, LongDouble, "%Lf")
 
-            COCv2StrTEMPLATE (char, Char, "%c")
+            COcv2StrTEMPLATE (char, Char, "%c")
 
   /*
    * Finally, we provide a dummy function which should never be called!
@@ -106,9 +108,9 @@ COCv2StrTEMPLATE (unsigned short, UShort, "%hud")
    * type_info.mac!
    */
 
-  char *COCv2StrDummy (void *src, int off, int len, int max_char)
+  char *COcv2StrDummy (void *src, int off, int len, int max_char)
 {
-    DBUG_ENTER ("COCv2StrDummy");
-    DBUG_ASSERT ((1 == 0), "COCv2StrDummy called!");
+    DBUG_ENTER ("COcv2StrDummy");
+    DBUG_ASSERT ((1 == 0), "COcv2StrDummy called!");
     DBUG_RETURN ((char *)NULL);
 }
