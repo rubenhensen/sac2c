@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.15  1995/09/26 16:55:16  cg
+ * Revision 1.16  1995/10/16 12:41:21  cg
+ * new function 'ModulePrefix' added for use in typechecker.
+ *
+ * Revision 1.15  1995/09/26  16:55:16  cg
  * type charlist renamed to strings
  *
  * Revision 1.14  1995/09/26  16:52:52  cg
@@ -90,6 +93,7 @@ typedef struct MODS {
 extern void FreeMods (mods *mods);
 extern mods *FindSymbolInModul (char *modname, char *name, int symbkind, mods *found,
                                 int recursive);
+extern char *ModulePrefix (char *);
 
 extern node *IMmodul (node *, node *);
 extern node *IMtypedef (node *, node *);

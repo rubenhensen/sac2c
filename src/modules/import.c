@@ -1,8 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.22  1995/10/12 13:58:31  cg
- * analysis structures for implicitly used items are now generated in the form of
+ * Revision 1.23  1995/10/16 12:41:21  cg
+ * new function 'ModulePrefix' added for use in typechecker.
+ *
+ * Revision 1.22  1995/10/12  13:58:31  cg
+ * analysis structures for implicitly used items are now generated in
+ * the form of
  * nodelists.
  *
  * Revision 1.21  1995/10/06  17:12:17  cg
@@ -533,6 +537,38 @@ FindSymbolInModul (char *modname, char *name, int symbkind, mods *found, int rec
     }
 
     DBUG_RETURN (found);
+}
+
+/*
+ *
+ *  functionname  : ModulePrefix
+ *  arguments     : 1) name of module
+ *  description   : returns the prefix of the given module
+ *  global vars   : ---
+ *  internal funs : FindModul
+ *  external funs : ---
+ *  macros        : ---
+ *
+ *  remarks       :
+ *
+ */
+
+char *
+ModulePrefix (char *name)
+{
+    mod *module;
+    char *prefix;
+
+    DBUG_ENTER ("ModulePrefix");
+
+    module = FindModul (name);
+    if (module == NULL) {
+        prefix = NULL;
+    } else {
+        prefix = module->prefix;
+    }
+
+    DBUG_RETURN (prefix);
 }
 
 /*
