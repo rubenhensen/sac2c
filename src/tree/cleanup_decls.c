@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2001/04/23 13:39:41  dkr
+ * CUDfundef(): now, after clean-up DFMUpdateMaskBase() is called
+ *
  * Revision 1.4  2001/03/22 20:03:01  dkr
  * include of tree.h eliminated
  *
@@ -42,19 +45,21 @@
 #include "DataFlowMask.h"
 #include "DataFlowMaskUtils.h"
 
-/*
+/******************************************************************************
  *
- * This modul removes all superfluous vardecs from the AST.
  *
- */
-
-/*
- * usage of arg_info (INFO_CUD_...)
- * ------------------------------------
+ *  This modul removes all superfluous vardecs from the AST.
  *
- *   ...FUNDEF   pointer to the current fundef
- *   ...REF      DFMmask
- */
+ *
+ ******************************************************************************
+ *
+ *  usage of arg_info (INFO_CUD_...)
+ *  --------------------------------
+ *
+ *    ...FUNDEF   pointer to the current fundef
+ *    ...REF      DFMmask
+ *
+ ******************************************************************************/
 
 /*
  * compound macro
@@ -89,9 +94,9 @@ CUDids (ids *id, node *arg_info)
                          "CleanupDecls() can be used after type checking only!");
 
             if ((NODE_TYPE (decl) != N_vardec) && (NODE_TYPE (decl) != N_arg)) {
-                DBUG_ASSERT ((NODE_TYPE (decl) == N_objdef), "declaration is neither a "
-                                                             "N_arg/N_vardec-node nor a "
-                                                             "N_objdef-node");
+                DBUG_ASSERT ((NODE_TYPE (decl) == N_objdef),
+                             "declaration is neither a N_arg/N_vardec-node nor a"
+                             " N_objdef node");
             } else {
                 DFMSetMaskEntryClear (INFO_CUD_REF (arg_info), NULL, decl);
             }
@@ -109,7 +114,7 @@ CUDids (ids *id, node *arg_info)
  *   node *CUDfundef( node *arg_node, node *arg_info)
  *
  * Description:
- *   Creates a new DFM base if not available already.
+ *
  *
  ******************************************************************************/
 
@@ -121,14 +126,27 @@ CUDfundef (node *arg_node, node *arg_info)
     INFO_CUD_FUNDEF (arg_info) = arg_node;
 
     if (FUNDEF_BODY (arg_node) != NULL) {
+        /*
+         * create DFM base
+         */
         if (FUNDEF_DFM_BASE (arg_node) == NULL) {
             FUNDEF_DFM_BASE (arg_node)
               = DFMGenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDEC (arg_node));
         }
 
+        /*
+         * remove superfluous vardecs
+         */
         INFO_CUD_REF (arg_info) = NULL;
         FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
         DBUG_ASSERT ((INFO_CUD_REF (arg_info) == NULL), "INFO_CUD_REF not freed!");
+
+        /*
+         * update DFM base
+         */
+        FUNDEF_DFM_BASE (arg_node)
+          = DFMUpdateMaskBase (FUNDEF_DFM_BASE (arg_node), FUNDEF_ARGS (arg_node),
+                               FUNDEF_VARDEC (arg_node));
     }
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
