@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.1  1994/12/11 17:33:27  sbs
+ * Revision 1.2  1995/02/22 14:14:36  hw
+ * changed FindFile (now look first for name and later have a look at path )
+ *
+ * Revision 1.1  1994/12/11  17:33:27  sbs
  * Initial revision
  *
  *
@@ -43,6 +46,7 @@ FindFile (pathkind p, char *name)
 
     strcpy (buffer2, path_bufs[p]);
     path = strtok (buffer2, ":");
+    file = fopen (name, "r");
     while ((file == NULL) && (path != NULL)) {
         strcpy (buffer, path);
         strcat (buffer, "/");
