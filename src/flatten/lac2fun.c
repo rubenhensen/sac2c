@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.26  2004/09/27 10:44:21  sah
+ * added support for ntype types in MakeL2fFundef
+ *
  * Revision 3.25  2004/07/16 17:36:23  sah
  * switch to new INFO structure
  * PHASE I
@@ -404,6 +407,11 @@ MakeL2fFundef (char *funname, char *modname, node *instr, node *funcall_let, DFM
     FUNDEF_INT_ASSIGN (fundef) = NULL;
     FUNDEF_EXT_ASSIGNS (fundef) = NodeListAppend (NULL, INFO_L2F_ASSIGN (arg_info), NULL);
     FUNDEF_USED (fundef) = 1;
+
+    /*
+     * construct the new type for the created function
+     */
+    FUNDEF_TYPE (fundef) = DFM2FunctionType (in, out, fundef);
     DBUG_PRINT ("L2F",
                 ("set link to external assignment: " F_PTR, INFO_L2F_ASSIGN (arg_info)));
 
