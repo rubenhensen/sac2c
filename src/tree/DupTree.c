@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.124  2004/11/26 12:53:54  mwe
+ * changes according to tree_compound.h
+ *
  * Revision 3.123  2004/11/26 12:22:23  mwe
  * moved some macros from .c to .h file (needed by external functions)
  *
@@ -1427,8 +1430,8 @@ DUPassign (node *arg_node, info *arg_info)
                   = LUTinsertIntoLutS (INFO_DUP_LUT (arg_info), IDS_NAME (oldids),
                                        IDS_NAME (newids));
                 INFO_DUP_LUT (arg_info)
-                  = LUTinsertIntoLutP (INFO_DUP_LUT (arg_info), IDS_VARDEC (oldids),
-                                       IDS_VARDEC (newids));
+                  = LUTinsertIntoLutP (INFO_DUP_LUT (arg_info), IDS_DECL (oldids),
+                                       IDS_DECL (newids));
                 INFO_DUP_LUT (arg_info)
                   = LUTinsertIntoLutP (INFO_DUP_LUT (arg_info), IDS_AVIS (oldids),
                                        IDS_AVIS (newids));
@@ -2063,8 +2066,8 @@ DUPwith (node *arg_node, info *arg_info)
           = LUTinsertIntoLutS (INFO_DUP_LUT (arg_info), IDS_NAME (oldvec),
                                IDS_NAME (newvec));
         INFO_DUP_LUT (arg_info)
-          = LUTinsertIntoLutP (INFO_DUP_LUT (arg_info), IDS_VARDEC (oldvec),
-                               IDS_VARDEC (newvec));
+          = LUTinsertIntoLutP (INFO_DUP_LUT (arg_info), IDS_DECL (oldvec),
+                               IDS_DECL (newvec));
         INFO_DUP_LUT (arg_info)
           = LUTinsertIntoLutP (INFO_DUP_LUT (arg_info), IDS_AVIS (oldvec),
                                IDS_AVIS (newvec));
@@ -2090,8 +2093,8 @@ DUPwith (node *arg_node, info *arg_info)
               = LUTinsertIntoLutS (INFO_DUP_LUT (arg_info), IDS_NAME (oldids),
                                    IDS_NAME (newids));
             INFO_DUP_LUT (arg_info)
-              = LUTinsertIntoLutP (INFO_DUP_LUT (arg_info), IDS_VARDEC (oldids),
-                                   IDS_VARDEC (newids));
+              = LUTinsertIntoLutP (INFO_DUP_LUT (arg_info), IDS_DECL (oldids),
+                                   IDS_DECL (newids));
             INFO_DUP_LUT (arg_info)
               = LUTinsertIntoLutP (INFO_DUP_LUT (arg_info), IDS_AVIS (oldids),
                                    IDS_AVIS (newids));
