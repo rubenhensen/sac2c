@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.33  2004/02/26 13:07:46  khf
+ * PH_wlpartgen added
+ *
  * Revision 3.32  2004/02/23 12:59:21  cg
  * Added include of ssa.h to avoid compiler warnings after usage
  * of DoSSA/UndoSSA functions.
@@ -165,6 +168,7 @@
 #include "options.h"
 #include "multithread.h"
 #include "blir.h"
+#include "WLPartitionGeneration.h"
 
 #include <stdlib.h>
 #include <unistd.h>
@@ -454,6 +458,20 @@ main (int argc, char *argv[])
     PHASE_EPILOG;
 
     if (break_after == PH_uniquecheck)
+        goto BREAK;
+    compiler_phase++;
+
+    PHASE_PROLOG;
+    if (khf) {
+        if (use_ssaform) {
+            NOTE_COMPILER_PHASE;
+            syntax_tree = WLPartitionGeneration (syntax_tree); /* wlpg_tab */
+            PHASE_DONE_EPILOG;
+        }
+    }
+    PHASE_EPILOG;
+
+    if (break_after == PH_wlpartgen)
         goto BREAK;
     compiler_phase++;
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2004/02/26 13:09:47  khf
+ * PH_wlpartgen added
+ *
  * Revision 3.4  2001/04/26 17:09:22  dkr
  * PH_rmvoidfun removed
  *
@@ -76,6 +79,8 @@ PH_SEL (PH_initial, "", 0, 0),
   PH_SEL (PH_objects, "Resolving global objects and reference parameters", 0, 0),
 
   PH_SEL (PH_uniquecheck, "Checking uniqueness property of objects", 0, 0),
+
+  PH_SEL (PH_wlpartgen, "Generating full partitions in with-loops", 0, 0),
 
   PH_SEL (PH_sacopt, "Running SAC optimizations", 0, 0),
 
