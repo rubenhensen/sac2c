@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.44  2002/09/13 23:00:28  dkr
+ * INFO_FREE_ASSIGN no longer initialized twice
+ *
  * Revision 3.43  2002/09/13 21:23:39  dkr
  * FreeMop(): DBUG_PRINT corrected
  *
@@ -618,7 +621,6 @@ FreeNode (node *free_node)
 
     arg_info = MakeInfo ();
     INFO_FREE_FLAG (arg_info) = free_node;
-    INFO_FREE_ASSIGN (arg_info) = NULL;
 
     free_node = Trav (free_node, arg_info);
 
@@ -656,7 +658,6 @@ FreeTree (node *free_node)
 
     arg_info = MakeInfo ();
     INFO_FREE_FLAG (arg_info) = NULL;
-    INFO_FREE_ASSIGN (arg_info) = NULL;
 
     free_node = Trav (free_node, arg_info);
 
