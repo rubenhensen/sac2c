@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.15  1999/09/01 11:49:38  sbs
+ * VARDEC_OR_ARG_ACTCHN and SET_VARDEC_OR_ARG_ACTCHN added!
+ *
  * Revision 2.14  1999/08/09 15:45:27  dkr
  * L_VARDEC_OR_ARG_REFCNT, ... added
  *
@@ -605,6 +608,8 @@ extern nodelist *NodeListFind (nodelist *nl, node *node);
  *          Use the L_VARDEC_OR_... macros instead!!
  */
 #define VARDEC_OR_ARG_NAME(n) ((NODE_TYPE (n) == N_arg) ? ARG_NAME (n) : VARDEC_NAME (n))
+#define VARDEC_OR_ARG_ACTCHN(n)                                                          \
+    ((NODE_TYPE (n) == N_arg) ? ARG_ACTCHN (n) : VARDEC_ACTCHN (n))
 #define VARDEC_OR_ARG_COLCHN(n)                                                          \
     ((NODE_TYPE (n) == N_arg) ? ARG_COLCHN (n) : VARDEC_COLCHN (n))
 #define VARDEC_OR_ARG_TYPE(n) ((NODE_TYPE (n) == N_arg) ? ARG_TYPE (n) : VARDEC_TYPE (n))
@@ -629,6 +634,12 @@ extern nodelist *NodeListFind (nodelist *nl, node *node);
         ARG_NAIVE_REFCNT (n) = (r);                                                      \
     } else {                                                                             \
         VARDEC_NAIVE_REFCNT (n) = (r);                                                   \
+    }
+#define SET_VARDEC_OR_ARG_ACTCHN(n, r)                                                   \
+    if (NODE_TYPE (n) == N_arg) {                                                        \
+        ARG_ACTCHN (n) = (r);                                                            \
+    } else {                                                                             \
+        VARDEC_ACTCHN (n) = (r);                                                         \
     }
 
 /*--------------------------------------------------------------------------*/
