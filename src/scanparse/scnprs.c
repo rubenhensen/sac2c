@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2002/08/13 14:45:59  sbs
+ * Stefan's dot elimination disabled due to scrambled code on several examples
+ * ... 8-(
+ *
  * Revision 3.8  2002/08/08 13:30:27  sbs
  * *** empty log message ***
  *
@@ -254,7 +258,9 @@ ScanParse ()
         goto DONE;
     }
 
-    syntax_tree = EliminateSelDots (syntax_tree);
+#if 0
+  syntax_tree = EliminateSelDots( syntax_tree);
+#endif
 
 DONE:
     DBUG_RETURN (syntax_tree);
