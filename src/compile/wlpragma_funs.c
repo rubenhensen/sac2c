@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2000/11/29 13:00:30  dkr
+ * no warnings ...
+ *
  * Revision 3.1  2000/11/20 18:01:28  sacbase
  * new release made
  *
@@ -329,7 +332,8 @@ All (node *segs, node *parms, node *cubes, int dims, int line)
 node *
 Cubes (node *segs, node *parms, node *cubes, int dims, int line)
 {
-    node *new_seg, *last_seg;
+    node *new_seg;
+    node *last_seg = NULL;
 
     DBUG_ENTER ("Cubes");
 
@@ -385,7 +389,8 @@ Cubes (node *segs, node *parms, node *cubes, int dims, int line)
 node *
 ConstSegs (node *segs, node *parms, node *cubes, int dims, int line)
 {
-    node *new_cubes, *new_seg, *last_seg;
+    node *new_cubes, *new_seg;
+    node *last_seg = NULL;
 
     DBUG_ENTER ("ConstSegs");
 

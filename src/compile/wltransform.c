@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.3  2000/11/29 12:59:18  dkr
+ * no warnings ...
+ *
  * Revision 3.2  2000/11/27 21:07:35  cg
  * APL entry of wlcomp pragma is extracted from wlcomp chain and
  * added to new Nwith2 node for further processing in compile.c.
@@ -2171,10 +2174,15 @@ CheckWithids (node *part)
 static node *
 Parts2Strides (node *parts, int dims, shpseg *shape)
 {
-    node *parts_stride, *stride, *new_stride, *new_grid, *last_grid, *gen, *bound1,
-      *bound2, *step, *width, *curr_bound1, *curr_bound2, *curr_step, *curr_width;
+    node *parts_stride, *stride, *new_stride, *new_grid, *gen, *bound1, *bound2, *step,
+      *width;
     int dim, curr_step_, curr_width_;
     bool is_empty;
+    node *last_grid = NULL;
+    node *curr_bound1 = NULL;
+    node *curr_bound2 = NULL;
+    node *curr_step = NULL;
+    node *curr_width = NULL;
 
     DBUG_ENTER ("Parts2Strides");
 
@@ -3686,13 +3694,13 @@ CompareWLtrees (node *tree1, node *tree2)
 static node *
 OptWL (node *nodes)
 {
-    node *next, *grids, *comp1, *comp2;
+    node *next, *grids, *comp1;
     int offset;
+    node *comp2 = NULL;
 
     DBUG_ENTER ("OptWL");
 
     if (nodes != NULL) {
-
         if (NODE_TYPE (nodes) != N_WLstriVar) {
 
             /*
@@ -3807,7 +3815,6 @@ OptWL (node *nodes)
                     }
                 }
             }
-
         } else {
             /*
              * optimization for non-constant strides is not performed yet
