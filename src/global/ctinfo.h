@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2005/03/10 09:41:09  cg
+ * Added CTIterminateCompilation()
+ *
  * Revision 1.4  2005/01/12 15:50:46  cg
  * Added CTIterminateCompilation.
  *
@@ -27,6 +30,8 @@
 #ifndef _SAC_CTINFO_H_
 #define _SAC_CTINFO_H_
 
+#include "types.h"
+
 extern void CTIinstallInterruptHandlers ();
 extern void CTIerror (const char *format, ...);
 extern void CTIerrorLine (int line, const char *format, ...);
@@ -41,6 +46,7 @@ extern void CTIwarnContinued (const char *format, ...);
 extern int CTIgetWarnMessageLineLength ();
 extern void CTIstate (const char *format, ...);
 extern void CTInote (const char *format, ...);
-extern void CTIterminateCompilation ();
+extern void CTIterminateCompilation (compiler_phase_t phase, char *break_specifier,
+                                     node *syntax_tree);
 
 #endif /* _SAC_CTINFO_H_ */
