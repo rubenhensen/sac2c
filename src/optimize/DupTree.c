@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.5  1999/03/15 18:55:43  dkr
+ * some modifications made (for CC)
+ *
  * Revision 2.4  1999/03/15 14:04:57  bs
  * Access macros renamed (take a look at tree_basic.h).
  * DupArray modified.
@@ -714,6 +717,7 @@ DupArray (node *arg_node, node *arg_info)
           = CopyDoubleVector (ARRAY_VECLEN (arg_node), ARRAY_DOUBLEVEC (arg_node));
     default:
         /* Nothing to do ! */
+        break;
     }
     DBUG_RETURN (new_node);
 }
@@ -1243,6 +1247,7 @@ DupNwithop (node *arg_node, node *arg_info)
         break;
     default:
         DBUG_ASSERT (0, "Unknown N_Nwithop-type found");
+        break;
     }
 
     DBUG_RETURN (new_node);
