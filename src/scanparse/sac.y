@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 1.140  1997/11/10 14:22:46  dkr
+ * removed a bug with A[.] -> psi(., A)
+ *
  * Revision 1.139  1997/11/07 12:31:23  srs
  * changed another nnode part
  *
@@ -2341,7 +2344,8 @@ expr:   apl {$$=$1;}
                                     (N_prf == $3->node[0]->nodetype) ||
                                     (N_ap == $3->node[0]->nodetype) ) )
 #else
-           if((!$3->node[0]) && ( (N_id == $3->node[0]->nodetype) ||
+           if(($3->node[0] != NULL) && ($3->node[1] == NULL)
+                               && ( (N_id == $3->node[0]->nodetype) ||
                                     (N_prf == $3->node[0]->nodetype) ||
                                     (N_ap == $3->node[0]->nodetype) ) )
 #endif
