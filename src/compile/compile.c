@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.166  1998/06/07 18:39:44  dkr
+ * added CHECK_REUSE for new with-loop
+ * (currently deactivated)
+ *
  * Revision 1.165  1998/06/06 18:31:27  dkr
  * fixed some minor bugs
  * COMPSync() finished
@@ -551,6 +555,7 @@
 #include "DupTree.h"
 #include "refcount.h"
 #include "typecheck.h" /* to use LookupType() */
+#include "ReuseWithArrays.h"
 #include "free.h"
 
 #define TYP_IF(n, d, p, f, sz) sz
@@ -6012,22 +6017,58 @@ COMPSpmd (node *arg_node, node *arg_info)
  *   node *COMPSync( node *arg_node, node *arg_info)
  *
  * description:
- *   compiles a N_sync node.
+ *   compiles a N_sync node:
+ *
+ *     < malloc-ICMs >                   // if (FIRST == 0) only
+ *     MT_CONTINUE( ...)                 // if (FIRST == 0) only
+ *     MT_START_SYNCBLOCK( ...)
+ *     < with-loop code without malloc/free-ICMs >
+ *     MT_SYNC...( ...)
+ *     < free-ICMs >
  *
  ******************************************************************************/
 
 node *
 COMPSync (node *arg_node, node *arg_info)
 {
-    node *icm_args, *icm_args1, *icm_args2, *with, *tmp, *instr, *assign, *last_assign,
-      *prolog_icms, *epilog_icms, *new_icm, *assigns = NULL;
+    node *icm_args, *icm_args1, *icm_args2, *icm_args3, *vardec, *with, *tmp, *instr,
+      *assign, *last_assign, *prolog_icms, *epilog_icms, *new_icm, *assigns = NULL;
     ids *with_ids;
     types *type;
     simpletype s_type;
-    char *icm_name, *var_name, *fold_type;
-    int num_folds, prolog;
+    char *tag, *icm_name, *var_name, *fold_type;
+    int num_args, num_folds, prolog;
 
     DBUG_ENTER ("COMPSync");
+
+    /*
+     * build arguments of ICM 'MT_START_SYNCBLOCK'
+     */
+    icm_args3 = NULL;
+    num_args = 0;
+    vardec = DFMGetMaskEntryDeclSet (SYNC_IN (arg_node));
+    while (vardec != NULL) {
+        if (VARDEC_OR_ARG_REFCNT (vardec) >= 0) {
+            tag = "in_rc";
+        } else {
+            tag = "in";
+        }
+        icm_args3
+          = AppendExpr (icm_args3,
+                        MakeExprs (MakeId (StringCopy (tag), NULL, ST_regular),
+                                   MakeExprs (MakeId (MakeTypeString (
+                                                        VARDEC_OR_ARG_TYPE (vardec)),
+                                                      NULL, ST_regular),
+                                              MakeExprs (MakeId (StringCopy (
+                                                                   VARDEC_OR_ARG_NAME (
+                                                                     vardec)),
+                                                                 NULL, ST_regular),
+                                                         NULL))));
+        num_args++;
+
+        vardec = DFMGetMaskEntryDeclSet (NULL);
+    }
+    icm_args3 = MakeExprs (MakeNum (num_args), icm_args3);
 
     /*
      * build arguments of ICMs (use 'SYNC_WITH_PTRS')
@@ -6128,10 +6169,15 @@ COMPSync (node *arg_node, node *arg_info)
                 var_name = ID_NAME (EXPRS_EXPR (EXPRS_NEXT (ICM_ARGS (instr))));
                 prolog = 1;
             } else {
-                if ((strcmp (ICM_NAME (instr), "ND_DEC_RC") == 0)
-                    || (strcmp (ICM_NAME (instr), "ND_DEC_RC_FREE_ARRAY") == 0)) {
-                    var_name = ID_NAME (EXPRS_EXPR (ICM_ARGS (instr)));
-                    prolog = 0;
+                if ((strcmp (ICM_NAME (instr), "ND_CHECK_REUSE_ARRAY") == 0)
+                    || (strcmp (ICM_NAME (instr), "ND_CHECK_REUSE_HIDDEN") == 0)) {
+                    var_name = ID_NAME (EXPRS_EXPR (EXPRS_NEXT (ICM_ARGS (instr))));
+                    prolog = 1;
+                } else {
+                    if (strcmp (ICM_NAME (instr), "ND_DEC_RC_FREE_ARRAY") == 0) {
+                        var_name = ID_NAME (EXPRS_EXPR (ICM_ARGS (instr)));
+                        prolog = 0;
+                    }
                 }
             }
 
@@ -6173,7 +6219,7 @@ COMPSync (node *arg_node, node *arg_info)
 
     /*
      * if this sync-region is *not* the first one of the current SPMD-region
-     *  -> insert extracted prolog-ICMs.
+     *  -> insert extracted prolog-ICMs (malloc).
      *  -> insert ICM (MT_CONTINUE),
      */
     if (!SYNC_FIRST (arg_node)) {
@@ -6196,9 +6242,11 @@ COMPSync (node *arg_node, node *arg_info)
     }
 
     /*
-     * insert contents of modified sync-region-block
+     * insert ICM 'MT_START_SYNCBLOCK' and contents of modified sync-region-block
      */
-    assigns = AppendAssign (assigns, BLOCK_INSTR (SYNC_REGION (arg_node)));
+    assigns = AppendAssign (assigns,
+                            MakeAssign (MakeIcm ("MT_START_SYNCBLOCK", icm_args3, NULL),
+                                        BLOCK_INSTR (SYNC_REGION (arg_node))));
     BLOCK_INSTR (SYNC_REGION (arg_node)) = NULL;
 
     /*
@@ -6230,7 +6278,7 @@ COMPSync (node *arg_node, node *arg_info)
       = AppendAssign (assigns, MakeAssign (MakeIcm (icm_name, icm_args2, NULL), NULL));
 
     /*
-     * insert extracted epilog-ICMs.
+     * insert extracted epilog-ICMs (free).
      */
     assigns = AppendAssign (assigns, epilog_icms);
 
@@ -6265,7 +6313,7 @@ node *wl_seg = NULL;
 node *
 COMPNwith2 (node *arg_node, node *arg_info)
 {
-    node *fundef, *icm_args, *neutral, *info, *dummy_assign, *tmp, *new,
+    node *fundef, *vardec, *icm_args, *neutral, *info, *dummy_assign, *tmp, *new,
       *rc_icms_wl_ids = NULL, *assigns = NULL;
     ids *withid_ids;
     char *icm_name;
@@ -6281,8 +6329,8 @@ COMPNwith2 (node *arg_node, node *arg_info)
     wl_node = arg_node;
 
     /*
-     * Insert ICMs for memory management (ND_ALLOC_ARRAY), if we have a
-     *  genarray- or modarray-op.
+     * Insert ICMs for memory management (ND_CHECK_REUSE_ARRAY, ND_ALLOC_ARRAY),
+     *  if we have a genarray- or modarray-op.
      * (If we have a fold, this is done automaticly when compiling the
      *  init-assignment 'wl_ids = neutral' !!!)
      *
@@ -6293,7 +6341,40 @@ COMPNwith2 (node *arg_node, node *arg_info)
      */
     if ((NWITH2_TYPE (arg_node) == WO_genarray)
         || (NWITH2_TYPE (arg_node) == WO_modarray)) {
-        assigns = MakeAllocArrayICMs (wl_ids);
+        /*
+         * find all arrays, that possibly can be reused.
+         */
+#if 0
+    arg_node = GetReuseArrays( arg_node,
+                               INFO_COMP_FUNDEF( arg_info),
+                               wl_ids);
+#endif
+
+        /*
+         * 'ND_CHECK_REUSE_ARRAY'
+         */
+        vardec = DFMGetMaskEntryDeclSet (NWITH2_REUSE (arg_node));
+        while (vardec != NULL) {
+            assigns
+              = MakeAssign (MakeIcm ("ND_CHECK_REUSE_ARRAY",
+                                     MakeExprs (MakeId (StringCopy (
+                                                          VARDEC_OR_ARG_NAME (vardec)),
+                                                        NULL, ST_regular),
+                                                MakeExprs (MakeId (StringCopy (
+                                                                     IDS_NAME (wl_ids)),
+                                                                   NULL, ST_regular),
+                                                           NULL)),
+                                     NULL),
+                            assigns);
+
+            vardec = DFMGetMaskEntryDeclSet (NULL);
+        }
+        NWITH2_REUSE (arg_node) = DFMRemoveMask (NWITH2_REUSE (arg_node));
+
+        /*
+         * 'ND_ALLOC_ARRAY'
+         */
+        assigns = AppendAssign (assigns, MakeAllocArrayICMs (wl_ids));
     } else {
         fundef = INFO_COMP_FUNDEF (arg_info);
 
@@ -6583,7 +6664,7 @@ COMPWLblock (node *arg_node, node *arg_info)
         assigns = Trav (WLBLOCK_NEXTDIM (arg_node), arg_info);
     }
 
-    /* build argument list for ICMs */
+    /* build argument list of ICMs */
     ids_vector = NWITHID_VEC (NWITH2_WITHID (wl_node));
     ids_scalar
       = GetIndexIds (NWITHID_IDS (NWITH2_WITHID (wl_node)), WLBLOCK_DIM (arg_node));
@@ -6664,7 +6745,7 @@ COMPWLublock (node *arg_node, node *arg_info)
         assigns = Trav (WLUBLOCK_NEXTDIM (arg_node), arg_info);
     }
 
-    /* build argument list for ICMs */
+    /* build argument list of ICMs */
     ids_vector = NWITHID_VEC (NWITH2_WITHID (wl_node));
     ids_scalar
       = GetIndexIds (NWITHID_IDS (NWITH2_WITHID (wl_node)), WLUBLOCK_DIM (arg_node));
@@ -6738,7 +6819,7 @@ COMPWLstride (node *arg_node, node *arg_info)
     assigns = Trav (WLSTRIDE_CONTENTS (arg_node), arg_info);
 
     /*
-     * build argument list for ICMs
+     * build argument list of ICMs
      */
     ids_vector = NWITHID_VEC (NWITH2_WITHID (wl_node));
     ids_scalar
@@ -7132,7 +7213,7 @@ COMPWLstriVar (node *arg_node, node *arg_info)
     /* compile contents */
     assigns = Trav (WLSTRIVAR_CONTENTS (arg_node), arg_info);
 
-    /* build argument list for ICMs */
+    /* build argument list of ICMs */
     ids_vector = NWITHID_VEC (NWITH2_WITHID (wl_node));
     ids_scalar
       = GetIndexIds (NWITHID_IDS (NWITH2_WITHID (wl_node)), WLSTRIVAR_DIM (arg_node));
