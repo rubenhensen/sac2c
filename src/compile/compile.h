@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2001/12/10 14:51:46  dkr
+ * some functions renamed
+ *
  * Revision 3.8  2001/05/08 12:30:38  dkr
  * macro IS_REFCOUNTED removed (use new macros RC_IS_ACTIVE, ... instead
  * !)
@@ -88,12 +91,12 @@ extern node *COMPCast (node *arg_node, node *arg_info);
 extern node *COMPSpmd (node *arg_node, node *arg_info);
 extern node *COMPSync (node *arg_node, node *arg_info);
 
-extern node *COMPNwith2 (node *arg_node, node *arg_info);
+extern node *COMPWith2 (node *arg_node, node *arg_info);
 extern node *COMPWLsegx (node *arg_node, node *arg_info);
 extern node *COMPWLxblock (node *arg_node, node *arg_info);
 extern node *COMPWLstridex (node *arg_node, node *arg_info);
 extern node *COMPWLgridx (node *arg_node, node *arg_info);
-extern node *COMPNcode (node *arg_node, node *arg_info);
+extern node *COMPWLcode (node *arg_node, node *arg_info);
 
 extern node *COMPMt (node *arg_node, node *arg_info);
 extern node *COMPSt (node *arg_node, node *arg_info);
