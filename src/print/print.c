@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.19  1999/05/12 15:29:35  jhs
+ * DbugPrintArray dbugged.
+ *
  * Revision 2.18  1999/05/12 08:51:52  jhs
  * Changed attribute names to access constatnt vectors.
  *
@@ -202,95 +205,90 @@ char *prf_string[] = {
 static void
 DbugPrintArray (node *arg_node)
 {
-    int *intptr, length, i;
+    int *intptr, i;
+    void *constvec;
+    simpletype vectype;
+    int veclen;
     char *chrptr;
     float *fltptr;
     double *dblptr;
 
     if (NODE_TYPE (arg_node) == N_array) {
-        length = ARRAY_VECLEN (arg_node);
-        switch (ARRAY_VECTYPE (arg_node)) {
-        case T_nothing:
-            fprintf (outfile, ":[");
-            break;
-        case T_int:
-            intptr = ARRAY_CONSTVEC (arg_node);
-            if ((intptr == NULL) || (length < 1))
-                return;
-            else {
-                fprintf (outfile, ":[%d", intptr[0]);
-                for (i = 1; i < ((length < 10) ? (length) : (10)); i++)
-                    fprintf (outfile, ",%d", intptr[i]);
-            }
-            break;
-        case T_float:
-            fltptr = ARRAY_CONSTVEC (arg_node);
-            if ((fltptr == NULL) || (length < 1))
-                return;
-            else {
-                fprintf (outfile, ":[%f", fltptr[0]);
-                for (i = 1; i < ((length < 10) ? (length) : (10)); i++)
-                    fprintf (outfile, ",%f", fltptr[i]);
-            }
-            break;
-        case T_double:
-            dblptr = ARRAY_CONSTVEC (arg_node);
-            if ((dblptr == NULL) || (length < 1))
-                return;
-            else {
-                fprintf (outfile, ":[%f", dblptr[0]);
-                for (i = 1; i < ((length < 10) ? (length) : (10)); i++)
-                    fprintf (outfile, ",%f", dblptr[i]);
-            }
-            break;
-        case T_bool:
-            intptr = ARRAY_CONSTVEC (arg_node);
-            if ((intptr == NULL) || (length < 1))
-                return;
-            else {
-                fprintf (outfile, ":[%s", ((intptr[0] == 0) ? ("false") : ("true")));
-                for (i = 1; i < ((length < 10) ? (length) : (10)); i++)
-                    fprintf (outfile, ",%s", ((intptr[i] == 0) ? ("false") : ("true")));
-            }
-            break;
-        case T_char:
-            chrptr = ARRAY_CONSTVEC (arg_node);
-            if ((chrptr == NULL) || (length < 1))
-                return;
-            else {
-                fprintf (outfile, ":[");
-                if ((chrptr[0] >= ' ') && (chrptr[0] <= '~') && (chrptr[0] != '\'')) {
-                    fprintf (outfile, ",'%c'", chrptr[0]);
-                } else {
-                    fprintf (outfile, ",'\\%o'", chrptr[0]);
-                }
-                for (i = 1; i < ((length < 10) ? (length) : (10)); i++)
-                    if ((chrptr[i] >= ' ') && (chrptr[i] <= '~') && (chrptr[i] != '\'')) {
-                        fprintf (outfile, ",'%c'", chrptr[i]);
-                    } else {
-                        fprintf (outfile, ",'\\%o'", chrptr[i]);
-                    }
-            }
-            break;
-        default:
-            return;
-        }
+        veclen = ARRAY_VECLEN (arg_node);
+        vectype = ARRAY_VECTYPE (arg_node);
+        constvec = ARRAY_CONSTVEC (arg_node);
     } else /* (NODE_TYPE(arg_node) == N_id) */ {
-        length = ID_VECLEN (arg_node);
-        intptr = ID_CONSTVEC (arg_node);
-        if (ID_ISCONST (arg_node)) {
-            fprintf (outfile, ":[");
-
-            if (0 < length)
-                fprintf (outfile, "%d", intptr[0]);
-
-            for (i = 1; i < ((length < 10) ? (length) : (10)); i++)
-                fprintf (outfile, ",%d", intptr[i]);
-        } else {
-            return;
-        }
+        veclen = ID_VECLEN (arg_node);
+        vectype = ID_VECTYPE (arg_node);
+        constvec = ID_CONSTVEC (arg_node);
     }
-    if (length > 10)
+    switch (vectype) {
+    case T_nothing:
+        fprintf (outfile, ":[");
+        break;
+    case T_int:
+        intptr = (int *)constvec;
+        if ((intptr == NULL) || (veclen < 1))
+            return;
+        else {
+            fprintf (outfile, ":[%d", intptr[0]);
+            for (i = 1; i < ((veclen < 10) ? (veclen) : (10)); i++)
+                fprintf (outfile, ",%d", intptr[i]);
+        }
+        break;
+    case T_float:
+        fltptr = (float *)constvec;
+        if ((fltptr == NULL) || (veclen < 1))
+            return;
+        else {
+            fprintf (outfile, ":[%f", fltptr[0]);
+            for (i = 1; i < ((veclen < 10) ? (veclen) : (10)); i++)
+                fprintf (outfile, ",%f", fltptr[i]);
+        }
+        break;
+    case T_double:
+        dblptr = (double *)constvec;
+        if ((dblptr == NULL) || (veclen < 1))
+            return;
+        else {
+            fprintf (outfile, ":[%f", dblptr[0]);
+            for (i = 1; i < ((veclen < 10) ? (veclen) : (10)); i++)
+                fprintf (outfile, ",%f", dblptr[i]);
+        }
+        break;
+    case T_bool:
+        intptr = (int *)constvec;
+        if ((intptr == NULL) || (veclen < 1))
+            return;
+        else {
+            fprintf (outfile, ":[%s", ((intptr[0] == 0) ? ("false") : ("true")));
+            for (i = 1; i < ((veclen < 10) ? (veclen) : (10)); i++)
+                fprintf (outfile, ",%s", ((intptr[i] == 0) ? ("false") : ("true")));
+        }
+        break;
+    case T_char:
+        chrptr = (char *)constvec;
+        if ((chrptr == NULL) || (veclen < 1))
+            return;
+        else {
+            fprintf (outfile, ":[");
+            if ((chrptr[0] >= ' ') && (chrptr[0] <= '~') && (chrptr[0] != '\'')) {
+                fprintf (outfile, ",'%c'", chrptr[0]);
+            } else {
+                fprintf (outfile, ",'\\%o'", chrptr[0]);
+            }
+            for (i = 1; i < ((veclen < 10) ? (veclen) : (10)); i++)
+                if ((chrptr[i] >= ' ') && (chrptr[i] <= '~') && (chrptr[i] != '\'')) {
+                    fprintf (outfile, ",'%c'", chrptr[i]);
+                } else {
+                    fprintf (outfile, ",'\\%o'", chrptr[i]);
+                }
+        }
+        break;
+    default:
+        return;
+    }
+    if (veclen > 10)
         fprintf (outfile, ",..]");
     else
         fprintf (outfile, "]");
