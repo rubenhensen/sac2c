@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/02/25 10:58:18  bs
+ * DupArray added
+ *
  * Revision 2.1  1999/02/23 12:41:18  sacbase
  * new release made
  *
@@ -153,6 +156,7 @@ extern node *DupDouble (node *arg_node, node *arg_info);
 extern node *DupStr (node *arg_node, node *arg_info);
 extern node *DupModarray (node *arg_node, node *arg_info);
 extern node *DupId (node *arg_node, node *arg_info);
+extern node *DupArray (node *arg_node, node *arg_info);
 extern node *DupExprs (node *arg_node, node *arg_info);
 extern node *DupCond (node *arg_node, node *arg_info);
 extern node *DupLoop (node *arg_node, node *arg_info);
