@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.15  2001/05/08 15:51:15  dkr
+ * more debug output added
+ *
  * Revision 1.14  2001/04/23 15:10:15  dkr
  * InferDFMs: DBUG_ASSERT added
  *
@@ -130,6 +133,35 @@
  */
 #define INFO_DFMBASE(arg_info) FUNDEF_DFM_BASE (INFO_INFDFMS_FUNDEF (arg_info))
 
+#ifndef DBUG_OFF
+/******************************************************************************
+ *
+ * Function:
+ *   void DbugPrintMask( DFMmask_t dfm)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+void
+DbugPrintMask (char *dfm_str, DFMmask_t dfm)
+{
+    DBUG_ENTER ("DbugPrintMask");
+
+    fprintf (stderr, "%s<" F_PTR ">: ", dfm_str, dfm);
+    if (dfm != NULL) {
+        DFMPrintMask (stderr, "%s ", dfm);
+    } else {
+        fprintf (stderr, "NULL");
+    }
+    fprintf (stderr, "\n");
+
+    DBUG_VOID_RETURN;
+}
+#endif
+
+#ifndef DBUG_OFF
 /******************************************************************************
  *
  * Function:
@@ -146,20 +178,45 @@ DbugPrintSignature (char *node_str, DFMmask_t in, DFMmask_t out, DFMmask_t local
 {
     DBUG_ENTER ("DbugPrintSignature");
 
-    DBUG_PRINT ("INFDFMS", ("signature of %s: ", node_str));
-    DBUG_EXECUTE ("INFDFMS", fprintf (stderr, "    in-vars<" F_PTR ">: ", in);
-                  if (in != NULL) { DFMPrintMask (stderr, "%s ", in); } else {
-                      fprintf (stderr, "NULL");
-                  } fprintf (stderr, "\n    out-vars<" F_PTR ">: ", out);
-                  if (out != NULL) { DFMPrintMask (stderr, "%s ", out); } else {
-                      fprintf (stderr, "NULL");
-                  } fprintf (stderr, "\n    local-vars<" F_PTR ">: ", local);
-                  if (local != NULL) { DFMPrintMask (stderr, "%s ", local); } else {
-                      fprintf (stderr, "NULL");
-                  } fprintf (stderr, "\n"););
+    fprintf (stderr, "\n------------------------------------------\n");
+    fprintf (stderr, "Signature of %s:\n", node_str);
+
+    DbugPrintMask ("   in   ", in);
+    DbugPrintMask ("   out  ", out);
+    DbugPrintMask ("   local", local);
+
+    fprintf (stderr, "------------------------------------------\n\n");
 
     DBUG_VOID_RETURN;
 }
+#endif
+
+#ifndef DBUG_OFF
+/******************************************************************************
+ *
+ * Function:
+ *   void DbugPrintMasks( node *arg_info)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+static void
+DbugPrintMasks (node *arg_info)
+{
+    DBUG_ENTER ("DbugPrintMasks");
+
+    fprintf (stderr, " ->\n");
+
+    DbugPrintMask ("   in    ", INFO_INFDFMS_IN (arg_info));
+    DbugPrintMask ("   out   ", INFO_INFDFMS_OUT (arg_info));
+    DbugPrintMask ("   local ", INFO_INFDFMS_LOCAL (arg_info));
+    DbugPrintMask ("   needed", INFO_INFDFMS_NEEDED (arg_info));
+
+    DBUG_VOID_RETURN;
+}
+#endif
 
 /******************************************************************************
  *
@@ -410,7 +467,7 @@ AdjustNeeded (DFMmask_t needed, DFMmask_t in, DFMmask_t out)
  *   That means, we have to clear the INFO_INFDFMS_NEEDED mask here!
  *
  *   BUT, in case of global objects this behaviour is NOT wanted.
- *   Therefore, during the flattening phase all not-global vars defined
+ *   Therefore, during the flattening phase all non-global vars defined
  *   within a with-loop are renamed:
  *
  *     val = 1;
@@ -739,6 +796,10 @@ InferMasks (DFMmask_t *in, DFMmask_t *out, DFMmask_t *local, node *arg_node,
     INFO_INFDFMS_OUT (arg_info) = DFMGenMaskCopy (*out);
     INFO_INFDFMS_LOCAL (arg_info) = DFMGenMaskClear (INFO_DFMBASE (arg_info));
 
+    DBUG_EXECUTE ("INFDFMS",
+                  fprintf (stderr, ">>>  %s entered", mdb_nodetype[NODE_TYPE (arg_node)]);
+                  DbugPrintMasks (arg_info););
+
     arg_node = InferMasksFunction (arg_node, arg_info);
 
     /*
@@ -758,7 +819,8 @@ InferMasks (DFMmask_t *in, DFMmask_t *out, DFMmask_t *local, node *arg_node,
         UPDATE (*local, INFO_INFDFMS_LOCAL (arg_info));
     }
 
-    DbugPrintSignature (NODE_TEXT (arg_node), *in, *out, *local);
+    DBUG_EXECUTE ("INFDFMS",
+                  DbugPrintSignature (NODE_TEXT (arg_node), *in, *out, *local););
 
     /*
      * update old local-mask
@@ -767,10 +829,10 @@ InferMasks (DFMmask_t *in, DFMmask_t *out, DFMmask_t *local, node *arg_node,
         /*
          * we have to hide the local vars!!
          */
-        DBUG_PRINT ("INFDFMS",
+        DBUG_PRINT ("INFDFMS_ALL",
                     ("local vars of node %s are hid!!!", NODE_TEXT (arg_node)));
     } else {
-        DBUG_PRINT ("INFDFMS",
+        DBUG_PRINT ("INFDFMS_ALL",
                     ("local vars of node %s are not hid.", NODE_TEXT (arg_node)));
         DFMSetMaskOr (old_local, *local);
     }
@@ -844,15 +906,16 @@ INFDFMSfundef (node *arg_node, node *arg_info)
     INFO_INFDFMS_FUNDEF (arg_info) = arg_node;
 
     if (FUNDEF_BODY (arg_node) != NULL) {
-        DBUG_PRINT ("INFDFMS", (">> %s():", FUNDEF_NAME (arg_node)));
+        DBUG_EXECUTE ("INFDFMS", fprintf (stderr, ">>>>>>>  function %s():\n",
+                                          FUNDEF_NAME (arg_node)););
 
         old_dfm_base = FUNDEF_DFM_BASE (arg_node);
         if (old_dfm_base == NULL) {
             FUNDEF_DFM_BASE (arg_node)
               = DFMGenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDEC (arg_node));
 
-            DBUG_PRINT ("INFDFMS", ("no DFM base found -> created (" F_PTR ")",
-                                    FUNDEF_DFM_BASE (arg_node)));
+            DBUG_PRINT ("INFDFMS_ALL", ("no DFM base found -> created (" F_PTR ")",
+                                        FUNDEF_DFM_BASE (arg_node)));
         } else {
             FUNDEF_DFM_BASE (arg_node)
               = DFMUpdateMaskBase (old_dfm_base, FUNDEF_ARGS (arg_node),
@@ -861,8 +924,8 @@ INFDFMSfundef (node *arg_node, node *arg_info)
             DBUG_ASSERT ((FUNDEF_DFM_BASE (arg_node) == old_dfm_base),
                          "address of DFM base has changed during update!");
 
-            DBUG_PRINT ("INFDFMS", ("DFM base found -> updated (" F_PTR ")",
-                                    FUNDEF_DFM_BASE (arg_node)));
+            DBUG_PRINT ("INFDFMS_ALL", ("DFM base found -> updated (" F_PTR ")",
+                                        FUNDEF_DFM_BASE (arg_node)));
         }
 
         INFO_INFDFMS_IN (arg_info) = DFMGenMaskClear (FUNDEF_DFM_BASE (arg_node));
@@ -880,8 +943,9 @@ INFDFMSfundef (node *arg_node, node *arg_info)
 
         INFO_INFDFMS_FIRST (arg_info) = TRUE;
         do {
-            DBUG_EXECUTE ("INFDFMS", cnt++;);
-            DBUG_PRINT ("INFDFMS", ("fixpoint iteration --- loop %i", cnt));
+            DBUG_EXECUTE ("INFDFMS", cnt++;
+                          fprintf (stderr, "\n>>>>>  fixpoint iteration --- loop %i\n",
+                                   cnt););
             INFO_INFDFMS_ISFIX (arg_info) = TRUE;
 
             FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
@@ -893,8 +957,9 @@ INFDFMSfundef (node *arg_node, node *arg_info)
             INFO_INFDFMS_FIRST (arg_info) = FALSE;
         } while (!INFO_INFDFMS_ISFIX (arg_info));
 
-        DBUG_PRINT ("INFDFMS", ("<< %s(): finished after %i iterations\n",
-                                FUNDEF_NAME (arg_node), cnt));
+        DBUG_EXECUTE ("INFDFMS",
+                      fprintf (stderr, "<< %s(): finished after %i iterations\n",
+                               FUNDEF_NAME (arg_node), cnt););
 
         INFO_INFDFMS_IN (arg_info) = DFMRemoveMask (INFO_INFDFMS_IN (arg_info));
         INFO_INFDFMS_OUT (arg_info) = DFMRemoveMask (INFO_INFDFMS_OUT (arg_info));
@@ -986,6 +1051,25 @@ INFDFMSlet (node *arg_node, node *arg_info)
     DefinedIds (LET_IDS (arg_node), arg_info);
 
     LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
+
+    DBUG_EXECUTE ("INFDFMS",
+                  fprintf (stderr, "%s traversed (", mdb_nodetype[NODE_TYPE (arg_node)]);
+                  {
+                      ids *let_ids = LET_IDS (arg_node);
+
+                      if (let_ids != NULL) {
+                          while (let_ids != NULL) {
+                              fprintf (stderr, "%s", IDS_NAME (let_ids));
+                              let_ids = IDS_NEXT (let_ids);
+                              if (let_ids != NULL) {
+                                  fprintf (stderr, " ,");
+                              }
+                          }
+                          fprintf (stderr, " = ");
+                      }
+                      fprintf (stderr, "[%s])",
+                               mdb_nodetype[NODE_TYPE (LET_EXPR (arg_node))]);
+                  } DbugPrintMasks (arg_info););
 
     DBUG_RETURN (arg_node);
 }
