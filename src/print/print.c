@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.204  1998/04/26 21:52:29  dkr
+ * PrintSPMD renamed to PrintSpmd
+ *
  * Revision 1.203  1998/04/25 16:28:59  sbs
  * END_ICM macros adjusted for a second argument!
  *
@@ -2106,9 +2109,9 @@ PrintPragma (node *arg_node, node *arg_info)
 /******************************************************************************/
 
 node *
-PrintSPMD (node *arg_node, node *arg_info)
+PrintSpmd (node *arg_node, node *arg_info)
 {
-    DBUG_ENTER ("PrintSPMD");
+    DBUG_ENTER ("PrintSpmd");
 
     fprintf (outfile, "/*** begin of SPMD region ***\n");
     INDENT;

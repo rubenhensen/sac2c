@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.31  1998/04/26 21:50:18  dkr
+ * PrintSPMD renamed to PrintSpmd
+ *
  * Revision 1.30  1998/04/25 11:45:56  sbs
  * indent moved into globals!
  *
@@ -152,7 +155,7 @@ extern node *PrintPre (node *arg_node, node *arg_info);
 extern node *PrintIcm (node *arg_node, node *arg_info);
 extern node *PrintVectInfo (node *arg_node, node *arg_info);
 extern node *PrintPragma (node *arg_node, node *arg_info);
-extern node *PrintSPMD (node *arg_node, node *arg_info);
+extern node *PrintSpmd (node *arg_node, node *arg_info);
 extern node *PrintSync (node *arg_node, node *arg_info);
 
 /* new with-loop */
