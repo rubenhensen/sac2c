@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.112  1996/01/25 18:39:56  cg
+ * Revision 1.113  1996/02/06 13:59:44  sbs
+ * PrintDouble and PrintFloat forced to append .0 / .0f for whole numbers
+ *
+ * Revision 1.112  1996/01/25  18:39:56  cg
  * beautified printing of blocks with and without return
  * class type is printed in comments until typedef is created
  *
@@ -922,7 +925,10 @@ PrintFloat (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("PrintFloat");
 
-    fprintf (outfile, "%.256g", arg_node->info.cfloat);
+    if (arg_node->info.cfloat == (int)arg_node->info.cfloat)
+        fprintf (outfile, "%.256g.0f", arg_node->info.cfloat);
+    else
+        fprintf (outfile, "%.256gf", arg_node->info.cfloat);
 
     DBUG_RETURN (arg_node);
 }
@@ -933,7 +939,10 @@ PrintDouble (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("PrintDouble");
 
-    fprintf (outfile, "%.256g", arg_node->info.cdbl);
+    if (arg_node->info.cdbl == (int)arg_node->info.cdbl)
+        fprintf (outfile, "%.256g.0", arg_node->info.cdbl);
+    else
+        fprintf (outfile, "%.256g", arg_node->info.cdbl);
 
     DBUG_RETURN (arg_node);
 }
