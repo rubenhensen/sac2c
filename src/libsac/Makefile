@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.14  2002/07/03 13:47:00  dkr
+# boundcheck.o removed
+#
 # Revision 3.13  2002/06/06 19:56:03  dkr
 # target clean modified
 #
@@ -52,7 +55,7 @@
 # 
 
 
-#######################################################################################
+##############################################################################
 #
 # include general setup:
 #
@@ -61,7 +64,7 @@ PROJECT_ROOT := ../..
 include $(PROJECT_ROOT)/Makefile.Config
 
 
-#######################################################################################
+##############################################################################
 #
 # local settings:
 #
@@ -71,12 +74,12 @@ MTFLAGS   := -DMT -D_REENTRANT -D_POSIX_C_SOURCE=199506L
 INCS := -I../tree -I../runtime -I../../inc
 LIBS := -L.
 
-OBJS_LIBSAC := boundcheck.o message.o misc.o profile.o trace.o nophm.o \
-               cachesim_access_advanced.o cachesim_access_simple.o   \
-               cachesim_basic.o ../../lib/main_args.o sac_arg.o cinterface.o
+OBJS_LIBSAC := message.o misc.o profile.o trace.o nophm.o sac_arg.o \
+               cachesim_access_advanced.o cachesim_access_simple.o \
+               cachesim_basic.o ../../lib/main_args.o cinterface.o
 
-OBJS_LIBSAC_MT := boundcheck_mt.o message_mt.o misc_mt.o trace_mt.o mt.o  \
-                  mt_trace.o nophm_mt.o sac_arg.o cinterface.o
+OBJS_LIBSAC_MT := message_mt.o misc_mt.o trace_mt.o mt.o mt_trace.o
+                  nophm_mt.o sac_arg.o cinterface.o
 
 
 .PHONY: all tar clean prod
@@ -136,7 +139,7 @@ clean:
 	$(RM) -r .sb SunWS_cache
 
 
-#######################################################################################
+##############################################################################
 #
 # include automatic dependency mechanism
 #
