@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.14  2004/10/26 10:46:59  sbs
+ * type_info now holds the module name as well.
+ *
  * Revision 1.13  2003/12/02 09:53:02  sbs
  * TEAssureNonNegativeValues added.
  *
@@ -53,6 +56,7 @@
 struct TE_INFO {
     int line;            /* line where the application is situated */
     char *kind_str;      /* kind of function we are dealing with */
+    char *mod_str;       /* optional module name */
     char *name_str;      /* name of the function */
     node *wrapper;       /* for udfs, this pointer points to the wrapper function */
     node *assign;        /* for udfs, this pointer points to the assign node of the ap */
@@ -62,6 +66,7 @@ struct TE_INFO {
 
 #define TI_LINE(n) (n->line)
 #define TI_KIND(n) (n->kind_str)
+#define TI_MOD(n) (n->mod_str)
 #define TI_NAME(n) (n->name_str)
 #define TI_FUNDEF(n) (n->wrapper)
 #define TI_ASSIGN(n) (n->assign)
@@ -172,8 +177,8 @@ MatchNumA (ntype *type)
  ******************************************************************************/
 
 te_info *
-TEMakeInfo (int linenum, char *kind_str, char *name_str, node *wrapper, node *assign,
-            void *cffun, te_info *parent)
+TEMakeInfo (int linenum, char *kind_str, char *mod_str, char *name_str, node *wrapper,
+            node *assign, void *cffun, te_info *parent)
 {
     te_info *res;
 
@@ -182,6 +187,7 @@ TEMakeInfo (int linenum, char *kind_str, char *name_str, node *wrapper, node *as
     res = (te_info *)Malloc (sizeof (te_info));
     TI_LINE (res) = linenum;
     TI_KIND (res) = kind_str;
+    TI_MOD (res) = mod_str;
     TI_NAME (res) = name_str;
     TI_FUNDEF (res) = wrapper;
     TI_ASSIGN (res) = assign;
@@ -203,6 +209,13 @@ TEGetKindStr (te_info *info)
 {
     DBUG_ENTER ("TEGetKindStr");
     DBUG_RETURN (TI_KIND (info));
+}
+
+char *
+TEGetModStr (te_info *info)
+{
+    DBUG_ENTER ("TEGetModStr");
+    DBUG_RETURN (TI_MOD (info));
 }
 
 char *
@@ -255,8 +268,10 @@ TEExtendedAbort ()
             assign = TI_ASSIGN (act_info_chn);
             if (!FUNDEF_IS_LACFUN (TI_FUNDEF (act_info_chn))) {
                 args = NewTypeCheck_Expr (AP_ARGS (ASSIGN_RHS (assign)));
-                CONT_ERROR (("-- %s(?): %d: %s%s", filename, TI_LINE (act_info_chn),
-                             TI_NAME (act_info_chn), TYType2String (args, FALSE, 0)));
+                CONT_ERROR (
+                  ("-- %s(?): %d: %s:%s%s", filename, TI_LINE (act_info_chn),
+                   ((TI_MOD (act_info_chn) != NULL) ? TI_MOD (act_info_chn) : "--"),
+                   TI_NAME (act_info_chn), TYType2String (args, FALSE, 0)));
             }
             act_info_chn = TI_CHN (act_info_chn);
         }
