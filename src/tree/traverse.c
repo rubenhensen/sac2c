@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.117  2004/11/27 05:05:25  ktr
+ * bugfix.
+ *
  * Revision 3.116  2004/11/27 01:33:21  sah
  * implemented TRAVgetName
  *
@@ -46,7 +49,7 @@ TRAVdo (node *arg_node, info *arg_info)
 
     DBUG_ASSERT ((arg_node != NULL), "Trav: tried to traverse into subtree NULL !");
 
-    DBUG_ASSERT ((NODE_TYPE (arg_node) > MAX_NODES), "Trav: illegal node type !");
+    DBUG_ASSERT ((NODE_TYPE (arg_node) <= MAX_NODES), "Trav: illegal node type !");
 
     DBUG_ASSERT ((travstack != NULL), "no traversal on stack!");
 
@@ -121,7 +124,7 @@ TRAVpop ()
 }
 
 const char *
-TRAVgetName (trav_t trav)
+TRAVgetName ()
 {
     const char *result;
 
@@ -130,7 +133,7 @@ TRAVgetName (trav_t trav)
     if (travstack == NULL) {
         result = "no_active_traversal";
     } else {
-        result = travnames[trav];
+        result = travnames[travstack->traversal];
     }
 
     DBUG_RETURN (result);
