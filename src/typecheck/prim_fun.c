@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.14  2000/07/11 10:19:27  dkr
+ * code for OLD_GET_TYPE_NODE removed
+ *
  * Revision 2.13  2000/02/17 17:04:17  cg
  * Prototype of function DuplicateTypes() is now included from
  * DupTree.h instead of typecheck.h.
@@ -129,26 +132,8 @@ enum type_class {
     AxAxA_A
 };
 
-#ifdef OLD_GET_TYPE_NODE
-#define GEN_TYPE_NODE(node, type)                                                        \
-    if (NULL != (node = GEN_NODE (types))) {                                             \
-        node->dim = 0;                                                                   \
-        node->simpletype = type;                                                         \
-        node->shpseg = NULL;                                                             \
-        node->next = NULL;                                                               \
-        node->id = NULL;                                                                 \
-        node->id_mod = NULL;                                                             \
-        node->name = NULL;                                                               \
-        node->name_mod = NULL;                                                           \
-        node->attrib = 0;                                                                \
-        node->status = 0;                                                                \
-        DBUG_PRINT ("PRIM_FUN", ("param: %s" P_FORMAT, type_string[type], node));        \
-    } else                                                                               \
-        SYSABORT (("Out of memory"))
-#else
 #define GEN_TYPE_NODE(types, simpletype)                                                 \
     types = MakeType (simpletype, SCALAR, NULL, NULL, NULL)
-#endif /* OLD_GET_TYPE_NODE */
 
 #define GEN_PRIM_FUN_TAB_ELEM(p_old, mod, node_p, t_tag, u_tag, p_new)                   \
     tmp = (prim_fun_tab_elem *)Malloc (sizeof (prim_fun_tab_elem));                      \
