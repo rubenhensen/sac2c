@@ -3,7 +3,11 @@
 /*
  *
  * $Log$
- * Revision 1.64  1995/06/30 11:27:21  hw
+ * Revision 1.65  1995/07/04 11:34:49  hw
+ * - parsing of primitive functions itod, ftod, dtoi, dtof inserted
+ * - parsing of 'double constants' inserted
+ *
+ * Revision 1.64  1995/06/30  11:27:21  hw
  * - new primitive functions "ftoi" & "itof" inserted
  * - token C_KEYWORD for not used c-keywords inserted
  *
@@ -250,6 +254,7 @@ static char *mod_name;
          node            *node;
          int             cint;
          float           cfloat;
+         double          cdbl;
          nums            *nums;
 	 prf             prf;
        }
@@ -258,7 +263,8 @@ static char *mod_name;
 %token BRACE_L, BRACE_R, BRACKET_L, BRACKET_R, SQBR_L, SQBR_R, COLON, SEMIC,
        COMMA,
        INLINE, LET, TYPEDEF, CONSTDEF, OBJDEF
-       AND, OR, EQ, NEQ, NOT, LE, LT, GE, GT, MUL, DIV, PLUS, MINUS, F2I, I2F,
+       AND, OR, EQ, NEQ, NOT, LE, LT, GE, GT, MUL, DIV, PLUS, MINUS,
+       F2I, F2D, I2F,I2D, D2I, D2F,
        INC, DEC, ADDON, SUBON, MULON, DIVON,
        RESHAPE, SHAPE, TAKE, DROP, DIM, ROTATE,CAT,PSI,
        K_MAIN, RETURN, IF, ELSE, DO, WHILE, FOR, WITH, GENARRAY, MODARRAY,
@@ -271,6 +277,7 @@ static char *mod_name;
                TYPE_LONG, TYPE_CHAR, TYPE_DBL, TYPE_VOID, TYPE_DOTS
 %token <cint> NUM
 %token <cfloat> FLOAT
+%token <cdbl> DOUBLE
 
 %type <prf> foldop
 %type <nodetype> modclass
@@ -1333,6 +1340,30 @@ expr:   apl {$$=$1; $$->info.fun_name.id_mod=NULL; }
                       ("%s " P_FORMAT ": %f ", 
                        mdb_nodetype[$$->nodetype], $$, $$->info.cfloat)); 
          }
+      | DOUBLE
+         { $$=MakeNode(N_double);
+           $$->info.cdbl=$1;
+
+           DBUG_PRINT("GENTREE",
+                      ("%s " P_FORMAT ": %f ",
+                       mdb_nodetype[$$->nodetype], $$, $$->info.cdbl));
+         }
+      | MINUS DOUBLE %prec UMINUS
+         { $$=MakeNode(N_double);
+           $$->info.cdbl=-$2;
+
+           DBUG_PRINT("GENTREE",
+                      ("%s " P_FORMAT ": %f ",
+                       mdb_nodetype[$$->nodetype], $$, $$->info.cdbl));
+         }
+      | PLUS DOUBLE %prec UMINUS
+         { $$=MakeNode(N_double);
+           $$->info.cdbl=$2;
+
+           DBUG_PRINT("GENTREE",
+                      ("%s " P_FORMAT ": %f ",
+                       mdb_nodetype[$$->nodetype], $$, $$->info.cdbl));
+         }
       | TRUE 
          { $$=MakeNode(N_bool);
            $$->info.cint=1;
@@ -1467,14 +1498,28 @@ monop: DIM
              $$->info.prf=F_shape;
           }
        | F2I
-          {
-             $$=MakeNode(N_prf);
+          {  $$=MakeNode(N_prf);
              $$->info.prf=F_ftoi; 
           }
+       | F2D
+          {  $$=MakeNode(N_prf);
+             $$->info.prf=F_ftod;
+          }
        | I2F
-          {
-             $$=MakeNode(N_prf);
+          {  $$=MakeNode(N_prf);
              $$->info.prf=F_itof; 
+          }
+       | I2D
+          {  $$=MakeNode(N_prf);
+             $$->info.prf=F_itod;
+          }
+       | D2I
+          {  $$=MakeNode(N_prf);
+             $$->info.prf=F_dtoi;
+          }
+       | D2F
+          {  $$=MakeNode(N_prf);
+             $$->info.prf=F_dtof;
           }
 
           ;
@@ -1585,6 +1630,11 @@ simpletype: TYPE_INT
                }
             | TYPE_BOOL 
                { $$=MakeTypes(T_bool);
+                 DBUG_PRINT("GENTREE",("type:"P_FORMAT" %s",
+                                     $$, mdb_type[$$->simpletype]));
+               }
+            | TYPE_DBL
+               { $$=MakeTypes(T_double);
                  DBUG_PRINT("GENTREE",("type:"P_FORMAT" %s",
                                      $$, mdb_type[$$->simpletype]));
                }
