@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.11  2000/02/17 16:16:55  cg
+# Added compilation of adjust_ids.c and fun2lac.c.
+#
 # Revision 2.10  2000/01/23 15:01:10  dkr
 # make deps done
 #
@@ -95,7 +98,7 @@ CFLAGS    := -D__EXTENSIONS__
 
 INCS=-I../global -I../../inc -I../tree
 
-all: flatten.o lac2fun.o
+all: flatten.o lac2fun.o fun2lac.o adjust_ids.o
 
 flatten.o: flatten.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o flatten.o -c flatten.c $(INCS)
@@ -103,11 +106,17 @@ flatten.o: flatten.c
 lac2fun.o: lac2fun.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o lac2fun.o -c lac2fun.c $(INCS)
 
+fun2lac.o: fun2lac.c
+	$(CC) $(CCFLAGS) $(CFLAGS) -o fun2lac.o -c fun2lac.c $(INCS)
+
+adjust_ids.o: adjust_ids.c
+	$(CC) $(CCFLAGS) $(CFLAGS) -o adjust_ids.o -c adjust_ids.c $(INCS)
+
 deps:
 	makedepend $(INCS) *.c
 
 clean:
-	$(RM) *.o *.bak
+	$(RM) *.o *.bak *~
 	$(RM) -r .sb SunWS_cache
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
