@@ -1,6 +1,8 @@
 /*
- *
  * $Log$
+ * Revision 1.5  2000/05/25 23:02:16  dkr
+ * added reference to Precompile() in header
+ *
  * Revision 1.4  2000/05/08 11:37:53  cg
  * Comment added.
  *
@@ -13,9 +15,6 @@
  *
  * Revision 1.1  2000/02/17 16:15:25  cg
  * Initial revision
- *
- *
- *
  */
 
 /*****************************************************************************
@@ -25,7 +24,6 @@
  * prefix: AI
  *
  * description:
- *
  *   This compiler module implements the renaming of the local identifiers
  *   of a function definition.
  *
@@ -43,7 +41,7 @@
  *   This compiler module is used to prepare a function definition for
  *   more or less naive inlining.
  *
- *   Its capabilities are used by Fun2Lac.
+ *   Its capabilities are used by Fun2Lac() and Precompile().
  *
  *****************************************************************************/
 
@@ -101,7 +99,7 @@ node *FindOrMakeVardec(char *var_name, node *fundef, node *vardec_or_arg)
 {
   node *vardec;
   
-  DBUG_ENTER("*FindOrMakeVardec");
+  DBUG_ENTER( "FindOrMakeVardec");
   
   vardec = BLOCK_VARDEC(FUNDEF_BODY(fundef));
   
