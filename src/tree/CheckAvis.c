@@ -1,6 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2002/08/05 09:52:04  sbs
+ * eliminated the requirement for Nwithid nodes to always have both,
+ * an IDS and a VEC attribute. This change is motivated by the requirement
+ * to convert to SSA form prior to type checking. Furthermore, not being
+ * restricted to the AKS case anymore, we cannot guarantee the existance
+ * of the IDS attribute in all cases anymore !!!!
+ *
  * Revision 1.9  2001/05/17 11:18:10  dkr
  * FREE(info) replaced by FreeTree(info)
  *
@@ -189,13 +196,13 @@ CAVNwithid (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("CAVNwithid");
 
-    DBUG_ASSERT ((NWITHID_VEC (arg_node) != NULL),
-                 "NWITHID node with empty VEC attribute");
-    NWITHID_VEC (arg_node) = TravIDS (NWITHID_VEC (arg_node), arg_info);
+    if (NWITHID_VEC (arg_node) != NULL) {
+        NWITHID_VEC (arg_node) = TravIDS (NWITHID_VEC (arg_node), arg_info);
+    }
 
-    DBUG_ASSERT ((NWITHID_IDS (arg_node) != NULL),
-                 "NWITHID node with empty IDS attribute");
-    NWITHID_IDS (arg_node) = TravIDS (NWITHID_IDS (arg_node), arg_info);
+    if (NWITHID_IDS (arg_node)) {
+        NWITHID_IDS (arg_node) = TravIDS (NWITHID_IDS (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }

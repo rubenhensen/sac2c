@@ -1,6 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 1.23  2002/08/05 09:52:04  sbs
+ * eliminated the requirement for Nwithid nodes to always have both,
+ * an IDS and a VEC attribute. This change is motivated by the requirement
+ * to convert to SSA form prior to type checking. Furthermore, not being
+ * restricted to the AKS case anymore, we cannot guarantee the existance
+ * of the IDS attribute in all cases anymore !!!!
+ *
  * Revision 1.22  2002/02/12 15:44:20  dkr
  * no changes done
  *
@@ -810,6 +817,8 @@ SSAap (node *arg_node, node *arg_info)
 node *
 SSANwith (node *arg_node, node *arg_info)
 {
+    node *withid;
+
     DBUG_ENTER ("SSANwith");
 
     /* traverse in with-op */
@@ -817,14 +826,24 @@ SSANwith (node *arg_node, node *arg_info)
     NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
 
     /*
-     * before traversing all partions, clear with ids/vec to check all
+     * before traversing all partions, init with-ids/-vec to check all
      * partions for identical index variables
      */
-    INFO_SSA_WITHIDS (arg_info) = NULL;
-    INFO_SSA_WITHVEC (arg_info) = NULL;
+    DBUG_ASSERT ((NWITH_PART (arg_node) != NULL), "Nwith without PART node!");
+
+    withid = NPART_WITHID (NWITH_PART (arg_node));
+    if (NWITHID_IDS (withid) != NULL) {
+        INFO_SSA_WITHIDS (arg_info) = IDS_AVIS (NWITHID_IDS (withid));
+    } else {
+        INFO_SSA_WITHIDS (arg_info) = NULL;
+    }
+    if (NWITHID_VEC (withid) != NULL) {
+        INFO_SSA_WITHVEC (arg_info) = IDS_AVIS (NWITHID_VEC (withid));
+    } else {
+        INFO_SSA_WITHVEC (arg_info) = NULL;
+    }
 
     /* traverse partitions */
-    DBUG_ASSERT ((NWITH_PART (arg_node) != NULL), "Nwith without PART node!");
     NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
 
     /* do stacking of current renaming status */
@@ -865,25 +884,23 @@ SSANpart (node *arg_node, node *arg_info)
 
     DBUG_ASSERT ((NPART_WITHID (arg_node) != NULL), "Npart without Nwithid node!");
 
-    /* store first occurrence of withids and withvec for later ASSERT */
+    /* assert unique withids/withvec !!! */
     if (INFO_SSA_WITHIDS (arg_info) == NULL) {
-        INFO_SSA_WITHIDS (arg_info) = IDS_AVIS (NWITHID_IDS (NPART_WITHID (arg_node)));
+        DBUG_ASSERT ((NWITHID_IDS (NPART_WITHID (arg_node)) == NULL),
+                     "multigenerator withloop with inconsistent withids");
+    } else {
+        DBUG_ASSERT ((INFO_SSA_WITHIDS (arg_info)
+                      == IDS_AVIS (NWITHID_IDS (NPART_WITHID (arg_node)))),
+                     "multigenerator withloop with inconsistent withids");
     }
     if (INFO_SSA_WITHVEC (arg_info) == NULL) {
-        INFO_SSA_WITHVEC (arg_info) = IDS_AVIS (NWITHID_VEC (NPART_WITHID (arg_node)));
+        DBUG_ASSERT ((NWITHID_VEC (NPART_WITHID (arg_node)) == NULL),
+                     "multigenerator withloop with inconsistent withvec");
+    } else {
+        DBUG_ASSERT ((INFO_SSA_WITHVEC (arg_info)
+                      == IDS_AVIS (NWITHID_VEC (NPART_WITHID (arg_node)))),
+                     "multigenerator withloop with inconsistent withvec");
     }
-
-    /* assert unique withids/withvec !!! */
-    DBUG_ASSERT ((INFO_SSA_WITHIDS (arg_info)
-                  == IDS_AVIS (NWITHID_IDS (NPART_WITHID (arg_node)))),
-                 "multigenerator withloop with inconsistent withids");
-    DBUG_ASSERT ((INFO_SSA_WITHVEC (arg_info)
-                  == IDS_AVIS (NWITHID_VEC (NPART_WITHID (arg_node)))),
-                 "multigenerator withloop with inconsistent withvec");
-
-    /* assert unique withids !!! */
-    DBUG_ASSERT ((INFO_SSA_WITHIDS (arg_info)), "no withids found");
-    DBUG_ASSERT ((INFO_SSA_WITHVEC (arg_info)), "no withvec found");
 
     if (NPART_NEXT (arg_node) != NULL) {
         /* traverse next part */
@@ -957,13 +974,13 @@ SSANwithid (node *arg_node, node *arg_info)
     assign = INFO_SSA_ASSIGN (arg_info);
     INFO_SSA_ASSIGN (arg_info) = NULL;
 
-    DBUG_ASSERT ((NWITHID_VEC (arg_node) != NULL),
-                 "NWITHID node with empty VEC attribute");
-    NWITHID_VEC (arg_node) = TravLeftIDS (NWITHID_VEC (arg_node), arg_info);
+    if (NWITHID_VEC (arg_node) != NULL) {
+        NWITHID_VEC (arg_node) = TravLeftIDS (NWITHID_VEC (arg_node), arg_info);
+    }
 
-    DBUG_ASSERT ((NWITHID_IDS (arg_node) != NULL),
-                 "NWITHID node with empty IDS attribute");
-    NWITHID_IDS (arg_node) = TravLeftIDS (NWITHID_IDS (arg_node), arg_info);
+    if (NWITHID_IDS (arg_node) != NULL) {
+        NWITHID_IDS (arg_node) = TravLeftIDS (NWITHID_IDS (arg_node), arg_info);
+    }
 
     /* restore currect assign for further processing */
     INFO_SSA_ASSIGN (arg_info) = assign;
