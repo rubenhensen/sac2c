@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.175  2004/08/05 12:06:01  skt
+ * MUTHassign added, TEMassign removed
+ *
  * Revision 3.174  2004/08/05 11:09:24  sah
  * the N_Nxxx nodes are now called N_nxxx, until the leading
  * n will be completly removed.
@@ -1413,7 +1416,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        PREC4fundef, TravSons, TravSons, NT2OTfundef, CWCfundef, TravSons, TravSons,
        TravSons, TravSons, TravSons, SPfundef, TSfundef, CVPfundef, WLFSfundef,
 
-       ASMRAfundef, TEMfundef, PEMfundef, EMALfundef, TravSons, TravSons, TravSons,
+       ASMRAfundef, TravSons, PEMfundef, EMALfundef, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, 3),
 
@@ -1737,7 +1740,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, WLAAassign, TravSons, SPMDRMassign, SPMDROassign, TravSons, TravSons,
        TravSons, TravSons, SPMDPMassign, SPMDCOassign, NTCassign, INFDFMSassign,
 
-       TravSons, TravSons, BLKINassign, TravSons, FUN2LACassign, AIassign, BLKEXassign,
+       MUTHassign, TravSons, BLKINassign, TravSons, FUN2LACassign, AIassign, BLKEXassign,
        TravSons, L2Fassign, BLKCOassign, DFAassign, BLKPPassign, TravSons, BARINassign,
        TravSons, TravSons, TravSons, PREC3assign, TravSons, APTassign,
 
