@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.27  2003/11/28 13:53:14  sbs
+ * sco's created by SCOExpr2StructConstant may SHARE the array components!!
+ * Therefore, we have to make sure these are copied BEFORE deletion!
+ *
  * Revision 1.26  2003/11/28 09:33:41  sbs
  * major code rewrite. Now, code inspection and code modification are better separated.
  * However, since the tricky code modification sections are copied from the old
@@ -699,6 +703,7 @@ PropagateArrayConstants (node **expr)
 {
     constant *const_expr;
     struct_constant *sco_expr;
+    node *tmp;
     bool res = FALSE;
 
     DBUG_ENTER ("PropagateArrayConstants");
@@ -714,8 +719,13 @@ PropagateArrayConstants (node **expr)
         } else {
             sco_expr = SCOExpr2StructConstant ((*expr));
             if (sco_expr != NULL) {
+                /*
+                 * as the sco_expr may share some subexpressions with (*expr),
+                 * we have to duplicate these BEFORE deleting (*expr)!!!
+                 */
+                tmp = SCODupStructConstant2Expr (sco_expr);
                 (*expr) = FreeTree (*expr);
-                (*expr) = SCODupStructConstant2Expr (sco_expr);
+                (*expr) = tmp;
                 sco_expr = SCOFreeStructConstant (sco_expr);
             }
         }
