@@ -1,7 +1,10 @@
 /*
  *  $Log$
- *  Revision 1.1  1995/02/03 07:45:32  hw
- *  Initial revision
+ *  Revision 1.2  1995/02/03 16:04:18  hw
+ *  added new functions AxA & Ixf_F
+ *
+ * Revision 1.1  1995/02/03  07:45:32  hw
+ * Initial revision
  *,$
  *
  */
@@ -37,5 +40,7 @@ xxxxx /* xxxxx is only a dummy argument */
 
 extern prim_fun_tab_elem *prim_fun_tab;
 extern void InitPrimFunTab ();
+extern types *AxA (types *array1, types *array2);
+extern types *Ixf_F (types *array1);
 
 #endif /* _prim_fun_h */
