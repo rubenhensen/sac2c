@@ -1,8 +1,9 @@
 /*
  *
  * $Log$
- * Revision 1.30  2002/09/03 11:54:29  dkr
- * no changes done
+ * Revision 1.31  2002/09/03 18:47:43  dkr
+ * - TAGGED_ARRAYS: constants propagation for N_ap activated again
+ * - SSACFid(): support for dynamic types added
  *
  * Revision 1.29  2002/07/29 12:12:53  sbs
  * PRF_IF macro extended by z.
@@ -529,17 +530,17 @@ SSACFExpr2StructConstant (node *expr)
     struc_co = NULL;
 
     if (NODE_TYPE (expr) == N_array) {
-        /* this expression is an array */
+        /* expression is an array */
         struc_co = SSACFArray2StructConstant (expr);
     } else if ((NODE_TYPE (expr) == N_id) && (AVIS_SSAASSIGN (ID_AVIS (expr)) != NULL)) {
-        dim = GetShapeDim (VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (expr))));
         /* expression is an identifier */
-        if (dim > 0) {
-            /* id is a defined array */
-            struc_co = SSACFArray2StructConstant (expr);
-        } else if (dim == 0) {
+        dim = GetShapeDim (VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (expr))));
+        if (dim == SCALAR) {
             /* id is a defined scalar */
             struc_co = SSACFScalar2StructConstant (expr);
+        } else if (dim > SCALAR) {
+            /* id is a defined array */
+            struc_co = SSACFArray2StructConstant (expr);
         }
     }
 
@@ -665,7 +666,7 @@ SSACFScalar2StructConstant (node *expr)
     if ((nt == N_num) || (nt == N_float) || (nt == N_double) || (nt == N_bool)
         || ((nt == N_id)
             && (GetShapeDim (VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (expr))))
-                == 0))) {
+                == SCALAR))) {
         /* create structural constant of scalar */
         ctype = VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (expr)));
 
@@ -1665,9 +1666,6 @@ SSACFap (node *arg_node, node *arg_info)
 
     DBUG_ASSERT ((AP_FUNDEF (arg_node) != NULL), "missing fundef in ap-node");
 
-#ifdef TAGGED_ARRAYS
-    INFO_SSACF_INSCONST (arg_info) = SUBST_NONE;
-#else
     /* substitute scalar constants in arguments (if no special function) */
     if (FUNDEF_IS_LACFUN (AP_FUNDEF (arg_node))) {
         INFO_SSACF_INSCONST (arg_info) = SUBST_NONE;
@@ -1675,7 +1673,6 @@ SSACFap (node *arg_node, node *arg_info)
         INFO_SSACF_INSCONST (arg_info)
           = SUBST_SCALAR && SUBST_ID_WITH_CONSTANT_IN_AP_ARGS;
     }
-#endif
 
     /* traverse arg chain */
     if (AP_ARGS (arg_node) != NULL) {
@@ -1757,22 +1754,22 @@ SSACFid (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("SSACFid");
 
-    dim = GetShapeDim (VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (arg_node))));
-
     /* check for constant scalar identifier */
-    if ((AVIS_SSACONST (ID_AVIS (arg_node)) != NULL)
-        && (((dim == SCALAR) && (INFO_SSACF_INSCONST (arg_info) >= SUBST_SCALAR))
+    if (AVIS_SSACONST (ID_AVIS (arg_node)) != NULL) {
+        dim = COGetDim (AVIS_SSACONST (ID_AVIS (arg_node)));
+
+        if (((dim == SCALAR) && (INFO_SSACF_INSCONST (arg_info) >= SUBST_SCALAR))
             || ((dim > SCALAR)
-                && (INFO_SSACF_INSCONST (arg_info)) == SUBST_SCALAR_AND_ARRAY))) {
+                && (INFO_SSACF_INSCONST (arg_info) == SUBST_SCALAR_AND_ARRAY))) {
+            DBUG_PRINT ("SSACF",
+                        ("substitue identifier %s through its value",
+                         VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (ID_AVIS (arg_node)))));
 
-        DBUG_PRINT ("SSACF",
-                    ("substitue identifier %s through its value",
-                     VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (ID_AVIS (arg_node)))));
-
-        /* substitute identifier with its value */
-        new_node = COConstant2AST (AVIS_SSACONST (ID_AVIS (arg_node)));
-        arg_node = FreeTree (arg_node);
-        arg_node = new_node;
+            /* substitute identifier with its value */
+            new_node = COConstant2AST (AVIS_SSACONST (ID_AVIS (arg_node)));
+            arg_node = FreeTree (arg_node);
+            arg_node = new_node;
+        }
     }
 
     DBUG_RETURN (arg_node);
