@@ -1,4 +1,6 @@
 Makefile
+blocks_init.c
+blocks_init.h
 multithread.c
 multithread.h
 schedule_init.c
