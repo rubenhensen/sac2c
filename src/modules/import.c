@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 2.7  2000/11/17 16:16:02  sbs
+ * locationtype field added in DEPS structure.
+ * This is used for implementing -MM and -MMlib options!
+ * => some extensions of PrintDependencies
+ * => some adjustments of MakeDeps calls done.
+ *
  * Revision 2.6  2000/11/15 14:32:44  sbs
  * {}'s added in order to please gcc.
  *
@@ -1246,12 +1252,13 @@ GenMod (char *name, int checkdec)
                     dependencies
                       = MakeDeps (StringCopy (name), StringCopy (abspathname), NULL,
                                   MODDEC_ISEXTERNAL (decl_tree) ? ST_external : ST_sac,
-                                  NULL, dependencies);
+                                  FindLocationOfFile (abspathname), NULL, dependencies);
                 }
             } else {
                 dependencies
                   = MakeDeps (StringCopy (name), StringCopy (abspathname), NULL,
-                              ST_external, MODDEC_LINKWITH (decl_tree), dependencies);
+                              ST_external, FindLocationOfFile (abspathname),
+                              MODDEC_LINKWITH (decl_tree), dependencies);
                 MODDEC_LINKWITH (decl_tree) = NULL;
             }
 
@@ -2171,8 +2178,8 @@ ImportOwnDeclaration (char *name, file_type modtype)
  *
  *  functionname  : PrintDependencies
  *  arguments     : 1) list of dependencies
- *                  2) mode, corresponds to compiler option -M (1) or
- *                     -Mlib (2).
+ *                  2) mode, corresponds to compiler option -M (1),
+ *                     -Mlib (2), -MM (3), or -MMlib (4)
  *  description   : prints a list of dependencies in a Makefile-like style
  *                  to stdout. All declaration files of imported modules
  *                  and classes are printed including the own declaration
@@ -2182,7 +2189,7 @@ ImportOwnDeclaration (char *name, file_type modtype)
  *  external funs : printf
  *  macros        :
  *
- *  remarks       : This function corresponds to the -M and -Mlib
+ *  remarks       : This function corresponds to the -M, -Mlib, -MM, and -MMlib
  *                  compiler options.
  *
  */
@@ -2200,25 +2207,29 @@ PrintDependencies (deps *depends, int mode)
     tmp = depends;
 
     while (tmp != NULL) {
-        printf ("  \\\n  %s", DEPS_DECNAME (tmp));
+        if ((mode <= 2) || (DEPS_LOC (tmp) == LOC_usr)) {
+            printf ("  \\\n  %s", DEPS_DECNAME (tmp));
+        }
         tmp = DEPS_NEXT (tmp);
     }
 
-    if (mode == 1) {
+    if ((mode == 1) || (mode == 3)) {
         printf ("\n");
     } else {
         tmp = depends;
 
         while (tmp != NULL) {
-            strcpy (buffer, DEPS_NAME (tmp));
+            if ((mode == 2) || (DEPS_LOC (tmp) == LOC_usr)) {
+                strcpy (buffer, DEPS_NAME (tmp));
 
-            if (DEPS_STATUS (tmp) == ST_sac) {
-                strcat (buffer, ".lib");
-            } else {
-                strcat (buffer, ".a");
+                if (DEPS_STATUS (tmp) == ST_sac) {
+                    strcat (buffer, ".lib");
+                } else {
+                    strcat (buffer, ".a");
+                }
+
+                printf ("  \\\n  %s", buffer);
             }
-
-            printf ("  \\\n  %s", buffer);
             tmp = DEPS_NEXT (tmp);
         }
 
@@ -2230,7 +2241,9 @@ PrintDependencies (deps *depends, int mode)
         tmp = depends;
 
         while (tmp != NULL) {
-            printf ("  \\\n  %s", DEPS_DECNAME (tmp));
+            if ((mode == 2) || (DEPS_LOC (tmp) == LOC_usr)) {
+                printf ("  \\\n  %s", DEPS_DECNAME (tmp));
+            }
             tmp = DEPS_NEXT (tmp);
         }
 
@@ -2239,7 +2252,9 @@ PrintDependencies (deps *depends, int mode)
         tmp = depends;
 
         while (tmp != NULL) {
-            printf ("  \\\n  %s", DEPS_NAME (tmp));
+            if ((mode == 2) || (DEPS_LOC (tmp) == LOC_usr)) {
+                printf ("  \\\n  %s", DEPS_NAME (tmp));
+            }
             tmp = DEPS_NEXT (tmp);
         }
 
@@ -2248,7 +2263,9 @@ PrintDependencies (deps *depends, int mode)
         tmp = depends;
 
         while (tmp != NULL) {
-            printf ("  \\\n  %s", DEPS_NAME (tmp));
+            if ((mode == 2) || (DEPS_LOC (tmp) == LOC_usr)) {
+                printf ("  \\\n  %s", DEPS_NAME (tmp));
+            }
             tmp = DEPS_NEXT (tmp);
         }
 
@@ -2257,13 +2274,15 @@ PrintDependencies (deps *depends, int mode)
         tmp = depends;
 
         while (tmp != NULL) {
-            printf ("%s:\n\t", DEPS_NAME (tmp));
+            if ((mode == 2) || (DEPS_LOC (tmp) == LOC_usr)) {
+                printf ("%s:\n\t", DEPS_NAME (tmp));
 
-            strcpy (buffer, DEPS_DECNAME (tmp));
-            filename = strrchr (buffer, '/');
-            *filename = 0;
+                strcpy (buffer, DEPS_DECNAME (tmp));
+                filename = strrchr (buffer, '/');
+                *filename = 0;
 
-            printf ("(cd %s; $(MAKE) %s)\n\n", buffer, DEPS_NAME (tmp));
+                printf ("(cd %s; $(MAKE) %s)\n\n", buffer, DEPS_NAME (tmp));
+            }
 
             tmp = DEPS_NEXT (tmp);
         }
