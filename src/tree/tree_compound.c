@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.24  2000/10/24 14:47:46  dkr
+ * some append functions added
+ *
  * Revision 1.23  2000/10/24 11:42:40  dkr
  * MakeType renamed into MakeTypes
  *
@@ -197,6 +200,24 @@
 #include "free.h"
 
 #include "typecheck.h"
+
+/*
+ * macro template for append functions
+ */
+#define APPEND(ret, type, atype, chain, item)                                            \
+    if (item != NULL) {                                                                  \
+        if (chain == NULL) {                                                             \
+            chain = item;                                                                \
+        } else {                                                                         \
+            type __tmp;                                                                  \
+            __tmp = chain;                                                               \
+            while (atype##_NEXT (__tmp) != NULL) {                                       \
+                __tmp = atype##_NEXT (__tmp);                                            \
+            }                                                                            \
+            atype##_NEXT (__tmp) = item;                                                 \
+        }                                                                                \
+    }                                                                                    \
+    ret = chain
 
 /*--------------------------------------------------------------------------*/
 /*  macros and functions for non-node structures                            */
@@ -589,22 +610,15 @@ IsNonUniqueHidden (types *type)
  ***/
 
 ids *
-AppendIdsChain (ids *first, ids *second)
+AppendIds (ids *chain, ids *item)
 {
-    ids *tmp;
+    ids *ret;
 
-    DBUG_ENTER ("AppendIdsChain");
+    DBUG_ENTER ("AppendIds");
 
-    if (first == NULL)
-        first = second;
-    else {
-        tmp = first;
-        while (IDS_NEXT (tmp) != NULL)
-            tmp = IDS_NEXT (tmp);
-        IDS_NEXT (tmp) = second;
-    }
+    APPEND (ret, ids *, IDS, chain, item);
 
-    DBUG_RETURN (first);
+    DBUG_RETURN (ret);
 }
 
 ids *
@@ -1147,6 +1161,18 @@ SearchTypedef (char *name, char *mod, node *implementations)
     DBUG_RETURN (tmp);
 }
 
+node *
+AppendTypedef (node *tdef_chain, node *tdef)
+{
+    node *ret;
+
+    DBUG_ENTER ("AppendTypedef");
+
+    APPEND (ret, node *, TYPEDEF, tdef_chain, tdef);
+
+    DBUG_RETURN (ret);
+}
+
 /*--------------------------------------------------------------------------*/
 
 /***
@@ -1185,6 +1211,18 @@ ObjList2ArgList (node *objdef)
     }
 
     DBUG_VOID_RETURN;
+}
+
+node *
+AppendObjdef (node *objdef_chain, node *objdef)
+{
+    node *ret;
+
+    DBUG_ENTER ("AppendObjdef");
+
+    APPEND (ret, node *, OBJDEF, objdef_chain, objdef);
+
+    DBUG_RETURN (ret);
 }
 
 /*--------------------------------------------------------------------------*/
@@ -1300,6 +1338,18 @@ SearchFundef (node *fun, node *allfuns)
     DBUG_RETURN (tmp);
 }
 
+node *
+AppendFundef (node *fundef_chain, node *fundef)
+{
+    node *ret;
+
+    DBUG_ENTER ("AppendFundef");
+
+    APPEND (ret, node *, FUNDEF, fundef_chain, fundef);
+
+    DBUG_RETURN (ret);
+}
+
 /*--------------------------------------------------------------------------*/
 
 /***
@@ -1315,10 +1365,10 @@ SearchFundef (node *fun, node *allfuns)
 /******************************************************************************
  *
  * function:
- *   node *AppendVardecs( node *vardecs, node *append)
+ *   node *AppendVardec( node *vardec_chain, node *vardec)
  *
  * description:
- *   Appends 'append' to 'vardecs' and returns the new chain.
+ *   Appends 'vardec' to 'vardec_chain' and returns the new chain.
  *
  * remark:
  *   In order to use this function in Compile() it can handle mixed chains
@@ -1327,13 +1377,13 @@ SearchFundef (node *fun, node *allfuns)
  ******************************************************************************/
 
 node *
-AppendVardecs (node *vardecs, node *append)
+AppendVardec (node *vardec_chain, node *vardec)
 {
     node *tmp;
 
-    DBUG_ENTER ("AppendVardecs");
+    DBUG_ENTER ("AppendVardec");
 
-    tmp = vardecs;
+    tmp = vardec_chain;
     if (tmp != NULL) {
         while (((NODE_TYPE (tmp) == N_assign) ? (ASSIGN_NEXT (tmp)) : (VARDEC_NEXT (tmp)))
                != NULL) {
@@ -1341,15 +1391,15 @@ AppendVardecs (node *vardecs, node *append)
               = (NODE_TYPE (tmp) == N_assign) ? (ASSIGN_NEXT (tmp)) : (VARDEC_NEXT (tmp));
         }
         if (NODE_TYPE (tmp) == N_assign) {
-            ASSIGN_NEXT (tmp) = append;
+            ASSIGN_NEXT (tmp) = vardec;
         } else {
-            VARDEC_NEXT (tmp) = append;
+            VARDEC_NEXT (tmp) = vardec;
         }
     } else {
-        vardecs = append;
+        vardec_chain = vardec;
     }
 
-    DBUG_RETURN (vardecs);
+    DBUG_RETURN (vardec_chain);
 }
 
 /*--------------------------------------------------------------------------*/
@@ -1503,7 +1553,7 @@ SearchDecl (char *name, node *decl_node)
 /******************************************************************************
  *
  * function:
- *   node *AppendAssign( node *assigns, node *assign)
+ *   node *AppendAssign( node *assign_chain, node *assign)
  *
  * description:
  *   appends 'assign' to the N_assign-chain 'assings' and returns the new
@@ -1512,25 +1562,15 @@ SearchDecl (char *name, node *decl_node)
  ******************************************************************************/
 
 node *
-AppendAssign (node *assigns, node *assign)
+AppendAssign (node *assign_chain, node *assign)
 {
-    node *tmp;
+    node *ret;
 
     DBUG_ENTER ("AppendAssign");
 
-    if (assign != NULL) {
-        if (assigns != NULL) {
-            tmp = assigns;
-            while (ASSIGN_NEXT (tmp) != NULL) {
-                tmp = ASSIGN_NEXT (tmp);
-            }
-            ASSIGN_NEXT (tmp) = assign;
-        } else {
-            assigns = assign;
-        }
-    }
+    APPEND (ret, node *, ASSIGN, assign_chain, assign);
 
-    DBUG_RETURN (assigns);
+    DBUG_RETURN (ret);
 }
 
 /******************************************************************************
@@ -1711,7 +1751,7 @@ AppendAssignIcm (node *assign, char *name, node *args)
 /******************************************************************************
  *
  * function:
- *   node *AppendExprs(node *exprs1, node *exprs2)
+ *   node *ExprsConcat( node *exprs1, node *exprs2)
  *
  * description:
  *   This function concatenates two N_exprs chains of nodes.
@@ -1719,25 +1759,15 @@ AppendAssignIcm (node *assign, char *name, node *args)
  ******************************************************************************/
 
 node *
-AppendExprs (node *exprs1, node *exprs2)
+ExprsConcat (node *exprs1, node *exprs2)
 {
-    node *res;
+    node *ret;
 
-    DBUG_ENTER ("AppendExprs");
+    DBUG_ENTER ("ExprsConcat");
 
-    if (exprs1 == NULL) {
-        res = exprs2;
-    } else {
-        res = exprs1;
+    APPEND (ret, node *, EXPRS, exprs1, exprs2);
 
-        while (EXPRS_NEXT (exprs1) != NULL) {
-            exprs1 = EXPRS_NEXT (exprs1);
-        }
-
-        EXPRS_NEXT (exprs1) = exprs2;
-    }
-
-    DBUG_RETURN (res);
+    DBUG_RETURN (ret);
 }
 
 /******************************************************************************
@@ -2346,13 +2376,9 @@ MakePrf3 (prf prf, node *arg1, node *arg2, node *arg3)
  *   node *CombineExprs( node *first, node *second)
  *
  * description:
- *   This one is used only within MakeIcmXXX.
- *   first and second are to nodes that will be conactenated as a chain
- *   of exprs, if the first is an expr second will be appended at the end
- *   of that chain, otherwise an N_exprs will be created ...
- *
- * exception:
- *   if first and second are NULL, NULL will be returned ...
+ *   This function is used only within MakeIcmXXX.
+ *   'first' and 'second' are N_exprs chains or expression nodes (N_id, N_num,
+ *   ...) that will be conactenated to a single N_exprs chain.
  *
  ******************************************************************************/
 
@@ -2367,7 +2393,7 @@ CombineExprs (node *first, node *second)
         if (NODE_TYPE (first) != N_exprs) {
             result = MakeExprs (first, second);
         } else {
-            result = AppendExprs (first, second);
+            result = ExprsConcat (first, second);
         }
     } else if (second != NULL) {
         if (NODE_TYPE (second) != N_exprs) {
@@ -2397,7 +2423,8 @@ CombineExprs (node *first, node *second)
  *
  * description:
  *   These functions generate complete ICM representations including arguments.
- *   Each function argument may be an arbitrary list of single ICM arguments.
+ *   Each function argument may be an arbitrary list of ICM arguments (i.e.,
+ *   a single expression node (N_id, N_num, ...) or a N_exprs chain!)
  *   These are concatenated correctly.
  *
  ******************************************************************************/
@@ -2514,7 +2541,7 @@ MakeIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *arg4, node *arg5
 {
     node *icm;
 
-    DBUG_ENTER ("MakeIcm6");
+    DBUG_ENTER ("MakeIcm7");
 
     arg7 = CombineExprs (arg7, NULL);
     arg6 = CombineExprs (arg6, arg7);
