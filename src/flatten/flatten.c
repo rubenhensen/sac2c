@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.58  1998/02/06 16:45:57  srs
+ * *** empty log message ***
+ *
  * Revision 1.57  1998/01/31 13:44:53  srs
  * removed bug in FltnNCode
  *
@@ -1745,11 +1748,14 @@ FltnNcode (node *arg_node, node *arg_info)
     char *name;
     DBUG_ENTER ("FltnNcode");
 
-    /* if CEXPR is not a constant we have to flatten the expression in the context
-       of the body */
-    if (N_float != NODE_TYPE (NCODE_CEXPR (arg_node))
-        && N_double != NODE_TYPE (NCODE_CEXPR (arg_node))
-        && N_num != NODE_TYPE (NCODE_CEXPR (arg_node))) {
+    /* here we prepere a litte trick for the TC:
+       every argument, regardless if constant of not, is unconditionally
+       flattened into the body. So the type of the body's last let-expr is
+       automatically the type of the final expression. */
+    /*   if (N_float != NODE_TYPE(NCODE_CEXPR(arg_node)) && */
+    /*       N_double != NODE_TYPE(NCODE_CEXPR(arg_node)) && */
+    /*       N_num != NODE_TYPE(NCODE_CEXPR(arg_node))) */
+    {
         name = GenTmpVar (var_counter++);
         let_node = MakeLet (NCODE_CEXPR (arg_node), MakeIds (name, NULL, ST_regular));
         assign_node = MakeAssign (let_node, NULL);
