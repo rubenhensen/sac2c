@@ -36,3 +36,4 @@ wl_access_analyze.h
 WithloopScalarization.h
 WithloopScalarization.c
 WithloopFusion.h
+WithloopFusion.c
