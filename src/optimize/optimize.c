@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.13  2000/05/26 14:22:52  sbs
+ * WLAA and TSI lifted on module level
+ * call to ArrayPadding added.
+ *
  * Revision 2.12  2000/01/26 17:26:53  dkr
  * type of traverse-function-table changed.
  *
@@ -369,6 +373,9 @@ Optimize (node *arg_node)
  *                |
  *   optimize function-wise by calling Trav (and thus OPTfundef)
  *                |
+ *               WLAA
+ *               AP
+ *               TSI
  *               DFR
  *
  ******************************************************************************/
@@ -399,6 +406,36 @@ OPTmodul (node *arg_node, node *arg_info)
          * Now, we apply the intra-procedural optimizations function-wise!
          */
         MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
+
+        /*
+         * Now, it's indicated to analyze the array accesses within WLs.
+         */
+        if (optimize & (OPT_TSI | OPT_AP)) {
+            arg_node = WLAccessAnalyze (arg_node);
+
+            if ((break_after == PH_sacopt) && (0 == strcmp (break_specifier, "wlaa")))
+                goto DONE;
+        }
+
+        /*
+         * Now, we apply array padding
+         */
+        if (optimize & OPT_AP) {
+            arg_node = ArrayPadding (arg_node);
+
+            if ((break_after == PH_sacopt) && (0 == strcmp (break_specifier, "ap")))
+                goto DONE;
+        }
+
+        /*
+         * At last we have to infere the tilesize.
+         */
+        if (optimize & OPT_TSI) {
+            arg_node = TileSizeInference (arg_node);
+
+            if ((break_after == PH_sacopt) && (0 == strcmp (break_specifier, "tsi")))
+                goto DONE;
+        }
 
         /*
          * After doing so, we apply DFR once again!
@@ -444,8 +481,6 @@ DONE:
  *        WLT        |
  *         |--------/
  *        DCR
- *        WLAA
- *        TSI
  *
  ******************************************************************************/
 
@@ -708,26 +743,6 @@ OPTfundef (node *arg_node, node *arg_info)
          */
         if (optimize & OPT_DCR) {
             arg_node = DeadCodeRemoval (arg_node, arg_info);
-        }
-
-        /*
-         * Now, it's indicated to analyze the array accesses within WLs.
-         */
-        if (optimize & OPT_TSI) {
-            arg_node = WLAccessAnalyze (arg_node);
-
-            if ((break_after == PH_sacopt) && (0 == strcmp (break_specifier, "wlaa")))
-                goto INFO;
-        }
-
-        /*
-         * At last we have to infere the tilesize.
-         */
-        if (optimize & OPT_TSI) {
-            arg_node = TileSizeInference (arg_node);
-
-            if ((break_after == PH_sacopt) && (0 == strcmp (break_specifier, "tsi")))
-                goto INFO;
         }
 
     INFO:
