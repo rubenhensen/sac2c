@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.2  2000/12/06 20:09:03  dkr
+# make deps done
+#
 # Revision 3.1  2000/11/20 18:00:46  sacbase
 # new release made
 #
@@ -187,4 +190,3 @@ writesib.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
 writesib.o: /usr/include/sys/int_types.h ../global/internal_lib.h
 writesib.o: ../tree/traverse.h ../print/convert.h filemgr.h ../print/print.h
 writesib.o: ../tree/tree.h
-

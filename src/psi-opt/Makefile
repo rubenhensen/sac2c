@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.2  2000/12/06 20:09:05  dkr
+# make deps done
+#
 # Revision 3.1  2000/11/20 18:01:38  sacbase
 # new release made
 #
@@ -269,4 +272,3 @@ wl_access_analyze.o: /usr/include/malloc.h /usr/include/sys/types.h
 wl_access_analyze.o: /usr/include/sys/machtypes.h
 wl_access_analyze.o: /usr/include/sys/int_types.h ../global/internal_lib.h
 wl_access_analyze.o: ../print/print.h ../tree/tree.h wl_access_analyze.h
-

@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.2  2000/12/06 20:09:06  dkr
+# make deps done
+#
 # Revision 3.1  2000/11/20 18:01:58  sacbase
 # new release made
 #
@@ -122,4 +125,3 @@ uniquecheck.o: ../tree/traverse.h ../global/internal_lib.h ../tree/free.h
 uniquecheck.o: ../global/my_debug.h /usr/include/malloc.h
 uniquecheck.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
 uniquecheck.o: /usr/include/sys/int_types.h
-

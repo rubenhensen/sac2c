@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.2  2000/12/06 20:09:02  dkr
+# make deps done
+#
 # Revision 3.1  2000/11/20 18:00:34  sacbase
 # new release made
 #
@@ -247,4 +250,3 @@ optimize.o: Unswitch.h ../psi-opt/ArrayElimination.h CSE.h
 optimize.o: ../psi-opt/WithloopFolding.h ../psi-opt/wl_access_analyze.h
 optimize.o: ../psi-opt/tile_size_inference.h ../psi-opt/index.h
 optimize.o: ../psi-opt/pad.h
-

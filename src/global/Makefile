@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 3.2  2000/12/06 20:08:59  dkr
+# make deps done
+#
 # Revision 3.1  2000/11/20 17:59:26  sacbase
 # new release made
 #
@@ -178,8 +181,8 @@ options.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 options.o: /usr/include/sys/isa_defs.h ../../inc/dbug.h /usr/include/stdio.h
 options.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
 options.o: /usr/include/stdio_impl.h ../../inc/main_args.h
-options.o: /usr/include/string.h usage.h ../modules/filemgr.h globals.h
-options.o: types.h internal_lib.h ../tree/free.h my_debug.h
+options.o: /usr/include/string.h usage.h ../modules/filemgr.h types.h
+options.o: globals.h internal_lib.h ../tree/free.h my_debug.h
 options.o: /usr/include/malloc.h /usr/include/sys/types.h
 options.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h Error.h
 resource.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
@@ -195,6 +198,5 @@ resource.o: internal_lib.h Error.h
 usage.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 usage.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 usage.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-usage.o: /usr/include/stdlib.h usage.h globals.h types.h build.h
-usage.o: ../../inc/dbug.h
-
+usage.o: /usr/include/stdlib.h /usr/include/string.h usage.h globals.h
+usage.o: types.h build.h ../../inc/dbug.h

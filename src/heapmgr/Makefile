@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.4  2000/12/06 20:09:10  dkr
+# make deps done
+#
 # Revision 3.3  2000/12/06 18:11:01  cg
 # Added initial version of array placement.
 #
@@ -137,6 +140,11 @@ memalign.o: /usr/include/sys/isa_defs.h /usr/include/sys/types.h
 memalign.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
 memalign.o: /usr/include/sys/unistd.h heapmgr.h ../runtime/sac_mt.h
 memalign.o: ../runtime/sac_heapmgr.h
+placement.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
+placement.o: /usr/include/sys/isa_defs.h /usr/include/stdio.h
+placement.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
+placement.o: /usr/include/stdio_impl.h heapmgr.h ../runtime/sac_mt.h
+placement.o: ../runtime/sac_heapmgr.h
 realloc.o: /usr/include/string.h /usr/include/sys/feature_tests.h
 realloc.o: /usr/include/sys/isa_defs.h heapmgr.h ../runtime/sac_mt.h
 realloc.o: ../runtime/sac_heapmgr.h
@@ -151,4 +159,3 @@ small_chunks.o: ../runtime/sac_heapmgr.h
 wrapper.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 wrapper.o: /usr/include/sys/isa_defs.h heapmgr.h ../runtime/sac_mt.h
 wrapper.o: ../runtime/sac_heapmgr.h
-

@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.3  2000/12/06 20:08:59  dkr
+# make deps done
+#
 # Revision 3.2  2000/12/06 19:50:39  dkr
 # infer_dfms.o added
 #
@@ -129,6 +132,18 @@ fun2lac.o: ../tree/traverse.h ../tree/free.h ../../inc/dbug.h
 fun2lac.o: ../global/my_debug.h /usr/include/malloc.h
 fun2lac.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
 fun2lac.o: /usr/include/sys/int_types.h adjust_ids.h
+infer_dfms.o: ../tree/tree.h ../global/types.h ../tree/tree_basic.h
+infer_dfms.o: ../tree/tree_compound.h ../global/Error.h /usr/include/stdio.h
+infer_dfms.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
+infer_dfms.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
+infer_dfms.o: /usr/include/stdio_impl.h /usr/include/string.h
+infer_dfms.o: /usr/include/stdlib.h ../global/globals.h
+infer_dfms.o: ../global/internal_lib.h ../tree/traverse.h ../tree/free.h
+infer_dfms.o: ../../inc/dbug.h ../global/my_debug.h /usr/include/malloc.h
+infer_dfms.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
+infer_dfms.o: /usr/include/sys/int_types.h ../tree/DupTree.h
+infer_dfms.o: ../tree/LookUpTable.h ../tree/DataFlowMask.h
+infer_dfms.o: ../tree/DataFlowMaskUtils.h infer_dfms.h
 lac2fun.o: ../tree/tree.h ../global/types.h ../tree/tree_basic.h
 lac2fun.o: ../tree/tree_compound.h ../global/Error.h /usr/include/stdio.h
 lac2fun.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
@@ -140,5 +155,4 @@ lac2fun.o: ../global/my_debug.h /usr/include/malloc.h
 lac2fun.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
 lac2fun.o: /usr/include/sys/int_types.h ../tree/DupTree.h
 lac2fun.o: ../tree/LookUpTable.h ../tree/DataFlowMask.h
-lac2fun.o: ../tree/DataFlowMaskUtils.h cleanup_decls.h
-
+lac2fun.o: ../tree/DataFlowMaskUtils.h lac2fun.h

@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.2  2000/12/06 20:09:13  dkr
+# make deps done
+#
 # Revision 3.1  2000/11/20 18:03:38  sacbase
 # new release made
 #
@@ -137,4 +140,3 @@ print_interface_wrapper.o: /usr/include/sys/machtypes.h
 print_interface_wrapper.o: /usr/include/sys/int_types.h ../global/resource.h
 print_interface_wrapper.o: ../compile/gen_startup_code.h
 print_interface_wrapper.o: ../tree/type_info.mac
-

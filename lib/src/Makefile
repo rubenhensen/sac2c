@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 3.2  2000/12/06 20:09:07  dkr
+# make deps done
+#
 # Revision 3.1  2000/11/20 18:02:04  sacbase
 # new release made
 #
@@ -90,11 +93,11 @@ clean:
 dbug.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 dbug.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 dbug.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-dbug.o: /usr/include/stdlib.h /usr/include/unistd.h /usr/include/sys/types.h
-dbug.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-dbug.o: /usr/include/sys/unistd.h /usr/include/malloc.h ../../inc/dbug.h
+dbug.o: /usr/include/string.h /usr/include/stdlib.h /usr/include/unistd.h
+dbug.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
+dbug.o: /usr/include/sys/int_types.h /usr/include/sys/unistd.h
+dbug.o: /usr/include/malloc.h ../../inc/dbug.h
 main_args.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 main_args.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 main_args.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
 main_args.o: /usr/include/string.h
-

@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.2  2000/12/06 20:09:10  dkr
+# make deps done
+#
 # Revision 3.1  2000/11/20 18:02:49  sacbase
 # new release made
 #
@@ -84,4 +87,3 @@ CacheSimTest.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 CacheSimTest.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 CacheSimTest.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
 CacheSimTest.o: ../runtime/sac_cachesim.h
-

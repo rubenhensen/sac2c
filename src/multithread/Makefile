@@ -1,6 +1,9 @@
 #
 # 
 # $Log$
+# Revision 3.2  2000/12/06 20:09:11  dkr
+# make deps done
+#
 # Revision 3.1  2000/11/20 18:02:58  sacbase
 # new release made
 #
@@ -235,4 +238,3 @@ schedule_init.o: ../tree/tree_basic.h ../tree/tree_compound.h
 schedule_init.o: ../global/Error.h /usr/include/string.h
 schedule_init.o: /usr/include/stdlib.h ../global/globals.h ../tree/traverse.h
 schedule_init.o: ../tree/scheduling.h ../global/internal_lib.h
-

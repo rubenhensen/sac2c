@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.2  2000/12/06 20:09:00  dkr
+# make deps done
+#
 # Revision 3.1  2000/11/20 17:59:42  sacbase
 # new release made
 #
@@ -129,4 +132,3 @@ print.o: ../modules/filemgr.h ../compile/gen_startup_code.h
 print.o: ../psi-opt/WithloopFolding.h ../tree/scheduling.h
 print.o: ../psi-opt/wl_access_analyze.h ../psi-opt/tile_size_inference.h
 print.o: ../global/NameTuples.h ../compile/icm.data ../tree/prf_node_info.mac
-

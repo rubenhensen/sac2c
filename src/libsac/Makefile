@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.3  2000/12/06 20:09:09  dkr
+# make deps done
+#
 # Revision 3.2  2000/12/06 17:39:01  cg
 # Added new gcc option "-w" in order to disable nasty compiler warnings
 # with respect to missing braces in the static initialization of mutex
@@ -187,17 +190,17 @@ sac_arg.o: /usr/include/stdarg.h /usr/include/varargs.h
 sac_arg.o: /usr/include/sys/va_list.h /usr/include/stdlib.h
 sac_arg.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 sac_arg.o: /usr/include/stdio.h /usr/include/stdio_tag.h
-sac_arg.o: /usr/include/stdio_impl.h ../runtime/sac.h ../runtime/sac_icm.h
-sac_arg.o: ../runtime/sac_boundcheck.h ../runtime/sac_misc.h
-sac_arg.o: ../runtime/sac_message.h ../runtime/sac_bool.h
-sac_arg.o: ../runtime/sac_std.h ../runtime/sac_idx.h ../runtime/sac_prf.h
-sac_arg.o: ../runtime/sac_mt.h ../runtime/sac_heapmgr.h ../runtime/sac_wl.h
-sac_arg.o: ../runtime/sac_trace.h ../runtime/sac_profile.h
-sac_arg.o: ../runtime/sac_cachesim.h ../runtime/sac_arg.h
-sac_arg.o: ../runtime/sac_cinterface.h
+sac_arg.o: /usr/include/stdio_impl.h /usr/include/string.h ../runtime/sac.h
+sac_arg.o: ../runtime/sac_icm.h ../runtime/sac_boundcheck.h
+sac_arg.o: ../runtime/sac_misc.h ../runtime/sac_message.h
+sac_arg.o: ../runtime/sac_bool.h ../runtime/sac_std.h ../runtime/sac_idx.h
+sac_arg.o: ../runtime/sac_prf.h ../runtime/sac_mt.h ../runtime/sac_heapmgr.h
+sac_arg.o: ../runtime/sac_wl.h ../runtime/sac_trace.h
+sac_arg.o: ../runtime/sac_profile.h ../runtime/sac_cachesim.h
+sac_arg.o: ../runtime/sac_arg.h ../runtime/sac_cinterface.h
+sac_arg.o: ../tree/type_info.mac
 trace.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 trace.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 trace.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
 trace.o: /usr/include/stdarg.h /usr/include/varargs.h /usr/include/string.h
 trace.o: ../runtime/sac_mt.h
-

@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.2  2000/12/06 20:09:12  dkr
+# make deps done
+#
 # Revision 3.1  2000/11/20 18:03:22  sacbase
 # new release made
 #
@@ -173,12 +176,12 @@ traverse.o: ../concurrent/spmd_trav.h DataFlowMask.h
 traverse.o: ../concurrent/spmd_cons.h ../concurrent/schedule.h
 traverse.o: ../psi-opt/wl_access_analyze.h ../psi-opt/tile_size_inference.h
 traverse.o: ../typecheck/new_typecheck.h ../multithread/multithread.h
-traverse.o: ../flatten/lac2fun.h ../flatten/cleanup_decls.h
-traverse.o: ../flatten/fun2lac.h ../flatten/adjust_ids.h
-traverse.o: ../multithread/schedule_init.h ../multithread/blocks_init.h
-traverse.o: ../multithread/blocks_expand.h ../multithread/repfuns_init.h
-traverse.o: ../multithread/mtfuns_init.h ../multithread/blocks_cons.h
-traverse.o: ../multithread/dataflow_analysis.h
+traverse.o: ../flatten/infer_dfms.h ../flatten/lac2fun.h
+traverse.o: ../flatten/cleanup_decls.h ../flatten/fun2lac.h
+traverse.o: ../flatten/adjust_ids.h ../multithread/schedule_init.h
+traverse.o: ../multithread/blocks_init.h ../multithread/blocks_expand.h
+traverse.o: ../multithread/repfuns_init.h ../multithread/mtfuns_init.h
+traverse.o: ../multithread/blocks_cons.h ../multithread/dataflow_analysis.h
 traverse.o: ../multithread/blocks_propagate.h ../multithread/barriers_init.h
 traverse.o: ../multithread/blocks_lift.h ../multithread/adjust_calls.h
 traverse.o: ../psi-opt/pad_collect.h ../psi-opt/pad_transform.h
@@ -216,4 +219,3 @@ tree_compound.o: ../global/my_debug.h free.h /usr/include/malloc.h
 tree_compound.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
 tree_compound.o: /usr/include/sys/int_types.h ../global/internal_lib.h
 tree_compound.o: ../typecheck/typecheck.h
-

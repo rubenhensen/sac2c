@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.2  2000/12/06 20:09:04  dkr
+# make deps done
+#
 # Revision 3.1  2000/11/20 18:01:00  sacbase
 # new release made
 #
@@ -262,5 +265,4 @@ wltransform.o: ../../inc/dbug.h ../global/my_debug.h /usr/include/malloc.h
 wltransform.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
 wltransform.o: /usr/include/sys/int_types.h ../tree/DupTree.h
 wltransform.o: ../tree/LookUpTable.h ../tree/DataFlowMask.h ../print/print.h
-wltransform.o: wlpragma_funs.h /usr/include/limits.h
-
+wltransform.o: ../global/resource.h wlpragma_funs.h /usr/include/limits.h
