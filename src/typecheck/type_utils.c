@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2004/12/09 12:32:27  sbs
+ * TUargtypes2AUD and TYrettypes2AUD eliminated
+ *
  * Revision 1.8  2004/12/09 00:36:57  sbs
  * handling of alphas in replaceAUD changed
  * ,
@@ -206,74 +209,6 @@ TUargtypes2unknownAUD (node *args)
 
 /** <!--********************************************************************-->
  *
- * @fn node  *TUrettypes2AUD( node *rets);
- *
- *   @brief
- *   @param
- *   @return
- *
- ******************************************************************************/
-
-node *
-TUrettypes2AUD (node *rets)
-{
-    node *tmp = rets;
-    ntype *scalar;
-    tvar *tv;
-
-    DBUG_ENTER ("TUrettypes2AUD");
-
-    while (tmp != NULL) {
-        if (TYisAlpha (RET_TYPE (tmp))) {
-            tv = TYgetAlpha (RET_TYPE (tmp));
-            if (SSIgetMax (tv) != NULL) {
-                scalar = TYcopyType (TYgetScalar (SSIgetMax (tv)));
-            } else if (SSIgetMin (tv) != NULL) {
-                scalar = TYcopyType (TYgetScalar (SSIgetMin (tv)));
-            } else {
-                scalar = TYmakeSimpleType (T_unknown);
-            }
-        } else {
-            scalar = TYcopyType (TYgetScalar (RET_TYPE (tmp)));
-        }
-        RET_TYPE (tmp) = TYfreeType (RET_TYPE (tmp));
-        RET_TYPE (tmp) = TYmakeAUD (scalar);
-        tmp = RET_NEXT (tmp);
-    }
-
-    DBUG_RETURN (rets);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node  *TUargtypes2AUD( node *args);
- *
- *   @brief
- *   @param
- *   @return
- *
- ******************************************************************************/
-
-node *
-TUargtypes2AUD (node *args)
-{
-    node *tmp = args;
-    ntype *scalar;
-
-    DBUG_ENTER ("TUargtypes2AUD");
-
-    while (tmp != NULL) {
-        scalar = TYcopyType (TYgetScalar (ARG_NTYPE (tmp)));
-        ARG_NTYPE (tmp) = TYfreeType (ARG_NTYPE (tmp));
-        ARG_NTYPE (tmp) = TYmakeAUD (scalar);
-        tmp = ARG_NEXT (tmp);
-    }
-
-    DBUG_RETURN (args);
-}
-
-/** <!--********************************************************************-->
- *
  * @fn node  *TUrettypes2alphaAUD( node *rets);
  *
  *   @brief
@@ -286,7 +221,7 @@ node *
 TUrettypes2alphaAUD (node *rets)
 {
     node *tmp = rets;
-    ntype *scalar;
+    ntype *new, *scalar;
     tvar *tv;
 
     DBUG_ENTER ("TUrettypes2alphaAUD");
@@ -295,17 +230,24 @@ TUrettypes2alphaAUD (node *rets)
         if (TYisAlpha (RET_TYPE (tmp))) {
             tv = TYgetAlpha (RET_TYPE (tmp));
             if (SSIgetMax (tv) != NULL) {
-                scalar = TYcopyType (TYgetScalar (SSIgetMax (tv)));
+                new = TYmakeAlphaType (
+                  TYmakeAUD (TYcopyType (TYgetScalar (SSIgetMax (tv)))));
             } else if (SSIgetMin (tv) != NULL) {
-                scalar = TYcopyType (TYgetScalar (SSIgetMin (tv)));
+                new = TYmakeAlphaType (
+                  TYmakeAUD (TYcopyType (TYgetScalar (SSIgetMin (tv)))));
             } else {
-                scalar = TYmakeSimpleType (T_unknown);
+                new = TYmakeAlphaType (NULL);
             }
         } else {
-            scalar = TYcopyType (TYgetScalar (RET_TYPE (tmp)));
+            scalar = TYgetScalar (RET_TYPE (tmp));
+            if (TYgetSimpleType (scalar) == T_unknown) {
+                new = TYmakeAlphaType (NULL);
+            } else {
+                new = TYmakeAlphaType (TYmakeAUD (TYcopyType (scalar)));
+            }
         }
         RET_TYPE (tmp) = TYfreeType (RET_TYPE (tmp));
-        RET_TYPE (tmp) = TYmakeAlphaType (TYmakeAUD (scalar));
+        RET_TYPE (tmp) = new;
         tmp = RET_NEXT (tmp);
     }
 

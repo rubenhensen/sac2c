@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2004/12/09 12:32:27  sbs
+ * TUargtypes2AUD and TYrettypes2AUD eliminated
+ *
  * Revision 1.7  2004/12/07 14:36:16  sbs
  * added TUtypeSignature2String
  *
@@ -37,8 +40,6 @@ extern node *TUreplaceRetTypes (node *rets, ntype *prodt);
 extern node *TUrettypes2alpha (node *rets);
 extern node *TUrettypes2unknownAUD (node *rets);
 extern node *TUargtypes2unknownAUD (node *rets);
-extern node *TUrettypes2AUD (node *rets);
-extern node *TUargtypes2AUD (node *rets);
 extern node *TUrettypes2alphaAUD (node *rets);
 extern bool TUisUniqueUserType (ntype *type);
 extern bool TUisArrayOfUser (ntype *type);
