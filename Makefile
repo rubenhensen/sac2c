@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.26  2001/04/20 11:18:21  nmw
+# SSALUR.o added to project
+#
 # Revision 3.25  2001/04/18 15:37:02  nmw
 # while2do added
 #
@@ -227,7 +230,8 @@ OPTIMIZE= src/optimize/optimize.o src/optimize/ConstantFolding.o \
           src/optimize/Unroll.o src/optimize/WLUnroll.o src/optimize/Unswitch.o \
           src/optimize/CSE.o \
           src/optimize/SSADeadCodeRemoval.o src/optimize/SSACSE.o \
-          src/optimize/SSAConstantFolding.o src/optimize/SSALIR.o
+          src/optimize/SSAConstantFolding.o src/optimize/SSALIR.o \
+          src/optimize/SSALUR.o
 PROFILE= src/profile/annotate_fun_calls.o
 PSIOPT= src/psi-opt/index.o src/psi-opt/ArrayElimination.o \
 	src/psi-opt/wl_access_analyze.o src/psi-opt/tile_size_inference.o \
