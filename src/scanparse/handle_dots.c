@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.41  2004/12/02 15:14:49  sah
+ * intermediate fix
+ *
  * Revision 1.40  2004/12/01 18:49:01  sah
  * post DK bugfixing
  *
@@ -1939,11 +1942,13 @@ HDap (node *arg_node, info *arg_info)
     /* Now we traverse our result in order to handle any */
     /* dots inside.                                      */
 
-    if (NODE_TYPE (result) == N_ap) {
-        if (AP_ARGS (result) != NULL)
-            AP_ARGS (result) = TRAVdo (AP_ARGS (result), arg_info);
-    } else {
-        result = TRAVdo (result, arg_info);
+    if (result != NULL) {
+        if (NODE_TYPE (result) == N_ap) {
+            if (AP_ARGS (result) != NULL)
+                AP_ARGS (result) = TRAVdo (AP_ARGS (result), arg_info);
+        } else {
+            result = TRAVdo (result, arg_info);
+        }
     }
 
     DBUG_RETURN (result);
