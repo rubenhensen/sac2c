@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.66  2002/09/06 16:18:10  sbs
+ * TYPES_POLY for type vars added.
+ *
  * Revision 3.65  2002/09/06 12:16:11  sah
  * MakeSetWL modified.
  *
@@ -264,6 +267,7 @@ MakeTypes (simpletype btype, int dim, shpseg *shpseg, char *name, char *mod)
     TYPES_MOD (tmp) = mod;
     TYPES_SHPSEG (tmp) = shpseg;
     TYPES_DIM (tmp) = dim;
+    TYPES_POLY (tmp) = FALSE;
     TYPES_STATUS (tmp) = ST_regular;
 
     TYPES_TDEF (tmp) = NULL;

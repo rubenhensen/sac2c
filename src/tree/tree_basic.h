@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.148  2002/09/06 16:18:10  sbs
+ * TYPES_POLY for type vars added.
+ *
  * Revision 3.147  2002/09/06 12:16:11  sah
  * SETWL_IDS modfied. MakeSetWL modified.
  *
@@ -354,6 +357,7 @@ extern shpseg *MakeShpseg (nums *num);
  ***
  ***    simpletype         BASETYPE
  ***    int                DIM
+ ***    bool               POLY                new TC indicates type vars!
  ***    shpseg*            SHPSEG    (O)
  ***    char*              NAME      (O)
  ***    char*              MOD       (O)
@@ -383,6 +387,7 @@ extern types *MakeTypes (simpletype btype, int dim, shpseg *shpseg, char *name,
 
 #define TYPES_BASETYPE(t) (t->simpletype)
 #define TYPES_DIM(t) (t->dim)
+#define TYPES_POLY(t) (t->poly)
 #define TYPES_SHPSEG(t) (t->shpseg)
 #define TYPES_NAME(t) (t->name)
 #define TYPES_MOD(t) (t->name_mod)

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.19  2002/09/06 16:18:45  sbs
+ * TYPES_POLY for type vars added.
+ *
  * Revision 3.18  2002/07/29 12:12:53  sbs
  * PRF_IF macro extended by z.
  *
@@ -326,6 +329,7 @@ typedef struct TYPESS {
     char *name_mod;         /* name of modul belonging to 'name' */
     struct NODE *tdef;      /* typedef of user-defined type */
     int dim;                /* if (dim == 0) => simpletype */
+    bool poly;              /* only needed for type templates (newTC !) */
     shpseg *shpseg;         /* pointer to shape specification */
     statustype type_status; /* regular/artificial/crettype */
     struct TYPESS *next;    /* only needed for fun-results  */
