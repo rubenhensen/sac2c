@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.16  1995/12/29 10:22:52  cg
+ * Revision 1.17  1996/01/07 16:52:11  cg
+ * N_typedef and N_objdef node have no longer N_pragma subnodes
+ *
+ * Revision 1.16  1995/12/29  10:22:52  cg
  * modified FreeSib according to new node structure,
  * added FreeInfo
  *
@@ -544,7 +547,8 @@ FreeTypedef (node *arg_node, node *arg_info)
 
     FREE (TYPEDEF_NAME (arg_node));
     FreeAllTypes (TYPEDEF_TYPE (arg_node));
-    FREETRAV (TYPEDEF_PRAGMA (arg_node));
+    FREE (TYPEDEF_COPYFUN (arg_node));
+    FREE (TYPEDEF_FREEFUN (arg_node));
 
     DBUG_PRINT ("FREE", ("Removing N_typedef node ..."));
 
@@ -567,7 +571,7 @@ FreeObjdef (node *arg_node, node *arg_info)
     tmp = FREECONT (OBJDEF_NEXT (arg_node));
 
     FREETRAV (OBJDEF_EXPR (arg_node));
-    FREETRAV (OBJDEF_PRAGMA (arg_node));
+    FREE (OBJDEF_LINKNAME (arg_node));
 
     FREE (OBJDEF_NAME (arg_node));
     FREE (OBJDEF_VARNAME (arg_node));
