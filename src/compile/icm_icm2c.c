@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.18  2003/11/06 08:29:02  sbs
+ * GetNextVarId commented out for TAGGED arrays.
+ *
  * Revision 3.17  2002/10/10 23:51:08  dkr
  * ICM_STR added
  *
@@ -532,6 +535,7 @@ GetNextVarNt (char ***ret, int cnt, node *exprs)
 }
 #endif /* TAGGED_ARRAYS */
 
+#ifndef TAGGED_ARRAYS
 static node *
 GetNextVarId (char ***ret, int cnt, node *exprs)
 {
@@ -552,6 +556,7 @@ GetNextVarId (char ***ret, int cnt, node *exprs)
 
     DBUG_RETURN (exprs);
 }
+#endif /* !TAGGED_ARRAYS */
 
 #ifdef TAGGED_ARRAYS
 static node *
