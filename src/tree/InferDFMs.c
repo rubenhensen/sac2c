@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2001/02/13 16:12:15  dkr
+ * 'act_tab' is stacked now :-)
+ *
  * Revision 1.3  2001/02/12 21:22:31  dkr
  * INFO_INFDFMS_FIRST added.
  * bug fixed: all DFMs in the AST are initialized correctly now
@@ -1274,14 +1277,17 @@ node *
 InferDFMs (node *syntax_tree, int hide_locals)
 {
     node *info_node;
+    funtab *old_funtab;
 
     DBUG_ENTER ("InferDFMs");
 
     info_node = MakeInfo ();
     INFO_INFDFMS_HIDELOC (info_node) = hide_locals;
 
+    old_funtab = act_tab;
     act_tab = infdfms_tab;
     syntax_tree = Trav (syntax_tree, info_node);
+    act_tab = old_funtab;
 
     info_node = FreeNode (info_node);
 
