@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.59  2004/10/05 13:54:25  sah
+ * more parts of compiler active in NEW_AST mode
+ *
  * Revision 3.58  2004/09/28 14:07:30  ktr
  * removed old refcount and generatemasks
  *
@@ -243,11 +246,8 @@
 #include "precompile.h"
 #include "compile.h"
 #include "annotate_fun_calls.h"
-#ifndef NEW_AST
 #include "cccall.h"
-#else
 #include "libstat.h"
-#endif
 #include "PatchWith.h"
 #include "resource.h"
 #include "interrupt.h"
@@ -459,6 +459,10 @@ main (int argc, char *argv[])
         goto BREAK;
     compiler_phase++;
 
+#else
+    compiler_phase += 2;
+#endif /* NEW_AST */
+
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
     syntax_tree = objinit (syntax_tree); /* objinit_tab */
@@ -468,10 +472,6 @@ main (int argc, char *argv[])
     if (break_after == PH_objinit)
         goto BREAK;
     compiler_phase++;
-
-#else
-    compiler_phase += 3;
-#endif /* NEW_AST */
 
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
@@ -551,6 +551,9 @@ main (int argc, char *argv[])
     if (break_after == PH_writesib)
         goto BREAK;
     compiler_phase++;
+#else
+    compiler_phase += 4;
+#endif /* NEW_AST */
 
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
@@ -618,6 +621,7 @@ main (int argc, char *argv[])
 
     PHASE_PROLOG;
 
+#ifndef NEW_AST
     switch (mtmode) {
     case MT_none:
         break;
@@ -652,6 +656,9 @@ main (int argc, char *argv[])
          * that this information is vital for precompile.
          */
     }
+#else
+    compiler_phase++;
+#endif /* NEW_AST */
 
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
@@ -666,6 +673,7 @@ main (int argc, char *argv[])
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
 
+#ifndef NEW_AST
     switch (mtmode) {
     case MT_none:
         syntax_tree = UndoSSA (syntax_tree);
@@ -687,6 +695,9 @@ main (int argc, char *argv[])
         syntax_tree = UndoSSA (syntax_tree);
         break;
     }
+#else
+    syntax_tree = UndoSSA (syntax_tree);
+#endif /* NEW_AST */
 
     PHASE_DONE_EPILOG;
     PHASE_EPILOG;
@@ -729,7 +740,9 @@ main (int argc, char *argv[])
      *  After the C file has been written, the syntax tree may be released.
      */
 
+#ifndef NEW_AST
     syntax_tree = FreeTree (syntax_tree);
+#endif
 
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
@@ -742,14 +755,12 @@ main (int argc, char *argv[])
     PHASE_PROLOG;
     if (filetype != F_prog) {
         NOTE_COMPILER_PHASE;
+#ifndef NEW_AST
         CreateLibrary ();
+#endif /* NEW_AST */
         PHASE_DONE_EPILOG;
     }
     PHASE_EPILOG;
-
-#else  /* NEW_AST */
-    SerializeModule (syntax_tree);
-#endif /* NEW_AST */
 
     compiler_phase = PH_final;
 
