@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.36  1996/02/11 20:19:01  sbs
+ * Revision 1.37  1996/02/21 10:56:08  cg
+ * macro CMP_FUN_ID drastically simplified
+ *
+ * Revision 1.36  1996/02/11  20:19:01  sbs
  * some minor corrections on stuff concerning N_vinfo,
  *
  * Revision 1.35  1996/01/22  17:27:50  cg
@@ -910,6 +913,7 @@ extern void ObjList2ArgList (node *objdef);
  *
  */
 
+#if 0
 #define CMP_FUN_ID(a, b)                                                                 \
                                                                                          \
     ((NULL == FUNDEF_MOD (a))                                                            \
@@ -917,6 +921,12 @@ extern void ObjList2ArgList (node *objdef);
        : ((NULL == FUNDEF_MOD (b)) ? 0                                                   \
                                    : ((!strcmp (FUNDEF_NAME (a), FUNDEF_NAME (b)))       \
                                       && (!strcmp (FUNDEF_MOD (a), FUNDEF_MOD (b))))))
+#endif
+
+#define CMP_FUN_ID(a, b)                                                                 \
+                                                                                         \
+    ((0 == strcmp (FUNDEF_NAME (a), FUNDEF_NAME (b)))                                    \
+     && (0 == strcmp (MOD (FUNDEF_MOD (a)), MOD (FUNDEF_MOD (b)))))
 
 /*
  *
