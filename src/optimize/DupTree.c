@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.97  1998/06/06 13:30:20  dkr
+ * fixed a bug in DupCond, DupLoop:
+ *   ids duplicated only, if != NULL !!!
+ *
  * Revision 1.96  1998/06/05 15:32:34  cg
  * Attributes COND_THENVARS COND_ELSEVARS DO_USEVARS DO_DEFVARS are
  * now duplicated as ids-chains
@@ -649,8 +653,12 @@ DupCond (node *arg_node, node *arg_info)
 
     DUP (arg_node, new_node);
 
-    COND_THENVARS (new_node) = DupIds (COND_THENVARS (arg_node), arg_info);
-    COND_ELSEVARS (new_node) = DupIds (COND_ELSEVARS (arg_node), arg_info);
+    if (COND_THENVARS (arg_node) != NULL) {
+        COND_THENVARS (new_node) = DupIds (COND_THENVARS (arg_node), arg_info);
+    }
+    if (COND_ELSEVARS (arg_node) != NULL) {
+        COND_ELSEVARS (new_node) = DupIds (COND_ELSEVARS (arg_node), arg_info);
+    }
 
     DBUG_RETURN (new_node);
 }
@@ -673,8 +681,12 @@ DupLoop (node *arg_node, node *arg_info)
 
     DUP (arg_node, new_node);
 
-    DO_USEVARS (new_node) = DupIds (DO_USEVARS (arg_node), arg_info);
-    DO_DEFVARS (new_node) = DupIds (DO_DEFVARS (arg_node), arg_info);
+    if (DO_USEVARS (arg_node) != NULL) {
+        DO_USEVARS (new_node) = DupIds (DO_USEVARS (arg_node), arg_info);
+    }
+    if (DO_DEFVARS (arg_node) != NULL) {
+        DO_DEFVARS (new_node) = DupIds (DO_DEFVARS (arg_node), arg_info);
+    }
 
     DBUG_RETURN (new_node);
 }
