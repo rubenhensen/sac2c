@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.25  2004/11/19 10:15:50  sah
+ * for objinit funs no wrapper is built
+ *
  * Revision 1.24  2004/11/10 19:35:09  sbs
  * INFO_CWC_WITH now is stacked properly in CWCnwith...
  *
@@ -294,7 +297,17 @@ WrapperCodeIsNeeded (node *fundef)
      * for the time being we always create the wrapper code although it
      * might never actually be used!!
      */
-    result = TRUE;
+    result = FALSE;
+
+    /*
+     * Well, at least for objinit functions, there is no need at all
+     * to build a wrapper! They aren't even dispatched
+     */
+    if (FUNDEF_IMPL (fundef) != NULL) {
+        if (FUNDEF_STATUS (FUNDEF_IMPL (fundef)) == ST_objinitfun) {
+            result = FALSE;
+        }
+    }
 
     DBUG_RETURN (result);
 }
