@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.157  1998/05/07 22:49:31  dkr
+ * added NWITH_RC_IDS, NWITH2_RC_IDS
+ *
  * Revision 1.156  1998/05/06 22:20:48  dkr
  * added support for DFMasks
  *
@@ -2268,17 +2271,21 @@ extern node *MakePragma ();
  *  have to be printed to the SIB.
  */
 
-/* srs: the number of sons being traversed is set to MAX_SONS, so
-   don't use (temporary) attributes in the node-slots  */
+/*
+ * srs: the number of sons being traversed is set to MAX_SONS, so
+ *  don't use (temporary) attributes in the node-slots.
+ */
 
 extern node *MakeInfo ();
 
-/* DupTree */
-/* ATTENTION: Usage of DUP and INL macros on arg_info are mixed. Be careful
-   to avoid overlapping addresses. */
+/* DupTree
+ *
+ * ATTENTION: Usage of DUP and INL macros on arg_info are mixed. Be careful
+ *            to avoid overlapping addresses.
+ */
 #define INFO_DUP_CONT(n) (n->node[1])
 
-/* TC */
+/* typecheck */
 #define INFO_TC_NEXTASSIGN(n) (n->node[1])
 #define INFO_TC_LASSIGN(n) (n->node[3])
 
@@ -2460,11 +2467,12 @@ extern node *MakeSync (node *region, int first);
  ***    int        COMPLEX                (wli -> wlf !!)
  ***    int        FOLDABLE               (wli -> wlf !!)
  ***    int        NO_CHANCE              (wli -> wlf !!)
+ ***    ids*       RC_IDS                 (refcount -> wltransform )
  ***
- ***    DFMmask_t  IN                     (refcount -> wltransform -> )
- ***    DFMmask_t  INOUT                  (refcount -> wltransform -> )
- ***    DFMmask_t  OUT                    (refcount -> wltransform -> )
- ***    DFMmask_t  LOCAL                  (refcount -> wltransform -> )
+ ***    DFMmask_t  IN                     (refcount -> wltransform )
+ ***    DFMmask_t  INOUT                  (refcount -> wltransform )
+ ***    DFMmask_t  OUT                    (refcount -> wltransform )
+ ***    DFMmask_t  LOCAL                  (refcount -> wltransform )
  ***/
 
 extern node *MakeNWith (node *part, node *code, node *withop);
@@ -2480,6 +2488,7 @@ extern node *MakeNWith (node *part, node *code, node *withop);
 #define NWITH_COMPLEX(n) (((wl_info *)(n->info2))->complex)
 #define NWITH_FOLDABLE(n) (((wl_info *)(n->info2))->foldable)
 #define NWITH_NO_CHANCE(n) (((wl_info *)(n->info2))->no_chance)
+#define NWITH_RC_IDS(n) ((ids *)(n->node[4]))
 
 #define NWITH_IN(n) ((DFMmask_t)n->dfmask[0])
 #define NWITH_INOUT(n) ((DFMmask_t)n->dfmask[1])
@@ -2672,12 +2681,14 @@ extern node *MakeNCode (node *block, node *expr);
  ***
  ***  sons:
  ***
- ***    node*    WITHID        (N_Nwithid)
- ***    node*    SEG           (N_WLseg)
- ***    node*    CODE          (N_Ncode)
- ***    node*    WITHOP        (N_Nwithop)
+ ***    node*      WITHID        (N_Nwithid)
+ ***    node*      SEG           (N_WLseg)
+ ***    node*      CODE          (N_Ncode)
+ ***    node*      WITHOP        (N_Nwithop)
  ***
  ***  temporary attributes:
+ ***
+ ***    ids*       RC_IDS             (wltransform -> compile ! )
  ***
  ***    DFMmask_t  IN                 (wltransform -> spmd -> )
  ***    DFMmask_t  INOUT              (wltransform -> spmd -> )
@@ -2692,6 +2703,8 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop);
 #define NWITH2_SEGS(n) (n->node[1])
 #define NWITH2_CODE(n) (n->node[2])
 #define NWITH2_WITHOP(n) (n->node[3])
+
+#define NWITH2_RC_IDS(n) ((ids *)(n->node[4]))
 
 #define NWITH2_IN(n) ((DFMmask_t)n->dfmask[0])
 #define NWITH2_INOUT(n) ((DFMmask_t)n->dfmask[1])
