@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.7  2004/12/07 16:35:49  sah
+  fixed a bug
+
   Revision 1.6  2004/12/07 14:19:38  sah
   mac OS X compatible version
 
@@ -106,7 +109,7 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
         </style>
         <script type="text/javascript" language="JavaScript1.2">
           function toggle( id) {
-            if (document.getElementById(id).style.display != "inline") {
+            if (document.getElementById(id).style.display != "block") {
               document.getElementById(id).style.display = "block";
             } else {
               document.getElementById(id).style.display = "none";
