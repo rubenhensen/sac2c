@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.9  1999/07/09 07:34:16  cg
+ * SAC heap manager integrated into sac2c.
+ *
  * Revision 2.8  1999/06/11 12:56:07  cg
  * Default settings for options -csfile, -csdir, and -cshost
  * made accessible to cache simulator
@@ -217,6 +220,12 @@ PrintGlobalSwitches ()
              (runtimecheck & RUNTIMECHECK_BOUNDARY) ? 1 : 0);
     fprintf (outfile, "#define SAC_DO_CHECK_ERRNO     %d\n",
              (runtimecheck & RUNTIMECHECK_ERRNO) ? 1 : 0);
+    fprintf (outfile, "#define SAC_DO_CHECK_HEAPMGR   %d\n",
+             (runtimecheck & RUNTIMECHECK_HEAPMGR) ? 1 : 0);
+    fprintf (outfile, "\n");
+
+    fprintf (outfile, "#define SAC_DO_PHM             %d\n",
+             (optimize & OPT_PHM) ? 1 : 0);
     fprintf (outfile, "\n");
 
     fprintf (outfile, "#define SAC_DO_PROFILE         %d\n", profileflag ? 1 : 0);
@@ -394,6 +403,8 @@ PrintGlobalSettings (node *syntax_tree)
     fprintf (outfile, "\n\n/*\n *  Global Settings\n */\n\n");
 
     fprintf (outfile, "#define NULL                      (void*) 0\n\n");
+
+    fprintf (outfile, "#define SAC_SET_INITIAL_HEAPSIZE  %d\n\n", initial_heapsize);
 
     fprintf (outfile, "#ifndef SAC_SET_THREADS_MAX\n");
     fprintf (outfile, "#define SAC_SET_THREADS_MAX       %d\n", max_threads);
@@ -709,6 +720,7 @@ GSCPrintMainBegin ()
 {
     DBUG_ENTER ("GSCPrintMainBegin");
 
+    fprintf (outfile, "  SAC_HM_SETUP();\n");
     fprintf (outfile, "  SAC_PF_SETUP();\n");
     fprintf (outfile, "  SAC_MT_SETUP();\n");
     fprintf (outfile, "  SAC_CS_SETUP();\n\n");

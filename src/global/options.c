@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.13  1999/07/09 07:31:24  cg
+ * SAC heap manager integrated into sac2c.
+ *
  * Revision 2.12  1999/06/28 09:53:32  cg
  * Handling of options -noLUR, -noWLUR, and -noLUS corrected.
  *
@@ -154,6 +157,7 @@ AnalyseCommandline (int argc, char *argv[])
         ARG_FLAGMASK ('m', runtimecheck |= RUNTIMECHECK_MALLOC);
         ARG_FLAGMASK ('b', runtimecheck |= RUNTIMECHECK_BOUNDARY);
         ARG_FLAGMASK ('e', runtimecheck |= RUNTIMECHECK_ERRNO);
+        ARG_FLAGMASK ('h', runtimecheck |= RUNTIMECHECK_HEAPMGR);
         ARG_FLAGMASK_END ();
     });
 
@@ -252,6 +256,9 @@ AnalyseCommandline (int argc, char *argv[])
         ARG_CHOICE ("sbe", optimize |= OPT_SBE);
         ARG_CHOICE ("SBE", optimize |= OPT_SBE);
 
+        ARG_CHOICE ("phm", optimize |= OPT_PHM);
+        ARG_CHOICE ("PHM", optimize |= OPT_PHM);
+
         ARG_CHOICE_END ();
     });
 
@@ -270,6 +277,8 @@ AnalyseCommandline (int argc, char *argv[])
 
     ARGS_FLAG ("help", usage (); exit (0));
     ARGS_FLAG ("h", usage (); exit (0));
+
+    ARGS_OPTION ("initheap", ARG_NUM (initial_heapsize));
 
     ARGS_OPTION ("intrinsic", {
         ARG_FLAGMASK_BEGIN ();
@@ -403,6 +412,9 @@ AnalyseCommandline (int argc, char *argv[])
 
         ARG_CHOICE ("sbe", optimize &= ~OPT_SBE);
         ARG_CHOICE ("SBE", optimize &= ~OPT_SBE);
+
+        ARG_CHOICE ("phm", optimize &= ~OPT_PHM);
+        ARG_CHOICE ("PHM", optimize &= ~OPT_PHM);
 
         ARG_CHOICE_END ();
     });

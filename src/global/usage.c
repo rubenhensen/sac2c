@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.11  1999/07/09 07:31:24  cg
+ * SAC heap manager integrated into sac2c.
+ *
  * Revision 2.10  1999/06/11 12:55:17  cg
  * Added options -cshost, -csfile, -csdir.
  * Explanation of cache simulation improved in general.
@@ -362,6 +365,7 @@ usage ()
             "\t\tTSP \t tile size pragmas (blocking) \n"
             "\t\tMTO \t multi-thread optimization \n"
             "\t\tSBE \t syncronisation barrier elimination \n"
+            "\t\tPHM \t private heap management \n"
             "\n"
             "\t\tOPT  \t enables/disables all optimizations at once.\n"
             "\n"
@@ -398,6 +402,10 @@ usage ()
             "\t\t\t\t<no> times be specialized.\n"
             "\t\t\t\t  Default: -maxspecialize %d\n",
             max_overload);
+    printf ("\t -initheap <size>\tat program startup initially request <size> MB\n"
+            "\t\t\t\tof heap memory from operating system.\n"
+            "\t\t\t\t  Default: -heapsize %d\n",
+            initial_heapsize);
 
     printf ("\n\nMULTI-THREAD OPTIONS:\n\n"
 
@@ -447,6 +455,7 @@ usage ()
       "\t\t\t\t  m: check success of memory allocations.\n"
       "\t\t\t\t  e: check errno variable upon applications of\n"
       "\t\t\t\t     external functions.\n"
+      "\t\t\t\t  h: use diagnostic heap manager.\n"
 
       "\n\nRUNTIME TRACE OPTIONS:\n\n"
 
@@ -611,7 +620,7 @@ usage ()
 
       "\n\nENVIRONMENT VARIABLES:\n\n"
 
-      "\tSACBASE\t\tbase directory of SAC installation\n"
+      "\tSACBASE\t\t\tbase directory of SAC installation\n"
       "\tSAC_PATH\t\tsearch paths for program source\n"
       "\tSAC_DEC_PATH\t\tsearch paths for declarations\n"
       "\tSAC_LIBRARY_PATH\tsearch paths for libraries\n"

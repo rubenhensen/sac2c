@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.12  1999/07/09 07:31:24  cg
+ * SAC heap manager integrated into sac2c.
+ *
  * Revision 2.11  1999/06/25 14:50:36  rob
  * Introduce definitions and utility infrastructure for tagged array support.
  *
@@ -114,7 +117,6 @@ extern int gen_mt_code;
 extern int num_threads;
 extern int max_sync_fold;
 extern int max_threads;
-extern int all_threads;
 extern int min_parallel_size;
 
 #define MAX_CPP_VARS 32
@@ -152,6 +154,7 @@ extern unsigned int optimize;
 #define OPT_TSP 0x00020000  /* with-loop tile size pragmas         */
 #define OPT_MTO 0x00040000  /* multi-thread optimization           */
 #define OPT_SBE 0x00080000  /* synchronisation barrier elimination */
+#define OPT_PHM 0x00100000  /* private heap management             */
 
 extern int optvar;
 extern int inlnum;
@@ -160,6 +163,8 @@ extern int wlunrnum;
 extern int minarray;
 extern int max_overload;
 extern int max_optcycles;
+
+extern int initial_heapsize;
 
 extern int show_refcnt;
 extern int show_idx;
@@ -210,6 +215,7 @@ extern unsigned int runtimecheck;
 #define RUNTIMECHECK_MALLOC 0x0001
 #define RUNTIMECHECK_BOUNDARY 0x0002
 #define RUNTIMECHECK_ERRNO 0x0004
+#define RUNTIMECHECK_HEAPMGR 0x0008
 
 extern unsigned int intrinsics;
 

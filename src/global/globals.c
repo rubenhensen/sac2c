@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.12  1999/07/09 07:31:24  cg
+ * SAC heap manager integrated into sac2c.
+ *
  * Revision 2.11  1999/06/25 14:50:36  rob
  * Introduce definitions and utility infrastructure for tagged array support.
  *
@@ -278,11 +281,6 @@ int max_threads = 32;
  * maximum number of threads if exact number is determined dynamically.
  */
 
-int all_threads = 0;
-/*
- * maximum number of threads if -mtall command line option is used.
- */
-
 int min_parallel_size = 250;
 /*
  * minimum generator size for parallel execution of with-loops.
@@ -342,6 +340,7 @@ int wlunrnum = 9;
 int minarray = 4;
 int max_overload = 10;
 int max_optcycles = 4;
+int initial_heapsize = 2;
 
 /*
  * Display options
