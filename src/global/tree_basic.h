@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.159  1998/05/12 13:17:37  dkr
+ * added SYNC_RC_IDS, SPMD_LIFTED_FROM
+ *
  * Revision 1.158  1998/05/08 00:47:44  dkr
  * added some attributes to N_Nwith/N_Nwith2
  *
@@ -2380,6 +2383,7 @@ extern node *MakeInfo ();
  ***    DFMmask_t  INOUT                 (spmdinit -> spmd... -> compile -> )
  ***    DFMmask_t  LOCAL                 (spmdinit -> spmd... -> )
  ***
+ ***    char*      LIFTED_FROM           (spmdlift -> compile -> )
  ***    char*      FUNNAME               (spmdlift -> compile -> )
  ***    node*      ICM         (N_icm)   (compile -> print -> )
  ***
@@ -2401,6 +2405,7 @@ extern node *MakeSpmd (node *region);
 #define SPMD_OUT(n) ((DFMmask_t)n->dfmask[2])
 #define SPMD_LOCAL(n) ((DFMmask_t)n->dfmask[3])
 
+#define SPMD_LIFTED_FROM ((char *)(n->node[3]))
 #define SPMD_FUNNAME(n) (n->info.id)
 #define SPMD_ICM(n) (n->node[2])
 
@@ -2421,6 +2426,7 @@ extern node *MakeSpmd (node *region);
  ***  temporary attributes:
  ***
  ***    ids*       INOUT_IDS             (spmdinit -> compile -> )
+ ***    ids*       RC_IDS                (spmdinit -> compile -> )
  ***
  ***    DFMmask_t  IN                    (spmdinit -> spmd... -> compile -> )
  ***    DFMmask_t  OUT                   (spmdinit -> spmd... -> compile -> )
@@ -2644,7 +2650,7 @@ extern node *MakeNWithOp (WithOpType WithOp);
  ***    long*  MASK                    (optimize -> )
  ***    int    FLAG                    (WLI -> WLF)
  ***    node*  COPY                    ( -> DupTree )
- ***    ids*   RC_IDS                  (refcount -> compile ! )
+ ***    ids*   RC_IDS                  (refcount -> compile )
  ***
  ***  remarks:
  ***   1)
@@ -2692,7 +2698,7 @@ extern node *MakeNCode (node *block, node *expr);
  ***
  ***  temporary attributes:
  ***
- ***    ids*       RC_IDS             (wltransform -> compile ! )
+ ***    ids*       RC_IDS             (wltransform -> compile )
  ***
  ***    DFMmask_t  IN                 (wltransform -> spmd -> )
  ***    DFMmask_t  INOUT              (wltransform -> spmd -> )
