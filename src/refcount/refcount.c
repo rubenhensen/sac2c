@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.23  2002/10/18 16:53:07  dkr
+ * RCfundef(): inference of ST_Cfun corrected
+ * (BTW, why is this infered here)
+ *
  * Revision 3.22  2002/09/06 09:37:37  dkr
  * ND_IDXS2OFFSET added
  *
@@ -631,9 +635,10 @@ RCfundef (node *arg_node, node *arg_info)
     DBUG_ENTER ("RCfundef");
 
     /*
-     * no module name -> must be an external C-fun
+     * special module name -> must be an external C-fun
      */
-    if (FUNDEF_MOD (arg_node) == NULL) {
+    if (((sbs == 1) && (strcmp (FUNDEF_MOD (arg_node), EXTERN_MOD_NAME) == 0))
+        || ((sbs == 0) && (FUNDEF_MOD (arg_node) == NULL))) {
         FUNDEF_STATUS (arg_node) = ST_Cfun;
     }
 
