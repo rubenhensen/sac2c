@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.4  2003/04/14 15:15:16  sbs
+ * casts for safe unsigned - signed comparison added.
+ *
  * Revision 3.3  2001/05/17 13:40:26  nmw
  * MALLOC/FREE replaced by Malloc/Free, using result of Free()
  *
@@ -176,7 +179,7 @@ CreateCacheSpec (int size, int line_size, int assoc, int el_size)
         tmp = 1;
         cnt = 0;
 
-        while (tmp < cache->line_size) {
+        while (tmp < (unsigned_int) (cache->line_size)) {
             tmp *= 2;
             cnt++;
         }
@@ -185,7 +188,7 @@ CreateCacheSpec (int size, int line_size, int assoc, int el_size)
 
         tmp = 1;
 
-        while (tmp < cache->set_num) {
+        while (tmp < (unsigned_int) (cache->set_num)) {
             tmp *= 2;
             cnt++;
         }
