@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.2  2004/11/24 00:27:17  sah
+  ...
+
   Revision 1.1  2004/11/23 11:36:55  sah
   Initial revision
 
@@ -48,13 +51,26 @@ version="1.0">
   <xsl:param name="prefix" />
   <xsl:param name="name" />
   <xsl:value-of select="'node *'"/>
+  <xsl:call-template name="travfun-name">
+    <xsl:with-param name="prefix">
+      <xsl:value-of select="$prefix" />
+    </xsl:with-param>
+    <xsl:with-param name="name">
+      <xsl:value-of select="$name" />
+    </xsl:with-param>
+  </xsl:call-template>
+  <xsl:value-of select="'( node *arg_node, info *arg_info )'"/>
+</xsl:template>
+
+<xsl:template name="travfun-name">
+  <xsl:param name="prefix" />
+  <xsl:param name="name" />
   <xsl:value-of select="$prefix"/>
   <xsl:call-template name="lowercase">
     <xsl:with-param name="string" >
       <xsl:value-of select="$name"/>
     </xsl:with-param>
   </xsl:call-template>
-  <xsl:value-of select="'( node *arg_node, info *arg_info )'"/>
 </xsl:template>
 
 <!--
