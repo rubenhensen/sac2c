@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.34  2000/09/20 18:19:10  dkr
+ * ID_MAKEUNIQUE renamed into ID_CLSCONV
+ *
  * Revision 1.33  2000/07/31 10:45:52  cg
  * Eventually, the son ICM_NEXT is removed from the N_icm node.
  * The creation function MakeIcm is adjusted accordingly.
@@ -838,7 +841,7 @@ DupId (node *arg_node, node *arg_info)
     ID_ATTRIB (new_node) = ID_ATTRIB (arg_node);
     ID_REFCNT (new_node) = ID_REFCNT (arg_node);
     ID_NAIVE_REFCNT (new_node) = ID_NAIVE_REFCNT (arg_node);
-    ID_MAKEUNIQUE (new_node) = ID_MAKEUNIQUE (arg_node);
+    ID_CLSCONV (new_node) = ID_CLSCONV (arg_node);
 
     if (DUP_WLF == INFO_DUP_TYPE (arg_info)) {
         /* Withloop folding (wlf) needs this. */
@@ -850,9 +853,10 @@ DupId (node *arg_node, node *arg_info)
         }
     }
 
-    /*  Coping the attibutes of constantvectors.
-     *  CONSTVEC itself can only be copied, if ISCONST flag is set,
-     *  otherwise VECTYPE might be T_unkown.
+    /*
+     * Coping the attibutes of constantvectors.
+     * CONSTVEC itself can only be copied, if ISCONST flag is set,
+     * otherwise VECTYPE might be T_unkown.
      */
     ID_ISCONST (new_node) = ID_ISCONST (arg_node);
     ID_VECTYPE (new_node) = ID_VECTYPE (arg_node);

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.25  2000/09/20 18:19:44  dkr
+ * ID_MAKEUNIQUE renamed into ID_CLSCONV
+ *
  * Revision 2.24  2000/08/17 10:12:13  dkr
  * all the NT stuff is now in a separate modul (NameTuples.[ch])
  *
@@ -1172,29 +1175,23 @@ PREC2ap (node *arg_node, node *arg_info)
         ap = arg_node;
         arg_node = EXPRS_EXPR (AP_ARGS (arg_node));
 
-        if (0 == strncmp (AP_NAME (ap), "to_", 3)) {
-            if (NODE_TYPE (arg_node) == N_id) {
-                arg_node = RenameId (arg_node);
-                if ((ID_REFCNT (arg_node) != -1)
-                    && (!IsUnique (VARDEC_TYPE (ID_VARDEC (arg_node))))) {
-                    /*
-                     * The base type of the class is refcounted,
-                     * so we have to make the boxed value unique.
-                     */
+        DBUG_ASSERT ((NODE_TYPE (arg_node) == N_id),
+                     "Argument of class conversion function must be a N_id node");
 
-                    ID_MAKEUNIQUE (arg_node) = 1;
-                } else {
-                    ID_MAKEUNIQUE (arg_node) = 0;
-                }
-            }
+        if (!strncmp (AP_NAME (ap), "to_", 3)) {
+            arg_node = RenameId (arg_node);
+            DBUG_ASSERT ((!IsUnique (ID_TYPE (arg_node))),
+                         "Argument of to_class function is unique already!");
+
+            ID_CLSCONV (arg_node) = TO_CLASS;
         } else {
             /*
              * This must be a "from" function. So, the argument is of a class
              * type which implies that it is an identifier.
              */
-
             arg_node = RenameId (arg_node);
-            ID_MAKEUNIQUE (arg_node) = 0;
+
+            ID_CLSCONV (arg_node) = FROM_CLASS;
         }
 
         FREE (AP_NAME (ap));
@@ -1263,7 +1260,7 @@ PREC2id (node *arg_node, node *arg_info)
 
             arg_node = RenameId (arg_node);
 
-            ID_MAKEUNIQUE (arg_node) = 0;
+            ID_CLSCONV (arg_node) = NO_CLSCONV;
         }
     }
 

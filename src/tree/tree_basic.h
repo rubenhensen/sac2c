@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.94  2000/09/20 18:19:29  dkr
+ * ID_MAKEUNIQUE renamed into ID_CLSCONV
+ *
  * Revision 1.93  2000/08/24 16:43:39  dkr
  * INFO_PRINT_ACCESS removed
  *
@@ -1649,7 +1652,7 @@ extern node *MakeVinfo (useflag flag, types *type, node *next, node *dollar);
  ***                                            ( -> analysis -> )
  ***    int         REFCNT                      (refcount -> compile -> )
  ***    int         NAIVE_REFCNT                (refcount -> concurrent -> )
- ***    int         MAKEUNIQUE                  (precompile -> compile -> )
+ ***    clsconv_t   CLSCONV                     (precompile -> compile -> )
  ***    node*       DEF                         (Unroll !, Unswitch !)
  ***    node*       WL          (O)             (wli -> wlf !!)
  ***
@@ -1697,8 +1700,8 @@ extern node *MakeVinfo (useflag flag, types *type, node *next, node *dollar);
  *                          additional argument in a return-statement
  *                          which belongs to a reference parameter
  *
- *  MAKEUNIQUE is a flag which is set in those N_id nodes which were
- *  arguments to class conversion function.
+ *  CLSCONV is a flag which is set in those N_id nodes which were
+ *  arguments to a class conversion (to_class, from_class) function.
  */
 
 extern node *MakeId (char *name, char *mod, statustype status);
@@ -1717,7 +1720,7 @@ extern node *MakeId3 (ids *ids_node);
 #define ID_STATUS(n) (n->info.ids->status)
 #define ID_REFCNT(n) (n->refcnt)
 #define ID_NAIVE_REFCNT(n) (n->info.ids->naive_refcnt)
-#define ID_MAKEUNIQUE(n) (n->flag)
+#define ID_CLSCONV(n) ((clsconv_t) (n->flag))
 #define ID_WL(n) (n->node[0])
 
 #define ID_VECLEN(n) (n->counter)
