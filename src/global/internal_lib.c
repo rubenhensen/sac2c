@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.20  2002/07/23 12:08:58  sah
+ * hd_tab added to TmpVar known tables.
+ *
  * Revision 3.19  2002/07/12 16:57:27  dkr
  * TmpVar(): modification for TAGGED_ARRAYS done
  *
@@ -651,6 +654,8 @@ TmpVar ()
         s = "wlf";
     } else if (act_tab == wls_tab) {
         s = "wls";
+    } else if (act_tab == hd_tab) {
+        s = "hd";
     } else {
         s = "unknown";
         DBUG_ASSERT ((0), "TmpVar(): unknown trav-tab found!");
