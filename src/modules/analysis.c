@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 1.9  1998/12/02 16:32:42  cg
+ * Now, generic object creation functions for imported global objects
+ * have status ST_objinitfun rather than ST_imported. As a consequence,
+ * functions with this status may have no body. This fact had to be
+ * considered.
+ *
  * Revision 1.8  1996/01/26 15:32:21  cg
  * function status ST_classfun now supported
  *
@@ -52,7 +58,7 @@
  *                  which types, functions and global objects are needed
  *                  in its body.
  *                  This information is needed later for handling global
- *                  objects and writing SIBs
+ *                  objects and writing SIBs.
  *  global vars   : act_tab, analy_tab
  *  internal funs : ---
  *  external funs : Trav
@@ -97,7 +103,8 @@ FindAllNeededObjects (node *arg_node)
     DBUG_ENTER ("FindAllNeededObjects");
 
     if ((FUNDEF_STATUS (arg_node) == ST_regular)
-        || (FUNDEF_STATUS (arg_node) == ST_objinitfun)) {
+        || ((FUNDEF_STATUS (arg_node) == ST_objinitfun)
+            && (FUNDEF_BODY (arg_node) != NULL))) {
         /*
          *  For each not imported function the list of called functions
          *  is traversed.
@@ -116,7 +123,8 @@ FindAllNeededObjects (node *arg_node)
                               ST_artificial);
 
             if ((FUNDEF_STATUS (NODELIST_NODE (tmp)) == ST_regular)
-                || (FUNDEF_STATUS (NODELIST_NODE (tmp)) == ST_objinitfun)) {
+                || ((FUNDEF_STATUS (NODELIST_NODE (tmp)) == ST_objinitfun)
+                    && (FUNDEF_BODY (NODELIST_NODE (tmp)) != NULL))) {
                 /*
                  *  If the called function is not imported, its called functions
                  *  are added to this function's list of needed functions.
@@ -194,7 +202,8 @@ ANAfundef (node *arg_node, node *arg_info)
     DBUG_ENTER ("ANAfundef");
 
     if ((FUNDEF_STATUS (arg_node) == ST_regular)
-        || (FUNDEF_STATUS (arg_node) == ST_objinitfun)) {
+        || ((FUNDEF_STATUS (arg_node) == ST_objinitfun)
+            && (FUNDEF_BODY (arg_node) != NULL))) {
         Trav (FUNDEF_BODY (arg_node), arg_node);
         FUNDEF_NEEDTYPES (arg_node) = TidyUpNodelist (FUNDEF_NEEDTYPES (arg_node));
     }
