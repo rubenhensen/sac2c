@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.34  2002/09/06 09:57:12  dkr
+ * ND_IDXS2OFFSET added
+ *
  * Revision 3.33  2002/09/06 09:37:11  dkr
  * ND_IDXS2OFFSET
  *
@@ -4118,26 +4121,26 @@ ICMCompileND_KS_VECT2OFFSET (char *off_name, char *arr_name, int dim, int dims,
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_KS_IDXS2OFFSET( char *off, int idxs_size, char **idxs,
- *                                     int shp_size, char **shpa_any)
+ *   void ICMCompileND_IDXS2OFFSET( char *off, int idxs_size, char **idxs,
+ *                                  int shp_size, char **shpa_any)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_KS_IDXS2OFFSET( off, idxs_size, idxs, shp_size, shpa_any )
+ *   ND_IDXS2OFFSET( off, idxs_size, idxs, shp_size, shpa_any )
  *
  ******************************************************************************/
 
 void
-ICMCompileND_KS_IDXS2OFFSET (char *off, int idxs_size, char **idxs, int shp_size,
-                             char **shpa_any)
+ICMCompileND_IDXS2OFFSET (char *off, int idxs_size, char **idxs, int shp_size,
+                          char **shpa_any)
 {
-    DBUG_ENTER ("ICMCompileND_KS_IDXS2OFFSET");
+    DBUG_ENTER ("ICMCompileND_IDXS2OFFSET");
 
-#define ND_KS_IDXS2OFFSET
+#define ND_IDXS2OFFSET
 #include "icm_comment.c"
 #include "icm_trace.c"
-#undef ND_KS_IDXS2OFFSET
+#undef ND_IDXS2OFFSET
 
     INDENT;
     fprintf (outfile, "%s = ", off);
