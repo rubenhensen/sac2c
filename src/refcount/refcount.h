@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  1998/01/28 19:41:52  dkr
+ * added declarations of RC-funs for new with-loop
+ *
  * Revision 1.11  1996/05/27 13:26:05  sbs
  * RCprf inserted.
  *
@@ -43,6 +46,7 @@
 
 #define _refcount_h
 
+extern node *Refcount (node *arg_node);
 extern node *RCassign (node *arg_node, node *arg_info);
 extern node *RCloop (node *arg_node, node *arg_info);
 extern node *RCprf (node *arg_node, node *arg_info);
@@ -50,11 +54,19 @@ extern node *RCid (node *arg_node, node *arg_info);
 extern node *RClet (node *arg_node, node *arg_info);
 extern node *RCcond (node *arg_node, node *arg_info);
 extern node *RCfundef (node *arg_node, node *arg_info);
+extern node *RCarg (node *arg_node, node *arg_info);
+
+/* old with-loop */
 extern node *RCwith (node *arg_node, node *arg_info);
 extern node *RCcon (node *arg_node, node *arg_info);
-extern node *RCarg (node *arg_node, node *arg_info);
-extern node *Refcount (node *arg_node);
 extern node *RCgen (node *arg_node, node *arg_info);
+extern node *RCwith (node *arg_node, node *arg_info);
+
+/* new with-loop */
+extern node *RCNwith (node *arg_node, node *arg_info);
+extern node *RCNpart (node *arg_node, node *arg_info);
+extern node *RCNgen (node *arg_node, node *arg_info);
+extern node *RCNcode (node *arg_node, node *arg_info);
 
 extern int IsArray (types *type);
 extern int IsNonUniqueHidden (types *type);
