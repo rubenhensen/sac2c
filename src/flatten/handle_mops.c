@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.18  2004/11/25 10:58:49  khf
+ * SacDecCamp04: COMPILES!
+ *
  * Revision 1.17  2004/07/16 14:41:34  sah
  * switch to new INFO structure
  * PHASE I
@@ -58,11 +61,16 @@
 
 #include "handle_mops.h"
 #include "traverse.h"
+#include "node_basic.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
+#include "internal_lib.h"
+#include "Error.h"
 #include "dbug.h"
 #include "free.h"
 #include "LookUpTable.h"
 
-static LUT_t prec_lut;
+static lut_t *prec_lut;
 
 typedef enum { Ass_l, Ass_r, Ass_n } assoc_t;
 
@@ -97,7 +105,7 @@ MakePrec (assoc_t assoc, int val)
     prec_t *res;
 
     DBUG_ENTER ("MakePrec");
-    res = (prec_t *)Malloc (sizeof (prec_t));
+    res = (prec_t *)ILIBmalloc (sizeof (prec_t));
 
     PREC_ASS (res) = assoc;
     PREC_VAL (res) = val;
@@ -120,7 +128,7 @@ FreePrec (prec_t *prec)
 {
     DBUG_ENTER ("FreePrec");
 
-    prec = Free (prec);
+    prec = ILIBfree (prec);
 
     DBUG_RETURN (prec);
 }
@@ -128,35 +136,35 @@ FreePrec (prec_t *prec)
 /******************************************************************************
  *
  * function:
- *    LUT_t InitPrecLut()
+ *    lut_t *InitPrecLut()
  *
  * description:
  *    ...
  *
  ******************************************************************************/
 
-static LUT_t
+static lut_t *
 InitPrecLut ()
 {
-    LUT_t res;
+    lut_t *res;
 
     DBUG_ENTER ("InitPrecLut");
 
-    res = GenerateLUT ();
+    res = LUTgenerateLut ();
 
-    res = InsertIntoLUT_S (res, "*", MakePrec (Ass_l, 12));
-    res = InsertIntoLUT_S (res, "/", MakePrec (Ass_l, 12));
-    res = InsertIntoLUT_S (res, "%", MakePrec (Ass_l, 12));
-    res = InsertIntoLUT_S (res, "+", MakePrec (Ass_l, 11));
-    res = InsertIntoLUT_S (res, "-", MakePrec (Ass_l, 11));
-    res = InsertIntoLUT_S (res, "<", MakePrec (Ass_l, 9));
-    res = InsertIntoLUT_S (res, "<=", MakePrec (Ass_l, 9));
-    res = InsertIntoLUT_S (res, ">", MakePrec (Ass_l, 9));
-    res = InsertIntoLUT_S (res, ">=", MakePrec (Ass_l, 9));
-    res = InsertIntoLUT_S (res, "==", MakePrec (Ass_l, 8));
-    res = InsertIntoLUT_S (res, "!=", MakePrec (Ass_l, 8));
-    res = InsertIntoLUT_S (res, "&&", MakePrec (Ass_l, 4));
-    res = InsertIntoLUT_S (res, "||", MakePrec (Ass_l, 3));
+    res = LUTinsertIntoLutS (res, "*", MakePrec (Ass_l, 12));
+    res = LUTinsertIntoLutS (res, "/", MakePrec (Ass_l, 12));
+    res = LUTinsertIntoLutS (res, "%", MakePrec (Ass_l, 12));
+    res = LUTinsertIntoLutS (res, "+", MakePrec (Ass_l, 11));
+    res = LUTinsertIntoLutS (res, "-", MakePrec (Ass_l, 11));
+    res = LUTinsertIntoLutS (res, "<", MakePrec (Ass_l, 9));
+    res = LUTinsertIntoLutS (res, "<=", MakePrec (Ass_l, 9));
+    res = LUTinsertIntoLutS (res, ">", MakePrec (Ass_l, 9));
+    res = LUTinsertIntoLutS (res, ">=", MakePrec (Ass_l, 9));
+    res = LUTinsertIntoLutS (res, "==", MakePrec (Ass_l, 8));
+    res = LUTinsertIntoLutS (res, "!=", MakePrec (Ass_l, 8));
+    res = LUTinsertIntoLutS (res, "&&", MakePrec (Ass_l, 4));
+    res = LUTinsertIntoLutS (res, "||", MakePrec (Ass_l, 3));
 
     DBUG_RETURN (res);
 }
@@ -164,7 +172,7 @@ InitPrecLut ()
 /******************************************************************************
  *
  * function:
- *    bool LeftAssoc( ids *lop, ids *rop)
+ *    bool LeftAssoc( node *lop, node *rop)
  *
  * description:
  *    ...
@@ -172,7 +180,7 @@ InitPrecLut ()
  ******************************************************************************/
 
 static bool
-LeftAssoc (ids *lop, ids *rop)
+LeftAssoc (node *lop, node *rop)
 {
     prec_t **prec_p;
     prec_t *prec1, *prec2;
@@ -182,14 +190,14 @@ LeftAssoc (ids *lop, ids *rop)
 
     DBUG_ENTER ("LeftAssoc");
 
-    prec_p = (prec_t **)SearchInLUT_S (prec_lut, IDS_NAME (lop));
+    prec_p = (prec_t **)LUTsearchInLutS (prec_lut, IDS_NAME (lop));
     if (prec_p == NULL) {
         prec1 = &default_prec; /* no precedence found */
     } else {
         prec1 = *prec_p;
     }
 
-    prec_p = (prec_t **)SearchInLUT_S (prec_lut, IDS_NAME (rop));
+    prec_p = (prec_t **)LUTsearchInLutS (prec_lut, IDS_NAME (rop));
     if (prec_p == NULL) {
         prec2 = &default_prec; /* no precedence found */
     } else {
@@ -200,8 +208,9 @@ LeftAssoc (ids *lop, ids *rop)
         if (PREC_ASS (prec1) == PREC_ASS (prec2)) {
             res = (PREC_ASS (prec1) == Ass_l);
         } else {
-            WARN (linenum, ("infix function application with non-unique precedence;"
-                            "choosing left associativity"));
+            WARN (global.linenum,
+                  ("infix function application with non-unique precedence;"
+                   "choosing left associativity"));
             res = TRUE;
         }
     } else {
@@ -244,10 +253,10 @@ LeftAssoc (ids *lop, ids *rop)
  ******************************************************************************/
 
 static node *
-Mop2Ap (ids *op, node *mop)
+Mop2Ap (node *op, node *mop)
 {
     node *ap, *exprs, *exprs3, *exprs_prime;
-    ids *fun_ids;
+    node *fun_ids;
 
     DBUG_ENTER ("Mop2Ap");
 
@@ -268,11 +277,11 @@ Mop2Ap (ids *op, node *mop)
             exprs3 = EXPRS_EXPRS3 (exprs);
             EXPRS_EXPRS3 (exprs) = NULL;
 
-            ap = MakeAp (StringCopy (IDS_NAME (fun_ids)), StringCopy (IDS_MOD (fun_ids)),
-                         exprs);
+            ap = TBmakeAp (NULL, exprs);
+            AP_NAME (ap) = ILIBstringCopy (IDS_NAME (fun_ids));
 
-            MOP_EXPRS (mop) = MakeExprs (ap, exprs3);
-            MOP_OPS (mop) = FreeOneIds (fun_ids);
+            MOP_EXPRS (mop) = TBmakeExprs (ap, exprs3);
+            MOP_OPS (mop) = FREEdoFreeNode (fun_ids);
 
             mop = Mop2Ap (op, mop);
         } else {
@@ -282,15 +291,18 @@ Mop2Ap (ids *op, node *mop)
 
             exprs_prime = MOP_EXPRS (mop);
 
-            ap = MakeAp2 (StringCopy (IDS_NAME (fun_ids)), StringCopy (IDS_MOD (fun_ids)),
-                          EXPRS_EXPR (exprs), EXPRS_EXPR (exprs_prime));
+            ap = TBmakeAp (NULL,
+                           TBmakeExprs (EXPRS_EXPR (exprs),
+                                        TBmakeExprs (EXPRS_EXPR (exprs_prime), NULL)));
+            AP_NAME (ap) = ILIBstringCopy (IDS_NAME (fun_ids));
+
             EXPRS_EXPR (exprs_prime) = ap;
 
             mop = Mop2Ap (op, mop);
 
             EXPRS_EXPR (exprs) = NULL;
-            exprs = FreeNode (exprs);
-            fun_ids = FreeOneIds (fun_ids);
+            exprs = FREEdoFreeNode (exprs);
+            fun_ids = FREEdoFreeNode (fun_ids);
         }
     } else {
         /*
@@ -312,7 +324,7 @@ Mop2Ap (ids *op, node *mop)
 /******************************************************************************
  *
  * function:
- *    node *HandleMops( node *arg_node)
+ *    node *HMdoHandleMops( node *arg_node)
  *
  * description:
  *    starts the elimination of N_mop nodes
@@ -320,23 +332,18 @@ Mop2Ap (ids *op, node *mop)
  ******************************************************************************/
 
 node *
-HandleMops (node *arg_node)
+HMdoHandleMops (node *arg_node)
 {
-    funtab *tmp_tab;
-
-    DBUG_ENTER ("HandleMops");
-
-    tmp_tab = act_tab;
-    act_tab = hm_tab;
+    DBUG_ENTER ("HMdoHandleMops");
 
     prec_lut = InitPrecLut ();
 
-    arg_node = Trav (arg_node, NULL);
+    TRAVpush (TR_hm);
+    arg_node = TRAVdo (arg_node, NULL);
+    TRAVpop ();
 
-    prec_lut = MapLUT_S (prec_lut, (void *(*)(void *))FreePrec);
-    prec_lut = RemoveLUT (prec_lut);
-
-    act_tab = tmp_tab;
+    prec_lut = LUTmapLutS (prec_lut, (void *(*)(void *))FreePrec);
+    prec_lut = LUTremoveLut (prec_lut);
 
     DBUG_RETURN (arg_node);
 }
@@ -364,9 +371,9 @@ HMmop (node *arg_node, info *arg_info)
                  "illegal result of Mop2Ap() found!");
     res = EXPRS_EXPR (MOP_EXPRS (mop));
     EXPRS_EXPR (MOP_EXPRS (mop)) = NULL;
-    mop = FreeTree (mop);
+    mop = FREEdoFreeTree (mop);
 
-    res = Trav (res, arg_info);
+    res = TRAVdo (res, arg_info);
 
     DBUG_RETURN (res);
 }
@@ -457,105 +464,4 @@ Name2Prf (char *name, prf *primfun)
     }
 
     DBUG_RETURN (res);
-}
-
-/******************************************************************************
- *
- * function:
- *    node *HMap(node *arg_node, info *arg_info)
- *
- * description:
- *   this function is only needed for converting the "new prf notation",
- *   which is needed for the new type checker, into the one that is
- *   required by the old type checker.....8-((
- *   Once the new TC is as powerful as the old one is, this function
- *   (and its call in flatten) becomes obsolete 8-)).
- *
- ******************************************************************************/
-
-node *
-HMap (node *arg_node, info *arg_info)
-{
-    prf primfun;
-    bool found;
-    node *res, *exprs;
-
-    DBUG_ENTER ("HMap");
-
-    arg_node = TravSons (arg_node, arg_info);
-
-    if (sbs == 1) {
-        res = arg_node;
-    } else {
-        found = Name2Prf (AP_NAME (arg_node), &primfun);
-
-        if (found) {
-            exprs = AP_ARGS (arg_node);
-            if ((primfun == F_sub_AxA) && (CountExprs (exprs) == 1)) {
-                switch (NODE_TYPE (EXPRS_EXPR1 (exprs))) {
-                case N_double:
-                    res = MakeDouble (-DOUBLE_VAL (EXPRS_EXPR1 (exprs)));
-                    arg_node = FreeNode (arg_node);
-                    break;
-                case N_float:
-                    res = MakeFloat (-FLOAT_VAL (EXPRS_EXPR1 (exprs)));
-                    arg_node = FreeNode (arg_node);
-                    break;
-                case N_num:
-                    res = MakeNum (-NUM_VAL (EXPRS_EXPR1 (exprs)));
-                    arg_node = FreeNode (arg_node);
-                    break;
-                default:
-                    AP_ARGS (arg_node) = MakeExprs (MakeNum (0), exprs);
-                    res = MakePrf (primfun, AP_ARGS (arg_node));
-                    AP_ARGS (arg_node) = NULL;
-                    arg_node = FreeNode (arg_node);
-                }
-            } else {
-                res = MakePrf (primfun, AP_ARGS (arg_node));
-                AP_ARGS (arg_node) = NULL;
-                arg_node = FreeNode (arg_node);
-            }
-        } else {
-            res = arg_node;
-        }
-    }
-
-    DBUG_RETURN (res);
-}
-
-/******************************************************************************
- *
- * function:
- *    node *HMNwithop(node *arg_node, info *arg_info)
- *
- * description:
- *   this function is only needed for converting the "new prf notation",
- *   which is needed for the new type checker, into the one that is
- *   required by the old type checker.....8-((
- *   Once the new TC is as powerful as the old one is, this function
- *   (and its call in flatten) becomes obsolete 8-)).
- *
- ******************************************************************************/
-
-node *
-HMNwithop (node *arg_node, info *arg_info)
-{
-    prf primfun;
-    bool found;
-
-    DBUG_ENTER ("HMNwithop");
-
-    if ((sbs != 1) && (NWITHOP_TYPE (arg_node) == WO_foldfun)) {
-
-        found = Name2Prf (NWITHOP_FUN (arg_node), &primfun);
-
-        if (found) {
-            NWITHOP_TYPE (arg_node) = WO_foldprf;
-            NWITHOP_PRF (arg_node) = primfun;
-        }
-    }
-    arg_node = TravSons (arg_node, arg_info);
-
-    DBUG_RETURN (arg_node);
 }
