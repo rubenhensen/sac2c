@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.81  1995/06/26 10:00:12  sbs
- * Idx-calls inserted
+ * Revision 1.82  1995/06/26 16:22:49  asi
+ * added UNRfundef
  *
+;; Revision 1.81  1995/06/26  10:00:12  sbs
+;; Idx-calls inserted
+;;
 ;; Revision 1.80  1995/06/23  12:22:46  hw
 ;; added DubFundef & DupDec  to dup_tab
 ;;
@@ -310,7 +313,8 @@ NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun),
   NIF (N_fundef, "N_fundef", DummyFun, FltnFundef, PrintFundef, TCfundef, OPTfundef,
        DEADfundef, WRfundef, FreeInfoType, CFfundef, RCfundef, CompFundef, LIRfundef,
-       DupFundef, INLfundef, DummyFun, DummyFun, DummyFun2, DummyFun, DummyFun, DummyFun),
+       DupFundef, INLfundef, UNRfundef, DummyFun, DummyFun2, DummyFun, DummyFun,
+       DummyFun),
   NIF (N_vardec, "N_vardec", DummyFun, DummyFun, PrintVardec, DummyFun, OPTvardec,
        DEADvardec, DummyFun, FreeInfoType, DummyFun, DummyFun, CompVardec, DummyFun,
        DupDec, INLvar, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun),
