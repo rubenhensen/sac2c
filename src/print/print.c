@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 2.78  2000/06/14 12:05:04  jhs
+ * Prints ST_IDENTIFER and MT_IDENTIFER now.
+ * ./
+ *
  * Revision 2.77  2000/06/08 13:03:26  nmw
  * call to printinterface inserted when generating c library
  *
@@ -2133,7 +2137,8 @@ PrintMT (node *arg_node, node *arg_info)
     DBUG_ENTER ("PrintMT");
 
     /* PrintAssign already indents */
-    fprintf (outfile, "/*** begin of mt region ***/\n");
+    fprintf (outfile, "MT(%i) {", MT_IDENTIFIER (arg_node));
+    fprintf (outfile, " /*** begin of mt region ***/\n");
 
     if (MT_USEMASK (arg_node) != NULL) {
         INDENT;
@@ -2165,7 +2170,7 @@ PrintMT (node *arg_node, node *arg_info)
 
     fprintf (outfile, "\n");
     INDENT;
-    fprintf (outfile, "/*** end of mt region ***/\n");
+    fprintf (outfile, "} /*** end of mt region ***/\n");
 
     DBUG_RETURN (arg_node);
 }
@@ -2178,7 +2183,8 @@ PrintST (node *arg_node, node *arg_info)
     DBUG_ENTER ("PrintST");
 
     /* PrintAssign already indents */
-    fprintf (outfile, "/*** begin of st region ***/\n");
+    fprintf (outfile, "ST(%i) {", ST_IDENTIFIER (arg_node));
+    fprintf (outfile, " /*** begin of st region ***/\n");
 
     if (ST_USEMASK (arg_node) != NULL) {
         INDENT;
@@ -2216,7 +2222,7 @@ PrintST (node *arg_node, node *arg_info)
 
     fprintf (outfile, "\n");
     INDENT;
-    fprintf (outfile, "/*** end of st region ***/\n");
+    fprintf (outfile, "} /*** end of st region ***/\n");
 
     DBUG_RETURN (arg_node);
 }
