@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.6  1999/08/05 13:36:25  jhs
+ * Added optimization of sequential assignments between spmd-blocks, main work
+ * happens in spmdinit and ist steered by OPT_MTI (default now: off), some
+ * traversals were needed and added in spmd_trav.
+ *
  * Revision 2.5  1999/08/03 11:44:02  jhs
  * Comments.
  *
@@ -258,6 +263,132 @@ CountOccurences (node *block, DFMmask_t which, node *fundef)
     }
 
     DBUG_RETURN (result);
+}
+
+/* #### */
+int
+LetWithFunction (node *let)
+{
+    int result;
+    node *arg_info;
+    funptr *old_tab;
+
+    DBUG_ENTER ("LetWithFunction");
+
+    old_tab = act_tab;
+    act_tab = spmdlc_tab;
+
+    arg_info = MakeInfo ();
+    INFO_SPMDT_APPLICATION (arg_info) = FALSE;
+
+    let = Trav (let, arg_info);
+
+    result = INFO_SPMDT_APPLICATION (arg_info);
+
+    DBUG_PRINT ("SPMDI", ("lwf result: %i", result));
+
+    Free (arg_info);
+
+    act_tab = old_tab;
+
+    DBUG_RETURN (result);
+}
+
+node *
+SPMDTLCap (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("SPMDTLCap");
+
+    INFO_SPMDT_APPLICATION (arg_info) = TRUE;
+
+    DBUG_PRINT ("SPMDI", ("N_ap hit"));
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+DeleteNested (node *arg_node)
+{
+    node *arg_info;
+    funptr *old_tab;
+
+    DBUG_ENTER ("DeleteNested");
+
+    old_tab = act_tab;
+    act_tab = spmddn_tab;
+
+    arg_info = MakeInfo ();
+    INFO_SPMDT_NESTED (arg_info) = FALSE;
+
+    arg_node = Trav (arg_node, arg_info);
+
+    Free (arg_info);
+
+    act_tab = old_tab;
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+SPMDDNspmd (node *arg_node, node *arg_info)
+{
+    node *spmd;
+
+    DBUG_ENTER ("SPMDDNspmd");
+
+    if (INFO_SPMDT_NESTED (arg_info)) {
+        DBUG_PRINT ("SPMDI", ("deleting spmd"));
+        spmd = arg_node;
+        arg_node = BLOCK_INSTR (SPMD_REGION (spmd));
+        BLOCK_INSTR (SPMD_REGION (spmd)) = NULL;
+        Free (spmd);
+
+        arg_node = Trav (arg_node, arg_info);
+    } else {
+        DBUG_PRINT ("SPMDI", ("first spmd, leaving"));
+
+        INFO_SPMDT_NESTED (arg_info) = TRUE;
+
+        SPMD_REGION (arg_node) = Trav (SPMD_REGION (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/* attached to arg_info are spmd-masks to be changed ... */
+void
+ProduceMasks (node *arg_node, node *arg_info)
+{
+    funptr *old_tab;
+
+    DBUG_ENTER ("ProduceMasks");
+
+    old_tab = act_tab;
+    act_tab = spmdpm_tab;
+
+    arg_node = Trav (arg_node, arg_info);
+
+    act_tab = old_tab;
+
+    DBUG_VOID_RETURN;
+}
+
+node *
+SPMDPMlet (node *arg_node, node *arg_info)
+{
+    ids *letids;
+
+    DBUG_ENTER ("SPMDPMlet");
+
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_let), ("N_let expected"));
+
+    letids = LET_IDS (arg_node);
+    while (letids != NULL) {
+        DFMSetMaskEntrySet (SPMD_OUT (arg_info), IDS_NAME (letids), NULL);
+        letids = IDS_NEXT (letids);
+    }
+
+    DBUG_RETURN (arg_node);
 }
 
 /******************************************************************************

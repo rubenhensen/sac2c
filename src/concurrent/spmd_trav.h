@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.4  1999/08/05 13:38:54  jhs
+ * Added optimization of sequential assignments between spmd-blocks, main work
+ * happens in spmdinit and ist steered by OPT_MTI (default now: off), some
+ * traversals were needed and added in spmd_trav.
+ *
  * Revision 2.3  1999/07/28 13:07:45  jhs
  * CountOccurences gets fundef now.
  *
@@ -21,6 +26,13 @@
 extern void DestroyCM (int *mask);
 
 extern int *CountOccurences (node *block, DFMmask_t which, node *fundef);
+
+extern int LetWithFunction (node *let);
+extern node *SPMDTLCap (node *arg_node, node *arg_info);
+extern node *DeleteNested (node *arg_node);
+extern node *SPMDDNspmd (node *arg_node, node *arg_info);
+extern void ProduceMasks (node *arg_node, node *arg_info);
+extern node *SPMDPMlet (node *arg_node, node *arg_info);
 
 /******************************************************************************
  ******************************************************************************

@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.7  1999/08/05 13:36:25  jhs
+ * Added optimization of sequential assignments between spmd-blocks, main work
+ * happens in spmdinit and ist steered by OPT_MTI (default now: off), some
+ * traversals were needed and added in spmd_trav.
+ *
  * Revision 2.6  1999/07/30 13:46:40  jhs
  * Brushed some Notes.
  *
@@ -175,6 +180,13 @@ CONCfundef (node *arg_node, node *arg_info)
              * First, spmd-blocks are built around with-loops.
              */
             act_tab = spmdinit_tab;
+            if (optimize & OPT_MTI) {
+                INFO_SPMDI_LASTSPMD (arg_info) = -1;
+                INFO_SPMDI_NEXTSPMD (arg_info) = -1;
+                INFO_SPMDI_CONTEXT (arg_info) = N_fundef;
+                INFO_SPMDI_EXPANDCONTEXT (arg_info) = TRUE;
+                INFO_SPMDI_EXPANDSTEP (arg_info) = FALSE;
+            }
             FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
 
             if ((break_after == PH_spmdregions)
