@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.8  2004/11/24 17:42:07  sbs
+ * compiles
+ *
  * Revision 1.7  2004/03/05 12:08:00  sbs
  * avoided the creation of AKD of dimensionality 0.
  *
@@ -24,9 +27,12 @@
  *
  */
 
-#include "dbug.h"
 #include "ct_with.h"
+#include "dbug.h"
 #include "type_errors.h"
+#include "new_types.h"
+#include "constants.h"
+#include "shape.h"
 
 /******************************************************************************
  ***
@@ -35,7 +41,7 @@
  ***
  ******************************************************************************/
 
-ntype *
+static ntype *
 Idx2Outer (ntype *idx)
 {
     ntype *scalar;
@@ -43,23 +49,23 @@ Idx2Outer (ntype *idx)
 
     DBUG_ENTER ("Idx2Outer");
 
-    scalar = TYGetScalar (idx);
-    switch (TYGetConstr (idx)) {
+    scalar = TYgetScalar (idx);
+    switch (TYgetConstr (idx)) {
     case TC_akv:
-        res = TYMakeAKS (TYCopyType (scalar), COConstant2Shape (TYGetValue (idx)));
+        res = TYmakeAKS (TYcopyType (scalar), COconstant2Shape (TYgetValue (idx)));
         break;
     case TC_aks:
-        if (SHGetExtent (TYGetShape (idx), 0) == 0) {
-            res = TYMakeAKS (TYCopyType (scalar), SHMakeShape (0));
+        if (SHgetExtent (TYgetShape (idx), 0) == 0) {
+            res = TYmakeAKS (TYcopyType (scalar), SHmakeShape (0));
         } else {
-            res = TYMakeAKD (TYCopyType (scalar), SHGetExtent (TYGetShape (idx), 0),
-                             SHMakeShape (0));
+            res = TYmakeAKD (TYcopyType (scalar), SHgetExtent (TYgetShape (idx), 0),
+                             SHmakeShape (0));
         }
         break;
     case TC_akd:
     case TC_audgz:
     case TC_aud:
-        res = TYMakeAUD (TYCopyType (scalar));
+        res = TYmakeAUD (TYcopyType (scalar));
         break;
     default:
         DBUG_ASSERT (FALSE, "Idx2Outer applied to non-array type idx");
@@ -79,137 +85,137 @@ Idx2Outer (ntype *idx)
 /******************************************************************************
  *
  * function:
- *    ntype *NTCWL_idx( te_info *info, ntype *args)
+ *    ntype *NTCCTwl_idx( te_info *info, ntype *args)
  *
  * description:
  *
  ******************************************************************************/
 
 ntype *
-NTCWL_idx (te_info *info, ntype *args)
+NTCCTwl_idx (te_info *info, ntype *args)
 {
     ntype *lb, *idx, *ub, *sv, *wv, *res;
 
-    DBUG_ENTER ("NTCWL_idx");
+    DBUG_ENTER ("NTCCTwl_idx");
 
-    lb = TYGetProductMember (args, 0);
-    idx = TYGetProductMember (args, 1);
-    ub = TYGetProductMember (args, 2);
+    lb = TYgetProductMember (args, 0);
+    idx = TYgetProductMember (args, 1);
+    ub = TYgetProductMember (args, 2);
 
-    TEAssureIntVect ("lower bound of with loop", lb);
-    TEAssureIntVect ("upper bound of with loop", ub);
-    res = TEAssureSameShape ("lower bound", lb, "upper bound of with loop", ub);
-    res = TEAssureSameShape ("index variables", idx, "generator boundaries", res);
+    TEassureIntVect ("lower bound of with loop", lb);
+    TEassureIntVect ("upper bound of with loop", ub);
+    res = TEassureSameShape ("lower bound", lb, "upper bound of with loop", ub);
+    res = TEassureSameShape ("index variables", idx, "generator boundaries", res);
 
-    if (TYGetProductSize (args) >= 4) {
-        sv = TYGetProductMember (args, 3);
-        TEAssureIntVect ("step vector of with loop", sv);
-        res = TEAssureSameShape ("step vector", sv, "generator boundaries", res);
+    if (TYgetProductSize (args) >= 4) {
+        sv = TYgetProductMember (args, 3);
+        TEassureIntVect ("step vector of with loop", sv);
+        res = TEassureSameShape ("step vector", sv, "generator boundaries", res);
 
-        if (TYGetProductSize (args) == 5) {
-            wv = TYGetProductMember (args, 4);
-            TEAssureIntVect ("width vector of with loop", wv);
-            res = TEAssureSameShape ("width vector", wv, "generator boundaries", res);
+        if (TYgetProductSize (args) == 5) {
+            wv = TYgetProductMember (args, 4);
+            TEassureIntVect ("width vector of with loop", wv);
+            res = TEassureSameShape ("width vector", wv, "generator boundaries", res);
         }
     }
 
-    DBUG_RETURN (TYMakeProductType (1, res));
+    DBUG_RETURN (TYmakeProductType (1, res));
 }
 
 /******************************************************************************
  *
  * function:
- *    ntype *NTCWL_gen( te_info *info, ntype *args)
+ *    ntype *NTCCTwl_gen( te_info *info, ntype *args)
  *
  * description:
  *
  ******************************************************************************/
 
 ntype *
-NTCWL_gen (te_info *info, ntype *args)
+NTCCTwl_gen (te_info *info, ntype *args)
 {
     ntype *idx, *shp, *expr, *dexpr, *res;
     ntype *dummy;
 
-    DBUG_ENTER ("NTCWL_gen");
+    DBUG_ENTER ("NTCCTwl_gen");
 
-    idx = TYGetProductMember (args, 0);
-    shp = TYGetProductMember (args, 1);
-    expr = TYGetProductMember (args, 2);
-    dexpr = TYGetProductMember (args, 3);
+    idx = TYgetProductMember (args, 0);
+    shp = TYgetProductMember (args, 1);
+    expr = TYgetProductMember (args, 2);
+    dexpr = TYgetProductMember (args, 3);
 
-    TEAssureIntVect ("shape expression of genarray with loop", shp);
-    TEAssureNonNegativeValues ("shape expression of genarray with loop", shp);
-    idx = TEAssureSameShape ("shape expression", shp,
+    TEassureIntVect ("shape expression of genarray with loop", shp);
+    TEassureNonNegativeValues ("shape expression of genarray with loop", shp);
+    idx = TEassureSameShape ("shape expression", shp,
                              "generator boundaries of genarray with loop", idx);
 
-    TEAssureSameScalarType ("body expression", expr, "default expression", dexpr);
-    expr = TEAssureSameShape ("body expression", expr, "default expression", dexpr);
+    TEassureSameScalarType ("body expression", expr, "default expression", dexpr);
+    expr = TEassureSameShape ("body expression", expr, "default expression", dexpr);
 
-    if (TYGetConstr (shp) == TC_akv) {
+    if (TYgetConstr (shp) == TC_akv) {
         dummy = Idx2Outer (shp);
     } else {
         dummy = Idx2Outer (idx);
     }
-    res = TYNestTypes (dummy, expr);
-    TYFreeType (dummy);
+    res = TYnestTypes (dummy, expr);
+    TYfreeType (dummy);
 
-    DBUG_RETURN (TYMakeProductType (1, res));
+    DBUG_RETURN (TYmakeProductType (1, res));
 }
 
 /******************************************************************************
  *
  * function:
- *    ntype *NTCWL_mod( te_info *info, ntype *args)
+ *    ntype *NTCCTwl_mod( te_info *info, ntype *args)
  *
  * description:
  *
  ******************************************************************************/
 
 ntype *
-NTCWL_mod (te_info *info, ntype *args)
+NTCCTwl_mod (te_info *info, ntype *args)
 {
     ntype *idx, *array, *expr, *res;
     ntype *dummy;
 
-    DBUG_ENTER ("NTCWL_mod");
+    DBUG_ENTER ("NTCCTwl_mod");
 
-    idx = TYGetProductMember (args, 0);
-    array = TYGetProductMember (args, 1);
-    expr = TYGetProductMember (args, 2);
+    idx = TYgetProductMember (args, 0);
+    array = TYgetProductMember (args, 1);
+    expr = TYgetProductMember (args, 2);
 
     dummy = Idx2Outer (idx);
-    res = TYNestTypes (dummy, expr);
-    TYFreeType (dummy);
+    res = TYnestTypes (dummy, expr);
+    TYfreeType (dummy);
 
-    res = TEAssureSameShape ("array expression", array, "result of modarray with loop",
+    res = TEassureSameShape ("array expression", array, "result of modarray with loop",
                              res);
 
-    DBUG_RETURN (TYMakeProductType (1, res));
+    DBUG_RETURN (TYmakeProductType (1, res));
 }
 
 /******************************************************************************
  *
  * function:
- *    ntype *NTCWL_fold( te_info *info, ntype *args)
+ *    ntype *NTCCTwl_fold( te_info *info, ntype *args)
  *
  * description:
  *
  ******************************************************************************/
 
 ntype *
-NTCWL_fold (te_info *info, ntype *args)
+NTCCTwl_fold (te_info *info, ntype *args)
 {
     ntype *neutr, *expr, *res;
 
-    DBUG_ENTER ("NTCWL_foldfun");
+    DBUG_ENTER ("NTCCTwl_foldfun");
 
-    neutr = TYGetProductMember (args, 0);
-    expr = TYGetProductMember (args, 1);
+    neutr = TYgetProductMember (args, 0);
+    expr = TYgetProductMember (args, 1);
 
-    TEAssureSameSimpleType ("neutral element", neutr, "body expression of fold with loop",
+    TEassureSameSimpleType ("neutral element", neutr, "body expression of fold with loop",
                             expr);
-    res = TYLubOfTypes (neutr, expr);
+    res = TYlubOfTypes (neutr, expr);
 
-    DBUG_RETURN (TYMakeProductType (1, res));
+    DBUG_RETURN (TYmakeProductType (1, res));
 }
