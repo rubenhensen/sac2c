@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.2  2004/11/26 11:00:39  sah
+  added default traversal function
+
   Revision 1.1  2004/11/23 22:18:52  sah
   Initial revision
 
@@ -139,6 +142,9 @@ travtables_t travtables = {
       </xsl:when>
       <xsl:when test="$style = &quot;none&quot;">
         <xsl:value-of select="'TRAVnone'" />
+      </xsl:when>
+      <xsl:when test="$style = &quot;error&quot;">
+        <xsl:value-of select="'TRAVerror'" />
       </xsl:when>
       <xsl:otherwise>
         <xsl:value-of select="$style" />
