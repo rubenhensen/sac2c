@@ -4,6 +4,9 @@
 /*
 *
 * $Log$
+* Revision 1.21  2004/11/25 16:26:17  cg
+* parsing of resourcefiles done without ids structure
+*
 * Revision 1.20  2004/11/25 15:37:40  sbs
 * some maior changes
 *
@@ -1711,9 +1714,8 @@ targets: TARGET ID COLON inherits resources targets
        ;
 
 inherits: COLON ID COLON inherits
-          { $$ = MakeIds( $2, NULL, ST_regular);
-            IDS_NEXT( $$) = $4;
-          }
+           { $$ = RSCmakeInheritenceListEntry( $2, $4)
+           }
         | /* empty */
           { $$ = NULL;
           } 
