@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.37  1998/03/02 22:24:30  dkr
+ * changed RCloop(), RCcond():
+ *   DO_VARINFO contains now a N_expr-chain
+ *
  * Revision 1.36  1998/03/01 00:16:56  dkr
  * added DBUG_ASSERTs for info-node in RCloop(), RCcond()
  *
@@ -378,9 +382,9 @@ FindVarDec (int var_no)
  *
  *  functionname  : LookupId
  *  arguments     : 1) name
- *                  2) chain of N_id nodes
+ *                  2) N_exprs-node with chain of N_id-nodes
  *  description   : looks 1) up in 2)
- *                  returns pointer to N_id node if found
+ *                  returns pointer to N_id-node if found
  *                  returns NULL if not found
  *  global vars   :
  *  internal funs :
@@ -391,20 +395,22 @@ FindVarDec (int var_no)
  *
  */
 node *
-LookupId (char *id, node *id_node)
+LookupId (char *id, node *id_chain)
 {
     node *tmp, *ret_node = NULL;
 
     DBUG_ENTER ("LookupId");
 
-    tmp = id_node;
+    tmp = id_chain;
     while (NULL != tmp)
-        if (0 == strcmp (id, ID_NAME (tmp))) {
-            ret_node = tmp;
+        if (0 == strcmp (id, ID_NAME (EXPRS_EXPR (tmp)))) {
+            ret_node = EXPRS_EXPR (tmp);
             break;
         } else
-            tmp = tmp->node[0];
+            tmp = EXPRS_NEXT (tmp);
+
     DBUG_PRINT ("RC", ("found %s:" P_FORMAT, id, ret_node));
+
     DBUG_RETURN (ret_node);
 }
 
@@ -750,14 +756,9 @@ RCloop (node *arg_node, node *arg_info)
                     if (0 == use_old) {
                         VAR_DEC_2_ID_NODE (id_node, var_dec);
                         ID_REFCNT (id_node) = ref_dump[i];
-                        /*
-                         * remark (dkr):
-                         *    this chain-contruction is not documented in tree_basic.h
-                         * 8-(( usually an N_id-node do not have a successor !!! (compare
-                         * with RCcond() ...)
-                         */
-                        id_node->node[0] = defvars;
-                        defvars = id_node;
+                        MakeExprs (id_node,
+                                   defvars); /* insert 'id_node' at the begining of
+                                                'defvars' */
                         DBUG_PRINT ("RC", ("store defined var (v2) %s:%d",
                                            ID_NAME (id_node), ID_REFCNT (id_node)));
                     } else {
@@ -773,14 +774,9 @@ RCloop (node *arg_node, node *arg_info)
                      */
                     if (0 == use_old) {
                         VAR_DEC_2_ID_NODE (id_node, var_dec);
-                        /*
-                         * remark (dkr):
-                         *    this chain-contruction is not documented in tree_basic.h
-                         * 8-(( usually an N_id-node do not have a successor !!! (compare
-                         * with RCcond() ...)
-                         */
-                        id_node->node[0] = usevars;
-                        usevars = id_node;
+                        MakeExprs (id_node,
+                                   usevars); /* insert 'id_node' at the begining of
+                                                'usevars' */
                         DBUG_PRINT ("RC", ("store used var (v1) %s:%d", ID_NAME (id_node),
                                            ID_REFCNT (id_node)));
                     } else {
@@ -1064,14 +1060,8 @@ RCcond (node *arg_node, node *arg_info)
             if (0 == use_old) {
                 VAR_DEC_2_ID_NODE (id_node, var_dec);
                 ID_REFCNT (id_node) = else_dump[i] - then_dump[i];
-                /*
-                 * remark (dkr):
-                 *    this chain-contruction is not documented in tree_basic.h  8-((
-                 *    usually an N_id-node do not have a successor !!!
-                 *    (compare with RCloop() ...)
-                 */
-                id_node->node[0] = thenvars;
-                thenvars = id_node;
+                thenvars = MakeExprs (id_node, thenvars); /* insert 'id_node' at the
+                                                             begining of 'thenvars' */
                 DBUG_PRINT ("RC", ("append %s :%d to then-part", ID_NAME (id_node),
                                    ID_REFCNT (id_node)));
             } else {
@@ -1090,14 +1080,8 @@ RCcond (node *arg_node, node *arg_info)
             if (0 == use_old) {
                 VAR_DEC_2_ID_NODE (id_node, var_dec);
                 ID_REFCNT (id_node) = then_dump[i] - else_dump[i];
-                /*
-                 * remark (dkr):
-                 *    this chain-contruction is not documented in tree_basic.h  8-((
-                 *    usually an N_id-node do not have a successor !!!
-                 *    (compare with RCloop() ...)
-                 */
-                id_node->node[0] = elsevars;
-                elsevars = id_node;
+                elsevars = MakeExprs (id_node, elsevars); /* insert 'id_node' at the
+                                                             begining of 'elsevars' */
                 DBUG_PRINT ("RC", ("append %s :%d to else-part", ID_NAME (id_node),
                                    ID_REFCNT (id_node)));
             } else {
