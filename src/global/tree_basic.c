@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.67  1998/05/12 15:51:18  dkr
+ * removed ???_VARINFO
+ *
  * Revision 1.66  1998/05/06 14:32:02  dkr
  * added support for DataFlowMasks
  *
@@ -816,8 +819,6 @@ MakeCond (node *cond, node *Then, node *Else)
     COND_THEN (tmp) = Then;
     COND_ELSE (tmp) = Else;
 
-    COND_VARINFO (tmp) = MakeInfo ();
-
     DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
                              mdb_nodetype[NODE_TYPE (tmp)], tmp));
 
@@ -838,8 +839,6 @@ MakeDo (node *cond, node *body)
     DO_COND (tmp) = cond;
     DO_BODY (tmp) = body;
 
-    DO_VARINFO (tmp) = MakeInfo ();
-
     DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
                              mdb_nodetype[NODE_TYPE (tmp)], tmp));
 
@@ -859,8 +858,6 @@ MakeWhile (node *cond, node *body)
 
     WHILE_COND (tmp) = cond;
     WHILE_BODY (tmp) = body;
-
-    WHILE_VARINFO (tmp) = MakeInfo ();
 
     DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
                              mdb_nodetype[NODE_TYPE (tmp)], tmp));

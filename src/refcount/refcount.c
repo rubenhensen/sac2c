@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.52  1998/05/12 15:52:07  dkr
+ * removed ???_VARINFO
+ *
  * Revision 1.51  1998/05/12 14:52:24  dkr
  * renamed ???_RC_IDS to ???_DEC_RC_IDS
  *
@@ -989,8 +992,6 @@ RCloop (node *arg_node, node *arg_info)
 
     WHILE_BODY (arg_node) = Trav (WHILE_BODY (arg_node), arg_info);
 
-    DBUG_ASSERT ((DO_VARINFO (arg_node) != NULL),
-                 "info-node for DO_USEVARS, DO_DEFVARS not found");
     usevars = DO_USEVARS (arg_node);
     defvars = DO_DEFVARS (arg_node);
 
@@ -1357,8 +1358,7 @@ RCcond (node *arg_node, node *arg_info)
      *  - COND_ELSE if (else_dump[i] < then_dump[i]):
      *                              (then_dump[i] - else_dump[i])
      */
-    DBUG_ASSERT ((COND_VARINFO (arg_node) != NULL),
-                 "info-node for COND_THENVARS, COND_ELSEVARS not found");
+
     thenvars = COND_THENVARS (arg_node);
     elsevars = COND_ELSEVARS (arg_node);
 

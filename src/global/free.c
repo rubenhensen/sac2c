@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.62  1998/05/12 15:51:41  dkr
+ * removed ???_VARINFO
+ *
  * Revision 1.61  1998/05/12 14:23:15  dkr
  * changed FreeSpmd, FreeSync
  *
@@ -1038,11 +1041,8 @@ FreeDo (node *arg_node, node *arg_info)
      * N_info does not fit into virtual syntax tree.
      */
 
-    if (DO_VARINFO (arg_node) != NULL) {
-        FREETRAV (DO_USEVARS (arg_node));
-        FREETRAV (DO_DEFVARS (arg_node));
-        FREE (DO_VARINFO (arg_node));
-    }
+    FREETRAV (DO_USEVARS (arg_node));
+    FREETRAV (DO_DEFVARS (arg_node));
 
     FREEMASK (DO_MASK);
 
@@ -1071,11 +1071,8 @@ FreeWhile (node *arg_node, node *arg_info)
      * N_info does not fit into virtual syntax tree.
      */
 
-    if (WHILE_VARINFO (arg_node) != NULL) {
-        FREETRAV (WHILE_USEVARS (arg_node));
-        FREETRAV (WHILE_DEFVARS (arg_node));
-        FREE (WHILE_VARINFO (arg_node));
-    }
+    FREETRAV (WHILE_USEVARS (arg_node));
+    FREETRAV (WHILE_DEFVARS (arg_node));
 
     FREEMASK (WHILE_MASK);
 
