@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.9  2000/10/27 13:24:56  cg
+ * Added functions PInoteResults() and PIpaddingOverhead().
+ *
  * Revision 1.8  2000/08/03 15:35:24  mab
  * completed implementation of data structure
  *
@@ -83,6 +86,7 @@ typedef struct PAD_INFO_T {
     int dim;
     shpseg *old_shape;
     shpseg *new_shape;
+    shpseg *padding;
     node *fundef_pad;
     node *fundef_unpad;
     struct PAD_INFO_T *next;
@@ -122,7 +126,9 @@ extern conflict_group_t *PIgetNextConflictGroup (conflict_group_t *cg_ptr);
 extern pattern_t *PIgetFirstPattern (conflict_group_t *cg_ptr);
 extern pattern_t *PIgetNextPattern (pattern_t *pt_ptr);
 extern void PIaddInferredShape (simpletype type, int dim, shpseg *old_shape,
-                                shpseg *new_shape);
+                                shpseg *new_shape, shpseg *padding);
+extern int PIpaddingOverhead (int dim, shpseg *shape, shpseg *padding);
+extern void PInoteResults ();
 
 /* used in pad_transform.c */
 extern void PIprintPadInfo ();
