@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2001/03/22 21:14:58  dkr
+ * include of tree.h elimianted
+ *
  * Revision 3.2  2001/02/13 17:21:26  dkr
  * MakeNode() eliminated
  *
@@ -24,7 +27,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "tree.h"
+#include "types.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
+#include "internal_lib.h"
 #include "Error.h"
 #include "dbug.h"
 #include "my_debug.h"
