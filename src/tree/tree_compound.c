@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.15  2001/03/15 10:54:49  nmw
+ * MakeVardecFromArgs adjusts VARDEC_ATTRIB correctly
+ *
  * Revision 3.14  2001/03/14 16:25:55  dkr
  * some errors in comments corrected
  *
@@ -1616,7 +1619,13 @@ MakeVardecFromArg (node *arg_node)
     /* VARDEC_TYPE(new_vardec) = set by MakeVardec;
        VARDEC_NAME(new_vardec) = set by MakeVardec; */
     VARDEC_STATUS (new_vardec) = ARG_STATUS (arg_node);
-    VARDEC_ATTRIB (new_vardec) = ARG_ATTRIB (arg_node);
+
+    /* reference parameter will be changed to unique vardecs */
+    if (ARG_ATTRIB (arg_node) != ST_regular) {
+        VARDEC_ATTRIB (new_vardec) = ST_unique;
+    } else {
+        VARDEC_ATTRIB (new_vardec) = ARG_ATTRIB (arg_node);
+    }
     VARDEC_TDEF (new_vardec) = ARG_TDEF (arg_node);
 
     /* duplicate avis node manually */
