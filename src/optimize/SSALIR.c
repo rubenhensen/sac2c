@@ -2,6 +2,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  2001/04/30 12:07:49  nmw
+ * do not traverse results of void functions
+ *
  * Revision 1.13  2001/04/20 11:34:55  nmw
  * warning removed
  *
@@ -1288,7 +1291,9 @@ SSALIRreturn (node *arg_node, node *arg_info)
     }
 
     /* traverse results */
-    RETURN_EXPRS (arg_node) = Trav (RETURN_EXPRS (arg_node), arg_info);
+    if (RETURN_EXPRS (arg_node) != NULL) {
+        RETURN_EXPRS (arg_node) = Trav (RETURN_EXPRS (arg_node), arg_info);
+    }
 
     INFO_SSALIR_FLAG (arg_info) = SSALIR_NORMAL;
 
@@ -1761,7 +1766,6 @@ LIRMOVNwithid (node *arg_node, node *arg_info)
             old_flag = INFO_SSALIR_FLAG (arg_info);
 
             INFO_SSALIR_FLAG (arg_info) = SSALIR_MOVELOCAL;
-            /* ##nmw## */
             NWITHID_VEC (arg_node) = LIRMOVleftids (NWITHID_VEC (arg_node), arg_info);
             NWITHID_IDS (arg_node) = LIRMOVleftids (NWITHID_IDS (arg_node), arg_info);
 
@@ -1787,7 +1791,9 @@ LIRMOVreturn (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("LIRMOVreturn");
 
-    RETURN_EXPRS (arg_node) = Trav (RETURN_EXPRS (arg_node), arg_info);
+    if (RETURN_EXPRS (arg_node) != NULL) {
+        RETURN_EXPRS (arg_node) = Trav (RETURN_EXPRS (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
