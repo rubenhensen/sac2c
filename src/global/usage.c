@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.85  1999/02/01 19:46:19  srs
+ * fixed typo
+ *
  * Revision 1.84  1999/01/26 14:25:08  cg
  * Added option -intrinsic p for intrinsic array-valued psi().
  *
@@ -397,7 +400,7 @@ usage ()
             "\t\t\t\t\t  d: use intrinsic drop\n"
             "\t\t\t\t\t  c: use intrinsic cat\n"
             "\t\t\t\t\t  r: use intrinsic rotate\n"
-            "\t\t\t\t\t  r: use intrinsic psi\n"
+            "\t\t\t\t\t  p: use intrinsic psi\n"
             "\t\t\t\t\t  o: use intrinsic type conversion\n"
 
             "\n\nLINK OPTIONS:\n\n"
