@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 1.183  1998/06/03 14:29:04  cg
+ * Attribute WITH_USEDVARS renamed to WITH_USEVARS analogously to the
+ * loop nodes.
+ * Attributes WLGRIDVAR_BOUND[12] made sons
+ * Attributes WLSTRIVAR_BOUND[12] and WLSTRIVAR_STEP made sons
+ *
  * Revision 1.182  1998/05/28 16:32:02  dkr
  * added ICM_INDENT: indent-mechanismus for H-ICMs
  *
@@ -13,7 +19,7 @@
  * Revision 1.179  1998/05/24 00:40:00  dkr
  * removed WLGRID_CODE_TEMPLATE
  *
- * Revision 1.178  1998/05/21 13:29:42  dkr
+ * Revision 1.178  1998/05/21 13:29:42  dkrnode *PRECWith(node *arg_node, node *arg_info)
  * renamed NCODE_DEC_RC_IDS into NCODE_INC_RC_IDS
  *
  * Revision 1.177  1998/05/21 10:14:42  dkr
@@ -1578,7 +1584,7 @@ extern node *MakeReturn (node *exprs);
  ***    long*  MASK[x]                  (optimize -> )
  ***/
 
-extern node *MakeCond (node *cond, node *Then, node *Else);
+extern node *MakeCond (node *cond, node *then, node *else);
 
 #define COND_COND(n) (n->node[0])
 #define COND_THEN(n) (n->node[1])
@@ -1709,7 +1715,7 @@ extern node *MakeAp (char *name, char *mod, node *args);
  ***  temporary attributes:
  ***
  ***    long*  MASK[x]                 (optimize -> )
- ***    node*  USEDVARS (N_info)       (refcount -> ) ???
+ ***    node*  USEVARS (N_exprs)       (refcount -> compile ->)
  ***
  ***  remark (srs): the 'body' of MakeWith() can be reached by WITH_OPERATOR.
  ***
@@ -1720,7 +1726,7 @@ extern node *MakeWith (node *gen, node *body);
 #define WITH_GEN(n) (n->node[0])
 #define WITH_OPERATOR(n) (n->node[1])
 #define WITH_MASK(n, x) (n->mask[x])
-#define WITH_USEDVARS(n) (n->node[2])
+#define WITH_USEVARS(n) (n->node[2])
 
 /*--------------------------------------------------------------------------*/
 
@@ -2755,7 +2761,7 @@ extern node *MakeNWithOp (WithOpType WithOp);
  ***    long*  MASK                    (optimize -> )
  ***    int    FLAG                    (WLI -> WLF)
  ***    node*  COPY                    ( -> DupTree )
- ***    ids*   DEC_RC_IDS              (refcount -> compile )
+ ***    ids*   INC_RC_IDS              (refcount -> compile )
  ***
  ***  remarks:
  ***
@@ -3081,13 +3087,13 @@ extern node *MakeWLgrid (int level, int dim, int bound1, int bound2, int unrolli
  ***
  ***    node*    CONTENTS      (N_WLgridVar, N_WLgrid)
  ***    node*    NEXT          (N_WLstriVar)
+ ***    node*    BOUND1        (N_num, N_id)
+ ***    node*    BOUND2        (N_num, N_id)
+ ***    node*    STEP          (N_num, N_id)
  ***
  ***  permanent attributes:
  ***
  ***    int      DIM
- ***    node*    BOUND1        (N_num, N_id)
- ***    node*    BOUND2        (N_num, N_id)
- ***    node*    STEP          (N_num, N_id)
  ***
  ***/
 
@@ -3110,11 +3116,11 @@ extern node *MakeWLstriVar (int dim, node *bound1, node *bound2, node *step,
  ***
  ***    node*    NEXTDIM         (N_WLstriVar)
  ***    node*    NEXT            (N_WLgridVar, N_WLgrid)
+ ***    node*    BOUND1          (N_num, N_id)
+ ***    node*    BOUND2          (N_num, N_id)
  ***
  ***  permanent attributes:
  ***
- ***    node*    BOUND1          (N_num, N_id)
- ***    node*    BOUND2          (N_num, N_id)
  ***    node*    CODE            (N_Ncode)
  ***    int      DIM
  ***
@@ -3135,10 +3141,10 @@ extern node *MakeWLgridVar (int dim, node *bound1, node *bound2, node *nextdim,
                             node *next, node *code);
 
 #define WLGRIDVAR_DIM(n) (n->refcnt)
-#define WLGRIDVAR_BOUND1(n) (n->node[3])
-#define WLGRIDVAR_BOUND2(n) (n->node[4])
+#define WLGRIDVAR_BOUND1(n) (n->node[2])
+#define WLGRIDVAR_BOUND2(n) (n->node[3])
 #define WLGRIDVAR_NEXTDIM(n) (n->node[0])
 #define WLGRIDVAR_NEXT(n) (n->node[1])
-#define WLGRIDVAR_CODE(n) (n->node[2])
+#define WLGRIDVAR_CODE(n) (n->node[4])
 
 #endif /* _sac_tree_basic_h */
