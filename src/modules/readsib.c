@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.7  2000/11/17 16:15:38  sbs
+ * MakeDeps extended for locationtype.
+ *
  * Revision 2.6  2000/11/14 13:18:55  dkr
  * no '... might be used uninitialized' warnings anymore
  *
@@ -228,7 +231,7 @@ ReadSib (node *syntax_tree)
  *                  module's or class's own declaration is searched for
  *                  and added to the list of dependencies
  *  external funs : MakeDeps, AbsolutePathname, FindFile, strcpy, strcat,
- *                  StringCopy
+ *                  StringCopy, FindLocationOfFile
  *
  */
 
@@ -249,7 +252,7 @@ AddOwnDecToDependencies (node *arg_node, deps *depends)
         if (pathname != NULL) {
             depends
               = MakeDeps (StringCopy (buffer), StringCopy (AbsolutePathname (pathname)),
-                          NULL, ST_own, NULL, depends);
+                          NULL, ST_own, FindLocationOfFile (pathname), NULL, depends);
         }
     }
 
