@@ -4,6 +4,9 @@
 /*
 *
 * $Log$
+* Revision 1.13  2004/11/18 10:28:20  sah
+* corrected handling of simple types
+*
 * Revision 1.12  2004/11/17 19:45:53  sah
 * fixed external typedefs
 *
@@ -466,7 +469,9 @@ typedef: TYPEDEF ntype id SEMIC
                         TYPEDEF_NAME( $$)));
          }
        | EXTERN TYPEDEF id SEMIC
-         { $$ = MakeTypedef( $3, mod_name, TYMakeSimpleType( T_hidden), ST_regular, NULL);
+         { $$ = MakeTypedef( $3, mod_name, TYMakeAKS(
+                  TYMakeSimpleType( T_hidden), 
+                  SHMakeShape( 0)), ST_regular, NULL);
 
            DBUG_PRINT( "PARSE",
                        ("%s:"F_PTR","F_PTR", Id: %s",
@@ -1704,10 +1709,10 @@ simpletype: TYPE_INT     { $$ = MakeTypes1( T_int);    }
  */
 
 ntype: basentype
-       { $$ = $1; 
+       { $$ = TYMakeAKS( $1, SHMakeShape(0)); 
        }
      | basentype SQBR_L SQBR_R
-       { $$ = $1;
+       { $$ = TYMakeAKS( $1, SHMakeShape(0)); 
        }
      | basentype SQBR_L exprs SQBR_R
        { $$ = Exprs2NType( $1, $3);
