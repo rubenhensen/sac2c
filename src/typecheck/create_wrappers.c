@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.31  2005/03/04 21:21:42  cg
+ * Removal of zombie functions automatized.
+ *
  * Revision 1.30  2005/02/16 22:29:13  sah
  * fixed CreateWrapperFor
  *
@@ -202,12 +205,6 @@ CRTWRPdoCreateWrappers (node *arg_node)
     info_node = FreeInfo (info_node);
 
     TRAVpop ();
-
-    /* as we have deleted some used wrappers, we now have
-     * to remove the zombies
-     */
-
-    arg_node = FREEremoveAllZombies (arg_node);
 
     DBUG_RETURN (arg_node);
 }
