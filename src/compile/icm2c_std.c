@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  1998/06/25 08:03:45  cg
+ * ND_FUN_DEC ICM modified.
+ *
  * Revision 1.9  1998/06/23 12:52:28  cg
  * Parantheses removed from macro name in #undef statement
  *
@@ -399,9 +402,6 @@ ICMCompileND_FUN_DEC (char *name, char *rettype, int narg, char **tyarg)
 #include "icm_comment.c"
 #include "icm_trace.c"
 #undef ND_FUN_DEC
-
-    fprintf (outfile, "#undef SAC_MT_CURRENT_FUN\n");
-    fprintf (outfile, "#define SAC_MT_CURRENT_FUN() %s\n", name);
 
     INDENT;
     fprintf (outfile, "%s ", rettype);
