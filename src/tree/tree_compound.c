@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.75  2002/10/30 16:31:07  dkr
+ * HasDotTypes(), HasDotArgs() modified
+ *
  * Revision 3.74  2002/10/10 23:51:53  dkr
  * no changes done
  *
@@ -581,7 +584,10 @@ HasDotTypes (types *type)
     DBUG_ENTER ("HasDotTypes");
 
     while (type != NULL) {
-        flag = (flag || (TYPES_BASETYPE (type) == T_dots));
+        if (TYPES_BASETYPE (type) == T_dots) {
+            flag = TRUE;
+            break;
+        }
         type = TYPES_NEXT (type);
     }
 
@@ -2463,7 +2469,10 @@ HasDotArgs (node *args)
 
     while (args != NULL) {
         DBUG_ASSERT ((NODE_TYPE (args) == N_arg), "no N_arg node found!");
-        flag = (flag || (ARG_BASETYPE (args) == T_dots));
+        if ((ARG_TYPE (args) != NULL) && (ARG_BASETYPE (args) == T_dots)) {
+            flag = TRUE;
+            break;
+        }
         args = ARG_NEXT (args);
     }
 
