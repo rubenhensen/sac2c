@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.45  1995/03/14 15:46:01  asi
+ * Revision 1.46  1995/03/15 14:14:25  asi
+ * output for masks modified
+ *
+ * Revision 1.45  1995/03/14  15:46:01  asi
  * printing of basic block numbers
  *
  * Revision 1.44  1995/03/14  10:54:29  hw
@@ -194,13 +197,15 @@ PrintAssign (node *arg_node, node *arg_info)
 
     DBUG_EXECUTE ("BBLOCK", fprintf (outfile, "[%d]", arg_node->bblock););
 
-    DBUG_EXECUTE ("MASK", fprintf (outfile, "**MASKS - assign\n");
+    DBUG_EXECUTE ("MASK", fprintf (outfile, "\n**MASKS - assign : %s\n",
+                                   mdb_nodetype[arg_node->node[0]->nodetype]);
                   PrintMasks (arg_node, arg_info););
 
     for (i = 0; i < arg_node->nnode; i++) {
         INDENT;
         if (1 == i)
             fprintf (outfile, "\n");
+
         Trav (arg_node->node[i], arg_info);
     }
 
@@ -330,7 +335,7 @@ PrintFundef (node *arg_node, node *arg_info)
     DBUG_PRINT ("PRINT", ("%s " P_FORMAT, mdb_nodetype[arg_node->nodetype], arg_node));
     arg_info = MakeNode (N_info);
     VARNO = arg_node->varno;
-    DBUG_EXECUTE ("MASK", fprintf (outfile, "**MASKS - function\n");
+    DBUG_EXECUTE ("MASK", fprintf (outfile, "\n**MASKS - function\n");
                   PrintMasks (arg_node, arg_info););
 
     fprintf (outfile, "\n");
@@ -539,7 +544,7 @@ PrintDo (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintDo");
 
-    DBUG_EXECUTE ("MASK", fprintf (outfile, "**MASKS - do body\n");
+    DBUG_EXECUTE ("MASK", fprintf (outfile, "\n**MASKS - do body\n");
                   PrintMasks (arg_node->node[1], arg_info););
 
     fprintf (outfile, "do\n");
@@ -585,7 +590,7 @@ PrintWhile (node *arg_node, node *arg_info)
     Trav (arg_node->node[0], arg_info);
     fprintf (outfile, " )\n");
 
-    DBUG_EXECUTE ("MASK", fprintf (outfile, "**MASKS - while body\n");
+    DBUG_EXECUTE ("MASK", fprintf (outfile, "\n**MASKS - while body\n");
                   PrintMasks (arg_node->node[1], arg_info););
 
     Trav (arg_node->node[1], arg_info); /* traverse body of loop */
@@ -636,14 +641,14 @@ PrintCond (node *arg_node, node *arg_info)
     Trav (arg_node->node[0], arg_info);
     fprintf (outfile, "\n");
 
-    DBUG_EXECUTE ("MASK", fprintf (outfile, "**MASKS - then\n");
+    DBUG_EXECUTE ("MASK", fprintf (outfile, "\n**MASKS - then\n");
                   PrintMasks (arg_node->node[1], arg_info););
 
     Trav (arg_node->node[1], arg_info);
     fprintf (outfile, "\n");
     indent--;
 
-    DBUG_EXECUTE ("MASK", fprintf (outfile, "**MASKS - else\n");
+    DBUG_EXECUTE ("MASK", fprintf (outfile, "\n**MASKS - else\n");
                   PrintMasks (arg_node->node[2], arg_info););
 
     INDENT;
@@ -660,7 +665,7 @@ PrintWith (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintWith");
 
-    DBUG_EXECUTE ("MASK", fprintf (outfile, "**MASKS - generator\n");
+    DBUG_EXECUTE ("MASK", fprintf (outfile, "\n**MASKS - generator\n");
                   PrintMasks (arg_node->node[0], arg_info););
     fprintf (outfile, "with (");
     Trav (arg_node->node[0], arg_info);
@@ -670,7 +675,7 @@ PrintWith (node *arg_node, node *arg_info)
                   fprintf (outfile, "**Used Variables (gen-,modarray) : %s\n", text);
                   free (text););
 
-    DBUG_EXECUTE ("MASK", fprintf (outfile, "**MASKS - with body\n");
+    DBUG_EXECUTE ("MASK", fprintf (outfile, "\n**MASKS - with body\n");
                   PrintMasks (arg_node, arg_info););
     Trav (arg_node->node[1], arg_info);
 
