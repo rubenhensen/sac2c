@@ -1,6 +1,10 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.16  2004/09/30 20:03:21  sah
+  added refcounting info to avis node
+  renamed CSEInfo to CSEinfo
+
   Revision 1.15  2004/09/29 12:51:54  skt
   some debugging (sorry)
 
@@ -133,6 +137,8 @@
     copy="function" />
     <type name="MTExecMode" ctype="mtexecmode_t" init="MUTH_ANY"
     copy="literal" />
+    <type name="RCCounter" ctype="rc_counter*" init="NULL"
+    copy="function" />
   </attributetypes>
   <nodesets>
     <nodeset name="Expr">
@@ -2241,13 +2247,13 @@
       </attributes>
       <flags></flags>
     </node>
-    <node name="CSEInfo">
+    <node name="CSEinfo">
       <description>This node is not located in the AST, it is only
       used internally by CSE.</description>
       <sons>
         <son name="Next" mandatory="no">
           <target>
-            <node name="CSEInfo" />
+            <node name="CSEinfo" />
           </target>
         </son>
       </sons>
@@ -2255,7 +2261,7 @@
         <attribute name="Layer" mandatory="yes">
           <type name="Link">
             <target>
-              <node name="CSEInfo" />
+              <node name="CSEinfo" />
             </target>
           </type>
           <phases>
@@ -2500,6 +2506,24 @@
             <phase name="SelectionPropagation" />
           </phases>
         </attribute>
+	<attribute name="EMRC_DefLevel" mandatory="yes">
+	  <type name="Integer" />
+	  <phases>
+	    <phase name="emmrc" />
+	  </phases>
+	</attribute>
+	<attribute name="EMRC_Counter" mandatory="no">
+	  <type name="RCCounter" />
+	  <phases>
+	    <phase name="emmrc" />
+          </phases>
+	</attribute>
+	<attribute name="EMRC_Counter2" mandatory="no">
+	  <type name="RCCounter" />
+	  <phases>
+	    <phase name="emmrc" />
+	  </phases>
+	</attribute>
       </attributes>
       <flags></flags>
     </node>
@@ -2752,7 +2776,8 @@
         </son>
       </sons>
       <attributes>
-        <attribute name="Identifier" mandatory="yes">
+        <attribute name="Identifier" default="GetNewEXIdentifier()" 
+	           mandatory="yes">
           <type name="Integer" />
           <phases>
             <all />
