@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.94  2000/08/05 13:01:42  dkr
+ * minor changes in PrintNgenerator
+ *
  * Revision 2.93  2000/07/31 10:45:52  cg
  * Eventually, the son ICM_NEXT is removed from the N_icm node.
  * The creation function MakeIcm is adjusted accordingly.
@@ -2503,31 +2506,28 @@ PrintNgenerator (node *arg_node, node *arg_info)
         fprintf (outfile, ".");
     }
     /* print first operator and eventually original first operator */
-    fprintf (outfile, " %s", prf_string[NGEN_OP1 (arg_node)]);
+    fprintf (outfile, " %s ", prf_string[NGEN_OP1 (arg_node)]);
     DBUG_EXECUTE ("ORIG_GENS",
                   fprintf (outfile, "::%s", prf_string[NGEN_OP1_ORIG (arg_node)]););
-    fprintf (outfile, " ");
 
     /* print indices */
     if (INFO_PRINT_NWITH (arg_info) != NULL) {
         DBUG_ASSERT ((NODE_TYPE (INFO_PRINT_NWITH (arg_info)) == N_Nwith),
                      "INFO_PRINT_NWITH is no N_Nwith node");
-        NWITH_WITHID (INFO_PRINT_NWITH (arg_info))
-          = Trav (NWITH_WITHID (INFO_PRINT_NWITH (arg_info)), arg_info);
+        Trav (NWITH_WITHID (INFO_PRINT_NWITH (arg_info)), arg_info);
     } else {
         fprintf (outfile, "?");
     }
 
     /* print second operator and eventually original operator */
-    fprintf (outfile, " %s", prf_string[NGEN_OP2 (arg_node)]);
+    fprintf (outfile, " %s ", prf_string[NGEN_OP2 (arg_node)]);
     DBUG_EXECUTE ("ORIG_GENS",
                   fprintf (outfile, "::%s", prf_string[NGEN_OP2_ORIG (arg_node)]););
-    fprintf (outfile, " ");
     /* print lower bound */
     if (NGEN_BOUND2 (arg_node)) {
         Trav (NGEN_BOUND2 (arg_node), arg_info);
     } else {
-        fprintf (outfile, " .");
+        fprintf (outfile, ".");
     }
 
     /* print step and width */
