@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2000/03/21 13:06:28  jhs
+ * Brushing, comments.
+ *
  * Revision 1.6  2000/03/15 15:50:19  dkr
  * fixed a bug:
  *   MT_OR_ST_REGION on left hand side is replaced by L_MT_OR_ST_REGION
@@ -30,7 +33,10 @@
  * prefix: BLKEX
  *
  * description:
- *   ####
+ *   Expands N_mt and N_mt blocks upwards, as long as a N_mt or N_st
+ *   is above the actual block (these can be of differnt kind).
+ *   All assignments before a block are swaped into the block.
+ *   If blocks of same kind get together, they are melted together.
  *
  ******************************************************************************/
 
@@ -56,7 +62,10 @@
  *   node *BlocksExpand(node *arg_node, node *arg_info)
  *
  * description:
- *   ####
+ *   Not traversed are:
+ *   - functions f with no body (FUNDEF_BODY( f) == NULL)
+ *   - functions f with FUNDEF_ATTRIB( f) = ST_call_rep
+ *   - functions f with FUNDEF_STATUS( f) = ST_foldfun
  *
  ******************************************************************************/
 node *
@@ -70,24 +79,36 @@ BlocksExpand (node *arg_node, node *arg_info)
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_fundef),
                  "BlocksExpand expects a N_fundef as arg_node");
 
-    old_tab = act_tab;
-    act_tab = blkex_tab;
+    if ((FUNDEF_BODY (arg_node) != NULL) && (FUNDEF_STATUS (arg_node) != ST_foldfun)
+        && (FUNDEF_ATTRIB (arg_node) != ST_call_rep)) {
+        old_tab = act_tab;
+        act_tab = blkex_tab;
 
-    /* push info ... */
-    old_blockabove = INFO_BLKEX_BLOCKABOVE (arg_info);
-    INFO_BLKEX_BLOCKABOVE (arg_info) = FALSE;
+        /* push info ... */
+        old_blockabove = INFO_BLKEX_BLOCKABOVE (arg_info);
+        INFO_BLKEX_BLOCKABOVE (arg_info) = FALSE;
 
-    FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
 
-    /* pop info ... */
-    INFO_BLKEX_BLOCKABOVE (arg_info) = old_blockabove;
+        /* pop info ... */
+        INFO_BLKEX_BLOCKABOVE (arg_info) = old_blockabove;
 
-    act_tab = old_tab;
+        act_tab = old_tab;
+    }
 
     DBUG_RETURN (arg_node);
 }
 
-/* #### comment missing */
+/******************************************************************************
+ *
+ * function:
+ *   node *BLKEXassign(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   The actual moving and melting is done here.
+ *   INFO_BLKEX_BLOCKABOVE tells whether there is a block above or not.
+ *
+ ******************************************************************************/
 node *
 BLKEXassign (node *arg_node, node *arg_info)
 {
@@ -175,6 +196,10 @@ BLKEXassign (node *arg_node, node *arg_info)
         }
     } else if (NODE_TYPE (this_instr) == N_return) {
         /* nothing happens, returns are ignored */
+    } else if (NODE_TYPE (this_instr) == N_cond) {
+        DBUG_PRINT ("BLKEX", ("trav into cond"));
+        this_instr = Trav (this_instr, arg_node);
+        DBUG_PRINT ("BLKEX", ("trav from cond"));
     } else {
         DBUG_PRINT ("BLKEX", ("node_type: %s", NODE_TEXT (this_instr)));
         DBUG_ASSERT (0, ("unhandled type of ASSIGN_INSTR (watch BLKEX)"));
