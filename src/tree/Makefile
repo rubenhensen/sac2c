@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.37  2004/10/25 11:59:14  sah
+# added SEL traversal
+#
 # Revision 3.36  2004/10/17 17:47:54  sah
 # added serialize_helper.
 #
@@ -99,7 +102,7 @@ ifeq ($(shell test -f $(PROJECT_ROOT)/_NEW_AST && echo yes),yes)
   NEWASTTARGETS := node_basic.o free_node.o free_attribs.o \
                    serialize_node.o serialize_attribs.o \
                    deserialize.o serialize_buildstack.o \
-                   serialize_helper.o
+                   serialize_helper.o serialize_link.o
 else
   NEWASTTARGETS :=
 endif

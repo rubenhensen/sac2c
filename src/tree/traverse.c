@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.101  2004/10/25 11:59:14  sah
+ * added SEL traversal
+ *
  * Revision 3.100  2004/10/22 14:47:40  sah
  * added usesymbols traversal
  *
@@ -440,6 +443,7 @@
 #include "resolveall.h"
 #include "annotatenamespace.h"
 #include "usesymbols.h"
+#include "serialize_link.h"
 #include "filterrc.h"
 #include "aliasanalysis.h"
 #include "staticreuse.h"
@@ -1054,15 +1058,20 @@ static funtab mmv_tab_rec = {{
 funtab *mmv_tab = &mmv_tab_rec;
 
 /*
- *  (51) unused_tab43
+ *  (51) sel_tab
  */
-static funtab unused_tab43_rec = {{
-#define NIFunused_43(it_unused_43) it_unused_43
+static funtab sel_tab_rec = {{
+#ifdef NEW_AST
+#define NIFsel(it_sel) it_sel
 #include "node_info.mac"
-                                  },
-                                  NULL,
-                                  NULL};
-funtab *unused_tab43 = &unused_tab43_rec;
+#else
+#define NIFunused_39(it_unused_39) it_unused_39
+#include "node_info.mac"
+#endif
+                             },
+                             NULL,
+                             NULL};
+funtab *sel_tab = &sel_tab_rec;
 
 /*
  *  (52) unused_tab44

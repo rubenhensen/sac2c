@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.127  2004/10/25 11:59:14  sah
+# added SEL traversal
+#
 # Revision 3.126  2004/10/22 14:47:40  sah
 # added usesymbols traversal
 #
@@ -311,7 +314,7 @@ ifeq ($(NEWAST),yes)
                src/modules/export.o src/modules/ccmanager.o \
                src/modules/libbuilder.o src/tree/serialize_helper.o \
                src/modules/resolveall.o src/modules/annotatenamespace.o \
-               src/modules/usesymbols.o
+               src/modules/usesymbols.o src/tree/serialize_link.o
   NEWASTFLAGS = -ldl --export-dynamic
 endif
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.77  2004/10/25 11:59:14  sah
+ * added SEL traversal
+ *
  * Revision 3.76  2004/10/22 14:47:40  sah
  * added usesymbols traversal
  *
@@ -394,7 +397,7 @@ extern funtab *sched_tab;
 extern funtab *conc_tab;
 extern funtab *opt_tab;
 extern funtab *wlaa_tab;
-extern funtab *unused_tab43;
+extern funtab *sel_tab;
 extern funtab *unused_tab44;
 extern funtab *unused_tab45;
 extern funtab *tsi_tab;
