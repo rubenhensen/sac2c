@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.69  2003/03/05 15:33:09  dkr
+ * bug in GetWlShape() fixed:
+ * works correcly for nested type definitions (user defined types...) now
+ *
  * Revision 3.68  2002/10/30 14:12:58  dkr
  * -enforceIEEE for WLs implemented
  *
@@ -2149,7 +2153,7 @@ GetLcmUnroll (node *nodes, int dim, bool include_blocks)
 /******************************************************************************
  *
  * Function:
- *   node *GenerateShapeStrides( int dim, int dims, int* shape)
+ *   node *GenerateShapeStrides( int dim, int dims, shpseg* shape)
  *
  * Description:
  *   Returns strides/grids of the size found in 'shape'.
@@ -2157,7 +2161,7 @@ GetLcmUnroll (node *nodes, int dim, bool include_blocks)
  ******************************************************************************/
 
 static node *
-GenerateShapeStrides (int dim, int dims, int *shape)
+GenerateShapeStrides (int dim, int dims, shpseg *shape)
 {
     node *new_grid;
     node *strides = NULL;
@@ -2168,8 +2172,8 @@ GenerateShapeStrides (int dim, int dims, int *shape)
         new_grid = MakeWLgrid (0, dim, 0, 1, FALSE,
                                GenerateShapeStrides (dim + 1, dims, shape), NULL, NULL);
 
-        strides = MakeWLstride (0, dim, 0, GET_SHAPE_IDX (shape, dim), 1, FALSE, new_grid,
-                                NULL);
+        strides = MakeWLstride (0, dim, 0, GET_SHAPE_IDX (SHPSEG_ELEMS (shape), dim), 1,
+                                FALSE, new_grid, NULL);
     }
 
     DBUG_RETURN (strides);
@@ -2430,19 +2434,19 @@ CheckWithids (node *part)
 /******************************************************************************
  *
  * Function:
- *   int *GetWlShape( node *wl, int dims, types *wl_type)
+ *   shpseg *GetWlShape( node *wl, int dims, types *wl_type)
  *
  * Description:
  *
  *
  ******************************************************************************/
 
-int *
+shpseg *
 GetWlShape (node *wl, int dims, types *wl_type)
 {
     node *shp_node;
-    int i;
-    int *shape = NULL;
+    int check_dims, i;
+    shpseg *shape = NULL;
 
     DBUG_ENTER ("GetWlShape");
 
@@ -2450,15 +2454,21 @@ GetWlShape (node *wl, int dims, types *wl_type)
     case WO_genarray:
         shp_node = NWITH_SHAPE (wl);
         if (NODE_TYPE (shp_node) == N_array) {
+            shape = MakeShpseg (NULL);
             shp_node = ARRAY_AELEMS (shp_node);
-            shape = (int *)Malloc (dims * sizeof (int));
             for (i = 0; i < dims; i++) {
+                DBUG_ASSERT ((shp_node != NULL),
+                             "genarray with-loop:"
+                             " size of index vector > dimension of WL shape");
                 DBUG_ASSERT (((shp_node != NULL)
                               && (NODE_TYPE (EXPRS_EXPR (shp_node)) == N_num)),
                              "illegal shape found!");
-                shape[i] = NUM_VAL (EXPRS_EXPR (shp_node));
+                SHPSEG_SHAPE (shape, i) = NUM_VAL (EXPRS_EXPR (shp_node));
                 shp_node = EXPRS_NEXT (shp_node);
             }
+            DBUG_ASSERT ((shp_node == NULL),
+                         "genarray with-loop:"
+                         " size of index vector < dimension of WL shape");
         } else {
             DBUG_ASSERT ((NODE_TYPE (shp_node) == N_id),
                          "NWITH_SHAPE is neither N_array nor N_id");
@@ -2469,12 +2479,10 @@ GetWlShape (node *wl, int dims, types *wl_type)
         break;
 
     case WO_modarray:
-        if (TYPES_SHPSEG (wl_type) != NULL) {
-            shape = (int *)Malloc (dims * sizeof (int));
-            for (i = 0; i < dims; i++) {
-                shape[i] = TYPES_SHAPE (wl_type, i);
-            }
-        }
+        shape = Type2Shpseg (wl_type, &check_dims);
+        DBUG_ASSERT ((check_dims >= dims),
+                     "modarray with-loop:"
+                     " size of index vector > dimension of target array");
         break;
 
     case WO_foldfun:
@@ -2729,7 +2737,7 @@ CurrentComponent_GetNode (node *aelems)
 /******************************************************************************
  *
  * Function:
- *   node* Parts2Strides( node *parts, int dims, int *shape)
+ *   node* Parts2Strides( node *parts, int dims, shpseg *shape)
  *
  * Description:
  *   Converts a N_Npart-chain ('parts') into a N_WLstride-chain (return).
@@ -2738,7 +2746,7 @@ CurrentComponent_GetNode (node *aelems)
  ******************************************************************************/
 
 static node *
-Parts2Strides (node *parts, int dims, int *shape)
+Parts2Strides (node *parts, int dims, shpseg *shape)
 {
     node *parts_stride, *stride, *new_stride, *new_grid;
     node *gen, *code;
@@ -2801,9 +2809,9 @@ Parts2Strides (node *parts, int dims, int *shape)
                 /* build N_WLstride-node of current dimension */
                 new_stride
                   = MakeWLstride (0, dim, CurrentComponent_GetInt (bound1),
-                                  (shape != NULL)
-                                    ? MIN (CurrentComponent_GetInt (bound2), shape[dim])
-                                    : CurrentComponent_GetInt (bound2),
+                                  (shape != NULL) ? MIN (CurrentComponent_GetInt (bound2),
+                                                         SHPSEG_SHAPE (shape, dim))
+                                                  : CurrentComponent_GetInt (bound2),
                                   CurrentComponent_GetInt (step), FALSE, new_grid, NULL);
 
                 /* the PART-information is needed by 'IntersectStrideWithOutline' */
@@ -2867,7 +2875,7 @@ Parts2Strides (node *parts, int dims, int *shape)
 /******************************************************************************
  *
  * Function:
- *   node *EmptyParts2StridesOrExpr( node **wl, int dims, int *shape)
+ *   node *EmptyParts2StridesOrExpr( node **wl, int dims, shpseg *shape)
  *
  * Description:
  *   This function handles the case in which all parts are empty.
@@ -2875,7 +2883,7 @@ Parts2Strides (node *parts, int dims, int *shape)
  ******************************************************************************/
 
 static node *
-EmptyParts2StridesOrExpr (node **wl, int dims, int *shape)
+EmptyParts2StridesOrExpr (node **wl, int dims, shpseg *shape)
 {
     node *strides;
     node *tmp;
@@ -4054,7 +4062,7 @@ ComputeCubes (node *strides)
 /******************************************************************************
  *
  * Function:
- *   node *GenerateCompleteDomain( node *stride, int dims, int *shape)
+ *   node *GenerateCompleteDomain( node *stride, int dims, shpseg *shape)
  *
  * Description:
  *   Supplements strides/grids for the complement of N_WLstride node 'stride'.
@@ -4099,7 +4107,7 @@ ComputeCubes (node *strides)
  ******************************************************************************/
 
 static node *
-GenerateCompleteDomain (node *stride, int dims, int *shape)
+GenerateCompleteDomain (node *stride, int dims, shpseg *shape)
 {
     node *new_strides, *new_stride, *new_grid;
     node *next_dim;
@@ -4156,7 +4164,9 @@ GenerateCompleteDomain (node *stride, int dims, int *shape)
          */
         new_stride
           = GenerateNodeForGap (act_stride, N_WLstride, &(WLSTRIDE_BOUND2 (act_stride)),
-                                N_WLstride, &(shape[WLSTRIDE_DIM (act_stride)]), FALSE);
+                                N_WLstride,
+                                &(SHPSEG_SHAPE (shape, WLSTRIDE_DIM (act_stride))),
+                                FALSE);
         if (new_stride != NULL) {
             WLSTRIDE_CONTENTS (new_stride)
               = MakeWLgrid (0, WLGRID_DIM (act_grid), 0, 1, FALSE,
@@ -4273,7 +4283,7 @@ GenerateCompleteDomain (node *stride, int dims, int *shape)
 /******************************************************************************
  *
  * Function:
- *   node *GenerateCompleteDomainVar( node *stride, int dims, int *shape)
+ *   node *GenerateCompleteDomainVar( node *stride, int dims, shpseg *shape)
  *
  * Description:
  *   Supplements strides/grids for the complement of N_WLstrideVar node
@@ -4308,7 +4318,7 @@ GenerateCompleteDomain (node *stride, int dims, int *shape)
  ******************************************************************************/
 
 static node *
-GenerateCompleteDomainVar (node *stride, int dims, int *shape)
+GenerateCompleteDomainVar (node *stride, int dims, shpseg *shape)
 {
     node *grid;
     int lb, shp_idx;
@@ -4342,7 +4352,7 @@ GenerateCompleteDomainVar (node *stride, int dims, int *shape)
         /*
          * append lower part of complement
          */
-        shp_idx = GET_SHAPE_IDX (shape, WLSTRIDEX_DIM (stride));
+        shp_idx = GET_SHAPE_IDX (SHPSEG_ELEMS (shape), WLSTRIDEX_DIM (stride));
         stride = FillGapSucc (&new_node, stride, NODE_TYPE (stride),
                               WLSTRIDEX_GET_ADDR (stride, BOUND2), N_WLstride, &shp_idx,
                               FALSE);
@@ -4375,7 +4385,7 @@ GenerateCompleteDomainVar (node *stride, int dims, int *shape)
 /******************************************************************************
  *
  * Function:
- *   node *BuildCubes( node *strides, node *wl2, int dims, int *wl_shp,
+ *   node *BuildCubes( node *strides, node *wl2, int dims, shpseg *shape,
  *                     bool *do_naive_comp)
  *
  * Description:
@@ -4384,7 +4394,7 @@ GenerateCompleteDomainVar (node *stride, int dims, int *shape)
  ******************************************************************************/
 
 static node *
-BuildCubes (node *strides, node *wl2, int dims, int *wl_shp, bool *do_naive_comp)
+BuildCubes (node *strides, node *wl2, int dims, shpseg *shape, bool *do_naive_comp)
 {
     bool all_const;
     node *cubes = NULL;
@@ -4401,10 +4411,10 @@ BuildCubes (node *strides, node *wl2, int dims, int *wl_shp, bool *do_naive_comp
          */
         if (!NWITH2_IS_FOLD (wl2)) {
             /* no fold with-loop  ->  add missing indices (init/copy) */
-            if (all_const && (wl_shp != NULL)) {
-                cubes = GenerateCompleteDomain (strides, dims, wl_shp);
+            if (all_const && (shape != NULL)) {
+                cubes = GenerateCompleteDomain (strides, dims, shape);
             } else {
-                cubes = GenerateCompleteDomainVar (strides, dims, wl_shp);
+                cubes = GenerateCompleteDomainVar (strides, dims, shape);
 
                 /*
                  * the generated cubes are already splitted and merged
@@ -6101,7 +6111,7 @@ DoNormalize (node *nodes, int *width)
 /******************************************************************************
  *
  * Function:
- *   node *NormWL( int dims, int *shape, int *idx_max, node *nodes)
+ *   node *NormWL( int dims, shpseg *shape, int *idx_max, node *nodes)
  *
  * Description:
  *   Returns the normalized N_WL...-tree 'nodes'.
@@ -6109,7 +6119,7 @@ DoNormalize (node *nodes, int *width)
  ******************************************************************************/
 
 static node *
-NormWL (int dims, int *shape, int *idx_max, node *nodes)
+NormWL (int dims, shpseg *shape, int *idx_max, node *nodes)
 {
     int d;
     int *width = NULL;
@@ -6120,7 +6130,7 @@ NormWL (int dims, int *shape, int *idx_max, node *nodes)
     for (d = 0; d < dims; d++) {
         if (idx_max[d] == IDX_SHAPE) {
             DBUG_ASSERT ((shape != NULL), "no shape found!");
-            width[d] = shape[d];
+            width[d] = SHPSEG_SHAPE (shape, d);
         } else {
             width[d] = idx_max[d];
         }
@@ -6366,7 +6376,7 @@ InsertNoopNodes (node *wlnode)
 /******************************************************************************
  *
  * function:
- *   void ComputeIndexMinMax( node *wlseg, int *shape, node *wlnode)
+ *   void ComputeIndexMinMax( node *wlseg, shpseg *shape, node *wlnode)
  *
  * description:
  *   Computes the minimum and maximum of the index-vector found in 'wlnode'.
@@ -6397,7 +6407,7 @@ InsertNoopNodes (node *wlnode)
  ******************************************************************************/
 
 static void
-ComputeIndexMinMax (node *wlseg, int *shape, node *wlnode)
+ComputeIndexMinMax (node *wlseg, shpseg *shape, node *wlnode)
 {
     nodetype nt;
     void *p_min, *p_max;
@@ -6454,7 +6464,7 @@ ComputeIndexMinMax (node *wlseg, int *shape, node *wlnode)
         if (dim >= 0) {
             p_idx_min = WLSEGX_IDX_GET_ADDR (wlseg, IDX_MIN, dim);
             p_idx_max = WLSEGX_IDX_GET_ADDR (wlseg, IDX_MAX, dim);
-            shp_idx = GET_SHAPE_IDX (shape, dim);
+            shp_idx = GET_SHAPE_IDX (SHPSEG_ELEMS (shape), dim);
 
             if (NodeOrInt_Le (nt, p_min, NODE_TYPE (wlseg), p_idx_min, shp_idx)) {
                 NodeOrInt_SetNodeOrInt (NODE_TYPE (wlseg), p_idx_min, nt, p_min);
@@ -6471,7 +6481,7 @@ ComputeIndexMinMax (node *wlseg, int *shape, node *wlnode)
 /******************************************************************************
  *
  * Function:
- *   node* InferSegsParams_Pre( node *segs, int *shape)
+ *   node* InferSegsParams_Pre( node *segs, shpseg *shape)
  *
  * Description:
  *   Infers the temporary attribute IDX_MIN, IDX_MAX, SV of all the given
@@ -6480,7 +6490,7 @@ ComputeIndexMinMax (node *wlseg, int *shape, node *wlnode)
  ******************************************************************************/
 
 static node *
-InferSegsParams_Pre (node *segs, int *shape)
+InferSegsParams_Pre (node *segs, shpseg *shape)
 {
     int d;
 
@@ -6493,7 +6503,7 @@ InferSegsParams_Pre (node *segs, int *shape)
         DBUG_EXECUTE (
           "WLtrans", fprintf (stderr, "InferSegsParams_Pre: ");
           fprintf (stderr, "SHAPE = "); if (shape != NULL) {
-              PRINT_VECT (stderr, shape, WLSEGX_DIMS (segs), "%i");
+              PRINT_VECT (stderr, SHPSEG_ELEMS (shape), WLSEGX_DIMS (segs), "%i");
           } else { fprintf (stderr, "NULL"); });
 
         if (NODE_TYPE (segs) == N_WLseg) {
@@ -6780,7 +6790,7 @@ InferFitted (node *wlnode)
 /******************************************************************************
  *
  * Function:
- *   node *ProcessSegments( node *segs, int dims, int *shape,
+ *   node *ProcessSegments( node *segs, int dims, shpseg *shape,
  *                          bool do_naive_comp, wl_bs_t wl_break_after)
  *
  * Description:
@@ -6789,7 +6799,7 @@ InferFitted (node *wlnode)
  ******************************************************************************/
 
 static node *
-ProcessSegments (node *segs, int dims, int *shape, bool do_naive_comp,
+ProcessSegments (node *segs, int dims, shpseg *shape, bool do_naive_comp,
                  wl_bs_t wl_break_after)
 {
     node *seg;
@@ -7056,7 +7066,7 @@ WLTRAwith (node *arg_node, node *arg_info)
     } else {
         node *strides;
         int idx_size;
-        int *wl_shp;
+        shpseg *wl_shp;
 
         /*
          * check whether NWITHID_VEC, NWITHID_IDS of all parts have identical
