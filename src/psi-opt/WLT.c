@@ -1,6 +1,11 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 2.13  2000/05/11 11:15:21  dkr
+ * Function MakeNullVec renamed into CreateZeroVector.
+ * Bug in function CreateFullPartition fixed:
+ *   New parts created have always the correct type now :-)
+ *
  * Revision 2.12  1999/11/15 18:05:41  dkr
  * VARNO replaced, INFO_VARNO with changed signature
  *
@@ -81,9 +86,6 @@
  *
  * Revision 1.4  1998/04/07 08:18:41  srs
  * CreateFullPartition() does not use StartSearchWL() anymore.
- *
- * Revision 1.3  1998/04/03 12:20:13  srs
- * *** empty log message ***
  *
  * Revision 1.2  1998/04/01 07:44:22  srs
  * added functions to create full partition
@@ -396,17 +398,19 @@ CreateFullPartition (node *wln, node *arg_info)
             array_shape = NULL;
             ArrayST2ArrayInt (NWITHOP_SHAPE (NWITH_WITHOP (wln)), &array_shape,
                               gen_shape);
-        } else /* modarray */
+        } else { /* modarray */
             /* We can use the *int array of shpseg to create the upper array bound */
             array_shape
               = TYPES_SHPSEG (ID_TYPE (NWITHOP_ARRAY (NWITH_WITHOP (wln))))->shp;
+        }
 
         /* determine type of expr in the operator (result of body) */
         type = ID_TYPE (NCODE_CEXPR (NWITH_CODE (wln)));
         /* create code for all new parts */
-        if (NWITH_TYPE (wln) == WO_genarray)
-            coden = MakeNum (0);
-        else { /* modarray */
+        if (NWITH_TYPE (wln) == WO_genarray) {
+            /* create a zero of the correct type */
+            coden = CreateZeroVector (0, TYPES_BASETYPE (type));
+        } else { /* modarray */
             _ids = NPART_VEC (NWITH_PART (wln));
             psi_index = MakeId (StringCopy (IDS_NAME (_ids)), NULL, ST_regular);
             ID_VARDEC (psi_index) = IDS_VARDEC (_ids);
@@ -1019,7 +1023,6 @@ WLTNgenerator (node *arg_node, node *arg_info)
 
                 if ((NWITH_TYPE (wln) == WO_modarray)
                     || (NWITH_TYPE (wln) == WO_genarray)) {
-
                     tnum = IDS_SHAPE (let_ids, dim);
                     if (lnum < 0) {
                         warning = 1;
@@ -1044,8 +1047,9 @@ WLTNgenerator (node *arg_node, node *arg_info)
                 ubound = EXPRS_NEXT (ubound);
             }
 
-            if (warning)
+            if (warning) {
                 WARN (NODE_LINE (arg_node), ("Withloop generator out of range"));
+            }
 
             /* the one and only N_Npart is empty. Transform WL. */
             if (empty) {
@@ -1064,10 +1068,12 @@ WLTNgenerator (node *arg_node, node *arg_info)
                         ubound = EXPRS_NEXT (ubound);
                     }
 
-                    if (NGEN_STEP (arg_node))
+                    if (NGEN_STEP (arg_node)) {
                         NGEN_STEP (arg_node) = FreeTree (NGEN_STEP (arg_node));
-                    if (NGEN_WIDTH (arg_node))
+                    }
+                    if (NGEN_WIDTH (arg_node)) {
                         NGEN_WIDTH (arg_node) = FreeTree (NGEN_WIDTH (arg_node));
+                    }
 
                     /* now modify the code. Only one N_Npart/N_Ncode exists.
                        All elements have to be 0. */
@@ -1090,11 +1096,13 @@ WLTNgenerator (node *arg_node, node *arg_info)
                         /* varname is duplicated here (own mem) */
 
                         /* create nullvec */
-                        tmpn = MakeNullVec (TYPES_DIM (IDS_TYPE (let_ids))
-                                              - ARRAY_SHAPE (NWITHOP_SHAPE (NWITH_WITHOP (
-                                                               INFO_WLI_WL (arg_info))),
-                                                             0),
-                                            T_int);
+                        tmpn = CreateZeroVector (TYPES_DIM (IDS_TYPE (let_ids))
+                                                   - ARRAY_SHAPE (NWITHOP_SHAPE (
+                                                                    NWITH_WITHOP (
+                                                                      INFO_WLI_WL (
+                                                                        arg_info))),
+                                                                  0),
+                                                 T_int);
                         /* replace N_empty with new assignment "_ids = [0,..,0]" */
                         assignn = MakeAssign (MakeLet (tmpn, _ids), NULL);
                         ASSIGN_MASK (assignn, 0) = GenMask (INFO_VARNO (arg_info));
@@ -1112,28 +1120,32 @@ WLTNgenerator (node *arg_node, node *arg_info)
                         /* we have a non-empty block.
                            search last assignment and make it the only one in the block.
                          */
-                        while (ASSIGN_NEXT (tmpn))
+                        while (ASSIGN_NEXT (tmpn)) {
                             tmpn = ASSIGN_NEXT (tmpn);
+                        }
                         assignn = DupTree (tmpn, NULL);
                         FreeTree (BLOCK_INSTR (blockn));
                         FreeTree (LET_EXPR (ASSIGN_INSTR (assignn)));
                         BLOCK_INSTR (blockn) = assignn;
                         LET_EXPR (ASSIGN_INSTR (assignn))
-                          = MakeNullVec (TYPES_DIM (IDS_TYPE (let_ids))
-                                           - ARRAY_SHAPE (NWITHOP_SHAPE (NWITH_WITHOP (
-                                                            INFO_WLI_WL (arg_info))),
-                                                          0),
-                                         T_int);
+                          = CreateZeroVector (TYPES_DIM (IDS_TYPE (let_ids))
+                                                - ARRAY_SHAPE (NWITHOP_SHAPE (
+                                                                 NWITH_WITHOP (
+                                                                   INFO_WLI_WL (
+                                                                     arg_info))),
+                                                               0),
+                                              T_int);
                         ASSIGN_MASK (assignn, 0) = GenMask (INFO_VARNO (arg_info));
                         ASSIGN_MASK (assignn, 1) = GenMask (INFO_VARNO (arg_info));
                     }
                 } else {
-                    if (WO_modarray == NWITH_TYPE (INFO_WLI_WL (arg_info)))
+                    if (WO_modarray == NWITH_TYPE (INFO_WLI_WL (arg_info))) {
                         /* replace WL with the base array (modarray). */
                         tmpn = NWITHOP_ARRAY (NWITH_WITHOP (INFO_WLI_WL (arg_info)));
-                    else
+                    } else {
                         /* replace WL with neutral element (fold). */
                         tmpn = NWITHOP_NEUTRAL (NWITH_WITHOP (INFO_WLI_WL (arg_info)));
+                    }
                     /* the INFO_WLI_REPLACE-mechanism is used to insert the
                        new id or constant. */
                     INFO_WLI_REPLACE (arg_info) = DupTree (tmpn, NULL);
