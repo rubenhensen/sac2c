@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.85  2000/08/24 15:51:18  dkr
+ * macro MUST_REFCOUNT renamed into IS_REFCOUNTED to prevent mix-up with macro
+ * of same name in refcount.[ch]
+ *
  * Revision 2.84  2000/08/24 10:12:38  dkr
  * fixed a bug in COMPAp():
  * icm ND_FREE_... replaced by ND_DEC_RC_FREE...
@@ -295,7 +299,7 @@ int basetype_size[] = {
  * the following macros are used while generation of N_icm-nodes
  */
 
-#define MUST_REFCOUNT(item, arg) (item##_REFCNT (arg) >= 0)
+#define IS_REFCOUNTED(item, arg) (item##_REFCNT (arg) >= 0)
 
 #define TYPE_REFCNT(type) (IsArray (type) + IsNonUniqueHidden (type) - 1)
 
@@ -2385,7 +2389,7 @@ COMPFundef (node *arg_node, node *arg_info)
         /*
          * first ICM arg: tag
          */
-        if ((MUST_REFCOUNT (TYPE, rettypes))
+        if ((IS_REFCOUNTED (TYPE, rettypes))
             && (FUN_DOES_REFCOUNT (arg_node, cnt_param))) {
             icm_args = MakeExprs (MakeId1 ("out_rc"), icm_args);
         } else {
@@ -4295,7 +4299,7 @@ COMPArray (node *arg_node, node *arg_info)
 
         DBUG_ENTER ("COMPId");
 
-        if (MUST_REFCOUNT (ID, arg_node)) {
+        if (IS_REFCOUNTED (ID, arg_node)) {
             res = MakeId3 (INFO_COMP_LASTIDS (arg_info));
 
             if (ID_MAKEUNIQUE (arg_node)) {
@@ -4446,7 +4450,7 @@ COMPArray (node *arg_node, node *arg_info)
                 tmp = EXPRS_NEXT (tmp);
             }
 
-            if (MUST_REFCOUNT (IDS, ids)) {
+            if (IS_REFCOUNTED (IDS, ids)) {
                 if (FUN_DOES_REFCOUNT (AP_FUNDEF (arg_node), cnt_param)) {
                     id_node = MakeId3 (ids);
                     tag_node = MakeId1 ("out_rc");
@@ -4501,7 +4505,7 @@ COMPArray (node *arg_node, node *arg_info)
 
                     tag_node = MakeId1 ("out");
                 } /* FUN_DOES_REFCOUNT */
-            }     /* MUST_REFCOUNT */
+            }     /* IS_REFCOUNTED */
             else {
                 id_node = MakeId3 (ids);
                 tag_node = MakeId1 ("out");
@@ -4562,7 +4566,7 @@ COMPArray (node *arg_node, node *arg_info)
             next = EXPRS_NEXT (exprs);
 
             if ((N_id == NODE_TYPE (EXPRS_EXPR (exprs)))
-                && (MUST_REFCOUNT (ID, EXPRS_EXPR (exprs)))) {
+                && (IS_REFCOUNTED (ID, EXPRS_EXPR (exprs)))) {
                 if (FUN_DOES_REFCOUNT (AP_FUNDEF (arg_node), cnt_param)) {
                     tag
                       = ID_ATTRIB (EXPRS_EXPR (exprs)) == ST_inout ? "inout_rc" : "in_rc";
@@ -4793,7 +4797,7 @@ COMPArray (node *arg_node, node *arg_info)
              * refcounting on their own and those that do not because we are definitely
              * inside a SAC function and these always do their own refcounting.
              */
-            if (MUST_REFCOUNT (ID, EXPRS_EXPR (ret_expr))) {
+            if (IS_REFCOUNTED (ID, EXPRS_EXPR (ret_expr))) {
                 last_icm_arg = EXPRS_NEXT (last_icm_arg)
                   = MakeExprs (MakeId1 ("out_rc"), NULL);
             } else {
@@ -4828,7 +4832,7 @@ COMPArray (node *arg_node, node *arg_info)
             /*
              * Append inout-tag to ICM args.
              */
-            if (MUST_REFCOUNT (ID, EXPRS_EXPR (ret_expr))) {
+            if (IS_REFCOUNTED (ID, EXPRS_EXPR (ret_expr))) {
                 last_icm_arg = EXPRS_NEXT (last_icm_arg)
                   = MakeExprs (MakeId1 ("inout_rc"), NULL);
             } else {
@@ -5043,7 +5047,7 @@ COMPArray (node *arg_node, node *arg_info)
 
         type_id_node = MakeId1 (MakeTypeString (fulltype));
 
-        if ((MUST_REFCOUNT (ARG, arg_node))
+        if ((IS_REFCOUNTED (ARG, arg_node))
             && (FUN_DOES_REFCOUNT (INFO_COMP_FUNDEF (arg_info),
                                    INFO_COMP_CNTPARAM (arg_info)))) {
 
@@ -5173,7 +5177,7 @@ COMPArray (node *arg_node, node *arg_info)
          */
 
         if (ARG_ATTRIB (arg_node) == ST_inout) {
-            if (MUST_REFCOUNT (ARG, arg_node)) {
+            if (IS_REFCOUNTED (ARG, arg_node)) {
                 CREATE_2_ARY_ICM (new_assign, "ND_DECL_INOUT_PARAM_RC", type_id_node,
                                   MakeId1 (id_name));
             } else {
@@ -5876,7 +5880,7 @@ COMPArray (node *arg_node, node *arg_info)
                  */
                 type = IDS_TYPE (with_ids);
                 if (TYPES_DIM (type) > 0) {
-                    if (MUST_REFCOUNT (IDS, with_ids)) {
+                    if (IS_REFCOUNTED (IDS, with_ids)) {
                         fold_type = "array_rc";
                     } else {
                         fold_type = "array";
