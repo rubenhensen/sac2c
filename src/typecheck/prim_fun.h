@@ -1,7 +1,14 @@
 /*
  *  $Log$
- *  Revision 1.7  1995/12/06 17:03:37  hw
- *  added typecheck of primitive function 'genarray'
+ *  Revision 1.8  1996/01/25 16:19:07  hw
+ *  added typechecking of primitive functions in modules
+ *  (in modules the resultung type can be also one with known dimension only
+ *   (without known shape). This feature can be added by compiling this file
+ *   with #define KNOWN_DIM.
+ *   KNOWN_DIM isn't set in this version, but can be added later)
+ *
+ * Revision 1.7  1995/12/06  17:03:37  hw
+ * added typecheck of primitive function 'genarray'
  *
  * Revision 1.6  1995/08/11  17:27:49  hw
  * function Modarray inserted
@@ -48,18 +55,18 @@ typedef struct PRIM_FUN_TAB_ELEM {
 extern prim_fun_tab_elem *prim_fun_tab;
 extern void InitPrimFunTab ();
 extern types *AxA (types *array1, types *array2, simpletype s_type);
-extern types *Reshp (node *vec, types *array);
+extern types *Reshp (node *vec, types *array, types *shp_vec);
 extern types *Shp (types *array);
-extern types *TakeV (node *vec, types *array);
-extern types *DropV (node *vec, types *array);
+extern types *TakeV (node *vec, types *vec_type, types *array);
+extern types *DropV (node *vec, types *vec_type, types *array);
 extern types *Psi (types *vec, types *array);
 extern types *TakeDropS (node *vec, types *array, int tag);
 extern types *Cat (node *s_node, types *array1, types *array2);
 extern types *Rot (node *s_node, types *array);
 extern types *ConvertType (types *array1, simpletype s_type);
 extern types *Modarray (types *array, types *vec, types *value, int line);
-extern types *Genarray_S (node *vec, types *array);
-extern types *Genarray_A (node *vec, types *array);
+extern types *Genarray_S (node *v_node, types *vec, types *array);
+extern types *Genarray_A (node *v_node, types *vec, types *array);
 
 #if 0 
 extern types *Psi(types *array1, types *array2);

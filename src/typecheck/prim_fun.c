@@ -1,6 +1,13 @@
 /*
  * $Log$
- * Revision 1.20  1995/12/06 17:03:37  hw
+ * Revision 1.21  1996/01/25 16:19:07  hw
+ * added typechecking of primitive functions in modules
+ * (in modules the resultung type can be also one with known dimension only
+ *  (without known shape). This feature can be added by compiling this file
+ *  with #define KNOWN_DIM.
+ *  KNOWN_DIM isn't set in this version, but can be added later)
+ *
+ * Revision 1.20  1995/12/06  17:03:37  hw
  * added typecheck of primitive function 'genarray'
  *
  * Revision 1.19  1995/08/15  14:42:25  hw
@@ -88,8 +95,7 @@
 #include "typecheck.h"
 #include "access_macros.h"
 #include "convert.h" /* to use macro MOD_NAME_CON */
-
-extern char filename[]; /* is set in main.c */
+#include "free.h"
 
 enum type_class {
     SxS_S,
@@ -132,6 +138,7 @@ enum type_class {
     AxAxA_A
 };
 
+#if 0
 #define FREE(a)                                                                          \
     DBUG_PRINT ("FREE", ("free" P_FORMAT, a));                                           \
     free (a)
@@ -143,7 +150,9 @@ enum type_class {
     } else {                                                                             \
         FREE (a);                                                                        \
     }
+#endif /* 0 */
 
+#ifdef OLD_GET_TYPE_NODE
 #define GEN_TYPE_NODE(node, type)                                                        \
     if (NULL != (node = GEN_NODE (types))) {                                             \
         node->dim = 0;                                                                   \
@@ -159,6 +168,10 @@ enum type_class {
         DBUG_PRINT ("PRIM_FUN", ("param: %s" P_FORMAT, type_string[type], node));        \
     } else                                                                               \
         Error ("out of memory", 1)
+#else
+#define GEN_TYPE_NODE(types, simpletype)                                                 \
+    types = MakeType (simpletype, SCALAR, NULL, NULL, NULL)
+#endif /* OLD_GET_TYPE_NODE */
 
 #define GEN_PRIM_FUN_TAB_ELEM(p_old, mod, node_p, t_tag, u_tag, p_new)                   \
     tmp = (prim_fun_tab_elem *)Malloc (sizeof (prim_fun_tab_elem));                      \
@@ -246,6 +259,23 @@ enum type_class {
     tmp_node = tmp_node->node[1];
 
 #define FT(pf, tc, new_pf) GenPrimTabEntries (pf, tc, new_pf);
+
+/* follwing macro is used to compare the the dimension of two types
+ * especially for comparison of types with known dimension and unknown shape
+ * like t[.,.] and types with known shape (and dimension) as t[2,3]
+ * d1 and d2 are dimensions of types
+ *
+ */
+#define EQUAL_DIM(d1, d2)                                                                \
+    (((d1 > 0) && (d2 > 0))                                                              \
+       ? (d1 == d2)                                                                      \
+       : (((d1 > 0) && (d2 < KNOWN_DIM_OFFSET))                                          \
+            ? (d1 == (d2 - KNOWN_DIM_OFFSET))                                            \
+            : (((d1 < KNOWN_DIM_OFFSET) && (d2 > 0))                                     \
+                 ? (d2 == (d1 - KNOWN_DIM_OFFSET))                                       \
+                 : (((d1 < KNOWN_DIM_OFFSET) && (d2 < KNOWN_DIM_OFFSET))                 \
+                      ? (d1 == d2)                                                       \
+                      : (d1 == d2)))))
 
 prim_fun_tab_elem *prim_fun_tab, *prim_fun_p;
 node *prim_fun_dec;
@@ -382,8 +412,13 @@ AxA (types *array1, types *array2, simpletype s_type)
 {
     types *ret_type = NULL, *tmp_array1 = NULL, *tmp_array2 = NULL;
     int new_type = 0;
+    int ret = 1;
 
     DBUG_ENTER ("AxA");
+
+    /* First compute basis_types (new types will be generated), if necessary.
+     * new_type will say which types are new
+     */
     if (T_user == array1->simpletype) {
         GET_BASIC_TYPE (tmp_array1, array1, -64);
         new_type = 1;
@@ -396,43 +431,83 @@ AxA (types *array1, types *array2, simpletype s_type)
     } else
         tmp_array2 = array2;
 
-    if (tmp_array1->dim == tmp_array2->dim) {
-        int *shp1, *shp2, i;
+    if (EQUAL_DIM (TYPES_DIM (tmp_array1), TYPES_DIM (tmp_array2))) {
+        /* set 'ret' to indicate which type is the result_type */
+        if ((TYPES_DIM (tmp_array2) < KNOWN_DIM_OFFSET)
+            && (TYPES_DIM (tmp_array1) > UNKNOWN_SHAPE))
+            ret = 1;
+        else if ((TYPES_DIM (tmp_array2) < KNOWN_DIM_OFFSET)
+                 && (TYPES_DIM (tmp_array1) > UNKNOWN_SHAPE))
+            ret = 2;
+        else if ((TYPES_DIM (tmp_array2) < KNOWN_DIM_OFFSET)
+                 && (TYPES_DIM (tmp_array1) < KNOWN_DIM_OFFSET))
+            ret = 2;
+        else if ((TYPES_DIM (tmp_array1) > UNKNOWN_SHAPE)
+                 && (TYPES_DIM (tmp_array2) > UNKNOWN_SHAPE)) {
+            int i;
 
-        shp1 = tmp_array1->shpseg->shp;
-        shp2 = tmp_array2->shpseg->shp;
-
-        for (i = 0; i < array1->dim; i++)
-            if (shp1[i] != shp2[i]) {
-                GEN_TYPE_NODE (ret_type, T_unknown);
-                break;
-            }
-
-        if (NULL == ret_type)
-            switch (new_type) {
-            case 0:
-                ret_type = DuplicateTypes (array1, 0);
-                ret_type->simpletype = s_type;
-                break;
-            case 1:
-                ret_type = tmp_array1;
-                ret_type->simpletype = s_type;
-                break;
-            case 2:
-                ret_type = tmp_array2;
-                ret_type->simpletype = s_type;
-                break;
-            case 3:
-                ret_type = tmp_array1;
-                ret_type->simpletype = s_type;
-                FREE_TYPES (tmp_array2);
-                break;
-            default:
-                DBUG_ASSERT (0, "wrong value of 'new_type'");
-                break;
-            }
+            /* compare shapes */
+            for (i = 0; i < TYPES_DIM (array1); i++)
+                if (TYPES_SHAPE (tmp_array1, i) != TYPES_SHAPE (tmp_array2, i)) {
+                    GEN_TYPE_NODE (ret_type, T_unknown);
+                    break;
+                }
+        } else if ((TYPES_DIM (tmp_array1) == UNKNOWN_SHAPE)
+                   && (TYPES_DIM (tmp_array2) == UNKNOWN_SHAPE))
+            ret = 1;
+        else
+            DBUG_ASSERT (0, "wrong dimensions");
     } else {
-        GEN_TYPE_NODE (ret_type, T_unknown);
+        if (TYPES_DIM (tmp_array1) == UNKNOWN_SHAPE)
+            ret = 2;
+        else if (TYPES_DIM (tmp_array2) == UNKNOWN_SHAPE)
+            ret = 1;
+        else
+            GEN_TYPE_NODE (ret_type, T_unknown);
+    }
+
+    /* now set return_type */
+    if (NULL == ret_type) {
+        switch (new_type) {
+        case 0:
+            if (1 == ret)
+                ret_type = DuplicateTypes (array1, 0);
+            else
+                ret_type = DuplicateTypes (array2, 0);
+            ret_type->simpletype = s_type;
+            break;
+        case 1:
+            if (1 == ret)
+                ret_type = tmp_array1;
+            else {
+                ret_type = DuplicateTypes (array2, 0);
+                FreeOneTypes (tmp_array1);
+            }
+            ret_type->simpletype = s_type;
+            break;
+        case 2:
+            if (2 == ret)
+                ret_type = tmp_array2;
+            else {
+                ret_type = DuplicateTypes (array1, 0);
+                FreeOneTypes (tmp_array2);
+            }
+            ret_type->simpletype = s_type;
+            break;
+        case 3:
+            if (1 == ret) {
+                ret_type = tmp_array1;
+                FreeOneTypes (tmp_array2);
+            } else {
+                ret_type = tmp_array2;
+                FreeOneTypes (tmp_array1);
+            }
+            ret_type->simpletype = s_type;
+            break;
+        default:
+            DBUG_ASSERT (0, "wrong value of 'new_type'");
+            break;
+        }
     }
 
     DBUG_RETURN (ret_type);
@@ -461,17 +536,31 @@ Shp (types *array)
 
     DBUG_ENTER ("Shp");
 
-#if 0   
-   GEN_TYPE_NODE(ret_type, T_int);
-   ret_type->dim=1;
-   ret_type->shpseg=(shpseg *)Malloc(sizeof(shpseg));
-   GET_DIM(dim,array);
-   ret_type->shpseg->shp[0]=dim;
-#endif /* 0 (hw 5.12) */
-
-    ret_type = MakeType (T_int, 1, MakeShpseg (NULL), NULL, NULL);
-    GET_DIM (dim, array);
-    TYPES_SHAPE (ret_type, 0) = dim;
+    if (UNKNOWN_SHAPE == TYPES_DIM (array))
+    /* replace UNKNOWN_SHAPE with KNOWN_DIM_OFFSET-1 if infering of dimension
+     * is integrated
+     */
+#ifndef KNOWN_DIM
+        ret_type = MakeType (T_int, UNKNOWN_SHAPE, NULL, NULL, NULL);
+#else
+        ret_type = MakeType (T_int, KNOWN_DIM_OFFSET - 1, NULL, NULL, NULL);
+#endif /* KNOWN_DIM */
+    else if (KNOWN_DIM_OFFSET > TYPES_DIM (array))
+    /* replace UNKNOWN_SHAPE with KNOWN_DIM_OFFSET-1 if infering of dimension
+     * is integrated
+     */
+#ifndef KNOWN_DIM
+        ret_type = MakeType (T_int, UNKNOWN_SHAPE, NULL, NULL, NULL);
+#else
+        ret_type = MakeType (T_int, KNOWN_DIM_OFFSET - 1, NULL, NULL, NULL);
+#endif /* KNOWN_DIM */
+    else if (SCALAR < TYPES_DIM (array)) {
+        /* it is a array-type */
+        ret_type = MakeType (T_int, 1, MakeShpseg (NULL), NULL, NULL);
+        GET_DIM (dim, array);
+        TYPES_SHAPE (ret_type, 0) = dim;
+    } else
+        DBUG_ASSERT (0, "unknown dimension of type");
 
     DBUG_RETURN (ret_type);
 }
@@ -481,6 +570,7 @@ Shp (types *array)
  *  functionname  : Reshp
  *  arguments     : 1) node of shape-vector
  *                  2) type of an array
+ *                  3) type of shape vector
  *  description   : returns the type of an array with shape 2) if number of
  *                  elements of old and new array are equal
  *                  or returns T_unkown if not
@@ -493,7 +583,7 @@ Shp (types *array)
  *
  */
 types *
-Reshp (node *vec, types *array)
+Reshp (node *vec, types *array, types *shp_vec)
 {
     int count1, count2, i, dim2 = 0;
     node *tmp;
@@ -501,36 +591,70 @@ Reshp (node *vec, types *array)
 
     DBUG_ENTER ("Reshp");
 
-    /* count number of elements of the new array  and store it in count1 */
-    DBUG_ASSERT (N_array == NODE_TYPE (vec), " wrong node != N_array");
-    tmp = ARRAY_AELEMS (vec);
-    count1 = 1;
-    while (NULL != tmp) {
-        dim2++;
-        count1 *= NUM_VAL (EXPRS_EXPR (tmp));
-        tmp = EXPRS_NEXT (tmp);
-    }
-
-    /* count number of elements of old array 1) */
-    count2 = 1;
-    for (i = 0; i < TYPES_DIM (array); i++)
-        count2 *= TYPES_SHAPE (array, i);
-
-    if ((count1 != count2) || (dim2 > SHP_SEG_SIZE))
-        GEN_TYPE_NODE (ret_type, T_unknown);
-    else {
-#if 0
-      GEN_TYPE_NODE(ret_type,array->simpletype);
-      ret_type->dim=dim2;
-      ret_type->shpseg=(shpseg*)Malloc(sizeof(shpseg));
-#endif /* 0 (hw 5.12) */
-
-        ret_type = MakeType (TYPES_BASETYPE (array), dim2, MakeShpseg (NULL), NULL, NULL);
+    if (N_array == NODE_TYPE (vec)) {
+        /* count number of elements of the new array  and store it in count1 */
+        DBUG_ASSERT (N_array == NODE_TYPE (vec), " wrong node != N_array");
         tmp = ARRAY_AELEMS (vec);
-        for (i = 0; i < dim2; i++) {
-            TYPES_SHAPE (ret_type, i) = NUM_VAL (EXPRS_EXPR (tmp));
+        count1 = 1;
+        while (NULL != tmp) {
+            dim2++;
+            count1 *= NUM_VAL (EXPRS_EXPR (tmp));
             tmp = EXPRS_NEXT (tmp);
         }
+
+        /* count number of elements of old array 1) */
+        count2 = 1;
+        for (i = 0; i < TYPES_DIM (array); i++)
+            count2 *= TYPES_SHAPE (array, i);
+
+        if (UNKNOWN_SHAPE == TYPES_DIM (array)) {
+            /* TODO: replace UNKNOWN_SHAPE with KNOWN_DIM_OFFSET-dim2 later on */
+#ifndef KNOWN_DIM
+            ret_type = MakeType (TYPES_BASETYPE (array), UNKNOWN_SHAPE, NULL, NULL, NULL);
+#else
+            ret_type = MakeType (TYPES_BASETYPE (array), KNOWN_DIM_OFFSET - dim2, NULL,
+                                 NULL, NULL);
+#endif /* KNOWN_DIM */
+        } else if ((count1 != count2) || (dim2 > SHP_SEG_SIZE))
+            GEN_TYPE_NODE (ret_type, T_unknown);
+        else {
+            ret_type
+              = MakeType (TYPES_BASETYPE (array), dim2, MakeShpseg (NULL), NULL, NULL);
+            tmp = ARRAY_AELEMS (vec);
+            for (i = 0; i < dim2; i++) {
+                TYPES_SHAPE (ret_type, i) = NUM_VAL (EXPRS_EXPR (tmp));
+                tmp = EXPRS_NEXT (tmp);
+            }
+        }
+    } else if (SAC_MOD == kind_of_file) {
+        /* checking a module, so the first argument of "reshape" has not to be
+         * an constant array
+         */
+        if (1 == TYPES_DIM (shp_vec)) {
+            /* we only know the dimension of the resulting type */
+#ifndef KNOWN_DIM
+            ret_type = MakeType (TYPES_BASETYPE (array), UNKNOWN_SHAPE, NULL, NULL, NULL);
+#else
+            ret_type
+              = MakeType (TYPES_BASETYPE (array),
+                          KNOWN_DIM_OFFSET - TYPES_SHAPE (shp_vec, 0), NULL, NULL, NULL);
+#endif /* KNOWN_DIM */
+        } else if ((UNKNOWN_SHAPE == TYPES_DIM (shp_vec))
+                   || ((KNOWN_DIM_OFFSET - 1) == TYPES_DIM (shp_vec))) {
+            /* we don't know the dimenion and the shape of the resulting type */
+            ret_type = MakeType (TYPES_BASETYPE (array), UNKNOWN_SHAPE, NULL, NULL, NULL);
+        } else {
+            ERROR2 (3, ("%s, %d: 1.argument of function `reshape` "
+                        " has wrong type (%s)",
+                        filename, NODE_LINE (vec), Type2String (shp_vec, 0)));
+        }
+    } else {
+        /* checking a programm, so first argument of "reshape" has to be an
+         * constant array, but it isn't.
+         */
+        ERROR2 (3, ("%s, %d: 1.argument of function `reshape` "
+                    " should be a constant vector",
+                    filename, NODE_LINE (vec)));
     }
 
     DBUG_RETURN (ret_type);
@@ -538,9 +662,167 @@ Reshp (node *vec, types *array)
 
 /*
  *
+ *  functionname  : TakeDropV
+ *  arguments     : 1) type of shape-vector
+ *                  2) type of an array
+ *
+ *  description   : computes the result-type of a 'take' or 'drop' operation,
+ *                  whoes first argument is NOT a constant vector
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        : DBUG...,
+ *
+ *  remarks       :
+ *
+ */
+types *
+TakeDropV (types *vec_type, types *array_btype)
+{
+    types *ret_type;
+
+    DBUG_ENTER ("TakeDropV");
+
+    if (1 == TYPES_DIM (vec_type)) {
+        /* access-vector is not a constant vector, but the shape is known
+         */
+        if (SCALAR < TYPES_DIM (array_btype))
+            /* the shape of the arrray is known
+             */
+            if (TYPES_SHAPE (vec_type, 0) <= TYPES_DIM (array_btype))
+            /* number of elements of acess-vector is equal or less than
+             * dimension of array
+             * (create a type with known dimension)
+             *
+             * replace UNKNOWN_SHAPE with KNOWN_DIM_OFFSET - TYPES_DIM(array_btype)
+             * if infering dimensions
+             *
+             */
+#ifndef KNOWN_DIM
+                ret_type = MakeType (TYPES_BASETYPE (array_btype), UNKNOWN_SHAPE, NULL,
+                                     NULL, NULL);
+#else
+                ret_type = MakeType (TYPES_BASETYPE (array_btype),
+                                     KNOWN_DIM_OFFSET - TYPES_DIM (array_btype), NULL,
+                                     NULL, NULL);
+#endif /* KNOWN_DIM */
+            else
+                /* access-vector as to many elements */
+                ret_type = MakeType (T_unknown, 0, NULL, NULL, NULL);
+        else if (UNKNOWN_SHAPE == TYPES_DIM (array_btype))
+            /* the shape of the array is unknown */
+            ret_type
+              = MakeType (TYPES_BASETYPE (array_btype), UNKNOWN_SHAPE, NULL, NULL, NULL);
+        else if (KNOWN_DIM_OFFSET > TYPES_DIM (array_btype))
+            /* only the dimension of the array is known */
+            if (KNOWN_DIM_OFFSET - TYPES_SHAPE (vec_type, 0) >= TYPES_DIM (array_btype))
+            /* number of elements of acess-vector is equal or less than
+             * dimension of array
+             * (create a type with known dimension)
+             *
+             * replace UNKNOWN_SHAPE with KNOWN_DIM_OFFSET-TYPES_DIM(array_btype)
+             * if infering dimensions
+             */
+#ifndef KNOWN_DIM
+                ret_type = MakeType (TYPES_BASETYPE (array_btype), UNKNOWN_SHAPE, NULL,
+                                     NULL, NULL);
+#else
+                ret_type = MakeType (TYPES_BASETYPE (array_btype),
+                                     KNOWN_DIM_OFFSET - TYPES_DIM (array_btype), NULL,
+                                     NULL, NULL);
+#endif /* KNOWN_DIM */
+            else
+                /* access-vector as to many elements */
+                ret_type = MakeType (T_unknown, 0, NULL, NULL, NULL);
+    } else if (UNKNOWN_SHAPE == TYPES_DIM (vec_type)) {
+        /* access-vector is not an constant vector.
+         * the shape of the vector is unknown
+         */
+        if (SCALAR < TYPES_DIM (array_btype))
+        /* the shape of the array is known, so the dimension of the result-type
+         * and the array are equal
+         *
+         * replace UNKNOWN_SHAPE with KNOWN_DIM_OFFSET-TYPES_DIM(array_btype)
+         * if infering dimensions
+         */
+#ifndef KNOWN_DIM
+            ret_type
+              = MakeType (TYPES_BASETYPE (array_btype), UNKNOWN_SHAPE, NULL, NULL, NULL);
+#else
+            ret_type
+              = MakeType (TYPES_BASETYPE (array_btype),
+                          KNOWN_DIM_OFFSET - TYPES_DIM (array_btype), NULL, NULL, NULL);
+#endif /* KNOWN_DIM */
+        else if (UNKNOWN_SHAPE == TYPES_DIM (array_btype))
+            /* the shape of the array is unknown.
+             * The shape of the resul-type will be unknown too
+             */
+            ret_type
+              = MakeType (TYPES_BASETYPE (array_btype), UNKNOWN_SHAPE, NULL, NULL, NULL);
+
+        else if (KNOWN_DIM_OFFSET > TYPES_DIM (array_btype))
+        /* One only know the dimension of the array, so one can only infer
+         * the dimsion of the reslut-type
+         *
+         * replace UNKNOWN_SHAPE with TYPES_DIM(array_btype)
+         * if infering dimensions
+         */
+#ifndef KNOWN_DIM
+            ret_type
+              = MakeType (TYPES_BASETYPE (array_btype), UNKNOWN_SHAPE, NULL, NULL, NULL);
+#else
+            ret_type = MakeType (TYPES_BASETYPE (array_btype), TYPES_DIM (array_btype),
+                                 NULL, NULL, NULL);
+#endif /* KNOWN_DIM */
+        else
+            DBUG_ASSERT (0, " wrong dimension of array_btype");
+    } else if ((KNOWN_DIM_OFFSET - 1) == TYPES_DIM (vec_type)) {
+        /* access-vector is not a constant vektor and only the dimension
+         * is known (the dimension is 1)
+         */
+        if (SCALAR < TYPES_DIM (array_btype)) {
+            /* the shape of the array is known, so the dimension of the result-type
+             * and the array are equal
+             */
+#ifndef KNOWN_DIM
+            ret_type
+              = MakeType (TYPES_BASETYPE (array_btype), UNKNOWN_SHAPE, NULL, NULL, NULL);
+#else
+            ret_type = MakeType (TYPES_BASETYPE (array_btype), TYPES_DIM (vec_type), NULL,
+                                 NULL, NULL);
+#endif /* KNOWN_DIM */
+        } else if (UNKNOWN_SHAPE == TYPES_DIM (array_btype))
+            /* the shape of the array is unknown.
+             * The shape of the resul-type will be unknown too
+             */
+            ret_type
+              = MakeType (TYPES_BASETYPE (array_btype), UNKNOWN_SHAPE, NULL, NULL, NULL);
+        else if (KNOWN_DIM_OFFSET > TYPES_DIM (array_btype)) {
+            /* One only knows the dimension of the array and the vector
+             */
+#ifndef KNOWN_DIM
+            ret_type
+              = MakeType (TYPES_BASETYPE (array_btype), UNKNOWN_SHAPE, NULL, NULL, NULL);
+#else
+            ret_type = MakeType (TYPES_BASETYPE (array_btype), TYPES_DIM (vec_type), NULL,
+                                 NULL, NULL);
+#endif /* KNOWN_DIM */
+        } else
+            DBUG_ASSERT (0, " wrong dimension of array_btype");
+    } else
+        /* the dimension of vec_type is greater than 1.
+         * This is not correct, so create T_unknown as result-type
+         */
+        ret_type = MakeType (T_unknown, 0, NULL, NULL, NULL);
+    DBUG_RETURN (ret_type);
+}
+
+/*
+ *
  *  functionname  : TakeV
  *  arguments     : 1) node of shape-vector
- *                  2) type of an array
+ *                  2) type of shape-vector
+ *                  3) type of an array
  *
  *  description   : computes the resulttype of a 'take' operation, whoes
  *                  first argument was a constant vector
@@ -553,7 +835,7 @@ Reshp (node *vec, types *array)
  *
  */
 types *
-TakeV (node *vec, types *array)
+TakeV (node *vec, types *vec_type, types *array)
 {
     types *ret_type, *array_btype;
     int ok = 1, i, dim2 = 0;
@@ -561,41 +843,97 @@ TakeV (node *vec, types *array)
 
     DBUG_ENTER ("TakeV");
 
-    if (N_array != vec->nodetype)
-        ERROR2 (3, ("%s, %d: 1.argument of function `take` "
-                    " should be a constant vector",
-                    filename, vec->lineno));
-    DBUG_ASSERT ((N_array == vec->nodetype), "not a N_array node");
-
-    tmp = vec->node[0];
-    GET_BASIC_TYPE (array_btype, array, vec->lineno);
-
-    /* check weather entries in 1) are ok */
-    while ((NULL != tmp) && (1 == ok) && (dim2 < array_btype->dim))
-        if ((tmp->node[0]->info.cint > array_btype->shpseg->shp[dim2])
-            || (0 > tmp->node[0]->info.cint))
-            ok = 0;
-        else {
-            tmp = tmp->node[1];
-            dim2++;
-        }
-
-    if ((0 == ok) || ((NULL != tmp) && (dim2 > array_btype->dim))) {
-        GEN_TYPE_NODE (ret_type, T_unknown);
-        FREE_TYPES (array_btype);
-    } else {
-        ret_type = array_btype;
-        FREE (ret_type->shpseg);
-        ret_type->shpseg = (shpseg *)Malloc (sizeof (shpseg));
-        tmp = vec->node[0];
-        /* compute resulting shape */
-        for (i = 0; i < array_btype->dim; i++)
-            if (i < dim2) {
-                ret_type->shpseg->shp[i] = tmp->node[0]->info.cint;
-                tmp = tmp->node[1];
-            } else
-                ret_type->shpseg->shp[i] = array_btype->shpseg->shp[i];
+    if (SAC_PRG == kind_of_file) {
+        if (N_array != NODE_TYPE (vec))
+            ERROR2 (3, ("%s, %d: 1.argument of function `take` "
+                        " should be a constant vector",
+                        filename, NODE_LINE (vec)));
+        DBUG_ASSERT ((N_array == NODE_TYPE (vec)), "not a N_array node");
     }
+
+    GET_BASIC_TYPE (array_btype, array, NODE_LINE (vec));
+
+    if (N_array == NODE_TYPE (vec)) {
+        tmp = ARRAY_AELEMS (vec);
+
+        if (SCALAR < TYPES_DIM (array_btype)) {
+            /* array has known shape */
+
+            /* check weather entries in 1) are ok */
+            while ((NULL != tmp) && (1 == ok) && (dim2 < TYPES_DIM (array_btype)))
+                if ((NUM_VAL (EXPRS_EXPR (tmp)) > TYPES_SHAPE (array_btype, dim2))
+                    || (0 >= NUM_VAL (EXPRS_EXPR (tmp))))
+                    ok = 0;
+                else {
+                    tmp = EXPRS_NEXT (tmp);
+                    dim2++;
+                }
+
+            if ((0 == ok) || ((NULL != tmp) && (dim2 >= array_btype->dim))) {
+                GEN_TYPE_NODE (ret_type, T_unknown);
+                FreeOneTypes (array_btype);
+            } else {
+                ret_type
+                  = MakeType (TYPES_BASETYPE (array_btype), TYPES_DIM (array_btype),
+                              MakeShpseg (NULL), NULL, NULL);
+                tmp = ARRAY_AELEMS (vec);
+                /* compute resulting shape */
+                for (i = 0; i < TYPES_DIM (array_btype); i++)
+                    if (i < dim2) {
+                        TYPES_SHAPE (ret_type, i) = NUM_VAL (EXPRS_EXPR (tmp));
+                        tmp = EXPRS_NEXT (tmp);
+                    } else
+                        TYPES_SHAPE (ret_type, i) = TYPES_SHAPE (array_btype, i);
+            }
+        } else if (UNKNOWN_SHAPE == TYPES_DIM (array_btype))
+            ret_type
+              = MakeType (TYPES_BASETYPE (array_btype), UNKNOWN_SHAPE, NULL, NULL, NULL);
+        else if (KNOWN_DIM_OFFSET > TYPES_DIM (array_btype)) {
+            /* one knows only the dimension of array_btype, but not the shape
+             */
+            while (NULL != tmp) {
+                dim2 += 1;
+                tmp = EXPRS_EXPR (tmp);
+            }
+            if (KNOWN_DIM_OFFSET - dim2 == TYPES_DIM (array_btype))
+            /* the shape of 'array' is unknown, but the dimension is known and it
+             * is equal the number of elements of the constant vector.
+             * We create a dimension known result-type, because we do not know
+             * if the components of the vector will match with the array's shape
+             *  any time.
+             * (of course one could take the components of the vector as new
+             *  values of the result-type, but one does not know if the
+             *  access will be ok)
+             *
+             *  replace UNKNOWN_SHAPE with TYPES_DIM(array_btype)
+             */
+#ifndef KNOWN_DIM
+                ret_type = MakeType (TYPES_BASETYPE (array_btype), UNKNOWN_SHAPE, NULL,
+                                     NULL, NULL);
+#else
+                ret_type = MakeType (TYPES_BASETYPE (array_btype),
+                                     TYPES_DIM (array_btype), NULL, NULL, NULL);
+#endif /* KNOWN_DIM */
+            else if (KNOWN_DIM_OFFSET - dim2 > TYPES_DIM (array_btype))
+            /* one only can infere the dimension of the result-type
+             *
+             * replace UNKNOWN_SHAPE with TYPES_DIM(array_btype) when infering
+             * dimesnion
+             */
+#ifndef KNOWN_DIM
+                ret_type = MakeType (TYPES_BASETYPE (array_btype), UNKNOWN_SHAPE, NULL,
+                                     NULL, NULL);
+#else
+                ret_type = MakeType (TYPES_BASETYPE (array_btype),
+                                     TYPES_DIM (array_btype), NULL, NULL, NULL);
+#endif /* KNOWN_DIM */
+        } else
+            DBUG_ASSERT (0, " wrong dimension of array_btype");
+    } else
+        ret_type = TakeDropV (vec_type, array_btype);
+
+    /* and now free some memory, because we don't need it anymore */
+    FreeOneTypes (array_btype);
 
     DBUG_RETURN (ret_type);
 }
@@ -611,14 +949,14 @@ TakeV (node *vec, types *array)
  *  global vars   :
  *  internal funs :
  *  external funs :
- *  macros        : DBUG...,  ERROR2, GEN_TYPE_NODE, FREE, FREE_TYPES,
+ *  macros        : DBUG...,  ERROR2, GEN_TYPE_NODE, FREE,
  *                   GET_BASIC_TYPE
  *
  *  remarks       : is part of macro TT2 and is used in typecheck.c
  *
  */
 types *
-DropV (node *vec, types *array)
+DropV (node *vec, types *vec_type, types *array)
 {
     types *ret_type, *array_btype;
     node *tmp;
@@ -626,40 +964,94 @@ DropV (node *vec, types *array)
 
     DBUG_ENTER ("DropV");
 
-    if (N_array != vec->nodetype)
-        ERROR2 (3, ("%s, %d: 1.argument of function `take` "
-                    " should be a constant vector",
-                    filename, vec->lineno));
-    DBUG_ASSERT ((N_array == vec->nodetype), "not a N_array node");
-
-    tmp = vec->node[0];
     GET_BASIC_TYPE (array_btype, array, vec->lineno);
 
-    /* check weather the entries in 1) are ok */
-    while ((NULL != tmp) && (1 == ok) && (dim2 < array_btype->dim))
-        if ((tmp->node[0]->info.cint < array_btype->shpseg->shp[dim2])
-            && (0 <= tmp->node[0]->info.cint)) {
-            dim2++;
-            tmp = tmp->node[1];
-        } else
-            ok = 0;
-
-    if ((0 == ok) || ((NULL != tmp) && (dim2 == array_btype->dim))) {
-        GEN_TYPE_NODE (ret_type, T_unknown);
-        FREE_TYPES (array_btype);
-    } else {
-        ret_type = array_btype;
-        FREE (ret_type->shpseg);
-        ret_type->shpseg = (shpseg *)Malloc (sizeof (shpseg));
-        tmp = vec->node[0];
-        for (i = 0; i < array_btype->dim; i++)
-            if (i < dim2) {
-                ret_type->shpseg->shp[i]
-                  = array_btype->shpseg->shp[i] - tmp->node[0]->info.cint;
-                tmp = tmp->node[1];
-            } else
-                ret_type->shpseg->shp[i] = array_btype->shpseg->shp[i];
+    if (SAC_PRG == kind_of_file) {
+        if (N_array != vec->nodetype)
+            ERROR2 (3, ("%s, %d: 1.argument of function `take` "
+                        " should be a constant vector",
+                        filename, vec->lineno));
+        DBUG_ASSERT ((N_array == vec->nodetype), "not a N_array node");
     }
+
+    if (N_array == NODE_TYPE (vec)) {
+        tmp = ARRAY_AELEMS (vec);
+
+        if (SCALAR < TYPES_DIM (array_btype)) {
+            /* array has known shape */
+
+            /* check weather the entries in 1) are ok */
+            while ((NULL != tmp) && (1 == ok) && (dim2 < TYPES_DIM (array_btype)))
+                if ((NUM_VAL (EXPRS_EXPR (tmp)) < TYPES_SHAPE (array_btype, dim2))
+                    && (0 <= NUM_VAL (EXPRS_EXPR (tmp)))) {
+                    dim2++;
+                    tmp = EXPRS_NEXT (tmp);
+                } else
+                    ok = 0;
+
+            if ((0 == ok) || ((NULL != tmp) && (dim2 == TYPES_DIM (array_btype)))) {
+                GEN_TYPE_NODE (ret_type, T_unknown);
+            } else {
+                ret_type
+                  = MakeType (TYPES_BASETYPE (array_btype), TYPES_DIM (array_btype),
+                              MakeShpseg (NULL), NULL, NULL);
+                tmp = ARRAY_AELEMS (vec);
+                for (i = 0; i < TYPES_DIM (array_btype); i++)
+                    if (i < dim2) {
+                        ret_type->shpseg->shp[i]
+                          = array_btype->shpseg->shp[i] - tmp->node[0]->info.cint;
+                        tmp = tmp->node[1];
+                    } else
+                        ret_type->shpseg->shp[i] = array_btype->shpseg->shp[i];
+            }
+        } else if (UNKNOWN_SHAPE == TYPES_DIM (array_btype))
+            ret_type
+              = MakeType (TYPES_BASETYPE (array_btype), UNKNOWN_SHAPE, NULL, NULL, NULL);
+        else if (KNOWN_DIM_OFFSET > TYPES_DIM (array_btype)) {
+            /* one knows only the dimension of array_btype, but not the shape
+             */
+            while (NULL != tmp) {
+                dim2 += 1;
+                tmp = EXPRS_EXPR (tmp);
+            }
+            if (KNOWN_DIM_OFFSET - dim2 == TYPES_DIM (array_btype))
+            /* the shape of 'array' is unknown, but the dimension is known and it
+             * is equal the number of elements of the constant vector.
+             * We create a dimension known result-type, because we do not know
+             * if the components of the vector will match with the array's shape
+             *  any time.
+             * (of course one could take the components of the vector as new
+             *  values of the result-type, but one does not know if the
+             *  access will be ok)
+             *
+             *  replace UNKNOWN_SHAPE with TYPES_DIM(array_btype)
+             */
+#ifndef KNOWN_DIM
+                ret_type = MakeType (TYPES_BASETYPE (array_btype), UNKNOWN_SHAPE, NULL,
+                                     NULL, NULL);
+#else
+                ret_type = MakeType (TYPES_BASETYPE (array_btype),
+                                     TYPES_DIM (array_btype), NULL, NULL, NULL);
+#endif /* KNOWN_DIM */
+            else if (KNOWN_DIM_OFFSET - dim2 > TYPES_DIM (array_btype))
+            /* one only can infere the dimension of the result-type
+             *
+             * replace UNKNOWN_SHAPE with TYPES_DIM(array_btype) when infering
+             * dimesnion
+             */
+#ifndef KNOWN_DIM
+                ret_type = MakeType (TYPES_BASETYPE (array_btype), UNKNOWN_SHAPE, NULL,
+                                     NULL, NULL);
+#else
+                ret_type = MakeType (TYPES_BASETYPE (array_btype),
+                                     TYPES_DIM (array_btype), NULL, NULL, NULL);
+#endif /* KNOWN_DIM */
+        } else
+            DBUG_ASSERT (0, " wrong dimension of array_btype");
+    } else
+        ret_type = TakeDropV (vec_type, array_btype);
+
+    FreeOneTypes (array_btype);
 
     DBUG_RETURN (ret_type);
 }
@@ -689,30 +1081,71 @@ Psi (types *vec, types *array)
 
     GET_BASIC_TYPE (array_btype, array, -64); /* -64 is a dummy argument */
 
-    if (1 == vec->dim)
-        if (vec->shpseg->shp[0] <= array_btype->dim) {
+    if (1 == TYPES_DIM (vec)) {
+        if (TYPES_SHAPE (vec, 0) <= TYPES_DIM (array_btype)) {
             ret_type = array_btype;
-            to_drop = vec->shpseg->shp[0];
-            dim = array_btype->dim - to_drop;
+            to_drop = TYPES_SHAPE (vec, 0);
+            dim = TYPES_DIM (array_btype) - to_drop;
             ret_type->dim = dim;
             if (dim > 0) {
-                new_shpseg = (shpseg *)Malloc (sizeof (shpseg));
+                new_shpseg = MakeShpseg (NULL);
                 for (i = 0; i < dim; i++)
-                    new_shpseg->shp[i] = array_btype->shpseg->shp[to_drop + i];
+                    SHPSEG_SHAPE (new_shpseg, i) = TYPES_SHAPE (array_btype, to_drop + i);
+                ret_type
+                  = MakeType (TYPES_BASETYPE (array_btype), dim, new_shpseg, NULL, NULL);
             } else
-                new_shpseg = NULL;
-            if (NULL != array_btype->shpseg) {
-                FREE (array_btype->shpseg);
-            }
-            ret_type->shpseg = new_shpseg;
+                ret_type
+                  = MakeType (TYPES_BASETYPE (array_btype), SCALAR, NULL, NULL, NULL);
+        } else if (UNKNOWN_SHAPE == TYPES_DIM (array_btype))
+            /* The result-type is an array or an skalar
+             */
+            ret_type = MakeType (TYPES_BASETYPE (array_btype), ARRAY_OR_SCALAR, NULL,
+                                 NULL, NULL);
+        else if (KNOWN_DIM_OFFSET > TYPES_DIM (array_btype)) {
+            /* only the dimension of array_btype is known
+             */
+            if (TYPES_SHAPE (vec, 0) < -TYPES_DIM (array_btype) - KNOWN_DIM_OFFSET)
+            /* dimension of array_btype is greater than number umber of elements
+             * of the access vector.
+             * The result-type will be an array with known dimension
+             */
+#ifndef KNOWN_DIM
+                ret_type = MakeType (TYPES_BASETYPE (array_btype), UNKNOWN_SHAPE, NULL,
+                                     NULL, NULL);
+#else
+                ret_type = MakeType (TYPES_BASETYPE (array_btype),
+                                     TYPES_DIM (array_btype) + TYPES_SHAPE (vec, 0), NULL,
+                                     NULL, NULL);
+#endif /* KNOWN_DIM */
+            else if (TYPES_SHAPE (vec, 0) == -TYPES_DIM (array_btype) - KNOWN_DIM_OFFSET)
+                /* dimension of array_btype is equal to number umber of elements
+                 * of the access vector.
+                 * The result-type is a scalar
+                 */
+                ret_type
+                  = MakeType (TYPES_BASETYPE (array_btype), SCALAR, NULL, NULL, NULL);
+            else
+                ret_type = MakeType (T_unknown, SCALAR, NULL, NULL, NULL);
         } else {
             GEN_TYPE_NODE (ret_type, T_unknown);
-            FREE_TYPES (array_btype);
         }
-    else {
+    } else if ((KNOWN_DIM_OFFSET - 1) == TYPES_DIM (vec)) {
+        /* the dimension of vec is 1, but the shape is unknown
+         * The result-type is an array or an skalar
+         */
+        ret_type
+          = MakeType (TYPES_BASETYPE (array_btype), ARRAY_OR_SCALAR, NULL, NULL, NULL);
+
+    } else if (UNKNOWN_SHAPE == TYPES_DIM (vec)) {
+        /* The dimension iand the shape of vec are unknown.
+         * The result-type is an array or an skalar.
+         */
+        ret_type
+          = MakeType (TYPES_BASETYPE (array_btype), ARRAY_OR_SCALAR, NULL, NULL, NULL);
+    } else {
         GEN_TYPE_NODE (ret_type, T_unknown);
-        FREE_TYPES (array_btype);
     }
+    FreeOneTypes (array_btype);
     DBUG_RETURN (ret_type);
 }
 
@@ -743,48 +1176,112 @@ TakeDropS (node *s_node, types *array, int tag)
 
     DBUG_ENTER ("TakeDropS");
 
-    if (N_num != s_node->nodetype)
-        ERROR2 (3, ("%s, %d: 1.argument of function 'drop' "
-                    "is not a constant",
-                    filename, s_node->lineno));
+    if (SAC_PRG == kind_of_file) {
+        if (N_num != NODE_TYPE (s_node))
+            ERROR2 (3, ("%s, %d: 1.argument of function 'drop' "
+                        "is not a constant",
+                        filename, NODE_LINE (s_node)));
 
-    DBUG_ASSERT ((N_num == s_node->nodetype), "not N_num");
+        DBUG_ASSERT (N_num == NODE_TYPE (s_node), "not N_num");
+        if (1 <= TYPES_DIM (array)) {
+            if (((1 == tag) ? (s_node->info.cint < array->shpseg->shp[0])
+                            : (s_node->info.cint <= array->shpseg->shp[0]))
+                && (0 <= s_node->info.cint)) {
+                GEN_TYPE_NODE (ret_type, array->simpletype);
+                ret_type->dim = 1;
+                ret_type->shpseg = (shpseg *)Malloc (sizeof (shpseg));
+                if (1 == tag)
+                    /* drop */
+                    ret_type->shpseg->shp[0] = array->shpseg->shp[0] - s_node->info.cint;
+                else
+                    /* take */
+                    ret_type->shpseg->shp[0] = s_node->info.cint;
 
-    if (1 == array->dim) {
-        if (((1 == tag) ? (s_node->info.cint < array->shpseg->shp[0])
-                        : (s_node->info.cint <= array->shpseg->shp[0]))
-            && (0 <= s_node->info.cint)) {
-            GEN_TYPE_NODE (ret_type, array->simpletype);
-            ret_type->dim = 1;
-            ret_type->shpseg = (shpseg *)Malloc (sizeof (shpseg));
-            if (1 == tag)
-                /* drop */
-                ret_type->shpseg->shp[0] = array->shpseg->shp[0] - s_node->info.cint;
+                for (i = 1; i < array->dim; i++)
+                    ret_type->shpseg->shp[i] = array->shpseg->shp[i];
+            } else
+                GEN_TYPE_NODE (ret_type, T_unknown);
+        }
+    } else {
+        /* for modules only */
+        if (N_num == NODE_TYPE (s_node)) {
+            if (SCALAR < TYPES_DIM (array)) {
+                if (((1 == tag) ? (s_node->info.cint < array->shpseg->shp[0])
+                                : (s_node->info.cint <= array->shpseg->shp[0]))
+                    && (0 <= s_node->info.cint)) {
+                    GEN_TYPE_NODE (ret_type, array->simpletype);
+                    ret_type->dim = 1;
+                    ret_type->shpseg = (shpseg *)Malloc (sizeof (shpseg));
+                    if (1 == tag)
+                        /* drop */
+                        ret_type->shpseg->shp[0]
+                          = array->shpseg->shp[0] - s_node->info.cint;
+                    else
+                        /* take */
+                        ret_type->shpseg->shp[0] = s_node->info.cint;
+
+                    for (i = 1; i < array->dim; i++)
+                        ret_type->shpseg->shp[i] = array->shpseg->shp[i];
+                } else
+                    GEN_TYPE_NODE (ret_type, T_unknown);
+            } else if (KNOWN_DIM_OFFSET > TYPES_DIM (array))
+                ret_type = MakeType (TYPES_BASETYPE (array), TYPES_DIM (array), NULL,
+                                     NULL, NULL);
+            else if (UNKNOWN_SHAPE == TYPES_DIM (array))
+                ret_type = MakeType (TYPES_BASETYPE (array), TYPES_DIM (array), NULL,
+                                     NULL, NULL);
             else
-                /* take */
-                ret_type->shpseg->shp[0] = s_node->info.cint;
-        } else
-            GEN_TYPE_NODE (ret_type, T_unknown);
-    } else if (1 < array->dim) {
-        if (((1 == tag) ? (s_node->info.cint < array->shpseg->shp[0])
-                        : (s_node->info.cint <= array->shpseg->shp[0]))
-            && (0 <= s_node->info.cint)) {
-            GEN_TYPE_NODE (ret_type, array->simpletype);
-            ret_type->dim = array->dim;
-            ret_type->shpseg = (shpseg *)Malloc (sizeof (shpseg));
-            if (1 == tag)
-                /* drop */
-                ret_type->shpseg->shp[0] = array->shpseg->shp[0] - s_node->info.cint;
+                DBUG_ASSERT (0, "wrong dimension of second argument (array)");
+        } else {
+            /* We don`t know the value of the first argument of 'take' or 'drop'.
+             * We can only infer the dimension, but no shape.
+             */
+            if (SCALAR < TYPES_DIM (array))
+#ifndef KNOWN_DIM
+                ret_type
+                  = MakeType (TYPES_BASETYPE (array), UNKNOWN_SHAPE, NULL, NULL, NULL);
+#else
+                ret_type
+                  = MakeType (TYPES_BASETYPE (array),
+                              KNOWN_DIM_OFFSET - TYPES_DIM (array), NULL, NULL, NULL);
+#endif /* KNOWN_DIM */
+            else if (KNOWN_DIM_OFFSET > TYPES_DIM (array))
+                ret_type = MakeType (TYPES_BASETYPE (array), TYPES_DIM (array), NULL,
+                                     NULL, NULL);
+            else if (UNKNOWN_SHAPE == TYPES_DIM (array))
+                ret_type = MakeType (TYPES_BASETYPE (array), TYPES_DIM (array), NULL,
+                                     NULL, NULL);
             else
-                /* take */
-                ret_type->shpseg->shp[0] = s_node->info.cint;
-
-            for (i = 1; i < array->dim; i++)
-                ret_type->shpseg->shp[i] = array->shpseg->shp[i];
-        } else
-            GEN_TYPE_NODE (ret_type, T_unknown);
-    } else
-        GEN_TYPE_NODE (ret_type, T_unknown);
+                DBUG_ASSERT (0, "wrong dimension of second argument (array)");
+        }
+    }
+#if 0
+   else
+      if(1<array->dim)
+      {
+         if(((1==tag)?(s_node->info.cint < array->shpseg->shp[0])
+             :(s_node->info.cint <= array->shpseg->shp[0]) ) &&
+            (0 <=s_node->info.cint))
+         {
+            GEN_TYPE_NODE(ret_type, array->simpletype);
+            ret_type->dim=array->dim;
+            ret_type->shpseg=(shpseg*)Malloc(sizeof(shpseg));
+            if(1==tag)
+               /* drop */
+               ret_type->shpseg->shp[0]=array->shpseg->shp[0]-s_node->info.cint;
+            else
+               /* take */
+               ret_type->shpseg->shp[0]=s_node->info.cint;
+            
+            for(i=1;i<array->dim;i++)
+               ret_type->shpseg->shp[i]=array->shpseg->shp[i];
+         }
+         else
+            GEN_TYPE_NODE(ret_type,T_unknown);
+      }
+      else
+         GEN_TYPE_NODE(ret_type,T_unknown);
+#endif /* if 0 , kann geloescht werden */
 
     DBUG_RETURN (ret_type);
 }
@@ -813,15 +1310,30 @@ Rot (node *s_node, types *array)
 
     DBUG_ENTER ("Rot");
 
-    if (N_num == s_node->nodetype)
-        if ((0 <= s_node->info.cint) && (s_node->info.cint < array->dim))
-            ret_type = DuplicateTypes (array, 0);
+    if (SAC_PRG == kind_of_file) {
+        if (N_num == s_node->nodetype)
+            if ((0 <= s_node->info.cint) && (s_node->info.cint < array->dim))
+                ret_type = DuplicateTypes (array, 0);
+            else
+                GEN_TYPE_NODE (ret_type, T_unknown);
         else
-            GEN_TYPE_NODE (ret_type, T_unknown);
-    else
-        ERROR2 (3, ("%s, %d: 1.argument of function `rotate` "
-                    " should be a constant",
-                    filename, s_node->lineno));
+            ERROR2 (3, ("%s, %d: 1.argument of function `rotate` "
+                        " should be a constant",
+                        filename, s_node->lineno));
+    } else {
+        /* for modules only */
+        if (N_num == NODE_TYPE (s_node)) {
+            if (SCALAR < TYPES_DIM (array)) {
+                if ((0 <= s_node->info.cint) && (s_node->info.cint < array->dim))
+                    ret_type = DuplicateTypes (array, 0);
+                else
+                    GEN_TYPE_NODE (ret_type, T_unknown);
+            } else
+                ret_type = DuplicateTypes (array, 0);
+        } else
+            /* the type of 'array' remains as it is */
+            ret_type = DuplicateTypes (array, 0);
+    }
 
     DBUG_RETURN (ret_type);
 }
@@ -853,33 +1365,94 @@ Cat (node *s_node, types *array1, types *array2)
 
     DBUG_ENTER ("Cat");
 
-    if (N_num == s_node->nodetype) {
-        dim1 = array1->dim;
-        dim2 = array2->dim;
-        axis = s_node->info.cint;
+    dim1 = TYPES_DIM (array1);
+    dim2 = TYPES_DIM (array2);
 
-        if ((0 <= axis) && (axis < dim1) && (dim1 == dim2)) {
-            for (i = 0; i < dim1; i++)
-                if (i != axis)
-                    if (array1->shpseg->shp[i] != array2->shpseg->shp[i]) {
-                        ok = 0;
-                        break;
-                    }
-            if (1 == ok) {
-                GEN_TYPE_NODE (ret_type, array1->simpletype);
-                ret_type->shpseg = (shpseg *)Malloc (sizeof (shpseg));
-                ret_type->dim = dim1;
+    if (SAC_PRG == kind_of_file) {
+        if (N_num == s_node->nodetype) {
+            axis = NUM_VAL (s_node);
+
+            if ((0 <= axis) && (axis < dim1) && (dim1 == dim2)) {
                 for (i = 0; i < dim1; i++)
-                    ret_type->shpseg->shp[i] = array1->shpseg->shp[i];
-                ret_type->shpseg->shp[axis] += array2->shpseg->shp[axis];
+                    if (i != axis)
+                        if (TYPES_SHAPE (array1, i) != TYPES_SHAPE (array2, i)) {
+                            ok = 0;
+                            break;
+                        }
+                if (1 == ok) {
+                    ret_type = MakeType (TYPES_BASETYPE (array1), dim1, MakeShpseg (NULL),
+                                         NULL, NULL);
+                    for (i = 0; i < dim1; i++)
+                        TYPES_SHAPE (ret_type, i) = TYPES_SHAPE (array1, i);
+                    TYPES_SHAPE (ret_type, axis) += TYPES_SHAPE (array2, axis);
+                } else
+                    GEN_TYPE_NODE (ret_type, T_unknown);
             } else
                 GEN_TYPE_NODE (ret_type, T_unknown);
         } else
-            GEN_TYPE_NODE (ret_type, T_unknown);
+            ERROR2 (3, ("%s, %d: 1.argument of function `cat` "
+                        " should be a constant",
+                        filename, s_node->lineno));
     } else
-        ERROR2 (3, ("%s, %d: 1.argument of function `cat` "
-                    " should be a constant",
-                    filename, s_node->lineno));
+      /* for modules only */
+      if ((SCALAR < dim1) && (SCALAR < dim2)) {
+        /* both arrays have known shape */
+        if (dim1 == dim2) {
+            if (N_num == NODE_TYPE (s_node)) {
+                axis = NUM_VAL (s_node);
+
+                if ((0 <= axis) && (axis < dim1)) {
+                    for (i = 0; i < dim1; i++)
+                        if (i != axis)
+                            if (TYPES_SHAPE (array1, i) != TYPES_SHAPE (array2, i)) {
+                                ok = 0;
+                                break;
+                            }
+                    if (1 == ok) {
+                        ret_type = MakeType (TYPES_BASETYPE (array1), dim1,
+                                             MakeShpseg (NULL), NULL, NULL);
+                        for (i = 0; i < dim1; i++)
+                            TYPES_SHAPE (ret_type, i) = TYPES_SHAPE (array1, i);
+                        TYPES_SHAPE (ret_type, axis) += TYPES_SHAPE (array2, axis);
+                    } else
+                        GEN_TYPE_NODE (ret_type, T_unknown);
+                } else
+                    ret_type = MakeType (T_unknown, 0, NULL, NULL, NULL);
+            } else
+#ifndef KNOWN_DIM
+                ret_type
+                  = MakeType (TYPES_BASETYPE (array1), UNKNOWN_SHAPE, NULL, NULL, NULL);
+#else
+                ret_type = MakeType (TYPES_BASETYPE (array1), KNOWN_DIM_OFFSET - dim1,
+                                     NULL, NULL, NULL);
+#endif /* KNOWN_DIM */
+        } else
+            ret_type = MakeType (T_unknown, 0, NULL, NULL, NULL);
+
+    } else if ((SCALAR < dim1) && (KNOWN_DIM_OFFSET > dim2)) {
+        if (dim2 == (KNOWN_DIM_OFFSET - dim1))
+            ret_type = MakeType (TYPES_BASETYPE (array1), dim2, NULL, NULL, NULL);
+        else
+            ret_type = MakeType (T_unknown, 0, NULL, NULL, NULL);
+    } else if ((SCALAR < dim2) && (UNKNOWN_SHAPE == dim1))
+        ret_type = MakeType (TYPES_BASETYPE (array1), dim1, NULL, NULL, NULL);
+    else if ((SCALAR < dim2) && (KNOWN_DIM_OFFSET > dim1)) {
+        if (dim1 == (KNOWN_DIM_OFFSET - dim2))
+            ret_type = MakeType (TYPES_BASETYPE (array1), dim1, NULL, NULL, NULL);
+        else
+            ret_type = MakeType (T_unknown, 0, NULL, NULL, NULL);
+    } else if ((SCALAR < dim2) && (UNKNOWN_SHAPE == dim1))
+        ret_type = MakeType (TYPES_BASETYPE (array1), dim1, NULL, NULL, NULL);
+    else if ((UNKNOWN_SHAPE == dim1) && (UNKNOWN_SHAPE == dim2))
+        ret_type = MakeType (TYPES_BASETYPE (array1), dim1, NULL, NULL, NULL);
+    else if ((UNKNOWN_SHAPE == dim1) && (KNOWN_DIM_OFFSET > dim2))
+        ret_type = MakeType (TYPES_BASETYPE (array1), dim2, NULL, NULL, NULL);
+    else if ((UNKNOWN_SHAPE == dim2) && (KNOWN_DIM_OFFSET > dim1))
+        ret_type = MakeType (TYPES_BASETYPE (array1), dim1, NULL, NULL, NULL);
+    else
+        DBUG_ASSERT (0, "wrong dimensions");
+
+    DBUG_ASSERT (NULL != ret_type, "no ret_type");
 
     DBUG_RETURN (ret_type);
 }
@@ -945,11 +1518,13 @@ Modarray (types *array, types *vec, types *value, int line)
     DBUG_PRINT ("PRF_TYPE", ("b_vec: %s", Type2String (b_vec, 0)));
     DBUG_PRINT ("PRF_TYPE", ("b_value: %s", Type2String (b_value, 0)));
 
-    if (b_vec->dim != 1) {
-        ERROR2 (3, ("%s, %d: 2.argument of function 'modarray' has incompatible "
-                    "type ( int[x] != %s)",
-                    filename, line, Type2String (vec, 0)));
-    } else {
+    if (SAC_PRG == kind_of_file) {
+        if (b_vec->dim != 1) {
+            ERROR2 (3, ("%s, %d: 2.argument of function 'modarray' has incompatible "
+                        "type ( int[x] != %s)",
+                        filename, line, Type2String (vec, 0)));
+        }
+        DBUG_ASSERT (1 == TYPES_DIM (b_vec), " wrong access vector");
 
         if (b_array->dim == b_vec->shpseg->shp[0] + b_value->dim) {
             int i, j;
@@ -966,16 +1541,106 @@ Modarray (types *array, types *vec, types *value, int line)
         } else
             types_ok = 0;
 
-        if (0 == types_ok) {
-            ERROR2 (3, ("%s, %d: arguments of function 'modarray' have wrong "
-                        "types ( %s, %s, %s)",
-                        filename, line, Type2String (array, 0), Type2String (vec, 0),
-                        Type2String (value, 0)));
-        } else {
-            FREE (b_vec);
-            FREE (b_value);
-            ret_type = b_array;
-        }
+    } else {
+        /* for modules only */
+
+        if (1 == TYPES_DIM (b_vec)) {
+            if (SCALAR < TYPES_DIM (b_array)) {
+                if (SCALAR < TYPES_DIM (b_value)) {
+                    /* now check whether the informations fit */
+                    if (b_array->dim == b_vec->shpseg->shp[0] + b_value->dim) {
+                        int i, j;
+
+                        for (i = b_vec->shpseg->shp[0], j = 0; i < b_array->dim;
+                             i++, j++) {
+                            DBUG_ASSERT (j < b_value->dim, " out of shape range");
+
+                            if (b_array->shpseg->shp[i] != b_value->shpseg->shp[j]) {
+                                types_ok = 0;
+                                break;
+                            }
+                        }
+                    }
+                } else if (SCALAR == TYPES_DIM (b_value)) {
+                    if (TYPES_SHAPE (b_vec, 0) != TYPES_DIM (b_array))
+                        types_ok = 0;
+                } else if (UNKNOWN_SHAPE == TYPES_DIM (b_value)) {
+                    if (TYPES_SHAPE (b_vec, 0) >= TYPES_DIM (b_array))
+                        types_ok = 0;
+                } else if (KNOWN_DIM_OFFSET > TYPES_DIM (b_value)) {
+                    if ((KNOWN_DIM_OFFSET - TYPES_DIM (b_array))
+                        != (TYPES_DIM (b_value) - TYPES_SHAPE (b_vec, 0)))
+                        types_ok = 0;
+                }
+            } else if (KNOWN_DIM_OFFSET > TYPES_DIM (b_array)) {
+                if (SCALAR < TYPES_DIM (b_value)) {
+                    if (TYPES_DIM (b_array)
+                        != (KNOWN_DIM_OFFSET
+                            - (TYPES_DIM (b_value) + TYPES_SHAPE (b_vec, 1))))
+                        types_ok = 0;
+                } else if (UNKNOWN_SHAPE == TYPES_DIM (b_value)) {
+                    if (TYPES_DIM (b_array) > (KNOWN_DIM_OFFSET - TYPES_SHAPE (b_vec, 1)))
+                        types_ok = 0;
+                } else if (KNOWN_DIM_OFFSET > TYPES_DIM (b_value)) {
+                    if (TYPES_DIM (b_array)
+                        != (TYPES_DIM (b_value) - TYPES_SHAPE (b_vec, 1)))
+                        types_ok = 0;
+                }
+            } else if (UNKNOWN_SHAPE == TYPES_DIM (b_array)) {
+                /* nothing to  check  */
+            }
+        } else if ((UNKNOWN_SHAPE == TYPES_DIM (b_vec))
+                   || (KNOWN_DIM_OFFSET - 1 == TYPES_DIM (b_vec))) {
+            /* access vector has unknown shape or its dimension 1, but shape
+             * isn't known
+             */
+            if (SCALAR < TYPES_DIM (b_array)) {
+                /* known shape of b_array */
+                if (SCALAR < TYPES_DIM (b_value)) {
+                    if (TYPES_DIM (b_array) > TYPES_DIM (b_value)) {
+                        int i, j;
+
+                        for (i = TYPES_DIM (b_array) - TYPES_DIM (b_value), j = 0;
+                             j < TYPES_DIM (b_value); i++, j++) {
+                            DBUG_ASSERT (i < TYPES_DIM (b_array), " out of shape range");
+
+                            if (TYPES_SHAPE (b_array, i) != TYPES_SHAPE (b_value, j)) {
+                                types_ok = 0;
+                                break;
+                            }
+                        }
+                    }
+                } else if (KNOWN_DIM_OFFSET > TYPES_DIM (b_value)) {
+                    if ((KNOWN_DIM_OFFSET - TYPES_DIM (b_array)) > TYPES_DIM (b_value))
+                        types_ok = 0;
+                }
+            } else if (KNOWN_DIM_OFFSET > TYPES_DIM (b_array)) {
+                /* known dimension only */
+                if (SCALAR < TYPES_DIM (b_value)) {
+                    if (TYPES_DIM (b_array) > (KNOWN_DIM_OFFSET - TYPES_DIM (b_value)))
+                        types_ok = 0;
+                } else if (KNOWN_DIM_OFFSET > TYPES_DIM (b_value)) {
+                    if (TYPES_DIM (b_array) > TYPES_DIM (b_value))
+                        types_ok = 0;
+                }
+                /* nothing to check for: UNKNOWN_SHAPE== TYPES_DIM(b_value)
+                 *  or SCALAR == TYPES_DIM(b_value)
+                 */
+            }
+        } else
+            /* wrong dimesnison of access vector */
+            types_ok = 0;
+    }
+
+    if (0 == types_ok) {
+        ERROR2 (3, ("%s, %d: arguments of function 'modarray' have wrong "
+                    "types ( %s, %s, %s)",
+                    filename, line, Type2String (array, 0), Type2String (vec, 0),
+                    Type2String (value, 0)));
+    } else {
+        FREE (b_vec);
+        FREE (b_value);
+        ret_type = b_array;
     }
 
     DBUG_ASSERT (ret_type != NULL, " wrong return value");
@@ -987,9 +1652,11 @@ Modarray (types *array, types *vec, types *value, int line)
  *
  *  functionname  : Genarray_S
  *  arguments     : 1) node to constant array (vector)
- *                  2) type of an array
+ *                  2) type of vector 1)
+ *                  3) type of an array
  *  description   : computes the resulttype of a 'genarray' operation
- *                  whoes first argument is a constant vector.
+ *                  whoes first argument is a constant vector (only if checking
+ *                  SAC_PRGs).
  *  global vars   :
  *  internal funs :
  *  external funs : Malloc
@@ -999,7 +1666,7 @@ Modarray (types *array, types *vec, types *value, int line)
  *
  */
 types *
-Genarray_S (node *v_node, types *array)
+Genarray_S (node *v_node, types *vec, types *scalar)
 {
     types *ret_type;
     int dim = 0;
@@ -1008,30 +1675,63 @@ Genarray_S (node *v_node, types *array)
 
     DBUG_ENTER ("Genarray_S");
 
-    if (N_array == NODE_TYPE (v_node)) {
+    if (SAC_PRG == kind_of_file) {
+        if (N_array == NODE_TYPE (v_node)) {
 
-        /* create shpseg of resulting type */
-        shpseg_p = MakeShpseg (NULL);
-        tmp = ARRAY_AELEMS (v_node);
-        do {
-            SHPSEG_SHAPE (shpseg_p, dim) = NUM_VAL (EXPRS_EXPR (tmp));
-            tmp = EXPRS_NEXT (tmp);
-            dim++;
-        } while (NULL != tmp);
+            /* create shpseg of resulting type */
+            shpseg_p = MakeShpseg (NULL);
+            tmp = ARRAY_AELEMS (v_node);
+            do {
+                SHPSEG_SHAPE (shpseg_p, dim) = NUM_VAL (EXPRS_EXPR (tmp));
+                tmp = EXPRS_NEXT (tmp);
+                dim++;
+            } while (NULL != tmp);
 
-        /* create resulting types */
-        ret_type = MakeType (TYPES_BASETYPE (array), dim, shpseg_p,
-                             StringCopy (TYPES_NAME (array)), TYPES_MOD (array));
-    } else
-        DBUG_ASSERT (0, " wrong first argument of primitive function genarray");
+            /* create resulting types */
+            ret_type = MakeType (TYPES_BASETYPE (scalar), dim, shpseg_p,
+                                 StringCopy (TYPES_NAME (scalar)), TYPES_MOD (scalar));
+        } else
+            ret_type = MakeType (T_unknown, NULL, NULL, NULL, NULL);
+        /*
+         * DBUG_ASSERT(0," wrong first argument of primitive function genarray");
+         */
+    } else {
+        /* checking in a module */
+        if (N_array == NODE_TYPE (v_node)) {
+
+            /* create shpseg of resulting type */
+            shpseg_p = MakeShpseg (NULL);
+            tmp = ARRAY_AELEMS (v_node);
+            do {
+                SHPSEG_SHAPE (shpseg_p, dim) = NUM_VAL (EXPRS_EXPR (tmp));
+                tmp = EXPRS_NEXT (tmp);
+                dim++;
+            } while (NULL != tmp);
+
+            /* create resulting types */
+            ret_type = MakeType (TYPES_BASETYPE (scalar), dim, shpseg_p,
+                                 StringCopy (TYPES_NAME (scalar)), TYPES_MOD (scalar));
+        } else {
+            /* there isn't a constant vector */
+            if ((1 == TYPES_DIM (vec)) || ((KNOWN_DIM_OFFSET - 1) == TYPES_DIM (vec))
+                || (UNKNOWN_SHAPE == TYPES_DIM (vec)))
+                ret_type
+                  = MakeType (TYPES_BASETYPE (scalar), UNKNOWN_SHAPE, NULL,
+                              StringCopy (TYPES_NAME (scalar)), TYPES_MOD (scalar));
+            else
+                ret_type = MakeType (T_unknown, NULL, NULL, NULL, NULL);
+        }
+    }
 
     DBUG_RETURN (ret_type);
 }
+
 /*
  *
  *  functionname  : Genarray_A
  *  arguments     : 1) node to constant array (vector)
- *                  2) type of an array
+ *                  2) type of access vector (1)
+ *                  3) type of an array
  *  description   : computes the resulttype of a 'genarray' operation
  *                  whoes first argument is a constant vector.
  *  global vars   :
@@ -1043,21 +1743,80 @@ Genarray_S (node *v_node, types *array)
  *
  */
 types *
-Genarray_A (node *v_node, types *array)
+Genarray_A (node *v_node, types *vec, types *array)
 {
     types *ret_type;
     int i, dim = 0;
 
     DBUG_ENTER ("Genarray_A");
-
-    ret_type = Genarray_S (v_node, array);
-    dim = TYPES_DIM (ret_type);
-    for (i = 0; i < TYPES_DIM (array); i++) {
-        DBUG_ASSERT (dim < SHP_SEG_SIZE, " shape is out of range");
-        TYPES_SHAPE (ret_type, dim) = TYPES_SHAPE (array, i);
-        dim++;
+    if (SAC_PRG == kind_of_file) {
+        if (N_array == NODE_TYPE (v_node)) {
+            ret_type = Genarray_S (v_node, vec, array);
+            dim = TYPES_DIM (ret_type);
+            for (i = 0; i < TYPES_DIM (array); i++) {
+                DBUG_ASSERT (dim < SHP_SEG_SIZE, " shape is out of range");
+                TYPES_SHAPE (ret_type, dim) = TYPES_SHAPE (array, i);
+                dim++;
+            }
+            TYPES_DIM (ret_type) = dim;
+        } else
+            ret_type = MakeType (T_unknown, NULL, NULL, NULL, NULL);
+    } else if (SAC_MOD == kind_of_file) {
+        /* we are checking a funktion in a module */
+        if (N_array == NODE_TYPE (v_node)) {
+            if (UNKNOWN_SHAPE == TYPES_DIM (array)) {
+                ret_type
+                  = MakeType (TYPES_BASETYPE (array), UNKNOWN_SHAPE, NULL, NULL, NULL);
+            } else if (KNOWN_DIM_OFFSET > TYPES_DIM (array)) {
+#ifdef KNOWN_DIM
+                ret_type = MakeType (TYPES_BASETYPE (array),
+                                     (TYPES_DIM (array) - TYPES_SHAPE (vec, 0)), NULL,
+                                     NULL, NULL);
+#else
+                ret_type
+                  = MakeType (TYPES_BASETYPE (array), UNKNOWN_SHAPE, NULL, NULL, NULL);
+#endif /* KNOWN_DIM */
+            } else if (SCALAR < TYPES_DIM (array)) {
+                ret_type = Genarray_S (v_node, vec, array);
+                dim = TYPES_DIM (ret_type);
+                for (i = 0; i < TYPES_DIM (array); i++) {
+                    DBUG_ASSERT (dim < SHP_SEG_SIZE, " shape is out of range");
+                    TYPES_SHAPE (ret_type, dim) = TYPES_SHAPE (array, i);
+                    dim++;
+                }
+                TYPES_DIM (ret_type) = dim;
+            }
+        } else if (1 == TYPES_DIM (vec)) {
+            if (SCALAR < TYPES_DIM (array))
+#ifdef KNOWN_DIM
+                ret_type = MakeType (TYPES_BASETYPE (array),
+                                     (KNOWN_DIM_OFFSET
+                                      - (TYPES_SHAPE (vec, 0) + TYPES_DIM (array))),
+                                     NULL, NULL, NULL);
+#else
+                ret_type
+                  = MakeType (TYPES_BASETYPE (array), UNKNOWN_SHAPE, NULL, NULL, NULL);
+#endif /* KNOWN_DIM */
+            else if (KNOWN_DIM_OFFSET < TYPES_DIM (array))
+#ifdef KNOWN_DIM
+                ret_type = MakeType (TYPES_BASETYPE (array),
+                                     (TYPES_DIM (array) - TYPES_SHAPE (vec, 0)), NULL,
+                                     NULL, NULL);
+#else
+                ret_type
+                  = MakeType (TYPES_BASETYPE (array), UNKNOWN_SHAPE, NULL, NULL, NULL);
+#endif /* KNOWN_DIM */
+            else if (UNKNOWN_SHAPE == TYPES_DIM (array))
+                ret_type
+                  = MakeType (TYPES_BASETYPE (array), UNKNOWN_SHAPE, NULL, NULL, NULL);
+            else
+                ret_type = MakeType (T_unknown, NULL, NULL, NULL, NULL);
+        } else if ((UNKNOWN_SHAPE == TYPES_DIM (vec))
+                   || ((KNOWN_DIM_OFFSET - 1) == TYPES_DIM (vec)))
+            ret_type = MakeType (TYPES_BASETYPE (array), UNKNOWN_SHAPE, NULL, NULL, NULL);
+        else
+            ret_type = MakeType (T_unknown, NULL, NULL, NULL, NULL);
     }
-    TYPES_DIM (ret_type) = dim;
 
     DBUG_RETURN (ret_type);
 }
