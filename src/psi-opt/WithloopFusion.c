@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.19  2004/11/24 19:08:51  khf
+ * SacDevCamp04: Compiles!
+ *
  * Revision 1.18  2004/11/07 19:26:35  khf
  * now consider every N_block disjoined
  *
@@ -65,18 +68,18 @@
  *
  */
 
-#define NEW_INFO
-
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "types.h"
 #include "new_types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
+#include "node_basic.h"
 #include "internal_lib.h"
 #include "free.h"
+#include "shape.h"
 #include "DupTree.h"
+#include "LookUpTable.h"
 #include "Error.h"
 #include "globals.h"
 #include "dbug.h"
@@ -97,7 +100,7 @@ struct INFO {
     node *wl;
     node *fundef;
     node *assign;
-    ids *lhs_wl;
+    node *lhs_wl;
     int wlaction;
     int genproperty;
     int wl_wotype;
@@ -242,7 +245,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = Malloc (sizeof (info));
+    result = ILIBmalloc (sizeof (info));
 
     INFO_WLFS_WL (result) = NULL;
     INFO_WLFS_FUNDEF (result) = NULL;
@@ -274,7 +277,7 @@ InitInfo (info *arg_info)
     INFO_WLFS_WL_LB_IS_ZERO (arg_info) = FALSE;
     INFO_WLFS_WL_ARRAY_TYPE (arg_info) = ARRAY_unknown;
     if (INFO_WLFS_WL_SHAPE (arg_info) != NULL) {
-        INFO_WLFS_WL_SHAPE (arg_info) = COFreeConstant (INFO_WLFS_WL_SHAPE (arg_info));
+        INFO_WLFS_WL_SHAPE (arg_info) = COfreeConstant (INFO_WLFS_WL_SHAPE (arg_info));
     }
     INFO_WLFS_WL_WOTYPE (arg_info) = WOT_unknown;
     INFO_WLFS_GENPROPERTY (arg_info) = GEN_equal;
@@ -291,8 +294,8 @@ UpdateInfo (info *arg_info, info *stacked_info)
 
     INFO_WLFS_FUSIONABLE_WL (arg_info) = INFO_WLFS_ASSIGN (stacked_info);
     INFO_WLFS_REFERENCES_FUSIONABLE (arg_info)
-      = NodeListAppend (INFO_WLFS_REFERENCES_FUSIONABLE (arg_info),
-                        INFO_WLFS_ASSIGN (stacked_info), NULL);
+      = TCnodeListAppend (INFO_WLFS_REFERENCES_FUSIONABLE (arg_info),
+                          INFO_WLFS_ASSIGN (stacked_info), NULL);
 
     switch (INFO_WLFS_FWL_WOTYPE (arg_info)) {
     case WOT_unknown:
@@ -334,13 +337,13 @@ FreeInfo (info *info)
 
     if (INFO_WLFS_REFERENCES_FUSIONABLE (info) != NULL) {
         INFO_WLFS_REFERENCES_FUSIONABLE (info)
-          = NodeListFree (INFO_WLFS_REFERENCES_FUSIONABLE (info), TRUE);
+          = TCnodeListFree (INFO_WLFS_REFERENCES_FUSIONABLE (info), TRUE);
     }
     if (INFO_WLFS_FWL_SHAPE (info) != NULL) {
-        INFO_WLFS_FWL_SHAPE (info) = COFreeConstant (INFO_WLFS_FWL_SHAPE (info));
+        INFO_WLFS_FWL_SHAPE (info) = COfreeConstant (INFO_WLFS_FWL_SHAPE (info));
     }
 
-    info = Free (info);
+    info = ILIBfree (info);
 
     DBUG_RETURN (info);
 }
@@ -355,7 +358,7 @@ MakeGridInfo ()
 
     DBUG_ENTER ("MakeGridInfo");
 
-    result = Malloc (sizeof (gridinfo));
+    result = ILIBmalloc (sizeof (gridinfo));
 
     GRIDINFO_NEW_LB (result) = NULL;
     GRIDINFO_NEW_UB (result) = NULL;
@@ -496,7 +499,7 @@ FreeGridInfo (gridinfo *gridinfo)
 {
     DBUG_ENTER ("FreeGridInfo");
 
-    gridinfo = Free (gridinfo);
+    gridinfo = ILIBfree (gridinfo);
 
     DBUG_RETURN (gridinfo);
 }
@@ -562,13 +565,13 @@ CheckIterationSpace (info *arg_info)
     shape1 = INFO_WLFS_WL_SHAPE (arg_info);
     shape2 = INFO_WLFS_FWL_SHAPE (arg_info);
 
-    if (SHGetUnrLen (COGetShape (shape1)) == SHGetUnrLen (COGetShape (shape2))) {
-        tmpc = COEq (shape1, shape2);
-        if (COIsTrue (tmpc, TRUE))
+    if (SHgetUnrLen (COgetShape (shape1)) == SHgetUnrLen (COgetShape (shape2))) {
+        tmpc = COeq (shape1, shape2);
+        if (COisTrue (tmpc, TRUE))
             is_equal = TRUE;
         else
             is_equal = FALSE;
-        tmpc = COFreeConstant (tmpc);
+        tmpc = COfreeConstant (tmpc);
     } else
         is_equal = FALSE;
 
@@ -675,8 +678,7 @@ CompGenSon (node *gen_son1, node *gen_son2)
 static node *
 FuseAccu (node *assigns1, node *assigns2)
 {
-    node *first_accu = NULL, *second_accu = NULL, *tmp, *predecessor;
-    ids *tmp_ids;
+    node *first_accu = NULL, *second_accu = NULL, *tmp, *predecessor, *tmp_ids;
 
     DBUG_ENTER ("FuseAccu");
 
@@ -720,8 +722,8 @@ FuseAccu (node *assigns1, node *assigns2)
          * they correspond with the fold operators of the withloop.
          *
          */
-        tmp_ids = DupAllIds (ASSIGN_LHS (second_accu));
-        ASSIGN_LHS (first_accu) = AppendIds (ASSIGN_LHS (first_accu), tmp_ids);
+        tmp_ids = DUPdoDupTree (ASSIGN_LHS (second_accu));
+        ASSIGN_LHS (first_accu) = TCappendIds (ASSIGN_LHS (first_accu), tmp_ids);
         while (tmp_ids != NULL) {
             /* set correct backref to defining assignment */
             AVIS_SSAASSIGN (IDS_AVIS (tmp_ids)) = first_accu;
@@ -729,9 +731,9 @@ FuseAccu (node *assigns1, node *assigns2)
         }
 
         if (predecessor == NULL)
-            assigns2 = FreeNode (second_accu);
+            assigns2 = FREEdoFreeNode (second_accu);
         else
-            ASSIGN_NEXT (predecessor) = FreeNode (second_accu);
+            ASSIGN_NEXT (predecessor) = FREEdoFreeNode (second_accu);
     }
 
     DBUG_RETURN (assigns2);
@@ -744,9 +746,9 @@ FuseAccu (node *assigns1, node *assigns2)
  *   @brief finds the N_Npart out of 'parts' which N_Ngenerator is equal
  *          to pattern.
  *
- *   @param  node *pattern  :  N_Ngenerator
- *           node *parts    :  N_Npart list
- *   @return node *         :  N_Npart with equal generator to pattern
+ *   @param  node *pattern  :  N_generator
+ *           node *parts    :  N_part list
+ *   @return node *         :  N_part with equal generator to pattern
  *                             else NULL
  ******************************************************************************/
 static node *
@@ -758,19 +760,19 @@ FindFittingPart (node *pattern, node *parts)
     DBUG_ENTER ("FindFittingPart");
 
     while (parts != NULL) {
-        gen = NPART_GEN (parts);
-        gen_prob = CompGenSon (NGEN_BOUND1 (pattern), NGEN_BOUND1 (gen));
-        gen_prob_ret = CompGenSon (NGEN_BOUND2 (pattern), NGEN_BOUND2 (gen));
+        gen = PART_GENERATOR (parts);
+        gen_prob = CompGenSon (GENERATOR_BOUND1 (pattern), GENERATOR_BOUND1 (gen));
+        gen_prob_ret = CompGenSon (GENERATOR_BOUND2 (pattern), GENERATOR_BOUND2 (gen));
         RESULT_GEN_PROP (gen_prob, gen_prob_ret);
-        gen_prob_ret = CompGenSon (NGEN_STEP (pattern), NGEN_STEP (gen));
+        gen_prob_ret = CompGenSon (GENERATOR_STEP (pattern), GENERATOR_STEP (gen));
         RESULT_GEN_PROP (gen_prob, gen_prob_ret);
-        gen_prob_ret = CompGenSon (NGEN_WIDTH (pattern), NGEN_WIDTH (gen));
+        gen_prob_ret = CompGenSon (GENERATOR_WIDTH (pattern), GENERATOR_WIDTH (gen));
         RESULT_GEN_PROP (gen_prob, gen_prob_ret);
         if (gen_prob == GEN_equal || gen_prob == GEN_equal_var) {
             tmp_part = parts;
             break;
         }
-        parts = NPART_NEXT (parts);
+        parts = PART_NEXT (parts);
     }
 
     DBUG_RETURN (tmp_part);
@@ -778,56 +780,56 @@ FindFittingPart (node *pattern, node *parts)
 
 /** <!--********************************************************************-->
  *
- * @fn node *FuseNCodes( node *extendable_part, node *fitting_part,
+ * @fn node *FuseCodes( node *extendable_part, node *fitting_part,
  *                       node *fusionable_assign, bool both_contain_fold,
  *                       node *fundef)
  *
  *   @brief inserts the whole assignment block of 'fitting_part' in
  *          assignment block of 'extendable_part'.
  *
- *   @param  node *extendable_part : N_Npart
- *           node *fitting_part    : N_Npart
+ *   @param  node *extendable_part : N_part
+ *           node *fitting_part    : N_part
  *           node *fusionable_wl   : N_assign of WL current WL will be fused with
  *           node *fundef          : N_fundef
  *   @return node                  : modified extendable_part
  ******************************************************************************/
 static node *
-FuseNCodes (node *extendable_part, node *fitting_part, node *fusionable_assign,
-            bool both_contain_fold, node *fundef)
+FuseCodes (node *extendable_part, node *fitting_part, node *fusionable_assign,
+           bool both_contain_fold, node *fundef)
 {
     node *fusionable_wl, *fusionable_ncode, *fitting_nncode, *fitting_assigns,
       *extendable_block, *fitting_exprs;
-    LUT_t lut;
-    ids *oldvec, *newvec, *oldids, *newids;
+    lut_t *lut;
+    node *oldvec, *newvec, *oldids, *newids;
     bool resolveable_dependencies;
 
-    DBUG_ENTER ("FuseNCodes");
+    DBUG_ENTER ("FuseCodes");
 
     fusionable_wl = ASSIGN_RHS (fusionable_assign);
     /*
      * If the N_Ncode of 'extendable_part' is referenced several
      * it has to be deepcopied before extend.
      */
-    if (NCODE_USED (NPART_CODE (extendable_part)) != 1) {
-        fusionable_ncode = NWITH_CODE (fusionable_wl);
+    if (CODE_USED (PART_CODE (extendable_part)) != 1) {
+        fusionable_ncode = WITH_CODE (fusionable_wl);
 
-        if (fusionable_ncode == NPART_CODE (extendable_part)) {
-            NCODE_USED (fusionable_ncode)--;
-            NPART_CODE (extendable_part)
-              = DupNodeSSA (NPART_CODE (extendable_part), fundef);
-            NCODE_USED (NPART_CODE (extendable_part)) = 1;
-            NWITH_CODE (fusionable_wl) = NPART_CODE (extendable_part);
-            NCODE_NEXT (NPART_CODE (extendable_part)) = fusionable_ncode;
+        if (fusionable_ncode == PART_CODE (extendable_part)) {
+            CODE_USED (fusionable_ncode)--;
+            PART_CODE (extendable_part)
+              = DUPdoDupNodeSsa (PART_CODE (extendable_part), fundef);
+            CODE_USED (PART_CODE (extendable_part)) = 1;
+            WITH_CODE (fusionable_wl) = PART_CODE (extendable_part);
+            CODE_NEXT (PART_CODE (extendable_part)) = fusionable_ncode;
         } else {
-            while (NCODE_NEXT (fusionable_ncode) != NPART_CODE (extendable_part)) {
-                fusionable_ncode = NCODE_NEXT (fusionable_ncode);
+            while (CODE_NEXT (fusionable_ncode) != PART_CODE (extendable_part)) {
+                fusionable_ncode = CODE_NEXT (fusionable_ncode);
             }
-            NCODE_USED (NCODE_NEXT (fusionable_ncode))--;
-            NPART_CODE (extendable_part)
-              = DupNodeSSA (NPART_CODE (extendable_part), fundef);
-            NCODE_USED (NPART_CODE (extendable_part)) = 1;
-            NCODE_NEXT (NPART_CODE (extendable_part)) = NCODE_NEXT (fusionable_ncode);
-            NCODE_NEXT (fusionable_ncode) = NPART_CODE (extendable_part);
+            CODE_USED (CODE_NEXT (fusionable_ncode))--;
+            PART_CODE (extendable_part)
+              = DUPdoDupNodeSsa (PART_CODE (extendable_part), fundef);
+            CODE_USED (PART_CODE (extendable_part)) = 1;
+            CODE_NEXT (PART_CODE (extendable_part)) = CODE_NEXT (fusionable_ncode);
+            CODE_NEXT (fusionable_ncode) = PART_CODE (extendable_part);
         }
     }
 
@@ -836,34 +838,30 @@ FuseNCodes (node *extendable_part, node *fitting_part, node *fusionable_assign,
      * by NWITHID_VEC and NWITHID_IDS of fusionable WL
      */
 
-    /* Create a new LUT */
-    lut = GenerateLUT ();
+    /* Create a new Lut */
+    lut = LUTgenerateLut ();
 
-    oldvec = NWITHID_VEC (NPART_WITHID (fitting_part));
-    newvec = NWITHID_VEC (NPART_WITHID (extendable_part));
+    oldvec = WITHID_VEC (PART_WITHID (fitting_part));
+    newvec = WITHID_VEC (PART_WITHID (extendable_part));
 
-    InsertIntoLUT_S (lut, IDS_NAME (oldvec), IDS_NAME (newvec));
-    InsertIntoLUT_P (lut, IDS_VARDEC (oldvec), IDS_VARDEC (newvec));
-    InsertIntoLUT_P (lut, IDS_AVIS (oldvec), IDS_AVIS (newvec));
+    LUTinsertIntoLutP (lut, IDS_AVIS (oldvec), IDS_AVIS (newvec));
 
-    oldids = NWITHID_IDS (NPART_WITHID (fitting_part));
-    newids = NWITHID_IDS (NPART_WITHID (extendable_part));
+    oldids = WITHID_IDS (PART_WITHID (fitting_part));
+    newids = WITHID_IDS (PART_WITHID (extendable_part));
 
     while (oldids != NULL) {
-        InsertIntoLUT_S (lut, IDS_NAME (oldids), IDS_NAME (newids));
-        InsertIntoLUT_P (lut, IDS_VARDEC (oldids), IDS_VARDEC (newids));
-        InsertIntoLUT_P (lut, IDS_AVIS (oldids), IDS_AVIS (newids));
+        LUTinsertIntoLutP (lut, IDS_AVIS (oldids), IDS_AVIS (newids));
 
         oldids = IDS_NEXT (oldids);
         newids = IDS_NEXT (newids);
     }
 
-    fitting_nncode = DupNodeLUTSSA (NPART_CODE (fitting_part), lut, fundef);
+    fitting_nncode = DUPdoDupNodeLutSsa (PART_CODE (fitting_part), lut, fundef);
 
-    resolveable_dependencies = NCODE_RESOLVEABLE_DEPEND (NPART_CODE (fitting_part));
+    resolveable_dependencies = CODE_HASRESOLVEABLEDEPENDENCIES (PART_CODE (fitting_part));
 
-    fitting_assigns = BLOCK_INSTR (NCODE_CBLOCK (fitting_nncode));
-    BLOCK_INSTR (NCODE_CBLOCK (fitting_nncode)) = MakeEmpty ();
+    fitting_assigns = BLOCK_INSTR (CODE_CBLOCK (fitting_nncode));
+    BLOCK_INSTR (CODE_CBLOCK (fitting_nncode)) = TBmakeEmpty ();
 
     /*
      * vardec of N_blocks which are not the first N_block of
@@ -871,18 +869,18 @@ FuseNCodes (node *extendable_part, node *fitting_part, node *fusionable_assign,
      * This holds especially for N_blocks of Withloops.
      */
 
-    fitting_exprs = NCODE_CEXPRS (fitting_nncode);
-    NCODE_CEXPRS (fitting_nncode) = MakeExprs (NULL, NULL);
+    fitting_exprs = CODE_CEXPRS (fitting_nncode);
+    CODE_CEXPRS (fitting_nncode) = TBmakeExprs (NULL, NULL);
 
-    fitting_nncode = FreeNode (fitting_nncode);
+    fitting_nncode = FREEdoFreeNode (fitting_nncode);
 
-    RemoveLUT (lut);
+    LUTremoveLut (lut);
 
     /*
      * extent N_block of extentable_part's N_Ncode by instructions
      * of N_block of fitting_part
      */
-    extendable_block = NCODE_CBLOCK (NPART_CODE (extendable_part));
+    extendable_block = CODE_CBLOCK (PART_CODE (extendable_part));
 
     if (NODE_TYPE (fitting_assigns) != N_empty) {
 
@@ -900,20 +898,21 @@ FuseNCodes (node *extendable_part, node *fitting_part, node *fusionable_assign,
              *  Ncode of current WL contains resolveable dependencies -> resolve them
              */
             fitting_assigns
-              = ResolveDependencies (fitting_assigns,
-                                     NCODE_CEXPRS (NPART_CODE (extendable_part)),
-                                     NPART_WITHID (extendable_part), fusionable_assign);
+              = RDEPENDdoResolveDependencies (fitting_assigns,
+                                              CODE_CEXPRS (PART_CODE (extendable_part)),
+                                              PART_WITHID (extendable_part),
+                                              fusionable_assign);
         }
 
         BLOCK_INSTR (extendable_block)
-          = AppendAssign (BLOCK_INSTR (extendable_block), fitting_assigns);
+          = TCappendAssign (BLOCK_INSTR (extendable_block), fitting_assigns);
     }
 
     /*
      * extent N_exprs of extendable_part's N_Ncode by N_exprs of fitting_part
      */
-    NCODE_CEXPRS (NPART_CODE (extendable_part))
-      = AppendExprs (NCODE_CEXPRS (NPART_CODE (extendable_part)), fitting_exprs);
+    CODE_CEXPRS (PART_CODE (extendable_part))
+      = TCappendExprs (CODE_CEXPRS (PART_CODE (extendable_part)), fitting_exprs);
 
     DBUG_RETURN (extendable_part);
 }
@@ -924,17 +923,17 @@ FuseNCodes (node *extendable_part, node *fitting_part, node *fusionable_assign,
  *
  *   @brief Fuses the two withloops together.
  *
- *   @param  node *wl                :  current N_Nwith node
+ *   @param  node *wl                :  current N_with node
  *           info *arg_info          :  N_INFO
  *           node *fusionable_assign :  N_assign node of the second withloop where the
  *                                      current withloop will be fused to
- *   @return node *                  :  current N_Nwith node
+ *   @return node *                  :  current N_with node
  ******************************************************************************/
 static node *
 FuseWithloops (node *wl, info *arg_info, node *fusionable_assign)
 {
     node *fusionable_wl, *tmp_withop, *parts, *fitting_part;
-    ids *tmp_ids;
+    node *tmp_ids;
     bool both_contain_fold;
 
     DBUG_ENTER ("FuseWithloops");
@@ -945,8 +944,9 @@ FuseWithloops (node *wl, info *arg_info, node *fusionable_assign)
     /*
      * 1. extend LHS of fusionable_assign by LHS of WL assignment
      */
-    tmp_ids = DupAllIds (ASSIGN_LHS (INFO_WLFS_ASSIGN (arg_info)));
-    ASSIGN_LHS (fusionable_assign) = AppendIds (ASSIGN_LHS (fusionable_assign), tmp_ids);
+    tmp_ids = DUPdoDupTree (ASSIGN_LHS (INFO_WLFS_ASSIGN (arg_info)));
+    ASSIGN_LHS (fusionable_assign)
+      = TCappendIds (ASSIGN_LHS (fusionable_assign), tmp_ids);
     while (tmp_ids != NULL) {
         /* set correct backref to defining assignment */
         AVIS_SSAASSIGN (IDS_AVIS (tmp_ids)) = fusionable_assign;
@@ -962,23 +962,23 @@ FuseWithloops (node *wl, info *arg_info, node *fusionable_assign)
     both_contain_fold = ((CONTAINS_FOLD (INFO_WLFS_WL_WOTYPE (arg_info)))
                          && (CONTAINS_FOLD (INFO_WLFS_FWL_WOTYPE (arg_info))));
 
-    parts = NWITH_PART (fusionable_wl);
+    parts = WITH_PART (fusionable_wl);
     while (parts != NULL) {
-        fitting_part = FindFittingPart (NPART_GEN (parts), NWITH_PART (wl));
+        fitting_part = FindFittingPart (PART_GENERATOR (parts), WITH_PART (wl));
         DBUG_ASSERT ((fitting_part != NULL), "no fitting N_Npart is available!");
-        parts = FuseNCodes (parts, fitting_part, fusionable_assign, both_contain_fold,
-                            INFO_WLFS_FUNDEF (arg_info));
-        parts = NPART_NEXT (parts);
+        parts = FuseCodes (parts, fitting_part, fusionable_assign, both_contain_fold,
+                           INFO_WLFS_FUNDEF (arg_info));
+        parts = PART_NEXT (parts);
     }
 
     /*
      * 3. extent N_Nwithop(s) of fusionable_wl by N_Nwithop of 'wl'
      */
-    tmp_withop = NWITH_WITHOP (fusionable_wl);
-    while (NWITHOP_NEXT (tmp_withop) != NULL) {
-        tmp_withop = NWITHOP_NEXT (tmp_withop);
+    tmp_withop = WITH_WITHOP (fusionable_wl);
+    while (WITHOP_NEXT (tmp_withop) != NULL) {
+        tmp_withop = WITHOP_NEXT (tmp_withop);
     }
-    NWITHOP_NEXT (tmp_withop) = DupTree (NWITH_WITHOP (wl));
+    WITHOP_NEXT (tmp_withop) = DUPdoDupTree (WITH_WITHOP (wl));
 
     DBUG_RETURN (wl);
 }
@@ -989,21 +989,21 @@ FuseWithloops (node *wl, info *arg_info, node *fusionable_assign)
  *
  *   @brief removes all unused N_codes recursively
  *
- *   @param  node *codes : N_Ncode chain
- *   @return node *      : modified N_Ncode chain
+ *   @param  node *codes : N_code chain
+ *   @return node *      : modified N_code chain
  ******************************************************************************/
 static node *
 RemoveUnusedCodes (node *codes)
 {
     DBUG_ENTER ("RemoveUnusedCodes");
     DBUG_ASSERT ((codes != NULL), "no codes available!");
-    DBUG_ASSERT ((NODE_TYPE (codes) == N_Ncode), "type of codes is not N_Ncode!");
+    DBUG_ASSERT ((NODE_TYPE (codes) == N_code), "type of codes is not N_code!");
 
-    if (NCODE_NEXT (codes) != NULL)
-        NCODE_NEXT (codes) = RemoveUnusedCodes (NCODE_NEXT (codes));
+    if (CODE_NEXT (codes) != NULL)
+        CODE_NEXT (codes) = RemoveUnusedCodes (CODE_NEXT (codes));
 
-    if (NCODE_USED (codes) == 0)
-        codes = FreeNode (codes);
+    if (CODE_USED (codes) == 0)
+        codes = FREEdoFreeNode (codes);
 
     DBUG_RETURN (codes);
 }
@@ -1031,18 +1031,16 @@ CreateEntryFlatArray (int entry, int number)
 
     tmp = NULL;
     for (i = 0; i < number; i++) {
-        tmp = MakeExprs (MakeNum (entry), tmp);
+        tmp = TBmakeExprs (TBmakeNum (entry), tmp);
     }
-    tmp = MakeFlatArray (tmp);
+    tmp = TCmakeFlatArray (tmp);
 
-    ARRAY_TYPE (tmp)
-      = MakeTypes (T_int, 1, MakeShpseg (MakeNums (number, NULL)), NULL, NULL);
-    ARRAY_NTYPE (tmp) = TYMakeAKS (TYMakeSimpleType (T_int), SHMakeShape (number));
+    ARRAY_NTYPE (tmp) = TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (number));
 
     ARRAY_ISCONST (tmp) = TRUE;
     ARRAY_VECTYPE (tmp) = T_int;
     ARRAY_VECLEN (tmp) = number;
-    ARRAY_CONSTVEC (tmp) = Array2Vec (T_int, ARRAY_AELEMS (tmp), NULL);
+    ARRAY_CONSTVEC (tmp) = TCarray2Vec (T_int, ARRAY_AELEMS (tmp), NULL);
     DBUG_RETURN (tmp);
 }
 
@@ -1138,39 +1136,45 @@ IntersectGrids (gridinfo *arg_gridinfo)
                     < GRIDINFO_NEW_UB_ELEM (arg_gridinfo)) {
                     GRIDINFO_NEW_LB_ELEM (arg_gridinfo) += first;
                     genn
-                      = MakeNGenerator (DupNode (GRIDINFO_NEW_LB (arg_gridinfo)),
-                                        DupNode (GRIDINFO_NEW_UB (arg_gridinfo)), F_le,
-                                        F_lt, DupNode (GRIDINFO_NEW_STEP (arg_gridinfo)),
-                                        DupNode (GRIDINFO_NEW_WIDTH (arg_gridinfo)));
+                      = TBmakeGenerator (F_le, F_lt,
+                                         DUPdoDupNode (GRIDINFO_NEW_LB (arg_gridinfo)),
+                                         DUPdoDupNode (GRIDINFO_NEW_UB (arg_gridinfo)),
+                                         DUPdoDupNode (GRIDINFO_NEW_STEP (arg_gridinfo)),
+                                         DUPdoDupNode (
+                                           GRIDINFO_NEW_WIDTH (arg_gridinfo)));
                     GRIDINFO_NEW_LB_ELEM (arg_gridinfo) -= first;
 
                     if (GRIDINFO_NPARTS_1 (arg_gridinfo) != NULL) {
 
-                        NPART_NEXT (GRIDINFO_NPART_1 (arg_gridinfo))
-                          = MakeNPart (DupNode (GRIDINFO_WITHID_1 (arg_gridinfo)), genn,
-                                       GRIDINFO_NCODE_1 (arg_gridinfo));
-                        NCODE_INC_USED (GRIDINFO_NCODE_1 (arg_gridinfo));
+                        PART_NEXT (GRIDINFO_NPART_1 (arg_gridinfo))
+                          = TBmakePart (GRIDINFO_NCODE_1 (arg_gridinfo),
+                                        DUPdoDupNode (GRIDINFO_WITHID_1 (arg_gridinfo)),
+                                        genn);
+                        CODE_INC_USED (GRIDINFO_NCODE_1 (arg_gridinfo));
 
                         GRIDINFO_NPART_1 (arg_gridinfo)
-                          = NPART_NEXT (GRIDINFO_NPART_1 (arg_gridinfo));
+                          = PART_NEXT (GRIDINFO_NPART_1 (arg_gridinfo));
 
-                        NPART_NEXT (GRIDINFO_NPART_2 (arg_gridinfo))
-                          = MakeNPart (DupNode (GRIDINFO_WITHID_2 (arg_gridinfo)),
-                                       DupNode (genn), GRIDINFO_NCODE_2 (arg_gridinfo));
-                        NCODE_INC_USED (GRIDINFO_NCODE_2 (arg_gridinfo));
+                        PART_NEXT (GRIDINFO_NPART_2 (arg_gridinfo))
+                          = TBmakePart (GRIDINFO_NCODE_2 (arg_gridinfo),
+                                        DUPdoDupNode (GRIDINFO_WITHID_2 (arg_gridinfo)),
+                                        DUPdoDupNode (genn));
+                        CODE_INC_USED (GRIDINFO_NCODE_2 (arg_gridinfo));
 
                         GRIDINFO_NPART_2 (arg_gridinfo)
-                          = NPART_NEXT (GRIDINFO_NPART_2 (arg_gridinfo));
+                          = PART_NEXT (GRIDINFO_NPART_2 (arg_gridinfo));
                     } else {
                         GRIDINFO_NPART_1 (arg_gridinfo)
-                          = MakeNPart (DupNode (GRIDINFO_WITHID_1 (arg_gridinfo)), genn,
-                                       GRIDINFO_NCODE_1 (arg_gridinfo));
-                        NCODE_INC_USED (GRIDINFO_NCODE_1 (arg_gridinfo));
+                          = TBmakePart (GRIDINFO_NCODE_1 (arg_gridinfo),
+                                        DUPdoDupNode (GRIDINFO_WITHID_1 (arg_gridinfo)),
+                                        genn);
+                        CODE_INC_USED (GRIDINFO_NCODE_1 (arg_gridinfo));
 
                         GRIDINFO_NPART_2 (arg_gridinfo)
-                          = MakeNPart (DupNode (GRIDINFO_WITHID_2 (arg_gridinfo)),
-                                       DupNode (genn), GRIDINFO_NCODE_2 (arg_gridinfo));
-                        NCODE_INC_USED (GRIDINFO_NCODE_2 (arg_gridinfo));
+                          = TBmakePart (GRIDINFO_NCODE_2 (arg_gridinfo),
+                                        DUPdoDupNode (GRIDINFO_WITHID_2 (arg_gridinfo)),
+                                        DUPdoDupNode (genn));
+                        CODE_INC_USED (GRIDINFO_NCODE_2 (arg_gridinfo));
 
                         GRIDINFO_NPARTS_1 (arg_gridinfo)
                           = GRIDINFO_NPART_1 (arg_gridinfo);
@@ -1216,13 +1220,13 @@ IntersectParts (node *parts_1, node *parts_2, node **new_parts_2)
 
     DBUG_ENTER ("IntersectParts");
 
-    if (ARRAY_ISCONST (NGEN_BOUND1 (NPART_GEN (parts_1)))) {
-        dim = ARRAY_VECLEN (NGEN_BOUND1 (NPART_GEN (parts_1)));
+    if (ARRAY_ISCONST (GENERATOR_BOUND1 (PART_GENERATOR (parts_1)))) {
+        dim = ARRAY_VECLEN (GENERATOR_BOUND1 (PART_GENERATOR (parts_1)));
     } else {
-        const_tmp = COAST2Constant (NGEN_BOUND1 (NPART_GEN (parts_1)));
+        const_tmp = COaST2Constant (GENERATOR_BOUND1 (PART_GENERATOR (parts_1)));
         if ((const_tmp != NULL)) {
-            dim = SHGetUnrLen (COGetShape (const_tmp));
-            const_tmp = COFreeConstant (const_tmp);
+            dim = SHgetUnrLen (COgetShape (const_tmp));
+            const_tmp = COfreeConstant (const_tmp);
         } else {
             dim = 0;
             DBUG_ASSERT ((0), "lower bound of generator is not constant!");
@@ -1241,12 +1245,12 @@ IntersectParts (node *parts_1, node *parts_2, node **new_parts_2)
     while (parts_1 != NULL) {
         parts_2 = parts_2_tmp;
         while (parts_2 != NULL) {
-            create_step = (NPART_STEP (parts_1) || NPART_STEP (parts_2));
+            create_step = (PART_STEP (parts_1) || PART_STEP (parts_2));
 
-            lb_1 = ARRAY_AELEMS (NGEN_BOUND1 (NPART_GEN (parts_1)));
-            ub_1 = ARRAY_AELEMS (NGEN_BOUND2 (NPART_GEN (parts_1)));
-            lb_2 = ARRAY_AELEMS (NGEN_BOUND1 (NPART_GEN (parts_2)));
-            ub_2 = ARRAY_AELEMS (NGEN_BOUND2 (NPART_GEN (parts_2)));
+            lb_1 = ARRAY_AELEMS (GENERATOR_BOUND1 (PART_GENERATOR (parts_1)));
+            ub_1 = ARRAY_AELEMS (GENERATOR_BOUND2 (PART_GENERATOR (parts_1)));
+            lb_2 = ARRAY_AELEMS (GENERATOR_BOUND1 (PART_GENERATOR (parts_2)));
+            ub_2 = ARRAY_AELEMS (GENERATOR_BOUND2 (PART_GENERATOR (parts_2)));
 
             new_array_lb = CreateEntryFlatArray (0, dim);
             new_array_ub = CreateEntryFlatArray (0, dim);
@@ -1270,25 +1274,27 @@ IntersectParts (node *parts_1, node *parts_2, node **new_parts_2)
                 ub_new = EXPRS_NEXT (ub_new);
             }
 
-            if (d == dim && gen_counter < max_newgens) {
+            if (d == dim && gen_counter < global.max_newgens) {
                 /* non empty generator */
 
                 if (create_step) {
 
                     /* compute lowest-common-multiplier between both steps */
-                    if (NGEN_STEP (NPART_GEN (parts_1)) == NULL)
-                        new_step = DupNode (NGEN_STEP (NPART_GEN (parts_2)));
-                    else if (NGEN_STEP (NPART_GEN (parts_2)) == NULL)
-                        new_step = DupNode (NGEN_STEP (NPART_GEN (parts_1)));
+                    if (GENERATOR_STEP (PART_GENERATOR (parts_1)) == NULL)
+                        new_step
+                          = DUPdoDupNode (GENERATOR_STEP (PART_GENERATOR (parts_2)));
+                    else if (GENERATOR_STEP (PART_GENERATOR (parts_2)) == NULL)
+                        new_step
+                          = DUPdoDupNode (GENERATOR_STEP (PART_GENERATOR (parts_1)));
                     else {
                         new_step = CreateEntryFlatArray (0, dim);
                         nstep = ARRAY_AELEMS (new_step);
-                        step_1 = ARRAY_AELEMS (NGEN_STEP (NPART_GEN (parts_1)));
-                        step_2 = ARRAY_AELEMS (NGEN_STEP (NPART_GEN (parts_2)));
+                        step_1 = ARRAY_AELEMS (GENERATOR_STEP (PART_GENERATOR (parts_1)));
+                        step_2 = ARRAY_AELEMS (GENERATOR_STEP (PART_GENERATOR (parts_2)));
                         for (d = 0; d < dim; d++) {
                             NUM_VAL (EXPRS_EXPR (nstep))
-                              = lcm (NUM_VAL (EXPRS_EXPR (step_1)),
-                                     NUM_VAL (EXPRS_EXPR (step_2)));
+                              = ILIBlcm (NUM_VAL (EXPRS_EXPR (step_1)),
+                                         NUM_VAL (EXPRS_EXPR (step_2)));
                             nstep = EXPRS_NEXT (nstep);
                             step_1 = EXPRS_NEXT (step_1);
                             step_2 = EXPRS_NEXT (step_2);
@@ -1296,13 +1302,13 @@ IntersectParts (node *parts_1, node *parts_2, node **new_parts_2)
                     }
 
                     /* compute offsets of both grids to new_array_lb */
-                    if (NGEN_STEP (NPART_GEN (parts_1)) != NULL) {
+                    if (GENERATOR_STEP (PART_GENERATOR (parts_1)) != NULL) {
                         if (offset_1 == NULL)
                             offset_1 = CreateEntryFlatArray (0, dim);
                         offset = ARRAY_AELEMS (offset_1);
                         lb_new = ARRAY_AELEMS (new_array_lb);
-                        lb_1 = ARRAY_AELEMS (NGEN_BOUND1 (NPART_GEN (parts_1)));
-                        step_1 = ARRAY_AELEMS (NGEN_STEP (NPART_GEN (parts_1)));
+                        lb_1 = ARRAY_AELEMS (GENERATOR_BOUND1 (PART_GENERATOR (parts_1)));
+                        step_1 = ARRAY_AELEMS (GENERATOR_STEP (PART_GENERATOR (parts_1)));
                         for (d = 0; d < dim; d++) {
                             NUM_VAL (EXPRS_EXPR (offset))
                               = ((NUM_VAL (EXPRS_EXPR (lb_new))
@@ -1325,13 +1331,13 @@ IntersectParts (node *parts_1, node *parts_2, node **new_parts_2)
                         }
                     }
 
-                    if (NGEN_STEP (NPART_GEN (parts_2)) != NULL) {
+                    if (GENERATOR_STEP (PART_GENERATOR (parts_2)) != NULL) {
                         if (offset_2 == NULL)
                             offset_2 = CreateEntryFlatArray (0, dim);
                         offset = ARRAY_AELEMS (offset_2);
                         lb_new = ARRAY_AELEMS (new_array_lb);
-                        lb_2 = ARRAY_AELEMS (NGEN_BOUND1 (NPART_GEN (parts_2)));
-                        step_2 = ARRAY_AELEMS (NGEN_STEP (NPART_GEN (parts_2)));
+                        lb_2 = ARRAY_AELEMS (GENERATOR_BOUND1 (PART_GENERATOR (parts_2)));
+                        step_2 = ARRAY_AELEMS (GENERATOR_STEP (PART_GENERATOR (parts_2)));
                         for (d = 0; d < dim; d++) {
                             NUM_VAL (EXPRS_EXPR (offset))
                               = ((NUM_VAL (EXPRS_EXPR (lb_new))
@@ -1359,11 +1365,11 @@ IntersectParts (node *parts_1, node *parts_2, node **new_parts_2)
                     arg_gridinfo = MakeGridInfo ();
 
                     /* get step and with of both parts, or create dummies */
-                    if (NGEN_STEP (NPART_GEN (parts_1)) != NULL) {
+                    if (GENERATOR_STEP (PART_GENERATOR (parts_1)) != NULL) {
                         GRIDINFO_STEP_1_AELEMS (arg_gridinfo)
-                          = ARRAY_AELEMS (NGEN_STEP (NPART_GEN (parts_1)));
+                          = ARRAY_AELEMS (GENERATOR_STEP (PART_GENERATOR (parts_1)));
                         GRIDINFO_WIDTH_1_AELEMS (arg_gridinfo)
-                          = ARRAY_AELEMS (NGEN_WIDTH (NPART_GEN (parts_1)));
+                          = ARRAY_AELEMS (GENERATOR_WIDTH (PART_GENERATOR (parts_1)));
                     } else {
                         if (dummy_step == NULL) {
                             dummy_step = CreateEntryFlatArray (1, dim);
@@ -1374,11 +1380,11 @@ IntersectParts (node *parts_1, node *parts_2, node **new_parts_2)
                           = ARRAY_AELEMS (dummy_width);
                     }
 
-                    if (NGEN_STEP (NPART_GEN (parts_2)) != NULL) {
+                    if (GENERATOR_STEP (PART_GENERATOR (parts_2)) != NULL) {
                         GRIDINFO_STEP_2_AELEMS (arg_gridinfo)
-                          = ARRAY_AELEMS (NGEN_STEP (NPART_GEN (parts_2)));
+                          = ARRAY_AELEMS (GENERATOR_STEP (PART_GENERATOR (parts_2)));
                         GRIDINFO_WIDTH_2_AELEMS (arg_gridinfo)
-                          = ARRAY_AELEMS (NGEN_WIDTH (NPART_GEN (parts_2)));
+                          = ARRAY_AELEMS (GENERATOR_WIDTH (PART_GENERATOR (parts_2)));
                     } else {
                         if (dummy_step == NULL) {
                             dummy_step = CreateEntryFlatArray (1, dim);
@@ -1392,15 +1398,15 @@ IntersectParts (node *parts_1, node *parts_2, node **new_parts_2)
                     arg_gridinfo
                       = FillGridInfo (arg_gridinfo, new_array_lb, new_array_ub, new_step,
                                       new_width, offset_1, offset_2, dim,
-                                      NPART_WITHID (parts_1), NPART_WITHID (parts_2),
-                                      NPART_CODE (parts_1), NPART_CODE (parts_2));
+                                      PART_WITHID (parts_1), PART_WITHID (parts_2),
+                                      PART_CODE (parts_1), PART_CODE (parts_2));
 
                     arg_gridinfo = IntersectGrids (arg_gridinfo);
 
                     if (GRIDINFO_NPARTS_1 (arg_gridinfo) != NULL) {
                         if (nparts_1) {
-                            NPART_NEXT (npart_1) = GRIDINFO_NPARTS_1 (arg_gridinfo);
-                            NPART_NEXT (npart_2) = GRIDINFO_NPARTS_2 (arg_gridinfo);
+                            PART_NEXT (npart_1) = GRIDINFO_NPARTS_1 (arg_gridinfo);
+                            PART_NEXT (npart_2) = GRIDINFO_NPARTS_2 (arg_gridinfo);
                         } else {
                             npart_1 = GRIDINFO_NPARTS_1 (arg_gridinfo);
                             npart_2 = GRIDINFO_NPARTS_2 (arg_gridinfo);
@@ -1410,57 +1416,59 @@ IntersectParts (node *parts_1, node *parts_2, node **new_parts_2)
                             gen_counter++;
                         }
 
-                        while (NPART_NEXT (npart_1) != NULL) {
-                            npart_1 = NPART_NEXT (npart_1);
-                            npart_2 = NPART_NEXT (npart_2);
+                        while (PART_NEXT (npart_1) != NULL) {
+                            npart_1 = PART_NEXT (npart_1);
+                            npart_2 = PART_NEXT (npart_2);
                             gen_counter++;
                         }
                     }
 
                     /* all new generators uses duplicates */
-                    new_array_lb = FreeNode (new_array_lb);
-                    new_array_ub = FreeNode (new_array_ub);
-                    new_width = FreeNode (new_width);
-                    new_step = FreeNode (new_step);
+                    new_array_lb = FREEdoFreeNode (new_array_lb);
+                    new_array_ub = FREEdoFreeNode (new_array_ub);
+                    new_width = FREEdoFreeNode (new_width);
+                    new_step = FREEdoFreeNode (new_step);
                     arg_gridinfo = FreeGridInfo (arg_gridinfo);
 
-                    if (gen_counter > max_newgens) {
+                    if (gen_counter > global.max_newgens) {
                         /*
                          * Max. numbers of new generators is exceeded.
                          * Remove all new generators.
                          */
-                        WARN (linenum, ("WLFS: number of new generators exceeds "
-                                        "max_newgens -> roll back"));
+                        WARN (global.linenum, ("WLFS: number of new generators exceeds "
+                                               "max_newgens -> roll back"));
 
-                        nparts_1 = FreeTree (nparts_1);
-                        nparts_2 = FreeTree (nparts_2);
+                        nparts_1 = FREEdoFreeTree (nparts_1);
+                        nparts_2 = FREEdoFreeTree (nparts_2);
                         goto DONE;
                     }
                 } else {
-                    genn = MakeNGenerator (new_array_lb, new_array_ub, F_le, F_lt, NULL,
-                                           NULL);
+                    genn = TBmakeGenerator (F_le, F_lt, new_array_lb, new_array_ub, NULL,
+                                            NULL);
 
                     if (nparts_1) {
-                        NPART_NEXT (npart_1)
-                          = MakeNPart (DupNode (NPART_WITHID (parts_1)), genn,
-                                       NPART_CODE (parts_1));
-                        NCODE_INC_USED (NPART_CODE (parts_1));
-                        npart_1 = NPART_NEXT (npart_1);
+                        PART_NEXT (npart_1)
+                          = TBmakePart (PART_CODE (parts_1),
+                                        DUPdoDupNode (PART_WITHID (parts_1)), genn);
+                        CODE_INC_USED (PART_CODE (parts_1));
+                        npart_1 = PART_NEXT (npart_1);
 
-                        NPART_NEXT (npart_2)
-                          = MakeNPart (DupNode (NPART_WITHID (parts_2)), DupNode (genn),
-                                       NPART_CODE (parts_2));
-                        NCODE_INC_USED (NPART_CODE (parts_2));
-                        npart_2 = NPART_NEXT (npart_2);
+                        PART_NEXT (npart_2)
+                          = TBmakePart (PART_CODE (parts_2),
+                                        DUPdoDupNode (PART_WITHID (parts_2)),
+                                        DUPdoDupNode (genn));
+                        CODE_INC_USED (PART_CODE (parts_2));
+                        npart_2 = PART_NEXT (npart_2);
                     } else {
-                        npart_1 = MakeNPart (DupNode (NPART_WITHID (parts_1)), genn,
-                                             NPART_CODE (parts_1));
-                        NCODE_INC_USED (NPART_CODE (parts_1));
+                        npart_1 = TBmakePart (PART_CODE (parts_1),
+                                              DUPdoDupNode (PART_WITHID (parts_1)), genn);
+                        CODE_INC_USED (PART_CODE (parts_1));
                         nparts_1 = npart_1;
 
-                        npart_2 = MakeNPart (DupNode (NPART_WITHID (parts_2)),
-                                             DupNode (genn), NPART_CODE (parts_2));
-                        NCODE_INC_USED (NPART_CODE (parts_2));
+                        npart_2 = TBmakePart (PART_CODE (parts_2),
+                                              DUPdoDupNode (PART_WITHID (parts_2)),
+                                              DUPdoDupNode (genn));
+                        CODE_INC_USED (PART_CODE (parts_2));
                         nparts_2 = npart_2;
                     }
                     gen_counter++;
@@ -1470,34 +1478,34 @@ IntersectParts (node *parts_1, node *parts_2, node **new_parts_2)
                  * Max. numbers of new generators is exceeded.
                  * Remove all new generators.
                  */
-                WARN (linenum, ("WLFS: number of new generators exceeds max_newgens -> "
-                                "roll back"));
+                WARN (global.linenum, ("WLFS: number of new generators exceeds "
+                                       "max_newgens -> roll back"));
 
-                nparts_1 = FreeTree (nparts_1);
-                nparts_2 = FreeTree (nparts_2);
-                new_array_lb = FreeNode (new_array_lb);
-                new_array_ub = FreeNode (new_array_ub);
+                nparts_1 = FREEdoFreeTree (nparts_1);
+                nparts_2 = FREEdoFreeTree (nparts_2);
+                new_array_lb = FREEdoFreeNode (new_array_lb);
+                new_array_ub = FREEdoFreeNode (new_array_ub);
                 goto DONE;
             } else {
                 /* empty generator */
-                new_array_lb = FreeNode (new_array_lb);
-                new_array_ub = FreeNode (new_array_ub);
+                new_array_lb = FREEdoFreeNode (new_array_lb);
+                new_array_ub = FREEdoFreeNode (new_array_ub);
             }
 
-            parts_2 = NPART_NEXT (parts_2);
+            parts_2 = PART_NEXT (parts_2);
         }
-        parts_1 = NPART_NEXT (parts_1);
+        parts_1 = PART_NEXT (parts_1);
     }
 
 DONE:
     if (offset_1)
-        offset_1 = FreeNode (offset_1);
+        offset_1 = FREEdoFreeNode (offset_1);
     if (offset_2)
-        offset_2 = FreeNode (offset_2);
+        offset_2 = FREEdoFreeNode (offset_2);
     if (dummy_step)
-        dummy_step = FreeNode (dummy_step);
+        dummy_step = FREEdoFreeNode (dummy_step);
     if (dummy_width)
-        dummy_width = FreeNode (dummy_width);
+        dummy_width = FREEdoFreeNode (dummy_width);
 
     DBUG_ASSERT (((*new_parts_2) == NULL), "new_parts_2 had to be empty");
     (*new_parts_2) = nparts_2;
@@ -1524,7 +1532,7 @@ BuildNewGens (node *current_wl, node *fusionable_wl)
 
     DBUG_ENTER ("BuildNewGens");
 
-    new_parts_fwl = IntersectParts (NWITH_PART (fusionable_wl), NWITH_PART (current_wl),
+    new_parts_fwl = IntersectParts (WITH_PART (fusionable_wl), WITH_PART (current_wl),
                                     &(new_parts_cwl));
 
     if (new_parts_fwl != NULL) {
@@ -1533,23 +1541,23 @@ BuildNewGens (node *current_wl, node *fusionable_wl)
         tmp = new_parts_fwl;
         while (tmp != NULL) {
             number_parts++;
-            tmp = NPART_NEXT (tmp);
+            tmp = PART_NEXT (tmp);
         }
 
         DBUG_PRINT ("WLFS", ("%d new generators created", number_parts));
 
-        NWITH_PART (fusionable_wl) = FreeTree (NWITH_PART (fusionable_wl));
-        NWITH_PART (fusionable_wl) = new_parts_fwl;
-        NWITH_PARTS (fusionable_wl) = number_parts;
-        NWITH_CODE (fusionable_wl) = RemoveUnusedCodes (NWITH_CODE (fusionable_wl));
-        DBUG_ASSERT ((NWITH_CODE (fusionable_wl) != NULL),
+        WITH_PART (fusionable_wl) = FREEdoFreeTree (WITH_PART (fusionable_wl));
+        WITH_PART (fusionable_wl) = new_parts_fwl;
+        WITH_PARTS (fusionable_wl) = number_parts;
+        WITH_CODE (fusionable_wl) = RemoveUnusedCodes (WITH_CODE (fusionable_wl));
+        DBUG_ASSERT ((WITH_CODE (fusionable_wl) != NULL),
                      ("all ncodes have been removed!!!"));
 
-        NWITH_PART (current_wl) = FreeTree (NWITH_PART (current_wl));
-        NWITH_PART (current_wl) = new_parts_cwl;
-        NWITH_PARTS (current_wl) = number_parts;
-        NWITH_CODE (current_wl) = RemoveUnusedCodes (NWITH_CODE (current_wl));
-        DBUG_ASSERT ((NWITH_CODE (fusionable_wl) != NULL),
+        WITH_PART (current_wl) = FREEdoFreeTree (WITH_PART (current_wl));
+        WITH_PART (current_wl) = new_parts_cwl;
+        WITH_PARTS (current_wl) = number_parts;
+        WITH_CODE (current_wl) = RemoveUnusedCodes (WITH_CODE (current_wl));
+        DBUG_ASSERT ((WITH_CODE (fusionable_wl) != NULL),
                      ("all ncodes have been removed!!!"));
     }
 
@@ -1609,7 +1617,7 @@ AskFusionOracle (info *arg_info)
 
         if ((INFO_WLFS_GENPROPERTY (arg_info) == GEN_equal
              || INFO_WLFS_GENPROPERTY (arg_info) == GEN_equal_var)
-            && NWITH_PARTS (wl) == NWITH_PARTS (fwl)) {
+            && WITH_PARTS (wl) == WITH_PARTS (fwl)) {
             DBUG_PRINT ("WLFS", ("both With-Loops can be fused together"));
             answer = TRUE;
         } else
@@ -1622,8 +1630,8 @@ AskFusionOracle (info *arg_info)
          */
         DBUG_PRINT ("WLFS", ("With-Loop depends on fusionable With-Loop"));
         INFO_WLFS_REFERENCES_FUSIONABLE (arg_info)
-          = NodeListAppend (INFO_WLFS_REFERENCES_FUSIONABLE (arg_info),
-                            INFO_WLFS_ASSIGN (arg_info), NULL);
+          = TCnodeListAppend (INFO_WLFS_REFERENCES_FUSIONABLE (arg_info),
+                              INFO_WLFS_ASSIGN (arg_info), NULL);
     }
 
     DBUG_RETURN (answer);
@@ -1649,7 +1657,7 @@ WLFSfundef (node *arg_node, info *arg_info)
     INFO_WLFS_FUNDEF (arg_info) = arg_node;
 
     if (FUNDEF_BODY (arg_node)) {
-        FUNDEF_INSTR (arg_node) = Trav (FUNDEF_INSTR (arg_node), arg_info);
+        FUNDEF_INSTR (arg_node) = TRAVdo (FUNDEF_INSTR (arg_node), arg_info);
     }
 
     DBUG_PRINT ("WLFS",
@@ -1681,7 +1689,7 @@ WLFSblock (node *arg_node, info *arg_info)
     INFO_WLFS_FUNDEF (arg_info) = INFO_WLFS_FUNDEF (info_tmp);
 
     if (BLOCK_INSTR (arg_node) != NULL) {
-        BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
+        BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
     }
 
     arg_info = FreeInfo (arg_info);
@@ -1718,10 +1726,10 @@ WLFSassign (node *arg_node, info *arg_info)
          * or there is no fusionable WL for now.
          */
 
-        ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+        ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
         if (ASSIGN_INSTRTYPE (arg_node) == N_let
-            && NODE_TYPE (ASSIGN_RHS (arg_node)) == N_Nwith) {
+            && NODE_TYPE (ASSIGN_RHS (arg_node)) == N_with) {
 
             if (INFO_WLFS_WLACTION (arg_info) == WL_fused) {
                 /*
@@ -1729,7 +1737,7 @@ WLFSassign (node *arg_node, info *arg_info)
                  * another withloop, so the current one is obsolete and has to
                  * be freed.
                  */
-                arg_node = FreeNode (arg_node);
+                arg_node = FREEdoFreeNode (arg_node);
 
                 /*
                  * Now we have to traverse back to the other withloop
@@ -1760,7 +1768,7 @@ WLFSassign (node *arg_node, info *arg_info)
     }
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
     }
 
     do {
@@ -1791,7 +1799,7 @@ WLFSassign (node *arg_node, info *arg_info)
                  */
 
                 DBUG_PRINT ("WLFS", ("collect assign:"));
-                DBUG_EXECUTE ("WLFS", PrintNode (ASSIGN_NEXT (arg_node)););
+                DBUG_EXECUTE ("WLFS", PRTdoPrintNode (ASSIGN_NEXT (arg_node)););
 
                 assignn = ASSIGN_NEXT (arg_node);
                 ASSIGN_NEXT (arg_node) = ASSIGN_NEXT (ASSIGN_NEXT (arg_node));
@@ -1809,8 +1817,8 @@ WLFSassign (node *arg_node, info *arg_info)
 
                 if (INFO_WLFS_ASSIGNS2SHIFT (arg_info) != NULL) {
 
-                    assigns2shift
-                      = AppendAssign (assigns2shift, INFO_WLFS_ASSIGNS2SHIFT (arg_info));
+                    assigns2shift = TCappendAssign (assigns2shift,
+                                                    INFO_WLFS_ASSIGNS2SHIFT (arg_info));
 
                     INFO_WLFS_ASSIGNS2SHIFT (arg_info) = NULL;
                 }
@@ -1818,7 +1826,7 @@ WLFSassign (node *arg_node, info *arg_info)
                 DBUG_PRINT ("WLFS", ("fusion is finished, starting search for new WL"));
 
                 if (ASSIGN_NEXT (arg_node) != NULL) {
-                    ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+                    ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
                 }
 
             } else {
@@ -1840,7 +1848,7 @@ WLFSassign (node *arg_node, info *arg_info)
 
             if (assigns2shift != NULL) {
 
-                arg_node = AppendAssign (assigns2shift, arg_node);
+                arg_node = TCappendAssign (assigns2shift, arg_node);
 
                 DBUG_PRINT ("WLFS", ("shifted depended assigns in front of WL"));
 
@@ -1848,7 +1856,7 @@ WLFSassign (node *arg_node, info *arg_info)
             }
 
             if (ASSIGN_NEXT (arg_node) != NULL) {
-                ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+                ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
             }
         } else {
             /* cleaning up */
@@ -1859,7 +1867,7 @@ WLFSassign (node *arg_node, info *arg_info)
 
             if (assigns2shift != NULL) {
                 DBUG_PRINT ("WLFS", ("shifted depended assigns in front of WL"));
-                arg_node = AppendAssign (assigns2shift, arg_node);
+                arg_node = TCappendAssign (assigns2shift, arg_node);
                 assigns2shift = NULL;
             }
             break;
@@ -1887,7 +1895,7 @@ WLFSap (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("WLFSap");
 
-    if ((FUNDEF_IS_LACFUN (AP_FUNDEF (arg_node)))) {
+    if ((FUNDEF_ISLACFUN (AP_FUNDEF (arg_node)))) {
         /*
          * special functions must be traversed when they are used
          */
@@ -1899,7 +1907,7 @@ WLFSap (node *arg_node, info *arg_info)
             info_tmp = arg_info;
             arg_info = MakeInfo ();
 
-            AP_FUNDEF (arg_node) = Trav (AP_FUNDEF (arg_node), arg_info);
+            AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
 
             arg_info = FreeInfo (arg_info);
             arg_info = info_tmp;
@@ -1909,7 +1917,7 @@ WLFSap (node *arg_node, info *arg_info)
     }
 
     if (AP_ARGS (arg_node) != NULL) {
-        AP_ARGS (arg_node) = Trav (AP_ARGS (arg_node), arg_info);
+        AP_ARGS (arg_node) = TRAVdo (AP_ARGS (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -1944,13 +1952,13 @@ WLFSid (node *arg_node, info *arg_info)
         is_dependent
           = CheckDependency (arg_node, INFO_WLFS_REFERENCES_FUSIONABLE (arg_info));
         if (is_dependent) {
-            DBUG_EXECUTE ("WLFS", PrintNode (INFO_WLFS_ASSIGN (arg_info)););
+            DBUG_EXECUTE ("WLFS", PRTdoPrintNode (INFO_WLFS_ASSIGN (arg_info)););
             DBUG_PRINT ("WLFS", ("%s references the fusionable With-Loop, note assign",
                                  ID_NAME (arg_node)));
 
             INFO_WLFS_REFERENCES_FUSIONABLE (arg_info)
-              = NodeListAppend (INFO_WLFS_REFERENCES_FUSIONABLE (arg_info),
-                                INFO_WLFS_ASSIGN (arg_info), NULL);
+              = TCnodeListAppend (INFO_WLFS_REFERENCES_FUSIONABLE (arg_info),
+                                  INFO_WLFS_ASSIGN (arg_info), NULL);
         }
     }
 
@@ -1959,7 +1967,7 @@ WLFSid (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *WLFSNwith(node *arg_node, info *arg_info)
+ * @fn node *WLFSwith(node *arg_node, info *arg_info)
  *
  *   @brief  start traversal of this WL and store information in new arg_info
  *           node. The only N_Npart node (inclusive body) is traversed.
@@ -1973,12 +1981,12 @@ WLFSid (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 node *
-WLFSNwith (node *arg_node, info *arg_info)
+WLFSwith (node *arg_node, info *arg_info)
 {
     node *fwl;
     wl_action_t wl_action = WL_nothing;
 
-    DBUG_ENTER ("WLFSNwith");
+    DBUG_ENTER ("WLFSwith");
 
     /*
      * first traversal in CODEs
@@ -1986,8 +1994,8 @@ WLFSNwith (node *arg_node, info *arg_info)
      * and I want to modify bottom up.
      */
     DBUG_PRINT ("WLFS", ("trav NCODE of WL"));
-    if (NWITH_CODE (arg_node) != NULL) {
-        NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
+    if (WITH_CODE (arg_node) != NULL) {
+        WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
     }
     DBUG_PRINT ("WLFS", ("trav NCODE of WL finished"));
 
@@ -1997,20 +2005,21 @@ WLFSNwith (node *arg_node, info *arg_info)
     /*
      * try to fuse the current With-Loop
      */
-    DBUG_EXECUTE ("WLFS", PrintNode (arg_node););
+    DBUG_EXECUTE ("WLFS", PRTdoPrintNode (arg_node););
 
     /*
      * The second traversal into the N_CODEs ought to detect possible
      * dependencies from current withloop to the fusionable.
-     * The result is stored in NWITH_WLDEPENDENT( arg_node)
+     * The result is stored in WITH_WLDEPENDENT( arg_node)
      */
     if (INFO_WLFS_FUSIONABLE_WL (arg_info) != NULL) {
 
-        arg_node = DetectDependencies (arg_node, INFO_WLFS_FUSIONABLE_WL (arg_info),
-                                       INFO_WLFS_REFERENCES_FUSIONABLE (arg_info));
+        arg_node
+          = DDEPENDdoDetectDependencies (arg_node, INFO_WLFS_FUSIONABLE_WL (arg_info),
+                                         INFO_WLFS_REFERENCES_FUSIONABLE (arg_info));
 
-        INFO_WLFS_WLDEPENDENT (arg_info) = NWITH_DEPENDENT (arg_node);
-        NWITH_DEPENDENT (arg_node) = FALSE;
+        INFO_WLFS_WLDEPENDENT (arg_info) = WITH_ISDEPENDENT (arg_node);
+        WITH_ISDEPENDENT (arg_node) = FALSE;
     } else
         INFO_WLFS_WLDEPENDENT (arg_info) = FALSE;
 
@@ -2021,8 +2030,8 @@ WLFSNwith (node *arg_node, info *arg_info)
      * Futhermore we consider only WLs with non-empty iteration space
      */
 
-    if (NWITH_PARTS (arg_node) >= 1
-        && SHGetUnrLen (TYGetShape (AVIS_TYPE (IDS_AVIS (NWITH_VEC (arg_node))))) > 0) {
+    if (WITH_PARTS (arg_node) >= 1
+        && SHgetUnrLen (TYgetShape (AVIS_TYPE (IDS_AVIS (WITH_VEC (arg_node))))) > 0) {
 
         INFO_WLFS_WL (arg_info) = arg_node; /* store the current node for later */
 
@@ -2030,7 +2039,7 @@ WLFSNwith (node *arg_node, info *arg_info)
          * Now, we traverse the WITHOP sons for checking types and shape
          */
         INFO_WLFS_LHS_WL (arg_info) = ASSIGN_LHS (INFO_WLFS_ASSIGN (arg_info));
-        NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
+        WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
 
         /*
          * traverse the N_PARTs.
@@ -2043,13 +2052,14 @@ WLFSNwith (node *arg_node, info *arg_info)
          *  INFO_WLFS_WL_ARRAY_TYPE(arg_info)
          *  INFO_WLFS_WL_SHAPE( arg_info)
          */
-        DBUG_ASSERT ((NWITH_PART (arg_node) != NULL),
-                     "NWITH_PARTS is >= 1 although no PART is available!");
-        NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
+        DBUG_ASSERT ((WITH_PART (arg_node) != NULL),
+                     "WITH_PARTS is >= 1 although no PART is available!");
+        WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
 
         /* is there a WL we can fuse with and is fusion with fold WLs permitted? */
         if ((INFO_WLFS_FUSIONABLE_WL (arg_info) != NULL)
-            && !(no_fold_fusion && CONTAINS_FOLD (INFO_WLFS_WL_WOTYPE (arg_info)))) {
+            && !(global.no_fold_fusion
+                 && CONTAINS_FOLD (INFO_WLFS_WL_WOTYPE (arg_info)))) {
 
             wl_action = WL_2fuse;
             fwl = INFO_WLFS_FUSIONABLE_WL (arg_info);
@@ -2060,17 +2070,18 @@ WLFSNwith (node *arg_node, info *arg_info)
                  * Later the tagged assignments !between! the two fused withloops
                  * had to be shifted in front of the result withloop.
                  */
-                arg_node = TagDependencies (arg_node, fwl);
+                arg_node = TDEPENDdoTagDependencies (arg_node, fwl);
 
                 /* fuse both withloops together */
                 DBUG_PRINT ("WLFS", ("starting fusion of both With-Loops"));
                 arg_node = FuseWithloops (arg_node, arg_info, fwl);
                 DBUG_PRINT ("WLFS", ("fused With-Loops:"));
-                DBUG_EXECUTE ("WLFS", PrintNode (fwl););
+                DBUG_EXECUTE ("WLFS", PRTdoPrintNode (fwl););
                 wl_action = WL_fused;
             }
         } else {
-            if (!(no_fold_fusion && CONTAINS_FOLD (INFO_WLFS_WL_WOTYPE (arg_info)))) {
+            if (!(global.no_fold_fusion
+                  && CONTAINS_FOLD (INFO_WLFS_WL_WOTYPE (arg_info)))) {
                 /*
                  * this WL is the first fusionable WL
                  */
@@ -2088,8 +2099,8 @@ WLFSNwith (node *arg_node, info *arg_info)
              * INFO_WLFS_REFERENCES_FUSIONABLE( arg_info)
              */
             INFO_WLFS_REFERENCES_FUSIONABLE (arg_info)
-              = NodeListAppend (INFO_WLFS_REFERENCES_FUSIONABLE (arg_info),
-                                INFO_WLFS_ASSIGN (arg_info), NULL);
+              = TCnodeListAppend (INFO_WLFS_REFERENCES_FUSIONABLE (arg_info),
+                                  INFO_WLFS_ASSIGN (arg_info), NULL);
         }
     }
 
@@ -2100,118 +2111,52 @@ WLFSNwith (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *WLFSNwithop( node *arg_node, info *arg_info)
+ * @fn node *WLFSgenarray( node *arg_node, info *arg_info)
  *
  *   @brief checks the type of withloop operator, tries to determine
  *          the shape of the index vektor and the type of array
  *          (AKS, AKD, AUD).
  *
- *   @param  node *arg_node:  N_Nwithop
+ *   @param  node *arg_node:  N_genarray
  *           info *arg_info:  N_info
- *   @return node *        :  N_Nwithop
+ *   @return node *        :  N_genarray
  ******************************************************************************/
 
 node *
-WLFSNwithop (node *arg_node, info *arg_info)
+WLFSgenarray (node *arg_node, info *arg_info)
 {
     wo_type_t current_type = WOT_unknown;
     constant *const_expr;
-    shape *new_shp, *shp;
-    ntype *type;
-    int iv_shape, i;
 
-    DBUG_ENTER ("WLFSNwithop");
+    DBUG_ENTER ("WLFSgenarray");
 
-    switch (NWITHOP_TYPE (arg_node)) {
-    case WO_genarray:
-        if (INFO_WLFS_WL_ARRAY_TYPE (arg_info) == ARRAY_unknown) {
-            const_expr = COAST2Constant (NWITHOP_SHAPE (arg_node));
-            if (const_expr != NULL) {
-                /*
-                 * since all shapes of fused WL had to be be identical so far,
-                 * it is sufficient to take first inferred shape
-                 */
-                INFO_WLFS_WL_ARRAY_TYPE (arg_info) = ARRAY_aks;
-                INFO_WLFS_WL_SHAPE (arg_info) = const_expr;
-            } else
-                INFO_WLFS_WL_ARRAY_TYPE (arg_info) = ARRAY_akd;
-        }
+    if (INFO_WLFS_WL_ARRAY_TYPE (arg_info) == ARRAY_unknown) {
+        const_expr = COaST2Constant (GENARRAY_SHAPE (arg_node));
+        if (const_expr != NULL) {
+            /*
+             * since all shapes of fused WL had to be be identical so far,
+             * it is sufficient to take first inferred shape
+             */
+            INFO_WLFS_WL_ARRAY_TYPE (arg_info) = ARRAY_aks;
+            INFO_WLFS_WL_SHAPE (arg_info) = const_expr;
+        } else
+            INFO_WLFS_WL_ARRAY_TYPE (arg_info) = ARRAY_akd;
+    }
 
-        if (INFO_WLFS_WL_WOTYPE (arg_info) == WOT_unknown)
-            current_type = WOT_gen_mod;
-        else if (INFO_WLFS_WL_WOTYPE (arg_info) == WOT_fold)
-            current_type = WOT_gen_mod_fold;
-        else
-            current_type = INFO_WLFS_WL_WOTYPE (arg_info);
-
-        break;
-
-    case WO_modarray:
-        if (INFO_WLFS_WL_ARRAY_TYPE (arg_info) == ARRAY_unknown) {
-
-            type = AVIS_TYPE (IDS_AVIS (INFO_WLFS_LHS_WL (arg_info)));
-            if (TYIsAKS (type)) {
-                shp = TYGetShape (type);
-
-                /* get shape of the index vector */
-                iv_shape = IDS_SHAPE (NWITH_VEC (INFO_WLFS_WL (arg_info)), 0);
-                DBUG_ASSERT ((iv_shape > 0), "shape of index vector has to be > 0!");
-
-                if (SHGetDim (shp) != iv_shape) {
-                    new_shp = SHMakeShape (iv_shape);
-
-                    for (i = 0; i < iv_shape; i++) {
-                        new_shp = SHSetExtent (new_shp, i, SHGetExtent (shp, i));
-                    }
-                    const_expr = COMakeConstantFromShape (new_shp);
-                } else
-                    const_expr = COMakeConstantFromShape (shp);
-
-                /*
-                 * since all shapes of fused WL had to be be identical so far,
-                 * it is sufficient to take first inferred shape
-                 */
-                INFO_WLFS_WL_ARRAY_TYPE (arg_info) = ARRAY_aks;
-                INFO_WLFS_WL_SHAPE (arg_info) = const_expr;
-            } else {
-                /*
-                 * nothing for now
-                 * we try to get more information later by upper bounds of generators
-                 */
-            }
-        }
-
-        if (INFO_WLFS_WL_WOTYPE (arg_info) == WOT_unknown)
-            current_type = WOT_gen_mod;
-        else if (INFO_WLFS_WL_WOTYPE (arg_info) == WOT_fold)
-            current_type = WOT_gen_mod_fold;
-        else
-            current_type = INFO_WLFS_WL_WOTYPE (arg_info);
-
-        break;
-
-    case WO_foldfun:
-        /* here is no break missing */
-    case WO_foldprf:
-        if (INFO_WLFS_WL_WOTYPE (arg_info) == WOT_unknown)
-            current_type = WOT_fold;
-        else if (INFO_WLFS_WL_WOTYPE (arg_info) == WOT_gen_mod)
-            current_type = WOT_gen_mod_fold;
-        else
-            current_type = INFO_WLFS_WL_WOTYPE (arg_info);
-        break;
-
-    default:
-        DBUG_ASSERT ((0), "illegal NWITHOP_TYPE found!");
-        break;
+    if (INFO_WLFS_WL_WOTYPE (arg_info) == WOT_unknown) {
+        current_type = WOT_gen_mod;
+    } else if (INFO_WLFS_WL_WOTYPE (arg_info) == WOT_fold) {
+        current_type = WOT_gen_mod_fold;
+    } else {
+        current_type = INFO_WLFS_WL_WOTYPE (arg_info);
     }
 
     INFO_WLFS_WL_WOTYPE (arg_info) = current_type;
 
     INFO_WLFS_LHS_WL (arg_info) = IDS_NEXT (INFO_WLFS_LHS_WL (arg_info));
 
-    if (NWITHOP_NEXT (arg_node) != NULL) {
-        NWITHOP_NEXT (arg_node) = Trav (NWITHOP_NEXT (arg_node), arg_info);
+    if (WITHOP_NEXT (arg_node) != NULL) {
+        WITHOP_NEXT (arg_node) = TRAVdo (WITHOP_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -2219,24 +2164,142 @@ WLFSNwithop (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *WLFSNpart(node *arg_node, info *arg_info)
+ * @fn node *WLFSmodarray( node *arg_node, info *arg_info)
  *
- *   @brief traverse only generator to check bounds, step and width
+ *   @brief checks the type of withloop operator, tries to determine
+ *          the shape of the index vektor and the type of array
+ *          (AKS, AKD, AUD).
  *
- *   @param  node *arg_node:  N_Npart
+ *   @param  node *arg_node:  N_modarray
  *           info *arg_info:  N_info
- *   @return node *        :  N_Npart
+ *   @return node *        :  N_modarray
  ******************************************************************************/
 
 node *
-WLFSNpart (node *arg_node, info *arg_info)
+WLFSmodarray (node *arg_node, info *arg_info)
+{
+    wo_type_t current_type = WOT_unknown;
+    constant *const_expr;
+    shape *new_shp, *shp;
+    ntype *type;
+    int iv_shape, i;
+
+    DBUG_ENTER ("WLFSmodarray");
+
+    if (INFO_WLFS_WL_ARRAY_TYPE (arg_info) == ARRAY_unknown) {
+
+        type = AVIS_TYPE (IDS_AVIS (INFO_WLFS_LHS_WL (arg_info)));
+        if (TYisAKS (type)) {
+            shp = TYgetShape (type);
+
+            /* get shape of the index vector */
+            iv_shape
+              = SHgetExtent (TYgetShape (IDS_NTYPE (WITH_VEC (INFO_WLFS_WL (arg_info)))),
+                             0);
+            DBUG_ASSERT ((iv_shape > 0), "shape of index vector has to be > 0!");
+
+            if (SHgetDim (shp) != iv_shape) {
+                new_shp = SHmakeShape (iv_shape);
+
+                for (i = 0; i < iv_shape; i++) {
+                    new_shp = SHsetExtent (new_shp, i, SHgetExtent (shp, i));
+                }
+                const_expr = COmakeConstantFromShape (new_shp);
+            } else
+                const_expr = COmakeConstantFromShape (shp);
+
+            /*
+             * since all shapes of fused WL had to be be identical so far,
+             * it is sufficient to take first inferred shape
+             */
+            INFO_WLFS_WL_ARRAY_TYPE (arg_info) = ARRAY_aks;
+            INFO_WLFS_WL_SHAPE (arg_info) = const_expr;
+        } else {
+            /*
+             * nothing for now
+             * we try to get more information later by upper bounds of generators
+             */
+        }
+    }
+
+    if (INFO_WLFS_WL_WOTYPE (arg_info) == WOT_unknown) {
+        current_type = WOT_gen_mod;
+    } else if (INFO_WLFS_WL_WOTYPE (arg_info) == WOT_fold) {
+        current_type = WOT_gen_mod_fold;
+    } else {
+        current_type = INFO_WLFS_WL_WOTYPE (arg_info);
+    }
+
+    INFO_WLFS_WL_WOTYPE (arg_info) = current_type;
+
+    INFO_WLFS_LHS_WL (arg_info) = IDS_NEXT (INFO_WLFS_LHS_WL (arg_info));
+
+    if (WITHOP_NEXT (arg_node) != NULL) {
+        WITHOP_NEXT (arg_node) = TRAVdo (WITHOP_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *WLFSfold( node *arg_node, info *arg_info)
+ *
+ *   @brief checks the type of withloop operator, tries to determine
+ *          the shape of the index vektor and the type of array
+ *          (AKS, AKD, AUD).
+ *
+ *   @param  node *arg_node:  N_fold
+ *           info *arg_info:  N_info
+ *   @return node *        :  N_fold
+ ******************************************************************************/
+
+node *
+WLFSfold (node *arg_node, info *arg_info)
+{
+    wo_type_t current_type = WOT_unknown;
+
+    DBUG_ENTER ("WLFSfold");
+
+    if (INFO_WLFS_WL_WOTYPE (arg_info) == WOT_unknown) {
+        current_type = WOT_fold;
+    } else if (INFO_WLFS_WL_WOTYPE (arg_info) == WOT_gen_mod) {
+        current_type = WOT_gen_mod_fold;
+    } else {
+        current_type = INFO_WLFS_WL_WOTYPE (arg_info);
+    }
+
+    INFO_WLFS_WL_WOTYPE (arg_info) = current_type;
+
+    INFO_WLFS_LHS_WL (arg_info) = IDS_NEXT (INFO_WLFS_LHS_WL (arg_info));
+
+    if (WITHOP_NEXT (arg_node) != NULL) {
+        WITHOP_NEXT (arg_node) = TRAVdo (WITHOP_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *WLFSpart(node *arg_node, info *arg_info)
+ *
+ *   @brief traverse only generator to check bounds, step and width
+ *
+ *   @param  node *arg_node:  N_part
+ *           info *arg_info:  N_info
+ *   @return node *        :  N_part
+ ******************************************************************************/
+
+node *
+WLFSpart (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WLFSNpart");
 
-    NPART_GEN (arg_node) = Trav (NPART_GEN (arg_node), arg_info);
+    PART_GENERATOR (arg_node) = TRAVdo (PART_GENERATOR (arg_node), arg_info);
 
-    if (NPART_NEXT (arg_node) != NULL) {
-        NPART_NEXT (arg_node) = Trav (NPART_NEXT (arg_node), arg_info);
+    if (PART_NEXT (arg_node) != NULL) {
+        PART_NEXT (arg_node) = TRAVdo (PART_NEXT (arg_node), arg_info);
     }
 
     if ((INFO_WLFS_WL_SHAPE (arg_info) != NULL)
@@ -2250,7 +2313,7 @@ WLFSNpart (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *WLFSNgenerator(node *arg_node, info *arg_info)
+ * @fn node *WLFSgenerator(node *arg_node, info *arg_info)
  *
  *   @brief  bounds, step and width vectors are compared with bounds, step
  *           and width of all generators of the withloop out of
@@ -2277,39 +2340,43 @@ WLFSNpart (node *arg_node, info *arg_info)
  *           lower bound of at least one generator is the zero vector.
  *           Only then a full Partition is garantied.
  *
- *   @param  node *arg_node:  N_Ngenerator
+ *   @param  node *arg_node:  N_generator
  *           info *arg_info:  N_info
- *   @return node *        :  N_Ngenerator
+ *   @return node *        :  N_generator
  ******************************************************************************/
 
 node *
-WLFSNgenerator (node *arg_node, info *arg_info)
+WLFSgenerator (node *arg_node, info *arg_info)
 {
     node *parts, *gen;
     gen_property_t gen_prob, gen_prob_ret;
     constant *const_expr, *max_shape, *tmpc, *const_lb;
 
-    DBUG_ENTER ("WLFSNgenerator");
+    DBUG_ENTER ("WLFSgenerator");
 
     if (INFO_WLFS_FUSIONABLE_WL (arg_info) != NULL) {
 
         if (INFO_WLFS_GENPROPERTY (arg_info) < GEN_variable) {
-            parts = NWITH_PART (ASSIGN_RHS (INFO_WLFS_FUSIONABLE_WL (arg_info)));
+            parts = WITH_PART (ASSIGN_RHS (INFO_WLFS_FUSIONABLE_WL (arg_info)));
 
             gen_prob = GEN_diffdim;
             while (parts != NULL) {
-                gen = NPART_GEN (parts);
-                gen_prob = CompGenSon (NGEN_BOUND1 (arg_node), NGEN_BOUND1 (gen));
-                gen_prob_ret = CompGenSon (NGEN_BOUND2 (arg_node), NGEN_BOUND2 (gen));
+                gen = PART_GENERATOR (parts);
+                gen_prob
+                  = CompGenSon (GENERATOR_BOUND1 (arg_node), GENERATOR_BOUND1 (gen));
+                gen_prob_ret
+                  = CompGenSon (GENERATOR_BOUND2 (arg_node), GENERATOR_BOUND2 (gen));
                 RESULT_GEN_PROP (gen_prob, gen_prob_ret);
-                gen_prob_ret = CompGenSon (NGEN_STEP (arg_node), NGEN_STEP (gen));
+                gen_prob_ret
+                  = CompGenSon (GENERATOR_STEP (arg_node), GENERATOR_STEP (gen));
                 RESULT_GEN_PROP (gen_prob, gen_prob_ret);
-                gen_prob_ret = CompGenSon (NGEN_WIDTH (arg_node), NGEN_WIDTH (gen));
+                gen_prob_ret
+                  = CompGenSon (GENERATOR_WIDTH (arg_node), GENERATOR_WIDTH (gen));
                 RESULT_GEN_PROP (gen_prob, gen_prob_ret);
 
                 if (gen_prob == GEN_equal || gen_prob == GEN_equal_var)
                     break;
-                parts = NPART_NEXT (parts);
+                parts = PART_NEXT (parts);
             }
             RESULT_GEN_PROP (INFO_WLFS_GENPROPERTY (arg_info), gen_prob);
         }
@@ -2318,32 +2385,32 @@ WLFSNgenerator (node *arg_node, info *arg_info)
     if (!INFO_WLFS_WL_LB_IS_ZERO (arg_info)
         && (INFO_WLFS_GENPROPERTY (arg_info) == GEN_equal
             || INFO_WLFS_GENPROPERTY (arg_info) == GEN_constant)) {
-        const_lb = COAST2Constant (NGEN_BOUND1 (arg_node));
-        if ((const_lb != NULL) && COIsZero (const_lb, TRUE)) {
+        const_lb = COaST2Constant (GENERATOR_BOUND1 (arg_node));
+        if ((const_lb != NULL) && COisZero (const_lb, TRUE)) {
             INFO_WLFS_WL_LB_IS_ZERO (arg_info) = TRUE;
-            const_lb = COFreeConstant (const_lb);
+            const_lb = COfreeConstant (const_lb);
         }
     }
 
     if (INFO_WLFS_WL_ARRAY_TYPE (arg_info) == ARRAY_unknown) {
-        const_expr = COAST2Constant (NGEN_BOUND2 (arg_node));
+        const_expr = COaST2Constant (GENERATOR_BOUND2 (arg_node));
         if (const_expr != NULL) {
             max_shape = INFO_WLFS_WL_SHAPE (arg_info);
             if (max_shape != NULL) {
-                tmpc = COGe (const_expr, max_shape);
-                if (COIsTrue (tmpc, TRUE)) {
+                tmpc = COge (const_expr, max_shape);
+                if (COisTrue (tmpc, TRUE)) {
                     INFO_WLFS_WL_SHAPE (arg_info)
-                      = COFreeConstant (INFO_WLFS_WL_SHAPE (arg_info));
+                      = COfreeConstant (INFO_WLFS_WL_SHAPE (arg_info));
                     INFO_WLFS_WL_SHAPE (arg_info) = const_expr;
                 }
-                tmpc = COFreeConstant (tmpc);
+                tmpc = COfreeConstant (tmpc);
             } else
                 INFO_WLFS_WL_SHAPE (arg_info) = const_expr;
         } else {
             INFO_WLFS_WL_ARRAY_TYPE (arg_info) = ARRAY_akd;
             if (INFO_WLFS_WL_SHAPE (arg_info) != NULL)
                 INFO_WLFS_WL_SHAPE (arg_info)
-                  = COFreeConstant (INFO_WLFS_WL_SHAPE (arg_info));
+                  = COfreeConstant (INFO_WLFS_WL_SHAPE (arg_info));
         }
     }
 
@@ -2352,7 +2419,7 @@ WLFSNgenerator (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *WithloopFusion( node *arg_node)
+ * @fn node *WLFSdoWithloopFusion( node *arg_node)
  *
  *   @brief  Starting point for the withloop fusion if it was called
  *           from optimize.
@@ -2362,27 +2429,24 @@ WLFSNgenerator (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 node *
-WithloopFusion (node *arg_node)
+WLFSdoWithloopFusion (node *arg_node)
 {
-    funtab *tmp_tab;
     info *arg_info;
 
-    DBUG_ENTER ("WithloopFusion");
+    DBUG_ENTER ("WLFSdoWithloopFusion");
 
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_fundef),
-                 "WithloopFusion not started with fundef node");
+                 "WLFSdoWithloopFusion not started with fundef node");
 
     DBUG_PRINT ("WLFS", ("Starting to fusion With-Loops ..."));
 
     arg_info = MakeInfo ();
 
-    tmp_tab = act_tab;
-    act_tab = wlfs_tab;
-
-    arg_node = Trav (arg_node, arg_info);
+    TRAVpush (TR_wlfs);
+    arg_node = TRAVdo (arg_node, arg_info);
+    TRAVpop ();
 
     arg_info = FreeInfo (arg_info);
-    act_tab = tmp_tab;
 
     DBUG_PRINT ("WLFS", ("Fusioning of With-Loops complete."));
 
