@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.81  2004/03/05 19:20:05  mwe
+ * support for new node N_funcond added
+ *
  * Revision 3.80  2004/02/20 08:22:18  mwe
  * added FUNDECS argument to MakeModul
  *
@@ -1109,6 +1112,27 @@ MakeExprs (node *expr, node *next)
 
     EXPRS_EXPR (tmp) = expr;
     EXPRS_NEXT (tmp) = next;
+
+    DBUG_PRINT ("MAKE",
+                ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
+
+    DBUG_RETURN (tmp);
+}
+
+/*--------------------------------------------------------------------------*/
+
+node *
+MakeFuncond (node *pred, node *then, node *alternative)
+{
+    node *tmp;
+
+    DBUG_ENTER ("MakeFuncond");
+
+    tmp = CreateCleanNode (N_funcond);
+
+    FUNCOND_IF (tmp) = pred;
+    FUNCOND_THEN (tmp) = then;
+    FUNCOND_ELSE (tmp) = alternative;
 
     DBUG_PRINT ("MAKE",
                 ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
