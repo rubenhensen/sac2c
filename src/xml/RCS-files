@@ -27,3 +27,4 @@ common-node-access.xsl
 common-travfun.xsl
 ast.xml
 Makefile
+ast2node_info_mac.xsl
