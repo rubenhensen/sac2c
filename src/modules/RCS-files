@@ -1,5 +1,4 @@
 Makefile
-checkdec.c
 filemgr.c
 filemgr.h
 implicittypes.c
