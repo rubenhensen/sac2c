@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2001/05/08 13:16:22  dkr
+ * new macros for RC used
+ *
  * Revision 1.2  2001/03/22 19:51:01  dkr
  * include of tree.h eliminated
  *
@@ -75,6 +78,7 @@
 #include "traverse.h"
 #include "free.h"
 #include "DupTree.h"
+#include "refcount.h"
 #include "print.h"
 
 /******************************************************************************
@@ -201,11 +205,13 @@ AIids (ids *arg_ids, node *arg_info)
                                    ST_regular),
                            arg_ids);
 #if 0
-    ID_VARDEC(LET_EXPR(new_let)) = FindOrMakeVardec(IDS_NAME(INFO_AI_IDS(arg_info)),
-                                                    INFO_AI_FUNDEF(arg_info),
-                                                    IDS_VARDEC(INFO_AI_IDS(arg_info)));
-#endif
+    ID_VARDEC( LET_EXPR( new_let))
+      = FindOrMakeVardec( IDS_NAME(INFO_AI_IDS(arg_info)),
+                          INFO_AI_FUNDEF(arg_info),
+                          IDS_VARDEC(INFO_AI_IDS(arg_info)));
+#else
         ID_VARDEC (LET_EXPR (new_let)) = IDS_VARDEC (INFO_AI_IDS (arg_info));
+#endif
         /*
          * This back reference is a dirty trick. Formally we would have to introduce
          * a new variable declaration within the adjusted function definition. The
@@ -215,10 +221,12 @@ AIids (ids *arg_ids, node *arg_info)
          * function and in the called function disjoint.
          */
 
-        if (IDS_REFCNT (arg_ids) == -1) {
-            ID_REFCNT (LET_EXPR (new_let)) = -1;
-        } else {
+        if (RC_IS_INACTIVE (IDS_REFCNT (arg_ids))) {
+            ID_REFCNT (LET_EXPR (new_let)) = RC_INACTIVE;
+        } else if (RC_IS_ACTIVE (IDS_REFCNT (arg_ids))) {
             ID_REFCNT (LET_EXPR (new_let)) = 1;
+        } else {
+            DBUG_ASSERT ((0), "illegal RC value found!");
         }
 
         INFO_AI_POSTASSIGN (arg_info)
@@ -396,6 +404,7 @@ node *
 AIid (node *arg_node, node *arg_info)
 {
     node *new_let;
+    ids *new_ids;
     char *desired_name;
 
     DBUG_ENTER ("AIid");
@@ -416,27 +425,30 @@ AIid (node *arg_node, node *arg_info)
              * id is replaced by the matching variable and an additional assignment
              * is created.
              */
-            new_let = MakeLet (arg_node,
-                               MakeIds (StringCopy (IDS_NAME (INFO_AI_IDS (arg_info))),
-                                        NULL, ST_regular));
-            /*
-            IDS_VARDEC(LET_IDS(new_let)) =
-            FindOrMakeVardec(IDS_NAME(INFO_AI_IDS(arg_info)), INFO_AI_FUNDEF(arg_info),
-                                                            IDS_VARDEC(INFO_AI_IDS(arg_info)));
-            */
-            IDS_VARDEC (LET_IDS (new_let)) = IDS_VARDEC (INFO_AI_IDS (arg_info));
-            if (ID_REFCNT (arg_node) == -1) {
-                IDS_REFCNT (LET_IDS (new_let)) = -1;
+            new_ids = MakeIds_Copy (IDS_NAME (INFO_AI_IDS (arg_info)));
+
+#if 0
+      IDS_VARDEC( new_ids)
+        = FindOrMakeVardec( IDS_NAME(INFO_AI_IDS(arg_info)),
+                            INFO_AI_FUNDEF(arg_info),
+                            IDS_VARDEC(INFO_AI_IDS(arg_info)));
+#else
+            IDS_VARDEC (new_ids) = IDS_VARDEC (INFO_AI_IDS (arg_info));
+#endif
+
+            if (RC_IS_INACTIVE (ID_REFCNT (arg_node))) {
+                IDS_REFCNT (new_ids) = RC_INACTIVE;
+            } else if (RC_IS_ACTIVE (ID_REFCNT (arg_node))) {
+                IDS_REFCNT (new_ids) = 1;
             } else {
-                IDS_REFCNT (LET_IDS (new_let)) = 1;
+                DBUG_ASSERT ((0), "illegal RC value found!");
             }
+
+            new_let = MakeLet (arg_node, new_ids);
 
             INFO_AI_PREASSIGN (arg_info)
               = MakeAssign (new_let, INFO_AI_PREASSIGN (arg_info));
-            arg_node
-              = MakeId (StringCopy (IDS_NAME (INFO_AI_IDS (arg_info))), NULL, ST_regular);
-            ID_VARDEC (arg_node) = IDS_VARDEC (LET_IDS (new_let));
-            ID_REFCNT (arg_node) = IDS_REFCNT (LET_IDS (new_let));
+            arg_node = DupIds_Id (INFO_AI_IDS (arg_info));
         }
     }
 
@@ -456,18 +468,22 @@ AIid (node *arg_node, node *arg_info)
              */
             new_let
               = MakeLet (arg_node, MakeIds (StringCopy (desired_name), NULL, ST_regular));
-            /*
-            IDS_VARDEC(LET_IDS(new_let))
-              = FindOrMakeVardec(desired_name,
-                                 INFO_AI_FUNDEF(arg_info),
-                                 ID_VARDEC(EXPRS_EXPR(INFO_AI_ARGS(arg_info))));
-            */
+#if 0
+      IDS_VARDEC( LET_IDS( new_let))
+        = FindOrMakeVardec( desired_name,
+                            INFO_AI_FUNDEF(arg_info),
+                            ID_VARDEC(EXPRS_EXPR(INFO_AI_ARGS(arg_info))));
+#else
             IDS_VARDEC (LET_IDS (new_let))
               = ID_VARDEC (EXPRS_EXPR (INFO_AI_ARGS (arg_info)));
-            if (ID_REFCNT (arg_node) == -1) {
-                IDS_REFCNT (LET_IDS (new_let)) = -1;
-            } else {
+#endif
+
+            if (RC_IS_INACTIVE (ID_REFCNT (arg_node))) {
+                IDS_REFCNT (LET_IDS (new_let)) = RC_INACTIVE;
+            } else if (RC_IS_ACTIVE (ID_REFCNT (arg_node))) {
                 IDS_REFCNT (LET_IDS (new_let)) = 1;
+            } else {
+                DBUG_ASSERT ((0), "illegal RC value found!");
             }
 
             INFO_AI_PREASSIGN (arg_info)
@@ -524,7 +540,6 @@ AIvardec (node *arg_node, node *arg_info)
     DBUG_ENTER ("AIvardec");
 
     FREE (VARDEC_NAME (arg_node));
-
     VARDEC_NAME (arg_node) = TmpVar ();
 
     if (VARDEC_NEXT (arg_node) != NULL) {
@@ -553,7 +568,6 @@ AIarg (node *arg_node, node *arg_info)
                  "Illegal actual parameter in AIarg()");
 
     FREE (ARG_NAME (arg_node));
-
     ARG_NAME (arg_node) = StringCopy (ID_NAME (EXPRS_EXPR (INFO_AI_ARGS (arg_info))));
 
     INFO_AI_ARGS (arg_info) = EXPRS_NEXT (INFO_AI_ARGS (arg_info));
@@ -761,7 +775,7 @@ AdjustIdentifiers (node *fundef, node *let)
 
     DBUG_EXECUTE ("PRINT_AI", PrintNode (fundef););
 
-    FreeNode (info_node);
+    info_node = FreeNode (info_node);
 
     act_tab = old_tab;
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.59  2001/05/08 13:15:59  dkr
+ * new macros for RC used
+ *
  * Revision 3.58  2001/05/03 17:32:01  dkr
  * MAXHOMDIM replaced by HOMSV
  *
@@ -227,6 +230,7 @@
 #include "NameTuples.h"
 #include "wltransform.h"
 #include "wl_bounds.h"
+#include "refcount.h"
 
 #define WARN_INDENT
 
@@ -713,6 +717,12 @@ PrintRC (int rc, int nrc, bool do_it)
     if (do_it) {
         if (rc >= 0) {
             fprintf (outfile, ":%d", rc);
+        } else if (rc == RC_UNDEF) {
+            fprintf (outfile, ":?");
+        } else if (rc == RC_INACTIVE) {
+            /* no output */
+        } else {
+            DBUG_ASSERT ((0), "illegal RC value found!");
         }
     }
 
