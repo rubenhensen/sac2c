@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2001/03/20 13:21:17  ben
+ *  SAC_MT_SCHEDULER_Block_Select added
+ *
  * Revision 3.9  2001/03/16 15:16:28  dkr
  * fixed a bug in SAC_MT_ADJUST_SCHEDULER__OFFSET,
  * SAC_MT_ADJUST_SCHEDULER
@@ -742,6 +745,20 @@ typedef union {
     {                                                                                    \
         SAC_MT_SCHEDULER_Block_DIM0 (lower, upper, unrolling)                            \
     }
+
+#define SAC_MT_SCHEDULER_Block_Select(sched_dim, lower, upper, num_tasks, next_taskid)   \
+    {                                                                                    \
+        const int iterations_per_thread = (upper - lower) / num_tasks;                   \
+                                                                                         \
+        SAC_WL_MT_SCHEDULE_START (sched_dim)                                             \
+          = lower + iterations_per_thread * next_taskid;                                 \
+                                                                                         \
+        if ((next_taskid + 1) != num_tasks) {                                            \
+            SAC_WL_MT_SCHEDULE_STOP (sched_dim)                                          \
+              = SAC_WL_MT_SCHEDULE_START (sched_dim) + iterations_per_thread;            \
+        } else {                                                                         \
+            SAC_WL_MT_SCHEDULE_STOP (sched_dim) = upper;                                 \
+        }
 
 #if 0
 /* These macros are probably no longer used. */
