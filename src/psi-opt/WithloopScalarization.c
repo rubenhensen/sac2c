@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2002/07/11 12:49:27  ktr
+ * WLS now supports conversion of other non-scalar expressions into a
+ * Withloop-nesting, which is scalarizeble.
+ *
  * Revision 1.11  2002/06/26 20:31:22  ktr
  * WLS now supports all tested MG-genarray WLs.
  *
@@ -148,6 +152,7 @@
 
 typedef enum {
     wls_probe,
+    wls_withloopification,
     wls_normgen,
     wls_distribute,
     wls_scalarize,
@@ -156,7 +161,7 @@ typedef enum {
 
 #define WLS_PHASE(n) ((wls_phase_type)INFO_WLS_PHASE (n))
 
-#define wls_perfect FALSE
+#define wls_agressive TRUE
 
 /****************************************************************************
  *
@@ -258,6 +263,8 @@ ConcatVecs (node *vec1, node *vec2)
 
     ARRAY_AELEMS (res)
       = CombineExprs (DupTree (ARRAY_AELEMS (vec1)), DupTree (ARRAY_AELEMS (vec2)));
+
+    ((int *)ARRAY_CONSTVEC (res)) = Array2IntVec (ARRAY_AELEMS (res), NULL);
 
     DBUG_RETURN (res);
 }
@@ -483,46 +490,330 @@ probePart (node *arg_node, node *arg_info)
         INFO_WLS_POSSIBLE (arg_info)
           = (VARDEC_DIM (AVIS_VARDECORARG (ID_AVIS (NPART_CEXPR (arg_node)))) > 0);
 
-    /* Is the inner CEXPR computed by a withloop? */
-    if (INFO_WLS_POSSIBLE (arg_info))
-        INFO_WLS_POSSIBLE (arg_info) = (NODE_TYPE (NPART_LETEXPR (arg_node)) == N_Nwith);
-
-    /* Is the inner WITHLOOP a MG-WL? */
-    if (INFO_WLS_POSSIBLE (arg_info))
-        INFO_WLS_POSSIBLE (arg_info) = (NWITH_PARTS (NPART_LETEXPR (arg_node)) > 0);
-
-    /* Is the inner Withloop really inside of this part? */
-    if (INFO_WLS_POSSIBLE (arg_info))
-        INFO_WLS_POSSIBLE (arg_info)
-          = (isAssignInsideBlock (NPART_SSAASSIGN (arg_node),
-                                  BLOCK_INSTR (NPART_CBLOCK (arg_node))));
-
-    /* Is this a perfect nesting of WLs? */
-    if ((INFO_WLS_POSSIBLE (arg_info)) && (wls_perfect))
-        INFO_WLS_POSSIBLE (arg_info)
-          = (BLOCK_INSTR (NPART_CBLOCK (arg_node)) == NPART_SSAASSIGN (arg_node));
-
-    /* Are all the inner Generators independent from the outer? */
-    if (INFO_WLS_POSSIBLE (arg_info))
-        INFO_WLS_POSSIBLE (arg_info)
-          = (checkGeneratorDependencies (arg_node,
-                                         NWITH_PART (NPART_LETEXPR (arg_node))));
-
-    /* Are both WLs of compatible Type? */
-    if (INFO_WLS_POSSIBLE (arg_info))
-        INFO_WLS_POSSIBLE (arg_info)
-          = (compatWLTypes (INFO_WLS_WITHOP (arg_info),
-                            NWITH_WITHOP (NPART_LETEXPR (arg_node))));
-
-    /* Do all inner WLs iterate over the same dimensions? */
-    if (INFO_WLS_POSSIBLE (arg_info)) {
-        if (INFO_WLS_DIMS (arg_info) == -1)
-            INFO_WLS_DIMS (arg_info)
-              = VARDEC_SHAPE (IDS_VARDEC (NWITH_VEC (NPART_LETEXPR (arg_node))), 0);
-        else
+    if (wls_agressive) {
+    } else {
+        /* perhaps some of these conditions should be made assertions in the
+           distribution phase */
+        /* Is the inner CEXPR computed by a withloop? */
+        if (INFO_WLS_POSSIBLE (arg_info))
             INFO_WLS_POSSIBLE (arg_info)
-              = (INFO_WLS_DIMS (arg_info)
-                 == VARDEC_SHAPE (IDS_VARDEC (NWITH_VEC (NPART_LETEXPR (arg_node))), 0));
+              = (NODE_TYPE (NPART_LETEXPR (arg_node)) == N_Nwith);
+
+        /* Is the inner WITHLOOP a MG-WL? */
+        if (INFO_WLS_POSSIBLE (arg_info))
+            INFO_WLS_POSSIBLE (arg_info) = (NWITH_PARTS (NPART_LETEXPR (arg_node)) > 0);
+
+        /* Is the inner Withloop really inside of this part? */
+        if (INFO_WLS_POSSIBLE (arg_info))
+            INFO_WLS_POSSIBLE (arg_info)
+              = (isAssignInsideBlock (NPART_SSAASSIGN (arg_node),
+                                      BLOCK_INSTR (NPART_CBLOCK (arg_node))));
+
+        /* Is this a perfect nesting of WLs? */
+        if (INFO_WLS_POSSIBLE (arg_info))
+            INFO_WLS_POSSIBLE (arg_info)
+              = (BLOCK_INSTR (NPART_CBLOCK (arg_node)) == NPART_SSAASSIGN (arg_node));
+
+        /* Are all the inner Generators independent from the outer? */
+        if (INFO_WLS_POSSIBLE (arg_info))
+            INFO_WLS_POSSIBLE (arg_info)
+              = (checkGeneratorDependencies (arg_node,
+                                             NWITH_PART (NPART_LETEXPR (arg_node))));
+
+        /* Are both WLs of compatible Type? */
+        if (INFO_WLS_POSSIBLE (arg_info))
+            INFO_WLS_POSSIBLE (arg_info)
+              = (compatWLTypes (INFO_WLS_WITHOP (arg_info),
+                                NWITH_WITHOP (NPART_LETEXPR (arg_node))));
+
+        /* Do all inner WLs iterate over the same dimensions? */
+        if (INFO_WLS_POSSIBLE (arg_info)) {
+            if (INFO_WLS_DIMS (arg_info) == -1)
+                INFO_WLS_DIMS (arg_info)
+                  = VARDEC_SHAPE (IDS_VARDEC (NWITH_VEC (NPART_LETEXPR (arg_node))), 0);
+            else
+                INFO_WLS_POSSIBLE (arg_info)
+                  = (INFO_WLS_DIMS (arg_info)
+                     == VARDEC_SHAPE (IDS_VARDEC (NWITH_VEC (NPART_LETEXPR (arg_node))),
+                                      0));
+        }
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/****************************************************************************
+ *
+ * Withloopification functions
+ *
+ ****************************************************************************/
+
+node *
+CreateCopyWithloop (node *arg_node, node *fundef)
+{
+    node *newwith;
+    node *selid;
+
+    DBUG_ENTER ("CreateCopyWithloop");
+
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_id,
+                 "CreateCopyWithloop called for non N_id node");
+
+    newwith = CreateScalarWith (GetDim (ID_TYPE (arg_node)),
+                                Type2Shpseg (ID_TYPE (arg_node), NULL),
+                                GetBasetype (ID_TYPE (arg_node)), NULL, fundef);
+
+    selid = MakeId (StringCopy (IDS_NAME (NWITH_VEC (newwith))), NULL, ST_regular);
+    ID_VARDEC (selid) = IDS_VARDEC (NWITH_VEC (newwith));
+    ID_AVIS (selid) = VARDEC_AVIS (ID_VARDEC (selid));
+
+    ASSIGN_RHS (BLOCK_INSTR (NWITH_CBLOCK (newwith)))
+      = MakePrf (F_sel, MakeExprs (selid, MakeExprs (DupNode (arg_node), NULL)));
+
+    DBUG_RETURN (newwith);
+}
+
+node *
+InsertCopyWithloop (node *arg_node, node *arg_info)
+{
+    node *assign;
+    node *assid;
+    node *vardec = NULL;
+
+    DBUG_ENTER ("InsertCopyWithloop");
+
+    assid = MakeId (TmpVar (), NULL, ST_regular);
+    vardec = MakeVardec (StringCopy (ID_NAME (assid)),
+                         DupOneTypes (ID_TYPE (NPART_CEXPR (arg_node))), vardec);
+
+    ID_VARDEC (assid) = vardec;
+    ID_AVIS (assid) = VARDEC_AVIS (vardec);
+
+    AddVardecs (INFO_WLS_FUNDEF (arg_info), vardec);
+
+    assign = MakeAssignLet (StringCopy (ID_NAME (assid)), vardec,
+                            CreateCopyWithloop (NPART_CEXPR (arg_node),
+                                                INFO_WLS_FUNDEF (arg_info)));
+
+    ID_SSAASSIGN (assid) = assign;
+
+    NPART_CEXPR (arg_node) = DupNode (assid);
+    BLOCK_INSTR (NPART_CBLOCK (arg_node))
+      = AppendAssign (BLOCK_INSTR (NPART_CBLOCK (arg_node)), assign);
+
+    DBUG_RETURN (arg_node);
+}
+
+shpseg *
+UpperBound (shpseg *shp, int dim)
+{
+    shpseg *res;
+    int i;
+
+    DBUG_ENTER ("UpperBound");
+
+    res = DupShpseg (shp);
+    for (i = 0; i < dim; i++)
+        SHPSEG_SHAPE (res, i)++;
+
+    DBUG_RETURN (res);
+}
+
+shpseg *
+IncreaseShpseg (shpseg *shppos, shpseg *shpmax, int dim)
+{
+    shpseg *res;
+    int i;
+
+    DBUG_ENTER ("IncreaseShpseg");
+
+    res = DupShpseg (shppos);
+
+    for (i = dim - 1; i >= 0; i--) {
+        SHPSEG_SHAPE (res, i)++;
+        if (SHPSEG_SHAPE (res, i) >= SHPSEG_SHAPE (shpmax, i))
+            SHPSEG_SHAPE (res, i) = 0;
+        else
+            break;
+    }
+
+    DBUG_RETURN (res);
+}
+
+node *
+CreateExprsPart (node *exprs, int *partcount, node *withid, shpseg *shppos,
+                 shpseg *shpmax, int dim, node *fundef, simpletype btype)
+{
+    node *res = NULL;
+    node *next;
+    node *assid;
+    node *vardec = NULL;
+    node *expr;
+
+    DBUG_ENTER ("CreateExprsPart");
+
+    if (exprs != NULL) {
+        expr = DupNode (EXPRS_EXPR (exprs));
+
+        assid = MakeId (TmpVar (), NULL, ST_regular);
+
+        if (NODE_TYPE (expr) == N_id)
+            vardec = MakeVardec (StringCopy (ID_NAME (assid)),
+                                 DupOneTypes (ID_TYPE (expr)), vardec);
+        else
+            vardec
+              = MakeVardec (StringCopy (ID_NAME (assid)), MakeTypes1 (btype), vardec);
+
+        ID_VARDEC (assid) = vardec;
+        ID_AVIS (assid) = VARDEC_AVIS (vardec);
+
+        AddVardecs (fundef, vardec);
+
+        res
+          = MakeNPart (withid,
+                       MakeNGenerator (Shpseg2Array (shppos, dim),
+                                       Shpseg2Array (UpperBound (shppos, dim), dim), F_le,
+                                       F_lt, NULL, NULL),
+                       MakeNCode (MakeBlock (MakeAssignLet (StringCopy (ID_NAME (assid)),
+                                                            vardec, expr),
+                                             NULL),
+                                  DupNode (assid)));
+
+        shppos = IncreaseShpseg (shppos, shpmax, dim);
+        next = CreateExprsPart (EXPRS_NEXT (exprs), partcount, withid, shppos, shpmax,
+                                dim, fundef, btype);
+
+        NPART_NEXT (res) = next;
+        if (next != NULL)
+            NCODE_NEXT (NPART_CODE (res)) = NPART_CODE (next);
+
+        *partcount = *partcount + 1;
+    }
+    DBUG_RETURN (res);
+}
+
+node *
+CreateArrayWithloop (node *array, node *fundef)
+{
+    int partcount = 0;
+    node *res;
+    node *part;
+    node *withid;
+    shpseg *shp;
+    shpseg *shpmax;
+
+    node *id;
+    node *vardecs = NULL;
+    ids *vec_ids;
+    ids *scl_ids = NULL;
+    ids *tmp_ids;
+    int i;
+    int dim;
+
+    DBUG_ENTER ("CreateArrayWithloop");
+
+    if (NODE_TYPE (array) == N_array) {
+        dim = 1;
+        shpmax = ARRAY_SHPSEG (array);
+    } else {
+        /* reshape */
+        DBUG_ASSERT (NODE_TYPE (array) == N_prf, "Invalid Node Type!");
+
+        dim = ARRAY_SHAPE (EXPRS_EXPR (PRF_ARGS (array)), 0);
+        shpmax = Array2Shpseg (EXPRS_EXPR (PRF_ARGS (array)), NULL);
+        array = EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (array)));
+    }
+
+    vec_ids = MakeIds (TmpVar (), NULL, ST_regular);
+    vardecs
+      = MakeVardec (StringCopy (IDS_NAME (vec_ids)),
+                    MakeTypes (T_int, 1, MakeShpseg (MakeNums (dim, NULL)), NULL, NULL),
+                    vardecs);
+
+    IDS_VARDEC (vec_ids) = vardecs;
+    IDS_AVIS (vec_ids) = VARDEC_AVIS (vardecs);
+
+    for (i = 0; i < dim; i++) {
+        tmp_ids = MakeIds (TmpVar (), NULL, ST_regular);
+        vardecs
+          = MakeVardec (StringCopy (IDS_NAME (tmp_ids)), MakeTypes1 (T_int), vardecs);
+        IDS_NEXT (tmp_ids) = scl_ids;
+        scl_ids = tmp_ids;
+        IDS_VARDEC (scl_ids) = vardecs;
+        IDS_AVIS (scl_ids) = VARDEC_AVIS (vardecs);
+    }
+
+    id = MakeId (TmpVar (), NULL, ST_regular);
+    vardecs = MakeVardec (StringCopy (ID_NAME (id)), MakeTypes1 (ARRAY_BASETYPE (array)),
+                          vardecs);
+    ID_VARDEC (id) = vardecs;
+    ID_AVIS (id) = VARDEC_AVIS (vardecs);
+
+    withid = MakeNWithid (vec_ids, scl_ids);
+
+    shp = Array2Shpseg (CreateZeroVector (dim, T_int), NULL);
+
+    part = CreateExprsPart (ARRAY_AELEMS (array), &partcount, withid, shp, shpmax, dim,
+                            fundef, ARRAY_BASETYPE (array));
+
+    res = MakeNWith (part, NPART_CODE (part),
+                     MakeNWithOp (WO_genarray,
+                                  Shpseg2Array (TYPES_SHPSEG (ARRAY_TYPE (array)), dim)));
+
+    NWITH_PARTS (res) = partcount;
+
+    AddVardecs (fundef, vardecs);
+
+    DBUG_RETURN (res);
+}
+
+node *
+Array2Withloop (node *arg_node, node *arg_info)
+{
+    node *assign;
+    node *assid;
+    node *vardec = NULL;
+
+    DBUG_ENTER ("Array2Withloop");
+
+    assid = MakeId (TmpVar (), NULL, ST_regular);
+    vardec = MakeVardec (StringCopy (ID_NAME (assid)),
+                         DupOneTypes (ID_TYPE (NPART_CEXPR (arg_node))), vardec);
+
+    ID_VARDEC (assid) = vardec;
+    ID_AVIS (assid) = VARDEC_AVIS (vardec);
+
+    AddVardecs (INFO_WLS_FUNDEF (arg_info), vardec);
+
+    assign = MakeAssignLet (StringCopy (ID_NAME (assid)), vardec,
+                            CreateArrayWithloop (NPART_LETEXPR (arg_node),
+                                                 INFO_WLS_FUNDEF (arg_info)));
+
+    ID_SSAASSIGN (assid) = assign;
+
+    NPART_CEXPR (arg_node) = DupNode (assid);
+    BLOCK_INSTR (NPART_CBLOCK (arg_node))
+      = AppendAssign (BLOCK_INSTR (NPART_CBLOCK (arg_node)), assign);
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+withloopifyPart (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("withloopifyPart");
+
+    if (!((NODE_TYPE (NPART_LETEXPR (arg_node)) == N_Nwith)
+          && (isAssignInsideBlock (NPART_SSAASSIGN (arg_node),
+                                   BLOCK_INSTR (NPART_CBLOCK (arg_node))))
+          && (compatWLTypes (INFO_WLS_WITHOP (arg_info),
+                             NWITH_WITHOP (NPART_LETEXPR (arg_node)))))) {
+        if ((NODE_TYPE (NPART_LETEXPR (arg_node)) == N_array)
+            || ((NODE_TYPE (NPART_LETEXPR (arg_node)) = N_prf)
+                && (PRF_PRF (NPART_LETEXPR (arg_node)) = F_reshape)))
+            arg_node = Array2Withloop (arg_node, arg_info);
+        else
+            arg_node = InsertCopyWithloop (arg_node, arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -654,7 +945,7 @@ distributePart (node *arg_node, node *arg_info)
 
     innerwith = NPART_LETEXPR (arg_node);
 
-    DBUG_ASSERT (NWITH_PARTS (innerwith) >= 1, "NWITH_PARTS(inenrwith) < 1");
+    DBUG_ASSERT (NWITH_PARTS (innerwith) >= 1, "NWITH_PARTS(innerwith) < 1");
 
     /* are there more two or more inner parts to distribute? */
     if (NWITH_PARTS (innerwith) <= 1)
@@ -1185,6 +1476,18 @@ WLSNwith (node *arg_node, node *arg_info)
 
         /***************************************************************************
          *
+         *  WITHLOOPIFICATION
+         *
+         ***************************************************************************/
+
+        WLS_PHASE (arg_info) = wls_withloopification;
+
+        if (NWITH_PART (arg_node) != NULL) {
+            NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
+        }
+
+        /***************************************************************************
+         *
          *  GENERATOR NORMALIZATION
          *
          *  Scalarazization can only be done if all vectors in all generators
@@ -1295,6 +1598,14 @@ WLSNpart (node *arg_node, node *arg_info)
     switch (WLS_PHASE (arg_info)) {
     case wls_probe:
         arg_node = probePart (arg_node, arg_info);
+
+        if ((INFO_WLS_POSSIBLE (arg_info)) && (NPART_NEXT (arg_node) != NULL)) {
+            NPART_NEXT (arg_node) = Trav (NPART_NEXT (arg_node), arg_info);
+        }
+        break;
+
+    case wls_withloopification:
+        arg_node = withloopifyPart (arg_node, arg_info);
 
         if ((INFO_WLS_POSSIBLE (arg_info)) && (NPART_NEXT (arg_node) != NULL)) {
             NPART_NEXT (arg_node) = Trav (NPART_NEXT (arg_node), arg_info);
