@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/11/14 19:16:07  sbs
+ * *** empty log message ***
+ *
  * Revision 3.3  2001/11/14 19:10:00  sbs
  * generic preprocessor-flag -DSAC_FOR_OSxxx inserted.
  *
@@ -272,6 +275,11 @@ ScanParse ()
         }
 
         strcpy (cccallstr, config.cpp_file);
+
+        strcat (cccallstr, " ");
+        strcat (cccallstr, config.opt_D);
+        strcat (cccallstr, "SAC_FOR_");
+        strcat (cccallstr, target_platform);
 
         for (i = 0; i < num_cpp_vars; i++) {
             strcat (cccallstr, " ");
