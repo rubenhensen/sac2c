@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.2  1994/12/20 17:34:35  hw
+ * Revision 1.3  1994/12/20 17:42:23  hw
+ * added includes dbug.h & stdio.h
+ *
+ * Revision 1.2  1994/12/20  17:34:35  hw
  * bug fixed in FreeIdsOnly
  * exchanged stdio.h with stdlib.h
  *
@@ -12,7 +15,8 @@
  */
 
 #include <stdlib.h>
-
+#include <stdio.h>
+#include "dbug.h"
 #include "tree.h"
 
 /*
