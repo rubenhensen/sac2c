@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.44  2005/03/04 21:21:42  cg
+ * Useless conditional eliminated.
+ * Integration of silently duplicated LaC funs at the end of the
+ * fundef chain added.
+ *
  * Revision 1.43  2004/11/26 19:43:43  khf
  * SacDevCamp04: COMPILES!!!!
  *
@@ -874,11 +879,7 @@ GetApAvisOfArgAvis (node *arg_avis, node *fundef)
 
     arg_chain = FUNDEF_ARGS (fundef);
 
-    DBUG_ASSERT ((NODELIST_NEXT (FUNDEF_EXT_ASSIGNS (fundef)) == NULL),
-                 "GetApAvisOfArgAvis cannot handle multiple usages "
-                 "of special fundefs");
-
-    exprs_chain = AP_ARGS (ASSIGN_RHS (NODELIST_NODE (FUNDEF_EXT_ASSIGNS (fundef))));
+    exprs_chain = AP_ARGS (ASSIGN_RHS (FUNDEF_EXT_ASSIGN (fundef)));
 
     ap_avis = NULL;
     cont = TRUE;
@@ -1268,13 +1269,6 @@ CSEap (node *arg_node, info *arg_info)
         && (AP_FUNDEF (arg_node) != INFO_CSE_FUNDEF (arg_info))) {
         DBUG_PRINT ("CSE", ("traverse in special fundef %s",
                             FUNDEF_NAME (AP_FUNDEF (arg_node))));
-
-        INFO_CSE_MODULE (arg_info)
-          = DUPcheckAndDupSpecialFundef (INFO_CSE_MODULE (arg_info), AP_FUNDEF (arg_node),
-                                         INFO_CSE_ASSIGN (arg_info));
-
-        DBUG_ASSERT ((FUNDEF_USED (AP_FUNDEF (arg_node)) == 1),
-                     "more than one instance of special function used.");
 
         /* stack arg_info frame for new fundef */
         new_arg_info = MakeInfo ();

@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.84  2005/03/04 21:21:42  cg
+ * Useless conditional eliminated.
+ * Integration of silently duplicated LaC funs at the end of the
+ * fundef chain added.
+ *
  * Revision 1.83  2005/02/14 15:51:48  mwe
  * CFids moved to cvp
  *
@@ -2295,7 +2300,6 @@ CFcond (node *arg_node, info *arg_info)
         }
 
         FUNDEF_ISCONDFUN (INFO_CF_FUNDEF (arg_info)) = FALSE;
-        FUNDEF_USED (INFO_CF_FUNDEF (arg_info)) = USED_INACTIVE;
         FUNDEF_ISINLINE (INFO_CF_FUNDEF (arg_info)) = TRUE;
     } else {
         /*
