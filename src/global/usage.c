@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.29  2000/05/25 11:57:18  dkr
+ * output of compiler phase names corrected
+ * typo corrected
+ *
  * Revision 2.28  2000/05/11 10:31:05  dkr
  * some minor corrections made
  *
@@ -135,11 +139,11 @@ usage ()
             "\tclass implementations), respectively.\n"
             "\t\n"
             "\tThe compilation process is performed in 4 separate stages:\n"
-            "\t1. sac2c uses any C preprocessor to preprocess the given SAC source;\n"
-            "\t2. sac2c itself transforms preprocessed SAC source code into C code;\n"
-            "\t3. sac2c uses any C compiler to generate target machine code;\n"
-            "\t4. sac2c uses any C linker to create an executable program\n"
-            "\t   or sac2c itself creates a SAC library file.\n"
+            "\t  1. sac2c uses any C preprocessor to preprocess the given SAC source;\n"
+            "\t  2. sac2c itself transforms preprocessed SAC source code into C code;\n"
+            "\t  3. sac2c uses any C compiler to generate target machine code;\n"
+            "\t  4. sac2c uses any C linker to create an executable program\n"
+            "\t     or sac2c itself creates a SAC library file.\n"
             "\t\n"
             "\tWhen compiling a SAC program, sac2c stores the corresponding\n"
             "\tintermediate C code either in the file a.out.c in the current directory\n"
@@ -161,17 +165,19 @@ usage ()
             "\t -V\t\tdisplay version identification.\n"
             "\n"
             "\t -libstat \tprint status information of the given SAC library file.\n"
-            "\t\t\t  This option requires the environment variables PWD,\n"
-            "\t\t\t  USER, and HOST to be set when compiling the module/\n"
-            "\t\t\t  class implementation in order to work correctly.\n"
+            "\t\t\tThis option requires the environment variables PWD,\n"
+            "\t\t\tUSER, and HOST to be set when compiling the module/\n"
+            "\t\t\tclass implementation in order to work correctly.\n"
+            "\n"
             "\t -M\t\tdetect dependencies from imported modules/classes and\n"
-            "\t\t\t  write them to stdout in a way suitable for the make\n"
-            "\t\t\t  utility. Only dependencies from declaration files are\n"
-            "\t\t\t  considered.\n"
+            "\t\t\twrite them to stdout in a way suitable for the make\n"
+            "\t\t\tutility. Only dependencies from declaration files are\n"
+            "\t\t\tconsidered.\n"
+            "\n"
             "\t -Mlib\t\tdetect dependencies from imported modules/classes and\n"
-            "\t\t\t  write them to stdout in a way suitable for the make\n"
-            "\t\t\t  utility. Dependencies from declaration files as well\n"
-            "\t\t\t  as library files are (recursively) considered.\n"
+            "\t\t\twrite them to stdout in a way suitable for the make\n"
+            "\t\t\tutility. Dependencies from declaration files as well\n"
+            "\t\t\tas library files are (recursively) considered.\n"
             "\n"
             "\tWhen called with one of these options, sac2c does not perform\n"
             "\tany compilation steps.\n");
@@ -179,21 +185,24 @@ usage ()
     printf ("\n\nGENERAL OPTIONS:\n\n"
 
             "\t -D <cpp-var>[=<value>]?\n"
-            "\t\t\tset <cpp-var> (to <value>) when\n"
-            "\t\t\t  running C preprocessor\n"
+            "\t\t\tset <cpp-var> (to <value>) when running C preprocessor\n"
+            "\n"
             "\t -I <path>\tspecify additional declaration path\n"
             "\t -L <path>\tspecify additional library path\n"
+            "\n"
             "\t -o <name>\tfor compilation of programs:\n"
             "\t\t\t  write executable to specified file\n"
             "\t\t\tfor compilation of module/class implementations:\n"
             "\t\t\t  write library to specified directory\n"
+            "\n"
             "\t -c \t\tgenerate C-file only\n"
+            "\n"
             "\t -v <n> \tverbose level\n"
             "\t\t\t  0: error messages only\n"
             "\t\t\t  1: error messages and warnings\n"
             "\t\t\t  2: basic compile time information\n"
             "\t\t\t  3: full compile time information\n"
-            "\t\t\t  default: -v %d\n",
+            "\t\t\tdefault: -v %d\n",
             verbose_level);
 
     printf ("\n\nBREAK OPTIONS:\n\n"
@@ -204,105 +213,103 @@ usage ()
             "\t\t-noPAB\tdeactivates print\n"
             "\t\t-doPAB\tactivates print\n\n");
 
-    for (ph = 1; ph <= 21; ph++)
-        ;
-    {
+    for (ph = 1; ph <= 21; ph++) {
         printf ("\t -b%i\tstop after: %s\n", ph, compiler_phase_name[ph]);
     }
 
-    printf (
-      "\n\nBREAK SPECIFIERS:\n\n"
+    printf ("\n\nBREAK SPECIFIERS:\n\n"
 
-      "\tBreak specifiers allow you to stop the compilation process\n"
-      "\twithin a particular phase.\n\n"
+            "\tBreak specifiers allow you to stop the compilation process\n"
+            "\twithin a particular phase.\n\n"
 
-      "\tCurrently supported:\n\n"
+            "\tCurrently supported:\n\n"
 
-      "\t-b15:inl       \tstop after function inlining\n"
-      "\t-b15:dfr       \tstop after dead function removal\n"
-      "\t-b15:ae        \tstop after array elimination\n"
-      "\t-b15:dcr       \tstop after dead code removal\n"
-      "\t-b15:cyc<N>:cse\tstop after common subexpression elimination in cycle N\n"
-      "\t-b15:cyc<N>:cf \tstop after constant folding in cycle N\n"
-      "\t-b15:cyc<N>:wlt\tstop after with-loop transformation in cycle N\n"
-      "\t-b15:cyc<N>:wli\tstop after with-loop information gathering in cycle N\n"
-      "\t-b15:cyc<N>:wlf\tstop after with-loop folding in cycle N\n"
-      "\t-b15:cyc<N>:cf2\tstop after second constant folding in cycle N\n"
-      "\t-b15:cyc<N>:dcr\tstop after dead code removal in cycle N\n"
-      "\t-b15:cyc<N>:lur\tstop after (with-)loop unrolling in cycle N\n"
-      "\t-b15:cyc<N>:lus\tstop after loop unswitching in cycle N\n"
-      "\t-b15:cyc<N>:lir\tstop after loop invariant removal in cycle N\n"
-      "\n"
-      "\t-b18:conv      \tstop after converting\n"
-      "\t-b18:cubes     \tstop after cube-building\n"
-      "\t-b18:segs      \tstop after choice of segments\n"
-      "\t-b18:split     \tstop after splitting\n"
-      "\t-b18:block     \tstop after hierarchical blocking\n"
-      "\t-b18:ublock    \tstop after unrolling-blocking\n"
-      "\t-b18:merge     \tstop after merging\n"
-      "\t-b18:opt       \tstop after optimization\n"
-      "\t-b18:fit       \tstop after fitting\n"
-      "\t-b18:norm      \tstop after normalization\n"
-      "\n"
-      "with -mt\n"
-      "\t-b19:spmdinit  \tstop after building SPMD blocks\n"
-      "\t-b19:spmdopt   \tstop after optimizing SPMD blocks\n"
-      "\t-b19:spmdlift  \tstop after lifting SPMD blocks\n"
-      "\t-b19:syncinit  \tstop after building SYNC blocks\n"
-      "\t-b19:syncopt   \tstop after optimizing SYNC blocks\n"
-      "\t-b19:scheduling\tstop after scheduling SYNC blocks and with-loop segments\n"
-      "\t-b19:spmdcons  \tstop after constrainig SPMD blocks\n"
-      "\t               \t(same as [-mt] -b19 only)\n"
-      "\n"
-      "with -mtn (UNDER CONSTRUCTION!!!)\n"
-      "\t-b19:init      \tstop after internal initialization\n"
-      "\t-b19:schin     \tstop after schedulings initialized\n"
-      "\t-b19:rfin      \tstop after replicated functions builded\n"
-      "\t-b19:blkin     \tstop after ST- and MT-blocks builded\n"
-      "\t-b19:blkpp     \tstop after blocks propagated\n"
-      "\t-b19:blkex     \tstop after blocks expanded\n"
-      "\t-b19:mtfin     \tstop after multithread functions builded\n"
-      "\t-b19:blkco     \tstop after blocks consolidated\n"
-      "\t-b19:dfa       \tstop after datafloa-analysis\n"
-      "\t-b19:barin     \tstop after barriers initialized\n"
-      "\t-b19:blkli     \tstop after blocks lifted\n"
-      "\t-b19:adjca     \tstop after adjusted calls\n"
-      "\t ... to be continued ...");
+            "\t -b15:inl          stop after function inlining\n"
+            "\t -b15:dfr          stop after dead function removal\n"
+            "\t -b15:ae           stop after array elimination\n"
+            "\t -b15:dcr          stop after dead code removal\n"
+            "\t -b15:cyc<N>:cse   stop after common subexpression elimination ...\n"
+            "\t -b15:cyc<N>:cf    stop after constant folding ...\n"
+            "\t -b15:cyc<N>:wlt   stop after with-loop transformation ...\n"
+            "\t -b15:cyc<N>:wli   stop after with-loop information gathering ...\n"
+            "\t -b15:cyc<N>:wlf   stop after with-loop folding ...\n"
+            "\t -b15:cyc<N>:cf2   stop after second constant folding ...\n"
+            "\t -b15:cyc<N>:dcr   stop after dead code removal ...\n"
+            "\t -b15:cyc<N>:lur   stop after (with-)loop unrolling ...\n"
+            "\t -b15:cyc<N>:lus   stop after loop unswitching ...\n"
+            "\t -b15:cyc<N>:lir   stop after loop invariant removal ...\n"
+            "\t                     ... in cycle <N>\n"
+            "\n"
+            "\t -b18:conv         stop after converting\n"
+            "\t -b18:cubes        stop after cube-building\n"
+            "\t -b18:segs         stop after choice of segments\n"
+            "\t -b18:split        stop after splitting\n"
+            "\t -b18:block        stop after hierarchical blocking\n"
+            "\t -b18:ublock       stop after unrolling-blocking\n"
+            "\t -b18:merge        stop after merging\n"
+            "\t -b18:opt          stop after optimization\n"
+            "\t -b18:fit          stop after fitting\n"
+            "\t -b18:norm         stop after normalization\n"
+            "\n"
+            "\twith -mt\n"
+            "\t -b19:spmdinit     stop after building SPMD blocks\n"
+            "\t -b19:spmdopt      stop after optimizing SPMD blocks\n"
+            "\t -b19:spmdlift     stop after lifting SPMD blocks\n"
+            "\t -b19:syncinit     stop after building SYNC blocks\n"
+            "\t -b19:syncopt      stop after optimizing SYNC blocks\n"
+            "\t -b19:scheduling   stop after scheduling SYNC blocks and with-loop\n"
+            "\t                     segments\n"
+            "\t -b19:spmdcons     stop after constrainig SPMD blocks\n"
+            "\t                     (same as [-mt] -b19 only)\n"
+            "\n"
+            "\twith -mtn (UNDER CONSTRUCTION!!!)\n"
+            "\t -b19:init         stop after internal initialization\n"
+            "\t -b19:schin        stop after schedulings initialized\n"
+            "\t -b19:rfin         stop after replicated functions builded\n"
+            "\t -b19:blkin        stop after ST- and MT-blocks builded\n"
+            "\t -b19:blkpp        stop after blocks propagated\n"
+            "\t -b19:blkex        stop after blocks expanded\n"
+            "\t -b19:mtfin        stop after multithread functions builded\n"
+            "\t -b19:blkco        stop after blocks consolidated\n"
+            "\t -b19:dfa          stop after dataflow-analysis\n"
+            "\t -b19:barin        stop after barriers initialized\n"
+            "\t -b19:blkli        stop after blocks lifted\n"
+            "\t -b19:adjca        stop after adjusted calls\n"
+            "\t ... to be continued ...");
 
     printf ("\n\nOPTIMIZATION OPTIONS:\n\n"
 
             "\t -no <opt>\tdisable optimization technique <opt>\n"
             "\t -do <opt>\tenable optimization technique <opt>\n"
             "\n"
-            "\t The following optimization techniques are currently supported:\n\n"
+            "\tThe following optimization techniques are currently supported:\n\n"
 
-            "\t\tCF  \t constant folding\n"
-            "\t\tINL \t function inlining\n"
-            "\t\tLUR \t loop unrolling\n"
-            "\t\tWLUR\t with-loop unrolling\n"
-            "\t\tLUS \t loop unswitching\n"
-            "\t\tDCR \t dead code removal\n"
-            "\t\tDFR \t dead function removal\n"
-            "\t\tLIR \t loop invariant removal\n"
-            "\t\tCSE \t common subexpression elimination\n"
-            "\t\tWLT \t with-loop transformation\n"
-            "\t\tWLF \t with-loop folding\n"
-            "\t\tDLAW\t application of the distributive law\n"
-            "\t\tIVE \t index vector elimination\n"
-            "\t\tAE  \t array elimination\n"
-            "\t\tRCO \t refcount optimization\n"
-            "\t\tUIP \t update-in-place\n"
-            "\t\tTSI \t tile size inference (blocking)\n"
-            "\t\tTSP \t tile size pragmas (blocking)\n"
-            "\t\tMTO \t multi-thread optimization\n"
-            "\t\tSBE \t syncronisation barrier elimination\n"
-            "\t\tPHM \t private heap management\n"
-            "\t\tAPS \t arena preselection (in conjunction with PHM)\n"
-            "\t\tRCAO\t refcount allocation optimization (in conjunction with\n"
-            "\t\tPHM)\n"
-            "\t\tMSCA\t memory size cache adjustment (in conjunction with PHM)\n"
+            "\t\tCF  \tconstant folding\n"
+            "\t\tINL \tfunction inlining\n"
+            "\t\tLUR \tloop unrolling\n"
+            "\t\tWLUR\twith-loop unrolling\n"
+            "\t\tLUS \tloop unswitching\n"
+            "\t\tDCR \tdead code removal\n"
+            "\t\tDFR \tdead function removal\n"
+            "\t\tLIR \tloop invariant removal\n"
+            "\t\tCSE \tcommon subexpression elimination\n"
+            "\t\tWLT \twith-loop transformation\n"
+            "\t\tWLF \twith-loop folding\n"
+            "\t\tDLAW\tapplication of the distributive law\n"
+            "\t\tIVE \tindex vector elimination\n"
+            "\t\tAE  \tarray elimination\n"
+            "\t\tRCO \trefcount optimization\n"
+            "\t\tUIP \tupdate-in-place\n"
+            "\t\tTSI \ttile size inference (blocking)\n"
+            "\t\tTSP \ttile size pragmas (blocking)\n"
+            "\t\tMTO \tmulti-thread optimization\n"
+            "\t\tSBE \tsyncronisation barrier elimination\n"
+            "\t\tPHM \tprivate heap management\n"
+            "\t\tAPS \tarena preselection (in conjunction with PHM)\n"
+            "\t\tRCAO\trefcount allocation optimiz. (in conjunction with PHM)\n"
+            "\t\tMSCA\tmemory size cache adjustment (in conjunction with PHM)\n"
             "\n"
-            "\t\tOPT  \t enables/disables all optimizations at once.\n"
+            "\t\tOPT \tenables/disables all optimizations at once.\n"
             "\n"
             "\tLower case letters may be used to indicate optimization techniques.\n"
             "\n"
@@ -313,84 +320,97 @@ usage ()
     printf ("\tOptimization side conditions:\n\n"
 
             "\t -maxoptcyc <no>    \trepeat optimization phase <no> times.\n"
-            "\t\t\t\t  Default: -maxoptcyc %d\n",
+            "\t\t\t\tdefault: -maxoptcyc %d\n\n",
             max_optcycles);
+
     printf ("\t -maxoptvar <no>    \treserve <no> variables for optimization.\n"
-            "\t\t\t\t  Default: -maxoptvar %d\n",
+            "\t\t\t\tdefault: -maxoptvar %d\n\n",
             optvar);
+
     printf ("\t -maxinl <no>       \tinline recursive functions <no> times.\n"
-            "\t\t\t\t  Default: -maxinl %d\n",
+            "\t\t\t\tdefault: -maxinl %d\n\n",
             inlnum);
+
     printf ("\t -maxlur <no>       \tunroll loops having no more than <no>\n"
-            "\t\t\t\titerations.\n"
-            "\t\t\t\t  Default: -maxlur %d\n",
+            "\t\t\t\t  iterations.\n"
+            "\t\t\t\tdefault: -maxlur %d\n\n",
             unrnum);
+
     printf ("\t -maxwlur <no>      \tunroll with-loops having no more than <no>\n"
-            "\t\t\t\telements.\n"
-            "\t\t\t\t  Default: -maxwlur %d\n",
+            "\t\t\t\t  elements.\n"
+            "\t\t\t\tdefault: -maxwlur %d\n\n",
             wlunrnum);
+
     printf ("\t -maxae <no>        \ttry array elimination for arrays with length\n"
-            "\t\t\t\tless than or equal <no>.\n"
-            "\t\t\t\t  Default: -maxae %d\n",
+            "\t\t\t\t  less than or equal <no>.\n"
+            "\t\t\t\tdefault: -maxae %d\n\n",
             minarray);
+
     printf ("\t -maxspecialize <no>\tfunctions with unknown shape will at most\n"
-            "\t\t\t\t<no> times be specialized.\n"
-            "\t\t\t\t  Default: -maxspecialize %d\n",
+            "\t\t\t\t  <no> times be specialized.\n"
+            "\t\t\t\tdefault: -maxspecialize %d\n\n",
             max_overload);
+
     printf ("\t -initmheap <size>\tat program startup initially request <size> KB\n"
-            "\t\t\t\tof heap memory for usage by the master thread.\n"
-            "\t\t\t\t  Default: -initmheap %d\n",
+            "\t\t\t\t  of heap memory for usage by the master thread.\n"
+            "\t\t\t\tdefault: -initmheap %d\n\n",
             initial_master_heapsize);
+
     printf ("\t -initwheap <size>\tat program startup initially request <size> KB\n"
-            "\t\t\t\tof heap memory for usage by each worker thread.\n"
-            "\t\t\t\t  Default: -initwheap %d\n",
+            "\t\t\t\t  of heap memory for usage by each worker\n"
+            "\t\t\t\t  thread.\n"
+            "\t\t\t\tdefault: -initwheap %d\n\n",
             initial_worker_heapsize);
+
     printf ("\t -inituheap <size>\tat program startup initially request <size> KB\n"
-            "\t\t\t\tof heap memory for usage by all threads (unified\n"
-            "\t\t\t\theap).\n"
-            "\t\t\t\t  Default: -inituheap %d\n",
+            "\t\t\t\t  of heap memory for usage by all threads\n"
+            "\t\t\t\t  (unified heap).\n"
+            "\t\t\t\tdefault: -inituheap %d\n\n",
             initial_unified_heapsize);
 
     printf ("\n\nMULTI-THREAD OPTIONS:\n\n"
 
             "\t -mt \t\t\tcompile program for multi-threaded execution.\n"
-            "\t\t\t\t  The number of threads to be used can either\n"
-            "\t\t\t\t  be specified statically using the option\n"
-            "\t\t\t\t  \"-numthreads\" or dynamically upon application\n"
-            "\t\t\t\t  startup using the generic command line option\n"
-            "\t\t\t\t  \"-mt <no>\".\n\n"
-
+            "\t\t\t\tThe number of threads to be used can either\n"
+            "\t\t\t\tbe specified statically using the option\n"
+            "\t\t\t\t\"-numthreads\" or dynamically upon application\n"
+            "\t\t\t\tstartup using the generic command line option\n"
+            "\t\t\t\t\"-mt <no>\".\n"
+            "\n"
             "\t -mtn \t\t\tnew support for multi-threading\n"
-            "\t\t\t\t  UNDER CONSTRUCTION!!!\n\n"
-
+            "\t\t\t\t  UNDER CONSTRUCTION!!!\n"
+            "\n"
             "\t -numthreads <no>\tstatically specify exact number of threads\n"
-            "\t\t\t\tto be used.\n"
+            "\t\t\t\t  to be used.\n"
+            "\n"
             "\t -maxthreads <no>\tmaximum number of threads to be used when exact\n"
-            "\t\t\t\tnumber is specified dynamically.\n"
-            "\t\t\t\t  Default: -maxthreads %d.\n"
+            "\t\t\t\t  number is specified dynamically.\n"
+            "\t\t\t\tdefault: -maxthreads %d.\n"
+            "\n"
             "\t -maxsyncfold <no>\tmaximum number of fold with-loops in a single\n"
-            "\t\t\t\tsynchronisation block.\n"
+            "\t\t\t\t  synchronisation block.\n"
             "\t\t\t\t  -1: maximum of needed (mechanical infered)\n"
             "\t\t\t\t   0: no fold-with-loops are allowed\n"
             "\t\t\t\t        (implies fold-with-loop will not be\n"
             "\t\t\t\t        executed concurrently)\n"
             "\t\t\t\t  >0: number is limited by value of maxsyncfold\n"
-            "\t\t\t\t  Default: -maxsyncfold %d.\n"
+            "\t\t\t\tdefault: -maxsyncfold %d.\n"
+            "\n"
             "\t -minmtsize <no>\tminimum generator size for parallel execution\n"
-            "\t\t\t\tof with-loops.\n"
-            "\t\t\t\t  Default: -minmtsize %d.\n\n"
-
+            "\t\t\t\t  of with-loops.\n"
+            "\t\t\t\tdefault: -minmtsize %d.\n"
+            "\n"
             "\t -maxrepsize <no>\t(-mtn) maximum size for arrays to be replicated\n"
-            "\t\t\t\t  Default: -maxrepsize %d.\n",
+            "\t\t\t\tdefault: -maxrepsize %d.\n",
             max_threads, max_sync_fold, min_parallel_size, max_replication_size);
 
     printf ("\n\nGENERAL DEBUG OPTIONS:\n\n"
 
             "\t -d nocleanup\t\tdon't remove temporary files and directories.\n"
             "\t -d syscall\t\tshow all system calls during compilation.\n"
-            "\t -d cccall\t\tgenerate shell script '.sac2c' that contains C\n"
-            "\t\t\t\tcompiler call.\n"
-            "\t\t\t\tThis implies option \"-d nocleanup\".\n");
+            "\t -d cccall\t\tgenerate shell script \".sac2c\" that contains C\n"
+            "\t\t\t\t  compiler call.\n"
+            "\t\t\t\t  This implies option \"-d nocleanup\".\n");
 
     printf ("\n\nINTERNAL DEBUG OPTIONS:\n\n"
 
@@ -400,16 +420,16 @@ usage ()
 
             "\t -# <str>\t\toptions (string) for DBUG information\n"
             "\t -# <from>/<to>/<str>\tDBUG information only in compiler phases\n"
-            "\t\t\t\t<from>..<to>\n"
+            "\t\t\t\t  <from>..<to>\n"
             "\t\t\t\t  Default: <from> = first compiler phase,\n"
             "\t\t\t\t           <to>   = last compiler phase\n\n"
 
             "\t -lac2fun <ph>[:<ph>]*\ttransformation of loops and conditions into\n"
-            "\t\t\t\tfunctions before the compiler phases <ph>.\n"
+            "\t\t\t\t  functions before the compiler phases <ph>.\n"
             "\t -fun2lac <ph>[:<ph>]*\ttransformation vice versa after the compiler\n"
-            "\t\t\t\tphases <ph>.\n"
-            "\t\t\t\tNote: -b<ph> stops the compiler *after* the\n"
-            "\t\t\t\tlac2fun transformation of phase <ph+1>!\n");
+            "\t\t\t\t  phases <ph>.\n"
+            "\t\t\t\t  Note: -b<ph> stops the compiler *after* the\n"
+            "\t\t\t\t  lac2fun transformation of phase <ph+1>!\n");
 
     printf ("\n\nRUNTIME CHECK OPTIONS:\n\n"
 
@@ -459,8 +479,7 @@ usage ()
             "\t\t  i: immediate analysis of memory accesses.\n"
             "\t\t  f: storage of memory accesses in file.\n"
             "\t\t  p: piping of memory accesses to concurrently running analyser.\n"
-            "\n"
-            "\t\tThe default simulation parameters are 'sgp'.\n"
+            "\t\tThe default simulation parameters are \"sgp\".\n"
             "\n"
             "\tSimple cache simulation only counts cache hits and cache misses while\n"
             "\tadvanced cache simulation additionally classifies cache misses into\n"
@@ -567,7 +586,7 @@ usage ()
             "\t -l <n>\t\tlink level for generating SAC library.\n"
             "\t\t\t  1: compile to one large object file.\n"
             "\t\t\t  2: compile to archive of object files.\n"
-            "\t\t\t  Default: -l %d\n",
+            "\t\t\tdefault: -l %d\n",
             linkstyle);
 
     printf ("\n\nC-COMPILER OPTIONS:\n\n"
@@ -579,7 +598,7 @@ usage ()
             "\t\t\t  1: minor C compiler optimizations.\n"
             "\t\t\t  2: medium C compiler optimizations.\n"
             "\t\t\t  3: full C compiler optimizations.\n"
-            "\t\t\t  Default: -O %d\n"
+            "\t\t\tdefault: -O %d\n"
             "\n"
             "\tThe actual effects of these options are C compiler specific!\n",
             cc_optimize);
