@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2004/07/14 23:50:35  sah
+ * moved variable declarations to beginning of a block
+ *
  * Revision 3.8  2004/07/14 23:25:53  sah
  * inlined some code from ConstantFolding.c as the old
  * constant folding has been removed. this is far from
@@ -175,12 +178,14 @@ TCWLprf (node *arg_node, node *arg_info)
 
     if (F_shape == PRF_PRF (arg_node)) {
         if (N_id == NODE_TYPE (PRF_ARG1 (arg_node))) {
+            node *tmp;
+
             /* constantfold prf shape() now. This code has been inlined
                from the old non-ssa constant folder. */
             DBUG_PRINT ("TYPE",
                         ("primitive function %s folded", mdb_prf[arg_node->info.prf]));
-            node *tmp
-              = Types2Array (ID_TYPE (PRF_ARG1 (arg_node)), INFO_CF_TYPE (arg_info));
+
+            tmp = Types2Array (ID_TYPE (PRF_ARG1 (arg_node)), INFO_CF_TYPE (arg_info));
             if (tmp != NULL) {
                 /* Types2Array was successful */
                 ARRAY_VECTYPE (tmp) = T_int;
@@ -197,13 +202,16 @@ TCWLprf (node *arg_node, node *arg_info)
                 if (N_array == NODE_TYPE (PRF_ARG1 (arg_node))) {
                     /* this code has been inline from the old non-ssa constant folder
                        as it has been removed */
+                    node *array;
+                    int noofelems;
+
                     DBUG_PRINT ("TYPE", ("primitive function %s folded",
                                          mdb_prf[arg_node->info.prf]));
 
-                    node *array = PRF_ARG1 (arg_node);
+                    array = PRF_ARG1 (arg_node);
 
                     /* count number of elements */
-                    int noofelems = CountExprs (ARRAY_AELEMS (array));
+                    noofelems = CountExprs (ARRAY_AELEMS (array));
 
                     /* store result in this array (it is reused as shape) */
                     NUM_VAL (EXPRS_EXPR (ARRAY_AELEMS (array))) = noofelems;
