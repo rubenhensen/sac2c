@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.9  1995/04/04 09:30:39  sbs
+# Revision 1.10  1995/05/15 13:38:44  asi
+# make deps done
+#
+# Revision 1.9  1995/04/04  09:30:39  sbs
 # make deps done
 #
 # Revision 1.8  1995/04/03  14:02:12  sbs
@@ -50,4 +53,4 @@ print.o: /usr/include/sys/stdtypes.h /usr/include/string.h print.h
 print.o: ../global/tree.h ../global/type_info.mac ../global/node_info.mac
 print.o: ../global/prf_node_info.mac ../global/my_debug.h ../../inc/dbug.h
 print.o: ../global/traverse.h ../global/Error.h convert.h
-print.o: ../optimize/optimize.h ../compile/icm.data
+print.o: ../optimize/optimize.h ../compile/icm.data ../compile/trace.h

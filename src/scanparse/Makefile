@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.8  1995/04/04 11:03:48  sbs
+# Revision 1.9  1995/05/15 13:38:46  asi
+# make deps done
+#
+# Revision 1.8  1995/04/04  11:03:48  sbs
 # make deps done
 #
 # Revision 1.7  1994/12/30  17:37:07  sbs
@@ -62,3 +65,4 @@ y.tab.o: /usr/include/stdio.h /usr/include/stdlib.h
 y.tab.o: /usr/include/sys/stdtypes.h /usr/include/memory.h ../../inc/dbug.h
 y.tab.o: ../global/tree.h ../global/type_info.mac ../global/node_info.mac
 y.tab.o: ../global/prf_node_info.mac ../global/my_debug.h
+y.tab.o: ../global/internal_lib.h

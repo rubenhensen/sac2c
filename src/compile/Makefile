@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.10  1995/05/04 11:46:29  sbs
+# Revision 1.11  1995/05/15 13:38:54  asi
+# make deps done
+#
+# Revision 1.10  1995/05/04  11:46:29  sbs
 # make clean adjusted
 #
 # Revision 1.9  1995/05/04  11:44:35  sbs
@@ -76,4 +79,3 @@ icm_args.o: icm.data trace.h
 icm_comment.o: icm.data trace.h
 icm_decl.o: icm.data trace.h
 icm_trace.o: icm.data trace.h
-tutu.o: icm_comment.c icm.data trace.h

@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.11  1995/05/04 11:54:26  asi
+# Revision 1.12  1995/05/15 13:38:50  asi
+# make deps done
+#
+# Revision 1.11  1995/05/04  11:54:26  asi
 # added -I../print
 #
 # Revision 1.10  1995/05/01  15:38:20  asi
@@ -73,8 +76,9 @@ ConstantFolding.o: /usr/include/stdio.h /usr/include/stdlib.h
 ConstantFolding.o: /usr/include/sys/stdtypes.h ../global/tree.h
 ConstantFolding.o: ../global/type_info.mac ../global/node_info.mac
 ConstantFolding.o: ../global/prf_node_info.mac ../global/free.h
-ConstantFolding.o: ../global/Error.h ../../inc/dbug.h ../global/my_debug.h
-ConstantFolding.o: ../global/traverse.h ../typecheck/typecheck.h optimize.h
+ConstantFolding.o: ../print/print.h ../global/Error.h ../../inc/dbug.h
+ConstantFolding.o: ../global/my_debug.h ../global/traverse.h
+ConstantFolding.o: ../typecheck/typecheck.h optimize.h DupTree.h
 ConstantFolding.o: ConstantFolding.h
 DeadCodeRemoval.o: /usr/include/stdio.h /usr/include/stdlib.h
 DeadCodeRemoval.o: /usr/include/sys/stdtypes.h ../global/tree.h
@@ -82,13 +86,19 @@ DeadCodeRemoval.o: ../global/type_info.mac ../global/node_info.mac
 DeadCodeRemoval.o: ../global/prf_node_info.mac ../global/free.h
 DeadCodeRemoval.o: ../global/Error.h ../../inc/dbug.h ../global/my_debug.h
 DeadCodeRemoval.o: ../global/traverse.h optimize.h DeadCodeRemoval.h
+DupTree.o: /usr/include/string.h /usr/include/sys/stdtypes.h ../global/tree.h
+DupTree.o: ../global/type_info.mac ../global/node_info.mac
+DupTree.o: ../global/prf_node_info.mac ../../inc/dbug.h /usr/include/stdio.h
+DupTree.o: ../global/my_debug.h ../global/traverse.h ../typecheck/typecheck.h
+DupTree.o: DupTree.h optimize.h
 LoopInvariantRemoval.o: /usr/include/stdio.h /usr/include/stdlib.h
 LoopInvariantRemoval.o: /usr/include/sys/stdtypes.h ../global/tree.h
 LoopInvariantRemoval.o: ../global/type_info.mac ../global/node_info.mac
-LoopInvariantRemoval.o: ../global/prf_node_info.mac ../global/Error.h
-LoopInvariantRemoval.o: ../../inc/dbug.h ../global/my_debug.h
-LoopInvariantRemoval.o: ../global/traverse.h ../typecheck/typecheck.h
-LoopInvariantRemoval.o: optimize.h LoopInvariantRemoval.h
+LoopInvariantRemoval.o: ../global/prf_node_info.mac ../global/free.h
+LoopInvariantRemoval.o: ../global/Error.h ../../inc/dbug.h
+LoopInvariantRemoval.o: ../global/my_debug.h ../global/traverse.h
+LoopInvariantRemoval.o: ../typecheck/typecheck.h optimize.h DupTree.h
+LoopInvariantRemoval.o: LoopInvariantRemoval.h
 WorkReduction.o: /usr/include/stdio.h /usr/include/stdlib.h
 WorkReduction.o: /usr/include/sys/stdtypes.h ../global/tree.h
 WorkReduction.o: ../global/type_info.mac ../global/node_info.mac
