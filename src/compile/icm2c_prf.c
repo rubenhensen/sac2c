@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2003/09/25 13:45:41  dkr
+ * new argument 'copyfun' added to some ICMs.
+ * ND_WRITE replaced by ND_WRITE_READ_COPY.
+ *
  * Revision 1.4  2003/09/22 12:38:40  dkr
  * minor bugs fixed
  *
@@ -173,6 +177,7 @@ void
 ICMCompileND_PRF_SHAPE__DATA (char *to_NT, int to_sdim, char *from_NT, int from_sdim)
 {
     int i;
+    hidden_class_t to_hc = ICUGetHiddenClass (to_NT);
     shape_class_t from_sc = ICUGetShapeClass (from_NT);
     int from_dim = DIM_NO_OFFSET (from_sdim);
 
@@ -182,6 +187,8 @@ ICMCompileND_PRF_SHAPE__DATA (char *to_NT, int to_sdim, char *from_NT, int from_
 #include "icm_comment.c"
 #include "icm_trace.c"
 #undef ND_PRF_SHAPE__DATA
+
+    DBUG_ASSERT ((to_hc == C_nhd), "result of shape() must be non-hidden!");
 
     INDENT;
     fprintf (outfile,
@@ -200,18 +207,21 @@ ICMCompileND_PRF_SHAPE__DATA (char *to_NT, int to_sdim, char *from_NT, int from_
     case C_akd:
         DBUG_ASSERT ((from_dim >= 0), "illegal dimension found!");
         for (i = 0; i < from_dim; i++) {
-            INDENT;
-            fprintf (outfile, "SAC_ND_WRITE( %s, %d) = SAC_ND_A_SHAPE( %s, %d);\n", to_NT,
-                     i, from_NT, i);
+            INDENT; /* is NHD -> no copyfun needed */
+            fprintf (outfile,
+                     "SAC_ND_WRITE_COPY( %s, %d, "
+                     "SAC_ND_A_SHAPE( %s, %d), );\n",
+                     to_NT, i, from_NT, i);
         }
         break;
 
     case C_aud:
         FOR_LOOP_INC_VARDEC (fprintf (outfile, "SAC_i");, fprintf (outfile, "0");
-                             , fprintf (outfile, "SAC_ND_A_DIM( %s)", from_NT);, INDENT;
+                             , fprintf (outfile, "SAC_ND_A_DIM( %s)", from_NT);
+                             , INDENT; /* is NHD -> no copyfun needed */
                              fprintf (outfile,
-                                      "SAC_ND_WRITE( %s, SAC_i) = "
-                                      "SAC_ND_A_SHAPE( %s, SAC_i);\n",
+                                      "SAC_ND_WRITE_COPY( %s, SAC_i,"
+                                      " SAC_ND_A_SHAPE( %s, SAC_i), );\n",
                                       to_NT, from_NT););
         break;
 
@@ -599,10 +609,11 @@ PrfSel_Data (char *to_NT, int to_sdim, char *from_NT, int from_sdim, void *idx,
                                       idx_read_fun, from_NT, from_dim);
                        FOR_LOOP_INC (fprintf (outfile, "SAC_i");, fprintf (outfile, "0");
                                      , fprintf (outfile, "SAC_ND_A_SIZE( %s)", to_NT);
-                                     , INDENT; fprintf (outfile,
-                                                        "SAC_ND_WRITE_READ_COPY( %s, "
-                                                        "SAC_i, %s, SAC_idx, %s)\n",
-                                                        to_NT, from_NT, copyfun);
+                                     , INDENT;
+                                     fprintf (outfile,
+                                              "SAC_ND_WRITE_READ_COPY( %s, SAC_i,"
+                                              " %s, SAC_idx, %s)\n",
+                                              to_NT, from_NT, copyfun);
                                      INDENT; fprintf (outfile, "SAC_idx++;\n");););
     }
 
@@ -1204,7 +1215,8 @@ ICMCompileND_PRF_TAKE__SHAPE (char *to_NT, int to_sdim, char *from_NT, int from_
  * function:
  *   void ICMCompileND_PRF_TAKE__DATA( char *to_NT, int to_sdim,
  *                                     char *from_NT, int from_sdim,
- *                                     char *cnt_ANY)
+ *                                     char *cnt_ANY,
+ *                                     char *copyfun)
  *
  * description:
  *   implements the compilation of the following ICM:
@@ -1215,7 +1227,7 @@ ICMCompileND_PRF_TAKE__SHAPE (char *to_NT, int to_sdim, char *from_NT, int from_
 
 void
 ICMCompileND_PRF_TAKE__DATA (char *to_NT, int to_sdim, char *from_NT, int from_sdim,
-                             char *cnt_ANY)
+                             char *cnt_ANY, char *copyfun)
 {
     DBUG_ENTER ("ICMCompileND_PRF_TAKE__DATA");
 
@@ -1256,9 +1268,9 @@ ICMCompileND_PRF_TAKE__DATA (char *to_NT, int to_sdim, char *from_NT, int from_s
                                         , fprintf (outfile, "0");
                                         , fprintf (outfile, "SAC_cnt");, INDENT;
                                         fprintf (outfile,
-                                                 "SAC_ND_WRITE( %s, SAC_i) = "
-                                                 "SAC_ND_READ( %s, SAC_off + SAC_i);\n",
-                                                 to_NT, from_NT);););
+                                                 "SAC_ND_WRITE_READ_COPY( %s, SAC_i,"
+                                                 " %s, SAC_off + SAC_i, %s);\n",
+                                                 to_NT, from_NT, copyfun);););
 
     DBUG_VOID_RETURN;
 }
@@ -1331,7 +1343,8 @@ ICMCompileND_PRF_DROP__SHAPE (char *to_NT, int to_sdim, char *from_NT, int from_
  * function:
  *   void ICMCompileND_PRF_DROP__DATA( char *to_NT, int to_sdim,
  *                                     char *from_NT, int from_sdim,
- *                                     char *cnt_ANY)
+ *                                     char *cnt_ANY,
+ *                                     char *copyfun)
  *
  * description:
  *   implements the compilation of the following ICM:
@@ -1342,7 +1355,7 @@ ICMCompileND_PRF_DROP__SHAPE (char *to_NT, int to_sdim, char *from_NT, int from_
 
 void
 ICMCompileND_PRF_DROP__DATA (char *to_NT, int to_sdim, char *from_NT, int from_sdim,
-                             char *cnt_ANY)
+                             char *cnt_ANY, char *copyfun)
 {
     DBUG_ENTER ("ICMCompileND_PRF_DROP__DATA");
 
@@ -1384,9 +1397,9 @@ ICMCompileND_PRF_DROP__DATA (char *to_NT, int to_sdim, char *from_NT, int from_s
                                         , fprintf (outfile, "0");
                                         , fprintf (outfile, "SAC_cnt");, INDENT;
                                         fprintf (outfile,
-                                                 "SAC_ND_WRITE( %s, SAC_i) = "
-                                                 "SAC_ND_READ( %s, SAC_off + SAC_i);\n",
-                                                 to_NT, from_NT);););
+                                                 "SAC_ND_WRITE_READ_COPY( %s, SAC_i,"
+                                                 " %s, SAC_off + SAC_i, %s);\n",
+                                                 to_NT, from_NT, copyfun);););
 
     DBUG_VOID_RETURN;
 }

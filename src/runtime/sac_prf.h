@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.17  2003/09/25 13:44:39  dkr
+ * new argument 'copyfun' added to some ICMs.
+ * ND_WRITE replaced by ND_WRITE_READ_COPY.
+ *
  * Revision 3.16  2003/09/22 11:59:31  dkr
  * SAC_ABS used
  *
@@ -193,15 +197,16 @@
 
 /* ND_PRF_CAT__SHAPE( ...) is a C-ICM */
 
-#define SAC_ND_PRF_CAT__DATA(to_NT, to_sdim, from1_NT, from1_sdim, from2_NT, from2_sdim) \
+#define SAC_ND_PRF_CAT__DATA(to_NT, to_sdim, from1_NT, from1_sdim, from2_NT, from2_sdim, \
+                             copyfun)                                                    \
     {                                                                                    \
         int SAC_i, SAC_off;                                                              \
         SAC_off = SAC_ND_A_SIZE (from1_NT);                                              \
         for (SAC_i = 0; SAC_i < SAC_off; SAC_i++) {                                      \
-            SAC_ND_WRITE (to_NT, SAC_i) = SAC_ND_READ (from1_NT, SAC_i);                 \
+            SAC_ND_WRITE_READ_COPY (to_NT, SAC_i, from1_NT, SAC_i, copyfun);             \
         }                                                                                \
         for (SAC_i = 0; SAC_i < SAC_ND_A_SIZE (from2_NT); SAC_i++) {                     \
-            SAC_ND_WRITE (to_NT, SAC_off + SAC_i) = SAC_ND_READ (from2_NT, SAC_i);       \
+            SAC_ND_WRITE_READ_COPY (to_NT, SAC_off + SAC_i, from2_NT, SAC_i, copyfun);   \
         }                                                                                \
     }
 
@@ -210,14 +215,14 @@
     {                                                                                    \
         int SAC_i;                                                                       \
         for (SAC_i = 0; SAC_i < SAC_ND_A_SIZE (to_NT); SAC_i++) {                        \
-            SAC_ND_WRITE (to_NT, SAC_i) = SAC_ND_READ (from_NT, SAC_i);                  \
+            SAC_ND_WRITE_READ_COPY (to_NT, SAC_i, from_NT, SAC_i, );                     \
         }                                                                                \
     }
 
 #define SAC_ND_PRF_S__DATA(to_NT, op_macro, op, scl)                                     \
     SAC_TR_PRF_PRINT (                                                                   \
       ("ND_PRF_S__DATA( %s, %s, %s, %s)\n", #to_NT, #op_macro, #op, #scl));              \
-    SAC_ND_WRITE (to_NT, 0) = op_macro (op, scl);
+    SAC_ND_WRITE_COPY (to_NT, 0, op_macro (op, scl), );
 
 #define SAC_ND_PRF_A__DATA(to_NT, op_macro, op, arg_NT)                                  \
     SAC_TR_PRF_PRINT (                                                                   \
@@ -225,14 +230,15 @@
     {                                                                                    \
         int SAC_i;                                                                       \
         for (SAC_i = 0; SAC_i < SAC_ND_A_SIZE (to_NT); SAC_i++) {                        \
-            SAC_ND_WRITE (to_NT, SAC_i) = op_macro (op, SAC_ND_READ (arg_NT, SAC_i));    \
+            SAC_ND_WRITE_COPY (to_NT, SAC_i,                                             \
+                               op_macro (op, SAC_ND_READ (arg_NT, SAC_i)), );            \
         }                                                                                \
     }
 
 #define SAC_ND_PRF_SxS__DATA(to_NT, op_macro, op, scl1, scl2)                            \
     SAC_TR_PRF_PRINT (("ND_PRF_SxS__DATA( %s, %s, %s, %s, %s)\n", #to_NT, #op_macro,     \
                        #op, #scl1, #scl2));                                              \
-    SAC_ND_WRITE (to_NT, 0) = op_macro (op, scl1, scl2);
+    SAC_ND_WRITE_COPY (to_NT, 0, op_macro (op, scl1, scl2), );
 
 #define SAC_ND_PRF_SxA__DATA(to_NT, op_macro, op, scl, from_NT)                          \
     SAC_TR_PRF_PRINT (("ND_PRF_SxA__DATA( %s, %s, %s, %s, %s)\n", #to_NT, #op_macro,     \
@@ -240,8 +246,8 @@
     {                                                                                    \
         int SAC_i;                                                                       \
         for (SAC_i = 0; SAC_i < SAC_ND_A_SIZE (to_NT); SAC_i++) {                        \
-            SAC_ND_WRITE (to_NT, SAC_i)                                                  \
-              = op_macro (op, scl, SAC_ND_READ (from_NT, SAC_i));                        \
+            SAC_ND_WRITE_COPY (to_NT, SAC_i,                                             \
+                               op_macro (op, scl, SAC_ND_READ (from_NT, SAC_i)), );      \
         }                                                                                \
     }
 
@@ -251,8 +257,8 @@
     {                                                                                    \
         int SAC_i;                                                                       \
         for (SAC_i = 0; SAC_i < SAC_ND_A_SIZE (to_NT); SAC_i++) {                        \
-            SAC_ND_WRITE (to_NT, SAC_i)                                                  \
-              = op_macro (op, SAC_ND_READ (from_NT, SAC_i), scl);                        \
+            SAC_ND_WRITE_COPY (to_NT, SAC_i,                                             \
+                               op_macro (op, SAC_ND_READ (from_NT, SAC_i), scl), );      \
         }                                                                                \
     }
 
@@ -262,8 +268,9 @@
     {                                                                                    \
         int SAC_i;                                                                       \
         for (SAC_i = 0; SAC_i < SAC_ND_A_SIZE (to_NT); SAC_i++) {                        \
-            SAC_ND_WRITE (to_NT, SAC_i) = op_macro (op, SAC_ND_READ (from1_NT, SAC_i),   \
-                                                    SAC_ND_READ (from2_NT, SAC_i));      \
+            SAC_ND_WRITE_COPY (to_NT, SAC_i,                                             \
+                               op_macro (op, SAC_ND_READ (from1_NT, SAC_i),              \
+                                         SAC_ND_READ (from2_NT, SAC_i)), );              \
         }                                                                                \
     }
 

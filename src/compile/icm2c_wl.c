@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.32  2003/09/25 13:43:30  dkr
+ * new argument 'copyfun' added to some ICMs.
+ * ND_WRITE replaced by ND_WRITE_READ_COPY.
+ *
  * Revision 3.31  2003/09/17 14:17:12  dkr
  * some function parameters renamed
  *
@@ -660,19 +664,20 @@ ICMCompileWL_END (char *to_NT, int to_sdim, char *idx_vec_NT, int dims)
  *   void ICMCompileWL_ASSIGN( char *val_NT, int val_sdim,
  *                             char *to_NT, int to_sdim
  *                             char *idx_vec_NT,
- *                             int dims, char **idxs_scl_NT)
+ *                             int dims, char **idxs_scl_NT,
+ *                             char *copyfun)
  *
  * description:
  *   Implements the compilation of the following ICM:
  *
  *   WL_ASSIGN( val_NT, val_sdim, to_NT, to_sdim,
- *              idx_vec_NT, dims, [ idxs_scl_NT ]* )
+ *              idx_vec_NT, dims, [ idxs_scl_NT ]* , copyfun )
  *
  ******************************************************************************/
 
 void
 ICMCompileWL_ASSIGN (char *val_NT, int val_sdim, char *to_NT, int to_sdim,
-                     char *idx_vec_NT, int dims, char **idxs_scl_NT)
+                     char *idx_vec_NT, int dims, char **idxs_scl_NT, char *copyfun)
 {
     int to_dim = DIM_NO_OFFSET (to_sdim);
     int val_dim = DIM_NO_OFFSET (val_sdim);
@@ -697,24 +702,19 @@ ICMCompileWL_ASSIGN (char *val_NT, int val_sdim, char *to_NT, int to_sdim,
 
     if ((val_dim == 0) || (to_dim == dims)) {
         INDENT;
-#ifdef TAGGED_ARRAYS
         fprintf (outfile,
-                 "SAC_ND_WRITE( %s, SAC_WL_OFFSET( %s)) = "
-                 "SAC_ND_READ( %s, 0);\n",
-                 to_NT, to_NT, val_NT);
-#else
-        fprintf (outfile, "SAC_ND_WRITE_ARRAY( %s, SAC_WL_OFFSET( %s)) = %s;\n", to_NT,
-                 to_NT, val_NT);
-#endif
+                 "SAC_ND_WRITE_READ_COPY( %s, SAC_WL_OFFSET( %s),"
+                 " %s, 0, %s);\n",
+                 to_NT, to_NT, val_NT, copyfun);
         INDENT;
         fprintf (outfile, "SAC_WL_OFFSET( %s)++;\n", to_NT);
     } else {
         FOR_LOOP_INC_VARDEC (fprintf (outfile, "SAC_i");, fprintf (outfile, "0");
                              , fprintf (outfile, "SAC_ND_A_SIZE( %s)", val_NT);, INDENT;
                              fprintf (outfile,
-                                      "SAC_ND_WRITE( %s, SAC_WL_OFFSET( %s)) = "
-                                      "SAC_ND_READ( %s, SAC_i);\n",
-                                      to_NT, to_NT, val_NT);
+                                      "SAC_ND_WRITE_READ_COPY( %s, SAC_WL_OFFSET( %s),"
+                                      " %s, SAC_i, %s);\n",
+                                      to_NT, to_NT, val_NT, copyfun);
                              INDENT;
                              fprintf (outfile, "SAC_WL_OFFSET( %s)++;\n", to_NT););
     }
@@ -761,7 +761,7 @@ ICMCompileWL_ASSIGN__INIT (char *to_NT, int to_sdim, char *idx_vec_NT, int dims,
         ASSURE_TYPE_ASS (fprintf (outfile, "(SAC_WL_SHAPE_FACTOR( %s, %d) == 1)", to_NT,
                                   dims - 1);
                          , fprintf (outfile, "Inconsistent with-loop found!"););
-        INDENT;
+        INDENT; /* how can this be done for arrays of hidden objects??? */
         fprintf (outfile, "SAC_ND_WRITE( %s, SAC_WL_OFFSET( %s)) = 0;\n", to_NT, to_NT);
         INDENT;
         fprintf (outfile, "SAC_WL_OFFSET( %s)++;\n", to_NT);
@@ -769,7 +769,8 @@ ICMCompileWL_ASSIGN__INIT (char *to_NT, int to_sdim, char *idx_vec_NT, int dims,
         FOR_LOOP_INC_VARDEC (fprintf (outfile, "SAC_i");, fprintf (outfile, "0");
                              , fprintf (outfile, "SAC_WL_SHAPE_FACTOR( %s, %d)", to_NT,
                                         dims - 1);
-                             , INDENT;
+                             , INDENT; /* how can this be done for arrays of hidden
+                                          objects??? */
                              fprintf (outfile,
                                       "SAC_ND_WRITE( %s, SAC_WL_OFFSET( %s)) = 0;\n",
                                       to_NT, to_NT);
@@ -786,18 +787,20 @@ ICMCompileWL_ASSIGN__INIT (char *to_NT, int to_sdim, char *idx_vec_NT, int dims,
  *   void ICMCompileWL_ASSIGN__COPY( char *from_NT,
  *                                   char *to_NT, int to_sdim,
  *                                   char *idx_vec_NT,
- *                                   int dims, char **idxs_scl_NT)
+ *                                   int dims, char **idxs_scl_NT,
+ *                                   char *copyfun)
  *
  * description:
  *   Implements the compilation of the following ICM:
  *
- *   WL_ASSIGN__COPY( from_NT, to_NT, to_sdim, idx_vec_NT, dims, [ idxs_scl_NT ]* )
+ *   WL_ASSIGN__COPY( from_NT, to_NT, to_sdim, idx_vec_NT, dims, [ idxs_scl_NT ]* ,
+ *                    copyfun )
  *
  ******************************************************************************/
 
 void
 ICMCompileWL_ASSIGN__COPY (char *from_NT, char *to_NT, int to_sdim, char *idx_vec_NT,
-                           int dims, char **idxs_scl_NT)
+                           int dims, char **idxs_scl_NT, char *copyfun)
 {
     int to_dim = DIM_NO_OFFSET (to_sdim);
 
@@ -822,19 +825,20 @@ ICMCompileWL_ASSIGN__COPY (char *from_NT, char *to_NT, int to_sdim, char *idx_ve
                          , fprintf (outfile, "Inconsistent with-loop found!"););
         INDENT;
         fprintf (outfile,
-                 "SAC_ND_WRITE( %s, SAC_WL_OFFSET( %s)) = "
-                 "SAC_ND_READ( %s, SAC_WL_OFFSET( %s));\n",
-                 to_NT, to_NT, from_NT, to_NT);
+                 "SAC_ND_WRITE_READ_COPY( %s, SAC_WL_OFFSET( %s),"
+                 " %s, SAC_WL_OFFSET( %s), %s);\n",
+                 to_NT, to_NT, from_NT, to_NT, copyfun);
         INDENT;
         fprintf (outfile, "SAC_WL_OFFSET( %s)++;\n", to_NT);
     } else {
         FOR_LOOP_INC_VARDEC (fprintf (outfile, "SAC_i");, fprintf (outfile, "0");
                              , fprintf (outfile, "SAC_WL_SHAPE_FACTOR( %s, %d)", to_NT,
                                         dims - 1);
-                             , INDENT; fprintf (outfile,
-                                                "SAC_ND_WRITE( %s, SAC_WL_OFFSET( %s)) = "
-                                                "SAC_ND_READ( %s, SAC_WL_OFFSET( %s));\n",
-                                                to_NT, to_NT, from_NT, to_NT);
+                             , INDENT;
+                             fprintf (outfile,
+                                      "SAC_ND_WRITE_READ_COPY( %s, SAC_WL_OFFSET( %s),"
+                                      " %s, SAC_WL_OFFSET( %s), %s);\n",
+                                      to_NT, to_NT, from_NT, to_NT, copyfun);
                              INDENT;
                              fprintf (outfile, "SAC_WL_OFFSET( %s)++;\n", to_NT););
     }
