@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.115  2004/11/19 15:11:10  sah
+ * removed NEEDOBJS
+ * added OBJECTS
+ *
  * Revision 3.114  2004/11/07 18:07:54  sah
  * disabled some code in NEW_AST mode
  *
@@ -1046,7 +1050,11 @@ DupModul (node *arg_node, info *arg_info)
                    DUPTRAV (MODUL_OBJS (arg_node)), DUPTRAV (MODUL_FUNS (arg_node)),
                    DUPTRAV (MODUL_FUNDECS (arg_node)));
 
+#ifndef NEW_AST
     MODUL_CLASSTYPE (new_node) = DupTypes_ (MODUL_CLASSTYPE (arg_node), arg_info);
+#else
+    MODUL_CLASSTYPE (new_node) = TYCopyType (MODUL_CLASSTYPE (arg_node));
+#endif
 
 #if 0
   MODUL_DECL( new_node) = ???
@@ -1070,7 +1078,11 @@ DupTypedef (node *arg_node, info *arg_info)
 
     new_node = MakeTypedef (StringCopy (TYPEDEF_NAME (arg_node)),
                             StringCopy (TYPEDEF_MOD (arg_node)),
+#ifndef NEW_AST
                             DupTypes_ (TYPEDEF_TYPE (arg_node), arg_info),
+#else
+                            TYCopyType (TYPEDEF_NTYPE (arg_node)),
+#endif
                             TYPEDEF_ATTRIB (arg_node), DUPCONT (TYPEDEF_NEXT (arg_node)));
 
     TYPEDEF_STATUS (new_node) = TYPEDEF_STATUS (arg_node);
@@ -1196,7 +1208,9 @@ DupFundef (node *arg_node, info *arg_info)
     FUNDEF_INLINE (new_node) = FUNDEF_INLINE (arg_node);
     FUNDEF_FUNNO (new_node) = FUNDEF_FUNNO (arg_node);
     FUNDEF_PRAGMA (new_node) = DUPTRAV (FUNDEF_PRAGMA (arg_node));
+#ifndef NEW_AST
     FUNDEF_NEEDOBJS (new_node) = DupNodelist_ (FUNDEF_NEEDOBJS (arg_node), arg_info);
+#endif
     FUNDEF_VARNO (new_node) = FUNDEF_VARNO (arg_node);
 
     FUNDEF_RETALIAS (new_node) = DupNodelist_ (FUNDEF_RETALIAS (arg_node), arg_info);

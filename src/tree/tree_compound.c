@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.95  2004/11/19 15:11:10  sah
+ * removed NEEDOBJS
+ * added OBJECTS
+ *
  * Revision 3.94  2004/10/26 16:14:31  sah
  * added RemoveFundef
  *
@@ -1547,9 +1551,13 @@ StoreNeededNode (node *insert, node *fundef, statustype status)
         list = FUNDEF_NEEDFUNS (fundef);
         break;
 
+#ifndef NEW_AST
+
     case N_objdef:
         list = FUNDEF_NEEDOBJS (fundef);
         break;
+
+#endif
 
     case N_typedef:
         list = FUNDEF_NEEDTYPES (fundef);
@@ -1566,9 +1574,11 @@ StoreNeededNode (node *insert, node *fundef, statustype status)
             FUNDEF_NEEDFUNS (fundef) = MakeNodelist (insert, status, NULL);
             break;
 
+#ifndef NEW_AST
         case N_objdef:
             FUNDEF_NEEDOBJS (fundef) = MakeNodelist (insert, status, NULL);
             break;
+#endif
 
         case N_typedef:
             FUNDEF_NEEDTYPES (fundef) = MakeNodelist (insert, status, NULL);
