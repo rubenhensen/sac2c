@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2002/08/14 12:09:17  sbs
+ * HMap transforma unary minus for old tc better now....
+ *
  * Revision 1.8  2002/08/14 11:51:08  sbs
  * HMAdjustFunNames debugged....
  *
@@ -436,7 +439,17 @@ HMap (node *arg_node, node *arg_info)
         if (found) {
             exprs = AP_ARGS (arg_node);
             if ((primfun == F_sub) && (CountExprs (exprs) == 1)) {
-                AP_ARGS (arg_node) = MakeExprs (MakeNum (0), exprs);
+                switch (NODE_TYPE (EXPRS_EXPR1 (exprs))) {
+                case N_double:
+                    AP_ARGS (arg_node) = MakeExprs (MakeDouble (0.0), exprs);
+                    break;
+                case N_float:
+                    AP_ARGS (arg_node) = MakeExprs (MakeFloat (0.0f), exprs);
+                    break;
+                case N_num:
+                default:
+                    AP_ARGS (arg_node) = MakeExprs (MakeNum (0), exprs);
+                }
             }
             res = MakePrf (primfun, AP_ARGS (arg_node));
             AP_ARGS (arg_node) = NULL;
