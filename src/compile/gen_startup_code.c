@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.44  2004/11/29 17:43:32  sah
+ * objinit disabled
+ *
  * Revision 3.43  2004/11/27 02:15:40  sah
  * fixed it.
  *
@@ -792,8 +795,10 @@ GSCprintMainBegin ()
         fprintf (global.outfile, "SAC_MT_SETUP();\n");
         INDENT;
         fprintf (global.outfile, "SAC_CS_SETUP();\n");
+#ifndef OBJR_DEACTIVATED
         INDENT;
         fprintf (global.outfile, "%s( __argc, __argv);\n\n", funname);
+#endif
     }
     funname = ILIBfree (funname);
 
