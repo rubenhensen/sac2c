@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.23  2004/11/24 13:29:55  khf
+ * SacDevCamp04: Compiles
+ *
  * Revision 1.22  2004/10/22 10:29:32  khf
  * fixed bug 73
  *
@@ -86,6 +89,8 @@
  *
  * @file WLPartition Generation.c
  *
+ * ATTENTION: This travesal works completly with new types
+ *
  * In this traversal AKS and AKD genarray/modarray withloops
  * with non-full partitions of the considered array are
  * transformed into withloops with full partitions.
@@ -140,15 +145,15 @@
  *
  */
 
-#define NEW_INFO
-
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "new_types.h"
 #include "tree_basic.h"
+#include "node_basic.h"
 #include "tree_compound.h"
 #include "internal_lib.h"
+#include "shape.h"
 #include "free.h"
 #include "DupTree.h"
 #include "Error.h"
@@ -168,7 +173,7 @@ struct INFO {
     node *fundef;
     node *let;
     node *nassign;
-    node *modul;
+    node *module;
     int genprob;
     int genshp;
     int subphase;
@@ -193,12 +198,12 @@ struct INFO {
 #define INFO_WLPG_FUNDEF(n) (n->fundef)
 #define INFO_WLPG_LET(n) (n->let)
 #define INFO_WLPG_NASSIGNS(n) (n->nassign)
-#define INFO_WLPG_MODUL(n) (n->modul)
+#define INFO_WLPG_MODULE(n) (n->module)
 #define INFO_WLPG_GENPROP(n) (n->genprob)
 #define INFO_WLPG_GENSHP(n) (n->genshp)
 #define INFO_WLPG_SUBPHASE(n) (n->subphase)
 
-#define AtLeastAKD(type) ((TYIsAKV (type) || TYIsAKS (type) || TYIsAKD (type)))
+#define AtLeastAKD(type) ((TYisAKV (type) || TYisAKS (type) || TYisAKD (type)))
 
 /**
  * INFO functions
@@ -210,13 +215,13 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = Malloc (sizeof (info));
+    result = ILIBmalloc (sizeof (info));
 
     INFO_WLPG_WL (result) = NULL;
     INFO_WLPG_FUNDEF (result) = NULL;
     INFO_WLPG_LET (result) = NULL;
     INFO_WLPG_NASSIGNS (result) = NULL;
-    INFO_WLPG_MODUL (result) = NULL;
+    INFO_WLPG_MODULE (result) = NULL;
     INFO_WLPG_GENPROP (result) = 0;
     INFO_WLPG_GENSHP (result) = 0;
     INFO_WLPG_SUBPHASE (result) = 0;
@@ -229,7 +234,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = Free (info);
+    info = ILIBfree (info);
 
     DBUG_RETURN (info);
 }
@@ -277,13 +282,13 @@ CreateStructConstant (node *expr, node *nassigns)
     iterator = nassigns;
 
     while (iterator) {
-        idn = DupIds_Id (LET_IDS (ASSIGN_INSTR (iterator)));
+        idn = DUPdupIdsId (LET_IDS (ASSIGN_INSTR (iterator)));
 
         if (tmp1) {
-            EXPRS_NEXT (tmp2) = MakeExprs (idn, NULL);
+            EXPRS_NEXT (tmp2) = TBmakeExprs (idn, NULL);
             tmp2 = EXPRS_NEXT (tmp2);
         } else {
-            tmp1 = MakeExprs (idn, tmp1);
+            tmp1 = TBmakeExprs (idn, tmp1);
             tmp2 = tmp1;
         }
 
@@ -291,12 +296,11 @@ CreateStructConstant (node *expr, node *nassigns)
         dim++;
     }
 
-    tmp1 = MakeFlatArray (tmp1);
-    nshpseg = MakeShpseg (MakeNums (dim, NULL));
-    ARRAY_TYPE (tmp1) = MakeTypes (T_int, 1, nshpseg, NULL, NULL);
-    ARRAY_NTYPE (tmp1) = TYMakeAKS (TYMakeSimpleType (T_int), SHMakeShape (dim));
+    tmp1 = TCmakeFlatArray (tmp1);
+    nshpseg = TBmakeShpseg (TBmakeNums (dim, NULL));
+    ARRAY_NTYPE (tmp1) = TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (dim));
     if (expr != NULL) {
-        expr = FreeTree (expr);
+        expr = FREEdoFreeTree (expr);
     }
     expr = tmp1;
 
@@ -320,8 +324,7 @@ CreateStructConstant (node *expr, node *nassigns)
 static node *
 CreateIdxShapeSelAssigns (node *array, int begin, int end, node *fundef)
 {
-    node *nassigns, *vardec, *tmp1, *tmp2;
-    ids *_ids;
+    node *nassigns, *vardec, *tmp1, *tmp2, *_ids;
     char *nvarname;
     int i;
 
@@ -335,25 +338,22 @@ CreateIdxShapeSelAssigns (node *array, int begin, int end, node *fundef)
     nassigns = NULL;
 
     for (i = end; i >= begin; i--) {
-        nvarname = TmpVarName (ID_NAME (array));
-        _ids = MakeIds (nvarname, NULL, ST_regular);
-        vardec = MakeVardec (StringCopy (nvarname), MakeTypes1 (T_int), NULL);
+        nvarname = ILIBtmpVarName (ID_NAME (array));
+        _ids = TBmakeIds (TBmakeAvis (nvarname, TYmakeAKS (TYmakeSimpleType (T_int),
+                                                           SHmakeShape (0))),
+                          NULL);
 
-        AVIS_TYPE (VARDEC_AVIS (vardec))
-          = TYMakeAKS (TYMakeSimpleType (T_int), SHMakeShape (0));
+        vardec = TBmakeVardec (IDS_AVIS (_ids), NULL);
 
-        IDS_VARDEC (_ids) = vardec;
-        IDS_AVIS (_ids) = VARDEC_AVIS (vardec);
-
-        fundef = AddVardecs (fundef, vardec);
+        fundef = TCaddVardecs (fundef, vardec);
 
         /* index position for selection */
-        tmp1 = MakeNum (i);
+        tmp1 = TBmakeNum (i);
         /* the array for selection */
-        tmp2 = MakeExprs (DupTree (array), NULL);
-        tmp1 = MakePrf (F_idx_shape_sel, MakeExprs (tmp1, tmp2));
+        tmp2 = TBmakeExprs (DUPdoDupTree (array), NULL);
+        tmp1 = TBmakePrf (F_idx_shape_sel, TBmakeExprs (tmp1, tmp2));
 
-        nassigns = MakeAssign (MakeLet (tmp1, _ids), nassigns);
+        nassigns = TBmakeAssign (TBmakeLet (_ids, tmp1), nassigns);
 
         /* set correct backref to defining assignment */
         AVIS_SSAASSIGN (IDS_AVIS (_ids)) = nassigns;
@@ -378,41 +378,35 @@ static node *
 CreateNewAssigns (node *expr, node *fundef)
 {
     int i;
-    node *tmp1, *tmp2, *tmp3, *nassigns, *vardec;
-    ids *_ids;
+    node *tmp1, *tmp2, *tmp3, *nassigns, *vardec, *_ids;
     char *nvarname;
-    types *type;
 
     DBUG_ENTER ("CreateNewAssigns");
 
     DBUG_ASSERT ((expr != NULL), "Expr is empty");
     DBUG_ASSERT ((NODE_TYPE (expr) == N_id), "CreateNewAssigns not called with N_id");
-    DBUG_ASSERT ((ID_DIM (expr) == 1), "Dimension of Id is not 1");
-    DBUG_ASSERT ((ID_SHPSEG (expr) != NULL), "SHPSEG of Id points to NULL");
+    DBUG_ASSERT ((TYisSimple (ID_NTYPE (expr)) == FALSE), "Id is a Scalar!!");
 
     nassigns = NULL;
 
-    for (i = ID_SHAPE (expr, 0) - 1; i >= 0; i--) {
-        nvarname = TmpVarName (ID_NAME (expr));
-        _ids = MakeIds (nvarname, NULL, ST_regular);
-        type = MakeTypes1 (T_int);
-        vardec = MakeVardec (StringCopy (nvarname), type, NULL);
+    for (i = SHgetExtent (TYgetShape (ID_NTYPE (expr)), 0) - 1; i >= 0; i--) {
+        nvarname = ILIBtmpVarName (ID_NAME (expr));
+        _ids = TBmakeIds (TBmakeAvis (nvarname, TYmakeAKS (TYmakeSimpleType (T_int),
+                                                           SHmakeShape (0))),
+                          NULL);
 
-        AVIS_TYPE (VARDEC_AVIS (vardec))
-          = TYMakeAKS (TYMakeSimpleType (T_int), SHMakeShape (0));
-        IDS_VARDEC (_ids) = vardec;
-        IDS_AVIS (_ids) = VARDEC_AVIS (vardec);
+        vardec = TBmakeVardec (IDS_AVIS (_ids), NULL);
 
-        fundef = AddVardecs (fundef, vardec);
+        fundef = TCaddVardecs (fundef, vardec);
 
         /* index position for selection */
-        tmp1 = MakeNum (i);
+        tmp1 = TBmakeNum (i);
         /* the array for selection */
-        tmp2 = MakeExprs (DupNode (expr), NULL);
+        tmp2 = TBmakeExprs (DUPdoDupNode (expr), NULL);
 
-        tmp3 = MakePrf (F_idx_sel, MakeExprs (tmp1, tmp2));
+        tmp3 = TBmakePrf (F_idx_sel, TBmakeExprs (tmp1, tmp2));
 
-        nassigns = MakeAssign (MakeLet (tmp3, _ids), nassigns);
+        nassigns = TBmakeAssign (TBmakeLet (_ids, tmp3), nassigns);
 
         /* set correct backref to defining assignment */
         AVIS_SSAASSIGN (IDS_AVIS (_ids)) = nassigns;
@@ -423,20 +417,19 @@ CreateNewAssigns (node *expr, node *fundef)
 
 /** <!--********************************************************************-->
  *
- * @fn ids *NewIds( node *nd, node *fundef)
+ * @fn node *NewIds( node *nd, node *fundef)
  *
  *   @brief creates new IDS.
  *
  *   @param  node *nd       :  if N_id node the new name and type will be
  *                             infered from
  *           node *fundef   :  N_fundef
- *   @return ids *          :  new Ids
+ *   @return node *         :  new Ids
  ******************************************************************************/
-static ids *
+static node *
 NewIds (node *nd, node *fundef)
 {
-    node *vardec;
-    ids *_ids;
+    node *vardec, *_ids;
     char *nvarname;
 
     DBUG_ENTER ("NewIds");
@@ -445,24 +438,22 @@ NewIds (node *nd, node *fundef)
                  "ID is empty or not N_id/N_num");
 
     if (NODE_TYPE (nd) == N_id) {
-        nvarname = TmpVarName (ID_NAME (nd));
-        _ids = MakeIds (nvarname, NULL, ST_regular);
-        vardec = MakeVardec (StringCopy (nvarname), DupOneTypes (ID_TYPE (nd)), NULL);
+        nvarname = ILIBtmpVarName (ID_NAME (nd));
+        _ids = TBmakeIds (TBmakeAvis (nvarname, TYcopyType (AVIS_TYPE (ID_AVIS (nd)))),
+                          NULL);
 
-        AVIS_TYPE (VARDEC_AVIS (vardec)) = TYCopyType (AVIS_TYPE (ID_AVIS (nd)));
+        vardec = TBmakeVardec (IDS_AVIS (_ids), NULL);
+
     } else {
-        nvarname = TmpVar ();
-        _ids = MakeIds (nvarname, NULL, ST_regular);
-        vardec = MakeVardec (StringCopy (nvarname), MakeTypes1 (T_int), NULL);
+        nvarname = ILIBtmpVar ();
+        _ids = TBmakeIds (TBmakeAvis (nvarname, TYmakeAKS (TYmakeSimpleType (T_int),
+                                                           SHmakeShape (0))),
+                          NULL);
 
-        AVIS_TYPE (VARDEC_AVIS (vardec))
-          = TYMakeAKS (TYMakeSimpleType (T_int), SHMakeShape (0));
+        vardec = TBmakeVardec (IDS_AVIS (_ids), NULL);
     }
 
-    IDS_VARDEC (_ids) = vardec;
-    IDS_AVIS (_ids) = VARDEC_AVIS (vardec);
-
-    fundef = AddVardecs (fundef, vardec);
+    fundef = TCaddVardecs (fundef, vardec);
 
     DBUG_RETURN (_ids);
 }
@@ -490,18 +481,16 @@ CreateEntryFlatArray (int entry, int number)
 
     tmp = NULL;
     for (i = 0; i < number; i++) {
-        tmp = MakeExprs (MakeNum (entry), tmp);
+        tmp = TBmakeExprs (TBmakeNum (entry), tmp);
     }
-    tmp = MakeFlatArray (tmp);
+    tmp = TCmakeFlatArray (tmp);
 
-    ARRAY_TYPE (tmp)
-      = MakeTypes (T_int, 1, MakeShpseg (MakeNums (number, NULL)), NULL, NULL);
-    ARRAY_NTYPE (tmp) = TYMakeAKS (TYMakeSimpleType (T_int), SHMakeShape (number));
+    ARRAY_NTYPE (tmp) = TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (number));
 
     ARRAY_ISCONST (tmp) = TRUE;
     ARRAY_VECTYPE (tmp) = T_int;
     ARRAY_VECLEN (tmp) = number;
-    ARRAY_CONSTVEC (tmp) = Array2Vec (T_int, ARRAY_AELEMS (tmp), NULL);
+    ARRAY_CONSTVEC (tmp) = TCarray2Vec (T_int, ARRAY_AELEMS (tmp), NULL);
     DBUG_RETURN (tmp);
 }
 
@@ -527,10 +516,10 @@ CreateNewPart (node *lb, node *ub, node *step, node *width, node *withid, node *
     DBUG_ENTER ("CreateNewPart");
 
     /* create tree structures */
-    genn = MakeNGenerator (DupTree (lb), DupTree (ub), F_le, F_lt, DupTree (step),
-                           DupTree (width));
-    partn = MakeNPart (DupTree (withid), genn, coden);
-    NCODE_INC_USED (coden);
+    genn = TBmakeGenerator (F_le, F_lt, DUPdoDupTree (lb), DUPdoDupTree (ub),
+                            DUPdoDupTree (step), DUPdoDupTree (width));
+    partn = TBmakePart (DUPdoDupTree (withid), genn, coden);
+    CODE_INC_USED (coden);
 
     DBUG_RETURN (partn);
 }
@@ -580,7 +569,7 @@ NormalizeStepWidth (node **step, node **width)
             if (ARRAY_ISCONST ((*step)))
                 veclen = ARRAY_VECLEN ((*step));
             else
-                veclen = CountExprs (ARRAY_AELEMS ((*step)));
+                veclen = TCcountExprs (ARRAY_AELEMS ((*step)));
 
             (*width) = CreateEntryFlatArray (1, veclen);
         }
@@ -608,10 +597,10 @@ NormalizeStepWidth (node **step, node **width)
             } else if ((NODE_TYPE (EXPRS_EXPR (stp)) == N_id)
                        && (NODE_TYPE (EXPRS_EXPR (wth)) == N_id)) {
                 if (!strcmp (ID_NAME (EXPRS_EXPR (stp)), ID_NAME (EXPRS_EXPR (wth)))) {
-                    EXPRS_EXPR (stp) = FreeTree (EXPRS_EXPR (stp));
-                    EXPRS_EXPR (stp) = MakeNum (1);
-                    EXPRS_EXPR (wth) = FreeTree (EXPRS_EXPR (wth));
-                    EXPRS_EXPR (wth) = MakeNum (1);
+                    EXPRS_EXPR (stp) = FREEdoFreeTree (EXPRS_EXPR (stp));
+                    EXPRS_EXPR (stp) = TBmakeNum (1);
+                    EXPRS_EXPR (wth) = FREEdoFreeTree (EXPRS_EXPR (wth));
+                    EXPRS_EXPR (wth) = TBmakeNum (1);
                     is_1 = is_1 && TRUE;
                 } else {
                     is_1 = FALSE;
@@ -627,8 +616,8 @@ NormalizeStepWidth (node **step, node **width)
         /* if both vectors are 1 this is equivalent to no grid */
 
         if (!error && is_1) {
-            (*step) = FreeTree (*step);
-            (*width) = FreeTree (*width);
+            (*step) = FREEdoFreeTree (*step);
+            (*width) = FREEdoFreeTree (*width);
         }
     }
 
@@ -654,18 +643,18 @@ AppendPart2WL (node *wln, node *partn)
 
     DBUG_ENTER ("AppendPart2WL");
 
-    parts = NWITH_PART (wln);
+    parts = WITH_PART (wln);
     /* at least one part exists */
     no_parts = 1;
 
-    while (NPART_NEXT (parts)) {
-        parts = NPART_NEXT (parts);
+    while (PART_NEXT (parts)) {
+        parts = PART_NEXT (parts);
         no_parts++;
     }
 
-    NPART_NEXT (parts) = partn;
+    PART_NEXT (parts) = partn;
     no_parts++;
-    NWITH_PARTS (wln) = no_parts;
+    WITH_PARTS (wln) = no_parts;
 
     DBUG_RETURN (wln);
 }
@@ -699,15 +688,15 @@ CutSlices (node *ls, node *us, node *l, node *u, int dim, node *wln, node *coden
     DBUG_ENTER ("CutSlices");
 
     /* create local copies of the arrays which atr modified here*/
-    lsc = DupTree (ls);
-    usc = DupTree (us);
+    lsc = DUPdoDupTree (ls);
+    usc = DUPdoDupTree (us);
 
     le = ARRAY_AELEMS (l);
     lsce = ARRAY_AELEMS (lsc);
     ue = ARRAY_AELEMS (u);
     usce = ARRAY_AELEMS (usc);
 
-    withidn = DupTree (NPART_WITHID (NWITH_PART (wln)));
+    withidn = DUPdoDupTree (PART_WITHID (WITH_PART (wln)));
 
     for (d = 0; d < dim; d++) {
         /* Check whether there is a cuboid above (below) the given one. */
@@ -717,30 +706,30 @@ CutSlices (node *ls, node *us, node *l, node *u, int dim, node *wln, node *coden
             lscnum = NUM_VAL (EXPRS_EXPR (lsce));
             if (lnum > lscnum) {
                 partn = CreateNewPart (lsc, usc, NULL, NULL, withidn, coden);
-                ubn = ARRAY_AELEMS (NPART_BOUND2 (partn));
+                ubn = ARRAY_AELEMS (PART_BOUND2 (partn));
                 for (i = 0; i < d; i++) {
                     ubn = EXPRS_NEXT (ubn);
                 }
                 if (NODE_TYPE (EXPRS_EXPR (ubn)) == N_num) {
                     NUM_VAL (EXPRS_EXPR (ubn)) = lnum;
                 } else {
-                    EXPRS_EXPR (ubn) = FreeTree (EXPRS_EXPR (ubn));
-                    EXPRS_EXPR (ubn) = DupTree (EXPRS_EXPR (le));
+                    EXPRS_EXPR (ubn) = FREEdoFreeTree (EXPRS_EXPR (ubn));
+                    EXPRS_EXPR (ubn) = DUPdoDupTree (EXPRS_EXPR (le));
                 }
                 wln = AppendPart2WL (wln, partn);
             }
         } else {
             partn = CreateNewPart (lsc, usc, NULL, NULL, withidn, coden);
-            ubn = ARRAY_AELEMS (NPART_BOUND2 (partn));
+            ubn = ARRAY_AELEMS (PART_BOUND2 (partn));
             for (i = 0; i < d; i++) {
                 ubn = EXPRS_NEXT (ubn);
             }
-            EXPRS_EXPR (ubn) = FreeTree (EXPRS_EXPR (ubn));
-            EXPRS_EXPR (ubn) = DupTree (EXPRS_EXPR (le));
-            if (ARRAY_ISCONST (NPART_BOUND2 (partn))) {
-                ARRAY_ISCONST (NPART_BOUND2 (partn)) = FALSE;
-                ARRAY_CONSTVEC (NPART_BOUND2 (partn))
-                  = Free (ARRAY_CONSTVEC (NPART_BOUND2 (partn)));
+            EXPRS_EXPR (ubn) = FREEdoFreeTree (EXPRS_EXPR (ubn));
+            EXPRS_EXPR (ubn) = DUPdoDupTree (EXPRS_EXPR (le));
+            if (ARRAY_ISCONST (PART_BOUND2 (partn))) {
+                ARRAY_ISCONST (PART_BOUND2 (partn)) = FALSE;
+                ARRAY_CONSTVEC (PART_BOUND2 (partn))
+                  = FREEdoFreeTree (ARRAY_CONSTVEC (PART_BOUND2 (partn)));
             }
             wln = AppendPart2WL (wln, partn);
         }
@@ -751,7 +740,7 @@ CutSlices (node *ls, node *us, node *l, node *u, int dim, node *wln, node *coden
             uscnum = NUM_VAL (EXPRS_EXPR (usce));
             if (unum < uscnum) {
                 partn = CreateNewPart (lsc, usc, NULL, NULL, withidn, coden);
-                lbn = ARRAY_AELEMS (NPART_BOUND1 (partn));
+                lbn = ARRAY_AELEMS (PART_BOUND1 (partn));
                 for (i = 0; i < d; i++) {
                     lbn = EXPRS_NEXT (lbn);
                 }
@@ -760,17 +749,17 @@ CutSlices (node *ls, node *us, node *l, node *u, int dim, node *wln, node *coden
             }
         } else {
             partn = CreateNewPart (lsc, usc, NULL, NULL, withidn, coden);
-            lbn = ARRAY_AELEMS (NPART_BOUND1 (partn));
+            lbn = ARRAY_AELEMS (PART_BOUND1 (partn));
             for (i = 0; i < d; i++) {
                 lbn = EXPRS_NEXT (lbn);
             }
-            EXPRS_EXPR (lbn) = FreeTree (EXPRS_EXPR (lbn));
-            EXPRS_EXPR (lbn) = DupTree (EXPRS_EXPR (ue));
+            EXPRS_EXPR (lbn) = FREEdoFreeTree (EXPRS_EXPR (lbn));
+            EXPRS_EXPR (lbn) = DUPdoDupTree (EXPRS_EXPR (ue));
             if ((NODE_TYPE (EXPRS_EXPR (lbn)) != N_num)
-                && (ARRAY_ISCONST (NPART_BOUND1 (partn)))) {
-                ARRAY_ISCONST (NPART_BOUND1 (partn)) = FALSE;
-                ARRAY_CONSTVEC (NPART_BOUND1 (partn))
-                  = Free (ARRAY_CONSTVEC (NPART_BOUND1 (partn)));
+                && (ARRAY_ISCONST (PART_BOUND1 (partn)))) {
+                ARRAY_ISCONST (PART_BOUND1 (partn)) = FALSE;
+                ARRAY_CONSTVEC (PART_BOUND1 (partn))
+                  = FREEdoFreeTree (ARRAY_CONSTVEC (PART_BOUND1 (partn)));
             }
             wln = AppendPart2WL (wln, partn);
         }
@@ -779,11 +768,11 @@ CutSlices (node *ls, node *us, node *l, node *u, int dim, node *wln, node *coden
         if (NODE_TYPE (EXPRS_EXPR (le)) == N_num) {
             NUM_VAL (EXPRS_EXPR (lsce)) = NUM_VAL (EXPRS_EXPR (le));
         } else {
-            EXPRS_EXPR (lsce) = FreeTree (EXPRS_EXPR (lsce));
-            EXPRS_EXPR (lsce) = DupTree (EXPRS_EXPR (le));
+            EXPRS_EXPR (lsce) = FREEdoFreeTree (EXPRS_EXPR (lsce));
+            EXPRS_EXPR (lsce) = DUPdoDupTree (EXPRS_EXPR (le));
             if (ARRAY_ISCONST (lsc)) {
                 ARRAY_ISCONST (lsc) = FALSE;
-                ARRAY_CONSTVEC (lsc) = Free (ARRAY_CONSTVEC (lsc));
+                ARRAY_CONSTVEC (lsc) = FREEdoFreeTree (ARRAY_CONSTVEC (lsc));
             }
         }
 
@@ -791,11 +780,11 @@ CutSlices (node *ls, node *us, node *l, node *u, int dim, node *wln, node *coden
             && (NODE_TYPE (EXPRS_EXPR (usce)) == N_num)) {
             NUM_VAL (EXPRS_EXPR (usce)) = NUM_VAL (EXPRS_EXPR (ue));
         } else {
-            EXPRS_EXPR (usce) = FreeTree (EXPRS_EXPR (usce));
-            EXPRS_EXPR (usce) = DupTree (EXPRS_EXPR (ue));
+            EXPRS_EXPR (usce) = FREEdoFreeTree (EXPRS_EXPR (usce));
+            EXPRS_EXPR (usce) = DUPdoDupTree (EXPRS_EXPR (ue));
             if ((NODE_TYPE (EXPRS_EXPR (usce)) != N_num) && (ARRAY_ISCONST (usc))) {
                 ARRAY_ISCONST (usc) = FALSE;
-                ARRAY_CONSTVEC (usc) = Free (ARRAY_CONSTVEC (usc));
+                ARRAY_CONSTVEC (usc) = FREEdoFreeTree (ARRAY_CONSTVEC (usc));
             }
         }
 
@@ -805,9 +794,9 @@ CutSlices (node *ls, node *us, node *l, node *u, int dim, node *wln, node *coden
         usce = EXPRS_NEXT (usce);
     }
 
-    lsc = FreeTree (lsc);
-    usc = FreeTree (usc);
-    withidn = FreeTree (withidn);
+    lsc = FREEdoFreeTree (lsc);
+    usc = FREEdoFreeTree (usc);
+    withidn = FREEdoFreeTree (withidn);
 
     DBUG_RETURN (wln);
 }
@@ -834,20 +823,20 @@ static node *
 CompleteGrid (node *ls, node *us, node *step, node *width, int dim, node *wln,
               node *coden, info *arg_info)
 {
-    node *nw, *stpe, *wthe, *nwe, *partn, *withidn, *lbn, *wthn, *tmp1, *tmp2, *nassign;
+    node *nw, *stpe, *wthe, *nwe, *partn, *withidn, *lbn, *wthn, *tmp1, *tmp2, *nassign,
+      *_ids;
     int i, d, stpnum, wthnum;
-    ids *_ids;
 
     DBUG_ENTER ("CompleteGrid");
 
     /* create local copies of the arrays which atr modified here*/
-    nw = DupTree (step);
+    nw = DUPdoDupTree (step);
 
     stpe = ARRAY_AELEMS (step);
     wthe = ARRAY_AELEMS (width);
     nwe = ARRAY_AELEMS (nw);
 
-    withidn = DupTree (NPART_WITHID (NWITH_PART (wln)));
+    withidn = DUPdoDupTree (PART_WITHID (WITH_PART (wln)));
 
     for (d = 0; d < dim; d++) {
 
@@ -859,8 +848,8 @@ CompleteGrid (node *ls, node *us, node *step, node *width, int dim, node *wln,
             if (stpnum > wthnum) { /* create new grids */
 
                 partn = CreateNewPart (ls, us, step, nw, withidn, coden);
-                lbn = ARRAY_AELEMS (NPART_BOUND1 (partn));
-                wthn = ARRAY_AELEMS (NPART_WIDTH (partn));
+                lbn = ARRAY_AELEMS (PART_BOUND1 (partn));
+                wthn = ARRAY_AELEMS (PART_WIDTH (partn));
 
                 for (i = 0; i < d; i++) {
                     wthn = EXPRS_NEXT (wthn);
@@ -874,32 +863,32 @@ CompleteGrid (node *ls, node *us, node *step, node *width, int dim, node *wln,
                     _ids = NewIds (EXPRS_EXPR (lbn), INFO_WLPG_FUNDEF (arg_info));
 
                     /* the identifier to add wthnum to */
-                    tmp1 = DupTree (EXPRS_EXPR (lbn));
+                    tmp1 = DUPdoDupTree (EXPRS_EXPR (lbn));
                     /* N_num wthnum */
-                    tmp2 = MakeExprs (DupTree (EXPRS_EXPR (wthe)), NULL);
+                    tmp2 = TBmakeExprs (DUPdoDupTree (EXPRS_EXPR (wthe)), NULL);
 
-                    tmp1 = MakePrf (F_add_SxS, MakeExprs (tmp1, tmp2));
+                    tmp1 = TBmakePrf (F_add_SxS, TBmakeExprs (tmp1, tmp2));
 
-                    nassign = MakeAssign (MakeLet (tmp1, _ids), NULL);
+                    nassign = TBmakeAssign (TBmakeLet (_ids, tmp1), NULL);
                     /* set correct backref to defining assignment */
                     AVIS_SSAASSIGN (IDS_AVIS (_ids)) = nassign;
 
                     INFO_WLPG_NASSIGNS (arg_info)
-                      = AppendAssign (INFO_WLPG_NASSIGNS (arg_info), nassign);
+                      = TCappendAssign (INFO_WLPG_NASSIGNS (arg_info), nassign);
 
-                    EXPRS_EXPR (lbn) = FreeTree (EXPRS_EXPR (lbn));
-                    EXPRS_EXPR (lbn) = DupIds_Id (_ids);
+                    EXPRS_EXPR (lbn) = FREEdoFreeTree (EXPRS_EXPR (lbn));
+                    EXPRS_EXPR (lbn) = DUPdupIdsId (_ids);
                 }
                 NUM_VAL (EXPRS_EXPR (wthn)) = stpnum - wthnum;
-                i = NormalizeStepWidth (&(NPART_STEP (partn)), &(NPART_WIDTH (partn)));
+                i = NormalizeStepWidth (&(PART_STEP (partn)), &(PART_WIDTH (partn)));
                 DBUG_ASSERT (!i, ("internal normalization failure"));
 
                 wln = AppendPart2WL (wln, partn);
             }
         } else {
             partn = CreateNewPart (ls, us, step, nw, withidn, coden);
-            lbn = ARRAY_AELEMS (NPART_BOUND1 (partn));
-            wthn = ARRAY_AELEMS (NPART_WIDTH (partn));
+            lbn = ARRAY_AELEMS (PART_BOUND1 (partn));
+            wthn = ARRAY_AELEMS (PART_WIDTH (partn));
 
             for (i = 0; i < d; i++) {
                 wthn = EXPRS_NEXT (wthn);
@@ -915,21 +904,21 @@ CompleteGrid (node *ls, node *us, node *step, node *width, int dim, node *wln,
                 _ids = NewIds (EXPRS_EXPR (lbn), INFO_WLPG_FUNDEF (arg_info));
 
                 /* the identifier to add current width to */
-                tmp1 = DupTree (EXPRS_EXPR (lbn));
+                tmp1 = DUPdoDupTree (EXPRS_EXPR (lbn));
                 /* current width as N_num or N_id */
-                tmp2 = MakeExprs (DupTree (EXPRS_EXPR (wthe)), NULL);
+                tmp2 = TBmakeExprs (DUPdoDupTree (EXPRS_EXPR (wthe)), NULL);
 
-                tmp1 = MakePrf (F_add_SxS, MakeExprs (tmp1, tmp2));
+                tmp1 = TBmakePrf (F_add_SxS, TBmakeExprs (tmp1, tmp2));
 
-                nassign = MakeAssign (MakeLet (tmp1, _ids), NULL);
+                nassign = TBmakeAssign (TBmakeLet (_ids, tmp1), NULL);
                 /* set correct backref to defining assignment */
                 AVIS_SSAASSIGN (IDS_AVIS (_ids)) = nassign;
 
                 INFO_WLPG_NASSIGNS (arg_info)
-                  = AppendAssign (INFO_WLPG_NASSIGNS (arg_info), nassign);
+                  = TCappendAssign (INFO_WLPG_NASSIGNS (arg_info), nassign);
 
-                EXPRS_EXPR (lbn) = FreeTree (EXPRS_EXPR (lbn));
-                EXPRS_EXPR (lbn) = DupIds_Id (_ids);
+                EXPRS_EXPR (lbn) = FREEdoFreeTree (EXPRS_EXPR (lbn));
+                EXPRS_EXPR (lbn) = DUPdupIdsId (_ids);
             }
 
             if ((NODE_TYPE (EXPRS_EXPR (stpe)) == N_num)
@@ -941,24 +930,24 @@ CompleteGrid (node *ls, node *us, node *step, node *width, int dim, node *wln,
                 _ids = NewIds (EXPRS_EXPR (wthn), INFO_WLPG_FUNDEF (arg_info));
 
                 /* the first identifier */
-                tmp1 = DupTree (EXPRS_EXPR (stpe));
+                tmp1 = DUPdoDupTree (EXPRS_EXPR (stpe));
                 /* the second identifier */
-                tmp2 = MakeExprs (DupTree (EXPRS_EXPR (wthe)), NULL);
+                tmp2 = TBmakeExprs (DUPdoDupTree (EXPRS_EXPR (wthe)), NULL);
 
-                tmp1 = MakePrf (F_sub_SxS, MakeExprs (tmp1, tmp2));
+                tmp1 = TBmakePrf (F_sub_SxS, TBmakeExprs (tmp1, tmp2));
 
-                nassign = MakeAssign (MakeLet (tmp1, _ids), NULL);
+                nassign = TBmakeAssign (TBmakeLet (_ids, tmp1), NULL);
                 /* set correct backref to defining assignment */
                 AVIS_SSAASSIGN (IDS_AVIS (_ids)) = nassign;
 
                 INFO_WLPG_NASSIGNS (arg_info)
-                  = AppendAssign (INFO_WLPG_NASSIGNS (arg_info), nassign);
+                  = TCappendAssign (INFO_WLPG_NASSIGNS (arg_info), nassign);
 
-                EXPRS_EXPR (wthn) = FreeTree (EXPRS_EXPR (wthn));
-                EXPRS_EXPR (wthn) = DupIds_Id (_ids);
+                EXPRS_EXPR (wthn) = FREEdoFreeTree (EXPRS_EXPR (wthn));
+                EXPRS_EXPR (wthn) = DUPdupIdsId (_ids);
             }
 
-            i = NormalizeStepWidth (&(NPART_STEP (partn)), &(NPART_WIDTH (partn)));
+            i = NormalizeStepWidth (&(PART_STEP (partn)), &(PART_WIDTH (partn)));
             DBUG_ASSERT (!i, ("internal normalization failure"));
 
             wln = AppendPart2WL (wln, partn);
@@ -969,11 +958,11 @@ CompleteGrid (node *ls, node *us, node *step, node *width, int dim, node *wln,
             && (NODE_TYPE (EXPRS_EXPR (wthe)) == N_num)) {
             NUM_VAL (EXPRS_EXPR (nwe)) = NUM_VAL (EXPRS_EXPR (wthe));
         } else {
-            EXPRS_EXPR (nwe) = FreeTree (EXPRS_EXPR (nwe));
-            EXPRS_EXPR (nwe) = DupTree (EXPRS_EXPR (wthe));
+            EXPRS_EXPR (nwe) = FREEdoFreeTree (EXPRS_EXPR (nwe));
+            EXPRS_EXPR (nwe) = DUPdoDupTree (EXPRS_EXPR (wthe));
             if ((NODE_TYPE (EXPRS_EXPR (nwe)) != N_num) && (ARRAY_ISCONST (nw))) {
                 ARRAY_ISCONST (nw) = FALSE;
-                ARRAY_CONSTVEC (nw) = Free (ARRAY_CONSTVEC (nw));
+                ARRAY_CONSTVEC (nw) = FREEdoFreeTree (ARRAY_CONSTVEC (nw));
             }
         }
 
@@ -982,7 +971,7 @@ CompleteGrid (node *ls, node *us, node *step, node *width, int dim, node *wln,
         nwe = EXPRS_NEXT (nwe);
     }
 
-    nw = FreeTree (nw);
+    nw = FREEdoFreeTree (nw);
 
     DBUG_RETURN (wln);
 }
@@ -1008,59 +997,52 @@ CreateScalarWL (int dim, node *array_shape, simpletype btype, node *expr, node *
     node *wl;
     node *id;
     node *vardecs = NULL;
-    ids *vec_ids;
-    ids *scl_ids = NULL;
-    ids *tmp_ids;
+    node *vec_ids;
+    node *scl_ids = NULL;
+    node *tmp_ids;
     int i;
 
     DBUG_ENTER ("CreateScalarWL");
 
     DBUG_ASSERT ((dim >= 0), "CreateScalarWith() used with unknown shape!");
 
-    vec_ids = MakeIds (TmpVar (), NULL, ST_regular);
-    vardecs
-      = MakeVardec (StringCopy (IDS_NAME (vec_ids)),
-                    MakeTypes (T_int, 1, MakeShpseg (MakeNums (dim, NULL)), NULL, NULL),
-                    vardecs);
-    AVIS_TYPE (VARDEC_AVIS (vardecs))
-      = TYMakeAKS (TYMakeSimpleType (T_int), SHMakeShape (dim));
-    IDS_VARDEC (vec_ids) = vardecs;
-    IDS_AVIS (vec_ids) = VARDEC_AVIS (vardecs);
+    vec_ids = TBmakeIds (TBmakeAvis (ILIBtmpVar (), TYmakeAKS (TYmakeSimpleType (T_int),
+                                                               SHmakeShape (dim))),
+                         NULL);
+
+    vardecs = TBmakeVardec (IDS_AVIS (vec_ids), vardecs);
 
     for (i = 0; i < dim; i++) {
-        tmp_ids = MakeIds (TmpVar (), NULL, ST_regular);
-        vardecs
-          = MakeVardec (StringCopy (IDS_NAME (tmp_ids)), MakeTypes1 (T_int), vardecs);
+        tmp_ids
+          = TBmakeIds (TBmakeAvis (ILIBtmpVar (),
+                                   TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0))),
+                       NULL);
+
+        vardecs = TBmakeVardec (IDS_AVIS (tmp_ids), vardecs);
         IDS_NEXT (tmp_ids) = scl_ids;
         scl_ids = tmp_ids;
-        AVIS_TYPE (VARDEC_AVIS (vardecs))
-          = TYMakeAKS (TYMakeSimpleType (T_int), SHMakeShape (0));
-        IDS_VARDEC (scl_ids) = vardecs;
-        IDS_AVIS (scl_ids) = VARDEC_AVIS (vardecs);
     }
 
-    id = MakeId (TmpVar (), NULL, ST_regular);
-    vardecs = MakeVardec (StringCopy (ID_NAME (id)), MakeTypes1 (btype), vardecs);
-    AVIS_TYPE (VARDEC_AVIS (vardecs))
-      = TYMakeAKS (TYMakeSimpleType (btype), SHMakeShape (0));
-    ID_VARDEC (id) = vardecs;
-    ID_AVIS (id) = VARDEC_AVIS (vardecs);
+    id = TBmakeId (
+      TBmakeAvis (ILIBtmpVar (), TYmakeAKS (TYmakeSimpleType (btype), SHmakeShape (0))));
+    vardecs = TBmakeVardec (ID_AVIS (id), vardecs);
 
-    wl = MakeNWith (MakeNPart (MakeNWithid (vec_ids, scl_ids),
-                               MakeNGenerator (CreateZeroVector (dim, T_int),
-                                               DupNode (array_shape), F_le, F_lt, NULL,
-                                               NULL),
-                               NULL),
-                    MakeNCode (MakeBlock (MakeAssignLet (StringCopy (ID_NAME (id)),
-                                                         vardecs, expr),
-                                          NULL),
-                               MakeExprs (id, NULL)),
-                    MakeNWithOp (WO_genarray, DupNode (array_shape)));
-    NCODE_USED (NWITH_CODE (wl))++;
-    NPART_CODE (NWITH_PART (wl)) = NWITH_CODE (wl);
-    NWITH_PARTS (wl) = 1;
+    wl = TBmakeWith (TBmakePart (TBmakeWithid (vec_ids, scl_ids),
+                                 TBmakeGenerator (F_le, F_lt,
+                                                  TCcreateZeroVector (dim, T_int),
+                                                  DUPdoDupNode (array_shape), NULL, NULL),
+                                 NULL),
+                     TBmakeCode (TBmakeBlock (TCmakeAssignLet (ILIBstringCopy (
+                                                                 ID_NAME (id)),
+                                                               vardecs, expr),
+                                              NULL),
+                                 TBmakeExprs (id, NULL)),
+                     TBmakeGenarray (DUPdoDupNode (array_shape), NULL));
+    CODE_USED (WITH_CODE (wl))++;
+    PART_CODE (WITH_PART (wl)) = WITH_CODE (wl);
+    WITH_PARTS (wl) = 1;
 
-    fundef = AddVardecs (fundef, vardecs);
+    fundef = TCaddVardecs (fundef, vardecs);
 
     DBUG_RETURN (wl);
 }
@@ -1091,34 +1073,35 @@ CreateZeros (node *array, node **nassigns, node *fundef)
     DBUG_ASSERT ((NODE_TYPE (array) == N_id), "no N_id node found!");
 
     array_type = ID_NTYPE (array);
-    dim = TYGetDim (array_type);
-    DBUG_ASSERT ((TYIsSimple (array_type) == FALSE), "N_id is no array type!");
-    btype = TYGetSimpleType (TYGetScalar (array_type));
-    shape = TYGetShape (array_type);
+    dim = TYgetDim (array_type);
+    DBUG_ASSERT ((TYisSimple (array_type) == FALSE), "N_id is no array type!");
+    btype = TYgetSimpleType (TYgetScalar (array_type));
+    shape = TYgetShape (array_type);
 
     if (dim == 0) {
-        zero = CreateZeroScalar (btype);
+        zero = TCcreateZeroScalar (btype);
     } else {
         node *array_shape = NULL;
 
-        if (TYIsAKV (array_type) || TYIsAKS (array_type)) {
+        if (TYisAKV (array_type) || TYisAKS (array_type)) {
 
-            array_shape = SHShape2Array (shape);
+            array_shape = SHshape2Array (shape);
             ARRAY_NTYPE (array_shape)
-              = TYMakeAKS (TYMakeSimpleType (T_int), SHMakeShape (dim));
+              = TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (dim));
 
             ARRAY_ISCONST (array_shape) = TRUE;
             ARRAY_VECTYPE (array_shape) = T_int;
             ARRAY_VECLEN (array_shape) = dim;
             ARRAY_CONSTVEC (array_shape)
-              = Array2Vec (T_int, ARRAY_AELEMS (array_shape), NULL);
+              = TCarray2Vec (T_int, ARRAY_AELEMS (array_shape), NULL);
 
         } else { /* AKD array */
             assigns = CreateIdxShapeSelAssigns (array, 0, (dim - 1), fundef);
             array_shape = CreateStructConstant (array_shape, assigns);
         }
-        zero = CreateScalarWL (dim, array_shape, btype, CreateZeroScalar (btype), fundef);
-        array_shape = FreeNode (array_shape);
+        zero
+          = CreateScalarWL (dim, array_shape, btype, TCcreateZeroScalar (btype), fundef);
+        array_shape = FREEdoFreeNode (array_shape);
     }
 
     (*nassigns) = assigns;
@@ -1127,13 +1110,13 @@ CreateZeros (node *array, node **nassigns, node *fundef)
 
 /** <!--********************************************************************-->
  *
- * @fn node *CreateArraySel( ids *sel_vec, ids *sel_ids, node *sel_array,
+ * @fn node *CreateArraySel( node *sel_vec, node *sel_ids, node *sel_array,
  *                           node **nassigns, node *fundef)
  *
  *   @brief creates an WL with element-wise reference on 'sel_array'
  *
- *   @param  ids  *sel_vec   : N_WITHID_VEC of current WL
- *           ids  *sel_ids   : N_WITHID_IDS of current WL
+ *   @param  node *sel_vec   : N_WITHID_VEC of current WL
+ *           node *sel_ids   : N_WITHID_IDS of current WL
  *           node *sel_array :
  *           node **nassigns : != NULL iff new assignments have been created
  *                             (AKD case)
@@ -1141,7 +1124,7 @@ CreateZeros (node *array, node **nassigns, node *fundef)
  *   @return node *          : N_Nwith
  ******************************************************************************/
 static node *
-CreateArraySel (ids *sel_vec, ids *sel_ids, node *sel_array, node **nassigns,
+CreateArraySel (node *sel_vec, node *sel_ids, node *sel_array, node **nassigns,
                 node *fundef)
 {
     node *sel;
@@ -1152,22 +1135,22 @@ CreateArraySel (ids *sel_vec, ids *sel_ids, node *sel_array, node **nassigns,
 
     DBUG_ASSERT ((NODE_TYPE (sel_array) == N_id), "no N_id node found!");
 
-    len_index = IDS_SHAPE (sel_vec, 0);
+    len_index = SHgetExtent (TYgetShape (IDS_NTYPE (sel_vec)), 0);
     DBUG_ASSERT ((len_index > 0), "illegal index length found!");
 
-    dim_array = TYGetDim (ID_NTYPE (sel_array));
+    dim_array = TYgetDim (ID_NTYPE (sel_array));
     DBUG_ASSERT ((dim_array > 0), "illegal array dimensionality found!");
 
     if (len_index > dim_array) {
         DBUG_ASSERT ((0), "illegal array selection found!");
         sel = NULL;
     } else if ((len_index == dim_array)) {
-        sel = MakePrf (F_sel, MakeExprs (DupIds_Id (sel_vec),
-                                         MakeExprs (DupNode (sel_array), NULL)));
+        sel
+          = TBmakePrf (F_sel, TBmakeExprs (DUPdupIdsId (sel_vec),
+                                           TBmakeExprs (DUPdoDupNode (sel_array), NULL)));
     } else { /* (len_index < dim_array) */
-        node *new_index, *id, *vardec, *ass;
+        node *new_index, *id, *vardec, *ass, *tmp_ids;
         node *array_shape = NULL;
-        ids *tmp_ids;
         shape *shape, *mshape;
         simpletype btype;
         ntype *array_type;
@@ -1176,24 +1159,24 @@ CreateArraySel (ids *sel_vec, ids *sel_ids, node *sel_array, node **nassigns,
         array_type = ID_NTYPE (sel_array);
         dim = (dim_array - len_index);
 
-        btype = TYGetSimpleType (TYGetScalar (array_type));
+        btype = TYgetSimpleType (TYgetScalar (array_type));
 
-        if (TYIsAKV (array_type) || TYIsAKS (array_type)) {
+        if (TYisAKV (array_type) || TYisAKS (array_type)) {
 
-            shape = TYGetShape (array_type);
-            mshape = SHDropFromShape (len_index, shape);
-            array_shape = SHShape2Array (mshape);
+            shape = TYgetShape (array_type);
+            mshape = SHdropFromShape (len_index, shape);
+            array_shape = SHshape2Array (mshape);
             ARRAY_NTYPE (array_shape)
-              = TYMakeAKS (TYMakeSimpleType (T_int), SHMakeShape (dim));
+              = TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (dim));
 
             ARRAY_ISCONST (array_shape) = TRUE;
             ARRAY_VECTYPE (array_shape) = T_int;
             ARRAY_VECLEN (array_shape) = dim;
             ARRAY_CONSTVEC (array_shape)
-              = Array2Vec (T_int, ARRAY_AELEMS (array_shape), NULL);
+              = TCarray2Vec (T_int, ARRAY_AELEMS (array_shape), NULL);
 
             if (mshape) {
-                SHFreeShape (mshape);
+                SHfreeShape (mshape);
             }
         } else { /* AKD array */
             assigns
@@ -1206,7 +1189,7 @@ CreateArraySel (ids *sel_vec, ids *sel_ids, node *sel_array, node **nassigns,
          */
         sel = CreateScalarWL (dim, array_shape, btype, NULL, fundef);
 
-        array_shape = FreeNode (array_shape);
+        array_shape = FREEdoFreeNode (array_shape);
 
         /*
          * create index vector for F_sel
@@ -1215,35 +1198,32 @@ CreateArraySel (ids *sel_vec, ids *sel_ids, node *sel_array, node **nassigns,
         while (IDS_NEXT (tmp_ids) != NULL) {
             tmp_ids = IDS_NEXT (tmp_ids);
         }
-        IDS_NEXT (tmp_ids) = NWITH_IDS (sel); /* concat ids chains */
-        new_index = Ids2Array (sel_ids);
+        IDS_NEXT (tmp_ids) = WITH_IDS (sel); /* concat ids chains */
+        new_index = TCids2Array (sel_ids);
         IDS_NEXT (tmp_ids) = NULL; /* restore ids chains */
 
         /*
          * create new id
          */
-        id = MakeId (TmpVar (), NULL, ST_regular);
-        vardec = MakeVardec (StringCopy (ID_NAME (id)),
-                             DupOneTypes (ARRAY_TYPE (new_index)), NULL);
-        ID_VARDEC (id) = vardec;
-        ID_AVIS (id) = VARDEC_AVIS (vardec);
+        id = TBmakeId (
+          TBmakeAvis (ILIBtmpVar (), TYoldType2Type (ARRAY_TYPE (new_index))));
+        vardec = TBmakeVardec (ID_AVIS (id), NULL);
 
-        AVIS_TYPE (VARDEC_AVIS (vardec)) = TYOldType2Type (ARRAY_TYPE (new_index));
-
-        fundef = AddVardecs (fundef, vardec);
+        fundef = TCaddVardecs (fundef, vardec);
 
         /*
          * create expression 'sel( tmp, A)' and insert it into WL
          */
-        ASSIGN_RHS (BLOCK_INSTR (NWITH_CBLOCK (sel)))
-          = MakePrf (F_sel, MakeExprs (id, MakeExprs (DupNode (sel_array), NULL)));
+        ASSIGN_RHS (BLOCK_INSTR (WITH_CBLOCK (sel)))
+          = TBmakePrf (F_sel,
+                       TBmakeExprs (id, TBmakeExprs (DUPdoDupNode (sel_array), NULL)));
 
         /*
          * create assignment 'tmp = [...];' and insert it into WL
          */
-        ass = MakeAssignLet (StringCopy (ID_NAME (id)), vardec, new_index);
-        ASSIGN_NEXT (ass) = BLOCK_INSTR (NWITH_CBLOCK (sel));
-        BLOCK_INSTR (NWITH_CBLOCK (sel)) = ass;
+        ass = TCmakeAssignLet (ILIBstringCopy (ID_NAME (id)), vardec, new_index);
+        ASSIGN_NEXT (ass) = BLOCK_INSTR (WITH_CBLOCK (sel));
+        BLOCK_INSTR (WITH_CBLOCK (sel)) = ass;
     }
 
     (*nassigns) = assigns;
@@ -1268,12 +1248,10 @@ CreateArraySel (ids *sel_vec, ids *sel_ids, node *sel_array, node **nassigns,
 static node *
 CreateFullPartition (node *wln, info *arg_info)
 {
-    node *coden, *idn, *nassign, *array_shape = NULL, *array_null, *vardec, *nassigns;
-    ids *_ids;
-    types *type;
+    node *coden, *idn, *nassign, *array_shape = NULL, *array_null, *vardec, *nassigns,
+                                 *_ids;
     ntype *array_type;
     shape *shape, *mshape;
-    char *nvarname;
     int gen_shape = 0;
     bool do_create;
 
@@ -1282,54 +1260,55 @@ CreateFullPartition (node *wln, info *arg_info)
     do_create = TRUE;
 
     /* get shape of the index vector (generator) */
-    gen_shape = IDS_SHAPE (NWITH_VEC (wln), 0);
+    gen_shape = SHgetExtent (TYgetShape (IDS_NTYPE (WITH_VEC (wln))), 0);
     DBUG_ASSERT ((gen_shape > 0), "shape of index vector has to be > 0!");
 
     /*
      * allocate "array_shape"
      */
-    switch (NWITH_TYPE (wln)) {
-    case WO_modarray: {
+    switch (NODE_TYPE (WITH_WITHOP (wln))) {
+    case N_modarray: {
         /* create upper array bound */
-        array_type = ID_NTYPE (NWITH_ARRAY (wln));
+        array_type = ID_NTYPE (MODARRAY_ARRAY (WITH_WITHOP (wln)));
 
-        if (TYIsAKV (array_type) || TYIsAKS (array_type)) {
+        if (TYisAKV (array_type) || TYisAKS (array_type)) {
 
-            shape = TYGetShape (array_type);
+            shape = TYgetShape (array_type);
             /* only for iteration space */
-            mshape = SHTakeFromShape (gen_shape, shape);
-            array_shape = SHShape2Array (mshape);
+            mshape = SHtakeFromShape (gen_shape, shape);
+            array_shape = SHshape2Array (mshape);
             ARRAY_NTYPE (array_shape)
-              = TYMakeAKS (TYMakeSimpleType (T_int), SHMakeShape (gen_shape));
+              = TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (gen_shape));
 
             ARRAY_ISCONST (array_shape) = TRUE;
             ARRAY_VECTYPE (array_shape) = T_int;
             ARRAY_VECLEN (array_shape) = gen_shape;
             ARRAY_CONSTVEC (array_shape)
-              = Array2Vec (T_int, ARRAY_AELEMS (array_shape), NULL);
+              = TCarray2Vec (T_int, ARRAY_AELEMS (array_shape), NULL);
 
             if (mshape) {
-                SHFreeShape (mshape);
+                SHfreeShape (mshape);
             }
-        } else if (TYIsAKD (array_type)) {
+        } else if (TYisAKD (array_type)) {
 
-            nassigns = CreateIdxShapeSelAssigns (NWITH_ARRAY (wln), 0, (gen_shape - 1),
-                                                 INFO_WLPG_FUNDEF (arg_info));
+            nassigns
+              = CreateIdxShapeSelAssigns (MODARRAY_ARRAY (WITH_WITHOP (wln)), 0,
+                                          (gen_shape - 1), INFO_WLPG_FUNDEF (arg_info));
             array_shape = CreateStructConstant (array_shape, nassigns);
             INFO_WLPG_NASSIGNS (arg_info)
-              = AppendAssign (INFO_WLPG_NASSIGNS (arg_info), nassigns);
+              = TCappendAssign (INFO_WLPG_NASSIGNS (arg_info), nassigns);
         } else {
             /* dimension unknown */
             array_shape = NULL;
         }
     } break;
 
-    case WO_genarray:
-        array_shape = DupTree (NWITH_SHAPE (wln));
+    case N_genarray:
+        array_shape = DUPdoDupTree (GENARRAY_SHAPE (WITH_WITHOP (wln)));
         break;
 
     default:
-        DBUG_ASSERT ((0), "illegal NWITH_TYPE found!");
+        DBUG_ASSERT ((0), "illegal WITH_TYPE found!");
         array_shape = NULL;
         break;
     }
@@ -1346,64 +1325,56 @@ CreateFullPartition (node *wln, info *arg_info)
 
         /* create code for all new parts */
         nassigns = NULL;
-        if (NWITH_TYPE (wln) == WO_genarray) {
-            if (sbs == 1) {
-                if (NWITHOP_DEFAULT (NWITH_WITHOP (wln)) == NULL) {
-                    coden = CreateZeros (NWITH_CEXPR (wln), &(nassigns),
-                                         INFO_WLPG_FUNDEF (arg_info));
-                } else {
-                    coden = DupTree (NWITHOP_DEFAULT (NWITH_WITHOP (wln)));
-                }
-            } else {
-                coden = CreateZeros (NWITH_CEXPR (wln), &(nassigns),
+        if (NODE_TYPE (WITH_WITHOP (wln)) == N_genarray) {
+            if (GENARRAY_DEFAULT (WITH_WITHOP (wln)) == NULL) {
+                coden = CreateZeros (EXPRS_EXPR (WITH_CEXPRS (wln)), &(nassigns),
                                      INFO_WLPG_FUNDEF (arg_info));
+            } else {
+                coden = DUPdoDupTree (GENARRAY_DEFAULT (WITH_WITHOP (wln)));
             }
         } else { /* modarray */
-            coden = CreateArraySel (NWITH_VEC (wln), NWITH_IDS (wln), NWITH_ARRAY (wln),
-                                    &(nassigns), INFO_WLPG_FUNDEF (arg_info));
+            coden = CreateArraySel (WITHID_VEC (WITH_WITHID (wln)),
+                                    WITHID_IDS (WITH_WITHID (wln)),
+                                    MODARRAY_ARRAY (WITH_WITHOP (wln)), &(nassigns),
+                                    INFO_WLPG_FUNDEF (arg_info));
         }
 
-        nvarname = TmpVar ();
-        _ids = MakeIds (nvarname, NULL, ST_regular);
-        /* determine type of expr in the operator (result of body) */
-        type = ID_TYPE (NWITH_CEXPR (wln));
-        vardec = MakeVardec (StringCopy (nvarname), DupOneTypes (type), NULL);
+        _ids = TBmakeIds (TBmakeAvis (ILIBtmpVar (), TYcopyType (AVIS_TYPE (ID_AVIS (
+                                                       EXPRS_EXPR (WITH_CEXPRS (wln)))))),
+                          NULL);
+        vardec = TBmakeVardec (IDS_AVIS (_ids), NULL);
 
-        AVIS_TYPE (VARDEC_AVIS (vardec))
-          = TYCopyType (AVIS_TYPE (ID_AVIS (NWITH_CEXPR (wln))));
-        IDS_VARDEC (_ids) = vardec;
-        IDS_AVIS (_ids) = VARDEC_AVIS (vardec);
-        INFO_WLPG_FUNDEF (arg_info) = AddVardecs (INFO_WLPG_FUNDEF (arg_info), vardec);
+        INFO_WLPG_FUNDEF (arg_info) = TCaddVardecs (INFO_WLPG_FUNDEF (arg_info), vardec);
 
-        idn = DupIds_Id (_ids);
+        idn = DUPdupIdsId (_ids);
 
-        /* create new N_Ncode node  */
-        nassign = MakeAssign (MakeLet (coden, _ids), NULL);
+        /* create new N_code node  */
+        nassign = TBmakeAssign (TBmakeLet (_ids, coden), NULL);
         /* set correct backref to defining assignment */
         AVIS_SSAASSIGN (IDS_AVIS (_ids)) = nassign;
-        nassigns = AppendAssign (nassigns, nassign);
-        coden = MakeNCode (MakeBlock (nassigns, NULL), MakeExprs (idn, NULL));
+        nassigns = TCappendAssign (nassigns, nassign);
+        coden = TBmakeCode (TBmakeBlock (nassigns, NULL), TBmakeExprs (idn, NULL));
 
         /* create surrounding cuboids */
-        wln = CutSlices (array_null, array_shape, NWITH_BOUND1 (wln), NWITH_BOUND2 (wln),
+        wln = CutSlices (array_null, array_shape, WITH_BOUND1 (wln), WITH_BOUND2 (wln),
                          gen_shape, wln, coden);
 
         /* the original part can still be found at first position in wln.
            Now create grids. */
-        if (NWITH_STEP (wln))
-            wln = CompleteGrid (NWITH_BOUND1 (wln), NWITH_BOUND2 (wln), NWITH_STEP (wln),
-                                NWITH_WIDTH (wln), gen_shape, wln, coden, arg_info);
+        if (WITH_STEP (wln))
+            wln = CompleteGrid (WITH_BOUND1 (wln), WITH_BOUND2 (wln), WITH_STEP (wln),
+                                WITH_WIDTH (wln), gen_shape, wln, coden, arg_info);
 
         /* if new codes have been created, add them to code list */
-        if (NPART_NEXT (NWITH_PART (wln))) {
-            NCODE_NEXT (coden) = NWITH_CODE (wln);
-            NWITH_CODE (wln) = coden;
+        if (PART_NEXT (WITH_PART (wln))) {
+            CODE_NEXT (coden) = WITH_CODE (wln);
+            WITH_CODE (wln) = coden;
         }
 
         /* free the above made arrays */
-        array_null = FreeTree (array_null);
+        array_null = FREEdoFreeTree (array_null);
     }
-    array_shape = FreeTree (array_shape);
+    array_shape = FREEdoFreeTree (array_shape);
 
     DBUG_RETURN (wln);
 }
@@ -1433,64 +1404,66 @@ CreateFullPartition (node *wln, info *arg_info)
 static node *
 CreateEmptyGenWLReplacement (node *wl, info *arg_info)
 {
-    ids *let_ids;
+    node *let_ids;
     int dim, i;
     node *lb, *ub, *lbe, *ube;
     node *code;
     node *tmpn, *assignn, *blockn, *cexpr;
     node *nassigns = NULL;
-    ids *_ids;
+    node *_ids;
 
     node *res;
 
     DBUG_ENTER ("CreateEmptyGenWLReplacement");
 
-    switch (NWITH_TYPE (wl)) {
-    case WO_genarray:
+    switch (NODE_TYPE (WITH_WITHOP (wl))) {
+    case N_genarray:
         res = wl;
         /*
          * First, we change the generator to full scope.
          */
         let_ids = LET_IDS (INFO_WLPG_LET (arg_info));
-        dim = SHGetDim (TYGetShape (AVIS_TYPE (IDS_AVIS (let_ids))));
-        lb = NWITH_BOUND1 (wl);
-        ub = NWITH_BOUND2 (wl);
+        dim = SHgetDim (TYgetShape (AVIS_TYPE (IDS_AVIS (let_ids))));
+        lb = WITH_BOUND1 (wl);
+        ub = WITH_BOUND2 (wl);
         lbe = ARRAY_AELEMS (lb);
         ube = ARRAY_AELEMS (ub);
 
         i = 0;
         while ((i < dim) && (lbe != NULL)) {
             NUM_VAL (EXPRS_EXPR (lbe)) = 0;
-            NUM_VAL (EXPRS_EXPR (ube)) = IDS_SHAPE (let_ids, i);
+            NUM_VAL (EXPRS_EXPR (ube))
+              = SHgetExtent (TYgetShape (IDS_NTYPE (let_ids)), i);
 
             lbe = EXPRS_NEXT (lbe);
             ube = EXPRS_NEXT (ube);
             i++;
         }
 
-        if (NWITH_STEP (wl)) {
-            NWITH_STEP (wl) = FreeTree (NWITH_STEP (wl));
+        if (WITH_STEP (wl)) {
+            WITH_STEP (wl) = FREEdoFreeTree (WITH_STEP (wl));
         }
-        if (NWITH_WIDTH (wl)) {
-            NWITH_WIDTH (wl) = FreeTree (NWITH_WIDTH (wl));
+        if (WITH_WIDTH (wl)) {
+            WITH_WIDTH (wl) = FREEdoFreeTree (WITH_WIDTH (wl));
         }
 
         /*
          * Now we have to change the code. Either we can use DEFAULT (easy)
          * or we have to create zeros (ugly).
          */
-        code = NWITH_CODE (wl);
-        if (NWITH_DEFAULT (wl) != NULL) {
-            NCODE_CBLOCK (code) = FreeTree (NCODE_CBLOCK (code));
-            NCODE_CBLOCK (code) = MakeEmpty ();
+        code = WITH_CODE (wl);
+        if (GENARRAY_DEFAULT (WITH_WITHOP (wl)) != NULL) {
+            CODE_CBLOCK (code) = FREEdoFreeTree (CODE_CBLOCK (code));
+            CODE_CBLOCK (code) = TBmakeEmpty ();
 
-            NCODE_CEXPR (code) = FreeTree (NCODE_CEXPR (code));
-            NCODE_CEXPR (code) = DupTree (NWITH_DEFAULT (wl));
-
+            EXPRS_EXPR (CODE_CEXPRS (code))
+              = FREEdoFreeTree (EXPRS_EXPR (CODE_CEXPRS (code)));
+            EXPRS_EXPR (CODE_CEXPRS (code))
+              = DUPdoDupTree (GENARRAY_DEFAULT (WITH_WITHOP (wl)));
         } else {
-            blockn = NCODE_CBLOCK (code);
+            blockn = CODE_CBLOCK (code);
             tmpn = BLOCK_INSTR (blockn);
-            cexpr = NCODE_CEXPR (code);
+            cexpr = EXPRS_EXPR (CODE_CEXPRS (code));
 
             if (N_empty == NODE_TYPE (tmpn)) {
                 /* there is no instruction in the block right now. */
@@ -1499,43 +1472,47 @@ CreateEmptyGenWLReplacement (node *wl, info *arg_info)
                 tmpn = CreateZeros (cexpr, &(nassigns), INFO_WLPG_FUNDEF (arg_info));
 
                 /* replace N_empty with new assignment "_ids = [0,..,0]" */
-                assignn = MakeAssign (MakeLet (tmpn, _ids), NULL);
-                nassigns = AppendAssign (nassigns, assignn);
-                BLOCK_INSTR (blockn) = AppendAssign (BLOCK_INSTR (blockn), nassigns);
+                assignn = TBmakeAssign (TBmakeLet (_ids, tmpn), NULL);
+                nassigns = TCappendAssign (nassigns, assignn);
+                BLOCK_INSTR (blockn) = TCappendAssign (BLOCK_INSTR (blockn), nassigns);
 
                 /* set correct backref to defining assignment */
                 AVIS_SSAASSIGN (IDS_AVIS (_ids)) = assignn;
 
                 /* replace CEXPR */
-                tmpn = NWITH_CODE (INFO_WLPG_WL (arg_info));
-                NCODE_CEXPR (tmpn) = FreeTree (NCODE_CEXPR (tmpn));
-                NCODE_CEXPR (tmpn) = DupIds_Id (_ids);
+                tmpn = WITH_CODE (INFO_WLPG_WL (arg_info));
+                EXPRS_EXPR (CODE_CEXPRS (tmpn))
+                  = FREEdoFreeTree (EXPRS_EXPR (CODE_CEXPRS (tmpn)));
+                EXPRS_EXPR (CODE_CEXPRS (tmpn)) = DUPdupIdsId (_ids);
 
             } else {
                 /* we have a non-empty block.
                    search cexpr assignment and make it the only one in the block. */
 
-                assignn = DupNode (AVIS_SSAASSIGN (ID_AVIS (cexpr)));
-                BLOCK_INSTR (blockn) = FreeTree (BLOCK_INSTR (blockn));
+                assignn = DUPdoDupNode (AVIS_SSAASSIGN (ID_AVIS (cexpr)));
+                BLOCK_INSTR (blockn) = FREEdoFreeTree (BLOCK_INSTR (blockn));
                 LET_EXPR (ASSIGN_INSTR (assignn))
-                  = FreeTree (LET_EXPR (ASSIGN_INSTR (assignn)));
+                  = FREEdoFreeTree (LET_EXPR (ASSIGN_INSTR (assignn)));
 
                 tmpn = CreateZeros (cexpr, &(nassigns), INFO_WLPG_FUNDEF (arg_info));
-                NCODE_FLAG (code) = TRUE;
+                CODE_VISITED (code) = TRUE;
                 LET_EXPR (ASSIGN_INSTR (assignn)) = tmpn;
-                nassigns = AppendAssign (nassigns, assignn);
+                nassigns = TCappendAssign (nassigns, assignn);
 
                 BLOCK_INSTR (blockn) = nassigns;
             }
         }
         break;
-    case WO_modarray:
-        res = DupTree (NWITH_ARRAY (wl));
-        wl = FreeTree (wl);
+    case N_modarray:
+        res = DUPdoDupTree (MODARRAY_ARRAY (WITH_WITHOP (wl)));
+        wl = FREEdoFreeTree (wl);
+        break;
+    case N_fold:
+        res = DUPdoDupTree (FOLD_NEUTRAL (WITH_WITHOP (wl)));
+        wl = FREEdoFreeTree (wl);
         break;
     default:
-        res = DupTree (NWITH_NEUTRAL (wl));
-        wl = FreeTree (wl);
+        DBUG_ASSERT ((0), "illegal WITHOP node found!");
         break;
     }
 
@@ -1574,32 +1551,28 @@ PropagateArrayConstants (node **expr)
     gshape = GV_unknown_shape;
 
     if ((*expr) != NULL) {
-        const_expr = COAST2Constant ((*expr));
+        const_expr = COaST2Constant ((*expr));
         if (const_expr != NULL) {
             gshape = GV_constant;
-            (*expr) = FreeTree (*expr);
-            (*expr) = COConstant2AST (const_expr);
-            const_expr = COFreeConstant (const_expr);
+            (*expr) = FREEdoFreeTree (*expr);
+            (*expr) = COconstant2AST (const_expr);
+            const_expr = COfreeConstant (const_expr);
 
         } else {
-            sco_expr = SCOExpr2StructConstant ((*expr));
+            sco_expr = SCOexpr2StructConstant ((*expr));
             if (sco_expr != NULL) {
                 gshape = GV_struct_constant;
                 /*
                  * as the sco_expr may share some subexpressions with (*expr),
                  * we have to duplicate these BEFORE deleting (*expr)!!!
                  */
-                tmp = SCODupStructConstant2Expr (sco_expr);
-                (*expr) = FreeTree (*expr);
+                tmp = SCOdupStructConstant2Expr (sco_expr);
+                (*expr) = FREEdoFreeTree (*expr);
                 (*expr) = tmp;
-                sco_expr = SCOFreeStructConstant (sco_expr);
+                sco_expr = SCOfreeStructConstant (sco_expr);
 
-            } else if (ID_DIM ((*expr)) == 1) {
-                if (ID_SHPSEG ((*expr)) != NULL) {
-                    if (ID_SHAPE ((*expr), 0) > 0) {
-                        gshape = GV_known_shape;
-                    }
-                }
+            } else if (TYisAKS (ID_NTYPE ((*expr)))) {
+                gshape = GV_known_shape;
             }
         }
 
@@ -1634,10 +1607,11 @@ CropBounds (node *wl, shape *max_shp)
 
     DBUG_ENTER ("CropBounds");
 
-    DBUG_ASSERT (((NWITH_TYPE (wl) == WO_modarray) || (NWITH_TYPE (wl) == WO_genarray)),
+    DBUG_ASSERT (((NODE_TYPE (WITH_WITHOP (wl)) == N_modarray)
+                  || (NODE_TYPE (WITH_WITHOP (wl)) == N_genarray)),
                  "CropBounds applied to wrong WL type!");
-    lbe = ARRAY_AELEMS (NWITH_BOUND1 (wl));
-    ube = ARRAY_AELEMS (NWITH_BOUND2 (wl));
+    lbe = ARRAY_AELEMS (WITH_BOUND1 (wl));
+    ube = ARRAY_AELEMS (WITH_BOUND2 (wl));
 
     dim = 0;
     while (lbe) {
@@ -1648,9 +1622,9 @@ CropBounds (node *wl, shape *max_shp)
         lbnum = NUM_VAL (EXPRS_EXPR (lbe));
         ubnum = NUM_VAL (EXPRS_EXPR (ube));
 
-        DBUG_ASSERT ((dim < SHGetDim (max_shp)),
+        DBUG_ASSERT ((dim < SHgetDim (max_shp)),
                      "dimensionality of lb greater than that of the result!");
-        tnum = SHGetExtent (max_shp, dim);
+        tnum = SHgetExtent (max_shp, dim);
         if (lbnum < 0) {
             NUM_VAL (EXPRS_EXPR (lbe)) = 0;
             WARN (NODE_LINE (wl),
@@ -1692,15 +1666,15 @@ ComputeGeneratorProperties (node *wl, shape *max_shp)
 
     DBUG_ENTER ("ComputeGeneratorProperties");
 
-    lbe = NWITH_BOUND1 (wl);
-    ube = NWITH_BOUND2 (wl);
-    steps = NWITH_STEP (wl);
-    width = NWITH_WIDTH (wl);
+    lbe = WITH_BOUND1 (wl);
+    ube = WITH_BOUND2 (wl);
+    steps = WITH_STEP (wl);
+    width = WITH_WIDTH (wl);
 
-    lbc = COAST2Constant (lbe);
-    ubc = COAST2Constant (ube);
+    lbc = COaST2Constant (lbe);
+    ubc = COaST2Constant (ube);
     if (max_shp != NULL) {
-        shpc = COMakeConstantFromShape (max_shp);
+        shpc = COmakeConstantFromShape (max_shp);
     } else {
         shpc = NULL;
     }
@@ -1713,19 +1687,19 @@ ComputeGeneratorProperties (node *wl, shape *max_shp)
      *  result....)
      */
     if (const_bounds) {
-        non_empty_bounds = (SHGetUnrLen (COGetShape (lbc)) > 0);
+        non_empty_bounds = (SHgetUnrLen (COgetShape (lbc)) > 0);
 
         if (non_empty_bounds) {
-            tmpc = COGe (lbc, ubc);
-            if (COIsTrue (tmpc, TRUE)) {
+            tmpc = COge (lbc, ubc);
+            if (COisTrue (tmpc, TRUE)) {
                 res = GPT_empty;
             }
-            tmpc = COFreeConstant (tmpc);
+            tmpc = COfreeConstant (tmpc);
         }
     }
 
     if (res == GPT_unknown) {
-        if ((NWITH_TYPE (wl) == WO_foldprf) || (NWITH_TYPE (wl) == WO_foldfun)) {
+        if ((NODE_TYPE (WITH_WITHOP (wl)) == N_fold)) {
             res = GPT_full;
         } else {
             /**
@@ -1740,17 +1714,17 @@ ComputeGeneratorProperties (node *wl, shape *max_shp)
                  * all elements of lbc must be zero
                  * and there must be not step vector
                  */
-                sh = COGetShape (ubc);
-                tmp = COMakeConstantFromShape (sh);
-                tmpc = COTake (tmp, shpc);
+                sh = COgetShape (ubc);
+                tmp = COmakeConstantFromShape (sh);
+                tmpc = COtake (tmp, shpc);
 
-                tmp = COFreeConstant (tmp);
-                shpc = COFreeConstant (shpc);
+                tmp = COfreeConstant (tmp);
+                shpc = COfreeConstant (shpc);
 
                 shpc = tmpc;
 
-                tmpc = COEq (ubc, shpc);
-                if (COIsZero (lbc, TRUE) && COIsTrue (tmpc, TRUE)) {
+                tmpc = COeq (ubc, shpc);
+                if (COisZero (lbc, TRUE) && COisTrue (tmpc, TRUE)) {
                     if (steps == NULL) {
                         res = GPT_full;
                     } else {
@@ -1759,54 +1733,55 @@ ComputeGeneratorProperties (node *wl, shape *max_shp)
                 } else {
                     res = GPT_partial;
                 }
-                tmpc = COFreeConstant (tmpc);
+                tmpc = COfreeConstant (tmpc);
             }
         }
     }
 
     /* Clean up constants */
-    shpc = (shpc != NULL ? COFreeConstant (shpc) : NULL);
-    ubc = (ubc != NULL ? COFreeConstant (ubc) : NULL);
-    lbc = (lbc != NULL ? COFreeConstant (lbc) : NULL);
+    shpc = (shpc != NULL ? COfreeConstant (shpc) : NULL);
+    ubc = (ubc != NULL ? COfreeConstant (ubc) : NULL);
+    lbc = (lbc != NULL ? COfreeConstant (lbc) : NULL);
 
-    DBUG_PRINT ("WLPG", ("generator property of with loop in line %d : %s", linenum,
-                         gen_prop_str[res]));
+    DBUG_PRINT ("WLPG", ("generator property of with loop in line %d : %s",
+                         global.linenum, gen_prop_str[res]));
     DBUG_RETURN (res);
 }
 
 /** <!--********************************************************************-->
  *
- * @fn node *WLPGmodul(node *arg_node, info *arg_info)
+ * @fn node *WLPGmodule(node *arg_node, info *arg_info)
  *
  *   @brief first traversal of function definitions for ConstantFolding
  *          and WLPartitionGeneration
  *
- *   @param  node *arg_node:  N_modul
+ *   @param  node *arg_node:  N_module
  *           info *arg_info:  N_info
- *   @return node *        :  N_modul
+ *   @return node *        :  N_module
  ******************************************************************************/
 
 node *
-WLPGmodul (node *arg_node, info *arg_info)
+WLPGmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLPGmodul");
+    DBUG_ENTER ("WLPGmodule");
 
-    INFO_WLPG_MODUL (arg_info) = arg_node;
+    INFO_WLPG_MODULE (arg_info) = arg_node;
 
     DBUG_PRINT ("WLPG", ("1. Constant Folding"));
     /* For Constant Folding */
-    if (MODUL_FUNS (arg_node) != NULL) {
-        Trav (MODUL_FUNS (arg_node), arg_info);
+    if (MODULE_FUNS (arg_node) != NULL) {
+        TRAVdo (MODULE_FUNS (arg_node), arg_info);
     }
 
-    if ((break_after == PH_wlenhance) && (0 == strcmp (break_specifier, "cf")))
+    if ((global.break_after == PH_wlenhance)
+        && (0 == strcmp (global.break_specifier, "cf")))
         goto DONE;
 
     DBUG_PRINT ("WLPG", ("2. WLPartitionGeneration"));
     /* For WLPartitionGeneration module-wise */
     INFO_WLPG_SUBPHASE (arg_info) = SP_mod;
-    if (MODUL_FUNS (arg_node) != NULL) {
-        MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
+    if (MODULE_FUNS (arg_node) != NULL) {
+        MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
     }
 
 DONE:
@@ -1837,28 +1812,28 @@ WLPGfundef (node *arg_node, info *arg_info)
          * to compute primitive function for constant expressions, especially
          * for bounds, steps and widths of WL's generator.
          */
-        if (optimize & OPT_CF) {
-            arg_node
-              = SSAConstantFolding (arg_node, INFO_WLPG_MODUL (arg_info)); /* ssacf_tab */
+        if (global.optimize.docf) {
+            arg_node = CFdoConstantFolding (arg_node,
+                                            INFO_WLPG_MODULE (arg_info)); /* ssacf_tab */
         }
 
         if (FUNDEF_NEXT (arg_node) != NULL) {
-            FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+            FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
         }
 
     } else if (INFO_WLPG_SUBPHASE (arg_info) == SP_mod) {
 
         if (FUNDEF_BODY (arg_node)) {
-            FUNDEF_INSTR (arg_node) = Trav (FUNDEF_INSTR (arg_node), arg_info);
+            FUNDEF_INSTR (arg_node) = TRAVdo (FUNDEF_INSTR (arg_node), arg_info);
         }
 
         if (FUNDEF_NEXT (arg_node) != NULL) {
-            FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+            FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
         }
     } else if (INFO_WLPG_SUBPHASE (arg_info) == SP_func) {
         /* compiler_phase == PH_sacopt */
         if (FUNDEF_BODY (arg_node)) {
-            FUNDEF_INSTR (arg_node) = Trav (FUNDEF_INSTR (arg_node), arg_info);
+            FUNDEF_INSTR (arg_node) = TRAVdo (FUNDEF_INSTR (arg_node), arg_info);
         }
     }
 
@@ -1884,7 +1859,7 @@ WLPGassign (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("WLPGassign");
 
-    ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
     iterator = NULL;
 
@@ -1901,11 +1876,11 @@ WLPGassign (node *arg_node, info *arg_info)
         INFO_WLPG_NASSIGNS (arg_info) = NULL;
 
         if (ASSIGN_NEXT (iterator) != NULL) {
-            ASSIGN_NEXT (iterator) = Trav (ASSIGN_NEXT (iterator), arg_info);
+            ASSIGN_NEXT (iterator) = TRAVdo (ASSIGN_NEXT (iterator), arg_info);
         }
     } else {
         if (ASSIGN_NEXT (arg_node) != NULL) {
-            ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+            ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
         }
     }
 
@@ -1941,11 +1916,11 @@ WLPGlet (node *arg_node, info *arg_info)
 
         if (AVIS_SSACONST (IDS_AVIS (LET_IDS (arg_node))) == NULL) {
             AVIS_SSACONST (IDS_AVIS (LET_IDS (arg_node)))
-              = COAST2Constant (LET_EXPR (arg_node));
+              = COaST2Constant (LET_EXPR (arg_node));
         }
     }
 
-    LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
+    LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -1969,7 +1944,7 @@ WLPGap (node *arg_node, info *arg_info)
     DBUG_ENTER ("WLPGap");
 
     if ((INFO_WLPG_SUBPHASE (arg_info) == SP_func)
-        && (FUNDEF_IS_LACFUN (AP_FUNDEF (arg_node)))) {
+        && (FUNDEF_ISLACFUN (AP_FUNDEF (arg_node)))) {
         /*
          * special functions must be traversed when they are used
          */
@@ -1981,7 +1956,7 @@ WLPGap (node *arg_node, info *arg_info)
             /* take current flag SUBPHASE */
             INFO_WLPG_SUBPHASE (arg_info) = INFO_WLPG_SUBPHASE (tmp);
 
-            AP_FUNDEF (arg_node) = Trav (AP_FUNDEF (arg_node), arg_info);
+            AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
 
             arg_info = FreeInfo (arg_info);
             arg_info = tmp;
@@ -1993,26 +1968,26 @@ WLPGap (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *WLPGNwith(node *arg_node, info *arg_info)
+ * @fn node *WLPGwith(node *arg_node, info *arg_info)
  *
  *   @brief  start traversal of this WL and store information in new arg_info
- *           node. The only N_Npart node (inclusive body) is traversed.
+ *           node. The only N_part node (inclusive body) is traversed.
  *           Afterwards, if certain conditions are fulfilled,
  *           the WL is transformed into a WL with generators describing a full
  *           partition.
  *
- *   @param  node *arg_node:  N_Nwith
+ *   @param  node *arg_node:  N_with
  *           info *arg_info:  N_info
- *   @return node *        :  N_Nwith
+ *   @return node *        :  N_with
  ******************************************************************************/
 
 node *
-WLPGNwith (node *arg_node, info *arg_info)
+WLPGwith (node *arg_node, info *arg_info)
 {
     node *let_tmp;
     bool replace_wl = FALSE;
 
-    DBUG_ENTER ("WLPGNwith");
+    DBUG_ENTER ("WLPGwith");
 
     /*
      * Information about last N_let has to be stacked before traversal
@@ -2023,8 +1998,8 @@ WLPGNwith (node *arg_node, info *arg_info)
      * The CODEs have to be traversed as they may contain further (nested) WLs
      * and I want to modify bottom up.
      */
-    if (NWITH_CODE (arg_node) != NULL) {
-        NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
+    if (WITH_CODE (arg_node) != NULL) {
+        WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
     }
 
     /* Pop N_let */
@@ -2036,7 +2011,7 @@ WLPGNwith (node *arg_node, info *arg_info)
      * Initially, it is set to -1; if we have successfully generated a full
      * partition, it carries a positive value.
      */
-    if (NWITH_PARTS (arg_node) == -1) {
+    if (WITH_PARTS (arg_node) == -1) {
 
         /*
          * initialize WL traversal
@@ -2050,34 +2025,35 @@ WLPGNwith (node *arg_node, info *arg_info)
          *
          *  INFO_WLPG_GENVAR(arg_info) and INFO_WLPG_GENPROP(arg_info) !!
          */
-        DBUG_ASSERT ((NWITH_PART (arg_node) != NULL),
+        DBUG_ASSERT ((WITH_PART (arg_node) != NULL),
                      "NWITH_PARTS is -1 although no PART is available!");
-        DBUG_ASSERT ((NPART_NEXT (NWITH_PART (arg_node)) == NULL),
+        DBUG_ASSERT ((PART_NEXT (WITH_PART (arg_node)) == NULL),
                      "NWITH_PARTS is -1 although more than one PART is available!");
-        NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
+        WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
 
         /*
          * Now, we traverse the WITHOP sons for propagating (structural) constants.
          */
-        NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
+        WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
 
         if (INFO_WLPG_GENPROP (arg_info) == GPT_empty) {
             arg_node = CreateEmptyGenWLReplacement (arg_node, arg_info);
             replace_wl = TRUE;
 
         } else if (INFO_WLPG_GENPROP (arg_info) == GPT_full) {
-            NWITH_PARTS (arg_node) = 1;
+            WITH_PARTS (arg_node) = 1;
 
-            if (NWITH_TYPE (arg_node) == WO_genarray) {
-                if (NWITH_DEFAULT (arg_node) != NULL) {
-                    NWITH_DEFAULT (arg_node) = FreeTree (NWITH_DEFAULT (arg_node));
+            if (NODE_TYPE (WITH_WITHOP (arg_node)) == N_genarray) {
+                if (GENARRAY_DEFAULT (WITH_WITHOP (arg_node)) != NULL) {
+                    GENARRAY_DEFAULT (WITH_WITHOP (arg_node))
+                      = FREEdoFreeTree (GENARRAY_DEFAULT (WITH_WITHOP (arg_node)));
                 }
             }
 
         } else if ((INFO_WLPG_GENPROP (arg_info) == GPT_partial)
                    && ((INFO_WLPG_GENSHP (arg_info) == GV_constant)
                        || (INFO_WLPG_GENSHP (arg_info) == GV_struct_constant))
-                   && AtLeastAKD (ID_NTYPE (NWITH_CEXPR (arg_node)))) {
+                   && AtLeastAKD (ID_NTYPE (EXPRS_EXPR (WITH_CEXPRS (arg_node))))) {
             arg_node = CreateFullPartition (arg_node, arg_info);
         }
 
@@ -2085,7 +2061,7 @@ WLPGNwith (node *arg_node, info *arg_info)
         /*
          * traverse the WITHOP sons for propagating (structural) constants.
          */
-        NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
+        WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
     }
 
     INFO_WLPG_WL (arg_info) = NULL;
@@ -2096,61 +2072,40 @@ WLPGNwith (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *WLPGNwithop( node *arg_node, info *arg_info)
+ * @fn node *WLPGgenarray( node *arg_node, info *arg_info)
  *
- *   @brief Substitutes NWITHOP_SHAPE into the N_Nwithop node.
+ *   @brief Substitutes GENARRAY_SHAPE into the N_genarray node.
  *
- *   @param  node *arg_node:  N_Nwithop
+ *   @param  node *arg_node:  N_genarray
  *           info *arg_info:  N_info
- *   @return node *        :  N_Nwithop
+ *   @return node *        :  N_genarray
  ******************************************************************************/
 
 node *
-WLPGNwithop (node *arg_node, info *arg_info)
+WLPGgenarray (node *arg_node, info *arg_info)
 {
     node *nassigns, *f_def;
     gen_shape_t current_shape;
 
-    DBUG_ENTER ("WLPGNwithop");
+    DBUG_ENTER ("WLPGgenarray");
 
     f_def = INFO_WLPG_FUNDEF (arg_info);
 
-    switch (NWITHOP_TYPE (arg_node)) {
-    case WO_genarray:
-        if (NWITHOP_SHAPE (arg_node) != NULL) {
-            NWITHOP_SHAPE (arg_node) = Trav (NWITHOP_SHAPE (arg_node), arg_info);
-        }
-        current_shape = PropagateArrayConstants (&(NWITHOP_SHAPE (arg_node)));
-        if (current_shape == GV_known_shape) {
-            nassigns = CreateNewAssigns (NWITHOP_SHAPE (arg_node), f_def);
-            NWITHOP_SHAPE (arg_node)
-              = CreateStructConstant (NWITHOP_SHAPE (arg_node), nassigns);
-            current_shape = GV_struct_constant;
-            INFO_WLPG_NASSIGNS (arg_info)
-              = AppendAssign (INFO_WLPG_NASSIGNS (arg_info), nassigns);
-        }
+    if (GENARRAY_SHAPE (arg_node) != NULL) {
+        GENARRAY_SHAPE (arg_node) = TRAVdo (GENARRAY_SHAPE (arg_node), arg_info);
+    }
+    current_shape = PropagateArrayConstants (&(GENARRAY_SHAPE (arg_node)));
+    if (current_shape == GV_known_shape) {
+        nassigns = CreateNewAssigns (GENARRAY_SHAPE (arg_node), f_def);
+        GENARRAY_SHAPE (arg_node)
+          = CreateStructConstant (GENARRAY_SHAPE (arg_node), nassigns);
+        current_shape = GV_struct_constant;
+        INFO_WLPG_NASSIGNS (arg_info)
+          = TCappendAssign (INFO_WLPG_NASSIGNS (arg_info), nassigns);
+    }
 
-        if (INFO_WLPG_GENSHP (arg_info) < current_shape) {
-            INFO_WLPG_GENSHP (arg_info) = current_shape;
-        }
-        break;
-
-    case WO_modarray:
-        if (NWITHOP_ARRAY (arg_node) != NULL) {
-            NWITHOP_ARRAY (arg_node) = Trav (NWITHOP_ARRAY (arg_node), arg_info);
-        }
-        break;
-
-    case WO_foldfun:
-        /* here is no break missing */
-    case WO_foldprf:
-        if (NWITHOP_NEUTRAL (arg_node) != NULL) {
-            NWITHOP_NEUTRAL (arg_node) = Trav (NWITHOP_NEUTRAL (arg_node), arg_info);
-        }
-        break;
-
-    case WO_unknown:
-        DBUG_ASSERT ((0), "Unknown withop type found!");
+    if (INFO_WLPG_GENSHP (arg_info) < current_shape) {
+        INFO_WLPG_GENSHP (arg_info) = current_shape;
     }
 
     DBUG_RETURN (arg_node);
@@ -2158,28 +2113,28 @@ WLPGNwithop (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *WLPGNpart(node *arg_node, info *arg_info)
+ * @fn node *WLPGpart(node *arg_node, info *arg_info)
  *
  *   @brief traverse only generator to propagate arrays
  *
- *   @param  node *arg_node:  N_Npart
+ *   @param  node *arg_node:  N_part
  *           info *arg_info:  N_info
- *   @return node *        :  N_Npart
+ *   @return node *        :  N_part
  ******************************************************************************/
 
 node *
-WLPGNpart (node *arg_node, info *arg_info)
+WLPGpart (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLPGNpart");
+    DBUG_ENTER ("WLPGpart");
 
-    NPART_GEN (arg_node) = Trav (NPART_GEN (arg_node), arg_info);
+    PART_GENERATOR (arg_node) = TRAVdo (PART_GENERATOR (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
 
 /** <!--********************************************************************-->
  *
- * @fn node *WLPGNgenerator(node *arg_node, info *arg_info)
+ * @fn node *WLPGgenerator(node *arg_node, info *arg_info)
  *
  *   @brief  bounds, step and width vectors are substituted into the generator.
  *           Generators that surmount the array bounds (like [-5,3] or
@@ -2202,16 +2157,15 @@ WLPGNpart (node *arg_node, info *arg_info)
  *           GV_struct_constant : the vektors are at least structural constants!
  *           GV_unknown_shape   : we don't know anything !
  *
- *   @param  node *arg_node:  N_Ngenerator
+ *   @param  node *arg_node:  N_generator
  *           info *arg_info:  N_info
- *   @return node *        :  N_Ngenerator
+ *   @return node *        :  N_generator
  ******************************************************************************/
 
 node *
-WLPGNgenerator (node *arg_node, info *arg_info)
+WLPGgenerator (node *arg_node, info *arg_info)
 {
-    node *wln, *f_def, *nassigns;
-    ids *let_ids;
+    node *wln, *f_def, *nassigns, *let_ids;
     shape *shp;
     ntype *type;
     bool check_bounds, check_stepwidth;
@@ -2226,37 +2180,40 @@ WLPGNgenerator (node *arg_node, info *arg_info)
     /*
      * First, we try to propagate (structural) constants into all sons:
      */
-    current_shape = PropagateArrayConstants (&(NGEN_BOUND1 (arg_node)));
+    current_shape = PropagateArrayConstants (&(GENERATOR_BOUND1 (arg_node)));
     if (current_shape == GV_known_shape) {
-        nassigns = CreateNewAssigns (NGEN_BOUND1 (arg_node), f_def);
-        NGEN_BOUND1 (arg_node) = CreateStructConstant (NGEN_BOUND1 (arg_node), nassigns);
+        nassigns = CreateNewAssigns (GENERATOR_BOUND1 (arg_node), f_def);
+        GENERATOR_BOUND1 (arg_node)
+          = CreateStructConstant (GENERATOR_BOUND1 (arg_node), nassigns);
         gshape = GV_struct_constant;
         INFO_WLPG_NASSIGNS (arg_info)
-          = AppendAssign (INFO_WLPG_NASSIGNS (arg_info), nassigns);
+          = TCappendAssign (INFO_WLPG_NASSIGNS (arg_info), nassigns);
     } else {
         gshape = current_shape;
     }
 
-    current_shape = PropagateArrayConstants (&(NGEN_BOUND2 (arg_node)));
+    current_shape = PropagateArrayConstants (&(GENERATOR_BOUND2 (arg_node)));
     if (current_shape == GV_known_shape) {
-        nassigns = CreateNewAssigns (NGEN_BOUND2 (arg_node), f_def);
-        NGEN_BOUND2 (arg_node) = CreateStructConstant (NGEN_BOUND2 (arg_node), nassigns);
+        nassigns = CreateNewAssigns (GENERATOR_BOUND2 (arg_node), f_def);
+        GENERATOR_BOUND2 (arg_node)
+          = CreateStructConstant (GENERATOR_BOUND2 (arg_node), nassigns);
         current_shape = GV_struct_constant;
         INFO_WLPG_NASSIGNS (arg_info)
-          = AppendAssign (INFO_WLPG_NASSIGNS (arg_info), nassigns);
+          = TCappendAssign (INFO_WLPG_NASSIGNS (arg_info), nassigns);
     }
     if (gshape < current_shape) {
         gshape = current_shape;
     }
     check_bounds = (gshape == GV_constant);
 
-    current_shape = PropagateArrayConstants (&(NGEN_STEP (arg_node)));
+    current_shape = PropagateArrayConstants (&(GENERATOR_STEP (arg_node)));
     if (current_shape == GV_known_shape) {
-        nassigns = CreateNewAssigns (NGEN_STEP (arg_node), f_def);
-        NGEN_STEP (arg_node) = CreateStructConstant (NGEN_STEP (arg_node), nassigns);
+        nassigns = CreateNewAssigns (GENERATOR_STEP (arg_node), f_def);
+        GENERATOR_STEP (arg_node)
+          = CreateStructConstant (GENERATOR_STEP (arg_node), nassigns);
         current_shape = GV_struct_constant;
         INFO_WLPG_NASSIGNS (arg_info)
-          = AppendAssign (INFO_WLPG_NASSIGNS (arg_info), nassigns);
+          = TCappendAssign (INFO_WLPG_NASSIGNS (arg_info), nassigns);
     }
     if (gshape < current_shape) {
         gshape = current_shape;
@@ -2264,13 +2221,14 @@ WLPGNgenerator (node *arg_node, info *arg_info)
 
     check_stepwidth = (current_shape <= GV_struct_constant);
 
-    current_shape = PropagateArrayConstants (&(NGEN_WIDTH (arg_node)));
+    current_shape = PropagateArrayConstants (&(GENERATOR_WIDTH (arg_node)));
     if (current_shape == GV_known_shape) {
-        nassigns = CreateNewAssigns (NGEN_WIDTH (arg_node), f_def);
-        NGEN_WIDTH (arg_node) = CreateStructConstant (NGEN_WIDTH (arg_node), nassigns);
+        nassigns = CreateNewAssigns (GENERATOR_WIDTH (arg_node), f_def);
+        GENERATOR_WIDTH (arg_node)
+          = CreateStructConstant (GENERATOR_WIDTH (arg_node), nassigns);
         current_shape = GV_struct_constant;
         INFO_WLPG_NASSIGNS (arg_info)
-          = AppendAssign (INFO_WLPG_NASSIGNS (arg_info), nassigns);
+          = TCappendAssign (INFO_WLPG_NASSIGNS (arg_info), nassigns);
     }
     if (gshape < current_shape) {
         gshape = current_shape;
@@ -2284,10 +2242,11 @@ WLPGNgenerator (node *arg_node, info *arg_info)
     let_ids = LET_IDS (INFO_WLPG_LET (arg_info));
     type = AVIS_TYPE (IDS_AVIS (let_ids));
 
-    if (TYIsAKS (type)) {
-        shp = TYGetShape (type);
+    if (TYisAKS (type)) {
+        shp = TYgetShape (type);
         if (check_bounds
-            && ((NWITH_TYPE (wln) == WO_modarray) || (NWITH_TYPE (wln) == WO_genarray))) {
+            && ((NODE_TYPE (WITH_WITHOP (wln)) == N_modarray)
+                || (NODE_TYPE (WITH_WITHOP (wln)) == N_genarray))) {
             wln = CropBounds (wln, shp);
         }
         gprop = ComputeGeneratorProperties (wln, shp);
@@ -2296,15 +2255,17 @@ WLPGNgenerator (node *arg_node, info *arg_info)
     }
 
     if (gshape == GV_struct_constant) {
-        if (NWITH_IS_FOLD (wln))
+        if (NODE_TYPE (WITH_WITHOP (wln)) == N_fold) {
             gprop = GPT_full;
-        else
+        } else {
             gprop = GPT_partial;
+        }
     }
 
     if (check_stepwidth) {
         /* normalize step and width */
-        switch (NormalizeStepWidth (&NGEN_STEP (arg_node), &NGEN_WIDTH (arg_node))) {
+        switch (
+          NormalizeStepWidth (&GENERATOR_STEP (arg_node), &GENERATOR_WIDTH (arg_node))) {
         case 1:
             ABORT (NODE_LINE (wln), ("component of width greater than step"));
         case 2:
@@ -2322,7 +2283,7 @@ WLPGNgenerator (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *WLPartitionGeneration( node *arg_node)
+ * @fn node *WLPGdoPartitionGeneration( node *arg_node)
  *
  *   @brief  Starting point for the partition generation if it was called
  *           from main.
@@ -2332,35 +2293,32 @@ WLPGNgenerator (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 node *
-WLPartitionGeneration (node *arg_node)
+WLPGdoPartitionGeneration (node *arg_node)
 {
-    funtab *tmp_tab;
     info *arg_info;
 
-    DBUG_ENTER ("WLPartitionGeneration");
+    DBUG_ENTER ("WLPGdoPartitionGeneration");
 
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_modul),
-                 "WLPartitionGeneration not started with modul node");
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_module),
+                 "WLPGdoPartitionGeneration not started with module node");
 
-    DBUG_PRINT ("WLPG", ("starting WLPartitionGeneration"));
+    DBUG_PRINT ("WLPG", ("starting WLPGdoPartitionGeneration"));
 
     arg_info = MakeInfo ();
     INFO_WLPG_SUBPHASE (arg_info) = SP_cf;
 
-    tmp_tab = act_tab;
-    act_tab = wlpg_tab;
-
-    arg_node = Trav (arg_node, arg_info);
+    TRAVpush (TR_wlpg);
+    arg_node = TRAVdo (arg_node, arg_info);
+    TRAVpop ();
 
     arg_info = FreeInfo (arg_info);
-    act_tab = tmp_tab;
 
     DBUG_RETURN (arg_node);
 }
 
 /** <!--********************************************************************-->
  *
- * @fn node *WLPartitionGenerationOPT( node *arg_node)
+ * @fn node *WLPGdoPartitionGenerationOpt( node *arg_node)
  *
  *   @brief  Starting point for the partition generation if it was called
  *           from optimize.
@@ -2370,28 +2328,25 @@ WLPartitionGeneration (node *arg_node)
  ******************************************************************************/
 
 node *
-WLPartitionGenerationOPT (node *arg_node)
+WLPGdoPartitionGenerationOpt (node *arg_node)
 {
-    funtab *tmp_tab;
     info *arg_info;
 
-    DBUG_ENTER ("WLPartitionGenerationOPT");
+    DBUG_ENTER ("WLPGdoPartitionGenerationOpt");
 
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_fundef),
-                 "WLPartitionGenerationOPT not started with fundef node");
+                 "WLPGdoPartitionGenerationOpt not started with fundef node");
 
-    DBUG_PRINT ("WLPG", ("starting WLPartitionGenerationOPT"));
+    DBUG_PRINT ("WLPG", ("starting WLPGdoPartitionGenerationOpt"));
 
     arg_info = MakeInfo ();
     INFO_WLPG_SUBPHASE (arg_info) = SP_func;
 
-    tmp_tab = act_tab;
-    act_tab = wlpg_tab;
-
-    arg_node = Trav (arg_node, arg_info);
+    TRAVpush (TR_wlpg);
+    arg_node = TRAVdo (arg_node, arg_info);
+    TRAVpop ();
 
     arg_info = FreeInfo (arg_info);
-    act_tab = tmp_tab;
 
     DBUG_RETURN (arg_node);
 }
