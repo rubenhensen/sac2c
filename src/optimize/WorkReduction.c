@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.1  1995/03/17 17:45:41  asi
+ * Revision 1.2  1995/04/05 14:01:53  asi
+ * added WRfundef
+ *
+ * Revision 1.1  1995/03/17  17:45:41  asi
  * Initial revision
  *
  */
@@ -27,10 +30,9 @@ extern char filename[]; /* is set temporary; will be set later on in main.c */
  *		    2) NULL
  *                  R) ptr optimized 1)
  *  description   : initiates work reduction for the intermediate sac-code:
-                    - call OptTrav to start constant-folding
  *  global vars   : syntax_tree, act_tab, wr_stack
  *  internal funs : ---
- *  external funs : Trav, MakeNode, MAlloc
+ *  external funs : Trav, MakeNode
  *  macros        : DBUG...
  *
  *  remarks       : --
@@ -46,6 +48,14 @@ WorkReduction (node *arg_node, node *info_node)
 
     arg_node = Trav (arg_node, info_node);
 
-    free (info_node);
+    FREE (info_node);
+    DBUG_RETURN (arg_node);
+}
+
+node *
+WRfundef (node *arg_node, node *info_node)
+{
+    DBUG_ENTER ("WRfundef");
+
     DBUG_RETURN (arg_node);
 }
