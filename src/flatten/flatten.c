@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 2.21  2000/05/17 15:14:23  dkr
+ * Use of INFO_FLTN_LASTASSIGN and INFO_FLTN_FINALASSIGN in loops
+ * corrected. (Especially in case of empty loop bodies.)
+ *
+ * Function FltnCon removed (old with-loop only).
+ *
  * Revision 2.20  2000/02/23 20:16:34  cg
  * Node status ST_imported replaced by ST_imported_mod and
  * ST_imported_class in order to allow distinction between enteties
@@ -114,13 +120,18 @@
  *                CT_ap,
  *                CT_return,
  *
- * LASTASSIGN : every FltnAssign replaces node[0] with arg_node so that other
+ * LASTASSIGN:  Every FltnAssign replaces node[0] with arg_node so that other
  * (node[0])    functions may place instructions IN FRONT of that assignment.
  *              FltnAssign returns this node[0]
- * node[1]: this node is only used in the context of WLs. It is necessary
- *          to put assignments (var initialisations) at the beginning of
- *          the WL-body. These assignments are stored here. See comment in
- *          FltnNcode.
+ *
+ * LASTWLBLOCK: This node is only used in the context of WLs. It is necessary
+ * (node[1])    to put assignments (var initialisations) at the beginning of
+ *              the WL-body. These assignments are stored here. See comment in
+ *              FltnNcode.
+ *
+ * FINALASSIGN: Every FltnBlock resets node[2] to NULL.
+ * (node[2])    Every FltnAssign replaces node[2] with arg_node if
+ *              ASSIGN_NEXT(arg_node) equals NULL.
  */
 
 #define P_FORMAT "(%06x)" /* formatstring for pointer address */
@@ -634,6 +645,7 @@ FltnArgs (node *arg_node, node *arg_info)
  *   - if CONTEXT is CT_wl arg_node is inserted in LASTWLBLOCK and after
  *     traversing the body LASTWLBLOCK -> NEXT is set to the result of the
  *     traversal. This ensures that flattening and renaming do not interfere!
+ *   - resets FINALASSIGN to NULL.
  *
  ******************************************************************************/
 
@@ -644,6 +656,7 @@ FltnBlock (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("FltnBlock");
 
+    INFO_FLTN_FINALASSIGN (arg_info) = NULL;
     if (BLOCK_INSTR (arg_node) != NULL) {
         if (INFO_FLTN_CONTEXT (arg_info) == CT_wl) {
             /*
@@ -703,7 +716,7 @@ FltnAssign (node *arg_node, node *arg_info)
     ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
     /*
      * newly inserted abstractions are prepanded in front of
-     * INFO_FLTN_LASTASSIGN( arg_info). To properly insert these nodes,
+     * INFO_FLTN_LASTASSIGN(arg_info). To properly insert these nodes,
      * that pointer has to be returned:
      */
     return_node = INFO_FLTN_LASTASSIGN (arg_info);
@@ -713,9 +726,9 @@ FltnAssign (node *arg_node, node *arg_info)
                                 arg_node));
     }
 
-    if (ASSIGN_NEXT (arg_node))
+    if (ASSIGN_NEXT (arg_node)) {
         ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
-    else {
+    } else {
         INFO_FLTN_FINALASSIGN (arg_info) = arg_node;
         DBUG_PRINT ("FLATTEN", ("FINALASSIGN set to %08x!", arg_node));
     }
@@ -1301,7 +1314,7 @@ FltnCond (node *arg_node, node *arg_info)
 node *
 FltnWhile (node *arg_node, node *arg_info)
 {
-    node *mem_last_assign, *pred, *pred2, *new_assign, *mem_final_assign;
+    node *mem_last_assign, *pred, *pred2, *new_assign, *final_assign;
     local_stack *mem_tos, *body_stack_seg;
     int i, body_stack_sz;
 
@@ -1318,6 +1331,7 @@ FltnWhile (node *arg_node, node *arg_info)
      * flatten the break condition!
      */
     WHILE_BODY (arg_node) = Trav (WHILE_BODY (arg_node), arg_info);
+    final_assign = INFO_FLTN_FINALASSIGN (arg_info);
 
     body_stack_sz = tos - mem_tos;
     body_stack_seg = CopyStackSeg (mem_tos, tos);
@@ -1336,6 +1350,7 @@ FltnWhile (node *arg_node, node *arg_info)
             PUSH_ENTRY (body_stack_seg[i]);
         }
     }
+
     FREE (body_stack_seg);
     INFO_FLTN_LASTASSIGN (arg_info) = mem_last_assign;
 
@@ -1363,10 +1378,21 @@ FltnWhile (node *arg_node, node *arg_info)
         ASSIGN_NEXT (new_assign) = NULL;
 
         mem_last_assign = INFO_FLTN_LASTASSIGN (arg_info);
-        mem_final_assign = INFO_FLTN_FINALASSIGN (arg_info);
         new_assign = Trav (new_assign, arg_info);
-        ASSIGN_NEXT (mem_final_assign) = new_assign;
-        DBUG_PRINT ("FLATTEN", ("appending %08x to %08x!", new_assign, mem_final_assign));
+
+        if (final_assign == NULL) {
+            DBUG_ASSERT ((NODE_TYPE (WHILE_INSTR (arg_node)) == N_empty),
+                         "INFO_FLTN_FINALASSIGN is NULL although while-body is "
+                         "non-empty");
+            /*
+             * loop-body ist empty so far!
+             */
+            WHILE_INSTR (arg_node) = FreeTree (WHILE_INSTR (arg_node));
+            WHILE_INSTR (arg_node) = new_assign;
+        } else {
+            ASSIGN_NEXT (final_assign) = new_assign;
+        }
+        DBUG_PRINT ("FLATTEN", ("appending %08x to %08x!", new_assign, final_assign));
         INFO_FLTN_LASTASSIGN (arg_info) = mem_last_assign;
     }
 
@@ -1398,7 +1424,7 @@ FltnWhile (node *arg_node, node *arg_info)
 node *
 FltnDo (node *arg_node, node *arg_info)
 {
-    node *mem_last_assign, *pred, *pred2;
+    node *mem_last_assign, *final_assign, *pred, *pred2;
 
     DBUG_ENTER ("FltnDo");
 
@@ -1412,6 +1438,7 @@ FltnDo (node *arg_node, node *arg_info)
      * flatten the break condition!
      */
     DO_BODY (arg_node) = Trav (DO_BODY (arg_node), arg_info);
+    final_assign = INFO_FLTN_FINALASSIGN (arg_info);
 
     pred = DO_COND (arg_node);
     if ((NODE_TYPE (pred) == N_ap) || (NODE_TYPE (pred) == N_prf)) {
@@ -1426,9 +1453,21 @@ FltnDo (node *arg_node, node *arg_info)
     pred2 = Trav (pred, arg_info);
     DBUG_ASSERT ((pred == pred2),
                  "return-node differs from arg_node while flattening an expr!");
-    ASSIGN_NEXT (INFO_FLTN_FINALASSIGN (arg_info)) = INFO_FLTN_LASTASSIGN (arg_info);
+    if (final_assign == NULL) {
+        DBUG_ASSERT ((NODE_TYPE (DO_INSTR (arg_node)) == N_empty),
+                     "INFO_FLTN_FINALASSIGN is NULL although do-body is non-empty");
+        /*
+         * loop-body ist empty so far!
+         */
+        if (INFO_FLTN_LASTASSIGN (arg_info) != NULL) {
+            DO_INSTR (arg_node) = FreeTree (DO_INSTR (arg_node));
+            DO_INSTR (arg_node) = INFO_FLTN_LASTASSIGN (arg_info);
+        }
+    } else {
+        ASSIGN_NEXT (final_assign) = INFO_FLTN_LASTASSIGN (arg_info);
+    }
     DBUG_PRINT ("FLATTEN", ("appending %08x tp %08x!", INFO_FLTN_LASTASSIGN (arg_info),
-                            INFO_FLTN_FINALASSIGN (arg_info)));
+                            final_assign));
     INFO_FLTN_LASTASSIGN (arg_info) = mem_last_assign;
 
     DBUG_RETURN (arg_node);
@@ -1533,121 +1572,6 @@ FltnGen (node *arg_node, node *arg_info)
         GEN_ID (arg_node) = TmpVarName (old_name);
     }
     PUSH (old_name, GEN_ID (arg_node), with_level - 1);
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *  node *FltnCon(node *arg_node, node *arg_info)
- *
- * description:
- *
- ******************************************************************************/
-
-node *
-FltnCon (node *arg_node, node *arg_info)
-{
-    node *expr, *expr2, *mem_last_assign, **body;
-
-    DBUG_ENTER ("FltnCon");
-
-    switch (NODE_TYPE (arg_node)) {
-    case N_modarray: {
-        expr = MODARRAY_ARRAY (arg_node);
-        if ((NODE_TYPE (expr) == N_prf) || (NODE_TYPE (expr) == N_ap)
-            || (NODE_TYPE (expr) == N_array)) {
-            MODARRAY_ARRAY (arg_node) = Abstract (expr, arg_info);
-            tos = tos - 1; /* DIRTY TRICK: hide the generator-variable! */
-            expr2 = Trav (expr, arg_info);
-            tos = tos + 1; /* DIRTY TRICK: make the generator-variable visible again! */
-            AnnotateIdWithConstVec (expr, MODARRAY_ARRAY (arg_node));
-        } else {
-            tos = tos - 1; /* DIRTY TRICK: hide the generator-variable! */
-            expr2 = Trav (expr, arg_info);
-            tos = tos + 1; /* DIRTY TRICK: make the generator-variable visible again! */
-        }
-        DBUG_ASSERT ((expr == expr2),
-                     "return-node differs from arg_node while flattening an expr!");
-        body = &MODARRAY_BODY (arg_node);
-        break;
-    }
-    case N_foldfun: {
-/*
- * in old with-loop 'compile' can handle unflattened neutral elements only!!
- */
-#if 0
-       expr = FOLDFUN_NEUTRAL( arg_node);
-       if(( NODE_TYPE( expr) == N_prf)   ||
-          ( NODE_TYPE( expr) == N_ap)    ||
-          ( NODE_TYPE( expr) == N_array) ||
-          ( NODE_TYPE( expr) == N_with)  ||
-          ( NODE_TYPE( expr) == N_Nwith)  ) {
-         FOLDFUN_NEUTRAL( arg_node) = Abstract( expr, arg_info);
-         tos = tos -1; /* DIRTY TRICK: hide the generator-variable! */
-         expr2 = Trav( expr, arg_info);
-         tos = tos +1; /* DIRTY TRICK: make the generator-variable visible again! */
-         AnnotateIdWithConstVec( expr, FOLDFUN_NEUTRAL( arg_node));
-       } else {
-         tos = tos -1; /* DIRTY TRICK: hide the generator-variable! */
-         expr2 = Trav( expr, arg_info);
-         tos = tos +1; /* DIRTY TRICK: make the generator-variable visible again! */
-       }
-       DBUG_ASSERT( (expr == expr2),
-         "return-node differs from arg_node while flattening an expr!");
-#endif
-        body = &FOLDFUN_BODY (arg_node);
-        break;
-    }
-    case N_foldprf: {
-/*
- * in old with-loop 'compile' can handle unflattened neutral elements only!!
- */
-#if 0
-       expr = FOLDPRF_NEUTRAL( arg_node);
-       if((expr != NULL) &&
-          ( ( NODE_TYPE( expr) == N_prf)   ||
-            ( NODE_TYPE( expr) == N_ap)    ||
-            ( NODE_TYPE( expr) == N_array) ||
-            ( NODE_TYPE( expr) == N_with)  ||
-            ( NODE_TYPE( expr) == N_Nwith)) ) {
-         FOLDPRF_NEUTRAL( arg_node) = Abstract( expr, arg_info);
-         tos = tos -1; /* DIRTY TRICK: hide the generator-variable! */
-         expr2 = Trav( expr, arg_info);
-         tos = tos +1; /* DIRTY TRICK: make the generator-variable visible again! */
-         AnnotateIdWithConstVec( expr, FOLDPRF_NEUTRAL( arg_node));
-       } else {
-         tos = tos -1; /* DIRTY TRICK: hide the generator-variable! */
-         expr2 = Trav( expr, arg_info);
-         tos = tos +1; /* DIRTY TRICK: make the generator-variable visible again! */
-       }
-       DBUG_ASSERT( (expr == expr2),
-         "return-node differs from arg_node while flattening an expr!");
-#endif
-        body = &FOLDPRF_BODY (arg_node);
-        break;
-    }
-    case N_genarray: {
-        body = &GENARRAY_BODY (arg_node);
-        break;
-    }
-    default: {
-        DBUG_ASSERT (0, "wrong nodetype in WL constructor!");
-        /*
-         * the following assignment is used only for convincing the C compiler
-         * that body will be initialized in any case!
-         */
-        body = NULL;
-        break;
-    }
-    }
-
-    mem_last_assign = INFO_FLTN_LASTASSIGN (arg_info);
-    INFO_FLTN_CONTEXT (arg_info) = CT_wl;
-    DBUG_PRINT ("RENAME", ("CONTEXT set to CT_wl"));
-    *body = Trav (*body, arg_info);
-    INFO_FLTN_LASTASSIGN (arg_info) = mem_last_assign;
 
     DBUG_RETURN (arg_node);
 }
