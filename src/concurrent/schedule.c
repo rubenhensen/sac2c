@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  1998/08/06 20:57:53  dkr
+ * SCHEDwlseg, SCHEDwlsegvar must traverse NEXT-nodes
+ *
  * Revision 1.1  1998/06/18 14:37:17  cg
  * Initial revision
  *
@@ -209,6 +212,10 @@ SCHEDwlseg (node *arg_node, node *arg_info)
         }
     }
 
+    if (WLSEG_NEXT (arg_node) != NULL) {
+        WLSEG_NEXT (arg_node) = Trav (WLSEG_NEXT (arg_node), arg_info);
+    }
+
     DBUG_RETURN (arg_node);
 }
 
@@ -226,6 +233,10 @@ node *SCHEDwlsegvar(node *arg_node, node *arg_info)
             ("Scheduling deiscipline '%s` not suitable for variable segments",
              WLSEGVAR_SCHEDULING(arg_node)->discipline));
     }
+  }
+  
+  if (WLSEGVAR_NEXT( arg_node) != NULL) {
+    WLSEGVAR_NEXT( arg_node) = Trav( WLSEGVAR_NEXT( arg_node), arg_info);
   }
   
   DBUG_RETURN(arg_node);
