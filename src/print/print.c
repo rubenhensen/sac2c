@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.63  1995/05/22 18:08:19  sbs
+ * Revision 1.64  1995/05/24 15:25:15  sbs
+ * trace.h included
+ *
+ * Revision 1.63  1995/05/22  18:08:19  sbs
  * __trace_buffer inswerted
  *
  * Revision 1.62  1995/05/22  15:51:12  sbs
@@ -197,6 +200,7 @@
 #include "Error.h"
 #include "convert.h"
 #include "optimize.h"
+#include "trace.h"
 
 extern show_refcnt;   /* imported from main.c */
 extern show_icm;      /* imported from main.c */
