@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.3  2000/02/11 16:28:31  dkr
+ * COMPWith removed
+ * Some superfluous and outdated macros removed
+ *
  * Revision 2.2  1999/11/09 21:19:07  dkr
  * added some comments
  *
@@ -126,7 +130,6 @@ extern node *COMPBlock (node *arg_node, node *arg_info);
 extern node *COMPCast (node *arg_node, node *arg_info);
 extern node *COMPTypedef (node *arg_node, node *arg_info);
 extern node *COMPObjdef (node *arg_node, node *arg_info);
-extern node *COMPWith (node *arg_node, node *arg_info);
 extern node *COMPSpmd (node *arg_node, node *arg_info);
 extern node *COMPSync (node *arg_node, node *arg_info);
 extern node *COMPNcode (node *arg_node, node *arg_info);
@@ -147,12 +150,10 @@ extern node *GetFoldVardecs (node *fundef);
  * some macros for creation of N_icms
  */
 
-#define MAKE_ICM_ARG(var, new_node) var = MakeExprs (new_node, NULL);
-
 #define MAKE_NEXT_ICM_ARG(prev, new_node)                                                \
     {                                                                                    \
         node *tmp;                                                                       \
-        MAKE_ICM_ARG (tmp, new_node);                                                    \
+        tmp = MakeExprs (new_node, NULL);                                                \
         EXPRS_NEXT (prev) = tmp;                                                         \
         prev = tmp;                                                                      \
     }
@@ -171,7 +172,7 @@ extern node *GetFoldVardecs (node *fundef);
 
 #define CREATE_1_ARY_ICM(assign, str, arg)                                               \
     assign = MakeAssign (MakeIcm (str, NULL, NULL), NULL);                               \
-    MAKE_ICM_ARG (ICM_ARGS (ASSIGN_INSTR (assign)), arg);                                \
+    ICM_ARGS (ASSIGN_INSTR (assign)) = MakeExprs (arg, NULL);                            \
     icm_arg = ICM_ARGS (ASSIGN_INSTR (assign));
 
 #define CREATE_2_ARY_ICM(assign, str, arg1, arg2)                                        \
@@ -204,14 +205,14 @@ extern node *GetFoldVardecs (node *fundef);
 #define BIN_ICM_REUSE(reuse, str, arg1, arg2)                                            \
     NODE_TYPE (reuse) = N_icm;                                                           \
     ICM_NAME (reuse) = str;                                                              \
-    MAKE_ICM_ARG (ICM_ARGS (reuse), arg1);                                               \
+    ICM_ARGS (reuse) = MakeExprs (arg1, NULL);                                           \
     icm_arg = ICM_ARGS (reuse);                                                          \
     MAKE_NEXT_ICM_ARG (icm_arg, arg2)
 
 #define TRI_ICM_REUSE(reuse, str, arg1, arg2, arg3)                                      \
     NODE_TYPE (reuse) = N_icm;                                                           \
     ICM_NAME (reuse) = str;                                                              \
-    MAKE_ICM_ARG (ICM_ARGS (reuse), arg1);                                               \
+    ICM_ARGS (reuse) = MakeExprs (arg1, NULL);                                           \
     icm_arg = ICM_ARGS (reuse);                                                          \
     MAKE_NEXT_ICM_ARG (icm_arg, arg2);                                                   \
     MAKE_NEXT_ICM_ARG (icm_arg, arg3)
