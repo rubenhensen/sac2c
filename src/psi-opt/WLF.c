@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.16  2000/10/31 23:33:03  dkr
+ * CreateZeroVector( 0, ...) replaced by CreateZeroScalar( ...)
+ *
  * Revision 2.15  2000/10/26 12:54:34  dkr
  * signature of DupOneIds changed
  *
@@ -1649,13 +1652,10 @@ WLFassign (node *arg_node, node *arg_info)
                     ARRAY_VECLEN (tmpn) = TYPES_DIM (idt);
                     ((int *)ARRAY_CONSTVEC (tmpn))
                       = Array2IntVec (ARRAY_AELEMS (tmpn), NULL);
-                    tmpn
-                      = MakePrf (F_genarray, /* prf N_genarray */
-                                 MakeExprs (tmpn,
-                                            MakeExprs (CreateZeroVector (0,
-                                                                         TYPES_BASETYPE (
-                                                                           idt)),
-                                                       NULL)));
+                    tmpn = MakePrf (F_genarray, /* prf N_genarray */
+                                    MakeExprs (tmpn, MakeExprs (CreateZeroScalar (
+                                                                  TYPES_BASETYPE (idt)),
+                                                                NULL)));
                     LET_EXPR (ASSIGN_INSTR (arg_node)) = tmpn;
                 }
             }
