@@ -46,9 +46,8 @@ map_cwrapper.o: ../global/internal_lib.h map_cwrapper.h ../global/my_debug.h
 map_cwrapper.o: ../../inc/dbug.h ../tree/traverse.h ../print/convert.h
 map_cwrapper.o: ../modules/filemgr.h ../tree/free.h /usr/include/malloc.h
 map_cwrapper.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
-map_cwrapper.o: /usr/include/sys/int_types.h /usr/include/sys/select.h
-map_cwrapper.o: /usr/include/sys/time.h /usr/include/sys/time.h
-map_cwrapper.o: ../global/resource.h ../typecheck/shape.h
+map_cwrapper.o: /usr/include/sys/int_types.h ../global/resource.h
+map_cwrapper.o: ../typecheck/shape.h
 print_interface.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 print_interface.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 print_interface.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
@@ -60,6 +59,5 @@ print_interface.o: print_interface.h ../print/print.h ../global/my_debug.h
 print_interface.o: ../../inc/dbug.h ../tree/traverse.h ../print/convert.h
 print_interface.o: ../modules/filemgr.h ../tree/free.h /usr/include/malloc.h
 print_interface.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
-print_interface.o: /usr/include/sys/int_types.h /usr/include/sys/select.h
-print_interface.o: /usr/include/sys/time.h /usr/include/sys/time.h
-print_interface.o: ../global/resource.h ../tree/type_info.mac
+print_interface.o: /usr/include/sys/int_types.h ../global/resource.h
+print_interface.o: ../tree/type_info.mac

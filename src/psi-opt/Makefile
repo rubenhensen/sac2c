@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.21  2000/07/05 14:23:47  dkr
+# make deps done
+#
 # Revision 2.20  2000/06/13 13:46:21  dkr
 # deps done
 #
@@ -284,7 +287,8 @@ pad_info.o: ../tree/tree_compound.h ../global/Error.h /usr/include/string.h
 pad_info.o: /usr/include/stdlib.h ../global/globals.h ../tree/traverse.h
 pad_info.o: ../tree/free.h ../global/my_debug.h /usr/include/malloc.h
 pad_info.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
-pad_info.o: /usr/include/sys/int_types.h ../global/internal_lib.h pad_info.h
+pad_info.o: /usr/include/sys/int_types.h ../global/internal_lib.h
+pad_info.o: ../tree/DupTree.h ../tree/LookUpTable.h pad_info.h
 pad_transform.o: ../../inc/dbug.h /usr/include/stdio.h
 pad_transform.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 pad_transform.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
@@ -295,7 +299,8 @@ pad_transform.o: /usr/include/stdlib.h ../global/globals.h ../tree/traverse.h
 pad_transform.o: ../tree/free.h ../global/my_debug.h /usr/include/malloc.h
 pad_transform.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
 pad_transform.o: /usr/include/sys/int_types.h ../global/internal_lib.h
-pad_transform.o: pad_info.h pad_transform.h
+pad_transform.o: ../tree/DupTree.h ../tree/LookUpTable.h pad_info.h
+pad_transform.o: pad_transform.h
 psi-opt.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 psi-opt.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 psi-opt.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h

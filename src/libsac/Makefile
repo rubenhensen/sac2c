@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.14  2000/07/05 14:23:58  dkr
+# make deps done
+#
 # Revision 1.13  2000/07/05 12:52:17  nmw
 # sac_Arg.c and cinterface.c added
 #
@@ -138,6 +141,18 @@ cachesim_basic.o: /usr/include/stdio_impl.h /usr/include/string.h
 cachesim_basic.o: /usr/include/unistd.h /usr/include/sys/unistd.h
 cachesim_basic.o: ../runtime/sac_cachesim.h ../runtime/sac_message.h
 cachesim_basic.o: cachesim.h ../../inc/main_args.h
+cinterface.o: /usr/include/stdarg.h /usr/include/varargs.h
+cinterface.o: /usr/include/sys/va_list.h /usr/include/stdio.h
+cinterface.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
+cinterface.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
+cinterface.o: /usr/include/stdlib.h ../runtime/sac.h
+cinterface.o: ../runtime/sac_boundcheck.h ../runtime/sac_misc.h
+cinterface.o: ../runtime/sac_message.h ../runtime/sac_bool.h
+cinterface.o: ../runtime/sac_std.h ../runtime/sac_idx.h ../runtime/sac_prf.h
+cinterface.o: ../runtime/sac_mt.h ../runtime/sac_heapmgr.h
+cinterface.o: ../runtime/sac_wl.h ../runtime/sac_trace.h
+cinterface.o: ../runtime/sac_profile.h ../runtime/sac_cachesim.h
+cinterface.o: ../runtime/sac_arg.h ../runtime/sac_cinterface.h
 message.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 message.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 message.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
@@ -159,6 +174,17 @@ profile.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
 profile.o: /usr/include/sys/time.h /usr/include/sys/types.h
 profile.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
 profile.o: /usr/include/sys/resource.h
+sac_arg.o: /usr/include/stdarg.h /usr/include/varargs.h
+sac_arg.o: /usr/include/sys/va_list.h /usr/include/stdio.h
+sac_arg.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
+sac_arg.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
+sac_arg.o: /usr/include/stdlib.h ../runtime/sac.h ../runtime/sac_boundcheck.h
+sac_arg.o: ../runtime/sac_misc.h ../runtime/sac_message.h
+sac_arg.o: ../runtime/sac_bool.h ../runtime/sac_std.h ../runtime/sac_idx.h
+sac_arg.o: ../runtime/sac_prf.h ../runtime/sac_mt.h ../runtime/sac_heapmgr.h
+sac_arg.o: ../runtime/sac_wl.h ../runtime/sac_trace.h
+sac_arg.o: ../runtime/sac_profile.h ../runtime/sac_cachesim.h
+sac_arg.o: ../runtime/sac_arg.h ../runtime/sac_cinterface.h
 trace.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 trace.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 trace.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
