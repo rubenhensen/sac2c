@@ -1,5 +1,8 @@
 <!--
   $Log$
+  Revision 1.109  2004/11/26 19:58:29  khf
+  CF added
+
   Revision 1.108  2004/11/26 19:35:37  skt
   added Module for RSP traversal
 
@@ -683,7 +686,23 @@
       </traversal>
       <traversal id="CF" name="Constant Folding" default="sons" include="SSAConstantFolding.h" >
         <travuser>
+          <node name="Fundef" />
+          <node name="Block" />
+          <node name="Arg" />
+          <node name="Assign" />
+          <node name="Cond" />
+          <node name="Return" />
+          <node name="Let" />
+          <node name="Ap" />
+          <node name="Ids" />
           <node name="Id" />
+          <node name="Array" />
+          <node name="Prf" />
+          <node name="With" />
+          <node name="Part" />
+          <node name="Code" />
+          <node name="Generator" />
+          <node name="Funcond" />
         </travuser>
       </traversal>
       <traversal id="CSE" name="Common Subexpression Elimination" default="sons" include="SSACSE.h" >
