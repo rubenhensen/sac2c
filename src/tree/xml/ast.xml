@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.30  2004/10/21 16:59:13  sah
+  switched part and code again
+
   Revision 1.29  2004/10/20 09:20:18  sah
   fixed non closed tag
 
@@ -2790,14 +2793,14 @@
     </node>
     <node name="NWith">
       <sons>
-        <son name="Code" mandatory="yes">
-          <target>
-            <node name="NCode" />
-          </target>
-        </son>
         <son name="Part" mandatory="yes">
           <target>
             <node name="NPart" />
+          </target>
+        </son>
+        <son name="Code" mandatory="yes">
+          <target>
+            <node name="NCode" />
           </target>
         </son>
         <son name="WithOp" mandatory="yes">
