@@ -1,6 +1,9 @@
 /*
  * $Log$
- * Revision 1.11  1995/06/06 16:09:36  hw
+ * Revision 1.12  1995/06/23 12:36:57  hw
+ * added argument to call of 'DuplicateTypes'
+ *
+ * Revision 1.11  1995/06/06  16:09:36  hw
  * changed errormessages
  *
  * Revision 1.10  1995/05/03  12:26:06  hw
@@ -54,8 +57,8 @@
 #include "my_debug.h"
 #include "internal_lib.h"
 
-extern types *DuplicateTypes (types *source); /* imported form typecheck.c */
-extern char filename[];                       /* is set in main.c */
+extern types *DuplicateTypes (types *source, int share); /* imported form typecheck.c */
+extern char filename[];                                  /* is set in main.c */
 
 enum type_class {
     SxS_S,
@@ -320,7 +323,7 @@ AxA (types *array1, types *array2, simpletype s_type)
             }
 
         if (NULL == ret_type) {
-            ret_type = DuplicateTypes (array1);
+            ret_type = DuplicateTypes (array1, 0);
             ret_type->simpletype = s_type;
         }
     } else {
@@ -351,7 +354,7 @@ Axs_F (types *array1)
 
     DBUG_ENTER ("Axs_F");
 
-    ret_type = DuplicateTypes (array1);
+    ret_type = DuplicateTypes (array1, 0);
     ret_type->simpletype = T_float;
 
     DBUG_RETURN (ret_type);
@@ -703,7 +706,7 @@ Rot (node *s_node, types *array)
 
     if (N_num == s_node->nodetype)
         if ((0 <= s_node->info.cint) && (s_node->info.cint < array->dim))
-            ret_type = DuplicateTypes (array);
+            ret_type = DuplicateTypes (array, 0);
         else
             GEN_TYPE_NODE (ret_type, T_unknown);
     else
