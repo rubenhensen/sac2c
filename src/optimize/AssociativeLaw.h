@@ -6,7 +6,7 @@ extern node *ALblock (node *, node *);
 extern node *ALassign (node *, node *);
 /* extern node *ALinstr(node*, node* );*/
 extern node *ALlet (node *, node *);
-extern node *AssociativeLawOptimize (node *, node *);
+extern node *ALprf (node *, node *);
 extern node *TravElems (node *, node *);
 extern int ContainOptInformation (node *);
 extern int IsAssociativeAndCommutative (node *);
@@ -18,5 +18,7 @@ extern int CountVar (node *);
 extern node *SortList (node *);
 extern node *CreateNAssignNodes (node *);
 extern node *CommitNAssignNodes (node *);
+extern int ReachedArgument (node *);
+extern int ReachedDefinition (node *);
 
 #endif
