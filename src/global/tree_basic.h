@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.13  1995/11/01 07:10:12  sbs
+ * Revision 1.14  1995/11/01 16:27:04  cg
+ * added some comments
+ *
+ * Revision 1.13  1995/11/01  07:10:12  sbs
  * neutral addded to N_foldprf;
  *
  * Revision 1.12  1995/10/30  09:53:35  cg
@@ -895,7 +898,8 @@ extern node *MakeWhile (node *cond, node *body);
  ***
  ***  temporary attributes:
  ***
- ***    node*  FUNDEF       (N_fundef)  (typecheck -> )
+ ***    node*  FUNDEF       (N_fundef)  (typecheck -> analysis -> )
+ ***                                    ( -> obj-handling -> )
  ***/
 
 extern node *MakeAp (char *name, char *mod, node *args);
