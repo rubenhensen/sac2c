@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.73  2003/09/15 16:46:25  dkr
+ * several modifications for MT done
+ *
  * Revision 1.72  2003/09/13 13:45:34  dkr
  * COMPSpmdFunReturn(): NT-tags added
  *
@@ -1756,7 +1759,7 @@ CheckAp (node *ap, node *arg_info)
  *                             char *tag, int *num_args, node *icm_args)
  *
  * @brief  Builds triplet-chain (tag, type, name) from dfm-mask mask,
- *         'tag' will we used as base for the tags (used raw or _rc is added),
+ *         'tag' is used as tag,
  *         'num_args' will be incremented for each triplet added (maybe NULL),
  *         at the end of this chain icm_args will be concatenated.
  *
@@ -1796,8 +1799,8 @@ MakeParamsByDFM (DFMmask_t *mask, char *tag, int *num_args, node *icm_args)
  *                                 char *tag, int *num_args, node *icm_args)
  *
  * @brief  Builds tuple-chain (tag, type, name, fun) from dfm-foldmask mask,
- *         'tag' will we used as base for the tags (used raw or _rc is added),
- *         'num_args' will be incremented for each triplet added (maybe NULL),
+ *         'tag' is used as tag,
+ *         'num_args' is incremented for each triplet added (maybe NULL),
  *         at the end of this chain icm_args will be concatenated.
  *
  * ### CODE NOT BRUSHED YET ###
@@ -1809,22 +1812,14 @@ static node *
 MakeParamsByDFMfold (DFMfoldmask_t *mask, char *tag, int *num_args, node *icm_args)
 {
     node *vardec;
-    char *rc_tag, *this_tag;
 
     DBUG_ENTER ("MakeParamsByDFMfold");
-
-    rc_tag = StringConcat (tag, "_rc");
 
     while (mask != NULL) {
         vardec = DFMFM_VARDEC (mask);
 
-        if (RC_IS_ACTIVE (VARDEC_OR_ARG_REFCNT (vardec))) {
-            this_tag = rc_tag;
-        } else {
-            this_tag = tag;
-        }
         icm_args
-          = MakeExprs (MakeId_Copy (this_tag),
+          = MakeExprs (MakeId_Copy (tag),
                        MakeExprs (MakeBasetypeArg (VARDEC_OR_ARG_TYPE (vardec)),
                                   MakeExprs (MakeId_Copy (VARDEC_OR_ARG_NAME (vardec)),
                                              icm_args)));
@@ -1834,8 +1829,6 @@ MakeParamsByDFMfold (DFMfoldmask_t *mask, char *tag, int *num_args, node *icm_ar
 
         mask = DFMFM_NEXT (mask);
     }
-
-    rc_tag = Free (rc_tag);
 
     DBUG_RETURN (icm_args);
 }
@@ -6094,19 +6087,11 @@ GetFoldTypeTag (ids *with_ids)
     DBUG_ENTER ("GetFoldTypeTag");
 
     type = IDS_TYPE (with_ids);
-    if (TYPES_DIM (type) > 0) {
-        if (RC_IS_ACTIVE (IDS_REFCNT (with_ids))) {
-            fold_type = "array_rc";
-        } else {
-            fold_type = "array";
-        }
+    btype = GetBasetype (type);
+    if (btype == T_user) {
+        fold_type = "hidden";
     } else {
-        btype = GetBasetype (type);
-        if (btype == T_user) {
-            fold_type = "hidden";
-        } else {
-            fold_type = type_string[btype];
-        }
+        fold_type = type_string[btype];
     }
 
     DBUG_RETURN (fold_type);
@@ -6230,10 +6215,11 @@ COMP2Sync (node *arg_node, node *arg_info)
                     fold_type = GetFoldTypeTag (with_ids);
 
                     /*
-                     * <fold_type>, <accu_var>
+                     * <fold_type>, <accu_nt>
                      */
-                    fold_args = MakeExprs (MakeId_Copy (fold_type),
-                                           MakeExprs (DupIds_Id (with_ids), fold_args));
+                    fold_args
+                      = MakeExprs (MakeId_Copy (fold_type),
+                                   MakeExprs (DupIds_Id_NT (with_ids), fold_args));
 
                     DBUG_PRINT ("COMP_MT", ("last's folds %s is %s", IDS_NAME (with_ids),
                                             fold_type));
@@ -6285,7 +6271,7 @@ COMP2Sync (node *arg_node, node *arg_info)
              * <fold_type>, <accu_var>
              */
             icm_args = MakeExprs (MakeId_Copy (fold_type),
-                                  MakeExprs (DupIds_Id (with_ids), NULL));
+                                  MakeExprs (DupIds_Id_NT (with_ids), NULL));
 
             barrier_args = AppendExprs (barrier_args, icm_args);
 
@@ -6295,8 +6281,10 @@ COMP2Sync (node *arg_node, node *arg_info)
              * <tmp_var>, <fold_op>
              */
             DBUG_ASSERT ((NWITH2_FUNDEF (with) != NULL), "no fundef found");
+            DBUG_ASSERT ((NODE_TYPE (NWITH2_CEXPR (with)) == N_id),
+                         "NWITH2_CEXPR is no N_id node");
             barrier_args = AppendExprs (barrier_args,
-                                        MakeExprs (DupNode (NWITH2_CEXPR (with)),
+                                        MakeExprs (DupId_NT (NWITH2_CEXPR (with)),
                                                    MakeExprs (MakeId_Copy (FUNDEF_NAME (
                                                                 NWITH2_FUNDEF (with))),
                                                               NULL)));
