@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.95  2004/09/22 19:15:24  khf
+ * corrected setting of fold_float in WLTRAwith
+ *
  * Revision 3.94  2004/09/08 23:55:42  dkrHH
  * InferWlIterShape(): replaced ASSERT by WARN since this ion
  *
@@ -2991,7 +2994,8 @@ Parts2Strides (node *parts, int iter_dims, shpseg *iter_shp)
             }
 
             if (CurrentComponent_IsInt (bound1) && CurrentComponent_IsInt (bound2)
-                && ((step == NULL) || CurrentComponent_IsInt (step))) {
+                && ((step == NULL) || CurrentComponent_IsInt (step))
+                && NODE_TYPE (new_grid) == N_WLgrid) {
                 /*
                  * all stride parameters are constant
                  */
@@ -8016,9 +8020,25 @@ WLTRAwith (node *arg_node, info *arg_info)
                     /* naive compilation  ->  put each stride in a separate segment */
                     segs = WLCOMP_Cubes (NULL, NULL, cubes, iter_dims, linenum);
                 } else {
-                    simpletype res_btype = GetBasetype (INFO_WL_LHS_TYPE (arg_info));
-                    bool fold_float
-                      = (has_fold && ((res_btype == T_float) || (res_btype == T_double)));
+                    bool fold_float = FALSE;
+
+                    if (has_fold) {
+                        types *res_types = INFO_WL_LHS_TYPE (arg_info);
+                        simpletype res_btype;
+                        withop = NWITH_WITHOP (arg_node);
+
+                        while (withop != NULL) {
+                            if (NWITHOP_IS_FOLD (withop)) {
+                                res_btype = GetBasetype (res_types);
+                                fold_float = (fold_float
+                                              || ((res_btype == T_float)
+                                                  || (res_btype == T_double)));
+                            }
+                            withop = NWITHOP_NEXT (withop);
+                            res_types = TYPES_NEXT (res_types);
+                        }
+                    }
+
                     segs
                       = SetSegs (NWITH_PRAGMA (arg_node), cubes, iter_dims, fold_float);
                 }
