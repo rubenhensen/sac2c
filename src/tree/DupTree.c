@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.138  2004/12/14 12:54:33  ktr
+ * DUPids modified.
+ *
  * Revision 3.137  2004/12/13 13:54:05  ktr
  * some changes made regarding DUPdoDupTreeSSA
  *
@@ -1617,6 +1620,8 @@ DUPids (node *arg_node, info *arg_info)
         if (AVIS_SSAASSIGN (IDS_AVIS (arg_node)) != NULL) {
             AVIS_SSAASSIGN (newavis) = INFO_DUP_ASSIGN (arg_info);
         }
+
+        AVIS_ISALIAS (newavis) = AVIS_ISALIAS (IDS_AVIS (arg_node));
 
         FUNDEF_VARDEC (INFO_DUP_FUNDEFSSA (arg_info))
           = TBmakeVardec (newavis, FUNDEF_VARDEC (INFO_DUP_FUNDEFSSA (arg_info)));
