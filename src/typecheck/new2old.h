@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2002/10/08 16:34:09  dkr
+ * NT2OTreturn() removed
+ *
  * Revision 1.4  2002/10/08 10:35:57  dkr
  * some new traversal functions added
  *
@@ -29,7 +32,6 @@ extern node *NT2OTblock (node *arg_node, node *arg_info);
 extern node *NT2OTvardec (node *arg_node, node *arg_info);
 extern node *NT2OTarray (node *arg_node, node *arg_info);
 extern node *NT2OTlet (node *arg_node, node *arg_info);
-extern node *NT2OTreturn (node *arg_node, node *arg_info);
 extern node *NT2OTwithop (node *arg_node, node *arg_info);
 
 #endif /* _new2old_h_ */

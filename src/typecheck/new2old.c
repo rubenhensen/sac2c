@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2002/10/08 16:36:24  dkr
+ * NT2OTreturn() removed
+ *
  * Revision 1.7  2002/10/08 16:32:45  dkr
  * FUNDEF_RETURN is inferned by new_typecheck.c already...
  *
@@ -333,28 +336,6 @@ NT2OTlet (node *arg_node, node *arg_info)
     LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
 
     INFO_NT2OT_LAST_LET (arg_info) = old_last_let;
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *NT2OTreturn( node *arg_node, node *arg_info)
- *
- * description:
- *
- *
- ******************************************************************************/
-
-node *
-NT2OTreturn (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("NT2OTreturn");
-
-    if (RETURN_EXPRS (arg_node) != NULL) {
-        RETURN_EXPRS (arg_node) = Trav (RETURN_EXPRS (arg_node), arg_info);
-    }
 
     DBUG_RETURN (arg_node);
 }
