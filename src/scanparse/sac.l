@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2001/05/22 14:08:39  dkr
+ * minor changes done
+ *
  * Revision 3.6  2001/05/18 09:26:43  cg
  * MALLOC and FREE transformed into Malloc and Free.
  *
@@ -171,7 +174,7 @@
 
 #define FILTER(token) \
   charpos += yyleng;  \
-  if (commlevel == 0)  return( token)
+  if (commlevel == 0) { return( token); }
 
 #define LINEBUF_SIZE 256
 #define YY_NO_UNPUT
@@ -212,278 +215,288 @@ int charpos = 0;
 %}
 
 
-"{"                             { FILTER( BRACE_L );}
-"}"                             { FILTER( BRACE_R );}
-"("                             { FILTER( BRACKET_L );}
-")"                             { FILTER( BRACKET_R );}
-"["                             { FILTER( SQBR_L );}
-"]"                             { FILTER( SQBR_R );}
-":"                             { FILTER( COLON );}
-";"                             { FILTER( SEMIC );}
-","                             { FILTER( COMMA );}
-"="                             { FILTER( LET );}
-"&"                             { FILTER( AMPERS );}
-"?"                             { FILTER( QUESTION );}
-"."                             { FILTER( DOT);}
+"{"                        { FILTER( BRACE_L ); }
+"}"                        { FILTER( BRACE_R ); }
+"("                        { FILTER( BRACKET_L ); }
+")"                        { FILTER( BRACKET_R ); }
+"["                        { FILTER( SQBR_L ); }
+"]"                        { FILTER( SQBR_R ); }
+":"                        { FILTER( COLON ); }
+";"                        { FILTER( SEMIC ); }
+","                        { FILTER( COMMA ); }
+"="                        { FILTER( LET ); }
+"&"                        { FILTER( AMPERS ); }
+"?"                        { FILTER( QUESTION ); }
+"."                        { FILTER( DOT); }
 
-"&&"                            { FILTER( AND );}
-"||"                            { FILTER( OR );}
-"=="                            { FILTER( EQ );}
-"!="                            { FILTER( NEQ );}
-"!"                             { FILTER( NOT );}
-"<="                            { FILTER( LE );}
-"<"                             { FILTER( LT );}
-">="                            { FILTER( GE );}
-">"                             { FILTER( GT );}
-"+"                             { FILTER( PLUS );}
-"-"                             { FILTER( MINUS );}
-"/"                             { FILTER( DIV );}
-"*"                             { FILTER( MUL );}
-"%"                             { FILTER( PRF_MOD );}
+"&&"                       { FILTER( AND ); }
+"||"                       { FILTER( OR ); }
+"=="                       { FILTER( EQ ); }
+"!="                       { FILTER( NEQ ); }
+"!"                        { FILTER( NOT ); }
+"<="                       { FILTER( LE ); }
+"<"                        { FILTER( LT ); }
+">="                       { FILTER( GE ); }
+">"                        { FILTER( GT ); }
+"+"                        { FILTER( PLUS ); }
+"-"                        { FILTER( MINUS ); }
+"/"                        { FILTER( DIV ); }
+"*"                        { FILTER( MUL ); }
+"%"                        { FILTER( PRF_MOD ); }
 
-"++"                            { FILTER( INC );}
-"--"                            { FILTER( DEC );}
+"++"                       { FILTER( INC ); }
+"--"                       { FILTER( DEC ); }
 
-"+="                            { FILTER( ADDON );}
-"-="                            { FILTER( SUBON );}
-"*="                            { FILTER( MULON );}
-"/="                            { FILTER( DIVON );}
-"%="                            { FILTER( MODON );}
+"+="                       { FILTER( ADDON ); }
+"-="                       { FILTER( SUBON ); }
+"*="                       { FILTER( MULON ); }
+"/="                       { FILTER( DIVON ); }
+"%="                       { FILTER( MODON ); }
 
-"abs"                           { FILTER( ABS );}
-"reshape"                       { FILTER( RESHAPE );}
-"shape"                         { FILTER( SHAPE );}
-"take"                          { FILTER( TAKE );}
-"drop"                          { FILTER( DROP );}
-"dim"                           { FILTER( DIM );}
-"rotate"                        { FILTER( ROTATE );}
-"cat"                           { if (compiler_phase==PH_setup) {
-                                    yylval.id=StringCopy(yytext);
-                                    FILTER( ID );
-                                    Free(yylval.id);
-                                  } else {
-                                    FILTER( CAT );
-                                  }
-                                }
-"psi"                           { FILTER( PSI );}
-"toi"                           { FILTER( TOI );}
-"tof"                           { FILTER( TOF );}
-"tod"                           { FILTER( TOD );}
-"min"                           { FILTER( PRF_MIN );}
-"max"                           { FILTER( PRF_MAX );}
-"typedef"                       { FILTER( TYPEDEF );}
-"classtype"                     { FILTER( CLASSTYPE );}
-"objdef"                        { FILTER( OBJDEF );}
-"main"                          { FILTER( K_MAIN );}
-"return"                        { FILTER( RETURN );}
-"if"                            { FILTER( IF );}
-"else"                          { FILTER( ELSE );}
-"do"                            { FILTER( DO );}
-"while"                         { FILTER( WHILE );}
-"for"                           { FILTER( FOR );}
-"with"                          { FILTER( NWITH );}
-"step"                          { FILTER( STEP );}
-"width"                         { FILTER( WIDTH );}
-"genarray"                      { FILTER( GENARRAY );}
-"modarray"                      { FILTER( MODARRAY );}
-"fold"                          { FILTER( FOLD );}
-"inline"                        { FILTER( INLINE );}
+"abs"                      { FILTER( ABS ); }
+"reshape"                  { FILTER( RESHAPE ); }
+"shape"                    { FILTER( SHAPE ); }
+"take"                     { FILTER( TAKE ); }
+"drop"                     { FILTER( DROP ); }
+"dim"                      { FILTER( DIM ); }
+"rotate"                   { FILTER( ROTATE ); }
+"cat"                      { if (compiler_phase == PH_setup) {
+                               yylval.id = StringCopy( yytext);
+                               FILTER( ID );
+                               Free( yylval.id);
+                             } else {
+                               FILTER( CAT );
+                             }
+                           }
+"psi"                      { FILTER( PSI ); }
+"toi"                      { FILTER( TOI ); }
+"tof"                      { FILTER( TOF ); }
+"tod"                      { FILTER( TOD ); }
+"min"                      { FILTER( PRF_MIN ); }
+"max"                      { FILTER( PRF_MAX ); }
+"typedef"                  { FILTER( TYPEDEF ); }
+"classtype"                { FILTER( CLASSTYPE ); }
+"objdef"                   { FILTER( OBJDEF ); }
+"main"                     { FILTER( K_MAIN ); }
+"return"                   { FILTER( RETURN ); }
+"if"                       { FILTER( IF ); }
+"else"                     { FILTER( ELSE ); }
+"do"                       { FILTER( DO ); }
+"while"                    { FILTER( WHILE ); }
+"for"                      { FILTER( FOR ); }
+"with"                     { FILTER( NWITH ); }
+"step"                     { FILTER( STEP ); }
+"width"                    { FILTER( WIDTH ); }
+"genarray"                 { FILTER( GENARRAY ); }
+"modarray"                 { FILTER( MODARRAY ); }
+"fold"                     { FILTER( FOLD ); }
+"inline"                   { FILTER( INLINE ); }
 
-"ModuleDec"                     { FILTER( MODDEC );}
-"ModuleSpec"                    { FILTER( MODSPEC );}
-"Module"                        { FILTER( MODIMP );}
-"ClassDec"                      { FILTER( CLASSDEC );}
-"Class"                         { FILTER( CLASSIMP );}
+"ModuleDec"                { FILTER( MODDEC ); }
+"ModuleSpec"               { FILTER( MODSPEC ); }
+"Module"                   { FILTER( MODIMP ); }
+"ClassDec"                 { FILTER( CLASSDEC ); }
+"Class"                    { FILTER( CLASSIMP ); }
 
-"import"                        { FILTER( IMPORT );}
-"all"                           { FILTER( ALL );}
-"implicit"                      { FILTER( IMPLICIT );}
-"explicit"                      { FILTER( EXPLICIT );}
-"types"                         { FILTER( TYPES );}
-"funs"                          { FILTER( FUNS );}
-"functions"                     { FILTER( FUNS );}
-"own"                           { FILTER( OWN );}
-"external"                      { FILTER( EXTERN );}
-"global"                        { FILTER( GLOBAL );}
-"objects"                       { FILTER( OBJECTS );}
+"import"                   { FILTER( IMPORT ); }
+"all"                      { FILTER( ALL ); }
+"implicit"                 { FILTER( IMPLICIT ); }
+"explicit"                 { FILTER( EXPLICIT ); }
+"types"                    { FILTER( TYPES ); }
+"funs"                     { FILTER( FUNS ); }
+"functions"                { FILTER( FUNS ); }
+"own"                      { FILTER( OWN ); }
+"external"                 { FILTER( EXTERN ); }
+"global"                   { FILTER( GLOBAL ); }
+"objects"                  { FILTER( OBJECTS ); }
 
-"#pragma"                       { FILTER( PRAGMA );}
-"linkname"                      { FILTER( LINKNAME );}
-"linksign"                      { FILTER( LINKSIGN );}
-"effect"                        { FILTER( EFFECT );}
-"touch"                         { FILTER( TOUCH );}
-"refcounting"                   { FILTER( REFCOUNTING );}
-"readonly"                      { FILTER( READONLY );}
-"copyfun"                       { FILTER( COPYFUN );}
-"freefun"                       { FILTER( FREEFUN );}
-"initfun"                       { FILTER( INITFUN );}
-"linkwith"                      { FILTER( LINKWITH );}
-"wlcomp"                        { FILTER( WLCOMP );}
-"cachesim"                      { FILTER( CACHESIM );}
-"specialize"                    { FILTER( SPECIALIZE );}
+"#pragma"                  { FILTER( PRAGMA ); }
+"linkname"                 { FILTER( LINKNAME ); }
+"linksign"                 { FILTER( LINKSIGN ); }
+"effect"                   { FILTER( EFFECT ); }
+"touch"                    { FILTER( TOUCH ); }
+"refcounting"              { FILTER( REFCOUNTING ); }
+"readonly"                 { FILTER( READONLY ); }
+"copyfun"                  { FILTER( COPYFUN ); }
+"freefun"                  { FILTER( FREEFUN ); }
+"initfun"                  { FILTER( INITFUN ); }
+"linkwith"                 { FILTER( LINKWITH ); }
+"wlcomp"                   { FILTER( WLCOMP ); }
+"cachesim"                 { FILTER( CACHESIM ); }
+"specialize"               { FILTER( SPECIALIZE ); }
 
-"int"                           { FILTER( TYPE_INT );}
-"float"                         { FILTER( TYPE_FLOAT );}
-"bool"                          { FILTER( TYPE_BOOL );}
-"unsigned"                      { FILTER( TYPE_UNS );}
-"short"                         { FILTER( TYPE_SHORT );}
-"long"                          { FILTER( TYPE_LONG );}
-"char"                          { FILTER( TYPE_CHAR );}
-"double"                        { FILTER( TYPE_DBL );}
+"int"                      { FILTER( TYPE_INT ); }
+"float"                    { FILTER( TYPE_FLOAT ); }
+"bool"                     { FILTER( TYPE_BOOL ); }
+"unsigned"                 { FILTER( TYPE_UNS ); }
+"short"                    { FILTER( TYPE_SHORT ); }
+"long"                     { FILTER( TYPE_LONG ); }
+"char"                     { FILTER( TYPE_CHAR ); }
+"double"                   { FILTER( TYPE_DBL ); }
 
-"void"                          { FILTER( TYPE_VOID );}
-"..."                           { FILTER( TYPE_DOTS );}
+"void"                     { FILTER( TYPE_VOID ); }
+"..."                      { FILTER( TYPE_DOTS ); }
 
-"true"                          { FILTER( TRUETOKEN );}
-"false"                         { FILTER( FALSETOKEN );}
+"true"                     { FILTER( TRUETOKEN ); }
+"false"                    { FILTER( FALSETOKEN ); }
 
-"const"                         { FILTER( C_KEYWORD);}
-"auto"                          { FILTER( C_KEYWORD);}
-"static"                        { FILTER( C_KEYWORD);}
-"extern"                        { FILTER( C_KEYWORD);}
-"struct"                        { FILTER( C_KEYWORD);}
-"union"                         { FILTER( C_KEYWORD);}
-"volatile"                      { FILTER( C_KEYWORD);}
-"case"                          { FILTER( C_KEYWORD);}
-"switch"                        { FILTER( C_KEYWORD);}
-"goto"                          { FILTER( C_KEYWORD);}
-"continue"                      { FILTER( C_KEYWORD);}
-"break"                         { FILTER( C_KEYWORD);}
+"const"                    { FILTER( C_KEYWORD); }
+"auto"                     { FILTER( C_KEYWORD); }
+"static"                   { FILTER( C_KEYWORD); }
+"extern"                   { FILTER( C_KEYWORD); }
+"struct"                   { FILTER( C_KEYWORD); }
+"union"                    { FILTER( C_KEYWORD); }
+"volatile"                 { FILTER( C_KEYWORD); }
+"case"                     { FILTER( C_KEYWORD); }
+"switch"                   { FILTER( C_KEYWORD); }
+"goto"                     { FILTER( C_KEYWORD); }
+"continue"                 { FILTER( C_KEYWORD); }
+"break"                    { FILTER( C_KEYWORD); }
 
-"target"                        { if( compiler_phase==PH_setup) {
-                                    FILTER( TARGET );
-                                  } else {
-                                    yylval.id=StringCopy(yytext);
-                                    FILTER( ID );
-                                    Free(yylval.id);
-                                  }
-                                }
-"default"                       { if( compiler_phase==PH_setup) {
-                                    yylval.id=StringCopy(yytext);
-                                    FILTER( ID );
-                                    Free(yylval.id);
-                                  } else {
-                                    FILTER( C_KEYWORD );
-                                  }
-                                }
+"target"                   { if( compiler_phase==PH_setup) {
+                               FILTER( TARGET );
+                             } else {
+                               yylval.id=StringCopy(yytext);
+                               FILTER( ID );
+                               Free(yylval.id);
+                             }
+                           }
+"default"                  { if( compiler_phase==PH_setup) {
+                               yylval.id=StringCopy(yytext);
+                               FILTER( ID );
+                               Free(yylval.id);
+                             } else {
+                               FILTER( C_KEYWORD );
+                             }
+                           }
 
-[-/][_A-Za-z0-9]*               { if( compiler_phase==PH_setup) {
-                                    yylval.id=StringCopy(yytext);
-                                    FILTER( OPTION );
-                                    Free(yylval.id);
-                                  } else {
-                                    switch (yytext[0]) {
-                                    case '-':
-                                      yyless(1);
-                                      FILTER(MINUS);
-                                      break;
-                                    case '/':
-                                      yyless(1);
-                                      FILTER(DIV);
-                                      break;
-                                    case '_':
-                                      yylval.id=StringCopy(yytext);
-                                      FILTER( PRIVATEID);
-                                      Free(yylval.id);
-                                      break;
-                                    default:
-                                      yylval.id=StringCopy(yytext);
-                                      FILTER( ID);
-                                      Free(yylval.id);
-                                    }
-                                  }
-                                }
+[-/][_A-Za-z0-9]*          { if( compiler_phase==PH_setup) {
+                               yylval.id=StringCopy(yytext);
+                               FILTER( OPTION );
+                               Free(yylval.id);
+                             } else {
+                               switch (yytext[0]) {
+                                 case '-':
+                                   yyless(1);
+                                   FILTER(MINUS);
+                                   break;
+                                 case '/':
+                                   yyless(1);
+                                   FILTER(DIV);
+                                   break;
+                                 case '_':
+                                   yylval.id=StringCopy(yytext);
+                                   FILTER( PRIVATEID);
+                                   Free(yylval.id);
+                                   break;
+                                 default:
+                                   yylval.id=StringCopy(yytext);
+                                   FILTER( ID);
+                                   Free(yylval.id);
+                               }
+                             }
+                           }
 
 
-\"([^"\n]|(\\\"))*\"            { yylval.id=StringCopy(yytext+sizeof(char));
-                                  yylval.id[strlen(yylval.id)-1]='\0';
-                                  FILTER( STR );
-                                  Free(yylval.id);
-                                }
+\"([^"\n]|(\\\"))*\"       { yylval.id=StringCopy(yytext+sizeof(char));
+                             yylval.id[strlen(yylval.id)-1]='\0';
+                             FILTER( STR );
+                             Free(yylval.id);
+                           }
 
 [A-Za-z]([A-Za-z0-9]|[_A-Za-z0-9][A-Za-z0-9])*_? {
-                                  yylval.id=StringCopy(yytext);
-                                  FILTER( ID );
-                                  Free(yylval.id);
-                                }
+                             yylval.id=StringCopy(yytext);
+                             FILTER( ID );
+                             Free(yylval.id);
+                           }
 
-[_A-Za-z][_A-Za-z0-9]*          { yylval.id=StringCopy(yytext);
-                                  FILTER( PRIVATEID );
-                                  Free(yylval.id);
-                                }
+[_A-Za-z][_A-Za-z0-9]*     { yylval.id=StringCopy(yytext);
+                             FILTER( PRIVATEID );
+                             Free(yylval.id);
+                           }
 
-'.'                             { yylval.cchar=yytext[1];
-                                  FILTER( CHAR );
-                                }
-'\\[0-9]+'                      { yylval.cchar=(char)atoi(yytext+2);
-                                  FILTER( CHAR );
-                                }
-'\\n'                           { yylval.cchar='\n';
-                                  FILTER( CHAR );
-                                }
-'\\t'                           { yylval.cchar='\t';
-                                  FILTER( CHAR );
-                                }
+'.'                        { yylval.cchar=yytext[1];
+                             FILTER( CHAR );
+                           }
+'\\[0-9]+'                 { yylval.cchar=(char)atoi(yytext+2);
+                             FILTER( CHAR );
+                           }
+'\\n'                      { yylval.cchar='\n';
+                             FILTER( CHAR );
+                           }
+'\\t'                      { yylval.cchar='\t';
+                             FILTER( CHAR );
+                           }
 
-[0-9]+                          { yylval.cint=atoi(yytext);
-                                  FILTER( NUM);
-                                }
+[0-9]+                     { yylval.cint=atoi(yytext);
+                             FILTER( NUM);
+                           }
 
 [0-9]*[.][0-9]+(e([+]?|[-]?)[0-9]+)? {
-                                  yylval.cdbl=atof(yytext);
-                                  FILTER( DOUBLE);
-                                }
+                             yylval.cdbl=atof(yytext);
+                             FILTER( DOUBLE);
+                           }
 
 [0-9]*([.][0-9]+(e([+]?|[-]?)[0-9]+)?)?[fF] {
-                                  yytext[strlen(yytext)]='\0';
-                                  yylval.cfloat=atof(yytext);
-                                  FILTER( FLOAT);
-                                }
+                             yytext[strlen(yytext)]='\0';
+                             yylval.cfloat=atof(yytext);
+                             FILTER( FLOAT);
+                           }
 
 [0-9]*([.][0-9]+(e([+]?|[-]?)[0-9]+)?)?[Dd] {
-                                  yytext[strlen(yytext)]='\0';
-                                  yylval.cdbl=atof(yytext);
-                                  FILTER( DOUBLE);
-                                }
+                             yytext[strlen(yytext)]='\0';
+                             yylval.cdbl=atof(yytext);
+                             FILTER( DOUBLE);
+                           }
 
 
-"/*"                            { if (commlevel++ == 1)
-                                    WARN(linenum, ("Nested comment eleminated"));
-                                  charpos += yyleng;
-                                }
-"*/"                            { charpos +=yyleng;
-                                  if (commlevel) commlevel--;
-                                  else return(SC);
-                                }
-\n.*                            { linenum++;
-                                  charpos = 0;
-                                  if (yyleng <= LINEBUF_SIZE) {
-                                    strncpy( linebuf, yytext+1,yyleng);
-                                    linebuf_ptr = linebuf;
-                                  }
-                                  else {
-                                    Free( tmp_buf);
-                                    tmp_buf = Malloc( (yyleng) * sizeof(char));
-                                    strncpy( tmp_buf, yytext+1,yyleng);
-                                    linebuf_ptr = tmp_buf;
-                                  }
-                                  yyless(1);
-                                }
-[ \t]                           { charpos += yyleng;}
-"\f"                            { charpos += yyleng;}
-#\ .*\n                         { linenum=atoi(yytext+2)-1;
-                                  { int start, len;
-                                    start = strcspn( yytext, "\"")+1;
-                                    len   = strcspn( yytext+start, "\"");
-                                    filename = (char *)Malloc( (len+1)*sizeof(char)); 
-                                    strncpy( filename , yytext + start, len);
-                                    filename[len] = '\0';
-                                  }
-                                  yyless(yyleng-1);
-                                }
-.                               { charpos += yyleng;
-                                  FILTER( SC );
-                                }
+"/*"                       { if (commlevel == 1) {
+                               WARN( linenum, ("Nested comment eleminated"));
+                             }
+                             commlevel++;
+                             charpos += yyleng;
+                           }
+"*/"                       { charpos += yyleng;
+                             if (commlevel > 0) {
+                               commlevel--;
+                             }
+                             else {
+                               return(SC);
+                             }
+                           }
+
+\n.*                       { linenum++;
+                             charpos = 0;
+                             if (yyleng <= LINEBUF_SIZE) {
+                               strncpy( linebuf, yytext+1,yyleng);
+                               linebuf_ptr = linebuf;
+                             }
+                             else {
+                               Free( tmp_buf);
+                               tmp_buf = Malloc( (yyleng) * sizeof(char));
+                               strncpy( tmp_buf, yytext+1,yyleng);
+                               linebuf_ptr = tmp_buf;
+                             }
+                             yyless(1);
+                           }
+
+[ \t]                      { charpos += yyleng; }
+
+"\f"                       { charpos += yyleng; }
+
+#\ .*\n                    { linenum=atoi(yytext+2)-1;
+                             { int start, len;
+                               start = strcspn( yytext, "\"")+1;
+                               len   = strcspn( yytext + start, "\"");
+                               filename = (char *)Malloc( (len+1)*sizeof(char));
+                               strncpy( filename , yytext + start, len);
+                               filename[len] = '\0';
+                             }
+                             yyless(yyleng-1);
+                           }
+
+.                          { charpos += yyleng;
+                             FILTER( SC );
+                           }
 
 %%
-
