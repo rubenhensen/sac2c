@@ -1,6 +1,9 @@
 /*      $Id$
  *
  * $Log$
+ * Revision 1.10  1998/04/03 11:38:52  srs
+ * changed SearchWL, CreateArrayFromInternGen
+ *
  * Revision 1.9  1998/04/01 07:51:53  srs
  * added many functions
  *
@@ -549,15 +552,16 @@ Tree2InternGen (node *wln)
  ******************************************************************************/
 
 node *
-CreateArrayFromInternGen (int *source, int number)
+CreateArrayFromInternGen (int *source, int number, types *type)
 {
     node *arrayn, *tmpn;
-    DBUG_ENTER (" *CreateArrayFromInternGen");
+    DBUG_ENTER ("CreateArrayFromInternGen");
 
     tmpn = NULL;
     while (number)
         tmpn = MakeExprs (MakeNum (source[--number]), tmpn);
     arrayn = MakeArray (tmpn);
+    ARRAY_TYPE (arrayn) = DuplicateTypes (type, 1);
 
     DBUG_RETURN (arrayn);
 }
@@ -577,6 +581,8 @@ node *
 InternGen2Tree (node *wln, intern_gen *ig)
 {
     node **part, *withidn, *genn, *b1n, *b2n, *stepn, *widthn;
+    types *type;
+    shpseg *shpseg;
 
     DBUG_ENTER ("InternGen2Tree");
 
@@ -584,12 +590,17 @@ InternGen2Tree (node *wln, intern_gen *ig)
     FreeTree (NWITH_PART (wln));
     part = &(NWITH_PART (wln));
 
+    /* create type for N_array nodes*/
+    shpseg = MakeShpseg (
+      MakeNums (ig->shape, NULL)); /* nums struct is freed inside MakeShpseg. */
+    type = MakeType (T_int, 1, shpseg, NULL, NULL);
+
     while (ig) {
         /* create generator components */
-        b1n = CreateArrayFromInternGen (ig->l, ig->shape);
-        b2n = CreateArrayFromInternGen (ig->u, ig->shape);
-        stepn = ig->step ? CreateArrayFromInternGen (ig->step, ig->shape) : NULL;
-        widthn = ig->width ? CreateArrayFromInternGen (ig->width, ig->shape) : NULL;
+        b1n = CreateArrayFromInternGen (ig->l, ig->shape, type);
+        b2n = CreateArrayFromInternGen (ig->u, ig->shape, type);
+        stepn = ig->step ? CreateArrayFromInternGen (ig->step, ig->shape, type) : NULL;
+        widthn = ig->width ? CreateArrayFromInternGen (ig->width, ig->shape, type) : NULL;
 
         /* create tree structures */
         genn = MakeNGenerator (b1n, b2n, F_le, F_lt, stepn, widthn);
@@ -599,6 +610,7 @@ InternGen2Tree (node *wln, intern_gen *ig)
     }
 
     FREE (withidn);
+    FreeOneTypes (type);
 
     DBUG_RETURN (wln);
 }
@@ -650,11 +662,9 @@ CreateVardec (char *name, types *type, node **vardecs)
  ******************************************************************************/
 
 void
-SearchWLHelp (int id_varno, node *assignn)
+SearchWLHelp (int id_varno, node *assignn, int *valid, int mode, int ol)
 {
-    int valid;
-
-    valid = -1;
+    *valid = -1;
 
     while (ASSIGN_NEXT (assignn))
         assignn = ASSIGN_NEXT (assignn);
@@ -664,11 +674,16 @@ SearchWLHelp (int id_varno, node *assignn)
         if (N_let == ASSIGN_INSTRTYPE (assignn)
             && N_Nwith == NODE_TYPE (LET_EXPR (ASSIGN_INSTR (assignn))))
             /* this is the bad boy */
-            NWITH_NO_CHANCE (LET_EXPR (ASSIGN_INSTR (assignn))) = 1;
-        else /* if not, this may be a compound structure. */
-            SearchWL (id_varno, assignn, &valid);
-    } else /* else it is defined somewhere above and we can use the ASSIGN_MRDMASK */
-        SearchWL (id_varno, (node *)ASSIGN_MRDMASK (assignn)[id_varno], &valid);
+            if (0 == mode || 1 == mode)
+                NWITH_NO_CHANCE (LET_EXPR (ASSIGN_INSTR (assignn))) = 1;
+        if (0 == mode)
+            NWITH_REFERENCED (LET_EXPR (ASSIGN_INSTR (assignn)))++;
+        else /* if not, this may be a blockassign. */
+            SearchWL (id_varno, assignn, valid, mode, ol);
+    } else { /* else it is defined somewhere above and we can use the ASSIGN_MRDMASK */
+        assignn = (node *)ASSIGN_MRDMASK (assignn)[id_varno];
+        SearchWL (id_varno, assignn, valid, mode, ol);
+    }
 }
 
 /******************************************************************************
@@ -680,7 +695,7 @@ SearchWLHelp (int id_varno, node *assignn)
  *   Searches a WL Id (specified with id_varno) somewhere above in the syntax
  *   tree, starting at startn. startn has to be the first possible tip
  *   where to find the WL, not the assign node of the Id itself. (Example:
- *     SearchWL(varno, (node*)ASSIGN_MRDMASK(assignn)[varno], &valid)     ).
+ *     SearchWL(varno, (node*)ASSIGN_MRDMASK(assignn)[varno], )   ).
  *
  *   Returns an assign node, if the Id describes a WL (N_Nwith). This of
  *   course is the assign node of the WL. Else NULL. See remarks.
@@ -691,70 +706,127 @@ SearchWLHelp (int id_varno, node *assignn)
  *   outside. Else it is 1.
  *
  * attention:
- *   this functions modifies the found WL in some cases. See remarks.
- *   make sure that *valid is not -1 if called. This is an internal flag
+ *   this functions modifies the found WL subject to mode. See documentaion
+ *   of StartSearchWL for more information on mode.
+ *   Make sure that *valid is not 1 if called. This is an internal flag
  *   used in conjunction with SearchWLHelp.
  *
  * remarks:
  *   The assign node is only returned if *valid is 1. Else we would have a
  *   problem returning multiple nodes if a WL is defined inside of both
- *   trees of a conditional, which could be recursive.
+ *   trees of a conditional or a loop, which could be recursive.
  *   If this happens (*valid==0) we still continue to find the WL to
- *   mark it as unfoldable. NWITH_NO_CHANCE is set to 1.
+ *   mark it (see mode).
  *
  ******************************************************************************/
 
 node *
-SearchWL (int id_varno, node *startn, int *valid)
+SearchWL (int id_varno, node *startn, int *valid, int mode, int original_level)
 {
     node *tmpn;
+    int loop_level, ct, ce;
 
     DBUG_ENTER ("SearchWL");
 
-    if (-1 != *valid)
-        *valid = 1;
-
     /* MRDs point at N_assign or at N_Npart nodes. If N_Npart, the Id is
-       an index vector, not a WL. */
+       an index vector, not a WL. Return NULL */
     if (startn && N_Npart == NODE_TYPE (startn))
         startn = NULL;
 
     if (startn) { /* N_assign node. */
+        DBUG_ASSERT (N_assign == NODE_TYPE (startn), ("startn no assign node"));
+        loop_level = ASSIGN_LEVEL (startn);
+
+        while (loop_level > original_level) {
+            /* jumped INTO a do-loop. The MRDs of do loops are stored
+               differently as MRDs while loops. correct this: find
+               do node of same level. That's the equivalent to
+               while loops that we expect. */
+            startn = (node *)ASSIGN_MRDMASK (startn)[id_varno];
+            loop_level = ASSIGN_LEVEL (startn);
+        }
+
         switch (ASSIGN_INSTRTYPE (startn)) {
         case N_while:
         case N_do:
-            /* if the Id is referenced in N_while, N_do or N_cond we can
-               set *valid to 0. */
-            *valid = 0;
+            /* now we have to distinguish where the 'pointer comes from'. Do we
+               use the Id from within the loop or from behind it? */
+            if (loop_level == original_level) {
+                /* the Id is behind the loop, same level. We definitely cannot
+                   use a WL for folding if Id describes one. */
 
-            /* we have to find out if idn referenced a WL. Therefore
-               we traverse the body to its last assignment and call SearchWL
-               again. This happens in SearchWLHelp. */
-            if (N_while == ASSIGN_INSTRTYPE (startn))
-                startn = BLOCK_INSTR (WHILE_BODY (ASSIGN_INSTR (startn)));
-            else
-                startn = BLOCK_INSTR (DO_BODY (ASSIGN_INSTR (startn)));
-            SearchWLHelp (id_varno, startn);
+                /* we have to find out if idn references a WL. Therefore
+                   we traverse the body to its last assignment and call SearchWL
+                   again. This happens in SearchWLHelp. */
+                if (N_while == ASSIGN_INSTRTYPE (startn))
+                    tmpn = BLOCK_INSTR (WHILE_BODY (ASSIGN_INSTR (startn)));
+                else
+                    tmpn = BLOCK_INSTR (DO_BODY (ASSIGN_INSTR (startn)));
+                SearchWLHelp (id_varno, tmpn, valid, mode, original_level + 1);
+
+                /* additionally, in case of a while loop, we have to search
+                   for a WL before the loop, too. */
+                if (N_while == ASSIGN_INSTRTYPE (startn)) {
+                    tmpn = (node *)ASSIGN_MRDMASK (startn)[id_varno];
+                    *valid = -1;
+                    SearchWL (id_varno, tmpn, valid, mode, original_level);
+                }
+
+                *valid = 0;
+            } else { /* loop_level < original_level */
+                tmpn = (node *)ASSIGN_MRDMASK (startn)[id_varno];
+                startn = SearchWL (id_varno, tmpn, valid, mode, loop_level);
+            }
             break;
 
         case N_cond:
-            *valid = 0;
-            if ((node *)COND_THENDEFMASK (ASSIGN_INSTR (startn))[id_varno]) {
-                tmpn = COND_THENINSTR (ASSIGN_INSTR (startn)); /* then-part */
-                SearchWLHelp (id_varno, tmpn);
-            }
-            if ((node *)COND_ELSEDEFMASK (ASSIGN_INSTR (startn))[id_varno]) {
-                tmpn = COND_ELSEINSTR (ASSIGN_INSTR (startn)); /* else-part */
-                SearchWLHelp (id_varno, tmpn);
+            if (loop_level == original_level) {
+                ct = ce = 0;
+                if ((node *)COND_THENDEFMASK (ASSIGN_INSTR (startn))[id_varno]) {
+                    /* is Id defined in the then subtree? */
+                    ct = 1;
+                    tmpn = COND_THENINSTR (ASSIGN_INSTR (startn)); /* then-part */
+                    SearchWLHelp (id_varno, tmpn, valid, mode, original_level + 1);
+                }
+                if ((node *)COND_ELSEDEFMASK (ASSIGN_INSTR (startn))[id_varno]) {
+                    ce = 1;
+                    tmpn = COND_ELSEINSTR (ASSIGN_INSTR (startn)); /* else-part */
+                    SearchWLHelp (id_varno, tmpn, valid, mode, original_level + 1);
+                }
+                if (!ct
+                    || !ce) { /* if Id is not defined in both trees, search above cond. */
+                    tmpn = (node *)ASSIGN_MRDMASK (startn)[id_varno];
+                    *valid = -1;
+                    SearchWL (id_varno, tmpn, valid, mode, original_level);
+                }
+
+                *valid = 0;
+            } else { /* loop_level < original_level */
+                tmpn = (node *)ASSIGN_MRDMASK (startn)[id_varno];
+                startn = SearchWL (id_varno, tmpn, valid, mode, loop_level);
             }
             break;
 
         case N_let:
-            if (N_Nwith == NODE_TYPE (LET_EXPR (ASSIGN_INSTR (startn)))) {
-                if (-1 == *valid) { /* inside a compound node */
-                    NWITH_NO_CHANCE (LET_EXPR (ASSIGN_INSTR (startn))) = 1;
-                    *valid = 0;
-                } /* else *valid is 1 and the assign node of the WL is in startn. */
+            if (N_id == NODE_TYPE (LET_EXPR (ASSIGN_INSTR (startn)))) {
+                /* if the Id we search for is renamed, let's search for the new
+                   name to find a referenced WL. */
+                id_varno = ID_VARNO (LET_EXPR (ASSIGN_INSTR (startn)));
+                startn = (node *)ASSIGN_MRDMASK (startn)[id_varno];
+                startn = SearchWL (id_varno, startn, valid, mode, original_level);
+            } else if (N_Nwith == NODE_TYPE (LET_EXPR (ASSIGN_INSTR (startn)))) {
+                /* now we found a WL */
+                if (0 == mode)
+                    NWITH_REFERENCED (LET_EXPR (ASSIGN_INSTR (startn)))++;
+                if (-1 == *valid) { /* but we cannot use it for folding */
+                    if (0 == mode || 1 == mode)
+                        NWITH_NO_CHANCE (LET_EXPR (ASSIGN_INSTR (startn))) = 1;
+                } else { /* *valid is 1 and the assign node of the WL is in startn. */
+                    DBUG_ASSERT (1 == *valid, ("wrong value for variable valid"));
+                    /*           if (1 == mode) */
+                    /*             NWITH_REFERENCED_FOLD(LET_EXPR(ASSIGN_INSTR(startn)))++;
+                     */
+                }
             } else
                 startn = NULL; /* this is not a WL. */
             break;
@@ -774,6 +846,48 @@ SearchWL (int id_varno, node *startn, int *valid)
 /******************************************************************************
  *
  * function:
+ *   node *StartSearchWL(node *idn, node *assignn)
+ *
+ * description:
+ *   This function searches the MRD (WL) for idn. If a WL is found which
+ *   can be used for folding, the assign node of this WL is returned.
+ *   assignn is the assign node in which idn is situated.
+ *   mode is used as follows:
+ *
+ * 0:
+ *   If a WL is found which can not be used for folding, NWITH_NO_CHANCE is set.
+ *   If a WL is found, it's NWITH_REFERENCED value is incremented.
+ * 1:
+ *   If a WL is found which can not be used for folding, NWITH_NO_CHANCE is set.
+ * 2:
+ *   No special behaviour, just returns found WL or NULL.
+ *
+ *   This functions can affect multiple WL. See SearchWL for more details.
+ *
+ ******************************************************************************/
+
+node *
+StartSearchWL (node *idn, node *assignn, int mode)
+{
+    node *resultn, *mrdn;
+    int varno, valid;
+
+    DBUG_ENTER ("StartSearchWLRef");
+    DBUG_ASSERT ((0 <= mode && 2 >= mode), ("wrong value given for mode"));
+
+    valid = 1; /* 1 is important, which means 'foldable' */
+    varno = ID_VARNO (idn);
+    mrdn = (node *)ASSIGN_MRDMASK (assignn)[varno];
+    resultn = SearchWL (varno, mrdn, &valid, mode, ASSIGN_LEVEL (assignn));
+
+    DBUG_ASSERT (0 == valid || 1 == valid, ("invalid value for variable valid"));
+
+    DBUG_RETURN (resultn);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   node *WithloopFolding(node *arg_node, node* arg_info)
  *
  * description:
@@ -785,33 +899,41 @@ SearchWL (int id_varno, node *startn, int *valid)
 node *
 WithloopFolding (node *arg_node, node *arg_info)
 {
-    DBUG_ENTER ("WLFWithloopFolding");
+    int expr;
 
+    DBUG_ENTER ("WithloopFolding");
     DBUG_ASSERT (!arg_info, ("at the beginning of WLF: arg_info != NULL"));
+
     arg_info = MakeInfo ();
 
     /* WLT traversal: transform WLs */
-    DBUG_EXECUTE ("WLx", NOTE_OPTIMIZER_PHASE ("  WLT"););
+    DBUG_PRINT ("OPT", ("  WLT"));
     act_tab = wlt_tab;
     arg_node = Trav (arg_node, arg_info);
+    expr = (wlt_expr - old_wlt_expr);
+    if (expr)
+        DBUG_PRINT ("OPT", ("                        result: %d", expr));
 
     /* rebuild mask which is necessary because of the transformations in WLT. */
-    DBUG_EXECUTE ("WLx", NOTE_OPTIMIZER_PHASE ("  GenerateMasks"););
+    DBUG_PRINT ("OPT", ("  GENERATEMASKS"));
     arg_node = GenerateMasks (arg_node, NULL);
 
     /* WLI traversal: search information */
-    DBUG_EXECUTE ("WLx", NOTE_OPTIMIZER_PHASE ("  WLI"););
+    DBUG_PRINT ("OPT", ("  WLI"));
     act_tab = wli_tab;
     arg_node = Trav (arg_node, arg_info);
 
     /* WLF traversal: fold WLs */
-    DBUG_EXECUTE ("WLx", NOTE_OPTIMIZER_PHASE ("  WLF"););
+    DBUG_PRINT ("OPT", ("  WLF"));
     act_tab = wlf_tab;
     arg_node = Trav (arg_node, arg_info);
+    expr = (wlf_expr - old_wlf_expr);
+    if (expr)
+        DBUG_PRINT ("OPT", ("                        result: %d", expr));
 
     /* rebuild mask which is necessary because of WL-body-substitutions and
        inserted new variables to prevent wrong variable bindings. */
-    DBUG_EXECUTE ("WLx", NOTE_OPTIMIZER_PHASE ("  GenerateMasks"););
+    DBUG_PRINT ("OPT", ("  GENERATEMASKS"));
     arg_node = GenerateMasks (arg_node, NULL);
 
     FREE (arg_info);
