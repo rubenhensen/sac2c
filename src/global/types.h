@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.37  1998/05/14 12:49:24  sbs
+ * contextflag added
+ *
  * Revision 1.36  1998/05/06 14:30:07  dkr
  * added DataFlowMasks to NODE type
  *
@@ -266,6 +269,8 @@ typedef enum {
     F_extclassdec,
     F_sib
 } file_type;
+
+typedef enum { CT_normal, CT_ap, CT_return, CT_loop, CT_cond, CT_modarray } contextflag;
 
 /*
  * new nodes for yacc and the syntax tree
