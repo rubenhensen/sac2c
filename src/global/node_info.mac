@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.3  1994/11/10 15:44:34  sbs
- * RCS-header inserted
+ * Revision 1.4  1994/11/11 13:59:16  hw
+ * added new nodes: N_pre N_post N_inc N_dec and functions belonging to them
  *
+;; Revision 1.3  1994/11/10  15:44:34  sbs
+;; RCS-header inserted
+;;
  *
  */
 
@@ -44,7 +47,11 @@ NIF (N_num, "N_num", DummyFun, PrintNum, DummyFun),
   NIF (N_exprs, "N_exprs", FltnExprs, PrintExprs, DummyFun),
   NIF (N_array, "N_array", DummyFun, PrintArray, DummyFun),
   NIF (N_info, "N_info", DummyFun, DummyFun, DummyFun),
-  NIF (N_empty, "N_empty", DummyFun, PrintEmpty, DummyFun)
+  NIF (N_empty, "N_empty", DummyFun, PrintEmpty, DummyFun),
+  NIF (N_inc, "N_inc", DummyFun, PrintInc, DummyFun),
+  NIF (N_dec, "N_dec", DummyFun, PrintDec, DummyFun),
+  NIF (N_post, "N_post", DummyFun, PrintPost, DummyFun),
+  NIF (N_pre, "N_pre", DummyFun, PrintPre, DummyFun)
 
 #if 0
 NIF( N_and,      "N_and",      DummyFun, DummyFun, DummyFun ),
