@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.28  1995/10/26 18:20:43  cg
+ * Revision 1.29  1995/11/01 08:02:34  cg
+ * added new break paramter -be to break after object handling.
+ *
+ * Revision 1.28  1995/10/26  18:20:43  cg
  * modified sequence of compiler phases considered
  * (checkdec moved behind typechecker)
  *
@@ -120,6 +123,7 @@ usage (char *prg_name)
     printf ("\t -bm \t\t\tstop after resolving implicit types\n");
     printf ("\t -by \t\t\tstop after analysing functions\n");
     printf ("\t -bb \t\t\tstop after writing SIB-file\n");
+    printf ("\t -be \t\t\tstop after handling objects\n");
     printf ("\t -bo \t\t\tstop after sac-optimizations\n");
     printf ("\t -bs \t\t\tstop after psi-optimizations\n");
     printf ("\t -br \t\t\tstop after refcount inference\n");
@@ -168,7 +172,7 @@ usage (char *prg_name)
 
     printf ("\nCOMPILER OPTIONS:\n");
     printf ("\t -fcheck_boundary\tcheck boundary of arrays while access\n");
-    printf ("\t -noSIB\t\t\tdon't write SIB-file\n");
+    /*   printf("\t -noSIB\t\t\tdon't write SIB-file\n"); */
 
     printf ("\nC-COMPILER OPTIONS:\n");
     printf ("\t  (these options handed to the C-compiler)\n");
