@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.12  1995/06/02 12:13:08  sbs
+ * Revision 1.13  1995/06/23 12:18:07  hw
+ * enlarged macro TYP_IF
+ *
+ * Revision 1.12  1995/06/02  12:13:08  sbs
  * NIF macro prolongated
  *
  * Revision 1.11  1995/04/11  15:57:47  asi
@@ -64,7 +67,7 @@ char *mdb_prf[] = {
 
 #undef PRF_IF
 
-#define TYP_IF(n, s, p) s
+#define TYP_IF(n, s, p, f) s
 
 char *mdb_type[] = {
 #include "type_info.mac"

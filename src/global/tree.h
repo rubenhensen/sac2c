@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.42  1995/06/06 14:06:28  cg
+ * Revision 1.43  1995/06/23 12:18:43  hw
+ * enlarged macro TYP_IF
+ *
+ * Revision 1.42  1995/06/06  14:06:28  cg
  * statustype modified.
  *
  * Revision 1.41  1995/06/02  12:15:25  sbs
@@ -150,7 +153,7 @@ typedef struct NUMS {
 /* typedef enum { T_int, T_float, T_bool, T_hidden, T_user, T_unknown } simpletype;
  */
 
-#define TYP_IF(n, s, p) n
+#define TYP_IF(n, s, p, f) n
 
 typedef enum {
 #include "type_info.mac"
