@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.21  2004/11/27 05:04:01  ktr
+ * dk
+ *
  * Revision 3.20  2004/11/25 22:28:51  sbs
  * compiles
  *
@@ -144,12 +147,12 @@ SPdoScanParse ()
     }
 
     if (global.show_syscall) {
-        NOTE (("global.yyin = fopen( \"%s\", \"r\")", cppfile));
+        NOTE (("yyin = fopen( \"%s\", \"r\")", cppfile));
     }
 
-    global.yyin = fopen (cppfile, "r");
+    yyin = fopen (cppfile, "r");
 
-    if ((global.yyin == NULL) || (ferror (global.yyin))) {
+    if ((yyin == NULL) || (ferror (yyin))) {
         SYSABORT (("Unable to start C preprocessor"));
     }
 
@@ -158,10 +161,10 @@ SPdoScanParse ()
     SPmyYyparse ();
 
     if (global.show_syscall) {
-        NOTE (("err = fclose( global.yyin)"));
+        NOTE (("err = fclose( yyin)"));
     }
 
-    err = fclose (global.yyin);
+    err = fclose (yyin);
     if (err) {
         SYSABORT (("C preprocessor error"));
     }
